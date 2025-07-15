@@ -374,6 +374,7 @@ extern const char *HTTP_VALUE_COMPRESS;
 extern const char *HTTP_VALUE_DEFLATE;
 extern const char *HTTP_VALUE_GZIP;
 extern const char *HTTP_VALUE_BROTLI;
+extern const char *HTTP_VALUE_ZSTD;
 extern const char *HTTP_VALUE_IDENTITY;
 extern const char *HTTP_VALUE_KEEP_ALIVE;
 extern const char *HTTP_VALUE_MAX_AGE;

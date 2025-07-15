@@ -1,6 +1,6 @@
 > GET ``/obj0 HTTP/1.1
-> X-Ats-Compress-Test: 0/gzip, deflate, sdch, br
-> Accept-Encoding: gzip, deflate, sdch, br
+> X-Ats-Compress-Test: 0/gzip, deflate, sdch, br, zstd
+> Accept-Encoding: gzip, deflate, sdch, br, zstd
 < HTTP/1.1 200 OK
 < Content-Type: text/javascript
 < Content-Encoding: br
@@ -14,7 +14,7 @@
 < Content-Type: text/javascript
 < Content-Encoding: gzip
 < Vary: Accept-Encoding
-< Content-Length: 7``
+< Content-Length: 71
 ===
 > GET ``/obj0 HTTP/1.1
 > X-Ats-Compress-Test: 0/br
@@ -32,14 +32,21 @@
 < Content-Type: text/javascript
 < Content-Length: 1049
 ===
+> GET ``/obj0 HTTP/1.1
+> X-Ats-Compress-Test: 0/zstd
+> Accept-Encoding: zstd
+< HTTP/1.1 200 OK
+< Content-Type: text/javascript
+< Content-Length: 1049
+===
 > GET ``/obj1 HTTP/1.1
-> X-Ats-Compress-Test: 1/gzip, deflate, sdch, br
-> Accept-Encoding: gzip, deflate, sdch, br
+> X-Ats-Compress-Test: 1/gzip, deflate, sdch, br, zstd
+> Accept-Encoding: gzip, deflate, sdch, br, zstd
 < HTTP/1.1 200 OK
 < Content-Type: text/javascript
 < Content-Encoding: gzip
 < Vary: Accept-Encoding
-< Content-Length: 7``
+< Content-Length: 71
 ===
 > GET ``/obj1 HTTP/1.1
 > X-Ats-Compress-Test: 1/gzip
@@ -48,7 +55,7 @@
 < Content-Type: text/javascript
 < Content-Encoding: gzip
 < Vary: Accept-Encoding
-< Content-Length: 7``
+< Content-Length: 71
 ===
 > GET ``/obj1 HTTP/1.1
 > X-Ats-Compress-Test: 1/br
@@ -64,9 +71,16 @@
 < Content-Type: text/javascript
 < Content-Length: 1049
 ===
+> GET ``/obj1 HTTP/1.1
+> X-Ats-Compress-Test: 1/zstd
+> Accept-Encoding: zstd
+< HTTP/1.1 200 OK
+< Content-Type: text/javascript
+< Content-Length: 1049
+===
 > GET ``/obj2 HTTP/1.1
-> X-Ats-Compress-Test: 2/gzip, deflate, sdch, br
-> Accept-Encoding: gzip, deflate, sdch, br
+> X-Ats-Compress-Test: 2/gzip, deflate, sdch, br, zstd
+> Accept-Encoding: gzip, deflate, sdch, br, zstd
 < HTTP/1.1 200 OK
 < Content-Type: text/javascript
 < Content-Encoding: br
@@ -80,7 +94,7 @@
 < Content-Type: text/javascript
 < Content-Encoding: gzip
 < Vary: Accept-Encoding
-< Content-Length: 7``
+< Content-Length: 71
 ===
 > GET ``/obj2 HTTP/1.1
 > X-Ats-Compress-Test: 2/br
@@ -98,6 +112,136 @@
 < Content-Type: text/javascript
 < Content-Length: 1049
 ===
+> GET ``/obj2 HTTP/1.1
+> X-Ats-Compress-Test: 2/zstd
+> Accept-Encoding: zstd
+< HTTP/1.1 200 OK
+< Content-Type: text/javascript
+< Content-Length: 1049
+===
+> GET ``/obj3 HTTP/1.1
+> X-Ats-Compress-Test: 3/gzip, deflate, sdch, br, zstd
+> Accept-Encoding: gzip, deflate, sdch, br, zstd
+< HTTP/1.1 200 OK
+< Content-Type: text/javascript
+< Content-Encoding: br
+< Vary: Accept-Encoding
+< Content-Length: 46
+===
+> GET ``/obj3 HTTP/1.1
+> X-Ats-Compress-Test: 3/gzip
+> Accept-Encoding: gzip
+< HTTP/1.1 200 OK
+< Content-Type: text/javascript
+< Content-Encoding: gzip
+< Vary: Accept-Encoding
+< Content-Length: 71
+===
+> GET ``/obj3 HTTP/1.1
+> X-Ats-Compress-Test: 3/br
+> Accept-Encoding: br
+< HTTP/1.1 200 OK
+< Content-Type: text/javascript
+< Content-Encoding: br
+< Vary: Accept-Encoding
+< Content-Length: 46
+===
+> GET ``/obj3 HTTP/1.1
+> X-Ats-Compress-Test: 3/deflate
+> Accept-Encoding: deflate
+< HTTP/1.1 200 OK
+< Content-Type: text/javascript
+< Content-Length: 1049
+===
+> GET ``/obj3 HTTP/1.1
+> X-Ats-Compress-Test: 3/zstd
+> Accept-Encoding: zstd
+< HTTP/1.1 200 OK
+< Content-Type: text/javascript
+< Content-Length: 1049
+===
+> GET ``/obj4 HTTP/1.1
+> X-Ats-Compress-Test: 4/gzip, deflate, sdch, br, zstd
+> Accept-Encoding: gzip, deflate, sdch, br, zstd
+< HTTP/1.1 200 OK
+< Content-Type: text/javascript
+< Vary: Accept-Encoding
+< Content-Length: 64
+===
+> GET ``/obj4 HTTP/1.1
+> X-Ats-Compress-Test: 4/gzip
+> Accept-Encoding: gzip
+< HTTP/1.1 200 OK
+< Content-Type: text/javascript
+< Content-Encoding: gzip
+< Vary: Accept-Encoding
+< Content-Length: 71
+===
+> GET ``/obj4 HTTP/1.1
+> X-Ats-Compress-Test: 4/br
+> Accept-Encoding: br
+< HTTP/1.1 200 OK
+< Content-Type: text/javascript
+< Content-Encoding: br
+< Vary: Accept-Encoding
+< Content-Length: 46
+===
+> GET ``/obj4 HTTP/1.1
+> X-Ats-Compress-Test: 4/deflate
+> Accept-Encoding: deflate
+< HTTP/1.1 200 OK
+< Content-Type: text/javascript
+< Content-Length: 1049
+===
+> GET ``/obj4 HTTP/1.1
+> X-Ats-Compress-Test: 4/zstd
+> Accept-Encoding: zstd
+< HTTP/1.1 200 OK
+< Content-Type: text/javascript
+< Vary: Accept-Encoding
+< Content-Length: 64
+===
+> GET ``/obj5 HTTP/1.1
+> X-Ats-Compress-Test: 5/gzip, deflate, sdch, br, zstd
+> Accept-Encoding: gzip, deflate, sdch, br, zstd
+< HTTP/1.1 200 OK
+< Content-Type: text/javascript
+< Vary: Accept-Encoding
+< Content-Length: 64
+===
+> GET ``/obj5 HTTP/1.1
+> X-Ats-Compress-Test: 5/gzip
+> Accept-Encoding: gzip
+< HTTP/1.1 200 OK
+< Content-Type: text/javascript
+< Content-Encoding: gzip
+< Vary: Accept-Encoding
+< Content-Length: 71
+===
+> GET ``/obj5 HTTP/1.1
+> X-Ats-Compress-Test: 5/br
+> Accept-Encoding: br
+< HTTP/1.1 200 OK
+< Content-Type: text/javascript
+< Content-Encoding: br
+< Vary: Accept-Encoding
+< Content-Length: 46
+===
+> GET ``/obj5 HTTP/1.1
+> X-Ats-Compress-Test: 5/deflate
+> Accept-Encoding: deflate
+< HTTP/1.1 200 OK
+< Content-Type: text/javascript
+< Content-Length: 1049
+===
+> GET ``/obj5 HTTP/1.1
+> X-Ats-Compress-Test: 5/zstd
+> Accept-Encoding: zstd
+< HTTP/1.1 200 OK
+< Content-Type: text/javascript
+< Vary: Accept-Encoding
+< Content-Length: 64
+===
 > GET ``/obj0 HTTP/1.1
 > X-Ats-Compress-Test: 0/gzip;q=0.666
 > Accept-Encoding: gzip;q=0.666
@@ -105,7 +249,7 @@
 < Content-Type: text/javascript
 < Content-Encoding: gzip
 < Vary: Accept-Encoding
-< Content-Length: 7``
+< Content-Length: 71
 ===
 > GET ``/obj0 HTTP/1.1
 > X-Ats-Compress-Test: 0/gzip;q=0.666x
@@ -114,7 +258,7 @@
 < Content-Type: text/javascript
 < Content-Encoding: gzip
 < Vary: Accept-Encoding
-< Content-Length: 7``
+< Content-Length: 71
 ===
 > GET ``/obj0 HTTP/1.1
 > X-Ats-Compress-Test: 0/gzip;q=#0.666
@@ -123,7 +267,7 @@
 < Content-Type: text/javascript
 < Content-Encoding: gzip
 < Vary: Accept-Encoding
-< Content-Length: 7``
+< Content-Length: 71
 ===
 > GET ``/obj0 HTTP/1.1
 > X-Ats-Compress-Test: 0/gzip; Q = 0.666
@@ -132,23 +276,23 @@
 < Content-Type: text/javascript
 < Content-Encoding: gzip
 < Vary: Accept-Encoding
-< Content-Length: 7``
+< Content-Length: 71
 ===
-> GET ``obj0 HTTP/1.1
+> GET ``/obj0 HTTP/1.1
 > X-Ats-Compress-Test: 0/gzip;q=0.0
 > Accept-Encoding: gzip;q=0.0
 < HTTP/1.1 200 OK
 < Content-Type: text/javascript
 < Content-Length: 1049
 ===
-> GET ``obj0 HTTP/1.1
+> GET ``/obj0 HTTP/1.1
 > X-Ats-Compress-Test: 0/gzip;q=-0.1
 > Accept-Encoding: gzip;q=-0.1
 < HTTP/1.1 200 OK
 < Content-Type: text/javascript
 < Content-Encoding: gzip
 < Vary: Accept-Encoding
-< Content-Length: 7``
+< Content-Length: 71
 ===
 > GET ``/obj0 HTTP/1.1
 > X-Ats-Compress-Test: 0/aaa, gzip;q=0.666, bbb
@@ -157,7 +301,7 @@
 < Content-Type: text/javascript
 < Content-Encoding: gzip
 < Vary: Accept-Encoding
-< Content-Length: 7``
+< Content-Length: 71
 ===
 > GET ``/obj0 HTTP/1.1
 > X-Ats-Compress-Test: 0/ br ; q=0.666, bbb
@@ -175,7 +319,7 @@
 < Content-Type: text/javascript
 < Content-Encoding: gzip
 < Vary: Accept-Encoding
-< Content-Length: 7``
+< Content-Length: 71
 ===
 > POST ``/obj3 HTTP/1.1
 > X-Ats-Compress-Test: 3/gzip
@@ -184,5 +328,5 @@
 < Content-Type: text/javascript
 < Content-Encoding: gzip
 < Vary: Accept-Encoding
-< Content-Length: 7``
+< Content-Length: 71
 ===

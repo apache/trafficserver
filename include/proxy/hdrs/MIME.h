@@ -619,6 +619,7 @@ extern const char *MIME_VALUE_S_MAXAGE;
 extern const char *MIME_VALUE_NEED_REVALIDATE_ONCE;
 extern const char *MIME_VALUE_WEBSOCKET;
 extern const char *MIME_VALUE_H2C;
+extern const char *MIME_VALUE_ZSTD;
 
 extern int MIME_LEN_ACCEPT;
 extern int MIME_LEN_ACCEPT_CHARSET;
@@ -722,6 +723,7 @@ extern int MIME_LEN_SEC_WEBSOCKET_KEY;
 extern int MIME_LEN_SEC_WEBSOCKET_VERSION;
 extern int MIME_LEN_HTTP2_SETTINGS;
 extern int MIME_LEN_EARLY_DATA;
+extern int MIME_LEN_ZSTD;
 
 extern int MIME_WKSIDX_ACCEPT;
 extern int MIME_WKSIDX_ACCEPT_CHARSET;
