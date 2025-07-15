@@ -24,6 +24,9 @@
 #include "P_Net.h" // For Metrics.
 #include "iocore/net/ConnectionTracker.h"
 #include "records/RecCore.h"
+#include "swoc/IPAddr.h"
+#include "swoc/swoc_file.h"
+#include <yaml-cpp/yaml.h>
 
 using namespace std::literals;
 
@@ -211,7 +214,97 @@ Groups_To_JSON(std::vector<std::shared_ptr<ConnectionTracker::Group const>> cons
   return text;
 }
 
-} // namespace
+bool
+Update_Client_Exempt_List_From_File(swoc::IPRangeSet &range_set, std::string_view filename)
+{
+  char const *config_name = ConnectionTracker::CONFIG_CLIENT_VAR_EXEMPT_LIST_FILENAME.data();
+  Note("%s: loading %.*s", config_name, static_cast<int>(filename.size()), filename.data());
+  std::error_code ec;
+  std::string     content{swoc::file::load(filename, ec)};
+  if (ec.value() != 0) {
+    Warning("%s: Failed to load %.*s - %s", config_name, static_cast<int>(filename.size()), filename.data(), ec.message().c_str());
+    return false;
+  }
+
+  YAML::Node root_node{YAML::Load(content)};
+  YAML::Node ranges_node{root_node[ConnectionTracker::EXEMPT_LIST_ROOT_NODE.data()]};
+  if (!ranges_node) {
+    Warning("%s: no %s root node found in %.*s", config_name, ConnectionTracker::EXEMPT_LIST_ROOT_NODE.data(),
+            static_cast<int>(filename.size()), filename.data());
+    return false;
+  }
+
+  // The exempt list should contain a Sequence of exempt addresses.
+  if (!ranges_node.IsSequence()) {
+    Warning("%s: %s root node must be a sequence of IP address ranges in %.*s", config_name,
+            ConnectionTracker::EXEMPT_LIST_ROOT_NODE.data(), static_cast<int>(filename.size()), filename.data());
+    return false;
+  }
+
+  for (auto const &range_node : ranges_node) {
+    if (!range_node.IsScalar()) {
+      Warning("%s: %.*s root node must be a sequence of IP address ranges in %.*s:%d", config_name,
+              static_cast<int>(ConnectionTracker::EXEMPT_LIST_ROOT_NODE.size()), ConnectionTracker::EXEMPT_LIST_ROOT_NODE.data(),
+              static_cast<int>(filename.size()), filename.data(), range_node.Mark().line);
+      return false;
+    }
+    std::string_view range_sv{range_node.Scalar()};
+    swoc::IPRange    range;
+    if (!range.load(range_sv)) {
+      Warning("%s: %.*s is not a valid IP range in %.*s:%d", config_name, static_cast<int>(range_sv.size()), range_sv.data(),
+              static_cast<int>(filename.size()), filename.data(), range_node.Mark().line);
+      return false;
+    }
+    range_set.mark(range);
+  }
+  return true;
+}
+
+bool
+Config_Update_Conntrack_Client_Exempt_List_Filename(const char * /* name ATS_UNUSED */, RecDataT dtype, RecData data, void *cookie)
+{
+  if (RECD_STRING != dtype) {
+    Warning("Invalid type for '%s' - must be 'STRING'", ConnectionTracker::CONFIG_CLIENT_VAR_EXEMPT_LIST_FILENAME.data());
+    return false;
+  }
+  auto *config = static_cast<ConnectionTracker::GlobalConfig *>(cookie);
+  if (data.rec_string == nullptr) {
+    // There is no exempt list configured. Ensure that our exempt list is empty.
+    config->client_exempt_list.clear();
+    return true;
+  }
+  std::string_view exempt_list_filename{data.rec_string};
+  ink_release_assert(config != nullptr);
+  return Update_Client_Exempt_List_From_File(config->client_exempt_list, exempt_list_filename);
+}
+
+} // anonymous namespace
+
+ConnectionTracker::GlobalConfig::GlobalConfig(GlobalConfig const &other)
+{
+  this->client_alert_delay = other.client_alert_delay;
+  this->server_alert_delay = other.server_alert_delay;
+  this->metric_enabled     = other.metric_enabled;
+  this->metric_prefix      = other.metric_prefix;
+  this->client_exempt_list.clear();
+  for (auto const &ip_range : other.client_exempt_list) {
+    this->client_exempt_list.mark(ip_range);
+  }
+}
+
+ConnectionTracker::GlobalConfig &
+ConnectionTracker::GlobalConfig::operator=(GlobalConfig const &other)
+{
+  this->client_alert_delay = other.client_alert_delay;
+  this->server_alert_delay = other.server_alert_delay;
+  this->metric_enabled     = other.metric_enabled;
+  this->metric_prefix      = other.metric_prefix;
+  this->client_exempt_list.clear();
+  for (auto const &ip_range : other.client_exempt_list) {
+    this->client_exempt_list.mark(ip_range);
+  }
+  return *this;
+}
 
 void
 ConnectionTracker::config_init(GlobalConfig *global, TxnConfig *txn, RecConfigUpdateCb const &config_cb)
@@ -220,6 +313,8 @@ ConnectionTracker::config_init(GlobalConfig *global, TxnConfig *txn, RecConfigUp
                            // Per transaction lookup must be done at call time because it changes.
 
   Enable_Config_Var(CONFIG_CLIENT_VAR_ALERT_DELAY, &Config_Update_Conntrack_Client_Alert_Delay, config_cb, global);
+  Enable_Config_Var(CONFIG_CLIENT_VAR_EXEMPT_LIST_FILENAME, &Config_Update_Conntrack_Client_Exempt_List_Filename, config_cb,
+                    global);
   Enable_Config_Var(CONFIG_SERVER_VAR_MIN, &Config_Update_Conntrack_Min, config_cb, txn);
   Enable_Config_Var(CONFIG_SERVER_VAR_MAX, &Config_Update_Conntrack_Max, config_cb, txn);
   Enable_Config_Var(CONFIG_SERVER_VAR_MATCH, &Config_Update_Conntrack_Match, config_cb, txn);
@@ -231,7 +326,14 @@ ConnectionTracker::config_init(GlobalConfig *global, TxnConfig *txn, RecConfigUp
 ConnectionTracker::TxnState
 ConnectionTracker::obtain_inbound(IpEndpoint const &addr)
 {
-  TxnState                    zret;
+  TxnState zret;
+  if (_global_config->client_exempt_list.contains(swoc::IPAddr{addr})) {
+    // This short-circuits all our connection throttling logic. Save time by
+    // just setting the flag for the caller to see that connections are exempt
+    // this address.
+    zret._exempt_p = true;
+    return zret;
+  }
   CryptoHash                  hash;
   Group::Key                  key{addr, hash, MatchType::MATCH_IP};
   std::lock_guard<std::mutex> lock(_inbound_table._mutex); // Table lock
