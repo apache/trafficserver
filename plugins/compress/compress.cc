@@ -950,6 +950,8 @@ transformable(TSHttpTxn txnp, bool server, HostConfiguration *host_configuration
         continue;
       }
 
+      info("Accept-Encoding value [%.*s]", len, value);
+
       if (strncasecmp(value, "zstd", sizeof("zstd") - 1) == 0) {
         if (*algorithms & ALGORITHM_ZSTD) {
           compression_acceptable = 1;

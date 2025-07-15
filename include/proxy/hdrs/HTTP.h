@@ -400,6 +400,7 @@ extern int HTTP_LEN_COMPRESS;
 extern int HTTP_LEN_DEFLATE;
 extern int HTTP_LEN_GZIP;
 extern int HTTP_LEN_BROTLI;
+extern int HTTP_LEN_ZSTD;
 extern int HTTP_LEN_IDENTITY;
 extern int HTTP_LEN_KEEP_ALIVE;
 extern int HTTP_LEN_MAX_AGE;

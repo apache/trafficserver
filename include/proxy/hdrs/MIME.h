@@ -601,6 +601,7 @@ extern const char *MIME_VALUE_COMPRESS;
 extern const char *MIME_VALUE_DEFLATE;
 extern const char *MIME_VALUE_GZIP;
 extern const char *MIME_VALUE_BROTLI;
+extern const char *MIME_VALUE_ZSTD;
 extern const char *MIME_VALUE_IDENTITY;
 extern const char *MIME_VALUE_KEEP_ALIVE;
 extern const char *MIME_VALUE_MAX_AGE;
@@ -619,7 +620,6 @@ extern const char *MIME_VALUE_S_MAXAGE;
 extern const char *MIME_VALUE_NEED_REVALIDATE_ONCE;
 extern const char *MIME_VALUE_WEBSOCKET;
 extern const char *MIME_VALUE_H2C;
-extern const char *MIME_VALUE_ZSTD;
 
 extern int MIME_LEN_ACCEPT;
 extern int MIME_LEN_ACCEPT_CHARSET;
