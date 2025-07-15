@@ -54,6 +54,10 @@
 #include <brotli/encode.h>
 #endif
 
+#if HAVE_ZSTD_H
+#include <zstd.h>
+#endif
+
 // Produce output about compile time features, useful for checking how things were built
 static void
 print_feature(std::string_view name, int value, bool json, bool last = false)
@@ -212,6 +216,11 @@ produce_versions(bool json)
   print_var("brotli", LBW().print("{:#x}", BrotliEncoderVersion()).view(), json);
 #else
   print_var("brotli", undef, json);
+#endif
+#if HAVE_ZSTD_H
+  print_var("zstd", LBW().print("{}", ZSTD_versionString()).view(), json);
+#else
+  print_var("zstd", undef, json);
 #endif
 
   // This should always be last
