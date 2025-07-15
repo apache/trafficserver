@@ -164,6 +164,7 @@ c_str_view MIME_VALUE_COMPRESS;
 c_str_view MIME_VALUE_DEFLATE;
 c_str_view MIME_VALUE_GZIP;
 c_str_view MIME_VALUE_BROTLI;
+c_str_view MIME_VALUE_ZSTD;
 c_str_view MIME_VALUE_IDENTITY;
 c_str_view MIME_VALUE_KEEP_ALIVE;
 c_str_view MIME_VALUE_MAX_AGE;
@@ -766,6 +767,7 @@ mime_init()
     MIME_VALUE_DEFLATE              = hdrtoken_string_to_wks_sv("deflate");
     MIME_VALUE_GZIP                 = hdrtoken_string_to_wks_sv("gzip");
     MIME_VALUE_BROTLI               = hdrtoken_string_to_wks_sv("br");
+    MIME_VALUE_ZSTD                 = hdrtoken_string_to_wks_sv("zstd");
     MIME_VALUE_IDENTITY             = hdrtoken_string_to_wks_sv("identity");
     MIME_VALUE_KEEP_ALIVE           = hdrtoken_string_to_wks_sv("keep-alive");
     MIME_VALUE_MAX_AGE              = hdrtoken_string_to_wks_sv("max-age");

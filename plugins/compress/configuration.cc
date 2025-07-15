@@ -229,6 +229,12 @@ HostConfiguration::add_compression_algorithms(string &line)
     string token = extractFirstToken(line, isCommaOrSpace);
     if (token.empty()) {
       break;
+    } else if (token == "zstd") {
+#ifdef HAVE_ZSTD_H
+      compression_algorithms_ |= ALGORITHM_ZSTD;
+#else
+      error("supported-algorithms: zstd support not compiled in.");
+#endif
     } else if (token == "br") {
 #ifdef HAVE_BROTLI_ENCODE_H
       compression_algorithms_ |= ALGORITHM_BROTLI;
@@ -240,7 +246,7 @@ HostConfiguration::add_compression_algorithms(string &line)
     } else if (token == "deflate") {
       compression_algorithms_ |= ALGORITHM_DEFLATE;
     } else {
-      error("Unknown compression type. Supported compression-algorithms <br,gzip,deflate>.");
+      error("Unknown compression type. Supported compression-algorithms <zstd,br,gzip,deflate>.");
     }
   }
 }

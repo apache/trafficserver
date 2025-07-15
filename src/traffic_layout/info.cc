@@ -91,6 +91,11 @@ produce_features(bool json)
 #else
   print_feature("TS_HAS_BROTLI", 0, json);
 #endif
+#if HAVE_ZSTD_H
+  print_feature("TS_HAS_ZSTD", 1, json);
+#else
+  print_feature("TS_HAS_ZSTD", 0, json);
+#endif
 #ifdef F_GETPIPE_SZ
   print_feature("TS_HAS_PIPE_BUFFER_SIZE_CONFIG", 1, json);
 #else

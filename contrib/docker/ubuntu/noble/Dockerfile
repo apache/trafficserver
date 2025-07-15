@@ -48,6 +48,7 @@ RUN apt update \
     libpcre3-dev \
     hwloc \
     libbrotli-dev \
+    libzstd-dev \
     luajit \
     libcap-dev \
     libmagick++-dev \

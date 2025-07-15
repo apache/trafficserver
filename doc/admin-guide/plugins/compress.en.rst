@@ -192,12 +192,24 @@ supported-algorithms
 
 Provides the compression algorithms that are supported, a comma separate list
 of values. This will allow |TS| to selectively support ``gzip``, ``deflate``,
-and brotli (``br``) compression. The default is ``gzip``. Multiple algorithms can
-be selected using ',' delimiter, for instance, ``supported-algorithms
-deflate,gzip,br``. Note that this list must **not** contain any white-spaces!
+brotli (``br``), and zstd (``zstd``) compression. The default is ``gzip``.
+Multiple algorithms can be selected using ',' delimiter, for instance,
+``supported-algorithms deflate,gzip,br,zstd``. Note that this list must **not**
+contain any white-spaces!
+
+============== =================================================================
+Algorithm      Description
+============== =================================================================
+gzip           Standard gzip compression (default, widely supported)
+deflate        Deflate compression (RFC 1951)
+br             Brotli compression (modern, efficient)
+zstd           Zstandard compression (fast, high compression ratio)
+============== =================================================================
 
 Note that if :ts:cv:`proxy.config.http.normalize_ae` is ``1``, only gzip will
-be considered, and if it is ``2``, only br or gzip will be considered.
+be considered, if it is ``2``, only br or gzip will be considered, if it is ``4``,
+only zstd, br, or gzip will be considered, and if it is ``5``, all combinations
+of zstd, br, and gzip will be considered.
 
 Examples
 ========
@@ -238,6 +250,23 @@ might create a configuration with the following options::
    compressible-content-type application/json
    flush true
    supported-algorithms br,gzip
+
+   # Supports zstd compression for high efficiency
+   [zstd.compress.com]
+   enabled true
+   compressible-content-type text/*
+   compressible-content-type application/json
+   compressible-content-type application/javascript
+   flush true
+   supported-algorithms zstd,gzip
+
+   # Supports all compression algorithms
+   [all.compress.com]
+   enabled true
+   compressible-content-type text/*
+   compressible-content-type application/json
+   flush true
+   supported-algorithms zstd,br,gzip,deflate
 
    # This origin does it all
    [bar.example.com]
