@@ -20,34 +20,34 @@
 #
 # This will define the following variables
 #
-#     ZSTD_FOUND
-#     ZSTD_LIBRARY
-#     ZSTD_INCLUDE_DIRS
+#     zstd_FOUND
+#     zstd_LIBRARY
+#     zstd_INCLUDE_DIRS
 #
 # and the following imported target
 #
 #     zstd::zstd
 #
 
-find_path(ZSTD_INCLUDE_DIR NAMES zstd.h)
+find_path(zstd_INCLUDE_DIR NAMES zstd.h)
 
-find_library(ZSTD_LIBRARY_DEBUG NAMES zstdd zstd_staticd)
-find_library(ZSTD_LIBRARY_RELEASE NAMES zstd zstd_static)
+find_library(zstd_LIBRARY_DEBUG NAMES zstdd zstd_staticd)
+find_library(zstd_LIBRARY_RELEASE NAMES zstd zstd_static)
 
-mark_as_advanced(ZSTD_LIBRARY ZSTD_INCLUDE_DIR)
+mark_as_advanced(zstd_LIBRARY zstd_INCLUDE_DIR)
 
 include(SelectLibraryConfigurations)
-select_library_configurations(ZSTD)
+select_library_configurations(zstd)
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(ZSTD DEFAULT_MSG ZSTD_LIBRARY ZSTD_INCLUDE_DIR)
+find_package_handle_standard_args(zstd DEFAULT_MSG zstd_LIBRARY zstd_INCLUDE_DIR)
 
-if(ZSTD_FOUND)
-  set(ZSTD_INCLUDE_DIRS "${ZSTD_INCLUDE_DIR}")
+if(zstd_FOUND)
+  set(zstd_INCLUDE_DIRS "${zstd_INCLUDE_DIR}")
 endif()
 
-if(ZSTD_FOUND AND NOT TARGET zstd::zstd)
+if(zstd_FOUND AND NOT TARGET zstd::zstd)
   add_library(zstd::zstd INTERFACE IMPORTED)
-  target_include_directories(zstd::zstd INTERFACE ${ZSTD_INCLUDE_DIRS})
-  target_link_libraries(zstd::zstd INTERFACE "${ZSTD_LIBRARY}")
+  target_include_directories(zstd::zstd INTERFACE ${zstd_INCLUDE_DIRS})
+  target_link_libraries(zstd::zstd INTERFACE "${zstd_LIBRARY}")
 endif()

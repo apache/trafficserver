@@ -341,8 +341,8 @@ set(TS_USE_MALLOC_ALLOCATOR ${ENABLE_MALLOC_ALLOCATOR})
 set(TS_USE_ALLOCATOR_METRICS ${ENABLE_ALLOCATOR_METRICS})
 find_package(ZLIB REQUIRED)
 
-find_package(ZSTD)
-if(ZSTD_FOUND)
+find_package(zstd)
+if(zstd_FOUND)
   set(HAVE_ZSTD_H TRUE)
 endif()
 
