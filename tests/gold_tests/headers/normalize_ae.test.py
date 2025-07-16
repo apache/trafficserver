@@ -40,6 +40,10 @@ request_header = {"headers": "GET / HTTP/1.1\r\nHost: www.ae-1.com\r\n\r\n", "ti
 server.addResponse("sessionlog.json", request_header, response_header)
 request_header = {"headers": "GET / HTTP/1.1\r\nHost: www.ae-2.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 server.addResponse("sessionlog.json", request_header, response_header)
+request_header = {"headers": "GET / HTTP/1.1\r\nHost: www.ae-4.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+server.addResponse("sessionlog.json", request_header, response_header)
+request_header = {"headers": "GET / HTTP/1.1\r\nHost: www.ae-5.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+server.addResponse("sessionlog.json", request_header, response_header)
 
 # Define first ATS. Disable the cache to make sure each request is sent to the
 # origin server.
@@ -65,6 +69,12 @@ def baselineTsSetup(ts):
     ts.Disk.remap_config.AddLine(
         'map http://www.ae-3.com http://127.0.0.1:{0}'.format(server.Variables.Port) +
         ' @plugin=conf_remap.so @pparam=proxy.config.http.normalize_ae=3')
+    ts.Disk.remap_config.AddLine(
+        'map http://www.ae-4.com http://127.0.0.1:{0}'.format(server.Variables.Port) +
+        ' @plugin=conf_remap.so @pparam=proxy.config.http.normalize_ae=4')
+    ts.Disk.remap_config.AddLine(
+        'map http://www.ae-5.com http://127.0.0.1:{0}'.format(server.Variables.Port) +
+        ' @plugin=conf_remap.so @pparam=proxy.config.http.normalize_ae=5')
 
 
 baselineTsSetup(ts)
@@ -120,6 +130,47 @@ def allAEHdrs(shouldWaitForUServer, shouldWaitForTs, ts, host):
     tr.Processes.Default.Command = baseCurl + curlTail('gzip;q=0.3, whatever;q=0.666, br;q=0.7')
     tr.Processes.Default.ReturnCode = 0
 
+    # ZSTD-related tests for normalize_ae modes 4 and 5
+    tr = test.AddTestRun()
+    tr.Processes.Default.Command = baseCurl + curlTail('zstd')
+    tr.Processes.Default.ReturnCode = 0
+
+    tr = test.AddTestRun()
+    tr.Processes.Default.Command = baseCurl + curlTail('zstd, gzip')
+    tr.Processes.Default.ReturnCode = 0
+
+    tr = test.AddTestRun()
+    tr.Processes.Default.Command = baseCurl + curlTail('zstd, br')
+    tr.Processes.Default.ReturnCode = 0
+
+    tr = test.AddTestRun()
+    tr.Processes.Default.Command = baseCurl + curlTail('zstd, br, gzip')
+    tr.Processes.Default.ReturnCode = 0
+
+    tr = test.AddTestRun()
+    tr.Processes.Default.Command = baseCurl + curlTail('gzip, zstd, br')
+    tr.Processes.Default.ReturnCode = 0
+
+    tr = test.AddTestRun()
+    tr.Processes.Default.Command = baseCurl + curlTail('br, zstd')
+    tr.Processes.Default.ReturnCode = 0
+
+    tr = test.AddTestRun()
+    tr.Processes.Default.Command = baseCurl + curlTail('zstd;q=0.8, br;q=0.7, gzip;q=0.6')
+    tr.Processes.Default.ReturnCode = 0
+
+    tr = test.AddTestRun()
+    tr.Processes.Default.Command = baseCurl + curlTail('deflate, zstd')
+    tr.Processes.Default.ReturnCode = 0
+
+    tr = test.AddTestRun()
+    tr.Processes.Default.Command = baseCurl + curlTail('identity, zstd, compress')
+    tr.Processes.Default.ReturnCode = 0
+
+    tr = test.AddTestRun()
+    tr.Processes.Default.Command = baseCurl + curlTail('br, compress')
+    tr.Processes.Default.ReturnCode = 0
+
 
 def perTsTest(shouldWaitForUServer, ts):
     allAEHdrs(shouldWaitForUServer, True, ts, 'www.no-oride.com')
@@ -127,6 +178,8 @@ def perTsTest(shouldWaitForUServer, ts):
     allAEHdrs(False, False, ts, 'www.ae-1.com')
     allAEHdrs(False, False, ts, 'www.ae-2.com')
     allAEHdrs(False, False, ts, 'www.ae-3.com')
+    allAEHdrs(False, False, ts, 'www.ae-4.com')
+    allAEHdrs(False, False, ts, 'www.ae-5.com')
 
 
 perTsTest(True, ts)

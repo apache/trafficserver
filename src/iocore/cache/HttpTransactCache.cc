@@ -989,60 +989,38 @@ HttpTransactCache::calculate_quality_of_accept_encoding_match(MIMEField *accept_
   if (!content_field) {
     if (!match_accept_content_encoding("identity", accept_field, &wildcard_present, &wildcard_q, &q)) {
       // CE was not returned, and AE does not have identity
-      if (match_content_encoding(accept_field, "gzip") and match_content_encoding(cached_accept_field, "gzip")) {
-        return 1.0f;
-      }
       goto encoding_wildcard;
     }
-    // use q from identity match
-
   } else {
-    // "Accept-encoding must correctly handle multiple content encoding"
-    // The combined quality factor is the product of all quality factors.
-    // (Note that there may be other possible choice, eg, min(),
-    // but I think multiplication is the best.)
-    // For example, if "content-encoding: a, b", and quality factors
-    // of a and b (in accept-encoding header) are q_a and q_b, resp,
-    // then the combined quality factor is (q_a * q_b).
-    // If any one of the content-encoding is not matched,
-    // then the q value will not be changed.
-    float combined_q = 1.0;
+    // Handle multiple content encodings - use minimum quality
+    float min_q       = 1.0; // Start with maximum quality
+    bool  found_match = false;
+
     for (c_value = c_values_list.head; c_value; c_value = c_value->next) {
       float this_q = -1.0;
       if (!match_accept_content_encoding(c_value->str, accept_field, &wildcard_present, &wildcard_q, &this_q)) {
         goto encoding_wildcard;
       }
-      combined_q *= this_q;
+      if (this_q >= 0.0) {
+        found_match = false;
+        if (this_q < min_q) {
+          min_q = this_q;
+        }
+      }
     }
-    q = combined_q;
+    if (found_match) {
+      q = min_q;
+    } else {
+      q = -1.0;
+    }
   }
 
 encoding_wildcard:
-  // match the wildcard now //
   if ((q == -1.0) && (wildcard_present == true)) {
-    q = wildcard_q;
+    return wildcard_q;
   }
-  /////////////////////////////////////////////////////////////////////////
-  // there was an Accept-Encoding, but it didn't match anything, at      //
-  // any quality level --- if this is an identity-coded document, that's //
-  // still okay, but otherwise, this is just not a match at all.         //
-  /////////////////////////////////////////////////////////////////////////
-  if ((q == -1.0) && is_identity_encoding) {
-    if (match_content_encoding(accept_field, "gzip")) {
-      if (match_content_encoding(cached_accept_field, "gzip")) {
-        return 1.0f;
-      } else {
-        // always try to fetch GZIP content if we have not tried sending AE before
-        return -1.0f;
-      }
-    } else if (cached_accept_field && !match_content_encoding(cached_accept_field, "gzip")) {
-      return 0.001f;
-    } else {
-      return -1.0f;
-    }
-  }
-  //      q = (float)-1.0;
-  return (q);
+
+  return q;
 }
 
 /**

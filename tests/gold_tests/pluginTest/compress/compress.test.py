@@ -25,7 +25,8 @@ Test compress plugin
 # Skip if plugins not present.
 #
 Test.SkipUnless(
-    Condition.PluginExists('compress.so'), Condition.PluginExists('conf_remap.so'), Condition.HasATSFeature('TS_HAS_BROTLI'))
+    Condition.PluginExists('compress.so'), Condition.PluginExists('conf_remap.so'), Condition.HasATSFeature('TS_HAS_BROTLI'),
+    Condition.HasATSFeature('TS_HAS_ZSTD'))
 
 server = Test.MakeOriginServer("server", options={'--load': f'{Test.TestDirectory}/compress_observer.py'})
 
@@ -43,7 +44,7 @@ response_header = {
     "timestamp": "1469733493.993",
     "body": body
 }
-for i in range(3):
+for i in range(6):
     # add request/response to the server dictionary
     request_header = {"headers": f"GET /obj{i} HTTP/1.1\r\nHost: just.any.thing\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
     server.addResponse("sessionfile.log", request_header, response_header)
@@ -89,6 +90,7 @@ ts.Disk.records_config.update(
 
 ts.Setup.Copy("compress.config")
 ts.Setup.Copy("compress2.config")
+ts.Setup.Copy("compress3.config")
 
 ts.Disk.remap_config.AddLine(
     f'map http://ae-0/ http://127.0.0.1:{server.Variables.Port}/' +
@@ -103,7 +105,16 @@ ts.Disk.remap_config.AddLine(
     f' @plugin=compress.so @pparam={Test.RunDirectory}/compress2.config')
 ts.Disk.remap_config.AddLine(
     f'map http://ae-3/ http://127.0.0.1:{server.Variables.Port}/' +
-    f' @plugin=compress.so @pparam={Test.RunDirectory}/compress.config')
+    ' @plugin=conf_remap.so @pparam=proxy.config.http.normalize_ae=3' +
+    f' @plugin=compress.so @pparam={Test.RunDirectory}/compress2.config')
+ts.Disk.remap_config.AddLine(
+    f'map http://ae-4/ http://127.0.0.1:{server.Variables.Port}/' +
+    ' @plugin=conf_remap.so @pparam=proxy.config.http.normalize_ae=4' +
+    f' @plugin=compress.so @pparam={Test.RunDirectory}/compress3.config')
+ts.Disk.remap_config.AddLine(
+    f'map http://ae-5/ http://127.0.0.1:{server.Variables.Port}/' +
+    ' @plugin=conf_remap.so @pparam=proxy.config.http.normalize_ae=5' +
+    f' @plugin=compress.so @pparam={Test.RunDirectory}/compress3.config')
 
 out_path_counter = 0
 
@@ -119,12 +130,12 @@ deflate_path = f'{Test.RunDirectory}/deflate.txt'
 
 
 def get_verify_command(out_path, decrompressor):
-    return f"{decrompressor} -c {out_path} > {deflate_path} && diff {deflate_path} {orig_path}"
+    return f"{decrompressor} {out_path} > {deflate_path} && diff {deflate_path} {orig_path}"
 
 
-for i in range(3):
+for i in range(6):
 
-    tr = Test.AddTestRun(f'gzip, deflate, sdch, br: {i}')
+    tr = Test.AddTestRun(f'gzip, deflate, sdch, br, zstd: {i}')
     if (waitForTs):
         tr.Processes.Default.StartBefore(ts)
     waitForTs = False
@@ -133,15 +144,21 @@ for i in range(3):
     waitForServer = False
     tr.Processes.Default.ReturnCode = 0
     out_path = get_out_path()
-    tr.Processes.Default.Command = curl(ts, i, 'gzip, deflate, sdch, br', out_path)
-    tr = Test.AddTestRun(f'verify gzip, deflate, sdch, br: {i}')
+    tr.Processes.Default.Command = curl(ts, i, 'gzip, deflate, sdch, br, zstd', out_path)
+    tr = Test.AddTestRun(f'verify gzip, deflate, sdch, br, zstd: {i}')
     tr.ReturnCode = 0
     if i == 0:
-        tr.Processes.Default.Command = get_verify_command(out_path, "brotli -d")
+        tr.Processes.Default.Command = get_verify_command(out_path, "brotli -d -c")
     elif i == 1:
-        tr.Processes.Default.Command = get_verify_command(out_path, "gunzip -k")
+        tr.Processes.Default.Command = get_verify_command(out_path, "gunzip -k -c")
     elif i == 2:
-        tr.Processes.Default.Command = get_verify_command(out_path, "brotli -d")
+        tr.Processes.Default.Command = get_verify_command(out_path, "brotli -d -c")
+    elif i == 3:
+        tr.Processes.Default.Command = get_verify_command(out_path, "brotli -d -c")
+    elif i == 4:
+        tr.Processes.Default.Command = get_verify_command(out_path, "zstd -d -c")
+    elif i == 5:
+        tr.Processes.Default.Command = get_verify_command(out_path, "zstd -d -c")
 
     tr = Test.AddTestRun(f'gzip: {i}')
     tr.Processes.Default.ReturnCode = 0
@@ -149,7 +166,7 @@ for i in range(3):
     tr.Processes.Default.Command = curl(ts, i, "gzip", out_path)
     tr = Test.AddTestRun(f'verify gzip: {i}')
     tr.ReturnCode = 0
-    tr.Processes.Default.Command = get_verify_command(out_path, "gunzip -k")
+    tr.Processes.Default.Command = get_verify_command(out_path, "gunzip -k -c")
 
     tr = Test.AddTestRun(f'br: {i}')
     tr.Processes.Default.ReturnCode = 0
@@ -160,7 +177,7 @@ for i in range(3):
     if i == 1:
         tr.Processes.Default.Command = f"diff {out_path} {orig_path}"
     else:
-        tr.Processes.Default.Command = get_verify_command(out_path, "brotli -d")
+        tr.Processes.Default.Command = get_verify_command(out_path, "brotli -d -c")
 
     tr = Test.AddTestRun(f'deflate: {i}')
     tr.Processes.Default.ReturnCode = 0
@@ -170,6 +187,17 @@ for i in range(3):
     tr.ReturnCode = 0
     tr.Processes.Default.Command = f"diff {out_path} {orig_path}"
 
+    tr = Test.AddTestRun(f'zstd: {i}')
+    tr.Processes.Default.ReturnCode = 0
+    out_path = get_out_path()
+    tr.Processes.Default.Command = curl(ts, i, "zstd", out_path)
+    tr = Test.AddTestRun(f'verify zstd: {i}')
+    tr.ReturnCode = 0
+    if i == 4 or i == 5:
+        tr.Processes.Default.Command = get_verify_command(out_path, "zstd -d -c")
+    else:
+        tr.Processes.Default.Command = get_verify_command(out_path, "cat")
+
 # Test Accept-Encoding normalization.
 
 tr = Test.AddTestRun()
@@ -178,7 +206,7 @@ out_path = get_out_path()
 tr.Processes.Default.Command = curl(ts, 0, "gzip;q=0.666", out_path)
 tr = Test.AddTestRun(f'verify gzip;q=0.666')
 tr.ReturnCode = 0
-tr.Processes.Default.Command = get_verify_command(out_path, "gunzip -k")
+tr.Processes.Default.Command = get_verify_command(out_path, "gunzip -k -c")
 
 tr = Test.AddTestRun()
 tr.Processes.Default.ReturnCode = 0
@@ -186,7 +214,7 @@ out_path = get_out_path()
 tr.Processes.Default.Command = curl(ts, 0, "gzip;q=0.666x", out_path)
 tr = Test.AddTestRun(f'verify gzip;q=0.666x')
 tr.ReturnCode = 0
-tr.Processes.Default.Command = get_verify_command(out_path, "gunzip -k")
+tr.Processes.Default.Command = get_verify_command(out_path, "gunzip -k -c")
 
 tr = Test.AddTestRun()
 tr.Processes.Default.ReturnCode = 0
@@ -194,7 +222,7 @@ out_path = get_out_path()
 tr.Processes.Default.Command = curl(ts, 0, "gzip;q=#0.666", out_path)
 tr = Test.AddTestRun(f'verify gzip;q=#0.666')
 tr.ReturnCode = 0
-tr.Processes.Default.Command = get_verify_command(out_path, "gunzip -k")
+tr.Processes.Default.Command = get_verify_command(out_path, "gunzip -k -c")
 
 tr = Test.AddTestRun()
 tr.Processes.Default.ReturnCode = 0
@@ -202,7 +230,7 @@ out_path = get_out_path()
 tr.Processes.Default.Command = curl(ts, 0, "gzip; Q = 0.666", out_path)
 tr = Test.AddTestRun(f'verify gzip; Q = 0.666')
 tr.ReturnCode = 0
-tr.Processes.Default.Command = get_verify_command(out_path, "gunzip -k")
+tr.Processes.Default.Command = get_verify_command(out_path, "gunzip -k -c")
 
 tr = Test.AddTestRun()
 tr.Processes.Default.ReturnCode = 0
@@ -218,7 +246,7 @@ out_path = get_out_path()
 tr.Processes.Default.Command = curl(ts, 0, "gzip;q=-0.1", out_path)
 tr = Test.AddTestRun(f'verify gzip;q=-0.1')
 tr.ReturnCode = 0
-tr.Processes.Default.Command = get_verify_command(out_path, "gunzip -k")
+tr.Processes.Default.Command = get_verify_command(out_path, "gunzip -k -c")
 
 tr = Test.AddTestRun()
 tr.Processes.Default.ReturnCode = 0
@@ -226,7 +254,7 @@ out_path = get_out_path()
 tr.Processes.Default.Command = curl(ts, 0, "aaa, gzip;q=0.666, bbb", out_path)
 tr = Test.AddTestRun(f'verify aaa, gzip;q=0.666, bbb')
 tr.ReturnCode = 0
-tr.Processes.Default.Command = get_verify_command(out_path, "gunzip -k")
+tr.Processes.Default.Command = get_verify_command(out_path, "gunzip -k -c")
 
 tr = Test.AddTestRun()
 tr.Processes.Default.ReturnCode = 0
@@ -234,7 +262,7 @@ out_path = get_out_path()
 tr.Processes.Default.Command = curl(ts, 0, " br ; q=0.666, bbb", out_path)
 tr = Test.AddTestRun(f'verify br ; q=0.666, bbb')
 tr.ReturnCode = 0
-tr.Processes.Default.Command = get_verify_command(out_path, "brotli -d")
+tr.Processes.Default.Command = get_verify_command(out_path, "brotli -d -c")
 
 tr = Test.AddTestRun()
 tr.Processes.Default.ReturnCode = 0
@@ -242,7 +270,7 @@ out_path = get_out_path()
 tr.Processes.Default.Command = curl(ts, 0, "aaa, gzip;q=0.666 , ", out_path)
 tr = Test.AddTestRun(f'verify aaa, gzip;q=0.666 , ')
 tr.ReturnCode = 0
-tr.Processes.Default.Command = get_verify_command(out_path, "gunzip -k")
+tr.Processes.Default.Command = get_verify_command(out_path, "gunzip -k -c")
 
 # post
 tr = Test.AddTestRun()
@@ -251,7 +279,7 @@ out_path = get_out_path()
 tr.Processes.Default.Command = curl_post(ts, 3, "gzip", out_path)
 tr = Test.AddTestRun(f'verify gzip post')
 tr.ReturnCode = 0
-tr.Processes.Default.Command = get_verify_command(out_path, "gunzip -k")
+tr.Processes.Default.Command = get_verify_command(out_path, "gunzip -k -c")
 
 # compress_long.log contains all the output from the curl commands.  The tr removes the carriage returns for easier
 # readability.  Curl seems to have a bug, where it will neglect to output an end of line before outputting an HTTP

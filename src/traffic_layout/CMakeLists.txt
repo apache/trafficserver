@@ -31,4 +31,8 @@ if(HAVE_BROTLI_ENCODE_H)
   target_link_libraries(traffic_layout PRIVATE brotli::brotlienc)
 endif()
 
+if(HAVE_ZSTD_H)
+  target_link_libraries(traffic_layout PRIVATE zstd::zstd)
+endif()
+
 install(TARGETS traffic_layout)

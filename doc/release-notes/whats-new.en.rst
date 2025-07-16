@@ -75,6 +75,7 @@ Plugins
 * xdebug - ``--enable`` option to selectively enable features has been added
 * system_stats - Stats about memory have been added
 * slice plugin - This plugin was promoted to stable.
+* compress plugin - Added support for Zstandard (zstd) compression algorithm.
 
 JSON-RPC
 ^^^^^^^^

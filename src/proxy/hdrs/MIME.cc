@@ -164,6 +164,7 @@ const char *MIME_VALUE_COMPRESS;
 const char *MIME_VALUE_DEFLATE;
 const char *MIME_VALUE_GZIP;
 const char *MIME_VALUE_BROTLI;
+const char *MIME_VALUE_ZSTD;
 const char *MIME_VALUE_IDENTITY;
 const char *MIME_VALUE_KEEP_ALIVE;
 const char *MIME_VALUE_MAX_AGE;
@@ -926,6 +927,7 @@ mime_init()
     MIME_VALUE_DEFLATE              = hdrtoken_string_to_wks("deflate");
     MIME_VALUE_GZIP                 = hdrtoken_string_to_wks("gzip");
     MIME_VALUE_BROTLI               = hdrtoken_string_to_wks("br");
+    MIME_VALUE_ZSTD                 = hdrtoken_string_to_wks("zstd");
     MIME_VALUE_IDENTITY             = hdrtoken_string_to_wks("identity");
     MIME_VALUE_KEEP_ALIVE           = hdrtoken_string_to_wks("keep-alive");
     MIME_VALUE_MAX_AGE              = hdrtoken_string_to_wks("max-age");

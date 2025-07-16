@@ -1,15 +1,33 @@
-0/gzip, deflate, sdch, br
+0/gzip, deflate, sdch, br, zstd
 0/gzip
 0/br
 0/deflate
-1/gzip, deflate, sdch, br
+0/zstd
+1/gzip, deflate, sdch, br, zstd
 1/gzip
 1/br
 1/deflate
-2/gzip, deflate, sdch, br
+1/zstd
+2/gzip, deflate, sdch, br, zstd
 2/gzip
 2/br
 2/deflate
+2/zstd
+3/gzip, deflate, sdch, br, zstd
+3/gzip
+3/br
+3/deflate
+3/zstd
+4/gzip, deflate, sdch, br, zstd
+4/gzip
+4/br
+4/deflate
+4/zstd
+5/gzip, deflate, sdch, br, zstd
+5/gzip
+5/br
+5/deflate
+5/zstd
 0/gzip;q=0.666
 0/gzip;q=0.666x
 0/gzip;q=#0.666

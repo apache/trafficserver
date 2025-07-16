@@ -2045,10 +2045,14 @@ Proxy User Variables
          normalize as for value ``1``
    ``3`` ``Accept-Encoding: br, gzip`` (if the header has ``br`` and ``gzip`` (with any ``q`` for either) then ``br, gzip``) **ELSE**
          normalize as for value ``2``
+   ``4`` ``Accept-Encoding: zstd`` if the header has ``zstd`` (with any ``q``) **ELSE**
+         normalize as for value ``2``
+   ``5`` ``Accept-Encoding: zstd, br, gzip`` (supports all combinations of ``zstd``, ``br``, and ``gzip``) **ELSE**
+         normalize as for value ``4``
    ===== ======================================================================
 
    This is useful for minimizing cached alternates of documents (e.g. ``gzip, deflate`` vs. ``deflate, gzip``).
-   Enabling this option is recommended if your origin servers use no encodings other than ``gzip`` or ``br`` (Brotli).
+   Enabling this option is recommended if your origin servers use no encodings other than ``gzip``, ``br`` (Brotli), or ``zstd`` (Zstandard).
 
 Security
 ========

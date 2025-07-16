@@ -52,6 +52,10 @@
 #include <brotli/encode.h>
 #endif
 
+#if HAVE_ZSTD_H
+#include <zstd.h>
+#endif
+
 // Produce output about compile time features, useful for checking how things were built
 static void
 print_feature(std::string_view name, int value, bool json, bool last = false)
@@ -93,6 +97,11 @@ produce_features(bool json)
   print_feature("TS_HAS_BROTLI", 1, json);
 #else
   print_feature("TS_HAS_BROTLI", 0, json);
+#endif
+#if HAVE_ZSTD_H
+  print_feature("TS_HAS_ZSTD", 1, json);
+#else
+  print_feature("TS_HAS_ZSTD", 0, json);
 #endif
 #ifdef F_GETPIPE_SZ
   print_feature("TS_HAS_PIPE_BUFFER_SIZE_CONFIG", 1, json);
@@ -205,6 +214,11 @@ produce_versions(bool json)
   print_var("brotli", LBW().print("{:#x}", BrotliEncoderVersion()).view(), json);
 #else
   print_var("brotli", undef, json);
+#endif
+#if HAVE_ZSTD_H
+  print_var("zstd", LBW().print("{}", ZSTD_versionString()).view(), json);
+#else
+  print_var("zstd", undef, json);
 #endif
 
   // This should always be last
