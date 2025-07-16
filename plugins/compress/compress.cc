@@ -65,18 +65,7 @@ namespace compress_ns
 DbgCtl dbg_ctl{TAG};
 }
 
-const int   ZLIB_COMPRESSION_LEVEL = 6;
-const char *dictionary             = nullptr;
-
-// brotli compression quality 1-11. Testing proved level '6'
-#if HAVE_BROTLI_ENCODE_H
-const int BROTLI_COMPRESSION_LEVEL = 6;
-const int BROTLI_LGW               = 16;
-#endif
-
-#if HAVE_ZSTD_H
-const int ZSTD_COMPRESSION_LEVEL = 12;
-#endif
+const char *dictionary = nullptr;
 
 static const char *global_hidden_header_name = nullptr;
 
@@ -150,7 +139,7 @@ static void zstd_compress_finish(Data *data);
 static void zstd_compress_one(Data *data, const char *upstream_buffer, int64_t upstream_length);
 #endif
 static Data *
-data_alloc(int compression_type, int compression_algorithms)
+data_alloc(int compression_type, int compression_algorithms, HostConfiguration *hc)
 {
   Data *data;
   int   err;
@@ -163,6 +152,7 @@ data_alloc(int compression_type, int compression_algorithms)
   data->state                  = transform_state_initialized;
   data->compression_type       = compression_type;
   data->compression_algorithms = compression_algorithms;
+  data->hc                     = hc;
   data->zstrm.next_in          = Z_NULL;
   data->zstrm.avail_in         = 0;
   data->zstrm.total_in         = 0;
@@ -179,7 +169,7 @@ data_alloc(int compression_type, int compression_algorithms)
     window_bits = WINDOW_BITS_DEFLATE;
   }
 
-  err = deflateInit2(&data->zstrm, ZLIB_COMPRESSION_LEVEL, Z_DEFLATED, window_bits, ZLIB_MEMLEVEL, Z_DEFAULT_STRATEGY);
+  err = deflateInit2(&data->zstrm, data->hc->zlib_compression_level(), Z_DEFLATED, window_bits, ZLIB_MEMLEVEL, Z_DEFAULT_STRATEGY);
 
   if (err != Z_OK) {
     fatal("gzip-transform: ERROR: deflateInit (%d)!", err);
@@ -199,8 +189,8 @@ data_alloc(int compression_type, int compression_algorithms)
     if (!data->bstrm.br) {
       fatal("Brotli Encoder Instance Failed");
     }
-    BrotliEncoderSetParameter(data->bstrm.br, BROTLI_PARAM_QUALITY, BROTLI_COMPRESSION_LEVEL);
-    BrotliEncoderSetParameter(data->bstrm.br, BROTLI_PARAM_LGWIN, BROTLI_LGW);
+    BrotliEncoderSetParameter(data->bstrm.br, BROTLI_PARAM_QUALITY, data->hc->brotli_compression_level());
+    BrotliEncoderSetParameter(data->bstrm.br, BROTLI_PARAM_LGWIN, data->hc->brotli_lgw_size());
     data->bstrm.next_in   = nullptr;
     data->bstrm.avail_in  = 0;
     data->bstrm.total_in  = 0;
@@ -522,7 +512,7 @@ zstd_compress_init(Data *data)
   }
 
   // Set compression level
-  size_t result = ZSTD_CCtx_setParameter(data->zstrm_zstd.cctx, ZSTD_c_compressionLevel, ZSTD_COMPRESSION_LEVEL);
+  size_t result = ZSTD_CCtx_setParameter(data->zstrm_zstd.cctx, ZSTD_c_compressionLevel, data->hc->zstd_compression_level());
   if (ZSTD_isError(result)) {
     error("Failed to set Zstd compression level: %s", ZSTD_getErrorName(result));
     return;
@@ -535,7 +525,7 @@ zstd_compress_init(Data *data)
     return;
   }
 
-  debug("zstd compression context initialized with level %d", ZSTD_COMPRESSION_LEVEL);
+  debug("zstd compression context initialized with level %d", data->hc->zstd_compression_level());
 }
 
 static void
@@ -1057,9 +1047,8 @@ compress_transform_add(TSHttpTxn txnp, HostConfiguration *hc, int compress_type,
   }
 
   connp     = TSTransformCreate(compress_transform, txnp);
-  data      = data_alloc(compress_type, algorithms);
+  data      = data_alloc(compress_type, algorithms, hc);
   data->txn = txnp;
-  data->hc  = hc;
 
   TSContDataSet(connp, data);
   TSHttpTxnHookAdd(txnp, TS_HTTP_RESPONSE_TRANSFORM_HOOK, connp);

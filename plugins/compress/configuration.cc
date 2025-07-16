@@ -108,7 +108,11 @@ enum ParserState {
   kParseRangeRequest,
   kParseFlush,
   kParseAllow,
-  kParseMinimumContentLength
+  kParseMinimumContentLength,
+  kParseGzipCompressionLevel,
+  kPaseBrotliCompressionLevel,
+  kParseBrotliLGWSize,
+  kParseZstdCompressionLevel,
 };
 
 void
@@ -389,6 +393,14 @@ Configuration::Parse(const char *path)
           state = kParseStart;
         } else if (token == "minimum-content-length") {
           state = kParseMinimumContentLength;
+        } else if (token == "gzip-compression-level") {
+          state = kParseGzipCompressionLevel;
+        } else if (token == "brotli-compression-level") {
+          state = kPaseBrotliCompressionLevel;
+        } else if (token == "brotli-lgwin") {
+          state = kParseBrotliLGWSize;
+        } else if (token == "zstd-compression-level") {
+          state = kParseZstdCompressionLevel;
         } else {
           warning("failed to interpret \"%s\" at line %zu", token.c_str(), lineno);
         }
@@ -425,6 +437,46 @@ Configuration::Parse(const char *path)
         current_host_configuration->set_minimum_content_length(strtoul(token.c_str(), nullptr, 10));
         state = kParseStart;
         break;
+      case kParseGzipCompressionLevel: {
+        int level = strtol(token.c_str(), nullptr, 10);
+        if (level < 1 || level > 9) {
+          error("gzip-compression-level must be between 1 and 9, got %d", level);
+        } else {
+          current_host_configuration->set_gzip_compression_level(level);
+        }
+        state = kParseStart;
+        break;
+      }
+      case kPaseBrotliCompressionLevel: {
+        int level = strtol(token.c_str(), nullptr, 10);
+        if (level < 0 || level > 11) {
+          error("brotli-compression-level must be between 0 and 11, got %d", level);
+        } else {
+          current_host_configuration->set_brotli_compression_level(level);
+        }
+        state = kParseStart;
+        break;
+      }
+      case kParseBrotliLGWSize: {
+        int lgw = strtol(token.c_str(), nullptr, 10);
+        if (lgw < 10 || lgw > 24) {
+          error("brotli-lgwin must be between 10 and 24, got %d", lgw);
+        } else {
+          current_host_configuration->set_brotli_lgw_size(lgw);
+        }
+        state = kParseStart;
+        break;
+      }
+      case kParseZstdCompressionLevel: {
+        int level = strtol(token.c_str(), nullptr, 10);
+        if (level < 1 || level > 22) {
+          error("zstd-compression-level must be between 1 and 22, got %d", level);
+        } else {
+          current_host_configuration->set_zstd_compression_level(level);
+        }
+        state = kParseStart;
+        break;
+      }
       }
     }
   }
