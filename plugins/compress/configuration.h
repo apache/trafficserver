@@ -59,7 +59,11 @@ public:
       remove_accept_encoding_(false),
       flush_(false),
       compression_algorithms_(ALGORITHM_GZIP),
-      minimum_content_length_(1024)
+      minimum_content_length_(1024),
+      zlib_compression_level_(6),
+      brotli_compression_level_(6),
+      brotli_lgw_size_(16),
+      zstd_compression_level_(12)
   {
   }
 
@@ -130,6 +134,51 @@ public:
     minimum_content_length_ = x;
   }
 
+  unsigned int
+  zlib_compression_level() const
+  {
+    return zlib_compression_level_;
+  }
+
+  void
+  set_gzip_compression_level(int level)
+  {
+    zlib_compression_level_ = level;
+  }
+
+  unsigned int
+  brotli_compression_level() const
+  {
+    return brotli_compression_level_;
+  }
+  void
+  set_brotli_compression_level(int level)
+  {
+    brotli_compression_level_ = level;
+  }
+
+  unsigned int
+  brotli_lgw_size() const
+  {
+    return brotli_lgw_size_;
+  }
+  void
+  set_brotli_lgw_size(unsigned int lgw)
+  {
+    brotli_lgw_size_ = lgw;
+  }
+
+  int
+  zstd_compression_level() const
+  {
+    return zstd_compression_level_;
+  }
+  void
+  set_zstd_compression_level(int level)
+  {
+    zstd_compression_level_ = level;
+  }
+
   void update_defaults();
   void add_allow(const std::string &allow);
   void add_compressible_content_type(const std::string &content_type);
@@ -149,6 +198,10 @@ private:
   bool         flush_;
   int          compression_algorithms_;
   unsigned int minimum_content_length_;
+  unsigned int zlib_compression_level_;
+  unsigned int brotli_compression_level_;
+  unsigned int brotli_lgw_size_;
+  int          zstd_compression_level_;
 
   RangeRequestCtrl range_request_ctl_ = RangeRequestCtrl::NO_COMPRESSION;
   StringContainer  compressible_content_types_;

@@ -185,7 +185,7 @@
 < Content-Type: text/javascript
 < Content-Encoding: br
 < Vary: Accept-Encoding
-< Content-Length: 46
+< Content-Length: 47
 ===
 > GET http://ae-4/obj4 HTTP/1.1
 > X-Ats-Compress-Test: 4/deflate
@@ -228,7 +228,7 @@
 < Content-Type: text/javascript
 < Content-Encoding: br
 < Vary: Accept-Encoding
-< Content-Length: 46
+< Content-Length: 47
 ===
 > GET http://ae-5/obj5 HTTP/1.1
 > X-Ats-Compress-Test: 5/deflate

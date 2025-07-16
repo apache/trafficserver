@@ -211,6 +211,41 @@ be considered, if it is ``2``, only br or gzip will be considered, if it is ``4`
 only zstd, br, or gzip will be considered, and if it is ``5``, all combinations
 of zstd, br, and gzip will be considered.
 
+gzip-compression-level
+-----------------------
+
+Sets the compression level for gzip compression. Valid values are 1-9, where
+1 is fastest compression (lowest compression ratio) and 9 is slowest compression
+(highest compression ratio). The default is 6, which provides a good balance
+between compression speed and ratio.
+
+brotli-compression-level
+-------------------------
+
+Sets the compression level for Brotli compression. Valid values are 0-11, where
+0 is fastest compression (lowest compression ratio) and 11 is slowest compression
+(highest compression ratio). The default is 6, which provides a good balance
+between compression speed and ratio.
+
+brotli-lgwin
+------------
+
+Sets the window size for Brotli compression. Valid values are 10-24, where
+larger values provide better compression but use more memory. The default is 16.
+This parameter controls the sliding window size used during compression:
+
+- 10: 1KB window (fastest, least memory)
+- 16: 64KB window (default, good balance)
+- 24: 16MB window (slowest, most memory, best compression)
+
+zstd-compression-level
+----------------------
+
+Sets the compression level for Zstandard compression. Valid values are 1-22, where
+1 is fastest compression (lowest compression ratio) and 22 is slowest compression
+(highest compression ratio). The default is 12, which provides an excellent
+balance between compression speed and ratio for web content.
+
 Examples
 ========
 
@@ -226,6 +261,10 @@ might create a configuration with the following options::
    compressible-status-code 200, 206
    minimum-content-length 860
    flush false
+   gzip-compression-level 6
+   brotli-compression-level 6
+   brotli-lgwin 16
+   zstd-compression-level 12
 
    # Now set a configuration for www.example.com
    [www.example.com]
@@ -243,13 +282,15 @@ might create a configuration with the following options::
    flush true
    supported-algorithms gzip,deflate
 
-   # Supports brotli compression
+   # Supports brotli compression with custom settings
    [brotli.compress.com]
    enabled true
    compressible-content-type text/*
    compressible-content-type application/json
    flush true
    supported-algorithms br,gzip
+   brotli-compression-level 8
+   brotli-lgwin 20
 
    # Supports zstd compression for high efficiency
    [zstd.compress.com]
@@ -259,14 +300,19 @@ might create a configuration with the following options::
    compressible-content-type application/javascript
    flush true
    supported-algorithms zstd,gzip
+   zstd-compression-level 15
 
-   # Supports all compression algorithms
+   # Supports all compression algorithms with optimized settings
    [all.compress.com]
    enabled true
    compressible-content-type text/*
    compressible-content-type application/json
    flush true
    supported-algorithms zstd,br,gzip,deflate
+   gzip-compression-level 7
+   brotli-compression-level 9
+   brotli-lgwin 18
+   zstd-compression-level 10
 
    # This origin does it all
    [bar.example.com]

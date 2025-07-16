@@ -24,4 +24,4 @@ compress.so <path-to-config>/sample.compress.config
 After modifying plugin.config, restart traffic server (sudo traffic_ctl server restart)
 the configuration is re-read when a management update is given (sudo traffic_ctl config reload)
 
-See sample.config.compress for an example configuration and the options that are available
+See sample.compress.config for an example configuration and the options that are available
