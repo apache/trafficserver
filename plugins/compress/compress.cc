@@ -134,7 +134,7 @@ handle_range_request(TSMBuffer req_buf, TSMLoc req_loc, HostConfiguration *hc)
 
 // Forward declarations for ZSTD compression functions
 #if HAVE_ZSTD_H
-static void zstd_compress_init(Data *data);
+static void zstd_compress_init(Data *data, unsigned long long content_size = ZSTD_CONTENTSIZE_UNKNOWN);
 static void zstd_compress_finish(Data *data);
 static void zstd_compress_one(Data *data, const char *upstream_buffer, int64_t upstream_length);
 #endif
@@ -361,7 +361,6 @@ etag_header(TSMBuffer bufp, TSMLoc hdr_loc)
   return ret;
 }
 
-// FIXME: some things are potentially compressible. those responses
 static void
 compress_transform_init(TSCont contp, Data *data)
 {
@@ -389,7 +388,19 @@ compress_transform_init(TSCont contp, Data *data)
 
 #if HAVE_ZSTD_H
   if (data->compression_type & COMPRESSION_TYPE_ZSTD) {
-    zstd_compress_init(data);
+    // Try to get content length from response headers
+    unsigned long long content_size = ZSTD_CONTENTSIZE_UNKNOWN;
+    TSMLoc content_length_loc       = TSMimeHdrFieldFind(bufp, hdr_loc, TS_MIME_FIELD_CONTENT_LENGTH, TS_MIME_LEN_CONTENT_LENGTH);
+    if (content_length_loc != TS_NULL_MLOC) {
+      unsigned int hdr_value = TSMimeHdrFieldValueUintGet(bufp, hdr_loc, content_length_loc, -1);
+      if (hdr_value > 0) {
+        content_size = static_cast<unsigned long long>(hdr_value);
+        debug("Found content-length header: %llu", content_size);
+      }
+      TSHandleMLocRelease(bufp, hdr_loc, content_length_loc);
+    }
+
+    zstd_compress_init(data, content_size);
     if (!data->zstrm_zstd.cctx) {
       TSError("Failed to create Zstandard compression context");
       return;
@@ -504,7 +515,7 @@ brotli_transform_one(Data *data, const char *upstream_buffer, int64_t upstream_l
 
 #if HAVE_ZSTD_H
 static void
-zstd_compress_init(Data *data)
+zstd_compress_init(Data *data, unsigned long long content_size)
 {
   if (!data->zstrm_zstd.cctx) {
     error("Failed to initialize Zstd compression context");
@@ -532,7 +543,25 @@ zstd_compress_init(Data *data)
     return;
   }
 
-  debug("zstd compression context initialized with level %d", data->hc->zstd_compression_level());
+  // Enable content size flag - this will include the content size in the frame header
+  result = ZSTD_CCtx_setParameter(data->zstrm_zstd.cctx, ZSTD_c_contentSizeFlag, 1);
+  if (ZSTD_isError(result)) {
+    error("Failed to enable Zstd content size flag: %s", ZSTD_getErrorName(result));
+    return;
+  }
+
+  // Set the pledged source size if known
+  if (content_size != ZSTD_CONTENTSIZE_UNKNOWN) {
+    result = ZSTD_CCtx_setPledgedSrcSize(data->zstrm_zstd.cctx, content_size);
+    if (ZSTD_isError(result)) {
+      error("Failed to set Zstd pledged source size: %s", ZSTD_getErrorName(result));
+      return;
+    }
+    debug("zstd compression context initialized with level %d and content size %llu", data->hc->zstd_compression_level(),
+          content_size);
+  } else {
+    debug("zstd compression context initialized with level %d (unknown content size)", data->hc->zstd_compression_level());
+  }
 }
 
 static void
