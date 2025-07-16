@@ -518,6 +518,13 @@ zstd_compress_init(Data *data)
     return;
   }
 
+  // set zstd_btopt
+  result = ZSTD_CCtx_setParameter(data->zstrm_zstd.cctx, ZSTD_c_strategy, ZSTD_btopt);
+  if (ZSTD_isError(result)) {
+    error("Failed to set Zstd btlazy2 option: %s", ZSTD_getErrorName(result));
+    return;
+  }
+
   // Enable checksum for data integrity
   result = ZSTD_CCtx_setParameter(data->zstrm_zstd.cctx, ZSTD_c_checksumFlag, 1);
   if (ZSTD_isError(result)) {
