@@ -433,6 +433,9 @@ HttpDebugNames::get_action_name(HttpTransact::StateMachineAction_t e)
   case HttpTransact::StateMachineAction_t::API_OS_DNS:
     return ("StateMachineAction_t::API_OS_DNS");
 
+  case HttpTransact::StateMachineAction_t::API_SEND_PROXY_PROTOCOL:
+    return ("StateMachineAction_t::API_SEND_PROXY_PROTOCOL");
+
   case HttpTransact::StateMachineAction_t::API_SEND_REQUEST_HDR:
     return ("StateMachineAction_t::API_SEND_REQUEST_HDR");
 
