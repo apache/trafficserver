@@ -90,7 +90,8 @@ if not Condition.CurlUsingUnixDomainSocket():
     tr = Test.AddTestRun()
     tr.MakeCurlCommand(
         '--verbose --ipv4 --http2 --insecure --header ' +
-        '"Host: myhost.test:123" HttPs://LocalHost:{}/'.format(ts.Variables.ssl_port))
+        '"Host: myhost.test:123" HttPs://LocalHost:{}/'.format(ts.Variables.ssl_port),
+        ts=ts)
     tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()

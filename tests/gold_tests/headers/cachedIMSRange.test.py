@@ -187,14 +187,14 @@ tr.StillRunningAfter = server
 if not Condition.CurlUsingUnixDomainSocket():
     # Test 4 - Test 304 response served from a regex-remap rule with HTTPS.
     tr = Test.AddTestRun()
-    tr.MakeCurlCommand(f'-vs -k https://127.0.0.1:{ts.Variables.ssl_port}/ -H "Host: {default_304_host}"')
+    tr.MakeCurlCommand(f'-vs -k https://127.0.0.1:{ts.Variables.ssl_port}/ -H "Host: {default_304_host}"', ts=ts)
     tr.Processes.Default.ReturnCode = 0
     tr.Processes.Default.Streams.All = Testers.GoldFile("gold/http1_304.gold", case_insensitive=True)
     tr.StillRunningAfter = server
 
     # Test 5 - Test 304 response served from a regex-remap rule with HTTP/2.
     tr = Test.AddTestRun()
-    tr.MakeCurlCommand(f'-vs -k --http2 https://127.0.0.1:{ts.Variables.ssl_port}/ -H "Host: {default_304_host}"')
+    tr.MakeCurlCommand(f'-vs -k --http2 https://127.0.0.1:{ts.Variables.ssl_port}/ -H "Host: {default_304_host}"', ts=ts)
     tr.Processes.Default.ReturnCode = 0
     tr.Processes.Default.Streams.All = Testers.GoldFile("gold/http2_304.gold", case_insensitive=True)
     tr.StillRunningAfter = server

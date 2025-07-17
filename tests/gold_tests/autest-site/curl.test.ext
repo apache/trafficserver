@@ -30,7 +30,7 @@ Tools to help with TestRun commands
 #
 
 
-def spawn_curl_commands(self, cmdstr, count, retcode=0, use_default=True, ts=None):
+def spawn_curl_commands(self, cmdstr, count, ts, retcode=0, use_default=True):
     ret = []
 
     if self.Variables.get("CurlUds", False):
