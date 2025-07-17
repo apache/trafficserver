@@ -34,8 +34,6 @@ if Arguments.ats_bin is not None:
 
 if Arguments.build_root is not None:
     ENV['BUILD_ROOT'] = Arguments.build_root
-    # If running from build root, assume build root is in repo directory tree
-    repo_root = dirname(Arguments.build_root)
 else:
     # Assume the build root is the same directory tree as the test location.
     ENV['BUILD_ROOT'] = repo_root
