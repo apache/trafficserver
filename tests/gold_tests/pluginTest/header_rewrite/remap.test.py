@@ -22,90 +22,122 @@ import ats_autest
 Test.Summary = '''
 A set of remap rules and tests for header_rewrite.
 '''
+Test.ContinueOnFail = True
 
 # Setup ATS and origin, define some convenience variables
-Test.ContinueOnFail = True
-run_dir = Test.RunDirectory
-
-ts = Test.MakeATSProcess("ts")
-ats_port = ts.Variables.port
-
-server = Test.MakeOriginServer("server")
-origin_port = server.Variables.Port
+mgr = ats_autest.ATSTestManager(Test, When)
 
 # Common debug logging config
-ts.Disk.records_config.update(
+mgr.enable_diagnostics(tags="header_rewrite")
+mgr.ts.Disk.records_config.update(
     {
         'proxy.config.http.insert_response_via_str': 0,
-        'proxy.config.diags.debug.enabled': 1,
-        'proxy.config.diags.show_location': 0,
-        'proxy.config.diags.debug.tags': 'header_rewrite',
+        'proxy.config.http.auth_server_session_private': 1,
+        'proxy.config.http.server_session_sharing.pool': 'global',
+        'proxy.config.http.server_session_sharing.match': 'both',
     })
 
-# ts.Disk.traffic_out.Content = "gold/header_rewrite-tag.gold"
+# mgr.ts.Disk.traffic_out.Content = "gold/header_rewrite-tag.gold"
 
-# Install all the HRW configuration files
-remap_rules = ['rule_client.conf', 'set_redirect.conf', 'rule_cond_method.conf', 'rule_l_value.conf']
-for rule in remap_rules:
-    ts.Setup.CopyAs(f'rules/{rule}', Test.RunDirectory)
+#############################################################################
+# Setup all the remap rules
+#
+url_base = "www.example.com/from"
+origin_base = f'127.0.0.1:{mgr.origin_port}/to'
 
-# Add responses for all expected requests
-resp_hdr = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-requests = [
+remap_rules = [
     {
-        "headers": "GET / HTTP/1.1\r\nHost: no_path.com\r\n\r\n",
-        "timestamp": "1469733493.993",
-        "body": "",
+        "from": "no_path.com/",
+        "to": "no_path.com?name=brian/",
+        "plugins": [("header_rewrite", [f"{mgr.run_dir}/set_redirect.conf"])]
     }, {
-        "headers": "GET /to_1/hello?=foo=bar HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
-        "timestamp": "1469733493.993",
-        "body": "",
+        "from": f"{url_base}_1/",
+        "to": f"{origin_base}_1/",
+        "plugins": [("header_rewrite", [f"{mgr.run_dir}/rule_client.conf"])]
     }, {
-        "headers": "GET /to_1/hrw-sets.png HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
-        "timestamp": "1469733493.993",
-        "body": ""
+        "from": f"{url_base}_2/",
+        "to": f"{origin_base}_2/",
+        "plugins": [("header_rewrite", [f"{mgr.run_dir}/rule_cond_method.conf"])]
     }, {
-        "headers": "GET /to_2/ HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
-        "timestamp": "1469733493.993",
-        "body": ""
+        "from": f"{url_base}_3/",
+        "to": f"{origin_base}_3/",
+        "plugins": [("header_rewrite", [f"{mgr.run_dir}/rule_l_value.conf"])]
     }, {
-        "headers": "GET /to_3/ HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
-        "timestamp": "1469733493.993",
-        "body": ""
+        "from": f"{url_base}_4/",
+        "to": f"{origin_base}_4/",
+        "plugins": [("header_rewrite", [f"{mgr.run_dir}/rule_set_header_after_ssn_txn_count.conf"])]
     }
 ]
 
-for req in requests:
-    server.addResponse("sessionfile.log", req, resp_hdr)
+mgr.copy_files('rules/', pattern='*.conf')
+mgr.add_remap_rules(remap_rules)
 
-# remap.config: (from, to, rules)
-url_base = "www.example.com/from"
-origin_base = f'127.0.0.1:{origin_port}/to'
-
-remap_rules = [
-    ats_autest.RemapRule(
-        from_url="no_path.com/", to_url="no_path.com?name=brian/", plugins=[("header_rewrite", [f"{run_dir}/set_redirect.conf"])]),
-    ats_autest.RemapRule(
-        from_url=f'{url_base}_1/', to_url=f'{origin_base}_1/', plugins=[("header_rewrite", [f"{run_dir}/rule_client.conf"])]),
-    ats_autest.RemapRule(
-        from_url=f'{url_base}_2/', to_url=f'{origin_base}_2/', plugins=[("header_rewrite", [f"{run_dir}/rule_cond_method.conf"])]),
-    ats_autest.RemapRule(
-        from_url=f'{url_base}_3/', to_url=f'{origin_base}_3/', plugins=[("header_rewrite", [f"{run_dir}/rule_l_value.conf"])]),
+#############################################################################
+# Setup the origin server rquest/response pairs
+#
+def_resp = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+origin_rules = [
+    ({
+        "headers": "GET / HTTP/1.1\r\nHost: no_path.com\r\n\r\n",
+        "timestamp": "1469733493.993",
+        "body": "",
+    }, def_resp),
+    (
+        {
+            "headers": "GET /to_1/hello?=foo=bar HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
+            "timestamp": "1469733493.993",
+            "body": "",
+        }, def_resp),
+    (
+        {
+            "headers": "GET /to_1/hrw-sets.png HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
+            "timestamp": "1469733493.993",
+            "body": ""
+        }, def_resp),
+    ({
+        "headers": "GET /to_2/ HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
+        "timestamp": "1469733493.993",
+        "body": ""
+    }, def_resp),
+    ({
+        "headers": "GET /to_3/ HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
+        "timestamp": "1469733493.993",
+        "body": ""
+    }, def_resp),
+    (
+        {
+            "headers": "GET /to_4/hello HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 0\r\n\r\n",
+            "timestamp": "1469733493.993",
+            "body": ""
+        }, {
+            "headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\n"
+                       "Content-Length: 0\r\n\r\n",
+            "timestamp": "1469733493.993",
+            "body": ""
+        }),
+    (
+        {
+            "headers": "GET /to_4/world HTTP/1.1\r\nContent-Length: 0\r\n"
+                       "Host: www.example.com\r\n\r\n",
+            "timestamp": "1469733493.993",
+            "body": "a\r\na\r\na\r\n\r\n"
+        }, {
+            "headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\n"
+                       "Connection: close\r\nContent-Length: 0\r\n\r\n",
+            "timestamp": "1469733493.993",
+            "body": ""
+        }),
 ]
-
-for rule in remap_rules:
-    plugin_args = " ".join(f'@plugin={plugin}.so ' + " ".join(f'@pparam={p}' for p in params) for plugin, params in rule.plugins)
-    ts.Disk.remap_config.AddLine(f'map http://{rule.from_url} http://{rule.to_url} {plugin_args}')
-    ts.Disk.remap_config.AddLine(f'map https://{rule.from_url} http://{rule.to_url} {plugin_args}')
+mgr.add_server_responses(origin_rules)
 
 # Create all the test cases
-curl_opt = f'--proxy 127.0.0.1:{ats_port} --verbose'
+curl_opt = f'--proxy {mgr.localhost} --verbose'
 expected_log = "gold/header_rewrite-tag.gold"
 
 test_runs = [
     {
         "desc": "TO-URL redirect test",
-        "curl": f'--head http://127.0.0.1:{ats_port} -H "Host: no_path.com" --verbose',
+        "curl": f'--head http://{mgr.localhost} -H "Host: no_path.com" --verbose',
         "gold": "gold/set-redirect.gold",
     },
     {
@@ -138,17 +170,21 @@ test_runs = [
         "curl": f'{curl_opt} "http://{url_base}_3/"',
         "gold": "gold/l_value.gold",
     },
+    {
+        "desc": "SSN-TXN-COUNT condition",
+
+        # Force last one with close connection header, this is also reflected in the response ^.
+        # if I do not do this, then the microserver will fail to close and when shutting down the process will
+        # fail with -9.
+        "multi_curl":
+            (
+                f'{{curl}} -v -H "{mgr.host_example}" -H "{mgr.conn_keepalive}" {mgr.localhost}/from_4/hello &&'
+                f'{{curl}} -v -H "{mgr.host_example}" -H "{mgr.conn_keepalive}" {mgr.localhost}/from_4/hello &&'
+                f'{{curl}} -v -H "{mgr.host_example}" -H "{mgr.conn_keepalive}" {mgr.localhost}/from_4/hello &&'
+                f'{{curl}} -v -H "{mgr.host_example}" -H "{mgr.conn_keepalive}" {mgr.localhost}/from_4/hello &&'
+                f'{{curl}} -v -H "{mgr.host_example}" -H "Connection: close" {mgr.localhost}/from_4/world'),
+        "gold": "gold/cond_ssn_txn_count.gold"
+    },
 ]
 
-# Run all the tests
-started = False
-for test in test_runs:
-    tr = Test.AddTestRun(test["desc"])
-    if not started:
-        tr.Processes.Default.StartBefore(server, ready=When.PortOpen(origin_port))
-        tr.Processes.Default.StartBefore(ts)
-        started = True
-    if "curl" in test:
-        tr.MakeCurlCommand(test["curl"], ts=ts)
-    tr.Processes.Default.Streams.stderr = test["gold"]
-    tr.StillRunningAfter = server
+mgr.execute_tests(test_runs)
