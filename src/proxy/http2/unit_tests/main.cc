@@ -51,14 +51,11 @@ struct EventProcessorListener : Catch::TestEventListenerBase {
 
     EThread *main_thread = new EThread;
     main_thread->set_specific();
-
-    hpack_huffman_init();
   }
 
   void
   testRunEnded(Catch::TestRunStats const & /* testRunStats */) override
   {
-    hpack_huffman_fin();
   }
 };
 

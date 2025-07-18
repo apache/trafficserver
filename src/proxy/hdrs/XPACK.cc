@@ -119,9 +119,10 @@ xpack_decode_string(Arena &arena, char **str, uint64_t &str_length, const uint8_
 
   if (isHuffman) {
     // Allocate temporary area twice the size of before decoded data
-    *str = arena.str_alloc(encoded_string_len * 2);
+    uint32_t const str_len = encoded_string_len * 2;
+    *str                   = arena.str_alloc(str_len);
 
-    len = huffman_decode(*str, p, encoded_string_len);
+    len = huffman_decode(*str, str_len, p, encoded_string_len);
     if (len < 0) {
       return XPACK_ERROR_COMPRESSION_ERROR;
     }
@@ -182,14 +183,19 @@ xpack_encode_string(uint8_t *buf_start, const uint8_t *buf_end, const char *valu
   uint8_t       *p           = buf_start;
   constexpr bool use_huffman = true;
 
-  ts::LocalBuffer<uint8_t, 4096> local_buffer(value_len * 4);
+  uint32_t const                 max_expected_size = value_len * 4;
+  ts::LocalBuffer<uint8_t, 4096> local_buffer(max_expected_size);
   uint8_t                       *data     = local_buffer.data();
   int64_t                        data_len = 0;
 
   // TODO Choose whether to use Huffman encoding wisely
   // cppcheck-suppress knownConditionTrueFalse; leaving "use_huffman" for wise huffman usage in the future
   if (use_huffman && value_len) {
-    data_len = huffman_encode(data, reinterpret_cast<const uint8_t *>(value), value_len);
+    data_len = huffman_encode(data, max_expected_size, reinterpret_cast<const uint8_t *>(value), value_len);
+  }
+
+  if (data_len < 0) {
+    return -1;
   }
 
   // Length

@@ -75,7 +75,6 @@ struct EventProcessorListener : Catch::TestEventListenerBase {
     url_init();
     mime_init();
     http_init();
-    hpack_huffman_init();
   }
 };
 CATCH_REGISTER_LISTENER(EventProcessorListener);
