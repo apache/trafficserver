@@ -87,6 +87,8 @@ operator_factory(const std::string &op)
     o = new OperatorSetStateInt8();
   } else if (op == "set-state-int16") {
     o = new OperatorSetStateInt16();
+  } else if (op == "set-cc-alg") {
+    o = new OperatorSetCCAlgorithm();
   } else {
     TSError("[%s] Unknown operator: %s", PLUGIN_NAME, op.c_str());
     return nullptr;

@@ -1158,6 +1158,18 @@ The available controllers are:
 |                   |                        | protocol)                                                                                    |
 +===================+========================+==============================================================================================+
 
+set-cc-alg
+~~~~~~~~~~
+::
+
+  set-cc-alg <value>
+
+This operator lets you set the congestion control algorithm for a particular 
+transaction. This will only work if your os supports TCP_CONGESTION at the protocol level IPPROTO_TCP. 
+Supported algorithms are operating system dependent. Common algorithms include reno and cubic.
+
+.......
+
 Operator Flags
 --------------
 
