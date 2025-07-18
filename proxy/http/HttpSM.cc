@@ -2144,7 +2144,7 @@ HttpSM::state_read_server_response_header(int event, void *data)
     t_state.api_next_action       = HttpTransact::SM_ACTION_API_READ_RESPONSE_HDR;
 
     // if exceeded limit deallocate postdata buffers and disable redirection
-    if (!(enable_redirection && (redirection_tries < t_state.txn_conf->number_of_redirections))) {
+    if (!(enable_redirection && (redirection_tries <= t_state.txn_conf->number_of_redirections))) {
       this->disable_redirect();
     }
 
