@@ -19,6 +19,7 @@ Shared library code for ATS autest tests. Add and update this file as needed.
 
 import glob
 import os
+import time
 
 
 class ATSTestManager:

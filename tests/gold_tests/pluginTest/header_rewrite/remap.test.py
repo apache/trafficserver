@@ -66,6 +66,10 @@ remap_rules = [
         "from": f"{url_base}_4/",
         "to": f"{origin_base}_4/",
         "plugins": [("header_rewrite", [f"{mgr.run_dir}/rule_set_header_after_ssn_txn_count.conf"])]
+    }, {
+        "from": f"{url_base}_5/",
+        "to": f"{origin_base}_5/",
+        "plugins": [("header_rewrite", [f"{mgr.run_dir}/rule_add_cache_result_header.conf"])]
     }
 ]
 
@@ -127,14 +131,29 @@ origin_rules = [
             "timestamp": "1469733493.993",
             "body": ""
         }),
+    (
+        {
+            "headers": "GET /to_5/ HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
+            "timestamp": "1469733493.993",
+            "body": ""
+        }, {
+            "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nCache-Control: max-age=10,public\r\n\r\n",
+            "timestamp": "1469733493.993",
+            "body": "CACHED"
+        }),
 ]
 mgr.add_server_responses(origin_rules)
 
 # Create all the test cases
-curl_opt = f'--proxy {mgr.localhost} --verbose'
+curl_proxy = f'--proxy {mgr.localhost} --verbose'
 expected_log = "gold/header_rewrite-tag.gold"
 
 test_runs = [
+    {
+        "desc": "Setup cache hit for tests later (cache hit /miss)",
+        "curl": f'-s -v -H "{mgr.host_example}" {mgr.localhost}/from_5/',
+        "gold": "gold/cond_cache_first.gold",
+    },
     {
         "desc": "TO-URL redirect test",
         "curl": f'--head http://{mgr.localhost} -H "Host: no_path.com" --verbose',
@@ -142,32 +161,32 @@ test_runs = [
     },
     {
         "desc": "CLIENT-URL test",
-        "curl": f'{curl_opt} "http://{url_base}_1/hello?=foo=bar"',
+        "curl": f'{curl_proxy} "http://{url_base}_1/hello?=foo=bar"',
         "gold": "gold/client-url.gold",
     },
     {
         "desc": "sets matching",
-        "curl": f'{curl_opt} "http://{url_base}_1/hrw-sets.png" -H "X-Testing: foo,bar"',
+        "curl": f'{curl_proxy} "http://{url_base}_1/hrw-sets.png" -H "X-Testing: foo,bar"',
         "gold": "gold/ext-sets.gold",
     },
     {
         "desc": "elif condition",
-        "curl": f'{curl_opt} "http://{url_base}_1/hrw-sets.png" -H "X-Testing: elif"',
+        "curl": f'{curl_proxy} "http://{url_base}_1/hrw-sets.png" -H "X-Testing: elif"',
         "gold": "gold/cond-elif.gold",
     },
     {
         "desc": "cond method GET",
-        "curl": f'{curl_opt} "http://{url_base}_2/"',
+        "curl": f'{curl_proxy} "http://{url_base}_2/"',
         "gold": "gold/cond_method.gold",
     },
     {
         "desc": "cond method DELETE",
-        "curl": f'--request DELETE {curl_opt} "http://{url_base}_2/"',
+        "curl": f'--request DELETE {curl_proxy} "http://{url_base}_2/"',
         "gold": "gold/cond_method.gold",
     },
     {
         "desc": "End [L] #5423",
-        "curl": f'{curl_opt} "http://{url_base}_3/"',
+        "curl": f'{curl_proxy} "http://{url_base}_3/"',
         "gold": "gold/l_value.gold",
     },
     {
@@ -184,6 +203,15 @@ test_runs = [
                 f'{{curl}} -v -H "{mgr.host_example}" -H "{mgr.conn_keepalive}" {mgr.localhost}/from_4/hello &&'
                 f'{{curl}} -v -H "{mgr.host_example}" -H "Connection: close" {mgr.localhost}/from_4/world'),
         "gold": "gold/cond_ssn_txn_count.gold"
+    },
+    {
+        "desc": "Cache condition test - miss, hit-fresh, hit-stale, hit-fresh",
+        "multi_curl":
+            (
+                f'{{curl}} -s -v -H "{mgr.host_example}" {mgr.localhost}/from_5/ && '
+                f'sleep 15 && {{curl}} -s -v -H "{mgr.host_example}" {mgr.localhost}/from_5/ && '
+                f'{{curl}} -s -v -H "{mgr.host_example}" {mgr.localhost}/from_5/'),
+        "gold": "gold/cond_cache.gold",
     },
 ]
 
