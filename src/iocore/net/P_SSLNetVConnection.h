@@ -108,22 +108,11 @@ class SSLNetVConnection : public UnixNetVConnection,
   using super = UnixNetVConnection; ///< Parent type.
 
 public:
-  int  sslStartHandShake(int event, int &err) override;
   void clear() override;
   void free_thread(EThread *t) override;
 
   bool
-  trackFirstHandshake() override
-  {
-    bool retval = this->get_tls_handshake_begin_time() == 0;
-    if (retval) {
-      this->_record_tls_handshake_begin_time();
-    }
-    return retval;
-  }
-
-  bool
-  getSSLHandShakeComplete() const override
+  getSSLHandShakeComplete() const
   {
     return sslHandshakeStatus != SSLHandshakeStatus::SSL_HANDSHAKE_ONGOING;
   }
@@ -320,6 +309,10 @@ public:
   Ptr<ProxyMutex> getMutexForTLSEvents() override;
 
 protected:
+  // UnixNetVConnection
+  bool _isReadyToTransferData() const override;
+  void _beReadyToTransferData() override;
+
   // TLSBasicSupport
   SSL *
   _get_ssl_object() const override
@@ -361,6 +354,9 @@ private:
   void             increment_ssl_version_metric(int version) const;
   NetProcessor    *_getNetProcessor() override;
   void            *_prepareForMigration() override;
+
+  bool _trackFirstHandshake();
+  int  _sslStartHandShake(int event, int &err);
 
   /** Return the unconsumed bytes in @a handShakeReader in a contiguous memory buffer.
    *

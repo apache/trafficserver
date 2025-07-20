@@ -169,20 +169,6 @@ write_signal_done(int event, NetHandler *nh, UnixNetVConnection *vc)
   }
 }
 
-static inline int
-read_signal_error(NetHandler *nh, UnixNetVConnection *vc, int lerrno)
-{
-  vc->lerrno = lerrno;
-  return read_signal_done(VC_EVENT_ERROR, nh, vc);
-}
-
-static inline int
-write_signal_error(NetHandler *nh, UnixNetVConnection *vc, int lerrno)
-{
-  vc->lerrno = lerrno;
-  return write_signal_done(VC_EVENT_ERROR, nh, vc);
-}
-
 bool
 UnixNetVConnection::get_data(int id, void *data)
 {
@@ -579,7 +565,7 @@ UnixNetVConnection::net_read_io(NetHandler *nh)
         return;
       }
       this->read.triggered = 0;
-      read_signal_error(nh, this, static_cast<int>(-r));
+      this->_readSignalError(nh, static_cast<int>(-r));
       return;
     }
     Metrics::Counter::increment(net_rsb.read_bytes, r);
@@ -652,51 +638,9 @@ UnixNetVConnection::net_write_io(NetHandler *nh)
     return;
   }
 
-  // This function will always return true unless
-  // this vc is an SSLNetVConnection.
-  if (!this->getSSLHandShakeComplete()) {
-    if (this->trackFirstHandshake()) {
-      // Eat the first write-ready.  Until the TLS handshake is complete,
-      // we should still be under the connect timeout and shouldn't bother
-      // the state machine until the TLS handshake is complete
-      this->write.triggered = 0;
-      nh->write_ready_list.remove(this);
-    }
-
-    int err{0}, ret{0};
-
-    if (this->get_context() == NET_VCONNECTION_OUT) {
-      ret = this->sslStartHandShake(SSL_EVENT_CLIENT, err);
-    } else {
-      ret = this->sslStartHandShake(SSL_EVENT_SERVER, err);
-    }
-
-    if (ret == EVENT_ERROR) {
-      this->write.triggered = 0;
-      write_signal_error(nh, this, err);
-    } else if (ret == SSL_HANDSHAKE_WANT_READ || ret == SSL_HANDSHAKE_WANT_ACCEPT) {
-      this->read.triggered = 0;
-      nh->read_ready_list.remove(this);
-      read_reschedule(nh, this);
-    } else if (ret == SSL_HANDSHAKE_WANT_CONNECT || ret == SSL_HANDSHAKE_WANT_WRITE) {
-      this->write.triggered = 0;
-      nh->write_ready_list.remove(this);
-      write_reschedule(nh, this);
-    } else if (ret == EVENT_DONE) {
-      this->write.triggered = 1;
-      if (this->write.enabled) {
-        nh->write_ready_list.in_or_enqueue(this);
-      }
-      // If this was driven by a zero length read, signal complete when
-      // the handshake is complete. Otherwise set up for continuing read
-      // operations.
-      if (s->vio.ntodo() <= 0) {
-        this->readSignalDone(VC_EVENT_WRITE_COMPLETE, nh);
-      }
-    } else {
-      write_reschedule(nh, this);
-    }
-
+  // This is for extra processes such as TLS handshake.
+  if (!this->_isReadyToTransferData()) {
+    this->_beReadyToTransferData();
     return;
   }
 
@@ -789,7 +733,7 @@ UnixNetVConnection::net_write_io(NetHandler *nh)
     }
 
     this->write.triggered = 0;
-    write_signal_error(nh, this, static_cast<int>(-r));
+    this->_writeSignalError(nh, static_cast<int>(-r));
     return;
   } else {                                          // Wrote data.  Finished without error
     int wbe_event = this->write_buffer_empty_event; // save so we can clear if needed.
@@ -941,10 +885,18 @@ UnixNetVConnection::readDisable(NetHandler *nh)
   read_disable(nh, this);
 }
 
-void
-UnixNetVConnection::readSignalError(NetHandler *nh, int err)
+int
+UnixNetVConnection::_readSignalError(NetHandler *nh, int lerrno)
 {
-  read_signal_error(nh, this, err);
+  this->lerrno = lerrno;
+  return read_signal_done(VC_EVENT_ERROR, nh, this);
+}
+
+int
+UnixNetVConnection::_writeSignalError(NetHandler *nh, int lerrno)
+{
+  this->lerrno = lerrno;
+  return write_signal_done(VC_EVENT_ERROR, nh, this);
 }
 
 int
