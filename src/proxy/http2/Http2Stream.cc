@@ -600,7 +600,11 @@ Http2Stream::transaction_done()
   }
   Http2ConnectionState &state = this->get_connection_state();
   ink_release_assert(closed || !state.is_state_closed());
+
+  // HttpSM is gone, no more reading or writing
   _sm = nullptr;
+  read_vio.disable();
+  write_vio.disable();
 
   if (closed) {
     // Safe to initiate SSN_CLOSE if this is the last stream
@@ -902,8 +906,8 @@ Http2Stream::update_write_request(bool call_update)
 void
 Http2Stream::signal_read_event(int event)
 {
-  if (this->read_vio.cont == nullptr || this->read_vio.cont->mutex == nullptr || this->read_vio.op == VIO::NONE ||
-      this->terminate_stream) {
+  if (this->_sm == nullptr || this->read_vio.cont == nullptr || this->read_vio.cont->mutex == nullptr ||
+      this->read_vio.op == VIO::NONE || this->terminate_stream) {
     return;
   }
 
@@ -931,8 +935,8 @@ void
 Http2Stream::signal_write_event(int event, bool call_update)
 {
   // Don't signal a write event if in fact nothing was written
-  if (this->write_vio.cont == nullptr || this->write_vio.cont->mutex == nullptr || this->write_vio.op == VIO::NONE ||
-      this->terminate_stream) {
+  if (this->_sm == nullptr || this->write_vio.cont == nullptr || this->write_vio.cont->mutex == nullptr ||
+      this->write_vio.op == VIO::NONE || this->terminate_stream) {
     return;
   }
 
