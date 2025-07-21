@@ -124,9 +124,6 @@ TEST_CASE("XPACK_String", "[xpack]")
 
   SECTION("Decoding")
   {
-    // Decoding string needs huffman tree
-    hpack_huffman_init();
-
     for (const auto &i : string_test_case) {
       Arena    arena;
       char    *actual     = nullptr;
