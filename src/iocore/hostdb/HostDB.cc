@@ -1305,6 +1305,10 @@ HostDBContinuation::remove_and_trigger_pending_dns()
   }
   EThread *thread = this_ethread();
   while ((c = qq.dequeue())) {
+    if (c->action.cancelled || c->mutex == nullptr) {
+      continue;
+    }
+
     // resume all queued HostDBCont in the thread associated with the netvc to avoid nethandler locking issues.
     EThread *affinity_thread = c->getThreadAffinity();
     SCOPED_MUTEX_LOCK(lock, c->mutex, this_ethread());
