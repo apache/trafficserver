@@ -1786,9 +1786,6 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   // Override default swoc::Errata settings.
   Initialize_Errata_Settings();
 
-  pcre_malloc = ats_malloc;
-  pcre_free   = ats_free;
-
   // Define the version info
   auto &version = AppVersionInfo::setup_version("traffic_server");
 
