@@ -30,15 +30,6 @@
 #include <string_view>
 #include "tsutil/Regex.h"
 
-/// XXX Use DFA or Regex wrappers?
-#ifdef HAVE_PCRE_PCRE_H
-#include <pcre/pcre.h>
-#else
-#include <pcre.h>
-#endif
-
-#define SUBSTRING_VECTOR_COUNT 30 // Should be multiple of 3
-
 struct VIA {
   VIA(const char *t) : title(t) {}
   ~VIA() { delete next; }
@@ -255,46 +246,28 @@ decodeViaHeader(std::string_view text)
 static bool
 filterViaHeader()
 {
-  const pcre       *compiledReg;
-  const pcre_extra *extraReg = nullptr;
-  int               subStringVector[SUBSTRING_VECTOR_COUNT];
-  const char       *err;
-  int               errOffset;
-  int               pcreExecCode;
-  int               i;
-  const char       *viaPattern =
-    R"(\[([ucsfpe]+[^\]]+)\])"; // Regex to match via header with in [] which can start with character class ucsfpe
-  std::string line;
-
-  // Compile PCRE via header pattern
-  compiledReg = pcre_compile(viaPattern, 0, &err, &errOffset, nullptr);
-
-  if (compiledReg == nullptr) {
-    printf("PCRE regex compilation failed with error %s at offset %d\n", err, errOffset);
+  // Regex to match the via header format
+  Regex                             regex;
+  static constexpr std::string_view via_pattern{R"(\[([ucsfpe]+[^\]]+)\])"};
+  if (regex.compile(via_pattern) == false) {
+    fprintf(stderr, "Error compiling regex pattern: %s\n", via_pattern.data());
     return false;
   }
 
   // Read all lines from stdin
+  std::string line;
   while (std::getline(std::cin, line)) {
-    // Match for via header pattern
-    pcreExecCode = pcre_exec(compiledReg, extraReg, line.data(), line.size(), 0, 0, subStringVector, SUBSTRING_VECTOR_COUNT);
-
-    // Match failed, don't worry. Continue to next line.
-    if (pcreExecCode < 0) {
+    // Match the regex against the line
+    RegexMatches matches;
+    if (regex.exec(line, matches) < 0) {
+      // If no match found, continue to next line
       continue;
     }
 
-    // Match successful, but too many substrings
-    if (pcreExecCode == 0) {
-      pcreExecCode = SUBSTRING_VECTOR_COUNT / 3;
-      printf("Too many substrings were found. %d substrings couldn't fit into subStringVector\n", pcreExecCode - 1);
-    }
-
-    // Loop based on number of matches found
-    for (i = 1; i < pcreExecCode; i++) {
-      std::string_view match{line.data() + subStringVector[2 * i], size_t(subStringVector[2 * i + 1] - subStringVector[2 * i])};
-      // Decode matched substring
-      decodeViaHeader(match);
+    // If match found, decode the via header
+    for (int i = 1; i < matches.size(); ++i) {
+      // Decode the via header
+      decodeViaHeader(matches[i]);
     }
   }
   return true;
