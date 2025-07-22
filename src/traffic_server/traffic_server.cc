@@ -2026,7 +2026,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   {
     auto rec_str{RecGetRecordStringAlloc("proxy.config.log.hostname")};
     auto hostname{ats_as_c_str(rec_str)};
-    if (hostname != nullptr || std::string_view(hostname) == "localhost"sv) {
+    if (hostname != nullptr && std::string_view(hostname) == "localhost"sv) {
       // The default value was used. Let Machine::init derive the hostname.
       hostname = nullptr;
     }
