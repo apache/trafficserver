@@ -366,19 +366,6 @@ RegexMatcher<Data, MatchResult>::RegexMatcher(const char *name, const char *file
 }
 
 //
-// RegexMatcher<Data,MatchResult>::~RegexMatcher()
-//
-template <class Data, class MatchResult> RegexMatcher<Data, MatchResult>::~RegexMatcher()
-{
-  for (int i = 0; i < num_el; i++) {
-    pcre_free(re_array[i]);
-    ats_free(re_str[i]);
-  }
-  delete[] re_str;
-  ats_free(re_array);
-}
-
-//
 // void RegexMatcher<Data,MatchResult>::Print() const
 //
 //   Debugging function
@@ -389,7 +376,7 @@ RegexMatcher<Data, MatchResult>::Print() const
 {
   printf("\tRegex Matcher with %d elements\n", num_el);
   for (int i = 0; i < num_el; i++) {
-    printf("\t\tRegex: %s\n", re_str[i]);
+    printf("\t\tRegex: %s\n", regex_strings[i].c_str());
     data_array[i].Print();
   }
 }
@@ -404,13 +391,10 @@ RegexMatcher<Data, MatchResult>::AllocateSpace(int num_entries)
   // Should not have been allocated before
   ink_assert(array_len == -1);
 
-  re_array = static_cast<pcre **>(ats_malloc(sizeof(pcre *) * num_entries));
-  memset(re_array, 0, sizeof(pcre *) * num_entries);
+  regex_array.reserve(num_entries);
+  regex_strings.reserve(num_entries);
 
   data_array = new Data[num_entries];
-
-  re_str = new char *[num_entries];
-  memset(re_str, 0, sizeof(char *) * num_entries);
 
   array_len = num_entries;
   num_el    = 0;
@@ -425,7 +409,7 @@ RegexMatcher<Data, MatchResult>::NewEntry(matcher_line *line_info)
 {
   Data       *cur_d;
   char       *pattern;
-  const char *errptr;
+  std::string errptr;
   int         erroffset;
   Result      error = Result::ok();
 
@@ -442,12 +426,12 @@ RegexMatcher<Data, MatchResult>::NewEntry(matcher_line *line_info)
   ink_assert(pattern != nullptr);
 
   // Create the compiled regular expression
-  re_array[num_el] = pcre_compile(pattern, 0, &errptr, &erroffset, nullptr);
-  if (!re_array[num_el]) {
+  regex_array[num_el].compile(pattern, errptr, erroffset);
+  if (regex_array[num_el].empty()) {
     return Result::failure("%s regular expression error at line %d position %d : %s", matcher_name, line_info->line_num, erroffset,
-                           errptr);
+                           errptr.c_str());
   }
-  re_str[num_el] = ats_strdup(pattern);
+  regex_strings[num_el] = pattern;
 
   // Remove our consumed label from the parsed line
   line_info->line[0][line_info->dest_entry] = nullptr;
@@ -459,10 +443,7 @@ RegexMatcher<Data, MatchResult>::NewEntry(matcher_line *line_info)
 
   if (error.failed()) {
     // There was a problem so undo the effects this function
-    ats_free(re_str[num_el]);
-    re_str[num_el] = nullptr;
-    pcre_free(re_array[num_el]);
-    re_array[num_el] = nullptr;
+    regex_strings[num_el] = ""; // reset the string
   } else {
     num_el++;
   }
@@ -480,16 +461,13 @@ template <class Data, class MatchResult>
 void
 RegexMatcher<Data, MatchResult>::Match(RequestData *rdata, MatchResult *result) const
 {
-  char *url_str;
-  int   r;
-
   // Check to see there is any work to before we copy the
   //   URL
   if (num_el <= 0) {
     return;
   }
 
-  url_str = rdata->get_string();
+  char *url_str = rdata->get_string();
 
   // Can't do a regex match with a NULL string so
   //  use an empty one instead
@@ -500,9 +478,8 @@ RegexMatcher<Data, MatchResult>::Match(RequestData *rdata, MatchResult *result) 
   // INKqa12980
   // The function unescapifyStr() is already called in
   // HttpRequestData::get_string(); therefore, no need to call again here.
-
   for (int i = 0; i < num_el; i++) {
-    r = pcre_exec(re_array[i], nullptr, url_str, strlen(url_str), 0, 0, nullptr, 0);
+    int r = regex_array[i].exec(url_str);
     if (r > -1) {
       Dbg(dbg_ctl_matcher, "%s Matched %s with regex at line %d", matcher_name, url_str, data_array[i].line_num);
       data_array[i].UpdateMatch(result, rdata);
@@ -534,7 +511,6 @@ void
 HostRegexMatcher<Data, MatchResult>::Match(RequestData *rdata, MatchResult *result) const
 {
   const char *url_str;
-  int         r;
 
   // Check to see there is any work to before we copy the
   //   URL
@@ -550,7 +526,7 @@ HostRegexMatcher<Data, MatchResult>::Match(RequestData *rdata, MatchResult *resu
     url_str = "";
   }
   for (int i = 0; i < this->num_el; i++) {
-    r = pcre_exec(this->re_array[i], nullptr, url_str, strlen(url_str), 0, 0, nullptr, 0);
+    int r = this->regex_array[i].exec(url_str);
     if (r != -1) {
       Dbg(dbg_ctl_matcher, "%s Matched %s with regex at line %d", const_cast<char *>(this->matcher_name), url_str,
           this->data_array[i].line_num);
