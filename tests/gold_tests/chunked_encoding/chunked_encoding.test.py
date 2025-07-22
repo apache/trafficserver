@@ -100,7 +100,7 @@ Test.Setup.Copy(os.path.join(Test.Variables.AtsBuildGoldTestsDir, 'chunked_encod
 tr = Test.AddTestRun()
 tr.TimeOut = 5
 if Condition.CurlUsingUnixDomainSocket():
-    tr.MakeCurlCommand('--http1.1 -H "Host: www.example.com" "http://127.0.0.1:{0}" --verbose'.format(ts.Variables.port))
+    tr.MakeCurlCommand('--http1.1 -H "Host: www.example.com" "http://127.0.0.1:{0}" --verbose'.format(ts.Variables.port), ts=ts)
 else:
     tr.MakeCurlCommand('--http1.1 --proxy 127.0.0.1:{0} http://www.example.com --verbose'.format(ts.Variables.port), ts=ts)
 tr.Processes.Default.ReturnCode = 0
@@ -122,7 +122,8 @@ if not Condition.CurlUsingUnixDomainSocket():
     tr.TimeOut = 5
     tr.MakeCurlCommand(
         '--http2 -k https://127.0.0.1:{0} --verbose -H "Host: www.anotherexample.com" -d "Knock knock"'.format(
-            ts.Variables.ssl_port))
+            ts.Variables.ssl_port),
+        ts=ts)
     tr.Processes.Default.ReturnCode = 0
     tr.Processes.Default.Streams.stderr = "gold/h2_chunked_POST_200.gold"
 

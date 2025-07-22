@@ -78,7 +78,7 @@ class StatsOverHttpPluginTest:
     def __testCaseAcceptCSV(self):
         tr = Test.AddTestRun('Fetch stats over HTTP in CSV format')
         self.__checkProcessBefore(tr)
-        tr.MakeCurlCommand(f"-vs -H'Accept: text/csv' --http1.1 http://127.0.0.1:{self.ts.Variables.port}/_stats")
+        tr.MakeCurlCommand(f"-vs -H'Accept: text/csv' --http1.1 http://127.0.0.1:{self.ts.Variables.port}/_stats", ts=self.ts)
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
             'proxy.process.http.delete_requests,0', 'Output should be CSV formatted.')
@@ -89,7 +89,8 @@ class StatsOverHttpPluginTest:
     def __testCaseAcceptPrometheus(self):
         tr = Test.AddTestRun('Fetch stats over HTTP in Prometheus format')
         self.__checkProcessBefore(tr)
-        tr.MakeCurlCommand(f"-vs -H'Accept: text/plain; version=0.0.4' --http1.1 http://127.0.0.1:{self.ts.Variables.port}/_stats")
+        tr.MakeCurlCommand(
+            f"-vs -H'Accept: text/plain; version=0.0.4' --http1.1 http://127.0.0.1:{self.ts.Variables.port}/_stats", ts=self.ts)
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
             'proxy_process_http_delete_requests 0', 'Output should be Prometheus formatted.')
@@ -100,7 +101,7 @@ class StatsOverHttpPluginTest:
     def __testCasePathJSON(self):
         tr = Test.AddTestRun('Fetch stats over HTTP in JSON format via /_stats/json')
         self.__checkProcessBefore(tr)
-        tr.MakeCurlCommand(f"-vs --http1.1 http://127.0.0.1:{self.ts.Variables.port}/_stats/json")
+        tr.MakeCurlCommand(f"-vs --http1.1 http://127.0.0.1:{self.ts.Variables.port}/_stats/json", ts=self.ts)
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stdout += Testers.ContainsExpression('{ "global": {', 'JSON header expected.')
         tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
@@ -112,7 +113,7 @@ class StatsOverHttpPluginTest:
     def __testCasePathCSV(self):
         tr = Test.AddTestRun('Fetch stats over HTTP in CSV format via /_stats/csv')
         self.__checkProcessBefore(tr)
-        tr.MakeCurlCommand(f"-vs --http1.1 http://127.0.0.1:{self.ts.Variables.port}/_stats/csv")
+        tr.MakeCurlCommand(f"-vs --http1.1 http://127.0.0.1:{self.ts.Variables.port}/_stats/csv", ts=self.ts)
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
             'proxy.process.http.delete_requests,0', 'CSV output expected.')
@@ -123,7 +124,7 @@ class StatsOverHttpPluginTest:
     def __testCasePathPrometheus(self):
         tr = Test.AddTestRun('Fetch stats over HTTP in Prometheus format via /_stats/prometheus')
         self.__checkProcessBefore(tr)
-        tr.MakeCurlCommand(f"-vs --http1.1 http://127.0.0.1:{self.ts.Variables.port}/_stats/prometheus")
+        tr.MakeCurlCommand(f"-vs --http1.1 http://127.0.0.1:{self.ts.Variables.port}/_stats/prometheus", ts=self.ts)
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
             'proxy_process_http_delete_requests 0', 'Prometheus output expected.')
@@ -134,7 +135,8 @@ class StatsOverHttpPluginTest:
     def __testCaseAcceptIgnoredIfPathExplicit(self):
         tr = Test.AddTestRun('Fetch stats over HTTP in Prometheus format with Accept csv header')
         self.__checkProcessBefore(tr)
-        tr.MakeCurlCommand(f"-vs -H'Accept: text/csv' --http1.1 http://127.0.0.1:{self.ts.Variables.port}/_stats/prometheus")
+        tr.MakeCurlCommand(
+            f"-vs -H'Accept: text/csv' --http1.1 http://127.0.0.1:{self.ts.Variables.port}/_stats/prometheus", ts=self.ts)
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
             'proxy_process_http_delete_requests 0', 'Prometheus output expected.')

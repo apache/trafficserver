@@ -87,19 +87,19 @@ tr.Processes.Default.Streams.All = Testers.ContainsExpression("Content-length: 1
 
 if not Condition.CurlUsingUnixDomainSocket():
     tr = Test.AddTestRun("GET bigobj: TLS, HTTP/1.1, IPv4")
-    tr.MakeCurlCommand(f'--verbose --ipv4 --http1.1 --insecure https://localhost:{ts.Variables.ssl_port}/bigobj')
+    tr.MakeCurlCommand(f'--verbose --ipv4 --http1.1 --insecure https://localhost:{ts.Variables.ssl_port}/bigobj', ts=ts)
     tr.Processes.Default.ReturnCode = 0
     tr.Processes.Default.Streams.All = Testers.ContainsExpression("HTTP/1.1 200 OK", "Should fetch pushed object")
     tr.Processes.Default.Streams.All = Testers.ContainsExpression("Content-length: 102400", "Content size should be accurate")
 
     tr = Test.AddTestRun("GET bigobj: TLS, HTTP/2, IPv4")
-    tr.MakeCurlCommand(f'--verbose --ipv4 --http2 --insecure https://localhost:{ts.Variables.ssl_port}/bigobj')
+    tr.MakeCurlCommand(f'--verbose --ipv4 --http2 --insecure https://localhost:{ts.Variables.ssl_port}/bigobj', ts=ts)
     tr.Processes.Default.ReturnCode = 0
     tr.Processes.Default.Streams.All = Testers.ContainsExpression("HTTP/2 200", "Should fetch pushed object")
     tr.Processes.Default.Streams.All = Testers.ContainsExpression("content-length: 102400", "Content size should be accurate")
 
     tr = Test.AddTestRun("GET bigobj: TLS, HTTP/2, IPv6")
-    tr.MakeCurlCommand(f'--verbose --ipv6 --http2 --insecure https://localhost:{ts.Variables.ssl_portv6}/bigobj')
+    tr.MakeCurlCommand(f'--verbose --ipv6 --http2 --insecure https://localhost:{ts.Variables.ssl_portv6}/bigobj', ts=ts)
     tr.Processes.Default.ReturnCode = 0
     tr.Processes.Default.Streams.All = Testers.ContainsExpression("HTTP/2 200", "Should fetch pushed object")
     tr.Processes.Default.Streams.All = Testers.ContainsExpression("content-length: 102400", "Content size should be accurate")

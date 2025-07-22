@@ -40,7 +40,7 @@ class ParentRetryTest:
     def run(self):
         tr = Test.AddTestRun()
         tr.Processes.Default.StartBefore(self.ts_child)
-        tr.MakeCurlCommand(f'"{self.ts_child.Variables.port}" --verbose')
+        tr.MakeCurlCommand(f'"{self.ts_child.Variables.port}" --verbose', ts=self.ts_child)
         tr.StillRunningAfter = self.ts_child
 
 

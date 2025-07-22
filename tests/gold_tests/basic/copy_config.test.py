@@ -44,7 +44,7 @@ t.StillRunningAfter += ts2
 
 # setup a testrun
 t = Test.AddTestRun("Talk to ts2")
-t.MakeCurlCommandMulti("{{curl_base}} 127.0.0.1:{port}".format(port=ts2.Variables.port))
+t.MakeCurlCommandMulti("{{curl_base}} 127.0.0.1:{port}".format(port=ts2.Variables.port), ts=ts2)
 t.ReturnCode = 0
 t.StillRunningAfter = ts1
 t.StillRunningAfter += ts2
