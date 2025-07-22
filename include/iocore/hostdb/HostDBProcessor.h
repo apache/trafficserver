@@ -120,7 +120,6 @@ enum class HostDBType : uint8_t {
   SRV,    ///< SRV record.
   HOST    ///< Hostname (reverse DNS)
 };
-char const *name_of(HostDBType t);
 
 /** Information about a single target.
  */
@@ -555,8 +554,6 @@ struct HostDBHash;
 //  getbyname_imm()
 using cb_process_result_pfn = void (Continuation::*)(HostDBRecord *r);
 
-Action *iterate(Continuation *cont);
-
 /** Information for doing host resolution for a request.
  *
  * This is effectively a state object for a request attempting to connect upstream. Information about its attempt
@@ -721,8 +718,6 @@ struct HostDBProcessor : public Processor {
 
   Action *getbyname_imm(Continuation *cont, cb_process_result_pfn process_hostdb_info, const char *hostname, int len,
                         Options const &opt = DEFAULT_OPTIONS);
-
-  Action *iterate(Continuation *cont);
 
   /** Lookup Hostinfo by addr */
   Action *getbyaddr_re(Continuation *cont, sockaddr const *aip);

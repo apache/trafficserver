@@ -83,15 +83,27 @@ This plugin may be enabled globally, so that the conditions and header
 rewriting rules are evaluated for every request made to your |TS| instance.
 This is done by adding the following line to your :file:`plugin.config`::
 
-  header_rewrite.so [--geo-db-path=path/to/geoip.db] config_file_1.conf config_file_2.conf ...
+  header_rewrite.so config_file_1.conf config_file_2.conf ...
 
 You may specify multiple configuration files. Their rules will be evaluated in
 the order the files are listed.
 
-The plugin takes an optional switch ``--geo-db-path``. If MaxMindDB support has
-been compiled in, use this switch to point at your .mmdb file. This also applies to
-the remap context.
+The plugin takes an optional switches.
 
+  +======================================+==================================================================================================+
+  | Option                               | Description                                                                                      |
+  +======================================+==================================================================================================+
+  | ``--geo-db-path <path_to_geoip_db>`` | If MaxMindDB support has been compiled in, use this switch to point at your .mmdb file.          |
+  |                                      | This also applies to the remap context.                                                          |
+  +======================================+==================================================================================================+
+  | ``--timezone <value>``               | This applies ``set-plugin-cntl TIMEZONE <value>`` to every transaction unconditionally.          |
+  |                                      | See set-plugin-cntl for the setting values and the effect.                                |
+  +======================================+==================================================================================================+
+  | ``--inbound-ip-source <value>``      | This applies ``set-plugin-cntl INBOUND_IP_SOURCE <value>`` to every transaction unconditionally. |
+  |                                      | See set-plugin-cntl for the setting values and the effect.                                |
+  +======================================+==================================================================================================+
+
+Please note that these optional switches needs to appear before config files like you would do on UNIX command lines.
 
 Enabling Per-Mapping
 --------------------
@@ -318,6 +330,8 @@ Per-Mapping`_ above.
 The ``<part>`` allows the operand to match against just a component of the URL,
 as documented in `URL Parts`_ below.
 
+.. _admin-plugins-header-rewrite-geo:
+
 GEO
 ~~~
 ::
@@ -429,6 +443,8 @@ are of the same name as for `set-http-cntl`_. This condition returns a ``true`` 
 
 would only continue evaluation if logging is turned off.
 
+.. _admin-plugins-header-rewrite-id:
+
 ID
 ~~
 ::
@@ -448,6 +464,8 @@ Now, even though these are conditionals, their primary use are as value
 arguments to another operator. For example::
 
     set-header ATS-Req-UUID %{ID:UNIQUE}
+
+.. _admin-plugins-header-rewrite-inbound:
 
 INBOUND
 ~~~~~~~
@@ -595,6 +613,8 @@ For example::
     cond %{SEND_REQUEST_HDR_HOOK} [AND]
     cond %{NEXT-HOP:HOST} =www.secondparent.com
         set-header Host vhost.secondparent.com
+
+.. _admin-plugins-header-rewrite-now:
 
 NOW
 ~~~
@@ -1116,6 +1136,8 @@ set-cookie
 Replaces the value of cookie ``<name>`` with ``<value>``, creating the cookie
 if necessary.
 
+.. _admin-plugins-header-rewrite-set-http-cntl:
+
 set-http-cntl
 ~~~~~~~~~~~~~
 ::
@@ -1147,12 +1169,16 @@ set-plugin-cntl
 This operator lets you control the fundamental behavior of this plugin for a particular transaction.
 The available controllers are:
 
-================== ===================== =============================================================================================
-Controller         Operators/Conditions  Description
-================== ===================== =============================================================================================
-TIMEZONE           ``NOW``               If ``GMT`` is passed, the operators and conditions use GMT regardles of the timezone setting
-                                         on your system. The default value is ``LOCAL``.
-================== ===================== =============================================================================================
++===================+========================+==============================================================================================+
+| Controller        | Operators/Conditions   | Description                                                                                  |
++===================+========================+==============================================================================================+
+| TIMEZONE          | ``NOW``                | If ``GMT`` is passed, the operators and conditions use GMT regardles of the timezone setting |
+|                   |                        | on your system. The default value is ``LOCAL``.                                              |
++===================+========================+==============================================================================================+
+| INBOUND_IP_SOURCE | ``IP``, ``INBOUND``,   | Selects which IP address to use for the operators and conditions. Available sources are      |
+|                   | ``CIDR``, and ``GEO``  | ``PEER`` (Uses the IP address of the peer), and ``PROXY`` (Uses the IP address from PROXY    |
+|                   |                        | protocol)                                                                                    |
++===================+========================+==============================================================================================+
 
 Operator Flags
 --------------
@@ -1197,6 +1223,8 @@ Old expansion variable   Condition variable to use with concatenations
 %<cque>                  %[CLIENT-URL}
 %<cquup>                 %{CLIENT-URL:PATH}
 ======================== ==========================================================================
+
+.. _admin-plugins-header-rewrite-url-parts:
 
 URL Parts
 ---------
@@ -1685,3 +1713,26 @@ This rule will deny all requests for URIs with the ``.php`` file extension::
    cond %{REMAP_PSEUDO_HOOK} [AND]
    cond %{CLIENT-URL:PATH} ="php" [EXT,NOCASE]
       set-status 403
+
+Use GMT regardless of system timezone setting
+---------------------------------------------
+
+This rule will change the behavior of %{NOW}. It will always return time in GMT.
+
+   cond %{READ_REQUEST_HDR_HOOK}
+      set-plugin-cntl TIMEZONE GMT
+
+   cond %{SEND_RESPONSE_HDR_HOOK}
+     set-header hour %{NOW:HOUR}
+
+Use IP address provided by PROXY protocol
+-----------------------------------------
+
+This rule will change the behavior of all header_rewrite conditions which use the client's IP address on a connection.
+Those will pick the address provided by PROXY protocol, instead of the peer's address.
+
+   cond %{READ_REQUEST_HDR_HOOK}
+      set-plugin-cntl INBOUND_IP_SOURCE PROXY
+
+   cond %{SEND_RESPONSE_HDR_HOOK}
+      set-header real-ip %{INBOUND:REMOTE-ADDR}

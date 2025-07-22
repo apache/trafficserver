@@ -1541,7 +1541,6 @@ init_http_header()
   url_init();
   mime_init();
   http_init();
-  hpack_huffman_init();
 }
 
 #if TS_HAS_TESTS

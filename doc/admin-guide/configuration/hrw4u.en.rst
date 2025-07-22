@@ -67,7 +67,7 @@ virtualenv or system-wide using:
 
 .. code-block:: none
 
-   pip install dist/hrw4u-1.0.0-py3-none-any.whl
+   pipx install dist/hrw4u-1.0.0-py3-none-any.whl
 
 Using
 -----
@@ -91,7 +91,8 @@ Syntax Differences
 The basic structure is a `section` name defining the part of the transaction to run in
 followed by conditionals and operators. It uses `if () {} else {}` conditional syntax
 with `&& , || and ==`, with conditions and operators generally following function() or
-object.style grammar. For instance:
+object.style grammar. Operator lines are terminated with `;` (whitespace is still not
+significant). For instance:
 
 .. code-block:: none
 
@@ -148,11 +149,12 @@ cond %{ACCESS:/path}            access("/path")                    File exists a
 cond %{CACHE} =hit-fresh        cache() == "hit-fresh"             Cache lookup result status
 cond %{CIDR:24,48} =ip          cidr(24,48) == "ip"                Match masked client IP address
 cond %{CLIENT-HEADER:X} =foo    inbound.req.X == "foo"             Original client request header
-cond %{CLIENT-URL:<C> =bar      inbound.url.<C> == "bar"           URL component match, ``C`` is ``host``, ``path`` etc.
+cond %{CLIENT-URL:<C> =bar      inbound.url.<C> == "bar"           URL component match, <:ref:`C<admin-plugins-header-rewrite-url-parts>`> is ``host``, ``path`` etc.
+
 cond %{COOKIE:foo} =bar         {in,out}bound.cookie.foo == "bar"  Check a cookie value
-cond %{FROM-URL:<C>} =bar       from.url.<C> == "bar"              Remap ``From URL`` component match, ``C`` is ``host`` etc.
-cond %{HEADER:X} =foo           {in,out}bound.req.X == "foo"       Context sensitive header conditions
-cond %{ID:UNIQUE} =...          id.UNIQUE == "..."                 Unique transaction identifier
+cond %{FROM-URL:<C>} =bar       from.url.<C> == "bar"              Remap ``From URL`` component match, <:ref:`C<admin-plugins-header-rewrite-url-parts>`> is ``host`` etc.
+cond %{HEADER:X} =fo            {in,out}bound.{req,resp}.X == "fo" Context sensitive header conditions
+cond %{ID:UNIQUE} =...          id.UNIQUE == "..."                 (:ref:`Unique/request/process<admin-plugins-header-rewrite-id>`) transaction identifier
 cond %{INTERNAL-TRANSACTION}    internal()                         Check if transaction is internally generated
 cond %{IP:CLIENT} ="..."        inbound.ip == "..."                Client's IP address. Same as ``inbound.REMOTE_ADDR``
 cond %{IP:INBOUND} ="..."       inbound.server == "..."            ATS's IP address to which the client connected
@@ -160,13 +162,18 @@ cond %{IP:SERVER} ="..."        outbound.ip == "..."               Upstream (nex
 cond %{IP:OUTBOUND} ="..."      outbound.server == "..."           ATS's outbound IP address, connecting upstream
 cond %{LAST-CAPTURE:<#>} ="..." capture.<#> == "..."               Last capture group from regex match (range: `0-9`)
 cond %{METHOD} =GET             inbound.method == "GET"            HTTP method match
-cond %{NEXT-HOP:<C>} ="bar"     outbound.url.<C> == "bar"          Next-hop URL component match, ``C`` is ``host`` etc.
-cond %{NOW:<U>} ="..."          now.<U> == "..."                   Current date/time in format, ``U`` selects time unit
+cond %{NEXT-HOP:<C>} ="bar"     outbound.url.<C> == "bar"          Next-hop URL component match, <:ref:`C<admin-plugins-header-rewrite-url-parts>`> is ``host`` etc.
+cond %{NOW:<U>} ="..."          now.<U> == "..."                   Current date/time in format,  <:ref:`U<admin-plugins-header-rewrite-geo>`> selects time unit
 cond %{RANDOM:500} >250         random(500) > 250                  Random number between 0 and the specified range
 cond %{SSN-TXN-COUNT} >10       ssn-txn-count() > 10               Number of transactions on server connection
-cond %{TO-URL:<C>} =bar         to.url.<C> == "bar"                Remap ``To URL`` component match, ``C`` is ``host`` etc.
+cond %{TO-URL:<C>} =bar         to.url.<C> == "bar"                Remap ``To URL`` component match, <:ref:`C<admin-plugins-header-rewrite-url-parts>`> is ``host`` etc.
 cond %{TXN-COUNT} >10           txn-count() > 10                   Number of transactions on client connection
 cond %{URL:<C> =bar             {in,out}bound.url.<C> == "bar"     Context aware URL component match
+cond %{GEO:<C>} =bar            geo.<C> == "bar"                   IP to Geo mapping. <:ref:`C<admin-plugins-header-rewrite-geo>`> is country, asn, etc.
+cond %{STATUS} =200             inbound.status ==200               Origin http status code
+%{TCP-INFO}                     tcp.info                           TCP Info struct field values
+cond %{HTTP-CNTL:<C>}           http.cntl.<C>                      Check the state of the <:ref:`C<admin-plugins-header-rewrite-set-http-cntl>`> HTTP control
+cond %{INBOUND:<C>}             {in,out}bound.conn.<c>             inbound (:ref:`client, user agent<admin-plugins-header-rewrite-inbound>`) connection to ATS
 =============================== ================================== ================================================
 
 The conditions operating on headers and URLs are also available as operators. E.g.:
@@ -180,10 +187,14 @@ The conditions operating on headers and URLs are also available as operators. E.
 In general, where it makes sense for the condition to be used as an operator, it is available as an operator.
 The rule of thumb is the conditional is an operator if the value is mutable.
 
+.. note::
+    Each parenthesis group in a conditional will produce a GROUP. Thus, the original header_rewrite
+    config will be more readable with ``if ...`` than `if (...)`.
+
 Operators
 ---------
 
-Operators in ``header_rewrite`` mapt to HRW4U as a mix of assignments and function calls.
+Operators in ``header_rewrite`` map to HRW4U as a mix of assignments and function calls.
 The preference is the assignment style when appropriate.
 
 ============================= ================================= ================================================
@@ -198,16 +209,17 @@ rm-destination QUERY ...      remove_query("foo,bar")           Remove specified
 rm-destination QUERY ... [I]  keep_query("foo,bar")             Keep only specified query keys
 run-plugin foo.so "args"      run-plugin("foo.so", "arg1", ...) Run an external remap plugin
 set-body "foo"                inbound.resp.body = "foo"         Set the response body
-set-body-from "https://..."   set-body-from("https://...")      Set the response body from a URL
+set-body-from "\https://..."   set-body-from("\https://...")      Set the response body from a URL
 set-config <name> 12          set-config("name", 17)            Set a configuration variable to a value
 set-conn-dscp 8               inbound.conn.dscp = 8             Set the DSCP value for the connection
 set-conn-mark 17              inbound.conn.mark = 17            Set the MARK value for the connection
 set-cookie foo bar            {in,out}bound.cookie.foo = "bar"  Set a request/response cookie named foo
-set-destination <C> bar       inbound.url.<C> = "bar"           Set a URL component, ``C`` is path, query etc.
-set-header X-Bar foo          inbound.req.X-Bar = "foo"         Assign a client request header
-set-redirect <Code> <URL>     set-redirect(302, "https://...")  Set a redirect response
+set-destination <C> bar       inbound.url.<C> = "bar"           Set a URL component, <:ref:`C<admin-plugins-header-rewrite-url-parts>`> is path, query etc.
+set-header X-Bar foo          inbound.{req,resp}.X-Bar = "foo"  Assign a client request/origin response header
+set-redirect <Code> <URL>     set-redirect(302, "\https://...")  Set a redirect response
 set-status 404                http.status = 404                 Set the response status code
 set-status-reason "No"        http.status.reason = "no"         Set the response status reason
+set-http-cntl                 http.cntl.<C> = bool              Turn on/off <:ref:`C<admin-plugins-header-rewrite-set-http-cntl>`> controllers
 ============================= ================================= ================================================
 
 In addition to those operators above, HRW4U supports the following special operators without arguments:
@@ -219,6 +231,15 @@ no-op             no-op();                     Explicit no-op statement
 set-debug         set-debug()                  Enables ATS txn debug
 skip-remap        skip-remap()                 Skip remap processing (open proxy)
 ================= ============================ ================================
+
+String concatenations
+---------------------
+
+You can concatenate values using strings, condition values and variable expansions on the same line in
+operators using. For instance, ``outbound.req.CustomHeader = “Hello from {inbound.ip}:{inbound.port}”``. As
+a result, the set-redirect's ``[QSA]`` flag would be implemented as ``set-redirect(302, "https://...?{inbound.url.query}")``.
+Note the presence of the ``?`` -- the url.query doesn't include it.
+
 
 Semantics
 =========
@@ -246,7 +267,8 @@ A special section `VARS` is used to declare variables. There is no equivalent in
 `header_rewrite`, where you managed the variables manually.
 
 .. note::
-    The section name is always required in HRW4U, there are no implicit or default hooks.
+    The section name is always required in HRW4U, there are no implicit or default hooks. There
+    can be several if/else block per section block.
 
 Groups
 ------
@@ -551,9 +573,6 @@ the ``CACHE`` condition results to a header.::
        if inbound.resp.All-Cache != "" {
            inbound.resp.All-Cache = "{inbound.resp.All-Cache}, {cache()}";
        }
-   }
-
-   SEND_RESPONSE {
        if inbound.resp.All-Cache == "" {
            inbound.resp.All-Cache = "{cache()}";
        }

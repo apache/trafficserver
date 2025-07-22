@@ -54,7 +54,8 @@ class BackgroundFillTest:
 
             self.ts[name].Disk.records_config.update(
                 {
-                    "proxy.config.http.server_ports": f"{self.ts[name].Variables.port} {self.ts[name].Variables.ssl_port}:ssl",
+                    "proxy.config.http.server_ports":
+                        f"{self.ts[name].Variables.port} {self.ts[name].Variables.ssl_port}:ssl {self.ts[name].Variables.uds_path}",
                     "proxy.config.http.background_fill_active_timeout": "0",
                     "proxy.config.http.background_fill_completed_threshold": "0.0",
                     "proxy.config.http.cache.required_headers": 0,  # Force cache
@@ -112,7 +113,8 @@ class BackgroundFillTest:
 timeout 2 {{curl}} --http1.1 -vs http://127.0.0.1:{self.ts['for_httpbin'].Variables.port}/drip?duration=4;
 sleep 4;
 {{curl}} --http1.1 -vs http://127.0.0.1:{self.ts['for_httpbin'].Variables.port}/drip?duration=4
-""")
+""",
+            ts=self.ts['for_httpbin'])
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stderr = Testers.Any(
             "gold/background_fill_0_stderr_H.gold", "gold/background_fill_0_stderr_W.gold")
@@ -130,7 +132,8 @@ sleep 4;
 timeout 3 {{curl}} --http1.1 -vsk https://127.0.0.1:{self.ts['for_httpbin'].Variables.ssl_port}/drip?duration=4;
 sleep 5;
 {{curl}} --http1.1 -vsk https://127.0.0.1:{self.ts['for_httpbin'].Variables.ssl_port}/drip?duration=4
-""")
+""",
+            ts=self.ts['for_httpbin'])
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stderr = Testers.Any(
             "gold/background_fill_1_stderr_H.gold", "gold/background_fill_1_stderr_W.gold")
@@ -148,7 +151,8 @@ sleep 5;
 timeout 3 {{curl}} --http2 -vsk https://127.0.0.1:{self.ts['for_httpbin'].Variables.ssl_port}/drip?duration=4;
 sleep 5;
 {{curl}} --http2 -vsk https://127.0.0.1:{self.ts['for_httpbin'].Variables.ssl_port}/drip?duration=4
-""")
+""",
+            ts=self.ts['for_httpbin'])
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stderr = Testers.Any(
             "gold/background_fill_2_stderr_H.gold", "gold/background_fill_2_stderr_W.gold")
@@ -172,9 +176,10 @@ sleep 5;
 
     def run(self):
         self.__testCase0()
-        self.__testCase1()
-        self.__testCase2()
-        self.__testCase3()
+        if not Condition.CurlUsingUnixDomainSocket():
+            self.__testCase1()
+            self.__testCase2()
+            self.__testCase3()
 
 
 BackgroundFillTest().run()

@@ -83,7 +83,8 @@ tr.MakeCurlCommand(
 -H"Cookie: fpbeta=magic" \
 -H "Proxy-Connection: keep-alive" \
 --verbose \
-'''.format(ts.Variables.port))
+'''.format(ts.Variables.port),
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 tr.Processes.Default.StartBefore(Test.Processes.ts)
@@ -99,7 +100,8 @@ tr.MakeCurlCommand(
 -H"Cookie: fpbeta=magit" \
 -H "Proxy-Connection: keep-alive" \
 --verbose \
-'''.format(ts.Variables.port))
+'''.format(ts.Variables.port),
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(server2, ready=When.PortOpen(server2.Variables.Port))
 tr.StillRunningAfter = ts

@@ -91,6 +91,7 @@ public:
   Regex()              = default;
   Regex(Regex const &) = delete; // No copying.
   Regex(Regex &&that) noexcept;
+  Regex &operator=(Regex &&other);
   ~Regex();
 
   /** Compile the @a pattern into a regular expression.
@@ -139,6 +140,9 @@ public:
 
   /// @return The number of capture groups in the compiled pattern.
   int get_capture_count();
+
+  /// @return Is the compiled pattern empty?
+  bool empty() const;
 
 private:
   /// @internal This effectively wraps a void* so that we can avoid requiring the pcre2.h include for the user of the Regex

@@ -260,7 +260,7 @@ HttpSM::cleanup()
   HttpConfig::release(t_state.http_config_param);
   m_remap->release();
 
-  cache_sm.cleanup();
+  cache_sm.cancel_pending_action();
 
   mutex.clear();
   tunnel.mutex.clear();
@@ -2784,6 +2784,9 @@ HttpSM::tunnel_handler_post(int event, void *data)
       default:
         break;
       }
+    } else if (static_cast<HttpSmPost_t>(p->handler_state) == HttpSmPost_t::SERVER_FAIL) {
+      handle_post_failure();
+      break;
     }
     break;
   case VC_EVENT_WRITE_READY: // iocore may callback first before send.

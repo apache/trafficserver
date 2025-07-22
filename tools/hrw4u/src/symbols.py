@@ -74,39 +74,39 @@ class SymbolResolver:
         "txn-count": ("TXN-COUNT", Validator.arg_count(0)),
     }
 
-    _CONDITION_MAP: Dict[str, Tuple[str, Optional[Callable[[str], None]], bool, Optional[Set[str]]]] = {
+    _CONDITION_MAP: Dict[str, Tuple[str, Optional[Callable[[str], None]], bool, Optional[Set[str]], bool]] = {
         # Exact matches
-        "inbound.ip": ("%{IP:CLIENT}", None, False, None),
-        "inbound.method": ("%{METHOD}", None, False, None),
-        "inbound.server": ("%{IP:INBOUND}", None, False, None),
-        "inbound.status": ("%{STATUS}", None, False, None),
-        "now": ("%{NOW}", None, False, None),
-        "outbound.ip": ("%{IP:SERVER}", None, False, {"PRE_REMAP", "REMAP", "READ_REQUEST"}),
-        "outbound.method": ("%{METHOD}", None, False, {"PRE_REMAP", "REMAP", "READ_REQUEST"}),
-        "outbound.server": ("%{IP:OUTBOUND}", None, False, {"PRE_REMAP", "REMAP", "READ_REQUEST"}),
-        "outbound.status": ("%{STATUS}", None, False, {"PRE_REMAP", "REMAP", "READ_REQUEST"}),
-        "tcp.info": ("%{TCP-INFO}", None, False, None),
+        "inbound.ip": ("%{IP:CLIENT}", None, False, None, False),
+        "inbound.method": ("%{METHOD}", None, False, None, False),
+        "inbound.server": ("%{IP:INBOUND}", None, False, None, False),
+        "inbound.status": ("%{STATUS}", None, False, None, False),
+        "now": ("%{NOW}", None, False, None, False),
+        "outbound.ip": ("%{IP:SERVER}", None, False, {"PRE_REMAP", "REMAP", "READ_REQUEST"}, False),
+        "outbound.method": ("%{METHOD}", None, False, {"PRE_REMAP", "REMAP", "READ_REQUEST"}, False),
+        "outbound.server": ("%{IP:OUTBOUND}", None, False, {"PRE_REMAP", "REMAP", "READ_REQUEST"}, False),
+        "outbound.status": ("%{STATUS}", None, False, {"PRE_REMAP", "REMAP", "READ_REQUEST"}, False),
+        "tcp.info": ("%{TCP-INFO}", None, False, None, False),
 
         # Prefix matches
-        "capture.": ("LAST-CAPTURE", Validator.range(0, 9), False, None),
-        "client.cert.": ("CLIENT-CERT", None, True, None),
-        "from.url.": ("FROM-URL", Validator.suffix_group(types.SuffixGroup.URL_FIELDS), True, None),
-        "geo.": ("GEO", Validator.suffix_group(types.SuffixGroup.GEO_FIELDS), True, None),
-        "http.cntl.": ("HTTP-CNTL", Validator.suffix_group(types.SuffixGroup.HTTP_CNTL_FIELDS), True, None),
-        "id.": ("ID", Validator.suffix_group(types.SuffixGroup.ID_FIELDS), True, None),
-        "inbound.conn.": ("INBOUND", Validator.suffix_group(types.SuffixGroup.CONN_FIELDS), True, None),
-        "inbound.cookie.": ("COOKIE", Validator.quoted_or_simple(), False, None),
-        "inbound.req.": ("CLIENT-HEADER", None, False, None),
-        "inbound.resp.": ("HEADER", None, False, None),
-        "inbound.url.": ("CLIENT-URL", Validator.suffix_group(types.SuffixGroup.URL_FIELDS), True, None),
-        "now.": ("NOW", Validator.suffix_group(types.SuffixGroup.DATE_FIELDS), True, None),
-        "outbound.conn.": ("OUTBOUND", Validator.suffix_group(types.SuffixGroup.CONN_FIELDS), True, None),
-        "outbound.cookie.": ("COOKIE", Validator.quoted_or_simple(), False, None),
-        "outbound.req.": ("HEADER", None, False, {"PRE_REMAP", "REMAP", "READ_REQUEST"}),
-        "outbound.resp.": ("HEADER", None, False, {"PRE_REMAP", "REMAP", "READ_REQUEST", "SEND_REQUEST"}),
+        "capture.": ("LAST-CAPTURE", Validator.range(0, 9), False, None, True),
+        "client.cert.": ("CLIENT-CERT", None, True, None, True),
+        "from.url.": ("FROM-URL", Validator.suffix_group(types.SuffixGroup.URL_FIELDS), True, None, True),
+        "geo.": ("GEO", Validator.suffix_group(types.SuffixGroup.GEO_FIELDS), True, None, True),
+        "http.cntl.": ("HTTP-CNTL", Validator.suffix_group(types.SuffixGroup.HTTP_CNTL_FIELDS), True, None, False),
+        "id.": ("ID", Validator.suffix_group(types.SuffixGroup.ID_FIELDS), True, None, False),
+        "inbound.conn.": ("INBOUND", Validator.suffix_group(types.SuffixGroup.CONN_FIELDS), True, None, False),
+        "inbound.cookie.": ("COOKIE", Validator.quoted_or_simple(), False, None, True),
+        "inbound.req.": ("CLIENT-HEADER", None, False, None, True),
+        "inbound.resp.": ("HEADER", None, False, None, True),
+        "inbound.url.": ("CLIENT-URL", Validator.suffix_group(types.SuffixGroup.URL_FIELDS), True, None, True),
+        "now.": ("NOW", Validator.suffix_group(types.SuffixGroup.DATE_FIELDS), True, None, False),
+        "outbound.conn.": ("OUTBOUND", Validator.suffix_group(types.SuffixGroup.CONN_FIELDS), True, None, False),
+        "outbound.cookie.": ("COOKIE", Validator.quoted_or_simple(), False, None, True),
+        "outbound.req.": ("HEADER", None, False, {"PRE_REMAP", "REMAP", "READ_REQUEST"}, True),
+        "outbound.resp.": ("HEADER", None, False, {"PRE_REMAP", "REMAP", "READ_REQUEST", "SEND_REQUEST"}, True),
         "outbound.url.":
-            ("NEXT-HOP", Validator.suffix_group(types.SuffixGroup.URL_FIELDS), True, {"PRE_REMAP", "REMAP", "READ_REQUEST"}),
-        "to.url.": ("TO-URL", Validator.suffix_group(types.SuffixGroup.URL_FIELDS), True, None),
+            ("NEXT-HOP", Validator.suffix_group(types.SuffixGroup.URL_FIELDS), True, {"PRE_REMAP", "REMAP", "READ_REQUEST"}, True),
+        "to.url.": ("TO-URL", Validator.suffix_group(types.SuffixGroup.URL_FIELDS), True, None, True),
     }
 
     _SECTION_MAP = {
@@ -206,23 +206,23 @@ class SymbolResolver:
         self._debug_exit("=> not found")
         raise SymbolResolutionError(name, "Unknown assignment symbol")
 
-    def resolve_condition(self, name: str, section: Optional[str] = None) -> str:
+    def resolve_condition(self, name: str, section: Optional[str] = None) -> Tuple[str, bool]:
         self._debug_enter(f"resolve_condition: {name} (section={section})")
 
         symbol = self.symbol_for(name)
         if symbol:
             self._debug_exit(f"=> symbol_table: {symbol.as_cond()}")
-            return symbol.as_cond()
+            return symbol.as_cond(), False
 
         # Exact match
         if name in self._CONDITION_MAP:
-            tag, _, _, restricted = self._CONDITION_MAP[name]
+            tag, _, _, restricted, default_expr = self._CONDITION_MAP[name]
             self.check_section(name, section, restricted)
             self._debug_exit(f"=> exact condition_map: {tag}")
-            return tag
+            return tag, default_expr
 
         # Prefix match
-        for prefix, (tag, validator, uppercase, restricted) in self._CONDITION_MAP.items():
+        for prefix, (tag, validator, uppercase, restricted, default_expr) in self._CONDITION_MAP.items():
             if prefix.endswith(".") and name.startswith(prefix):
                 self.check_section(name, section, restricted)
                 suffix = name[len(prefix):]
@@ -231,7 +231,7 @@ class SymbolResolver:
                     validator(suf_norm)
                 resolved = f"%{{{tag}:{suf_norm}}}"
                 self._debug_exit(f"=> prefix condition_map: {resolved}")
-                return resolved
+                return resolved, default_expr
 
         self._debug_exit("=> not found")
         raise SymbolResolutionError(name, "Unknown condition symbol")

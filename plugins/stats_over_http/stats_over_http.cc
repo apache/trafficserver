@@ -120,33 +120,49 @@ static bool             is_ipmap_allowed(const config_t *config, const struct so
 
 #if HAVE_BROTLI_ENCODE_H
 struct b_stream {
-  BrotliEncoderState *br;
-  uint8_t            *next_in;
-  size_t              avail_in;
-  uint8_t            *next_out;
-  size_t              avail_out;
-  size_t              total_in;
-  size_t              total_out;
+  BrotliEncoderState *br        = nullptr;
+  uint8_t            *next_in   = nullptr;
+  size_t              avail_in  = 0;
+  uint8_t            *next_out  = nullptr;
+  size_t              avail_out = 0;
+  size_t              total_in  = 0;
+  size_t              total_out = 0;
+
+  ~b_stream()
+  {
+    if (br) {
+      BrotliEncoderDestroyInstance(br);
+      br = nullptr;
+    }
+  }
 };
 #endif
 
 struct stats_state {
-  TSVConn net_vc;
-  TSVIO   read_vio;
-  TSVIO   write_vio;
+  TSVConn net_vc    = nullptr;
+  TSVIO   read_vio  = nullptr;
+  TSVIO   write_vio = nullptr;
 
-  TSIOBuffer       req_buffer;
-  TSIOBuffer       resp_buffer;
-  TSIOBufferReader resp_reader;
+  TSIOBuffer       req_buffer  = nullptr;
+  TSIOBuffer       resp_buffer = nullptr;
+  TSIOBufferReader resp_reader = nullptr;
 
-  int               output_bytes;
-  int               body_written;
-  output_format_t   output_format;
-  encoding_format_t encoding;
+  int               output_bytes  = 0;
+  int               body_written  = 0;
+  output_format_t   output_format = output_format_t::JSON_OUTPUT;
+  encoding_format_t encoding      = encoding_format_t::NONE;
   z_stream          zstrm;
 #if HAVE_BROTLI_ENCODE_H
   b_stream bstrm;
 #endif
+  stats_state()
+  {
+    memset(&zstrm, 0, sizeof(z_stream));
+    zstrm.zalloc    = Z_NULL;
+    zstrm.zfree     = Z_NULL;
+    zstrm.opaque    = Z_NULL;
+    zstrm.data_type = Z_ASCII;
+  }
 };
 
 static char *
@@ -231,7 +247,7 @@ stats_cleanup(TSCont contp, stats_state *my_state)
   }
 
   TSVConnClose(my_state->net_vc);
-  TSfree(my_state);
+  delete my_state;
   TSContDestroy(contp);
 }
 
@@ -542,6 +558,7 @@ br_out_stats(stats_state *my_state)
   }
   my_state->output_bytes += TSIOBufferWrite(my_state->resp_buffer, outputbuf, outputsize);
   BrotliEncoderDestroyInstance(my_state->bstrm.br);
+  my_state->bstrm.br = nullptr;
 }
 #endif
 
@@ -726,9 +743,8 @@ stats_origin(TSCont contp, TSEvent /* event ATS_UNUSED */, void *edata)
   /* This is us -- register our intercept */
   Dbg(dbg_ctl, "Intercepting request");
 
-  my_state = (stats_state *)TSmalloc(sizeof(*my_state));
-  memset(my_state, 0, sizeof(*my_state));
-  icontp = TSContCreate(stats_dostuff, TSMutexCreate());
+  my_state = new stats_state;
+  icontp   = TSContCreate(stats_dostuff, TSMutexCreate());
 
   if (path_had_explicit_format) {
     Dbg(dbg_ctl, "Path had explicit format, ignoring any Accept header: %s", request_path_suffix.data());
@@ -916,7 +932,7 @@ static config_t *
 new_config(std::fstream &fh)
 {
   config_t *config    = nullptr;
-  config              = new config_t();
+  config              = new config_t;
   config->recordTypes = DEFAULT_RECORD_TYPES;
   config->stats_path  = "";
   std::string cur_line;
@@ -968,7 +984,7 @@ static void
 delete_config(config_t *config)
 {
   Dbg(dbg_ctl, "Freeing config");
-  TSfree(config);
+  delete config;
 }
 
 // standard api below...

@@ -19,7 +19,7 @@
 import sys
 import argparse
 
-from antlr4 import FileStream, CommonTokenStream
+from antlr4 import InputStream, CommonTokenStream
 from antlr4.error.ErrorStrategy import BailErrorStrategy
 
 from hrw4u.hrw4uLexer import hrw4uLexer
@@ -38,7 +38,8 @@ def fatal(message: str):
 
 def main():
     parser_arg = argparse.ArgumentParser(description="Process HRW4U input and produce output (AST or HRW).")
-    parser_arg.add_argument("input_file", help="The input file to parse.")
+    parser_arg.add_argument(
+        "input_file", help="The input file to parse.", nargs='?', type=argparse.FileType('r', encoding='UTF-8'), default=sys.stdin)
 
     group = parser_arg.add_mutually_exclusive_group()
     group.add_argument("--ast", action="store_true", help="Produce the AST tree only from ANTLR.")
@@ -46,23 +47,27 @@ def main():
     parser_arg.add_argument("--debug", action="store_true", help="Enable debug output")
 
     args = parser_arg.parse_args()
+    input_content = args.input_file.read()
+
+    if args.input_file is not sys.stdin:
+        filename = args.input_file.name
+        args.input_file.close()
+    else:
+        filename = "<stdin>"
 
     if not (args.ast or args.hrw):
         args.hrw = True
 
-    try:
-        input_stream = FileStream(args.input_file, encoding="utf-8")
-    except Exception as e:
-        fatal(f"{args.input_file}:0:0 - hrw4u error: cannot open file: {e}")
+    input_stream = InputStream(input_content)
 
     lexer = hrw4uLexer(input_stream)
     lexer.removeErrorListeners()
-    lexer.addErrorListener(ThrowingErrorListener(filename=args.input_file))
+    lexer.addErrorListener(ThrowingErrorListener(filename=filename))
     token_stream = CommonTokenStream(lexer)
 
     parser_obj = hrw4uParser(token_stream)
     parser_obj.removeErrorListeners()
-    parser_obj.addErrorListener(ThrowingErrorListener(filename=args.input_file))
+    parser_obj.addErrorListener(ThrowingErrorListener(filename=filename))
     parser_obj.errorHandler = BailErrorStrategy()
 
     try:
@@ -75,7 +80,7 @@ def main():
     if args.ast:
         print(tree.toStringTree(recog=parser_obj))
     else:
-        visitor = HRW4UVisitor(filename=args.input_file, debug=args.debug)
+        visitor = HRW4UVisitor(filename=filename, debug=args.debug)
         try:
             result = visitor.visit(tree)
             print("\n".join(result))
