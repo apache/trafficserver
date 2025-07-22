@@ -31,7 +31,7 @@ are enabled by adding a define to your Cript file (or when compiling the Cript).
 Making this addition optional allows users to choose whether they want to use
 these convenience APIs or stick with the traditional Cripts API style.
 
-The convenience APIs carries a small (very small) overhead, due to how Cripts defers
+The convenience APIs carry a small (very small) overhead, due to how Cripts defers
 (or delays) initializations of objects until they are actually used. These new APIs
 are designed to be as efficient as possible, but they do introduce potential conflicts
 in the top level namespace. Here's a simple example of how to enable these APIs:
@@ -49,6 +49,10 @@ in the top level namespace. Here's a simple example of how to enable these APIs:
 
    #include <cripts/Epilogue.hpp>
 
+.. note::
+   The convenience APIs must be enabled before including the Preamble header.
+   This define affects the entire compilation unit, so use it consistently
+   throughout your Cript file.
 
 .. _cripts-convenience-toplevel:
 
@@ -72,11 +76,11 @@ Object                        Traditional API equivalent
 ``urls.pristine``             ``borrow cripts::Pristine::URL::Get()``
 ``urls.cache``                ``borrow cripts::Cache::URL::Get()``
 ``urls.parent``               ``borrow cripts::Parent::URL::Get()``
-``urls.remap.to``             ``borrow cripts::Remap::To::URL::Get``
-``urls.remap.from``           ``borrow cripts::Remap::From::URL::Get``
+``urls.remap.to``             ``borrow cripts::Remap::To::URL::Get()``
+``urls.remap.from``           ``borrow cripts::Remap::From::URL::Get()``
 ===========================   =============================================
 
-The use of these top-level objects are identical to how you would use them with the traditinoal
+The use of these top-level objects are identical to how you would use them with the traditional
 APIs. The following code shows both the traditional Cripts API and the new APIs in a simple
 example:
 
@@ -89,7 +93,7 @@ example:
      borrow url = cripts::Client::URL::Get();
 
      url.query.Keep({"foo", "bar"});
-     req["X-Foo"] = "bar"
+     req["X-Foo"] = "bar";
    }
 
    // Convenience API, does not need the borrow statements
@@ -100,7 +104,7 @@ example:
    }
 
 .. note::
-   Both ``client.url`` and `` urls.request`` refer to the same underlying object, which is
+   Both ``client.url`` and ``urls.request`` refer to the same underlying object, which is
    ``cripts::Client::URL``. This means that any changes made to ``urls.request``
    will also be reflected in ``client.url`` and vice versa.
 
@@ -111,7 +115,7 @@ Convenience macros
 
 In addition to the top-level APIs, a set of convenience macros are provided as well,
 enabled with the same ``#define`` as above. The following macros have been added,
-which again populates in the top level namespace:
+which again populate the top level namespace:
 
 ===========================   ====================================================================
 Macro                         Traditional API equivalent
@@ -126,19 +130,116 @@ Macro                         Traditional API equivalent
 ``TimeNow()``                 ``cripts::Time::Local::Now()``
 ===========================   ====================================================================
 
-An example of using ACLs and regular expressions:
+These macros provide a more concise syntax for common operations. Here are some examples:
+
+.. _cripts-convenience-macros-examples:
+
+Regex and ACL Example
+---------------------
+
+.. code-block:: cpp
+
+   #define CRIPTS_CONVENIENCE_APIS 1
+   #include <cripts/Preamble.hpp>
+
+   do_remap()
+   {
+     Regex(path_regex, "^/api/v([0-9]+)/(.*)$");
+     ACL(internal_networks, {"192.168.0.0/16", "10.0.0.0/8", "172.16.0.0/12"});
+
+     if (internal_networks.Match(client.connection.IP())) {
+       if (path_regex.Match(urls.request.path)) {
+         // Internal API access allowed
+         client.request["X-API-Version"] = path_regex[1]; // First capture group
+         client.request["X-API-Path"] = path_regex[2];    // Second capture group
+       }
+     } else {
+       StatusCode(403, "Access denied");
+     }
+   }
+
+   #include <cripts/Epilogue.hpp>
+
+Metrics and File Example
+------------------------
+
+.. code-block:: cpp
+
+   #define CRIPTS_CONVENIENCE_APIS 1
+   #include <cripts/Preamble.hpp>
+
+   do_create_instance()
+   {
+     CreateCounter(0, "requests.total");
+     CreateGauge(1, "active.connections");
+     FilePath(config_file, "/etc/ats/custom.conf");
+   }
+
+   do_remap()
+   {
+     instance.metrics[0]->Increment(); // Increment request counter
+
+     auto uuid = UniqueUUID();
+     auto timestamp = TimeNow();
+
+     client.request["X-Request-ID"] = uuid;
+     client.request["X-Timestamp"] = timestamp.Epoch();
+   }
+
+   #include <cripts/Epilogue.hpp>
+
+.. _cripts-convenience-performance:
+
+Performance Considerations
+==========================
+
+The convenience APIs are designed to have minimal overhead:
+
+1. **Lazy Initialization**: Objects are only initialized when first accessed
+2. **Reference Semantics**: The convenience objects are references to the same underlying objects
+3. **Compile-time Macros**: Most convenience macros expand to the same code as traditional APIs
+
+However, there are some considerations:
+
+- **Namespace Pollution**: The convenience APIs add names to the global namespace
+- **Debugging**: Stack traces may show convenience wrapper functions
+- **Compatibility**: Code using convenience APIs requires the ``#define`` to compile
+- **Performance**: While the overhead is minimal, it may not be suitable for performance-critical
+  code due to the lazy initialization.
+
+.. _cripts-convenience-best-practices:
+
+Best Practices
+==============
+
+When using convenience APIs:
+
+1. **Consistent Usage**: Either use convenience APIs throughout a Cript or stick to traditional APIs
+2. **Documentation**: Comment when using convenience APIs for team clarity.
+3. **Testing**: Test both with and without convenience APIs if maintaining compatibility.
+
+Example of mixed usage (not recommended):
 
 .. code-block:: cpp
 
    do_remap()
    {
-     Regex(rex, "^/([^/]+)/(.*)$");
-     ACL(allow, {"192.168.201.0/24", "10.0.0.0/8"});
-
-     if (allow.Match(client.connection.IP()) && rex.Match(urls.request.path)) {
-       // do something
-     }
+     // Mixed usage - avoid this pattern!
+     borrow req = cripts::Client::Request::Get(); // Traditional
+     urls.request.query.Keep({"foo"});            // Convenience
    }
+
+Better approach:
+
+.. code-block:: cpp
+
+   do_remap()
+   {
+     // Consistent convenience API usage
+     client.request["X-Processed"] = "true";
+     urls.request.query.Keep({"foo", "bar"});
+   }
+
 .. note::
    The ``StatusCode`` macro currently only works with the status code, the reason
    message can not be set or overridden. Fixing this will require a future change
