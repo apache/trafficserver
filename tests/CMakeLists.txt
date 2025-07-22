@@ -48,7 +48,7 @@ add_subdirectory(gold_tests/tls)
 set(RUNPIPENV PIPENV_VENV_IN_PROJECT=True ${PipEnv})
 
 set(CMAKE_GOLD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/gold_tests")
-set(CMAKE_SKIP_GOLD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/_gold_tests")
+set(CMAKE_SKIP_GOLD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/_skipped_uds_gold_tests")
 set(CURL_UDS_FLAG "")
 if(ENABLE_AUTEST_UDS)
   set(CURL_UDS_FLAG "--curl-uds")

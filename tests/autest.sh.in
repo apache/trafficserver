@@ -27,12 +27,15 @@ ${RUNPIPENV} run env autest \
   ${CURL_UDS_FLAG} ${AUTEST_OPTIONS} \
   "$@"
 
-# Restore tests back to source tree
+# Restore tests back to source tree and remove temp dir
 if [ -n "${CURL_UDS_FLAG}" ]; then
   if [ -d "${CMAKE_SKIP_GOLD_DIR}/h2" ]; then
     mv "${CMAKE_SKIP_GOLD_DIR}/h2" "${CMAKE_GOLD_DIR}/h2"
   fi
   if [ -d "${CMAKE_SKIP_GOLD_DIR}/tls" ]; then
     mv "${CMAKE_SKIP_GOLD_DIR}/tls" "${CMAKE_GOLD_DIR}/tls"
+  fi
+  if [ -d "${CMAKE_SKIP_GOLD_DIR}" ]; then
+    rm -rf "${CMAKE_SKIP_GOLD_DIR}"
   fi
 fi
