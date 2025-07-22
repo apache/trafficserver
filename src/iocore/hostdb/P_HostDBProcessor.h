@@ -74,10 +74,6 @@ enum HostDBMark {
   HOSTDB_MARK_IPV6,    ///< IPv6 / T_AAAA
   HOSTDB_MARK_SRV,     ///< Service / T_SRV
 };
-/** Convert a HostDB @a mark to a string.
-    @return A static string.
- */
-extern const char *string_for(HostDBMark mark);
 
 //
 // Constants
@@ -228,43 +224,28 @@ struct HostDBContinuation : public Continuation {
   /// Original IP address family style. Note this will disagree with
   /// @a hash.db_mark when doing a retry on an alternate family. The retry
   /// logic depends on it to avoid looping.
-  HostResStyle  host_res_style      = DEFAULT_OPTIONS.host_res_style; ///< Address family priority.
-  int           dns_lookup_timeout  = DEFAULT_OPTIONS.timeout;
-  Event        *timeout             = nullptr;
-  Continuation *from_cont           = nullptr;
-  int           probe_depth         = 0;
-  size_t        current_iterate_pos = 0;
-  //  char name[MAXDNAME];
-  //  int namelen;
+  HostResStyle host_res_style     = DEFAULT_OPTIONS.host_res_style; ///< Address family priority.
+  int          dns_lookup_timeout = DEFAULT_OPTIONS.timeout;
+  Event       *timeout            = nullptr;
+
   char hash_host_name_store[MAXDNAME + 1]; // used as backing store for @a hash
-  char srv_target_name[MAXDNAME];
-  //  void *m_pDS;
+
   PendingAction pending_action;
 
-  unsigned int missing   : 1;
   unsigned int force_dns : 1;
 
   int probeEvent(int event, Event *e);
-  int iterateEvent(int event, Event *e);
   int dnsEvent(int event, HostEnt *e);
   int dnsPendingEvent(int event, Event *e);
   int backgroundEvent(int event, Event *e);
-  int retryEvent(int event, Event *e);
-  int setbyEvent(int event, Event *e);
 
   /// Recompute the hash and update ancillary values.
   void refresh_hash();
   void do_dns();
-  Ptr<HostDBRecord>
-  lookup_done(const char *query_name, ts_seconds answer_ttl, SRVHosts *s = nullptr, Ptr<HostDBRecord> record = Ptr<HostDBRecord>{})
-  {
-    return this->lookup_done(swoc::TextView{query_name, strlen(query_name)}, answer_ttl, s, std::move(record));
-  }
 
   Ptr<HostDBRecord> lookup_done(swoc::TextView query_name, ts_seconds answer_ttl, SRVHosts *s = nullptr,
                                 Ptr<HostDBRecord> record = Ptr<HostDBRecord>{});
 
-  int  key_partition();
   void remove_and_trigger_pending_dns();
   int  set_check_pending_dns();
 
@@ -280,10 +261,8 @@ struct HostDBContinuation : public Continuation {
   };
   static const Options DEFAULT_OPTIONS; ///< Default defaults.
   void                 init(HostDBHash const &hash, Options const &opt = DEFAULT_OPTIONS);
-  int                  make_get_message(char *buf, int len);
-  int                  make_put_message(HostDBInfo *r, Continuation *c, char *buf, int len);
 
-  HostDBContinuation() : missing(false), force_dns(DEFAULT_OPTIONS.force_dns)
+  HostDBContinuation() : force_dns(DEFAULT_OPTIONS.force_dns)
   {
     ink_zero(hash_host_name_store);
     ink_zero(hash.hash);
@@ -291,20 +270,8 @@ struct HostDBContinuation : public Continuation {
   }
 };
 
-inline unsigned int
-master_hash(CryptoHash const &hash)
-{
-  return static_cast<int>(hash[1] >> 32);
-}
-
 inline Queue<HostDBContinuation> &
 HostDBCache::pending_dns_for_hash(const CryptoHash &hash)
 {
   return pending_dns[this->refcountcache->partition_for_key(hash.fold())];
-}
-
-inline int
-HostDBContinuation::key_partition()
-{
-  return hostDB.refcountcache->partition_for_key(hash.hash.fold());
 }

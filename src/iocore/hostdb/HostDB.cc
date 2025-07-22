@@ -100,21 +100,6 @@ HOSTDB_CLIENT_IP_HASH(sockaddr const *lhs, IpAddr const &rhs)
 
 } // namespace
 
-char const *
-name_of(HostDBType t)
-{
-  switch (t) {
-  case HostDBType::UNSPEC:
-    return "*";
-  case HostDBType::ADDR:
-    return "Address";
-  case HostDBType::SRV:
-    return "SRV";
-  case HostDBType::HOST:
-    return "Reverse DNS";
-  }
-  return "";
-}
 // Static configuration information
 
 HostDBCache hostDB;
@@ -158,13 +143,6 @@ check_for_retry(HostDBMark &mark, HostResStyle style)
     zret = false;
   }
   return zret;
-}
-
-const char *
-string_for(HostDBMark mark)
-{
-  static const char *STRING[] = {"Generic", "IPv4", "IPv6", "SRV"};
-  return STRING[mark];
 }
 
 //
@@ -273,21 +251,6 @@ HostDBCache *
 HostDBProcessor::cache()
 {
   return &hostDB;
-}
-
-struct HostDBBackgroundTask : public Continuation {
-  ts_seconds frequency;
-  ts_hr_time start_time;
-
-  virtual int sync_event(int event, void *edata) = 0;
-  int         wait_event(int event, void *edata);
-
-  HostDBBackgroundTask(ts_seconds frequency);
-};
-
-HostDBBackgroundTask::HostDBBackgroundTask(ts_seconds frequency) : Continuation(new_ProxyMutex()), frequency(frequency)
-{
-  SET_HANDLER(&HostDBBackgroundTask::sync_event);
 }
 
 int
@@ -444,12 +407,6 @@ reply_to_cont(Continuation *cont, HostDBRecord *r, bool is_srv = false)
 }
 
 inline HostResStyle
-host_res_style_for(sockaddr const *ip)
-{
-  return ats_is_ip6(ip) ? HOST_RES_IPV6_ONLY : HOST_RES_IPV4_ONLY;
-}
-
-inline HostResStyle
 host_res_style_for(HostDBMark mark)
 {
   return HOSTDB_MARK_IPV4 == mark ? HOST_RES_IPV4_ONLY : HOSTDB_MARK_IPV6 == mark ? HOST_RES_IPV6_ONLY : HOST_RES_NONE;
@@ -465,18 +422,6 @@ db_mark_for(HostResStyle style)
     zret = HOSTDB_MARK_IPV6;
   }
   return zret;
-}
-
-inline HostDBMark
-db_mark_for(sockaddr const *ip)
-{
-  return ats_is_ip6(ip) ? HOSTDB_MARK_IPV6 : HOSTDB_MARK_IPV4;
-}
-
-inline HostDBMark
-db_mark_for(IpAddr const &ip)
-{
-  return ip.isIp6() ? HOSTDB_MARK_IPV6 : HOSTDB_MARK_IPV4;
 }
 
 HostDBRecord::Handle
@@ -782,29 +727,6 @@ HostDBProcessor::getbyname_imm(Continuation *cont, cb_process_result_pfn process
   hash.refresh();
 
   return getby(cont, process_hostdb_info, hash, opt);
-}
-
-Action *
-HostDBProcessor::iterate(Continuation *cont)
-{
-  ink_assert(cont->mutex->thread_holding == this_ethread());
-  EThread *thread = cont->mutex->thread_holding;
-
-  Metrics::Counter::increment(hostdb_rsb.total_lookups);
-
-  HostDBContinuation         *c = hostDBContAllocator.alloc();
-  HostDBContinuation::Options copt;
-  copt.cont           = cont;
-  copt.force_dns      = false;
-  copt.timeout        = 0;
-  copt.host_res_style = HOST_RES_NONE;
-  c->init(HostDBHash(), copt);
-  c->current_iterate_pos = 0;
-  SET_CONTINUATION_HANDLER(c, &HostDBContinuation::iterateEvent);
-
-  thread->schedule_in(c, HOST_DB_RETRY_PERIOD);
-
-  return &c->action;
 }
 
 // Lookup done, insert into the local table, return data to the
@@ -1128,57 +1050,6 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
   }
 }
 
-int
-HostDBContinuation::iterateEvent(int event, Event *e)
-{
-  Dbg(dbg_ctl_hostdb, "iterateEvent event=%d eventp=%p", event, e);
-  ink_assert(!link.prev && !link.next);
-  EThread *t = e ? e->ethread : this_ethread();
-
-  MUTEX_TRY_LOCK(lock, action.mutex, t);
-  if (!lock.is_locked()) {
-    Dbg(dbg_ctl_hostdb, "iterateEvent event=%d eventp=%p: reschedule due to not getting action mutex", event, e);
-    mutex->thread_holding->schedule_in(this, HOST_DB_RETRY_PERIOD);
-    return EVENT_CONT;
-  }
-
-  if (action.cancelled) {
-    hostdb_cont_free(this);
-    return EVENT_DONE;
-  }
-
-  // let's iterate through another record and then reschedule ourself.
-  if (current_iterate_pos < hostDB.refcountcache->partition_count()) {
-    // TODO: configurable number at a time?
-    ts::shared_mutex                  &bucket_lock = hostDB.refcountcache->get_partition(current_iterate_pos).lock;
-    std::shared_lock<ts::shared_mutex> lock{bucket_lock};
-
-    auto &partMap = hostDB.refcountcache->get_partition(current_iterate_pos).get_map();
-    for (const auto &it : partMap) {
-      auto *r = static_cast<HostDBRecord *>(it.item.get());
-      if (r && !r->is_failed()) {
-        action.continuation->handleEvent(EVENT_INTERVAL, static_cast<void *>(r));
-      }
-    }
-    current_iterate_pos++;
-  }
-
-  if (current_iterate_pos < hostDB.refcountcache->partition_count()) {
-    // And reschedule ourselves to pickup the next bucket after HOST_DB_RETRY_PERIOD.
-    Dbg(dbg_ctl_hostdb, "iterateEvent event=%d eventp=%p: completed current iteration %ld of %ld", event, e, current_iterate_pos,
-        hostDB.refcountcache->partition_count());
-    mutex->thread_holding->schedule_in(this, HOST_DB_ITERATE_PERIOD);
-    return EVENT_CONT;
-  } else {
-    Dbg(dbg_ctl_hostdb, "iterateEvent event=%d eventp=%p: completed FINAL iteration %ld", event, e, current_iterate_pos);
-    // if there are no more buckets, then we're done.
-    action.continuation->handleEvent(EVENT_DONE, nullptr);
-    hostdb_cont_free(this);
-  }
-
-  return EVENT_DONE;
-}
-
 //
 // Probe state
 //
@@ -1294,6 +1165,10 @@ HostDBContinuation::remove_and_trigger_pending_dns()
   }
   EThread *thread = this_ethread();
   while ((c = qq.dequeue())) {
+    if (c->action.cancelled || c->mutex == nullptr) {
+      continue;
+    }
+
     // resume all queued HostDBCont in the thread associated with the netvc to avoid nethandler locking issues.
     EThread *affinity_thread = c->getThreadAffinity();
     SCOPED_MUTEX_LOCK(lock, c->mutex, this_ethread());
@@ -1538,33 +1413,6 @@ ink_hostdb_init(ts::ModuleVersion v)
   hostdb_rsb.insert_duplicate_to_pending_dns = Metrics::Counter::createPtr("proxy.process.hostdb.insert_duplicate_to_pending_dns");
 
   ts_host_res_global_init();
-}
-
-struct HostDBFileContinuation : public Continuation {
-  using self = HostDBFileContinuation;
-  using Keys = std::vector<CryptoHash>;
-
-  int            idx  = 0;       ///< Working index.
-  const char    *name = nullptr; ///< Host name (just for debugging)
-  Keys          *keys = nullptr; ///< Entries from file.
-  CryptoHash     hash;           ///< Key for entry.
-  ats_scoped_str path;           ///< Used to keep the host file name around.
-
-  HostDBFileContinuation() : Continuation(nullptr) {}
-  /// Finish update
-  static void finish(Keys *keys ///< Valid keys from update.
-  );
-  /// Clean up this instance.
-  void destroy();
-};
-
-ClassAllocator<HostDBFileContinuation> hostDBFileContAllocator("hostDBFileContAllocator");
-
-void
-HostDBFileContinuation::destroy()
-{
-  this->~HostDBFileContinuation();
-  hostDBFileContAllocator.free(this);
 }
 
 // Host file processing globals.

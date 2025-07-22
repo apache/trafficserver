@@ -22,7 +22,10 @@ Test.Summary = '''
 Test TS API to get PROXY protocol info
 '''
 
-Test.SkipUnless(Condition.HasProgram("nghttp", "Nghttp need to be installed on system for this test to work"),)
+Test.SkipUnless(
+    Condition.HasProgram("nghttp", "Nghttp need to be installed on system for this test to work"),
+    Condition.HasCurlVersion("8.2.0"),
+)
 Test.ContinueOnFail = True
 
 # ----

@@ -42,8 +42,6 @@ LLVMFuzzerTestOneInput(const uint8_t *input_data, size_t size_data)
 
   cmd_disable_pfreelist = true;
 
-  hpack_huffman_init();
-
   HpackIndexingTable       indexing_table(INITIAL_TABLE_SIZE);
   std::unique_ptr<HTTPHdr> headers(new HTTPHdr);
   headers->create(HTTPType::REQUEST);

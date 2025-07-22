@@ -97,8 +97,8 @@ Matchers<std::string>::test_set(const std::string &t) const
     if (match_with_modifiers(rhs, entry, _mods)) {
       if (pi_dbg_ctl.on()) {
         debug_helper(t, " ∈ ", true);
-        return true;
       }
+      return true;
     }
   }
 
