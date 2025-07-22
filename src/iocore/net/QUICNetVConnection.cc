@@ -538,12 +538,6 @@ QUICNetVConnection::load_buffer_and_write(int64_t /* towrite ATS_UNUSED */, MIOB
   return 0;
 }
 
-bool
-QUICNetVConnection::getSSLHandShakeComplete() const
-{
-  return quiche_conn_is_established(this->_quiche_con);
-}
-
 void
 QUICNetVConnection::_bindSSLObject()
 {
@@ -799,6 +793,12 @@ QUICNetVConnection::getMutexForTLSEvents()
   return this->nh->mutex;
 }
 
+bool
+QUICNetVConnection::_isReadyToTransferData() const
+{
+  return quiche_conn_is_established(this->_quiche_con);
+}
+
 SSL *
 QUICNetVConnection::_get_ssl_object() const
 {
@@ -864,7 +864,7 @@ QUICNetVConnection::_isTryingRenegotiation() const
 {
   // Renegotiation is not allowed on QUIC (TLS 1.3) connections.
   // If handshake is completed when this function is called, that should be unallowed attempt of renegotiation.
-  return this->getSSLHandShakeComplete();
+  return quiche_conn_is_established(this->_quiche_con);
 }
 
 shared_SSL_CTX

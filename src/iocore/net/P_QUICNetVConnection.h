@@ -97,7 +97,6 @@ public:
   VIO    *do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner = false) override;
   int     connectUp(EThread *t, int fd) override;
   int64_t load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf, int64_t &total_written, int &needs) override;
-  bool    getSSLHandShakeComplete() const override;
 
   // NetEvent
   virtual void net_read_io(NetHandler *nh) override;
@@ -153,6 +152,9 @@ public:
 protected:
   std::unique_ptr<QUICContext> _context;
   QUICPacketHandler           *_packet_handler = nullptr;
+
+  // UnixNetVConnection
+  bool _isReadyToTransferData() const override;
 
   // TLSBasicSupport
   SSL         *_get_ssl_object() const override;

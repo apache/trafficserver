@@ -488,7 +488,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh)
   // If the key renegotiation failed it's over, just signal the error and finish.
   if (sslClientRenegotiationAbort == true) {
     this->read.triggered = 0;
-    readSignalError(nh, -ENET_SSL_FAILED);
+    this->_readSignalError(nh, -ENET_SSL_FAILED);
     Dbg(dbg_ctl_ssl, "client renegotiation setting read signal error");
     return;
   }
@@ -510,9 +510,9 @@ SSLNetVConnection::net_read_io(NetHandler *nh)
     int err = 0;
 
     if (get_context() == NET_VCONNECTION_OUT) {
-      ret = sslStartHandShake(SSL_EVENT_CLIENT, err);
+      ret = _sslStartHandShake(SSL_EVENT_CLIENT, err);
     } else {
-      ret = sslStartHandShake(SSL_EVENT_SERVER, err);
+      ret = _sslStartHandShake(SSL_EVENT_SERVER, err);
     }
     if (ret == SSL_RESTART) {
       // VC migrated into a new object
@@ -561,7 +561,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh)
     }
     if (ret == EVENT_ERROR) {
       this->read.triggered = 0;
-      readSignalError(nh, err);
+      this->_readSignalError(nh, err);
     } else if (ret == SSL_HANDSHAKE_WANT_READ || ret == SSL_HANDSHAKE_WANT_ACCEPT) {
       if (SSLConfigParams::ssl_handshake_timeout_in > 0) {
         double handshake_time = (static_cast<double>(ink_get_hrtime() - this->get_tls_handshake_begin_time()) / 1000000000);
@@ -571,7 +571,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh)
           Dbg(dbg_ctl_ssl, "ssl handshake for vc %p, expired, release the connection", this);
           read.triggered = 0;
           nh->read_ready_list.remove(this);
-          readSignalError(nh, ETIMEDOUT);
+          this->_readSignalError(nh, ETIMEDOUT);
           return;
         }
       }
@@ -687,7 +687,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh)
     break;
   case SSL_READ_ERROR:
     this->read.triggered = 0;
-    readSignalError(nh, (ssl_read_errno) ? ssl_read_errno : -ENET_SSL_FAILED);
+    this->_readSignalError(nh, (ssl_read_errno) ? ssl_read_errno : -ENET_SSL_FAILED);
     Dbg(dbg_ctl_ssl, "read finished - read error");
     break;
   }
@@ -999,7 +999,7 @@ SSLNetVConnection::free_thread(EThread *t)
 }
 
 int
-SSLNetVConnection::sslStartHandShake(int event, int &err)
+SSLNetVConnection::_sslStartHandShake(int event, int &err)
 {
   if (TSSystemState::is_ssl_handshaking_stopped()) {
     Dbg(dbg_ctl_ssl, "Stopping handshake due to server shutting down.");
@@ -1784,6 +1784,68 @@ SSLNetVConnection::protocol_contains(std::string_view prefix) const
     retval = super::protocol_contains(prefix);
   }
   return retval;
+}
+
+bool
+SSLNetVConnection::_trackFirstHandshake()
+{
+  bool retval = this->get_tls_handshake_begin_time() == 0;
+  if (retval) {
+    this->_record_tls_handshake_begin_time();
+  }
+  return retval;
+}
+
+bool
+SSLNetVConnection::_isReadyToTransferData() const
+{
+  return getSSLHandShakeComplete();
+}
+
+void
+SSLNetVConnection::_beReadyToTransferData()
+{
+  if (this->_trackFirstHandshake()) {
+    // Eat the first write-ready.  Until the TLS handshake is complete,
+    // we should still be under the connect timeout and shouldn't bother
+    // the state machine until the TLS handshake is complete
+    this->write.triggered = 0;
+    nh->write_ready_list.remove(this);
+  }
+
+  int err{0}, ret{0};
+
+  if (this->get_context() == NET_VCONNECTION_OUT) {
+    ret = this->_sslStartHandShake(SSL_EVENT_CLIENT, err);
+  } else {
+    ret = this->_sslStartHandShake(SSL_EVENT_SERVER, err);
+  }
+
+  if (ret == EVENT_ERROR) {
+    this->write.triggered = 0;
+    this->_writeSignalError(nh, err);
+  } else if (ret == SSL_HANDSHAKE_WANT_READ || ret == SSL_HANDSHAKE_WANT_ACCEPT) {
+    this->read.triggered = 0;
+    nh->read_ready_list.remove(this);
+    this->readReschedule(nh);
+  } else if (ret == SSL_HANDSHAKE_WANT_CONNECT || ret == SSL_HANDSHAKE_WANT_WRITE) {
+    this->write.triggered = 0;
+    nh->write_ready_list.remove(this);
+    this->writeReschedule(nh);
+  } else if (ret == EVENT_DONE) {
+    this->write.triggered = 1;
+    if (this->write.enabled) {
+      nh->write_ready_list.in_or_enqueue(this);
+    }
+    // If this was driven by a zero length read, signal complete when
+    // the handshake is complete. Otherwise set up for continuing read
+    // operations.
+    if (this->write.vio.ntodo() <= 0) {
+      this->readSignalDone(VC_EVENT_WRITE_COMPLETE, nh);
+    }
+  } else {
+    this->writeReschedule(nh);
+  }
 }
 
 in_port_t
