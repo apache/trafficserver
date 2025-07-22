@@ -20,9 +20,9 @@
 HRW4U DSL
 *********
 
-This is a next-generation rule language for the existing ATS ``header_rewrite`` plugin. It
-introduces a clearer syntax, formal grammar, full condition nesting, semantic validation,
-and extensible condition/operator support.
+HRW4U is a next-generation rule language for the existing ATS ``header_rewrite``
+plugin. It introduces clearer syntax, formal grammar, full condition nesting,
+semantic validation, and extensible condition/operator support.
 
 Overview
 ========
@@ -37,8 +37,8 @@ Rather than repeating `header_rewrite` documentation, please refer to:
 Why HRW4U?
 ----------
 
-Over time, ``header_rewrite`` format has become unwieldy and difficult to use. Therefore
-we try to improve the following:
+Over time, the ``header_rewrite`` format has become unwieldy and difficult to use.
+HRW4U aims to improve the following:
 
 - Structured grammar and parser
 - Better error diagnostics (line/col, filename, hints)
@@ -51,11 +51,11 @@ we try to improve the following:
 Building
 --------
 
-At the moment, the HRW4U compiler is not built as part of the ATS build process. You need to
-build it separately, using Python 3.10+ and pyenv environments. There's a ``bootstrap.sh``
-script in the ``tools/hrw4u`` directory that helps with the process.
+Currently, the HRW4U compiler is not built as part of the ATS build process. You need to
+build it separately using Python 3.10+ and pyenv environments. There's a ``bootstrap.sh``
+script in the ``tools/hrw4u`` directory that helps with the setup process.
 
-Once setup, simply run:
+Once set up, simply run:
 
 .. code-block:: none
 
@@ -72,8 +72,8 @@ virtualenv or system-wide using:
 Using
 -----
 
-Once installed, you will have a ``hrw4u`` command available. You can run it with the
-as following, which produces the help output:
+Once installed, you will have a ``hrw4u`` command available. You can run it as
+follows to produce the help output:
 
 .. code-block:: none
 
@@ -150,7 +150,6 @@ cond %{CACHE} =hit-fresh        cache() == "hit-fresh"             Cache lookup 
 cond %{CIDR:24,48} =ip          cidr(24,48) == "ip"                Match masked client IP address
 cond %{CLIENT-HEADER:X} =foo    inbound.req.X == "foo"             Original client request header
 cond %{CLIENT-URL:<C> =bar      inbound.url.<C> == "bar"           URL component match, <:ref:`C<admin-plugins-header-rewrite-url-parts>`> is ``host``, ``path`` etc.
-
 cond %{COOKIE:foo} =bar         {in,out}bound.cookie.foo == "bar"  Check a cookie value
 cond %{FROM-URL:<C>} =bar       from.url.<C> == "bar"              Remap ``From URL`` component match, <:ref:`C<admin-plugins-header-rewrite-url-parts>`> is ``host`` etc.
 cond %{HEADER:X} =fo            {in,out}bound.{req,resp}.X == "fo" Context sensitive header conditions
@@ -171,7 +170,7 @@ cond %{TXN-COUNT} >10           txn-count() > 10                   Number of tra
 cond %{URL:<C> =bar             {in,out}bound.url.<C> == "bar"     Context aware URL component match
 cond %{GEO:<C>} =bar            geo.<C> == "bar"                   IP to Geo mapping. <:ref:`C<admin-plugins-header-rewrite-geo>`> is country, asn, etc.
 cond %{STATUS} =200             inbound.status ==200               Origin http status code
-%{TCP-INFO}                     tcp.info                           TCP Info struct field values
+cond %{TCP-INFO}                tcp.info                           TCP Info struct field values
 cond %{HTTP-CNTL:<C>}           http.cntl.<C>                      Check the state of the <:ref:`C<admin-plugins-header-rewrite-set-http-cntl>`> HTTP control
 cond %{INBOUND:<C>}             {in,out}bound.conn.<c>             inbound (:ref:`client, user agent<admin-plugins-header-rewrite-inbound>`) connection to ATS
 =============================== ================================== ================================================
@@ -235,9 +234,10 @@ skip-remap        skip-remap()                 Skip remap processing (open proxy
 String concatenations
 ---------------------
 
-You can concatenate values using strings, condition values and variable expansions on the same line in
-operators using. For instance, ``outbound.req.CustomHeader = “Hello from {inbound.ip}:{inbound.port}”``. As
-a result, the set-redirect's ``[QSA]`` flag would be implemented as ``set-redirect(302, "https://...?{inbound.url.query}")``.
+You can concatenate values using strings, condition values, and variable expansions
+on the same line in operators. For instance, ``outbound.req.CustomHeader = "Hello from {inbound.ip}:{inbound.port}"``.
+As a result, the set-redirect's ``[QSA]`` flag would be implemented as
+``set-redirect(302, "https://...?{inbound.url.query}")``.
 Note the presence of the ``?`` -- the url.query doesn't include it.
 
 
@@ -455,8 +455,8 @@ possible to accomplish::
 Add Cache Control Headers Based on Origin Path
 ----------------------------------------------
 
-This rule adds cache control headers to CDN responses based matching the origin
-path.  One provides a max age and the other provides a "no-cache" statement to
+This rule adds cache control headers to CDN responses based on matching the origin
+path. One provides a max age and the other provides a "no-cache" statement to
 two different file paths. ::
 
    READ_RESPONSE {
@@ -514,13 +514,13 @@ Close Connections for draining
 
 When a healthcheck file is missing (in this example, ``/path/to/the/healthcheck/file.txt``),
 add a ``Connection: close`` header to have clients drop their connection,
-allowing the server to drain. Although Connection header is only available on
-HTTP/1.1 in terms of protocols, but this also works for HTTP/2 connections
+allowing the server to drain. Although the Connection header is only available on
+HTTP/1.1 in terms of protocols, this also works for HTTP/2 connections
 because the header triggers HTTP/2 graceful shutdown. This should be a global
 configuration.::
 
    SEND_RESPONSE {
-      if !access("/path/to/the/healthcheck/file.txt}") {
+      if !access("/path/to/the/healthcheck/file.txt") {
           inbound.resp.Connection = "close";
       }
    }
@@ -591,7 +591,7 @@ And finally, a  much more efficient solution, using the ``else`` clause.::
 Add Identifier from Server with Data
 ------------------------------------
 
-This rule adds an unique identifier from the server if the data is fresh from
+This rule adds a unique identifier from the server if the data is fresh from
 the cache or if the identifier has not been generated yet. This will inform
 the client where the requested data was served from.::
 
@@ -604,7 +604,7 @@ the client where the requested data was served from.::
 Apply rate limiting for some select requests
 --------------------------------------------
 
-This rule will conditiionally, based on the client request headers, apply rate
+This rule will conditionally, based on the client request headers, apply rate
 limiting to the request.::
 
    REMAP {
