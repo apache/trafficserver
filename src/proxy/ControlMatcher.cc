@@ -391,8 +391,8 @@ RegexMatcher<Data, MatchResult>::AllocateSpace(int num_entries)
   // Should not have been allocated before
   ink_assert(array_len == -1);
 
-  regex_array.reserve(num_entries);
-  regex_strings.reserve(num_entries);
+  regex_array.resize(num_entries);
+  regex_strings.resize(num_entries);
 
   data_array = new Data[num_entries];
 
@@ -409,7 +409,7 @@ RegexMatcher<Data, MatchResult>::NewEntry(matcher_line *line_info)
 {
   Data       *cur_d;
   char       *pattern;
-  std::string errptr;
+  std::string error_msg;
   int         erroffset;
   Result      error = Result::ok();
 
@@ -426,10 +426,10 @@ RegexMatcher<Data, MatchResult>::NewEntry(matcher_line *line_info)
   ink_assert(pattern != nullptr);
 
   // Create the compiled regular expression
-  regex_array[num_el].compile(pattern, errptr, erroffset);
+  regex_array[num_el].compile(pattern, error_msg, erroffset);
   if (regex_array[num_el].empty()) {
     return Result::failure("%s regular expression error at line %d position %d : %s", matcher_name, line_info->line_num, erroffset,
-                           errptr.c_str());
+                           error_msg.c_str());
   }
   regex_strings[num_el] = pattern;
 
