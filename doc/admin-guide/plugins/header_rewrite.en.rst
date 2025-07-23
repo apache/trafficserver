@@ -1198,7 +1198,7 @@ INBOUND_IP_SOURCE
 """""""""""""""""
 This controller selects which IP address to use for the conditions on the table above.
 The default value is ``PEER`` and the IP address of the peer will be used.
-If ``PROXY`` is set, and PROXY protocol is used, the source IP address provided by PROXY protocol used.
+If ``PROXY`` is set, and PROXY protocol is used, the source IP address provided by PROXY protocol will be used.
 
 .. note::
     The conditions return an empty string if the source is set to ``PROXY`` but PROXY protocol header does not present.
