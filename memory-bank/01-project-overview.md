@@ -38,7 +38,7 @@
 - **Shared**: Common proxy components (`shared/`)
 
 #### 4. **Management** (`src/mgmt/`)
-- JSONRPC server for management
+- **JSONRPC**: RPC server for management and control
 - Configuration management
 - Administrative tools
 

@@ -6,13 +6,12 @@
 ```bash
 # Basic build
 cmake -B build
-cmake --build build
 
 # With options
 cmake -B build -DCMAKE_INSTALL_PREFIX=/opt/ats -DBUILD_EXPERIMENTAL_PLUGINS=ON
 
 # Using presets
-cmake --preset dev
+cmake --preset release
 ```
 
 ### Key Build Options
@@ -77,9 +76,9 @@ brew install cmake ninja pkg-config openssl pcre
 ```bash
 git clone https://github.com/apache/trafficserver.git
 cd trafficserver
-cmake --preset default
-cmake --build build-default
-cmake --install build-default
+cmake --preset release
+cmake --build build-release
+cmake --install build-release
 ```
 
 ## Recent Changes & Migration Notes

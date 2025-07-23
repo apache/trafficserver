@@ -53,11 +53,10 @@ Core technical concepts including event system, cache architecture, and performa
 ```bash
 # Basic build
 cmake -B build
-cmake --build build
 
 # With presets
-cmake --preset default
-cmake --build build-default
+cmake --preset release
+cmake --build build-release
 ```
 
 ## Navigation Guide
