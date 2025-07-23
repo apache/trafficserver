@@ -90,20 +90,32 @@ the order the files are listed.
 
 The plugin takes an optional switches.
 
-  +======================================+==================================================================================================+
-  | Option                               | Description                                                                                      |
-  +======================================+==================================================================================================+
-  | ``--geo-db-path <path_to_geoip_db>`` | If MaxMindDB support has been compiled in, use this switch to point at your .mmdb file.          |
-  |                                      | This also applies to the remap context.                                                          |
-  +======================================+==================================================================================================+
-  | ``--timezone <value>``               | This applies ``set-plugin-cntl TIMEZONE <value>`` to every transaction unconditionally.          |
-  |                                      | See set-plugin-cntl for the setting values and the effect.                                |
-  +======================================+==================================================================================================+
-  | ``--inbound-ip-source <value>``      | This applies ``set-plugin-cntl INBOUND_IP_SOURCE <value>`` to every transaction unconditionally. |
-  |                                      | See set-plugin-cntl for the setting values and the effect.                                |
-  +======================================+==================================================================================================+
+====================================== ==================================================================================================
+ Option                                Description
+====================================== ==================================================================================================
+ ``--geo-db-path <path_to_geoip_db>``  A file path for MaxMindDB.
+====================================== ==================================================================================================
+ ``--timezone <value>``                Timezone to use on header rewrite rules.
+====================================== ==================================================================================================
+ ``--inbound-ip-source <value>``       The source of IP address for the client.
+====================================== ==================================================================================================
 
 Please note that these optional switches needs to appear before config files like you would do on UNIX command lines.
+
+``--geo-db-path``
+^^^^^^^^^^^^^^^^^
+If MaxMindDB support has been compiled in, use this switch to point at your .mmdb file.
+This also applies to the remap context.
+
+``--timezone``
+^^^^^^^^^^^^^^
+This applies ``set-plugin-cntl TIMEZONE <value>`` to every transaction unconditionally.
+See set-plugin-cntl for the setting values and the effect.
+
+``--inbound-ip-source``
+^^^^^^^^^^^^^^^^^^^^^^^
+This applies ``set-plugin-cntl INBOUND_IP_SOURCE <value>`` to every transaction unconditionally.
+See set-plugin-cntl for the setting values and the effect.
 
 Enabling Per-Mapping
 --------------------
@@ -1169,16 +1181,26 @@ set-plugin-cntl
 This operator lets you control the fundamental behavior of this plugin for a particular transaction.
 The available controllers are:
 
-+===================+========================+==============================================================================================+
-| Controller        | Operators/Conditions   | Description                                                                                  |
-+===================+========================+==============================================================================================+
-| TIMEZONE          | ``NOW``                | If ``GMT`` is passed, the operators and conditions use GMT regardles of the timezone setting |
-|                   |                        | on your system. The default value is ``LOCAL``.                                              |
-+===================+========================+==============================================================================================+
-| INBOUND_IP_SOURCE | ``IP``, ``INBOUND``,   | Selects which IP address to use for the operators and conditions. Available sources are      |
-|                   | ``CIDR``, and ``GEO``  | ``PEER`` (Uses the IP address of the peer), and ``PROXY`` (Uses the IP address from PROXY    |
-|                   |                        | protocol)                                                                                    |
-+===================+========================+==============================================================================================+
+================== ============================================ =======================
+Controller         Operators/Conditions                         Available values
+================== ============================================ =======================
+TIMEZONE           ``NOW``                                      ``GMT``, or ``LOCAL``
+INBOUND_IP_SOURCE  ``IP``, ``INBOUND``, ``CIDR``, and ``GEO``   ``PEER``, or ``PROXY``
+================== ============================================ =======================
+
+TIMEZONE
+^^^^^^^^
+This controller selects the timezone to use for ``NOW`` condition.
+If ``GMT`` is set, GMT will be used regardles of the timezone setting on your system. The default value is ``LOCAL``.
+
+INBOUND_IP_SOURCE
+^^^^^^^^^^^^^^^^^
+This controller selects which IP address to use for the conditions on the table above.
+The default value is ``PEER`` and the IP address of the peer will be used.
+If ``PROXY`` is set, and PROXY protocol is used, the source IP address provided by PROXY protocol used.
+
+.. note::
+    The conditions return an empty string if the source is set to ``PROXY`` but PROXY protocol header does not present.
 
 Operator Flags
 --------------
@@ -1717,7 +1739,7 @@ This rule will deny all requests for URIs with the ``.php`` file extension::
 Use GMT regardless of system timezone setting
 ---------------------------------------------
 
-This rule will change the behavior of %{NOW}. It will always return time in GMT.
+This rule will change the behavior of %{NOW}. It will always return time in GMT.::
 
    cond %{READ_REQUEST_HDR_HOOK}
       set-plugin-cntl TIMEZONE GMT
@@ -1729,7 +1751,7 @@ Use IP address provided by PROXY protocol
 -----------------------------------------
 
 This rule will change the behavior of all header_rewrite conditions which use the client's IP address on a connection.
-Those will pick the address provided by PROXY protocol, instead of the peer's address.
+Those will pick the address provided by PROXY protocol, instead of the peer's address.::
 
    cond %{READ_REQUEST_HDR_HOOK}
       set-plugin-cntl INBOUND_IP_SOURCE PROXY
