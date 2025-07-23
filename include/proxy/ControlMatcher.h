@@ -97,13 +97,8 @@
 #include "tsutil/Regex.h"
 #include "proxy/hdrs/URL.h"
 
-#if __has_include("pcre/pcre.h")
-#include <pcre/pcre.h>
-#elif __has_include("pcre.h")
-#include <pcre.h>
-#else
-#error "Unable to locate PCRE heeader"
-#endif
+#define PCRE2_CODE_UNIT_WIDTH 8
+#include "pcre2.h"
 
 #include <swoc/swoc_ip.h>
 
@@ -159,7 +154,7 @@ public:
 };
 
 // Mixin class for shared info across all templates. This just wraps the
-// shared members such that we don't have to duplicate all these initialixers
+// shared members such that we don't have to duplicate all these initializers
 // etc. If someone wants to rewrite all this code to use setters and getters,
 // by all means, please do so. The plumbing is in place :).
 template <class Data> class BaseMatcher
@@ -209,7 +204,6 @@ template <class Data, class MatchResult> class RegexMatcher : protected BaseMatc
 
 public:
   RegexMatcher(const char *name, const char *filename);
-  ~RegexMatcher();
 
   void   AllocateSpace(int num_entries);
   Result NewEntry(matcher_line *line_info);
@@ -224,8 +218,8 @@ public:
   using super::num_el;
 
 protected:
-  pcre **re_array = nullptr; // array of compiled regexs
-  char **re_str   = nullptr; // array of uncompiled regex strings
+  std::vector<Regex>       regex_array;   // array of regexs
+  std::vector<std::string> regex_strings; // array of regex strings
 };
 
 template <class Data, class MatchResult> class HostRegexMatcher : public RegexMatcher<Data, MatchResult>
