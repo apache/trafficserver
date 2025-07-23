@@ -2779,9 +2779,6 @@ HttpSM::tunnel_handler_post(int event, void *data)
       default:
         break;
       }
-    } else if (p->handler_state == HTTP_SM_POST_SERVER_FAIL) {
-      handle_post_failure();
-      break;
     }
     break;
   case VC_EVENT_WRITE_READY: // iocore may callback first before send.
