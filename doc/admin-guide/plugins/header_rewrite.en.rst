@@ -101,17 +101,19 @@ The plugin takes an optional switches.
 Please note that these optional switches needs to appear before config files like you would do on UNIX command lines.
 
 ``--geo-db-path``
-^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~
+
 If MaxMindDB support has been compiled in, use this switch to point at your .mmdb file.
 This also applies to the remap context.
 
 ``--timezone``
-^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~
+
 This applies ``set-plugin-cntl TIMEZONE <value>`` to every transaction unconditionally.
 See set-plugin-cntl for the setting values and the effect.
 
 ``--inbound-ip-source``
-^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~
 This applies ``set-plugin-cntl INBOUND_IP_SOURCE <value>`` to every transaction unconditionally.
 See set-plugin-cntl for the setting values and the effect.
 
@@ -1187,12 +1189,13 @@ INBOUND_IP_SOURCE  ``IP``, ``INBOUND``, ``CIDR``, and ``GEO``   ``PEER``, or ``P
 ================== ============================================ =======================
 
 TIMEZONE
-^^^^^^^^
+""""""""
+
 This controller selects the timezone to use for ``NOW`` condition.
 If ``GMT`` is set, GMT will be used regardles of the timezone setting on your system. The default value is ``LOCAL``.
 
 INBOUND_IP_SOURCE
-^^^^^^^^^^^^^^^^^
+"""""""""""""""""
 This controller selects which IP address to use for the conditions on the table above.
 The default value is ``PEER`` and the IP address of the peer will be used.
 If ``PROXY`` is set, and PROXY protocol is used, the source IP address provided by PROXY protocol used.
