@@ -361,6 +361,16 @@
       }
     },
     {
+      "name": "branch-autest-uds",
+      "displayName": "CI branch autest",
+      "inherits": ["branch"],
+      "cacheVariables": {
+        "ENABLE_AUTEST": "ON",
+        "ENABLE_AUTEST_UDS": "ON",
+        "ENABLE_EXAMPLE": "ON"
+      }
+    },
+    {
       "name": "branch-freebsd",
       "displayName": "CI branch freebsd",
       "description": "Defaults for branch freebsd builds",
