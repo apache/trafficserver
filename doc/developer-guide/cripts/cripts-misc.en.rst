@@ -287,12 +287,12 @@ Example usage:
    {
      static const cripts::File::Path p1("/tmp/foo");
      static const cripts::File::Path p2("/tmp/secret.txt");
-     borrow resp = cripts::Client::Response::Get();
+     borrow req = cripts::Client::Request::Get();
 
      if (cripts::File::Status(p1).type() == cripts::File::Type::regular) {
-       resp["X-Foo-Exists"] = "yes";
+       req["X-Foo-Exists"] = "yes";
      } else {
-       resp["X-Foo-Exists"] = "no";
+       req["X-Foo-Exists"] = "no";
      }
 
      cripts::string secret = cripts::File::Line::Reader(p2);
@@ -321,11 +321,11 @@ Using the ``UUID`` object is simple, via the ``Get()`` method. Here's an example
 
    do_remap()
    {
-     borrow resp = cripts::Client::Response::Get();
+     borrow req = cripts::Client::Request::Get();
 
-     resp["X-Process-UUID"] = cripts::UUID::Process::Get();
-     resp["X-Unique-UUID"] = cripts::UUID::Unique::Get();
-     resp["X-Request-UUID"] = cripts::UUID::Request::Get();
+     req["X-Process-UUID"] = cripts::UUID::Process::Get();
+     req["X-Unique-UUID"] = cripts::UUID::Unique::Get();
+     req["X-Request-UUID"] = cripts::UUID::Request::Get();
    }
 
 .. _cripts-misc-metrics:
@@ -416,3 +416,5 @@ Debug logging uses the same format string syntax as ``fmt::format()`` in ``libfm
 .. note::
     Debug output is controlled by the ATS debug tags system. Use appropriate
     debug tags in your ATS configuration to enable debug output for your Cripts.
+    The default debug tag for Cripts is the name of the Cript itself, either
+    the Cript source file, or the compiled plugin name.

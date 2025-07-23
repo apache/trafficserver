@@ -39,7 +39,7 @@ Usage
 
 As with remap rules, global Cripts still requires both the preamble as well as the epilogue.
 However, all callbacks are prefixed with ``glb_`` to indicate that they are global hooks.
-See the hooks below for more details.
+See the :ref:`hooks <cripts-global-hooks>` below for more details.
 
 Global plugins must be compiled manually and loaded through the standard ATS plugin
 configuration. Here's a complete example:
@@ -74,6 +74,8 @@ configuration. Here's a complete example:
    }
 
    #include <cripts/Epilogue.hpp>
+
+.. _cripts-global-hooks:
 
 Hooks
 =====
