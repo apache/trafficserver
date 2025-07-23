@@ -45,6 +45,7 @@
 #include "swoc/swoc_ip.h"
 #include "swoc/BufferWriter.h"
 
+#include "tscore/MgmtDefs.h"
 #include "tscore/ink_platform.h"
 #include "tscore/ink_inet.h"
 #include "tscore/ink_resolver.h"
@@ -60,6 +61,31 @@ using ts::Metrics;
 
 static const unsigned HTTP_STATUS_NUMBER = 600;
 using HttpStatusBitset                   = std::bitset<HTTP_STATUS_NUMBER>;
+
+class HttpStatusCodeList
+{
+public:
+  static const MgmtConverter Conv;
+
+  char *conf_value{nullptr};
+
+  bool
+  contains(int code) const
+  {
+    return _data[code];
+  }
+
+  void
+  set(const char *src, int length = -1)
+  {
+    conf_value = ats_strndup(src, length);
+    Conv.store_string(this, conf_value);
+  }
+
+private:
+  // TODO: change container to std::unordered_set or something
+  HttpStatusBitset _data;
+};
 
 struct HttpStatsBlock {
   // Need two stats for these for counts and times
@@ -700,6 +726,12 @@ struct OverridableHttpConfigParams {
 
   // Host Resolution order
   HostResData host_res_data;
+
+  // bitset to hold the status codes that will BE cached with negative caching enabled
+  HttpStatusCodeList negative_caching_list;
+
+  // bitset to hold the status codes that will used by nagative revalidating enabled
+  HttpStatusCodeList negative_revalidating_list;
 };
 
 /////////////////////////////////////////////////////////////
@@ -797,12 +829,6 @@ public:
 
   ConnectionTracker::GlobalConfig global_connection_tracker_config;
 
-  // bitset to hold the status codes that will BE cached with negative caching enabled
-  HttpStatusBitset negative_caching_list;
-
-  // bitset to hold the status codes that will used by nagative revalidating enabled
-  HttpStatusBitset negative_revalidating_list;
-
   // All the overridable configurations goes into this class member, but they
   // are not copied over until needed ("lazy").
   OverridableHttpConfigParams oride;
@@ -883,6 +909,8 @@ inline HttpConfigParams::~HttpConfigParams()
   ats_free(oride.ssl_client_sni_policy);
   ats_free(oride.ssl_client_alpn_protocols);
   ats_free(oride.host_res_data.conf_value);
+  ats_free(oride.negative_caching_list.conf_value);
+  ats_free(oride.negative_revalidating_list.conf_value);
 
   delete connect_ports;
   delete redirect_actions_map;
