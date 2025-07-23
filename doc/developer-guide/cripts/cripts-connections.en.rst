@@ -89,6 +89,32 @@ IPv4 and IPv6 CIDR sizes. For example:
 
      CDebug("Client IP CIDR: {}", ip.string(24, 64));
 
+.. _cripts-ip-methods:
+
+IP Object Methods
+=================
+
+The IP objects returned by ``IP()`` and ``LocalIP()`` methods provide additional functionality
+beyond string conversion:
+
+=======================   =========================================================================
+Method                    Description
+=======================   =========================================================================
+``string()``              Convert IP to string with optional CIDR masking.
+``Socket()``              Convert IP to a ``sockaddr`` structure for low-level socket operations.
+``Hasher()``              Generate a hash value for the IP address.
+``Sample()``              Determine if IP should be sampled based on rate and seed.
+``ASN()``                 Get ASN number (if Geo-IP support is available).
+``ASNName()``             Get ASN name (if Geo-IP support is available).
+``Country()``             Get country name (if Geo-IP support is available).
+``CountryCode()``         Get country code (if Geo-IP support is available).
+=======================   =========================================================================
+
+.. note::
+   The Geo-IP methods (``ASN``, ``ASNName``, ``Country``, ``CountryCode``) are only available if ATS
+   has been built with Geo-IP support. These methods can be used on any IP object, not just
+   connection IPs.
+
 .. _cripts-connections-variables:
 
 Connection Variables
@@ -154,8 +180,40 @@ accessed via the ``Log()`` method. See the ``tcpinfo`` plugin in ATS for details
 Geo-IP
 ======
 
-If ATS has been built with Geo-IP support, the connection object will provide access to the Geo-IP
-data for the connection. The following methods will then be available:
+If ATS has been built with Geo-IP support, both connection objects and IP objects will provide
+access to Geo-IP data. There are two ways to access Geo-IP information:
+
+**Connection-based Geo-IP**
+
+The connection object provides access to Geo-IP data for the connection's IP address:
+
+.. code-block:: cpp
+
+   do_send_response()
+   {
+     borrow conn = cripts::Client::Connection::Get();
+
+     // This is supported, but probably prefer the IP-based approach below
+     resp["X-ASN"] = conn.geo.ASN();
+     resp["X-Country"] = conn.geo.Country();
+   }
+
+**IP-based Geo-IP**
+
+Any IP object can perform Geo-IP lookups directly:
+
+.. code-block:: cpp
+
+   do_send_response()
+   {
+     borrow conn = cripts::Client::Connection::Get();
+     auto client_ip = conn.IP();
+
+     resp["X-ASN"] = client_ip.ASN();
+     resp["X-Country"] = client_ip.Country();
+   }
+
+The following methods are available for both approaches:
 
 =======================   =========================================================================
 Method                    Description
@@ -168,7 +226,9 @@ Method                    Description
 
 .. note::
    All methods return string values. These are methods and not fields, so they must be called as
-   functions.
+   functions. The IP-based approach allows you to perform Geo-IP lookups on any IP address,
+   not just connection IPs, making it more flexible for use cases where you have IP addresses
+   from other sources.
 
 .. _cripts-connections-tls:
 

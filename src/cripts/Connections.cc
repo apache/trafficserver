@@ -142,6 +142,15 @@ IP::GetSV(unsigned ipv4_cidr, unsigned ipv6_cidr)
   return "";
 }
 
+sockaddr
+IP::Socket() const
+{
+  sockaddr addr = {};
+
+  this->copy_to(&addr);
+  return addr;
+}
+
 uint64_t
 IP::Hasher(unsigned ipv4_cidr, unsigned ipv6_cidr)
 {
