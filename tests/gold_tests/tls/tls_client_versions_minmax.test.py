@@ -83,7 +83,8 @@ tr.Processes.Default.StartBefore(Test.Processes.ts)
 # https://www.openssl.org/docs/manmaster/man3/SSL_CTX_set_security_level.html
 tr.MakeCurlCommand(
     "-v --ciphers DEFAULT@SECLEVEL=0 --tls-max 1.2 --tlsv1.2 --resolve 'foo.com:{0}:127.0.0.1' -k  https://foo.com:{0}".format(
-        ts.Variables.ssl_port))
+        ts.Variables.ssl_port),
+    ts=ts)
 tr.ReturnCode = 35
 tr.StillRunningAfter = ts
 
@@ -91,7 +92,8 @@ tr.StillRunningAfter = ts
 tr = Test.AddTestRun("foo.com TLSv1")
 tr.MakeCurlCommand(
     "-v --ciphers DEFAULT@SECLEVEL=0 --tls-max 1.0 --tlsv1 --resolve 'foo.com:{0}:127.0.0.1' -k  https://foo.com:{0}".format(
-        ts.Variables.ssl_port))
+        ts.Variables.ssl_port),
+    ts=ts)
 tr.ReturnCode = 0
 tr.StillRunningAfter = ts
 
@@ -99,7 +101,8 @@ tr.StillRunningAfter = ts
 tr = Test.AddTestRun("foo.com TLSv1_1")
 tr.MakeCurlCommand(
     "-v --ciphers DEFAULT@SECLEVEL=0 --tls-max 1.1 --tlsv1.1 --resolve 'foo.com:{0}:127.0.0.1' -k  https://foo.com:{0}".format(
-        ts.Variables.ssl_port))
+        ts.Variables.ssl_port),
+    ts=ts)
 tr.ReturnCode = 0
 tr.StillRunningAfter = ts
 
@@ -107,7 +110,8 @@ tr.StillRunningAfter = ts
 tr = Test.AddTestRun("bar.com TLSv1")
 tr.MakeCurlCommand(
     "-v --ciphers DEFAULT@SECLEVEL=0 --tls-max 1.0 --tlsv1 --resolve 'bar.com:{0}:127.0.0.1' -k  https://bar.com:{0}".format(
-        ts.Variables.ssl_port))
+        ts.Variables.ssl_port),
+    ts=ts)
 tr.ReturnCode = 35
 tr.StillRunningAfter = ts
 
@@ -115,6 +119,7 @@ tr.StillRunningAfter = ts
 tr = Test.AddTestRun("bar.com TLSv1_2")
 tr.MakeCurlCommand(
     "-v --ciphers DEFAULT@SECLEVEL=0 --tls-max 1.2 --tlsv1.2 --resolve 'bar.com:{0}:127.0.0.1' -k  https://bar.com:{0}".format(
-        ts.Variables.ssl_port))
+        ts.Variables.ssl_port),
+    ts=ts)
 tr.ReturnCode = 0
 tr.StillRunningAfter = ts

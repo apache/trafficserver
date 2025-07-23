@@ -38,11 +38,16 @@ server.addResponse("sessionlog.json", request_header, response_header)
 
 ts.Disk.remap_config.AddLine('map http://www.example.com http://127.0.0.1:{0}'.format(server.Variables.Port))
 
+ipv4flag = ""
+if not Condition.CurlUsingUnixDomainSocket():
+    ipv4flag = "--ipv4"
+
 # Test spaces at the end of the field name and before the :
 tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 tr.Processes.Default.StartBefore(Test.Processes.ts)
-tr.MakeCurlCommand('-s -D - -v --ipv4 --http1.1 -H "Host: www.example.com" http://localhost:{0}/'.format(ts.Variables.port))
+tr.MakeCurlCommand(
+    '-s -D - -v {0} --http1.1 -H "Host: www.example.com" http://localhost:{1}/'.format(ipv4flag, ts.Variables.port), ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = "gold/field_name_space.gold"
 tr.StillRunningAfter = ts

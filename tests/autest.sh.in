@@ -7,11 +7,35 @@
 export LD_LIBRARY_PATH=${CMAKE_INSTALL_PREFIX}/lib
 export PYTHONPATH=${CMAKE_CURRENT_SOURCE_DIR}/gold_tests/remap:$PYTHONPATH
 
+# Define tests to skip for CURL_UDS_FLAG
+if [ -n "${CURL_UDS_FLAG}" ]; then
+  mkdir -p "${CMAKE_SKIP_GOLD_DIR}"
+  if [ -d "${CMAKE_GOLD_DIR}/h2" ]; then
+    mv "${CMAKE_GOLD_DIR}/h2" "${CMAKE_SKIP_GOLD_DIR}/h2"
+  fi
+  if [ -d "${CMAKE_GOLD_DIR}/tls" ]; then
+    mv "${CMAKE_GOLD_DIR}/tls" "${CMAKE_SKIP_GOLD_DIR}/tls"
+  fi
+fi
+
 ${RUNPIPENV} run env autest \
   --sandbox ${AUTEST_SANDBOX} \
-  --directory ${CMAKE_CURRENT_SOURCE_DIR}/gold_tests \
+  --directory ${CMAKE_GOLD_DIR} \
   --ats-bin=${CMAKE_INSTALL_PREFIX}/bin \
   --proxy-verifier-bin ${PROXY_VERIFIER_PATH} \
   --build-root ${CMAKE_BINARY_DIR} \
   ${CURL_UDS_FLAG} ${AUTEST_OPTIONS} \
   "$@"
+
+# Restore tests back to source tree and remove temp dir
+if [ -n "${CURL_UDS_FLAG}" ]; then
+  if [ -d "${CMAKE_SKIP_GOLD_DIR}/h2" ]; then
+    mv "${CMAKE_SKIP_GOLD_DIR}/h2" "${CMAKE_GOLD_DIR}/h2"
+  fi
+  if [ -d "${CMAKE_SKIP_GOLD_DIR}/tls" ]; then
+    mv "${CMAKE_SKIP_GOLD_DIR}/tls" "${CMAKE_GOLD_DIR}/tls"
+  fi
+  if [ -d "${CMAKE_SKIP_GOLD_DIR}" ]; then
+    rm -rf "${CMAKE_SKIP_GOLD_DIR}"
+  fi
+fi

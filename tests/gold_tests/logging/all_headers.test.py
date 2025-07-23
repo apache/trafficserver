@@ -25,7 +25,7 @@ Test new "all headers" log fields
 
 # Define ATS.
 #
-ts = Test.MakeATSProcess("ts")
+ts = Test.MakeATSProcess("ts", enable_proxy_protocol=True)
 
 # Define MicroServer.
 #
@@ -39,10 +39,18 @@ response_header = {
 }
 server.addResponse("sessionlog.json", request_header, response_header)
 
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 0,
-    'proxy.config.diags.debug.tags': 'http|dns',
-})
+if Condition.CurlUsingUnixDomainSocket():
+    ts.Disk.records_config.update(
+        {
+            'proxy.config.diags.debug.enabled': 0,
+            'proxy.config.diags.debug.tags': 'http|dns',
+            'proxy.config.http.insert_forwarded': 'for',
+        })
+else:
+    ts.Disk.records_config.update({
+        'proxy.config.diags.debug.enabled': 0,
+        'proxy.config.diags.debug.tags': 'http|dns',
+    })
 
 ts.Disk.remap_config.AddLine('map http://127.0.0.1:{0} http://127.0.0.1:{1}'.format(ts.Variables.port, server.Variables.Port))
 
@@ -62,7 +70,10 @@ logging:
 # Configure comparison of "sanitized" log file with gold file at end of test.
 #
 sanitized_log_path = os.path.join(ts.Variables.LOGDIR, 'test_all_headers.log.san')
-Test.Disk.File(sanitized_log_path, exists=True, content='gold/test_all_headers.gold')
+if Condition.CurlUsingUnixDomainSocket():
+    Test.Disk.File(sanitized_log_path, exists=True, content='gold/test_all_headers_uds.gold')
+else:
+    Test.Disk.File(sanitized_log_path, exists=True, content='gold/test_all_headers.gold')
 
 
 def reallyLong():
@@ -79,13 +90,25 @@ def reallyLong():
 tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(Test.Processes.ts)
-tr.MakeCurlCommand('"http://127.0.0.1:{0}" --user-agent "007" --verbose '.format(ts.Variables.port) + reallyLong())
+if Condition.CurlUsingUnixDomainSocket():
+    tr.MakeCurlCommand(
+        '"http://127.0.0.1:{0}" --user-agent "007" --haproxy-protocol 1 --haproxy-clientip 127.0.0.1 --verbose '.format(
+            ts.Variables.port) + reallyLong(),
+        ts=ts)
+else:
+    tr.MakeCurlCommand('"http://127.0.0.1:{0}" --user-agent "007" --verbose '.format(ts.Variables.port) + reallyLong(), ts=ts)
 tr.Processes.Default.ReturnCode = 0
 
 # Repeat same curl, will be answered from the ATS cache.
 #
 tr = Test.AddTestRun()
-tr.MakeCurlCommand('"http://127.0.0.1:{0}" --user-agent "007" --verbose '.format(ts.Variables.port) + reallyLong())
+if Condition.CurlUsingUnixDomainSocket():
+    tr.MakeCurlCommand(
+        '"http://127.0.0.1:{0}" --user-agent "007" --haproxy-protocol 1 --haproxy-clientip 127.0.0.1 --verbose '.format(
+            ts.Variables.port) + reallyLong(),
+        ts=ts)
+else:
+    tr.MakeCurlCommand('"http://127.0.0.1:{0}" --user-agent "007" --verbose '.format(ts.Variables.port) + reallyLong(), ts=ts)
 tr.Processes.Default.ReturnCode = 0
 
 # Delay to allow TS to flush report to disk, then "sanitize" generated log.

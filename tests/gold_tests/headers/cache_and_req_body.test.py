@@ -20,7 +20,7 @@ Test cached responses and requests with bodies using CurlHeader tester
 Test.Summary = '''
 Test cached responses and requests with bodies using CurlHeader tester
 '''
-
+Test.SkipIf(Condition.CurlUsingUnixDomainSocket())
 Test.ContinueOnFail = True
 
 # Define default ATS
@@ -126,7 +126,8 @@ tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(ts)
 tr.MakeCurlCommand(
     '-s -D - -v --ipv4 --http1.1 -H "x-debug: x-cache,x-cache-key,via" -H "Host: www.example.com" http://localhost:{port}/'.format(
-        port=ts.Variables.port))
+        port=ts.Variables.port),
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = Testers.CurlHeader(cache_and_req_body_miss)
 tr.StillRunningAfter = ts
@@ -135,7 +136,8 @@ tr.StillRunningAfter = ts
 tr = Test.AddTestRun()
 tr.MakeCurlCommand(
     '-s -D - -v --ipv4 --http1.1 -H "x-debug: x-cache,x-cache-key,via" -H "Host: www.example.com" http://localhost:{}'.format(
-        ts.Variables.port))
+        ts.Variables.port),
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = Testers.CurlHeader(cache_and_req_body_hit)
 tr.StillRunningAfter = ts

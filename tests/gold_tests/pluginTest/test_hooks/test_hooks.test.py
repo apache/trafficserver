@@ -56,23 +56,29 @@ Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'test_hook
 ts.Disk.remap_config.AddLine("map http://one http://127.0.0.1:{0}".format(server.Variables.Port))
 ts.Disk.remap_config.AddLine("map https://one http://127.0.0.1:{0}".format(server.Variables.Port))
 
+ipv4flag = ""
+if not Condition.CurlUsingUnixDomainSocket():
+    ipv4flag = "--ipv4"
+
 tr = Test.AddTestRun()
 # Probe server port to check if ready.
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 #
-tr.MakeCurlCommand('--verbose --ipv4 --header "Host: one" http://localhost:{0}/argh'.format(ts.Variables.port))
+tr.MakeCurlCommand('--verbose {0} --header "Host: one" http://localhost:{1}/argh'.format(ipv4flag, ts.Variables.port), ts=ts)
 tr.Processes.Default.ReturnCode = 0
 
-tr = Test.AddTestRun()
-tr.MakeCurlCommand(
-    '--verbose --ipv4 --http2 --insecure --header "Host: one" https://localhost:{0}/argh'.format(ts.Variables.ssl_port))
-tr.Processes.Default.ReturnCode = 0
+if not Condition.CurlUsingUnixDomainSocket():
+    tr = Test.AddTestRun()
+    tr.MakeCurlCommand(
+        '--verbose --ipv4 --http2 --insecure --header "Host: one" https://localhost:{0}/argh'.format(ts.Variables.ssl_port), ts=ts)
+    tr.Processes.Default.ReturnCode = 0
 
-tr = Test.AddTestRun()
-tr.MakeCurlCommand(
-    '--verbose --ipv4 --http1.1 --insecure --header "Host: one" https://localhost:{0}/argh'.format(ts.Variables.ssl_port))
-tr.Processes.Default.ReturnCode = 0
+    tr = Test.AddTestRun()
+    tr.MakeCurlCommand(
+        '--verbose --ipv4 --http1.1 --insecure --header "Host: one" https://localhost:{0}/argh'.format(ts.Variables.ssl_port),
+        ts=ts)
+    tr.Processes.Default.ReturnCode = 0
 
 # The probing of the ATS port to detect when ATS is ready may be seen by ATS as a VCONN start/close, so filter out these
 # events from the log file.
@@ -85,5 +91,8 @@ tr = Test.AddTestRun()
 tr.Processes.Default.Command = "echo check log"
 tr.Processes.Default.ReturnCode = 0
 f = tr.Disk.File(log_path)
-f.Content = "log.gold"
-f.Content += Testers.ContainsExpression("Global: event=TS_EVENT_VCONN_CLOSE", "VCONN_CLOSE should trigger 2 times")
+if Condition.CurlUsingUnixDomainSocket():
+    f.Content = "log_uds.gold"
+else:
+    f.Content = "log.gold"
+    f.Content += Testers.ContainsExpression("Global: event=TS_EVENT_VCONN_CLOSE", "VCONN_CLOSE should trigger 2 times")

@@ -120,7 +120,8 @@ class EsiTest():
         tr = Test.AddTestRun("First request")
         tr.MakeCurlCommand(
             f'http://127.0.0.1:{self._ts.Variables.port}/main.php -H"Host: www.example.com" '
-            '-H"Accept: */*" --verbose')
+            '-H"Accept: */*" --verbose',
+            ts=self._ts)
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stdout = "gold/nested_include_body.gold"
         tr.StillRunningAfter = self._server

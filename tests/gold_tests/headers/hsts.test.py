@@ -20,7 +20,7 @@ Test the hsts response header.
 Test.Summary = '''
 heck hsts header is set correctly
 '''
-
+Test.SkipIf(Condition.CurlUsingUnixDomainSocket())
 Test.ContinueOnFail = True
 
 # Define default ATS
@@ -55,7 +55,8 @@ tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.MakeCurlCommand(
     '-s -D - --verbose --ipv4 --http1.1 --insecure --header "Host: {0}" https://localhost:{1}'.format(
-        'www.example.com', ts.Variables.ssl_port))
+        'www.example.com', ts.Variables.ssl_port),
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "hsts.200.gold"
 tr.StillRunningAfter = ts
@@ -64,7 +65,8 @@ tr.StillRunningAfter = ts
 tr = Test.AddTestRun()
 tr.MakeCurlCommand(
     '-s -D - --verbose --ipv4 --http1.1 --insecure --header "Host: {0}" https://localhost:{1}'.format(
-        'bad_host', ts.Variables.ssl_port))
+        'bad_host', ts.Variables.ssl_port),
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "hsts.404.gold"
 tr.StillRunningAfter = server

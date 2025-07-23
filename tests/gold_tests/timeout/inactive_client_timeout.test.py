@@ -19,13 +19,15 @@
 Test.Summary = 'Testing ATS client inactivity timeout'
 
 ts = Test.MakeATSProcess("ts", enable_tls=True)
-replay_file = "slow_server.yaml"
+if Condition.CurlUsingUnixDomainSocket():
+    replay_file = "slow_server_uds.yaml"
+else:
+    replay_file = "slow_server.yaml"
 server = Test.MakeVerifierServerProcess("server", replay_file)
 
 Test.ContinueOnFail = True
 
-ts.addSSLfile("../tls/ssl/server.pem")
-ts.addSSLfile("../tls/ssl/server.key")
+ts.addDefaultSSLFiles()
 
 ts.Disk.records_config.update(
     {
@@ -63,7 +65,8 @@ tr.Processes.Default.StartBefore(server)
 
 client.Streams.All += Testers.ContainsExpression('x-response: 1', 'Verify that the first response is received')
 client.Streams.All += Testers.ContainsExpression('x-response: 2', 'Verify that the second response is received')
-client.Streams.All += Testers.ContainsExpression('x-response: 3', 'Verify that the third response is received')
-client.Streams.All += Testers.ContainsExpression('x-response: 4', 'Verify that the fourth response is received')
-client.Streams.All += Testers.ContainsExpression('x-response: 5', 'Verify that the fifth response is received')
-client.Streams.All += Testers.ContainsExpression('x-response: 6', 'Verify that the sixth response is received')
+if not Condition.CurlUsingUnixDomainSocket():
+    client.Streams.All += Testers.ContainsExpression('x-response: 3', 'Verify that the third response is received')
+    client.Streams.All += Testers.ContainsExpression('x-response: 4', 'Verify that the fourth response is received')
+    client.Streams.All += Testers.ContainsExpression('x-response: 5', 'Verify that the fifth response is received')
+    client.Streams.All += Testers.ContainsExpression('x-response: 6', 'Verify that the sixth response is received')
