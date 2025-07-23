@@ -20,17 +20,18 @@
 HRW4U DSL
 *********
 
-HRW4U is a next-generation rule language for the existing ATS ``header_rewrite``
-plugin. It introduces clearer syntax, formal grammar, full condition nesting,
-semantic validation, and extensible condition/operator support.
+HRW4U is a next-generation rule language for the existing ATS
+:ref:`admin-plugins-header-rewrite` plugin. It introduces clearer
+syntax, formal grammar, full condition nesting, semantic validation,
+and extensible condition/operator support.
 
 Overview
 ========
 
-HRW4U replaces the free-form text parsing of `header_rewrite` with a formally defined
+HRW4U replaces the free-form text parsing of ``header_rewrite`` with a formally defined
 grammar using ANTLR. This makes HRW4U easier to parse, validate, and extend.
 
-Rather than repeating `header_rewrite` documentation, please refer to:
+Rather than repeating ``header_rewrite`` documentation, please refer to:
   - :ref:`admin-plugins-header-rewrite` for feature behavior and semantics
   - This page focuses on syntax and behavior *differences* in HRW4U
 
