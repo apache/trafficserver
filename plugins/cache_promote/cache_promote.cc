@@ -77,13 +77,13 @@ cont_handle_policy(TSCont contp, TSEvent event, void *edata)
           // Do nothing, just let it handle the lookup.
           DBG("cache-status is %d (hit), nothing to do", obj_status);
 
-          if (config->getPolicy()->_stats_enabled) {
+          if (!config->getPolicy()->_stats_id.empty()) {
             TSStatIntIncrement(config->getPolicy()->_cache_hits_id, 1);
           }
           break;
         }
       }
-      if (config->getPolicy()->_stats_enabled) {
+      if (!config->getPolicy()->_stats_id.empty()) {
         TSStatIntIncrement(config->getPolicy()->_total_requests_id, 1);
       }
     } else {

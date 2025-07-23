@@ -120,8 +120,12 @@ public:
   const std::string
   id() const override
   {
+    if (_label.empty()) {
+      return ""; // This will prevent the policy factory from coalescing this policy
+    }
+
     return _label + ";LRU=b:" + std::to_string(_buckets) + ",h:" + std::to_string(_hits) + ",B:" + std::to_string(_bytes) +
-           ",i:" + std::to_string(_internal_enabled);
+           ",i:" + std::to_string(_internal_enabled) + ",e:" + _stats_id;
   }
 
   void
