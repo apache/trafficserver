@@ -476,6 +476,7 @@ check_symbol_exists(SSL_set1_verify_cert_store "openssl/ssl.h" TS_HAS_VERIFY_CER
 check_symbol_exists(SSL_get_shared_curve "openssl/ssl.h" HAVE_SSL_GET_SHARED_CURVE)
 check_symbol_exists(SSL_get_curve_name "openssl/ssl.h" HAVE_SSL_GET_CURVE_NAME)
 check_symbol_exists(SSL_get0_group_name "openssl/ssl.h" HAVE_SSL_GET0_GROUP_NAME)
+check_symbol_exists(SSL_get_negotiated_group "openssl/ssl.h" HAVE_SSL_GET_NEGOTIATED_GROUP)
 check_symbol_exists(SSL_get_group_id "openssl/ssl.h" HAVE_SSL_GET_GROUP_ID)
 check_symbol_exists(SSL_get_group_name "openssl/ssl.h" HAVE_SSL_GET_GROUP_NAME)
 check_symbol_exists(SSL_set_max_early_data "openssl/ssl.h" HAVE_SSL_SET_MAX_EARLY_DATA)
