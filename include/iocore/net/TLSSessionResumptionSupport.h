@@ -25,6 +25,7 @@
 #pragma once
 
 #include <openssl/ssl.h>
+#include <string_view>
 
 #include "tscore/ink_inet.h"
 #include "iocore/net/SSLTypes.h"
@@ -48,9 +49,10 @@ public:
   int processSessionTicket(SSL *ssl, unsigned char *keyname, unsigned char *iv, EVP_CIPHER_CTX *cipher_ctx, HMAC_CTX *hctx,
                            int enc);
 #endif
-  bool         getSSLSessionCacheHit() const;
-  bool         getSSLOriginSessionCacheHit() const;
-  ssl_curve_id getSSLCurveNID() const;
+  bool             getSSLSessionCacheHit() const;
+  bool             getSSLOriginSessionCacheHit() const;
+  ssl_curve_id     getSSLCurveNID() const;
+  std::string_view getSSLGroupName() const;
 
   SSL_SESSION                 *getSession(SSL *ssl, const unsigned char *id, int len, int *copy);
   std::shared_ptr<SSL_SESSION> getOriginSession(const std::string &lookup_key);
@@ -62,9 +64,10 @@ protected:
 private:
   static int _ex_data_index;
 
-  bool _sslSessionCacheHit       = false;
-  bool _sslOriginSessionCacheHit = false;
-  int  _sslCurveNID              = NID_undef;
+  bool        _sslSessionCacheHit       = false;
+  bool        _sslOriginSessionCacheHit = false;
+  int         _sslCurveNID              = NID_undef;
+  std::string _sslGroupName;
 
 #ifdef HAVE_SSL_CTX_SET_TLSEXT_TICKET_KEY_EVP_CB
   int _setSessionInformation(ssl_ticket_key_block *keyblock, unsigned char *keyname, unsigned char *iv, EVP_CIPHER_CTX *cipher_ctx,
@@ -81,4 +84,5 @@ private:
   void _setSSLSessionCacheHit(bool state);
   void _setSSLOriginSessionCacheHit(bool state);
   void _setSSLCurveNID(ssl_curve_id curve_nid);
+  void _setSSLGroupName(std::string_view group_name);
 };
