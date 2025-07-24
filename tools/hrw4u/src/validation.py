@@ -75,6 +75,9 @@ class ValidatorChain:
     def quoted_or_simple(self) -> 'ValidatorChain':
         return self._add(self._wrap_args(Validator.quoted_or_simple()))
 
+    def http_token(self) -> 'ValidatorChain':
+        return self._add(self._wrap_args(Validator.http_token()))
+
     def nbit_int(self, nbits: int) -> 'ValidatorChain':
         return self._add(self._wrap_args(Validator.nbit_int(nbits)))
 
@@ -134,13 +137,24 @@ class Validator:
 
     @staticmethod
     def quoted_or_simple() -> Callable[[str], None]:
-        simple_re = re.compile(r'^[a-zA-Z0-9_-]+$')
+        simple_re = re.compile(r'^[@a-zA-Z0-9_-]+$')
 
         def validator(value: str) -> None:
             if (value.startswith('"') and value.endswith('"')) or simple_re.fullmatch(value):
                 return
             raise SymbolResolutionError(
                 value, "Value must be quoted unless it is a simple token (letters, digits, underscore, dash)")
+
+        return validator
+
+    @staticmethod
+    def http_token() -> Callable[[str], None]:
+        header_re = re.compile(r'^[@!#$%&\'*+\-.0-9A-Z^_`a-z|~]+$')
+
+        def validator(value: str) -> None:
+            if header_re.fullmatch(value):
+                return
+            raise SymbolResolutionError(value, "HTTP token/header not valid, illegal characters or format.")
 
         return validator
 

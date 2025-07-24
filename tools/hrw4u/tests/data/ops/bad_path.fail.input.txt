@@ -1,0 +1,3 @@
+REMAP {
+  inbound.url.ath="foo";
+}

@@ -1,0 +1,3 @@
+tests/data/ops/bad_path.fail.input.txt:2:2: error: Invalid suffix 'ATH' for group 'URL_FIELDS'. Must be one of: HOST, PATH, PORT, QUERY, SCHEME, URL
+   2 |   inbound.url.ath="foo";
+     |   ^
