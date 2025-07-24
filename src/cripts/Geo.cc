@@ -88,63 +88,89 @@ get_geo_string(const sockaddr *addr, Qualifiers q)
   return ret;
 }
 
+// Helper function to convert IP to sockaddr for geo lookup
 cripts::string
-detail::ConnBase::Geo::ASN() const
+get_geo_string_from_ip(const cripts::IP &ip, Qualifiers q)
 {
-  return get_geo_string(this->_owner->socket(), GEO_QUAL_ASN);
+  auto addr = ip.Socket();
+  return get_geo_string(&addr, q);
+}
+
+// IP class Geo methods - can be used with any IP address
+cripts::string
+cripts::IP::ASN() const
+{
+  return get_geo_string_from_ip(*this, GEO_QUAL_ASN);
 }
 
 cripts::string
-detail::ConnBase::Geo::ASNName() const
+cripts::IP::ASNName() const
 {
-  cripts::string ret;
-  ret = get_geo_string(this->_owner->socket(), GEO_QUAL_ASN_NAME);
-
-  return ret; // RVO
+  return get_geo_string_from_ip(*this, GEO_QUAL_ASN_NAME);
 }
 
 cripts::string
-detail::ConnBase::Geo::Country() const
+cripts::IP::Country() const
 {
-  cripts::string ret;
-  ret = get_geo_string(this->_owner->socket(), GEO_QUAL_COUNTRY);
-
-  return ret; // RVO
+  return get_geo_string_from_ip(*this, GEO_QUAL_COUNTRY);
 }
 
 cripts::string
-detail::ConnBase::Geo::CountryCode() const
+cripts::IP::CountryCode() const
 {
-  cripts::string ret;
-  ret = get_geo_string(this->_owner->socket(), GEO_QUAL_COUNTRY_ISO);
-
-  return ret; // RVO
+  return get_geo_string_from_ip(*this, GEO_QUAL_COUNTRY_ISO);
 }
 
 #else
 
+// IP class Geo methods - unavailable when MaxMind is not available
 cripts::string
-detail::ConnBase::Geo::ASN() const
+cripts::IP::ASN() const
 {
   return "(unavailable)";
 }
 
 cripts::string
-detail::ConnBase::Geo::ASNName() const
+cripts::IP::ASNName() const
 {
   return "(unavailable)";
 }
 
 cripts::string
-detail::ConnBase::Geo::Country() const
+cripts::IP::Country() const
 {
   return "(unavailable)";
 }
 
 cripts::string
-detail::ConnBase::Geo::CountryCode() const
+cripts::IP::CountryCode() const
 {
   return "(unavailable)";
 }
 
 #endif // CRIPTS_HAS_MAXMIND
+
+// ConnBase::Geo methods - delegate to IP-based implementation for backward compatibility
+cripts::string
+detail::ConnBase::Geo::ASN() const
+{
+  return this->_owner->IP().ASN();
+}
+
+cripts::string
+detail::ConnBase::Geo::ASNName() const
+{
+  return this->_owner->IP().ASNName();
+}
+
+cripts::string
+detail::ConnBase::Geo::Country() const
+{
+  return this->_owner->IP().Country();
+}
+
+cripts::string
+detail::ConnBase::Geo::CountryCode() const
+{
+  return this->_owner->IP().CountryCode();
+}
