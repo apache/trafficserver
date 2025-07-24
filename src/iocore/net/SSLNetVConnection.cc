@@ -2055,10 +2055,26 @@ SSLNetVConnection::_migrateFromSSL()
 ssl_curve_id
 SSLNetVConnection::_get_tls_curve() const
 {
-  if (getSSLSessionCacheHit()) {
+  // For resumed server side session caching, we have to retrieve the curve/group
+  // from our stored data. For non-resumed sessions or from ticket based resumption,
+  // simply query the SSL object.
+  if (getIsResumedFromSessionCache()) {
     return getSSLCurveNID();
   } else {
     return SSLGetCurveNID(ssl);
+  }
+}
+
+std::string_view
+SSLNetVConnection::_get_tls_group() const
+{
+  // For resumed server side session caching, we have to retrieve the curve/group
+  // from our stored data. For non-resumed sessions or from ticket based resumption,
+  // simply query the SSL object.
+  if (getIsResumedFromSessionCache()) {
+    return getSSLGroupName();
+  } else {
+    return SSLGetGroupName(ssl);
   }
 }
 
