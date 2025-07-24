@@ -111,7 +111,8 @@ struct SSLConfigParams : public ConfigInfo {
 
   char *keylog_file;
 
-  static bool ssl_ktls_enabled;
+  static bool   ssl_ktls_enabled;
+  static size_t number_of_ssl_threads;
 
   static uint32_t server_max_early_data;
   static uint32_t server_recv_max_early_data;
