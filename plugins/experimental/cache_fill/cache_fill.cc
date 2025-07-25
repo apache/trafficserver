@@ -41,6 +41,9 @@
 #include "background_fetch.h"
 #include "configs.h"
 
+// Global config, if we don't have a remap specific config.
+static BgFetchConfig *gConfig = nullptr;
+
 static const char *
 getCacheLookupResultName(TSCacheLookupResult result)
 {
@@ -135,6 +138,34 @@ cont_handle_cache(TSCont contp, TSEvent event, void *edata)
   // Reenable and continue with the state machine.
   TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
   return 0;
+}
+
+///////////////////////////////////////////////////////////////////////////
+// Setup global hooks
+void
+TSPluginInit(int argc, const char *argv[])
+{
+  TSPluginRegistrationInfo info;
+
+  info.plugin_name   = (char *)PLUGIN_NAME;
+  info.vendor_name   = (char *)"Apache Software Foundation";
+  info.support_email = (char *)"dev@trafficserver.apache.org";
+
+  if (TS_SUCCESS != TSPluginRegister(&info)) {
+    TSError("[%s] Plugin registration failed", PLUGIN_NAME);
+  }
+
+  TSCont cont = TSContCreate(cont_handle_cache, nullptr);
+
+  gConfig = new BgFetchConfig(cont);
+
+  if (gConfig->parseOptions(argc, argv)) {
+    Dbg(dbg_ctl, "cache fill plugin is successfully initialized globally");
+    TSHttpHookAdd(TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, cont);
+  } else {
+    // ToDo: Hmmm, no way to fail a global plugin here?
+    Dbg(dbg_ctl, "Failed to initialize as global plugin");
+  }
 }
 
 ///////////////////////////////////////////////////////////////////////////
