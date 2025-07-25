@@ -25,6 +25,7 @@
 #include <utility>
 #include <iostream>
 
+#include "records/RecDefs.h"
 #include "swoc/swoc_file.h"
 
 #include "tscore/ink_platform.h"
@@ -520,10 +521,10 @@ RecLookupRecord(const char *name, void (*callback)(const RecRecord *, void *), v
 
   if (it != metrics.end()) {
     RecRecord r;
-    auto &&[name, val] = *it;
+    auto &&[name, type, val] = *it;
 
     r.rec_type     = RECT_PLUGIN;
-    r.data_type    = RECD_INT;
+    r.data_type    = type == ts::Metrics::MetricType::COUNTER ? RECD_COUNTER : RECD_INT;
     r.name         = name.data();
     r.data.rec_int = val;
 
@@ -567,12 +568,12 @@ RecLookupMatchingRecords(unsigned rec_type, const char *match, void (*callback)(
     // librecords callback with a "pseudo" record.
     RecRecord tmp;
 
-    tmp.rec_type  = RECT_PROCESS;
-    tmp.data_type = RECD_INT;
+    tmp.rec_type = RECT_PROCESS;
 
-    for (auto &&[name, val] : ts::Metrics::instance()) {
+    for (auto &&[name, type, val] : ts::Metrics::instance()) {
       if (regex.match(name.data()) >= 0) {
         tmp.name         = name.data();
+        tmp.data_type    = type == ts::Metrics::MetricType::COUNTER ? RECD_COUNTER : RECD_INT;
         tmp.data.rec_int = val;
         callback(&tmp, data);
       }
@@ -904,9 +905,10 @@ RecDumpRecords(RecT rec_type, RecDumpEntryCb callback, void *edata)
   // Dump all new metrics as well (no "type" for them)
   RecData datum;
 
-  for (auto &&[name, val] : ts::Metrics::instance()) {
+  for (auto &&[name, type, val] : ts::Metrics::instance()) {
     datum.rec_int = val;
-    callback(RECT_PLUGIN, edata, true, name.data(), TS_RECORDDATATYPE_INT, &datum);
+    callback(RECT_PLUGIN, edata, true, name.data(),
+             type == Metrics::MetricType::COUNTER ? TS_RECORDDATATYPE_COUNTER : TS_RECORDDATATYPE_INT, &datum);
   }
 }
 
