@@ -217,7 +217,7 @@ Metrics::iterator::next()
     offset = 0;
   }
 
-  _it = _makeId(blob, offset, MetricType::UNKNOWN);
+  _it = _makeId(blob, offset, MetricType::COUNTER);
 }
 
 namespace details
@@ -275,9 +275,7 @@ Metrics::Derived::derive(const std::initializer_list<Metrics::Derived::DerivedMe
 
     for (auto &d : m.derived_from) {
       if (std::holds_alternative<Metrics::AtomicType *>(d)) {
-        auto m = std::get<Metrics::AtomicType *>(d);
-
-        dm.derived_from.push_back(m);
+        dm.derived_from.push_back(std::get<Metrics::AtomicType *>(d));
       } else if (std::holds_alternative<Metrics::IdType>(d)) {
         dm.derived_from.push_back(instance.lookup(std::get<Metrics::IdType>(d)));
       } else if (std::holds_alternative<std::string_view>(d)) {

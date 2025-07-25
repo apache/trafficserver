@@ -82,12 +82,12 @@ public:
     std::atomic<int64_t> _value{0};
   };
 
-  enum class MetricType : int { UNKNOWN = 0, COUNTER, GAUGE };
+  enum class MetricType : int { COUNTER = 0, GAUGE };
 
   using IdType   = int32_t; // Could be a tuple, but one way or another, they have to be combined to an int32_t.
   using SpanType = swoc::MemSpan<AtomicType>;
 
-  static constexpr uint16_t MAX_BLOBS    = 8192;
+  static constexpr uint16_t MAX_BLOBS    = 4096;
   static constexpr uint16_t MAX_SIZE     = 1024;                               // For a total of 8M metrics
   static constexpr IdType   NOT_FOUND    = std::numeric_limits<IdType>::min(); // <16-bit,16-bit> = <blob-index,offset>
   static const auto         MEMORY_ORDER = std::memory_order_relaxed;
@@ -242,7 +242,7 @@ public:
   iterator
   begin() const
   {
-    return iterator(*this, _makeId(0, 0, MetricType::COUNTER));
+    return iterator(*this, 0);
   }
 
   iterator
@@ -250,7 +250,7 @@ public:
   {
     auto [blob, offset] = _storage->current();
 
-    return iterator(*this, _makeId(blob, offset, MetricType::UNKNOWN));
+    return iterator(*this, _makeId(blob, offset, MetricType::COUNTER));
   }
 
   iterator
@@ -315,21 +315,20 @@ private:
     {
       _blobs[0] = std::make_unique<NamesAndAtomics>();
       release_assert(_blobs[0]);
-      auto [blob, offset] = _splitID(create("proxy.process.api.metrics.bad_id", MetricType::COUNTER));
       // Reserve slot 0 for errors, this should always be 0
-      release_assert(0 == blob && 0 == offset);
+      release_assert(0 == create("proxy.process.api.metrics.bad_id", MetricType::COUNTER));
     }
 
     ~Storage() {}
 
-    IdType           create(const std::string_view name, const MetricType type = MetricType::UNKNOWN);
+    IdType           create(const std::string_view name, const MetricType type = MetricType::COUNTER);
     void             addBlob();
     IdType           lookup(const std::string_view name) const;
     AtomicType      *lookup(const std::string_view name, IdType *out_id, MetricType *out_type = nullptr) const;
     AtomicType      *lookup(Metrics::IdType id, std::string_view *out_name = nullptr, MetricType *out_type = nullptr) const;
     std::string_view name(IdType id) const;
     MetricType       type(IdType id) const;
-    SpanType         createSpan(size_t size, const MetricType type = MetricType::UNKNOWN, IdType *id = nullptr);
+    SpanType         createSpan(size_t size, const MetricType type = MetricType::COUNTER, IdType *id = nullptr);
     bool             rename(IdType id, const std::string_view name);
 
     std::pair<int16_t, int16_t>

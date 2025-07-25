@@ -49,7 +49,7 @@ TEST_CASE("Metrics", "[libtsapi][Metrics]")
   {
     auto fooid = Metrics::Counter::create("foo");
 
-    REQUIRE(fooid == 0x10000001);
+    REQUIRE(fooid == 1);
     REQUIRE(m.name(fooid) == "foo");
     REQUIRE(m.type(fooid) == Metrics::MetricType::COUNTER);
 
@@ -75,8 +75,8 @@ TEST_CASE("Metrics", "[libtsapi][Metrics]")
     auto                span  = Metrics::Counter::createSpan(17, &span_id);
 
     REQUIRE(span.size() == 17);
-    REQUIRE(fooid == 0x10000001);
-    REQUIRE(span_id == 0x10000003);
+    REQUIRE(fooid == 1);
+    REQUIRE(span_id == 3);
 
     m.rename(span_id + 0, "span.0");
     m.rename(span_id + 1, "span.1");
