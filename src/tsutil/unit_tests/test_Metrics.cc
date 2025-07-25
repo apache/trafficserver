@@ -32,8 +32,9 @@ TEST_CASE("Metrics", "[libtsapi][Metrics]")
 
   SECTION("iterator")
   {
-    auto [name, value] = *m.begin();
+    auto [name, type, value] = *m.begin();
     REQUIRE(value == 0);
+    REQUIRE(type == Metrics::MetricType::COUNTER);
     REQUIRE(name == "proxy.process.api.metrics.bad_id");
 
     REQUIRE(m.begin() != m.end());
@@ -48,8 +49,9 @@ TEST_CASE("Metrics", "[libtsapi][Metrics]")
   {
     auto fooid = Metrics::Counter::create("foo");
 
-    REQUIRE(fooid == 1);
+    REQUIRE(fooid == 0x10000001);
     REQUIRE(m.name(fooid) == "foo");
+    REQUIRE(m.type(fooid) == Metrics::MetricType::COUNTER);
 
     REQUIRE(m[fooid].load() == 0);
     m.increment(fooid);
@@ -59,6 +61,7 @@ TEST_CASE("Metrics", "[libtsapi][Metrics]")
   SECTION("operator[] & store")
   {
     auto storeid = Metrics::Gauge::create("store");
+    REQUIRE(m.type(storeid) == Metrics::MetricType::GAUGE);
 
     m[storeid].store(42);
 
@@ -72,8 +75,8 @@ TEST_CASE("Metrics", "[libtsapi][Metrics]")
     auto                span  = Metrics::Counter::createSpan(17, &span_id);
 
     REQUIRE(span.size() == 17);
-    REQUIRE(fooid == 1);
-    REQUIRE(span_id == 3);
+    REQUIRE(fooid == 0x10000001);
+    REQUIRE(span_id == 0x10000003);
 
     m.rename(span_id + 0, "span.0");
     m.rename(span_id + 1, "span.1");
@@ -97,6 +100,13 @@ TEST_CASE("Metrics", "[libtsapi][Metrics]")
     auto fmid = m.lookup("ametric");
 
     REQUIRE(mid == fmid);
+
+    std::string_view    name{};
+    Metrics::MetricType type{};
+    m.lookup(mid, &name, &type);
+
+    REQUIRE(name == "ametric");
+    REQUIRE(type == Metrics::MetricType::COUNTER);
   }
 
   SECTION("derived")
@@ -107,15 +117,16 @@ TEST_CASE("Metrics", "[libtsapi][Metrics]")
     auto d = Metrics::Counter::createPtr("m-d");
     auto e = Metrics::Counter::createPtr("m-e");
     ts::Metrics::Derived::derive({
-      {"derived-a-c", {a, b, c}               }, // test using ptr
-      {"derived-cd",  {m.lookup("m-c"), "m-d"}}, // using IdType and string
-      {"derived-ce",  {"derived-cd", "m-e"}   }  // using another derived
+      {"derived-a-c", Metrics::MetricType::COUNTER, {a, b, c}               }, // test using ptr
+      {"derived-cd",  Metrics::MetricType::COUNTER, {m.lookup("m-c"), "m-d"}}, // using IdType and string
+      {"derived-ce",  Metrics::MetricType::COUNTER, {"derived-cd", "m-e"}   }  // using another derived
     });
 
     auto derived   = m.lookup("derived-a-c");
     auto derivedcd = m.lookup("derived-cd");
     auto derivedce = m.lookup("derived-ce");
     REQUIRE(derived != ts::Metrics::NOT_FOUND);
+    REQUIRE(m.type(derived) == Metrics::MetricType::COUNTER);
 
     REQUIRE(m[derived].load() == 0);
 

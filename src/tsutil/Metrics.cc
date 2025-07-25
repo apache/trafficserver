@@ -54,7 +54,7 @@ Metrics::Storage::addBlob() // The mutex must be held before calling this!
 }
 
 Metrics::IdType
-Metrics::Storage::create(std::string_view name)
+Metrics::Storage::create(std::string_view name, const MetricType type)
 {
   std::lock_guard lock(_mutex);
   auto            it = _lookups.find(name);
@@ -63,7 +63,7 @@ Metrics::Storage::create(std::string_view name)
     return it->second;
   }
 
-  Metrics::IdType           id    = _makeId(_cur_blob, _cur_off);
+  Metrics::IdType           id    = _makeId(_cur_blob, _cur_off, type);
   Metrics::NamesAndAtomics *blob  = _blobs[_cur_blob].get();
   Metrics::NameStorage     &names = std::get<0>(*blob);
 
@@ -91,7 +91,7 @@ Metrics::Storage::lookup(const std::string_view name) const
 }
 
 Metrics::AtomicType *
-Metrics::Storage::lookup(Metrics::IdType id, std::string_view *out_name) const
+Metrics::Storage::lookup(Metrics::IdType id, std::string_view *out_name, Metrics::MetricType *out_type) const
 {
   auto [blob_ix, offset]         = _splitID(id);
   Metrics::NamesAndAtomics *blob = _blobs[blob_ix].get();
@@ -106,11 +106,17 @@ Metrics::Storage::lookup(Metrics::IdType id, std::string_view *out_name) const
     *out_name = std::get<0>(std::get<0>(*blob)[offset]);
   }
 
+  if (out_type) {
+    // don't trust the passed in id to get the type as it might have been manufactured (i.e. from iterators)
+    // so get the type from the storage tuple.
+    *out_type = _extractType(std::get<1>(std::get<0>(*blob)[offset]));
+  }
+
   return &((std::get<1>(*blob)[offset]));
 }
 
 Metrics::AtomicType *
-Metrics::Storage::lookup(const std::string_view name, Metrics::IdType *out_id) const
+Metrics::Storage::lookup(const std::string_view name, Metrics::IdType *out_id, Metrics::MetricType *out_type) const
 {
   Metrics::IdType      id     = lookup(name);
   Metrics::AtomicType *result = nullptr;
@@ -121,6 +127,10 @@ Metrics::Storage::lookup(const std::string_view name, Metrics::IdType *out_id) c
 
   if (nullptr != out_id) {
     *out_id = id;
+  }
+
+  if (out_type && id != NOT_FOUND) {
+    *out_type = _extractType(id);
   }
 
   return result;
@@ -143,8 +153,14 @@ Metrics::Storage::name(Metrics::IdType id) const
   return result;
 }
 
+Metrics::MetricType
+Metrics::Storage::type(IdType id) const
+{
+  return _extractType(id);
+}
+
 Metrics::SpanType
-Metrics::Storage::createSpan(size_t size, Metrics::IdType *id)
+Metrics::Storage::createSpan(size_t size, Metrics::MetricType type, Metrics::IdType *id)
 {
   release_assert(size <= MAX_SIZE);
   std::lock_guard lock(_mutex);
@@ -153,7 +169,7 @@ Metrics::Storage::createSpan(size_t size, Metrics::IdType *id)
     addBlob();
   }
 
-  Metrics::IdType           span_start = _makeId(_cur_blob, _cur_off);
+  Metrics::IdType           span_start = _makeId(_cur_blob, _cur_off, type);
   Metrics::NamesAndAtomics *blob       = _blobs[_cur_blob].get();
   Metrics::AtomicStorage   &atomics    = std::get<1>(*blob);
   Metrics::SpanType         span       = Metrics::SpanType(&atomics[_cur_off], size);
@@ -201,7 +217,7 @@ Metrics::iterator::next()
     offset = 0;
   }
 
-  _it = _makeId(blob, offset);
+  _it = _makeId(blob, offset, MetricType::UNKNOWN);
 }
 
 namespace details
@@ -255,11 +271,13 @@ Metrics::Derived::derive(const std::initializer_list<Metrics::Derived::DerivedMe
 
   for (auto &m : metrics) {
     details::DerivedMetric dm{};
-    dm.metric = instance._create(m.derived_name);
+    dm.metric = instance._create(m.derived_name, m.derived_type);
 
     for (auto &d : m.derived_from) {
       if (std::holds_alternative<Metrics::AtomicType *>(d)) {
-        dm.derived_from.push_back(std::get<Metrics::AtomicType *>(d));
+        auto m = std::get<Metrics::AtomicType *>(d);
+
+        dm.derived_from.push_back(m);
       } else if (std::holds_alternative<Metrics::IdType>(d)) {
         dm.derived_from.push_back(instance.lookup(std::get<Metrics::IdType>(d)));
       } else if (std::holds_alternative<std::string_view>(d)) {
