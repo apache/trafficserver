@@ -133,6 +133,10 @@ extern "C" int plock(int);
 #include <gperftools/heap-profiler.h>
 #endif
 
+#if TS_USE_LINUX_IO_URING
+import inkuring;
+#endif
+
 extern void load_config_file_callback(const char *parent_file, const char *remap_file);
 
 extern HttpBodyFactory *body_factory;

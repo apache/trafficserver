@@ -37,12 +37,13 @@
 #include "tscore/ink_hw.h"
 #endif
 
-#if TS_USE_LINUX_IO_URING
-#include "iocore/io_uring/IO_URING.h"
-#endif
-
 #ifdef AIO_FAULT_INJECTION
 #include "iocore/aio/AIO_fault_injection.h"
+#endif
+
+#if TS_USE_LINUX_IO_URING
+#include <liburing.h>
+import inkuring;
 #endif
 
 #define MAX_DISKS_POSSIBLE 100
@@ -547,7 +548,6 @@ AIOThreadInfo::aio_thread_main(AIOThreadInfo *thr_info)
 }
 
 #if TS_USE_LINUX_IO_URING
-#include "iocore/io_uring/IO_URING.h"
 
 namespace
 {

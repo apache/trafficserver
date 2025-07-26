@@ -43,14 +43,15 @@
 #include "iocore/net/AsyncSignalEventIO.h"
 #include "iocore/net/Net.h"
 #include "iocore/eventsystem/UnixSocket.h"
-#if TS_USE_LINUX_IO_URING
-#include "iocore/io_uring/IO_URING.h"
-#endif
 #include "tscore/ink_inet.h"
 #include "tscore/ink_sock.h"
 #include <netinet/udp.h>
 #ifdef HAVE_SO_TXTIME
 #include <linux/net_tstamp.h>
+#endif
+
+#if TS_USE_LINUX_IO_URING
+import inkuring;
 #endif
 
 #ifndef UDP_SEGMENT

@@ -25,11 +25,12 @@
 #include "P_UnixNet.h"
 #include "iocore/net/NetHandler.h"
 #include "iocore/net/PollCont.h"
-#if TS_USE_LINUX_IO_URING
-#include "iocore/io_uring/IO_URING.h"
-#endif
 
 #include <atomic>
+
+#if TS_USE_LINUX_IO_URING
+import inkuring;
+#endif
 
 using namespace std::literals;
 

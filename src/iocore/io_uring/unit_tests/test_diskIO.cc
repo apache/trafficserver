@@ -27,7 +27,9 @@
 
 #include "swoc/swoc_file.h"
 
-#include "iocore/io_uring/IO_URING.h"
+#include <liburing.h>
+
+import inkuring;
 
 #include <functional>
 
