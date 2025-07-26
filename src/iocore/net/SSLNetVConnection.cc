@@ -2062,6 +2062,16 @@ SSLNetVConnection::_get_tls_curve() const
   }
 }
 
+std::string_view
+SSLNetVConnection::_get_tls_group() const
+{
+  if (getSSLSessionCacheHit()) {
+    return getSSLGroupName();
+  } else {
+    return SSLGetGroupName(ssl);
+  }
+}
+
 int
 SSLNetVConnection::_verify_certificate(X509_STORE_CTX * /* ctx ATS_UNUSED */)
 {

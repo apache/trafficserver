@@ -2521,6 +2521,24 @@ SSLGetCurveNID(SSL *ssl)
 #endif
 }
 
+std::string_view
+SSLGetGroupName([[maybe_unused]] SSL *ssl)
+{
+#if HAVE_SSL_GET0_GROUP_NAME // OpenSSL
+  char const *group_name = SSL_get0_group_name(ssl);
+  return group_name != nullptr ? std::string_view(group_name) : "";
+#elif HAVE_SSL_GET_GROUP_ID && HAVE_SSL_GET_GROUP_NAME // BoringSSL
+  uint16_t const group_id = SSL_get_group_id(ssl);
+  if (group_id == 0) {
+    return "";
+  }
+  char const *group_name = SSL_get_group_name(group_id);
+  return group_name != nullptr ? std::string_view(group_name) : "";
+#else
+  return "";
+#endif // HAVE_SSL_GET0_GROUP_NAME
+}
+
 SSL_SESSION *
 SSLSessionDup(SSL_SESSION *sess)
 {

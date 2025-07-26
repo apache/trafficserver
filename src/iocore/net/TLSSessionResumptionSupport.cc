@@ -26,6 +26,7 @@
 
 #include "iocore/net/TLSSessionResumptionSupport.h"
 #include "P_SSLCertLookup.h"
+#include "P_SSLUtils.h"
 #include "iocore/net/SSLAPIHooks.h"
 
 #include "P_SSLConfig.h"
@@ -141,6 +142,12 @@ TLSSessionResumptionSupport::getSSLCurveNID() const
   return this->_sslCurveNID;
 }
 
+std::string_view
+TLSSessionResumptionSupport::getSSLGroupName() const
+{
+  return this->_sslGroupName;
+}
+
 SSL_SESSION *
 TLSSessionResumptionSupport::getSession(SSL *ssl, const unsigned char *id, int len, int *copy)
 {
@@ -182,6 +189,7 @@ TLSSessionResumptionSupport::getSession(SSL *ssl, const unsigned char *id, int l
       Metrics::Counter::increment(ssl_rsb.session_cache_hit);
       this->_setSSLSessionCacheHit(true);
       this->_setSSLCurveNID(exdata->curve);
+      this->_setSSLGroupName(exdata->group_name);
     }
   } else {
     Metrics::Counter::increment(ssl_rsb.session_cache_miss);
@@ -192,8 +200,9 @@ TLSSessionResumptionSupport::getSession(SSL *ssl, const unsigned char *id, int l
 std::shared_ptr<SSL_SESSION>
 TLSSessionResumptionSupport::getOriginSession(const std::string &lookup_key)
 {
-  ssl_curve_id                 curve       = 0;
-  std::shared_ptr<SSL_SESSION> shared_sess = origin_sess_cache->get_session(lookup_key, &curve);
+  ssl_curve_id                 curve = 0;
+  std::string                  group_name;
+  std::shared_ptr<SSL_SESSION> shared_sess = origin_sess_cache->get_session(lookup_key, &curve, group_name);
 
   if (shared_sess != nullptr) {
     // Double check the timeout
@@ -205,6 +214,7 @@ TLSSessionResumptionSupport::getOriginSession(const std::string &lookup_key)
       Metrics::Counter::increment(ssl_rsb.origin_session_cache_hit);
       this->_setSSLOriginSessionCacheHit(true);
       this->_setSSLCurveNID(curve);
+      this->_setSSLGroupName(group_name);
     }
   } else {
     Metrics::Counter::increment(ssl_rsb.origin_session_cache_miss);
@@ -298,6 +308,8 @@ TLSSessionResumptionSupport::_getSessionInformation(ssl_ticket_key_block *keyblo
       }
 
       this->_setSSLSessionCacheHit(true);
+      this->_setSSLCurveNID((ssl == nullptr) ? 0 : SSLGetCurveNID(ssl));
+      this->_setSSLGroupName((ssl == nullptr) ? "" : std::string{SSLGetGroupName(ssl)});
 
 #ifdef TLS1_3_VERSION
       if (SSL_version(ssl) >= TLS1_3_VERSION) {
@@ -332,4 +344,10 @@ void
 TLSSessionResumptionSupport::_setSSLCurveNID(ssl_curve_id curve_nid)
 {
   this->_sslCurveNID = curve_nid;
+}
+
+void
+TLSSessionResumptionSupport::_setSSLGroupName(std::string_view group_name)
+{
+  this->_sslGroupName = std::string{group_name};
 }
