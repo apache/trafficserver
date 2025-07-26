@@ -34,6 +34,8 @@
 
 #include "iocore/eventsystem/EventSystem.h"
 
+import tscore;
+
 // Get rid of any previous definition first... /leif
 #ifdef MAX_PRODUCERS
 #undef MAX_PRODUCERS

@@ -1412,7 +1412,7 @@ dns_result(DNSHandler *h, DNSEntry *e, HostEnt *ent, bool retry, bool tcp_retry)
   }
   if (!cancelled) {
     // ToDo: Should this possibly be send_time() ??
-    ink_hrtime diff = (ink_get_hrtime() - e->submit_time) / HRTIME_MSECOND;
+    ink_hrtime diff = (ink_get_hrtime() - e->submit_time) / HRTIME_MSECONDS(1);
 
     // These are rolling averages, this requires that the lookup_fail/success counters are incremented later
     if (!ent || !ent->good) {
@@ -1580,7 +1580,7 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
   --(handler->in_flight);
   Metrics::Gauge::decrement(dns_rsb.in_flight);
   // These are rolling averages
-  ink_hrtime diff = (ink_get_hrtime() - e->send_time) / HRTIME_MSECOND;
+  ink_hrtime diff = (ink_get_hrtime() - e->send_time) / HRTIME_MSECONDS(1);
 
   Metrics::Counter::increment(dns_rsb.response_time, diff);
 

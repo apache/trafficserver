@@ -27,14 +27,15 @@
 
 #include "swoc/swoc_file.h"
 
-#include "iocore/io_uring/IO_URING.h"
+#include <liburing.h>
+
+import inkuring;
 
 #include <functional>
 
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include "tscore/ink_hrtime.h"
 
 #include "tsutil/Metrics.h"
 using ts::Metrics;

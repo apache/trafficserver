@@ -28,8 +28,10 @@
   This file contains code supporting the Inktomi high-resolution timer.
 **************************************************************************/
 
-#include "tscore/ink_hrtime.h"
+module;
+
 #include "tscore/ink_assert.h"
+#include "tscore/ink_config.h"
 #include "tscore/ink_defs.h"
 
 #if defined(__FreeBSD__)
@@ -40,10 +42,19 @@
 #include <cstring>
 #include <sys/time.h>
 
-int gSystemClock = 0; // 0 == CLOCK_REALTIME, the default
+#include <ctime>
+#include <cstdint>
+#include <cstdlib>
 
-char *
-int64_to_str(char *buf, unsigned int buf_size, int64_t val, unsigned int *total_chars, unsigned int req_width, char pad_char)
+export module tscore:hrtime;
+
+export using ink_hrtime = int64_t;
+
+export int gSystemClock = 0; // 0 == CLOCK_REALTIME, the default
+
+export char *
+int64_to_str(char *buf, unsigned int buf_size, int64_t val, unsigned int *total_chars, unsigned int req_width = 0,
+             char pad_char = '0')
 {
   const unsigned int local_buf_size = 32;
   char               local_buf[local_buf_size];
@@ -177,4 +188,297 @@ squid_timestamp_to_buf(char *buf, unsigned int buf_size, long timestamp_sec, lon
   }
 
   return res;
+}
+
+//////////////////////////////////////////////////////////////////////////////
+//
+//      Factors to multiply units by to obtain corresponding ink_hrtime values.
+//
+//////////////////////////////////////////////////////////////////////////////
+
+#define HRTIME_FOREVER (10 * HRTIME_DECADE)
+#define HRTIME_DECADE  (10 * HRTIME_YEAR)
+#define HRTIME_YEAR    (365 * HRTIME_DAY + HRTIME_DAY / 4)
+#define HRTIME_WEEK    (7 * HRTIME_DAY)
+#define HRTIME_DAY     (24 * HRTIME_HOUR)
+#define HRTIME_HOUR    (60 * HRTIME_MINUTE)
+#define HRTIME_MINUTE  (60 * HRTIME_SECOND)
+#define HRTIME_SECOND  (1000 * HRTIME_MSECOND)
+#define HRTIME_MSECOND (1000 * HRTIME_USECOND)
+#define HRTIME_USECOND (1000 * HRTIME_NSECOND)
+#define HRTIME_NSECOND (static_cast<ink_hrtime>(1))
+
+#define HRTIME_APPROX_SECONDS(_x) ((_x) >> 30) // off by 7.3%
+#define HRTIME_APPROX_FACTOR      (((float)(1 << 30)) / (((float)HRTIME_SECOND)))
+
+//////////////////////////////////////////////////////////////////////////////
+//
+//      Map from units to ink_hrtime values
+//
+//////////////////////////////////////////////////////////////////////////////
+
+// simple macros
+
+export template <typename T>
+constexpr T
+HRTIME_FOREVERS(T x)
+{
+  return x * HRTIME_FOREVER;
+}
+
+export template <typename T>
+constexpr T
+HRTIME_YEARS(T x)
+{
+  return x * HRTIME_YEAR;
+}
+
+export template <typename T>
+constexpr T
+HRTIME_WEEKS(T x)
+{
+  return x * HRTIME_WEEK;
+}
+
+export template <typename T>
+constexpr T
+HRTIME_DAYS(T x)
+{
+  return x * HRTIME_DAY;
+}
+
+export template <typename T>
+constexpr T
+HRTIME_HOURS(T x)
+{
+  return x * HRTIME_HOUR;
+}
+
+export template <typename T>
+constexpr T
+HRTIME_MINUTES(T x)
+{
+  return x * HRTIME_MINUTE;
+}
+
+export template <typename T>
+constexpr T
+HRTIME_SECONDS(T x)
+{
+  return x * HRTIME_SECOND;
+}
+
+export template <typename T>
+constexpr T
+HRTIME_MSECONDS(T x)
+{
+  return x * HRTIME_MSECOND;
+}
+
+export template <typename T>
+constexpr T
+HRTIME_USECONDS(T x)
+{
+  return x * HRTIME_USECOND;
+}
+
+export template <typename T>
+constexpr T
+HRTIME_NSECONDS(T x)
+{
+  return x * HRTIME_NSECOND;
+}
+
+// gratuitous wrappers
+
+export ink_hrtime
+ink_hrtime_from_years(unsigned int years)
+{
+  return (HRTIME_YEARS(years));
+}
+
+export ink_hrtime
+ink_hrtime_from_weeks(unsigned int weeks)
+{
+  return (HRTIME_WEEKS(weeks));
+}
+
+export ink_hrtime
+ink_hrtime_from_days(unsigned int days)
+{
+  return (HRTIME_DAYS(days));
+}
+
+export ink_hrtime
+ink_hrtime_from_mins(unsigned int mins)
+{
+  return (HRTIME_MINUTES(mins));
+}
+
+export ink_hrtime
+ink_hrtime_from_sec(unsigned int sec)
+{
+  return (HRTIME_SECONDS(sec));
+}
+
+export ink_hrtime
+ink_hrtime_from_msec(unsigned int msec)
+{
+  return (HRTIME_MSECONDS(msec));
+}
+
+export ink_hrtime
+ink_hrtime_from_usec(unsigned int usec)
+{
+  return (HRTIME_USECONDS(usec));
+}
+
+export ink_hrtime
+ink_hrtime_from_nsec(unsigned int nsec)
+{
+  return (HRTIME_NSECONDS(nsec));
+}
+
+static inline ink_hrtime
+ink_hrtime_from_timespec(const struct timespec *ts)
+{
+  return ink_hrtime_from_sec(ts->tv_sec) + ink_hrtime_from_nsec(ts->tv_nsec);
+}
+
+static inline ink_hrtime
+ink_hrtime_from_timeval(const struct timeval *tv)
+{
+  return ink_hrtime_from_sec(tv->tv_sec) + ink_hrtime_from_usec(tv->tv_usec);
+}
+
+//////////////////////////////////////////////////////////////////////////////
+//
+//      Map from ink_hrtime values to other units
+//
+//////////////////////////////////////////////////////////////////////////////
+
+export ink_hrtime
+ink_hrtime_to_years(ink_hrtime t)
+{
+  return (t / HRTIME_YEAR);
+}
+
+export ink_hrtime
+ink_hrtime_to_weeks(ink_hrtime t)
+{
+  return (t / HRTIME_WEEK);
+}
+
+export ink_hrtime
+ink_hrtime_to_days(ink_hrtime t)
+{
+  return (t / HRTIME_DAY);
+}
+
+export ink_hrtime
+ink_hrtime_to_mins(ink_hrtime t)
+{
+  return (t / HRTIME_MINUTE);
+}
+
+export ink_hrtime
+ink_hrtime_to_sec(ink_hrtime t)
+{
+  return (t / HRTIME_SECOND);
+}
+
+export ink_hrtime
+ink_hrtime_to_msec(ink_hrtime t)
+{
+  return (t / HRTIME_MSECOND);
+}
+
+export ink_hrtime
+ink_hrtime_to_usec(ink_hrtime t)
+{
+  return (t / HRTIME_USECOND);
+}
+
+export ink_hrtime
+ink_hrtime_to_nsec(ink_hrtime t)
+{
+  return (t / HRTIME_NSECOND);
+}
+
+export struct timespec
+ink_hrtime_to_timespec(ink_hrtime t)
+{
+  struct timespec ts;
+
+  ts.tv_sec  = ink_hrtime_to_sec(t);
+  ts.tv_nsec = t % HRTIME_SECOND;
+  return (ts);
+}
+
+export struct timeval
+ink_hrtime_to_timeval(ink_hrtime t)
+{
+  int64_t        usecs;
+  struct timeval tv;
+
+  usecs      = ink_hrtime_to_usec(t);
+  tv.tv_sec  = usecs / 1000000;
+  tv.tv_usec = usecs % 1000000;
+  return (tv);
+}
+
+/*
+   using Jan 1 1970 as the base year, instead of Jan 1 1601,
+   which translates to (365 + 0.25)369*24*60*60 seconds   */
+#define NT_TIMEBASE_DIFFERENCE_100NSECS 116444736000000000i64
+
+export ink_hrtime
+ink_get_hrtime()
+{
+#if defined(freebsd) || HAVE_CLOCK_GETTIME
+  timespec ts;
+  clock_gettime(static_cast<clockid_t>(gSystemClock), &ts);
+  return ink_hrtime_from_timespec(&ts);
+#else
+  timeval tv;
+  gettimeofday(&tv, nullptr);
+  return ink_hrtime_from_timeval(&tv);
+#endif
+}
+
+export struct timeval
+ink_gettimeofday()
+{
+  return ink_hrtime_to_timeval(ink_get_hrtime());
+}
+
+export int
+ink_time()
+{
+  return static_cast<int>(ink_hrtime_to_sec(ink_get_hrtime()));
+}
+
+export int
+ink_hrtime_diff_msec(ink_hrtime t1, ink_hrtime t2)
+{
+  return static_cast<int>(ink_hrtime_to_msec(t1 - t2));
+}
+
+export ink_hrtime
+ink_hrtime_diff(ink_hrtime t1, ink_hrtime t2)
+{
+  return (t1 - t2);
+}
+
+export ink_hrtime
+ink_hrtime_add(ink_hrtime t1, ink_hrtime t2)
+{
+  return (t1 + t2);
+}
+
+export void
+ink_hrtime_sleep(ink_hrtime delay)
+{
+  struct timespec ts = ink_hrtime_to_timespec(delay);
+  nanosleep(&ts, nullptr);
 }

@@ -28,7 +28,6 @@
 
 #pragma once
 
-#include "tscore/ink_hrtime.h"
 #include "tscore/ink_defs.h"
 #include <sched.h>
 
