@@ -30,6 +30,8 @@
 #include "proxy/http2/Http2ConnectionState.h"
 #include "proxy/http2/Http2Frame.h"
 
+import tscore;
+
 // Name                       Edata                 Description
 // HTTP2_SESSION_EVENT_INIT   Http2CommonSession *  HTTP/2 session is born
 // HTTP2_SESSION_EVENT_FINI   Http2CommonSession *  HTTP/2 session is ended

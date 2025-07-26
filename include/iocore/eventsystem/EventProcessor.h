@@ -28,6 +28,8 @@
 #include "iocore/eventsystem/Event.h"
 #include <atomic>
 
+import tscore;
+
 #ifdef TS_MAX_THREADS_IN_EACH_THREAD_TYPE
 constexpr int MAX_THREADS_IN_EACH_TYPE = TS_MAX_THREADS_IN_EACH_THREAD_TYPE;
 #else

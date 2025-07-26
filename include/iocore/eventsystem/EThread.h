@@ -34,6 +34,8 @@
 #include "iocore/eventsystem/ProtectedQueue.h"
 #include "tsutil/Histogram.h"
 
+import tscore;
+
 #if TS_USE_HWLOC
 struct hwloc_obj;
 using hwloc_obj_t = hwloc_obj *;

@@ -53,6 +53,8 @@
 #include "tscore/History.h"
 #include "tscore/PendingAction.h"
 
+import tscore;
+
 #define HTTP_API_CONTINUE (INK_API_EVENT_EVENTS_START + 0)
 #define HTTP_API_ERROR    (INK_API_EVENT_EVENTS_START + 1)
 

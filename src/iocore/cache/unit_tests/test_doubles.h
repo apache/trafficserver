@@ -27,7 +27,6 @@
 
 #include "tscore/EventNotify.h"
 #include "tscore/ink_config.h"
-#include "tscore/ink_hrtime.h"
 
 #if TS_USE_LINUX_IO_URING
 #include "iocore/io_uring/IO_URING.h"

@@ -24,7 +24,7 @@
 #include "RegressionSM.h"
 #include "iocore/eventsystem/EventProcessor.h"
 
-#define REGRESSION_SM_RETRY (100 * HRTIME_MSECOND)
+#define REGRESSION_SM_RETRY (HRTIME_MSECONDS(100))
 
 void
 RegressionSM::set_status(int astatus)

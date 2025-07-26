@@ -504,7 +504,7 @@ private:
     if (period < 1) {
       period = 1;
     }
-    eventProcessor.schedule_every(this, period * HRTIME_SECOND, ET_CALL);
+    eventProcessor.schedule_every(this, period * HRTIME_SECONDS(1), ET_CALL);
     Dbg(dbg_ctl_log_config, "thread local buffer manager init: %d wakeup period", period);
   }
 
@@ -1427,7 +1427,7 @@ REGRESSION_TEST(LogObjectManager_Transfer)(RegressionTest *t, int /* atype ATS_U
     box.check(mgr2.get_num_objects() == 4, "Testing that manager 2 has 4 objects");
 
     rprintf(t, "running Log::periodoc_tasks()\n");
-    Log::periodic_tasks(ink_get_hrtime() / HRTIME_SECOND);
+    Log::periodic_tasks(ink_get_hrtime() / HRTIME_SECONDS(1));
     rprintf(t, "Log::periodoc_tasks() done\n");
   }
 

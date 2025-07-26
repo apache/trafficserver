@@ -36,7 +36,6 @@ import inkuring;
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include "tscore/ink_hrtime.h"
 
 #include "tsutil/Metrics.h"
 using ts::Metrics;

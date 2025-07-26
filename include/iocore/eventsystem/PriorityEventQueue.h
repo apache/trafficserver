@@ -26,6 +26,8 @@
 #include "tscore/ink_platform.h"
 #include "iocore/eventsystem/Event.h"
 
+import tscore;
+
 // <5ms, 10, 20, 40, 80, 160, 320, 640, 1280, 2560, 5120
 #define N_PQ_LIST          10
 #define PQ_BUCKET_TIME(_i) (HRTIME_MSECONDS(5) << (_i))
@@ -115,7 +117,7 @@ struct PriorityEventQueue {
         return last_check_time + (PQ_BUCKET_TIME(i) / 2);
       }
     }
-    return last_check_time + HRTIME_FOREVER;
+    return last_check_time + HRTIME_FOREVERS(1);
   }
 
   PriorityEventQueue();

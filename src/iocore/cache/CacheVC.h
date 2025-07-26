@@ -33,11 +33,12 @@
 #include "P_CacheDoc.h"
 #include "Stripe.h"
 #include "StripeSM.h"
-#include "tscore/ink_hrtime.h"
 #include "tscore/List.h"
 #include "tscore/Ptr.h"
 
 #include <cstdint>
+
+import tscore;
 
 class Stripe;
 class HttpConfigAccessor;

@@ -56,7 +56,6 @@
 
 // tscore
 #include "tscore/ink_assert.h"
-#include "tscore/ink_hrtime.h"
 #include "tscore/Ptr.h"
 
 // ts

@@ -20,10 +20,11 @@
   limitations under the License.
 */
 
+module;
+
 #include "tscore/SnowflakeID.h"
 #include "tscore/Diags.h"
 #include "tscore/ink_base64.h"
-#include "tscore/ink_hrtime.h"
 #include "tsutil/DbgCtl.h"
 
 #include <cstdint>
@@ -31,6 +32,10 @@
 #include <memory>
 #include <mutex>
 #include <string_view>
+
+module tscore;
+
+import :hrtime;
 
 std::atomic<uint64_t> SnowflakeIDUtils::global_machine_id{0};
 

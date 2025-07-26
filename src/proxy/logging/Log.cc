@@ -1125,7 +1125,7 @@ Log::init_when_enabled()
 
     // create the flush thread
     create_threads();
-    eventProcessor.schedule_every(new PeriodicWakeup(preproc_threads, 1), HRTIME_SECOND, ET_CALL);
+    eventProcessor.schedule_every(new PeriodicWakeup(preproc_threads, 1), HRTIME_SECONDS(1), ET_CALL);
 
     init_status |= FULLY_INITIALIZED;
   }
@@ -1419,11 +1419,11 @@ Log::flush_thread_main(void * /* args ATS_UNUSED */)
 
     // Time to work on periodic events??
     //
-    now = ink_get_hrtime() / HRTIME_SECOND;
+    now = ink_get_hrtime() / HRTIME_SECONDS(1);
     if (now >= last_time + periodic_tasks_interval) {
       Dbg(dbg_ctl_log_preproc, "periodic tasks for %" PRId64, (int64_t)now);
       periodic_tasks(now);
-      last_time = ink_get_hrtime() / HRTIME_SECOND;
+      last_time = ink_get_hrtime() / HRTIME_SECONDS(1);
     }
 
     // wait for more work; a spurious wake-up is ok since we'll just

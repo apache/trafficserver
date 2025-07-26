@@ -29,6 +29,8 @@
 #include "proxy/http3/Http3FrameDispatcher.h"
 #include "proxy/http3/Http3FrameCollector.h"
 
+import tscore;
+
 class QUICStreamIO;
 class HQSession;
 class Http09Session;

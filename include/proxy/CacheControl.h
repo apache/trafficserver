@@ -38,11 +38,11 @@ struct RequestData;
 
 const int CC_UNSET_TIME = -1;
 
-#define CACHE_CONTROL_TIMEOUT (HRTIME_HOUR * 1)
+#define CACHE_CONTROL_TIMEOUT (HRTIME_HOURS(1))
 
 //   Use 10 second time for purify testing under low
 //     load to verify memory allocation
-// #define CACHE_CONTROL_TIMEOUT            (HRTIME_SECOND*10)
+// #define CACHE_CONTROL_TIMEOUT            (HRTIME_SECONDS(10))
 
 enum class CacheControlType {
   INVALID = 0,

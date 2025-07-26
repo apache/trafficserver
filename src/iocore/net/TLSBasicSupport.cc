@@ -24,6 +24,7 @@
 
 #include "SSLStats.h"
 #include "iocore/net/TLSBasicSupport.h"
+#include <tscore/ink_assert.h>
 #if defined(OPENSSL_IS_BORINGSSL)
 #include "tscore/Diags.h" // For Warning
 #endif                    // OPENSSL_IS_BORINGSSL

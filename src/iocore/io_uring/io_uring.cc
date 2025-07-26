@@ -27,13 +27,13 @@ module;
 
 #include <iocore/net/EventIO.h>
 
-#include <tscore/ink_hrtime.h>
-
 #include <liburing.h>
 
 #include <utility>
 
 export module inkuring;
+
+import tscore;
 
 export struct IOUringConfig {
   int queue_entries = 32;

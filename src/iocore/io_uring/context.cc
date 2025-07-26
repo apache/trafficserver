@@ -27,7 +27,6 @@ module;
 
 #include <tsutil/Metrics.h>
 
-#include <tscore/ink_hrtime.h>
 #include <tscore/Diags.h>
 
 #include <liburing.h>
@@ -40,6 +39,8 @@ module;
 #include <utility>
 
 module inkuring;
+
+import tscore;
 
 using ts::Metrics;
 

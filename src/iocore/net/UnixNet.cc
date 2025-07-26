@@ -25,7 +25,6 @@
 #include "P_Net.h"
 #include "P_UnixNet.h"
 #include "iocore/net/AsyncSignalEventIO.h"
-#include "tscore/ink_hrtime.h"
 
 #if TS_USE_LINUX_IO_URING
 import inkuring;
@@ -129,7 +128,7 @@ public:
         }
         if (nh.keep_alive_queue.in(ne)) {
           // only stat if the connection is in keep-alive, there can be other inactivity timeouts
-          ink_hrtime diff = (now - (ne->next_inactivity_timeout_at - ne->inactivity_timeout_in)) / HRTIME_SECOND;
+          ink_hrtime diff = (now - (ne->next_inactivity_timeout_at - ne->inactivity_timeout_in)) / HRTIME_SECONDS(1);
           Metrics::Counter::increment(net_rsb.keep_alive_queue_timeout_total, diff);
           Metrics::Counter::increment(net_rsb.keep_alive_queue_timeout_count);
         }

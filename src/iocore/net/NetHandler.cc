@@ -507,7 +507,7 @@ NetHandler::_close_ne(NetEvent *ne, ink_hrtime now, int &handle_event, int &clos
   if (!lock.is_locked()) {
     return;
   }
-  ink_hrtime diff = (now - (ne->next_inactivity_timeout_at - ne->inactivity_timeout_in)) / HRTIME_SECOND;
+  ink_hrtime diff = (now - (ne->next_inactivity_timeout_at - ne->inactivity_timeout_in)) / HRTIME_SECONDS(1);
   if (diff > 0) {
     total_idle_time += diff;
     ++total_idle_count;

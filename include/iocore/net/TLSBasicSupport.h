@@ -28,8 +28,9 @@
 
 #include <openssl/ssl.h>
 
-#include "tscore/ink_hrtime.h"
 #include "iocore/net/SSLTypes.h"
+
+import tscore;
 
 using TLSHandle = SSL *;
 

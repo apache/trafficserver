@@ -29,13 +29,14 @@
 #include "tscore/Ptr.h"
 #include "tsutil/TsSharedMutex.h"
 #include "tscore/Version.h"
-#include "tscore/ink_hrtime.h"
 #include "tscore/ink_time.h"
 #include "tsutil/Metrics.h"
 
 #include "swoc/IntrusiveHashMap.h"
 #include <cstdint>
 #include <unistd.h>
+
+import tscore;
 
 using ts::Metrics;
 

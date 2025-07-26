@@ -35,7 +35,6 @@
 #include "iocore/eventsystem/Event.h"
 
 #include "tscore/ink_apidefs.h"
-#include "tscore/ink_hrtime.h"
 #include "tscore/ink_inet.h"
 #include "tscore/ink_rand.h"
 #include "tscore/ink_resolver.h"
@@ -48,6 +47,8 @@
 #include <swoc/IPEndpoint.h>
 
 #include "tsutil/Metrics.h"
+
+import tscore;
 
 using ts::Metrics;
 

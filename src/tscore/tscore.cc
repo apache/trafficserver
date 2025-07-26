@@ -1,6 +1,6 @@
 /** @file
 
-  FrequencyCounter
+  A brief file description
 
   @section license License
 
@@ -21,22 +21,7 @@
   limitations under the License.
  */
 
-#pragma once
+export module tscore;
 
-#include <cstdint>
-#include <tscore/ink_hrtime.h>
-
-class FrequencyCounter
-{
-public:
-  void     increment(uint16_t amount = 1);
-  uint32_t get_count();
-  virtual ~FrequencyCounter() {}
-
-protected:
-  uint16_t   _count[2]    = {0};
-  ink_hrtime _last_update = 0;
-
-private:
-  virtual ink_hrtime _ink_get_hrtime();
-};
+export import :frequency_counter;
+export import :hrtime;

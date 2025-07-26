@@ -26,6 +26,8 @@
 
 #include "iocore/eventsystem/Action.h"
 
+import tscore;
+
 //
 //  Defines
 //

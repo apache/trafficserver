@@ -27,8 +27,9 @@
   Generic event notify mechanism among threads.
 **************************************************************************/
 
+module;
+
 #include "tscore/EventNotify.h"
-#include "tscore/ink_hrtime.h"
 #include "tscore/ink_defs.h"
 
 #if defined(HAVE_EVENTFD) && TS_USE_EPOLL == 1
@@ -36,6 +37,9 @@
 #include <fcntl.h>
 #include <sys/epoll.h>
 #endif
+
+module tscore;
+import :hrtime;
 
 EventNotify::EventNotify()
 {
