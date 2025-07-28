@@ -56,7 +56,7 @@ Value::set_value(const std::string &val)
         if ((tcond_val = condition_factory(cond_token))) {
           Parser parser;
 
-          if (parser.parse_line(_value)) {
+          if (parser.parse_line(cond_token)) {
             tcond_val->initialize(parser);
           } else {
             // TODO: should we produce error here?
