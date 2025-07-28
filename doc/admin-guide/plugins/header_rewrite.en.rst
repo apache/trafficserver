@@ -307,7 +307,7 @@ The two arguments, if provided, are comma separated. Valid syntax includes::
 A typical use case is to insert the @-prefixed header as above, and then use
 this header in a custom log format, rather than logging the full client
 IP. Another use case could be to make a special condition on a sub-net,
-e.g.::
+e.g. ::
 
     cond %{CIDR:8} ="8.0.0.0"
         set-header X-Is-Eight "Yes"
@@ -1502,7 +1502,7 @@ Remove Origin Authentication Headers
 The following ruleset removes any authentication headers from the origin
 response before caching it or returning it to the client. This is accomplished
 by setting the hook context and then removing the cookie and basic
-authentication headers.::
+authentication headers. ::
 
    cond %{READ_RESPONSE_HDR_HOOK}
      rm-header Set-Cookie
@@ -1651,7 +1651,7 @@ add a ``Connection: close`` header to have clients drop their connection,
 allowing the server to drain. Although Connection header is only available on
 HTTP/1.1 in terms of protocols, but this also works for HTTP/2 connections
 because the header triggers HTTP/2 graceful shutdown. This should be a global
-configuration.::
+configuration. ::
 
    cond %{SEND_RESPONSE_HDR_HOOK}
    cond %{ACCESS:/path/to/the/healthcheck/file.txt}    [NOT,OR]
@@ -1662,7 +1662,7 @@ Use Internal header to pass data
 
 In |TS|, a header that begins with ``@`` does not leave |TS|. Thus, you can use
 this to pass data to different |TS| systems. For instance, a series of remap rules
-could each be tagged with a consistent name to make finding logs easier.::
+could each be tagged with a consistent name to make finding logs easier. ::
 
    cond %{REMAP_PSEUDO_HOOK}
       set-header @PropertyName "someproperty"
@@ -1677,7 +1677,7 @@ could each be tagged with a consistent name to make finding logs easier.::
 Remove Client Query Parameters
 ------------------------------------
 
-The following ruleset removes any query parameters set by the client.::
+The following ruleset removes any query parameters set by the client. ::
 
    cond %{REMAP_PSEUDO_HOOK}
       rm-destination QUERY
@@ -1696,7 +1696,7 @@ Mimic X-Debug Plugin's X-Cache Header
 -------------------------------------
 
 This rule can mimic X-Debug plugin's ``X-Cache`` header by accumulating
-the ``CACHE`` condition results to a header.::
+the ``CACHE`` condition results to a header. ::
 
    cond %{SEND_RESPONSE_HDR_HOOK} [AND]
    cond %{HEADER:All-Cache} ="" [NOT]
@@ -1711,7 +1711,7 @@ Add Identifier from Server with Data
 
 This rule adds an unique identifier from the server if the data is fresh from
 the cache or if the identifier has not been generated yet. This will inform
-the client where the requested data was served from.::
+the client where the requested data was served from. ::
 
    cond %{SEND_RESPONSE_HDR_HOOK} [AND]
    cond %{HEADER:ATS-SRVR-UUID} ="" [OR]
@@ -1722,7 +1722,7 @@ Apply rate limiting for some select requests
 --------------------------------------------
 
 This rule will conditiionally, based on the client request headers, apply rate
-limiting to the request.::
+limiting to the request. ::
 
    cond %{REMAP_PSEUDO_HOOK} [AND]
    cond %{CLIENT-HEADER:Some-Special-Header} ="yes"
@@ -1740,7 +1740,7 @@ This rule will deny all requests for URIs with the ``.php`` file extension::
 Use GMT regardless of system timezone setting
 ---------------------------------------------
 
-This rule will change the behavior of %{NOW}. It will always return time in GMT.::
+This rule will change the behavior of %{NOW}. It will always return time in GMT. ::
 
    cond %{READ_REQUEST_HDR_HOOK}
       set-plugin-cntl TIMEZONE GMT
@@ -1752,7 +1752,7 @@ Use IP address provided by PROXY protocol
 -----------------------------------------
 
 This rule will change the behavior of all header_rewrite conditions which use the client's IP address on a connection.
-Those will pick the address provided by PROXY protocol, instead of the peer's address.::
+Those will pick the address provided by PROXY protocol, instead of the peer's address. ::
 
    cond %{READ_REQUEST_HDR_HOOK}
       set-plugin-cntl INBOUND_IP_SOURCE PROXY
