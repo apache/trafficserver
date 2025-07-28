@@ -50,7 +50,6 @@ enum parent_select_mode_t {
   PS_CACHEKEY_URL, // Set parent selection url to cache_key url
 };
 
-constexpr std::string_view DefaultImsHeader   = {"X-Crr-Ims"};
 constexpr std::string_view DefaultIdentHeader = {"X-Crr-Ident"};
 constexpr std::string_view SLICE_CRR_HEADER   = {"Slice-Crr-Status"};
 constexpr std::string_view SLICE_CRR_VAL      = "1";
@@ -185,11 +184,6 @@ create_pluginconfig(int argc, char *const argv[])
     pc->ps_mode = PS_CACHEKEY_URL;
   }
 
-  if (pc->consider_ims_header && pc->ims_header.empty()) {
-    pc->ims_header = DefaultImsHeader;
-    DEBUG_LOG("Plugin uses default ims header: %s", pc->ims_header.c_str());
-  }
-
   if (pc->consider_ident_header && pc->ident_header.empty()) {
     pc->ident_header = DefaultIdentHeader;
     DEBUG_LOG("Plugin uses default ident header: %s", pc->ident_header.c_str());
@@ -316,23 +310,8 @@ range_header_check(TSHttpTxn txnp, pluginconfig *const pc)
             }
           }
 
-          // optionally consider an ims header
-          bool ims_active = false;
-          if (pc->consider_ims_header) {
-            TSMLoc const imsloc = TSMimeHdrFieldFind(hdr_buf, hdr_loc, pc->ims_header.data(), pc->ims_header.size());
-            if (TS_NULL_MLOC != imsloc) {
-              time_t const itime = TSMimeHdrFieldValueDateGet(hdr_buf, hdr_loc, imsloc);
-              DEBUG_LOG("Servicing the '%s' header", pc->ims_header.c_str());
-              TSHandleMLocRelease(hdr_buf, hdr_loc, imsloc);
-              if (0 < itime) {
-                txn_state->ims_time = itime;
-                ims_active          = true;
-              }
-            }
-          }
-
           // If not revalidating then consider the identity header
-          if (!ims_active && pc->consider_ident_header) {
+          if (pc->consider_ident_header) {
             TSMLoc const identloc = TSMimeHdrFieldFind(hdr_buf, hdr_loc, pc->ident_header.data(), pc->ident_header.size());
             if (TS_NULL_MLOC != identloc) {
               DEBUG_LOG("Servicing the '%s' header", pc->ident_header.c_str());
@@ -358,7 +337,7 @@ range_header_check(TSHttpTxn txnp, pluginconfig *const pc)
         TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, txn_contp);
         DEBUG_LOG("Added TS_HTTP_SEND_REQUEST_HDR_HOOK, TS_HTTP_SEND_RESPONSE_HDR_HOOK, and TS_HTTP_TXN_CLOSE_HOOK");
 
-        if (0 < txn_state->ims_time || txn_state->ident_check) {
+        if (txn_state->ident_check) {
           TSHttpTxnHookAdd(txnp, TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, txn_contp);
           DEBUG_LOG("Also Added TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK");
         }
@@ -598,105 +577,102 @@ set_header(TSMBuffer buf, TSMLoc hdr_loc, const char *header, int len, const cha
   return ret;
 }
 
-time_t
-get_date_from_cached_hdr(TSHttpTxn txn)
-{
-  TSMBuffer buf     = nullptr;
-  TSMLoc    hdr_loc = TS_NULL_MLOC;
-  time_t    date    = 0;
-
-  if (TSHttpTxnCachedRespGet(txn, &buf, &hdr_loc) == TS_SUCCESS) {
-    TSMLoc const date_loc = TSMimeHdrFieldFind(buf, hdr_loc, TS_MIME_FIELD_DATE, TS_MIME_LEN_DATE);
-    if (TS_NULL_MLOC != date_loc) {
-      date = TSMimeHdrFieldValueDateGet(buf, hdr_loc, date_loc);
-      TSHandleMLocRelease(buf, hdr_loc, date_loc);
-    }
-    TSHandleMLocRelease(buf, TS_NULL_MLOC, hdr_loc);
-  }
-
-  return date;
-}
-
 /**
- * Handle a special IMS request or identity check on stale asset
+ * Handle the identity check
  */
 void
 handle_cache_lookup_complete(TSHttpTxn txnp, txndata *const txn_state)
 {
+  TSAssert(txn_state->ident_check);
   int cachestat;
   if (TS_SUCCESS == TSHttpTxnCacheLookupStatusGet(txnp, &cachestat)) {
-    if (TS_CACHE_LOOKUP_HIT_FRESH == cachestat) {
-      time_t const ch_time = get_date_from_cached_hdr(txnp);
-      DEBUG_LOG("IMS Cached header time %jd vs IMS %jd", static_cast<intmax_t>(ch_time),
-                static_cast<intmax_t>(txn_state->ims_time));
-      if (ch_time < txn_state->ims_time) {
-        TSHttpTxnCacheLookupStatusSet(txnp, TS_CACHE_LOOKUP_HIT_STALE);
-        if (dbg_ctl.on()) {
-          int         url_len = 0;
-          char *const req_url = TSHttpTxnEffectiveUrlStringGet(txnp, &url_len);
-          if (nullptr != req_url) {
-            std::string const &rv = txn_state->range_value;
-            DEBUG_LOG("Forced revalidate %.*s-%s", url_len, req_url, rv.c_str());
+    if (TS_CACHE_LOOKUP_HIT_FRESH != cachestat && TS_CACHE_LOOKUP_HIT_STALE != cachestat) {
+      return;
+    }
 
-            TSfree(req_url);
-          }
-        }
-      }
-    } else if (TS_CACHE_LOOKUP_HIT_STALE == cachestat && txn_state->ident_check) {
-      pluginconfig const *const pc = txn_state->config;
-      DEBUG_LOG("Stale asset ident check");
+    // pull the identifier from the cached response
+    TSMBuffer cbuf  = nullptr;
+    TSMLoc    chloc = TS_NULL_MLOC;
 
-      TSMBuffer resp_buf = nullptr;
-      TSMLoc    resp_loc = TS_NULL_MLOC;
+    if (TSHttpTxnCachedRespGet(txnp, &cbuf, &chloc) == TS_SUCCESS) {
+      if (TS_HTTP_STATUS_OK == TSHttpHdrStatusGet(cbuf, chloc)) {
+        pluginconfig const *const pc = txn_state->config;
 
-      if (TS_SUCCESS == TSHttpTxnCachedRespGet(txnp, &resp_buf, &resp_loc)) {
-        if (TS_HTTP_STATUS_OK == TSHttpHdrStatusGet(resp_buf, resp_loc)) {
-          // get the request identifier
-          TSMBuffer req_buf = nullptr;
-          TSMLoc    req_loc = TS_NULL_MLOC;
-          if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &req_buf, &req_loc)) {
-            TSMLoc const ident_loc = TSMimeHdrFieldFind(req_buf, req_loc, pc->ident_header.data(), pc->ident_header.size());
-            if (TS_NULL_MLOC != ident_loc) {
-              DEBUG_LOG("Checking identifier against the '%s' header", pc->ident_header.c_str());
+        // get the request identifier
+        TSMBuffer rbuf  = nullptr;
+        TSMLoc    rhloc = TS_NULL_MLOC;
+        if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &rbuf, &rhloc)) {
+          TSMLoc const riloc = TSMimeHdrFieldFind(rbuf, rhloc, pc->ident_header.data(), pc->ident_header.size());
+          if (TS_NULL_MLOC != riloc) {
+            DEBUG_LOG("Checking identifier against the '%s' header", pc->ident_header.c_str());
 
-              int               len = 0;
-              char const *const str = TSMimeHdrFieldValueStringGet(req_buf, req_loc, ident_loc, -1, &len);
+            int               len = 0;
+            char const *const str = TSMimeHdrFieldValueStringGet(rbuf, rhloc, riloc, -1, &len);
 
-              // determine which identifier has been provided
-              std::string_view const svreq(str, len);
-              std::string_view       tag;
-              if (svreq.substr(0, Etag.length()) == Etag) {
-                DEBUG_LOG("Etag identifier provided in '%.*s'", len, str);
-                tag = Etag;
-              } else if (svreq.substr(0, LastModified.length()) == LastModified) {
-                DEBUG_LOG("Last-Modified indentifier provided in '%.*s'", len, str);
-                tag = LastModified;
-              }
+            // determine which identifier has been provided
+            std::string_view ident(str, len);
+            std::string_view tag;
+            if (ident.substr(0, Etag.length()) == Etag) {
+              DEBUG_LOG("Etag identifier provided in '%.*s'", len, str);
+              tag   = Etag;
+              ident = ident.substr(Etag.length() + 1);
+            } else if (ident.substr(0, LastModified.length()) == LastModified) {
+              DEBUG_LOG("Last-Modified indentifier provided in '%.*s'", len, str);
+              tag   = LastModified;
+              ident = ident.substr(LastModified.length() + 1);
+            }
 
-              if (!tag.empty()) {
-                TSMLoc const id_loc = TSMimeHdrFieldFind(resp_buf, resp_loc, tag.data(), tag.size());
-                if (TS_NULL_MLOC != id_loc) {
-                  int                    len = 0;
-                  char const *const      str = TSMimeHdrFieldValueStringGet(resp_buf, resp_loc, id_loc, 0, &len);
-                  std::string_view const sv(str, len);
+            if (!tag.empty()) {
+              // pull the identifier from the cached response
+              TSMLoc const ciloc = TSMimeHdrFieldFind(cbuf, chloc, tag.data(), tag.length());
+              if (TS_NULL_MLOC != ciloc) {
+                int               cilen = 0;
+                char const *const cistr = TSMimeHdrFieldValueStringGet(cbuf, chloc, ciloc, -1, &cilen);
 
-                  DEBUG_LOG("Checking cached '%.*s' against request '%.*s'", len, str, (int)svreq.size(), svreq.data());
+                std::string_view const cident(cistr, cilen);
 
-                  if (std::string_view::npos != svreq.rfind(sv)) {
-                    DEBUG_LOG("Flipping cache lookup status from STALE to FRESH");
-                    TSHttpTxnCacheLookupStatusSet(txnp, TS_CACHE_LOOKUP_HIT_FRESH);
+                if (TS_CACHE_LOOKUP_HIT_FRESH == cachestat) {
+                  if (ident != cident) {
+                    DEBUG_LOG("Flipping from fresh to stale");
+                    TSHttpTxnCacheLookupStatusSet(txnp, TS_CACHE_LOOKUP_HIT_STALE);
+
+                    if (dbg_ctl.on()) {
+                      int         url_len = 0;
+                      char *const req_url = TSHttpTxnEffectiveUrlStringGet(txnp, &url_len);
+                      if (nullptr != req_url) {
+                        std::string const &rv = txn_state->range_value;
+                        DEBUG_LOG("Forced revalidate %.*s-%s", url_len, req_url, rv.c_str());
+                        TSfree(req_url);
+                      }
+                    }
                   }
-                  TSHandleMLocRelease(resp_buf, resp_loc, id_loc);
+                } else if (TS_CACHE_LOOKUP_HIT_STALE == cachestat) {
+                  if (ident == cident) {
+                    DEBUG_LOG("Flipping from stale to fresh");
+                    TSHttpTxnCacheLookupStatusSet(txnp, TS_CACHE_LOOKUP_HIT_FRESH);
+
+                    if (dbg_ctl.on()) {
+                      int         url_len = 0;
+                      char *const req_url = TSHttpTxnEffectiveUrlStringGet(txnp, &url_len);
+                      if (nullptr != req_url) {
+                        std::string const &rv = txn_state->range_value;
+                        DEBUG_LOG("Forced fresh %.*s-%s", url_len, req_url, rv.c_str());
+                        TSfree(req_url);
+                      }
+                    }
+                  }
                 }
               }
-
-              TSHandleMLocRelease(req_buf, req_loc, ident_loc);
+              TSHandleMLocRelease(cbuf, chloc, ciloc);
             }
-            TSHandleMLocRelease(req_buf, TS_NULL_MLOC, req_loc);
+
+            TSHandleMLocRelease(rbuf, rhloc, riloc);
           }
+
+          TSHandleMLocRelease(rbuf, TS_NULL_MLOC, rhloc);
         }
-        TSHandleMLocRelease(resp_buf, TS_NULL_MLOC, resp_loc);
       }
+      TSHandleMLocRelease(cbuf, TS_NULL_MLOC, chloc);
     }
   }
 }
