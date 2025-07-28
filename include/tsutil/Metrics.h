@@ -87,10 +87,12 @@ public:
   using IdType   = int32_t; // Could be a tuple, but one way or another, they have to be combined to an int32_t.
   using SpanType = swoc::MemSpan<AtomicType>;
 
-  static constexpr uint16_t MAX_BLOBS    = 4096;
-  static constexpr uint16_t MAX_SIZE     = 1024;                               // For a total of 8M metrics
-  static constexpr IdType   NOT_FOUND    = std::numeric_limits<IdType>::min(); // <16-bit,16-bit> = <blob-index,offset>
-  static const auto         MEMORY_ORDER = std::memory_order_relaxed;
+  static constexpr uint16_t MAX_BLOBS        = 8192;
+  static constexpr uint16_t MAX_SIZE         = 1024;                               // For a total of 8M metrics
+  static constexpr IdType   NOT_FOUND        = std::numeric_limits<IdType>::min(); // <16-bit,16-bit> = <blob-index,offset>
+  static const auto         MEMORY_ORDER     = std::memory_order_relaxed;
+  static constexpr int      METRIC_TYPE_BITS = 29;
+  static constexpr int      METRIC_TYPE_MASK = 0x1FFF;
 
 private:
   using NameAndId       = std::tuple<std::string, IdType>;
@@ -283,20 +285,20 @@ private:
   static constexpr std::tuple<uint16_t, uint16_t>
   _splitID(IdType value)
   {
-    return std::make_tuple(static_cast<uint16_t>(value >> 16) & 0x0FFF, static_cast<uint16_t>(value & 0xFFFF));
+    return std::make_tuple(static_cast<uint16_t>(value >> 16) & METRIC_TYPE_MASK, static_cast<uint16_t>(value & 0xFFFF));
   }
 
   static constexpr MetricType
   _extractType(IdType value)
   {
-    return MetricType{value >> 28};
+    return MetricType{value >> METRIC_TYPE_BITS};
   }
 
   static constexpr IdType
   _makeId(uint16_t blob, uint16_t offset, const MetricType type)
   {
     int t = static_cast<int>(type);
-    return (t << 28 | blob << 16 | offset);
+    return (t << METRIC_TYPE_BITS | blob << 16 | offset);
   }
 
   class Storage
