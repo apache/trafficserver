@@ -152,9 +152,8 @@ HostMatcher<Data, MatchResult>::Match(RequestData *rdata, MatchResult *result) c
   Data *data_ptr;
   bool  r;
 
-  // Check to see if there is any work to do before making
-  //   the string copy
-  if (num_el <= 0) {
+  // Check to see if there is any work to do before making the string copy
+  if (this->num_el <= 0) {
     return;
   }
 
@@ -335,8 +334,7 @@ UrlMatcher<Data, MatchResult>::Match(RequestData *rdata, MatchResult *result) co
 {
   char *url_str;
 
-  // Check to see there is any work to before we copy the
-  //   URL
+  // Check to see there is any work to before we copy the URL
   if (num_el <= 0) {
     return;
   }
@@ -454,15 +452,14 @@ RegexMatcher<Data, MatchResult>::NewEntry(matcher_line *line_info)
 //
 // void RegexMatcher<Data,MatchResult>::Match(RequestData* rdata, MatchResult* result)
 //
-//   Coduncts a linear search through the regex array and
+//   Conducts a linear search through the regex array and
 //     updates arg result for each regex that matches arg URL
 //
 template <class Data, class MatchResult>
 void
 RegexMatcher<Data, MatchResult>::Match(RequestData *rdata, MatchResult *result) const
 {
-  // Check to see there is any work to before we copy the
-  //   URL
+  // Check to see there is any work to before we copy the URL
   if (num_el <= 0) {
     return;
   }
@@ -479,13 +476,12 @@ RegexMatcher<Data, MatchResult>::Match(RequestData *rdata, MatchResult *result) 
   // The function unescapifyStr() is already called in
   // HttpRequestData::get_string(); therefore, no need to call again here.
   for (int i = 0; i < num_el; i++) {
-    int r = regex_array[i].exec(url_str);
-    if (r > -1) {
+    if (regex_array[i].exec(url_str) == true) {
       Dbg(dbg_ctl_matcher, "%s Matched %s with regex at line %d", matcher_name, url_str, data_array[i].line_num);
       data_array[i].UpdateMatch(result, rdata);
-    } else if (r < -1) {
+    } else {
       // An error has occurred
-      Warning("Error [%d] matching regex at line %d.", r, data_array[i].line_num);
+      Warning("Error matching regex at line %d.", data_array[i].line_num);
     } // else it's -1 which means no match was found.
   }
   ats_free(url_str);
@@ -512,8 +508,7 @@ HostRegexMatcher<Data, MatchResult>::Match(RequestData *rdata, MatchResult *resu
 {
   const char *url_str;
 
-  // Check to see there is any work to before we copy the
-  //   URL
+  // Check to see there is any work to before we copy the URL
   if (this->num_el <= 0) {
     return;
   }
@@ -525,9 +520,8 @@ HostRegexMatcher<Data, MatchResult>::Match(RequestData *rdata, MatchResult *resu
   if (url_str == nullptr) {
     url_str = "";
   }
-  for (int i = 0; i < this->num_el; i++) {
-    int r = this->regex_array[i].exec(url_str);
-    if (r != -1) {
+  for (int i = 0; i < num_el; i++) {
+    if (this->regex_array[i].exec(url_str) == true) {
       Dbg(dbg_ctl_matcher, "%s Matched %s with regex at line %d", const_cast<char *>(this->matcher_name), url_str,
           this->data_array[i].line_num);
       this->data_array[i].UpdateMatch(result, rdata);
