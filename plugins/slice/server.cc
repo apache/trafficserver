@@ -113,6 +113,8 @@ update_object_size(TSHttpTxn txnp, int64_t size, Config &config)
   }
 }
 
+// This sets up the reference data with the content length and any
+// strong/weak identifiers for comparing against subsequent slices.
 HeaderState
 handleFirstServerHeader(Data *const data, TSCont const contp)
 {
@@ -201,9 +203,11 @@ handleFirstServerHeader(Data *const data, TSCont const contp)
     return HeaderState::Fail;
   }
 
-  // save data header string
-  data->m_datelen = sizeof(data->m_date);
-  header.valueForKey(TS_MIME_FIELD_DATE, TS_MIME_LEN_DATE, data->m_date, &data->m_datelen);
+  /*
+// save data header string
+data->m_datelen = sizeof(data->m_date);
+header.valueForKey(TS_MIME_FIELD_DATE, TS_MIME_LEN_DATE, data->m_date, &data->m_datelen);
+  */
 
   // save weak cache header identifiers (rfc7232 section 2)
   data->m_etaglen = sizeof(data->m_etag);
@@ -387,6 +391,7 @@ handleNextServerHeader(Data *const data)
     DEBUG_LOG("Next Header:\n%s", header.toString().c_str());
   }
 
+  // assume the next block header is from the same asset until proven false
   bool same = true;
 
   switch (header.status()) {
@@ -394,7 +399,7 @@ handleNextServerHeader(Data *const data)
     if (data->onlyHeader()) {
       return false;
     }
-    // need to reissue reference slice
+    // asset is gone, reissue the reference block
     logSliceError("404 internal block response (asset gone)", data, header);
     same = false;
     break;
@@ -412,6 +417,7 @@ handleNextServerHeader(Data *const data)
   // can't parse the content range header, abort -- might be too strict
   ContentRange blockcr;
 
+  // check the content range (offset and size)
   if (same) {
     blockcr = contentRangeFrom(header);
     if (!blockcr.isValid() || blockcr.m_length != data->m_contentlen) {
@@ -420,10 +426,16 @@ handleNextServerHeader(Data *const data)
     }
   }
 
+  // identifiers.  Use them
+  char etag[8192];
+  int  etaglen = 0;
+  char lastmodified[33];
+  int  lastmodifiedlen = 0;
+
+  // check the identifiers
   if (same) {
-    // prefer the etag but use Last-Modified if we must.
-    char etag[8192];
-    int  etaglen = sizeof(etag);
+    // prefer the etag
+    etaglen = sizeof(etag);
     header.valueForKey(TS_MIME_FIELD_ETAG, TS_MIME_LEN_ETAG, etag, &etaglen);
 
     if (0 < data->m_etaglen || 0 < etaglen) {
@@ -432,8 +444,8 @@ handleNextServerHeader(Data *const data)
         logSliceError("Mismatch block Etag", data, header);
       }
     } else {
-      char lastmodified[33];
-      int  lastmodifiedlen = sizeof(lastmodified);
+      // use Last-Modified if we must
+      lastmodifiedlen = sizeof(lastmodified);
       header.valueForKey(TS_MIME_FIELD_LAST_MODIFIED, TS_MIME_LEN_LAST_MODIFIED, lastmodified, &lastmodifiedlen);
       if (0 < data->m_lastmodifiedlen || 0 < lastmodifiedlen) {
         same = data->m_lastmodifiedlen == lastmodifiedlen && 0 == strncmp(lastmodified, data->m_lastmodified, lastmodifiedlen);
@@ -445,59 +457,27 @@ handleNextServerHeader(Data *const data)
   }
 
   // Header mismatch
-  if (same) {
-    // If we were in reference block refetch mode and the headers
-    // still match there is a problem
-    if (BlockState::ActiveRef == data->m_blockstate) {
-      ERROR_LOG("Reference block refetched, got the same block back again");
-      return false;
-    }
-  } else {
-    switch (data->m_blockstate) {
-    case BlockState::Active: {
+  if (!same) {
+    if (data->m_blockstate == BlockState::Active) {
       data->m_upstream.abort();
 
-      // Refetch the current interior slice
-      data->m_blockstate = BlockState::PendingInt;
-
-      time_t date = 0;
-      header.timeForKey(TS_MIME_FIELD_DATE, TS_MIME_LEN_DATE, &date);
-
-      // Ask for any slice newer than the cached one
-      time_t const dateims = date + 1;
-
-      DEBUG_LOG("Attempting to reissue interior slice block request with IMS header time: %jd", static_cast<intmax_t>(dateims));
-
-      // add special CRR IMS header to the request
-      HttpHeader          headerreq(data->m_req_hdrmgr.m_buffer, data->m_req_hdrmgr.m_lochdr);
-      Config const *const conf = data->m_config;
-      if (!headerreq.setKeyTime(conf->m_crr_ims_header.data(), conf->m_crr_ims_header.size(), dateims)) {
-        ERROR_LOG("Failed setting '%s'", conf->m_crr_ims_header.c_str());
-        return false;
-      }
-
-    } break;
-    case BlockState::ActiveInt: {
-      data->m_upstream.abort();
-
-      // New interior slice still mismatches, refetch the reference slice
+      // Interior slice doesn't match reference slice, refetch reference
+      // In this case we've given up but are trying to fix the reference
+      // for next time
       data->m_blockstate = BlockState::PendingRef;
 
-      // convert reference date header to time_t
-      time_t const date = TSMimeParseDate(data->m_date, data->m_datelen);
-
-      // Ask for any slice newer than the cached one
-      time_t const dateims = date + 1;
-
-      DEBUG_LOG("Attempting to reissue reference slice block request with IMS header time: %jd", static_cast<intmax_t>(dateims));
-
-      // add special CRR IMS header to the request
-      HttpHeader          headerreq(data->m_req_hdrmgr.m_buffer, data->m_req_hdrmgr.m_lochdr);
-      Config const *const conf = data->m_config;
-      if (!headerreq.setKeyTime(conf->m_crr_ims_header.data(), conf->m_crr_ims_header.size(), dateims)) {
-        ERROR_LOG("Failed setting '%s'", conf->m_crr_ims_header.c_str());
-        return false;
+      // interior headers for new identifier reference
+      data->m_etaglen = etaglen;
+      if (0 < etaglen) {
+        strncpy(data->m_etag, etag, etaglen);
       }
+      data->m_lastmodifiedlen = lastmodifiedlen;
+      if (0 < lastmodifiedlen) {
+        strncpy(data->m_lastmodified, lastmodified, lastmodifiedlen);
+      }
+
+      // potentially new content length
+      data->m_contentlen = blockcr.m_length;
 
       // Reset for first block
       if (Config::RefType::First == data->m_config->m_reftype) {
@@ -507,17 +487,6 @@ handleNextServerHeader(Data *const data)
       }
 
       return true;
-
-    } break;
-      // Refetch the reference slice
-    case BlockState::ActiveRef: {
-      // In this state the reference changed otherwise the asset is toast
-      // reset the content length (if content length drove the mismatch)
-      data->m_contentlen = blockcr.m_length;
-      return true;
-    } break;
-    default:
-      break;
     }
   }
 
@@ -603,8 +572,7 @@ handle_server_resp(TSCont contp, TSEvent event, Data *const data)
 
       // header may have been successfully parsed but with caveats
       switch (data->m_blockstate) {
-        // request new version of current internal slice
-      case BlockState::PendingInt:
+        // request new version of reference slice
       case BlockState::PendingRef: {
         if (!request_block(contp, data)) {
           data->m_blockstate = BlockState::Fail;
