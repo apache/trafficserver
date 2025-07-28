@@ -49,5 +49,5 @@ RefCountCacheHeader::operator==(RefCountCacheHeader const &that) const
 bool
 RefCountCacheHeader::compatible(RefCountCacheHeader *that) const
 {
-  return this->magic == that->magic && this->version == that->version && this->object_version == that->version;
+  return this->magic == that->magic && this->version == that->version && this->object_version == that->object_version;
 };
