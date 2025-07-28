@@ -606,20 +606,20 @@ handle_cache_lookup_complete(TSHttpTxn txnp, txndata *const txn_state)
           if (TS_NULL_MLOC != riloc) {
             DEBUG_LOG("Checking identifier against the '%s' header", pc->ident_header.c_str());
 
-            int               len = 0;
-            char const *const str = TSMimeHdrFieldValueStringGet(rbuf, rhloc, riloc, -1, &len);
+            int               rilen = 0;
+            char const *const ristr = TSMimeHdrFieldValueStringGet(rbuf, rhloc, riloc, -1, &rilen);
 
             // determine which identifier has been provided
-            std::string_view ident(str, len);
+            std::string_view rident(ristr, rilen);
             std::string_view tag;
-            if (ident.substr(0, Etag.length()) == Etag) {
-              DEBUG_LOG("Etag identifier provided in '%.*s'", len, str);
-              tag   = Etag;
-              ident = ident.substr(Etag.length() + 1);
-            } else if (ident.substr(0, LastModified.length()) == LastModified) {
-              DEBUG_LOG("Last-Modified indentifier provided in '%.*s'", len, str);
-              tag   = LastModified;
-              ident = ident.substr(LastModified.length() + 1);
+            if (rident.substr(0, Etag.length()) == Etag) {
+              DEBUG_LOG("Etag identifier provided in '%.*s'", rilen, ristr);
+              tag    = Etag;
+              rident = rident.substr(Etag.length() + 1);
+            } else if (rident.substr(0, LastModified.length()) == LastModified) {
+              DEBUG_LOG("Last-Modified indentifier provided in '%.*s'", rilen, ristr);
+              tag    = LastModified;
+              rident = rident.substr(LastModified.length() + 1);
             }
 
             if (!tag.empty()) {
@@ -632,7 +632,9 @@ handle_cache_lookup_complete(TSHttpTxn txnp, txndata *const txn_state)
                 std::string_view const cident(cistr, cilen);
 
                 if (TS_CACHE_LOOKUP_HIT_FRESH == cachestat) {
-                  if (ident != cident) {
+                  DEBUG_LOG("FRESH, Checking '%.*s': cached: '%.*s' request: '%.*s'", (int)tag.length(), tag.data(),
+                            (int)cident.length(), cident.data(), (int)rident.length(), rident.data());
+                  if (rident != cident) {
                     DEBUG_LOG("Flipping from fresh to stale");
                     TSHttpTxnCacheLookupStatusSet(txnp, TS_CACHE_LOOKUP_HIT_STALE);
 
@@ -647,7 +649,9 @@ handle_cache_lookup_complete(TSHttpTxn txnp, txndata *const txn_state)
                     }
                   }
                 } else if (TS_CACHE_LOOKUP_HIT_STALE == cachestat) {
-                  if (ident == cident) {
+                  DEBUG_LOG("STALE, Checking '%.*s': cached: '%.*s' request: '%.*s'", (int)tag.length(), tag.data(),
+                            (int)cident.length(), cident.data(), (int)rident.length(), rident.data());
+                  if (rident == cident) {
                     DEBUG_LOG("Flipping from stale to fresh");
                     TSHttpTxnCacheLookupStatusSet(txnp, TS_CACHE_LOOKUP_HIT_FRESH);
 

@@ -151,7 +151,7 @@ tr.StillRunningAfter = ts
 tr = Test.AddTestRun("0- range X-Crr-Ident Etag check")
 tr.DelayStart = 2
 ps = tr.Processes.Default
-tr.MakeCurlCommand(curl_and_args + f" http://ident/path -r 0- -H 'X-Crr-Ident: Etag: {etag}'", ts=ts)
+tr.MakeCurlCommand(curl_and_args + f" http://ident/path -r 0- -H 'X-Crr-Ident: Etag {etag}'", ts=ts)
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh", "expected cache hit-fresh")
 tr.StillRunningAfter = ts
@@ -160,7 +160,7 @@ tr.StillRunningAfter = ts
 tr = Test.AddTestRun("0- range CrrIdent Etag check")
 tr.DelayStart = 2
 ps = tr.Processes.Default
-tr.MakeCurlCommand(curl_and_args + f" http://identheader/pathheader -r 0- -H 'CrrIdent: Etag: {etag_custom}'", ts=ts)
+tr.MakeCurlCommand(curl_and_args + f" http://identheader/pathheader -r 0- -H 'CrrIdent: Etag {etag_custom}'", ts=ts)
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh", "expected cache hit-fresh")
 tr.StillRunningAfter = ts
@@ -168,7 +168,7 @@ tr.StillRunningAfter = ts
 # 6 Test - Ensure X-Crr-Ident Last-Modified header results in hit-fresh
 tr = Test.AddTestRun("0- range X-Crr-Ident Last-Modified check")
 ps = tr.Processes.Default
-tr.MakeCurlCommand(curl_and_args + f' http://ident/path -r 0- -H "X-Crr-Ident: Last-Modified: {last_modified}"', ts=ts)
+tr.MakeCurlCommand(curl_and_args + f' http://ident/path -r 0- -H "X-Crr-Ident: Last-Modified {last_modified}"', ts=ts)
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh", "expected cache hit-fresh")
 tr.StillRunningAfter = ts
@@ -176,7 +176,7 @@ tr.StillRunningAfter = ts
 # 7 Test - Provide a mismatch Etag force IMS request
 tr = Test.AddTestRun("0- range X-Crr-Ident check")
 ps = tr.Processes.Default
-tr.MakeCurlCommand(curl_and_args + f' http://ident/path -r 0- -H "X-Crr-Ident: Last-Modified: foo"', ts=ts)
+tr.MakeCurlCommand(curl_and_args + f' http://ident/path -r 0- -H "X-Crr-Ident: Last-Modified foo"', ts=ts)
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-stale", "expected cache hit-stale")
 tr.StillRunningAfter = ts
@@ -184,12 +184,12 @@ tr.StillRunningAfter = ts
 # post checks for traffic.out
 
 ts.Disk.traffic_out.Content = Testers.ContainsExpression(
-    """Checking cached '"772102f4-56f4bc1e6d417"' against request 'Etag: "772102f4-56f4bc1e6d417"'""",
+    """Checking cached '"772102f4-56f4bc1e6d417"' against request 'Etag "772102f4-56f4bc1e6d417"'""",
     "Etag is correctly considered")
 
 ts.Disk.traffic_out.Content = Testers.ContainsExpression(
-    """Checking cached 'foo' against request 'Etag: foo'""", "Etag custom header is correctly considered")
+    """Checking cached 'foo' against request 'Etag foo'""", "Etag custom header is correctly considered")
 
 ts.Disk.traffic_out.Content = Testers.ContainsExpression(
-    """Checking cached 'Fri, 07 Mar 2025 18:06:58 GMT' against request 'Last-Modified: Fri, 07 Mar 2025 18:06:58 GMT'""",
+    """STALE, Checking 'Last-Modified': cached: 'Fri, 07 Mar 2025 18:06:58 GMT' request: 'foo'""",
     "Last-Modified is correctly considered")
