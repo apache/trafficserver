@@ -17,3 +17,5 @@
 
 add_atsplugin(conf_remap conf_remap.cc)
 verify_remap_plugin(conf_remap)
+
+target_link_libraries(conf_remap PRIVATE libswoc::libswoc yaml-cpp::yaml-cpp)
