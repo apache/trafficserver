@@ -1705,6 +1705,14 @@ Origin Server Connect Attempts
    `proxy.config.http.connect_attempts_max_retries`_ so an error is returned to the client faster and also to reduce the load on the down origin.
    The timeout interval `proxy.config.http.connect_attempts_timeout`_ in seconds is used with this setting.
 
+.. ts:cv:: CONFIG proxy.config.http.connect_attempts_retry_backoff_base INT 0
+   :reloadable:
+   :overridable:
+   :units: milliseconds
+
+   The base delay, in milliseconds, used for exponential backoff between retry attempts to connect to the origin server. After each
+   failure the delay doubles - e.g. 64m, 128m, 256m. When this is set to `0` (the default value), |TS| retries immediately without exponential backoff.
+
 .. ts:cv:: CONFIG proxy.config.http.connect.down.policy INT 2
    :overridable:
 

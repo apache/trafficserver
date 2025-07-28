@@ -7259,6 +7259,9 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
   case TS_CONFIG_HTTP_CONNECT_ATTEMPTS_TIMEOUT:
     ret = _memberp_to_generic(&overridableHttpConfig->connect_attempts_timeout, conv);
     break;
+  case TS_CONFIG_HTTP_CONNECT_ATTEMPTS_RETRY_BACKOFF_BASE:
+    ret = _memberp_to_generic(&overridableHttpConfig->connect_attempts_retry_backoff_base, conv);
+    break;
   case TS_CONFIG_HTTP_DOWN_SERVER_CACHE_TIME:
     conv = &HttpDownServerCacheTimeConv;
     ret  = &overridableHttpConfig->down_server_timeout;

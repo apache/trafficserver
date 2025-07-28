@@ -86,6 +86,8 @@ const std::unordered_map<std::string_view, std::tuple<const TSOverridableConfigK
     {"proxy.config.net.sock_recv_buffer_size_out",                     {TS_CONFIG_NET_SOCK_RECV_BUFFER_SIZE_OUT, TS_RECORDDATATYPE_INT}         },
     {"proxy.config.net.sock_send_buffer_size_out",                     {TS_CONFIG_NET_SOCK_SEND_BUFFER_SIZE_OUT, TS_RECORDDATATYPE_INT}         },
     {"proxy.config.http.connect_attempts_timeout",                     {TS_CONFIG_HTTP_CONNECT_ATTEMPTS_TIMEOUT, TS_RECORDDATATYPE_INT}         },
+    {"proxy.config.http.connect_attempts_retry_backoff_base",
+     {TS_CONFIG_HTTP_CONNECT_ATTEMPTS_RETRY_BACKOFF_BASE, TS_RECORDDATATYPE_INT}                                                                },
     {"proxy.config.websocket.no_activity_timeout",                     {TS_CONFIG_WEBSOCKET_NO_ACTIVITY_TIMEOUT, TS_RECORDDATATYPE_INT}         },
     {"proxy.config.http.negative_caching_lifetime",                    {TS_CONFIG_HTTP_NEGATIVE_CACHING_LIFETIME, TS_RECORDDATATYPE_INT}        },
     {"proxy.config.http.default_buffer_water_mark",                    {TS_CONFIG_HTTP_DEFAULT_BUFFER_WATER_MARK, TS_RECORDDATATYPE_INT}        },

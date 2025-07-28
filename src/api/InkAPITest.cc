@@ -8704,6 +8704,7 @@ std::array<std::string_view, TS_CONFIG_LAST_ENTRY> SDK_Overridable_Configs = {
    "proxy.config.http.connect_attempts_max_retries_down_server",
    "proxy.config.http.connect_attempts_rr_retries",
    "proxy.config.http.connect_attempts_timeout",
+   "proxy.config.http.connect_attempts_retry_backoff_base",
    "proxy.config.http.down_server.cache_time",
    "proxy.config.http.doc_in_cache_skip_dns",
    "proxy.config.http.background_fill_active_timeout",

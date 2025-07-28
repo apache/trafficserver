@@ -153,6 +153,16 @@ HttpDebugNames::get_event_name(int event)
     return "NET_EVENT_OPEN_FAILED/TS_EVENT_NET_CONNECT_FAILED";
 
   ////////////////////
+  // CONNECT_EVENTS //
+  ////////////////////
+  case CONNECT_EVENT_TXN:
+    return "CONNECT_EVENT_TXN";
+  case CONNECT_EVENT_DIRECT:
+    return "CONNECT_EVENT_DIRECT";
+  case CONNECT_EVENT_RETRY:
+    return "CONNECT_EVENT_RETRY";
+
+  ////////////////////
   // HOSTDB  EVENTS //
   ////////////////////
   case EVENT_HOST_DB_LOOKUP:
