@@ -162,7 +162,8 @@ public:
     self_type &operator=(integer val);
     self_type &operator+=(const cripts::string_view str);
 
-    // These specialized assignment operators all use the above
+    // ToDo: This was useful at some point, but was breaking other useful uses. Leaving
+    // it here for now for maybe future work.
     // template <size_t N>
     // self_type &
     // operator=(const char (&str)[N])
