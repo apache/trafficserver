@@ -878,6 +878,8 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.oride.connect_attempts_max_retries, "proxy.config.http.connect_attempts_max_retries");
   HttpEstablishStaticConfigLongLong(c.oride.connect_attempts_max_retries_down_server,
                                     "proxy.config.http.connect_attempts_max_retries_down_server");
+  HttpEstablishStaticConfigLongLong(c.oride.connect_attempts_retry_backoff_base,
+                                    "proxy.config.http.connect_attempts_retry_backoff_base");
 
   HttpEstablishStaticConfigLongLong(c.oride.connect_down_policy, "proxy.config.http.connect.down.policy");
 
@@ -1173,6 +1175,8 @@ HttpConfig::reconfigure()
             "will never redispatch to another server",
             m_master.oride.connect_attempts_rr_retries, params->oride.connect_attempts_max_retries);
   }
+  params->oride.connect_attempts_retry_backoff_base = m_master.oride.connect_attempts_retry_backoff_base;
+
   params->oride.connect_attempts_rr_retries     = m_master.oride.connect_attempts_rr_retries;
   params->oride.connect_attempts_timeout        = m_master.oride.connect_attempts_timeout;
   params->oride.connect_down_policy             = m_master.oride.connect_down_policy;

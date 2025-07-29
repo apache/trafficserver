@@ -23,6 +23,7 @@
  */
 
 #include "proxy/http/HttpConfig.h"
+#include "tscore/ink_hrtime.h"
 #include "tsutil/Metrics.h"
 #include "tsutil/ts_bw_format.h"
 #include "proxy/ProxyTransaction.h"
@@ -1781,6 +1782,11 @@ HttpSM::state_http_server_open(int event, void *data)
 {
   SMDbg(dbg_ctl_http_track, "entered inside state_http_server_open: %s", HttpDebugNames::get_event_name(event));
   STATE_ENTER(&HttpSM::state_http_server_open, event);
+
+  if (event == CONNECT_EVENT_RETRY) {
+    pending_action.clear_if_action_is(reinterpret_cast<Action *>(data));
+  }
+
   ink_release_assert(event == EVENT_INTERVAL || event == NET_EVENT_OPEN || event == NET_EVENT_OPEN_FAILED ||
                      pending_action.empty());
   if (event != NET_EVENT_OPEN) {
@@ -1819,6 +1825,9 @@ HttpSM::state_http_server_open(int event, void *data)
   case CONNECT_EVENT_DIRECT:
     // Try it again, but direct this time
     do_http_server_open(false, true);
+    break;
+  case CONNECT_EVENT_RETRY:
+    do_http_server_open();
     break;
   case CONNECT_EVENT_TXN:
     SMDbg(dbg_ctl_http, "Connection handshake complete via CONNECT_EVENT_TXN");
@@ -8080,7 +8089,17 @@ HttpSM::set_next_state()
       }
     }
 
-    do_http_server_open();
+    ink_hrtime backoff_base = t_state.txn_conf->connect_attempts_retry_backoff_base;
+    if (backoff_base > 0) {
+      // Retry with exponential backoff
+      ink_hrtime backoff = backoff_base << t_state.current.retry_attempts.get();
+      SMDbg(dbg_ctl_http_connect, "Retry connect with %" PRId64 " msec backoff", backoff);
+      this->pending_action = nullptr;
+      this->pending_action = this_ethread()->schedule_in(this, HRTIME_MSECONDS(backoff), CONNECT_EVENT_RETRY);
+    } else {
+      do_http_server_open();
+    }
+
     break;
   }
 

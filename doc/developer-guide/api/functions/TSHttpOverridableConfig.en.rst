@@ -118,6 +118,7 @@ TSOverridableConfigKey Value                                              Config
 :enumerator:`TS_CONFIG_HTTP_CONNECT_ATTEMPTS_MAX_RETRIES`               :ts:cv:`proxy.config.http.connect_attempts_max_retries`
 :enumerator:`TS_CONFIG_HTTP_CONNECT_ATTEMPTS_RR_RETRIES`                :ts:cv:`proxy.config.http.connect_attempts_rr_retries`
 :enumerator:`TS_CONFIG_HTTP_CONNECT_ATTEMPTS_TIMEOUT`                   :ts:cv:`proxy.config.http.connect_attempts_timeout`
+:enumerator:`TS_CONFIG_HTTP_CONNECT_ATTEMPTS_RETRY_BACKOFF_BASE`        :ts:cv:`proxy.config.http.connect_attempts_retry_backoff_base`
 :enumerator:`TS_CONFIG_HTTP_DEFAULT_BUFFER_SIZE`                        :ts:cv:`proxy.config.http.default_buffer_size`
 :enumerator:`TS_CONFIG_HTTP_DEFAULT_BUFFER_WATER_MARK`                  :ts:cv:`proxy.config.http.default_buffer_water_mark`
 :enumerator:`TS_CONFIG_HTTP_DOC_IN_CACHE_SKIP_DNS`                      :ts:cv:`proxy.config.http.doc_in_cache_skip_dns`
