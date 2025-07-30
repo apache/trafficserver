@@ -55,11 +55,13 @@ struct SSLStatsBlock {
   Metrics::Counter::AtomicType *origin_server_wrong_version                    = nullptr;
   Metrics::Counter::AtomicType *origin_session_cache_hit                       = nullptr;
   Metrics::Counter::AtomicType *origin_session_cache_miss                      = nullptr;
+  Metrics::Counter::AtomicType *origin_session_cache_timeout                   = nullptr;
   Metrics::Counter::AtomicType *origin_session_reused_count                    = nullptr;
   Metrics::Counter::AtomicType *session_cache_eviction                         = nullptr;
   Metrics::Counter::AtomicType *session_cache_hit                              = nullptr;
   Metrics::Counter::AtomicType *session_cache_lock_contention                  = nullptr;
   Metrics::Counter::AtomicType *session_cache_miss                             = nullptr;
+  Metrics::Counter::AtomicType *session_cache_timeout                          = nullptr;
   Metrics::Counter::AtomicType *session_cache_new_session                      = nullptr;
   Metrics::Counter::AtomicType *sni_name_set_failure                           = nullptr;
   Metrics::Counter::AtomicType *total_attempts_handshake_count_in              = nullptr;
@@ -96,10 +98,17 @@ struct SSLStatsBlock {
   Metrics::Counter::AtomicType *user_agent_version_too_high                    = nullptr;
   Metrics::Counter::AtomicType *user_agent_version_too_low                     = nullptr;
   Metrics::Counter::AtomicType *user_agent_wrong_version                       = nullptr;
-  Metrics::Gauge::AtomicType   *user_agent_session_hit                         = nullptr;
-  Metrics::Gauge::AtomicType   *user_agent_session_miss                        = nullptr;
-  Metrics::Gauge::AtomicType   *user_agent_session_timeout                     = nullptr;
-  Metrics::Gauge::AtomicType   *user_agent_sessions                            = nullptr;
+
+  // Note: The following user_agent_session_* metrics are implemented as Gauge types
+  // even though they semantically represent cumulative counters. This is because
+  // they are periodically synchronized from external counter sources (OpenSSL's
+  // built-in session cache or ATS's session cache) and need to be "set" to specific
+  // values rather than incremented. From a monitoring perspective, these should be
+  // treated as counters for calculating rates.
+  Metrics::Gauge::AtomicType *user_agent_session_hit     = nullptr;
+  Metrics::Gauge::AtomicType *user_agent_session_miss    = nullptr;
+  Metrics::Gauge::AtomicType *user_agent_session_timeout = nullptr;
+  Metrics::Gauge::AtomicType *user_agent_sessions        = nullptr;
 };
 
 extern SSLStatsBlock                                                   ssl_rsb;
