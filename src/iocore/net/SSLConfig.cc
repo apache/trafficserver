@@ -70,6 +70,7 @@ init_ssl_ctx_func  SSLConfigParams::init_ssl_ctx_cb                       = null
 load_ssl_file_func SSLConfigParams::load_ssl_file_cb                      = nullptr;
 swoc::IPRangeSet  *SSLConfigParams::proxy_protocol_ip_addrs               = nullptr;
 bool               SSLConfigParams::ssl_ktls_enabled                      = false;
+size_t             SSLConfigParams::number_of_ssl_threads                 = 0;
 
 const uint32_t EARLY_DATA_DEFAULT_SIZE                         = 16384;
 uint32_t       SSLConfigParams::server_max_early_data          = 0;
@@ -678,7 +679,11 @@ SSLCertificateConfig::reconfigure()
 {
   bool                     retStatus = true;
   SSLConfig::scoped_config params;
-  SSLCertLookup           *lookup = new SSLCertLookup();
+
+  // If this assert fails, the call to update this has to be moved earlier in the
+  // main() function.
+  ink_release_assert(SSLConfigParams::number_of_ssl_threads > 0);
+  SSLCertLookup *lookup = new SSLCertLookup(SSLConfigParams::number_of_ssl_threads);
 
   // Test SSL certificate loading startup. With large numbers of certificates, reloading can take time, so delay
   // twice the healthcheck period to simulate a loading a large certificate set.
@@ -688,7 +693,7 @@ SSLCertificateConfig::reconfigure()
     ink_hrtime_sleep(HRTIME_SECONDS(secs));
   }
 
-  auto errata = SSLMultiCertConfigLoader(params).load(lookup);
+  auto errata = SSLMultiCertConfigLoader(params).load(lookup, SSLConfigParams::number_of_ssl_threads);
   if (!lookup->is_valid || (errata.has_severity() && errata.severity() >= ERRATA_ERROR)) {
     retStatus = false;
   }
@@ -902,7 +907,10 @@ SSLConfigParams::updateCTX(const std::string &cert_secret_name) const
 
   // Update the server cert
   SSLMultiCertConfigLoader loader(this);
-  loader.update_ssl_ctx(cert_secret_name);
+  // If this assert fails, the call to update this has to be moved earlier in the
+  // main() function.
+  ink_release_assert(SSLConfigParams::number_of_ssl_threads > 0);
+  loader.update_ssl_ctx(cert_secret_name, SSLConfigParams::number_of_ssl_threads);
 
   secret_for_updateCTX = nullptr;
 }
