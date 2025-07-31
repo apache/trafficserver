@@ -206,7 +206,7 @@ tr.StillRunningAfter = ts
 # 8 Test - Fetch "fresh" into cache
 tr = Test.AddTestRun("0- fresh range cache load")
 ps = tr.Processes.Default
-tr.MakeCurlCommand(curl_and_args + ' http://ident/pathfresh -r 0-')
+tr.MakeCurlCommand(curl_and_args + ' http://ident/pathfresh -r 0-', ts=ts)
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected cache miss for load")
 tr.StillRunningAfter = ts
@@ -214,7 +214,7 @@ tr.StillRunningAfter = ts
 # 9 Test - Ensure "fresh" is in cache
 tr = Test.AddTestRun("0- fresh range cache check")
 ps = tr.Processes.Default
-tr.MakeCurlCommand(curl_and_args + ' http://ident/pathfresh -r 0-')
+tr.MakeCurlCommand(curl_and_args + ' http://ident/pathfresh -r 0-', ts=ts)
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh", "expected cache fresh")
 tr.StillRunningAfter = ts
@@ -222,7 +222,7 @@ tr.StillRunningAfter = ts
 # 10 request with different etag and ensure it goes stale
 tr = Test.AddTestRun("0- etag fresh range to stale")
 ps = tr.Processes.Default
-tr.MakeCurlCommand(curl_and_args + " http://ident/pathfresh -r 0- -H 'X-Crr-Ident: Etag not_the_same'")
+tr.MakeCurlCommand(curl_and_args + " http://ident/pathfresh -r 0- -H 'X-Crr-Ident: Etag not_the_same'", ts=ts)
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-stale", "expected cache hit-stale")
 tr.StillRunningAfter = ts

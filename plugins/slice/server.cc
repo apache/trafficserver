@@ -461,6 +461,8 @@ handleNextServerHeader(Data *const data)
     if (data->m_blockstate == BlockState::Active) {
       data->m_upstream.abort();
 
+      DEBUG_LOG("Starting refetch of reference block");
+
       // Interior slice doesn't match reference slice, refetch reference
       // In this case we've given up but are trying to fix the reference
       // for next time

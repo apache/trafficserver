@@ -57,10 +57,10 @@ constexpr std::string_view SKIP_CRR_HDR_NAME  = {"X-Skip-Crr"};
 
 std::string_view const Etag(TS_MIME_FIELD_ETAG, TS_MIME_LEN_ETAG);
 std::string_view const LastModified(TS_MIME_FIELD_LAST_MODIFIED, TS_MIME_LEN_LAST_MODIFIED);
+std::string_view const Stale{"Stale"};
 
 struct pluginconfig {
   parent_select_mode_t ps_mode{PS_DEFAULT};
-  bool                 consider_ims_header{false};
   bool                 consider_ident_header{false};
   bool                 modify_cache_key{true};
   bool                 verify_cacheability{false};
@@ -133,24 +133,15 @@ create_pluginconfig(int argc, char *const argv[])
   --argv;
 
   for (;;) {
-    int const opt = getopt_long(argc, argv, "i:", longopts, nullptr);
+    int const opt = getopt_long(argc, argv, "j:", longopts, nullptr);
     if (-1 == opt) {
       break;
     }
 
     switch (opt) {
-    case 'c': {
-      DEBUG_LOG("Plugin considers the ims header");
-      pc->consider_ims_header = true;
-    } break;
     case 'd': {
       DEBUG_LOG("Plugin considers the ident header");
       pc->consider_ident_header = true;
-    } break;
-    case 'i': {
-      DEBUG_LOG("Plugin uses custom ims header: %s", optarg);
-      pc->ims_header.assign(optarg);
-      pc->consider_ims_header = true;
     } break;
     case 'j': {
       DEBUG_LOG("Plugin uses custom ident header: %s", optarg);
@@ -315,8 +306,8 @@ range_header_check(TSHttpTxn txnp, pluginconfig *const pc)
             TSMLoc const identloc = TSMimeHdrFieldFind(hdr_buf, hdr_loc, pc->ident_header.data(), pc->ident_header.size());
             if (TS_NULL_MLOC != identloc) {
               DEBUG_LOG("Servicing the '%s' header", pc->ident_header.c_str());
-              TSHandleMLocRelease(hdr_buf, hdr_loc, identloc);
               txn_state->ident_check = true;
+              TSHandleMLocRelease(hdr_buf, hdr_loc, identloc);
             };
           }
 
@@ -577,6 +568,17 @@ set_header(TSMBuffer buf, TSMLoc hdr_loc, const char *header, int len, const cha
   return ret;
 }
 
+void
+debugTxnUrl(TSHttpTxn const txnp, std::string const &rangeval)
+{
+  int         url_len = 0;
+  char *const req_url = TSHttpTxnEffectiveUrlStringGet(txnp, &url_len);
+  if (nullptr != req_url) {
+    DEBUG_LOG("Forced fresh %.*s-%s", url_len, req_url, rangeval.c_str());
+    TSfree(req_url);
+  }
+}
+
 /**
  * Handle the identity check
  */
@@ -620,6 +622,15 @@ handle_cache_lookup_complete(TSHttpTxn txnp, txndata *const txn_state)
               DEBUG_LOG("Last-Modified indentifier provided in '%.*s'", rilen, ristr);
               tag    = LastModified;
               rident = rident.substr(LastModified.length() + 1);
+            } else if (rident.substr(0, Stale.length()) == Stale) {
+              // note tag isn't set here
+              if (TS_CACHE_LOOKUP_HIT_FRESH == cachestat) {
+                TSHttpTxnCacheLookupStatusSet(txnp, TS_CACHE_LOOKUP_HIT_STALE);
+                if (dbg_ctl.on()) {
+                  DEBUG_LOG("Hard flipping from fresh to stale");
+                  debugTxnUrl(txnp, txn_state->range_value);
+                }
+              }
             }
 
             if (!tag.empty()) {
@@ -635,34 +646,22 @@ handle_cache_lookup_complete(TSHttpTxn txnp, txndata *const txn_state)
                   DEBUG_LOG("FRESH, Checking '%.*s': cached: '%.*s' request: '%.*s'", (int)tag.length(), tag.data(),
                             (int)cident.length(), cident.data(), (int)rident.length(), rident.data());
                   if (rident != cident) {
-                    DEBUG_LOG("Flipping from fresh to stale");
                     TSHttpTxnCacheLookupStatusSet(txnp, TS_CACHE_LOOKUP_HIT_STALE);
 
                     if (dbg_ctl.on()) {
-                      int         url_len = 0;
-                      char *const req_url = TSHttpTxnEffectiveUrlStringGet(txnp, &url_len);
-                      if (nullptr != req_url) {
-                        std::string const &rv = txn_state->range_value;
-                        DEBUG_LOG("Forced revalidate %.*s-%s", url_len, req_url, rv.c_str());
-                        TSfree(req_url);
-                      }
+                      DEBUG_LOG("Flipping from fresh to stale");
+                      debugTxnUrl(txnp, txn_state->range_value);
                     }
                   }
                 } else if (TS_CACHE_LOOKUP_HIT_STALE == cachestat) {
                   DEBUG_LOG("STALE, Checking '%.*s': cached: '%.*s' request: '%.*s'", (int)tag.length(), tag.data(),
                             (int)cident.length(), cident.data(), (int)rident.length(), rident.data());
                   if (rident == cident) {
-                    DEBUG_LOG("Flipping from stale to fresh");
                     TSHttpTxnCacheLookupStatusSet(txnp, TS_CACHE_LOOKUP_HIT_FRESH);
 
                     if (dbg_ctl.on()) {
-                      int         url_len = 0;
-                      char *const req_url = TSHttpTxnEffectiveUrlStringGet(txnp, &url_len);
-                      if (nullptr != req_url) {
-                        std::string const &rv = txn_state->range_value;
-                        DEBUG_LOG("Forced fresh %.*s-%s", url_len, req_url, rv.c_str());
-                        TSfree(req_url);
-                      }
+                      DEBUG_LOG("Flipping from stale to fresh");
+                      debugTxnUrl(txnp, txn_state->range_value);
                     }
                   }
                 }

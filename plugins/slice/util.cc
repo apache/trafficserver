@@ -102,21 +102,27 @@ request_block(TSCont contp, Data *const data)
   //   mark a fresh block stale if the identifiers mismatch
   //   mark a stale block fresh if the identifiers match.
   Config const *const cfg = data->m_config;
-  if (!cfg->m_crr_ident_header.empty() && !header.hasKey(cfg->m_crr_ident_header.data(), cfg->m_crr_ident_header.size())) {
-    swoc::LocalBufferWriter<8192> idbuf;
-    if (0 < data->m_etaglen) {
-      idbuf.write(TS_MIME_FIELD_ETAG, TS_MIME_LEN_ETAG);
-      idbuf.write(" ");
-      idbuf.write(data->m_etag, data->m_etaglen);
-    } else if (0 < data->m_lastmodifiedlen) {
-      idbuf.write(TS_MIME_FIELD_LAST_MODIFIED, TS_MIME_LEN_LAST_MODIFIED);
-      idbuf.write(" ");
-      idbuf.write(data->m_lastmodified, data->m_lastmodifiedlen);
-    }
+  if (!cfg->m_crr_ident_header.empty()) {
+    // Set ident header if header not set or if refetch reference slice
+    if (BlockState::PendingRef == data->m_blockstate ||
+        !header.hasKey(cfg->m_crr_ident_header.data(), cfg->m_crr_ident_header.size())) {
+      swoc::LocalBufferWriter<8192> idbuf;
+      if (0 < data->m_etaglen) {
+        idbuf.write(TS_MIME_FIELD_ETAG, TS_MIME_LEN_ETAG);
+        idbuf.write(" ");
+        idbuf.write(data->m_etag, data->m_etaglen);
+      } else if (0 < data->m_lastmodifiedlen) {
+        idbuf.write(TS_MIME_FIELD_LAST_MODIFIED, TS_MIME_LEN_LAST_MODIFIED);
+        idbuf.write(" ");
+        idbuf.write(data->m_lastmodified, data->m_lastmodifiedlen);
+      } else if (BlockState::PendingRef == data->m_blockstate) {
+        idbuf.write("Stale");
+      }
 
-    if (0 < idbuf.size()) {
-      DEBUG_LOG("Adding identity '%.*s'", (int)idbuf.size(), idbuf.data());
-      header.setKeyVal(cfg->m_crr_ident_header.data(), cfg->m_crr_ident_header.size(), idbuf.data(), idbuf.size());
+      if (0 < idbuf.size()) {
+        DEBUG_LOG("Adding identity '%.*s'", (int)idbuf.size(), idbuf.data());
+        header.setKeyVal(cfg->m_crr_ident_header.data(), cfg->m_crr_ident_header.size(), idbuf.data(), idbuf.size());
+      }
     }
   }
 
