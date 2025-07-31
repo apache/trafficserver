@@ -27,9 +27,15 @@ This plugin doesn't provide any improvement for smaller objects but could also d
 Using the plugin
 ----------------
 
-This plugin functions as a per remap plugin.
+This plugin functions as either a global or per remap plugin, and it takes an optional argument for
+specifying a config file with inclusion or exclusion criteria. The config file can be specified both
+via an absolute path or via a relative path to the install dir
 
-To activate the plugin, in :file:`remap.config`, simply append the
+To activate the plugin in global mode, in :file:`plugin.config`, simply add::
+
+    @plugin=cache_fill.so @pparam=<config-file>
+
+To activate the plugin in per remap mode, in :file:`remap.config`, simply append the
 below to the specific remap line::
 
    @plugin=cache_fill.so @pparam=<config-file>
@@ -38,6 +44,7 @@ Functionality
 -------------
 
 Plugin decides to trigger a background fetch of the original (Client) request if the request/response is cacheable and cache status is TS_CACHE_LOOKUP_MISS/TS_CACHE_LOOKUP_HIT_STALE.
+This will work for range requests by making a background fetch and removing the range header.
 
 Future additions
 ----------------
