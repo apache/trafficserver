@@ -26,6 +26,7 @@ Test.Summary = '''
 Test the reported type of HTTP transactions and tunnels
 '''
 
+Test.SkipIf(Condition.CurlUsingUnixDomainSocket())
 # Define default ATS. Disable the cache to simplify the test.
 ts = Test.MakeATSProcess("ts", enable_cache=False, enable_tls=True)
 ts.addSSLfile("../tls/ssl/server.pem")
@@ -84,7 +85,7 @@ cmd_tunnel = '-k --http1.1 -H "Connection: close" -vs --resolve "tunnel-test:{0}
 
 # Send the tunnel request
 tr.Processes.Default.Env = ts.Env
-tr.MakeCurlCommand(cmd_tunnel)
+tr.MakeCurlCommand(cmd_tunnel, ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.TimeOut = 10
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.SSL_Port))

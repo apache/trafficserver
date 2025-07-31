@@ -88,7 +88,7 @@ class TestFileChangeBehavior:
         self._positive_hc_counter += 1
         counter = self._positive_hc_counter
         tr = Test.AddTestRun(f'Positive acme healthchecks: {counter}')
-        tr.MakeCurlCommand(f'-v http://127.0.0.1:{self._ts.Variables.port}/acme')
+        tr.MakeCurlCommand(f'-v http://127.0.0.1:{self._ts.Variables.port}/acme', ts=self._ts)
         curl_acme = tr.Processes.Default
         if not self._ts_started:
             curl_acme.StartBefore(self._ts)
@@ -97,7 +97,7 @@ class TestFileChangeBehavior:
 
         # Repeat for acme-ssl
         tr2 = Test.AddTestRun(f'Positive acme-ssl healthchecks: {counter}')
-        tr2.MakeCurlCommand(f'-kv https://127.0.0.1:{self._ts.Variables.ssl_port}/acme-ssl')
+        tr2.MakeCurlCommand(f'-kv https://127.0.0.1:{self._ts.Variables.ssl_port}/acme-ssl', ts=self._ts)
         curl_acme_ssl = tr2.Processes.Default
         if not self._ts_started:
             curl_acme_ssl.StartBefore(self._ts)
@@ -118,7 +118,7 @@ class TestFileChangeBehavior:
         :return: None
         '''
         tr = Test.AddTestRun('Expect 200 for acme after acme-ssl removal')
-        tr.MakeCurlCommand(f'-v http://127.0.0.1:{self._ts.Variables.port}/acme')
+        tr.MakeCurlCommand(f'-v http://127.0.0.1:{self._ts.Variables.port}/acme', ts=self._ts)
         curl_acme = tr.Processes.Default
         if not self._ts_started:
             curl_acme.StartBefore(self._ts)
@@ -126,7 +126,7 @@ class TestFileChangeBehavior:
         curl_acme.Streams.All += Testers.ContainsExpression('HTTP/1.1 200', 'Verify 200 response for /acme after acme-ssl removal')
 
         tr2 = Test.AddTestRun('Expect 404 for acme-ssl after removal')
-        tr2.MakeCurlCommand(f'-kv https://127.0.0.1:{self._ts.Variables.ssl_port}/acme-ssl')
+        tr2.MakeCurlCommand(f'-kv https://127.0.0.1:{self._ts.Variables.ssl_port}/acme-ssl', ts=self._ts)
         curl_acme_ssl = tr2.Processes.Default
         if not self._ts_started:
             curl_acme_ssl.StartBefore(self._ts)

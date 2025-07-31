@@ -41,7 +41,7 @@ class PostAndMaxRequestsInTest:
 
         self.ts.Disk.records_config.update(
             {
-                "proxy.config.http.server_ports": f"{self.ts.Variables.port}",
+                "proxy.config.http.server_ports": f"{self.ts.Variables.port} {self.ts.Variables.uds_path}",
                 "proxy.config.net.max_requests_in": 1000,
                 'proxy.config.http.connect_attempts_timeout': 1,
                 "proxy.config.diags.debug.enabled": 1,
@@ -61,7 +61,7 @@ class PostAndMaxRequestsInTest:
         tr = Test.AddTestRun()
         tr.Processes.Default.StartBefore(self.origin_server)
         tr.Processes.Default.StartBefore(self.ts)
-        tr.MakeCurlCommand(f"-X POST --http1.1 -vs http://127.0.0.1:{self.ts.Variables.port}/ --data key=value")
+        tr.MakeCurlCommand(f"-X POST --http1.1 -vs http://127.0.0.1:{self.ts.Variables.port}/ --data key=value", ts=self.ts)
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stdout = "gold/post_slow_server_max_requests_in_0_stdout.gold"
         tr.Processes.Default.Streams.stderr = "gold/post_slow_server_max_requests_in_0_stderr.gold"

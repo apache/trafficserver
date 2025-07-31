@@ -65,6 +65,10 @@ ts.Disk.remap_config.AddLine(
 ts.Disk.remap_config.AddLine(
     "map https://myhost.test:123 http://127.0.0.1:{0} @plugin={1} @plugin={1}".format(server.Variables.Port, f"{plugin_name}.so"))
 
+ipv4flag = ""
+if not Condition.CurlUsingUnixDomainSocket():
+    ipv4flag = "--ipv4"
+
 # For some reason, without this delay, traffic_server cannot reliably open the cleartext port for listening without an
 # error.
 #
@@ -76,17 +80,19 @@ tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(ts)
 #
-tr.MakeCurlCommand('--verbose --ipv4 --header "Host: mYhOsT.teSt" hTtP://loCalhOst:{}/'.format(ts.Variables.port))
+tr.MakeCurlCommand('--verbose {0} --header "Host: mYhOsT.teSt" hTtP://loCalhOst:{1}/'.format(ipv4flag, ts.Variables.port), ts=ts)
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
-tr.MakeCurlCommand('--verbose --ipv4 --proxy localhost:{} http://mYhOsT.teSt/xYz'.format(ts.Variables.port))
-tr.Processes.Default.ReturnCode = 0
+tr.MakeCurlCommand('--verbose {0} --proxy localhost:{1} http://mYhOsT.teSt/xYz'.format(ipv4flag, ts.Variables.port), ts=ts)
 
-tr = Test.AddTestRun()
-tr.MakeCurlCommand(
-    '--verbose --ipv4 --http2 --insecure --header ' + '"Host: myhost.test:123" HttPs://LocalHost:{}/'.format(ts.Variables.ssl_port))
-tr.Processes.Default.ReturnCode = 0
+if not Condition.CurlUsingUnixDomainSocket():
+    tr = Test.AddTestRun()
+    tr.MakeCurlCommand(
+        '--verbose --ipv4 --http2 --insecure --header ' +
+        '"Host: myhost.test:123" HttPs://LocalHost:{}/'.format(ts.Variables.ssl_port),
+        ts=ts)
+    tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
 # Change server port number (which can vary) to a fixed string for compare to gold file.
@@ -94,4 +100,7 @@ second_log_file_name = os.path.join(ts.Variables.LOGDIR, "log2.txt")
 tr.Processes.Default.Command = f"sed 's/{server.Variables.Port}/SERVER_PORT/' < {log_file_name} > {second_log_file_name}"
 tr.Processes.Default.ReturnCode = 0
 f = tr.Disk.File(second_log_file_name)
-f.Content = "log.gold"
+if Condition.CurlUsingUnixDomainSocket():
+    f.Content = "log_uds.gold"
+else:
+    f.Content = "log.gold"

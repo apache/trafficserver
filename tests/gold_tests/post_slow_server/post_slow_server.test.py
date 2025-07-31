@@ -52,7 +52,8 @@ server = Test.Processes.Process("server", "bash -c '" + Test.TestDirectory + "/s
 tr = Test.AddTestRun()
 tr.MakeCurlCommand(
     '--request POST --verbose --ipv4 --http2 --insecure --header "Content-Length: 0"' +
-    " --header 'Host: localhost' https://localhost:{}/xyz >curl.log 2>curl.err".format(ts.Variables.ssl_port))
+    " --header 'Host: localhost' https://localhost:{}/xyz >curl.log 2>curl.err".format(ts.Variables.ssl_port),
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(ts)

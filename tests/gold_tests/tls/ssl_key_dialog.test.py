@@ -50,8 +50,8 @@ server.addResponse("sessionlog.json", request_header, response_header)
 tr = Test.AddTestRun("use a key with passphrase")
 tr.Setup.Copy("ssl/signer.pem")
 tr.MakeCurlCommand(
-    f"-v --cacert ./signer.pem  --resolve 'passphrase:{ts.Variables.ssl_port}:127.0.0.1' https://passphrase:{ts.Variables.ssl_port}/"
-)
+    f"-v --cacert ./signer.pem  --resolve 'passphrase:{ts.Variables.ssl_port}:127.0.0.1' https://passphrase:{ts.Variables.ssl_port}/",
+    ts=ts)
 tr.ReturnCode = 0
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(Test.Processes.ts)
@@ -86,8 +86,8 @@ tr2reload.Processes.Default.ReturnCode = 0
 tr3 = Test.AddTestRun("use a key with passphrase")
 tr3.Setup.Copy("ssl/signer.pem")
 tr3.MakeCurlCommand(
-    f"-v --cacert ./signer.pem  --resolve 'passphrase:{ts.Variables.ssl_port}:127.0.0.1' https://passphrase:{ts.Variables.ssl_port}/"
-)
+    f"-v --cacert ./signer.pem  --resolve 'passphrase:{ts.Variables.ssl_port}:127.0.0.1' https://passphrase:{ts.Variables.ssl_port}/",
+    ts=ts)
 tr3.ReturnCode = 0
 tr3.Processes.Default.Streams.stderr.Content = Testers.ContainsExpression("200", "expected 200 OK response")
 tr3.Processes.Default.Streams.stdout.Content = Testers.ContainsExpression("success!", "expected success")

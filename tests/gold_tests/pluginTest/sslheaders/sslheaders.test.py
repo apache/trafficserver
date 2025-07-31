@@ -21,6 +21,7 @@ Test.Summary = '''
 Test sslheaders plugin.
 '''
 
+Test.SkipIf(Condition.CurlUsingUnixDomainSocket())
 Test.SkipUnless(
     Condition.PluginExists('sslheaders.so'),
     Condition.HasCurlFeature('http2'),
@@ -66,5 +67,6 @@ tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.MakeCurlCommand(
     '-H "SSL-Client-ID: My Fake Client ID" --verbose --ipv4 --insecure --header "Host: bar.com"' +
-    ' https://localhost:{}'.format(ts.Variables.ssl_port))
+    ' https://localhost:{}'.format(ts.Variables.ssl_port),
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
