@@ -129,18 +129,23 @@ to this header.
 
     X-Crr-Ident: Etag "foo"
     X-Crr-Ident: Last-Modified Tue, 19 Nov 2019 13:26:45 GMT
+    X-Crr-Ident: Stale
 
 During the cache lookup hook the identifer is used in the following ways:
 
-- If a range request is considered STALE the identifier from this header
+If a range request is considered STALE the identifier from this header
 will be compared to the stale cache identifier. If the values match
 the response will be changed to FRESH, preventing the transaction from
 contacting a parent.
 
-- If a range request is considered FRESH the identifier from this header
+If a range request is considered FRESH the identifier from this header
 will be compared to the stale cache identifier. If the values mis match
 the response will be changed to STALE, resulting in an IMS check being
 sent to the parent cache.
+
+A FRESH to STALE state may be forced by the "Stale" identifier tag.
+This is used by the slice plugin when an interior range request
+returns a 404 indicating that the asset has been removed at the origin.
 
 When used with the :program:`slice` plugin its `--crr-ident-header`
 option must have the same value (or not be defined) in order to work.
