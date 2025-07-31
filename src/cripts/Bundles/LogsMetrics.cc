@@ -113,7 +113,7 @@ LogsMetrics::doTxnClose(cripts::Context *context)
     resp["@TCPInfo"] += fmt::format(",TC; {}", conn.tcpinfo.Log());
   }
 
-  // .label(str)
+  // .propstats(str)
   if (_label.length() > 0) {
     instance.metrics[Bundle::PROPSTAT_CLIENT_BYTES_IN]->Increment(TSHttpTxnClientReqHdrBytesGet(transaction.txnp) +
                                                                   TSHttpTxnClientReqBodyBytesGet(transaction.txnp));
@@ -170,12 +170,12 @@ LogsMetrics::doSendResponse(cripts::Context *context)
 void
 LogsMetrics::doCacheLookup(cripts::Context *context)
 {
-  auto status = transaction.LookupStatus();
+  borrow cached = cripts::Cache::Response::Get();
 
-  // .label(str)
+  // .propstats(str)
   if (_label.length() > 0) {
-    if (status >= 0 && status <= 3) {
-      instance.metrics[status]->Increment(); // This assumes the 4 cache stats are first
+    if (cached.lookupstatus >= LookupStatus::MISS && cached.lookupstatus <= LookupStatus::SKIPPED) {
+      instance.metrics[cached.lookupstatus]->Increment(); // This assumes the 4 cache stats are first
     }
   }
 }
@@ -196,8 +196,9 @@ LogsMetrics::doRemap(cripts::Context *context)
 
   // .tcpinfo(bool)
   if (_tcpinfo && sampled) {
-    borrow req      = cripts::Client::Request::Get();
-    borrow conn     = cripts::Client::Connection::Get();
+    borrow req  = cripts::Client::Request::Get();
+    borrow conn = cripts::Client::Connection::Get();
+
     req["@TCPInfo"] = fmt::format("TS; {}", conn.tcpinfo.Log());
   }
 }
