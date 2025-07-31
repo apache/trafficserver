@@ -1,0 +1,385 @@
+Changes with Apache Traffic Server 10.1.0
+  #10742 - Add new API TSContScheduleOnEntirePool and TSContScheduleEveryOnEntirePool
+  #10754 - Fix compile error with debug output in stek_share.cc.
+  #10936 - Help background fill autest to run on ubuntu
+  #11026 - Move Doc struct to Doc.h
+  #11077 - Add ENABLE_CLANG_TIDY option
+  #11095 - Cleanup: Remove deprecated MUTEX_TAKE_LOCK_FOR
+  #11108 - Use EMERGENCY instead of FATAL for some certificate loading errors
+  #11118 - autests change perl shasum to cksum
+  #11125 - cleanup: Remove unnecessary dependency from a header file
+  #11132 - Bump version to 10.1
+  #11178 - Get Stripe::aggWrite into a test harness
+  #11186 - Use GCC standard pre-defined macros to determine endianess.
+  #11188 - http2: change stream state to closed from open if END_STREAM is sent and received
+  #11199 - Add RefCountObjInHeap class.
+  #11204 - Don't send "None" as a server name
+  #11267 - cleanup: Resolve some of dependencies on private headers
+  #11271 - rate_limit: Adds a --rate option for RPS limits
+  #11279 - Convert records to use Regex wrapper instead of pcre directly
+  #11280 - cleanup: Resolve some of dependencies on private headers (records)
+  #11281 - cleanup: Resolve some of dependencies on private headers (cache)
+  #11285 - clang-format v18 + modified configs
+  #11288 - cleanup: Resolve some of dependencies on private headers (proxy)
+  #11289 - cleanup: Remove CLIENT_CONNECTION_FIRST_READ_BUFFER_SIZE_INDEX
+  #11294 - Change map_with_referer to use Regex class instead of pcre directly
+  #11302 - fix background fill test gold file
+  #11311 - Make P_Freer.h public
+  #11316 - Tests: Update oss-fuzz script to use the updated H3 build tools folder.
+  #11322 - Minor document change for lua plugin
+  #11325 - This fixes the linking issues from #11320
+  #11332 - Enable ASan on CI Rocky preset
+  #11347 - Add tests for writing documents to the cache
+  #11350 - Remove unused include from remap_stats
+  #11353 - Coverity 1523638: Resource leak in object in cache test for RWW
+  #11361 - Coverity 1517812: COPY_INSTEAD_OF_MOVE
+  #11370 - Fix some doc generation warnings
+  #11379 - Ignore coverity issue 1545918 in rate_limit
+  #11405 - Use the specified `length` characters of the key in `Headers::count`
+  #11407 - Clean up the insertion of documents into the aggregate write buffer
+  #11416 - Avoid race conditions in Regex.cc.
+  #11418 - Fix warnings in test_Stripe.cc
+  #11419 - Fix all Sphinx doc generation warnings
+  #11423 - remap.config: trivial doc fix
+  #11427 - Remove Stripe::get_agg_todo_size
+  #11438 - Fail earlier if Netcat is not installed
+  #11440 - Remove unused _setFunc parameter to LogField constructor overload.
+  #11441 - Update magick plugin to OpenSSL 1.1.1 API
+  #11443 - LSan: Suppress libssl.so leak for verify_global_magick unit test
+  #11451 - Make NetDbg available on releaes builds
+  #11453 - Remove inkevent dependency from records
+  #11456 - Clean up agg_copy
+  #11459 - Clarify VCONN_CLOSE serialization in developer docs
+  #11467 - Update access_control to OpenSSL 1.1.1 HMAC API
+  #11472 - Add set-body-from config item to header_rewrite
+  #11473 - Remove unused defines from P_Connection.h
+  #11474 - Remove HAVE_HMAC_CTX_NEW
+  #11479 - Add UnixSocket class based on SocketManager
+  #11504 - Lowercase the headers appended by ja3_fingerprint
+  #11508 - Fix incorrect metric for agg_copy bytes written
+  #11509 - Remove jtest tool and its minions
+  #11510 - Promote write_bytes and gc_frags_evacuated metrics
+  #11515 - Remove global `-Wno-unused-parameter` warning suppression
+  #11524 - Fix unused parameters in the test plugins
+  #11526 - Do not retry to open cache store on ENOMEM
+  #11535 - Use UnixSocket instead of SocketManager in proxy
+  #11538 - Remove dead locking logic in `HttpCacheSM`
+  #11550 - Update `UnixSocket` API for inkdns
+  #11551 - Cleanup of header_rewrite redirect operator when invoked globally.
+  #11558 - Make gitignore for cmake builds more strict
+  #11559 - Document that = can be used between ESI param and value.
+  #11562 - Rename `Stripe` to `StripeSM`
+  #11565 - Extract Stripe superclass from StripeSM
+  #11581 - Fix build for Http3frame fuzz test
+  #11582 - Use VIO reader and writer APIs
+  #11584 - Allow `UnixNetVConnection` to be closed anytime
+  #11613 - Remove unused MIOBuffer constructor, add explicit to another.
+  #11617 - Move `StripeSM` methods to StripeSM.cc
+  #11618 - Conditional Slicing
+  #11620 - Fix fuzz build 
+  #11623 - Use `this_ethread()` for evacuation block alloc
+  #11626 - traffic_ctl: Support command options to enable/disable  debug logs at runtime in a single command.
+  #11628 - Extract `PreservationTable` from `StripeSM`
+  #11636 - Create `CacheProcessor.cc` source file
+  #11638 - Fix check_build problem with Fuzz tests
+  #11639 - Remove `SocketManager`
+  #11643 - Reduce the number of checks for BoringSSL
+  #11645 - Reduce dup code
+  #11650 - traffic_ctl: Display `YAML` format when `--records` option is set (instead of the legacy `records.config` style)
+  #11654 - records. Fix regex to make sure default values are properly loaded when configured in the `records.yaml`
+  #11658 - header_rewrite: Allow Txn reenable to be deferred.
+  #11661 - Fix CID 1559182 from Coverity
+  #11662 - Fix CID 1559183 from Coverity
+  #11663 - coverity #1550451: Don't invalidate internal data
+  #11664 - Suppress CID 1523641 - dead code in XPACK
+  #11665 - Fix CID 1523641 - unchecked error return
+  #11666 - CID-1559185: Mute coverity.
+  #11668 - Fix a bunch of COPY_INSTEAD_OF_MOVE Coverity CIDs
+  #11669 - Fix Fuzz test issue
+  #11670 - ATS 10 upgrading documentation updates
+  #11671 - Add algorithm to calculate a JA4 fingerprint
+  #11674 - Update InkAPITest.cc for new con.sock field
+  #11675 - Separate `Server` from `Connection`
+  #11678 - Fix JA4 TLS version encoding
+  #11679 - Upgrade notes: per_server.connection.queue removal
+  #11680 - Upgrade notes: removal of disable_h2 sni.yaml
+  #11681 - Update ATS 10 upgrading documentation
+  #11683 - Documenting the removal of mysql_remap plugin in upgrading
+  #11684 - Upgrade notes: Removal of mgmt libraries
+  #11686 - Update ATS 10 upgrading documentation
+  #11687 - Update ATS 10 upgrading documentation
+  #11688 - Update ATS 10 upgrading documentation
+  #11689 - Upgrade notes: Document new configs related to hugepages
+  #11690 - Document proxy.config.system_clock setting
+  #11691 - Update ATS 10 new features (plugins)
+  #11692 - Document traffic_ctl monitor command
+  #11693 - Document upgrade for verify.server.policy default
+  #11694 - Upgrade doc for keepalive_internal_vc setting
+  #11696 - Upgrade doc additions
+  #11697 - Upgrade Docs: IP Category and filter action docs
+  #11698 - Update ATS 10 upgrading documentation
+  #11699 - Documentation: Update release notes
+  #11701 - Document JSON-RPC changes.
+  #11703 - Remove dead private method from `HttpSM`
+  #11704 - Document TSContSchedule related API changes
+  #11707 - Fix whats-new links and remove redundant timeout
+  #11708 - Move lua function removal into the plugin section
+  #11709 - Update ATS 10 upgrading documentation
+  #11710 - Update ATS 10 new features (http2)
+  #11711 - Documentation updates
+  #11712 - Documentation: updates
+  #11715 - Document changes for sni.yaml:fqdn:tunnel_route
+  #11716 - Fix JA4 SNI type determination
+  #11717 - Update documentation - hostdb, rate plugin, slice plugin
+  #11719 - Add JA4 plugin
+  #11721 - Document change of fqdn field (sni.yaml)
+  #11722 - Move `Cache::` methods to Cache.cc
+  #11726 - Update ATS 10 documenation
+  #11728 - Update ATS 10 documentation
+  #11729 - Add `VAR_DEPENDS` feature to auto options
+  #11730 - RPC: Make sure any internal(not handlers) error gets properly set.
+  #11731 - Sever `PreservationTable` inheritance and add utility methods
+  #11732 - Cleanup: StripeSM
+  #11733 - Fix C-style cast in Cache subsystem
+  #11735 - Cleanup: Move dir_valid macros to Stripe
+  #11736 - Add gcp auth & rename s3_auth plugin to origin_server_auth
+  #11737 - Decouple disk from stripe
+  #11739 - Cleanup: Remove unused dir_ functions
+  #11740 - Tools & Test: Add autest to validate `traffic_ctl config` output and also add a new `--default` option.
+  #11741 - cleanup - remove unused buffer.
+  #11742 - Cleanup: Move Stripe initialization to Stripe::_init_data
+  #11744 - Add TLSEventSupport
+  #11745 - Cleanup: Remove server name stuff from NetVConnection
+  #11746 - Update official release docs
+  #11751 - Cleanup of redundant HdrToken & WKS
+  #11757 - Cleanup: Redundant definition of cache_bytes_used
+  #11760 - build tests for hostdb. Add new benchmark for hostdb
+  #11761 - Event loop sub-stats
+  #11762 - ja3_fingerprint: add --preserve option
+  #11763 - JSONRPC - Use dynamic and configurable buffer for incoming jsonrpc messages.
+  #11768 - Cleanup log filter code, and add supports for LT and GT filters.
+  #11769 - Add USDTs for HTTP milestones and states
+  #11770 - Only include TestBox.h if needed
+  #11772 - multiplexer: support request bodies from non-POST/PUT
+  #11773 - TS API: TSVConnSslSniGet sets 0 as length if it returns nullptr
+  #11774 - quic: Enable quiche debug logging only if debug tag vv_quiche is set
+  #11775 - http3: Remove an unnecessary copy
+  #11778 - Reduce the number of calls for ERR_clear_error
+  #11782 - Cleanup: Remove leftovers from remote management logging initialization.
+  #11786 - Use BRAVO rwlock for ReplaceablePtr
+  #11787 - Add support for cert verification to QUIC
+  #11789 - INKVConnInternal::do_io_*: handle null buffer
+  #11791 - Move HttpAPIHooks from proxy to tsapibackend
+  #11792 - Cleanup aio inline and remove P_AIO header
+  #11793 - Foundation laid for global Cripts
+  #11794 - Refactor the read and write functions in Unix and SSL NetVC
+  #11795 - add cache_open_write_fail_count metric
+  #11797 - ASan: Fix use-after-free of SDK_API_TSCache Regression Test
+  #11798 - CID-1550425: Mute coverity. Overflowed return value
+  #11799 - Coverity: Fix a few copy instead of move warnings.
+  #11800 - Coverity: txn_box, fix a few copy instead of move warnings.
+  #11801 - Add Dockerfile in contrib
+  #11803 - Add bcc tool to observe pthread trylock
+  #11805 - Coverity. Fixes for CID-1497391 and CID-1497371
+  #11807 - Coverity. CID-1559195: Fix for  uninitialized scalar field.
+  #11810 - Update gcp documentation 
+  #11811 - Add a constructor to `Stripe` to impose invariants early
+  #11813 - Defer deletion of reloadable remap plugins
+  #11815 - jsonrpc: Wait for the socket to be ready to read.
+  #11820 - Updates to release process
+  #11825 - Implement RAII for `PreservationTable`
+  #11826 - docs: Fix code section to use the right include lines.
+  #11832 - Make more of the dir entry sync configurable
+  #11838 - Add a dir-entry setting to volumes.config
+  #11842 - Add missing packages to Dockerfile
+  #11844 - Add metrics for negotiated group with client
+  #11847 - escalate plugin: handle origin not reachable
+  #11853 - Revert "First cut at header heap genIDs and new API (#11780)"
+  #11859 - TransformTerminus::do_io_*: handle null buffer
+  #11860 - Coverity: fix for CID-1550449
+  #11862 - Make proxy.config.http.cache.post_method overridable
+  #11863 - Adds a HTTP-CNTL condition to header_rewrite
+  #11864 - s3_auth does not retry after a file read error
+  #11865 - Adds a fragment-size= option to volume.config
+  #11866 - Change the interpretation of cache fragment size
+  #11867 - Coverity: Fix for CID-1550441
+  #11868 - Coverity: Fix fox CID-1550411
+  #11870 - Coverity: Fixes for CID-1544449, CID-1497428 and CID-1497258
+  #11873 - Update otel_tracer plugin
+  #11875 - Coverity: Fix for CID-1528745, CID-1528719 and CID-1528565.
+  #11876 - Coverity: Fix for CID-1528689
+  #11877 - Coverity: Fix for CID-1523671
+  #11878 - Fix for CID-1523646. Invalid iterator.
+  #11879 - Coverity: Several Overflowed integer argument fixes
+  #11885 - Add better logging for origin_server_auth
+  #11888 - jsonrpc -  Make sure we do not start the rpc server when ats runs on command mode.
+  #11893 - Add support to retrieve request header block to lua plugin
+  #11895 - Cleanup: Remove disk path copy from Stripe
+  #11904 - Fix documentation - cookie remap is an experimental plugin
+  #11905 - Add support for millisecond sleep in Lua plugin
+  #11906 - Do not touch fd from StripeSM::handle_dir_clear
+  #11908 - Coverity. `swoc` Make Name Binding global variables a singleton. 
+  #11911 - Make error if remap ACL has more than one @action
+  #11915 - Fix where we get the filename from
+  #11916 - Remove some autotools leftovers
+  #11918 - Note that some settings are unavailable with BoringSSL
+  #11919 - Deduplicate StripeSM evacuate hit window computation
+  #11926 - Group directory related `Stripe` fields into struct
+  #11932 - Remove Vagrant related files
+  #11933 - Remove reference to traffic_manager from trafficserver rc file
+  #11937 - Clean up some linter warnings in SSLNetVConnection
+  #11940 - Add micro benchmark of EventSystem
+  #11944 - Cleanup: Remove C-style cast from RemapConfig.cc
+  #11947 - Coverity: Fix several new issues.
+  #11949 - [traffic_crashlog] Log full version info
+  #11950 - Coverity: Fix for CID-1587277
+  #11951 - Add unit tests for remap rules. Fix release-assert crasher
+  #11953 - Zero-initialize struct variables in JA4 plugin
+  #11954 - Coverity: Fix for CID 1587263.
+  #11958 - libswoc version update: 1.5.13
+  #11975 - [compress] Add range request control option
+  #11977 - Make LLVM19 builds happy again
+  #11978 - Codeql updates
+  #11982 - Coverity: Some fixes.
+  #11984 - Cleanup of iocore
+  #11985 - Update modsecurity example that leverages lua plugin 
+  #11999 - Add support for parsing Proxy protocol v2 TLV fields
+  #12000 - Fix a build issue from iocore cleanup
+  #12005 - [docs] fix note about updating the ats website
+  #12006 - Added option for proxy.config.http.auth_server_session_private
+  #12007 - Adding a 103 Early Hints Autest
+  #12009 - Adds the %{GROUP} condition to HRW, and else clause
+  #12010 - Fixes some typos on Cripts docs
+  #12011 - Accept PROXY protocol header that carries UDP address info
+  #12013 - Fix cifuzz job
+  #12015 - Adds HRW state variables, 16 flags,  4 int8s and 1 int16
+  #12019 - install libswoc with versioned filenames
+  #12023 - Verbose debugging for setting the number of net threads
+  #12027 - Deprecate name_get() and value_get() function returns const char * (#10153)
+  #12030 - records.yaml: Error logs -   Include record name as part of the error description.
+  #12031 - Add support for Unix Domain Socket server
+  #12032 - Add TSVConnPPInfoGet
+  #12033 - Update the cmake hwloc processing unit support test to use the hwloc include directory
+  #12037 - Coverity: Avoid order initalization issue - part 2.
+  #12038 - Link iocore/net/test_net correctly on OSes other than macOS with old CMake (<3.24)
+  #12039 - access_control plugin: Generate Session Cookie by "exp=0"
+  #12040 - Cleanup debug log of do_http_server_open
+  #12041 - [cache_range_requests] Cleanup debug log
+  #12042 - CID-1591526 - Fix double unlocking.
+  #12043 - Coverity - fix some new unit test's new issues.
+  #12045 - CID-1508827 Fix leak in icap_plugin
+  #12049 - Add support for getting authority information from Proxy Protocol
+  #12051 - Build tools -  Bump quiche version to 0.23.2
+  #12055 - Add mark_bulk() method to lib/swoc to rebuild the RBTree in one operation
+  #12057 - AuTest for Cripts
+  #12058 - Export MPTCP CMAKE var to header files
+  #12059 - Cleanup: Make Cache functions const
+  #12061 - Cleanup - remove a few unused files.
+  #12062 - Fix `tools/benchmark` code/build.
+  #12063 - Clarifies that parent.config is to be replaced with strategies
+  #12065 - Fix memory leak in ink_event_system_init
+  #12068 - Extend timeout from 5 to 10 in tunnel_transform test
+  #12084 - [cachekey] Cleanup debug log
+  #12085 - Move defaulting install prefix before layout setup
+  #12086 - cppcheck - Fix some some errors and warnings.
+  #12095 - Fix a few places where inet_ntop could fail
+  #12096 - Slice plugin support UDS path
+  #12097 - libswoc version update: 1.5.14
+  #12098 - Error::Status can now take optional reason
+  #12099 - Fix a memory leak in the main function in traffic_server.cc
+  #12100 - traffic_top - Fix uncought exception
+  #12101 - Tools: records 2 yaml script fix.
+  #12104 - Add proxy.process.http.total_client_connections_uds
+  #12107 - Fix hii log field for UDS
+  #12108 - Add nullptr check in HttpTransact::is_stale_cache_response_returnable
+  #12109 - Fix typo on header_rewrite documentation
+  #12110 - Add server_cipher_suite to sni.yaml
+  #12115 - Fix logging for origin_server_auth
+  #12116 - [compress] Fix compressible-status-code config
+  #12117 - Adds a %{LAST-CAPTURE} condition to HRW
+  #12118 - Cleanup rc/trafficserver to use layout
+  #12125 - header_rewrite: Add set-plugin-cntl
+  #12126 - Fix header_rewrite loading remap mmdb files
+  #12127 - Fix cache initialization
+  #12128 - Fix check for tcp_info struct
+  #12132 - Doc updates to prepare for Sphinx 8
+  #12135 - esi autest: add --private-response test
+  #12138 - Stabilize autest tls_sni_with_port
+  #12139 - Add some debug logs to proxy protoocl parser
+  #12141 - Fix a bug that PPv2 parser fails to read TLV
+  #12143 - [origin_server_auth] Fix race of config_reloader vs delete
+  #12145 - Couple of coverity fixes.
+  #12146 - docs: Update documentation about PPv2 TLV support
+  #12148 - Require the use of CRLF in chunked message body
+  #12155 - Adds convenience APIs / definitions to Cripts
+  #12156 - Support UDS path for prefetch and esi plugin
+  #12157 - Add CurlCommand to autests (#12122)
+  #12160 - Update the expired certs for autest ssl_key_dialog
+  #12163 - GCC 15: Address mismatched-new-delete in MemArena::Block
+  #12164 - -std=c++20: Remove TextView space before _sv/_tv literal
+  #12165 - autest updates for recent curl and nghttp2 versions
+  #12170 - Add a StatusCode() macro for Cripts convenience mode
+  #12179 - USDT tracing improvements
+  #12181 - Cleanup: Remove unused args from open_read and open_write
+  #12182 - Reset HttpCacheSM on following redirect
+  #12183 - traffic_ctl - Implement `server status` command option.
+  #12185 - OCSP: FetchSM initialization check
+  #12186 - Remove unused VIO.op values
+  #12187 - Make chunk size parsing more strict
+  #12189 - Cleanup HttpCacheSM & HttpCacheAction
+  #12190 - doc: ssl.client.alpn_protocol h22o update
+  #12194 - Remove accept_fn from NetAccept
+  #12199 - Add URL argument to USDT
+  #12200 - Fix FreeBSD Raw Cache Disk Support
+  #12202 - Fix build for clang 20
+  #12205 - Fix openDirEntry leak
+  #12209 - Fixes a crash related to connection tracker config callbacks
+  #12212 - Add proxy.config.http.negative_revalidating_list
+  #12215 - Reset write lock state to init after closing write
+  #12217 - Make TS_VERSION_STRING overridable
+  #12222 - Fix compilation problem with wasm plugin + Update the use of proxy-wasm library
+  #12223 - Add server_group_list option to sni
+  #12224 - Call SSL_get_negotiated_group not during read early data
+  #12228 - XPACK: Inspect _start_expanding_capacity before expanding
+  #12231 - Update SNI for origin side connections
+  #12233 - revert #10996 move session pool metrics outside critical section
+  #12235 - cachekey doc: --include-headers matched case insensitively
+  #12241 - Serve stale contents until max-age + max_stale_age
+  #12248 - Updated testing and fixed bug in SSLSNIConfig
+  #12257 - HTTP/2: Wait END_STREAM flag on half-closed(local) stream state
+  #12258 - [10.1.x][compress] Add an option to do not compress partial object 
+  #12261 - Add the cqssg log field for TLS group name logging
+  #12264 - Fix narrowing conversion of connection ID
+  #12267 - Include records.yaml line and column in the logs when error is found.
+  #12268 - Improve accuracy of alloc metrics with freelists
+  #12269 - [10.1.x] Add per_server_conn metrics
+  #12272 - Cleanup: Track HttpCacheSM read retry event (#12193)
+  #12274 - healthchecks: fix event matching for directory events
+  #12278 - Update url_m_loc variable to the newly generated one in set-destination
+  #12283 - Try both old(9.2) and new cache key generation (#12271)
+  #12288 - Docs: Clarify URL Parts
+  #12290 - Support CLIENT_HELLO split across multiple packets
+  #12295 - Add max inclusion depth support to esi plugin
+  #12302 - stats_over_http: Add Prometheus format option
+  #12303 - Add a setting to choose the data source of IP address for ACL
+  #12307 - Fix potential mutex destroy while locked in origin_server_auth plugin
+  #12313 - Return captive_action from HttpCachSM if read retry event is scheduled
+  #12314 - per_server_connection_max.test.py: Process fixes
+  #12317 - Add metric when parent marked down from inactive timeout
+  #12318 - Increment parent mark down if config allows
+  #12323 - Expose JSON client timeout to CLI
+  #12326 - Fix FileManager to handle file updates properly. (#12282)  10.1.x
+  #12327 - traffic_ctl - Set the appropriate error exit code. (#12308) 10.1.x
+  #12329 - Make OCSP refresh messages debug logs
+  #12330 - 10.1.x: otel build update for GCC 15 (#12180)
+  #12331 - ja3_fingerprint: fix leak of duplicate header fields
+  #12332 - xdebug: release the client request MLoc
+  #12333 - stats_over_http: ensure BrotliEncoderDestroyInstance
+  #12341 - Add action & mutex check before triggering pending dns
+  #12347 - Add config file support for cache_fill
+  #12349 - header_rewrite: Add INBOUND_IP_SOURCE controller (#12246)
+  #12352 - traffic_ctl: get all host statuses by empty arg
+  #12362 - Skip autest for PROXY protocol if the version of curl is old
+  #12367 - Disable read/write_vio in Http2Stream::transaction_done
+  #12374 - cache_promote: Bugfix, don't repurpose policies without labels
+  #12386 - Revert "Address HttpSM::attach_server_session crash (#12325)"
