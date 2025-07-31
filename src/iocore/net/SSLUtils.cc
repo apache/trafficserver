@@ -57,6 +57,7 @@
 #include <openssl/engine.h>
 #include <openssl/err.h>
 #include <openssl/evp.h>
+#include <openssl/objects.h>
 #include <openssl/pem.h>
 #include <openssl/rand.h>
 #include <openssl/x509.h>
@@ -2519,6 +2520,31 @@ SSLGetCurveNID(SSL *ssl)
 #else
   return SSL_get_curve_id(ssl);
 #endif
+}
+
+std::string_view
+SSLGetGroupName([[maybe_unused]] SSL *ssl)
+{
+#if HAVE_SSL_GET0_GROUP_NAME // OpenSSL 3.2+
+  char const *group_name = SSL_get0_group_name(ssl);
+  return group_name != nullptr ? std::string_view(group_name) : "";
+#elif HAVE_SSL_GET_NEGOTIATED_GROUP && HAVE_SSL_GROUP_TO_NAME // OpenSSL 3.0/3.1
+  int const group_id = SSL_get_negotiated_group(ssl);
+  if (group_id != NID_undef) {
+    char const *group_name = SSL_group_to_name(ssl, group_id);
+    return group_name != nullptr ? std::string_view(group_name) : "";
+  }
+  return "";
+#elif HAVE_SSL_GET_GROUP_ID && HAVE_SSL_GET_GROUP_NAME        // BoringSSL
+  uint16_t const group_id = SSL_get_group_id(ssl);
+  if (group_id == 0) {
+    return "";
+  }
+  char const *group_name = SSL_get_group_name(group_id);
+  return group_name != nullptr ? std::string_view(group_name) : "";
+#else
+  return "";
+#endif // HAVE_SSL_GET0_GROUP_NAME
 }
 
 SSL_SESSION *
