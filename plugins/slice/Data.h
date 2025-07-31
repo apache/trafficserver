@@ -30,12 +30,10 @@
 struct Config;
 
 enum BlockState {
-  Pending,
-  PendingInt, // Pending internal refectch
-  PendingRef, // Pending reference refetch
-  Active,
-  ActiveInt, // Active internal refetch
-  ActiveRef, // Active reference refetch
+  Pending,    // waiting for response
+  Active,     // processing current block
+  PendingRef, // waiting for reference refetch response
+  ActiveRef,  // processing current reference refetch
   Done,
   Passthru, // non 206 response passthru
   Fail,
@@ -59,9 +57,7 @@ struct Data {
   char m_hostname[8192];
   int  m_hostlen{0};
 
-  // read from slice block 0
-  char m_date[33];
-  int  m_datelen{0};
+  // best identifier headers, initially from reference slice
   char m_etag[8192];
   int  m_etaglen{0};
   char m_lastmodified[33];
@@ -104,7 +100,6 @@ struct Data {
 
   explicit Data(Config *const config) : m_config(config)
   {
-    m_date[0]         = '\0';
     m_hostname[0]     = '\0';
     m_etag[0]         = '\0';
     m_lastmodified[0] = '\0';

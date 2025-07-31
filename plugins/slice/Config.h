@@ -51,7 +51,6 @@ struct Config {
   uint64_t m_min_size_to_slice{0};    // Only strip objects larger than this
 
   std::string m_skip_header;
-  std::string m_crr_ims_header;
   std::string m_crr_ident_header;
 
   // Convert optarg to bytes
