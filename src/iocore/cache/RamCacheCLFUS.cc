@@ -218,7 +218,7 @@ RamCacheCLFUS::init(int64_t abytes, StripeSM *astripe)
   }
   this->_resize_hashtable();
   if (cache_config_ram_cache_compress) {
-    eventProcessor.schedule_every(new RamCacheCLFUSCompressor(this), HRTIME_SECOND, ET_TASK);
+    eventProcessor.schedule_every(new RamCacheCLFUSCompressor(this), HRTIME_SECONDS(1), ET_TASK);
   }
 }
 

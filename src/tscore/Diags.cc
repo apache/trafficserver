@@ -43,7 +43,6 @@
 #include "tscore/ink_error.h"
 #include "tscore/ink_assert.h"
 #include "tscore/ink_time.h"
-#include "tscore/ink_hrtime.h"
 #include "tscore/ink_thread.h"
 #include "tscore/Regression.h"
 #include "tscore/Diags.h"
