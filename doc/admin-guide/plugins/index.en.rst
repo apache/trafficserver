@@ -185,6 +185,7 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
    Multiplexer <multiplexer.en>
    OpenTelemetry Tracer <otel_tracer.en>
    Rate Limit <rate_limit.en>
+   Real IP <realip.en>
    URI Signing <uri_signing.en>
    Legacy Signed URLs <url_sig.en>
    Slice <slice.en>
@@ -249,6 +250,9 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
 
 :doc:`Rate Limit <rate_limit.en>`
    Simple transaction rate limiting.
+
+:doc:`Real IP <realip.en>`
+   Provides real client's IP address.
 
 :doc:`Remap Purge <remap_purge.en>`
    This remap plugin allows the administrator to easily setup remotely

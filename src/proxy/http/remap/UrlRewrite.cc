@@ -457,6 +457,10 @@ UrlRewrite::PerformACLFiltering(HttpTransact::State *s, const url_mapping *const
         src_addr   = &pp_info.src_addr;
         local_addr = &pp_info.dst_addr;
         break;
+      } else if (IpAllow::Subject::PLUGIN == IpAllow::subjects[i]) {
+        src_addr   = reinterpret_cast<const IpEndpoint *>(s->state_machine->get_ua_txn()->get_verified_client_addr());
+        local_addr = &s->client_info.dst_addr;
+        break;
       }
     }
 
