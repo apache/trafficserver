@@ -29,7 +29,7 @@ replay_file = "replay/negative-caching-disabled.replay.yaml"
 server = Test.MakeVerifierServerProcess("server-disabled", replay_file)
 ts.Disk.records_config.update(
     {
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'http',
         'proxy.config.http.insert_age_in_response': 0,
         'proxy.config.http.negative_caching_enabled': 0
@@ -48,7 +48,7 @@ replay_file = "replay/negative-caching-default.replay.yaml"
 server = Test.MakeVerifierServerProcess("server-default", replay_file)
 ts.Disk.records_config.update(
     {
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'http',
         'proxy.config.http.insert_age_in_response': 0,
         'proxy.config.http.negative_caching_enabled': 1
@@ -67,7 +67,7 @@ replay_file = "replay/negative-caching-customized.replay.yaml"
 server = Test.MakeVerifierServerProcess("server-customized", replay_file)
 ts.Disk.records_config.update(
     {
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'http',
         'proxy.config.http.insert_age_in_response': 0,
         'proxy.config.http.negative_caching_enabled': 1,
@@ -85,7 +85,7 @@ tr.AddVerifierClientProcess("client-customized", replay_file, http_ports=[ts.Var
 ts = Test.MakeATSProcess("ts-lifetime")
 ts.Disk.records_config.update(
     {
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'http',
         'proxy.config.http.insert_age_in_response': 0,
         'proxy.config.http.negative_caching_enabled': 1,
@@ -122,7 +122,7 @@ tr.StillRunningAfter = ts
 ts = Test.MakeATSProcess("ts-lifetime-2")
 ts.Disk.records_config.update(
     {
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'http',
         'proxy.config.http.insert_age_in_response': 0,
         'proxy.config.http.negative_caching_enabled': 1,

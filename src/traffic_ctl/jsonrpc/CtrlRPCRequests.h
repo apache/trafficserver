@@ -241,13 +241,13 @@ struct SetDebugServerRequest : ConfigSetRecordRequest {
     std::string enable_value{(enabled ? "1" : "0")};
     if (!client_ip.empty()) {
       super::params.push_back(Params{"proxy.config.diags.debug.client_ip", client_ip});
-      // proxy.config.diags.debug.enabled needs to be set to 2 if client_ip is used.
+      // proxy.config.diags.debug.mode needs to be set to 2 if client_ip is used.
       enable_value = "2";
     }
     if (!tags.empty()) {
       super::params.push_back(Params{"proxy.config.diags.debug.tags", tags});
     }
 
-    super::params.push_back(Params{"proxy.config.diags.debug.enabled", std::move(enable_value)});
+    super::params.push_back(Params{"proxy.config.diags.debug.mode", std::move(enable_value)});
   }
 };

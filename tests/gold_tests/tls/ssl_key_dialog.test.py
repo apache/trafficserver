@@ -32,7 +32,7 @@ ts.addSSLfile("ssl/passphrase2.key")
 ts.Disk.remap_config.AddLine(f"map https://passphrase:{ts.Variables.ssl_port}/ http://127.0.0.1:{server.Variables.Port}")
 ts.Disk.records_config.update(
     {
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'ssl_load|http',
         'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
         'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),

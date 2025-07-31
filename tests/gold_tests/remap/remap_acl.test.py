@@ -85,7 +85,7 @@ class Test_remap_acl:
 
         ts.Disk.records_config.update(
             {
-                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.mode': 1,
                 'proxy.config.diags.debug.tags': 'http|url|remap|ip_allow|proxyprotocol',
                 'proxy.config.http.push_method_enabled': 1,
                 'proxy.config.http.connect_ports': self._server.Variables.http_port,
@@ -164,7 +164,7 @@ class Test_old_action:
 
         ts.Disk.records_config.update(
             {
-                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.mode': 1,
                 'proxy.config.diags.debug.tags': 'http|url|remap|ip_allow',
                 'proxy.config.url_remap.acl_behavior_policy': 1,
             })

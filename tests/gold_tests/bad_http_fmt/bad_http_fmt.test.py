@@ -84,7 +84,7 @@ server.addResponse("sessionlog.json", request_header, response_header)
 
 ts.Disk.records_config.update(
     {
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'http|dns',
         'proxy.config.url_remap.remap_required': 0,
         'proxy.config.http.strict_uri_parsing': 1,

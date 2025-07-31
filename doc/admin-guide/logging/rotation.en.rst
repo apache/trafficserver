@@ -148,9 +148,9 @@ To set log file rolling options and/or configure |TS| to roll log files when
 they reach a certain size, adjust the following settings in
 :file:`records.yaml`:
 
-#. Enable log rolling with :ts:cv:`proxy.config.log.rolling_enabled`. ::
+#. Enable log rolling with :ts:cv:`proxy.config.log.rolling.mode`. ::
 
-    CONFIG proxy.config.log.rolling_enabled INT 1
+    CONFIG proxy.config.log.rolling.mode INT 1
 
 #. Configure the upper limit on log file size with
    :ts:cv:`proxy.config.log.rolling_size_mb`. ::

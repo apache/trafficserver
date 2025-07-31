@@ -221,7 +221,7 @@ class Test_ip_category:
         ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
         ts.Disk.records_config.update(
             {
-                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.mode': 1,
                 'proxy.config.diags.debug.tags': 'http|ip_allow',
                 'proxy.config.cache.ip_categories.filename': Test_ip_category._categories_filename,
                 'proxy.config.http.push_method_enabled': 1,

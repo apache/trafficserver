@@ -28,7 +28,7 @@ tr = Test.TxnBoxTestAndRun("Test IP address", "ip-addr.replay.yaml", config_path
 ts = tr.Variables.TS
 ts.Disk.records_config.update(
     {
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'txn_box',
         'proxy.config.http.insert_request_via_str': 0
     })

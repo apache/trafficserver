@@ -37,7 +37,7 @@ def get_ts(logging_config):
 
     ts.Disk.records_config.update(
         {
-            'proxy.config.diags.debug.enabled': 1,
+            'proxy.config.diags.debug.mode': 1,
             'proxy.config.diags.debug.tags': 'log-file',
             'proxy.config.log.max_secs_per_buffer': 1,
         })

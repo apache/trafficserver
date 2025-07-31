@@ -71,6 +71,7 @@ const std::unordered_map<std::string_view, std::tuple<const TSOverridableConfigK
     {"proxy.config.ssl.hsts_include_subdomains",                       {TS_CONFIG_SSL_HSTS_INCLUDE_SUBDOMAINS, TS_RECORDDATATYPE_INT}           },
     {"proxy.config.http.number_of_redirections",                       {TS_CONFIG_HTTP_NUMBER_OF_REDIRECTIONS, TS_RECORDDATATYPE_INT}           },
     {"proxy.config.http.keep_alive_enabled_out",                       {TS_CONFIG_HTTP_KEEP_ALIVE_ENABLED_OUT, TS_RECORDDATATYPE_INT}           },
+    {"proxy.config.http.response_server.mode",                         {TS_CONFIG_HTTP_RESPONSE_SERVER_MODE, TS_RECORDDATATYPE_INT}             },
     {"proxy.config.http.response_server_enabled",                      {TS_CONFIG_HTTP_RESPONSE_SERVER_ENABLED, TS_RECORDDATATYPE_INT}          },
     {"proxy.config.http.anonymize_remove_cookie",                      {TS_CONFIG_HTTP_ANONYMIZE_REMOVE_COOKIE, TS_RECORDDATATYPE_INT}          },
     {"proxy.config.http.request_header_max_size",                      {TS_CONFIG_HTTP_REQUEST_HEADER_MAX_SIZE, TS_RECORDDATATYPE_INT}          },

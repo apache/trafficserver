@@ -35,7 +35,7 @@ class ChunkedEncodingDisabled:
         self.ts.addDefaultSSLFiles()
         self.ts.Disk.records_config.update(
             {
-                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.mode": 1,
                 "proxy.config.diags.debug.tags": "http",
                 "proxy.config.ssl.server.cert.path": f'{self.ts.Variables.SSLDir}',
                 "proxy.config.ssl.server.private_key.path": f'{self.ts.Variables.SSLDir}',

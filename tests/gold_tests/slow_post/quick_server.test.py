@@ -84,7 +84,7 @@ class QuickServerTest:
         self._ts.Disk.remap_config.AddLine(f'map / http://quick.server.com:{self._server.Variables.http_port}')
         self._ts.Disk.records_config.update(
             {
-                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.mode': 1,
                 'proxy.config.diags.debug.tags': 'http|dns|hostdb',
                 'proxy.config.dns.nameservers': f'127.0.0.1:{self._dns.Variables.Port}',
                 'proxy.config.dns.resolv_conf': 'NULL',

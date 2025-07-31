@@ -363,7 +363,7 @@ msgid ""
 msgstr ""
 
 #: ../../../admin-guide/monitoring/logging/managing-logs.en.rst:197
-msgid "Enable log rolling with :ts:cv:`proxy.config.log.rolling_enabled`. ::"
+msgid "Enable log rolling with :ts:cv:`proxy.config.log.rolling.mode`. ::"
 msgstr ""
 
 #: ../../../admin-guide/monitoring/logging/managing-logs.en.rst:201

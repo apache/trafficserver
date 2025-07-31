@@ -62,7 +62,7 @@ Description
 
 .. var:: const char* record_name
 
-    A null-terminated string with the record name which was built when parsing the YAML file. Example: `proxy.config.diags.debug.enabled`.
+    A null-terminated string with the record name which was built when parsing the YAML file. Example: `proxy.config.diags.debug.mode`.
     Use this to validate or do any check base on a record name.
 
 .. var:: TSYaml value_node

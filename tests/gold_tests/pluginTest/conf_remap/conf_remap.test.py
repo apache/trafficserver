@@ -43,7 +43,7 @@ class ConfRemapPluginTest:
         self._ts = Test.MakeATSProcess("ts", enable_cache=True)
         self._ts.Disk.records_config.update(
             {
-                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.mode": 1,
                 "proxy.config.diags.debug.tags": "http|conf_remap",
                 "proxy.config.http.insert_response_via_str": 2,
                 "proxy.config.http.negative_caching_enabled": 0

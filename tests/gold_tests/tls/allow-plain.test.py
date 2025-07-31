@@ -43,7 +43,7 @@ ts.Disk.records_config.update(
         'proxy.config.http.server_ports': '{0}:ssl:allow-plain'.format(ts.Variables.ssl_port),
         'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
         'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-        'proxy.config.diags.debug.enabled': 0,
+        'proxy.config.diags.debug.mode': 0,
         'proxy.config.diags.debug.tags': 'ssl|http',
     })
 

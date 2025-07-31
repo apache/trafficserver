@@ -42,7 +42,7 @@ server.addResponse("sessionlog.json", request_header, response_header)
 ts.Disk.plugin_config.AddLine('xdebug.so --enable=x-cache,x-cache-key,via')
 ts.Disk.records_config.update(
     {
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'http',
         'proxy.config.http.response_via_str': 3,
     })

@@ -247,6 +247,9 @@ RecErrT RecGetRecordDataType(const char *name, RecDataT *data_type, bool lock = 
 RecErrT RecGetRecordPersistenceType(const char *name, RecPersistT *persist_type, bool lock = true);
 RecErrT RecGetRecordSource(const char *name, RecSourceT *source, bool lock = true);
 
+/// Check if a configuration record is using its default value (vs being set by user, plugin, env, etc.).
+bool RecConfigIsUsingDefaultValue(char const *name);
+
 /// Generate a warning if any configuration name/value is not registered.
 void RecConfigWarnIfUnregistered();
 

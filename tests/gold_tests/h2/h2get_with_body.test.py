@@ -45,7 +45,7 @@ ts.Disk.records_config.update(
         'proxy.config.ssl.server.private_key.path': f"{ts.Variables.SSLDir}",
         'proxy.config.ssl.client.alpn_protocols': 'h2,http/1.1',
         'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
-        "proxy.config.diags.debug.enabled": 3,
+        "proxy.config.diags.debug.mode": 3,
         "proxy.config.diags.debug.tags": "http",
     })
 

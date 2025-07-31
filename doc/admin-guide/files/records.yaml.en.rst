@@ -320,6 +320,29 @@ System Variables
 
 .. ts:cv:: CONFIG proxy.config.output.logfile.rolling_enabled INT 0
    :reloadable:
+   :deprecated:
+
+   .. deprecated:: 10.1.0
+
+      This configuration is deprecated. Use :ts:cv:`proxy.config.output.logfile.rolling.mode` instead.
+
+   Specifies how the output log is rolled. You can specify the following values:
+
+   ===== ======================================================================
+   Value Description
+   ===== ======================================================================
+   ``0`` Disables output log rolling.
+   ``1`` Enables output log rolling at specific intervals (specified with the
+         :ts:cv:`proxy.config.output.logfile.rolling_interval_sec` variable).
+         The clock starts ticking on |TS| boot.
+   ``2`` Enables output log rolling when the output log reaches a specific size
+         (specified with :ts:cv:`proxy.config.output.logfile.rolling_size_mb`).
+   ``3`` Enables output log rolling at specific intervals or when the output log
+         reaches a specific size (whichever occurs first).
+   ===== ======================================================================
+
+.. ts:cv:: CONFIG proxy.config.output.logfile.rolling.mode INT 0
+   :reloadable:
 
    Specifies how the output log is rolled. You can specify the following values:
 
@@ -442,6 +465,35 @@ Thread Variables
    This option specifies the size limit for core files in the event
    that :program:`traffic_server` crashes. ``-1`` means there is
    no limit. A value of ``0`` prevents core dump creation.
+
+.. ts:cv:: CONFIG proxy.config.mlock_enabled INT 0
+   :deprecated:
+
+   .. deprecated:: 10.1.0
+
+      This configuration is deprecated. Use :ts:cv:`proxy.config.mlock.mode` instead.
+
+   Controls memory locking behavior for Traffic Server:
+
+   ===== ======================================================================
+   Value Description
+   ===== ======================================================================
+   ``0`` Disabled - no memory locking.
+   ``1`` Enabled for important pages (e.g. cache directory).
+   ``2`` Enabled for all pages.
+   ===== ======================================================================
+
+.. ts:cv:: CONFIG proxy.config.mlock.mode INT 0
+
+   Controls memory locking behavior for Traffic Server:
+
+   ===== ======================================================================
+   Value Description
+   ===== ======================================================================
+   ``0`` No memory locking.
+   ``1`` Memory locking enabled for important pages (e.g. cache directory).
+   ``2`` Memory locking enabled for all pages.
+   ===== ======================================================================
 
 .. ts:cv:: CONFIG proxy.config.restart.stop_listening INT 0
    :reloadable:
@@ -967,8 +1019,29 @@ allow-plain
 .. ts:cv:: CONFIG proxy.config.http.response_server_enabled INT 1
    :reloadable:
    :overridable:
+   :deprecated:
+
+   .. deprecated:: 10.1.0
+
+      This configuration is deprecated. Use :ts:cv:`proxy.config.http.response_server.mode` instead.
 
    You can specify one of the following:
+
+   ===== ======================================================================
+   Value Description
+   ===== ======================================================================
+   ``0`` No ``Server`` header is added to the response.
+   ``1`` The ``Server`` header is added according to
+         :ts:cv:`proxy.config.http.response_server_str`.
+   ``2`` The ``Server`` header is added only if the response from origin does
+         not have one already.
+   ===== ======================================================================
+
+.. ts:cv:: CONFIG proxy.config.http.response_server.mode INT 1
+   :reloadable:
+   :overridable:
+
+   Specifies how the ``Server`` header is handled in responses:
 
    ===== ======================================================================
    Value Description
@@ -3175,6 +3248,11 @@ Logging Configuration
 
 .. ts:cv:: CONFIG proxy.config.log.logging_enabled INT 3
    :reloadable:
+   :deprecated:
+
+   .. deprecated:: 10.1.0
+
+      This configuration is deprecated. Use :ts:cv:`proxy.config.log.logging.mode` instead.
 
    Enables and disables event logging:
 
@@ -3186,6 +3264,22 @@ Logging Configuration
    ``2``    Log transactions only.
    ``3``    Dual logging (errors and transactions).
    ======== ===================================================================
+
+   Refer to :ref:`admin-logging` for more information on event logging.
+
+.. ts:cv:: CONFIG proxy.config.log.logging.mode INT 3
+   :reloadable:
+
+   Enables and disables event logging:
+
+   ===== ===================================================================
+   Value Effect
+   ===== ===================================================================
+   ``0`` Logging disabled.
+   ``1`` Log errors only.
+   ``2`` Log transactions only.
+   ``3`` Dual logging (errors and transactions).
+   ===== ===================================================================
 
    Refer to :ref:`admin-logging` for more information on event logging.
 
@@ -3263,6 +3357,32 @@ Logging Configuration
    existing log files are not changed when the configuration is modified.
 
 .. ts:cv:: CONFIG proxy.config.log.rolling_enabled INT 1
+   :reloadable:
+   :deprecated:
+
+   .. deprecated:: 10.1.0
+
+      This configuration is deprecated. Use :ts:cv:`proxy.config.log.rolling.mode` instead.
+
+   Specifies how log files are rolled. You can specify the following values:
+
+   ===== ======================================================================
+   Value Description
+   ===== ======================================================================
+   ``0`` Disables log file rolling.
+   ``1`` Enables log file rolling at specific intervals during the day
+         (specified with the :ts:cv:`proxy.config.log.rolling_interval_sec` and
+         :ts:cv:`proxy.config.log.rolling_offset_hr` variables).
+   ``2`` Enables log file rolling when log files reach a specific size
+         (specified with :ts:cv:`proxy.config.log.rolling_size_mb`).
+   ``3`` Enables log file rolling at specific intervals during the day or when
+         log files reach a specific size (whichever occurs first).
+   ``4`` Enables log file rolling at specific intervals during the day when log
+         files reach a specific size (i.e. at a specified time if the file is
+         of the specified size).
+   ===== ======================================================================
+
+.. ts:cv:: CONFIG proxy.config.log.rolling.mode INT 1
    :reloadable:
 
    Specifies how log files are rolled. You can specify the following values:
@@ -3497,6 +3617,11 @@ Diagnostic Logging Configuration
 
 .. ts:cv:: CONFIG proxy.config.diags.debug.enabled INT 0
    :reloadable:
+   :deprecated:
+
+   .. deprecated:: 10.1.0
+
+      This configuration is deprecated. Use :ts:cv:`proxy.config.diags.debug.mode` instead.
 
    When set to 1, enables logging for diagnostic messages whose log level is `diag` or `debug`.
 
@@ -3504,9 +3629,25 @@ Diagnostic Logging Configuration
 
    See the :ref:`Enable debug using traffic_ctl<traffic-control-command-server-debug>` for a convenient way to handle this.
 
+.. ts:cv:: CONFIG proxy.config.diags.debug.mode INT 0
+   :reloadable:
+
+   Controls diagnostic debug message logging:
+
+   ===== ======================================================================
+   Value Description
+   ===== ======================================================================
+   ``0`` Disables debug message logging.
+   ``1`` Enables logging for diagnostic messages whose log level is `diag` or `debug`.
+   ``2`` Interprets the :ts:cv:`proxy.config.diags.debug.client_ip` setting to
+         determine whether diagnostic messages are logged.
+   ===== ======================================================================
+
+   See the :ref:`Enable debug using traffic_ctl<traffic-control-command-server-debug>` for a convenient way to handle this.
+
 .. ts:cv:: CONFIG proxy.config.diags.debug.client_ip STRING NULL
 
-   if :ts:cv:`proxy.config.diags.debug.enabled` is set to 2, this value is tested against the source IP of the incoming connection.  If there is a match, all the diagnostic messages for that connection and the related outgoing connection will be logged.
+   if :ts:cv:`proxy.config.diags.debug.mode` is set to 2, this value is tested against the source IP of the incoming connection.  If there is a match, all the diagnostic messages for that connection and the related outgoing connection will be logged.
 
 .. ts:cv:: CONFIG proxy.config.diags.debug.tags STRING http|dns
 
@@ -3577,6 +3718,30 @@ Diagnostic Logging Configuration
 
 
 .. ts:cv:: CONFIG proxy.config.diags.logfile.rolling_enabled INT 0
+   :reloadable:
+   :deprecated:
+
+   .. deprecated:: 10.1.0
+
+      This configuration is deprecated. Use :ts:cv:`proxy.config.diags.logfile.rolling.mode` instead.
+
+   Specifies how the diagnostics log is rolled. You can specify the following values:
+
+   ===== ======================================================================
+   Value Description
+   ===== ======================================================================
+   ``0`` Disables diagnostics log rolling.
+   ``1`` Enables diagnostics log rolling at specific intervals (specified with
+         :ts:cv:`proxy.config.diags.logfile.rolling_interval_sec`). The "clock"
+         starts ticking on |TS| startup.
+   ``2`` Enables diagnostics log rolling when the diagnostics log reaches a
+         specific size (specified with
+         :ts:cv:`proxy.config.diags.logfile.rolling_size_mb`).
+   ``3`` Enables diagnostics log rolling at specific intervals or when the
+         diagnostics log reaches a specific size (whichever occurs first).
+   ===== ======================================================================
+
+.. ts:cv:: CONFIG proxy.config.diags.logfile.rolling.mode INT 0
    :reloadable:
 
    Specifies how the diagnostics log is rolled. You can specify the following values:
@@ -3959,8 +4124,27 @@ SSL Termination
   SSL session cache for the origin server.
 
 .. ts:cv:: CONFIG proxy.config.ssl.session_cache.enabled INT 2
+   :deprecated:
+
+   .. deprecated:: 10.1.0
+
+      This configuration is deprecated. Use :ts:cv:`proxy.config.ssl.session_cache.mode` instead.
 
    Enables the SSL session cache:
+
+   ===== ======================================================================
+   Value Description
+   ===== ======================================================================
+   ``0`` Disables the session cache entirely.
+   ``1`` Enables the session cache using OpenSSL's implementation.
+   ``2`` Default. Enables the session cache using |TS|'s implementation. This
+         implementation should perform much better than the OpenSSL
+         implementation.
+   ===== ======================================================================
+
+.. ts:cv:: CONFIG proxy.config.ssl.session_cache.mode INT 2
+
+   Specifies how the SSL session cache is configured:
 
    ===== ======================================================================
    Value Description
@@ -3978,7 +4162,7 @@ SSL Termination
   entries in seconds. If it is ``0``, then the SSL library will use
   a default value, typically 300 seconds. Note: This option has no affect
   when using the |TS| session cache (option ``2`` in
-  ``proxy.config.ssl.session_cache.enabled``)
+  ``proxy.config.ssl.session_cache.mode``)
 
    See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
 
@@ -4020,9 +4204,9 @@ SSL Termination
   Take into account that setting the value to 0 will disable session caching for TLSv1.3
   connections.
 
-  Lowering this setting to ``1`` can be interesting when ``proxy.config.ssl.session_cache.enabled`` is enabled because
+  Lowering this setting to ``1`` can be interesting when ``proxy.config.ssl.session_cache.mode`` is enabled because
   otherwise for every new TLSv1.3 connection two session IDs will be inserted in the session cache.
-  On the other hand, if ``proxy.config.ssl.session_cache.enabled``  is disabled, using the default value is recommended.
+  On the other hand, if ``proxy.config.ssl.session_cache.mode``  is disabled, using the default value is recommended.
   In those scenarios, increasing the number of tickets could be potentially beneficial for clients performing
   multiple requests over concurrent TLS connections as per RFC 8446 clients SHOULDN'T reuse TLS Tickets.
 

@@ -48,7 +48,7 @@ ts.Disk.records_config.update(
         'proxy.config.exec_thread.autoconfig.scale': 1.0,
         'proxy.config.http.host_sni_policy': 2,
         'proxy.config.ssl.TLSv1_3.enabled': 0,
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'ssl',
     })
 

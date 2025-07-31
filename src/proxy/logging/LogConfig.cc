@@ -168,11 +168,24 @@ LogConfig::read_configuration_variables()
   rolling_offset_hr    = RecGetRecordInt("proxy.config.log.rolling_offset_hr").value_or(0);
   rolling_size_mb      = RecGetRecordInt("proxy.config.log.rolling_size_mb").value_or(0);
   rolling_min_count    = RecGetRecordInt("proxy.config.log.rolling_min_count").value_or(0);
-  val                  = RecGetRecordInt("proxy.config.log.rolling_enabled").value_or(0);
+
+  // Validate that new mode and deprecated enabled configs don't conflict (if both explicitly defined).
+  auto rolling_mode_config    = RecGetRecordInt("proxy.config.log.rolling.mode");
+  auto rolling_enabled_config = RecGetRecordInt("proxy.config.log.rolling_enabled");
+
+  if (rolling_mode_config.has_value() && rolling_enabled_config.has_value() &&
+      rolling_mode_config.value() != rolling_enabled_config.value() &&
+      !RecConfigIsUsingDefaultValue("proxy.config.log.rolling_enabled")) {
+    Emergency("Conflicting log rolling configuration: proxy.config.log.rolling.mode=%d but proxy.config.log.rolling_enabled=%d",
+              static_cast<int>(rolling_mode_config.value()), static_cast<int>(rolling_enabled_config.value()));
+  }
+
+  val = rolling_mode_config.value_or(rolling_enabled_config.value_or(1));
+
   if (LogRollingEnabledIsValid(val)) {
     rolling_enabled = static_cast<Log::RollingEnabledValues>(val);
   } else {
-    Warning("invalid value '%d' for '%s', disabling log rolling", val, "proxy.config.log.rolling_enabled");
+    Warning("invalid value '%d' for '%s', disabling log rolling", val, "proxy.config.log.rolling.mode");
     rolling_enabled = Log::NO_ROLLING;
   }
 
@@ -439,6 +452,7 @@ LogConfig::register_config_callbacks()
     "proxy.config.log.logfile_perm",
     "proxy.config.log.hostname",
     "proxy.config.log.logfile_dir",
+    "proxy.config.log.rolling.mode",
     "proxy.config.log.rolling_enabled",
     "proxy.config.log.rolling_interval_sec",
     "proxy.config.log.rolling_offset_hr",

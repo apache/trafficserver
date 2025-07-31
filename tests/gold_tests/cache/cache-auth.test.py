@@ -42,7 +42,7 @@ class AuthDefaultTest:
     def setupTS(self):
         self.ts = Test.MakeATSProcess("ts-auth-default")
         self.ts.Disk.records_config.update({
-            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.mode": 1,
             "proxy.config.diags.debug.tags": "http",
         })
         self.ts.Disk.remap_config.AddLine(f"map / http://127.0.0.1:{self.server.Variables.http_port}/",)
@@ -86,7 +86,7 @@ class AuthIgnoredTest:
         self.ts = Test.MakeATSProcess("ts-auth-ignored")
         self.ts.Disk.records_config.update(
             {
-                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.mode": 1,
                 "proxy.config.diags.debug.tags": "http",
                 # Configure ATS to ignore the WWW-Authenticate header in
                 # response(allow caching of such response)

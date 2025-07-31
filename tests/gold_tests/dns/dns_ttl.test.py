@@ -70,7 +70,7 @@ class TtlDnsTest:
         self.dns_port = ports.get_port(self.ts, 'dns_port')
         self.ts.Disk.records_config.update(
             {
-                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.mode": 1,
                 "proxy.config.diags.debug.tags": "dns",
                 'proxy.config.dns.nameservers': f'127.0.0.1:{self.dns_port}',
                 'proxy.config.dns.resolv_conf': 'NULL',

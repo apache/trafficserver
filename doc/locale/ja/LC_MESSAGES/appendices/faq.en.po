@@ -1128,7 +1128,7 @@ msgid ""
 "config.log.logging_enabled` variable in :file:`records.yaml`."
 msgstr ""
 "ログ出力が有効になっているかどうかを :file:`records.yaml` の :ts:cv:"
-"`proxy.config.log.logging_enabled` 変数の値を見て確認してください。"
+"`proxy.config.log.logging.mode` 変数の値を見て確認してください。"
 
 #: ../../../appendices/faq.en.rst:533
 msgid ""

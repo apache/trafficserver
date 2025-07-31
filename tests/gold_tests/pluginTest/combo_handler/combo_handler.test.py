@@ -87,7 +87,7 @@ add_server_obj("application/javascript", "/obj4")
 ts = Test.MakeATSProcess("ts")
 
 ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
+    'proxy.config.diags.debug.mode': 1,
     'proxy.config.diags.debug.tags': 'http|combo_handler',
 })
 

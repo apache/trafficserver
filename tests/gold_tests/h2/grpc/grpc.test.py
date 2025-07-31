@@ -69,7 +69,7 @@ class TestGrpc():
 
                 # Disable debug logging to avoid excessive log file size. I keep
                 # it here for convenience of use during manual debugging.
-                "proxy.config.diags.debug.enabled": 0,
+                "proxy.config.diags.debug.mode": 0,
                 "proxy.config.diags.debug.tags": "http",
 
                 # The Python gRPC module uses many WINDO_UPDATE frames of small

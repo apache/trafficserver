@@ -59,7 +59,7 @@ class SlowPostAttack:
         Test.PrepareInstalledPlugin('request_buffer.so', self._ts)
         self._ts.Disk.records_config.update(
             {
-                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.mode': 1,
                 'proxy.config.diags.debug.tags': 'http',
                 'proxy.config.http.per_server.connection.max': self._origin_max_connections,
             })

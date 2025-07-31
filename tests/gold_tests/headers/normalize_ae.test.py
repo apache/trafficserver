@@ -49,7 +49,7 @@ ts = Test.MakeATSProcess("ts", enable_cache=False)
 def baselineTsSetup(ts):
 
     ts.Disk.records_config.update({
-        # 'proxy.config.diags.debug.enabled': 1,
+        # 'proxy.config.diags.debug.mode': 1,
     })
 
     ts.Disk.remap_config.AddLine('map http://www.no-oride.com http://127.0.0.1:{0}'.format(server.Variables.Port))

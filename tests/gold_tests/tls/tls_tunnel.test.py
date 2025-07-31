@@ -88,7 +88,7 @@ ts.Disk.records_config.update(
         'proxy.config.ssl.client.CA.cert.filename': 'signer.pem',
         'proxy.config.exec_thread.autoconfig.scale': 1.0,
         'proxy.config.url_remap.pristine_host_hdr': 1,
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'http|ssl|proxyprotocol',
         'proxy.config.dns.nameservers': f'127.0.0.1:{dns.Variables.Port}',
         'proxy.config.dns.resolv_conf': 'NULL'

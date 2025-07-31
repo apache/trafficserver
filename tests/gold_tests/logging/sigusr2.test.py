@@ -42,12 +42,12 @@ class Sigusr2Test:
         self.ts.Disk.records_config.update(
             {
                 'proxy.config.http.wait_for_cache': 1,
-                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.mode': 1,
                 'proxy.config.diags.debug.tags': 'log',
                 'proxy.config.log.periodic_tasks_interval': 1,
 
                 # All log rotation should be handled externally.
-                'proxy.config.log.rolling_enabled': 0,
+                'proxy.config.log.rolling.mode': 0,
                 'proxy.config.log.auto_delete_rolled_files': 0,
             })
 

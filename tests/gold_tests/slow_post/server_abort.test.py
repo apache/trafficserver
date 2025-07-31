@@ -34,7 +34,7 @@ ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=aaa-signed.pem ssl
 ts.Disk.records_config.update(
     {
         'proxy.config.diags.debug.tags': 'http|dns',
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.ssl.server.cert.path': f'{Test.TestDirectory}/test_secrets',
         'proxy.config.ssl.server.private_key.path': f'{Test.TestDirectory}/test_secrets',
     })

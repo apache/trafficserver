@@ -44,7 +44,7 @@ class PostAndMaxRequestsInTest:
                 "proxy.config.http.server_ports": f"{self.ts.Variables.port} {self.ts.Variables.uds_path}",
                 "proxy.config.net.max_requests_in": 1000,
                 'proxy.config.http.connect_attempts_timeout': 1,
-                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.mode": 1,
                 "proxy.config.diags.debug.tags": "http|socket|v_net_queue",
             })
 

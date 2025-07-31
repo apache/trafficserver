@@ -452,7 +452,30 @@ SSLConfigParams::initialize()
   // SSL session cache configurations
   ssl_origin_session_cache      = RecGetRecordInt("proxy.config.ssl.origin_session_cache.enabled").value_or(0);
   ssl_origin_session_cache_size = RecGetRecordInt("proxy.config.ssl.origin_session_cache.size").value_or(0);
-  ssl_session_cache             = RecGetRecordInt("proxy.config.ssl.session_cache.value").value_or(0);
+
+  // Validate that new mode and deprecated enabled configs don't conflict (if both explicitly defined).
+  auto session_cache_mode    = RecGetRecordInt("proxy.config.ssl.session_cache.mode");
+  auto session_cache_enabled = RecGetRecordInt("proxy.config.ssl.session_cache.enabled");
+  auto session_cache_value   = RecGetRecordInt("proxy.config.ssl.session_cache.value");
+
+  if (session_cache_mode.has_value() && session_cache_enabled.has_value() &&
+      session_cache_mode.value() != session_cache_enabled.value() &&
+      !RecConfigIsUsingDefaultValue("proxy.config.ssl.session_cache.enabled")) {
+    Emergency("Conflicting SSL session cache configuration: proxy.config.ssl.session_cache.mode=%d but "
+              "proxy.config.ssl.session_cache.enabled=%d",
+              static_cast<int>(session_cache_mode.value()), static_cast<int>(session_cache_enabled.value()));
+  }
+  if (session_cache_mode.has_value() && session_cache_value.has_value() &&
+      session_cache_mode.value() != session_cache_value.value() &&
+      !RecConfigIsUsingDefaultValue("proxy.config.ssl.session_cache.value")) {
+    Emergency("Conflicting SSL session cache configuration: proxy.config.ssl.session_cache.mode=%d but "
+              "proxy.config.ssl.session_cache.value=%d",
+              static_cast<int>(session_cache_mode.value()), static_cast<int>(session_cache_value.value()));
+  }
+
+  ssl_session_cache = session_cache_mode.value_or(
+    session_cache_enabled.value_or(session_cache_value.value_or(SSL_SESSION_CACHE_MODE_SERVER_ATS_IMPL)));
+
   ssl_session_cache_size        = RecGetRecordInt("proxy.config.ssl.session_cache.size").value_or(0);
   ssl_session_cache_num_buckets = RecGetRecordInt("proxy.config.ssl.session_cache.num_buckets").value_or(0);
   ssl_session_cache_skip_on_contention =

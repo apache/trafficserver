@@ -159,6 +159,7 @@ TSOverridableConfigKey Value                                              Config
 :enumerator:`TS_CONFIG_HTTP_REQUEST_BUFFER_ENABLED`                     :ts:cv:`proxy.config.http.request_buffer_enabled`
 :enumerator:`TS_CONFIG_HTTP_REQUEST_HEADER_MAX_SIZE`                    :ts:cv:`proxy.config.http.request_header_max_size`
 :enumerator:`TS_CONFIG_HTTP_RESPONSE_HEADER_MAX_SIZE`                   :ts:cv:`proxy.config.http.response_header_max_size`
+:enumerator:`TS_CONFIG_HTTP_RESPONSE_SERVER_MODE`                       :ts:cv:`proxy.config.http.response_server.mode`
 :enumerator:`TS_CONFIG_HTTP_RESPONSE_SERVER_ENABLED`                    :ts:cv:`proxy.config.http.response_server_enabled`
 :enumerator:`TS_CONFIG_HTTP_RESPONSE_SERVER_STR`                        :ts:cv:`proxy.config.http.response_server_str`
 :enumerator:`TS_CONFIG_HTTP_SEND_HTTP11_REQUESTS`                       :ts:cv:`proxy.config.http.send_http11_requests`

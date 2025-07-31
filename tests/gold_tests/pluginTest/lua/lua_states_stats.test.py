@@ -53,7 +53,7 @@ ts.Disk.plugin_config.AddLine('tslua.so {}/global.lua'.format(Test.RunDirectory)
 
 ts.Disk.records_config.update(
     {
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'ts_lua',
         'proxy.config.plugin.lua.max_states': 4,
     })

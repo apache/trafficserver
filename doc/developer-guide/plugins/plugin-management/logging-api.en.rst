@@ -37,8 +37,12 @@ The logging API enables you to:
 -  Set the log header for your custom text log: see
    :func:`TSTextLogObjectHeaderSet`
 
--  Enable or disable rolling your custom text log: see
+-  Enable or disable rolling your custom text log (deprecated in 10.1.0,
+   use :func:`TSTextLogObjectRollingModeSet` instead): see
    :func:`TSTextLogObjectRollingEnabledSet`
+
+-  Set the rolling mode for your custom text log: see
+   :func:`TSTextLogObjectRollingModeSet`
 
 -  Set the rolling interval (in seconds) for your custom text log: see
    :func:`TSTextLogObjectRollingIntervalSecSet`

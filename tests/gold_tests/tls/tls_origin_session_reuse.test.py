@@ -78,7 +78,7 @@ ts1.Disk.records_config.update(
 ts2.Disk.records_config.update(
     {
         'proxy.config.http.cache.http': 0,
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'ssl.origin_session_cache',
         'proxy.config.ssl.server.cert.path': '{0}'.format(ts2.Variables.SSLDir),
         'proxy.config.ssl.server.private_key.path': '{0}'.format(ts2.Variables.SSLDir),
@@ -114,7 +114,7 @@ ts3.Disk.records_config.update(
 ts4.Disk.records_config.update(
     {
         'proxy.config.http.cache.http': 0,
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'ssl.origin_session_cache',
         'proxy.config.ssl.server.cert.path': '{0}'.format(ts4.Variables.SSLDir),
         'proxy.config.ssl.server.private_key.path': '{0}'.format(ts4.Variables.SSLDir),

@@ -219,7 +219,7 @@ Example for a single test.
 traffic_ctl = Make_traffic_ctl(Test, records_yaml)
 
 ## if the output is simple, then you can just
-traffic_ctl.config().get("proxy.config.diags.debug.enabled").validate_with_text("proxy.config.diags.debug.enabled: 1")
+traffic_ctl.config().get("proxy.config.diags.debug.mode").validate_with_text("proxy.config.diags.debug.mode: 1")
 
 # if the poutput is a bit complex, then you can just set your own gold file.
 traffic_ctl.config().get("proxy.config.diags.debug.tags").as_records().validate_with_goldfile("your_gold_file.gold")

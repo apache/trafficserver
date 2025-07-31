@@ -42,7 +42,7 @@ ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{}/'.format(server.Variable
 # Configure the tslua's configuration file.
 ts.Setup.Copy("watermark.lua", ts.Variables.CONFIGDIR)
 
-ts.Disk.records_config.update({'proxy.config.diags.debug.enabled': 1, 'proxy.config.diags.debug.tags': 'ts_lua'})
+ts.Disk.records_config.update({'proxy.config.diags.debug.mode': 1, 'proxy.config.diags.debug.tags': 'ts_lua'})
 
 # Test for watermark debug output
 ts.Disk.traffic_out.Content = Testers.ContainsExpression(r"WMbytes\(31337\)", "Upstream watermark should be properly set")

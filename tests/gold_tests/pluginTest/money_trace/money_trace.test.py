@@ -54,7 +54,7 @@ ts.Disk.remap_config.AddLines(
 
 # minimal configuration
 ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 0,
+    'proxy.config.diags.debug.mode': 0,
     'proxy.config.diags.debug.tags': 'money_trace',
 })
 

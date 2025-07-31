@@ -124,6 +124,7 @@ std::set<std::string> valid_log_object_keys = {"filename",
                                                "mode",
                                                "header",
                                                "rolling_enabled",
+                                               "rolling_mode",
                                                "rolling_interval_sec",
                                                "rolling_offset_hr",
                                                "rolling_size_mb",
@@ -187,15 +188,24 @@ YamlLogConfig::decodeLogObject(const YAML::Node &node)
   int obj_rolling_max_count    = cfg->rolling_max_count;
   int obj_rolling_allow_empty  = cfg->rolling_allow_empty;
 
-  if (node["rolling_enabled"]) {
-    auto value          = node["rolling_enabled"].as<std::string>();
+  // Handle rolling configuration (rolling_mode preferred, rolling_enabled deprecated)
+  const char *rolling_param = nullptr;
+  if (node["rolling_mode"]) {
+    rolling_param = "rolling_mode";
+  } else if (node["rolling_enabled"]) {
+    rolling_param = "rolling_enabled";
+  }
+
+  if (rolling_param) {
+    auto rolling_node   = node[rolling_param];
+    auto value          = rolling_node.as<std::string>();
     obj_rolling_enabled = ROLLING_MODE_TEXT.get(value);
     if (obj_rolling_enabled < 0) {
       obj_rolling_enabled = ROLLING_MODE_LUA.get(value);
       if (obj_rolling_enabled < 0) {
-        obj_rolling_enabled = node["rolling_enabled"].as<int>();
+        obj_rolling_enabled = rolling_node.as<int>();
         if (obj_rolling_enabled < Log::NO_ROLLING || obj_rolling_enabled > Log::ROLL_ON_TIME_AND_SIZE) {
-          throw YAML::ParserException(node["rolling_enabled"].Mark(), "unknown value " + value);
+          throw YAML::ParserException(rolling_node.Mark(), "unknown value " + value);
         }
       }
     }

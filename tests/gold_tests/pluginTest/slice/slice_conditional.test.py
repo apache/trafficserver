@@ -93,7 +93,7 @@ ts.Disk.remap_config.AddLines(
 ts.Disk.plugin_config.AddLine('xdebug.so --enable=x-cache')
 ts.Disk.records_config.update(
     {
-        'proxy.config.diags.debug.enabled': '0',
+        'proxy.config.diags.debug.mode': '0',
         'proxy.config.diags.debug.tags': 'http|cache|slice|xdebug|cache_range_requests',
     })
 

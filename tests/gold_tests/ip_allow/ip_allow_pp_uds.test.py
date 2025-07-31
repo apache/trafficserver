@@ -84,7 +84,7 @@ ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key
 
 ts.Disk.records_config.update(
     {
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'ip_allow',
         'proxy.config.http.push_method_enabled': 1,
         'proxy.config.http.connect_ports': '{0}'.format(server.Variables.SSL_Port),
@@ -192,7 +192,7 @@ class Test_ip_allow:
         self._ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
         self._ts.Disk.records_config.update(
             {
-                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.mode': 1,
                 'proxy.config.diags.debug.tags': 'v_quic|quic|http|proxyprotocol|ip_allow',
                 'proxy.config.http.push_method_enabled': 1,
                 'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),

@@ -158,7 +158,7 @@ ts5.Disk.stek_share_conf_5.AddLines(
 
 ts1.Disk.records_config.update(
     {
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'stek_share',
         'proxy.config.exec_thread.autoconfig.enabled': 0,
         'proxy.config.exec_thread.limit': 4,
@@ -178,7 +178,7 @@ ts1.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variabl
 
 ts2.Disk.records_config.update(
     {
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'stek_share',
         'proxy.config.exec_thread.autoconfig.enabled': 0,
         'proxy.config.exec_thread.limit': 4,
@@ -198,7 +198,7 @@ ts2.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variabl
 
 ts3.Disk.records_config.update(
     {
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'stek_share',
         'proxy.config.exec_thread.autoconfig.enabled': 0,
         'proxy.config.exec_thread.limit': 4,
@@ -218,7 +218,7 @@ ts3.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variabl
 
 ts4.Disk.records_config.update(
     {
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'stek_share',
         'proxy.config.exec_thread.autoconfig.enabled': 0,
         'proxy.config.exec_thread.limit': 4,
@@ -238,7 +238,7 @@ ts4.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variabl
 
 ts5.Disk.records_config.update(
     {
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'stek_share',
         'proxy.config.exec_thread.autoconfig.enabled': 0,
         'proxy.config.exec_thread.limit': 4,

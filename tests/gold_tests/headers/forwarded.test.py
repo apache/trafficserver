@@ -92,7 +92,7 @@ def baselineTsSetup(ts):
 
     ts.Disk.records_config.update(
         {
-            # 'proxy.config.diags.debug.enabled': 1,
+            # 'proxy.config.diags.debug.mode': 1,
             'proxy.config.url_remap.pristine_host_hdr': 1,  # Retain Host header in original incoming client request.
             'proxy.config.proxy_name': 'Poxy_Proxy',  # This will be the server name.
             'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
@@ -189,7 +189,7 @@ baselineTsSetup(ts2)
 
 ts2.Disk.records_config.update(
     {
-        # 'proxy.config.diags.debug.enabled': 1,
+        # 'proxy.config.diags.debug.mode': 1,
         'proxy.config.url_remap.pristine_host_hdr': 1,  # Retain Host header in original incoming client request.
         'proxy.config.http.insert_forwarded': 'by=uuid'
     })

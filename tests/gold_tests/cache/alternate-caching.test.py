@@ -27,7 +27,7 @@ Test the alternate caching feature.
 ts = Test.MakeATSProcess("ts-alternate-caching")
 ts.Disk.records_config.update(
     {
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'http|cache',
         'proxy.config.http.cache.max_stale_age': 6,
         'proxy.config.cache.select_alternate': 1,

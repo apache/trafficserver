@@ -85,7 +85,7 @@ Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'ssl_secre
 
 ts.Disk.records_config.update(
     {
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'ssl_secret_load_test|ssl',
         'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
         'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
@@ -168,7 +168,7 @@ tr2.Disk.records_config.update(
         'proxy.config.ssl.client.private_key.path': '{0}/../'.format(ts.Variables.SSLDir),
         'proxy.config.ssl.client.private_key.filename': 'signed-foo.key',
         'proxy.config.url_remap.pristine_host_hdr': 1,
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'ssl_secret_load_test|ssl',
     })
 tr2.StillRunningAfter = ts

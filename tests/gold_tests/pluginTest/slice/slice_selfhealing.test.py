@@ -78,11 +78,10 @@ ts.Disk.remap_config.AddLines(
 
 ts.Disk.plugin_config.AddLine('xdebug.so --enable=x-cache')
 
-ts.Disk.records_config.update(
-    {
-        'proxy.config.diags.debug.enabled': 1,
-        'proxy.config.diags.debug.tags': 'cache_range_requests|slice',
-    })
+ts.Disk.records_config.update({
+    'proxy.config.diags.debug.mode': 1,
+    'proxy.config.diags.debug.tags': 'cache_range_requests|slice',
+})
 
 curl_and_args = '-s -D /dev/stdout -o /dev/stderr -x localhost:{}'.format(ts.Variables.port) + ' -H "x-debug: x-cache"'
 

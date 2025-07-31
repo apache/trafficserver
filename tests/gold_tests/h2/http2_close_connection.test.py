@@ -34,7 +34,7 @@ ts.Disk.records_config.update(
         'proxy.config.ssl.server.cert.path': f'{ts.Variables.SSLDir}',
         'proxy.config.ssl.server.private_key.path': f'{ts.Variables.SSLDir}',
         'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
-        'proxy.config.diags.debug.enabled': 3,
+        'proxy.config.diags.debug.mode': 3,
         'proxy.config.diags.debug.tags': 'http',
         'proxy.config.exec_thread.autoconfig.enabled': 0,
         'proxy.config.exec_thread.limit': 4,

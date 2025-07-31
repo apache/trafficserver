@@ -44,7 +44,7 @@ Test.PrepareTestPlugin(
 
 ts.Disk.records_config.update(
     {
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'session_id_verify',
         'proxy.config.cache.enable_read_while_writer': 0,
         'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),

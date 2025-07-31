@@ -63,7 +63,7 @@ server.addResponse("sessionlog.json", request_header3, response_header3)
 ts.Disk.plugin_config.AddLine('xdebug.so --enable=x-cache,x-cache-key,via')
 ts.Disk.records_config.update(
     {
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'http',
         'proxy.config.http.response_via_str': 3,
         'proxy.config.http.insert_age_in_response': 0,
@@ -129,7 +129,7 @@ replay_file = "replay/cache-control-max-age.replay.yaml"
 server = Test.MakeVerifierServerProcess("proxy-verifier-server", replay_file)
 ts.Disk.records_config.update(
     {
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'http',
         'proxy.config.http.insert_age_in_response': 0,
 
@@ -151,7 +151,7 @@ replay_file = "replay/cache-control-s-maxage.replay.yaml"
 server = Test.MakeVerifierServerProcess("s-maxage-server", replay_file)
 ts.Disk.records_config.update(
     {
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'http',
         'proxy.config.http.insert_age_in_response': 0,
     })
@@ -166,7 +166,7 @@ tr.AddVerifierClientProcess("s-maxage-client", replay_file, http_ports=[ts.Varia
 #
 ts = Test.MakeATSProcess("ts-cache-control-pragma")
 ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
+    'proxy.config.diags.debug.mode': 1,
     'proxy.config.diags.debug.tags': 'http|cache',
 })
 tr = Test.AddTestRun("Verify Pragma: no-cache does not conflict with Cache-Control headers")
@@ -195,7 +195,7 @@ class RequestCacheControlDefaultTest:
     def setupTS(self):
         self.ts = Test.MakeATSProcess("ts-request-cache-control-default")
         self.ts.Disk.records_config.update({
-            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.mode": 1,
             "proxy.config.diags.debug.tags": "http",
         })
         self.ts.Disk.remap_config.AddLine(f"map / http://127.0.0.1:{self.server.Variables.http_port}/",)
@@ -236,7 +236,7 @@ class RequestCacheControlHonorClientTest:
         self.ts = Test.MakeATSProcess("ts-request-cache-control-honor-client")
         self.ts.Disk.records_config.update(
             {
-                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.mode": 1,
                 "proxy.config.diags.debug.tags": "http",
                 # Configured to honor client requests to bypass the cache
                 "proxy.config.http.cache.ignore_client_no_cache": 0
@@ -288,7 +288,7 @@ class ResponseCacheControlDefaultTest:
     def setupTS(self):
         self.ts = Test.MakeATSProcess("ts-response-cache-control-default")
         self.ts.Disk.records_config.update({
-            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.mode": 1,
             "proxy.config.diags.debug.tags": "http",
         })
         self.ts.Disk.remap_config.AddLine(f"map / http://127.0.0.1:{self.server.Variables.http_port}/",)
@@ -337,7 +337,7 @@ class ResponseCacheControlIgnoredTest:
         self.ts = Test.MakeATSProcess("ts-response-cache-control-ignored")
         self.ts.Disk.records_config.update(
             {
-                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.mode": 1,
                 "proxy.config.diags.debug.tags": "http",
                 "proxy.config.http.cache.ignore_server_no_cache": 1
             })

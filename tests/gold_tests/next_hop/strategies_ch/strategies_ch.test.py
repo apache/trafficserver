@@ -53,7 +53,7 @@ for i in range(num_nh):
     ts = Test.MakeATSProcess(f"ts_nh{i}", use_traffic_out=False, command=f"traffic_server 2>nh_trace{i}.log")
     ts.Disk.records_config.update(
         {
-            'proxy.config.diags.debug.enabled': 1,
+            'proxy.config.diags.debug.mode': 1,
             'proxy.config.diags.debug.tags': 'http|dns',
             'proxy.config.dns.nameservers': f"127.0.0.1:{dns.Variables.Port}",
             'proxy.config.dns.resolv_conf': "NULL",
@@ -66,7 +66,7 @@ ts = Test.MakeATSProcess("ts")
 
 ts.Disk.records_config.update(
     {
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'http|dns|parent|next_hop|host_statuses|hostdb',
         'proxy.config.dns.nameservers': f"127.0.0.1:{dns.Variables.Port}",  # Only nameservers if resolv_conf NULL.
         'proxy.config.dns.resolv_conf': "NULL",  # This defaults to /etc/resvolv.conf (OS namesevers) if not NULL.

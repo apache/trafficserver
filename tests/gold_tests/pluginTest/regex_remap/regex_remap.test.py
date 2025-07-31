@@ -81,7 +81,7 @@ ts.Disk.remap_config.AddLine(
 # minimal configuration
 ts.Disk.records_config.update(
     {
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'http|regex_remap',
         'proxy.config.dns.nameservers': f"127.0.0.1:{nameserver.Variables.Port}",
         'proxy.config.dns.resolv_conf': 'NULL'

@@ -41,7 +41,7 @@ class CookieDefaultTest:
     def setupTS(self):
         self.ts = Test.MakeATSProcess("ts-cookie-default")
         self.ts.Disk.records_config.update({
-            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.mode": 1,
             "proxy.config.diags.debug.tags": "http",
         })
         self.ts.Disk.remap_config.AddLine(f"map / http://127.0.0.1:{self.server.Variables.http_port}/",)
@@ -81,7 +81,7 @@ class CookieBypassTest:
         self.ts = Test.MakeATSProcess("ts-cookie-bypass")
         self.ts.Disk.records_config.update(
             {
-                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.mode": 1,
                 "proxy.config.diags.debug.tags": "http",
                 # Bypass cache for any responses to cookies
                 "proxy.config.http.cache.cache_responses_to_cookies": 0
@@ -121,7 +121,7 @@ class CookieImgOnlyTest:
         self.ts = Test.MakeATSProcess("ts-cookie-img-only")
         self.ts.Disk.records_config.update(
             {
-                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.mode": 1,
                 "proxy.config.diags.debug.tags": "http",
                 # Cache only for image types
                 "proxy.config.http.cache.cache_responses_to_cookies": 2
@@ -164,7 +164,7 @@ class CookieAllButTextTest:
         self.ts = Test.MakeATSProcess("ts-cookie-all-but-text")
         self.ts.Disk.records_config.update(
             {
-                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.mode": 1,
                 "proxy.config.diags.debug.tags": "http",
                 # Cache all content type except text
                 "proxy.config.http.cache.cache_responses_to_cookies": 3
@@ -209,7 +209,7 @@ class CookieAllButTextWithExcpTest:
         self.ts = Test.MakeATSProcess("ts-cookie-all-but-text-with-excp")
         self.ts.Disk.records_config.update(
             {
-                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.mode": 1,
                 "proxy.config.diags.debug.tags": "http",
                 # Cache all content type but text. Text type also gets cached for
                 # server responses without Set-Cookie or with Cache-Control: public

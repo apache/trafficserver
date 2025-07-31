@@ -37,7 +37,7 @@ class CompressPluginTest:
         self.ts = Test.MakeATSProcess("ts")
         self.ts.Disk.records_config.update(
             {
-                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.mode": 1,
                 "proxy.config.diags.debug.tags": "http|compress",
                 "proxy.config.http.insert_response_via_str": 2,
             })

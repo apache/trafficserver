@@ -40,7 +40,7 @@ class DownCachedOriginServerTest:
 
         self._ts.Disk.records_config.update(
             {
-                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.mode': 1,
                 'proxy.config.diags.debug.tags': 'hostdb|dns|http|socket',
                 'proxy.config.http.connect_attempts_max_retries': 0,
                 'proxy.config.http.connect_attempts_rr_retries': 0,

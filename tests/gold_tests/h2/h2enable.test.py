@@ -40,7 +40,7 @@ ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key
 # Set up port 4444 with HTTP1 only, no HTTP/2
 ts.Disk.records_config.update(
     {
-        'proxy.config.diags.debug.enabled': 0,
+        'proxy.config.diags.debug.mode': 0,
         'proxy.config.diags.debug.tags': 'http|ssl',
         'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
         'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),

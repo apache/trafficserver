@@ -125,7 +125,7 @@ class PerClientConnectionMaxTest:
                 'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
                 'proxy.config.dns.nameservers': f"127.0.0.1:{self._dns.Variables.Port}",
                 'proxy.config.dns.resolv_conf': 'NULL',
-                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.mode': 1,
                 'proxy.config.diags.debug.tags': 'socket|http|net_queue|iocore_net|conn_track',
                 'proxy.config.net.per_client.max_connections_in': self._max_client_connections,
                 # Disable keep-alive so we close the client connections when the

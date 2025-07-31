@@ -26,7 +26,7 @@ replay_file = "replay/cache-range-response.replay.yaml"
 server = Test.MakeVerifierServerProcess("server0", replay_file)
 ts.Disk.records_config.update(
     {
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'http.*|cache.*',
         'proxy.config.http.cache.range.write': 1,
         'proxy.config.http.cache.when_to_revalidate': 4,

@@ -133,7 +133,7 @@ def makeTestCase(redirectTarget, expectedAction, scenario):
         trafficservers[config] = Test.MakeATSProcess('ts_{0}'.format(normConfig), enable_cache=False)
         trafficservers[config].Disk.records_config.update(
             {
-                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.mode': 1,
                 'proxy.config.diags.debug.tags': 'http|dns|redirect',
                 'proxy.config.http.number_of_redirections': 1,
                 'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(dns.Variables.Port),

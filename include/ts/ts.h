@@ -2438,10 +2438,20 @@ void TSTextLogObjectHeaderSet(TSTextLogObject the_object, const char *header);
 /**
     Enable/disable rolling.
 
+    Deprecated in 10.1.0. Use :func:`TSTextLogObjectRollingModeSet` instead.
+
     @param rolling_enabled a valid proxy.config.log.rolling_enabled value.
 
  */
 TSReturnCode TSTextLogObjectRollingEnabledSet(TSTextLogObject the_object, int rolling_enabled);
+
+/**
+    Set the rolling mode for log object.
+
+    @param rolling_mode a valid proxy.config.log.rolling.mode value.
+
+ */
+TSReturnCode TSTextLogObjectRollingModeSet(TSTextLogObject the_object, int rolling_mode);
 
 /**
     Set the rolling interval.

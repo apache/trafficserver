@@ -40,7 +40,7 @@ ts.addSSLfile("ssl/signer.pem")
 
 ts.Disk.records_config.update(
     {
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'traffic_dump',
         'proxy.config.ssl.server.cert.path': ts.Variables.SSLDir,
         'proxy.config.ssl.server.private_key.path': ts.Variables.SSLDir,

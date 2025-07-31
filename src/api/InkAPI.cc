@@ -6438,10 +6438,17 @@ TSTextLogObjectHeaderSet(TSTextLogObject the_object, const char *header)
 TSReturnCode
 TSTextLogObjectRollingEnabledSet(TSTextLogObject the_object, int rolling_enabled)
 {
+  /// TODO: Remove TSTextLogObjectRollingEnabledSet in 11.0.0.
+  return TSTextLogObjectRollingModeSet(the_object, rolling_enabled);
+}
+
+TSReturnCode
+TSTextLogObjectRollingModeSet(TSTextLogObject the_object, int rolling_mode)
+{
   sdk_assert(sdk_sanity_check_iocore_structure(the_object) == TS_SUCCESS);
 
-  if (LogRollingEnabledIsValid(rolling_enabled)) {
-    (reinterpret_cast<TextLogObject *>(the_object))->set_rolling_enabled(static_cast<Log::RollingEnabledValues>(rolling_enabled));
+  if (LogRollingEnabledIsValid(rolling_mode)) {
+    (reinterpret_cast<TextLogObject *>(the_object))->set_rolling_enabled(static_cast<Log::RollingEnabledValues>(rolling_mode));
     return TS_SUCCESS;
   }
 
@@ -7165,6 +7172,9 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
     break;
   case TS_CONFIG_HTTP_ANONYMIZE_INSERT_CLIENT_IP:
     ret = _memberp_to_generic(&overridableHttpConfig->anonymize_insert_client_ip, conv);
+    break;
+  case TS_CONFIG_HTTP_RESPONSE_SERVER_MODE:
+    ret = _memberp_to_generic(&overridableHttpConfig->proxy_response_server_mode, conv);
     break;
   case TS_CONFIG_HTTP_RESPONSE_SERVER_ENABLED:
     ret = _memberp_to_generic(&overridableHttpConfig->proxy_response_server_enabled, conv);

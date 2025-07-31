@@ -66,6 +66,9 @@ static const RecordElement RecordsConfig[] =
   {RECT_CONFIG, "proxy.config.crash_log_helper", RECD_STRING, MGMT_CRASHLOG_HELPER, RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
   // 0 - Disabled, 1 - enabled for important pages (e.g. cache directory), 2 - enabled for all pages
+  {RECT_CONFIG, "proxy.config.mlock.mode", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-2]", RECA_NULL}
+  ,
+  // Provided for backwards compatibility. Use proxy.config.mlock.mode insead.
   {RECT_CONFIG, "proxy.config.mlock_enabled", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-2]", RECA_NULL}
   ,
   //# 0 = disable (seconds)
@@ -83,7 +86,9 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.output.logfile_perm", RECD_STRING, "rw-r--r--", RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
-  // traffic.out rotation, default is 0 (aka rolling turned off) to preserve compatibility
+  {RECT_CONFIG, "proxy.config.output.logfile.rolling.mode", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-3]", RECA_NULL}
+  ,
+  // Provided for backwards compatibility. Use proxy.config.output.logfile.rolling.mode instead.
   {RECT_CONFIG, "proxy.config.output.logfile.rolling_enabled", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-3]", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.output.logfile.rolling_interval_sec", RECD_INT, "3600", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
@@ -192,15 +197,12 @@ static const RecordElement RecordsConfig[] =
   //#
   //# Diagnostics
   //#
-  //# Enable by setting proxy.config.diags.debug.enabled to 1
-  //# Route each type of diagnostic with a string, each character representing:
-  //#    O  stdout
-  //#    E  stderr
-  //#    S  syslog
-  //#    L  diags.log
-  //#
   //##############################################################################
-  {RECT_CONFIG, "proxy.config.diags.debug.enabled", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, "[0-3]", RECA_NULL}
+  // Values: 0=disabled, 1=normal, 2=client_ip
+  {RECT_CONFIG, "proxy.config.diags.debug.mode", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-2]", RECA_NULL}
+  ,
+  // Provided for backwards compatibility. Use proxy.config.diags.debug.mode instead.
+  {RECT_CONFIG, "proxy.config.diags.debug.enabled", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, "[0-2]", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.diags.debug.tags", RECD_STRING, "http|dns", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
@@ -208,7 +210,7 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.diags.debug.client_ip", RECD_STRING, nullptr, RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.diags.action.enabled", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  {RECT_CONFIG, "proxy.config.diags.action.enabled", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.diags.action.tags", RECD_STRING, "", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
@@ -236,7 +238,9 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.diags.logfile.filename", RECD_STRING, "diags.log", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[^[:space:]]+$", RECA_NULL}
   ,
-  // diags.log rotation, default is 0 (aka rolling turned off) to preserve compatibility
+  {RECT_CONFIG, "proxy.config.diags.logfile.rolling.mode", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-3]", RECA_NULL}
+  ,
+  // Provided for backwards compatibility. Use proxy.config.diags.logfile.rolling.mode instead.
   {RECT_CONFIG, "proxy.config.diags.logfile.rolling_enabled", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-3]", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.diags.logfile.rolling_interval_sec", RECD_INT, "3600", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
@@ -305,6 +309,9 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.http.response_via_str", RECD_STRING, "ApacheTrafficServer/" PACKAGE_VERSION, RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
+  {RECT_CONFIG, "proxy.config.http.response_server.mode", RECD_INT, "1", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-2]", RECA_NULL}
+  ,
+  // Provided for backwards compatibility. Use proxy.config.http.response_server.mode instead.
   {RECT_CONFIG, "proxy.config.http.response_server_enabled", RECD_INT, "1", RECU_DYNAMIC, RR_NULL, RECC_NULL, "[0-2]", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.http.response_server_str", RECD_STRING, "ATS/" PACKAGE_VERSION, RECU_DYNAMIC, RR_NULL, RECC_NULL, ".*", RECA_NULL}
@@ -1022,11 +1029,10 @@ static const RecordElement RecordsConfig[] =
   //# New Logging Config
   //#
   //##############################################################################
-  //# possible values for logging_enabled
-  //# 0: no logging at all
-  //# 1: log errors only
-  //# 2: full logging
-  {RECT_CONFIG, "proxy.config.log.logging_enabled", RECD_INT, "3", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-4]", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.log.logging.mode", RECD_INT, "3", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-3]", RECA_NULL}
+  ,
+  // Provided for backwards compatibility. Use proxy.config.log.logging.mode instead.
+  {RECT_CONFIG, "proxy.config.log.logging_enabled", RECD_INT, "3", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-3]", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.log.log_buffer_size", RECD_INT, "9216", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
@@ -1048,6 +1054,9 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.log.preproc_threads", RECD_INT, "1", RECU_RESTART_TS, RR_REQUIRED, RECC_INT, "[1-128]", RECA_NULL}
   ,
+  {RECT_CONFIG, "proxy.config.log.rolling.mode", RECD_INT, "1", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-4]", RECA_NULL}
+  ,
+  // Provided for backwards compatibility. Use proxy.config.log.rolling.mode instead.
   {RECT_CONFIG, "proxy.config.log.rolling_enabled", RECD_INT, "1", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-4]", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.log.rolling_interval_sec", RECD_INT, "86400", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
@@ -1189,11 +1198,17 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.ssl.client.scheme_proto_mismatch_policy", RECD_INT, "2", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.ssl.origin_session_cache.enabled", RECD_INT, "1", RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  {RECT_CONFIG, "proxy.config.ssl.origin_session_cache.enabled", RECD_INT, "1", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.ssl.origin_session_cache.size", RECD_INT, "10240", RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.ssl.session_cache.value", RECD_INT, "2", RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  {RECT_CONFIG, "proxy.config.ssl.session_cache.mode", RECD_INT, "2", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-2]", RECA_NULL}
+  ,
+  // Provided for backwards compatibility. Use proxy.config.ssl.session_cache.mode instead.
+  {RECT_CONFIG, "proxy.config.ssl.session_cache.enabled", RECD_INT, "2", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-2]", RECA_NULL}
+  ,
+  // Provided for backwards compatibility. Use proxy.config.ssl.session_cache.mode instead.
+  {RECT_CONFIG, "proxy.config.ssl.session_cache.value", RECD_INT, "2", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-2]", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.ssl.session_cache.size", RECD_INT, "102400", RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,

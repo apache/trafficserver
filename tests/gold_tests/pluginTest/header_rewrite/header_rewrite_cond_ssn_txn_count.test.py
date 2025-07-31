@@ -54,7 +54,7 @@ server.addResponse("sessionlog.log", request_header_world, response_header_world
 
 ts.Disk.records_config.update(
     {
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'header.*',
         'proxy.config.http.auth_server_session_private': 1,
         'proxy.config.http.server_session_sharing.pool': 'global',

@@ -425,7 +425,21 @@ public:
     int diags_log_roll_size;
     diags_log_roll_size = RecGetRecordInt("proxy.config.diags.logfile.rolling_size_mb").value_or(0);
     int diags_log_roll_enable;
-    diags_log_roll_enable = RecGetRecordInt("proxy.config.diags.logfile.rolling_enabled").value_or(0);
+
+    // Validate that new mode and old enabled configs don't conflict
+    auto diags_rolling_mode    = RecGetRecordInt("proxy.config.diags.logfile.rolling.mode");
+    auto diags_rolling_enabled = RecGetRecordInt("proxy.config.diags.logfile.rolling_enabled");
+
+    if (diags_rolling_mode.has_value() && diags_rolling_enabled.has_value() &&
+        diags_rolling_mode.value() != diags_rolling_enabled.value() &&
+        !RecConfigIsUsingDefaultValue("proxy.config.diags.logfile.rolling_enabled")) {
+      Emergency("Conflicting diags rolling configuration: proxy.config.diags.logfile.rolling.mode=%d but "
+                "proxy.config.diags.logfile.rolling_enabled=%d",
+                static_cast<int>(diags_rolling_mode.value()), static_cast<int>(diags_rolling_enabled.value()));
+    }
+
+    diags_log_roll_enable = diags_rolling_mode.value_or(diags_rolling_enabled.value_or(0));
+
     diags()->config_roll_diagslog(static_cast<RollingEnabledValues>(diags_log_roll_enable), diags_log_roll_int,
                                   diags_log_roll_size);
 
@@ -438,7 +452,21 @@ public:
     int output_log_roll_size;
     output_log_roll_size = RecGetRecordInt("proxy.config.output.logfile.rolling_size_mb").value_or(0);
     int output_log_roll_enable;
-    output_log_roll_enable = RecGetRecordInt("proxy.config.output.logfile.rolling_enabled").value_or(0);
+
+    // Validate that new mode and old enabled configs don't conflict (if both explicitly defined)
+    auto output_rolling_mode    = RecGetRecordInt("proxy.config.output.logfile.rolling.mode");
+    auto output_rolling_enabled = RecGetRecordInt("proxy.config.output.logfile.rolling_enabled");
+
+    if (output_rolling_mode.has_value() && output_rolling_enabled.has_value() &&
+        output_rolling_mode.value() != output_rolling_enabled.value() &&
+        !RecConfigIsUsingDefaultValue("proxy.config.output.logfile.rolling_enabled")) {
+      Emergency("Conflicting output rolling configuration: proxy.config.output.logfile.rolling.mode=%d but "
+                "proxy.config.output.logfile.rolling_enabled=%d",
+                static_cast<int>(output_rolling_mode.value()), static_cast<int>(output_rolling_enabled.value()));
+    }
+
+    output_log_roll_enable = output_rolling_mode.value_or(output_rolling_enabled.value_or(0));
+
     diags()->config_roll_outputlog(static_cast<RollingEnabledValues>(output_log_roll_enable), output_log_roll_int,
                                    output_log_roll_size);
 
@@ -1971,7 +1999,18 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 // Check if we should do mlockall()
 #if defined(MCL_FUTURE)
   int mlock_flags = 0;
-  mlock_flags     = RecGetRecordInt("proxy.config.mlock_enabled").value_or(0);
+
+  // Validate that new mode and old enabled configs don't conflict (if both explicitly defined)
+  auto mlock_mode    = RecGetRecordInt("proxy.config.mlock.mode");
+  auto mlock_enabled = RecGetRecordInt("proxy.config.mlock_enabled");
+
+  if (mlock_mode.has_value() && mlock_enabled.has_value() && mlock_mode.value() != mlock_enabled.value() &&
+      !RecConfigIsUsingDefaultValue("proxy.config.mlock_enabled")) {
+    Emergency("Conflicting mlock configuration: proxy.config.mlock.mode=%d but proxy.config.mlock_enabled=%d",
+              static_cast<int>(mlock_mode.value()), static_cast<int>(mlock_enabled.value()));
+  }
+
+  mlock_flags = mlock_mode.value_or(mlock_enabled.value_or(0));
 
   if (mlock_flags == 2) {
     if (0 != mlockall(MCL_CURRENT | MCL_FUTURE)) {

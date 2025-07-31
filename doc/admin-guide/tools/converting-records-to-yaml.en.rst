@@ -53,7 +53,7 @@ a new YAML map from each name, so for instance, with the following records:
    CONFIG proxy.config.task_threads INT 2
    CONFIG proxy.config.cache.threads_per_disk INT 8
    CONFIG proxy.config.exec_thread.affinity INT 1
-   CONFIG proxy.config.diags.debug.enabled INT 0
+   CONFIG proxy.config.diags.debug.mode INT 0
    CONFIG proxy.config.diags.debug.tags STRING http|dns
 
 
@@ -69,7 +69,7 @@ the following:
          threads_per_disk: 8
       diags:
          debug:
-            enabled: 0
+            mode: 0
             tags: http|dns
       exec_thread:
          affinity: 1

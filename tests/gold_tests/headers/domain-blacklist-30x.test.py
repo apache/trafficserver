@@ -36,7 +36,7 @@ PASSTHRU_HOST = 'www.passthrough.test'
 
 ts.Disk.records_config.update(
     {
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'header_rewrite|dbg_header_rewrite',
         'proxy.config.body_factory.enable_logging': 1,
     })

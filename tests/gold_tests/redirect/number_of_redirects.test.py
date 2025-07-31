@@ -62,7 +62,7 @@ class NumberOfRedirectionsTest:
     def add_config(self):
         self._ts.Disk.records_config.update(
             {
-                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.mode': 1,
                 'proxy.config.diags.debug.tags': 'http|dns|redirect|http_redirect',
                 'proxy.config.http.number_of_redirections': self._numberOfRedirections,
                 'proxy.config.dns.nameservers': f'127.0.0.1:{self._dns.Variables.Port}',

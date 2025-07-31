@@ -74,7 +74,7 @@ with open(config_path, 'r') as config_file:
 
 ts.Disk.records_config.update(
     {
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'cookie_remap.*|http.*|dns.*',
     })
 

@@ -47,7 +47,7 @@ ts.addSSLfile("ssl/signer.pem")
 
 ts.Disk.records_config.update(
     {
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'traffic_dump|quic',
         'proxy.config.http.insert_age_in_response': 0,
         'proxy.config.quic.qlog.file_base': qlog_dir,

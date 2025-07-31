@@ -99,7 +99,7 @@ origin.Disk.records_config.update(
         "proxy.config.http.insert_age_in_response": 0,
         "proxy.config.http.request_via_str": 0,
         "proxy.config.http.response_via_str": 0,
-        "proxy.config.diags.debug.enabled": 1,
+        "proxy.config.diags.debug.mode": 1,
         "proxy.config.diags.debug.tags": "http",
     })
 
@@ -123,7 +123,7 @@ ts.Disk.records_config.update(
         "proxy.config.http.cache.range.write": 1,
         "proxy.config.http.response_via_str": 3,
         "proxy.config.http.wait_for_cache": 1,
-        "proxy.config.diags.debug.enabled": 1,
+        "proxy.config.diags.debug.mode": 1,
         "proxy.config.diags.debug.tags": "http",
     })
 # ----

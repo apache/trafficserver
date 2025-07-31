@@ -46,7 +46,7 @@ def get_common_ats_process(name, plugin_command, replay_exists):
     ts = Test.MakeATSProcess(name)
     replay_dir = os.path.join(ts.RunDirectory, name, "log")
     ts.Disk.records_config.update({
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'traffic_dump',
     })
     ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{server.Variables.http_port}')

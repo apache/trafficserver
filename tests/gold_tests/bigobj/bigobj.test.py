@@ -31,7 +31,7 @@ ts.addDefaultSSLFiles()
 
 ts.Disk.records_config.update(
     {
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'http|dns|cache',
         'proxy.config.http.cache.required_headers': 0,  # No required headers for caching
         'proxy.config.http.push_method_enabled': 1,
@@ -48,7 +48,7 @@ ts.Disk.remap_config.AddLine(f'map https://localhost:{ts.Variables.ssl_portv6} h
 
 # Size of object to get.  (NOTE:  If you increase this significantly you may also have to increase cache
 # capacity in tests/gold_tests/autest-size/min_cfg/storage.config.  Also, for very large objects, if
-# proxy.config.diags.debug.enabled is 1, the PUSH request will timeout and fail.)
+# proxy.config.diags.debug.mode is 1, the PUSH request will timeout and fail.)
 #
 obj_kilobytes = 10 * 1024
 obj_bytes = obj_kilobytes * 10
@@ -111,7 +111,7 @@ ts.addDefaultSSLFiles()
 
 ts.Disk.records_config.update(
     {
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'http|dns|cache',
         'proxy.config.http.cache.required_headers': 0,  # No required headers for caching
         'proxy.config.proxy_name': 'Poxy_Proxy',  # This will be the server name.

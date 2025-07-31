@@ -70,7 +70,7 @@ Via
 Diags
     If the ``Diags`` header is requested, the `XDebug` plugin enables the
     transaction specific diagnostics for the transaction. This also requires
-    that :ts:cv:`proxy.config.diags.debug.enabled` is set to ``1``.
+    that :ts:cv:`proxy.config.diags.debug.mode` is set to ``1``.
 
 Probe
     All request and response headers are written to the response body. Because

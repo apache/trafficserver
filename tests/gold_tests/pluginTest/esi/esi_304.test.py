@@ -133,7 +133,7 @@ No Date
         # Configure ATS with a vanilla ESI plugin configuration.
         ts = Test.MakeATSProcess("ts{}".format(EsiTest._ts_counter))
         ts.Disk.records_config.update({
-            'proxy.config.diags.debug.enabled': 1,
+            'proxy.config.diags.debug.mode': 1,
             'proxy.config.diags.debug.tags': 'http|plugin_esi',
         })
         ts.Disk.remap_config.AddLine('map http://www.example.com/ http://127.0.0.1:{0}'.format(EsiTest._server.Variables.Port))

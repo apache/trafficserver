@@ -39,6 +39,6 @@ ts.Disk.records_config.update(
         'proxy.config.log.max_secs_per_buffer': 1,
         'proxy.config.http.per_server.connection.max': 500,
         'proxy.config.http.background_fill_completed_threshold': 0.4,
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'txn_box'
     })

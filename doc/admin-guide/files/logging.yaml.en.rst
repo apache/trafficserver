@@ -289,7 +289,11 @@ filename               string      The name of the logfile relative to the defau
 format                 string      a string with a valid named format specification.
 header                 string      If present, emitted as the first line of each
                                    new log file.
-rolling_enabled        *see below* Determines the type of log rolling to use (or
+rolling_mode           *see below* Determines the type of log rolling to use (or
+                                   whether to disable rolling). Overrides
+                                   :ts:cv:`proxy.config.log.rolling.mode`.
+rolling_enabled        *see below* **Deprecated in 10.1.0**. Use ``rolling_mode``
+                                   instead. Determines the type of log rolling to use (or
                                    whether to disable rolling). Overrides
                                    :ts:cv:`proxy.config.log.rolling_enabled`.
 rolling_interval_sec   number      Interval in seconds between log file rolling.
@@ -310,11 +314,16 @@ filters                array of    The optional list of filter objects which
 ====================== =========== =================================================
 
 Enabling log rolling may be done globally in :file:`records.yaml`, or on a
-per-log basis by passing appropriate values for the ``rolling_enabled`` key. The
+per-log basis by passing appropriate values for the ``rolling_mode`` key. The
 latter method may also be used to effect different rolling settings for
 individual logs. The numeric values that may be passed are the same as used by
-:ts:cv:`proxy.config.log.rolling_enabled`. For convenience and readability,
+:ts:cv:`proxy.config.log.rolling.mode`. For convenience and readability,
 the following predefined variables may also be used in :file:`logging.yaml`:
+
+.. deprecated:: 10.1.0
+
+   The ``rolling_enabled`` parameter is deprecated. Use ``rolling_mode`` instead.
+   ``rolling_enabled`` will continue to work for backwards compatibility.
 
 log.roll.none
     Disable log rolling.
@@ -389,3 +398,18 @@ matched the REFRESH_HIT filter we created.
      format: summaryfmt
      filters:
      - refreshhitfilter
+
+The following is an example of a log specification that creates a rolling log
+that rolls every hour when the size reaches 100MB. This shows the new ``rolling_mode``
+parameter (recommended) which replaces the deprecated ``rolling_enabled`` parameter.
+Mode 4 combines both time and size rolling triggers.
+
+.. code:: yaml
+
+   logs:
+   - mode: ascii
+     filename: combined_rolling
+     format: minimalfmt
+     rolling_mode: 4                # Roll on time when size reached
+     rolling_interval_sec: 3600     # Check every hour
+     rolling_size_mb: 100           # Roll when 100MB is reached

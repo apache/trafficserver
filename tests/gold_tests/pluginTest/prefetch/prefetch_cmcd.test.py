@@ -168,7 +168,7 @@ dns = Test.MakeDNServer("dns")
 ts1 = Test.MakeATSProcess("ts1", enable_uds=False)
 ts1.Disk.records_config.update(
     {
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'prefetch|http',
         'proxy.config.dns.nameservers': f"127.0.0.1:{dns.Variables.Port}",
         'proxy.config.dns.resolv_conf': "NULL",
@@ -193,7 +193,7 @@ logging:
 ts0 = Test.MakeATSProcess("ts0")
 ts0.Disk.records_config.update(
     {
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'prefetch|http',
         'proxy.config.dns.nameservers': f"127.0.0.1:{dns.Variables.Port}",
         'proxy.config.dns.resolv_conf': "NULL",

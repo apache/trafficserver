@@ -48,7 +48,7 @@ class ProxyProtocolInTest:
                 "proxy.config.http.insert_forwarded": "for|by=ip|proto",
                 "proxy.config.ssl.server.cert.path": f"{self.ts.Variables.SSLDir}",
                 "proxy.config.ssl.server.private_key.path": f"{self.ts.Variables.SSLDir}",
-                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.mode": 1,
                 "proxy.config.diags.debug.tags": "proxyprotocol",
             })
 
@@ -150,7 +150,7 @@ class ProxyProtocolOutTest:
             {
                 "proxy.config.ssl.server.cert.path": f"{self._ts.Variables.SSLDir}",
                 "proxy.config.ssl.server.private_key.path": f"{self._ts.Variables.SSLDir}",
-                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.mode": 1,
                 "proxy.config.diags.debug.tags": "http|proxyprotocol",
                 "proxy.config.http.proxy_protocol_out": self._pp_version,
                 "proxy.config.dns.nameservers": f"127.0.0.1:{self._dns.Variables.Port}",

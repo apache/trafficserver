@@ -45,7 +45,7 @@ dns = Test.MakeDNServer("dns")
 ts = Test.MakeATSProcess("ts")
 ts.Disk.records_config.update(
     {
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'http|dns|prefetch',
         'proxy.config.dns.nameservers': f"127.0.0.1:{dns.Variables.Port}",
         'proxy.config.dns.resolv_conf': "NULL",

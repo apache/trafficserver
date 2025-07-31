@@ -71,7 +71,7 @@ ts1.Disk.remap_config.AddLine(f"map / http://origin:{origin.Variables.Port}")
 
 ts1.Disk.records_config.update(
     {
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'http|dns|hostdb|parent',
         'proxy.config.dns.nameservers': f"127.0.0.1:{dns.Variables.Port}",
         'proxy.config.dns.resolv_conf': "NULL",
@@ -88,7 +88,7 @@ ts0.Disk.remap_config.AddLine("map http://foo.bar http://foo.bar")
 
 ts0.Disk.records_config.update(
     {
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'http|dns|hostdb|parent',
         'proxy.config.dns.nameservers': f"127.0.0.1:{dns.Variables.Port}",
         'proxy.config.dns.resolv_conf': "NULL",

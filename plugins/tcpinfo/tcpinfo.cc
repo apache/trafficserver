@@ -377,8 +377,7 @@ TSPluginInit(int argc, const char *argv[])
     case 'e':
       i = strtoul(optarg, &endptr, 10);
       if (*endptr != '\0' || i > 3) {
-        TSError("[tcpinfo] invalid rolling-enabled argument, '%s', using the system's proxy.config.log.rolling_enabled value",
-                optarg);
+        TSError("[tcpinfo] invalid rolling-enabled argument, '%s', using the system's proxy.config.log.rolling.mode value", optarg);
       } else {
         rolling_enabled = i;
       }
@@ -433,7 +432,7 @@ init:
   if (rolling_enabled == -1) {
     // The user either did not provide a value or the value they provided was
     // invalid.
-    Dbg(dbg_ctl, "Using system default value of proxy.config.log.rolling_enabled ");
+    Dbg(dbg_ctl, "Using system default value of proxy.config.log.rolling.mode ");
   } else {
     if (TSTextLogObjectRollingEnabledSet(config->log, rolling_enabled) != TS_SUCCESS) {
       TSError("[tcpinfo] failed to enable log file rolling to: '%d'", rolling_enabled);

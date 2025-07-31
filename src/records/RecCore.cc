@@ -709,6 +709,13 @@ RecGetRecordSource(const char *name, RecSourceT *source, bool lock)
   return err;
 }
 
+bool
+RecConfigIsUsingDefaultValue(char const *name)
+{
+  RecSourceT source = REC_SOURCE_NULL;
+  return (RecGetRecordSource(name, &source) == REC_ERR_OKAY && source == REC_SOURCE_DEFAULT);
+}
+
 //-------------------------------------------------------------------------
 // RecRegisterStat
 //-------------------------------------------------------------------------

@@ -46,7 +46,7 @@ function recordsConfig() {
     traffic_ctl config set proxy.config.exec_thread.autoconfig.scale 1.000000
 
     traffic_ctl config set proxy.config.accept_threads 1
-    traffic_ctl config set proxy.config.log.logging_enabled 0
+    traffic_ctl config set proxy.config.log.logging.mode 0
     traffic_ctl config set proxy.config.http.server_port 8080
     traffic_ctl config set proxy.config.url_remap.pristine_host_hdr 1
 

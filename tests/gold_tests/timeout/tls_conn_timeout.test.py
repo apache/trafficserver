@@ -46,7 +46,7 @@ ts.Disk.records_config.update(
         'proxy.config.http.connect_attempts_timeout': 1,
         'proxy.config.http.connect_attempts_max_retries': 1,
         'proxy.config.http.transaction_no_activity_timeout_out': 4,
-        'proxy.config.diags.debug.enabled': 0,
+        'proxy.config.diags.debug.mode': 0,
         'proxy.config.diags.debug.tags': 'http|ssl',
         'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
     })

@@ -108,7 +108,7 @@ class TestGrpc():
                 # Only enable debug logging during manual exectution. All the
                 # DATA frames get multiple logs and it makes the traffic.out too
                 # unwieldy.
-                "proxy.config.diags.debug.enabled": 0,
+                "proxy.config.diags.debug.mode": 0,
                 "proxy.config.diags.debug.tags": "http",
             })
         return self._ts

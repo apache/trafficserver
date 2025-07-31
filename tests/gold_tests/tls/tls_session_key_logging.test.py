@@ -52,7 +52,7 @@ class TlsKeyloggingTest:
                 "proxy.config.ssl.server.cert.path": f'{self.ts.Variables.SSLDir}',
                 "proxy.config.ssl.server.private_key.path": f'{self.ts.Variables.SSLDir}',
                 "proxy.config.ssl.client.verify.server.policy": 'PERMISSIVE',
-                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.mode': 1,
                 'proxy.config.diags.debug.tags': 'ssl_keylog'
             })
         self.ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')

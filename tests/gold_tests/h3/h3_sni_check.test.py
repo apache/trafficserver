@@ -70,7 +70,7 @@ class Test_sni_check:
         self._ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
         self._ts.Disk.records_config.update(
             {
-                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.mode': 1,
                 'proxy.config.diags.debug.tags': 'http',
                 'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
                 'proxy.config.quic.no_activity_timeout_in': 0,

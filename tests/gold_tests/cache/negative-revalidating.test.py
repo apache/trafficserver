@@ -57,7 +57,7 @@ class NegativeRevalidatingTest:
 #
 NegativeRevalidatingTest(
     "Verify negative revalidating disabled", {
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'http|cache',
         'proxy.config.http.insert_age_in_response': 0,
         'proxy.config.http.insert_response_via_str': 2,
@@ -71,7 +71,7 @@ NegativeRevalidatingTest(
 NegativeRevalidatingTest(
     "Verify negative revalidating enabled",
     {
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'http|cache',
         'proxy.config.http.insert_age_in_response': 0,
         'proxy.config.http.insert_response_via_str': 2,
@@ -88,7 +88,7 @@ NegativeRevalidatingTest(
 #
 NegativeRevalidatingTest(
     "Verify negative_revalidating_list behavior", {
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'http|cache',
         'proxy.config.http.insert_age_in_response': 0,
         'proxy.config.http.insert_response_via_str': 2,

@@ -141,13 +141,13 @@ tr.Processes.Default.StartBefore(ts2)
 tr.Processes.StillRunningAfter = ts2
 
 tr2 = Test.AddTestRun("Test multiple docs from the same file")
-tr2.Processes.Default.Command = 'traffic_ctl config get proxy.config.diags.debug.enabled proxy.config.diags.debug.tags'
+tr2.Processes.Default.Command = 'traffic_ctl config get proxy.config.diags.debug.mode proxy.config.diags.debug.tags'
 tr2.Processes.Default.Env = ts2.Env
 tr2.Processes.Default.ReturnCode = 0
 
 # Make sure it's what we want.
 tr2.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-    'proxy.config.diags.debug.enabled: 0', 'Config should show debug disabled')
+    'proxy.config.diags.debug.mode: 0', 'Config should show debug disabled')
 tr2.Processes.Default.Streams.stdout += Testers.ContainsExpression(
     'proxy.config.diags.debug.tags: filemanager', 'Config should show a different tag')
 

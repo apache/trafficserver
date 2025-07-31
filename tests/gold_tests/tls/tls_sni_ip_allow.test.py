@@ -130,7 +130,7 @@ class TestSniIpAllow:
                 'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
                 'proxy.config.dns.nameservers': f"127.0.0.1:{dns.Variables.Port}",
                 'proxy.config.dns.resolv_conf': 'NULL',
-                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.mode': 1,
                 'proxy.config.diags.debug.tags': 'http|ssl|proxyprotocol',
                 'proxy.config.acl.subjects': 'PROXY,PEER',
             })

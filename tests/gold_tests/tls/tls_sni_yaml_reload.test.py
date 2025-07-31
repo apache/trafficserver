@@ -33,7 +33,7 @@ ts.Disk.records_config.update(
         'proxy.config.ssl.server.cert.path': ts.Variables.SSLDir,
         'proxy.config.ssl.server.private_key.path': ts.Variables.SSLDir,
         'proxy.config.ssl.CA.cert.filename': f'{ts.Variables.SSLDir}/signer.pem',
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'ssl|http',
         'proxy.config.diags.output.debug': 'L',
     })

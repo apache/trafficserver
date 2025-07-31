@@ -252,7 +252,7 @@ Display the current value of a configuration record.
 
    .. code-block:: bash
 
-      $ traffic_ctl config set proxy.config.diags.debug.enabled 1 -c records.yaml
+      $ traffic_ctl config set proxy.config.diags.debug.mode 1 -c records.yaml
       $ cat records.yaml
       records:
       ...
@@ -413,17 +413,17 @@ traffic_ctl server
    Enables diagnostic messages at runtime. This is equivalent to
    manually setting the below records but this is done in one go.
 
-   Note that if you just set this to enable, the :ts:cv:`proxy.config.diags.debug.enabled`
+   Note that if you just set this to enable, the :ts:cv:`proxy.config.diags.debug.mode`
    will be set to ``1`` unless you specify the ``--client_ip,-c`` option.
 
-   :ts:cv:`proxy.config.diags.debug.enabled`
+   :ts:cv:`proxy.config.diags.debug.mode`
 
    :ts:cv:`proxy.config.diags.debug.tags`
 
    :ts:cv:`proxy.config.diags.debug.client_ip`
 
 
-   Enables logging for diagnostic messages. See :ts:cv:`proxy.config.diags.debug.enabled` for information.
+   Enables logging for diagnostic messages. See :ts:cv:`proxy.config.diags.debug.mode` for information.
 
    .. option:: --tags, -t  tags
 
@@ -439,7 +439,7 @@ traffic_ctl server
 .. program:: traffic_ctl server
 .. option:: debug disable
 
-   Disables logging for diagnostic messages. Equivalent to set :ts:cv:`proxy.config.diags.debug.enabled` to ``0``.
+   Disables logging for diagnostic messages. Equivalent to set :ts:cv:`proxy.config.diags.debug.mode` to ``0``.
 
 
    Example:

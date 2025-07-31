@@ -91,7 +91,7 @@ server.addResponse("sessionlog.json", request_lm, response_lm)
 # Define ATS and configure
 ts = Test.MakeATSProcess("ts")
 ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
+    'proxy.config.diags.debug.mode': 1,
     'proxy.config.diags.debug.tags': 'slice',
 })
 

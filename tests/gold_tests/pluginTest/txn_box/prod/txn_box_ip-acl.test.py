@@ -44,7 +44,7 @@ ts.Setup.Copy("ip-acl.csv", ts.Variables.CONFIGDIR)  # Need the IP Space file.
 
 ts.Disk.records_config.update(
     {
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'txn_box',
         'proxy.config.http.cache.http': 0
     })

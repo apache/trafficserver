@@ -405,7 +405,7 @@ generated, verify the following:
   open or create log files.
 
 - Check that logging is enabled by checking the value of the
-  :ts:cv:`proxy.config.log.logging_enabled` variable in :file:`records.yaml`.
+  :ts:cv:`proxy.config.log.logging.mode` variable in :file:`records.yaml`.
 
 - Check that a log format is enabled. In :file:`records.yaml`, select
   the standard or custom format by editing variables in the Logging Config

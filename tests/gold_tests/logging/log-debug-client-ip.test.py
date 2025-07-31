@@ -29,7 +29,7 @@ nameserver = Test.MakeDNServer("dns", default='127.0.0.1')
 
 ts.Disk.records_config.update(
     {
-        'proxy.config.diags.debug.enabled': 2,
+        'proxy.config.diags.debug.mode': 2,
         'proxy.config.diags.debug.tags': 'http',
         'proxy.config.diags.debug.client_ip': '127.0.0.1',
         'proxy.config.dns.nameservers': f"127.0.0.1:{nameserver.Variables.Port}",

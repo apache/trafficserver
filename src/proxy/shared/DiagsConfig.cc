@@ -76,8 +76,19 @@ DiagsConfig::reconfigure_diags()
 
   // enabled if records.yaml set
 
-  auto e{RecGetRecordInt("proxy.config.diags.debug.enabled")};
-  found = e.has_value();
+  // Validate that new mode and deprecated enabled configs don't conflict (if both explicitly defined).
+  auto debug_mode    = RecGetRecordInt("proxy.config.diags.debug.mode");
+  auto debug_enabled = RecGetRecordInt("proxy.config.diags.debug.enabled");
+
+  // Check for conflicts, but only error if deprecated config was explicitly set (not default)
+  if (debug_mode.has_value() && debug_enabled.has_value() && debug_mode.value() != debug_enabled.value() &&
+      !RecConfigIsUsingDefaultValue("proxy.config.diags.debug.enabled")) {
+    Emergency("Conflicting diags debug configuration: proxy.config.diags.debug.mode=%d but proxy.config.diags.debug.enabled=%d",
+              static_cast<int>(debug_mode.value()), static_cast<int>(debug_enabled.value()));
+  }
+
+  auto e = debug_mode.has_value() ? debug_mode : debug_enabled;
+  found  = e.has_value();
   if (found && e.value()) {
     c.enabled(DiagsTagType_Debug, e.value()); // implement OR logic
   }
@@ -295,13 +306,39 @@ DiagsConfig::DiagsConfig(std::string_view prefix_string, const char *filename, c
   int output_log_roll_size;
   output_log_roll_size = RecGetRecordInt("proxy.config.output.logfile.rolling_size_mb").value_or(0);
   int output_log_roll_enable;
-  output_log_roll_enable = RecGetRecordInt("proxy.config.output.logfile.rolling_enabled").value_or(0);
+  // Validate that new mode and deprecated enabled configs don't conflict (if both explicitly defined).
+  auto output_rolling_mode    = RecGetRecordInt("proxy.config.output.logfile.rolling.mode");
+  auto output_rolling_enabled = RecGetRecordInt("proxy.config.output.logfile.rolling_enabled");
+
+  if (output_rolling_mode.has_value() && output_rolling_enabled.has_value() &&
+      output_rolling_mode.value() != output_rolling_enabled.value() &&
+      !RecConfigIsUsingDefaultValue("proxy.config.output.logfile.rolling_enabled")) {
+    Emergency("Conflicting output rolling configuration: proxy.config.output.logfile.rolling.mode=%d but "
+              "proxy.config.output.logfile.rolling_enabled=%d",
+              static_cast<int>(output_rolling_mode.value()), static_cast<int>(output_rolling_enabled.value()));
+  }
+
+  output_log_roll_enable = output_rolling_mode.value_or(output_rolling_enabled.value_or(0));
+
   int diags_log_roll_int;
   diags_log_roll_int = RecGetRecordInt("proxy.config.diags.logfile.rolling_interval_sec").value_or(0);
   int diags_log_roll_size;
   diags_log_roll_size = RecGetRecordInt("proxy.config.diags.logfile.rolling_size_mb").value_or(0);
   int diags_log_roll_enable;
-  diags_log_roll_enable = RecGetRecordInt("proxy.config.diags.logfile.rolling_enabled").value_or(0);
+
+  // Validate that new mode and deprecated enabled configs don't conflict (if both explicitly defined).
+  auto diags_rolling_mode    = RecGetRecordInt("proxy.config.diags.logfile.rolling.mode");
+  auto diags_rolling_enabled = RecGetRecordInt("proxy.config.diags.logfile.rolling_enabled");
+
+  if (diags_rolling_mode.has_value() && diags_rolling_enabled.has_value() &&
+      diags_rolling_mode.value() != diags_rolling_enabled.value() &&
+      !RecConfigIsUsingDefaultValue("proxy.config.diags.logfile.rolling_enabled")) {
+    Emergency("Conflicting diags rolling configuration: proxy.config.diags.logfile.rolling.mode=%d but "
+              "proxy.config.diags.logfile.rolling_enabled=%d",
+              static_cast<int>(diags_rolling_mode.value()), static_cast<int>(diags_rolling_enabled.value()));
+  }
+
+  diags_log_roll_enable = diags_rolling_mode.value_or(diags_rolling_enabled.value_or(0));
 
   // Grab some perms for the actual files on disk
   {
@@ -343,11 +380,14 @@ void
 DiagsConfig::register_diags_callbacks()
 {
   static const char *config_record_names[] = {
-    "proxy.config.diags.debug.enabled",  "proxy.config.diags.debug.tags",       "proxy.config.diags.action.enabled",
-    "proxy.config.diags.action.tags",    "proxy.config.diags.show_location",    "proxy.config.diags.output.diag",
-    "proxy.config.diags.output.debug",   "proxy.config.diags.output.status",    "proxy.config.diags.output.note",
-    "proxy.config.diags.output.warning", "proxy.config.diags.output.error",     "proxy.config.diags.output.fatal",
-    "proxy.config.diags.output.alert",   "proxy.config.diags.output.emergency", nullptr,
+    "proxy.config.diags.debug.mode",       "proxy.config.diags.debug.enabled",
+    "proxy.config.diags.debug.tags",       "proxy.config.diags.action.enabled",
+    "proxy.config.diags.action.tags",      "proxy.config.diags.show_location",
+    "proxy.config.diags.output.diag",      "proxy.config.diags.output.debug",
+    "proxy.config.diags.output.status",    "proxy.config.diags.output.note",
+    "proxy.config.diags.output.warning",   "proxy.config.diags.output.error",
+    "proxy.config.diags.output.fatal",     "proxy.config.diags.output.alert",
+    "proxy.config.diags.output.emergency", nullptr,
   };
 
   bool  total_status = true;

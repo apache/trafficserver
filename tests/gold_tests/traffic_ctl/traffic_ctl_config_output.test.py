@@ -45,7 +45,7 @@ traffic_ctl = Make_traffic_ctl(Test, records_yaml)
 # YAML output
 traffic_ctl.config().get("proxy.config.diags.debug.tags").as_records().validate_with_goldfile("t1_yaml.gold")
 # Default output
-traffic_ctl.config().get("proxy.config.diags.debug.enabled").validate_with_text("proxy.config.diags.debug.enabled: 1")
+traffic_ctl.config().get("proxy.config.diags.debug.mode").validate_with_text("proxy.config.diags.debug.mode: 1")
 # Default output with default.
 traffic_ctl.config().get("proxy.config.diags.debug.tags").with_default() \
     .validate_with_text("proxy.config.diags.debug.tags: rpc # default http|dns")
@@ -54,7 +54,7 @@ traffic_ctl.config().get("proxy.config.diags.debug.tags").with_default() \
 # when using --records.
 traffic_ctl.config().get("proxy.config.diags.debug.tags").as_records().with_default().validate_with_goldfile("t2_yaml.gold")
 traffic_ctl.config().get(
-    "proxy.config.diags.debug.tags proxy.config.diags.debug.enabled proxy.config.diags.debug.throttling_interval_msec").as_records(
+    "proxy.config.diags.debug.tags proxy.config.diags.debug.mode proxy.config.diags.debug.throttling_interval_msec").as_records(
     ).with_default().validate_with_goldfile("t3_yaml.gold")
 
 ##### CONFIG MATCH

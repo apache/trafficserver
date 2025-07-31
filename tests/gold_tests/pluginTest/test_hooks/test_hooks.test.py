@@ -45,7 +45,7 @@ ts.Disk.records_config.update(
         'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
         'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
         'proxy.config.url_remap.remap_required': 0,
-        'proxy.config.diags.debug.enabled': 0,
+        'proxy.config.diags.debug.mode': 0,
         'proxy.config.diags.debug.tags': 'http|test_hooks',
     })
 

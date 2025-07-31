@@ -42,7 +42,7 @@ class AccessControlTest:
         self.ts.Disk.ssl_multicert_config.AddLine("dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key")
         self.ts.Disk.records_config.update(
             {
-                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.mode": 1,
                 "proxy.config.diags.debug.tags": "http|access_control",
                 "proxy.config.http.insert_response_via_str": 2,
                 'proxy.config.ssl.server.cert.path': f"{self.ts.Variables.SSLDir}",

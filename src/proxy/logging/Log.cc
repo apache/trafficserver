@@ -215,14 +215,24 @@ Log::periodic_tasks(long time_now)
     Dbg(dbg_ctl_log_config, "Performing reconfiguration, init status = %d", init_status);
 
     if (logging_mode_changed) {
-      int val;
-      val = RecGetRecordInt("proxy.config.log.logging_enabled").value_or(0);
+      // Validate that new mode and deprecated enabled configs don't conflict (if both explicitly defined).
+      auto logging_mode_config    = RecGetRecordInt("proxy.config.log.logging.mode");
+      auto logging_enabled_config = RecGetRecordInt("proxy.config.log.logging_enabled");
+
+      if (logging_mode_config.has_value() && logging_enabled_config.has_value() &&
+          logging_mode_config.value() != logging_enabled_config.value() &&
+          !RecConfigIsUsingDefaultValue("proxy.config.log.logging_enabled")) {
+        Emergency("Conflicting logging configuration: proxy.config.log.logging.mode=%d but proxy.config.log.logging_enabled=%d",
+                  static_cast<int>(logging_mode_config.value()), static_cast<int>(logging_enabled_config.value()));
+      }
+
+      int val = logging_mode_config.value_or(logging_enabled_config.value_or(LOG_MODE_FULL));
 
       if (val < LOG_MODE_NONE || val > LOG_MODE_FULL) {
         logging_mode = LOG_MODE_FULL;
-        Warning("proxy.config.log.logging_enabled has an invalid "
-                "value setting it to %d",
-                logging_mode);
+        Warning("proxy.config.log.logging.mode has an invalid "
+                "value %d, setting it to %d",
+                val, logging_mode);
       } else {
         logging_mode = static_cast<LoggingMode>(val);
       }
@@ -1080,13 +1090,24 @@ Log::init(int flags)
     config->read_configuration_variables();
     preproc_threads = config->preproc_threads;
 
-    int val;
-    val = RecGetRecordInt("proxy.config.log.logging_enabled").value_or(0);
+    // Validate that new mode and deprecated enabled configs don't conflict (if both explicitly defined).
+    auto logging_mode_config    = RecGetRecordInt("proxy.config.log.logging.mode");
+    auto logging_enabled_config = RecGetRecordInt("proxy.config.log.logging_enabled");
+
+    if (logging_mode_config.has_value() && logging_enabled_config.has_value() &&
+        logging_mode_config.value() != logging_enabled_config.value() &&
+        !RecConfigIsUsingDefaultValue("proxy.config.log.logging_enabled")) {
+      Emergency("Conflicting logging configuration: proxy.config.log.logging.mode=%d but proxy.config.log.logging_enabled=%d",
+                static_cast<int>(logging_mode_config.value()), static_cast<int>(logging_enabled_config.value()));
+    }
+
+    int val = logging_mode_config.value_or(logging_enabled_config.value_or(LOG_MODE_FULL));
+
     if (val < LOG_MODE_NONE || val > LOG_MODE_FULL) {
       logging_mode = LOG_MODE_FULL;
-      Warning("proxy.config.log.logging_enabled has an invalid "
-              "value, setting it to %d",
-              logging_mode);
+      Warning("proxy.config.log.logging.mode has an invalid "
+              "value %d, setting it to %d",
+              val, logging_mode);
     } else {
       logging_mode = static_cast<LoggingMode>(val);
     }
@@ -1106,7 +1127,7 @@ Log::init(int flags)
 
   init_fields();
   if (!(config_flags & LOGCAT)) {
-    RecRegisterConfigUpdateCb("proxy.config.log.logging_enabled", &Log::handle_logging_mode_change, nullptr);
+    RecRegisterConfigUpdateCb("proxy.config.log.logging.mode", &Log::handle_logging_mode_change, nullptr);
 
     Dbg(dbg_ctl_log_config, "Log::init(): logging_mode = %d init status = %d", logging_mode, init_status);
     config->init();

@@ -161,7 +161,7 @@ msgid ":ts:cv:`proxy.config.http.insert_client_ip`"
 msgstr ""
 
 #: ../../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:84
-msgid ":ts:cv:`proxy.config.http.response_server_enabled`"
+msgid ":ts:cv:`proxy.config.http.response_server.mode`"
 msgstr ""
 
 #: ../../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:85

@@ -45,7 +45,7 @@ ts.Setup.Copy("ssl/signed-foo.key")
 
 ts.Disk.records_config.update(
     {
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'traffic_dump|http',
         'proxy.config.http.insert_age_in_response': 0,
         'proxy.config.ssl.server.cert.path': ts.Variables.SSLDir,

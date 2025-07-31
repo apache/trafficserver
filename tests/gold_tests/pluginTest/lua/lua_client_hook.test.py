@@ -43,7 +43,7 @@ ts.Disk.remap_config.AddLine(
 # Configure the tslua's configuration file.
 ts.Setup.Copy("client_hook.lua", ts.Variables.CONFIGDIR)
 
-ts.Disk.records_config.update({'proxy.config.diags.debug.enabled': 1, 'proxy.config.diags.debug.tags': 'ts_lua'})
+ts.Disk.records_config.update({'proxy.config.diags.debug.mode': 1, 'proxy.config.diags.debug.tags': 'ts_lua'})
 
 # Test for watermark debug output
 ts.Disk.traffic_out.Content = Testers.ContainsExpression(r"AAAA", "Response is properly captured")

@@ -42,7 +42,7 @@ response_header = {
 
 server.addResponse("sessionlog.json", request_header, response_header)
 
-ts.Disk.records_config.update({'proxy.config.diags.debug.enabled': 0, 'proxy.config.diags.debug.tags': 'http'})
+ts.Disk.records_config.update({'proxy.config.diags.debug.mode': 0, 'proxy.config.diags.debug.tags': 'http'})
 
 ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variables.Port))
 
@@ -90,7 +90,7 @@ class HTTP10Test:
         self.ts.addDefaultSSLFiles()
         self.ts.Disk.records_config.update(
             {
-                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.mode": 1,
                 "proxy.config.diags.debug.tags": "http",
                 "proxy.config.ssl.server.cert.path": f'{self.ts.Variables.SSLDir}',
                 "proxy.config.ssl.server.private_key.path": f'{self.ts.Variables.SSLDir}',
@@ -148,7 +148,7 @@ class MalformedChunkHeaderTest:
         self.ts.addDefaultSSLFiles()
         self.ts.Disk.records_config.update(
             {
-                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.mode": 1,
                 "proxy.config.diags.debug.tags": "http",
                 "proxy.config.ssl.server.cert.path": f'{self.ts.Variables.SSLDir}',
                 "proxy.config.ssl.server.private_key.path": f'{self.ts.Variables.SSLDir}',

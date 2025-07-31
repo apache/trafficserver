@@ -37,6 +37,7 @@ Synopsis
 .. function:: TSReturnCode TSTextLogObjectDestroy(TSTextLogObject the_object)
 .. function:: void TSTextLogObjectHeaderSet(TSTextLogObject the_object, const char * header)
 .. function:: TSReturnCode TSTextLogObjectRollingEnabledSet(TSTextLogObject the_object, int rolling_enabled)
+.. function:: TSReturnCode TSTextLogObjectRollingModeSet(TSTextLogObject the_object, int rolling_mode)
 .. function:: void TSTextLogObjectRollingIntervalSecSet(TSTextLogObject the_object, int rolling_interval_sec)
 .. function:: void TSTextLogObjectRollingOffsetHrSet(TSTextLogObject the_object, int rolling_offset_hr)
 .. function:: void TSTextLogObjectRollingSizeMbSet(TSTextLogObject the_object, int rolling_size_mb)
@@ -44,18 +45,24 @@ Synopsis
 Description
 ===========
 
-:func:`TSTextLogObjectRollingEnabledSet` sets the log rolling mode
+:func:`TSTextLogObjectRollingModeSet` sets the log rolling mode
 for the given object. This API must be used once the object is
-created and before writing into logs. The :arg:`rolling_enabled`
-argument must be a valid :ts:cv:`proxy.config.log.rolling_enabled`
-values. If :func:`TSTextLogObjectRollingEnabledSet` is never called,
+created and before writing into logs. The :arg:`rolling_mode`
+argument must be a valid :ts:cv:`proxy.config.log.rolling.mode`
+value. If :func:`TSTextLogObjectRollingModeSet` is never called,
 the log object takes it's log rolling mode from the global
-:ts:cv:`proxy.config.log.rolling_enabled` setting.
+:ts:cv:`proxy.config.log.rolling.mode` setting.
 
-It's also important to call :func:`TSTextLogObjectRollingEnabledSet` before
-any of the other APIs that modifies the rolling object. This is due to the
-fact that this API dictates which rolling mode should be used, and therefore
-affects further modifications of the logging object.
+.. deprecated:: 10.1.0
+    :func:`TSTextLogObjectRollingModeSet` is the modern equivalent of
+    :func:`TSTextLogObjectRollingEnabledSet` and provides the same functionality
+    with a clearer name. :func:`TSTextLogObjectRollingEnabledSet` is deprecated
+    as of 10.1.0.
+
+It's important to call :func:`TSTextLogObjectRollingModeSet` before any of the
+other APIs that modify the rolling object. This is due to the fact that these
+APIs dictate which rolling mode should be used, and therefore affect further
+modifications of the logging object.
 
 See Also
 ========

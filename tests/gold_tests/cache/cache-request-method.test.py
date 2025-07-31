@@ -29,7 +29,7 @@ replay_file = "replay/post_with_post_caching_disabled.replay.yaml"
 server = tr.AddVerifierServerProcess("server0", replay_file)
 ts.Disk.records_config.update(
     {
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'http.*|cache.*',
         'proxy.config.http.insert_age_in_response': 0,
 
@@ -50,7 +50,7 @@ replay_file = "replay/post_with_post_caching_enabled.replay.yaml"
 server = tr.AddVerifierServerProcess("server1", replay_file)
 ts.Disk.records_config.update(
     {
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'http.*|cache.*',
         'proxy.config.http.insert_age_in_response': 0,
         'proxy.config.http.cache.post_method': 1,
@@ -68,7 +68,7 @@ replay_file = "replay/post_with_post_caching_enabled.replay.yaml"
 server = tr.AddVerifierServerProcess("server2", replay_file)
 ts.Disk.records_config.update(
     {
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'http.*|cache.*',
         'proxy.config.http.insert_age_in_response': 0,
         # Override the following in remap.config.
@@ -88,7 +88,7 @@ replay_file = "replay/head_with_get_cached.replay.yaml"
 server = tr.AddVerifierServerProcess("server3", replay_file)
 ts.Disk.records_config.update(
     {
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'http.*|cache.*',
         'proxy.config.http.insert_age_in_response': 0,
     })

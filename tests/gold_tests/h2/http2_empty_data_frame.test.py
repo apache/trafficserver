@@ -36,7 +36,7 @@ class Http2EmptyDataFrameTest:
         self._ts.addDefaultSSLFiles()
         self._ts.Disk.records_config.update(
             {
-                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.mode': 1,
                 'proxy.config.diags.debug.tags': 'http2',
                 'proxy.config.ssl.server.cert.path': f"{self._ts.Variables.SSLDir}",
                 'proxy.config.ssl.server.private_key.path': f"{self._ts.Variables.SSLDir}",

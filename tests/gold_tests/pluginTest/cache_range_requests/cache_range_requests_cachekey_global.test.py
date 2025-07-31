@@ -127,7 +127,7 @@ ts.Disk.plugin_config.AddLines(
 # minimal configuration
 ts.Disk.records_config.update(
     {
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'cachekey|cache_range_requests',
     })
 

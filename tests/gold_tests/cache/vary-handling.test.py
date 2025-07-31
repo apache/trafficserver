@@ -26,7 +26,7 @@ replay_file = "replay/varied_transactions.replay.yaml"
 server = Test.MakeVerifierServerProcess("server", replay_file)
 ts.Disk.records_config.update(
     {
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'http',
         'proxy.config.http.insert_age_in_response': 0,
         'proxy.config.cache.limits.http.max_alts': 4,

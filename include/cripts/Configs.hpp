@@ -264,6 +264,7 @@ private:
       cripts::IntConfig    request_header_max_size{"proxy.config.http.request_header_max_size"};
       cripts::IntConfig    response_header_max_size{"proxy.config.http.response_header_max_size"};
       cripts::IntConfig    response_server_enabled{"proxy.config.http.response_server_enabled"};
+      cripts::IntConfig    response_server_mode{"proxy.config.http.response_server.mode"};
       cripts::StringConfig response_server_str{"proxy.config.http.response_server_str"};
       cripts::IntConfig    send_http11_requests{"proxy.config.http.send_http11_requests"};
 

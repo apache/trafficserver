@@ -34,7 +34,7 @@ ts.Disk.records_config.update(
         'proxy.config.exec_thread.limit': 32,
         'proxy.config.accept_threads': 1,
         'proxy.config.task_threads': 2,
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'TSContSchedule_test'
     })
 

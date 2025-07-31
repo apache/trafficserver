@@ -42,13 +42,13 @@ server.addResponse("sessionlog.json", request_header, response_header)
 if Condition.CurlUsingUnixDomainSocket():
     ts.Disk.records_config.update(
         {
-            'proxy.config.diags.debug.enabled': 0,
+            'proxy.config.diags.debug.mode': 0,
             'proxy.config.diags.debug.tags': 'http|dns',
             'proxy.config.http.insert_forwarded': 'for',
         })
 else:
     ts.Disk.records_config.update({
-        'proxy.config.diags.debug.enabled': 0,
+        'proxy.config.diags.debug.mode': 0,
         'proxy.config.diags.debug.tags': 'http|dns',
     })
 

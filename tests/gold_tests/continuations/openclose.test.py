@@ -44,7 +44,7 @@ Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'ssntxnord
 server.addResponse("sessionfile.log", request_header, response_header)
 ts.Disk.records_config.update(
     {
-        'proxy.config.diags.debug.enabled': 0,
+        'proxy.config.diags.debug.mode': 0,
         'proxy.config.diags.debug.tags': 'ssntxnorder_verify.*',
         'proxy.config.cache.enable_read_while_writer': 0
     })

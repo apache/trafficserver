@@ -78,7 +78,7 @@ class SessionMatchTest:
         self._ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(self._server.Variables.Port))
         self._ts.Disk.records_config.update(
             {
-                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.mode': 1,
                 'proxy.config.diags.debug.tags': 'http',
                 'proxy.config.http.auth_server_session_private': 1,
                 'proxy.config.http.server_session_sharing.pool': 'global',

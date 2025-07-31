@@ -105,7 +105,7 @@ class BodyBufferTest:
         Test.PrepareInstalledPlugin('request_buffer.so', self._ts)
         self._ts.Disk.records_config.update(
             {
-                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.mode': 1,
                 'proxy.config.diags.debug.tags': 'request_buffer',
                 'proxy.config.http.server_ports': str(self._ts.Variables.port) + f" {self._ts.Variables.uds_path}",
             })

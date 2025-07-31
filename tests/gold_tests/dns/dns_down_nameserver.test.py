@@ -68,7 +68,7 @@ class DownDNSNameserverTest:
 
         self._ts.Disk.records_config.update(
             {
-                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.mode': 1,
                 'proxy.config.diags.debug.tags': 'hostdb|dns',
                 'proxy.config.dns.nameservers': f'127.0.0.1:{self._dns_port}',
                 'proxy.config.dns.resolv_conf': 'NULL'

@@ -64,7 +64,7 @@ class Test_quic_no_activity_timeout:
         self._ts.addSSLfile("ssl/private-key.key")
         self._ts.Disk.records_config.update(
             {
-                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.mode': 1,
                 'proxy.config.diags.debug.tags': 'ssl|net|v_quic|quic|http|socket|inactivity_cop',
                 'proxy.config.quic.no_activity_timeout_in': self.no_activity_timeout_in,
                 'proxy.config.quic.qlog.file_base': f'log/qlog_{Test_quic_no_activity_timeout.server_counter}',

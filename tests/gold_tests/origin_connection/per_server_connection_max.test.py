@@ -49,7 +49,7 @@ class PerServerConnectionMaxTest:
             {
                 'proxy.config.dns.nameservers': f"127.0.0.1:{self._dns.Variables.Port}",
                 'proxy.config.dns.resolv_conf': 'NULL',
-                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.mode': 1,
                 'proxy.config.diags.debug.tags': 'http|conn_track',
                 'proxy.config.http.per_server.connection.max': self._origin_max_connections,
                 'proxy.config.http.per_server.connection.metric_enabled': 1,
@@ -113,7 +113,7 @@ class ConnectMethodTest:
             {
                 'proxy.config.dns.nameservers': f"127.0.0.1:{self._dns.Variables.Port}",
                 'proxy.config.dns.resolv_conf': 'NULL',
-                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.mode': 1,
                 'proxy.config.diags.debug.tags': 'http|dns|hostdb|conn_track',
                 'proxy.config.http.server_ports': f"{self._ts.Variables.port} {self._ts.Variables.uds_path}",
                 'proxy.config.http.connect_ports': f"{self._server.Variables.Port}",

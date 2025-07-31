@@ -52,7 +52,7 @@ ts.Disk.records_config.update(
         'proxy.config.ssl.server.version.max': 2,
         'proxy.config.ssl.TLSv1_2': 0,  # This setting should be ignored in favor of a version range setting
         'proxy.config.exec_thread.autoconfig.scale': 1.0,
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'ssl',
     })
 

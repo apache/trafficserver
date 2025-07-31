@@ -28,7 +28,7 @@ Test.ContinueOnFail = True
 ts.Disk.records_config.update(
     {
         'proxy.config.diags.debug.tags': 'http',
-        'proxy.config.diags.debug.enabled': 0,
+        'proxy.config.diags.debug.mode': 0,
         'proxy.config.http.strict_uri_parsing': 1
     })
 
@@ -37,7 +37,7 @@ ts2 = Test.MakeATSProcess("ts2")
 ts2.Disk.records_config.update(
     {
         'proxy.config.diags.debug.tags': 'http',
-        'proxy.config.diags.debug.enabled': 0,
+        'proxy.config.diags.debug.mode': 0,
         'proxy.config.http.strict_uri_parsing': 2
     })
 

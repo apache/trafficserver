@@ -60,7 +60,7 @@ class TestDefaultInactivityTimeout:
 
         debug_tags = 'http|cache|socket|net_queue|inactivity_cop|conf_remap'
         ts.Disk.records_config.update({
-            'proxy.config.diags.debug.enabled': 1,
+            'proxy.config.diags.debug.mode': 1,
             'proxy.config.diags.debug.tags': debug_tags,
         })
 

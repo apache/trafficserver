@@ -39,7 +39,7 @@ ts.addSSLfile("ssl/signer.pem")
 ts.Disk.records_config.update(
     {
         # Test looks for debug output from the plugin
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'ssl_client_verify_test',
         'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
         'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),

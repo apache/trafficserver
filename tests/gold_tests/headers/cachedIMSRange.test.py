@@ -112,7 +112,7 @@ ts.addDefaultSSLFiles()
 ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
 ts.Disk.records_config.update(
     {
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'http',
         'proxy.config.http.response_via_str': 3,
         'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),

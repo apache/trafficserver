@@ -29,15 +29,15 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.1.1\n"
 
-#: ../../developer-guide/api/functions/TSTextLogObjectCreate.en.rst:45
+#: ../../developer-guide/api/functions/TSTextLogObjectCreate.en.rst:48
 msgid ""
-":func:`TSTextLogObjectRollingEnabledSet` sets the log rolling mode for the "
+":func:`TSTextLogObjectRollingModeSet` sets the log rolling mode for the "
 "given object. This API must be used once the object is created and before "
-"writing into logs. The :arg:`rolling_enabled` argument must be a valid :ts:"
-"cv:`proxy.config.log.rolling_enabled` values. If :func:"
-"`TSTextLogObjectRollingEnabledSet` is never called, the log object takes "
-"it's log rolling mode from the global :ts:cv:`proxy.config.log."
-"rolling_enabled` setting."
+"writing into logs. The :arg:`rolling_mode` argument must be a valid :ts:cv:"
+"`proxy.config.log.rolling.mode` value. If :func:"
+"`TSTextLogObjectRollingModeSet` is never called, the log object takes it's "
+"log rolling mode from the global :ts:cv:`proxy.config.log.rolling.mode` "
+"setting."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSTextLogObjectCreate.en.rst:28
@@ -60,18 +60,37 @@ msgstr ":manpage:`TSAPI(3ts)`"
 msgid "Description"
 msgstr "解説"
 
-#: ../../developer-guide/api/functions/TSTextLogObjectCreate.en.rst:53
+#: ../../developer-guide/api/functions/TSTextLogObjectCreate.en.rst:56
 msgid ""
-"It's also important to call :func:`TSTextLogObjectRollingEnabledSet` before "
-"any of the other APIs that modifies the rolling object. This is due to the "
-"fact that this API dictates which rolling mode should be used, and "
-"therefore affects further modifications of the logging object."
+".. deprecated:: 10.1.0"
 msgstr ""
 
-#: ../../developer-guide/api/functions/TSTextLogObjectCreate.en.rst:59
+#: ../../developer-guide/api/functions/TSTextLogObjectCreate.en.rst:57
+msgid ""
+":func:`TSTextLogObjectRollingModeSet` is the modern equivalent of :func:"
+"`TSTextLogObjectRollingEnabledSet` and provides the same functionality with "
+"a clearer name. :func:`TSTextLogObjectRollingEnabledSet` is deprecated as "
+"of 10.1.0."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSTextLogObjectCreate.en.rst:62
+msgid ""
+"It's important to call :func:`TSTextLogObjectRollingModeSet` before any of "
+"the other APIs that modify the rolling object. This is due to the fact that "
+"these APIs dictate which rolling mode should be used, and therefore affect "
+"further modifications of the logging object."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSTextLogObjectCreate.en.rst:67
 msgid "See Also"
 msgstr "参照"
 
 #: ../../developer-guide/api/functions/TSTextLogObjectCreate.en.rst:30
 msgid "`#include <ts/ts.h>`"
 msgstr "`#include <ts/ts.h>`"
+
+#: ../../developer-guide/api/functions/TSTextLogObjectCreate.en.rst:40
+msgid ""
+".. function:: TSReturnCode TSTextLogObjectRollingModeSet(TSTextLogObject "
+"the_object, int rolling_mode)"
+msgstr ""

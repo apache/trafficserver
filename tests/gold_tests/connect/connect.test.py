@@ -46,7 +46,7 @@ class ConnectTest:
 
         self.ts.Disk.records_config.update(
             {
-                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.mode': 1,
                 'proxy.config.diags.debug.tags': 'http',
                 'proxy.config.http.server_ports': f"{self.ts.Variables.port} {self.ts.Variables.uds_path}",
                 'proxy.config.http.connect_ports': f"{self.httpbin.Variables.Port}",
@@ -135,7 +135,7 @@ class ConnectViaPVTest:
 
         self.ts.Disk.records_config.update(
             {
-                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.mode': 1,
                 'proxy.config.diags.debug.tags': 'http|iocore_net|rec',
                 'proxy.config.http.server_ports': f"{self.ts.Variables.port}",
                 'proxy.config.http.connect_ports': f"{self.server.Variables.http_port}",
@@ -216,7 +216,7 @@ class ConnectViaPVTest2:
 
         self.ts.Disk.records_config.update(
             {
-                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.mode': 1,
                 'proxy.config.diags.debug.tags': 'http|hpack',
                 'proxy.config.ssl.server.cert.path': f'{self.ts.Variables.SSLDir}',
                 'proxy.config.ssl.server.private_key.path': f'{self.ts.Variables.SSLDir}',

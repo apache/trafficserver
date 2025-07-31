@@ -44,7 +44,7 @@ ts.Setup.Copy("../ssl/server.pem", os.path.join(ts.Variables.SSLDir, "server.pem
 
 ts.Disk.records_config.update(
     {
-        'proxy.config.diags.debug.enabled': 1
+        'proxy.config.diags.debug.mode': 1
         #    , 'proxy.config.diags.debug.tags': 'txn_box|http|ssl'
         ,
         'proxy.config.diags.debug.tags': 'txn_box',

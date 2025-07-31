@@ -58,7 +58,7 @@ Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'ssl_secre
 ts.Disk.records_config.update(
     {
         'proxy.config.diags.debug.tags': 'ssl_secret_load_test|ssl',
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.ssl.server.cert.path': '{0}/../'.format(ts.Variables.SSLDir),
         'proxy.config.ssl.server.private_key.path': '{0}/../'.format(ts.Variables.SSLDir),
         'proxy.config.ssl.server.cipher_suite':

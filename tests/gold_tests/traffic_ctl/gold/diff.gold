@@ -1,4 +1,4 @@
-proxy.config.diags.debug.enabled has changed
+proxy.config.diags.debug.mode has changed
 ``Current Value: 1
 ``Default Value: 0
 proxy.config.diags.debug.tags has changed

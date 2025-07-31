@@ -931,7 +931,22 @@ HttpConfig::startup()
   HttpEstablishStaticConfigStringAlloc(c.oride.global_user_agent_header, "proxy.config.http.global_user_agent_header");
   c.oride.global_user_agent_header_size = c.oride.global_user_agent_header ? strlen(c.oride.global_user_agent_header) : 0;
 
+  HttpEstablishStaticConfigByte(c.oride.proxy_response_server_mode, "proxy.config.http.response_server.mode");
+
+  // The following is the deprecated version of proxy_response_server_mode.
   HttpEstablishStaticConfigByte(c.oride.proxy_response_server_enabled, "proxy.config.http.response_server_enabled");
+
+  // Validate that new mode and deprecated enabled configs don't conflict (if both explicitly defined).
+  auto response_server_mode    = RecGetRecordInt("proxy.config.http.response_server.mode");
+  auto response_server_enabled = RecGetRecordInt("proxy.config.http.response_server_enabled");
+
+  if (response_server_mode.has_value() && response_server_enabled.has_value() &&
+      response_server_mode.value() != response_server_enabled.value() &&
+      !RecConfigIsUsingDefaultValue("proxy.config.http.response_server_enabled")) {
+    Emergency("Conflicting HTTP response server configuration: proxy.config.http.response_server.mode=%d but "
+              "proxy.config.http.response_server_enabled=%d",
+              static_cast<int>(response_server_mode.value()), static_cast<int>(response_server_enabled.value()));
+  }
   HttpEstablishStaticConfigStringAlloc(c.oride.proxy_response_server_string, "proxy.config.http.response_server_str");
   c.oride.proxy_response_server_string_len =
     c.oride.proxy_response_server_string ? strlen(c.oride.proxy_response_server_string) : 0;
@@ -1236,6 +1251,7 @@ HttpConfig::reconfigure()
   params->oride.proxy_response_server_string_len =
     params->oride.proxy_response_server_string ? strlen(params->oride.proxy_response_server_string) : 0;
   params->oride.proxy_response_server_enabled = m_master.oride.proxy_response_server_enabled;
+  params->oride.proxy_response_server_mode    = m_master.oride.proxy_response_server_mode;
 
   params->oride.insert_squid_x_forwarded_for = INT_TO_BOOL(m_master.oride.insert_squid_x_forwarded_for);
   params->oride.insert_forwarded             = m_master.oride.insert_forwarded;

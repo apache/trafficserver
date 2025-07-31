@@ -46,7 +46,7 @@ class TransactionDataSyncTest:
                 "proxy.config.ssl.server.private_key.path": f'{self.ts.Variables.SSLDir}',
                 "proxy.config.ssl.client.verify.server.policy": 'PERMISSIVE',
                 "proxy.config.dns.nameservers": f"127.0.0.1:{self.nameserver.Variables.Port}",
-                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.mode': 1,
                 'proxy.config.diags.debug.tags': 'http|txn_data_sink',
             })
         self.ts.addDefaultSSLFiles()

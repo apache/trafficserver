@@ -31,7 +31,7 @@ tr = Test.TxnBoxTestAndRun("Accept Encoding", "accept-encoding.replay.yaml", con
 
 tr.Variables.TS.Disk.records_config.update(
     {
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'txn_box',
         'proxy.config.http.cache.http': 0,
         'proxy.config.http.normalize_ae': 0,

@@ -38,7 +38,7 @@ tr = Test.TxnBoxTestAndRun(
 ts = tr.Variables.TS
 ts.Disk.records_config.update(
     {
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'txn_box',
         'proxy.config.crash_log_helper':
             '/home/dmeden/code/git/trafficserver/build/_sandbox/txn-debug/ts-debug-enabled/bin/traffic_crashlog'
@@ -56,7 +56,7 @@ tr = Test.TxnBoxTestAndRun(
 ts = tr.Variables.TS
 ts.Disk.records_config.update(
     {
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'txn_box',
         'proxy.config.crash_log_helper':
             '/home/dmeden/code/git/trafficserver/build/_sandbox/txn-debug/ts-debug-disabled/bin/traffic_crashlog'

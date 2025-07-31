@@ -63,7 +63,7 @@ ts.Disk.records_config.update(
         'proxy.config.exec_thread.autoconfig.scale': 1.0,
         'proxy.config.ssl.engine.conf_file': '{0}/ts/config/load_engine.cnf'.format(Test.RunDirectory),
         'proxy.config.ssl.async.handshake.enabled': 1,
-        'proxy.config.diags.debug.enabled': 0,
+        'proxy.config.diags.debug.mode': 0,
         'proxy.config.diags.debug.tags': 'ssl|http'
     })
 

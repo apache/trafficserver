@@ -61,7 +61,7 @@ class TestTSHttpTxnServerAddrSet:
             {
                 'proxy.config.dns.nameservers': f'127.0.0.1:{self._dns.Variables.Port}',
                 'proxy.config.dns.resolv_conf': 'NULL',
-                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.mode': 1,
                 'proxy.config.diags.debug.tags': 'http|dns|hostdb|test_plugin',
             })
 

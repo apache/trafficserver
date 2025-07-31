@@ -24,7 +24,7 @@ Test conditional get with body drains the body from client"
 ts = Test.MakeATSProcess("ts-conditional-get-caching")
 ts.Disk.records_config.update(
     {
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'http|cache',
         'proxy.config.http.cache.max_stale_age': 6,
     })

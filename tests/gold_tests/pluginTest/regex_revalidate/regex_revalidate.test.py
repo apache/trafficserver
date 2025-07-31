@@ -123,9 +123,9 @@ ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{}'.format(server.Variables
 # minimal configuration
 ts.Disk.records_config.update(
     {
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'regex_revalidate',
-        #    'proxy.config.diags.debug.enabled': 0,
+        #    'proxy.config.diags.debug.mode': 0,
         'proxy.config.http.insert_age_in_response': 0,
         'proxy.config.http.response_via_str': 3,
     })

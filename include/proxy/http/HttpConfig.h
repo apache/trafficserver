@@ -509,7 +509,8 @@ struct OverridableHttpConfigParams {
   MgmtByte anonymize_remove_client_ip  = 0;
   MgmtByte anonymize_insert_client_ip  = 1;
 
-  MgmtByte proxy_response_server_enabled          = 1;
+  MgmtByte proxy_response_server_mode             = 1;
+  MgmtByte proxy_response_server_enabled          = 1; // Deprecated. Use proxy_response_server_mode instead.
   MgmtByte proxy_response_hsts_include_subdomains = 0;
 
   /////////////////////

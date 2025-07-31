@@ -82,7 +82,7 @@ ts.Disk.records_config.update(
         'proxy.config.ssl.client.CA.cert.filename': 'signer.pem',
         'proxy.config.exec_thread.autoconfig.scale': 1.0,
         'proxy.config.url_remap.pristine_host_hdr': 1,
-        'proxy.config.diags.debug.enabled': 0,
+        'proxy.config.diags.debug.mode': 0,
         'proxy.config.diags.debug.tags': 'ssl'
     })
 
@@ -118,7 +118,7 @@ tr2.Disk.records_config.update(
         'proxy.config.ssl.client.CA.cert.filename': 'signer.pem',
         'proxy.config.exec_thread.autoconfig.scale': 1.0,
         'proxy.config.url_remap.pristine_host_hdr': 1,
-        'proxy.config.diags.debug.enabled': 0,
+        'proxy.config.diags.debug.mode': 0,
         'proxy.config.diags.debug.tags': 'ssl'
     })
 tr2.StillRunningAfter = ts
@@ -162,7 +162,7 @@ tr2.Disk.records_config.update(
         'proxy.config.ssl.client.CA.cert.filename': 'signer.pem',
         'proxy.config.exec_thread.autoconfig.scale': 1.0,
         'proxy.config.url_remap.pristine_host_hdr': 1,
-        'proxy.config.diags.debug.enabled': 0,
+        'proxy.config.diags.debug.mode': 0,
         'proxy.config.diags.debug.tags': 'ssl'
     })
 tr2.StillRunningAfter = ts

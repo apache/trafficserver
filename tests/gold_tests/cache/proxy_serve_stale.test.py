@@ -46,7 +46,7 @@ class ProxyServeStaleTest:
                 'proxy.config.http.parent_proxy.total_connect_attempts': 1,
                 'proxy.config.http.cache.max_stale_age': 10,
                 'proxy.config.http.parent_proxy.self_detect': 0,
-                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.mode': 1,
                 'proxy.config.diags.debug.tags': 'cache|http|dns|hostdb|parent_proxy',
                 'proxy.config.dns.nameservers': f"127.0.0.1:{self.nameserver.Variables.Port}",
             })

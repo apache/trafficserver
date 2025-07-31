@@ -34,11 +34,11 @@ Test.SkipIf(Condition.true("This test is sensitive to timing issues which makes 
 class TestLogRetention:
     __base_records_config = {
         # Do not accept connections from clients until cache subsystem is operational.
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'logspace',
 
         # Enable log rotation and auto-deletion, the subjects of this test.
-        'proxy.config.log.rolling_enabled': 3,
+        'proxy.config.log.rolling.mode': 3,
         'proxy.config.log.auto_delete_rolled_files': 1,
 
         # 10 MB is the minimum rolling size.

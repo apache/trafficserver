@@ -112,7 +112,7 @@ class TestRedirectToSameOriginOnCache:
         ts.Disk.records_config.update(
             {
                 'proxy.config.http.server_ports': f"{self._port_one}",
-                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.mode': 1,
                 'proxy.config.diags.debug.tags': "cache|dns|http|redirect|remap",
                 'proxy.config.dns.nameservers': f"127.0.0.1:{self._dns_port}",
                 'proxy.config.dns.resolv_conf': 'NULL',

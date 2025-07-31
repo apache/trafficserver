@@ -98,7 +98,7 @@ ts1.Setup.Copy('early_h2_multi2.txt')
 
 ts1.Disk.records_config.update(
     {
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'http|ssl_early_data|ssl',
         'proxy.config.exec_thread.autoconfig.enabled': 0,
         'proxy.config.exec_thread.limit': 8,
@@ -127,7 +127,7 @@ ts1.Disk.sni_yaml.AddLines([
 
 ts2.Disk.records_config.update(
     {
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'http|ssl_early_data|ssl',
         'proxy.config.exec_thread.autoconfig.enabled': 0,
         'proxy.config.exec_thread.limit': 8,

@@ -32,7 +32,7 @@ ts.addSSLfile("ssl/two.com.pem")
 
 ts.Disk.records_config.update(
     {
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'client_context_dump',
         'proxy.config.ssl.server.cert.path': '{}'.format(ts.Variables.SSLDir),
         'proxy.config.ssl.server.private_key.path': '{}'.format(ts.Variables.SSLDir),

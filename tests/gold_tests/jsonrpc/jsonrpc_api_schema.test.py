@@ -92,7 +92,7 @@ Test.testName = 'Basic JSONRPC API test'
 
 ts.Disk.records_config.update(
     {
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'rpc|filemanager|http|cache',
         'proxy.config.jsonrpc.filename': "jsonrpc.yaml",  # We will be using this record to tests some RPC API.
     })

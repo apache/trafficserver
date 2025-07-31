@@ -118,7 +118,7 @@ class TestStaleResponse:
 
         ts.Disk.records_config.update(
             {
-                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.mode": 1,
                 "proxy.config.diags.debug.tags": "http|stale_response",
                 "proxy.config.http.server_session_sharing.pool": "global",
                 # Turn off negative revalidating so that we can test stale-if-error.

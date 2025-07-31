@@ -38,7 +38,7 @@ class InvalidRangeHeaderTest:
         self.ts = Test.MakeATSProcess("ts1")
         self.ts.Disk.records_config.update(
             {
-                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.mode': 1,
                 'proxy.config.diags.debug.tags': 'http',
                 'proxy.config.http.cache.http': 1,
                 'proxy.config.http.cache.range.write': 1,

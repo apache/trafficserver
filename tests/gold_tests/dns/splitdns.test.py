@@ -41,7 +41,7 @@ class SplitDNSTest:
         self.ts.Disk.records_config.update(
             {
                 "proxy.config.dns.splitDNS.enabled": 1,
-                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.mode": 1,
                 "proxy.config.diags.debug.tags": "dns|splitdns",
             })
         self.ts.Disk.splitdns_config.AddLine(f"dest_domain=foo.ts.a.o named=127.0.0.1:{self.dns.Variables.Port}")

@@ -36,4 +36,4 @@ r = Test.TxnBoxTestAndRun(
     remap=[['http://base.ex', ['--key=meta.txn-box.remap', 'static_file.replay.yaml']]])
 ts = r.Variables.TS
 ts.Setup.Copy("static_file.txt", ts.Variables.CONFIGDIR)
-ts.Disk.records_config.update({'proxy.config.diags.debug.enabled': 1, 'proxy.config.diags.debug.tags': 'txn_box|http'})
+ts.Disk.records_config.update({'proxy.config.diags.debug.mode': 1, 'proxy.config.diags.debug.tags': 'txn_box|http'})

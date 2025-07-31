@@ -115,7 +115,7 @@ class TestSNIWithPort:
                 'proxy.config.ssl.server.private_key.path': f"{ts.Variables.SSLDir}",
                 'proxy.config.http.server_ports':
                     f"{self._port_one}:ssl {self._port_two}:ssl {self._port_three}:ssl {self._port_unmapped}:ssl",
-                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.mode': 1,
                 'proxy.config.diags.debug.tags': 'dns|http|ssl|sni',
             })
 

@@ -57,7 +57,7 @@ ts.Setup.Copy("../ssl/ca-bundle.pem", os.path.join(ts.Variables.SSLDir, "ca-bund
 
 ts.Disk.records_config.update(
     {
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'txn_box|ssl',
         'proxy.config.http.cache.http': 0,
         'proxy.config.ssl.server.cert.path': ts.Variables.SSLDir,

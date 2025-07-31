@@ -34,4 +34,4 @@ tr = Test.TxnBoxTestAndRun(
         ['http://one.ex/path/', 'http://two.ex/path/'], ['http://one.ex']
     ])
 ts = tr.Variables.TS
-ts.Disk.records_config.update({'proxy.config.diags.debug.enabled': 1, 'proxy.config.diags.debug.tags': 'txn_box'})
+ts.Disk.records_config.update({'proxy.config.diags.debug.mode': 1, 'proxy.config.diags.debug.tags': 'txn_box'})

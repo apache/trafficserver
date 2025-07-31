@@ -1119,7 +1119,7 @@ HttpTransactHeaders::add_forwarded_field_to_request(HttpTransact::State *s, HTTP
 void
 HttpTransactHeaders::add_server_header_to_response(const OverridableHttpConfigParams *http_txn_conf, HTTPHdr *header)
 {
-  if (http_txn_conf->proxy_response_server_enabled && http_txn_conf->proxy_response_server_string) {
+  if (http_txn_conf->proxy_response_server_mode && http_txn_conf->proxy_response_server_string) {
     MIMEField *ua_field;
     bool       do_add = true;
 
@@ -1129,7 +1129,7 @@ HttpTransactHeaders::add_server_header_to_response(const OverridableHttpConfigPa
       }
     } else {
       // There was an existing header from Origin, so only add if setting allows to overwrite.
-      do_add = (1 == http_txn_conf->proxy_response_server_enabled);
+      do_add = (1 == http_txn_conf->proxy_response_server_mode);
     }
 
     // This will remove any old string (free it), and set our Server header.

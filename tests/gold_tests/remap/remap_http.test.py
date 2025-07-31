@@ -41,7 +41,7 @@ server.addResponse("sessionfile.log", request_header, response_header)
 server2.addResponse("sessionfile.log", request_header2, response_header2)
 ts.Disk.records_config.update(
     {
-        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.mode': 1,
         'proxy.config.diags.debug.tags': 'http.*|dns|conf_remap',
         'proxy.config.http.referer_filter': 1,
         'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(dns.Variables.Port),
