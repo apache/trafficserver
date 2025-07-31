@@ -100,7 +100,13 @@ SSL/TLS
 .. ts:stat:: global proxy.process.ssl.ssl_session_cache_miss integer
    :type: counter
 
+.. ts:stat:: global proxy.process.ssl.ssl_session_cache_timeout integer
+   :type: counter
+
 .. ts:stat:: global proxy.process.ssl.ssl_origin_session_cache_miss integer
+   :type: counter
+
+.. ts:stat:: global proxy.process.ssl.ssl_origin_session_cache_timeout integer
    :type: counter
 
 .. ts:stat:: global proxy.process.ssl.ssl_session_cache_new_session integer
@@ -247,8 +253,8 @@ SSL/TLS
 .. ts:stat:: global proxy.process.ssl.user_agent_session_miss integer
    :type: counter
 
-   Incoming client SSL connections which unsuccessfully attempted to use a
-   previously negotiated session, since statistics collection began.
+   Incoming client SSL connections which proposed a session for resumption but
+   were not in the session cache, since statistics collection began.
 
 .. ts:stat:: global proxy.process.ssl.user_agent_sessions integer
    :type: counter
