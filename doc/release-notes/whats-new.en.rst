@@ -26,15 +26,15 @@ What's New in ATS v10.1
 Metrics
 -------
 
-* Added :ts:cv:`proxy.process.http.total_parent_marked_down_timeout`
-* Added :ts:cv:`proxy.process.http.total_client_connections_uds`
-* Added :ts:cv:`proxy.process.ssl.group.user_agent.P-256`
-* Added :ts:cv:`proxy.process.ssl.group.user_agent.P-384`
-* Added :ts:cv:`proxy.process.ssl.group.user_agent.P-521`
-* Added :ts:cv:`proxy.process.ssl.group.user_agent.X25519`
-* Added :ts:cv:`proxy.process.ssl.group.user_agent.P-224`
-* Added :ts:cv:`proxy.process.ssl.group.user_agent.X448`
-* Added :ts:cv:`proxy.process.ssl.group.user_agent.X25519MLKEM768`
+* Added ``proxy.process.http.total_parent_marked_down_timeout``
+* Added ``proxy.process.http.total_client_connections_uds``
+* Added ``proxy.process.ssl.group.user_agent.P-256``
+* Added ``proxy.process.ssl.group.user_agent.P-384``
+* Added ``proxy.process.ssl.group.user_agent.P-521``
+* Added ``proxy.process.ssl.group.user_agent.X25519``
+* Added ``proxy.process.ssl.group.user_agent.P-224``
+* Added ``proxy.process.ssl.group.user_agent.X448``
+* Added ``proxy.process.ssl.group.user_agent.X25519MLKEM768``
 
 Plugins
 -------
@@ -76,7 +76,7 @@ TS API
 Features
 --------
 
-* Add the :ts:cv:`cqssg` log field for TLS group name logging
+* Add the ``cqssg`` log field for TLS group name logging
 * traffic_ctl: Add a new :ref:`server <traffic-control-command-server-status>` command to show some basic internal
   information
 * traffic_ctl: Now displays YAML format output when the ``--records`` option is
