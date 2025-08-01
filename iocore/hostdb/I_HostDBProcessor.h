@@ -175,13 +175,28 @@ struct HostDBInfo : public RefCountObj {
     if (size < sizeof(HostDBInfo)) {
       return nullptr;
     }
-    HostDBInfo *ret = HostDBInfo::alloc(size - sizeof(HostDBInfo));
-    int buf_index   = ret->_iobuffer_index;
+    HostDBInfo *ret      = HostDBInfo::alloc(size - sizeof(HostDBInfo));
+    const auto buf_index = ret->_iobuffer_index;
     memcpy((void *)ret, buf, size);
-    // Reset the refcount back to 0, this is a bit ugly-- but I'm not sure we want to expose a method
-    // to mess with the refcount, since this is a fairly unique use case
-    ret                  = new (ret) HostDBInfo();
-    ret->_iobuffer_index = buf_index;
+
+    // Member variables with default member initializers will be overwritten by subsequent constructor calls,
+    // so their values are temporarily saved and restored after the constructor is executed.
+    const auto key                 = ret->key;
+    const auto hostname_offset     = ret->hostname_offset;
+    const auto ip_timestamp        = ret->ip_timestamp;
+    const auto ip_timeout_interval = ret->ip_timeout_interval;
+
+    // The constructor is invoked for the following reasons:
+    // - To reinitialize the virtual function table pointer (vptr),
+    //   which may have been corrupted by a previous memcpy
+    // - To reset the reference count to zero
+    ret                      = new (ret) HostDBInfo();
+    ret->key                 = key;
+    ret->hostname_offset     = hostname_offset;
+    ret->ip_timestamp        = ip_timestamp;
+    ret->ip_timeout_interval = ip_timeout_interval;
+    ret->_iobuffer_index     = buf_index;
+
     return ret;
   }
 
@@ -319,6 +334,8 @@ struct HostDBInfo : public RefCountObj {
     }
   }
 
+  // NOTE: Using default member initializers can affect the behavior of the unmarshall method.
+  //       Ensure that all member variables are properly set within the unmarshall method.
   uint64_t key{0};
 
   // Application specific data. NOTE: We need an integral number of
