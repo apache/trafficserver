@@ -29,19 +29,17 @@ class SymbolResolver:
         "http.status.reason": ("set-status-reason", Validator.quoted_or_simple(), False, None),
         "http.status": ("set-status", Validator.range(0, 999), False, None),
         "inbound.conn.dscp": ("set-conn-dscp", Validator.nbit_int(6), False, None),
-        "inbound.cookie.": (["rm-cookie", "set-cookie"], Validator.quoted_or_simple(), False, None),
-        "inbound.req.": (["rm-header", "set-header"], Validator.quoted_or_simple(), False, None),
+        "inbound.cookie.": (["rm-cookie", "set-cookie"], Validator.http_token(), False, None),
+        "inbound.req.": (["rm-header", "set-header"], Validator.http_token(), False, None),
         "inbound.resp.body": ("set-body", Validator.quoted_or_simple(), False, None),
-        "inbound.resp.": (["rm-header", "set-header"], Validator.quoted_or_simple(), False, None),
+        "inbound.resp.": (["rm-header", "set-header"], Validator.http_token(), False, None),
         "inbound.status.reason": ("set-status-reason", Validator.range(0, 999), False, None),
         "inbound.status": ("set-status", Validator.range(0, 999), False, None),
-        "inbound.url.": (["rm-destination", "set-destination"], Validator.quoted_or_simple(), True, None),
-        "outbound.cookie.": (["rm-cookie", "set-cookie"], Validator.quoted_or_simple(), False, None),
-        "outbound.req.": (["rm-header", "set-header"], Validator.quoted_or_simple(), False, {"PRE_REMAP", "REMAP", "READ_REQUEST"}),
+        "inbound.url.": (["rm-destination", "set-destination"], Validator.suffix_group(types.SuffixGroup.URL_FIELDS), True, None),
+        "outbound.cookie.": (["rm-cookie", "set-cookie"], Validator.http_token(), False, None),
+        "outbound.req.": (["rm-header", "set-header"], Validator.http_token(), False, {"PRE_REMAP", "REMAP", "READ_REQUEST"}),
         "outbound.resp.":
-            (
-                ["rm-header",
-                 "set-header"], Validator.quoted_or_simple(), False, {"PRE_REMAP", "REMAP", "READ_REQUEST", "SEND_REQUEST"}),
+            (["rm-header", "set-header"], Validator.http_token(), False, {"PRE_REMAP", "REMAP", "READ_REQUEST", "SEND_REQUEST"}),
         "outbound.status.reason": ("set-status-reason", Validator.range(0, 999), False, {"PRE_REMAP", "REMAP", "READ_REQUEST"}),
         "outbound.status": ("set-status", Validator.range(0, 999), False, {"PRE_REMAP", "REMAP", "READ_REQUEST"}),
     }
@@ -95,13 +93,13 @@ class SymbolResolver:
         "http.cntl.": ("HTTP-CNTL", Validator.suffix_group(types.SuffixGroup.HTTP_CNTL_FIELDS), True, None, False),
         "id.": ("ID", Validator.suffix_group(types.SuffixGroup.ID_FIELDS), True, None, False),
         "inbound.conn.": ("INBOUND", Validator.suffix_group(types.SuffixGroup.CONN_FIELDS), True, None, False),
-        "inbound.cookie.": ("COOKIE", Validator.quoted_or_simple(), False, None, True),
+        "inbound.cookie.": ("COOKIE", Validator.http_token(), False, None, True),
         "inbound.req.": ("CLIENT-HEADER", None, False, None, True),
         "inbound.resp.": ("HEADER", None, False, None, True),
         "inbound.url.": ("CLIENT-URL", Validator.suffix_group(types.SuffixGroup.URL_FIELDS), True, None, True),
         "now.": ("NOW", Validator.suffix_group(types.SuffixGroup.DATE_FIELDS), True, None, False),
         "outbound.conn.": ("OUTBOUND", Validator.suffix_group(types.SuffixGroup.CONN_FIELDS), True, None, False),
-        "outbound.cookie.": ("COOKIE", Validator.quoted_or_simple(), False, None, True),
+        "outbound.cookie.": ("COOKIE", Validator.http_token(), False, None, True),
         "outbound.req.": ("HEADER", None, False, {"PRE_REMAP", "REMAP", "READ_REQUEST"}, True),
         "outbound.resp.": ("HEADER", None, False, {"PRE_REMAP", "REMAP", "READ_REQUEST", "SEND_REQUEST"}, True),
         "outbound.url.":
@@ -178,6 +176,8 @@ class SymbolResolver:
                     qualifier = name[len(op_key):]
                     if uppercase:
                         qualifier = qualifier.upper()
+                    if validator:
+                        validator(qualifier)
                     if isinstance(commands, list):  # rm- / -set- operator
                         if value == '""':
                             result = f"{commands[0]} {qualifier}"

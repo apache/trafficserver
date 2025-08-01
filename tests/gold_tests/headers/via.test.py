@@ -101,7 +101,8 @@ if not Condition.CurlUsingUnixDomainSocket():
     # HTTP 2
     tr = Test.AddTestRun()
     tr.MakeCurlCommand(
-        '--verbose --ipv4 --http2 --insecure --header "Host: www.example.com" https://localhost:{}'.format(ts.Variables.ssl_port))
+        '--verbose --ipv4 --http2 --insecure --header "Host: www.example.com" https://localhost:{}'.format(ts.Variables.ssl_port),
+        ts=ts)
     tr.Processes.Default.ReturnCode = 0
 
     tr.StillRunningAfter = server
@@ -112,7 +113,8 @@ if not Condition.CurlUsingUnixDomainSocket():
         tr = Test.AddTestRun()
         tr.MakeCurlCommand(
             '--verbose --ipv4 --http3 --insecure --header "Host: www.example.com" https://localhost:{}'.format(
-                ts.Variables.ssl_port))
+                ts.Variables.ssl_port),
+            ts=ts)
         tr.Processes.Default.ReturnCode = 0
         tr.StillRunningAfter = server
         tr.StillRunningAfter = ts
@@ -120,7 +122,8 @@ if not Condition.CurlUsingUnixDomainSocket():
     # TLS
     tr = Test.AddTestRun()
     tr.MakeCurlCommand(
-        '--verbose --ipv4 --http1.1 --insecure --header "Host: www.example.com" https://localhost:{}'.format(ts.Variables.ssl_port))
+        '--verbose --ipv4 --http1.1 --insecure --header "Host: www.example.com" https://localhost:{}'.format(ts.Variables.ssl_port),
+        ts=ts)
     tr.Processes.Default.ReturnCode = 0
 
     tr.StillRunningAfter = server
@@ -138,7 +141,8 @@ if not Condition.CurlUsingUnixDomainSocket():
     tr = Test.AddTestRun()
     tr.MakeCurlCommand(
         '--verbose --ipv6 --http1.1 --insecure --header "Host: www.example.com" https://localhost:{}'.format(
-            ts.Variables.ssl_portv6))
+            ts.Variables.ssl_portv6),
+        ts=ts)
     tr.Processes.Default.ReturnCode = 0
 
     tr.StillRunningAfter = server

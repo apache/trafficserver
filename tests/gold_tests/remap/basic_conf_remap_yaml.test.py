@@ -120,7 +120,8 @@ class conf_remap_yaml_load_test:
         else:
             tr.MakeCurlCommand(
                 '--proxy 127.0.0.1:{0} "http://www.testexample.com/test" -H "Host: www.testexample.com" --verbose'.format(
-                    self._ts.Variables.port))
+                    self._ts.Variables.port),
+                ts=self._ts)
         conf_remap_yaml_load_test.client_counter += 1
 
 

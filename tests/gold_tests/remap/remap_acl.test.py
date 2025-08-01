@@ -59,7 +59,7 @@ class Test_remap_acl:
 
         tr = Test.AddTestRun(name)
         self._configure_server(tr)
-        self._configure_traffic_server(tr)
+        self._configure_traffic_server(tr, proxy_protocol)
         self._configure_client(tr, proxy_protocol)
 
     def _configure_server(self, tr: 'TestRun') -> None:
@@ -72,14 +72,14 @@ class Test_remap_acl:
         Test_remap_acl._server_counter += 1
         self._server = server
 
-    def _configure_traffic_server(self, tr: 'TestRun') -> None:
+    def _configure_traffic_server(self, tr: 'TestRun', proxy_protocol: bool) -> None:
         """Configure Traffic Server.
 
         :param tr: The TestRun object to associate the Traffic Server process with.
         """
 
         name = f"ts-{Test_remap_acl._ts_counter}"
-        ts = tr.MakeATSProcess(name, enable_cache=False, enable_tls=True, enable_proxy_protocol=True)
+        ts = tr.MakeATSProcess(name, enable_cache=False, enable_proxy_protocol=proxy_protocol, enable_uds=False)
         Test_remap_acl._ts_counter += 1
         self._ts = ts
 
@@ -159,7 +159,7 @@ class Test_old_action:
         '''
         name = f"ts-old-action-{Test_old_action._ts_counter}"
         Test_old_action._ts_counter += 1
-        ts = tr.MakeATSProcess(name)
+        ts = tr.MakeATSProcess(name, enable_uds=False)
         self._ts = ts
 
         ts.Disk.records_config.update(

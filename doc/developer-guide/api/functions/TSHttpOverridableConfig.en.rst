@@ -118,6 +118,7 @@ TSOverridableConfigKey Value                                              Config
 :enumerator:`TS_CONFIG_HTTP_CONNECT_ATTEMPTS_MAX_RETRIES`               :ts:cv:`proxy.config.http.connect_attempts_max_retries`
 :enumerator:`TS_CONFIG_HTTP_CONNECT_ATTEMPTS_RR_RETRIES`                :ts:cv:`proxy.config.http.connect_attempts_rr_retries`
 :enumerator:`TS_CONFIG_HTTP_CONNECT_ATTEMPTS_TIMEOUT`                   :ts:cv:`proxy.config.http.connect_attempts_timeout`
+:enumerator:`TS_CONFIG_HTTP_CONNECT_ATTEMPTS_RETRY_BACKOFF_BASE`        :ts:cv:`proxy.config.http.connect_attempts_retry_backoff_base`
 :enumerator:`TS_CONFIG_HTTP_DEFAULT_BUFFER_SIZE`                        :ts:cv:`proxy.config.http.default_buffer_size`
 :enumerator:`TS_CONFIG_HTTP_DEFAULT_BUFFER_WATER_MARK`                  :ts:cv:`proxy.config.http.default_buffer_water_mark`
 :enumerator:`TS_CONFIG_HTTP_DOC_IN_CACHE_SKIP_DNS`                      :ts:cv:`proxy.config.http.doc_in_cache_skip_dns`
@@ -140,8 +141,10 @@ TSOverridableConfigKey Value                                              Config
 :enumerator:`TS_CONFIG_HTTP_KEEP_ALIVE_POST_OUT`                        :ts:cv:`proxy.config.http.keep_alive_post_out`
 :enumerator:`TS_CONFIG_HTTP_NEGATIVE_CACHING_ENABLED`                   :ts:cv:`proxy.config.http.negative_caching_enabled`
 :enumerator:`TS_CONFIG_HTTP_NEGATIVE_CACHING_LIFETIME`                  :ts:cv:`proxy.config.http.negative_caching_lifetime`
+:enumerator:`TS_CONFIG_HTTP_NEGATIVE_CACHING_LIST`                      :ts:cv:`proxy.config.http.negative_caching_list`
 :enumerator:`TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_ENABLED`              :ts:cv:`proxy.config.http.negative_revalidating_enabled`
 :enumerator:`TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_LIFETIME`             :ts:cv:`proxy.config.http.negative_revalidating_lifetime`
+:enumerator:`TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_LIST`                 :ts:cv:`proxy.config.http.negative_revalidating_list`
 :enumerator:`TS_CONFIG_HTTP_NO_DNS_JUST_FORWARD_TO_PARENT`              :ts:cv:`proxy.config.http.no_dns_just_forward_to_parent`
 :enumerator:`TS_CONFIG_HTTP_NORMALIZE_AE`                               :ts:cv:`proxy.config.http.normalize_ae`
 :enumerator:`TS_CONFIG_HTTP_NUMBER_OF_REDIRECTIONS`                     :ts:cv:`proxy.config.http.number_of_redirections`

@@ -1705,6 +1705,14 @@ Origin Server Connect Attempts
    `proxy.config.http.connect_attempts_max_retries`_ so an error is returned to the client faster and also to reduce the load on the down origin.
    The timeout interval `proxy.config.http.connect_attempts_timeout`_ in seconds is used with this setting.
 
+.. ts:cv:: CONFIG proxy.config.http.connect_attempts_retry_backoff_base INT 0
+   :reloadable:
+   :overridable:
+   :units: milliseconds
+
+   The base delay, in milliseconds, used for exponential backoff between retry attempts to connect to the origin server. After each
+   failure the delay doubles - e.g. 64m, 128m, 256m. When this is set to `0` (the default value), |TS| retries immediately without exponential backoff.
+
 .. ts:cv:: CONFIG proxy.config.http.connect.down.policy INT 2
    :overridable:
 
@@ -1886,6 +1894,7 @@ Negative Response Caching
 
 .. ts:cv:: CONFIG proxy.config.http.negative_caching_list STRING 204 305 403 404 414 500 501 502 503 504
    :reloadable:
+   :overridable:
 
    The HTTP status code for negative caching. Default values are mentioned above. The unwanted status codes can be
    taken out from the list. Other status codes can be added. The variable is a list but parsed as STRING.
@@ -1905,6 +1914,8 @@ Negative Response Caching
    A value of ``0`` disables serving stale content and a value of ``1`` enables keeping and serving stale content if revalidation fails.
 
 .. ts:cv:: CONFIG proxy.config.http.negative_revalidating_lifetime INT 1800
+   :reloadable:
+   :overridable:
 
    When replying with a stale cached response in negative revalidating circumstances (see
    :ts:cv:`proxy.config.http.negative_revalidating_enabled`), |TS| includes an ``Expires:`` HTTP
@@ -1930,6 +1941,7 @@ Negative Response Caching
 
 .. ts:cv:: CONFIG proxy.config.http.negative_revalidating_list STRING 500 502 503 504
    :reloadable:
+   :overridable:
 
    The HTTP status codes for which the negative revalidating feature applies. Note that this is a
    `STRING` configuration containing a space separated list of the desired HTTP status codes.

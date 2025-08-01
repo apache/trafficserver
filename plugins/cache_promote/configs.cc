@@ -74,7 +74,7 @@ PromotionConfig::factory(int argc, char *argv[])
         return false;
       } else {
         if (_policy && _policy->stats_add(optarg)) {
-          _policy->_stats_enabled = true;
+          _policy->_stats_id = optarg;
           DBG("stats collection is enabled");
         }
       }

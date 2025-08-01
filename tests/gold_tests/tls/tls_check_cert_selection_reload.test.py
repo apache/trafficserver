@@ -63,7 +63,7 @@ tr = Test.AddTestRun("bar.com cert signer1")
 tr.Setup.Copy("ssl/signer.pem")
 tr.Setup.Copy("ssl/signer2.pem")
 tr.MakeCurlCommand(
-    "-v --cacert ./signer.pem  --resolve 'bar.com:{0}:127.0.0.1' https://bar.com:{0}/random".format(ts.Variables.ssl_port))
+    "-v --cacert ./signer.pem  --resolve 'bar.com:{0}:127.0.0.1' https://bar.com:{0}/random".format(ts.Variables.ssl_port), ts=ts)
 tr.ReturnCode = 0
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(Test.Processes.ts)
@@ -76,7 +76,7 @@ tr.Processes.Default.Streams.All += Testers.ContainsExpression("404", "Should ma
 
 tr = Test.AddTestRun("bar.com cert signer2")
 tr.MakeCurlCommand(
-    "-v --cacert ./signer2.pem  --resolve 'bar.com:{0}:127.0.0.1' https://bar.com:{0}/random".format(ts.Variables.ssl_port))
+    "-v --cacert ./signer2.pem  --resolve 'bar.com:{0}:127.0.0.1' https://bar.com:{0}/random".format(ts.Variables.ssl_port), ts=ts)
 tr.ReturnCode = 60
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
@@ -111,14 +111,14 @@ tr.Processes.Default.StartBefore(
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 tr.MakeCurlCommand(
-    "-v --cacert ./signer.pem  --resolve 'bar.com:{0}:127.0.0.1' https://bar.com:{0}/random".format(ts.Variables.ssl_port))
+    "-v --cacert ./signer.pem  --resolve 'bar.com:{0}:127.0.0.1' https://bar.com:{0}/random".format(ts.Variables.ssl_port), ts=ts)
 tr.ReturnCode = 60
 tr.Processes.Default.Streams.All = Testers.ContainsExpression(
     "unable to get local issuer certificate", "Server certificate not issued by expected signer")
 
 tr = Test.AddTestRun("Try with signer 2 again")
 tr.MakeCurlCommand(
-    "-v --cacert ./signer2.pem  --resolve 'bar.com:{0}:127.0.0.1' https://bar.com:{0}/random".format(ts.Variables.ssl_port))
+    "-v --cacert ./signer2.pem  --resolve 'bar.com:{0}:127.0.0.1' https://bar.com:{0}/random".format(ts.Variables.ssl_port), ts=ts)
 tr.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts

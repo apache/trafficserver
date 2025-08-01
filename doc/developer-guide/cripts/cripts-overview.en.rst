@@ -157,13 +157,52 @@ convention, ``PascalCase``. Instance variables and members are always all lowerc
    auto url = cripts::Client::URL::Get();
    url.query.Keep({"foo", "bar"});
 
-.. _cripts-overview-hooks:
-
 .. note::
 
    This naming convention does not apply to ``string`` and ``string_view`` variables, which
-   follow the standard C++ conventions for the standard method names. Cripts specific Additions
+   follow the standard C++ conventions for the standard method names. Cripts specific additions
    do follow the ``PascalCase`` convention though.
+
+.. _cripts-overview-naming-styles:
+
+Hook Naming Styles
+-------------------
+
+Cripts supports two naming styles for hooks to accommodate different coding preferences:
+
+1. **Lowercase with underscores** (traditional C style): ``do_remap()``, ``do_send_response()``
+2. **PascalCase** (C++ style): ``DoRemap()``, ``DoSendResponse()``
+
+Both styles are functionally identical and can be used interchangeably:
+
+.. code-block:: cpp
+
+   // Traditional C-style naming
+   do_remap()
+   {
+     // Hook implementation
+   }
+
+   // Equivalent PascalCase naming
+   DoRemap()
+   {
+     // Same hook implementation
+   }
+
+The same dual naming convention applies to global hooks:
+
+.. code-block:: cpp
+
+   // Traditional style
+   glb_read_request() { /* ... */ }
+
+   // PascalCase style
+   GlbReadRequest() { /* ... */ }
+
+Choose the style that best fits your team's coding standards and use it consistently
+throughout your Cript files.
+
+.. _cripts-overview-hooks:
 
 Hooks
 =====
@@ -180,7 +219,7 @@ setup the hooks, as this is done by the ATS process.
 Normal Hooks
 ------------
 
-Lets look at the normal hooks that are available in Cripts. Note here that the name
+Let's look at the normal hooks that are available in Cripts. Note here that the name
 of the function dictates the underlying ATS hook.
 
 .. _cripts-overview-hooks-do-remap:
@@ -283,10 +322,10 @@ Instance Data
 
 Instance data is a way to store data that is specific to a plugin instance. This is
 primarily useful when writing traditional remap plugins in Cripts using the instance hooks.
-Instance data is stored in a map that is specific to the plugin instance, and each slot
-is initially a string, as provided by the remap rule.
+Instance data is stored in a vector that is specific to the plugin instance, and each slot
+is initially a string, as provided by the remap rule parameters.
 
-Best way to understand this is to look at an example:
+The best way to understand this is to look at an example:
 
 .. code-block:: cpp
 
@@ -295,10 +334,12 @@ Best way to understand this is to look at an example:
    do_create_instance()
    {
      if (instance.size() == 3) {
+       // Convert string parameters to appropriate types
        auto first  = float(AsString(instance.data[0]));
        auto second = integer(AsString(instance.data[1]));
-       auto third  = boolean(AsString(instance.data[3]));
+       auto third  = boolean(AsString(instance.data[2]));
 
+       // Store converted values back to instance data
        instance.data[0] = first;
        instance.data[1] = second;
        instance.data[2] = third;
@@ -307,16 +348,63 @@ Best way to understand this is to look at an example:
 
    do_remap()
    {
-       auto first  = AsFloat(instance.data[0]);
-       auto second = AsInteger(instance.data[1]);
-       auto third  = AsBoolean(instance.data[3]);
+     // Retrieve typed values from instance data
+     auto first  = AsFloat(instance.data[0]);
+     auto second = AsInteger(instance.data[1]);
+     auto third  = AsBoolean(instance.data[2]);
 
-       // Use the instance parameter here in the Cript rules.
+     // Use the instance parameters here in the Cript rules
+     CDebug("Instance params: {}, {}, {}", first, second, third);
    }
 
    #include <cripts/Epilogue.hpp>
+
+.. note::
+   Instance data uses 0-based indexing. If you have 3 parameters, they are accessed
+   as ``instance.data[0]``, ``instance.data[1]``, and ``instance.data[2]``.
 
 As you can see, it takes a little bit of work to manage these instance parameters, which
 is a limitation of the language constructs in Cripts. But writing plugins like this is for
 more advanced users, and users just writing simple Cripts for their remap rules will not
 need to worry about this.
+
+.. _cripts-overview-data-types:
+
+Data Type Conversion
+---------------------
+
+Instance data supports various data types through conversion functions:
+
+=========================   =======================================================================
+Function                    Description
+=========================   =======================================================================
+``AsString(value)``         Convert to string representation.
+``AsInteger(value)``        Convert to 64-bit signed integer.
+``AsFloat(value)``          Convert to double-precision floating point.
+``AsBoolean(value)``        Convert to boolean (true/false).
+=========================   =======================================================================
+
+Example of parameter processing:
+
+.. code-block:: cpp
+
+   do_create_instance()
+   {
+     // Remap rule: @plugin=example.cript @pparam=timeout:30 @pparam=enabled:true @pparam=rate:1.5
+     if (instance.size() >= 3) {
+       // Parse "timeout:30" -> 30
+       auto timeout_str = AsString(instance.data[0]);
+       auto timeout_val = integer(timeout_str.substr(timeout_str.find(':') + 1));
+       instance.data[0] = timeout_val;
+
+       // Parse "enabled:true" -> true
+       auto enabled_str = AsString(instance.data[1]);
+       auto enabled_val = boolean(enabled_str.substr(enabled_str.find(':') + 1) == "true");
+       instance.data[1] = enabled_val;
+
+       // Parse "rate:1.5" -> 1.5
+       auto rate_str = AsString(instance.data[2]);
+       auto rate_val = float(rate_str.substr(rate_str.find(':') + 1));
+       instance.data[2] = rate_val;
+     }
+   }

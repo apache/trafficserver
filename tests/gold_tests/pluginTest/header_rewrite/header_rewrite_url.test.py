@@ -92,7 +92,8 @@ tr = Test.AddTestRun()
 tr.MakeCurlCommand(
     '--proxy 127.0.0.1:{0} "http://www.example.com/from_path/hrw-sets.png" '
     '-H "Proxy-Connection: keep-alive" -H "X-Testing: foo,bar" '
-    '--verbose'.format(ts.Variables.port))
+    '--verbose'.format(ts.Variables.port),
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = "gold/ext-sets.gold"
 tr.StillRunningAfter = server
@@ -103,7 +104,8 @@ tr = Test.AddTestRun()
 tr.MakeCurlCommand(
     '--proxy 127.0.0.1:{0} "http://www.example.com/from_path/hrw-sets.png" '
     '-H "Proxy-Connection: keep-alive" -H "X-Testing: elif" '
-    '--verbose'.format(ts.Variables.port))
+    '--verbose'.format(ts.Variables.port),
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = "gold/cond-elif.gold"
 tr.StillRunningAfter = server

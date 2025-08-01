@@ -1139,6 +1139,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
     yellow += verify(result, ParentResultType::SPECIFIED, "yellow", 37412);
   }
   RE(((red == 7) && (orange == 7) && (yellow == 7)), 1);
+
   // Test 2
   ST(2);
   tbl[0] = '\0';
@@ -1157,7 +1158,8 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   RE((((g == 17) && !b && !i && !v) || (!g && (b == 17) && !i && !v) || (!g && !b && (i == 17) && !v) ||
       (!g && !b && !i && (v == 17))),
      2);
-  // Test 3 - 6 Parenting Table
+
+  // Test 3 - 7 Parenting Table
   tbl[0] = '\0';
 #define TEST_IP4_ADDR "209.131.62.14"
 #define TEST_IP6_ADDR "BEEF:DEAD:ABBA:CAFE:1337:1E1F:5EED:C0FF"
@@ -1179,6 +1181,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   T("url_regex=cyclops method=trace parent=mayo:80\n");                                 /* L15 */
   T("dest_host=pluto scheme=HTTP parent=strategy:80\n");                                /* L16 */
   REBUILD;
+
   // Test 3
   IpEndpoint ip;
   ats_ip_pton(TEST_IP4_ADDR, &ip.sa);
@@ -1193,12 +1196,14 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   br(request, "numeric_host", &ip.sa);
   FP;
   RE(verify(result, ParentResultType::SPECIFIED, "zwoop", 37) + verify(result, ParentResultType::SPECIFIED, "jMCg", 24), 4);
+
   // Test 5
   ST(5);
   REINIT;
   br(request, "www.pilot.net");
   FP;
   RE(verify(result, ParentResultType::SPECIFIED, "pilot_net", 80), 5);
+
   // Test 6
   ST(6);
   REINIT;
@@ -1206,7 +1211,8 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   auto snoopy_dog = "http://www.snoopy.com/"sv;
   request->hdr->url_set(snoopy_dog);
   FP;
-  RE(verify(result, ParentResultType::SPECIFIED, "odie", 80) + verify(result, ParentResultType::SPECIFIED, "garfield", 80), 5);
+  RE(verify(result, ParentResultType::SPECIFIED, "odie", 80) + verify(result, ParentResultType::SPECIFIED, "garfield", 80), 6);
+
   // Test 7
   ST(7);
   REINIT;
@@ -1214,7 +1220,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   FP;
   RE(verify(result, ParentResultType::SPECIFIED, "amy", 80) + verify(result, ParentResultType::SPECIFIED, "katie", 80) +
        verify(result, ParentResultType::SPECIFIED, "carissa", 771),
-     6);
+     7);
   // Test 6+ BUGBUG needs to be fixed
   //   ST(7); REINIT;
   //   br(request, "www.microsoft.net");
@@ -1237,16 +1243,18 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   //   ink_assert(request->hdr->url_get()->port_get() == 819);
   //   printf("url: %s\n",request->hdr->url_get()->string_get(0));
   //   FP; RE(verify(result,ParentResultType::SPECIFIED,"genie",80),8);
-  // Test 7 - N Parent Table
+
+  // Test 8 - N Parent Table
   tbl[0] = '\0';
   T("dest_domain=rabbit.net parent=fuzzy:80,fluffy:80,furry:80,frisky:80 round_robin=strict go_direct=true\n");
   REBUILD;
+
   // Test 8
   ST(8);
   REINIT;
   br(request, "i.am.rabbit.net");
   FP;
-  RE(verify(result, ParentResultType::SPECIFIED, "fuzzy", 80), 7);
+  RE(verify(result, ParentResultType::SPECIFIED, "fuzzy", 80), 8);
   params->markParentDown(result, fail_threshold, retry_time);
 
   // Test 9
@@ -1254,44 +1262,51 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   REINIT;
   br(request, "i.am.rabbit.net");
   FP;
-  RE(verify(result, ParentResultType::SPECIFIED, "fluffy", 80), 8);
+  RE(verify(result, ParentResultType::SPECIFIED, "fluffy", 80), 9);
+
   // Test 10
   ST(10);
   REINIT;
   br(request, "i.am.rabbit.net");
   FP;
-  RE(verify(result, ParentResultType::SPECIFIED, "furry", 80), 9);
+  RE(verify(result, ParentResultType::SPECIFIED, "furry", 80), 10);
+
   // Test 11
   ST(11);
   REINIT;
   br(request, "i.am.rabbit.net");
   FP;
-  RE(verify(result, ParentResultType::SPECIFIED, "frisky", 80), 10);
+  RE(verify(result, ParentResultType::SPECIFIED, "frisky", 80), 11);
+
   // restart the loop
+
   // Test 12
   ST(12);
   REINIT;
   br(request, "i.am.rabbit.net");
   FP;
-  RE(verify(result, ParentResultType::SPECIFIED, "fluffy", 80), 11);
+  RE(verify(result, ParentResultType::SPECIFIED, "fluffy", 80), 12);
+
   // Test 13
   ST(13);
   REINIT;
   br(request, "i.am.rabbit.net");
   FP;
-  RE(verify(result, ParentResultType::SPECIFIED, "fluffy", 80), 12);
+  RE(verify(result, ParentResultType::SPECIFIED, "fluffy", 80), 13);
+
   // Test 14
   ST(14);
   REINIT;
   br(request, "i.am.rabbit.net");
   FP;
-  RE(verify(result, ParentResultType::SPECIFIED, "furry", 80), 13);
+  RE(verify(result, ParentResultType::SPECIFIED, "furry", 80), 14);
+
   // Test 15
   ST(15);
   REINIT;
   br(request, "i.am.rabbit.net");
   FP;
-  RE(verify(result, ParentResultType::SPECIFIED, "frisky", 80), 14);
+  RE(verify(result, ParentResultType::SPECIFIED, "frisky", 80), 15);
   params->markParentDown(result, fail_threshold, retry_time);
 
   // restart the loop
@@ -1301,44 +1316,51 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   REINIT;
   br(request, "i.am.rabbit.net");
   FP;
-  RE(verify(result, ParentResultType::SPECIFIED, "fluffy", 80), 15);
+  RE(verify(result, ParentResultType::SPECIFIED, "fluffy", 80), 16);
+
   // Test 17
   ST(17);
   REINIT;
   br(request, "i.am.rabbit.net");
   FP;
-  RE(verify(result, ParentResultType::SPECIFIED, "fluffy", 80), 16);
+  RE(verify(result, ParentResultType::SPECIFIED, "fluffy", 80), 17);
+
   // Test 18
   ST(18);
   REINIT;
   br(request, "i.am.rabbit.net");
   FP;
-  RE(verify(result, ParentResultType::SPECIFIED, "furry", 80), 17);
+  RE(verify(result, ParentResultType::SPECIFIED, "furry", 80), 18);
+
   // Test 19
   ST(19);
   REINIT;
   br(request, "i.am.rabbit.net");
   FP;
-  RE(verify(result, ParentResultType::SPECIFIED, "fluffy", 80), 18);
+  RE(verify(result, ParentResultType::SPECIFIED, "fluffy", 80), 19);
+
   // restart the loop
+
   // Test 20
   ST(20);
   REINIT;
   br(request, "i.am.rabbit.net");
   FP;
-  RE(verify(result, ParentResultType::SPECIFIED, "fluffy", 80), 19);
+  RE(verify(result, ParentResultType::SPECIFIED, "fluffy", 80), 20);
+
   // Test 21
   ST(21);
   REINIT;
   br(request, "i.am.rabbit.net");
   FP;
-  RE(verify(result, ParentResultType::SPECIFIED, "fluffy", 80), 20);
+  RE(verify(result, ParentResultType::SPECIFIED, "fluffy", 80), 21);
+
   // Test 22
   ST(22);
   REINIT;
   br(request, "i.am.rabbit.net");
   FP;
-  RE(verify(result, ParentResultType::SPECIFIED, "furry", 80), 21);
+  RE(verify(result, ParentResultType::SPECIFIED, "furry", 80), 22);
   params->markParentDown(result, fail_threshold, retry_time);
 
   // Test 23 - 32
@@ -1361,7 +1383,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
     RE(verify(result, ParentResultType::DIRECT, nullptr, 0), i);
   }
 
-  // sleep(5); // parents should come back up; they don't
+  // parents should come back up; they don't
   sleep(params->policy.ParentRetryTime + 1);
 
   // Fix: The following tests failed because

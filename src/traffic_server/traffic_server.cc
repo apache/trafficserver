@@ -1786,9 +1786,6 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   // Override default swoc::Errata settings.
   Initialize_Errata_Settings();
 
-  pcre_malloc = ats_malloc;
-  pcre_free   = ats_free;
-
   // Define the version info
   auto &version = AppVersionInfo::setup_version("traffic_server");
 
@@ -2026,7 +2023,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   {
     auto rec_str{RecGetRecordStringAlloc("proxy.config.log.hostname")};
     auto hostname{ats_as_c_str(rec_str)};
-    if (hostname != nullptr || std::string_view(hostname) == "localhost"sv) {
+    if (hostname != nullptr && std::string_view(hostname) == "localhost"sv) {
       // The default value was used. Let Machine::init derive the hostname.
       hostname = nullptr;
     }

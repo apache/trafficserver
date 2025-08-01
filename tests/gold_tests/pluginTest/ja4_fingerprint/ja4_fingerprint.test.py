@@ -145,7 +145,7 @@ class TestJA4Fingerprint:
                  'then a JA4 header should be attached.')
 def test1(params: TestParams) -> None:
     client = params['tr'].Processes.Default
-    params['tr'].MakeCurlCommand('-k -v "https://localhost:{0}/resource"'.format(params['port_one']))
+    params['tr'].MakeCurlCommand('-k -v "https://localhost:{0}/resource"'.format(params['port_one']), ts=params['ts'])
 
     client.ReturnCode = 0
     client.Streams.stdout += Testers.ContainsExpression(r'Yay!', 'We should receive the expected body.')
