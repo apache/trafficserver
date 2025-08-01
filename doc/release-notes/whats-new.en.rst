@@ -19,8 +19,101 @@
 
 .. _whats_new:
 
-What's New in ATS v10.x
+
+What's New in ATS v10.1
 =======================
+
+Metrics
+-------
+
+* Added ``proxy.process.http.total_parent_marked_down_timeout``
+* Added ``proxy.process.http.total_client_connections_uds``
+* Added ``proxy.process.ssl.group.user_agent.P-256``
+* Added ``proxy.process.ssl.group.user_agent.P-384``
+* Added ``proxy.process.ssl.group.user_agent.P-521``
+* Added ``proxy.process.ssl.group.user_agent.X25519``
+* Added ``proxy.process.ssl.group.user_agent.P-224``
+* Added ``proxy.process.ssl.group.user_agent.X448``
+* Added ``proxy.process.ssl.group.user_agent.X25519MLKEM768``
+
+Plugins
+-------
+
+* stats_over_http: Add prometheus metrics format option
+* header_rewrite: Add ``set-plugin-cntl`` operator
+* header_rewrite: Add ``LAST-CAPTURE`` condition to access the last capture
+  group of a regex
+* header_rewrite: Add support for state variables that can be used in conditions
+  and operators.
+* header_rewrite: Add support for an else clause in conditions
+* header_rewrite: Add a ``GROUP`` condition
+* header_rewrite: Add a ``HTTP-CNTL`` condition to control if expensive rules
+  are run.
+* header_rewrite: Add the ``set-body-from`` operator to set the response body
+  from a URL
+* header_rewrite: The ``set-body-from`` operator now defers renabling the
+  transaction until after the fetch of the URL providing the response body
+* slice: Support unix domain socket paths
+* slice: Add configuration to limit slicing of some objects.
+* access_control: Generate a session cookie when ``exp=0`` appears in a
+  ``TokenRespHdr`` origin response header.
+* compress:  Add range request control options to adjust behavior based on the
+  ``Accept-Encoding`` or ``Range`` headers
+* lua: Add support for millisecond sleep
+* escalate: Now handles dispatching to the failover server if the original server is down
+* ja3_fingerprint: Add the ``--preserve`` option to avoid modifing some existing
+  ja* fields.
+* ja4_fingerprint: Added this new plugin
+* rate_limit: Add a ``--rate`` option to limit by RPS
+
+TS API
+------
+
+* Add ``TSVConnPPInfoGet`` to get Proxy Protocol information.
+* Add ``TSContScheduleOnEntirePool`` and ``TSContScheduleEveryOnEntirePool`` to
+  schedule continuations on every thread in a pool.
+
+Features
+--------
+
+* Add the ``cqssg`` log field for TLS group name logging
+* traffic_ctl: Add a new :ref:`server <traffic-control-command-server-status>` command to show some basic internal
+  information
+* traffic_ctl: Now displays YAML format output when the ``--records`` option is
+  set.
+* traffic_ctl: Added the ``server debug`` command to enable/disable diagnostics
+  and debug tags at runtime with a single command.
+* cripts: Add some new high level  :ref:`convenience <cripts-convenience>` APIs
+* cripts: Add optional reason parameter to ``Error::Status``
+* sni.yaml: Add ``server_cipher_suite`` and ``server_TLSv1_3_cipher_suites`` to
+  allow overriding the setting from ``records.yaml``
+* Add support for getting authority information from Proxy Protocol V2. with new
+  ``ppa`` log formatter.
+* Add support for getting UDP address info from Proxy Protocol.
+* Added support for listening on a Unix Domain Socket. See :ts:cv:`proxy.config.http.server_ports`
+* Added option for :ts:cv:`proxy.config.http.auth_server_session_private` to only mark the connection private if ``Proxy-Authorization`` or ``Www-Authenticate`` headers are present
+* It is now an ``ERROR`` if a remap ACL has more than one ``@action`` parameter.
+  This was an error in ATS 10.0.x
+* Add a ``fragment-size`` option in volume.config to control the fragment size
+  of the volume.
+* Add an optional ``avg_obj_size`` to ``volume.config`` to control the directory
+  entry sizing.
+* The ``proxy.config.http.cache.post_method`` is now an overridable config.
+* Defer deleting the copied plugin shared object file to startup to make it
+  easier to debug crashes in plugins.
+
+
+Configuration
+-------------
+
+* Added :ts:cv:`proxy.config.http.negative_revalidating_list` to configure the
+  list of status codes that apply to the negative revalidating feature
+
+
+
+What's New in ATS v10.0
+=======================
+
 
 This version of |ATS| includes over <x> commits, from <y> pull requests. A
 total of <z> contributors have participated in this development cycle.

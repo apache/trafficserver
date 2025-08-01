@@ -133,6 +133,16 @@ HTTP Connection
 .. ts:stat:: global proxy.process.http.total_incoming_connections integer
    :type: counter
 
+.. ts:stat:: global proxy.process.http.total_parent_marked_down_count integer
+   :type: counter
+
+   Tracks the number of times a parent was marked down.
+
+.. ts:stat:: global proxy.process.http.total_parent_marked_down_timeout integer
+   :type: counter
+
+   Tracks the number of times a parent was marked down due to a inactivity timeout.
+
 .. ts:stat:: global proxy.process.http.total_server_connections integer
    :type: counter
 
