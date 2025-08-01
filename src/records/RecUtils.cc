@@ -469,11 +469,10 @@ RecordValidityCheck(const char *value, RecCheckT checkType, const char *pattern)
     }
     break;
   case RECC_NULL:
-    // skip checking
+    ink_assert(!"Unexpected RECC_NULL check type with a regex pattern");
     return true;
   default:
-    // unknown RecordCheckType...
-    ;
+    ink_assert(!"Unknown RecordCheckType");
   }
 
   return false;
