@@ -74,7 +74,7 @@ TS API
   schedule continuations on every thread in a pool.
 
 Features
--------
+--------
 
 * Add the :ts:cv:`cqssg` log field for TLS group name logging
 * traffic_ctl: Add a new :ref:`server <traffic-control-command-server-status>` command to show some basic internal
