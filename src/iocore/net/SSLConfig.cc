@@ -42,10 +42,13 @@
 #include "tscore/ink_config.h"
 #include "tscore/Layout.h"
 #include "records/RecHttp.h"
+#include "records/RecCore.h"
 
 #include <openssl/pem.h>
+#include <array>
 #include <cstring>
 #include <cmath>
+#include <unordered_map>
 
 int                SSLConfig::config_index                                = 0;
 int                SSLConfig::configids[]                                 = {0, 0};
@@ -88,6 +91,87 @@ DbgCtl dbg_ctl_ssl_config_updateCTX{"ssl_config_updateCTX"};
 DbgCtl dbg_ctl_ssl_client_ctx{"ssl_client_ctx"};
 
 } // end anonymous namespace
+
+/** Determines the SSL session cache configuration value using a priority-based selection scheme.
+ *
+ * This function resolves the SSL session cache configuration by evaluating multiple potential
+ * configuration sources and selecting the one with the highest priority. The priority calculation
+ * combines two factors:
+ *
+ * Configuration Name Priority (base priority):
+ * - `proxy.config.ssl.session_cache.mode`: 3 (highest preference)
+ * - `proxy.config.ssl.session_cache.value`: 2 (medium preference)
+ * - `proxy.config.ssl.session_cache.enabled`: 1 (lowest preference)
+ *
+ * Configuration Source Priority (added to base priority):
+ * - Environment variable (`REC_SOURCE_ENV`): +0x30 (highest precedence)
+ * - Explicit configuration (`REC_SOURCE_EXPLICIT`): +0x20 (config file, API)
+ * - Plugin default (`REC_SOURCE_PLUGIN`): +0x10 (plugin changed the default value via TSMgmtIntCreate)
+ * - Built-in default (`REC_SOURCE_DEFAULT`): +0x00 (lowest precedence)
+ *
+ * Priority Calculation:
+ * `total_priority = base_priority + source_priority`
+ *
+ * Examples:
+ * - `mode` set via environment variable: 3 + 0x30 = 0x33 (highest possible)
+ * - `mode` set explicitly in config: 3 + 0x20 = 0x23
+ * - `value` set via environment variable: 2 + 0x30 = 0x32
+ * - `enabled` set explicitly in config: 1 + 0x20 = 0x21
+ *
+ * The configuration with the highest total priority is selected. This ensures that:
+ * 1. Environment variables always override other sources.
+ * 2. Among configurations from the same source, `mode` > `value` > `enabled`.
+ * 3. Explicit configuration overrides plugin defaults and built-in defaults.
+ *
+ * @return The SSL session cache mode value.
+ */
+static int
+get_ssl_session_cache_config()
+{
+  //
+  // TODO: in 11.x, we can simply remove this function and use only proxy.config.ssl.session_cache.mode.
+  //
+
+  struct ConfigOption {
+    const char *name;     ///< Configuration parameter name (e.g., "proxy.config.ssl.session_cache.mode").
+    int         value;    ///< The configured value if explicitly set.
+    int         priority; ///< The inherit priority of the config name, higher is more preferred.
+  };
+
+  /// The priority of the source. Higher is more preferred.
+  std::unordered_map<int, int> source_priorities = {
+    {REC_SOURCE_ENV,      0x30},
+    {REC_SOURCE_EXPLICIT, 0x20},
+    {REC_SOURCE_PLUGIN,   0x10},
+    {REC_SOURCE_DEFAULT,  0x0 },
+    {REC_SOURCE_NULL,     0x0 }, // For completeness, no record should have this set.
+  };
+
+  std::array<ConfigOption, 3> configs = {
+    {
+     {"proxy.config.ssl.session_cache.mode", 0, 0x3},
+     {"proxy.config.ssl.session_cache.value", 0, 0x2},
+     {"proxy.config.ssl.session_cache.enabled", 0, 0x1},
+     }
+  };
+
+  // Loop over the config names, updating their priority score per their source.
+  auto *highest_priority_config = &configs[0];
+  for (auto &config : configs) {
+    RecSourceT source;
+    if (RecGetRecordSource(config.name, &source) == REC_ERR_OKAY) {
+      config.priority += source_priorities[source];
+      config.value     = RecGetRecordInt(config.name).value_or(0);
+      if (config.priority > highest_priority_config->priority) {
+        highest_priority_config = &config;
+      }
+    } else {
+      // We need to update our logic here if any of these configs are removed.
+      ink_release_assert(false);
+    }
+  }
+  return highest_priority_config->value;
+}
 
 SSLConfigParams::SSLConfigParams()
 {
@@ -452,7 +536,8 @@ SSLConfigParams::initialize()
   // SSL session cache configurations
   ssl_origin_session_cache      = RecGetRecordInt("proxy.config.ssl.origin_session_cache.enabled").value_or(0);
   ssl_origin_session_cache_size = RecGetRecordInt("proxy.config.ssl.origin_session_cache.size").value_or(0);
-  ssl_session_cache             = RecGetRecordInt("proxy.config.ssl.session_cache.value").value_or(0);
+  ssl_session_cache             = get_ssl_session_cache_config();
+
   ssl_session_cache_size        = RecGetRecordInt("proxy.config.ssl.session_cache.size").value_or(0);
   ssl_session_cache_num_buckets = RecGetRecordInt("proxy.config.ssl.session_cache.num_buckets").value_or(0);
   ssl_session_cache_skip_on_contention =

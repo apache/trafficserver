@@ -16,7 +16,7 @@ records:
     origin_session_cache:
       enabled: 0
     session_cache:
-      value: 0
+      mode: 0
   tunnel:
     prewarm:
       enabled: 0

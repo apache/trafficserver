@@ -115,11 +115,11 @@ enum RecCheckT {
 /// @internal @c REC_SOURCE_NULL is useful for a return value, I don't see using it in the actual data.
 /// @internal If this is changed, TSMgmtSource in apidefs.h.in must also be changed.
 enum RecSourceT {
-  REC_SOURCE_NULL,     ///< No source / value not set.
-  REC_SOURCE_DEFAULT,  ///< Built in default.
-  REC_SOURCE_PLUGIN,   ///< Plugin supplied default.
+  REC_SOURCE_NULL,     ///< No source / value not set. Not used in the actual data.
+  REC_SOURCE_DEFAULT,  ///< Built in records.yaml default.
+  REC_SOURCE_PLUGIN,   ///< Plugin supplied default. See TSMgmtIntCreate/TSMgmtStringCreate.
   REC_SOURCE_EXPLICIT, ///< Set by administrator (config file, external API, etc.)
-  REC_SOURCE_ENV       ///< Process environment variable.
+  REC_SOURCE_ENV       ///< Process environment variable override.
 };
 
 enum RecAccessT {
