@@ -373,12 +373,17 @@ SSLConfigParams::initialize()
     ats_free(clientALPNProtocols);
   }
 
-#ifdef SSL_OP_CIPHER_SERVER_PREFERENCE
+#if defined(SSL_OP_SERVER_PREFERENCE) || defined(SSL_OP_CIPHER_SERVER_PREFERENCE)
   option = RecGetRecordInt("proxy.config.ssl.server.honor_cipher_order").value_or(0);
   if (option) {
+    // Prefer the newer, more accurately named flag when available.
+#ifdef SSL_OP_SERVER_PREFERENCE
+    ssl_ctx_options |= SSL_OP_SERVER_PREFERENCE;
+#else
     ssl_ctx_options |= SSL_OP_CIPHER_SERVER_PREFERENCE;
-  }
 #endif
+  }
+#endif // defined(SSL_OP_SERVER_PREFERENCE) || defined(SSL_OP_CIPHER_SERVER_PREFERENCE)
 
 #ifdef SSL_OP_PRIORITIZE_CHACHA
   option = RecGetRecordInt("proxy.config.ssl.server.prioritize_chacha").value_or(0);
