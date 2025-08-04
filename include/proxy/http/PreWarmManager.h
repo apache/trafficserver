@@ -43,7 +43,6 @@ using ts::Metrics;
 
 // tscore
 #include "tscore/CryptoHash.h"
-#include "tscore/ink_hrtime.h"
 
 #include <array>
 #include <cstddef>
@@ -53,6 +52,8 @@ using ts::Metrics;
 #include <queue>
 #include <string>
 #include <unordered_map>
+
+import tscore;
 
 // PreWarm::Dst and PreWarm::SPtrConstDst are defined in iocore.
 namespace PreWarm

@@ -133,6 +133,10 @@ extern "C" int plock(int);
 #include <gperftools/heap-profiler.h>
 #endif
 
+#if TS_USE_LINUX_IO_URING
+import inkuring;
+#endif
+
 extern void load_config_file_callback(const char *parent_file, const char *remap_file);
 
 extern HttpBodyFactory *body_factory;
@@ -1983,7 +1987,6 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 #endif
 
   // Pick the system clock to choose, likely only on Linux. See <linux/time.h>.
-  extern int gSystemClock; // 0 == CLOCK_REALTIME, the default
   gSystemClock = RecGetRecordInt("proxy.config.system_clock").value_or(0);
 
   if (!command_flag) { // No need if we are going into command mode.
@@ -2125,9 +2128,9 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   // This means any spawn scheduling must be done before this point.
   eventProcessor.start(num_of_net_threads, stacksize);
 
-  eventProcessor.schedule_every(new SignalContinuation, HRTIME_MSECOND * 500, ET_CALL);
-  eventProcessor.schedule_every(new DiagsLogContinuation, HRTIME_SECOND, ET_TASK);
-  eventProcessor.schedule_every(new MemoryLimit, HRTIME_SECOND * 10, ET_TASK);
+  eventProcessor.schedule_every(new SignalContinuation, HRTIME_MSECONDS(500), ET_CALL);
+  eventProcessor.schedule_every(new DiagsLogContinuation, HRTIME_SECONDS(1), ET_TASK);
+  eventProcessor.schedule_every(new MemoryLimit, HRTIME_SECONDS(10), ET_TASK);
   RecRegisterConfigUpdateCb("proxy.config.dump_mem_info_frequency", init_memory_tracker, nullptr);
   init_memory_tracker(nullptr, RECD_NULL, RecData(), nullptr);
 
@@ -2330,7 +2333,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   while (!TSSystemState::is_event_system_shut_down()) {
 #if TS_USE_LINUX_IO_URING == 1
     if (ur->valid()) {
-      ur->submit_and_wait(1 * HRTIME_SECOND);
+      ur->submit_and_wait(HRTIME_SECONDS(1));
     } else {
       sleep(1);
     }

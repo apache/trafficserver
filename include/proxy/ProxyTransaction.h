@@ -26,6 +26,8 @@
 #include "proxy/ProxySession.h"
 #include <string_view>
 
+import tscore;
+
 class HttpSM;
 
 // Abstract Class for any transaction with-in the HttpSM

@@ -114,6 +114,7 @@ target_link_libraries(
 # Is this necessary?
 if(TS_USE_LINUX_IO_URING)
   target_link_libraries(inknet PUBLIC ts::inkuring)
+  set_target_properties(inknet PROPERTIES CXX_SCAN_FOR_MODULES ON)
 endif()
 
 if(BUILD_TESTING)

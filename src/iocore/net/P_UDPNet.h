@@ -282,7 +282,7 @@ public:
       }
       s = (s + 1) % N_SLOTS;
     }
-    return HRTIME_FOREVER;
+    return HRTIME_FOREVERS(1);
   }
 };
 

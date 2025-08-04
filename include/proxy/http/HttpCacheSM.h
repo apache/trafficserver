@@ -38,6 +38,8 @@
 #include "proxy/hdrs/HTTP.h"
 #include "proxy/http/HttpConfig.h"
 
+import tscore;
+
 class HttpSM;
 class HttpCacheSM;
 

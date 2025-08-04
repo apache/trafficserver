@@ -49,13 +49,14 @@
 #include "tscore/InkErrno.h"
 #include "tscore/Diags.h"
 #include "tscore/ink_assert.h"
-#include "tscore/ink_hrtime.h"
 #include "tscore/List.h"
 
 #include <cinttypes>
 #include <cstddef>
 #include <cstdlib>
 #include <cstring>
+
+import tscore;
 
 // These macros allow two incrementing unsigned values x and y to maintain
 // their ordering when one of them overflows, given that the values stay close to each other.
@@ -1166,7 +1167,7 @@ StripeSM::evacuateDocReadDone(int event, Event *e)
     goto Ldone;
   }
   // coverity[Y2K38_SAFETY:FALSE]
-  if ((b->f.pinned && !b->readers) && doc->pinned < static_cast<uint32_t>(ink_get_hrtime() / HRTIME_SECOND)) {
+  if ((b->f.pinned && !b->readers) && doc->pinned < static_cast<uint32_t>(ink_get_hrtime() / HRTIME_SECONDS(1))) {
     goto Ldone;
   }
 

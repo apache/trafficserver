@@ -33,6 +33,8 @@
 #include "proxy/IPAllow.h"
 #include "tscore/SnowflakeID.h"
 
+import tscore;
+
 // Emit a debug message conditional on whether this particular client session
 // has debugging enabled. This should only be called from within a client session
 // member function.

@@ -25,11 +25,12 @@
 #include "P_UnixNet.h"
 #include "iocore/net/NetHandler.h"
 #include "iocore/net/PollCont.h"
-#if TS_USE_LINUX_IO_URING
-#include "iocore/io_uring/IO_URING.h"
-#endif
 
 #include <atomic>
+
+#if TS_USE_LINUX_IO_URING
+import inkuring;
+#endif
 
 using namespace std::literals;
 
@@ -506,7 +507,7 @@ NetHandler::_close_ne(NetEvent *ne, ink_hrtime now, int &handle_event, int &clos
   if (!lock.is_locked()) {
     return;
   }
-  ink_hrtime diff = (now - (ne->next_inactivity_timeout_at - ne->inactivity_timeout_in)) / HRTIME_SECOND;
+  ink_hrtime diff = (now - (ne->next_inactivity_timeout_at - ne->inactivity_timeout_in)) / HRTIME_SECONDS(1);
   if (diff > 0) {
     total_idle_time += diff;
     ++total_idle_count;
