@@ -108,6 +108,17 @@ Configuration
 
 * Added :ts:cv:`proxy.config.http.negative_revalidating_list` to configure the
   list of status codes that apply to the negative revalidating feature
+* Added :ts:cv:`proxy.config.ssl.session_cache.mode` to control TLS session caching.
+  This is intended to replace the legacy :ts:cv:`proxy.config.ssl.session_cache.enabled` and
+  ``proxy.config.ssl.session_cache.value`` configurations. The
+  :ts:cv:`proxy.config.ssl.session_cache.enabled` setting was documented but
+  never implemented, while ``proxy.config.ssl.session_cache.value`` was
+  implemented but not documented. The new :ts:cv:`proxy.config.ssl.session_cache.mode`
+  functions just like the legacy ``proxy.config.ssl.session_cache.value`` did
+  in the ealier 10.0 release. The :ts:cv:`proxy.config.ssl.session_cache.mode`
+  setting provides a clear and consistent interface going forward.  For backward
+  compatibility, ``.enabled`` is now implemented, but both ``.enabled`` and
+  ``.value`` will be removed in ATS 11.x.
 
 
 
