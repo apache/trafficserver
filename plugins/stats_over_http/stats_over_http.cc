@@ -496,14 +496,25 @@ prometheus_out_stat(TSRecordType /* rec_type ATS_UNUSED */, void *edata, int /* 
 {
   stats_state *my_state       = static_cast<stats_state *>(edata);
   std::string  sanitized_name = sanitize_metric_name_for_prometheus(name);
+  char         type_buffer[256];
+  char         help_buffer[256];
+
+  snprintf(help_buffer, sizeof(help_buffer), "# HELP %s %s\n", sanitized_name.c_str(), name);
   switch (data_type) {
   case TS_RECORDDATATYPE_COUNTER:
+    APPEND(help_buffer);
+    snprintf(type_buffer, sizeof(type_buffer), "# TYPE %s counter\n", sanitized_name.c_str());
+    APPEND(type_buffer);
     APPEND_STAT_PROMETHEUS_NUMERIC(sanitized_name.c_str(), "%" PRIu64, wrap_unsigned_counter(datum->rec_counter));
     break;
   case TS_RECORDDATATYPE_INT:
+    APPEND(help_buffer);
+    snprintf(type_buffer, sizeof(type_buffer), "# TYPE %s gauge\n", sanitized_name.c_str());
+    APPEND(type_buffer);
     APPEND_STAT_PROMETHEUS_NUMERIC(sanitized_name.c_str(), "%" PRIu64, wrap_unsigned_counter(datum->rec_int));
     break;
   case TS_RECORDDATATYPE_FLOAT:
+    APPEND(help_buffer);
     APPEND_STAT_PROMETHEUS_NUMERIC(sanitized_name.c_str(), "%f", datum->rec_float);
     break;
   case TS_RECORDDATATYPE_STRING:
