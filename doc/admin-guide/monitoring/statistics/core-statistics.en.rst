@@ -40,6 +40,7 @@ component to which they're related.
    core/network-io.en
    core/ssl.en
    core/ssl-cipher.en
+   core/ssl-group.en
    core/http-transaction.en
    core/http-response-code.en
    core/http-request-method.en
