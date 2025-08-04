@@ -581,8 +581,8 @@ http_txn_cont(TSCont contp, TSEvent event, void *edata)
     }
 
     if (!context->state.error.Failed()) {
-      if (context->_urls.cache.Modified()) {
-        context->_urls.cache._update(); // Make sure the cache-key gets updated, if modified
+      if (context->_cache.url.Modified()) {
+        context->_cache.url._update(); // Make sure the cache-key gets updated, if modified
       }
       if (context->_urls.request.Modified()) {
         context->_urls.request._update(); // Make sure any changes to the request URL is updated
@@ -612,8 +612,8 @@ http_txn_cont(TSCont contp, TSEvent event, void *edata)
     }
 
     if (!context->state.error.Failed()) {
-      if (context->_urls.cache.Modified()) {
-        context->_urls.cache._update(); // Make sure the cache-key gets updated, if modified
+      if (context->_cache.url.Modified()) {
+        context->_cache.url._update(); // Make sure the cache-key gets updated, if modified
       }
       if (context->_urls.request.Modified()) {
         context->_urls.request._update(); // Make sure any changes to the request URL is updated
@@ -899,8 +899,8 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 
   // Don't do the callbacks when we are in a failure state.
   if (!context->state.error.Failed()) {
-    if (context->_urls.cache.Modified()) {
-      context->_urls.cache._update(); // Make sure the cache-key gets updated, if modified
+    if (context->_cache.url.Modified()) {
+      context->_cache.url._update(); // Make sure the cache-key gets updated, if modified
     }
     if (context->_urls.request.Modified()) {
       context->_urls.request._update(); // Make sure any changes to the request URL is updated
