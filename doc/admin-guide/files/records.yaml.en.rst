@@ -3709,8 +3709,10 @@ SSL Termination
 
 .. ts:cv:: CONFIG proxy.config.ssl.server.honor_cipher_order INT 1
 
-   By default (``1``) |TS| will use the server's cipher suites preferences instead of the client preferences.
-   By disabling it (``0``) |TS| will use client's cipher suites preferences.
+   By default (``1``) |TS| will use the server's preferences for cipher suites, supported groups, and
+   signature algorithms instead of the client preferences. By disabling it (``0``) |TS| will use the
+   client's preferences. Note that despite the configuration name mentioning "cipher_order", this
+   setting controls server preference for multiple aspects of TLS negotiation, not just cipher suites.
 
 .. ts:cv:: CONFIG proxy.config.ssl.server.prioritize_chacha INT 0
 
