@@ -76,7 +76,7 @@ Changes with Apache Traffic Server 10.1.0
   #11613 - Remove unused MIOBuffer constructor, add explicit to another.
   #11617 - Move `StripeSM` methods to StripeSM.cc
   #11618 - Conditional Slicing
-  #11620 - Fix fuzz build 
+  #11620 - Fix fuzz build
   #11623 - Use `this_ethread()` for evacuation block alloc
   #11626 - traffic_ctl: Support command options to enable/disable  debug logs at runtime in a single command.
   #11628 - Extract `PreservationTable` from `StripeSM`
@@ -182,7 +182,7 @@ Changes with Apache Traffic Server 10.1.0
   #11803 - Add bcc tool to observe pthread trylock
   #11805 - Coverity. Fixes for CID-1497391 and CID-1497371
   #11807 - Coverity. CID-1559195: Fix for  uninitialized scalar field.
-  #11810 - Update gcp documentation 
+  #11810 - Update gcp documentation
   #11811 - Add a constructor to `Stripe` to impose invariants early
   #11813 - Defer deletion of reloadable remap plugins
   #11815 - jsonrpc: Wait for the socket to be ready to read.
@@ -218,7 +218,7 @@ Changes with Apache Traffic Server 10.1.0
   #11904 - Fix documentation - cookie remap is an experimental plugin
   #11905 - Add support for millisecond sleep in Lua plugin
   #11906 - Do not touch fd from StripeSM::handle_dir_clear
-  #11908 - Coverity. `swoc` Make Name Binding global variables a singleton. 
+  #11908 - Coverity. `swoc` Make Name Binding global variables a singleton.
   #11911 - Make error if remap ACL has more than one @action
   #11915 - Fix where we get the filename from
   #11916 - Remove some autotools leftovers
@@ -242,7 +242,7 @@ Changes with Apache Traffic Server 10.1.0
   #11978 - Codeql updates
   #11982 - Coverity: Some fixes.
   #11984 - Cleanup of iocore
-  #11985 - Update modsecurity example that leverages lua plugin 
+  #11985 - Update modsecurity example that leverages lua plugin
   #11999 - Add support for parsing Proxy protocol v2 TLV fields
   #12000 - Fix a build issue from iocore cleanup
   #12005 - [docs] fix note about updating the ats website
@@ -347,7 +347,7 @@ Changes with Apache Traffic Server 10.1.0
   #12241 - Serve stale contents until max-age + max_stale_age
   #12248 - Updated testing and fixed bug in SSLSNIConfig
   #12257 - HTTP/2: Wait END_STREAM flag on half-closed(local) stream state
-  #12258 - [10.1.x][compress] Add an option to do not compress partial object 
+  #12258 - [10.1.x][compress] Add an option to do not compress partial object
   #12261 - Add the cqssg log field for TLS group name logging
   #12264 - Fix narrowing conversion of connection ID
   #12267 - Include records.yaml line and column in the logs when error is found.
