@@ -44,6 +44,7 @@ sessions:
 
     proxy-response:
       status: 200
+
   - client-request:
       method: "GET"
       version: "1.1"
@@ -60,6 +61,31 @@ sessions:
       headers:
         fields:
           - [ content-length, 16 ]
+          - [ cache-control, "public,max-age=3600"]
 
     proxy-response:
       status: 200
+
+  - client-request:
+      # wait for cache I/O
+      delay: 100ms
+      method: "GET"
+      version: "1.1"
+      url: /a/path/resource
+      headers:
+        fields:
+        - [ Host, oof.com ]
+        - [ Connection, keep-alive ]
+        - [ Content-Length, 0 ]
+        - [ x-debug, x-cache ]
+
+    # should no request to origin server
+    server-response:
+      status: 503
+
+    # hitting cache is expected
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ x-cache, {value: "hit-fresh", as: equal } ]
