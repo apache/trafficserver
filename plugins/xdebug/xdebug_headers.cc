@@ -17,8 +17,10 @@
   limitations under the License.
  */
 
+#include "xdebug_headers.h"
+
 #include <cstdlib>
-#include <stdio.h>
+#include <cstdio>
 #include <cstdio>
 #include <strings.h>
 #include <string_view>
@@ -28,9 +30,12 @@
 
 #define DEBUG_TAG_LOG_HEADERS "xdebug.headers"
 
+namespace xdebug
+{
+
 namespace
 {
-DbgCtl dbg_ctl_hdrs{DEBUG_TAG_LOG_HEADERS};
+  DbgCtl dbg_ctl_hdrs{DEBUG_TAG_LOG_HEADERS};
 }
 
 class EscapeCharForJson
@@ -202,3 +207,5 @@ print_response_headers(TSHttpTxn txn, std::stringstream &output)
     TSHandleMLocRelease(buf_c, TS_NULL_MLOC, hdr_loc);
   }
 }
+
+} // namespace xdebug

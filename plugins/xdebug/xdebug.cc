@@ -16,13 +16,12 @@
  * limitations under the License.
  */
 
+#include <climits>
 #include <cstdlib>
 #include <cstdio>
 #include <cstdio>
 #include <strings.h>
-#include <sstream>
 #include <cstring>
-#include <atomic>
 #include <memory>
 #include <getopt.h>
 #include <cstdint>
@@ -37,37 +36,21 @@
 #include "swoc/TextView.h"
 #include "tscpp/api/Cleanup.h"
 
+#include "xdebug_types.h"
+#include "xdebug_headers.h"
+#include "xdebug_transforms.h"
+
+namespace xdebug
+{
+
 namespace
 {
-DbgCtl dbg_ctl{"xdebug"};
-
-struct BodyBuilder {
-  atscppapi::TSContUniqPtr     transform_connp;
-  atscppapi::TSIOBufferUniqPtr output_buffer;
-  // It's important that output_reader comes after output_buffer so it will be deleted first.
-  atscppapi::TSIOBufferReaderUniqPtr output_reader;
-  TSVIO                              output_vio    = nullptr;
-  bool                               wrote_prebody = false;
-  bool                               wrote_body    = false;
-  bool                               hdr_ready     = false;
-  std::atomic_flag                   wrote_postbody;
-
-  int64_t nbytes = 0;
-};
-
-struct XDebugTxnAuxData {
-  std::unique_ptr<BodyBuilder> body_builder;
-  unsigned                     xheaders = 0;
-};
-
-atscppapi::TxnAuxMgrData mgrData;
-
-using AuxDataMgr = atscppapi::TxnAuxDataMgr<XDebugTxnAuxData, mgrData>;
-
+  DbgCtl dbg_ctl{"xdebug"};
+  DbgCtl dbg_ctl_xform{"xdebug_transform"};
 } // end anonymous namespace
 
-#include "xdebug_headers.cc"
-#include "xdebug_transforms.cc"
+// Definition of the auxiliary data manager
+atscppapi::TxnAuxMgrData mgrData;
 
 static struct {
   const char *str;
@@ -839,10 +822,17 @@ updateAllowedHeaders(const char *optarg)
   TSfree(list);
 }
 
+} // namespace xdebug
+
 void
 TSPluginInit(int argc, const char *argv[])
 {
+  using namespace xdebug;
+
   Dbg(dbg_ctl, "initializing plugin");
+
+  // Initialize transforms module
+  init_transforms();
 
   static const struct option longopt[] = {
     {const_cast<char *>("header"), required_argument, nullptr, 'h' },
@@ -903,6 +893,4 @@ TSPluginInit(int argc, const char *argv[])
   XDeleteDebugHdrCont = TSContCreate(XDeleteDebugHdr, nullptr);
   TSReleaseAssert(XDeleteDebugHdrCont);
   TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, TSContCreate(XScanRequestHeaders, nullptr));
-
-  gethostname(Hostname, 1024);
 }

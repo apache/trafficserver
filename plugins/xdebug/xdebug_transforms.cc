@@ -17,18 +17,29 @@
   limitations under the License.
  */
 
-#include <limits.h>
-#include <stdio.h>
-#include <string.h>
-#include <functional>
+#include "xdebug_types.h"
+#include "xdebug_headers.h"
+
+#include <unistd.h>
+#include <sstream>
+#include <cinttypes>
 
 #include "ts/ts.h"
+
+namespace xdebug
+{
 
 static const std::string_view MultipartBoundary{"\r\n--- ATS xDebug Probe Injection Boundary ---\r\n\r\n"};
 
 static char Hostname[1024];
 
 static DbgCtl dbg_ctl_xform{"xdebug_transform"};
+
+void
+init_transforms()
+{
+  gethostname(Hostname, 1024);
+}
 
 static std::string
 getPreBody(TSHttpTxn txn)
@@ -52,7 +63,7 @@ getPostBody(TSHttpTxn txn)
   return output.str();
 }
 
-static void
+void
 writePostBody(TSHttpTxn txn, BodyBuilder *data)
 {
   if (data->wrote_body && data->hdr_ready && !data->wrote_postbody.test_and_set()) {
@@ -65,7 +76,7 @@ writePostBody(TSHttpTxn txn, BodyBuilder *data)
   }
 }
 
-static int
+int
 body_transform(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
 {
   TSHttpTxn    txn  = static_cast<TSHttpTxn>(TSContDataGet(contp));
@@ -142,3 +153,5 @@ body_transform(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
   }
   return 0;
 }
+
+} // namespace xdebug
