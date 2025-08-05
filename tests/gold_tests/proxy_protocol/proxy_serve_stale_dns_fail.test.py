@@ -20,7 +20,7 @@ Test proxy serving stale content when DNS lookup fails
 Test.ContinueOnFail = True
 # Set up hierarchical caching processes
 ts_child = Test.MakeATSProcess("ts_child")
-ts_parent = Test.MakeATSProcess("ts_parent")
+ts_parent = Test.MakeATSProcess("ts_parent", enable_uds=False)
 nameserver = Test.MakeDNServer("dns")
 server_name = "http://unknown.domain.com/"
 
@@ -65,13 +65,13 @@ child_curl_request = (
     f'sleep 7; {{curl}} -s -v http://localhost:{ts_child.Variables.port};'
     f'sleep 17; {{curl}} -s -v http://localhost:{ts_child.Variables.port};'
     # Test parent serving stale with failed DNS OS lookup
-    f'{{curl}} -X PUSH -d "{stale_5}" "http://localhost:{ts_parent.Variables.port}";'
-    f'sleep 7; {{curl}} -s -v http://localhost:{ts_parent.Variables.port};'
-    f'sleep 17; {{curl}} -s -v http://localhost:{ts_parent.Variables.port};')
+    f'{{curl_base}} -X PUSH -d "{stale_5}" "http://localhost:{ts_parent.Variables.port}";'
+    f'sleep 7; {{curl_base}} -s -v http://localhost:{ts_parent.Variables.port};'
+    f'sleep 17; {{curl_base}} -s -v http://localhost:{ts_parent.Variables.port};')
 
 # Test case for when parent server is down but child proxy can serve cache object
 tr = Test.AddTestRun()
-tr.MakeCurlCommandMulti(child_curl_request)
+tr.MakeCurlCommandMulti(child_curl_request, ts=ts_child)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(ts_child)
 tr.Processes.Default.StartBefore(ts_parent)

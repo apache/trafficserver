@@ -65,7 +65,7 @@ numberOfRequests = 100
 # is set in SpawnCurlCommands.  On Fedora 28/29, it seems that curl will
 # occasionally timeout after a couple seconds and return exitcode 2
 # Examining the packet capture shows that Traffic Server dutifully sends the response
-ps = tr.SpawnCurlCommands(cmdstr=cmd, count=numberOfRequests, retcode=Any(0, 2))
+ps = tr.SpawnCurlCommands(cmdstr=cmd, count=numberOfRequests, retcode=Any(0, 2), ts=ts)
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.ReturnCode = Any(0, 2)
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
@@ -79,11 +79,12 @@ tr.StillRunningAfter = server
 #
 # Run some HTTP/2 traffic.
 #
-tr = Test.AddTestRun("Perform HTTP/2 transactions")
-cmd = '-v -k --http2 -H "host:example.com" https://127.0.0.1:{0}'.format(ts.Variables.ssl_port)
-ps = tr.SpawnCurlCommands(cmdstr=cmd, count=numberOfRequests, retcode=Any(0, 2))
-tr.Processes.Default.Env = ts.Env
-tr.Processes.Default.ReturnCode = Any(0, 2)
+if not Condition.CurlUsingUnixDomainSocket():
+    tr = Test.AddTestRun("Perform HTTP/2 transactions")
+    cmd = '-v -k --http2 -H "host:example.com" https://127.0.0.1:{0}'.format(ts.Variables.ssl_port)
+    ps = tr.SpawnCurlCommands(cmdstr=cmd, count=numberOfRequests, retcode=Any(0, 2), ts=ts)
+    tr.Processes.Default.Env = ts.Env
+    tr.Processes.Default.ReturnCode = Any(0, 2)
 
 #
 # Verify that the session ids are unique.
@@ -96,7 +97,10 @@ tr.Processes.Default.ReturnCode = Any(0, 2)
 
 def verify_session_count(output):
     global numberOfRequests
-    nReq = numberOfRequests * 2
+    if Condition.CurlUsingUnixDomainSocket():
+        nReq = numberOfRequests
+    else:
+        nReq = numberOfRequests * 2
     session_ids = [line[0:line.find("\n")] for line in str(output).split("session id: ")[1:]]
     if len(session_ids) != nReq:
         return "Found {} session_id's, expected {}".format(len(session_ids), nReq)

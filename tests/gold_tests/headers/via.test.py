@@ -63,8 +63,16 @@ ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key
 via_log_id = Test.Disk.File("via.log")
 if Condition.HasATSFeature('TS_USE_QUIC') and Condition.HasCurlFeature('http3'):
     via_log_id.Content = "via_h3.gold"
+elif Condition.CurlUsingUnixDomainSocket():
+    via_log_id.Content = "via_uds.gold"
 else:
     via_log_id.Content = "via.gold"
+
+ipv4flag = ""
+ipv6flag = ""
+if not Condition.CurlUsingUnixDomainSocket():
+    ipv4flag = "--ipv4"
+    ipv6flag = "--ipv6"
 
 # Basic HTTP 1.1
 tr = Test.AddTestRun()
@@ -73,7 +81,8 @@ tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Po
 # Delay on readiness of our ssl ports
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 
-tr.MakeCurlCommand('--verbose --ipv4 --http1.1 --proxy localhost:{} http://www.example.com'.format(ts.Variables.port))
+tr.MakeCurlCommand(
+    '--verbose {0} --http1.1 --proxy localhost:{1} http://www.example.com'.format(ipv4flag, ts.Variables.port), ts=ts)
 tr.Processes.Default.ReturnCode = 0
 
 tr.StillRunningAfter = server
@@ -81,50 +90,60 @@ tr.StillRunningAfter = ts
 
 # HTTP 1.0
 tr = Test.AddTestRun()
-tr.MakeCurlCommand('--verbose --ipv4 --http1.0 --proxy localhost:{} http://www.example.com'.format(ts.Variables.port))
-tr.Processes.Default.ReturnCode = 0
-
-tr.StillRunningAfter = server
-tr.StillRunningAfter = ts
-
-# HTTP 2
-tr = Test.AddTestRun()
 tr.MakeCurlCommand(
-    '--verbose --ipv4 --http2 --insecure --header "Host: www.example.com" https://localhost:{}'.format(ts.Variables.ssl_port))
+    '--verbose {0} --http1.0 --proxy localhost:{1} http://www.example.com'.format(ipv4flag, ts.Variables.port), ts=ts)
 tr.Processes.Default.ReturnCode = 0
 
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
 
-# HTTP 3
-if Condition.HasATSFeature('TS_HAS_QUICHE') and Condition.HasCurlFeature('http3'):
+if not Condition.CurlUsingUnixDomainSocket():
+    # HTTP 2
     tr = Test.AddTestRun()
     tr.MakeCurlCommand(
-        '--verbose --ipv4 --http3 --insecure --header "Host: www.example.com" https://localhost:{}'.format(ts.Variables.ssl_port))
+        '--verbose --ipv4 --http2 --insecure --header "Host: www.example.com" https://localhost:{}'.format(ts.Variables.ssl_port),
+        ts=ts)
     tr.Processes.Default.ReturnCode = 0
+
     tr.StillRunningAfter = server
     tr.StillRunningAfter = ts
 
-# TLS
-tr = Test.AddTestRun()
-tr.MakeCurlCommand(
-    '--verbose --ipv4 --http1.1 --insecure --header "Host: www.example.com" https://localhost:{}'.format(ts.Variables.ssl_port))
-tr.Processes.Default.ReturnCode = 0
+    # HTTP 3
+    if Condition.HasATSFeature('TS_HAS_QUICHE') and Condition.HasCurlFeature('http3'):
+        tr = Test.AddTestRun()
+        tr.MakeCurlCommand(
+            '--verbose --ipv4 --http3 --insecure --header "Host: www.example.com" https://localhost:{}'.format(
+                ts.Variables.ssl_port),
+            ts=ts)
+        tr.Processes.Default.ReturnCode = 0
+        tr.StillRunningAfter = server
+        tr.StillRunningAfter = ts
 
-tr.StillRunningAfter = server
-tr.StillRunningAfter = ts
+    # TLS
+    tr = Test.AddTestRun()
+    tr.MakeCurlCommand(
+        '--verbose --ipv4 --http1.1 --insecure --header "Host: www.example.com" https://localhost:{}'.format(ts.Variables.ssl_port),
+        ts=ts)
+    tr.Processes.Default.ReturnCode = 0
+
+    tr.StillRunningAfter = server
+    tr.StillRunningAfter = ts
 
 # IPv6
 tr = Test.AddTestRun()
-tr.MakeCurlCommand('--verbose --ipv6 --http1.1 --proxy localhost:{} http://www.example.com'.format(ts.Variables.portv6))
-tr.Processes.Default.ReturnCode = 0
-tr.StillRunningAfter = server
-tr.StillRunningAfter = ts
-
-tr = Test.AddTestRun()
 tr.MakeCurlCommand(
-    '--verbose --ipv6 --http1.1 --insecure --header "Host: www.example.com" https://localhost:{}'.format(ts.Variables.ssl_portv6))
+    '--verbose {0} --http1.1 --proxy localhost:{1} http://www.example.com'.format(ipv6flag, ts.Variables.portv6), ts=ts)
 tr.Processes.Default.ReturnCode = 0
-
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
+
+if not Condition.CurlUsingUnixDomainSocket():
+    tr = Test.AddTestRun()
+    tr.MakeCurlCommand(
+        '--verbose --ipv6 --http1.1 --insecure --header "Host: www.example.com" https://localhost:{}'.format(
+            ts.Variables.ssl_portv6),
+        ts=ts)
+    tr.Processes.Default.ReturnCode = 0
+
+    tr.StillRunningAfter = server
+    tr.StillRunningAfter = ts

@@ -43,13 +43,17 @@ Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'hook_add_
 
 ts.Disk.remap_config.AddLine("map http://one http://127.0.0.1:{0}".format(server.Variables.Port))
 
+ipv4flag = ""
+if not Condition.CurlUsingUnixDomainSocket():
+    ipv4flag = "--ipv4"
+
 tr = Test.AddTestRun()
 # Probe server port to check if ready.
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 # Probe TS cleartext port to check if ready (probing TLS port causes spurious VCONN hook triggers).
 tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.port))
 #
-tr.MakeCurlCommand('--verbose --ipv4 --header "Host: one" http://localhost:{0}/argh'.format(ts.Variables.port))
+tr.MakeCurlCommand('--verbose {0} --header "Host: one" http://localhost:{1}/argh'.format(ipv4flag, ts.Variables.port), ts=ts)
 tr.Processes.Default.ReturnCode = 0
 
 # Look at the debug output from the plugin
