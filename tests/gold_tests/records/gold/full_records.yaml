@@ -564,11 +564,11 @@ records:
         filename: null
     session_cache:
       auto_clear: 1
+      mode: 2
       num_buckets: 256
       size: 102400
       skip_cache_on_bucket_contention: 0
       timeout: 0
-      value: 2
   stop:
     shutdown_timeout: 0
   system:
