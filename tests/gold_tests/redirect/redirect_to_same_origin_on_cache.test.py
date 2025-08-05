@@ -121,6 +121,7 @@ class TestRedirectToSameOriginOnCache:
             })
 
         ts.Disk.remap_config.AddLine(f"map oof.com http://oof.backend.com:{server_one.Variables.http_port}")
+        ts.Disk.plugin_config.AddLine("xdebug.so --enable=x-cache,x-cache-key,via")
 
         self._ts = ts
 
