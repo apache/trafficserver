@@ -383,3 +383,9 @@ Changes with Apache Traffic Server 10.1.0
   #12367 - Disable read/write_vio in Http2Stream::transaction_done
   #12374 - cache_promote: Bugfix, don't repurpose policies without labels
   #12386 - Revert "Address HttpSM::attach_server_session crash (#12325)"
+  #12411 - Update what's new page for 10.1
+  #12415 - Docs: TLS Negotiated Group Metrics
+  #12418 - whats-new doc: proxy.config.ssl.session_cache.mode
+  #12419 - 10.1.x: proxy.config.ssl.session_cache.mode (#12414)
+  #12420 - 10.1.x: server.honor_cipher_order: Clarify documentation (#12416)
+  #12421 - 10.1.x: Remove trailing whitespace in Changes-10.1.0
