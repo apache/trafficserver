@@ -58,57 +58,60 @@ static struct {
 } xDebugHeader = {nullptr, 0};
 
 enum {
-  XHEADER_X_CACHE_KEY      = 1u << 2,
-  XHEADER_X_MILESTONES     = 1u << 3,
-  XHEADER_X_CACHE          = 1u << 4,
-  XHEADER_X_GENERATION     = 1u << 5,
-  XHEADER_X_TRANSACTION_ID = 1u << 6,
-  XHEADER_X_DUMP_HEADERS   = 1u << 7,
-  XHEADER_X_REMAP          = 1u << 8,
-  XHEADER_X_PROBE_HEADERS  = 1u << 9,
-  XHEADER_X_PSELECT_KEY    = 1u << 10,
-  XHEADER_X_CACHE_INFO     = 1u << 11,
-  XHEADER_X_EFFECTIVE_URL  = 1u << 12,
-  XHEADER_VIA              = 1u << 13,
-  XHEADER_DIAGS            = 1u << 14,
-  XHEADER_ALL              = UINT_MAX
+  XHEADER_X_CACHE_KEY       = 1u << 2,
+  XHEADER_X_MILESTONES      = 1u << 3,
+  XHEADER_X_CACHE           = 1u << 4,
+  XHEADER_X_GENERATION      = 1u << 5,
+  XHEADER_X_TRANSACTION_ID  = 1u << 6,
+  XHEADER_X_DUMP_HEADERS    = 1u << 7,
+  XHEADER_X_REMAP           = 1u << 8,
+  XHEADER_X_PROBE_HEADERS   = 1u << 9,
+  XHEADER_X_PSELECT_KEY     = 1u << 10,
+  XHEADER_X_CACHE_INFO      = 1u << 11,
+  XHEADER_X_EFFECTIVE_URL   = 1u << 12,
+  XHEADER_VIA               = 1u << 13,
+  XHEADER_DIAGS             = 1u << 14,
+  XHEADER_X_PROBE_FULL_JSON = 1u << 15,
+  XHEADER_ALL               = UINT_MAX
 };
 
 static unsigned int allowedHeaders = 0;
 
-constexpr std::string_view HEADER_NAME_X_CACHE_KEY      = "x-cache-key";
-constexpr std::string_view HEADER_NAME_X_MILESTONES     = "x-milestones";
-constexpr std::string_view HEADER_NAME_X_CACHE          = "x-cache";
-constexpr std::string_view HEADER_NAME_X_GENERATION     = "x-cache-generation";
-constexpr std::string_view HEADER_NAME_X_TRANSACTION_ID = "x-transaction-id";
-constexpr std::string_view HEADER_NAME_X_DUMP_HEADERS   = "x-dump-headers";
-constexpr std::string_view HEADER_NAME_X_REMAP          = "x-remap";
-constexpr std::string_view HEADER_NAME_X_PROBE_HEADERS  = "probe";
-constexpr std::string_view HEADER_NAME_X_PSELECT_KEY    = "x-parentselection-key";
-constexpr std::string_view HEADER_NAME_X_CACHE_INFO     = "x-cache-info";
-constexpr std::string_view HEADER_NAME_X_EFFECTIVE_URL  = "x-effective-url";
-constexpr std::string_view HEADER_NAME_VIA              = "via";
-constexpr std::string_view HEADER_NAME_DIAGS            = "diags";
-constexpr std::string_view HEADER_NAME_ALL              = "all";
+constexpr std::string_view HEADER_NAME_X_CACHE_KEY       = "x-cache-key";
+constexpr std::string_view HEADER_NAME_X_MILESTONES      = "x-milestones";
+constexpr std::string_view HEADER_NAME_X_CACHE           = "x-cache";
+constexpr std::string_view HEADER_NAME_X_GENERATION      = "x-cache-generation";
+constexpr std::string_view HEADER_NAME_X_TRANSACTION_ID  = "x-transaction-id";
+constexpr std::string_view HEADER_NAME_X_DUMP_HEADERS    = "x-dump-headers";
+constexpr std::string_view HEADER_NAME_X_REMAP           = "x-remap";
+constexpr std::string_view HEADER_NAME_X_PROBE_HEADERS   = "probe";
+constexpr std::string_view HEADER_NAME_X_PSELECT_KEY     = "x-parentselection-key";
+constexpr std::string_view HEADER_NAME_X_CACHE_INFO      = "x-cache-info";
+constexpr std::string_view HEADER_NAME_X_EFFECTIVE_URL   = "x-effective-url";
+constexpr std::string_view HEADER_NAME_VIA               = "via";
+constexpr std::string_view HEADER_NAME_DIAGS             = "diags";
+constexpr std::string_view HEADER_NAME_X_PROBE_FULL_JSON = "probe-full-json";
+constexpr std::string_view HEADER_NAME_ALL               = "all";
 
 constexpr struct XHeader {
   std::string_view name;
   unsigned int     flag;
 } header_flags[] = {
-  {HEADER_NAME_X_CACHE_KEY,      XHEADER_X_CACHE_KEY     },
-  {HEADER_NAME_X_MILESTONES,     XHEADER_X_MILESTONES    },
-  {HEADER_NAME_X_CACHE,          XHEADER_X_CACHE         },
-  {HEADER_NAME_X_GENERATION,     XHEADER_X_GENERATION    },
-  {HEADER_NAME_X_TRANSACTION_ID, XHEADER_X_TRANSACTION_ID},
-  {HEADER_NAME_X_DUMP_HEADERS,   XHEADER_X_DUMP_HEADERS  },
-  {HEADER_NAME_X_REMAP,          XHEADER_X_REMAP         },
-  {HEADER_NAME_X_PROBE_HEADERS,  XHEADER_X_PROBE_HEADERS },
-  {HEADER_NAME_X_PSELECT_KEY,    XHEADER_X_PSELECT_KEY   },
-  {HEADER_NAME_X_CACHE_INFO,     XHEADER_X_CACHE_INFO    },
-  {HEADER_NAME_X_EFFECTIVE_URL,  XHEADER_X_EFFECTIVE_URL },
-  {HEADER_NAME_VIA,              XHEADER_VIA             },
-  {HEADER_NAME_DIAGS,            XHEADER_DIAGS           },
-  {HEADER_NAME_ALL,              XHEADER_ALL             },
+  {HEADER_NAME_X_CACHE_KEY,       XHEADER_X_CACHE_KEY      },
+  {HEADER_NAME_X_MILESTONES,      XHEADER_X_MILESTONES     },
+  {HEADER_NAME_X_CACHE,           XHEADER_X_CACHE          },
+  {HEADER_NAME_X_GENERATION,      XHEADER_X_GENERATION     },
+  {HEADER_NAME_X_TRANSACTION_ID,  XHEADER_X_TRANSACTION_ID },
+  {HEADER_NAME_X_DUMP_HEADERS,    XHEADER_X_DUMP_HEADERS   },
+  {HEADER_NAME_X_REMAP,           XHEADER_X_REMAP          },
+  {HEADER_NAME_X_PROBE_HEADERS,   XHEADER_X_PROBE_HEADERS  },
+  {HEADER_NAME_X_PSELECT_KEY,     XHEADER_X_PSELECT_KEY    },
+  {HEADER_NAME_X_CACHE_INFO,      XHEADER_X_CACHE_INFO     },
+  {HEADER_NAME_X_EFFECTIVE_URL,   XHEADER_X_EFFECTIVE_URL  },
+  {HEADER_NAME_VIA,               XHEADER_VIA              },
+  {HEADER_NAME_DIAGS,             XHEADER_DIAGS            },
+  {HEADER_NAME_X_PROBE_FULL_JSON, XHEADER_X_PROBE_FULL_JSON},
+  {HEADER_NAME_ALL,               XHEADER_ALL              },
 };
 
 static TSCont XInjectHeadersCont  = nullptr;
@@ -430,7 +433,7 @@ InjectEffectiveURLHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
 }
 
 static void
-InjectOriginalContentTypeHeader(TSMBuffer buffer, TSMLoc hdr)
+InjectOriginalContentTypeHeader(TSMBuffer buffer, TSMLoc hdr, bool is_full_json)
 {
   TSMLoc ct_field = TSMimeHdrFieldFind(buffer, hdr, TS_MIME_FIELD_CONTENT_TYPE, TS_MIME_LEN_CONTENT_TYPE);
   if (TS_NULL_MLOC != ct_field) {
@@ -449,7 +452,12 @@ InjectOriginalContentTypeHeader(TSMBuffer buffer, TSMLoc hdr)
   }
 
   TSMimeHdrFieldValuesClear(buffer, hdr, ct_field);
-  TSReleaseAssert(TSMimeHdrFieldValueStringSet(buffer, hdr, ct_field, -1, "text/plain", lengthof("text/plain")) == TS_SUCCESS);
+  if (is_full_json) {
+    TSReleaseAssert(TSMimeHdrFieldValueStringSet(buffer, hdr, ct_field, -1, "application/json", lengthof("application/json")) ==
+                    TS_SUCCESS);
+  } else {
+    TSReleaseAssert(TSMimeHdrFieldValueStringSet(buffer, hdr, ct_field, -1, "text/plain", lengthof("text/plain")) == TS_SUCCESS);
+  }
 }
 
 static void
@@ -570,10 +578,11 @@ XInjectResponseHeaders(TSCont /* contp */, TSEvent event, void *edata)
     log_headers(txn, buffer, hdr, "ClientResponse");
   }
 
-  if (xheaders & XHEADER_X_PROBE_HEADERS) {
-    InjectOriginalContentTypeHeader(buffer, hdr);
+  if (xheaders & XHEADER_X_PROBE_HEADERS || xheaders & XHEADER_X_PROBE_FULL_JSON) {
+    InjectOriginalContentTypeHeader(buffer, hdr, xheaders & XHEADER_X_PROBE_FULL_JSON);
     BodyBuilder *data = AuxDataMgr::data(txn).body_builder.get();
-    Dbg(dbg_ctl_xform, "XInjectResponseHeaders(): client resp header ready");
+    Dbg(dbg_ctl_xform, "XInjectResponseHeaders(): client resp header ready (probe-full-json: %d)",
+        xheaders & XHEADER_X_PROBE_FULL_JSON);
     if (data == nullptr) {
       TSHttpTxnReenable(txn, TS_EVENT_HTTP_ERROR);
       return TS_ERROR;
@@ -679,6 +688,12 @@ XScanRequestHeaders(TSCont /* contp */, TSEvent event, void *edata)
 
 #define header_field_eq(name, vptr, vlen) (((int)name.size() == vlen) && (strncasecmp(name.data(), vptr, vlen) == 0))
 
+      // A couple convenience variables for probing.
+      bool const is_probe_headers =
+        header_field_eq(HEADER_NAME_X_PROBE_HEADERS, value, vsize) && (XHEADER_X_PROBE_HEADERS & allowedHeaders);
+      bool const is_probe_full_json =
+        header_field_eq(HEADER_NAME_X_PROBE_FULL_JSON, value, vsize) && (XHEADER_X_PROBE_FULL_JSON & allowedHeaders);
+
       if (header_field_eq(HEADER_NAME_X_CACHE_KEY, value, vsize)) {
         xheaders |= XHEADER_X_CACHE_KEY & allowedHeaders;
       } else if (header_field_eq(HEADER_NAME_X_CACHE_INFO, value, vsize)) {
@@ -700,13 +715,18 @@ XScanRequestHeaders(TSCont /* contp */, TSEvent event, void *edata)
         // Enable diagnostics for DebugTxn()'s only
         TSHttpTxnCntlSet(txn, TS_HTTP_CNTL_TXN_DEBUG, true);
 
-      } else if (header_field_eq(HEADER_NAME_X_PROBE_HEADERS, value, vsize) && (XHEADER_X_PROBE_HEADERS & allowedHeaders)) {
-        xheaders |= XHEADER_X_PROBE_HEADERS;
+      } else if (is_probe_headers || is_probe_full_json) {
+        // You can't do both at the same time. If both are passed, full JSON takes precedence.
+        if (is_probe_headers && is_probe_full_json) {
+          TSError("[xdebug] Both probe-headers and probe-full-json are enabled. Choosing probe-full-json.");
+        }
+        xheaders |= is_probe_full_json ? XHEADER_X_PROBE_FULL_JSON : XHEADER_X_PROBE_HEADERS;
 
         auto &auxData = AuxDataMgr::data(txn);
 
         // prefix request headers and postfix response headers
         BodyBuilder *data = new BodyBuilder();
+        data->probe_type  = is_probe_full_json ? ProbeType::PROBE_FULL_JSON : ProbeType::PROBE_STANDARD;
         auxData.body_builder.reset(data);
 
         TSVConn connp = TSTransformCreate(body_transform, txn);

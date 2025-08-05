@@ -28,12 +28,20 @@ namespace xdebug
 {
 
 /**
+ * Whether to print the headers for the "probe-full-json" format.
+ */
+static constexpr bool FULL_JSON = true;
+
+/**
  * Print headers to a stringstream with JSON-like formatting.
  * @param bufp The TSMBuffer containing the headers.
  * @param hdr_loc The TSMLoc for the headers.
  * @param ss The stringstream to write to.
+ * @param full_json Whether to print the headers in a compliant JSON
+ * format. The legacy "probe" format is not JSON-compliant. The new
+ * "probe-full-json" format is JSON-compliant.
  */
-void print_headers(TSMBuffer bufp, TSMLoc hdr_loc, std::stringstream &ss);
+void print_headers(TSMBuffer bufp, TSMLoc hdr_loc, std::stringstream &ss, bool full_json);
 
 /**
  * Log headers to debug for debugging purposes.
@@ -57,5 +65,19 @@ void print_request_headers(TSHttpTxn txn, std::stringstream &output);
  * @param output The stringstream to write to.
  */
 void print_response_headers(TSHttpTxn txn, std::stringstream &output);
+
+/**
+ * Print request headers in JSON format for probe-full-json.
+ * @param txn The transaction.
+ * @param output The stringstream to write to.
+ */
+void print_request_headers_full_json(TSHttpTxn txn, std::stringstream &output);
+
+/**
+ * Print response headers in JSON format for probe-full-json.
+ * @param txn The transaction.
+ * @param output The stringstream to write to.
+ */
+void print_response_headers_full_json(TSHttpTxn txn, std::stringstream &output);
 
 } // namespace xdebug

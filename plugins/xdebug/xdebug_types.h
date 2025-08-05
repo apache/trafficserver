@@ -30,6 +30,8 @@
 namespace xdebug
 {
 
+enum class ProbeType { PROBE_STANDARD, PROBE_FULL_JSON };
+
 struct BodyBuilder {
   atscppapi::TSContUniqPtr     transform_connp;
   atscppapi::TSIOBufferUniqPtr output_buffer;
@@ -40,6 +42,7 @@ struct BodyBuilder {
   bool                               wrote_body    = false;
   bool                               hdr_ready     = false;
   std::atomic_flag                   wrote_postbody;
+  ProbeType                          probe_type = ProbeType::PROBE_STANDARD;
 
   int64_t nbytes = 0;
 };
