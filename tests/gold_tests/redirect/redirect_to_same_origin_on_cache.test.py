@@ -27,7 +27,7 @@ TestParams = Dict[str, Any]
 class TestRedirectToSameOriginOnCache:
     """Configure a test for reproducing #9275."""
 
-    replay_filepath_one: str = "redirect_to_same_origin_on_cache.replay.yaml"
+    replay_filepath_one: str = "replay/redirect_to_same_origin_on_cache.replay.yaml"
     client_counter: int = 0
     server_counter: int = 0
     ts_counter: int = 0
