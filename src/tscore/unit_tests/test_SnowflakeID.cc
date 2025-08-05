@@ -117,6 +117,9 @@ TEST_CASE("SnowflakeID", "[libts][SnowflakeID]")
       // Something is seriously wrong...don't infinite loop.
       FAIL("Failed to generate two snowflake IDs in the same millisecond.");
     }
+    // Sleep to ensure we generate IDs in a fresh millisecond, avoiding
+    // sequence number continuation from previous attempts.
+    std::this_thread::sleep_for(std::chrono::milliseconds(2));
     ms_since_unix_epoch_before = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
     v1                         = SnowflakeID::get_next_value();
     v2                         = SnowflakeID::get_next_value();
