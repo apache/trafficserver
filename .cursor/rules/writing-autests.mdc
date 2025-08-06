@@ -1,0 +1,318 @@
+---
+description: When working with or adding autests, the end to end tests for the project
+alwaysApply: false
+---
+This rule describes writing of end to end autests
+
+Apache Traffic Server (ATS) has two types of tests: catch tests for unit tests and the autest framework for end-to-end testing. autests are declarative rather than imperative, using a specific Python framework syntax. Tests reside in `tests/gold_tests/` with `.test.py` extensions. For autest framework documentation, see: https://autestsuite.bitbucket.io/index.html
+
+File Structure and Naming:
+- Place tests in appropriate subdirectories under `tests/gold_tests/` (e.g., `cache/`, `pluginTest/<plugin_name>`, `tls/`, etc.)
+- Use descriptive names with `.test.py` extension (e.g., `cache-auth.test.py`, `stats_over_http.test.py`)
+- Organize related tests in feature-specific subdirectories
+- autest, a general testing framework, is extended to add ATS testing support via `.test.ext` files in `tests/gold_tests/autest-site`
+
+Running Autests:
+If ATS cmake build is properly configured, tests can be run with:
+```bash
+cmake --build build
+cmake --install build
+cd build/tests
+pipenv install
+./autest.sh --sandbox /tmp/sbcursor --clean=none -f <test_name_without_test_py_extension>
+```
+
+For example, to run `cache-auth.test.py`:
+```bash
+./autest.sh --sandbox /tmp/sbcursor --clean=none -f cache-auth
+```
+
+Test File Template Structure
+
+Always start a test file with:
+
+```python
+'''
+Brief description of what the test validates
+'''
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+```
+
+Test Configuration:
+
+Set global test properties:
+
+```python
+Test.Summary = 'Brief description of test purpose'
+Test.ContinueOnFail = True  # Usually set to True for multi-step tests
+```
+
+
+Class-Based Test Organization
+
+Prefer organizing tests as Python classes and use Python type hints:
+
+```python
+class YourTestClass:
+    """
+    Docstring explaining the test purpose and any relevant documentation links
+    """
+
+    def __init__(self):
+        self._setupOriginServer()  # or self.setupServers()
+        self._setupTS()            # or self.setupATS()
+
+    def _setupOriginServer(self):
+        # Create origin server(s)
+        self._server = Test.MakeOriginServer("server")
+        # OR for replay-based tests:
+        # self.server = Test.MakeVerifierServerProcess("server-name", "replay/file.replay.yaml")
+
+    def _setupTS(self):
+        # Create ATS process
+        self._ts = Test.MakeATSProcess("ts")
+
+        # Configure records.config
+        self._ts.Disk.records_config.update({
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "relevant_debug_tags",
+            # Add other configuration as needed
+        })
+
+        # Configure remap.config if needed
+        self._ts.Disk.remap_config.AddLine(
+            f"map / http://127.0.0.1:{self.server.Variables.http_port}/"
+        )
+
+        # Configure plugins if needed
+        # self._ts.Disk.plugin_config.AddLine('plugin_name.so plugin_args')
+
+        # Set up log validation if needed
+        # self._ts.Disk.diags_log.Content += Testers.ContainsExpression(
+        #     "expected log message", "Description of what this validates"
+        # )
+
+    def run(self):
+        # Execute test scenarios
+        self._testScenario1()
+        self._testScenario2()
+        # etc.
+
+    def testScenario1(self):
+        tr = Test.AddTestRun('Description of this test scenario')
+
+        # Start processes
+        tr.Processes.Default.StartBefore(self._server)
+        tr.Processes.Default.StartBefore(self._ts)
+
+        # Execute test command
+        # Option 1: curl command
+        tr.MakeCurlCommand(f"-vs --http1.1 http://127.0.0.1:{self._ts.Variables.port}/path", ts=self._ts)
+
+        # Option 2: custom command
+        # tr.Processes.Default.Command = "your_command_here"
+
+        # Option 3: verifier client for replay tests
+        # tr.AddVerifierClientProcess("client-name", "replay/file.replay.yaml",
+        #                           http_ports=[self._ts.Variables.port])
+
+        # Set expectations
+        tr.Processes.Default.ReturnCode = 0
+        tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+            'expected_output', 'Description of what this validates'
+        )
+        # Optionally compare output to a gold file.
+        # tr.Processes.Default.Streams.stderr = "gold/expected_stderr.gold"
+        tr.Processes.Default.TimeOut = 5
+
+        # Keep processes running for subsequent tests
+        tr.StillRunningAfter = self._server
+        tr.StillRunningAfter = self._ts
+
+# Execute the test
+YourTestClass().run()
+```
+
+Key Framework Objects and Methods
+
+Test Configuration
+- `Test.Summary`: Brief test description
+- `Test.ContinueOnFail`: Whether to continue after failures
+- `Test.SkipUnless()`: Conditional test execution
+- `Test.AddTestRun()`: Create new test run. Each test contains one or more of these.
+
+Process Creation
+- `tr.MakeATSProcess` or `Test.MakeATSProcess("name")`: Create an ATS instance for a test run or a global one.
+- `tr.MakeOriginServer("name")` or `Test.MakeOriginServer("name")`: Create an origin server for a test run or a global one.
+- `tr.AddVerifierServerProcess` or `Test.MakeVerifierServerProcess("name", "replay_file")`: Create replay-based server
+- Note that every process, except for the Default process for each TestRun, takes a name and the name has to be unique across all Process names in the test.py file.
+
+Proxy Verifier Client and Server
+- `tr.MakeoriginServer` is the legacy server type. It just sets up a server. Typically client HTTP traffic is generated using curl. New tests should use `AddVerifierServerProcess`
+- `tr.AddVerifierServerProcess` is paired with `tr.AddVerifierClientProcess` which both use the same external replay config yaml file. These two processes then exchange traffic to test ATS per the replay yaml file that has verification rules.
+- For proxy-verifier documentation, see: https://github.com/yahoo/proxy-verifier
+
+Here's an example for how the server can be configured:
+
+```python
+   def _configure_server(self, tr: 'TestRun'):
+        """Configure the server.
+
+        :param tr: The TestRun object to associate the server process with.
+        """
+        server = tr.AddVerifierServerProcess(f"server_{Test_ip_allow.server_counter}", self.replay_file)
+        Test_ip_allow.server_counter += 1
+        self._server = server
+```
+
+Here's an example of how the client is configured:
+
+```python
+        tr.Processes.Default.StartBefore(self._server)
+        tr.Processes.Default.StartBefore(self._ts)
+
+        tr.AddVerifierClientProcess(
+            f'client-{Test_ip_allow.client_counter}',
+            self.replay_file,
+            http_ports=[self._ts.Variables.proxy_protocol_port],
+            https_ports=[self._ts.Variables.ssl_port],
+            http3_ports=[self._ts.Variables.ssl_port],
+            keys=self.replay_keys)
+```
+
+ATS Configuration
+- `ts.Disk.records_config.update`: Basic ATS configuration
+- `ts.Disk.remap_config.AddLine()`: Add a remap rule.
+- `ts.Disk.remap_config.AddLines()`: Add multiple remap rules.
+- `ts.Variables.port`, `ts.Variables.ssl_port`: Access ATS HTTP or HTTPS port
+
+ATS HTTPS Configuration
+Many tests require testing HTTPS. This requires some specific configuration:
+- `ts.addDefaultSSLFiles` Copy the default SSL certs for ATS to use.
+- `ts.Disk.ssl_multicert_config.AddLine("dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key")` configure ATS to use the certs
+
+Also for HTTP, add these configurations to the records_config.update:
+
+```python
+"proxy.config.ssl.server.cert.path": f"{self.ts.Variables.SSLDir}",
+"proxy.config.ssl.server.private_key.path": f"{self.ts.Variables.SSLDir}",
+```
+
+Plugin testing considerations:
+Some tests verify plugin behavior. Follow these guidelines when testing a plugin:
+- `ts.Disk.plugin_config.AddLine()`: Configure plugins. This must be done for any plugin under test.
+- Add `Test.SkipUnless(Condition.PluginExists('plugin_name.so'))` at the top of the test to only run if the plugin is installed.
+
+Traffic Generation
+- `tr.Processes.Default.Command`: Set custom command. Sometimes a test has an adhoc Python script to generate traffic, for example.
+- `tr.MakeCurlCommand()`: Execute curl command. This sets tr.Processes.Default.Command to run a curl command.
+- `tr.AddVerifierClientProcess()`: This also sets tr.Processes.Default.Command to use the Proxy Verifier replay client to generate traffic. This takes, among other parameters, the name of a replay file.
+- `tr.Processes.Default.StartBefore()`: Start process before the client starts. This must be done for ats and all servers before the client starts. Although, if there are global servers, they can only be started once by the first Default process of the first TestRun.
+
+Validation
+- `Testers.ContainsExpression(pattern, description)`: Validate output contains pattern. Generally += these.
+- `tr.Processes.Default.ReturnCode`: Expected exit code. By default it is 0, but certain negative tests should expect 1.
+- `tr.Processes.Default.Streams.all`: Stream validation
+- `tr.Processes.Default.TimeOut`: Test timeout
+- `tr.StillRunningAfter`: Ensure the server is still running after the client finishes.
+- For VerifierClient and VerifierServer, much validation is done in the replay files themselves. The test.py should add output verification that each transaction happened as expected.
+
+Here's an example Verifier replay file:
+
+```yaml
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+sessions:
+
+- transactions:
+
+  - client-request:
+      method: GET
+      url: /
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, fqdn1 ]
+        - [ uuid, 1 ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Length, { value: 19, as: equal } ]
+        - [ Cache-Control, { value: no-cache, as: equal } ]
+        - [ Content-Type, { value: text/plain, as: equal } ]
+        - [ Server, { value: ATS, as: contains } ]
+      content:
+        encoding: plain
+        data: |
+          small body content
+        verify: { as: equal }
+
+  - client-request:
+      method: GET
+      url: /path
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, fqdn1 ]
+        - [ uuid, 2 ]
+
+    proxy-response:
+      status: 404
+      headers:
+        fields:
+        - [ Cache-Control, { value: no-store, as: equal } ]
+        - [ Content-Type, { value: text/html, as: equal } ]
+        - [ Server, { value: ATS, as: contains } ]
+      content:
+        encoding: plain
+        data: Error
+        verify: { as: contains }
+```
+
+Replay Yaml Notes:
+- Each transaction will have a client-request and a server-response which each generate the HTTP request and response, respectively.
+- Each transaction's client-request has a uuid header whose value uniquely identifies the transaction.
+- proxy-request and proxy-response nodes do not generate traffic but rather verify content. See their value: and as: content above.
+- The proxy-response status: node verifies the status. This is generally important for verifying a 200 or some other HTTP response from ATS.
+
+Best Practices:
+- **Class Organization**: Use classes to group related test scenarios
+- **Separation of Concerns**: Separate server setup, ATS setup, and test execution as separate functions in the class.
+- **Descriptive Names**: Use clear, descriptive names for test runs and processes. Pass a descriptive name to `tr.AddTestRun('<concise test run description>')`
+- **Documentation**: Include docstrings explaining test purpose and setup as well as type hints.
+- **Gold Files**: Use gold files for complex expected outputs in subdirectories. These can be slow, so prefer ContainsExpression/ExcludesExpressions.
+- **Debug Configuration**: Enable relevant debug tags for troubleshooting.
+- **Cache IO**: if testing the ATS cache, one transaction has to populate the cache. If using VerifierClient, put a `delay: 100ms` in the client-request for the following transaction to make a 100ms delay for the cache to finish IO.
+
+
+When generating autests, follow these patterns and adapt the template to the specific testing scenario while maintaining the declarative, configuration-driven approach that characterizes the autest framework.
