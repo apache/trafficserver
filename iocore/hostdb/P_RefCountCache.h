@@ -611,7 +611,7 @@ LoadRefCountCacheFromPath(RefCountCache<CacheEntryType> &cache, const std::strin
 
     CacheEntryType *newItem = load_func((char *)&buf, tmpValue.size);
     if (newItem != nullptr) {
-      cache.put(tmpValue.key, newItem, tmpValue.size - sizeof(CacheEntryType));
+      cache.put(tmpValue.key, newItem, tmpValue.size - sizeof(CacheEntryType), tmpValue.expiry_time);
     }
   };
 
