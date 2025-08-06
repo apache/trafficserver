@@ -1,5 +1,5 @@
 trace_peer0.log:+++++++++ Incoming Request +++++++++
-trace_peer0.log:GET http://ts_upstream0:UP_PORT0/obj0 HTTP/1.1
+trace_peer0.log:GET http://``/obj0 HTTP/1.1
 result->result: ParentResultType::SPECIFIED Chosen parent: ts_peer3
 trace_peer0.log:+++++++++ Proxy's Request +++++++++
 trace_peer0.log:GET http://ts_upstream0:UP_PORT0/obj0 HTTP/1.1
@@ -26,7 +26,7 @@ trace_peer0.log:HTTP/1.1 200 OK
 trace_peer0.log:+++++++++ Proxy's Response 2 +++++++++
 trace_peer0.log:HTTP/1.1 200 OK
 trace_peer0.log:+++++++++ Incoming Request +++++++++
-trace_peer0.log:GET http://ts_upstream0:UP_PORT0/obj8 HTTP/1.1
+trace_peer0.log:GET http://``/obj8 HTTP/1.1
 result->result: ParentResultType::SPECIFIED Chosen parent: ts_peer6
 trace_peer0.log:+++++++++ Proxy's Request +++++++++
 trace_peer0.log:GET http://ts_upstream0:UP_PORT0/obj8 HTTP/1.1
@@ -39,7 +39,7 @@ trace_peer0.log:HTTP/1.1 200 OK
 trace_peer0.log:+++++++++ Proxy's Response 2 +++++++++
 trace_peer0.log:HTTP/1.1 200 OK
 trace_peer0.log:+++++++++ Incoming Request +++++++++
-trace_peer0.log:GET http://ts_upstream0:UP_PORT0/obj0 HTTP/1.1
+trace_peer0.log:GET http://``/obj0 HTTP/1.1
 result->result: ParentResultType::SPECIFIED Chosen parent: ts_peer3
 trace_peer0.log:+++++++++ Proxy's Request +++++++++
 trace_peer0.log:GET http://ts_upstream0:UP_PORT0/obj0 HTTP/1.1
@@ -61,7 +61,7 @@ trace_peer0.log:HTTP/1.1 200 OK
 trace_peer0.log:+++++++++ Proxy's Response 2 +++++++++
 trace_peer0.log:HTTP/1.1 200 OK
 trace_peer0.log:+++++++++ Incoming Request +++++++++
-trace_peer0.log:GET http://ts_upstream0:UP_PORT0/obj8 HTTP/1.1
+trace_peer0.log:GET http://``/obj8 HTTP/1.1
 result->result: ParentResultType::SPECIFIED Chosen parent: ts_peer6
 trace_peer0.log:+++++++++ Proxy's Request +++++++++
 trace_peer0.log:GET http://ts_upstream0:UP_PORT0/obj8 HTTP/1.1
@@ -74,7 +74,7 @@ trace_peer0.log:HTTP/1.1 200 OK
 trace_peer0.log:+++++++++ Proxy's Response 2 +++++++++
 trace_peer0.log:HTTP/1.1 200 OK
 trace_peer1.log:+++++++++ Incoming Request +++++++++
-trace_peer1.log:GET http://ts_upstream0:UP_PORT0/obj1 HTTP/1.1
+trace_peer1.log:GET http://``/obj1 HTTP/1.1
 result->result: ParentResultType::SPECIFIED Chosen parent: ts_peer5
 trace_peer1.log:+++++++++ Proxy's Request +++++++++
 trace_peer1.log:GET http://ts_upstream0:UP_PORT0/obj1 HTTP/1.1
@@ -87,7 +87,7 @@ trace_peer1.log:HTTP/1.1 200 OK
 trace_peer1.log:+++++++++ Proxy's Response 2 +++++++++
 trace_peer1.log:HTTP/1.1 200 OK
 trace_peer1.log:+++++++++ Incoming Request +++++++++
-trace_peer1.log:GET http://ts_upstream0:UP_PORT0/obj9 HTTP/1.1
+trace_peer1.log:GET http://``/obj9 HTTP/1.1
 result->result: ParentResultType::SPECIFIED Chosen parent: ts_peer7
 trace_peer1.log:+++++++++ Proxy's Request +++++++++
 trace_peer1.log:GET http://ts_upstream0:UP_PORT0/obj9 HTTP/1.1
@@ -114,7 +114,7 @@ trace_peer1.log:HTTP/1.1 200 OK
 trace_peer1.log:+++++++++ Proxy's Response 2 +++++++++
 trace_peer1.log:HTTP/1.1 200 OK
 trace_peer1.log:+++++++++ Incoming Request +++++++++
-trace_peer1.log:GET http://ts_upstream0:UP_PORT0/obj3 HTTP/1.1
+trace_peer1.log:GET http://``/obj3 HTTP/1.1
 result->result: ParentResultType::SPECIFIED Chosen parent: ts_peer2
 trace_peer1.log:+++++++++ Proxy's Request +++++++++
 trace_peer1.log:GET http://ts_upstream0:UP_PORT0/obj3 HTTP/1.1
@@ -136,7 +136,7 @@ trace_peer1.log:HTTP/1.1 200 OK
 trace_peer1.log:+++++++++ Proxy's Response 2 +++++++++
 trace_peer1.log:HTTP/1.1 200 OK
 trace_peer1.log:+++++++++ Incoming Request +++++++++
-trace_peer1.log:GET http://ts_upstream0:UP_PORT0/obj11 HTTP/1.1
+trace_peer1.log:GET http://``/obj11 HTTP/1.1
 result->result: ParentResultType::SPECIFIED Chosen parent: ts_peer7
 trace_peer1.log:+++++++++ Proxy's Request +++++++++
 trace_peer1.log:GET http://ts_upstream0:UP_PORT0/obj11 HTTP/1.1
@@ -149,7 +149,7 @@ trace_peer1.log:HTTP/1.1 200 OK
 trace_peer1.log:+++++++++ Proxy's Response 2 +++++++++
 trace_peer1.log:HTTP/1.1 200 OK
 trace_peer2.log:+++++++++ Incoming Request +++++++++
-trace_peer2.log:GET http://ts_upstream0:UP_PORT0/obj2 HTTP/1.1
+trace_peer2.log:GET http://``/obj2 HTTP/1.1
 result->result: ParentResultType::SPECIFIED Chosen parent: ts_peer7
 trace_peer2.log:+++++++++ Proxy's Request +++++++++
 trace_peer2.log:GET http://ts_upstream0:UP_PORT0/obj2 HTTP/1.1
@@ -218,7 +218,7 @@ trace_peer2.log:HTTP/1.1 200 OK
 trace_peer2.log:+++++++++ Proxy's Response 2 +++++++++
 trace_peer2.log:HTTP/1.1 200 OK
 trace_peer2.log:+++++++++ Incoming Request +++++++++
-trace_peer2.log:GET http://ts_upstream0:UP_PORT0/obj10 HTTP/1.1
+trace_peer2.log:GET http://``/obj10 HTTP/1.1
 result->result: ParentResultType::SPECIFIED Chosen parent: ts_peer1
 trace_peer2.log:+++++++++ Proxy's Request +++++++++
 trace_peer2.log:GET http://ts_upstream0:UP_PORT0/obj10 HTTP/1.1
@@ -272,7 +272,7 @@ trace_peer2.log:HTTP/1.1 200 OK
 trace_peer2.log:+++++++++ Proxy's Response 2 +++++++++
 trace_peer2.log:HTTP/1.1 200 OK
 trace_peer2.log:+++++++++ Incoming Request +++++++++
-trace_peer2.log:GET http://ts_upstream0:UP_PORT0/obj6 HTTP/1.1
+trace_peer2.log:GET http://``/obj6 HTTP/1.1
 trace_peer2.log:[alts] ---- alternate #1 (Q = 1) has these request/response hdrs:
 trace_peer2.log:GET http://ts_upstream0:UP_PORT0/obj6 HTTP/1.1
 trace_peer2.log:HTTP/1.1 200 OK
@@ -290,7 +290,7 @@ trace_peer2.log:HTTP/1.1 200 OK
 trace_peer2.log:+++++++++ Proxy's Response 2 +++++++++
 trace_peer2.log:HTTP/1.1 200 OK
 trace_peer2.log:+++++++++ Incoming Request +++++++++
-trace_peer2.log:GET http://ts_upstream0:UP_PORT0/obj14 HTTP/1.1
+trace_peer2.log:GET http://``/obj14 HTTP/1.1
 result->result: ParentResultType::SPECIFIED Chosen parent: ts_peer5
 trace_peer2.log:+++++++++ Proxy's Request +++++++++
 trace_peer2.log:GET http://ts_upstream0:UP_PORT0/obj14 HTTP/1.1
@@ -317,7 +317,7 @@ trace_peer3.log:HTTP/1.1 200 OK
 trace_peer3.log:+++++++++ Proxy's Response 2 +++++++++
 trace_peer3.log:HTTP/1.1 200 OK
 trace_peer3.log:+++++++++ Incoming Request +++++++++
-trace_peer3.log:GET http://ts_upstream0:UP_PORT0/obj3 HTTP/1.1
+trace_peer3.log:GET http://``/obj3 HTTP/1.1
 result->result: ParentResultType::SPECIFIED Chosen parent: ts_peer2
 trace_peer3.log:+++++++++ Proxy's Request +++++++++
 trace_peer3.log:GET http://ts_upstream0:UP_PORT0/obj3 HTTP/1.1
@@ -330,7 +330,7 @@ trace_peer3.log:HTTP/1.1 200 OK
 trace_peer3.log:+++++++++ Proxy's Response 2 +++++++++
 trace_peer3.log:HTTP/1.1 200 OK
 trace_peer3.log:+++++++++ Incoming Request +++++++++
-trace_peer3.log:GET http://ts_upstream0:UP_PORT0/obj11 HTTP/1.1
+trace_peer3.log:GET http://``/obj11 HTTP/1.1
 result->result: ParentResultType::SPECIFIED Chosen parent: ts_peer7
 trace_peer3.log:+++++++++ Proxy's Request +++++++++
 trace_peer3.log:GET http://ts_upstream0:UP_PORT0/obj11 HTTP/1.1
@@ -380,7 +380,7 @@ trace_peer3.log:HTTP/1.1 200 OK
 trace_peer3.log:+++++++++ Proxy's Response 2 +++++++++
 trace_peer3.log:HTTP/1.1 200 OK
 trace_peer3.log:+++++++++ Incoming Request +++++++++
-trace_peer3.log:GET http://ts_upstream0:UP_PORT0/obj1 HTTP/1.1
+trace_peer3.log:GET http://``/obj1 HTTP/1.1
 result->result: ParentResultType::SPECIFIED Chosen parent: ts_peer5
 trace_peer3.log:+++++++++ Proxy's Request +++++++++
 trace_peer3.log:GET http://ts_upstream0:UP_PORT0/obj1 HTTP/1.1
@@ -393,7 +393,7 @@ trace_peer3.log:HTTP/1.1 200 OK
 trace_peer3.log:+++++++++ Proxy's Response 2 +++++++++
 trace_peer3.log:HTTP/1.1 200 OK
 trace_peer3.log:+++++++++ Incoming Request +++++++++
-trace_peer3.log:GET http://ts_upstream0:UP_PORT0/obj9 HTTP/1.1
+trace_peer3.log:GET http://``/obj9 HTTP/1.1
 result->result: ParentResultType::SPECIFIED Chosen parent: ts_peer7
 trace_peer3.log:+++++++++ Proxy's Request +++++++++
 trace_peer3.log:GET http://ts_upstream0:UP_PORT0/obj9 HTTP/1.1
@@ -424,7 +424,7 @@ trace_peer3.log:HTTP/1.1 200 OK
 trace_peer3.log:+++++++++ Proxy's Response 2 +++++++++
 trace_peer3.log:HTTP/1.1 200 OK
 trace_peer4.log:+++++++++ Incoming Request +++++++++
-trace_peer4.log:GET http://ts_upstream0:UP_PORT0/obj4 HTTP/1.1
+trace_peer4.log:GET http://``/obj4 HTTP/1.1
 result->result: ParentResultType::SPECIFIED Chosen parent: ts_peer2
 trace_peer4.log:+++++++++ Proxy's Request +++++++++
 trace_peer4.log:GET http://ts_upstream0:UP_PORT0/obj4 HTTP/1.1
@@ -437,7 +437,7 @@ trace_peer4.log:HTTP/1.1 200 OK
 trace_peer4.log:+++++++++ Proxy's Response 2 +++++++++
 trace_peer4.log:HTTP/1.1 200 OK
 trace_peer4.log:+++++++++ Incoming Request +++++++++
-trace_peer4.log:GET http://ts_upstream0:UP_PORT0/obj12 HTTP/1.1
+trace_peer4.log:GET http://``/obj12 HTTP/1.1
 result->result: ParentResultType::SPECIFIED Chosen parent: ts_peer2
 trace_peer4.log:+++++++++ Proxy's Request +++++++++
 trace_peer4.log:GET http://ts_upstream0:UP_PORT0/obj12 HTTP/1.1
@@ -450,7 +450,7 @@ trace_peer4.log:HTTP/1.1 200 OK
 trace_peer4.log:+++++++++ Proxy's Response 2 +++++++++
 trace_peer4.log:HTTP/1.1 200 OK
 trace_peer4.log:+++++++++ Incoming Request +++++++++
-trace_peer4.log:GET http://ts_upstream0:UP_PORT0/obj4 HTTP/1.1
+trace_peer4.log:GET http://``/obj4 HTTP/1.1
 result->result: ParentResultType::SPECIFIED Chosen parent: ts_peer2
 trace_peer4.log:+++++++++ Proxy's Request +++++++++
 trace_peer4.log:GET http://ts_upstream0:UP_PORT0/obj4 HTTP/1.1
@@ -463,7 +463,7 @@ trace_peer4.log:HTTP/1.1 200 OK
 trace_peer4.log:+++++++++ Proxy's Response 2 +++++++++
 trace_peer4.log:HTTP/1.1 200 OK
 trace_peer4.log:+++++++++ Incoming Request +++++++++
-trace_peer4.log:GET http://ts_upstream0:UP_PORT0/obj12 HTTP/1.1
+trace_peer4.log:GET http://``/obj12 HTTP/1.1
 result->result: ParentResultType::SPECIFIED Chosen parent: ts_peer2
 trace_peer4.log:+++++++++ Proxy's Request +++++++++
 trace_peer4.log:GET http://ts_upstream0:UP_PORT0/obj12 HTTP/1.1
@@ -490,7 +490,7 @@ trace_peer5.log:HTTP/1.1 200 OK
 trace_peer5.log:+++++++++ Proxy's Response 2 +++++++++
 trace_peer5.log:HTTP/1.1 200 OK
 trace_peer5.log:+++++++++ Incoming Request +++++++++
-trace_peer5.log:GET http://ts_upstream0:UP_PORT0/obj5 HTTP/1.1
+trace_peer5.log:GET http://``/obj5 HTTP/1.1
 result->result: ParentResultType::SPECIFIED Chosen parent: ts_peer2
 trace_peer5.log:+++++++++ Proxy's Request +++++++++
 trace_peer5.log:GET http://ts_upstream0:UP_PORT0/obj5 HTTP/1.1
@@ -503,7 +503,7 @@ trace_peer5.log:HTTP/1.1 200 OK
 trace_peer5.log:+++++++++ Proxy's Response 2 +++++++++
 trace_peer5.log:HTTP/1.1 200 OK
 trace_peer5.log:+++++++++ Incoming Request +++++++++
-trace_peer5.log:GET http://ts_upstream0:UP_PORT0/obj13 HTTP/1.1
+trace_peer5.log:GET http://``/obj13 HTTP/1.1
 result->result: ParentResultType::SPECIFIED Chosen parent: ts_peer3
 trace_peer5.log:+++++++++ Proxy's Request +++++++++
 trace_peer5.log:GET http://ts_upstream0:UP_PORT0/obj13 HTTP/1.1
@@ -539,7 +539,7 @@ trace_peer5.log:HTTP/1.1 200 OK
 trace_peer5.log:+++++++++ Proxy's Response 2 +++++++++
 trace_peer5.log:HTTP/1.1 200 OK
 trace_peer5.log:+++++++++ Incoming Request +++++++++
-trace_peer5.log:GET http://ts_upstream0:UP_PORT0/obj7 HTTP/1.1
+trace_peer5.log:GET http://``/obj7 HTTP/1.1
 result->result: ParentResultType::SPECIFIED Chosen parent: ts_peer0
 trace_peer5.log:+++++++++ Proxy's Request +++++++++
 trace_peer5.log:GET http://ts_upstream0:UP_PORT0/obj7 HTTP/1.1
@@ -561,7 +561,7 @@ trace_peer5.log:HTTP/1.1 200 OK
 trace_peer5.log:+++++++++ Proxy's Response 2 +++++++++
 trace_peer5.log:HTTP/1.1 200 OK
 trace_peer5.log:+++++++++ Incoming Request +++++++++
-trace_peer5.log:GET http://ts_upstream0:UP_PORT0/obj15 HTTP/1.1
+trace_peer5.log:GET http://``/obj15 HTTP/1.1
 result->result: ParentResultType::SPECIFIED Chosen parent: ts_peer3
 trace_peer5.log:+++++++++ Proxy's Request +++++++++
 trace_peer5.log:GET http://ts_upstream0:UP_PORT0/obj15 HTTP/1.1
@@ -574,7 +574,7 @@ trace_peer5.log:HTTP/1.1 200 OK
 trace_peer5.log:+++++++++ Proxy's Response 2 +++++++++
 trace_peer5.log:HTTP/1.1 200 OK
 trace_peer6.log:+++++++++ Incoming Request +++++++++
-trace_peer6.log:GET http://ts_upstream0:UP_PORT0/obj6 HTTP/1.1
+trace_peer6.log:GET http://``/obj6 HTTP/1.1
 result->result: ParentResultType::SPECIFIED Chosen parent: ts_peer2
 trace_peer6.log:+++++++++ Proxy's Request +++++++++
 trace_peer6.log:GET http://ts_upstream0:UP_PORT0/obj6 HTTP/1.1
@@ -601,7 +601,7 @@ trace_peer6.log:HTTP/1.1 200 OK
 trace_peer6.log:+++++++++ Proxy's Response 2 +++++++++
 trace_peer6.log:HTTP/1.1 200 OK
 trace_peer6.log:+++++++++ Incoming Request +++++++++
-trace_peer6.log:GET http://ts_upstream0:UP_PORT0/obj14 HTTP/1.1
+trace_peer6.log:GET http://``/obj14 HTTP/1.1
 result->result: ParentResultType::SPECIFIED Chosen parent: ts_peer5
 trace_peer6.log:+++++++++ Proxy's Request +++++++++
 trace_peer6.log:GET http://ts_upstream0:UP_PORT0/obj14 HTTP/1.1
@@ -614,7 +614,7 @@ trace_peer6.log:HTTP/1.1 200 OK
 trace_peer6.log:+++++++++ Proxy's Response 2 +++++++++
 trace_peer6.log:HTTP/1.1 200 OK
 trace_peer6.log:+++++++++ Incoming Request +++++++++
-trace_peer6.log:GET http://ts_upstream0:UP_PORT0/obj2 HTTP/1.1
+trace_peer6.log:GET http://``/obj2 HTTP/1.1
 result->result: ParentResultType::SPECIFIED Chosen parent: ts_peer7
 trace_peer6.log:+++++++++ Proxy's Request +++++++++
 trace_peer6.log:GET http://ts_upstream0:UP_PORT0/obj2 HTTP/1.1
@@ -636,7 +636,7 @@ trace_peer6.log:HTTP/1.1 200 OK
 trace_peer6.log:+++++++++ Proxy's Response 2 +++++++++
 trace_peer6.log:HTTP/1.1 200 OK
 trace_peer6.log:+++++++++ Incoming Request +++++++++
-trace_peer6.log:GET http://ts_upstream0:UP_PORT0/obj10 HTTP/1.1
+trace_peer6.log:GET http://``/obj10 HTTP/1.1
 result->result: ParentResultType::SPECIFIED Chosen parent: ts_peer1
 trace_peer6.log:+++++++++ Proxy's Request +++++++++
 trace_peer6.log:GET http://ts_upstream0:UP_PORT0/obj10 HTTP/1.1
@@ -663,7 +663,7 @@ trace_peer7.log:HTTP/1.1 200 OK
 trace_peer7.log:+++++++++ Proxy's Response 2 +++++++++
 trace_peer7.log:HTTP/1.1 200 OK
 trace_peer7.log:+++++++++ Incoming Request +++++++++
-trace_peer7.log:GET http://ts_upstream0:UP_PORT0/obj7 HTTP/1.1
+trace_peer7.log:GET http://``/obj7 HTTP/1.1
 result->result: ParentResultType::SPECIFIED Chosen parent: ts_peer0
 trace_peer7.log:+++++++++ Proxy's Request +++++++++
 trace_peer7.log:GET http://ts_upstream0:UP_PORT0/obj7 HTTP/1.1
@@ -704,7 +704,7 @@ trace_peer7.log:HTTP/1.1 200 OK
 trace_peer7.log:+++++++++ Proxy's Response 2 +++++++++
 trace_peer7.log:HTTP/1.1 200 OK
 trace_peer7.log:+++++++++ Incoming Request +++++++++
-trace_peer7.log:GET http://ts_upstream0:UP_PORT0/obj15 HTTP/1.1
+trace_peer7.log:GET http://``/obj15 HTTP/1.1
 result->result: ParentResultType::SPECIFIED Chosen parent: ts_peer3
 trace_peer7.log:+++++++++ Proxy's Request +++++++++
 trace_peer7.log:GET http://ts_upstream0:UP_PORT0/obj15 HTTP/1.1
@@ -726,7 +726,7 @@ trace_peer7.log:HTTP/1.1 200 OK
 trace_peer7.log:+++++++++ Proxy's Response 2 +++++++++
 trace_peer7.log:HTTP/1.1 200 OK
 trace_peer7.log:+++++++++ Incoming Request +++++++++
-trace_peer7.log:GET http://ts_upstream0:UP_PORT0/obj5 HTTP/1.1
+trace_peer7.log:GET http://``/obj5 HTTP/1.1
 result->result: ParentResultType::SPECIFIED Chosen parent: ts_peer2
 trace_peer7.log:+++++++++ Proxy's Request +++++++++
 trace_peer7.log:GET http://ts_upstream0:UP_PORT0/obj5 HTTP/1.1
@@ -757,7 +757,7 @@ trace_peer7.log:HTTP/1.1 200 OK
 trace_peer7.log:+++++++++ Proxy's Response 2 +++++++++
 trace_peer7.log:HTTP/1.1 200 OK
 trace_peer7.log:+++++++++ Incoming Request +++++++++
-trace_peer7.log:GET http://ts_upstream0:UP_PORT0/obj13 HTTP/1.1
+trace_peer7.log:GET http://``/obj13 HTTP/1.1
 result->result: ParentResultType::SPECIFIED Chosen parent: ts_peer3
 trace_peer7.log:+++++++++ Proxy's Request +++++++++
 trace_peer7.log:GET http://ts_upstream0:UP_PORT0/obj13 HTTP/1.1
