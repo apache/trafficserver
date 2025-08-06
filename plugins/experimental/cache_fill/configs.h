@@ -84,6 +84,7 @@ public:
 private:
   TSCont      _cont = nullptr;
   list_type   _rules;
-  bool        _allow_304 = false;
+  bool        _allow_304      = false;
+  bool        _range_req_only = false;
   std::string _log_file;
 };

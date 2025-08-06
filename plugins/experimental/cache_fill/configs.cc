@@ -42,19 +42,19 @@ bool
 BgFetchConfig::parseOptions(int argc, const char *argv[])
 {
   static const struct option longopt[] = {
-    {const_cast<char *>("log"),       required_argument, nullptr, 'l' },
-    {const_cast<char *>("config"),    required_argument, nullptr, 'c' },
-    {const_cast<char *>("allow-304"), no_argument,       nullptr, 'a' },
-    {nullptr,                         no_argument,       nullptr, '\0'}
+    {const_cast<char *>("log"),            required_argument, nullptr, 'l' },
+    {const_cast<char *>("config"),         required_argument, nullptr, 'c' },
+    {const_cast<char *>("allow-304"),      no_argument,       nullptr, 'a' },
+    {const_cast<char *>("range-req-only"), no_argument,       nullptr, 'r' },
+    {nullptr,                              no_argument,       nullptr, '\0'},
   };
 
   while (true) {
-    int opt = getopt_long(argc, const_cast<char *const *>(argv), "lc", longopt, nullptr);
+    int opt = getopt_long(argc, const_cast<char *const *>(argv), "", longopt, nullptr);
 
     if (opt == -1) {
       break;
     }
-
     switch (opt) {
     case 'l':
       Dbg(dbg_ctl, "option: log file specified: %s", optarg);
@@ -70,6 +70,10 @@ BgFetchConfig::parseOptions(int argc, const char *argv[])
     case 'a':
       Dbg(dbg_ctl, "option: --allow-304 set");
       _allow_304 = true;
+      break;
+    case 'r':
+      Dbg(dbg_ctl, "option: --range-req-only set");
+      _range_req_only = true;
       break;
     default:
       TSError("[%s] invalid plugin option: %c", PLUGIN_NAME, opt);
@@ -198,8 +202,25 @@ BgFetchConfig::bgFetchAllowed(TSHttpTxn txnp) const
     return false;
   }
 
-  bool allow_bg_fetch = true;
+  if (_range_req_only) {
+    TSMBuffer bufp;
+    TSMLoc    hdr_loc;
+    if (TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc) == TS_SUCCESS) {
+      bool hasRangeHdrs = false;
+      for (auto const &header : FILTER_HEADERS) {
+        if (TSMimeHdrFieldFind(bufp, hdr_loc, header.data(), header.size() == TS_SUCCESS)) {
+          hasRangeHdrs = true;
+          break;
+        }
+      }
+      if (!hasRangeHdrs) {
+        Dbg(dbg_ctl, "_range_req_only=true; This transaction is not a range request");
+        return false;
+      }
+    }
+  }
 
+  bool allow_bg_fetch = true;
   // We could do this recursively, but following the linked list is probably more efficient.
   for (auto const &r : _rules) {
     if (r.check_field_configured(txnp)) {

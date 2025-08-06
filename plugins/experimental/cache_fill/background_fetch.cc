@@ -45,17 +45,6 @@ namespace cache_fill_ns
 DbgCtl dbg_ctl{PLUGIN_NAME};
 }
 
-// This is the list of all headers that must be removed when we make the actual background
-// fetch request for range requests.
-static const std::array<const std::string_view, 6> FILTER_HEADERS{
-  {{TS_MIME_FIELD_RANGE, static_cast<size_t>(TS_MIME_LEN_RANGE)},
-   {TS_MIME_FIELD_IF_MATCH, static_cast<size_t>(TS_MIME_LEN_IF_MATCH)},
-   {TS_MIME_FIELD_IF_MODIFIED_SINCE, static_cast<size_t>(TS_MIME_LEN_IF_MODIFIED_SINCE)},
-   {TS_MIME_FIELD_IF_NONE_MATCH, static_cast<size_t>(TS_MIME_LEN_IF_NONE_MATCH)},
-   {TS_MIME_FIELD_IF_RANGE, static_cast<size_t>(TS_MIME_LEN_IF_RANGE)},
-   {TS_MIME_FIELD_IF_UNMODIFIED_SINCE, static_cast<size_t>(TS_MIME_LEN_IF_UNMODIFIED_SINCE)}}
-};
-
 ///////////////////////////////////////////////////////////////////////////
 // Remove a header (fully) from an TSMLoc / TSMBuffer. Return the number
 // of fields (header values) we removed.
