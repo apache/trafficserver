@@ -40,13 +40,35 @@ QUICCertConfig::startup()
 void
 QUICCertConfig::reconfigure()
 {
+  bool                     retStatus = true;
   SSLConfig::scoped_config params;
   SSLCertLookup           *lookup = new SSLCertLookup();
 
   QUICMultiCertConfigLoader loader(params);
-  loader.load(lookup);
+  auto                      errata = loader.load(lookup);
+  if (!lookup->is_valid || (errata.has_severity() && errata.severity() >= ERRATA_ERROR)) {
+    retStatus = false;
+  }
 
-  _config_id = configProcessor.set(_config_id, lookup);
+  if (retStatus || _config_id == 0) {
+    _config_id = configProcessor.set(_config_id, lookup);
+  } else {
+    delete lookup;
+  }
+
+  if (!errata.empty()) {
+    errata.assign_annotation_glue_text("\n  ");
+    errata.assign_severity_glue_text(" -> \n  ");
+    bwprint(ts::bw_dbg, "\n{}", errata);
+  } else {
+    ts::bw_dbg = "";
+  }
+
+  if (retStatus) {
+    Note("(quic) %s finished loading%s", params->configFilePath, ts::bw_dbg.c_str());
+  } else {
+    Error("(quic) %s failed to load%s", params->configFilePath, ts::bw_dbg.c_str());
+  }
 }
 
 SSLCertLookup *

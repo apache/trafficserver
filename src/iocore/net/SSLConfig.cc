@@ -800,9 +800,9 @@ SSLCertificateConfig::reconfigure()
   }
 
   if (retStatus) {
-    Note("%s finished loading%s", params->configFilePath, ts::bw_dbg.c_str());
+    Note("(ssl) %s finished loading%s", params->configFilePath, ts::bw_dbg.c_str());
   } else {
-    Error("%s failed to load%s", params->configFilePath, ts::bw_dbg.c_str());
+    Error("(ssl) %s failed to load%s", params->configFilePath, ts::bw_dbg.c_str());
   }
 
   return retStatus;
