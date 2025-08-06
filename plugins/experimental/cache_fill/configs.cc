@@ -44,7 +44,6 @@ BgFetchConfig::parseOptions(int argc, const char *argv[])
   static const struct option longopt[] = {
     {const_cast<char *>("log"),            required_argument, nullptr, 'l' },
     {const_cast<char *>("config"),         required_argument, nullptr, 'c' },
-    {const_cast<char *>("allow-304"),      no_argument,       nullptr, 'a' },
     {const_cast<char *>("range-req-only"), no_argument,       nullptr, 'r' },
     {nullptr,                              no_argument,       nullptr, '\0'},
   };
@@ -66,10 +65,6 @@ BgFetchConfig::parseOptions(int argc, const char *argv[])
         // Error messages are written in the parser
         return false;
       }
-      break;
-    case 'a':
-      Dbg(dbg_ctl, "option: --allow-304 set");
-      _allow_304 = true;
       break;
     case 'r':
       Dbg(dbg_ctl, "option: --range-req-only set");

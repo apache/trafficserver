@@ -70,12 +70,6 @@ public:
     return _log_file;
   }
 
-  bool
-  allow304() const
-  {
-    return _allow_304;
-  }
-
   // This parses and populates the BgFetchRule linked list (_rules).
   bool readConfig(const char *file_name);
 
@@ -84,7 +78,6 @@ public:
 private:
   TSCont      _cont = nullptr;
   list_type   _rules;
-  bool        _allow_304      = false;
   bool        _range_req_only = false;
   std::string _log_file;
 };
