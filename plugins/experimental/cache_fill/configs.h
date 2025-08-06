@@ -70,6 +70,12 @@ public:
     return _log_file;
   }
 
+  static bool
+  isTrue(const char *arg)
+  {
+    return (nullptr == arg || 0 == strncasecmp("true", arg, 4) || 0 == strncasecmp("1", arg, 1) || 0 == strncasecmp("yes", arg, 3));
+  }
+
   // This parses and populates the BgFetchRule linked list (_rules).
   bool readConfig(const char *file_name);
 
@@ -78,6 +84,7 @@ public:
 private:
   TSCont      _cont = nullptr;
   list_type   _rules;
-  bool        _range_req_only = false;
+  bool        _range_req_only  = false;
+  bool        _cache_range_req = true;
   std::string _log_file;
 };

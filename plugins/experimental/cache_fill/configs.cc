@@ -42,10 +42,11 @@ bool
 BgFetchConfig::parseOptions(int argc, const char *argv[])
 {
   static const struct option longopt[] = {
-    {const_cast<char *>("log"),            required_argument, nullptr, 'l' },
-    {const_cast<char *>("config"),         required_argument, nullptr, 'c' },
-    {const_cast<char *>("range-req-only"), no_argument,       nullptr, 'r' },
-    {nullptr,                              no_argument,       nullptr, '\0'},
+    {const_cast<char *>("log"),             required_argument, nullptr, 'l' },
+    {const_cast<char *>("config"),          required_argument, nullptr, 'c' },
+    {const_cast<char *>("range-req-only"),  optional_argument, nullptr, 'r' },
+    {const_cast<char *>("cache-range-req"), optional_argument, nullptr, 'a' },
+    {nullptr,                               no_argument,       nullptr, '\0'},
   };
 
   while (true) {
@@ -68,13 +69,22 @@ BgFetchConfig::parseOptions(int argc, const char *argv[])
       break;
     case 'r':
       Dbg(dbg_ctl, "option: --range-req-only set");
-      _range_req_only = true;
+      _range_req_only = isTrue(optarg);
+      break;
+    case 'a':
+      Dbg(dbg_ctl, "option: --cache-range-req set");
+      _cache_range_req = isTrue(optarg);
       break;
     default:
       TSError("[%s] invalid plugin option: %c", PLUGIN_NAME, opt);
       return false;
       break;
     }
+  }
+
+  if (_range_req_only && !_cache_range_req) {
+    TSError("[%s] Cannot define _range_req_only=true and _cache_range_req=false", PLUGIN_NAME);
+    return false;
   }
 
   return true;
@@ -197,7 +207,7 @@ BgFetchConfig::bgFetchAllowed(TSHttpTxn txnp) const
     return false;
   }
 
-  if (_range_req_only) {
+  if (_range_req_only || !_cache_range_req) {
     TSMBuffer bufp;
     TSMLoc    hdr_loc;
     if (TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc) == TS_SUCCESS) {
@@ -208,8 +218,12 @@ BgFetchConfig::bgFetchAllowed(TSHttpTxn txnp) const
           break;
         }
       }
-      if (!hasRangeHdrs) {
+      if (!hasRangeHdrs && _range_req_only) {
         Dbg(dbg_ctl, "_range_req_only=true; This transaction is not a range request");
+        return false;
+      }
+      if (hasRangeHdrs && !_cache_range_req) {
+        Dbg(dbg_ctl, "_cache_range_req=false; This transaction is a range request");
         return false;
       }
     }

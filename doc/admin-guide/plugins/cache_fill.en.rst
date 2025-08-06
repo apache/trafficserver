@@ -32,7 +32,7 @@ via an absolute path or via a relative path to the install dir
 
 To activate the plugin in global mode, in :file:`plugin.config`, simply add::
 
-    @plugin=cache_fill.so @pparam=<config-file>
+   cache_fill.so --config <config-file>
 
 To activate the plugin in per remap mode, in :file:`remap.config`, simply append the
 below to the specific remap line::
@@ -42,7 +42,7 @@ below to the specific remap line::
 include/exclude
 ---------------
 The plugin supports a config file that can specify exclusion or inclusion of background fetch
-based on any arbitrary header or client-ip::
+based on any arbitrary header or client-ip
 
 The contents of the config-file could be as below::
 
@@ -66,17 +66,27 @@ range-request-only
 ------------------
 When set to ``true``, this plugin will only trigger a background fetch if a range header is present.
 Range headers include ``Range``, ``If-Match``, ``If-Modified-Since``, ``If-None-Match``, ``If-Range``
-and ``If-Unmodified-Since``
+and ``If-Unmodified-Since``. By default, this is set to false.
 
 This would look like::
-    
+
     @plugin=cache_fill.so @pparam=--range-request-only
+
+cache-range-req
+---------------
+When set to ``false``. this plugin will not trigger a background fetch for range requests. By default,
+this is set to true.
+Note: you cannot set this to false and ``range-request-only`` to true.
+
+This would look like::
+
+    @plugin=cache_fill.so @pparam=--cache-range-req=false
 
 Functionality
 -------------
 
 Plugin decides to trigger a background fetch of the original (Client) request if the request/response is cacheable and cache status is TS_CACHE_LOOKUP_MISS/TS_CACHE_LOOKUP_HIT_STALE.
-This will work for range requests by making a background fetch and removing the range header.
+This will work for range requests by making a background fetch and removing the range header. To disable this feature, set ``--cache-range-req=false``
 
 Future additions
 ----------------
