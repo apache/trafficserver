@@ -20,7 +20,6 @@ validation.py
 Encapsulates shared validation utilities for use in HRW4U.
 """
 
-import inspect
 import re
 from typing import Callable, List, Optional
 from hrw4u.errors import SymbolResolutionError

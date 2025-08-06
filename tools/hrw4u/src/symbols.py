@@ -40,7 +40,8 @@ class SymbolResolver:
         "outbound.req.": (["rm-header", "set-header"], Validator.http_token(), False, {"PRE_REMAP", "REMAP", "READ_REQUEST"}),
         "outbound.resp.":
             (["rm-header", "set-header"], Validator.http_token(), False, {"PRE_REMAP", "REMAP", "READ_REQUEST", "SEND_REQUEST"}),
-        "outbound.status.reason": ("set-status-reason", Validator.range(0, 999), False, {"PRE_REMAP", "REMAP", "READ_REQUEST"}),
+        "outbound.status.reason":
+            ("set-status-reason", Validator.quoted_or_simple(), False, {"PRE_REMAP", "REMAP", "READ_REQUEST"}),
         "outbound.status": ("set-status", Validator.range(0, 999), False, {"PRE_REMAP", "REMAP", "READ_REQUEST"}),
     }
 
