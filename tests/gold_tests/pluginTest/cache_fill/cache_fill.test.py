@@ -170,13 +170,10 @@ class CacheFillTest:
 
     def setUpGlobalPlugin(self):
         ## Check global plugin ##
-        self.ts.Disk.plugin_config.AddLine('cache_fill.so --range-req-only')
+        self.ts.Disk.plugin_config.AddLine('cache_fill.so')
 
         self.ts.Disk.remap_config.AddLines(
-            [
-                'map http://www.example.com/global http://127.0.0.1:{}/global'.format(self.server.Variables.Port),
-                'map http://www.example.com/globalRange http://127.0.0.1:{}/globalRange'.format(self.server.Variables.Port)
-            ])
+            ['map http://www.example.com/global http://127.0.0.1:{}/global'.format(self.server.Variables.Port)])
 
         req = {
             "headers": "GET /global HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "\r\n",
@@ -192,55 +189,26 @@ class CacheFillTest:
         }
 
         self.server.addResponse("sessionlog.json", req, res)
-        req = {
-            "headers":
-                "GET /globalRange HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "Accept: */*" + "Range: bytes=0-4\r\n" + "\r\n",
-            "timestamp": "1469733493.993",
-            "body": ""
-        }
-        res = {
-            "headers":
-                "HTTP/1.1 200 OK\r\n" + "Cache-Control: max-age=1\r\n" + "Connection: close\r\n" +
-                'Etag: 883213f5-67f5bc2e7d528\r\n',
-            "timestamp": "1469733493.993",
-            "body": "hello hello"
-        }
-
-        self.server.addResponse("sessionlog.json", req, res)
-
-    def test_global_rangeReqOnly_CacheMiss(self):
-        # Cache miss; background fetch should fill cache
-        tr = Test.AddTestRun("Range cache miss")
-        ps = tr.Processes.Default
-        tr.MakeCurlCommand(self.curl_and_args + ' http://www.example.com/globalRange -r 0-4', ts=self.ts)
-        ps.ReturnCode = 0
-        ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected cache miss")
-        self.ts.Disk.traffic_out.Content = Testers.ExcludesExpression(
-            "_range_req_only=true; This transaction is not a range request", "expected background fetch to not trigger")
-        ps.Streams.stdout.Content += Testers.ContainsExpression("200 OK", "Expected 200 status")
-        tr.StillRunningAfter = self.ts
-
-    def test_global_rangeReqOnly_cacheHit(self):
-        # Global implementation: Cache hit-fresh from background fill
-        tr = Test.AddTestRun("Cache hit-fresh - global implementation")
-        ps = tr.Processes.Default
-        tr.MakeCurlCommand(self.curl_and_args + ' http://www.example.com/globalRange', ts=self.ts)
-        ps.ReturnCode = 0
-        ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh", "expected cache hit")
-        self.ts.Disk.traffic_out.Content = Testers.ExcludesExpression(
-            "_range_req_only=true; This transaction is not a range request", "expected background fetch to not trigger")
-        ps.Streams.stdout.Content += Testers.ContainsExpression("200 OK", "Expected 200 status")
-        tr.StillRunningAfter = self.ts
 
     def test_global_cacheMiss(self):
         # Global implementation: Cache miss; background fetch should fill cache
         tr = Test.AddTestRun("Cache miss - global implementation")
+
         ps = tr.Processes.Default
         tr.MakeCurlCommand(self.curl_and_args + ' http://www.example.com/global', ts=self.ts)
         ps.ReturnCode = 0
         ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected cache miss")
-        self.ts.Disk.traffic_out.Content = Testers.ContainsExpression(
-            "_range_req_only=true; This transaction is not a range request", "expected background fetch to not trigger")
+
+        ps.Streams.stdout.Content += Testers.ContainsExpression("200 OK", "Expected 200 status")
+        tr.StillRunningAfter = self.ts
+
+    def test_global_cacheHit(self):
+        # Global implementation: Cache hit-fresh from background fill
+        tr = Test.AddTestRun("Cache hit-fresh - global implementation")
+        ps = tr.Processes.Default
+        tr.MakeCurlCommand(self.curl_and_args + ' http://www.example.com/global', ts=self.ts)
+        ps.ReturnCode = 0
+        ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh", "expected cache hit")
         ps.Streams.stdout.Content += Testers.ContainsExpression("200 OK", "Expected 200 status")
         tr.StillRunningAfter = self.ts
 
@@ -252,9 +220,8 @@ class CacheFillTest:
         self.test_noStore_noFill()
         self.test_nostore_cacheMiss()
         self.setUpGlobalPlugin()
-        self.test_global_rangeReqOnly_CacheMiss()
-        self.test_global_rangeReqOnly_cacheHit()
         self.test_global_cacheMiss()
+        self.test_global_cacheHit()
 
     def run(self):
         self.runTraffic()
