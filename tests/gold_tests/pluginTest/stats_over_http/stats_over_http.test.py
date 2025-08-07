@@ -47,7 +47,7 @@ class StatsOverHttpPluginTest:
 
         self.ts.Disk.records_config.update(
             {
-                "proxy.config.http.server_ports": f"{self.ts.Variables.port} {self._ts.Variables.uds_path}",
+                "proxy.config.http.server_ports": f"{self.ts.Variables.port} {self.ts.Variables.uds_path}",
                 "proxy.config.diags.debug.enabled": 1,
                 "proxy.config.diags.debug.tags": "stats_over_http"
             })
