@@ -43,6 +43,10 @@ when the origin server in the remap rule returns a 401,
   This option sends the "pristine" Host: header (eg, the Host: header
   that the client sent) to the escalated request.
 
+@pparam=--get-method-only
+  This option restricts escalation to only GET requests. POST, PUT, HEAD,
+  and other methods will not be escalated.
+
 Installation
 ------------
 
@@ -61,3 +65,8 @@ Traffic Server would accept a request for ``cdn.example.com`` and, on a cache mi
 request to ``origin.example.com``. If the response code from that server is a 401, 404, 410,
 or 502, then Traffic Server would proxy the request to ``second-origin.example.com``, using a
 Host: header of ``cdn.example.com``.
+
+To only escalate GET requests, you can use::
+
+    map cdn.example.com origin.example.com \
+      @plugin=escalate.so @pparam=401,404,410,502:second-origin.example.com @pparam=--get-method-only
