@@ -132,14 +132,6 @@ The slice plugin supports the following options::
         to indicate that the slice plugin should be skipped.
         -s for short
 
-    --crr-ims-header=<header name> (default: X-Crr-Ims)
-        Header name used by the slice plugin to tell the
-        `cache_range_requests` plugin that a request should
-        be marked as STALE.  Used for self healing.
-        This must match the `--ims-header` option used by the
-        `cache_range_requests` plugin.
-        -i for short
-
     --crr-ident-header=<header name> (default: X-Crr-Ident)
         Header name used by the slice plugin to tell the
         `cache_range_requests` plugin the identifier of the
@@ -313,21 +305,29 @@ uses content-length and last-modified and/or etags to ensure assembled
 blocks come from the same asset.  In the case where a slice from a parent
 is fetched which indicates that the asset has changed, the slice plugin
 will attempt to self heal the asset.  The `cache_range_requests` plugin
-must be configured with the `--consider-ims` parameter in order for
+must be configured with the `--consider-ident` parameter in order for
 this to work.
 
 Example `remap.config` configuration::
 
   map http://slice/ http://parent/ @plugin=slice.so @pparam=--remap-host=cache_range_requests
-  map http://cache_range_requests/ http://parent/ @plugin=cache_range_requests.so @pparam=--consider-ims
+  map http://cache_range_requests/ http://parent/ @plugin=cache_range_requests.so @pparam=--consider-ident
 
-When a request is served, the slice plugin uses reference slice 0 to
-build a response to the client.  When subsequent slices are fetched they
-are checked against this reference slice.  If a mismatch occurs an IMS
-request for the offending slice is made through the `cache_range_requests`
-plugin using an X-Crr-Ims header.  If the refetched slice still mismatches
-then the client connection is aborted a crr IMS request is made for
-the reference slice in an attempt to refetch it.
+When a request is served, the slice plugin uses the header from slice 0
+requested range build a response to the client. When subsequent slices
+are requested from the parent the X-Crr-Ident header is populated with
+the reference identifier (etag or last-modified) and the request is made
+through the `cache_range_requests` plugin.  The `cache_range_requests`
+plugin will then decide whether to send back the current cached slice
+(if the identifier matches) or attempt to refetch or "heal" that slice
+by marking it STALE.
+
+If the slice returned by the cache_range_requests plugin still doesn't
+match the reference slice then client side of the transaction is
+aborted.  However the plugin still attempts to "heal" the reference
+slice.  The X-Crr-Ident header is populated with the new identifer
+and the reference slice is re-requested with the intent of having the
+`cache_range_requests` plugin "heal" the reference slice.
 
 Optionally (but not recommended) the plugin may be configured to use
 the first slice in the request as the reference slice.  This option

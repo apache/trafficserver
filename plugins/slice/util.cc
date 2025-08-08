@@ -57,7 +57,6 @@ request_block(TSCont contp, Data *const data)
 
   switch (data->m_blockstate) {
   case BlockState::Pending:
-  case BlockState::PendingInt:
   case BlockState::PendingRef:
     break;
   default:
@@ -76,7 +75,7 @@ request_block(TSCont contp, Data *const data)
 
   DEBUG_LOG("requestBlock: %s", rangestr);
 
-  // reuse the incoming client header, just change the range
+  // reuse the original client request header, just change the range
   HttpHeader header(data->m_req_hdrmgr.m_buffer, data->m_req_hdrmgr.m_lochdr);
 
   // if configured, remove range header from head requests
@@ -99,22 +98,31 @@ request_block(TSCont contp, Data *const data)
   }
 
   // Attach the identifier header
+  // The cache_range_requests plugin will:
+  //   mark a fresh block stale if the identifiers mismatch
+  //   mark a stale block fresh if the identifiers match.
   Config const *const cfg = data->m_config;
-  if (!cfg->m_crr_ident_header.empty() && !header.hasKey(cfg->m_crr_ident_header.data(), cfg->m_crr_ident_header.size())) {
-    swoc::LocalBufferWriter<8192> idbuf;
-    if (0 < data->m_etaglen) {
-      idbuf.write(TS_MIME_FIELD_ETAG, TS_MIME_LEN_ETAG);
-      idbuf.write(": ");
-      idbuf.write(data->m_etag, data->m_etaglen);
-    } else if (0 < data->m_lastmodifiedlen) {
-      idbuf.write(TS_MIME_FIELD_LAST_MODIFIED, TS_MIME_LEN_LAST_MODIFIED);
-      idbuf.write(": ");
-      idbuf.write(data->m_lastmodified, data->m_lastmodifiedlen);
-    }
+  if (!cfg->m_crr_ident_header.empty()) {
+    // Set ident header if header not set or if refetch reference slice
+    if (BlockState::PendingRef == data->m_blockstate ||
+        !header.hasKey(cfg->m_crr_ident_header.data(), cfg->m_crr_ident_header.size())) {
+      swoc::LocalBufferWriter<8192> idbuf;
+      if (0 < data->m_etaglen) {
+        idbuf.write(TS_MIME_FIELD_ETAG, TS_MIME_LEN_ETAG);
+        idbuf.write(" ");
+        idbuf.write(data->m_etag, data->m_etaglen);
+      } else if (0 < data->m_lastmodifiedlen) {
+        idbuf.write(TS_MIME_FIELD_LAST_MODIFIED, TS_MIME_LEN_LAST_MODIFIED);
+        idbuf.write(" ");
+        idbuf.write(data->m_lastmodified, data->m_lastmodifiedlen);
+      } else if (BlockState::PendingRef == data->m_blockstate) {
+        idbuf.write("Stale");
+      }
 
-    if (0 < idbuf.size()) {
-      DEBUG_LOG("Adding identity '%.*s'", (int)idbuf.size(), idbuf.data());
-      header.setKeyVal(cfg->m_crr_ident_header.data(), cfg->m_crr_ident_header.size(), idbuf.data(), idbuf.size());
+      if (0 < idbuf.size()) {
+        DEBUG_LOG("Adding identity '%.*s'", (int)idbuf.size(), idbuf.data());
+        header.setKeyVal(cfg->m_crr_ident_header.data(), cfg->m_crr_ident_header.size(), idbuf.data(), idbuf.size());
+      }
     }
   }
 
@@ -174,15 +182,8 @@ request_block(TSCont contp, Data *const data)
   case BlockState::Pending:
     data->m_blockstate = BlockState::Active;
     break;
-  case BlockState::PendingInt: {
-    data->m_blockstate       = BlockState::ActiveInt;
-    Config const *const conf = data->m_config;
-    header.removeKey(conf->m_crr_ims_header.c_str(), conf->m_crr_ims_header.size());
-  } break;
   case BlockState::PendingRef: {
-    data->m_blockstate       = BlockState::ActiveRef;
-    Config const *const conf = data->m_config;
-    header.removeKey(conf->m_crr_ims_header.c_str(), conf->m_crr_ims_header.size());
+    data->m_blockstate = BlockState::ActiveRef;
   } break;
   default:
     ERROR_LOG("Invalid blockstate");
