@@ -24,7 +24,7 @@
 
 #include "iocore/net/ReadWriteEventIO.h"
 #include "iocore/net/NetHandler.h"
-
+#include "ts/ats_probe.h"
 namespace
 {
 DbgCtl dbg_ctl_iocore_net_main{"iocore_net_main"};
@@ -52,6 +52,7 @@ ReadWriteEventIO::process_event(int flags)
 {
   // Remove triggered NetEvent from cop_list because it won't be timeout before
   // next InactivityCop runs.
+  ATS_PROBE2(eventio_rw_process_event, _ne->get_fd(), flags);
   if (_nh->cop_list.in(_ne)) {
     _nh->cop_list.remove(_ne);
   }
