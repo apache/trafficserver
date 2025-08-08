@@ -187,7 +187,7 @@ class ConnectViaPVTest:
         self.__testMetrics()
 
 
-# ConnectViaPVTest().run()
+ConnectViaPVTest().run()
 
 
 class ConnectViaPVTest2:
@@ -246,4 +246,4 @@ class ConnectViaPVTest2:
         self.runTraffic()
 
 
-# ConnectViaPVTest2().run()
+ConnectViaPVTest2().run()

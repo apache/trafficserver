@@ -38,6 +38,7 @@
 #include "ts/ts.h"
 #include "ts/remap.h"
 #include "background_fetch.h"
+#include "tscore/ink_inet.h"
 using OutstandingRequests = std::unordered_map<std::string, bool>;
 
 namespace cache_fill_ns
@@ -157,6 +158,8 @@ BgFetchData::initialize(TSMBuffer request, TSMLoc req_hdr, TSHttpTxn txnp)
       memcpy(&client_ip, ip, sizeof(sockaddr_in));
     } else if (ip->sa_family == AF_INET6) {
       memcpy(&client_ip, ip, sizeof(sockaddr_in6));
+    } else if (ip->sa_family == AF_UNIX) {
+      memcpy(&client_ip, ip, sizeof(sockaddr_un));
     } else {
       TSError("[%s] Unknown address family %d", PLUGIN_NAME, ip->sa_family);
     }
@@ -262,6 +265,11 @@ cont_bg_fetch(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
       case AF_INET6:
         inet_ntop(AF_INET6, &(((struct sockaddr_in6 *)sockaddress)->sin6_addr), buf, INET6_ADDRSTRLEN);
         Dbg(dbg_ctl, "Client IPv6 = %s", buf);
+        break;
+      case AF_UNIX:
+        char path[TS_UNIX_SIZE];
+        strncpy(path, ats_unix_cast(sockaddress)->sun_path, TS_UNIX_SIZE);
+        Dbg(dbg_ctl, "Client UDS = %s", path);
         break;
       default:
         TSError("[%s] Unknown address family %d", PLUGIN_NAME, sockaddress->sa_family);
