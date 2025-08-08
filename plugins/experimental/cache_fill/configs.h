@@ -70,10 +70,10 @@ public:
     return _log_file;
   }
 
-  bool
-  allow304() const
+  static bool
+  isTrue(const char *arg)
   {
-    return _allow_304;
+    return (nullptr == arg || 0 == strncasecmp("true", arg, 4) || 0 == strncasecmp("1", arg, 1) || 0 == strncasecmp("yes", arg, 3));
   }
 
   // This parses and populates the BgFetchRule linked list (_rules).
@@ -84,6 +84,7 @@ public:
 private:
   TSCont      _cont = nullptr;
   list_type   _rules;
-  bool        _allow_304 = false;
+  bool        _range_req_only  = false;
+  bool        _cache_range_req = true;
   std::string _log_file;
 };
