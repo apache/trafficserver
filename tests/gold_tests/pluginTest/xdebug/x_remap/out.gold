@@ -37,7 +37,7 @@ X-Remap: from=http://one/, to=http://127.0.0.1:SERVER_PORT/
 Content-Type: text/plain
 
 ``
-{'xDebugProbeAt' : '``
+{'xDebugProbeAt' : '``',
    'captured':[{'type':'request', 'side':'client', 'headers': {
 	'Start-Line' : 'GET http://127.0.0.1:SERVER_PORT/argh HTTP/1.1',
 	'Host' : '127.0.0.1:SERVER_PORT',
@@ -56,7 +56,7 @@ Content-Type: text/plain
 
 --- ATS xDebug Probe Injection Boundary ---
 
-{'xDebugProbeAt' : '``
+{'xDebugProbeAt' : '``',
    'captured':[{'type':'response', 'side':'server', 'headers': {
 	'Start-Line' : 'HTTP/1.1 200 OK',
 	'Connection' : 'close',
@@ -86,7 +86,7 @@ X-Remap: from=http://two/, to=http://127.0.0.1:SERVER_PORT/
 Content-Type: text/plain
 
 ``
-{'xDebugProbeAt' : '``
+{'xDebugProbeAt' : '``',
    'captured':[{'type':'request', 'side':'client', 'headers': {
 	'Start-Line' : 'GET http://127.0.0.1:SERVER_PORT/argh HTTP/1.1',
 	'Host' : '127.0.0.1:SERVER_PORT',
@@ -105,7 +105,7 @@ Content-Type: text/plain
 
 --- ATS xDebug Probe Injection Boundary ---
 
-{'xDebugProbeAt' : '``
+{'xDebugProbeAt' : '``',
    'captured':[{'type':'response', 'side':'server', 'headers': {
 	'Start-Line' : 'HTTP/1.1 200 OK',
 	'Connection' : 'close',
@@ -135,7 +135,7 @@ X-Remap: from=http://three[0-9]+/, to=http://127.0.0.1:SERVER_PORT/
 Content-Type: text/plain
 
 ``
-{'xDebugProbeAt' : '``
+{'xDebugProbeAt' : '``',
    'captured':[{'type':'request', 'side':'client', 'headers': {
 	'Start-Line' : 'GET http://127.0.0.1:SERVER_PORT/argh HTTP/1.1',
 	'Host' : '127.0.0.1:SERVER_PORT',
@@ -154,7 +154,7 @@ Content-Type: text/plain
 
 --- ATS xDebug Probe Injection Boundary ---
 
-{'xDebugProbeAt' : '``
+{'xDebugProbeAt' : '``',
    'captured':[{'type':'response', 'side':'server', 'headers': {
 	'Start-Line' : 'HTTP/1.1 200 OK',
 	'Connection' : 'close',
@@ -184,7 +184,7 @@ X-Remap: from=http://two/, to=http://127.0.0.1:SERVER_PORT/
 Content-Type: text/plain
 
 ``
-{'xDebugProbeAt' : '``
+{'xDebugProbeAt' : '``',
    'captured':[{'type':'request', 'side':'client', 'headers': {
 	'Start-Line' : 'GET http://127.0.0.1:SERVER_PORT/not_there HTTP/1.1',
 	'Host' : '127.0.0.1:SERVER_PORT',
@@ -203,7 +203,7 @@ Content-Type: text/plain
 
 --- ATS xDebug Probe Injection Boundary ---
 
-{'xDebugProbeAt' : '``
+{'xDebugProbeAt' : '``',
    'captured':[{'type':'response', 'side':'server', 'headers': {
 	'Start-Line' : 'HTTP/1.1 404 Not Found',
 	'Server' : 'MicroServer',
@@ -234,7 +234,7 @@ X-Remap: from=http://two/, to=http://127.0.0.1:SERVER_PORT/
 Content-Type: text/plain
 
 ``
-{'xDebugProbeAt' : '``
+{'xDebugProbeAt' : '``',
    'captured':[{'type':'request', 'side':'client', 'headers': {
 	'Start-Line' : 'GET http://127.0.0.1:SERVER_PORT/argh HTTP/1.1',
 	'Host' : '127.0.0.1:SERVER_PORT',
@@ -255,7 +255,7 @@ Content-Type: text/plain
 
 --- ATS xDebug Probe Injection Boundary ---
 
-{'xDebugProbeAt' : '``
+{'xDebugProbeAt' : '``',
    'captured':[{'type':'response', 'side':'server', 'headers': {
 	'Start-Line' : 'HTTP/1.1 200 OK',
 	'Connection' : 'close',
@@ -285,7 +285,7 @@ X-Remap: from=http://two/, to=http://127.0.0.1:SERVER_PORT/
 Content-Type: text/plain
 
 ``
-{'xDebugProbeAt' : '``
+{'xDebugProbeAt' : '``',
    'captured':[{'type':'request', 'side':'client', 'headers': {
 	'Start-Line' : 'GET http://127.0.0.1:SERVER_PORT/argh HTTP/1.1',
 	'Host' : '127.0.0.1:SERVER_PORT',
@@ -304,7 +304,7 @@ Content-Type: text/plain
 
 --- ATS xDebug Probe Injection Boundary ---
 
-{'xDebugProbeAt' : '``
+{'xDebugProbeAt' : '``',
    'captured':[{'type':'response', 'side':'server', 'headers': {
 	'Start-Line' : 'HTTP/1.1 200 OK',
 	'Connection' : 'close',
@@ -334,7 +334,7 @@ X-Remap: from=http://two/, to=http://127.0.0.1:SERVER_PORT/
 Content-Type: text/plain
 
 ``
-{'xDebugProbeAt' : '``
+{'xDebugProbeAt' : '``',
    'captured':[{'type':'request', 'side':'client', 'headers': {
 	'Start-Line' : 'GET http://127.0.0.1:SERVER_PORT/argh HTTP/1.1',
 	'Host' : '127.0.0.1:SERVER_PORT',
@@ -355,7 +355,7 @@ Content-Type: text/plain
 
 --- ATS xDebug Probe Injection Boundary ---
 
-{'xDebugProbeAt' : '``
+{'xDebugProbeAt' : '``',
    'captured':[{'type':'response', 'side':'server', 'headers': {
 	'Start-Line' : 'HTTP/1.1 200 OK',
 	'Connection' : 'close',
@@ -385,7 +385,7 @@ X-Remap: from=http://two/, to=http://127.0.0.1:SERVER_PORT/
 Content-Type: text/plain
 
 ``
-{'xDebugProbeAt' : '``
+{'xDebugProbeAt' : '``',
    'captured':[{'type':'request', 'side':'client', 'headers': {
 	'Start-Line' : 'GET http://127.0.0.1:SERVER_PORT/argh HTTP/1.1',
 	'Host' : '127.0.0.1:SERVER_PORT',
@@ -406,7 +406,7 @@ Content-Type: text/plain
 
 --- ATS xDebug Probe Injection Boundary ---
 
-{'xDebugProbeAt' : '``
+{'xDebugProbeAt' : '``',
    'captured':[{'type':'response', 'side':'server', 'headers': {
 	'Start-Line' : 'HTTP/1.1 200 OK',
 	'Connection' : 'close',
@@ -436,7 +436,7 @@ X-Remap: from=http://two/, to=http://127.0.0.1:SERVER_PORT/
 Content-Type: text/plain
 
 ``
-{'xDebugProbeAt' : '``
+{'xDebugProbeAt' : '``',
    'captured':[{'type':'request', 'side':'client', 'headers': {
 	'Start-Line' : 'GET http://127.0.0.1:SERVER_PORT/argh HTTP/1.1',
 	'Host' : '127.0.0.1:SERVER_PORT',
@@ -455,7 +455,7 @@ Content-Type: text/plain
 
 --- ATS xDebug Probe Injection Boundary ---
 
-{'xDebugProbeAt' : '``
+{'xDebugProbeAt' : '``',
    'captured':[{'type':'response', 'side':'server', 'headers': {
 	'Start-Line' : 'HTTP/1.1 200 OK',
 	'Connection' : 'close',
