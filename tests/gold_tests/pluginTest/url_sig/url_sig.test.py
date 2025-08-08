@@ -28,6 +28,9 @@ Test.ContinueOnFail = True
 # Skip if plugins not present.
 Test.SkipUnless(Condition.PluginExists('url_sig.so'))
 
+# Skip since tests assume client addresses are IPs
+Test.SkipIf(Condition.CurlUsingUnixDomainSocket())
+
 # Set up to check the output after the tests have run.
 #
 url_sig_log_id = Test.Disk.File("url_sig_short.log")

@@ -23,6 +23,9 @@ Test.Summary = 'Exercise stats-over-http plugin'
 Test.SkipUnless(Condition.PluginExists('stats_over_http.so'))
 Test.ContinueOnFail = True
 
+# Skip until plugin supports pp or uds path
+Test.SkipIf(Condition.CurlUsingUnixDomainSocket())
+
 
 class StatsOverHttpPluginTest:
     """
