@@ -1,4 +1,5 @@
 '''
+Verify escalate plugin behavior.
 '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -127,4 +128,119 @@ class EscalateTest:
         client.Streams.All += Testers.ContainsExpression('x-response: fourth', 'Verify that the fourth response was received.')
 
 
+class EscalateGetMethodOnlyTest:
+    """
+    Test the escalate plugin with --get-method-only option to verify only GET requests are escalated.
+    """
+
+    _replay_get_method_file: str = 'escalate_get_method_only.replay.yaml'
+    _replay_failover_file: str = 'escalate_failover.replay.yaml'
+
+    def __init__(self):
+        '''Configure the test run for GET method only testing.'''
+        tr = Test.AddTestRun('Test escalate plugin with --get-method-only option.')
+        self._setup_dns(tr)
+        self._setup_servers(tr)
+        self._setup_ts(tr)
+        self._setup_client(tr)
+
+    def _setup_dns(self, tr: 'TestRun') -> None:
+        '''Set up the DNS server.'''
+        self._dns = tr.MakeDNServer("dns_get_method", default='127.0.0.1')
+
+    def _setup_servers(self, tr: 'TestRun') -> None:
+        '''Set up the origin and failover servers for GET method only testing.'''
+        tr.Setup.Copy(self._replay_get_method_file)
+        tr.Setup.Copy(self._replay_failover_file)
+        self._server_origin = tr.AddVerifierServerProcess("server_origin_get_method", self._replay_get_method_file)
+        self._server_failover = tr.AddVerifierServerProcess("server_failover_get_method", self._replay_failover_file)
+
+        # Verify the origin server received all requests
+        self._server_origin.Streams.All += Testers.ContainsExpression(
+            'uuid: GET', "Verify the origin server received the first GET request.")
+        self._server_origin.Streams.All += Testers.ContainsExpression(
+            'uuid: GET_chunked', "Verify the origin server received the chunked GET request.")
+        self._server_origin.Streams.All += Testers.ContainsExpression(
+            'uuid: GET_failed', "Verify the origin server received the failed GET request.")
+        self._server_origin.Streams.All += Testers.ContainsExpression(
+            'uuid: POST_success', "Verify the origin server received the successful POST request.")
+        self._server_origin.Streams.All += Testers.ContainsExpression(
+            'uuid: HEAD_fail_no_escalation', "Verify the origin server received the HEAD request that should not be escalated.")
+        self._server_origin.Streams.All += Testers.ContainsExpression(
+            'uuid: POST_fail_no_escalation', "Verify the origin server received the POST request that should not be escalated.")
+
+        # The down origin request should NOT be received by this server
+        self._server_origin.Streams.All += Testers.ExcludesExpression(
+            'uuid: GET_down_origin', "Verify the origin server did not receive the down origin request.")
+
+        # Verify failover server receives escalated requests but NOT the POST that should be skipped
+        self._server_failover.Streams.All += Testers.ContainsExpression(
+            'uuid: GET_failed', "Verify the failover server received the failed GET request.")
+        self._server_failover.Streams.All += Testers.ContainsExpression(
+            'uuid: GET_down_origin', "Verify the failover server received the down origin GET request.")
+        # With --get-method-only, the POST_failed_no_escalation and HEAD should NOT be escalated
+        self._server_failover.Streams.All += Testers.ExcludesExpression(
+            'uuid: POST_fail_no_escalation', "Verify the failover server did not receive the POST that should not be escalated.")
+        self._server_failover.Streams.All += Testers.ExcludesExpression(
+            'uuid: HEAD_fail_no_escalation', "Verify the failover server did not receive the HEAD that should not be escalated.")
+        # The successful POST should also not reach failover (since it succeeds on origin)
+        self._server_failover.Streams.All += Testers.ExcludesExpression(
+            'uuid: POST_success', "Verify the failover server did not receive the successful POST request.")
+
+    def _setup_ts(self, tr: 'TestRun') -> None:
+        '''Set up Traffic Server with --get-method-only option.'''
+        self._ts = tr.MakeATSProcess("ts_get_method_only", enable_cache=False)
+
+        self._ts.Disk.records_config.update(
+            {
+                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.tags': 'http|escalate',
+                'proxy.config.dns.nameservers': f'127.0.0.1:{self._dns.Variables.Port}',
+                'proxy.config.dns.resolv_conf': 'NULL',
+                'proxy.config.http.redirect.actions': 'self:follow',
+                'proxy.config.http.number_of_redirections': 4,
+            })
+
+        # Set up a dead port for the down origin scenario
+        dead_port = get_port(self._ts, "dead_port")
+
+        # Configure escalate plugin with --get-method-only option
+        self._ts.Disk.remap_config.AddLines(
+            [
+                f'map http://origin.server.com http://backend.origin.server.com:{self._server_origin.Variables.http_port} '
+                f'@plugin=escalate.so @pparam=500,502:failover.server.com:{self._server_failover.Variables.http_port} @pparam=--get-method-only',
+                f'map http://down_origin.server.com http://backend.down_origin.server.com:{dead_port} '
+                f'@plugin=escalate.so @pparam=500,502:failover.server.com:{self._server_failover.Variables.http_port} @pparam=--get-method-only',
+            ])
+
+    def _setup_client(self, tr: 'TestRun') -> None:
+        '''Set up the client for GET method only testing.'''
+        client = tr.AddVerifierClientProcess(
+            "client_get_method_only", self._replay_get_method_file, http_ports=[self._ts.Variables.port])
+
+        client.StartBefore(self._dns)
+        client.StartBefore(self._server_origin)
+        client.StartBefore(self._server_failover)
+        client.StartBefore(self._ts)
+
+        # Verify that successful responses are returned for successful requests and escalated failures
+        client.Streams.All += Testers.ContainsExpression('x-response: first', 'Verify first GET response received.')
+        client.Streams.All += Testers.ContainsExpression('x-response: second', 'Verify second GET response received.')
+        client.Streams.All += Testers.ContainsExpression('x-response: third', 'Verify third GET response received (escalated).')
+        client.Streams.All += Testers.ContainsExpression('x-response: fourth', 'Verify fourth GET response received (escalated).')
+        client.Streams.All += Testers.ContainsExpression('x-response: post_success', 'Verify successful POST response received.')
+        client.Streams.All += Testers.ContainsExpression(
+            'x-response: head_fail_no_escalation', 'Verify non-escalated HEAD response received.')
+        client.Streams.All += Testers.ContainsExpression(
+            'x-response: post_fail_no_escalation', 'Verify non-escalated POST response received.')
+
+        # Verify that the POST that should not be escalated returns 502
+        client.Streams.All += Testers.ContainsExpression('502 Bad Gateway', 'Verify the non-escalated POST returns 502')
+
+        # The test should complete without errors
+        client.Streams.All += Testers.ExcludesExpression(r'\[ERROR\]', 'Verify there were no errors in the replay.')
+
+
+# Run both test classes
 EscalateTest()
+EscalateGetMethodOnlyTest()
