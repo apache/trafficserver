@@ -43,6 +43,17 @@
 using OutstandingRequests = std::unordered_map<std::string, bool>;
 const char PLUGIN_NAME[]  = "cache_fill";
 
+// This is the list of all headers that must be removed when we make the actual background
+// fetch request for range requests.
+static const std::array<const std::string_view, 6> FILTER_HEADERS{
+  {{TS_MIME_FIELD_RANGE, static_cast<size_t>(TS_MIME_LEN_RANGE)},
+   {TS_MIME_FIELD_IF_MATCH, static_cast<size_t>(TS_MIME_LEN_IF_MATCH)},
+   {TS_MIME_FIELD_IF_MODIFIED_SINCE, static_cast<size_t>(TS_MIME_LEN_IF_MODIFIED_SINCE)},
+   {TS_MIME_FIELD_IF_NONE_MATCH, static_cast<size_t>(TS_MIME_LEN_IF_NONE_MATCH)},
+   {TS_MIME_FIELD_IF_RANGE, static_cast<size_t>(TS_MIME_LEN_IF_RANGE)},
+   {TS_MIME_FIELD_IF_UNMODIFIED_SINCE, static_cast<size_t>(TS_MIME_LEN_IF_UNMODIFIED_SINCE)}}
+};
+
 namespace cache_fill_ns
 {
 extern DbgCtl dbg_ctl;
