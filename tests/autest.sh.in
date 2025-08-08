@@ -16,6 +16,9 @@ if [ -n "${CURL_UDS_FLAG}" ]; then
   if [ -d "${CMAKE_GOLD_DIR}/tls" ]; then
     mv "${CMAKE_GOLD_DIR}/tls" "${CMAKE_SKIP_GOLD_DIR}/tls"
   fi
+  if [ -d "${CMAKE_GOLD_DIR}/tls_hooks" ]; then
+    mv "${CMAKE_GOLD_DIR}/tls_hooks" "${CMAKE_SKIP_GOLD_DIR}/tls_hooks"
+  fi
 fi
 
 ${RUNPIPENV} run env autest \
@@ -34,6 +37,9 @@ if [ -n "${CURL_UDS_FLAG}" ]; then
   fi
   if [ -d "${CMAKE_SKIP_GOLD_DIR}/tls" ]; then
     mv "${CMAKE_SKIP_GOLD_DIR}/tls" "${CMAKE_GOLD_DIR}/tls"
+  fi
+  if [ -d "${CMAKE_SKIP_GOLD_DIR}/tls_hooks" ]; then
+    mv "${CMAKE_SKIP_GOLD_DIR}/tls_hooks" "${CMAKE_GOLD_DIR}/tls_hooks"
   fi
   if [ -d "${CMAKE_SKIP_GOLD_DIR}" ]; then
     rm -rf "${CMAKE_SKIP_GOLD_DIR}"

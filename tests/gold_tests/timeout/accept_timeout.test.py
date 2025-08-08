@@ -21,6 +21,7 @@ Test.Summary = 'Testing ATS inactivity timeout'
 Test.SkipUnless(
     Condition.HasCurlFeature('http2'), Condition.HasProgram("telnet", "Need telnet to shutdown when server shuts down tcp"),
     Condition.HasProgram("nc", "Need nc to send data to server"))
+Test.SkipIf(Condition.CurlUsingUnixDomainSocket())
 
 ts = Test.MakeATSProcess("ts", enable_tls=True)
 

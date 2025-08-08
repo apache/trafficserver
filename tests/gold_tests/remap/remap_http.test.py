@@ -82,11 +82,14 @@ tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = "gold/remap-200.gold"
 
 # www.example2.com host (match on receive port)
-tr = Test.AddTestRun()
-tr.MakeCurlCommand(
-    '--proxy 127.0.0.1:{0} "http://www.example2.com"  -H "Proxy-Connection: keep-alive" --verbose'.format(ts.Variables.port), ts=ts)
-tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.Streams.stderr = "gold/remap2-200.gold"
+# map_with_recv_port doesn't work with UDS
+if not Condition.CurlUsingUnixDomainSocket():
+    tr = Test.AddTestRun()
+    tr.MakeCurlCommand(
+        '--proxy 127.0.0.1:{0} "http://www.example2.com"  -H "Proxy-Connection: keep-alive" --verbose'.format(ts.Variables.port),
+        ts=ts)
+    tr.Processes.Default.ReturnCode = 0
+    tr.Processes.Default.Streams.stderr = "gold/remap2-200.gold"
 
 # www.example.com:80 host
 tr = Test.AddTestRun()
@@ -113,41 +116,50 @@ tr.Processes.Default.Streams.stderr = "gold/remap-404.gold"
 
 # redirect result
 tr = Test.AddTestRun()
-tr.MakeCurlCommand(' --proxy 127.0.0.1:{0} "http://test3.com" --verbose'.format(ts.Variables.port), ts=ts)
+tr.MakeCurlCommand(
+    ' --proxy 127.0.0.1:{0} "http://test3.com" -H "Proxy-Connection: keep-alive" --verbose'.format(ts.Variables.port), ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = "gold/remap-redirect.gold"
 
 # referer hit
 tr = Test.AddTestRun()
 tr.MakeCurlCommand(
-    ' --proxy 127.0.0.1:{0} "http://test4.com" --header "Referer: persia.com" --verbose'.format(ts.Variables.port), ts=ts)
+    ' --proxy 127.0.0.1:{0} "http://test4.com" --header "Referer: persia.com" -H "Proxy-Connection: keep-alive" --verbose'.format(
+        ts.Variables.port),
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = "gold/remap-referer-hit.gold"
 
 # referer miss
 tr = Test.AddTestRun()
 tr.MakeCurlCommand(
-    ' --proxy 127.0.0.1:{0} "http://test4.com" --header "Referer: monkey.com" --verbose'.format(ts.Variables.port), ts=ts)
+    ' --proxy 127.0.0.1:{0} "http://test4.com" --header "Referer: monkey.com" -H "Proxy-Connection: keep-alive" --verbose'.format(
+        ts.Variables.port),
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = "gold/remap-referer-miss.gold"
 
 # referer hit
 tr = Test.AddTestRun()
 tr.MakeCurlCommand(
-    ' --proxy 127.0.0.1:{0} "http://test4.com" --header "Referer: www.persia.com" --verbose'.format(ts.Variables.port), ts=ts)
+    ' --proxy 127.0.0.1:{0} "http://test4.com" --header "Referer: www.persia.com" -H "Proxy-Connection: keep-alive" --verbose'
+    .format(ts.Variables.port),
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = "gold/remap-referer-hit.gold"
 
 # DNS test
 tr = Test.AddTestRun()
-tr.MakeCurlCommand(' --proxy 127.0.0.1:{0} "http://testDNS.com" --verbose'.format(ts.Variables.port), ts=ts)
+tr.MakeCurlCommand(
+    ' --proxy 127.0.0.1:{0} "http://testDNS.com" -H "Proxy-Connection: keep-alive" --verbose'.format(ts.Variables.port), ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = "gold/remap-DNS-200.gold"
 
 # microserver lookup test
 tr = Test.AddTestRun()
 tr.MakeCurlCommand(
-    '--proxy 127.0.0.1:{0} "http://www.testexample.com/test" -H "Host: www.testexample.com" --verbose'.format(ts.Variables.port),
+    '--proxy 127.0.0.1:{0} "http://www.testexample.com/test" -H "Host: www.testexample.com" -H "Proxy-Connection: keep-alive" --verbose'
+    .format(ts.Variables.port),
     ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(server2)

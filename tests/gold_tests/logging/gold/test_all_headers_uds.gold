@@ -20,7 +20,6 @@
 ({__DATE__}}
 
 {{Accept}:{*/*}}
-{{Forwarded}:{for=127.0.0.1}}
 {{Host}:{127.0.0.1__TS_PORT__}}
 {{User-Agent}:{007}}
 ({__VIA__}}
