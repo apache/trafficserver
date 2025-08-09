@@ -1,4 +1,4 @@
-requirements.txt#
+#
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -14,7 +14,12 @@ requirements.txt#
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-antlr4-python3-runtime>=4.9,<5.0
-pytest>=7.0,<8.0
-pyinstaller>=5.0,<7.0
-build>=0.8,<2.0
+import pytest
+import utils
+
+
+@pytest.mark.conds
+@pytest.mark.reverse
+@pytest.mark.parametrize("input_file,output_file,ast_file", utils.collect_test_files("conds"))
+def test_reverse_conversion(input_file, output_file, ast_file):
+    utils.run_reverse_test(input_file, output_file)

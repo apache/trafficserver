@@ -14,25 +14,12 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-from setuptools import setup, find_packages
+import pytest
+import utils
 
-setup(
-    name="hrw4u",
-    version="1.0.0",
-    description="HRW4U CLI tool",
-    author="Leif Hedstrom",
-    package_dir={"": "build"},
-    packages=find_packages(where="build"),
-    include_package_data=True,
-    entry_points={"console_scripts": ["hrw4u = hrw4u.__main__:main",]},
-    install_requires=[
-        "antlr4-python3-runtime==4.*",
-    ],
-    python_requires=">=3.10",
-    classifiers=[
-        "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: Implementation :: PyPy",
-        "License :: OSI Approved :: Apache Software License",
-        "Operating System :: OS Independent",
-    ],
-)
+
+@pytest.mark.ops
+@pytest.mark.reverse
+@pytest.mark.parametrize("input_file,output_file,ast_file", utils.collect_test_files("ops"))
+def test_reverse_conversion(input_file, output_file, ast_file):
+    utils.run_reverse_test(input_file, output_file)

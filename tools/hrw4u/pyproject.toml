@@ -15,8 +15,55 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 [build-system]
-requires = ["setuptools", "wheel"]
+requires = ["setuptools>=65.0", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "hrw4u"
+version = "1.1.0"
+description = "HRW4U CLI tool for Apache Traffic Server header rewrite rules"
+authors = [
+    {name = "Leif Hedstrom", email = "leif@apache.org"}
+]
+license = "Apache-2.0"
+requires-python = ">=3.11"
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+    "Topic :: Software Development :: Code Generators",
+    "Topic :: Text Processing :: Linguistic",
+]
+dependencies = [
+    "antlr4-python3-runtime>=4.9,<5.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0,<8.0",
+    "pyinstaller>=5.0,<7.0",
+    "build>=0.8,<2.0",
+]
+
+[project.scripts]
+hrw4u = "hrw4u.__main__:main"
+u4wrh = "u4wrh.__main__:main"
+
+[tool.setuptools]
+script-files = ["scripts/hrw4u", "scripts/u4wrh"]
+
+[tool.setuptools.packages.find]
+where = ["build"]
+
+[tool.setuptools.package-dir]
+"" = "build"
+
 [tool.pytest.ini_options]
 markers = [
     "invalid: marks tests expected to fail input parsing",
@@ -25,4 +72,5 @@ markers = [
     "ops: marks tests for all operators",
     "vars: marks tests for all variables",
     "examples: marks tests for all header_rewrite docs examples",
+    "reverse: marks tests for reverse conversion (header_rewrite -> hrw4u)",
 ]

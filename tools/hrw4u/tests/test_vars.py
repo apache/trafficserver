@@ -24,13 +24,13 @@ def test_output_matches(input_file, output_file, ast_file):
     utils.run_output_test(input_file, output_file)
 
 
-@pytest.mark.ops
+@pytest.mark.vars
 @pytest.mark.parametrize("input_file,output_file,ast_file", utils.collect_test_files("vars"))
 def test_ast_matches(input_file, output_file, ast_file):
     utils.run_ast_test(input_file, ast_file)
 
 
-@pytest.mark.ops
+@pytest.mark.vars
 @pytest.mark.invalid
 @pytest.mark.parametrize("input_file", utils.collect_failing_inputs("vars"))
 def test_invalid_inputs_fail(input_file):

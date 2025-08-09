@@ -20,6 +20,9 @@ from antlr4 import InputStream, CommonTokenStream
 from hrw4u.hrw4uLexer import hrw4uLexer
 from hrw4u.hrw4uParser import hrw4uParser
 from hrw4u.visitor import HRW4UVisitor
+from u4wrh.u4wrhLexer import u4wrhLexer
+from u4wrh.u4wrhParser import u4wrhParser
+from u4wrh.hrw_visitor import HRWInverseVisitor
 
 __all__ = [
     "collect_test_files",
@@ -27,6 +30,7 @@ __all__ = [
     "run_output_test",
     "run_ast_test",
     "run_failing_test",
+    "run_reverse_test",
 ]
 
 
@@ -34,6 +38,14 @@ def parse_input_text(text):
     lexer = hrw4uLexer(InputStream(text))
     stream = CommonTokenStream(lexer)
     parser = hrw4uParser(stream)
+    tree = parser.program()
+    return parser, tree
+
+
+def parse_u4wrh_text(text):
+    lexer = u4wrhLexer(InputStream(text))
+    stream = CommonTokenStream(lexer)
+    parser = u4wrhParser(stream)
     tree = parser.program()
     return parser, tree
 
@@ -96,3 +108,13 @@ def run_failing_test(input_file: Path):
         f"Error mismatch for {input_file}\n"
         f"Expected error (partial match):\n{expected_error}\n\n"
         f"Actual error:\n{actual_error}")
+
+
+def run_reverse_test(input_file: Path, output_file: Path):
+    """Run u4wrh on output.txt and compare with input.txt (round-trip test)."""
+    output_text = output_file.read_text()
+    parser, tree = parse_u4wrh_text(output_text)
+    visitor = HRWInverseVisitor(filename=str(output_file))
+    actual_hrw4u = "\n".join(visitor.visit(tree)).strip()
+    expected_hrw4u = input_file.read_text().strip()
+    assert actual_hrw4u == expected_hrw4u, f"Reverse conversion mismatch for {output_file}"

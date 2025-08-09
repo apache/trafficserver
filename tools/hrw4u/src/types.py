@@ -14,9 +14,22 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+
+from __future__ import annotations
+
 from enum import Enum
 from dataclasses import dataclass
 from typing import FrozenSet
+
+
+class BooleanLiteral(str, Enum):
+    """Boolean literal values used in conditions"""
+    TRUE = "TRUE"
+    FALSE = "FALSE"
+
+    @classmethod
+    def contains(cls, value: str) -> bool:
+        return value.upper() in {member.value for member in cls}
 
 
 class SuffixGroup(Enum):
@@ -73,7 +86,7 @@ class VarType(Enum):
         raise ValueError(f"Unknown VarType string: {type}")
 
 
-@dataclass
+@dataclass(slots=True, frozen=True)
 class Symbol:
     var_type: VarType
     index: int
