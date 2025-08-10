@@ -1,8 +1,8 @@
 VARS {
-   foo: bool;
-   bar: bool;
+    bool_0: bool;
+    bool_1: bool;
 }
 
 REMAP {
-    bar = foo;
+    bool_1 = bool_0;
 }

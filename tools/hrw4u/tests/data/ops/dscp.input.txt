@@ -1,5 +1,5 @@
 REMAP {
     if true {
-       inbound.conn.dscp = 17;
+        inbound.conn.dscp = 17;
     }
 }

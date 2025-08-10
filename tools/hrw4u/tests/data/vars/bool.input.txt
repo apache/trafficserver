@@ -1,9 +1,9 @@
 VARS {
-   Flag: bool;
+    bool_0: bool;
 }
 
 REMAP {
-    if Flag {
+    if bool_0 {
         inbound.req.X-foo = "bar";
     }
 }

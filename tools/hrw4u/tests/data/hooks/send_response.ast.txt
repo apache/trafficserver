@@ -1,1 +1,1 @@
-(program (section SEND_RESPONSE { (sectionBody (conditional (ifStatement if (condition (expression (term (factor (comparison (comparable inbound.resp.X-Send-Response) == (value "yes")))))) (block { (statement outbound.resp.X-Send-Response = (value "") ;) })))) }) <EOF>)
+(program (section SEND_RESPONSE { (sectionBody (conditional (ifStatement if (condition (expression (term (factor (comparison (comparable inbound.resp.X-Send-Response) == (value "yes")))))) (block { (statement inbound.resp.X-Send-Response = (value "") ;) })))) }) <EOF>)
