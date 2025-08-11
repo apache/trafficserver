@@ -25,6 +25,8 @@ Test.SkipUnless(
     Condition.PluginExists('cache_fill.so'),
     Condition.PluginExists('xdebug.so'),
 )
+# Skip until cache_fill supports UDS
+Test.SkipIf(Condition.CurlUsingUnixDomainSocket())
 Test.ContinueOnFail = True
 Test.testName = "cache_fill"
 
