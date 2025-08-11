@@ -112,6 +112,33 @@ significant). For instance:
 
 There is no `cond` or `set-header` syntax — those are implied by context.
 
+Header Presence
+---------------
+
+In header_rewrite, to test if a header is not present, you must test the value against an empty string (and then negate it to test if the header exists). For instance:
+
+.. code-block:: none
+
+   # header_rewrite - test if header is NOT present
+   cond %{HEADER:Strict-Transport-Security} =""
+
+   # header_rewrite - test if header IS present
+   cond %{HEADER:Strict-Transport-Security} ="" [NOT]
+
+HRW4U uses a more conventional approach:
+
+.. code-block:: none
+
+   # HRW4U - test if header is NOT present
+   if !inbound.req.Strict-Transport-Security {
+       ...
+   }
+
+   # HRW4U - test if header IS present
+   if inbound.req.Strict-Transport-Security {
+       ...
+   }
+
 
 Condition & Operator Mapping
 ============================
@@ -150,7 +177,7 @@ cond %{ACCESS:/path}            access("/path")                    File exists a
 cond %{CACHE} =hit-fresh        cache() == "hit-fresh"             Cache lookup result status
 cond %{CIDR:24,48} =ip          cidr(24,48) == "ip"                Match masked client IP address
 cond %{CLIENT-HEADER:X} =foo    inbound.req.X == "foo"             Original client request header
-cond %{CLIENT-URL:<C> =bar      inbound.url.<C> == "bar"           URL component match, <:ref:`C<admin-plugins-header-rewrite-url-parts>`> is ``host``, ``path`` etc.
+cond %{CLIENT-URL:<C>} =bar      inbound.url.<C> == "bar"          URL component match, <:ref:`C<admin-plugins-header-rewrite-url-parts>`> is ``host``, ``path`` etc.
 cond %{COOKIE:foo} =bar         {in,out}bound.cookie.foo == "bar"  Check a cookie value
 cond %{FROM-URL:<C>} =bar       from.url.<C> == "bar"              Remap ``From URL`` component match, <:ref:`C<admin-plugins-header-rewrite-url-parts>`> is ``host`` etc.
 cond %{HEADER:X} =fo            {in,out}bound.{req,resp}.X == "fo" Context sensitive header conditions
@@ -228,6 +255,7 @@ In addition to those operators above, HRW4U supports the following special opera
 Header Rewrite    HRW4U Syntax                 Description
 ================= ============================ ================================
 no-op             no-op();                     Explicit no-op statement
+no-op [L]         break;                       Exit current section early (last rule)
 set-debug         set-debug()                  Enables ATS txn debug
 skip-remap        skip-remap()                 Skip remap processing (open proxy)
 ================= ============================ ================================
@@ -480,7 +508,11 @@ Redirect when the Origin Server Times Out
 This rule sends a 302 redirect to the client with the requested URI's Path and
 Query string when the Origin server times out or the connection is refused::
 
-   TBD
+   READ_RESPONSE {
+       if outbound.status in [502, 504] {
+           set-redirect(302, "http://different_origin.example.com/{inbound.url.path}?{inbound.url.query}");
+       }
+   }
 
 Check for existence of a header
 -------------------------------
