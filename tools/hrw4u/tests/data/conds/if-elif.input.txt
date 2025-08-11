@@ -1,5 +1,5 @@
 SEND_RESPONSE {
-    if inbound.url.path == "foo"  {
+    if inbound.url.path == "foo" {
         inbound.resp.X-Path = "f";
     } elif inbound.url.path == "bar" {
         inbound.resp.X-Path = "b";

@@ -4,9 +4,9 @@ REMAP {
     }
 
     if geo.COUNTRY == "KR" {
-         inbound.req.X-Something-Else = "miles";
+        inbound.req.X-Something-Else = "miles";
     } else {
-         inbound.req.X-Something-Else = "leif";
+        inbound.req.X-Something-Else = "leif";
     }
 
     if inbound.url.path in ["foo", "bar"] with PRE {
