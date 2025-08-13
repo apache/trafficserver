@@ -57,8 +57,7 @@ dns.addRecords(records={"test.ipv4.only.com.": ["127.0.0.1"]})
 dns.addRecords(records={"test.ipv6.only.com": ["127.0.0.1", "::1"]})
 
 tr = Test.AddTestRun()
-tr.MakeCurlCommand(
-    ' --proxy 127.0.0.1:{0} "http://testDNS.com" -H "Proxy-Connection: keep-alive" --verbose'.format(ts.Variables.port), ts=ts)
+tr.MakeCurlCommand(' --proxy 127.0.0.1:{0} "http://testDNS.com" --verbose'.format(ts.Variables.port), ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(dns)
@@ -67,8 +66,7 @@ tr.Processes.Default.Streams.stderr = "gold/remap-DNS-200.gold"
 tr.StillRunningAfter = server
 
 tr = Test.AddTestRun()
-tr.MakeCurlCommand(
-    ' --proxy 127.0.0.1:{0} "http://testDNS2.com" -H "Proxy-Connection: keep-alive" --verbose'.format(ts.Variables.port), ts=ts)
+tr.MakeCurlCommand(' --proxy 127.0.0.1:{0} "http://testDNS2.com" --verbose'.format(ts.Variables.port), ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(server_v6)
 tr.Processes.Default.Streams.stderr = "gold/remap-DNS-ipv6-200.gold"

@@ -52,6 +52,9 @@ def curl_command(self, cmd, ts=None, p=None):
     if p == None:
         p = self.Processes.Default
     if self.Variables.get("CurlUds", False):
+        # curl via UDS doesn't add this header when proxy flag enabled, need to explicitly set for test
+        if "--proxy" in cmd:
+            cmd += ' -H "Proxy-Connection: keep-alive"'
         p.Command = f'curl --unix-socket {ts.Variables.uds_path} ' + cmd
     else:
         p.Command = 'curl ' + cmd
