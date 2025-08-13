@@ -23,9 +23,8 @@
 
 #include <string>
 #include <string_view>
-#define CATCH_CONFIG_MAIN
 
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
 
 #include "proxy/hdrs/XPACK.h"
 #include "proxy/hdrs/HuffmanCodec.h"

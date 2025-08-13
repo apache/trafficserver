@@ -20,7 +20,7 @@ add_executable(
                       ${PROJECT_SOURCE_DIR}/common.cc ${PROJECT_SOURCE_DIR}/utils.cc
 )
 
-target_link_libraries(test_access_control PRIVATE ts::tscore OpenSSL::SSL OpenSSL::Crypto catch2::catch2)
+target_link_libraries(test_access_control PRIVATE ts::tscore OpenSSL::SSL OpenSSL::Crypto Catch2::Catch2WithMain)
 target_compile_definitions(test_access_control PRIVATE ACCESS_CONTROL_UNIT_TEST)
 
-add_test(NAME test_access_control COMMAND test_access_control)
+add_catch2_test(NAME test_access_control COMMAND test_access_control)

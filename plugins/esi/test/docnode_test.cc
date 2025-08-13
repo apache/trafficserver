@@ -23,8 +23,7 @@
 
 #include <string>
 
-#define CATCH_CONFIG_MAIN
-#include <catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 
 #include "EsiParser.h"
 #include "Utils.h"

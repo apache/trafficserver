@@ -10,9 +10,11 @@
 #include <string>
 #include <map>
 #include <unordered_map>
+#include <cmath>
+#include <algorithm>
 
 #include "swoc/TextView.h"
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
 
 using swoc::TextView;
 using namespace std::literals;
@@ -73,7 +75,7 @@ TEST_CASE("TextView Operations", "[libswoc][TextView]") {
   REQUIRE(tv);
   REQUIRE(!tv == false);
   if (nothing) {
-    REQUIRE(nullptr == "bad operator bool on TextView");
+    REQUIRE(false); // bad operator bool on TextView
   }
   REQUIRE(!nothing == true);
   REQUIRE(nothing.empty() == true);

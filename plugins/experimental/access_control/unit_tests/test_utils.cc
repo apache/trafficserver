@@ -22,7 +22,7 @@
  */
 
 #include <openssl/opensslv.h>
-#include <catch.hpp> /* catch unit-test framework */
+#include <catch2/catch_test_macros.hpp> /* catch unit-test framework */
 #include "../utils.h"
 #include "../common.h"
 

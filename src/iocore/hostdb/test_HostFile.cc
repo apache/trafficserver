@@ -21,9 +21,12 @@
   limitations under the License.
  */
 
-#define CATCH_CONFIG_MAIN
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/reporters/catch_reporter_event_listener.hpp>
+#include <catch2/reporters/catch_reporter_registrars.hpp>
+#include <catch2/interfaces/catch_interfaces_config.hpp>
 
+#include <fstream>
 #include <string>
 
 #include "swoc/bwf_base.h"
@@ -44,8 +47,8 @@ DbgCtl dbg_ctl_hostdb{"hostdb"};
 const std::string_view hosts_data = "127.0.0.1 localhost\n::1 localhost\n1.2.3.4  host1\n4.3.2.1 host2 host3\n";
 
 } // end anonymous namespace
-struct EventProcessorListener : Catch::TestEventListenerBase {
-  using TestEventListenerBase::TestEventListenerBase;
+struct EventProcessorListener : Catch::EventListenerBase {
+  using EventListenerBase::EventListenerBase;
 
   void
   testRunStarting(Catch::TestRunInfo const & /* testRunInfo ATS_UNUSED */) override

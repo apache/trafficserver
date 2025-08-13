@@ -24,7 +24,7 @@
 #include <openssl/bio.h>
 #include <openssl/pem.h>
 
-#include <catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 
 // Mock TS API functions.
 

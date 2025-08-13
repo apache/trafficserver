@@ -21,8 +21,10 @@
   limitations under the License.
  */
 
-#define CATCH_CONFIG_MAIN
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/reporters/catch_reporter_event_listener.hpp>
+#include <catch2/reporters/catch_reporter_registrars.hpp>
+#include <catch2/interfaces/catch_interfaces_config.hpp>
 
 #include "tscore/Layout.h"
 
@@ -375,8 +377,8 @@ TEST_CASE("block size parser", "[iocore]")
   REQUIRE(parse_buffer_chunk_sizes("bob:1 2 3", chunk_sizes) == false);
 }
 
-struct EventProcessorListener : Catch::TestEventListenerBase {
-  using TestEventListenerBase::TestEventListenerBase;
+struct EventProcessorListener : Catch::EventListenerBase {
+  using EventListenerBase::EventListenerBase;
 
   void
   testRunStarting(Catch::TestRunInfo const & /* testRunInfo ATS_UNUSED */) override

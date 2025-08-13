@@ -175,7 +175,6 @@ if(BUILD_TESTING)
     unit_tests/test_ink_string.cc
     unit_tests/test_layout.cc
     unit_tests/test_scoped_resource.cc
-    unit_tests/unit_test_main.cc
     unit_tests/test_Version.cc
   )
   target_link_libraries(
@@ -187,14 +186,14 @@ if(BUILD_TESTING)
             resolv::resolv
             OpenSSL::Crypto
             OpenSSL::SSL
-            catch2::catch2
+            Catch2::Catch2WithMain
             inkevent
   )
   if(TS_USE_HWLOC)
     target_link_libraries(test_tscore PRIVATE hwloc::hwloc)
   endif()
 
-  add_test(NAME test_tscore COMMAND $<TARGET_FILE:test_tscore>)
+  add_catch2_test(NAME test_tscore COMMAND $<TARGET_FILE:test_tscore>)
 endif()
 
 clang_tidy_check(tscore)

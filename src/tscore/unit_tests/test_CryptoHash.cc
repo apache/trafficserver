@@ -26,7 +26,7 @@
 #include "tscore/ink_assert.h"
 #include "tscore/ink_defs.h"
 #include "tscore/CryptoHash.h"
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
 
 TEST_CASE("CrypoHash", "[libts][CrypoHash]")
 {

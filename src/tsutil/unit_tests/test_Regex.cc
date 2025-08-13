@@ -26,7 +26,7 @@
 #include "tscore/ink_assert.h"
 #include "tscore/ink_defs.h"
 #include "tsutil/Regex.h"
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
 
 struct subject_match_t {
   std::string_view subject;

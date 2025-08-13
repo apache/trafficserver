@@ -28,22 +28,25 @@
 #include "tscore/Diags.h"
 #include "tscore/Layout.h"
 
-#define CATCH_CONFIG_MAIN
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/reporters/catch_reporter_event_listener.hpp>
+#include <catch2/reporters/catch_reporter_registrars.hpp>
+#include <catch2/interfaces/catch_interfaces_config.hpp>
 
 inline static constexpr int test_threads{1};
 
-class EventProcessorListener final : public Catch::TestEventListenerBase
+class EventProcessorListener final : public Catch::EventListenerBase
 {
 public:
-  using TestEventListenerBase::TestEventListenerBase;
+  using EventListenerBase::EventListenerBase;
 
   void
   testRunStarting(Catch::TestRunInfo const &testRunInfo) override
   {
     Layout::create();
     BaseLogFile *base_log_file = new BaseLogFile("stderr");
-    DiagsPtr::set(new Diags(testRunInfo.name, "" /* tags */, "" /* actions */, base_log_file));
+    DiagsPtr::set(new Diags(std::string_view{testRunInfo.name.data(), testRunInfo.name.size()}, "" /* tags */, "" /* actions */,
+                            base_log_file));
 
     diags()->activate_taglist("sni", DiagsTagType_Debug);
     diags()->config.enabled(DiagsTagType_Debug, 0); // set 1 if you want to see debug log

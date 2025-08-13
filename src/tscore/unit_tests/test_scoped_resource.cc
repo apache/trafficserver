@@ -22,7 +22,7 @@
 */
 
 #include "tscore/ink_memory.h"
-#include <catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 
 ats_scoped_fd
 fixed_fd()

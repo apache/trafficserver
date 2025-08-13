@@ -62,7 +62,7 @@ add_executable(
 )
 target_link_libraries(
   test_http3
-  PRIVATE catch2::catch2
+  PRIVATE Catch2::Catch2WithMain
           ts::quic
           ts::inkevent
           ts::records
@@ -70,12 +70,12 @@ target_link_libraries(
           ts::hdrs
           ts::tscore
 )
-add_test(NAME test_http3 COMMAND test_http3)
+add_catch2_test(NAME test_http3 COMMAND test_http3)
 
 add_executable(test_qpack test/main_qpack.cc test/test_QPACK.cc QPACK.cc)
 target_link_libraries(
   test_qpack
-  PRIVATE catch2::catch2
+  PRIVATE Catch2::Catch2
           ts::quic
           ts::inkevent
           ts::records
@@ -83,6 +83,6 @@ target_link_libraries(
           ts::hdrs
           ts::tscore
 )
-add_test(NAME test_qpack COMMAND test_qpack)
+add_catch2_test(NAME test_qpack COMMAND test_qpack)
 
 clang_tidy_check(http3)

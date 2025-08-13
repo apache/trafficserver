@@ -21,8 +21,7 @@
  * @brief Unit test for slice ContentRange
  */
 
-#define CATCH_CONFIG_MAIN /* include main function */
-#include "catch.hpp"      /* catch unit-test framework */
+#include <catch2/catch_test_macros.hpp> /* catch unit-test framework */
 #include "../ContentRange.h"
 
 TEST_CASE("content_range invalid state", "[AWS][slice][utility]")

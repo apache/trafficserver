@@ -21,7 +21,9 @@
     limitations under the License.
 */
 
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_string.hpp>
+#include <catch2/matchers/catch_matchers.hpp>
 
 #include "proxy/http2/HTTP2.h"
 
@@ -106,10 +108,10 @@ TEST_CASE("Convert HTTPHdr", "[HTTP2]")
     hdr_2.print(buf, sizeof(buf), &bufindex, &dumpoffset);
 
     // check
-    CHECK_THAT(buf, Catch::StartsWith("GET https://trafficserver.apache.org/index.html HTTP/1.1\r\n"
-                                      "Host: trafficserver.apache.org\r\n"
-                                      "User-Agent: foobar\r\n"
-                                      "\r\n"));
+    CHECK_THAT(buf, Catch::Matchers::StartsWith("GET https://trafficserver.apache.org/index.html HTTP/1.1\r\n"
+                                                "Host: trafficserver.apache.org\r\n"
+                                                "User-Agent: foobar\r\n"
+                                                "\r\n"));
 
     // Verify that conversion from HTTP/2 to HTTP/1.1 works correctly when the
     // HTTP/2 request contains a Host header.
@@ -135,10 +137,10 @@ TEST_CASE("Convert HTTPHdr", "[HTTP2]")
     // check: Note that the Host will now be at the end of the Headers since we
     // added it above and it will remain there, albeit with the updated value
     // from the :authority header.
-    CHECK_THAT(buf, Catch::StartsWith("GET https://trafficserver.apache.org/index.html HTTP/1.1\r\n"
-                                      "User-Agent: foobar\r\n"
-                                      "Host: trafficserver.apache.org\r\n"
-                                      "\r\n"));
+    CHECK_THAT(buf, Catch::Matchers::StartsWith("GET https://trafficserver.apache.org/index.html HTTP/1.1\r\n"
+                                                "User-Agent: foobar\r\n"
+                                                "Host: trafficserver.apache.org\r\n"
+                                                "\r\n"));
   }
 
   SECTION("response")
@@ -191,6 +193,6 @@ TEST_CASE("Convert HTTPHdr", "[HTTP2]")
 
     // check
     REQUIRE(bufindex > 0);
-    CHECK_THAT(buf, Catch::StartsWith("HTTP/1.1 200 OK\r\n\r\n"));
+    CHECK_THAT(buf, Catch::Matchers::StartsWith("HTTP/1.1 200 OK\r\n\r\n"));
   }
 }

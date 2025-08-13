@@ -20,9 +20,12 @@
  */
 
 #define CATCH_CONFIG_ENABLE_BENCHMARKING
-#define CATCH_CONFIG_RUNNER
 
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/reporters/catch_reporter_event_listener.hpp>
+#include <catch2/reporters/catch_reporter_registrars.hpp>
+#include <catch2/interfaces/catch_interfaces_config.hpp>
+#include <catch2/catch_session.hpp>
 
 #include "iocore/eventsystem/Continuation.h"
 #include "iocore/eventsystem/EventSystem.h"

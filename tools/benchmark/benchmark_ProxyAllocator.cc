@@ -22,8 +22,7 @@ limitations under the License.
 */
 
 #define CATCH_CONFIG_ENABLE_BENCHMARKING
-#define CATCH_CONFIG_MAIN
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
 
 #include "iocore/eventsystem/Thread.h"
 #include "tscore/Allocator.h"

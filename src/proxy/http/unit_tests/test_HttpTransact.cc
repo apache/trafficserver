@@ -31,7 +31,7 @@ using namespace std::string_view_literals;
 #include "proxy/http/HttpTransact.h"
 #include "records/RecordsConfig.h"
 
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
 
 TEST_CASE("HttpTransact", "[http]")
 {

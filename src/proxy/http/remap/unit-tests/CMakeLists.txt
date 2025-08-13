@@ -86,7 +86,7 @@ target_compile_definitions(test_PluginDso PRIVATE PLUGIN_DSO_TESTS)
 target_include_directories(test_PluginDso PRIVATE ${PROJECT_SOURCE_DIR}/tests/include)
 
 target_link_libraries(
-  test_PluginDso PRIVATE catch2::catch2 ts::tsapi ts::configmanager ts::inkevent ts::proxy libswoc::libswoc
+  test_PluginDso PRIVATE Catch2::Catch2WithMain ts::tsapi ts::configmanager ts::inkevent ts::proxy libswoc::libswoc
 )
 
 if(NOT APPLE)
@@ -94,7 +94,7 @@ if(NOT APPLE)
 endif()
 
 if(NOT APPLE)
-  add_test(NAME test_PluginDso COMMAND $<TARGET_FILE:test_PluginDso>)
+  add_catch2_test(NAME test_PluginDso COMMAND $<TARGET_FILE:test_PluginDso>)
 endif()
 ### test_PluginFactory ########################################################################
 
@@ -119,7 +119,7 @@ target_include_directories(test_PluginFactory PRIVATE ${PROJECT_SOURCE_DIR}/test
 
 target_link_libraries(
   test_PluginFactory
-  PRIVATE catch2::catch2
+  PRIVATE Catch2::Catch2WithMain
           tscore
           ts::tsapi
           ts::configmanager
@@ -133,7 +133,7 @@ target_link_libraries(
 )
 
 if(NOT APPLE)
-  add_test(NAME test_PluginFactory COMMAND $<TARGET_FILE:test_PluginFactory>)
+  add_catch2_test(NAME test_PluginFactory COMMAND $<TARGET_FILE:test_PluginFactory>)
 endif()
 ### test_RemapPluginInfo ########################################################################
 
@@ -152,7 +152,7 @@ target_include_directories(test_RemapPluginInfo PRIVATE ${PROJECT_SOURCE_DIR}/te
 
 target_link_libraries(
   test_RemapPluginInfo
-  PRIVATE catch2::catch2
+  PRIVATE Catch2::Catch2WithMain
           tscore
           ts::tsapi
           ts::configmanager
@@ -166,7 +166,7 @@ target_link_libraries(
 )
 
 if(NOT APPLE)
-  add_test(NAME test_RemapPluginInfo COMMAND $<TARGET_FILE:test_RemapPluginInfo>)
+  add_catch2_test(NAME test_RemapPluginInfo COMMAND $<TARGET_FILE:test_RemapPluginInfo>)
 endif()
 
 # not in the same if as the above will be removed shortly.
@@ -201,10 +201,11 @@ target_compile_definitions(
 target_include_directories(test_NextHopStrategyFactory PRIVATE ${PROJECT_SOURCE_DIR}/tests/include)
 
 target_link_libraries(
-  test_NextHopStrategyFactory PRIVATE catch2::catch2 ts::hdrs ts::inkutils tscore libswoc::libswoc yaml-cpp::yaml-cpp
+  test_NextHopStrategyFactory PRIVATE Catch2::Catch2WithMain ts::hdrs ts::inkutils tscore libswoc::libswoc
+                                      yaml-cpp::yaml-cpp
 )
 
-add_test(NAME test_NextHopStrategyFactory COMMAND $<TARGET_FILE:test_NextHopStrategyFactory>)
+add_catch2_test(NAME test_NextHopStrategyFactory COMMAND $<TARGET_FILE:test_NextHopStrategyFactory>)
 
 ### test_NextHopRoundRobin ########################################################################
 
@@ -226,7 +227,7 @@ target_include_directories(test_NextHopRoundRobin PRIVATE ${PROJECT_SOURCE_DIR}/
 
 target_link_libraries(
   test_NextHopRoundRobin
-  PRIVATE catch2::catch2
+  PRIVATE Catch2::Catch2WithMain
           ts::hdrs
           ts::inkevent
           ts::inkutils
@@ -235,7 +236,7 @@ target_link_libraries(
           yaml-cpp::yaml-cpp
 )
 
-add_test(NAME test_NextHopRoundRobin COMMAND $<TARGET_FILE:test_NextHopRoundRobin>)
+add_catch2_test(NAME test_NextHopRoundRobin COMMAND $<TARGET_FILE:test_NextHopRoundRobin>)
 
 ### test_NextHopConsistentHash ########################################################################
 
@@ -259,7 +260,7 @@ target_include_directories(test_NextHopConsistentHash PRIVATE ${PROJECT_SOURCE_D
 
 target_link_libraries(
   test_NextHopConsistentHash
-  PRIVATE catch2::catch2
+  PRIVATE Catch2::Catch2WithMain
           tscore
           ts::inkevent
           ts::hdrs
@@ -268,14 +269,14 @@ target_link_libraries(
           yaml-cpp::yaml-cpp
 )
 
-add_test(NAME test_NextHopConsistentHash COMMAND $<TARGET_FILE:test_NextHopConsistentHash>)
+add_catch2_test(NAME test_NextHopConsistentHash COMMAND $<TARGET_FILE:test_NextHopConsistentHash>)
 
 ### test_RemapRules ########################################################################
 add_executable(test_RemapRules "${PROJECT_SOURCE_DIR}/src/iocore/cache/unit_tests/stub.cc" test_RemapRules.cc)
 
 target_link_libraries(
   test_RemapRules
-  PRIVATE catch2::catch2
+  PRIVATE Catch2::Catch2WithMain
           ts::http
           ts::hdrs # transitive
           logging # transitive
@@ -286,4 +287,4 @@ target_link_libraries(
           ts::jsonrpc_protocol
 )
 
-add_test(NAME test_RemapRules COMMAND $<TARGET_FILE:test_RemapRules>)
+add_catch2_test(NAME test_RemapRules COMMAND $<TARGET_FILE:test_RemapRules>)
