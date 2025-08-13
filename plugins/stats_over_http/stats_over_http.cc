@@ -473,17 +473,33 @@ csv_out_stat(TSRecordType /* rec_type ATS_UNUSED */, void *edata, int /* registe
 }
 
 /** Replace characters offensive to Prometheus with '_'.
- * Prometheus is particular about metric names.
+ *
+ * See: https://prometheus.io/docs/concepts/data_model/#metric-names-and-labels
+ *
+ *  > Metric names SHOULD match the regex [a-zA-Z_:][a-zA-Z0-9_:]*
+ *  > for the best experience and compatibility
+ *
  * @param[in] name The metric name to sanitize.
  * @return A sanitized metric name.
  */
-static std::string
-sanitize_metric_name_for_prometheus(std::string_view name)
+static
+// Remove this check when we drop support for pre-13 GCC versions.
+#if defined(__cpp_lib_constexpr_string) && __cpp_lib_constexpr_string >= 201907L
+  constexpr
+#endif
+  std::string
+  sanitize_metric_name_for_prometheus(std::string_view name)
 {
   std::string sanitized_name(name);
-  // Convert certain characters that Prometheus doesn't like to '_'.
+  // If the first character is a digit, prepend an underscore since Prometheus
+  // doesn't allow digits as the first character.
+  if (sanitized_name.length() > 0 && sanitized_name[0] >= '0' && sanitized_name[0] <= '9') {
+    sanitized_name = "_" + sanitized_name;
+  }
+  // Convert characters that Prometheus doesn't like to '_'.
+  // : letters (a-z, A-Z), digits (0-9), underscores (_), and colons (:).
   for (auto &c : sanitized_name) {
-    if (c == '.' || c == '+' || c == '-') {
+    if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_' || c == ':')) {
       c = '_';
     }
   }
@@ -1110,3 +1126,83 @@ config_handler(TSCont cont, TSEvent /* event ATS_UNUSED */, void * /* edata ATS_
   }
   return 0;
 }
+
+//
+// Compilation time unit tests.
+//
+#ifdef DEBUG
+// Remove this check when we drop support for pre-13 GCC versions.
+#if defined(__cpp_lib_constexpr_string) && __cpp_lib_constexpr_string >= 201907L
+constexpr void
+test_sanitize_metric_name_for_prometheus()
+{
+  // Various unchanged names.
+  static_assert(sanitize_metric_name_for_prometheus("foo") == "foo");
+  static_assert(sanitize_metric_name_for_prometheus("foo_bar") == "foo_bar");
+  static_assert(sanitize_metric_name_for_prometheus("foo_bar:baz") == "foo_bar:baz");
+  static_assert(sanitize_metric_name_for_prometheus("FooBar123") == "FooBar123");
+  static_assert(sanitize_metric_name_for_prometheus("UPPERCASE_NAME") == "UPPERCASE_NAME");
+  static_assert(sanitize_metric_name_for_prometheus("lowercase_name") == "lowercase_name");
+  static_assert(sanitize_metric_name_for_prometheus("Mixed_Case_123") == "Mixed_Case_123");
+
+  // Test dots conversion (common in ATS metrics).
+  static_assert(sanitize_metric_name_for_prometheus("foo.bar") == "foo_bar");
+  static_assert(sanitize_metric_name_for_prometheus("proxy.process.allocator.inuse") == "proxy_process_allocator_inuse");
+
+  // Various invalid characters.
+  static_assert(sanitize_metric_name_for_prometheus("foo-bar") == "foo_bar");
+  static_assert(sanitize_metric_name_for_prometheus("foo+bar") == "foo_bar");
+  static_assert(sanitize_metric_name_for_prometheus("foo@bar") == "foo_bar");
+  static_assert(sanitize_metric_name_for_prometheus("foo#bar") == "foo_bar");
+  static_assert(sanitize_metric_name_for_prometheus("foo$bar") == "foo_bar");
+  static_assert(sanitize_metric_name_for_prometheus("foo%bar") == "foo_bar");
+  static_assert(sanitize_metric_name_for_prometheus("foo^bar") == "foo_bar");
+  static_assert(sanitize_metric_name_for_prometheus("foo&bar") == "foo_bar");
+  static_assert(sanitize_metric_name_for_prometheus("foo*bar") == "foo_bar");
+  static_assert(sanitize_metric_name_for_prometheus("foo(bar)") == "foo_bar_");
+  static_assert(sanitize_metric_name_for_prometheus("foo=bar") == "foo_bar");
+  static_assert(sanitize_metric_name_for_prometheus("foo|bar") == "foo_bar");
+  static_assert(sanitize_metric_name_for_prometheus("foo\\bar") == "foo_bar");
+  static_assert(sanitize_metric_name_for_prometheus("foo/bar") == "foo_bar");
+  static_assert(sanitize_metric_name_for_prometheus("foo?bar") == "foo_bar");
+  static_assert(sanitize_metric_name_for_prometheus("foo<bar>") == "foo_bar_");
+  static_assert(sanitize_metric_name_for_prometheus("foo,bar;baz") == "foo_bar_baz");
+  static_assert(sanitize_metric_name_for_prometheus("foo\"bar'baz") == "foo_bar_baz");
+  static_assert(sanitize_metric_name_for_prometheus("foo`bar~baz") == "foo_bar_baz");
+  static_assert(sanitize_metric_name_for_prometheus("foo!bar") == "foo_bar");
+  static_assert(sanitize_metric_name_for_prometheus("foo_bar[baz]") == "foo_bar_baz_");
+  static_assert(sanitize_metric_name_for_prometheus("proxy.process.allocator.inuse.ioBufAllocator[0]") ==
+                "proxy_process_allocator_inuse_ioBufAllocator_0_");
+
+  // Whitespace and control characters.
+  static_assert(sanitize_metric_name_for_prometheus("foo bar") == "foo_bar");
+  static_assert(sanitize_metric_name_for_prometheus("foo\tbar") == "foo_bar");
+  static_assert(sanitize_metric_name_for_prometheus("foo\nbar") == "foo_bar");
+  static_assert(sanitize_metric_name_for_prometheus("foo\rbar") == "foo_bar");
+
+  // Initial digit variations.
+  static_assert(sanitize_metric_name_for_prometheus("0foo") == "_0foo");
+  static_assert(sanitize_metric_name_for_prometheus("1.proxy.process.allocator.inuse.ioBufAllocator[0]") ==
+                "_1_proxy_process_allocator_inuse_ioBufAllocator_0_");
+
+  // Complex combinations.
+  static_assert(sanitize_metric_name_for_prometheus("proxy.process.http.connection_errors[500].rate") ==
+                "proxy_process_http_connection_errors_500__rate");
+  static_assert(sanitize_metric_name_for_prometheus("cache.hit_ratio[0-5min]") == "cache_hit_ratio_0_5min_");
+  static_assert(sanitize_metric_name_for_prometheus("worker.thread[0].cpu.usage%") == "worker_thread_0__cpu_usage_");
+  static_assert(sanitize_metric_name_for_prometheus("1st.metric.name-with+special@chars") == "_1st_metric_name_with_special_chars");
+
+  // Minimal edge cases.
+  static_assert(sanitize_metric_name_for_prometheus("") == "");
+  static_assert(sanitize_metric_name_for_prometheus("a") == "a");
+  static_assert(sanitize_metric_name_for_prometheus(".") == "_");
+  static_assert(sanitize_metric_name_for_prometheus("1") == "_1");
+
+  // Edge cases with multiple consecutive invalid characters.
+  static_assert(sanitize_metric_name_for_prometheus("foo...bar") == "foo___bar");
+  static_assert(sanitize_metric_name_for_prometheus("123foo---bar") == "_123foo___bar");
+  static_assert(sanitize_metric_name_for_prometheus("foo [[[bar]]]") == "foo____bar___");
+  static_assert(sanitize_metric_name_for_prometheus("foo@#$%bar") == "foo____bar");
+}
+#endif // defined(__cpp_lib_constexpr_string) && __cpp_lib_constexpr_string >= 201907L
+#endif // DEBUG
