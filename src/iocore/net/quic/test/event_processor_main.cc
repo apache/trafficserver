@@ -21,10 +21,10 @@
  *  limitations under the License.
  */
 
-// To make compile faster
-// https://github.com/philsquared/Catch/blob/master/docs/slow-compiles.md
-#define CATCH_CONFIG_MAIN
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/reporters/catch_reporter_event_listener.hpp>
+#include <catch2/reporters/catch_reporter_registrars.hpp>
+#include <catch2/interfaces/catch_interfaces_config.hpp>
 
 #include "tscore/Layout.h"
 #include "tscore/Diags.h"
@@ -36,14 +36,15 @@
 
 #define TEST_THREADS 1
 
-struct EventProcessorListener : Catch::TestEventListenerBase {
-  using TestEventListenerBase::TestEventListenerBase; // inherit constructor
+struct EventProcessorListener : Catch::EventListenerBase {
+  using EventListenerBase::EventListenerBase; // inherit constructor
 
   void
   testRunStarting(Catch::TestRunInfo const &testRunInfo) override
   {
     BaseLogFile *base_log_file = new BaseLogFile("stderr");
-    DiagsPtr::set(new Diags(testRunInfo.name, "" /* tags */, "" /* actions */, base_log_file));
+    DiagsPtr::set(new Diags(std::string_view{testRunInfo.name.data(), testRunInfo.name.size()}, "" /* tags */, "" /* actions */,
+                            base_log_file));
     diags()->activate_taglist("vv_quic|quic", DiagsTagType_Debug);
     diags()->config.enabled(DiagsTagType_Debug, 1);
     diags()->show_location = SHOW_LOCATION_DEBUG;

@@ -17,8 +17,8 @@
 
 add_executable(test_origin_server_auth test_aws_auth_v4.cc "${PROJECT_SOURCE_DIR}/aws_auth_v4.cc")
 
-target_link_libraries(test_origin_server_auth PRIVATE OpenSSL::Crypto catch2::catch2 ts::tsutil)
+target_link_libraries(test_origin_server_auth PRIVATE OpenSSL::Crypto Catch2::Catch2WithMain ts::tsutil)
 
 target_compile_definitions(test_origin_server_auth PRIVATE AWS_AUTH_V4_UNIT_TEST)
 
-add_test(NAME test_origin_server_auth COMMAND test_origin_server_auth)
+add_catch2_test(NAME test_origin_server_auth COMMAND test_origin_server_auth)

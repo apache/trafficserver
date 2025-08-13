@@ -20,8 +20,7 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 */
-#define CATCH_CONFIG_MAIN
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
 
 #include <iostream>
 #include <cstring>

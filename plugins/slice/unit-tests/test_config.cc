@@ -21,9 +21,8 @@
  * @brief Unit test for slice ContentRange
  */
 
-#define CATCH_CONFIG_MAIN /* include main function */
 #include "../Config.h"
-#include "catch.hpp" /* catch unit-test framework */
+#include <catch2/catch_test_macros.hpp> /* catch unit-test framework */
 
 #include <array>
 #include <getopt.h>

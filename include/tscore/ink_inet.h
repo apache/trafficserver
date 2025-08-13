@@ -1440,7 +1440,7 @@ struct IpAddr {
   ///< Pre-constructed invalid instance.
   static self const INVALID;
 
-  operator swoc::IPAddr()
+  operator swoc::IPAddr() const
   {
     switch (_family) {
     case AF_INET:

@@ -26,7 +26,7 @@ verify_remap_plugin(cookie_remap)
 if(BUILD_TESTING)
   add_executable(test_cookiejar test_cookiejar.cc strip.cc cookiejar.cc)
 
-  target_link_libraries(test_cookiejar PRIVATE catch2::catch2)
+  target_link_libraries(test_cookiejar PRIVATE Catch2::Catch2WithMain)
 
-  add_test(NAME test_cookiejar COMMAND test_cookiejar)
+  add_catch2_test(NAME test_cookiejar COMMAND test_cookiejar)
 endif()

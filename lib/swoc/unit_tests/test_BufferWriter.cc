@@ -24,7 +24,7 @@
 #include "swoc/MemArena.h"
 #include "swoc/BufferWriter.h"
 #include "swoc/ArenaWriter.h"
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
 
 using swoc::TextView;
 using swoc::MemSpan;
