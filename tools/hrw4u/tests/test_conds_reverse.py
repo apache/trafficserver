@@ -14,12 +14,17 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+from __future__ import annotations
+
+from pathlib import Path
+
 import pytest
 import utils
 
 
 @pytest.mark.conds
 @pytest.mark.reverse
-@pytest.mark.parametrize("input_file,output_file,ast_file", utils.collect_test_files("conds"))
-def test_reverse_conversion(input_file, output_file, ast_file):
+@pytest.mark.parametrize("input_file,output_file", utils.collect_reverse_test_files("conds", "u4wrh"))
+def test_reverse_conversion(input_file: Path, output_file: Path) -> None:
+    """Test that u4wrh reverse conversion produces original hrw4u for conds test cases."""
     utils.run_reverse_test(input_file, output_file)

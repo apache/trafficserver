@@ -73,4 +73,5 @@ markers = [
     "vars: marks tests for all variables",
     "examples: marks tests for all header_rewrite docs examples",
     "reverse: marks tests for reverse conversion (header_rewrite -> hrw4u)",
+    "ast: marks tests for AST validation",
 ]
