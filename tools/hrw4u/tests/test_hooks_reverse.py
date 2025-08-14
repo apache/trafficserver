@@ -14,25 +14,17 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-from setuptools import setup, find_packages
+from __future__ import annotations
 
-setup(
-    name="hrw4u",
-    version="1.0.0",
-    description="HRW4U CLI tool",
-    author="Leif Hedstrom",
-    package_dir={"": "build"},
-    packages=find_packages(where="build"),
-    include_package_data=True,
-    entry_points={"console_scripts": ["hrw4u = hrw4u.__main__:main",]},
-    install_requires=[
-        "antlr4-python3-runtime==4.*",
-    ],
-    python_requires=">=3.10",
-    classifiers=[
-        "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: Implementation :: PyPy",
-        "License :: OSI Approved :: Apache Software License",
-        "Operating System :: OS Independent",
-    ],
-)
+from pathlib import Path
+
+import pytest
+import utils
+
+
+@pytest.mark.hooks
+@pytest.mark.reverse
+@pytest.mark.parametrize("input_file,output_file", utils.collect_reverse_test_files("hooks", "u4wrh"))
+def test_reverse_conversion(input_file: Path, output_file: Path) -> None:
+    """Test that u4wrh reverse conversion produces original hrw4u for hooks test cases."""
+    utils.run_reverse_test(input_file, output_file)

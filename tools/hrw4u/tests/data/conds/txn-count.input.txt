@@ -6,6 +6,6 @@ REMAP {
 
 SEND_RESPONSE {
     if from.url.path ~ /foo/ && ssn-txn-count() > 5 {
-        inbound.req.@Server-Txn-Count = "{ssn-txn-count()}";
+        inbound.resp.@Server-Txn-Count = "{ssn-txn-count()}";
     }
 }

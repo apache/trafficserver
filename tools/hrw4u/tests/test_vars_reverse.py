@@ -23,23 +23,8 @@ import utils
 
 
 @pytest.mark.vars
-@pytest.mark.parametrize("input_file,output_file", utils.collect_output_test_files("vars", "hrw4u"))
-def test_output_matches(input_file: Path, output_file: Path) -> None:
-    """Test that hrw4u output matches expected output for vars test cases."""
-    utils.run_output_test(input_file, output_file)
-
-
-@pytest.mark.vars
-@pytest.mark.ast
-@pytest.mark.parametrize("input_file,ast_file", utils.collect_ast_test_files("vars"))
-def test_ast_matches(input_file: Path, ast_file: Path) -> None:
-    """Test that AST structure matches expected AST for vars test cases."""
-    utils.run_ast_test(input_file, ast_file)
-
-
-@pytest.mark.vars
-@pytest.mark.invalid
-@pytest.mark.parametrize("input_file", utils.collect_failing_inputs("vars"))
-def test_invalid_inputs_fail(input_file: Path) -> None:
-    """Test that invalid vars inputs produce expected errors."""
-    utils.run_failing_test(input_file)
+@pytest.mark.reverse
+@pytest.mark.parametrize("input_file,output_file", utils.collect_reverse_test_files("vars", "u4wrh"))
+def test_reverse_conversion(input_file: Path, output_file: Path) -> None:
+    """Test that u4wrh reverse conversion produces original hrw4u for vars test cases."""
+    utils.run_reverse_test(input_file, output_file)

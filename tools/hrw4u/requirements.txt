@@ -1,4 +1,3 @@
-#
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -14,7 +13,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-antlr4-python3-runtime
-pytest
-pyinstaller
-build
+antlr4-python3-runtime>=4.9,<5.0
+pytest>=7.0,<8.0
+pyinstaller>=5.0,<7.0
+build>=0.8,<2.0

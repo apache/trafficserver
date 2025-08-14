@@ -22,16 +22,9 @@ import pytest
 import utils
 
 
-@pytest.mark.conds
-@pytest.mark.parametrize("input_file,output_file", utils.collect_output_test_files("conds", "hrw4u"))
-def test_output_matches(input_file: Path, output_file: Path) -> None:
-    """Test that hrw4u output matches expected output for conds test cases."""
-    utils.run_output_test(input_file, output_file)
-
-
-@pytest.mark.conds
-@pytest.mark.ast
-@pytest.mark.parametrize("input_file,ast_file", utils.collect_ast_test_files("conds"))
-def test_ast_matches(input_file: Path, ast_file: Path) -> None:
-    """Test that AST structure matches expected AST for conds test cases."""
-    utils.run_ast_test(input_file, ast_file)
+@pytest.mark.ops
+@pytest.mark.reverse
+@pytest.mark.parametrize("input_file,output_file", utils.collect_reverse_test_files("ops", "u4wrh"))
+def test_reverse_conversion(input_file: Path, output_file: Path) -> None:
+    """Test that u4wrh reverse conversion produces original hrw4u for ops test cases."""
+    utils.run_reverse_test(input_file, output_file)

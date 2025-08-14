@@ -1,0 +1,4 @@
+# Note that this also tests the default REMAP hook. We made this a special
+# test, because in hrw4u, we don't use QSA.
+cond %{GEO:COUNTRY} =SE
+  set-redirect 302 https://www.example.com/SE/%{CLIENT-URL:PATH} [QSA]
