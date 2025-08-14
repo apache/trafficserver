@@ -19,7 +19,7 @@ project(origin_server_auth)
 
 add_atsplugin(origin_server_auth origin_server_auth.cc aws_auth_v4.cc)
 
-target_link_libraries(origin_server_auth PRIVATE OpenSSL::Crypto)
+target_link_libraries(origin_server_auth PRIVATE OpenSSL::Crypto libswoc::libswoc)
 
 verify_remap_plugin(origin_server_auth)
 
@@ -34,6 +34,6 @@ project(s3_auth)
 
 add_atsplugin(s3_auth origin_server_auth.cc aws_auth_v4.cc)
 
-target_link_libraries(s3_auth PRIVATE OpenSSL::Crypto)
+target_link_libraries(s3_auth PRIVATE OpenSSL::Crypto libswoc::libswoc)
 
 verify_remap_plugin(s3_auth)
