@@ -17,10 +17,12 @@
 */
 #pragma once
 
+#include <algorithm>
 #include <string>
 #include <string_view>
 #include <unordered_map>
 #include <vector>
+#include <concepts>
 
 #include "ts/ts.h"
 #include "ts/remap.h"
@@ -500,7 +502,7 @@ public:
       // Make sure the hash and vector are populated
       _parser();
 
-      std::sort(_ordered.begin(), _ordered.end());
+      std::ranges::sort(_ordered);
       _modified = true;
     }
 

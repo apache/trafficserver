@@ -88,7 +88,6 @@ Function                    Description
 =========================   =======================================================================
 ``DisableCallback()``       Disables a future callback in this Cript, for this transaction.
 ``Aborted()``               Has the transaction been aborted.
-``LookupStatus()``          Returns the cache lookup status for the transaction.
 =========================   =======================================================================
 
 When disabling a callback, use the following names:
@@ -182,9 +181,9 @@ Example usage:
 Time
 ====
 
-Cripts has encapsulated some common time-related functions in the core.  At the
-moment only the localtime is available, via the ``cripts::Time::Local`` object and its
-``Now()`` method. The ``Now()`` method returns the current time as an object
+Cripts has encapsulated some common time-related functions in the core.  Two different time objects
+are available, ``cripts::Time::Local`` and ``cripts::Time::UTC`` objects and their respective
+``::Now()`` methods. The ``Now()`` method returns the current time as an object
 with the following functions:
 
 =====================   ===========================================================================
@@ -199,10 +198,11 @@ Function                Description
 ``Second()``            Returns the second (0-59).
 ``WeekDay()``           Returns the day of the week (0-6, Sunday is 0).
 ``YearDay()``           Returns the day of the year (0-365).
+``ToDate()``            Returns a string for the Date in HTTP header format
 =====================   ===========================================================================
 
 The time as returned by ``Now()`` can also be used directly in comparisons with previous or future
-times, and can be cast to an integer to get the epoch time.
+times. In addition, the ``Now()`` constructor can take an optional ``cripts::Time::Point`` argument.
 
 Example usage:
 
@@ -212,12 +212,8 @@ Example usage:
    {
      auto now = cripts::Time::Local::Now();
 
-     CDebug("Current time: year={}, month={}, day={}",
-            now.Year(), now.Month(), now.Day());
+     CDebug("Current time: year={}, month={}, day={}", now.Year(), now.Month(), now.Day());
      CDebug("Epoch time: {}", now.Epoch());
-
-     // Can also be used directly as integer
-     integer epoch_time = now;
    }
 
 .. _cripts-misc-plugins:
