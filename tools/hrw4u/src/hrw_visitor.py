@@ -19,7 +19,7 @@ from __future__ import annotations
 from u4wrh.u4wrhVisitor import u4wrhVisitor
 from u4wrh.u4wrhParser import u4wrhParser
 from .hrw_symbols import InverseSymbolResolver
-from hrw4u.errors import hrw4u_error
+from hrw4u.errors import hrw4u_error, SymbolResolutionError
 from hrw4u.validation import Validator
 from hrw4u.debugging import Dbg
 from hrw4u.states import CondState, OperatorState, SectionType, ModifierType
@@ -275,7 +275,10 @@ class HRWInverseVisitor(u4wrhVisitor, VisitorMixin):
                             return None
 
                         case _:
-                            expr, _ = self.symbol_resolver.percent_to_ident_or_func(pct_text, self.section_label)
+                            try:
+                                expr, _ = self.symbol_resolver.percent_to_ident_or_func(pct_text, self.section_label)
+                            except SymbolResolutionError as exc:
+                                raise hrw4u_error(self.filename, ctx, exc)
                             terms = self._group_terms if self._in_group else self._pending_terms
                             terms.append((expr, cond_state))
                             return None
@@ -296,7 +299,10 @@ class HRWInverseVisitor(u4wrhVisitor, VisitorMixin):
         try:
             left_pct = comparison.lhs().getText()
             self._dbg(f"LHS raw: '{left_pct}'")
-            lhs_expr, _ = self.symbol_resolver.percent_to_ident_or_func(left_pct, self.section_label)
+            try:
+                lhs_expr, _ = self.symbol_resolver.percent_to_ident_or_func(left_pct, self.section_label)
+            except SymbolResolutionError as exc:
+                raise hrw4u_error(self.filename, comparison, exc)
 
             match comparison:
                 case _ if comparison.cmpOp():
