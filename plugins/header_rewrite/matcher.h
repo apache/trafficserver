@@ -361,13 +361,13 @@ private:
   test_reg(const std::string &t, const Resources &res) const
   {
     TSAssert(std::holds_alternative<regexHelper>(_data));
-    Dbg(pi_dbg_ctl, "Test regular expression against: %s (NOCASE = %s)", t.c_str(),
+    Dbg(header_rewrite_ns::dbg_ctl, "Test regular expression against: %s (NOCASE = %s)", t.c_str(),
         has_modifier(_mods, CondModifiers::MOD_NOCASE) ? "true" : "false");
     const auto &re    = std::get<regexHelper>(_data);
     int         count = re.regexMatch(t.c_str(), t.length(), const_cast<Resources &>(res).ovector);
 
     if (count > 0) {
-      Dbg(pi_dbg_ctl, "Successfully found regular expression match");
+      Dbg(header_rewrite_ns::dbg_ctl, "Successfully found regular expression match");
       const_cast<Resources &>(res).ovector_ptr   = t.c_str();
       const_cast<Resources &>(res).ovector_count = count;
 

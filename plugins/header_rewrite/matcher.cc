@@ -21,10 +21,20 @@
   limitations under the License.
 */
 
+#include "tsutil/DbgCtl.h"
 #include <string>
 #include <algorithm>
 
 #include "matcher.h"
+
+namespace header_rewrite_ns
+{
+const char PLUGIN_NAME[]     = "header_rewrite";
+const char PLUGIN_NAME_DBG[] = "dbg_header_rewrite";
+
+DbgCtl dbg_ctl{PLUGIN_NAME_DBG};
+DbgCtl pi_dbg_ctl{PLUGIN_NAME};
+} // namespace header_rewrite_ns
 
 static bool
 match_with_modifiers(std::string_view rhs, std::string_view lhs, CondModifiers mods)
@@ -116,7 +126,7 @@ Matchers<const sockaddr *>::test(const sockaddr *const &addr, const Resources & 
   if (ranges.contains(swoc::IPAddr(addr))) {
     if (pi_dbg_ctl.on()) {
       char text[INET6_ADDRSTRLEN];
-      Dbg(pi_dbg_ctl, "Successfully found IP-range match on %s", getIP(addr, text));
+      Dbg(dbg_ctl, "Successfully found IP-range match on %s", getIP(addr, text));
     }
     return true;
   }
