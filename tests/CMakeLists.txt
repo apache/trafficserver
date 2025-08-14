@@ -47,23 +47,24 @@ add_subdirectory(gold_tests/tls)
 
 set(RUNPIPENV PIPENV_VENV_IN_PROJECT=True ${PipEnv})
 
-configure_file(Pipfile Pipfile COPYONLY)
-configure_file(autest.sh.in autest.sh)
-
+set(CMAKE_GOLD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/gold_tests")
+set(CMAKE_SKIP_GOLD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/_skipped_uds_gold_tests")
 set(CURL_UDS_FLAG "")
 if(ENABLE_AUTEST_UDS)
   set(CURL_UDS_FLAG "--curl-uds")
 endif()
+
+configure_file(Pipfile Pipfile COPYONLY)
+configure_file(autest.sh.in autest.sh)
 
 add_custom_target(
   autest
   COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target install
   COMMAND ${RUNPIPENV} install
   COMMAND
-    ${CMAKE_COMMAND} -E env PYTHONPATH=${CMAKE_CURRENT_SOURCE_DIR}/gold_tests/remap:$ENV{PYTHONPATH} ${RUNPIPENV} run
-    env autest --directory ${CMAKE_CURRENT_SOURCE_DIR}/gold_tests --ats-bin=${CMAKE_INSTALL_PREFIX}/bin
-    --proxy-verifier-bin ${PROXY_VERIFIER_PATH} --build-root ${CMAKE_BINARY_DIR} --sandbox ${AUTEST_SANDBOX}
-    ${CURL_UDS_FLAG} ${AUTEST_OPTIONS}
+    ${CMAKE_COMMAND} -E env PYTHONPATH=${CMAKE_GOLD_DIR}/remap:$ENV{PYTHONPATH} ${RUNPIPENV} run env autest --directory
+    ${CMAKE_GOLD_DIR} --ats-bin=${CMAKE_INSTALL_PREFIX}/bin --proxy-verifier-bin ${PROXY_VERIFIER_PATH} --build-root
+    ${CMAKE_BINARY_DIR} --sandbox ${AUTEST_SANDBOX} ${CURL_UDS_FLAG} ${AUTEST_OPTIONS}
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   USES_TERMINAL
 )
@@ -72,10 +73,26 @@ add_custom_target(
   autest_no_install
   COMMAND ${RUNPIPENV} install
   COMMAND
-    ${CMAKE_COMMAND} -E env PYTHONPATH=${CMAKE_CURRENT_SOURCE_DIR}/gold_tests/remap:$ENV{PYTHONPATH} ${RUNPIPENV} run
-    env autest --directory ${CMAKE_CURRENT_SOURCE_DIR}/gold_tests --ats-bin=${CMAKE_INSTALL_PREFIX}/bin
-    --proxy-verifier-bin ${PROXY_VERIFIER_PATH} --build-root ${CMAKE_BINARY_DIR} --sandbox ${AUTEST_SANDBOX}
-    ${CURL_UDS_FLAG} ${AUTEST_OPTIONS}
+    ${CMAKE_COMMAND} -E env PYTHONPATH=${CMAKE_GOLD_DIR}/remap:$ENV{PYTHONPATH} ${RUNPIPENV} run env autest --directory
+    ${CMAKE_GOLD_DIR} --ats-bin=${CMAKE_INSTALL_PREFIX}/bin --proxy-verifier-bin ${PROXY_VERIFIER_PATH} --build-root
+    ${CMAKE_BINARY_DIR} --sandbox ${AUTEST_SANDBOX} ${CURL_UDS_FLAG} ${AUTEST_OPTIONS}
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+  USES_TERMINAL
+)
+
+# autest uds specific target that skips tests and runs with curl flag
+add_custom_target(
+  autest-uds
+  COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target install
+  COMMAND ${RUNPIPENV} install
+  COMMAND ${CMAKE_COMMAND} -E rename ${CMAKE_GOLD_DIR}/h2 ${CMAKE_SKIP_GOLD_DIR}/h2
+  COMMAND ${CMAKE_COMMAND} -E rename ${CMAKE_GOLD_DIR}/tls ${CMAKE_SKIP_GOLD_DIR}/tls
+  COMMAND
+    ${CMAKE_COMMAND} -E env PYTHONPATH=${CMAKE_GOLD_DIR}/remap:$ENV{PYTHONPATH} ${RUNPIPENV} run env autest --directory
+    ${CMAKE_GOLD_DIR} --ats-bin=${CMAKE_INSTALL_PREFIX}/bin --proxy-verifier-bin ${PROXY_VERIFIER_PATH} --build-root
+    ${CMAKE_BINARY_DIR} --sandbox ${AUTEST_SANDBOX} ${CURL_UDS_FLAG} ${AUTEST_OPTIONS}
+  COMMAND ${CMAKE_COMMAND} -E rename {CMAKE_SKIP_GOLD_DIR}/h2 ${CMAKE_GOLD_DIR}/h2
+  COMMAND ${CMAKE_COMMAND} -E rename ${CMAKE_SKIP_GOLD_DIR}/tls ${CMAKE_GOLD_DIR}/tls
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   USES_TERMINAL
 )

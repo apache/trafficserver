@@ -24,6 +24,7 @@ Test transactions and sessions over http2, making sure they open and close in th
 '''
 
 Test.SkipUnless(Condition.HasCurlFeature('http2'))
+Test.SkipIf(Condition.CurlUsingUnixDomainSocket())
 
 # Define default ATS. Disable the cache to simplify the test.
 ts = Test.MakeATSProcess("ts", enable_tls=True, enable_cache=False)
@@ -67,7 +68,7 @@ tr = Test.AddTestRun()
 # Create a bunch of curl commands to be executed in parallel. Default.Process is set in SpawnCurlCommands.
 # On Fedora 28/29, it seems that curl will occasionally timeout after a couple seconds and return exitcode 2
 # Examining the packet capture shows that Traffic Server dutifully sends the response
-ps = tr.SpawnCurlCommands(cmdstr=cmd, count=numberOfRequests, retcode=Any(0, 2))
+ps = tr.SpawnCurlCommands(cmdstr=cmd, count=numberOfRequests, retcode=Any(0, 2), ts=ts)
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.ReturnCode = Any(0, 2)
 

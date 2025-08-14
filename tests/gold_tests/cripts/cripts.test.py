@@ -71,7 +71,7 @@ class CriptsBasicTest:
 
     def runHeaderTest(self):
         tr = Test.AddTestRun('Exercise traffic through cripts.')
-        tr.MakeCurlCommand(f'-v -H "Host: www.example.com" http://127.0.0.1:{self.ts.Variables.port}')
+        tr.MakeCurlCommand(f'-v -H "Host: www.example.com" http://127.0.0.1:{self.ts.Variables.port}', ts=self.ts)
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.StartBefore(self.server, ready=When.PortOpen(self.server.Variables.Port))
         tr.Processes.Default.StartBefore(self.ts)

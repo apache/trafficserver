@@ -22,7 +22,7 @@ import os
 Test.Summary = '''
 Verify ip_allow filtering behavior.
 '''
-
+Test.SkipIf(Condition.CurlUsingUnixDomainSocket())
 Test.ContinueOnFail = True
 
 # Define default ATS
@@ -141,7 +141,7 @@ tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.SSL_Port))
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 
-tr.MakeCurlCommand('--verbose -H "Host: www.example.com" http://localhost:{ts_port}/get'.format(ts_port=ts.Variables.port))
+tr.MakeCurlCommand('--verbose -H "Host: www.example.com" http://localhost:{ts_port}/get'.format(ts_port=ts.Variables.port), ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = 'gold/200.gold'
 tr.StillRunningAfter = ts
@@ -152,7 +152,8 @@ tr.StillRunningAfter = server
 # not in the allowlist.
 #
 tr = Test.AddTestRun()
-tr.MakeCurlCommand('--verbose -X CONNECT -H "Host: localhost" http://localhost:{ts_port}/connect'.format(ts_port=ts.Variables.port))
+tr.MakeCurlCommand(
+    '--verbose -X CONNECT -H "Host: localhost" http://localhost:{ts_port}/connect'.format(ts_port=ts.Variables.port), ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = 'gold/403.gold'
 tr.StillRunningAfter = ts
@@ -164,7 +165,8 @@ tr.StillRunningAfter = server
 #
 tr = Test.AddTestRun()
 tr.MakeCurlCommand(
-    '--http2 --verbose -k -X PUSH -H "Host: localhost" https://localhost:{ts_port}/h2_push'.format(ts_port=ts.Variables.ssl_port))
+    '--http2 --verbose -k -X PUSH -H "Host: localhost" https://localhost:{ts_port}/h2_push'.format(ts_port=ts.Variables.ssl_port),
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = 'gold/403_h2.gold'
 tr.StillRunningAfter = ts
