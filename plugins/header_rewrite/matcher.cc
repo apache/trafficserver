@@ -126,7 +126,7 @@ Matchers<const sockaddr *>::test(const sockaddr *const &addr, const Resources & 
   if (ranges.contains(swoc::IPAddr(addr))) {
     if (pi_dbg_ctl.on()) {
       char text[INET6_ADDRSTRLEN];
-      Dbg(dbg_ctl, "Successfully found IP-range match on %s", getIP(addr, text));
+      Dbg(pi_dbg_ctl, "Successfully found IP-range match on %s", getIP(addr, text));
     }
     return true;
   }
