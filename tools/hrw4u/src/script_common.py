@@ -24,9 +24,10 @@ import sys
 from typing import Final, NoReturn, Protocol, TextIO, Any
 
 from antlr4 import CommonTokenStream, InputStream
-from antlr4.error.ErrorStrategy import BailErrorStrategy
+from antlr4.error.ErrorStrategy import BailErrorStrategy, DefaultErrorStrategy
 
 from hrw4u.errors import Hrw4uSyntaxError, ThrowingErrorListener
+from hrw4u.collector import ErrorCollector, CollectingErrorListener
 
 # Modern Python 3.11+ requirement
 REQUIRED_PYTHON: Final[tuple[int, int]] = (3, 11)
@@ -73,7 +74,7 @@ def fatal(message: str) -> NoReturn:
     sys.exit(1)
 
 
-def create_base_parser(description: str) -> argparse.ArgumentParser:
+def create_base_parser(description: str) -> tuple[argparse.ArgumentParser, argparse._MutuallyExclusiveGroup]:
     """Create base argument parser with common options."""
     parser = argparse.ArgumentParser(description=description, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument(
@@ -87,6 +88,8 @@ def create_base_parser(description: str) -> argparse.ArgumentParser:
     output_group.add_argument("--ast", action="store_true", help="Produce the ANTLR parse tree only")
 
     parser.add_argument("--debug", action="store_true", help="Enable debug output")
+    parser.add_argument(
+        "--collect-errors", action="store_true", help="Collect and report multiple errors instead of stopping at first error")
 
     return parser, output_group
 
@@ -105,41 +108,85 @@ def process_input(input_file: TextIO) -> tuple[str, str]:
 
 
 def create_parse_tree(
-        content: str, filename: str, lexer_class: type[LexerProtocol], parser_class: type[ParserProtocol],
-        error_prefix: str) -> tuple[Any, ParserProtocol]:
-    """Create ANTLR parse tree from input content."""
+        content: str,
+        filename: str,
+        lexer_class: type[LexerProtocol],
+        parser_class: type[ParserProtocol],
+        error_prefix: str,
+        collect_errors: bool = False) -> tuple[Any, ParserProtocol, ErrorCollector | None]:
+    """Create ANTLR parse tree from input content with optional error collection."""
     input_stream = InputStream(content)
+    error_collector = None
 
-    # Configure lexer
+    if collect_errors:
+        error_collector = ErrorCollector()
+        error_listener = CollectingErrorListener(filename=filename, error_collector=error_collector)
+    else:
+        error_listener = ThrowingErrorListener(filename=filename)
+
     lexer = lexer_class(input_stream)
     lexer.removeErrorListeners()
-    lexer.addErrorListener(ThrowingErrorListener(filename=filename))
+    lexer.addErrorListener(error_listener)
 
-    # Configure parser
     token_stream = CommonTokenStream(lexer)
     parser_obj = parser_class(token_stream)
     parser_obj.removeErrorListeners()
-    parser_obj.addErrorListener(ThrowingErrorListener(filename=filename))
-    parser_obj.errorHandler = BailErrorStrategy()
+    parser_obj.addErrorListener(error_listener)
+
+    if collect_errors:
+        parser_obj.errorHandler = DefaultErrorStrategy()
+    else:
+        parser_obj.errorHandler = BailErrorStrategy()
 
     try:
-        return parser_obj.program(), parser_obj
+        tree = parser_obj.program()
+        return tree, parser_obj, error_collector
     except Hrw4uSyntaxError as e:
-        fatal(str(e))
+        if collect_errors:
+            if error_collector:
+                error_collector.add_error(e)
+            return None, parser_obj, error_collector
+        else:
+            fatal(str(e))
     except Exception as e:
-        fatal(f"{filename}:0:0 - {error_prefix} error: {e}")
+        if collect_errors:
+            if error_collector:
+                syntax_error = Hrw4uSyntaxError(filename, 0, 0, f"{error_prefix} error: {e}", "")
+                error_collector.add_error(syntax_error)
+            return None, parser_obj, error_collector
+        else:
+            fatal(f"{filename}:0:0 - {error_prefix} error: {e}")
 
 
 def generate_output(
-        tree: Any, parser_obj: ParserProtocol, visitor_class: type[VisitorProtocol], filename: str, debug: bool,
-        ast_mode: bool) -> None:
-    """Generate and print output based on mode."""
+        tree: Any,
+        parser_obj: ParserProtocol,
+        visitor_class: type[VisitorProtocol],
+        filename: str,
+        debug: bool,
+        ast_mode: bool,
+        error_collector: ErrorCollector | None = None) -> None:
+    """Generate and print output based on mode with optional error collection."""
     if ast_mode:
-        print(tree.toStringTree(recog=parser_obj))
+        if tree is not None:
+            print(tree.toStringTree(recog=parser_obj))
+        elif error_collector and error_collector.has_errors():
+            print("Parse tree not available due to syntax errors.")
     else:
-        visitor = visitor_class(filename=filename, debug=debug)
-        try:
-            result = visitor.visit(tree)
-            print("\n".join(result))
-        except Exception as e:
-            fatal(str(e))
+        if tree is not None:
+            visitor = visitor_class(filename=filename, debug=debug, error_collector=error_collector)
+            try:
+                result = visitor.visit(tree)
+                if result:
+                    print("\n".join(result))
+            except Exception as e:
+                if error_collector:
+                    syntax_error = Hrw4uSyntaxError(filename, 0, 0, f"Visitor error: {e}", "")
+                    error_collector.add_error(syntax_error)
+                else:
+                    fatal(str(e))
+
+    if error_collector and error_collector.has_errors():
+        print(error_collector.get_error_summary(), file=sys.stderr)
+        if not ast_mode and tree is None:
+            sys.exit(1)

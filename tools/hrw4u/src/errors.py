@@ -21,13 +21,13 @@ from antlr4.error.ErrorListener import ErrorListener
 
 
 class ThrowingErrorListener(ErrorListener):
+    """ANTLR error listener that throws exceptions on syntax errors."""
 
-    def __init__(self, filename="<input>"):
+    def __init__(self, filename: str = "<input>") -> None:
         super().__init__()
         self.filename = filename
 
-    def syntaxError(self, recognizer, _offendingSymbol, line, column, msg, e):
-        input_stream = None
+    def syntaxError(self, recognizer, _offendingSymbol, line: int, column: int, msg: str, e) -> None:
         code_line = ""
 
         try:
@@ -40,17 +40,18 @@ class ThrowingErrorListener(ErrorListener):
             if input_stream is not None:
                 code_line = input_stream.strdata.splitlines()[line - 1]
         except Exception:
-            print("Error retrieving source line, this is a system error in ANTLR4.")
+            pass
 
         raise Hrw4uSyntaxError(self.filename, line, column, msg, code_line)
 
 
 class Hrw4uSyntaxError(Exception):
+    """Formatted syntax error with source context."""
 
-    def __init__(self, filename, line, column, message, source_line):
+    def __init__(self, filename: str, line: int, column: int, message: str, source_line: str) -> None:
         super().__init__(self._format_error(filename, line, column, message, source_line))
 
-    def _format_error(self, filename, line, col, message, source_line):
+    def _format_error(self, filename: str, line: int, col: int, message: str, source_line: str) -> str:
         error = f"{filename}:{line}:{col}: error: {message}"
 
         lineno = f"{line:4d}"
@@ -60,14 +61,15 @@ class Hrw4uSyntaxError(Exception):
 
 
 class SymbolResolutionError(Exception):
+    """Error for unrecognized symbols during compilation."""
 
-    def __init__(self, name, message=None):
+    def __init__(self, name: str, message: str | None = None) -> None:
         self.name = name
         super().__init__(message or f"Unrecognized symbol: '{name}'")
 
 
-# Main error handling function, use this in the visitor and symbols
-def hrw4u_error(filename, ctx, exc):
+def hrw4u_error(filename: str, ctx, exc: Exception) -> Hrw4uSyntaxError:
+    """Convert exceptions to formatted syntax errors with source context."""
     if isinstance(exc, Hrw4uSyntaxError):
         return exc
 

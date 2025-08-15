@@ -31,7 +31,6 @@ def main() -> None:
 
     # Add U4WRH-specific output option
     output_group.add_argument("--hrw4u", action="store_true", help="Produce reconstructed hrw4u output (default)")
-
     args = parser.parse_args()
 
     # Default to hrw4u output if neither AST nor hrw4u specified
@@ -40,10 +39,10 @@ def main() -> None:
 
     # Process input and create parse tree
     content, filename = process_input(args.input_file)
-    tree, parser_obj = create_parse_tree(content, filename, u4wrhLexer, u4wrhParser, "u4wrh")
+    tree, parser_obj, error_collector = create_parse_tree(content, filename, u4wrhLexer, u4wrhParser, "u4wrh", args.collect_errors)
 
     # Generate output
-    generate_output(tree, parser_obj, HRWInverseVisitor, filename, args.debug, args.ast)
+    generate_output(tree, parser_obj, HRWInverseVisitor, filename, args.debug, args.ast, error_collector)
 
 
 if __name__ == "__main__":

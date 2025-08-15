@@ -44,6 +44,7 @@ class SuffixGroup(Enum):
     BOOL_FIELDS = frozenset({"TRUE", "FALSE", "YES", "NO", "ON", "OFF", "0", "1"})
 
     def validate(self, suffix: str) -> None:
+        """Validate that suffix is allowed for this group."""
         allowed_upper = {val.upper() for val in self.value}
         if suffix.upper() not in allowed_upper:
             raise ValueError(
@@ -56,7 +57,7 @@ class VarType(Enum):
     INT8 = ("int8", "INT8", "set-state-int8", 4)
     INT16 = ("int16", "INT16", "set-state-int16", 1)
 
-    def __init__(self, name: str, cond_tag: str, op_tag: str, limit: int):
+    def __init__(self, name: str, cond_tag: str, op_tag: str, limit: int) -> None:
         self._name = name
         self._cond_tag = cond_tag
         self._op_tag = op_tag
@@ -79,11 +80,12 @@ class VarType(Enum):
         return self._name
 
     @classmethod
-    def from_str(cls, type: str) -> 'VarType':
+    def from_str(cls, type_str: str) -> 'VarType':
+        """Create VarType from string representation."""
         for vt in cls:
-            if vt._name == type.lower():
+            if vt._name == type_str.lower():
                 return vt
-        raise ValueError(f"Unknown VarType string: {type}")
+        raise ValueError(f"Unknown VarType string: {type_str}")
 
 
 @dataclass(slots=True, frozen=True)
@@ -94,5 +96,5 @@ class Symbol:
     def as_cond(self) -> str:
         return f"%{{STATE-{self.var_type.cond_tag}:{self.index}}}"
 
-    def as_operator(self, value) -> str:
+    def as_operator(self, value: str) -> str:
         return f"{self.var_type.op_tag} {self.index} {value}"

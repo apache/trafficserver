@@ -56,7 +56,7 @@ class SectionValidator:
 
     @staticmethod
     def validate_section_access(name: str, section: SectionType | None, restricted: Set[SectionType] | None) -> None:
-        """Validate if a symbol can be used in the given section"""
+        """Validate if a symbol can be used in the given section."""
         if section and restricted and section in restricted:
             raise SymbolResolutionError(name, f"{name} is not available in the {section.value} section")
 

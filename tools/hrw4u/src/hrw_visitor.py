@@ -32,10 +32,12 @@ class HRWInverseVisitor(u4wrhVisitor, VisitorMixin):
             self,
             filename: str = SystemDefaults.DEFAULT_FILENAME,
             section_label: SectionType = SectionType.REMAP,
-            debug: bool = SystemDefaults.DEFAULT_DEBUG):
+            debug: bool = SystemDefaults.DEFAULT_DEBUG,
+            error_collector=None) -> None:
         self.filename = filename
         self.section_label = section_label
         self.output: list[str] = []
+        self.error_collector = error_collector
 
         self._pending_terms: list[tuple[str, CondState]] = []
         self._in_group: bool = False
@@ -54,10 +56,10 @@ class HRWInverseVisitor(u4wrhVisitor, VisitorMixin):
 # Helpers
 #
 
-    def _emit(self, s: str):
+    def _emit(self, s: str) -> None:
         self.output.append(self.format_with_indent(s, self._stmt_indent))
 
-    def _close_if_and_section(self):
+    def _close_if_and_section(self) -> None:
         if self._in_if_block:
             self._stmt_indent -= 1
             self._emit("}")
@@ -68,13 +70,13 @@ class HRWInverseVisitor(u4wrhVisitor, VisitorMixin):
             self._section_opened = False
         self._in_elif_mode = False
 
-    def _reset_condition_state(self):
+    def _reset_condition_state(self) -> None:
         self._pending_terms.clear()
         self._in_elif_mode = False
         self._in_group = False
         self._group_terms.clear()
 
-    def _start_new_section(self, section_type: SectionType):
+    def _start_new_section(self, section_type: SectionType) -> None:
         self._dbg.enter(f"start_section {section_type.value}")
 
         if self._section_opened and self.section_label == section_type:
@@ -102,7 +104,7 @@ class HRWInverseVisitor(u4wrhVisitor, VisitorMixin):
         self._stmt_indent += 1
         self._dbg.exit(f"start_section {section_type.value}")
 
-    def _ensure_section(self):
+    def _ensure_section(self) -> None:
         if not self._section_opened:
             self._emit(f"{self.section_label.value} {{")
             self._section_opened = True
@@ -147,7 +149,7 @@ class HRWInverseVisitor(u4wrhVisitor, VisitorMixin):
         self._dbg.exit(f"result: {result}")
         return result
 
-    def _flush_pending_condition(self):
+    def _flush_pending_condition(self) -> None:
         if not self._pending_terms:
             return
 
@@ -168,7 +170,7 @@ class HRWInverseVisitor(u4wrhVisitor, VisitorMixin):
 # Visitors
 #
 
-    def visitProgram(self, ctx: u4wrhParser.ProgramContext):
+    def visitProgram(self, ctx: u4wrhParser.ProgramContext) -> list[str]:
         self._dbg.enter("visitProgram")
         try:
             for line in ctx.line():
@@ -187,7 +189,7 @@ class HRWInverseVisitor(u4wrhVisitor, VisitorMixin):
         finally:
             self._dbg.exit("visitProgram")
 
-    def visitElifLine(self, ctx: u4wrhParser.ElifLineContext):
+    def visitElifLine(self, ctx: u4wrhParser.ElifLineContext) -> None:
         self._dbg.enter("visitElifLine")
         try:
             if self._in_if_block:
@@ -198,7 +200,7 @@ class HRWInverseVisitor(u4wrhVisitor, VisitorMixin):
         finally:
             self._dbg.exit("visitElifLine")
 
-    def visitElseLine(self, ctx: u4wrhParser.ElseLineContext):
+    def visitElseLine(self, ctx: u4wrhParser.ElseLineContext) -> None:
         self._dbg.enter("visitElseLine")
         try:
             if self._in_if_block:
@@ -219,7 +221,7 @@ class HRWInverseVisitor(u4wrhVisitor, VisitorMixin):
         finally:
             self._dbg.exit("visitElseLine")
 
-    def visitCondLine(self, ctx: u4wrhParser.CondLineContext):
+    def visitCondLine(self, ctx: u4wrhParser.CondLineContext) -> None:
         self._dbg.enter("visitCondLine")
         try:
             cond_state = CondState()
@@ -278,7 +280,12 @@ class HRWInverseVisitor(u4wrhVisitor, VisitorMixin):
                             try:
                                 expr, _ = self.symbol_resolver.percent_to_ident_or_func(pct_text, self.section_label)
                             except SymbolResolutionError as exc:
-                                raise hrw4u_error(self.filename, ctx, exc)
+                                error = hrw4u_error(self.filename, ctx, exc)
+                                if self.error_collector:
+                                    self.error_collector.add_error(error)
+                                    return None  # Continue processing
+                                else:
+                                    raise error
                             terms = self._group_terms if self._in_group else self._pending_terms
                             terms.append((expr, cond_state))
                             return None
@@ -290,7 +297,12 @@ class HRWInverseVisitor(u4wrhVisitor, VisitorMixin):
                         terms.append((comparison_expr, cond_state))
                         return None
 
-                    raise hrw4u_error(self.filename, body, "Unrecognized condition body")
+                    error = hrw4u_error(self.filename, body, "Unrecognized condition body")
+                    if self.error_collector:
+                        self.error_collector.add_error(error)
+                        return None  # Continue processing
+                    else:
+                        raise error
         finally:
             self._dbg.exit("visitCondLine")
 
@@ -302,7 +314,12 @@ class HRWInverseVisitor(u4wrhVisitor, VisitorMixin):
             try:
                 lhs_expr, _ = self.symbol_resolver.percent_to_ident_or_func(left_pct, self.section_label)
             except SymbolResolutionError as exc:
-                raise hrw4u_error(self.filename, comparison, exc)
+                error = hrw4u_error(self.filename, comparison, exc)
+                if self.error_collector:
+                    self.error_collector.add_error(error)
+                    return "ERROR"  # Return placeholder to continue processing
+                else:
+                    raise error
 
             match comparison:
                 case _ if comparison.cmpOp():
@@ -352,11 +369,16 @@ class HRWInverseVisitor(u4wrhVisitor, VisitorMixin):
                     return result
 
                 case _:
-                    raise hrw4u_error(self.filename, comparison, "Invalid comparison")
+                    error = hrw4u_error(self.filename, comparison, "Invalid comparison")
+                    if self.error_collector:
+                        self.error_collector.add_error(error)
+                        return "ERROR"  # Return placeholder to continue processing
+                    else:
+                        raise error
         finally:
             self._dbg.exit("_build_comparison")
 
-    def visitOpLine(self, ctx: u4wrhParser.OpLineContext):
+    def visitOpLine(self, ctx: u4wrhParser.OpLineContext) -> None:
         self._dbg.enter("visitOpLine")
         try:
             self._ensure_section()
@@ -419,6 +441,11 @@ class HRWInverseVisitor(u4wrhVisitor, VisitorMixin):
 
             return None
         except Exception as exc:
-            raise hrw4u_error(self.filename, ctx, exc)
+            error = hrw4u_error(self.filename, ctx, exc)
+            if self.error_collector:
+                self.error_collector.add_error(error)
+                return None  # Continue processing other operations
+            else:
+                raise error
         finally:
             self._dbg.exit("visitOpLine")
