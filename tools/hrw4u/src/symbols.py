@@ -27,13 +27,14 @@ from hrw4u.common import SectionValidator, SystemDefaults
 
 
 class SymbolResolver:
+    """Resolves hrw4u symbols to their corresponding header_rewrite operations."""
 
-    def __init__(self, debug: bool = SystemDefaults.DEFAULT_DEBUG):
+    def __init__(self, debug: bool = SystemDefaults.DEFAULT_DEBUG) -> None:
         self._symbols: dict[str, types.Symbol] = {}
         self._var_counter = {vt: 0 for vt in types.VarType}
         self._dbg = Dbg(debug)
 
-    def _check_section(self, name: str, section: SectionType | None, restricted: set[SectionType] | None):
+    def _check_section(self, name: str, section: SectionType | None, restricted: set[SectionType] | None) -> None:
         SectionValidator.validate_section_access(name, section, restricted)
 
     def symbol_for(self, name: str) -> types.Symbol | None:
@@ -41,18 +42,17 @@ class SymbolResolver:
 
     def get_statement_spec(self, name: str) -> tuple[str, Callable[[str], None] | None]:
         try:
-            cmd, validator = tables.STATEMENT_FUNCTION_MAP[name]
-            return cmd, validator
+            return tables.STATEMENT_FUNCTION_MAP[name]
         except KeyError:
             raise SymbolResolutionError(name, "Unknown operator or invalid standalone use")
 
-    def declare_variable(self, name: str, type: str) -> str:
+    def declare_variable(self, name: str, type_name: str) -> str:
         try:
-            var_type = types.VarType.from_str(type)
+            var_type = types.VarType.from_str(type_name)
         except ValueError:
-            raise SymbolResolutionError(name, f"Invalid type '{type}'")
+            raise SymbolResolutionError(name, f"Invalid type '{type_name}'")
         if self._var_counter[var_type] >= var_type.limit:
-            raise SymbolResolutionError(name, f"Too many '{type}' variables (max {var_type.limit})")
+            raise SymbolResolutionError(name, f"Too many '{type_name}' variables (max {var_type.limit})")
 
         symbol = types.Symbol(var_type, self._var_counter[var_type])
         self._var_counter[var_type] += 1
@@ -61,6 +61,7 @@ class SymbolResolver:
 
     def resolve_assignment(self, name: str, value: str, section: SectionType | None = None) -> str:
         self._dbg.enter(f"resolve_assignment: {name} = {value} (section={section})")
+
         for op_key, (commands, validator, uppercase, restricted_sections) in tables.OPERATOR_MAP.items():
             if op_key.endswith("."):
                 if name.startswith(op_key):
@@ -70,7 +71,7 @@ class SymbolResolver:
                         qualifier = qualifier.upper()
                     if validator:
                         validator(qualifier)
-                    if isinstance(commands, (list, tuple)):  # rm- / -set- operator
+                    if isinstance(commands, (list, tuple)):
                         if value == '""':
                             result = f"{commands[0]} {qualifier}"
                         else:
@@ -79,14 +80,13 @@ class SymbolResolver:
                         result = f"{commands} {qualifier} {value}"
                     self._dbg.exit(f"=> prefix-operator: {result}")
                     return result
-            else:
-                if name == op_key:
-                    self._check_section(name, section, restricted_sections)
-                    if validator:
-                        validator(value)
-                    result = f"{commands} {value}"
-                    self._dbg.exit(f"=> operator: {result}")
-                    return result
+            elif name == op_key:
+                self._check_section(name, section, restricted_sections)
+                if validator:
+                    validator(value)
+                result = f"{commands} {value}"
+                self._dbg.exit(f"=> operator: {result}")
+                return result
 
         if resolved_lhs := self.symbol_for(name):
             if resolved_rhs := self.symbol_for(value):
@@ -111,14 +111,12 @@ class SymbolResolver:
             self._dbg.exit(f"=> symbol_table: {symbol.as_cond()}")
             return symbol.as_cond(), False
 
-        # Exact match
         if name in tables.CONDITION_MAP:
             tag, _, _, restricted, default_expr, _ = tables.CONDITION_MAP[name]
             self._check_section(name, section, restricted)
             self._dbg.exit(f"=> exact condition_map: {tag}")
             return tag, default_expr
 
-        # Prefix match
         for prefix, (tag, validator, uppercase, restricted, default_expr, _) in tables.CONDITION_MAP.items():
             if prefix.endswith(".") and name.startswith(prefix):
                 self._check_section(name, section, restricted)
@@ -169,8 +167,7 @@ class SymbolResolver:
             result = command
         else:
             result = f"{command} {' '.join(args)}"
-            # Special hack, only the keep_query function needs the [I] modifier right now ...
-            # Todo: This should be handled by the states.py module.
+            # TODO: Move this special case to states.py module
             if func_name == "keep_query":
                 result += " [I]"
         self._dbg.exit(f"=> resolved statement function: {result}")

@@ -39,10 +39,15 @@ class QueuedItem:
 class HRW4UVisitor(hrw4uVisitor, VisitorMixin):
     _SUBSTITUTE_PATTERN = RegexPatterns.SUBSTITUTE_PATTERN
 
-    def __init__(self, filename: str = SystemDefaults.DEFAULT_FILENAME, debug: bool = SystemDefaults.DEFAULT_DEBUG):
+    def __init__(
+            self,
+            filename: str = SystemDefaults.DEFAULT_FILENAME,
+            debug: bool = SystemDefaults.DEFAULT_DEBUG,
+            error_collector=None) -> None:
         self.filename = filename
         self.output: list[str] = []
         self.current_section: SectionType | None = None
+        self.error_collector = error_collector
 
         self._cond_indent = 0
         self._stmt_indent = 0
@@ -51,9 +56,9 @@ class HRW4UVisitor(hrw4uVisitor, VisitorMixin):
 
         self._dbg = Dbg(debug)
 
-        self.symbol_resolver = SymbolResolver(SystemDefaults.DEFAULT_CONFIGURABLE)  # ToDo: make this configurable
+        self.symbol_resolver = SymbolResolver(SystemDefaults.DEFAULT_CONFIGURABLE)  # TODO: make this configurable
 
-    def _make_condition(self, cond_text: str, last: bool = False, negate: bool = False):
+    def _make_condition(self, cond_text: str, last: bool = False, negate: bool = False) -> str:
         self._dbg(f"make_condition: {cond_text} last={last} negate={negate}")
         self._cond_state.not_ |= negate
         self._cond_state.last = last
@@ -63,12 +68,12 @@ class HRW4UVisitor(hrw4uVisitor, VisitorMixin):
 # Helpers
 #
 
-    def _queue_condition(self, text: str):
+    def _queue_condition(self, text: str) -> None:
         self._dbg(f"queue cond: {text}  state={self._cond_state.to_list()}")
         self._queued = QueuedItem(text=text, state=self._cond_state.copy(), indent=self._cond_indent)
         self._cond_state.reset()
 
-    def _flush_condition(self):
+    def _flush_condition(self) -> None:
         if self._queued:
             mods = self._queued.state.to_list()
             self._dbg(f"flush cond: {self._queued.text} state={mods} indent={self._queued.indent}")
@@ -76,12 +81,12 @@ class HRW4UVisitor(hrw4uVisitor, VisitorMixin):
             self.output.append(self.format_with_indent(f"{self._queued.text}{mod_str}", self._queued.indent))
             self._queued = None
 
-    def _parse_function_call(self, ctx):
+    def _parse_function_call(self, ctx) -> tuple[str, list[str]]:
         func = ctx.funcName.text
         args = [v.getText() for v in ctx.argumentList().value()] if ctx.argumentList() else []
         return func, args
 
-    def _substitute_strings(self, s: str, ctx):
+    def _substitute_strings(self, s: str, ctx) -> str:
         inner = s[1:-1]
 
         def repl(m: re.Match) -> str:
@@ -100,7 +105,12 @@ class HRW4UVisitor(hrw4uVisitor, VisitorMixin):
                     return replacement
                 raise SymbolResolutionError(m.group(0), "Unrecognized substitution format")
             except Exception as e:
-                raise hrw4u_error(self.filename, ctx, f"symbol error in {{}}: {e}")
+                error = hrw4u_error(self.filename, ctx, f"symbol error in {{}}: {e}")
+                if self.error_collector:
+                    self.error_collector.add_error(error)
+                    return f"{{ERROR: {e}}}"  # Return placeholder to continue processing
+                else:
+                    raise error
 
         return f'"{self._SUBSTITUTE_PATTERN.sub(repl, inner)}"'
 
@@ -108,7 +118,7 @@ class HRW4UVisitor(hrw4uVisitor, VisitorMixin):
 # Visitors
 #
 
-    def visitProgram(self, ctx):
+    def visitProgram(self, ctx) -> list[str]:
         self._dbg.enter("visitProgram")
         try:
             sections = ctx.section()
@@ -123,7 +133,7 @@ class HRW4UVisitor(hrw4uVisitor, VisitorMixin):
         finally:
             self._dbg.exit("visitProgram")
 
-    def visitSection(self, ctx):
+    def visitSection(self, ctx) -> None:
         self._dbg.enter("visitSection")
         if ctx.varSection():
             return self.visitVarSection(ctx.varSection())
@@ -132,7 +142,12 @@ class HRW4UVisitor(hrw4uVisitor, VisitorMixin):
         try:
             self.current_section = SectionType(section_name)
         except ValueError:
-            raise hrw4u_error(self.filename, ctx, f"Invalid section name: '{section_name}'")
+            error = hrw4u_error(self.filename, ctx, f"Invalid section name: '{section_name}'")
+            if self.error_collector:
+                self.error_collector.add_error(error)
+                return  # Skip processing this section but continue
+            else:
+                raise error
         try:
             hook = self.symbol_resolver.map_hook(section_name)
             self._dbg(f"`{section_name}' -> `{hook}'")
@@ -155,18 +170,27 @@ class HRW4UVisitor(hrw4uVisitor, VisitorMixin):
                     self._stmt_indent -= 1
 
         except Exception as e:
-            raise hrw4u_error(self.filename, ctx, e)
+            error = hrw4u_error(self.filename, ctx, e)
+            if self.error_collector:
+                self.error_collector.add_error(error)
+                return  # Continue processing other sections
+            else:
+                raise error
         self._dbg.exit("visitSection")
 
-    def visitVarSection(self, ctx):
+    def visitVarSection(self, ctx) -> None:
         if self.current_section is not None:
-            raise hrw4u_error(self.filename, ctx, "Variable section must be first in a section")
+            error = hrw4u_error(self.filename, ctx, "Variable section must be first in a section")
+            if self.error_collector:
+                self.error_collector.add_error(error)
+                return
+            else:
+                raise error
         self._dbg.enter("visitVarSection")
         self.visit(ctx.variables())
         self._dbg.exit("visitVarSection")
-        return
 
-    def visitStatement(self, ctx):
+    def visitStatement(self, ctx) -> None:
         self._dbg.enter("visitStatement")
         try:
             match ctx:
@@ -204,17 +228,22 @@ class HRW4UVisitor(hrw4uVisitor, VisitorMixin):
                     return
 
         except Exception as e:
-            raise hrw4u_error(self.filename, ctx, e)
+            error = hrw4u_error(self.filename, ctx, e)
+            if self.error_collector:
+                self.error_collector.add_error(error)
+                return  # Continue processing other statements
+            else:
+                raise error
         finally:
             self._dbg.exit("visitStatement")
 
-    def visitVariables(self, ctx):
+    def visitVariables(self, ctx) -> None:
         self._dbg.enter("visitVariables")
         for decl in ctx.variableDecl():
             self.visit(decl)
         self._dbg.exit("visitVariables")
 
-    def visitVariableDecl(self, ctx):
+    def visitVariableDecl(self, ctx) -> None:
         self._dbg.enter("visitVariableDecl")
         try:
             name = ctx.name.text
@@ -222,10 +251,15 @@ class HRW4UVisitor(hrw4uVisitor, VisitorMixin):
             symbol = self.symbol_resolver.declare_variable(name, type)
             self._dbg(f"bind `{name}' to {symbol}")
         except Exception as e:
-            raise hrw4u_error(self.filename, ctx, e)
+            error = hrw4u_error(self.filename, ctx, e)
+            if self.error_collector:
+                self.error_collector.add_error(error)
+                return  # Continue processing other variables
+            else:
+                raise error
         self._dbg.exit("visitVariableDecl")
 
-    def visitConditional(self, ctx):
+    def visitConditional(self, ctx) -> None:
         self._dbg.enter("visitConditional")
         self.visit(ctx.ifStatement())
         for elif_ctx in ctx.elifClause():
@@ -234,19 +268,19 @@ class HRW4UVisitor(hrw4uVisitor, VisitorMixin):
             self.visit(ctx.elseClause())
         self._dbg.exit("visitConditional")
 
-    def visitIfStatement(self, ctx):
+    def visitIfStatement(self, ctx) -> None:
         self._dbg.enter("visitIfStatement")
         self.visit(ctx.condition())
         self.visit(ctx.block())
         self._dbg.exit("visitIfStatement")
 
-    def visitElseClause(self, ctx):
+    def visitElseClause(self, ctx) -> None:
         self._dbg.enter("visitElseClause")
         self.emit_condition("else", final=True)
         self.visit(ctx.block())
         self._dbg.exit("visitElseClause")
 
-    def visitElifClause(self, ctx):
+    def visitElifClause(self, ctx) -> None:
         self._dbg.enter("visitElifClause")
         self.emit_condition("elif", final=True)
         self._stmt_indent += 1
@@ -257,7 +291,7 @@ class HRW4UVisitor(hrw4uVisitor, VisitorMixin):
         self._cond_indent -= 1
         self._dbg.exit("visitElifClause")
 
-    def visitBlock(self, ctx):
+    def visitBlock(self, ctx) -> None:
         self._dbg.enter("visitBlock")
         self._stmt_indent += 1
         for s in ctx.statement():
@@ -265,13 +299,13 @@ class HRW4UVisitor(hrw4uVisitor, VisitorMixin):
         self._stmt_indent -= 1
         self._dbg.exit("visitBlock")
 
-    def visitCondition(self, ctx):
+    def visitCondition(self, ctx) -> None:
         self._dbg.enter("visitCondition")
         self.emit_expression(ctx.expression(), last=True)
         self._flush_condition()
         self._dbg.exit("visitCondition")
 
-    def visitComparison(self, ctx, *, last: bool = False):
+    def visitComparison(self, ctx, *, last: bool = False) -> None:
         self._dbg.enter("visitComparison")
         comp = ctx.comparable()
         try:
@@ -316,33 +350,48 @@ class HRW4UVisitor(hrw4uVisitor, VisitorMixin):
             self._dbg.exit("visitComparison")
 
         except Exception as e:
-            raise hrw4u_error(self.filename, ctx, e)
+            error = hrw4u_error(self.filename, ctx, e)
+            if self.error_collector:
+                self.error_collector.add_error(error)
+                return  # Continue processing other comparisons
+            else:
+                raise error
 
-    def visitModifier(self, ctx):
+    def visitModifier(self, ctx) -> None:
         self.visit(ctx.modifierList())
 
-    def visitModifierList(self, ctx):
+    def visitModifierList(self, ctx) -> None:
         for token in ctx.mods:
             try:
                 mod = token.text.upper()
                 self._cond_state.add_modifier(mod)
             except Exception as exc:
-                raise hrw4u_error(self.filename, ctx, exc)
+                error = hrw4u_error(self.filename, ctx, exc)
+                if self.error_collector:
+                    self.error_collector.add_error(error)
+                    return  # Continue processing other modifiers
+                else:
+                    raise error
 
-    def visitFunctionCall(self, ctx):
+    def visitFunctionCall(self, ctx) -> str:
         try:
             func, raw_args = self._parse_function_call(ctx)
             self._dbg(f"function: {func}({', '.join(raw_args)})")
             return self.symbol_resolver.resolve_function(func, raw_args, strip_quotes=True)
         except Exception as e:
-            raise hrw4u_error(self.filename, ctx, e)
+            error = hrw4u_error(self.filename, ctx, e)
+            if self.error_collector:
+                self.error_collector.add_error(error)
+                return "ERROR"  # Return placeholder to continue processing
+            else:
+                raise error
 
 
 #
 # Emitters
 #
 
-    def emit_condition(self, text: str, *, final: bool = False):
+    def emit_condition(self, text: str, *, final: bool = False) -> None:
         if final:
             self.output.append(self.format_with_indent(text, self._cond_indent))
         else:
@@ -350,11 +399,11 @@ class HRW4UVisitor(hrw4uVisitor, VisitorMixin):
                 self._flush_condition()
             self._queue_condition(text)
 
-    def emit_statement(self, line: str):
+    def emit_statement(self, line: str) -> None:
         self._flush_condition()
         self.output.append(self.format_with_indent(line, self._stmt_indent))
 
-    def emit_expression(self, ctx, *, nested: bool = False, last: bool = False, grouped: bool = False):
+    def emit_expression(self, ctx, *, nested: bool = False, last: bool = False, grouped: bool = False) -> None:
         self._dbg.enter("emit_expression")
         if ctx.OR():
             self._dbg("`OR' detected")
@@ -377,7 +426,7 @@ class HRW4UVisitor(hrw4uVisitor, VisitorMixin):
             self.emit_term(ctx.term(), last=last)
         self._dbg.exit("emit_expression")
 
-    def emit_term(self, ctx, *, last: bool = False):
+    def emit_term(self, ctx, *, last: bool = False) -> None:
         self._dbg.enter("emit_term")
         if ctx.AND():
             self._dbg("`AND' detected")
@@ -391,7 +440,7 @@ class HRW4UVisitor(hrw4uVisitor, VisitorMixin):
             self.emit_factor(ctx.factor(), last=last)
         self._dbg.exit("emit_term")
 
-    def emit_factor(self, ctx, *, last: bool = False):
+    def emit_factor(self, ctx, *, last: bool = False) -> None:
         self._dbg.enter("emit_factor")
         try:
             match ctx:
@@ -447,5 +496,10 @@ class HRW4UVisitor(hrw4uVisitor, VisitorMixin):
                     self.emit_condition(cond)
 
         except Exception as e:
-            raise hrw4u_error(self.filename, ctx, e)
+            error = hrw4u_error(self.filename, ctx, e)
+            if self.error_collector:
+                self.error_collector.add_error(error)
+                return  # Continue processing other factors
+            else:
+                raise error
         self._dbg.exit("emit_factor")

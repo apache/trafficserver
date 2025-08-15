@@ -40,7 +40,8 @@ SRC_FILES_HRW4U=src/visitor.py \
 	src/types.py \
 	src/debugging.py \
 	src/common.py \
-	src/script_common.py
+	src/collector.py \
+	src/script_common.py \
 
 # Inverse helper sources for u4wrh (actual files you have)
 INVERSE_SRC_FILES_U4WRH=src/hrw_visitor.py \

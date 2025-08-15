@@ -31,7 +31,6 @@ def main() -> None:
 
     # Add HRW4U-specific output option
     output_group.add_argument("--hrw", action="store_true", help="Produce the HRW output (default)")
-
     args = parser.parse_args()
 
     # Default to HRW output if neither AST nor HRW specified
@@ -40,10 +39,10 @@ def main() -> None:
 
     # Process input and create parse tree
     content, filename = process_input(args.input_file)
-    tree, parser_obj = create_parse_tree(content, filename, hrw4uLexer, hrw4uParser, "hrw4u")
+    tree, parser_obj, error_collector = create_parse_tree(content, filename, hrw4uLexer, hrw4uParser, "hrw4u", args.collect_errors)
 
     # Generate output
-    generate_output(tree, parser_obj, HRW4UVisitor, filename, args.debug, args.ast)
+    generate_output(tree, parser_obj, HRW4UVisitor, filename, args.debug, args.ast, error_collector)
 
 
 if __name__ == "__main__":

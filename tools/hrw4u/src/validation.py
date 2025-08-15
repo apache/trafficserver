@@ -31,8 +31,9 @@ from hrw4u.common import RegexPatterns
 
 
 class ValidatorChain:
+    """Chains multiple validation functions together."""
 
-    def __init__(self, funcs: list[Callable[[list[str]], None]] | None = None):
+    def __init__(self, funcs: list[Callable[[list[str]], None]] | None = None) -> None:
         self._validators: list[Callable[[list[str]], None]] = funcs or []
 
     def __call__(self, args: list[str]) -> None:
@@ -41,7 +42,7 @@ class ValidatorChain:
 
     def _wrap_args(self, func: Callable[[str], None]) -> Callable[[list[str]], None]:
 
-        def wrapped(args: list[str]):
+        def wrapped(args: list[str]) -> None:
             for arg in args:
                 func(arg)
 
@@ -179,6 +180,7 @@ class Validator:
 
     @staticmethod
     def validate_assignment(var_type: types.VarType, value: str, name: str) -> None:
+        """Validate assignment value matches variable type constraints."""
         match var_type:
             case types.VarType.BOOL:
                 try:

@@ -34,12 +34,12 @@ class InverseSymbolResolver:
     naming/casing where hrw4u establishes a style).
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._state_vars: dict[tuple[types.VarType, int], str] = {}
 
     @cached_property
     def _rev_conditions_exact(self) -> dict[str, str]:
-        """Cached reverse condition mapping for exact matches"""
+        """Cached reverse condition mapping for exact matches."""
         result = {}
         for ident_key, (tag, _, uppercase, *_) in tables.CONDITION_MAP.items():
             if not ident_key.endswith("."):
@@ -49,7 +49,7 @@ class InverseSymbolResolver:
 
     @cached_property
     def _rev_conditions_prefix(self) -> list[tuple[str, str, bool]]:
-        """Cached reverse condition mapping for prefix matches"""
+        """Cached reverse condition mapping for prefix matches."""
         result = []
         for ident_key, (tag, _, uppercase, *_) in tables.CONDITION_MAP.items():
             if ident_key.endswith("."):
@@ -58,17 +58,17 @@ class InverseSymbolResolver:
 
     @cached_property
     def _rev_functions(self) -> dict[str, str]:
-        """Cached reverse function mapping"""
+        """Cached reverse function mapping."""
         return {tag: fn_name for fn_name, (tag, _) in tables.FUNCTION_MAP.items()}
 
     @cached_property
     def _rev_sections(self) -> dict[str, str]:
-        """Cached reverse section mapping"""
+        """Cached reverse section mapping."""
         return {s.hook_name: s.value for s in SectionType}
 
     @cached_property
     def _url_tags(self) -> set[str]:
-        """Cached URL tags from condition map"""
+        """Cached URL tags from condition map."""
         return {tag for ident_key, (tag, *_) in tables.CONDITION_MAP.items() if ident_key.endswith(".url.") or "URL" in tag}
 
     def _section_label_for_tag(self, tag: str) -> str | None:
@@ -129,12 +129,11 @@ class InverseSymbolResolver:
         elif tag == "IP":
             return None
 
-        candidates = []
         for key, (mapped_tag, _, _, restricted, _, _) in tables.CONDITION_MAP.items():
             tag_part = mapped_tag.replace("%{", "").replace("}", "").split(":")[0]
             if tag_part == tag:
                 if not restricted or not section or section not in restricted:
-                    candidates.append((key, restricted))
+                    pass
 
         return None
 
@@ -151,7 +150,7 @@ class InverseSymbolResolver:
         except ValueError:
             raise SymbolResolutionError(f"%{{{tag}}}", f"Invalid index for {tag}: {payload}")
 
-    def _handle_ip_tag(self, payload: str) -> tuple[str, bool]:
+    def _handle_ip_tag(self, payload: str) -> tuple[str | None, bool]:
         if (ip_map := tables.REVERSE_RESOLUTION_MAP.get("IP")) and (result := ip_map.get(payload)):
             return result, False
         return None, False
@@ -265,6 +264,7 @@ class InverseSymbolResolver:
         return f"{name}({', '.join(qargs)})" if qargs else f"{name}()"
 
     def parse_percent_block(self, pct: str) -> tuple[str, str | None]:
+        """Parse percent block into tag and payload components."""
         try:
             Validator.percent_block()(pct)
         except Exception:
@@ -281,6 +281,7 @@ class InverseSymbolResolver:
         return inner, None
 
     def convert_set_to_brackets(self, set_text: str) -> str:
+        """Convert set notation to bracket format."""
         try:
             Validator.set_format()(set_text)
         except Exception:
@@ -297,6 +298,7 @@ class InverseSymbolResolver:
         return set_text
 
     def format_iprange(self, iprange_text: str) -> str:
+        """Format IP range with proper spacing."""
         try:
             Validator.iprange_format()(iprange_text)
         except Exception:
@@ -309,12 +311,14 @@ class InverseSymbolResolver:
         return iprange_text
 
     def get_var_declarations(self) -> list[str]:
+        """Get variable declarations in hrw4u format."""
         declarations = []
         for (var_type, _), var_name in sorted(self._state_vars.items()):
             declarations.append(f"{var_name}: {var_type.name.lower()};")
         return declarations
 
     def negate_expression(self, term: str) -> str:
+        """Negate a logical expression appropriately."""
         t = term.strip()
         if ' == ""' in t:
             return t.replace(' == ""', '')
@@ -335,6 +339,7 @@ class InverseSymbolResolver:
         return f"!({t})"
 
     def percent_to_ident_or_func(self, percent: str, section: SectionType | None) -> tuple[str, bool]:
+        """Convert percent block to identifier or function call."""
         match = Validator._PERCENT_RE.match(percent)
         if not match:
             raise SymbolResolutionError(percent, "Invalid %{...} reference")
@@ -386,6 +391,7 @@ class InverseSymbolResolver:
         raise SymbolResolutionError(percent, f"Unknown percent tag: {tag}")
 
     def op_to_hrw4u(self, cmd: str, args: list[str], section: SectionType | None, op_state: 'OperatorState') -> str:
+        """Convert HRW operation to hrw4u statement."""
         if cmd == "no-op" and op_state.last:
             return "break"
 
