@@ -43,6 +43,14 @@ when the origin server in the remap rule returns a 401,
   This option sends the "pristine" Host: header (eg, the Host: header
   that the client sent) to the escalated request.
 
+@pparam=--escalate-non-get-methods
+  In general, the escalate plugin is used with a failover origin that serves a
+  cached backup of the original content.  As a result, the default behavior is
+  to only escalate GET requests since POST, PUT, etc., are not idempotent and
+  may require side effects that are not supported by a failover origin. This
+  option overrides the default behavior and enables escalation for non-GET
+  requests in addition to GET.
+
 Installation
 ------------
 
@@ -61,3 +69,9 @@ Traffic Server would accept a request for ``cdn.example.com`` and, on a cache mi
 request to ``origin.example.com``. If the response code from that server is a 401, 404, 410,
 or 502, then Traffic Server would proxy the request to ``second-origin.example.com``, using a
 Host: header of ``cdn.example.com``.
+
+By default, only GET requests are escalated. To escalate non-GET requests as
+well, you can use::
+
+    map cdn.example.com origin.example.com \
+      @plugin=escalate.so @pparam=401,404,410,502:second-origin.example.com @pparam=--escalate-non-get-methods

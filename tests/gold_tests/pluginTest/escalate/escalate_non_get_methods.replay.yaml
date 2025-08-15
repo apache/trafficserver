@@ -19,6 +19,7 @@ meta:
 
 sessions:
 - transactions:
+  # Original GET transactions from escalate_original.replay.yaml
   - client-request:
       method: "GET"
       version: "1.1"
@@ -37,13 +38,18 @@ sessions:
         - [ X-Request, { value: first, as: equal } ]
 
     server-response:
-      # The failover server should not receive this request since the original
-      # server should handle it.
-      status: 400
-      reason: Bad Request
+      status: 200
+      reason: OK
       headers:
         fields:
-        - [ Content-Length, 0 ]
+        - [ Content-Length, 320000 ]
+        - [ X-Response, first ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response, { value: first, as: equal } ]
 
   - client-request:
       method: "GET"
@@ -63,13 +69,20 @@ sessions:
         - [ X-Request, { value: second, as: equal } ]
 
     server-response:
-      # The failover server should not receive this request since the original
-      # server should handle it.
-      status: 400
-      reason: Bad Request
+      status: 200
+      reason: OK
       headers:
         fields:
-        - [ Content-Length, 0 ]
+        - [ Transfer-Encoding, chunked ]
+        - [ X-Response, second ]
+      content:
+        size: 320000
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response, { value: second, as: equal } ]
 
   - client-request:
       method: "GET"
@@ -89,12 +102,18 @@ sessions:
         - [ X-Request, { value: third, as: equal } ]
 
     server-response:
-      status: 200
-      reason: OK
+      status: 502
+      reason: Bad Gateway
       headers:
         fields:
-        - [ Content-Length, 320000 ]
-        - [ X-Response, third ]
+        - [ Content-Length, 0 ]
+
+    proxy-response:
+      # The failover server should reply with a 200 OK (GET requests are escalated with --escalate-non-get-methods).
+      status: 200
+      headers:
+        fields:
+        - [ X-Response, { value: third, as: equal } ]
 
   # This will not make it to the origin server since the Host is set to a
   # non-responsive server. But the failover server should reply with a 200 OK.
@@ -120,12 +139,51 @@ sessions:
       reason: OK
       headers:
         fields:
-        - [ Transfer-Encoding, chunked ]
-        - [ X-Response, fourth ]
-      content:
-        size: 320000
+        - [ Content-Length, 320000 ]
 
-  # HEAD request response for escalated requests (with --escalate-non-get-methods)
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response, { value: fourth, as: equal } ]
+
+  # POST request with sizable body that gets proxied normally.
+  - client-request:
+      method: "POST"
+      version: "1.1"
+      url: /api/upload/data
+      headers:
+        fields:
+        - [ Host, origin.server.com ]
+        - [ Content-Type, "application/json" ]
+        - [ Content-Length, 32 ]
+        - [ X-Request, post_success ]
+        - [ uuid, POST_success ]
+      content:
+        encoding: plain
+        size: 32
+
+    proxy-request:
+      method: "POST"
+      headers:
+        fields:
+        - [ X-Request, { value: post_success, as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 32 ]
+        - [ X-Response, post_success ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response, { value: post_success, as: equal } ]
+
+  # A HEAD request that will be escalated with --escalate-non-get-methods
   - client-request:
       method: "HEAD"
       version: "1.1"
@@ -143,9 +201,16 @@ sessions:
         - [ X-Request, { value: head_fail_escalated, as: equal } ]
 
     server-response:
-      status: 200
-      reason: OK
+      status: 502
+      reason: Bad Gateway
       headers:
         fields:
         - [ Content-Length, 0 ]
         - [ X-Response, head_fail_escalated ]
+
+    # With --escalate-non-get-methods, HEAD request is escalated to failover.
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response, { value: head_fail_escalated, as: equal } ]
