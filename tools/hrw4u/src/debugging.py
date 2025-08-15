@@ -40,7 +40,7 @@ class Dbg:
             self.indent += 1
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+    def __exit__(self, exc_type: type[BaseException] | None, exc_val: BaseException | None, exc_tb: object) -> None:
         if self.enabled:
             self.indent = max(0, self.indent - 1)
 

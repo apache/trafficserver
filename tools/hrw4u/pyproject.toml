@@ -20,7 +20,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "hrw4u"
-version = "1.1.0"
+version = "1.2.6"
 description = "HRW4U CLI tool for Apache Traffic Server header rewrite rules"
 authors = [
     {name = "Leif Hedstrom", email = "leif@apache.org"}
@@ -54,9 +54,10 @@ dev = [
 [project.scripts]
 hrw4u = "hrw4u.__main__:main"
 u4wrh = "u4wrh.__main__:main"
+hrw4u-lsp = "hrw4u_lsp.__main__:main"
 
 [tool.setuptools]
-script-files = ["scripts/hrw4u", "scripts/u4wrh"]
+script-files = ["scripts/hrw4u", "scripts/u4wrh", "scripts/hrw4u-lsp"]
 
 [tool.setuptools.packages.find]
 where = ["build"]

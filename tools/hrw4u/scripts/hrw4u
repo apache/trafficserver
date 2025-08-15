@@ -22,7 +22,7 @@ from __future__ import annotations
 from hrw4u.hrw4uLexer import hrw4uLexer
 from hrw4u.hrw4uParser import hrw4uParser
 from hrw4u.visitor import HRW4UVisitor
-from hrw4u.script_common import create_base_parser, create_parse_tree, generate_output, process_input
+from hrw4u.common import create_base_parser, create_parse_tree, generate_output, process_input
 
 
 def main() -> None:
@@ -39,7 +39,8 @@ def main() -> None:
 
     # Process input and create parse tree
     content, filename = process_input(args.input_file)
-    tree, parser_obj, error_collector = create_parse_tree(content, filename, hrw4uLexer, hrw4uParser, "hrw4u", args.collect_errors)
+    tree, parser_obj, error_collector = create_parse_tree(
+        content, filename, hrw4uLexer, hrw4uParser, "hrw4u", not args.stop_on_error)
 
     # Generate output
     generate_output(tree, parser_obj, HRW4UVisitor, filename, args.debug, args.ast, error_collector)

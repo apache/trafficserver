@@ -14,11 +14,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-"""
-validation.py
-
-Encapsulates shared validation utilities for use in HRW4U.
-"""
+"""Shared validation utilities for HRW4U."""
 
 from __future__ import annotations
 
@@ -28,6 +24,10 @@ from hrw4u.errors import SymbolResolutionError
 from hrw4u import states
 import hrw4u.types as types
 from hrw4u.common import RegexPatterns
+
+#
+# Validator Chain Infrastructure
+#
 
 
 class ValidatorChain:
@@ -52,9 +52,8 @@ class ValidatorChain:
         self._validators.append(func)
         return self
 
-
 #
-# Validators, to be chained
+# Validator Chain Methods
 #
 
     def arg_at(self, index: int, func: Callable[[str], None]) -> 'ValidatorChain':
@@ -90,6 +89,11 @@ class ValidatorChain:
 
     def suffix_group(self, group: types.SuffixGroup) -> 'ValidatorChain':
         return self._add(self._wrap_args(group.validate))
+
+
+#
+# Core Validator Class
+#
 
 
 class Validator:
@@ -239,6 +243,38 @@ class Validator:
         def validator(value: str) -> None:
             if not value.startswith("%{") or not value.endswith("}"):
                 raise SymbolResolutionError(value, "Invalid percent block format (must be %{...})")
+
+        return validator
+
+    @staticmethod
+    def normalize_arg_at(
+        index: int, normalize_func: Callable[[str], str] = lambda x: x.strip().strip('"').upper()) -> Callable[[list[str]], None]:
+        """Normalizes argument at specified index using the provided normalization function."""
+
+        def validator(args: list[str]) -> None:
+            if len(args) > index:
+                args[index] = normalize_func(args[index])
+
+        return validator
+
+    @staticmethod
+    def conditional_arg_validation(field_to_values: dict[str, frozenset[str]]) -> Callable[[list[str]], None]:
+        """Validates second argument based on first argument using a field-to-values mapping.
+        Expects arguments to already be normalized (uppercase, quotes stripped)."""
+
+        def validator(args: list[str]) -> None:
+            if len(args) >= 2:
+                field = args[0]
+                value = args[1]
+
+                if field in field_to_values:
+                    allowed_values = field_to_values[field]
+                    if value not in allowed_values:
+                        raise SymbolResolutionError(
+                            value,
+                            f"Invalid value '{value}' for field '{field}'. Must be one of: {', '.join(sorted(allowed_values))}")
+                else:
+                    raise SymbolResolutionError(field, f"Unknown field '{field}' for conditional validation")
 
         return validator
 

@@ -17,16 +17,19 @@
 
 from __future__ import annotations
 
+import io
 import re
 from dataclasses import dataclass
+from functools import lru_cache
 
 from hrw4u.hrw4uVisitor import hrw4uVisitor
 from hrw4u.hrw4uParser import hrw4uParser
 from hrw4u.symbols import SymbolResolver, SymbolResolutionError
 from hrw4u.errors import hrw4u_error
 from hrw4u.states import CondState, SectionType
-from hrw4u.debugging import Dbg
-from hrw4u.common import VisitorMixin, RegexPatterns, SystemDefaults
+from hrw4u.common import RegexPatterns, SystemDefaults
+from hrw4u.visitor_base import BaseHRWVisitor
+from hrw4u.perf import StringBuilderMixin
 
 
 @dataclass(slots=True)
@@ -36,7 +39,12 @@ class QueuedItem:
     indent: int
 
 
-class HRW4UVisitor(hrw4uVisitor, VisitorMixin):
+#
+# Main Visitor Class
+#
+
+
+class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor, StringBuilderMixin):
     _SUBSTITUTE_PATTERN = RegexPatterns.SUBSTITUTE_PATTERN
 
     def __init__(
@@ -44,19 +52,31 @@ class HRW4UVisitor(hrw4uVisitor, VisitorMixin):
             filename: str = SystemDefaults.DEFAULT_FILENAME,
             debug: bool = SystemDefaults.DEFAULT_DEBUG,
             error_collector=None) -> None:
-        self.filename = filename
-        self.output: list[str] = []
-        self.current_section: SectionType | None = None
-        self.error_collector = error_collector
+        super().__init__(filename, debug, error_collector)
+        StringBuilderMixin.__init__(self)
 
-        self._cond_indent = 0
-        self._stmt_indent = 0
         self._cond_state = CondState()
         self._queued: QueuedItem | None = None
 
-        self._dbg = Dbg(debug)
-
         self.symbol_resolver = SymbolResolver(SystemDefaults.DEFAULT_CONFIGURABLE)  # TODO: make this configurable
+
+    @lru_cache(maxsize=256)
+    def _cached_symbol_resolution(self, symbol_text: str, section_name: str) -> tuple[str, bool]:
+        """Cache expensive symbol resolution operations."""
+        try:
+            section = SectionType(section_name)
+            return self.symbol_resolver.resolve_condition(symbol_text, section)
+        except (ValueError, SymbolResolutionError):
+            return symbol_text, False
+
+    @lru_cache(maxsize=128)
+    def _cached_hook_mapping(self, section_name: str) -> str:
+        """Cache hook mapping lookups."""
+        return self.symbol_resolver.map_hook(section_name)
+
+    def _initialize_visitor(self) -> None:
+        """Override from base class - visitor-specific initialization."""
+        pass
 
     def _make_condition(self, cond_text: str, last: bool = False, negate: bool = False) -> str:
         self._dbg(f"make_condition: {cond_text} last={last} negate={negate}")
@@ -64,19 +84,15 @@ class HRW4UVisitor(hrw4uVisitor, VisitorMixin):
         self._cond_state.last = last
         return f"cond {cond_text}"
 
-#
-# Helpers
-#
-
     def _queue_condition(self, text: str) -> None:
-        self._dbg(f"queue cond: {text}  state={self._cond_state.to_list()}")
-        self._queued = QueuedItem(text=text, state=self._cond_state.copy(), indent=self._cond_indent)
+        self.debug_log(f"queue cond: {text}  state={self._cond_state.to_list()}")
+        self._queued = QueuedItem(text=text, state=self._cond_state.copy(), indent=self.cond_indent)
         self._cond_state.reset()
 
     def _flush_condition(self) -> None:
         if self._queued:
             mods = self._queued.state.to_list()
-            self._dbg(f"flush cond: {self._queued.text} state={mods} indent={self._queued.indent}")
+            self.debug_log(f"flush cond: {self._queued.text} state={mods} indent={self._queued.indent}")
             mod_str = f" [{','.join(mods)}]" if mods else ""
             self.output.append(self.format_with_indent(f"{self._queued.text}{mod_str}", self._queued.indent))
             self._queued = None
@@ -87,6 +103,7 @@ class HRW4UVisitor(hrw4uVisitor, VisitorMixin):
         return func, args
 
     def _substitute_strings(self, s: str, ctx) -> str:
+        """Optimized string substitution using string builder."""
         inner = s[1:-1]
 
         def repl(m: re.Match) -> str:
@@ -96,42 +113,45 @@ class HRW4UVisitor(hrw4uVisitor, VisitorMixin):
                     arg_str = m.group("args").strip()
                     args = [arg.strip() for arg in arg_str.split(',')] if arg_str else []
                     replacement = self.symbol_resolver.resolve_function(func_name, args, strip_quotes=False)
-                    self._dbg(f"substitute: {{{func_name}({arg_str})}} -> {replacement}")
+                    self.debug_log(f"substitute: {{{func_name}({arg_str})}} -> {replacement}")
                     return replacement
                 if m.group("var"):
                     var_name = m.group("var").strip()
-                    replacement, _ = self.symbol_resolver.resolve_condition(var_name, self.current_section)
-                    self._dbg(f"substitute: {{{var_name}}} -> {replacement}")
+                    replacement, _ = self._cached_symbol_resolution(var_name, self.current_section.value)
+                    self.debug_log(f"substitute: {{{var_name}}} -> {replacement}")
                     return replacement
                 raise SymbolResolutionError(m.group(0), "Unrecognized substitution format")
             except Exception as e:
                 error = hrw4u_error(self.filename, ctx, f"symbol error in {{}}: {e}")
+                if hasattr(error, 'add_note'):
+                    error.add_note(f"String interpolation context: {s[:50]}...")
+                    if self.current_section:
+                        error.add_note(f"Current section: {self.current_section.value}")
                 if self.error_collector:
                     self.error_collector.add_error(error)
                     return f"{{ERROR: {e}}}"  # Return placeholder to continue processing
                 else:
                     raise error
 
-        return f'"{self._SUBSTITUTE_PATTERN.sub(repl, inner)}"'
+        # Use cached pattern for efficiency
+        substituted = self._SUBSTITUTE_PATTERN.sub(repl, inner)
+        return f'"{substituted}"'
 
 #
-# Visitors
+# Visitor Methods
 #
 
     def visitProgram(self, ctx) -> list[str]:
-        self._dbg.enter("visitProgram")
-        try:
+        with self.debug_context("visitProgram"):
             sections = ctx.section()
             section_count = len(sections)
             for idx, section in enumerate(sections):
                 start_length = len(self.output)
                 self.visit(section)
                 if idx < section_count - 1 and len(self.output) > start_length:
-                    self.output.append("")
+                    self.emit_separator()
             self._flush_condition()
-            return self.output
-        finally:
-            self._dbg.exit("visitProgram")
+            return self.get_final_output()
 
     def visitSection(self, ctx) -> None:
         self._dbg.enter("visitSection")
@@ -141,16 +161,19 @@ class HRW4UVisitor(hrw4uVisitor, VisitorMixin):
         section_name = ctx.name.text
         try:
             self.current_section = SectionType(section_name)
-        except ValueError:
+        except ValueError as e:
             error = hrw4u_error(self.filename, ctx, f"Invalid section name: '{section_name}'")
+            if hasattr(error, 'add_note'):
+                valid_sections = [s.value for s in SectionType]
+                error.add_note(f"Valid sections: {', '.join(valid_sections)}")
             if self.error_collector:
                 self.error_collector.add_error(error)
                 return  # Skip processing this section but continue
             else:
                 raise error
         try:
-            hook = self.symbol_resolver.map_hook(section_name)
-            self._dbg(f"`{section_name}' -> `{hook}'")
+            hook = self._cached_hook_mapping(section_name)
+            self.debug_log(f"`{section_name}' -> `{hook}'")
             in_statement_block = False
             for idx, body in enumerate(ctx.sectionBody()):
                 is_conditional = body.conditional() is not None
@@ -223,7 +246,10 @@ class HRW4UVisitor(hrw4uVisitor, VisitorMixin):
                     self._dbg(f"standalone op: {operator}")
                     cmd, validator = self.symbol_resolver.get_statement_spec(operator)
                     if validator:
-                        raise SymbolResolutionError(operator, "This operator requires an argument")
+                        error = SymbolResolutionError(operator, "This operator requires an argument")
+                        if self.current_section:
+                            error.add_section_context(self.current_section.value)
+                        raise error
                     self.emit_statement(cmd)
                     return
 
@@ -231,7 +257,7 @@ class HRW4UVisitor(hrw4uVisitor, VisitorMixin):
             error = hrw4u_error(self.filename, ctx, e)
             if self.error_collector:
                 self.error_collector.add_error(error)
-                return  # Continue processing other statements
+                return  # Continue processing other variables
             else:
                 raise error
         finally:
@@ -252,9 +278,14 @@ class HRW4UVisitor(hrw4uVisitor, VisitorMixin):
             self._dbg(f"bind `{name}' to {symbol}")
         except Exception as e:
             error = hrw4u_error(self.filename, ctx, e)
+            if hasattr(error, 'add_note'):
+                name = getattr(ctx, 'name', None)
+                type_name = getattr(ctx, 'typeName', None)
+                if name and type_name:
+                    error.add_note(f"Variable declaration: {name.text}:{type_name.text}")
             if self.error_collector:
                 self.error_collector.add_error(error)
-                return  # Continue processing other variables
+                return  # Continue processing other statements
             else:
                 raise error
         self._dbg.exit("visitVariableDecl")
@@ -310,7 +341,7 @@ class HRW4UVisitor(hrw4uVisitor, VisitorMixin):
         comp = ctx.comparable()
         try:
             if comp.ident:
-                lhs, _ = self.symbol_resolver.resolve_condition(comp.ident.text, self.current_section)
+                lhs, _ = self._cached_symbol_resolution(comp.ident.text, self.current_section.value)
             else:
                 lhs = self.visitFunctionCall(comp.functionCall())
             operator = ctx.getChild(1)
@@ -388,57 +419,60 @@ class HRW4UVisitor(hrw4uVisitor, VisitorMixin):
 
 
 #
-# Emitters
+# Emitter Methods
 #
 
     def emit_condition(self, text: str, *, final: bool = False) -> None:
         if final:
-            self.output.append(self.format_with_indent(text, self._cond_indent))
+            self.output.append(self.format_with_indent(text, self.cond_indent))
         else:
             if self._queued:
                 self._flush_condition()
             self._queue_condition(text)
 
+    def emit_separator(self) -> None:
+        """Emit a blank line separator."""
+        self.output.append("")
+
     def emit_statement(self, line: str) -> None:
+        """Override base class method to handle condition flushing."""
         self._flush_condition()
-        self.output.append(self.format_with_indent(line, self._stmt_indent))
+        super().emit_statement(line)
 
     def emit_expression(self, ctx, *, nested: bool = False, last: bool = False, grouped: bool = False) -> None:
-        self._dbg.enter("emit_expression")
-        if ctx.OR():
-            self._dbg("`OR' detected")
-            if grouped:
-                self._dbg("GROUP-START")
-                self.emit_condition("cond %{GROUP}", final=True)
-                self._cond_indent += 1
+        with self.debug_context("emit_expression"):
+            if ctx.OR():
+                self.debug_log("`OR' detected")
+                if grouped:
+                    self.debug_log("GROUP-START")
+                    self.emit_condition("cond %{GROUP}", final=True)
+                    self.increment_cond_indent()
 
-            self.emit_expression(ctx.expression(), nested=False, last=False)
-            if self._queued:
-                self._queued.state.and_or = True
-            self._flush_condition()
-            self.emit_term(ctx.term(), last=last)
-
-            if grouped:
+                self.emit_expression(ctx.expression(), nested=False, last=False)
+                if self._queued:
+                    self._queued.state.and_or = True
                 self._flush_condition()
-                self._cond_indent -= 1
-                self.emit_condition("cond %{GROUP:END}")
-        else:
-            self.emit_term(ctx.term(), last=last)
-        self._dbg.exit("emit_expression")
+                self.emit_term(ctx.term(), last=last)
+
+                if grouped:
+                    self._flush_condition()
+                    self.decrement_cond_indent()
+                    self.emit_condition("cond %{GROUP:END}")
+            else:
+                self.emit_term(ctx.term(), last=last)
 
     def emit_term(self, ctx, *, last: bool = False) -> None:
-        self._dbg.enter("emit_term")
-        if ctx.AND():
-            self._dbg("`AND' detected")
-            self.emit_term(ctx.term(), last=False)
-            if self._queued:
-                self._queued.indent = self._cond_indent
-                self._queued.state.and_or = False
-            self._flush_condition()
-            self.emit_factor(ctx.factor(), last=last)
-        else:
-            self.emit_factor(ctx.factor(), last=last)
-        self._dbg.exit("emit_term")
+        with self.debug_context("emit_term"):
+            if ctx.AND():
+                self.debug_log("`AND' detected")
+                self.emit_term(ctx.term(), last=False)
+                if self._queued:
+                    self._queued.indent = self.cond_indent
+                    self._queued.state.and_or = False
+                self._flush_condition()
+                self.emit_factor(ctx.factor(), last=last)
+            else:
+                self.emit_factor(ctx.factor(), last=last)
 
     def emit_factor(self, ctx, *, last: bool = False) -> None:
         self._dbg.enter("emit_factor")
@@ -481,7 +515,7 @@ class HRW4UVisitor(hrw4uVisitor, VisitorMixin):
                         symbol = entry.as_cond()
                         default_expr = False
                     else:
-                        symbol, default_expr = self.symbol_resolver.resolve_condition(name, self.current_section)
+                        symbol, default_expr = self._cached_symbol_resolution(name, self.current_section.value)
 
                     if default_expr:
                         cond_txt = f"{symbol} =\"\""
