@@ -36,6 +36,11 @@ class QueuedItem:
     indent: int
 
 
+#
+# Main Visitor Class
+#
+
+
 class HRW4UVisitor(hrw4uVisitor, VisitorMixin):
     _SUBSTITUTE_PATTERN = RegexPatterns.SUBSTITUTE_PATTERN
 
@@ -63,10 +68,6 @@ class HRW4UVisitor(hrw4uVisitor, VisitorMixin):
         self._cond_state.not_ |= negate
         self._cond_state.last = last
         return f"cond {cond_text}"
-
-#
-# Helpers
-#
 
     def _queue_condition(self, text: str) -> None:
         self._dbg(f"queue cond: {text}  state={self._cond_state.to_list()}")
@@ -115,7 +116,7 @@ class HRW4UVisitor(hrw4uVisitor, VisitorMixin):
         return f'"{self._SUBSTITUTE_PATTERN.sub(repl, inner)}"'
 
 #
-# Visitors
+# Visitor Methods
 #
 
     def visitProgram(self, ctx) -> list[str]:
@@ -231,7 +232,7 @@ class HRW4UVisitor(hrw4uVisitor, VisitorMixin):
             error = hrw4u_error(self.filename, ctx, e)
             if self.error_collector:
                 self.error_collector.add_error(error)
-                return  # Continue processing other statements
+                return  # Continue processing other variables
             else:
                 raise error
         finally:
@@ -254,7 +255,7 @@ class HRW4UVisitor(hrw4uVisitor, VisitorMixin):
             error = hrw4u_error(self.filename, ctx, e)
             if self.error_collector:
                 self.error_collector.add_error(error)
-                return  # Continue processing other variables
+                return  # Continue processing other statements
             else:
                 raise error
         self._dbg.exit("visitVariableDecl")
@@ -388,7 +389,7 @@ class HRW4UVisitor(hrw4uVisitor, VisitorMixin):
 
 
 #
-# Emitters
+# Emitter Methods
 #
 
     def emit_condition(self, text: str, *, final: bool = False) -> None:

@@ -26,13 +26,13 @@ import hrw4u.types as types
 import hrw4u.tables as tables
 from hrw4u.states import SectionType
 
+#
+# Inverse Symbol Resolution
+#
+
 
 class InverseSymbolResolver:
-    """
-    Reverse mapping utilities driven by the forward SymbolResolver tables.
-    Designed to produce hrw4u output that round-trips closely (including
-    naming/casing where hrw4u establishes a style).
-    """
+    """Reverse mapping utilities for hrw4u output generation."""
 
     def __init__(self) -> None:
         self._state_vars: dict[tuple[types.VarType, int], str] = {}
@@ -121,11 +121,18 @@ class InverseSymbolResolver:
         return "inbound.resp."
 
     def _resolve_ambiguous_exact(self, tag: str, section: SectionType | None) -> str | None:
-        if tag in tables.AMBIGUOUS_CONTEXT_TAGS and (mapping := tables.REVERSE_RESOLUTION_MAP.get(tag)):
-            outbound_sections = mapping["outbound_sections"]
-            if section in outbound_sections or (tag == "STATUS" and section == SectionType.READ_RESPONSE):
-                return mapping["outbound_result"]
-            return mapping["inbound_result"]
+        if tag == "STATUS":
+            if (mapping := tables.REVERSE_RESOLUTION_MAP.get("STATUS")):
+                outbound_sections = mapping["outbound_sections"]
+                if section in outbound_sections or section == SectionType.READ_RESPONSE:
+                    return mapping["outbound_result"]
+                return mapping["inbound_result"]
+        elif tag == "METHOD":
+            if (mapping := tables.REVERSE_RESOLUTION_MAP.get("METHOD")):
+                outbound_sections = mapping["outbound_sections"]
+                if section in outbound_sections:
+                    return mapping["outbound_result"]
+                return mapping["inbound_result"]
         elif tag == "IP":
             return None
 
@@ -167,34 +174,38 @@ class InverseSymbolResolver:
         return None
 
     def _rewrite_inline_percents(self, value: str, section: SectionType | None) -> str:
+        # Handle simple cases first
         if types.BooleanLiteral.contains(value):
             return value.lower()
-
         if value.isnumeric():
             return value
 
-        if value.startswith('%{') and value.endswith('}'):
-            m = Validator._PERCENT_RE.fullmatch(value)
-            if m:
-                try:
-                    expr, _ = self.percent_to_ident_or_func(value, section)
-                    return f'"{{{expr}}}"'
-                except SymbolResolutionError:
-                    return f'"{value}"'
+        # Handle full percent block
+        if value.startswith('%{') and value.endswith('}') and Validator._PERCENT_RE.fullmatch(value):
+            try:
+                expr, _ = self.percent_to_ident_or_func(value, section)
+                return f'"{{{expr}}}"'
+            except SymbolResolutionError:
+                return f'"{value}"'
 
+        # Handle quoted strings with embedded percent blocks
         is_quoted = value.startswith('"') and value.endswith('"')
         inner_value = value[1:-1] if is_quoted else value
 
+        rewritten = Validator._PERCENT_PATTERN.sub(self._make_percent_replacer(section), inner_value)
+        return f'"{rewritten}"'
+
+    def _make_percent_replacer(self, section: SectionType | None):
+        """Create a replacement function for percent blocks in strings."""
+
         def repl(match: re.Match) -> str:
-            percent_block = match.group(0)
             try:
-                expr, _ = self.percent_to_ident_or_func(percent_block, section)
+                expr, _ = self.percent_to_ident_or_func(match.group(0), section)
                 return "{" + expr + "}"
             except SymbolResolutionError:
-                return percent_block
+                return match.group(0)
 
-        rewritten = Validator._PERCENT_PATTERN.sub(repl, inner_value)
-        return f'"{rewritten}"'
+        return repl
 
     def _handle_set_rm_operation(self, cmd: str, toks: list[str], prefix: str, qualifier: str, context: str) -> str:
         if cmd.startswith("rm-"):
@@ -258,6 +269,12 @@ class InverseSymbolResolver:
 
             processed_args = [self._rewrite_inline_percents(arg, section) for arg in args[1:]]
             qargs = [prefixed_header] + processed_args
+        elif name == "set-plugin-cntl" and len(args) >= 2:
+            qualifier = args[0]
+            value = args[1]
+            # Always quote the value for consistent output
+            quoted_value = f'"{value}"' if not (value.startswith('"') and value.endswith('"')) else value
+            qargs = [qualifier, quoted_value]
         else:
             qargs = [self._rewrite_inline_percents(Validator.quote_if_needed(a), section) for a in args]
 
@@ -313,7 +330,8 @@ class InverseSymbolResolver:
     def get_var_declarations(self) -> list[str]:
         """Get variable declarations in hrw4u format."""
         declarations = []
-        for (var_type, _), var_name in sorted(self._state_vars.items()):
+        # Sort by VarType name and then by index for consistent ordering
+        for (var_type, _), var_name in sorted(self._state_vars.items(), key=lambda x: (x[0][0].name, x[0][1])):
             declarations.append(f"{var_name}: {var_type.name.lower()};")
         return declarations
 

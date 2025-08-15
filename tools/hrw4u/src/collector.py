@@ -49,7 +49,7 @@ class CollectingErrorListener(ErrorListener):
         self.filename = filename
         self.error_collector = error_collector or ErrorCollector()
 
-    def syntaxError(self, recognizer, _offendingSymbol, line, column, msg, e) -> None:
+    def syntaxError(self, recognizer: object, _offendingSymbol: object, line: int, column: int, msg: str, e: object) -> None:
         code_line = ""
 
         try:
@@ -63,7 +63,6 @@ class CollectingErrorListener(ErrorListener):
             if input_stream is not None:
                 code_line = input_stream.strdata.splitlines()[line - 1]
         except Exception:
-            # If we can't get the source line, continue without it
             pass
 
         error = Hrw4uSyntaxError(self.filename, line, column, msg, code_line)

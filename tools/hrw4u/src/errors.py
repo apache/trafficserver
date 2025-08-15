@@ -27,7 +27,7 @@ class ThrowingErrorListener(ErrorListener):
         super().__init__()
         self.filename = filename
 
-    def syntaxError(self, recognizer, _offendingSymbol, line: int, column: int, msg: str, e) -> None:
+    def syntaxError(self, recognizer: object, _offendingSymbol: object, line: int, column: int, msg: str, e: object) -> None:
         code_line = ""
 
         try:
@@ -68,7 +68,7 @@ class SymbolResolutionError(Exception):
         super().__init__(message or f"Unrecognized symbol: '{name}'")
 
 
-def hrw4u_error(filename: str, ctx, exc: Exception) -> Hrw4uSyntaxError:
+def hrw4u_error(filename: str, ctx: object, exc: Exception) -> Hrw4uSyntaxError:
     """Convert exceptions to formatted syntax errors with source context."""
     if isinstance(exc, Hrw4uSyntaxError):
         return exc

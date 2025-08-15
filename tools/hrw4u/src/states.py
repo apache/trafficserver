@@ -16,19 +16,24 @@
 """
 State management for logical condition modifiers.
 
-Flags:
-    * and_or  - False = AND (default), True = OR
-    * not_    - negation
-    * nocase  - case-insensitive match
-    * substr  - substring mode (SUF/PRE/EXT/MID)
-    * last    - if True, omit AND/OR from string form
+This module manages condition and operator state including:
+- and_or: logical connectors (AND/OR)
+- not_: negation flags
+- nocase: case-insensitive matching
+- substr: substring modes (SUF/PRE/EXT/MID)
+- last: omit logical connectors when final
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
 from enum import Enum, auto
+from typing import Self
 from hrw4u.errors import SymbolResolutionError
+
+#
+# Section and State Management
+#
 
 
 class SectionType(str, Enum):
@@ -41,6 +46,7 @@ class SectionType(str, Enum):
     PRE_REMAP = "PRE_REMAP"
     TXN_START = "TXN_START"
     TXN_CLOSE = "TXN_CLOSE"
+    VARS = "VARS"
 
     @property
     def hook_name(self) -> str:
@@ -54,11 +60,28 @@ class SectionType(str, Enum):
             SectionType.PRE_REMAP: "READ_REQUEST_PRE_REMAP_HOOK",
             SectionType.TXN_START: "TXN_START_HOOK",
             SectionType.TXN_CLOSE: "TXN_CLOSE_HOOK",
+            SectionType.VARS: "VARS_SECTION",
         }
         return hook_map[self]
 
+    @property
+    def lsp_description(self) -> str:
+        """Get LSP-friendly description for this section type"""
+        description_map = {
+            SectionType.REMAP: f"This section processes requests/responses at the `{self.hook_name}` hook point in ATS.",
+            SectionType.SEND_REQUEST: f"This section processes requests/responses at the `{self.hook_name}` hook point in ATS.",
+            SectionType.READ_RESPONSE: f"This section processes requests/responses at the `{self.hook_name}` hook point in ATS.",
+            SectionType.SEND_RESPONSE: f"This section processes requests/responses at the `{self.hook_name}` hook point in ATS.",
+            SectionType.READ_REQUEST: f"This section processes requests/responses at the `{self.hook_name}` hook point in ATS.",
+            SectionType.PRE_REMAP: f"This section processes requests/responses at the `{self.hook_name}` hook point in ATS.",
+            SectionType.TXN_START: f"This section processes requests/responses at the `{self.hook_name}` hook point in ATS.",
+            SectionType.TXN_CLOSE: f"This section processes requests/responses at the `{self.hook_name}` hook point in ATS.",
+            SectionType.VARS: "This section declares variables that can be used throughout the configuration.",
+        }
+        return description_map[self]
+
     @classmethod
-    def from_hook(cls, hook_name: str) -> "SectionType":
+    def from_hook(cls, hook_name: str) -> Self:
         """Get the section type from its hook name"""
         for section in cls:
             if section.hook_name == hook_name:
@@ -66,7 +89,9 @@ class SectionType(str, Enum):
         raise ValueError(f"No section found for hook '{hook_name}'")
 
 
-# --- Modifier Constants ---
+#
+# Modifier Constants
+#
 
 # Condition modifiers (used in conditional expressions)
 CONDITION_MODIFIERS = frozenset({"AND", "OR", "NOT", "NOCASE", "PRE", "SUF", "EXT", "MID"})
@@ -91,7 +116,7 @@ class ModifierType(str, Enum):
     UNKNOWN = "UNKNOWN"
 
     @staticmethod
-    def classify(modifier: str) -> "ModifierType":
+    def classify(modifier: str) -> Self:
         """Determine what type of modifier this is"""
         mod_upper = modifier.upper()
         if mod_upper in CONDITION_MODIFIERS:
@@ -110,6 +135,11 @@ class SubstringMode(str, Enum):
     MID = "MID"
 
 
+#
+# State Classes
+#
+
+
 @dataclass(slots=True)
 class CondState:
     and_or: bool = False  # False == AND (default)
@@ -122,7 +152,7 @@ class CondState:
         self.and_or = self.not_ = self.nocase = self.last = False
         self.substr = SubstringMode.NONE
 
-    def copy(self) -> "CondState":
+    def copy(self) -> Self:
         return replace(self)
 
     def add_modifier(self, mod: str) -> None:
@@ -189,7 +219,7 @@ class OperatorState:
     def reset(self) -> None:
         self.invert = self.last = self.qsa = False
 
-    def copy(self) -> "OperatorState":
+    def copy(self) -> Self:
         return replace(self)
 
     def add_modifier(self, mod: str) -> None:

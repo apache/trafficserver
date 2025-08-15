@@ -24,6 +24,10 @@ from functools import cached_property
 from hrw4u.states import SectionType
 from hrw4u.errors import SymbolResolutionError
 
+#
+# Common Utilities and Constants
+#
+
 
 class RegexPatterns:
     """Compiled regex patterns for reuse across modules"""
@@ -110,7 +114,6 @@ class HeaderOperations:
     OPERATIONS: Final = (MagicStrings.RM_HEADER.value, MagicStrings.SET_HEADER.value)
 
 
-# Protocol classes for better type safety
 class ValidatorProtocol(Protocol):
     """Protocol for validation functions"""
 
@@ -136,3 +139,35 @@ class InverseResolverProtocol(Protocol):
 
     def op_to_hrw4u(self, cmd: str, args: list[str], section: SectionType | None, op_state) -> str:
         ...
+
+
+class ErrorHandler:
+    """Centralized error handling for visitors and parsers."""
+
+    @staticmethod
+    def handle_visitor_error(filename: str, ctx: object, exc: Exception, error_collector=None, return_value: str = "") -> str:
+        """Standard error handling for visitor methods."""
+        from hrw4u.errors import hrw4u_error
+
+        error = hrw4u_error(filename, ctx, exc)
+        if error_collector:
+            error_collector.add_error(error)
+            return return_value
+        else:
+            raise error
+
+    @staticmethod
+    def handle_symbol_error(filename: str, ctx: object, symbol_name: str, exc: Exception, error_collector=None) -> str | None:
+        """Handle symbol resolution errors with context."""
+        from hrw4u.errors import hrw4u_error, SymbolResolutionError
+
+        if isinstance(exc, SymbolResolutionError):
+            error = hrw4u_error(filename, ctx, exc)
+        else:
+            error = hrw4u_error(filename, ctx, f"symbol error in '{symbol_name}': {exc}")
+
+        if error_collector:
+            error_collector.add_error(error)
+            return f"ERROR({symbol_name})"
+        else:
+            raise error

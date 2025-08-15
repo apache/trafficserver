@@ -236,14 +236,15 @@ rm-destination QUERY ...      remove_query("foo,bar")           Remove specified
 rm-destination QUERY ... [I]  keep_query("foo,bar")             Keep only specified query keys
 run-plugin foo.so "args"      run-plugin("foo.so", "arg1", ...) Run an external remap plugin
 set-body "foo"                inbound.resp.body = "foo"         Set the response body
-set-body-from "\https://..."   set-body-from("\https://...")      Set the response body from a URL
+set-body-from "\https://..."  set-body-from("\https://...")     Set the response body from a URL
 set-config <name> 12          set-config("name", 17)            Set a configuration variable to a value
 set-conn-dscp 8               inbound.conn.dscp = 8             Set the DSCP value for the connection
 set-conn-mark 17              inbound.conn.mark = 17            Set the MARK value for the connection
 set-cookie foo bar            {in,out}bound.cookie.foo = "bar"  Set a request/response cookie named foo
-set-destination <C> bar       inbound.url.<C> = "bar"           Set a URL component, <:ref:`C<admin-plugins-header-rewrite-url-parts>`> is path, query etc.
+set-destination <C> bar       {in,out}bound.url.<C> = "bar"     Set a URL component, <:ref:`C<admin-plugins-header-rewrite-url-parts>`> is path, query etc.
 set-header X-Bar foo          inbound.{req,resp}.X-Bar = "foo"  Assign a client request/origin response header
-set-redirect <Code> <URL>     set-redirect(302, "\https://...")  Set a redirect response
+set-plugin-cntl <C> <T>       set-plugin-cntl(<C>) = <T>        Set the plugin control <C> to <T>, see <:ref:`C<admin-plugins-header-rewrite-plugin-cntl>`>
+set-redirect <Code> <URL>     set-redirect(302, "\https://...") Set a redirect response
 set-status 404                http.status = 404                 Set the response status code
 set-status-reason "No"        http.status.reason = "no"         Set the response status reason
 set-http-cntl                 http.cntl.<C> = bool              Turn on/off <:ref:`C<admin-plugins-header-rewrite-set-http-cntl>`> controllers

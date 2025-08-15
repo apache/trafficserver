@@ -25,6 +25,10 @@ import hrw4u.tables as tables
 from hrw4u.states import SectionType
 from hrw4u.common import SectionValidator, SystemDefaults
 
+#
+# Symbol Resolution
+#
+
 
 class SymbolResolver:
     """Resolves hrw4u symbols to their corresponding header_rewrite operations."""
@@ -71,6 +75,7 @@ class SymbolResolver:
                         qualifier = qualifier.upper()
                     if validator:
                         validator(qualifier)
+
                     if isinstance(commands, (list, tuple)):
                         if value == '""':
                             result = f"{commands[0]} {qualifier}"
@@ -172,6 +177,11 @@ class SymbolResolver:
                 result += " [I]"
         self._dbg.exit(f"=> resolved statement function: {result}")
         return result
+
+
+#
+# Hook Mapping
+#
 
     def map_hook(self, label: str) -> str:
         self._dbg.enter(f"map_hook: {label}")

@@ -89,7 +89,7 @@ def create_base_parser(description: str) -> tuple[argparse.ArgumentParser, argpa
 
     parser.add_argument("--debug", action="store_true", help="Enable debug output")
     parser.add_argument(
-        "--collect-errors", action="store_true", help="Collect and report multiple errors instead of stopping at first error")
+        "--stop-on-error", action="store_true", help="Stop processing on first error (default: collect and report multiple errors)")
 
     return parser, output_group
 
@@ -113,7 +113,7 @@ def create_parse_tree(
         lexer_class: type[LexerProtocol],
         parser_class: type[ParserProtocol],
         error_prefix: str,
-        collect_errors: bool = False) -> tuple[Any, ParserProtocol, ErrorCollector | None]:
+        collect_errors: bool = True) -> tuple[Any, ParserProtocol, ErrorCollector | None]:
     """Create ANTLR parse tree from input content with optional error collection."""
     input_stream = InputStream(content)
     error_collector = None
