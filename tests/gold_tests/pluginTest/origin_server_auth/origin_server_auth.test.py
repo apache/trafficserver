@@ -117,7 +117,10 @@ class OriginServerAuthTest:
         tr.StillRunningAfter = self.server
 
     def checkLogOutput(self):
-        self.ts.Disk.traffic_out.Content = "gold/origin_server_auth_parsing_ts.gold"
+        if Condition.CurlUsingUnixDomainSocket():
+            self.ts.Disk.traffic_out.Content = "gold/origin_server_auth_parsing_ts_uds.gold"
+        else:
+            self.ts.Disk.traffic_out.Content = "gold/origin_server_auth_parsing_ts.gold"
         self.ts.ReturnCode = 0
 
     def runTraffic(self):

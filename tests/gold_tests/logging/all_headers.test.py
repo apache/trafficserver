@@ -25,7 +25,7 @@ Test new "all headers" log fields
 
 # Define ATS.
 #
-ts = Test.MakeATSProcess("ts", enable_proxy_protocol=True)
+ts = Test.MakeATSProcess("ts")
 
 # Define MicroServer.
 #
@@ -39,18 +39,10 @@ response_header = {
 }
 server.addResponse("sessionlog.json", request_header, response_header)
 
-if Condition.CurlUsingUnixDomainSocket():
-    ts.Disk.records_config.update(
-        {
-            'proxy.config.diags.debug.enabled': 0,
-            'proxy.config.diags.debug.tags': 'http|dns',
-            'proxy.config.http.insert_forwarded': 'for',
-        })
-else:
-    ts.Disk.records_config.update({
-        'proxy.config.diags.debug.enabled': 0,
-        'proxy.config.diags.debug.tags': 'http|dns',
-    })
+ts.Disk.records_config.update({
+    'proxy.config.diags.debug.enabled': 0,
+    'proxy.config.diags.debug.tags': 'http|dns',
+})
 
 ts.Disk.remap_config.AddLine('map http://127.0.0.1:{0} http://127.0.0.1:{1}'.format(ts.Variables.port, server.Variables.Port))
 
@@ -92,8 +84,7 @@ tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 if Condition.CurlUsingUnixDomainSocket():
     tr.MakeCurlCommand(
-        '"http://127.0.0.1:{0}" --user-agent "007" --haproxy-protocol 1 --haproxy-clientip 127.0.0.1 --verbose '.format(
-            ts.Variables.port) + reallyLong(),
+        '"http://127.0.0.1:{0}" --user-agent "007" -H "Host: 127.0.0.1:{0}" --verbose '.format(ts.Variables.port) + reallyLong(),
         ts=ts)
 else:
     tr.MakeCurlCommand('"http://127.0.0.1:{0}" --user-agent "007" --verbose '.format(ts.Variables.port) + reallyLong(), ts=ts)
@@ -104,8 +95,7 @@ tr.Processes.Default.ReturnCode = 0
 tr = Test.AddTestRun()
 if Condition.CurlUsingUnixDomainSocket():
     tr.MakeCurlCommand(
-        '"http://127.0.0.1:{0}" --user-agent "007" --haproxy-protocol 1 --haproxy-clientip 127.0.0.1 --verbose '.format(
-            ts.Variables.port) + reallyLong(),
+        '"http://127.0.0.1:{0}" --user-agent "007" -H "Host: 127.0.0.1:{0}" --verbose '.format(ts.Variables.port) + reallyLong(),
         ts=ts)
 else:
     tr.MakeCurlCommand('"http://127.0.0.1:{0}" --user-agent "007" --verbose '.format(ts.Variables.port) + reallyLong(), ts=ts)

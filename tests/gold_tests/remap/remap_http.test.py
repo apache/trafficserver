@@ -82,11 +82,14 @@ tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = "gold/remap-200.gold"
 
 # www.example2.com host (match on receive port)
-tr = Test.AddTestRun()
-tr.MakeCurlCommand(
-    '--proxy 127.0.0.1:{0} "http://www.example2.com"  -H "Proxy-Connection: keep-alive" --verbose'.format(ts.Variables.port), ts=ts)
-tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.Streams.stderr = "gold/remap2-200.gold"
+# map_with_recv_port doesn't work with UDS
+if not Condition.CurlUsingUnixDomainSocket():
+    tr = Test.AddTestRun()
+    tr.MakeCurlCommand(
+        '--proxy 127.0.0.1:{0} "http://www.example2.com"  -H "Proxy-Connection: keep-alive" --verbose'.format(ts.Variables.port),
+        ts=ts)
+    tr.Processes.Default.ReturnCode = 0
+    tr.Processes.Default.Streams.stderr = "gold/remap2-200.gold"
 
 # www.example.com:80 host
 tr = Test.AddTestRun()

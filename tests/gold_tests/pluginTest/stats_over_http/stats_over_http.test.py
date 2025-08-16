@@ -23,6 +23,9 @@ Test.Summary = 'Exercise stats-over-http plugin'
 Test.SkipUnless(Condition.PluginExists('stats_over_http.so'))
 Test.ContinueOnFail = True
 
+# Skip until plugin supports pp or uds path
+Test.SkipIf(Condition.CurlUsingUnixDomainSocket())
+
 
 class StatsOverHttpPluginTest:
     """
@@ -47,7 +50,7 @@ class StatsOverHttpPluginTest:
 
         self.ts.Disk.records_config.update(
             {
-                "proxy.config.http.server_ports": f"{self.ts.Variables.port}",
+                "proxy.config.http.server_ports": f"{self.ts.Variables.port} {self.ts.Variables.uds_path}",
                 "proxy.config.diags.debug.enabled": 1,
                 "proxy.config.diags.debug.tags": "stats_over_http"
             })
