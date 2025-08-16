@@ -92,6 +92,9 @@ Enabling ESI
   1024 * 1024.  Example values: 500, 5K, 2M.  If this option is omitted, the maximum document size defaults to 1M.
 - ``--max-inclusion-depth <max-depth>`` controls the maximum depth of recursive ESI inclusion allowed (between 0 and 9).
   Default is 3.
+- ``--allowed-response-codes <code1,code2,...>`` specifies a comma-separated list of HTTP response codes that should
+  be processed for ESI transformation.  Only responses with these status codes will be examined for ESI content. Default
+  is ``200,304``.
 
 3. ``HTTP_COOKIE`` variable support is turned off by default. It can be turned on with ``-f <handler_config>`` or
    ``-handler <handler_config>``. For example:
