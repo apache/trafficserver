@@ -38,5 +38,14 @@ arguments which should have been obtained by a call to :func:`TSHttpTxnClientReq
 the field in :arg:`field` was created by calling :func:`TSMimeHdrFieldCreateNamed` the same
 :arg:`bufp` and :arg:`hdr` passed to that should be passed to this function.
 
+
+.. note::
+
+   If the field was found via :func:`TSMimeHdrFieldFind`, then this function
+   call is effectively a no-op. If a field with the same name already exists in
+   the header (that is, if :func:`TSMimeHdrFieldCreateNamed` was called for a
+   field name that already existed in the header), then the new field is added
+   as a duplicate field.
+
 Returns :code:`TS_SUCCESS` if the :arg:`field` was attached to the header, :code:`TS_ERROR` if it
 was not. Fields cannot be attached to read only headers.
