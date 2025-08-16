@@ -21,10 +21,20 @@
   limitations under the License.
 */
 
+#include "tsutil/DbgCtl.h"
 #include <string>
 #include <algorithm>
 
 #include "matcher.h"
+
+namespace header_rewrite_ns
+{
+const char PLUGIN_NAME[]     = "header_rewrite";
+const char PLUGIN_NAME_DBG[] = "dbg_header_rewrite";
+
+DbgCtl dbg_ctl{PLUGIN_NAME_DBG};
+DbgCtl pi_dbg_ctl{PLUGIN_NAME};
+} // namespace header_rewrite_ns
 
 static bool
 match_with_modifiers(std::string_view rhs, std::string_view lhs, CondModifiers mods)

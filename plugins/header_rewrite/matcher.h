@@ -380,3 +380,11 @@ private:
   std::variant<T, std::set<T>, swoc::IPRangeSet, regexHelper> _data;
   CondModifiers                                               _mods = CondModifiers::NONE;
 };
+
+// forward declare spcializations implemented in matcher.cc
+
+template <> bool Matchers<std::string>::test_eq(const std::string &) const;
+
+template <> bool Matchers<std::string>::test_set(const std::string &) const;
+
+template <> bool Matchers<const sockaddr *>::test(const sockaddr *const &, const Resources &) const;
