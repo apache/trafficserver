@@ -327,7 +327,7 @@ RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook, c
   }
 
   // Collect all resource IDs that we need
-  for (size_t i = TS_HTTP_READ_REQUEST_HDR_HOOK; i < TS_HTTP_LAST_HOOK; ++i) {
+  for (size_t i = TS_HTTP_READ_REQUEST_HDR_HOOK; i <= TS_HTTP_LAST_HOOK; ++i) {
     if (_rules[i]) {
       _resids[i] = _rules[i]->get_all_resource_ids();
     }
@@ -656,22 +656,24 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
   RuleSet  *rule = conf->rule(TS_REMAP_PSEUDO_HOOK);
   Resources res(rh, rri);
 
-  res.gather(RSRC_CLIENT_REQUEST_HEADERS, TS_REMAP_PSEUDO_HOOK);
-  while (rule) {
-    const RuleSet::OperatorAndMods &ops = rule->eval(res);
-    const OperModifiers             rt  = rule->exec(ops, res);
+  if (rule) {
+    res.gather(conf->resid(TS_REMAP_PSEUDO_HOOK), TS_REMAP_PSEUDO_HOOK);
 
-    ink_assert((rt & OPER_NO_REENABLE) == 0);
+    do {
+      const RuleSet::OperatorAndMods &ops = rule->eval(res);
+      const OperModifiers             rt  = rule->exec(ops, res);
 
-    if (res.changed_url == true) {
-      rval = TSREMAP_DID_REMAP;
-    }
+      ink_assert((rt & OPER_NO_REENABLE) == 0);
 
-    if (rule->last() || (rt & OPER_LAST)) {
-      break; // Conditional break, force a break with [L]
-    }
+      if (res.changed_url == true) {
+        rval = TSREMAP_DID_REMAP;
+      }
 
-    rule = rule->next.get();
+      if (rule->last() || (rt & OPER_LAST)) {
+        break; // Conditional break, force a break with [L]
+      }
+
+    } while ((rule = rule->next.get()));
   }
 
   Dbg(dbg_ctl, "Returning from TSRemapDoRemap with status: %d", rval);
