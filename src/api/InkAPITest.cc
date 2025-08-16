@@ -917,9 +917,11 @@ synserver_vc_accept(TSCont contp, TSEvent event, void *data)
   TSAssert(s->magic == MAGIC_ALIVE);
 
   if (event == TS_EVENT_NET_ACCEPT_FAILED) {
-    Warning("Synserver failed to bind to port %d.", ntohs(s->accept_port));
-    ink_release_assert(!"Synserver must be able to bind to a port, check system netstat");
-    Dbg(dbg_ctl_SockServer, "%s: NET_ACCEPT_FAILED", __func__);
+    if (s && s->accept_port != SYNSERVER_DUMMY_PORT) {
+      Warning("Synserver failed to bind to port %d.", ntohs(s->accept_port));
+      ink_release_assert(!"Synserver must be able to bind to a port, check system netstat");
+      Dbg(dbg_ctl_SockServer, "%s: NET_ACCEPT_FAILED", __func__);
+    }
     return TS_EVENT_IMMEDIATE;
   }
 
