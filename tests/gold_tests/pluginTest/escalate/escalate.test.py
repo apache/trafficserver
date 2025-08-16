@@ -34,31 +34,39 @@ class EscalateTest:
 
     _replay_original_file: str = 'escalate_original.replay.yaml'
     _replay_failover_file: str = 'escalate_failover.replay.yaml'
+    _process_counter: int = 0
 
-    def __init__(self):
-        '''Configure the test run.'''
-        tr = Test.AddTestRun('Test escalate plugin.')
+    def __init__(self, disable_redirect_header: bool = False) -> None:
+        '''Configure the test run.
+        :param disable_redirect_header: Whether to use --no-redirect-header.
+        '''
+        tr = Test.AddTestRun(f'Test escalate plugin. disable_redirect_header={disable_redirect_header}')
         self._setup_dns(tr)
-        self._setup_servers(tr)
-        self._setup_ts(tr)
+        self._setup_servers(tr, disable_redirect_header)
+        self._setup_ts(tr, disable_redirect_header)
         self._setup_client(tr)
+        EscalateTest._process_counter += 1
 
-    def _setup_dns(self, tr: 'Process') -> None:
+    def _setup_dns(self, tr: 'TestRun') -> None:
         '''Set up the DNS server.
 
         :param tr: The test run to add the DNS server to.
         '''
-        self._dns = tr.MakeDNServer(f"dns", default='127.0.0.1')
+        process_name = f"dns_{EscalateTest._process_counter}"
+        self._dns = tr.MakeDNServer(process_name, default='127.0.0.1')
 
-    def _setup_servers(self, tr: 'Process') -> None:
+    def _setup_servers(self, tr: 'TestRun', disable_redirect_header: bool) -> None:
         '''Set up the origin and failover servers.
 
         :param tr: The test run to add the servers to.
+        :param disable_redirect_header: Whether ATS was configured with --no-redirect-header.
         '''
         tr.Setup.Copy(self._replay_original_file)
         tr.Setup.Copy(self._replay_failover_file)
-        self._server_origin = tr.AddVerifierServerProcess(f"server_origin", self._replay_original_file)
-        self._server_failover = tr.AddVerifierServerProcess(f"server_failover", self._replay_failover_file)
+        process_name = f"server_origin_{EscalateTest._process_counter}"
+        self._server_origin = tr.AddVerifierServerProcess(process_name, self._replay_original_file)
+        process_name = f"server_failover_{EscalateTest._process_counter}"
+        self._server_failover = tr.AddVerifierServerProcess(process_name, self._replay_failover_file)
 
         self._server_origin.Streams.All += Testers.ContainsExpression(
             'uuid: GET', "Verify the origin server received the GET request.")
@@ -72,6 +80,8 @@ class EscalateTest:
             'uuid: POST_fail_not_escalated', "Verify the origin server received the POST request that should not be escalated.")
         self._server_origin.Streams.All += Testers.ExcludesExpression(
             'uuid: GET_down_origin', "Verify the origin server did not receive the down origin request.")
+        self._server_origin.Streams.All += Testers.ExcludesExpression(
+            'x-escalate-redirect', "Verify the origin server should never receive the x-escalate-redirect header.")
 
         self._server_failover.Streams.All += Testers.ContainsExpression(
             'uuid: GET_failed', "Verify the failover server received the failed GET request.")
@@ -90,12 +100,21 @@ class EscalateTest:
             'uuid: POST_fail_not_escalated',
             "Verify the failover server did not receive the POST request that should not be escalated.")
 
-    def _setup_ts(self, tr: 'Process') -> None:
+        if disable_redirect_header:
+            self._server_failover.Streams.All += Testers.ExcludesExpression(
+                'x-escalate-redirect', "Verify the failover server did not receive the x-escalate-redirect header.")
+        else:
+            self._server_failover.Streams.All += Testers.ContainsExpression(
+                'x-escalate-redirect: 1', "Verify the failover server received the x-escalate-redirect header.")
+
+    def _setup_ts(self, tr: 'Process', disable_redirect_header: bool) -> None:
         '''Set up Traffic Server.
 
         :param tr: The test run to add Traffic Server to.
+        :param disable_redirect_header: Whether ATS should be configured with --no-redirect-header.
         '''
-        self._ts = tr.MakeATSProcess(f"ts", enable_cache=False)
+        process_name = f"ts_{EscalateTest._process_counter}"
+        self._ts = tr.MakeATSProcess(process_name, enable_cache=False)
         # Select a port that is guaranteed to not be used at the moment.
         dead_port = get_port(self._ts, "dead_port")
         self._ts.Disk.records_config.update(
@@ -107,15 +126,18 @@ class EscalateTest:
                 'proxy.config.http.redirect.actions': 'self:follow',
                 'proxy.config.http.number_of_redirections': 4,
             })
+        params = ''
+        if disable_redirect_header:
+            params = '@pparam=--no-redirect-header'
         self._ts.Disk.remap_config.AddLines(
             [
                 f'map http://origin.server.com http://backend.origin.server.com:{self._server_origin.Variables.http_port} '
-                f'@plugin=escalate.so @pparam=500,502:failover.server.com:{self._server_failover.Variables.http_port}',
+                f'@plugin=escalate.so @pparam=500,502:failover.server.com:{self._server_failover.Variables.http_port} {params}',
 
                 # Now create remap entries for the multiplexed hosts: one that
                 # verifies HTTP, and another that verifies HTTPS.
                 f'map http://down_origin.server.com http://backend.down_origin.server.com:{dead_port} '
-                f'@plugin=escalate.so @pparam=500,502:failover.server.com:{self._server_failover.Variables.http_port} ',
+                f'@plugin=escalate.so @pparam=500,502:failover.server.com:{self._server_failover.Variables.http_port} {params}',
             ])
 
     def _setup_client(self, tr: 'Process') -> None:
@@ -123,7 +145,8 @@ class EscalateTest:
 
         :param tr: The test run to add the client to.
         '''
-        client = tr.AddVerifierClientProcess(f"client", self._replay_original_file, http_ports=[self._ts.Variables.port])
+        process_name = f"client_{EscalateTest._process_counter}"
+        client = tr.AddVerifierClientProcess(process_name, self._replay_original_file, http_ports=[self._ts.Variables.port])
         client.StartBefore(self._dns)
         client.StartBefore(self._server_origin)
         client.StartBefore(self._server_failover)
@@ -254,5 +277,6 @@ class EscalateNonGetMethodsTest:
         client.Streams.All += Testers.ExcludesExpression(r'\[ERROR\]', 'Verify there were no errors in the replay.')
 
 
-EscalateTest()
+EscalateTest(disable_redirect_header=False)
+EscalateTest(disable_redirect_header=True)
 EscalateNonGetMethodsTest()

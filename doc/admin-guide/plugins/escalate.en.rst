@@ -43,6 +43,14 @@ when the origin server in the remap rule returns a 401,
   This option sends the "pristine" Host: header (eg, the Host: header
   that the client sent) to the escalated request.
 
+@pparam=--no-redirect-header
+  Controls whether to add the x-escalate-redirect header to escalated requests.
+  When enabled (default), the plugin adds an x-escalate-redirect header with value "1"
+  to the client request when it escalates to a different origin server. This header
+  can be used by downstream systems to identify requests that have been escalated.
+  The header is only added if it doesn't already exist in the request.
+  Use --no-redirect-header to disable adding the x-escalate-redirect header.
+
 @pparam=--escalate-non-get-methods
   In general, the escalate plugin is used with a failover origin that serves a
   cached backup of the original content.  As a result, the default behavior is
@@ -68,10 +76,17 @@ With this line in :file:`remap.config` ::
 Traffic Server would accept a request for ``cdn.example.com`` and, on a cache miss, proxy the
 request to ``origin.example.com``. If the response code from that server is a 401, 404, 410,
 or 502, then Traffic Server would proxy the request to ``second-origin.example.com``, using a
-Host: header of ``cdn.example.com``.
+Host: header of ``cdn.example.com``. Additionally, an x-escalate-redirect header with value "1"
+will be added to the escalated request.
+
+To disable adding the x-escalate-redirect header, use::
+
+    map cdn.example.com origin.example.com \
+      @plugin=escalate.so @pparam=401,404,410,502:second-origin.example.com @pparam=--no-redirect-header
 
 By default, only GET requests are escalated. To escalate non-GET requests as
 well, you can use::
 
     map cdn.example.com origin.example.com \
       @plugin=escalate.so @pparam=401,404,410,502:second-origin.example.com @pparam=--escalate-non-get-methods
+
