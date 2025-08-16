@@ -43,9 +43,12 @@ FreelistAllocator ioBufAllocator[DEFAULT_BUFFER_SIZES];
 ClassAllocator<MIOBuffer>     ioAllocator("ioAllocator", DEFAULT_BUFFER_NUMBER);
 ClassAllocator<IOBufferData>  ioDataAllocator("ioDataAllocator", DEFAULT_BUFFER_NUMBER);
 ClassAllocator<IOBufferBlock> ioBlockAllocator("ioBlockAllocator", DEFAULT_BUFFER_NUMBER);
-int64_t                       default_large_iobuffer_size = DEFAULT_LARGE_BUFFER_SIZE;
-int64_t                       default_small_iobuffer_size = DEFAULT_SMALL_BUFFER_SIZE;
-int64_t                       max_iobuffer_size           = DEFAULT_BUFFER_SIZES - 1;
+#if TS_USE_LINUX_SPLICE
+ClassAllocator<PipeIOBuffer> pipeIOAllocator("pipeIOAllocator", DEFAULT_BUFFER_NUMBER);
+#endif
+int64_t default_large_iobuffer_size = DEFAULT_LARGE_BUFFER_SIZE;
+int64_t default_small_iobuffer_size = DEFAULT_SMALL_BUFFER_SIZE;
+int64_t max_iobuffer_size           = DEFAULT_BUFFER_SIZES - 1;
 
 //
 // Initialization
