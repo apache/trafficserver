@@ -16,7 +16,9 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import datetime
 import os
+import time
 
 Test.Summary = '''
 cache_range_requests X-Crr-Ident plugin test
@@ -74,6 +76,7 @@ res_full = {
 
 server.addResponse("sessionlog.json", req_full, res_full)
 
+# test for custom Ident header
 req_custom = {
     "headers": "GET /pathheader HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "Accept: */*\r\n" + "Range: bytes=0-\r\n" + "\r\n",
     "timestamp": "1469733493.993",
@@ -91,6 +94,25 @@ res_custom = {
 }
 
 server.addResponse("sessionlog.json", req_custom, res_custom)
+
+# Long lived asset for FRESH to STALE testing
+req_fresh = {
+    "headers": "GET /pathfresh HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "Accept: */*\r\n" + "Range: bytes=0-\r\n" + "\r\n",
+    "timestamp": "1469733493.993",
+    "body": ""
+}
+
+etag_fresh = 'fresh'
+
+res_fresh = {
+    "headers":
+        "HTTP/1.1 206 Partial Content\r\n" + "Accept-Ranges: bytes\r\n" + "Cache-Control: max-age=3600\r\n" +
+        "Content-Range: bytes 0-{0}/{0}\r\n".format(bodylen) + "Connection: close\r\n" + 'Etag: ' + etag_fresh + '\r\n' + '\r\n',
+    "timestamp": "1469733493.993",
+    "body": body
+}
+
+server.addResponse("sessionlog.json", req_fresh, res_fresh)
 
 # cache range requests plugin remap
 ts.Disk.remap_config.AddLines(
@@ -151,7 +173,7 @@ tr.StillRunningAfter = ts
 tr = Test.AddTestRun("0- range X-Crr-Ident Etag check")
 tr.DelayStart = 2
 ps = tr.Processes.Default
-tr.MakeCurlCommand(curl_and_args + f" http://ident/path -r 0- -H 'X-Crr-Ident: Etag: {etag}'", ts=ts)
+tr.MakeCurlCommand(curl_and_args + f" http://ident/path -r 0- -H 'X-Crr-Ident: Etag {etag}'", ts=ts)
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh", "expected cache hit-fresh")
 tr.StillRunningAfter = ts
@@ -160,7 +182,7 @@ tr.StillRunningAfter = ts
 tr = Test.AddTestRun("0- range CrrIdent Etag check")
 tr.DelayStart = 2
 ps = tr.Processes.Default
-tr.MakeCurlCommand(curl_and_args + f" http://identheader/pathheader -r 0- -H 'CrrIdent: Etag: {etag_custom}'", ts=ts)
+tr.MakeCurlCommand(curl_and_args + f" http://identheader/pathheader -r 0- -H 'CrrIdent: Etag {etag_custom}'", ts=ts)
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh", "expected cache hit-fresh")
 tr.StillRunningAfter = ts
@@ -168,7 +190,7 @@ tr.StillRunningAfter = ts
 # 6 Test - Ensure X-Crr-Ident Last-Modified header results in hit-fresh
 tr = Test.AddTestRun("0- range X-Crr-Ident Last-Modified check")
 ps = tr.Processes.Default
-tr.MakeCurlCommand(curl_and_args + f' http://ident/path -r 0- -H "X-Crr-Ident: Last-Modified: {last_modified}"', ts=ts)
+tr.MakeCurlCommand(curl_and_args + f' http://ident/path -r 0- -H "X-Crr-Ident: Last-Modified {last_modified}"', ts=ts)
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh", "expected cache hit-fresh")
 tr.StillRunningAfter = ts
@@ -176,7 +198,31 @@ tr.StillRunningAfter = ts
 # 7 Test - Provide a mismatch Etag force IMS request
 tr = Test.AddTestRun("0- range X-Crr-Ident check")
 ps = tr.Processes.Default
-tr.MakeCurlCommand(curl_and_args + f' http://ident/path -r 0- -H "X-Crr-Ident: Last-Modified: foo"', ts=ts)
+tr.MakeCurlCommand(curl_and_args + f' http://ident/path -r 0- -H "X-Crr-Ident: Last-Modified foo"', ts=ts)
+ps.ReturnCode = 0
+ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-stale", "expected cache hit-stale")
+tr.StillRunningAfter = ts
+
+# 8 Test - Fetch "fresh" into cache
+tr = Test.AddTestRun("0- fresh range cache load")
+ps = tr.Processes.Default
+tr.MakeCurlCommand(curl_and_args + ' http://ident/pathfresh -r 0-', ts=ts)
+ps.ReturnCode = 0
+ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected cache miss for load")
+tr.StillRunningAfter = ts
+
+# 9 Test - Ensure "fresh" is in cache
+tr = Test.AddTestRun("0- fresh range cache check")
+ps = tr.Processes.Default
+tr.MakeCurlCommand(curl_and_args + ' http://ident/pathfresh -r 0-', ts=ts)
+ps.ReturnCode = 0
+ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh", "expected cache fresh")
+tr.StillRunningAfter = ts
+
+# 10 request with different etag and ensure it goes stale
+tr = Test.AddTestRun("0- etag fresh range to stale")
+ps = tr.Processes.Default
+tr.MakeCurlCommand(curl_and_args + " http://ident/pathfresh -r 0- -H 'X-Crr-Ident: Etag not_the_same'", ts=ts)
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-stale", "expected cache hit-stale")
 tr.StillRunningAfter = ts
@@ -184,12 +230,15 @@ tr.StillRunningAfter = ts
 # post checks for traffic.out
 
 ts.Disk.traffic_out.Content = Testers.ContainsExpression(
-    """Checking cached '"772102f4-56f4bc1e6d417"' against request 'Etag: "772102f4-56f4bc1e6d417"'""",
+    """Checking cached '"772102f4-56f4bc1e6d417"' against request 'Etag "772102f4-56f4bc1e6d417"'""",
     "Etag is correctly considered")
 
 ts.Disk.traffic_out.Content = Testers.ContainsExpression(
-    """Checking cached 'foo' against request 'Etag: foo'""", "Etag custom header is correctly considered")
+    """Checking cached 'foo' against request 'Etag foo'""", "Etag custom header is correctly considered")
 
 ts.Disk.traffic_out.Content = Testers.ContainsExpression(
-    """Checking cached 'Fri, 07 Mar 2025 18:06:58 GMT' against request 'Last-Modified: Fri, 07 Mar 2025 18:06:58 GMT'""",
-    "Last-Modified is correctly considered")
+    """STALE, Checking 'Last-Modified': cached: 'Fri, 07 Mar 2025 18:06:58 GMT' request: 'foo'""",
+    "Last-Modified stale to fresh is correctly considered")
+
+ts.Disk.traffic_out.Content = Testers.ContainsExpression(
+    """FRESH, Checking 'Etag': cached: 'fresh' request: 'not_the_same'""", "Etag fresh to stale is correctly considered")
