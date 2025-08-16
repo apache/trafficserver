@@ -125,7 +125,9 @@ extern c_str_view URL_SCHEME_FILE;
 extern c_str_view URL_SCHEME_FTP;
 extern c_str_view URL_SCHEME_GOPHER;
 extern c_str_view URL_SCHEME_HTTP;
+extern c_str_view URL_SCHEME_HTTP_UDS;
 extern c_str_view URL_SCHEME_HTTPS;
+extern c_str_view URL_SCHEME_HTTPS_UDS;
 extern c_str_view URL_SCHEME_WS;
 extern c_str_view URL_SCHEME_WSS;
 extern c_str_view URL_SCHEME_MAILTO;
@@ -591,6 +593,9 @@ inline int
 URL::port_get() const
 {
   ink_assert(valid());
+  if (auto scheme = m_url_impl->get_scheme(); scheme.length() >= 8 && scheme.ends_with("+uds")) {
+    return 0;
+  }
   return url_canonicalize_port(m_url_impl->get_type(), m_url_impl->get_port());
 }
 
