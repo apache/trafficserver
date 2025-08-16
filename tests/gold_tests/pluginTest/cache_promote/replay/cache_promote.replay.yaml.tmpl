@@ -1,0 +1,166 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+#
+#  This is a template file to generate "cache_promote.replay.yaml" needs to be evaluated.
+#
+meta:
+  version: "1.0"
+
+sessions:
+- protocol:
+  - name: http
+    version: 1
+  - name: tcp
+  - name: ip
+
+  transactions:
+  #
+  # test case 0-0 : simple LRU policy case - 3rd request is expected to hit the cache
+  #
+  - client-request:
+      method: "GET"
+      url: /test_0/cache/2
+      headers:
+        fields:
+          - [ uuid, 0-0-0 ]
+          - [ x-debug, x-cache ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ x-cache, {{value: "miss", as: equal }} ]
+
+  - client-request:
+      method: "GET"
+      url: /test_0/cache/2
+      headers:
+        fields:
+          - [ uuid, 0-0-1 ]
+          - [ x-debug, x-cache ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ x-cache, {{value: "miss", as: equal }} ]
+
+  - client-request:
+      method: "GET"
+      url: /test_0/cache/2
+      headers:
+        fields:
+          - [ uuid, 0-0-2 ]
+          - [ x-debug, x-cache ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ x-cache, {{value: "hit-fresh", as: equal }} ]
+
+  #
+  # test case 0-1 : following redirect
+  #
+  - client-request:
+      method: "GET"
+      url: /test_0/redirect-to?url=http://127.0.0.1:{httpbin_port}/cache/3
+      headers:
+        fields:
+          - [ uuid, 0-1-0 ]
+          - [ x-debug, x-cache ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ x-cache, {{value: "miss", as: equal }} ]
+
+  - client-request:
+      method: "GET"
+      url: /test_0/redirect-to?url=http://127.0.0.1:{httpbin_port}/cache/3
+      headers:
+        fields:
+          - [ uuid, 0-1-1 ]
+          - [ x-debug, x-cache ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ x-cache, {{value: "miss", as: equal }} ]
+
+
+  - client-request:
+      method: "GET"
+      url: /test_0/redirect-to?url=http://127.0.0.1:{httpbin_port}/cache/3
+      headers:
+        fields:
+          - [ uuid, 0-1-2 ]
+          - [ x-debug, x-cache ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ x-cache, {{value: "hit-fresh", as: equal }} ]
+
+  #
+  # test case 1 : following redirect with cachekey plugin
+  #
+  - client-request:
+      method: "GET"
+      url: /test_1/redirect-to?url=http://127.0.0.1:{httpbin_port}/cache/4
+      headers:
+        fields:
+          - [ uuid, 1-0 ]
+          - [ x-debug, x-cache ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ x-cache, {{value: "miss", as: equal }} ]
+
+  - client-request:
+      method: "GET"
+      url: /test_1/redirect-to?url=http://127.0.0.1:{httpbin_port}/cache/4
+      headers:
+        fields:
+          - [ uuid, 1-1 ]
+          - [ x-debug, x-cache ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ x-cache, {{value: "miss", as: equal }} ]
+
+
+  - client-request:
+      method: "GET"
+      url: /test_1/redirect-to?url=http://127.0.0.1:{httpbin_port}/cache/4
+      headers:
+        fields:
+          - [ uuid, 1-2 ]
+          - [ x-debug, x-cache ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ x-cache, {{value: "hit-fresh", as: equal }} ]
