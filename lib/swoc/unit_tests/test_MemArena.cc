@@ -24,10 +24,11 @@
 #include <map>
 #include <set>
 #include <random>
+#include <algorithm>
 
 #include "swoc/MemArena.h"
 #include "swoc/TextView.h"
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
 
 using swoc::MemSpan;
 using swoc::MemArena;

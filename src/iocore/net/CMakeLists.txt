@@ -143,19 +143,21 @@ if(BUILD_TESTING)
   if(CMAKE_LINK_GROUP_USING_RESCAN_SUPPORTED OR CMAKE_CXX_LINK_GROUP_USING_RESCAN_SUPPORTED)
     string(JOIN "," LINK_GROUP_LIBS_CSV ${LINK_GROUP_LIBS})
     target_link_libraries(
-      test_net PRIVATE catch2::catch2 ts::tscore "$<LINK_GROUP:RESCAN,${LINK_GROUP_LIBS_CSV}>" ts::tsutil ts::inkevent
-                       libswoc::libswoc
+      test_net PRIVATE Catch2::Catch2WithMain ts::tscore "$<LINK_GROUP:RESCAN,${LINK_GROUP_LIBS_CSV}>" ts::tsutil
+                       ts::inkevent libswoc::libswoc
     )
   elseif(APPLE)
     # These linkers already do the equivalent of RESCAN, so there's no support in cmake for it
     # This case is mainly for macOS
     # The reason that the list is different here, is because a careful ordering is necessary to prevent duplicate symbols, which are not allowed on macOS
-    target_link_libraries(test_net PRIVATE catch2::catch2 ts::tscore ts::proxy ts::inknet ts::inkevent libswoc::libswoc)
+    target_link_libraries(
+      test_net PRIVATE Catch2::Catch2WithMain ts::tscore ts::proxy ts::inknet ts::inkevent libswoc::libswoc
+    )
   else()
     # CMake <3.24 does not support LINK_GROUP. Use -Wl,--start-group and -Wl,--end-group manually.
     target_link_libraries(
       test_net
-      PRIVATE catch2::catch2
+      PRIVATE Catch2::Catch2WithMain
               ts::tscore
               -Wl,--start-group
               ${LINK_GROUP_LIBS}
@@ -170,7 +172,7 @@ if(BUILD_TESTING)
   endif()
   set(LIBINKNET_UNIT_TEST_DIR "${CMAKE_SOURCE_DIR}/src/iocore/net/unit_tests")
   target_compile_definitions(test_net PRIVATE LIBINKNET_UNIT_TEST_DIR=${LIBINKNET_UNIT_TEST_DIR})
-  add_test(NAME test_net COMMAND test_net)
+  add_catch2_test(NAME test_net COMMAND test_net)
 
   if(NOT APPLE)
     # Disable ORD violation caused by double definition inside a stub file libinknet_stub.cc

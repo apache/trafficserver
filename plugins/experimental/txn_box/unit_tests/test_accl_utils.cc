@@ -20,10 +20,11 @@
   Copyright 2019, Oath Inc.
 */
 
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
 #include <iostream>
 #include <forward_list>
 #include <chrono>
+#include <functional>
 
 #include <swoc/TextView.h>
 #include "txn_box/accl_util.h"

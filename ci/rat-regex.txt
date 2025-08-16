@@ -66,6 +66,7 @@ port\.h
 ^override.css$
 ^catch[.]hpp$
 ^configuru.hpp$
+^Catch2$
 ^yamlcpp$
 ^systemtap$
 ^swoc$

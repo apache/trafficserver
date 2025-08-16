@@ -62,12 +62,11 @@ add_subdirectory(remap)
 
 if(BUILD_TESTING)
   add_executable(
-    test_proxy_http
-    unit_tests/unit_test_main.cc unit_tests/test_ForwardedConfig.cc unit_tests/test_error_page_selection.cc
-    unit_tests/test_PreWarm.cc ForwardedConfig.cc HttpBodyFactory.cc
+    test_proxy_http unit_tests/test_ForwardedConfig.cc unit_tests/test_error_page_selection.cc
+                    unit_tests/test_PreWarm.cc ForwardedConfig.cc HttpBodyFactory.cc
   )
-  target_link_libraries(test_proxy_http PRIVATE catch2::catch2 hdrs tscore inkevent proxy logging)
-  add_test(NAME test_proxy_http COMMAND test_proxy_http)
+  target_link_libraries(test_proxy_http PRIVATE Catch2::Catch2WithMain hdrs tscore inkevent proxy logging)
+  add_catch2_test(NAME test_proxy_http COMMAND test_proxy_http)
 endif(BUILD_TESTING)
 
 clang_tidy_check(http)

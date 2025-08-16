@@ -23,8 +23,8 @@
 #include "tscore/ink_resolver.h"
 #include "test_Diags.h"
 
-#define CATCH_CONFIG_RUNNER
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/catch_session.hpp>
 
 extern void ts_session_protocol_well_known_name_indices_init();
 

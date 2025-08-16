@@ -23,7 +23,7 @@
 #include <fstream>
 
 #include "swoc/swoc_file.h"
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
 
 using namespace swoc;
 using namespace swoc::literals;

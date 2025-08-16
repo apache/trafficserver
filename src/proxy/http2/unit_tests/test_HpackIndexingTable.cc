@@ -27,7 +27,7 @@
 #include <memory>
 #include <string_view>
 
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
 
 #include "proxy/http2/HPACK.h"
 

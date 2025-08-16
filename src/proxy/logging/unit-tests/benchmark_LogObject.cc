@@ -47,8 +47,7 @@ benchmark_LogObject_LDADD = \
  */
 
 #define CATCH_CONFIG_ENABLE_BENCHMARKING
-#define CATCH_CONFIG_MAIN
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
 
 #include "proxy/logging/LogConfig.h"
 #include "proxy/logging/Log.h"

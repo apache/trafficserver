@@ -24,7 +24,7 @@
 #include "tscore/MMH.h"
 #include "tscore/ink_memory.h"
 #include "tscore/Random.h"
-#include <catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 
 #define TEST_COLLISIONS 10000000
 

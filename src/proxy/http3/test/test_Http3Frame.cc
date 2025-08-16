@@ -21,7 +21,7 @@
  *  limitations under the License.
  */
 
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
 #include <cstdio>
 #include "proxy/http3/Http3Frame.h"
 #include "proxy/http3/Http3FrameDispatcher.h"

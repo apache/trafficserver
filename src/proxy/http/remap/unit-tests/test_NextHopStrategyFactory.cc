@@ -26,9 +26,8 @@
 
  */
 
-#define CATCH_CONFIG_MAIN /* include main function */
-#include <catch.hpp>      /* catch unit-test framework */
-#include <fstream>        /* ofstream */
+#include <catch2/catch_test_macros.hpp> /* catch unit-test framework */
+#include <fstream>                      /* ofstream */
 #include <memory>
 #include <utime.h>
 #include <yaml-cpp/yaml.h>

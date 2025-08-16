@@ -19,7 +19,10 @@
 */
 #define CATCH_CONFIG_EXTERNAL_INTERFACES
 
-#include <catch.hpp> /* catch unit-test framework */
+#include <catch2/catch_test_macros.hpp> /* catch unit-test framework */
+#include <catch2/reporters/catch_reporter_event_listener.hpp>
+#include <catch2/reporters/catch_reporter_registrars.hpp>
+#include <catch2/interfaces/catch_interfaces_config.hpp>
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -77,8 +80,8 @@ DbgCtl            dbg_ctl{"rpc.test.client"};
 
 } // end anonymous namespace
 
-struct RPCServerTestListener : Catch::TestEventListenerBase {
-  using TestEventListenerBase::TestEventListenerBase; // inherit constructor
+struct RPCServerTestListener : Catch::EventListenerBase {
+  using EventListenerBase::EventListenerBase; // inherit constructor
   ~RPCServerTestListener();
 
   // The whole test run starting

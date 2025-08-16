@@ -30,7 +30,7 @@
 #include "swoc/IntrusiveDList.h"
 #include "swoc/bwf_base.h"
 
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
 
 using swoc::IntrusiveDList;
 

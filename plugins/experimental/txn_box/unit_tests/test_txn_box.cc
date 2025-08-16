@@ -18,7 +18,7 @@
     limitations under the License.
  */
 
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
 
 #include "txn_box/yaml_util.h"
 using namespace swoc::literals;

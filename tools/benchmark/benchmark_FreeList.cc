@@ -20,9 +20,9 @@
  */
 
 #define CATCH_CONFIG_ENABLE_BENCHMARKING
-#define CATCH_CONFIG_RUNNER
 
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/catch_session.hpp>
 
 #include "tscore/ink_hw.h"
 #include "tscore/ink_thread.h"

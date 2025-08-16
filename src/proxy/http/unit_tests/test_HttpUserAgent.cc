@@ -30,7 +30,7 @@
 #include "proxy/Milestones.h"
 #include "../../../iocore/net/P_SSLNetVConnection.h"
 
-#include <catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 
 #include <cstring>
 

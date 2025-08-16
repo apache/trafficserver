@@ -27,7 +27,7 @@
 #include "swoc/swoc_ip.h"
 #include "swoc/bwf_ip.h"
 #include "tscore/ink_inet.h"
-#include <catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 #include <iostream>
 #include "ts/apidefs.h"
 #include "tscore/ink_inet.h"

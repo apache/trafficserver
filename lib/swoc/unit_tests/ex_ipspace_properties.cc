@@ -6,7 +6,7 @@
     Example use of IPSpace for property mapping.
 */
 
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
 
 #include <memory>
 #include <limits>

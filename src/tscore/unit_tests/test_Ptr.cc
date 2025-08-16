@@ -20,7 +20,7 @@
 */
 
 #include "tscore/Ptr.h"
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
 
 struct PtrObject : RefCountObjInHeap {
   PtrObject(unsigned *_c) : count(_c) { ++(*count); }

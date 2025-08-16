@@ -23,7 +23,7 @@
 #include "tsutil/ts_meta.h"
 #include "swoc/TextView.h"
 
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
 
 struct A {
   int _value;

@@ -21,9 +21,8 @@
  * @brief Unit tests for functions implementing access control
  */
 
-#define CATCH_CONFIG_MAIN      /* include main function */
-#include <catch.hpp>           /* catch unit-test framework */
-#include "../access_control.h" /* access_control utility */
+#include <catch2/catch_test_macros.hpp> /* catch unit-test framework */
+#include "../access_control.h"          /* access_control utility */
 
 /* AccessToken ***************************************************************************************************************** */
 

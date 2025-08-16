@@ -19,7 +19,7 @@
 #include "sensitive_fields.h"
 
 #include <cstring>
-#include <catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 
 using namespace traffic_dump;
 

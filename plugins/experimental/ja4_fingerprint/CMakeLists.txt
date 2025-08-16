@@ -21,7 +21,7 @@ verify_global_plugin(ja4_fingerprint)
 
 if(BUILD_TESTING)
   add_executable(test_ja4 test_ja4.cc ja4.cc tls_client_hello_summary.cc)
-  target_link_libraries(test_ja4 PRIVATE catch2::catch2)
+  target_link_libraries(test_ja4 PRIVATE Catch2::Catch2WithMain)
 
-  add_test(test_ja4 test_ja4)
+  add_catch2_test(NAME test_ja4 COMMAND test_ja4)
 endif()

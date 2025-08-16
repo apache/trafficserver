@@ -21,11 +21,11 @@
  *  limitations under the License.
  */
 
-// To make compile faster
-// https://github.com/philsquared/Catch/blob/master/docs/slow-compiles.md
-// #define CATCH_CONFIG_MAIN
-#define CATCH_CONFIG_RUNNER
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/reporters/catch_reporter_event_listener.hpp>
+#include <catch2/reporters/catch_reporter_registrars.hpp>
+#include <catch2/interfaces/catch_interfaces_config.hpp>
+#include <catch2/catch_session.hpp>
 
 #include "tscore/Layout.h"
 #include "tscore/Diags.h"
@@ -48,14 +48,15 @@ int  ackmode      = 0;
 char appname[256] = "ats";
 char pattern[256] = "";
 
-struct EventProcessorListener : Catch::TestEventListenerBase {
-  using TestEventListenerBase::TestEventListenerBase; // inherit constructor
+struct EventProcessorListener : Catch::EventListenerBase {
+  using EventListenerBase::EventListenerBase; // inherit constructor
 
   virtual void
   testRunStarting(Catch::TestRunInfo const &testRunInfo) override
   {
     BaseLogFile *base_log_file = new BaseLogFile("stderr");
-    DiagsPtr::set(new Diags(testRunInfo.name, "" /* tags */, "" /* actions */, base_log_file));
+    DiagsPtr::set(new Diags(std::string_view{testRunInfo.name.data(), testRunInfo.name.size()}, "" /* tags */, "" /* actions */,
+                            base_log_file));
     diags()->activate_taglist("qpack", DiagsTagType_Debug);
     diags()->config.enabled(DiagsTagType_Debug, 1);
     diags()->show_location = SHOW_LOCATION_DEBUG;
@@ -83,7 +84,7 @@ int
 main(int argc, char *argv[])
 {
   Catch::Session session;
-  using namespace Catch::clara;
+  using namespace Catch::Clara;
   auto cli =
     session.cli() | Opt(qifdir, "qifdir")["--q-qif-dir"]("path for a directory that contains QIF files (default:qifs/qifs") |
     Opt(encdir, "encdir")["--q-encoded-dir"]("path for a directory that encoded files will be stored (default:qifs/encoded)") |

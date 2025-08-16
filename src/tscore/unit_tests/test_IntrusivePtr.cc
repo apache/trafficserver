@@ -25,7 +25,7 @@
 
 #include <string>
 #include <sstream>
-#include <catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 
 struct Thing : public ts::IntrusivePtrCounter {
   Thing() { ++_count; }
