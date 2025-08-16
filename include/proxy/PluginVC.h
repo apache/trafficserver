@@ -39,6 +39,8 @@
 #include "iocore/net/NetVConnection.h"
 #include "tscore/ink_atomic.h"
 
+import tscore;
+
 class PluginVCCore;
 
 struct PluginVCState {

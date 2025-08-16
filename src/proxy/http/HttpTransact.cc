@@ -8250,7 +8250,7 @@ HttpTransact::get_error_string(int erno)
 ink_time_t
 ink_local_time()
 {
-  return ink_get_hrtime() / HRTIME_SECOND;
+  return ink_get_hrtime() / HRTIME_SECONDS(1);
 }
 
 //
@@ -8274,7 +8274,7 @@ HttpTransact::origin_server_connection_speed(ink_hrtime transfer_time, int64_t n
 {
   float bytes_per_hrtime =
     (transfer_time == 0) ? (nbytes) : (static_cast<float>(nbytes) / static_cast<float>(static_cast<int64_t>(transfer_time)));
-  int bytes_per_sec = static_cast<int>(bytes_per_hrtime * HRTIME_SECOND);
+  int bytes_per_sec = static_cast<int>(bytes_per_hrtime * HRTIME_SECONDS(1));
 
   if (bytes_per_sec <= 100) {
     Metrics::Counter::increment(http_rsb.user_agent_speed_bytes_per_sec_100);
@@ -8307,7 +8307,7 @@ HttpTransact::user_agent_connection_speed(ink_hrtime transfer_time, int64_t nbyt
 {
   float bytes_per_hrtime =
     (transfer_time == 0) ? (nbytes) : (static_cast<float>(nbytes) / static_cast<float>(static_cast<int64_t>(transfer_time)));
-  int64_t bytes_per_sec = static_cast<int64_t>(bytes_per_hrtime * HRTIME_SECOND);
+  int64_t bytes_per_sec = static_cast<int64_t>(bytes_per_hrtime * HRTIME_SECONDS(1));
 
   if (bytes_per_sec <= 100) {
     Metrics::Counter::increment(http_rsb.origin_server_speed_bytes_per_sec_100);

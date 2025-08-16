@@ -37,7 +37,6 @@
 #include "iocore/net/TLSSNISupport.h"
 
 #include "tscore/ink_assert.h"
-#include "tscore/ink_hrtime.h"
 #include "tscore/ink_memory.h"
 #include "tsutil/PostScript.h"
 #include "tsutil/LocalBuffer.h"

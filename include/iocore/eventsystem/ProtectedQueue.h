@@ -36,6 +36,9 @@
 
 #include "tscore/ink_platform.h"
 #include "iocore/eventsystem/Event.h"
+
+import tscore;
+
 struct ProtectedQueue {
   void   enqueue(Event *e);
   void   signal();

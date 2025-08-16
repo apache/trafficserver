@@ -21,21 +21,7 @@
   limitations under the License.
  */
 
-#include "iocore/io_uring/IOUringEventIO.h"
-#if TS_USE_LINUX_IO_URING
-#include "iocore/io_uring/IO_URING.h"
+export module tscore;
 
-int
-IOUringEventIO::start(EventLoop l, IOUringContext *h)
-{
-  _h     = h;
-  int fd = _h->register_eventfd();
-  return start_common(l, fd, EVENTIO_READ);
-}
-
-void
-IOUringEventIO::process_event(int /* flags ATS_UNUSED */)
-{
-  _h->service();
-}
-#endif
+export import :frequency_counter;
+export import :hrtime;

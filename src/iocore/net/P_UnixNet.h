@@ -31,10 +31,6 @@
 #include "iocore/net/NetHandler.h"
 #include "tscore/ink_sys_control.h"
 
-#if TS_USE_LINUX_IO_URING
-#include "iocore/io_uring/IOUringEventIO.h"
-#endif
-
 NetHandler     *get_NetHandler(EThread *t);
 PollCont       *get_PollCont(EThread *t);
 PollDescriptor *get_PollDescriptor(EThread *t);

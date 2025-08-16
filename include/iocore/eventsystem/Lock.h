@@ -27,6 +27,8 @@
 #include "tscore/Diags.h"
 #include "iocore/eventsystem/Thread.h"
 
+import tscore;
+
 #define MAX_LOCK_TIME               HRTIME_MSECONDS(200)
 #define THREAD_MUTEX_THREAD_HOLDING (-1024 * 1024)
 

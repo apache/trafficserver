@@ -15,8 +15,10 @@
 #
 #######################
 
-add_library(inkuring STATIC io_uring.cc IOUringEventIO.cc)
+add_library(inkuring STATIC context.cc)
 add_library(ts::inkuring ALIAS inkuring)
+
+target_sources(inkuring PUBLIC FILE_SET CXX_MODULES FILES io_uring.cc)
 
 target_link_libraries(
   inkuring
@@ -26,6 +28,7 @@ target_link_libraries(
 
 if(BUILD_TESTING)
   add_executable(test_iouring unit_tests/test_diskIO.cc)
+
   target_link_libraries(test_iouring PRIVATE inkuring libswoc::libswoc tsutil catch2::catch2)
 
   target_include_directories(test_iouring PRIVATE ${CATCH_INCLUDE_DIR})
