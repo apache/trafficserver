@@ -449,7 +449,8 @@ REGRESSION_TEST(cache_disk_replacement_stability)(RegressionTest *t, int level, 
 
   *pstatus = REGRESSION_TEST_INPROGRESS;
 
-  disk.num_errors = 0;
+  disk.num_errors       = 0;
+  disk.hash_base_string = ats_strdup("placeholder");
 
   for (int i = 0; i < MAX_VOLS; ++i) {
     stripes[i]     = new StripeSM{&disk, static_cast<off_t>(DEFAULT_STRIPE_SIZE / STORE_BLOCK_SIZE), 0};
