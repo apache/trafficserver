@@ -341,9 +341,27 @@ set(TS_USE_MALLOC_ALLOCATOR ${ENABLE_MALLOC_ALLOCATOR})
 set(TS_USE_ALLOCATOR_METRICS ${ENABLE_ALLOCATOR_METRICS})
 find_package(ZLIB REQUIRED)
 
-find_package(zstd)
+find_package(zstd CONFIG QUIET)
 if(zstd_FOUND)
   set(HAVE_ZSTD_H TRUE)
+
+  # Provide a compatibility target name if the upstream package does not export it
+  # Our code links against `zstd::zstd`; upstream zstd usually exports
+  # `zstd::libzstd_shared`/`zstd::libzstd_static`. Create an alias if needed.
+  if(NOT TARGET zstd::zstd)
+    if(TARGET zstd::libzstd_shared)
+      set(_zstd_target zstd::libzstd_shared)
+    elseif(TARGET zstd::libzstd_static)
+      set(_zstd_target zstd::libzstd_static)
+    elseif(TARGET zstd::libzstd)
+      set(_zstd_target zstd::libzstd)
+    endif()
+    if(DEFINED _zstd_target)
+      add_library(zstd_zstd INTERFACE)
+      target_link_libraries(zstd_zstd INTERFACE ${_zstd_target})
+      add_library(zstd::zstd ALIAS zstd_zstd)
+    endif()
+  endif()
 endif()
 
 # ncurses is used in traffic_top
