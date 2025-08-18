@@ -343,7 +343,6 @@ find_package(ZLIB REQUIRED)
 
 find_package(zstd CONFIG QUIET)
 if(zstd_FOUND)
-  set(HAVE_ZSTD_H TRUE)
 
   # Provide a compatibility target name if the upstream package does not export it
   # Our code links against `zstd::zstd`; upstream zstd usually exports
@@ -360,8 +359,13 @@ if(zstd_FOUND)
       add_library(zstd_zstd INTERFACE)
       target_link_libraries(zstd_zstd INTERFACE ${_zstd_target})
       add_library(zstd::zstd ALIAS zstd_zstd)
+      set(HAVE_ZSTD_H TRUE)
+    else()
+      set(HAVE_ZSTD_H FALSE)
     endif()
   endif()
+else()
+  set(HAVE_ZSTD_H FALSE)
 endif()
 
 # ncurses is used in traffic_top
