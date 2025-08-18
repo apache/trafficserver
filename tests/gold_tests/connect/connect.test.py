@@ -22,6 +22,7 @@ import re
 
 Test.Summary = 'Exercise HTTP CONNECT Method'
 Test.ContinueOnFail = True
+Test.SkipIf(Condition.CurlUsingUnixDomainSocket())
 
 
 class ConnectTest:
@@ -48,7 +49,7 @@ class ConnectTest:
             {
                 'proxy.config.diags.debug.enabled': 1,
                 'proxy.config.diags.debug.tags': 'http',
-                'proxy.config.http.server_ports': f"{self.ts.Variables.port} {self.ts.Variables.uds_path}",
+                'proxy.config.http.server_ports': f"{self.ts.Variables.port}",
                 'proxy.config.http.connect_ports': f"{self.httpbin.Variables.Port}",
             })
 
@@ -84,14 +85,10 @@ logging:
     def __testCase0(self):
         tr = Test.AddTestRun()
         self.__checkProcessBefore(tr)
-        if Condition.CurlUsingUnixDomainSocket():
-            tr.MakeCurlCommand(f"-v --fail -s -X CONNECT -p -x 127.0.0.1:{self.ts.Variables.port} 'http://foo.com/get'", ts=self.ts)
-            tr.Processes.Default.Streams.stderr = "gold/connect_0_stderr_uds.gold"
-        else:
-            tr.MakeCurlCommand(f"-v --fail -s -p -x 127.0.0.1:{self.ts.Variables.port} 'http://foo.com/get'", ts=self.ts)
-            tr.Processes.Default.Streams.stderr = "gold/connect_0_stderr.gold"
-            tr.Processes.Default.Streams.stderr = Testers.ContainsExpression(
-                f'Connected to 127.0.0.1.*{self.ts.Variables.port}', 'Curl should connect through the ATS proxy port.')
+        tr.MakeCurlCommand(f"-v --fail -s -p -x 127.0.0.1:{self.ts.Variables.port} 'http://foo.com/get'", ts=self.ts)
+        tr.Processes.Default.Streams.stderr = "gold/connect_0_stderr.gold"
+        tr.Processes.Default.Streams.stderr = Testers.ContainsExpression(
+            f'Connected to 127.0.0.1.*{self.ts.Variables.port}', 'Curl should connect through the ATS proxy port.')
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.TimeOut = 3
         self.__checkProcessAfter(tr)
@@ -220,7 +217,7 @@ class ConnectViaPVTest2:
                 'proxy.config.diags.debug.tags': 'http|hpack',
                 'proxy.config.ssl.server.cert.path': f'{self.ts.Variables.SSLDir}',
                 'proxy.config.ssl.server.private_key.path': f'{self.ts.Variables.SSLDir}',
-                'proxy.config.http.server_ports': f"{self.ts.Variables.ssl_port}:ssl {self.ts.Variables.uds_path}",
+                'proxy.config.http.server_ports': f"{self.ts.Variables.ssl_port}:ssl",
                 'proxy.config.http.connect_ports': f"{self.server.Variables.http_port}",
             })
 

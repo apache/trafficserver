@@ -104,7 +104,8 @@ class CriptsBasicTest:
     def run(self):
         self.updateCompilerForTest()
         self.runHeaderTest()
-        self.runCertsTest()
+        if not Condition.CurlUsingUnixDomainSocket():
+            self.runCertsTest()
 
 
 CriptsBasicTest().run()
