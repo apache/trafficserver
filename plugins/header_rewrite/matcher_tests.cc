@@ -84,6 +84,8 @@ TSHttpTxnServerRespGet(TSHttpTxn, TSMBuffer *, TSMLoc *)
   return TS_SUCCESS;
 }
 
+ClassAllocator<ProxyMutex> mutexAllocator("mutexAllocator");
+
 TEST_CASE("Matcher", "[plugins][header_rewrite]")
 {
   Matchers<std::string> foo(MATCH_EQUAL);
