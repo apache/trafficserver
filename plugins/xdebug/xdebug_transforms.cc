@@ -17,18 +17,29 @@
   limitations under the License.
  */
 
-#include <limits.h>
-#include <stdio.h>
-#include <string.h>
-#include <functional>
+#include "xdebug_types.h"
+#include "xdebug_headers.h"
+
+#include <unistd.h>
+#include <sstream>
+#include <cinttypes>
 
 #include "ts/ts.h"
+
+namespace xdebug
+{
 
 static const std::string_view MultipartBoundary{"\r\n--- ATS xDebug Probe Injection Boundary ---\r\n\r\n"};
 
 static char Hostname[1024];
 
 static DbgCtl dbg_ctl_xform{"xdebug_transform"};
+
+void
+init_transforms()
+{
+  gethostname(Hostname, 1024);
+}
 
 static std::string
 getPreBody(TSHttpTxn txn)
@@ -38,6 +49,15 @@ getPreBody(TSHttpTxn txn)
   print_request_headers(txn, output);
   output << "\n   ]\n}";
   output << MultipartBoundary;
+  return output.str();
+}
+
+static std::string
+getPreBodyFullJson(TSHttpTxn txn)
+{
+  std::stringstream output;
+  print_request_headers_full_json(txn, output);
+  output << R"(,"server-body": ")";
   return output.str();
 }
 
@@ -52,12 +72,27 @@ getPostBody(TSHttpTxn txn)
   return output.str();
 }
 
-static void
+static std::string
+getPostBodyFullJson(TSHttpTxn txn)
+{
+  std::stringstream output;
+  output << R"(",)"; // Close the origin-body field.
+  print_response_headers_full_json(txn, output);
+  output << '\n';
+  return output.str();
+}
+
+void
 writePostBody(TSHttpTxn txn, BodyBuilder *data)
 {
   if (data->wrote_body && data->hdr_ready && !data->wrote_postbody.test_and_set()) {
     Dbg(dbg_ctl_xform, "body_transform(): Writing postbody headers...");
-    std::string postbody = getPostBody(txn);
+    std::string postbody;
+    if (data->probe_type == ProbeType::PROBE_STANDARD) {
+      postbody = getPostBody(txn);
+    } else {
+      postbody = getPostBodyFullJson(txn);
+    }
     TSIOBufferWrite(data->output_buffer.get(), postbody.data(), postbody.length());
     data->nbytes += postbody.length();
     TSVIONBytesSet(data->output_vio, data->nbytes);
@@ -65,7 +100,7 @@ writePostBody(TSHttpTxn txn, BodyBuilder *data)
   }
 }
 
-static int
+int
 body_transform(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
 {
   TSHttpTxn    txn  = static_cast<TSHttpTxn>(TSContDataGet(contp));
@@ -102,7 +137,12 @@ body_transform(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
 
     if (data->wrote_prebody == false) {
       Dbg(dbg_ctl_xform, "body_transform(): Writing prebody headers...");
-      std::string prebody = getPreBody(txn);
+      std::string prebody;
+      if (data->probe_type == ProbeType::PROBE_STANDARD) {
+        prebody = getPreBody(txn);
+      } else {
+        prebody = getPreBodyFullJson(txn);
+      }
       TSIOBufferWrite(data->output_buffer.get(), prebody.data(), prebody.length()); // write prebody
       data->wrote_prebody  = true;
       data->nbytes        += prebody.length();
@@ -142,3 +182,5 @@ body_transform(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
   }
   return 0;
 }
+
+} // namespace xdebug

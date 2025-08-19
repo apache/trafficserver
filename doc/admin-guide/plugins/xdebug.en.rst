@@ -53,8 +53,17 @@ selectively by passing header names to ``--enable`` option.
     --enable=x-remap,x-cache
 
 This enables ``X-Remap`` and ``X-Cache``. If a client's request has
-``X-Debug: x-remap, x-cache, probe``, XDebug will only injects ``X-Reamp`` and
+``X-Debug: x-remap, x-cache, probe``, XDebug will only inject ``X-Remap`` and
 ``X-Cache``.
+
+To enable the JSON transaction header probe functionality:
+
+::
+
+    --enable=probe-full-json
+
+This allows clients to request ``X-Debug: probe-full-json`` to receive request
+and response header information in a structured JSON format.
 
 
 Debugging Headers
@@ -86,6 +95,64 @@ Probe
     - Original content body
     - Response Headers from Proxy B -> Proxy A
     - Response Headers from Proxy A -> Client
+
+Probe-Full-JSON
+    Similar to `Probe` but formats the output as a complete JSON object
+    containing request and response headers. The response body is modified to
+    include client request headers, proxy request headers, the original server
+    response body, server response headers, and proxy response headers in a
+    structured JSON format. In contrast to Probe, the response content with
+    this feature is parsable with JSON parsing tools like ``jq``. Because the
+    body is altered, it disables writing to cache and changes the Content-Type
+    to ``application/json``.
+
+    JSON Nodes:
+
+    - ``client-request``: Headers from the client to the proxy.
+    - ``proxy-request``: Headers from the proxy to the origin server (if applicable).
+    - ``server-body``: The original response body content from the origin server.
+    - ``server-response``: Headers from the origin server to the proxy.
+    - ``proxy-response``: Headers from the proxy to the client.
+
+    Here's an example of the JSON output from the `x_probe_full_json` test::
+
+        $ curl -s -H"uuid: 1" -H "Host: example.com" -H "X-Debug: probe-full-json" http://127.0.0.1:61003/test | jq
+        {
+            "client-request": {
+                "start-line": "GET http://127.0.0.1:61000/test HTTP/1.1",
+                "uuid": "1",
+                "host": "127.0.0.1:61000",
+                "x-request": "from-client"
+            },
+            "proxy-request": {
+                "start-line": "GET /test HTTP/1.1",
+                "uuid": "1",
+                "host": "127.0.0.1:61000",
+                "x-request": "from-client",
+                "Client-ip": "127.0.0.1",
+                "X-Forwarded-For": "127.0.0.1",
+                "Via": "http/1.1 traffic_server[f47ffc16-0a20-441e-b17d-6e3cb044e025] (ApacheTrafficServer/10.2.0)"
+            },
+            "server-body": "Original server response",
+            "server-response": {
+                "start-line": "HTTP/1.1 200 ",
+                "content-type": "text/html",
+                "content-length": "24",
+                "x-response": "from-origin",
+                "Date": "Tue, 19 Aug 2025 15:02:07 GMT"
+            },
+            "proxy-response": {
+                "start-line": "HTTP/1.1 200 OK",
+                "content-type": "application/json",
+                "x-response": "from-origin",
+                "Date": "Tue, 19 Aug 2025 15:02:07 GMT",
+                "Age": "0",
+                "Transfer-Encoding": "chunked",
+                "Connection": "keep-alive",
+                "Server": "ATS/10.2.0",
+                "X-Original-Content-Type": "text/html"
+            }
+        }
 
 X-Cache-Key
     The ``X-Cache-Key`` header contains the URL that identifies the HTTP object in the
