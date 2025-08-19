@@ -32,6 +32,8 @@
 #include "tscore/History.h"
 #include "proxy/Milestones.h"
 
+import tscore;
+
 class Http2Stream;
 class Http2ConnectionState;
 

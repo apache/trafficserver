@@ -24,9 +24,10 @@
 #pragma once
 
 #include "ts/apidefs.h"
-#include "tscore/ink_hrtime.h"
 
 #include <array>
+
+import tscore;
 
 template <class T, size_t entries> class Milestones
 {

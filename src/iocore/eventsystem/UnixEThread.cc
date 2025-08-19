@@ -229,7 +229,7 @@ EThread::execute_regular()
   ink_hrtime loop_finish_time; // Time at the end of the loop.
 
   // Track this so we can update on boundary crossing.
-  auto prev_slice = this->metrics.prev_slice(metrics._slice.data() + (ink_get_hrtime() / HRTIME_SECOND) % Metrics::N_SLICES);
+  auto prev_slice = this->metrics.prev_slice(metrics._slice.data() + (ink_get_hrtime() / HRTIME_SECONDS(1)) % Metrics::N_SLICES);
 
   int nq_count;
   int ev_count;
@@ -245,7 +245,7 @@ EThread::execute_regular()
     nq_count        = 0; // count # of elements put on negative queue.
     ev_count        = 0; // # of events handled.
 
-    current_slice = metrics._slice.data() + (loop_start_time / HRTIME_SECOND) % Metrics::N_SLICES;
+    current_slice = metrics._slice.data() + (loop_start_time / HRTIME_SECONDS(1)) % Metrics::N_SLICES;
     metrics.current_slice.store(current_slice, std::memory_order_release);
     if (current_slice != prev_slice) {
       // I have observed multi-second event loops in production, making this necessary. [amc]
@@ -289,7 +289,7 @@ EThread::execute_regular()
     ink_hrtime sleep_time = next_time - ink_get_hrtime();
     if (sleep_time > 0) {
       if (EventQueueExternal.localQueue.empty()) {
-        sleep_time = std::min(sleep_time, HRTIME_MSECONDS(thread_max_heartbeat_mseconds));
+        sleep_time = std::min<long>(sleep_time, HRTIME_MSECONDS(thread_max_heartbeat_mseconds));
       } else {
         // Because of a missed lock, Timed-Event and Negative-Event have been pushed into localQueue for retry in awhile.
         // Therefore, we have to set the limitation of sleep time in order to handle the next retry in time.

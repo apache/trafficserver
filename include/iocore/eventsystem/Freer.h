@@ -27,6 +27,8 @@
 #include "tscore/ink_platform.h"
 #include "iocore/eventsystem/Tasks.h"
 
+import tscore;
+
 // Note that these should not be used for memory that wishes to retain
 // NUMA socket affinity. We'll potentially return these on an arbitrarily
 // selected processor/socket.

@@ -159,7 +159,7 @@ RecRawStatSyncHrTimeAvg(const char *name, RecDataT data_type, RecData *data, Rec
     r = 0.0f;
   } else {
     r = static_cast<float>(static_cast<double>(total.sum) / static_cast<double>(total.count));
-    r = r / static_cast<float>(HRTIME_SECOND);
+    r = r / static_cast<float>(HRTIME_SECONDS(1));
   }
 
   RecDataSetFromFloat(data_type, data, r);

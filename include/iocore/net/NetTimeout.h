@@ -24,9 +24,10 @@
 #pragma once
 
 #include "tscore/List.h"
-#include "tscore/ink_hrtime.h"
 
 #include "iocore/eventsystem/EventSystem.h"
+
+import tscore;
 
 /**
   NetTimeout - handle active & inactive timeout

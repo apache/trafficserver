@@ -41,7 +41,6 @@ add_library(
   Encoding.cc
   EventNotify.cc
   Extendible.cc
-  FrequencyCounter.cc
   Hash.cc
   HashFNV.cc
   HashSip.cc
@@ -69,7 +68,6 @@ add_library(
   ink_defs.cc
   ink_error.cc
   ink_file.cc
-  ink_hrtime.cc
   ink_hw.cc
   ink_inet.cc
   ink_memory.cc
@@ -97,6 +95,8 @@ add_library(
   signals.cc
 )
 add_library(ts::tscore ALIAS tscore)
+
+target_sources(tscore PUBLIC FILE_SET CXX_MODULES FILES tscore.cc FrequencyCounter.cc ink_hrtime.cc)
 
 # Some plugins link against ts::tscore and therefore need it to be compiled as
 # position independent.

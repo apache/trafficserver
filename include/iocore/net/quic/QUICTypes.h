@@ -24,7 +24,6 @@
 #pragma once
 
 #include "iocore/net/NetVConnection.h"
-#include "tscore/ink_hrtime.h"
 #include "tscore/ink_inet.h"
 
 #include <openssl/evp.h>
@@ -34,6 +33,8 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+
+import tscore;
 
 using QUICPacketNumber = uint64_t;
 using QUICVersion      = uint32_t;

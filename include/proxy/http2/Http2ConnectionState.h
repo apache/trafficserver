@@ -32,7 +32,8 @@
 #include "proxy/http2/HPACK.h"
 #include "proxy/http2/Http2Stream.h"
 #include "proxy/http2/Http2DependencyTree.h"
-#include "tscore/FrequencyCounter.h"
+
+import tscore;
 
 class Http2CommonSession;
 class Http2Frame;
