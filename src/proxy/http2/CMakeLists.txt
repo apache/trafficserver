@@ -49,12 +49,12 @@ if(BUILD_TESTING)
     unit_tests/test_Http2Frame.cc
     unit_tests/test_HpackIndexingTable.cc
   )
-  target_link_libraries(test_http2 PRIVATE catch2::catch2 records tscore hdrs inkevent)
-  add_test(NAME test_http2 COMMAND test_http2)
+  target_link_libraries(test_http2 PRIVATE Catch2::Catch2WithMain records tscore hdrs inkevent)
+  add_catch2_test(NAME test_http2 COMMAND test_http2)
 
   add_executable(test_Http2DependencyTree unit_tests/test_Http2DependencyTree.cc)
-  target_link_libraries(test_Http2DependencyTree PRIVATE catch2::catch2 tscore libswoc::libswoc)
-  add_test(NAME test_Http2DependencyTree COMMAND test_Http2DependencyTree)
+  target_link_libraries(test_Http2DependencyTree PRIVATE Catch2::Catch2WithMain tscore libswoc::libswoc)
+  add_catch2_test(NAME test_Http2DependencyTree COMMAND test_Http2DependencyTree)
 
   add_executable(test_HPACK test_HPACK.cc HPACK.cc)
   target_link_libraries(test_HPACK PRIVATE tscore hdrs inkevent)

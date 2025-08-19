@@ -28,7 +28,7 @@
 #include <string_view>
 #include <thread>
 
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
 
 using std::chrono::duration_cast;
 using std::chrono::milliseconds;

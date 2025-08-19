@@ -21,7 +21,7 @@
     limitations under the License.
 */
 
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
 
 #include "proxy/http2/Http2Frame.h"
 

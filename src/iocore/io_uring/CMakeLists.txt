@@ -26,11 +26,11 @@ target_link_libraries(
 
 if(BUILD_TESTING)
   add_executable(test_iouring unit_tests/test_diskIO.cc)
-  target_link_libraries(test_iouring PRIVATE inkuring libswoc::libswoc tsutil catch2::catch2)
+  target_link_libraries(test_iouring PRIVATE inkuring libswoc::libswoc tsutil Catch2::Catch2)
 
   target_include_directories(test_iouring PRIVATE ${CATCH_INCLUDE_DIR})
 
-  add_test(NAME test_iouring COMMAND $<TARGET_FILE:test_iouring>)
+  add_catch2_test(NAME test_iouring COMMAND $<TARGET_FILE:test_iouring>)
 endif()
 
 clang_tidy_check(inkuring)

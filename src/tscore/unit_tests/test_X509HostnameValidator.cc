@@ -21,8 +21,8 @@
   limitations under the License.
  */
 
-#define CATCH_CONFIG_RUNNER
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/catch_session.hpp>
 
 #include <openssl/pem.h>
 #include <openssl/x509.h>

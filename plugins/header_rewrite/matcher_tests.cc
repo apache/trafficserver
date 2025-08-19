@@ -22,8 +22,7 @@
 
 #include "matcher.h"
 #include "ts/apidefs.h"
-#define CATCH_CONFIG_MAIN
-#include "catch.hpp"
+#include "catch2/catch_test_macros.hpp"
 
 int
 _TSAssert(const char *, const char *, int)

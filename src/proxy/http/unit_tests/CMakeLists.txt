@@ -28,7 +28,7 @@ add_executable(
 
 target_link_libraries(
   test_http
-  PRIVATE catch2::catch2
+  PRIVATE Catch2::Catch2WithMain
           ts::http
           ts::hdrs # transitive
           logging # transitive
@@ -39,4 +39,4 @@ target_link_libraries(
           ts::jsonrpc_protocol
 )
 
-add_test(NAME test_http COMMAND $<TARGET_FILE:test_http>)
+add_catch2_test(NAME test_http COMMAND $<TARGET_FILE:test_http>)

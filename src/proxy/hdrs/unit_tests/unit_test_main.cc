@@ -24,8 +24,8 @@
 #include "proxy/hdrs/HTTP.h"
 #include "proxy/hdrs/HuffmanCodec.h"
 
-#define CATCH_CONFIG_RUNNER
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/catch_session.hpp>
 
 extern int cmd_disable_pfreelist;
 

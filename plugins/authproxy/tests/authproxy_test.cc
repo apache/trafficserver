@@ -17,8 +17,7 @@
  */
 
 #include <string_view>
-#define CATCH_CONFIG_MAIN /* include main function */
-#include <catch.hpp>      /* catch unit-test framework */
+#include <catch2/catch_test_macros.hpp> /* catch unit-test framework */
 #include "../utils.h"
 
 using std::string_view;
