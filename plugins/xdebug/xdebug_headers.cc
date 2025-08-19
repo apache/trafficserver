@@ -66,8 +66,8 @@ public:
       if (BEFORE_NAME == _state) {
         return {""};
       } else if (BEFORE_VALUE == _state) {
-        // Failsafe -- missing value -- this should never happen.
-        result = _missing_value(_full_json);
+        // The header field has no value.
+        result = _handle_empty_value(_full_json);
       }
       _state = BEFORE_NAME;
       return result;
@@ -116,16 +116,14 @@ private:
   }
 
   /** The separator content when there is an empty value.
-   *
-   * This is hopefully never used.
    */
   static std::string_view
-  _missing_value(bool full_json)
+  _handle_empty_value(bool full_json)
   {
     if (full_json) {
-      return {R"(":")"};
+      return {R"(",")"};
     } else {
-      return {"' : '','\n\t"};
+      return {"',\n\t'"};
     }
   }
 

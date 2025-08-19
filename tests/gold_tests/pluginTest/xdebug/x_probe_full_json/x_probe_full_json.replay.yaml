@@ -41,6 +41,7 @@ sessions:
         - [ Content-Type, "text/html" ]
         - [ Content-Length, "24" ]
         - [ X-Response, "from-origin" ]
+        - [ X-No-Value, "" ]
       content:
         encoding: plain
         data: "Original server response"
