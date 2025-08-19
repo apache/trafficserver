@@ -1925,13 +1925,15 @@ HttpSM::state_read_server_response_header(int event, void *data)
   switch (event) {
   case VC_EVENT_EOS:
     server_entry->eos = true;
+    // If we have received any bytes for this transaction do not retry
+    if (server_response_hdr_bytes > 0) {
+      t_state.current.retry_attempts.maximize(t_state.configured_connect_attempts_max_retries());
+    }
+    break;
 
-  // Fall through
   case VC_EVENT_READ_READY:
   case VC_EVENT_READ_COMPLETE:
     // More data to parse
-    // Got some data, won't retry origin connection on error
-    t_state.current.retry_attempts.maximize(t_state.configured_connect_attempts_max_retries());
     break;
 
   case VC_EVENT_ERROR:
