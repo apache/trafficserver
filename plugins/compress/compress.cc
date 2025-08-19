@@ -134,9 +134,9 @@ handle_range_request(TSMBuffer req_buf, TSMLoc req_loc, HostConfiguration *hc)
 
 // Forward declarations for ZSTD compression functions
 #if HAVE_ZSTD_H
-static void zstd_compress_init(Data *data);
-static void zstd_compress_finish(Data *data);
-static void zstd_compress_one(Data *data, const char *upstream_buffer, int64_t upstream_length);
+static void zstd_transform_init(Data *data);
+static void zstd_transform_finish(Data *data);
+static void zstd_transform_one(Data *data, const char *upstream_buffer, int64_t upstream_length);
 #endif
 
 static Data *
@@ -390,7 +390,7 @@ compress_transform_init(TSCont contp, Data *data)
 
 #if HAVE_ZSTD_H
   if (data->compression_type & COMPRESSION_TYPE_ZSTD) {
-    zstd_compress_init(data);
+    zstd_transform_init(data);
     if (!data->zstrm_zstd.cctx) {
       TSError("Failed to create Zstandard compression context");
       return;
@@ -505,7 +505,7 @@ brotli_transform_one(Data *data, const char *upstream_buffer, int64_t upstream_l
 
 #if HAVE_ZSTD_H
 static void
-zstd_compress_init(Data *data)
+zstd_transform_init(Data *data)
 {
   if (!data->zstrm_zstd.cctx) {
     error("Failed to initialize Zstd compression context");
@@ -530,7 +530,7 @@ zstd_compress_init(Data *data)
 }
 
 static void
-zstd_compress_finish(Data *data)
+zstd_transform_finish(Data *data)
 {
   if (data->state == transform_state_output) {
     TSIOBufferBlock downstream_blkp;
@@ -570,7 +570,7 @@ zstd_compress_finish(Data *data)
 }
 
 static void
-zstd_compress_one(Data *data, const char *upstream_buffer, int64_t upstream_length)
+zstd_transform_one(Data *data, const char *upstream_buffer, int64_t upstream_length)
 {
   TSIOBufferBlock downstream_blkp;
   int64_t         downstream_length;
@@ -633,7 +633,7 @@ compress_transform_one(Data *data, TSIOBufferReader upstream_reader, int amount)
 
 #if HAVE_ZSTD_H
     if (data->compression_type & COMPRESSION_TYPE_ZSTD && (data->compression_algorithms & ALGORITHM_ZSTD)) {
-      zstd_compress_one(data, upstream_buffer, upstream_length);
+      zstd_transform_one(data, upstream_buffer, upstream_length);
     } else
 #endif
 #if HAVE_BROTLI_ENCODE_H
@@ -725,7 +725,7 @@ compress_transform_finish(Data *data)
 {
 #if HAVE_ZSTD_H
   if (data->compression_type & COMPRESSION_TYPE_ZSTD && data->compression_algorithms & ALGORITHM_ZSTD) {
-    zstd_compress_finish(data);
+    zstd_transform_finish(data);
     debug("compress_transform_finish: zstd compression finish");
   } else
 #endif
