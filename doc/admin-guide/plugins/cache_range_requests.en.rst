@@ -133,19 +133,23 @@ to this header.
 
 During the cache lookup hook the identifer is used in the following ways:
 
-If a range request is considered STALE the identifier from this header
-will be compared to the stale cache identifier. If the values match
-the response will be changed to FRESH, preventing the transaction from
-contacting a parent.
+If a range request cache lookup is considered STALE the identifier from
+this header will be compared to the stale cache identifier. If the values
+match the response will be changed to FRESH, preventing the transaction
+from contacting a parent.
 
-If a range request is considered FRESH the identifier from this header
-will be compared to the stale cache identifier. If the values mis match
-the response will be changed to STALE, resulting in an IMS check being
-sent to the parent cache.
+If a range request cache lookup is considered FRESH the identifier from
+this header will be compared to the stale cache identifier. If the values
+do not match the transaction will be changed to STALE, resulting in an
+IMS check being sent to the parent cache.
 
-A FRESH to STALE state may be forced by the "Stale" identifier tag.
-This is used by the slice plugin when an interior range request
-returns a 404 indicating that the asset has been removed at the origin.
+A FRESH to STALE cache lookup state may be forced by the "Stale"
+identifier tag.  This is used by the slice plugin when an interior
+range request returns a 404 indicating that the asset has been removed
+at the origin.
+
+Based on RFC7232 and ATS internals if present the ETag header is evaluated
+first, followed by the Last-Modified header.
 
 When used with the :program:`slice` plugin its `--crr-ident-header`
 option must have the same value (or not be defined) in order to work.

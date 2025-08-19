@@ -203,12 +203,6 @@ handleFirstServerHeader(Data *const data, TSCont const contp)
     return HeaderState::Fail;
   }
 
-  /*
-// save data header string
-data->m_datelen = sizeof(data->m_date);
-header.valueForKey(TS_MIME_FIELD_DATE, TS_MIME_LEN_DATE, data->m_date, &data->m_datelen);
-  */
-
   // save weak cache header identifiers (rfc7232 section 2)
   data->m_etaglen = sizeof(data->m_etag);
   header.valueForKey(TS_MIME_FIELD_ETAG, TS_MIME_LEN_ETAG, data->m_etag, &data->m_etaglen);

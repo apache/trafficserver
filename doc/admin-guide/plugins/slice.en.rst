@@ -137,8 +137,8 @@ The slice plugin supports the following options::
         `cache_range_requests` plugin the identifier of the
         first/reference slice fetched.  First Etag is preferred
         followed by Last-Modified. The `cache_range_requests`
-        can use this identifier to flip a STALE asset back to
-        FRESH in order to limit unnecessary IMS requests.
+				plugin uses this header to flip cache lookup status
+				to STALE or FRESH depending on the header.
 
     --prefetch-count=<int> (optional)
         Default is 0
@@ -301,7 +301,7 @@ Self Healing
 ------------
 
 The slice plugin uses the very first slice as a reference slice which
-uses content-length and last-modified and/or etags to ensure assembled
+uses content-length and etag or last-modified headers to ensure assembled
 blocks come from the same asset.  In the case where a slice from a parent
 is fetched which indicates that the asset has changed, the slice plugin
 will attempt to self heal the asset.  The `cache_range_requests` plugin
@@ -322,18 +322,18 @@ plugin will then decide whether to send back the current cached slice
 (if the identifier matches) or attempt to refetch or "heal" that slice
 by marking it STALE.
 
-If the slice returned by the cache_range_requests plugin still doesn't
-match the reference slice then client side of the transaction is
-aborted.  However the plugin still attempts to "heal" the reference
+If the slice returned by the cache_range_requests plugin still
+doesn't match the reference slice then client side of the transaction
+is aborted.  The plugin will then attempt to "heal" the reference
 slice.  The X-Crr-Ident header is populated with the new identifer
 and the reference slice is re-requested with the intent of having the
 `cache_range_requests` plugin "heal" the reference slice.
 
-Optionally (but not recommended) the plugin may be configured to use
-the first slice in the request as the reference slice.  This option
-is faster since it does not visit any slices outside those needed to
-fulfill a request.  However this may still cause problems if the
-requested range was calculated from a newer version of the asset.
+The plugin may be configured to use the first slice of the request
+as the reference slice instead of the asset slice 0.  This option is
+faster as it does not visit any slices outside those needed to fulfill
+a request. This option may cause serious out of sync issues as range
+requests may end up being served from temporally different assets.
 
 Purge Requests
 --------------
