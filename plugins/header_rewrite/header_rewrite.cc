@@ -40,12 +40,6 @@
 // Debugs
 namespace header_rewrite_ns
 {
-const char PLUGIN_NAME[]     = "header_rewrite";
-const char PLUGIN_NAME_DBG[] = "dbg_header_rewrite";
-
-DbgCtl dbg_ctl{PLUGIN_NAME_DBG};
-DbgCtl pi_dbg_ctl{PLUGIN_NAME};
-
 std::once_flag initHRWLibs;
 PluginFactory  plugin_factory;
 
