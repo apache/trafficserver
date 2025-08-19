@@ -95,7 +95,7 @@ produce_features(bool json)
 #else
   print_feature("TS_HAS_BROTLI", 0, json);
 #endif
-#if HAVE_ZSTD_H
+#ifdef HAVE_ZSTD_H
   print_feature("TS_HAS_ZSTD", 1, json);
 #else
   print_feature("TS_HAS_ZSTD", 0, json);
@@ -212,7 +212,7 @@ produce_versions(bool json)
 #else
   print_var("brotli", undef, json);
 #endif
-#if HAVE_ZSTD_H
+#ifdef HAVE_ZSTD_H
   print_var("zstd", LBW().print("{}", ZSTD_versionString()).view(), json);
 #else
   print_var("zstd", undef, json);
