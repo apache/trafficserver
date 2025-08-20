@@ -16,6 +16,7 @@
  * limitations under the License.
  */
 
+#include <cctype>
 #include <climits>
 #include <cstdlib>
 #include <cstdio>
@@ -39,6 +40,7 @@
 #include "xdebug_types.h"
 #include "xdebug_headers.h"
 #include "xdebug_transforms.h"
+#include "xdebug_utils.h"
 
 namespace xdebug
 {
@@ -579,8 +581,9 @@ XInjectResponseHeaders(TSCont /* contp */, TSEvent event, void *edata)
   }
 
   if (xheaders & XHEADER_X_PROBE_HEADERS || xheaders & XHEADER_X_PROBE_FULL_JSON) {
-    InjectOriginalContentTypeHeader(buffer, hdr, xheaders & XHEADER_X_PROBE_FULL_JSON);
     BodyBuilder *data = AuxDataMgr::data(txn).body_builder.get();
+
+    InjectOriginalContentTypeHeader(buffer, hdr, xheaders & XHEADER_X_PROBE_FULL_JSON);
     Dbg(dbg_ctl_xform, "XInjectResponseHeaders(): client resp header ready (probe-full-json: %d)",
         xheaders & XHEADER_X_PROBE_FULL_JSON);
     if (data == nullptr) {
@@ -647,6 +650,51 @@ isFwdFieldValue(std::string_view value, intmax_t &fwdCnt)
   return true;
 }
 
+/** Resolve encoding based on response Content-Type before body transformation. */
+static int
+XResolveEncoding(TSCont /* contp */, TSEvent event, void *edata)
+{
+  TSHttpTxn txn = static_cast<TSHttpTxn>(edata);
+  TSMLoc    hdr = TS_NULL_MLOC, ct_field = TS_NULL_MLOC;
+  TSMBuffer buffer;
+
+  // Make sure TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE) is called before exiting function.
+  ts::PostScript ps([=]() -> void { TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE); });
+
+  TSReleaseAssert(event == TS_EVENT_HTTP_READ_RESPONSE_HDR);
+
+  auto        &auxData = AuxDataMgr::data(txn);
+  BodyBuilder *data    = auxData.body_builder.get();
+
+  // Only resolve encoding for probe-full-json.
+  if (data == nullptr || data->probe_type != ProbeType::PROBE_FULL_JSON) {
+    return TS_EVENT_NONE;
+  }
+
+  if (TSHttpTxnServerRespGet(txn, &buffer, &hdr) == TS_ERROR) {
+    return TS_EVENT_NONE;
+  }
+
+  ct_field = TSMimeHdrFieldFind(buffer, hdr, TS_MIME_FIELD_CONTENT_TYPE, TS_MIME_LEN_CONTENT_TYPE);
+  if (TS_NULL_MLOC != ct_field) {
+    int         ct_len   = 0;
+    const char *ct_value = TSMimeHdrFieldValueStringGet(buffer, hdr, ct_field, -1, &ct_len);
+    if (ct_value != nullptr && ct_len > 0) {
+      if (xdebug::is_textual_content_type(std::string_view{ct_value, static_cast<size_t>(ct_len)})) {
+        Dbg(dbg_ctl_xform, "Content-type of \"%.*s\": is textual, using escape encoding", ct_len, ct_value);
+        data->body_encoding = BodyEncoding_t::ESCAPE;
+      } else {
+        Dbg(dbg_ctl_xform, "Content-type of \"%.*s\": is not textual, using hex encoding", ct_len, ct_value);
+        data->body_encoding = BodyEncoding_t::HEX;
+      }
+    }
+    TSHandleMLocRelease(buffer, hdr, ct_field);
+  }
+
+  TSHandleMLocRelease(buffer, TS_NULL_MLOC, hdr);
+  return TS_EVENT_NONE;
+}
+
 // Scan the client request headers and determine which debug headers they
 // want in the response.
 static int
@@ -691,8 +739,14 @@ XScanRequestHeaders(TSCont /* contp */, TSEvent event, void *edata)
       // A couple convenience variables for probing.
       bool const is_probe_headers =
         header_field_eq(HEADER_NAME_X_PROBE_HEADERS, value, vsize) && (XHEADER_X_PROBE_HEADERS & allowedHeaders);
-      bool const is_probe_full_json =
-        header_field_eq(HEADER_NAME_X_PROBE_FULL_JSON, value, vsize) && (XHEADER_X_PROBE_FULL_JSON & allowedHeaders);
+      bool                   is_probe_full_json = false;
+      xdebug::BodyEncoding_t requested_encoding = xdebug::BodyEncoding_t::AUTO;
+      if (XHEADER_X_PROBE_FULL_JSON & allowedHeaders) {
+        swoc::TextView tv{value, static_cast<size_t>(vsize)};
+        if (xdebug::parse_probe_full_json_field_value(tv, requested_encoding)) {
+          is_probe_full_json = true;
+        }
+      }
 
       if (header_field_eq(HEADER_NAME_X_CACHE_KEY, value, vsize)) {
         xheaders |= XHEADER_X_CACHE_KEY & allowedHeaders;
@@ -727,12 +781,24 @@ XScanRequestHeaders(TSCont /* contp */, TSEvent event, void *edata)
         // prefix request headers and postfix response headers
         BodyBuilder *data = new BodyBuilder();
         data->probe_type  = is_probe_full_json ? ProbeType::PROBE_FULL_JSON : ProbeType::PROBE_STANDARD;
+        if (is_probe_full_json) {
+          data->body_encoding = requested_encoding;
+        }
         auxData.body_builder.reset(data);
 
         TSVConn connp = TSTransformCreate(body_transform, txn);
         data->transform_connp.reset(connp);
         TSContDataSet(connp, txn);
         TSHttpTxnHookAdd(txn, TS_HTTP_RESPONSE_TRANSFORM_HOOK, connp);
+
+        // Add hook to resolve encoding before body transformation (unless
+        // explicitly set via =hex, etc.).
+        if (is_probe_full_json && data->body_encoding == BodyEncoding_t::AUTO) {
+          TSVConn encoding_connp = TSTransformCreate(XResolveEncoding, txn);
+          data->resolve_encoding_connp.reset(encoding_connp);
+          TSContDataSet(encoding_connp, txn);
+          TSHttpTxnHookAdd(txn, TS_HTTP_READ_RESPONSE_HDR_HOOK, encoding_connp);
+        }
 
         // disable writing to cache because we are injecting data into the body.
         TSHttpTxnCntlSet(txn, TS_HTTP_CNTL_RESPONSE_CACHEABLE, false);

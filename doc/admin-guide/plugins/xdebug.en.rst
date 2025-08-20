@@ -83,7 +83,11 @@ Diags
 
 Probe
     All request and response headers are written to the response body. Because
-    the body is altered, it disables writing to cache.
+    the body is altered, it disables writing to cache. Further, the ``Content-Type``
+    value is modified to ``application/json`` and an ``X-Original-Content-Type``
+    response header is added to indicate the original response ``Content-Type``
+    value.
+
     In conjunction with the `fwd` tag, the response body will contain a
     chronological log of all headers for all transactions used for this
     response.
@@ -104,7 +108,9 @@ Probe-Full-JSON
     structured JSON format. In contrast to Probe, the response content with
     this feature is parsable with JSON parsing tools like ``jq``. Because the
     body is altered, it disables writing to cache and changes the Content-Type
-    to ``application/json``.
+    to ``application/json``.  However, as with the ``probe`` header, a
+    ``X-Original-Content-Type`` response header is added to indicate the original
+    response ``Content-Type`` value.
 
     JSON Nodes:
 
@@ -114,7 +120,22 @@ Probe-Full-JSON
     - ``server-response``: Headers from the origin server to the proxy.
     - ``proxy-response``: Headers from the proxy to the client.
 
-    Here's an example of the JSON output from the `x_probe_full_json` test::
+    For the ``server-body`` value, by default the plugin chooses an encoding
+    based on the original response ``Content-Type``:
+
+      - Textual content types (e.g. ``text/*``, and types containing ``json``,
+        ``xml``, ``html``, ``csv``, or ``javascript``) are JSON-escaped.
+      - Other content types are hex-encoded.
+
+    You can override the derived encoding by providing an option with the
+    ``probe-full-json`` header value:
+
+      - ``X-Debug: probe-full-json=escape`` forces JSON escaping of the origin body.
+      - ``X-Debug: probe-full-json=hex`` forces hex encoding of the origin body.
+      - ``X-Debug: probe-full-json=nobody`` omits the origin body entirely.
+
+
+    Here's an example of the JSON output::
 
         $ curl -s -H"uuid: 1" -H "Host: example.com" -H "X-Debug: probe-full-json" http://127.0.0.1:61003/test | jq
         {
