@@ -42,6 +42,7 @@ sessions:
         - [ Content-Type, "text/html" ]
         - [ Content-Length, "20" ]
         - [ X-Server, "TestOrigin" ]
+        - [ X-No-Value, "" ]
       content:
         encoding: plain
         data: "Original server body"

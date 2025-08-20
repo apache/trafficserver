@@ -74,6 +74,7 @@ class XDebugProbeTest:
         tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
             'ATS xDebug Probe Injection Boundary', "ATS xDebug Probe Injection Boundary should be present")
         tr.Processes.Default.Streams.stdout += Testers.ContainsExpression('xDebugProbeAt', "xDebugProbeAt should be present")
+        tr.Processes.Default.Streams.stdout += Testers.ContainsExpression("'x-no-value' : ''", "x-no-value should be present")
 
 
 # Execute the test
