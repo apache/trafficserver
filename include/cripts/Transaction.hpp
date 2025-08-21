@@ -17,8 +17,6 @@
 */
 #pragma once
 
-#include <fmt/core.h>
-
 #include "ts/ts.h"
 
 #include "cripts/Error.hpp"

@@ -24,6 +24,10 @@
 #include "resources.h"
 #include "lulu.h"
 
+#if TS_HAS_CRIPTS
+#include "cripts/Connections.hpp"
+#endif
+
 // Collect all resources
 void
 Resources::gather(const ResourceIDs ids, TSHttpHookID hook)
@@ -34,10 +38,12 @@ Resources::gather(const ResourceIDs ids, TSHttpHookID hook)
   ovector_count = 0;
   ovector_ptr   = nullptr;
 
+  Dbg(pi_dbg_ctl, "Gathering resources for hook %s with IDs %d", TSHttpHookNameLookup(hook), ids);
+
   // If we need the client request headers, make sure it's also available in the client vars.
   if (ids & RSRC_CLIENT_REQUEST_HEADERS) {
     Dbg(pi_dbg_ctl, "\tAdding TXN client request header buffers");
-    if (TSHttpTxnClientReqGet(txnp, &client_bufp, &client_hdr_loc) != TS_SUCCESS) {
+    if (TSHttpTxnClientReqGet(state.txnp, &client_bufp, &client_hdr_loc) != TS_SUCCESS) {
       Dbg(pi_dbg_ctl, "could not gather bufp/hdr_loc for request");
       return;
     }
@@ -48,7 +54,7 @@ Resources::gather(const ResourceIDs ids, TSHttpHookID hook)
     // Read response headers from server
     if ((ids & RSRC_SERVER_RESPONSE_HEADERS) || (ids & RSRC_RESPONSE_STATUS)) {
       Dbg(pi_dbg_ctl, "\tAdding TXN server response header buffers");
-      if (TSHttpTxnServerRespGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
+      if (TSHttpTxnServerRespGet(state.txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
         Dbg(pi_dbg_ctl, "could not gather bufp/hdr_loc for response");
         return;
       }
@@ -64,7 +70,7 @@ Resources::gather(const ResourceIDs ids, TSHttpHookID hook)
     // Read request headers to server
     if (ids & RSRC_SERVER_REQUEST_HEADERS) {
       Dbg(pi_dbg_ctl, "\tAdding TXN server request header buffers");
-      if (TSHttpTxnServerReqGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
+      if (TSHttpTxnServerReqGet(state.txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
         Dbg(pi_dbg_ctl, "could not gather bufp/hdr_loc for request");
         return;
       }
@@ -84,7 +90,7 @@ Resources::gather(const ResourceIDs ids, TSHttpHookID hook)
     // Send response headers to client
     if (ids & RSRC_CLIENT_RESPONSE_HEADERS) {
       Dbg(pi_dbg_ctl, "\tAdding TXN client response header buffers");
-      if (TSHttpTxnClientRespGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
+      if (TSHttpTxnClientRespGet(state.txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
         Dbg(pi_dbg_ctl, "could not gather bufp/hdr_loc for request");
         return;
       }
@@ -116,7 +122,7 @@ Resources::gather(const ResourceIDs ids, TSHttpHookID hook)
   case TS_HTTP_TXN_CLOSE_HOOK:
     // Get TCP Info at transaction close
     Dbg(pi_dbg_ctl, "\tAdding TXN close buffers");
-    if (TSHttpTxnClientRespGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
+    if (TSHttpTxnClientRespGet(state.txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
       Dbg(pi_dbg_ctl, "could not gather bufp/hdr_loc for request");
       return;
     }
@@ -125,6 +131,32 @@ Resources::gather(const ResourceIDs ids, TSHttpHookID hook)
   default:
     break;
   }
+
+  // The following is all the new infrastructure borrowed / reused from
+  // the Cripts library.
+#if TS_HAS_CRIPTS
+  if (ids & (RSRC_CLIENT_CONNECTION | RSRC_MTLS_CERTIFICATE | RSRC_SERVER_CERTIFICATE)) {
+    Dbg(pi_dbg_ctl, "\tAdding Cripts Client::Connection");
+    client_conn = new cripts::Client::Connection();
+    client_conn->set_state(&state);
+  }
+
+  if (ids & RSRC_SERVER_CONNECTION) {
+    Dbg(pi_dbg_ctl, "\tAdding Cripts Server::Connection");
+    server_conn = new cripts::Server::Connection();
+    server_conn->set_state(&state);
+  }
+
+  if (ids & RSRC_MTLS_CERTIFICATE) {
+    Dbg(pi_dbg_ctl, "\tAdding Cripts Certs::Client");
+    mtls_cert = new cripts::Certs::Client(*client_conn);
+  }
+
+  if (ids & RSRC_SERVER_CERTIFICATE) {
+    Dbg(pi_dbg_ctl, "\tAdding Cripts Certs::Server");
+    server_cert = new cripts::Certs::Server(*client_conn);
+  }
+#endif
 
   _ready = true;
 }
@@ -143,6 +175,13 @@ Resources::destroy()
       TSHandleMLocRelease(client_bufp, TS_NULL_MLOC, client_hdr_loc);
     }
   }
+
+#if TS_HAS_CRIPTS
+  delete client_conn;
+  delete server_conn;
+  delete mtls_cert;
+  delete server_cert;
+#endif
 
   _ready = false;
 }

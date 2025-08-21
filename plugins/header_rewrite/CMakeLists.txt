@@ -42,6 +42,11 @@ target_link_libraries(
   PUBLIC libswoc::libswoc
 )
 
+if(ENABLE_CRIPTS)
+  target_link_libraries(header_rewrite PRIVATE ts::cripts)
+  target_compile_definitions(header_rewrite PRIVATE TS_HAS_CRIPTS=1)
+endif()
+
 if(maxminddb_FOUND)
   target_compile_definitions(header_rewrite PUBLIC TS_USE_HRW_MAXMINDDB=1)
   target_sources(header_rewrite PRIVATE conditions_geo_maxmind.cc)
