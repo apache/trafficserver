@@ -112,6 +112,20 @@ enum NetworkSessionQualifiers {
   NET_QUAL_IPV6,        ///< 'ipv6' or not.
   NET_QUAL_IP_FAMILY,   ///< IP protocol family.
   NET_QUAL_STACK,       ///< Full protocol stack.
+#if TS_HAS_CRIPTS
+  NET_QUAL_CERT_PEM,        ///< The PEM encoded certificate
+  NET_QUAL_CERT_SIG,        ///< The signature of the certificate
+  NET_QUAL_CERT_SUBJECT,    ///< The subject of the certificate
+  NET_QUAL_CERT_ISSUER,     ///< The issuer of the certificate
+  NET_QUAL_CERT_SERIAL,     ///< The serial number of the certificate
+  NET_QUAL_CERT_NOT_BEFORE, ///< The not before date of the certificate
+  NET_QUAL_CERT_NOT_AFTER,  ///< The not after date of the certificate
+  NET_QUAL_CERT_VERSION,    ///< The version of the certificate
+  NET_QUAL_CERT_SAN_DNS,    ///< The DNS names in the SAN
+  NET_QUAL_CERT_SAN_IP,     ///< The IP addresses in the SAN
+  NET_QUAL_CERT_SAN_EMAIL,  ///< The email addresses in the SAN
+  NET_QUAL_CERT_SAN_URI,    ///< The URIs in the SAN
+#endif
 };
 
 class Statement
@@ -174,18 +188,18 @@ public:
   static int acquire_txn_slot();
   static int acquire_txn_private_slot();
 
+  void
+  require_resources(const ResourceIDs ids)
+  {
+    _rsrc = static_cast<ResourceIDs>(_rsrc | ids);
+  }
+
 protected:
   virtual void initialize_hooks();
 
   UrlQualifiers     parse_url_qualifier(const std::string &q) const;
   NextHopQualifiers parse_next_hop_qualifier(const std::string &q) const;
   TSHttpCntlType    parse_http_cntl_qualifier(const std::string &q) const;
-
-  void
-  require_resources(const ResourceIDs ids)
-  {
-    _rsrc = static_cast<ResourceIDs>(_rsrc | ids);
-  }
 
   virtual bool
   need_txn_slot() const

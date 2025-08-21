@@ -36,7 +36,7 @@
 // TODO: This is very incomplete, we need to support linked lists of these,
 // which evaluate each component and create a "joined" final string.
 //
-class Value : Statement
+class Value : public Statement
 {
 public:
   Value() { Dbg(dbg_ctl, "Calling CTOR for Value"); }
@@ -47,7 +47,7 @@ public:
   Value(const Value &)          = delete;
   void operator=(const Value &) = delete;
 
-  void set_value(const std::string &val);
+  void set_value(const std::string &val, Statement *owner = nullptr);
 
   void
   append_value(std::string &s, const Resources &res) const
