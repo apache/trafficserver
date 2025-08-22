@@ -461,9 +461,10 @@ public:
 
     Query(cripts::string_view load)
     {
-      _data   = load;
-      _size   = load.size();
-      _loaded = true;
+      _data       = load;
+      _size       = load.size();
+      _loaded     = true;
+      _standalone = true;
     }
 
     void Reset() override;
@@ -515,7 +516,8 @@ public:
   private:
     void _parser();
 
-    bool           _modified = false;
+    bool           _modified   = false;
+    bool           _standalone = false;  // This component is used outside of a URL owner, not common
     OrderedParams  _ordered;             // Ordered vector of all parameters, can be sorted etc.
     HashParams     _hashed;              // Unordered map to go from "name" to the query parameter
     cripts::string _storage;             // Used when recombining the query params into a

@@ -228,6 +228,7 @@ Url::Path::_parser()
 Url::Query::Parameter &
 Url::Query::Parameter::operator=(const cripts::string_view str)
 {
+  CAssert(!_owner->_standalone);
   _ensure_initialized(_owner->_owner);
   CAssert(!_owner->_owner->ReadOnly()); // This can not be a read-only URL
   auto iter = _owner->_hashed.find(_name);
@@ -246,7 +247,9 @@ Url::Query::Parameter::operator=(const cripts::string_view str)
 cripts::string_view
 Url::Query::GetSV()
 {
-  _ensure_initialized(_owner);
+  if (!_standalone) {
+    _ensure_initialized(_owner);
+  }
   if (_ordered.size() > 0) {
     _storage.clear();
     _storage.reserve(_size);
@@ -290,6 +293,7 @@ Url::Query::GetSV()
 Url::Query
 Url::Query::operator=(cripts::string_view query)
 {
+  CAssert(!_standalone);
   _ensure_initialized(_owner);
   CAssert(!_owner->ReadOnly()); // This can not be a read-only URL
   TSUrlHttpQuerySet(_owner->_bufp, _owner->_urlp, query.data(), query.size());
@@ -317,8 +321,10 @@ Url::Query::operator+=(cripts::string_view add)
 Url::Query::Parameter
 Url::Query::operator[](cripts::string_view param)
 {
-  // Make sure the hash and vector are populated
-  _ensure_initialized(_owner);
+  // Make sure the hash and vector are populated, but only if we have an owner
+  if (!_standalone) {
+    _ensure_initialized(_owner);
+  }
   _parser();
 
   Parameter ret;
