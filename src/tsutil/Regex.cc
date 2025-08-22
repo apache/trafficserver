@@ -126,8 +126,7 @@ struct RegexMatches::_MatchData {
 //----------------------------------------------------------------------------
 RegexMatches::RegexMatches(uint32_t size)
 {
-  pcre2_general_context *ctx =
-    pcre2_general_context_create(&RegexMatches::malloc, [](void *, void *) -> void {}, static_cast<void *>(this));
+  pcre2_general_context *ctx = pcre2_general_context_create(&RegexMatches::malloc, &RegexMatches::free, static_cast<void *>(this));
 
   pcre2_match_data *match_data = pcre2_match_data_create(size, ctx);
   if (match_data == nullptr) {
@@ -152,8 +151,18 @@ RegexMatches::malloc(size_t size, void *caller)
     return ptr;
   }
 
-  // return nullptr if buffer is too small
-  return nullptr;
+  return ::malloc(size);
+}
+
+void
+RegexMatches::free(void *p, void *caller)
+{
+  auto *matches = static_cast<RegexMatches *>(caller);
+
+  // Call free for any p outside _buffer
+  if (!(p >= matches->_buffer && p < matches->_buffer + sizeof(matches->_buffer))) {
+    ::free(p);
+  }
 }
 
 //----------------------------------------------------------------------------
