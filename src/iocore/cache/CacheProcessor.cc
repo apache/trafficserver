@@ -1126,7 +1126,10 @@ register_cache_stats(CacheStatsBlock *rsb, const std::string &prefix)
   rsb->ram_cache_bytes_total = ts::Metrics::Gauge::createPtr(prefix + ".ram_cache.total_bytes");
   rsb->ram_cache_bytes       = ts::Metrics::Gauge::createPtr(prefix + ".ram_cache.bytes_used");
   rsb->ram_cache_hits        = ts::Metrics::Counter::createPtr(prefix + ".ram_cache.hits");
+  rsb->last_open_read_hits   = ts::Metrics::Counter::createPtr(prefix + ".last_open_read.hits");
+  rsb->agg_buffer_hits       = ts::Metrics::Counter::createPtr(prefix + ".aggregation_buffer.hits");
   rsb->ram_cache_misses      = ts::Metrics::Counter::createPtr(prefix + ".ram_cache.misses");
+  rsb->all_mem_misses        = ts::Metrics::Counter::createPtr(prefix + ".all_memory_caches.misses");
   rsb->pread_count           = ts::Metrics::Counter::createPtr(prefix + ".pread_count");
   rsb->percent_full          = ts::Metrics::Gauge::createPtr(prefix + ".percent_full");
   rsb->read_seek_fail        = ts::Metrics::Counter::createPtr(prefix + ".read.seek.failure");
