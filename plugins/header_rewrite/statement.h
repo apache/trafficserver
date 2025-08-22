@@ -238,8 +238,8 @@ union PrivateSlotData {
 enum { TIMEZONE_LOCAL, TIMEZONE_GMT };
 
 enum {
-  IP_SRC_PEER,  // Immediate connection
-  IP_SRC_PROXY, // PROXY protocl
+  IP_SRC_PEER,   // Immediate connection
+  IP_SRC_PROXY,  // PROXY protocl
+  IP_SRC_PLUGIN, // Plugin
   // IP_SRC_FORWARDED,  // Forwarded header field (TS core needs to support the header first. It can be done by a plugin as well.)
-  // IP_SRC_PLUGIN  // Plugin (Needs TS API to set and get a verified client IP address)
 };

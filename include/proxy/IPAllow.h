@@ -147,7 +147,7 @@ public:
 
   static constexpr const char *MODULE_NAME = "IPAllow";
 
-  enum Subject { PEER, PROXY, MAX_SUBJECTS };
+  enum Subject { PEER, PROXY, PLUGIN, MAX_SUBJECTS };
 
   /** An access control record and support data.
    * The primary point of this is to hold the backing configuration in memory while the ACL
