@@ -808,10 +808,26 @@ QUICNetVConnection::_get_ssl_object() const
 ssl_curve_id
 QUICNetVConnection::_get_tls_curve() const
 {
-  if (getSSLSessionCacheHit()) {
+  // For resumed server side session caching, we have to retrieve the curve/group
+  // from our stored data. For non-resumed sessions or from ticket based resumption,
+  // simply query the SSL object.
+  if (getIsResumedFromSessionCache()) {
     return getSSLCurveNID();
   } else {
     return SSLGetCurveNID(this->_ssl);
+  }
+}
+
+std::string_view
+QUICNetVConnection::_get_tls_group() const
+{
+  // For resumed server side session caching, we have to retrieve the curve/group
+  // from our stored data. For non-resumed sessions or from ticket based resumption,
+  // simply query the SSL object.
+  if (getIsResumedFromSessionCache()) {
+    return getSSLGroupName();
+  } else {
+    return SSLGetGroupName(this->_ssl);
   }
 }
 
