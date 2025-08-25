@@ -39,6 +39,11 @@ are available:
 
    The sampling rate for the request to be considered
 
+.. option:: --disable-on-redirect
+
+   Disables running on ``TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK`` again when a transaction follows redirect.
+   This option is recommended when this plugin is used with the :program:`cachekey` plugin.
+
 If :option:`--policy` is set to ``lru`` the following options are also available:
 
 .. option:: --label
