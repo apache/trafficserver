@@ -5185,8 +5185,8 @@ Sockets
    default: ``1`` meaning ``on`` all Platforms except Linux: ``45`` seconds
 
    This directive enables operating system specific optimizations for a listening socket. ``defer_accept`` holds a call to ``accept(2)``
-   back until data has arrived. In Linux' special case this is up to a maximum of 45 seconds.
-   On FreeBSD, ``accf_data`` module needs to be loaded.
+   back until data has arrived. In Linux' special case this is up to a maximum of 45 seconds. Note in Linux, additional delays may
+   occur as kernel handles retries using exponential backoff algorithm. On FreeBSD, ``accf_data`` module needs to be loaded.
    Note: If MPTCP is enabled, TCP_DEFER_ACCEPT is only supported on Linux kernels 5.19+.
 
 .. ts:cv:: CONFIG proxy.config.net.listen_backlog INT -1
