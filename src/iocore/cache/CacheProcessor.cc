@@ -128,6 +128,10 @@ CacheProcessor::start(int, size_t)
 void
 CachePeriodicMetricsUpdate()
 {
+  if (cacheProcessor.initialized != CACHE_INITIALIZED) {
+    return;
+  }
+
   int64_t total_sum = 0;
 
   // Make sure the bytes_used per volume is always reset to zero, this can update the
@@ -137,21 +141,19 @@ CachePeriodicMetricsUpdate()
     ts::Metrics::Gauge::store(gstripes[i]->cache_vol->vol_rsb.bytes_used, 0);
   }
 
-  if (cacheProcessor.initialized == CACHE_INITIALIZED) {
-    for (int i = 0; i < gnstripes; ++i) {
-      StripeSM *v    = gstripes[i];
-      int64_t   used = cache_bytes_used(i);
+  for (int i = 0; i < gnstripes; ++i) {
+    StripeSM *v    = gstripes[i];
+    int64_t   used = cache_bytes_used(i);
 
-      ts::Metrics::Gauge::increment(v->cache_vol->vol_rsb.bytes_used, used); // This assumes they start at zero
-      total_sum += used;
-    }
-
-    // Also update the global (not per volume) metrics
-    int64_t total = ts::Metrics::Gauge::load(cache_rsb.bytes_total);
-
-    ts::Metrics::Gauge::store(cache_rsb.bytes_used, total_sum);
-    ts::Metrics::Gauge::store(cache_rsb.percent_full, total ? (total_sum * 100) / total : 0);
+    ts::Metrics::Gauge::increment(v->cache_vol->vol_rsb.bytes_used, used); // This assumes they start at zero
+    total_sum += used;
   }
+
+  // Also update the global (not per volume) metrics
+  int64_t total = ts::Metrics::Gauge::load(cache_rsb.bytes_total);
+
+  ts::Metrics::Gauge::store(cache_rsb.bytes_used, total_sum);
+  ts::Metrics::Gauge::store(cache_rsb.percent_full, total ? (total_sum * 100) / total : 0);
 }
 
 // ToDo: This gets called as part of librecords collection continuation, probably change this later.
