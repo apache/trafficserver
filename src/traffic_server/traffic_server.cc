@@ -829,7 +829,7 @@ CB_After_Cache_Init()
     // The delay_listen_for_cache value was 1, therefore the main function
     // delayed the call to start_HttpProxyServer until we got here. We must
     // call accept on the ports now that the cache is initialized.
-    Note("Delayed listen enable, cache initialization finished");
+    Note("Enabling listen, cache initialization finished");
     start_HttpProxyServer();
     emit_fully_initialized_message();
   }
