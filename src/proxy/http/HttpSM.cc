@@ -392,6 +392,7 @@ HttpSM::attach_client_session(ProxyTransaction *txn)
   if (!netvc) {
     return;
   }
+  ATS_PROBE2(http_attach_client_session, sm_id, netvc->get_socket());
   _ua.set_txn(txn, milestones);
 
   // Collect log & stats information. We've already verified that the netvc is !nullptr above,
@@ -6629,6 +6630,7 @@ HttpSM::attach_server_session()
   // Propagate the per client IP debugging
   if (_ua.get_txn()) {
     server_txn->get_netvc()->control_flags.set_flags(get_cont_flags().get_flags());
+    ATS_PROBE2(http_attach_server_session, this->sm_id, server_txn->get_netvc()->get_socket());
   } else { // If there is no _ua.get_txn() no sense in continuing to attach the server session
     return;
   }
