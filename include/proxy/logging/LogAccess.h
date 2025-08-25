@@ -146,6 +146,7 @@ public:
   int marshal_client_req_tcp_reused(char *);         // INT
   int marshal_client_req_is_ssl(char *);             // INT
   int marshal_client_req_ssl_reused(char *);         // INT
+  int marshal_client_ssl_resumption_type(char *);    // INT
   int marshal_client_req_is_internal(char *);        // INT
   int marshal_client_req_mptcp_state(char *);        // INT
   int marshal_client_security_protocol(char *);      // STR
