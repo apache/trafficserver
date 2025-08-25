@@ -1,0 +1,1 @@
+(program (section REMAP { (sectionBody (statement inbound.url.host = (value "foo") ;)) }) (section SEND_REQUEST { (sectionBody (statement outbound.url.path = (value "foo/bar.txt") ;)) }) <EOF>)

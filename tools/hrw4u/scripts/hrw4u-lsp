@@ -1,0 +1,1579 @@
+#!/usr/bin/env python3
+#
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+"""
+HRW4U Language Server Protocol implementation.
+
+This script provides a Language Server Protocol (LSP) server for the HRW4U language,
+offering syntax/semantic analysis, diagnostics, completion suggestions, and hover
+information for editors and IDEs.
+"""
+
+from __future__ import annotations
+
+import json
+import sys
+import urllib.parse
+from typing import Any
+from antlr4.error.ErrorListener import ErrorListener
+
+from hrw4u.hrw4uLexer import hrw4uLexer
+from hrw4u.hrw4uParser import hrw4uParser
+from hrw4u.visitor import HRW4UVisitor
+from hrw4u.collector import ErrorCollector
+from hrw4u.script_common import create_parse_tree
+from hrw4u.tables import OPERATOR_MAP, CONDITION_MAP, FUNCTION_MAP, STATEMENT_FUNCTION_MAP
+from hrw4u_lsp.help import LSP_HEADER_CONTEXTS, LSP_STRING_LITERAL_INFO, LSP_FUNCTION_DOCUMENTATION, LSP_KEYWORD_DOCUMENTATION
+from hrw4u.states import SectionType
+from hrw4u.types import VarType
+
+
+class LSPErrorListener(ErrorListener):
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.errors: list[dict[str, Any]] = []
+
+    def syntaxError(self, recognizer, offendingSymbol, line, column, msg, e) -> None:
+        self.errors.append(
+            {
+                "range":
+                    {
+                        "start": {
+                            "line": line - 1,
+                            "character": column
+                        },
+                        "end":
+                            {
+                                "line": line - 1,
+                                "character": column + (len(str(offendingSymbol.text)) if offendingSymbol.text else 1)
+                            }
+                    },
+                "severity": 1,
+                "message": msg,
+                "source": "hrw4u-parser"
+            })
+
+
+class DocumentManager:
+    """Manages document synchronization and parsing."""
+
+    def __init__(self) -> None:
+        self.documents: dict[str, str] = {}
+        self.diagnostics: dict[str, list[dict[str, Any]]] = {}
+        self.variable_declarations: dict[str, dict[str, dict[str, str]]] = {}  # uri -> {var_name -> {type, description}}
+
+    def open_document(self, uri: str, text: str) -> None:
+        """Open/update a document."""
+        self.documents[uri] = text
+        self._analyze_document(uri)
+
+    def change_document(self, uri: str, text: str) -> None:
+        """Handle document changes."""
+        self.documents[uri] = text
+        self._analyze_document(uri)
+
+    def close_document(self, uri: str) -> None:
+        """Close a document."""
+        if uri in self.documents:
+            del self.documents[uri]
+        if uri in self.diagnostics:
+            del self.diagnostics[uri]
+        if uri in self.variable_declarations:
+            del self.variable_declarations[uri]
+
+    def _analyze_document(self, uri: str) -> None:
+        """Analyze document and collect diagnostics."""
+        text = self.documents.get(uri, "")
+        diagnostics = []
+
+        # Parse variable declarations from VARS sections
+        self._parse_variable_declarations(uri, text)
+
+        diagnostics.extend(self._validate_section_names(text))
+
+        try:
+            filename = self._uri_to_path(uri)
+            tree, parser, error_collector = create_parse_tree(text, filename, hrw4uLexer, hrw4uParser, "HRW4U", collect_errors=True)
+
+            if hasattr(parser, '_syntax_errors'):
+                for error in parser._syntax_errors:
+                    diagnostics.append(error)
+
+            if tree is not None:
+                visitor = HRW4UVisitor(filename=filename, error_collector=error_collector)
+                try:
+                    visitor.visit(tree)
+                except Exception as e:
+                    diagnostics.append(
+                        {
+                            "range": {
+                                "start": {
+                                    "line": 0,
+                                    "character": 0
+                                },
+                                "end": {
+                                    "line": 0,
+                                    "character": 10
+                                }
+                            },
+                            "severity": 1,
+                            "message": f"Visitor error: {str(e)}",
+                            "source": "hrw4u-visitor"
+                        })
+
+            if error_collector and error_collector.has_errors():
+                for error_obj in error_collector.errors:
+                    error_str = str(error_obj)
+                    severity = 1
+
+                    line_num = getattr(error_obj, 'line', 1) - 1 if hasattr(error_obj, 'line') else 0
+                    col_num = getattr(error_obj, 'column', 0) if hasattr(error_obj, 'column') else 0
+
+                    line_num = max(0, line_num)
+                    col_num = max(0, col_num)
+
+                    # Calculate proper end position
+                    lines = text.split('\n')
+                    if line_num < len(lines):
+                        line_text = lines[line_num]
+                        # Try to find the token length for better highlighting
+                        end_col = col_num + 10  # Default fallback
+                        if col_num < len(line_text):
+                            # Find word boundaries for better highlighting
+                            start = col_num
+                            end = col_num
+                            while end < len(line_text) and (line_text[end].isalnum() or line_text[end] in '._'):
+                                end += 1
+                            if end > start:
+                                end_col = end
+                    else:
+                        end_col = col_num + 10
+
+                    diagnostics.append(
+                        {
+                            "range":
+                                {
+                                    "start": {
+                                        "line": line_num,
+                                        "character": col_num
+                                    },
+                                    "end": {
+                                        "line": line_num,
+                                        "character": end_col
+                                    }
+                                },
+                            "severity": severity,
+                            "message": error_str,
+                            "source": "hrw4u"
+                        })
+
+        except Exception as e:
+            diagnostics.append(
+                {
+                    "range": {
+                        "start": {
+                            "line": 0,
+                            "character": 0
+                        },
+                        "end": {
+                            "line": 0,
+                            "character": 10
+                        }
+                    },
+                    "severity": 1,
+                    "message": f"Parse error: {str(e)}",
+                    "source": "hrw4u-parser"
+                })
+
+        self.diagnostics[uri] = diagnostics
+
+    def _validate_section_names(self, text: str) -> list[dict[str, Any]]:
+        """Pre-validate section names in the document."""
+        diagnostics = []
+        lines = text.split('\n')
+
+        valid_sections = {section.value for section in SectionType}
+
+        for line_num, line in enumerate(lines):
+            stripped = line.strip()
+            if not stripped or stripped.startswith('//') or stripped.startswith('#'):
+                continue
+
+            # Look for section declarations (word followed by {)
+            if '{' in stripped and not stripped.startswith('{'):
+                parts = stripped.split('{', 1)
+                potential_section = parts[0].strip()
+
+                # Skip if it looks like a variable declaration or other construct
+                if ' ' in potential_section or '=' in potential_section:
+                    continue
+
+                if potential_section and potential_section not in valid_sections:
+                    start_pos = line.find(potential_section)
+                    end_pos = start_pos + len(potential_section)
+
+                    diagnostics.append(
+                        {
+                            "range":
+                                {
+                                    "start": {
+                                        "line": line_num,
+                                        "character": start_pos
+                                    },
+                                    "end": {
+                                        "line": line_num,
+                                        "character": end_pos
+                                    }
+                                },
+                            "severity": 1,
+                            "message":
+                                f"Invalid section name: '{potential_section}'. Valid sections are: {', '.join(sorted(valid_sections))}",
+                            "source": "hrw4u-section-validator"
+                        })
+
+        return diagnostics
+
+    def _parse_variable_declarations(self, uri: str, text: str) -> None:
+        """Parse variable declarations from VARS sections."""
+        self.variable_declarations[uri] = {}
+        lines = text.split('\n')
+        in_vars_section = False
+        brace_count = 0
+
+        for line_num, line in enumerate(lines):
+            stripped = line.strip()
+
+            # Skip comments and empty lines
+            if not stripped or stripped.startswith('//') or stripped.startswith('#'):
+                continue
+
+            # Check for VARS section start
+            if stripped == 'VARS {' or stripped.startswith('VARS {'):
+                in_vars_section = True
+                brace_count = 1
+                continue
+
+            if in_vars_section:
+                brace_count += stripped.count('{') - stripped.count('}')
+
+                if brace_count <= 0:
+                    in_vars_section = False
+                    continue
+
+                if ':' in stripped and ';' in stripped:
+                    try:
+                        decl = stripped.rstrip(';').strip()
+                        if ':' in decl:
+                            var_name, var_type = decl.split(':', 1)
+                            var_name = var_name.strip()
+                            var_type = var_type.strip()
+
+                            try:
+                                vt = VarType.from_str(var_type.lower())
+                                description = vt.description
+                            except ValueError:
+                                description = f"Variable of type {var_type}"
+
+                            self.variable_declarations[uri][var_name] = {
+                                'type': var_type,
+                                'description': description,
+                                'line': line_num
+                            }
+                    except Exception:
+                        continue
+
+    def get_diagnostics(self, uri: str) -> list[dict[str, Any]]:
+        return self.diagnostics.get(uri, [])
+
+    def get_completions(self, uri: str, line: int, character: int) -> list[dict[str, Any]]:
+        text = self.documents.get(uri, "")
+        lines = text.split('\n')
+
+        if line >= len(lines):
+            return []
+
+        current_line = lines[line]
+        prefix = current_line[:character]
+
+        context = self._determine_completion_context(lines, line, character)
+        completions = []
+
+        if context["is_section_context"]:
+            for section in SectionType:
+                completions.append(
+                    {
+                        "label": section.value,
+                        "kind": 14,  # Keyword
+                        "detail": f"Hook: {section.hook_name}",
+                        "documentation":
+                            {
+                                "kind": "markdown",
+                                "value": f"**{section.value}** - HRW4U Section\n\n" + f"Maps to ATS hook: `{section.hook_name}`"
+                            },
+                        "insertText": f"{section.value} {{\n\t$0\n}}",
+                        "insertTextFormat": 2  # Snippet
+                    })
+
+        # Dot-notation completions (operators and conditions)
+        elif context["has_dot"]:
+            base_prefix = context["dot_prefix"]
+            current_section = context["current_section"]
+            seen_labels = set()
+
+            for key, (tag, validator, is_prefix, sections, is_conditional, meta) in CONDITION_MAP.items():
+                if key.startswith(base_prefix):
+                    if sections and current_section and current_section in sections:
+                        continue
+
+                    if key in seen_labels:
+                        continue
+                    seen_labels.add(key)
+
+                    detail = f"Condition: {tag}"
+                    if sections:
+                        detail += f" (Restricted in: {', '.join(s.value for s in sections)})"
+
+                    completions.append(
+                        {
+                            "label": key,
+                            "kind": 5,  # Field
+                            "detail": detail,
+                            "documentation": {
+                                "kind": "markdown",
+                                "value": f"**{key}** - HRW4U Condition\n\n" + f"Maps to: `{tag}`"
+                            },
+                            "textEdit": {
+                                "range": context["replacement_range"],
+                                "newText": key
+                            }
+                        })
+
+            for key, (commands, validator, is_prefix, sections) in OPERATOR_MAP.items():
+                if key.startswith(base_prefix):
+                    if sections and current_section and current_section in sections:
+                        continue
+
+                    if key in seen_labels:
+                        continue
+                    seen_labels.add(key)
+
+                    cmd_str = commands if isinstance(commands, str) else " / ".join(commands)
+                    detail = f"Operation: {cmd_str}"
+                    if sections:
+                        detail += f" (Restricted in: {', '.join(s.value for s in sections)})"
+
+                    completions.append(
+                        {
+                            "label": key,
+                            "kind": 5,  # Field
+                            "detail": detail,
+                            "documentation":
+                                {
+                                    "kind": "markdown",
+                                    "value": f"**{key}** - HRW4U Operator\n\n" + f"Maps to: `{cmd_str}`"
+                                },
+                            "textEdit": {
+                                "range": context["replacement_range"],
+                                "newText": key
+                            }
+                        })
+
+        elif context["is_function_context"]:
+            for func_name, (tag, validator) in FUNCTION_MAP.items():
+                detail = f"Function: {tag}"
+                documentation_value = f"**{func_name}()** - HRW4U Function\n\nMaps to: `{tag}`\n\nUsed in conditional expressions."
+
+                if func_name in LSP_FUNCTION_DOCUMENTATION:
+                    func_doc = LSP_FUNCTION_DOCUMENTATION[func_name]
+                    detail = f"{func_doc['category']}: {func_doc['name']}"
+                    documentation_value = f"**{func_doc['name']}**\n\n{func_doc['description']}\n\n**Syntax:** `{func_doc['syntax']}`"
+
+                completions.append(
+                    {
+                        "label": func_name,
+                        "kind": 3,  # Function
+                        "detail": detail,
+                        "documentation": {
+                            "kind": "markdown",
+                            "value": documentation_value
+                        },
+                        "insertText": f"{func_name}($0)",
+                        "insertTextFormat": 2  # Snippet
+                    })
+
+            for func_name, (tag, validator) in STATEMENT_FUNCTION_MAP.items():
+                detail = f"Statement: {tag}"
+                documentation_value = f"**{func_name}()** - HRW4U Statement Function\n\nMaps to: `{tag}`\n\nUsed as statements in code blocks."
+
+                if func_name in LSP_FUNCTION_DOCUMENTATION:
+                    func_doc = LSP_FUNCTION_DOCUMENTATION[func_name]
+                    detail = f"{func_doc['category']}: {func_doc['name']}"
+                    documentation_value = f"**{func_doc['name']}**\n\n{func_doc['description']}\n\n**Syntax:** `{func_doc['syntax']}`"
+
+                completions.append(
+                    {
+                        "label": func_name,
+                        "kind": 3,  # Function
+                        "detail": detail,
+                        "documentation": {
+                            "kind": "markdown",
+                            "value": documentation_value
+                        },
+                        "insertText": f"{func_name}($0)",
+                        "insertTextFormat": 2  # Snippet
+                    })
+
+        # Variable type completions (in VARS context)
+        if context["current_section"] and context["current_section"].value == "VARS":
+            var_types = ["bool", "int8", "int16"]
+            for var_type in var_types:
+                completions.append(
+                    {
+                        "label": var_type,
+                        "kind": 25,  # TypeParameter
+                        "detail": f"Variable type: {var_type}",
+                        "documentation":
+                            {
+                                "kind": "markdown",
+                                "value":
+                                    f"**{var_type}** - HRW4U Variable Type\n\nUsed for declaring variables in the VARS section."
+                            }
+                    })
+
+        if context["allows_keywords"]:
+            # Basic keywords with comprehensive documentation
+            basic_keywords = [
+                ("if", "Conditional statement"), ("else", "Else clause"), ("elif", "Else-if clause"), ("true", "Boolean literal"),
+                ("false", "Boolean literal")
+            ]
+
+            for keyword, desc in basic_keywords:
+                detail = desc
+                documentation_value = f"**{keyword}** - HRW4U keyword"
+
+                # Use comprehensive documentation if available
+                if keyword in LSP_KEYWORD_DOCUMENTATION:
+                    kw_doc = LSP_KEYWORD_DOCUMENTATION[keyword]
+                    detail = f"{kw_doc['category']}: {kw_doc['name']}"
+                    documentation_value = f"**{kw_doc['name']}**\n\n{kw_doc['description']}\n\n**Syntax:** `{kw_doc['syntax']}`"
+
+                completions.append(
+                    {
+                        "label": keyword,
+                        "kind": 14,  # Keyword
+                        "detail": detail,
+                        "documentation": {
+                            "kind": "markdown",
+                            "value": documentation_value
+                        }
+                    })
+
+            # Add break keyword with special handling
+            if "break" in LSP_KEYWORD_DOCUMENTATION:
+                kw_doc = LSP_KEYWORD_DOCUMENTATION["break"]
+                completions.append(
+                    {
+                        "label": "break",
+                        "kind": 14,  # Keyword
+                        "detail": f"{kw_doc['category']}: {kw_doc['name']}",
+                        "documentation":
+                            {
+                                "kind": "markdown",
+                                "value":
+                                    f"**{kw_doc['name']}**\n\n{kw_doc['description']}\n\n**Syntax:** `{kw_doc['syntax']}`\n\n**Maps to:** `{kw_doc['maps_to']}`"
+                            }
+                    })
+
+        return completions
+
+    def _determine_completion_context(self, lines: list[str], line: int, character: int) -> dict[str, Any]:
+        """Determine the completion context based on cursor position."""
+        current_line = lines[line]
+        prefix = current_line[:character]
+
+        context = {
+            "is_section_context": False,
+            "has_dot": False,
+            "dot_prefix": "",
+            "is_function_context": False,
+            "allows_keywords": False,
+            "current_section": None,
+            "replacement_range": None
+        }
+
+        stripped_prefix = prefix.strip()
+        if not stripped_prefix or (stripped_prefix and not any(c in stripped_prefix for c in ['.', '=', '(', ')'])):
+            rest_of_line = current_line[character:].strip()
+            if not rest_of_line or rest_of_line.startswith('{'):
+                context["is_section_context"] = True
+
+        if "." in prefix:
+            parts = prefix.split()
+            if parts:
+                last_part = parts[-1]
+                if "." in last_part:
+                    context["has_dot"] = True
+                    context["dot_prefix"] = last_part.split(".")[0] + "."
+
+                    word_start = len(prefix) - len(last_part)
+                    context["replacement_range"] = {
+                        "start": {
+                            "line": line,
+                            "character": word_start
+                        },
+                        "end": {
+                            "line": line,
+                            "character": character
+                        }
+                    }
+
+        if not context["has_dot"] and not context["is_section_context"]:
+            context["is_function_context"] = True
+            context["allows_keywords"] = True
+
+        # Determine current section
+        for i in range(line, -1, -1):
+            line_text = lines[i].strip()
+            if '{' in line_text and not line_text.startswith('{'):
+                section_name = line_text.split('{')[0].strip()
+                try:
+                    context["current_section"] = SectionType(section_name)
+                    break
+                except ValueError:
+                    pass
+
+        return context
+
+    def get_hover_info(self, uri: str, line: int, character: int) -> dict[str, Any] | None:
+        """Get hover information for the symbol at the given position."""
+        text = self.documents.get(uri, "")
+        lines = text.split('\n')
+
+        if line >= len(lines):
+            return None
+
+        current_line = lines[line]
+        if character >= len(current_line):
+            return None
+
+        string_info = self._check_string_literal(current_line, character)
+        if string_info:
+            return string_info
+
+        full_expression_info = self._parse_dotted_expression(current_line, character)
+        if full_expression_info:
+            return full_expression_info
+
+        word_start = character
+        word_end = character
+
+        # Expand to find word boundaries (including hyphens for header names)
+        while word_start > 0 and (current_line[word_start - 1].isalnum() or current_line[word_start - 1] in '._@-'):
+            word_start -= 1
+        while word_end < len(current_line) and (current_line[word_end].isalnum() or current_line[word_end] in '._@-'):
+            word_end += 1
+
+        if word_start == word_end:
+            return None
+
+        word = current_line[word_start:word_end]
+
+        # Don't show hover for basic control flow keywords
+        basic_keywords = {'if', 'elif', 'else', 'true', 'false', 'break'}
+        if word.lower() in basic_keywords:
+            return None
+
+        stripped_line = current_line.strip()
+        if stripped_line.startswith(word) and '{' in stripped_line:
+            return self._get_section_hover_info(word)
+
+        if word.lower() in ['bool', 'int8', 'int16']:
+            return self._get_variable_type_hover_info(word)
+
+        rest_of_line = current_line[word_end:].strip()
+        if rest_of_line.startswith('('):
+            return self._get_function_hover_info(word)
+
+        # Check if this is a declared variable
+        variable_info = self._get_variable_hover_info(uri, word)
+        if variable_info:
+            return variable_info
+
+        # Check for keyword documentation
+        if word.lower() in LSP_KEYWORD_DOCUMENTATION:
+            return self._get_keyword_hover_info(word.lower())
+
+        return {"contents": {"kind": "markdown", "value": f"**{word}** - HRW4U Language symbol"}}
+
+    def _get_keyword_hover_info(self, keyword: str) -> dict[str, Any]:
+        """Get hover info for keywords with comprehensive documentation."""
+        if keyword in LSP_KEYWORD_DOCUMENTATION:
+            kw_doc = LSP_KEYWORD_DOCUMENTATION[keyword]
+
+            sections = [
+                f"**{kw_doc['name']}** - {kw_doc['category']}", "", kw_doc['description'], "", f"**Syntax:** `{kw_doc['syntax']}`"
+            ]
+
+            if kw_doc.get("examples"):
+                sections.extend(["", "**Examples:**"])
+                for example in kw_doc["examples"]:
+                    sections.append(f"```hrw4u\n{example}\n```")
+
+            if kw_doc.get("maps_to"):
+                sections.extend(["", f"**Maps to:** `{kw_doc['maps_to']}`"])
+
+            if kw_doc.get("usage_context"):
+                sections.extend(["", f"**Usage:** {kw_doc['usage_context']}"])
+
+            return {"contents": {"kind": "markdown", "value": "\n".join(sections)}}
+
+        return {"contents": {"kind": "markdown", "value": f"**{keyword}** - HRW4U keyword"}}
+
+    def _get_section_hover_info(self, section_name: str) -> dict[str, Any]:
+        """Get hover info for section names."""
+        try:
+            section_type = SectionType(section_name)
+            return {
+                "contents":
+                    {
+                        "kind": "markdown",
+                        "value":
+                            f"**{section_name}** - HRW4U Section\n\n" + f"**Hook:** `{section_type.hook_name}`\n\n" +
+                            section_type.lsp_description
+                    }
+            }
+        except ValueError:
+            return {
+                "contents":
+                    {
+                        "kind": "markdown",
+                        "value":
+                            f"**{section_name}** - ❌ Invalid Section Name\n\n" +
+                            f"Valid sections are: {', '.join([s.value for s in SectionType])}"
+                    }
+            }
+
+    def _get_variable_type_hover_info(self, var_type: str) -> dict[str, Any]:
+        """Get hover info for variable types."""
+        try:
+            vt = VarType.from_str(var_type.lower())
+            return {
+                "contents":
+                    {
+                        "kind": "markdown",
+                        "value":
+                            f"**{var_type}** - HRW4U Variable Type\n\n{vt.description}\n\nUsed in variable declarations within the VARS section."
+                    }
+            }
+        except ValueError:
+            return {"contents": {"kind": "markdown", "value": f"**{var_type}** - Unknown Variable Type"}}
+
+    def _get_variable_hover_info(self, uri: str, variable_name: str) -> dict[str, Any] | None:
+        """Get hover info for declared variables."""
+        variables = self.variable_declarations.get(uri, {})
+        if variable_name in variables:
+            var_info = variables[variable_name]
+            var_type = var_info['type']
+            description = var_info['description']
+            declaration_line = var_info['line'] + 1  # Convert to 1-based line numbers
+
+            return {
+                "contents":
+                    {
+                        "kind": "markdown",
+                        "value":
+                            f"**{variable_name}** - HRW4U Variable\n\n" + f"**Type:** `{var_type}`\n\n" +
+                            f"**Description:** {description}\n\n" + f"**Declared at:** Line {declaration_line}"
+                    }
+            }
+        return None
+
+    def _parse_dotted_expression(self, line: str, character: int) -> dict[str, Any] | None:
+        """Parse dotted expressions like outbound.req.X-Fie or inbound.req.@X-foo."""
+        # Find the boundaries of the dotted expression
+        expr_start = character
+        expr_end = character
+
+        # Move backwards to find the start of the expression
+        while expr_start > 0 and (line[expr_start - 1].isalnum() or line[expr_start - 1] in '._@-'):
+            expr_start -= 1
+
+        # Move forwards to find the end of the expression
+        while expr_end < len(line) and (line[expr_end].isalnum() or line[expr_end] in '._@-'):
+            expr_end += 1
+
+        if expr_start == expr_end:
+            return None
+
+        full_expression = line[expr_start:expr_end]
+
+        # Handle header patterns
+        header_patterns = ['inbound.req.', 'inbound.resp.', 'outbound.req.', 'outbound.resp.']
+
+        for pattern in header_patterns:
+            if full_expression.startswith(pattern):
+                header_name = full_expression[len(pattern):]
+                cursor_pos = character - expr_start
+
+                if cursor_pos < len(pattern):
+                    context = pattern.rstrip('.')
+                    return self._get_operator_hover_info(context)
+                else:
+                    if header_name:
+                        is_ats_internal = header_name.startswith('@')
+                        header_type = "ATS Internal Header" if is_ats_internal else "HTTP Header"
+
+                        context_desc = pattern.rstrip('.').replace('.', ' ').title()
+
+                        description = f"**{header_name}** - {header_type}\n\n"
+                        description += f"**Context:** {context_desc} Headers\n\n"
+
+                        if is_ats_internal:
+                            description += "This is an ATS internal header (prefixed with '@') used for internal processing and metadata."
+                        else:
+                            description += "HTTP header used in request/response processing."
+
+                        return {"contents": {"kind": "markdown", "value": description}}
+
+        # Handle cookie patterns
+        cookie_patterns = ['inbound.cookie.', 'outbound.cookie.']
+
+        for pattern in cookie_patterns:
+            if full_expression.startswith(pattern):
+                cookie_name = full_expression[len(pattern):]
+                cursor_pos = character - expr_start
+
+                if cursor_pos < len(pattern):
+                    context = pattern.rstrip('.')
+                    return self._get_operator_hover_info(context)
+                else:
+                    if cookie_name:
+                        direction = "Inbound" if pattern.startswith('inbound') else "Outbound"
+                        description = f"**{cookie_name}** - HTTP Cookie\n\n"
+                        description += f"**Context:** {direction} Request Cookies\n\n"
+                        description += "HTTP cookie used in request processing for session management, authentication, and user tracking."
+
+                        return {"contents": {"kind": "markdown", "value": description}}
+
+        # Handle URL patterns
+        url_patterns = ['inbound.url.', 'outbound.url.']
+
+        for pattern in url_patterns:
+            if full_expression.startswith(pattern):
+                url_component = full_expression[len(pattern):]
+                cursor_pos = character - expr_start
+
+                if cursor_pos < len(pattern):
+                    context = pattern.rstrip('.')
+                    return self._get_operator_hover_info(context)
+                else:
+                    if url_component:
+                        direction = "Inbound" if pattern.startswith('inbound') else "Outbound"
+
+                        # Map common URL components to descriptions
+                        component_descriptions = {
+                            'host': 'The hostname part of the URL',
+                            'port': 'The port number of the URL',
+                            'path': 'The path portion of the URL (everything after the hostname/port)',
+                            'query': 'The query string parameters (everything after ?)',
+                            'scheme': 'The URL scheme (http, https, etc.)',
+                            'fragment': 'The URL fragment (everything after #)'
+                        }
+
+                        component_desc = component_descriptions.get(url_component.lower(), f"URL component '{url_component}'")
+
+                        description = f"**{url_component}** - URL Component\n\n"
+                        description += f"**Context:** {direction} Request URL\n\n"
+                        description += f"{component_desc}."
+
+                        return {"contents": {"kind": "markdown", "value": description}}
+
+        # Handle HTTP status patterns
+        if full_expression == 'http.status':
+            return {
+                "contents":
+                    {
+                        "kind": "markdown",
+                        "value":
+                            "**http.status** - HTTP Status Code\n\n**Operation:** Set HTTP response status code\n\n**Maps to:** `set-status`\n\n**Usage:** Assign a numeric status code (100-599) to control the HTTP response status."
+                    }
+            }
+
+        if full_expression == 'http.status.reason':
+            return {
+                "contents":
+                    {
+                        "kind": "markdown",
+                        "value":
+                            "**http.status.reason** - HTTP Status Reason Phrase\n\n**Operation:** Set custom HTTP response status reason phrase\n\n**Maps to:** `set-status-reason`\n\n**Usage:** Assign a custom reason phrase to accompany the HTTP status code (e.g., \"Not Found\" for 404)."
+                    }
+            }
+
+        # Handle other specific patterns from OPERATOR_MAP
+        status_patterns = {
+            'inbound.status':
+                (
+                    '**inbound.status** - Inbound Response Status\n\n**Context:** Status code of the inbound HTTP response\n\n**Maps to:** `set-status`',
+                    'set-status'),
+            'outbound.status':
+                (
+                    '**outbound.status** - Outbound Response Status\n\n**Context:** Status code of the outbound HTTP response\n\n**Maps to:** `set-status`',
+                    'set-status'),
+            'inbound.status.reason':
+                (
+                    '**inbound.status.reason** - Inbound Status Reason\n\n**Context:** Reason phrase for inbound HTTP response status\n\n**Maps to:** `set-status-reason`',
+                    'set-status-reason'),
+            'outbound.status.reason':
+                (
+                    '**outbound.status.reason** - Outbound Status Reason\n\n**Context:** Reason phrase for outbound HTTP response status\n\n**Maps to:** `set-status-reason`',
+                    'set-status-reason')
+        }
+
+        if full_expression in status_patterns:
+            description, maps_to = status_patterns[full_expression]
+            return {"contents": {"kind": "markdown", "value": description}}
+
+        # Handle connection patterns
+        if full_expression.startswith('inbound.conn.') or full_expression.startswith('outbound.conn.'):
+            parts = full_expression.split('.')
+            if len(parts) == 3:
+                direction = parts[0].title()  # Inbound or Outbound
+                field = parts[2].upper()  # DSCP, MARK, etc.
+
+                field_descriptions = {
+                    'DSCP': ('Differentiated Services Code Point', 'Traffic classification and QoS marking (0-63)'),
+                    'MARK': ('Connection Mark', 'Netfilter connection mark for traffic shaping (32-bit integer)')
+                }
+
+                if field in field_descriptions:
+                    field_name, field_desc = field_descriptions[field]
+                    description = f"**{parts[2]}** - {field_name}\n\n"
+                    description += f"**Context:** {direction} Connection {field_name}\n\n"
+                    description += f"**Description:** {field_desc}\n\n"
+                    description += f"**Maps to:** `set-conn-{parts[2].lower()}`"
+
+                    return {"contents": {"kind": "markdown", "value": description}}
+
+        # Handle date/time patterns (now.YEAR, now.MONTH, etc.)
+        if full_expression.startswith('now.'):
+            time_field = full_expression[4:]  # Remove 'now.' prefix
+            time_descriptions = {
+                'YEAR': ('Current year', '4-digit year (e.g., 2023)'),
+                'MONTH': ('Current month', 'Month number (1-12)'),
+                'DAY': ('Current day', 'Day of month (1-31)'),
+                'HOUR': ('Current hour', 'Hour in 24-hour format (0-23)'),
+                'MINUTE': ('Current minute', 'Minute (0-59)'),
+                'SECOND': ('Current second', 'Second (0-59)'),
+                'WEEKDAY': ('Day of week', 'Day of week (0=Sunday, 6=Saturday)'),
+                'YEARDAY': ('Day of year', 'Day of year (1-366)')
+            }
+
+            if time_field in time_descriptions:
+                field_name, field_desc = time_descriptions[time_field]
+                description = f"**{time_field}** - {field_name}\n\n"
+                description += f"**Context:** Current Date/Time Field\n\n"
+                description += f"**Description:** {field_desc}\n\n"
+                description += f"**Maps to:** `%{{NOW:{time_field}}}`\n\n"
+                description += "Used for timestamp generation and time-based conditional logic."
+
+                return {"contents": {"kind": "markdown", "value": description}}
+
+        # Handle ID patterns (id.UNIQUE, id.REQUEST, etc.)
+        if full_expression.startswith('id.'):
+            id_field = full_expression[3:]  # Remove 'id.' prefix
+            id_descriptions = {
+                'UNIQUE': ('Unique identifier', 'Globally unique identifier for this transaction'),
+                'REQUEST': ('Request ID', 'Unique identifier for this HTTP request'),
+                'PROCESS': ('Process ID', 'ATS process identifier'),
+                'THREAD': ('Thread ID', 'ATS thread identifier'),
+                'SESSION': ('Session ID', 'Client session identifier'),
+                'SSN': ('Session ID (alias)', 'Alias for SESSION - client session identifier')
+            }
+
+            if id_field in id_descriptions:
+                field_name, field_desc = id_descriptions[id_field]
+                description = f"**{id_field}** - {field_name}\n\n"
+                description += f"**Context:** Transaction/Process Identifier\n\n"
+                description += f"**Description:** {field_desc}\n\n"
+                description += f"**Maps to:** `%{{ID:{id_field}}}`\n\n"
+                description += "Used for logging, debugging, and correlation across systems."
+
+                return {"contents": {"kind": "markdown", "value": description}}
+
+        # Handle exact IP matches
+        ip_patterns = {
+            'inbound.ip':
+                (
+                    '**inbound.ip** - Client IP Address\n\n**Context:** IP address of the connecting client\n\n**Maps to:** `%{IP:CLIENT}`\n\nUsed for access control, logging, and geographic routing.'
+                ),
+            'outbound.ip':
+                (
+                    '**outbound.ip** - Server IP Address\n\n**Context:** IP address of the destination server\n\n**Maps to:** `%{IP:SERVER}`\n\nUsed for server selection and routing decisions.'
+                ),
+            'inbound.server':
+                (
+                    '**inbound.server** - Inbound Server IP\n\n**Context:** IP address of the ATS inbound interface\n\n**Maps to:** `%{IP:INBOUND}`\n\nUsed for multi-homed server configurations.'
+                ),
+            'outbound.server':
+                (
+                    '**outbound.server** - Outbound Server IP\n\n**Context:** IP address of the ATS outbound interface\n\n**Maps to:** `%{IP:OUTBOUND}`\n\nUsed for source IP selection and routing.'
+                )
+        }
+
+        if full_expression in ip_patterns:
+            return {"contents": {"kind": "markdown", "value": ip_patterns[full_expression]}}
+
+        # Handle geo patterns (geo.COUNTRY, geo.ASN, etc.)
+        if full_expression.startswith('geo.'):
+            geo_field = full_expression[4:].upper()  # Remove 'geo.' prefix and normalize to uppercase
+            geo_descriptions = {
+                'COUNTRY': ('Country code', 'ISO 3166-1 alpha-2 country code (e.g., US, GB, DE)'),
+                'COUNTRY_ISO': ('Country ISO code', 'ISO 3166-1 alpha-3 country code (e.g., USA, GBR, DEU)'),
+                'ASN': ('Autonomous System Number', 'ASN of the client IP address (e.g., 15169 for Google)'),
+                'ASN-NAME': ('AS Organization', 'Name of the Autonomous System organization (e.g., "Google LLC")')
+            }
+
+            if geo_field in geo_descriptions:
+                field_name, field_desc = geo_descriptions[geo_field]
+                description = f"**{geo_field.lower()}** - {field_name}\n\n"
+                description += f"**Context:** Geographic Information\n\n"
+                description += f"**Description:** {field_desc}\n\n"
+                description += f"**Maps to:** `%{{GEO:{geo_field}}}`\n\n"
+                description += "Used for geographic routing, content localization, and analytics."
+
+                return {"contents": {"kind": "markdown", "value": description}}
+
+        # Handle HTTP control patterns (http.cntl.*)
+        if full_expression.startswith('http.cntl.'):
+            cntl_field = full_expression[10:]  # Remove 'http.cntl.' prefix
+
+            description = f"**http.cntl.{cntl_field}** - HTTP Transaction Control Field\n\n"
+            description += f"**Context:** HTTP Transaction Control\n\n"
+            description += f"**Description:** Controls ATS transaction processing behavior\n\n"
+            description += f"**Maps to:** `set-plugin-cntl` operation with field-specific behavior\n\n"
+            description += "Used for fine-grained control of HTTP transaction processing."
+
+            return {"contents": {"kind": "markdown", "value": description}}
+
+        if full_expression in ['inbound.req', 'inbound.resp', 'outbound.req', 'outbound.resp']:
+            return self._get_operator_hover_info(full_expression)
+
+        if '.' in full_expression:
+            return self._get_operator_hover_info(full_expression)
+
+        return None
+
+    def _check_string_literal(self, line: str, character: int) -> dict[str, Any] | None:
+        """Check if the cursor is inside a string literal and parse interpolated expressions."""
+        # Find all quoted strings in the line
+        in_single_quote = False
+        in_double_quote = False
+        quote_start = -1
+
+        for i, char in enumerate(line):
+            if char == '"' and not in_single_quote:
+                if not in_double_quote:
+                    # Starting a double-quoted string
+                    in_double_quote = True
+                    quote_start = i
+                else:
+                    # Ending a double-quoted string
+                    if quote_start <= character <= i:
+                        # Check for interpolated expressions within the string
+                        string_content = line[quote_start + 1:i]  # Content between quotes
+                        cursor_in_string = character - quote_start - 1  # Position within string content
+
+                        interpolation_info = self._check_interpolated_expression(string_content, cursor_in_string)
+                        if interpolation_info:
+                            return interpolation_info
+
+                        # Return generic string info if no interpolation found
+                        return {
+                            "contents":
+                                {
+                                    "kind": "markdown",
+                                    "value":
+                                        f"**{LSP_STRING_LITERAL_INFO['name']}** - HRW4U String Literal\n\n{LSP_STRING_LITERAL_INFO['description']}"
+                                }
+                        }
+                    in_double_quote = False
+
+            elif char == "'" and not in_double_quote:
+                if not in_single_quote:
+                    # Starting a single-quoted string
+                    in_single_quote = True
+                    quote_start = i
+                else:
+                    # Ending a single-quoted string
+                    if quote_start <= character <= i:
+                        # Check for interpolated expressions within the string
+                        string_content = line[quote_start + 1:i]  # Content between quotes
+                        cursor_in_string = character - quote_start - 1  # Position within string content
+
+                        interpolation_info = self._check_interpolated_expression(string_content, cursor_in_string)
+                        if interpolation_info:
+                            return interpolation_info
+
+                        # Return generic string info if no interpolation found
+                        return {
+                            "contents":
+                                {
+                                    "kind": "markdown",
+                                    "value":
+                                        f"**{LSP_STRING_LITERAL_INFO['name']}** - HRW4U String Literal\n\n{LSP_STRING_LITERAL_INFO['description']}"
+                                }
+                        }
+                    in_single_quote = False
+
+        return None
+
+    def _check_interpolated_expression(self, string_content: str, cursor_pos: int) -> dict[str, Any] | None:
+        """Check if the cursor is over an interpolated expression like {geo.country}."""
+        # Find all interpolated expressions {expression}
+        import re
+
+        for match in re.finditer(r'\{([^}]+)\}', string_content):
+            start, end = match.span()
+            if start <= cursor_pos <= end:
+                # Cursor is within this interpolated expression
+                expression = match.group(1).strip()  # Extract content between {}
+
+                # Try to get hover info for this expression
+                hover_info = self._get_interpolated_expression_info(expression)
+                if hover_info:
+                    return hover_info
+
+                # Fallback for unrecognized interpolations
+                return {
+                    "contents":
+                        {
+                            "kind": "markdown",
+                            "value":
+                                f"**{{{expression}}}** - HRW4U String Interpolation\n\nVariable substitution in string literals."
+                        }
+                }
+
+        return None
+
+    def _get_interpolated_expression_info(self, expression: str) -> dict[str, Any] | None:
+        """Get hover info for interpolated expressions."""
+        # Handle date/time patterns (now.YEAR, now.MONTH, etc.)
+        if expression.startswith('now.'):
+            time_field = expression[4:]  # Remove 'now.' prefix
+            time_descriptions = {
+                'YEAR': ('Current year', '4-digit year (e.g., 2023)'),
+                'MONTH': ('Current month', 'Month number (1-12)'),
+                'DAY': ('Current day', 'Day of month (1-31)'),
+                'HOUR': ('Current hour', 'Hour in 24-hour format (0-23)'),
+                'MINUTE': ('Current minute', 'Minute (0-59)'),
+                'SECOND': ('Current second', 'Second (0-59)'),
+                'WEEKDAY': ('Day of week', 'Day of week (0=Sunday, 6=Saturday)'),
+                'YEARDAY': ('Day of year', 'Day of year (1-366)')
+            }
+
+            if time_field in time_descriptions:
+                field_name, field_desc = time_descriptions[time_field]
+                description = f"**{{{expression}}}** - {field_name} Interpolation\n\n"
+                description += f"**Context:** Current Date/Time Field\n\n"
+                description += f"**Description:** {field_desc}\n\n"
+                description += f"**Maps to:** `%{{NOW:{time_field}}}`\n\n"
+                description += "Used for timestamp generation in string values."
+
+                return {"contents": {"kind": "markdown", "value": description}}
+
+        # Handle ID patterns (id.UNIQUE, id.REQUEST, etc.)
+        if expression.startswith('id.'):
+            id_field = expression[3:]  # Remove 'id.' prefix
+            id_descriptions = {
+                'UNIQUE': ('Unique identifier', 'Globally unique identifier for this transaction'),
+                'REQUEST': ('Request ID', 'Unique identifier for this HTTP request'),
+                'PROCESS': ('Process ID', 'ATS process identifier'),
+                'THREAD': ('Thread ID', 'ATS thread identifier'),
+                'SESSION': ('Session ID', 'Client session identifier'),
+                'SSN': ('Session ID (alias)', 'Alias for SESSION - client session identifier')
+            }
+
+            if id_field in id_descriptions:
+                field_name, field_desc = id_descriptions[id_field]
+                description = f"**{{{expression}}}** - {field_name} Interpolation\n\n"
+                description += f"**Context:** Transaction/Process Identifier\n\n"
+                description += f"**Description:** {field_desc}\n\n"
+                description += f"**Maps to:** `%{{ID:{id_field}}}`\n\n"
+                description += "Used for logging and correlation in string values."
+
+                return {"contents": {"kind": "markdown", "value": description}}
+
+        # Handle IP patterns
+        ip_patterns = {
+            'inbound.ip': ('Client IP Address', 'IP address of the connecting client', '%{IP:CLIENT}'),
+            'outbound.ip': ('Server IP Address', 'IP address of the destination server', '%{IP:SERVER}'),
+            'inbound.server': ('Inbound Server IP', 'IP address of the ATS inbound interface', '%{IP:INBOUND}'),
+            'outbound.server': ('Outbound Server IP', 'IP address of the ATS outbound interface', '%{IP:OUTBOUND}')
+        }
+
+        if expression in ip_patterns:
+            field_name, field_desc, maps_to = ip_patterns[expression]
+            description = f"**{{{expression}}}** - {field_name} Interpolation\n\n"
+            description += f"**Context:** IP Address Field\n\n"
+            description += f"**Description:** {field_desc}\n\n"
+            description += f"**Maps to:** `{maps_to}`\n\n"
+            description += "Used for IP-based routing and logging in string values."
+
+            return {"contents": {"kind": "markdown", "value": description}}
+
+        # Handle geo patterns (geo.country, geo.asn, etc.)
+        if expression.startswith('geo.'):
+            geo_field = expression[4:].upper()  # Remove 'geo.' prefix and normalize to uppercase
+            geo_descriptions = {
+                'COUNTRY': ('Country code', 'ISO 3166-1 alpha-2 country code (e.g., US, GB, DE)'),
+                'COUNTRY_ISO': ('Country ISO code', 'ISO 3166-1 alpha-3 country code (e.g., USA, GBR, DEU)'),
+                'ASN': ('Autonomous System Number', 'ASN of the client IP address (e.g., 15169 for Google)'),
+                'ASN-NAME': ('AS Organization', 'Name of the Autonomous System organization (e.g., "Google LLC")')
+            }
+
+            if geo_field in geo_descriptions:
+                field_name, field_desc = geo_descriptions[geo_field]
+                description = f"**{{{expression}}}** - {field_name} Interpolation\n\n"
+                description += f"**Context:** Geographic Information\n\n"
+                description += f"**Description:** {field_desc}\n\n"
+                description += f"**Maps to:** `%{{GEO:{geo_field}}}`\n\n"
+                description += "Used for geographic routing and localization in string values."
+
+                return {"contents": {"kind": "markdown", "value": description}}
+
+        # Handle URL patterns
+        if expression.startswith('inbound.url.') or expression.startswith('outbound.url.'):
+            parts = expression.split('.')
+            if len(parts) == 3:
+                direction = parts[0].title()  # Inbound or Outbound
+                url_component = parts[2]
+
+                component_descriptions = {
+                    'host': 'The hostname part of the URL',
+                    'port': 'The port number of the URL',
+                    'path': 'The path portion of the URL (everything after the hostname/port)',
+                    'query': 'The query string parameters (everything after ?)',
+                    'scheme': 'The URL scheme (http, https, etc.)',
+                    'fragment': 'The URL fragment (everything after #)'
+                }
+
+                if url_component.lower() in component_descriptions:
+                    component_desc = component_descriptions[url_component.lower()]
+                    description = f"**{{{expression}}}** - {direction} URL {url_component.title()} Interpolation\n\n"
+                    description += f"**Context:** {direction} Request URL Component\n\n"
+                    description += f"**Description:** {component_desc}\n\n"
+                    description += "Used for URL manipulation and routing in string values."
+
+                    return {"contents": {"kind": "markdown", "value": description}}
+
+        # Handle regex capture groups (capture.1, capture.2, etc.)
+        if expression.startswith('capture.'):
+            capture_num = expression[8:]  # Remove 'capture.' prefix
+
+            # Validate it's a numeric capture group
+            try:
+                group_number = int(capture_num)
+                description = f"**{{{expression}}}** - Regex Capture Group {group_number}\n\n"
+                description += f"**Context:** Regular Expression Capture Group\n\n"
+                description += f"**Description:** References capture group #{group_number} from the most recently evaluated regex condition\n\n"
+                description += f"**Maps to:** `${{CAPTURE:{group_number}}}`\n\n"
+                description += "**Usage:** Used to insert captured substrings from regex matches into string values. "
+                description += "The capture group must be defined in a preceding regex condition (e.g., using `//` matches).\n\n"
+                description += "**Note:** Capture groups are numbered starting from 1. Group 0 represents the entire match."
+
+                return {"contents": {"kind": "markdown", "value": description}}
+            except ValueError:
+                # Handle non-numeric capture references
+                description = f"**{{{expression}}}** - Regex Capture Reference\n\n"
+                description += f"**Context:** Regular Expression Capture\n\n"
+                description += f"**Description:** References a capture element from the most recently evaluated regex condition\n\n"
+                description += "**Usage:** Used to insert captured substrings from regex matches into string values."
+
+                return {"contents": {"kind": "markdown", "value": description}}
+
+        return None
+
+    def _check_header_context(self, line: str, word_start: int, word: str) -> dict[str, Any] | None:
+        """Check if this is a header name in a header context."""
+        # Look for patterns like "inbound.req.header_name" or "outbound.resp.header_name"
+        line_before_word = line[:word_start]
+
+        # Check for inbound/outbound header contexts
+        header_contexts = {
+            'inbound.req.': 'Inbound Request',
+            'inbound.resp.': 'Inbound Response',
+            'outbound.req.': 'Outbound Request',
+            'outbound.resp.': 'Outbound Response'
+        }
+
+        for context, desc in header_contexts.items():
+            # More flexible matching - check if the context appears before the word
+            if context in line_before_word:
+                # Make sure the context is actually right before this word
+                context_pos = line_before_word.rfind(context)
+                if context_pos >= 0 and context_pos + len(context) == word_start:
+                    # This appears to be a header name
+                    is_ats_internal = word.startswith('@')
+                    header_type = "ATS Internal Header" if is_ats_internal else "HTTP Header"
+
+                    description = f"**{word}** - {header_type}\n\n"
+                    description += f"**Context:** {desc} Headers\n\n"
+
+                    if is_ats_internal:
+                        description += "This is an ATS internal header (prefixed with '@') used for internal processing and metadata."
+                    else:
+                        description += "HTTP header used in request/response processing."
+
+                    return {"contents": {"kind": "markdown", "value": description}}
+
+        return None
+
+    def _get_operator_hover_info(self, operator: str) -> dict[str, Any]:
+        """Get hover info for operators."""
+        # Special handling for inbound/outbound header contexts
+        if operator in LSP_HEADER_CONTEXTS:
+            context_info = LSP_HEADER_CONTEXTS[operator]
+            return {
+                "contents":
+                    {
+                        "kind": "markdown",
+                        "value":
+                            f"**{operator}** - HRW4U Header Context\n\n" + f"**Context:** {context_info['name']}\n\n" +
+                            f"{context_info['description']}\n\n" + f"Headers starting with '@' are ATS internal headers."
+                    }
+            }
+
+        # Check exact matches first
+        if operator in OPERATOR_MAP:
+            commands, validator, is_prefix, sections = OPERATOR_MAP[operator]
+            cmd_str = commands if isinstance(commands, str) else ' / '.join(commands)
+
+            section_info = ""
+            if sections:
+                section_names = [s.value for s in sections]
+                section_info = f"\n\n**Restricted in sections:** {', '.join(section_names)}"
+
+            return {
+                "contents":
+                    {
+                        "kind": "markdown",
+                        "value": f"**{operator}** - HRW4U Operator\n\n" + f"**Maps to:** `{cmd_str}`{section_info}"
+                    }
+            }
+
+        # Check prefix matches
+        for key, (commands, validator, is_prefix, sections) in OPERATOR_MAP.items():
+            if is_prefix and operator.startswith(key):
+                cmd_str = commands if isinstance(commands, str) else ' / '.join(commands)
+                suffix = operator[len(key):]
+
+                section_info = ""
+                if sections:
+                    section_names = [s.value for s in sections]
+                    section_info = f"\n\n**Restricted in sections:** {', '.join(section_names)}"
+
+                return {
+                    "contents":
+                        {
+                            "kind": "markdown",
+                            "value":
+                                f"**{operator}** - HRW4U Operator\n\n" + f"**Base:** `{key}`\n" + f"**Suffix:** `{suffix}`\n" +
+                                f"**Maps to:** `{cmd_str}`{section_info}"
+                        }
+                }
+
+        # Check condition map
+        if operator in CONDITION_MAP:
+            tag, validator, is_prefix, sections, is_conditional, meta = CONDITION_MAP[operator]
+
+            section_info = ""
+            if sections:
+                section_names = [s.value for s in sections]
+                section_info = f"\n\n**Restricted in sections:** {', '.join(section_names)}"
+
+            return {
+                "contents":
+                    {
+                        "kind": "markdown",
+                        "value": f"**{operator}** - HRW4U Condition\n\n" + f"**Maps to:** `{tag}`{section_info}"
+                    }
+            }
+
+        # Check condition prefix matches
+        for key, (tag, validator, is_prefix, sections, is_conditional, meta) in CONDITION_MAP.items():
+            if is_prefix and operator.startswith(key):
+                suffix = operator[len(key):]
+
+                section_info = ""
+                if sections:
+                    section_names = [s.value for s in sections]
+                    section_info = f"\n\n**Restricted in sections:** {', '.join(section_names)}"
+
+                return {
+                    "contents":
+                        {
+                            "kind": "markdown",
+                            "value":
+                                f"**{operator}** - HRW4U Condition\n\n" + f"**Base:** `{key}`\n" + f"**Suffix:** `{suffix}`\n" +
+                                f"**Maps to:** `{tag}`{section_info}"
+                        }
+                }
+
+        return {"contents": {"kind": "markdown", "value": f"**{operator}** - HRW4U symbol"}}
+
+    def _get_function_hover_info(self, function_name: str) -> dict[str, Any]:
+        """Get hover info for functions with comprehensive documentation."""
+        # Check comprehensive documentation first
+        if function_name in LSP_FUNCTION_DOCUMENTATION:
+            func_doc = LSP_FUNCTION_DOCUMENTATION[function_name]
+
+            # Build parameter documentation
+            param_docs = []
+            if func_doc.get("parameters"):
+                param_docs.append("**Parameters:**")
+                for param in func_doc["parameters"]:
+                    param_docs.append(f"- `{param['name']}` ({param['type']}): {param['description']}")
+
+            # Build examples section
+            example_docs = []
+            if func_doc.get("examples"):
+                example_docs.append("**Examples:**")
+                for example in func_doc["examples"]:
+                    example_docs.append(f"```hrw4u\n{example}\n```")
+
+            # Combine all documentation
+            sections = [
+                f"**{func_doc['name']}** - {func_doc['category']}", "", func_doc['description'], "",
+                f"**Syntax:** `{func_doc['syntax']}`"
+            ]
+
+            if param_docs:
+                sections.extend([""] + param_docs)
+
+            if example_docs:
+                sections.extend([""] + example_docs)
+
+            sections.extend(["", f"**Maps to:** `{func_doc['maps_to']}`", "", f"**Usage:** {func_doc['usage_context']}"])
+
+            # Add return values if available (for condition functions)
+            if "return_values" in func_doc:
+                sections.extend(["", f"**Return Values:** {', '.join(func_doc['return_values'])}"])
+
+            return {"contents": {"kind": "markdown", "value": "\n".join(sections)}}
+
+        # Fallback to basic documentation
+        if function_name in FUNCTION_MAP:
+            tag, validator = FUNCTION_MAP[function_name]
+            return {
+                "contents":
+                    {
+                        "kind": "markdown",
+                        "value":
+                            f"**{function_name}()** - HRW4U Function\n\n" + f"**Maps to:** `{tag}`\n\n" +
+                            f"Used in conditional expressions."
+                    }
+            }
+
+        if function_name in STATEMENT_FUNCTION_MAP:
+            tag, validator = STATEMENT_FUNCTION_MAP[function_name]
+            return {
+                "contents":
+                    {
+                        "kind": "markdown",
+                        "value":
+                            f"**{function_name}()** - HRW4U Statement Function\n\n" + f"**Maps to:** `{tag}`\n\n" +
+                            f"Used as statements in code blocks."
+                    }
+            }
+
+        return {"contents": {"kind": "markdown", "value": f"**{function_name}()** - Unknown HRW4U function"}}
+
+
+class HRW4ULanguageServer:
+    """Main LSP server implementation."""
+
+    def __init__(self) -> None:
+        self.document_manager = DocumentManager()
+        self.running = False
+        self.request_id = 0
+
+    def start(self) -> None:
+        self.running = True
+        while self.running:
+            try:
+                content_length = 0
+                while True:
+                    line = sys.stdin.readline()
+                    if not line:
+                        self.running = False
+                        return
+
+                    line = line.strip()
+                    if line.startswith("Content-Length:"):
+                        content_length = int(line.split(":")[1].strip())
+                    elif line == "":
+                        break
+
+                if content_length > 0:
+                    content = sys.stdin.read(content_length)
+                    if not content:
+                        self.running = False
+                        break
+
+                    try:
+                        message = json.loads(content)
+                        self._handle_message(message)
+                    except json.JSONDecodeError as e:
+                        self._send_error_response(None, -32700, f"Parse error: {str(e)}")
+
+            except (EOFError, KeyboardInterrupt):
+                self.running = False
+                break
+            except Exception as e:
+                self._send_error_response(None, -32603, f"Internal error: {str(e)}")
+
+    def _handle_message(self, message: dict[str, Any]) -> None:
+        method = message.get("method", "")
+
+        if method == "initialize":
+            self._handle_initialize(message)
+        elif method == "initialized":
+            pass  # Nothing to do
+        elif method == "textDocument/didOpen":
+            self._handle_did_open(message)
+        elif method == "textDocument/didChange":
+            self._handle_did_change(message)
+        elif method == "textDocument/didClose":
+            self._handle_did_close(message)
+        elif method == "textDocument/completion":
+            self._handle_completion(message)
+        elif method == "textDocument/hover":
+            self._handle_hover(message)
+        elif method == "shutdown":
+            self._handle_shutdown(message)
+        elif method == "exit":
+            self.running = False
+
+    def _handle_initialize(self, message: dict[str, Any]) -> None:
+        response = {
+            "jsonrpc": "2.0",
+            "id": message["id"],
+            "result":
+                {
+                    "capabilities":
+                        {
+                            "textDocumentSync": 1,
+                            "completionProvider": {
+                                "triggerCharacters": ["."]
+                            },
+                            "hoverProvider": True
+                        }
+                }
+        }
+        self._send_message(response)
+
+    def _handle_did_open(self, message: dict[str, Any]) -> None:
+        params = message["params"]
+        text_document = params["textDocument"]
+        uri = text_document["uri"]
+        text = text_document["text"]
+
+        self.document_manager.open_document(uri, text)
+        self._send_diagnostics(uri)
+
+    def _handle_did_change(self, message: dict[str, Any]) -> None:
+        params = message["params"]
+        text_document = params["textDocument"]
+        uri = text_document["uri"]
+        changes = params["contentChanges"]
+
+        if changes:
+            text = changes[0]["text"]
+            self.document_manager.change_document(uri, text)
+            self._send_diagnostics(uri)
+
+    def _handle_did_close(self, message: dict[str, Any]) -> None:
+        params = message["params"]
+        text_document = params["textDocument"]
+        uri = text_document["uri"]
+
+        self.document_manager.close_document(uri)
+
+    def _handle_completion(self, message: dict[str, Any]) -> None:
+        params = message["params"]
+        text_document = params["textDocument"]
+        position = params["position"]
+        uri = text_document["uri"]
+        line = position["line"]
+        character = position["character"]
+
+        completions = self.document_manager.get_completions(uri, line, character)
+
+        response = {"jsonrpc": "2.0", "id": message["id"], "result": {"isIncomplete": False, "items": completions}}
+        self._send_message(response)
+
+    def _handle_hover(self, message: dict[str, Any]) -> None:
+        params = message["params"]
+        text_document = params["textDocument"]
+        position = params["position"]
+        uri = text_document["uri"]
+        line = position["line"]
+        character = position["character"]
+
+        hover_info = self.document_manager.get_hover_info(uri, line, character)
+
+        response = {"jsonrpc": "2.0", "id": message["id"], "result": hover_info}
+        self._send_message(response)
+
+    def _handle_shutdown(self, message: dict[str, Any]) -> None:
+        response = {"jsonrpc": "2.0", "id": message["id"], "result": None}
+        self._send_message(response)
+
+    def _send_diagnostics(self, uri: str) -> None:
+        """Send diagnostics for a document."""
+        diagnostics = self.document_manager.get_diagnostics(uri)
+
+        notification = {
+            "jsonrpc": "2.0",
+            "method": "textDocument/publishDiagnostics",
+            "params": {
+                "uri": uri,
+                "diagnostics": diagnostics
+            }
+        }
+        self._send_message(notification)
+
+    def _send_message(self, message: dict[str, Any]) -> None:
+        content = json.dumps(message)
+        response = f"Content-Length: {len(content)}\r\n\r\n{content}"
+        sys.stdout.write(response)
+        sys.stdout.flush()
+
+    def _send_error_response(self, request_id: int | None, code: int, message: str) -> None:
+        response = {"jsonrpc": "2.0", "id": request_id, "error": {"code": code, "message": message}}
+        self._send_message(response)
+
+
+def main() -> None:
+    """Main entry point for the LSP server."""
+    server = HRW4ULanguageServer()
+    server.start()
+
+
+if __name__ == "__main__":
+    main()

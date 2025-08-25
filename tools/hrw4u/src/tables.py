@@ -23,36 +23,51 @@ import hrw4u.types as types
 from hrw4u.states import SectionType
 from hrw4u.common import MagicStrings, HeaderOperations
 
-HEADER_OPERATIONS = HeaderOperations.OPERATIONS
+#
+# Core Symbol Maps
+#
 
 OPERATOR_MAP: dict[str, tuple[str | list[str] | tuple[str, ...], Callable[[str], None] | None, bool, set[SectionType] | None]] = {
     "http.cntl.": ("set-http-cntl", Validator.suffix_group(types.SuffixGroup.HTTP_CNTL_FIELDS), True, None),
     "http.status.reason": ("set-status-reason", Validator.quoted_or_simple(), False, None),
     "http.status": ("set-status", Validator.range(0, 999), False, None),
     "inbound.conn.dscp": ("set-conn-dscp", Validator.nbit_int(6), False, None),
+    "inbound.conn.mark": ("set-conn-mark", Validator.nbit_int(32), False, None),
+    "outbound.conn.dscp":
+        ("set-conn-dscp", Validator.nbit_int(6), False, {SectionType.PRE_REMAP, SectionType.REMAP, SectionType.READ_REQUEST}),
+    "outbound.conn.mark":
+        ("set-conn-mark", Validator.nbit_int(32), False, {SectionType.PRE_REMAP, SectionType.REMAP, SectionType.READ_REQUEST}),
     "inbound.cookie.": (["rm-cookie", "set-cookie"], Validator.http_token(), False, None),
-    "inbound.req.": (HEADER_OPERATIONS, Validator.http_token(), False, None),
+    "inbound.req.": (HeaderOperations.OPERATIONS, Validator.http_token(), False, None),
     "inbound.resp.body": ("set-body", Validator.quoted_or_simple(), False, None),
-    "inbound.resp.": (HEADER_OPERATIONS, Validator.http_token(), False, None),
+    "inbound.resp.": (HeaderOperations.OPERATIONS, Validator.http_token(), False, None),
     "inbound.status.reason": ("set-status-reason", Validator.quoted_or_simple(), False, None),
     "inbound.status": ("set-status", Validator.range(0, 999), False, None),
     "inbound.url.": (["rm-destination", "set-destination"], Validator.suffix_group(types.SuffixGroup.URL_FIELDS), True, None),
-    "outbound.cookie.": (["rm-cookie", "set-cookie"], Validator.http_token(), False, None),
+    "outbound.cookie.":
+        (
+            ["rm-cookie",
+             "set-cookie"], Validator.http_token(), False, {SectionType.PRE_REMAP, SectionType.REMAP, SectionType.READ_REQUEST}),
     "outbound.req.":
-        (HEADER_OPERATIONS, Validator.http_token(), False, {SectionType.PRE_REMAP, SectionType.REMAP, SectionType.READ_REQUEST}),
+        (
+            HeaderOperations.OPERATIONS, Validator.http_token(), False,
+            {SectionType.PRE_REMAP, SectionType.REMAP, SectionType.READ_REQUEST}),
     "outbound.resp.":
         (
-            HEADER_OPERATIONS,
-            Validator.http_token(),
-            False,
-            {SectionType.PRE_REMAP, SectionType.REMAP, SectionType.READ_REQUEST, SectionType.SEND_REQUEST},
-        ),
+            HeaderOperations.OPERATIONS, Validator.http_token(), False,
+            {SectionType.PRE_REMAP, SectionType.REMAP, SectionType.READ_REQUEST, SectionType.SEND_REQUEST}),
     "outbound.status.reason":
         (
             "set-status-reason", Validator.quoted_or_simple(), False,
-            {SectionType.PRE_REMAP, SectionType.REMAP, SectionType.READ_REQUEST}),
+            {SectionType.PRE_REMAP, SectionType.REMAP, SectionType.READ_REQUEST, SectionType.SEND_REQUEST}),
     "outbound.status":
-        ("set-status", Validator.range(0, 999), False, {SectionType.PRE_REMAP, SectionType.REMAP, SectionType.READ_REQUEST}),
+        (
+            "set-status", Validator.range(0, 999), False,
+            {SectionType.PRE_REMAP, SectionType.REMAP, SectionType.READ_REQUEST, SectionType.SEND_REQUEST}),
+    "outbound.url.":
+        (
+            ["rm-destination", "set-destination"], Validator.suffix_group(types.SuffixGroup.URL_FIELDS), True,
+            {SectionType.PRE_REMAP, SectionType.REMAP, SectionType.READ_REQUEST})
 }
 
 # This map is for functions which can never be used as conditions. We split this out to avoid
@@ -69,8 +84,18 @@ STATEMENT_FUNCTION_MAP: dict[str, tuple[str, Callable[[list[str]], None] | None]
     "set-config": ("set-config", Validator.arg_count(2).quoted_or_simple()),
     "set-redirect":
         ("set-redirect", Validator.arg_count(2).arg_at(0, Validator.range(300, 399)).arg_at(1, Validator.quoted_or_simple())),
-    "skip-remap": ("skip-remap", Validator.arg_count(1).suffix_group(types.SuffixGroup.BOOL_FIELDS)),
+    "skip-remap":
+        ("skip-remap", Validator.arg_count(1).suffix_group(types.SuffixGroup.BOOL_FIELDS)._add(Validator.normalize_arg_at(0))),
+    "set-plugin-cntl":
+        (
+            "set-plugin-cntl", Validator.arg_count(2)._add(Validator.normalize_arg_at(0)).arg_at(
+                0, Validator.suffix_group(types.SuffixGroup.PLUGIN_CNTL_FIELDS))._add(Validator.normalize_arg_at(1))._add(
+                    Validator.conditional_arg_validation(types.SuffixGroup.PLUGIN_CNTL_MAPPING.value))),
 }
+
+#
+# Condition and Function Maps
+#
 
 # The function map are for the hybrid functions which map to what looks like conditions,
 # but don't map nicely to the X.y syntax we prefer in HRW4U.
@@ -144,7 +169,7 @@ CONDITION_MAP: dict[str, tuple[str, Callable[[str], None] | None, bool, set[Sect
             "%{STATUS}",
             None,
             False,
-            {SectionType.PRE_REMAP, SectionType.REMAP, SectionType.READ_REQUEST},
+            {SectionType.PRE_REMAP, SectionType.REMAP, SectionType.READ_REQUEST, SectionType.SEND_REQUEST},
             False,
             {
                 "reverse_tag": "STATUS",
@@ -172,10 +197,15 @@ CONDITION_MAP: dict[str, tuple[str, Callable[[str], None] | None, bool, set[Sect
     }),
     "inbound.url.": ("CLIENT-URL", Validator.suffix_group(types.SuffixGroup.URL_FIELDS), True, None, True, None),
     "now.": ("NOW", Validator.suffix_group(types.SuffixGroup.DATE_FIELDS), True, None, False, None),
-    "outbound.conn.": ("OUTBOUND", Validator.suffix_group(types.SuffixGroup.CONN_FIELDS), True, None, True, None),
-    "outbound.cookie.": ("COOKIE", Validator.http_token(), False, None, True, {
-        "reverse_fallback": "inbound.cookie."
-    }),
+    "outbound.conn.":
+        (
+            "OUTBOUND", Validator.suffix_group(types.SuffixGroup.CONN_FIELDS), True,
+            {SectionType.PRE_REMAP, SectionType.REMAP, SectionType.READ_REQUEST}, True, None),
+    "outbound.cookie.":
+        (
+            "COOKIE", Validator.http_token(), False, {SectionType.PRE_REMAP, SectionType.REMAP, SectionType.READ_REQUEST}, True, {
+                "reverse_fallback": "inbound.cookie."
+            }),
     "outbound.req.":
         (
             "HEADER", None, False, {SectionType.PRE_REMAP, SectionType.REMAP, SectionType.READ_REQUEST}, True, {
@@ -204,7 +234,10 @@ CONDITION_MAP: dict[str, tuple[str, Callable[[str], None] | None, bool, set[Sect
     "to.url.": ("TO-URL", Validator.suffix_group(types.SuffixGroup.URL_FIELDS), True, None, True, None),
 }
 
-# Reverse resolution map for inverse symbol resolution
+#
+# Reverse Resolution Maps, for u4wrh
+#
+
 REVERSE_RESOLUTION_MAP = {
     # IP payload mappings
     "IP": {
@@ -259,38 +292,6 @@ REVERSE_RESOLUTION_MAP = {
             "COOKIE": ("inbound.cookie.", False),
         },
 }
-
-# Pre-computed lookup optimizations for better performance
-_OPERATOR_COMMAND_LOOKUP = {
-    cmd: key for key, (commands, *_) in OPERATOR_MAP.items()
-    for cmd in (commands if isinstance(commands, (list, tuple)) else [commands])
-}
-
-_CONDITION_TAG_LOOKUP = {
-    tag.strip().removeprefix("%{").removesuffix("}").split(":", 1)[0]: key
-    for key, (tag, *_) in CONDITION_MAP.items()
-    if not key.endswith(".")
-}
-
-_FUNCTION_TAG_LOOKUP = {tag: func_name for func_name, (tag, _) in FUNCTION_MAP.items()}
-
-
-def get_operator_key_for_command(command: str) -> str | None:
-    """Fast lookup for operator key by command"""
-    return _OPERATOR_COMMAND_LOOKUP.get(command)
-
-
-def get_condition_key_for_tag(tag: str) -> str | None:
-    """Fast lookup for condition key by tag"""
-    return _CONDITION_TAG_LOOKUP.get(tag)
-
-
-def get_function_name_for_tag(tag: str) -> str | None:
-    """Fast lookup for function name by tag"""
-    return _FUNCTION_TAG_LOOKUP.get(tag)
-
-
-AMBIGUOUS_CONTEXT_TAGS = frozenset({"STATUS", "METHOD"})
 
 OPERATOR_COMMAND_MAP = {
     "set-header": ("header_ops", "header", lambda toks: toks[1], lambda qual: qual),

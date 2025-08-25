@@ -1,5 +1,6 @@
 REMAP {
     if true {
         inbound.conn.dscp = 17;
+        inbound.conn.mark = 1234;
     }
 }
