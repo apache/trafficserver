@@ -1,1 +1,1 @@
-(program (section (varSection VARS { (variables (variableDecl Flag : bool ;)) })) (section REMAP { (sectionBody (conditional (ifStatement if (condition (expression (term (factor Flag)))) (block { (statement inbound.req.X-foo = (value "bar") ;) })))) }) <EOF>)
+(program (section (varSection VARS { (variables (variableDecl bool_0 : bool ;)) })) (section REMAP { (sectionBody (conditional (ifStatement if (condition (expression (term (factor bool_0)))) (block { (statement inbound.req.X-foo = (value "bar") ;) })))) }) <EOF>)

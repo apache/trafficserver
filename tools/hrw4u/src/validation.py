@@ -20,31 +20,34 @@ validation.py
 Encapsulates shared validation utilities for use in HRW4U.
 """
 
-import inspect
+from __future__ import annotations
+
 import re
-from typing import Callable, List, Optional
+from typing import Callable
 from hrw4u.errors import SymbolResolutionError
+from hrw4u import states
 import hrw4u.types as types
+from hrw4u.common import RegexPatterns
 
 
 class ValidatorChain:
 
-    def __init__(self, funcs: Optional[List[Callable[[List[str]], None]]] = None):
-        self._validators: List[Callable[[List[str]], None]] = funcs
+    def __init__(self, funcs: list[Callable[[list[str]], None]] | None = None):
+        self._validators: list[Callable[[list[str]], None]] = funcs or []
 
-    def __call__(self, args: List[str]) -> None:
+    def __call__(self, args: list[str]) -> None:
         for fn in self._validators:
             fn(args)
 
-    def _wrap_args(self, func: Callable[[str], None]) -> Callable[[List[str]], None]:
+    def _wrap_args(self, func: Callable[[str], None]) -> Callable[[list[str]], None]:
 
-        def wrapped(args: List[str]):
+        def wrapped(args: list[str]):
             for arg in args:
                 func(arg)
 
         return wrapped
 
-    def _add(self, func: Callable[[List[str]], None]) -> 'ValidatorChain':
+    def _add(self, func: Callable[[list[str]], None]) -> 'ValidatorChain':
         self._validators.append(func)
         return self
 
@@ -58,7 +61,7 @@ class ValidatorChain:
         Validate a specific argument at the given index.
         """
 
-        def validator(args: List[str]) -> None:
+        def validator(args: list[str]) -> None:
             try:
                 func(args[index])
             except IndexError:
@@ -89,11 +92,18 @@ class ValidatorChain:
 
 
 class Validator:
+    # Use shared compiled regex patterns for performance
+    _SIMPLE_TOKEN_RE = RegexPatterns.SIMPLE_TOKEN
+    _HTTP_TOKEN_RE = RegexPatterns.HTTP_TOKEN
+    _REGEX_LITERAL_RE = RegexPatterns.REGEX_LITERAL
+    _PERCENT_RE = RegexPatterns.PERCENT_BLOCK
+    _PERCENT_INLINE_RE = RegexPatterns.PERCENT_INLINE
+    _PERCENT_PATTERN = RegexPatterns.PERCENT_PATTERN
 
     @staticmethod
     def arg_count(count: int) -> 'ValidatorChain':
 
-        def validator(args: List[str]) -> None:
+        def validator(args: list[str]) -> None:
             if len(args) != count:
                 raise SymbolResolutionError(str(args), f"Invalid number of arguments (expected {count}, got {len(args)})")
 
@@ -102,7 +112,7 @@ class Validator:
     @staticmethod
     def min_args(count: int) -> ValidatorChain:
 
-        def validator(args: List[str]) -> None:
+        def validator(args: list[str]) -> None:
             if len(args) < count:
                 raise SymbolResolutionError(str(args), f"At least {count} argument(s) required (got {len(args)})")
 
@@ -137,10 +147,9 @@ class Validator:
 
     @staticmethod
     def quoted_or_simple() -> Callable[[str], None]:
-        simple_re = re.compile(r'^[@a-zA-Z0-9_-]+$')
 
         def validator(value: str) -> None:
-            if (value.startswith('"') and value.endswith('"')) or simple_re.fullmatch(value):
+            if (value.startswith('"') and value.endswith('"')) or Validator._SIMPLE_TOKEN_RE.fullmatch(value):
                 return
             raise SymbolResolutionError(
                 value, "Value must be quoted unless it is a simple token (letters, digits, underscore, dash)")
@@ -149,10 +158,9 @@ class Validator:
 
     @staticmethod
     def http_token() -> Callable[[str], None]:
-        header_re = re.compile(r'^[@!#$%&\'*+\-.0-9A-Z^_`a-z|~]+$')
 
         def validator(value: str) -> None:
-            if header_re.fullmatch(value):
+            if Validator._HTTP_TOKEN_RE.fullmatch(value):
                 return
             raise SymbolResolutionError(value, "HTTP token/header not valid, illegal characters or format.")
 
@@ -171,22 +179,81 @@ class Validator:
 
     @staticmethod
     def validate_assignment(var_type: types.VarType, value: str, name: str) -> None:
-        if var_type == types.VarType.BOOL:
-            try:
-                types.SuffixGroup.BOOL_FIELDS.validate(value)
-            except ValueError:
-                raise SymbolResolutionError(name, f"Invalid value '{value}' for bool variable '{name}'")
-        elif var_type == types.VarType.INT8:
-            try:
-                v = int(value)
-                if not (0 <= v <= 255):
-                    raise SymbolResolutionError(name, f"Invalid value '{value}' for int8 variable '{name}'")
-            except ValueError:
-                raise SymbolResolutionError(name, f"Expected integer for int8 variable '{name}'")
-        elif var_type == types.VarType.INT16:
-            try:
-                v = int(value)
-                if not (0 <= v <= 65535):
-                    raise SymbolResolutionError(name, f"Invalid value '{value}' for int16 variable '{name}'")
-            except ValueError:
-                raise SymbolResolutionError(name, f"Expected integer for int16 variable '{name}'")
+        match var_type:
+            case types.VarType.BOOL:
+                try:
+                    types.SuffixGroup.BOOL_FIELDS.validate(value)
+                except ValueError:
+                    raise SymbolResolutionError(name, f"Invalid value '{value}' for bool variable '{name}'")
+
+            case types.VarType.INT8:
+                try:
+                    v = int(value)
+                    if not (0 <= v <= 255):
+                        raise SymbolResolutionError(name, f"Invalid value '{value}' for int8 variable '{name}'")
+                except ValueError:
+                    raise SymbolResolutionError(name, f"Expected integer for int8 variable '{name}'")
+
+            case types.VarType.INT16:
+                try:
+                    v = int(value)
+                    if not (0 <= v <= 65535):
+                        raise SymbolResolutionError(name, f"Invalid value '{value}' for int16 variable '{name}'")
+                except ValueError:
+                    raise SymbolResolutionError(name, f"Expected integer for int16 variable '{name}'")
+
+    @staticmethod
+    def needs_quotes(value: str) -> bool:
+        if not value:
+            return True
+        if value.startswith('"') and value.endswith('"'):
+            return False
+        if Validator._SIMPLE_TOKEN_RE.fullmatch(value):
+            return False
+        if Validator._REGEX_LITERAL_RE.match(value):
+            return False
+        try:
+            int(value)
+            return False
+        except ValueError:
+            return True
+
+    @staticmethod
+    def quote_if_needed(value: str) -> str:
+        return f'"{value}"' if Validator.needs_quotes(value) else value
+
+    @staticmethod
+    def logic_modifier() -> Callable[[str], None]:
+
+        def validator(value: str) -> None:
+            if value.upper() not in states.ALL_MODIFIERS:
+                raise SymbolResolutionError(value, f"Invalid logic modifier: {value}")
+
+        return validator
+
+    @staticmethod
+    def percent_block() -> Callable[[str], None]:
+
+        def validator(value: str) -> None:
+            if not value.startswith("%{") or not value.endswith("}"):
+                raise SymbolResolutionError(value, "Invalid percent block format (must be %{...})")
+
+        return validator
+
+    @staticmethod
+    def set_format() -> Callable[[str], None]:
+
+        def validator(value: str) -> None:
+            if not ((value.startswith('[') and value.endswith(']')) or (value.startswith('(') and value.endswith(')'))):
+                raise SymbolResolutionError(value, "Set must be enclosed in [] or ()")
+
+        return validator
+
+    @staticmethod
+    def iprange_format() -> Callable[[str], None]:
+
+        def validator(value: str) -> None:
+            if not (value.startswith('{') and value.endswith('}')):
+                raise SymbolResolutionError(value, "IP range must be enclosed in {}")
+
+        return validator

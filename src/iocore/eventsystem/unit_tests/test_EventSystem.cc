@@ -21,8 +21,10 @@
   limitations under the License.
  */
 
-#define CATCH_CONFIG_MAIN
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/reporters/catch_reporter_event_listener.hpp>
+#include <catch2/reporters/catch_reporter_registrars.hpp>
+#include <catch2/interfaces/catch_interfaces_config.hpp>
 
 #include "iocore/eventsystem/EventSystem.h"
 #include "tscore/ink_atomic.h"
@@ -81,8 +83,8 @@ TEST_CASE("EventSystem", "[iocore]")
   }
 }
 
-struct EventProcessorListener : Catch::TestEventListenerBase {
-  using TestEventListenerBase::TestEventListenerBase;
+struct EventProcessorListener : Catch::EventListenerBase {
+  using EventListenerBase::EventListenerBase;
 
   void
   testRunStarting(Catch::TestRunInfo const & /* testRunInfo ATS_UNUSED */) override

@@ -5,7 +5,7 @@
 
 #include "swoc/DiscreteRange.h"
 #include "swoc/TextView.h"
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
 
 using swoc::TextView;
 using namespace std::literals;

@@ -3721,8 +3721,10 @@ SSL Termination
 
 .. ts:cv:: CONFIG proxy.config.ssl.server.honor_cipher_order INT 1
 
-   By default (``1``) |TS| will use the server's cipher suites preferences instead of the client preferences.
-   By disabling it (``0``) |TS| will use client's cipher suites preferences.
+   By default (``1``) |TS| will use the server's preferences for cipher suites, supported groups, and
+   signature algorithms instead of the client preferences. By disabling it (``0``) |TS| will use the
+   client's preferences. Note that despite the configuration name mentioning "cipher_order", this
+   setting controls server preference for multiple aspects of TLS negotiation, not just cipher suites.
 
 .. ts:cv:: CONFIG proxy.config.ssl.server.prioritize_chacha INT 0
 
@@ -3968,9 +3970,9 @@ SSL Termination
   Take into account that setting the value to 0 will disable session caching for TLSv1.3
   connections.
 
-  Lowering this setting to ``1`` can be interesting when ``proxy.config.ssl.session_cache.enabled`` is enabled because
+  Lowering this setting to ``1`` can be interesting when ``proxy.config.ssl.session_cache.mode`` is enabled because
   otherwise for every new TLSv1.3 connection two session IDs will be inserted in the session cache.
-  On the other hand, if ``proxy.config.ssl.session_cache.enabled``  is disabled, using the default value is recommended.
+  On the other hand, if ``proxy.config.ssl.session_cache.mode``  is disabled, using the default value is recommended.
   In those scenarios, increasing the number of tickets could be potentially beneficial for clients performing
   multiple requests over concurrent TLS connections as per RFC 8446 clients SHOULDN'T reuse TLS Tickets.
 

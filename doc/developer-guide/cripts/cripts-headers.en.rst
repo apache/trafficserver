@@ -43,6 +43,7 @@ Header Object                   Description
 ``cripts::Client::Response``    The client response headers.
 ``cripts::Server::Request``     The server request headers.
 ``cripts::Server::Response``    The server response headers.
+``cripts::Cache::Response``     The cached response headers (immutable and conditional).
 =============================   ===========================================================================
 
 .. note::
@@ -50,6 +51,8 @@ Header Object                   Description
    For all of these headers, except the ``cripts::Client::Request``, the headers are not
    available until the respective hook is called. For example, the ``cripts::Client::Response`` headers
    are not available until the response headers are received from the origin server or cache lookup.
+   The ``cripts::Cache::Response`` header is also immutable, and can only be used after a successful
+   cache lookup.
 
 Assigning the empty value (``""``) to a header will remove it from the header list. For example:
 
@@ -135,16 +138,34 @@ Member                       Description
 ==========================   ======================================================================
 ``status``                   The status code of the response. E.g. ``200``.
 ``reason``                   The reason phrase of the response. E.g. ``OK``.
-``cache``                    The cache status of the response. E.g. ``miss``.
 ==========================   ======================================================================
 
-Of these, the first two are pretty self explanatory, but the ``cache`` status is a bit more
-complex. This is a string that represents the cache status of the response. The possible values
-are:
+
+Lookup Status
+-------------
+
+The ``Cache::Response`` header also hold the status of the cache lookup, in a member named
+``cachelookup``. This is an integer value that represents the status of the cache lookup.
+The possible values are:
+
+===============================   ======================================================================
+Value                             Description
+===============================   ======================================================================
+``LookupStatus::NONE``     (-1)   No lookup status available.
+``LookupStatus::MISS``      (0)   The response was not found in the cache.
+``LookupStatus::HIT_STALE`` (1)   The response was found in the cache, but it was stale.
+``LookupStatus::HIT_FRESH`` (2)   The response was found in the cache and is fresh.
+``LookupStatus::SKIPPED``   (3)   We skipped cache lookup completely
+===============================   ======================================================================
+
+A string representation of the cache lookup status is also available in in the ``lookupstatus`` member,
+via an implicit conversion to a string
+
 
 ==========================   ======================================================================
 Value                        Description
 ==========================   ======================================================================
+``none``                     No lookup status available.
 ``miss``                     The response was not found in the cache.
 ``hit-stale``                The response was found in the cache, but it was stale.
 ``hit-fresh``                The response was found in the cache and is fresh.
@@ -152,14 +173,14 @@ Value                        Description
 ==========================   ======================================================================
 
 This status can be used to determine if the response was found in the cache, and if so, if it was
-fresh or stale. Example usage of the cache status:
+fresh or stale. Example usage of the cache lookup status:
 
 .. code-block:: cpp
 
   do_read_response() {
-    borrow resp = cripts::Server::Response::Get();
+    borrow cached = cripts::Cache::Response::Get();
 
-    if (resp.cache == "miss") {
+    if (cached.lookupstatus == cripts::LookupStatus::MISS) {
       // Do something
     }
   }

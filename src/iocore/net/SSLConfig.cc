@@ -42,10 +42,13 @@
 #include "tscore/ink_config.h"
 #include "tscore/Layout.h"
 #include "records/RecHttp.h"
+#include "records/RecCore.h"
 
 #include <openssl/pem.h>
+#include <array>
 #include <cstring>
 #include <cmath>
+#include <unordered_map>
 
 int                SSLConfig::config_index                           = 0;
 int                SSLConfig::configids[]                            = {0, 0};
@@ -363,12 +366,17 @@ SSLConfigParams::initialize()
     ats_free(clientALPNProtocols);
   }
 
-#ifdef SSL_OP_CIPHER_SERVER_PREFERENCE
+#if defined(SSL_OP_SERVER_PREFERENCE) || defined(SSL_OP_CIPHER_SERVER_PREFERENCE)
   option = RecGetRecordInt("proxy.config.ssl.server.honor_cipher_order").value_or(0);
   if (option) {
+    // Prefer the newer, more accurately named flag when available.
+#ifdef SSL_OP_SERVER_PREFERENCE
+    ssl_ctx_options |= SSL_OP_SERVER_PREFERENCE;
+#else
     ssl_ctx_options |= SSL_OP_CIPHER_SERVER_PREFERENCE;
-  }
 #endif
+  }
+#endif // defined(SSL_OP_SERVER_PREFERENCE) || defined(SSL_OP_CIPHER_SERVER_PREFERENCE)
 
 #ifdef SSL_OP_PRIORITIZE_CHACHA
   option = RecGetRecordInt("proxy.config.ssl.server.prioritize_chacha").value_or(0);
@@ -685,9 +693,9 @@ SSLCertificateConfig::reconfigure()
   }
 
   if (retStatus) {
-    Note("%s finished loading%s", params->configFilePath, ts::bw_dbg.c_str());
+    Note("(ssl) %s finished loading%s", params->configFilePath, ts::bw_dbg.c_str());
   } else {
-    Error("%s failed to load%s", params->configFilePath, ts::bw_dbg.c_str());
+    Error("(ssl) %s failed to load%s", params->configFilePath, ts::bw_dbg.c_str());
   }
 
   return retStatus;

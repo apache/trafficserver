@@ -142,42 +142,6 @@ public:
 
   }; // End class cripts::Header::Method
 
-  class CacheStatus
-  {
-    using self_type = CacheStatus;
-
-  public:
-    CacheStatus() = delete;
-    CacheStatus(Header *owner) : _owner(owner) {}
-
-    cripts::string_view GetSV();
-
-    operator cripts::string_view() { return GetSV(); }
-
-    cripts::string_view::const_pointer
-    Data()
-    {
-      return GetSV().data();
-    }
-
-    cripts::string_view::size_type
-    Size()
-    {
-      return GetSV().size();
-    }
-
-    cripts::string_view::size_type
-    Length()
-    {
-      return GetSV().size();
-    }
-
-  private:
-    Header             *_owner = nullptr;
-    cripts::string_view _cache;
-
-  }; // Class cripts::Header::CacheStatus
-
   class String : public cripts::StringViewMixin<String>
   {
     using super_type = cripts::StringViewMixin<String>;
@@ -198,22 +162,19 @@ public:
     self_type &operator=(integer val);
     self_type &operator+=(const cripts::string_view str);
 
-    // These specialized assignment operators all use the above
-    template <size_t N>
-    self_type &
-    operator=(const char (&str)[N])
-    {
-      return operator=(cripts::string_view(str, str[N - 1] ? N : N - 1));
-    }
+    // ToDo: This was useful at some point, but was breaking other useful uses. Leaving
+    // it here for now for maybe future work.
+    // template <size_t N>
+    // self_type &
+    // operator=(const char (&str)[N])
+    //{
+    //  return operator=(cripts::string_view(str, str[N - 1] ? N : N - 1));
+    //}
+
+    self_type &operator=(std::nullptr_t) = delete;
 
     self_type &
-    operator=(char *&str)
-    {
-      return operator=(cripts::string_view(str, strlen(str)));
-    }
-
-    self_type &
-    operator=(char const *&str)
+    operator=(char const *str)
     {
       return operator=(cripts::string_view(str, strlen(str)));
     }
@@ -331,11 +292,11 @@ public:
     static const Iterator _end;
   }; // Class cripts::Header::iterator
 
-  Header() : status(this), reason(this), body(this), cache(this) {}
+  Header() : status(this), reason(this), body(this) {}
 
   ~Header() { Reset(); }
 
-  // Clear anything "cached" in the Url, this is rather draconian, but it's
+  // Clear anything "cached" in the Header, this is rather draconian, but it's
   // safe...
   void
   Reset()
@@ -363,6 +324,7 @@ public:
   }
 
   String operator[](const cripts::string_view str);
+  time_t AsDate(const cripts::string_view str);
 
   [[nodiscard]] bool
   Initialized() const
@@ -393,10 +355,9 @@ public:
     _state = state;
   }
 
-  Status      status;
-  Reason      reason;
-  Body        body;
-  CacheStatus cache;
+  Status status;
+  Reason reason;
+  Body   body;
 
 protected:
   static void
@@ -513,6 +474,48 @@ namespace Server
 
 } // namespace Server
 
+namespace Cache
+{
+  class Response : public ResponseHeader
+  {
+    using super_type = ResponseHeader;
+    using self_type  = Response;
+
+    class LookupStatus
+    {
+      using self_type = LookupStatus;
+
+    public:
+      LookupStatus() = delete;
+      LookupStatus(Response *owner) : _owner(owner) {}
+
+      cripts::string_view GetSV();
+      self_type          &operator=(int status);
+
+      operator integer();
+
+    private:
+      Response *_owner  = nullptr;
+      int       _lookup = -1; // Note set yet
+
+    }; // Class cripts::Cache::LookupStatus
+
+  public:
+    Response() : ResponseHeader(), lookupstatus(this){};
+
+    Response(const self_type &)       = delete;
+    void operator=(const self_type &) = delete;
+
+    // Implemented later, because needs the context.
+    static self_type &_get(cripts::Context *context);
+    void              _initialize() override;
+
+    LookupStatus lookupstatus;
+
+  }; // End class Cache::Response
+
+} // namespace Cache
+
 // Some static methods for the Method class
 namespace Method
 {
@@ -529,6 +532,16 @@ namespace Method
   // This is a special feature of ATS
   extern const cripts::Header::Method PURGE;
 } // namespace Method
+
+// Lookup status constants, these are used in the Cache::Response::lookupstatus
+namespace LookupStatus
+{
+  inline constexpr int NONE      = -1;
+  inline constexpr int MISS      = TS_CACHE_LOOKUP_MISS;
+  inline constexpr int HIT_STALE = TS_CACHE_LOOKUP_HIT_STALE;
+  inline constexpr int HIT_FRESH = TS_CACHE_LOOKUP_HIT_FRESH;
+  inline constexpr int SKIPPED   = TS_CACHE_LOOKUP_SKIPPED;
+} // namespace LookupStatus
 
 class Context;
 } // namespace cripts

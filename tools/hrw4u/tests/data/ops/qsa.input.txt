@@ -1,0 +1,5 @@
+REMAP {
+    if geo.COUNTRY == SE {
+        set-redirect(302, "https://www.example.com/SE/{inbound.url.path}?{inbound.url.query}");
+    }
+}

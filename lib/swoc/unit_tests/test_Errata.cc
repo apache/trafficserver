@@ -11,7 +11,7 @@
 #include "swoc/bwf_ex.h"
 #include "swoc/swoc_file.h"
 #include "swoc/Lexicon.h"
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
 
 using swoc::Errata;
 using swoc::Rv;

@@ -17,8 +17,6 @@
 */
 #pragma once
 
-#include <fmt/core.h>
-
 #include "ts/ts.h"
 
 #include "cripts/Error.hpp"
@@ -79,18 +77,6 @@ public:
     }
 
     return false;
-  }
-
-  [[nodiscard]] int
-  LookupStatus() const
-  {
-    int status = 0;
-
-    if (TSHttpTxnCacheLookupStatusGet(txnp, &status) != TS_SUCCESS) {
-      return -1;
-    }
-
-    return status;
   }
 
 }; // class Transaction

@@ -10,7 +10,7 @@
 #include "swoc/Lexicon.h"
 #include "swoc/swoc_file.h"
 #include "swoc/swoc_ip.h"
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
 
 // Example code for documentatoin
 // ---

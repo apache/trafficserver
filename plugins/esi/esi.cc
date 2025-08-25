@@ -33,9 +33,11 @@
 #include <limits>
 #include <arpa/inet.h>
 #include <getopt.h>
+#include <unordered_set>
 
 #include "ts/ts.h"
 #include "ts/remap.h"
+#include "swoc/TextView.h"
 
 #include "Utils.h"
 #include "gzip.h"
@@ -52,13 +54,16 @@ using std::string;
 using namespace EsiLib;
 using namespace Stats;
 
+using response_codes_t = std::unordered_set<int>;
+
 struct OptionInfo {
-  bool     packed_node_support{false};
-  bool     private_response{false};
-  bool     disable_gzip_output{false};
-  bool     first_byte_flush{false};
-  unsigned max_doc_size{1024 * 1024};
-  unsigned max_inclusion_depth{3};
+  bool             packed_node_support{false};
+  bool             private_response{false};
+  bool             disable_gzip_output{false};
+  bool             first_byte_flush{false};
+  unsigned         max_doc_size{1024 * 1024};
+  unsigned         max_inclusion_depth{3};
+  response_codes_t allowed_response_codes{200, 304};
 };
 
 static HandlerManager        *gHandlerManager = nullptr;
@@ -1314,17 +1319,20 @@ isTxnTransformable(TSHttpTxn txnp, bool is_cache_txn, const OptionInfo *pOptionI
     return false;
   }
 
-  // if origin returns status 304, check cached response instead
-  int response_status;
-  if (is_cache_txn == false) {
-    response_status = TSHttpHdrStatusGet(bufp, hdr_loc);
-    if (response_status == TS_HTTP_STATUS_NOT_MODIFIED) {
-      TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
-      header_obtained = TSHttpTxnCachedRespGet(txnp, &bufp, &hdr_loc);
-      if (header_obtained != TS_SUCCESS) {
-        TSError("[esi][%s] Couldn't get txn cache response header", __FUNCTION__);
-        return false;
-      }
+  int const response_status = TSHttpHdrStatusGet(bufp, hdr_loc);
+  Dbg(dbg_ctl_local, "Checking status: %d", response_status);
+  if (pOptionInfo->allowed_response_codes.find(response_status) == pOptionInfo->allowed_response_codes.end()) {
+    Dbg(dbg_ctl_local, "Not transforming response of status: %d (not in configured transform response codes)", response_status);
+    TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
+    return false;
+  }
+  if (!is_cache_txn && response_status == TS_HTTP_STATUS_NOT_MODIFIED) {
+    // if origin returns status 304, check cached response instead
+    TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
+    header_obtained = TSHttpTxnCachedRespGet(txnp, &bufp, &hdr_loc);
+    if (header_obtained != TS_SUCCESS) {
+      TSError("[esi][%s] Couldn't get txn cache response header", __FUNCTION__);
+      return false;
     }
   }
 
@@ -1614,18 +1622,19 @@ esiPluginInit(int argc, const char *argv[], OptionInfo *pOptionInfo)
   if (argc > 1) {
     int                        c;
     static const struct option longopts[] = {
-      {const_cast<char *>("packed-node-support"), no_argument,       nullptr, 'n'},
-      {const_cast<char *>("private-response"),    no_argument,       nullptr, 'p'},
-      {const_cast<char *>("disable-gzip-output"), no_argument,       nullptr, 'z'},
-      {const_cast<char *>("first-byte-flush"),    no_argument,       nullptr, 'b'},
-      {const_cast<char *>("handler-filename"),    required_argument, nullptr, 'f'},
-      {const_cast<char *>("max-doc-size"),        required_argument, nullptr, 'd'},
-      {const_cast<char *>("max-inclusion-depth"), required_argument, nullptr, 'i'},
-      {nullptr,                                   0,                 nullptr, 0  },
+      {const_cast<char *>("packed-node-support"),    no_argument,       nullptr, 'n'},
+      {const_cast<char *>("private-response"),       no_argument,       nullptr, 'p'},
+      {const_cast<char *>("disable-gzip-output"),    no_argument,       nullptr, 'z'},
+      {const_cast<char *>("first-byte-flush"),       no_argument,       nullptr, 'b'},
+      {const_cast<char *>("handler-filename"),       required_argument, nullptr, 'f'},
+      {const_cast<char *>("max-doc-size"),           required_argument, nullptr, 'd'},
+      {const_cast<char *>("max-inclusion-depth"),    required_argument, nullptr, 'i'},
+      {const_cast<char *>("allowed-response-codes"), required_argument, nullptr, 'r'},
+      {nullptr,                                      0,                 nullptr, 0  },
     };
 
     int longindex = 0;
-    while ((c = getopt_long(argc, const_cast<char *const *>(argv), "npzbf:d:i:", longopts, &longindex)) != -1) {
+    while ((c = getopt_long(argc, const_cast<char *const *>(argv), "npzbf:d:i:r:", longopts, &longindex)) != -1) {
       switch (c) {
       case 'n':
         pOptionInfo->packed_node_support = true;
@@ -1679,6 +1688,34 @@ esiPluginInit(int argc, const char *argv[], OptionInfo *pOptionInfo)
         pOptionInfo->max_inclusion_depth = max;
         break;
       }
+      case 'r': {
+        // Parse comma-separated list of response codes using TextView.
+        pOptionInfo->allowed_response_codes.clear();
+        swoc::TextView codes_view(optarg);
+
+        while (codes_view) {
+          auto code_view = codes_view.take_prefix_at(',');
+          if (code_view.empty() && codes_view.empty()) {
+            break; // Handle trailing comma case
+          }
+
+          swoc::TextView parsed;
+          auto           code_value = swoc::svtou(code_view, &parsed);
+
+          // Check if the entire token was parsed and is a valid HTTP status code
+          if (parsed.size() == code_view.size() && code_value >= 100 && code_value < 600) {
+            pOptionInfo->allowed_response_codes.insert(static_cast<int>(code_value));
+          } else if (!code_view.empty()) { // Ignore empty tokens (e.g., from trailing commas)
+            TSEmergency("[esi][%s] invalid response code format or value (%.*s) - must be between 100 and 599", __FUNCTION__,
+                        static_cast<int>(code_view.size()), code_view.data());
+          }
+        }
+
+        if (pOptionInfo->allowed_response_codes.empty()) {
+          TSEmergency("[esi][%s] no valid response codes specified", __FUNCTION__);
+        }
+        break;
+      }
       default:
         TSEmergency("[esi][%s] bad option", __FUNCTION__);
         return -1;
@@ -1686,12 +1723,21 @@ esiPluginInit(int argc, const char *argv[], OptionInfo *pOptionInfo)
     }
   }
 
+  // Format response codes for logging.
+  string response_codes_str = "";
+  for (auto const response_code : pOptionInfo->allowed_response_codes) {
+    if (!response_codes_str.empty()) {
+      response_codes_str += ",";
+    }
+    response_codes_str += std::to_string(response_code);
+  }
+
   Dbg(dbg_ctl_local,
       "[%s] Plugin started, "
       "packed-node-support: %d, private-response: %d, disable-gzip-output: %d, first-byte-flush: %d, max-doc-size %u, "
-      "max-inclusion-depth %u ",
+      "max-inclusion-depth %u, allowed-response-codes: [%s]",
       __FUNCTION__, pOptionInfo->packed_node_support, pOptionInfo->private_response, pOptionInfo->disable_gzip_output,
-      pOptionInfo->first_byte_flush, pOptionInfo->max_doc_size, pOptionInfo->max_inclusion_depth);
+      pOptionInfo->first_byte_flush, pOptionInfo->max_doc_size, pOptionInfo->max_inclusion_depth, response_codes_str.c_str());
 
   return 0;
 }

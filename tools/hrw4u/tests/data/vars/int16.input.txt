@@ -1,9 +1,9 @@
 VARS {
-   Num: int16;
+    int16_0: int16;
 }
 
 REMAP {
-    if Num > 12345 {
+    if int16_0 > 12345 {
         inbound.req.X-foo = "bar";
     }
 }

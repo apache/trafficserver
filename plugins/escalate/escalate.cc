@@ -20,13 +20,16 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
+#include "ts/apidefs.h"
 #include <ts/ts.h>
 #include <ts/remap.h>
+
 #include <cstdlib>
 #include <cstdio>
 #include <getopt.h>
 #include <cstring>
 #include <string>
+#include <string_view>
 #include <iterator>
 #include <map>
 
@@ -35,7 +38,8 @@
 
 // Constants and some declarations
 
-const char PLUGIN_NAME[] = "escalate";
+const char PLUGIN_NAME[]     = "escalate";
+const char REDIRECT_HEADER[] = "x-escalate-redirect";
 
 static DbgCtl dbg_ctl{PLUGIN_NAME};
 
@@ -67,7 +71,9 @@ struct EscalationState {
   ~EscalationState() { TSContDestroy(cont); }
   TSCont        cont;
   StatusMapType status_map;
-  bool          use_pristine = false;
+  bool          use_pristine             = false;
+  bool          escalate_non_get_methods = false;
+  bool          add_redirect_header      = true;
 };
 
 // Little helper function, to update the Host portion of a URL, and stringify the result.
@@ -92,6 +98,31 @@ MakeEscalateUrl(TSMBuffer mbuf, TSMLoc url, const char *host, size_t host_len, i
   return url_str;
 }
 
+/**
+ * Check if the method is GET.
+ *
+ * @param txn The transaction whose method is to be checked.
+ * @return True if @a txn's method is GET, false otherwise.
+ */
+static bool
+MethodIsGet(TSHttpTxn txn)
+{
+  TSMBuffer req_mbuf;
+  TSMLoc    req_hdrp;
+  if (TSHttpTxnClientReqGet(txn, &req_mbuf, &req_hdrp) != TS_SUCCESS) {
+    return false;
+  }
+  int         method_len = 0;
+  char const *method     = TSHttpHdrMethodGet(req_mbuf, req_hdrp, &method_len);
+  if (method == nullptr) {
+    return false;
+  }
+  std::string_view method_view{method, static_cast<size_t>(method_len)};
+  bool const       is_get = (method_view == TS_HTTP_METHOD_GET);
+  TSHandleMLocRelease(req_mbuf, TS_NULL_MLOC, req_hdrp);
+  return is_get;
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////
 // Main continuation for the plugin, examining an origin response for a potential retry.
 //
@@ -105,6 +136,12 @@ EscalateResponse(TSCont cont, TSEvent event, void *edata)
 
   TSAssert(event == TS_EVENT_HTTP_READ_RESPONSE_HDR || event == TS_EVENT_HTTP_SEND_RESPONSE_HDR);
   bool const processing_connection_error = (event == TS_EVENT_HTTP_SEND_RESPONSE_HDR);
+
+  if (!es->escalate_non_get_methods && !MethodIsGet(txn)) {
+    Dbg(dbg_ctl, "Skipping escalation for non-GET method");
+    TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
+    return TS_EVENT_NONE;
+  }
 
   if (processing_connection_error) {
     TSServerState const state = TSHttpTxnServerStateGet(txn);
@@ -173,6 +210,30 @@ EscalateResponse(TSCont cont, TSEvent event, void *edata)
   // Now update the Redirect URL, if set
   if (url_str) {
     TSHttpTxnRedirectUrlSet(txn, url_str, url_len); // Transfers ownership
+
+    // Add our x-escalate-redirect header marker if it doesn't already exist and the option is enabled.
+    if (es->add_redirect_header) {
+      TSMBuffer bufp;
+      TSMLoc    hdr_loc, field_loc;
+
+      if (TS_SUCCESS == TSHttpTxnClientReqGet(txn, &bufp, &hdr_loc)) {
+        field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, REDIRECT_HEADER, sizeof(REDIRECT_HEADER) - 1);
+        if (field_loc == nullptr) {
+          if (TSMimeHdrFieldCreateNamed(bufp, hdr_loc, REDIRECT_HEADER, sizeof(REDIRECT_HEADER) - 1, &field_loc) == TS_SUCCESS) {
+            if (TSMimeHdrFieldValueStringInsert(bufp, hdr_loc, field_loc, -1, "1", 1) == TS_SUCCESS) {
+              TSMimeHdrFieldAppend(bufp, hdr_loc, field_loc);
+            }
+            TSHandleMLocRelease(bufp, hdr_loc, field_loc);
+            Dbg(dbg_ctl, "Added x-escalate-redirect header to the client request.");
+          }
+        } else {
+          Dbg(dbg_ctl, "x-escalate-redirect header already exists, not adding.");
+        }
+        TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
+      } else {
+        TSError("[%s] Failed to get client request header to add x-escalate-redirect header", PLUGIN_NAME);
+      }
+    }
   }
 
   // Set the transaction free ...
@@ -199,6 +260,10 @@ TSRemapNewInstance(int argc, char *argv[], void **instance, char *errbuf, int er
     // Ugly, but we set the precedence before with non-command line parsing of args
     if (0 == strncasecmp(argv[i], "--pristine", 10)) {
       es->use_pristine = true;
+    } else if (0 == strncasecmp(argv[i], "--no-redirect-header", 20)) {
+      es->add_redirect_header = false;
+    } else if (0 == strncasecmp(argv[i], "--escalate-non-get-methods", 26)) {
+      es->escalate_non_get_methods = true;
     } else {
       // Each token should be a status code then a URL, separated by ':'.
       sep = strchr(argv[i], ':');

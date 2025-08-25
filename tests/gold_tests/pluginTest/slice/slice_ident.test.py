@@ -169,19 +169,19 @@ ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 O
 tr.StillRunningAfter = ts
 
 # 6 Test - add token to transaction log
-tr = Test.AddTestRun("Fetch last-modified asset")
+tr = Test.AddTestRun("Add 404 token to transaction log")
 ps = tr.Processes.Default
 tr.MakeCurlCommand(curl_and_args + ' http://prefetch/404.txt', ts=ts)
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("404", "expected 404 Not Found response")
 tr.StillRunningAfter = ts
 
+# 7 - wait for logs
 condwaitpath = os.path.join(Test.Variables.AtsTestToolsDir, 'condwait')
-
 tslog = os.path.join(ts.Variables.LOGDIR, 'transaction.log')
 Test.AddAwaitFileContainsTestRun('Await ts transactions to finish logging.', tslog, '404.txt')
 
-# 6 Check logs
+# 8 Check logs
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = (f"cat {tslog}")
 tr.Streams.stdout = "gold/slice_ident.gold"

@@ -15,12 +15,9 @@
 #
 #######################
 
-add_executable(
-  test_stale_response unit_test_main.cc test_DirectiveParser.cc test_BodyData.cc
-                      ${PROJECT_SOURCE_DIR}/DirectiveParser.cc
-)
+add_executable(test_stale_response test_DirectiveParser.cc test_BodyData.cc ${PROJECT_SOURCE_DIR}/DirectiveParser.cc)
 
 target_include_directories(test_stale_response PRIVATE "${PROJECT_SOURCE_DIR}")
-target_link_libraries(test_stale_response PRIVATE ts::tsutil libswoc::libswoc catch2::catch2)
+target_link_libraries(test_stale_response PRIVATE ts::tsutil libswoc::libswoc Catch2::Catch2WithMain)
 
-add_test(NAME test_stale_response COMMAND test_stale_response)
+add_catch2_test(NAME test_stale_response COMMAND test_stale_response)

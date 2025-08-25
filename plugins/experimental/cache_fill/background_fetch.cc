@@ -46,6 +46,27 @@ DbgCtl dbg_ctl{PLUGIN_NAME};
 }
 
 ///////////////////////////////////////////////////////////////////////////
+// Remove a header (fully) from an TSMLoc / TSMBuffer. Return the number
+// of fields (header values) we removed.
+int
+remove_header(TSMBuffer bufp, TSMLoc hdr_loc, const char *header, int len)
+{
+  TSMLoc field = TSMimeHdrFieldFind(bufp, hdr_loc, header, len);
+  int    cnt   = 0;
+
+  while (field) {
+    TSMLoc tmp = TSMimeHdrFieldNextDup(bufp, hdr_loc, field);
+
+    ++cnt;
+    TSMimeHdrFieldDestroy(bufp, hdr_loc, field);
+    TSHandleMLocRelease(bufp, hdr_loc, field);
+    field = tmp;
+  }
+
+  return cnt;
+}
+
+///////////////////////////////////////////////////////////////////////////
 // Set a header to a specific value. This will avoid going to through a
 // remove / add sequence in case of an existing header.
 // but clean.
@@ -175,6 +196,12 @@ BgFetchData::initialize(TSMBuffer request, TSMLoc req_hdr, TSHttpTxn txnp)
 
             if (set_header(mbuf, hdr_loc, TS_MIME_FIELD_HOST, TS_MIME_LEN_HOST, hostp, len)) {
               Dbg(dbg_ctl, "Set header Host: %.*s", len, hostp);
+            }
+            // Next, remove the Range headers and IMS (conditional) headers from the request
+            for (auto const &header : FILTER_HEADERS) {
+              if (remove_header(mbuf, hdr_loc, header.data(), header.size()) > 0) {
+                Dbg(dbg_ctl, "Removed the %s header from request", header.data());
+              }
             }
             ret = true;
           }

@@ -99,27 +99,27 @@ namespace detail
 #define REC_PERSISTENCE_TYPE(P) rec::detail::is_valid_persistence<P>::value
 
 enum RecUpdateT {
-  RECU_NULL,      // default: don't know the behavior
-  RECU_DYNAMIC,   // config can be updated dynamically w/ "traffic_ctl config reload"
-  RECU_RESTART_TS // config requires TS to be restarted to take effect
+  RECU_NULL,      ///< default: don't know the behavior
+  RECU_DYNAMIC,   ///< config can be updated dynamically w/ "traffic_ctl config reload"
+  RECU_RESTART_TS ///< config requires TS to be restarted to take effect
 };
 
 enum RecCheckT {
-  RECC_NULL, // default: no check type defined
-  RECC_STR,  // config is a string
-  RECC_INT,  // config is an integer with a range
-  RECC_IP    // config is an ip address
+  RECC_NULL, ///< default: no check type defined
+  RECC_STR,  ///< config is a string
+  RECC_INT,  ///< config is an integer with a range
+  RECC_IP    ///< config is an ip address
 };
 
 /// The source of the value.
 /// @internal @c REC_SOURCE_NULL is useful for a return value, I don't see using it in the actual data.
 /// @internal If this is changed, TSMgmtSource in apidefs.h.in must also be changed.
 enum RecSourceT {
-  REC_SOURCE_NULL,     ///< No source / value not set.
-  REC_SOURCE_DEFAULT,  ///< Built in default.
-  REC_SOURCE_PLUGIN,   ///< Plugin supplied default.
+  REC_SOURCE_NULL,     ///< No source / value not set. Not used in the actual data.
+  REC_SOURCE_DEFAULT,  ///< Built in records.yaml default.
+  REC_SOURCE_PLUGIN,   ///< Plugin supplied default. See TSMgmtIntCreate/TSMgmtStringCreate.
   REC_SOURCE_EXPLICIT, ///< Set by administrator (config file, external API, etc.)
-  REC_SOURCE_ENV       ///< Process environment variable.
+  REC_SOURCE_ENV       ///< Process environment variable override.
 };
 
 enum RecAccessT {

@@ -14,68 +14,47 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-import re, sys
+
+from __future__ import annotations
+
+import re
 from dataclasses import dataclass
 
 from hrw4u.hrw4uVisitor import hrw4uVisitor
 from hrw4u.hrw4uParser import hrw4uParser
 from hrw4u.symbols import SymbolResolver, SymbolResolutionError
 from hrw4u.errors import hrw4u_error
-from hrw4u.states import CondState
+from hrw4u.states import CondState, SectionType
+from hrw4u.debugging import Dbg
+from hrw4u.common import VisitorMixin, RegexPatterns, SystemDefaults
 
 
-@dataclass
+@dataclass(slots=True)
 class QueuedItem:
     text: str
     state: CondState
     indent: int
 
 
-class HRW4UVisitor(hrw4uVisitor):
-    INDENT_SPACES = 4
-    _SUBSTITUTE_PATTERN = re.compile(
-        r"""(?<!%)\{\s*(?P<func>[a-zA-Z_][a-zA-Z0-9_-]*)\s*\((?P<args>[^)]*)\)\s*\}
-            |
-            (?<!%)\{(?P<var>[^{}()]+)\}
-        """,
-        re.VERBOSE,
-    )
+class HRW4UVisitor(hrw4uVisitor, VisitorMixin):
+    _SUBSTITUTE_PATTERN = RegexPatterns.SUBSTITUTE_PATTERN
 
-    def __init__(self, filename: str = "<stdin>", debug: bool = False):
+    def __init__(self, filename: str = SystemDefaults.DEFAULT_FILENAME, debug: bool = SystemDefaults.DEFAULT_DEBUG):
         self.filename = filename
         self.output: list[str] = []
-        self.current_section: str | None = None
+        self.current_section: SectionType | None = None
 
         self._cond_indent = 0
         self._stmt_indent = 0
         self._cond_state = CondState()
         self._queued: QueuedItem | None = None
 
-        self._debug_enabled = debug
-        self._debug_indent = 0
+        self._dbg = Dbg(debug)
 
-        self.symbol_resolver = SymbolResolver(False)  # ToDo: make this configurable
-
-#
-# Debugging
-#
-
-    def _debug(self, msg: str, levels: bool = False, out: bool = False):
-        if self._debug_enabled:
-            if levels:
-                msg = f"</{msg}>" if out else f"<{msg}>"
-            print("[debug] " + " " * (self._debug_indent * self.INDENT_SPACES) + msg, file=sys.stderr)
-
-    def _debug_enter(self, msg: str):
-        self._debug(msg, levels=True)
-        self._debug_indent += 1
-
-    def _debug_exit(self, msg: str | None = None):
-        self._debug_indent = max(0, self._debug_indent - 1)
-        self._debug(msg, levels=True, out=True)
+        self.symbol_resolver = SymbolResolver(SystemDefaults.DEFAULT_CONFIGURABLE)  # ToDo: make this configurable
 
     def _make_condition(self, cond_text: str, last: bool = False, negate: bool = False):
-        self._debug(f"make_condition: {cond_text} last={last} negate={negate}")
+        self._dbg(f"make_condition: {cond_text} last={last} negate={negate}")
         self._cond_state.not_ |= negate
         self._cond_state.last = last
         return f"cond {cond_text}"
@@ -85,16 +64,16 @@ class HRW4UVisitor(hrw4uVisitor):
 #
 
     def _queue_condition(self, text: str):
-        self._debug(f"queue cond: {text}  state={self._cond_state.to_list()}")
+        self._dbg(f"queue cond: {text}  state={self._cond_state.to_list()}")
         self._queued = QueuedItem(text=text, state=self._cond_state.copy(), indent=self._cond_indent)
         self._cond_state.reset()
 
     def _flush_condition(self):
         if self._queued:
             mods = self._queued.state.to_list()
-            self._debug(f"flush cond: {self._queued.text} state={mods} indent={self._queued.indent}")
+            self._dbg(f"flush cond: {self._queued.text} state={mods} indent={self._queued.indent}")
             mod_str = f" [{','.join(mods)}]" if mods else ""
-            self.output.append(" " * (self._queued.indent * self.INDENT_SPACES) + f"{self._queued.text}{mod_str}")
+            self.output.append(self.format_with_indent(f"{self._queued.text}{mod_str}", self._queued.indent))
             self._queued = None
 
     def _parse_function_call(self, ctx):
@@ -104,180 +83,171 @@ class HRW4UVisitor(hrw4uVisitor):
 
     def _substitute_strings(self, s: str, ctx):
         inner = s[1:-1]
-        for m in reversed(list(self._SUBSTITUTE_PATTERN.finditer(inner))):
+
+        def repl(m: re.Match) -> str:
             try:
                 if m.group("func"):
                     func_name = m.group("func").strip()
                     arg_str = m.group("args").strip()
                     args = [arg.strip() for arg in arg_str.split(',')] if arg_str else []
                     replacement = self.symbol_resolver.resolve_function(func_name, args, strip_quotes=False)
-                    self._debug(f"substitute: {{{func_name}({arg_str})}} -> {replacement}")
-                elif m.group("var"):
+                    self._dbg(f"substitute: {{{func_name}({arg_str})}} -> {replacement}")
+                    return replacement
+                if m.group("var"):
                     var_name = m.group("var").strip()
                     replacement, _ = self.symbol_resolver.resolve_condition(var_name, self.current_section)
-                    self._debug(f"substitute: {{{var_name}}} -> {replacement}")
-                else:
-                    raise SymbolResolutionError(m.group(0), "Unrecognized substitution format")
+                    self._dbg(f"substitute: {{{var_name}}} -> {replacement}")
+                    return replacement
+                raise SymbolResolutionError(m.group(0), "Unrecognized substitution format")
             except Exception as e:
                 raise hrw4u_error(self.filename, ctx, f"symbol error in {{}}: {e}")
 
-            start, end = m.span()
-            inner = inner[:start] + replacement + inner[end:]
-
-        return f'"{inner}"'
+        return f'"{self._SUBSTITUTE_PATTERN.sub(repl, inner)}"'
 
 #
 # Visitors
 #
 
     def visitProgram(self, ctx):
-        self._debug_enter("visitProgram")
+        self._dbg.enter("visitProgram")
         try:
-            for i, sec in enumerate(ctx.section()):
-                start = len(self.output)
-                self.visit(sec)
-                if i < len(ctx.section()) - 1 and len(self.output) > start:
+            sections = ctx.section()
+            section_count = len(sections)
+            for idx, section in enumerate(sections):
+                start_length = len(self.output)
+                self.visit(section)
+                if idx < section_count - 1 and len(self.output) > start_length:
                     self.output.append("")
             self._flush_condition()
             return self.output
         finally:
-            self._debug_exit("visitProgram")
+            self._dbg.exit("visitProgram")
 
     def visitSection(self, ctx):
-        self._debug_enter("visitSection")
+        self._dbg.enter("visitSection")
         if ctx.varSection():
             return self.visitVarSection(ctx.varSection())
 
-        section = ctx.name.text
-        self.current_section = section
+        section_name = ctx.name.text
         try:
-            hook = self.symbol_resolver.map_hook(section)
-            self._debug(f"`{section}' -> `{hook}'")
-            emitted = False
-            after_conditional = False
-
-            for body in ctx.sectionBody():
-                if body.conditional():
-                    if emitted:
+            self.current_section = SectionType(section_name)
+        except ValueError:
+            raise hrw4u_error(self.filename, ctx, f"Invalid section name: '{section_name}'")
+        try:
+            hook = self.symbol_resolver.map_hook(section_name)
+            self._dbg(f"`{section_name}' -> `{hook}'")
+            in_statement_block = False
+            for idx, body in enumerate(ctx.sectionBody()):
+                is_conditional = body.conditional() is not None
+                if is_conditional or not in_statement_block:
+                    if idx > 0:  # Add a newline if this is not the first element.
                         self._flush_condition()
                         self.output.append("")
                     self.emit_condition(f"cond %{{{hook}}} [AND]", final=True)
-                    self.visit(body)
-                    emitted = True
-                    after_conditional = True
 
-                elif body.statement():
-                    if emitted and after_conditional:
-                        self._flush_condition()
-                        self.output.append("")
-                        emitted = False
-                    if not emitted:
-                        self.emit_condition(f"cond %{{{hook}}} [AND]", final=True)
-                        emitted = True
+                if is_conditional:
+                    self.visit(body)
+                    in_statement_block = False
+                else:
+                    in_statement_block = True
                     self._stmt_indent += 1
                     self.visit(body)
                     self._stmt_indent -= 1
-                    after_conditional = False
 
         except Exception as e:
             raise hrw4u_error(self.filename, ctx, e)
-        self._debug_exit("visitSection")
+        self._dbg.exit("visitSection")
 
     def visitVarSection(self, ctx):
         if self.current_section is not None:
             raise hrw4u_error(self.filename, ctx, "Variable section must be first in a section")
-        self._debug_enter("visitVarSection")
+        self._dbg.enter("visitVarSection")
         self.visit(ctx.variables())
-        self._debug_exit("visitVarSection")
+        self._dbg.exit("visitVarSection")
         return
 
     def visitStatement(self, ctx):
-        self._debug_enter("visitStatement")
+        self._dbg.enter("visitStatement")
         try:
-            if ctx.BREAK():
-                self._debug("BREAK")
-                self.emit_statement("no-op [L]")
-                return
+            match ctx:
+                case _ if ctx.BREAK():
+                    self._dbg("BREAK")
+                    self.emit_statement("no-op [L]")
+                    return
 
-            if ctx.functionCall():
-                func, args = self._parse_function_call(ctx.functionCall())
-                subst_args = [
-                    self._substitute_strings(arg, ctx) if arg.startswith('"') and arg.endswith('"') else arg for arg in args
-                ]
-                symbol = self.symbol_resolver.resolve_statement_func(func, subst_args)
-                self.emit_statement(symbol)
-                return
+                case _ if ctx.functionCall():
+                    func, args = self._parse_function_call(ctx.functionCall())
+                    subst_args = [
+                        self._substitute_strings(arg, ctx) if arg.startswith('"') and arg.endswith('"') else arg for arg in args
+                    ]
+                    symbol = self.symbol_resolver.resolve_statement_func(func, subst_args)
+                    self.emit_statement(symbol)
+                    return
 
-            if ctx.EQUAL():
-                lhs = ctx.lhs.text
-                rhs = ctx.value().getText()
-                if rhs.startswith('"') and rhs.endswith('"'):
-                    rhs = self._substitute_strings(rhs, ctx)
-                self._debug(f"assignment: {lhs} = {rhs}")
-                lhs_obj = self.symbol_resolver.symbol_for(lhs)
-                rhs_obj = self.symbol_resolver.symbol_for(rhs)
-                if lhs_obj and rhs_obj:
-                    if rhs_obj.var_type != lhs_obj.var_type:
-                        raise SymbolResolutionError(rhs, f"Type mismatch: {lhs_obj.var_type} vs {rhs_obj.var_type}")
-                    out = lhs_obj.as_operator(rhs_obj.as_cond())
-                else:
+                case _ if ctx.EQUAL():
+                    lhs = ctx.lhs.text
+                    rhs = ctx.value().getText()
+                    if rhs.startswith('"') and rhs.endswith('"'):
+                        rhs = self._substitute_strings(rhs, ctx)
+                    self._dbg(f"assignment: {lhs} = {rhs}")
                     out = self.symbol_resolver.resolve_assignment(lhs, rhs, self.current_section)
-                self.emit_statement(out)
-                return
+                    self.emit_statement(out)
+                    return
 
-            operator = ctx.op.text
-            self._debug(f"standalone op: {operator}")
-            cmd, validator = self.symbol_resolver.get_operator(operator)
-            if validator:
-                raise SymbolResolutionError(operator, "This operator requires an argument")
-            self.emit_statement(cmd)
-            return
+                case _:
+                    operator = ctx.op.text
+                    self._dbg(f"standalone op: {operator}")
+                    cmd, validator = self.symbol_resolver.get_statement_spec(operator)
+                    if validator:
+                        raise SymbolResolutionError(operator, "This operator requires an argument")
+                    self.emit_statement(cmd)
+                    return
 
         except Exception as e:
             raise hrw4u_error(self.filename, ctx, e)
         finally:
-            self._debug_exit("visitStatement")
+            self._dbg.exit("visitStatement")
 
     def visitVariables(self, ctx):
-        self._debug_enter("visitVariables")
+        self._dbg.enter("visitVariables")
         for decl in ctx.variableDecl():
             self.visit(decl)
-        self._debug_exit("visitVariables")
+        self._dbg.exit("visitVariables")
 
     def visitVariableDecl(self, ctx):
-        self._debug_enter("visitVariableDecl")
+        self._dbg.enter("visitVariableDecl")
         try:
             name = ctx.name.text
             type = ctx.typeName.text
             symbol = self.symbol_resolver.declare_variable(name, type)
-            self._debug(f"bind `{name}' to {symbol}")
+            self._dbg(f"bind `{name}' to {symbol}")
         except Exception as e:
             raise hrw4u_error(self.filename, ctx, e)
-        self._debug_exit("visitVariableDecl")
+        self._dbg.exit("visitVariableDecl")
 
     def visitConditional(self, ctx):
-        self._debug_enter("visitConditional")
+        self._dbg.enter("visitConditional")
         self.visit(ctx.ifStatement())
         for elif_ctx in ctx.elifClause():
             self.visit(elif_ctx)
         if ctx.elseClause():
             self.visit(ctx.elseClause())
-        self._debug_exit("visitConditional")
+        self._dbg.exit("visitConditional")
 
     def visitIfStatement(self, ctx):
-        self._debug_enter("visitIfStatement")
+        self._dbg.enter("visitIfStatement")
         self.visit(ctx.condition())
         self.visit(ctx.block())
-        self._debug_exit("visitIfStatement")
+        self._dbg.exit("visitIfStatement")
 
     def visitElseClause(self, ctx):
-        self._debug_enter("visitElseClause")
+        self._dbg.enter("visitElseClause")
         self.emit_condition("else", final=True)
         self.visit(ctx.block())
-        self._debug_exit("visitElseClause")
+        self._dbg.exit("visitElseClause")
 
     def visitElifClause(self, ctx):
-        self._debug_enter("visitElifClause")
+        self._dbg.enter("visitElifClause")
         self.emit_condition("elif", final=True)
         self._stmt_indent += 1
         self._cond_indent += 1
@@ -285,24 +255,24 @@ class HRW4UVisitor(hrw4uVisitor):
         self.visit(ctx.block())
         self._stmt_indent -= 1
         self._cond_indent -= 1
-        self._debug_exit("visitElifClause")
+        self._dbg.exit("visitElifClause")
 
     def visitBlock(self, ctx):
-        self._debug_enter("visitBlock")
+        self._dbg.enter("visitBlock")
         self._stmt_indent += 1
         for s in ctx.statement():
             self.visit(s)
         self._stmt_indent -= 1
-        self._debug_exit("visitBlock")
+        self._dbg.exit("visitBlock")
 
     def visitCondition(self, ctx):
-        self._debug_enter("visitCondition")
+        self._dbg.enter("visitCondition")
         self.emit_expression(ctx.expression(), last=True)
         self._flush_condition()
-        self._debug_exit("visitCondition")
+        self._dbg.exit("visitCondition")
 
     def visitComparison(self, ctx, *, last: bool = False):
-        self._debug_enter("visitComparison")
+        self._dbg.enter("visitComparison")
         comp = ctx.comparable()
         try:
             if comp.ident:
@@ -312,36 +282,38 @@ class HRW4UVisitor(hrw4uVisitor):
             operator = ctx.getChild(1)
             negate = operator.symbol.type in (hrw4uParser.NEQ, hrw4uParser.NOT_TILDE)
 
-            if ctx.value():
-                rhs = ctx.value().getText()
-                if operator.symbol.type in (hrw4uParser.EQUALS, hrw4uParser.NEQ):
-                    cond_txt = f"{lhs} ={rhs}"
-                else:
-                    cond_txt = f"{lhs} {operator.getText()}{rhs}"
+            match ctx:
+                case _ if ctx.value():
+                    rhs = ctx.value().getText()
+                    match operator.symbol.type:
+                        case hrw4uParser.EQUALS | hrw4uParser.NEQ:
+                            cond_txt = f"{lhs} ={rhs}"
+                        case _:
+                            cond_txt = f"{lhs} {operator.getText()}{rhs}"
 
-            elif ctx.regex():
-                cond_txt = f"{lhs} {ctx.regex().getText()}"
+                case _ if ctx.regex():
+                    cond_txt = f"{lhs} {ctx.regex().getText()}"
 
-            # IP Ranges are a bit special, we keep the {} verbatim and no quotes allowed
-            elif ctx.iprange():
-                cond_txt = f"{lhs} {ctx.iprange().getText()}"
+                # IP Ranges are a bit special, we keep the {} verbatim and no quotes allowed
+                case _ if ctx.iprange():
+                    cond_txt = f"{lhs} {ctx.iprange().getText()}"
 
-            elif ctx.set_():
-                inner = ctx.set_().getText()[1:-1]
-                # We no longer strip the quotes here for sets, fixed in #12256
-                # parts = [s.strip().strip("'") for s in inner.split(",")]
-                cond_txt = f"{lhs} ({inner})"
+                case _ if ctx.set_():
+                    inner = ctx.set_().getText()[1:-1]
+                    # We no longer strip the quotes here for sets, fixed in #12256
+                    # parts = [s.strip().strip("'") for s in inner.split(",")]
+                    cond_txt = f"{lhs} ({inner})"
 
-            else:
-                raise hrw4u_error(self.filename, ctx, "Invalid comparison (should not happen)")
+                case _:
+                    raise hrw4u_error(self.filename, ctx, "Invalid comparison (should not happen)")
 
             if ctx.modifier():
                 self.visit(ctx.modifier())
             self._cond_state.not_ = negate
             self._cond_state.last = last
-            self._debug(f"comparison: {cond_txt}")
+            self._dbg(f"comparison: {cond_txt}")
             self.emit_condition(f"cond {cond_txt}")
-            self._debug_exit("visitComparison")
+            self._dbg.exit("visitComparison")
 
         except Exception as e:
             raise hrw4u_error(self.filename, ctx, e)
@@ -350,17 +322,17 @@ class HRW4UVisitor(hrw4uVisitor):
         self.visit(ctx.modifierList())
 
     def visitModifierList(self, ctx):
-        for tok in ctx.mods:
+        for token in ctx.mods:
             try:
-                mod = tok.text.upper()
+                mod = token.text.upper()
                 self._cond_state.add_modifier(mod)
-            except Exception as e:
-                raise hrw4u_error(self.filename, ctx, e)
+            except Exception as exc:
+                raise hrw4u_error(self.filename, ctx, exc)
 
     def visitFunctionCall(self, ctx):
         try:
             func, raw_args = self._parse_function_call(ctx)
-            self._debug(f"function: {func}({', '.join(raw_args)})")
+            self._dbg(f"function: {func}({', '.join(raw_args)})")
             return self.symbol_resolver.resolve_function(func, raw_args, strip_quotes=True)
         except Exception as e:
             raise hrw4u_error(self.filename, ctx, e)
@@ -372,7 +344,7 @@ class HRW4UVisitor(hrw4uVisitor):
 
     def emit_condition(self, text: str, *, final: bool = False):
         if final:
-            self.output.append(" " * (self._cond_indent * self.INDENT_SPACES) + text)
+            self.output.append(self.format_with_indent(text, self._cond_indent))
         else:
             if self._queued:
                 self._flush_condition()
@@ -380,14 +352,14 @@ class HRW4UVisitor(hrw4uVisitor):
 
     def emit_statement(self, line: str):
         self._flush_condition()
-        self.output.append(" " * (self._stmt_indent * self.INDENT_SPACES) + line)
+        self.output.append(self.format_with_indent(line, self._stmt_indent))
 
     def emit_expression(self, ctx, *, nested: bool = False, last: bool = False, grouped: bool = False):
-        self._debug_enter("emit_expression")
+        self._dbg.enter("emit_expression")
         if ctx.OR():
-            self._debug("`OR' detected")
+            self._dbg("`OR' detected")
             if grouped:
-                self._debug("GROUP-START")
+                self._dbg("GROUP-START")
                 self.emit_condition("cond %{GROUP}", final=True)
                 self._cond_indent += 1
 
@@ -403,12 +375,12 @@ class HRW4UVisitor(hrw4uVisitor):
                 self.emit_condition("cond %{GROUP:END}")
         else:
             self.emit_term(ctx.term(), last=last)
-        self._debug_exit("emit_expression")
+        self._dbg.exit("emit_expression")
 
     def emit_term(self, ctx, *, last: bool = False):
-        self._debug_enter("emit_term")
+        self._dbg.enter("emit_term")
         if ctx.AND():
-            self._debug("`AND' detected")
+            self._dbg("`AND' detected")
             self.emit_term(ctx.term(), last=False)
             if self._queued:
                 self._queued.indent = self._cond_indent
@@ -417,63 +389,63 @@ class HRW4UVisitor(hrw4uVisitor):
             self.emit_factor(ctx.factor(), last=last)
         else:
             self.emit_factor(ctx.factor(), last=last)
-        self._debug_exit("emit_term")
+        self._dbg.exit("emit_term")
 
     def emit_factor(self, ctx, *, last: bool = False):
-        self._debug_enter("emit_factor")
+        self._dbg.enter("emit_factor")
         try:
-            if ctx.getChildCount() == 2 and ctx.getChild(0).getText() == "!":
-                self._debug("`NOT' detected")
-                self._cond_state.not_ = True
-                self.emit_factor(ctx.getChild(1), last=last)
+            match ctx:
+                case _ if ctx.getChildCount() == 2 and ctx.getChild(0).getText() == "!":
+                    self._dbg("`NOT' detected")
+                    self._cond_state.not_ = True
+                    self.emit_factor(ctx.getChild(1), last=last)
 
-            elif ctx.LPAREN():
-                self._debug("GROUP-START")
-                self.emit_condition("cond %{GROUP}", final=True)
-                self._cond_indent += 1
-                self.emit_expression(ctx.expression(), nested=False, last=True, grouped=True)
-                self._cond_indent -= 1
-                self._cond_state.last = last
-                self.emit_condition("cond %{GROUP:END}")
+                case _ if ctx.LPAREN():
+                    self._dbg("GROUP-START")
+                    self.emit_condition("cond %{GROUP}", final=True)
+                    self._cond_indent += 1
+                    self.emit_expression(ctx.expression(), nested=False, last=True, grouped=True)
+                    self._cond_indent -= 1
+                    self._cond_state.last = last
+                    self.emit_condition("cond %{GROUP:END}")
 
-            elif ctx.comparison():
-                self.visitComparison(ctx.comparison(), last=last)
+                case _ if ctx.comparison():
+                    self.visitComparison(ctx.comparison(), last=last)
 
-            elif ctx.functionCall():
-                cond = self._make_condition(self.visitFunctionCall(ctx.functionCall()), last=last)
-                self.emit_condition(cond)
+                case _ if ctx.functionCall():
+                    cond = self._make_condition(self.visitFunctionCall(ctx.functionCall()), last=last)
+                    self.emit_condition(cond)
 
-            elif ctx.TRUE():
-                self._debug("TRUE literal")
-                cond = self._make_condition("%{TRUE}", last=last)
-                self.emit_condition(cond)
+                case _ if ctx.TRUE():
+                    self._dbg("TRUE literal")
+                    cond = self._make_condition("%{TRUE}", last=last)
+                    self.emit_condition(cond)
 
-            elif ctx.FALSE():
-                self._debug("FALSE literal")
-                cond = self._make_condition("%{FALSE}", last=last)
-                self.emit_condition(cond)
+                case _ if ctx.FALSE():
+                    self._dbg("FALSE literal")
+                    cond = self._make_condition("%{FALSE}", last=last)
+                    self.emit_condition(cond)
 
-            elif ctx.ident:
-                name = ctx.ident.text
-                entry = self.symbol_resolver.symbol_for(name)
-                if entry:
-                    symbol = entry.as_cond()
-                    default_expr = False
-                else:
-                    symbol, default_expr = self.symbol_resolver.resolve_condition(name, self.current_section)
+                case _ if ctx.ident:
+                    name = ctx.ident.text
+                    if entry := self.symbol_resolver.symbol_for(name):
+                        symbol = entry.as_cond()
+                        default_expr = False
+                    else:
+                        symbol, default_expr = self.symbol_resolver.resolve_condition(name, self.current_section)
 
-                if default_expr:
-                    cond_txt = f"{symbol} =\"\""
-                    negate = not self._cond_state.not_
-                else:
-                    cond_txt = symbol
-                    negate = self._cond_state.not_
+                    if default_expr:
+                        cond_txt = f"{symbol} =\"\""
+                        negate = not self._cond_state.not_
+                    else:
+                        cond_txt = symbol
+                        negate = self._cond_state.not_
 
-                self._cond_state.not_ = False
-                self._debug(f"{'implicit' if default_expr else 'explicit'} comparison: {cond_txt} negate={negate}")
-                cond = self._make_condition(cond_txt, last=last, negate=negate)
-                self.emit_condition(cond)
+                    self._cond_state.not_ = False
+                    self._dbg(f"{'implicit' if default_expr else 'explicit'} comparison: {cond_txt} negate={negate}")
+                    cond = self._make_condition(cond_txt, last=last, negate=negate)
+                    self.emit_condition(cond)
 
         except Exception as e:
             raise hrw4u_error(self.filename, ctx, e)
-        self._debug_exit("emit_factor")
+        self._dbg.exit("emit_factor")

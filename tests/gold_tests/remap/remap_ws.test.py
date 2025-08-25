@@ -94,6 +94,10 @@ tr.StillRunningAfter = ts
 
 # Test metrics
 tr = Test.AddTestRun()
+if Condition.CurlUsingUnixDomainSocket():
+    metrics_gold_file = 'remap-ws-metrics-uds.gold'
+else:
+    metrics_gold_file = 'remap-ws-metrics.gold'
 tr.Processes.Default.Command = (
     f"{Test.Variables.AtsTestToolsDir}/stdout_wait" + " 'traffic_ctl metric get" +
     " proxy.process.http.total_incoming_connections" + " proxy.process.http.total_client_connections" +
@@ -108,7 +112,7 @@ tr.Processes.Default.Command = (
     " proxy.process.tunnel.current_client_connections_tls_partial_blind" +
     " proxy.process.tunnel.total_client_connections_tls_http" + " proxy.process.tunnel.current_client_connections_tls_http" +
     " proxy.process.tunnel.total_server_connections_tls" + " proxy.process.tunnel.current_server_connections_tls'" +
-    f" {Test.TestDirectory}/gold/remap-ws-metrics.gold")
+    f" {Test.TestDirectory}/gold/{metrics_gold_file}")
 # Need to copy over the environment so traffic_ctl knows where to find the unix domain socket
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.ReturnCode = 0

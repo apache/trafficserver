@@ -18,7 +18,7 @@
   limitations under the License.
 */
 
-#include <catch.hpp> /* catch unit-test framework */
+#include <catch2/catch_test_macros.hpp> /* catch unit-test framework */
 
 #include <tsutil/ts_bw_format.h>
 

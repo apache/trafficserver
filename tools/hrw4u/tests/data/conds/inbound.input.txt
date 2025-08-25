@@ -1,5 +1,5 @@
 SEND_RESPONSE {
-    if inbound.conn.TLS != "" {
+    if inbound.conn.TLS {
         inbound.resp.X-LOCAL-ADDR = "{inbound.conn.LOCAL-ADDR}";
         inbound.resp.X-LOCAL-PORT = "{inbound.conn.LOCAL-PORT}";
         inbound.resp.X-REMOTE-ADDR = "{inbound.conn.REMOTE-ADDR}";

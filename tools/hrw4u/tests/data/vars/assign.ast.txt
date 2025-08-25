@@ -1,1 +1,1 @@
-(program (section (varSection VARS { (variables (variableDecl foo : bool ;) (variableDecl bar : bool ;)) })) (section REMAP { (sectionBody (statement bar = (value foo) ;)) }) <EOF>)
+(program (section (varSection VARS { (variables (variableDecl bool_0 : bool ;) (variableDecl bool_1 : bool ;)) })) (section REMAP { (sectionBody (statement bool_1 = (value bool_0) ;)) }) <EOF>)

@@ -158,7 +158,7 @@ Converting a file with a detailed output.
     ├──» #5 : proxy.config.ssl.TLSv1_3 -> proxy.config.ssl.TLSv1_3.enabled
     ├──» #6 : proxy.config.ssl.client.TLSv1_3 -> proxy.config.ssl.client.TLSv1_3.enabled
     ├──» #7 : proxy.config.ssl.origin_session_cache -> proxy.config.ssl.origin_session_cache.enabled
-    └──» #8 : proxy.config.ssl.session_cache -> proxy.config.ssl.session_cache.value
+    └──» #8 : proxy.config.ssl.session_cache -> proxy.config.ssl.session_cache.mode
 
 
 There are a few things to note here:

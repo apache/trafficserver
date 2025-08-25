@@ -79,16 +79,17 @@ do_read_response()
 
 do_send_response()
 {
-  borrow resp = cripts::Client::Response::Get();
-  borrow conn = cripts::Client::Connection::Get();
-  string msg  = "Eliminate TSCPP";
+  borrow resp   = cripts::Client::Response::Get();
+  borrow conn   = cripts::Client::Connection::Get();
+  borrow cached = cripts::Cache::Response::Get();
+  string msg    = "Eliminate TSCPP";
 
   resp["Server"]         = "";        // Deletes the Server header
   resp["X-AMC"]          = msg;       // New header
   resp["Cache-Control"]  = "Private"; // Deletes old CC values, and sets a new one
   resp["X-UUID"]         = cripts::UUID::Unique::Get();
   resp["X-tcpinfo"]      = conn.tcpinfo.Log();
-  resp["X-Cache-Status"] = resp.cache;
+  resp["X-Cache-Status"] = cached.lookupstatus.GetSV();
   resp["X-Integer"]      = 666;
   resp["X-Data"]         = AsString(txn_data[2]);
 

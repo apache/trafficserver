@@ -28,7 +28,6 @@
 namespace
 {
 constexpr std::string_view DefaultSliceSkipHeader = {"X-Slicer-Info"};
-constexpr std::string_view DefaultCrrImsHeader    = {"X-Crr-Ims"};
 constexpr std::string_view DefaultCrrIdentHeader  = {"X-Crr-Ident"};
 } // namespace
 
@@ -114,7 +113,6 @@ Config::fromArgs(int const argc, char const *const argv[])
   // standard parsing
   constexpr struct option longopts[] = {
     {const_cast<char *>("blockbytes"),           required_argument, nullptr, 'b'},
-    {const_cast<char *>("crr-ims-header"),       required_argument, nullptr, 'c'},
     {const_cast<char *>("disable-errorlog"),     no_argument,       nullptr, 'd'},
     {const_cast<char *>("exclude-regex"),        required_argument, nullptr, 'e'},
     {const_cast<char *>("crr-ident-header"),     required_argument, nullptr, 'g'},
@@ -135,7 +133,7 @@ Config::fromArgs(int const argc, char const *const argv[])
   // getopt assumes args start at '1' so this hack is needed
   char *const *argvp = (const_cast<char *const *>(argv) - 1);
   for (;;) {
-    int const opt = getopt_long(argc + 1, argvp, "b:dc:e:g:i:lm:p:r:s:t:x:z:", longopts, nullptr);
+    int const opt = getopt_long(argc + 1, argvp, "b:de:g:i:lm:p:r:s:t:x:z:", longopts, nullptr);
     if (-1 == opt) {
       break;
     }
@@ -151,10 +149,6 @@ Config::fromArgs(int const argc, char const *const argv[])
       } else {
         ERROR_LOG("Invalid blockbytes: %s", optarg);
       }
-    } break;
-    case 'c': {
-      m_crr_ims_header.assign(optarg);
-      DEBUG_LOG("Using override crr ims header %s", optarg);
     } break;
     case 'd': {
       m_paceerrsecs = -1;
@@ -279,10 +273,6 @@ Config::fromArgs(int const argc, char const *const argv[])
     DEBUG_LOG("Block stitching error logs enabled");
   } else {
     DEBUG_LOG("Block stitching error logs at most every %d sec(s)", m_paceerrsecs);
-  }
-  if (m_crr_ims_header.empty()) {
-    m_crr_ims_header = DefaultCrrImsHeader;
-    DEBUG_LOG("Using default crr ims header %s", m_crr_ims_header.c_str());
   }
   if (m_crr_ident_header.empty()) {
     m_crr_ident_header = DefaultCrrIdentHeader;

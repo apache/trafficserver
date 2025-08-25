@@ -124,3 +124,28 @@ sessions:
         - [ X-Response, fourth ]
       content:
         size: 320000
+
+  # HEAD request response for escalated requests (with --escalate-non-get-methods)
+  - client-request:
+      method: "HEAD"
+      version: "1.1"
+      url: /api/head/data
+      headers:
+        fields:
+        - [ Host, origin.server.com ]
+        - [ X-Request, head_fail_escalated ]
+        - [ uuid, HEAD_fail_escalated ]
+
+    proxy-request:
+      method: "HEAD"
+      headers:
+        fields:
+        - [ X-Request, { value: head_fail_escalated, as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+        - [ X-Response, head_fail_escalated ]

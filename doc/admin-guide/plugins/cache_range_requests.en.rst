@@ -112,37 +112,6 @@ which includes information about the partial content range.  In this mode,
 all requests (include partial content) will use consistent hashing method
 for parent selection.
 
-X-Crr-Ims header support
-------------------------
-
-.. option:: --consider-ims
-.. option:: -c
-.. option:: --ims-header=[header name] (default: X-Crr-Ims)
-.. option:: -i
-
-To support slice plugin self healing an option to force revalidation
-after cache lookup complete was added.  This option is triggered by a
-special header:
-
-.. code::
-
-    X-Crr-Ims: Tue, 19 Nov 2019 13:26:45 GMT
-
-When this header is provided and a `cache hit fresh` is encountered the
-``Date`` header of the object in cache is compared to this header date
-value.  If the cache date is *less* than this IMS date then the object
-is marked as STALE and an appropriate If-Modified-Since or If-Match
-request along with this X-Crr-Ims header is passed up to the parent.
-
-In order for this to properly work in a CDN each cache in the
-chain *SHOULD* also contain a remap rule with the
-:program:`cache_range_requests` plugin with this option set.
-
-When used with the :program:`slice` plugin its `--crr-ims-header`
-option must have the same value (or not be defined) in order to work.
-
-Presence of the `--ims-header` automatically sets the `--consider-ims` option.
-
 X-Crr-Ident header support
 --------------------------
 
@@ -158,13 +127,29 @@ to this header.
 
 .. code::
 
-    X-Crr-Ident: Etag: "foo"
-    X-Crr-Ident: Last-Modified: Tue, 19 Nov 2019 13:26:45 GMT
+    X-Crr-Ident: Etag "foo"
+    X-Crr-Ident: Last-Modified Tue, 19 Nov 2019 13:26:45 GMT
+    X-Crr-Ident: Stale
 
-During the cache lookup hook if a range request is considered STALE
-the identifier from this header will be compared to the stale cache
-identifier. If the values match the response will be changed to FRESH,
-preventing the transaction from contacting a parent.
+During the cache lookup hook the identifer is used in the following ways:
+
+If a range request cache lookup is considered STALE the identifier from
+this header will be compared to the stale cache identifier. If the values
+match the response will be changed to FRESH, preventing the transaction
+from contacting a parent.
+
+If a range request cache lookup is considered FRESH the identifier from
+this header will be compared to the stale cache identifier. If the values
+do not match the transaction will be changed to STALE, resulting in an
+IMS check being sent to the parent cache.
+
+A FRESH to STALE cache lookup state may be forced by the "Stale"
+identifier tag.  This is used by the slice plugin when an interior
+range request returns a 404 indicating that the asset has been removed
+at the origin.
+
+Based on RFC7232 and ATS internals if present the ETag header is evaluated
+first, followed by the Last-Modified header.
 
 When used with the :program:`slice` plugin its `--crr-ident-header`
 option must have the same value (or not be defined) in order to work.

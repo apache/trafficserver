@@ -68,12 +68,11 @@ ts.Disk.remap_config.AddLines(
     [
         f'map http://slice/ http://127.0.0.1:{server.Variables.Port}/' +
         ' @plugin=slice.so @pparam=--blockbytes-test=3 @pparam=--remap-host=crr',
-        f'map http://crr/ http://127.0.0.1:{server.Variables.Port}/' +
-        '  @plugin=cache_range_requests.so @pparam=--consider-ims @pparam=--consider-ident',
+        f'map http://crr/ http://127.0.0.1:{server.Variables.Port}/' + '  @plugin=cache_range_requests.so @pparam=--consider-ident',
         f'map http://slicehdr/ http://127.0.0.1:{server.Variables.Port}/' + ' @plugin=slice.so @pparam=--blockbytes-test=3' +
-        ' @pparam=--remap-host=crrhdr @pparam=--crr-ims-header=crr-foo',
+        ' @pparam=--remap-host=crrhdr @pparam=--crr-ident-header=crr-foo',
         f'map http://crrhdr/ http://127.0.0.1:{server.Variables.Port}/'
-        '  @plugin=cache_range_requests.so @pparam=--ims-header=crr-foo',
+        '  @plugin=cache_range_requests.so @pparam=--ident-header=crr-foo',
     ])
 
 ts.Disk.plugin_config.AddLine('xdebug.so --enable=x-cache')
@@ -239,7 +238,7 @@ ps.Streams.stderr = "gold/aaa.gold"
 ps.Streams.stdout.Content = Testers.ContainsExpression("etagold", "expected etagold")
 tr.StillRunningAfter = ts
 
-# 5 Test - Preload reference etagnew-1
+# 5 Test - Preload slice 1 etagnew-1
 tr = Test.AddTestRun("Preload slice etagnew-1")
 ps = tr.Processes.Default
 tr.MakeCurlCommand(curl_and_args + ' http://crr/reference -r 3-5 -H "uuid: etagnew-1"', ts=ts)

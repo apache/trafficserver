@@ -15,59 +15,135 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+
 BUILD_DIR:=build
 DIST_DIR:=dist
-PKG_DIR:=$(BUILD_DIR)/hrw4u
+
+# Separate package dirs for forward (hrw4u) and inverse (u4wrh)
+PKG_DIR_HRW4U:=$(BUILD_DIR)/hrw4u
+PKG_DIR_U4WRH:=$(BUILD_DIR)/u4wrh
+
 VENV_NAME:=hrw4u
 ANTLR=antlr
 
-# Source files
-SCRIPT_FILE=scripts/hrw4u
+# Scripts (each becomes the package __main__.py)
+SCRIPT_HRW4U=scripts/hrw4u
+SCRIPT_U4WRH=scripts/u4wrh
 
-SRC_FILES=src/visitor.py \
-          src/symbols.py \
-          src/validation.py \
-          src/errors.py \
-          src/states.py \
-          src/types.py
-GRAMMAR_FILE=grammar/hrw4u.g4
+# Shared source files for hrw4u (forward)
+SRC_FILES_HRW4U=src/visitor.py \
+	src/symbols.py \
+	src/tables.py \
+	src/validation.py \
+	src/errors.py \
+	src/states.py \
+	src/types.py \
+	src/debugging.py \
+	src/common.py \
+	src/script_common.py
 
-ANTLR_FILES=$(PKG_DIR)/hrw4uLexer.py \
-            $(PKG_DIR)/hrw4uParser.py \
-            $(PKG_DIR)/hrw4uVisitor.py \
-            $(PKG_DIR)/hrw4u.interp \
-            $(PKG_DIR)/hrw4u.tokens \
-            $(PKG_DIR)/hrw4uLexer.tokens
+# Inverse helper sources for u4wrh (actual files you have)
+INVERSE_SRC_FILES_U4WRH=src/hrw_visitor.py \
+	src/hrw_symbols.py \
+	src/common.py \
+	src/errors.py \
+	src/validation.py \
+	src/states.py \
+	src/types.py \
+	src/debugging.py \
+	src/tables.py \
+	src/script_common.py
 
-COPIED_SRC_FILES=$(patsubst src/%, $(PKG_DIR)/%, $(SRC_FILES))
+# Grammars (forward + inverse)
+GRAMMAR_FWD=grammar/hrw4u.g4
+GRAMMAR_INV=grammar/u4wrh.g4
 
-.PHONY: all gen test clean build package env setup-deps activate update
+# ANTLR outputs (forward -> build/hrw4u, inverse -> build/u4wrh)
+ANTLR_FILES_FWD=$(PKG_DIR_HRW4U)/hrw4uLexer.py \
+	$(PKG_DIR_HRW4U)/hrw4uParser.py \
+	$(PKG_DIR_HRW4U)/hrw4uVisitor.py \
+	$(PKG_DIR_HRW4U)/hrw4u.interp \
+	$(PKG_DIR_HRW4U)/hrw4u.tokens \
+	$(PKG_DIR_HRW4U)/hrw4uLexer.tokens
+
+ANTLR_FILES_INV=$(PKG_DIR_U4WRH)/u4wrhLexer.py \
+	$(PKG_DIR_U4WRH)/u4wrhParser.py \
+	$(PKG_DIR_U4WRH)/u4wrhVisitor.py \
+	$(PKG_DIR_U4WRH)/u4wrh.interp \
+	$(PKG_DIR_U4WRH)/u4wrh.tokens \
+	$(PKG_DIR_U4WRH)/u4wrhLexer.tokens
+
+# Copy maps
+COPIED_SRC_FILES_HRW4U=$(patsubst src/%, $(PKG_DIR_HRW4U)/%, $(SRC_FILES_HRW4U))
+COPIED_INV_FILES_U4WRH=$(patsubst src/%, $(PKG_DIR_U4WRH)/%, $(INVERSE_SRC_FILES_U4WRH))
+
+# Main entry point files
+MAIN_HRW4U=$(PKG_DIR_HRW4U)/__main__.py
+MAIN_U4WRH=$(PKG_DIR_U4WRH)/__main__.py
+INIT_HRW4U=$(PKG_DIR_HRW4U)/__init__.py
+INIT_U4WRH=$(PKG_DIR_U4WRH)/__init__.py
+
+.PHONY: all gen gen-fwd gen-inv copy-src test clean build package env setup-deps activate update
 
 all: gen
 
-copy-src: $(COPIED_SRC_FILES)
+# Orchestrate generation then copy sources and drop __main__.py in each package
+gen: gen-fwd gen-inv copy-src $(MAIN_HRW4U) $(MAIN_U4WRH) $(INIT_HRW4U) $(INIT_U4WRH)
 
-$(PKG_DIR)/%: src/%
-	@mkdir -p $(PKG_DIR)
+# Create __main__.py files only when scripts change
+$(MAIN_HRW4U): $(SCRIPT_HRW4U)
+	@mkdir -p $(PKG_DIR_HRW4U)
 	cp $< $@
 
-gen: $(ANTLR_FILES) copy-src
+$(MAIN_U4WRH): $(SCRIPT_U4WRH)
+	@mkdir -p $(PKG_DIR_U4WRH)
+	cp $< $@
 
-$(ANTLR_FILES): $(GRAMMAR_FILE)
-	@mkdir -p $(PKG_DIR)
-	cd grammar && $(ANTLR) -Dlanguage=Python3 -visitor -no-listener -o ../$(PKG_DIR) hrw4u.g4
-	cp $(SRC_FILES) $(PKG_DIR)
-	cp $(SCRIPT_FILE) $(PKG_DIR)/__main__.py
-	touch $(PKG_DIR)/__init__.py
+# Create __init__.py files only when package directories are created
+$(INIT_HRW4U): | $(PKG_DIR_HRW4U)
+	touch $@
+
+$(INIT_U4WRH): | $(PKG_DIR_U4WRH)
+	touch $@
+
+# Generate forward parser/lexer into build/hrw4u
+gen-fwd: $(ANTLR_FILES_FWD)
+
+$(ANTLR_FILES_FWD): $(GRAMMAR_FWD)
+	@mkdir -p $(PKG_DIR_HRW4U)
+	cd grammar && $(ANTLR) -Dlanguage=Python3 -visitor -no-listener -o ../$(PKG_DIR_HRW4U) hrw4u.g4
+
+# Generate inverse parser/lexer into build/u4wrh
+gen-inv: $(ANTLR_FILES_INV)
+
+$(ANTLR_FILES_INV): $(GRAMMAR_INV)
+	@mkdir -p $(PKG_DIR_U4WRH)
+	cd grammar && $(ANTLR) -Dlanguage=Python3 -visitor -no-listener -o ../$(PKG_DIR_U4WRH) u4wrh.g4
+
+# Copy Python sources into their respective package dirs
+copy-src: $(COPIED_SRC_FILES_HRW4U) $(COPIED_INV_FILES_U4WRH)
+
+# Pattern rules for copying
+$(PKG_DIR_HRW4U)/%: src/%
+	@mkdir -p $(PKG_DIR_HRW4U)
+	cp $< $@
+
+# Inverse files currently live directly under src/, map them into build/u4wrh/
+$(PKG_DIR_U4WRH)/%: src/%
+	@mkdir -p $(PKG_DIR_U4WRH)
+	cp $< $@
 
 test:
 	pytest --tb=short tests
 
+# Build standalone binaries (optional)
 build: gen
-	pyinstaller --onefile --name hrw4u --strip scripts/hrw4u
+	pyinstaller --onefile --name hrw4u --strip $(SCRIPT_HRW4U)
+	pyinstaller --onefile --name u4wrh --strip $(SCRIPT_U4WRH)
 
+# Wheel packaging (adjust pyproject to include both packages if desired)
 package: gen
-	@echo "==> Building pip package for $(hrw4u)..."
+	@echo "==> Building pip package(s)..."
 	python3 -m build --wheel --outdir $(DIST_DIR)
 
 clean:
