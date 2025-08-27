@@ -345,7 +345,7 @@ class OperatorHoverProvider:
             if "method" in doc.LSP_METHOD_DOCUMENTATION:
                 method_doc = doc.LSP_METHOD_DOCUMENTATION["method"]
                 description = (
-                    f"**{operator}** - HTTP Request Method\n\n"
+                    f"**{operator}** - {method_doc.name}\n\n"
                     f"**Description:** {method_doc.description}\n\n"
                     f"**Usage:** {method_doc.usage}")
 
@@ -365,11 +365,19 @@ class OperatorHoverProvider:
                 f"**Example:** `{operator}.host` for the hostname portion of the URL.")
 
         # Special handling for inbound/outbound header contexts
-        if operator in doc.LSP_HEADER_CONTEXTS:
-            context_info = doc.LSP_HEADER_CONTEXTS[operator]
-            return HoverInfoProvider.create_hover_info(
-                f"**{operator}** - HRW4U Header Context\n\n" + f"**Context:** {context_info['name']}\n\n" +
-                f"{context_info['description']}\n\n" + f"Headers starting with '@' are ATS internal headers.")
+        # Check if we have comprehensive sub-namespace documentation for this pattern
+        if operator in doc.LSP_SUB_NAMESPACE_DOCUMENTATION:
+            sub_namespace_doc = doc.LSP_SUB_NAMESPACE_DOCUMENTATION[operator]
+            sections = [
+                f"**{operator}** - {sub_namespace_doc.name}", "", f"**Context:** {sub_namespace_doc.context}", "",
+                f"**Description:** {sub_namespace_doc.description}", "",
+                f"**Available items:** {', '.join(sub_namespace_doc.available_items)}", "", f"**Usage:** {sub_namespace_doc.usage}"
+            ]
+            if sub_namespace_doc.examples:
+                sections.extend(["", "**Examples:**"])
+                for example in sub_namespace_doc.examples:
+                    sections.append(f"```hrw4u\n{example}\n```")
+            return HoverInfoProvider.create_hover_info("\n".join(sections))
 
         # Check exact matches first
         if operator in OPERATOR_MAP:
@@ -425,7 +433,61 @@ class OperatorHoverProvider:
                     f"**{operator}** - HRW4U Condition\n\n" + f"**Base:** `{key}`\n" + f"**Suffix:** `{suffix}`\n" +
                     f"**Maps to:** `{tag}`{section_info}")
 
+        # Handle namespace prefixes with comprehensive documentation as fallback
+        namespace_info = OperatorHoverProvider._get_namespace_hover_info(operator)
+        if namespace_info:
+            return namespace_info
+
         return HoverInfoProvider.create_hover_info(f"**{operator}** - HRW4U symbol")
+
+    @staticmethod
+    def _get_namespace_hover_info(operator: str) -> Dict[str, Any] | None:
+        """Get comprehensive hover info for namespace prefixes using centralized documentation."""
+        # Strip trailing dot for namespace lookup (handles cases like "inbound." -> "inbound")
+        namespace_key = operator.rstrip('.')
+
+        # First check for sub-namespace patterns (e.g., "inbound.conn", "outbound.req")
+        if namespace_key in doc.LSP_SUB_NAMESPACE_DOCUMENTATION:
+            sub_namespace_doc = doc.LSP_SUB_NAMESPACE_DOCUMENTATION[namespace_key]
+
+            # Build the hover content from the sub-namespace documentation
+            sections = [
+                f"**{namespace_key}** - {sub_namespace_doc.name}", "", f"**Context:** {sub_namespace_doc.context}", "",
+                f"**Description:** {sub_namespace_doc.description}", "",
+                f"**Available items:** {', '.join(sub_namespace_doc.available_items)}", "", f"**Usage:** {sub_namespace_doc.usage}"
+            ]
+
+            if sub_namespace_doc.examples:
+                sections.extend(["", "**Examples:**"])
+                for example in sub_namespace_doc.examples:
+                    sections.append(f"```hrw4u\n{example}\n```")
+
+            return HoverInfoProvider.create_hover_info("\n".join(sections))
+
+        # For single-part namespace documentation, show it unless it's a known condition that should
+        # take precedence (like standalone "now" in conditional contexts)
+        # This allows namespace documentation for "geo", "id", etc. while preserving condition behavior
+        pass  # No additional filtering - let the fallback logic in get_operator_hover_info handle it
+
+        # Fall back to single-part namespace documentation
+        if namespace_key not in doc.LSP_NAMESPACE_DOCUMENTATION:
+            return None
+
+        namespace_doc = doc.LSP_NAMESPACE_DOCUMENTATION[namespace_key]
+
+        # Build the hover content from the centralized documentation
+        sections = [
+            f"**{namespace_key}** - {namespace_doc.name}", "", f"**Context:** {namespace_doc.context}", "",
+            f"**Description:** {namespace_doc.description}", "", f"**Available items:** {', '.join(namespace_doc.available_items)}",
+            "", f"**Usage:** {namespace_doc.usage}"
+        ]
+
+        if namespace_doc.examples:
+            sections.extend(["", "**Examples:**"])
+            for example in namespace_doc.examples:
+                sections.append(f"```hrw4u\n{example}\n```")
+
+        return HoverInfoProvider.create_hover_info("\n".join(sections))
 
 
 class RegexHoverProvider:

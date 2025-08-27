@@ -30,20 +30,24 @@ from hrw4u.types import SuffixGroup
 
 
 @dataclass(slots=True, frozen=True)
-class FieldInfo:
-    """Represents information about a field for LSP hover and completion."""
+class DocumentationInfo:
+    """Unified documentation structure for all HRW4U language elements."""
     name: str
     description: str
-    maps_to: str | None = None
-    usage: str = "Used in expression evaluation."
     context: str | None = None
+    usage: str = "Used in expression evaluation."
+    maps_to: str | None = None
+    available_items: list[str] | None = None
+    examples: list[str] | None = None
+    default_value: str | None = None
+    possible_values: list[str] | None = None
 
     def create_hover_markdown(self, expression: str, is_interpolation: bool = False) -> str:
-        """Create standardized hover markdown for this field."""
+        """Create standardized hover markdown for this documentation."""
         prefix = f"**{{{expression}}}**" if is_interpolation else f"**{expression}**"
-        suffix = "Interpolation" if is_interpolation else ""
+        suffix = " Interpolation" if is_interpolation else ""
 
-        sections = [f"{prefix} - {self.name} {suffix}".rstrip()]
+        sections = [f"{prefix} - {self.name}{suffix}"]
 
         if self.context:
             sections.extend(["", f"**Context:** {self.context}"])
@@ -53,9 +57,27 @@ class FieldInfo:
         if self.maps_to:
             sections.extend(["", f"**Maps to:** `{self.maps_to}`"])
 
-        sections.extend(["", self.usage])
+        if self.available_items:
+            sections.extend(["", f"**Available items:** {', '.join(self.available_items)}"])
+
+        if self.default_value:
+            sections.extend(["", f"**Default Value:** `{self.default_value}`"])
+
+        if self.possible_values:
+            sections.extend(["", f"**Possible Values:** {', '.join(self.possible_values)}"])
+
+        sections.extend(["", f"**Usage:** {self.usage}"])
+
+        if self.examples:
+            sections.extend(["", "**Examples:**"])
+            for example in self.examples:
+                sections.append(f"```hrw4u\n{example}\n```")
 
         return "\n".join(sections)
+
+
+# Legacy alias for backward compatibility
+FieldInfo = DocumentationInfo
 
 
 @dataclass(slots=True, frozen=True)
@@ -290,21 +312,9 @@ CONN_FIELDS: Final[dict[str, FieldInfo]] = {
             'Used for advanced traffic shaping and firewall integration.')
 }
 
-
-@dataclass(slots=True, frozen=True)
-class ConnectionDoc:
-    """Documentation for connection fields."""
-    name: str
-    description: str
-    maps_to: str
-    context: str
-    usage: str
-    examples: list[str] | None = None
-
-
-LSP_CONNECTION_DOCUMENTATION: Final[dict[str, ConnectionDoc]] = {
+LSP_CONNECTION_DOCUMENTATION: Final[dict[str, DocumentationInfo]] = {
     "TLS":
-        ConnectionDoc(
+        DocumentationInfo(
             name="TLS Protocol",
             description="The TLS protocol version if the connection is over TLS, otherwise empty string.",
             maps_to="%{INBOUND:TLS}",
@@ -314,7 +324,7 @@ LSP_CONNECTION_DOCUMENTATION: Final[dict[str, ConnectionDoc]] = {
                 "if inbound.conn.TLS {\n    // Handle TLS connection\n}", "inbound.conn.TLS != \"\" && inbound.method == \"GET\""
             ]),
     "H2":
-        ConnectionDoc(
+        DocumentationInfo(
             name="HTTP/2 Protocol",
             description="The string 'h2' if the connection is HTTP/2, otherwise empty string.",
             maps_to="%{INBOUND:H2}",
@@ -322,7 +332,7 @@ LSP_CONNECTION_DOCUMENTATION: Final[dict[str, ConnectionDoc]] = {
             usage="Used to detect HTTP/2 connections and apply protocol-specific handling.",
             examples=["if inbound.conn.H2 {\n    // Handle HTTP/2 connection\n}", "inbound.conn.H2 == \"h2\""]),
     "IPV4":
-        ConnectionDoc(
+        DocumentationInfo(
             name="IPv4 Connection",
             description="The string 'ipv4' if the connection is IPv4, otherwise empty string.",
             maps_to="%{INBOUND:IPV4}",
@@ -330,7 +340,7 @@ LSP_CONNECTION_DOCUMENTATION: Final[dict[str, ConnectionDoc]] = {
             usage="Used to detect IPv4 connections for version-specific processing.",
             examples=["if inbound.conn.IPV4 {\n    // Handle IPv4 connection\n}"]),
     "IPV6":
-        ConnectionDoc(
+        DocumentationInfo(
             name="IPv6 Connection",
             description="The string 'ipv6' if the connection is IPv6, otherwise empty string.",
             maps_to="%{INBOUND:IPV6}",
@@ -338,7 +348,7 @@ LSP_CONNECTION_DOCUMENTATION: Final[dict[str, ConnectionDoc]] = {
             usage="Used to detect IPv6 connections for version-specific processing.",
             examples=["if inbound.conn.IPV6 {\n    // Handle IPv6 connection\n}"]),
     "IP-FAMILY":
-        ConnectionDoc(
+        DocumentationInfo(
             name="IP Address Family",
             description="The IP family: either 'ipv4' or 'ipv6'.",
             maps_to="%{INBOUND:IP-FAMILY}",
@@ -346,7 +356,7 @@ LSP_CONNECTION_DOCUMENTATION: Final[dict[str, ConnectionDoc]] = {
             usage="Used to determine the IP version family for network routing decisions.",
             examples=["if inbound.conn.IP-FAMILY == \"ipv6\" {\n    // IPv6-specific handling\n}"]),
     "STACK":
-        ConnectionDoc(
+        DocumentationInfo(
             name="Protocol Stack",
             description="The full protocol stack separated by commas (e.g., 'ipv4,tcp,tls,h2').",
             maps_to="%{INBOUND:STACK}",
@@ -354,7 +364,7 @@ LSP_CONNECTION_DOCUMENTATION: Final[dict[str, ConnectionDoc]] = {
             usage="Used for comprehensive protocol analysis and debugging.",
             examples=["if inbound.conn.STACK ~ /tls/ {\n    // TLS is in the stack\n}"]),
     "LOCAL-ADDR":
-        ConnectionDoc(
+        DocumentationInfo(
             name="Local Address",
             description="The local (ATS) IP address for the connection.",
             maps_to="%{INBOUND:LOCAL-ADDR}",
@@ -362,7 +372,7 @@ LSP_CONNECTION_DOCUMENTATION: Final[dict[str, ConnectionDoc]] = {
             usage="Used for multi-homed server configurations and routing decisions.",
             examples=["inbound.resp.X-Server-IP = \"{inbound.conn.LOCAL-ADDR}\""]),
     "LOCAL-PORT":
-        ConnectionDoc(
+        DocumentationInfo(
             name="Local Port",
             description="The local (ATS) port number for the connection.",
             maps_to="%{INBOUND:LOCAL-PORT}",
@@ -370,7 +380,7 @@ LSP_CONNECTION_DOCUMENTATION: Final[dict[str, ConnectionDoc]] = {
             usage="Used for port-based routing and service identification.",
             examples=["if inbound.conn.LOCAL-PORT == 8080 {\n    // Handle specific port\n}"]),
     "REMOTE-ADDR":
-        ConnectionDoc(
+        DocumentationInfo(
             name="Remote Address",
             description="The client IP address for the connection.",
             maps_to="%{INBOUND:REMOTE-ADDR}",
@@ -378,7 +388,7 @@ LSP_CONNECTION_DOCUMENTATION: Final[dict[str, ConnectionDoc]] = {
             usage="Used for client identification, access control, and geographic routing.",
             examples=["inbound.resp.X-Client-IP = \"{inbound.conn.REMOTE-ADDR}\""]),
     "REMOTE-PORT":
-        ConnectionDoc(
+        DocumentationInfo(
             name="Remote Port",
             description="The client port number for the connection.",
             maps_to="%{INBOUND:REMOTE-PORT}",
@@ -386,16 +396,6 @@ LSP_CONNECTION_DOCUMENTATION: Final[dict[str, ConnectionDoc]] = {
             usage="Used for client connection analysis and debugging.",
             examples=["if inbound.conn.REMOTE-PORT > 1024 {\n    // Non-privileged port\n}"])
 }
-
-
-@dataclass(slots=True, frozen=True)
-class CertificateDoc:
-    """Documentation for certificate fields."""
-    name: str
-    description: str
-    context: str
-    usage: str
-    examples: list[str] | None = None
 
 
 def _build_certificate_field_description(cert_type: str) -> str:
@@ -412,9 +412,9 @@ def _build_certificate_field_description(cert_type: str) -> str:
     return f"{base_desc} {field_desc}"
 
 
-LSP_CERTIFICATE_DOCUMENTATION: Final[dict[str, CertificateDoc]] = {
+LSP_CERTIFICATE_DOCUMENTATION: Final[dict[str, DocumentationInfo]] = {
     "client-cert":
-        CertificateDoc(
+        DocumentationInfo(
             name="Client Certificate",
             description=_build_certificate_field_description("client"),
             context="X.509 Client Certificate",
@@ -424,7 +424,7 @@ LSP_CERTIFICATE_DOCUMENTATION: Final[dict[str, CertificateDoc]] = {
                 "inbound.resp.X-Client-Cert = \"{inbound.conn.client-cert.SERIAL}\""
             ]),
     "server-cert":
-        CertificateDoc(
+        DocumentationInfo(
             name="Server Certificate",
             description=_build_certificate_field_description("server"),
             context="X.509 Server Certificate",
@@ -620,18 +620,12 @@ class CapturePattern:
         return result
 
 
-@dataclass(slots=True, frozen=True)
-class MethodDoc:
-    """Documentation for HTTP methods."""
-    description: str
-    usage: str
-    examples: list[str] | None = None
-
-
-LSP_METHOD_DOCUMENTATION: Final[dict[str, MethodDoc]] = {
+LSP_METHOD_DOCUMENTATION: Final[dict[str, DocumentationInfo]] = {
     "method":
-        MethodDoc(
+        DocumentationInfo(
+            name="HTTP Request Method",
             description="The HTTP method (verb) used by the client for this request. Common methods include GET (retrieve data), POST (submit data), PUT (update resource), DELETE (remove resource), HEAD (get headers only), OPTIONS (check capabilities), PATCH (partial update), CONNECT (establish tunnel), and TRACE (diagnostic loopback).",
+            context="HTTP Request Method",
             usage="Used for method-based routing, access control, HTTP semantics enforcement, and RESTful API handling. Essential for implementing proper HTTP behavior and security policies.",
             examples=[
                 "if inbound.method == \"POST\" {\n    // Handle data submission\n}",
@@ -641,21 +635,10 @@ LSP_METHOD_DOCUMENTATION: Final[dict[str, MethodDoc]] = {
             ])
 }
 
-
 # Cookie field documentation
-@dataclass(slots=True, frozen=True)
-class CookieDoc:
-    """Documentation for cookie access patterns."""
-    name: str
-    description: str
-    context: str
-    usage: str
-    examples: list[str] | None = None
-
-
-LSP_COOKIE_DOCUMENTATION: Final[dict[str, CookieDoc]] = {
+LSP_COOKIE_DOCUMENTATION: Final[dict[str, DocumentationInfo]] = {
     "inbound.cookie":
-        CookieDoc(
+        DocumentationInfo(
             name="Inbound Request Cookies",
             description="Access to HTTP cookies sent by the client in the request. Cookies are key-value pairs used for session management, user preferences, authentication tokens, and client state tracking. Each cookie can be accessed by name (e.g., inbound.cookie.sessionid).",
             context="Client Request Cookie Access",
@@ -666,7 +649,7 @@ LSP_COOKIE_DOCUMENTATION: Final[dict[str, CookieDoc]] = {
                 "if inbound.cookie.consent == \"accepted\" {\n    // User accepted cookies\n}"
             ]),
     "outbound.cookie":
-        CookieDoc(
+        DocumentationInfo(
             name="Outbound Response Cookies",
             description="Set HTTP cookies in the response that will be sent to the client. These cookies will be stored by the client's browser and sent back in future requests. Use for session management, user preferences, and client state.",
             context="Server Response Cookie Setting",
@@ -679,16 +662,7 @@ LSP_COOKIE_DOCUMENTATION: Final[dict[str, CookieDoc]] = {
             ])
 }
 
-
-# Regular Expression documentation
-@dataclass(slots=True, frozen=True)
-class RegexDoc:
-    """Documentation for regular expression patterns."""
-    pattern: str
-    flags: str
-    description: str
-    usage: str
-    examples: list[str] | None = None
+# Regular Expression documentation - no longer used as a dataclass
 
 
 class RegexPattern:
@@ -816,18 +790,12 @@ class RegexPattern:
         return "\n".join(doc_parts)
 
 
-@dataclass(slots=True, frozen=True)
-class StatusDoc:
-    """Documentation for HTTP status codes."""
-    description: str
-    usage: str
-    examples: list[str] | None = None
-
-
-LSP_STATUS_DOCUMENTATION: Final[dict[str, StatusDoc]] = {
+LSP_STATUS_DOCUMENTATION: Final[dict[str, DocumentationInfo]] = {
     "status":
-        StatusDoc(
+        DocumentationInfo(
+            name="HTTP Status Code",
             description="The HTTP status code of the response (200, 404, 500, etc.). Can be used for both inbound and outbound contexts.",
+            context="HTTP Response Status",
             usage="Used for status-based routing, error handling, and response transformation.",
             examples=[
                 "if outbound.status >= 400 {\n    // Handle error response\n}",
@@ -835,20 +803,12 @@ LSP_STATUS_DOCUMENTATION: Final[dict[str, StatusDoc]] = {
             ])
 }
 
-
-@dataclass(slots=True, frozen=True)
-class CacheDoc:
-    """Documentation for cache status."""
-    description: str
-    usage: str
-    possible_values: list[str]
-    examples: list[str] | None = None
-
-
-LSP_CACHE_DOCUMENTATION: Final[dict[str, CacheDoc]] = {
+LSP_CACHE_DOCUMENTATION: Final[dict[str, DocumentationInfo]] = {
     "cache":
-        CacheDoc(
+        DocumentationInfo(
+            name="Cache Status Function",
             description="The cache lookup result status indicating whether the requested object was found in cache and its freshness.",
+            context="Cache Lookup Status",
             usage="Used for cache-based routing, debugging, and performance optimization decisions.",
             possible_values=["none", "miss", "hit-stale", "hit-fresh", "skipped"],
             examples=[
@@ -857,64 +817,60 @@ LSP_CACHE_DOCUMENTATION: Final[dict[str, CacheDoc]] = {
             ])
 }
 
-
-@dataclass(slots=True, frozen=True)
-class HTTPControlDoc:
-    """Documentation for HTTP control fields."""
-    name: str
-    description: str
-    default_value: str
-    usage: str
-    examples: list[str] | None = None
-
-
-LSP_HTTP_CONTROL_DOCUMENTATION: Final[dict[str, HTTPControlDoc]] = {
+LSP_HTTP_CONTROL_DOCUMENTATION: Final[dict[str, DocumentationInfo]] = {
     "LOGGING":
-        HTTPControlDoc(
+        DocumentationInfo(
             name="Transaction Logging Control",
             description="Controls whether this transaction should be logged.",
+            context="HTTP Transaction Control",
             default_value="on",
             usage="Used to selectively disable logging for specific transactions (e.g., health checks).",
             examples=["http.cntl.LOGGING = false", "if http.cntl.LOGGING {\n    // Logging is enabled\n}"]),
     "INTERCEPT_RETRY":
-        HTTPControlDoc(
+        DocumentationInfo(
             name="Intercept Retry Control",
             description="Allows intercepts to be retried on failure.",
+            context="HTTP Transaction Control",
             default_value="off",
             usage="Used to enable retry logic for intercepted requests.",
             examples=["http.cntl.INTERCEPT_RETRY = true"]),
     "RESP_CACHEABLE":
-        HTTPControlDoc(
+        DocumentationInfo(
             name="Response Cacheable Control",
             description="Forces the response to be cacheable regardless of cache headers.",
+            context="HTTP Transaction Control",
             default_value="off",
             usage="Used to override response caching decisions for specific transactions.",
             examples=["http.cntl.RESP_CACHEABLE = true"]),
     "REQ_CACHEABLE":
-        HTTPControlDoc(
+        DocumentationInfo(
             name="Request Cacheable Control",
             description="Forces the request to be cacheable.",
+            context="HTTP Transaction Control",
             default_value="off",
             usage="Used to override request caching decisions.",
             examples=["http.cntl.REQ_CACHEABLE = true"]),
     "SERVER_NO_STORE":
-        HTTPControlDoc(
+        DocumentationInfo(
             name="Server No Store Control",
             description="Prevents the response from being written to cache storage.",
+            context="HTTP Transaction Control",
             default_value="off",
             usage="Used to prevent specific responses from being cached.",
             examples=["http.cntl.SERVER_NO_STORE = true"]),
     "TXN_DEBUG":
-        HTTPControlDoc(
+        DocumentationInfo(
             name="Transaction Debug Control",
             description="Enables detailed debugging for this transaction.",
+            context="HTTP Transaction Control",
             default_value="off",
             usage="Used to enable debugging output for specific transactions.",
             examples=["http.cntl.TXN_DEBUG = true", "if inbound.req.X-Debug == \"on\" {\n    http.cntl.TXN_DEBUG = true;\n}"]),
     "SKIP_REMAP":
-        HTTPControlDoc(
+        DocumentationInfo(
             name="Skip Remap Control",
             description="Skips remap processing for this transaction (enables open proxy mode).",
+            context="HTTP Transaction Control",
             default_value="off",
             usage="Used to bypass remap rules for specific requests.",
             examples=["http.cntl.SKIP_REMAP = true"])
@@ -1127,76 +1083,40 @@ LSP_STRING_LITERAL_INFO: Final[dict[str, str]] = {
         "String values in HRW4U support variable interpolation using {variable} syntax. Variables and function calls can be embedded within strings for dynamic content generation. Strings must be enclosed in double quotes when they contain spaces or special characters."
 }
 
-LSP_HEADER_CONTEXTS: Final[dict[str, dict[str, str]]] = {
-    "inbound.req":
-        {
-            "name": "Inbound Request Headers",
-            "description":
-                "HTTP headers from incoming client requests. These headers contain client-provided information such as User-Agent, Accept, Authorization, and custom headers. Use these for request routing, authentication, and client behavior analysis."
-        },
-    "inbound.resp":
-        {
-            "name": "Inbound Response Headers",
-            "description":
-                "HTTP headers for responses sent back to clients. These headers control client behavior, caching, security policies, and response metadata. Modify these to implement CORS, security headers, cache control, and custom response information."
-        },
-    "outbound.req":
-        {
-            "name": "Outbound Request Headers",
-            "description":
-                "HTTP headers sent to upstream servers. These headers can modify or add information when ATS forwards requests to backend services. Use for authentication forwarding, load balancing hints, and upstream communication."
-        },
-    "outbound.resp":
-        {
-            "name": "Outbound Response Headers",
-            "description":
-                "HTTP headers received from upstream servers before forwarding to clients. These can be modified before sending the response to clients. Use for header filtering, response transformation, and backend response processing."
-        }
-}
+# Remove redundant LSP_HEADER_CONTEXTS - now covered by LSP_SUB_NAMESPACE_DOCUMENTATION
 
-
-# Additional field documentation for body assignment and status handling
-@dataclass(slots=True, frozen=True)
-class FieldDoc:
-    """Documentation for special field assignments."""
-    name: str
-    description: str
-    context: str
-    usage: str
-    examples: list[str] | None = None
-
-
-LSP_FIELD_DOCUMENTATION: Final[dict[str, FieldDoc]] = {
+# Unified field documentation using DocumentationInfo
+LSP_FIELD_DOCUMENTATION: Final[dict[str, DocumentationInfo]] = {
     "inbound.resp.body":
-        FieldDoc(
+        DocumentationInfo(
             name="Inbound Response Body",
             description="Sets the response body content that will be sent to the client. Can be used to provide custom response content.",
             context="Response Body Assignment",
             usage="Used to set custom response body content in response processing sections",
             examples=["inbound.resp.body = \"Custom error message\";", "inbound.resp.body = \"I am a teapot, rewritten\";"]),
     "outbound.resp.body":
-        FieldDoc(
+        DocumentationInfo(
             name="Outbound Response Body",
             description="Sets the response body content received from upstream servers before forwarding to clients.",
             context="Response Body Assignment",
             usage="Used to modify upstream response body content before client delivery",
             examples=["outbound.resp.body = \"Modified upstream content\";", "outbound.resp.body = template_content;"]),
     "http.status":
-        FieldDoc(
+        DocumentationInfo(
             name="HTTP Status Code",
             description="Sets the HTTP status code for the response. Can be used to override the default or upstream status code.",
             context="HTTP Status Control",
             usage="Used to set custom HTTP status codes in response processing",
             examples=["http.status = 404;", "http.status = 200;"]),
     "http.status.reason":
-        FieldDoc(
+        DocumentationInfo(
             name="HTTP Status Reason",
             description="Sets the HTTP status reason phrase that accompanies the status code in the response line.",
             context="HTTP Status Control",
             usage="Used to set custom HTTP status reason phrases",
             examples=["http.status.reason = \"Not Found\";", "http.status.reason = \"Go Away\";"]),
     "break":
-        FieldDoc(
+        DocumentationInfo(
             name="Break Statement",
             description="Terminates execution of the current rule block, similar to 'last' in Apache mod_rewrite. Prevents further rule processing.",
             context="Control Flow",
@@ -1206,21 +1126,10 @@ LSP_FIELD_DOCUMENTATION: Final[dict[str, FieldDoc]] = {
             ])
 }
 
-
-# Condition Modifier Documentation
-@dataclass(slots=True, frozen=True)
-class ModifierDoc:
-    """Documentation for condition modifiers used with 'with' keyword."""
-    name: str
-    description: str
-    context: str
-    usage: str
-    examples: list[str] | None = None
-
-
-LSP_MODIFIER_DOCUMENTATION: Final[dict[str, ModifierDoc]] = {
+# Unified modifier documentation using DocumentationInfo
+LSP_MODIFIER_DOCUMENTATION: Final[dict[str, DocumentationInfo]] = {
     "NOCASE":
-        ModifierDoc(
+        DocumentationInfo(
             name="Case Insensitive Matching",
             description="Performs case-insensitive string matching, ignoring differences between uppercase and lowercase letters.",
             context="String Comparison Modifier",
@@ -1231,7 +1140,7 @@ LSP_MODIFIER_DOCUMENTATION: Final[dict[str, ModifierDoc]] = {
                 "if (inbound.url.host ~ /example\\.com/ with NOCASE) {\n    // Case-insensitive regex match\n}"
             ]),
     "MID":
-        ModifierDoc(
+        DocumentationInfo(
             name="Middle String Matching",
             description="Matches if the pattern appears anywhere within the target string (substring matching).",
             context="String Matching Modifier",
@@ -1242,7 +1151,7 @@ LSP_MODIFIER_DOCUMENTATION: Final[dict[str, ModifierDoc]] = {
                 "if (inbound.req.Referer == \"google\" with MID,NOCASE) {\n    // Case-insensitive substring match\n}"
             ]),
     "PRE":
-        ModifierDoc(
+        DocumentationInfo(
             name="Prefix String Matching",
             description="Matches if the target string starts with the specified pattern (prefix matching).",
             context="String Matching Modifier",
@@ -1253,7 +1162,7 @@ LSP_MODIFIER_DOCUMENTATION: Final[dict[str, ModifierDoc]] = {
                 "if (inbound.url.host == \"api\" with PRE,NOCASE) {\n    // Case-insensitive prefix match\n}"
             ]),
     "SUF":
-        ModifierDoc(
+        DocumentationInfo(
             name="Suffix String Matching",
             description="Matches if the target string ends with the specified pattern (suffix matching).",
             context="String Matching Modifier",
@@ -1264,7 +1173,7 @@ LSP_MODIFIER_DOCUMENTATION: Final[dict[str, ModifierDoc]] = {
                 "if (inbound.url.host == \".com\" with SUF,NOCASE) {\n    // Case-insensitive suffix match\n}"
             ]),
     "EXT":
-        ModifierDoc(
+        DocumentationInfo(
             name="File Extension Matching",
             description="Matches file extensions in the target string, such as .php, .cc, .html, etc.",
             context="File Extension Matching Modifier",
@@ -1346,3 +1255,236 @@ class ModifierPattern:
                 f"**Context:** HRW4U Condition Modifier\n\n"
                 f"Used with the 'with' keyword to modify condition behavior.\n\n"
                 f"**Available modifiers:** {', '.join(LSP_MODIFIER_DOCUMENTATION.keys())}")
+
+
+# Unified Namespace Documentation using DocumentationInfo
+LSP_NAMESPACE_DOCUMENTATION: Final[dict[str, DocumentationInfo]] = {
+    "geo":
+        DocumentationInfo(
+            name="Geographic Information Namespace",
+            context="Client Geographic Data",
+            description="Access geographic information about the client's location based on IP geolocation. "
+            "Provides country codes, ASN information and other location-based data for routing and compliance decisions.",
+            available_items=list(GEO_FIELDS.keys()),
+            usage="Used for geographic routing, content localization, and compliance with regional regulations.",
+            examples=["if geo.COUNTRY == \"US\" {\n    // Handle US traffic\n}", "geo.ASN == 15169  // Google's ASN"]),
+    "id":
+        DocumentationInfo(
+            name="Transaction Identifier Namespace",
+            context="Transaction and Session Identifiers",
+            description="Access unique identifiers for transactions, requests, processes, threads, and sessions. "
+            "Essential for tracking, debugging, and correlation across distributed systems.",
+            available_items=list(ID_FIELDS.keys()),
+            usage="Used for transaction tracking, debugging, logging correlation, and session management.",
+            examples=["inbound.resp.X-Request-ID = \"{id.REQUEST}\"", "if id.SESSION {\n    // Session-based processing\n}"]),
+    "now":
+        DocumentationInfo(
+            name="Current Time Namespace",
+            context="Current Date and Time Information",
+            description="Access current time components for time-based routing, scheduling, and conditional logic. "
+            "All values are based on the server's current time when the request is processed.",
+            available_items=list(TIME_FIELDS.keys()),
+            usage="Used for time-based routing, load balancing, maintenance windows, and temporal logic.",
+            examples=["if now.HOUR >= 22 || now.HOUR < 6 {\n    // Night time processing\n}", "now.WEEKDAY == 0  // Sunday"]),
+    "inbound":
+        DocumentationInfo(
+            name="Inbound Request Context",
+            context="Client Request Processing",
+            description="Access to incoming request data from clients. This includes request headers, "
+            "URL components, HTTP method, cookies, connection information, and client certificates.",
+            available_items=["req", "resp", "method", "status", "url", "cookie", "conn", "ip"],
+            usage="Used for request analysis, routing decisions, authentication, and client behavior processing.",
+            examples=["inbound.method == \"POST\"", "inbound.req.User-Agent ~ /mobile/",
+                      "inbound.url.host == \"api.example.com\""]),
+    "outbound":
+        DocumentationInfo(
+            name="Outbound Request Context",
+            context="Upstream Server Communication",
+            description="Access to outbound request data sent to upstream servers and responses received back. "
+            "This includes request/response headers, status codes, and server connection information.",
+            available_items=["req", "resp", "status", "ip", "conn"],
+            usage="Used for upstream communication control, response processing, and server selection.",
+            examples=[
+                "outbound.req.Authorization = \"Bearer {token}\"", "if outbound.status >= 500 {\n    // Handle server errors\n}"
+            ]),
+    "client":
+        DocumentationInfo(
+            name="Client Information Namespace",
+            context="Client Connection and Certificate Data",
+            description="Access to client-specific information including client certificates in mTLS scenarios, "
+            "client IP addresses, and other client connection metadata.",
+            available_items=["cert", "ip", "conn"],
+            usage="Used for client authentication, authorization, certificate-based routing, and client identification.",
+            examples=["if client.cert.SUBJECT ~ /CN=admin/ {\n    // Admin client detected\n}", "client.ip == \"192.168.1.100\""]),
+    "http":
+        DocumentationInfo(
+            name="HTTP Transaction Control Namespace",
+            context="HTTP Transaction Processing Control",
+            description="Access to HTTP transaction control fields and status information. "
+            "This includes transaction control settings, HTTP status codes, and processing directives.",
+            available_items=["cntl", "status"],
+            usage="Used for fine-grained control of HTTP transaction processing, status manipulation, and ATS behavior control.",
+            examples=["http.cntl.LOGGING = false", "http.status = 418", "http.status.reason = \"I'm a teapot\""])
+}
+
+# Combined namespace and sub-namespace documentation using unified structure
+LSP_SUB_NAMESPACE_DOCUMENTATION: Final[dict[str, DocumentationInfo]] = {
+    "inbound.conn":
+        DocumentationInfo(
+            name="Inbound Connection Properties",
+            context="Client Connection Information",
+            description="Access to properties of the client connection including protocol information (TLS, HTTP/2), "
+            "IP family details (IPv4/IPv6), address information (local/remote), port numbers, and certificate data. "
+            "Essential for connection-based routing and security decisions.",
+            available_items=[
+                "TLS", "H2", "IPV4", "IPV6", "IP-FAMILY", "STACK", "LOCAL-ADDR", "LOCAL-PORT", "REMOTE-ADDR", "REMOTE-PORT",
+                "client-cert", "server-cert", "DSCP", "MARK"
+            ],
+            usage="Used for protocol-specific routing, security policy enforcement, certificate validation, "
+            "and connection analysis in client request processing.",
+            examples=[
+                "if inbound.conn.TLS {\n    // Handle TLS connections\n}", "inbound.conn.H2 == \"h2\" && inbound.method == \"GET\"",
+                "inbound.resp.X-Client-IP = \"{inbound.conn.REMOTE-ADDR}\""
+            ]),
+    "outbound.conn":
+        DocumentationInfo(
+            name="Outbound Connection Properties",
+            context="Upstream Server Connection Information",
+            description="Access to properties of the upstream server connection including protocol stack, "
+            "address information, and connection characteristics. Used for server selection decisions "
+            "and upstream communication control.",
+            available_items=[
+                "TLS", "H2", "IPV4", "IPV6", "IP-FAMILY", "STACK", "LOCAL-ADDR", "LOCAL-PORT", "REMOTE-ADDR", "REMOTE-PORT",
+                "server-cert", "DSCP", "MARK"
+            ],
+            usage="Used for upstream server routing, protocol negotiation, load balancing decisions, "
+            "and server connection analysis.",
+            examples=[
+                "if outbound.conn.TLS {\n    // Secure upstream connection\n}", "outbound.conn.REMOTE-ADDR == \"10.0.1.100\"",
+                "outbound.req.X-Forwarded-Proto = outbound.conn.TLS ? \"https\" : \"http\""
+            ]),
+    "inbound.req":
+        DocumentationInfo(
+            name="Inbound Request Headers",
+            context="Client Request Header Access",
+            description="Access to HTTP headers sent by the client in the incoming request. "
+            "Headers contain client-provided information such as User-Agent, Accept, Authorization, "
+            "Content-Type, custom headers, and other request metadata essential for routing and processing.",
+            available_items=[
+                "User-Agent", "Accept", "Authorization", "Content-Type", "Content-Length", "Host", "Referer", "Cookie",
+                "X-Forwarded-For", "Accept-Language", "Accept-Encoding"
+            ],
+            usage="Used for request routing, client identification, authentication, content negotiation, "
+            "and request analysis based on client-provided header information.",
+            examples=[
+                "if inbound.req.User-Agent ~ /mobile/ {\n    // Mobile client detected\n}", "inbound.req.Authorization ~ /Bearer/",
+                "inbound.req.X-API-Key != \"\""
+            ]),
+    "inbound.resp":
+        DocumentationInfo(
+            name="Inbound Response Headers",
+            context="Client Response Header Control",
+            description="Control HTTP headers that will be sent back to the client in the response. "
+            "These headers control client behavior, caching policies, security settings, CORS, "
+            "and custom response metadata. Essential for client communication and security.",
+            available_items=[
+                "Content-Type", "Content-Length", "Cache-Control", "Set-Cookie", "Location", "Access-Control-Allow-Origin",
+                "X-Frame-Options", "Content-Security-Policy", "X-Custom-Header", "Strict-Transport-Security"
+            ],
+            usage="Used to set response headers for cache control, security policies, CORS configuration, "
+            "custom response information, and client behavior control.",
+            examples=[
+                "inbound.resp.X-Powered-By = \"Apache Traffic Server\"", "inbound.resp.Access-Control-Allow-Origin = \"*\"",
+                "inbound.resp.Cache-Control = \"max-age=3600\""
+            ]),
+    "outbound.req":
+        DocumentationInfo(
+            name="Outbound Request Headers",
+            context="Upstream Request Header Control",
+            description="Control HTTP headers sent to upstream servers when forwarding requests. "
+            "Used to modify, add, or remove headers before sending requests to backend services. "
+            "Essential for upstream authentication, load balancing hints, and server communication.",
+            available_items=[
+                "User-Agent", "Authorization", "Content-Type", "Content-Length", "Host", "X-Forwarded-For", "X-Forwarded-Proto",
+                "X-Real-IP", "X-Request-ID", "Accept"
+            ],
+            usage="Used for upstream authentication forwarding, request modification, load balancing, "
+            "backend communication control, and request header transformation.",
+            examples=[
+                "outbound.req.Authorization = \"Bearer {api_token}\"",
+                "outbound.req.X-Forwarded-For = \"{inbound.conn.REMOTE-ADDR}\"", "outbound.req.User-Agent = \"ATS-Proxy/9.0\""
+            ]),
+    "outbound.resp":
+        DocumentationInfo(
+            name="Outbound Response Headers",
+            context="Upstream Response Header Processing",
+            description="Access and modify HTTP headers received from upstream servers before forwarding "
+            "to clients. Used for response transformation, header filtering, security header injection, "
+            "and backend response processing before client delivery.",
+            available_items=[
+                "Content-Type", "Content-Length", "Cache-Control", "Set-Cookie", "Location", "Server", "X-Powered-By", "Expires",
+                "Last-Modified", "ETag"
+            ],
+            usage="Used for response header transformation, security header filtering, cache control modification, "
+            "and upstream response processing before forwarding to clients.",
+            examples=[
+                "outbound.resp.Server = \"\"  // Remove server header",
+                "if outbound.resp.Cache-Control == \"\" {\n    outbound.resp.Cache-Control = \"no-cache\";\n}",
+                "outbound.resp.X-Backend-Server = \"{outbound.conn.REMOTE-ADDR}\""
+            ]),
+    "inbound.url":
+        DocumentationInfo(
+            name="Inbound URL Components",
+            context="Client Request URL Analysis",
+            description="Access components of the incoming request URL including hostname, port, path, "
+            "query parameters, scheme, and fragment. Essential for URL-based routing, path analysis, "
+            "and request processing decisions.",
+            available_items=["host", "port", "path", "query", "scheme", "fragment"],
+            usage="Used for hostname-based routing, path analysis, query parameter processing, "
+            "protocol detection, and URL-based conditional logic.",
+            examples=[
+                "if inbound.url.host == \"api.example.com\" {\n    // API subdomain routing\n}",
+                "inbound.url.path ~ /^\\/api\\/v[0-9]+\\//", "inbound.url.query ~ /debug=true/"
+            ]),
+    "outbound.url":
+        DocumentationInfo(
+            name="Outbound URL Components",
+            context="Upstream Request URL Control",
+            description="Control components of the URL sent to upstream servers. Used for URL rewriting, "
+            "path transformation, query parameter modification, and upstream routing decisions.",
+            available_items=["host", "port", "path", "query", "scheme", "fragment"],
+            usage="Used for upstream URL rewriting, path transformation, server selection, "
+            "query parameter manipulation, and backend routing control.",
+            examples=[
+                "outbound.url.host = \"backend.internal.com\"", "outbound.url.path = \"/v2\" + inbound.url.path",
+                "outbound.url.query = inbound.url.query + \"&source=ats\""
+            ]),
+    "inbound.cookie":
+        DocumentationInfo(
+            name="Inbound Request Cookies",
+            context="Client Cookie Access",
+            description="Access HTTP cookies sent by the client in the request. Cookies are key-value pairs "
+            "used for session management, user preferences, authentication tokens, and client state tracking. "
+            "Each cookie can be accessed by name (e.g., inbound.cookie.sessionid).",
+            available_items=["sessionid", "auth_token", "user_pref", "tracking_id", "consent", "theme", "language"],
+            usage="Used for session management, user authentication, personalization, A/B testing, "
+            "and maintaining client state across requests.",
+            examples=[
+                "if inbound.cookie.session == \"admin\" {\n    // Admin session detected\n}", "inbound.cookie.tracking_id != \"\"",
+                "if inbound.cookie.consent == \"accepted\" {\n    // User accepted cookies\n}"
+            ]),
+    "outbound.cookie":
+        DocumentationInfo(
+            name="Outbound Response Cookies",
+            context="Client Cookie Setting",
+            description="Set HTTP cookies in the response that will be sent to the client. "
+            "These cookies will be stored by the client's browser and sent back in future requests. "
+            "Use for session management, user preferences, and client state persistence.",
+            available_items=["sessionid", "auth_token", "user_pref", "tracking_id", "theme", "language", "consent"],
+            usage="Used to set session cookies, authentication tokens, user preferences, tracking identifiers, "
+            "and other client state that needs to persist across requests.",
+            examples=[
+                "outbound.cookie.sessionid = \"{id.UNIQUE}\"", "outbound.cookie.theme = \"dark\"",
+                "outbound.cookie.auth_token = \"{generated_token}\""
+            ])
+}

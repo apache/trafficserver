@@ -423,6 +423,12 @@ class DocumentManager:
         if variable_info:
             return variable_info
 
+        # Check if this is an operator/condition before falling back to generic symbol
+        from hrw4u_lsp.lsp.hover import OperatorHoverProvider
+        operator_info = OperatorHoverProvider.get_operator_hover_info(word)
+        if operator_info:
+            return operator_info
+
         return HoverInfoProvider.create_hover_info(f"**{word}** - HRW4U Language symbol")
 
 

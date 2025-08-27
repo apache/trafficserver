@@ -441,3 +441,195 @@ REMAP {
     # Server should handle complex syntax without crashing
     if response is not None:
         assert "result" in response
+
+
+@pytest.mark.parametrize(
+    "namespace,expected_content", [
+        ("geo", "Geographic Information Namespace"),
+        ("id", "Transaction Identifier Namespace"),
+        ("inbound", "Inbound Request Context"),
+        ("outbound", "Outbound Request Context"),
+        ("client", "Client Information Namespace"),
+        ("http", "HTTP Transaction Control Namespace"),
+    ])
+def test_namespace_hover_documentation(shared_lsp_client, namespace, expected_content) -> None:
+    """Test that namespace prefixes provide comprehensive hover documentation."""
+    test_content = f"""READ_REQUEST {{
+    {namespace}.
+}}"""
+
+    uri = f"file:///test_namespace_{namespace}.hrw4u"
+    shared_lsp_client.open_document(uri, test_content)
+
+    # Position after the namespace and dot
+    char_pos = len(f"    {namespace}.")
+    response = shared_lsp_client.request_hover(uri, 1, char_pos - 1)  # Hover on the namespace itself
+
+    assert response is not None
+    assert "result" in response
+    assert "contents" in response["result"]
+
+    content = response["result"]["contents"]["value"]
+    assert expected_content in content, f"Expected '{expected_content}' in hover for {namespace}"
+
+    # Verify it's not just the generic "HRW4U symbol" response
+    assert "HRW4U symbol" not in content or "Namespace" in content
+
+
+def test_now_condition_vs_namespace(shared_lsp_client) -> None:
+    """Test that 'now' shows condition documentation when standalone, but namespace when used with fields."""
+    # Test standalone 'now' (should show condition documentation)
+    test_content_condition = """READ_REQUEST {
+    if now {
+        // test
+    }
+}"""
+
+    shared_lsp_client.open_document("file:///test_now_condition.hrw4u", test_content_condition)
+    response = shared_lsp_client.request_hover("file:///test_now_condition.hrw4u", 1, 7)  # Position on 'now'
+
+    assert response is not None
+    assert "result" in response
+    content = response["result"]["contents"]["value"]
+    assert "HRW4U Condition" in content
+    assert "%{NOW}" in content
+
+    # Test 'now.HOUR' (should show field documentation)
+    test_content_field = """READ_REQUEST {
+    if now.HOUR > 22 {
+        // test
+    }
+}"""
+
+    shared_lsp_client.open_document("file:///test_now_field.hrw4u", test_content_field)
+    response = shared_lsp_client.request_hover("file:///test_now_field.hrw4u", 1, 11)  # Position on 'HOUR'
+
+    assert response is not None
+    assert "result" in response
+    content = response["result"]["contents"]["value"]
+    assert "Current Hour" in content or "HOUR" in content
+
+
+@pytest.mark.parametrize(
+    "expression,field_type", [
+        ("geo.COUNTRY", "Country Code"),
+        ("id.UNIQUE", "Unique Identifier"),
+        ("now.HOUR", "Current Hour"),
+        ("inbound.method", "HTTP Request Method"),
+        ("outbound.status", "HTTP status"),
+    ])
+def test_specific_field_hover(shared_lsp_client, expression, field_type) -> None:
+    """Test hover documentation for specific namespace fields."""
+    test_content = f"""READ_REQUEST {{
+    if {expression} {{
+        // test
+    }}
+}}"""
+
+    uri = f"file:///test_field_{expression.replace('.', '_')}.hrw4u"
+    shared_lsp_client.open_document(uri, test_content)
+
+    # Position on the field part after the dot
+    namespace, field = expression.split('.')
+    char_pos = len(f"    if {namespace}.") + len(field) // 2
+    response = shared_lsp_client.request_hover(uri, 1, char_pos)
+
+    assert response is not None
+    assert "result" in response
+    assert "contents" in response["result"]
+
+    content = response["result"]["contents"]["value"]
+    # Should contain field-specific documentation
+    assert field_type in content or expression in content
+
+
+@pytest.mark.parametrize(
+    "sub_namespace,expected_content", [
+        ("inbound.conn", "Inbound Connection Properties"),
+        ("outbound.conn", "Outbound Connection Properties"),
+        ("inbound.req", "Inbound Request Headers"),
+        ("inbound.resp", "Inbound Response Headers"),
+        ("outbound.req", "Outbound Request Headers"),
+        ("outbound.resp", "Outbound Response Headers"),
+        ("inbound.cookie", "Inbound Request Cookies"),
+        ("outbound.cookie", "Outbound Response Cookies"),
+    ])
+def test_sub_namespace_hover_documentation(shared_lsp_client, sub_namespace, expected_content) -> None:
+    """Test that sub-namespace patterns provide comprehensive hover documentation."""
+    test_content = f"""READ_REQUEST {{
+    {sub_namespace}.
+}}"""
+
+    uri = f"file:///test_sub_namespace_{sub_namespace.replace('.', '_')}.hrw4u"
+    shared_lsp_client.open_document(uri, test_content)
+
+    # Position after the sub-namespace and dot, but hover on the sub-namespace itself
+    char_pos = len(f"    {sub_namespace}.")
+    response = shared_lsp_client.request_hover(uri, 1, char_pos - 1)  # Hover on the sub-namespace
+
+    assert response is not None
+    assert "result" in response
+    assert "contents" in response["result"]
+
+    content = response["result"]["contents"]["value"]
+    assert expected_content in content, f"Expected '{expected_content}' in hover for {sub_namespace}"
+
+    # Verify it's not just the generic "HRW4U symbol" response
+    assert "HRW4U symbol" not in content or expected_content in content
+
+    # Verify it contains meaningful information (different patterns have different formats)
+    # Accept various indicators of comprehensive documentation
+    meaningful_indicators = [
+        "Available items:", "Usage:", "Description:", "Context:", "HTTP headers", "cookies", "connection", "URL components"
+    ]
+    has_meaningful_content = any(indicator in content for indicator in meaningful_indicators)
+    assert has_meaningful_content, f"Expected meaningful content for {sub_namespace}, got: {content[:200]}..."
+
+
+@pytest.mark.parametrize(
+    "sub_namespace,expected_content", [
+        ("inbound.conn", "Inbound Connection Properties"),
+        ("outbound.conn", "Outbound Connection Properties"),
+    ])
+def test_specific_connection_sub_namespace_hover(shared_lsp_client, sub_namespace, expected_content) -> None:
+    """Test that connection sub-namespace patterns provide full sub-namespace documentation."""
+    test_content = f"""READ_REQUEST {{
+    {sub_namespace}.
+}}"""
+
+    uri = f"file:///test_conn_sub_namespace_{sub_namespace.replace('.', '_')}.hrw4u"
+    shared_lsp_client.open_document(uri, test_content)
+
+    # Position after the sub-namespace and dot, but hover on the sub-namespace itself
+    char_pos = len(f"    {sub_namespace}.")
+    response = shared_lsp_client.request_hover(uri, 1, char_pos - 1)  # Hover on the sub-namespace
+
+    assert response is not None
+    assert "result" in response
+    assert "contents" in response["result"]
+
+    content = response["result"]["contents"]["value"]
+    assert expected_content in content, f"Expected '{expected_content}' in hover for {sub_namespace}"
+
+    # Verify it shows the comprehensive sub-namespace documentation
+    assert "Available items:" in content
+    assert "Usage:" in content
+    assert "Context:" in content
+
+
+def test_unknown_namespace_fallback(shared_lsp_client) -> None:
+    """Test that unknown namespaces still get generic fallback response."""
+    test_content = """READ_REQUEST {
+    unknown_namespace.
+}"""
+
+    shared_lsp_client.open_document("file:///test_unknown.hrw4u", test_content)
+
+    response = shared_lsp_client.request_hover("file:///test_unknown.hrw4u", 1, 10)
+
+    assert response is not None
+    assert "result" in response
+    assert "contents" in response["result"]
+
+    content = response["result"]["contents"]["value"]
+    assert "HRW4U symbol" in content
