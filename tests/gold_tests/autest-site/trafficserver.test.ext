@@ -53,6 +53,7 @@ def MakeATSProcess(
         enable_cache=True,
         enable_quic=False,
         enable_uds=True,
+        enable_cripts=False,
         block_for_debug=False,
         log_data=default_log_data,
         use_traffic_out=True,
@@ -402,6 +403,15 @@ def MakeATSProcess(
         p.Disk.records_config.update({
             'proxy.config.udp.threads': 1,
         })
+
+    if enable_cripts:
+        p.Setup.Copy(
+            os.path.join(p.Variables.RepoDir, 'tools', 'cripts', 'compiler.sh'), os.path.join(bin_path, 'cripts_compiler.sh'))
+        p.Disk.records_config.update({
+            'proxy.config.plugin.compiler_path': os.path.join(bin_path, 'cripts_compiler.sh'),
+        })
+        # ATS_ROOT is used by compiler.sh to find the ATS install directory.
+        p.Env['ATS_ROOT'] = p.Variables.PREFIX
 
     # The following message was added so that tests and users can know when
     # Traffic Server is ready to both receive and optimize traffic.
