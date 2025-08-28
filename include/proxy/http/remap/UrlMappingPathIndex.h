@@ -76,7 +76,7 @@ private:
     idx = url->scheme_get_wksidx();
     // If the scheme is empty (e.g. because of a CONNECT method), guess it
     // based on port
-    if (idx == -1) {
+    if (idx == -1 && url->scheme_get().empty()) {
       if (port == 80) {
         idx = URL_WKSIDX_HTTP;
       } else {
