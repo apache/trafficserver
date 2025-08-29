@@ -1,0 +1,28 @@
+SEND_RESPONSE {
+    if inbound.conn.TLS {
+        inbound.resp.X-Client-Cert = "{inbound.conn.client-cert.PEM}";
+        inbound.resp.X-Client-Cert-Subject = "{inbound.conn.client-cert.SUBJECT}";
+        inbound.resp.X-Client-Cert-Issuer = "{inbound.conn.client-cert.ISSUER}";
+        inbound.resp.X-Server-Cert-Subject = "{inbound.conn.server-cert.SUBJECT}";
+        inbound.resp.X-Server-Cert-Serial = "{inbound.conn.server-cert.SERIAL}";
+        inbound.resp.X-Client-SAN-DNS = "{inbound.conn.client-cert.SAN.DNS}";
+        inbound.resp.X-Client-SAN-IP = "{inbound.conn.client-cert.SAN.IP}";
+        inbound.resp.X-Server-SAN-Email = "{inbound.conn.server-cert.SAN.EMAIL}";
+        inbound.resp.X-Server-SAN-URI = "{inbound.conn.server-cert.SAN.URI}";
+    }
+}
+
+SEND_REQUEST {
+    if inbound.conn.client-cert.SAN.DNS ~ /example\.com/ {
+        outbound.req.X-Matched-Domain = "true";
+    }
+
+    if inbound.conn.client-cert.SUBJECT ~ /CN=testcert/ {
+        outbound.req.X-Test-Client = "verified";
+    }
+}
+
+READ_RESPONSE {
+    outbound.resp.X-Outbound-Client-Cert = "{outbound.conn.client-cert.PEM}";
+    outbound.resp.X-Outbound-Server-Subject = "{outbound.conn.server-cert.SUBJECT}";
+}

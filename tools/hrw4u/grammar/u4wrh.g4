@@ -70,7 +70,7 @@ COMMA         : ',';
 SEMICOLON     : ';';
 
 EOL           : '\r'? '\n';
-COMMENT       : '#' ~[\r\n]* -> skip ;
+COMMENT       : '#' ~[\r\n]* ;
 WS            : [ \t]+ -> skip ;
 
 // -----------------------------
@@ -86,6 +86,7 @@ line
     | opLine EOL
     | elifLine EOL
     | elseLine EOL
+    | commentLine EOL
     | EOL                     // blank line
     ;
 
@@ -112,7 +113,7 @@ bareRef
     : percentRef
     ;
 
-// Comparison forms including implicit regex "~"
+// Comparison forms including implicit regex "~" and implicit equality "="
 comparison
     : lhs ( cmpOp rhs
           | regexOp regex
@@ -121,6 +122,10 @@ comparison
           | inOp iprange
           | set_                 // implicit "in" when set follows directly
           | iprange              // implicit "in" when iprange follows directly
+          | STRING               // implicit "=" when string follows directly
+          | NUMBER               // implicit "=" when number follows directly
+          | IDENT                // implicit "=" when identifier follows directly
+          | COMPLEX_STRING       // implicit "=" when complex string follows directly
           )
     ;
 
@@ -245,4 +250,8 @@ opTail
 opFlag
     : IDENT
     | 'QSA'
+    ;
+
+commentLine
+    : COMMENT
     ;

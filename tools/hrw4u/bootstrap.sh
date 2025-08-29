@@ -40,8 +40,12 @@ fi
 echo "==> Activating virtualenv..."
 pyenv activate "$VENV_NAME"
 
+
 echo "==> Installing dependencies..."
 pip install --upgrade pip
 pip install -r requirements.txt
 
 echo "==> Done. To activate manually: pyenv activate $VENV_NAME"
+
+# Probably need for running in the local build tree
+export PYTHONPATH=./build:${PYTHONPATH}

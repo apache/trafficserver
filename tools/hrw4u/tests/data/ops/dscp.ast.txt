@@ -1,1 +1,1 @@
-(program (section REMAP { (sectionBody (conditional (ifStatement if (condition (expression (term (factor true)))) (block { (statement inbound.conn.dscp = (value 17) ;) })))) }) <EOF>)
+(program (programItem (section REMAP { (sectionBody (conditional (ifStatement if (condition (expression (term (factor true)))) (block { (blockItem (statement inbound.conn.dscp = (value 17) ;)) (blockItem (statement inbound.conn.mark = (value 1234) ;)) })))) })) <EOF>)

@@ -1,0 +1,5 @@
+# Operations tests direction exceptions
+# Format: test_name: direction
+#
+# Implicit = comparisons
+implicit-cmp.input: u4wrh
