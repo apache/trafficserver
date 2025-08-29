@@ -23,24 +23,16 @@ from typing import Self
 
 
 class MagicStrings(str, Enum):
-    """Common magic strings used throughout the codebase"""
-    # Header operations
     RM_HEADER = "rm-header"
     SET_HEADER = "set-header"
     RM_COOKIE = "rm-cookie"
     SET_COOKIE = "set-cookie"
     RM_DESTINATION = "rm-destination"
     SET_DESTINATION = "set-destination"
-
-    # Status operations
     SET_STATUS = "set-status"
     SET_STATUS_REASON = "set-status-reason"
-
-    # Body operations
     SET_BODY = "set-body"
     SET_BODY_FROM = "set-body-from"
-
-    # Control operations
     NO_OP = "no-op"
     SET_DEBUG = "set-debug"
     SET_CONFIG = "set-config"
@@ -48,18 +40,13 @@ class MagicStrings(str, Enum):
     SKIP_REMAP = "skip-remap"
     RUN_PLUGIN = "run-plugin"
     COUNTER = "counter"
-
-    # Connection operations
     SET_CONN_DSCP = "set-conn-dscp"
     SET_HTTP_CNTL = "set-http-cntl"
-
-    # Query operations
     REMOVE_QUERY = "remove_query"
     KEEP_QUERY = "keep_query"
 
 
 class BooleanLiteral(str, Enum):
-    """Boolean literal values used in conditions"""
     TRUE = "TRUE"
     FALSE = "FALSE"
 
@@ -69,7 +56,6 @@ class BooleanLiteral(str, Enum):
 
 
 class LanguageKeyword(Enum):
-    """Core HRW4U language keywords with descriptions"""
     IF = ("if", "Conditional statement")
     ELIF = ("elif", "Else-if clause")
     ELSE = ("else", "Else clause")
@@ -85,7 +71,6 @@ class LanguageKeyword(Enum):
 
     @classmethod
     def get_keywords_with_descriptions(cls) -> dict[str, str]:
-        """Get a dictionary mapping keywords to their descriptions."""
         return {member.keyword: member.description for member in cls}
 
 
@@ -112,7 +97,6 @@ class SuffixGroup(Enum):
     PLUGIN_CNTL_FIELDS = frozenset(PLUGIN_CNTL_MAPPING.keys())
 
     def validate(self, suffix: str) -> None:
-        """Validate that suffix is allowed for this group."""
         allowed_upper = {val.upper() for val in self.value}
         if suffix.upper() not in allowed_upper:
             raise ValueError(
@@ -154,7 +138,6 @@ class VarType(Enum):
 
     @classmethod
     def from_str(cls, type_str: str) -> Self:
-        """Create VarType from string representation."""
         for vt in cls:
             if vt._name == type_str.lower():
                 return vt

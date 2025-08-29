@@ -15,12 +15,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-"""
-Centralized hover information providers for the HRW4U LSP server.
-
-This module provides specialized hover providers for different types of
-expressions, reducing code duplication and improving maintainability.
-"""
+"""Centralized hover information providers for the HRW4U LSP server."""
 
 from __future__ import annotations
 
@@ -337,6 +332,34 @@ class DottedExpressionHoverProvider:
 class OperatorHoverProvider:
     """Specialized hover provider for operators and conditions."""
 
+    SIMILARITY_THRESHOLD = 2
+
+    @classmethod
+    def _get_known_prefixes(cls) -> set[str]:
+        """Extract known prefixes from existing documentation and operator tables."""
+        prefixes = set()
+
+        # Extract from namespace documentation
+        if hasattr(doc, 'LSP_NAMESPACE_DOCUMENTATION'):
+            prefixes.update(doc.LSP_NAMESPACE_DOCUMENTATION.keys())
+
+        # Extract from sub-namespace documentation
+        if hasattr(doc, 'LSP_SUB_NAMESPACE_DOCUMENTATION'):
+            for key in doc.LSP_SUB_NAMESPACE_DOCUMENTATION.keys():
+                prefixes.add(key.split('.')[0])
+
+        # Extract from operator map
+        for key in OPERATOR_MAP.keys():
+            if '.' in key:
+                prefixes.add(key.split('.')[0])
+
+        # Extract from condition map
+        for key in CONDITION_MAP.keys():
+            if '.' in key:
+                prefixes.add(key.split('.')[0])
+
+        return prefixes
+
     @staticmethod
     def get_operator_hover_info(operator: str) -> Dict[str, Any]:
         """Get hover info for operators."""
@@ -365,7 +388,6 @@ class OperatorHoverProvider:
                 f"**Example:** `{operator}.host` for the hostname portion of the URL.")
 
         # Special handling for inbound/outbound header contexts
-        # Check if we have comprehensive sub-namespace documentation for this pattern
         if operator in doc.LSP_SUB_NAMESPACE_DOCUMENTATION:
             sub_namespace_doc = doc.LSP_SUB_NAMESPACE_DOCUMENTATION[operator]
             sections = [
@@ -438,7 +460,18 @@ class OperatorHoverProvider:
         if namespace_info:
             return namespace_info
 
-        return HoverInfoProvider.create_hover_info(f"**{operator}** - HRW4U symbol")
+        known_prefixes = OperatorHoverProvider._get_known_prefixes()
+
+        for prefix in known_prefixes:
+            if abs(len(operator) - len(prefix)) <= OperatorHoverProvider.SIMILARITY_THRESHOLD:
+                matches = sum(1 for a, b in zip(operator.lower(), prefix) if a == b)
+                if matches >= len(prefix) - OperatorHoverProvider.SIMILARITY_THRESHOLD:
+                    return None
+
+        if ('_' in operator or len(operator) > 8) and not any(operator.lower().startswith(p[:3]) for p in known_prefixes):
+            return HoverInfoProvider.create_hover_info(f"**{operator}** - HRW4U symbol")
+
+        return None
 
     @staticmethod
     def _get_namespace_hover_info(operator: str) -> Dict[str, Any] | None:

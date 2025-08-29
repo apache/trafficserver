@@ -15,12 +15,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-"""
-Centralized string handling for the HRW4U LSP server.
-
-This module provides specialized handlers for string literals and interpolated
-expressions, reducing code duplication in the main LSP server.
-"""
+"""Centralized string handling for the HRW4U LSP server."""
 
 from __future__ import annotations
 
@@ -29,16 +24,21 @@ from typing import Any, Dict
 
 from .documentation import LSP_STRING_LITERAL_INFO
 from .hover import HoverInfoProvider, InterpolationHoverProvider
-from .types import (CompletionContext, LSPPosition, LSPRange, VariableDeclaration, DiagnosticRange, LSPDiagnostic)
+from .types import (CompletionContext, LSPPosition, VariableDeclaration, DiagnosticRange, LSPDiagnostic)
 
 
 class StringLiteralHandler:
     """Handles string literal processing and hover information."""
 
     @staticmethod
+    def _create_string_literal_hover() -> Dict[str, Any]:
+        """Create standardized string literal hover info."""
+        return HoverInfoProvider.create_hover_info(
+            f"**{LSP_STRING_LITERAL_INFO['name']}** - HRW4U String Literal\n\n{LSP_STRING_LITERAL_INFO['description']}")
+
+    @staticmethod
     def check_string_literal(line: str, character: int) -> Dict[str, Any] | None:
         """Check if the cursor is inside a string literal and parse interpolated expressions."""
-        # Find all quoted strings in the line
         in_single_quote = False
         in_double_quote = False
         quote_start = -1
@@ -57,10 +57,7 @@ class StringLiteralHandler:
                         if interpolation_info:
                             return interpolation_info
 
-                        # Return generic string info if no interpolation found
-                        return HoverInfoProvider.create_hover_info(
-                            f"**{LSP_STRING_LITERAL_INFO['name']}** - HRW4U String Literal\n\n{LSP_STRING_LITERAL_INFO['description']}"
-                        )
+                        return StringLiteralHandler._create_string_literal_hover()
                     in_double_quote = False
 
             elif char == "'" and not in_double_quote:
@@ -69,16 +66,14 @@ class StringLiteralHandler:
                     quote_start = i
                 else:
                     if quote_start <= character <= i:
-                        string_content = line[quote_start + 1:i]  # Content between quotes
+                        string_content = line[quote_start + 1:i]
                         cursor_in_string = character - quote_start - 1
 
                         interpolation_info = InterpolationHandler.check_interpolated_expression(string_content, cursor_in_string)
                         if interpolation_info:
                             return interpolation_info
 
-                        return HoverInfoProvider.create_hover_info(
-                            f"**{LSP_STRING_LITERAL_INFO['name']}** - HRW4U String Literal\n\n{LSP_STRING_LITERAL_INFO['description']}"
-                        )
+                        return StringLiteralHandler._create_string_literal_hover()
                     in_single_quote = False
 
         return None
@@ -170,38 +165,6 @@ class ContextAnalyzer:
                     pass
 
         return context
-
-
-class HeaderContextChecker:
-    """Handles header context checking for hover information."""
-
-    @staticmethod
-    def check_header_context(line: str, word_start: int, word: str) -> Dict[str, Any] | None:
-        """Check if this is a header name in a header context."""
-        from .documentation import LSP_HEADER_CONTEXTS
-
-        # Look for patterns like "inbound.req.header_name" or "outbound.resp.header_name"
-        line_before_word = line[:word_start]
-        for context, context_info in LSP_HEADER_CONTEXTS.items():
-            if context in line_before_word:
-                context_pos = line_before_word.rfind(context)
-                if context_pos >= 0 and context_pos + len(context) == word_start:
-                    is_ats_internal = word.startswith('@')
-                    header_type = "ATS Internal Header" if is_ats_internal else "HTTP Header"
-
-                    if is_ats_internal:
-                        additional_info = "This is an ATS internal header (prefixed with '@') used for internal processing and metadata."
-                    else:
-                        additional_info = "HTTP header used in request/response processing."
-
-                    description = (
-                        f"**{word}** - {header_type}\n\n"
-                        f"**Context:** {context_info['name']} Headers\n\n"
-                        f"{additional_info}")
-
-                    return HoverInfoProvider.create_hover_info(description)
-
-        return None
 
 
 class ExpressionParser:

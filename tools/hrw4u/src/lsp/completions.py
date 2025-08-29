@@ -14,10 +14,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-"""
-Centralized completion helpers for LSP functionality.
-This module provides utilities for creating completion items.
-"""
+"""Centralized completion helpers for LSP functionality."""
 
 from __future__ import annotations
 

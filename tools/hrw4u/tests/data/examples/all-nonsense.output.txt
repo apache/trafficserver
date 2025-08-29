@@ -1,0 +1,254 @@
+# Boolean and integer state you can flip/use across sections
+
+
+cond %{TXN_START_HOOK} [AND]
+# Plugin controls
+    set-http-cntl TXN_DEBUG true
+    set-http-cntl LOGGING true
+    set-http-cntl REQ_CACHEABLE true
+    set-http-cntl RESP_CACHEABLE true
+    set-http-cntl SERVER_NO_STORE false
+    set-http-cntl SKIP_REMAP false
+    set-http-cntl INTERCEPT_RETRY false
+# allow intercept retry
+# Plugin-level knobs
+    set-plugin-cntl TIMEZONE GMT
+    set-plugin-cntl INBOUND_IP_SOURCE PEER
+    set-config "proxy.config.http.allow_multi_range" 1
+# Connection marks (client side)
+    set-conn-dscp 8
+    set-conn-mark 1734
+# Initialize and twiddle user vars
+    set-state-flag 0 true
+    set-state-flag 1 false
+    set-state-int8 0 7
+    set-state-int16 0 1024
+# Simple demo: count every transaction seen
+    counter "txn_start_count"
+
+cond %{READ_REQUEST_PRE_REMAP_HOOK} [AND]
+cond %{GROUP}
+    cond %{METHOD} ="GET" [AND,NOCASE]
+    cond %{GROUP}
+        cond %{GROUP}
+            cond %{CLIENT-URL:PATH} ("mp3","m3u","m3u8") [OR,NOCASE,EXT]
+            cond %{CLIENT-URL:HOST} /(?i)^api\./
+        cond %{GROUP:END} [AND]
+    cond %{GROUP:END}
+cond %{GROUP:END}
+    set-header X-Prefilter "static-or-api"
+elif
+    cond %{GROUP}
+        cond %{GROUP}
+            cond %{ACCESS:/var/developertesting} [OR]
+            cond %{INTERNAL-TRANSACTION}
+        cond %{GROUP:END} [AND]
+    cond %{GROUP:END}
+        set-header X-Prefilter "dev-or-internal"
+elif
+    cond %{GROUP}
+        cond %{RANDOM:100} >50
+    cond %{GROUP:END}
+        set-header X-Prefilter "coinflip"
+else
+    no-op
+# Show CIDR and ID usage; also demonstrate list membership on method
+
+cond %{READ_REQUEST_PRE_REMAP_HOOK} [AND]
+cond %{GROUP}
+    cond %{GROUP}
+        cond %{CIDR:16,48} ="10.0.0.0" [OR]
+        cond %{CIDR:8,8} ="fd00::"
+    cond %{GROUP:END} [AND]
+cond %{GROUP:END}
+    set-header X-Network "private"
+
+cond %{READ_REQUEST_PRE_REMAP_HOOK} [AND]
+cond %{GROUP}
+    cond %{METHOD} ("POST","PUT")
+cond %{GROUP:END}
+    set-state-flag 1 true
+
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{GROUP}
+    cond %{FROM-URL:HOST} ="old.example.com" [NOCASE]
+cond %{GROUP:END}
+    set-destination HOST "new.example.com"
+    rm-destination QUERY "id,utm_campaign" [I]
+
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{GROUP}
+    cond %{TO-URL:PATH} /(?i)^\/legacy\//
+cond %{GROUP:END}
+    set-destination PATH "/v2/"
+    rm-destination QUERY "debug,trace"
+
+cond %{REMAP_PSEUDO_HOOK} [AND]
+    set-header X-foo inbound.conn.client-cert.SAN
+# Run a remap plugin conditionally (args are pass-through)
+
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{GROUP}
+    cond %{CLIENT-URL:HOST} ="plugins.example"
+cond %{GROUP:END}
+    run-plugin "regex_remap.so" "in:^/foo/(.*)$" "out:/bar/$1"
+# Demonstrate last-rule behavior
+
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{GROUP}
+    cond %{CLIENT-HEADER:X-Bypass} ="1"
+cond %{GROUP:END}
+    skip-remap TRUE
+    no-op [L]
+# like [L]
+
+
+cond %{READ_REQUEST_HDR_HOOK} [AND]
+# Header presence / equality and capture groups
+cond %{GROUP}
+    cond %{CLIENT-HEADER:Strict-Transport-Security} ="" [NOT]
+cond %{GROUP:END}
+    set-header X-HSTS-Present "1"
+
+cond %{READ_REQUEST_HDR_HOOK} [AND]
+cond %{GROUP}
+    cond %{CLIENT-HEADER:User-Agent} /(?i)foo-(\d+)/
+cond %{GROUP:END}
+    set-header X-UA-Capture "%{LAST-CAPTURE:1}"
+# Cookies: read, set, and remove
+
+cond %{READ_REQUEST_HDR_HOOK} [AND]
+cond %{GROUP}
+    cond %{COOKIE:session} ="admin" [NOCASE]
+cond %{GROUP:END}
+    set-cookie role "super"
+else
+    set-cookie role "guest"
+
+cond %{READ_REQUEST_HDR_HOOK} [AND]
+    rm-cookie obsolete
+# IP and URL string expansions in values
+    set-header X-Client "%{IP:CLIENT} : %{CLIENT-URL:PORT}"
+    set-header X-Req-Id "%{ID:UNIQUE}"
+# Geo lookups as values
+    set-header X-Geo "%{GEO:COUNTRY}-%{GEO:ASN}"
+# Example of counters + vars interplay
+
+cond %{READ_REQUEST_HDR_HOOK} [AND]
+cond %{GROUP}
+    cond %{STATE-FLAG:1}
+cond %{GROUP:END}
+    counter "write_methods_seen"
+    set-state-int8 0 42
+# assign int8
+    set-state-int16 0 6553
+# assign int16
+
+
+cond %{SEND_REQUEST_HDR_HOOK} [AND]
+# Use NEXT-HOP information to adjust Host header
+cond %{GROUP}
+    cond %{NEXT-HOP:HOST} ="www.firstparent.com"
+cond %{GROUP:END}
+    set-header Host "vhost.firstparent.com"
+elif
+    cond %{GROUP}
+        cond %{NEXT-HOP:HOST} ="www.secondparent.com"
+    cond %{GROUP:END}
+        set-header Host "vhost.secondparent.com"
+# Demonstrate HTTP control read and write
+
+cond %{SEND_REQUEST_HDR_HOOK} [AND]
+cond %{GROUP}
+    cond %{HTTP-CNTL:LOGGING} [NOT]
+cond %{GROUP:END}
+    set-http-cntl LOGGING true
+
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{CLIENT-HEADER:X-Bar} ="fie" [MID]
+
+
+cond %{READ_RESPONSE_HDR_HOOK} [AND]
+# Cache lookup status checks
+cond %{GROUP}
+    cond %{CACHE} ="hit-stale"
+cond %{GROUP:END}
+    set-header X-Cache "stale"
+elif
+    cond %{GROUP}
+        cond %{CACHE} ="hit-fresh"
+    cond %{GROUP:END}
+        set-header X-Cache "fresh"
+elif
+    cond %{GROUP}
+        cond %{CACHE} ("miss","skipped")
+    cond %{GROUP:END}
+        set-header X-Cache "%{CACHE}"
+# echo the value
+# Status transforms + reason
+
+cond %{READ_RESPONSE_HDR_HOOK} [AND]
+cond %{GROUP}
+    cond %{STATUS} >399 [AND]
+    cond %{STATUS} <500
+cond %{GROUP:END}
+    set-status 404
+    set-status-reason "Not Here But Somewhere"
+# Example body overrides (allowed at READ_RESPONSE only)
+
+cond %{READ_RESPONSE_HDR_HOOK} [AND]
+cond %{STATUS} >499
+    set-body-from "http://errors.example.com/500?rid=%{ID:REQUEST}"
+elif
+    cond %{GROUP}
+        cond %{STATUS} =418
+    cond %{GROUP:END}
+        set-header Content-Type "text/plain"
+        set-header Server "ATS-HRW4U"
+        set-body "I am a teapot, rewritten"
+
+cond %{SEND_RESPONSE_HDR_HOOK} [AND]
+    set-header Cache-Control "public, max-age=60"
+    set-header X-Now "%{NOW:YEAR}-%{NOW:MONTH}-%{NOW:DAY}T%{NOW:HOUR}:%{NOW:MINUTE}"
+    set-header X-Ports "in=%{CLIENT-URL:PORT};out=%{NEXT-HOP:PORT}"
+    set-header X-IPs "client=%{IP:CLIENT};server=%{IP:SERVER}"
+    set-header X-ID "%{ID:UNIQUE}"
+    set-header ATS-Geo-Country "%{GEO:COUNTRY}"
+    set-header ATS-Geo-ASN "%{GEO:ASN}"
+    set-header ATS-Geo-ASN-NAME "%{GEO:ASN-NAME}"
+    set-cookie debug "on"
+
+cond %{SEND_RESPONSE_HDR_HOOK} [AND]
+cond %{CLIENT-HEADER:X-Redirect} ="1"
+    set-redirect 302 "https://redirect.example/x?%{CLIENT-URL:QUERY}"
+
+cond %{SEND_RESPONSE_HDR_HOOK} [AND]
+    counter "send_response_count"
+
+cond %{TXN_CLOSE_HOOK} [AND]
+    counter "txn_close_count"
+    no-op
+
+cond %{SEND_RESPONSE_HDR_HOOK} [AND]
+cond %{INBOUND:TLS} ="" [NOT]
+    set-header X-Client-Cert "%{INBOUND:CLIENT-CERT:PEM}"
+    set-header X-Client-Cert-Subject "%{INBOUND:CLIENT-CERT:SUBJECT}"
+    set-header X-Client-Cert-Issuer "%{INBOUND:CLIENT-CERT:ISSUER}"
+    set-header X-Server-Cert-Subject "%{INBOUND:SERVER-CERT:SUBJECT}"
+    set-header X-Server-Cert-Serial "%{INBOUND:SERVER-CERT:SERIAL}"
+    set-header X-Client-SAN-DNS "%{INBOUND:CLIENT-CERT:SAN:DNS}"
+    set-header X-Client-SAN-IP "%{INBOUND:CLIENT-CERT:SAN:IP}"
+    set-header X-Server-SAN-Email "%{INBOUND:SERVER-CERT:SAN:EMAIL}"
+    set-header X-Server-SAN-URI "%{INBOUND:SERVER-CERT:SAN:URI}"
+
+cond %{SEND_REQUEST_HDR_HOOK} [AND]
+cond %{INBOUND:CLIENT-CERT:SAN:DNS} /example\.com/
+    set-header X-Matched-Domain "true"
+
+cond %{SEND_REQUEST_HDR_HOOK} [AND]
+cond %{INBOUND:CLIENT-CERT:SUBJECT} /CN=testcert/
+    set-header X-Test-Client "verified"
+
+cond %{READ_RESPONSE_HDR_HOOK} [AND]
+    set-header X-Outbound-Client-Cert "%{OUTBOUND:CLIENT-CERT:PEM}"
+    set-header X-Outbound-Server-Subject "%{OUTBOUND:SERVER-CERT:SUBJECT}"

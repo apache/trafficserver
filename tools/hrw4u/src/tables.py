@@ -16,20 +16,13 @@
 #  limitations under the License.
 
 from __future__ import annotations
-from typing import Final
+from typing import Final, Callable
 from dataclasses import dataclass
-from hrw4u.generators import _table_generator
 from hrw4u.generators import get_complete_reverse_resolution_map
-
-from typing import Callable
 from hrw4u.validation import Validator
 import hrw4u.types as types
 from hrw4u.states import SectionType
 from hrw4u.common import HeaderOperations
-
-#
-# Core Symbol Maps
-#
 
 OPERATOR_MAP: dict[str, tuple[str | list[str] | tuple[str, ...], Callable[[str], None] | None, bool, set[SectionType] | None]] = {
     "http.cntl.": ("set-http-cntl", Validator.suffix_group(types.SuffixGroup.HTTP_CNTL_FIELDS), True, None),
@@ -41,17 +34,17 @@ OPERATOR_MAP: dict[str, tuple[str | list[str] | tuple[str, ...], Callable[[str],
         ("set-conn-dscp", Validator.nbit_int(6), False, {SectionType.PRE_REMAP, SectionType.REMAP, SectionType.READ_REQUEST}),
     "outbound.conn.mark":
         ("set-conn-mark", Validator.nbit_int(32), False, {SectionType.PRE_REMAP, SectionType.REMAP, SectionType.READ_REQUEST}),
-    "inbound.cookie.": (["rm-cookie", "set-cookie"], Validator.http_token(), False, None),
+    "inbound.cookie.": (HeaderOperations.COOKIE_OPERATIONS, Validator.http_token(), False, None),
     "inbound.req.": (HeaderOperations.OPERATIONS, Validator.http_token(), False, None),
     "inbound.resp.body": ("set-body", Validator.quoted_or_simple(), False, None),
     "inbound.resp.": (HeaderOperations.OPERATIONS, Validator.http_token(), False, None),
     "inbound.status.reason": ("set-status-reason", Validator.quoted_or_simple(), False, None),
     "inbound.status": ("set-status", Validator.range(0, 999), False, None),
-    "inbound.url.": (["rm-destination", "set-destination"], Validator.suffix_group(types.SuffixGroup.URL_FIELDS), True, None),
+    "inbound.url.": (HeaderOperations.DESTINATION_OPERATIONS, Validator.suffix_group(types.SuffixGroup.URL_FIELDS), True, None),
     "outbound.cookie.":
         (
-            ["rm-cookie",
-             "set-cookie"], Validator.http_token(), False, {SectionType.PRE_REMAP, SectionType.REMAP, SectionType.READ_REQUEST}),
+            HeaderOperations.COOKIE_OPERATIONS, Validator.http_token(), False,
+            {SectionType.PRE_REMAP, SectionType.REMAP, SectionType.READ_REQUEST}),
     "outbound.req.":
         (
             HeaderOperations.OPERATIONS, Validator.http_token(), False,
@@ -70,12 +63,10 @@ OPERATOR_MAP: dict[str, tuple[str | list[str] | tuple[str, ...], Callable[[str],
             {SectionType.PRE_REMAP, SectionType.REMAP, SectionType.READ_REQUEST, SectionType.SEND_REQUEST}),
     "outbound.url.":
         (
-            ["rm-destination", "set-destination"], Validator.suffix_group(types.SuffixGroup.URL_FIELDS), True,
+            HeaderOperations.DESTINATION_OPERATIONS, Validator.suffix_group(types.SuffixGroup.URL_FIELDS), True,
             {SectionType.PRE_REMAP, SectionType.REMAP, SectionType.READ_REQUEST})
 }
 
-# This map is for functions which can never be used as conditions. We split this out to avoid
-# the conflict that otherwise happens when a function name is also a condition name.
 STATEMENT_FUNCTION_MAP: dict[str, tuple[str, Callable[[list[str]], None] | None]] = {
     "add-header": ("add-header", Validator.arg_count(2).arg_at(0, Validator.http_token()).arg_at(1, Validator.quoted_or_simple())),
     "counter": ("counter", Validator.arg_count(1).quoted_or_simple()),
@@ -97,12 +88,6 @@ STATEMENT_FUNCTION_MAP: dict[str, tuple[str, Callable[[list[str]], None] | None]
                     Validator.conditional_arg_validation(types.SuffixGroup.PLUGIN_CNTL_MAPPING.value))),
 }
 
-#
-# Condition and Function Maps
-#
-
-# The function map are for the hybrid functions which map to what looks like conditions,
-# but don't map nicely to the X.y syntax we prefer in HRW4U.
 FUNCTION_MAP = {
     "access": ("ACCESS", Validator.arg_count(1).quoted_or_simple()),
     "cache": ("CACHE", Validator.arg_count(0)),
@@ -303,11 +288,6 @@ CONDITION_MAP: dict[str, tuple[str, Callable[[str], None] | None, bool, set[Sect
     "to.url.": ("TO-URL", Validator.suffix_group(types.SuffixGroup.URL_FIELDS), True, None, True, None),
 }
 
-#
-# Static Reverse Resolution Tables
-#
-
-# Fallback tag mappings for complex resolution
 FALLBACK_TAG_MAP: dict[str, tuple[str, bool]] = {
     "HEADER": ("header_condition", True),
     "CLIENT-HEADER": ("inbound.req.", False),
@@ -340,16 +320,7 @@ OPERATOR_COMMAND_MAP: dict[str, tuple[str, str, Callable, Callable]] = {
     "rm-destination": ("destination_ops", "destination", lambda toks: toks[1].lower(), lambda qual: qual)
 }
 
-#
-# Programmatically Generated Reverse Resolution Maps
-#
-
-# Generate reverse resolution map programmatically to eliminate duplication
 REVERSE_RESOLUTION_MAP = get_complete_reverse_resolution_map()
-
-#
-# LSP Pattern Matching Tables
-#
 
 
 @dataclass(slots=True, frozen=True)
@@ -364,26 +335,17 @@ class PatternMatch:
 
 
 class LSPPatternMatcher:
-    """Table-driven pattern matcher for LSP hover functionality."""
 
-    # Define pattern categories with their corresponding documentation field dictionaries
     FIELD_PATTERNS: Final[dict[str, tuple[str, str, str]]] = {
         'now.': ('TIME_FIELDS', 'Current Date/Time Field', 'NOW'),
         'id.': ('ID_FIELDS', 'Transaction/Process Identifier', 'ID'),
         'geo.': ('GEO_FIELDS', 'Geographic Information', 'GEO'),
     }
 
-    # Header patterns with their context information
     HEADER_PATTERNS: Final[list[str]] = ['inbound.req.', 'inbound.resp.', 'outbound.req.', 'outbound.resp.']
-
-    # Cookie patterns
     COOKIE_PATTERNS: Final[list[str]] = ['inbound.cookie.', 'outbound.cookie.']
-
-    # Certificate patterns
     CERTIFICATE_PATTERNS: Final[tuple[str, ...]] = (
         'inbound.conn.client-cert.', 'inbound.conn.server-cert.', 'outbound.conn.client-cert.', 'outbound.conn.server-cert.')
-
-    # Connection patterns
     CONNECTION_PATTERNS: Final[list[str]] = ['inbound.conn.', 'outbound.conn.']
 
     @classmethod

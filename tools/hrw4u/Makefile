@@ -45,12 +45,12 @@ SHARED_FILES=src/common.py \
 UTILS_FILES=src/symbols_base.py \
 	src/visitor_base.py \
 	src/generators.py \
-	src/interning.py \
-	src/perf.py
+	src/interning.py
 
 # hrw4u-specific source files (no LSP modules needed)
 SRC_FILES_HRW4U=src/visitor.py \
-	src/symbols.py
+	src/symbols.py \
+	src/suggestions.py
 ALL_HRW4U_FILES=$(SHARED_FILES) $(UTILS_FILES) $(SRC_FILES_HRW4U)
 
 # Package-specific source files for u4wrh (inverse) - only u4wrh-specific files

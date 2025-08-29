@@ -15,13 +15,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-"""
-HRW4U Language Server Protocol implementation.
-
-This script provides a Language Server Protocol (LSP) server for the HRW4U language,
-offering syntax/semantic analysis, diagnostics, completion suggestions, and hover
-information for editors and IDEs.
-"""
+"""HRW4U Language Server Protocol implementation."""
 
 from __future__ import annotations
 
@@ -47,7 +41,7 @@ from hrw4u_lsp.lsp.strings import (
     VariableDeclaration)
 from hrw4u_lsp.lsp.hover import (
     HoverInfoProvider, FunctionHoverProvider, VariableHoverProvider, SectionHoverProvider, RegexHoverProvider,
-    ModifierHoverProvider)
+    ModifierHoverProvider, OperatorHoverProvider)
 from hrw4u_lsp.lsp.completions import CompletionProvider
 from hrw4u_lsp.lsp.documentation import LSP_FUNCTION_DOCUMENTATION
 
@@ -82,43 +76,12 @@ class LSPErrorListener(ErrorListener):
 class DocumentManager:
     """Manages document synchronization and parsing."""
 
-    _completion_provider = CompletionProvider()
-
     def __init__(self) -> None:
         self.documents: dict[str, str] = {}
         self.diagnostics: dict[str, list[LSPDiagnostic]] = {}
         self.variable_declarations: dict[str, dict[str, VariableDeclaration]] = {}
         self._completion_provider = CompletionProvider()
         self._uri_path_cache: dict[str, str] = {}
-
-    @lru_cache(maxsize=128)
-    def _cached_section_validation(self, section_name: str) -> bool:
-        """Cache section name validation."""
-        valid_sections = {section.value for section in SectionType}
-        return section_name in valid_sections
-
-    #
-    # Helper Methods
-    #
-
-    def _create_completion_item(
-            self,
-            label: str,
-            kind: int,
-            detail: str,
-            documentation: str,
-            insert_text: str = None,
-            text_edit: dict = None,
-            insert_text_format: int = 1) -> dict[str, Any]:
-        """Create a standardized completion item dictionary."""
-        item = {"label": label, "kind": kind, "detail": detail, "documentation": {"kind": "markdown", "value": documentation}}
-        if insert_text:
-            item["insertText"] = insert_text
-        if text_edit:
-            item["textEdit"] = text_edit
-        if insert_text_format != 1:
-            item["insertTextFormat"] = insert_text_format
-        return item
 
     def _add_operator_completions(self, completions: list, base_prefix: str, current_section, context: CompletionContext) -> None:
         """Add operator and condition completions."""
@@ -127,30 +90,12 @@ class DocumentManager:
         completions.extend(operator_completions)
 
     def _add_function_completions(self, completions: list, function_map: dict, function_type: str) -> None:
-        """Add function completions from a function map."""
-        for func_name, (tag, _) in function_map.items():
-            detail = f"{function_type}: {tag}"
-            documentation_value = f"**{func_name}()** - HRW4U {function_type} Function\n\nMaps to: `{tag}`\n\nUsed {'in conditional expressions' if function_type == 'Function' else 'as statements in code blocks'}."
-
-            if func_name in LSP_FUNCTION_DOCUMENTATION:
-                func_doc = LSP_FUNCTION_DOCUMENTATION[func_name]
-                detail = f"{func_doc['category']}: {func_doc['name']}"
-                documentation_value = f"**{func_doc['name']}**\n\n{func_doc['description']}\n\n**Syntax:** `{func_doc['syntax']}`"
-
-            completions.append(
-                self._create_completion_item(
-                    label=func_name,
-                    kind=3,
-                    detail=detail,
-                    documentation=documentation_value,
-                    insert_text=f"{func_name}($0)",
-                    insert_text_format=2))
+        """Add function completions using centralized provider."""
+        completions.extend(self._completion_provider.get_function_completions())
 
     def _add_keyword_completions(self, completions: list) -> None:
-        """Add keyword completions using basic descriptions."""
-        for keyword, desc in LanguageKeyword.get_keywords_with_descriptions().items():
-            documentation_value = f"**{keyword}** - HRW4U keyword"
-            completions.append(self._create_completion_item(label=keyword, kind=14, detail=desc, documentation=documentation_value))
+        """Add keyword completions using centralized provider."""
+        completions.extend(self._completion_provider.get_keyword_completions())
 
     def open_document(self, uri: str, text: str) -> None:
         """Open/update a document."""
@@ -196,9 +141,10 @@ class DocumentManager:
             filename = self._uri_to_path(uri)
             tree, parser, error_collector = create_parse_tree(text, filename, hrw4uLexer, hrw4uParser, "HRW4U", collect_errors=True)
 
+            # Collect parser syntax errors (will be deduplicated later)
+            parser_errors = []
             if hasattr(parser, '_syntax_errors'):
-                for error in parser._syntax_errors:
-                    diagnostics.append(error)
+                parser_errors = list(parser._syntax_errors)
 
             if tree is not None:
                 visitor = HRW4UVisitor(filename=filename, error_collector=error_collector)
@@ -222,9 +168,14 @@ class DocumentManager:
                             "source": "hrw4u-visitor"
                         })
 
+            # Collect semantic errors first (they're more helpful with suggestions)
+            semantic_error_positions = set()
             if error_collector and error_collector.has_errors():
                 for error_obj in error_collector.errors:
                     error_str = str(error_obj)
+                    if hasattr(error_obj, '__notes__') and error_obj.__notes__:
+                        error_str += "\n" + "\n".join(error_obj.__notes__)
+
                     severity = 1
 
                     line_num = getattr(error_obj, 'line', 1) - 1 if hasattr(error_obj, 'line') else 0
@@ -233,19 +184,47 @@ class DocumentManager:
                     line_num = max(0, line_num)
                     col_num = max(0, col_num)
 
+                    semantic_error_positions.add((line_num, col_num))
+
                     lines = text.split('\n')
                     if line_num < len(lines):
                         line_text = lines[line_num]
-                        end_col = col_num + 10
-                        if col_num < len(line_text):
-                            start = col_num
-                            end = col_num
-                            while end < len(line_text) and (line_text[end].isalnum() or line_text[end] in '._'):
-                                end += 1
-                            if end > start:
-                                end_col = end
+                        end_col = col_num + 1
+
+                        # Check if this error has a suggestion - if so, adjust range accordingly
+                        if hasattr(error_obj, '__notes__') and error_obj.__notes__:
+                            for note in error_obj.__notes__:
+                                if "Did you mean:" in note:
+                                    suggestion_part = note.split("Did you mean: ")[1].rstrip("?")
+                                    if suggestion_part and col_num < len(line_text):
+                                        start = col_num
+                                        segments = suggestion_part.split('.')
+                                        pos = start
+
+                                        for i, _ in enumerate(segments):
+                                            # Skip the current word
+                                            while pos < len(line_text) and (line_text[pos].isalnum() or line_text[pos] == '_'):
+                                                pos += 1
+
+                                            if i < len(segments) - 1:
+                                                if pos < len(line_text) and line_text[pos] == '.':
+                                                    pos += 1
+                                                else:
+                                                    break
+
+                                        end_col = pos
+                                    break
+                        else:
+                            # No suggestion - expand to full token as before
+                            if col_num < len(line_text):
+                                start = col_num
+                                end = col_num
+                                while end < len(line_text) and (line_text[end].isalnum() or line_text[end] in '._'):
+                                    end += 1
+                                if end > start:
+                                    end_col = end
                     else:
-                        end_col = col_num + 10
+                        end_col = col_num + 1
 
                     diagnostics.append(
                         {
@@ -264,6 +243,15 @@ class DocumentManager:
                             "message": error_str,
                             "source": "hrw4u"
                         })
+
+            # Add parser errors only if they don't overlap with semantic errors
+            for parser_error in parser_errors:
+                error_line = parser_error.get("range", {}).get("start", {}).get("line", -1)
+                error_char = parser_error.get("range", {}).get("start", {}).get("character", -1)
+
+                # Only add parser error if there's no semantic error at the same position
+                if (error_line, error_char) not in semantic_error_positions:
+                    diagnostics.append(parser_error)
 
         except Exception as e:
             diagnostics.append(
@@ -307,20 +295,7 @@ class DocumentManager:
         completions = []
 
         if context["is_section_context"]:
-            for section in SectionType:
-                completions.append(
-                    {
-                        "label": section.value,
-                        "kind": 14,
-                        "detail": f"Hook: {section.hook_name}",
-                        "documentation":
-                            {
-                                "kind": "markdown",
-                                "value": f"**{section.value}** - HRW4U Section\n\n" + f"Maps to ATS hook: `{section.hook_name}`"
-                            },
-                        "insertText": f"{section.value} {{\n\t$0\n}}",
-                        "insertTextFormat": 2
-                    })
+            completions.extend(self._completion_provider.get_section_completions())
 
         # Dot-notation completions (operators and conditions)
         elif context["has_dot"]:
@@ -334,20 +309,7 @@ class DocumentManager:
 
         # Variable type completions (in VARS context)
         if context["current_section"] and context["current_section"].value == "VARS":
-            for var_type_enum in VarType:
-                var_type = var_type_enum.value[0]
-                completions.append(
-                    {
-                        "label": var_type,
-                        "kind": 25,
-                        "detail": f"Variable type: {var_type}",
-                        "documentation":
-                            {
-                                "kind": "markdown",
-                                "value":
-                                    f"**{var_type}** - HRW4U Variable Type\n\nUsed for declaring variables in the VARS section."
-                            }
-                    })
+            completions.extend(self._completion_provider.get_variable_type_completions())
 
         if context["allows_keywords"]:
             self._add_keyword_completions(completions)
@@ -364,6 +326,10 @@ class DocumentManager:
 
         current_line = lines[line]
         if character >= len(current_line):
+            return None
+
+        comment_start = current_line.find('#')
+        if comment_start != -1 and character >= comment_start:
             return None
 
         string_info = StringLiteralHandler.check_string_literal(current_line, character)
@@ -424,12 +390,11 @@ class DocumentManager:
             return variable_info
 
         # Check if this is an operator/condition before falling back to generic symbol
-        from hrw4u_lsp.lsp.hover import OperatorHoverProvider
         operator_info = OperatorHoverProvider.get_operator_hover_info(word)
         if operator_info:
             return operator_info
 
-        return HoverInfoProvider.create_hover_info(f"**{word}** - HRW4U Language symbol")
+        return None
 
 
 class HRW4ULanguageServer:
@@ -492,6 +457,8 @@ class HRW4ULanguageServer:
             self._handle_completion(message)
         elif method == "textDocument/hover":
             self._handle_hover(message)
+        elif method == "textDocument/codeAction":
+            self._handle_code_action(message)
         elif method == "shutdown":
             self._handle_shutdown(message)
         elif method == "exit":
@@ -509,7 +476,8 @@ class HRW4ULanguageServer:
                             "completionProvider": {
                                 "triggerCharacters": ["."]
                             },
-                            "hoverProvider": True
+                            "hoverProvider": True,
+                            "codeActionProvider": True
                         }
                 }
         }
@@ -566,6 +534,42 @@ class HRW4ULanguageServer:
         hover_info = self.document_manager.get_hover_info(uri, line, character)
 
         response = {"jsonrpc": "2.0", "id": message["id"], "result": hover_info}
+        self._send_message(response)
+
+    def _handle_code_action(self, message: dict[str, Any]) -> None:
+        """Handle code action requests for quick fixes."""
+        params = message["params"]
+        text_document = params["textDocument"]
+        range_obj = params["range"]
+        context = params.get("context", {})
+        uri = text_document["uri"]
+
+        actions = []
+
+        # Get diagnostics for this range
+        diagnostics = context.get("diagnostics", [])
+        for diagnostic in diagnostics:
+            if diagnostic.get("source") == "hrw4u" and "Did you mean:" in diagnostic.get("message", ""):
+                message_text = diagnostic["message"]
+                if "Did you mean:" in message_text:
+                    suggestion_part = message_text.split("Did you mean: ")[1].split("\n")[0].rstrip("?")
+                    if suggestion_part:
+                        action = {
+                            "title": f"Replace with '{suggestion_part}'",
+                            "kind": "quickfix",
+                            "diagnostics": [diagnostic],
+                            "edit": {
+                                "changes": {
+                                    uri: [{
+                                        "range": diagnostic["range"],
+                                        "newText": suggestion_part
+                                    }]
+                                }
+                            }
+                        }
+                        actions.append(action)
+
+        response = {"jsonrpc": "2.0", "id": message["id"], "result": actions}
         self._send_message(response)
 
     def _handle_shutdown(self, message: dict[str, Any]) -> None:

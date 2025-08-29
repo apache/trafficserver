@@ -23,19 +23,16 @@ import hrw4u.types as types
 from hrw4u.states import SectionType
 from hrw4u.common import SystemDefaults
 from hrw4u.symbols_base import SymbolResolverBase
-
-#
-# Symbol Resolution
-#
+from hrw4u.suggestions import SuggestionEngine
 
 
 class SymbolResolver(SymbolResolverBase):
-    """Resolves hrw4u symbols to their corresponding header_rewrite operations."""
 
     def __init__(self, debug: bool = SystemDefaults.DEFAULT_DEBUG) -> None:
         super().__init__(debug)
         self._symbols: dict[str, types.Symbol] = {}
         self._var_counter = {vt: 0 for vt in types.VarType}
+        self._suggestion_engine = SuggestionEngine()
 
     def symbol_for(self, name: str) -> types.Symbol | None:
         return self._symbols.get(name)
@@ -66,7 +63,6 @@ class SymbolResolver(SymbolResolverBase):
 
     def resolve_assignment(self, name: str, value: str, section: SectionType | None = None) -> str:
         with self.debug_context("resolve_assignment", name, value, section):
-            # Use cached operator lookup from base class
             for op_key, (commands, validator, uppercase, restricted_sections) in self._operator_map.items():
                 if op_key.endswith("."):
                     if name.startswith(op_key):
@@ -79,44 +75,37 @@ class SymbolResolver(SymbolResolverBase):
 
                         if isinstance(commands, (list, tuple)):
                             if value == '""':
-                                result = f"{commands[0]} {qualifier}"
+                                return f"{commands[0]} {qualifier}"
                             else:
-                                result = f"{commands[1]} {qualifier} {value}"
+                                return f"{commands[1]} {qualifier} {value}"
                         else:
-                            result = f"{commands} {qualifier} {value}"
-                        return result
+                            return f"{commands} {qualifier} {value}"
                 elif name == op_key:
                     self.validate_section_access(name, section, restricted_sections)
                     if validator:
                         validator(value)
-                    result = f"{commands} {value}"
-                    return result
+                    return f"{commands} {value}"
 
-        if resolved_lhs := self.symbol_for(name):
-            if resolved_rhs := self.symbol_for(value):
-                if resolved_rhs.var_type != resolved_lhs.var_type:
-                    raise SymbolResolutionError(value, f"Type mismatch: {resolved_lhs.var_type} vs {resolved_rhs.var_type}")
-                result = resolved_lhs.as_operator(resolved_rhs.as_cond())
-                self._dbg.exit(f"=> var-to-var assignment: {result}")
-                return result
+            if resolved_lhs := self.symbol_for(name):
+                if resolved_rhs := self.symbol_for(value):
+                    if resolved_rhs.var_type != resolved_lhs.var_type:
+                        raise SymbolResolutionError(value, f"Type mismatch: {resolved_lhs.var_type} vs {resolved_rhs.var_type}")
+                    return resolved_lhs.as_operator(resolved_rhs.as_cond())
 
-            Validator.validate_assignment(resolved_lhs.var_type, value, name)
-            result = resolved_lhs.as_operator(value)
-            self._dbg.exit(f"=> symbol_table: {result}")
-            return result
+                Validator.validate_assignment(resolved_lhs.var_type, value, name)
+                return resolved_lhs.as_operator(value)
 
-        self._dbg.exit("=> not found")
-        error = SymbolResolutionError(name, "Unknown assignment symbol")
-        if section:
-            error.add_section_context(section.value)
-        raise error
+            error = SymbolResolutionError(name, "Unknown assignment symbol")
+            suggestions = self._suggestion_engine.get_suggestions(name, 'assignment', section)
+            if suggestions:
+                error.add_symbol_suggestion(suggestions)
+            raise error
 
     def resolve_condition(self, name: str, section: SectionType | None = None) -> tuple[str, bool]:
         with self.debug_context("resolve_condition", name, section):
             if symbol := self.symbol_for(name):
                 return symbol.as_cond(), False
 
-            # Use cached condition lookup from base class
             if condition_info := self._lookup_condition_cached(name):
                 tag, _, _, restricted, default_expr, _ = condition_info
                 self.validate_section_access(name, section, restricted)
@@ -134,58 +123,57 @@ class SymbolResolver(SymbolResolverBase):
                 return resolved, default_expr
 
             error = SymbolResolutionError(name, "Unknown condition symbol")
-            if section:
-                error.add_section_context(section.value)
+            declared_vars = list(self._symbols.keys())
+            suggestions = self._suggestion_engine.get_suggestions(name, 'condition', section, declared_vars)
+            if suggestions:
+                error.add_symbol_suggestion(suggestions)
             raise error
 
     def resolve_function(self, func_name: str, args: list[str], strip_quotes: bool = False) -> str:
         with self.debug_context("resolve_function", func_name, args):
-            # Use cached function lookup from base class
             if function_info := self._lookup_function_cached(func_name):
                 tag, validator = function_info
                 if validator:
                     validator(args)
 
-                cleaned_args = []
-                for arg in args:
-                    if strip_quotes and arg.startswith('"') and arg.endswith('"'):
-                        cleaned_args.append(arg[1:-1])
-                    else:
-                        cleaned_args.append(arg)
-                if cleaned_args:
-                    result = f"%{{{tag}:{','.join(cleaned_args)}}}"
+                if strip_quotes:
+                    cleaned_args = [arg[1:-1] if arg.startswith('"') and arg.endswith('"') else arg for arg in args]
                 else:
-                    result = f"%{{{tag}}}"
-                return result
+                    cleaned_args = args
+
+                return f"%{{{tag}:{','.join(cleaned_args)}}}" if cleaned_args else f"%{{{tag}}}"
 
             error = SymbolResolutionError(func_name, f"Unknown function: '{func_name}'")
             error.add_note(f"Arguments provided: {len(args)}")
+            suggestions = self._suggestion_engine.get_suggestions(func_name, 'function')
+            if suggestions:
+                error.add_symbol_suggestion(suggestions)
             raise error
 
     def resolve_statement_func(self, func_name: str, args: list[str]) -> str:
         with self.debug_context("resolve_statement_func", func_name, args):
-            # Use cached statement function lookup from base class
             if function_info := self._lookup_statement_function_cached(func_name):
                 command, validator = function_info
                 if validator:
                     validator(args)
-                if not args:
-                    result = command
-                else:
-                    result = f"{command} {' '.join(args)}"
-                    # TODO: Move this special case to states.py module
-                    if func_name == "keep_query":
-                        result += " [I]"
+
+                result = command if not args else f"{command} {' '.join(args)}"
+                # TODO: Move this special case to states.py module
+                if func_name == "keep_query":
+                    result += " [I]"
                 return result
 
             error = SymbolResolutionError(func_name, f"Unknown statement function: '{func_name}'")
             error.add_note(f"Arguments provided: {len(args)}")
+            suggestions = self._suggestion_engine.get_suggestions(func_name, 'statement_function')
+            if suggestions:
+                error.add_symbol_suggestion(suggestions)
             raise error
 
-
-#
-# Hook Mapping
-#
+    def get_variable_suggestions(self, name: str, section: SectionType | None = None) -> list[str]:
+        """Get suggestions for undefined variables, including declared variables."""
+        declared_vars = list(self._symbols.keys())
+        return self._suggestion_engine.get_suggestions(name, 'condition', section, declared_vars)
 
     def map_hook(self, label: str) -> str:
         with self.debug_context("map_hook", label):

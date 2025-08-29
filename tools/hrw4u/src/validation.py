@@ -14,8 +14,6 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-"""Shared validation utilities for HRW4U."""
-
 from __future__ import annotations
 
 import re
@@ -25,13 +23,8 @@ from hrw4u import states
 import hrw4u.types as types
 from hrw4u.common import RegexPatterns
 
-#
-# Validator Chain Infrastructure
-#
-
 
 class ValidatorChain:
-    """Chains multiple validation functions together."""
 
     def __init__(self, funcs: list[Callable[[list[str]], None]] | None = None) -> None:
         self._validators: list[Callable[[list[str]], None]] = funcs or []
@@ -52,14 +45,7 @@ class ValidatorChain:
         self._validators.append(func)
         return self
 
-#
-# Validator Chain Methods
-#
-
     def arg_at(self, index: int, func: Callable[[str], None]) -> 'ValidatorChain':
-        """
-        Validate a specific argument at the given index.
-        """
 
         def validator(args: list[str]) -> None:
             try:
@@ -89,11 +75,6 @@ class ValidatorChain:
 
     def suffix_group(self, group: types.SuffixGroup) -> 'ValidatorChain':
         return self._add(self._wrap_args(group.validate))
-
-
-#
-# Core Validator Class
-#
 
 
 class Validator:
@@ -293,5 +274,29 @@ class Validator:
         def validator(value: str) -> None:
             if not (value.startswith('{') and value.endswith('}')):
                 raise SymbolResolutionError(value, "IP range must be enclosed in {}")
+
+        return validator
+
+    @staticmethod
+    def regex_pattern() -> Callable[[str], None]:
+        """Validate PCRE2-compatible regular expression patterns."""
+
+        def validator(value: str) -> None:
+            if value.startswith('/') and value.endswith('/') and len(value) > 2:
+                pattern = value[1:-1]
+            else:
+                pattern = value
+
+            if not pattern:
+                raise SymbolResolutionError(value, "Empty regex pattern")
+
+            try:
+                re.compile(pattern)
+            except re.error as e:
+                error_msg = str(e)
+                if len(error_msg) > 60:
+                    error_msg = error_msg[:57] + "..."
+
+                raise SymbolResolutionError(value, f"Invalid regex: {error_msg}")
 
         return validator

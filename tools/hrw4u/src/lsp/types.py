@@ -14,11 +14,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-"""
-TypedDict definitions for LSP structures.
-
-This module provides strongly-typed data structures for the HRW4U LSP server.
-"""
+"""TypedDict definitions for LSP structures."""
 
 from __future__ import annotations
 

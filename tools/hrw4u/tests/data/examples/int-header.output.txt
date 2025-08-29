@@ -1,2 +1,3 @@
+# This comment is merely here for testing comments
 cond %{REMAP_PSEUDO_HOOK} [AND]
     set-header @PropertyName "someproperty"

@@ -1,3 +1,4 @@
 cond %{SEND_REQUEST_HDR_HOOK} [AND]
+# Remove the cache-control and Pragma header. Pragma is rare though
     rm-header Cache-Control
     rm-header Pragma

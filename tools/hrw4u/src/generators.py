@@ -25,53 +25,48 @@ reducing maintenance overhead.
 from __future__ import annotations
 
 from typing import Any
-from functools import lru_cache
+from functools import cache
 from hrw4u.states import SectionType
 
 
 class TableGenerator:
-    """
-    Generates derived tables and reverse mappings from primary tables.
-    """
+    """Generates derived tables and reverse mappings from primary tables."""
 
     def __init__(self) -> None:
-        self._cache_enabled = True
+        pass
 
-    @lru_cache(maxsize=1)
-    def generate_reverse_condition_map(self, condition_map: dict[str, tuple]) -> dict[str, str]:
-        """
-        Generate reverse condition mapping from forward condition map.
-        """
+    @staticmethod
+    def _clean_tag(tag: str) -> str:
+        """Extract clean tag name from %{TAG:payload} format."""
+        return tag.strip().removeprefix('%{').removesuffix('}').split(':')[0]
+
+    def generate_reverse_condition_map(self, condition_map: tuple[tuple[str, tuple], ...]) -> dict[str, str]:
+        """Generate reverse condition mapping from forward condition map."""
         reverse_map = {}
 
-        for ident_key, (tag, _, _, _, _, _) in condition_map.items():
+        for ident_key, (tag, _, _, _, _, _) in condition_map:
             if not ident_key.endswith('.'):
-                # Extract the tag without %{} wrapper
-                clean_tag = tag.strip().removeprefix('%{').removesuffix('}').split(':')[0]
+                clean_tag = self._clean_tag(tag)
                 reverse_map[clean_tag] = ident_key
 
         return reverse_map
 
-    @lru_cache(maxsize=1)
-    def generate_reverse_function_map(self, function_map: dict[str, tuple]) -> dict[str, str]:
+    def generate_reverse_function_map(self, function_map: tuple[tuple[str, tuple], ...]) -> dict[str, str]:
         """Generate reverse function mapping from forward function map."""
-        return {tag: func_name for func_name, (tag, _) in function_map.items()}
+        return {tag: func_name for func_name, (tag, _) in function_map}
 
-    @lru_cache(maxsize=1)
+    @cache
     def generate_section_hook_mapping(self) -> dict[str, str]:
         """Generate section name to hook name mapping."""
         return {section.value: section.hook_name for section in SectionType}
 
-    @lru_cache(maxsize=1)
+    @cache
     def generate_hook_section_mapping(self) -> dict[str, str]:
         """Generate hook name to section name mapping."""
         return {section.hook_name: section.value for section in SectionType}
 
     def generate_ip_mapping(self) -> dict[str, str]:
-        """
-        Generate IP payload to identifier mapping from CONDITION_MAP.
-        """
-        # Import here to avoid circular dependency
+        """Generate IP payload to identifier mapping from CONDITION_MAP."""
         from hrw4u.tables import CONDITION_MAP
 
         ip_mapping = {}
@@ -83,9 +78,7 @@ class TableGenerator:
         return ip_mapping
 
     def generate_status_target_mapping(self) -> dict[frozenset[SectionType], str]:
-        """
-        Generate status target mappings based on section restrictions.
-        """
+        """Generate status target mappings based on section restrictions."""
         return {
             frozenset({SectionType.REMAP, SectionType.SEND_RESPONSE}): "inbound.status",
             frozenset({SectionType.PRE_REMAP, SectionType.READ_REQUEST, SectionType.SEND_REQUEST,
@@ -93,9 +86,7 @@ class TableGenerator:
         }
 
     def generate_context_mappings(self) -> dict[str, dict[SectionType | frozenset[SectionType], str]]:
-        """
-        Generate context type mappings for headers, URLs, etc.
-        """
+        """Generate context type mappings for headers, URLs, etc."""
         return {
             "HEADER_CONTEXT_MAP":
                 {
@@ -111,9 +102,7 @@ class TableGenerator:
         }
 
     def generate_ambiguous_tag_resolution(self) -> dict[str, dict[str, Any]]:
-        """
-        Generate ambiguous tag resolution mappings.
-        """
+        """Generate ambiguous tag resolution mappings."""
         return {
             "STATUS":
                 {
@@ -132,11 +121,9 @@ class TableGenerator:
         }
 
     def generate_complete_reverse_resolution_map(self) -> dict[str, Any]:
-        """
-        Generate the complete reverse resolution map.
+        """Generate the complete reverse resolution map.
 
-        Combines all the individual mapping generators into a single structure
-        that replaces the manually maintained REVERSE_RESOLUTION_MAP.
+        Combines all individual mapping generators into a single structure.
         """
         reverse_map = {}
 
@@ -165,69 +152,17 @@ class TableGenerator:
 
         return reverse_map
 
-    def validate_table_consistency(self, operator_map: dict, condition_map: dict, function_map: dict) -> list[str]:
-        """
-        Validate consistency between forward and reverse mappings.
-        """
-        issues = []
-        all_tags = set()
-
-        # Collect condition tags
-        for key, (tag, *_) in condition_map.items():
-            clean_tag = tag.strip().removeprefix('%{').removesuffix('}').split(':')[0]
-            if clean_tag in all_tags:
-                issues.append(f"Duplicate tag '{clean_tag}' found in condition map (key: {key})")
-            all_tags.add(clean_tag)
-
-        # Collect function tags
-        for key, (tag, *_) in function_map.items():
-            if tag in all_tags:
-                issues.append(f"Duplicate tag '{tag}' found in function map (key: {key})")
-            all_tags.add(tag)
-
-        # Validate section restrictions are consistent
-        for key, (_, _, _, sections, *_) in condition_map.items():
-            if sections:
-                for section in sections:
-                    if not isinstance(section, SectionType):
-                        issues.append(f"Invalid section type in condition map key '{key}': {type(section)}")
-
-        for key, (_, _, _, sections) in operator_map.items():
-            if sections:
-                for section in sections:
-                    if not isinstance(section, SectionType):
-                        issues.append(f"Invalid section type in operator map key '{key}': {type(section)}")
-
-        return issues
-
-    def clear_caches(self) -> None:
-        """Clear all cached generated mappings."""
-        if self._cache_enabled:
-            self.generate_reverse_condition_map.cache_clear()
-            self.generate_reverse_function_map.cache_clear()
-            self.generate_section_hook_mapping.cache_clear()
-            self.generate_hook_section_mapping.cache_clear()
-
-    def disable_caching(self) -> None:
-        """Disable caching for testing or dynamic scenarios."""
-        self._cache_enabled = False
-        self.clear_caches()
-
-    def enable_caching(self) -> None:
-        """Re-enable caching for performance."""
-        self._cache_enabled = True
-
 
 # Singleton instance for global use
 _table_generator = TableGenerator()
 
 
-def get_reverse_condition_map(condition_map: dict) -> dict[str, str]:
+def get_reverse_condition_map(condition_map: dict[str, tuple]) -> dict[str, str]:
     """Get reverse condition mapping."""
     return _table_generator.generate_reverse_condition_map(tuple(condition_map.items()))
 
 
-def get_reverse_function_map(function_map: dict) -> dict[str, str]:
+def get_reverse_function_map(function_map: dict[str, tuple]) -> dict[str, str]:
     """Get reverse function mapping."""
     return _table_generator.generate_reverse_function_map(tuple(function_map.items()))
 
@@ -240,13 +175,3 @@ def get_section_mappings() -> tuple[dict[str, str], dict[str, str]]:
 def get_complete_reverse_resolution_map() -> dict[str, Any]:
     """Get the complete generated reverse resolution map."""
     return _table_generator.generate_complete_reverse_resolution_map()
-
-
-def validate_table_consistency(operator_map: dict, condition_map: dict, function_map: dict) -> list[str]:
-    """Validate consistency between tables."""
-    return _table_generator.validate_table_consistency(operator_map, condition_map, function_map)
-
-
-def clear_table_caches() -> None:
-    """Clear all table generation caches."""
-    _table_generator.clear_caches()

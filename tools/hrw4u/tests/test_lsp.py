@@ -14,7 +14,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-"""Optimized LSP server tests for the HRW4U Language Server."""
+"""LSP server tests for the HRW4U Language Server."""
 
 from __future__ import annotations
 
@@ -26,8 +26,10 @@ from typing import Any
 import pytest
 import threading
 import queue
-import concurrent.futures
 from dataclasses import dataclass
+from collections import deque
+import os
+import lsp_asserts
 
 
 @dataclass
@@ -40,8 +42,8 @@ class LSPTestCase:
     expected_checks: list[callable]
 
 
-class OptimizedLSPClient:
-    """High-performance LSP client with reduced startup overhead and batching."""
+class LSPClient:
+    """LSP client for tests"""
 
     def __init__(self, server_command: list[str]) -> None:
         self.server_command = server_command
@@ -49,7 +51,10 @@ class OptimizedLSPClient:
         self.request_id = 1
         self.response_queue = queue.Queue()
         self.reader_thread = None
+        self.stderr_thread = None
+        self.stderr_buffer = deque(maxlen=1000)
         self.initialized = False
+        self.shutdown_requested = False
 
     def start_server(self) -> None:
         """Start server and begin background response reading."""
@@ -58,40 +63,87 @@ class OptimizedLSPClient:
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            text=True,
-            bufsize=0,  # Unbuffered for faster I/O
-            universal_newlines=True)
+            text=False,  # Binary mode for proper LSP framing
+            bufsize=0)
 
-        # Start background thread to read responses
+        # Start background threads for stdout and stderr
         self.reader_thread = threading.Thread(target=self._read_responses, daemon=True)
         self.reader_thread.start()
 
-        # Do initialization once
+        self.stderr_thread = threading.Thread(target=self._drain_stderr, daemon=True)
+        self.stderr_thread.start()
+
         self._initialize_server()
 
     def _read_responses(self) -> None:
-        """Background thread to continuously read server responses."""
-        while self.process and self.process.poll() is None:
+        """Background thread to continuously read server responses with proper LSP framing."""
+        while self.process and self.process.poll() is None and not self.shutdown_requested:
             try:
-                line = self.process.stdout.readline()
-                if not line:
+                # Read headers until blank line
+                headers = {}
+                while True:
+                    line = self.process.stdout.readline()
+                    if not line:
+                        return  # EOF
+
+                    line = line.decode('ascii', errors='ignore').strip()
+                    if not line:  # Empty line marks end of headers
+                        break
+
+                    if ':' in line:
+                        key, value = line.split(':', 1)
+                        headers[key.strip().lower()] = value.strip()
+
+                # Get content length from headers
+                content_length_str = headers.get('content-length')
+                if content_length_str is None:
+                    continue  # Invalid LSP message - no Content-Length
+
+                try:
+                    content_length = int(content_length_str)
+                except ValueError:
+                    continue  # Invalid Content-Length value
+
+                # Read exact number of bytes for the body
+                content_bytes = self.process.stdout.read(content_length)
+                if len(content_bytes) != content_length:
+                    continue  # Incomplete read
+
+                # Decode as UTF-8 after full payload is read
+                try:
+                    content = content_bytes.decode('utf-8')
+                    response = json.loads(content)
+                    self.response_queue.put(response)
+                except json.JSONDecodeError as e:
+                    # Log specific JSON decode error but continue
+                    continue
+                except UnicodeDecodeError as e:
+                    # Log specific Unicode decode error but continue
                     continue
 
-                line = line.strip()
-                if line.startswith("Content-Length:"):
-                    content_length = int(line.split(":")[1].strip())
-                    self.process.stdout.readline()  # Empty line
-                    content = self.process.stdout.read(content_length)
-
-                    if content:
-                        try:
-                            response = json.loads(content)
-                            self.response_queue.put(response)
-                        except json.JSONDecodeError:
-                            continue
-
-            except Exception:
+            except (IOError, OSError, BrokenPipeError):
+                # Connection-related errors - break the loop
+                break
+            except Exception as e:
+                # Store unexpected errors for debugging but continue
                 continue
+
+    def _drain_stderr(self) -> None:
+        """Background thread to continuously drain stderr to prevent deadlocks."""
+        while self.process and self.process.poll() is None and not self.shutdown_requested:
+            try:
+                line = self.process.stderr.readline()
+                if not line:
+                    break
+                line = line.decode('utf-8', errors='ignore').strip()
+                if line:
+                    self.stderr_buffer.append(line)
+            except Exception:
+                break
+
+    def get_server_stderr(self, last_n: int = 20) -> list[str]:
+        """Get the last N lines of server stderr for debugging."""
+        return list(self.stderr_buffer)[-last_n:]
 
     def _initialize_server(self) -> None:
         """Initialize server once and wait for ready state."""
@@ -121,32 +173,41 @@ class OptimizedLSPClient:
 
         self.send_message(init_message)
         self.request_id += 1
-
-        # Wait for initialize response
         self.wait_for_response(timeout=3.0)
-
-        # Send initialized notification
         self.send_message({"jsonrpc": "2.0", "method": "initialized", "params": {}})
-
         self.initialized = True
 
     def send_message(self, message: dict[str, Any]) -> None:
-        """Send message with minimal overhead."""
+        """Send message with proper binary LSP framing."""
         if not self.process:
             raise RuntimeError("Server not started")
 
-        content = json.dumps(message, separators=(',', ':'))  # Compact JSON
-        request = f"Content-Length: {len(content)}\r\n\r\n{content}"
+        content = json.dumps(message, separators=(',', ':'), ensure_ascii=False)  # Compact JSON
+        content_bytes = content.encode('utf-8')
+        content_length = len(content_bytes)
+
+        # Build LSP message with proper byte length
+        request = f"Content-Length: {content_length}\r\n\r\n".encode('ascii') + content_bytes
         self.process.stdin.write(request)
         self.process.stdin.flush()
 
     def wait_for_response(self, timeout: float = 2.0, expect_id: int | None = None) -> dict[str, Any] | None:
-        """Wait for response with reduced timeout and better polling."""
+        """Wait for response with adaptive backoff and configurable timeout."""
+        # Allow environment override for timeout
+        env_timeout = os.environ.get('HRW4U_LSP_TIMEOUT')
+        if env_timeout:
+            try:
+                timeout = float(env_timeout)
+            except ValueError:
+                pass  # Use default if invalid
+
         start_time = time.time()
+        poll_interval = 0.1  # Start with fast polling
+        max_poll_interval = 0.5  # Cap at 0.5s
 
         while time.time() - start_time < timeout:
             try:
-                response = self.response_queue.get(timeout=0.1)
+                response = self.response_queue.get(timeout=poll_interval)
                 if expect_id is not None:
                     if response.get("id") == expect_id:
                         return response
@@ -155,6 +216,8 @@ class OptimizedLSPClient:
                     continue
                 return response
             except queue.Empty:
+                # Gradually increase polling interval for backoff
+                poll_interval = min(poll_interval * 1.2, max_poll_interval)
                 continue
 
         return None
@@ -174,7 +237,6 @@ class OptimizedLSPClient:
             }
         }
         self.send_message(open_message)
-        # No sleep - let diagnostics come when ready
 
     def request_completion(self, uri: str, line: int, character: int) -> dict[str, Any] | None:
         """Request completion with current request ID."""
@@ -223,75 +285,78 @@ class OptimizedLSPClient:
         return self.wait_for_response(expect_id=expected_id, timeout=2.0)
 
     def stop_server(self) -> None:
-        """Clean shutdown."""
-        if self.process:
-            self.process.terminate()
-            self.process.wait(timeout=5.0)
+        """Graceful shutdown with JSON-RPC shutdown sequence and fallback kill."""
+        if not self.process:
+            return
+
+        self.shutdown_requested = True
+
+        try:
+            # Send JSON-RPC shutdown request
+            shutdown_message = {"jsonrpc": "2.0", "id": self.request_id, "method": "shutdown", "params": {}}
+
+            self.send_message(shutdown_message)
+
+            # Wait for shutdown response (optimized shorter timeout)
+            shutdown_response = self.wait_for_response(timeout=0.5, expect_id=self.request_id)
+            self.request_id += 1
+
+            # Send exit notification
+            exit_message = {"jsonrpc": "2.0", "method": "exit", "params": {}}
+            self.send_message(exit_message)
+
+            # Wait for process to exit gracefully (optimized timeout)
+            try:
+                self.process.wait(timeout=1.0)
+            except subprocess.TimeoutExpired:
+                # Fallback: terminate if it doesn't exit gracefully
+                self.process.terminate()
+                try:
+                    self.process.wait(timeout=0.5)
+                except subprocess.TimeoutExpired:
+                    # Last resort: kill
+                    self.process.kill()
+                    self.process.wait()
+
+        except Exception:
+            # If anything goes wrong, fall back to terminate (optimized timeout)
+            try:
+                self.process.terminate()
+                self.process.wait(timeout=0.5)
+            except subprocess.TimeoutExpired:
+                self.process.kill()
+                self.process.wait()
+
+        # Ensure threads complete
+        if self.reader_thread and self.reader_thread.is_alive():
+            self.reader_thread.join(timeout=1.0)
+        if self.stderr_thread and self.stderr_thread.is_alive():
+            self.stderr_thread.join(timeout=1.0)
 
 
-@pytest.fixture(scope="session")  # Session scope - one server for all tests
+def _create_test_document(client, content: str, test_name: str) -> str:
+    """Helper to create and open a test document."""
+    uri = f"file:///test_{test_name}.hrw4u"
+    client.open_document(uri, content)
+    return uri
+
+
+def _assert_hover_response(response: dict[str, Any] | None, expected_content: str, context: str) -> str:
+    """Helper to validate hover response structure and extract content - use new centralized helpers."""
+    return lsp_asserts.assert_hover_contents(response, expected_content, context)
+
+
+@pytest.fixture(scope="session")
 def shared_lsp_client():
     """Shared LSP client for all tests to avoid startup overhead."""
     lsp_script = Path(__file__).parent.parent / "scripts" / "hrw4u-lsp"
     if not lsp_script.exists():
         pytest.skip("hrw4u-lsp script not found - run 'make' first")
 
-    client = OptimizedLSPClient([str(lsp_script)])
+    client = LSPClient([str(lsp_script)])
     client.start_server()
     yield client
     client.stop_server()
-
-
-def test_lsp_initialization_optimized(shared_lsp_client) -> None:
-    """Test basic initialization (server already initialized by fixture)."""
-    # Server is already initialized, just verify it's working
-    assert shared_lsp_client.initialized
-    assert shared_lsp_client.process.poll() is None  # Still running
-
-
-def test_document_operations_optimized(shared_lsp_client) -> None:
-    """Test document operations with reduced waiting."""
-    test_content = """READ_REQUEST {
-    inbound.req.host = "example.com";
-    inbound.resp.body = "Hello World";
-}"""
-
-    shared_lsp_client.open_document("file:///test_doc_ops.hrw4u", test_content)
-    # No arbitrary sleep - diagnostics will come when ready
-
-
-def test_completion_optimized(shared_lsp_client) -> None:
-    """Test completion with optimized timing."""
-    test_content = """READ_REQUEST {
-    inbound.req.host = "example.com";
-}"""
-
-    shared_lsp_client.open_document("file:///test_completion.hrw4u", test_content)
-
-    response = shared_lsp_client.request_completion("file:///test_completion.hrw4u", 1, 12)
-
-    assert response is not None
-    assert "result" in response
-    assert "items" in response["result"]
-    items = response["result"]["items"]
-    assert len(items) > 0
-
-    for item in items:
-        if "textEdit" in item:
-            assert "range" in item["textEdit"]
-            assert "newText" in item["textEdit"]
-
-
-def test_hover_optimized(shared_lsp_client) -> None:
-    """Test hover with optimized timing."""
-    test_content = "READ_REQUEST { inbound.req.host = \"example.com\"; }"
-
-    shared_lsp_client.open_document("file:///test_hover.hrw4u", test_content)
-
-    response = shared_lsp_client.request_hover("file:///test_hover.hrw4u", 0, 5)
-
-    assert response is not None
-    assert "result" in response
 
 
 @pytest.mark.parametrize(
@@ -310,27 +375,17 @@ def test_section_restrictions_batch(shared_lsp_client, section, prefix, should_a
     uri = f"file:///test_restrictions_{section}_{prefix.replace('.', '_')}.hrw4u"
     shared_lsp_client.open_document(uri, test_content)
 
-    # Position after the prefix
     char_pos = len(f"    {prefix}")
     response = shared_lsp_client.request_completion(uri, 1, char_pos)
 
-    assert response is not None
-    assert "result" in response
-    items = response["result"]["items"]
-
-    matching_items = [item for item in items if item["label"].startswith(prefix)]
-
-    if should_allow:
-        assert len(matching_items) > 0, f"{prefix} should be available in {section}"
-    else:
-        assert len(matching_items) == 0, f"{prefix} should NOT be available in {section}"
+    items = lsp_asserts.assert_result_items(response, f"completion in {section}")
+    lsp_asserts.assert_completion_items_with_prefix(items, prefix, should_allow, f"{section} completion for {prefix}")
 
 
 def test_multi_section_inbound_always_allowed(shared_lsp_client) -> None:
     """Test inbound.req. in multiple sections efficiently."""
     test_cases = [("REMAP", "inbound.req."), ("SEND_REQUEST", "inbound.req."), ("READ_RESPONSE", "inbound.req.")]
 
-    # Use concurrent futures for parallel execution where possible
     results = []
 
     for section, prefix in test_cases:
@@ -348,7 +403,6 @@ def test_multi_section_inbound_always_allowed(shared_lsp_client) -> None:
         matching_items = [item for item in items if item["label"].startswith(prefix)]
         results.append((section, len(matching_items)))
 
-    # Verify all sections allow inbound.req.
     for section, count in results:
         assert count > 0, f"inbound.req. should be available in {section}"
 
@@ -358,7 +412,6 @@ def test_outbound_restrictions_batch(shared_lsp_client) -> None:
     early_sections = ["PRE_REMAP", "REMAP", "READ_REQUEST"]
     late_sections = ["SEND_REQUEST", "READ_RESPONSE"]
 
-    # Test early sections (should block outbound)
     for section in early_sections:
         test_content = f"""{section} {{
     outbound.
@@ -370,14 +423,12 @@ def test_outbound_restrictions_batch(shared_lsp_client) -> None:
         assert response is not None
         items = response["result"]["items"]
 
-        # Should NOT find restricted outbound items
         outbound_cookie_items = [item for item in items if item["label"].startswith("outbound.cookie.")]
         outbound_url_items = [item for item in items if item["label"].startswith("outbound.url.")]
 
         assert len(outbound_cookie_items) == 0, f"outbound.cookie. should NOT be in {section}"
         assert len(outbound_url_items) == 0, f"outbound.url. should NOT be in {section}"
 
-    # Test late sections (should allow outbound)
     for section in late_sections:
         test_content = f"""{section} {{
     outbound.
@@ -389,7 +440,6 @@ def test_outbound_restrictions_batch(shared_lsp_client) -> None:
         assert response is not None
         items = response["result"]["items"]
 
-        # Should find allowed outbound items
         outbound_conn_items = [item for item in items if item["label"].startswith("outbound.conn.")]
         outbound_cookie_items = [item for item in items if item["label"].startswith("outbound.cookie.")]
 
@@ -398,7 +448,7 @@ def test_outbound_restrictions_batch(shared_lsp_client) -> None:
 
 
 def test_specific_outbound_conn_completions(shared_lsp_client) -> None:
-    """Test specific outbound.conn completions efficiently."""
+    """Test specific outbound.conn completions"""
     test_content = """SEND_REQUEST {
     outbound.conn.
 }"""
@@ -407,23 +457,17 @@ def test_specific_outbound_conn_completions(shared_lsp_client) -> None:
 
     response = shared_lsp_client.request_completion("file:///test_conn_specific.hrw4u", 1, 18)
 
-    assert response is not None
-    items = response["result"]["items"]
+    items = lsp_asserts.assert_result_items(response, "outbound.conn completions")
 
-    dscp_items = [item for item in items if item["label"] == "outbound.conn.dscp"]
-    mark_items = [item for item in items if item["label"] == "outbound.conn.mark"]
+    dscp_item = lsp_asserts.assert_completion_item_exists(items, "outbound.conn.dscp", "dscp completion")
+    mark_item = lsp_asserts.assert_completion_item_exists(items, "outbound.conn.mark", "mark completion")
 
-    assert len(dscp_items) > 0, "outbound.conn.dscp should be available"
-    assert len(mark_items) > 0, "outbound.conn.mark should be available"
-
-    # Verify mappings
-    assert "set-conn-dscp" in dscp_items[0]["detail"]
-    assert "set-conn-mark" in mark_items[0]["detail"]
+    assert "set-conn-dscp" in dscp_item["detail"]
+    assert "set-conn-mark" in mark_item["detail"]
 
 
 def test_additional_language_features(shared_lsp_client) -> None:
     """Test additional language features with minimal overhead."""
-    # Combined test document with multiple advanced features
     test_content = """VARS { TestFlag: bool; }
 SEND_RESPONSE {
     if inbound.conn.TLS { outbound.resp.X-Geo = "{geo.country}"; }
@@ -435,10 +479,7 @@ REMAP {
 
     shared_lsp_client.open_document("file:///test_additional.hrw4u", test_content)
 
-    # Single completion test to validate syntax parsing
     response = shared_lsp_client.request_completion("file:///test_additional.hrw4u", 2, 12)
-
-    # Server should handle complex syntax without crashing
     if response is not None:
         assert "result" in response
 
@@ -458,21 +499,12 @@ def test_namespace_hover_documentation(shared_lsp_client, namespace, expected_co
     {namespace}.
 }}"""
 
-    uri = f"file:///test_namespace_{namespace}.hrw4u"
-    shared_lsp_client.open_document(uri, test_content)
+    uri = _create_test_document(shared_lsp_client, test_content, f"namespace_{namespace}")
 
-    # Position after the namespace and dot
     char_pos = len(f"    {namespace}.")
-    response = shared_lsp_client.request_hover(uri, 1, char_pos - 1)  # Hover on the namespace itself
+    response = shared_lsp_client.request_hover(uri, 1, char_pos - 1)
 
-    assert response is not None
-    assert "result" in response
-    assert "contents" in response["result"]
-
-    content = response["result"]["contents"]["value"]
-    assert expected_content in content, f"Expected '{expected_content}' in hover for {namespace}"
-
-    # Verify it's not just the generic "HRW4U symbol" response
+    content = _assert_hover_response(response, expected_content, namespace)
     assert "HRW4U symbol" not in content or "Namespace" in content
 
 
@@ -486,7 +518,7 @@ def test_now_condition_vs_namespace(shared_lsp_client) -> None:
 }"""
 
     shared_lsp_client.open_document("file:///test_now_condition.hrw4u", test_content_condition)
-    response = shared_lsp_client.request_hover("file:///test_now_condition.hrw4u", 1, 7)  # Position on 'now'
+    response = shared_lsp_client.request_hover("file:///test_now_condition.hrw4u", 1, 7)
 
     assert response is not None
     assert "result" in response
@@ -494,7 +526,6 @@ def test_now_condition_vs_namespace(shared_lsp_client) -> None:
     assert "HRW4U Condition" in content
     assert "%{NOW}" in content
 
-    # Test 'now.HOUR' (should show field documentation)
     test_content_field = """READ_REQUEST {
     if now.HOUR > 22 {
         // test
@@ -502,7 +533,7 @@ def test_now_condition_vs_namespace(shared_lsp_client) -> None:
 }"""
 
     shared_lsp_client.open_document("file:///test_now_field.hrw4u", test_content_field)
-    response = shared_lsp_client.request_hover("file:///test_now_field.hrw4u", 1, 11)  # Position on 'HOUR'
+    response = shared_lsp_client.request_hover("file:///test_now_field.hrw4u", 1, 11)
 
     assert response is not None
     assert "result" in response
@@ -529,7 +560,6 @@ def test_specific_field_hover(shared_lsp_client, expression, field_type) -> None
     uri = f"file:///test_field_{expression.replace('.', '_')}.hrw4u"
     shared_lsp_client.open_document(uri, test_content)
 
-    # Position on the field part after the dot
     namespace, field = expression.split('.')
     char_pos = len(f"    if {namespace}.") + len(field) // 2
     response = shared_lsp_client.request_hover(uri, 1, char_pos)
@@ -539,7 +569,6 @@ def test_specific_field_hover(shared_lsp_client, expression, field_type) -> None
     assert "contents" in response["result"]
 
     content = response["result"]["contents"]["value"]
-    # Should contain field-specific documentation
     assert field_type in content or expression in content
 
 
@@ -562,8 +591,6 @@ def test_sub_namespace_hover_documentation(shared_lsp_client, sub_namespace, exp
 
     uri = f"file:///test_sub_namespace_{sub_namespace.replace('.', '_')}.hrw4u"
     shared_lsp_client.open_document(uri, test_content)
-
-    # Position after the sub-namespace and dot, but hover on the sub-namespace itself
     char_pos = len(f"    {sub_namespace}.")
     response = shared_lsp_client.request_hover(uri, 1, char_pos - 1)  # Hover on the sub-namespace
 
@@ -573,12 +600,8 @@ def test_sub_namespace_hover_documentation(shared_lsp_client, sub_namespace, exp
 
     content = response["result"]["contents"]["value"]
     assert expected_content in content, f"Expected '{expected_content}' in hover for {sub_namespace}"
-
-    # Verify it's not just the generic "HRW4U symbol" response
     assert "HRW4U symbol" not in content or expected_content in content
 
-    # Verify it contains meaningful information (different patterns have different formats)
-    # Accept various indicators of comprehensive documentation
     meaningful_indicators = [
         "Available items:", "Usage:", "Description:", "Context:", "HTTP headers", "cookies", "connection", "URL components"
     ]
@@ -586,35 +609,29 @@ def test_sub_namespace_hover_documentation(shared_lsp_client, sub_namespace, exp
     assert has_meaningful_content, f"Expected meaningful content for {sub_namespace}, got: {content[:200]}..."
 
 
-@pytest.mark.parametrize(
-    "sub_namespace,expected_content", [
+def test_connection_namespace_hover_details(shared_lsp_client) -> None:
+    """Test that connection sub-namespaces provide comprehensive documentation details."""
+    connection_namespaces = [
         ("inbound.conn", "Inbound Connection Properties"),
         ("outbound.conn", "Outbound Connection Properties"),
-    ])
-def test_specific_connection_sub_namespace_hover(shared_lsp_client, sub_namespace, expected_content) -> None:
-    """Test that connection sub-namespace patterns provide full sub-namespace documentation."""
-    test_content = f"""READ_REQUEST {{
+    ]
+
+    for sub_namespace, expected_content in connection_namespaces:
+        test_content = f"""READ_REQUEST {{
     {sub_namespace}.
 }}"""
 
-    uri = f"file:///test_conn_sub_namespace_{sub_namespace.replace('.', '_')}.hrw4u"
-    shared_lsp_client.open_document(uri, test_content)
+        uri = _create_test_document(shared_lsp_client, test_content, f"conn_details_{sub_namespace.replace('.', '_')}")
 
-    # Position after the sub-namespace and dot, but hover on the sub-namespace itself
-    char_pos = len(f"    {sub_namespace}.")
-    response = shared_lsp_client.request_hover(uri, 1, char_pos - 1)  # Hover on the sub-namespace
+        char_pos = len(f"    {sub_namespace}.")
+        response = shared_lsp_client.request_hover(uri, 1, char_pos - 1)
 
-    assert response is not None
-    assert "result" in response
-    assert "contents" in response["result"]
+        content = _assert_hover_response(response, expected_content, sub_namespace)
 
-    content = response["result"]["contents"]["value"]
-    assert expected_content in content, f"Expected '{expected_content}' in hover for {sub_namespace}"
-
-    # Verify it shows the comprehensive sub-namespace documentation
-    assert "Available items:" in content
-    assert "Usage:" in content
-    assert "Context:" in content
+        # Additional checks specific to connection namespaces
+        assert "Available items:" in content, f"Missing 'Available items:' for {sub_namespace}"
+        assert "Usage:" in content, f"Missing 'Usage:' for {sub_namespace}"
+        assert "Context:" in content, f"Missing 'Context:' for {sub_namespace}"
 
 
 def test_unknown_namespace_fallback(shared_lsp_client) -> None:

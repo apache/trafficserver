@@ -13,16 +13,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-"""
-State management for logical condition modifiers.
-
-This module manages condition and operator state including:
-- and_or: logical connectors (AND/OR)
-- not_: negation flags
-- nocase: case-insensitive matching
-- substr: substring modes (SUF/PRE/EXT/MID)
-- last: omit logical connectors when final
-"""
+"""State management for logical condition modifiers."""
 
 from __future__ import annotations
 
@@ -31,10 +22,6 @@ from enum import Enum, auto
 from typing import Self
 from hrw4u.errors import SymbolResolutionError
 from hrw4u.interning import intern_section, intern_hook, intern_modifier
-
-#
-# Section and State Management
-#
 
 
 class SectionType(str, Enum):
@@ -51,7 +38,6 @@ class SectionType(str, Enum):
 
     @property
     def hook_name(self) -> str:
-        """Get the corresponding hook name for this section type"""
         hook_map = {
             SectionType.REMAP: intern_hook("REMAP_PSEUDO_HOOK"),
             SectionType.SEND_REQUEST: intern_hook("SEND_REQUEST_HDR_HOOK"),
@@ -67,34 +53,18 @@ class SectionType(str, Enum):
 
     @property
     def lsp_description(self) -> str:
-        """Get LSP-friendly description for this section type"""
-        description_map = {
-            SectionType.REMAP: f"This section processes requests/responses at the `{self.hook_name}` hook point in ATS.",
-            SectionType.SEND_REQUEST: f"This section processes requests/responses at the `{self.hook_name}` hook point in ATS.",
-            SectionType.READ_RESPONSE: f"This section processes requests/responses at the `{self.hook_name}` hook point in ATS.",
-            SectionType.SEND_RESPONSE: f"This section processes requests/responses at the `{self.hook_name}` hook point in ATS.",
-            SectionType.READ_REQUEST: f"This section processes requests/responses at the `{self.hook_name}` hook point in ATS.",
-            SectionType.PRE_REMAP: f"This section processes requests/responses at the `{self.hook_name}` hook point in ATS.",
-            SectionType.TXN_START: f"This section processes requests/responses at the `{self.hook_name}` hook point in ATS.",
-            SectionType.TXN_CLOSE: f"This section processes requests/responses at the `{self.hook_name}` hook point in ATS.",
-            SectionType.VARS: "This section declares variables that can be used throughout the configuration.",
-        }
-        return description_map[self]
+        if self == SectionType.VARS:
+            return "This section declares variables that can be used throughout the configuration."
+        return f"This section processes requests/responses at the `{self.hook_name}` hook point in ATS."
 
     @classmethod
     def from_hook(cls, hook_name: str) -> Self:
-        """Get the section type from its hook name"""
         for section in cls:
             if section.hook_name == hook_name:
                 return section
         raise ValueError(f"No section found for hook '{hook_name}'")
 
 
-#
-# Modifier Constants
-#
-
-# Condition modifiers (used in conditional expressions) - interned for performance
 CONDITION_MODIFIERS = frozenset(
     {
         intern_modifier("AND"),
@@ -107,13 +77,10 @@ CONDITION_MODIFIERS = frozenset(
         intern_modifier("MID")
     })
 
-# Operator modifiers (used in operation statements) - interned for performance
 OPERATOR_MODIFIERS = frozenset({intern_modifier("I"), intern_modifier("L"), intern_modifier("QSA")})
 
-# All supported modifiers in the system
 ALL_MODIFIERS = CONDITION_MODIFIERS | OPERATOR_MODIFIERS
 
-# The canonical order for sorting 'with' modifiers - interned for performance
 WITH_MODIFIER_ORDER = [
     intern_modifier("EXT"),
     intern_modifier("NOCASE"),
@@ -122,19 +89,16 @@ WITH_MODIFIER_ORDER = [
     intern_modifier("SUF")
 ]
 
-# Modifiers that can be used in a 'with' clause
 WITH_MODIFIERS = frozenset(WITH_MODIFIER_ORDER)
 
 
 class ModifierType(str, Enum):
-    """Classification of modifier types"""
     CONDITION = "CONDITION"
     OPERATOR = "OPERATOR"
     UNKNOWN = "UNKNOWN"
 
     @staticmethod
     def classify(modifier: str) -> Self:
-        """Determine what type of modifier this is"""
         mod_upper = modifier.upper()
         if mod_upper in CONDITION_MODIFIERS:
             return ModifierType.CONDITION
@@ -150,11 +114,6 @@ class SubstringMode(str, Enum):
     PRE = "PRE"
     EXT = "EXT"
     MID = "MID"
-
-
-#
-# State Classes
-#
 
 
 @dataclass(slots=True)
@@ -190,7 +149,6 @@ class CondState:
             raise SymbolResolutionError(mod, "Unknown condition modifier")
 
     def to_list(self) -> list[str]:
-        """Return a full list of modifiers including logical connectors"""
         parts: list[str] = []
         if not self.last:
             parts.append("OR" if self.and_or else "AND")
@@ -202,17 +160,7 @@ class CondState:
             parts.append(self.substr.name)
         return parts
 
-    def to_op_flags(self) -> list[str]:
-        """Return only the operation-relevant flags (no logical connectors)"""
-        parts: list[str] = []
-        if self.nocase:
-            parts.append("NOCASE")
-        if self.substr is not SubstringMode.NONE:
-            parts.append(self.substr.name)
-        return parts
-
     def to_with_modifiers(self) -> list[str]:
-        """Return 'with' clause modifiers in canonical order"""
         mods: list[str] = []
         if self.nocase:
             mods.append("NOCASE")
@@ -221,6 +169,11 @@ class CondState:
         mods.sort(key=lambda m: WITH_MODIFIER_ORDER.index(m) if m in WITH_MODIFIER_ORDER else 999)
         return mods
 
+    def render_suffix(self) -> str:
+        """Render modifier suffix for condition output."""
+        parts = self.to_list()
+        return f" [{','.join(parts)}]" if parts else ""
+
     def __str__(self) -> str:
         parts = self.to_list()
         return f"[{','.join(parts)}]" if parts else ""
@@ -228,7 +181,6 @@ class CondState:
 
 @dataclass(slots=True)
 class OperatorState:
-    """State for operator modifiers like [I] and [L]"""
     invert: bool = False  # [I] modifier for operations like rm-destination
     last: bool = False  # [L] modifier for operations like no-op
     qsa: bool = False
@@ -259,10 +211,6 @@ class OperatorState:
         if self.qsa:
             parts.append("QSA")
         return parts
-
-    def to_op_flags(self) -> list[str]:
-        """Return operation flags (same as to_list for OperatorState)"""
-        return self.to_list()
 
     def __str__(self) -> str:
         parts = self.to_list()

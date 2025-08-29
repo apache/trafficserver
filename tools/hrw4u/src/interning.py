@@ -14,12 +14,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-"""
-String interning utilities for memory optimization.
-
-This module provides centralized string interning using Python's sys.intern()
-for frequently used strings to reduce memory footprint and improve comparison performance.
-"""
+"""String interning utilities for memory optimization."""
 
 from __future__ import annotations
 
@@ -30,18 +25,14 @@ from typing import Final
 class StringInterning:
     """Centralized string interning for frequently used strings."""
 
-    # Language keywords and literals
-    # Import here to avoid circular dependency
     from hrw4u.types import LanguageKeyword
     KEYWORDS: Final[dict[str, str]] = {kw.keyword: sys.intern(kw.keyword) for kw in LanguageKeyword}
 
-    # Section names - interned for fast comparisons
     SECTIONS: Final[dict[str, str]] = {
         section: sys.intern(section) for section in
         ['REMAP', 'SEND_REQUEST', 'READ_RESPONSE', 'SEND_RESPONSE', 'READ_REQUEST', 'PRE_REMAP', 'TXN_START', 'TXN_CLOSE', 'VARS']
     }
 
-    # Hook names - used frequently in mapping operations
     HOOKS: Final[dict[str, str]] = {
         hook: sys.intern(hook) for hook in [
             'REMAP_PSEUDO_HOOK', 'SEND_REQUEST_HDR_HOOK', 'READ_RESPONSE_HDR_HOOK', 'SEND_RESPONSE_HDR_HOOK',
@@ -49,13 +40,10 @@ class StringInterning:
         ]
     }
 
-    # Condition and operator modifiers
     MODIFIERS: Final[dict[str, str]] = {
         mod: sys.intern(mod) for mod in ['AND', 'OR', 'NOT', 'NOCASE', 'PRE', 'SUF', 'EXT', 'MID', 'I', 'L', 'QSA']
     }
-    # NOTE: Operator/condition prefixes are NOT interned because they are used
-    # as static dict keys, not in hot comparison paths
-    # LSP-related strings
+
     LSP_STRINGS: Final[dict[str, str]] = {
         string: sys.intern(string) for string in [
             'markdown', 'kind', 'value', 'label', 'detail', 'documentation', 'insertText', 'textEdit', 'insertTextFormat', 'range',
@@ -94,39 +82,28 @@ class StringInterning:
         return sys.intern(string)
 
 
-# Convenience functions for common interning operations
 def intern_keyword(keyword: str) -> str:
-    """Convenience function to intern language keywords."""
+    """Intern language keywords."""
     return StringInterning.intern_keyword(keyword)
 
 
 def intern_section(section: str) -> str:
-    """Convenience function to intern section names."""
+    """Intern section names."""
     return StringInterning.intern_section(section)
 
 
 def intern_hook(hook: str) -> str:
-    """Convenience function to intern hook names."""
+    """Intern hook names."""
     return StringInterning.intern_hook(hook)
 
 
 def intern_modifier(modifier: str) -> str:
-    """Convenience function to intern modifier strings."""
+    """Intern modifier strings."""
     return StringInterning.intern_modifier(modifier)
 
 
-def intern_operator_prefix(prefix: str) -> str:
-    """Convenience function to intern operator prefixes."""
-    return StringInterning.intern_operator_prefix(prefix)
-
-
-def intern_condition_prefix(prefix: str) -> str:
-    """Convenience function to intern condition prefixes."""
-    return StringInterning.intern_condition_prefix(prefix)
-
-
 def intern_lsp_string(string: str) -> str:
-    """Convenience function to intern LSP-related strings."""
+    """Intern LSP-related strings."""
     return StringInterning.intern_lsp_string(string)
 
 

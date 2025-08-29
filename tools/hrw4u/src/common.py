@@ -28,10 +28,6 @@ from antlr4 import InputStream, CommonTokenStream
 from hrw4u.errors import Hrw4uSyntaxError, ThrowingErrorListener, ErrorCollector, CollectingErrorListener
 from hrw4u.types import MagicStrings
 
-#
-# Common Utilities and Constants
-#
-
 
 class RegexPatterns:
     """Compiled regex patterns for reuse across modules"""
@@ -49,6 +45,13 @@ class RegexPatterns:
         re.VERBOSE,
     )
 
+    # Additional performance patterns
+    IDENTIFIER: Final = re.compile(r'^[a-zA-Z_][a-zA-Z0-9_]*$')
+    HTTP_HEADER: Final = re.compile(r'^[@!#$%&\'*+\-.0-9A-Z^_`a-z|~]+$')
+    WHITESPACE: Final = re.compile(r'\s+')
+    COMMENT_BLOCK: Final = re.compile(r'/\*.*?\*/', re.DOTALL)
+    STRING_INTERPOLATION: Final = re.compile(r'\{([a-zA-Z_][a-zA-Z0-9_.-]*(?:\([^)]*\))?)\}', re.MULTILINE)
+
 
 class SystemDefaults:
     """System-wide default constants"""
@@ -56,16 +59,15 @@ class SystemDefaults:
     DEFAULT_DEBUG: Final = False
     DEFAULT_CONFIGURABLE: Final = False
     LINE_NUMBER_WIDTH: Final = 4
+    INDENT_SPACES: Final = 4
+    DEBUG_PREFIX: Final = "[debug]"
 
 
 class HeaderOperations:
-    """Header operation constants as tuple for backward compatibility"""
+    """Operation constants for various resource types"""
     OPERATIONS: Final = (MagicStrings.RM_HEADER.value, MagicStrings.SET_HEADER.value)
-
-
-#
-# Script Utilities
-#
+    COOKIE_OPERATIONS: Final = (MagicStrings.RM_COOKIE.value, MagicStrings.SET_COOKIE.value)
+    DESTINATION_OPERATIONS: Final = (MagicStrings.RM_DESTINATION.value, MagicStrings.SET_DESTINATION.value)
 
 
 class LexerProtocol(Protocol):
@@ -90,7 +92,7 @@ class ParserProtocol(Protocol):
     def program(self) -> Any:
         ...
 
-    errorHandler: Any
+    errorHandler: BailErrorStrategy | DefaultErrorStrategy
 
 
 class VisitorProtocol(Protocol):
@@ -134,7 +136,7 @@ def process_input(input_file: TextIO) -> tuple[str, str]:
         filename = input_file.name
         input_file.close()
     else:
-        filename = "<stdin>"
+        filename = SystemDefaults.DEFAULT_FILENAME
 
     return content, filename
 
@@ -195,18 +197,19 @@ def generate_output(
         parser_obj: ParserProtocol,
         visitor_class: type[VisitorProtocol],
         filename: str,
-        debug: bool,
-        ast_mode: bool,
+        args: Any,
         error_collector: ErrorCollector | None = None) -> None:
     """Generate and print output based on mode with optional error collection."""
-    if ast_mode:
+    if args.ast:
         if tree is not None:
             print(tree.toStringTree(recog=parser_obj))
         elif error_collector and error_collector.has_errors():
             print("Parse tree not available due to syntax errors.")
     else:
         if tree is not None:
-            visitor = visitor_class(filename=filename, debug=debug, error_collector=error_collector)
+            preserve_comments = not getattr(args, 'no_comments', False)
+            visitor = visitor_class(
+                filename=filename, debug=args.debug, error_collector=error_collector, preserve_comments=preserve_comments)
             try:
                 result = visitor.visit(tree)
                 if result:
@@ -214,11 +217,14 @@ def generate_output(
             except Exception as e:
                 if error_collector:
                     syntax_error = Hrw4uSyntaxError(filename, 0, 0, f"Visitor error: {e}", "")
+                    if hasattr(e, '__notes__') and e.__notes__:
+                        for note in e.__notes__:
+                            syntax_error.add_note(note)
                     error_collector.add_error(syntax_error)
                 else:
                     fatal(str(e))
 
     if error_collector and error_collector.has_errors():
         print(error_collector.get_error_summary(), file=sys.stderr)
-        if not ast_mode and tree is None:
+        if not args.ast and tree is None:
             sys.exit(1)

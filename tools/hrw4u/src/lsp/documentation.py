@@ -14,12 +14,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-"""
-Centralized documentation data for LSP functionality.
-
-This module contains comprehensive documentation for functions, keywords, and other
-language elements that are used for hover information and completion details.
-"""
+"""Centralized documentation data for LSP functionality."""
 
 from __future__ import annotations
 

@@ -27,10 +27,6 @@ import hrw4u.tables as tables
 from hrw4u.states import SectionType
 from hrw4u.symbols_base import SymbolResolverBase
 
-#
-# Inverse Symbol Resolution
-#
-
 
 class InverseSymbolResolver(SymbolResolverBase):
     """Reverse mapping utilities for hrw4u output generation."""
