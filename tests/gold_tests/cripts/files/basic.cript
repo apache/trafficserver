@@ -20,21 +20,21 @@
 
 do_read_response()
 {
-  borrow resp = cripts::Server::Response::Get();
+  borrow resp            = cripts::Server::Response::Get();
   resp["responseHeader"] = "changed";
 }
 
 do_send_response()
 {
-  borrow resp = cripts::Client::Response::Get();
-  borrow conn =cripts::Client::Connection::Get();
+  borrow resp                  = cripts::Client::Response::Get();
+  borrow conn                  = cripts::Client::Connection::Get();
   resp["criptsResponseHeader"] = "response";
 
   if (conn.IsTLS()) {
-    const auto tls = cripts::Certs::Server(conn);
-    resp["X-Subject"] = tls.subject;
+    const auto tls      = cripts::Certs::Server(conn);
+    resp["X-Subject"]   = tls.subject;
     resp["X-NotBefore"] = tls.notBefore;
-    resp["X-NotAfter"] = tls.notAfter;
+    resp["X-NotAfter"]  = tls.notAfter;
   }
 }
 

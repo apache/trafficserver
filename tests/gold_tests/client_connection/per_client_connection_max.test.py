@@ -18,6 +18,7 @@ Verify the behavior of proxy.config.net.per_client.connection.max.
 #  limitations under the License.
 
 from enum import Enum
+import os
 
 Test.Summary = __doc__
 
@@ -55,15 +56,17 @@ class PerClientConnectionMaxTest:
         Protocol.HTTP2: 'http2_slow_origins.replay.yaml',
     }
 
-    def __init__(self, protocol: int, exempt_list: str = '', exempt_list_applies: bool = False) -> None:
+    def __init__(self, protocol: int, exempt_list: str = '', exempt_list_file: str = '', exempt_list_applies: bool = False) -> None:
         """Configure the test processes in preparation for the TestRun.
 
         :param protocol: The protocol to test.
         :param exempt_list: A comma-separated string of IP addresses or ranges to exempt.
           The default empty string implies that no exempt list will be configured.
+        :param exempt_list_file: A file containing a list of IP addresses or ranges to exempt.
+          The default empty string implies that no exempt list will be configured.
         :param exempt_list_applies: If True, the exempt list is assumed to exempt
           the test connections. Thus the per client max connections is expected
-          to be enforced for the connections.
+          not to be enforced for the connections.
         """
         self._process_counter = PerClientConnectionMaxTest._process_counter
         PerClientConnectionMaxTest._process_counter += 1
@@ -71,12 +74,18 @@ class PerClientConnectionMaxTest:
         protocol_string = Protocol.to_str(protocol)
         self._replay_file = self._protocol_to_replay_file[protocol]
         self._exempt_list = exempt_list
+        self._exempt_list_file = exempt_list_file
         self._exempt_list_applies = exempt_list_applies
 
         exempt_list_description = 'exempted' if exempt_list_applies else 'not exempted'
+        exempt_description = 'no exempt list'
+        if exempt_list:
+            exempt_description = 'exempt list string'
+        elif exempt_list_file:
+            exempt_description = 'exempt list file'
         tr = Test.AddTestRun(
             f'proxy.config.net.per_client.connection.max: {protocol_string}, '
-            f'exempt_list: {exempt_list_description}')
+            f'{exempt_description}: {exempt_list_description}')
         self._configure_dns(tr)
         self._configure_server(tr)
         self._configure_trafficserver()
@@ -132,14 +141,18 @@ class PerClientConnectionMaxTest:
                 'proxy.config.dns.nameservers': f"127.0.0.1:{self._dns.Variables.Port}",
                 'proxy.config.dns.resolv_conf': 'NULL',
                 'proxy.config.diags.debug.enabled': 1,
-                'proxy.config.diags.debug.tags': 'socket|http|net_queue|iocore_net|conn_track',
+                'proxy.config.diags.debug.tags': 'socket|http|net_queue|iocore_net|conn_track|cripts',
                 'proxy.config.net.per_client.max_connections_in': self._max_client_connections,
                 # Disable keep-alive so we close the client connections when the
                 # transactions are done. This allows us to verify cleanup is working
                 # per the ConnectionTracker metrics.
                 'proxy.config.http.keep_alive_enabled_in': 0,
             })
-        if self._exempt_list:
+        if self._exempt_list_file:
+            exempt_list_absolute = os.path.join(self._ts.Variables.CONFIGDIR, os.path.basename(self._exempt_list_file))
+            self._ts.Setup.Copy(self._exempt_list_file, exempt_list_absolute)
+            self._ts.Disk.plugin_config.AddLine(f'connection_exempt_list.so {exempt_list_absolute}')
+        elif self._exempt_list:
             self._ts.Disk.records_config.update({
                 'proxy.config.http.per_client.connection.exempt_list': self._exempt_list,
             })
@@ -222,3 +235,7 @@ PerClientConnectionMaxTest(Protocol.HTTP2)
 PerClientConnectionMaxTest(Protocol.HTTP, exempt_list='127.0.0.1,::1', exempt_list_applies=True)
 PerClientConnectionMaxTest(Protocol.HTTPS, exempt_list='1.2.3.4,5.6.0.0/16', exempt_list_applies=False)
 PerClientConnectionMaxTest(Protocol.HTTP2, exempt_list='0/0,::/0', exempt_list_applies=True)
+
+PerClientConnectionMaxTest(Protocol.HTTP, exempt_list_file='exempt_lists/exempt_localhost.yaml', exempt_list_applies=True)
+PerClientConnectionMaxTest(Protocol.HTTP, exempt_list_file='exempt_lists/no_localhost.yaml', exempt_list_applies=False)
+PerClientConnectionMaxTest(Protocol.HTTP, exempt_list_file='exempt_lists/exempt_all.yaml', exempt_list_applies=True)
