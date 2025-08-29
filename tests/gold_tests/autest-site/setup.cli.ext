@@ -111,6 +111,7 @@ if ENV['ATS_BIN'] is not None:
     host.WriteVerbose(['ats'], "Traffic server version:", out)
 
 Variables.AtsExampleDir = os.path.join(AutestSitePath, '..', '..', '..', 'example')
+Variables.AtsToolsDir = os.path.join(AutestSitePath, '..', '..', '..', 'tools')
 Variables.AtsTestToolsDir = os.path.join(AutestSitePath, '..', '..', 'tools')
 Variables.VerifierBinPath = ENV['VERIFIER_BIN']
 Variables.BuildRoot = ENV['BUILD_ROOT']
