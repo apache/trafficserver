@@ -37,7 +37,8 @@ class HRWInverseVisitor(u4wrhVisitor, BaseHRWVisitor, StringBuilderMixin):
             filename: str = SystemDefaults.DEFAULT_FILENAME,
             section_label: SectionType = SectionType.REMAP,
             debug: bool = SystemDefaults.DEFAULT_DEBUG,
-            error_collector=None) -> None:
+            error_collector=None,
+            preserve_comments: bool = True) -> None:
 
         # Initialize BaseHRWVisitor and StringBuilderMixin
         super().__init__(filename=filename, debug=debug, error_collector=error_collector)
@@ -45,6 +46,7 @@ class HRWInverseVisitor(u4wrhVisitor, BaseHRWVisitor, StringBuilderMixin):
 
         # HRW inverse-specific state
         self.section_label = section_label
+        self.preserve_comments = preserve_comments
         self._pending_terms: list[tuple[str, CondState]] = []
         self._in_group: bool = False
         self._group_terms: list[tuple[str, CondState]] = []
@@ -106,10 +108,11 @@ class HRWInverseVisitor(u4wrhVisitor, BaseHRWVisitor, StringBuilderMixin):
                 return
 
             prev = bool(self.output)
+            had_section = self._section_opened
             self._close_if_and_section()
             self._reset_condition_state()
 
-            if prev and (not self.output or self.output[-1] != ""):
+            if prev and had_section and (not self.output or self.output[-1] != ""):
                 self.output.append("")
 
             self.section_label = section_type
@@ -201,6 +204,18 @@ class HRWInverseVisitor(u4wrhVisitor, BaseHRWVisitor, StringBuilderMixin):
                 self.output = vars_output.split('\n') + self.output
 
             return self.output
+
+    def visitCommentLine(self, ctx: u4wrhParser.CommentLineContext) -> None:
+        """Preserve comments in the output with proper indentation."""
+        if not self.preserve_comments:
+            return
+        with self.debug_context("visitCommentLine"):
+            comment_text = ctx.COMMENT().getText()
+            self._flush_pending_condition()
+            if self._section_opened:
+                self.emit(comment_text)
+            else:
+                self.output.append(comment_text)
 
     def visitElifLine(self, ctx: u4wrhParser.ElifLineContext) -> None:
         """Handle elif line transitions."""

@@ -51,12 +51,14 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor, StringBuilderMixin):
             self,
             filename: str = SystemDefaults.DEFAULT_FILENAME,
             debug: bool = SystemDefaults.DEFAULT_DEBUG,
-            error_collector=None) -> None:
+            error_collector=None,
+            preserve_comments: bool = True) -> None:
         super().__init__(filename, debug, error_collector)
         StringBuilderMixin.__init__(self)
 
         self._cond_state = CondState()
         self._queued: QueuedItem | None = None
+        self.preserve_comments = preserve_comments
 
         self.symbol_resolver = SymbolResolver(SystemDefaults.DEFAULT_CONFIGURABLE)  # TODO: make this configurable
 
@@ -143,13 +145,19 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor, StringBuilderMixin):
 
     def visitProgram(self, ctx) -> list[str]:
         with self.debug_context("visitProgram"):
-            sections = ctx.section()
-            section_count = len(sections)
-            for idx, section in enumerate(sections):
+            program_items = ctx.programItem()
+            sections = [item for item in program_items if item.section()]
+            for idx, item in enumerate(program_items):
                 start_length = len(self.output)
-                self.visit(section)
-                if idx < section_count - 1 and len(self.output) > start_length:
-                    self.emit_separator()
+                if item.section():
+                    self.visit(item.section())
+                    if idx < len(program_items) - 1 and len(self.output) > start_length:
+                        next_items = program_items[idx + 1:]
+                        if any(next_item.section() for next_item in next_items):
+                            self.emit_separator()
+                elif item.commentLine() and self.preserve_comments:
+                    comment_text = item.commentLine().COMMENT().getText()
+                    self.output.append(comment_text)
             self._flush_condition()
             return self.get_final_output()
 
@@ -175,22 +183,50 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor, StringBuilderMixin):
             hook = self._cached_hook_mapping(section_name)
             self.debug_log(f"`{section_name}' -> `{hook}'")
             in_statement_block = False
+            first_hook_emitted = False
+            pending_leading_comments = []
+
             for idx, body in enumerate(ctx.sectionBody()):
                 is_conditional = body.conditional() is not None
-                if is_conditional or not in_statement_block:
+                is_comment = body.commentLine() is not None
+
+                if is_comment:
+                    if self.preserve_comments:
+                        if not first_hook_emitted:
+                            pending_leading_comments.append(body)
+                        else:
+                            self.visit(body)
+                elif is_conditional or not in_statement_block:
                     if idx > 0:  # Add a newline if this is not the first element.
                         self._flush_condition()
                         self.output.append("")
-                    self.emit_condition(f"cond %{{{hook}}} [AND]", final=True)
 
-                if is_conditional:
-                    self.visit(body)
-                    in_statement_block = False
+                    self.emit_condition(f"cond %{{{hook}}} [AND]", final=True)
+                    if not first_hook_emitted:
+                        first_hook_emitted = True
+                        for comment in pending_leading_comments:
+                            self.visit(comment)
+                        pending_leading_comments = []
+
+                    if is_conditional:
+                        self.visit(body)
+                        in_statement_block = False
+                    else:
+                        in_statement_block = True
+                        self._stmt_indent += 1
+                        self.visit(body)
+                        self._stmt_indent -= 1
                 else:
-                    in_statement_block = True
+                    # This is a statement in an ongoing statement block
                     self._stmt_indent += 1
                     self.visit(body)
                     self._stmt_indent -= 1
+
+            # Handle case where section has only comments
+            if not first_hook_emitted and pending_leading_comments:
+                self.emit_condition(f"cond %{{{hook}}} [AND]", final=True)
+                for comment in pending_leading_comments:
+                    self.visit(comment)
 
         except Exception as e:
             error = hrw4u_error(self.filename, ctx, e)
@@ -212,6 +248,14 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor, StringBuilderMixin):
         self._dbg.enter("visitVarSection")
         self.visit(ctx.variables())
         self._dbg.exit("visitVarSection")
+
+    def visitCommentLine(self, ctx) -> None:
+        if not self.preserve_comments:
+            return
+        with self.debug_context("visitCommentLine"):
+            comment_text = ctx.COMMENT().getText()
+            self.debug_log(f"preserving comment: {comment_text}")
+            self.output.append(comment_text)
 
     def visitStatement(self, ctx) -> None:
         self._dbg.enter("visitStatement")
@@ -325,8 +369,11 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor, StringBuilderMixin):
     def visitBlock(self, ctx) -> None:
         self._dbg.enter("visitBlock")
         self._stmt_indent += 1
-        for s in ctx.statement():
-            self.visit(s)
+        for item in ctx.blockItem():
+            if item.statement():
+                self.visit(item.statement())
+            elif item.commentLine() and self.preserve_comments:
+                self.visit(item.commentLine())
         self._stmt_indent -= 1
         self._dbg.exit("visitBlock")
 

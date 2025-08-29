@@ -1,1 +1,1 @@
-(program (section SEND_REQUEST { (sectionBody (statement outbound.req.Cache-Control = (value "") ;)) (sectionBody (statement outbound.req.Pragma = (value "") ;)) }) <EOF>)
+(program (programItem (section SEND_REQUEST { (sectionBody (commentLine # Remove the cache-control and Pragma header. Pragma is rare though)) (sectionBody (statement outbound.req.Cache-Control = (value "") ;)) (sectionBody (statement outbound.req.Pragma = (value "") ;)) })) <EOF>)

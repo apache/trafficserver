@@ -366,6 +366,10 @@ class DocumentManager:
         if character >= len(current_line):
             return None
 
+        comment_start = current_line.find('#')
+        if comment_start != -1 and character >= comment_start:
+            return None
+
         string_info = StringLiteralHandler.check_string_literal(current_line, character)
         if string_info:
             return string_info

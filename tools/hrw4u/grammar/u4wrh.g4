@@ -70,7 +70,7 @@ COMMA         : ',';
 SEMICOLON     : ';';
 
 EOL           : '\r'? '\n';
-COMMENT       : '#' ~[\r\n]* -> skip ;
+COMMENT       : '#' ~[\r\n]* ;
 WS            : [ \t]+ -> skip ;
 
 // -----------------------------
@@ -86,6 +86,7 @@ line
     | opLine EOL
     | elifLine EOL
     | elseLine EOL
+    | commentLine EOL
     | EOL                     // blank line
     ;
 
@@ -249,4 +250,8 @@ opTail
 opFlag
     : IDENT
     | 'QSA'
+    ;
+
+commentLine
+    : COMMENT
     ;

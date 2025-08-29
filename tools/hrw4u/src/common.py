@@ -195,18 +195,19 @@ def generate_output(
         parser_obj: ParserProtocol,
         visitor_class: type[VisitorProtocol],
         filename: str,
-        debug: bool,
-        ast_mode: bool,
+        args: Any,
         error_collector: ErrorCollector | None = None) -> None:
     """Generate and print output based on mode with optional error collection."""
-    if ast_mode:
+    if args.ast:
         if tree is not None:
             print(tree.toStringTree(recog=parser_obj))
         elif error_collector and error_collector.has_errors():
             print("Parse tree not available due to syntax errors.")
     else:
         if tree is not None:
-            visitor = visitor_class(filename=filename, debug=debug, error_collector=error_collector)
+            preserve_comments = not getattr(args, 'no_comments', False)
+            visitor = visitor_class(
+                filename=filename, debug=args.debug, error_collector=error_collector, preserve_comments=preserve_comments)
             try:
                 result = visitor.visit(tree)
                 if result:
@@ -220,5 +221,5 @@ def generate_output(
 
     if error_collector and error_collector.has_errors():
         print(error_collector.get_error_summary(), file=sys.stderr)
-        if not ast_mode and tree is None:
+        if not args.ast and tree is None:
             sys.exit(1)
