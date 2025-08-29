@@ -753,9 +753,13 @@ TSPluginInit(int argc, const char *argv[])
     TSContDataSet(contp, context);
     TSHttpHookAdd(TS_HTTP_TXN_START_HOOK, contp); // This acts similarly to the DoRemap callback
   } else {
+    if (needs_glb_init) {
+      CDebug("[%s] - No global hooks, but there is a global init callback", info.plugin_name);
+    } else {
+      TSError("[%s] - No global hooks, no global init callback", info.plugin_name);
+    }
     delete context;
     delete inst;
-    TSError("[%s] - No global hooks enabled", info.plugin_name);
   }
 }
 
