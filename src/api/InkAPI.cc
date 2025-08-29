@@ -89,6 +89,7 @@
 
 #include "mgmt/rpc/jsonrpc/JsonRPC.h"
 #include <swoc/bwf_base.h>
+#include <swoc/IPRange.h>
 #include "ts/ts.h"
 
 /****************************************************************
@@ -9114,4 +9115,38 @@ TSHttpTxnTypeGet(TSHttpTxn txnp)
     }
   }
   return retval;
+}
+
+TSReturnCode
+TSConnectionLimitExemptListSet(std::string_view ip_ranges)
+{
+  swoc::TextView   ip_ranges_tv{ip_ranges};
+  swoc::IPRangeSet ip_ranges_set;
+  while (auto ip_range_tv = ip_ranges_tv.take_prefix_at(',')) {
+    swoc::IPRange ip_range;
+    if (!ip_range.load(ip_range_tv)) {
+      return TS_ERROR;
+    }
+    ip_ranges_set.mark(ip_range);
+  }
+  bool success = ConnectionTracker::set_client_exempt_list(ip_ranges_set);
+  return success ? TS_SUCCESS : TS_ERROR;
+}
+
+TSReturnCode
+TSConnectionLimitExemptListAdd(std::string_view ip_range)
+{
+  swoc::IPRange ip_range_obj;
+  if (!ip_range_obj.load(ip_range)) {
+    return TS_ERROR;
+  }
+
+  bool success = ConnectionTracker::add_client_exempt_range(ip_range_obj);
+  return success ? TS_SUCCESS : TS_ERROR;
+}
+
+void
+TSConnectionLimitExemptListClear()
+{
+  ConnectionTracker::clear_client_exempt_list();
 }
