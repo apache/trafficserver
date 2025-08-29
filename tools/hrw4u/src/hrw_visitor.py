@@ -366,6 +366,30 @@ class HRWInverseVisitor(u4wrhVisitor, BaseHRWVisitor, StringBuilderMixin):
                     self.debug(f"comparison -> {result}")
                     return result
 
+                case _ if comparison.STRING():
+                    string_value = comparison.STRING().getText()
+                    result = f"{lhs_expr} == {string_value}"
+                    self.debug(f"implicit string comparison -> {result}")
+                    return result
+
+                case _ if comparison.NUMBER():
+                    number_value = comparison.NUMBER().getText()
+                    result = f"{lhs_expr} == {number_value}"
+                    self.debug(f"implicit number comparison -> {result}")
+                    return result
+
+                case _ if comparison.IDENT():
+                    ident_value = comparison.IDENT().getText()
+                    result = f"{lhs_expr} == {ident_value}"
+                    self.debug(f"implicit ident comparison -> {result}")
+                    return result
+
+                case _ if comparison.COMPLEX_STRING():
+                    complex_value = comparison.COMPLEX_STRING().getText()
+                    result = f"{lhs_expr} == {complex_value}"
+                    self.debug(f"implicit complex string comparison -> {result}")
+                    return result
+
                 case _:
                     self.handle_visitor_error(comparison, ValueError("Invalid comparison"))
                     return "ERROR"

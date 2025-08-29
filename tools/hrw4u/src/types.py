@@ -74,6 +74,7 @@ class LanguageKeyword(Enum):
     ELIF = ("elif", "Else-if clause")
     ELSE = ("else", "Else clause")
     WITH = ("with", "Condition modifier keyword")
+    IN = ("in", "Set membership operator")
     TRUE = ("true", "Boolean literal")
     FALSE = ("false", "Boolean literal")
     BREAK = ("break", "Loop break statement")
