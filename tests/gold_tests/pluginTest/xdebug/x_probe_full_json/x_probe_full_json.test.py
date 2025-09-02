@@ -29,7 +29,7 @@ class XDebugProbeFullJsonTest:
     to include request headers, response body, and response headers in a complete JSON format.
 
     The probe-full-json feature:
-    - Changes Content-Type to text/plain
+    - Changes Content-Type to application/json
     - Generates a complete JSON object containing all debug information
     - Includes client/server request headers, response body, and client/server response headers
     - Disables caching due to body modification
@@ -79,19 +79,59 @@ class XDebugProbeFullJsonTest:
         tr.AddVerifierClientProcess("client", self._replay_file, http_ports=[self._ts.Variables.port])
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-            'X-Original-Content-Type', "X-Original-Content-Type should be present")
+            'X-Original-Content-Type: text/html', "X-Original-Content-Type of text/html should be present")
+        tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+            'X-Original-Content-Type: application/octet-stream',
+            "X-Original-Content-Type of application/octet-stream should be present")
 
     def _setupJqValidation(self) -> None:
         """Use curl to get the response body and pipe through jq to validate JSON.
         """
-        tr = Test.AddTestRun("Verify JSON output")
+        tr = Test.AddTestRun("Escaped text/html content.")
         self._startServersIfNeeded(tr)
         tr.MakeCurlCommand(
             f'-s -H"uuid: 1" -H "Host: example.com" -H "X-Debug: probe-full-json" '
             f'http://127.0.0.1:{self._ts.Variables.port}/test | '
             "jq '.\"client-request\".\"uuid\",.\"server-body\",.\"proxy-response\".\"x-response\"'")
         tr.Processes.Default.ReturnCode = 0
-        tr.Processes.Default.Streams.stdout = "gold/jq.gold"
+        tr.Processes.Default.Streams.stdout = "gold/jq_escaped.gold"
+
+        tr = Test.AddTestRun("Hex-encoded application/octet-stream content.")
+        self._startServersIfNeeded(tr)
+        tr.MakeCurlCommand(
+            f'-s -H"uuid: 2" -H "Host: example.com" -H "X-Debug: probe-full-json" '
+            f'http://127.0.0.1:{self._ts.Variables.port}/binary | '
+            "jq '.\"client-request\".\"uuid\",.\"server-body\",.\"proxy-response\".\"x-response\"'")
+        tr.Processes.Default.ReturnCode = 0
+        tr.Processes.Default.Streams.stdout += "gold/jq_hex.gold"
+
+        tr = Test.AddTestRun("=hex")
+        self._startServersIfNeeded(tr)
+        tr.MakeCurlCommand(
+            f'-s -H"uuid: 1" -H "Host: example.com" -H "X-Debug: probe-full-json=hex" '
+            f'http://127.0.0.1:{self._ts.Variables.port}/test | '
+            "jq '.\"server-body\"'")
+        tr.Processes.Default.ReturnCode = 0
+        tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+            '3c21444f43545950452068746d6c3e', "Should contain hex-encoded HTML content (forced hex override)")
+
+        tr = Test.AddTestRun("=escape")
+        self._startServersIfNeeded(tr)
+        tr.MakeCurlCommand(
+            f'-s -H"uuid: 1" -H "Host: example.com" -H "X-Debug: probe-full-json=escape" '
+            f'http://127.0.0.1:{self._ts.Variables.port}/test | '
+            "jq '.\"client-request\".\"uuid\",.\"server-body\",.\"proxy-response\".\"x-response\"'")
+        tr.Processes.Default.ReturnCode = 0
+        tr.Processes.Default.Streams.stdout += "gold/jq_escaped.gold"
+
+        tr = Test.AddTestRun("=nobody")
+        self._startServersIfNeeded(tr)
+        tr.MakeCurlCommand(
+            f'-s -H"uuid: 1" -H "Host: example.com" -H "X-Debug: probe-full-json=nobody" '
+            f'http://127.0.0.1:{self._ts.Variables.port}/test | '
+            "jq '.\"client-request\".\"uuid\",.\"server-body\",.\"proxy-response\".\"x-response\"'")
+        tr.Processes.Default.ReturnCode = 0
+        tr.Processes.Default.Streams.stdout += "gold/jq_nobody.gold"
 
 
 # Execute the test
