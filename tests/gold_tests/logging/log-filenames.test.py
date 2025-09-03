@@ -258,10 +258,4 @@ DefaultNamedTest()
 CustomNamedTest()
 stdoutTest()
 
-# The following stderr test can be run successfully by hand using the replay
-# files from the sandbox. All the expected output goes to stderr. However, for
-# some reason during the AuTest run, the stderr output stops emitting after the
-# logging.yaml file is parsed. This is left here for now because it is valuable
-# for use during development, but it is left commented out so that it doesn't
-# produce the false failure in CI and developer test runs.
-# stderrTest()
+stderrTest()
