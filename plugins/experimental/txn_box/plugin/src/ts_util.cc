@@ -130,7 +130,7 @@ namespace compat
   status_set(ts::HttpTxn &txn, TSHttpStatus status, swoc::meta::CaseTag<1>) -> decltype(TSHttpTxnStatusSet(txn, eraser<S>(status)),
                                                                                         bool())
   {
-    TSHttpTxnStatusSet(txn, eraser<S>(status)); // no error return, sigh.
+    TSHttpTxnStatusSet(txn, eraser<S>(status), "txn_box");
     return true;
   }
 
@@ -660,7 +660,7 @@ ts::HttpHeader::field_remove(swoc::TextView name)
 bool
 ts::HttpResponse::status_set(TSHttpStatus status) const
 {
-  return TS_SUCCESS == TSHttpHdrStatusSet(_buff, _loc, status);
+  return TS_SUCCESS == TSHttpHdrStatusSet(_buff, _loc, status, nullptr, "");
 }
 
 TextView

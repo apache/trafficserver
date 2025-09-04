@@ -191,7 +191,7 @@ handle_response(TSHttpTxn txnp)
     goto done;
   }
 
-  TSHttpHdrStatusSet(bufp, hdr_loc, TS_HTTP_STATUS_MOVED_PERMANENTLY);
+  TSHttpHdrStatusSet(bufp, hdr_loc, TS_HTTP_STATUS_MOVED_PERMANENTLY, txnp, PLUGIN_NAME);
   TSHttpHdrReasonSet(bufp, hdr_loc, TSHttpHdrReasonLookup(TS_HTTP_STATUS_MOVED_PERMANENTLY),
                      strlen(TSHttpHdrReasonLookup(TS_HTTP_STATUS_MOVED_PERMANENTLY)));
 

@@ -403,7 +403,7 @@ ts_lua_client_response_set_status(lua_State *L)
   reason     = TSHttpHdrReasonLookup(TSHttpStatus(status));
   reason_len = strlen(reason);
 
-  TSHttpHdrStatusSet(http_ctx->client_response_bufp, http_ctx->client_response_hdrp, TSHttpStatus(status));
+  TSHttpHdrStatusSet(http_ctx->client_response_bufp, http_ctx->client_response_hdrp, TSHttpStatus(status), http_ctx->txnp, "lua");
   TSHttpHdrReasonSet(http_ctx->client_response_bufp, http_ctx->client_response_hdrp, reason, reason_len);
 
   return 0;
@@ -488,7 +488,7 @@ ts_lua_client_response_set_error_resp(lua_State *L)
   }
   reason_len = strlen(reason);
 
-  TSHttpHdrStatusSet(http_ctx->client_response_bufp, http_ctx->client_response_hdrp, TSHttpStatus(status));
+  TSHttpHdrStatusSet(http_ctx->client_response_bufp, http_ctx->client_response_hdrp, TSHttpStatus(status), http_ctx->txnp, "lua");
   TSHttpHdrReasonSet(http_ctx->client_response_bufp, http_ctx->client_response_hdrp, reason, reason_len);
 
   body_len = 0;

@@ -543,6 +543,7 @@ Plugin Details
 
 .. _piid:
 .. _pitag:
+.. _plss:
 .. _cqint:
 
 Logging fields which may be used to obtain details of plugins involved in the
@@ -559,6 +560,12 @@ pitag Proxy Plugin     Plugin tag for the current transaction. This is set for
                        plugin driven transactions via
                        :func:`TSHttpConnectWithPluginId`. or
                        :func:`TSHttpConnectPlugin`.
+plss  Proxy Plugin     Plugin Last Set Status. The identifying label for the entity
+                       (such as a plugin name) that last set the HTTP status code for
+                       the transaction. This is set via :func:`TSHttpTxnStatusSet`
+                       with a ``setter`` parameter or :func:`TSHttpStatusSetterSet`.
+                       Shows ``-`` if no setter has been recorded. ``ip_allow`` will
+                       be set if the :file:`ip_allow.yaml` component denies the request.
 cqint Client Request   If a request was generated internally (via a plugin), then
                        this has a value of ``1``, otherwise ``0``. This can be
                        useful when tracking internal only requests, such as those

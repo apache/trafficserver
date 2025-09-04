@@ -569,12 +569,18 @@ UrlRewrite::PerformACLFiltering(HttpTransact::State *s, const url_mapping *const
         if (match && s->client_connection_allowed) { // make sure that a previous filter did not DENY
           Dbg(dbg_ctl_url_rewrite, "matched ACL filter rule, %s request", rp->allow_flag ? "allowing" : "denying");
           s->client_connection_allowed = rp->allow_flag ? true : false;
+          if (!s->client_connection_allowed) {
+            s->http_return_code_setter_name = "ip_allow";
+          }
         } else {
           if (!s->client_connection_allowed) {
             Dbg(dbg_ctl_url_rewrite, "Previous ACL filter rule denied request, continuing to deny it");
           } else {
             Dbg(dbg_ctl_url_rewrite, "did NOT match ACL filter rule, %s request", rp->allow_flag ? "denying" : "allowing");
             s->client_connection_allowed = rp->allow_flag ? false : true;
+            if (!s->client_connection_allowed) {
+              s->http_return_code_setter_name = "ip_allow";
+            }
           }
         }
       } else if (ip_matches) {
@@ -583,6 +589,9 @@ UrlRewrite::PerformACLFiltering(HttpTransact::State *s, const url_mapping *const
           // Did they specify allowing the listed methods, or denying them?
           Dbg(dbg_ctl_url_rewrite, "matched ACL filter rule, %s request", rp->allow_flag ? "allowing" : "denying");
           s->client_connection_allowed = rp->allow_flag;
+          if (!s->client_connection_allowed) {
+            s->http_return_code_setter_name = "ip_allow";
+          }
 
           // Since both the IP and method match, this rule will be applied regardless of ACLMatchingPolicy and no need to process
           // other filters nor ip_allow.yaml rules
@@ -601,6 +610,9 @@ UrlRewrite::PerformACLFiltering(HttpTransact::State *s, const url_mapping *const
           Dbg(dbg_ctl_url_rewrite, "ACL rule matched on IP but not on method, action: %s, %s the request",
               rp->get_action_description(), (rp->allow_flag ? "denying" : "allowing"));
           s->client_connection_allowed = !rp->allow_flag;
+          if (!s->client_connection_allowed) {
+            s->http_return_code_setter_name = "ip_allow";
+          }
 
           // Since IP match and configured policy is MATCH_ON_IP_ONLY, no need to process other filters nor ip_allow.yaml rules.
           s->skip_ip_allow_yaml = true;
