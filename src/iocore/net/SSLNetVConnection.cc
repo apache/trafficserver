@@ -898,6 +898,43 @@ SSLNetVConnection::do_io_close(int lerrno)
 }
 
 void
+SSLNetVConnection::do_io_shutdown(ShutdownHowTo_t howto)
+{
+  switch (howto) {
+  case IO_SHUTDOWN_READ:
+    // No need to call SSL API
+    read.enabled = 0;
+    read.vio.buffer.clear();
+    read.vio.nbytes  = 0;
+    read.vio.cont    = nullptr;
+    f.shutdown      |= NetEvent::SHUTDOWN_READ;
+    break;
+  case IO_SHUTDOWN_WRITE:
+    SSL_shutdown(ssl);
+    write.enabled = 0;
+    write.vio.buffer.clear();
+    write.vio.nbytes  = 0;
+    write.vio.cont    = nullptr;
+    f.shutdown       |= NetEvent::SHUTDOWN_WRITE;
+    break;
+  case IO_SHUTDOWN_READWRITE:
+    SSL_shutdown(ssl);
+    read.enabled  = 0;
+    write.enabled = 0;
+    read.vio.buffer.clear();
+    read.vio.nbytes = 0;
+    write.vio.buffer.clear();
+    write.vio.nbytes = 0;
+    read.vio.cont    = nullptr;
+    write.vio.cont   = nullptr;
+    f.shutdown       = NetEvent::SHUTDOWN_READ | NetEvent::SHUTDOWN_WRITE;
+    break;
+  default:
+    ink_assert(!"not reached");
+  }
+}
+
+void
 SSLNetVConnection::clear()
 {
   _ca_cert_file.reset();
