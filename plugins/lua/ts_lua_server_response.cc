@@ -391,7 +391,7 @@ ts_lua_server_response_set_status(lua_State *L)
     reason_len = strlen(reason);
   }
 
-  TSHttpHdrStatusSet(http_ctx->server_response_bufp, http_ctx->server_response_hdrp, TSHttpStatus(status));
+  TSHttpHdrStatusSet(http_ctx->server_response_bufp, http_ctx->server_response_hdrp, TSHttpStatus(status), http_ctx->txnp, "lua");
   TSHttpHdrReasonSet(http_ctx->server_response_bufp, http_ctx->server_response_hdrp, reason, reason_len);
 
   return 0;

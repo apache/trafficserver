@@ -1412,7 +1412,7 @@ Context::setProperty(std::string_view key, std::string_view serialized_value)
 
     if (TSHttpTxnServerRespGet(txnp_, &bufp, &hdr_loc) == TS_SUCCESS) {
       int64_t *status = reinterpret_cast<int64_t *>(const_cast<char *>(serialized_value.data()));
-      TSHttpHdrStatusSet(bufp, hdr_loc, static_cast<TSHttpStatus>(*status));
+      TSHttpHdrStatusSet(bufp, hdr_loc, static_cast<TSHttpStatus>(*status), txnp_, WASM_DEBUG_TAG);
       TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     }
     return WasmResult::Ok;
@@ -1487,7 +1487,7 @@ Context::sendLocalResponse(uint32_t response_code, std::string_view body_text, P
     TSError("[wasm][%s] Can't send local response without a transaction", __FUNCTION__);
     return WasmResult::InternalFailure;
   } else {
-    TSHttpTxnStatusSet(txnp_, static_cast<TSHttpStatus>(response_code));
+    TSHttpTxnStatusSet(txnp_, static_cast<TSHttpStatus>(response_code), WASM_DEBUG_TAG);
 
     if (body_text.size() > 0) {
       TSHttpTxnErrorBodySet(txnp_, TSstrndup(body_text.data(), body_text.size()), body_text.size(),

@@ -580,7 +580,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo * /* rri ATS_UNUSED */
 
   if (!cfg) {
     VERROR("No remap context available, check code / config");
-    TSHttpTxnStatusSet(rh, TS_HTTP_STATUS_INTERNAL_SERVER_ERROR);
+    TSHttpTxnStatusSet(rh, TS_HTTP_STATUS_INTERNAL_SERVER_ERROR, PLUGIN);
     return TSREMAP_NO_REMAP;
   }
 

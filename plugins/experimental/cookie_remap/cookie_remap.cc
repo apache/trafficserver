@@ -1217,18 +1217,18 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
       // Maybe set the return status
       if (status > TS_HTTP_STATUS_NONE) {
         Dbg(dbg_ctl, "Setting return status to %d", status);
-        TSHttpTxnStatusSet(txnp, status);
+        TSHttpTxnStatusSet(txnp, status, MY_NAME);
         if ((status == TS_HTTP_STATUS_MOVED_PERMANENTLY) || (status == TS_HTTP_STATUS_MOVED_TEMPORARILY)) {
           if (rewrite_to.size() > 8192) {
             TSError("Redirect in target "
                     "URL too long");
-            TSHttpTxnStatusSet(txnp, TS_HTTP_STATUS_REQUEST_URI_TOO_LONG);
+            TSHttpTxnStatusSet(txnp, TS_HTTP_STATUS_REQUEST_URI_TOO_LONG, MY_NAME);
           } else {
             const char *start    = rewrite_to.c_str();
             int         dest_len = rewrite_to.size();
 
             if (TS_PARSE_ERROR == TSUrlParse(rri->requestBufp, rri->requestUrl, &start, start + dest_len)) {
-              TSHttpTxnStatusSet(txnp, TS_HTTP_STATUS_INTERNAL_SERVER_ERROR);
+              TSHttpTxnStatusSet(txnp, TS_HTTP_STATUS_INTERNAL_SERVER_ERROR, MY_NAME);
               TSError("can't parse "
                       "substituted "
                       "URL string");
@@ -1251,7 +1251,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 
       // set the new url
       if (TSUrlParse(rri->requestBufp, rri->requestUrl, &start, start + rewrite_to.length()) == TS_PARSE_ERROR) {
-        TSHttpTxnStatusSet(txnp, TS_HTTP_STATUS_INTERNAL_SERVER_ERROR);
+        TSHttpTxnStatusSet(txnp, TS_HTTP_STATUS_INTERNAL_SERVER_ERROR, MY_NAME);
         TSError("can't parse substituted URL string");
         goto error;
       } else {
