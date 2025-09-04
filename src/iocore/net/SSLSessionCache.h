@@ -30,13 +30,25 @@
 
 #include <openssl/ssl.h>
 #include <mutex>
+#include <string>
+#include <string_view>
 #include <utility>
 
+/** Looking at OpenSSL's providers/common/capabilities.c, the current maximum
+ * length of a group name is 20 characters (brainpoolP256r1tls13 and the like).
+ * Reserving 64 characters should be more than enough. If someday we are
+ * surprised and this turns out to be too small, there is an assertion gaurd to
+ * make sure we do not overrun the buffer in SSLSessionCache.cc.
+ */
+#define SSL_MAX_GROUP_NAME_SIZE   64
 #define SSL_MAX_SESSION_SIZE      256
 #define SSL_MAX_ORIG_SESSION_SIZE 4096
 
 struct ssl_session_cache_exdata {
   ssl_curve_id curve = 0;
+
+  /** The TLS group name, gauranteed to be null-terminated. */
+  char group_name[SSL_MAX_GROUP_NAME_SIZE] = {'\0'};
 };
 
 inline void
@@ -193,10 +205,12 @@ class SSLOriginSession
 public:
   std::string                  key;
   ssl_curve_id                 curve_id;
+  std::string                  group_name;
   std::shared_ptr<SSL_SESSION> shared_sess = nullptr;
 
-  SSLOriginSession(const std::string &lookup_key, ssl_curve_id curve, std::shared_ptr<SSL_SESSION> session)
-    : key(lookup_key), curve_id(curve), shared_sess(std::move(session))
+  SSLOriginSession(const std::string &lookup_key, ssl_curve_id curve, std::string_view group_name,
+                   std::shared_ptr<SSL_SESSION> session)
+    : key(lookup_key), curve_id(curve), group_name(group_name), shared_sess(std::move(session))
   {
   }
 
@@ -210,7 +224,7 @@ public:
   ~SSLOriginSessionCache();
 
   void                         insert_session(const std::string &lookup_key, SSL_SESSION *sess, SSL *ssl);
-  std::shared_ptr<SSL_SESSION> get_session(const std::string &lookup_key, ssl_curve_id *curve);
+  std::shared_ptr<SSL_SESSION> get_session(const std::string &lookup_key, ssl_curve_id *curve, std::string &group_name);
   void                         remove_session(const std::string &lookup_key);
 
 private:

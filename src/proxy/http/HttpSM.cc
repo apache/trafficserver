@@ -6655,7 +6655,7 @@ HttpSM::attach_server_session()
   }
 
   if (auto tsrs = server_vc->get_service<TLSSessionResumptionSupport>(); tsrs) {
-    server_ssl_reused = tsrs->getSSLOriginSessionCacheHit();
+    server_ssl_reused = tsrs->getIsResumedOriginSSLSession();
   }
 
   server_protocol = server_txn->get_protocol_string();

@@ -43,6 +43,7 @@ struct ClientConnectionInfo {
   bool tcp_reused{false};
   bool ssl_reused{false};
   bool connection_is_ssl{false};
+  int  ssl_resumption_type{0}; // 0=no resumption, 1=session cache, 2=session ticket
 
   char const *protocol{"-"};
   char const *sec_protocol{"-"};
@@ -76,6 +77,8 @@ public:
   bool get_client_tcp_reused() const;
 
   bool get_client_ssl_reused() const;
+
+  int get_client_ssl_resumption_type() const;
 
   bool get_client_connection_is_ssl() const;
 
@@ -169,8 +172,8 @@ HttpUserAgent::set_txn(ProxyTransaction *txn, TransactionMilestones &milestones)
       m_conn_info.curve = "-";
     }
 
-    if (auto group{tbs->get_tls_group()}; group) {
-      m_conn_info.security_group = group;
+    if (auto group{tbs->get_tls_group()}; !group.empty()) {
+      m_conn_info.security_group = group.data();
     } else {
       m_conn_info.security_group = "-";
     }
@@ -187,7 +190,15 @@ HttpUserAgent::set_txn(ProxyTransaction *txn, TransactionMilestones &milestones)
   }
 
   if (auto tsrs = netvc->get_service<TLSSessionResumptionSupport>()) {
-    m_conn_info.ssl_reused = tsrs->getSSLSessionCacheHit();
+    m_conn_info.ssl_reused = tsrs->getIsResumedSSLSession();
+
+    if (tsrs->getIsResumedFromSessionCache()) {
+      m_conn_info.ssl_resumption_type = 1;
+    } else if (tsrs->getIsResumedFromSessionTicket()) {
+      m_conn_info.ssl_resumption_type = 2;
+    } else {
+      m_conn_info.ssl_resumption_type = 0;
+    }
   }
 
   if (auto protocol_str{txn->get_protocol_string()}; protocol_str) {
@@ -231,6 +242,12 @@ inline bool
 HttpUserAgent::get_client_ssl_reused() const
 {
   return m_conn_info.ssl_reused;
+}
+
+inline int
+HttpUserAgent::get_client_ssl_resumption_type() const
+{
+  return m_conn_info.ssl_resumption_type;
 }
 
 inline bool
