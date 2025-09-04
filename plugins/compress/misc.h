@@ -76,7 +76,7 @@ using Data = struct {
   TSVIO                    downstream_vio;
   TSIOBuffer               downstream_buffer;
   TSIOBufferReader         downstream_reader;
-  int                      downstream_length;
+  int64_t                  downstream_length;
   z_stream                 zstrm;
   enum transform_state     state;
   int                      compression_type;
