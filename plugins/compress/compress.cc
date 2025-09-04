@@ -22,6 +22,7 @@
  */
 
 #include <cstring>
+#include <cinttypes>
 #include <zlib.h>
 
 #include "ts/apidefs.h"
@@ -539,7 +540,7 @@ gzip_transform_finish(Data *data)
     }
 
     if (data->downstream_length != static_cast<int64_t>(data->zstrm.total_out)) {
-      error("gzip-transform: output lengths don't match (%d, %ld)", data->downstream_length, data->zstrm.total_out);
+      error("gzip-transform: output lengths don't match (%" PRId64 ", %lu)", data->downstream_length, data->zstrm.total_out);
     }
 
     debug("gzip-transform: Finished gzip");
@@ -564,7 +565,7 @@ brotli_transform_finish(Data *data)
   }
 
   if (data->downstream_length != static_cast<int64_t>(data->bstrm.total_out)) {
-    error("brotli-transform: output lengths don't match (%d, %ld)", data->downstream_length, data->bstrm.total_out);
+    error("brotli-transform: output lengths don't match (%" PRId64 ", %zu)", data->downstream_length, data->bstrm.total_out);
   }
 
   debug("brotli-transform: Finished brotli");
