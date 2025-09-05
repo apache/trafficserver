@@ -65,6 +65,12 @@ public:
   TSRemapRequestInfo                      *rri   = nullptr; // This may be nullptr, if not a remap
   cripts::Instance                        &p_instance;      // p_ == public_, since we can't use "instance"
 
+  bool
+  rriValid() const
+  {
+    return rri && rri->requestBufp && rri->requestHdrp && rri->requestUrl;
+  }
+
   // These are private, but needs to be visible to our friend classes that
   // depends on the Context.
   friend class Client::Request;

@@ -466,11 +466,11 @@ Pristine::URL::_initialize()
 void
 Client::URL::_initialize()
 {
-  if (_context->rri) {
+  if (_context->rriValid()) {
+    super_type::_initialize();
     _bufp    = _context->rri->requestBufp;
     _hdr_loc = _context->rri->requestHdrp;
     _urlp    = _context->rri->requestUrl;
-    super_type::_initialize();
   } else {
     Client::Request &req = Client::Request::_get(_context); // Repurpose / create the shared request object
 
@@ -505,10 +505,14 @@ Client::URL::_update()
 void
 Remap::From::URL::_initialize()
 {
-  super_type::_initialize();
-  _bufp    = _context->rri->requestBufp;
-  _hdr_loc = _context->rri->requestHdrp;
-  _urlp    = _context->rri->mapFromUrl;
+  if (_context->rriValid()) {
+    super_type::_initialize();
+    _bufp    = _context->rri->requestBufp;
+    _hdr_loc = _context->rri->requestHdrp;
+    _urlp    = _context->rri->mapFromUrl;
+  } else {
+    _context->state.error.Fail();
+  }
 }
 
 Remap::From::URL &
@@ -521,11 +525,14 @@ Remap::From::URL::_get(cripts::Context *context)
 void
 Remap::To::URL::_initialize()
 {
-  super_type::_initialize();
-
-  _bufp    = _context->rri->requestBufp;
-  _hdr_loc = _context->rri->requestHdrp;
-  _urlp    = _context->rri->mapToUrl;
+  if (_context->rriValid()) {
+    super_type::_initialize();
+    _bufp    = _context->rri->requestBufp;
+    _hdr_loc = _context->rri->requestHdrp;
+    _urlp    = _context->rri->mapToUrl;
+  } else {
+    _context->state.error.Fail();
+  }
 }
 
 Remap::To::URL &
