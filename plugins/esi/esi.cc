@@ -27,6 +27,7 @@
 #include <cstdlib>
 #include <climits>
 #include <cstring>
+#include <cinttypes>
 #include <string>
 #include <list>
 #include <new>
@@ -872,8 +873,8 @@ transformData(TSCont contp)
       // should not set any fixed length
       if (cont_data->curr_state == ContData::PROCESSING_COMPLETE) {
         if (cont_data->gzip_output) {
-          string cdata;
-          int    downstream_length;
+          string  cdata;
+          int64_t downstream_length;
           if (!cont_data->esi_gzip->stream_finish(cdata, downstream_length)) {
             TSError("[esi][%s] Error while finishing gzip", __FUNCTION__);
             return 0;
@@ -886,7 +887,7 @@ transformData(TSCont contp)
               TSError("[esi][%s] Error while writing bytes to downstream VC", __FUNCTION__);
               return 0;
             }
-            CONT_DATA_DBG(cont_data, "[%s] ESI processed overall/gzip: %d", __FUNCTION__, downstream_length);
+            CONT_DATA_DBG(cont_data, "[%s] ESI processed overall/gzip: %" PRId64, __FUNCTION__, downstream_length);
             TSVIONBytesSet(cont_data->output_vio, downstream_length);
           }
         } else {

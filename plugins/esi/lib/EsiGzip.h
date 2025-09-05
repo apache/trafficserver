@@ -26,6 +26,7 @@
 #include <zlib.h>
 #include <string>
 #include <string_view>
+#include <cinttypes>
 
 class EsiGzip
 {
@@ -60,16 +61,16 @@ public:
    *
    * @return True if the compression succeeded, false otherwise.
    */
-  bool stream_finish(std::string &cdata, int &downstream_length);
+  bool stream_finish(std::string &cdata, int64_t &downstream_length);
 
 private:
   /** The cumulative total number of bytes for the compressed stream. */
-  int _downstream_length;
+  int64_t _downstream_length;
 
   /** The cumulative total number of uncompressed bytes that have been
    * compressed.
    */
-  int      _total_data_length;
+  int64_t  _total_data_length;
   z_stream _zstrm;
   uLong    _crc;
 };
