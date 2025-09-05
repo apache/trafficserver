@@ -496,6 +496,8 @@ private:
   int     find_server_buffer_size();
   int     find_http_resp_buffer_size(int64_t cl);
   int64_t server_transfer_init(MIOBuffer *buf, int hdr_size);
+  // Helper to compute how the server-to-client body will be tunneled (chunked, dechunked, or passthrough).
+  TunnelChunkingAction_t compute_server_to_client_action() const;
 
   /// Update the milestones to track time spent in the plugin API.
   void milestone_update_api_time();

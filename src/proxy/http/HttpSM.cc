@@ -6547,8 +6547,23 @@ HttpSM::perform_cache_write_action()
     if (transform_info.entry == nullptr || t_state.api_info.cache_untransformed == true) {
       cache_sm.close_read();
       t_state.cache_info.write_status = HttpTransact::CacheWriteStatus_t::IN_PROGRESS;
-      setup_cache_write_transfer(&cache_sm, server_entry->vc, &t_state.cache_info.object_store, client_response_hdr_bytes,
-                                 "cache write");
+
+      // Decide how many header bytes the cache-write consumer should skip based on
+      // the server-to-client tunneling action and whether a transform consumer will
+      // also be attached to this server producer.
+      // If the action routes the cache-write to the dechunked buffer AND there is
+      // also a transform consumer, the header is not copied into the dechunked
+      // buffer (see HttpTunnel::producer_run), so skip_bytes must be 0.
+      TunnelChunkingAction_t action_for_server_to_client = compute_server_to_client_action();
+
+      bool transform_consumer_present     = (transform_info.entry != nullptr);
+      bool cache_reader_is_dechunked      = (action_for_server_to_client == TunnelChunkingAction_t::DECHUNK_CONTENT ||
+                                        action_for_server_to_client == TunnelChunkingAction_t::PASSTHRU_CHUNKED_CONTENT);
+      bool header_present_in_cache_reader = !(cache_reader_is_dechunked && transform_consumer_present);
+
+      int64_t cache_write_skip = header_present_in_cache_reader ? client_response_hdr_bytes : 0;
+
+      setup_cache_write_transfer(&cache_sm, server_entry->vc, &t_state.cache_info.object_store, cache_write_skip, "cache write");
     } else {
       // We are not caching the untransformed.  We might want to
       //  use the cache writevc to cache the transformed copy
@@ -7145,6 +7160,24 @@ HttpSM::server_transfer_init(MIOBuffer *buf, int hdr_size)
   }
 
   return nbytes;
+}
+
+TunnelChunkingAction_t
+HttpSM::compute_server_to_client_action() const
+{
+  if (t_state.client_info.receive_chunked_response == false) {
+    if (t_state.current.server->transfer_encoding == HttpTransact::TransferEncoding_t::CHUNKED) {
+      return TunnelChunkingAction_t::DECHUNK_CONTENT;
+    }
+    return TunnelChunkingAction_t::PASSTHRU_DECHUNKED_CONTENT;
+  }
+  if (t_state.current.server->transfer_encoding != HttpTransact::TransferEncoding_t::CHUNKED) {
+    if (t_state.client_info.http_version == HTTP_0_9) {
+      return TunnelChunkingAction_t::PASSTHRU_DECHUNKED_CONTENT;
+    }
+    return TunnelChunkingAction_t::CHUNK_CONTENT;
+  }
+  return TunnelChunkingAction_t::PASSTHRU_CHUNKED_CONTENT;
 }
 
 HttpTunnelProducer *

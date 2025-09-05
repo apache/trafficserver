@@ -1003,9 +1003,29 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
     }
 
     // Consume bytes from the reader if we are skipping bytes.
+    // Determine if the assigned reader actually contains the header bytes.
+    // For dechunked buffers with a transform consumer, the header is NOT copied
+    // into the dechunked buffer; in that case, skip_bytes must be ignored.
     if (c->skip_bytes > 0) {
-      ink_release_assert(c->skip_bytes <= c->buffer_reader->read_avail());
-      c->buffer_reader->consume(c->skip_bytes);
+      bool reader_has_header = true;
+      if (action == TunnelChunkingAction_t::DECHUNK_CONTENT) {
+        reader_has_header = !transform_consumer;
+      } else if (c->vc_type == HttpTunnelType_t::CACHE_WRITE && action == TunnelChunkingAction_t::PASSTHRU_CHUNKED_CONTENT) {
+        // Cache write uses the dechunked buffer in this mode.
+        reader_has_header = !transform_consumer;
+      }
+
+      if (!reader_has_header) {
+        Dbg(dbg_ctl_http_tunnel,
+            "[producer_run] consumer '%s' reader has no header; ignoring skip_bytes=%" PRId64 " for this consumer", c->name,
+            c->skip_bytes);
+        c->skip_bytes = 0;
+      } else {
+        // Reader must contain the header now; enforce and consume exactly skip_bytes.
+        ink_release_assert(c->skip_bytes <= c->buffer_reader->read_avail());
+        c->buffer_reader->consume(c->skip_bytes);
+        c->skip_bytes = 0;
+      }
     }
   }
 
