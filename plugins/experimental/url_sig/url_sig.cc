@@ -869,7 +869,7 @@ deny:
     break;
   }
   /* Always set the return status */
-  TSHttpTxnStatusSet(txnp, cfg->err_status);
+  TSHttpTxnStatusSet(txnp, cfg->err_status, PLUGIN_NAME);
 
   return TSREMAP_DID_REMAP;
 

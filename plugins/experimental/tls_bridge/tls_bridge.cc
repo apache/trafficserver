@@ -513,7 +513,7 @@ Bridge::update_ua_response()
     // an actual upstream connection. Otherwise, let the original connection response code
     // ride.
     if (_out_response_code != TS_HTTP_STATUS_OK && _out_response_code != TS_HTTP_STATUS_NONE) {
-      TSHttpHdrStatusSet(mbuf, hdr_loc, _out_response_code);
+      TSHttpHdrStatusSet(mbuf, hdr_loc, _out_response_code, _ua_txn, PLUGIN_NAME);
       if (!_out_response_reason.empty()) {
         TSHttpHdrReasonSet(mbuf, hdr_loc, _out_response_reason.data(), _out_response_reason.size());
       }

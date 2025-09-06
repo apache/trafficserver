@@ -1,0 +1,3 @@
+client_method=GET proxy_response_status=200 status_setter=-
+client_method=CONNECT proxy_response_status=403 status_setter=ip_allow
+client_method=PUSH proxy_response_status=403 status_setter=ip_allow
