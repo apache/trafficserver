@@ -24,7 +24,7 @@ import utils
 
 @pytest.mark.ops
 @pytest.mark.reverse
-@pytest.mark.parametrize("input_file,output_file", utils.collect_reverse_test_files("ops", "u4wrh"))
+@pytest.mark.parametrize("input_file,output_file", utils.collect_output_test_files("ops", "u4wrh"))
 def test_reverse_conversion(input_file: Path, output_file: Path) -> None:
     """Test that u4wrh reverse conversion produces original hrw4u for ops test cases."""
     utils.run_reverse_test(input_file, output_file)

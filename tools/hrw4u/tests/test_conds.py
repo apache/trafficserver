@@ -35,3 +35,11 @@ def test_output_matches(input_file: Path, output_file: Path) -> None:
 def test_ast_matches(input_file: Path, ast_file: Path) -> None:
     """Test that AST structure matches expected AST for conds test cases."""
     utils.run_ast_test(input_file, ast_file)
+
+
+@pytest.mark.conds
+@pytest.mark.invalid
+@pytest.mark.parametrize("input_file", utils.collect_failing_inputs("conds"))
+def test_invalid_inputs_fail(input_file: Path) -> None:
+    """Test that invalid conds inputs produce expected errors."""
+    utils.run_failing_test(input_file)

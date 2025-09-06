@@ -14,12 +14,6 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-"""
-validation.py
-
-Encapsulates shared validation utilities for use in HRW4U.
-"""
-
 from __future__ import annotations
 
 import re
@@ -32,7 +26,7 @@ from hrw4u.common import RegexPatterns
 
 class ValidatorChain:
 
-    def __init__(self, funcs: list[Callable[[list[str]], None]] | None = None):
+    def __init__(self, funcs: list[Callable[[list[str]], None]] | None = None) -> None:
         self._validators: list[Callable[[list[str]], None]] = funcs or []
 
     def __call__(self, args: list[str]) -> None:
@@ -41,7 +35,7 @@ class ValidatorChain:
 
     def _wrap_args(self, func: Callable[[str], None]) -> Callable[[list[str]], None]:
 
-        def wrapped(args: list[str]):
+        def wrapped(args: list[str]) -> None:
             for arg in args:
                 func(arg)
 
@@ -51,15 +45,7 @@ class ValidatorChain:
         self._validators.append(func)
         return self
 
-
-#
-# Validators, to be chained
-#
-
     def arg_at(self, index: int, func: Callable[[str], None]) -> 'ValidatorChain':
-        """
-        Validate a specific argument at the given index.
-        """
 
         def validator(args: list[str]) -> None:
             try:
@@ -179,6 +165,7 @@ class Validator:
 
     @staticmethod
     def validate_assignment(var_type: types.VarType, value: str, name: str) -> None:
+        """Validate assignment value matches variable type constraints."""
         match var_type:
             case types.VarType.BOOL:
                 try:
@@ -241,6 +228,38 @@ class Validator:
         return validator
 
     @staticmethod
+    def normalize_arg_at(
+        index: int, normalize_func: Callable[[str], str] = lambda x: x.strip().strip('"').upper()) -> Callable[[list[str]], None]:
+        """Normalizes argument at specified index using the provided normalization function."""
+
+        def validator(args: list[str]) -> None:
+            if len(args) > index:
+                args[index] = normalize_func(args[index])
+
+        return validator
+
+    @staticmethod
+    def conditional_arg_validation(field_to_values: dict[str, frozenset[str]]) -> Callable[[list[str]], None]:
+        """Validates second argument based on first argument using a field-to-values mapping.
+        Expects arguments to already be normalized (uppercase, quotes stripped)."""
+
+        def validator(args: list[str]) -> None:
+            if len(args) >= 2:
+                field = args[0]
+                value = args[1]
+
+                if field in field_to_values:
+                    allowed_values = field_to_values[field]
+                    if value not in allowed_values:
+                        raise SymbolResolutionError(
+                            value,
+                            f"Invalid value '{value}' for field '{field}'. Must be one of: {', '.join(sorted(allowed_values))}")
+                else:
+                    raise SymbolResolutionError(field, f"Unknown field '{field}' for conditional validation")
+
+        return validator
+
+    @staticmethod
     def set_format() -> Callable[[str], None]:
 
         def validator(value: str) -> None:
@@ -255,5 +274,29 @@ class Validator:
         def validator(value: str) -> None:
             if not (value.startswith('{') and value.endswith('}')):
                 raise SymbolResolutionError(value, "IP range must be enclosed in {}")
+
+        return validator
+
+    @staticmethod
+    def regex_pattern() -> Callable[[str], None]:
+        """Validate PCRE2-compatible regular expression patterns."""
+
+        def validator(value: str) -> None:
+            if value.startswith('/') and value.endswith('/') and len(value) > 2:
+                pattern = value[1:-1]
+            else:
+                pattern = value
+
+            if not pattern:
+                raise SymbolResolutionError(value, "Empty regex pattern")
+
+            try:
+                re.compile(pattern)
+            except re.error as e:
+                error_msg = str(e)
+                if len(error_msg) > 60:
+                    error_msg = error_msg[:57] + "..."
+
+                raise SymbolResolutionError(value, f"Invalid regex: {error_msg}")
 
         return validator

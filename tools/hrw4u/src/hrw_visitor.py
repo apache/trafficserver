@@ -16,217 +16,181 @@
 
 from __future__ import annotations
 
+from functools import lru_cache
+
 from u4wrh.u4wrhVisitor import u4wrhVisitor
 from u4wrh.u4wrhParser import u4wrhParser
 from .hrw_symbols import InverseSymbolResolver
-from hrw4u.errors import hrw4u_error, SymbolResolutionError
+from hrw4u.errors import SymbolResolutionError
+from hrw4u.states import CondState, SectionType
+from hrw4u.common import SystemDefaults
+from hrw4u.visitor_base import BaseHRWVisitor
 from hrw4u.validation import Validator
-from hrw4u.debugging import Dbg
-from hrw4u.states import CondState, OperatorState, SectionType, ModifierType
-from hrw4u.common import VisitorMixin, SystemDefaults
+
+# Cache regex validator at module level for efficiency
+_inverse_regex_validator = Validator.regex_pattern()
 
 
-class HRWInverseVisitor(u4wrhVisitor, VisitorMixin):
+class HRWInverseVisitor(u4wrhVisitor, BaseHRWVisitor):
+    """Inverse visitor for converting ATS configuration back to HRW4U format."""
 
     def __init__(
             self,
             filename: str = SystemDefaults.DEFAULT_FILENAME,
             section_label: SectionType = SectionType.REMAP,
-            debug: bool = SystemDefaults.DEFAULT_DEBUG):
-        self.filename = filename
-        self.section_label = section_label
-        self.output: list[str] = []
+            debug: bool = SystemDefaults.DEFAULT_DEBUG,
+            error_collector=None,
+            preserve_comments: bool = True) -> None:
 
+        super().__init__(filename=filename, debug=debug, error_collector=error_collector)
+
+        # HRW inverse-specific state
+        self.section_label = section_label
+        self.preserve_comments = preserve_comments
         self._pending_terms: list[tuple[str, CondState]] = []
         self._in_group: bool = False
         self._group_terms: list[tuple[str, CondState]] = []
 
-        self._in_if_block = False
-        self._section_opened = False
-        self._stmt_indent = 0
-        self._in_elif_mode = False
-
-        self._dbg = Dbg(debug)
-
         self.symbol_resolver = InverseSymbolResolver()
 
-#
-# Helpers
-#
-
-    def _emit(self, s: str):
-        self.output.append(self.format_with_indent(s, self._stmt_indent))
-
-    def _close_if_and_section(self):
-        if self._in_if_block:
-            self._stmt_indent -= 1
-            self._emit("}")
-            self._in_if_block = False
-        if self._section_opened:
-            self._stmt_indent -= 1
-            self._emit("}")
-            self._section_opened = False
+        self._section_opened = False
+        self._in_if_block = False
         self._in_elif_mode = False
 
-    def _reset_condition_state(self):
+    @lru_cache(maxsize=128)
+    def _cached_percent_parsing(self, pct_text: str) -> tuple[str, str | None]:
+        """Cache expensive percent block parsing."""
+        return self.symbol_resolver.parse_percent_block(pct_text)
+
+    @lru_cache(maxsize=256)
+    def _cached_symbol_to_ident(self, pct_text: str, section_name: str) -> tuple[str, str]:
+        """Cache expensive symbol resolution operations."""
+        try:
+            section = SectionType(section_name)
+            return self.symbol_resolver.percent_to_ident_or_func(pct_text, section)
+        except (ValueError, SymbolResolutionError):
+            return pct_text, ""
+
+    #
+    # Helpers
+    #
+
+    def _reset_condition_state(self) -> None:
+        """Reset condition state for new sections."""
         self._pending_terms.clear()
         self._in_elif_mode = False
         self._in_group = False
         self._group_terms.clear()
 
-    def _start_new_section(self, section_type: SectionType):
-        self._dbg.enter(f"start_section {section_type.value}")
+    def _start_new_section(self, section_type: SectionType) -> None:
+        """Start a new section, handling continuation of existing sections."""
+        with self.debug_context(f"start_section {section_type.value}"):
+            if self._section_opened and self._section_label == section_type:
+                self.debug(f"continuing existing section")
+                if self._in_if_block:
+                    self.decrease_indent()
+                    self.emit("}")
+                    self._in_if_block = False
+                self._reset_condition_state()
+                if self.output and self.output[-1] != "":
+                    self.output.append("")
+                return
 
-        if self._section_opened and self.section_label == section_type:
-            self._dbg("continuing existing section")
-            if self._in_if_block:
-                self._stmt_indent -= 1
-                self._emit("}")
-                self._in_if_block = False
+            prev = bool(self.output)
+            had_section = self._section_opened
+            self._close_if_and_section()
             self._reset_condition_state()
-            if self.output and self.output[-1] != "":
+
+            if had_section and self.output and self.output[-1] != "":
                 self.output.append("")
-            self._dbg.exit(f"continue_section {section_type.value}")
-            return
 
-        prev = bool(self.output)
-        self._close_if_and_section()
-        self._reset_condition_state()
-
-        if prev and (not self.output or self.output[-1] != ""):
-            self.output.append("")
-
-        self.section_label = section_type
-        self._emit(f"{section_type.value} {{")
-        self._section_opened = True
-        self._stmt_indent += 1
-        self._dbg.exit(f"start_section {section_type.value}")
-
-    def _ensure_section(self):
-        if not self._section_opened:
-            self._emit(f"{self.section_label.value} {{")
+            self._section_label = section_type
+            self.emit(f"{section_type.value} {{")
             self._section_opened = True
-            self._stmt_indent += 1
-
-    def _apply_with_modifiers(self, expr: str, state: CondState) -> str:
-        with_mods = state.to_with_modifiers()
-        return f"{expr} with {','.join(with_mods)}" if with_mods else expr
+            self.increase_indent()
 
     def _build_expression_parts(self, terms: list[tuple[str, CondState]]) -> str:
-        self._dbg.enter(f"_build_expression_parts: {terms}")
-        parts: list[str] = []
-        connector = "&&"
+        """Build expression from condition terms."""
+        with self.debug_context(f"_build_expression_parts: {terms}"):
+            parts: list[str] = []
+            connector = "&&"
 
-        for idx, (term, state) in enumerate(terms):
-            self._dbg(f"term {idx}: {term}, state: {state}")
+            for idx, (term, state) in enumerate(terms):
+                self.debug(f"term {idx}: {term}, state: {state}")
 
-            if state.not_:
-                processed_term = self.symbol_resolver.negate_expression(term)
-            else:
-                if ' != ""' in term:
-                    processed_term = term.replace(' != ""', '')
-                elif ' == ""' in term:
-                    processed_term = f"!{term.replace(' == \"\"', '')}"
+                if state.not_:
+                    processed_term = self.symbol_resolver.negate_expression(term)
                 else:
-                    processed_term = term
+                    processed_term = self._normalize_empty_string_condition(term, state)
 
-            processed_term = self._apply_with_modifiers(processed_term, state)
-            self._dbg(f"processed term {idx}: {processed_term}")
+                processed_term = self._apply_with_modifiers(processed_term, state)
+                self.debug(f"processed term {idx}: {processed_term}")
 
-            if idx > 0:
-                parts.append(connector)
-            parts.append(processed_term)
+                if idx > 0:
+                    parts.append(connector)
+                parts.append(processed_term)
 
-            if state.and_or:
-                connector = "||"
-            else:
-                connector = "&&"
-            self._dbg(f"next connector: {connector}")
+                connector = self._build_condition_connector(state, idx == len(terms) - 1)
+                self.debug(f"next connector: {connector}")
 
-        result = " ".join(parts)
-        self._dbg.exit(f"result: {result}")
-        return result
+            result = " ".join(parts)
+            return result
 
-    def _flush_pending_condition(self):
+    def _flush_pending_condition(self) -> None:
+        """Flush pending condition terms into if/elif statement."""
         if not self._pending_terms:
             return
 
         expr = self._build_expression_parts(self._pending_terms)
-
-        if self._in_elif_mode:
-            self._emit(f"}} elif {expr} {{")
-            self._in_elif_mode = False
-        else:
-            self._emit(f"if {expr} {{")
-
-        self._in_if_block = True
-        self._stmt_indent += 1
+        self._start_if_block(expr)
         self._pending_terms.clear()
 
-
-#
-# Visitors
-#
-
-    def visitProgram(self, ctx: u4wrhParser.ProgramContext):
-        self._dbg.enter("visitProgram")
-        try:
+    def visitProgram(self, ctx: u4wrhParser.ProgramContext) -> list[str]:
+        """Visit program and generate complete HRW4U output."""
+        with self.debug_context("visitProgram"):
             for line in ctx.line():
                 self.visit(line)
             self._close_if_and_section()
 
             var_declarations = self.symbol_resolver.get_var_declarations()
             if var_declarations:
-                vars_section = ["VARS {"]
-                for decl in var_declarations:
-                    vars_section.append(self.format_with_indent(decl, 1))
-                vars_section.extend(["}", ""])
-                self.output = vars_section + self.output
+                vars_output = '\n'.join(["VARS {", *[self.format_with_indent(decl, 1) for decl in var_declarations], "}", ""])
+                self.output = vars_output.split('\n') + self.output
 
             return self.output
-        finally:
-            self._dbg.exit("visitProgram")
 
-    def visitElifLine(self, ctx: u4wrhParser.ElifLineContext):
-        self._dbg.enter("visitElifLine")
-        try:
-            if self._in_if_block:
-                self._stmt_indent -= 1
-                self._in_if_block = False
-            self._in_elif_mode = True
+    def visitCommentLine(self, ctx: u4wrhParser.CommentLineContext) -> None:
+        """Preserve comments in the output with proper indentation."""
+        if not self.preserve_comments:
+            return
+        with self.debug_context("visitCommentLine"):
+            comment_text = ctx.COMMENT().getText()
+            self._flush_pending_condition()
+            if self._section_opened:
+                self.emit(comment_text)
+            else:
+                self.output.append(comment_text)
+
+    def visitElifLine(self, ctx: u4wrhParser.ElifLineContext) -> None:
+        """Handle elif line transitions."""
+        with self.debug_context("visitElifLine"):
+            self._start_elif_mode()
             return None
-        finally:
-            self._dbg.exit("visitElifLine")
 
-    def visitElseLine(self, ctx: u4wrhParser.ElseLineContext):
-        self._dbg.enter("visitElseLine")
-        try:
-            if self._in_if_block:
-                self._stmt_indent -= 1
-
-                if self.output and self.output[-1].strip() == "}":
-                    self.output[-1] = self.format_with_indent("} else {", self._stmt_indent)
-                else:
-                    self._emit("} else {")
-
-                self._in_if_block = True
-                self._stmt_indent += 1
-                return None
-
-            self._emit("else {")
-            self._stmt_indent += 1
+    def visitElseLine(self, ctx: u4wrhParser.ElseLineContext) -> None:
+        """Handle else line transitions."""
+        with self.debug_context("visitElseLine"):
+            self._handle_else_transition()
             return None
-        finally:
-            self._dbg.exit("visitElseLine")
 
-    def visitCondLine(self, ctx: u4wrhParser.CondLineContext):
-        self._dbg.enter("visitCondLine")
-        try:
+    def visitCondLine(self, ctx: u4wrhParser.CondLineContext) -> None:
+        """Process condition lines with error handling."""
+        with self.debug_context("visitCondLine"):
             cond_state = CondState()
             if ctx.modList():
                 for mod_item in ctx.modList().modItem():
                     cond_state.add_modifier(mod_item.getText())
-            self._dbg(f"cond_state: {cond_state}")
+            self.debug(f"cond_state: {cond_state}")
 
             body = ctx.condBody()
 
@@ -238,13 +202,13 @@ class HRWInverseVisitor(u4wrhVisitor, VisitorMixin):
 
             match pct_text:
                 case str() if pct_text:
-                    self._dbg(f"percent block: {pct_text}")
-                    tag, payload = self.symbol_resolver.parse_percent_block(pct_text)
-                    self._dbg(f"percent parsed -> tag={tag} payload={payload}")
+                    self.debug(f"percent block: {pct_text}")
+                    tag, payload = self._cached_percent_parsing(pct_text)
+                    self.debug(f"percent parsed -> tag={tag} payload={payload}")
 
                     try:
                         section_type = SectionType.from_hook(tag)
-                        self._dbg("hook => new section: " + section_type.value)
+                        self.debug("hook => new section: " + section_type.value)
                         self._start_new_section(section_type)
                         return None
                     except ValueError:
@@ -275,10 +239,11 @@ class HRWInverseVisitor(u4wrhVisitor, VisitorMixin):
                             return None
 
                         case _:
-                            try:
-                                expr, _ = self.symbol_resolver.percent_to_ident_or_func(pct_text, self.section_label)
-                            except SymbolResolutionError as exc:
-                                raise hrw4u_error(self.filename, ctx, exc)
+                            expr = None
+                            with self.trap(ctx):
+                                expr, _ = self._cached_symbol_to_ident(pct_text, self._section_label.value)
+                            if not expr:
+                                return None  # skip this term on error
                             terms = self._group_terms if self._in_group else self._pending_terms
                             terms.append((expr, cond_state))
                             return None
@@ -286,23 +251,25 @@ class HRWInverseVisitor(u4wrhVisitor, VisitorMixin):
                 case _:
                     if body.comparison():
                         comparison_expr = self._build_comparison_expression(body.comparison())
-                        terms = self._group_terms if self._in_group else self._pending_terms
-                        terms.append((comparison_expr, cond_state))
+                        if comparison_expr != "ERROR":  # Skip if error occurred
+                            terms = self._group_terms if self._in_group else self._pending_terms
+                            terms.append((comparison_expr, cond_state))
                         return None
 
-                    raise hrw4u_error(self.filename, body, "Unrecognized condition body")
-        finally:
-            self._dbg.exit("visitCondLine")
+                    self.handle_error(ValueError("Unrecognized condition body"))
+                    return None
 
     def _build_comparison_expression(self, comparison: u4wrhParser.ComparisonContext) -> str:
-        self._dbg.enter("_build_comparison")
-        try:
+        """Build comparison expression with error handling."""
+        with self.debug_context("_build_comparison"):
             left_pct = comparison.lhs().getText()
-            self._dbg(f"LHS raw: '{left_pct}'")
-            try:
-                lhs_expr, _ = self.symbol_resolver.percent_to_ident_or_func(left_pct, self.section_label)
-            except SymbolResolutionError as exc:
-                raise hrw4u_error(self.filename, comparison, exc)
+            self.debug(f"LHS raw: '{left_pct}'")
+
+            lhs_expr = None
+            with self.trap(comparison):
+                lhs_expr, _ = self._cached_symbol_to_ident(left_pct, self._section_label.value)
+            if not lhs_expr:
+                return "ERROR"
 
             match comparison:
                 case _ if comparison.cmpOp():
@@ -311,114 +278,141 @@ class HRWInverseVisitor(u4wrhVisitor, VisitorMixin):
                     if operator == "=":
                         operator = "=="
                     result = f"{lhs_expr} {operator} {rhs}"
-                    self._dbg(f"comparison -> {result}")
-                    return result
-
-                case _ if comparison.regexOp():
-                    regex_op = comparison.regexOp().getText()
-                    regex_expr = comparison.regex().getText()
-                    result = f"{lhs_expr} {regex_op} {regex_expr}"
-                    self._dbg(f"comparison -> {result}")
+                    self.debug(f"comparison -> {result}")
                     return result
 
                 case _ if comparison.regex():
                     regex_expr = comparison.regex().getText()
+                    try:
+                        _inverse_regex_validator(regex_expr)
+                    except Exception as e:
+                        with self.trap(comparison.regex()):
+                            raise e
+                        return "ERROR"
                     result = f"{lhs_expr} ~ {regex_expr}"
-                    self._dbg(f"comparison -> {result}")
+                    self.debug(f"comparison -> {result}")
                     return result
-
-                case _ if comparison.inOp():
-                    if comparison.set_():
-                        set_text = self.symbol_resolver.convert_set_to_brackets(comparison.set_().getText())
-                        result = f"{lhs_expr} in {set_text}"
-                        self._dbg(f"comparison -> {result}")
-                        return result
-                    if comparison.iprange():
-                        iprange_text = self.symbol_resolver.format_iprange(comparison.iprange().getText())
-                        result = f"{lhs_expr} in {iprange_text}"
-                        self._dbg(f"comparison -> {result}")
-                        return result
 
                 case _ if (set_ctx := comparison.set_()):
                     set_text = self.symbol_resolver.convert_set_to_brackets(set_ctx.getText())
                     result = f"{lhs_expr} in {set_text}"
-                    self._dbg(f"comparison -> {result}")
+                    self.debug(f"comparison -> {result}")
                     return result
 
                 case _ if (iprange_ctx := comparison.iprange()):
                     iprange_text = self.symbol_resolver.format_iprange(iprange_ctx.getText())
                     result = f"{lhs_expr} in {iprange_text}"
-                    self._dbg(f"comparison -> {result}")
+                    self.debug(f"comparison -> {result}")
+                    return result
+
+                case _ if comparison.STRING():
+                    string_value = comparison.STRING().getText()
+                    result = f"{lhs_expr} == {string_value}"
+                    self.debug(f"implicit string comparison -> {result}")
+                    return result
+
+                case _ if comparison.NUMBER():
+                    number_value = comparison.NUMBER().getText()
+                    result = f"{lhs_expr} == {number_value}"
+                    self.debug(f"implicit number comparison -> {result}")
+                    return result
+
+                case _ if comparison.IDENT():
+                    ident_value = comparison.IDENT().getText()
+                    result = f"{lhs_expr} == {ident_value}"
+                    self.debug(f"implicit ident comparison -> {result}")
+                    return result
+
+                case _ if comparison.COMPLEX_STRING():
+                    complex_value = comparison.COMPLEX_STRING().getText()
+                    result = f"{lhs_expr} == {complex_value}"
+                    self.debug(f"implicit complex string comparison -> {result}")
                     return result
 
                 case _:
-                    raise hrw4u_error(self.filename, comparison, "Invalid comparison")
-        finally:
-            self._dbg.exit("_build_comparison")
+                    with self.trap(comparison):
+                        raise ValueError("Invalid comparison")
+                    return "ERROR"
 
-    def visitOpLine(self, ctx: u4wrhParser.OpLineContext):
-        self._dbg.enter("visitOpLine")
-        try:
-            self._ensure_section()
+    def visitOpLine(self, ctx: u4wrhParser.OpLineContext) -> None:
+        """Process operation lines with comprehensive error handling."""
+        with self.debug_context("visitOpLine"):
+            self._ensure_section_open(self._section_label)
             self._flush_pending_condition()
 
             node = ctx.opText()
-            cmd: str | None = None
-            args: list[str] = []
-            cond_state = CondState()
-            op_state = OperatorState()
+            cmd = node.IDENT().getText() if node.IDENT() else None
+            args, op_state, _cond_state = self._parse_op_tails(node, ctx)
 
-            if node.IDENT():
-                cmd = node.IDENT().getText()
+            self.debug(f"operator: {cmd} args={args} op_state={op_state} cond_state={_cond_state}")
+            if cmd == "set-redirect":
+                args = self._reconstruct_redirect_args(args)
+                self.debug(f"reconstructed redirect: {args}")
 
-            for tail in node.opTail():
-                if getattr(tail, "LBRACKET", None) and tail.LBRACKET():
-                    for flag in tail.opFlag():
-                        flag_text = flag.getText().upper()
-                        mod_type = ModifierType.classify(flag_text)
-                        if mod_type == ModifierType.CONDITION:
-                            cond_state.add_modifier(flag_text)
-                        elif mod_type == ModifierType.OPERATOR:
-                            op_state.add_modifier(flag_text)
-                        else:
-                            raise Exception(f"Unknown modifier: {flag_text}")
-                    continue
-                if getattr(tail, "IDENT", None) and tail.IDENT():
-                    args.append(tail.IDENT().getText())
-                    continue
-                if getattr(tail, "NUMBER", None) and tail.NUMBER():
-                    args.append(tail.NUMBER().getText())
-                    continue
-                if getattr(tail, "STRING", None) and tail.STRING():
-                    args.append(tail.STRING().getText())
-                    continue
-                if getattr(tail, "PERCENT_BLOCK", None) and tail.PERCENT_BLOCK():
-                    args.append(tail.PERCENT_BLOCK().getText())
-                    continue
-                if getattr(tail, "COMPLEX_STRING", None) and tail.COMPLEX_STRING():
-                    args.append(tail.COMPLEX_STRING().getText())
-                    continue
-                tail_text = tail.getText()
-                if tail_text:
-                    args.append(tail_text)
-
-            self._dbg(f"operator: {cmd} args={args} op_state={op_state} cond_state={cond_state}")
-            if cmd == "set-redirect" and len(args) > 1:
-                url_parts = []
-                for arg in args[1:]:
-                    if arg.startswith('"') and arg.endswith('"'):
-                        url_parts.append(arg[1:-1])
-                    else:
-                        url_parts.append(arg)
-                reconstructed_url = "".join(url_parts)
-                args = [args[0], reconstructed_url]
-                self._dbg(f"reconstructed redirect: {args}")
-
-            stmt = self.symbol_resolver.op_to_hrw4u(cmd, args, self.section_label, op_state)
-            self._emit(stmt + ";")
+            stmt = self.symbol_resolver.op_to_hrw4u(cmd, args, self._section_label, op_state)
+            self.emit(stmt + ";")
 
             return None
-        except Exception as exc:
-            raise hrw4u_error(self.filename, ctx, exc)
-        finally:
-            self._dbg.exit("visitOpLine")
+
+    # Condition block lifecycle methods - specific to inverse visitor
+    def _close_if_block(self) -> None:
+        """Close open if block."""
+        if self._in_if_block:
+            self.decrease_indent()
+            self.emit("}")
+            self._in_if_block = False
+
+    def _close_section(self) -> None:
+        """Close open section."""
+        if self._section_opened:
+            self.decrease_indent()
+            self.emit("}")
+            self._section_opened = False
+
+    def _close_if_and_section(self) -> None:
+        """Close open if blocks and sections."""
+        self._close_if_block()
+        self._close_section()
+        self._in_elif_mode = False
+
+    def _ensure_section_open(self, section_label: SectionType) -> None:
+        """Ensure a section is open for statements."""
+        if not self._section_opened:
+            self.emit(f"{section_label.value} {{")
+            self._section_opened = True
+            self.increase_indent()
+
+    def _start_elif_mode(self) -> None:
+        """Handle elif line transitions."""
+        if self._in_if_block:
+            self.decrease_indent()
+            self._in_if_block = False
+        self._in_elif_mode = True
+
+    def _handle_else_transition(self) -> None:
+        """Handle else line transitions."""
+        if self._in_if_block:
+            self.decrease_indent()
+
+            if self.output and self.output[-1].strip() == "}":
+                self.output[-1] = self.format_with_indent("} else {", self.current_indent)
+            else:
+                self.emit("} else {")
+
+            self._in_if_block = True
+            self.increase_indent()
+        else:
+            self.emit("else {")
+            self.increase_indent()
+            self._in_if_block = True
+
+    def _start_if_block(self, condition_expr: str) -> None:
+        """Start a new if block."""
+        if self._in_elif_mode:
+            self.emit(f"}} elif {condition_expr} {{")
+            self._in_elif_mode = False
+        else:
+            self.emit(f"if {condition_expr} {{")
+
+        self._in_if_block = True
+        self.increase_indent()

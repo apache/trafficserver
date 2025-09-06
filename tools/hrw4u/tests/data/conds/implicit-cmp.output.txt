@@ -1,0 +1,11 @@
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{CLIENT-HEADER:X-Slicer-Info} "test-value"
+    set-header X-Test "found"
+
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{CLIENT-HEADER:X-Debug} supersekret
+    set-debug
+
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{CLIENT-HEADER:X-Number} 123
+    set-status 200

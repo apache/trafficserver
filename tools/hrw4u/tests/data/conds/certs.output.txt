@@ -1,0 +1,23 @@
+cond %{SEND_RESPONSE_HDR_HOOK} [AND]
+cond %{INBOUND:TLS} ="" [NOT]
+    set-header X-Client-Cert "%{INBOUND:CLIENT-CERT:PEM}"
+    set-header X-Client-Cert-Subject "%{INBOUND:CLIENT-CERT:SUBJECT}"
+    set-header X-Client-Cert-Issuer "%{INBOUND:CLIENT-CERT:ISSUER}"
+    set-header X-Server-Cert-Subject "%{INBOUND:SERVER-CERT:SUBJECT}"
+    set-header X-Server-Cert-Serial "%{INBOUND:SERVER-CERT:SERIAL}"
+    set-header X-Client-SAN-DNS "%{INBOUND:CLIENT-CERT:SAN:DNS}"
+    set-header X-Client-SAN-IP "%{INBOUND:CLIENT-CERT:SAN:IP}"
+    set-header X-Server-SAN-Email "%{INBOUND:SERVER-CERT:SAN:EMAIL}"
+    set-header X-Server-SAN-URI "%{INBOUND:SERVER-CERT:SAN:URI}"
+
+cond %{SEND_REQUEST_HDR_HOOK} [AND]
+cond %{INBOUND:CLIENT-CERT:SAN:DNS} /example\.com/
+    set-header X-Matched-Domain "true"
+
+cond %{SEND_REQUEST_HDR_HOOK} [AND]
+cond %{INBOUND:CLIENT-CERT:SUBJECT} /CN=testcert/
+    set-header X-Test-Client "verified"
+
+cond %{READ_RESPONSE_HDR_HOOK} [AND]
+    set-header X-Outbound-Client-Cert "%{OUTBOUND:CLIENT-CERT:PEM}"
+    set-header X-Outbound-Server-Subject "%{OUTBOUND:SERVER-CERT:SUBJECT}"

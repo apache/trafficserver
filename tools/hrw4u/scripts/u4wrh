@@ -19,7 +19,7 @@
 
 from __future__ import annotations
 
-from hrw4u.script_common import create_base_parser, create_parse_tree, generate_output, process_input
+from hrw4u.common import create_base_parser, create_parse_tree, generate_output, process_input
 from u4wrh.hrw_visitor import HRWInverseVisitor
 from u4wrh.u4wrhLexer import u4wrhLexer
 from u4wrh.u4wrhParser import u4wrhParser
@@ -29,21 +29,21 @@ def main() -> None:
     """Main entry point for the u4wrh script."""
     parser, output_group = create_base_parser("Process header_rewrite (HRW) lines and reconstruct hrw4u source.")
 
-    # Add U4WRH-specific output option
+    # Argument parsing
     output_group.add_argument("--hrw4u", action="store_true", help="Produce reconstructed hrw4u output (default)")
-
+    parser.add_argument("--no-comments", action="store_true", help="Skip comment preservation (ignore comments in output)")
     args = parser.parse_args()
 
     # Default to hrw4u output if neither AST nor hrw4u specified
     if not (args.ast or args.hrw4u):
         args.hrw4u = True
 
-    # Process input and create parse tree
     content, filename = process_input(args.input_file)
-    tree, parser_obj = create_parse_tree(content, filename, u4wrhLexer, u4wrhParser, "u4wrh")
+    tree, parser_obj, error_collector = create_parse_tree(
+        content, filename, u4wrhLexer, u4wrhParser, "u4wrh", not args.stop_on_error)
 
     # Generate output
-    generate_output(tree, parser_obj, HRWInverseVisitor, filename, args.debug, args.ast)
+    generate_output(tree, parser_obj, HRWInverseVisitor, filename, args, error_collector)
 
 
 if __name__ == "__main__":

@@ -1,3 +1,3 @@
-tests/data/hooks/invalid_section.fail.input.txt:1:0: error: Invalid section name: 'FOOBAR'
+tests/data/hooks/invalid_section.fail.input.txt:1:0: error: Invalid section name: 'FOOBAR'. Valid sections: REMAP, SEND_REQUEST, READ_RESPONSE, SEND_RESPONSE, READ_REQUEST, PRE_REMAP, TXN_START, TXN_CLOSE, VARS
    1 | FOOBAR {
      | ^

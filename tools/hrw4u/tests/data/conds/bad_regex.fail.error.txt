@@ -1,0 +1,3 @@
+tests/data/conds/bad_regex.fail.input.txt:2:27: error: Invalid regex: unterminated character set at position 3
+   2 |     if inbound.req.X-Foo ~ /Foo[/ {
+     |                            ^
