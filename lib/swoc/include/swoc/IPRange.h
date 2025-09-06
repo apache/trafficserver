@@ -1578,6 +1578,13 @@ public:
    */
   self_type &fill(swoc::IPRange const &r);
 
+  /** Erase addresses from the set.
+   *
+   * @param r Range of addresses to erase.
+   * @return @a this
+   */
+  self_type &erase(swoc::IPRange const &r);
+
   /// @return @c true if @a addr is in the set.
   bool contains(swoc::IPAddr const &addr) const;
 
@@ -1680,6 +1687,12 @@ IPRangeSet::mark(swoc::IPRange const &r) -> self_type & {
 inline auto
 IPRangeSet::fill(swoc::IPRange const &r) -> self_type & {
   _addrs.mark(r, MARK);
+  return *this;
+}
+
+inline auto
+IPRangeSet::erase(swoc::IPRange const &r) -> self_type & {
+  _addrs.erase(r);
   return *this;
 }
 
