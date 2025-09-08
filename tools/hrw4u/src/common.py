@@ -32,7 +32,8 @@ from hrw4u.types import MagicStrings
 class RegexPatterns:
     """Compiled regex patterns for reuse across modules"""
     SIMPLE_TOKEN: Final = re.compile(r'^[@a-zA-Z0-9_-]+$')
-    HTTP_TOKEN: Final = re.compile(r'^[@!#$%&\'*+\-.0-9A-Z^_`a-z|~]+$')
+    HTTP_TOKEN: Final = re.compile(r'^[!#$%&\'*+.^_`|~0-9A-Za-z-]+$')
+    HTTP_HEADER_NAME: Final = re.compile(r'^(?:@[!#$%&\'*+^_`|~0-9A-Za-z-]+|[!#$%&\'*+^_`|~0-9A-Za-z-]+)$')
     REGEX_LITERAL: Final = re.compile(r'^/(?:\\.|[^/\r\n])+/$')
     PERCENT_BLOCK: Final = re.compile(r"^\%\{([A-Z0-9_-]+)(?::(.*))?\}$")
     PERCENT_INLINE: Final = re.compile(r"%\{([A-Z0-9_-]+)(?::(.*?))?\}")
@@ -47,7 +48,6 @@ class RegexPatterns:
 
     # Additional performance patterns
     IDENTIFIER: Final = re.compile(r'^[a-zA-Z_][a-zA-Z0-9_]*$')
-    HTTP_HEADER: Final = re.compile(r'^[@!#$%&\'*+\-.0-9A-Z^_`a-z|~]+$')
     WHITESPACE: Final = re.compile(r'\s+')
     COMMENT_BLOCK: Final = re.compile(r'/\*.*?\*/', re.DOTALL)
     STRING_INTERPOLATION: Final = re.compile(r'\{([a-zA-Z_][a-zA-Z0-9_.-]*(?:\([^)]*\))?)\}', re.MULTILINE)

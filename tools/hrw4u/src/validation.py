@@ -67,6 +67,15 @@ class ValidatorChain:
     def http_token(self) -> 'ValidatorChain':
         return self._add(self._wrap_args(Validator.http_token()))
 
+    def http_header_name(self) -> 'ValidatorChain':
+        return self._add(self._wrap_args(Validator.http_header_name()))
+
+    def simple_token(self) -> 'ValidatorChain':
+        return self._add(self._wrap_args(Validator.simple_token()))
+
+    def regex_literal(self) -> 'ValidatorChain':
+        return self._add(self._wrap_args(Validator.regex_literal()))
+
     def nbit_int(self, nbits: int) -> 'ValidatorChain':
         return self._add(self._wrap_args(Validator.nbit_int(nbits)))
 
@@ -81,10 +90,22 @@ class Validator:
     # Use shared compiled regex patterns for performance
     _SIMPLE_TOKEN_RE = RegexPatterns.SIMPLE_TOKEN
     _HTTP_TOKEN_RE = RegexPatterns.HTTP_TOKEN
+    _HTTP_HEADER_NAME_RE = RegexPatterns.HTTP_HEADER_NAME
     _REGEX_LITERAL_RE = RegexPatterns.REGEX_LITERAL
     _PERCENT_RE = RegexPatterns.PERCENT_BLOCK
     _PERCENT_INLINE_RE = RegexPatterns.PERCENT_INLINE
     _PERCENT_PATTERN = RegexPatterns.PERCENT_PATTERN
+
+    @staticmethod
+    def regex_validator(pattern: re.Pattern[str], error_message: str) -> Callable[[str], None]:
+        """Generic regex validator factory."""
+
+        def validator(value: str) -> None:
+            if pattern.fullmatch(value):
+                return
+            raise SymbolResolutionError(value, error_message)
+
+        return validator
 
     @staticmethod
     def arg_count(count: int) -> 'ValidatorChain':
@@ -133,6 +154,7 @@ class Validator:
 
     @staticmethod
     def quoted_or_simple() -> Callable[[str], None]:
+        """Validate values that are either quoted strings or simple tokens."""
 
         def validator(value: str) -> None:
             if (value.startswith('"') and value.endswith('"')) or Validator._SIMPLE_TOKEN_RE.fullmatch(value):
@@ -143,14 +165,28 @@ class Validator:
         return validator
 
     @staticmethod
+    def simple_token() -> Callable[[str], None]:
+        """Validate simple tokens (letters, digits, underscore, dash)."""
+        return Validator.regex_validator(Validator._SIMPLE_TOKEN_RE, "Must be a simple token (letters, digits, underscore, dash)")
+
+    @staticmethod
+    def regex_literal() -> Callable[[str], None]:
+        """Validate regex literals in /pattern/ format."""
+        return Validator.regex_validator(Validator._REGEX_LITERAL_RE, "Must be a valid regex literal in /pattern/ format")
+
+    @staticmethod
     def http_token() -> Callable[[str], None]:
+        """Validate HTTP tokens according to RFC 7230."""
+        return Validator.regex_validator(Validator._HTTP_TOKEN_RE, "HTTP token/header not valid, illegal characters or format.")
 
-        def validator(value: str) -> None:
-            if Validator._HTTP_TOKEN_RE.fullmatch(value):
-                return
-            raise SymbolResolutionError(value, "HTTP token/header not valid, illegal characters or format.")
+    @staticmethod
+    def http_header_name() -> Callable[[str], None]:
+        """Validate HTTP header names with ATS extensions.
 
-        return validator
+        Allows RFC 7230 tchar: !#$%&'*+-.^_`|~0-9A-Za-z
+        Plus '@' only as the first character for ATS internal headers.
+        """
+        return Validator.regex_validator(Validator._HTTP_HEADER_NAME_RE, "Invalid HTTP header name format")
 
     @staticmethod
     def suffix_group(group: types.SuffixGroup) -> Callable[[str], None]:

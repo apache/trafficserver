@@ -35,9 +35,9 @@ OPERATOR_MAP: dict[str, tuple[str | list[str] | tuple[str, ...], Callable[[str],
     "outbound.conn.mark":
         ("set-conn-mark", Validator.nbit_int(32), False, {SectionType.PRE_REMAP, SectionType.REMAP, SectionType.READ_REQUEST}),
     "inbound.cookie.": (HeaderOperations.COOKIE_OPERATIONS, Validator.http_token(), False, None),
-    "inbound.req.": (HeaderOperations.OPERATIONS, Validator.http_token(), False, None),
+    "inbound.req.": (HeaderOperations.OPERATIONS, Validator.http_header_name(), False, None),
     "inbound.resp.body": ("set-body", Validator.quoted_or_simple(), False, None),
-    "inbound.resp.": (HeaderOperations.OPERATIONS, Validator.http_token(), False, None),
+    "inbound.resp.": (HeaderOperations.OPERATIONS, Validator.http_header_name(), False, None),
     "inbound.status.reason": ("set-status-reason", Validator.quoted_or_simple(), False, None),
     "inbound.status": ("set-status", Validator.range(0, 999), False, None),
     "inbound.url.": (HeaderOperations.DESTINATION_OPERATIONS, Validator.suffix_group(types.SuffixGroup.URL_FIELDS), True, None),
@@ -47,11 +47,11 @@ OPERATOR_MAP: dict[str, tuple[str | list[str] | tuple[str, ...], Callable[[str],
             {SectionType.PRE_REMAP, SectionType.REMAP, SectionType.READ_REQUEST}),
     "outbound.req.":
         (
-            HeaderOperations.OPERATIONS, Validator.http_token(), False,
+            HeaderOperations.OPERATIONS, Validator.http_header_name(), False,
             {SectionType.PRE_REMAP, SectionType.REMAP, SectionType.READ_REQUEST}),
     "outbound.resp.":
         (
-            HeaderOperations.OPERATIONS, Validator.http_token(), False,
+            HeaderOperations.OPERATIONS, Validator.http_header_name(), False,
             {SectionType.PRE_REMAP, SectionType.REMAP, SectionType.READ_REQUEST, SectionType.SEND_REQUEST}),
     "outbound.status.reason":
         (
@@ -68,7 +68,8 @@ OPERATOR_MAP: dict[str, tuple[str | list[str] | tuple[str, ...], Callable[[str],
 }
 
 STATEMENT_FUNCTION_MAP: dict[str, tuple[str, Callable[[list[str]], None] | None]] = {
-    "add-header": ("add-header", Validator.arg_count(2).arg_at(0, Validator.http_token()).arg_at(1, Validator.quoted_or_simple())),
+    "add-header":
+        ("add-header", Validator.arg_count(2).arg_at(0, Validator.http_header_name()).arg_at(1, Validator.quoted_or_simple())),
     "counter": ("counter", Validator.arg_count(1).quoted_or_simple()),
     "set-debug": ("set-debug", Validator.arg_count(0)),
     "no-op": ("no-op", Validator.arg_count(0)),
@@ -189,10 +190,10 @@ CONDITION_MAP: dict[str, tuple[str, Callable[[str], None] | None, bool, set[Sect
     "inbound.cookie.": ("COOKIE", Validator.http_token(), False, None, True, {
         "reverse_fallback": "inbound.cookie."
     }),
-    "inbound.req.": ("CLIENT-HEADER", None, False, None, True, {
+    "inbound.req.": ("CLIENT-HEADER", Validator.http_header_name(), False, None, True, {
         "reverse_fallback": "inbound.req."
     }),
-    "inbound.resp.": ("HEADER", None, False, None, True, {
+    "inbound.resp.": ("HEADER", Validator.http_header_name(), False, None, True, {
         "reverse_context": "header_condition"
     }),
     "inbound.url.": ("CLIENT-URL", Validator.suffix_group(types.SuffixGroup.URL_FIELDS), True, None, True, None),
@@ -262,13 +263,14 @@ CONDITION_MAP: dict[str, tuple[str, Callable[[str], None] | None, bool, set[Sect
             }),
     "outbound.req.":
         (
-            "HEADER", None, False, {SectionType.PRE_REMAP, SectionType.REMAP, SectionType.READ_REQUEST}, True, {
-                "reverse_context": "header_condition"
-            }),
+            "HEADER", Validator.http_header_name(), False, {SectionType.PRE_REMAP, SectionType.REMAP,
+                                                            SectionType.READ_REQUEST}, True, {
+                                                                "reverse_context": "header_condition"
+                                                            }),
     "outbound.resp.":
         (
             "HEADER",
-            None,
+            Validator.http_header_name(),
             False,
             {SectionType.PRE_REMAP, SectionType.REMAP, SectionType.READ_REQUEST, SectionType.SEND_REQUEST},
             True,

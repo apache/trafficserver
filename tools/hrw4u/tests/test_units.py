@@ -22,8 +22,9 @@ fully exercised by the integration tests, providing focused testing
 for internal implementation details.
 """
 
-from hrw4u.errors import ErrorCollector, Hrw4uSyntaxError
+from hrw4u.errors import ErrorCollector, Hrw4uSyntaxError, SymbolResolutionError
 from hrw4u.visitor import HRW4UVisitor
+from hrw4u.validation import Validator
 import pytest
 import sys
 import os
@@ -132,6 +133,155 @@ class TestErrorCollectorUnits:
         assert "Error 2" in error_summary
         assert "Error 3" in error_summary
         assert "Found 3 errors:" in error_summary
+
+
+class TestValidationUnits:
+    """Unit tests for validation functions."""
+
+    def test_http_header_name_valid_standard(self):
+        """Test http_header_name with valid standard RFC 7230 header names."""
+        validator = Validator.http_header_name()
+
+        valid_names = [
+            "Content-Type",
+            "X-Custom-Header",
+            "User-Agent",
+            "Accept-Encoding",
+            "X_Custom_Header",  # Underscores allowed
+            "X~Custom~Header",  # Tildes allowed
+            "X^Custom^Header",  # Carets allowed
+            "X|Custom|Header",  # Pipes allowed
+            "X!Custom!Header",  # Exclamation marks allowed
+            "X#Custom#Header",  # Hash marks allowed
+            "X$Custom$Header",  # Dollar signs allowed
+            "X%Custom%Header",  # Percent signs allowed
+            "X&Custom&Header",  # Ampersands allowed
+            "X'Custom'Header",  # Single quotes allowed
+            "X*Custom*Header",  # Asterisks allowed
+            "X+Custom+Header",  # Plus signs allowed
+            "X`Custom`Header",  # Backticks allowed
+        ]
+
+        for name in valid_names:
+            # Should not raise an exception
+            validator(name)
+
+    def test_http_header_name_valid_ats_internal(self):
+        """Test http_header_name with valid ATS internal headers (@ prefix)."""
+        validator = Validator.http_header_name()
+
+        valid_ats_names = [
+            "@Client-Txn-Count",
+            "@X-Method",
+            "@PropertyName",
+            "@Custom_Header",
+        ]
+
+        for name in valid_ats_names:
+            # Should not raise an exception
+            validator(name)
+
+    def test_http_header_name_invalid(self):
+        """Test http_header_name with invalid header names."""
+        validator = Validator.http_header_name()
+
+        invalid_names = [
+            "",  # Empty name
+            "@",  # Just @ alone
+            "Content Type",  # Space not allowed
+            "Content\tType",  # Tab not allowed
+            "Content\nType",  # Newline not allowed
+            "Content(Type)",  # Parentheses not allowed
+            "Content[Type]",  # Brackets not allowed
+            "Content{Type}",  # Braces not allowed
+            "Content<Type>",  # Angle brackets not allowed
+            "Content@Type",  # @ not allowed in middle
+            "Content,Type",  # Comma not allowed
+            "Content;Type",  # Semicolon not allowed
+            "Content:Type",  # Colon not allowed
+            "Content=Type",  # Equals not allowed
+            "Content?Type",  # Question mark not allowed
+            "Content/Type",  # Forward slash not allowed
+            "Content\\Type",  # Backslash not allowed
+            "Content\"Type\"",  # Quotes not allowed
+            "@Content@Type",  # @ not allowed after first position
+            "X-@Header",  # @ not allowed after first position
+            "headers.X-Match",  # Dots not allowed (hrw4u restriction)
+            "X.Custom.Header",  # Dots not allowed (hrw4u restriction)
+            "@Custom.Header",  # Dots not allowed even in ATS headers
+            "header.X-Foo",  # Dots not allowed (the specific case mentioned)
+        ]
+
+        for name in invalid_names:
+            with pytest.raises(SymbolResolutionError):
+                validator(name)
+
+    def test_http_token_valid(self):
+        """Test http_token with valid tokens."""
+        validator = Validator.http_token()
+
+        valid_tokens = [
+            "Content-Type",
+            "simple_token",
+            "Token123",
+            "!#$%&'*+-.^_`|~",  # All allowed special chars
+            "Mixed123.Token-Name_Test",
+        ]
+
+        for token in valid_tokens:
+            # Should not raise an exception
+            validator(token)
+
+    def test_http_token_invalid(self):
+        """Test http_token with invalid tokens."""
+        validator = Validator.http_token()
+
+        invalid_tokens = [
+            "",  # Empty
+            "token with space",  # Space not allowed
+            "token\ttab",  # Tab not allowed
+            "token\nnewline",  # Newline not allowed
+            "token(paren)",  # Parentheses not allowed
+            "token[bracket]",  # Brackets not allowed
+            "token{brace}",  # Braces not allowed
+            "token<angle>",  # Angle brackets not allowed
+            "token@at",  # @ not allowed in http_token
+            "token,comma",  # Comma not allowed
+            "token;semicolon",  # Semicolon not allowed
+            "token:colon",  # Colon not allowed
+            "token=equals",  # Equals not allowed
+            "token?question",  # Question mark not allowed
+            "token/slash",  # Forward slash not allowed
+            "token\\backslash",  # Backslash not allowed
+            "token\"quote\"",  # Quotes not allowed
+        ]
+
+        for token in invalid_tokens:
+            with pytest.raises(SymbolResolutionError):
+                validator(token)
+
+    def test_regex_validator_factory(self):
+        """Test the unified regex_validator factory method."""
+        import re
+
+        # Create a custom validator for testing
+        test_pattern = re.compile(r'^[A-Z]+$')  # Only uppercase letters
+        validator = Validator.regex_validator(test_pattern, "Must be uppercase letters only")
+
+        # Valid cases
+        validator("ABC")
+        validator("HELLO")
+        validator("TEST")
+
+        # Invalid cases
+        with pytest.raises(SymbolResolutionError, match="Must be uppercase letters only"):
+            validator("abc")
+
+        with pytest.raises(SymbolResolutionError, match="Must be uppercase letters only"):
+            validator("Hello")
+
+        with pytest.raises(SymbolResolutionError, match="Must be uppercase letters only"):
+            validator("TEST123")
 
 
 if __name__ == "__main__":
