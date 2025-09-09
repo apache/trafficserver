@@ -1260,7 +1260,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
         (toScheme != std::string_view{URL_SCHEME_HTTP} && toScheme != std::string_view{URL_SCHEME_HTTPS} &&
          toScheme != std::string_view{URL_SCHEME_TUNNEL} && toScheme != std::string_view{URL_SCHEME_WS} &&
          toScheme != std::string_view{URL_SCHEME_WSS})) {
-      errStr = "only http, https, ws, wss, and tunnel remappings are supported";
+      errStr = "only http, https, http+unix, https+unix, ws, wss, and tunnel remappings are supported";
       goto MAP_ERROR;
     }
 
