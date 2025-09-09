@@ -86,14 +86,14 @@ RemapProcessor::setup_for_remap(HttpTransact::State *s, UrlRewrite *table)
     bool ret;
     if (s->client_info.dst_addr.host_order_port() == 0) {
       // Port number 0 means that UDS is used.
-      // Adjust the scheme so that we can find rules with +uds suffix.
+      // Adjust the scheme so that we can find rules with +unix suffix.
       URL adjusted_url;
       adjusted_url.create(nullptr);
       adjusted_url.copy(request_url);
       if (auto scheme = adjusted_url.scheme_get_wksidx(); scheme == URL_WKSIDX_HTTP) {
-        adjusted_url.scheme_set("http+uds");
+        adjusted_url.scheme_set("http+unix");
       } else if (scheme == URL_WKSIDX_HTTPS) {
-        adjusted_url.scheme_set("https+uds");
+        adjusted_url.scheme_set("https+unix");
       }
       Dbg(dbg_ctl_url_rewrite, "[lookup] scheme was adjusted to %.*s", static_cast<int>(adjusted_url.scheme_get().size()),
           adjusted_url.scheme_get().data());

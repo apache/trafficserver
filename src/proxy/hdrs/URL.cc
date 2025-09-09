@@ -148,9 +148,9 @@ url_init()
     URL_SCHEME_FTP       = hdrtoken_string_to_wks_sv("ftp");
     URL_SCHEME_GOPHER    = hdrtoken_string_to_wks_sv("gopher");
     URL_SCHEME_HTTP      = hdrtoken_string_to_wks_sv("http");
-    URL_SCHEME_HTTP_UDS  = c_str_view("http+uds", 8);
+    URL_SCHEME_HTTP_UDS  = c_str_view("http+unix", 9);
     URL_SCHEME_HTTPS     = hdrtoken_string_to_wks_sv("https");
-    URL_SCHEME_HTTPS_UDS = c_str_view("https+uds", 9);
+    URL_SCHEME_HTTPS_UDS = c_str_view("https+unix", 10);
     URL_SCHEME_WSS       = hdrtoken_string_to_wks_sv("wss");
     URL_SCHEME_WS        = hdrtoken_string_to_wks_sv("ws");
     URL_SCHEME_MAILTO    = hdrtoken_string_to_wks_sv("mailto");

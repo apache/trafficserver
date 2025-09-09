@@ -593,7 +593,7 @@ inline int
 URL::port_get() const
 {
   ink_assert(valid());
-  if (auto scheme = m_url_impl->get_scheme(); scheme.length() >= 8 && scheme.ends_with("+uds")) {
+  if (auto scheme = m_url_impl->get_scheme(); scheme.length() >= 8 && scheme.ends_with("+unix")) {
     return 0;
   }
   return url_canonicalize_port(m_url_impl->get_type(), m_url_impl->get_port());
