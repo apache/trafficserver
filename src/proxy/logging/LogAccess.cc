@@ -1940,17 +1940,9 @@ LogAccess::marshal_client_req_url_scheme(char *buf)
     alen = hdrtoken_index_to_length(scheme);
   } else {
     str  = "UNKNOWN";
-    alen = strlen(str);
+    alen = ::strlen(str);
   }
-
-  // calculate the padded length only if the actual length
-  // is not zero. We don't want the padded length to be zero
-  // because marshal_mem should write the DEFAULT_STR to the
-  // buffer if str is nil, and we need room for this.
-  //
-  if (alen) {
-    plen = round_strlen(alen + 1); // +1 for trailing 0
-  }
+  plen = round_strlen(alen + 1); // +1 for trailing 0
 
   if (buf) {
     marshal_mem(buf, str, alen, plen);
