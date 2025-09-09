@@ -24,13 +24,14 @@
 #pragma once
 
 #include <string>
+#include <string_view>
 
 #include "DocNode.h"
 
 class EsiParser
 {
 public:
-  EsiParser(unsigned max_doc_size);
+  EsiParser(unsigned max_doc_size, std::string_view request_url = "");
 
   /** clears state */
   void clear();
@@ -91,6 +92,7 @@ private:
   };
 
   const unsigned _max_doc_size;
+  std::string    _request_url;
 
   std::string _data;
   int         _parse_start_pos;
