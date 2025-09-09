@@ -46,6 +46,7 @@
 #cmakedefine HAVE_POSIX_FADVISE 1
 #cmakedefine HAVE_POSIX_FALLOCATE 1
 #cmakedefine HAVE_POSIX_MADVISE 1
+#cmakedefine HAVE_ZSTD_H 1
 
 #cmakedefine HAVE_PTHREAD_GETNAME_NP 1
 #cmakedefine HAVE_PTHREAD_GET_NAME_NP 1
