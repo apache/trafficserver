@@ -25,26 +25,26 @@ Real IP Plugin
 
 Description
 ===========
-The `realip` plugin reads an IP address from a specified data source such as HTTP header field, and make it available for ATS and
+The `realip` plugin reads an IP address from a specified data source such as HTTP header field, and makes it available for ATS and
 its plugins as the verified client address.
 
 To use the verified client IP address for ACL, :ts:cv:`proxy.config.acl.subjects` needs to be set to `PLUGIN`.
-Similary, if you want to use the IP address on header_rewrite plugin, its `INBOUND_IP_SOURCE` needs to be set to `PLUGIN`.
+Similary, if you want to use the IP address on :doc:`header_rewrite plugin<header_rewrite.en>`, its `INBOUND_IP_SOURCE` needs to be set to `PLUGIN`.
 
 
 Configuration
 =============
 
-To enable the `realip` plugin, insert the following line in :file:`plugin.config`:
+To enable the `realip` plugin, insert the following line in :file:`plugin.config`::
 
     realip.so <config.yaml>
 
-The plugin supports 2 mode:
+The plugin supports 2 modes:
 
 simple
 ------
 
-The plugin reads an IP address from a specified HTTP header field. These settings bewlow are available for this mode:
+The plugin reads an IP address from a specified HTTP header field. These settings below are available for this mode:
 
 
 +------------------+-------------------------------------------------------------------------------------------------------+

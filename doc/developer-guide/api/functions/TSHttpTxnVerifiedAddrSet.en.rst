@@ -39,8 +39,11 @@ This function enables plugins to provide a reliable client IP address for |TS| a
 This is useful if there is a proxy in front of |TS| and it forwards client's IP address by HTTP header field, PROXY protocol, etc.
 Plugins that call this function are expected to check the validity of the IP address.
 
-The provided address will be used for remap ACL if :ts:cv:`proxy.config.acl.subjects` is set to `PLUGIN`.
-Plugins can get the provided address by calling the getter function bewlow if those need client's real IP address.
+The provided address will be used if :ts:cv:`proxy.config.acl.subjects` is set to `PLUGIN`.
+Plugins can get the provided address by calling the getter function below if those need client's real IP address.
+
+The address `addr` is internally copied and |TS| core maintains its own copy.
+Plugins that call this function do not need to keep the original for later use.
 
 
 TSHttpTxnVerifiedAddrGet
@@ -60,5 +63,7 @@ Synopsis
 Description
 ===========
 
-This is the getter version for the above setter. This returns 1 if a verified address is available.
+This is the getter version of the above setter. This returns 1 if a verified address is available.
 Please note that a port number is not always available even if the function returns 1.
+
+The address returned is maintained by |TS| core. Plugins cannot free the memory.
