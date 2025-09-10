@@ -72,6 +72,8 @@ class BackgroundFillTest:
                     "proxy.config.diags.debug.tags": "http",
                 })
 
+            self.ts[name].Disk.plugin_config.AddLine('xdebug.so --enable=x-cache')
+
             if name == 'for_httpbin' or name == 'default':
                 self.ts[name].Disk.remap_config.AddLines([
                     f"map / http://127.0.0.1:{self.httpbin.Variables.Port}",
@@ -110,14 +112,13 @@ class BackgroundFillTest:
         tr.MakeCurlCommandMulti(
             f"""
 {{curl}} -X PURGE --http1.1 -vs http://127.0.0.1:{self.ts['for_httpbin'].Variables.port}/drip?duration=4;
-timeout 2 {{curl}} --http1.1 -vs http://127.0.0.1:{self.ts['for_httpbin'].Variables.port}/drip?duration=4;
-sleep 4;
-{{curl}} --http1.1 -vs http://127.0.0.1:{self.ts['for_httpbin'].Variables.port}/drip?duration=4
+timeout 1 {{curl}} --http1.1 -vs http://127.0.0.1:{self.ts['for_httpbin'].Variables.port}/drip?duration=4;
+sleep 5;
+{{curl}} --http1.1 -vs http://127.0.0.1:{self.ts['for_httpbin'].Variables.port}/drip?duration=4 -H "x-debug: x-cache"
 """,
             ts=self.ts['for_httpbin'])
         tr.Processes.Default.ReturnCode = 0
-        tr.Processes.Default.Streams.stderr = Testers.Any(
-            "gold/background_fill_0_stderr_H.gold", "gold/background_fill_0_stderr_W.gold")
+        tr.Processes.Default.Streams.stderr = "gold/background_fill_0_stderr_H.gold"
         self.__checkProcessAfter(tr)
 
     def __testCase1(self):
@@ -129,14 +130,13 @@ sleep 4;
         tr.MakeCurlCommandMulti(
             f"""
 {{curl}} -X PURGE --http1.1 -vsk https://127.0.0.1:{self.ts['for_httpbin'].Variables.ssl_port}/drip?duration=4;
-timeout 3 {{curl}} --http1.1 -vsk https://127.0.0.1:{self.ts['for_httpbin'].Variables.ssl_port}/drip?duration=4;
+timeout 1 {{curl}} --http1.1 -vsk https://127.0.0.1:{self.ts['for_httpbin'].Variables.ssl_port}/drip?duration=4;
 sleep 5;
-{{curl}} --http1.1 -vsk https://127.0.0.1:{self.ts['for_httpbin'].Variables.ssl_port}/drip?duration=4
+{{curl}} --http1.1 -vsk https://127.0.0.1:{self.ts['for_httpbin'].Variables.ssl_port}/drip?duration=4 -H "x-debug: x-cache"
 """,
             ts=self.ts['for_httpbin'])
         tr.Processes.Default.ReturnCode = 0
-        tr.Processes.Default.Streams.stderr = Testers.Any(
-            "gold/background_fill_1_stderr_H.gold", "gold/background_fill_1_stderr_W.gold")
+        tr.Processes.Default.Streams.stderr = "gold/background_fill_1_stderr_H.gold"
         self.__checkProcessAfter(tr)
 
     def __testCase2(self):
@@ -148,14 +148,13 @@ sleep 5;
         tr.MakeCurlCommandMulti(
             f"""
 {{curl}} -X PURGE --http2 -vsk https://127.0.0.1:{self.ts['for_httpbin'].Variables.ssl_port}/drip?duration=4;
-timeout 3 {{curl}} --http2 -vsk https://127.0.0.1:{self.ts['for_httpbin'].Variables.ssl_port}/drip?duration=4;
+timeout 1 {{curl}} --http2 -vsk https://127.0.0.1:{self.ts['for_httpbin'].Variables.ssl_port}/drip?duration=4;
 sleep 5;
-{{curl}} --http2 -vsk https://127.0.0.1:{self.ts['for_httpbin'].Variables.ssl_port}/drip?duration=4
+{{curl}} --http2 -vsk https://127.0.0.1:{self.ts['for_httpbin'].Variables.ssl_port}/drip?duration=4 -H "x-debug: x-cache"
 """,
             ts=self.ts['for_httpbin'])
         tr.Processes.Default.ReturnCode = 0
-        tr.Processes.Default.Streams.stderr = Testers.Any(
-            "gold/background_fill_2_stderr_H.gold", "gold/background_fill_2_stderr_W.gold")
+        tr.Processes.Default.Streams.stderr = "gold/background_fill_2_stderr_H.gold"
         self.__checkProcessAfter(tr)
 
     def __testCase3(self):
