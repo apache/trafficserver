@@ -480,6 +480,7 @@ Network Addresses, Ports, and Interfaces
 
 .. _chi:
 .. _chih:
+.. _chiv:
 .. _hii:
 .. _hiih:
 .. _chp:
@@ -501,6 +502,8 @@ chi   Client         IP address of the client's host. If :ref:`Proxy Protocol <p
                      is used, this represents the IP address of the peer, rather than
                      the client IP behind the peer.
 chih  Client         IP address of the client's host, in hexadecimal.
+chiv  Client         IP address of the client's host verified by a plugin. If not available,
+                     ``chi`` is used.
 hii   Proxy          IP address for the proxy's incoming interface (to which
                      the client connected).
 hiih  Proxy          IP address for the proxy's incoming interface (to which
