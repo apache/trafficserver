@@ -23,6 +23,7 @@
 
 #include "BIO_fastopen.h"
 #include "P_UnixNet.h"
+#include "P_UnixNetVConnection.h"
 #include "SSLStats.h"
 #include "P_Net.h"
 #include "P_SSLUtils.h"
@@ -36,6 +37,7 @@
 #include "iocore/net/ProxyProtocol.h"
 #include "iocore/net/SSLDiags.h"
 #include "iocore/net/SSLSNIConfig.h"
+#include "iocore/net/SSLTypes.h"
 #include "iocore/net/TLSALPNSupport.h"
 #include "tscore/ink_config.h"
 #include "tscore/Layout.h"
@@ -900,6 +902,12 @@ SSLNetVConnection::do_io_close(int lerrno)
 void
 SSLNetVConnection::do_io_shutdown(ShutdownHowTo_t howto)
 {
+  if (get_tunnel_type() == SNIRoutingType::BLIND) {
+    // we don't have TLS layer control of blind tunnel
+    UnixNetVConnection::do_io_shutdown(howto);
+    return;
+  }
+
   switch (howto) {
   case IO_SHUTDOWN_READ:
     // No need to call SSL API
