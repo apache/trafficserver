@@ -323,6 +323,35 @@ Examples
     regex_map http://x([0-9]+).z.com/ http://real-x$1.z.com/
     regex_redirect http://old.(.*).z.com http://new.$1.z.com
 
+.. _map_with_recv_port:
+
+map_with_recv_port
+==================
+
+Format::
+
+    map_with_recv_port client-URL origin-server-URL
+
+``map_with_recv_port`` supports two special URL schemes, ``http+unix`` and ``https+unix``.
+These are useful if you want to have different mapping rules or differnt plugin configuration for requests recevied via Unix Domain Socket.
+
+map_with_recv_port Examples
+---------------------------
+
+::
+
+   map_with_recv_port http://foo.example.com:8000/ http://x.example.com/
+   map_with_recv_port http://foo.example.com:8888/ http://y.example.com/
+
+Explanation: Requests received on port 8000 and 8888 are forwarded to different servers.
+
+::
+
+   map                     http://foo.example.com/ http://x.example.com/ @plugin=plugin1.so
+   map_with_recv_port http+unix://foo.example.com/ http://x.example.com/
+
+Explanation: All requests are forwarded to the same server, but plugin1 does not run for requests received via Unix Domain Socket.
+
 .. _map_with_referer:
 
 map_with_referer
