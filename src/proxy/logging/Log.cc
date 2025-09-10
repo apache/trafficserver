@@ -343,6 +343,11 @@ Log::init_fields()
   global_field_list.add(field, false);
   field_symbol_hash.emplace("chih", field);
 
+  field = new LogField("client_host_ip_verified", "chiv", LogField::IP, &LogAccess::marshal_client_host_ip_verified,
+                       &LogAccess::unmarshal_ip_to_str);
+  global_field_list.add(field, false);
+  field_symbol_hash.emplace("chiv", field);
+
   // interface ip
 
   field =

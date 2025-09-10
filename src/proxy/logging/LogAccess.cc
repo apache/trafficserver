@@ -1451,6 +1451,21 @@ LogAccess::marshal_host_interface_ip(char *buf)
   return marshal_ip(buf, &m_http_sm->t_state.client_info.dst_addr.sa);
 }
 
+int
+LogAccess::marshal_client_host_ip_verified(char *buf)
+{
+  if (m_http_sm) {
+    auto txn = m_http_sm->get_ua_txn();
+    if (txn) {
+      sockaddr const *addr = txn->get_verified_client_addr();
+      if (addr && ats_is_ip(addr)) {
+        return marshal_ip(buf, addr);
+      }
+    }
+  }
+  return marshal_ip(buf, &m_http_sm->t_state.client_info.src_addr.sa);
+}
+
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 int
