@@ -6289,9 +6289,10 @@ close_connection:
 void
 HttpSM::do_setup_client_request_body_tunnel(HttpVC_t to_vc_type)
 {
-  if (t_state.hdr_info.request_content_length == 0) {
-    // No tunnel is needed to transfer 0 bytes. Simply return without setting up
-    // a tunnel nor any of the other related logic around request bodies.
+  if (!_ua.get_txn()->has_request_body(t_state.hdr_info.request_content_length,
+                                       t_state.client_info.transfer_encoding == HttpTransact::TransferEncoding_t::CHUNKED)) {
+    // No tunnel is needed to transfer 0 bytes or when no request body is present.
+    // Simply return without setting up a tunnel nor any of the other related logic around request bodies.
     return;
   }
   bool chunked = t_state.client_info.transfer_encoding == HttpTransact::CHUNKED_ENCODING ||
