@@ -153,9 +153,7 @@ protected:
   IOBufferReader *_reader    = nullptr;
 
 private:
-  struct sockaddr_storage _verified_addr {
-    .ss_family = AF_UNSPEC
-  };
+  struct sockaddr_storage _verified_addr = {.ss_family = AF_UNSPEC};
 };
 
 ////////////////////////////////////////////////////////////
