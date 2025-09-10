@@ -16,6 +16,6 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-# The first sed command in the pipeline eliminates the first 3 log fields from each log line.
+# The first sed command in the pipeline eliminates the next 3 log fields from each log line after the scheme field.
 
-sed 's/^[^ ]* [^ ]* [^ ]* //' < $1 | sed 's/:[0-9][0-9]*\([^0-9]\)/:SOMEPORT\1/g'
+sed 's/^\([^ ]*\) [^ ]* [^ ]* [^ ]* /\1 /' < $1 | sed 's/:[0-9][0-9]*\([^0-9]\)/:SOMEPORT\1/g'
