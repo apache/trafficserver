@@ -4312,6 +4312,9 @@ TSHttpTxnVerifiedAddrGet(TSHttpTxn txnp, const struct sockaddr **addr)
   ProxyTransaction *prxtxn = sm->get_ua_txn();
 
   *addr = prxtxn->get_verified_client_addr();
+  if ((*addr)->sa_family == AF_UNSPEC) {
+    return TS_ERROR;
+  }
 
   return TS_SUCCESS;
 }
