@@ -19,7 +19,7 @@
 import os
 
 Test.Summary = '''
-Test TS API to get and set a verified address 
+Test TS API to get and set a verified address
 '''
 
 Test.ContinueOnFail = True
