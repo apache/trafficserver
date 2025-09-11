@@ -13,5 +13,5 @@
 ``
 < HTTP/1.1 ``
 ``
-< Via: http/1.1 traffic_server (ApacheTrafficServer/`` [cHs f ])
+< Via: http/1.1 traffic_server (ApacheTrafficServer/`` [cRs f ])
 ``
