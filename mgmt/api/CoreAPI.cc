@@ -49,6 +49,16 @@
 #include "tscore/I_Layout.h"
 #include "tscore/ink_cap.h"
 
+#if defined(__FreeBSD__)
+#include <sys/types.h>
+#define __WALL P_ALL
+#define PTRACE_ATTACH PT_ATTACH
+#define PTRACE_DETACH PT_DETACH
+#define DATA_NULL 0
+#else
+#define DATA_NULL NULL
+#endif
+
 // global variable
 static CallbackTable *local_event_callbacks;
 
@@ -327,7 +337,7 @@ done:
     _UPT_destroy(ap);
   }
 
-  status = ptrace(PTRACE_DETACH, target, NULL, NULL);
+  status = ptrace(PTRACE_DETACH, target, NULL, DATA_NULL);
   Debug("backtrace", "ptrace(DETACH, %ld) -> %d (errno %d)", (long)target, status, errno);
 }
 
