@@ -32,11 +32,9 @@ DbgCtl dbg_ctl{PIName};
 void
 handle_txn_start(TSHttpTxn txn)
 {
-  struct sockaddr_in addr = {
-    .sin_family = AF_INET,
-    .sin_port   = 0,
-    .sin_addr   = {.s_addr = 0x01010101} // 1.1.1.1
-  };
+  struct sockaddr_in addr = {};
+  addr.sin_family = AF_INET, addr.sin_port = 0,
+  addr.sin_addr = {.s_addr = 0x01010101} // 1.1.1.1
   TSHttpTxnVerifiedAddrSet(txn, reinterpret_cast<struct sockaddr *>(&addr));
   TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
 }
