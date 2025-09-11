@@ -40,6 +40,7 @@ append_slash(const char *path)
 
 TEST_CASE("constructor test", "[constructor]")
 {
+  unsetenv("TS_ROOT");
   Layout layout;
   // test for constructor
   REQUIRE(layout.prefix == TS_BUILD_PREFIX);
