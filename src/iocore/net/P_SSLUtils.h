@@ -36,8 +36,11 @@ class SSLNetVConnection;
 
 using ssl_error_t = int;
 
-// Return the SSL Curve ID associated to the specified SSL connection
+/// Return the SSL Curve ID associated with the specified SSL connection
 ssl_curve_id SSLGetCurveNID(SSL *ssl);
+
+/// Return the TLS Group Name associated with the specified SSL connection.
+std::string_view SSLGetGroupName(SSL *ssl);
 
 SSL_SESSION *SSLSessionDup(SSL_SESSION *sess);
 
