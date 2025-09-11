@@ -64,7 +64,6 @@ public:
   void do_io_close(int lerrno = -1) override;
 
   // Accessor Methods
-  bool         allow_half_open() const;
   void         set_half_close_flag(bool flag) override;
   bool         get_half_close_flag() const override;
   int          get_transact_count() const override;

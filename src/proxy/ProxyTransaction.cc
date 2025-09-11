@@ -272,6 +272,19 @@ ProxyTransaction::set_expect_receive_trailer()
 bool
 ProxyTransaction::allow_half_open() const
 {
+  bool config_allows_it = (_sm) ? _sm->t_state.txn_conf->allow_half_open > 0 : true;
+  if (config_allows_it) {
+    // Check with the session to make sure the underlying transport allows the half open scenario
+    if (auto vc = this->get_netvc(); vc != nullptr) {
+      if (auto tbs = vc->get_service<TLSBasicSupport>(); tbs != nullptr) {
+        if (tbs->get_tls_version() == TLS1_3_VERSION) {
+          return true;
+        }
+      } else {
+        return true;
+      }
+    }
+  }
   return false;
 }
 

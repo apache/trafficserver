@@ -44,6 +44,7 @@ public:
   static void             unbind(SSL *ssl);
 
   TLSHandle   get_tls_handle() const;
+  int         get_tls_version() const;
   const char *get_tls_protocol_name() const;
   const char *get_tls_cipher_suite() const;
   const char *get_tls_curve() const;
