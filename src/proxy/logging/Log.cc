@@ -629,6 +629,11 @@ Log::init_fields()
   global_field_list.add(field, false);
   field_symbol_hash.emplace("pssc", field);
 
+  field = new LogField("proxy_response_status_code_setter", "prscs", LogField::STRING, &LogAccess::marshal_status_plugin_entry,
+                       &LogAccess::unmarshal_str);
+  global_field_list.add(field, false);
+  field_symbol_hash.emplace("prscs", field);
+
   field = new LogField("proxy_resp_header_len", "pshl", LogField::sINT, &LogAccess::marshal_proxy_resp_header_len,
                        &LogAccess::unmarshal_int_to_str);
   global_field_list.add(field, false);

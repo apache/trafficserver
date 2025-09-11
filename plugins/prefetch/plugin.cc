@@ -687,7 +687,7 @@ contHandleFetch(const TSCont contp, TSEvent event, void *edata)
       if (TS_SUCCESS == TSHttpTxnClientRespGet(txnp, &bufp, &hdrLoc)) {
         const char *reason    = TSHttpHdrReasonLookup(data->_status);
         int         reasonLen = strlen(reason);
-        TSHttpHdrStatusSet(bufp, hdrLoc, data->_status);
+        TSHttpHdrStatusSet(bufp, hdrLoc, data->_status, txnp, PLUGIN_NAME);
         TSHttpHdrReasonSet(bufp, hdrLoc, reason, reasonLen);
         PrefetchDebug("set response: %d %.*s '%s'", data->_status, reasonLen, reason, data->_body.c_str());
 

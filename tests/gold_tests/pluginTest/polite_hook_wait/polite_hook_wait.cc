@@ -231,7 +231,7 @@ Blocking_action::_txn_cont_func(TSCont, TSEvent event, void *eventData)
   Blocking_action &ba = AuxDataMgr::data(txn);
 
   if (!ba.txn_valid) {
-    TSHttpTxnStatusSet(txn, TS_HTTP_STATUS_FORBIDDEN);
+    TSHttpTxnStatusSet(txn, TS_HTTP_STATUS_FORBIDDEN, PINAME);
   }
 
   TSHttpTxnReenable(txn, ba.txn_valid ? TS_EVENT_HTTP_CONTINUE : TS_EVENT_HTTP_ERROR);

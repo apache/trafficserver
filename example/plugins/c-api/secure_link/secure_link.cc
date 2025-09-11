@@ -144,7 +144,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
     }
     if (sli->strict) {
       Dbg(dbg_ctl, "request is DENY");
-      TSHttpTxnStatusSet(rh, TS_HTTP_STATUS_FORBIDDEN);
+      TSHttpTxnStatusSet(rh, TS_HTTP_STATUS_FORBIDDEN, PLUGIN_NAME);
       status = TSREMAP_NO_REMAP;
     } else {
       Dbg(dbg_ctl, "request is PASS");

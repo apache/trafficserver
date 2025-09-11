@@ -668,6 +668,7 @@ Status Codes
 .. _cfsc:
 .. _csssc:
 .. _pfsc:
+.. _prscs:
 .. _pssc:
 .. _sssc:
 .. _prrp:
@@ -689,6 +690,14 @@ pfsc  Proxy Request         Finish status code specifying whether the proxy
                             (``INTR``), or timed out (``TIMEOUT``).
 prrp  Proxy Response        HTTP response reason phrase sent by |TS| proxy to the
                             client.
+prscs Proxy Response        The identifying label for the entity (such as a plugin
+                            name or component) that last set the HTTP status code
+                            for the transaction. This is set via
+                            :func:`TSHttpTxnStatusSet` with a ``setter`` parameter
+                            or :func:`TSHttpHdrStatusSet` with a ``setter``
+                            parameter. Shows ``-`` if no setter has been recorded.
+                            ``ip_allow`` will be set if the :file:`ip_allow.yaml`
+                            component denies the request.
 pssc  Proxy Response        HTTP response status code sent by |TS| proxy to the
                             client.
 sssc  Origin Response       HTTP response status code sent by the origin server

@@ -241,7 +241,7 @@ handle_invalid_icap_behavior(TSCont contp, TransformData *data, const char *msg)
     TSError("[%s] Couldn't clear client response header", PLUGIN_NAME);
     return 0;
   }
-  TSHttpHdrStatusSet(bufp, hdr_loc, TS_HTTP_STATUS_BAD_GATEWAY);
+  TSHttpHdrStatusSet(bufp, hdr_loc, TS_HTTP_STATUS_BAD_GATEWAY, data->txn, PLUGIN_NAME);
   TSHttpHdrReasonSet(bufp, hdr_loc, TSHttpHdrReasonLookup(TS_HTTP_STATUS_BAD_GATEWAY),
                      strlen(TSHttpHdrReasonLookup(TS_HTTP_STATUS_BAD_GATEWAY)));
   TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);

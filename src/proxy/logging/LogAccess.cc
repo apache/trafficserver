@@ -2381,6 +2381,29 @@ LogAccess::marshal_proxy_resp_status_code(char *buf)
   -------------------------------------------------------------------------*/
 
 int
+LogAccess::marshal_status_plugin_entry(char *buf)
+{
+  char const *str = nullptr;
+  int         len = INK_MIN_ALIGN;
+
+  if (m_http_sm) {
+    std::string const &tag = m_http_sm->t_state.http_return_code_setter_name;
+    if (!tag.empty()) {
+      str = tag.c_str();
+      len = LogAccess::padded_strlen(str);
+    }
+  }
+
+  if (buf) {
+    marshal_str(buf, str, len);
+  }
+  return len;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
 LogAccess::marshal_proxy_resp_header_len(char *buf)
 {
   if (buf) {

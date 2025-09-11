@@ -628,7 +628,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 
   if (!cfg) {
     VERROR("No remap context available, check code / config");
-    TSHttpTxnStatusSet(rh, TS_HTTP_STATUS_INTERNAL_SERVER_ERROR);
+    TSHttpTxnStatusSet(rh, TS_HTTP_STATUS_INTERNAL_SERVER_ERROR, PLUGIN);
     return TSREMAP_NO_REMAP;
   }
 
@@ -638,7 +638,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
     TSUrlPathGet(rri->requestBufp, rri->requestUrl, &pathsz);
     if (pathsz > 0) {
       VDEBUG("Path is not an exact match. Rejecting!");
-      TSHttpTxnStatusSet(rh, TS_HTTP_STATUS_NOT_FOUND);
+      TSHttpTxnStatusSet(rh, TS_HTTP_STATUS_NOT_FOUND, PLUGIN);
       return TSREMAP_NO_REMAP;
     }
   }
