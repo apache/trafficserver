@@ -24,6 +24,7 @@
 #pragma once
 
 #include <string>
+#include <string_view>
 #include <map>
 #include "StringHash.h"
 #include "DocNode.h"
@@ -45,7 +46,7 @@ public:
   };
 
   EsiProcessor(void *cont_addr, HttpDataFetcher &fetcher, EsiLib::Variables &variables, const EsiLib::HandlerManager &handler_mgr,
-               unsigned max_doc_size);
+               unsigned max_doc_size, std::string_view request_url = "");
 
   /** Initializes the processor with the context of the request to be processed */
   bool start();
@@ -166,6 +167,7 @@ private:
   int          _n_try_blocks_processed;
 
   const EsiLib::HandlerManager &_handler_manager;
+  std::string                   _request_url;
 
   static const char *INCLUDE_DATA_ID_ATTR;
 
