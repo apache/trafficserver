@@ -1,1 +1,1 @@
-(program (section SEND_RESPONSE { (sectionBody (conditional (ifStatement if (condition (expression (term (factor http.cntl.LOGGING)))) (block { (statement inbound.resp.X-Foo = (value "Logging on") ;) (statement http.cntl.LOGGING = (value false) ;) })))) }) <EOF>)
+(program (programItem (section SEND_RESPONSE { (sectionBody (conditional (ifStatement if (condition (expression (term (factor http.cntl.LOGGING)))) (block { (blockItem (statement inbound.resp.X-Foo = (value "Logging on") ;)) (blockItem (statement http.cntl.LOGGING = (value false) ;)) })))) })) <EOF>)

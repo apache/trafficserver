@@ -1,0 +1,7 @@
+REMAP {
+    inbound.url.host = "foo";
+}
+
+SEND_REQUEST {
+    outbound.url.path = "foo/bar.txt";
+}

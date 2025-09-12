@@ -1,3 +1,4 @@
+# This comment is merely here for testing comments
 REMAP {
     inbound.req.@PropertyName = "someproperty";
 }

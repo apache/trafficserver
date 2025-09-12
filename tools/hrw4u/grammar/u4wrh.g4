@@ -21,10 +21,8 @@ grammar u4wrh;
 // Lexer Rules
 // -----------------------------
 COND          : 'cond';
-IF            : 'if';
 ELIF          : 'elif';
 ELSE          : 'else';
-IN            : 'in';
 AND_MOD       : 'AND';
 OR_MOD        : 'OR';
 NOT_MOD       : 'NOT';
@@ -63,14 +61,10 @@ EQUALS        : '=';
 NEQ           : '!=';
 GT            : '>';
 LT            : '<';
-TILDE         : '~';
-NOT_TILDE     : '!~';
-COLON         : ':';
 COMMA         : ',';
-SEMICOLON     : ';';
 
 EOL           : '\r'? '\n';
-COMMENT       : '#' ~[\r\n]* -> skip ;
+COMMENT       : '#' ~[\r\n]* ;
 WS            : [ \t]+ -> skip ;
 
 // -----------------------------
@@ -86,6 +80,7 @@ line
     | opLine EOL
     | elifLine EOL
     | elseLine EOL
+    | commentLine EOL
     | EOL                     // blank line
     ;
 
@@ -112,15 +107,16 @@ bareRef
     : percentRef
     ;
 
-// Comparison forms including implicit regex "~"
+// Comparison forms including implicit regex "~" and implicit equality "="
 comparison
     : lhs ( cmpOp rhs
-          | regexOp regex
-          | regex                // implicit "~" when operator omitted
-          | inOp set_
-          | inOp iprange
+          | regex
           | set_                 // implicit "in" when set follows directly
           | iprange              // implicit "in" when iprange follows directly
+          | STRING               // implicit "=" when string follows directly
+          | NUMBER               // implicit "=" when number follows directly
+          | IDENT                // implicit "=" when identifier follows directly
+          | COMPLEX_STRING       // implicit "=" when complex string follows directly
           )
     ;
 
@@ -137,15 +133,6 @@ cmpOp
 
 rhs
     : value
-    ;
-
-regexOp
-    : TILDE
-    | NOT_TILDE
-    ;
-
-inOp
-    : IN
     ;
 
 // %{...} used as a function-like condition (same token shape)
@@ -245,4 +232,8 @@ opTail
 opFlag
     : IDENT
     | 'QSA'
+    ;
+
+commentLine
+    : COMMENT
     ;

@@ -80,14 +80,19 @@ COLON         : ':';
 COMMA         : ',';
 SEMICOLON     : ';';
 
-COMMENT       : '#' ~[\r\n]* -> skip ;
+COMMENT       : '#' ~[\r\n]* ;
 WS            : [ \t\r\n]+ -> skip ;
 
 // -----------------------------
 // Parser Rules
 // -----------------------------
 program
-    : section+ EOF
+    : programItem+ EOF
+    ;
+
+programItem
+    : section
+    | commentLine
     ;
 
 section
@@ -102,10 +107,16 @@ varSection
 sectionBody
     : statement
     | conditional
+    | commentLine
     ;
 
 variables
-    : variableDecl+
+    : variablesItem+
+    ;
+
+variablesItem
+    : variableDecl
+    | commentLine
     ;
 
 variableDecl
@@ -138,7 +149,12 @@ elifClause
     ;
 
 block
-    : LBRACE statement* RBRACE
+    : LBRACE blockItem* RBRACE
+    ;
+
+blockItem
+    : statement
+    | commentLine
     ;
 
 // This helps us keep track of the last condition, which shouldn't emit the [] mods
@@ -229,4 +245,8 @@ value
     | ident=IDENT
     | ip
     | iprange
+    ;
+
+commentLine
+    : COMMENT
     ;
