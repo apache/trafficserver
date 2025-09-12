@@ -44,6 +44,7 @@ sessions:
             - [:path, /a/path]
             - [Content-Type, text/html]
             - [uuid, 1]
+            - [x-debug, x-cache]
       - RST_STREAM:
           delay: 1s
           error-code: INTERNAL_ERROR
@@ -84,6 +85,7 @@ sessions:
             - [:path, /a/path]
             - [Content-Type, text/html]
             - [uuid, 2]
+            - [x-debug, x-cache]
 
     server-response:
       frames:

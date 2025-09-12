@@ -4,12 +4,12 @@
 content-type: text/html
 content-length: 11
 ``
-via: https/2 traffic_server (ApacheTrafficServer/`` [cMsSfW])
+x-cache: miss
 ``
 [DEBUG]: Received an HTTP/2 response for key 2 with stream id 1:
 :status: 200
 content-type: text/html
 content-length: 11
 ``
-via: http/1.1 traffic_server (ApacheTrafficServer/`` [cHs f ])
+x-cache: hit-fresh
 ``
