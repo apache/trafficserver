@@ -82,8 +82,29 @@ RemapProcessor::setup_for_remap(HttpTransact::State *s, UrlRewrite *table)
   if (table->num_rules_forward_with_recv_port) {
     Dbg(dbg_ctl_url_rewrite, "[lookup] forward mappings with recv port found; Using recv port %d",
         s->client_info.dst_addr.host_order_port());
-    if (table->forwardMappingWithRecvPortLookup(request_url, s->client_info.dst_addr.host_order_port(), request_host.data(),
-                                                static_cast<int>(request_host.length()), s->url_map)) {
+
+    bool ret;
+    if (s->client_info.dst_addr.host_order_port() == 0) {
+      // Port number 0 means that UDS is used.
+      // Adjust the scheme so that we can find rules with +unix suffix.
+      URL adjusted_url;
+      adjusted_url.create(nullptr);
+      adjusted_url.copy(request_url);
+      if (auto scheme = adjusted_url.scheme_get_wksidx(); scheme == URL_WKSIDX_HTTP) {
+        adjusted_url.scheme_set("http+unix");
+      } else if (scheme == URL_WKSIDX_HTTPS) {
+        adjusted_url.scheme_set("https+unix");
+      }
+      Dbg(dbg_ctl_url_rewrite, "[lookup] scheme was adjusted to %.*s", static_cast<int>(adjusted_url.scheme_get().size()),
+          adjusted_url.scheme_get().data());
+      ret = table->forwardMappingWithRecvPortLookup(&adjusted_url, s->client_info.dst_addr.host_order_port(), request_host.data(),
+                                                    static_cast<int>(request_host.length()), s->url_map);
+      adjusted_url.destroy();
+    } else {
+      ret = table->forwardMappingWithRecvPortLookup(request_url, s->client_info.dst_addr.host_order_port(), request_host.data(),
+                                                    static_cast<int>(request_host.length()), s->url_map);
+    }
+    if (ret) {
       Dbg(dbg_ctl_url_rewrite, "Found forward mapping with recv port");
       mapping_found = true;
     } else if (table->num_rules_forward == 0) {
