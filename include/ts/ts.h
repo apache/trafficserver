@@ -1575,6 +1575,55 @@ void TSHttpTxnErrorBodySet(TSHttpTxn txnp, char *buf, size_t buflength, char *mi
    @param mimetype Optional output pointer to the MIME type of the response.
 */
 char *TSHttpTxnErrorBodyGet(TSHttpTxn txnp, size_t *buflength, char **mimetype);
+/**
+    Sets the Transaction's Next Hop Parent Strategy.
+    Calling this after TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK will
+    result in bad behavior.
+
+    You can get this strategy pointer by calling TSHttpTxnParentStrategyGet().
+
+    @param txnp HTTP transaction whose parent strategy to get.
+    @param pointer to the given strategy.
+
+ */
+void TSHttpTxnParentStrategySet(TSHttpTxn txnp, void *const strategy);
+
+/**
+    Retrieves a pointer to the current next hop selection strategy.
+    This value may be a nullptr due to:
+      - parent proxying not enabled
+      - no parent selection strategy (using parent.config)
+
+    @param txnp HTTP transaction whose parent proxy to get.
+    @param pointer to the current selection strategy.
+
+ */
+TSReturnCode TSHttpTxnParentStrategyGet(TSHttpTxn txnp, void **strategy);
+
+/**
+    Retrieves a pointer to the named strategy in the loaded strategy table.
+    This will return nullptr if the named strategy is not found.
+
+    Typically this should be called by TSRemapInit/TSPluginInit
+    to avoid constant table lookups during transaction processing.
+
+    @param txnp HTTP transaction whose parent proxy to get.
+    @param pointer to the current selection strategy.
+
+ */
+TSReturnCode TSParentNamedStrategyGet(char const *name, void **strategy);
+
+/**
+    Sets the parent proxy name and port. The string hostname is copied
+    into the TSHttpTxn; you can modify or delete the string after
+    calling TSHttpTxnParentProxySet().
+
+    @param txnp HTTP transaction whose parent proxy to set.
+    @param hostname parent proxy host name string.
+    @param port parent proxy port to set.
+
+ */
+void TSHttpTxnParentProxySet(TSHttpTxn txnp, const char *hostname, int port);
 
 /**
     Retrieves the parent proxy hostname and port, if parent

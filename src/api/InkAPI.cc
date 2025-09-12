@@ -4950,6 +4950,41 @@ TSHttpTxnServerRequestBodySet(TSHttpTxn txnp, char *buf, int64_t buflength)
 }
 
 TSReturnCode
+TSHttpTxnNextHopStrategyGet(TSHttpTxn txnp, void **strategy)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+
+  auto sm = reinterpret_cast<HttpSM const *>(txnp);
+
+  *strategy = static_cast<void *>(sm->t_state.next_hop_strategy);
+
+  return TS_SUCCESS;
+}
+
+void
+TSHttpTxnNextHopStrategySet(TSHttpTxn txnp, void *strategy)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr(strategy) == TS_SUCCESS);
+
+  auto sm = reinterpret_cast<HttpSM *>(txnp);
+
+  sm->t_state.next_hop_strategy = reinterpret_cast<NextHopSelectionStrategy *>(strategy);
+}
+
+TSReturnCode
+TSParentNamedStrategyGet(const char *name, void **strategy)
+{
+  sdk_assert(sdk_sanity_check_null_ptr((void *)name) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr(strategy) == TS_SUCCESS);
+
+  // BNO this must be implemented
+  *strategy = nullptr;
+
+  return TS_SUCCESS;
+}
+
+TSReturnCode
 TSHttpTxnParentProxyGet(TSHttpTxn txnp, const char **hostname, int *port)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
