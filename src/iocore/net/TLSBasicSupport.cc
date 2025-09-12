@@ -79,6 +79,17 @@ TLSBasicSupport::get_tls_handle() const
   return this->_get_ssl_object();
 }
 
+int
+TLSBasicSupport::get_tls_version() const
+{
+  auto ssl = this->_get_ssl_object();
+  if (ssl) {
+    return SSL_version(ssl);
+  } else {
+    return 0;
+  }
+}
+
 const char *
 TLSBasicSupport::get_tls_protocol_name() const
 {
