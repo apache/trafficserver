@@ -34,12 +34,12 @@ traffic_ctl = Make_traffic_ctl(Test)
 ######
 # traffic_ctl server status
 traffic_ctl.server().status().validate_with_text(
-    '{"initialized_done": "true", "is_ssl_handshaking_stopped": "false", "is_draining": "false", "is_event_system_shut_down": "false"}'
+    '{"initialized_done": "true", "is_ssl_handshaking_stopped": "false", "is_draining": "false", "is_event_system_shut_down": "false", "thread_groups": [{"name": "ET_NET", "count": "4", "started": "true"}, {"name": "ET_TASK", "count": "2", "started": "true"}, {"name": "ET_UDP", "count": "0", "started": "false"}]}'
 )
 # Drain ats so we can check the output.
 traffic_ctl.server().drain().exec()
 
 # After the drain, server status should reflect this change.
 traffic_ctl.server().status().validate_with_text(
-    '{"initialized_done": "true", "is_ssl_handshaking_stopped": "false", "is_draining": "true", "is_event_system_shut_down": "false"}'
+    '{"initialized_done": "true", "is_ssl_handshaking_stopped": "false", "is_draining": "true", "is_event_system_shut_down": "false", "thread_groups": [{"name": "ET_NET", "count": "4", "started": "true"}, {"name": "ET_TASK", "count": "2", "started": "true"}, {"name": "ET_UDP", "count": "0", "started": "false"}]}'
 )
