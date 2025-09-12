@@ -128,6 +128,9 @@ public:
   PoolableSession    *get_server_session() const;
   HttpSM             *get_sm() const;
 
+  void            set_verified_client_addr(const sockaddr *addr);
+  sockaddr const *get_verified_client_addr() const;
+
   // This function must return a non-negative number that is different for two in-progress transactions with the same proxy_ssn
   // session.
   //
@@ -150,6 +153,7 @@ protected:
   IOBufferReader *_reader    = nullptr;
 
 private:
+  struct sockaddr_storage _verified_addr = {};
 };
 
 ////////////////////////////////////////////////////////////
@@ -323,5 +327,21 @@ ProxyTransaction::get_remote_addr() const
     return _proxy_ssn->get_remote_addr();
   } else {
     return nullptr;
+  }
+}
+
+inline struct sockaddr const *
+ProxyTransaction::get_verified_client_addr() const
+{
+  return reinterpret_cast<const struct sockaddr *>(&_verified_addr);
+}
+
+inline void
+ProxyTransaction::set_verified_client_addr(const sockaddr *addr)
+{
+  if (addr->sa_family == AF_INET) {
+    memcpy(&_verified_addr, addr, sizeof(struct sockaddr_in));
+  } else {
+    memcpy(&_verified_addr, addr, sizeof(struct sockaddr_in6));
   }
 }
