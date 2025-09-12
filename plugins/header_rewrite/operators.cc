@@ -1218,6 +1218,8 @@ OperatorSetPluginCntl::initialize(Parser &p)
       _value = IP_SRC_PEER;
     } else if (value == "PROXY") {
       _value = IP_SRC_PROXY;
+    } else if (value == "PLUGIN") {
+      _value = IP_SRC_PLUGIN;
     } else {
       TSError("[%s] Unknown value for INBOUND_IP_SOURCE control: %s", PLUGIN_NAME, value.c_str());
     }
