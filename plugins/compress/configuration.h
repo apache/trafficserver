@@ -58,8 +58,20 @@ public:
       remove_accept_encoding_(false),
       flush_(false),
       compression_algorithms_(ALGORITHM_GZIP),
-      minimum_content_length_(1024)
+      minimum_content_length_(1024),
+      content_type_ignore_parameters_(false)
   {
+  }
+
+  bool
+  content_type_ignore_parameters()
+  {
+    return content_type_ignore_parameters_;
+  }
+  void
+  set_content_type_ignore_parameters(bool x)
+  {
+    content_type_ignore_parameters_ = x;
   }
 
   bool
@@ -148,6 +160,7 @@ private:
   bool         flush_;
   int          compression_algorithms_;
   unsigned int minimum_content_length_;
+  bool         content_type_ignore_parameters_;
 
   RangeRequestCtrl range_request_ctl_ = RangeRequestCtrl::NO_COMPRESSION;
   StringContainer  compressible_content_types_;
