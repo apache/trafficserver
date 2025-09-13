@@ -31,6 +31,7 @@ ANTLR=antlr
 SCRIPT_HRW4U=scripts/hrw4u
 SCRIPT_U4WRH=scripts/u4wrh
 SCRIPT_LSP=scripts/hrw4u-lsp
+SCRIPT_KG=scripts/hrw4u-kg
 
 # Shared source files (will go in hrw4u package)
 SHARED_FILES=src/common.py \
@@ -50,7 +51,9 @@ UTILS_FILES=src/symbols_base.py \
 # hrw4u-specific source files (no LSP modules needed)
 SRC_FILES_HRW4U=src/visitor.py \
 	src/symbols.py \
-	src/suggestions.py
+	src/suggestions.py \
+	src/kg_visitor.py
+
 ALL_HRW4U_FILES=$(SHARED_FILES) $(UTILS_FILES) $(SRC_FILES_HRW4U)
 
 # Package-specific source files for u4wrh (inverse) - only u4wrh-specific files
@@ -170,6 +173,7 @@ build: gen
 	pyinstaller --onefile --name hrw4u --strip $(SCRIPT_HRW4U)
 	pyinstaller --onefile --name u4wrh --strip $(SCRIPT_U4WRH)
 	pyinstaller --onefile --name hrw4u-lsp --strip $(SCRIPT_LSP)
+	pyinstaller --onefile --name hrw4u-kg --strip $(SCRIPT_KG)
 
 # Wheel packaging (adjust pyproject to include both packages if desired)
 package: gen
