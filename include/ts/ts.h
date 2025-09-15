@@ -1611,7 +1611,7 @@ TSReturnCode TSHttpTxnNextHopStrategyGet(TSHttpTxn txnp, void **strategy);
     @param pointer to the current selection strategy.
 
  */
-TSReturnCode TSHttpTxnNamedNextHopStrategyGet(char const *name, void **strategy);
+TSReturnCode TSHttpTxnNamedNextHopStrategyGet(TSHttpTxn txnp, char const *name, void **strategy);
 
 /**
     Retrieves a pointer to the named strategy in the loaded strategy table.
