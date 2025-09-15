@@ -1583,3 +1583,38 @@ OperatorSetStateInt16::exec(const Resources &res) const
 
   return true;
 }
+
+// OperatorSetNextHopStrategy
+void
+OperatorSetNextHopStrategy::initialize(Parser &p)
+{
+  Operator::initialize(p);
+
+  _name.set_value(p.get_arg(), this);
+}
+
+void
+OperatorSetNextHopStrategy::initialize_hooks()
+{
+  add_allowed_hook(TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK);
+  add_allowed_hook(TS_HTTP_PRE_REMAP_HOOK);
+  add_allowed_hook(TS_HTTP_READ_REQUEST_HDR_HOOK);
+  add_allowed_hook(TS_REMAP_PSEUDO_HOOK);
+}
+
+bool
+OperatorSetNextHopStrategy::exec(const Resources &res) const
+{
+  auto txnp = res.state.txnp;
+  if (txnp) {
+    auto const  name     = _name.get_value();
+    void *const strategy = TSHttpTxnNamedNextHopStrategyGet(txnp, name.c_str());
+    if (nullptr != strategy) {
+      TSHttpTxnNextHopStrategySet(txnp, strategy);
+      Dbg(pi_dbg_ctl, "   Setting strategy with name %s", name.c_str());
+    } else {
+      TSWarning("[%s] No strategy found for name %s", PLUGIN_NAME, name.c_str());
+    }
+  }
+  return true;
+}

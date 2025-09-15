@@ -4949,16 +4949,14 @@ TSHttpTxnServerRequestBodySet(TSHttpTxn txnp, char *buf, int64_t buflength)
   s->internal_msg_buffer_fast_allocator_size = -1;
 }
 
-TSReturnCode
-TSHttpTxnNextHopStrategyGet(TSHttpTxn txnp, void **strategy)
+void *
+TSHttpTxnNextHopStrategyGet(TSHttpTxn txnp)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
   auto sm = reinterpret_cast<HttpSM const *>(txnp);
 
-  *strategy = static_cast<void *>(sm->t_state.next_hop_strategy);
-
-  return TS_SUCCESS;
+  return static_cast<void *>(sm->t_state.next_hop_strategy);
 }
 
 void
@@ -4972,8 +4970,8 @@ TSHttpTxnNextHopStrategySet(TSHttpTxn txnp, void *strategy)
   sm->t_state.next_hop_strategy = reinterpret_cast<NextHopSelectionStrategy *>(strategy);
 }
 
-TSReturnCode
-TSHttpTxnNamedNextHopStrategyGet(TSHttpTxn txnp, char const *const name, void **strategy)
+void *
+TSHttpTxnNamedNextHopStrategyGet(TSHttpTxn txnp, char const *const name)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr((void *)name) == TS_SUCCESS);
@@ -4988,18 +4986,15 @@ TSHttpTxnNamedNextHopStrategyGet(TSHttpTxn txnp, char const *const name, void **
   std::shared_ptr<NextHopSelectionStrategy> const strat = sm->m_remap->strategyFactory->strategyInstance(name);
 
   if (!strat) {
-    *strategy = nullptr;
-    return TS_ERROR;
+    return nullptr;
   } else {
-    *strategy = static_cast<void *>(strat.get());
+    return static_cast<void *>(strat.get());
   }
-
-  return TS_SUCCESS;
 }
 
 /*
 TSReturnCode
-TSParentNamedStrategyGet(const char *name, void **strategy)
+TSHttpParentNamedStrategyGet(const char *name, void **strategy)
 {
   sdk_assert(sdk_sanity_check_null_ptr((void *)name) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr(strategy) == TS_SUCCESS);
