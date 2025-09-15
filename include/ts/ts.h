@@ -1586,7 +1586,7 @@ char *TSHttpTxnErrorBodyGet(TSHttpTxn txnp, size_t *buflength, char **mimetype);
     @param pointer to the given strategy.
 
  */
-void TSHttpTxnParentStrategySet(TSHttpTxn txnp, void *const strategy);
+void TSHttpTxnNextHopStrategySet(TSHttpTxn txnp, void *const strategy);
 
 /**
     Retrieves a pointer to the current next hop selection strategy.
@@ -1598,7 +1598,7 @@ void TSHttpTxnParentStrategySet(TSHttpTxn txnp, void *const strategy);
     @param pointer to the current selection strategy.
 
  */
-TSReturnCode TSHttpTxnParentStrategyGet(TSHttpTxn txnp, void **strategy);
+TSReturnCode TSHttpTxnNextHopStrategyGet(TSHttpTxn txnp, void **strategy);
 
 /**
     Retrieves a pointer to the named strategy in the loaded strategy table.
@@ -1611,7 +1611,20 @@ TSReturnCode TSHttpTxnParentStrategyGet(TSHttpTxn txnp, void **strategy);
     @param pointer to the current selection strategy.
 
  */
-TSReturnCode TSParentNamedStrategyGet(char const *name, void **strategy);
+TSReturnCode TSHttpTxnNamedNextHopStrategyGet(char const *name, void **strategy);
+
+/**
+    Retrieves a pointer to the named strategy in the loaded strategy table.
+    This will return nullptr if the named strategy is not found.
+
+    Typically this should be called by TSRemapInit/TSPluginInit
+    to avoid constant table lookups during transaction processing.
+
+    @param txnp HTTP transaction whose parent proxy to get.
+    @param pointer to the current selection strategy.
+
+ */
+TSReturnCode TSRemapNamedNextHopStrategyGet(char const *name, void **strategy);
 
 /**
     Sets the parent proxy name and port. The string hostname is copied
