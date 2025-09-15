@@ -15,8 +15,11 @@
 #
 #######################
 
-add_autest_plugin(test_tsapi test_tsapi.cc)
-add_autest_plugin(test_TSHttpTxnServerAddrSet test_TSHttpTxnServerAddrSet.cc)
-add_autest_plugin(test_TSHttpSsnInfo test_TSHttpSsnInfo.cc)
-add_autest_plugin(test_TSVConnPPInfo test_TSVConnPPInfo.cc)
-add_autest_plugin(test_TSHttpTxnVerifiedAddr test_TSHttpTxnVerifiedAddr.cc)
+project(rate_limit)
+
+add_atsplugin(realip realip.cc address_setter.cc address_source.cc simple.cc pp.cc)
+
+target_link_libraries(realip PRIVATE libswoc::libswoc yaml-cpp::yaml-cpp)
+verify_global_plugin(realip)
+# Only works as a global plugin at this time
+#verify_remap_plugin(realip)
