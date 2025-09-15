@@ -259,7 +259,11 @@ class ConnBase
     retrans()
     {
       initialize();
+#if defined(__FreeBSD__)
+      return (_ready ? info.__tcpi_retrans : 0);
+#else
       return (_ready ? info.tcpi_retrans : 0);
+#endif
     }
 
     struct tcp_info info;
