@@ -64,7 +64,7 @@ Resources::gather(const ResourceIDs ids, TSHttpHookID hook)
     // Read request headers to server
     if (ids & RSRC_SERVER_REQUEST_HEADERS) {
       Dbg(pi_dbg_ctl, "\tAdding TXN server request header buffers");
-      if (!TSHttpTxnServerReqGet(txnp, &bufp, &hdr_loc)) {
+      if (TSHttpTxnServerReqGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
         Dbg(pi_dbg_ctl, "could not gather bufp/hdr_loc for request");
         return;
       }
