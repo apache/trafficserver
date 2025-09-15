@@ -92,7 +92,7 @@ public:
       break;
     case LOG_FILE_ASCII:
     case LOG_FILE_PIPE:
-      free(m_data);
+      ats_free(m_data);
       break;
     case N_LOGFILE_TYPES:
     default:
