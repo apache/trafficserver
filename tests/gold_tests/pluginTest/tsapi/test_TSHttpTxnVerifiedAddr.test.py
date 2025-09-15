@@ -32,10 +32,7 @@ httpbin = Test.MakeHttpBinServer("httpbin")
 # ----
 # Setup ATS
 # ----
-ts = Test.MakeATSProcess("ts", enable_tls=True)
-
-# add ssl materials like key, certificates for the server
-ts.addDefaultSSLFiles()
+ts = Test.MakeATSProcess("ts")
 
 ts.Disk.remap_config.AddLines([f'map /httpbin/ http://127.0.0.1:{httpbin.Variables.Port}/'])
 
@@ -51,8 +48,6 @@ ts.Disk.records_config.update(
     {
         'proxy.config.diags.debug.enabled': 1,
         'proxy.config.diags.debug.tags': 'http|test_TSHttpTxnVerifiedAddr',
-        'proxy.config.ssl.server.cert.path': f'{ts.Variables.SSLDir}',
-        'proxy.config.ssl.server.private_key.path': f'{ts.Variables.SSLDir}'
     })
 
 # ----
