@@ -73,7 +73,7 @@ logging:
             tr.StillRunningBefore = self.httpbin
             tr.StillRunningBefore = self.ts
         else:
-            tr.Processes.Default.StartBefore(self.httpbin, ready=When.PortOpen(self.httpbin.Variables.Port))
+            tr.Processes.Default.StartBefore(self.httpbin)
             tr.Processes.Default.StartBefore(self.ts)
             self.state = self.State.RUNNING
 
