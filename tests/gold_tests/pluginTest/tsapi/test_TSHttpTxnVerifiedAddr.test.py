@@ -54,7 +54,9 @@ ts.Disk.records_config.update(
 # Test Cases
 # ----
 
-tr = Test.AddTestRun()
+# The test plugin sets an hard coded IP address as a verified address.
+# The verified address should be read by header_rewrite plugin and returned in "ip" response header.
+tr = Test.AddTestRun("Test that a verified address is set by a plugin and read by another plugin")
 tr.MakeCurlCommand(f'-v http://127.0.0.1:{ts.Variables.port}/httpbin/get', ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(httpbin, ready=When.PortOpen(httpbin.Variables.Port))
