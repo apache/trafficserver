@@ -1,0 +1,5 @@
+# Operations tests direction exceptions
+# Format: test_name: direction
+
+# This monster doesn't produce exactly reversible output
+all-nonsense.input: hrw4u

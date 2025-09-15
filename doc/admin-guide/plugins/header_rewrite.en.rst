@@ -1208,6 +1208,8 @@ TXN_DEBUG        Enable transaction debugging (default: ``off``)
 SKIP_REMAP       Don't require a remap match for the transaction (default: ``off``)
 ================ ====================================================================
 
+.. _admin-plugins-header-rewrite-plugin-cntl:
+
 set-plugin-cntl
 ~~~~~~~~~~~~~~~
 ::
@@ -1660,9 +1662,11 @@ already set to some value, and the status code is a 2xx::
 Add a response header for certain status codes
 ----------------------------------------------
 
+This rule will set a header ``X-Redirect-Status`` but only for a set of status codes::
+
    cond %{SEND_RESPONSE_HDR_HOOK} [AND]
    cond %{STATUS} (301,302,307,308)
-   set-header X-Redirect-Status %{STATUS}
+      set-header X-Redirect-Status %{STATUS}
 
 Add HSTS
 --------

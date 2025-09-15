@@ -1,3 +1,5 @@
+# Note that this also tests the default REMAP hook. We made this a special
+# test, because in hrw4u, we don't use QSA.
 REMAP {
     if geo.COUNTRY == SE {
         set-redirect(302, "https://www.example.com/SE/{inbound.url.path}?{inbound.url.query}");

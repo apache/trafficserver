@@ -1,0 +1,5 @@
+cond %{REMAP_PSEUDO_HOOK} [AND]
+    set-destination HOST "foo"
+
+cond %{SEND_REQUEST_HDR_HOOK} [AND]
+    set-destination PATH "foo/bar.txt"
