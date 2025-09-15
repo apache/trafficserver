@@ -6513,8 +6513,8 @@ HttpTransact::process_quick_http_filter(State *s, int method)
   }
 
   // if the "ip_allow" named filter is deactivated in the remap.config, then don't modify anything
-  url_mapping *mp = s->url_map.getMapping();
-  if (mp && !mp->ip_allow_check_enabled_p) {
+  url_mapping const *const mp = s->url_map.getMapping();
+  if (nullptr != mp && !mp->ip_allow_check_enabled_p) {
     return;
   }
 
