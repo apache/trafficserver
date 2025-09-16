@@ -576,6 +576,8 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
         header_rewrite_ns::inboundIpSource = IP_SRC_PEER;
       } else if (strcmp(optarg, "PROXY") == 0) {
         header_rewrite_ns::inboundIpSource = IP_SRC_PROXY;
+      } else if (strcmp(optarg, "PLUGIN") == 0) {
+        header_rewrite_ns::inboundIpSource = IP_SRC_PLUGIN;
       } else {
         TSError("[%s] Unknown value for inbound-ip-source parameter: %s", PLUGIN_NAME, optarg);
       }
