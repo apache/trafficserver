@@ -1242,7 +1242,7 @@ If ``PROXY`` is set, and PROXY protocol is used, the source IP address provided 
     The conditions return an empty string if the source is set to ``PROXY`` but PROXY protocol header does not present.
 
 set-effective-address
-~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
 ::
 
   set-effective-address <address>
