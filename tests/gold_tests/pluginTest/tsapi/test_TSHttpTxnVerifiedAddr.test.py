@@ -36,8 +36,6 @@ ts = Test.MakeATSProcess("ts")
 
 ts.Disk.remap_config.AddLine(f'map /httpbin/ http://127.0.0.1:{httpbin.Variables.Port}/')
 
-ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
-
 Test.PrepareTestPlugin(
     os.path.join(Test.Variables.AtsBuildGoldTestsDir, 'pluginTest', 'tsapi', '.libs', 'test_TSHttpTxnVerifiedAddr.so'), ts)
 
