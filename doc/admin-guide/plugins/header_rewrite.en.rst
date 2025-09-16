@@ -1251,7 +1251,7 @@ This operator allows you to set client's effective address for a transaction. Th
 operators that use client's IP address.
 
 .. note::
-    This operator also changes `INBOUND_IP_SOURCE1 to `PLUGIN` to make the address available for other conditions and operators.
+    This operator also changes `INBOUND_IP_SOURCE` to `PLUGIN` to make the address available for other conditions and operators.
     See `set-plugin-cntl`_ for the detail.
 
 Operator Flags
