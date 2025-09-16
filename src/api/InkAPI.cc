@@ -4983,12 +4983,12 @@ TSHttpTxnNamedNextHopStrategyGet(TSHttpTxn txnp, char const *const name)
 
   // HttpSM has a reference count handle to UrlRewrite which has a
   // pointer to NextHopStrategyFactory
-  std::shared_ptr<NextHopSelectionStrategy> const strat = sm->m_remap->strategyFactory->strategyInstance(name);
+  NextHopSelectionStrategy *const strat = sm->m_remap->strategyFactory->strategyInstance(name);
 
   if (!strat) {
     return nullptr;
   } else {
-    return static_cast<void *>(strat.get());
+    return static_cast<void *>(strat);
   }
 }
 
