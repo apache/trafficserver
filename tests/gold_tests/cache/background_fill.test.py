@@ -88,7 +88,7 @@ class BackgroundFillTest:
             tr.StillRunningBefore = self.ts['for_httpbin']
             tr.StillRunningBefore = self.ts['for_pv']
         else:
-            tr.Processes.Default.StartBefore(self.httpbin, ready=When.PortOpen(self.httpbin.Variables.Port))
+            tr.Processes.Default.StartBefore(self.httpbin)
             tr.Processes.Default.StartBefore(self.pv_server)
             tr.Processes.Default.StartBefore(self.ts['for_httpbin'])
             tr.Processes.Default.StartBefore(self.ts['for_pv'])

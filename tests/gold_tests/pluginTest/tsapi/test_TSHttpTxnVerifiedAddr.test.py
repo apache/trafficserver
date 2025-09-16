@@ -62,7 +62,7 @@ ts.Disk.records_config.update(
 tr = Test.AddTestRun()
 tr.MakeCurlCommand(f'-v http://127.0.0.1:{ts.Variables.port}/httpbin/get', ts=ts)
 tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.StartBefore(httpbin, ready=When.PortOpen(httpbin.Variables.Port))
+tr.Processes.Default.StartBefore(httpbin)
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.Processes.Default.Streams.stderr.Content = Testers.ContainsExpression(
     "ip: 1.1.1.1", "Verifiy header_rewrite picked the verified address")
