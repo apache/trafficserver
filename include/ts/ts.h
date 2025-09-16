@@ -1611,7 +1611,20 @@ void *TSHttpTxnNextHopStrategyGet(TSHttpTxn txnp);
     @param name of the strategy to look up.
 
  */
-void *TSHttpTxnNamedNextHopStrategyGet(TSHttpTxn txnp, const char *name);
+TSReturnCode TSHttpTxnNextHopNamedStrategySet(TSHttpTxn txnp, const char *name);
+
+/**
+    Retrieves a pointer to the named strategy in the strategy table.
+    This will return nullptr if no strategy is set.
+
+                This uses the current transaction's state machine to get
+                access to UrlRewrite's NextHopStrategyFactory.
+
+    @param txnp HTTP transaction which holds the strategy table.
+    @param name of the strategy to look up.
+
+ */
+void *TSHttpTxnNextHopNamedStrategyGet(TSHttpTxn txnp, const char *name);
 
 /**
     Retrieves a pointer to the named strategy in the loaded strategy table.

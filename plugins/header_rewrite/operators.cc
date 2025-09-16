@@ -1608,7 +1608,7 @@ OperatorSetNextHopStrategy::exec(const Resources &res) const
   auto txnp = res.state.txnp;
   if (txnp) {
     auto const  name     = _name.get_value();
-    void *const strategy = TSHttpTxnNamedNextHopStrategyGet(txnp, name.c_str());
+    void *const strategy = TSHttpTxnNextHopNamedStrategyGet(txnp, name.c_str());
     if (nullptr != strategy) {
       TSHttpTxnNextHopStrategySet(txnp, strategy);
       Dbg(pi_dbg_ctl, "   Setting strategy with name %s", name.c_str());

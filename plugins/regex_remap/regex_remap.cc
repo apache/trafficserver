@@ -226,6 +226,11 @@ public:
   {
     return _lowercase_substitutions;
   }
+  inline std::string const &
+  strategy() const
+  {
+    return _strategy;
+  }
 
   // Hold an overridable configurations
   struct Override {
@@ -262,6 +267,8 @@ private:
   int _no_activity_timeout = -1;
   int _connect_timeout     = -1;
   int _dns_timeout         = -1;
+
+  std::string _strategy = {};
 
   Override *_first_override = nullptr;
   int       _sub_pos[MAX_SUBS];
@@ -323,6 +330,8 @@ RemapRegex::initialize(const std::string &reg, const std::string &sub, const std
       _connect_timeout = strtol(opt_val.c_str(), nullptr, 10);
     } else if (opt.compare(start, 11, "dns_timeout") == 0) {
       _dns_timeout = strtol(opt_val.c_str(), nullptr, 10);
+    } else if (opt.compare(start, 8, "strategy") == 0) {
+      _strategy = opt_val;
     } else {
       TSOverridableConfigKey key;
       TSRecordDataType       type;
@@ -970,6 +979,12 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
       if (re->dns_timeout_option() > (-1)) {
         Dbg(dbg_ctl, "Setting DNS timeout to %d", re->dns_timeout_option());
         TSHttpTxnDNSTimeoutSet(txnp, re->dns_timeout_option());
+      }
+      if (!re->strategy().empty()) {
+        Dbg(dbg_ctl, "Setting strategy to %s", re->strategy().c_str());
+        if (TS_ERROR == TSHttpTxnNextHopNamedStrategySet(txnp, re->strategy().c_str())) {
+          Dbg(dbg_ctl, "Error setting strategy to %s", re->strategy().c_str());
+        }
       }
       bool lowercase_substitutions = false;
       if (re->lowercase_substitutions_option() == true) {
