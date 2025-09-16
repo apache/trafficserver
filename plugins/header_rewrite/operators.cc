@@ -1585,3 +1585,42 @@ OperatorSetStateInt16::exec(const Resources &res) const
 
   return true;
 }
+
+void
+OperatorSetEffectiveAddress::initialize(Parser &p)
+{
+  Operator::initialize(p);
+
+  _value.set_value(p.get_value(), this);
+}
+
+void
+OperatorSetEffectiveAddress::initialize_hooks()
+{
+  add_allowed_hook(TS_HTTP_READ_REQUEST_HDR_HOOK);
+  add_allowed_hook(TS_REMAP_PSEUDO_HOOK);
+}
+
+bool
+OperatorSetEffectiveAddress::exec(const Resources &res) const
+{
+  std::string value;
+  _value.append_value(value, res);
+
+  // Never set an empty address
+  if (value.empty()) {
+    Dbg(pi_dbg_ctl, "Address is empty, skipping");
+    return true;
+  }
+
+  auto                    addr = swoc::IPAddr(value);
+  struct sockaddr_storage storage;
+  addr.copy_to(reinterpret_cast<struct sockaddr *>(&storage));
+  TSHttpTxnVerifiedAddrSet(res.state.txnp, reinterpret_cast<struct sockaddr *>(&storage));
+
+  PrivateSlotData private_data;
+  private_data.raw       = reinterpret_cast<uint64_t>(TSUserArgGet(res.state.txnp, _txn_private_slot));
+  private_data.ip_source = IP_SRC_PLUGIN;
+
+  return true;
+}
