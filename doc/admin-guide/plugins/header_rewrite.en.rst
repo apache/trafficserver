@@ -1241,6 +1241,19 @@ If ``PROXY`` is set, and PROXY protocol is used, the source IP address provided 
 .. note::
     The conditions return an empty string if the source is set to ``PROXY`` but PROXY protocol header does not present.
 
+set-effective-address
+~~~~~~~~~~~~~
+::
+
+  set-effective-address <address>
+
+This operator allows you to set client's effective address for a transaction. The address will be used on other conditions and
+operators that use client's IP address.
+
+.. note::
+    This operator also changes `INBOUND_IP_SOURCE1 to `PLUGIN` to make the address available for other conditions and operators.
+    See `set-plugin-cntl`_ for the detail.
+
 Operator Flags
 --------------
 
