@@ -1591,7 +1591,7 @@ OperatorSetEffectiveAddress::initialize(Parser &p)
 {
   Operator::initialize(p);
 
-  _value.set_value(p.get_value(), this);
+  _value.set_value(p.get_arg(), this);
 }
 
 void
