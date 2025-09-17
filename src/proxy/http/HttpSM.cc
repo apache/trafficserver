@@ -868,20 +868,15 @@ HttpSM::state_watch_for_client_abort(int event, void *data)
    * client.
    */
   case VC_EVENT_EOS: {
-    // We got an early EOS. If the tunnal has cache writer, don't kill it for background fill.
+    // We got an early EOS. To trigger background fill, do NOT kill HttpSM.
     if (!terminate_sm) { // Not done already
       NetVConnection *netvc = _ua.get_txn()->get_netvc();
-      if (_ua.get_txn()->allow_half_open() || tunnel.has_consumer_besides_client()) {
-        if (netvc) {
+      if (netvc) {
+        if (_ua.get_txn()->allow_half_open()) {
           netvc->do_io_shutdown(IO_SHUTDOWN_READ);
+        } else {
+          netvc->do_io_shutdown(IO_SHUTDOWN_READWRITE);
         }
-      } else {
-        _ua.get_txn()->do_io_close();
-        vc_table.cleanup_entry(_ua.get_entry());
-        _ua.set_entry(nullptr);
-        tunnel.kill_tunnel();
-        terminate_sm = true; // Just die already, the requester is gone
-        set_ua_abort(HttpTransact::ABORTED, event);
       }
       if (_ua.get_entry()) {
         _ua.get_entry()->eos = true;

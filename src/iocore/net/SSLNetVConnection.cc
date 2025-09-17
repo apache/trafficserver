@@ -23,6 +23,7 @@
 
 #include "BIO_fastopen.h"
 #include "P_UnixNet.h"
+#include "P_UnixNetVConnection.h"
 #include "SSLStats.h"
 #include "P_Net.h"
 #include "P_SSLUtils.h"
@@ -36,6 +37,7 @@
 #include "iocore/net/ProxyProtocol.h"
 #include "iocore/net/SSLDiags.h"
 #include "iocore/net/SSLSNIConfig.h"
+#include "iocore/net/SSLTypes.h"
 #include "iocore/net/TLSALPNSupport.h"
 #include "tscore/ink_config.h"
 #include "tscore/Layout.h"
@@ -895,6 +897,51 @@ SSLNetVConnection::do_io_close(int lerrno)
   }
   // Go on and do the unix socket cleanups
   super::do_io_close(lerrno);
+}
+
+void
+SSLNetVConnection::do_io_shutdown(ShutdownHowTo_t howto)
+{
+  if (get_tunnel_type() == SNIRoutingType::BLIND) {
+    // we don't have TLS layer control of blind tunnel
+    UnixNetVConnection::do_io_shutdown(howto);
+    return;
+  }
+
+  switch (howto) {
+  case IO_SHUTDOWN_READ:
+    // No need to call SSL API
+    //   SSL_shutdown() sends the close_notify alert to the peer and it only closes the write direction.
+    //   The read direction will be closed by the peer.
+    read.enabled = 0;
+    read.vio.buffer.clear();
+    read.vio.nbytes  = 0;
+    read.vio.cont    = nullptr;
+    f.shutdown      |= NetEvent::SHUTDOWN_READ;
+    break;
+  case IO_SHUTDOWN_WRITE:
+    SSL_shutdown(ssl);
+    write.enabled = 0;
+    write.vio.buffer.clear();
+    write.vio.nbytes  = 0;
+    write.vio.cont    = nullptr;
+    f.shutdown       |= NetEvent::SHUTDOWN_WRITE;
+    break;
+  case IO_SHUTDOWN_READWRITE:
+    SSL_shutdown(ssl);
+    read.enabled  = 0;
+    write.enabled = 0;
+    read.vio.buffer.clear();
+    read.vio.nbytes = 0;
+    write.vio.buffer.clear();
+    write.vio.nbytes = 0;
+    read.vio.cont    = nullptr;
+    write.vio.cont   = nullptr;
+    f.shutdown       = NetEvent::SHUTDOWN_READ | NetEvent::SHUTDOWN_WRITE;
+    break;
+  default:
+    ink_assert(!"not reached");
+  }
 }
 
 void

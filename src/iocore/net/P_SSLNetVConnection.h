@@ -139,6 +139,7 @@ public:
   void    net_read_io(NetHandler *nh) override;
   int64_t load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf, int64_t &total_written, int &needs) override;
   void    do_io_close(int lerrno = -1) override;
+  void    do_io_shutdown(ShutdownHowTo_t howto) override;
 
   ////////////////////////////////////////////////////////////
   // Instances of NetVConnection should be allocated        //

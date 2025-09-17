@@ -639,6 +639,11 @@ UnixNetVConnection::net_write_io(NetHandler *nh)
   NetState     *s = &this->write;
   Continuation *c = this->write.vio.cont;
 
+  if (c == nullptr) {
+    // If Continuation to callback is nullptr, we can do nothing
+    return;
+  }
+
   MUTEX_TRY_LOCK(lock, s->vio.mutex, thread);
 
   if (!lock.is_locked() || lock.get_mutex() != s->vio.mutex.get()) {
