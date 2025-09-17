@@ -48,16 +48,12 @@ class CompressPluginContentTypeParamsTest:
         self.ts.Setup.Copy("etc/ignore-params-true.config")
 
         self.ts.Disk.remap_config.AddLines(
-            {
-                f"""
-map /ignore-params-false/ http://127.0.0.1:{self.server.Variables.http_port}/ \
-    @plugin=compress.so \
-    @pparam={Test.RunDirectory}/ignore-params-false.config
-map /ignore-params-true/ http://127.0.0.1:{self.server.Variables.http_port}/ \
-    @plugin=compress.so \
-    @pparam={Test.RunDirectory}/ignore-params-true.config
-"""
-            })
+            [
+                f'map /ignore-params-false/ http://127.0.0.1:{self.server.Variables.http_port}/ @plugin=compress.so' +
+                f' @pparam={Test.RunDirectory}/ignore-params-false.config',
+                f'map /ignore-params-true/ http://127.0.0.1:{self.server.Variables.http_port}/ @plugin=compress.so' +
+                f' @pparam={Test.RunDirectory}/ignore-params-true.config',
+            ])
 
     def run(self):
         tr = Test.AddTestRun()
