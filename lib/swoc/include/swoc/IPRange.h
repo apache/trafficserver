@@ -609,14 +609,6 @@ class IPRangeView {
     std::monostate _nil; ///< No data present.
     IP4Range const *_4;  ///< IPv4 range.
     IP6Range const *_6;  ///< IPv6 range.
-    //void const *_void;   ///< Used only for fast copy in construction and assignment.
-
-    // These constructors are needed to make the default construction / assignent methods work.
-    // Otherwise the compiler thinks the union isn't initialized.
-    // storage_type() = default;
-    // storage_type(std::monostate) {}
-    // storage_type(storage_type const &that);
-    // storage_type &operator=(storage_type const &rhs);
   };
 
 public:
@@ -1880,14 +1872,6 @@ IPSpace<PAYLOAD>::iterator::operator--(int) -> self_type {
 /// ------------------------------------------------------------------------------------
 
 // +++ IPRange +++
-
-// inline IPRangeView::storage_type::storage_type(IPRangeView::storage_type const &that) : _void(that._void) {}
-//
-// inline IPRangeView::storage_type &
-// IPRangeView::storage_type::operator=(IPRangeView::storage_type const &rhs) {
-//   _void = rhs._void;
-//   return *this;
-// }
 
 inline IP4Range::IP4Range(string_view const &text) {
   this->load(text);
