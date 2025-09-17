@@ -28,6 +28,8 @@
 #include <vector>
 #include <fnmatch.h>
 
+#include <swoc/TextView.h>
+
 #include "debug_macros.h"
 
 namespace Gzip
@@ -191,16 +193,13 @@ HostConfiguration::is_status_code_compressible(const TSHttpStatus status_code) c
   return it != compressible_status_codes_.end();
 }
 
-static std::string_view
+std::string_view
 strip_params(std::string_view v)
 {
-  if (auto pos = v.find(';'); pos != std::string_view::npos) {
-    v = v.substr(0, pos);
-  }
-  // trim trailing spaces
-  while (!v.empty() && isspace(static_cast<unsigned char>(v.back())))
-    v.remove_suffix(1);
-  return v;
+  swoc::TextView tv{v};
+  tv = tv.take_prefix_at(';');
+  tv.rtrim(swoc::CharSet(" \t\n\r\f\v"));
+  return tv;
 }
 
 bool
