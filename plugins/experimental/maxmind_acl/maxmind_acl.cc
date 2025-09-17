@@ -70,7 +70,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
     Acl *a = static_cast<Acl *>(ih);
     if (!a->eval(rri, rh)) {
       Dbg(dbg_ctl, "denying request");
-      TSHttpTxnStatusSet(rh, TS_HTTP_STATUS_FORBIDDEN);
+      TSHttpTxnStatusSet(rh, TS_HTTP_STATUS_FORBIDDEN, PLUGIN_NAME);
       a->send_html(rh);
     }
   }

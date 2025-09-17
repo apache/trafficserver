@@ -760,7 +760,7 @@ stats_origin(TSCont contp, TSEvent /* event ATS_UNUSED */, void *edata)
 
   if (auto addr = TSHttpTxnClientAddrGet(txnp); !is_ipmap_allowed(config, addr)) {
     Dbg(dbg_ctl, "not right ip");
-    TSHttpTxnStatusSet(txnp, TS_HTTP_STATUS_FORBIDDEN);
+    TSHttpTxnStatusSet(txnp, TS_HTTP_STATUS_FORBIDDEN, PLUGIN_NAME);
     reenable = TS_EVENT_HTTP_ERROR;
     goto notforme;
   }

@@ -169,6 +169,7 @@ public:
   int marshal_proxy_resp_squid_len(char *);         // INT
   int marshal_proxy_resp_content_len(char *);       // INT
   int marshal_proxy_resp_status_code(char *);       // INT
+  int marshal_status_plugin_entry(char *);          // STR
   int marshal_proxy_resp_header_len(char *);        // INT
   int marshal_proxy_finish_status_code(char *);     // INT
   int marshal_cache_result_code(char *);            // INT
