@@ -46,16 +46,16 @@ Resources::gather(const ResourceIDs ids, TSHttpHookID hook)
   switch (hook) {
   case TS_HTTP_READ_RESPONSE_HDR_HOOK:
     // Read response headers from server
-    if (ids & RSRC_SERVER_RESPONSE_HEADERS) {
+    if ((ids & RSRC_SERVER_RESPONSE_HEADERS) || (ids & RSRC_RESPONSE_STATUS)) {
       Dbg(pi_dbg_ctl, "\tAdding TXN server response header buffers");
       if (TSHttpTxnServerRespGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
         Dbg(pi_dbg_ctl, "could not gather bufp/hdr_loc for response");
         return;
       }
-    }
-    if (ids & RSRC_RESPONSE_STATUS) {
-      Dbg(pi_dbg_ctl, "\tAdding TXN server response status resource");
-      resp_status = TSHttpHdrStatusGet(bufp, hdr_loc);
+      if (ids & RSRC_RESPONSE_STATUS) {
+        Dbg(pi_dbg_ctl, "\tAdding TXN server response status resource");
+        resp_status = TSHttpHdrStatusGet(bufp, hdr_loc);
+      }
     }
     break;
 
