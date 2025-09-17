@@ -626,7 +626,7 @@ UnixNetVConnection::net_write_io(NetHandler *nh)
   Continuation *c = this->write.vio.cont;
 
   if (c == nullptr) {
-    // If Continuatin to callback is nullptr, we can do nothing
+    // If Continuation to callback is nullptr, we can do nothing
     return;
   }
 

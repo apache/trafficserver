@@ -911,6 +911,8 @@ SSLNetVConnection::do_io_shutdown(ShutdownHowTo_t howto)
   switch (howto) {
   case IO_SHUTDOWN_READ:
     // No need to call SSL API
+    //   SSL_shutdown() sends the close_notify alert to the peer and it only closes the write direction.
+    //   The read direction will be closed by the peer.
     read.enabled = 0;
     read.vio.buffer.clear();
     read.vio.nbytes  = 0;
