@@ -64,7 +64,7 @@ public:
   }
 
   bool
-  content_type_ignore_parameters()
+  content_type_ignore_parameters() const
   {
     return content_type_ignore_parameters_;
   }
