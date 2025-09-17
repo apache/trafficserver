@@ -4970,6 +4970,21 @@ TSHttpTxnNextHopStrategySet(TSHttpTxn txnp, void *strategy)
   sm->t_state.next_hop_strategy = reinterpret_cast<NextHopSelectionStrategy *>(strategy);
 }
 
+char const *
+TSHttpTxnNextHopStrategyNameGet(TSHttpTxn txnp)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+
+  auto sm = reinterpret_cast<HttpSM const *>(txnp);
+
+  char const *name = nullptr;
+  if (nullptr != sm->t_state.next_hop_strategy) {
+    name = sm->t_state.next_hop_strategy->strategy_name.c_str();
+  }
+
+  return name;
+}
+
 void *
 TSHttpTxnNextHopNamedStrategyGet(TSHttpTxn txnp, const char *name)
 {

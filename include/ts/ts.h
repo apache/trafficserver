@@ -1601,6 +1601,19 @@ void TSHttpTxnNextHopStrategySet(TSHttpTxn txnp, void *strategy);
 void *TSHttpTxnNextHopStrategyGet(TSHttpTxn txnp);
 
 /**
+    Returns either null pointer or null terminated pointer to name.
+                DO NOT FREE.
+
+    This value may be a nullptr due to:
+      - parent proxying not enabled
+      - no parent selection strategy (using parent.config)
+
+    @param txnp HTTP transaction whose next hop strategy to get.
+
+ */
+char const *TSHttpTxnNextHopStrategyNameGet(TSHttpTxn txnp);
+
+/**
     Retrieves a pointer to the named strategy in the strategy table.
     This will return nullptr if no strategy is set.
 
