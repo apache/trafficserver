@@ -281,7 +281,7 @@ echo date('l jS \of F Y h:i:s A');
             ts=self._ts)
         tr.Processes.Default.ReturnCode = 0
         self._ts.Disk.diags_log.Content = Testers.ContainsExpression(
-            r"ERROR: \[_setup\] Cannot allow attempted doc of size 121; Max allowed size is 100",
+            r"ERROR: \[_setup\] Cannot allow attempted doc of size 121; Max allowed size is 100 for URL \[.*esi\.php.*\]",
             "max doc size test should have doc size error log")
         tr.StillRunningAfter = self._server
         tr.StillRunningAfter = self._ts

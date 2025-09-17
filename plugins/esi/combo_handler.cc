@@ -45,6 +45,18 @@
 using namespace std;
 using namespace EsiLib;
 using namespace swoc::literals;
+#include "http_utils.h"
+
+/** Extracts a URL string from buffer and location objects.
+ *
+ * @param[in] bufp The buffer containing the URL data.
+ * @param[in] url_loc The memory location pointing to the URL within the
+ *   buffer.
+ *
+ * @return The URL. Returns UNKNOWN_URL_STRING if the URL cannot be retrieved due to
+ *   API failures or invalid parameters.
+ */
+// Use shared helper from url_utils.h
 
 #define DEBUG_TAG "combo_handler"
 
@@ -586,17 +598,20 @@ getClientRequest(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc hdr_loc, TSMLoc url_loc,
   const char *query = TSUrlHttpQueryGet(bufp, url_loc, &query_len);
 
   if (!query) {
-    LOG_ERROR("Could not get query from request URL");
+    std::string const url_string = getUrlString(bufp, url_loc);
+    LOG_ERROR("Could not get query from request URL [%s]", url_string.c_str());
     creq.status = TS_HTTP_STATUS_BAD_REQUEST;
     return;
   } else {
     if (!getDefaultBucket(txnp, bufp, hdr_loc, creq)) {
-      LOG_ERROR("failed getting Default Bucket for the request");
+      std::string const url_string = getUrlString(bufp, url_loc);
+      LOG_ERROR("failed getting Default Bucket for the request [%s]", url_string.c_str());
       return;
     }
     if (query_len > MAX_QUERY_LENGTH) {
-      creq.status = TS_HTTP_STATUS_BAD_REQUEST;
-      LOG_ERROR("querystring too long");
+      std::string const url_string = getUrlString(bufp, url_loc);
+      creq.status                  = TS_HTTP_STATUS_BAD_REQUEST;
+      LOG_ERROR("querystring too long for request [%s]", url_string.c_str());
       return;
     }
     parseQueryParameters(query, query_len, creq);
