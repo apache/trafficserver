@@ -1622,7 +1622,7 @@ OperatorSetEffectiveAddress::exec(const Resources &res) const
   private_data.raw       = reinterpret_cast<uint64_t>(TSUserArgGet(res.state.txnp, _txn_private_slot));
   private_data.ip_source = IP_SRC_PLUGIN;
 
-  Dbg(pi_dbg_ctl, "   Setting plugin control %d to %d", static_cast<int>(_name), _value);
+  Dbg(pi_dbg_ctl, "   Setting plugin control INBOUND_IP_SOURCE to IP_SRC_PLUGIN");
   TSUserArgSet(res.state.txnp, _txn_private_slot, reinterpret_cast<void *>(private_data.raw));
 
   return true;
