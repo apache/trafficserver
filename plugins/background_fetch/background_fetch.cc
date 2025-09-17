@@ -31,6 +31,7 @@
 #include <cinttypes>
 #include <string_view>
 #include <array>
+#include <sys/un.h>
 
 #include "ts/ts.h"
 #include "ts/remap.h"
@@ -238,8 +239,11 @@ BgFetchData::initialize(TSMBuffer request, TSMLoc req_hdr, TSHttpTxn txnp)
       memcpy(&client_ip, ip, sizeof(sockaddr_in));
     } else if (ip->sa_family == AF_INET6) {
       memcpy(&client_ip, ip, sizeof(sockaddr_in6));
+    } else if (ip->sa_family == AF_UNIX) {
+      memcpy(&client_ip, ip, sizeof(sockaddr_un));
     } else {
       TSError("[%s] Unknown address family %d", PLUGIN_NAME, ip->sa_family);
+      return false;
     }
   } else {
     TSError("[%s] Failed to get client host info", PLUGIN_NAME);

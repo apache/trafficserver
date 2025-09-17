@@ -112,7 +112,7 @@ EsiGzip::stream_encode(const char *data, int data_len, std::string &cdata)
 }
 
 bool
-EsiGzip::stream_finish(std::string &cdata, int &downstream_length)
+EsiGzip::stream_finish(std::string &cdata, int64_t &downstream_length)
 {
   if (_downstream_length == 0) {
     // We need to run encode first to get the gzip header inserted.

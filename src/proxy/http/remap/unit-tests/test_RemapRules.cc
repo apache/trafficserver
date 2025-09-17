@@ -168,4 +168,60 @@ map https://h1.example.com \
       REQUIRE(urlmap.getMapping()->filter->src_ip_array[0].match_all_addresses);
     }
   }
+  GIVEN("map_with_recv_port keyword with a special URL scheme for Unix Domain Socket")
+  {
+    std::unique_ptr<UrlRewrite> urlrw = std::make_unique<UrlRewrite>();
+
+    std::string config = R"RMCFG(
+map_with_recv_port http+unix://front.example.com \
+    http://origin.example.com
+  )RMCFG";
+
+    auto cpath = write_test_remap(config, "unix-scheme");
+    printf("wrote config to path: %s\n", cpath.c_str());
+    int         rc = urlrw->BuildTable(cpath.c_str());
+    EasyURL     url("http+unix://front.example.com");
+    const char *host = "front.example.com";
+
+    THEN("only requests via unix domain socket matches")
+    {
+      // Checck if the rule is loaded
+      REQUIRE(rc == TS_SUCCESS);
+      REQUIRE(urlrw->rule_count() == 1);
+      UrlMappingContainer urlmap;
+
+      // The rule must not match if a port number is available (the request is made on IP interface)
+      REQUIRE(urlrw->forwardMappingWithRecvPortLookup(&url.url, 80, host, strlen(host), urlmap) == false);
+      // The rule must match if a port number is unavailable (the request is made on Unix Domain Socket)
+      REQUIRE(urlrw->forwardMappingWithRecvPortLookup(&url.url, 0, host, strlen(host), urlmap) == true);
+    }
+  }
+  GIVEN("map_with_recv_port keyword with a regular URL scheme")
+  {
+    std::unique_ptr<UrlRewrite> urlrw = std::make_unique<UrlRewrite>();
+
+    std::string config = R"RMCFG(
+map_with_recv_port http://front.example.com \
+    http://origin.example.com
+  )RMCFG";
+
+    auto cpath = write_test_remap(config, "regular-scheme");
+    printf("wrote config to path: %s\n", cpath.c_str());
+    int         rc = urlrw->BuildTable(cpath.c_str());
+    EasyURL     url("http://front.example.com");
+    const char *host = "front.example.com";
+
+    THEN("only request via IP interface matches")
+    {
+      // Checck if the rule is loaded
+      REQUIRE(rc == TS_SUCCESS);
+      REQUIRE(urlrw->rule_count() == 1);
+      UrlMappingContainer urlmap;
+
+      // The rule must match if a port number is available (the request is made on IP interface)
+      REQUIRE(urlrw->forwardMappingWithRecvPortLookup(&url.url, 80, host, strlen(host), urlmap) == true);
+      // The rule must not match if a port number is unavailable (the request is made on Unix Domain Socket)
+      REQUIRE(urlrw->forwardMappingWithRecvPortLookup(&url.url, 0, host, strlen(host), urlmap) == false);
+    }
+  }
 }

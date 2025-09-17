@@ -75,7 +75,7 @@ tr = Test.AddTestRun()
 tr.TimeOut = 10
 tr.Processes.Default.Command = f"curl --haproxy-protocol --haproxy-clientip 1.2.3.4 'http://127.0.0.1:{ts.Variables.proxy_protocol_port}/httpbin/get'"
 tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.StartBefore(httpbin, ready=When.PortOpen(httpbin.Variables.Port))
+tr.Processes.Default.StartBefore(httpbin)
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.Processes.Default.Streams.stdout = "test_TSVConnPPInfo_curl0.gold"
 tr.StillRunningAfter = httpbin

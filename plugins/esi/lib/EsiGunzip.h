@@ -25,6 +25,7 @@
 
 #include <zlib.h>
 #include <string>
+#include <cinttypes>
 
 class EsiGunzip
 {
@@ -44,8 +45,8 @@ public:
   bool stream_finish();
 
 private:
-  int      _downstream_length;
-  int      _total_data_length;
+  int64_t  _downstream_length;
+  int64_t  _total_data_length;
   z_stream _zstrm;
 
   bool _init;

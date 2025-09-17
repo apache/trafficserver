@@ -1,0 +1,215 @@
+VARS {
+  # Boolean and integer state you can flip/use across sections
+  FlagA: bool;
+  FlagB: bool;
+  Cnt8: int8;
+  Big16: int16;
+}
+
+TXN_START {
+  # Plugin controls
+  http.cntl.TXN_DEBUG = true;
+  http.cntl.LOGGING = true;
+  http.cntl.REQ_CACHEABLE = true;
+  http.cntl.RESP_CACHEABLE = true;
+  http.cntl.SERVER_NO_STORE = false;
+  http.cntl.SKIP_REMAP = false;
+  http.cntl.INTERCEPT_RETRY = false;       # allow intercept retry
+
+  # Plugin-level knobs
+  set-plugin-cntl("TIMEZONE", "GMT");
+  set-plugin-cntl(INBOUND_IP_SOURCE, "PEER");
+
+  set-config("proxy.config.http.allow_multi_range", 1);
+
+  # Connection marks (client side)
+  inbound.conn.dscp = 8;
+  inbound.conn.mark = 1734;
+
+  # Initialize and twiddle user vars
+  FlagA = true;
+  FlagB = false;
+  Cnt8 = 7;
+  Big16 = 1024;
+
+  # Simple demo: count every transaction seen
+  counter("txn_start_count");
+}
+
+PRE_REMAP {
+  if (inbound.method == "GET" with NOCASE &&
+      (inbound.url.path in ["mp3","m3u","m3u8"] with EXT,NOCASE ||
+       inbound.url.host ~ /(?i)^api\./)) {
+    inbound.req.X-Prefilter = "static-or-api";
+  } elif (access("/var/developertesting") || internal()) {
+    inbound.req.X-Prefilter = "dev-or-internal";
+  } elif (random(100) > 50) {
+    inbound.req.X-Prefilter = "coinflip";
+  } else {
+    no-op();
+  }
+
+# Show CIDR and ID usage; also demonstrate list membership on method
+  if (cidr(16,48) == "10.0.0.0" || cidr(8,8) == "fd00::") {
+    inbound.req.X-Network = "private";
+  }
+  if (inbound.method in ["POST","PUT"]) {
+    FlagB = true;
+  }
+}
+
+REMAP {
+  if (from.url.host == "old.example.com" with NOCASE) {
+    inbound.url.host = "new.example.com";
+    keep_query("id,utm_campaign");
+  }
+
+  if (to.url.path ~ /(?i)^\/legacy\//) {
+    inbound.url.path = "/v2/";
+    remove_query("debug,trace");
+  }
+
+  inbound.req.X-foo = inbound.conn.client-cert.SAN;
+
+  # Run a remap plugin conditionally (args are pass-through)
+  if (inbound.url.host == "plugins.example") {
+    run-plugin("regex_remap.so", "in:^/foo/(.*)$", "out:/bar/$1");
+  }
+
+  # Demonstrate last-rule behavior
+  if (inbound.req.X-Bypass == "1") {
+    skip-remap(true);
+    break;  # like [L]
+  }
+}
+
+READ_REQUEST {
+  # Header presence / equality and capture groups
+  if (inbound.req.Strict-Transport-Security) {
+    inbound.req.X-HSTS-Present = "1";
+  }
+  if (inbound.req.User-Agent ~ /(?i)foo-(\d+)/) {
+    inbound.req.X-UA-Capture = "{capture.1}";
+  }
+
+  # Cookies: read, set, and remove
+  if (inbound.cookie.session == "admin" with NOCASE) {
+    inbound.cookie.role = "super";
+  } else {
+    inbound.cookie.role = "guest";
+  }
+  inbound.cookie.obsolete = "";
+
+  # IP and URL string expansions in values
+  inbound.req.X-Client = "{inbound.ip} : {inbound.url.port}";
+  inbound.req.X-Req-Id = "{id.UNIQUE}";
+
+  # Geo lookups as values
+  inbound.req.X-Geo = "{geo.country}-{geo.asn}";
+
+  # Example of counters + vars interplay
+  if (FlagB) {
+    counter("write_methods_seen");
+    Cnt8 = 42;      # assign int8
+    Big16 = 6553;   # assign int16
+  }
+}
+
+SEND_REQUEST {
+  # Use NEXT-HOP information to adjust Host header
+  if (outbound.url.host == "www.firstparent.com") {
+    outbound.req.Host = "vhost.firstparent.com";
+  } elif (outbound.url.host == "www.secondparent.com") {
+    outbound.req.Host = "vhost.secondparent.com";
+  }
+
+  # Demonstrate HTTP control read and write
+  if (!http.cntl.LOGGING) {
+    http.cntl.LOGGING = true;
+  }
+}
+
+REMAP {
+    if inbound.req.X-Bar  ==  "fie" with MID {
+    }
+}
+
+READ_RESPONSE {
+  # Cache lookup status checks
+  if (cache() == "hit-stale") {
+    outbound.resp.X-Cache = "stale";
+  } elif (cache() == "hit-fresh") {
+    outbound.resp.X-Cache = "fresh";
+  } elif (cache() in ["miss","skipped"]) {
+    outbound.resp.X-Cache = "{cache()}";  # echo the value
+  }
+
+  # Status transforms + reason
+  if (inbound.status > 399 && inbound.status < 500) {
+    http.status = 404;
+    http.status.reason = "Not Here But Somewhere";
+  }
+
+  # Example body overrides (allowed at READ_RESPONSE only)
+  if outbound.status > 499 {
+    set-body-from("http://errors.example.com/500?rid={id.REQUEST}");
+  } elif (inbound.status == 418) {
+    outbound.resp.Content-Type = "text/plain";
+    outbound.resp.Server = "ATS-HRW4U";
+    inbound.resp.body = "I am a teapot, rewritten";
+  }
+}
+
+SEND_RESPONSE {
+  outbound.resp.Cache-Control = "public, max-age=60";
+  outbound.resp.X-Now = "{now.YEAR}-{now.MONTH}-{now.DAY}T{now.HOUR}:{now.MINUTE}";
+  outbound.resp.X-Ports = "in={inbound.url.port};out={outbound.url.port}";
+  outbound.resp.X-IPs = "client={inbound.ip};server={outbound.ip}";
+  outbound.resp.X-ID = "{id.UNIQUE}";
+
+  outbound.resp.ATS-Geo-Country = "{geo.country}";
+  outbound.resp.ATS-Geo-ASN = "{geo.asn}";
+  outbound.resp.ATS-Geo-ASN-NAME = "{geo.ASN-NAME}";
+
+  outbound.cookie.debug = "on";
+
+  if inbound.req.X-Redirect == "1" {
+    set-redirect(302, "https://redirect.example/x?{inbound.url.query}");
+  }
+
+  counter("send_response_count");
+}
+
+TXN_CLOSE {
+  counter("txn_close_count");
+  no-op();
+}
+
+SEND_RESPONSE {
+    if inbound.conn.TLS {
+        inbound.resp.X-Client-Cert = "{inbound.conn.client-cert.PEM}";
+        inbound.resp.X-Client-Cert-Subject = "{inbound.conn.client-cert.SUBJECT}";
+        inbound.resp.X-Client-Cert-Issuer = "{inbound.conn.client-cert.ISSUER}";
+        inbound.resp.X-Server-Cert-Subject = "{inbound.conn.server-cert.SUBJECT}";
+        inbound.resp.X-Server-Cert-Serial = "{inbound.conn.server-cert.SERIAL}";
+        inbound.resp.X-Client-SAN-DNS = "{inbound.conn.client-cert.SAN.DNS}";
+        inbound.resp.X-Client-SAN-IP = "{inbound.conn.client-cert.SAN.IP}";
+        inbound.resp.X-Server-SAN-Email = "{inbound.conn.server-cert.SAN.EMAIL}";
+        inbound.resp.X-Server-SAN-URI = "{inbound.conn.server-cert.SAN.URI}";
+    }
+}
+
+SEND_REQUEST {
+    if inbound.conn.client-cert.SAN.DNS ~ /example\.com/ {
+        outbound.req.X-Matched-Domain = "true";
+    }
+
+    if inbound.conn.client-cert.SUBJECT ~ /CN=testcert/ {
+        outbound.req.X-Test-Client = "verified";
+    }
+}
+
+READ_RESPONSE {
+    outbound.resp.X-Outbound-Client-Cert = "{outbound.conn.client-cert.PEM}";
+    outbound.resp.X-Outbound-Server-Subject = "{outbound.conn.server-cert.SUBJECT}";
+}

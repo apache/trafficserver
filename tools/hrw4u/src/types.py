@@ -19,11 +19,34 @@ from __future__ import annotations
 
 from enum import Enum
 from dataclasses import dataclass
-from typing import FrozenSet
+from typing import Self
+
+
+class MagicStrings(str, Enum):
+    RM_HEADER = "rm-header"
+    SET_HEADER = "set-header"
+    RM_COOKIE = "rm-cookie"
+    SET_COOKIE = "set-cookie"
+    RM_DESTINATION = "rm-destination"
+    SET_DESTINATION = "set-destination"
+    SET_STATUS = "set-status"
+    SET_STATUS_REASON = "set-status-reason"
+    SET_BODY = "set-body"
+    SET_BODY_FROM = "set-body-from"
+    NO_OP = "no-op"
+    SET_DEBUG = "set-debug"
+    SET_CONFIG = "set-config"
+    SET_REDIRECT = "set-redirect"
+    SKIP_REMAP = "skip-remap"
+    RUN_PLUGIN = "run-plugin"
+    COUNTER = "counter"
+    SET_CONN_DSCP = "set-conn-dscp"
+    SET_HTTP_CNTL = "set-http-cntl"
+    REMOVE_QUERY = "remove_query"
+    KEEP_QUERY = "keep_query"
 
 
 class BooleanLiteral(str, Enum):
-    """Boolean literal values used in conditions"""
     TRUE = "TRUE"
     FALSE = "FALSE"
 
@@ -32,16 +55,46 @@ class BooleanLiteral(str, Enum):
         return value.upper() in {member.value for member in cls}
 
 
+class LanguageKeyword(Enum):
+    IF = ("if", "Conditional statement")
+    ELIF = ("elif", "Else-if clause")
+    ELSE = ("else", "Else clause")
+    WITH = ("with", "Condition modifier keyword")
+    IN = ("in", "Set membership operator")
+    TRUE = ("true", "Boolean literal")
+    FALSE = ("false", "Boolean literal")
+    BREAK = ("break", "Loop break statement")
+
+    def __init__(self, keyword: str, description: str) -> None:
+        self.keyword = keyword
+        self.description = description
+
+    @classmethod
+    def get_keywords_with_descriptions(cls) -> dict[str, str]:
+        return {member.keyword: member.description for member in cls}
+
+
 class SuffixGroup(Enum):
     URL_FIELDS = frozenset({"SCHEME", "HOST", "PORT", "PATH", "QUERY", "URL"})
     GEO_FIELDS = frozenset({"COUNTRY", "COUNTRY-ISO", "ASN", "ASN-NAME"})
     CONN_FIELDS = frozenset(
-        {"LOCAL-ADDR", "LOCAL-PORT", "REMOTE-ADDR", "REMOTE-PORT", "TLS", "H2", "IPV4", "IPV6", "IP-FAMILY", "STACK"})
+        {
+            "LOCAL-ADDR", "LOCAL-PORT", "REMOTE-ADDR", "REMOTE-PORT", "TLS", "H2", "IPV4", "IPV6", "IP-FAMILY", "STACK",
+            "client-cert", "server-cert"
+        })
     HTTP_CNTL_FIELDS = frozenset(
         {"LOGGING", "INTERCEPT_RETRY", "RESP_CACHEABLE", "REQ_CACHEABLE", "SERVER_NO_STORE", "TXN_DEBUG", "SKIP_REMAP"})
     ID_FIELDS = frozenset({"REQUEST", "PROCESS", "UNIQUE"})
     DATE_FIELDS = frozenset({"YEAR", "MONTH", "DAY", "HOUR", "MINUTE", "WEEKDAY", "YEARDAY"})
     BOOL_FIELDS = frozenset({"TRUE", "FALSE", "YES", "NO", "ON", "OFF", "0", "1"})
+    CERT_FIELDS = frozenset(
+        {
+            "PEM", "pem", "SIG", "sig", "SUBJECT", "subject", "ISSUER", "issuer", "SERIAL", "serial", "NOT_BEFORE", "not_before",
+            "NOT_AFTER", "not_after", "VERSION", "version"
+        })
+    SAN_FIELDS = frozenset({"DNS", "dns", "IP", "ip", "EMAIL", "email", "URI", "uri"})
+    PLUGIN_CNTL_MAPPING = {"TIMEZONE": frozenset({"GMT", "LOCAL"}), "INBOUND_IP_SOURCE": frozenset({"PEER", "PROXY"})}
+    PLUGIN_CNTL_FIELDS = frozenset(PLUGIN_CNTL_MAPPING.keys())
 
     def validate(self, suffix: str) -> None:
         allowed_upper = {val.upper() for val in self.value}
@@ -52,15 +105,16 @@ class SuffixGroup(Enum):
 
 
 class VarType(Enum):
-    BOOL = ("bool", "FLAG", "set-state-flag", 16)
-    INT8 = ("int8", "INT8", "set-state-int8", 4)
-    INT16 = ("int16", "INT16", "set-state-int16", 1)
+    BOOL = ("bool", "FLAG", "set-state-flag", 16, "Boolean variable type - stores true/false values")
+    INT8 = ("int8", "INT8", "set-state-int8", 4, "8-bit integer variable type - stores values from 0 to 255")
+    INT16 = ("int16", "INT16", "set-state-int16", 1, "16-bit integer variable type - stores values from 0 to 65535")
 
-    def __init__(self, name: str, cond_tag: str, op_tag: str, limit: int):
+    def __init__(self, name: str, cond_tag: str, op_tag: str, limit: int, description: str) -> None:
         self._name = name
         self._cond_tag = cond_tag
         self._op_tag = op_tag
         self._limit = limit
+        self._description = description
 
     @property
     def cond_tag(self) -> str:
@@ -78,12 +132,16 @@ class VarType(Enum):
     def name(self) -> str:
         return self._name
 
+    @property
+    def description(self) -> str:
+        return self._description
+
     @classmethod
-    def from_str(cls, type: str) -> 'VarType':
+    def from_str(cls, type_str: str) -> Self:
         for vt in cls:
-            if vt._name == type.lower():
+            if vt._name == type_str.lower():
                 return vt
-        raise ValueError(f"Unknown VarType string: {type}")
+        raise ValueError(f"Unknown VarType string: {type_str}")
 
 
 @dataclass(slots=True, frozen=True)
@@ -94,5 +152,5 @@ class Symbol:
     def as_cond(self) -> str:
         return f"%{{STATE-{self.var_type.cond_tag}:{self.index}}}"
 
-    def as_operator(self, value) -> str:
+    def as_operator(self, value: str) -> str:
         return f"{self.var_type.op_tag} {self.index} {value}"

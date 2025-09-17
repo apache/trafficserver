@@ -1,0 +1,3 @@
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{CLIENT-URL:PATH} ("php","php3","php4","php5","phtml") [EXT]
+    set-header X-Is-PHP "yes"

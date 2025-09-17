@@ -869,20 +869,15 @@ HttpSM::state_watch_for_client_abort(int event, void *data)
    * client.
    */
   case VC_EVENT_EOS: {
-    // We got an early EOS. If the tunnal has cache writer, don't kill it for background fill.
+    // We got an early EOS. To trigger background fill, do NOT kill HttpSM.
     if (!terminate_sm) { // Not done already
       NetVConnection *netvc = _ua.get_txn()->get_netvc();
-      if (_ua.get_txn()->allow_half_open() || tunnel.has_consumer_besides_client()) {
-        if (netvc) {
+      if (netvc) {
+        if (_ua.get_txn()->allow_half_open()) {
           netvc->do_io_shutdown(IO_SHUTDOWN_READ);
+        } else {
+          netvc->do_io_shutdown(IO_SHUTDOWN_READWRITE);
         }
-      } else {
-        _ua.get_txn()->do_io_close();
-        vc_table.cleanup_entry(_ua.get_entry());
-        _ua.set_entry(nullptr);
-        tunnel.kill_tunnel();
-        terminate_sm = true; // Just die already, the requester is gone
-        set_ua_abort(HttpTransact::ABORTED, event);
       }
       if (_ua.get_entry()) {
         _ua.get_entry()->eos = true;
@@ -6308,9 +6303,10 @@ close_connection:
 void
 HttpSM::do_setup_client_request_body_tunnel(HttpVC_t to_vc_type)
 {
-  if (t_state.hdr_info.request_content_length == 0) {
-    // No tunnel is needed to transfer 0 bytes. Simply return without setting up
-    // a tunnel nor any of the other related logic around request bodies.
+  if (!_ua.get_txn()->has_request_body(t_state.hdr_info.request_content_length,
+                                       t_state.client_info.transfer_encoding == HttpTransact::TransferEncoding_t::CHUNKED)) {
+    // No tunnel is needed to transfer 0 bytes or when no request body is present.
+    // Simply return without setting up a tunnel nor any of the other related logic around request bodies.
     return;
   }
   bool chunked = t_state.client_info.transfer_encoding == HttpTransact::TransferEncoding_t::CHUNKED ||

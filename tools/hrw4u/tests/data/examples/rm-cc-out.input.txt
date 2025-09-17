@@ -1,4 +1,5 @@
 SEND_REQUEST {
+    # Remove the cache-control and Pragma header. Pragma is rare though
     outbound.req.Cache-Control = "";
     outbound.req.Pragma = "";
 }
