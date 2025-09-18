@@ -37,7 +37,6 @@ public:
   // Methods
   void release() override;
 
-  bool allow_half_open() const override;
   void transaction_done() override;
   void increment_transactions_stat() override;
   void decrement_transactions_stat() override;

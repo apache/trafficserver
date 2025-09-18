@@ -540,13 +540,6 @@ Http1ClientSession::start()
   this->release(&trans);
 }
 
-bool
-Http1ClientSession::allow_half_open() const
-{
-  // Only allow half open connections if the not over TLS
-  return (_vc && _vc->get_service<TLSBasicSupport>() == nullptr);
-}
-
 void
 Http1ClientSession::set_half_close_flag(bool flag)
 {
