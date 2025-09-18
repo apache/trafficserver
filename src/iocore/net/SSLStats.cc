@@ -131,7 +131,7 @@ SSLPeriodicMetricsUpdate()
     // Most of the SSL_CTX_sess_*() metrics are inclusive of OpenSSL's
     // "internal" cache *and* the ATS "external" cache. The exception is the
     // SSL_CTX_sess_misses() metric, which curiously only counts OpenSSL
-    // internal misses.  Therefore, to make that metric accurate for the
+    // internal misses. Therefore, to make that metric accurate for the
     // situation where ATS manages sessions via its own cache, which is the
     // default configuration (see proxy.config.ssl.session_cache.value), we
     // have to add in the misses we've counted in the
@@ -144,6 +144,15 @@ SSLPeriodicMetricsUpdate()
     if (ssl_rsb.session_cache_timeout) {
       session_cache_timeouts = Metrics::Counter::load(ssl_rsb.session_cache_timeout);
     }
+#if defined(OPENSSL_IS_BORINGSSL)
+    // On BoringSSL, all SSL_CTX_sess_*() functions always return 0 for the ATS
+    // external cache, making them unusable for monitoring. We currently address
+    // hits and misses because they are the most relevant metrics for session
+    // cache performance monitoring and should be treated as a pair.
+    if (ssl_rsb.session_cache_hit) {
+      hits = Metrics::Counter::load(ssl_rsb.session_cache_hit);
+    }
+#endif
     if (ssl_rsb.session_cache_miss) {
       misses  = Metrics::Counter::load(ssl_rsb.session_cache_miss);
       misses -= (session_cache_timeouts > misses) ? 0 : session_cache_timeouts;
