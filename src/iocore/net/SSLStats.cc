@@ -113,6 +113,7 @@ void
 SSLPeriodicMetricsUpdate()
 {
   SSLCertificateConfig::scoped_config certLookup;
+  SSLConfig::scoped_config            sslConfig;
 
   int64_t sessions = 0;
   int64_t hits     = 0;
@@ -120,6 +121,43 @@ SSLPeriodicMetricsUpdate()
   int64_t timeouts = 0;
 
   Dbg(dbg_ctl_ssl, "Starting to update the new session metrics");
+
+  // Check if we're using the ATS session cache implementation rather than the
+  // OpenSSL internal cache.
+  bool const using_ats_session_cache =
+    sslConfig && sslConfig->ssl_session_cache == SSLConfigParams::SSL_SESSION_CACHE_MODE_SERVER_ATS_IMPL;
+
+  if (using_ats_session_cache) {
+    // Most of the SSL_CTX_sess_*() metrics are inclusive of OpenSSL's
+    // "internal" cache *and* the ATS "external" cache. The exception is the
+    // SSL_CTX_sess_misses() metric, which curiously only counts OpenSSL
+    // internal misses. Therefore, to make that metric accurate for the
+    // situation where ATS manages sessions via its own cache, which is the
+    // default configuration (see proxy.config.ssl.session_cache.value), we
+    // have to add in the misses we've counted in the
+    // TLSSessionResumptionSupport.cc callback hooks.
+
+    // We count timeouts as misses in TLSSessionResumptionSupport.cc for
+    // session_cache_miss, whereas OpenSSL tracks them separately and our
+    // user_agent_session_miss follows suit.
+    int64_t session_cache_timeouts = 0;
+    if (ssl_rsb.session_cache_timeout) {
+      session_cache_timeouts = Metrics::Counter::load(ssl_rsb.session_cache_timeout);
+    }
+#if defined(OPENSSL_IS_BORINGSSL)
+    // On BoringSSL, all SSL_CTX_sess_*() functions always return 0 for the ATS
+    // external cache, making them unusable for monitoring. We currently address
+    // hits and misses because they are the most relevant metrics for session
+    // cache performance monitoring and should be treated as a pair.
+    if (ssl_rsb.session_cache_hit) {
+      hits = Metrics::Counter::load(ssl_rsb.session_cache_hit);
+    }
+#endif
+    if (ssl_rsb.session_cache_miss) {
+      misses  = Metrics::Counter::load(ssl_rsb.session_cache_miss);
+      misses -= (session_cache_timeouts > misses) ? 0 : session_cache_timeouts;
+    }
+  }
   if (certLookup) {
     const unsigned ctxCount = certLookup->count();
     for (size_t i = 0; i < ctxCount; i++) {
@@ -136,6 +174,9 @@ SSLPeriodicMetricsUpdate()
     }
   }
 
+  // Store cumulative session statistics as gauges. These metrics represent cumulative
+  // counters semantically but are implemented as gauges because they need to be "set"
+  // to values read from external counter sources (OpenSSL and/or ATS session cache).
   Metrics::Gauge::store(ssl_rsb.user_agent_sessions, sessions);
   Metrics::Gauge::store(ssl_rsb.user_agent_session_hit, hits);
   Metrics::Gauge::store(ssl_rsb.user_agent_session_miss, misses);
@@ -181,11 +222,13 @@ SSLInitializeStatistics()
   ssl_rsb.sni_name_set_failure               = Metrics::Counter::createPtr("proxy.process.ssl.ssl_sni_name_set_failure");
   ssl_rsb.origin_session_cache_hit           = Metrics::Counter::createPtr("proxy.process.ssl.ssl_origin_session_cache_hit");
   ssl_rsb.origin_session_cache_miss          = Metrics::Counter::createPtr("proxy.process.ssl.ssl_origin_session_cache_miss");
+  ssl_rsb.origin_session_cache_timeout       = Metrics::Counter::createPtr("proxy.process.ssl.ssl_origin_session_cache_timeout");
   ssl_rsb.session_cache_eviction             = Metrics::Counter::createPtr("proxy.process.ssl.ssl_session_cache_eviction");
   ssl_rsb.session_cache_hit                  = Metrics::Counter::createPtr("proxy.process.ssl.ssl_session_cache_hit");
   ssl_rsb.session_cache_lock_contention      = Metrics::Counter::createPtr("proxy.process.ssl.ssl_session_cache_lock_contention");
   ssl_rsb.session_cache_miss                 = Metrics::Counter::createPtr("proxy.process.ssl.ssl_session_cache_miss");
   ssl_rsb.session_cache_new_session          = Metrics::Counter::createPtr("proxy.process.ssl.ssl_session_cache_new_session");
+  ssl_rsb.session_cache_timeout              = Metrics::Counter::createPtr("proxy.process.ssl.ssl_session_cache_timeout");
   ssl_rsb.total_attempts_handshake_count_in  = Metrics::Counter::createPtr("proxy.process.ssl.total_attempts_handshake_count_in");
   ssl_rsb.total_attempts_handshake_count_out = Metrics::Counter::createPtr("proxy.process.ssl.total_attempts_handshake_count_out");
   ssl_rsb.total_dyn_def_tls_record_count     = Metrics::Counter::createPtr("proxy.process.ssl.default_record_size_count");
