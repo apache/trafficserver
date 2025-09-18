@@ -1609,7 +1609,10 @@ OperatorSetNextHopStrategy::exec(const Resources &res) const
   if (txnp) {
     auto const name = _name.get_value();
 
-    if (TS_SUCCESS == TSHttpTxnNextHopNamedStrategySet(txnp, name.c_str())) {
+    if (name == "null") {
+      TSHttpTxnNextHopStrategySet(txnp, nullptr);
+      Dbg(pi_dbg_ctl, "   Nulling strategy");
+    } else if (TS_SUCCESS == TSHttpTxnNextHopNamedStrategySet(txnp, name.c_str())) {
       Dbg(pi_dbg_ctl, "   Setting strategy '%s'", name.c_str());
     } else {
       TSWarning("[%s] Failed to set  strategy '%s'", PLUGIN_NAME, name.c_str());
