@@ -980,10 +980,13 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
         Dbg(dbg_ctl, "Setting DNS timeout to %d", re->dns_timeout_option());
         TSHttpTxnDNSTimeoutSet(txnp, re->dns_timeout_option());
       }
-      if (!re->strategy().empty()) {
-        Dbg(dbg_ctl, "Setting strategy to %s", re->strategy().c_str());
-        if (TS_ERROR == TSHttpTxnNextHopNamedStrategySet(txnp, re->strategy().c_str())) {
-          Dbg(dbg_ctl, "Error setting strategy to %s", re->strategy().c_str());
+      auto const &strat = re->strategy();
+      if (!strat.empty()) {
+        Dbg(dbg_ctl, "Setting strategy to %s", strat.c_str());
+        if ("null" == strat) {
+          TSHttpTxnNextHopStrategySet(txnp, nullptr);
+        } else if (TS_ERROR == TSHttpTxnNextHopNamedStrategySet(txnp, strat.c_str())) {
+          Dbg(dbg_ctl, "Error setting strategy to %s", strat.c_str());
         }
       }
       bool lowercase_substitutions = false;

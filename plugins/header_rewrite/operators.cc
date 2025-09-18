@@ -1607,13 +1607,13 @@ OperatorSetNextHopStrategy::exec(const Resources &res) const
 {
   auto txnp = res.state.txnp;
   if (txnp) {
-    auto const  name     = _name.get_value();
-    void *const strategy = TSHttpTxnNextHopNamedStrategyGet(txnp, name.c_str());
-    if (nullptr != strategy) {
-      TSHttpTxnNextHopStrategySet(txnp, strategy);
-      Dbg(pi_dbg_ctl, "   Setting strategy with name %s", name.c_str());
+    auto const name = _name.get_value();
+
+    if (TS_SUCCESS == TSHttpTxnNextHopNamedStrategySet(txnp, name.c_str())) {
+      Dbg(pi_dbg_ctl, "   Setting strategy '%s'", name.c_str());
     } else {
-      TSWarning("[%s] No strategy found for name %s", PLUGIN_NAME, name.c_str());
+      TSWarning("[%s] Failed to set  strategy '%s'", PLUGIN_NAME, name.c_str());
+      return false;
     }
   }
   return true;
