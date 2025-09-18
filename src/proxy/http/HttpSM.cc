@@ -1690,6 +1690,19 @@ HttpSM::handle_api_return()
     // Clean up from any communication with previous servers
     release_server_session();
 
+    // Clean up any active tunnels, transforms, and plugin agents
+    // to prevent stray timeout events from firing after redirect
+    tunnel.kill_tunnel();
+    if (hooks_set) {
+      transform_cleanup(TS_HTTP_RESPONSE_TRANSFORM_HOOK, &transform_info);
+      transform_cleanup(TS_HTTP_REQUEST_TRANSFORM_HOOK, &post_transform_info);
+      plugin_agents_cleanup();
+    }
+    if (plugin_tunnel) {
+      plugin_tunnel->kill_no_connect();
+      plugin_tunnel = nullptr;
+    }
+
     call_transact_and_set_next_state(HttpTransact::HandleRequest);
     break;
   }
