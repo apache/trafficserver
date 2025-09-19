@@ -5467,7 +5467,7 @@ TSVConnIsSslReused(TSVConn sslp)
   NetVConnection    *vc     = reinterpret_cast<NetVConnection *>(sslp);
   SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(vc);
 
-  return ssl_vc ? ssl_vc->getSSLSessionCacheHit() : 0;
+  return ssl_vc ? ssl_vc->getIsResumedSSLSession() : 0;
 }
 
 const char *
