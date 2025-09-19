@@ -4963,7 +4963,8 @@ void
 TSHttpTxnNextHopStrategySet(TSHttpTxn txnp, void *strategy)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
-  sdk_assert(sdk_sanity_check_null_ptr(strategy) == TS_SUCCESS);
+  // null strategy falls back to parent.config
+  // sdk_assert(sdk_sanity_check_null_ptr(strategy) == TS_SUCCESS);
 
   auto sm = reinterpret_cast<HttpSM *>(txnp);
 

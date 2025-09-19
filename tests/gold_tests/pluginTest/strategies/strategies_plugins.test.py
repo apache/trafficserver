@@ -57,7 +57,7 @@ for ind in range(num_origins):
         "body": "",
     }
     response_header = {
-        "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
+        "headers": f"HTTP/1.1 200 OK\r\nConnection: close\r\nOrigin: {name}\r\n\r\n",
         "timestamp": "1469733493.993",
         "body": name,
     }
@@ -82,11 +82,19 @@ ts.Disk.records_config.update(
         'proxy.config.diags.debug.enabled': 1,
         'proxy.config.diags.debug.tags': "url_rewrite|next_hop|dns|parent|regex_remap|header_rewrite|tslua|http|hostdb",
     })
-
+'''
+# Use a Strategy header for header rewrite changing
 ts.Disk.plugin_config.AddLine("header_rewrite.so hdr_rw.config")
 ts.Disk.MakeConfigFile("hdr_rw.config").AddLines(
     [
         "cond %{READ_REQUEST_HDR_HOOK}",
+        'cond %{HEADER:Strategy} ="" [NOT]',
+        "set-next-hop-strategy %{HEADER:Strategy}",
+    ])
+'''
+ts.Disk.MakeConfigFile("hdr_rw.config").AddLines(
+    [
+        "cond %{REMAP_PSEUDO_HOOK}",
         'cond %{CLIENT-HEADER:Strategy} ="" [NOT]',
         "set-next-hop-strategy %{CLIENT-HEADER:Strategy}",
     ])
@@ -118,7 +126,7 @@ s.AddLine("strategies:")
 for ind in range(num_origins - 1):
     s.AddLines(
         [
-            f"  - strategy: strategy-{ind}",
+            f"  - strategy: nh{ind}",
             f"    policy: consistent_hash",
             f"    hash_key: path",
             f"    go_direct: false",
@@ -131,9 +139,9 @@ for ind in range(num_origins - 1):
 
 ts.Disk.remap_config.AddLines(
     [
-        "map http://nh0 http://origin @strategy=strategy-0",
-        "map http://nh1 http://origin @strategy=strategy-1",
-        "map http://nh2 http://nh2",
+        "map http://nh0 http://origin @strategy=nh0 @plugin=header_rewrite.so @pparam=hdr_rw.config",
+        "map http://nh1 http://origin @strategy=nh1 @plugin=header_rewrite.so @pparam=hdr_rw.config",
+        "map http://nh2 http://origin @plugin=header_rewrite.so @pparam=hdr_rw.config",
     ])
 
 # Tests
@@ -141,7 +149,7 @@ ts.Disk.remap_config.AddLines(
 # stdout for body, stderr for headers
 curl_and_args = '-s -o /dev/stdout -D /dev/stderr -x localhost:{}'.format(ts.Variables.port)
 
-# 0 Test - nh0 default request
+# 0 - nh0 default request
 tr = Test.AddTestRun("nh0 straight through request")
 ps = tr.Processes.Default
 for ind in range(num_origins):
@@ -156,7 +164,7 @@ ps.Streams.stdout.Content = Testers.ContainsExpression("nh0", "expected nh0")
 tr.StillRunningAfter = ts
 tr.StillRunnerAfter = dns
 
-# 1 Test - nh1 default request
+# 1 - nh1 default request
 tr = Test.AddTestRun("nh1 straight through request")
 ps = tr.Processes.Default
 tr.MakeCurlCommand(curl_and_args + " http://nh1/path", ts=ts)
@@ -164,10 +172,37 @@ ps.ReturnCode = Any(0, -2)
 ps.Streams.stdout.Content = Testers.ContainsExpression("nh1", "expected nh1")
 tr.StillRunningAfter = ts
 
-# 2 Test - nh2 default request
+# 2 - nh2 default request
 tr = Test.AddTestRun("nh2 straight through request")
 ps = tr.Processes.Default
 tr.MakeCurlCommand(curl_and_args + " http://nh2/path", ts=ts)
 ps.ReturnCode = Any(0, -2)
 ps.Streams.stdout.Content = Testers.ContainsExpression("nh2", "expected nh2")
 tr.StillRunningAfter = ts
+
+# 3 switch strategies
+tr = Test.AddTestRun("nh0 switch to nh1")
+ps = tr.Processes.Default
+tr.MakeCurlCommand(curl_and_args + ' http://nh0/path -H "Strategy: nh1"', ts=ts)
+ps.ReturnCode = Any(0, -2)
+ps.Streams.stdout.Content = Testers.ContainsExpression("nh1", "expected nh1")
+tr.StillRunningAfter = ts
+tr.StillRunnerAfter = dns
+
+# 4 strategy to parent.config
+tr = Test.AddTestRun("nh0 switch to parent.config")
+ps = tr.Processes.Default
+tr.MakeCurlCommand(curl_and_args + ' http://nh0/path -H "Strategy: null"', ts=ts)
+ps.ReturnCode = Any(0, -2)
+ps.Streams.stdout.Content = Testers.ContainsExpression("nh2", "expected nh2")
+tr.StillRunningAfter = ts
+tr.StillRunnerAfter = dns
+
+# 5 parent.config strategy to strategy
+tr = Test.AddTestRun("nh2 switch to nh0")
+ps = tr.Processes.Default
+tr.MakeCurlCommand(curl_and_args + ' http://nh2/path -H "Strategy: nh0"', ts=ts)
+ps.ReturnCode = Any(0, -2)
+ps.Streams.stdout.Content = Testers.ContainsExpression("nh0", "expected nh0")
+tr.StillRunningAfter = ts
+tr.StillRunnerAfter = dns

@@ -643,5 +643,5 @@ protected:
   bool exec(const Resources &res) const override;
 
 private:
-  Value _name;
+  Value _value;
 };
