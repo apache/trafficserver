@@ -33,7 +33,7 @@
 #include "iocore/eventsystem/PriorityEventQueue.h"
 #include "iocore/eventsystem/ProtectedQueue.h"
 #include "tsutil/Histogram.h"
-#include "Watchdog.h"
+#include "iocore/eventsystem/Watchdog.h"
 
 #if TS_USE_HWLOC
 struct hwloc_obj;
