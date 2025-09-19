@@ -56,9 +56,9 @@ static int
 ts_lua_vconn_get_remote_addr(lua_State *L)
 {
   ts_lua_vconn_ctx *vconn_ctx;
-  int               port;
-  int               family;
-  char              sip[128];
+  int               port     = 0;
+  int               family   = AF_UNSPEC;
+  char              sip[128] = "";
 
   GET_VCONN_CONTEXT(vconn_ctx, L);
 
@@ -73,10 +73,12 @@ ts_lua_vconn_get_remote_addr(lua_State *L)
       port = ntohs(((struct sockaddr_in *)addr)->sin_port);
       inet_ntop(AF_INET, (const void *)&((struct sockaddr_in *)addr)->sin_addr, sip, sizeof(sip));
       family = AF_INET;
-    } else {
+    } else if (addr->sa_family == AF_INET6) {
       port = ntohs(((struct sockaddr_in6 *)addr)->sin6_port);
       inet_ntop(AF_INET6, (const void *)&((struct sockaddr_in6 *)addr)->sin6_addr, sip, sizeof(sip));
       family = AF_INET6;
+    } else if (addr->sa_family == AF_UNIX) {
+      family = AF_UNIX;
     }
 
     lua_pushstring(L, sip);

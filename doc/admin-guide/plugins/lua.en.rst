@@ -1838,6 +1838,7 @@ Socket address family
 
     TS_LUA_AF_INET (2)
     TS_LUA_AF_INET6 (10)
+    TS_LUA_AF_UNIX (1)
 
 
 :ref:`TOP <admin-plugins-ts-lua>`
