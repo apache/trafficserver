@@ -38,8 +38,8 @@ namespace Watchdog
 
 DbgCtl dbg_ctl_watchdog("watchdog");
 
-Monitor::Monitor(const std::span<EThread *> threads, std::chrono::milliseconds timeout_ms)
-  : _threads{threads.begin(), threads.end()}, _watchdog_thread{std::bind_front(&Monitor::monitor_loop, this)}, _timeout{timeout_ms}
+Monitor::Monitor(EThread *threads[], size_t n_threads, std::chrono::milliseconds timeout_ms)
+  : _threads(threads, threads + n_threads), _watchdog_thread{std::bind_front(&Monitor::monitor_loop, this)}, _timeout{timeout_ms}
 {
   ink_assert(timeout_ms.count() > 0);
 }

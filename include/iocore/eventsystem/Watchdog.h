@@ -26,7 +26,6 @@
 
 #include <atomic>
 #include <chrono>
-#include <span>
 #include <vector>
 #include <thread>
 
@@ -46,7 +45,7 @@ struct Heartbeat {
 class Monitor
 {
 public:
-  explicit Monitor(const std::span<EThread *> threads, std::chrono::milliseconds timeout_ms);
+  explicit Monitor(EThread *threads[], size_t n_threads, std::chrono::milliseconds timeout_ms);
   Monitor() = delete;
 
 private:
