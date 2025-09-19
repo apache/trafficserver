@@ -304,7 +304,14 @@ EThread::execute_regular()
     ink_hrtime post_drain  = ink_get_hrtime();
     ink_hrtime drain_queue = post_drain - loop_start_time;
 
+    // watchdog kick - pre-sleep
+    this->heartbeat_state.last_sleep.store(std::chrono::steady_clock::now(), std::memory_order_relaxed);
+
     tail_cb->waitForActivity(sleep_time);
+
+    // watchdog kick - post-wake
+    this->heartbeat_state.last_wake.store(std::chrono::steady_clock::now(), std::memory_order_relaxed);
+    this->heartbeat_state.seq.fetch_add(1, std::memory_order_relaxed);
 
     // loop cleanup
     loop_finish_time = ink_get_hrtime();

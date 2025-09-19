@@ -33,6 +33,7 @@
 #include "iocore/eventsystem/PriorityEventQueue.h"
 #include "iocore/eventsystem/ProtectedQueue.h"
 #include "tsutil/Histogram.h"
+#include "Watchdog.h"
 
 #if TS_USE_HWLOC
 struct hwloc_obj;
@@ -583,6 +584,8 @@ public:
   };
 
   Metrics metrics;
+
+  Watchdog::Heartbeat heartbeat_state;
 
 private:
   void cons_common();

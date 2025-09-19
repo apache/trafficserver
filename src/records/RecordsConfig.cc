@@ -1529,7 +1529,12 @@ static constexpr RecordElement RecordsConfig[] =
   {RECT_CONFIG, "proxy.config.io_uring.wq_workers_unbounded", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL},
   {RECT_CONFIG, "proxy.config.aio.mode", RECD_STRING, "auto", RECU_DYNAMIC, RR_NULL, RECC_STR, "(auto|io_uring|thread)", RECA_NULL},
 #endif
-
+  //###########
+  //#
+  //# Thread watchdog
+  //#
+  //###########
+  {RECT_CONFIG, "proxy.config.thread_watchdog.timeout_ms", RECD_INT, "1000", RECU_RESTART_TS, RR_NULL, RECC_INT, "[1-10000]", RECA_NULL}
 };
 // clang-format on
 
