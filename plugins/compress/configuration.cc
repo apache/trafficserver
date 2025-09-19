@@ -220,11 +220,12 @@ HostConfiguration::is_content_type_compressible(const char *content_type, int co
     if (exclude) {
       ++match_string; // skip '!'
     }
-    // If content_type_ignore_parameters is set, then we match against the base type (without parameters) if the match string does
-    // not contain parameters. Otherwise we match against the full content type.
-    const std::string &target = (content_type_ignore_parameters() && std::strchr(match_string, ';') == nullptr) ?
-                                  std::string(strip_params(std::string_view(scontent_type))) :
-                                  scontent_type;
+    std::string target;
+    if (content_type_ignore_parameters() && std::strchr(match_string, ';') == nullptr) {
+      target = strip_params(std::string_view(scontent_type));
+    } else {
+      target = scontent_type;
+    }
     if (fnmatch(match_string, target.c_str(), 0) == 0) {
       info("compressible content type [%s], matched on pattern [%s]", target.c_str(), it->c_str());
       is_match = !exclude;
