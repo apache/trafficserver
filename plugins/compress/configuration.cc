@@ -28,9 +28,11 @@
 #include <vector>
 #include <fnmatch.h>
 
-#include <swoc/TextView.h>
+#include "swoc/TextView.h"
 
 #include "debug_macros.h"
+
+#include <cctype>
 
 namespace Gzip
 {
@@ -198,7 +200,7 @@ strip_params(std::string_view v)
 {
   swoc::TextView tv{v};
   tv = tv.take_prefix_at(';');
-  tv.rtrim(swoc::CharSet(" \t\n\r\f\v"));
+  tv.rtrim_if(static_cast<int (*)(int)>(&isspace));
   return tv;
 }
 
