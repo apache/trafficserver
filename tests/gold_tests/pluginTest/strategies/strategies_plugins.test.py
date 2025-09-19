@@ -62,6 +62,17 @@ for ind in range(num_origins):
         "body": name,
     }
     origin.addResponse("sessionfile.log", request_header, response_header)
+    request_header = {
+        "headers": f"GET /path/{name} HTTP/1.1\r\nHost: origin\r\n\r\n",
+        "timestamp": "1469733493.993",
+        "body": "",
+    }
+    response_header = {
+        "headers": f"HTTP/1.1 200 OK\r\nConnection: close\r\nOrigin: {name}\r\n\r\n",
+        "timestamp": "1469733493.993",
+        "body": name,
+    }
+    origin.addResponse("sessionfile.log", request_header, response_header)
     origin.ReturnCode = Any(0, -2)
     origins.append(origin)
     dns.addRecords(records={name: ["127.0.0.1"]})
@@ -82,21 +93,33 @@ ts.Disk.records_config.update(
         'proxy.config.diags.debug.enabled': 1,
         'proxy.config.diags.debug.tags': "url_rewrite|next_hop|dns|parent|regex_remap|header_rewrite|tslua|http|hostdb",
     })
-'''
-# Use a Strategy header for header rewrite changing
-ts.Disk.plugin_config.AddLine("header_rewrite.so hdr_rw.config")
-ts.Disk.MakeConfigFile("hdr_rw.config").AddLines(
-    [
-        "cond %{READ_REQUEST_HDR_HOOK}",
-        'cond %{HEADER:Strategy} ="" [NOT]',
-        "set-next-hop-strategy %{HEADER:Strategy}",
-    ])
-'''
+
 ts.Disk.MakeConfigFile("hdr_rw.config").AddLines(
     [
         "cond %{REMAP_PSEUDO_HOOK}",
         'cond %{CLIENT-HEADER:Strategy} ="" [NOT]',
         "set-next-hop-strategy %{CLIENT-HEADER:Strategy}",
+    ])
+ts.Disk.MakeConfigFile("regex_remap.config").AddLines(
+    [
+        "/nh0 http://origin/path @strategy=nh1",
+        "/nh1 http://origin/path @strategy=null",
+        "/nh2 http://origin/path @strategy=nh0",
+    ])
+ts.Disk.MakeConfigFile("strat.lua").AddLines(
+    [
+        'function do_remap()',
+        ' local uri = ts.client_request.get_uri()',
+        ' if uri:find("nh0") then',
+        '  ts.http.set_next_hop_strategy("nh1")',
+        ' elseif uri:find("nh1") then',
+        '  ts.http.clear_next_hop_strategy("nh1")',
+        ' elseif uri:find("nh2") then',
+        '  ts.http.set_next_hop_strategy("nh0")',
+        ' end',
+        ' ts.client_request.set_uri("path")',
+        ' return 0',
+        'end',
     ])
 
 # parent.config
@@ -139,9 +162,15 @@ for ind in range(num_origins - 1):
 
 ts.Disk.remap_config.AddLines(
     [
-        "map http://nh0 http://origin @strategy=nh0 @plugin=header_rewrite.so @pparam=hdr_rw.config",
-        "map http://nh1 http://origin @strategy=nh1 @plugin=header_rewrite.so @pparam=hdr_rw.config",
-        "map http://nh2 http://origin @plugin=header_rewrite.so @pparam=hdr_rw.config",
+        "map http://nh0_hr http://origin @strategy=nh0 @plugin=header_rewrite.so @pparam=hdr_rw.config",
+        "map http://nh1_hr http://origin @strategy=nh1 @plugin=header_rewrite.so @pparam=hdr_rw.config",
+        "map http://nh2_hr http://origin @plugin=header_rewrite.so @pparam=hdr_rw.config",
+        "map http://nh0_rr http://origin @strategy=nh0 @plugin=regex_remap.so @pparam=regex_remap.config",
+        "map http://nh1_rr http://origin @strategy=nh1 @plugin=regex_remap.so @pparam=regex_remap.config",
+        "map http://nh2_rr http://origin @plugin=regex_remap.so @pparam=regex_remap.config",
+        "map http://nh0_lua http://origin @strategy=nh0 @plugin=tslua.so @pparam=strat.lua",
+        "map http://nh1_lua http://origin @strategy=nh1 @plugin=tslua.so @pparam=strat.lua",
+        "map http://nh2_lua http://origin @plugin=tslua.so @pparam=strat.lua",
     ])
 
 # Tests
@@ -149,8 +178,10 @@ ts.Disk.remap_config.AddLines(
 # stdout for body, stderr for headers
 curl_and_args = '-s -o /dev/stdout -D /dev/stderr -x localhost:{}'.format(ts.Variables.port)
 
+# header rewrite
+
 # 0 - nh0 default request
-tr = Test.AddTestRun("nh0 straight through request")
+tr = Test.AddTestRun("nh0_hr straight through request")
 ps = tr.Processes.Default
 for ind in range(num_origins):
     origin = origins[ind]
@@ -158,50 +189,108 @@ for ind in range(num_origins):
     tr.StillRunningAfter = origin
 ps.StartBefore(dns)
 ps.StartBefore(Test.Processes.ts)
-tr.MakeCurlCommand(curl_and_args + " http://nh0/path", ts=ts)
+tr.MakeCurlCommand(curl_and_args + " http://nh0_hr/path", ts=ts)
 ps.ReturnCode = Any(0, -2)
 ps.Streams.stdout.Content = Testers.ContainsExpression("nh0", "expected nh0")
 tr.StillRunningAfter = ts
 tr.StillRunnerAfter = dns
 
-# 1 - nh1 default request
-tr = Test.AddTestRun("nh1 straight through request")
+# 1 - nh1_hr default request
+tr = Test.AddTestRun("nh1_hr straight through request")
 ps = tr.Processes.Default
-tr.MakeCurlCommand(curl_and_args + " http://nh1/path", ts=ts)
+tr.MakeCurlCommand(curl_and_args + " http://nh1_hr/path", ts=ts)
 ps.ReturnCode = Any(0, -2)
 ps.Streams.stdout.Content = Testers.ContainsExpression("nh1", "expected nh1")
 tr.StillRunningAfter = ts
 
-# 2 - nh2 default request
-tr = Test.AddTestRun("nh2 straight through request")
+# 2 - nh2_hr default request
+tr = Test.AddTestRun("nh2_hr straight through request")
 ps = tr.Processes.Default
-tr.MakeCurlCommand(curl_and_args + " http://nh2/path", ts=ts)
+tr.MakeCurlCommand(curl_and_args + " http://nh2_hr/path", ts=ts)
 ps.ReturnCode = Any(0, -2)
 ps.Streams.stdout.Content = Testers.ContainsExpression("nh2", "expected nh2")
 tr.StillRunningAfter = ts
 
 # 3 switch strategies
-tr = Test.AddTestRun("nh0 switch to nh1")
+tr = Test.AddTestRun("nh0_hr switch to nh1")
 ps = tr.Processes.Default
-tr.MakeCurlCommand(curl_and_args + ' http://nh0/path -H "Strategy: nh1"', ts=ts)
+tr.MakeCurlCommand(curl_and_args + ' http://nh0_hr/path -H "Strategy: nh1"', ts=ts)
 ps.ReturnCode = Any(0, -2)
 ps.Streams.stdout.Content = Testers.ContainsExpression("nh1", "expected nh1")
 tr.StillRunningAfter = ts
 tr.StillRunnerAfter = dns
 
 # 4 strategy to parent.config
-tr = Test.AddTestRun("nh0 switch to parent.config")
+tr = Test.AddTestRun("nh1_hr switch to parent.config")
 ps = tr.Processes.Default
-tr.MakeCurlCommand(curl_and_args + ' http://nh0/path -H "Strategy: null"', ts=ts)
+tr.MakeCurlCommand(curl_and_args + ' http://nh1_hr/path -H "Strategy: null"', ts=ts)
 ps.ReturnCode = Any(0, -2)
 ps.Streams.stdout.Content = Testers.ContainsExpression("nh2", "expected nh2")
 tr.StillRunningAfter = ts
 tr.StillRunnerAfter = dns
 
 # 5 parent.config strategy to strategy
-tr = Test.AddTestRun("nh2 switch to nh0")
+tr = Test.AddTestRun("nh2_hr switch to nh0")
 ps = tr.Processes.Default
-tr.MakeCurlCommand(curl_and_args + ' http://nh2/path -H "Strategy: nh0"', ts=ts)
+tr.MakeCurlCommand(curl_and_args + ' http://nh2_hr/path -H "Strategy: nh0"', ts=ts)
+ps.ReturnCode = Any(0, -2)
+ps.Streams.stdout.Content = Testers.ContainsExpression("nh0", "expected nh0")
+tr.StillRunningAfter = ts
+tr.StillRunnerAfter = dns
+
+# regex_remap
+
+# 6 switch strategies
+tr = Test.AddTestRun("nh0_rr switch to nh1")
+ps = tr.Processes.Default
+tr.MakeCurlCommand(curl_and_args + ' http://nh0_rr/nh0', ts=ts)
+ps.ReturnCode = Any(0, -2)
+ps.Streams.stdout.Content = Testers.ContainsExpression("nh1", "expected nh1")
+tr.StillRunningAfter = ts
+tr.StillRunnerAfter = dns
+
+# 7 strategy to parent.config
+tr = Test.AddTestRun("nh1_rr switch to parent.config")
+ps = tr.Processes.Default
+tr.MakeCurlCommand(curl_and_args + ' http://nh1_rr/nh1', ts=ts)
+ps.ReturnCode = Any(0, -2)
+ps.Streams.stdout.Content = Testers.ContainsExpression("nh2", "expected nh2")
+tr.StillRunningAfter = ts
+tr.StillRunnerAfter = dns
+
+# 8 parent.config strategy to strategy
+tr = Test.AddTestRun("nh2_rr switch to nh0")
+ps = tr.Processes.Default
+tr.MakeCurlCommand(curl_and_args + ' http://nh2_rr/nh2', ts=ts)
+ps.ReturnCode = Any(0, -2)
+ps.Streams.stdout.Content = Testers.ContainsExpression("nh0", "expected nh0")
+tr.StillRunningAfter = ts
+tr.StillRunnerAfter = dns
+
+# tslua
+
+# 9 switch strategies
+tr = Test.AddTestRun("nh0_lua switch to nh1")
+ps = tr.Processes.Default
+tr.MakeCurlCommand(curl_and_args + ' http://nh0_lua/nh0', ts=ts)
+ps.ReturnCode = Any(0, -2)
+ps.Streams.stdout.Content = Testers.ContainsExpression("nh1", "expected nh1")
+tr.StillRunningAfter = ts
+tr.StillRunnerAfter = dns
+
+# 10 strategy to parent.config
+tr = Test.AddTestRun("nh1_lua switch to parent.config")
+ps = tr.Processes.Default
+tr.MakeCurlCommand(curl_and_args + ' http://nh1_lua/nh1', ts=ts)
+ps.ReturnCode = Any(0, -2)
+ps.Streams.stdout.Content = Testers.ContainsExpression("nh2", "expected nh2")
+tr.StillRunningAfter = ts
+tr.StillRunnerAfter = dns
+
+# 11 parent.config strategy to strategy
+tr = Test.AddTestRun("nh2_lua switch to nh0")
+ps = tr.Processes.Default
+tr.MakeCurlCommand(curl_and_args + ' http://nh2_lua/nh2', ts=ts)
 ps.ReturnCode = Any(0, -2)
 ps.Streams.stdout.Content = Testers.ContainsExpression("nh0", "expected nh0")
 tr.StillRunningAfter = ts
