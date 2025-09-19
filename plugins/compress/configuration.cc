@@ -200,7 +200,7 @@ strip_params(std::string_view v)
 {
   swoc::TextView tv{v};
   tv = tv.take_prefix_at(';');
-  tv.rtrim_if(static_cast<int (*)(int)>(&isspace));
+  tv.rtrim_if([](int ch) { return std::isspace(ch); });
   return tv;
 }
 
