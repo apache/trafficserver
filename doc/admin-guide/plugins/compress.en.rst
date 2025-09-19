@@ -152,6 +152,16 @@ only applies if the response explicitly sends Content-Length. Regardless of
 this setting, responses with ``Content-Length: 0`` are considered not
 compressible. Defaults to 1024 bytes.
 
+content_type_ignore_parameters
+------------------------------
+
+When set to ``true``, parameter substrings of a response ``Content-Type`` header
+value (for example ``; charset=utf-8``) are ignored for the purpose of
+``compressible-content-type`` pattern matching, unless the pattern itself
+includes a ``;``. This allows a pattern like ``application/json`` to match
+responses such as ``application/json; charset=utf-8``. When set to ``false``,
+the full value including parameters is used for matching. Defaults to ``false``.
+
 allow
 --------
 
@@ -228,6 +238,7 @@ might create a configuration with the following options::
    enabled true
    compressible-content-type text/*
    compressible-content-type application/json
+   content_type_ignore_parameters true
    flush true
    supported-algorithms gzip,deflate
 
@@ -236,6 +247,7 @@ might create a configuration with the following options::
    enabled true
    compressible-content-type text/*
    compressible-content-type application/json
+   content_type_ignore_parameters true
    flush true
    supported-algorithms br,gzip
 
