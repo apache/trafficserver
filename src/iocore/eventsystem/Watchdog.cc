@@ -44,8 +44,14 @@ Monitor::Monitor(EThread *threads[], size_t n_threads, std::chrono::milliseconds
   ink_assert(timeout_ms.count() > 0);
 }
 
+Monitor::~Monitor()
+{
+  _shutdown.store(true);
+  _watchdog_thread.join();
+}
+
 void
-Monitor::monitor_loop(const std::stop_token &stoken) const
+Monitor::monitor_loop() const
 {
   // Divide by a floating point 2 to avoid truncation to zero.
   auto sleep_time = _timeout / 2.0;
@@ -53,7 +59,7 @@ Monitor::monitor_loop(const std::stop_token &stoken) const
   Dbg(dbg_ctl_watchdog, "Starting watchdog with timeout %" PRIu64 " ms on %zu threads.  sleep_time = %" PRIu64 " us",
       _timeout.count(), _threads.size(), std::chrono::duration_cast<std::chrono::microseconds>(sleep_time).count());
 
-  while (!stoken.stop_requested()) {
+  while (!_shutdown.load()) {
     std::chrono::time_point<std::chrono::steady_clock> now = std::chrono::steady_clock::now();
     for (size_t i = 0; i < _threads.size(); ++i) {
       EThread                                           *t          = _threads[i];

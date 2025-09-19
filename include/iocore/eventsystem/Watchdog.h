@@ -46,13 +46,15 @@ class Monitor
 {
 public:
   explicit Monitor(EThread *threads[], size_t n_threads, std::chrono::milliseconds timeout_ms);
+  ~Monitor();
   Monitor() = delete;
 
 private:
   const std::vector<EThread *>    _threads;
-  const std::jthread              _watchdog_thread;
+  std::thread                     _watchdog_thread;
   const std::chrono::milliseconds _timeout;
-  void                            monitor_loop(const std::stop_token &stoken) const;
+  std::atomic<bool>               _shutdown = false;
+  void                            monitor_loop() const;
 };
 
 } // namespace Watchdog
