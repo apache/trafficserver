@@ -58,7 +58,7 @@ tr.Processes.Default.Streams.All += Testers.ContainsExpression(
 tr.Processes.Default.Streams.All += Testers.ContainsExpression(
     'Submitted RST_STREAM frame for key 1 on stream 1.', 'Send RST_STREAM frame.')
 
-server.Streams.All += Testers.ContainsExpression('RST_STREAM', 'Origin Server received RST_STREAM frame.')
+server.Streams.All += Testers.ExcludesExpression('RST_STREAM', 'Server is not affected.')
 
 ts.Disk.traffic_out.Content += Testers.ContainsExpression('Received HEADERS frame', 'Received HEADERS frame.')
 
