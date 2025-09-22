@@ -1839,7 +1839,7 @@ url_CryptoHash_get(const URLImpl *url, CryptoHash *hash, bool ignore_query, cach
   URLHashContext ctx;
   if ((url_hash_method != 0) && (url->m_url_type == URLType::HTTP) &&
       ((url->m_len_user + url->m_len_password + (ignore_query ? 0 : url->m_len_query)) == 0) &&
-      (3 + 1 + 1 + 1 + 1 + 1 + 2 + url->m_len_scheme + url->m_len_host + url->m_len_path < BUFSIZE) &&
+      (10u + url->m_len_scheme + url->m_len_host + url->m_len_path < BUFSIZE) &&
       (memchr(url->m_ptr_host, '%', url->m_len_host) == nullptr) && (memchr(url->m_ptr_path, '%', url->m_len_path) == nullptr)) {
     url_CryptoHash_get_fast(url, ctx, hash, generation);
 #ifdef DEBUG
@@ -1956,7 +1956,7 @@ url_CryptoHash_get_92(const URLImpl *url, CryptoHash *hash, bool ignore_query, c
   URLHashContext ctx;
   if ((url_hash_method != 0) && (url->m_url_type == URLType::HTTP) &&
       ((url->m_len_user + url->m_len_password + url->m_len_params + (ignore_query ? 0 : url->m_len_query)) == 0) &&
-      (3 + 1 + 1 + 1 + 1 + 1 + 2 + url->m_len_scheme + url->m_len_host + url->m_len_path < BUFSIZE) &&
+      (10u + url->m_len_scheme + url->m_len_host + url->m_len_path < BUFSIZE) &&
       (memchr(url->m_ptr_host, '%', url->m_len_host) == nullptr) && (memchr(url->m_ptr_path, '%', url->m_len_path) == nullptr)) {
     url_CryptoHash_get_fast(url, ctx, hash, generation);
 #ifdef DEBUG
