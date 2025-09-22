@@ -57,6 +57,8 @@ using namespace Stats;
 
 using response_codes_t = std::unordered_set<int>;
 
+#include "http_utils.h"
+
 struct OptionInfo {
   bool             packed_node_support{false};
   bool             private_response{false};
@@ -114,7 +116,7 @@ struct ContData {
   TSCont                  contp;
   TSHttpTxn               txnp;
   const OptionInfo *const option_info;
-  char                   *request_url;
+  std::string             request_url;
   sockaddr const         *client_addr;
   DataType                input_type;
   string                  packed_node_list;
@@ -143,7 +145,7 @@ struct ContData {
       contp(contptr),
       txnp(tx),
       option_info(opt_info),
-      request_url(nullptr),
+      request_url(UNKNOWN_URL_STRING),
       input_type(DATA_TYPE_RAW_ESI),
       packed_node_list(""),
       gzipped_data(""),
@@ -214,7 +216,7 @@ bool
 ContData::init()
 {
   if (initialized) {
-    TSError("[esi][%s] ContData already initialized!", __FUNCTION__);
+    TSError("[esi][%s] ContData already initialized for URL [%s]", __FUNCTION__, request_url.c_str());
     return false;
   }
 
@@ -226,7 +228,7 @@ ContData::init()
     // Get upstream VIO
     input_vio = TSVConnWriteVIOGet(contp);
     if (!input_vio) {
-      TSError("[esi][%s] Error while getting input vio", __FUNCTION__);
+      TSError("[esi][%s] Error while getting input vio for URL [%s]", __FUNCTION__, request_url.c_str());
       goto lReturn;
     }
     input_reader = TSVIOReaderGet(input_vio);
@@ -235,7 +237,7 @@ ContData::init()
     TSVConn output_conn;
     output_conn = TSTransformOutputVConnGet(contp);
     if (!output_conn) {
-      TSError("[esi][%s] Error while getting transform VC", __FUNCTION__);
+      TSError("[esi][%s] Error while getting transform VC for URL [%s]", __FUNCTION__, request_url.c_str());
       goto lReturn;
     }
     output_buffer = TSIOBufferCreate();
@@ -252,7 +254,7 @@ ContData::init()
       esi_vars = new Variables(contp, gAllowlistCookies);
     }
 
-    esi_proc = new EsiProcessor(contp, *data_fetcher, *esi_vars, *gHandlerManager, option_info->max_doc_size);
+    esi_proc = new EsiProcessor(contp, *data_fetcher, *esi_vars, *gHandlerManager, option_info->max_doc_size, request_url);
 
     esi_gzip   = new EsiGzip();
     esi_gunzip = new EsiGunzip();
@@ -275,7 +277,7 @@ ContData::getClientState()
   TSMBuffer req_bufp;
   TSMLoc    req_hdr_loc;
   if (TSHttpTxnClientReqGet(txnp, &req_bufp, &req_hdr_loc) != TS_SUCCESS) {
-    TSError("[esi][%s] Error while retrieving client request", __FUNCTION__);
+    TSError("[esi][%s] Error while retrieving client request for URL [%s]", __FUNCTION__, request_url.c_str());
     return;
   }
 
@@ -291,22 +293,25 @@ ContData::getClientState()
     TSMBuffer bufp;
     TSMLoc    url_loc;
     if (TSHttpTxnPristineUrlGet(txnp, &bufp, &url_loc) != TS_SUCCESS) {
-      TSError("[esi][%s] Error while retrieving hdr url", __FUNCTION__);
+      TSError("[esi][%s] Error while retrieving hdr url for URL [%s]", __FUNCTION__, request_url.c_str());
       return;
     }
     if (url_loc) {
-      if (request_url) {
-        TSfree(request_url);
+      int   length;
+      char *url_string = TSUrlStringGet(bufp, url_loc, &length);
+      if (url_string) {
+        request_url.assign(url_string, length);
+        TSfree(url_string);
+      } else {
+        request_url = UNKNOWN_URL_STRING;
       }
-      int length;
-      request_url = TSUrlStringGet(bufp, url_loc, &length);
-      Dbg(dbg_ctl_local, "[%s] Got request URL [%s]", __FUNCTION__, request_url ? request_url : "(null)");
+      Dbg(dbg_ctl_local, "[%s] Got request URL [%s]", __FUNCTION__, request_url.c_str());
       int         query_len;
       const char *query = TSUrlHttpQueryGet(bufp, url_loc, &query_len);
       if (query) {
         esi_vars->populate(query, query_len);
       }
-      TSHandleMLocRelease(bufp, req_hdr_loc, url_loc);
+      TSHandleMLocRelease(bufp, TS_NULL_MLOC, url_loc);
     }
 
     TSMLoc field_loc   = TSMimeHdrFieldGet(req_bufp, req_hdr_loc, 0);
@@ -473,12 +478,12 @@ ContData::getServerState()
       input_type = DATA_TYPE_PACKED_ESI;
       return;
     } else if (TSHttpTxnCachedRespGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
-      TSError("[esi][%s] Could not get server response; set input type to RAW_ESI", __FUNCTION__);
+      TSError("[esi][%s] Could not get server response; set input type to RAW_ESI for URL [%s]", __FUNCTION__, request_url.c_str());
       input_type = DATA_TYPE_RAW_ESI;
       return;
     }
   } else if (TSHttpTxnServerRespGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
-    TSError("[esi][%s] Could not get server response; set input type to RAW_ESI", __FUNCTION__);
+    TSError("[esi][%s] Could not get server response; set input type to RAW_ESI for URL [%s]", __FUNCTION__, request_url.c_str());
     input_type = DATA_TYPE_RAW_ESI;
     return;
   }
@@ -505,9 +510,6 @@ ContData::~ContData()
   }
   if (output_buffer) {
     TSIOBufferDestroy(output_buffer);
-  }
-  if (request_url) {
-    TSfree(request_url);
   }
   if (esi_vars) {
     delete esi_vars;
@@ -537,12 +539,13 @@ removeCacheHandler(TSCont contp, TSEvent /* event ATS_UNUSED */, void * /* edata
 static bool
 removeCacheKey(TSHttpTxn txnp)
 {
-  TSMBuffer  req_bufp;
-  TSMLoc     req_hdr_loc;
-  TSMLoc     url_loc  = nullptr;
-  TSCont     contp    = nullptr;
-  TSCacheKey cacheKey = nullptr;
-  bool       result   = false;
+  TSMBuffer   req_bufp;
+  TSMLoc      req_hdr_loc;
+  TSMLoc      url_loc  = nullptr;
+  TSCont      contp    = nullptr;
+  TSCacheKey  cacheKey = nullptr;
+  bool        result   = false;
+  std::string request_url;
 
   if (TSHttpTxnClientReqGet(txnp, &req_bufp, &req_hdr_loc) != TS_SUCCESS) {
     TSError("[esi][%s] Error while retrieving client request", __FUNCTION__);
@@ -555,26 +558,29 @@ removeCacheKey(TSHttpTxn txnp)
       break;
     }
 
+    // Get the URL for error logging.
+    request_url = getUrlString(req_bufp, url_loc);
+
     contp = TSContCreate(removeCacheHandler, nullptr);
     if (contp == nullptr) {
-      TSError("[esi][%s] Could not create continuation", __FUNCTION__);
+      TSError("[esi][%s] Could not create continuation for URL [%s]", __FUNCTION__, request_url.c_str());
       break;
     }
 
     cacheKey = TSCacheKeyCreate();
     if (cacheKey == nullptr) {
-      TSError("[esi][%s] TSCacheKeyCreate fail", __FUNCTION__);
+      TSError("[esi][%s] TSCacheKeyCreate fail for URL [%s]", __FUNCTION__, request_url.c_str());
       break;
     }
 
     if (TSCacheKeyDigestFromUrlSet(cacheKey, url_loc) != TS_SUCCESS) {
-      TSError("[esi][%s] TSCacheKeyDigestFromUrlSet fail", __FUNCTION__);
+      TSError("[esi][%s] TSCacheKeyDigestFromUrlSet fail for URL [%s]", __FUNCTION__, request_url.c_str());
       break;
     }
 
     TSCacheRemove(contp, cacheKey);
     result = true;
-    TSError("[esi][%s] TSCacheRemoved", __FUNCTION__);
+    TSError("[esi][%s] TSCacheRemoved for URL [%s]", __FUNCTION__, request_url.c_str());
   } while (false);
 
   if (cacheKey != nullptr) {
@@ -586,7 +592,7 @@ removeCacheKey(TSHttpTxn txnp)
     }
   }
 
-  TSHandleMLocRelease(req_bufp, req_hdr_loc, url_loc);
+  TSHandleMLocRelease(req_bufp, TS_NULL_MLOC, url_loc);
   if (req_hdr_loc != nullptr) {
     TSHandleMLocRelease(req_bufp, TS_NULL_MLOC, req_hdr_loc);
   }
@@ -605,7 +611,7 @@ cacheNodeList(ContData *cont_data)
   string post_request("");
   post_request.append(TS_HTTP_METHOD_POST);
   post_request.append(" ");
-  post_request.append(cont_data->request_url);
+  post_request.append(cont_data->request_url.c_str());
   post_request.append(" HTTP/1.0\r\n");
   post_request.append(SERVER_INTERCEPT_HEADER);
   post_request.append(": cache=1\r\n");
@@ -677,7 +683,8 @@ transformData(TSCont contp)
     if (toread > 0) {
       avail = TSIOBufferReaderAvail(cont_data->input_reader);
       if (avail == TS_ERROR) {
-        TSError("[esi][%s] Error while getting number of bytes available", __FUNCTION__);
+        TSError("[esi][%s] Error while getting number of bytes available for URL [%s]", __FUNCTION__,
+                cont_data->request_url.c_str());
         return 0;
       }
 
@@ -776,7 +783,8 @@ transformData(TSCont contp)
         CONT_DATA_DBG(cont_data, "[%s] ESI processor output document of size %d starting with [%.10s]", __FUNCTION__, out_data_len,
                       (out_data_len ? out_data : "(null)"));
       } else {
-        TSError("[esi][%s] ESI processor failed to process document; will return empty document", __FUNCTION__);
+        TSError("[esi][%s] ESI processor failed to process document; will return empty document for URL [%s]", __FUNCTION__,
+                cont_data->request_url.c_str());
         out_data     = "";
         out_data_len = 0;
       }
@@ -786,7 +794,7 @@ transformData(TSCont contp)
         string cdata;
         if (cont_data->gzip_output) {
           if (!gzip(out_data, out_data_len, cdata)) {
-            TSError("[esi][%s] Error while gzipping content", __FUNCTION__);
+            TSError("[esi][%s] Error while gzipping content for URL [%s]", __FUNCTION__, cont_data->request_url.c_str());
             out_data_len = 0;
             out_data     = "";
           } else {
@@ -801,7 +809,7 @@ transformData(TSCont contp)
         TSVConn output_conn;
         output_conn = TSTransformOutputVConnGet(contp);
         if (!output_conn) {
-          TSError("[esi][%s] Error while getting transform VC", __FUNCTION__);
+          TSError("[esi][%s] Error while getting transform VC for URL [%s]", __FUNCTION__, cont_data->request_url.c_str());
           return 0;
         }
 
@@ -809,7 +817,8 @@ transformData(TSCont contp)
         output_vio = TSVConnWrite(output_conn, contp, cont_data->output_reader, out_data_len);
 
         if (TSIOBufferWrite(TSVIOBufferGet(output_vio), out_data, out_data_len) == TS_ERROR) {
-          TSError("[esi][%s] Error while writing bytes to downstream VC", __FUNCTION__);
+          TSError("[esi][%s] Error while writing bytes to downstream VC for URL [%s]", __FUNCTION__,
+                  cont_data->request_url.c_str());
           return 0;
         }
 
@@ -840,7 +849,8 @@ transformData(TSCont contp)
       CONT_DATA_DBG(cont_data, "[%s] ESI processor output document of size %d starting with [%.10s]", __FUNCTION__,
                     static_cast<int>(out_data.size()), (out_data.size() ? out_data.data() : "(null)"));
     } else {
-      TSError("[esi][%s] ESI processor failed to process document; will return empty document", __FUNCTION__);
+      TSError("[esi][%s] ESI processor failed to process document; will return empty document for URL [%s]", __FUNCTION__,
+              cont_data->request_url.c_str());
       out_data.assign("");
 
       if (!cont_data->xform_closed) {
@@ -853,18 +863,20 @@ transformData(TSCont contp)
     if (!cont_data->xform_closed && out_data.size() > 0) {
       if (cont_data->gzip_output) {
         if (!cont_data->esi_gzip->stream_encode(out_data, cdata)) {
-          TSError("[esi][%s] Error while gzipping content", __FUNCTION__);
+          TSError("[esi][%s] Error while gzipping content for URL [%s]", __FUNCTION__, cont_data->request_url.c_str());
         } else {
           CONT_DATA_DBG(cont_data, "[%s] Compressed document from size %d to %d bytes via EsiGzip", __FUNCTION__,
                         static_cast<int>(out_data.size()), static_cast<int>(cdata.size()));
         }
         if (TSIOBufferWrite(TSVIOBufferGet(cont_data->output_vio), cdata.data(), cdata.size()) == TS_ERROR) {
-          TSError("[esi][%s] Error while writing bytes to downstream VC", __FUNCTION__);
+          TSError("[esi][%s] Error while writing bytes to downstream VC for URL [%s]", __FUNCTION__,
+                  cont_data->request_url.c_str());
           return 0;
         }
       } else {
         if (TSIOBufferWrite(TSVIOBufferGet(cont_data->output_vio), out_data.data(), out_data.size()) == TS_ERROR) {
-          TSError("[esi][%s] Error while writing bytes to downstream VC", __FUNCTION__);
+          TSError("[esi][%s] Error while writing bytes to downstream VC for URL [%s]", __FUNCTION__,
+                  cont_data->request_url.c_str());
           return 0;
         }
       }
@@ -876,15 +888,17 @@ transformData(TSCont contp)
           string  cdata;
           int64_t downstream_length;
           if (!cont_data->esi_gzip->stream_finish(cdata, downstream_length)) {
-            TSError("[esi][%s] Error while finishing gzip", __FUNCTION__);
+            TSError("[esi][%s] Error while finishing gzip for URL [%s]", __FUNCTION__, cont_data->request_url.c_str());
             return 0;
           } else {
             if (TSVIOBufferGet(cont_data->output_vio) == nullptr) {
-              TSError("[esi][%s] Error while writing bytes to downstream VC", __FUNCTION__);
+              TSError("[esi][%s] Error while writing bytes to downstream VC for URL [%s]", __FUNCTION__,
+                      cont_data->request_url.c_str());
               return 0;
             }
             if (TSIOBufferWrite(TSVIOBufferGet(cont_data->output_vio), cdata.data(), cdata.size()) == TS_ERROR) {
-              TSError("[esi][%s] Error while writing bytes to downstream VC", __FUNCTION__);
+              TSError("[esi][%s] Error while writing bytes to downstream VC for URL [%s]", __FUNCTION__,
+                      cont_data->request_url.c_str());
               return 0;
             }
             CONT_DATA_DBG(cont_data, "[%s] ESI processed overall/gzip: %" PRId64, __FUNCTION__, downstream_length);
@@ -917,7 +931,8 @@ transformHandler(TSCont contp, TSEvent event, void *edata)
 
   if (!cont_data->initialized) {
     if (!cont_data->init()) {
-      TSError("[esi][%s] Could not initialize continuation data; shutting down transformation", __FUNCTION__);
+      TSError("[esi][%s] Could not initialize continuation data; shutting down transformation for URL [%s]", __FUNCTION__,
+              cont_data->request_url.c_str());
       goto lShutdown;
     }
     CONT_DATA_DBG(cont_data, "[%s] initialized continuation data", __FUNCTION__);
@@ -962,7 +977,7 @@ transformHandler(TSCont contp, TSEvent event, void *edata)
       // doubt: what is this code doing?
       input_vio = TSVConnWriteVIOGet(contp);
       if (!input_vio) {
-        TSError("[esi][%s] Error while getting upstream vio", __FUNCTION__);
+        TSError("[esi][%s] Error while getting upstream vio for URL [%s]", __FUNCTION__, cont_data->request_url.c_str());
       } else {
         TSContCall(TSVIOContGet(input_vio), TS_EVENT_ERROR, input_vio);
       }
@@ -1001,7 +1016,7 @@ transformHandler(TSCont contp, TSEvent event, void *edata)
             }
           }
         } else {
-          TSError("[esi][%s] Could not handle fetch event!", __FUNCTION__);
+          TSError("[esi][%s] Could not handle fetch event for URL [%s]", __FUNCTION__, cont_data->request_url.c_str());
         }
       } else {
         TSAssert(!"Unexpected event");
@@ -1040,6 +1055,7 @@ struct RespHdrModData {
   bool              gzip_encoding;
   bool              head_only;
   const OptionInfo *option_info;
+  std::string       request_url;
 };
 
 static void
@@ -1074,7 +1090,7 @@ modifyResponseHeader(TSCont contp, TSEvent event, void *edata)
   RespHdrModData *mod_data = static_cast<RespHdrModData *>(TSContDataGet(contp));
   TSHttpTxn       txnp     = static_cast<TSHttpTxn>(edata);
   if (event != TS_EVENT_HTTP_SEND_RESPONSE_HDR) {
-    TSError("[esi][%s] Unexpected event (%d)", __FUNCTION__, event);
+    TSError("[esi][%s] Unexpected event (%d) for URL [%s]", __FUNCTION__, event, mod_data->request_url.c_str());
     goto lReturn;
   }
   TSMBuffer bufp;
@@ -1159,7 +1175,7 @@ modifyResponseHeader(TSCont contp, TSEvent event, void *edata)
     Dbg(dbg_ctl_local, "[%s] Inspected client-bound headers", __FUNCTION__);
     retval = 1;
   } else {
-    TSError("[esi][%s] Error while getting response from txn", __FUNCTION__);
+    TSError("[esi][%s] Error while getting response from txn for URL [%s]", __FUNCTION__, mod_data->request_url.c_str());
   }
 
 lReturn:
@@ -1209,10 +1225,13 @@ checkHeaderValue(TSMBuffer bufp, TSMLoc hdr_loc, const char *name, int name_len,
 static void
 maskOsCacheHeaders(TSHttpTxn txnp)
 {
+  // Get URL for error logging.
+  std::string request_url = getRequestUrlString(txnp);
+
   TSMBuffer bufp;
   TSMLoc    hdr_loc;
   if (TSHttpTxnServerRespGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
-    TSError("[esi][%s] Couldn't get server response from txn", __FUNCTION__);
+    TSError("[esi][%s] Couldn't get server response from txn for URL [%s]", __FUNCTION__, request_url.c_str());
     return;
   }
   int         n_mime_headers = TSMimeHdrFieldsCount(bufp, hdr_loc);
@@ -1252,7 +1271,7 @@ maskOsCacheHeaders(TSHttpTxn txnp)
         masked_name.assign(HEADER_MASK_PREFIX);
         masked_name.append(name, name_len);
         if (TSMimeHdrFieldNameSet(bufp, hdr_loc, field_loc, masked_name.data(), masked_name.size()) != TS_SUCCESS) {
-          TSError("[esi][%s] Couldn't rename header [%.*s]", __FUNCTION__, name_len, name);
+          TSError("[esi][%s] Couldn't rename header [%.*s] for URL [%s]", __FUNCTION__, name_len, name, request_url.c_str());
         }
       }
     } // end if got header name
@@ -1280,6 +1299,9 @@ isTxnTransformable(TSHttpTxn txnp, bool is_cache_txn, const OptionInfo *pOptionI
     return false;
   }
 
+  // Get URL for error logging.
+  std::string request_url = getRequestUrlString(txnp);
+
   TSMLoc   loc;
   unsigned d;
 
@@ -1290,8 +1312,8 @@ isTxnTransformable(TSHttpTxn txnp, bool is_cache_txn, const OptionInfo *pOptionI
   }
   TSHandleMLocRelease(bufp, hdr_loc, loc);
   if (d >= pOptionInfo->max_inclusion_depth) {
-    TSError("[esi][%s] The current esi inclusion depth (%u) is larger than or equal to the max (%u)", __FUNCTION__, d,
-            pOptionInfo->max_inclusion_depth);
+    TSError("[esi][%s] The current esi inclusion depth (%u) is larger than or equal to the max (%u) for URL [%s]", __FUNCTION__, d,
+            pOptionInfo->max_inclusion_depth, request_url.c_str());
     return false;
   }
 
@@ -1299,7 +1321,7 @@ isTxnTransformable(TSHttpTxn txnp, bool is_cache_txn, const OptionInfo *pOptionI
   const char *method;
   method = TSHttpHdrMethodGet(bufp, hdr_loc, &method_len);
   if (method == nullptr) {
-    TSError("[esi][%s] Couldn't get method", __FUNCTION__);
+    TSError("[esi][%s] Couldn't get method for URL [%s]", __FUNCTION__, request_url.c_str());
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     return false;
   }
@@ -1316,7 +1338,7 @@ isTxnTransformable(TSHttpTxn txnp, bool is_cache_txn, const OptionInfo *pOptionI
 
   header_obtained = is_cache_txn ? TSHttpTxnCachedRespGet(txnp, &bufp, &hdr_loc) : TSHttpTxnServerRespGet(txnp, &bufp, &hdr_loc);
   if (header_obtained != TS_SUCCESS) {
-    TSError("[esi][%s] Couldn't get txn header", __FUNCTION__);
+    TSError("[esi][%s] Couldn't get txn header for URL [%s]", __FUNCTION__, request_url.c_str());
     return false;
   }
 
@@ -1332,7 +1354,7 @@ isTxnTransformable(TSHttpTxn txnp, bool is_cache_txn, const OptionInfo *pOptionI
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     header_obtained = TSHttpTxnCachedRespGet(txnp, &bufp, &hdr_loc);
     if (header_obtained != TS_SUCCESS) {
-      TSError("[esi][%s] Couldn't get txn cache response header", __FUNCTION__);
+      TSError("[esi][%s] Couldn't get txn cache response header for URL [%s]", __FUNCTION__, request_url.c_str());
       return false;
     }
   }
@@ -1374,9 +1396,12 @@ isTxnTransformable(TSHttpTxn txnp, bool is_cache_txn, const OptionInfo *pOptionI
 static bool
 isCacheObjTransformable(TSHttpTxn txnp, const OptionInfo *pOptionInfo, bool *intercept_header, bool *head_only)
 {
+  // Get URL for error logging.
+  std::string request_url = getRequestUrlString(txnp);
+
   int obj_status;
   if (TSHttpTxnCacheLookupStatusGet(txnp, &obj_status) == TS_ERROR) {
-    TSError("[esi][%s] Couldn't get cache status of object", __FUNCTION__);
+    TSError("[esi][%s] Couldn't get cache status of object for URL [%s]", __FUNCTION__, request_url.c_str());
     return false;
   }
   if (obj_status == TS_CACHE_LOOKUP_HIT_FRESH) {
@@ -1398,7 +1423,9 @@ isInterceptRequest(TSHttpTxn txnp)
   TSMBuffer bufp;
   TSMLoc    hdr_loc;
   if (TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
-    TSError("[esi][%s] Could not get client request", __FUNCTION__);
+    // Try to get URL for error reporting.
+    std::string url_string = getRequestUrlString(txnp);
+    TSError("[esi][%s] Could not get client request for URL [%s]", __FUNCTION__, url_string.c_str());
     return false;
   }
 
@@ -1407,7 +1434,14 @@ isInterceptRequest(TSHttpTxn txnp)
   int         method_len;
   const char *method = TSHttpHdrMethodGet(bufp, hdr_loc, &method_len);
   if (!method) {
-    TSError("[esi][%s] Could not obtain method!", __FUNCTION__);
+    // Get URL for error reporting.
+    std::string url_string = UNKNOWN_URL_STRING;
+    TSMLoc      url_loc;
+    if (TSHttpHdrUrlGet(bufp, hdr_loc, &url_loc) == TS_SUCCESS && url_loc) {
+      url_string = getUrlString(bufp, url_loc);
+      TSHandleMLocRelease(bufp, hdr_loc, url_loc);
+    }
+    TSError("[esi][%s] Could not obtain method for URL [%s]!", __FUNCTION__, url_string.c_str());
   } else {
     if ((method_len != TS_HTTP_LEN_POST) || (strncasecmp(method, TS_HTTP_METHOD_POST, TS_HTTP_LEN_POST))) {
       Dbg(dbg_ctl_local, "[%s] Method [%.*s] invalid, [%s] expected", __FUNCTION__, method_len, method, TS_HTTP_METHOD_POST);
@@ -1450,7 +1484,7 @@ addSendResponseHeaderHook(TSHttpTxn txnp, const ContData *src_cont_data)
 {
   TSCont contp = TSContCreate(modifyResponseHeader, nullptr);
   if (!contp) {
-    TSError("[esi][%s] Could not create continuation", __FUNCTION__);
+    TSError("[esi][%s] Could not create continuation for URL [%s]", __FUNCTION__, src_cont_data->request_url.c_str());
     return false;
   }
   TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, contp);
@@ -1459,6 +1493,7 @@ addSendResponseHeaderHook(TSHttpTxn txnp, const ContData *src_cont_data)
   cont_data->cache_txn      = src_cont_data->cache_txn;
   cont_data->head_only      = src_cont_data->head_only;
   cont_data->gzip_encoding  = src_cont_data->gzip_output;
+  cont_data->request_url    = src_cont_data->request_url;
   TSContDataSet(contp, cont_data);
   return true;
 }
@@ -1500,7 +1535,7 @@ addTransform(TSHttpTxn txnp, const bool processing_os_response, const bool inter
   TSHttpTxnHookAdd(txnp, TS_HTTP_RESPONSE_TRANSFORM_HOOK, contp);
 
   if (!addSendResponseHeaderHook(txnp, cont_data)) {
-    TSError("[esi][%s] Couldn't add send response header hook", __FUNCTION__);
+    TSError("[esi][%s] Couldn't add send response header hook for URL [%s]", __FUNCTION__, cont_data->request_url.c_str());
     goto lFail;
   }
 
@@ -1532,13 +1567,15 @@ globalHookHandler(TSCont contp, TSEvent event, void *edata)
   bool               head_only        = false;
   bool               intercept_req    = isInterceptRequest(txnp);
   struct OptionInfo *pOptionInfo      = static_cast<OptionInfo *>(TSContDataGet(contp));
+  // Get URL for error logging.
+  std::string request_url = getRequestUrlString(txnp);
 
   switch (event) {
   case TS_EVENT_HTTP_READ_REQUEST_HDR:
     Dbg(dbg_ctl_local, "[%s] handling read request header event", __FUNCTION__);
     if (intercept_req) {
       if (!setupServerIntercept(txnp)) {
-        TSError("[esi][%s] Could not setup server intercept", __FUNCTION__);
+        TSError("[esi][%s] Could not setup server intercept for URL [%s]", __FUNCTION__, request_url.c_str());
       } else {
         Dbg(dbg_ctl_local, "[%s] Setup server intercept", __FUNCTION__);
       }
@@ -1855,6 +1892,9 @@ TSRemapDeleteInstance(void *ih)
 TSRemapStatus
 TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo * /* rri ATS_UNUSED */)
 {
+  // Get URL for error logging.
+  std::string request_url = getRequestUrlString(txnp);
+
   if (nullptr != ih) {
     TSCont contp = static_cast<TSCont>(ih);
     TSHttpTxnHookAdd(txnp, TS_HTTP_READ_RESPONSE_HDR_HOOK, contp);
@@ -1862,7 +1902,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo * /* rri ATS_UNUSED 
 
     if (isInterceptRequest(txnp)) {
       if (!setupServerIntercept(txnp)) {
-        TSError("[esi][%s] Could not setup server intercept", __FUNCTION__);
+        TSError("[esi][%s] Could not setup server intercept for URL [%s]", __FUNCTION__, request_url.c_str());
       } else {
         Dbg(dbg_ctl_local, "[%s] Setup server intercept", __FUNCTION__);
       }
