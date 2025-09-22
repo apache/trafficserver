@@ -78,7 +78,10 @@ namespace
 {
 // Whether we should implement url_CryptoHash_get() using url_CryptoHash_get_fast(). Note that
 // url_CryptoHash_get_fast() does NOT produce the same result as url_CryptoHash_get_general().
-int url_hash_method = 0;
+constexpr int url_hash_method = 0;
+
+// Buffer size for url_CryptoHash_get() and url_CryptoHash_get_92().
+constexpr size_t BUFSIZE = 4096;
 
 DbgCtl dbg_ctl_http{"http"};
 DbgCtl dbg_ctl_url_cachekey{"url_cachekey"};
@@ -1691,8 +1694,6 @@ memcpy_tolower(char *d, const char *s, int n)
   }
 }
 
-static constexpr size_t BUFSIZE = 4096;
-
 // fast path for CryptoHash, HTTP, no user/password/params/query,
 // no buffer overflow, no unescaping needed
 
@@ -1968,8 +1969,6 @@ url_CryptoHash_get_92(const URLImpl *url, CryptoHash *hash, bool ignore_query, c
     url_CryptoHash_get_general_92(url, ctx, *hash, ignore_query, generation);
   }
 }
-
-#undef BUFSIZE
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
