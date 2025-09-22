@@ -194,6 +194,7 @@ TLSSessionResumptionSupport::getSession(SSL *ssl, const unsigned char *id, int l
     // Double check the timeout
     if (is_ssl_session_timed_out(session)) {
       Metrics::Counter::increment(ssl_rsb.session_cache_miss);
+      Metrics::Counter::increment(ssl_rsb.session_cache_timeout);
 // Due to bug in openssl, the timeout is checked, but only removed
 // from the openssl built-in hash table.  The external remove cb is not called
 #if 0 // This is currently eliminated, since it breaks things in odd ways (see TS-3710)
@@ -224,6 +225,7 @@ TLSSessionResumptionSupport::getOriginSession(const std::string &lookup_key)
     // Double check the timeout
     if (is_ssl_session_timed_out(shared_sess.get())) {
       Metrics::Counter::increment(ssl_rsb.origin_session_cache_miss);
+      Metrics::Counter::increment(ssl_rsb.origin_session_cache_timeout);
       origin_sess_cache->remove_session(lookup_key);
       shared_sess.reset();
     } else {
