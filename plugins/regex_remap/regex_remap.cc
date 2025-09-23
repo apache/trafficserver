@@ -981,7 +981,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
         TSHttpTxnDNSTimeoutSet(txnp, re->dns_timeout_option());
       }
       auto const &strat = re->strategy();
-      if (strat.empty()) {
+      if (strat.empty() || "null" == strat) {
         Dbg(dbg_ctl, "Clearing strategy (use parent.config)");
         TSHttpTxnNextHopStrategySet(txnp, nullptr);
       } else {

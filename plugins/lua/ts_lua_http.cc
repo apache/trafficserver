@@ -565,7 +565,7 @@ ts_lua_http_set_next_hop_strategy(lua_State *L)
     size_t      name_len;
 
     name = luaL_checklstring(L, 1, &name_len);
-    if (0 == name_len) {
+    if (0 == name_len || "null" == std::string_view(name)) {
       Dbg(dbg_ctl, "Clearning strategy (use parent.config)");
       TSHttpTxnNextHopStrategySet(http_ctx->txnp, nullptr);
     } else {

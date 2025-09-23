@@ -1093,7 +1093,7 @@ set-next-hop-strategy
 Replaces/Sets the current next hop parent selection strategy with
 the matching strategy specified in `strategies.yaml`
 
-Setting to "" removes the current strategy which will fall back
+Setting to "null" removes the current strategy which will fall back
 to other methods (ie: parent.config or remap to url).
 
 set-redirect

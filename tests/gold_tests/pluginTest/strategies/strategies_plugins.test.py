@@ -106,7 +106,7 @@ ts.Disk.MakeConfigFile("regex_remap.config").AddLines(
         '/nh1 http://origin/path @strategy=',
         "/nh2 http://origin/path @strategy=nh0",
     ])
-ts.Disk.MakeConfigFile("strat.lua").AddLines(
+ts.Disk.MakeConfigFile("strategies.lua").AddLines(
     [
         'function do_remap()',
         ' local uri = ts.client_request.get_uri()',
@@ -168,9 +168,9 @@ ts.Disk.remap_config.AddLines(
         "map http://nh0_rr http://origin @strategy=nh0 @plugin=regex_remap.so @pparam=regex_remap.config",
         "map http://nh1_rr http://origin @strategy=nh1 @plugin=regex_remap.so @pparam=regex_remap.config",
         "map http://nh2_rr http://origin @plugin=regex_remap.so @pparam=regex_remap.config",
-        "map http://nh0_lua http://origin @strategy=nh0 @plugin=tslua.so @pparam=strat.lua",
-        "map http://nh1_lua http://origin @strategy=nh1 @plugin=tslua.so @pparam=strat.lua",
-        "map http://nh2_lua http://origin @plugin=tslua.so @pparam=strat.lua",
+        "map http://nh0_lua http://origin @strategy=nh0 @plugin=tslua.so @pparam=strategies.lua",
+        "map http://nh1_lua http://origin @strategy=nh1 @plugin=tslua.so @pparam=strategies.lua",
+        "map http://nh2_lua http://origin @plugin=tslua.so @pparam=strategies.lua",
     ])
 
 # Tests

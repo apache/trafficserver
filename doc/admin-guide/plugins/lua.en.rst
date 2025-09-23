@@ -1958,8 +1958,8 @@ ts.http.set_next_hop_strategy
 **description** Looks for the named strategy and sets the current
 transaction to use that strategy.
 
-Use empty string to clear the strategy and fall back to parent.config
-or the remap to url.
+Use empty string or "null" to clear the strategy and fall back to
+parent.config or the remap to url.
 
 Here is an example:
 

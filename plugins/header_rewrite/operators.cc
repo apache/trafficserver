@@ -1658,7 +1658,7 @@ OperatorSetNextHopStrategy::exec(const Resources &res) const
   _value.append_value(value, res);
 
   // Setting an empty strategy clears it for either parent.config or remap to
-  if (value.empty()) {
+  if ("null" == value || value.empty()) {
     Dbg(pi_dbg_ctl, "Clearing strategy");
     TSHttpTxnNextHopStrategySet(txnp, nullptr);
     return true;
