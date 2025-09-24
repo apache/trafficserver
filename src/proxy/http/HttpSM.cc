@@ -69,9 +69,9 @@
 
 using namespace std::literals;
 
-#define DEFAULT_RESPONSE_BUFFER_SIZE_INDEX 6 // 8K
-#define DEFAULT_REQUEST_BUFFER_SIZE_INDEX  6 // 8K
-#define MIN_CONFIG_BUFFER_SIZE_INDEX       5 // 4K
+static constexpr int DEFAULT_RESPONSE_BUFFER_SIZE_INDEX = 6; // 8K
+static constexpr int DEFAULT_REQUEST_BUFFER_SIZE_INDEX  = 6; // 8K
+static constexpr int MIN_CONFIG_BUFFER_SIZE_INDEX       = 5; // 4K
 
 #define hsm_release_assert(EX)              \
   {                                         \
@@ -122,11 +122,11 @@ static DbgCtl dbg_ctl_ssl_early_data{"ssl_early_data"};
 static DbgCtl dbg_ctl_ssl_sni{"ssl_sni"};
 static DbgCtl dbg_ctl_url_rewrite{"url_rewrite"};
 
-static const int sub_header_size = sizeof("Content-type: ") - 1 + 2 + sizeof("Content-range: bytes ") - 1 + 4;
-static const int boundary_size   = 2 + sizeof("RANGE_SEPARATOR") - 1 + 2;
+static constexpr int sub_header_size = sizeof("Content-type: ") - 1 + 2 + sizeof("Content-range: bytes ") - 1 + 4;
+static constexpr int boundary_size   = 2 + sizeof("RANGE_SEPARATOR") - 1 + 2;
 
-static const char *str_100_continue_response = "HTTP/1.1 100 Continue\r\n\r\n";
-static const int   len_100_continue_response = strlen(str_100_continue_response);
+static const char   *str_100_continue_response = "HTTP/1.1 100 Continue\r\n\r\n";
+static constexpr int len_100_continue_response = sizeof("HTTP/1.1 100 Continue\r\n\r\n") - 1;
 
 // Handy alias for short (single line) message generation.
 using lbw = swoc::LocalBufferWriter<256>;
