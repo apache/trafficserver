@@ -50,7 +50,7 @@ tr = Test.AddTestRun()
 tr.MakeCurlCommand(
     f'--http1.1 -H "Host: www.example.com" -H "Real-IP: 1.2.3.4" --verbose "http://127.0.0.1:{ts.Variables.port}"', ts=ts)
 tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
+tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.Processes.Default.Streams.stderr = expected_output
 tr.StillRunningAfter = server
