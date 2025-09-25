@@ -1,0 +1,93 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+#
+# This replay file assumes that caching is enabled and
+# proxy.config.http.cache.ignore_client_cc_max_age is set to 0 so that we can
+# test max-age in the client requests.
+#
+
+meta:
+  version: "1.0"
+
+sessions:
+- protocol:
+  - name: http
+    version: 2
+  - name: tls
+    sni: test_sni
+  - name: tcp
+  - name: ip
+  transactions:
+  # Stream 1
+  - client-request:
+      frames:
+        - HEADERS:
+            headers:
+              fields:
+              - [ :method, GET ]
+              - [ :scheme, https ]
+              - [ :authority, www.example.com ]
+              - [ :path, /path/1 ]
+              - [ Content-Type, image/jpeg ]
+              - [ uuid, 1 ]
+        - RST_STREAM:
+            delay: 1s
+            error-code: CANCEL
+
+    server-response:
+      delay: 2s
+      headers:
+        fields:
+        - [ :status, 200 ]
+        - [ Content-Type, image/jpeg ]
+        - [ X-Response, first-response ]
+        - [ Cache-Control, "private" ]
+      content:
+        size: 1024
+
+  # Stream 3
+  - client-request:
+      headers:
+        fields:
+        - [ :method, GET ]
+        - [ :scheme, https ]
+        - [ :authority, www.example.com ]
+        - [ :path, /path/3 ]
+        - [ Content-Type, image/jpeg ]
+        - [ uuid, 3]
+
+    server-response:
+      delay: 1s
+
+      headers:
+        fields:
+        - [ :status, 200 ]
+        - [ Content-Type, image/jpeg ]
+        - [ X-Response, second-response ]
+        - [ Cache-Control, "private" ]
+      content:
+        size: 1024
+
+    proxy-response:
+      headers:
+        fields:
+        - [ :status, 200 ]
+        - [ Content-Type, image/jpeg ]
+        - [ X-Response, second-response ]
+        - [ Cache-Control, "private" ]
+      content:
+        size: 1024
