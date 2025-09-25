@@ -647,6 +647,7 @@ are supported::
 
     %{NEXT-HOP:HOST} Name of the current selected parent.
     %{NEXT-HOP:PORT} Port of the current selected parent.
+    %{NEXT-HOP:STRATEGY} Name of the current strategy (can be "" if not using a strategy)
 
 Note that the ``<part>`` of NEXT-HOP will likely not be available unless
 an origin server connection is attempted at which point it will available
@@ -1082,6 +1083,18 @@ if necessary.
 
 The header's ``<value>`` may be a literal string, or take advantage of
 `String concatenations`_ to calculate a dynamic value for the header.
+
+set-next-hop-strategy
+~~~~~~~~~~~~~~~~~~~~~
+::
+
+  set-next-hop-strategy <name>
+
+Replaces/Sets the current next hop parent selection strategy with
+the matching strategy specified in `strategies.yaml`
+
+Setting to "null" removes the current strategy which will fall back
+to other methods (ie: parent.config or remap to url).
 
 set-redirect
 ~~~~~~~~~~~~

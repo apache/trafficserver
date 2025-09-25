@@ -124,16 +124,16 @@ done:
 NextHopStrategyFactory::~NextHopStrategyFactory()
 {
   NH_Dbg(NH_DBG_CTL, "destroying NextHopStrategyFactory");
+
+  for (auto &[_, ptr] : _strategies) {
+    delete ptr;
+  }
 }
 
 void
 NextHopStrategyFactory::createStrategy(const std::string &name, const NHPolicyType policy_type, ts::Yaml::Map &node)
 {
-  std::shared_ptr<NextHopSelectionStrategy> strat;
-  std::shared_ptr<NextHopRoundRobin>        strat_rr;
-  std::shared_ptr<NextHopConsistentHash>    strat_chash;
-
-  strat = strategyInstance(name.c_str());
+  NextHopSelectionStrategy const *strat = strategyInstance(name.c_str());
   if (strat != nullptr) {
     NH_Note("A strategy named '%s' has already been loaded and another will not be created.", name.data());
     node.bad();
@@ -145,26 +145,28 @@ NextHopStrategyFactory::createStrategy(const std::string &name, const NHPolicyTy
     case NHPolicyType::FIRST_LIVE:
     case NHPolicyType::RR_STRICT:
     case NHPolicyType::RR_IP:
-    case NHPolicyType::RR_LATCHED:
-      strat_rr = std::make_shared<NextHopRoundRobin>(name, policy_type, node);
+    case NHPolicyType::RR_LATCHED: {
+      NextHopRoundRobin *const strat_rr = new NextHopRoundRobin(name, policy_type, node);
       _strategies.emplace(std::make_pair(std::string(name), strat_rr));
       break;
-    case NHPolicyType::CONSISTENT_HASH:
-      strat_chash = std::make_shared<NextHopConsistentHash>(name, policy_type, node);
+    }
+    case NHPolicyType::CONSISTENT_HASH: {
+      NextHopConsistentHash *const strat_chash = new NextHopConsistentHash(name, policy_type, node);
       _strategies.emplace(std::make_pair(std::string(name), strat_chash));
       break;
+    }
     default: // handles ParentRR_t::UNDEFINED, no strategy is added
       break;
     };
   } catch (std::exception &ex) {
-    strat.reset();
+    ;
   }
 }
 
-std::shared_ptr<NextHopSelectionStrategy>
-NextHopStrategyFactory::strategyInstance(const char *name)
+NextHopSelectionStrategy *
+NextHopStrategyFactory::strategyInstance(const char *name) const
 {
-  std::shared_ptr<NextHopSelectionStrategy> ps_strategy;
+  NextHopSelectionStrategy *ps_strategy = nullptr;
 
   if (!strategies_loaded) {
     NH_Error("no strategy configurations were defined, see definitions in '%s' file", fn.c_str());
