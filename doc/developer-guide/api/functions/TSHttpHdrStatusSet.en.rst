@@ -30,5 +30,19 @@ Synopsis
 
 .. function:: TSReturnCode TSHttpHdrStatusSet(TSMBuffer bufp, TSMLoc offset, TSHttpStatus status)
 
+.. function:: TSReturnCode TSHttpHdrStatusSet(TSMBuffer bufp, TSMLoc offset, TSHttpStatus status, std::string_view setter)
+
 Description
 ===========
+
+Sets the HTTP status code on an existing HTTP header object. An overload also
+accepts the transaction and an identifying setter label. When provided, the
+setter is recorded on the transaction for logging via the `prscs` log field.
+
+Parameters
+==========
+
+- bufp: Marshal buffer containing the HTTP header.
+- offset: Location of the HTTP header within bufp.
+- status: The HTTP status code to set.
+- setter: Optional label identifying the component setting the status; pass empty to leave unchanged.

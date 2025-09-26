@@ -22,6 +22,7 @@
  */
 
 #include <atomic>
+#include <mutex>
 #include <tuple>
 #include <unordered_map>
 #include <string_view>
@@ -355,6 +356,96 @@ _TSAssert(const char *, const char *, int)
 ////////////////////////////////////////////////////////////////////
 
 /*****************************************************************/
+/* Transaction context mapping for TSMLoc                       */
+/*****************************************************************/
+
+/** Map TSMLoc references to their originating transactions.
+ *
+ * This class provides a global mapping mechanism that allows TSMLoc objects obtained from
+ * transaction functions (like TSHttpTxnClientRespGet) to remember their transaction context.
+ * This eliminates the need for plugins to explicitly pass TSHttpTxn parameters to functions
+ * like TSHttpHdrStatusSet, as the transaction can be automatically extracted from the TSMLoc.
+ *
+ * The mapping is automatically populated when headers are retrieved from transactions and
+ * cleaned up when TSMLoc objects are released via TSHandleMLocRelease.
+ *
+ * @see TSHttpTxnClientRespGet, TSHttpTxnServerRespGet, TSHttpHdrStatusSet
+ */
+class TxnMLocMapping
+{
+public:
+  /** Associates a TSMLoc with its originating transaction.
+   *
+   * Creates a mapping from the given TSMLoc to the transaction that created it.
+   * This is called automatically when headers are retrieved from transactions.
+   *
+   * @param[in] mloc The TSMLoc object to associate (must not be TS_NULL_MLOC).
+   * @param[in] txnp The transaction that created this TSMLoc (must not be nullptr).
+   */
+  void
+  associate(TSMLoc mloc, TSHttpTxn txnp)
+  {
+    std::lock_guard<std::mutex> lock(m_mapping_mutex);
+    if (mloc != TS_NULL_MLOC && txnp != nullptr) {
+      m_mloc_to_txn[mloc] = txnp;
+    }
+  }
+
+  /** Retrieves the transaction associated with a given TSMLoc.
+   *
+   * Looks up the transaction context that was associated with the TSMLoc when
+   * it was created from a transaction. This allows functions to automatically
+   * extract transaction context without requiring explicit transaction parameters.
+   *
+   * @param[in] mloc The TSMLoc object to look up
+   * @return The associated transaction if found, nullptr if no association exists.
+   */
+  TSHttpTxn
+  get_txn(TSMLoc mloc)
+  {
+    std::lock_guard<std::mutex> lock(m_mapping_mutex);
+    auto                        it = m_mloc_to_txn.find(mloc);
+    return (it != m_mloc_to_txn.end()) ? it->second : nullptr;
+  }
+
+  /** Removes the association for a given TSMLoc.
+   *
+   * Cleans up the mapping entry for the specified TSMLoc. This is called
+   * when TSHandleMLocRelease is invoked to prevent memory leaks.
+   *
+   * @param[in] mloc The TSMLoc object to remove from the mapping.
+   */
+  void
+  remove(TSMLoc mloc)
+  {
+    std::lock_guard<std::mutex> lock(m_mapping_mutex);
+    m_mloc_to_txn.erase(mloc);
+  }
+
+private:
+  /** The mapping from TSMLoc to TSHttpTxn */
+  std::unordered_map<TSMLoc, TSHttpTxn> m_mloc_to_txn;
+
+  /** Mutex protecting concurrent access to the mapping */
+  std::mutex m_mapping_mutex;
+};
+
+/** Global instance of the transaction-to-TSMLoc mapping.
+ *
+ * This singleton instance manages the global mapping between TSMLoc references
+ * and their originating transactions. It is used throughout the API to:
+ *
+ * 1. Associate TSMLoc objects with transactions when headers are retrieved
+ * 2. Extract transaction context from TSMLoc objects in API functions
+ * 3. Clean up mappings when TSMLoc objects are released
+ *
+ * The mapping enables a cleaner API where plugins don't need to explicitly
+ * pass transaction handles to functions that operate on headers obtained
+ * from those transactions.
+ */
+static TxnMLocMapping g_txn_mloc_mapping;
+
+/*****************************************************************/
 /* Handles to headers are impls, but need to handle MIME or HTTP */
 /*****************************************************************/
 
@@ -377,6 +468,41 @@ inline MIMEHdrImpl *
 _hdr_mloc_to_mime_hdr_impl(TSMLoc mloc)
 {
   return _hdr_obj_to_mime_hdr_impl(reinterpret_cast<HdrHeapObjImpl *>(mloc));
+}
+
+/** Helper function to extract transaction context from a TSMLoc.
+ *
+ * This convenience function queries the global transaction mapping to retrieve
+ * the TSHttpTxn that was associated with a given TSMLoc when it was created
+ * from a transaction. This enables API functions to automatically access
+ * transaction context without requiring explicit transaction parameters.
+ *
+ * @param[in] mloc The TSMLoc object to query for transaction context.
+ * @return The associated TSHttpTxn if the TSMLoc was created from a transaction,
+ *         nullptr if no association exists or if the TSMLoc was created independently.
+ */
+inline TSHttpTxn
+_hdr_mloc_to_txn(TSMLoc mloc)
+{
+  return g_txn_mloc_mapping.get_txn(mloc);
+}
+
+/** Helper function to create TSMLoc and associate it with transaction context.
+ *
+ * This function converts the given HTTPHdrImpl to a TSMLoc and automatically
+ * associates it with the provided transaction in the global mapping. This ensures
+ * that the TSMLoc can later be used to extract transaction context.
+ *
+ * @param[in] txnp The transaction to associate with this TSMLoc.
+ * @param[in] hdr_impl The HTTPHdrImpl to convert to TSMLoc.
+ * @return The TSMLoc value associated with the transaction.
+ */
+inline TSMLoc
+_associate_txn_with_mloc(TSHttpTxn txnp, HTTPHdrImpl *hdr_impl)
+{
+  TSMLoc obj = reinterpret_cast<TSMLoc>(hdr_impl);
+  g_txn_mloc_mapping.associate(obj, txnp);
+  return obj;
 }
 
 TSReturnCode
@@ -845,6 +971,7 @@ TSHandleMLocRelease(TSMBuffer bufp, TSMLoc parent, TSMLoc mloc)
   case HdrHeapObjType::URL:
   case HdrHeapObjType::HTTP_HEADER:
   case HdrHeapObjType::MIME_HEADER:
+    g_txn_mloc_mapping.remove(mloc);
     return TS_SUCCESS;
 
   case HdrHeapObjType::FIELD_SDK_HANDLE:
@@ -2932,6 +3059,12 @@ TSHttpHdrStatusGet(TSMBuffer bufp, TSMLoc obj)
 TSReturnCode
 TSHttpHdrStatusSet(TSMBuffer bufp, TSMLoc obj, TSHttpStatus status)
 {
+  return TSHttpHdrStatusSet(bufp, obj, status, std::string_view{});
+}
+
+TSReturnCode
+TSHttpHdrStatusSet(TSMBuffer bufp, TSMLoc obj, TSHttpStatus status, std::string_view setter)
+{
   // Allow to modify the buffer only
   // if bufp is modifiable. If bufp is not modifiable return
   // TS_ERROR. If allowed, return TS_SUCCESS. Changed the
@@ -2948,6 +3081,24 @@ TSHttpHdrStatusSet(TSMBuffer bufp, TSMLoc obj, TSHttpStatus status)
   SET_HTTP_HDR(h, bufp, obj);
   ink_assert(static_cast<HdrHeapObjType>(h.m_http->m_type) == HdrHeapObjType::HTTP_HEADER);
   h.status_set(static_cast<HTTPStatus>(status));
+
+  // Extract transaction from TSMLoc if available
+  TSHttpTxn txnp = _hdr_mloc_to_txn(obj);
+
+  if (!setter.empty()) {
+    if (txnp != nullptr) {
+      sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+      HttpSM *sm                               = reinterpret_cast<HttpSM *>(txnp);
+      sm->t_state.http_return_code_setter_name = setter;
+    } else {
+      // This should never happen. If we see this, it means we missed calling
+      // _associate_txn_with_mloc when getting the TSMLoc somewhere in our API.
+      // Hopefully looking at the code of the setter will reveal where that
+      // happened.
+      Error("TSHttpHdrStatusSet: no transaction found when setting status for %.*s", static_cast<int>(setter.size()),
+            setter.data());
+    }
+  }
   return TS_SUCCESS;
 }
 
@@ -3936,7 +4087,8 @@ TSHttpTxnClientReqGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
 
   if (hptr->valid()) {
     *(reinterpret_cast<HTTPHdr **>(bufp)) = hptr;
-    *obj                                  = reinterpret_cast<TSMLoc>(hptr->m_http);
+    *obj                                  = _associate_txn_with_mloc(txnp, hptr->m_http);
+
     if (sdk_sanity_check_mbuffer(*bufp) == TS_SUCCESS) {
       hptr->mark_target_dirty();
       return TS_SUCCESS;
@@ -4045,7 +4197,8 @@ TSHttpTxnClientRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
 
   if (hptr->valid()) {
     *(reinterpret_cast<HTTPHdr **>(bufp)) = hptr;
-    *obj                                  = reinterpret_cast<TSMLoc>(hptr->m_http);
+    *obj                                  = _associate_txn_with_mloc(txnp, hptr->m_http);
+
     sdk_assert(sdk_sanity_check_mbuffer(*bufp) == TS_SUCCESS);
     return TS_SUCCESS;
   }
@@ -4065,7 +4218,8 @@ TSHttpTxnServerReqGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
 
   if (hptr->valid()) {
     *(reinterpret_cast<HTTPHdr **>(bufp)) = hptr;
-    *obj                                  = reinterpret_cast<TSMLoc>(hptr->m_http);
+    *obj                                  = _associate_txn_with_mloc(txnp, hptr->m_http);
+
     sdk_assert(sdk_sanity_check_mbuffer(*bufp) == TS_SUCCESS);
     return TS_SUCCESS;
   }
@@ -4085,7 +4239,8 @@ TSHttpTxnServerRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
 
   if (hptr->valid()) {
     *(reinterpret_cast<HTTPHdr **>(bufp)) = hptr;
-    *obj                                  = reinterpret_cast<TSMLoc>(hptr->m_http);
+    *obj                                  = _associate_txn_with_mloc(txnp, hptr->m_http);
+
     sdk_assert(sdk_sanity_check_mbuffer(*bufp) == TS_SUCCESS);
     return TS_SUCCESS;
   }
@@ -4125,7 +4280,7 @@ TSHttpTxnCachedReqGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
   }
 
   *(reinterpret_cast<HdrHeapSDKHandle **>(bufp)) = *handle;
-  *obj                                           = reinterpret_cast<TSMLoc>(cached_hdr->m_http);
+  *obj                                           = _associate_txn_with_mloc(txnp, cached_hdr->m_http);
   sdk_assert(sdk_sanity_check_mbuffer(*bufp) == TS_SUCCESS);
 
   return TS_SUCCESS;
@@ -4164,7 +4319,7 @@ TSHttpTxnCachedRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
   (*handle)->m_heap = cached_hdr->m_heap;
 
   *(reinterpret_cast<HdrHeapSDKHandle **>(bufp)) = *handle;
-  *obj                                           = reinterpret_cast<TSMLoc>(cached_hdr->m_http);
+  *obj                                           = _associate_txn_with_mloc(txnp, cached_hdr->m_http);
   sdk_assert(sdk_sanity_check_mbuffer(*bufp) == TS_SUCCESS);
 
   return TS_SUCCESS;
@@ -4200,7 +4355,7 @@ TSHttpTxnCachedRespModifiableGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
 
   ink_assert(c_resp != nullptr && c_resp->valid());
   *(reinterpret_cast<HTTPHdr **>(bufp)) = c_resp;
-  *obj                                  = reinterpret_cast<TSMLoc>(c_resp->m_http);
+  *obj                                  = _associate_txn_with_mloc(txnp, c_resp->m_http);
   sdk_assert(sdk_sanity_check_mbuffer(*bufp) == TS_SUCCESS);
 
   return TS_SUCCESS;
@@ -4664,7 +4819,7 @@ TSHttpTxnTransformRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
 
   if (hptr->valid()) {
     *(reinterpret_cast<HTTPHdr **>(bufp)) = hptr;
-    *obj                                  = reinterpret_cast<TSMLoc>(hptr->m_http);
+    *obj                                  = _associate_txn_with_mloc(txnp, hptr->m_http);
     return sdk_sanity_check_mbuffer(*bufp);
   }
 
@@ -5243,12 +5398,22 @@ TSUserArgGet(void *data, int arg_idx)
 }
 
 void
-TSHttpTxnStatusSet(TSHttpTxn txnp, TSHttpStatus status)
+TSHttpTxnStatusSet(TSHttpTxn txnp, TSHttpStatus status, std::string_view setter)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
   HttpSM *sm                   = reinterpret_cast<HttpSM *>(txnp);
   sm->t_state.http_return_code = static_cast<HTTPStatus>(status);
+
+  if (!setter.empty()) {
+    sm->t_state.http_return_code_setter_name = setter;
+  }
+}
+
+void
+TSHttpTxnStatusSet(TSHttpTxn txnp, TSHttpStatus status)
+{
+  TSHttpTxnStatusSet(txnp, status, std::string_view{});
 }
 
 TSHttpStatus
@@ -6674,7 +6839,7 @@ TSFetchPageRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
 
   if (hptr->valid()) {
     *(reinterpret_cast<HTTPHdr **>(bufp)) = hptr;
-    *obj                                  = reinterpret_cast<TSMLoc>(hptr->m_http);
+    *obj                                  = _associate_txn_with_mloc(txnp, hptr->m_http);
     return sdk_sanity_check_mbuffer(*bufp);
   }
 

@@ -664,7 +664,8 @@ public:
     HTTPVersion         updated_server_version = HTTP_INVALID;
     CacheLookupResult_t cache_lookup_result    = CacheLookupResult_t::NONE;
     HTTPStatus          http_return_code       = HTTPStatus::NONE;
-    CacheAuth_t         www_auth_content       = CacheAuth_t::NONE;
+    std::string         http_return_code_setter_name;
+    CacheAuth_t         www_auth_content = CacheAuth_t::NONE;
 
     Arena arena;
 
