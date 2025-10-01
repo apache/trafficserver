@@ -398,9 +398,6 @@ HttpDebugNames::get_action_name(HttpTransact::StateMachineAction_t e)
   case HttpTransact::StateMachineAction_t::ORIGIN_SERVER_RAW_OPEN:
     return ("StateMachineAction_t::ORIGIN_SERVER_RAW_OPEN");
 
-  case HttpTransact::StateMachineAction_t::ORIGIN_SERVER_RR_MARK_DOWN:
-    return ("StateMachineAction_t::ORIGIN_SERVER_RR_MARK_DOWN");
-
   case HttpTransact::StateMachineAction_t::READ_PUSH_HDR:
     return ("StateMachineAction_t::READ_PUSH_HDR");
 
@@ -430,9 +427,6 @@ HttpDebugNames::get_action_name(HttpTransact::StateMachineAction_t e)
 
   case HttpTransact::StateMachineAction_t::SSL_TUNNEL:
     return ("StateMachineAction_t::SSL_TUNNEL");
-
-  case HttpTransact::StateMachineAction_t::CONTINUE:
-    return ("StateMachineAction_t::CONTINUE");
 
   case HttpTransact::StateMachineAction_t::API_READ_REQUEST_HDR:
     return ("StateMachineAction_t::API_READ_REQUEST_HDR");

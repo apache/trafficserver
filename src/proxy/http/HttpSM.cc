@@ -8243,21 +8243,6 @@ HttpSM::set_next_state()
     break;
   }
 
-  case HttpTransact::StateMachineAction_t::ORIGIN_SERVER_RR_MARK_DOWN: {
-    HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_mark_os_down);
-    ATS_PROBE(next_state_SM_ACTION_ORIGIN_SERVER_RR_MARK_DOWN);
-
-    ink_assert(t_state.dns_info.looking_up == ResolveInfo::ORIGIN_SERVER);
-
-    // TODO: This might not be optimal (or perhaps even correct), but it will
-    // effectively mark the host as down. What's odd is that state_mark_os_down
-    // above isn't triggering.
-    HttpSM::do_hostdb_update_if_necessary();
-
-    do_hostdb_lookup();
-    break;
-  }
-
   case HttpTransact::StateMachineAction_t::SSL_TUNNEL: {
     t_state.api_next_action = HttpTransact::StateMachineAction_t::API_SEND_RESPONSE_HDR;
     do_api_callout();
@@ -8329,11 +8314,6 @@ HttpSM::set_next_state()
 
   case HttpTransact::StateMachineAction_t::WAIT_FOR_FULL_BODY: {
     wait_for_full_body();
-    break;
-  }
-
-  case HttpTransact::StateMachineAction_t::CONTINUE: {
-    ink_release_assert(!"Not implemented");
     break;
   }
 
