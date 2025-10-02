@@ -1,4 +1,5 @@
 records:
+  config_update_interval_ms: 10  # default: 3000
   diags:
     debug:
       enabled: 1  # default: 0
