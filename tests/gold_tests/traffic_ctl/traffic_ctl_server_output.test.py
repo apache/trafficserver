@@ -28,9 +28,16 @@ Test traffic_ctl different commands.
 
 Test.ContinueOnFail = True
 
+records_yaml = '''
+  exec_thread:
+    autoconfig:
+      enabled: 0
+    limit: 4
+    '''
+
 Test.Summary = 'Basic test for traffic_ctl server command features.'
 
-traffic_ctl = Make_traffic_ctl(Test)
+traffic_ctl = Make_traffic_ctl(Test, records_yaml)
 ######
 # traffic_ctl server status
 traffic_ctl.server().status().validate_with_text(
