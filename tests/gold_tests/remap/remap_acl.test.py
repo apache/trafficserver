@@ -79,7 +79,8 @@ class Test_remap_acl:
         """
 
         name = f"ts-{Test_remap_acl._ts_counter}"
-        ts = tr.MakeATSProcess(name, enable_cache=False, enable_proxy_protocol=proxy_protocol, enable_uds=False)
+        ts = tr.MakeATSProcess(
+            name, enable_cache=False, enable_proxy_protocol=proxy_protocol, enable_uds=False, reload_quickly=True)
         Test_remap_acl._ts_counter += 1
         self._ts = ts
 

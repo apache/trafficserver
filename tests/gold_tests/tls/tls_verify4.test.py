@@ -22,7 +22,7 @@ Specifically update via traffic_ctl (reloadable)
 '''
 
 # Define default ATS
-ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
+ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True, reload_quickly=True)
 server_foo = Test.MakeOriginServer(
     "server_foo",
     ssl=True,

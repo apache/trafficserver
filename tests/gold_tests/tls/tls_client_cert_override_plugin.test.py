@@ -21,7 +21,7 @@ Test.Summary = '''
 Test conf_remp to specify different client certificates to offer to the origin.  Loading certs/keys via plugin.
 '''
 
-ts = Test.MakeATSProcess("ts")
+ts = Test.MakeATSProcess("ts", reload_quickly=True)
 
 cafile = "{0}/signer.pem".format(Test.RunDirectory)
 cafile2 = "{0}/signer2.pem".format(Test.RunDirectory)

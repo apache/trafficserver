@@ -35,7 +35,7 @@ Test.ContinueOnFail = False
 server = Test.MakeOriginServer("server")
 
 # Define ATS and configure
-ts = Test.MakeATSProcess("ts")
+ts = Test.MakeATSProcess("ts", reload_quickly=True)
 
 Test.testName = "regex_revalidate_miss"
 Test.Setup.Copy("metrics_miss.sh")

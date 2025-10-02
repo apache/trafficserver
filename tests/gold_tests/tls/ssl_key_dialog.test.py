@@ -20,7 +20,7 @@ Test.Summary = '''
 Test that Trafficserver starts with default configurations.
 '''
 
-ts = Test.MakeATSProcess("ts", enable_tls=True)
+ts = Test.MakeATSProcess("ts", enable_tls=True, reload_quickly=True)
 server = Test.MakeOriginServer("server")
 
 ts.addSSLfile("ssl/passphrase.pem")
@@ -30,6 +30,7 @@ ts.addSSLfile("ssl/passphrase2.pem")
 ts.addSSLfile("ssl/passphrase2.key")
 
 ts.Disk.remap_config.AddLine(f"map https://passphrase:{ts.Variables.ssl_port}/ http://127.0.0.1:{server.Variables.Port}")
+ts.Disk.remap_config.AddLine(f"map https://passphrase2:{ts.Variables.ssl_port}/ http://127.0.0.1:{server.Variables.Port}")
 ts.Disk.records_config.update(
     {
         'proxy.config.diags.debug.enabled': 1,
@@ -83,10 +84,19 @@ tr2reload.Processes.Default.Command = 'traffic_ctl config reload'
 tr2reload.Processes.Default.Env = ts.Env
 tr2reload.Processes.Default.ReturnCode = 0
 
+tr2reload = Test.AddTestRun("Await config reload")
+p = tr2reload.Processes.Default
+p.Command = 'echo awaiting config reload'
+p.Env = ts.Env
+p.ReturnCode = 0
+await_config_reload = tr.Processes.Process(f'config_reload_succeeded', 'sleep 30')
+await_config_reload.Ready = When.FileContains(ts.Disk.diags_log.Name, "ssl_multicert.config finished loading", 2)
+p.StartBefore(await_config_reload)
+
 tr3 = Test.AddTestRun("use a key with passphrase")
 tr3.Setup.Copy("ssl/signer.pem")
 tr3.MakeCurlCommand(
-    f"-v --cacert ./signer.pem  --resolve 'passphrase:{ts.Variables.ssl_port}:127.0.0.1' https://passphrase:{ts.Variables.ssl_port}/",
+    f"-v --cacert ./signer.pem  --resolve 'passphrase2:{ts.Variables.ssl_port}:127.0.0.1' https://passphrase2:{ts.Variables.ssl_port}/",
     ts=ts)
 tr3.ReturnCode = 0
 tr3.Processes.Default.Streams.stderr.Content = Testers.ContainsExpression("200", "expected 200 OK response")

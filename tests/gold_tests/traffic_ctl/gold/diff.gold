@@ -1,3 +1,6 @@
+proxy.config.config_update_interval_ms has changed
+``Current Value: 1
+``Default Value: 3000
 proxy.config.diags.debug.enabled has changed
 ``Current Value: 1
 ``Default Value: 0
