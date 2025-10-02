@@ -238,6 +238,31 @@ TLSBasicSupport::_record_tls_handshake_end_time()
 
   Dbg(dbg_ctl_ssl, "ssl handshake time:%" PRId64, ssl_handshake_time);
   Metrics::Counter::increment(ssl_rsb.total_handshake_time, ssl_handshake_time);
+
+  // Record per-group handshake time
+#if defined(OPENSSL_IS_BORINGSSL)
+  SSL     *ssl      = this->_get_ssl_object();
+  uint16_t group_id = SSL_get_group_id(ssl);
+  if (group_id != 0) {
+    const char *group_name = SSL_get_group_name(group_id);
+    if (auto it = tls_group_handshake_time_map.find(group_name); it != tls_group_handshake_time_map.end()) {
+      Metrics::Counter::increment(it->second, ssl_handshake_time);
+    }
+  }
+#elif defined(SSL_get_negotiated_group)
+  SSL *ssl = this->_get_ssl_object();
+  int  nid = SSL_get_negotiated_group(const_cast<SSL *>(ssl));
+  if (nid != NID_undef) {
+    if (auto it = tls_group_handshake_time_map.find(nid); it != tls_group_handshake_time_map.end()) {
+      Metrics::Counter::increment(it->second, ssl_handshake_time);
+    } else {
+      auto other = tls_group_handshake_time_map.find(SSL_GROUP_STAT_OTHER_KEY);
+      if (other != tls_group_handshake_time_map.end()) {
+        Metrics::Counter::increment(other->second, ssl_handshake_time);
+      }
+    }
+  }
+#endif
 }
 
 void
