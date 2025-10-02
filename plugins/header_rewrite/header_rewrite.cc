@@ -137,6 +137,39 @@ RulesConfig::add_rule(std::unique_ptr<RuleSet> rule)
   }
 }
 
+// Helper function to validate rule completion
+static bool
+validate_rule_completion(RuleSet *rule, const std::string &fname, int lineno)
+{
+  // Early return if rule has operators - no validation errors possible
+  if (!rule || rule->has_operator()) {
+    return true;
+  }
+
+  switch (rule->get_clause()) {
+  case Parser::CondClause::ELIF:
+    if (rule->cur_section()->group.has_conditions()) {
+      TSError("[%s] ELIF conditions without operators are not allowed in file: %s, lineno: %d", PLUGIN_NAME, fname.c_str(), lineno);
+      return false;
+    }
+    break;
+
+  case Parser::CondClause::ELSE:
+    TSError("[%s] conditions not allowed in ELSE clause in file: %s, lineno: %d", PLUGIN_NAME, fname.c_str(), lineno);
+    return false;
+
+  case Parser::CondClause::OPER:
+    TSError("[%s] conditions without operators are not allowed in file: %s, lineno: %d", PLUGIN_NAME, fname.c_str(), lineno);
+    return false;
+
+  case Parser::CondClause::COND:
+    // COND clause without operators - potentially valid in some cases
+    break;
+  }
+
+  return true;
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // Config parser, use to parse both the global, and per-remap, configurations.
 //
@@ -220,21 +253,14 @@ RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook, c
     }
 
     // If we are at the beginning of a new condition, save away the previous rule (but only if it has operators).
-    if (p.is_cond() && rule) {
-      bool transfer    = rule->cur_section()->has_operator();
-      auto rule_clause = rule->get_clause();
+    if (p.is_cond() && rule && is_hook) {
+      // Only validate and save when starting a NEW rule (hook condition)
+      bool transfer = rule->cur_section()->has_operator();
 
-      if (rule_clause == Parser::CondClause::ELIF) {
-        if (is_hook) {
-          TSError("[%s] ELIF without operators are not allowed in file: %s, lineno: %d", PLUGIN_NAME, fname.c_str(), lineno);
-          return false;
-        }
-      } else if (rule_clause == Parser::CondClause::ELSE) {
-        if (!transfer) {
-          TSError("[%s] conditions not allowed in ELSE clause in file: %s, lineno: %d", PLUGIN_NAME, fname.c_str(), lineno);
-          return false;
-        }
+      if (!validate_rule_completion(rule.get(), fname, lineno)) {
+        return false;
       }
+
       if (transfer) {
         add_rule(std::move(rule));
       }
@@ -327,8 +353,14 @@ RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook, c
   }
 
   // Add the last rule (possibly the only rule)
-  if (rule && rule->has_operator()) {
-    add_rule(std::move(rule));
+  if (rule) {
+    if (!validate_rule_completion(rule.get(), fname, lineno)) {
+      return false;
+    }
+
+    if (rule->has_operator()) {
+      add_rule(std::move(rule));
+    }
   }
 
   // Collect all resource IDs that we need

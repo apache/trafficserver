@@ -786,6 +786,12 @@ public:
     }
   }
 
+  bool
+  has_conditions() const
+  {
+    return _cond != nullptr;
+  }
+
 private:
   Condition *_cond = nullptr; // First pre-condition (linked list)
   bool       _end  = false;
