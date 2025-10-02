@@ -36,8 +36,10 @@ std::unordered_map<std::string, Metrics::Counter::AtomicType *> cipher_map;
 
 #ifdef OPENSSL_IS_BORINGSSL
 std::unordered_map<std::string, Metrics::Counter::AtomicType *> tls_group_map;
+std::unordered_map<std::string, Metrics::Counter::AtomicType *> tls_group_handshake_time_map;
 #elif defined(SSL_get_negotiated_group)
 std::unordered_map<int, Metrics::Counter::AtomicType *> tls_group_map;
+std::unordered_map<int, Metrics::Counter::AtomicType *> tls_group_handshake_time_map;
 #endif
 
 namespace
@@ -60,6 +62,15 @@ add_group_stat(T key, const std::string &name)
 
     tls_group_map.emplace(key, metric);
     Dbg(dbg_ctl_ssl, "registering SSL group metric '%s'", name.c_str());
+  }
+
+  // Register corresponding handshake time metric
+  if (tls_group_handshake_time_map.find(key) == tls_group_handshake_time_map.end()) {
+    Metrics::Counter::AtomicType *time_metric =
+      Metrics::Counter::createPtr("proxy.process.ssl.group.user_agent." + name + ".handshake_time");
+
+    tls_group_handshake_time_map.emplace(key, time_metric);
+    Dbg(dbg_ctl_ssl, "registering SSL group handshake time metric '%s.handshake_time'", name.c_str());
   }
 }
 #endif // OPENSSL_IS_BORINGSSL or SSL_get_negotiated_group
