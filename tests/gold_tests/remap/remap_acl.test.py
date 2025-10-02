@@ -24,6 +24,8 @@ from yaml import load, dump
 from yaml import CLoader as Loader
 from typing import List, Tuple
 
+from ports import get_port
+
 Test.Summary = '''
 Verify remap.config acl behavior.
 '''
@@ -32,7 +34,10 @@ Verify remap.config acl behavior.
 class Test_remap_acl:
     """Configure a test to verify remap.config acl behavior."""
 
-    _ts_counter: int = 0
+    _ts: 'TestProcess' = None
+    _ts_reload_counter: int = 0
+    _ts_is_started: bool = False
+
     _server_counter: int = 0
     _client_counter: int = 0
 
@@ -50,49 +55,56 @@ class Test_remap_acl:
         :param expect_responses: The in-order expected responses from the proxy.
         """
         self._replay_file = replay_file
-        self._ip_allow_content = ip_allow_content
+        self._ip_allow_lines = ip_allow_content.split("\n")
         self._deactivate_ip_allow = deactivate_ip_allow
         self._acl_behavior_policy = acl_behavior_policy
         self._acl_configuration = acl_configuration
         self._named_acls = named_acls
         self._expected_responses = expected_responses
 
+        # Usually we configure the server first and use the server port to
+        # configure ATS to remap to it. In this case, though, we want a
+        # long-lived ATS process that spans TestRuns. So we let ATS choose an
+        # arbitrary availble server port, and then tell the TestRun-specific
+        # server to use that port.
+        server_port = self._configure_traffic_server()
         tr = Test.AddTestRun(name)
-        self._configure_server(tr)
-        self._configure_traffic_server(tr, proxy_protocol)
+        self._configure_server(tr, server_port)
         self._configure_client(tr, proxy_protocol)
 
-    def _configure_server(self, tr: 'TestRun') -> None:
+    def _configure_server(self, tr: 'TestRun', server_port: int) -> None:
         """Configure the server.
-
-        :param tr: The TestRun object to associate the server process with.
         """
         name = f"server-{Test_remap_acl._server_counter}"
-        server = tr.AddVerifierServerProcess(name, self._replay_file)
+        server = tr.AddVerifierServerProcess(name, self._replay_file, http_ports=[server_port])
         Test_remap_acl._server_counter += 1
         self._server = server
 
-    def _configure_traffic_server(self, tr: 'TestRun', proxy_protocol: bool) -> None:
+    def _configure_traffic_server(self) -> int:
         """Configure Traffic Server.
 
-        :param tr: The TestRun object to associate the Traffic Server process with.
+        :return: The listening port that the server should use.
         """
 
-        name = f"ts-{Test_remap_acl._ts_counter}"
-        ts = tr.MakeATSProcess(
-            name, enable_cache=False, enable_proxy_protocol=proxy_protocol, enable_uds=False, reload_quickly=True)
-        Test_remap_acl._ts_counter += 1
+        call_reload: bool = False
+        if Test_remap_acl._ts is not None:
+            ts = Test_remap_acl._ts
+            call_reload = True
+        else:
+            ts = Test.MakeATSProcess("ts", enable_cache=False, enable_proxy_protocol=True, enable_uds=False, reload_quickly=True)
+            Test_remap_acl._ts = ts
         self._ts = ts
+        port_name = f'ServerPort-{Test_remap_acl._ts_reload_counter}'
+        server_port: int = get_port(ts, port_name)
 
-        ts.Disk.records_config.update(
-            {
-                'proxy.config.diags.debug.enabled': 1,
-                'proxy.config.diags.debug.tags': 'http|url|remap|ip_allow|proxyprotocol',
-                'proxy.config.http.push_method_enabled': 1,
-                'proxy.config.http.connect_ports': self._server.Variables.http_port,
-                'proxy.config.url_remap.acl_behavior_policy': self._acl_behavior_policy,
-                'proxy.config.acl.subjects': 'PROXY,PEER',
-            })
+        record_config = {
+            'proxy.config.diags.debug.enabled': 1,
+            'proxy.config.diags.debug.tags': 'http|url|remap|ip_allow|proxyprotocol',
+            'proxy.config.http.push_method_enabled': 1,
+            'proxy.config.http.connect_ports': server_port,
+            'proxy.config.url_remap.acl_behavior_policy': self._acl_behavior_policy,
+            'proxy.config.acl.subjects': 'PROXY,PEER',
+        }
 
         remap_config_lines = []
         if self._deactivate_ip_allow:
@@ -105,9 +117,56 @@ class Test_remap_acl:
         for name, _ in self._named_acls:
             remap_config_lines.append(f'.activatefilter {name}')
 
-        remap_config_lines.append(f'map / http://127.0.0.1:{self._server.Variables.http_port} {self._acl_configuration}')
-        ts.Disk.remap_config.AddLines(remap_config_lines)
-        ts.Disk.ip_allow_yaml.AddLines(self._ip_allow_content.split("\n"))
+        remap_config_lines.append(f'map / http://127.0.0.1:{server_port} {self._acl_configuration}')
+        if call_reload:
+            #
+            # Update the ATS configuration.
+            #
+            tr = Test.AddTestRun("Change the ATS configuration")
+            p = tr.Processes.Default
+            p.Command = 'echo updating configuration'
+            p.Env = ts.Env
+            tr.StillRunningAfter = ts
+
+            records_path = os.path.join(ts.Variables.CONFIGDIR, 'records.yaml')
+            tr.Disk.File(records_path, typename="ats:config:records").update(record_config)
+
+            remap_cfg_path = os.path.join(ts.Variables.CONFIGDIR, 'remap.config')
+            tr.Disk.File(remap_cfg_path).WriteOn("")
+            tr.Disk.File(remap_cfg_path, typename="ats:config").AddLines(remap_config_lines)
+
+            ip_allow_path = os.path.join(ts.Variables.CONFIGDIR, 'ip_allow.yaml')
+            tr.Disk.File(ip_allow_path).WriteOn("")
+            tr.Disk.File(ip_allow_path, typename="ats:config").AddLines(self._ip_allow_lines)
+
+            #
+            # Kick off the ATS config reload.
+            #
+            tr = Test.AddTestRun("Reload the ATS configuration")
+            p = tr.Processes.Default
+            p.Command = 'traffic_ctl config reload'
+            p.Env = ts.Env
+            tr.StillRunningAfter = ts
+
+            #
+            # Await the config reload to finish.
+            #
+            tr = Test.AddTestRun("Await config reload")
+            p = tr.Processes.Default
+            p.Command = 'echo awaiting config reload'
+            p.Env = ts.Env
+            Test_remap_acl._ts_reload_counter += 1
+            count = Test_remap_acl._ts_reload_counter
+            await_config_reload = tr.Processes.Process(f'config_reload_succeeded_{count}', 'sleep 30')
+            await_config_reload.Ready = When.FileContains(ts.Disk.diags_log.Name, "remap.config finished loading", count)
+            p.StartBefore(await_config_reload)
+
+        else:
+            ts.Disk.records_config.update(record_config)
+            ts.Disk.remap_config.AddLines(remap_config_lines)
+            ts.Disk.ip_allow_yaml.AddLines(self._ip_allow_lines)
+
+        return server_port
 
     def _configure_client(self, tr: 'TestRun', proxy_protocol: bool) -> None:
         """Run the test.
@@ -116,11 +175,14 @@ class Test_remap_acl:
         """
 
         name = f"client-{Test_remap_acl._client_counter}"
-        port = self._ts.Variables.port if proxy_protocol == False else self._ts.Variables.proxy_protocol_port
+        ts = Test_remap_acl._ts
+        port = ts.Variables.port if proxy_protocol == False else ts.Variables.proxy_protocol_port
         p = tr.AddVerifierClientProcess(name, self._replay_file, http_ports=[port])
         Test_remap_acl._client_counter += 1
         p.StartBefore(self._server)
-        p.StartBefore(self._ts)
+        if not Test_remap_acl._ts_is_started:
+            p.StartBefore(ts)
+            Test_remap_acl._ts_is_started = True
 
         if self._expected_responses == [None, None]:
             # If there are no expected responses, expect the Warning about the rejected ip.
