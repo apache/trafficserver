@@ -30,10 +30,10 @@ Tools to help with TestRun commands
 #
 
 
-def spawn_curl_commands(self, cmdstr, count, ts, retcode=0, use_default=True):
+def spawn_curl_commands(self, cmdstr, count, ts=None, retcode=0, use_default=True):
     ret = []
 
-    if self.Variables.get("CurlUds", False):
+    if self.Variables.get("CurlUds", False) and ts != None:
         cmdstr = f'curl --unix-socket {ts.Variables.uds_path} ' + cmdstr
     else:
         cmdstr = 'curl ' + cmdstr
@@ -51,7 +51,7 @@ def spawn_curl_commands(self, cmdstr, count, ts, retcode=0, use_default=True):
 def curl_command(self, cmd, ts=None, p=None):
     if p == None:
         p = self.Processes.Default
-    if self.Variables.get("CurlUds", False):
+    if self.Variables.get("CurlUds", False) and ts != None:
         # curl via UDS doesn't add this header when proxy flag enabled, need to explicitly set for test
         # unless pipe is found, indicating multiple commands
         if "--proxy" in cmd and "|" not in cmd:
@@ -64,7 +64,7 @@ def curl_command(self, cmd, ts=None, p=None):
 
 def curl_multiple_commands(self, cmd, ts=None):
     p = self.Processes.Default
-    if self.Variables.get("CurlUds", False):
+    if self.Variables.get("CurlUds", False) and ts != None:
         p.Command = cmd.format(curl=f'curl --unix-socket {ts.Variables.uds_path}', curl_base='curl')
     else:
         p.Command = cmd.format(curl='curl', curl_base='curl')
