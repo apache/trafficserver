@@ -149,6 +149,9 @@ ts_lua_inject_server_request_server_addr_api(lua_State *L)
 
   lua_pushinteger(L, AF_INET6);
   lua_setglobal(L, "TS_LUA_AF_INET6");
+
+  lua_pushinteger(L, AF_UNIX);
+  lua_setglobal(L, "TS_LUA_AF_UNIX");
 }
 
 static void
