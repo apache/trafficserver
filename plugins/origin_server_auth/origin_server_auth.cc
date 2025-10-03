@@ -1099,7 +1099,7 @@ event_handler(TSCont cont, TSEvent event, void *edata)
         Dbg(dbg_ctl, "Successfully signed the URL");
       } else {
         Dbg(dbg_ctl, "Failed to sign the URL, status = %d", status);
-        TSHttpTxnStatusSet(txnp, status);
+        TSHttpTxnStatusSet(txnp, status, PLUGIN_NAME);
         enable_event = TS_EVENT_HTTP_ERROR;
       }
       break;
@@ -1325,7 +1325,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo * /* rri */)
   } else {
     Dbg(dbg_ctl, "Remap context is invalid");
     TSError("[%s] No remap context available, check code / config", PLUGIN_NAME);
-    TSHttpTxnStatusSet(txnp, TS_HTTP_STATUS_INTERNAL_SERVER_ERROR);
+    TSHttpTxnStatusSet(txnp, TS_HTTP_STATUS_INTERNAL_SERVER_ERROR, PLUGIN_NAME);
   }
 
   // This plugin actually doesn't do anything with remapping. Ever.

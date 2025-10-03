@@ -280,7 +280,7 @@ handleInvalidToken(TSHttpTxn txnp, AccessControlTxnData *data, bool reject, cons
 {
   TSRemapStatus resultStatus = TSREMAP_NO_REMAP;
   if (reject) {
-    TSHttpTxnStatusSet(txnp, httpStatus);
+    TSHttpTxnStatusSet(txnp, httpStatus, PLUGIN_NAME);
     resultStatus = TSREMAP_DID_REMAP;
   } else {
     data->_vaState = status;
@@ -395,7 +395,7 @@ contHandleAccessControl(const TSCont contp, TSEvent event, void *edata)
             } else {
               AccessControlDebug("failed to construct a valid origin access token, did not set-cookie with it");
               /* Don't set any cookie, fail the request here returning appropriate status code and body.*/
-              TSHttpTxnStatusSet(txnp, config->_invalidOriginResponse);
+              TSHttpTxnStatusSet(txnp, config->_invalidOriginResponse, PLUGIN_NAME);
               static const char *body    = "Unexpected Response From the Origin Server\n";
               size_t             bufsize = strlen(body) + 1;
               char              *buf     = static_cast<char *>(TSmalloc(bufsize));
@@ -602,18 +602,18 @@ TSRemapDoRemap(void *instance, TSHttpTxn txnp, TSRemapRequestInfo *rri)
           }
         }
       } else {
-        TSHttpTxnStatusSet(txnp, config->_invalidRequest);
+        TSHttpTxnStatusSet(txnp, config->_invalidRequest, PLUGIN_NAME);
         AccessControlDebug("https is the only allowed scheme (plugin should be used only with TLS)");
         remapStatus = TSREMAP_DID_REMAP;
       }
     } else {
-      TSHttpTxnStatusSet(txnp, config->_internalError);
+      TSHttpTxnStatusSet(txnp, config->_internalError, PLUGIN_NAME);
       AccessControlError("failed to get request uri-scheme");
       remapStatus = TSREMAP_DID_REMAP;
     }
   } else {
     /* Something is terribly wrong, we cannot get the configuration */
-    TSHttpTxnStatusSet(txnp, TS_HTTP_STATUS_INTERNAL_SERVER_ERROR);
+    TSHttpTxnStatusSet(txnp, TS_HTTP_STATUS_INTERNAL_SERVER_ERROR, PLUGIN_NAME);
     AccessControlError("configuration unavailable");
     remapStatus = TSREMAP_DID_REMAP;
   }
