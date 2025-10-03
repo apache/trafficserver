@@ -142,7 +142,6 @@ extern MgmtConverter const &HttpDownServerCacheTimeConv;
 extern HttpSessionAccept                 *plugin_http_accept;
 extern HttpSessionAccept                 *plugin_http_transparent_accept;
 extern thread_local PluginThreadContext  *pluginThreadContext;
-static ClassAllocator<APIHook>            apiHookAllocator("apiHookAllocator");
 extern ClassAllocator<INKContInternal>    INKContAllocator;
 extern ClassAllocator<INKVConnInternal>   INKVConnAllocator;
 static ClassAllocator<MIMEFieldSDKHandle> mHandleAllocator("MIMEFieldSDKHandle");
