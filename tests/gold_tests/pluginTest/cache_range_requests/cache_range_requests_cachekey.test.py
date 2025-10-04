@@ -34,7 +34,7 @@ Test.ContinueOnFail = False
 Test.testName = "cache_range_requests_cachekey"
 
 # Define and configure ATS, enable traffic_ctl config reload
-ts = Test.MakeATSProcess("ts")
+ts = Test.MakeATSProcess("ts", reload_quickly=True)
 
 # Define and configure origin server
 server = Test.MakeOriginServer("server", lookup_key="{%uuid}")
