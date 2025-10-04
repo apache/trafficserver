@@ -24,7 +24,7 @@ Test tunneling based on SNI
 '''
 
 # Define default ATS
-ts = Test.MakeATSProcess("ts", enable_tls=True, enable_proxy_protocol=True)
+ts = Test.MakeATSProcess("ts", enable_tls=True, enable_proxy_protocol=True, reload_quickly=True)
 server_foo = Test.MakeOriginServer("server_foo", ssl=True)
 server_bar = Test.MakeOriginServer("server_bar", ssl=True)
 server2 = Test.MakeOriginServer("server2")
