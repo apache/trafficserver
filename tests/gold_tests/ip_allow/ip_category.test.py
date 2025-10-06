@@ -214,7 +214,7 @@ class Test_ip_category:
             tr.TimeOut = 20
 
             return
-        ts = Test.MakeATSProcess("ts", enable_cache=False, enable_tls=True, reload_quickly=True)
+        ts = Test.MakeATSProcess("ts", enable_cache=False, enable_tls=True)
         Test_ip_category._ts = ts
 
         ts.addDefaultSSLFiles()

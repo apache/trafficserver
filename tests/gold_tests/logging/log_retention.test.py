@@ -116,7 +116,7 @@ class TestLogRetention:
         """
         ts_name = "ts{counter}".format(counter=TestLogRetention.__ts_counter)
         TestLogRetention.__ts_counter += 1
-        self.ts = Test.MakeATSProcess(ts_name, command=command, reload_quickly=True)
+        self.ts = Test.MakeATSProcess(ts_name, command=command)
 
         combined_records_config = TestLogRetention.__base_records_config.copy()
         combined_records_config.update(records_config)

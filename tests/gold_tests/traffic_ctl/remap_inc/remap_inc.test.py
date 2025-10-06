@@ -25,7 +25,7 @@ Test.ContinueOnFail = False
 Test.Setup.Copy("wait_reload.sh")
 
 # Define ATS and configure
-ts = Test.MakeATSProcess("ts", enable_cache=False, reload_quickly=True)
+ts = Test.MakeATSProcess("ts", enable_cache=False)
 nameserver = Test.MakeDNServer("dns", default='127.0.0.1')
 
 ts.Disk.File(ts.Variables.CONFIGDIR + "/test.inc", id="test_cfg", typename="ats:config")

@@ -239,7 +239,7 @@ class TrafficCtl(Config, Server):
         self._current_test_number = self._testNumber
 
         self._Test = test
-        self._ts = self._Test.MakeATSProcess(f"ts_{self._testNumber}", reload_quickly=True)
+        self._ts = self._Test.MakeATSProcess(f"ts_{self._testNumber}")
         if records_yaml != None:
             self._ts.Disk.records_config.update(records_yaml)
         self._tests = []

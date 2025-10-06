@@ -58,8 +58,7 @@ def MakeATSProcess(
         log_data=default_log_data,
         use_traffic_out=True,
         dump_runroot=True,
-        enable_proxy_protocol=False,
-        reload_quickly=False):
+        enable_proxy_protocol=False):
     """Create a traffic server process.
 
     :param block_for_debug: if True, causes traffic_server to run with the
@@ -67,9 +66,6 @@ def MakeATSProcess(
     triggered by running traffic_server under a debugger. In the debugger,
     `set cmd_block = 0`, set any desired break points, then `c` to continue
     to let the test proceed.
-    :param reload_quickly: if True, sets proxy.config.config_update_interval_ms
-    to 1ms for fast config reloads. Use this for tests that call 'traffic_ctl
-    config reload' to avoid waiting the default 3 seconds.
     """
     #####################################
     # common locations
@@ -387,9 +383,8 @@ def MakeATSProcess(
             'proxy.config.ssl.keylog_file': tmpname,
         })
 
-    if reload_quickly:
-        # For config reload tests, no need to wait the default 3 seconds to detect the need for a reload.
-        p.Disk.records_config.update({'proxy.config.config_update_interval_ms': 1})
+    # For config reload tests, no need to wait the default 3 seconds to detect the need for a reload.
+    p.Disk.records_config.update({'proxy.config.config_update_interval_ms': 20})
 
     if enable_cache:
         # In records.yaml, the cache is enabled by default so there's nothing

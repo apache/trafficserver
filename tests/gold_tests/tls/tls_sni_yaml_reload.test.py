@@ -20,7 +20,7 @@ Test reloading sni.yaml behaves as expected
 
 sni_domain = 'example.com'
 
-ts = Test.MakeATSProcess("ts", enable_tls=True, reload_quickly=True)
+ts = Test.MakeATSProcess("ts", enable_tls=True)
 server = Test.MakeOriginServer("server")
 server2 = Test.MakeOriginServer("server3")
 request_header = {"headers": f"GET / HTTP/1.1\r\nHost: {sni_domain}\r\n\r\n", "timestamp": "1469733493.993", "body": ""}

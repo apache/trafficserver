@@ -20,7 +20,7 @@ Test.Summary = '''
 Test that Trafficserver starts with default configurations.
 '''
 
-ts = Test.MakeATSProcess("ts", enable_tls=True, reload_quickly=True)
+ts = Test.MakeATSProcess("ts", enable_tls=True)
 server = Test.MakeOriginServer("server")
 
 ts.addSSLfile("ssl/passphrase.pem")
