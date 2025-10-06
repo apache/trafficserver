@@ -27,9 +27,11 @@
 #include <vector>
 #include <fnmatch.h>
 #include <system_error>
+#include <stdexcept>
 
 #include "swoc/swoc_file.h"
 #include "swoc/TextView.h"
+#include "swoc/Lexicon.h"
 
 #include "debug_macros.h"
 
@@ -242,18 +244,21 @@ HostConfiguration::compression_algorithms()
 /**
   "true" and "false" are compatibility with old version, will be removed
  */
+
+// Lexicon for mapping range-request configuration tokens to enum values
+static const swoc::Lexicon<RangeRequestCtrl> RangeRequestLexicon{
+  {RangeRequestCtrl::NONE,                   {"true", "none"}           },
+  {RangeRequestCtrl::NO_COMPRESSION,         {"false", "no-compression"}},
+  {RangeRequestCtrl::REMOVE_RANGE,           {"remove-range"}           },
+  {RangeRequestCtrl::REMOVE_ACCEPT_ENCODING, {"remove-accept-encoding"} }
+};
+
 void
 HostConfiguration::set_range_request(swoc::TextView token)
 {
-  if (token == "true" || token == "none") {
-    range_request_ctl_ = RangeRequestCtrl::NONE;
-  } else if (token == "false" || token == "no-compression") {
-    range_request_ctl_ = RangeRequestCtrl::NO_COMPRESSION;
-  } else if (token == "remove-range") {
-    range_request_ctl_ = RangeRequestCtrl::REMOVE_RANGE;
-  } else if (token == "remove-accept-encoding") {
-    range_request_ctl_ = RangeRequestCtrl::REMOVE_ACCEPT_ENCODING;
-  } else {
+  try {
+    range_request_ctl_ = RangeRequestLexicon[token];
+  } catch (std::domain_error const &) {
     error("invalid token for range_request: %.*s", static_cast<int>(token.size()), token.data());
   }
 }
