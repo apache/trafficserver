@@ -180,7 +180,8 @@ HostConfiguration::is_content_type_compressible(const char *content_type, int co
       ++match_string; // skip '!'
     }
     std::string target;
-    if (content_type_ignore_parameters() && std::strchr(match_string, ';') == nullptr) {
+
+    if (content_type_ignore_parameters() && content_type_pattern.find(';') == std::string::npos) {
       target = strip_params(content_type_view);
     } else {
       target = content_type_view;
