@@ -151,7 +151,7 @@ public:
   bool is_status_code_compressible(const TSHttpStatus status_code) const;
   void add_compression_algorithms(swoc::TextView algorithms);
   int  compression_algorithms();
-  void set_range_request(const std::string &token);
+  void set_range_request(swoc::TextView token);
 
 private:
   std::string  host_;

@@ -275,7 +275,7 @@ HostConfiguration::compression_algorithms()
   "true" and "false" are compatibility with old version, will be removed
  */
 void
-HostConfiguration::set_range_request(const std::string &token)
+HostConfiguration::set_range_request(swoc::TextView token)
 {
   if (token == "true" || token == "none") {
     range_request_ctl_ = RangeRequestCtrl::NONE;
@@ -286,7 +286,7 @@ HostConfiguration::set_range_request(const std::string &token)
   } else if (token == "remove-accept-encoding") {
     range_request_ctl_ = RangeRequestCtrl::REMOVE_ACCEPT_ENCODING;
   } else {
-    error("invalid token for range_request: %s", token.c_str());
+    error("invalid token for range_request: %.*s", static_cast<int>(token.size()), token.data());
   }
 }
 
@@ -404,7 +404,7 @@ Configuration::Parse(const char *path)
         state = kParseStart;
         break;
       case kParseRangeRequest:
-        current_host_configuration->set_range_request(std::string(token));
+        current_host_configuration->set_range_request(token);
         state = kParseStart;
         break;
       case kParseFlush:
