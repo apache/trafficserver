@@ -77,7 +77,7 @@ enum ParserState {
 void
 Configuration::add_host_configuration(HostConfiguration *hc)
 {
-  host_configurations_.push_back(hc);
+  host_configurations_.emplace_back(hc);
 }
 
 void
