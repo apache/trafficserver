@@ -23,10 +23,10 @@
 
 #include "tscore/ink_config.h"
 #include "configuration.h"
-#include <fstream>
 #include <algorithm>
 #include <vector>
 #include <fnmatch.h>
+#include <system_error>
 
 #include "swoc/swoc_file.h"
 #include "swoc/TextView.h"
@@ -334,28 +334,30 @@ Configuration::Parse(const char *path)
 
   auto path_string = pathstring.c_str();
   info("Parsing file \"%s\"", path_string);
-  std::ifstream f;
 
-  size_t lineno = 0;
+  std::error_code ec;
+  std::string     content = swoc::file::load(pathstring, ec);
 
-  f.open(path_string, std::ios::in);
-
-  if (!f.is_open()) {
-    warning("could not open file [%s], skip", path_string);
+  if (ec) {
+    warning("could not open file [%s], skip: %s", path_string, ec.message().c_str());
     return c;
   }
 
-  enum ParserState state = kParseStart;
+  enum ParserState state  = kParseStart;
+  size_t           lineno = 0;
 
-  while (!f.eof()) {
-    std::string line;
-    getline(f, line);
+  swoc::TextView content_view(content);
+  while (content_view) {
+    auto line_view = content_view.take_prefix_at('\n');
     ++lineno;
 
-    trim_if(line, isspace);
-    if (line.empty()) {
+    // Trim whitespace
+    line_view.trim_if(&::isspace);
+    if (line_view.empty()) {
       continue;
     }
+
+    std::string line(line_view);
 
     for (;;) {
       string token = extractFirstToken(line, isspace);
