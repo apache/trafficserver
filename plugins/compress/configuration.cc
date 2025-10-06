@@ -61,7 +61,7 @@ extractFirstToken(swoc::TextView &view, int (*fp)(int))
   return token;
 }
 
-enum ParserState {
+enum class ParserState {
   kParseStart,
   kParseCompressibleContentType,
   kParseRemoveAcceptEncoding,
@@ -305,8 +305,8 @@ Configuration::Parse(const char *path)
     return c;
   }
 
-  enum ParserState state  = kParseStart;
-  size_t           lineno = 0;
+  ParserState state  = ParserState::kParseStart;
+  size_t      lineno = 0;
 
   swoc::TextView content_view(content);
   while (content_view) {
@@ -330,6 +330,7 @@ Configuration::Parse(const char *path)
         break;
       }
 
+      using enum ParserState;
       switch (state) {
       case kParseStart:
         if (token.starts_with('[') && token.ends_with(']')) {
@@ -420,7 +421,7 @@ Configuration::Parse(const char *path)
     warning("Combination of 'cache false' and 'range-request none' might deliver corrupted content");
   }
 
-  if (state != kParseStart) {
+  if (state != ParserState::kParseStart) {
     warning("the parser state indicates that data was expected when it reached the end of the file (%d)", state);
   }
 
