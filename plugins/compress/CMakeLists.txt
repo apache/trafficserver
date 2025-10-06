@@ -20,5 +20,10 @@ target_link_libraries(compress PRIVATE libswoc::libswoc)
 if(HAVE_BROTLI_ENCODE_H)
   target_link_libraries(compress PRIVATE brotli::brotlienc)
 endif()
+
+if(HAVE_ZSTD_H)
+  target_link_libraries(compress PRIVATE zstd::zstd)
+endif()
+
 verify_global_plugin(compress)
 verify_remap_plugin(compress)
