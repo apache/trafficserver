@@ -101,10 +101,10 @@ Configuration::find(const char *host, int host_length)
   if (host && host_length > 0 && host_configurations_.size() > 1) {
     std::string shost(host, host_length);
 
-    // ToDo: Maybe use std::find() here somehow?
-    for (HostContainer::iterator it = host_configurations_.begin() + 1; it != host_configurations_.end(); ++it) {
-      if ((*it)->host() == shost) {
-        host_configuration = *it;
+    // Start from index 1 to skip the default configuration at index 0
+    for (size_t i = 1; i < host_configurations_.size(); ++i) {
+      if (host_configurations_[i]->host() == shost) {
+        host_configuration = host_configurations_[i];
         break;
       }
     }
@@ -118,15 +118,15 @@ HostConfiguration::is_url_allowed(const char *url, int url_len)
 {
   string surl(url, url_len);
   if (has_allows()) {
-    for (StringContainer::iterator allow_it = allows_.begin(); allow_it != allows_.end(); ++allow_it) {
-      const char *match_string = allow_it->c_str();
+    for (const auto &allow : allows_) {
+      const char *match_string = allow.c_str();
       bool        exclude      = match_string[0] == '!';
       if (exclude) {
         ++match_string; // skip !
       }
       if (fnmatch(match_string, surl.c_str(), 0) == 0) {
         info("url [%s] %s for compression, matched allow pattern [%s]", surl.c_str(), exclude ? "disabled" : "enabled",
-             allow_it->c_str());
+             allow.c_str());
         return !exclude;
       }
     }
@@ -159,8 +159,8 @@ HostConfiguration::is_content_type_compressible(const char *content_type, int co
   string scontent_type(content_type, content_type_length);
   bool   is_match = false;
 
-  for (StringContainer::iterator it = compressible_content_types_.begin(); it != compressible_content_types_.end(); ++it) {
-    const char *match_string = it->c_str();
+  for (const auto &content_type_pattern : compressible_content_types_) {
+    const char *match_string = content_type_pattern.c_str();
     if (match_string == nullptr) {
       continue;
     }
@@ -176,7 +176,7 @@ HostConfiguration::is_content_type_compressible(const char *content_type, int co
       target = scontent_type;
     }
     if (fnmatch(match_string, target.c_str(), 0) == 0) {
-      info("compressible content type [%s], matched on pattern [%s]", target.c_str(), it->c_str());
+      info("compressible content type [%s], matched on pattern [%s]", target.c_str(), content_type_pattern.c_str());
       is_match = !exclude;
     }
   }
