@@ -99,11 +99,11 @@ Configuration::find(const char *host, int host_length)
   HostConfiguration *host_configuration = host_configurations_[0];
 
   if (host && host_length > 0 && host_configurations_.size() > 1) {
-    std::string shost(host, host_length);
+    swoc::TextView host_view(host, host_length);
 
     // Start from index 1 to skip the default configuration at index 0
     for (size_t i = 1; i < host_configurations_.size(); ++i) {
-      if (host_configurations_[i]->host() == shost) {
+      if (host_configurations_[i]->host() == host_view) {
         host_configuration = host_configurations_[i];
         break;
       }
@@ -116,8 +116,11 @@ Configuration::find(const char *host, int host_length)
 bool
 HostConfiguration::is_url_allowed(const char *url, int url_len)
 {
-  string surl(url, url_len);
+  swoc::TextView url_view(url, url_len);
+
   if (has_allows()) {
+    // fnmatch requires null-terminated strings, so we need a std::string for the url
+    string surl(url_view);
     for (const auto &allow : allows_) {
       const char *match_string = allow.c_str();
       bool        exclude      = match_string[0] == '!';
@@ -125,15 +128,16 @@ HostConfiguration::is_url_allowed(const char *url, int url_len)
         ++match_string; // skip !
       }
       if (fnmatch(match_string, surl.c_str(), 0) == 0) {
-        info("url [%s] %s for compression, matched allow pattern [%s]", surl.c_str(), exclude ? "disabled" : "enabled",
-             allow.c_str());
+        info("url [%.*s] %s for compression, matched allow pattern [%s]", static_cast<int>(url_view.size()), url_view.data(),
+             exclude ? "disabled" : "enabled", allow.c_str());
         return !exclude;
       }
     }
-    info("url [%s] disabled for compression, did not match any allows pattern", surl.c_str());
+    info("url [%.*s] disabled for compression, did not match any allows pattern", static_cast<int>(url_view.size()),
+         url_view.data());
     return false;
   }
-  info("url [%s] enabled for compression, did not match any pattern", surl.c_str());
+  info("url [%.*s] enabled for compression, did not match any pattern", static_cast<int>(url_view.size()), url_view.data());
   return true;
 }
 
@@ -156,8 +160,8 @@ strip_params(swoc::TextView v)
 bool
 HostConfiguration::is_content_type_compressible(const char *content_type, int content_type_length)
 {
-  string scontent_type(content_type, content_type_length);
-  bool   is_match = false;
+  swoc::TextView content_type_view(content_type, content_type_length);
+  bool           is_match = false;
 
   for (const auto &content_type_pattern : compressible_content_types_) {
     const char *match_string = content_type_pattern.c_str();
@@ -171,9 +175,9 @@ HostConfiguration::is_content_type_compressible(const char *content_type, int co
     }
     std::string target;
     if (content_type_ignore_parameters() && std::strchr(match_string, ';') == nullptr) {
-      target = strip_params(swoc::TextView(scontent_type));
+      target = strip_params(content_type_view);
     } else {
-      target = scontent_type;
+      target = content_type_view;
     }
     if (fnmatch(match_string, target.c_str(), 0) == 0) {
       info("compressible content type [%s], matched on pattern [%s]", target.c_str(), content_type_pattern.c_str());
