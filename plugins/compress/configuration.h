@@ -143,8 +143,8 @@ public:
   }
 
   void update_defaults();
-  void add_allow(const std::string &allow);
-  void add_compressible_content_type(const std::string &content_type);
+  void add_allow(swoc::TextView allow);
+  void add_compressible_content_type(swoc::TextView content_type);
   void add_compressible_status_codes(swoc::TextView status_codes);
   bool is_url_allowed(const char *url, int url_len);
   bool is_content_type_compressible(const char *content_type, int content_type_length);

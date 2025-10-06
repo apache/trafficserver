@@ -80,15 +80,15 @@ HostConfiguration::update_defaults()
 }
 
 void
-HostConfiguration::add_allow(const std::string &allow)
+HostConfiguration::add_allow(swoc::TextView allow)
 {
-  allows_.push_back(allow);
+  allows_.push_back(std::string(allow));
 }
 
 void
-HostConfiguration::add_compressible_content_type(const std::string &content_type)
+HostConfiguration::add_compressible_content_type(swoc::TextView content_type)
 {
-  compressible_content_types_.push_back(content_type);
+  compressible_content_types_.push_back(std::string(content_type));
 }
 
 HostConfiguration *
@@ -352,7 +352,7 @@ Configuration::Parse(const char *path)
         }
         break;
       case kParseCompressibleContentType:
-        current_host_configuration->add_compressible_content_type(std::string(token));
+        current_host_configuration->add_compressible_content_type(token);
         state = kParseStart;
         break;
       case kParseContentTypeIgnoreParameters:
@@ -380,7 +380,7 @@ Configuration::Parse(const char *path)
         state = kParseStart;
         break;
       case kParseAllow:
-        current_host_configuration->add_allow(std::string(token));
+        current_host_configuration->add_allow(token);
         state = kParseStart;
         break;
       case kParseMinimumContentLength: {
