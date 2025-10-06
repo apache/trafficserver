@@ -84,13 +84,13 @@ HostConfiguration::update_defaults()
 void
 HostConfiguration::add_allow(swoc::TextView allow)
 {
-  allows_.push_back(std::string(allow));
+  allows_.emplace_back(allow);
 }
 
 void
 HostConfiguration::add_compressible_content_type(swoc::TextView content_type)
 {
-  compressible_content_types_.push_back(std::string(content_type));
+  compressible_content_types_.emplace_back(content_type);
 }
 
 HostConfiguration *
