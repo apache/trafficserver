@@ -52,7 +52,7 @@ enum class RangeRequestCtrl : int {
 class HostConfiguration : private atscppapi::noncopyable
 {
 public:
-  explicit HostConfiguration(const std::string &host)
+  explicit HostConfiguration(swoc::TextView host)
     : host_(host),
       enabled_(true),
       cache_(true),

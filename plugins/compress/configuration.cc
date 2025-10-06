@@ -326,11 +326,11 @@ Configuration::Parse(const char *path)
       switch (state) {
       case kParseStart:
         if ((token[0] == '[') && (token[token.size() - 1] == ']')) {
-          std::string current_host(token.substr(1, token.size() - 2));
+          auto host_name = token.substr(1, token.size() - 2);
 
           // Makes sure that any default settings are properly set, when not explicitly set via configs
           current_host_configuration->update_defaults();
-          current_host_configuration = new HostConfiguration(current_host);
+          current_host_configuration = new HostConfiguration(host_name);
           c->add_host_configuration(current_host_configuration);
         } else if (token == "compressible-content-type") {
           state = kParseCompressibleContentType;
