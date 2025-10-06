@@ -70,38 +70,16 @@ trim_if(string &s, int (*fp)(int))
   rtrim_if(s, fp);
 }
 
-string
-extractFirstToken(string &s, int (*fp)(int))
+swoc::TextView
+extractFirstToken(swoc::TextView &view, int (*fp)(int))
 {
-  int startTok{-1}, endTok{-1}, idx{0};
+  // Skip leading delimiters
+  view.ltrim_if([fp](char c) -> bool { return fp(static_cast<unsigned char>(c)) != 0; });
 
-  for (;; ++idx) {
-    if (idx == int(s.length())) {
-      if (endTok < 0) {
-        endTok = idx;
-      }
-      break;
-    } else if (fp(s[idx])) {
-      if ((startTok >= 0) and (endTok < 0)) {
-        endTok = idx;
-      }
-    } else if (endTok > 0) {
-      break;
-    } else if (startTok < 0) {
-      startTok = idx;
-    }
-  }
+  // Extract token up to (and removing) the first delimiter
+  auto token = view.take_prefix_if([fp](char c) -> bool { return fp(static_cast<unsigned char>(c)) != 0; });
 
-  string tmp;
-  if (startTok >= 0) {
-    tmp = string(s, startTok, endTok - startTok);
-  }
-
-  if (idx > 0) {
-    s = string(s, idx, s.length() - idx);
-  }
-
-  return tmp;
+  return token;
 }
 
 enum ParserState {
@@ -243,11 +221,11 @@ isCommaOrSpace(int ch)
 }
 
 void
-HostConfiguration::add_compression_algorithms(string &line)
+HostConfiguration::add_compression_algorithms(swoc::TextView line)
 {
   compression_algorithms_ = ALGORITHM_DEFAULT; // remove the default gzip.
   for (;;) {
-    string token = extractFirstToken(line, isCommaOrSpace);
+    auto token = extractFirstToken(line, isCommaOrSpace);
     if (token.empty()) {
       break;
     } else if (token == "br") {
@@ -267,23 +245,23 @@ HostConfiguration::add_compression_algorithms(string &line)
 }
 
 void
-HostConfiguration::add_compressible_status_codes(string &line)
+HostConfiguration::add_compressible_status_codes(swoc::TextView line)
 {
   compressible_status_codes_.clear();
 
   for (;;) {
-    string token = extractFirstToken(line, isCommaOrSpace);
+    auto token = extractFirstToken(line, isCommaOrSpace);
     if (token.empty()) {
       break;
     }
 
-    uint status_code = strtoul(token.c_str(), nullptr, 10);
-    if (status_code == 0) {
-      error("Invalid status code %s", token.c_str());
-      continue;
+    swoc::TextView parsed;
+    uintmax_t      status_code = swoc::svtou(token, &parsed);
+    if (parsed.size() == token.size() && status_code > 0) {
+      compressible_status_codes_.insert(static_cast<TSHttpStatus>(status_code));
+    } else {
+      error("Invalid status code %.*s", static_cast<int>(token.size()), token.data());
     }
-
-    compressible_status_codes_.insert(static_cast<TSHttpStatus>(status_code));
   }
 }
 
@@ -356,11 +334,8 @@ Configuration::Parse(const char *path)
     if (line_view.empty()) {
       continue;
     }
-
-    std::string line(line_view);
-
     for (;;) {
-      string token = extractFirstToken(line, isspace);
+      auto token = extractFirstToken(line_view, isspace);
 
       if (token.empty()) {
         break;
@@ -374,7 +349,7 @@ Configuration::Parse(const char *path)
       switch (state) {
       case kParseStart:
         if ((token[0] == '[') && (token[token.size() - 1] == ']')) {
-          std::string current_host = token.substr(1, token.size() - 2);
+          std::string current_host(token.substr(1, token.size() - 2));
 
           // Makes sure that any default settings are properly set, when not explicitly set via configs
           current_host_configuration->update_defaults();
@@ -395,21 +370,21 @@ Configuration::Parse(const char *path)
         } else if (token == "flush") {
           state = kParseFlush;
         } else if (token == "supported-algorithms") {
-          current_host_configuration->add_compression_algorithms(line);
+          current_host_configuration->add_compression_algorithms(line_view);
           state = kParseStart;
         } else if (token == "allow") {
           state = kParseAllow;
         } else if (token == "compressible-status-code") {
-          current_host_configuration->add_compressible_status_codes(line);
+          current_host_configuration->add_compressible_status_codes(line_view);
           state = kParseStart;
         } else if (token == "minimum-content-length") {
           state = kParseMinimumContentLength;
         } else {
-          warning("failed to interpret \"%s\" at line %zu", token.c_str(), lineno);
+          warning("failed to interpret \"%.*s\" at line %zu", static_cast<int>(token.size()), token.data(), lineno);
         }
         break;
       case kParseCompressibleContentType:
-        current_host_configuration->add_compressible_content_type(token);
+        current_host_configuration->add_compressible_content_type(std::string(token));
         state = kParseStart;
         break;
       case kParseContentTypeIgnoreParameters:
@@ -429,7 +404,7 @@ Configuration::Parse(const char *path)
         state = kParseStart;
         break;
       case kParseRangeRequest:
-        current_host_configuration->set_range_request(token);
+        current_host_configuration->set_range_request(std::string(token));
         state = kParseStart;
         break;
       case kParseFlush:
@@ -437,13 +412,18 @@ Configuration::Parse(const char *path)
         state = kParseStart;
         break;
       case kParseAllow:
-        current_host_configuration->add_allow(token);
+        current_host_configuration->add_allow(std::string(token));
         state = kParseStart;
         break;
-      case kParseMinimumContentLength:
-        current_host_configuration->set_minimum_content_length(strtoul(token.c_str(), nullptr, 10));
+      case kParseMinimumContentLength: {
+        swoc::TextView parsed;
+        uintmax_t      length = swoc::svtou(token, &parsed);
+        if (parsed.size() == token.size()) {
+          current_host_configuration->set_minimum_content_length(length);
+        }
         state = kParseStart;
         break;
+      }
       }
     }
   }

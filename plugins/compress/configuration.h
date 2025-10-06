@@ -29,6 +29,7 @@
 
 #include "ts/ts.h"
 #include "tscpp/api/noncopyable.h"
+#include "swoc/TextView.h"
 
 namespace Gzip
 {
@@ -144,11 +145,11 @@ public:
   void update_defaults();
   void add_allow(const std::string &allow);
   void add_compressible_content_type(const std::string &content_type);
-  void add_compressible_status_codes(std::string &status_codes);
+  void add_compressible_status_codes(swoc::TextView status_codes);
   bool is_url_allowed(const char *url, int url_len);
   bool is_content_type_compressible(const char *content_type, int content_type_length);
   bool is_status_code_compressible(const TSHttpStatus status_code) const;
-  void add_compression_algorithms(std::string &algorithms);
+  void add_compression_algorithms(swoc::TextView algorithms);
   int  compression_algorithms();
   void set_range_request(const std::string &token);
 
