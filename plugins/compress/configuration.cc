@@ -152,9 +152,7 @@ HostConfiguration::is_url_allowed(const char *url, int url_len)
 bool
 HostConfiguration::is_status_code_compressible(const TSHttpStatus status_code) const
 {
-  std::set<TSHttpStatus>::const_iterator it = compressible_status_codes_.find(status_code);
-
-  return it != compressible_status_codes_.end();
+  return compressible_status_codes_.contains(status_code);
 }
 
 swoc::TextView
