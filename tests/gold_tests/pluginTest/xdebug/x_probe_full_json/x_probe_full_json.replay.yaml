@@ -1,0 +1,132 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+sessions:
+
+- transactions:
+
+  - client-request:
+      method: GET
+      url: /test
+      version: '1.1'
+      headers:
+        fields:
+        - [ uuid, '1' ]
+        - [ Host, example.com ]
+        - [ X-Debug, probe-full-json ]
+        - [ X-Request, "from-client"]
+
+    proxy-request:
+      headers:
+        fields:
+        - [ x-debug, { as: absent } ]
+
+    server-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Type, "text/html" ]
+        - [ Transfer-Encoding, "chunked" ]
+        - [ X-Response, "from-origin" ]
+        - [ X-No-Value, "" ]
+      content:
+        encoding: plain
+        data: |
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>Test Page with "Quotes"</title>
+              <style>
+                  body { font-family: Arial, sans-serif; margin: 20px; }
+                  .highlight { color: "red"; background: "yellow"; }
+              </style>
+          </head>
+          <body>
+              <header>
+                  <h1>Welcome to the "Test" Page</h1>
+                  <p>This page contains "double quotes" that will break JSON parsing.</p>
+              </header>
+              <main>
+                  <h2>Content with "Problematic" Characters</h2>
+                  <p>Here are some examples:</p>
+                  <ul>
+                      <li>Attribute with quotes: class="example"</li>
+                      <li>String with quotes: "Hello World"</li>
+                      <li>Nested quotes: "She said \"Hello\" to me"</li>
+                  </ul>
+                  <script>
+                      var message = "This script contains \"quotes\" that will break JSON";
+                      console.log("Debug: " + message);
+                  </script>
+              </main>
+              <footer>
+                  <p>&copy; 2024 "Test Company" - All rights reserved.</p>
+              </footer>
+          </body>
+          </html>
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Type, { value: "application/json", as: equal } ]
+        - [ X-Response, { value: "from-origin", as: contains } ]
+        - [ X-Original-Content-Type, { value: "text/html", as: equal } ]
+      content:
+        data: 'Welcome to the \"Test\" Page'
+        verify: { as: contains }
+
+  # Test 2: Binary content type (should be hex-encoded by default)
+  - client-request:
+      method: GET
+      url: /binary
+      version: '1.1'
+      headers:
+        fields:
+        - [ uuid, '2' ]
+        - [ Host, example.com ]
+        - [ X-Debug, probe-full-json ]
+        - [ X-Request, "binary-test"]
+
+    proxy-request:
+      headers:
+        fields:
+        - [ x-debug, { as: absent } ]
+
+    server-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Type, "application/octet-stream" ]
+        - [ Content-Length, "26" ]
+        - [ X-Response, "binary-data" ]
+      content:
+        encoding: plain
+        data: "Binary data with quotes!"
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Type, { value: "application/json", as: equal } ]
+        - [ X-Response, { value: "binary-data", as: contains } ]
+        - [ X-Original-Content-Type, { value: "application/octet-stream", as: equal } ]
+      content:
+        # Expect hex encoding: "Binary data with quotes!" -> hex
+        data: '42696e617279206461746120776974682071756f74657321'
+        verify: { as: contains }

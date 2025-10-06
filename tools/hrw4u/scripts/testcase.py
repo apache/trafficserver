@@ -16,6 +16,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+from __future__ import annotations
+
 import sys
 import argparse
 from pathlib import Path
@@ -27,7 +29,7 @@ from hrw4u.visitor import HRW4UVisitor
 KNOWN_MARKS = {"hooks", "conds", "ops", "vars", "examples", "invalid"}
 
 
-def parse_tree(input_text):
+def parse_tree(input_text: str) -> tuple[hrw4uParser, any]:
     stream = InputStream(input_text)
     lexer = hrw4uLexer(stream)
     tokens = CommonTokenStream(lexer)
@@ -36,7 +38,7 @@ def parse_tree(input_text):
     return parser, tree
 
 
-def process_file(input_path, update_ast=False, update_output=False, update_error=False):
+def process_file(input_path: Path, update_ast: bool = False, update_output: bool = False, update_error: bool = False) -> bool:
     base = input_path.with_suffix('')
     ast_path = base.with_suffix('.ast.txt')
     output_path = base.with_suffix('.output.txt')
@@ -79,7 +81,7 @@ def process_file(input_path, update_ast=False, update_output=False, update_error
             return False
 
 
-def run_batch(group=None, update_ast=False, update_output=False, update_error=False):
+def run_batch(group: str | None = None, update_ast: bool = False, update_output: bool = False, update_error: bool = False) -> None:
     base_dir = Path("tests/data")
     pattern = "**/*.input.txt" if group is None else f"{group}/**/*.input.txt"
     input_files = sorted(base_dir.glob(pattern))
@@ -101,7 +103,7 @@ def run_batch(group=None, update_ast=False, update_output=False, update_error=Fa
         sys.exit(1)
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(description="Run, update, or show ANTLR test outputs.")
     parser.add_argument("input_file", type=Path, nargs="?", help="Optional single input file")
     parser.add_argument("-g", "--group", help="Test group to run (e.g. 'hooks')")

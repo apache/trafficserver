@@ -27,9 +27,11 @@
 
  */
 
-#define CATCH_CONFIG_MAIN /* include main function */
-#include <catch.hpp>      /* catch unit-test framework */
-#include <fstream>        /* ofstream */
+#include <catch2/catch_test_macros.hpp> /* catch unit-test framework */
+#include <catch2/reporters/catch_reporter_event_listener.hpp>
+#include <catch2/reporters/catch_reporter_registrars.hpp>
+#include <catch2/interfaces/catch_interfaces_config.hpp>
+#include <fstream> /* ofstream */
 #include <memory>
 #include <utime.h>
 
@@ -41,8 +43,8 @@
 #include "iocore/utils/diags.i"
 
 #define TEST_THREADS 2
-struct EventProcessorListener : Catch::TestEventListenerBase {
-  using TestEventListenerBase::TestEventListenerBase;
+struct EventProcessorListener : Catch::EventListenerBase {
+  using EventListenerBase::EventListenerBase;
 
   void
   testRunStarting(Catch::TestRunInfo const & /* testRunInfo ATS_UNUSED */) override

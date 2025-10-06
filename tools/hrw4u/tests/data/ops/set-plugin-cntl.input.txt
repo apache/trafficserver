@@ -1,0 +1,9 @@
+REMAP {
+    if true {
+        set-plugin-cntl(TIMEZONE, "LOCAL");
+        set-plugin-cntl(INBOUND_IP_SOURCE, "PEER");
+    } else {
+        set-plugin-cntl(TIMEZONE, "GMT");
+        set-plugin-cntl(INBOUND_IP_SOURCE, "PROXY");
+    }
+}

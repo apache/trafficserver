@@ -108,22 +108,11 @@ class SSLNetVConnection : public UnixNetVConnection,
   using super = UnixNetVConnection; ///< Parent type.
 
 public:
-  int  sslStartHandShake(int event, int &err) override;
   void clear() override;
   void free_thread(EThread *t) override;
 
   bool
-  trackFirstHandshake() override
-  {
-    bool retval = this->get_tls_handshake_begin_time() == 0;
-    if (retval) {
-      this->_record_tls_handshake_begin_time();
-    }
-    return retval;
-  }
-
-  bool
-  getSSLHandShakeComplete() const override
+  getSSLHandShakeComplete() const
   {
     return sslHandshakeStatus != SSLHandshakeStatus::SSL_HANDSHAKE_ONGOING;
   }
@@ -139,6 +128,7 @@ public:
   void    net_read_io(NetHandler *nh) override;
   int64_t load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf, int64_t &total_written, int &needs) override;
   void    do_io_close(int lerrno = -1) override;
+  void    do_io_shutdown(ShutdownHowTo_t howto) override;
 
   ////////////////////////////////////////////////////////////
   // Instances of NetVConnection should be allocated        //
@@ -320,14 +310,19 @@ public:
   Ptr<ProxyMutex> getMutexForTLSEvents() override;
 
 protected:
+  // UnixNetVConnection
+  bool _isReadyToTransferData() const override;
+  void _beReadyToTransferData() override;
+
   // TLSBasicSupport
   SSL *
   _get_ssl_object() const override
   {
     return this->ssl;
   }
-  ssl_curve_id _get_tls_curve() const override;
-  int          _verify_certificate(X509_STORE_CTX *ctx) override;
+  ssl_curve_id     _get_tls_curve() const override;
+  std::string_view _get_tls_group() const override;
+  int              _verify_certificate(X509_STORE_CTX *ctx) override;
 
   // TLSSessionResumptionSupport
   const IpEndpoint &
@@ -361,6 +356,9 @@ private:
   void             increment_ssl_version_metric(int version) const;
   NetProcessor    *_getNetProcessor() override;
   void            *_prepareForMigration() override;
+
+  bool _trackFirstHandshake();
+  int  _sslStartHandShake(int event, int &err);
 
   /** Return the unconsumed bytes in @a handShakeReader in a contiguous memory buffer.
    *

@@ -60,7 +60,8 @@ if not Condition.CurlUsingUnixDomainSocket():
     tr.Processes.Default.StartBefore(Test.Processes.ts, ready=1)
     tr.MakeCurlCommand(
         '--max-time 2 -v -s -q -H "Connection: Upgrade" -H "Upgrade: websocket" -H "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==" -H "Sec-WebSocket-Version: 13" --http1.1 --resolve www.example.com:{0}:127.0.0.1 -k https://www.example.com:{0}/chat'
-        .format(ts.Variables.ssl_port))
+        .format(ts.Variables.ssl_port),
+        ts=ts)
     tr.Processes.Default.ReturnCode = 28
     tr.Processes.Default.Streams.stderr = "gold/remap-ws-upgrade.gold"
     tr.StillRunningAfter = server
@@ -93,6 +94,10 @@ tr.StillRunningAfter = ts
 
 # Test metrics
 tr = Test.AddTestRun()
+if Condition.CurlUsingUnixDomainSocket():
+    metrics_gold_file = 'remap-ws-metrics-uds.gold'
+else:
+    metrics_gold_file = 'remap-ws-metrics.gold'
 tr.Processes.Default.Command = (
     f"{Test.Variables.AtsTestToolsDir}/stdout_wait" + " 'traffic_ctl metric get" +
     " proxy.process.http.total_incoming_connections" + " proxy.process.http.total_client_connections" +
@@ -107,7 +112,7 @@ tr.Processes.Default.Command = (
     " proxy.process.tunnel.current_client_connections_tls_partial_blind" +
     " proxy.process.tunnel.total_client_connections_tls_http" + " proxy.process.tunnel.current_client_connections_tls_http" +
     " proxy.process.tunnel.total_server_connections_tls" + " proxy.process.tunnel.current_server_connections_tls'" +
-    f" {Test.TestDirectory}/gold/remap-ws-metrics.gold")
+    f" {Test.TestDirectory}/gold/{metrics_gold_file}")
 # Need to copy over the environment so traffic_ctl knows where to find the unix domain socket
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.ReturnCode = 0

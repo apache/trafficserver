@@ -1,0 +1,107 @@
+#!/usr/bin/env bash
+#
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+set -uo pipefail
+
+# Usage: ./u4wrh_validator.sh [-w] <file1.output.txt> [file2.output.txt ...]
+#   -w  Use strict whitespace-sensitive diff (turn OFF whitespace resilience)
+
+STRICT_WHITESPACE=false
+
+# --- parse flags ---
+while getopts ":w" opt; do
+  case "$opt" in
+    w) STRICT_WHITESPACE=true ;;
+    \?) echo "Unknown option: -$OPTARG" >&2; exit 2 ;;
+  esac
+done
+shift $((OPTIND - 1))
+
+if [ "$#" -lt 1 ]; then
+    echo "Usage: $0 [-w] <file1.output.txt> [file2.output.txt ...]"
+    exit 1
+fi
+
+# Colors (fallback if terminal doesn't support them)
+if [ -t 1 ] && command -v tput >/dev/null 2>&1; then
+    if [ "$(tput colors)" -ge 8 ]; then
+        GREEN="$(tput setaf 2)"
+        RED="$(tput setaf 1)"
+        BOLD="$(tput bold)"
+        RESET="$(tput sgr0)"
+    fi
+fi
+GREEN="${GREEN:-}"
+RED="${RED:-}"
+BOLD="${BOLD:-}"
+RESET="${RESET:-}"
+
+check="✅"
+xmark="❌"
+
+TMPFILE="$(mktemp "${TMPDIR:-/tmp}/u4wrh_validator.XXXXXX")"
+trap 'rm -f "$TMPFILE" "$TMPFILE.diff" "$TMPFILE.stderr"' EXIT
+
+# Choose diff options:
+# - Default (resilient): ignore amount of whitespace (-b) and blank-line changes (-B)
+# - Strict (-w flag): no whitespace ignores
+if $STRICT_WHITESPACE; then
+  DIFF_OPTS=(-u)
+else
+  DIFF_OPTS=(-u -b -B)
+fi
+
+ok_count=0
+fail_count=0
+
+for output_file in "$@"; do
+    if [[ "$output_file" != *.output.txt ]]; then
+        printf "%sSkipping %s (does not match *.output.txt)%s\n" "$RED" "$output_file" "$RESET"
+        continue
+    fi
+
+    input_file="${output_file/.output.txt/.input.txt}"
+    if [ ! -f "$input_file" ]; then
+        printf "%s%s ... Fail!%s\n" "$RED" "$output_file" "$RESET"
+        echo "  Missing expected input file: $input_file"
+        ((fail_count++))
+        continue
+    fi
+
+    if ! ./scripts/u4wrh "$output_file" > "$TMPFILE" 2> "$TMPFILE.stderr"; then
+        printf "%s%s ... Fail!%s\n" "$RED" "$output_file" "$RESET"
+        echo "  u4wrh failed:"
+        sed 's/^/    /' "$TMPFILE.stderr"
+        : > "$TMPFILE.stderr"
+        ((fail_count++))
+        continue
+    fi
+    : > "$TMPFILE.stderr"
+
+    if diff "${DIFF_OPTS[@]}" "$input_file" "$TMPFILE" > "$TMPFILE.diff"; then
+        printf "%sValidating %s ... OK! %s%s\n" "$GREEN" "$output_file" "$check" "$RESET"
+        ((ok_count++))
+    else
+        printf "%s%s ... Fail! %s%s\n" "$RED" "$output_file" "$xmark" "$RESET"
+        cat "$TMPFILE.diff"
+        ((fail_count++))
+    fi
+done
+
+# --- Summary ---
+printf "\n${BOLD}Validation Summary:${RESET} ${GREEN}%d OK${RESET}, ${RED}%d Fail${RESET}\n" "$ok_count" "$fail_count"

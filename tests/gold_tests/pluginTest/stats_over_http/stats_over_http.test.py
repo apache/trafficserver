@@ -23,6 +23,9 @@ Test.Summary = 'Exercise stats-over-http plugin'
 Test.SkipUnless(Condition.PluginExists('stats_over_http.so'))
 Test.ContinueOnFail = True
 
+# Skip until plugin supports pp or uds path
+Test.SkipIf(Condition.CurlUsingUnixDomainSocket())
+
 
 class StatsOverHttpPluginTest:
     """
@@ -47,7 +50,7 @@ class StatsOverHttpPluginTest:
 
         self.ts.Disk.records_config.update(
             {
-                "proxy.config.http.server_ports": f"{self.ts.Variables.port}",
+                "proxy.config.http.server_ports": f"{self.ts.Variables.port} {self.ts.Variables.uds_path}",
                 "proxy.config.diags.debug.enabled": 1,
                 "proxy.config.diags.debug.tags": "stats_over_http"
             })
@@ -62,6 +65,33 @@ class StatsOverHttpPluginTest:
     def __checkProcessAfter(self, tr):
         assert (self.state == self.State.RUNNING)
         tr.StillRunningAfter = self.ts
+
+    def __checkPrometheusMetrics(self, p: 'Test.Process', from_prometheus: bool):
+        '''Check the Prometheus metrics output.
+        :param p: The process whose output to check.
+        :param from_prometheus: Whether the output is from Prometheus. Otherwise it's from ATS.
+        '''
+        p.Streams.stdout += Testers.ContainsExpression(
+            'HELP proxy_process_http2_current_client_connections proxy.process.http2.current_client_connections',
+            'Output should have a help line for a gauge.')
+        p.Streams.stdout += Testers.ContainsExpression(
+            'TYPE proxy_process_http2_current_client_connections gauge', 'Output should have a type line for a gauge.')
+        p.Streams.stdout += Testers.ContainsExpression(
+            'proxy_process_http2_current_client_connections 0', 'Verify the successful parsing of Prometheus metrics for a gauge.')
+
+        p.Streams.stdout += Testers.ContainsExpression(
+            'HELP proxy_process_http_delete_requests proxy.process.http.delete_requests',
+            'Output should have a help line for a counter.')
+        p.Streams.stdout += Testers.ContainsExpression(
+            'TYPE proxy_process_http_delete_requests counter', 'Output should have a type line for a counter.')
+
+        # Curiosly, Prometheus appaneds _total to counter metrics.
+        if from_prometheus:
+            p.Streams.stdout += Testers.ContainsExpression(
+                'proxy_process_http_delete_requests_total 0', 'Verify the successful parsing of Prometheus metrics for a counter.')
+        else:
+            p.Streams.stdout += Testers.ContainsExpression(
+                'proxy_process_http_delete_requests 0', 'Verify the successful parsing of Prometheus metrics for a counter.')
 
     def __testCaseNoAccept(self):
         tr = Test.AddTestRun('Fetch stats over HTTP in JSON format: no Accept and default path')
@@ -78,7 +108,7 @@ class StatsOverHttpPluginTest:
     def __testCaseAcceptCSV(self):
         tr = Test.AddTestRun('Fetch stats over HTTP in CSV format')
         self.__checkProcessBefore(tr)
-        tr.MakeCurlCommand(f"-vs -H'Accept: text/csv' --http1.1 http://127.0.0.1:{self.ts.Variables.port}/_stats")
+        tr.MakeCurlCommand(f"-vs -H'Accept: text/csv' --http1.1 http://127.0.0.1:{self.ts.Variables.port}/_stats", ts=self.ts)
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
             'proxy.process.http.delete_requests,0', 'Output should be CSV formatted.')
@@ -89,10 +119,10 @@ class StatsOverHttpPluginTest:
     def __testCaseAcceptPrometheus(self):
         tr = Test.AddTestRun('Fetch stats over HTTP in Prometheus format')
         self.__checkProcessBefore(tr)
-        tr.MakeCurlCommand(f"-vs -H'Accept: text/plain; version=0.0.4' --http1.1 http://127.0.0.1:{self.ts.Variables.port}/_stats")
+        tr.MakeCurlCommand(
+            f"-vs -H'Accept: text/plain; version=0.0.4' --http1.1 http://127.0.0.1:{self.ts.Variables.port}/_stats", ts=self.ts)
         tr.Processes.Default.ReturnCode = 0
-        tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-            'proxy_process_http_delete_requests 0', 'Output should be Prometheus formatted.')
+        self.__checkPrometheusMetrics(tr.Processes.Default, from_prometheus=False)
         tr.Processes.Default.Streams.stderr = "gold/stats_over_http_prometheus_stderr.gold"
         tr.Processes.Default.TimeOut = 3
         self.__checkProcessAfter(tr)
@@ -100,7 +130,7 @@ class StatsOverHttpPluginTest:
     def __testCasePathJSON(self):
         tr = Test.AddTestRun('Fetch stats over HTTP in JSON format via /_stats/json')
         self.__checkProcessBefore(tr)
-        tr.MakeCurlCommand(f"-vs --http1.1 http://127.0.0.1:{self.ts.Variables.port}/_stats/json")
+        tr.MakeCurlCommand(f"-vs --http1.1 http://127.0.0.1:{self.ts.Variables.port}/_stats/json", ts=self.ts)
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stdout += Testers.ContainsExpression('{ "global": {', 'JSON header expected.')
         tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
@@ -112,7 +142,7 @@ class StatsOverHttpPluginTest:
     def __testCasePathCSV(self):
         tr = Test.AddTestRun('Fetch stats over HTTP in CSV format via /_stats/csv')
         self.__checkProcessBefore(tr)
-        tr.MakeCurlCommand(f"-vs --http1.1 http://127.0.0.1:{self.ts.Variables.port}/_stats/csv")
+        tr.MakeCurlCommand(f"-vs --http1.1 http://127.0.0.1:{self.ts.Variables.port}/_stats/csv", ts=self.ts)
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
             'proxy.process.http.delete_requests,0', 'CSV output expected.')
@@ -123,10 +153,9 @@ class StatsOverHttpPluginTest:
     def __testCasePathPrometheus(self):
         tr = Test.AddTestRun('Fetch stats over HTTP in Prometheus format via /_stats/prometheus')
         self.__checkProcessBefore(tr)
-        tr.MakeCurlCommand(f"-vs --http1.1 http://127.0.0.1:{self.ts.Variables.port}/_stats/prometheus")
+        tr.MakeCurlCommand(f"-vs --http1.1 http://127.0.0.1:{self.ts.Variables.port}/_stats/prometheus", ts=self.ts)
         tr.Processes.Default.ReturnCode = 0
-        tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-            'proxy_process_http_delete_requests 0', 'Prometheus output expected.')
+        self.__checkPrometheusMetrics(tr.Processes.Default, from_prometheus=False)
         tr.Processes.Default.Streams.stderr = "gold/stats_over_http_prometheus_stderr.gold"
         tr.Processes.Default.TimeOut = 3
         self.__checkProcessAfter(tr)
@@ -134,7 +163,8 @@ class StatsOverHttpPluginTest:
     def __testCaseAcceptIgnoredIfPathExplicit(self):
         tr = Test.AddTestRun('Fetch stats over HTTP in Prometheus format with Accept csv header')
         self.__checkProcessBefore(tr)
-        tr.MakeCurlCommand(f"-vs -H'Accept: text/csv' --http1.1 http://127.0.0.1:{self.ts.Variables.port}/_stats/prometheus")
+        tr.MakeCurlCommand(
+            f"-vs -H'Accept: text/csv' --http1.1 http://127.0.0.1:{self.ts.Variables.port}/_stats/prometheus", ts=self.ts)
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
             'proxy_process_http_delete_requests 0', 'Prometheus output expected.')
@@ -153,8 +183,7 @@ class StatsOverHttpPluginTest:
         p = tr.Processes.Default
         p.Command = f'{sys.executable} {ingester} http://127.0.0.1:{self.ts.Variables.port}/_stats/prometheus'
         p.ReturnCode = 0
-        p.Streams.stdout += Testers.ContainsExpression(
-            'proxy_process_http_delete_requests 0', 'Verify the successful parsing of Prometheus metrics.')
+        self.__checkPrometheusMetrics(p, from_prometheus=True)
 
     def run(self):
         self.__testCaseNoAccept()

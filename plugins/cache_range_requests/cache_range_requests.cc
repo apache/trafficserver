@@ -41,6 +41,25 @@
 #define DEBUG_LOG(fmt, ...) Dbg(dbg_ctl, fmt, ##__VA_ARGS__)
 #define ERROR_LOG(fmt, ...) TSError("[%s:%d] %s(): " fmt, __FILE__, __LINE__, __func__, ##__VA_ARGS__)
 
+// The following allows for scope based defer.
+#ifndef defer
+struct defer_dummy {
+};
+template <class F> struct deferrer {
+  F f;
+  ~deferrer() { f(); }
+};
+template <class F>
+deferrer<F>
+operator*(defer_dummy, F f)
+{
+  return {f};
+}
+#define DEFER_(LINE) zz_defer##LINE
+#define DEFER(LINE)  DEFER_(LINE)
+#define defer        auto DEFER(__LINE__) = defer_dummy{} *[&]()
+#endif // defer
+
 namespace
 {
 DbgCtl dbg_ctl{PLUGIN_NAME};
@@ -50,7 +69,6 @@ enum parent_select_mode_t {
   PS_CACHEKEY_URL, // Set parent selection url to cache_key url
 };
 
-constexpr std::string_view DefaultImsHeader   = {"X-Crr-Ims"};
 constexpr std::string_view DefaultIdentHeader = {"X-Crr-Ident"};
 constexpr std::string_view SLICE_CRR_HEADER   = {"Slice-Crr-Status"};
 constexpr std::string_view SLICE_CRR_VAL      = "1";
@@ -58,15 +76,14 @@ constexpr std::string_view SKIP_CRR_HDR_NAME  = {"X-Skip-Crr"};
 
 std::string_view const Etag(TS_MIME_FIELD_ETAG, TS_MIME_LEN_ETAG);
 std::string_view const LastModified(TS_MIME_FIELD_LAST_MODIFIED, TS_MIME_LEN_LAST_MODIFIED);
+std::string_view const Stale{"Stale"};
 
 struct pluginconfig {
   parent_select_mode_t ps_mode{PS_DEFAULT};
-  bool                 consider_ims_header{false};
   bool                 consider_ident_header{false};
   bool                 modify_cache_key{true};
   bool                 verify_cacheability{false};
   bool                 cache_complete_responses{false};
-  std::string          ims_header;
   std::string          ident_header;
 };
 
@@ -74,7 +91,6 @@ struct txndata {
   pluginconfig const *config{nullptr};
   std::string         range_value;
   TSHttpStatus        origin_status{TS_HTTP_STATUS_NONE};
-  time_t              ims_time{0};
   bool                ident_check{false};
   bool                verify_cacheability{false};
   bool                cache_complete_responses{false};
@@ -118,9 +134,7 @@ create_pluginconfig(int argc, char *const argv[])
   }
 
   static const struct option longopts[] = {
-    {const_cast<char *>("consider-ims"),             no_argument,       nullptr, 'c'},
     {const_cast<char *>("consider-ident"),           no_argument,       nullptr, 'd'},
-    {const_cast<char *>("ims-header"),               required_argument, nullptr, 'i'},
     {const_cast<char *>("ident-header"),             required_argument, nullptr, 'j'},
     {const_cast<char *>("no-modify-cachekey"),       no_argument,       nullptr, 'n'},
     {const_cast<char *>("ps-cachekey"),              no_argument,       nullptr, 'p'},
@@ -134,24 +148,15 @@ create_pluginconfig(int argc, char *const argv[])
   --argv;
 
   for (;;) {
-    int const opt = getopt_long(argc, argv, "i:", longopts, nullptr);
+    int const opt = getopt_long(argc, argv, "j:", longopts, nullptr);
     if (-1 == opt) {
       break;
     }
 
     switch (opt) {
-    case 'c': {
-      DEBUG_LOG("Plugin considers the ims header");
-      pc->consider_ims_header = true;
-    } break;
     case 'd': {
       DEBUG_LOG("Plugin considers the ident header");
       pc->consider_ident_header = true;
-    } break;
-    case 'i': {
-      DEBUG_LOG("Plugin uses custom ims header: %s", optarg);
-      pc->ims_header.assign(optarg);
-      pc->consider_ims_header = true;
     } break;
     case 'j': {
       DEBUG_LOG("Plugin uses custom ident header: %s", optarg);
@@ -183,11 +188,6 @@ create_pluginconfig(int argc, char *const argv[])
   if (optind < argc && 0 == strcmp("ps_mode:cache_key_url", argv[optind])) {
     DEBUG_LOG("Plugin modifies parent selection key (deprecated)");
     pc->ps_mode = PS_CACHEKEY_URL;
-  }
-
-  if (pc->consider_ims_header && pc->ims_header.empty()) {
-    pc->ims_header = DefaultImsHeader;
-    DEBUG_LOG("Plugin uses default ims header: %s", pc->ims_header.c_str());
   }
 
   if (pc->consider_ident_header && pc->ident_header.empty()) {
@@ -261,8 +261,16 @@ range_header_check(TSHttpTxn txnp, pluginconfig *const pc)
   TSMLoc    hdr_loc = TS_NULL_MLOC;
 
   if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &hdr_buf, &hdr_loc)) {
+    defer
+    {
+      TSHandleMLocRelease(hdr_buf, TS_NULL_MLOC, hdr_loc);
+    };
     TSMLoc const range_loc = TSMimeHdrFieldFind(hdr_buf, hdr_loc, TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE);
     if (TS_NULL_MLOC != range_loc) {
+      defer
+      {
+        TSHandleMLocRelease(hdr_buf, hdr_loc, range_loc);
+      };
       int               len       = 0;
       char const *const hdr_value = TSMimeHdrFieldValueStringGet(hdr_buf, hdr_loc, range_loc, 0, &len);
 
@@ -308,7 +316,8 @@ range_header_check(TSHttpTxn txnp, pluginconfig *const pc)
             const char *start  = cache_key_url;
             const char *end    = cache_key_url + cache_key_url_len;
             if (TS_SUCCESS == TSUrlCreate(hdr_buf, &ps_loc)) {
-              if (TS_PARSE_DONE == TSUrlParse(hdr_buf, ps_loc, &start, end) && // This should always succeed.
+              // This should always succeed.
+              if (TS_PARSE_DONE == TSUrlParse(hdr_buf, ps_loc, &start, end) &&
                   TS_SUCCESS == TSHttpTxnParentSelectionUrlSet(txnp, hdr_buf, ps_loc)) {
                 DEBUG_LOG("Setting Parent Selection URL to '%.*s'", cache_key_url_len, cache_key_url);
               }
@@ -316,28 +325,13 @@ range_header_check(TSHttpTxn txnp, pluginconfig *const pc)
             }
           }
 
-          // optionally consider an ims header
-          bool ims_active = false;
-          if (pc->consider_ims_header) {
-            TSMLoc const imsloc = TSMimeHdrFieldFind(hdr_buf, hdr_loc, pc->ims_header.data(), pc->ims_header.size());
-            if (TS_NULL_MLOC != imsloc) {
-              time_t const itime = TSMimeHdrFieldValueDateGet(hdr_buf, hdr_loc, imsloc);
-              DEBUG_LOG("Servicing the '%s' header", pc->ims_header.c_str());
-              TSHandleMLocRelease(hdr_buf, hdr_loc, imsloc);
-              if (0 < itime) {
-                txn_state->ims_time = itime;
-                ims_active          = true;
-              }
-            }
-          }
-
           // If not revalidating then consider the identity header
-          if (!ims_active && pc->consider_ident_header) {
+          if (pc->consider_ident_header) {
             TSMLoc const identloc = TSMimeHdrFieldFind(hdr_buf, hdr_loc, pc->ident_header.data(), pc->ident_header.size());
             if (TS_NULL_MLOC != identloc) {
               DEBUG_LOG("Servicing the '%s' header", pc->ident_header.c_str());
-              TSHandleMLocRelease(hdr_buf, hdr_loc, identloc);
               txn_state->ident_check = true;
+              TSHandleMLocRelease(hdr_buf, hdr_loc, identloc);
             };
           }
 
@@ -358,7 +352,7 @@ range_header_check(TSHttpTxn txnp, pluginconfig *const pc)
         TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, txn_contp);
         DEBUG_LOG("Added TS_HTTP_SEND_REQUEST_HDR_HOOK, TS_HTTP_SEND_RESPONSE_HDR_HOOK, and TS_HTTP_TXN_CLOSE_HOOK");
 
-        if (0 < txn_state->ims_time || txn_state->ident_check) {
+        if (txn_state->ident_check) {
           TSHttpTxnHookAdd(txnp, TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, txn_contp);
           DEBUG_LOG("Also Added TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK");
         }
@@ -370,11 +364,9 @@ range_header_check(TSHttpTxn txnp, pluginconfig *const pc)
           txn_state->slice_request = true;
         }
       }
-      TSHandleMLocRelease(hdr_buf, hdr_loc, range_loc);
     } else {
       DEBUG_LOG("No range request header.");
     }
-    TSHandleMLocRelease(hdr_buf, TS_NULL_MLOC, hdr_loc);
   }
 }
 
@@ -394,13 +386,16 @@ handle_send_origin_request(TSCont contp, TSHttpTxn txnp, txndata *const txn_stat
     return;
   }
 
-  if (TS_SUCCESS == TSHttpTxnServerReqGet(txnp, &hdr_buf, &hdr_loc) && !rv.empty()) {
-    if (set_header(hdr_buf, hdr_loc, TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE, rv.data(), rv.size())) {
+  if (TS_SUCCESS == TSHttpTxnServerReqGet(txnp, &hdr_buf, &hdr_loc)) {
+    defer
+    {
+      TSHandleMLocRelease(hdr_buf, TS_NULL_MLOC, hdr_loc);
+    };
+    if (!rv.empty() && set_header(hdr_buf, hdr_loc, TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE, rv.data(), rv.size())) {
       DEBUG_LOG("Added range header: %s", rv.c_str());
       TSHttpTxnHookAdd(txnp, TS_HTTP_READ_RESPONSE_HDR_HOOK, contp);
     }
   }
-  TSHandleMLocRelease(hdr_buf, TS_NULL_MLOC, hdr_loc);
 }
 
 /**
@@ -416,15 +411,21 @@ handle_client_send_response(TSHttpTxn txnp, txndata *const txn_state)
   TSMBuffer resp_buf = nullptr;
   TSMLoc    resp_loc = TS_NULL_MLOC;
   if (TS_SUCCESS == TSHttpTxnClientRespGet(txnp, &resp_buf, &resp_loc)) {
+    defer
+    {
+      TSHandleMLocRelease(resp_buf, TS_NULL_MLOC, resp_loc);
+    };
+
     TSHttpStatus const status = TSHttpHdrStatusGet(resp_buf, resp_loc);
     // a cached status will be 200 with expected parent response status of 206
     if (TS_HTTP_STATUS_OK == status) {
       if (txn_state->origin_status == TS_HTTP_STATUS_NONE ||
           txn_state->origin_status == TS_HTTP_STATUS_NOT_MODIFIED) { // cache hit or revalidation
         // status is always TS_HTTP_STATUS_NONE on cache hit; its value is only set during handle_server_read_response()
-        TSMLoc content_range_loc = TSMimeHdrFieldFind(resp_buf, resp_loc, TS_MIME_FIELD_CONTENT_RANGE, TS_MIME_LEN_CONTENT_RANGE);
+        TSMLoc const content_range_loc =
+          TSMimeHdrFieldFind(resp_buf, resp_loc, TS_MIME_FIELD_CONTENT_RANGE, TS_MIME_LEN_CONTENT_RANGE);
 
-        if (content_range_loc) {
+        if (TS_NULL_MLOC != content_range_loc) {
           DEBUG_LOG("Got TS_HTTP_STATUS_OK on cache hit or revalidation and Content-Range header present in response");
           partial_content_reason = true;
           TSHandleMLocRelease(resp_buf, resp_loc, content_range_loc);
@@ -452,7 +453,6 @@ handle_client_send_response(TSHttpTxn txnp, txndata *const txn_state)
     } else {
       DEBUG_LOG("Ignoring status code %d; txn_state->origin_status=%d", status, txn_state->origin_status);
     }
-    TSHandleMLocRelease(resp_buf, TS_NULL_MLOC, resp_loc);
   }
 
   if (partial_content_reason) {
@@ -485,44 +485,49 @@ handle_server_read_response(TSHttpTxn txnp, txndata *const txn_state)
   TSMLoc    resp_loc = TS_NULL_MLOC;
   int       cache_lookup;
 
-  if (TS_SUCCESS == TSHttpTxnServerRespGet(txnp, &resp_buf, &resp_loc)) {
-    TSHttpStatus const status = TSHttpHdrStatusGet(resp_buf, resp_loc);
-    txn_state->origin_status  = status;
-    if (TS_HTTP_STATUS_PARTIAL_CONTENT == status) {
-      DEBUG_LOG("Got TS_HTTP_STATUS_PARTIAL_CONTENT.");
-      // changing the status code from 206 to 200 forces the object into cache
-      TSHttpHdrStatusSet(resp_buf, resp_loc, TS_HTTP_STATUS_OK);
-      DEBUG_LOG("Set response header to TS_HTTP_STATUS_OK.");
+  if (TS_SUCCESS != TSHttpTxnServerRespGet(txnp, &resp_buf, &resp_loc)) {
+    return;
+  }
 
-      if (txn_state->verify_cacheability && !TSHttpTxnIsCacheable(txnp, nullptr, resp_buf)) {
-        DEBUG_LOG("transaction is not cacheable; resetting status code to 206");
-        TSHttpHdrStatusSet(resp_buf, resp_loc, TS_HTTP_STATUS_PARTIAL_CONTENT);
-      }
-    } else if (TS_HTTP_STATUS_OK == status) {
-      bool cacheable = txn_state->cache_complete_responses;
-
-      if (cacheable && txn_state->verify_cacheability) {
-        DEBUG_LOG("Received a cacheable complete response from the origin; verifying cacheability");
-        cacheable = TSHttpTxnIsCacheable(txnp, nullptr, resp_buf);
-      }
-
-      // 200s are cached by default; only cache if configured to do so
-      if (!cacheable && TS_SUCCESS == TSHttpTxnCntlSet(txnp, TS_HTTP_CNTL_SERVER_NO_STORE, true)) {
-        DEBUG_LOG("Cache write has been disabled for this transaction.");
-      } else {
-        DEBUG_LOG("Allowing object to be cached.");
-      }
-    }
-
-    // slice requesting cache lookup status and cacheability (only on miss or validation)
-    if ((txn_state->origin_status == TS_HTTP_STATUS_PARTIAL_CONTENT || txn_state->origin_status == TS_HTTP_STATUS_NOT_MODIFIED) &&
-        txn_state->slice_request && TSHttpTxnIsCacheable(txnp, nullptr, resp_buf) &&
-        TSHttpTxnCacheLookupStatusGet(txnp, &cache_lookup) == TS_SUCCESS &&
-        (cache_lookup == TS_CACHE_LOOKUP_MISS || cache_lookup == TS_CACHE_LOOKUP_HIT_STALE)) {
-      txn_state->slice_response = true;
-    }
-
+  defer
+  {
     TSHandleMLocRelease(resp_buf, TS_NULL_MLOC, resp_loc);
+  };
+
+  TSHttpStatus const status = TSHttpHdrStatusGet(resp_buf, resp_loc);
+  txn_state->origin_status  = status;
+  if (TS_HTTP_STATUS_PARTIAL_CONTENT == status) {
+    DEBUG_LOG("Got TS_HTTP_STATUS_PARTIAL_CONTENT.");
+    // changing the status code from 206 to 200 forces the object into cache
+    TSHttpHdrStatusSet(resp_buf, resp_loc, TS_HTTP_STATUS_OK);
+    DEBUG_LOG("Set response header to TS_HTTP_STATUS_OK.");
+
+    if (txn_state->verify_cacheability && !TSHttpTxnIsCacheable(txnp, nullptr, resp_buf)) {
+      DEBUG_LOG("transaction is not cacheable; resetting status code to 206");
+      TSHttpHdrStatusSet(resp_buf, resp_loc, TS_HTTP_STATUS_PARTIAL_CONTENT);
+    }
+  } else if (TS_HTTP_STATUS_OK == status) {
+    bool cacheable = txn_state->cache_complete_responses;
+
+    if (cacheable && txn_state->verify_cacheability) {
+      DEBUG_LOG("Received a cacheable complete response from the origin; verifying cacheability");
+      cacheable = TSHttpTxnIsCacheable(txnp, nullptr, resp_buf);
+    }
+
+    // 200s are cached by default; only cache if configured to do so
+    if (!cacheable && TS_SUCCESS == TSHttpTxnCntlSet(txnp, TS_HTTP_CNTL_SERVER_NO_STORE, true)) {
+      DEBUG_LOG("Cache write has been disabled for this transaction.");
+    } else {
+      DEBUG_LOG("Allowing object to be cached.");
+    }
+  }
+
+  // slice requesting cache lookup status and cacheability (only on miss or validation)
+  if ((txn_state->origin_status == TS_HTTP_STATUS_PARTIAL_CONTENT || txn_state->origin_status == TS_HTTP_STATUS_NOT_MODIFIED) &&
+      txn_state->slice_request && TSHttpTxnIsCacheable(txnp, nullptr, resp_buf) &&
+      TSHttpTxnCacheLookupStatusGet(txnp, &cache_lookup) == TS_SUCCESS &&
+      (cache_lookup == TS_CACHE_LOOKUP_MISS || cache_lookup == TS_CACHE_LOOKUP_HIT_STALE)) {
+    txn_state->slice_response = true;
   }
 }
 
@@ -540,7 +545,6 @@ remove_header(TSMBuffer buf, TSMLoc hdr_loc, const char *header, int len)
 
   while (TS_NULL_MLOC != field) {
     TSMLoc const tmp = TSMimeHdrFieldNextDup(buf, hdr_loc, field);
-
     ++cnt;
     TSMimeHdrFieldDestroy(buf, hdr_loc, field);
     TSHandleMLocRelease(buf, hdr_loc, field);
@@ -598,104 +602,143 @@ set_header(TSMBuffer buf, TSMLoc hdr_loc, const char *header, int len, const cha
   return ret;
 }
 
-time_t
-get_date_from_cached_hdr(TSHttpTxn txn)
+void
+debugTxnUrl(TSHttpTxn const txnp, std::string_view const desc, std::string const &rangeval)
 {
-  TSMBuffer buf     = nullptr;
-  TSMLoc    hdr_loc = TS_NULL_MLOC;
-  time_t    date    = 0;
-
-  if (TSHttpTxnCachedRespGet(txn, &buf, &hdr_loc) == TS_SUCCESS) {
-    TSMLoc const date_loc = TSMimeHdrFieldFind(buf, hdr_loc, TS_MIME_FIELD_DATE, TS_MIME_LEN_DATE);
-    if (TS_NULL_MLOC != date_loc) {
-      date = TSMimeHdrFieldValueDateGet(buf, hdr_loc, date_loc);
-      TSHandleMLocRelease(buf, hdr_loc, date_loc);
-    }
-    TSHandleMLocRelease(buf, TS_NULL_MLOC, hdr_loc);
+  int         url_len = 0;
+  char *const req_url = TSHttpTxnEffectiveUrlStringGet(txnp, &url_len);
+  if (nullptr != req_url) {
+    DEBUG_LOG("%.*s: %.*s-%s", (int)desc.length(), desc.data(), url_len, req_url, rangeval.c_str());
+    TSfree(req_url);
   }
-
-  return date;
 }
 
 /**
- * Handle a special IMS request or identity check on stale asset
+ * Handle the identity/validator check.
+ * Based on RFC7232 and HttpTransactCache::match_response_to_request_conditionals
+ * Compare ETAG if provided.
+ * else Compare Last-Modified if provided.
  */
 void
 handle_cache_lookup_complete(TSHttpTxn txnp, txndata *const txn_state)
 {
+  TSAssert(txn_state->ident_check);
   int cachestat;
   if (TS_SUCCESS == TSHttpTxnCacheLookupStatusGet(txnp, &cachestat)) {
-    if (TS_CACHE_LOOKUP_HIT_FRESH == cachestat) {
-      time_t const ch_time = get_date_from_cached_hdr(txnp);
-      DEBUG_LOG("IMS Cached header time %jd vs IMS %jd", static_cast<intmax_t>(ch_time),
-                static_cast<intmax_t>(txn_state->ims_time));
-      if (ch_time < txn_state->ims_time) {
+    if (TS_CACHE_LOOKUP_HIT_FRESH != cachestat && TS_CACHE_LOOKUP_HIT_STALE != cachestat) {
+      return;
+    }
+
+    // ensure the cached response is a 200
+    TSMBuffer cbuf  = nullptr;
+    TSMLoc    chloc = TS_NULL_MLOC;
+    if (TSHttpTxnCachedRespGet(txnp, &cbuf, &chloc) != TS_SUCCESS) {
+      return;
+    }
+
+    defer
+    {
+      TSHandleMLocRelease(cbuf, TS_NULL_MLOC, chloc);
+    };
+
+    if (TS_HTTP_STATUS_OK != TSHttpHdrStatusGet(cbuf, chloc)) {
+      return;
+    }
+
+    pluginconfig const *const pc = txn_state->config;
+
+    // request identifier/validator
+    TSMBuffer rbuf  = nullptr;
+    TSMLoc    rhloc = TS_NULL_MLOC;
+    if (TS_SUCCESS != TSHttpTxnClientReqGet(txnp, &rbuf, &rhloc)) {
+      return;
+    }
+
+    defer
+    {
+      TSHandleMLocRelease(rbuf, TS_NULL_MLOC, rhloc);
+    };
+
+    // No directive found (should not happen)
+    TSMLoc const riloc = TSMimeHdrFieldFind(rbuf, rhloc, pc->ident_header.data(), pc->ident_header.size());
+    if (TS_NULL_MLOC == riloc) {
+      return;
+    }
+    defer
+    {
+      TSHandleMLocRelease(rbuf, rhloc, riloc);
+    };
+
+    int               rilen = 0;
+    char const *const ristr = TSMimeHdrFieldValueStringGet(rbuf, rhloc, riloc, -1, &rilen);
+    if (0 == rilen) {
+      return;
+    }
+
+    // pull the identifier from the request header
+    std::string_view rident(ristr, rilen);
+    std::string_view rtag;
+    if (rident.substr(0, Etag.length()) == Etag) {
+      DEBUG_LOG("Etag identifier provided in '%.*s'", rilen, ristr);
+      rtag   = Etag;
+      rident = rident.substr(Etag.length() + 1);
+    } else if (rident.substr(0, LastModified.length()) == LastModified) {
+      DEBUG_LOG("Last-Modified indentifier provided in '%.*s'", rilen, ristr);
+      rtag   = LastModified;
+      rident = rident.substr(LastModified.length() + 1);
+    } else if (rident.substr(0, Stale.length()) == Stale) {
+      // note tag isn't set here
+      if (TS_CACHE_LOOKUP_HIT_FRESH == cachestat) {
         TSHttpTxnCacheLookupStatusSet(txnp, TS_CACHE_LOOKUP_HIT_STALE);
         if (dbg_ctl.on()) {
-          int         url_len = 0;
-          char *const req_url = TSHttpTxnEffectiveUrlStringGet(txnp, &url_len);
-          if (nullptr != req_url) {
-            std::string const &rv = txn_state->range_value;
-            DEBUG_LOG("Forced revalidate %.*s-%s", url_len, req_url, rv.c_str());
-
-            TSfree(req_url);
-          }
+          debugTxnUrl(txnp, "force to stale", txn_state->range_value);
         }
       }
-    } else if (TS_CACHE_LOOKUP_HIT_STALE == cachestat && txn_state->ident_check) {
-      pluginconfig const *const pc = txn_state->config;
-      DEBUG_LOG("Stale asset ident check");
+      return;
+    } else {
+      DEBUG_LOG("Unknown indentifier provided in '%.*s'", rilen, ristr);
+      return;
+    }
 
-      TSMBuffer resp_buf = nullptr;
-      TSMLoc    resp_loc = TS_NULL_MLOC;
+    // pull the identifier from the cached response
+    // first priority is etag
+    std::string_view ctag  = Etag;
+    TSMLoc           ciloc = TSMimeHdrFieldFind(cbuf, chloc, ctag.data(), ctag.length());
+    if (TS_NULL_MLOC == ciloc) {
+      ctag  = LastModified;
+      ciloc = TSMimeHdrFieldFind(cbuf, chloc, ctag.data(), ctag.length());
+      if (TS_NULL_MLOC == ciloc) {
+        return;
+      }
+    }
 
-      if (TS_SUCCESS == TSHttpTxnCachedRespGet(txnp, &resp_buf, &resp_loc)) {
-        if (TS_HTTP_STATUS_OK == TSHttpHdrStatusGet(resp_buf, resp_loc)) {
-          // get the request identifier
-          TSMBuffer req_buf = nullptr;
-          TSMLoc    req_loc = TS_NULL_MLOC;
-          if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &req_buf, &req_loc)) {
-            TSMLoc const ident_loc = TSMimeHdrFieldFind(req_buf, req_loc, pc->ident_header.data(), pc->ident_header.size());
-            if (TS_NULL_MLOC != ident_loc) {
-              DEBUG_LOG("Checking identifier against the '%s' header", pc->ident_header.c_str());
+    defer
+    {
+      TSHandleMLocRelease(cbuf, chloc, ciloc);
+    };
 
-              int               len = 0;
-              char const *const str = TSMimeHdrFieldValueStringGet(req_buf, req_loc, ident_loc, -1, &len);
+    int               cilen = 0;
+    char const *const cistr = TSMimeHdrFieldValueStringGet(cbuf, chloc, ciloc, -1, &cilen);
+    if (0 == cilen) {
+      return;
+    }
+    std::string_view cident(cistr, cilen);
 
-              // determine which identifier has been provided
-              std::string_view const svreq(str, len);
-              std::string_view       tag;
-              if (svreq.substr(0, Etag.length()) == Etag) {
-                DEBUG_LOG("Etag identifier provided in '%.*s'", len, str);
-                tag = Etag;
-              } else if (svreq.substr(0, LastModified.length()) == LastModified) {
-                DEBUG_LOG("Last-Modified indentifier provided in '%.*s'", len, str);
-                tag = LastModified;
-              }
-
-              if (!tag.empty()) {
-                TSMLoc const id_loc = TSMimeHdrFieldFind(resp_buf, resp_loc, tag.data(), tag.size());
-                if (TS_NULL_MLOC != id_loc) {
-                  int                    len = 0;
-                  char const *const      str = TSMimeHdrFieldValueStringGet(resp_buf, resp_loc, id_loc, 0, &len);
-                  std::string_view const sv(str, len);
-
-                  DEBUG_LOG("Checking cached '%.*s' against request '%.*s'", len, str, (int)svreq.size(), svreq.data());
-
-                  if (std::string_view::npos != svreq.rfind(sv)) {
-                    DEBUG_LOG("Flipping cache lookup status from STALE to FRESH");
-                    TSHttpTxnCacheLookupStatusSet(txnp, TS_CACHE_LOOKUP_HIT_FRESH);
-                  }
-                  TSHandleMLocRelease(resp_buf, resp_loc, id_loc);
-                }
-              }
-
-              TSHandleMLocRelease(req_buf, req_loc, ident_loc);
-            }
-            TSHandleMLocRelease(req_buf, TS_NULL_MLOC, req_loc);
-          }
+    // fresh to stale with ident mismatch
+    if (TS_CACHE_LOOKUP_HIT_FRESH == cachestat) {
+      if (rtag != ctag || rident != cident) {
+        TSHttpTxnCacheLookupStatusSet(txnp, TS_CACHE_LOOKUP_HIT_STALE);
+        if (dbg_ctl.on()) {
+          debugTxnUrl(txnp, "flip to stale", txn_state->range_value);
         }
-        TSHandleMLocRelease(resp_buf, TS_NULL_MLOC, resp_loc);
+      }
+      // stale to fresh with ident match
+    } else if (TS_CACHE_LOOKUP_HIT_STALE == cachestat) {
+      if (rtag == ctag && rident == cident) {
+        TSHttpTxnCacheLookupStatusSet(txnp, TS_CACHE_LOOKUP_HIT_FRESH);
+        if (dbg_ctl.on()) {
+          debugTxnUrl(txnp, "flip to fresh", txn_state->range_value);
+        }
       }
     }
   }

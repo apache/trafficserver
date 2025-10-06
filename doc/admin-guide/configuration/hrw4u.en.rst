@@ -20,25 +20,26 @@
 HRW4U DSL
 *********
 
-This is a next-generation rule language for the existing ATS ``header_rewrite`` plugin. It
-introduces a clearer syntax, formal grammar, full condition nesting, semantic validation,
+HRW4U is a next-generation rule language for the existing ATS
+:ref:`admin-plugins-header-rewrite` plugin. It introduces clearer
+syntax, formal grammar, full condition nesting, semantic validation,
 and extensible condition/operator support.
 
 Overview
 ========
 
-HRW4U replaces the free-form text parsing of `header_rewrite` with a formally defined
+HRW4U replaces the free-form text parsing of ``header_rewrite`` with a formally defined
 grammar using ANTLR. This makes HRW4U easier to parse, validate, and extend.
 
-Rather than repeating `header_rewrite` documentation, please refer to:
+Rather than repeating ``header_rewrite`` documentation, please refer to:
   - :ref:`admin-plugins-header-rewrite` for feature behavior and semantics
   - This page focuses on syntax and behavior *differences* in HRW4U
 
 Why HRW4U?
 ----------
 
-Over time, ``header_rewrite`` format has become unwieldy and difficult to use. Therefore
-we try to improve the following:
+Over time, the ``header_rewrite`` format has become unwieldy and difficult to use.
+HRW4U aims to improve the following:
 
 - Structured grammar and parser
 - Better error diagnostics (line/col, filename, hints)
@@ -51,11 +52,11 @@ we try to improve the following:
 Building
 --------
 
-At the moment, the HRW4U compiler is not built as part of the ATS build process. You need to
-build it separately, using Python 3.10+ and pyenv environments. There's a ``bootstrap.sh``
-script in the ``tools/hrw4u`` directory that helps with the process.
+Currently, the HRW4U compiler is not built as part of the ATS build process. You need to
+build it separately using Python 3.10+ and pyenv environments. There's a ``bootstrap.sh``
+script in the ``tools/hrw4u`` directory that helps with the setup process.
 
-Once setup, simply run:
+Once set up, simply run:
 
 .. code-block:: none
 
@@ -72,8 +73,8 @@ virtualenv or system-wide using:
 Using
 -----
 
-Once installed, you will have a ``hrw4u`` command available. You can run it with the
-as following, which produces the help output:
+Once installed, you will have a ``hrw4u`` command available. You can run it as
+follows to produce the help output:
 
 .. code-block:: none
 
@@ -111,6 +112,33 @@ significant). For instance:
 
 There is no `cond` or `set-header` syntax — those are implied by context.
 
+Header Presence
+---------------
+
+In header_rewrite, to test if a header is not present, you must test the value against an empty string (and then negate it to test if the header exists). For instance:
+
+.. code-block:: none
+
+   # header_rewrite - test if header is NOT present
+   cond %{HEADER:Strict-Transport-Security} =""
+
+   # header_rewrite - test if header IS present
+   cond %{HEADER:Strict-Transport-Security} ="" [NOT]
+
+HRW4U uses a more conventional approach:
+
+.. code-block:: none
+
+   # HRW4U - test if header is NOT present
+   if !inbound.req.Strict-Transport-Security {
+       ...
+   }
+
+   # HRW4U - test if header IS present
+   if inbound.req.Strict-Transport-Security {
+       ...
+   }
+
 
 Condition & Operator Mapping
 ============================
@@ -142,39 +170,42 @@ Conditions
 
 Below is a partial mapping of `header_rewrite` condition symbols to their HRW4U equivalents:
 
-=============================== ================================== ================================================
-Header Rewrite                   HRW4U                             Description
-=============================== ================================== ================================================
-cond %{ACCESS:/path}            access("/path")                    File exists at "/path" and is accessible by ATS
-cond %{CACHE} =hit-fresh        cache() == "hit-fresh"             Cache lookup result status
-cond %{CIDR:24,48} =ip          cidr(24,48) == "ip"                Match masked client IP address
-cond %{CLIENT-HEADER:X} =foo    inbound.req.X == "foo"             Original client request header
-cond %{CLIENT-URL:<C> =bar      inbound.url.<C> == "bar"           URL component match, <:ref:`C<admin-plugins-header-rewrite-url-parts>`> is ``host``, ``path`` etc.
-
-cond %{COOKIE:foo} =bar         {in,out}bound.cookie.foo == "bar"  Check a cookie value
-cond %{FROM-URL:<C>} =bar       from.url.<C> == "bar"              Remap ``From URL`` component match, <:ref:`C<admin-plugins-header-rewrite-url-parts>`> is ``host`` etc.
-cond %{HEADER:X} =fo            {in,out}bound.{req,resp}.X == "fo" Context sensitive header conditions
-cond %{ID:UNIQUE} =...          id.UNIQUE == "..."                 (:ref:`Unique/request/process<admin-plugins-header-rewrite-id>`) transaction identifier
-cond %{INTERNAL-TRANSACTION}    internal()                         Check if transaction is internally generated
-cond %{IP:CLIENT} ="..."        inbound.ip == "..."                Client's IP address. Same as ``inbound.REMOTE_ADDR``
-cond %{IP:INBOUND} ="..."       inbound.server == "..."            ATS's IP address to which the client connected
-cond %{IP:SERVER} ="..."        outbound.ip == "..."               Upstream (next-hop) server IP address
-cond %{IP:OUTBOUND} ="..."      outbound.server == "..."           ATS's outbound IP address, connecting upstream
-cond %{LAST-CAPTURE:<#>} ="..." capture.<#> == "..."               Last capture group from regex match (range: `0-9`)
-cond %{METHOD} =GET             inbound.method == "GET"            HTTP method match
-cond %{NEXT-HOP:<C>} ="bar"     outbound.url.<C> == "bar"          Next-hop URL component match, <:ref:`C<admin-plugins-header-rewrite-url-parts>`> is ``host`` etc.
-cond %{NOW:<U>} ="..."          now.<U> == "..."                   Current date/time in format,  <:ref:`U<admin-plugins-header-rewrite-geo>`> selects time unit
-cond %{RANDOM:500} >250         random(500) > 250                  Random number between 0 and the specified range
-cond %{SSN-TXN-COUNT} >10       ssn-txn-count() > 10               Number of transactions on server connection
-cond %{TO-URL:<C>} =bar         to.url.<C> == "bar"                Remap ``To URL`` component match, <:ref:`C<admin-plugins-header-rewrite-url-parts>`> is ``host`` etc.
-cond %{TXN-COUNT} >10           txn-count() > 10                   Number of transactions on client connection
-cond %{URL:<C> =bar             {in,out}bound.url.<C> == "bar"     Context aware URL component match
-cond %{GEO:<C>} =bar            geo.<C> == "bar"                   IP to Geo mapping. <:ref:`C<admin-plugins-header-rewrite-geo>`> is country, asn, etc.
-cond %{STATUS} =200             inbound.status ==200               Origin http status code
-%{TCP-INFO}                     tcp.info                           TCP Info struct field values
-cond %{HTTP-CNTL:<C>}           http.cntl.<C>                      Check the state of the <:ref:`C<admin-plugins-header-rewrite-set-http-cntl>`> HTTP control
-cond %{INBOUND:<C>}             {in,out}bound.conn.<c>             inbound (:ref:`client, user agent<admin-plugins-header-rewrite-inbound>`) connection to ATS
-=============================== ================================== ================================================
+================================ ================================== ================================================
+Header Rewrite                    HRW4U                             Description
+================================ ================================== ================================================
+cond %{ACCESS:/path}             access("/path")                    File exists at "/path" and is accessible by ATS
+cond %{CACHE} =hit-fresh         cache() == "hit-fresh"             Cache lookup result status
+cond %{CIDR:24,48} =ip           cidr(24,48) == "ip"                Match masked client IP address
+cond %{CLIENT-HEADER:X} =foo     inbound.req.X == "foo"             Original client request header
+cond %{CLIENT-URL:<C>} =bar      inbound.url.<C> == "bar"           URL component match, <:ref:`C<admin-plugins-header-rewrite-url-parts>`> is ``host``, ``path`` etc.
+cond %{COOKIE:foo} =bar          {in,out}bound.cookie.foo == "bar"  Check a cookie value
+cond %{FROM-URL:<C>} =bar        from.url.<C> == "bar"              Remap ``From URL`` component match, <:ref:`C<admin-plugins-header-rewrite-url-parts>`> is ``host`` etc.
+cond %{HEADER:X} =fo             {in,out}bound.{req,resp}.X == "fo" Context sensitive header conditions
+cond %{ID:UNIQUE} =...           id.UNIQUE == "..."                 (:ref:`Unique/request/process<admin-plugins-header-rewrite-id>`) transaction identifier
+cond %{INTERNAL-TRANSACTION}     internal()                         Check if transaction is internally generated
+cond %{INBOUND:CLIENT-CERT:<X>}  inbound.client-cert.<X>            Access the mTLS / client certificate details, on the inbound (client) connection
+cond %{INBOUND:SERVER-CERT:<X>}  inbound.client-cert.<X>            Access the server (handshake) certificate details, on the inbound connection
+cond %{IP:CLIENT} ="..."         inbound.ip == "..."                Client's IP address. Same as ``inbound.REMOTE_ADDR``
+cond %{IP:INBOUND} ="..."        inbound.server == "..."            ATS's IP address to which the client connected
+cond %{IP:SERVER} ="..."         outbound.ip == "..."               Upstream (next-hop) server IP address
+cond %{IP:OUTBOUND} ="..."       outbound.server == "..."           ATS's outbound IP address, connecting upstream
+cond %{LAST-CAPTURE:<#>} ="..."  capture.<#> == "..."               Last capture group from regex match (range: `0-9`)
+cond %{METHOD} =GET              inbound.method == "GET"            HTTP method match
+cond %{NEXT-HOP:<C>} ="bar"      outbound.url.<C> == "bar"          Next-hop URL component match, <:ref:`C<admin-plugins-header-rewrite-url-parts>`> is ``host`` etc.
+cond %{NOW:<U>} ="..."           now.<U> == "..."                   Current date/time in format,  <:ref:`U<admin-plugins-header-rewrite-geo>`> selects time unit
+cond %{OUTBOUND:CLIENT-CERT:<X>} outbound.client-cert.<X>           Access the mTLS / client certificate details, on the outbound (upstream) connection
+cond %{OUTbOUND:SERVER-CERT:<X>} outbound.client-cert.<X>           Access the server (handshake) certificate details, on the outbound connection
+cond %{RANDOM:500} >250          random(500) > 250                  Random number between 0 and the specified range
+cond %{SSN-TXN-COUNT} >10        ssn-txn-count() > 10               Number of transactions on server connection
+cond %{TO-URL:<C>} =bar          to.url.<C> == "bar"                Remap ``To URL`` component match, <:ref:`C<admin-plugins-header-rewrite-url-parts>`> is ``host`` etc.
+cond %{TXN-COUNT} >10            txn-count() > 10                   Number of transactions on client connection
+cond %{URL:<C> =bar              {in,out}bound.url.<C> == "bar"     Context aware URL component match
+cond %{GEO:<C>} =bar             geo.<C> == "bar"                   IP to Geo mapping. <:ref:`C<admin-plugins-header-rewrite-geo>`> is country, asn, etc.
+cond %{STATUS} =200              inbound.status ==200               Origin http status code
+cond %{TCP-INFO}                 tcp.info                           TCP Info struct field values
+cond %{HTTP-CNTL:<C>}            http.cntl.<C>                      Check the state of the <:ref:`C<admin-plugins-header-rewrite-set-http-cntl>`> HTTP control
+cond %{INBOUND:<C>}              {in,out}bound.conn.<c>             inbound (:ref:`client, user agent<admin-plugins-header-rewrite-inbound>`) connection to ATS
+================================ ================================== ================================================
 
 The conditions operating on headers and URLs are also available as operators. E.g.:
 
@@ -209,14 +240,15 @@ rm-destination QUERY ...      remove_query("foo,bar")           Remove specified
 rm-destination QUERY ... [I]  keep_query("foo,bar")             Keep only specified query keys
 run-plugin foo.so "args"      run-plugin("foo.so", "arg1", ...) Run an external remap plugin
 set-body "foo"                inbound.resp.body = "foo"         Set the response body
-set-body-from "\https://..."   set-body-from("\https://...")      Set the response body from a URL
+set-body-from "\https://..."  set-body-from("\https://...")     Set the response body from a URL
 set-config <name> 12          set-config("name", 17)            Set a configuration variable to a value
 set-conn-dscp 8               inbound.conn.dscp = 8             Set the DSCP value for the connection
 set-conn-mark 17              inbound.conn.mark = 17            Set the MARK value for the connection
 set-cookie foo bar            {in,out}bound.cookie.foo = "bar"  Set a request/response cookie named foo
-set-destination <C> bar       inbound.url.<C> = "bar"           Set a URL component, <:ref:`C<admin-plugins-header-rewrite-url-parts>`> is path, query etc.
+set-destination <C> bar       {in,out}bound.url.<C> = "bar"     Set a URL component, <:ref:`C<admin-plugins-header-rewrite-url-parts>`> is path, query etc.
 set-header X-Bar foo          inbound.{req,resp}.X-Bar = "foo"  Assign a client request/origin response header
-set-redirect <Code> <URL>     set-redirect(302, "\https://...")  Set a redirect response
+set-plugin-cntl <C> <T>       set-plugin-cntl(<C>) = <T>        Set the plugin control <C> to <T>, see <:ref:`C<admin-plugins-header-rewrite-plugin-cntl>`>
+set-redirect <Code> <URL>     set-redirect(302, "\https://...") Set a redirect response
 set-status 404                http.status = 404                 Set the response status code
 set-status-reason "No"        http.status.reason = "no"         Set the response status reason
 set-http-cntl                 http.cntl.<C> = bool              Turn on/off <:ref:`C<admin-plugins-header-rewrite-set-http-cntl>`> controllers
@@ -228,6 +260,7 @@ In addition to those operators above, HRW4U supports the following special opera
 Header Rewrite    HRW4U Syntax                 Description
 ================= ============================ ================================
 no-op             no-op();                     Explicit no-op statement
+no-op [L]         break;                       Exit current section early (last rule)
 set-debug         set-debug()                  Enables ATS txn debug
 skip-remap        skip-remap()                 Skip remap processing (open proxy)
 ================= ============================ ================================
@@ -235,9 +268,10 @@ skip-remap        skip-remap()                 Skip remap processing (open proxy
 String concatenations
 ---------------------
 
-You can concatenate values using strings, condition values and variable expansions on the same line in
-operators using. For instance, ``outbound.req.CustomHeader = “Hello from {inbound.ip}:{inbound.port}”``. As
-a result, the set-redirect's ``[QSA]`` flag would be implemented as ``set-redirect(302, "https://...?{inbound.url.query}")``.
+You can concatenate values using strings, condition values, and variable expansions
+on the same line in operators. For instance, ``outbound.req.CustomHeader = "Hello from {inbound.ip}:{inbound.port}"``.
+As a result, the set-redirect's ``[QSA]`` flag would be implemented as
+``set-redirect(302, "https://...?{inbound.url.query}")``.
 Note the presence of the ``?`` -- the url.query doesn't include it.
 
 
@@ -455,8 +489,8 @@ possible to accomplish::
 Add Cache Control Headers Based on Origin Path
 ----------------------------------------------
 
-This rule adds cache control headers to CDN responses based matching the origin
-path.  One provides a max age and the other provides a "no-cache" statement to
+This rule adds cache control headers to CDN responses based on matching the origin
+path. One provides a max age and the other provides a "no-cache" statement to
 two different file paths. ::
 
    READ_RESPONSE {
@@ -479,7 +513,11 @@ Redirect when the Origin Server Times Out
 This rule sends a 302 redirect to the client with the requested URI's Path and
 Query string when the Origin server times out or the connection is refused::
 
-   TBD
+   READ_RESPONSE {
+       if outbound.status in [502, 504] {
+           set-redirect(302, "http://different_origin.example.com/{inbound.url.path}?{inbound.url.query}");
+       }
+   }
 
 Check for existence of a header
 -------------------------------
@@ -514,13 +552,13 @@ Close Connections for draining
 
 When a healthcheck file is missing (in this example, ``/path/to/the/healthcheck/file.txt``),
 add a ``Connection: close`` header to have clients drop their connection,
-allowing the server to drain. Although Connection header is only available on
-HTTP/1.1 in terms of protocols, but this also works for HTTP/2 connections
+allowing the server to drain. Although the Connection header is only available on
+HTTP/1.1 in terms of protocols, this also works for HTTP/2 connections
 because the header triggers HTTP/2 graceful shutdown. This should be a global
 configuration.::
 
    SEND_RESPONSE {
-      if !access("/path/to/the/healthcheck/file.txt}") {
+      if !access("/path/to/the/healthcheck/file.txt") {
           inbound.resp.Connection = "close";
       }
    }
@@ -591,7 +629,7 @@ And finally, a  much more efficient solution, using the ``else`` clause.::
 Add Identifier from Server with Data
 ------------------------------------
 
-This rule adds an unique identifier from the server if the data is fresh from
+This rule adds a unique identifier from the server if the data is fresh from
 the cache or if the identifier has not been generated yet. This will inform
 the client where the requested data was served from.::
 
@@ -604,7 +642,7 @@ the client where the requested data was served from.::
 Apply rate limiting for some select requests
 --------------------------------------------
 
-This rule will conditiionally, based on the client request headers, apply rate
+This rule will conditionally, based on the client request headers, apply rate
 limiting to the request.::
 
    REMAP {

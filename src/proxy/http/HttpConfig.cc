@@ -596,43 +596,59 @@ register_stat_callbacks()
   Metrics::Derived::derive({
     // Total bytes of client request body + headers
     {"proxy.process.http.user_agent_total_request_bytes",
-     {http_rsb.user_agent_request_document_total_size, http_rsb.user_agent_request_header_total_size}                                           },
+     Metrics::MetricType::COUNTER,
+     {http_rsb.user_agent_request_document_total_size, http_rsb.user_agent_request_header_total_size}                     },
     // Total bytes of client response body + headers
     {"proxy.process.http.user_agent_total_response_bytes",
-     {http_rsb.user_agent_response_document_total_size, http_rsb.user_agent_response_header_total_size}                                         },
+     Metrics::MetricType::COUNTER,
+     {http_rsb.user_agent_response_document_total_size, http_rsb.user_agent_response_header_total_size}                   },
     // Total bytes of origin server request body + headers
     {"proxy.process.http.origin_server_total_request_bytes",
-     {http_rsb.origin_server_request_document_total_size, http_rsb.origin_server_request_header_total_size}                                     },
+     Metrics::MetricType::COUNTER,
+     {http_rsb.origin_server_request_document_total_size, http_rsb.origin_server_request_header_total_size}               },
     // Total bytes of origin server response body + headers
     {"proxy.process.http.origin_server_total_response_bytes",
-     {http_rsb.origin_server_response_document_total_size, http_rsb.origin_server_response_header_total_size}                                   },
+     Metrics::MetricType::COUNTER,
+     {http_rsb.origin_server_response_document_total_size, http_rsb.origin_server_response_header_total_size}             },
     // Total bytes of client request and response (total traffic to and from clients)
     {"proxy.process.user_agent_total_bytes",
-     {"proxy.process.http.user_agent_total_request_bytes", "proxy.process.http.user_agent_total_response_bytes"}                                },
+     Metrics::MetricType::COUNTER,
+     {"proxy.process.http.user_agent_total_request_bytes", "proxy.process.http.user_agent_total_response_bytes"}          },
     // Total bytes of origin/parent request and response
     {"proxy.process.origin_server_total_bytes",
+     Metrics::MetricType::COUNTER,
      {"proxy.process.http.origin_server_total_request_bytes", "proxy.process.http.origin_server_total_response_bytes",
-      http_rsb.parent_proxy_request_total_bytes, http_rsb.parent_proxy_response_total_bytes}                                                    },
+      http_rsb.parent_proxy_request_total_bytes, http_rsb.parent_proxy_response_total_bytes}                              },
     // Total requests which are cache hits
     {"proxy.process.cache_total_hits",
-     {http_rsb.cache_hit_fresh, http_rsb.cache_hit_reval, http_rsb.cache_hit_ims, http_rsb.cache_hit_stale_served}                              },
+     Metrics::MetricType::COUNTER,
+     {http_rsb.cache_hit_fresh, http_rsb.cache_hit_reval, http_rsb.cache_hit_ims, http_rsb.cache_hit_stale_served}        },
     // Total requests which are cache misses
     {"proxy.process.cache_total_misses",
+     Metrics::MetricType::COUNTER,
      {http_rsb.cache_miss_cold, http_rsb.cache_miss_changed, http_rsb.cache_miss_client_no_cache, http_rsb.cache_miss_ims,
-      http_rsb.cache_miss_uncacheable}                                                                                                          },
+      http_rsb.cache_miss_uncacheable}                                                                                    },
     // Total of all server connections (sum of origins and parent connections)
-    {"proxy.process.current_server_connections",              {http_rsb.current_server_connections, http_rsb.current_parent_proxy_connections}  },
+    {"proxy.process.current_server_connections",
+     Metrics::MetricType::GAUGE,
+     {http_rsb.current_server_connections, http_rsb.current_parent_proxy_connections}                                     },
     // Total requests, both hits and misses (this is slightly superfluous, but assures correct percentage calculations)
-    {"proxy.process.cache_total_requests",                    {"proxy.process.cache_total_hits", "proxy.process.cache_total_misses"}            },
+    {"proxy.process.cache_total_requests",
+     Metrics::MetricType::COUNTER,
+     {"proxy.process.cache_total_hits", "proxy.process.cache_total_misses"}                                               },
     // Total cache requests bytes which are cache hits
     {"proxy.process.cache_total_hits_bytes",
-     {http_rsb.tcp_hit_user_agent_bytes, http_rsb.tcp_refresh_hit_user_agent_bytes, http_rsb.tcp_ims_hit_user_agent_bytes}                      },
+     Metrics::MetricType::COUNTER,
+     {http_rsb.tcp_hit_user_agent_bytes, http_rsb.tcp_refresh_hit_user_agent_bytes, http_rsb.tcp_ims_hit_user_agent_bytes}},
     // Total cache requests bytes which are cache misses
     {"proxy.process.cache_total_misses_bytes",
+     Metrics::MetricType::COUNTER,
      {http_rsb.tcp_miss_user_agent_bytes, http_rsb.tcp_expired_miss_user_agent_bytes, http_rsb.tcp_refresh_miss_user_agent_bytes,
-      http_rsb.tcp_ims_miss_user_agent_bytes}                                                                                                   },
+      http_rsb.tcp_ims_miss_user_agent_bytes}                                                                             },
     // Total request bytes, both hits and misses
-    {"proxy.process.cache_total_bytes",                       {"proxy.process.cache_total_hits_bytes", "proxy.process.cache_total_misses_bytes"}}
+    {"proxy.process.cache_total_bytes",
+     Metrics::MetricType::COUNTER,
+     {"proxy.process.cache_total_hits_bytes", "proxy.process.cache_total_misses_bytes"}                                   }
   });
 }
 
@@ -640,10 +656,14 @@ register_stat_callbacks()
   Parse list of HTTP status code and return HttpStatusBitset
   - e.g. "204 305 403 404 414 500 501 502 503 504"
  */
-static HttpStatusBitset
-parse_http_status_code_list(swoc::TextView status_list)
+static void
+parse_http_status_code_list(HttpStatusBitset &set, swoc::TextView status_list)
 {
-  HttpStatusBitset set;
+  // Clear target set first
+  set.reset();
+
+  // Trim quotes or double quotes if there
+  status_list = status_list.trim('"').trim('\'');
 
   auto is_sep{[](char c) { return isspace(c) || ',' == c || ';' == c; }};
 
@@ -659,91 +679,20 @@ parse_http_status_code_list(swoc::TextView status_list)
       set[n] = true;
     }
   }
-
-  return set;
 }
 
-static bool
-set_negative_caching_list(const char *name, RecDataT dtype, RecData data, HttpConfigParams *c, bool update)
-{
-  bool             ret = false;
-  HttpStatusBitset set;
-
-  // values from proxy.config.http.negative_caching_list
-  if (0 == strcasecmp("proxy.config.http.negative_caching_list", name) && RECD_STRING == dtype && data.rec_string) {
-    // parse the list of status codes
-    set = parse_http_status_code_list({data.rec_string, strlen(data.rec_string)});
-  }
-
-  // set the return value
-  if (set != c->negative_caching_list) {
-    c->negative_caching_list = set;
-    ret                      = ret || update;
-  }
-
-  return ret;
-}
-
-// Method of getting the status code bitset
-static int
-negative_caching_list_cb(const char *name, RecDataT dtype, RecData data, void *cookie)
-{
-  HttpConfigParams *c = static_cast<HttpConfigParams *>(cookie);
-  // Signal an update if valid value arrived.
-  if (set_negative_caching_list(name, dtype, data, c, true)) {
-    http_config_cb(name, dtype, data, cookie);
-  }
-  return REC_ERR_OKAY;
-}
-
-// Method of loading the negative caching config bitset
-void
-load_negative_caching_var(RecRecord const *r, void *cookie)
-{
-  HttpConfigParams *c = static_cast<HttpConfigParams *>(cookie);
-  set_negative_caching_list(r->name, r->data_type, r->data, c, false);
-}
-
-static bool
-set_negative_revalidating_list(const char *name, RecDataT dtype, RecData data, HttpConfigParams *c, bool update)
-{
-  bool             ret = false;
-  HttpStatusBitset set;
-
-  // values from proxy.config.http.negative_revalidating_list
-  if (0 == strcasecmp("proxy.config.http.negative_revalidating_list", name) && RECD_STRING == dtype && data.rec_string) {
-    // parse the list of status codes
-    set = parse_http_status_code_list({data.rec_string, strlen(data.rec_string)});
-  }
-
-  // set the return value
-  if (set != c->negative_revalidating_list) {
-    c->negative_revalidating_list = set;
-    ret                           = ret || update;
-  }
-
-  return ret;
-}
-
-// Method of getting the status code bitset
-static int
-negative_revalidating_list_cb(const char *name, RecDataT dtype, RecData data, void *cookie)
-{
-  HttpConfigParams *c = static_cast<HttpConfigParams *>(cookie);
-  // Signal an update if valid value arrived.
-  if (set_negative_revalidating_list(name, dtype, data, c, true)) {
-    http_config_cb(name, dtype, data, cookie);
-  }
-  return REC_ERR_OKAY;
-}
-
-// Method of loading the negative caching config bitset
-void
-load_negative_revalidating_var(RecRecord const *r, void *cookie)
-{
-  HttpConfigParams *c = static_cast<HttpConfigParams *>(cookie);
-  set_negative_revalidating_list(r->name, r->data_type, r->data, c, false);
-}
+// clang-format off
+// TODO: find good clang-format setting
+const MgmtConverter HttpStatusCodeList::Conv{
+  [](const void *data) -> std::string_view {
+    const HttpStatusCodeList *list = static_cast<const HttpStatusCodeList *>(data);
+    return list->conf_value;
+  },
+  [](void *data, std::string_view src) -> void {
+    HttpStatusCodeList *list = static_cast<HttpStatusCodeList *>(data);
+    parse_http_status_code_list(list->_data, src);
+  }};
+// clang-format on
 
 /** Template for creating conversions and initialization for @c std::chrono based configuration variables.
  *
@@ -945,6 +894,8 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.oride.connect_attempts_max_retries, "proxy.config.http.connect_attempts_max_retries");
   HttpEstablishStaticConfigLongLong(c.oride.connect_attempts_max_retries_down_server,
                                     "proxy.config.http.connect_attempts_max_retries_down_server");
+  HttpEstablishStaticConfigLongLong(c.oride.connect_attempts_retry_backoff_base,
+                                    "proxy.config.http.connect_attempts_retry_backoff_base");
 
   HttpEstablishStaticConfigLongLong(c.oride.connect_down_policy, "proxy.config.http.connect.down.policy");
 
@@ -1076,12 +1027,11 @@ HttpConfig::startup()
   // Negative caching and revalidation
   HttpEstablishStaticConfigByte(c.oride.negative_caching_enabled, "proxy.config.http.negative_caching_enabled");
   HttpEstablishStaticConfigLongLong(c.oride.negative_caching_lifetime, "proxy.config.http.negative_caching_lifetime");
+  HttpEstablishStaticConfigStringAlloc(c.oride.negative_caching_list.conf_value, "proxy.config.http.negative_caching_list");
   HttpEstablishStaticConfigByte(c.oride.negative_revalidating_enabled, "proxy.config.http.negative_revalidating_enabled");
   HttpEstablishStaticConfigLongLong(c.oride.negative_revalidating_lifetime, "proxy.config.http.negative_revalidating_lifetime");
-  RecRegisterConfigUpdateCb("proxy.config.http.negative_caching_list", &negative_caching_list_cb, &c);
-  RecLookupRecord("proxy.config.http.negative_caching_list", &load_negative_caching_var, &c, true);
-  RecRegisterConfigUpdateCb("proxy.config.http.negative_revalidating_list", &negative_revalidating_list_cb, &c);
-  RecLookupRecord("proxy.config.http.negative_revalidating_list", &load_negative_revalidating_var, &c, true);
+  HttpEstablishStaticConfigStringAlloc(c.oride.negative_revalidating_list.conf_value,
+                                       "proxy.config.http.negative_revalidating_list");
 
   // Buffer size and watermark
   HttpEstablishStaticConfigLongLong(c.oride.default_buffer_size_index, "proxy.config.http.default_buffer_size");
@@ -1241,6 +1191,8 @@ HttpConfig::reconfigure()
             "will never redispatch to another server",
             m_master.oride.connect_attempts_rr_retries, params->oride.connect_attempts_max_retries);
   }
+  params->oride.connect_attempts_retry_backoff_base = m_master.oride.connect_attempts_retry_backoff_base;
+
   params->oride.connect_attempts_rr_retries     = m_master.oride.connect_attempts_rr_retries;
   params->oride.connect_attempts_timeout        = m_master.oride.connect_attempts_timeout;
   params->oride.connect_down_policy             = m_master.oride.connect_down_policy;
@@ -1401,8 +1353,8 @@ HttpConfig::reconfigure()
   params->oride.ssl_client_sni_policy     = ats_strdup(m_master.oride.ssl_client_sni_policy);
   params->oride.ssl_client_alpn_protocols = ats_strdup(m_master.oride.ssl_client_alpn_protocols);
 
-  params->negative_caching_list      = m_master.negative_caching_list;
-  params->negative_revalidating_list = m_master.negative_revalidating_list;
+  params->oride.negative_caching_list.set(m_master.oride.negative_caching_list.conf_value);
+  params->oride.negative_revalidating_list.set(m_master.oride.negative_revalidating_list.conf_value);
 
   params->oride.host_res_data            = m_master.oride.host_res_data;
   params->oride.host_res_data.conf_value = ats_strdup(m_master.oride.host_res_data.conf_value);

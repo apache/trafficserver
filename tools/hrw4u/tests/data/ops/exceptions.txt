@@ -1,0 +1,5 @@
+# Operations tests direction exceptions
+# Format: test_name: direction
+
+# QSA (Query String Append) is a reverse-only test
+qsa.input: u4wrh

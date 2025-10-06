@@ -7,6 +7,7 @@
 #include <chrono>
 #include <iostream>
 #include <variant>
+#include <cmath>
 
 #include <netinet/in.h>
 
@@ -15,7 +16,7 @@
 #include "swoc/bwf_std.h"
 #include "swoc/bwf_ex.h"
 
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
 
 using namespace std::literals;
 using namespace swoc::literals;

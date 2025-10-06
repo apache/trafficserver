@@ -712,8 +712,8 @@ LogFile::writeln(char *data, int len, int fd, const char *path)
   LogFile::check_fd
 
   This routine will occasionally stat the current logfile to make sure that
-  it really does exist.  The easiest way to do this is to close the file
-  and re-open it, which will create the file if it doesn't already exist.
+  it really does exist. We use fstat() on the open file descriptor to check
+  if the file has been unlinked.
 
   Failure to open the logfile will generate a manager alarm and a Warning.
   -------------------------------------------------------------------------*/
@@ -726,13 +726,34 @@ LogFile::check_fd()
 
   if ((stat_check_count % Log::config->file_stat_frequency) == 0) {
     //
-    // It's time to see if the file really exists.  If we can't see
-    // the file (via access), then we'll close our descriptor and
-    // attempt to re-open it, which will create the file if it's not
-    // there.
+    // Check if the file still exists using fstat() on the open file descriptor.
+    // For regular files that have been unlinked (e.g., by log rotation tools),
+    // st_nlink will be 0. Non-regular files like stderr/stdout will never have
+    // st_nlink == 0, so this approach works safely for all file types.
     //
-    if (m_name && !LogFile::exists(m_name)) {
-      close_file();
+    if (m_name && is_open()) {
+      int fd = get_fd();
+      if (fd >= 0) {
+        struct stat st;
+        if (fstat(fd, &st) == 0) {
+          // If the file has been unlinked, st_nlink will be 0
+          // This only happens for regular files, not special files like stderr/stdout
+          if (st.st_nlink == 0) {
+            close_file();
+          }
+        } else {
+          // fstat failed, the file descriptor may be invalid
+          // Fall back to path-based existence check
+          if (!LogFile::exists(m_name)) {
+            close_file();
+          }
+        }
+      } else {
+        // No valid fd, fall back to path-based check
+        if (!LogFile::exists(m_name)) {
+          close_file();
+        }
+      }
     }
     stat_check_count = 0;
   }

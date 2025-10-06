@@ -1,1 +1,1 @@
-(program (section REMAP { (sectionBody (conditional (ifStatement if (condition (expression (expression (term (factor inbound.req.X-Foo))) || (term (factor inbound.req.X-Bar)))) (block { (statement inbound.req.X-fie = (value "123") ;) })))) }) <EOF>)
+(program (programItem (section REMAP { (sectionBody (conditional (ifStatement if (condition (expression (expression (term (factor inbound.req.X-Foo))) || (term (factor inbound.req.X-Bar)))) (block { (blockItem (statement inbound.req.X-fie = (value "123") ;)) })))) })) <EOF>)

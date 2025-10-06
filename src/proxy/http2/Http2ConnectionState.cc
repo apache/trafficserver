@@ -1369,10 +1369,7 @@ Http2ConnectionState::send_connection_preface()
   configured_settings.set(HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS, _adjust_concurrent_stream());
 
   uint32_t const configured_initial_window_size = this->_get_configured_receive_session_window_size();
-  if (this->_has_dynamic_stream_window()) {
-    // Since this is the beginning of the connection and there are no streams
-    // yet, we can just set the stream window size to fill the entire session
-    // window size.
+  if (configured_initial_window_size > HTTP2_INITIAL_WINDOW_SIZE) {
     configured_settings.set(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE, configured_initial_window_size);
   }
 

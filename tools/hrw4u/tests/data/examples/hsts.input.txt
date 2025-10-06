@@ -1,5 +1,5 @@
 READ_RESPONSE {
-    if outbound.resp.Strict-Transport-Security == "" && inbound.conn.TLS != "" {
-        outbound.resp.Strict-Transport-Security  = "max-age=63072000; includeSubDomains; preload";
+    if !outbound.resp.Strict-Transport-Security && inbound.conn.TLS {
+        outbound.resp.Strict-Transport-Security = "max-age=63072000; includeSubDomains; preload";
     }
 }

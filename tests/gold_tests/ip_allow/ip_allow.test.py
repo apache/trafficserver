@@ -96,12 +96,12 @@ ts.Disk.records_config.update(
     })
 
 format_string = (
-    '%<cqtd>-%<cqtt> %<stms> %<ttms> %<chi> %<crc>/%<pssc> %<psql> '
+    'scheme=%<pqus> %<cqtd>-%<cqtt> %<stms> %<ttms> %<chi> %<crc>/%<pssc> %<psql> '
     '%<cqhm> %<pquc> %<phr> %<psct> %<{Y-RID}pqh> '
     '%<{Y-YPCS}pqh> %<{Host}cqh> %<{CHAD}pqh>  '
     'sftover=%<{x-safet-overlimit-rules}cqh> sftmat=%<{x-safet-matched-rules}cqh> '
     'sftcls=%<{x-safet-classification}cqh> '
-    'sftbadclf=%<{x-safet-bad-classifiers}cqh> yra=%<{Y-RA}cqh> scheme=%<pqus>')
+    'sftbadclf=%<{x-safet-bad-classifiers}cqh> yra=%<{Y-RA}cqh>')
 
 ts.Disk.logging_yaml.AddLines(
     ''' logging:
@@ -137,11 +137,11 @@ ts.Disk.traffic_out.Content += Testers.ContainsExpression(
 #
 # TEST 1: Perform a GET request. Should be allowed because GET is in the allowlist.
 #
-tr = Test.AddTestRun()
+tr = Test.AddTestRun('Allowed GET request')
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.SSL_Port))
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 
-tr.MakeCurlCommand('--verbose -H "Host: www.example.com" http://localhost:{ts_port}/get'.format(ts_port=ts.Variables.port))
+tr.MakeCurlCommand('--verbose -H "Host: www.example.com" http://localhost:{ts_port}/get'.format(ts_port=ts.Variables.port), ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = 'gold/200.gold'
 tr.StillRunningAfter = ts
@@ -151,8 +151,9 @@ tr.StillRunningAfter = server
 # TEST 2: Perform a CONNECT request. Should not be allowed because CONNECT is
 # not in the allowlist.
 #
-tr = Test.AddTestRun()
-tr.MakeCurlCommand('--verbose -X CONNECT -H "Host: localhost" http://localhost:{ts_port}/connect'.format(ts_port=ts.Variables.port))
+tr = Test.AddTestRun('Denied CONNECT request')
+tr.MakeCurlCommand(
+    '--verbose -X CONNECT -H "Host: localhost" http://localhost:{ts_port}/connect'.format(ts_port=ts.Variables.port), ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = 'gold/403.gold'
 tr.StillRunningAfter = ts
@@ -162,15 +163,16 @@ tr.StillRunningAfter = server
 # TEST 3: Perform a PUSH request over HTTP/2. Should not be allowed because
 # PUSH is not in the allowlist.
 #
-tr = Test.AddTestRun()
+tr = Test.AddTestRun('Denied PUSH request over HTTP/2')
 tr.MakeCurlCommand(
-    '--http2 --verbose -k -X PUSH -H "Host: localhost" https://localhost:{ts_port}/h2_push'.format(ts_port=ts.Variables.ssl_port))
+    '--http2 --verbose -k -X PUSH -H "Host: localhost" https://localhost:{ts_port}/h2_push'.format(ts_port=ts.Variables.ssl_port),
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = 'gold/403_h2.gold'
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 
-tr = Test.AddTestRun()
+tr = Test.AddTestRun('Await and verify the transaction log file')
 tr.Processes.Default.Command = (
     os.path.join(Test.Variables.AtsTestToolsDir, 'stdout_wait') + ' 60 "{} {}" {}'.format(
         os.path.join(Test.TestDirectory, 'run_sed.sh'), os.path.join(ts.Variables.LOGDIR, 'squid.log'),

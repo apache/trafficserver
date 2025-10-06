@@ -1,0 +1,7 @@
+REMAP {
+    if inound.req.X-Foo ~ /foo/ {
+        inbound.req.X-Status = "foo";
+    } elif outbound.req.X-Bar ~ /bar/ {
+        inbound.req.X-status = "bar";
+    }
+}

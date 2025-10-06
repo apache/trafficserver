@@ -34,6 +34,7 @@
 #include <array>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <sys/un.h>
 
 #include "ts/ts.h"
 #include "ts/remap.h"
@@ -43,6 +44,27 @@ using OutstandingRequests = std::unordered_map<std::string, bool>;
 namespace cache_fill_ns
 {
 DbgCtl dbg_ctl{PLUGIN_NAME};
+}
+
+///////////////////////////////////////////////////////////////////////////
+// Remove a header (fully) from an TSMLoc / TSMBuffer. Return the number
+// of fields (header values) we removed.
+int
+remove_header(TSMBuffer bufp, TSMLoc hdr_loc, const char *header, int len)
+{
+  TSMLoc field = TSMimeHdrFieldFind(bufp, hdr_loc, header, len);
+  int    cnt   = 0;
+
+  while (field) {
+    TSMLoc tmp = TSMimeHdrFieldNextDup(bufp, hdr_loc, field);
+
+    ++cnt;
+    TSMimeHdrFieldDestroy(bufp, hdr_loc, field);
+    TSHandleMLocRelease(bufp, hdr_loc, field);
+    field = tmp;
+  }
+
+  return cnt;
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -136,8 +158,11 @@ BgFetchData::initialize(TSMBuffer request, TSMLoc req_hdr, TSHttpTxn txnp)
       memcpy(&client_ip, ip, sizeof(sockaddr_in));
     } else if (ip->sa_family == AF_INET6) {
       memcpy(&client_ip, ip, sizeof(sockaddr_in6));
+    } else if (ip->sa_family == AF_UNIX) {
+      memcpy(&client_ip, ip, sizeof(sockaddr_un));
     } else {
       TSError("[%s] Unknown address family %d", PLUGIN_NAME, ip->sa_family);
+      return false;
     }
   } else {
     TSError("[%s] Failed to get client host info", PLUGIN_NAME);
@@ -175,6 +200,12 @@ BgFetchData::initialize(TSMBuffer request, TSMLoc req_hdr, TSHttpTxn txnp)
 
             if (set_header(mbuf, hdr_loc, TS_MIME_FIELD_HOST, TS_MIME_LEN_HOST, hostp, len)) {
               Dbg(dbg_ctl, "Set header Host: %.*s", len, hostp);
+            }
+            // Next, remove the Range headers and IMS (conditional) headers from the request
+            for (auto const &header : FILTER_HEADERS) {
+              if (remove_header(mbuf, hdr_loc, header.data(), header.size()) > 0) {
+                Dbg(dbg_ctl, "Removed the %s header from request", header.data());
+              }
             }
             ret = true;
           }

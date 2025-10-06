@@ -480,6 +480,7 @@ Network Addresses, Ports, and Interfaces
 
 .. _chi:
 .. _chih:
+.. _chiv:
 .. _hii:
 .. _hiih:
 .. _chp:
@@ -501,6 +502,8 @@ chi   Client         IP address of the client's host. If :ref:`Proxy Protocol <p
                      is used, this represents the IP address of the peer, rather than
                      the client IP behind the peer.
 chih  Client         IP address of the client's host, in hexadecimal.
+chiv  Client         IP address of the client's host verified by a plugin. If not available,
+                     ``chi`` is used.
 hii   Proxy          IP address for the proxy's incoming interface (to which
                      the client connected).
 hiih  Proxy          IP address for the proxy's incoming interface (to which
@@ -615,6 +618,7 @@ SSL / Encryption
 .. _cscert:
 .. _cqssl:
 .. _cqssr:
+.. _cqssrt:
 .. _cqssv:
 .. _cqssc:
 .. _cqssu:
@@ -636,9 +640,15 @@ cscert Client Request 1 if |TS| requested certificate from client during TLS
                       handshake. 0 otherwise.
 cqssl  Client Request SSL client request status indicates if this client
                       connection is over SSL.
-cqssr  Client Request SSL session ticket reused status; indicates if the current
-                      request hit the SSL session ticket and avoided a full SSL
-                      handshake.
+cqssr  Client Request SSL session resumption status; indicates whether the
+                      current request was resumed from a previous SSL session
+                      and avoided a full TLS handshake. Resumption may have
+                      been via a server side session cache or via a TLS session
+                      ticket, see cqssrt_ for the resumption type.
+cqssrt Client Request SSL resumption type; indicates the type of TLS session
+                      resumption used for this request. 0 for no resumption,
+                      1 for server session cache resumption, 2 for TLS session
+                      ticket resumption.
 cqssv  Client Request SSL version used to communicate with the client.
 cqssc  Client Request SSL Cipher used by |TS| to communicate with the client.
 cqssu  Client Request SSL Elliptic Curve used by |TS| to communicate with the

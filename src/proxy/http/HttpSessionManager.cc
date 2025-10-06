@@ -36,6 +36,7 @@
 #include "proxy/http/HttpSM.h"
 #include "proxy/http/HttpDebugNames.h"
 #include "iocore/net/TLSSNISupport.h"
+#include "ts/ats_probe.h"
 #include <iterator>
 
 namespace
@@ -500,11 +501,13 @@ HttpSessionManager::_acquire_session(sockaddr const *ip, CryptoHash const &hostn
     if (to_return) {
       if (sm->create_server_txn(to_return)) {
         Dbg(dbg_ctl_http_ss, "[%" PRId64 "] [acquire session] return session from shared pool", to_return->connection_id());
+        ATS_PROBE2(http_ss_acquire_session, to_return->connection_id(), to_return->get_netvc()->get_socket());
         to_return->state = PoolableSession::PooledState::SSN_IN_USE;
         retval           = HSMresult_t::DONE;
       } else {
         Dbg(dbg_ctl_http_ss, "[%" PRId64 "] [acquire session] failed to get transaction on session from shared pool",
             to_return->connection_id());
+        ATS_PROBE2(http_ss_acquire_session_failed, to_return->connection_id(), to_return->get_netvc()->get_socket());
         // Don't close the H2 origin.  Otherwise you get use-after free with the activity timeout cop
         if (!to_return->is_multiplexing()) {
           to_return->do_io_close();
@@ -534,13 +537,16 @@ HttpSessionManager::release_session(PoolableSession *to_release)
 
     if (locked) {
       pool->releaseSession(to_release);
+      ATS_PROBE2(http_ss_release_session_global, to_release->connection_id(), to_release->get_netvc()->get_socket());
     } else if (this->get_pool_type() == TS_SERVER_SESSION_SHARING_POOL_HYBRID) {
       // Try again with the thread pool
       to_release->sharing_pool = TS_SERVER_SESSION_SHARING_POOL_THREAD;
+      ATS_PROBE2(http_ss_release_session_thread, to_release->connection_id(), to_release->get_netvc()->get_socket());
       return release_session(to_release);
     } else {
       Dbg(dbg_ctl_http_ss, "[%" PRId64 "] [release session] could not release session due to lock contention",
           to_release->connection_id());
+      ATS_PROBE2(http_ss_release_lock_contended, to_release->connection_id(), to_release->get_netvc()->get_socket());
       released_p = false;
     }
   }

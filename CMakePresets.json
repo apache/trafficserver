@@ -357,7 +357,19 @@
       "inherits": ["branch"],
       "cacheVariables": {
         "ENABLE_AUTEST": "ON",
-        "ENABLE_EXAMPLE": "ON"
+        "ENABLE_EXAMPLE": "ON",
+        "ENABLE_CRIPTS": "ON"
+      }
+    },
+    {
+      "name": "branch-autest-uds",
+      "displayName": "CI branch autest",
+      "inherits": ["branch"],
+      "cacheVariables": {
+        "ENABLE_AUTEST": "ON",
+        "ENABLE_AUTEST_UDS": "ON",
+        "ENABLE_EXAMPLE": "ON",
+        "ENABLE_CRIPTS": "ON"
       }
     },
     {

@@ -153,6 +153,16 @@ HttpDebugNames::get_event_name(int event)
     return "NET_EVENT_OPEN_FAILED/TS_EVENT_NET_CONNECT_FAILED";
 
   ////////////////////
+  // CONNECT_EVENTS //
+  ////////////////////
+  case CONNECT_EVENT_TXN:
+    return "CONNECT_EVENT_TXN";
+  case CONNECT_EVENT_DIRECT:
+    return "CONNECT_EVENT_DIRECT";
+  case CONNECT_EVENT_RETRY:
+    return "CONNECT_EVENT_RETRY";
+
+  ////////////////////
   // HOSTDB  EVENTS //
   ////////////////////
   case EVENT_HOST_DB_LOOKUP:
@@ -388,9 +398,6 @@ HttpDebugNames::get_action_name(HttpTransact::StateMachineAction_t e)
   case HttpTransact::StateMachineAction_t::ORIGIN_SERVER_RAW_OPEN:
     return ("StateMachineAction_t::ORIGIN_SERVER_RAW_OPEN");
 
-  case HttpTransact::StateMachineAction_t::ORIGIN_SERVER_RR_MARK_DOWN:
-    return ("StateMachineAction_t::ORIGIN_SERVER_RR_MARK_DOWN");
-
   case HttpTransact::StateMachineAction_t::READ_PUSH_HDR:
     return ("StateMachineAction_t::READ_PUSH_HDR");
 
@@ -420,9 +427,6 @@ HttpDebugNames::get_action_name(HttpTransact::StateMachineAction_t e)
 
   case HttpTransact::StateMachineAction_t::SSL_TUNNEL:
     return ("StateMachineAction_t::SSL_TUNNEL");
-
-  case HttpTransact::StateMachineAction_t::CONTINUE:
-    return ("StateMachineAction_t::CONTINUE");
 
   case HttpTransact::StateMachineAction_t::API_READ_REQUEST_HDR:
     return ("StateMachineAction_t::API_READ_REQUEST_HDR");

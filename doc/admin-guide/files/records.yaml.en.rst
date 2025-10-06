@@ -780,7 +780,7 @@ proto
 
 pp
    Enables Proxy Protocol on the port.  If Proxy Protocol is enabled on the
-   port, all incoming requests must be prefaced with the PROXY header.  See
+   port, |TS| tries to parse the header first, and it falls back to the regular connection handling based on other keywords. See
    :ref:`Proxy Protocol <proxy-protocol>` for more details on how to configure
    this option properly.
 
@@ -1705,6 +1705,14 @@ Origin Server Connect Attempts
    `proxy.config.http.connect_attempts_max_retries`_ so an error is returned to the client faster and also to reduce the load on the down origin.
    The timeout interval `proxy.config.http.connect_attempts_timeout`_ in seconds is used with this setting.
 
+.. ts:cv:: CONFIG proxy.config.http.connect_attempts_retry_backoff_base INT 0
+   :reloadable:
+   :overridable:
+   :units: milliseconds
+
+   The base delay, in milliseconds, used for exponential backoff between retry attempts to connect to the origin server. After each
+   failure the delay doubles - e.g. 64m, 128m, 256m. When this is set to `0` (the default value), |TS| retries immediately without exponential backoff.
+
 .. ts:cv:: CONFIG proxy.config.http.connect.down.policy INT 2
    :overridable:
 
@@ -1886,6 +1894,7 @@ Negative Response Caching
 
 .. ts:cv:: CONFIG proxy.config.http.negative_caching_list STRING 204 305 403 404 414 500 501 502 503 504
    :reloadable:
+   :overridable:
 
    The HTTP status code for negative caching. Default values are mentioned above. The unwanted status codes can be
    taken out from the list. Other status codes can be added. The variable is a list but parsed as STRING.
@@ -1905,6 +1914,8 @@ Negative Response Caching
    A value of ``0`` disables serving stale content and a value of ``1`` enables keeping and serving stale content if revalidation fails.
 
 .. ts:cv:: CONFIG proxy.config.http.negative_revalidating_lifetime INT 1800
+   :reloadable:
+   :overridable:
 
    When replying with a stale cached response in negative revalidating circumstances (see
    :ts:cv:`proxy.config.http.negative_revalidating_enabled`), |TS| includes an ``Expires:`` HTTP
@@ -1930,6 +1941,7 @@ Negative Response Caching
 
 .. ts:cv:: CONFIG proxy.config.http.negative_revalidating_list STRING 500 502 503 504
    :reloadable:
+   :overridable:
 
    The HTTP status codes for which the negative revalidating feature applies. Note that this is a
    `STRING` configuration containing a space separated list of the desired HTTP status codes.
@@ -2178,6 +2190,7 @@ IP Allow
    ============= ======================================================================
    ``PEER``      Use the IP address of the peer
    ``PROXY``     Use the IP address from PROXY protocol
+   ``PLUGIN``    Use the IP address verified by a plugin
    ============= ======================================================================
 
 
@@ -3713,8 +3726,10 @@ SSL Termination
 
 .. ts:cv:: CONFIG proxy.config.ssl.server.honor_cipher_order INT 1
 
-   By default (``1``) |TS| will use the server's cipher suites preferences instead of the client preferences.
-   By disabling it (``0``) |TS| will use client's cipher suites preferences.
+   By default (``1``) |TS| will use the server's preferences for cipher suites, supported groups, and
+   signature algorithms instead of the client preferences. By disabling it (``0``) |TS| will use the
+   client's preferences. Note that despite the configuration name mentioning "cipher_order", this
+   setting controls server preference for multiple aspects of TLS negotiation, not just cipher suites.
 
 .. ts:cv:: CONFIG proxy.config.ssl.server.prioritize_chacha INT 0
 
@@ -3950,9 +3965,9 @@ SSL Termination
   Setting a value less than or equal to ``0`` effectively disables
   SSL session cache for the origin server.
 
-.. ts:cv:: CONFIG proxy.config.ssl.session_cache.enabled INT 2
+.. ts:cv:: CONFIG proxy.config.ssl.session_cache.mode INT 2
 
-   Enables the SSL session cache:
+   Sets the SSL session cache mode:
 
    ===== ======================================================================
    Value Description
@@ -3964,13 +3979,22 @@ SSL Termination
          implementation.
    ===== ======================================================================
 
+.. ts:cv:: CONFIG proxy.config.ssl.session_cache.enabled INT 2
+
+   .. deprecated:: 10.1.0
+      Use :ts:cv:`proxy.config.ssl.session_cache.mode` instead.
+
+   This configuration exists for historical reasons and is deprecated in favor of
+   :ts:cv:`proxy.config.ssl.session_cache.mode`. It accepts the same values and
+   has identical behavior, so see that documentation for details.
+
 .. ts:cv:: CONFIG proxy.config.ssl.session_cache.timeout INT 0
 
   This configuration specifies the lifetime of SSL session cache
   entries in seconds. If it is ``0``, then the SSL library will use
   a default value, typically 300 seconds. Note: This option has no affect
   when using the |TS| session cache (option ``2`` in
-  ``proxy.config.ssl.session_cache.enabled``)
+  ``proxy.config.ssl.session_cache.mode``)
 
    See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
 
@@ -4012,9 +4036,9 @@ SSL Termination
   Take into account that setting the value to 0 will disable session caching for TLSv1.3
   connections.
 
-  Lowering this setting to ``1`` can be interesting when ``proxy.config.ssl.session_cache.enabled`` is enabled because
+  Lowering this setting to ``1`` can be interesting when ``proxy.config.ssl.session_cache.mode`` is enabled because
   otherwise for every new TLSv1.3 connection two session IDs will be inserted in the session cache.
-  On the other hand, if ``proxy.config.ssl.session_cache.enabled``  is disabled, using the default value is recommended.
+  On the other hand, if ``proxy.config.ssl.session_cache.mode``  is disabled, using the default value is recommended.
   In those scenarios, increasing the number of tickets could be potentially beneficial for clients performing
   multiple requests over concurrent TLS connections as per RFC 8446 clients SHOULDN'T reuse TLS Tickets.
 
@@ -5166,8 +5190,8 @@ Sockets
    default: ``1`` meaning ``on`` all Platforms except Linux: ``45`` seconds
 
    This directive enables operating system specific optimizations for a listening socket. ``defer_accept`` holds a call to ``accept(2)``
-   back until data has arrived. In Linux' special case this is up to a maximum of 45 seconds.
-   On FreeBSD, ``accf_data`` module needs to be loaded.
+   back until data has arrived. In Linux' special case this is up to a maximum of 45 seconds. Note in Linux, additional delays may
+   occur as kernel handles retries using exponential backoff algorithm. On FreeBSD, ``accf_data`` module needs to be loaded.
    Note: If MPTCP is enabled, TCP_DEFER_ACCEPT is only supported on Linux kernels 5.19+.
 
 .. ts:cv:: CONFIG proxy.config.net.listen_backlog INT -1

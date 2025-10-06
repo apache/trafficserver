@@ -42,7 +42,7 @@ ts.Disk.records_config.update(
 tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(ts)
-tr.MakeCurlCommand("-v -k -H \")host: foo.com\" https://127.0.0.1:{0}".format(ts.Variables.ssl_port))
+tr.MakeCurlCommand("-v -k -H \")host: foo.com\" https://127.0.0.1:{0}".format(ts.Variables.ssl_port), ts=ts)
 tr.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts

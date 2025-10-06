@@ -28,7 +28,11 @@
 #include <vector>
 #include <fnmatch.h>
 
+#include "swoc/TextView.h"
+
 #include "debug_macros.h"
+
+#include <cctype>
 
 namespace Gzip
 {
@@ -108,9 +112,10 @@ enum ParserState {
   kParseRangeRequest,
   kParseFlush,
   kParseAllow,
-  kParseMinimumContentLength,
   kParseGzipCompressionLevel,
-  kPaseBrotliCompressionLevel,
+  kParseMinimumContentLength,
+  kParseContentTypeIgnoreParameters,
+  kParseBrotliCompressionLevel,
   kParseBrotliLGWSize,
   kParseZstdCompressionLevel,
 };
@@ -194,6 +199,15 @@ HostConfiguration::is_status_code_compressible(const TSHttpStatus status_code) c
   return it != compressible_status_codes_.end();
 }
 
+std::string_view
+strip_params(std::string_view v)
+{
+  swoc::TextView tv{v};
+  tv = tv.take_prefix_at(';');
+  tv.rtrim_if(&::isspace);
+  return tv;
+}
+
 bool
 HostConfiguration::is_content_type_compressible(const char *content_type, int content_type_length)
 {
@@ -210,8 +224,14 @@ HostConfiguration::is_content_type_compressible(const char *content_type, int co
     if (exclude) {
       ++match_string; // skip '!'
     }
-    if (fnmatch(match_string, scontent_type.c_str(), 0) == 0) {
-      info("compressible content type [%s], matched on pattern [%s]", scontent_type.c_str(), it->c_str());
+    std::string target;
+    if (content_type_ignore_parameters() && std::strchr(match_string, ';') == nullptr) {
+      target = strip_params(std::string_view(scontent_type));
+    } else {
+      target = scontent_type;
+    }
+    if (fnmatch(match_string, target.c_str(), 0) == 0) {
+      info("compressible content type [%s], matched on pattern [%s]", target.c_str(), it->c_str());
       is_match = !exclude;
     }
   }
@@ -373,6 +393,8 @@ Configuration::Parse(const char *path)
           c->add_host_configuration(current_host_configuration);
         } else if (token == "compressible-content-type") {
           state = kParseCompressibleContentType;
+        } else if (token == "content_type_ignore_parameters") {
+          state = kParseContentTypeIgnoreParameters;
         } else if (token == "remove-accept-encoding") {
           state = kParseRemoveAcceptEncoding;
         } else if (token == "enabled") {
@@ -396,7 +418,7 @@ Configuration::Parse(const char *path)
         } else if (token == "gzip-compression-level") {
           state = kParseGzipCompressionLevel;
         } else if (token == "brotli-compression-level") {
-          state = kPaseBrotliCompressionLevel;
+          state = kParseBrotliCompressionLevel;
         } else if (token == "brotli-lgwin") {
           state = kParseBrotliLGWSize;
         } else if (token == "zstd-compression-level") {
@@ -407,6 +429,10 @@ Configuration::Parse(const char *path)
         break;
       case kParseCompressibleContentType:
         current_host_configuration->add_compressible_content_type(token);
+        state = kParseStart;
+        break;
+      case kParseContentTypeIgnoreParameters:
+        current_host_configuration->set_content_type_ignore_parameters(token == "true");
         state = kParseStart;
         break;
       case kParseRemoveAcceptEncoding:
@@ -447,7 +473,7 @@ Configuration::Parse(const char *path)
         state = kParseStart;
         break;
       }
-      case kPaseBrotliCompressionLevel: {
+      case kParseBrotliCompressionLevel: {
         int level = strtol(token.c_str(), nullptr, 10);
         if (level < 0 || level > 11) {
           error("brotli-compression-level must be between 0 and 11, got %d", level);

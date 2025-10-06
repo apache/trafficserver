@@ -161,7 +161,7 @@ LogAccess::marshal_proxy_host_ip(char *buf)
 int
 LogAccess::marshal_process_uuid(char *buf)
 {
-  int len = round_strlen(TS_UUID_STRING_LEN + 1);
+  int len = padded_length(TS_UUID_STRING_LEN + 1);
 
   if (buf) {
     const char *str = const_cast<char *>(Machine::instance()->process_uuid.getString());
@@ -211,7 +211,7 @@ LogAccess::marshal_config_str_var(char *config_var, char *buf)
 {
   auto str{RecGetRecordStringAlloc(config_var)};
   auto c_str{ats_as_c_str(str)};
-  int  len = LogAccess::strlen(c_str);
+  int  len = LogAccess::padded_strlen(c_str);
   if (buf) {
     marshal_str(buf, c_str, len);
   }
@@ -768,7 +768,7 @@ unmarshal_str_json(char **buf, char *dest, int len, LogSlice *slice)
   int   val_len     = static_cast<int>(::strlen(val_buf));
   int   escaped_len = escape_json(nullptr, val_buf, val_len);
 
-  *buf += LogAccess::strlen(val_buf); // this is how it was stored
+  *buf += LogAccess::padded_strlen(val_buf); // this is how it was stored
 
   if (slice && slice->m_enable) {
     int offset, n;
@@ -820,7 +820,7 @@ LogAccess::unmarshal_str(char **buf, char *dest, int len, LogSlice *slice, LogEs
   char *val_buf = *buf;
   int   val_len = static_cast<int>(::strlen(val_buf));
 
-  *buf += LogAccess::strlen(val_buf); // this is how it was stored
+  *buf += LogAccess::padded_strlen(val_buf); // this is how it was stored
 
   if (slice && slice->m_enable) {
     int offset, n;
@@ -1429,7 +1429,7 @@ LogAccess::marshal_plugin_identity_tag(char *buf)
   if (!tag) {
     tag = "*";
   } else {
-    len = LogAccess::strlen(tag);
+    len = LogAccess::padded_strlen(tag);
   }
 
   if (buf) {
@@ -1451,6 +1451,21 @@ LogAccess::marshal_host_interface_ip(char *buf)
   return marshal_ip(buf, &m_http_sm->t_state.client_info.dst_addr.sa);
 }
 
+int
+LogAccess::marshal_client_host_ip_verified(char *buf)
+{
+  if (m_http_sm) {
+    auto txn = m_http_sm->get_ua_txn();
+    if (txn) {
+      sockaddr const *addr = txn->get_verified_client_addr();
+      if (addr && ats_is_ip(addr)) {
+        return marshal_ip(buf, addr);
+      }
+    }
+  }
+  return marshal_ip(buf, &m_http_sm->t_state.client_info.src_addr.sa);
+}
+
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 int
@@ -1463,7 +1478,7 @@ LogAccess::marshal_cache_lookup_url_canon(char *buf)
     // If the lookup URL isn't populated, we'll fall back to the request URL.
     len = marshal_client_req_url_canon(buf);
   } else {
-    len = round_strlen(m_cache_lookup_url_canon_len + 1); // +1 for eos
+    len = padded_length(m_cache_lookup_url_canon_len + 1); // +1 for eos
     if (buf) {
       marshal_mem(buf, m_cache_lookup_url_canon_str, m_cache_lookup_url_canon_len, len);
     }
@@ -1497,7 +1512,7 @@ LogAccess::marshal_client_sni_server_name(char *buf)
       }
     }
   }
-  int len = round_strlen(server_name.length() + 1);
+  int len = padded_length(server_name.length() + 1);
   if (buf) {
     marshal_str(buf, server_name.data(), len);
   }
@@ -1549,7 +1564,7 @@ int
 LogAccess::marshal_version_build_number(char *buf)
 {
   auto &version = AppVersionInfo::get_version();
-  int   len     = LogAccess::strlen(version.build_number());
+  int   len     = LogAccess::padded_strlen(version.build_number());
   if (buf) {
     marshal_str(buf, version.build_number(), len);
   }
@@ -1563,7 +1578,7 @@ int
 LogAccess::marshal_version_string(char *buf)
 {
   auto &version = AppVersionInfo::get_version();
-  int   len     = LogAccess::strlen(version.version());
+  int   len     = LogAccess::padded_strlen(version.version());
   if (buf) {
     marshal_str(buf, version.version(), len);
   }
@@ -1593,7 +1608,7 @@ LogAccess::marshal_proxy_protocol_version(char *buf)
       version_str = "-";
       break;
     }
-    len = LogAccess::strlen(version_str);
+    len = LogAccess::padded_strlen(version_str);
   }
 
   if (buf) {
@@ -1815,7 +1830,7 @@ LogAccess::marshal_client_req_http_method(char *buf)
     // buffer if str is nil, and we need room for this.
     //
     if (!str.empty()) {
-      plen = round_strlen(static_cast<int>(str.length()) + 1); // +1 for trailing 0
+      plen = padded_length(static_cast<int>(str.length()) + 1); // +1 for trailing 0
     }
   }
 
@@ -1831,7 +1846,7 @@ LogAccess::marshal_client_req_http_method(char *buf)
 int
 LogAccess::marshal_client_req_url(char *buf)
 {
-  int len = round_strlen(m_client_req_url_len + 1); // +1 for trailing 0
+  int len = padded_length(m_client_req_url_len + 1); // +1 for trailing 0
 
   if (buf) {
     marshal_mem(buf, m_client_req_url_str, m_client_req_url_len, len);
@@ -1845,7 +1860,7 @@ LogAccess::marshal_client_req_url(char *buf)
 int
 LogAccess::marshal_client_req_url_canon(char *buf)
 {
-  int len = round_strlen(m_client_req_url_canon_len + 1);
+  int len = padded_length(m_client_req_url_canon_len + 1);
 
   if (buf) {
     marshal_mem(buf, m_client_req_url_canon_str, m_client_req_url_canon_len, len);
@@ -1868,7 +1883,7 @@ LogAccess::marshal_client_req_unmapped_url_canon(char *buf)
     // log the requests, even when there is no remap rule for it.
     len = marshal_client_req_url_canon(buf);
   } else {
-    len = round_strlen(m_client_req_unmapped_url_canon_len + 1); // +1 for eos
+    len = padded_length(m_client_req_unmapped_url_canon_len + 1); // +1 for eos
     if (buf) {
       marshal_mem(buf, m_client_req_unmapped_url_canon_str, m_client_req_unmapped_url_canon_len, len);
     }
@@ -1891,7 +1906,7 @@ LogAccess::marshal_client_req_unmapped_url_path(char *buf)
   if (m_client_req_unmapped_url_path_str == INVALID_STR) {
     len = marshal_client_req_url_path(buf);
   } else {
-    len = round_strlen(m_client_req_unmapped_url_path_len + 1); // +1 for eos
+    len = padded_length(m_client_req_unmapped_url_path_len + 1); // +1 for eos
     if (buf) {
       marshal_mem(buf, m_client_req_unmapped_url_path_str, m_client_req_unmapped_url_path_len, len);
     }
@@ -1908,7 +1923,7 @@ LogAccess::marshal_client_req_unmapped_url_host(char *buf)
   validate_unmapped_url();
   validate_unmapped_url_path();
 
-  int len = round_strlen(m_client_req_unmapped_url_host_len + 1); // +1 for eos
+  int len = padded_length(m_client_req_unmapped_url_host_len + 1); // +1 for eos
   if (buf) {
     marshal_mem(buf, m_client_req_unmapped_url_host_str, m_client_req_unmapped_url_host_len, len);
   }
@@ -1919,7 +1934,7 @@ LogAccess::marshal_client_req_unmapped_url_host(char *buf)
 int
 LogAccess::marshal_client_req_url_path(char *buf)
 {
-  int len = round_strlen(m_client_req_url_path_len + 1);
+  int len = padded_length(m_client_req_url_path_len + 1);
   if (buf) {
     marshal_mem(buf, m_client_req_url_path_str, m_client_req_url_path_len, len);
   }
@@ -1940,17 +1955,9 @@ LogAccess::marshal_client_req_url_scheme(char *buf)
     alen = hdrtoken_index_to_length(scheme);
   } else {
     str  = "UNKNOWN";
-    alen = strlen(str);
+    alen = ::strlen(str);
   }
-
-  // calculate the padded length only if the actual length
-  // is not zero. We don't want the padded length to be zero
-  // because marshal_mem should write the DEFAULT_STR to the
-  // buffer if str is nil, and we need room for this.
-  //
-  if (alen) {
-    plen = round_strlen(alen + 1); // +1 for trailing 0
-  }
+  plen = padded_length(alen + 1); // +1 for trailing 0
 
   if (buf) {
     marshal_mem(buf, str, alen, plen);
@@ -1987,7 +1994,7 @@ int
 LogAccess::marshal_client_req_protocol_version(char *buf)
 {
   const char *protocol_str = m_http_sm->get_user_agent().get_client_protocol();
-  int         len          = LogAccess::strlen(protocol_str);
+  int         len          = LogAccess::padded_strlen(protocol_str);
 
   // Set major & minor versions when protocol_str is not "http/2".
   if (::strlen(protocol_str) == 4 && strncmp("http", protocol_str, 4) == 0) {
@@ -2002,7 +2009,7 @@ LogAccess::marshal_client_req_protocol_version(char *buf)
       protocol_str = "*";
     }
 
-    len = LogAccess::strlen(protocol_str);
+    len = LogAccess::padded_strlen(protocol_str);
   }
 
   if (buf) {
@@ -2019,7 +2026,7 @@ int
 LogAccess::marshal_server_req_protocol_version(char *buf)
 {
   const char *protocol_str = m_http_sm->server_protocol;
-  int         len          = LogAccess::strlen(protocol_str);
+  int         len          = LogAccess::padded_strlen(protocol_str);
 
   // Set major & minor versions when protocol_str is not "http/2".
   if (::strlen(protocol_str) == 4 && strncmp("http", protocol_str, 4) == 0) {
@@ -2034,7 +2041,7 @@ LogAccess::marshal_server_req_protocol_version(char *buf)
       protocol_str = "*";
     }
 
-    len = LogAccess::strlen(protocol_str);
+    len = LogAccess::padded_strlen(protocol_str);
   }
 
   if (buf) {
@@ -2120,6 +2127,15 @@ LogAccess::marshal_client_req_ssl_reused(char *buf)
 }
 
 int
+LogAccess::marshal_client_ssl_resumption_type(char *buf)
+{
+  if (buf) {
+    marshal_int(buf, m_http_sm->get_user_agent().get_client_ssl_resumption_type());
+  }
+  return INK_MIN_ALIGN;
+}
+
+int
 LogAccess::marshal_client_req_is_internal(char *buf)
 {
   if (buf) {
@@ -2189,7 +2205,7 @@ LogAccess::marshal_client_req_uuid(char *buf)
   int         len  = snprintf(str, sizeof(str), "%s-%" PRId64 "", uuid, m_http_sm->sm_id);
 
   ink_assert(len <= TS_CRUUID_STRING_LEN);
-  len = round_strlen(len + 1);
+  len = padded_length(len + 1);
 
   if (buf) {
     marshal_str(buf, str, len); // This will pad the remaining bytes properly ...
@@ -2209,7 +2225,7 @@ LogAccess::marshal_client_rx_error_code(char *buf)
 {
   char error_code[MAX_PROXY_ERROR_CODE_SIZE] = {0};
   m_http_sm->t_state.client_info.rx_error_code.str(error_code, sizeof(error_code));
-  int round_len = LogAccess::strlen(error_code);
+  int round_len = LogAccess::padded_strlen(error_code);
 
   if (buf) {
     marshal_str(buf, error_code, round_len);
@@ -2223,7 +2239,7 @@ LogAccess::marshal_client_tx_error_code(char *buf)
 {
   char error_code[MAX_PROXY_ERROR_CODE_SIZE] = {0};
   m_http_sm->t_state.client_info.tx_error_code.str(error_code, sizeof(error_code));
-  int round_len = LogAccess::strlen(error_code);
+  int round_len = LogAccess::padded_strlen(error_code);
 
   if (buf) {
     marshal_str(buf, error_code, round_len);
@@ -2238,7 +2254,7 @@ int
 LogAccess::marshal_client_security_protocol(char *buf)
 {
   const char *proto     = m_http_sm->get_user_agent().get_client_sec_protocol();
-  int         round_len = LogAccess::strlen(proto);
+  int         round_len = LogAccess::padded_strlen(proto);
 
   if (buf) {
     marshal_str(buf, proto, round_len);
@@ -2251,7 +2267,7 @@ int
 LogAccess::marshal_client_security_cipher_suite(char *buf)
 {
   const char *cipher    = m_http_sm->get_user_agent().get_client_cipher_suite();
-  int         round_len = LogAccess::strlen(cipher);
+  int         round_len = LogAccess::padded_strlen(cipher);
 
   if (buf) {
     marshal_str(buf, cipher, round_len);
@@ -2264,7 +2280,7 @@ int
 LogAccess::marshal_client_security_curve(char *buf)
 {
   const char *curve     = m_http_sm->get_user_agent().get_client_curve();
-  int         round_len = LogAccess::strlen(curve);
+  int         round_len = LogAccess::padded_strlen(curve);
 
   if (buf) {
     marshal_str(buf, curve, round_len);
@@ -2277,7 +2293,7 @@ int
 LogAccess::marshal_client_security_group(char *buf)
 {
   const char *group     = m_http_sm->get_user_agent().get_client_security_group();
-  int         round_len = LogAccess::strlen(group);
+  int         round_len = LogAccess::padded_strlen(group);
 
   if (buf) {
     marshal_str(buf, group, round_len);
@@ -2295,7 +2311,7 @@ LogAccess::marshal_client_security_alpn(char *buf)
     alpn                           = client_sec_alpn.data();
   }
 
-  int round_len = LogAccess::strlen(alpn);
+  int round_len = LogAccess::padded_strlen(alpn);
 
   if (buf) {
     marshal_str(buf, alpn, round_len);
@@ -2310,7 +2326,7 @@ LogAccess::marshal_client_security_alpn(char *buf)
 int
 LogAccess::marshal_proxy_resp_content_type(char *buf)
 {
-  int len = round_strlen(m_proxy_resp_content_type_len + 1);
+  int len = padded_length(m_proxy_resp_content_type_len + 1);
   if (buf) {
     marshal_mem(buf, m_proxy_resp_content_type_str, m_proxy_resp_content_type_len, len);
   }
@@ -2323,7 +2339,7 @@ LogAccess::marshal_proxy_resp_content_type(char *buf)
 int
 LogAccess::marshal_proxy_resp_reason_phrase(char *buf)
 {
-  int len = round_strlen(m_proxy_resp_reason_phrase_len + 1);
+  int len = padded_length(m_proxy_resp_reason_phrase_len + 1);
   if (buf) {
     marshal_mem(buf, m_proxy_resp_reason_phrase_str, m_proxy_resp_reason_phrase_len, len);
   }
@@ -2629,7 +2645,7 @@ LogAccess::marshal_server_host_name(char *buf)
 
   if (m_http_sm->t_state.current.server) {
     str = m_http_sm->t_state.current.server->name;
-    len = LogAccess::strlen(str);
+    len = LogAccess::padded_strlen(str);
   }
 
   if (buf) {
@@ -3189,7 +3205,7 @@ LogAccess::marshal_http_header_field(LogField::Container container, char *field,
         buf++;
       }
       running_len += 1;
-      padded_len   = round_strlen(running_len);
+      padded_len   = padded_length(running_len);
 
 // Note: marshal_string fills the padding to
 //  prevent purify UMRs so we do it here too
@@ -3294,7 +3310,7 @@ LogAccess::marshal_http_header_field_escapify(LogField::Container container, cha
         buf++;
       }
       running_len += 1;
-      padded_len   = round_strlen(running_len);
+      padded_len   = padded_length(running_len);
 
 // Note: marshal_string fills the padding to
 //  prevent purify UMRs so we do it here too

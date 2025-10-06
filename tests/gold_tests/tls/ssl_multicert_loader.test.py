@@ -47,7 +47,7 @@ tr.Processes.Default.StartBefore(server)
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 tr.MakeCurlCommand(
-    f"-q -s -v -k --resolve '{sni_domain}:{ts.Variables.ssl_port}:127.0.0.1' https://{sni_domain}:{ts.Variables.ssl_port}")
+    f"-q -s -v -k --resolve '{sni_domain}:{ts.Variables.ssl_port}:127.0.0.1' https://{sni_domain}:{ts.Variables.ssl_port}", ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Check response")
 tr.Processes.Default.Streams.stderr = Testers.IncludesExpression(f"CN={sni_domain}", "Check response")
@@ -84,7 +84,7 @@ tr3.Processes.Default.StartBefore(server2, ready=When.FileContains(ts.Disk.diags
 tr3.StillRunningAfter = ts
 tr3.StillRunningAfter = server
 tr3.MakeCurlCommand(
-    f"-q -s -v -k --resolve '{sni_domain}:{ts.Variables.ssl_port}:127.0.0.1' https://{sni_domain}:{ts.Variables.ssl_port}")
+    f"-q -s -v -k --resolve '{sni_domain}:{ts.Variables.ssl_port}:127.0.0.1' https://{sni_domain}:{ts.Variables.ssl_port}", ts=ts)
 tr3.Processes.Default.ReturnCode = 0
 tr3.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Check response")
 tr3.Processes.Default.Streams.stderr = Testers.IncludesExpression(f"CN={sni_domain}", "Check response")

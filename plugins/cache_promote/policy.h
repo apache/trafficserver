@@ -63,7 +63,7 @@ public:
   void
   decrementStat(const int stat, const int amount)
   {
-    if (_stats_enabled) {
+    if (!_stats_id.empty()) {
       TSStatIntDecrement(stat, amount);
     }
   }
@@ -71,7 +71,7 @@ public:
   void
   incrementStat(const int stat, const int amount)
   {
-    if (_stats_enabled) {
+    if (!_stats_id.empty()) {
       TSStatIntIncrement(stat, amount);
     }
   }
@@ -127,12 +127,11 @@ public:
   virtual void        usage() const                   = 0;
   virtual bool        stats_add(const char *remap_id) = 0;
 
-  // when true stats are incremented.
-  bool _stats_enabled     = false;
-  bool _internal_enabled  = false;
-  int  _cache_hits_id     = -1;
-  int  _promoted_id       = -1;
-  int  _total_requests_id = -1;
+  bool        _internal_enabled  = false;
+  int         _cache_hits_id     = -1;
+  int         _promoted_id       = -1;
+  int         _total_requests_id = -1;
+  std::string _stats_id          = "";
 
 private:
   float _sample = 0.0;

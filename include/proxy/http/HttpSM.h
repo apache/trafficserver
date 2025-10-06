@@ -58,6 +58,7 @@
 
 #define CONNECT_EVENT_TXN    (HTTP_NET_CONNECTION_EVENT_EVENTS_START) + 0
 #define CONNECT_EVENT_DIRECT (HTTP_NET_CONNECTION_EVENT_EVENTS_START) + 1
+#define CONNECT_EVENT_RETRY  (HTTP_NET_CONNECTION_EVENT_EVENTS_START) + 2
 
 // The default size for http header buffers when we don't
 //   need to include extra space for the document

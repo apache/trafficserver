@@ -77,6 +77,15 @@ public:
   uint64_t Hasher(unsigned ipv4_cidr = 32, unsigned ipv6_cidr = 128);
   bool     Sample(double rate, uint32_t seed = 0, unsigned ipv4_cidr = 32, unsigned ipv6_cidr = 128);
 
+  // Convert IP to sockaddr structure
+  [[nodiscard]] sockaddr Socket() const;
+
+  // Geo-IP functionality - can be used with any IP address
+  [[nodiscard]] cripts::string ASN() const;
+  [[nodiscard]] cripts::string ASNName() const;
+  [[nodiscard]] cripts::string Country() const;
+  [[nodiscard]] cripts::string CountryCode() const;
+
 private:
   char     _str[INET6_ADDRSTRLEN + 1];
   uint64_t _hash    = 0;
@@ -268,7 +277,11 @@ class ConnBase
     retrans()
     {
       initialize();
+#if defined(__FreeBSD__)
+      return (_ready ? info.__tcpi_retrans : 0);
+#else
       return (_ready ? info.tcpi_retrans : 0);
+#endif
     }
 
     struct tcp_info info;

@@ -27,6 +27,7 @@
 static const struct option longopt[] = {
   {const_cast<char *>("policy"),               required_argument, nullptr, 'p' },
   {const_cast<char *>("stats-enable-with-id"), required_argument, nullptr, 'e' },
+  {const_cast<char *>("disable-on-redirect"),  no_argument,       nullptr, 'd' },
   // This is for both Chance and LRU (optional) policy
   {const_cast<char *>("sample"),               required_argument, nullptr, 's' },
   // For the LRU policy
@@ -74,10 +75,12 @@ PromotionConfig::factory(int argc, char *argv[])
         return false;
       } else {
         if (_policy && _policy->stats_add(optarg)) {
-          _policy->_stats_enabled = true;
+          _policy->_stats_id = optarg;
           DBG("stats collection is enabled");
         }
       }
+    } else if (opt == 'd') {
+      _disable_on_redirect = true;
     } else {
       if (_policy) {
         // The --sample (-s) option is allowed for all configs, but only after --policy is specified.

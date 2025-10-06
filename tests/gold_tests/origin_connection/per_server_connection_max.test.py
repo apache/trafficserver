@@ -20,6 +20,8 @@ Verify the behavior of proxy.config.http.per_server.connection.max.
 Test.Summary = __doc__
 import os
 
+Test.SkipIf(Condition.CurlUsingUnixDomainSocket())
+
 
 class PerServerConnectionMaxTest:
     """Define an object to test our max origin connection behavior."""

@@ -82,13 +82,17 @@ public:
     std::atomic<int64_t> _value{0};
   };
 
+  enum class MetricType : int { COUNTER = 0, GAUGE };
+
   using IdType   = int32_t; // Could be a tuple, but one way or another, they have to be combined to an int32_t.
   using SpanType = swoc::MemSpan<AtomicType>;
 
-  static constexpr uint16_t MAX_BLOBS    = 8192;
-  static constexpr uint16_t MAX_SIZE     = 1024;                               // For a total of 8M metrics
-  static constexpr IdType   NOT_FOUND    = std::numeric_limits<IdType>::min(); // <16-bit,16-bit> = <blob-index,offset>
-  static const auto         MEMORY_ORDER = std::memory_order_relaxed;
+  static constexpr uint16_t MAX_BLOBS        = 8192;
+  static constexpr uint16_t MAX_SIZE         = 1024;                               // For a total of 8M metrics
+  static constexpr IdType   NOT_FOUND        = std::numeric_limits<IdType>::min(); // <16-bit,16-bit> = <blob-index,offset>
+  static const auto         MEMORY_ORDER     = std::memory_order_relaxed;
+  static constexpr int      METRIC_TYPE_BITS = 29;
+  static constexpr int      METRIC_TYPE_MASK = 0x1FFF;
 
 private:
   using NameAndId       = std::tuple<std::string, IdType>;
@@ -122,9 +126,9 @@ public:
     return _storage->lookup(name, out_id);
   }
   AtomicType *
-  lookup(IdType id, std::string_view *out_name = nullptr) const
+  lookup(IdType id, std::string_view *out_name = nullptr, Metrics::MetricType *type = nullptr) const
   {
-    return _storage->lookup(id, out_name);
+    return _storage->lookup(id, out_name, type);
   }
   bool
   rename(IdType id, const std::string_view name)
@@ -166,6 +170,12 @@ public:
     return _storage->name(id);
   }
 
+  MetricType
+  type(IdType id) const
+  {
+    return _storage->type(id);
+  }
+
   bool
   valid(IdType id) const
   {
@@ -177,7 +187,7 @@ public:
   {
   public:
     using iterator_category = std::input_iterator_tag;
-    using value_type        = std::tuple<std::string_view, int64_t>;
+    using value_type        = std::tuple<std::string_view, MetricType, int64_t>;
     using difference_type   = ptrdiff_t;
     using pointer           = value_type *;
     using reference         = value_type &;
@@ -206,9 +216,10 @@ public:
     operator*() const
     {
       std::string_view name;
-      auto             metric = _metrics.lookup(_it, &name);
+      MetricType       type;
+      auto             metric = _metrics.lookup(_it, &name, &type);
 
-      return std::make_tuple(name, metric->_value.load());
+      return std::make_tuple(name, type, metric->_value.load());
     }
 
     bool
@@ -241,7 +252,7 @@ public:
   {
     auto [blob, offset] = _storage->current();
 
-    return iterator(*this, _makeId(blob, offset));
+    return iterator(*this, _makeId(blob, offset, MetricType::COUNTER));
   }
 
   iterator
@@ -259,34 +270,35 @@ public:
 private:
   // These are private, to assure that we don't use them by accident creating naked metrics
   IdType
-  _create(const std::string_view name)
+  _create(const std::string_view name, MetricType type)
   {
-    return _storage->create(name);
+    return _storage->create(name, type);
   }
 
   SpanType
-  _createSpan(size_t size, IdType *id = nullptr)
+  _createSpan(size_t size, MetricType type, IdType *id = nullptr)
   {
-    return _storage->createSpan(size, id);
+    return _storage->createSpan(size, type, id);
   }
 
   // These are little helpers around managing the ID's
   static constexpr std::tuple<uint16_t, uint16_t>
   _splitID(IdType value)
   {
-    return std::make_tuple(static_cast<uint16_t>(value >> 16), static_cast<uint16_t>(value & 0xFFFF));
+    return std::make_tuple(static_cast<uint16_t>(value >> 16) & METRIC_TYPE_MASK, static_cast<uint16_t>(value & 0xFFFF));
+  }
+
+  static constexpr MetricType
+  _extractType(IdType value)
+  {
+    return MetricType{value >> METRIC_TYPE_BITS};
   }
 
   static constexpr IdType
-  _makeId(uint16_t blob, uint16_t offset)
+  _makeId(uint16_t blob, uint16_t offset, const MetricType type)
   {
-    return (blob << 16 | offset);
-  }
-
-  static constexpr IdType
-  _makeId(std::tuple<uint16_t, uint16_t> id)
-  {
-    return _makeId(std::get<0>(id), std::get<1>(id));
+    int t = static_cast<int>(type);
+    return (t << METRIC_TYPE_BITS | blob << 16 | offset);
   }
 
   class Storage
@@ -305,18 +317,20 @@ private:
     {
       _blobs[0] = std::make_unique<NamesAndAtomics>();
       release_assert(_blobs[0]);
-      release_assert(0 == create("proxy.process.api.metrics.bad_id")); // Reserve slot 0 for errors, this should always be 0
+      // Reserve slot 0 for errors, this should always be 0
+      release_assert(0 == create("proxy.process.api.metrics.bad_id", MetricType::COUNTER));
     }
 
     ~Storage() {}
 
-    IdType           create(const std::string_view name);
+    IdType           create(const std::string_view name, const MetricType type = MetricType::COUNTER);
     void             addBlob();
     IdType           lookup(const std::string_view name) const;
-    AtomicType      *lookup(const std::string_view name, IdType *out_id) const;
-    AtomicType      *lookup(Metrics::IdType id, std::string_view *out_name = nullptr) const;
+    AtomicType      *lookup(const std::string_view name, IdType *out_id, MetricType *out_type = nullptr) const;
+    AtomicType      *lookup(Metrics::IdType id, std::string_view *out_name = nullptr, MetricType *out_type = nullptr) const;
     std::string_view name(IdType id) const;
-    SpanType         createSpan(size_t size, IdType *id = nullptr);
+    MetricType       type(IdType id) const;
+    SpanType         createSpan(size_t size, const MetricType type = MetricType::COUNTER, IdType *id = nullptr);
     bool             rename(IdType id, const std::string_view name);
 
     std::pair<int16_t, int16_t>
@@ -380,7 +394,7 @@ public:
     {
       auto &instance = Metrics::instance();
 
-      return instance._create(name);
+      return instance._create(name, MetricType::GAUGE);
     }
 
     static AtomicType *
@@ -388,7 +402,7 @@ public:
     {
       auto &instance = Metrics::instance();
 
-      return reinterpret_cast<AtomicType *>(instance.lookup(instance._create(name)));
+      return reinterpret_cast<AtomicType *>(instance.lookup(instance._create(name, MetricType::GAUGE)));
     }
 
     static AtomicType *
@@ -397,7 +411,7 @@ public:
       auto       &instance = Metrics::instance();
       std::string tmpname  = std::string(prefix) + std::string(name);
 
-      return reinterpret_cast<AtomicType *>(instance.lookup(instance._create(tmpname)));
+      return reinterpret_cast<AtomicType *>(instance.lookup(instance._create(tmpname, MetricType::GAUGE)));
     }
 
     static Metrics::Gauge::SpanType
@@ -405,7 +419,7 @@ public:
     {
       auto &instance = Metrics::instance();
 
-      return instance._createSpan(size, id);
+      return instance._createSpan(size, MetricType::GAUGE, id);
     }
 
     static void
@@ -477,7 +491,7 @@ public:
     {
       auto &instance = Metrics::instance();
 
-      return instance._create(name);
+      return instance._create(name, MetricType::COUNTER);
     }
 
     static AtomicType *
@@ -485,7 +499,7 @@ public:
     {
       auto &instance = Metrics::instance();
 
-      return reinterpret_cast<AtomicType *>(instance.lookup(instance._create(name)));
+      return reinterpret_cast<AtomicType *>(instance.lookup(instance._create(name, MetricType::COUNTER)));
     }
 
     static AtomicType *
@@ -494,7 +508,7 @@ public:
       auto       &instance = Metrics::instance();
       std::string tmpname  = std::string(prefix) + std::string(name);
 
-      return reinterpret_cast<AtomicType *>(instance.lookup(instance._create(tmpname)));
+      return reinterpret_cast<AtomicType *>(instance.lookup(instance._create(tmpname, MetricType::COUNTER)));
     }
 
     static Metrics::Counter::SpanType
@@ -502,7 +516,7 @@ public:
     {
       auto &instance = Metrics::instance();
 
-      return instance._createSpan(size, id);
+      return instance._createSpan(size, MetricType::COUNTER, id);
     }
 
     static void
@@ -531,6 +545,7 @@ public:
     struct DerivedMetricSpec {
       using MetricSpec = std::variant<Metrics::AtomicType *, Metrics::IdType, std::string_view>;
       std::string_view                  derived_name;
+      Metrics::MetricType               derived_type;
       std::initializer_list<MetricSpec> derived_from;
     };
 

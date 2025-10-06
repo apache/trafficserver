@@ -104,7 +104,7 @@ ts1.Disk.records_config.update(
         'proxy.config.exec_thread.limit': 8,
         'proxy.config.ssl.server.cert.path': '{0}'.format(ts1.Variables.SSLDir),
         'proxy.config.ssl.server.private_key.path': '{0}'.format(ts1.Variables.SSLDir),
-        'proxy.config.ssl.session_cache.value': 2,
+        'proxy.config.ssl.session_cache.mode': 2,
         'proxy.config.ssl.session_cache.size': 512000,
         'proxy.config.ssl.session_cache.timeout': 7200,
         'proxy.config.ssl.session_cache.num_buckets': 32768,
@@ -133,7 +133,7 @@ ts2.Disk.records_config.update(
         'proxy.config.exec_thread.limit': 8,
         'proxy.config.ssl.server.cert.path': '{0}'.format(ts1.Variables.SSLDir),
         'proxy.config.ssl.server.private_key.path': '{0}'.format(ts1.Variables.SSLDir),
-        'proxy.config.ssl.session_cache.value': 2,
+        'proxy.config.ssl.session_cache.mode': 2,
         'proxy.config.ssl.session_cache.size': 512000,
         'proxy.config.ssl.session_cache.timeout': 7200,
         'proxy.config.ssl.session_cache.num_buckets': 32768,
@@ -155,7 +155,7 @@ ts2.Disk.sni_yaml.AddLines([
 ])
 
 tr = Test.AddTestRun('Basic Curl Test')
-tr.MakeCurlCommand('-k --resolve example.com:{0}:127.0.0.1 https://example.com:{0}'.format(ts1.Variables.ssl_port))
+tr.MakeCurlCommand('-k --resolve example.com:{0}:127.0.0.1 https://example.com:{0}'.format(ts1.Variables.ssl_port), ts=ts1)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(ts1)

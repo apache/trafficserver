@@ -15,6 +15,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
+#include <algorithm>
 #include <sstream>
 
 #include "cripts/Lulu.hpp"
@@ -114,7 +115,7 @@ Url::Path::GetSV()
   if (_segments.size() > 0) {
     std::ostringstream path;
 
-    std::copy(_segments.begin(), _segments.end(), std::ostream_iterator<cripts::string_view>(path, "/"));
+    std::ranges::copy(_segments, std::ostream_iterator<cripts::string_view>(path, "/"));
     _storage.reserve(_size);
     _storage = std::string_view(path.str());
     if (_storage.size() > 0) {
@@ -228,6 +229,7 @@ Url::Path::_parser()
 Url::Query::Parameter &
 Url::Query::Parameter::operator=(const cripts::string_view str)
 {
+  CAssert(!_owner->_standalone);
   _ensure_initialized(_owner->_owner);
   CAssert(!_owner->_owner->ReadOnly()); // This can not be a read-only URL
   auto iter = _owner->_hashed.find(_name);
@@ -246,7 +248,9 @@ Url::Query::Parameter::operator=(const cripts::string_view str)
 cripts::string_view
 Url::Query::GetSV()
 {
-  _ensure_initialized(_owner);
+  if (!_standalone) {
+    _ensure_initialized(_owner);
+  }
   if (_ordered.size() > 0) {
     _storage.clear();
     _storage.reserve(_size);
@@ -290,6 +294,7 @@ Url::Query::GetSV()
 Url::Query
 Url::Query::operator=(cripts::string_view query)
 {
+  CAssert(!_standalone);
   _ensure_initialized(_owner);
   CAssert(!_owner->ReadOnly()); // This can not be a read-only URL
   TSUrlHttpQuerySet(_owner->_bufp, _owner->_urlp, query.data(), query.size());
@@ -317,8 +322,10 @@ Url::Query::operator+=(cripts::string_view add)
 Url::Query::Parameter
 Url::Query::operator[](cripts::string_view param)
 {
-  // Make sure the hash and vector are populated
-  _ensure_initialized(_owner);
+  // Make sure the hash and vector are populated, but only if we have an owner
+  if (!_standalone) {
+    _ensure_initialized(_owner);
+  }
   _parser();
 
   Parameter ret;
@@ -340,7 +347,7 @@ Url::Query::Erase(cripts::string_view param)
   _parser();
 
   auto iter  = _hashed.find(param);
-  auto viter = std::find(_ordered.begin(), _ordered.end(), param);
+  auto viter = std::ranges::find(_ordered, param);
 
   if (iter != _hashed.end()) {
     _size -= iter->second.size(); // Size of the erased value
@@ -365,7 +372,7 @@ Url::Query::Erase(std::initializer_list<cripts::string_view> list, bool keep)
     _parser();
 
     for (auto viter = _ordered.begin(); viter != _ordered.end();) {
-      if (list.end() == std::find(list.begin(), list.end(), *viter)) {
+      if (list.end() == std::ranges::find(list, *viter)) {
         auto iter = _hashed.find(*viter);
 
         CAssert(iter != _hashed.end());
@@ -460,11 +467,11 @@ Pristine::URL::_initialize()
 void
 Client::URL::_initialize()
 {
-  if (_context->rri) {
+  if (_context->rriValid()) {
+    super_type::_initialize();
     _bufp    = _context->rri->requestBufp;
     _hdr_loc = _context->rri->requestHdrp;
     _urlp    = _context->rri->requestUrl;
-    super_type::_initialize();
   } else {
     Client::Request &req = Client::Request::_get(_context); // Repurpose / create the shared request object
 
@@ -499,10 +506,14 @@ Client::URL::_update()
 void
 Remap::From::URL::_initialize()
 {
-  super_type::_initialize();
-  _bufp    = _context->rri->requestBufp;
-  _hdr_loc = _context->rri->requestHdrp;
-  _urlp    = _context->rri->mapFromUrl;
+  if (_context->rriValid()) {
+    super_type::_initialize();
+    _bufp    = _context->rri->requestBufp;
+    _hdr_loc = _context->rri->requestHdrp;
+    _urlp    = _context->rri->mapFromUrl;
+  } else {
+    _context->state.error.Fail();
+  }
 }
 
 Remap::From::URL &
@@ -515,11 +526,14 @@ Remap::From::URL::_get(cripts::Context *context)
 void
 Remap::To::URL::_initialize()
 {
-  super_type::_initialize();
-
-  _bufp    = _context->rri->requestBufp;
-  _hdr_loc = _context->rri->requestHdrp;
-  _urlp    = _context->rri->mapToUrl;
+  if (_context->rriValid()) {
+    super_type::_initialize();
+    _bufp    = _context->rri->requestBufp;
+    _hdr_loc = _context->rri->requestHdrp;
+    _urlp    = _context->rri->mapToUrl;
+  } else {
+    _context->state.error.Fail();
+  }
 }
 
 Remap::To::URL &
@@ -532,14 +546,14 @@ Remap::To::URL::_get(cripts::Context *context)
 Cache::URL &
 Cache::URL::_get(cripts::Context *context)
 {
-  _ensure_initialized(&context->_urls.cache);
-  return context->_urls.cache;
+  _ensure_initialized(&context->_cache.url);
+  return context->_cache.url;
 }
 
 void
 Cache::URL::_initialize()
 {
-  Cache::URL      *url = &_context->_urls.cache;
+  Cache::URL      *url = &_context->_cache.url;
   Client::Request &req = Client::Request::_get(_context); // Repurpose / create the shared request object
 
   switch (_context->state.hook) {
@@ -547,6 +561,7 @@ Cache::URL::_initialize()
   case TS_HTTP_SEND_RESPONSE_HDR_HOOK:
   case TS_HTTP_READ_RESPONSE_HDR_HOOK:
   case TS_HTTP_SEND_REQUEST_HDR_HOOK:
+  case TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK:
   case TS_HTTP_TXN_CLOSE_HOOK:
     if (TSUrlCreate(req.BufP(), &url->_urlp) == TS_SUCCESS) {
       TSAssert(_context->state.txnp);
@@ -584,7 +599,7 @@ Cache::URL::_update()
   query.Flush();
 
   if (_modified) {
-    _ensure_initialized(&_context->_urls.cache);
+    _ensure_initialized(&_context->_cache.url);
     TSAssert(_context->state.txnp);
     _modified = false;
     if (TS_SUCCESS == TSHttpTxnCacheLookupUrlSet(_context->state.txnp, _bufp, _urlp)) {

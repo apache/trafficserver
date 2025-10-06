@@ -1,16 +1,16 @@
 VARS {
-    goAway: bool;
+    bool_0: bool;
 }
 
 REMAP {
     if inbound.req.X-Allow == "yes" {
-        http.status = 403;
-        goAway = true;
+        inbound.status = 403;
+        bool_0 = true;
     }
 }
 
 SEND_RESPONSE {
-    if goAway {
+    if bool_0 {
         http.status.reason = "Go Away";
     }
 }

@@ -40,12 +40,6 @@
 // Debugs
 namespace header_rewrite_ns
 {
-const char PLUGIN_NAME[]     = "header_rewrite";
-const char PLUGIN_NAME_DBG[] = "dbg_header_rewrite";
-
-DbgCtl dbg_ctl{PLUGIN_NAME_DBG};
-DbgCtl pi_dbg_ctl{PLUGIN_NAME};
-
 std::once_flag initHRWLibs;
 PluginFactory  plugin_factory;
 } // namespace header_rewrite_ns
@@ -76,7 +70,7 @@ static int cont_rewrite_headers(TSCont, TSEvent, void *);
 class RulesConfig
 {
 public:
-  RulesConfig()
+  RulesConfig(int timezone, int inboundIpSource) : _timezone(timezone), _inboundIpSource(inboundIpSource)
   {
     Dbg(dbg_ctl, "RulesConfig CTOR");
     _cont = TSContCreate(cont_rewrite_headers, nullptr);
@@ -107,6 +101,18 @@ public:
     return _rules[hook].get();
   }
 
+  [[nodiscard]] int
+  timezone() const
+  {
+    return _timezone;
+  }
+
+  [[nodiscard]] int
+  inboundIpSource() const
+  {
+    return _inboundIpSource;
+  }
+
   bool parse_config(const std::string &fname, TSHttpHookID default_hook, char *from_url = nullptr, char *to_url = nullptr);
 
 private:
@@ -115,6 +121,9 @@ private:
   TSCont                                                      _cont;
   std::array<std::unique_ptr<RuleSet>, TS_HTTP_LAST_HOOK + 1> _rules{};
   std::array<ResourceIDs, TS_HTTP_LAST_HOOK + 1>              _resids{};
+
+  int _timezone        = 0;
+  int _inboundIpSource = 0;
 };
 
 void
@@ -323,13 +332,28 @@ RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook, c
   }
 
   // Collect all resource IDs that we need
-  for (size_t i = TS_HTTP_READ_REQUEST_HDR_HOOK; i < TS_HTTP_LAST_HOOK; ++i) {
+  for (size_t i = TS_HTTP_READ_REQUEST_HDR_HOOK; i <= TS_HTTP_LAST_HOOK; ++i) {
     if (_rules[i]) {
       _resids[i] = _rules[i]->get_all_resource_ids();
     }
   }
 
   return true;
+}
+
+static void
+setPluginControlValues(TSHttpTxn txnp, RulesConfig *conf)
+{
+  if (conf->timezone() != 0 || conf->inboundIpSource() != 0) {
+    ConditionNow temporal_statement; // This could be any statement that use the private slot.
+    int          slot = temporal_statement.get_txn_private_slot();
+
+    PrivateSlotData private_data;
+    private_data.raw       = reinterpret_cast<uint64_t>(TSUserArgGet(txnp, slot));
+    private_data.timezone  = conf->timezone();
+    private_data.ip_source = conf->inboundIpSource();
+    TSUserArgSet(txnp, slot, reinterpret_cast<void *>(private_data.raw));
+  }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -360,6 +384,7 @@ cont_rewrite_headers(TSCont contp, TSEvent event, void *edata)
     break;
   case TS_EVENT_HTTP_TXN_START:
     hook = TS_HTTP_TXN_START_HOOK;
+    setPluginControlValues(txnp, conf);
     break;
   case TS_EVENT_HTTP_TXN_CLOSE:
     hook = TS_HTTP_TXN_CLOSE_HOOK;
@@ -403,8 +428,10 @@ cont_rewrite_headers(TSCont contp, TSEvent event, void *edata)
 }
 
 static const struct option longopt[] = {
-  {.name = "geo-db-path", .has_arg = required_argument, .flag = nullptr, .val = 'm' },
-  {.name = nullptr,       .has_arg = no_argument,       .flag = nullptr, .val = '\0'}
+  {.name = "geo-db-path",       .has_arg = required_argument, .flag = nullptr, .val = 'm' },
+  {.name = "timezone",          .has_arg = required_argument, .flag = nullptr, .val = 't' },
+  {.name = "inbound-ip-source", .has_arg = required_argument, .flag = nullptr, .val = 'i' },
+  {.name = nullptr,             .has_arg = no_argument,       .flag = nullptr, .val = '\0'}
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -425,14 +452,39 @@ TSPluginInit(int argc, const char *argv[])
   }
 
   std::string geoDBpath;
+  int         inboundIpSource = 0;
+  int         timezone        = 0;
   while (true) {
-    int opt = getopt_long(argc, const_cast<char *const *>(argv), "m:", longopt, nullptr);
+    int opt = getopt_long(argc, const_cast<char *const *>(argv), "m:t:i:", longopt, nullptr);
 
     switch (opt) {
-    case 'm': {
+    case 'm':
       geoDBpath = optarg;
-    } break;
+      break;
+    case 't':
+      Dbg(pi_dbg_ctl, "Default timezone %s", optarg);
+      if (strcmp(optarg, "LOCAL") == 0) {
+        timezone = TIMEZONE_LOCAL;
+      } else if (strcmp(optarg, "GMT") == 0) {
+        timezone = TIMEZONE_GMT;
+      } else {
+        TSError("[%s] Unknown value for timezone parameter: %s", PLUGIN_NAME, optarg);
+      }
+      break;
+    case 'i':
+      Dbg(pi_dbg_ctl, "Default inbound IP source %s", optarg);
+      if (strcmp(optarg, "PEER") == 0) {
+        inboundIpSource = IP_SRC_PEER;
+      } else if (strcmp(optarg, "PROXY") == 0) {
+        inboundIpSource = IP_SRC_PROXY;
+      } else if (strcmp(optarg, "PLUGIN") == 0) {
+        inboundIpSource = IP_SRC_PLUGIN;
+      } else {
+        TSError("[%s] Unknown value for inbound-ip-source parameter: %s", PLUGIN_NAME, optarg);
+      }
+      break;
     }
+
     if (opt == -1) {
       break;
     }
@@ -448,7 +500,7 @@ TSPluginInit(int argc, const char *argv[])
 
   // Parse the global config file(s). All rules are just appended
   // to the "global" Rules configuration.
-  auto *conf       = new RulesConfig;
+  auto *conf       = new RulesConfig(timezone, inboundIpSource);
   bool  got_config = false;
 
   for (int i = optind; i < argc; ++i) {
@@ -466,6 +518,9 @@ TSPluginInit(int argc, const char *argv[])
   if (got_config) {
     TSCont contp = TSContCreate(cont_rewrite_headers, nullptr);
     TSContDataSet(contp, conf);
+
+    // We always need to hook TXN_START to call setPluginControlValues at the beginning.
+    TSHttpHookAdd(TS_HTTP_TXN_START_HOOK, contp);
 
     for (int i = TS_HTTP_READ_REQUEST_HDR_HOOK; i < TS_HTTP_LAST_HOOK; ++i) {
       if (conf->rule(i)) {
@@ -511,14 +566,39 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
   ++argv;
 
   std::string geoDBpath;
+  int         timezone        = 0;
+  int         inboundIpSource = 0;
   while (true) {
-    int opt = getopt_long(argc, (char *const *)argv, "m:", longopt, nullptr);
+    int opt = getopt_long(argc, (char *const *)argv, "m:t:i:", longopt, nullptr);
 
     switch (opt) {
-    case 'm': {
+    case 'm':
       geoDBpath = optarg;
-    } break;
+      break;
+    case 't':
+      Dbg(pi_dbg_ctl, "Default timezone %s", optarg);
+      if (strcmp(optarg, "LOCAL") == 0) {
+        timezone = TIMEZONE_LOCAL;
+      } else if (strcmp(optarg, "GMT") == 0) {
+        timezone = TIMEZONE_GMT;
+      } else {
+        TSError("[%s] Unknown value for timezone parameter: %s", PLUGIN_NAME, optarg);
+      }
+      break;
+    case 'i':
+      Dbg(pi_dbg_ctl, "Default inbound IP source %s", optarg);
+      if (strcmp(optarg, "PEER") == 0) {
+        inboundIpSource = IP_SRC_PEER;
+      } else if (strcmp(optarg, "PROXY") == 0) {
+        inboundIpSource = IP_SRC_PROXY;
+      } else if (strcmp(optarg, "PLUGIN") == 0) {
+        inboundIpSource = IP_SRC_PLUGIN;
+      } else {
+        TSError("[%s] Unknown value for inbound-ip-source parameter: %s", PLUGIN_NAME, optarg);
+      }
+      break;
     }
+
     if (opt == -1) {
       break;
     }
@@ -533,7 +613,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
     std::call_once(initHRWLibs, [&geoDBpath]() { initHRWLibraries(geoDBpath); });
   }
 
-  auto *conf = new RulesConfig;
+  auto *conf = new RulesConfig(timezone, inboundIpSource);
 
   for (int i = optind; i < argc; ++i) {
     Dbg(pi_dbg_ctl, "Loading remap configuration file %s", argv[i]);
@@ -573,6 +653,8 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
   TSRemapStatus rval = TSREMAP_NO_REMAP;
   auto         *conf = static_cast<RulesConfig *>(ih);
 
+  setPluginControlValues(rh, conf);
+
   // Go through all hooks we support, and setup the txn hook(s) as necessary
   for (int i = TS_HTTP_READ_REQUEST_HDR_HOOK; i < TS_HTTP_LAST_HOOK; ++i) {
     if (conf->rule(i)) {
@@ -587,22 +669,24 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
   RuleSet  *rule = conf->rule(TS_REMAP_PSEUDO_HOOK);
   Resources res(rh, rri);
 
-  res.gather(RSRC_CLIENT_REQUEST_HEADERS, TS_REMAP_PSEUDO_HOOK);
-  while (rule) {
-    const RuleSet::OperatorAndMods &ops = rule->eval(res);
-    const OperModifiers             rt  = rule->exec(ops, res);
+  if (rule) {
+    res.gather(conf->resid(TS_REMAP_PSEUDO_HOOK), TS_REMAP_PSEUDO_HOOK);
 
-    ink_assert((rt & OPER_NO_REENABLE) == 0);
+    do {
+      const RuleSet::OperatorAndMods &ops = rule->eval(res);
+      const OperModifiers             rt  = rule->exec(ops, res);
 
-    if (res.changed_url == true) {
-      rval = TSREMAP_DID_REMAP;
-    }
+      ink_assert((rt & OPER_NO_REENABLE) == 0);
 
-    if (rule->last() || (rt & OPER_LAST)) {
-      break; // Conditional break, force a break with [L]
-    }
+      if (res.changed_url == true) {
+        rval = TSREMAP_DID_REMAP;
+      }
 
-    rule = rule->next.get();
+      if (rule->last() || (rt & OPER_LAST)) {
+        break; // Conditional break, force a break with [L]
+      }
+
+    } while ((rule = rule->next.get()));
   }
 
   Dbg(dbg_ctl, "Returning from TSRemapDoRemap with status: %d", rval);

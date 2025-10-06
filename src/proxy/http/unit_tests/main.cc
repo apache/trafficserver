@@ -21,8 +21,10 @@
     limitations under the License.
 */
 
-#define CATCH_CONFIG_MAIN
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/reporters/catch_reporter_event_listener.hpp>
+#include <catch2/reporters/catch_reporter_registrars.hpp>
+#include <catch2/interfaces/catch_interfaces_config.hpp>
 
 #include "tscore/Layout.h"
 
@@ -33,8 +35,8 @@
 
 #define TEST_THREADS 1
 
-struct EventProcessorListener : Catch::TestEventListenerBase {
-  using TestEventListenerBase::TestEventListenerBase;
+struct EventProcessorListener : Catch::EventListenerBase {
+  using EventListenerBase::EventListenerBase;
 
   void
   testRunStarting(Catch::TestRunInfo const & /* testRunInfo */) override

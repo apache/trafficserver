@@ -4289,6 +4289,37 @@ TSHttpTxnCacheLookupStatusSet(TSHttpTxn txnp, int cachelookup)
 }
 
 TSReturnCode
+TSHttpTxnVerifiedAddrSet(TSHttpTxn txnp, const struct sockaddr *addr)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void *)addr) == TS_SUCCESS);
+
+  HttpSM           *sm     = reinterpret_cast<HttpSM *>(txnp);
+  ProxyTransaction *prxtxn = sm->get_ua_txn();
+
+  prxtxn->set_verified_client_addr(addr);
+
+  return TS_SUCCESS;
+}
+
+TSReturnCode
+TSHttpTxnVerifiedAddrGet(TSHttpTxn txnp, const struct sockaddr **addr)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void *)addr) == TS_SUCCESS);
+
+  HttpSM           *sm     = reinterpret_cast<HttpSM *>(txnp);
+  ProxyTransaction *prxtxn = sm->get_ua_txn();
+
+  *addr = prxtxn->get_verified_client_addr();
+  if ((*addr)->sa_family == AF_UNSPEC) {
+    return TS_ERROR;
+  }
+
+  return TS_SUCCESS;
+}
+
+TSReturnCode
 TSHttpTxnInfoIntGet(TSHttpTxn txnp, TSHttpTxnInfoKey key, TSMgmtInt *value)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
@@ -5436,7 +5467,7 @@ TSVConnIsSslReused(TSVConn sslp)
   NetVConnection    *vc     = reinterpret_cast<NetVConnection *>(sslp);
   SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(vc);
 
-  return ssl_vc ? ssl_vc->getSSLSessionCacheHit() : 0;
+  return ssl_vc ? ssl_vc->getIsResumedSSLSession() : 0;
 }
 
 const char *
@@ -7117,6 +7148,10 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
   case TS_CONFIG_HTTP_NEGATIVE_CACHING_LIFETIME:
     ret = _memberp_to_generic(&overridableHttpConfig->negative_caching_lifetime, conv);
     break;
+  case TS_CONFIG_HTTP_NEGATIVE_CACHING_LIST:
+    ret  = &overridableHttpConfig->negative_caching_list;
+    conv = &HttpStatusCodeList::Conv;
+    break;
   case TS_CONFIG_HTTP_CACHE_WHEN_TO_REVALIDATE:
     ret = _memberp_to_generic(&overridableHttpConfig->cache_when_to_revalidate, conv);
     break;
@@ -7255,6 +7290,9 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
   case TS_CONFIG_HTTP_CONNECT_ATTEMPTS_TIMEOUT:
     ret = _memberp_to_generic(&overridableHttpConfig->connect_attempts_timeout, conv);
     break;
+  case TS_CONFIG_HTTP_CONNECT_ATTEMPTS_RETRY_BACKOFF_BASE:
+    ret = _memberp_to_generic(&overridableHttpConfig->connect_attempts_retry_backoff_base, conv);
+    break;
   case TS_CONFIG_HTTP_DOWN_SERVER_CACHE_TIME:
     conv = &HttpDownServerCacheTimeConv;
     ret  = &overridableHttpConfig->down_server_timeout;
@@ -7324,6 +7362,10 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
     break;
   case TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_LIFETIME:
     ret = _memberp_to_generic(&overridableHttpConfig->negative_revalidating_lifetime, conv);
+    break;
+  case TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_LIST:
+    ret  = &overridableHttpConfig->negative_revalidating_list;
+    conv = &HttpStatusCodeList::Conv;
     break;
   case TS_CONFIG_SSL_HSTS_MAX_AGE:
     ret = _memberp_to_generic(&overridableHttpConfig->proxy_response_hsts_max_age, conv);
@@ -7506,6 +7548,20 @@ _conf_to_memberp(TSOverridableConfigKey conf, const OverridableHttpConfigParams 
   return _conf_to_memberp(conf, const_cast<OverridableHttpConfigParams *>(overridableHttpConfig), conv);
 }
 
+// 3rd little helper function to find and eval MgmtConverter
+static TSReturnCode
+_eval_conv(OverridableHttpConfigParams *target, TSOverridableConfigKey conf, const char *value, int length)
+{
+  MgmtConverter const *conv;
+  void                *dest = _conf_to_memberp(conf, target, conv);
+  if (dest != nullptr && conv != nullptr && conv->store_string) {
+    conv->store_string(dest, std::string_view(value, length));
+  } else {
+    return TS_ERROR;
+  }
+  return TS_SUCCESS;
+}
+
 /* APIs to manipulate the overridable configuration options.
  */
 TSReturnCode
@@ -7682,6 +7738,20 @@ TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
   case TS_CONFIG_SSL_CERT_FILEPATH:
     /* noop */
     break;
+  case TS_CONFIG_HTTP_NEGATIVE_CACHING_LIST:
+    if (value && length > 0) {
+      OverridableHttpConfigParams *target      = &s->t_state.my_txn_conf();
+      target->negative_caching_list.conf_value = const_cast<char *>(value);
+      return _eval_conv(target, conf, value, length);
+    }
+    break;
+  case TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_LIST:
+    if (value && length > 0) {
+      OverridableHttpConfigParams *target           = &s->t_state.my_txn_conf();
+      target->negative_revalidating_list.conf_value = const_cast<char *>(value);
+      return _eval_conv(target, conf, value, length);
+    }
+    break;
   case TS_CONFIG_HTTP_HOST_RESOLUTION_PREFERENCE:
     if (value && length > 0) {
       s->t_state.my_txn_conf().host_res_data.conf_value = const_cast<char *>(value);
@@ -7689,13 +7759,7 @@ TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
     [[fallthrough]];
   default: {
     if (value && length > 0) {
-      MgmtConverter const *conv;
-      void                *dest = _conf_to_memberp(conf, &(s->t_state.my_txn_conf()), conv);
-      if (dest != nullptr && conv != nullptr && conv->store_string) {
-        conv->store_string(dest, std::string_view(value, length));
-      } else {
-        return TS_ERROR;
-      }
+      return _eval_conv(&(s->t_state.my_txn_conf()), conf, value, length);
     }
     break;
   }

@@ -83,15 +83,39 @@ This plugin may be enabled globally, so that the conditions and header
 rewriting rules are evaluated for every request made to your |TS| instance.
 This is done by adding the following line to your :file:`plugin.config`::
 
-  header_rewrite.so [--geo-db-path=path/to/geoip.db] config_file_1.conf config_file_2.conf ...
+  header_rewrite.so config_file_1.conf config_file_2.conf ...
 
 You may specify multiple configuration files. Their rules will be evaluated in
 the order the files are listed.
 
-The plugin takes an optional switch ``--geo-db-path``. If MaxMindDB support has
-been compiled in, use this switch to point at your .mmdb file. This also applies to
-the remap context.
+The plugin takes an optional switches.
 
+====================================== ==================================================================================================
+ Option                                Description
+====================================== ==================================================================================================
+ ``--geo-db-path <path_to_geoip_db>``  A file path for MaxMindDB.
+ ``--timezone <value>``                Timezone to use on header rewrite rules.
+ ``--inbound-ip-source <value>``       The source of IP address for the client.
+====================================== ==================================================================================================
+
+Please note that these optional switches needs to appear before config files like you would do on UNIX command lines.
+
+``--geo-db-path``
+~~~~~~~~~~~~~~~~~
+
+If MaxMindDB support has been compiled in, use this switch to point at your .mmdb file.
+This also applies to the remap context.
+
+``--timezone``
+~~~~~~~~~~~~~~
+
+This applies ``set-plugin-cntl TIMEZONE <value>`` to every transaction unconditionally.
+See set-plugin-cntl for the setting values and the effect.
+
+``--inbound-ip-source``
+~~~~~~~~~~~~~~~~~~~~~~~
+This applies ``set-plugin-cntl INBOUND_IP_SOURCE <value>`` to every transaction unconditionally.
+See set-plugin-cntl for the setting values and the effect.
 
 Enabling Per-Mapping
 --------------------
@@ -283,7 +307,7 @@ The two arguments, if provided, are comma separated. Valid syntax includes::
 A typical use case is to insert the @-prefixed header as above, and then use
 this header in a custom log format, rather than logging the full client
 IP. Another use case could be to make a special condition on a sub-net,
-e.g.::
+e.g. ::
 
     cond %{CIDR:8} ="8.0.0.0"
         set-header X-Is-Eight "Yes"
@@ -459,7 +483,7 @@ INBOUND
 ~~~~~~~
 ::
 
-   cond %{INBOUND:TLS} /./
+   cond %{INBOUND:TLS} ="" [NOT]
 
 This condition provides access to information about the inbound (client, user agent) connection to ATS.
 The data that can be checked is ::
@@ -487,7 +511,7 @@ will be true for *non*-TLS connections because it will be true when ``%{INBOUND:
 string. This happens because the default matching is equality and the default value the empty
 string. Therefore the condition is treated as if it were ::
 
-  cond %{INBOUND:TLS}=""
+  cond %{INBOUND:TLS} =""
 
 which is true when the connection is not TLS. The arguments ``H2``, ``IPV4``, and ``IPV6`` work the
 same way.
@@ -501,6 +525,42 @@ As a special matcher, the inbound IP addresses can be matched against a list of 
     This will not work against the non-IP based conditions, such as the protocol families,
     and the configuration parser will error out. The format here is very specific, in particular no
     white spaces are allowed between the ranges.
+
+If |ATS| is built with :ref:`Cripts <developer-guide-cripts>` support, a number of additional
+qualifiers are available exclusively on TLS sessions, for X509 certificate introspection.
+The client certificate (for mutual TLS) is accessed with qualifier prefix of ``CLIENT-CERT:``
+and the server certificate with a prefix qualifier of ``SERVER-CERT:``. The X509 naming of the
+specific fields are the same for the two certificates::
+
+   PEM              The PEM-encoded certificate, as a string.
+   SIG              The signature of the certificate.
+   SUBJECT          The subject of the certificate.
+   ISSUER           The issuer of the certificate.
+   SERIAL           The serial number of the certificate.
+   NOT_BEFORE       The date and time when the certificate becomes valid.
+   NOT_AFTER        The date and time when the certificate expires.
+   VERSION          The version of the certificate.
+   SAN:DNS          The Subject Alternative Name (SAN) DNS entries.
+   SAN:IP           The Subject Alternative Name (SAN) IP addresses.
+   SAN:EMAIL        The Subject Alternative Name (SAN) email addresses.
+   SAN:URI          The Subject Alternative Name (SAN) URIs.
+
+These conditions and qualifiers can be used in conditions of course, but more importantly,
+are also very useful when adding or modifying headers. For example, you can add some
+client certificate and server subject to the response headers, so that the client can see it
+as part of the response ::
+
+    cond %{SEND_RESPONSE_HDR_HOOK} [AND]
+    cond %{INBOUND:TLS} ="" [NOT]
+      set-header X-Client-Cert "%{INBOUND:CLIENT-CERT:PEM}"
+      set-header X-Client-Cert-Subject "%{INBOUND:CLIENT-CERT:SUBJECT}"
+      set-header X-Client-Cert-Issuer "%{INBOUND:CLIENT-CERT:ISSUER}"
+      set-header X-Server-Cert-Subject "%{INBOUND:SERVER-CERT:SUBJECT}""
+
+The ``SAN:`` fields will return a semicolon-separated list of the respective
+values, there can be zero, one or many of each SAN type. Example ::
+
+    cond %{CLIENT-CERT:SAN:DNS} /example\.com/
 
 IP
 ~~
@@ -1148,6 +1208,8 @@ TXN_DEBUG        Enable transaction debugging (default: ``off``)
 SKIP_REMAP       Don't require a remap match for the transaction (default: ``off``)
 ================ ====================================================================
 
+.. _admin-plugins-header-rewrite-plugin-cntl:
+
 set-plugin-cntl
 ~~~~~~~~~~~~~~~
 ::
@@ -1157,16 +1219,40 @@ set-plugin-cntl
 This operator lets you control the fundamental behavior of this plugin for a particular transaction.
 The available controllers are:
 
-+===================+========================+==============================================================================================+
-| Controller        | Operators/Conditions   | Description                                                                                  |
-+===================+========================+==============================================================================================+
-| TIMEZONE          | ``NOW``                | If ``GMT`` is passed, the operators and conditions use GMT regardles of the timezone setting |
-|                   |                        | on your system. The default value is ``LOCAL``.                                              |
-+===================+========================+==============================================================================================+
-| INBOUND_IP_SOURCE | ``IP``, ``INBOUND``,   | Selects which IP address to use for the operators and conditions. Available sources are      |
-|                   | ``CIDR``, and ``GEO``  | ``PEER`` (Uses the IP address of the peer), and ``PROXY`` (Uses the IP address from PROXY    |
-|                   |                        | protocol)                                                                                    |
-+===================+========================+==============================================================================================+
+================== ============================================ =======================
+Controller         Operators/Conditions                         Available values
+================== ============================================ =======================
+TIMEZONE           ``NOW``                                      ``GMT``, or ``LOCAL``
+INBOUND_IP_SOURCE  ``IP``, ``INBOUND``, ``CIDR``, and ``GEO``   ``PEER``, or ``PROXY``
+================== ============================================ =======================
+
+TIMEZONE
+""""""""
+
+This controller selects the timezone to use for ``NOW`` condition.
+If ``GMT`` is set, GMT will be used regardles of the timezone setting on your system. The default value is ``LOCAL``.
+
+INBOUND_IP_SOURCE
+"""""""""""""""""
+This controller selects which IP address to use for the conditions on the table above.
+The default value is ``PEER`` and the IP address of the peer will be used.
+If ``PROXY`` is set, and PROXY protocol is used, the source IP address provided by PROXY protocol will be used.
+
+.. note::
+    The conditions return an empty string if the source is set to ``PROXY`` but PROXY protocol header does not present.
+
+set-effective-address
+~~~~~~~~~~~~~~~~~~~~~
+::
+
+  set-effective-address <address>
+
+This operator allows you to set client's effective address for a transaction. The address will be used on other conditions and
+operators that use client's IP address.
+
+.. note::
+    This operator also changes `INBOUND_IP_SOURCE` to `PLUGIN` to make the address available for other conditions and operators.
+    See `set-plugin-cntl`_ for the detail.
 
 Operator Flags
 --------------
@@ -1467,7 +1553,7 @@ Remove Origin Authentication Headers
 The following ruleset removes any authentication headers from the origin
 response before caching it or returning it to the client. This is accomplished
 by setting the hook context and then removing the cookie and basic
-authentication headers.::
+authentication headers. ::
 
    cond %{READ_RESPONSE_HDR_HOOK}
      rm-header Set-Cookie
@@ -1589,9 +1675,11 @@ already set to some value, and the status code is a 2xx::
 Add a response header for certain status codes
 ----------------------------------------------
 
+This rule will set a header ``X-Redirect-Status`` but only for a set of status codes::
+
    cond %{SEND_RESPONSE_HDR_HOOK} [AND]
    cond %{STATUS} (301,302,307,308)
-   set-header X-Redirect-Status %{STATUS}
+      set-header X-Redirect-Status %{STATUS}
 
 Add HSTS
 --------
@@ -1616,7 +1704,7 @@ add a ``Connection: close`` header to have clients drop their connection,
 allowing the server to drain. Although Connection header is only available on
 HTTP/1.1 in terms of protocols, but this also works for HTTP/2 connections
 because the header triggers HTTP/2 graceful shutdown. This should be a global
-configuration.::
+configuration. ::
 
    cond %{SEND_RESPONSE_HDR_HOOK}
    cond %{ACCESS:/path/to/the/healthcheck/file.txt}    [NOT,OR]
@@ -1627,7 +1715,7 @@ Use Internal header to pass data
 
 In |TS|, a header that begins with ``@`` does not leave |TS|. Thus, you can use
 this to pass data to different |TS| systems. For instance, a series of remap rules
-could each be tagged with a consistent name to make finding logs easier.::
+could each be tagged with a consistent name to make finding logs easier. ::
 
    cond %{REMAP_PSEUDO_HOOK}
       set-header @PropertyName "someproperty"
@@ -1642,7 +1730,7 @@ could each be tagged with a consistent name to make finding logs easier.::
 Remove Client Query Parameters
 ------------------------------------
 
-The following ruleset removes any query parameters set by the client.::
+The following ruleset removes any query parameters set by the client. ::
 
    cond %{REMAP_PSEUDO_HOOK}
       rm-destination QUERY
@@ -1661,7 +1749,7 @@ Mimic X-Debug Plugin's X-Cache Header
 -------------------------------------
 
 This rule can mimic X-Debug plugin's ``X-Cache`` header by accumulating
-the ``CACHE`` condition results to a header.::
+the ``CACHE`` condition results to a header. ::
 
    cond %{SEND_RESPONSE_HDR_HOOK} [AND]
    cond %{HEADER:All-Cache} ="" [NOT]
@@ -1676,7 +1764,7 @@ Add Identifier from Server with Data
 
 This rule adds an unique identifier from the server if the data is fresh from
 the cache or if the identifier has not been generated yet. This will inform
-the client where the requested data was served from.::
+the client where the requested data was served from. ::
 
    cond %{SEND_RESPONSE_HDR_HOOK} [AND]
    cond %{HEADER:ATS-SRVR-UUID} ="" [OR]
@@ -1687,7 +1775,7 @@ Apply rate limiting for some select requests
 --------------------------------------------
 
 This rule will conditiionally, based on the client request headers, apply rate
-limiting to the request.::
+limiting to the request. ::
 
    cond %{REMAP_PSEUDO_HOOK} [AND]
    cond %{CLIENT-HEADER:Some-Special-Header} ="yes"
@@ -1705,7 +1793,7 @@ This rule will deny all requests for URIs with the ``.php`` file extension::
 Use GMT regardless of system timezone setting
 ---------------------------------------------
 
-This rule will change the behavior of %{NOW}. It will always return time in GMT.
+This rule will change the behavior of %{NOW}. It will always return time in GMT. ::
 
    cond %{READ_REQUEST_HDR_HOOK}
       set-plugin-cntl TIMEZONE GMT
@@ -1717,7 +1805,7 @@ Use IP address provided by PROXY protocol
 -----------------------------------------
 
 This rule will change the behavior of all header_rewrite conditions which use the client's IP address on a connection.
-Those will pick the address provided by PROXY protocol, instead of the peer's address.
+Those will pick the address provided by PROXY protocol, instead of the peer's address. ::
 
    cond %{READ_REQUEST_HDR_HOOK}
       set-plugin-cntl INBOUND_IP_SOURCE PROXY

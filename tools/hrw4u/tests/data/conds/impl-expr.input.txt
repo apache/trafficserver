@@ -1,5 +1,5 @@
 REMAP {
     if inbound.req.X-Foo || inbound.req.X-Bar {
-       inbound.req.X-fie = "123";
+        inbound.req.X-fie = "123";
     }
 }

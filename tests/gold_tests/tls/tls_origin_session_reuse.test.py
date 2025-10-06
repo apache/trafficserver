@@ -64,7 +64,7 @@ ts1.Disk.records_config.update(
         'proxy.config.ssl.server.cert.path': '{0}'.format(ts1.Variables.SSLDir),
         'proxy.config.ssl.server.private_key.path': '{0}'.format(ts1.Variables.SSLDir),
         'proxy.config.exec_thread.autoconfig.scale': 1.0,
-        'proxy.config.ssl.session_cache.value': 2,
+        'proxy.config.ssl.session_cache.mode': 2,
         'proxy.config.ssl.session_cache.size': 4096,
         'proxy.config.ssl.session_cache.num_buckets': 256,
         'proxy.config.ssl.session_cache.skip_cache_on_bucket_contention': 0,
@@ -83,7 +83,7 @@ ts2.Disk.records_config.update(
         'proxy.config.ssl.server.cert.path': '{0}'.format(ts2.Variables.SSLDir),
         'proxy.config.ssl.server.private_key.path': '{0}'.format(ts2.Variables.SSLDir),
         'proxy.config.exec_thread.autoconfig.scale': 1.0,
-        'proxy.config.ssl.session_cache.value': 2,
+        'proxy.config.ssl.session_cache.mode': 2,
         'proxy.config.ssl.session_cache.size': 4096,
         'proxy.config.ssl.session_cache.num_buckets': 256,
         'proxy.config.ssl.session_cache.skip_cache_on_bucket_contention': 0,
@@ -100,7 +100,7 @@ ts3.Disk.records_config.update(
         'proxy.config.ssl.server.cert.path': '{0}'.format(ts3.Variables.SSLDir),
         'proxy.config.ssl.server.private_key.path': '{0}'.format(ts3.Variables.SSLDir),
         'proxy.config.exec_thread.autoconfig.scale': 1.0,
-        'proxy.config.ssl.session_cache.value': 2,
+        'proxy.config.ssl.session_cache.mode': 2,
         'proxy.config.ssl.session_cache.size': 4096,
         'proxy.config.ssl.session_cache.num_buckets': 256,
         'proxy.config.ssl.session_cache.skip_cache_on_bucket_contention': 0,
@@ -119,7 +119,7 @@ ts4.Disk.records_config.update(
         'proxy.config.ssl.server.cert.path': '{0}'.format(ts4.Variables.SSLDir),
         'proxy.config.ssl.server.private_key.path': '{0}'.format(ts4.Variables.SSLDir),
         'proxy.config.exec_thread.autoconfig.scale': 1.0,
-        'proxy.config.ssl.session_cache.value': 2,
+        'proxy.config.ssl.session_cache.mode': 2,
         'proxy.config.ssl.session_cache.size': 4096,
         'proxy.config.ssl.session_cache.num_buckets': 256,
         'proxy.config.ssl.session_cache.skip_cache_on_bucket_contention': 0,
@@ -134,7 +134,8 @@ ts4.Disk.records_config.update(
 tr = Test.AddTestRun('new session then reuse')
 tr.MakeCurlCommandMulti(
     '{{curl}} https://127.0.0.1:{0}/reuse_session -k && {{curl}} https://127.0.0.1:{0}/reuse_session -k'.format(
-        ts2.Variables.ssl_port))
+        ts2.Variables.ssl_port),
+    ts=ts2)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(ts1)
@@ -149,7 +150,8 @@ tr.StillRunningAfter += ts2
 tr = Test.AddTestRun('remove oldest session, new session then reuse')
 tr.MakeCurlCommandMulti(
     '{{curl}} https://127.0.0.1:{0}/remove_oldest -k && {{curl}} https://127.0.0.1:{0}/remove_oldest -k'.format(
-        ts2.Variables.ssl_port))
+        ts2.Variables.ssl_port),
+    ts=ts2)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ContainsExpression('curl test', 'Making sure the basics still work')
 ts2.Disk.traffic_out.Content = Testers.ContainsExpression('remove oldest session', '')
@@ -158,7 +160,8 @@ ts2.Disk.traffic_out.Content += Testers.ContainsExpression('reused session to or
 tr.StillRunningAfter = server
 
 tr = Test.AddTestRun('disable origin session reuse, reuse should fail')
-tr.MakeCurlCommandMulti('{{curl}} https://127.0.0.1:{0} -k && {{curl}} https://127.0.0.1:{0} -k'.format(ts4.Variables.ssl_port))
+tr.MakeCurlCommandMulti(
+    '{{curl}} https://127.0.0.1:{0} -k && {{curl}} https://127.0.0.1:{0} -k'.format(ts4.Variables.ssl_port), ts=ts4)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(ts3)
 tr.Processes.Default.StartBefore(ts4)

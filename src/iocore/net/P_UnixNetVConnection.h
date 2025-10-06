@@ -124,29 +124,6 @@ public:
 
   void get_local_sa();
 
-  // these are not part of the pure virtual interface.  They were
-  // added to reduce the amount of duplicate code in classes inherited
-  // from NetVConnection (SSL).
-  virtual int
-  sslStartHandShake(int event, int &err)
-  {
-    (void)event;
-    (void)err;
-    return EVENT_ERROR;
-  }
-
-  virtual bool
-  getSSLHandShakeComplete() const
-  {
-    return (true);
-  }
-
-  virtual bool
-  trackFirstHandshake()
-  {
-    return false;
-  }
-
   // NetEvent
   virtual void net_read_io(NetHandler *nh) override;
   virtual void net_write_io(NetHandler *nh) override;
@@ -188,7 +165,6 @@ public:
 
   virtual int64_t load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf, int64_t &total_written, int &needs);
   void            readDisable(NetHandler *nh);
-  void            readSignalError(NetHandler *nh, int err);
   int             readSignalDone(int event, NetHandler *nh);
   int             readSignalAndUpdate(int event);
   void            readReschedule(NetHandler *nh);
@@ -240,6 +216,20 @@ public:
   {
     return _is_tunnel_endpoint;
   }
+
+protected:
+  virtual bool
+  _isReadyToTransferData() const
+  {
+    return true;
+  }
+  virtual void
+  _beReadyToTransferData()
+  {
+  }
+
+  int _readSignalError(NetHandler *nh, int lerrno);
+  int _writeSignalError(NetHandler *nh, int lerrno);
 
 private:
   virtual void         *_prepareForMigration();

@@ -1,5 +1,5 @@
 ``
-> GET http://testDNS.com``
+> GET ``
 > Host: testDNS.com``
 > User-Agent: curl/``
 > Accept: */*

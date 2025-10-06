@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
 #include "tscore/Random.h"
 #include "tscore/ink_rand.h"
 #include <iostream>

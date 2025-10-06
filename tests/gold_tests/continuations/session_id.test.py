@@ -82,7 +82,7 @@ tr.StillRunningAfter = server
 if not Condition.CurlUsingUnixDomainSocket():
     tr = Test.AddTestRun("Perform HTTP/2 transactions")
     cmd = '-v -k --http2 -H "host:example.com" https://127.0.0.1:{0}'.format(ts.Variables.ssl_port)
-    ps = tr.SpawnCurlCommands(cmdstr=cmd, count=numberOfRequests, retcode=Any(0, 2))
+    ps = tr.SpawnCurlCommands(cmdstr=cmd, count=numberOfRequests, retcode=Any(0, 2), ts=ts)
     tr.Processes.Default.Env = ts.Env
     tr.Processes.Default.ReturnCode = Any(0, 2)
 

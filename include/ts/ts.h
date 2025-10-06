@@ -956,23 +956,18 @@ TSMLoc TSMimeHdrFieldGet(TSMBuffer bufp, TSMLoc hdr, int idx);
 TSMLoc TSMimeHdrFieldFind(TSMBuffer bufp, TSMLoc hdr, const char *name, int length);
 
 /**
-    Returns the TSMLoc location of a specified MIME field from within
-    the MIME header located at hdr. The retrieved_str parameter
-    specifies which field to retrieve. For each MIME field in the
-    MIME header, a pointer comparison is done between the field name
-    and retrieved_str. This is a much quicker retrieval function
-    than TSMimeHdrFieldFind() since it obviates the need for a
-    string comparison. However, retrieved_str must be one of the
-    predefined field names of the form TS_MIME_FIELD_XXX for the
-    call to succeed. Release the returned TSMLoc handle with a call
-    to TSHandleMLocRelease().
+    Appends a MIME field to a header. The field is typically newly created via
+    @a TSMimeHdrFieldCreateNamed. If the field was found via @a
+    TSMimeHdrFieldFind and it existed already in the header, then this function
+    call is effectively a no-op. If the field is newly created via @a
+    TSMimeHdrFieldCreateNamed and a field with the same name already exists in
+    the header, then the new field is added as a duplicate field.
 
-    @param bufp marshal buffer containing the MIME field.
-    @param hdr location of the MIME header containing the field.
-    @param retrieved_str specifies the field to retrieve. Must be
-      one of the predefined field names of the form TS_MIME_FIELD_XXX.
-    @return location of the requested MIME field. If the requested
-      field cannot be found, returns 0.
+    @param bufp marshal buffer containing the MIME header. Must be modifiable.
+    @param hdr location of the MIME header to append the field to.
+    @param field location of the MIME field to append to the header.
+    @return TS_SUCCESS if the field was successfully appended to the header,
+      TS_ERROR if the operation failed (e.g., if the buffer is read-only).
 
  */
 TSReturnCode TSMimeHdrFieldAppend(TSMBuffer bufp, TSMLoc hdr, TSMLoc field);
@@ -2998,6 +2993,10 @@ TSReturnCode TSIpStringToAddr(const char *str, size_t str_len, struct sockaddr *
  * @return enun value of type TSTxnType
  */
 TSTxnType TSHttpTxnTypeGet(TSHttpTxn txnp);
+
+TSReturnCode TSHttpTxnVerifiedAddrSet(TSHttpTxn txnp, const struct sockaddr *addr);
+
+TSReturnCode TSHttpTxnVerifiedAddrGet(TSHttpTxn txnp, const struct sockaddr **addr);
 
 /* Get Arbitrary Txn info such as cache lookup details etc as defined in TSHttpTxnInfoKey */
 /**

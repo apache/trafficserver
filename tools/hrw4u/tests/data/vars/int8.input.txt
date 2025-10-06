@@ -1,9 +1,9 @@
 VARS {
-   Num: int8;
+    int8_0: int8;
 }
 
 REMAP {
-    if Num > 123 {
+    if int8_0 > 123 {
         inbound.req.X-foo = "bar";
     }
 }

@@ -77,7 +77,7 @@ tr.TimeOut = 10
 # size which exponentially reduces the gold file processing time.
 tr.Processes.Default.Command = f"nghttp -vn --continuation 'https://localhost:{ts.Variables.ssl_port}/httpbin/post' -d 'post_body' | grep -v 'continuation-test'"
 tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.StartBefore(httpbin, ready=When.PortOpen(httpbin.Variables.Port))
+tr.Processes.Default.StartBefore(httpbin)
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.Processes.Default.Streams.stdout = "test_TSHttpSsnInfo_nghttp0.gold"
 tr.StillRunningAfter = httpbin

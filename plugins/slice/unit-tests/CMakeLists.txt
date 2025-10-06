@@ -17,20 +17,20 @@
 
 add_executable(test_content_range test_content_range.cc ${PROJECT_SOURCE_DIR}/ContentRange.cc)
 target_compile_definitions(test_content_range PRIVATE UNITTEST)
-target_link_libraries(test_content_range PRIVATE catch2::catch2 ts::tsutil)
-add_test(NAME test_content_range COMMAND test_content_range)
+target_link_libraries(test_content_range PRIVATE Catch2::Catch2WithMain ts::tsutil)
+add_catch2_test(NAME test_content_range COMMAND test_content_range)
 
 add_executable(test_range test_range.cc ${PROJECT_SOURCE_DIR}/Range.cc)
 target_compile_definitions(test_range PRIVATE UNITTEST)
-target_link_libraries(test_range PRIVATE catch2::catch2 ts::tsutil)
-add_test(NAME test_range COMMAND test_range)
+target_link_libraries(test_range PRIVATE Catch2::Catch2WithMain ts::tsutil)
+add_catch2_test(NAME test_range COMMAND test_range)
 
 add_executable(test_config test_config.cc ${PROJECT_SOURCE_DIR}/Config.cc ${PROJECT_SOURCE_DIR}/ObjectSizeCache.cc)
 target_compile_definitions(test_config PRIVATE UNITTEST)
-target_link_libraries(test_config PRIVATE PCRE::PCRE catch2::catch2 ts::tsutil)
-add_test(NAME test_config COMMAND test_config)
+target_link_libraries(test_config PRIVATE PCRE::PCRE Catch2::Catch2WithMain ts::tsutil)
+add_catch2_test(NAME test_config COMMAND test_config)
 
 add_executable(test_cache test_cache.cc ${PROJECT_SOURCE_DIR}/ObjectSizeCache.cc)
 target_compile_definitions(test_cache PRIVATE UNITTEST)
-target_link_libraries(test_cache PRIVATE catch2::catch2 ts::tsutil)
-add_test(NAME test_cache COMMAND test_cache)
+target_link_libraries(test_cache PRIVATE Catch2::Catch2WithMain ts::tsutil)
+add_catch2_test(NAME test_cache COMMAND test_cache)

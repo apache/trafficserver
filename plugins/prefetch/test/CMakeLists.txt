@@ -17,8 +17,8 @@
 
 add_executable(test_evaluate test_evaluate.cc "${PROJECT_SOURCE_DIR}/common.cc" "${PROJECT_SOURCE_DIR}/evaluate.cc")
 
-target_link_libraries(test_evaluate PRIVATE catch2::catch2)
+target_link_libraries(test_evaluate PRIVATE Catch2::Catch2WithMain)
 
 target_compile_definitions(test_evaluate PRIVATE PREFETCH_UNIT_TEST)
 
-add_test(NAME test_evaluate COMMAND test_evaluate)
+add_catch2_test(NAME test_evaluate COMMAND test_evaluate)

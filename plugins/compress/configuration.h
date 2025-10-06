@@ -63,8 +63,20 @@ public:
       zlib_compression_level_(6),
       brotli_compression_level_(6),
       brotli_lgw_size_(16),
-      zstd_compression_level_(12)
+      zstd_compression_level_(12),
+      content_type_ignore_parameters_(false)
   {
+  }
+
+  bool
+  content_type_ignore_parameters() const
+  {
+    return content_type_ignore_parameters_;
+  }
+  void
+  set_content_type_ignore_parameters(bool x)
+  {
+    content_type_ignore_parameters_ = x;
   }
 
   bool
@@ -202,6 +214,7 @@ private:
   unsigned int brotli_compression_level_;
   unsigned int brotli_lgw_size_;
   int          zstd_compression_level_;
+  bool         content_type_ignore_parameters_;
 
   RangeRequestCtrl range_request_ctl_ = RangeRequestCtrl::NO_COMPRESSION;
   StringContainer  compressible_content_types_;

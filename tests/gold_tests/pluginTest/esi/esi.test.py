@@ -186,9 +186,9 @@ echo date('l jS \of F Y h:i:s A');
         client_process.Streams.stdout = "gold/esi_body.gold"
         if self._cc_behavior == CcBehaviorT.REMOVE_CC:
             client_process.Streams.stderr += Testers.ExcludesExpression(
-                'cache-control:', 'The Cache-Control field not be present in the response', reflags=re.IGNORECASE)
+                'cache-control:', 'The Cache-Control field should not be present in the response', reflags=re.IGNORECASE)
             client_process.Streams.stderr += Testers.ExcludesExpression(
-                'expires:', 'The Expires field not be present in the response', reflags=re.IGNORECASE)
+                'expires:', 'The Expires field should not be present in the response', reflags=re.IGNORECASE)
         if self._cc_behavior == CcBehaviorT.MAKE_PRIVATE:
             client_process.Streams.stderr += Testers.ContainsExpression(
                 'cache-control:.*max-age=0, private',
@@ -281,7 +281,7 @@ echo date('l jS \of F Y h:i:s A');
             ts=self._ts)
         tr.Processes.Default.ReturnCode = 0
         self._ts.Disk.diags_log.Content = Testers.ContainsExpression(
-            r"ERROR: \[_setup\] Cannot allow attempted doc of size 121; Max allowed size is 100",
+            r"ERROR: \[_setup\] Cannot allow attempted doc of size 121; Max allowed size is 100 for URL \[.*esi\.php.*\]",
             "max doc size test should have doc size error log")
         tr.StillRunningAfter = self._server
         tr.StillRunningAfter = self._ts
@@ -307,6 +307,22 @@ echo date('l jS \of F Y h:i:s A');
             ts=self._ts)
         tr.Processes.Default.ReturnCode = 0
         self._configure_client_output_expectations(tr.Processes.Default)
+        tr.StillRunningAfter = self._server
+        tr.StillRunningAfter = self._ts
+
+    def run_cases_expecting_no_transformation(self):
+        tr = Test.AddTestRun(f"Verify the ESI plugin does not transform responses: {self._plugin_config}")
+        client = tr.MakeCurlCommand(
+            f'http://127.0.0.1:{self._ts.Variables.port}/esi.php '
+            '-H"Host: www.example.com" -H"Accept: */*" --verbose',
+            ts=self._ts)
+        client.ReturnCode = 0
+
+        # Expect no transformation: the tag should be present without any transformation.
+        client.Streams.stdout += Testers.ContainsExpression(
+            'Hello, <esi:include src="http://www.example.com/date.php"/>',
+            'The response should not be transformed',
+            reflags=re.IGNORECASE)
         tr.StillRunningAfter = self._server
         tr.StillRunningAfter = self._ts
 
@@ -352,3 +368,13 @@ max_doc_2K_test = EsiTest(plugin_config='esi.so --max-doc-size 2K')
 max_doc_2K_test.run_cases_expecting_gzip()
 max_doc_20M_test = EsiTest(plugin_config='esi.so --max-doc-size 20M')
 max_doc_20M_test.run_cases_expecting_gzip()
+
+# The test doesn't use 304 redirect, so restricting the allowed response codes to 200
+# should not affect the test.
+allowed_response_codes_test = EsiTest(plugin_config='esi.so --allowed-response-codes 200')
+allowed_response_codes_test.run_cases_expecting_gzip()
+
+# Do not allow transforming the 200 OK response. Since the test uses a 200 OK response,
+# the plugin should not transform it.
+response_not_allowed_test = EsiTest(plugin_config='esi.so --allowed-response-codes 304')
+response_not_allowed_test.run_cases_expecting_no_transformation()

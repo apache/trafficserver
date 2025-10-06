@@ -10,7 +10,7 @@
 
 #include "swoc/Lexicon.h"
 #include "swoc/Errata.h"
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
 
 using swoc::TextView;
 using swoc::Lexicon;

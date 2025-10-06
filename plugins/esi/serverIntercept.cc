@@ -27,6 +27,7 @@
 #include <string>
 #include <climits>
 #include <strings.h>
+#include "http_utils.h"
 #include <cstdio>
 
 const char *ECHO_HEADER_PREFIX          = "Echo-";
@@ -350,7 +351,9 @@ setupServerIntercept(TSHttpTxn txnp)
 {
   TSCont contp = TSContCreate(serverIntercept, TSMutexCreate());
   if (!contp) {
-    TSError("[server_intercept][%s] Could not create intercept request", __FUNCTION__);
+    // Get URL for error reporting.
+    std::string url_string = getRequestUrlString(txnp);
+    TSError("[server_intercept][%s] Could not create intercept request for URL [%s]", __FUNCTION__, url_string.c_str());
     return false;
   }
   SContData *cont_data = new SContData(contp);

@@ -17,8 +17,6 @@ Test nested include for the ESI plugin.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import os
-
 Test.Summary = '''
 Test nested include for the ESI plugin.
 '''
@@ -31,106 +29,77 @@ class EsiTest():
     A class that encapsulates the configuration and execution of a set of ESI
     test cases.
     """
-    """ static: The same server Process is used across all tests. """
-    _server = None
-    """ static: A counter to keep the ATS process names unique across tests. """
-    _ts_counter = 0
-    """ static: A counter to keep any output file names unique across tests. """
-    _output_counter = 0
-    """ The ATS process for this set of test cases. """
-    _ts = None
 
-    def __init__(self, plugin_config):
+    _replay_file: str = "esi_nested_include.replay.yaml"
+
+    def __init__(self, plugin_config) -> None:
         """
-        Args:
-            plugin_config (str): The config line to place in plugin.config for
-                the ATS process.
+        :param plugin_config: esi.so configuration for plugin.config.
         """
-        if EsiTest._server is None:
-            EsiTest._server = EsiTest._create_server()
+        tr = Test.AddTestRun("Request the ESI generated document")
+        self._create_server(tr)
+        self._create_ats(tr, plugin_config)
+        self._create_client(tr)
 
-        self._ts = EsiTest._create_ats(self, plugin_config)
-
-    @staticmethod
-    def _create_server():
+    def _create_server(self, tr: 'TestRun') -> 'Process':
+        """ Create and start a server process.
+        :param tr: The test run to add the server to.
+        :return: The server process.
         """
-        Create and start a server process.
-        """
-        # Configure our server.
-        server = Test.MakeOriginServer("server", lookup_key="{%uuid}")
+        # Configure our server using proxy verifier.
+        server = tr.AddVerifierServerProcess("server", self._replay_file, other_args='--format "{url}"')
+        self._server = server
 
-        # Generate the set of ESI responses.
-        request_header = {
-            "headers": "GET /esi-nested-include.php HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "Content-Length: 0\r\n\r\n",
-            "timestamp": "1469733493.993",
-            "body": ""
-        }
-        esi_body = r'''<p>
-<esi:include src="http://www.example.com/esi-nested-include.html"/>
-</p>
-'''
-        response_header = {
-            "headers":
-                "HTTP/1.1 200 OK\r\n" + "X-Esi: 1\r\n" + "Cache-Control: private\r\n" + "Content-Type: text/html\r\n" +
-                "Connection: close\r\n" + "Content-Length: {}\r\n".format(len(esi_body)) + "\r\n",
-            "timestamp": "1469733493.993",
-            "body": esi_body
-        }
-        server.addResponse("sessionfile.log", request_header, response_header)
-
-        # Create a run to start the server.
-        tr = Test.AddTestRun("Start the server.")
-        tr.Processes.Default.StartBefore(server)
-        tr.Processes.Default.Command = "echo starting the server"
-        tr.Processes.Default.ReturnCode = 0
-        tr.StillRunningAfter = server
+        # Validate server traffic
+        server.Streams.All += Testers.ContainsExpression('GET /main.php', 'Verify the server received the initial request.')
+        server.Streams.All += Testers.ContainsExpression(
+            'GET /esi-nested-include.html', 'Verify the server received the nested include request.')
 
         return server
 
-    @staticmethod
-    def _create_ats(self, plugin_config):
+    def _create_ats(self, tr: 'TestRun', plugin_config: str) -> 'Process':
+        """ Create and start an ATS process.
+        :param tr: The test run to add the ATS to.
+        :param plugin_config: The plugin configuration to use.
+        :return: The ATS process.
         """
-        Create and start an ATS process.
-        """
-        EsiTest._ts_counter += 1
-
         # Configure ATS with a vanilla ESI plugin configuration.
-        ts = Test.MakeATSProcess("ts{}".format(EsiTest._ts_counter))
+        ts = tr.MakeATSProcess(f"ts")
+        self._ts = ts
         ts.Disk.records_config.update({
             'proxy.config.diags.debug.enabled': 1,
             'proxy.config.diags.debug.tags': 'http|plugin_esi',
         })
-        ts.Disk.remap_config.AddLine(f'map http://www.example.com/ http://127.0.0.1:{EsiTest._server.Variables.Port}')
+        server_port = self._server.Variables.http_port
+        ts.Disk.remap_config.AddLine(f'map http://www.example.com/ http://127.0.0.1:{server_port}')
         ts.Disk.plugin_config.AddLine(plugin_config)
 
         ts.Disk.diags_log.Content = Testers.ContainsExpression(
             r'The current esi inclusion depth \(3\) is larger than or equal to the max \(3\)',
             'Verify the ESI error concerning the max inclusion depth')
-
-        # Create a run to start the ATS process.
-        tr = Test.AddTestRun("Start the ATS process.")
-        tr.Processes.Default.StartBefore(ts)
-        tr.Processes.Default.Command = "echo starting ATS"
-        tr.Processes.Default.ReturnCode = 0
-        tr.StillRunningAfter = ts
         return ts
 
-    def run_test(self):
-        # Test 1: Verify basic ESI functionality without processing internal txn.
-        tr = Test.AddTestRun("First request")
-        tr.MakeCurlCommand(
-            f'http://127.0.0.1:{self._ts.Variables.port}/main.php -H"Host: www.example.com" '
-            '-H"Accept: */*" --verbose')
-        tr.Processes.Default.ReturnCode = 0
-        tr.Processes.Default.Streams.stdout = "gold/nested_include_body.gold"
-        tr.StillRunningAfter = self._server
-        tr.StillRunningAfter = self._ts
+    def _create_client(self, tr: 'TestRun') -> None:
+        """ Create and start a client process to generate the request.
+        :param tr: The test run to add the client to.
+        """
+        # Note, just request the main.php file. Otherwise the client will do the
+        # ESI requests in the replay file as well.
+        p = tr.AddVerifierClientProcess(
+            "client", self._replay_file, http_ports=[self._ts.Variables.port], other_args='--format "{url}" --keys /main.php')
+        p.ReturnCode = 0
+        p.StartBefore(self._server)
+        p.StartBefore(self._ts)
+
+        # Double check that the client received the response.
+        p.Streams.stdout += Testers.ContainsExpression(
+            'Received an HTTP/1 chunked body', 'Verify the client received the response.')
+
+        p.Streams.stdout += Testers.ContainsExpression(
+            'esi:include src="http://www.example.com/esi-nested-include.html"/>', 'Verify the ATS received the esi include.')
 
 
 #
 # Configure and run the test cases.
 #
-
-# Run the tests with ESI configured with private response.
-first_test = EsiTest(plugin_config='esi.so')
-first_test.run_test()
+EsiTest(plugin_config='esi.so')

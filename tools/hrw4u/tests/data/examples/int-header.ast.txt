@@ -1,1 +1,1 @@
-(program (section REMAP { (sectionBody (statement inbound.req.@PropertyName = (value "someproperty") ;)) }) <EOF>)
+(program (programItem (commentLine # This comment is merely here for testing comments)) (programItem (section REMAP { (sectionBody (statement inbound.req.@PropertyName = (value "someproperty") ;)) })) <EOF>)

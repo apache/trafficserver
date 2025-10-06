@@ -52,6 +52,11 @@ cont_handle_policy(TSCont contp, TSEvent event, void *edata)
   switch (event) {
   // After the cache lookups check if it should be promoted on cache misses
   case TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE:
+    if (TSHttpTxnRedirectRetries(txnp) > 0 && config->is_disabled_on_redirect()) {
+      // do nothing when following redirect if it's configured
+      break;
+    }
+
     if (!TSHttpTxnIsInternal(txnp) || config->getPolicy()->isInternalEnabled()) {
       int obj_status;
 
@@ -77,13 +82,13 @@ cont_handle_policy(TSCont contp, TSEvent event, void *edata)
           // Do nothing, just let it handle the lookup.
           DBG("cache-status is %d (hit), nothing to do", obj_status);
 
-          if (config->getPolicy()->_stats_enabled) {
+          if (!config->getPolicy()->_stats_id.empty()) {
             TSStatIntIncrement(config->getPolicy()->_cache_hits_id, 1);
           }
           break;
         }
       }
-      if (config->getPolicy()->_stats_enabled) {
+      if (!config->getPolicy()->_stats_id.empty()) {
         TSStatIntIncrement(config->getPolicy()->_total_requests_id, 1);
       }
     } else {

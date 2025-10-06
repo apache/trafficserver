@@ -88,60 +88,64 @@ class TestFileChangeBehavior:
         self._positive_hc_counter += 1
         counter = self._positive_hc_counter
         tr = Test.AddTestRun(f'Positive acme healthchecks: {counter}')
-        tr.MakeCurlCommand(f'-v http://127.0.0.1:{self._ts.Variables.port}/acme')
+        tr.MakeCurlCommand(f'-v http://127.0.0.1:{self._ts.Variables.port}/acme', ts=self._ts)
         curl_acme = tr.Processes.Default
         if not self._ts_started:
             curl_acme.StartBefore(self._ts)
             self._ts_started = True
         curl_acme.Streams.All += Testers.ContainsExpression('HTTP/1.1 200', 'Verify 200 response for /acme')
 
-        # Repeat for acme-ssl
-        tr2 = Test.AddTestRun(f'Positive acme-ssl healthchecks: {counter}')
-        tr2.MakeCurlCommand(f'-kv https://127.0.0.1:{self._ts.Variables.ssl_port}/acme-ssl')
-        curl_acme_ssl = tr2.Processes.Default
-        if not self._ts_started:
-            curl_acme_ssl.StartBefore(self._ts)
-            self._ts_started = True
-        curl_acme_ssl.Streams.All += Testers.ContainsExpression('HTTP/2 200', 'Verify 200 response for /acme-ssl')
+        if not Condition.CurlUsingUnixDomainSocket():
+            # Repeat for acme-ssl
+            tr2 = Test.AddTestRun(f'Positive acme-ssl healthchecks: {counter}')
+            tr2.MakeCurlCommand(f'-kv https://127.0.0.1:{self._ts.Variables.ssl_port}/acme-ssl', ts=self._ts)
+            curl_acme_ssl = tr2.Processes.Default
+            if not self._ts_started:
+                curl_acme_ssl.StartBefore(self._ts)
+                self._ts_started = True
+            curl_acme_ssl.Streams.All += Testers.ContainsExpression('HTTP/2 200', 'Verify 200 response for /acme-ssl')
 
     def _remove_acme_ssl(self) -> None:
         '''Remove the acme-ssl file to trigger a file change detection.
         :return: None
         '''
-        tr = Test.AddTestRun('Remove acme-ssl file')
-        p = tr.Processes.Default
-        p.Command = f'rm {Test.RunDirectory}/acme-ssl && sleep 1'
-        tr.Processes.Default.ReturnCode = 0
+        if not Condition.CurlUsingUnixDomainSocket():
+            tr = Test.AddTestRun('Remove acme-ssl file')
+            p = tr.Processes.Default
+            p.Command = f'rm {Test.RunDirectory}/acme-ssl && sleep 1'
+            tr.Processes.Default.ReturnCode = 0
 
     def _expect_acme_ssl_404(self) -> None:
         '''Expect a 404 response for the removed acme-ssl file.
         :return: None
         '''
         tr = Test.AddTestRun('Expect 200 for acme after acme-ssl removal')
-        tr.MakeCurlCommand(f'-v http://127.0.0.1:{self._ts.Variables.port}/acme')
+        tr.MakeCurlCommand(f'-v http://127.0.0.1:{self._ts.Variables.port}/acme', ts=self._ts)
         curl_acme = tr.Processes.Default
         if not self._ts_started:
             curl_acme.StartBefore(self._ts)
             self._ts_started = True
         curl_acme.Streams.All += Testers.ContainsExpression('HTTP/1.1 200', 'Verify 200 response for /acme after acme-ssl removal')
 
-        tr2 = Test.AddTestRun('Expect 404 for acme-ssl after removal')
-        tr2.MakeCurlCommand(f'-kv https://127.0.0.1:{self._ts.Variables.ssl_port}/acme-ssl')
-        curl_acme_ssl = tr2.Processes.Default
-        if not self._ts_started:
-            curl_acme_ssl.StartBefore(self._ts)
-            self._ts_started = True
-        curl_acme_ssl.Streams.All += Testers.ContainsExpression('HTTP/2 404', 'Verify 404 response for /acme-ssl after removal')
+        if not Condition.CurlUsingUnixDomainSocket():
+            tr2 = Test.AddTestRun('Expect 404 for acme-ssl after removal')
+            tr2.MakeCurlCommand(f'-kv https://127.0.0.1:{self._ts.Variables.ssl_port}/acme-ssl', ts=self._ts)
+            curl_acme_ssl = tr2.Processes.Default
+            if not self._ts_started:
+                curl_acme_ssl.StartBefore(self._ts)
+                self._ts_started = True
+            curl_acme_ssl.Streams.All += Testers.ContainsExpression('HTTP/2 404', 'Verify 404 response for /acme-ssl after removal')
 
     def _re_add_acme_ssl(self) -> None:
         '''Re-add the acme-ssl file to restore the healthcheck.
         :return: None
         '''
-        tr = Test.AddTestRun('Re-add acme-ssl file')
-        tr.Setup.Copy('acme-ssl', Test.RunDirectory)
-        p = tr.Processes.Default
-        p.Command = 'sleep 1'
-        p.ReturnCode = 0
+        if not Condition.CurlUsingUnixDomainSocket():
+            tr = Test.AddTestRun('Re-add acme-ssl file')
+            tr.Setup.Copy('acme-ssl', Test.RunDirectory)
+            p = tr.Processes.Default
+            p.Command = 'sleep 1'
+            p.ReturnCode = 0
 
 
 # Instantiate the test

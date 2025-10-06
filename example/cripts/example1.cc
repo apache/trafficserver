@@ -79,23 +79,31 @@ do_read_response()
 
 do_send_response()
 {
-  borrow resp = cripts::Client::Response::Get();
-  borrow conn = cripts::Client::Connection::Get();
-  string msg  = "Eliminate TSCPP";
+  borrow resp   = cripts::Client::Response::Get();
+  borrow conn   = cripts::Client::Connection::Get();
+  borrow cached = cripts::Cache::Response::Get();
+  string msg    = "Eliminate TSCPP";
 
   resp["Server"]         = "";        // Deletes the Server header
   resp["X-AMC"]          = msg;       // New header
   resp["Cache-Control"]  = "Private"; // Deletes old CC values, and sets a new one
   resp["X-UUID"]         = cripts::UUID::Unique::Get();
   resp["X-tcpinfo"]      = conn.tcpinfo.Log();
-  resp["X-Cache-Status"] = resp.cache;
+  resp["X-Cache-Status"] = cached.lookupstatus.GetSV();
   resp["X-Integer"]      = 666;
   resp["X-Data"]         = AsString(txn_data[2]);
 
+  // This is still supported, but prefer the IP-based approach
   resp["X-ASN"]         = conn.geo.ASN();
   resp["X-ASN-Name"]    = conn.geo.ASNName();
   resp["X-Country"]     = conn.geo.Country();
   resp["X-ISO-Country"] = conn.geo.CountryCode();
+
+  auto client_ip            = conn.IP();
+  resp["X-New-ASN"]         = client_ip.ASN();
+  resp["X-New-ASN-Name"]    = client_ip.ASNName();
+  resp["X-New-Country"]     = client_ip.Country();
+  resp["X-New-ISO-Country"] = client_ip.CountryCode();
 
   // Setup some connection parameters
   conn.congestion = "bbr";
@@ -132,6 +140,7 @@ do_remap()
 
   if (CRIPT_ALLOW.contains(ip)) {
     CDebug("Client IP allowed: {}", ip.string(24, 64));
+    CDebug("Client IP Geo - Country: {}, ASN: {}", ip.Country(), ip.ASN());
   }
 
   CDebug("Epoch time is {} (or via .epoch(), {}", now, now.Epoch());

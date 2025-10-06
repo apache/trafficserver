@@ -829,7 +829,7 @@ CB_After_Cache_Init()
     // The delay_listen_for_cache value was 1, therefore the main function
     // delayed the call to start_HttpProxyServer until we got here. We must
     // call accept on the ports now that the cache is initialized.
-    Dbg(dbg_ctl_http_listen, "Delayed listen enable, cache initialization finished");
+    Note("Enabling listen, cache initialization finished");
     start_HttpProxyServer();
     emit_fully_initialized_message();
   }
@@ -1786,9 +1786,6 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   // Override default swoc::Errata settings.
   Initialize_Errata_Settings();
 
-  pcre_malloc = ats_malloc;
-  pcre_free   = ats_free;
-
   // Define the version info
   auto &version = AppVersionInfo::setup_version("traffic_server");
 
@@ -2026,7 +2023,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   {
     auto rec_str{RecGetRecordStringAlloc("proxy.config.log.hostname")};
     auto hostname{ats_as_c_str(rec_str)};
-    if (hostname != nullptr || std::string_view(hostname) == "localhost"sv) {
+    if (hostname != nullptr && std::string_view(hostname) == "localhost"sv) {
       // The default value was used. Let Machine::init derive the hostname.
       hostname = nullptr;
     }
@@ -2284,7 +2281,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
       // Delay only if config value set and flag value is zero
       // (-1 => cache already initialized)
       if (delay_p && ink_atomic_cas(&delay_listen_for_cache, 0, 1)) {
-        Dbg(dbg_ctl_http_listen, "Delaying listen, waiting for cache initialization");
+        Note("Delaying listen, waiting for cache initialization");
       } else {
         // If we've come here, either:
         //

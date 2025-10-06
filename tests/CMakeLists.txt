@@ -36,41 +36,23 @@ function(ADD_AUTEST_PLUGIN _NAME)
 endfunction()
 
 add_subdirectory(tools/plugins)
+add_subdirectory(gold_tests/chunked_encoding)
+add_subdirectory(gold_tests/continuations/plugins)
+add_subdirectory(gold_tests/jsonrpc/plugins)
+add_subdirectory(gold_tests/pluginTest/polite_hook_wait)
+add_subdirectory(gold_tests/pluginTest/tsapi)
+add_subdirectory(gold_tests/pluginTest/TSVConnFd)
+add_subdirectory(gold_tests/timeout)
+add_subdirectory(gold_tests/tls)
+
 set(RUNPIPENV PIPENV_VENV_IN_PROJECT=True ${PipEnv})
 
-set(CMAKE_GOLD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/gold_tests_filtered")
+set(CMAKE_GOLD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/gold_tests")
+set(CMAKE_SKIP_GOLD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/_skipped_uds_gold_tests")
 set(CURL_UDS_FLAG "")
 if(ENABLE_AUTEST_UDS)
   set(CURL_UDS_FLAG "--curl-uds")
-  # Copy everything except dirs: h2, tls
-  # Other specific tests will be skipped
-  file(
-    COPY ${CMAKE_CURRENT_SOURCE_DIR}/gold_tests/
-    DESTINATION ${CMAKE_GOLD_DIR}
-    FILES_MATCHING
-    PATTERN "*"
-    PATTERN "h2" EXCLUDE
-    PATTERN "tls*" EXCLUDE
-    PATTERN "tls/ssl/**"
-  )
-else()
-  # Copy everything except autest_uds tests that are only for curl uds option
-  file(
-    COPY ${CMAKE_CURRENT_SOURCE_DIR}/gold_tests/
-    DESTINATION ${CMAKE_GOLD_DIR}
-    FILES_MATCHING
-    PATTERN "*"
-  )
-  add_subdirectory(gold_tests_filtered/tls)
 endif()
-
-add_subdirectory(gold_tests_filtered/chunked_encoding)
-add_subdirectory(gold_tests_filtered/continuations/plugins)
-add_subdirectory(gold_tests_filtered/jsonrpc/plugins)
-add_subdirectory(gold_tests_filtered/pluginTest/polite_hook_wait)
-add_subdirectory(gold_tests_filtered/pluginTest/tsapi)
-add_subdirectory(gold_tests_filtered/pluginTest/TSVConnFd)
-add_subdirectory(gold_tests_filtered/timeout)
 
 configure_file(Pipfile Pipfile COPYONLY)
 configure_file(autest.sh.in autest.sh)
@@ -91,10 +73,28 @@ add_custom_target(
   autest_no_install
   COMMAND ${RUNPIPENV} install
   COMMAND
-    ${CMAKE_COMMAND} -E env PYTHONPATH=${CMAKE_CURRENT_SOURCE_DIR}/gold_tests/remap:$ENV{PYTHONPATH} ${RUNPIPENV} run
-    env autest --directory ${CMAKE_CURRENT_SOURCE_DIR}/gold_tests --ats-bin=${CMAKE_INSTALL_PREFIX}/bin
-    --proxy-verifier-bin ${PROXY_VERIFIER_PATH} --build-root ${CMAKE_BINARY_DIR} --sandbox ${AUTEST_SANDBOX}
-    ${CURL_UDS_FLAG} ${AUTEST_OPTIONS}
+    ${CMAKE_COMMAND} -E env PYTHONPATH=${CMAKE_GOLD_DIR}/remap:$ENV{PYTHONPATH} ${RUNPIPENV} run env autest --directory
+    ${CMAKE_GOLD_DIR} --ats-bin=${CMAKE_INSTALL_PREFIX}/bin --proxy-verifier-bin ${PROXY_VERIFIER_PATH} --build-root
+    ${CMAKE_BINARY_DIR} --sandbox ${AUTEST_SANDBOX} ${CURL_UDS_FLAG} ${AUTEST_OPTIONS}
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+  USES_TERMINAL
+)
+
+# autest uds specific target that skips tests and runs with curl flag
+add_custom_target(
+  autest-uds
+  COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target install
+  COMMAND ${RUNPIPENV} install
+  COMMAND ${CMAKE_COMMAND} -E rename ${CMAKE_GOLD_DIR}/h2 ${CMAKE_SKIP_GOLD_DIR}/h2
+  COMMAND ${CMAKE_COMMAND} -E rename ${CMAKE_GOLD_DIR}/tls ${CMAKE_SKIP_GOLD_DIR}/tls
+  COMMAND ${CMAKE_COMMAND} -E rename ${CMAKE_GOLD_DIR}/tls_hooks ${CMAKE_SKIP_GOLD_DIR}/tls_hooks
+  COMMAND
+    ${CMAKE_COMMAND} -E env PYTHONPATH=${CMAKE_GOLD_DIR}/remap:$ENV{PYTHONPATH} ${RUNPIPENV} run env autest --directory
+    ${CMAKE_GOLD_DIR} --ats-bin=${CMAKE_INSTALL_PREFIX}/bin --proxy-verifier-bin ${PROXY_VERIFIER_PATH} --build-root
+    ${CMAKE_BINARY_DIR} --sandbox ${AUTEST_SANDBOX} ${CURL_UDS_FLAG} ${AUTEST_OPTIONS}
+  COMMAND ${CMAKE_COMMAND} -E rename {CMAKE_SKIP_GOLD_DIR}/h2 ${CMAKE_GOLD_DIR}/h2
+  COMMAND ${CMAKE_COMMAND} -E rename ${CMAKE_SKIP_GOLD_DIR}/tls ${CMAKE_GOLD_DIR}/tls
+  COMMAND ${CMAKE_COMMAND} -E rename ${CMAKE_SKIP_GOLD_DIR}/tls_hooks ${CMAKE_GOLD_DIR}/tls_hooks
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   USES_TERMINAL
 )
