@@ -25,6 +25,7 @@
 #include "configuration.h"
 #include <algorithm>
 #include <ranges>
+#include <unordered_map>
 #include <vector>
 #include <fnmatch.h>
 #include <system_error>
@@ -260,6 +261,18 @@ static const swoc::Lexicon<RangeRequestCtrl> RangeRequestLexicon{
   {RangeRequestCtrl::REMOVE_ACCEPT_ENCODING, {"remove-accept-encoding"} }
 };
 
+static const std::unordered_map<std::string_view, ParserState> KeywordToStateMap{
+  {"compressible-content-type",      ParserState::kParseCompressibleContentType    },
+  {"content_type_ignore_parameters", ParserState::kParseContentTypeIgnoreParameters},
+  {"remove-accept-encoding",         ParserState::kParseRemoveAcceptEncoding       },
+  {"enabled",                        ParserState::kParseEnable                     },
+  {"cache",                          ParserState::kParseCache                      },
+  {"range-request",                  ParserState::kParseRangeRequest               },
+  {"flush",                          ParserState::kParseFlush                      },
+  {"allow",                          ParserState::kParseAllow                      },
+  {"minimum-content-length",         ParserState::kParseMinimumContentLength       }
+};
+
 void
 HostConfiguration::set_range_request(swoc::TextView token)
 {
@@ -336,30 +349,14 @@ Configuration::Parse(const char *path)
           current_host_configuration->update_defaults();
           current_host_configuration = new HostConfiguration(host_name);
           c->add_host_configuration(current_host_configuration);
-        } else if (token == "compressible-content-type") {
-          state = kParseCompressibleContentType;
-        } else if (token == "content_type_ignore_parameters") {
-          state = kParseContentTypeIgnoreParameters;
-        } else if (token == "remove-accept-encoding") {
-          state = kParseRemoveAcceptEncoding;
-        } else if (token == "enabled") {
-          state = kParseEnable;
-        } else if (token == "cache") {
-          state = kParseCache;
-        } else if (token == "range-request") {
-          state = kParseRangeRequest;
-        } else if (token == "flush") {
-          state = kParseFlush;
         } else if (token == "supported-algorithms") {
           current_host_configuration->add_compression_algorithms(line_view);
           state = kParseStart;
-        } else if (token == "allow") {
-          state = kParseAllow;
         } else if (token == "compressible-status-code") {
           current_host_configuration->add_compressible_status_codes(line_view);
           state = kParseStart;
-        } else if (token == "minimum-content-length") {
-          state = kParseMinimumContentLength;
+        } else if (auto it = KeywordToStateMap.find(std::string_view(token.data(), token.size())); it != KeywordToStateMap.end()) {
+          state = it->second;
         } else {
           warning("failed to interpret \"%.*s\" at line %zu", static_cast<int>(token.size()), token.data(), lineno);
         }
