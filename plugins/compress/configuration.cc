@@ -188,7 +188,7 @@ HostConfiguration::is_content_type_compressible(const char *content_type, int co
   return is_match;
 }
 
-int
+constexpr int
 isCommaOrSpace(int ch)
 {
   return (ch == ',') or isspace(ch);
