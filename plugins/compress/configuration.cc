@@ -28,6 +28,7 @@
 #include <vector>
 #include <fnmatch.h>
 
+#include "swoc/swoc_file.h"
 #include "swoc/TextView.h"
 
 #include "debug_macros.h"
@@ -314,17 +315,13 @@ HostConfiguration::set_range_request(const std::string &token)
 Configuration *
 Configuration::Parse(const char *path)
 {
-  string pathstring(path);
+  swoc::file::path pathstring(path);
 
   // If we have a path and it's not an absolute path, make it relative to the
   // configuration directory.
-  if (!pathstring.empty() && pathstring[0] != '/') {
-    pathstring.assign(TSConfigDirGet());
-    pathstring.append("/");
-    pathstring.append(path);
+  if (!pathstring.is_absolute()) {
+    pathstring = swoc::file::path(TSConfigDirGet()) / pathstring;
   }
-
-  trim_if(pathstring, isspace);
 
   Configuration     *c                          = new Configuration();
   HostConfiguration *current_host_configuration = new HostConfiguration("");
@@ -335,16 +332,16 @@ Configuration::Parse(const char *path)
     return c;
   }
 
-  path = pathstring.c_str();
-  info("Parsing file \"%s\"", path);
+  auto path_string = pathstring.c_str();
+  info("Parsing file \"%s\"", path_string);
   std::ifstream f;
 
   size_t lineno = 0;
 
-  f.open(path, std::ios::in);
+  f.open(path_string, std::ios::in);
 
   if (!f.is_open()) {
-    warning("could not open file [%s], skip", path);
+    warning("could not open file [%s], skip", path_string);
     return c;
   }
 
