@@ -64,7 +64,7 @@ public:
   {
   }
 
-  bool
+  [[nodiscard]] bool
   content_type_ignore_parameters() const
   {
     return content_type_ignore_parameters_;
@@ -75,7 +75,7 @@ public:
     content_type_ignore_parameters_ = x;
   }
 
-  bool
+  [[nodiscard]] bool
   enabled()
   {
     return enabled_;
@@ -85,12 +85,12 @@ public:
   {
     enabled_ = x;
   }
-  RangeRequestCtrl
+  [[nodiscard]] RangeRequestCtrl
   range_request_ctl()
   {
     return range_request_ctl_;
   }
-  bool
+  [[nodiscard]] bool
   cache()
   {
     return cache_;
@@ -100,7 +100,7 @@ public:
   {
     cache_ = x;
   }
-  bool
+  [[nodiscard]] bool
   flush()
   {
     return flush_;
@@ -110,7 +110,7 @@ public:
   {
     flush_ = x;
   }
-  bool
+  [[nodiscard]] bool
   remove_accept_encoding()
   {
     return remove_accept_encoding_;
@@ -120,18 +120,18 @@ public:
   {
     remove_accept_encoding_ = x;
   }
-  std::string
+  [[nodiscard]] std::string
   host()
   {
     return host_;
   }
 
-  bool
+  [[nodiscard]] bool
   has_allows() const
   {
     return !allows_.empty();
   }
-  unsigned int
+  [[nodiscard]] unsigned int
   minimum_content_length() const
   {
     return minimum_content_length_;
@@ -142,16 +142,16 @@ public:
     minimum_content_length_ = x;
   }
 
-  void update_defaults();
-  void add_allow(swoc::TextView allow);
-  void add_compressible_content_type(swoc::TextView content_type);
-  void add_compressible_status_codes(swoc::TextView status_codes);
-  bool is_url_allowed(const char *url, int url_len);
-  bool is_content_type_compressible(const char *content_type, int content_type_length);
-  bool is_status_code_compressible(const TSHttpStatus status_code) const;
-  void add_compression_algorithms(swoc::TextView algorithms);
-  int  compression_algorithms();
-  void set_range_request(swoc::TextView token);
+  void               update_defaults();
+  void               add_allow(swoc::TextView allow);
+  void               add_compressible_content_type(swoc::TextView content_type);
+  void               add_compressible_status_codes(swoc::TextView status_codes);
+  [[nodiscard]] bool is_url_allowed(const char *url, int url_len);
+  [[nodiscard]] bool is_content_type_compressible(const char *content_type, int content_type_length);
+  [[nodiscard]] bool is_status_code_compressible(const TSHttpStatus status_code) const;
+  void               add_compression_algorithms(swoc::TextView algorithms);
+  [[nodiscard]] int  compression_algorithms();
+  void               set_range_request(swoc::TextView token);
 
 private:
   std::string  host_;
@@ -178,8 +178,8 @@ class Configuration : private atscppapi::noncopyable
   friend class HostConfiguration;
 
 public:
-  static Configuration *Parse(const char *path);
-  HostConfiguration    *find(const char *host, int host_length);
+  [[nodiscard]] static Configuration *Parse(const char *path);
+  [[nodiscard]] HostConfiguration    *find(const char *host, int host_length);
 
 private:
   explicit Configuration() {}
