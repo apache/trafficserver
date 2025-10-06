@@ -383,6 +383,9 @@ def MakeATSProcess(
             'proxy.config.ssl.keylog_file': tmpname,
         })
 
+    # For config reload tests, no need to wait the default 3 seconds to detect the need for a reload.
+    p.Disk.records_config.update({'proxy.config.config_update_interval_ms': 20})
+
     if enable_cache:
         # In records.yaml, the cache is enabled by default so there's nothing
         # we have to do here to functionally enable it. However, the tests that
@@ -557,16 +560,17 @@ class YAMLFile(File):
         else:
             return content  # Already an object.
 
-    def __update(self, content, out):
+    def __update(self, content: dict, out: dict):
         for key, value in content.items():
             if key in out:
-                if isinstance(out[key], dict) == False:
-                    out.update(content)
+                if not isinstance(out[key], dict):
+                    # Simple: just set the value.
+                    out[key] = value
                     continue
 
+                # Recurse: update the nested dictionary.
                 self.__update(value, out[key])
             else:
-                out[key] = {}
                 out[key] = value
 
     def update(self, content):
@@ -602,7 +606,6 @@ class RecordsYAML(YAMLFile):
     def __legacy_update(self, obj, new_doc=False):
         config = {}
         for name, value in obj.items():
-            ori_name = name
             if name.startswith("proxy.config."):
                 name = name[len("proxy.config."):]
             elif name.startswith("local.config."):

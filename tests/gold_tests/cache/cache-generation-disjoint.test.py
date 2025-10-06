@@ -31,7 +31,6 @@ ts.Disk.records_config.update(
     {
         'proxy.config.body_factory.enable_customizations': 3,  # enable domain specific body factory
         'proxy.config.http.cache.generation': -1,  # Start with cache turned off
-        'proxy.config.config_update_interval_ms': 1,
     })
 ts.Disk.plugin_config.AddLine('xdebug.so --enable=x-cache,x-cache-key,via,x-cache-generation')
 ts.Disk.remap_config.AddLines(
