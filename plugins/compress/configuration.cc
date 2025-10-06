@@ -331,7 +331,7 @@ Configuration::Parse(const char *path)
 
       switch (state) {
       case kParseStart:
-        if ((token[0] == '[') && (token[token.size() - 1] == ']')) {
+        if (token.starts_with('[') && token.ends_with(']')) {
           auto host_name = token.substr(1, token.size() - 2);
 
           // Makes sure that any default settings are properly set, when not explicitly set via configs
