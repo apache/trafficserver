@@ -170,10 +170,7 @@ HostConfiguration::is_content_type_compressible(const char *content_type, int co
 
   for (const auto &content_type_pattern : compressible_content_types_) {
     const char *match_string = content_type_pattern.c_str();
-    if (match_string == nullptr) {
-      continue;
-    }
-    bool exclude = content_type_pattern.starts_with('!');
+    bool        exclude      = content_type_pattern.starts_with('!');
 
     if (exclude) {
       ++match_string; // skip '!'
