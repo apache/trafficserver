@@ -143,13 +143,12 @@ HostConfiguration::is_status_code_compressible(const TSHttpStatus status_code) c
   return it != compressible_status_codes_.end();
 }
 
-std::string_view
-strip_params(std::string_view v)
+swoc::TextView
+strip_params(swoc::TextView v)
 {
-  swoc::TextView tv{v};
-  tv = tv.take_prefix_at(';');
-  tv.rtrim_if(&::isspace);
-  return tv;
+  v = v.take_prefix_at(';');
+  v.rtrim_if(&::isspace);
+  return v;
 }
 
 bool
@@ -170,7 +169,7 @@ HostConfiguration::is_content_type_compressible(const char *content_type, int co
     }
     std::string target;
     if (content_type_ignore_parameters() && std::strchr(match_string, ';') == nullptr) {
-      target = strip_params(std::string_view(scontent_type));
+      target = strip_params(swoc::TextView(scontent_type));
     } else {
       target = scontent_type;
     }
