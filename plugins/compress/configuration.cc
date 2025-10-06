@@ -24,6 +24,7 @@
 #include "tscore/ink_config.h"
 #include "configuration.h"
 #include <algorithm>
+#include <ranges>
 #include <vector>
 #include <fnmatch.h>
 #include <system_error>
@@ -110,9 +111,9 @@ Configuration::find(const char *host, int host_length)
     swoc::TextView host_view(host, host_length);
 
     // Start from index 1 to skip the default configuration at index 0
-    for (size_t i = 1; i < host_configurations_.size(); ++i) {
-      if (host_configurations_[i]->host() == host_view) {
-        host_configuration = host_configurations_[i];
+    for (const auto &config : host_configurations_ | std::views::drop(1)) {
+      if (config->host() == host_view) {
+        host_configuration = config;
         break;
       }
     }
