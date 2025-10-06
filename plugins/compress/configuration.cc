@@ -131,7 +131,7 @@ HostConfiguration::is_url_allowed(const char *url, int url_len)
     string surl(url_view);
     for (const auto &allow : allows_) {
       const char *match_string = allow.c_str();
-      bool        exclude      = match_string[0] == '!';
+      bool        exclude      = allow.starts_with('!');
       if (exclude) {
         ++match_string; // skip !
       }
@@ -174,7 +174,7 @@ HostConfiguration::is_content_type_compressible(const char *content_type, int co
     if (match_string == nullptr) {
       continue;
     }
-    bool exclude = match_string[0] == '!';
+    bool exclude = content_type_pattern.starts_with('!');
 
     if (exclude) {
       ++match_string; // skip '!'
@@ -325,7 +325,7 @@ Configuration::Parse(const char *path)
       }
 
       // once a comment is encountered, we are done processing the line
-      if (token[0] == '#') {
+      if (token.starts_with('#')) {
         break;
       }
 
