@@ -40,8 +40,6 @@
 
 namespace Gzip
 {
-using namespace std;
-
 inline auto
 make_char_predicate(int (*fp)(int))
 {
@@ -129,7 +127,7 @@ HostConfiguration::is_url_allowed(const char *url, int url_len)
 
   if (has_allows()) {
     // fnmatch requires null-terminated strings, so we need a std::string for the url
-    string surl(url_view);
+    std::string surl(url_view);
     for (const auto &allow : allows_) {
       const char *match_string = allow.c_str();
       bool        exclude      = allow.starts_with('!');
