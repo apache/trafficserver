@@ -23,6 +23,7 @@
 #include <iostream>
 #include <string>
 #include <sstream>
+#include <string_view>
 
 #include "ts/ts.h"
 
@@ -65,12 +66,25 @@ Parser::parse_line(const std::string &original_line)
         extracting_token = false;
       }
     } else if ((state != PARSER_IN_REGEX) && (line[i] == '\\')) {
-      // Escaping
+      // Escaping - convert escape sequences to control characters
       if (!extracting_token) {
         extracting_token = true;
         cur_token_start  = i;
       }
-      line.erase(i, 1);
+      // Check if next character forms an escape sequence we want to convert
+      if (i + 1 < line.size()) {
+        constexpr std::string_view controls{"trn", 3};
+        constexpr char             mapped_ctrls[] = "\t\r\n";
+
+        if (auto pos = controls.find(line[i + 1]); pos != std::string_view::npos) {
+          line[i] = mapped_ctrls[pos];
+          line.erase(i + 1, 1);
+        } else {
+          line.erase(i, 1);
+        }
+      } else {
+        line.erase(i, 1); // Backslash at end of line
+      }
     } else if ((state != PARSER_IN_REGEX) && (line[i] == '"')) {
       if ((state != PARSER_IN_QUOTE) && !extracting_token) {
         state            = PARSER_IN_QUOTE;
