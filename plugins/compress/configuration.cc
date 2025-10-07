@@ -24,7 +24,6 @@
 #include "tscore/ink_config.h"
 #include "configuration.h"
 #include <algorithm>
-#include <ranges>
 #include <unordered_map>
 #include <vector>
 #include <fnmatch.h>
