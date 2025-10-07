@@ -339,9 +339,8 @@ Configuration::Parse(const char *path)
         break;
       }
 
-      using enum ParserState;
       switch (state) {
-      case kParseStart:
+      case ParserState::kParseStart:
         if (token.starts_with('[') && token.ends_with(']')) {
           auto host_name = token.substr(1, token.size() - 2);
 
@@ -351,55 +350,55 @@ Configuration::Parse(const char *path)
           c->add_host_configuration(current_host_configuration);
         } else if (token == "supported-algorithms") {
           current_host_configuration->add_compression_algorithms(line_view);
-          state = kParseStart;
+          state = ParserState::kParseStart;
         } else if (token == "compressible-status-code") {
           current_host_configuration->add_compressible_status_codes(line_view);
-          state = kParseStart;
+          state = ParserState::kParseStart;
         } else if (auto it = KeywordToStateMap.find(std::string_view(token.data(), token.size())); it != KeywordToStateMap.end()) {
           state = it->second;
         } else {
           warning("failed to interpret \"%.*s\" at line %zu", static_cast<int>(token.size()), token.data(), lineno);
         }
         break;
-      case kParseCompressibleContentType:
+      case ParserState::kParseCompressibleContentType:
         current_host_configuration->add_compressible_content_type(token);
-        state = kParseStart;
+        state = ParserState::kParseStart;
         break;
-      case kParseContentTypeIgnoreParameters:
+      case ParserState::kParseContentTypeIgnoreParameters:
         current_host_configuration->set_content_type_ignore_parameters(token == "true");
-        state = kParseStart;
+        state = ParserState::kParseStart;
         break;
-      case kParseRemoveAcceptEncoding:
+      case ParserState::kParseRemoveAcceptEncoding:
         current_host_configuration->set_remove_accept_encoding(token == "true");
-        state = kParseStart;
+        state = ParserState::kParseStart;
         break;
-      case kParseEnable:
+      case ParserState::kParseEnable:
         current_host_configuration->set_enabled(token == "true");
-        state = kParseStart;
+        state = ParserState::kParseStart;
         break;
-      case kParseCache:
+      case ParserState::kParseCache:
         current_host_configuration->set_cache(token == "true");
-        state = kParseStart;
+        state = ParserState::kParseStart;
         break;
-      case kParseRangeRequest:
+      case ParserState::kParseRangeRequest:
         current_host_configuration->set_range_request(token);
-        state = kParseStart;
+        state = ParserState::kParseStart;
         break;
-      case kParseFlush:
+      case ParserState::kParseFlush:
         current_host_configuration->set_flush(token == "true");
-        state = kParseStart;
+        state = ParserState::kParseStart;
         break;
-      case kParseAllow:
+      case ParserState::kParseAllow:
         current_host_configuration->add_allow(token);
-        state = kParseStart;
+        state = ParserState::kParseStart;
         break;
-      case kParseMinimumContentLength: {
+      case ParserState::kParseMinimumContentLength: {
         swoc::TextView parsed;
         uintmax_t      length = swoc::svtou(token, &parsed);
         if (parsed.size() == token.size()) {
           current_host_configuration->set_minimum_content_length(length);
         }
-        state = kParseStart;
+        state = ParserState::kParseStart;
         break;
       }
       }
