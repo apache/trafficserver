@@ -110,9 +110,9 @@ Configuration::find(const char *host, int host_length)
     swoc::TextView host_view(host, host_length);
 
     // Start from index 1 to skip the default configuration at index 0
-    for (const auto &config : host_configurations_ | std::views::drop(1)) {
-      if (config->host() == host_view) {
-        host_configuration = config;
+    for (size_t i = 1; i < host_configurations_.size(); ++i) {
+      if (host_configurations_[i]->host() == host_view) {
+        host_configuration = host_configurations_[i];
         break;
       }
     }
