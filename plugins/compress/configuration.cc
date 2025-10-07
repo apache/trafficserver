@@ -255,10 +255,10 @@ HostConfiguration::compression_algorithms()
 
 // Lexicon for mapping range-request configuration tokens to enum values
 static const swoc::Lexicon<RangeRequestCtrl> RangeRequestLexicon{
-  {RangeRequestCtrl::NONE,                   {"true", "none"}           },
-  {RangeRequestCtrl::NO_COMPRESSION,         {"false", "no-compression"}},
-  {RangeRequestCtrl::REMOVE_RANGE,           {"remove-range"}           },
-  {RangeRequestCtrl::REMOVE_ACCEPT_ENCODING, {"remove-accept-encoding"} }
+  swoc::Lexicon<RangeRequestCtrl>::with_multi{{RangeRequestCtrl::NONE, {"true", "none"}},
+                                              {RangeRequestCtrl::NO_COMPRESSION, {"false", "no-compression"}},
+                                              {RangeRequestCtrl::REMOVE_RANGE, {"remove-range"}},
+                                              {RangeRequestCtrl::REMOVE_ACCEPT_ENCODING, {"remove-accept-encoding"}}}
 };
 
 static const std::unordered_map<std::string_view, ParserState> KeywordToStateMap{
