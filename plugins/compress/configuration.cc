@@ -415,7 +415,7 @@ Configuration::Parse(const char *path)
   }
 
   if (state != ParserState::kParseStart) {
-    warning("the parser state indicates that data was expected when it reached the end of the file (%d)", state);
+    warning("the parser state indicates that data was expected when it reached the end of the file (%d)", static_cast<int>(state));
   }
 
   return c;
