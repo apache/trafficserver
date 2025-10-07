@@ -31,9 +31,10 @@
 #include <vector>
 #include <mutex>
 
-static_assert(RE_CASE_INSENSITIVE == PCRE2_CASELESS, "Update RE_CASE_INSERSITIVE for current PCRE2 version.");
-static_assert(RE_UNANCHORED == PCRE2_MULTILINE, "Update RE_MULTILINE for current PCRE2 version.");
+static_assert(RE_CASE_INSENSITIVE == PCRE2_CASELESS, "Update RE_CASE_INSENSITIVE for current PCRE2 version.");
+static_assert(RE_UNANCHORED == PCRE2_MULTILINE, "Update RE_UNANCHORED for current PCRE2 version.");
 static_assert(RE_ANCHORED == PCRE2_ANCHORED, "Update RE_ANCHORED for current PCRE2 version.");
+static_assert(RE_NOTEMPTY == PCRE2_NOTEMPTY, "Update RE_NOTEMPTY for current PCRE2 version.");
 
 //----------------------------------------------------------------------------
 namespace
@@ -296,20 +297,20 @@ Regex::compile(std::string_view pattern, std::string &error, int &erroroffset, u
 
 //----------------------------------------------------------------------------
 bool
-Regex::exec(std::string_view subject) const
+Regex::exec(std::string_view subject, uint32_t flags) const
 {
   if (_Code::get(_code) == nullptr) {
     return false;
   }
   RegexMatches matches;
 
-  int count = this->exec(subject, matches);
+  int count = this->exec(subject, matches, flags);
   return count > 0;
 }
 
 //----------------------------------------------------------------------------
 int32_t
-Regex::exec(std::string_view subject, RegexMatches &matches) const
+Regex::exec(std::string_view subject, RegexMatches &matches, uint32_t flags) const
 {
   auto code = _Code::get(_code);
 
@@ -317,7 +318,7 @@ Regex::exec(std::string_view subject, RegexMatches &matches) const
   if (code == nullptr) {
     return 0;
   }
-  int count = pcre2_match(code, reinterpret_cast<PCRE2_SPTR>(subject.data()), subject.size(), 0, 0,
+  int count = pcre2_match(code, reinterpret_cast<PCRE2_SPTR>(subject.data()), subject.size(), 0, flags,
                           RegexMatches::_MatchData::get(matches._match_data), RegexContext::get_instance()->get_match_context());
 
   matches._size = count;

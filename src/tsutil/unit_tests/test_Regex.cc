@@ -190,3 +190,40 @@ TEST_CASE("Regex", "[libts][Regex]")
   }
 #endif
 }
+
+TEST_CASE("Regex RE_NOTEMPTY flag behavior", "[libts][Regex][flags][RE_NOTEMPTY]")
+{
+  // Pattern that only matches empty string
+  Regex r;
+  REQUIRE(r.compile("^$") == true);
+
+  SECTION("default exec matches empty subject")
+  {
+    // boolean overload
+    CHECK(r.exec(std::string_view("")) == true);
+
+    // matches overload should return 1 (one match - the whole subject)
+    RegexMatches matches;
+    CHECK(r.exec(std::string_view(""), matches) == 1);
+    CHECK(matches.size() == 1);
+    CHECK(matches[0] == std::string_view(""));
+  }
+
+  SECTION("RE_NOTEMPTY prevents empty matches")
+  {
+    // boolean overload with RE_NOTEMPTY should not match
+    CHECK(r.exec(std::string_view(""), RE_NOTEMPTY) == false);
+
+    // matches overload should return a negative value (PCRE2_ERROR_NOMATCH)
+    RegexMatches matches;
+    int          rc = r.exec(std::string_view(""), matches, RE_NOTEMPTY);
+    CHECK(rc < 0);
+  }
+
+  SECTION("non-empty subject unaffected by RE_NOTEMPTY for this pattern")
+  {
+    // '^$' should not match 'a' in any case
+    CHECK(r.exec(std::string_view("a")) == false);
+    CHECK(r.exec(std::string_view("a"), RE_NOTEMPTY) == false);
+  }
+}
