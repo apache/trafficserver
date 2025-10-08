@@ -29,7 +29,7 @@ Combined header_rewrite/regex_remap/tslua strategies tests
 Test.SkipUnless(
     Condition.PluginExists('header_rewrite.so'),
     Condition.PluginExists('regex_remap.so'),
-    #Condition.PluginExists('tslua.so'),
+    Condition.PluginExists('tslua.so'),
 )
 Test.ContinueOnFail = False
 
