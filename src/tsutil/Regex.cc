@@ -297,6 +297,13 @@ Regex::compile(std::string_view pattern, std::string &error, int &erroroffset, u
 
 //----------------------------------------------------------------------------
 bool
+Regex::exec(std::string_view subject) const
+{
+  return this->exec(subject, 0);
+}
+
+//----------------------------------------------------------------------------
+bool
 Regex::exec(std::string_view subject, uint32_t flags) const
 {
   if (_Code::get(_code) == nullptr) {
@@ -306,6 +313,13 @@ Regex::exec(std::string_view subject, uint32_t flags) const
 
   int count = this->exec(subject, matches, flags);
   return count > 0;
+}
+
+//----------------------------------------------------------------------------
+int32_t
+Regex::exec(std::string_view subject, RegexMatches &matches) const
+{
+  return this->exec(subject, matches, 0);
 }
 
 //----------------------------------------------------------------------------
