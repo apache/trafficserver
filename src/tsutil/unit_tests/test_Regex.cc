@@ -23,6 +23,9 @@
 #include <string_view>
 #include <vector>
 
+#define PCRE2_CODE_UNIT_WIDTH 8
+#include <pcre2.h>
+
 #include "tscore/ink_assert.h"
 #include "tscore/ink_defs.h"
 #include "tsutil/Regex.h"
@@ -168,7 +171,7 @@ TEST_CASE("Regex", "[libts][Regex]")
     Regex        r;
     RegexMatches matches;
     REQUIRE(r.exec("foo") == false);
-    REQUIRE(r.exec("foo", matches) == 0);
+    REQUIRE(r.exec("foo", matches) == PCRE2_ERROR_NULL);
   }
 
   // test for recompiling the regular expression
