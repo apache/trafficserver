@@ -1085,6 +1085,8 @@ ts_lua_http_get_ssn_remote_addr(lua_State *L)
       port = ntohs(((struct sockaddr_in6 *)client_ip)->sin6_port);
       inet_ntop(AF_INET6, (const void *)&((struct sockaddr_in6 *)client_ip)->sin6_addr, cip, sizeof(cip));
       family = AF_INET6;
+    } else if (client_ip->sa_family == AF_UNIX) {
+      family = AF_UNIX;
     }
 
     lua_pushstring(L, cip);
