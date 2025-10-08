@@ -20,3 +20,12 @@ add_atsplugin(cachekey cachekey.cc common.cc configs.cc pattern.cc plugin.cc)
 target_link_libraries(cachekey PRIVATE PCRE::PCRE)
 verify_global_plugin(cachekey)
 verify_remap_plugin(cachekey)
+
+# Register test with CTest when testing is enabled.
+if(BUILD_TESTING)
+  add_executable(pattern_test unit_tests/pattern_test.cc pattern.cc common.cc)
+  target_include_directories(pattern_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+  target_compile_definitions(pattern_test PRIVATE CACHEKEY_UNIT_TEST)
+  target_link_libraries(pattern_test PRIVATE Catch2::Catch2WithMain PCRE::PCRE libswoc::libswoc ts::tsutil)
+  add_catch2_test(NAME pattern_test COMMAND pattern_test)
+endif()
