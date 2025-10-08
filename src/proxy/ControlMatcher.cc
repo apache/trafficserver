@@ -481,7 +481,7 @@ RegexMatcher<Data, MatchResult>::Match(RequestData *rdata, MatchResult *result) 
       data_array[i].UpdateMatch(result, rdata);
     } else {
       // An error has occurred
-      Warning("Error matching regex at line %d.", data_array[i].line_num);
+      Warning("Error matching regex: %s:%d.", file_name ? file_name : "unknown", data_array[i].line_num);
     } // else it's -1 which means no match was found.
   }
   ats_free(url_str);
@@ -527,7 +527,7 @@ HostRegexMatcher<Data, MatchResult>::Match(RequestData *rdata, MatchResult *resu
       this->data_array[i].UpdateMatch(result, rdata);
     } else {
       // An error has occurred
-      Warning("error matching regex at line %d", this->data_array[i].line_num);
+      Warning("error matching regex: %s:%d", this->file_name ? this->file_name : "unknown", this->data_array[i].line_num);
     }
   }
 }
