@@ -34,6 +34,7 @@
 #endif
 
 #include <type_traits>
+#include <string_view>
 #include <vector>
 
 #include "tsutil/DbgCtl.h"
@@ -1142,7 +1143,9 @@ TSReturnCode TSHttpHdrUrlGet(TSMBuffer bufp, TSMLoc offset, TSMLoc *locp);
 TSReturnCode TSHttpHdrUrlSet(TSMBuffer bufp, TSMLoc offset, TSMLoc url);
 
 TSHttpStatus TSHttpHdrStatusGet(TSMBuffer bufp, TSMLoc offset);
+/** This is a candidate for deprecation in v10.0.0 in favor of the version that takes the setter. */
 TSReturnCode TSHttpHdrStatusSet(TSMBuffer bufp, TSMLoc offset, TSHttpStatus status);
+TSReturnCode TSHttpHdrStatusSet(TSMBuffer bufp, TSMLoc offset, TSHttpStatus status, TSHttpTxn txnp, std::string_view setter);
 const char  *TSHttpHdrReasonGet(TSMBuffer bufp, TSMLoc offset, int *length);
 TSReturnCode TSHttpHdrReasonSet(TSMBuffer bufp, TSMLoc offset, const char *value, int length);
 const char  *TSHttpHdrReasonLookup(TSHttpStatus status);
@@ -1637,7 +1640,35 @@ TSReturnCode TSUserArgIndexLookup(TSUserArgType type, int arg_idx, const char **
 void         TSUserArgSet(void *data, int arg_idx, void *arg);
 void        *TSUserArgGet(void *data, int arg_idx);
 
-void         TSHttpTxnStatusSet(TSHttpTxn txnp, TSHttpStatus status);
+/** Set the HTTP status code for a transaction.
+ *
+ * Sets the transaction's internal status state, triggering Traffic Server's
+ * error handling system. This is typically used for access control,
+ * authentication failures, and early transaction processing. Traffic Server
+ * will automatically generate an appropriate error response body.
+ *
+ * @note This is a candidate for deprecation in v10.0.0 in favor of the version
+ * that takes the setter.
+ *
+ * @param[in] txnp The associated transaction for the new status.
+ * @param[in] status The HTTP status code to set.
+ */
+void TSHttpTxnStatusSet(TSHttpTxn txnp, TSHttpStatus status);
+
+/** Set the HTTP status code for a transaction and track the entity that set it.
+ *
+ * Sets the transaction's internal status state, triggering Traffic Server's
+ * error handling system. This is typically used for access control,
+ * authentication failures, and early transaction processing. Traffic Server
+ * will automatically generate an appropriate error response body.
+ *
+ * @param[in] txnp The associated transaction for the new status.
+ * @param[in] status The HTTP status code to set.
+ * @param[in] setter Identifying label for the entity setting the status
+ *   (e.g., plugin name). If empty, clears the current setter information.
+ */
+void TSHttpTxnStatusSet(TSHttpTxn txnp, TSHttpStatus status, std::string_view setter);
+
 TSHttpStatus TSHttpTxnStatusGet(TSHttpTxn txnp);
 
 void TSHttpTxnActiveTimeoutSet(TSHttpTxn txnp, int timeout);

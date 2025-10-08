@@ -278,7 +278,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 
     len = snprintf(tmp, 255, "This is very small example of TS API usage!\nIteration %d!\nHTTP return code %d\n", my_local_counter,
                    TS_HTTP_STATUS_CONTINUE + my_local_counter);
-    TSHttpTxnStatusSet(rh, static_cast<TSHttpStatus>(static_cast<int>(TS_HTTP_STATUS_CONTINUE) + my_local_counter));
+    TSHttpTxnStatusSet(rh, static_cast<TSHttpStatus>(static_cast<int>(TS_HTTP_STATUS_CONTINUE) + my_local_counter), PLUGIN_NAME);
     TSHttpTxnErrorBodySet(rh, tmp, len, nullptr); // Defaults to text/html
     my_local_counter++;
   }

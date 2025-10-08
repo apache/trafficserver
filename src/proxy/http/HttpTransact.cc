@@ -906,6 +906,7 @@ HttpTransact::Forbidden(State *s)
 {
   TxnDbg(dbg_ctl_http_trans, "IpAllow marked request forbidden");
   bootstrap_state_variables_from_request(s, &s->hdr_info.client_request);
+  s->http_return_code_setter_name = "ip_allow";
   build_error_response(s, HTTPStatus::FORBIDDEN, "Access Denied", "access#denied");
   TRANSACT_RETURN(StateMachineAction_t::SEND_ERROR_CACHE_NOOP, nullptr);
 }
@@ -1109,6 +1110,7 @@ HttpTransact::EndRemapRequest(State *s)
   // We must close this connection if client_connection_enabled == false //
   /////////////////////////////////////////////////////////////////////////
   if (!s->client_connection_allowed) {
+    s->http_return_code_setter_name = "ip_allow";
     build_error_response(s, HTTPStatus::FORBIDDEN, "Access Denied", "access#denied");
     s->reverse_proxy = false;
     goto done;
@@ -6509,6 +6511,7 @@ HttpTransact::process_quick_http_filter(State *s, int method)
 {
   // connection already disabled by previous ACL filtering, don't modify it.
   if (!s->client_connection_allowed) {
+    s->http_return_code_setter_name = "ip_allow";
     return;
   }
 
@@ -6547,7 +6550,8 @@ HttpTransact::process_quick_http_filter(State *s, int method)
         TxnDbg(dbg_ctl_ip_allow, "Line %d denial for '%.*s' from %s", acl.source_line(), static_cast<int>(method_str.length()),
                method_str.data(), ats_ip_ntop(&s->client_info.src_addr.sa, ipb, sizeof(ipb)));
       }
-      s->client_connection_allowed = false;
+      s->http_return_code_setter_name = "ip_allow";
+      s->client_connection_allowed    = false;
     }
   }
 }

@@ -97,7 +97,7 @@ txn_queue_cont(TSCont cont, TSEvent /* event ATS_UNUSED */, void * /* edata ATS_
 
       delayHeader(txnp, limiter->header(), age);
       Dbg(dbg_ctl, "Queued TXN is too old (%ldms), erroring out", static_cast<long>(age.count()));
-      TSHttpTxnStatusSet(txnp, static_cast<TSHttpStatus>(limiter->error()));
+      TSHttpTxnStatusSet(txnp, static_cast<TSHttpStatus>(limiter->error()), PLUGIN_NAME);
       TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, contp);
       limiter->incrementMetric(RATE_LIMITER_METRIC_EXPIRED);
       TSHttpTxnReenable(txnp, TS_EVENT_HTTP_ERROR);
