@@ -35,3 +35,10 @@ def test_output_matches(input_file: Path, output_file: Path) -> None:
 def test_ast_matches(input_file: Path, ast_file: Path) -> None:
     """Test that AST structure matches expected AST for ops test cases."""
     utils.run_ast_test(input_file, ast_file)
+
+
+@pytest.mark.ops
+@pytest.mark.invalid
+@pytest.mark.parametrize("input_file", utils.collect_failing_inputs("ops"))
+def test_invalid_inputs_fail(input_file):
+    utils.run_failing_test(input_file)
