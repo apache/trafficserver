@@ -125,7 +125,17 @@ public:
    *
    * It is safe to call this method concurrently on the same instance of @a this.
    */
-  bool exec(std::string_view subject, uint32_t flags = 0) const;
+  bool exec(std::string_view subject) const;
+
+  /** Execute the regular expression.
+   *
+   * @param subject String to match against.
+   * @param flags Match flags (e.g., RE_NOTEMPTY).
+   * @return @c true if the pattern matched, @a false if not.
+   *
+   * It is safe to call this method concurrently on the same instance of @a this.
+   */
+  bool exec(std::string_view subject, uint32_t flags) const;
 
   /** Execute the regular expression.
    *
@@ -138,7 +148,21 @@ public:
    * Each capture group takes 3 elements of @a ovector, therefore @a ovecsize must
    * be a multiple of 3 and at least three times the number of desired capture groups.
    */
-  int exec(std::string_view subject, RegexMatches &matches, uint32_t flags = 0) const;
+  int exec(std::string_view subject, RegexMatches &matches) const;
+
+  /** Execute the regular expression.
+   *
+   * @param subject String to match against.
+   * @param matches Place to store the capture groups.
+   * @param flags Match flags (e.g., RE_NOTEMPTY).
+   * @return @c The number of capture groups. < 0 if an error occurred. 0 if the number of Matches is too small.
+   *
+   * It is safe to call this method concurrently on the same instance of @a this.
+   *
+   * Each capture group takes 3 elements of @a ovector, therefore @a ovecsize must
+   * be a multiple of 3 and at least three times the number of desired capture groups.
+   */
+  int exec(std::string_view subject, RegexMatches &matches, uint32_t flags) const;
 
   /// @return The number of capture groups in the compiled pattern.
   int get_capture_count();
