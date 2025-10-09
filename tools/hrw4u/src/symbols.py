@@ -73,6 +73,10 @@ class SymbolResolver(SymbolResolverBase):
                         if validator:
                             validator(qualifier)
 
+                        # Add boolean value validation for http.cntl assignments.
+                        if op_key == "http.cntl.":
+                            types.SuffixGroup.BOOL_FIELDS.validate(value)
+
                         if isinstance(commands, (list, tuple)):
                             if value == '""':
                                 return f"{commands[0]} {qualifier}"
