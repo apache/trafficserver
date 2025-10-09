@@ -22,6 +22,7 @@
 #pragma once
 
 #include <string>
+#include <memory>
 
 #include "ts/ts.h"
 
@@ -37,6 +38,20 @@ enum OperModifiers {
   OPER_QSA         = 4,
   OPER_INV         = 8,
   OPER_NO_REENABLE = 16,
+};
+
+// Forward declaration
+class Operator;
+
+// Holding the operator and mods - used by both RuleSet and OperatorIf
+struct OperatorAndMods {
+  OperatorAndMods() = default;
+
+  OperatorAndMods(const OperatorAndMods &)            = delete;
+  OperatorAndMods &operator=(const OperatorAndMods &) = delete;
+
+  std::unique_ptr<Operator> oper;
+  OperModifiers             oper_mods = OPER_NONE;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
