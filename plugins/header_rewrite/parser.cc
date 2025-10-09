@@ -15,6 +15,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
+
 //////////////////////////////////////////////////////////////////////////////////////////////
 // parser.cc: implementation of the config parser
 //
@@ -204,6 +205,12 @@ Parser::preprocess(std::vector<std::string> tokens)
     return true;
   } else if (tokens[0] == "elif") {
     _clause = CondClause::ELIF;
+    return true;
+  } else if (tokens[0] == "if") {
+    _clause = CondClause::IF;
+    return true;
+  } else if (tokens[0] == "endif") {
+    _clause = CondClause::ENDIF;
     return true;
   }
 
