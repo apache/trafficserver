@@ -312,7 +312,7 @@ Regex::exec(std::string_view subject, uint32_t flags) const
   RegexMatches matches;
 
   int count = this->exec(subject, matches, flags);
-  return count > 0;
+  return count >= 0;
 }
 
 //----------------------------------------------------------------------------
@@ -330,7 +330,7 @@ Regex::exec(std::string_view subject, RegexMatches &matches, uint32_t flags) con
 
   // check if there is a compiled regex
   if (code == nullptr) {
-    return 0;
+    return PCRE2_ERROR_NULL;
   }
   int count = pcre2_match(code, reinterpret_cast<PCRE2_SPTR>(subject.data()), subject.size(), 0, flags,
                           RegexMatches::_MatchData::get(matches._match_data), RegexContext::get_instance()->get_match_context());
