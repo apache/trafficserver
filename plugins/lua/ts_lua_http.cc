@@ -75,6 +75,10 @@ static int ts_lua_http_set_cache_url(lua_State *L);
 static int ts_lua_http_get_cache_lookup_url(lua_State *L);
 static int ts_lua_http_set_cache_lookup_url(lua_State *L);
 static int ts_lua_http_redo_cache_lookup(lua_State *L);
+
+static int ts_lua_http_get_next_hop_strategy(lua_State *L);
+static int ts_lua_http_set_next_hop_strategy(lua_State *L);
+
 static int ts_lua_http_get_parent_proxy(lua_State *L);
 static int ts_lua_http_set_parent_proxy(lua_State *L);
 static int ts_lua_http_get_parent_selection_url(lua_State *L);
@@ -179,6 +183,12 @@ ts_lua_inject_http_cache_api(lua_State *L)
 
   lua_pushcfunction(L, ts_lua_http_redo_cache_lookup);
   lua_setfield(L, -2, "redo_cache_lookup");
+
+  lua_pushcfunction(L, ts_lua_http_get_next_hop_strategy);
+  lua_setfield(L, -2, "get_next_hop_strategy");
+
+  lua_pushcfunction(L, ts_lua_http_set_next_hop_strategy);
+  lua_setfield(L, -2, "set_next_hop_strategy");
 
   lua_pushcfunction(L, ts_lua_http_get_parent_proxy);
   lua_setfield(L, -2, "get_parent_proxy");
@@ -512,6 +522,62 @@ ts_lua_http_redo_cache_lookup(lua_State *L)
     if (TSHttpTxnRedoCacheLookup(http_ctx->txnp, url, url_len) != TS_SUCCESS) {
       TSError("[ts_lua][%s] Failed to redo cache lookup", __FUNCTION__);
     }
+  }
+
+  return 0;
+}
+
+static int
+ts_lua_http_get_next_hop_strategy(lua_State *L)
+{
+  char const      *name = nullptr;
+  ts_lua_http_ctx *http_ctx;
+
+  GET_HTTP_CONTEXT(http_ctx, L);
+
+  void const *const stratptr = TSHttpTxnNextHopStrategyGet(http_ctx->txnp);
+  if (nullptr != stratptr) {
+    name = TSHttpNextHopStrategyNameGet(stratptr);
+  }
+
+  if (name == nullptr) {
+    lua_pushnil(L);
+  } else {
+    lua_pushstring(L, name);
+  }
+
+  return 1;
+}
+
+static int
+ts_lua_http_set_next_hop_strategy(lua_State *L)
+{
+  int n = 0;
+
+  ts_lua_http_ctx *http_ctx;
+
+  GET_HTTP_CONTEXT(http_ctx, L);
+
+  n = lua_gettop(L);
+
+  if (n == 1) {
+    const char *name = nullptr;
+    size_t      name_len;
+
+    name = luaL_checklstring(L, 1, &name_len);
+    if (0 == name_len || "null" == std::string_view(name)) {
+      Dbg(dbg_ctl, "Clearning strategy (use parent.config)");
+      TSHttpTxnNextHopStrategySet(http_ctx->txnp, nullptr);
+    } else {
+      void const *const stratptr = TSHttpTxnNextHopNamedStrategyGet(http_ctx->txnp, name);
+      if (nullptr == stratptr) {
+        TSError("[ts_lua][%s] Failed get next hop strategy name '%s'", __FUNCTION__, name);
+      } else {
+        TSHttpTxnNextHopStrategySet(http_ctx->txnp, stratptr);
+      }
+    }
+  } else {
+    return luaL_error(L, "incorrect # of arguments for set_parent_proxy, receiving %d instead of 1", n);
   }
 
   return 0;
