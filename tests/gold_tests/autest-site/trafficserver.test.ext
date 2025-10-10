@@ -408,10 +408,11 @@ def MakeATSProcess(
         })
 
     if enable_cripts:
-        p.Setup.Copy(
-            os.path.join(p.Variables.RepoDir, 'tools', 'cripts', 'compiler.sh'), os.path.join(bin_path, 'cripts_compiler.sh'))
+        cripts_compiler = os.path.join(bin_path, 'cripts_compiler.sh')
+        p.Setup.Copy(os.path.join(p.Variables.RepoDir, 'tools', 'cripts', 'compiler.sh'), cripts_compiler)
+        p.Variables.cripts_compiler = cripts_compiler
         p.Disk.records_config.update({
-            'proxy.config.plugin.compiler_path': os.path.join(bin_path, 'cripts_compiler.sh'),
+            'proxy.config.plugin.compiler_path': cripts_compiler,
         })
         # ATS_ROOT is used by compiler.sh to find the ATS install directory.
         p.Env['ATS_ROOT'] = p.Variables.PREFIX
