@@ -38,7 +38,8 @@ ProxyProtocolAddressSource::get_address(TSHttpTxn txnp, struct sockaddr_storage 
   int                    pp_addr_len;
 
   TSVConn vconn = TSHttpSsnClientVConnGet(TSHttpTxnSsnGet(txnp));
-  if (TSVConnPPInfoGet(vconn, TS_PP_INFO_SRC_ADDR, reinterpret_cast<const char **>(&pp_addr), &pp_addr_len) == TS_SUCCESS) {
+  if (vconn != nullptr &&
+      TSVConnPPInfoGet(vconn, TS_PP_INFO_SRC_ADDR, reinterpret_cast<const char **>(&pp_addr), &pp_addr_len) == TS_SUCCESS) {
     if (pp_addr->sa_family == AF_INET) {
       memcpy(addr, pp_addr, sizeof(struct sockaddr_in));
       ret = reinterpret_cast<struct sockaddr *>(addr);
