@@ -141,29 +141,32 @@ RulesConfig::add_rule(std::unique_ptr<RuleSet> rule)
 static bool
 validate_rule_completion(RuleSet *rule, const std::string &fname, int lineno)
 {
-  // Early return if rule has operators - no validation errors possible
-  if (!rule || rule->has_operator()) {
-    return true;
-  }
+  TSAssert(rule);
 
   switch (rule->get_clause()) {
   case Parser::CondClause::ELIF:
-    if (rule->cur_section()->group.has_conditions()) {
-      TSError("[%s] ELIF conditions without operators are not allowed in file: %s, lineno: %d", PLUGIN_NAME, fname.c_str(), lineno);
+    if (!rule->cur_section()->group.has_conditions() || !rule->cur_section()->has_operator()) {
+      TSError("[%s] ELIF clause must have both conditions and operators in file: %s, lineno: %d", PLUGIN_NAME, fname.c_str(),
+              lineno);
       return false;
     }
     break;
 
   case Parser::CondClause::ELSE:
-    TSError("[%s] conditions not allowed in ELSE clause in file: %s, lineno: %d", PLUGIN_NAME, fname.c_str(), lineno);
-    return false;
+    if (rule->cur_section()->group.has_conditions()) {
+      TSError("[%s] conditions not allowed in ELSE clause in file: %s, lineno: %d", PLUGIN_NAME, fname.c_str(), lineno);
+      return false;
+    }
+    break;
 
   case Parser::CondClause::OPER:
-    TSError("[%s] conditions without operators are not allowed in file: %s, lineno: %d", PLUGIN_NAME, fname.c_str(), lineno);
-    return false;
+    if (!rule->has_operator()) {
+      TSError("[%s] conditions without operators are not allowed in file: %s, lineno: %d", PLUGIN_NAME, fname.c_str(), lineno);
+      return false;
+    }
+    break;
 
   case Parser::CondClause::COND:
-    // COND clause without operators - potentially valid in some cases
     break;
   }
 
@@ -253,15 +256,11 @@ RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook, c
     }
 
     // If we are at the beginning of a new condition, save away the previous rule (but only if it has operators).
-    if (p.is_cond() && rule && is_hook) {
-      // Only validate and save when starting a NEW rule (hook condition)
-      bool transfer = rule->cur_section()->has_operator();
-
+    // This also has to deal with the fact that we allow implicit hooks to end / start a new rule.
+    if (p.is_cond() && rule && (is_hook || rule->cur_section()->has_operator())) {
       if (!validate_rule_completion(rule.get(), fname, lineno)) {
         return false;
-      }
-
-      if (transfer) {
+      } else {
         add_rule(std::move(rule));
       }
     }
@@ -275,6 +274,8 @@ RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook, c
       rule = std::make_unique<RuleSet>();
       rule->set_hook(hook);
       group = rule->get_group(); // This the implicit rule group to begin with
+      Dbg(pi_dbg_ctl, "New RuleSet in %%{%s} at %s:%d",
+          (hook == TS_REMAP_PSEUDO_HOOK) ? "REMAP_PSEUDO_HOOK" : TSHttpHookNameLookup(hook), fname.c_str(), lineno);
 
       if (is_hook) {
         // Check if the hooks are not available for the remap mode
@@ -356,9 +357,7 @@ RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook, c
   if (rule) {
     if (!validate_rule_completion(rule.get(), fname, lineno)) {
       return false;
-    }
-
-    if (rule->has_operator()) {
+    } else {
       add_rule(std::move(rule));
     }
   }
