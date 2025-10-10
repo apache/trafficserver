@@ -78,6 +78,10 @@ remap_rules = [
         "from": f"{url_base}_7/",
         "to": f"{origin_base}_7/",
         "plugins": [("header_rewrite", [f"{mgr.run_dir}/rule.conf"])]
+    }, {
+        "from": f"{url_base}_8/",
+        "to": f"{origin_base}_8/",
+        "plugins": [("header_rewrite", [f"{mgr.run_dir}/implicit_hook.conf"])]
     }
 ]
 
@@ -156,6 +160,11 @@ origin_rules = [
     }, def_resp),
     ({
         "headers": "GET /to_7/ HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
+        "timestamp": "1469733493.993",
+        "body": ""
+    }, def_resp),
+    ({
+        "headers": "GET /to_8/ HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
         "timestamp": "1469733493.993",
         "body": ""
     }, def_resp),
@@ -238,8 +247,23 @@ test_runs = [
     },
     {
         "desc": "Status change test (200 to 303)",
-        "curl": f'{curl_proxy} "http://{url_base}_7/" -H "Proxy-Connection: keep-alive"',
+        "curl": f'{curl_proxy} "http://{url_base}_7/"',
         "gold": "gold/header_rewrite-303.gold",
+    },
+    {
+        "desc": "Implicit hook test - no X-Fie header (expect X-Response-Foo: No)",
+        "curl": f'{curl_proxy} "http://{url_base}_8/"',
+        "gold": "gold/implicit_hook_no_fie.gold",
+    },
+    {
+        "desc": "Implicit hook test - X-Fie: Fie (expect X-Response-Foo: Yes)",
+        "curl": f'{curl_proxy} "http://{url_base}_8/" -H "X-Fie: Fie"',
+        "gold": "gold/implicit_hook_fie.gold",
+    },
+    {
+        "desc": "Implicit hook test - X-Client-Foo: fOoBar (expect X-Response-Foo: Prefix)",
+        "curl": f'{curl_proxy} "http://{url_base}_8/" -H "X-Client-Foo: fOoBar"',
+        "gold": "gold/implicit_hook_prefix.gold",
     },
 ]
 
