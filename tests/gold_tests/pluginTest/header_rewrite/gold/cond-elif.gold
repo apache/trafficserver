@@ -1,5 +1,5 @@
 ``
-> GET ``/from_path/hrw-sets.png``
+> GET http://www.example.com/from_1/hrw-sets.png``
 > Host: www.example.com``
 > User-Agent: curl/``
 ``
