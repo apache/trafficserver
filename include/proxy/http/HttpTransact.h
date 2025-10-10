@@ -388,7 +388,6 @@ public:
 
     ORIGIN_SERVER_OPEN,
     ORIGIN_SERVER_RAW_OPEN,
-    ORIGIN_SERVER_RR_MARK_DOWN,
 
     READ_PUSH_HDR,
     STORE_PUSH_BODY,
@@ -407,7 +406,6 @@ public:
     SERVER_PARSE_NEXT_HDR,
     TRANSFORM_READ,
     SSL_TUNNEL,
-    CONTINUE,
 
     API_SM_START,
     API_READ_REQUEST_HDR,
@@ -664,7 +662,8 @@ public:
     HTTPVersion         updated_server_version = HTTP_INVALID;
     CacheLookupResult_t cache_lookup_result    = CacheLookupResult_t::NONE;
     HTTPStatus          http_return_code       = HTTPStatus::NONE;
-    CacheAuth_t         www_auth_content       = CacheAuth_t::NONE;
+    std::string         http_return_code_setter_name;
+    CacheAuth_t         www_auth_content = CacheAuth_t::NONE;
 
     Arena arena;
 

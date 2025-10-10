@@ -1,0 +1,3 @@
+tests/data/vars/typos.fail.input.txt:2:7: error: Unknown condition symbol
+   2 |     if inound.req.X-Foo ~ /foo/ {
+     |        ^

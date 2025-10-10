@@ -60,7 +60,8 @@ const EsiParser::EsiNodeInfo EsiParser::ESI_NODES[] = {
 
 const EsiParser::EsiNodeInfo EsiParser::HTML_COMMENT_NODE_INFO(DocNode::TYPE_HTML_COMMENT, "<!--esi", 7, "-->", 3);
 
-EsiParser::EsiParser(unsigned max_doc_size) : _max_doc_size(max_doc_size), _parse_start_pos(-1)
+EsiParser::EsiParser(unsigned max_doc_size, std::string_view request_url)
+  : _max_doc_size(max_doc_size), _request_url{request_url}, _parse_start_pos(-1)
 {
   // do this so that object doesn't move around in memory;
   // (because we return pointers into this object)
@@ -79,8 +80,8 @@ EsiParser::_setup(string &data, int &parse_start_pos, size_t &orig_output_list_s
       data_len = strlen(data_ptr);
     }
     if ((data.size() + data_len) > _max_doc_size) {
-      TSError("[%s] Cannot allow attempted doc of size %d; Max allowed size is %d", __FUNCTION__, int(data.size() + data_len),
-              _max_doc_size);
+      TSError("[%s] Cannot allow attempted doc of size %d; Max allowed size is %d for URL [%s]", __FUNCTION__,
+              int(data.size() + data_len), _max_doc_size, _request_url.c_str());
       retval = false;
     } else {
       data.append(data_ptr, data_len);
@@ -100,7 +101,8 @@ EsiParser::parseChunk(const char *data, DocNodeList &node_list, int data_len /* 
     return false;
   }
   if (!_parse(_data, _parse_start_pos, node_list)) {
-    TSError("[%s] Failed to parse chunk of size %d starting with [%.5s]...", __FUNCTION__, data_len, (data_len ? data : "(null)"));
+    TSError("[%s] Failed to parse chunk of size %d starting with [%.5s]... for URL [%s]", __FUNCTION__, data_len,
+            (data_len ? data : "(null)"), _request_url.c_str());
     return false;
   }
   return true;

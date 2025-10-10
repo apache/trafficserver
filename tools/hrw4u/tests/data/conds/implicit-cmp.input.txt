@@ -1,0 +1,13 @@
+REMAP {
+    if inbound.req.X-Slicer-Info == "test-value" {
+        inbound.req.X-Test = "found";
+    }
+
+    if inbound.req.X-Debug == supersekret {
+        set-debug();
+    }
+
+    if inbound.req.X-Number == 123 {
+        inbound.status = 200;
+    }
+}

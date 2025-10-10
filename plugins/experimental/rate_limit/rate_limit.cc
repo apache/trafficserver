@@ -147,7 +147,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo * /* rri ATS_UNUSED 
     case ReserveStatus::HIGH_RATE:
       if (!limiter->max_queue() || limiter->full()) {
         // We are running at limit, and the queue has reached max capacity, give back an error and be done.
-        TSHttpTxnStatusSet(txnp, static_cast<TSHttpStatus>(limiter->error()));
+        TSHttpTxnStatusSet(txnp, static_cast<TSHttpStatus>(limiter->error()), PLUGIN_NAME);
         limiter->setupTxnCont(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK);
         Dbg(dbg_ctl, "Rejecting request, we're at %s and queue is full", status == ReserveStatus::FULL ? "capacity" : "high rate");
       } else {

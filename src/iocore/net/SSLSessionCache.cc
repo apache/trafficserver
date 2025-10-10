@@ -65,9 +65,11 @@ SSLOriginSessionCache::insert_session(const std::string &lookup_key, SSL_SESSION
 
   Dbg(dbg_ctl_ssl_origin_session_cache, "insert session: %s = %p", lookup_key.c_str(), sess_ptr);
 
-  ssl_curve_id                      curve = (ssl == nullptr) ? 0 : SSLGetCurveNID(ssl);
+  ssl_curve_id curve      = (ssl == nullptr) ? 0 : SSLGetCurveNID(ssl);
+  std::string  group_name = (ssl == nullptr) ? "" : std::string{SSLGetGroupName(ssl)};
+
   std::unique_ptr<SSLOriginSession> ssl_orig_session(
-    new SSLOriginSession(lookup_key, curve, std::shared_ptr<SSL_SESSION>{sess_ptr, SSLSessDeleter}));
+    new SSLOriginSession(lookup_key, curve, group_name, std::shared_ptr<SSL_SESSION>{sess_ptr, SSLSessDeleter}));
   auto new_node = ssl_orig_session.release();
 
   std::unique_lock lock(mutex);
@@ -89,7 +91,7 @@ SSLOriginSessionCache::insert_session(const std::string &lookup_key, SSL_SESSION
 }
 
 std::shared_ptr<SSL_SESSION>
-SSLOriginSessionCache::get_session(const std::string &lookup_key, ssl_curve_id *curve)
+SSLOriginSessionCache::get_session(const std::string &lookup_key, ssl_curve_id *curve, std::string &group_name)
 {
   Dbg(dbg_ctl_ssl_origin_session_cache, "get session: %s", lookup_key.c_str());
 
@@ -102,6 +104,8 @@ SSLOriginSessionCache::get_session(const std::string &lookup_key, ssl_curve_id *
   if (curve != nullptr) {
     *curve = entry->second->curve_id;
   }
+
+  group_name = entry->second->group_name;
 
   return entry->second->shared_sess;
 }

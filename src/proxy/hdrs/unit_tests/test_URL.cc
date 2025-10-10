@@ -68,6 +68,8 @@ TEST_CASE("Validate Scheme", "[proxy][validscheme]")
     {"example.",   true },
     {"example++",  true },
     {"example--.", true },
+    {"http+unix",  true },
+    {"https+unix", true },
     {"++example",  false},
     {"--example",  false},
     {".example",   false},

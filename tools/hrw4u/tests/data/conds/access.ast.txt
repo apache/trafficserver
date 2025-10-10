@@ -1,1 +1,1 @@
-(program (section REMAP { (sectionBody (conditional (ifStatement if (condition (expression (term (factor (functionCall access ( (argumentList (value "/tmp/bar")) )))))) (block { (statement inbound.req.X-Remap = (value "exists") ;) })))) }) <EOF>)
+(program (programItem (section REMAP { (sectionBody (conditional (ifStatement if (condition (expression (term (factor (functionCall access ( (argumentList (value "/tmp/bar")) )))))) (block { (blockItem (statement inbound.req.X-Remap = (value "exists") ;)) })))) })) <EOF>)

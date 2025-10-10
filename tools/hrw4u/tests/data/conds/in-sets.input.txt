@@ -1,0 +1,5 @@
+REMAP {
+    if inbound.url.path in ["php", "php3", "php4", "php5", "phtml"] with EXT {
+        inbound.req.X-Is-PHP = "yes";
+    }
+}

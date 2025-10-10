@@ -18,36 +18,40 @@
 from __future__ import annotations
 
 import sys
+import types
+
+from .common import SystemDefaults
 
 
 class Dbg:
-    INDENT_SPACES = 4
+    """Debug utility for hierarchical debug output with indentation."""
 
-    def __init__(self, enabled: bool, indent: int = 0):
+    def __init__(self, enabled: bool, indent: int = 0) -> None:
         self.enabled = enabled
         self.indent = indent
 
-    def __call__(self, msg: str, *, levels: bool = False, out: bool = False):
+    def __call__(self, msg: str, *, levels: bool = False, out: bool = False) -> None:
         if self.enabled:
             if levels:
                 msg = f"</{msg}>" if out else f"<{msg}>"
-            print(f"[debug] {' ' * (self.indent * self.INDENT_SPACES)}{msg}", file=sys.stderr)
+            print(f"{SystemDefaults.DEBUG_PREFIX} {' ' * (self.indent * SystemDefaults.INDENT_SPACES)}{msg}", file=sys.stderr)
 
-    def __enter__(self):
+    def __enter__(self) -> "Dbg":
         if self.enabled:
             self.indent += 1
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(
+            self, exc_type: type[BaseException] | None, exc_val: BaseException | None, exc_tb: types.TracebackType | None) -> None:
         if self.enabled:
             self.indent = max(0, self.indent - 1)
 
-    def enter(self, msg: str):
+    def enter(self, msg: str) -> None:
         if self.enabled:
             self(msg, levels=True)
             self.indent += 1
 
-    def exit(self, msg: str | None = None):
+    def exit(self, msg: str | None = None) -> None:
         if self.enabled:
             self.indent = max(0, self.indent - 1)
             if msg:

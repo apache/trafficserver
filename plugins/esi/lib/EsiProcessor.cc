@@ -43,9 +43,9 @@ DbgCtl dbg_ctl{"plugin_esi_procesor"};
 #define DBG(FMT, ...) Dbg(dbg_ctl, FMT " contp=%p", ##__VA_ARGS__, _cont_addr)
 
 EsiProcessor::EsiProcessor(void *cont_addr, HttpDataFetcher &fetcher, Variables &variables, const HandlerManager &handler_mgr,
-                           unsigned max_doc_size)
+                           unsigned max_doc_size, std::string_view request_url)
   : _curr_state(STOPPED),
-    _parser(max_doc_size),
+    _parser(max_doc_size, request_url),
     _n_prescanned_nodes(0),
     _n_processed_nodes(0),
     _n_processed_try_nodes(0),
@@ -56,6 +56,7 @@ EsiProcessor::EsiProcessor(void *cont_addr, HttpDataFetcher &fetcher, Variables 
     _expression(variables),
     _n_try_blocks_processed(0),
     _handler_manager(handler_mgr),
+    _request_url{request_url},
     _cont_addr(cont_addr)
 {
 }
@@ -87,7 +88,7 @@ EsiProcessor::addParseData(const char *data, int data_len)
   }
 
   if (!_parser.parseChunk(data, _node_list, data_len)) {
-    TSError("[%s] Failed to parse chunk; Stopping processor...", __FUNCTION__);
+    TSError("[%s] Failed to parse chunk; Stopping processor for URL [%s]", __FUNCTION__, _request_url.c_str());
     error();
     Stats::increment(Stats::N_PARSE_ERRS);
     return false;
@@ -115,7 +116,7 @@ EsiProcessor::completeParse(const char *data /* = 0 */, int data_len /* = -1 */)
   }
 
   if (!_parser.completeParse(_node_list, data, data_len)) {
-    TSError("[%s] Couldn't parse ESI document", __FUNCTION__);
+    TSError("[%s] Couldn't parse ESI document for URL [%s]", __FUNCTION__, _request_url.c_str());
     error();
     Stats::increment(Stats::N_PARSE_ERRS);
     return false;

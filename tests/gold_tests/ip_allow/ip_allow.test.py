@@ -85,7 +85,7 @@ ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key
 ts.Disk.records_config.update(
     {
         'proxy.config.diags.debug.enabled': 1,
-        'proxy.config.diags.debug.tags': 'ip_allow',
+        'proxy.config.diags.debug.tags': 'ip_allow|http|url_rewrite',
         'proxy.config.http.push_method_enabled': 1,
         'proxy.config.http.connect_ports': '{0}'.format(server.Variables.SSL_Port),
         'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
@@ -96,22 +96,22 @@ ts.Disk.records_config.update(
     })
 
 format_string = (
-    '%<cqtd>-%<cqtt> %<stms> %<ttms> %<chi> %<crc>/%<pssc> %<psql> '
+    'scheme=%<pqus> %<cqtd>-%<cqtt> %<stms> %<ttms> %<chi> %<crc>/%<pssc> %<psql> '
     '%<cqhm> %<pquc> %<phr> %<psct> %<{Y-RID}pqh> '
     '%<{Y-YPCS}pqh> %<{Host}cqh> %<{CHAD}pqh>  '
     'sftover=%<{x-safet-overlimit-rules}cqh> sftmat=%<{x-safet-matched-rules}cqh> '
     'sftcls=%<{x-safet-classification}cqh> '
-    'sftbadclf=%<{x-safet-bad-classifiers}cqh> yra=%<{Y-RA}cqh> scheme=%<pqus>')
+    'sftbadclf=%<{x-safet-bad-classifiers}cqh> yra=%<{Y-RA}cqh> status_setter=%<prscs>')
 
 ts.Disk.logging_yaml.AddLines(
-    ''' logging:
+    f''' logging:
   formats:
     - name: custom
-      format: '{}'
+      format: '{format_string}'
   logs:
     - filename: squid.log
       format: custom
-'''.format(format_string).split("\n"))
+'''.split("\n"))
 
 ts.Disk.remap_config.AddLine('map / https://127.0.0.1:{0}'.format(server.Variables.SSL_Port))
 
@@ -137,7 +137,7 @@ ts.Disk.traffic_out.Content += Testers.ContainsExpression(
 #
 # TEST 1: Perform a GET request. Should be allowed because GET is in the allowlist.
 #
-tr = Test.AddTestRun()
+tr = Test.AddTestRun('Allowed GET request')
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.SSL_Port))
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 
@@ -151,7 +151,7 @@ tr.StillRunningAfter = server
 # TEST 2: Perform a CONNECT request. Should not be allowed because CONNECT is
 # not in the allowlist.
 #
-tr = Test.AddTestRun()
+tr = Test.AddTestRun('Denied CONNECT request')
 tr.MakeCurlCommand(
     '--verbose -X CONNECT -H "Host: localhost" http://localhost:{ts_port}/connect'.format(ts_port=ts.Variables.port), ts=ts)
 tr.Processes.Default.ReturnCode = 0
@@ -163,7 +163,7 @@ tr.StillRunningAfter = server
 # TEST 3: Perform a PUSH request over HTTP/2. Should not be allowed because
 # PUSH is not in the allowlist.
 #
-tr = Test.AddTestRun()
+tr = Test.AddTestRun('Denied PUSH request over HTTP/2')
 tr.MakeCurlCommand(
     '--http2 --verbose -k -X PUSH -H "Host: localhost" https://localhost:{ts_port}/h2_push'.format(ts_port=ts.Variables.ssl_port),
     ts=ts)
@@ -172,11 +172,11 @@ tr.Processes.Default.Streams.stderr = 'gold/403_h2.gold'
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 
-tr = Test.AddTestRun()
+tr = Test.AddTestRun('Await and verify the transaction log file')
+squid_log = os.path.join(ts.Variables.LOGDIR, 'squid.log')
 tr.Processes.Default.Command = (
     os.path.join(Test.Variables.AtsTestToolsDir, 'stdout_wait') + ' 60 "{} {}" {}'.format(
-        os.path.join(Test.TestDirectory, 'run_sed.sh'), os.path.join(ts.Variables.LOGDIR, 'squid.log'),
-        os.path.join(Test.TestDirectory, 'gold/log.gold')))
+        os.path.join(Test.TestDirectory, 'run_sed.sh'), squid_log, os.path.join(Test.TestDirectory, 'gold/log.gold')))
 tr.Processes.Default.ReturnCode = 0
 
 IP_ALLOW_CONFIG_ALLOW_ALL = '''ip_allow:

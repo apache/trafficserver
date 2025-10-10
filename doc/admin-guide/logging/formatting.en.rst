@@ -480,6 +480,7 @@ Network Addresses, Ports, and Interfaces
 
 .. _chi:
 .. _chih:
+.. _chiv:
 .. _hii:
 .. _hiih:
 .. _chp:
@@ -501,6 +502,8 @@ chi   Client         IP address of the client's host. If :ref:`Proxy Protocol <p
                      is used, this represents the IP address of the peer, rather than
                      the client IP behind the peer.
 chih  Client         IP address of the client's host, in hexadecimal.
+chiv  Client         IP address of the client's host verified by a plugin. If not available,
+                     ``chi`` is used.
 hii   Proxy          IP address for the proxy's incoming interface (to which
                      the client connected).
 hiih  Proxy          IP address for the proxy's incoming interface (to which
@@ -668,6 +671,7 @@ Status Codes
 .. _cfsc:
 .. _csssc:
 .. _pfsc:
+.. _prscs:
 .. _pssc:
 .. _sssc:
 .. _prrp:
@@ -689,6 +693,14 @@ pfsc  Proxy Request         Finish status code specifying whether the proxy
                             (``INTR``), or timed out (``TIMEOUT``).
 prrp  Proxy Response        HTTP response reason phrase sent by |TS| proxy to the
                             client.
+prscs Proxy Response        The identifying label for the entity (such as a plugin
+                            name or component) that last set the HTTP status code
+                            for the transaction. This is set via
+                            :func:`TSHttpTxnStatusSet` with a ``setter`` parameter
+                            or :func:`TSHttpHdrStatusSet` with a ``setter``
+                            parameter. Shows ``-`` if no setter has been recorded.
+                            ``ip_allow`` will be set if the :file:`ip_allow.yaml`
+                            component denies the request.
 pssc  Proxy Response        HTTP response status code sent by |TS| proxy to the
                             client.
 sssc  Origin Response       HTTP response status code sent by the origin server

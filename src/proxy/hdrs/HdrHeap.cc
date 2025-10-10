@@ -57,7 +57,7 @@ DbgCtl dbg_ctl_http{"http"};
 void
 obj_describe(HdrHeapObjImpl *obj, bool recurse)
 {
-  static const char *obj_names[] = {"EMPTY", "RAW", "URL", "HTTP_HEADER", "MIME_HEADER", "FIELD_BLOCK"};
+  static constexpr const char *obj_names[] = {"EMPTY", "RAW", "URL", "HTTP_HEADER", "MIME_HEADER", "FIELD_BLOCK"};
 
   Dbg(dbg_ctl_http, "%s %p: [T: %d, L: %4d, OBJFLAGS: %X]  ", obj_names[obj->m_type], obj, obj->m_type, obj->m_length,
       obj->m_obj_flags);

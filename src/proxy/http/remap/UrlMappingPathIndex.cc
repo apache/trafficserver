@@ -21,6 +21,7 @@
     limitations under the License.
 */
 
+#include <tsutil/ts_bw_format.h>
 #include "proxy/http/remap/UrlMappingPathIndex.h"
 
 namespace
@@ -46,14 +47,21 @@ UrlMappingPathIndex::Insert(url_mapping *mapping)
   UrlMappingTrie *trie;
 
   trie = _GetTrie(&(mapping->fromURL), scheme_idx, port);
+  auto from_path{mapping->fromURL.path_get()};
 
   if (!trie) {
     trie = new UrlMappingTrie();
     m_tries.insert(UrlMappingGroup::value_type(UrlMappingTrieKey(scheme_idx, port), trie));
     Dbg(dbg_ctl_UrlMappingPathIndex_Insert, "Created new trie for scheme index, port combo <%d, %d>", scheme_idx, port);
+  } else {
+    Dbg(dbg_ctl_UrlMappingPathIndex_Insert, "-- Checking for existing entry %*s", static_cast<int>(from_path.length()),
+        from_path.data());
+    if (auto retval = trie->Search(from_path.data(), from_path.length()); retval && retval->getRank() < mapping->getRank()) {
+      swoc::bwprint(ts::bw_dbg, "Exising remap {} shadows {}", retval->fromURL, mapping->fromURL);
+      Warning("%s", ts::bw_dbg.c_str());
+    }
   }
 
-  auto from_path{mapping->fromURL.path_get()};
   if (!trie->Insert(from_path.data(), mapping, mapping->getRank(), static_cast<int>(from_path.length()))) {
     Error("Couldn't insert into trie!");
     return false;

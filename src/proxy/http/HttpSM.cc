@@ -70,9 +70,9 @@
 
 using namespace std::literals;
 
-#define DEFAULT_RESPONSE_BUFFER_SIZE_INDEX 6 // 8K
-#define DEFAULT_REQUEST_BUFFER_SIZE_INDEX  6 // 8K
-#define MIN_CONFIG_BUFFER_SIZE_INDEX       5 // 4K
+static constexpr int DEFAULT_RESPONSE_BUFFER_SIZE_INDEX = 6; // 8K
+static constexpr int DEFAULT_REQUEST_BUFFER_SIZE_INDEX  = 6; // 8K
+static constexpr int MIN_CONFIG_BUFFER_SIZE_INDEX       = 5; // 4K
 
 #define hsm_release_assert(EX)              \
   {                                         \
@@ -123,11 +123,11 @@ static DbgCtl dbg_ctl_ssl_early_data{"ssl_early_data"};
 static DbgCtl dbg_ctl_ssl_sni{"ssl_sni"};
 static DbgCtl dbg_ctl_url_rewrite{"url_rewrite"};
 
-static const int sub_header_size = sizeof("Content-type: ") - 1 + 2 + sizeof("Content-range: bytes ") - 1 + 4;
-static const int boundary_size   = 2 + sizeof("RANGE_SEPARATOR") - 1 + 2;
+static constexpr int sub_header_size = sizeof("Content-type: ") - 1 + 2 + sizeof("Content-range: bytes ") - 1 + 4;
+static constexpr int boundary_size   = 2 + sizeof("RANGE_SEPARATOR") - 1 + 2;
 
-static const char *str_100_continue_response = "HTTP/1.1 100 Continue\r\n\r\n";
-static const int   len_100_continue_response = strlen(str_100_continue_response);
+static const char   *str_100_continue_response = "HTTP/1.1 100 Continue\r\n\r\n";
+static constexpr int len_100_continue_response = sizeof("HTTP/1.1 100 Continue\r\n\r\n") - 1;
 
 // Handy alias for short (single line) message generation.
 using lbw = swoc::LocalBufferWriter<256>;
@@ -392,6 +392,7 @@ HttpSM::attach_client_session(ProxyTransaction *txn)
   if (!netvc) {
     return;
   }
+  ATS_PROBE2(http_attach_client_session, sm_id, netvc->get_socket());
   _ua.set_txn(txn, milestones);
 
   // Collect log & stats information. We've already verified that the netvc is !nullptr above,
@@ -868,13 +869,17 @@ HttpSM::state_watch_for_client_abort(int event, void *data)
    * client.
    */
   case VC_EVENT_EOS: {
-    // We got an early EOS. If the tunnal has cache writer, don't kill it for background fill.
+    // We got an early EOS.
     if (!terminate_sm) { // Not done already
       NetVConnection *netvc = _ua.get_txn()->get_netvc();
       if (_ua.get_txn()->allow_half_open() || tunnel.has_consumer_besides_client()) {
         if (netvc) {
           netvc->do_io_shutdown(IO_SHUTDOWN_READ);
         }
+      } else if (t_state.txn_conf->cache_http &&
+                 (server_entry != nullptr && server_entry->vc_read_handler == &HttpSM::state_read_server_response_header)) {
+        // if HttpSM is waiting response header from origin server, keep it for a while to run background fetch
+        _ua.get_txn()->do_io_shutdown(IO_SHUTDOWN_READWRITE);
       } else {
         _ua.get_txn()->do_io_close();
         vc_table.cleanup_entry(_ua.get_entry());
@@ -5312,6 +5317,7 @@ HttpSM::ip_allow_deny_request(const IpAllow::ACL &acl)
           method.data(), ntop_formatted);
   }
 
+  t_state.http_return_code_setter_name = "ip_allow";
   t_state.current.retry_attempts.maximize(
     t_state.configured_connect_attempts_max_retries()); // prevent any more retries with this IP
   call_transact_and_set_next_state(HttpTransact::Forbidden);
@@ -6307,9 +6313,10 @@ close_connection:
 void
 HttpSM::do_setup_client_request_body_tunnel(HttpVC_t to_vc_type)
 {
-  if (t_state.hdr_info.request_content_length == 0) {
-    // No tunnel is needed to transfer 0 bytes. Simply return without setting up
-    // a tunnel nor any of the other related logic around request bodies.
+  if (!_ua.get_txn()->has_request_body(t_state.hdr_info.request_content_length,
+                                       t_state.client_info.transfer_encoding == HttpTransact::TransferEncoding_t::CHUNKED)) {
+    // No tunnel is needed to transfer 0 bytes or when no request body is present.
+    // Simply return without setting up a tunnel nor any of the other related logic around request bodies.
     return;
   }
   bool chunked = t_state.client_info.transfer_encoding == HttpTransact::TransferEncoding_t::CHUNKED ||
@@ -6629,6 +6636,7 @@ HttpSM::attach_server_session()
   // Propagate the per client IP debugging
   if (_ua.get_txn()) {
     server_txn->get_netvc()->control_flags.set_flags(get_cont_flags().get_flags());
+    ATS_PROBE2(http_attach_server_session, this->sm_id, server_txn->get_netvc()->get_socket());
   } else { // If there is no _ua.get_txn() no sense in continuing to attach the server session
     return;
   }
@@ -6653,7 +6661,7 @@ HttpSM::attach_server_session()
   }
 
   if (auto tsrs = server_vc->get_service<TLSSessionResumptionSupport>(); tsrs) {
-    server_ssl_reused = tsrs->getSSLOriginSessionCacheHit();
+    server_ssl_reused = tsrs->getIsResumedOriginSSLSession();
   }
 
   server_protocol = server_txn->get_protocol_string();
@@ -8236,21 +8244,6 @@ HttpSM::set_next_state()
     break;
   }
 
-  case HttpTransact::StateMachineAction_t::ORIGIN_SERVER_RR_MARK_DOWN: {
-    HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_mark_os_down);
-    ATS_PROBE(next_state_SM_ACTION_ORIGIN_SERVER_RR_MARK_DOWN);
-
-    ink_assert(t_state.dns_info.looking_up == ResolveInfo::ORIGIN_SERVER);
-
-    // TODO: This might not be optimal (or perhaps even correct), but it will
-    // effectively mark the host as down. What's odd is that state_mark_os_down
-    // above isn't triggering.
-    HttpSM::do_hostdb_update_if_necessary();
-
-    do_hostdb_lookup();
-    break;
-  }
-
   case HttpTransact::StateMachineAction_t::SSL_TUNNEL: {
     t_state.api_next_action = HttpTransact::StateMachineAction_t::API_SEND_RESPONSE_HDR;
     do_api_callout();
@@ -8322,11 +8315,6 @@ HttpSM::set_next_state()
 
   case HttpTransact::StateMachineAction_t::WAIT_FOR_FULL_BODY: {
     wait_for_full_body();
-    break;
-  }
-
-  case HttpTransact::StateMachineAction_t::CONTINUE: {
-    ink_release_assert(!"Not implemented");
     break;
   }
 

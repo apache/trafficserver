@@ -40,6 +40,7 @@ append_slash(const char *path)
 
 TEST_CASE("constructor test", "[constructor]")
 {
+  unsetenv("TS_ROOT");
   Layout layout;
   // test for constructor
   REQUIRE(layout.prefix == TS_BUILD_PREFIX);
@@ -59,6 +60,7 @@ TEST_CASE("environment variable constructor test", "[env_constructor]")
 
 TEST_CASE("layout create test", "[create]")
 {
+  unsetenv("TS_ROOT");
   Layout::create();
   REQUIRE(Layout::get()->prefix == TS_BUILD_PREFIX);
   REQUIRE(Layout::get()->sysconfdir == Layout::get()->relative(TS_BUILD_SYSCONFDIR));
@@ -67,6 +69,7 @@ TEST_CASE("layout create test", "[create]")
 // tests below based on the created layout
 TEST_CASE("relative test", "[relative]")
 {
+  unsetenv("TS_ROOT");
   Layout::create();
   // relative (1 argument)
   std::string_view sv("file");
@@ -76,6 +79,7 @@ TEST_CASE("relative test", "[relative]")
 
 TEST_CASE("relative to test", "[relative_to]")
 {
+  unsetenv("TS_ROOT");
   Layout::create();
   // relative to (2 parameters)
   std::string str1 = append_slash(TS_BUILD_PREFIX) + "file";
@@ -91,6 +95,7 @@ TEST_CASE("relative to test", "[relative_to]")
 
 TEST_CASE("update_sysconfdir test", "[update_sysconfdir]")
 {
+  unsetenv("TS_ROOT");
   Layout::create();
   Layout::get()->update_sysconfdir("/abc");
   REQUIRE(Layout::get()->sysconfdir == "/abc");

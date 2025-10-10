@@ -31,9 +31,10 @@
 #include <vector>
 #include <mutex>
 
-static_assert(RE_CASE_INSENSITIVE == PCRE2_CASELESS, "Update RE_CASE_INSERSITIVE for current PCRE2 version.");
-static_assert(RE_UNANCHORED == PCRE2_MULTILINE, "Update RE_MULTILINE for current PCRE2 version.");
+static_assert(RE_CASE_INSENSITIVE == PCRE2_CASELESS, "Update RE_CASE_INSENSITIVE for current PCRE2 version.");
+static_assert(RE_UNANCHORED == PCRE2_MULTILINE, "Update RE_UNANCHORED for current PCRE2 version.");
 static_assert(RE_ANCHORED == PCRE2_ANCHORED, "Update RE_ANCHORED for current PCRE2 version.");
+static_assert(RE_NOTEMPTY == PCRE2_NOTEMPTY, "Update RE_NOTEMPTY for current PCRE2 version.");
 
 //----------------------------------------------------------------------------
 namespace
@@ -126,15 +127,10 @@ struct RegexMatches::_MatchData {
 //----------------------------------------------------------------------------
 RegexMatches::RegexMatches(uint32_t size)
 {
-  pcre2_general_context *ctx =
-    pcre2_general_context_create(&RegexMatches::malloc, [](void *, void *) -> void {}, static_cast<void *>(this));
+  pcre2_general_context *ctx = pcre2_general_context_create(&RegexMatches::malloc, &RegexMatches::free, static_cast<void *>(this));
 
   pcre2_match_data *match_data = pcre2_match_data_create(size, ctx);
-  if (match_data == nullptr) {
-    // buffer was too small, allocate from heap
-    debug_assert_message(false, "RegexMatches data buffer too small, increase the buffer size in Regex.h");
-    match_data = pcre2_match_data_create(size, RegexContext::get_instance()->get_general_context());
-  }
+  debug_assert_message(match_data, "Failed to allocate pcre2 match data from custom context");
 
   _MatchData::set(_match_data, match_data);
 }
@@ -152,8 +148,23 @@ RegexMatches::malloc(size_t size, void *caller)
     return ptr;
   }
 
-  // return nullptr if buffer is too small
-  return nullptr;
+  return ::malloc(size);
+}
+
+void
+RegexMatches::free(void *p, void *caller)
+{
+  auto *matches = static_cast<RegexMatches *>(caller);
+
+  // Call free for any p outside _buffer
+  // If the pcre2 context requests more data than fits in our builtin buffer, we will call malloc
+  // to fulfil that request.
+  // !his checks for any pointers outside of our buffer in order to free that memory up.
+  //
+  // nullptr is outside of our buffer, but its ok to call ::free with nullptr.
+  if (!(p >= matches->_buffer && p < matches->_buffer + sizeof(matches->_buffer))) {
+    ::free(p);
+  }
 }
 
 //----------------------------------------------------------------------------
@@ -288,26 +299,40 @@ Regex::compile(std::string_view pattern, std::string &error, int &erroroffset, u
 bool
 Regex::exec(std::string_view subject) const
 {
+  return this->exec(subject, 0);
+}
+
+//----------------------------------------------------------------------------
+bool
+Regex::exec(std::string_view subject, uint32_t flags) const
+{
   if (_Code::get(_code) == nullptr) {
     return false;
   }
   RegexMatches matches;
 
-  int count = this->exec(subject, matches);
-  return count > 0;
+  int count = this->exec(subject, matches, flags);
+  return count >= 0;
 }
 
 //----------------------------------------------------------------------------
 int32_t
 Regex::exec(std::string_view subject, RegexMatches &matches) const
 {
+  return this->exec(subject, matches, 0);
+}
+
+//----------------------------------------------------------------------------
+int32_t
+Regex::exec(std::string_view subject, RegexMatches &matches, uint32_t flags) const
+{
   auto code = _Code::get(_code);
 
   // check if there is a compiled regex
   if (code == nullptr) {
-    return 0;
+    return PCRE2_ERROR_NULL;
   }
-  int count = pcre2_match(code, reinterpret_cast<PCRE2_SPTR>(subject.data()), subject.size(), 0, 0,
+  int count = pcre2_match(code, reinterpret_cast<PCRE2_SPTR>(subject.data()), subject.size(), 0, flags,
                           RegexMatches::_MatchData::get(matches._match_data), RegexContext::get_instance()->get_match_context());
 
   matches._size = count;

@@ -140,7 +140,6 @@ extern MgmtConverter const &HttpDownServerCacheTimeConv;
 extern HttpSessionAccept                 *plugin_http_accept;
 extern HttpSessionAccept                 *plugin_http_transparent_accept;
 extern thread_local PluginThreadContext  *pluginThreadContext;
-static ClassAllocator<APIHook>            apiHookAllocator("apiHookAllocator");
 extern ClassAllocator<INKContInternal>    INKContAllocator;
 extern ClassAllocator<INKVConnInternal>   INKVConnAllocator;
 static ClassAllocator<MIMEFieldSDKHandle> mHandleAllocator("MIMEFieldSDKHandle");
@@ -2928,7 +2927,7 @@ TSHttpHdrStatusGet(TSMBuffer bufp, TSMLoc obj)
 }
 
 TSReturnCode
-TSHttpHdrStatusSet(TSMBuffer bufp, TSMLoc obj, TSHttpStatus status)
+TSHttpHdrStatusSet(TSMBuffer bufp, TSMLoc obj, TSHttpStatus status, TSHttpTxn txnp, std::string_view setter)
 {
   // Allow to modify the buffer only
   // if bufp is modifiable. If bufp is not modifiable return
@@ -2946,7 +2945,19 @@ TSHttpHdrStatusSet(TSMBuffer bufp, TSMLoc obj, TSHttpStatus status)
   SET_HTTP_HDR(h, bufp, obj);
   ink_assert(static_cast<HdrHeapObjType>(h.m_http->m_type) == HdrHeapObjType::HTTP_HEADER);
   h.status_set(static_cast<HTTPStatus>(status));
+
+  if (txnp != nullptr && !setter.empty()) {
+    sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+    HttpSM *sm                               = reinterpret_cast<HttpSM *>(txnp);
+    sm->t_state.http_return_code_setter_name = setter;
+  }
   return TS_SUCCESS;
+}
+
+TSReturnCode
+TSHttpHdrStatusSet(TSMBuffer bufp, TSMLoc obj, TSHttpStatus status)
+{
+  return TSHttpHdrStatusSet(bufp, obj, status, nullptr, std::string_view{});
 }
 
 const char *
@@ -4287,6 +4298,37 @@ TSHttpTxnCacheLookupStatusSet(TSHttpTxn txnp, int cachelookup)
 }
 
 TSReturnCode
+TSHttpTxnVerifiedAddrSet(TSHttpTxn txnp, const struct sockaddr *addr)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void *)addr) == TS_SUCCESS);
+
+  HttpSM           *sm     = reinterpret_cast<HttpSM *>(txnp);
+  ProxyTransaction *prxtxn = sm->get_ua_txn();
+
+  prxtxn->set_verified_client_addr(addr);
+
+  return TS_SUCCESS;
+}
+
+TSReturnCode
+TSHttpTxnVerifiedAddrGet(TSHttpTxn txnp, const struct sockaddr **addr)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void *)addr) == TS_SUCCESS);
+
+  HttpSM           *sm     = reinterpret_cast<HttpSM *>(txnp);
+  ProxyTransaction *prxtxn = sm->get_ua_txn();
+
+  *addr = prxtxn->get_verified_client_addr();
+  if ((*addr)->sa_family == AF_UNSPEC) {
+    return TS_ERROR;
+  }
+
+  return TS_SUCCESS;
+}
+
+TSReturnCode
 TSHttpTxnInfoIntGet(TSHttpTxn txnp, TSHttpTxnInfoKey key, TSMgmtInt *value)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
@@ -5210,12 +5252,22 @@ TSUserArgGet(void *data, int arg_idx)
 }
 
 void
-TSHttpTxnStatusSet(TSHttpTxn txnp, TSHttpStatus status)
+TSHttpTxnStatusSet(TSHttpTxn txnp, TSHttpStatus status, std::string_view setter)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
   HttpSM *sm                   = reinterpret_cast<HttpSM *>(txnp);
   sm->t_state.http_return_code = static_cast<HTTPStatus>(status);
+
+  if (!setter.empty()) {
+    sm->t_state.http_return_code_setter_name = setter;
+  }
+}
+
+void
+TSHttpTxnStatusSet(TSHttpTxn txnp, TSHttpStatus status)
+{
+  TSHttpTxnStatusSet(txnp, status, std::string_view{});
 }
 
 TSHttpStatus
@@ -5434,7 +5486,7 @@ TSVConnIsSslReused(TSVConn sslp)
   NetVConnection    *vc     = reinterpret_cast<NetVConnection *>(sslp);
   SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(vc);
 
-  return ssl_vc ? ssl_vc->getSSLSessionCacheHit() : 0;
+  return ssl_vc ? ssl_vc->getIsResumedSSLSession() : 0;
 }
 
 const char *

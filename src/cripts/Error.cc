@@ -26,7 +26,7 @@ void
 Error::Execute(cripts::Context *context)
 {
   if (Failed()) {
-    TSHttpTxnStatusSet(context->state.txnp, _status._getter());
+    TSHttpTxnStatusSet(context->state.txnp, _status._getter(), "cripts");
     // ToDo: So we can't set the reason phrase here, because ATS doesn't have that
     // as a transaction API, only on the response header...
   }

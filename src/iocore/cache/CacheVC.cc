@@ -276,7 +276,7 @@ CacheVC::get_data(int i, void *data)
     *(static_cast<CacheHTTPInfo **>(data)) = &alternate;
     return true;
   case CACHE_DATA_RAM_CACHE_HIT_FLAG:
-    *(static_cast<int *>(data)) = !f.not_from_ram_cache;
+    *(static_cast<int *>(data)) = f.doc_from_ram_cache;
     return true;
   default:
     break;
@@ -386,9 +386,6 @@ CacheVC::handleReadDone(int event, Event * /* e ATS_UNUSED */)
     // put into ram cache?
     if (io.ok() && ((doc->first_key == *read_key) || (doc->key == *read_key) || STORE_COLLISION) && doc->magic == DOC_MAGIC) {
       int okay = 1;
-      if (!f.doc_from_ram_cache) {
-        f.not_from_ram_cache = 1;
-      }
       if (cache_config_enable_checksum && doc->checksum != DOC_NO_CHECKSUM) {
         // verify that the checksum matches
         uint32_t checksum = 0;

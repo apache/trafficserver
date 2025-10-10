@@ -53,6 +53,7 @@ def MakeATSProcess(
         enable_cache=True,
         enable_quic=False,
         enable_uds=True,
+        enable_cripts=False,
         block_for_debug=False,
         log_data=default_log_data,
         use_traffic_out=True,
@@ -382,6 +383,9 @@ def MakeATSProcess(
             'proxy.config.ssl.keylog_file': tmpname,
         })
 
+    # For config reload tests, no need to wait the default 3 seconds to detect the need for a reload.
+    p.Disk.records_config.update({'proxy.config.config_update_interval_ms': 20})
+
     if enable_cache:
         # In records.yaml, the cache is enabled by default so there's nothing
         # we have to do here to functionally enable it. However, the tests that
@@ -402,6 +406,15 @@ def MakeATSProcess(
         p.Disk.records_config.update({
             'proxy.config.udp.threads': 1,
         })
+
+    if enable_cripts:
+        p.Setup.Copy(
+            os.path.join(p.Variables.RepoDir, 'tools', 'cripts', 'compiler.sh'), os.path.join(bin_path, 'cripts_compiler.sh'))
+        p.Disk.records_config.update({
+            'proxy.config.plugin.compiler_path': os.path.join(bin_path, 'cripts_compiler.sh'),
+        })
+        # ATS_ROOT is used by compiler.sh to find the ATS install directory.
+        p.Env['ATS_ROOT'] = p.Variables.PREFIX
 
     # The following message was added so that tests and users can know when
     # Traffic Server is ready to both receive and optimize traffic.
@@ -547,16 +560,17 @@ class YAMLFile(File):
         else:
             return content  # Already an object.
 
-    def __update(self, content, out):
+    def __update(self, content: dict, out: dict):
         for key, value in content.items():
             if key in out:
-                if isinstance(out[key], dict) == False:
-                    out.update(content)
+                if not isinstance(out[key], dict):
+                    # Simple: just set the value.
+                    out[key] = value
                     continue
 
+                # Recurse: update the nested dictionary.
                 self.__update(value, out[key])
             else:
-                out[key] = {}
                 out[key] = value
 
     def update(self, content):
@@ -592,7 +606,6 @@ class RecordsYAML(YAMLFile):
     def __legacy_update(self, obj, new_doc=False):
         config = {}
         for name, value in obj.items():
-            ori_name = name
             if name.startswith("proxy.config."):
                 name = name[len("proxy.config."):]
             elif name.startswith("local.config."):

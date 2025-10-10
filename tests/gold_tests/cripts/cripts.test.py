@@ -32,7 +32,6 @@ Test.ContinueOnFail = True
 class CriptsBasicTest:
 
     def __init__(self):
-        self._compiler_location = os.path.join(Test.RunDirectory, "compiler.sh")
         self.setUpOriginServer()
         self.setUpTS()
 
@@ -48,7 +47,7 @@ class CriptsBasicTest:
         self.server.addResponse("sessionfile.log", request_header, response_header)
 
     def setUpTS(self):
-        self.ts = Test.MakeATSProcess("ts_in", enable_tls=True, enable_cache=False)
+        self.ts = Test.MakeATSProcess("ts_in", enable_tls=True, enable_cache=False, enable_cripts=True)
 
         self.ts.addDefaultSSLFiles()
         self.ts.Disk.ssl_multicert_config.AddLine("dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key")
@@ -58,7 +57,6 @@ class CriptsBasicTest:
         self.ts.Disk.records_config.update(
             {
                 'proxy.config.plugin.dynamic_reload_mode': 1,
-                'proxy.config.plugin.compiler_path': self._compiler_location,
                 "proxy.config.ssl.server.cert.path": f"{self.ts.Variables.SSLDir}",
                 "proxy.config.ssl.server.private_key.path": f"{self.ts.Variables.SSLDir}",
             })
@@ -68,20 +66,6 @@ class CriptsBasicTest:
         self.ts.Disk.remap_config.AddLine(
             f'map https://www.example.com:{self.ts.Variables.ssl_port} http://127.0.0.1:{self.server.Variables.Port} @plugin=basic.cript'
         )
-
-    def updateCompilerForTest(self):
-        '''Update the compiler script for the install location of the ATS process.'''
-        tr = Test.AddTestRun("Update the compiler script for the install location of the ATS process.")
-        p = tr.Processes.Default
-        compiler_source = os.path.join(p.Variables.RepoDir, 'tools', 'cripts', 'compiler.sh')
-        p.Setup.Copy(compiler_source, self._compiler_location)
-        install_dir = os.path.split(p.Variables.BINDIR)[0]
-        # autest doesn't like the -i '' that's necessary on Darwin/macOS
-        # sed_in_place = "-i ''" if platform.system() == 'Darwin' else "-i"
-        # p.Command = f"sed -i '' 's|\"/tmp/ats\"|\"{install_dir}\"|' {self._compiler_location}"
-        p.Command = (f'perl -pi -e \'s|\\"/tmp/ats\\"|\\"{install_dir}\\"|g\' {self._compiler_location}')
-
-        p.ReturnCode = 0
 
     def runHeaderTest(self):
         tr = Test.AddTestRun('Exercise traffic through cripts.')
@@ -102,7 +86,6 @@ class CriptsBasicTest:
         tr.StillRunningAfter = self.server
 
     def run(self):
-        self.updateCompilerForTest()
         self.runHeaderTest()
         if not Condition.CurlUsingUnixDomainSocket():
             self.runCertsTest()

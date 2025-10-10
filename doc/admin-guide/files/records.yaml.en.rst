@@ -780,7 +780,7 @@ proto
 
 pp
    Enables Proxy Protocol on the port.  If Proxy Protocol is enabled on the
-   port, all incoming requests must be prefaced with the PROXY header.  See
+   port, |TS| tries to parse the header first, and it falls back to the regular connection handling based on other keywords. See
    :ref:`Proxy Protocol <proxy-protocol>` for more details on how to configure
    this option properly.
 
@@ -2186,6 +2186,7 @@ IP Allow
    ============= ======================================================================
    ``PEER``      Use the IP address of the peer
    ``PROXY``     Use the IP address from PROXY protocol
+   ``PLUGIN``    Use the IP address verified by a plugin
    ============= ======================================================================
 
 
@@ -5124,8 +5125,8 @@ Sockets
    default: ``1`` meaning ``on`` all Platforms except Linux: ``45`` seconds
 
    This directive enables operating system specific optimizations for a listening socket. ``defer_accept`` holds a call to ``accept(2)``
-   back until data has arrived. In Linux' special case this is up to a maximum of 45 seconds.
-   On FreeBSD, ``accf_data`` module needs to be loaded.
+   back until data has arrived. In Linux' special case this is up to a maximum of 45 seconds. Note in Linux, additional delays may
+   occur as kernel handles retries using exponential backoff algorithm. On FreeBSD, ``accf_data`` module needs to be loaded.
    Note: If MPTCP is enabled, TCP_DEFER_ACCEPT is only supported on Linux kernels 5.19+.
 
 .. ts:cv:: CONFIG proxy.config.net.listen_backlog INT -1

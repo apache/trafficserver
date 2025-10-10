@@ -1758,6 +1758,9 @@ getClientAddr(TSHttpTxn txnp, int txn_private_slot)
     TSVConnPPInfoGet(TSHttpSsnClientVConnGet(TSHttpTxnSsnGet(txnp)), TS_PP_INFO_SRC_ADDR, reinterpret_cast<const char **>(&addr),
                      &addr_len);
     break;
+  case IP_SRC_PLUGIN:
+    TSHttpTxnVerifiedAddrGet(txnp, &addr);
+    break;
   default:
     Dbg(pi_dbg_ctl, "Unknown IP source (%d) was specified", private_data.ip_source);
     addr = TSHttpTxnClientAddrGet(txnp);

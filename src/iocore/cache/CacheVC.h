@@ -58,7 +58,7 @@ struct CacheVC : public CacheVConnection {
   is_ram_cache_hit() const override
   {
     ink_assert(vio.op == VIO::READ);
-    return !f.not_from_ram_cache;
+    return f.doc_from_ram_cache;
   }
 
   int
@@ -302,7 +302,6 @@ struct CacheVC : public CacheVConnection {
       unsigned int open_read_timeout       : 1; // UNUSED
       unsigned int data_done               : 1;
       unsigned int read_from_writer_called : 1;
-      unsigned int not_from_ram_cache      : 1; // entire object was from ram cache
       unsigned int rewrite_resident_alt    : 1;
       unsigned int readers                 : 1;
       unsigned int doc_from_ram_cache      : 1;

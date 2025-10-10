@@ -42,10 +42,6 @@ namespace header_rewrite_ns
 {
 std::once_flag initHRWLibs;
 PluginFactory  plugin_factory;
-
-int timezone        = 0;
-int inboundIpSource = 0;
-
 } // namespace header_rewrite_ns
 
 static void
@@ -74,7 +70,7 @@ static int cont_rewrite_headers(TSCont, TSEvent, void *);
 class RulesConfig
 {
 public:
-  RulesConfig()
+  RulesConfig(int timezone, int inboundIpSource) : _timezone(timezone), _inboundIpSource(inboundIpSource)
   {
     Dbg(dbg_ctl, "RulesConfig CTOR");
     _cont = TSContCreate(cont_rewrite_headers, nullptr);
@@ -105,6 +101,18 @@ public:
     return _rules[hook].get();
   }
 
+  [[nodiscard]] int
+  timezone() const
+  {
+    return _timezone;
+  }
+
+  [[nodiscard]] int
+  inboundIpSource() const
+  {
+    return _inboundIpSource;
+  }
+
   bool parse_config(const std::string &fname, TSHttpHookID default_hook, char *from_url = nullptr, char *to_url = nullptr);
 
 private:
@@ -113,6 +121,9 @@ private:
   TSCont                                                      _cont;
   std::array<std::unique_ptr<RuleSet>, TS_HTTP_LAST_HOOK + 1> _rules{};
   std::array<ResourceIDs, TS_HTTP_LAST_HOOK + 1>              _resids{};
+
+  int _timezone        = 0;
+  int _inboundIpSource = 0;
 };
 
 void
@@ -124,6 +135,39 @@ RulesConfig::add_rule(std::unique_ptr<RuleSet> rule)
   } else {
     _rules[hook]->append(std::move(rule));
   }
+}
+
+// Helper function to validate rule completion
+static bool
+validate_rule_completion(RuleSet *rule, const std::string &fname, int lineno)
+{
+  // Early return if rule has operators - no validation errors possible
+  if (!rule || rule->has_operator()) {
+    return true;
+  }
+
+  switch (rule->get_clause()) {
+  case Parser::CondClause::ELIF:
+    if (rule->cur_section()->group.has_conditions()) {
+      TSError("[%s] ELIF conditions without operators are not allowed in file: %s, lineno: %d", PLUGIN_NAME, fname.c_str(), lineno);
+      return false;
+    }
+    break;
+
+  case Parser::CondClause::ELSE:
+    TSError("[%s] conditions not allowed in ELSE clause in file: %s, lineno: %d", PLUGIN_NAME, fname.c_str(), lineno);
+    return false;
+
+  case Parser::CondClause::OPER:
+    TSError("[%s] conditions without operators are not allowed in file: %s, lineno: %d", PLUGIN_NAME, fname.c_str(), lineno);
+    return false;
+
+  case Parser::CondClause::COND:
+    // COND clause without operators - potentially valid in some cases
+    break;
+  }
+
+  return true;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -209,21 +253,14 @@ RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook, c
     }
 
     // If we are at the beginning of a new condition, save away the previous rule (but only if it has operators).
-    if (p.is_cond() && rule) {
-      bool transfer    = rule->cur_section()->has_operator();
-      auto rule_clause = rule->get_clause();
+    if (p.is_cond() && rule && is_hook) {
+      // Only validate and save when starting a NEW rule (hook condition)
+      bool transfer = rule->cur_section()->has_operator();
 
-      if (rule_clause == Parser::CondClause::ELIF) {
-        if (is_hook) {
-          TSError("[%s] ELIF without operators are not allowed in file: %s, lineno: %d", PLUGIN_NAME, fname.c_str(), lineno);
-          return false;
-        }
-      } else if (rule_clause == Parser::CondClause::ELSE) {
-        if (!transfer) {
-          TSError("[%s] conditions not allowed in ELSE clause in file: %s, lineno: %d", PLUGIN_NAME, fname.c_str(), lineno);
-          return false;
-        }
+      if (!validate_rule_completion(rule.get(), fname, lineno)) {
+        return false;
       }
+
       if (transfer) {
         add_rule(std::move(rule));
       }
@@ -316,8 +353,14 @@ RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook, c
   }
 
   // Add the last rule (possibly the only rule)
-  if (rule && rule->has_operator()) {
-    add_rule(std::move(rule));
+  if (rule) {
+    if (!validate_rule_completion(rule.get(), fname, lineno)) {
+      return false;
+    }
+
+    if (rule->has_operator()) {
+      add_rule(std::move(rule));
+    }
   }
 
   // Collect all resource IDs that we need
@@ -331,16 +374,16 @@ RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook, c
 }
 
 static void
-setPluginControlValues(TSHttpTxn txnp)
+setPluginControlValues(TSHttpTxn txnp, RulesConfig *conf)
 {
-  if (header_rewrite_ns::timezone != 0 || header_rewrite_ns::inboundIpSource != 0) {
+  if (conf->timezone() != 0 || conf->inboundIpSource() != 0) {
     ConditionNow temporal_statement; // This could be any statement that use the private slot.
     int          slot = temporal_statement.get_txn_private_slot();
 
     PrivateSlotData private_data;
     private_data.raw       = reinterpret_cast<uint64_t>(TSUserArgGet(txnp, slot));
-    private_data.timezone  = header_rewrite_ns::timezone;
-    private_data.ip_source = header_rewrite_ns::inboundIpSource;
+    private_data.timezone  = conf->timezone();
+    private_data.ip_source = conf->inboundIpSource();
     TSUserArgSet(txnp, slot, reinterpret_cast<void *>(private_data.raw));
   }
 }
@@ -373,7 +416,7 @@ cont_rewrite_headers(TSCont contp, TSEvent event, void *edata)
     break;
   case TS_EVENT_HTTP_TXN_START:
     hook = TS_HTTP_TXN_START_HOOK;
-    setPluginControlValues(txnp);
+    setPluginControlValues(txnp, conf);
     break;
   case TS_EVENT_HTTP_TXN_CLOSE:
     hook = TS_HTTP_TXN_CLOSE_HOOK;
@@ -441,6 +484,8 @@ TSPluginInit(int argc, const char *argv[])
   }
 
   std::string geoDBpath;
+  int         inboundIpSource = 0;
+  int         timezone        = 0;
   while (true) {
     int opt = getopt_long(argc, const_cast<char *const *>(argv), "m:t:i:", longopt, nullptr);
 
@@ -449,21 +494,23 @@ TSPluginInit(int argc, const char *argv[])
       geoDBpath = optarg;
       break;
     case 't':
-      Dbg(pi_dbg_ctl, "Global timezone %s", optarg);
+      Dbg(pi_dbg_ctl, "Default timezone %s", optarg);
       if (strcmp(optarg, "LOCAL") == 0) {
-        header_rewrite_ns::timezone = TIMEZONE_LOCAL;
+        timezone = TIMEZONE_LOCAL;
       } else if (strcmp(optarg, "GMT") == 0) {
-        header_rewrite_ns::timezone = TIMEZONE_GMT;
+        timezone = TIMEZONE_GMT;
       } else {
         TSError("[%s] Unknown value for timezone parameter: %s", PLUGIN_NAME, optarg);
       }
       break;
     case 'i':
-      Dbg(pi_dbg_ctl, "Global inbound IP source %s", optarg);
+      Dbg(pi_dbg_ctl, "Default inbound IP source %s", optarg);
       if (strcmp(optarg, "PEER") == 0) {
-        header_rewrite_ns::inboundIpSource = IP_SRC_PEER;
+        inboundIpSource = IP_SRC_PEER;
       } else if (strcmp(optarg, "PROXY") == 0) {
-        header_rewrite_ns::inboundIpSource = IP_SRC_PROXY;
+        inboundIpSource = IP_SRC_PROXY;
+      } else if (strcmp(optarg, "PLUGIN") == 0) {
+        inboundIpSource = IP_SRC_PLUGIN;
       } else {
         TSError("[%s] Unknown value for inbound-ip-source parameter: %s", PLUGIN_NAME, optarg);
       }
@@ -485,7 +532,7 @@ TSPluginInit(int argc, const char *argv[])
 
   // Parse the global config file(s). All rules are just appended
   // to the "global" Rules configuration.
-  auto *conf       = new RulesConfig;
+  auto *conf       = new RulesConfig(timezone, inboundIpSource);
   bool  got_config = false;
 
   for (int i = optind; i < argc; ++i) {
@@ -551,6 +598,8 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
   ++argv;
 
   std::string geoDBpath;
+  int         timezone        = 0;
+  int         inboundIpSource = 0;
   while (true) {
     int opt = getopt_long(argc, (char *const *)argv, "m:t:i:", longopt, nullptr);
 
@@ -559,21 +608,23 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
       geoDBpath = optarg;
       break;
     case 't':
-      Dbg(pi_dbg_ctl, "Global timezone %s", optarg);
+      Dbg(pi_dbg_ctl, "Default timezone %s", optarg);
       if (strcmp(optarg, "LOCAL") == 0) {
-        header_rewrite_ns::timezone = TIMEZONE_LOCAL;
+        timezone = TIMEZONE_LOCAL;
       } else if (strcmp(optarg, "GMT") == 0) {
-        header_rewrite_ns::timezone = TIMEZONE_GMT;
+        timezone = TIMEZONE_GMT;
       } else {
         TSError("[%s] Unknown value for timezone parameter: %s", PLUGIN_NAME, optarg);
       }
       break;
     case 'i':
-      Dbg(pi_dbg_ctl, "Global inbound IP source %s", optarg);
+      Dbg(pi_dbg_ctl, "Default inbound IP source %s", optarg);
       if (strcmp(optarg, "PEER") == 0) {
-        header_rewrite_ns::inboundIpSource = IP_SRC_PEER;
+        inboundIpSource = IP_SRC_PEER;
       } else if (strcmp(optarg, "PROXY") == 0) {
-        header_rewrite_ns::inboundIpSource = IP_SRC_PROXY;
+        inboundIpSource = IP_SRC_PROXY;
+      } else if (strcmp(optarg, "PLUGIN") == 0) {
+        inboundIpSource = IP_SRC_PLUGIN;
       } else {
         TSError("[%s] Unknown value for inbound-ip-source parameter: %s", PLUGIN_NAME, optarg);
       }
@@ -594,7 +645,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
     std::call_once(initHRWLibs, [&geoDBpath]() { initHRWLibraries(geoDBpath); });
   }
 
-  auto *conf = new RulesConfig;
+  auto *conf = new RulesConfig(timezone, inboundIpSource);
 
   for (int i = optind; i < argc; ++i) {
     Dbg(pi_dbg_ctl, "Loading remap configuration file %s", argv[i]);
@@ -631,10 +682,10 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
     return TSREMAP_NO_REMAP;
   }
 
-  setPluginControlValues(rh);
-
   TSRemapStatus rval = TSREMAP_NO_REMAP;
   auto         *conf = static_cast<RulesConfig *>(ih);
+
+  setPluginControlValues(rh, conf);
 
   // Go through all hooks we support, and setup the txn hook(s) as necessary
   for (int i = TS_HTTP_READ_REQUEST_HDR_HOOK; i < TS_HTTP_LAST_HOOK; ++i) {

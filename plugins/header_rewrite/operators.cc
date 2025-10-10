@@ -199,14 +199,14 @@ OperatorSetStatus::exec(const Resources &res) const
   case TS_HTTP_READ_RESPONSE_HDR_HOOK:
   case TS_HTTP_SEND_RESPONSE_HDR_HOOK:
     if (res.bufp && res.hdr_loc) {
-      TSHttpHdrStatusSet(res.bufp, res.hdr_loc, static_cast<TSHttpStatus>(_status.get_int_value()));
+      TSHttpHdrStatusSet(res.bufp, res.hdr_loc, static_cast<TSHttpStatus>(_status.get_int_value()), res.state.txnp, PLUGIN_NAME);
       if (_reason && _reason_len > 0) {
         TSHttpHdrReasonSet(res.bufp, res.hdr_loc, _reason, _reason_len);
       }
     }
     break;
   default:
-    TSHttpTxnStatusSet(res.state.txnp, static_cast<TSHttpStatus>(_status.get_int_value()));
+    TSHttpTxnStatusSet(res.state.txnp, static_cast<TSHttpStatus>(_status.get_int_value()), PLUGIN_NAME);
     break;
   }
 
@@ -591,14 +591,14 @@ OperatorSetRedirect::exec(const Resources &res) const
         Dbg(pi_dbg_ctl, "Could not set Location field value to: %s", value.c_str());
       }
       // Set the new status.
-      TSHttpTxnStatusSet(res.state.txnp, static_cast<TSHttpStatus>(_status.get_int_value()));
+      TSHttpTxnStatusSet(res.state.txnp, static_cast<TSHttpStatus>(_status.get_int_value()), PLUGIN_NAME);
       const_cast<Resources &>(res).changed_url = true;
       res._rri->redirect                       = 1;
     } else {
       Dbg(pi_dbg_ctl, "OperatorSetRedirect::exec() hook=%d", int(get_hook()));
       // Set the new status code and reason.
       TSHttpStatus status = static_cast<TSHttpStatus>(_status.get_int_value());
-      TSHttpHdrStatusSet(res.bufp, res.hdr_loc, status);
+      TSHttpHdrStatusSet(res.bufp, res.hdr_loc, status, res.state.txnp, PLUGIN_NAME);
       EditRedirectResponse(res.state.txnp, value, status, res.bufp, res.hdr_loc);
     }
     Dbg(pi_dbg_ctl, "OperatorSetRedirect::exec() invoked with destination=%s and status code=%d", value.c_str(),
@@ -1218,6 +1218,8 @@ OperatorSetPluginCntl::initialize(Parser &p)
       _value = IP_SRC_PEER;
     } else if (value == "PROXY") {
       _value = IP_SRC_PROXY;
+    } else if (value == "PLUGIN") {
+      _value = IP_SRC_PLUGIN;
     } else {
       TSError("[%s] Unknown value for INBOUND_IP_SOURCE control: %s", PLUGIN_NAME, value.c_str());
     }
@@ -1287,7 +1289,7 @@ OperatorRunPlugin::initialize(Parser &p)
   argv[0] = p.from_url();
   argv[1] = p.to_url();
 
-  for (int i = 0; i < argc; ++i) {
+  for (size_t i = 0; i < tokens.size(); ++i) {
     argv[i + 2] = const_cast<char *>(tokens[i].c_str());
   }
 
@@ -1380,7 +1382,7 @@ OperatorSetBodyFrom::exec(const Resources &res) const
     // Forces original status code in event TSHttpTxnErrorBodySet changed
     // the code or another condition was set conflicting with this one.
     // Set here because res is the only structure that contains the original status code.
-    TSHttpTxnStatusSet(res.state.txnp, res.resp_status);
+    TSHttpTxnStatusSet(res.state.txnp, res.resp_status, PLUGIN_NAME);
   } else {
     TSError(PLUGIN_NAME, "OperatorSetBodyFrom:exec:: Could not create request");
     return true;
@@ -1580,6 +1582,48 @@ OperatorSetStateInt16::exec(const Resources &res) const
   ptr &= ~STATE_INT16_MASK; // Clear any old value
   ptr |= (static_cast<uint64_t>(val) << 48);
   TSUserArgSet(res.state.txnp, _txn_slot, reinterpret_cast<void *>(ptr));
+
+  return true;
+}
+
+void
+OperatorSetEffectiveAddress::initialize(Parser &p)
+{
+  Operator::initialize(p);
+
+  _value.set_value(p.get_arg(), this);
+}
+
+void
+OperatorSetEffectiveAddress::initialize_hooks()
+{
+  add_allowed_hook(TS_HTTP_READ_REQUEST_HDR_HOOK);
+  add_allowed_hook(TS_REMAP_PSEUDO_HOOK);
+}
+
+bool
+OperatorSetEffectiveAddress::exec(const Resources &res) const
+{
+  std::string value;
+  _value.append_value(value, res);
+
+  // Never set an empty address
+  if (value.empty()) {
+    Dbg(pi_dbg_ctl, "Address is empty, skipping");
+    return true;
+  }
+
+  auto                    addr = swoc::IPAddr(value);
+  struct sockaddr_storage storage;
+  addr.copy_to(reinterpret_cast<struct sockaddr *>(&storage));
+  TSHttpTxnVerifiedAddrSet(res.state.txnp, reinterpret_cast<struct sockaddr *>(&storage));
+
+  PrivateSlotData private_data;
+  private_data.raw       = reinterpret_cast<uint64_t>(TSUserArgGet(res.state.txnp, _txn_private_slot));
+  private_data.ip_source = IP_SRC_PLUGIN;
+
+  Dbg(pi_dbg_ctl, "   Setting plugin control INBOUND_IP_SOURCE to IP_SRC_PLUGIN");
+  TSUserArgSet(res.state.txnp, _txn_private_slot, reinterpret_cast<void *>(private_data.raw));
 
   return true;
 }

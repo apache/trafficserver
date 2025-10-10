@@ -1208,6 +1208,8 @@ TXN_DEBUG        Enable transaction debugging (default: ``off``)
 SKIP_REMAP       Don't require a remap match for the transaction (default: ``off``)
 ================ ====================================================================
 
+.. _admin-plugins-header-rewrite-plugin-cntl:
+
 set-plugin-cntl
 ~~~~~~~~~~~~~~~
 ::
@@ -1238,6 +1240,19 @@ If ``PROXY`` is set, and PROXY protocol is used, the source IP address provided 
 
 .. note::
     The conditions return an empty string if the source is set to ``PROXY`` but PROXY protocol header does not present.
+
+set-effective-address
+~~~~~~~~~~~~~~~~~~~~~
+::
+
+  set-effective-address <address>
+
+This operator allows you to set client's effective address for a transaction. The address will be used on other conditions and
+operators that use client's IP address.
+
+.. note::
+    This operator also changes `INBOUND_IP_SOURCE` to `PLUGIN` to make the address available for other conditions and operators.
+    See `set-plugin-cntl`_ for the detail.
 
 Operator Flags
 --------------
@@ -1660,9 +1675,11 @@ already set to some value, and the status code is a 2xx::
 Add a response header for certain status codes
 ----------------------------------------------
 
+This rule will set a header ``X-Redirect-Status`` but only for a set of status codes::
+
    cond %{SEND_RESPONSE_HDR_HOOK} [AND]
    cond %{STATUS} (301,302,307,308)
-   set-header X-Redirect-Status %{STATUS}
+      set-header X-Redirect-Status %{STATUS}
 
 Add HSTS
 --------

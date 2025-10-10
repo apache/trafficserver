@@ -136,6 +136,9 @@ SSLPeriodicMetricsUpdate()
     }
   }
 
+  // Store cumulative session statistics as gauges. These metrics represent cumulative
+  // counters semantically but are implemented as gauges because they need to be "set"
+  // to values read from external counter sources (OpenSSL and/or ATS session cache).
   Metrics::Gauge::store(ssl_rsb.user_agent_sessions, sessions);
   Metrics::Gauge::store(ssl_rsb.user_agent_session_hit, hits);
   Metrics::Gauge::store(ssl_rsb.user_agent_session_miss, misses);
@@ -181,6 +184,7 @@ SSLInitializeStatistics()
   ssl_rsb.sni_name_set_failure               = Metrics::Counter::createPtr("proxy.process.ssl.ssl_sni_name_set_failure");
   ssl_rsb.origin_session_cache_hit           = Metrics::Counter::createPtr("proxy.process.ssl.ssl_origin_session_cache_hit");
   ssl_rsb.origin_session_cache_miss          = Metrics::Counter::createPtr("proxy.process.ssl.ssl_origin_session_cache_miss");
+  ssl_rsb.origin_session_cache_timeout       = Metrics::Counter::createPtr("proxy.process.ssl.ssl_origin_session_cache_timeout");
   ssl_rsb.session_cache_eviction             = Metrics::Counter::createPtr("proxy.process.ssl.ssl_session_cache_eviction");
   ssl_rsb.session_cache_hit                  = Metrics::Counter::createPtr("proxy.process.ssl.ssl_session_cache_hit");
   ssl_rsb.session_cache_lock_contention      = Metrics::Counter::createPtr("proxy.process.ssl.ssl_session_cache_lock_contention");
