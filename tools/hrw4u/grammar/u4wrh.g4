@@ -21,6 +21,8 @@ grammar u4wrh;
 // Lexer Rules
 // -----------------------------
 COND          : 'cond';
+IF_OP         : 'if';
+ENDIF_OP      : 'endif';
 ELIF          : 'elif';
 ELSE          : 'else';
 AND_MOD       : 'AND';
@@ -48,24 +50,24 @@ fragment HEXDIGIT : [0-9a-fA-F];
 // Percent blocks - treat entire %{...} as one token
 PERCENT_BLOCK : '%{' ~[}\r\n]* '}' '}'?;
 
-IDENT         : [@a-zA-Z_][a-zA-Z0-9_@.-]* ;
-COMPLEX_STRING : (~[ \t\r\n[\]{}(),=!><~%])+;
-NUMBER        : [0-9]+ ;
-LPAREN        : '(';
-RPAREN        : ')';
-LBRACE        : '{';
-RBRACE        : '}';
-LBRACKET      : '[';
-RBRACKET      : ']';
-EQUALS        : '=';
-NEQ           : '!=';
-GT            : '>';
-LT            : '<';
-COMMA         : ',';
+IDENT          : [@a-zA-Z_][a-zA-Z0-9_@.-]* ;
+COMPLEX_STRING : (~[ \t\r\n[\]{}(),=!><~%#])+;
+NUMBER         : [0-9]+ ;
+LPAREN         : '(';
+RPAREN         : ')';
+LBRACE         : '{';
+RBRACE         : '}';
+LBRACKET       : '[';
+RBRACKET       : ']';
+EQUALS         : '=';
+NEQ            : '!=';
+GT             : '>';
+LT             : '<';
+COMMA          : ',';
 
-EOL           : '\r'? '\n';
-COMMENT       : '#' ~[\r\n]* ;
-WS            : [ \t]+ -> skip ;
+EOL            : '\r'? '\n';
+COMMENT        : '#'~[\r\n]*;
+WS             : [ \t]+ -> skip ;
 
 // -----------------------------
 // Parser Rules
@@ -78,6 +80,8 @@ program
 line
     : condLine EOL
     | opLine EOL
+    | ifLine EOL
+    | endifLine EOL
     | elifLine EOL
     | elseLine EOL
     | commentLine EOL
@@ -86,6 +90,14 @@ line
 
 condLine
     : COND condBody modList?
+    ;
+
+ifLine
+    : IF_OP
+    ;
+
+endifLine
+    : ENDIF_OP
     ;
 
 elifLine
