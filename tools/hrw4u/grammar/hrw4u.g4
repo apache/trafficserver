@@ -156,6 +156,7 @@ block
 
 blockItem
     : statement
+    | conditional
     | commentLine
     ;
 

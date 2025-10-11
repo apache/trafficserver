@@ -445,6 +445,15 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                 for item in ctx.blockItem():
                     if item.statement():
                         self.visit(item.statement())
+                    elif item.conditional():
+                        # Nested conditional - emit if/endif operators with saved state
+                        self.emit_statement("if")
+                        saved_indents = self.stmt_indent, self.cond_indent
+                        self.stmt_indent += 1
+                        self.cond_indent = self.stmt_indent
+                        self.visit(item.conditional())
+                        self.stmt_indent, self.cond_indent = saved_indents
+                        self.emit_statement("endif")
                     elif item.commentLine() and self.preserve_comments:
                         self.visit(item.commentLine())
 
@@ -464,7 +473,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                 else:
                     lhs = self.visitFunctionCall(comp.functionCall())
             if not lhs:
-                return  # Skip on error
+                return
             operator = ctx.getChild(1)
             negate = operator.symbol.type in (hrw4uParser.NEQ, hrw4uParser.NOT_TILDE)
 
@@ -496,7 +505,6 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                 case _ if ctx.set_():
                     inner = ctx.set_().getText()[1:-1]
                     # We no longer strip the quotes here for sets, fixed in #12256
-                    # parts = [s.strip().strip("'") for s in inner.split(",")]
                     cond_txt = f"{lhs} ({inner})"
 
                 case _:
