@@ -53,16 +53,16 @@ extractFirstToken(swoc::TextView &view, int (*fp)(int))
 }
 
 enum class ParserState {
-  kParseStart,
-  kParseCompressibleContentType,
-  kParseRemoveAcceptEncoding,
-  kParseEnable,
-  kParseCache,
-  kParseRangeRequest,
-  kParseFlush,
-  kParseAllow,
-  kParseMinimumContentLength,
-  kParseContentTypeIgnoreParameters
+  Start,
+  CompressibleContentType,
+  RemoveAcceptEncoding,
+  Enable,
+  Cache,
+  RangeRequest,
+  Flush,
+  Allow,
+  MinimumContentLength,
+  ContentTypeIgnoreParameters
 };
 
 void
@@ -253,15 +253,15 @@ static const swoc::Lexicon<RangeRequestCtrl> RangeRequestLexicon{
 };
 
 static const std::unordered_map<std::string_view, ParserState> KeywordToStateMap{
-  {"compressible-content-type",      ParserState::kParseCompressibleContentType    },
-  {"content_type_ignore_parameters", ParserState::kParseContentTypeIgnoreParameters},
-  {"remove-accept-encoding",         ParserState::kParseRemoveAcceptEncoding       },
-  {"enabled",                        ParserState::kParseEnable                     },
-  {"cache",                          ParserState::kParseCache                      },
-  {"range-request",                  ParserState::kParseRangeRequest               },
-  {"flush",                          ParserState::kParseFlush                      },
-  {"allow",                          ParserState::kParseAllow                      },
-  {"minimum-content-length",         ParserState::kParseMinimumContentLength       }
+  {"compressible-content-type",      ParserState::CompressibleContentType    },
+  {"content_type_ignore_parameters", ParserState::ContentTypeIgnoreParameters},
+  {"remove-accept-encoding",         ParserState::RemoveAcceptEncoding       },
+  {"enabled",                        ParserState::Enable                     },
+  {"cache",                          ParserState::Cache                      },
+  {"range-request",                  ParserState::RangeRequest               },
+  {"flush",                          ParserState::Flush                      },
+  {"allow",                          ParserState::Allow                      },
+  {"minimum-content-length",         ParserState::MinimumContentLength       }
 };
 
 void
@@ -305,7 +305,7 @@ Configuration::Parse(const char *path)
     return c;
   }
 
-  ParserState state  = ParserState::kParseStart;
+  ParserState state  = ParserState::Start;
   size_t      lineno = 0;
 
   swoc::TextView content_view(content);
@@ -331,7 +331,7 @@ Configuration::Parse(const char *path)
       }
 
       switch (state) {
-      case ParserState::kParseStart:
+      case ParserState::Start:
         if (token.starts_with('[') && token.ends_with(']')) {
           auto host_name = token.substr(1, token.size() - 2);
 
@@ -341,55 +341,55 @@ Configuration::Parse(const char *path)
           c->add_host_configuration(current_host_configuration);
         } else if (token == "supported-algorithms") {
           current_host_configuration->add_compression_algorithms(line_view);
-          state = ParserState::kParseStart;
+          state = ParserState::Start;
         } else if (token == "compressible-status-code") {
           current_host_configuration->add_compressible_status_codes(line_view);
-          state = ParserState::kParseStart;
+          state = ParserState::Start;
         } else if (auto it = KeywordToStateMap.find(std::string_view(token.data(), token.size())); it != KeywordToStateMap.end()) {
           state = it->second;
         } else {
           warning("failed to interpret \"%.*s\" at line %zu", static_cast<int>(token.size()), token.data(), lineno);
         }
         break;
-      case ParserState::kParseCompressibleContentType:
+      case ParserState::CompressibleContentType:
         current_host_configuration->add_compressible_content_type(token);
-        state = ParserState::kParseStart;
+        state = ParserState::Start;
         break;
-      case ParserState::kParseContentTypeIgnoreParameters:
+      case ParserState::ContentTypeIgnoreParameters:
         current_host_configuration->set_content_type_ignore_parameters(token == "true");
-        state = ParserState::kParseStart;
+        state = ParserState::Start;
         break;
-      case ParserState::kParseRemoveAcceptEncoding:
+      case ParserState::RemoveAcceptEncoding:
         current_host_configuration->set_remove_accept_encoding(token == "true");
-        state = ParserState::kParseStart;
+        state = ParserState::Start;
         break;
-      case ParserState::kParseEnable:
+      case ParserState::Enable:
         current_host_configuration->set_enabled(token == "true");
-        state = ParserState::kParseStart;
+        state = ParserState::Start;
         break;
-      case ParserState::kParseCache:
+      case ParserState::Cache:
         current_host_configuration->set_cache(token == "true");
-        state = ParserState::kParseStart;
+        state = ParserState::Start;
         break;
-      case ParserState::kParseRangeRequest:
+      case ParserState::RangeRequest:
         current_host_configuration->set_range_request(token);
-        state = ParserState::kParseStart;
+        state = ParserState::Start;
         break;
-      case ParserState::kParseFlush:
+      case ParserState::Flush:
         current_host_configuration->set_flush(token == "true");
-        state = ParserState::kParseStart;
+        state = ParserState::Start;
         break;
-      case ParserState::kParseAllow:
+      case ParserState::Allow:
         current_host_configuration->add_allow(token);
-        state = ParserState::kParseStart;
+        state = ParserState::Start;
         break;
-      case ParserState::kParseMinimumContentLength: {
+      case ParserState::MinimumContentLength: {
         swoc::TextView parsed;
         uintmax_t      length = swoc::svtou(token, &parsed);
         if (parsed.size() == token.size()) {
           current_host_configuration->set_minimum_content_length(length);
         }
-        state = ParserState::kParseStart;
+        state = ParserState::Start;
         break;
       }
       }
@@ -404,7 +404,7 @@ Configuration::Parse(const char *path)
     warning("Combination of 'cache false' and 'range-request none' might deliver corrupted content");
   }
 
-  if (state != ParserState::kParseStart) {
+  if (state != ParserState::Start) {
     warning("the parser state indicates that data was expected when it reached the end of the file (%d)", static_cast<int>(state));
   }
 
