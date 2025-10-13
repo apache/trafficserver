@@ -40,22 +40,14 @@
 
 namespace Gzip
 {
-inline auto
-make_char_predicate(int (*fp)(int))
-{
-  return [fp](char c) -> bool { return fp(static_cast<unsigned char>(c)) != 0; };
-}
-
 swoc::TextView
 extractFirstToken(swoc::TextView &view, int (*fp)(int))
 {
-  auto predicate = make_char_predicate(fp);
-
   // Skip leading delimiters
-  view.ltrim_if(predicate);
+  view.ltrim_if(fp);
 
   // Extract token up to (and removing) the first delimiter
-  auto token = view.take_prefix_if(predicate);
+  auto token = view.take_prefix_if(fp);
 
   return token;
 }
