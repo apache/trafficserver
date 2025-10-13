@@ -116,8 +116,10 @@ extern std::unordered_map<std::string, Metrics::Counter::AtomicType *> cipher_ma
 
 #if defined(OPENSSL_IS_BORINGSSL)
 extern std::unordered_map<std::string, Metrics::Counter::AtomicType *> tls_group_map;
+extern std::unordered_map<std::string, Metrics::Counter::AtomicType *> tls_group_handshake_time_map;
 #elif defined(SSL_get_negotiated_group)
 extern std::unordered_map<int, Metrics::Counter::AtomicType *> tls_group_map;
+extern std::unordered_map<int, Metrics::Counter::AtomicType *> tls_group_handshake_time_map;
 constexpr int                                                  SSL_GROUP_STAT_OTHER_KEY = 0;
 #endif
 
