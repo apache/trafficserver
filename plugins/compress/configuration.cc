@@ -23,12 +23,16 @@
 
 #include "tscore/ink_config.h"
 #include "configuration.h"
-#include <fstream>
 #include <algorithm>
+#include <unordered_map>
 #include <vector>
 #include <fnmatch.h>
+#include <system_error>
+#include <stdexcept>
 
+#include "swoc/swoc_file.h"
 #include "swoc/TextView.h"
+#include "swoc/Lexicon.h"
 
 #include "debug_macros.h"
 
@@ -36,90 +40,35 @@
 
 namespace Gzip
 {
-using namespace std;
-
-void
-ltrim_if(string &s, int (*fp)(int))
+swoc::TextView
+extractFirstToken(swoc::TextView &view, int (*fp)(int))
 {
-  for (size_t i = 0; i < s.size();) {
-    if (fp(s[i])) {
-      s.erase(i, 1);
-    } else {
-      break;
-    }
-  }
+  // Skip leading delimiters
+  view.ltrim_if(fp);
+
+  // Extract token up to (and removing) the first delimiter
+  auto token = view.take_prefix_if(fp);
+
+  return token;
 }
 
-void
-rtrim_if(string &s, int (*fp)(int))
-{
-  for (ssize_t i = static_cast<ssize_t>(s.size()) - 1; i >= 0; i--) {
-    if (fp(s[i])) {
-      s.erase(i, 1);
-    } else {
-      break;
-    }
-  }
-}
-
-void
-trim_if(string &s, int (*fp)(int))
-{
-  ltrim_if(s, fp);
-  rtrim_if(s, fp);
-}
-
-string
-extractFirstToken(string &s, int (*fp)(int))
-{
-  int startTok{-1}, endTok{-1}, idx{0};
-
-  for (;; ++idx) {
-    if (idx == int(s.length())) {
-      if (endTok < 0) {
-        endTok = idx;
-      }
-      break;
-    } else if (fp(s[idx])) {
-      if ((startTok >= 0) and (endTok < 0)) {
-        endTok = idx;
-      }
-    } else if (endTok > 0) {
-      break;
-    } else if (startTok < 0) {
-      startTok = idx;
-    }
-  }
-
-  string tmp;
-  if (startTok >= 0) {
-    tmp = string(s, startTok, endTok - startTok);
-  }
-
-  if (idx > 0) {
-    s = string(s, idx, s.length() - idx);
-  }
-
-  return tmp;
-}
-
-enum ParserState {
-  kParseStart,
-  kParseCompressibleContentType,
-  kParseRemoveAcceptEncoding,
-  kParseEnable,
-  kParseCache,
-  kParseRangeRequest,
-  kParseFlush,
-  kParseAllow,
-  kParseMinimumContentLength,
-  kParseContentTypeIgnoreParameters
+enum class ParserState {
+  Start,
+  CompressibleContentType,
+  RemoveAcceptEncoding,
+  Enable,
+  Cache,
+  RangeRequest,
+  Flush,
+  Allow,
+  MinimumContentLength,
+  ContentTypeIgnoreParameters
 };
 
 void
 Configuration::add_host_configuration(HostConfiguration *hc)
 {
-  host_configurations_.push_back(hc);
+  host_configurations_.emplace_back(hc);
 }
 
 void
@@ -132,15 +81,15 @@ HostConfiguration::update_defaults()
 }
 
 void
-HostConfiguration::add_allow(const std::string &allow)
+HostConfiguration::add_allow(swoc::TextView allow)
 {
-  allows_.push_back(allow);
+  allows_.emplace_back(allow);
 }
 
 void
-HostConfiguration::add_compressible_content_type(const std::string &content_type)
+HostConfiguration::add_compressible_content_type(swoc::TextView content_type)
 {
-  compressible_content_types_.push_back(content_type);
+  compressible_content_types_.emplace_back(content_type);
 }
 
 HostConfiguration *
@@ -149,12 +98,12 @@ Configuration::find(const char *host, int host_length)
   HostConfiguration *host_configuration = host_configurations_[0];
 
   if (host && host_length > 0 && host_configurations_.size() > 1) {
-    std::string shost(host, host_length);
+    swoc::TextView host_view(host, host_length);
 
-    // ToDo: Maybe use std::find() here somehow?
-    for (HostContainer::iterator it = host_configurations_.begin() + 1; it != host_configurations_.end(); ++it) {
-      if ((*it)->host() == shost) {
-        host_configuration = *it;
+    // Start from index 1 to skip the default configuration at index 0
+    for (size_t i = 1; i < host_configurations_.size(); ++i) {
+      if (host_configurations_[i]->host() == host_view) {
+        host_configuration = host_configurations_[i];
         break;
       }
     }
@@ -166,68 +115,67 @@ Configuration::find(const char *host, int host_length)
 bool
 HostConfiguration::is_url_allowed(const char *url, int url_len)
 {
-  string surl(url, url_len);
+  swoc::TextView url_view(url, url_len);
+
   if (has_allows()) {
-    for (StringContainer::iterator allow_it = allows_.begin(); allow_it != allows_.end(); ++allow_it) {
-      const char *match_string = allow_it->c_str();
-      bool        exclude      = match_string[0] == '!';
+    // fnmatch requires null-terminated strings, so we need a std::string for the url
+    std::string surl(url_view);
+    for (const auto &allow : allows_) {
+      const char *match_string = allow.c_str();
+      bool        exclude      = allow.starts_with('!');
       if (exclude) {
         ++match_string; // skip !
       }
       if (fnmatch(match_string, surl.c_str(), 0) == 0) {
-        info("url [%s] %s for compression, matched allow pattern [%s]", surl.c_str(), exclude ? "disabled" : "enabled",
-             allow_it->c_str());
+        info("url [%.*s] %s for compression, matched allow pattern [%s]", static_cast<int>(url_view.size()), url_view.data(),
+             exclude ? "disabled" : "enabled", allow.c_str());
         return !exclude;
       }
     }
-    info("url [%s] disabled for compression, did not match any allows pattern", surl.c_str());
+    info("url [%.*s] disabled for compression, did not match any allows pattern", static_cast<int>(url_view.size()),
+         url_view.data());
     return false;
   }
-  info("url [%s] enabled for compression, did not match any pattern", surl.c_str());
+  info("url [%.*s] enabled for compression, did not match any pattern", static_cast<int>(url_view.size()), url_view.data());
   return true;
 }
 
 bool
 HostConfiguration::is_status_code_compressible(const TSHttpStatus status_code) const
 {
-  std::set<TSHttpStatus>::const_iterator it = compressible_status_codes_.find(status_code);
-
-  return it != compressible_status_codes_.end();
+  return compressible_status_codes_.contains(status_code);
 }
 
-std::string_view
-strip_params(std::string_view v)
+swoc::TextView
+strip_params(swoc::TextView v)
 {
-  swoc::TextView tv{v};
-  tv = tv.take_prefix_at(';');
-  tv.rtrim_if(&::isspace);
-  return tv;
+  v = v.take_prefix_at(';');
+  v.rtrim_if(&::isspace);
+  return v;
 }
 
 bool
 HostConfiguration::is_content_type_compressible(const char *content_type, int content_type_length)
 {
-  string scontent_type(content_type, content_type_length);
-  bool   is_match = false;
+  swoc::TextView content_type_view(content_type, content_type_length);
+  bool           is_match = false;
 
-  for (StringContainer::iterator it = compressible_content_types_.begin(); it != compressible_content_types_.end(); ++it) {
-    const char *match_string = it->c_str();
-    if (match_string == nullptr) {
-      continue;
-    }
-    bool exclude = match_string[0] == '!';
+  for (const auto &content_type_pattern : compressible_content_types_) {
+    const char *match_string = content_type_pattern.c_str();
+    bool        exclude      = content_type_pattern.starts_with('!');
 
     if (exclude) {
       ++match_string; // skip '!'
     }
     std::string target;
-    if (content_type_ignore_parameters() && std::strchr(match_string, ';') == nullptr) {
-      target = strip_params(std::string_view(scontent_type));
+
+    if (content_type_ignore_parameters() && content_type_pattern.find(';') == std::string::npos) {
+      target = strip_params(content_type_view);
     } else {
-      target = scontent_type;
+      target = content_type_view;
     }
     if (fnmatch(match_string, target.c_str(), 0) == 0) {
-      info("compressible content type [%s], matched on pattern [%s]", target.c_str(), it->c_str());
+      info("compressible content type [%s], matched on pattern [%s]", target.c_str(), content_type_pattern.c_str());
       is_match = !exclude;
     }
   }
@@ -235,18 +183,18 @@ HostConfiguration::is_content_type_compressible(const char *content_type, int co
   return is_match;
 }
 
-int
+constexpr int
 isCommaOrSpace(int ch)
 {
   return (ch == ',') or isspace(ch);
 }
 
 void
-HostConfiguration::add_compression_algorithms(string &line)
+HostConfiguration::add_compression_algorithms(swoc::TextView line)
 {
   compression_algorithms_ = ALGORITHM_DEFAULT; // remove the default gzip.
   for (;;) {
-    string token = extractFirstToken(line, isCommaOrSpace);
+    auto token = extractFirstToken(line, isCommaOrSpace);
     if (token.empty()) {
       break;
     } else if (token == "br") {
@@ -266,23 +214,23 @@ HostConfiguration::add_compression_algorithms(string &line)
 }
 
 void
-HostConfiguration::add_compressible_status_codes(string &line)
+HostConfiguration::add_compressible_status_codes(swoc::TextView line)
 {
   compressible_status_codes_.clear();
 
   for (;;) {
-    string token = extractFirstToken(line, isCommaOrSpace);
+    auto token = extractFirstToken(line, isCommaOrSpace);
     if (token.empty()) {
       break;
     }
 
-    uint status_code = strtoul(token.c_str(), nullptr, 10);
-    if (status_code == 0) {
-      error("Invalid status code %s", token.c_str());
-      continue;
+    swoc::TextView parsed;
+    uintmax_t      status_code = swoc::svtou(token, &parsed);
+    if (parsed.size() == token.size() && status_code > 0) {
+      compressible_status_codes_.insert(static_cast<TSHttpStatus>(status_code));
+    } else {
+      error("Invalid status code %.*s", static_cast<int>(token.size()), token.data());
     }
-
-    compressible_status_codes_.insert(static_cast<TSHttpStatus>(status_code));
   }
 }
 
@@ -295,36 +243,47 @@ HostConfiguration::compression_algorithms()
 /**
   "true" and "false" are compatibility with old version, will be removed
  */
+
+// Lexicon for mapping range-request configuration tokens to enum values
+static const swoc::Lexicon<RangeRequestCtrl> RangeRequestLexicon{
+  swoc::Lexicon<RangeRequestCtrl>::with_multi{{RangeRequestCtrl::NONE, {"true", "none"}},
+                                              {RangeRequestCtrl::NO_COMPRESSION, {"false", "no-compression"}},
+                                              {RangeRequestCtrl::REMOVE_RANGE, {"remove-range"}},
+                                              {RangeRequestCtrl::REMOVE_ACCEPT_ENCODING, {"remove-accept-encoding"}}}
+};
+
+static const std::unordered_map<std::string_view, ParserState> KeywordToStateMap{
+  {"compressible-content-type",      ParserState::CompressibleContentType    },
+  {"content_type_ignore_parameters", ParserState::ContentTypeIgnoreParameters},
+  {"remove-accept-encoding",         ParserState::RemoveAcceptEncoding       },
+  {"enabled",                        ParserState::Enable                     },
+  {"cache",                          ParserState::Cache                      },
+  {"range-request",                  ParserState::RangeRequest               },
+  {"flush",                          ParserState::Flush                      },
+  {"allow",                          ParserState::Allow                      },
+  {"minimum-content-length",         ParserState::MinimumContentLength       }
+};
+
 void
-HostConfiguration::set_range_request(const std::string &token)
+HostConfiguration::set_range_request(swoc::TextView token)
 {
-  if (token == "true" || token == "none") {
-    range_request_ctl_ = RangeRequestCtrl::NONE;
-  } else if (token == "false" || token == "no-compression") {
-    range_request_ctl_ = RangeRequestCtrl::NO_COMPRESSION;
-  } else if (token == "remove-range") {
-    range_request_ctl_ = RangeRequestCtrl::REMOVE_RANGE;
-  } else if (token == "remove-accept-encoding") {
-    range_request_ctl_ = RangeRequestCtrl::REMOVE_ACCEPT_ENCODING;
-  } else {
-    error("invalid token for range_request: %s", token.c_str());
+  try {
+    range_request_ctl_ = RangeRequestLexicon[token];
+  } catch (std::domain_error const &) {
+    error("invalid token for range_request: %.*s", static_cast<int>(token.size()), token.data());
   }
 }
 
 Configuration *
 Configuration::Parse(const char *path)
 {
-  string pathstring(path);
+  swoc::file::path pathstring(path);
 
   // If we have a path and it's not an absolute path, make it relative to the
   // configuration directory.
-  if (!pathstring.empty() && pathstring[0] != '/') {
-    pathstring.assign(TSConfigDirGet());
-    pathstring.append("/");
-    pathstring.append(path);
+  if (!pathstring.is_absolute()) {
+    pathstring = swoc::file::path(TSConfigDirGet()) / pathstring;
   }
-
-  trim_if(pathstring, isspace);
 
   Configuration     *c                          = new Configuration();
   HostConfiguration *current_host_configuration = new HostConfiguration("");
@@ -335,116 +294,104 @@ Configuration::Parse(const char *path)
     return c;
   }
 
-  path = pathstring.c_str();
-  info("Parsing file \"%s\"", path);
-  std::ifstream f;
+  auto path_string = pathstring.c_str();
+  info("Parsing file \"%s\"", path_string);
 
-  size_t lineno = 0;
+  std::error_code ec;
+  std::string     content = swoc::file::load(pathstring, ec);
 
-  f.open(path, std::ios::in);
-
-  if (!f.is_open()) {
-    warning("could not open file [%s], skip", path);
+  if (ec) {
+    warning("could not open file [%s], skip: %s", path_string, ec.message().c_str());
     return c;
   }
 
-  enum ParserState state = kParseStart;
+  ParserState state  = ParserState::Start;
+  size_t      lineno = 0;
 
-  while (!f.eof()) {
-    std::string line;
-    getline(f, line);
+  swoc::TextView content_view(content);
+  while (content_view) {
+    auto line_view = content_view.take_prefix_at('\n');
     ++lineno;
 
-    trim_if(line, isspace);
-    if (line.empty()) {
+    // Trim whitespace
+    line_view.trim_if(&::isspace);
+    if (line_view.empty()) {
       continue;
     }
-
     for (;;) {
-      string token = extractFirstToken(line, isspace);
+      auto token = extractFirstToken(line_view, isspace);
 
       if (token.empty()) {
         break;
       }
 
       // once a comment is encountered, we are done processing the line
-      if (token[0] == '#') {
+      if (token.starts_with('#')) {
         break;
       }
 
       switch (state) {
-      case kParseStart:
-        if ((token[0] == '[') && (token[token.size() - 1] == ']')) {
-          std::string current_host = token.substr(1, token.size() - 2);
+      case ParserState::Start:
+        if (token.starts_with('[') && token.ends_with(']')) {
+          auto host_name = token.substr(1, token.size() - 2);
 
           // Makes sure that any default settings are properly set, when not explicitly set via configs
           current_host_configuration->update_defaults();
-          current_host_configuration = new HostConfiguration(current_host);
+          current_host_configuration = new HostConfiguration(host_name);
           c->add_host_configuration(current_host_configuration);
-        } else if (token == "compressible-content-type") {
-          state = kParseCompressibleContentType;
-        } else if (token == "content_type_ignore_parameters") {
-          state = kParseContentTypeIgnoreParameters;
-        } else if (token == "remove-accept-encoding") {
-          state = kParseRemoveAcceptEncoding;
-        } else if (token == "enabled") {
-          state = kParseEnable;
-        } else if (token == "cache") {
-          state = kParseCache;
-        } else if (token == "range-request") {
-          state = kParseRangeRequest;
-        } else if (token == "flush") {
-          state = kParseFlush;
         } else if (token == "supported-algorithms") {
-          current_host_configuration->add_compression_algorithms(line);
-          state = kParseStart;
-        } else if (token == "allow") {
-          state = kParseAllow;
+          current_host_configuration->add_compression_algorithms(line_view);
+          state = ParserState::Start;
         } else if (token == "compressible-status-code") {
-          current_host_configuration->add_compressible_status_codes(line);
-          state = kParseStart;
-        } else if (token == "minimum-content-length") {
-          state = kParseMinimumContentLength;
+          current_host_configuration->add_compressible_status_codes(line_view);
+          state = ParserState::Start;
+        } else if (auto it = KeywordToStateMap.find(std::string_view(token.data(), token.size())); it != KeywordToStateMap.end()) {
+          state = it->second;
         } else {
-          warning("failed to interpret \"%s\" at line %zu", token.c_str(), lineno);
+          warning("failed to interpret \"%.*s\" at line %zu", static_cast<int>(token.size()), token.data(), lineno);
         }
         break;
-      case kParseCompressibleContentType:
+      case ParserState::CompressibleContentType:
         current_host_configuration->add_compressible_content_type(token);
-        state = kParseStart;
+        state = ParserState::Start;
         break;
-      case kParseContentTypeIgnoreParameters:
+      case ParserState::ContentTypeIgnoreParameters:
         current_host_configuration->set_content_type_ignore_parameters(token == "true");
-        state = kParseStart;
+        state = ParserState::Start;
         break;
-      case kParseRemoveAcceptEncoding:
+      case ParserState::RemoveAcceptEncoding:
         current_host_configuration->set_remove_accept_encoding(token == "true");
-        state = kParseStart;
+        state = ParserState::Start;
         break;
-      case kParseEnable:
+      case ParserState::Enable:
         current_host_configuration->set_enabled(token == "true");
-        state = kParseStart;
+        state = ParserState::Start;
         break;
-      case kParseCache:
+      case ParserState::Cache:
         current_host_configuration->set_cache(token == "true");
-        state = kParseStart;
+        state = ParserState::Start;
         break;
-      case kParseRangeRequest:
+      case ParserState::RangeRequest:
         current_host_configuration->set_range_request(token);
-        state = kParseStart;
+        state = ParserState::Start;
         break;
-      case kParseFlush:
+      case ParserState::Flush:
         current_host_configuration->set_flush(token == "true");
-        state = kParseStart;
+        state = ParserState::Start;
         break;
-      case kParseAllow:
+      case ParserState::Allow:
         current_host_configuration->add_allow(token);
-        state = kParseStart;
+        state = ParserState::Start;
         break;
-      case kParseMinimumContentLength:
-        current_host_configuration->set_minimum_content_length(strtoul(token.c_str(), nullptr, 10));
-        state = kParseStart;
+      case ParserState::MinimumContentLength: {
+        swoc::TextView parsed;
+        uintmax_t      length = swoc::svtou(token, &parsed);
+        if (parsed.size() == token.size()) {
+          current_host_configuration->set_minimum_content_length(length);
+        }
+        state = ParserState::Start;
         break;
+      }
       }
     }
   }
@@ -457,8 +404,8 @@ Configuration::Parse(const char *path)
     warning("Combination of 'cache false' and 'range-request none' might deliver corrupted content");
   }
 
-  if (state != kParseStart) {
-    warning("the parser state indicates that data was expected when it reached the end of the file (%d)", state);
+  if (state != ParserState::Start) {
+    warning("the parser state indicates that data was expected when it reached the end of the file (%d)", static_cast<int>(state));
   }
 
   return c;
