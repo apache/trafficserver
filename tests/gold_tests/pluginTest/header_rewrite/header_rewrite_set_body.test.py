@@ -39,7 +39,7 @@ class HeaderRewriteSetBodyTest:
         self.server.addResponse("sessionlog.log", request_header, response_header)
 
     def setUpTS(self):
-        self.ts = Test.MakeATSProcess("ts", enable_cache=False)
+        self.ts = Test.MakeATSProcess("ts")
         empty_body_rule_file = Test.Disk.File("empty_body_rule.conf", "txt", "")
         empty_body_rule_file.WriteOn(
             '''
@@ -78,7 +78,6 @@ class HeaderRewriteSetBodyTest:
         Test that empty set-body doesn't crash the server and properly deletes internal error body
         '''
         tr = Test.AddTestRun()
-        tr.Processes.Default.StartBefore(self.ts)
         tr.MakeCurlCommand(f'-s -v --proxy 127.0.0.1:{self.ts.Variables.port} "http://www.example.com/emptybody"', ts=self.ts)
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.StartBefore(self.server)
@@ -94,7 +93,6 @@ class HeaderRewriteSetBodyTest:
         Test that set-body with a variable works correctly
         '''
         tr = Test.AddTestRun()
-        tr.Processes.Default.StartBefore(self.ts)
         tr.MakeCurlCommand(f'-s -v --proxy 127.0.0.1:{self.ts.Variables.port} "http://www.example.com/setbody"', ts=self.ts)
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.StartBefore(self.server)
