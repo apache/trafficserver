@@ -1,0 +1,8 @@
+VARS {
+    first: bool @5;
+    second: bool @5;  # Error: slot already used
+}
+
+SEND_RESPONSE {
+    set_header("X-Test", "value");
+}
