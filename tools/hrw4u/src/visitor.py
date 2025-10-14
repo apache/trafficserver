@@ -399,17 +399,21 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                 if ctx.typeName is None:
                     raise SymbolResolutionError("variable", "Missing type name in declaration")
                 name = ctx.name.text
-                type = ctx.typeName.text
+                type_name = ctx.typeName.text
+                explicit_slot = int(ctx.slot.text) if ctx.slot else None
 
                 if '.' in name or ':' in name:
                     raise SymbolResolutionError("variable", f"Variable name '{name}' cannot contain '.' or ':' characters")
 
-                symbol = self.symbol_resolver.declare_variable(name, type)
-                self._dbg(f"bind `{name}' to {symbol}")
+                symbol = self.symbol_resolver.declare_variable(name, type_name, explicit_slot)
+                slot_info = f" @{explicit_slot}" if explicit_slot is not None else ""
+                self._dbg(f"bind `{name}' to {symbol}{slot_info}")
             except Exception as e:
                 name = getattr(ctx, 'name', None)
                 type_name = getattr(ctx, 'typeName', None)
-                note = f"Variable declaration: {name.text}:{type_name.text}" if name and type_name else None
+                slot = getattr(ctx, 'slot', None)
+                note = f"Variable declaration: {name.text}:{type_name.text}" + \
+                    (f" @{slot.text}" if slot else "") if name and type_name else None
                 with self.trap(ctx, note=note):
                     raise e
                 return
