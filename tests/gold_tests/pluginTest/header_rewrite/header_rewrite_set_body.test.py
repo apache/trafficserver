@@ -95,11 +95,10 @@ class HeaderRewriteSetBodyTest:
         tr = Test.AddTestRun()
         tr.MakeCurlCommand(f'-s -v --proxy 127.0.0.1:{self.ts.Variables.port} "http://www.example.com/setbody"', ts=self.ts)
         tr.Processes.Default.ReturnCode = 0
-        tr.Processes.Default.StartBefore(self.server)
-        tr.Processes.Default.StartBefore(self.ts)
         tr.Processes.Default.Streams.stderr.Content = Testers.ContainsExpression("200 OK", "expected 200 response")
         tr.Processes.Default.Streams.stderr.Content += Testers.ContainsExpression("Content-Length: 3", "expected content-length 3")
         tr.Processes.Default.Streams.stdout.Content = Testers.ContainsExpression("200", "body should be set to 200")
+        tr.Processes.Default.Streams.stdout.Content += Testers.ExcludesExpression("should not", "body should be removed")
 
         tr.StillRunningAfter = self.ts  # Verify server didn't crash
 

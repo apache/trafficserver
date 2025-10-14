@@ -103,7 +103,7 @@ enum AllocType {
 #define BUFFER_SIZE_INDEX_IS_CONSTANT(_size_index)       (_size_index >= DEFAULT_BUFFER_SIZES)
 
 #define BUFFER_SIZE_FOR_XMALLOC(_size) (-(_size))
-inline int64_t
+[[nodiscard]] constexpr int64_t
 BUFFER_SIZE_INDEX_FOR_XMALLOC_SIZE(int64_t size)
 {
   // Positive size indices are interpreted as a BUFFER_SIZE_INDEX_*.
