@@ -88,7 +88,8 @@ ThreadAffinityInitializer Thread_Affinity_Initializer;
 namespace
 {
 struct EventStatsBlock {
-  static constexpr size_t STAT_COUNT = EThread::Metrics::Graph::N_BUCKETS * 2 + EThread::Metrics::Slice::N_STAT_ID;
+  static constexpr size_t STAT_COUNT =
+    EThread::Metrics::Graph::N_BUCKETS * 2 + EThread::Metrics::Slice::N_STAT_ID * EThread::Metrics::N_TIMESCALES;
   std::array<ts::Metrics::Gauge::AtomicType *, STAT_COUNT> stats;
 } events_rsb;
 
@@ -543,6 +544,8 @@ EventProcessor::start(int n_event_threads, size_t stacksize)
              static_cast<size_t>(EThread::Metrics::API_HISTOGRAM_BUCKET_SIZE.count() * Graph::min_for_bucket(id)));
     events_rsb.stats[stat_idx++] = ts::Metrics::Gauge::createPtr(name);
   }
+
+  debug_assert_message(stat_idx == events_rsb.stats.size(), "events_rsp stats overrun!");
 
   RecRegNewSyncStatSync(EventMetricStatSync);
 
