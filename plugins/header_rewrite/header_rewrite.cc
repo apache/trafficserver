@@ -376,10 +376,9 @@ static void
 setPluginControlValues(TSHttpTxn txnp, RulesConfig *conf)
 {
   if (conf->timezone() != 0 || conf->inboundIpSource() != 0) {
-    ConditionNow temporal_statement; // This could be any statement that use the private slot.
-    int          slot = temporal_statement.get_txn_private_slot();
-
+    int             slot = Statement::acquire_txn_private_slot();
     PrivateSlotData private_data;
+
     private_data.raw       = reinterpret_cast<uint64_t>(TSUserArgGet(txnp, slot));
     private_data.timezone  = conf->timezone();
     private_data.ip_source = conf->inboundIpSource();
