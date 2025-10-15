@@ -497,14 +497,6 @@ public:
   /// The index of @a target in this record.
   int index_of(HostDBInfo const *target) const;
 
-  /** Allocation and initialize an instance from a serialized buffer.
-   *
-   * @param buff Serialization data.
-   * @param size Size of @a buff.
-   * @return An instance initialized from @a buff.
-   */
-  static self_type *unmarshall(char *buff, unsigned size);
-
 protected:
   /// Current active info.
   /// @note This value may be out of range due to the difficulty of synchronization, therefore
