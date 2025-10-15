@@ -544,7 +544,6 @@ EventProcessor::start(int n_event_threads, size_t stacksize)
     events_rsb.stats[stat_idx++] = ts::Metrics::Gauge::createPtr(name);
   }
 
-  // Name must be that of a stat, pick one at random since we do all of them in one pass/callback.
   RecRegNewSyncStatSync(EventMetricStatSync);
 
   this->spawn_event_threads(ET_CALL, n_event_threads, stacksize);
