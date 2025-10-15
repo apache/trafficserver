@@ -23,10 +23,28 @@
 #include <atomic>
 #include "proxy/HostStatus.h"
 #include "proxy/ParentConsistentHash.h"
+#include "tscore/HashSip.h"
+#include "tscore/HashWyhash.h"
 
 namespace
 {
 DbgCtl dbg_ctl_parent_select{"parent_select"};
+}
+
+std::unique_ptr<ATSHash64>
+ParentConsistentHash::createHashInstance(ParentHashAlgorithm algo)
+{
+  switch (algo) {
+  case ParentHashAlgorithm::SIPHASH24:
+    return std::make_unique<ATSHash64Sip24>();
+  case ParentHashAlgorithm::SIPHASH13:
+    return std::make_unique<ATSHash64Sip13>();
+  case ParentHashAlgorithm::WYHASH:
+    return std::make_unique<ATSHash64Wyhash>();
+  default:
+    Warning("Unknown hash algorithm %d, using SipHash-2-4", static_cast<int>(algo));
+    return std::make_unique<ATSHash64Sip24>();
+  }
 }
 
 ParentConsistentHash::ParentConsistentHash(ParentRecord *parent_record)
@@ -38,21 +56,24 @@ ParentConsistentHash::ParentConsistentHash(ParentRecord *parent_record)
   parents[SECONDARY] = parent_record->secondary_parents;
   ignore_query       = parent_record->ignore_query;
   secondary_mode     = parent_record->secondary_mode;
+  selected_algorithm = parent_record->consistent_hash_algorithm;
   ink_zero(foundParents);
 
+  hash[PRIMARY]  = createHashInstance(selected_algorithm);
   chash[PRIMARY] = std::make_unique<ATSConsistentHash>();
 
   for (i = 0; i < parent_record->num_parents; i++) {
-    chash[PRIMARY]->insert(&(parent_record->parents[i]), parent_record->parents[i].weight, (ATSHash64 *)&hash[PRIMARY]);
+    chash[PRIMARY]->insert(&(parent_record->parents[i]), parent_record->parents[i].weight, hash[PRIMARY].get());
   }
 
   if (parent_record->num_secondary_parents > 0) {
     Dbg(dbg_ctl_parent_select, "ParentConsistentHash(): initializing the secondary parents hash.");
+    hash[SECONDARY]  = createHashInstance(selected_algorithm);
     chash[SECONDARY] = std::make_unique<ATSConsistentHash>();
 
     for (i = 0; i < parent_record->num_secondary_parents; i++) {
       chash[SECONDARY]->insert(&(parent_record->secondary_parents[i]), parent_record->secondary_parents[i].weight,
-                               (ATSHash64 *)&hash[SECONDARY]);
+                               hash[SECONDARY].get());
     }
   } else {
     chash[SECONDARY] = nullptr;
@@ -110,8 +131,8 @@ ParentConsistentHash::getPathHash(HttpRequestData *hrdata, ATSHash64 *h)
 
 // Helper function to abstract calling ATSConsistentHash lookup_by_hashval() vs lookup().
 static pRecord *
-chash_lookup(ATSConsistentHash *fhash, uint64_t path_hash, ATSConsistentHashIter *chashIter, bool *wrap_around,
-             ATSHash64Sip24 *hash, bool *chash_init, bool *mapWrapped)
+chash_lookup(ATSConsistentHash *fhash, uint64_t path_hash, ATSConsistentHashIter *chashIter, bool *wrap_around, ATSHash64 *hash,
+             bool *chash_init, bool *mapWrapped)
 {
   pRecord *prtmp;
 
@@ -134,18 +155,18 @@ void
 ParentConsistentHash::selectParent(bool first_call, ParentResult *result, RequestData *rdata,
                                    unsigned int /* fail_threshold ATS_UNUSED */, unsigned int retry_time)
 {
-  ATSHash64Sip24     hash;
-  ATSConsistentHash *fhash;
-  HttpRequestData   *request_info   = static_cast<HttpRequestData *>(rdata);
-  bool               firstCall      = first_call;
-  bool               parentRetry    = false;
-  bool               wrap_around[2] = {false, false};
-  int                lookups        = 0;
-  uint64_t           path_hash      = 0;
-  uint32_t           last_lookup;
-  pRecord           *prtmp = nullptr, *pRec = nullptr;
-  HostStatus        &pStatus   = HostStatus::instance();
-  TSHostStatus       host_stat = TSHostStatus::TS_HOST_STATUS_INIT;
+  std::unique_ptr<ATSHash64> hash = createHashInstance(selected_algorithm);
+  ATSConsistentHash         *fhash;
+  HttpRequestData           *request_info   = static_cast<HttpRequestData *>(rdata);
+  bool                       firstCall      = first_call;
+  bool                       parentRetry    = false;
+  bool                       wrap_around[2] = {false, false};
+  int                        lookups        = 0;
+  uint64_t                   path_hash      = 0;
+  uint32_t                   last_lookup;
+  pRecord                   *prtmp = nullptr, *pRec = nullptr;
+  HostStatus                &pStatus   = HostStatus::instance();
+  TSHostStatus               host_stat = TSHostStatus::TS_HOST_STATUS_INIT;
 
   Dbg(dbg_ctl_parent_select, "ParentConsistentHash::%s(): Using a consistent hash parent selection strategy.", __func__);
   ink_assert(numParents(result) > 0 || result->rec->go_direct == true);
@@ -193,10 +214,10 @@ ParentConsistentHash::selectParent(bool first_call, ParentResult *result, Reques
   }
 
   // Do the initial parent look-up.
-  path_hash = getPathHash(request_info, (ATSHash64 *)&hash);
+  path_hash = getPathHash(request_info, hash.get());
   fhash     = chash[last_lookup].get();
   do { // search until we've selected a different parent if !firstCall
-    prtmp = chash_lookup(fhash, path_hash, &result->chashIter[last_lookup], &wrap_around[last_lookup], &hash,
+    prtmp = chash_lookup(fhash, path_hash, &result->chashIter[last_lookup], &wrap_around[last_lookup], hash.get(),
                          &result->chash_init[last_lookup], &result->mapWrapped[last_lookup]);
     lookups++;
     if (prtmp) {
@@ -283,7 +304,7 @@ ParentConsistentHash::selectParent(bool first_call, ParentResult *result, Reques
           }
         }
         fhash = chash[last_lookup].get();
-        prtmp = chash_lookup(fhash, path_hash, &result->chashIter[last_lookup], &wrap_around[last_lookup], &hash,
+        prtmp = chash_lookup(fhash, path_hash, &result->chashIter[last_lookup], &wrap_around[last_lookup], hash.get(),
                              &result->chash_init[last_lookup], &result->mapWrapped[last_lookup]);
         lookups++;
         if (prtmp) {

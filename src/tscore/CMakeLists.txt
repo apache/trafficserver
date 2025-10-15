@@ -44,7 +44,7 @@ add_library(
   FrequencyCounter.cc
   Hash.cc
   HashFNV.cc
-  HashSip.cc
+  HashWyhash.cc
   HostLookup.cc
   InkErrno.cc
   JeMiAllocator.cc
@@ -155,6 +155,7 @@ if(BUILD_TESTING)
     unit_tests/test_Extendible.cc
     unit_tests/test_Encoding.cc
     unit_tests/test_FrequencyCounter.cc
+    unit_tests/test_HashAlgorithms.cc
     unit_tests/test_HKDF.cc
     unit_tests/test_Histogram.cc
     unit_tests/test_History.cc

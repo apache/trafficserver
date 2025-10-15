@@ -55,4 +55,8 @@ if(TS_USE_QUIC)
   add_subdirectory(http3)
 endif()
 
+if(BUILD_TESTING)
+  add_subdirectory(unit_tests)
+endif()
+
 clang_tidy_check(proxy)
