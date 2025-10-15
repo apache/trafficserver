@@ -278,6 +278,13 @@ The following list shows the possible actions and their allowed values.
        The other traffic is unaffected. Once the downed parent becomes
        available, the traffic distribution returns to the pre-down
        state.
+
+       The hash algorithm used for consistent hashing can be configured via
+       :ts:cv:`proxy.config.http.parent_proxy.consistent_hash_algorithm`. Available
+       algorithms are ``siphash24`` (default), ``siphash13`` (faster), and ``wyhash``
+       (fastest). See the records.yaml documentation for performance characteristics
+       and migration considerations.
+
     - ``latched`` - The first parent in the list is marked as primary and is
       always chosen until connection errors cause it to be marked down.  When
       this occurs the next parent in the list then becomes primary.  The primary
