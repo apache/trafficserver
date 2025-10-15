@@ -505,9 +505,6 @@ public:
    */
   static self_type *unmarshall(char *buff, unsigned size);
 
-  /// Database version.
-  static constexpr ts::VersionNumber Version{3, 0};
-
 protected:
   /// Current active info.
   /// @note This value may be out of range due to the difficulty of synchronization, therefore

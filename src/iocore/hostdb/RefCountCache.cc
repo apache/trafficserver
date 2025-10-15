@@ -37,17 +37,3 @@ RefCountCacheHashEntry::dealloc(RefCountCacheHashEntry *e)
 {
   return refCountCacheHashingValueAllocator.free(e);
 }
-
-RefCountCacheHeader::RefCountCacheHeader(ts::VersionNumber object_version) : object_version(object_version){};
-
-bool
-RefCountCacheHeader::operator==(RefCountCacheHeader const &that) const
-{
-  return this->magic == that.magic && this->version == that.version;
-}
-
-bool
-RefCountCacheHeader::compatible(RefCountCacheHeader *that) const
-{
-  return this->magic == that->magic && this->version == that->version && this->object_version == that->version;
-};
