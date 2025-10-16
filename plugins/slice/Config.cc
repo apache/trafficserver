@@ -158,10 +158,10 @@ Config::fromArgs(int const argc, char const *const argv[])
       m_regex    = new Regex();
 
       if (m_regex->compile(m_regexstr, err, erroffset)) {
-        ERROR_LOG("Invalid regex: '%s' - %s at column %d", m_regexstr.c_str(), err.c_str(), erroffset);
-      } else {
         m_regex_type = Exclude;
         DEBUG_LOG("Using regex for url exclude: '%s'", m_regexstr.c_str());
+      } else {
+        ERROR_LOG("Invalid regex: '%s' - %s at column %d", m_regexstr.c_str(), err.c_str(), erroffset);
       }
     } break;
     case 'g': {
@@ -179,10 +179,10 @@ Config::fromArgs(int const argc, char const *const argv[])
       m_regex    = new Regex();
 
       if (m_regex->compile(m_regexstr, err, erroffset)) {
-        ERROR_LOG("Invalid regex: '%s' - %s at column %d", m_regexstr.c_str(), err.c_str(), erroffset);
-      } else {
         m_regex_type = Include;
         DEBUG_LOG("Using regex for url include: '%s'", m_regexstr.c_str());
+      } else {
+        ERROR_LOG("Invalid regex: '%s' - %s at column %d", m_regexstr.c_str(), err.c_str(), erroffset);
       }
     } break;
     case 'l': {
