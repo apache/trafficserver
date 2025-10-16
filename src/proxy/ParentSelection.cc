@@ -56,6 +56,21 @@ DbgCtl         ParentResult::dbg_ctl_parent_select{"parent_select"};
 static DbgCtl &dbg_ctl_parent_select{ParentResult::dbg_ctl_parent_select};
 static DbgCtl  dbg_ctl_parent_config{"parent_config"};
 
+ParentHashAlgorithm
+parseHashAlgorithm(std::string_view name)
+{
+  if (name == "siphash24") {
+    return ParentHashAlgorithm::SIPHASH24;
+  } else if (name == "siphash13") {
+    return ParentHashAlgorithm::SIPHASH13;
+  } else if (name == "wyhash") {
+    return ParentHashAlgorithm::WYHASH;
+  } else {
+    Warning("Unknown hash algorithm '%.*s', defaulting to siphash24", static_cast<int>(name.size()), name.data());
+    return ParentHashAlgorithm::SIPHASH24;
+  }
+}
+
 ParentSelectionPolicy::ParentSelectionPolicy()
 {
   int32_t retry_time     = 0;
@@ -645,6 +660,10 @@ ParentRecord::Init(matcher_line *line_info)
 
   if (auto rec_self_detect{RecGetRecordInt("proxy.config.http.parent_proxy.self_detect")}; rec_self_detect) {
     self_detect = static_cast<int>(rec_self_detect.value());
+  }
+
+  if (auto rec_hash_algo{RecGetRecordStringAlloc("proxy.config.http.parent_proxy.consistent_hash_algorithm")}; rec_hash_algo) {
+    consistent_hash_algorithm = parseHashAlgorithm(rec_hash_algo.value());
   }
 
   for (int i = 0; i < MATCHER_MAX_TOKENS; i++) {

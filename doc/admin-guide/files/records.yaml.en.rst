@@ -1471,6 +1471,28 @@ Parent Proxy Configuration
    ``2`` Mark the host down. This is the default.
    ===== ======================================================================
 
+.. ts:cv:: CONFIG proxy.config.http.parent_proxy.consistent_hash_algorithm STRING siphash24
+
+   Selects the hash algorithm used for consistent hash parent selection. This setting
+   only affects parent selection when ``round_robin=consistent_hash`` is configured in
+   :file:`parent.config`. The hash algorithm determines how requests are distributed
+   across parent proxies.
+
+   ============== ================================================================================
+   Value          Description
+   ============== ================================================================================
+   ``siphash24``  SipHash-2-4 (default). Cryptographically strong, DoS-resistant hash function.
+   ``siphash13``  SipHash-1-3. ~50% faster than SipHash-2-4, still DoS-resistant.
+   ``wyhash``     Wyhash v4.1. ~3-5x faster than SipHash-2-4, DoS-resistant.
+   ============== ================================================================================
+
+   .. warning::
+
+      Changing this setting will cause requests to be redistributed differently across
+      parent proxies. This can lead to cache churn and increased origin load during the
+      transition period. Plan the migration carefully and consider doing it during
+      low-traffic periods.
+
 .. ts:cv:: CONFIG proxy.config.http.parent_proxy.enable_parent_timeout_markdowns INT 0
    :reloadable:
    :overridable:

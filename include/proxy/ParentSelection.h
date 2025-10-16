@@ -73,6 +73,8 @@ enum class ParentRetry_t {
   BOTH = 3
 };
 
+enum class ParentHashAlgorithm { SIPHASH24 = 0, SIPHASH13, WYHASH };
+
 struct UnavailableServerResponseCodes {
   UnavailableServerResponseCodes(char *val);
   ~UnavailableServerResponseCodes(){};
@@ -163,6 +165,7 @@ public:
   int                             max_unavailable_server_retries     = 1;
   int                             secondary_mode                     = 1;
   bool                            ignore_self_detect                 = false;
+  ParentHashAlgorithm             consistent_hash_algorithm          = ParentHashAlgorithm::SIPHASH24;
 };
 
 // If the parent was set by the external customer api,
