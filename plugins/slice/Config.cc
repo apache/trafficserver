@@ -33,15 +33,8 @@ constexpr std::string_view DefaultCrrIdentHeader  = {"X-Crr-Ident"};
 
 Config::~Config()
 {
-  if (nullptr != m_regex_extra) {
-#ifndef PCRE_STUDY_JIT_COMPILE
-    pcre_free(m_regex_extra);
-#else
-    pcre_free_study(m_regex_extra);
-#endif
-  }
   if (nullptr != m_regex) {
-    pcre_free(m_regex);
+    delete m_regex;
   }
 }
 
@@ -159,15 +152,15 @@ Config::fromArgs(int const argc, char const *const argv[])
         break;
       }
 
-      const char *errptr;
+      std::string err;
       int         erroffset;
       m_regexstr = optarg;
-      m_regex    = pcre_compile(m_regexstr.c_str(), 0, &errptr, &erroffset, nullptr);
-      if (nullptr == m_regex) {
-        ERROR_LOG("Invalid regex: '%s'", m_regexstr.c_str());
+      m_regex    = new Regex();
+
+      if (m_regex->compile(m_regexstr, err, erroffset)) {
+        ERROR_LOG("Invalid regex: '%s' - %s at column %d", m_regexstr.c_str(), err.c_str(), erroffset);
       } else {
-        m_regex_type  = Exclude;
-        m_regex_extra = pcre_study(m_regex, 0, &errptr);
+        m_regex_type = Exclude;
         DEBUG_LOG("Using regex for url exclude: '%s'", m_regexstr.c_str());
       }
     } break;
@@ -180,16 +173,15 @@ Config::fromArgs(int const argc, char const *const argv[])
         ERROR_LOG("Regex already specified!");
         break;
       }
-
-      const char *errptr;
+      std::string err;
       int         erroffset;
       m_regexstr = optarg;
-      m_regex    = pcre_compile(m_regexstr.c_str(), 0, &errptr, &erroffset, nullptr);
-      if (nullptr == m_regex) {
-        ERROR_LOG("Invalid regex: '%s'", m_regexstr.c_str());
+      m_regex    = new Regex();
+
+      if (m_regex->compile(m_regexstr, err, erroffset)) {
+        ERROR_LOG("Invalid regex: '%s' - %s at column %d", m_regexstr.c_str(), err.c_str(), erroffset);
       } else {
-        m_regex_type  = Include;
-        m_regex_extra = pcre_study(m_regex, 0, &errptr);
+        m_regex_type = Include;
         DEBUG_LOG("Using regex for url include: '%s'", m_regexstr.c_str());
       }
     } break;
@@ -330,12 +322,12 @@ Config::matchesRegex(char const *const url, int const urllen) const
 
   switch (m_regex_type) {
   case Exclude: {
-    if (0 <= pcre_exec(m_regex, m_regex_extra, url, urllen, 0, 0, nullptr, 0)) {
+    if (m_regex->exec({url, static_cast<size_t>(urllen)})) {
       matches = false;
     }
   } break;
   case Include: {
-    if (pcre_exec(m_regex, m_regex_extra, url, urllen, 0, 0, nullptr, 0) < 0) {
+    if (!m_regex->exec({url, static_cast<size_t>(urllen)})) {
       matches = false;
     }
   } break;
