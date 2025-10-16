@@ -322,11 +322,13 @@ Config::matchesRegex(char const *const url, int const urllen) const
 
   switch (m_regex_type) {
   case Exclude: {
+    // Exclude means if the regex matches, it doesn't match
     if (m_regex->exec({url, static_cast<size_t>(urllen)})) {
       matches = false;
     }
   } break;
   case Include: {
+    // Include means if the regex matches, it matches
     if (!m_regex->exec({url, static_cast<size_t>(urllen)})) {
       matches = false;
     }
