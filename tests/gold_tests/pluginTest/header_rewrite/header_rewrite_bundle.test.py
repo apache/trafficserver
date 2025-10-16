@@ -82,6 +82,10 @@ remap_rules = [
         "from": f"{url_base}_8/",
         "to": f"{origin_base}_8/",
         "plugins": [("header_rewrite", [f"{mgr.run_dir}/implicit_hook.conf"])]
+    }, {
+        "from": f"{url_base}_9/",
+        "to": f"{origin_base}_9/",
+        "plugins": [("header_rewrite", [f"{mgr.run_dir}/regex_tests.conf"])]
     }
 ]
 
@@ -165,6 +169,11 @@ origin_rules = [
     }, def_resp),
     ({
         "headers": "GET /to_8/ HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
+        "timestamp": "1469733493.993",
+        "body": ""
+    }, def_resp),
+    ({
+        "headers": "GET /to_9/ HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
         "timestamp": "1469733493.993",
         "body": ""
     }, def_resp),
@@ -264,6 +273,21 @@ test_runs = [
         "desc": "Implicit hook test - X-Client-Foo: fOoBar (expect X-Response-Foo: Prefix)",
         "curl": f'{curl_proxy} "http://{url_base}_8/" -H "X-Client-Foo: fOoBar"',
         "gold": "gold/implicit_hook_prefix.gold",
+    },
+    {
+        "desc": "Regex test - no additional headers (expect X-Match-2 only)",
+        "curl": f'{curl_proxy} "http://{url_base}_9/"',
+        "gold": "gold/regex_match2_only.gold",
+    },
+    {
+        "desc": "Regex test - X-Test1: Foobar (expect X-Match and X-Match-2)",
+        "curl": f'{curl_proxy} "http://{url_base}_9/" -H "X-Test1: Foobar"',
+        "gold": "gold/regex_both_match.gold",
+    },
+    {
+        "desc": "Regex test - X-Test1: none (expect X-Match-2 only)",
+        "curl": f'{curl_proxy} "http://{url_base}_9/" -H "X-Test1: none"',
+        "gold": "gold/regex_match2_only.gold",
     },
 ]
 
