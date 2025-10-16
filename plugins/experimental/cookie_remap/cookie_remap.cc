@@ -24,7 +24,7 @@
 #include "cookiejar.h"
 #include <ts/ts.h>
 
-#include <pcre.h>
+#include "tsutil/Regex.h"
 #include <ts/remap.h>
 #include <yaml-cpp/yaml.h>
 
@@ -45,8 +45,6 @@ namespace
 {
 DbgCtl dbg_ctl{MY_NAME};
 }
-
-const int OVECCOUNT = 30; // We support $1 - $9 only, and this needs to be 3x that
 
 class UrlComponents
 {
@@ -262,11 +260,7 @@ public:
   {
     Dbg(dbg_ctl, "subop destructor called");
     if (regex) {
-      pcre_free(regex);
-    }
-
-    if (regex_extra) {
-      pcre_free(regex_extra);
+      delete regex;
     }
   }
 
@@ -379,23 +373,22 @@ public:
   bool
   setRegexMatch(const std::string &s)
   {
-    const char *error_comp  = nullptr;
-    const char *error_study = nullptr;
+    std::string error;
     int         erroffset;
 
     op_type      = REGEXP;
     regex_string = s;
-    regex        = pcre_compile(regex_string.c_str(), 0, &error_comp, &erroffset, nullptr);
-
-    if (regex == nullptr) {
-      return false;
-    }
-    regex_extra = pcre_study(regex, 0, &error_study);
-    if ((regex_extra == nullptr) && (error_study != nullptr)) {
+    regex        = new Regex();
+    if (!regex->compile(regex_string.c_str(), error, erroffset, 0)) {
+      delete regex;
+      regex = nullptr;
       return false;
     }
 
-    if (pcre_fullinfo(regex, regex_extra, PCRE_INFO_CAPTURECOUNT, &regex_ccount) != 0) {
+    regex_ccount = regex->get_capture_count();
+    if (regex_ccount < 0) {
+      delete regex;
+      regex = nullptr;
       return false;
     }
 
@@ -415,16 +408,12 @@ public:
   }
 
   int
-  regexMatch(const char *str, int len, int ovector[]) const
+  regexMatch(const char *str, int len, RegexMatches &matches) const
   {
-    return pcre_exec(regex,       // the compiled pattern
-                     regex_extra, // Extra data from study (maybe)
-                     str,         // the subject std::string
-                     len,         // the length of the subject
-                     0,           // start at offset 0 in the subject
-                     0,           // default options
-                     ovector,     // output vector for substring information
-                     OVECCOUNT);  // number of elements in the output vector
+    if (regex) {
+      return regex->exec(std::string_view(str, len), matches);
+    }
+    return -1;
   };
 
   void
@@ -454,8 +443,7 @@ private:
 
   std::string str_match;
 
-  pcre       *regex       = nullptr;
-  pcre_extra *regex_extra = nullptr;
+  Regex      *regex = nullptr;
   std::string regex_string;
   int         regex_ccount = 0;
 
@@ -682,8 +670,8 @@ public:
 
       // OPERATION::regex matching
       if (subop_type == REGEXP) {
-        int ovector[OVECCOUNT];
-        int ret = subop->regexMatch(string_to_match.c_str(), string_to_match.length(), ovector);
+        RegexMatches matches;
+        int          ret = subop->regexMatch(string_to_match.c_str(), string_to_match.length(), matches);
 
         if (ret >= 0) {
           std::string::size_type pos  = sendto.find('$');
@@ -714,9 +702,10 @@ public:
               int ix = sendto[pos + 1] - '0';
 
               if (ix <= subop->getRegexCcount()) { // Just skip an illegal regex group
-                dest += sendto.substr(ppos, pos - ppos);
-                dest += string_to_match.substr(ovector[ix * 2], ovector[ix * 2 + 1] - ovector[ix * 2]);
-                ppos  = pos + 2;
+                dest             += sendto.substr(ppos, pos - ppos);
+                auto regex_match  = matches[ix];
+                dest.append(regex_match.data(), regex_match.size());
+                ppos = pos + 2;
               } else {
                 Dbg(dbg_ctl,
                     "bad "
