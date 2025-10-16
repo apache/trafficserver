@@ -26,7 +26,6 @@
 #include "iocore/eventsystem/EventProcessor.h"
 #include "records/RecCore.h"
 #include "records/RecProcess.h"
-#include "../../records/P_RecProcess.h"
 #include "tscore/ink_align.h"
 #include <sched.h>
 #if TS_USE_HWLOC
