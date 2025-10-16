@@ -17,39 +17,29 @@
 */
 #include "regex_helper.h"
 #include "lulu.h"
+#include "ts/ts.h"
+#include "tsutil/Regex.h"
+#include <pcre.h>
 
 bool
 regexHelper::setRegexMatch(const std::string &s, bool nocase)
 {
-  const char *errorComp  = nullptr;
-  const char *errorStudy = nullptr;
-  int         erroffset;
+  std::string error;
+  int         errorOffset;
 
   regexString = s;
-  regex       = pcre_compile(regexString.c_str(), nocase ? PCRE_CASELESS : 0, &errorComp, &erroffset, nullptr);
 
-  if (regex == nullptr) {
-    return false;
-  }
-  regexExtra = pcre_study(regex, 0, &errorStudy);
-  if ((regexExtra == nullptr) && (errorStudy != nullptr)) {
-    return false;
-  }
-  if (pcre_fullinfo(regex, regexExtra, PCRE_INFO_CAPTURECOUNT, &regexCcount) != 0) {
+  bool ok = regex.compile(regexString, error, errorOffset, nocase ? PCRE_CASELESS : 0);
+
+  if (!ok) {
+    TSError("[%s] Invalid regex: failed to precompile: %s (%s at %d)", PLUGIN_NAME, s.c_str(), error.c_str(), errorOffset);
     return false;
   }
   return true;
 }
 
 int
-regexHelper::regexMatch(const char *str, int len, int ovector[]) const
+regexHelper::regexMatch(std::string_view subject, RegexMatches &matches) const
 {
-  return pcre_exec(regex,      // the compiled pattern
-                   regexExtra, // Extra data from study (maybe)
-                   str,        // the subject std::string
-                   len,        // the length of the subject
-                   0,          // start at offset 0 in the subject
-                   0,          // default options
-                   ovector,    // output vector for substring information
-                   OVECCOUNT); // number of elements in the output vector
+  return regex.exec(subject, matches);
 };
