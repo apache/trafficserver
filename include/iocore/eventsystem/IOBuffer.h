@@ -102,8 +102,16 @@ enum AllocType {
 #define BUFFER_SIZE_INDEX_IS_FAST_ALLOCATED(_size_index) (((uint64_t)_size_index) < DEFAULT_BUFFER_SIZES)
 #define BUFFER_SIZE_INDEX_IS_CONSTANT(_size_index)       (_size_index >= DEFAULT_BUFFER_SIZES)
 
-#define BUFFER_SIZE_FOR_XMALLOC(_size)            (-(_size))
-#define BUFFER_SIZE_INDEX_FOR_XMALLOC_SIZE(_size) (-(_size))
+#define BUFFER_SIZE_FOR_XMALLOC(_size) (-(_size))
+[[nodiscard]] constexpr int64_t
+BUFFER_SIZE_INDEX_FOR_XMALLOC_SIZE(int64_t size)
+{
+  // Positive size indices are interpreted as a BUFFER_SIZE_INDEX_*.
+  // Negative size indices are interpreted as a malloc size.
+  // A zero size index is BUFFER_SIZE_INDEX_128, which causes this buffer to be freed incorrectly.
+  ink_release_assert(size > 0 && "Zero-length xmalloc buffer causes heap corruption!");
+  return -size;
+}
 
 #define BUFFER_SIZE_FOR_CONSTANT(_size)            (_size - DEFAULT_BUFFER_SIZES)
 #define BUFFER_SIZE_INDEX_FOR_CONSTANT_SIZE(_size) (_size + DEFAULT_BUFFER_SIZES)
