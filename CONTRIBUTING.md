@@ -55,16 +55,13 @@ are a few simple rules to follow:
 7. If the _PR_ is a Work-In-Progress, and not ready to commit, mark it with the
    **WIP** label.
 
-8. Make sure you run **clang-format** before making the _PR_. This is easiest
-   done with e.g. "make clang-format", which works on macOS and Linux.
+8. Make sure to **format** your code before making the _PR_. This is easily
+   done with e.g. "cmake --build build --target format", which works on macOS and Linux.
 
-9. Make sure you run **autopep8** before making the _PR_. This is easiest
-   done with e.g. "make autopep8".
-
-10. When making backports, make sure you mark the _PR_ for the appropriate
+9. When making backports, make sure you mark the _PR_ for the appropriate
    Github branch (e.g. **6.2.x**).
 
-11. If you are making backports to an LTS branch, remember that the job of
+10. If you are making backports to an LTS branch, remember that the job of
    merging such a _PR_ is the duty of the release manager.
 
 
