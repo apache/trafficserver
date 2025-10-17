@@ -768,7 +768,7 @@ INPUT_ENCODING         = UTF-8
 # *.md, *.mm, *.dox, *.py, *.f90, *.f, *.for, *.tcl, *.vhd, *.vhdl, *.ucf,
 # *.qsf, *.as and *.js.
 
-FILE_PATTERNS          = *.c *.cc *.h *.h.in *.i
+FILE_PATTERNS          = *.c *.cc *.h *.h.in *.i *.cript
 
 # The RECURSIVE tag can be used to specify whether or not subdirectories should
 # be searched for input files as well.

@@ -1,0 +1,86 @@
+/*
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+*/
+
+#include <cripts/Preamble.hpp>
+#include <yaml-cpp/yaml.h>
+
+glb_init()
+{
+  CDebug("Initializing per-client connection exempt list plugin");
+  if (instance.Size() != 1) {
+    TSError("Expected a single exempt list filepath as argument, %lu provided.", instance.Size());
+    return;
+  }
+  // First argument (after plugin name) should be the filename
+  auto filename = AsString(instance.data[0]);
+
+  CDebug("Loading exempt list from file: {}", filename);
+
+  // Clear any existing exempt list
+  TSConnectionLimitExemptListClear();
+
+  try {
+    // Load the YAML file
+    YAML::Node config      = YAML::LoadFile(filename.c_str());
+    integer    added_count = 0;
+
+    // Check if the root node contains the exempt_list key
+    if (!config["exempt_list"]) {
+      TSError("YAML file '%s' does not contain an 'exempt_list' key", filename.c_str());
+      return;
+    }
+
+    const YAML::Node &exempt_list = config["exempt_list"];
+
+    // Verify that exempt_list is a sequence/array
+    if (!exempt_list.IsSequence()) {
+      TSError("'exempt_list' in YAML file '%s' is not a sequence/array", filename.c_str());
+      return;
+    }
+
+    // Iterate through each IP range in the exempt list
+    for (const YAML::Node &item : exempt_list) {
+      if (!item.IsScalar()) {
+        TSError("Non-scalar item found in exempt_list, skipping");
+        continue;
+      }
+
+      std::string ip_range = item.as<std::string>();
+
+      // Add IP range to exempt list
+      TSReturnCode result = TSConnectionLimitExemptListAdd(ip_range);
+      if (result == TS_SUCCESS) {
+        added_count++;
+        CDebug("Added IP range: {}", ip_range);
+      } else {
+        TSError("Failed to add IP range '%s'", ip_range.c_str());
+      }
+    }
+
+    CDebug("Successfully processed YAML file, added {} IP ranges to exempt list", added_count);
+
+  } catch (const YAML::Exception &e) {
+    TSError("YAML parsing error for file '%s': %s", filename.c_str(), e.what());
+  } catch (const std::exception &e) {
+    TSError("Failed to process exempt list file '%s': %s", filename.c_str(), e.what());
+  } catch (...) {
+    TSError("Unknown error while processing exempt list file '%s'", filename.c_str());
+  }
+}
+
+#include <cripts/Epilogue.hpp>
