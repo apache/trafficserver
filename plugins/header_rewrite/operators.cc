@@ -1667,7 +1667,6 @@ OperatorSetNextHopStrategy::exec(const Resources &res) const
   void const *const stratptr = TSHttpTxnNextHopNamedStrategyGet(txnp, value.c_str());
   if (nullptr == stratptr) {
     TSWarning("[%s] Failed to get strategy '%s'", PLUGIN_NAME, value.c_str());
-    return false;
   } else {
     Dbg(pi_dbg_ctl, "   Setting strategy '%s'", value.c_str());
     TSHttpTxnNextHopStrategySet(txnp, stratptr);

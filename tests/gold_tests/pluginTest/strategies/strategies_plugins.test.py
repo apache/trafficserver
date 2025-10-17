@@ -105,6 +105,7 @@ ts.Disk.MakeConfigFile("regex_remap.config").AddLines(
         "/nh0 http://origin/path @strategy=nh1",
         '/nh1 http://origin/path @strategy=',
         "/nh2 http://origin/path @strategy=nh0",
+        "/nemo http://origin/path @strategy=nemo",
     ])
 ts.Disk.MakeConfigFile("strategies.lua").AddLines(
     [
@@ -116,6 +117,8 @@ ts.Disk.MakeConfigFile("strategies.lua").AddLines(
         '  ts.http.set_next_hop_strategy("")',
         ' elseif uri:find("nh2") then',
         '  ts.http.set_next_hop_strategy("nh0")',
+        ' elseif uri:find("nemo") then',
+        '  ts.http.set_next_hop_strategy("nemo")',
         ' end',
         ' ts.client_request.set_uri("path")',
         ' return 0',
@@ -238,9 +241,18 @@ ps.Streams.stdout.Content = Testers.ContainsExpression("nh0", "expected nh0")
 tr.StillRunningAfter = ts
 tr.StillRunnerAfter = dns
 
+# 6 try to switch to non existent strategy
+tr = Test.AddTestRun("nh0_hr switch to nemo (fail)")
+ps = tr.Processes.Default
+tr.MakeCurlCommand(curl_and_args + ' http://nh0_hr/path -H "Strategy: nemo"', ts=ts)
+ps.ReturnCode = 0
+ps.Streams.stdout.Content = Testers.ContainsExpression("nh0", "expected nh0")
+tr.StillRunningAfter = ts
+tr.StillRunnerAfter = dns
+
 # regex_remap
 
-# 6 switch strategies
+# 7 switch strategies
 tr = Test.AddTestRun("nh0_rr switch to nh1")
 ps = tr.Processes.Default
 tr.MakeCurlCommand(curl_and_args + ' http://nh0_rr/nh0', ts=ts)
@@ -249,7 +261,7 @@ ps.Streams.stdout.Content = Testers.ContainsExpression("nh1", "expected nh1")
 tr.StillRunningAfter = ts
 tr.StillRunnerAfter = dns
 
-# ' strategy to parent.config
+# 8 strategy to parent.config
 tr = Test.AddTestRun("nh1_rr switch to parent.config")
 ps = tr.Processes.Default
 tr.MakeCurlCommand(curl_and_args + ' http://nh1_rr/nh1', ts=ts)
@@ -258,7 +270,7 @@ ps.Streams.stdout.Content = Testers.ContainsExpression("nh2", "expected nh2")
 tr.StillRunningAfter = ts
 tr.StillRunnerAfter = dns
 
-# 8 parent.config strategy to strategy
+# 9 parent.config strategy to strategy
 tr = Test.AddTestRun("nh2_rr switch to nh0")
 ps = tr.Processes.Default
 tr.MakeCurlCommand(curl_and_args + ' http://nh2_rr/nh2', ts=ts)
@@ -267,9 +279,18 @@ ps.Streams.stdout.Content = Testers.ContainsExpression("nh0", "expected nh0")
 tr.StillRunningAfter = ts
 tr.StillRunnerAfter = dns
 
+# 10 switch strategies (fail)
+tr = Test.AddTestRun("nh0_rr switch to nemo")
+ps = tr.Processes.Default
+tr.MakeCurlCommand(curl_and_args + ' http://nh0_rr/nemo', ts=ts)
+ps.ReturnCode = 0
+ps.Streams.stdout.Content = Testers.ContainsExpression("nh0", "expected nh0")
+tr.StillRunningAfter = ts
+tr.StillRunnerAfter = dns
+
 # tslua
 
-# 9 switch strategies
+# 11 switch strategies
 tr = Test.AddTestRun("nh0_lua switch to nh1")
 ps = tr.Processes.Default
 tr.MakeCurlCommand(curl_and_args + ' http://nh0_lua/nh0', ts=ts)
@@ -278,7 +299,7 @@ ps.Streams.stdout.Content = Testers.ContainsExpression("nh1", "expected nh1")
 tr.StillRunningAfter = ts
 tr.StillRunnerAfter = dns
 
-# 10 strategy to parent.config
+# 12 strategy to parent.config
 tr = Test.AddTestRun("nh1_lua switch to parent.config")
 ps = tr.Processes.Default
 tr.MakeCurlCommand(curl_and_args + ' http://nh1_lua/nh1', ts=ts)
@@ -287,7 +308,7 @@ ps.Streams.stdout.Content = Testers.ContainsExpression("nh2", "expected nh2")
 tr.StillRunningAfter = ts
 tr.StillRunnerAfter = dns
 
-# 11 parent.config strategy to strategy
+# 13 parent.config strategy to strategy
 tr = Test.AddTestRun("nh2_lua switch to nh0")
 ps = tr.Processes.Default
 tr.MakeCurlCommand(curl_and_args + ' http://nh2_lua/nh2', ts=ts)
@@ -295,3 +316,15 @@ ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("nh0", "expected nh0")
 tr.StillRunningAfter = ts
 tr.StillRunnerAfter = dns
+
+# 14 switch strategies, fail
+tr = Test.AddTestRun("nh0_lua switch to nemo")
+ps = tr.Processes.Default
+tr.MakeCurlCommand(curl_and_args + ' http://nh0_lua/nemo', ts=ts)
+ps.ReturnCode = 0
+ps.Streams.stdout.Content = Testers.ContainsExpression("nh0", "expected nh0")
+tr.StillRunningAfter = ts
+tr.StillRunnerAfter = dns
+
+# Overriding the built in ERROR check since we expect some ERROR messages
+ts.Disk.diags_log.Content = Testers.ContainsExpression("ERROR", "Some tests are failure tests")
