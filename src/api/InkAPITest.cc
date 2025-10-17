@@ -3062,6 +3062,7 @@ struct SocketTest {
   bool            test_next_hop_ip_get;
   bool            test_next_hop_name_get;
   bool            test_next_hop_port_get;
+  bool            test_next_hop_strategy_get;
   bool            test_client_protocol_stack_get;
   bool            test_client_protocol_stack_contains;
 
@@ -3153,6 +3154,28 @@ checkHttpTxnClientProtocolStackContains(SocketTest *test, void *data)
     SDK_RPRINT(test->regtest, "TSHttpTxnClientProtocolStackContains", "TestCase2", TC_FAIL, "faulty udp report");
     test->test_client_protocol_stack_contains = false;
   }
+  return TS_EVENT_CONTINUE;
+}
+
+// This func is called by us from mytest_handler to check for TSHttpTxnNextStrategyGet
+static int
+checkHttpTxnNextHopStrategyGet(SocketTest *test, void *data)
+{
+  TSHttpTxn txnp = static_cast<TSHttpTxn>(data);
+
+  // this is an invalid pointer but the contents don't matter for this test.
+  void const *const exp = reinterpret_cast<void *>(0x01);
+
+  void const *const strategy = TSHttpTxnNextHopStrategyGet(txnp);
+  if (strategy == exp) {
+    test->test_next_hop_strategy_get = true;
+    SDK_RPRINT(test->regtest, "TSHttpTxnNextHopStrategyGet", "TestCase1", TC_PASS, "ok");
+  } else {
+    test->test_next_hop_strategy_get = false;
+    SDK_RPRINT(test->regtest, "TSHttpTxnNextHopStrategyGet", "TestCase1", TC_FAIL, "Value's Mismatch [expected '%jx', got '%jx'",
+               exp, strategy);
+  }
+
   return TS_EVENT_CONTINUE;
 }
 
@@ -3485,6 +3508,11 @@ mytest_handler(TSCont contp, TSEvent event, void *data)
       test->hook_mask |= 2;
     }
     TSHttpTxnCntlSet(static_cast<TSHttpTxn>(data), TS_HTTP_CNTL_SKIP_REMAPPING, true);
+
+    // Set the strategy pointer here
+    // this is an invalid pointer but the contents don't matter for this test.
+    TSHttpTxnNextHopStrategySet(static_cast<TSHttpTxn>(data), (void *)0x01);
+
     checkHttpTxnClientReqGet(test, data);
 
     TSHttpTxnReenable(static_cast<TSHttpTxn>(data), TS_EVENT_HTTP_CONTINUE);
@@ -3501,6 +3529,7 @@ mytest_handler(TSCont contp, TSEvent event, void *data)
 
     checkHttpTxnClientIPGet(test, data);
     checkHttpTxnServerIPGet(test, data);
+    checkHttpTxnNextHopStrategyGet(test, data);
 
     TSHttpTxnReenable(static_cast<TSHttpTxn>(data), TS_EVENT_HTTP_CONTINUE);
     test->reenable_mask |= 8;
@@ -3591,7 +3620,7 @@ mytest_handler(TSCont contp, TSEvent event, void *data)
           (test->test_client_remote_port_get != true) || (test->test_client_req_get != true) ||
           (test->test_client_resp_get != true) || (test->test_server_ip_get != true) || (test->test_server_req_get != true) ||
           (test->test_server_resp_get != true) || (test->test_next_hop_ip_get != true) || (test->test_next_hop_name_get != true) ||
-          (test->test_next_hop_port_get != true)) {
+          (test->test_next_hop_port_get != true) || (test->test_next_hop_strategy_get != true)) {
         *(test->pstatus) = REGRESSION_TEST_FAILED;
       }
       // transaction is over. clean up.
@@ -3635,6 +3664,7 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_HttpHookAdd)(RegressionTest *test, int /* atyp
   socktest->test_next_hop_ip_get          = false;
   socktest->test_next_hop_name_get        = false;
   socktest->test_next_hop_port_get        = false;
+  socktest->test_next_hop_strategy_get    = false;
   socktest->magic                         = MAGIC_ALIVE;
   TSContDataSet(cont, socktest);
 

@@ -118,6 +118,8 @@ Statement::parse_next_hop_qualifier(const std::string &q) const
     qual = NEXT_HOP_HOST;
   } else if (q == "PORT") {
     qual = NEXT_HOP_PORT;
+  } else if (q == "STRATEGY") {
+    qual = NEXT_HOP_STRATEGY;
   } else {
     TSError("[%s] Invalid NextHop() qualifier: %s", PLUGIN_NAME, q.c_str());
   }

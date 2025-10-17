@@ -166,14 +166,11 @@ RemapProcessor::finish_remap(HttpTransact::State *s, UrlRewrite *table)
   referer_info *ri;
 
   map = s->url_map.getMapping();
-  if (!map) {
+  if (nullptr == map) {
+    Dbg(dbg_ctl_url_rewrite, "Could not find corresponding url_mapping for this transaction");
     return false;
   }
 
-  // if there is a configured next hop strategy, make it available in the state.
-  if (map->strategy) {
-    s->next_hop_strategy = map->strategy;
-  }
   // Do fast ACL filtering (it is safe to check map here)
   table->PerformACLFiltering(s, map);
 
@@ -310,12 +307,18 @@ RemapProcessor::perform_remap(Continuation *cont, HttpTransact::State *s)
   url_mapping   *map            = s->url_map.getMapping();
   host_hdr_info *hh_info        = &(s->hh_info);
 
-  if (!map) {
+  if (nullptr == map) {
     Error("Could not find corresponding url_mapping for this transaction %p", s);
     Dbg(dbg_ctl_url_rewrite, "Could not find corresponding url_mapping for this transaction");
     ink_assert(!"this should never happen -- call setup_for_remap first");
     cont->handleEvent(EVENT_REMAP_ERROR, nullptr);
     return ACTION_RESULT_DONE;
+  }
+
+  // if there is a configured next hop strategy, make it available in the state.
+  if (nullptr != map->strategy) {
+    Dbg(dbg_ctl_url_rewrite, "Setting next-hop strategy to %s", map->strategy->strategy_name.c_str());
+    s->next_hop_strategy = map->strategy;
   }
 
   RemapPlugins plugins(s, request_url, request_header, hh_info);
