@@ -106,6 +106,9 @@ public:
     if (_regex) {
       delete _regex;
     }
+    if (_acl) {
+      delete _acl;
+    }
   }
   const std::string &
   get_regex() const
@@ -151,6 +154,15 @@ class CountryAcl : public Acl
 {
 public:
   CountryAcl() { memset(_iso_country_codes, 0, sizeof(_iso_country_codes)); }
+  ~CountryAcl()
+  {
+    RegexAcl *cur = _regexes;
+    while (cur) {
+      RegexAcl *next = cur->next();
+      delete cur;
+      cur = next;
+    }
+  }
   void read_regex(const char *fn, int &tokens) override;
   int  process_args(int argc, char *argv[]) override;
   bool eval(TSRemapRequestInfo *rri, TSHttpTxn txnp) const override;
