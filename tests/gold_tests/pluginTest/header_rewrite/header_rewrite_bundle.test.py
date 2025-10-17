@@ -86,6 +86,10 @@ remap_rules = [
         "from": f"{url_base}_9/",
         "to": f"{origin_base}_9/",
         "plugins": [("header_rewrite", [f"{mgr.run_dir}/regex_tests.conf"])]
+    }, {
+        "from": f"{url_base}_10/",
+        "to": f"{origin_base}_10/",
+        "plugins": [("header_rewrite", [f"{mgr.run_dir}/nested_ifs.conf"])]
     }
 ]
 
@@ -174,6 +178,11 @@ origin_rules = [
     }, def_resp),
     ({
         "headers": "GET /to_9/ HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
+        "timestamp": "1469733493.993",
+        "body": ""
+    }, def_resp),
+    ({
+        "headers": "GET /to_10/ HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
         "timestamp": "1469733493.993",
         "body": ""
     }, def_resp),
@@ -288,6 +297,36 @@ test_runs = [
         "desc": "Regex test - X-Test1: none (expect X-Match-2 only)",
         "curl": f'{curl_proxy} "http://{url_base}_9/" -H "X-Test1: none"',
         "gold": "gold/regex_match2_only.gold",
+    },
+    {
+        "desc": "Nested if/elif/else - X-Foo=foo + X-Bar=bar path",
+        "curl": f'{curl_proxy} "http://{url_base}_10/" -H "X-Foo: foo" -H "X-Bar: bar"',
+        "gold": "gold/nested_ifs_foo_bar.gold",
+    },
+    {
+        "desc": "Nested if/elif/else - X-Foo=foo + X-Fie=fie path",
+        "curl": f'{curl_proxy} "http://{url_base}_10/" -H "X-Foo: foo" -H "X-Fie: fie"',
+        "gold": "gold/nested_ifs_foo_fie.gold",
+    },
+    {
+        "desc": "Nested if/elif/else - X-Foo=maybe path",
+        "curl": f'{curl_proxy} "http://{url_base}_10/" -H "X-Foo: maybe"',
+        "gold": "gold/nested_ifs_maybe.gold",
+    },
+    {
+        "desc": "Nested if/elif/else - X-Foo=definitely path",
+        "curl": f'{curl_proxy} "http://{url_base}_10/" -H "X-Foo: definitely"',
+        "gold": "gold/nested_ifs_definitely.gold",
+    },
+    {
+        "desc": "Nested if/elif/else - else path (no X-Foo)",
+        "curl": f'{curl_proxy} "http://{url_base}_10/"',
+        "gold": "gold/nested_ifs_else.gold",
+    },
+    {
+        "desc": "Nested if/elif/else - else path with X-Fie (tests second if)",
+        "curl": f'{curl_proxy} "http://{url_base}_10/" -H "X-Fie: fie"',
+        "gold": "gold/nested_ifs_else_fie.gold",
     },
 ]
 

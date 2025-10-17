@@ -3,3 +3,5 @@
 
 # QSA (Query String Append) is a reverse-only test
 qsa.input: u4wrh
+# HTTP-CNTL valid bools can not reverse back to the original input
+http_cntl_valid_bools.input: hrw4u

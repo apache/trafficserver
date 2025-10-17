@@ -90,6 +90,7 @@ operator_factory(const std::string &op)
   } else if (op == "set-effective-address") {
     o = new OperatorSetEffectiveAddress();
   } else {
+    // Note that we don't support the OperatorIf() pseudo-operator here!
     TSError("[%s] Unknown operator: %s", PLUGIN_NAME, op.c_str());
     return nullptr;
   }

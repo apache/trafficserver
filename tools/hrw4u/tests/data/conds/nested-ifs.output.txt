@@ -1,0 +1,27 @@
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{CLIENT-HEADER:X-Foo} ="bar"
+    set-header X-Hello "there"
+    if
+        cond %{CLIENT-HEADER:X-Fie} ="fie"
+            set-header X-first "1"
+            if
+                cond %{STATE-FLAG:0} [OR]
+                cond %{GROUP}
+                    cond %{STATE-FLAG:1} [AND]
+                    cond %{STATE-FLAG:2}
+                cond %{GROUP:END}
+                    set-header X-Parsed "more"
+                else
+                    set-header X-Parsed "yes"
+            endif
+        elif
+            cond %{CLIENT-HEADER:X-Fum} ="bar"
+                set-header X-Parsed "no"
+        else
+            set-header X-More "yes"
+    endif
+elif
+    cond %{CLIENT-HEADER:X-Foo} ="foo" [NOCASE,PRE]
+        set-header X-Nocase "foo"
+else
+    set-header X-Something "no-bar"
