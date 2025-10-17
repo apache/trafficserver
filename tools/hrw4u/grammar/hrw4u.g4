@@ -69,6 +69,7 @@ LBRACKET      : '[';
 RBRACKET      : ']';
 EQUALS        : '==';
 EQUAL         : '=';
+PLUSEQUAL     : '+=';
 NEQ           : '!=';
 GT            : '>';
 LT            : '<';
@@ -127,6 +128,7 @@ statement
     : BREAK SEMICOLON
     | functionCall SEMICOLON
     | lhs=IDENT EQUAL value SEMICOLON
+    | lhs=IDENT PLUSEQUAL value SEMICOLON
     | op=IDENT SEMICOLON
     ;
 

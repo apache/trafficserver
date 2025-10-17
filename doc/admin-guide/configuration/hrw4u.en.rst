@@ -231,6 +231,7 @@ The preference is the assignment style when appropriate.
 ============================= ================================= ================================================
 Header Rewrite                HRW4U                             Description
 ============================= ================================= ================================================
+add-header X-bar foo          inbound.{req,resp}.x-Bar += "bar" Add the header to (possibly) an existing header
 counter my_stat               counter("my_stat")                Increment internal counter
 rm-client-header X-Foo        inbound.req.X-Foo = ""            Remove a client request header
 rm-cookie foo                 {in,out}bound.cookie.foo = ""     Remove the cookie named foo
@@ -253,6 +254,28 @@ set-status 404                http.status = 404                 Set the response
 set-status-reason "No"        http.status.reason = "no"         Set the response status reason
 set-http-cntl                 http.cntl.<C> = bool              Turn on/off <:ref:`C<admin-plugins-header-rewrite-set-http-cntl>`> controllers
 ============================= ================================= ================================================
+
+Adding Headers with the += Operator
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+HRW4U provides a special ``+=`` operator for adding headers::
+
+    REMAP {
+        # Using += to add a header (maps to add-header)
+        inbound.req.X-Custom-Header += "new-value";
+    }
+
+The ``+=`` operator only works with the following pre-defined symbols:
+
+- ``inbound.req.<header>`` - Client request headers
+- ``inbound.resp.<header>`` - Origin response headers
+- ``outbound.req.<header>`` - Outbound request headers (context-restricted)
+- ``outbound.resp.<header>`` - Outbound response headers (context-restricted)
+
+.. note::
+    The ``+=`` operator differs from ``=`` in that ``=`` will replace/set the header value (mapping to
+    ``set-header``), while ``+=`` will add a new instance of the header (mapping to ``add-header``).
+    This is important for headers that can have multiple values, such as ``Set-Cookie`` or custom headers.
 
 In addition to those operators above, HRW4U supports the following special operators without arguments:
 

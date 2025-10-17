@@ -40,20 +40,22 @@ class TableGenerator:
         """Extract clean tag name from %{TAG:payload} format."""
         return tag.strip().removeprefix('%{').removesuffix('}').split(':')[0]
 
-    def generate_reverse_condition_map(self, condition_map: tuple[tuple[str, tuple], ...]) -> dict[str, str]:
+    def generate_reverse_condition_map(self, condition_map: tuple[tuple[str, Any], ...]) -> dict[str, str]:
         """Generate reverse condition mapping from forward condition map."""
         reverse_map = {}
 
-        for ident_key, (tag, _, _, _, _, _) in condition_map:
+        for ident_key, params in condition_map:
             if not ident_key.endswith('.'):
-                clean_tag = self._clean_tag(tag)
-                reverse_map[clean_tag] = ident_key
+                tag = params.target if params else None
+                if tag:
+                    clean_tag = self._clean_tag(tag)
+                    reverse_map[clean_tag] = ident_key
 
         return reverse_map
 
-    def generate_reverse_function_map(self, function_map: tuple[tuple[str, tuple], ...]) -> dict[str, str]:
+    def generate_reverse_function_map(self, function_map: tuple[tuple[str, Any], ...]) -> dict[str, str]:
         """Generate reverse function mapping from forward function map."""
-        return {tag: func_name for func_name, (tag, _) in function_map}
+        return {params.target: func_name for func_name, params in function_map}
 
     @cache
     def generate_section_hook_mapping(self) -> dict[str, str]:
@@ -70,7 +72,9 @@ class TableGenerator:
         from hrw4u.tables import CONDITION_MAP
 
         ip_mapping = {}
-        for condition_key, (tag, *_, reverse_info) in CONDITION_MAP.items():
+        for condition_key, params in CONDITION_MAP.items():
+            tag = params.target if params else None
+            reverse_info = params.rev if params else None
             if reverse_info and reverse_info.get("reverse_tag") == "IP":
                 payload = reverse_info.get("reverse_payload")
                 if payload:
@@ -162,7 +166,7 @@ def get_reverse_condition_map(condition_map: dict[str, tuple]) -> dict[str, str]
     return _table_generator.generate_reverse_condition_map(tuple(condition_map.items()))
 
 
-def get_reverse_function_map(function_map: dict[str, tuple]) -> dict[str, str]:
+def get_reverse_function_map(function_map: dict[str, Any]) -> dict[str, str]:
     """Get reverse function mapping."""
     return _table_generator.generate_reverse_function_map(tuple(function_map.items()))
 

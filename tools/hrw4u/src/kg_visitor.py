@@ -151,48 +151,55 @@ class KnowledgeGraphVisitor(hrw4uVisitor, BaseHRWVisitor):
                     "description": f"Apache Traffic Server hook for {hrw4u_section}"
                 }, f"ats_hook:{ats_hook}")
 
-        for op_pattern, (command, validator, uppercase, restricted_sections) in OPERATOR_MAP.items():
+        for op_pattern, params in OPERATOR_MAP.items():
+            validator = params.validate if params else None
+            restricted_sections = params.sections if params else None
+            command = params.target if params else None
             self._add_node(
                 "SemanticOperator", {
                     "pattern": op_pattern,
                     "hrw_operator": str(command) if isinstance(command, str) else str(command),
-                    "validates_uppercase": uppercase,
+                    "validates_uppercase": params.upper if params else False,
                     "has_validator": validator is not None,
                     "restricted_sections": [s.value for s in restricted_sections] if restricted_sections else None,
                     "description": f"Operator pattern {op_pattern} -> {command}"
                 }, f"sem_op:{op_pattern}")
 
-        for cond_pattern, (tag, validator, uppercase, restricted, default_expr, reverse_info) in CONDITION_MAP.items():
+        for cond_pattern, params in CONDITION_MAP.items():
+            validator = params.validate if params else None
+            restricted = params.sections if params else None
+            reverse_info = params.rev if params else None
+            tag = params.target if params else None
             self._add_node(
                 "SemanticCondition", {
                     "pattern": cond_pattern,
                     "hrw_condition": tag,
-                    "validates_uppercase": uppercase,
+                    "validates_uppercase": params.upper if params else False,
                     "has_validator": validator is not None,
                     "restricted_sections": [s.value for s in restricted] if restricted else None,
-                    "has_default_expression": default_expr,
+                    "has_default_expression": params.prefix if params else False,
                     "reverse_mapping": reverse_info,
                     "description": f"Condition pattern {cond_pattern} -> {tag}"
                 }, f"sem_cond:{cond_pattern}")
 
-        for func_name, (tag, validator) in FUNCTION_MAP.items():
+        for func_name, params in FUNCTION_MAP.items():
             self._add_node(
                 "SemanticFunction", {
                     "name": func_name,
-                    "hrw_condition": tag,
-                    "has_validator": validator is not None,
+                    "hrw_condition": params.target,
+                    "has_validator": params.validate is not None,
                     "type": "condition_function",
-                    "description": f"Function {func_name} -> %{{{tag}}}"
+                    "description": f"Function {func_name} -> %{{{params.target}}}"
                 }, f"sem_func:{func_name}")
 
-        for func_name, (command, validator) in STATEMENT_FUNCTION_MAP.items():
+        for func_name, params in STATEMENT_FUNCTION_MAP.items():
             self._add_node(
                 "SemanticFunction", {
                     "name": func_name,
-                    "hrw_operator": command,
-                    "has_validator": validator is not None,
+                    "hrw_operator": params.target,
+                    "has_validator": params.validate is not None,
                     "type": "statement_function",
-                    "description": f"Statement function {func_name} -> {command}"
+                    "description": f"Statement function {func_name} -> {params.target}"
                 }, f"sem_stmt_func:{func_name}")
 
         for suffix_group in SuffixGroup:
