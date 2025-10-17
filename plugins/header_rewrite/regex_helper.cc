@@ -19,7 +19,6 @@
 #include "lulu.h"
 #include "ts/ts.h"
 #include "tsutil/Regex.h"
-#include <pcre.h>
 
 bool
 regexHelper::setRegexMatch(const std::string &s, bool nocase)
@@ -29,9 +28,7 @@ regexHelper::setRegexMatch(const std::string &s, bool nocase)
 
   regexString = s;
 
-  bool ok = regex.compile(regexString, error, errorOffset, nocase ? PCRE_CASELESS : 0);
-
-  if (!ok) {
+  if (!regex.compile(regexString, error, errorOffset, nocase ? RE_CASE_INSENSITIVE : 0)) {
     TSError("[%s] Invalid regex: failed to precompile: %s (%s at %d)", PLUGIN_NAME, s.c_str(), error.c_str(), errorOffset);
     return false;
   }
