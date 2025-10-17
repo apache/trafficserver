@@ -30,6 +30,7 @@ regexHelper::setRegexMatch(const std::string &s, bool nocase)
 
   if (!regex.compile(regexString, error, errorOffset, nocase ? static_cast<int>(RE_CASE_INSENSITIVE) : 0)) {
     TSError("[%s] Invalid regex: failed to precompile: %s (%s at %d)", PLUGIN_NAME, s.c_str(), error.c_str(), errorOffset);
+    Dbg(pi_dbg_ctl, "Invalid regex: failed to precompile: %s (%s at %d)", s.c_str(), error.c_str(), errorOffset);
     return false;
   }
   return true;
