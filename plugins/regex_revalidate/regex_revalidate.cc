@@ -303,10 +303,11 @@ load_state(plugin_state_t *pstate, invalidate_t **ilist)
       invalidate_t *const inv = (invalidate_t *)TSmalloc(sizeof(invalidate_t));
       init_invalidate_t(inv);
 
-      inv->regex_text = TSstrndup(matches[1].data(), matches[1].length());
+      auto const regv = matches[1];
+      inv->regex_text = TSstrndup(regv.data(), regv.length());
       Dbg(dbg_ctl, "regex_tex: %s", inv->regex_text);
 
-      // atoi will termite when the whitespace is reached
+      // atoi will terminate when whitespace/eol is reached
       inv->epoch  = atoi(matches[2].data());
       inv->expiry = atoi(matches[3].data());
 
@@ -316,8 +317,7 @@ load_state(plugin_state_t *pstate, invalidate_t **ilist)
         continue;
       }
 
-      std::string_view const type = matches[4];
-
+      auto const type = matches[4];
       if (0 == strncasecmp(type.data(), RESULT_STALE, type.length())) {
         Dbg(dbg_ctl, "state: regex line set to result type %s: '%s'", RESULT_STALE, inv->regex_text);
       } else if (0 == strncasecmp(type.data(), RESULT_MISS, type.length())) {
@@ -414,7 +414,7 @@ load_config(plugin_state_t *pstate, invalidate_t **ilist)
         i = (invalidate_t *)TSmalloc(sizeof(invalidate_t));
         init_invalidate_t(i);
 
-        std::string_view const regv = matches[1];
+        auto const regv = matches[1];
 
         i->regex = new Regex;
         std::string error;
@@ -430,11 +430,11 @@ load_config(plugin_state_t *pstate, invalidate_t **ilist)
         i->regex_text = TSstrndup(regv.data(), regv.length());
         Dbg(dbg_ctl, "regex_tex: %s", i->regex_text);
         i->epoch = now;
-        // atoi will terminate where whitespace/eol is reached
+        // atoi will terminate when whitespace/eol is reached
         i->expiry = atoi(matches[2].data());
 
         if (5 == rc) {
-          std::string_view const type = matches[4];
+          auto const type = matches[4];
           if (0 == strncasecmp(type.data(), RESULT_MISS, type.length())) {
             Dbg(dbg_ctl, "Regex line set to result type %s: '%s'", RESULT_MISS, i->regex_text);
             i->new_result = TS_CACHE_LOOKUP_MISS;
@@ -704,10 +704,9 @@ main_handler(TSCont cont, TSEvent event, void *edata)
               url = TSHttpTxnEffectiveUrlStringGet(txn, &url_len);
               Dbg(dbg_ctl, "Effective url is is '%.*s'", url_len, url);
             }
-            std::string_view const urlv(url, url_len);
-
             Dbg(dbg_ctl, "checking: %s, %s", url, iptr->regex_text);
 
+            std::string_view const urlv(url, url_len);
             if (iptr->regex->exec(urlv)) {
               Dbg(dbg_ctl, "Forced revalidate, Match with rule regex: '%s' epoch: %jd, expiry: %jd, result: '%s'", iptr->regex_text,
                   intmax_t(iptr->epoch), intmax_t(iptr->expiry), strForResult(iptr->new_result));
