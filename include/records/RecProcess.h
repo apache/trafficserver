@@ -62,6 +62,11 @@ int RecRawStatSyncIntMsecsToFloatSeconds(const char *name, RecDataT data_type, R
 int RecRegisterRawStatSyncCb(const char *name, RecRawStatSyncCb sync_cb, RecRawStatBlock *rsb, int id);
 int RecRawStatUpdateSum(RecRawStatBlock *rsb, int id);
 
+int RecExecRawStatSyncCbs();
+
+using RecCallbackFunction = std::function<void()>;
+void RecRegNewSyncStatSync(RecCallbackFunction callback);
+
 //-------------------------------------------------------------------------
 // RawStat Setting/Getting
 //-------------------------------------------------------------------------
