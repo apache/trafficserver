@@ -28,7 +28,7 @@ regexHelper::setRegexMatch(const std::string &s, bool nocase)
 
   regexString = s;
 
-  if (!regex.compile(regexString, error, errorOffset, nocase ? RE_CASE_INSENSITIVE : 0)) {
+  if (!regex.compile(regexString, error, errorOffset, nocase ? static_cast<int>(RE_CASE_INSENSITIVE) : 0)) {
     TSError("[%s] Invalid regex: failed to precompile: %s (%s at %d)", PLUGIN_NAME, s.c_str(), error.c_str(), errorOffset);
     return false;
   }
