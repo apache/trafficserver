@@ -23,6 +23,7 @@
 
 #include "RegressionSM.h"
 #include "iocore/eventsystem/EventProcessor.h"
+#include "iocore/eventsystem/EThread.h"
 
 #define REGRESSION_SM_RETRY (100 * HRTIME_MSECOND)
 
