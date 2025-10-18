@@ -26,9 +26,9 @@
 
 
  ***************************************************************************/
+#include "iocore/eventsystem/Freer.h"
 #include "tscore/ink_platform.h"
 #include "tscore/CryptoHash.h"
-#include "../../iocore/eventsystem/P_EventSystem.h"
 #include "proxy/logging/LogUtils.h"
 #include "proxy/logging/LogField.h"
 #include "proxy/logging/LogObject.h"

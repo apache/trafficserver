@@ -228,9 +228,18 @@ public:
 
   // Private
 
-  Event();
+  Event() : in_the_prot_queue(false), in_the_priority_queue(false), immediate(false), globally_allocated(true), in_heap(false) {}
 
-  Event *init(Continuation *c, ink_hrtime atimeout_at = 0, ink_hrtime aperiod = 0);
+  Event *
+  init(Continuation *c, ink_hrtime atimeout_at = 0, ink_hrtime aperiod = 0)
+  {
+    continuation = c;
+    timeout_at   = atimeout_at;
+    period       = aperiod;
+    immediate    = !period && !atimeout_at;
+    cancelled    = false;
+    return this;
+  }
 
 #ifdef ENABLE_TIME_TRACE
   ink_hrtime start_time;
@@ -281,6 +290,13 @@ public:
 // Event Allocator
 //
 extern ClassAllocator<Event> eventAllocator;
+
+inline void
+Event::free()
+{
+  mutex = nullptr;
+  eventAllocator.free(this);
+}
 
 #define EVENT_ALLOC(_a, _t) THREAD_ALLOC(_a, _t)
 #define EVENT_FREE(_p, _a, _t) \

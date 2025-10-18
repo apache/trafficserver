@@ -28,8 +28,8 @@
 
 
 **************************************************************************/
-#include "P_EventSystem.h"
-#include "tscore/Diags.h"
+#include "iocore/eventsystem/Lock.h"
+#include "tsutil/DbgCtl.h"
 
 ClassAllocator<ProxyMutex> mutexAllocator("mutexAllocator");
 

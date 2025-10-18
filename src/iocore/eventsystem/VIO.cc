@@ -21,29 +21,39 @@
   limitations under the License.
  */
 
-/****************************************************************************
+#include "iocore/eventsystem/VIO.h"
+#include "iocore/eventsystem/VConnection.h"
 
-  Event Subsystem
+void
+VIO::set_continuation(Continuation *acont)
+{
+  if (vc_server) {
+    vc_server->set_continuation(this, acont);
+  }
+  if (acont) {
+    mutex = acont->mutex;
+    cont  = acont;
+  } else {
+    mutex = nullptr;
+    cont  = nullptr;
+  }
+  return;
+}
 
+void
+VIO::reenable()
+{
+  this->_disabled = false;
+  if (vc_server) {
+    vc_server->reenable(this);
+  }
+}
 
-
-**************************************************************************/
-#pragma once
-#define _P_EventSystem_H
-
-#include "tscore/ink_platform.h"
-
-#include "iocore/eventsystem/EventSystem.h"
-#include "iocore/eventsystem/Freer.h"
-
-#include "P_Thread.h"
-#include "P_VIO.h"
-#include "P_IOBuffer.h"
-#include "P_VConnection.h"
-#include "P_UnixEvent.h"
-#include "P_UnixEThread.h"
-#include "P_ProtectedQueue.h"
-#include "P_UnixEventProcessor.h"
-
-static constexpr ts::ModuleVersion EVENT_SYSTEM_MODULE_INTERNAL_VERSION{EVENT_SYSTEM_MODULE_PUBLIC_VERSION,
-                                                                        ts::ModuleVersion::PRIVATE};
+void
+VIO::reenable_re()
+{
+  this->_disabled = false;
+  if (vc_server) {
+    vc_server->reenable_re(this);
+  }
+}

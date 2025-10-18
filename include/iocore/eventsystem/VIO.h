@@ -56,13 +56,17 @@ class ProxyMutex;
 class VIO
 {
 public:
-  explicit VIO(int aop);
-  VIO();
+  explicit VIO(int aop) : op(aop), buffer(), mutex(nullptr) {}
+  VIO() : buffer(), mutex(nullptr) {}
   ~VIO() {}
 
   /** Interface for the VConnection that owns this handle. */
-  Continuation *get_continuation() const;
-  void          set_continuation(Continuation *cont);
+  Continuation *
+  get_continuation() const
+  {
+    return cont;
+  }
+  void set_continuation(Continuation *cont);
 
   /**
     Set nbytes to be what is current available.
@@ -70,7 +74,15 @@ public:
     Interface to set nbytes to be ndone + buffer.reader()->read_avail()
     if a reader is set.
   */
-  void done();
+  void
+  done()
+  {
+    if (buffer.reader()) {
+      nbytes = ndone + buffer.reader()->read_avail();
+    } else {
+      nbytes = ndone;
+    }
+  }
 
   /**
     Determine the number of bytes remaining.
@@ -81,15 +93,36 @@ public:
     @return The number of bytes to be processed by the operation.
 
   */
-  int64_t ntodo() const;
+  int64_t
+  ntodo() const
+  {
+    return nbytes - ndone;
+  }
 
   /////////////////////
   // buffer settings //
   /////////////////////
-  void            set_writer(MIOBuffer *writer);
-  void            set_reader(IOBufferReader *reader);
-  MIOBuffer      *get_writer() const;
-  IOBufferReader *get_reader() const;
+  void
+  set_writer(MIOBuffer *writer)
+  {
+    buffer.writer_for(writer);
+  }
+  void
+  set_reader(IOBufferReader *reader)
+  {
+    buffer.reader_for(reader);
+  }
+  MIOBuffer *
+  get_writer() const
+  {
+    return buffer.writer();
+  }
+
+  IOBufferReader *
+  get_reader() const
+  {
+    return (buffer.reader());
+  }
 
   /**
     Reenable the IO operation.
@@ -125,8 +158,16 @@ public:
   */
   void reenable_re();
 
-  void disable();
-  bool is_disabled() const;
+  void
+  disable()
+  {
+    this->_disabled = true;
+  }
+  bool
+  is_disabled() const
+  {
+    return this->_disabled;
+  }
 
   enum {
     NONE = 0,

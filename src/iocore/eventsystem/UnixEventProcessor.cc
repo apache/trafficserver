@@ -27,6 +27,8 @@
 #include "records/RecCore.h"
 #include "records/RecProcess.h"
 #include "tscore/ink_align.h"
+#include "tscore/ink_atomic.h"
+#include "tscore/TSSystemState.h"
 #include <sched.h>
 #if TS_USE_HWLOC
 #if __has_include(<alloca.h>)
@@ -614,4 +616,217 @@ thread_started(EThread *t)
       break;
     }
   }
+}
+
+off_t
+EventProcessor::allocate(int size)
+{
+  static off_t start = INK_ALIGN(offsetof(EThread, thread_private), 16);
+  static off_t loss  = start - offsetof(EThread, thread_private);
+  size               = INK_ALIGN(size, 16); // 16 byte alignment
+
+  int old;
+  do {
+    old = thread_data_used;
+    if (old + loss + size > PER_THREAD_DATA) {
+      return -1;
+    }
+  } while (!ink_atomic_cas(&thread_data_used, old, old + size));
+
+  return (off_t)(old + start);
+}
+
+EThread *
+EventProcessor::assign_thread(EventType etype)
+{
+  int                    next;
+  ThreadGroupDescriptor *tg = &thread_group[etype];
+
+  ink_assert(etype < MAX_EVENT_TYPES);
+  if (tg->_count > 1) {
+    next = ++tg->_next_round_robin % tg->_count;
+  } else {
+    next = 0;
+  }
+  return tg->_thread[next];
+}
+
+// If thread_holding is the correct type, return it.
+//
+// Otherwise check if there is already an affinity associated with the continuation,
+// return it if the type is the same, return the next available thread of "etype" if
+// the type is different.
+//
+// Only assign new affinity when there is currently none.
+EThread *
+EventProcessor::assign_affinity_by_type(Continuation *cont, EventType etype)
+{
+  EThread *ethread = cont->mutex->thread_holding;
+  if (!ethread->is_event_type(etype)) {
+    ethread = cont->getThreadAffinity();
+    if (ethread == nullptr || !ethread->is_event_type(etype)) {
+      ethread = assign_thread(etype);
+    }
+  }
+
+  if (cont->getThreadAffinity() == nullptr) {
+    cont->setThreadAffinity(ethread);
+  }
+
+  return ethread;
+}
+
+Event *
+EventProcessor::schedule(Event *e, EventType etype)
+{
+  ink_assert(etype < MAX_EVENT_TYPES);
+
+  if (TSSystemState::is_event_system_shut_down()) {
+    return nullptr;
+  }
+
+  EThread *affinity_thread = e->continuation->getThreadAffinity();
+  EThread *curr_thread     = this_ethread();
+  if (affinity_thread != nullptr && affinity_thread->is_event_type(etype)) {
+    e->ethread = affinity_thread;
+  } else {
+    // Is the current thread eligible?
+    if (curr_thread != nullptr && curr_thread->is_event_type(etype)) {
+      e->ethread = curr_thread;
+    } else {
+      e->ethread = assign_thread(etype);
+    }
+    if (affinity_thread == nullptr) {
+      e->continuation->setThreadAffinity(e->ethread);
+    }
+  }
+
+  if (e->continuation->mutex) {
+    e->mutex = e->continuation->mutex;
+  }
+
+  if (curr_thread != nullptr && e->ethread == curr_thread) {
+    e->ethread->EventQueueExternal.enqueue_local(e);
+  } else {
+    e->ethread->EventQueueExternal.enqueue(e);
+  }
+
+  return e;
+}
+
+Event *
+EventProcessor::schedule_imm(Continuation *cont, EventType et, int callback_event, void *cookie)
+{
+  Event *e = eventAllocator.alloc();
+
+  ink_assert(et < MAX_EVENT_TYPES);
+#ifdef ENABLE_TIME_TRACE
+  e->start_time = ink_get_hrtime();
+#endif
+
+#ifdef ENABLE_EVENT_TRACKER
+  e->set_location();
+#endif
+
+  e->callback_event = callback_event;
+  e->cookie         = cookie;
+  return schedule(e->init(cont, 0, 0), et);
+}
+
+Event *
+EventProcessor::schedule_at(Continuation *cont, ink_hrtime t, EventType et, int callback_event, void *cookie)
+{
+  Event *e = eventAllocator.alloc();
+
+  ink_assert(t > 0);
+  ink_assert(et < MAX_EVENT_TYPES);
+
+#ifdef ENABLE_EVENT_TRACKER
+  e->set_location();
+#endif
+
+  e->callback_event = callback_event;
+  e->cookie         = cookie;
+  return schedule(e->init(cont, t, 0), et);
+}
+
+Event *
+EventProcessor::schedule_in(Continuation *cont, ink_hrtime t, EventType et, int callback_event, void *cookie)
+{
+  Event *e = eventAllocator.alloc();
+
+  ink_assert(et < MAX_EVENT_TYPES);
+
+#ifdef ENABLE_EVENT_TRACKER
+  e->set_location();
+#endif
+
+  e->callback_event = callback_event;
+  e->cookie         = cookie;
+  return schedule(e->init(cont, ink_get_hrtime() + t, 0), et);
+}
+
+Event *
+EventProcessor::schedule_every(Continuation *cont, ink_hrtime t, EventType et, int callback_event, void *cookie)
+{
+  Event *e = eventAllocator.alloc();
+
+  ink_assert(t != 0);
+  ink_assert(et < MAX_EVENT_TYPES);
+
+#ifdef ENABLE_EVENT_TRACKER
+  e->set_location();
+#endif
+
+  e->callback_event = callback_event;
+  e->cookie         = cookie;
+  if (t < 0) {
+    return schedule(e->init(cont, t, t), et);
+  } else {
+    return schedule(e->init(cont, ink_get_hrtime() + t, t), et);
+  }
+}
+
+std::vector<TSAction>
+EventProcessor::schedule_entire(Continuation *cont, ink_hrtime t, ink_hrtime p, EventType et, int callback_event, void *cookie)
+{
+  ThreadGroupDescriptor *tg          = &thread_group[et];
+  EThread               *curr_thread = this_ethread();
+
+  std::vector<TSAction> actions;
+
+  for (int i = 0; i < tg->_count; i++) {
+    Event *e = eventAllocator.alloc();
+
+    e->ethread        = tg->_thread[i];
+    e->callback_event = callback_event;
+    e->cookie         = cookie;
+
+    if (t == 0 && p == 0) {
+      e->init(cont, 0, 0);
+    } else if (t != 0 && p == 0) {
+      e->init(cont, ink_get_hrtime() + t, 0);
+    } else if (t == 0 && p != 0) {
+      if (p < 0) {
+        e->init(cont, p, p);
+      } else {
+        e->init(cont, ink_get_hrtime() + p, p);
+      }
+    } else {
+      ink_assert(!"not reached");
+    }
+
+    e->mutex = new_ProxyMutex();
+
+    if (curr_thread != nullptr && e->ethread == curr_thread) {
+      e->ethread->EventQueueExternal.enqueue_local(e);
+    } else {
+      e->ethread->EventQueueExternal.enqueue(e);
+    }
+
+    /* This is a hack. Should be handled in ink_types */
+    actions.push_back((TSAction)((uintptr_t) reinterpret_cast<TSAction>(e) | 0x1));
+  }
+
+  return actions;
 }
