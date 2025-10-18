@@ -31,18 +31,17 @@
 #include "../iocore/eventsystem/P_VConnection.h"
 #include "iocore/utils/OneWayTunnel.h"
 #include "proxy/http/HttpSessionAccept.h"
+#include "tsutil/Metrics.h"
 
 static DbgCtl dbg_ctl_SocksProxy("SocksProxy");
 
-enum {
-  socksproxy_http_connections_stat,
-  socksproxy_tunneled_connections_stat,
-
-  socksproxy_stat_count
-};
-static RecRawStatBlock *socksproxy_stat_block;
-
-#define SOCKSPROXY_INC_STAT(x) RecIncrRawStat(socksproxy_stat_block, mutex->thread_holding, x)
+namespace
+{
+struct {
+  ts::Metrics::Counter::AtomicType *http_connections;
+  ts::Metrics::Counter::AtomicType *tunneled_connections;
+} stats;
+} // namespace
 
 struct SocksProxy;
 using SocksProxyHandler = int (SocksProxy::*)(int, void *);
@@ -508,7 +507,7 @@ SocksProxy::parse_socks_client_request(unsigned char *p)
     sendResp(true);
     state = HTTP_REQ;
   } else {
-    SOCKSPROXY_INC_STAT(socksproxy_tunneled_connections_stat);
+    ts::Metrics::Counter::increment(stats.tunneled_connections);
     Dbg(dbg_ctl_SocksProxy, "Tunnelling the connection for port %d", port);
 
     if (clientVC->socks_addr.type != SOCKS_ATYPE_IPV4) {
@@ -555,7 +554,7 @@ SocksProxy::state_handing_over_http_request(int event, [[maybe_unused]] void *da
   case VC_EVENT_WRITE_COMPLETE: {
     HttpSessionAccept::Options ha_opt;
 
-    SOCKSPROXY_INC_STAT(socksproxy_http_connections_stat);
+    ts::Metrics::Counter::increment(stats.http_connections);
     Dbg(dbg_ctl_SocksProxy, "Handing over the HTTP request");
 
     ha_opt.transport_type = clientVC->attributes;
@@ -707,15 +706,8 @@ start_SocksProxy(int port)
   opt.local_port = port;
   netProcessor.main_accept(new SocksAccepter(), NO_FD, opt);
 
-  socksproxy_stat_block = RecAllocateRawStatBlock(socksproxy_stat_count);
-
-  if (socksproxy_stat_block) {
-    RecRegisterRawStat(socksproxy_stat_block, RECT_PROCESS, "proxy.process.socks.proxy.http_connections", RECD_INT, RECP_PERSISTENT,
-                       socksproxy_http_connections_stat, RecRawStatSyncCount);
-
-    RecRegisterRawStat(socksproxy_stat_block, RECT_PROCESS, "proxy.process.socks.proxy.tunneled_connections", RECD_INT,
-                       RECP_PERSISTENT, socksproxy_tunneled_connections_stat, RecRawStatSyncCount);
-  }
+  stats.http_connections     = ts::Metrics::Counter::createPtr("proxy.process.socks.proxy.http_connections");
+  stats.tunneled_connections = ts::Metrics::Counter::createPtr("proxy.process.socks.proxy.tunneled_connections");
 }
 
 int
