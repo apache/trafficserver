@@ -21,6 +21,7 @@ Record statistics support (EThread implementation).
   limitations under the License.
  */
 
+#include "iocore/eventsystem/EventProcessor.h"
 #include "records/RecDefs.h"
 #include "../../records/P_RecCore.h"
 #include "../../records/P_RecProcess.h"

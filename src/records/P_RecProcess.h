@@ -23,12 +23,6 @@
 
 #pragma once
 
-// Must include 'P_EventSystem.h' before 'I_EventSystem.h' (which is
-// included in 'I_RecProcess.h') to prevent multiple-symbol-definition
-// complaints if the caller uses both 'P_EventSystem.h' and this 'P_'
-// file.
-#include "../iocore/eventsystem/P_EventSystem.h"
-
 #include "records/RecProcess.h"
 #include "P_RecDefs.h"
 
