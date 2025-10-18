@@ -19,7 +19,6 @@ add_library(
   inkevent STATIC
   EventSystem.cc
   IOBuffer.cc
-  Inline.cc
   Lock.cc
   MIOBufferWriter.cc
   PQ-List.cc
@@ -35,6 +34,7 @@ add_library(
   ConfigProcessor.cc
   RecRawStatsImpl.cc
   RecProcess.cc
+  VIO.cc
 )
 add_library(ts::inkevent ALIAS inkevent)
 

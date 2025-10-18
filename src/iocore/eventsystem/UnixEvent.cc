@@ -27,9 +27,9 @@
 
 
 *****************************************************************************/
-#include "P_EventSystem.h"
 
-#include "tscore/ink_stack_trace.h"
+#include "iocore/eventsystem/Event.h"
+#include "iocore/eventsystem/EThread.h"
 
 ClassAllocator<Event> eventAllocator("eventAllocator", 256);
 

@@ -21,6 +21,7 @@
  *  limitations under the License.
  */
 
+#include "iocore/eventsystem/IOBuffer.h"
 #include "proxy/hdrs/VersionConverter.h"
 #include "proxy/hdrs/HeaderValidator.h"
 #include "proxy/http2/HTTP2.h"
