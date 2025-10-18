@@ -40,7 +40,9 @@
 
  ****************************************************************************/
 
-#include "P_EventSystem.h"
+#include "iocore/eventsystem/Processor.h"
+#include "tscore/ink_assert.h"
+
 //////////////////////////////////////////////////////////////////////////////
 //
 //      Processor::Processor()
