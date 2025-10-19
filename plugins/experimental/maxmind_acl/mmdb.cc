@@ -411,8 +411,6 @@ Acl::parseregex(const YAML::Node &regex, bool allow)
             Dbg(dbg_ctl, "Adding regex: %s, for country: %s", temp._regex_s.c_str(), i[y].as<std::string>().c_str());
             if (allow) {
               allow_regex[i[y].as<std::string>()].push_back(temp);
-
-              // allow_regex[i[y].as<std::string>()].data().push_back(temp);
             } else {
               deny_regex[i[y].as<std::string>()].push_back(temp);
             }
@@ -524,7 +522,6 @@ Acl::eval(TSRemapRequestInfo * /* rri ATS_UNUSED */, TSHttpTxn txnp)
 
   MMDB_entry_data_list_s *entry_data_list = nullptr;
   if (result.found_entry) {
-    Dbg(dbg_ctl, "Found entry for this IP");
     int status = MMDB_get_entry_data_list(&result.entry, &entry_data_list);
     if (MMDB_SUCCESS != status) {
       Dbg(dbg_ctl, "Error looking up entry data: %s", MMDB_strerror(status));

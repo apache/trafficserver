@@ -51,9 +51,7 @@ using namespace maxmind_acl_ns;
 
 struct plugin_regex {
   std::string _regex_s;
-  // pcre       *_rex;
-  // pcre_extra *_extra;
-  Regex *_rex;
+  Regex      *_rex;
 };
 
 enum ipstate { ALLOW_IP, DENY_IP, UNKNOWN_IP };
