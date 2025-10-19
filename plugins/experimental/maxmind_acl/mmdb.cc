@@ -399,19 +399,11 @@ Acl::parseregex(const YAML::Node &regex, bool allow)
           plugin_regex temp;
           auto         temprule = i.as<std::vector<std::string>>();
           temp._regex_s         = temprule.back();
-          const char *error;
-          int         erroffset;
-          temp._rex = pcre_compile(temp._regex_s.c_str(), 0, &error, &erroffset, nullptr);
-
-          // Compile the regex for this set of countries
-          if (nullptr != temp._rex) {
-            temp._extra = pcre_study(temp._rex, 0, &error);
-            if ((nullptr == temp._extra) && error && (*error != 0)) {
-              TSError("[%s] Failed to study regular expression in %s:%s", PLUGIN_NAME, temp._regex_s.c_str(), error);
-              return;
-            }
-          } else {
-            TSError("[%s] Failed to compile regular expression in %s: %s", PLUGIN_NAME, temp._regex_s.c_str(), error);
+          std::string error;
+          int         erroroffset = 0;
+          temp._rex               = new Regex();
+          if (!temp._rex->compile(temp._regex_s, error, erroroffset, 0)) {
+            TSError("[%s] Failed to compile regular expression in %s", PLUGIN_NAME, temp._regex_s.c_str());
             return;
           }
 
@@ -419,6 +411,8 @@ Acl::parseregex(const YAML::Node &regex, bool allow)
             Dbg(dbg_ctl, "Adding regex: %s, for country: %s", temp._regex_s.c_str(), i[y].as<std::string>().c_str());
             if (allow) {
               allow_regex[i[y].as<std::string>()].push_back(temp);
+
+              // allow_regex[i[y].as<std::string>()].data().push_back(temp);
             } else {
               deny_regex[i[y].as<std::string>()].push_back(temp);
             }
@@ -530,6 +524,7 @@ Acl::eval(TSRemapRequestInfo * /* rri ATS_UNUSED */, TSHttpTxn txnp)
 
   MMDB_entry_data_list_s *entry_data_list = nullptr;
   if (result.found_entry) {
+    Dbg(dbg_ctl, "Found entry for this IP");
     int status = MMDB_get_entry_data_list(&result.entry, &entry_data_list);
     if (MMDB_SUCCESS != status) {
       Dbg(dbg_ctl, "Error looking up entry data: %s", MMDB_strerror(status));
@@ -793,7 +788,7 @@ Acl::eval_country(MMDB_entry_data_s *entry_data, const std::string &url)
     Dbg(dbg_ctl, "saw url not empty: %s, %ld", url.c_str(), url.length());
     if (!allow_regex[output].empty()) {
       for (auto &i : allow_regex[output]) {
-        if (PCRE_ERROR_NOMATCH != pcre_exec(i._rex, i._extra, url.c_str(), url.length(), 0, PCRE_NOTEMPTY, nullptr, 0)) {
+        if (i._rex->exec(url)) {
           Dbg(dbg_ctl, "Got a regex allow hit on regex: %s, country: %s", i._regex_s.c_str(), output);
           ret = true;
         }
@@ -801,7 +796,7 @@ Acl::eval_country(MMDB_entry_data_s *entry_data, const std::string &url)
     }
     if (!deny_regex[output].empty()) {
       for (auto &i : deny_regex[output]) {
-        if (PCRE_ERROR_NOMATCH != pcre_exec(i._rex, i._extra, url.c_str(), url.length(), 0, PCRE_NOTEMPTY, nullptr, 0)) {
+        if (i._rex->exec(url)) {
           Dbg(dbg_ctl, "Got a regex deny hit on regex: %s, country: %s", i._regex_s.c_str(), output);
           ret = false;
         }
