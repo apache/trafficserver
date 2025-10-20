@@ -102,7 +102,7 @@ RegressionTest::run(const char *atest, int regression_level)
   fprintf(stderr, "REGRESSION_TEST initialization begun\n");
   // start the non exclusive tests
   for (RegressionTest *t = test; t; t = t->next) {
-    if (regex.exec(t->name)) {
+    if (regex.exec(t->name, RE_ANCHORED)) {
       int res = start_test(t, regression_level);
       if (res == REGRESSION_TEST_FAILED) {
         final_status = REGRESSION_TEST_FAILED;
@@ -153,7 +153,7 @@ RegressionTest::run_some(int regression_level)
   }
 
   for (; current; current = current->next) {
-    if (regex.exec(current->name)) {
+    if (regex.exec(current->name, RE_ANCHORED)) {
       int res = start_test(current, regression_level);
       if (res == REGRESSION_TEST_INPROGRESS) {
         return res;
