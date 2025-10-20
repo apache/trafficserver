@@ -518,8 +518,8 @@ CacheVC::load_from_last_open_read_call()
 {
   if (*this->read_key == this->stripe->first_fragment_key && dir_offset(&this->dir) == this->stripe->first_fragment_offset) {
     this->buf = this->stripe->first_fragment_data;
-    ts::Metrics::Counter::increment(cache_rsb.ram_cache_hits);
-    ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.ram_cache_hits);
+    ts::Metrics::Counter::increment(cache_rsb.last_open_read_hits);
+    ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.last_open_read_hits);
     return true;
   }
   return false;
@@ -537,8 +537,8 @@ CacheVC::load_from_aggregation_buffer()
   [[maybe_unused]] bool success = this->stripe->copy_from_aggregate_write_buffer(doc, dir, this->io.aiocb.aio_nbytes);
   // We already confirmed that the copy was valid, so it should not fail.
   ink_assert(success);
-  ts::Metrics::Counter::increment(cache_rsb.ram_cache_hits);
-  ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.ram_cache_hits);
+  ts::Metrics::Counter::increment(cache_rsb.agg_buffer_hits);
+  ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.agg_buffer_hits);
   return true;
 }
 
