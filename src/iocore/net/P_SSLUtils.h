@@ -125,11 +125,11 @@ struct ats_wildcard_matcher {
   bool
   match(const char *hostname) const
   {
-    return regex.match(hostname) != -1;
+    return regex.exec(hostname);
   }
 
 private:
-  DFA regex;
+  Regex regex;
 };
 
 using scoped_X509 = std::unique_ptr<X509, ssl::detail::X509Deleter>;
