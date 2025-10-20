@@ -336,7 +336,7 @@ Diags::tag_activated(const char *tag, DiagsTagType mode) const
 
   lock();
   if (activated_tags[mode]) {
-    activated = activated_tags[mode]->exec(tag);
+    activated = activated_tags[mode]->exec(tag, RE_ANCHORED);
   }
   unlock();
 
