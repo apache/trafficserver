@@ -40,7 +40,7 @@ static RegressionTest *exclusive_test = nullptr;
 
 RegressionTest *RegressionTest::current   = nullptr;
 int             RegressionTest::ran_tests = 0;
-DFA             RegressionTest::dfa;
+Regex           RegressionTest::regex;
 int             RegressionTest::final_status = REGRESSION_TEST_PASSED;
 
 static const char *
@@ -94,15 +94,15 @@ int
 RegressionTest::run(const char *atest, int regression_level)
 {
   if (atest) {
-    dfa.compile(atest);
+    regex.compile(atest);
   } else {
-    dfa.compile(".*");
+    regex.compile(".*");
   }
 
   fprintf(stderr, "REGRESSION_TEST initialization begun\n");
   // start the non exclusive tests
   for (RegressionTest *t = test; t; t = t->next) {
-    if ((dfa.match(t->name) >= 0)) {
+    if (regex.exec(t->name)) {
       int res = start_test(t, regression_level);
       if (res == REGRESSION_TEST_FAILED) {
         final_status = REGRESSION_TEST_FAILED;
@@ -153,7 +153,7 @@ RegressionTest::run_some(int regression_level)
   }
 
   for (; current; current = current->next) {
-    if ((dfa.match(current->name) >= 0)) {
+    if (regex.exec(current->name)) {
       int res = start_test(current, regression_level);
       if (res == REGRESSION_TEST_INPROGRESS) {
         return res;
