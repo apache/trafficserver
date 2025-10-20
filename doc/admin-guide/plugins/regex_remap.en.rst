@@ -143,6 +143,7 @@ remap.config. The following options are available ::
 
     @caseless                   - Make regular expressions case insensitive
     @lowercase_substitutions    - Turn on (enable) lower case substitutions
+		@strategy                   - Specify a strategy from strategies.yaml. "null" or "" will clear the strategy.
 
 
 This can be useful to force a particular response for some URLs, e.g. ::

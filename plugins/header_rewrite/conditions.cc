@@ -1538,6 +1538,15 @@ ConditionNextHop::append_value(std::string &s, const Resources &res)
     Dbg(pi_dbg_ctl, "Appending '%d' to evaluation value", port);
     s.append(std::to_string(port));
   } break;
+  case NEXT_HOP_STRATEGY: {
+    char const *const name = TSHttpNextHopStrategyNameGet(res.state.txnp);
+    if (nullptr != name) {
+      Dbg(pi_dbg_ctl, "Appending '%s' to evaluation value", name);
+      s.append(name);
+    } else {
+      Dbg(pi_dbg_ctl, "NextHopStrategyName is empty");
+    }
+  } break;
   default:
     TSReleaseAssert(!"All cases should have been handled");
     break;

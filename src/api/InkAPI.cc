@@ -4991,6 +4991,59 @@ TSHttpTxnServerRequestBodySet(TSHttpTxn txnp, char *buf, int64_t buflength)
   s->internal_msg_buffer_fast_allocator_size = -1;
 }
 
+void const *
+TSHttpTxnNextHopStrategyGet(TSHttpTxn txnp)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+
+  auto sm = reinterpret_cast<HttpSM const *>(txnp);
+
+  return static_cast<void *>(sm->t_state.next_hop_strategy);
+}
+
+void
+TSHttpTxnNextHopStrategySet(TSHttpTxn txnp, void const *stratptr)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  // null strategy falls back to parent.config
+  // sdk_assert(sdk_sanity_check_null_ptr(strategy) == TS_SUCCESS);
+
+  auto sm       = reinterpret_cast<HttpSM *>(txnp);
+  auto strategy = reinterpret_cast<NextHopSelectionStrategy const *>(stratptr);
+
+  sm->t_state.next_hop_strategy = const_cast<NextHopSelectionStrategy *>(strategy);
+}
+
+char const *
+TSHttpNextHopStrategyNameGet(void const *stratptr)
+{
+  char const *name = nullptr;
+  if (nullptr != stratptr) {
+    auto strategy = reinterpret_cast<NextHopSelectionStrategy const *>(stratptr);
+    name          = strategy->strategy_name.c_str();
+  }
+
+  return name;
+}
+
+void const *
+TSHttpTxnNextHopNamedStrategyGet(TSHttpTxn txnp, const char *name)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void *)name) == TS_SUCCESS);
+
+  auto sm = reinterpret_cast<HttpSM const *>(txnp);
+
+  sdk_assert(sdk_sanity_check_null_ptr((void *)sm->m_remap) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void *)sm->m_remap->strategyFactory) == TS_SUCCESS);
+
+  // HttpSM has a reference count handle to UrlRewrite which has a
+  // pointer to NextHopStrategyFactory
+  NextHopSelectionStrategy const *const strat = sm->m_remap->strategyFactory->strategyInstance(name);
+
+  return static_cast<void const *>(strat);
+}
+
 TSReturnCode
 TSHttpTxnParentProxyGet(TSHttpTxn txnp, const char **hostname, int *port)
 {

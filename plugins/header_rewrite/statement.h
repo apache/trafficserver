@@ -63,6 +63,7 @@ enum NextHopQualifiers {
   NEXT_HOP_NONE,
   NEXT_HOP_HOST,
   NEXT_HOP_PORT,
+  NEXT_HOP_STRATEGY,
 };
 
 // NOW data
