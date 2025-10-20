@@ -336,7 +336,7 @@ Diags::tag_activated(const char *tag, DiagsTagType mode) const
 
   lock();
   if (activated_tags[mode]) {
-    activated = (activated_tags[mode]->match(tag) != -1);
+    activated = activated_tags[mode]->exec(tag);
   }
   unlock();
 
@@ -362,7 +362,7 @@ Diags::activate_taglist(const char *taglist, DiagsTagType mode)
     if (activated_tags[mode]) {
       delete activated_tags[mode];
     }
-    activated_tags[mode] = new DFA;
+    activated_tags[mode] = new Regex;
     activated_tags[mode]->compile(taglist);
     unlock();
   }
