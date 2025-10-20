@@ -130,11 +130,6 @@ Pattern::empty() const
 }
 
 /**
- * @brief Destructor, frees PCRE related resources.
- */
-Pattern::~Pattern() {}
-
-/**
  * @brief Capture or capture-and-replace depending on whether a replacement string is specified.
  * @see replace()
  * @see capture()

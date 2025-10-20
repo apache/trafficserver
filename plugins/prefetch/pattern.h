@@ -35,7 +35,6 @@ public:
   static const int TOKENCOUNT = 10; /**< @brief Capturing groups $0..$9 */
 
   Pattern();
-  virtual ~Pattern();
 
   bool init(const String &pattern, const String &replacement);
   bool init(const String &config);
