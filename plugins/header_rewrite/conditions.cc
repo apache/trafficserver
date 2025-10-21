@@ -1538,6 +1538,15 @@ ConditionNextHop::append_value(std::string &s, const Resources &res)
     Dbg(pi_dbg_ctl, "Appending '%d' to evaluation value", port);
     s.append(std::to_string(port));
   } break;
+  case NEXT_HOP_STRATEGY: {
+    char const *const name = TSHttpNextHopStrategyNameGet(res.state.txnp);
+    if (nullptr != name) {
+      Dbg(pi_dbg_ctl, "Appending '%s' to evaluation value", name);
+      s.append(name);
+    } else {
+      Dbg(pi_dbg_ctl, "NextHopStrategyName is empty");
+    }
+  } break;
   default:
     TSReleaseAssert(!"All cases should have been handled");
     break;
@@ -1722,11 +1731,8 @@ ConditionLastCapture::set_qualifier(const std::string &q)
 void
 ConditionLastCapture::append_value(std::string &s, const Resources &res)
 {
-  if (res.ovector_ptr && res.ovector_count > _ix) {
-    int start = res.ovector[_ix * 2];
-    int end   = res.ovector[_ix * 2 + 1];
-
-    s.append(std::string_view(res.ovector_ptr).substr(start, (end - start)));
+  if (res.matches.size() > _ix) {
+    s.append(res.matches[_ix]);
     Dbg(pi_dbg_ctl, "Evaluating LAST-CAPTURE(%d)", _ix);
   }
 }

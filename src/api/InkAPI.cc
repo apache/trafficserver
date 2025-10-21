@@ -142,7 +142,6 @@ extern MgmtConverter const &HttpDownServerCacheTimeConv;
 extern HttpSessionAccept                 *plugin_http_accept;
 extern HttpSessionAccept                 *plugin_http_transparent_accept;
 extern thread_local PluginThreadContext  *pluginThreadContext;
-static ClassAllocator<APIHook>            apiHookAllocator("apiHookAllocator");
 extern ClassAllocator<INKContInternal>    INKContAllocator;
 extern ClassAllocator<INKVConnInternal>   INKVConnAllocator;
 static ClassAllocator<MIMEFieldSDKHandle> mHandleAllocator("MIMEFieldSDKHandle");
@@ -2930,7 +2929,7 @@ TSHttpHdrStatusGet(TSMBuffer bufp, TSMLoc obj)
 }
 
 TSReturnCode
-TSHttpHdrStatusSet(TSMBuffer bufp, TSMLoc obj, TSHttpStatus status)
+TSHttpHdrStatusSet(TSMBuffer bufp, TSMLoc obj, TSHttpStatus status, TSHttpTxn txnp, std::string_view setter)
 {
   // Allow to modify the buffer only
   // if bufp is modifiable. If bufp is not modifiable return
@@ -2948,7 +2947,19 @@ TSHttpHdrStatusSet(TSMBuffer bufp, TSMLoc obj, TSHttpStatus status)
   SET_HTTP_HDR(h, bufp, obj);
   ink_assert(static_cast<HdrHeapObjType>(h.m_http->m_type) == HdrHeapObjType::HTTP_HEADER);
   h.status_set(static_cast<HTTPStatus>(status));
+
+  if (txnp != nullptr && !setter.empty()) {
+    sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+    HttpSM *sm                               = reinterpret_cast<HttpSM *>(txnp);
+    sm->t_state.http_return_code_setter_name = setter;
+  }
   return TS_SUCCESS;
+}
+
+TSReturnCode
+TSHttpHdrStatusSet(TSMBuffer bufp, TSMLoc obj, TSHttpStatus status)
+{
+  return TSHttpHdrStatusSet(bufp, obj, status, nullptr, std::string_view{});
 }
 
 const char *
@@ -4980,6 +4991,59 @@ TSHttpTxnServerRequestBodySet(TSHttpTxn txnp, char *buf, int64_t buflength)
   s->internal_msg_buffer_fast_allocator_size = -1;
 }
 
+void const *
+TSHttpTxnNextHopStrategyGet(TSHttpTxn txnp)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+
+  auto sm = reinterpret_cast<HttpSM const *>(txnp);
+
+  return static_cast<void *>(sm->t_state.next_hop_strategy);
+}
+
+void
+TSHttpTxnNextHopStrategySet(TSHttpTxn txnp, void const *stratptr)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  // null strategy falls back to parent.config
+  // sdk_assert(sdk_sanity_check_null_ptr(strategy) == TS_SUCCESS);
+
+  auto sm       = reinterpret_cast<HttpSM *>(txnp);
+  auto strategy = reinterpret_cast<NextHopSelectionStrategy const *>(stratptr);
+
+  sm->t_state.next_hop_strategy = const_cast<NextHopSelectionStrategy *>(strategy);
+}
+
+char const *
+TSHttpNextHopStrategyNameGet(void const *stratptr)
+{
+  char const *name = nullptr;
+  if (nullptr != stratptr) {
+    auto strategy = reinterpret_cast<NextHopSelectionStrategy const *>(stratptr);
+    name          = strategy->strategy_name.c_str();
+  }
+
+  return name;
+}
+
+void const *
+TSHttpTxnNextHopNamedStrategyGet(TSHttpTxn txnp, const char *name)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void *)name) == TS_SUCCESS);
+
+  auto sm = reinterpret_cast<HttpSM const *>(txnp);
+
+  sdk_assert(sdk_sanity_check_null_ptr((void *)sm->m_remap) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void *)sm->m_remap->strategyFactory) == TS_SUCCESS);
+
+  // HttpSM has a reference count handle to UrlRewrite which has a
+  // pointer to NextHopStrategyFactory
+  NextHopSelectionStrategy const *const strat = sm->m_remap->strategyFactory->strategyInstance(name);
+
+  return static_cast<void const *>(strat);
+}
+
 TSReturnCode
 TSHttpTxnParentProxyGet(TSHttpTxn txnp, const char **hostname, int *port)
 {
@@ -5243,12 +5307,22 @@ TSUserArgGet(void *data, int arg_idx)
 }
 
 void
-TSHttpTxnStatusSet(TSHttpTxn txnp, TSHttpStatus status)
+TSHttpTxnStatusSet(TSHttpTxn txnp, TSHttpStatus status, std::string_view setter)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
   HttpSM *sm                   = reinterpret_cast<HttpSM *>(txnp);
   sm->t_state.http_return_code = static_cast<HTTPStatus>(status);
+
+  if (!setter.empty()) {
+    sm->t_state.http_return_code_setter_name = setter;
+  }
+}
+
+void
+TSHttpTxnStatusSet(TSHttpTxn txnp, TSHttpStatus status)
+{
+  TSHttpTxnStatusSet(txnp, status, std::string_view{});
 }
 
 TSHttpStatus

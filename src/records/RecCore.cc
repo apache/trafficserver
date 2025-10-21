@@ -556,8 +556,8 @@ RecErrT
 RecLookupMatchingRecords(unsigned rec_type, const char *match, void (*callback)(const RecRecord *, void *), void *data,
                          bool /* lock ATS_UNUSED */)
 {
-  int num_records;
-  DFA regex;
+  int   num_records;
+  Regex regex;
 
   if (!regex.compile(match, RE_CASE_INSENSITIVE | RE_UNANCHORED)) {
     return REC_ERR_FAIL;
@@ -571,7 +571,7 @@ RecLookupMatchingRecords(unsigned rec_type, const char *match, void (*callback)(
     tmp.rec_type = RECT_PROCESS;
 
     for (auto &&[name, type, val] : ts::Metrics::instance()) {
-      if (regex.match(name.data()) >= 0) {
+      if (regex.exec(name.data())) {
         tmp.name         = name.data();
         tmp.data_type    = type == ts::Metrics::MetricType::COUNTER ? RECD_COUNTER : RECD_INT;
         tmp.data.rec_int = val;
@@ -589,7 +589,7 @@ RecLookupMatchingRecords(unsigned rec_type, const char *match, void (*callback)(
       continue;
     }
 
-    if (regex.match(r->name) < 0) {
+    if (!regex.exec(r->name)) {
       continue;
     }
 

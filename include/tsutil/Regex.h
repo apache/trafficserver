@@ -36,6 +36,7 @@ enum REFlags {
   RE_CASE_INSENSITIVE = 0x00000008u, ///< Ignore case (default: case sensitive).
   RE_UNANCHORED       = 0x00000400u, ///< Unanchored (DFA defaults to anchored).
   RE_ANCHORED         = 0x80000000u, ///< Anchored (Regex defaults to unanchored).
+  RE_NOTEMPTY         = 0x00000004u  ///< Not empty (default: may match empty string).
 };
 
 /// @brief Wrapper for PCRE2 match data.
@@ -129,6 +130,16 @@ public:
   /** Execute the regular expression.
    *
    * @param subject String to match against.
+   * @param flags Match flags (e.g., RE_NOTEMPTY).
+   * @return @c true if the pattern matched, @a false if not.
+   *
+   * It is safe to call this method concurrently on the same instance of @a this.
+   */
+  bool exec(std::string_view subject, uint32_t flags) const;
+
+  /** Execute the regular expression.
+   *
+   * @param subject String to match against.
    * @param matches Place to store the capture groups.
    * @return @c The number of capture groups. < 0 if an error occurred. 0 if the number of Matches is too small.
    *
@@ -138,6 +149,20 @@ public:
    * be a multiple of 3 and at least three times the number of desired capture groups.
    */
   int exec(std::string_view subject, RegexMatches &matches) const;
+
+  /** Execute the regular expression.
+   *
+   * @param subject String to match against.
+   * @param matches Place to store the capture groups.
+   * @param flags Match flags (e.g., RE_NOTEMPTY).
+   * @return @c The number of capture groups. < 0 if an error occurred. 0 if the number of Matches is too small.
+   *
+   * It is safe to call this method concurrently on the same instance of @a this.
+   *
+   * Each capture group takes 3 elements of @a ovector, therefore @a ovecsize must
+   * be a multiple of 3 and at least three times the number of desired capture groups.
+   */
+  int exec(std::string_view subject, RegexMatches &matches, uint32_t flags) const;
 
   /// @return The number of capture groups in the compiled pattern.
   int get_capture_count();

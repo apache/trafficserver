@@ -137,6 +137,42 @@ RulesConfig::add_rule(std::unique_ptr<RuleSet> rule)
   }
 }
 
+// Helper function to validate rule completion
+static bool
+validate_rule_completion(RuleSet *rule, const std::string &fname, int lineno)
+{
+  TSAssert(rule);
+
+  switch (rule->get_clause()) {
+  case Parser::CondClause::ELIF:
+    if (!rule->cur_section()->group.has_conditions() || !rule->cur_section()->has_operator()) {
+      TSError("[%s] ELIF clause must have both conditions and operators in file: %s, lineno: %d", PLUGIN_NAME, fname.c_str(),
+              lineno);
+      return false;
+    }
+    break;
+
+  case Parser::CondClause::ELSE:
+    if (rule->cur_section()->group.has_conditions()) {
+      TSError("[%s] conditions not allowed in ELSE clause in file: %s, lineno: %d", PLUGIN_NAME, fname.c_str(), lineno);
+      return false;
+    }
+    break;
+
+  case Parser::CondClause::OPER:
+    if (!rule->has_operator()) {
+      TSError("[%s] conditions without operators are not allowed in file: %s, lineno: %d", PLUGIN_NAME, fname.c_str(), lineno);
+      return false;
+    }
+    break;
+
+  case Parser::CondClause::COND:
+    break;
+  }
+
+  return true;
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // Config parser, use to parse both the global, and per-remap, configurations.
 //
@@ -220,22 +256,11 @@ RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook, c
     }
 
     // If we are at the beginning of a new condition, save away the previous rule (but only if it has operators).
-    if (p.is_cond() && rule) {
-      bool transfer    = rule->cur_section()->has_operator();
-      auto rule_clause = rule->get_clause();
-
-      if (rule_clause == Parser::CondClause::ELIF) {
-        if (is_hook) {
-          TSError("[%s] ELIF without operators are not allowed in file: %s, lineno: %d", PLUGIN_NAME, fname.c_str(), lineno);
-          return false;
-        }
-      } else if (rule_clause == Parser::CondClause::ELSE) {
-        if (!transfer) {
-          TSError("[%s] conditions not allowed in ELSE clause in file: %s, lineno: %d", PLUGIN_NAME, fname.c_str(), lineno);
-          return false;
-        }
-      }
-      if (transfer) {
+    // This also has to deal with the fact that we allow implicit hooks to end / start a new rule.
+    if (p.is_cond() && rule && (is_hook || rule->cur_section()->has_operator())) {
+      if (!validate_rule_completion(rule.get(), fname, lineno)) {
+        return false;
+      } else {
         add_rule(std::move(rule));
       }
     }
@@ -249,6 +274,8 @@ RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook, c
       rule = std::make_unique<RuleSet>();
       rule->set_hook(hook);
       group = rule->get_group(); // This the implicit rule group to begin with
+      Dbg(pi_dbg_ctl, "New RuleSet in %%{%s} at %s:%d",
+          (hook == TS_REMAP_PSEUDO_HOOK) ? "REMAP_PSEUDO_HOOK" : TSHttpHookNameLookup(hook), fname.c_str(), lineno);
 
       if (is_hook) {
         // Check if the hooks are not available for the remap mode
@@ -327,8 +354,12 @@ RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook, c
   }
 
   // Add the last rule (possibly the only rule)
-  if (rule && rule->has_operator()) {
-    add_rule(std::move(rule));
+  if (rule) {
+    if (!validate_rule_completion(rule.get(), fname, lineno)) {
+      return false;
+    } else {
+      add_rule(std::move(rule));
+    }
   }
 
   // Collect all resource IDs that we need
@@ -345,10 +376,9 @@ static void
 setPluginControlValues(TSHttpTxn txnp, RulesConfig *conf)
 {
   if (conf->timezone() != 0 || conf->inboundIpSource() != 0) {
-    ConditionNow temporal_statement; // This could be any statement that use the private slot.
-    int          slot = temporal_statement.get_txn_private_slot();
-
+    int             slot = Statement::acquire_txn_private_slot();
     PrivateSlotData private_data;
+
     private_data.raw       = reinterpret_cast<uint64_t>(TSUserArgGet(txnp, slot));
     private_data.timezone  = conf->timezone();
     private_data.ip_source = conf->inboundIpSource();

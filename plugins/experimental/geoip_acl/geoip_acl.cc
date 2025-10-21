@@ -97,7 +97,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 
     if (!a->eval(rri, rh)) {
       Dbg(dbg_ctl, "denying request");
-      TSHttpTxnStatusSet(rh, static_cast<TSHttpStatus>(403));
+      TSHttpTxnStatusSet(rh, static_cast<TSHttpStatus>(403), PLUGIN_NAME);
       a->send_html(rh);
     }
   }

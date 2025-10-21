@@ -1996,3 +1996,19 @@ url_host_CryptoHash_get(URLImpl *url, CryptoHash *hash)
   ctx.update(&port, sizeof(port));
   ctx.finalize(*hash);
 }
+
+namespace swoc
+{
+BufferWriter &
+bwformat(BufferWriter &w, bwf::Spec const &, URL const &url)
+{
+  char buff[2048];
+  int  idx    = 0;
+  int  offset = 0;
+  url.print(buff, sizeof(buff), &idx, &offset);
+
+  w.write(buff, idx);
+
+  return w;
+}
+} // namespace swoc

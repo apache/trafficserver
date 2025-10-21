@@ -143,7 +143,7 @@ on_send_response_header(TSHttpTxn txnp, TSCont contp, PurgeInstance *purge)
     char response[1024];
     int  len = snprintf(response, sizeof(response), "PURGED %s\r\n\r\n", purge->id);
 
-    TSHttpHdrStatusSet(bufp, hdr_loc, TS_HTTP_STATUS_OK);
+    TSHttpHdrStatusSet(bufp, hdr_loc, TS_HTTP_STATUS_OK, txnp, PLUGIN_NAME);
     TSHttpHdrReasonSet(bufp, hdr_loc, "OK", 2);
     TSHttpTxnErrorBodySet(txnp, TSstrdup(response), len >= (int)sizeof(response) ? (int)sizeof(response) - 1 : len, nullptr);
 

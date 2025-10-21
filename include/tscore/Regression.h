@@ -76,7 +76,7 @@ struct RegressionTest {
 
   static int             final_status;
   static int             ran_tests;
-  static DFA             dfa;
+  static Regex           regex;
   static RegressionTest *current;
   static int             run(const char *name, int regression_level);
   static void            list();

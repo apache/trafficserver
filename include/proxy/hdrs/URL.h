@@ -786,3 +786,8 @@ URL::unescapify(Arena *arena, const char *str, int length)
 {
   return url_unescapify(arena, str, length);
 }
+
+namespace swoc
+{
+BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &, URL const &url);
+} // namespace swoc

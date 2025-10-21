@@ -92,7 +92,8 @@ class XDebugProbeFullJsonTest:
         tr.MakeCurlCommand(
             f'-s -H"uuid: 1" -H "Host: example.com" -H "X-Debug: probe-full-json" '
             f'http://127.0.0.1:{self._ts.Variables.port}/test | '
-            "jq '.\"client-request\".\"uuid\",.\"server-body\",.\"proxy-response\".\"x-response\"'")
+            "jq '.\"client-request\".\"uuid\",.\"server-body\",.\"proxy-response\".\"x-response\"'",
+            ts=self._ts)
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stdout = "gold/jq_escaped.gold"
 
@@ -101,7 +102,8 @@ class XDebugProbeFullJsonTest:
         tr.MakeCurlCommand(
             f'-s -H"uuid: 2" -H "Host: example.com" -H "X-Debug: probe-full-json" '
             f'http://127.0.0.1:{self._ts.Variables.port}/binary | '
-            "jq '.\"client-request\".\"uuid\",.\"server-body\",.\"proxy-response\".\"x-response\"'")
+            "jq '.\"client-request\".\"uuid\",.\"server-body\",.\"proxy-response\".\"x-response\"'",
+            ts=self._ts)
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stdout += "gold/jq_hex.gold"
 
@@ -110,7 +112,8 @@ class XDebugProbeFullJsonTest:
         tr.MakeCurlCommand(
             f'-s -H"uuid: 1" -H "Host: example.com" -H "X-Debug: probe-full-json=hex" '
             f'http://127.0.0.1:{self._ts.Variables.port}/test | '
-            "jq '.\"server-body\"'")
+            "jq '.\"server-body\"'",
+            ts=self._ts)
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
             '3c21444f43545950452068746d6c3e', "Should contain hex-encoded HTML content (forced hex override)")
@@ -120,7 +123,8 @@ class XDebugProbeFullJsonTest:
         tr.MakeCurlCommand(
             f'-s -H"uuid: 1" -H "Host: example.com" -H "X-Debug: probe-full-json=escape" '
             f'http://127.0.0.1:{self._ts.Variables.port}/test | '
-            "jq '.\"client-request\".\"uuid\",.\"server-body\",.\"proxy-response\".\"x-response\"'")
+            "jq '.\"client-request\".\"uuid\",.\"server-body\",.\"proxy-response\".\"x-response\"'",
+            ts=self._ts)
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stdout += "gold/jq_escaped.gold"
 
@@ -129,7 +133,8 @@ class XDebugProbeFullJsonTest:
         tr.MakeCurlCommand(
             f'-s -H"uuid: 1" -H "Host: example.com" -H "X-Debug: probe-full-json=nobody" '
             f'http://127.0.0.1:{self._ts.Variables.port}/test | '
-            "jq '.\"client-request\".\"uuid\",.\"server-body\",.\"proxy-response\".\"x-response\"'")
+            "jq '.\"client-request\".\"uuid\",.\"server-body\",.\"proxy-response\".\"x-response\"'",
+            ts=self._ts)
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stdout += "gold/jq_nobody.gold"
 

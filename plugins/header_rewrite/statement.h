@@ -63,6 +63,7 @@ enum NextHopQualifiers {
   NEXT_HOP_NONE,
   NEXT_HOP_HOST,
   NEXT_HOP_PORT,
+  NEXT_HOP_STRATEGY,
 };
 
 // NOW data
@@ -168,8 +169,13 @@ public:
   {
     TSReleaseAssert(_initialized == false);
     initialize_hooks();
-    acquire_txn_slot();
-    acquire_txn_private_slot();
+
+    if (need_txn_slot()) {
+      _txn_slot = acquire_txn_slot();
+    }
+    if (need_txn_private_slot()) {
+      _txn_private_slot = acquire_txn_private_slot();
+    }
 
     _initialized = true;
   }
@@ -180,18 +186,14 @@ public:
     return _initialized;
   }
 
-  int
-  get_txn_private_slot()
-  {
-    acquire_txn_private_slot();
-    return _txn_private_slot;
-  }
-
   void
   require_resources(const ResourceIDs ids)
   {
     _rsrc = static_cast<ResourceIDs>(_rsrc | ids);
   }
+
+  static int acquire_txn_slot();
+  static int acquire_txn_private_slot();
 
 protected:
   virtual void initialize_hooks();
@@ -217,9 +219,6 @@ protected:
   int        _txn_private_slot = -1;
 
 private:
-  void acquire_txn_slot();
-  void acquire_txn_private_slot();
-
   ResourceIDs               _rsrc = RSRC_NONE;
   TSHttpHookID              _hook = TS_HTTP_READ_RESPONSE_HDR_HOOK;
   std::vector<TSHttpHookID> _allowed_hooks;

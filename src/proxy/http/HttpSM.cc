@@ -314,8 +314,9 @@ HttpSM::init(bool from_early_data)
   // Added to skip dns if the document is in cache. DNS will be forced if there is a ip based ACL in
   // cache control or parent.config or if the doc_in_cache_skip_dns is disabled or if http caching is disabled
   // TODO: This probably doesn't honor this as a per-transaction overridable config.
-  t_state.force_dns = (ip_rule_in_CacheControlTable() || t_state.parent_params->parent_table->ipMatch ||
-                       !(t_state.txn_conf->doc_in_cache_skip_dns) || !(t_state.txn_conf->cache_http));
+  t_state.force_dns =
+    (ip_rule_in_CacheControlTable() || (nullptr != t_state.parent_params && t_state.parent_params->parent_table->ipMatch) ||
+     !(t_state.txn_conf->doc_in_cache_skip_dns) || !(t_state.txn_conf->cache_http));
 
   SET_HANDLER(&HttpSM::main_handler);
 
@@ -5317,6 +5318,7 @@ HttpSM::ip_allow_deny_request(const IpAllow::ACL &acl)
           method.data(), ntop_formatted);
   }
 
+  t_state.http_return_code_setter_name = "ip_allow";
   t_state.current.retry_attempts.maximize(
     t_state.configured_connect_attempts_max_retries()); // prevent any more retries with this IP
   call_transact_and_set_next_state(HttpTransact::Forbidden);

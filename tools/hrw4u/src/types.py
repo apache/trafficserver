@@ -99,9 +99,21 @@ class SuffixGroup(Enum):
     def validate(self, suffix: str) -> None:
         allowed_upper = {val.upper() for val in self.value}
         if suffix.upper() not in allowed_upper:
-            raise ValueError(
-                f"Invalid suffix '{suffix}' for group '{self.name}'. "
-                f"Must be one of: {', '.join(sorted(self.value))}")
+            # Special handling for BOOL_FIELDS to detect quoted boolean values
+            if self == SuffixGroup.BOOL_FIELDS:
+                bool_msg = f"Invalid boolean value '{suffix}'. Must be one of: {', '.join(sorted(self.value))}"
+
+                # Check if this is a quoted boolean value
+                is_double_quoted = (suffix.startswith('"') and suffix.endswith('"'))
+                is_single_quoted = (suffix.startswith("'") and suffix.endswith("'"))
+                if ((is_double_quoted or is_single_quoted) and len(suffix) > 2 and suffix[1:-1].upper() in allowed_upper):
+                    raise ValueError(f"{bool_msg} and must not be quoted")
+                else:
+                    raise ValueError(bool_msg)
+            else:
+                raise ValueError(
+                    f"Invalid suffix '{suffix}' for group '{self.name}'. "
+                    f"Must be one of: {', '.join(sorted(self.value))}")
 
 
 class VarType(Enum):

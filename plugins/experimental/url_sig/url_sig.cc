@@ -33,11 +33,7 @@
 #include <cctype>
 #include <cstdint>
 
-#ifdef HAVE_PCRE_PCRE_H
-#include <pcre/pcre.h>
-#else
-#include <pcre.h>
-#endif
+#include "tsutil/Regex.h"
 
 #include <ts/ts.h>
 #include <ts/remap.h>
@@ -51,8 +47,7 @@ struct config {
   TSHttpStatus err_status;
   char        *err_url;
   char         keys[MAX_KEY_NUM][MAX_KEY_LEN];
-  pcre        *regex;
-  pcre_extra  *regex_extra;
+  Regex       *excl_regex;
   int          pristine_url_flag;
   char        *sig_anchor;
   bool         ignore_expiry;
@@ -65,16 +60,8 @@ free_cfg(struct config *cfg)
   TSfree(cfg->err_url);
   TSfree(cfg->sig_anchor);
 
-  if (cfg->regex_extra) {
-#ifndef PCRE_STUDY_JIT_COMPILE
-    pcre_free(cfg->regex_extra);
-#else
-    pcre_free_study(cfg->regex_extra);
-#endif
-  }
-
-  if (cfg->regex) {
-    pcre_free(cfg->regex);
+  if (cfg->excl_regex) {
+    delete cfg->excl_regex;
   }
 
   TSfree(cfg);
@@ -197,24 +184,20 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
     } else if (strncmp(line, "sig_anchor", 10) == 0) {
       cfg->sig_anchor = TSstrndup(value, strlen(value));
     } else if (strncmp(line, "excl_regex", 10) == 0) {
-      // compile and study regex
-      const char *errptr;
-      int         erroffset, options = 0;
+      // Compile regex.
+      std::string error;
+      int         erroffset = 0;
 
-      if (cfg->regex) {
+      if (cfg->excl_regex) {
         Dbg(dbg_ctl, "Skipping duplicate excl_regex");
         continue;
       }
 
-      cfg->regex = pcre_compile(value, options, &errptr, &erroffset, nullptr);
-      if (cfg->regex == nullptr) {
-        Dbg(dbg_ctl, "Regex compilation failed with error (%s) at character %d", errptr, erroffset);
-      } else {
-#ifdef PCRE_STUDY_JIT_COMPILE
-        options = PCRE_STUDY_JIT_COMPILE;
-#endif
-        cfg->regex_extra = pcre_study(
-          cfg->regex, options, &errptr); // We do not need to check the error here because we can still run without the studying?
+      cfg->excl_regex = new Regex();
+      if (!cfg->excl_regex->compile(value, error, erroffset, 0)) {
+        Dbg(dbg_ctl, "Regex compilation failed with error (%s) at character %d", error.c_str(), erroffset);
+        delete cfg->excl_regex;
+        cfg->excl_regex = nullptr;
       }
     } else if (strncmp(line, "ignore_expiry", 13) == 0) {
       if (strncmp(value, "true", 4) == 0) {
@@ -579,18 +562,16 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 
   Dbg(dbg_ctl, "%s", url);
 
-  if (cfg->regex) {
-    const int offset = 0, options = 0;
-    int       ovector[30];
-
+  if (cfg->excl_regex) {
     /* Only search up to the first ? or # */
     const char *base_url_end = url;
     while (*base_url_end && !(*base_url_end == '?' || *base_url_end == '#')) {
       ++base_url_end;
     }
-    const int len = base_url_end - url;
+    const size_t len = base_url_end - url;
 
-    if (pcre_exec(cfg->regex, cfg->regex_extra, url, len, offset, options, ovector, 30) >= 0) {
+    if (cfg->excl_regex->exec(std::string_view(url, len))) {
+      // The user configured this URL to be excluded from signing checks.
       goto allow;
     }
   }
@@ -869,7 +850,7 @@ deny:
     break;
   }
   /* Always set the return status */
-  TSHttpTxnStatusSet(txnp, cfg->err_status);
+  TSHttpTxnStatusSet(txnp, cfg->err_status, PLUGIN_NAME);
 
   return TSREMAP_DID_REMAP;
 

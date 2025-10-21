@@ -279,9 +279,9 @@ HostDBCache::start(int flags)
   }
 
   // Setup the ref-counted cache (this must be done regardless of syncing or not).
-  this->refcountcache = new RefCountCache<HostDBRecord>(hostdb_partitions, hostdb_max_size, hostdb_max_count, HostDBRecord::Version,
-                                                        "proxy.process.hostdb.cache.");
-  this->pending_dns   = new Queue<HostDBContinuation, Continuation::Link_link>[hostdb_partitions];
+  this->refcountcache =
+    new RefCountCache<HostDBRecord>(hostdb_partitions, hostdb_max_size, hostdb_max_count, "proxy.process.hostdb.cache.");
+  this->pending_dns       = new Queue<HostDBContinuation, Continuation::Link_link>[hostdb_partitions];
   this->remoteHostDBQueue = new Queue<HostDBContinuation, Continuation::Link_link>[hostdb_partitions];
   return 0;
 }
@@ -1570,22 +1570,6 @@ HostDBRecord::alloc(TextView query_name, unsigned int rr_count, size_t srv_name_
     new (&info) std::remove_reference_t<decltype(info)>;
   }
 
-  return self;
-}
-
-HostDBRecord::self_type *
-HostDBRecord::unmarshall(char *buff, unsigned size)
-{
-  if (size < sizeof(self_type)) {
-    return nullptr;
-  }
-  auto src = reinterpret_cast<self_type *>(buff);
-  ink_release_assert(size == src->_record_size);
-  auto ptr  = ioBufAllocator[src->_iobuffer_index].alloc_void();
-  auto self = static_cast<self_type *>(ptr);
-  new (self) self_type();
-  auto delta = sizeof(RefCountObj); // skip the VFTP and ref count.
-  memcpy(static_cast<std::byte *>(ptr) + delta, buff + delta, size - delta);
   return self;
 }
 

@@ -64,20 +64,6 @@ public:
     items_freed.insert(this);
     printf("freeing: %p items_freed.size(): %zu\n", this, items_freed.size());
   }
-
-  static ExampleStruct *
-  unmarshall(char *buf, unsigned int size)
-  {
-    if (size < sizeof(ExampleStruct)) {
-      return nullptr;
-    }
-    ExampleStruct *ret = ExampleStruct::alloc(size - sizeof(ExampleStruct));
-    memcpy(static_cast<void *>(ret), buf, size);
-    // Reset the refcount back to 0, this is a bit ugly-- but I'm not sure we want to expose a method
-    // to mess with the refcount, since this is a fairly unique use case
-    ret = new (ret) ExampleStruct();
-    return ret;
-  }
 };
 
 std::set<ExampleStruct *> ExampleStruct::items_freed;
@@ -216,8 +202,6 @@ test()
   auto cache           = std::make_unique<RefCountCache<ExampleStruct>>(cachePartitions);
   printf("Created...\n");
 
-  LoadRefCountCacheFromPath<ExampleStruct>(*cache, "/tmp/hostdb_cache", ExampleStruct::unmarshall);
-  printf("Cache started...\n");
   int numTestEntries = 10000;
 
   // See if anything persisted across the restart

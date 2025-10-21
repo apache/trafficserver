@@ -360,24 +360,10 @@ RefCountCachePartition<C>::get_map()
   return this->item_map;
 }
 
-// The header for the cache, this is used to check if the serialized cache is compatible
-class RefCountCacheHeader
-{
-public:
-  unsigned int      magic = REFCOUNTCACHE_MAGIC_NUMBER;
-  ts::VersionNumber version{REFCOUNTCACHE_VERSION};
-  ts::VersionNumber object_version; // version passed in of whatever it is we are caching
-
-  RefCountCacheHeader(ts::VersionNumber object_version = ts::VersionNumber());
-  bool operator==(RefCountCacheHeader const &that) const;
-  bool compatible(RefCountCacheHeader *that) const;
-};
-
 // RefCountCache is a ref-counted key->value map to store classes that inherit from RefCountObj.
 // Once an item is `put` into the cache, the cache will maintain a Ptr<> to that object until erase
 // or clear is called-- which will remove the cache's Ptr<> to the object.
 //
-// This cache may be Persisted (RefCountCacheSync) as well as loaded from disk (LoadRefCountCacheFromPath).
 // This class will optionally emit metrics at the given `metrics_prefix`.
 //
 // Note: although this cache does allow you to set expiry times this cache does not actively GC itself-- meaning
@@ -391,8 +377,7 @@ template <class C> class RefCountCache
 {
 public:
   // Constructor
-  RefCountCache(unsigned int num_partitions, int size = -1, int items = -1, ts::VersionNumber object_version = ts::VersionNumber(),
-                const std::string &metrics_prefix = ".refcountcache");
+  RefCountCache(unsigned int num_partitions, int size = -1, int items = -1, const std::string &metrics_prefix = ".refcountcache");
   // Destructor
   ~RefCountCache();
 
@@ -408,7 +393,6 @@ public:
   size_t                     partition_count() const;
   RefCountCachePartition<C> &get_partition(int pnum);
   size_t                     count() const;
-  RefCountCacheHeader       &get_header();
   RefCountCacheBlock        *get_rsb();
 
 private:
@@ -416,15 +400,11 @@ private:
   int                                                     max_items; // Total number of items allowed
   unsigned int                                            num_partitions;
   std::vector<std::unique_ptr<RefCountCachePartition<C>>> partitions;
-  // Header
-  RefCountCacheHeader header; // Our header
-  RefCountCacheBlock  rsb;
+  RefCountCacheBlock                                      rsb;
 };
 
 template <class C>
-RefCountCache<C>::RefCountCache(unsigned int num_partitions, int size, int items, ts::VersionNumber object_version,
-                                const std::string &metrics_prefix)
-  : header(RefCountCacheHeader(object_version))
+RefCountCache<C>::RefCountCache(unsigned int num_partitions, int size, int items, const std::string &metrics_prefix)
 {
   this->max_size       = size;
   this->max_items      = items;
@@ -474,13 +454,6 @@ int
 RefCountCache<C>::partition_for_key(uint64_t key)
 {
   return key % this->num_partitions;
-}
-
-template <class C>
-RefCountCacheHeader &
-RefCountCache<C>::get_header()
-{
-  return this->header;
 }
 
 template <class C>
@@ -536,59 +509,4 @@ RefCountCache<C>::clear()
   for (unsigned int i = 0; i < this->num_partitions; i++) {
     this->partitions[i]->clear();
   }
-}
-
-// Fill `cache` with items in file `filepath` using `load_func` to unmarshall the record.
-// Errors are -1
-template <typename CacheEntryType>
-int
-LoadRefCountCacheFromPath(RefCountCache<CacheEntryType> &cache, const std::string &filepath,
-                          CacheEntryType *(*load_func)(char *, unsigned int))
-{
-  // If we have no load method, then we can't load anything so lets just stop right here
-  if (load_func == nullptr) {
-    return -1; // TODO: some specific error code
-  }
-
-  int fd = open(filepath.c_str(), O_RDONLY);
-  if (fd < 0) {
-    Warning("Unable to open file %s; [Error]: %s", filepath.c_str(), strerror(errno));
-    return -1;
-  }
-
-  // read in the header
-  RefCountCacheHeader tmpHeader = RefCountCacheHeader();
-  int                 read_ret  = read(fd, reinterpret_cast<char *>(&tmpHeader), sizeof(RefCountCacheHeader));
-  if (read_ret != sizeof(RefCountCacheHeader)) {
-    UnixSocket{fd}.close();
-    Warning("Error reading cache header from disk (expected %ld): %d", sizeof(RefCountCacheHeader), read_ret);
-    return -1;
-  }
-  if (!cache.get_header().compatible(&tmpHeader)) {
-    UnixSocket{fd}.close();
-    Warning("Incompatible cache at %s, not loading.", filepath.c_str());
-    return -1; // TODO: specific code for incompatible
-  }
-
-  RefCountCacheItemMeta tmpValue = RefCountCacheItemMeta(0, 0);
-  while (true) { // TODO: better loop
-    read_ret = read(fd, reinterpret_cast<char *>(&tmpValue), sizeof(tmpValue));
-    if (read_ret != sizeof(tmpValue)) {
-      break;
-    }
-    char buf[tmpValue.size];
-    read_ret = read(fd, reinterpret_cast<char *>(&buf), tmpValue.size);
-    if (read_ret != static_cast<int>(tmpValue.size)) {
-      Warning("Encountered error reading item from cache: %d", read_ret);
-      break;
-    }
-
-    CacheEntryType *newItem = load_func(reinterpret_cast<char *>(&buf), tmpValue.size);
-    if (newItem != nullptr) {
-      cache.put(tmpValue.key, newItem, tmpValue.size - sizeof(CacheEntryType));
-    }
-  };
-
-  UnixSocket{fd}.close();
-  return 0;
 }

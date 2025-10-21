@@ -662,7 +662,8 @@ public:
     HTTPVersion         updated_server_version = HTTP_INVALID;
     CacheLookupResult_t cache_lookup_result    = CacheLookupResult_t::NONE;
     HTTPStatus          http_return_code       = HTTPStatus::NONE;
-    CacheAuth_t         www_auth_content       = CacheAuth_t::NONE;
+    std::string         http_return_code_setter_name;
+    CacheAuth_t         www_auth_content = CacheAuth_t::NONE;
 
     Arena arena;
 
@@ -722,11 +723,11 @@ public:
     //  able to defer some work in building the request
     TransactFunc_t pending_work = nullptr;
 
-    HttpRequestData                           request_data;
-    ParentConfigParams                       *parent_params     = nullptr;
-    std::shared_ptr<NextHopSelectionStrategy> next_hop_strategy = nullptr;
-    ParentResult                              parent_result;
-    CacheControlResult                        cache_control;
+    HttpRequestData           request_data;
+    ParentConfigParams       *parent_params     = nullptr;
+    NextHopSelectionStrategy *next_hop_strategy = nullptr;
+    ParentResult              parent_result;
+    CacheControlResult        cache_control;
 
     StateMachineAction_t next_action                      = StateMachineAction_t::UNDEFINED; // out
     StateMachineAction_t api_next_action                  = StateMachineAction_t::UNDEFINED; // out

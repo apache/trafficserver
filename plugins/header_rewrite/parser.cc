@@ -164,7 +164,7 @@ Parser::parse_line(const std::string &original_line)
 }
 
 // This is the main "parser", a helper function to the above tokenizer. NOTE: this modifies (possibly) the tokens list,
-// therefore, we pass in a copy of the parsers tokens here, such that the original token list is retained (useful for tests etc.).
+// therefore, we pass in a copy of the parser's tokens here, such that the original token list is retained.
 bool
 Parser::preprocess(std::vector<std::string> tokens)
 {
@@ -178,6 +178,7 @@ Parser::preprocess(std::vector<std::string> tokens)
         if (m.find_first_of(',') != std::string::npos) {
           std::istringstream iss(m);
           std::string        t;
+
           while (getline(iss, t, ',')) {
             _mods.push_back(t);
           }
@@ -186,7 +187,6 @@ Parser::preprocess(std::vector<std::string> tokens)
         }
         tokens.pop_back(); // consume it, so we don't concatenate it into the value
       } else {
-        // Syntax error
         TSError("[%s] mods have to be enclosed in []", PLUGIN_NAME);
         return false;
       }

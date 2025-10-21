@@ -244,7 +244,7 @@ public:
 private:
   const std::string prefix_str;
   mutable ink_mutex tag_table_lock;    // prevents reconfig/read races
-  DFA              *activated_tags[2]; // 1 table for debug, 1 for action
+  Regex            *activated_tags[2]; // 1 table for debug, 1 for action
 
   // These are the default logfile permissions
   int diags_logfile_perm  = -1;

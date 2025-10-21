@@ -34,6 +34,7 @@
 #endif
 
 #include <type_traits>
+#include <string_view>
 #include <vector>
 
 #include "tsutil/DbgCtl.h"
@@ -1142,7 +1143,9 @@ TSReturnCode TSHttpHdrUrlGet(TSMBuffer bufp, TSMLoc offset, TSMLoc *locp);
 TSReturnCode TSHttpHdrUrlSet(TSMBuffer bufp, TSMLoc offset, TSMLoc url);
 
 TSHttpStatus TSHttpHdrStatusGet(TSMBuffer bufp, TSMLoc offset);
+/** This is a candidate for deprecation in v10.0.0 in favor of the version that takes the setter. */
 TSReturnCode TSHttpHdrStatusSet(TSMBuffer bufp, TSMLoc offset, TSHttpStatus status);
+TSReturnCode TSHttpHdrStatusSet(TSMBuffer bufp, TSMLoc offset, TSHttpStatus status, TSHttpTxn txnp, std::string_view setter);
 const char  *TSHttpHdrReasonGet(TSMBuffer bufp, TSMLoc offset, int *length);
 TSReturnCode TSHttpHdrReasonSet(TSMBuffer bufp, TSMLoc offset, const char *value, int length);
 const char  *TSHttpHdrReasonLookup(TSHttpStatus status);
@@ -1577,6 +1580,67 @@ void TSHttpTxnErrorBodySet(TSHttpTxn txnp, char *buf, size_t buflength, char *mi
 char *TSHttpTxnErrorBodyGet(TSHttpTxn txnp, size_t *buflength, char **mimetype);
 
 /**
+    Sets the Transaction's Next Hop Parent Strategy.
+    Calling this after TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK will
+    result in bad behavior.
+
+    You can get this strategy pointer by calling TSHttpTxnParentStrategyGet().
+
+    @param txnp HTTP transaction whose parent strategy to set.
+    @param pointer to the given strategy.
+
+ */
+void TSHttpTxnNextHopStrategySet(TSHttpTxn txnp, void const *strategy);
+
+/**
+    Retrieves a pointer to the current next hop selection strategy.
+    This value may be a nullptr due to:
+      - parent proxying not enabled
+      - no parent selection strategy (using parent.config)
+
+    @param txnp HTTP transaction whose next hop strategy to get.
+
+ */
+void const *TSHttpTxnNextHopStrategyGet(TSHttpTxn txnp);
+
+/**
+    Returns either null pointer or null terminated pointer to name.
+                DO NOT FREE.
+
+    This value may be a nullptr due to:
+      - parent proxying not enabled
+      - no parent selection strategy (using parent.config)
+
+    @param txnp HTTP transaction whose next hop strategy to get.
+
+ */
+char const *TSHttpNextHopStrategyNameGet(void const *strategy);
+
+/**
+    Retrieves a pointer to the named strategy in the strategy table.
+    Returns nullptr if no strategy is set.
+    This uses the current transaction's state machine to get
+    access to UrlRewrite's NextHopStrategyFactory.
+
+    @param txnp HTTP transaction which holds the strategy table.
+    @param name of the strategy to look up.
+
+ */
+void const *TSHttpTxnNextHopNamedStrategyGet(TSHttpTxn txnp, const char *name);
+
+/**
+    Sets the parent proxy name and port. The string hostname is copied
+    into the TSHttpTxn; you can modify or delete the string after
+    calling TSHttpTxnParentProxySet().
+
+    @param txnp HTTP transaction whose parent proxy to set.
+    @param hostname parent proxy host name string.
+    @param port parent proxy port to set.
+
+ */
+void TSHttpTxnParentProxySet(TSHttpTxn txnp, const char *hostname, int port);
+
+/**
     Retrieves the parent proxy hostname and port, if parent
     proxying is enabled. If parent proxying is not enabled,
     TSHttpTxnParentProxyGet() sets hostname to nullptr and port to -1.
@@ -1637,7 +1701,35 @@ TSReturnCode TSUserArgIndexLookup(TSUserArgType type, int arg_idx, const char **
 void         TSUserArgSet(void *data, int arg_idx, void *arg);
 void        *TSUserArgGet(void *data, int arg_idx);
 
-void         TSHttpTxnStatusSet(TSHttpTxn txnp, TSHttpStatus status);
+/** Set the HTTP status code for a transaction.
+ *
+ * Sets the transaction's internal status state, triggering Traffic Server's
+ * error handling system. This is typically used for access control,
+ * authentication failures, and early transaction processing. Traffic Server
+ * will automatically generate an appropriate error response body.
+ *
+ * @note This is a candidate for deprecation in v10.0.0 in favor of the version
+ * that takes the setter.
+ *
+ * @param[in] txnp The associated transaction for the new status.
+ * @param[in] status The HTTP status code to set.
+ */
+void TSHttpTxnStatusSet(TSHttpTxn txnp, TSHttpStatus status);
+
+/** Set the HTTP status code for a transaction and track the entity that set it.
+ *
+ * Sets the transaction's internal status state, triggering Traffic Server's
+ * error handling system. This is typically used for access control,
+ * authentication failures, and early transaction processing. Traffic Server
+ * will automatically generate an appropriate error response body.
+ *
+ * @param[in] txnp The associated transaction for the new status.
+ * @param[in] status The HTTP status code to set.
+ * @param[in] setter Identifying label for the entity setting the status
+ *   (e.g., plugin name). If empty, clears the current setter information.
+ */
+void TSHttpTxnStatusSet(TSHttpTxn txnp, TSHttpStatus status, std::string_view setter);
+
 TSHttpStatus TSHttpTxnStatusGet(TSHttpTxn txnp);
 
 void TSHttpTxnActiveTimeoutSet(TSHttpTxn txnp, int timeout);
