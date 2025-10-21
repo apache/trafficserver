@@ -547,6 +547,23 @@ RecLookupRecord(const char *name, void (*callback)(const RecRecord *, void *), v
     if (lock) {
       ink_rwlock_unlock(&g_records_rwlock);
     }
+
+    // Also check for StaticString metrics
+    if (err == REC_ERR_FAIL) {
+      auto &strings = ts::Metrics::StaticString::instance();
+
+      if (auto m = strings.lookup(std::string{name}); m) {
+        RecRecord r;
+        r.rec_type                = RECT_PLUGIN;
+        r.data_type               = RECD_STRING;
+        r.name                    = name;
+        r.data.rec_string         = const_cast<char *>(m->data());
+        r.data_default.rec_string = const_cast<char *>(m->data());
+
+        callback(&r, data);
+        err = REC_ERR_OKAY;
+      }
+    }
   }
 
   return err;
@@ -556,7 +573,6 @@ RecErrT
 RecLookupMatchingRecords(unsigned rec_type, const char *match, void (*callback)(const RecRecord *, void *), void *data,
                          bool /* lock ATS_UNUSED */)
 {
-  int   num_records;
   Regex regex;
 
   if (!regex.compile(match, RE_CASE_INSENSITIVE | RE_UNANCHORED)) {
@@ -566,12 +582,12 @@ RecLookupMatchingRecords(unsigned rec_type, const char *match, void (*callback)(
   if ((rec_type & (RECT_PROCESS | RECT_NODE | RECT_PLUGIN))) {
     // First find the new metrics, this is a bit of a hack, because we still use the old
     // librecords callback with a "pseudo" record.
-    RecRecord tmp;
-
-    tmp.rec_type = RECT_PROCESS;
-
     for (auto &&[name, type, val] : ts::Metrics::instance()) {
       if (regex.exec(name.data())) {
+        RecRecord tmp;
+
+        tmp.rec_type = RECT_PROCESS;
+
         tmp.name         = name.data();
         tmp.data_type    = type == ts::Metrics::MetricType::COUNTER ? RECD_COUNTER : RECD_INT;
         tmp.data.rec_int = val;
@@ -581,7 +597,7 @@ RecLookupMatchingRecords(unsigned rec_type, const char *match, void (*callback)(
     // Fall through to return any matching string metrics
   }
 
-  num_records = g_num_records;
+  int num_records = g_num_records;
   for (int i = 0; i < num_records; i++) {
     RecRecord *r = &(g_records[i]);
 
@@ -596,6 +612,22 @@ RecLookupMatchingRecords(unsigned rec_type, const char *match, void (*callback)(
     rec_mutex_acquire(&(r->lock));
     callback(r, data);
     rec_mutex_release(&(r->lock));
+  }
+
+  // Finally check string metrics
+  for (auto &&[name, value] : ts::Metrics::StaticString::instance()) {
+    if (regex.exec(name)) {
+      RecRecord tmp;
+
+      tmp.rec_type = RECT_PROCESS;
+
+      tmp.name      = name.data();
+      tmp.data_type = RECD_STRING;
+      // NOTE(cmcfarlen): unfortunate relic here that the callbacks expect a non-const rec_string
+      // This should be temp until traffic_ctl uses ts::Metrics directly
+      tmp.data.rec_string = const_cast<char *>(value.c_str());
+      callback(&tmp, data);
+    }
   }
 
   return REC_ERR_OKAY;
