@@ -37,6 +37,15 @@ Instance::_initialize(int argc, const char *argv[], const char *filename, bool r
       data[i - 2] = s;
     }
     _size = argc - 2;
+  } else {
+    // Global plugins don't have the from/to url values.
+    for (int i = 1; i < argc && i <= 16; i++) {
+      auto s = cripts::string(argv[i]);
+
+      s.trim("\"\'");
+      data[i - 1] = s;
+    }
+    _size = argc - 1;
   }
 
   // Set the debug tag for this plugin, slightly annoying that we have to calculate
