@@ -281,9 +281,8 @@ The following list shows the possible actions and their allowed values.
 
        The hash algorithm used for consistent hashing can be configured via
        :ts:cv:`proxy.config.http.parent_proxy.consistent_hash_algorithm`. Available
-       algorithms are ``siphash24`` (default), ``siphash13`` (faster), and ``wyhash``
-       (fastest). See the records.yaml documentation for performance characteristics
-       and migration considerations.
+       algorithms are ``siphash24`` (default) and ``siphash13`` (faster).
+       See the records.yaml documentation for details.
 
     - ``latched`` - The first parent in the list is marked as primary and is
       always chosen until connection errors cause it to be marked down.  When
@@ -324,6 +323,62 @@ The following list shows the possible actions and their allowed values.
       marked up.
 
   -  ``false`` - The default.  Do not ignore the host status.
+
+.. _parent-config-format-hash-algorithm:
+
+``hash_algorithm``
+    When using ``round_robin=consistent_hash``, this specifies the hash algorithm to use
+    for this specific rule, overriding the global default set in :ts:cv:`proxy.config.http.parent_proxy.consistent_hash_algorithm`.
+
+    Allowed values:
+
+    - ``siphash24`` - SipHash-2-4 (default). Cryptographically strong, DoS-resistant.
+    - ``siphash13`` - SipHash-1-3. ~50% faster than SipHash-2-4, still DoS-resistant.
+
+    Example::
+
+        dest_domain=. parent="p1.x.com:80,p2.x.com:80" round_robin=consistent_hash hash_algorithm=siphash13
+
+.. _parent-config-format-hash-seed0:
+
+``hash_seed0``
+    When using ``round_robin=consistent_hash``, this specifies the first 64 bits of the hash seed (key).
+
+    - For SipHash algorithms, this is the first half of the 128-bit cryptographic key (k0)
+    - For future 64-bit algorithms, this will be the full seed value
+
+    Value must be specified as a decimal integer (e.g. ``12345678901234567``). Default is ``0``.
+
+    Example::
+
+        dest_domain=. parent="p1.x.com:80,p2.x.com:80" round_robin=consistent_hash hash_seed0=1234567890
+
+.. _parent-config-format-hash-seed1:
+
+``hash_seed1``
+    When using ``round_robin=consistent_hash``, this specifies the second 64 bits of the hash seed (key).
+
+    - For SipHash algorithms, this is the second half of the 128-bit cryptographic key (k1)
+    - For future 64-bit algorithms, this value is ignored
+
+    Value must be specified as a decimal integer (e.g. ``9876543210987654321``). Default is ``0``.
+
+    Example::
+
+        dest_domain=. parent="p1.x.com:80,p2.x.com:80" round_robin=consistent_hash hash_seed0=1234567890 hash_seed1=9876543210
+
+.. _parent-config-format-hash-replicas:
+
+``hash_replicas``
+    When using ``round_robin=consistent_hash``, this specifies the number of virtual nodes (replicas)
+    per parent host on the consistent hash ring.
+
+    Increasing the replica count improves the distribution of requests across parent proxies but uses
+    more memory. Must be greater than 0. Default is ``1024``.
+
+    Example::
+
+        dest_domain=. parent="p1.x.com:80,p2.x.com:80" round_robin=consistent_hash hash_replicas=2048
 
 Examples
 ========

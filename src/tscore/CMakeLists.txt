@@ -44,7 +44,6 @@ add_library(
   FrequencyCounter.cc
   Hash.cc
   HashFNV.cc
-  HashWyhash.cc
   HostLookup.cc
   InkErrno.cc
   JeMiAllocator.cc

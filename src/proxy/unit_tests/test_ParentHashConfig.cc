@@ -31,7 +31,6 @@ TEST_CASE("parseHashAlgorithm - Valid inputs", "[ParentSelection]")
 {
   REQUIRE(parseHashAlgorithm("siphash24") == ParentHashAlgorithm::SIPHASH24);
   REQUIRE(parseHashAlgorithm("siphash13") == ParentHashAlgorithm::SIPHASH13);
-  REQUIRE(parseHashAlgorithm("wyhash") == ParentHashAlgorithm::WYHASH);
 }
 
 TEST_CASE("parseHashAlgorithm - Invalid inputs fallback to default", "[ParentSelection]")
@@ -46,9 +45,7 @@ TEST_CASE("parseHashAlgorithm - Invalid inputs fallback to default", "[ParentSel
 TEST_CASE("parseHashAlgorithm - Case sensitivity", "[ParentSelection]")
 {
   // Should be case-sensitive - uppercase should fall back to default
-  REQUIRE(parseHashAlgorithm("WYHASH") == ParentHashAlgorithm::SIPHASH24);
   REQUIRE(parseHashAlgorithm("SipHash24") == ParentHashAlgorithm::SIPHASH24);
-  REQUIRE(parseHashAlgorithm("Wyhash") == ParentHashAlgorithm::SIPHASH24);
 }
 
 TEST_CASE("ParentHashAlgorithm - Backward compatibility", "[ParentSelection]")

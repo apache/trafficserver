@@ -57,17 +57,23 @@ std::shared_ptr<HostRecord>
 NextHopConsistentHash::chashLookup(const std::shared_ptr<ATSConsistentHash> &ring, uint32_t cur_ring, ParentResult &result,
                                    HttpRequestData &request_info, bool *wrapped, uint64_t sm_id)
 {
-  uint64_t               hash_key = 0;
-  ATSHash64Sip24         hash;
+  uint64_t hash_key = 0;
+  // Create hash instance based on configured algorithm and seeds
+  std::unique_ptr<ATSHash64> hash;
+  if (hash_algorithm == "siphash13") {
+    hash = std::make_unique<ATSHash64Sip13>(hash_seed0, hash_seed1);
+  } else {
+    hash = std::make_unique<ATSHash64Sip24>(hash_seed0, hash_seed1);
+  }
   HostRecord            *host_rec = nullptr;
   ATSConsistentHashIter *iter     = &result.chashIter[cur_ring];
 
   if (result.chash_init[cur_ring] == false) {
-    hash_key                    = getHashKey(sm_id, request_info, &hash);
+    hash_key                    = getHashKey(sm_id, request_info, hash.get());
     host_rec                    = static_cast<HostRecord *>(ring->lookup_by_hashval(hash_key, iter, wrapped));
     result.chash_init[cur_ring] = true;
   } else {
-    host_rec = static_cast<HostRecord *>(ring->lookup(nullptr, iter, wrapped, &hash));
+    host_rec = static_cast<HostRecord *>(ring->lookup(nullptr, iter, wrapped, hash.get()));
   }
   bool wrap_around = *wrapped;
   *wrapped         = (result.mapWrapped[cur_ring] && *wrapped) ? true : false;
@@ -91,7 +97,7 @@ NextHopConsistentHash::~NextHopConsistentHash()
 NextHopConsistentHash::NextHopConsistentHash(const std::string_view name, const NHPolicyType &policy, ts::Yaml::Map &n)
   : NextHopSelectionStrategy(name, policy, n)
 {
-  ATSHash64Sip24 hash;
+  std::unique_ptr<ATSHash64> hash;
 
   try {
     if (n["hash_url"]) {
@@ -140,9 +146,67 @@ NextHopConsistentHash::NextHopConsistentHash(const std::string_view name, const 
                                 "', this strategy will be ignored.");
   }
 
+  // Parse hash_algorithm
+  try {
+    if (n["hash_algorithm"]) {
+      hash_algorithm = n["hash_algorithm"].Scalar();
+      if (hash_algorithm != "siphash24" && hash_algorithm != "siphash13") {
+        NH_Note("Invalid 'hash_algorithm' value, '%s', for the strategy named '%s', using default 'siphash24'.",
+                hash_algorithm.c_str(), strategy_name.c_str());
+        hash_algorithm = "siphash24";
+      }
+    }
+  } catch (std::exception &ex) {
+    throw std::invalid_argument("Error parsing the strategy named '" + strategy_name + "' due to '" + ex.what() +
+                                "', this strategy will be ignored.");
+  }
+
+  // Parse hash_seed0
+  try {
+    if (n["hash_seed0"]) {
+      hash_seed0 = n["hash_seed0"].as<uint64_t>();
+    }
+  } catch (std::exception &ex) {
+    throw std::invalid_argument("Error parsing the strategy named '" + strategy_name + "' due to '" + ex.what() +
+                                "', this strategy will be ignored.");
+  }
+
+  // Parse hash_seed1
+  try {
+    if (n["hash_seed1"]) {
+      hash_seed1 = n["hash_seed1"].as<uint64_t>();
+    }
+  } catch (std::exception &ex) {
+    throw std::invalid_argument("Error parsing the strategy named '" + strategy_name + "' due to '" + ex.what() +
+                                "', this strategy will be ignored.");
+  }
+
+  // Parse hash_replicas
+  try {
+    if (n["hash_replicas"]) {
+      hash_replicas = n["hash_replicas"].as<int>();
+      if (hash_replicas <= 0) {
+        NH_Note("Invalid 'hash_replicas' value, %d, for the strategy named '%s', must be > 0, using default 1024.", hash_replicas,
+                strategy_name.c_str());
+        hash_replicas = 1024;
+      }
+    }
+  } catch (std::exception &ex) {
+    throw std::invalid_argument("Error parsing the strategy named '" + strategy_name + "' due to '" + ex.what() +
+                                "', this strategy will be ignored.");
+  }
+
+  // Create the hash instance based on configured algorithm and seeds
+  if (hash_algorithm == "siphash13") {
+    hash = std::make_unique<ATSHash64Sip13>(hash_seed0, hash_seed1);
+  } else {
+    // Default to siphash24
+    hash = std::make_unique<ATSHash64Sip24>(hash_seed0, hash_seed1);
+  }
+
   // load up the hash rings.
   for (uint32_t i = 0; i < groups; i++) {
-    std::shared_ptr<ATSConsistentHash> hash_ring = std::make_shared<ATSConsistentHash>();
+    std::shared_ptr<ATSConsistentHash> hash_ring = std::make_shared<ATSConsistentHash>(hash_replicas);
     for (uint32_t j = 0; j < host_groups[i].size(); j++) {
       // ATSConsistentHash needs the raw pointer.
       HostRecord *p = host_groups[i][j].get();
@@ -154,11 +218,11 @@ NextHopConsistentHash::NextHopConsistentHash(const std::string_view name, const 
       }
       p->group_index = host_groups[i][j]->group_index;
       p->host_index  = host_groups[i][j]->host_index;
-      hash_ring->insert(p, p->weight, &hash);
+      hash_ring->insert(p, p->weight, hash.get());
       NH_Dbg(NH_DBG_CTL, "Loading hash rings - ring: %d, host record: %d, name: %s, hostname: %s, strategy: %s", i, j, p->name,
              p->hostname.c_str(), strategy_name.c_str());
     }
-    hash.clear();
+    hash->clear();
     rings.push_back(std::move(hash_ring));
   }
 }

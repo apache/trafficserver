@@ -73,7 +73,7 @@ enum class ParentRetry_t {
   BOTH = 3
 };
 
-enum class ParentHashAlgorithm { SIPHASH24 = 0, SIPHASH13, WYHASH };
+enum class ParentHashAlgorithm { SIPHASH24 = 0, SIPHASH13 };
 
 struct UnavailableServerResponseCodes {
   UnavailableServerResponseCodes(char *val);
@@ -166,6 +166,9 @@ public:
   int                             secondary_mode                     = 1;
   bool                            ignore_self_detect                 = false;
   ParentHashAlgorithm             consistent_hash_algorithm          = ParentHashAlgorithm::SIPHASH24;
+  uint64_t                        consistent_hash_seed0              = 0;
+  uint64_t                        consistent_hash_seed1              = 0;
+  int consistent_hash_replicas = 1024; // Number of virtual nodes per host (int to match ATSConsistentHash constructor)
 };
 
 // If the parent was set by the external customer api,

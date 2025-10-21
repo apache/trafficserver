@@ -24,7 +24,6 @@
 #include "proxy/HostStatus.h"
 #include "proxy/ParentConsistentHash.h"
 #include "tscore/HashSip.h"
-#include "tscore/HashWyhash.h"
 
 namespace
 {
@@ -32,18 +31,16 @@ DbgCtl dbg_ctl_parent_select{"parent_select"};
 }
 
 std::unique_ptr<ATSHash64>
-ParentConsistentHash::createHashInstance(ParentHashAlgorithm algo)
+ParentConsistentHash::createHashInstance(ParentHashAlgorithm algo, uint64_t seed0, uint64_t seed1)
 {
   switch (algo) {
   case ParentHashAlgorithm::SIPHASH24:
-    return std::make_unique<ATSHash64Sip24>();
+    return std::make_unique<ATSHash64Sip24>(seed0, seed1);
   case ParentHashAlgorithm::SIPHASH13:
-    return std::make_unique<ATSHash64Sip13>();
-  case ParentHashAlgorithm::WYHASH:
-    return std::make_unique<ATSHash64Wyhash>();
+    return std::make_unique<ATSHash64Sip13>(seed0, seed1);
   default:
     Warning("Unknown hash algorithm %d, using SipHash-2-4", static_cast<int>(algo));
-    return std::make_unique<ATSHash64Sip24>();
+    return std::make_unique<ATSHash64Sip24>(seed0, seed1);
   }
 }
 
@@ -57,10 +54,12 @@ ParentConsistentHash::ParentConsistentHash(ParentRecord *parent_record)
   ignore_query       = parent_record->ignore_query;
   secondary_mode     = parent_record->secondary_mode;
   selected_algorithm = parent_record->consistent_hash_algorithm;
+  hash_seed0         = parent_record->consistent_hash_seed0;
+  hash_seed1         = parent_record->consistent_hash_seed1;
   ink_zero(foundParents);
 
-  hash[PRIMARY]  = createHashInstance(selected_algorithm);
-  chash[PRIMARY] = std::make_unique<ATSConsistentHash>();
+  hash[PRIMARY]  = createHashInstance(selected_algorithm, hash_seed0, hash_seed1);
+  chash[PRIMARY] = std::make_unique<ATSConsistentHash>(parent_record->consistent_hash_replicas);
 
   for (i = 0; i < parent_record->num_parents; i++) {
     chash[PRIMARY]->insert(&(parent_record->parents[i]), parent_record->parents[i].weight, hash[PRIMARY].get());
@@ -68,8 +67,8 @@ ParentConsistentHash::ParentConsistentHash(ParentRecord *parent_record)
 
   if (parent_record->num_secondary_parents > 0) {
     Dbg(dbg_ctl_parent_select, "ParentConsistentHash(): initializing the secondary parents hash.");
-    hash[SECONDARY]  = createHashInstance(selected_algorithm);
-    chash[SECONDARY] = std::make_unique<ATSConsistentHash>();
+    hash[SECONDARY]  = createHashInstance(selected_algorithm, hash_seed0, hash_seed1);
+    chash[SECONDARY] = std::make_unique<ATSConsistentHash>(parent_record->consistent_hash_replicas);
 
     for (i = 0; i < parent_record->num_secondary_parents; i++) {
       chash[SECONDARY]->insert(&(parent_record->secondary_parents[i]), parent_record->secondary_parents[i].weight,
@@ -155,7 +154,7 @@ void
 ParentConsistentHash::selectParent(bool first_call, ParentResult *result, RequestData *rdata,
                                    unsigned int /* fail_threshold ATS_UNUSED */, unsigned int retry_time)
 {
-  std::unique_ptr<ATSHash64> hash = createHashInstance(selected_algorithm);
+  std::unique_ptr<ATSHash64> hash = createHashInstance(selected_algorithm, hash_seed0, hash_seed1);
   ATSConsistentHash         *fhash;
   HttpRequestData           *request_info   = static_cast<HttpRequestData *>(rdata);
   bool                       firstCall      = first_call;

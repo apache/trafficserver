@@ -45,8 +45,10 @@ class ParentConsistentHash : public ParentSelectionStrategy
   bool                               ignore_query;
   int                                secondary_mode;
   ParentHashAlgorithm                selected_algorithm;
+  uint64_t                           hash_seed0;
+  uint64_t                           hash_seed1;
 
-  std::unique_ptr<ATSHash64> createHashInstance(ParentHashAlgorithm algo);
+  std::unique_ptr<ATSHash64> createHashInstance(ParentHashAlgorithm algo, uint64_t seed0, uint64_t seed1);
 
 public:
   static const int PRIMARY   = 0;
