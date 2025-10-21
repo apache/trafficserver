@@ -594,7 +594,21 @@ RecLookupMatchingRecords(unsigned rec_type, const char *match, void (*callback)(
         callback(&tmp, data);
       }
     }
-    // Fall through to return any matching string metrics
+    // Finally check string metrics
+    for (auto &&[name, value] : ts::Metrics::StaticString::instance()) {
+      if (regex.exec(name)) {
+        RecRecord tmp;
+
+        tmp.rec_type = RECT_PROCESS;
+
+        tmp.name      = name.data();
+        tmp.data_type = RECD_STRING;
+        // NOTE(cmcfarlen): unfortunate relic here that the callbacks expect a non-const rec_string
+        // This should be temp until traffic_ctl uses ts::Metrics directly
+        tmp.data.rec_string = const_cast<char *>(value.c_str());
+        callback(&tmp, data);
+      }
+    }
   }
 
   int num_records = g_num_records;
@@ -612,22 +626,6 @@ RecLookupMatchingRecords(unsigned rec_type, const char *match, void (*callback)(
     rec_mutex_acquire(&(r->lock));
     callback(r, data);
     rec_mutex_release(&(r->lock));
-  }
-
-  // Finally check string metrics
-  for (auto &&[name, value] : ts::Metrics::StaticString::instance()) {
-    if (regex.exec(name)) {
-      RecRecord tmp;
-
-      tmp.rec_type = RECT_PROCESS;
-
-      tmp.name      = name.data();
-      tmp.data_type = RECD_STRING;
-      // NOTE(cmcfarlen): unfortunate relic here that the callbacks expect a non-const rec_string
-      // This should be temp until traffic_ctl uses ts::Metrics directly
-      tmp.data.rec_string = const_cast<char *>(value.c_str());
-      callback(&tmp, data);
-    }
   }
 
   return REC_ERR_OKAY;
