@@ -91,20 +91,29 @@ ts.Disk.records_config.update(
         'proxy.config.http.parent_proxy.mark_down_hostdb': 0,
         'proxy.config.http.parent_proxy.self_detect': 0,
         'proxy.config.diags.debug.enabled': 1,
-        'proxy.config.diags.debug.tags': "url_rewrite|next_hop|dns|parent|regex_remap|header_rewrite|tslua|http|hostdb",
+        #'proxy.config.diags.debug.tags': "url_rewrite|next_hop|dns|parent|regex_remap|header_rewrite|tslua|http|hostdb",
+        'proxy.config.diags.debug.tags': "next_hop|dns|parent|regex_remap|header_rewrite|tslua",
     })
 
 ts.Disk.MakeConfigFile("hdr_rw.config").AddLines(
     [
-        "cond %{REMAP_PSEUDO_HOOK}",
-        'cond %{CLIENT-HEADER:Strategy} ="" [NOT]',
-        "set-next-hop-strategy %{CLIENT-HEADER:Strategy}",
+        'cond %{CLIENT-HEADER:Strategy} ="nemo"',
+        "set-next-hop-strategy nemo",
+        'cond %{CLIENT-HEADER:Strategy} ="nh0"',
+        "set-next-hop-strategy nh0",
+        'cond %{CLIENT-HEADER:Strategy} ="nh1"',
+        "set-next-hop-strategy nh1",
+        'cond %{CLIENT-HEADER:Strategy} ="null"',
+        "set-next-hop-strategy null",
+        'cond %{CLIENT-HEADER:Strategy} ="clear"',
+        'set-next-hop-strategy ""',
     ])
 ts.Disk.MakeConfigFile("regex_remap.config").AddLines(
     [
         "/nh0 http://origin/path @strategy=nh1",
         '/nh1 http://origin/path @strategy=',
         "/nh2 http://origin/path @strategy=nh0",
+        '/null http://origin/path @strategy=null',
         "/nemo http://origin/path @strategy=nemo",
     ])
 ts.Disk.MakeConfigFile("strategies.lua").AddLines(
@@ -117,6 +126,8 @@ ts.Disk.MakeConfigFile("strategies.lua").AddLines(
         '  ts.http.set_next_hop_strategy("")',
         ' elseif uri:find("nh2") then',
         '  ts.http.set_next_hop_strategy("nh0")',
+        ' elseif uri:find("null") then',
+        '  ts.http.set_next_hop_strategy("null")',
         ' elseif uri:find("nemo") then',
         '  ts.http.set_next_hop_strategy("nemo")',
         ' end',

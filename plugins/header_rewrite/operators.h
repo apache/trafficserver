@@ -668,5 +668,7 @@ protected:
   bool exec(const Resources &res) const override;
 
 private:
-  Value _value;
+  bool        _apply = true;
+  std::string _stratname;
+  void const *_strategy = nullptr;
 };

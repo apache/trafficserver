@@ -90,15 +90,18 @@ clear_xstr_array(char *v[], size_t vsize)
 }
 
 BUILD_TABLE_INFO::BUILD_TABLE_INFO()
-
 {
   memset(this->paramv, 0, sizeof(this->paramv));
   memset(this->argv, 0, sizeof(this->argv));
+  ink_assert(nullptr == BUILD_TABLE_INFO::instance);
+  BUILD_TABLE_INFO::instance = this;
 }
 
 BUILD_TABLE_INFO::~BUILD_TABLE_INFO()
 {
   this->reset();
+  ink_assert(nullptr != BUILD_TABLE_INFO::instance);
+  BUILD_TABLE_INFO::instance = nullptr;
 }
 
 void
