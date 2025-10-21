@@ -607,6 +607,37 @@ zstd_transform_one(Data *data, const char *upstream_buffer, int64_t upstream_len
       break;
     }
   }
+
+  // Handle flushing if enabled
+  if (!data->hc->flush()) {
+    return;
+  }
+
+  // Flush the compression stream
+  ZSTD_inBuffer empty_input = {nullptr, 0, 0};
+  for (;;) {
+    downstream_blkp         = TSIOBufferStart(data->downstream_buffer);
+    char *downstream_buffer = TSIOBufferBlockWriteStart(downstream_blkp, &downstream_length);
+
+    ZSTD_outBuffer output = {downstream_buffer, static_cast<size_t>(downstream_length), 0};
+
+    size_t result = ZSTD_compressStream2(data->zstrm_zstd.cctx, &output, &empty_input, ZSTD_e_flush);
+
+    if (ZSTD_isError(result)) {
+      error("Zstd flush failed: %s", ZSTD_getErrorName(result));
+      return;
+    }
+
+    if (output.pos > 0) {
+      TSIOBufferProduce(data->downstream_buffer, output.pos);
+      data->downstream_length    += output.pos;
+      data->zstrm_zstd.total_out += output.pos;
+    }
+
+    if (result == 0) { /* flush complete */
+      break;
+    }
+  }
 }
 #endif
 
