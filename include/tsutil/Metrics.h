@@ -34,6 +34,7 @@
 #include <string>
 #include <string_view>
 #include <variant>
+#include <optional>
 
 #include "swoc/MemSpan.h"
 
