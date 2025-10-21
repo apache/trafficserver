@@ -297,7 +297,7 @@ load_state(plugin_state_t *pstate, invalidate_t **ilist)
     ++ln;
 
     RegexMatches matches;
-    int const    rc = config_re.exec(line, matches, 0);
+    int const    rc = config_re.exec(line, matches);
 
     if (5 == rc) {
       invalidate_t *const inv = (invalidate_t *)TSmalloc(sizeof(invalidate_t));
@@ -305,7 +305,7 @@ load_state(plugin_state_t *pstate, invalidate_t **ilist)
 
       auto const regv = matches[1];
       inv->regex_text = TSstrndup(regv.data(), regv.length());
-      Dbg(dbg_ctl, "regex_tex: %s", inv->regex_text);
+      Dbg(dbg_ctl, "regex_text: %s", inv->regex_text);
 
       // atoi will terminate when whitespace/eol is reached
       inv->epoch  = atoi(matches[2].data());
