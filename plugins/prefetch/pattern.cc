@@ -23,6 +23,7 @@
  */
 
 #include "pattern.h"
+#include "tsutil/Regex.h"
 
 static void
 replaceString(String &str, const String &from, const String &to)
@@ -182,7 +183,7 @@ Pattern::match(const String &subject)
     return false;
   }
 
-  return _regex.exec(subject);
+  return _regex.exec(subject, RE_NOTEMPTY);
 }
 
 /**
@@ -200,7 +201,7 @@ Pattern::capture(const String &subject, StringVector &result)
   }
 
   RegexMatches matches;
-  int          matchCount = _regex.exec(subject, matches);
+  int          matchCount = _regex.exec(subject, matches, RE_NOTEMPTY);
 
   if (matchCount <= 0) {
     return false;
@@ -231,7 +232,7 @@ Pattern::replace(const String &subject, String &result)
   }
 
   RegexMatches matches;
-  int          matchCount = _regex.exec(subject, matches);
+  int          matchCount = _regex.exec(subject, matches, RE_NOTEMPTY);
 
   if (matchCount <= 0) {
     return false;
