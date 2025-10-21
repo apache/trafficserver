@@ -395,9 +395,8 @@ load_config(plugin_state_t *pstate, invalidate_t **ilist)
 
     Dbg(dbg_ctl, "Attempting to load rules from: '%s'", path);
 
-    std::string error;
-    Regex       config_re;
-    bool const  regstat = config_re.compile("^([^#].+?)\\s+(\\d+)(\\s+(\\w+))?\\s*$");
+    Regex      config_re;
+    bool const regstat = config_re.compile("^([^#].+?)\\s+(\\d+)(\\s+(\\w+))?\\s*$");
     TSReleaseAssert(true == regstat);
 
     char          line[LINE_MAX];
