@@ -815,8 +815,11 @@ OperatorSetBody::exec(const Resources &res) const
   std::string value;
 
   _value.append_value(value, res);
-  char *msg = TSstrdup(_value.get_value().c_str());
-  TSHttpTxnErrorBodySet(res.txnp, msg, _value.size(), nullptr);
+  char *msg = nullptr;
+  if (!value.empty()) {
+    msg = TSstrdup(value.c_str());
+  }
+  TSHttpTxnErrorBodySet(res.txnp, msg, value.size(), nullptr);
   return true;
 }
 
