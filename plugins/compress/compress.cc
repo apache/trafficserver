@@ -505,6 +505,55 @@ brotli_transform_one(Data *data, const char *upstream_buffer, int64_t upstream_l
 #endif
 
 #if HAVE_ZSTD_H
+static bool
+zstd_compress_operation(Data *data, const char *upstream_buffer, int64_t upstream_length, ZSTD_EndDirective mode)
+{
+  TSIOBufferBlock downstream_blkp;
+  int64_t         downstream_length;
+
+  ZSTD_inBuffer input = {upstream_buffer, static_cast<size_t>(upstream_length), 0};
+
+  for (;;) {
+    downstream_blkp         = TSIOBufferStart(data->downstream_buffer);
+    char *downstream_buffer = TSIOBufferBlockWriteStart(downstream_blkp, &downstream_length);
+
+    ZSTD_outBuffer output = {downstream_buffer, static_cast<size_t>(downstream_length), 0};
+
+    size_t result = ZSTD_compressStream2(data->zstrm_zstd.cctx, &output, &input, mode);
+
+    if (ZSTD_isError(result)) {
+      error("Zstd compression failed (%d): %s", mode, ZSTD_getErrorName(result));
+      return false;
+    }
+
+    if (output.pos > 0) {
+      TSIOBufferProduce(data->downstream_buffer, output.pos);
+      data->downstream_length    += output.pos;
+      data->zstrm_zstd.total_out += output.pos;
+    }
+
+    // Check completion conditions based on mode
+    if (mode == ZSTD_e_continue) {
+      // For continue mode, stop when all input is consumed
+      if (input.pos >= input.size) {
+        break;
+      }
+      // If we have output space but no more input was consumed, break to avoid infinite loop
+      if (output.pos == 0 && input.pos < input.size) {
+        error("zstd-transform: no progress made in compression");
+        return false;
+      }
+    } else if (mode == ZSTD_e_flush) {
+      // For flush mode, stop when flush is complete (result == 0)
+      if (result == 0) {
+        break;
+      }
+    }
+  }
+
+  return true;
+}
+
 static void
 zstd_transform_init(Data *data)
 {
@@ -573,70 +622,22 @@ zstd_transform_finish(Data *data)
 static void
 zstd_transform_one(Data *data, const char *upstream_buffer, int64_t upstream_length)
 {
-  TSIOBufferBlock downstream_blkp;
-  int64_t         downstream_length;
-
-  // Set up input buffer for zstd streaming
-  ZSTD_inBuffer input        = {upstream_buffer, static_cast<size_t>(upstream_length), 0};
-  data->zstrm_zstd.total_in += upstream_length;
-
-  while (input.pos < input.size) {
-    downstream_blkp         = TSIOBufferStart(data->downstream_buffer);
-    char *downstream_buffer = TSIOBufferBlockWriteStart(downstream_blkp, &downstream_length);
-
-    // Set up output buffer for zstd streaming
-    ZSTD_outBuffer output = {downstream_buffer, static_cast<size_t>(downstream_length), 0};
-
-    // Compress the data using streaming API
-    size_t result = ZSTD_compressStream2(data->zstrm_zstd.cctx, &output, &input, ZSTD_e_continue);
-
-    if (ZSTD_isError(result)) {
-      error("Zstd compression failed: %s", ZSTD_getErrorName(result));
-      return;
-    }
-
-    if (output.pos > 0) {
-      TSIOBufferProduce(data->downstream_buffer, output.pos);
-      data->downstream_length    += output.pos;
-      data->zstrm_zstd.total_out += output.pos;
-    }
-
-    // If we have output space but no more input was consumed, break to avoid infinite loop
-    if (output.pos == 0 && input.pos < input.size) {
-      error("zstd-transform: no progress made in compression");
-      break;
-    }
+  bool ok = zstd_compress_operation(data, upstream_buffer, upstream_length, ZSTD_e_continue);
+  if (!ok) {
+    error("Zstd compression (CONTINUE) failed");
+    return;
   }
 
-  // Handle flushing if enabled
+  data->zstrm_zstd.total_in += upstream_length;
+
   if (!data->hc->flush()) {
     return;
   }
 
-  // Flush the compression stream
-  ZSTD_inBuffer empty_input = {nullptr, 0, 0};
-  for (;;) {
-    downstream_blkp         = TSIOBufferStart(data->downstream_buffer);
-    char *downstream_buffer = TSIOBufferBlockWriteStart(downstream_blkp, &downstream_length);
-
-    ZSTD_outBuffer output = {downstream_buffer, static_cast<size_t>(downstream_length), 0};
-
-    size_t result = ZSTD_compressStream2(data->zstrm_zstd.cctx, &output, &empty_input, ZSTD_e_flush);
-
-    if (ZSTD_isError(result)) {
-      error("Zstd flush failed: %s", ZSTD_getErrorName(result));
-      return;
-    }
-
-    if (output.pos > 0) {
-      TSIOBufferProduce(data->downstream_buffer, output.pos);
-      data->downstream_length    += output.pos;
-      data->zstrm_zstd.total_out += output.pos;
-    }
-
-    if (result == 0) { /* flush complete */
-      break;
-    }
+  ok = zstd_compress_operation(data, nullptr, 0, ZSTD_e_flush);
+  if (!ok) {
+    error("Zstd compression (FLUSH) failed");
+    return;
   }
 }
 #endif
