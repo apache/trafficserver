@@ -537,7 +537,7 @@ ts_lua_http_get_next_hop_strategy(lua_State *L)
 
   void const *const stratptr = TSHttpTxnNextHopStrategyGet(http_ctx->txnp);
   if (nullptr != stratptr) {
-    name = TSHttpNextHopStrategyNameGet(stratptr);
+    name = TSNextHopStrategyNameGet(stratptr);
   }
 
   if (name == nullptr) {
@@ -569,7 +569,7 @@ ts_lua_http_set_next_hop_strategy(lua_State *L)
       Dbg(dbg_ctl, "Clearning strategy (use parent.config)");
       TSHttpTxnNextHopStrategySet(http_ctx->txnp, nullptr);
     } else {
-      void const *const stratptr = TSHttpTxnNextHopNamedStrategyGet(http_ctx->txnp, name);
+      void const *const stratptr = TSHttpTxnNextHopStrategyFind(http_ctx->txnp, name);
       if (nullptr == stratptr) {
         TSError("[ts_lua][%s] Failed get next hop strategy name '%s'", __FUNCTION__, name);
       } else {
