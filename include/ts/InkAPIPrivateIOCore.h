@@ -22,13 +22,8 @@
  */
 
 #pragma once
-#if !defined(__GNUC__)
-#include "iocore/eventsystem/EventSystem.h"
-#include "iocore/net/Net.h"
-#else
-#include "../../src/iocore/eventsystem/P_EventSystem.h"
-#include "../../src/iocore/net/P_Net.h"
-#endif
+#include "iocore/eventsystem/VConnection.h"
+#include "ts/apidefs.h"
 
 enum INKContInternalMagic_t {
   INKCONT_INTERN_MAGIC_ALIVE = 0x00009631,
