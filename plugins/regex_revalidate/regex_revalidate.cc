@@ -703,7 +703,7 @@ main_handler(TSCont cont, TSEvent event, void *edata)
               url = TSHttpTxnEffectiveUrlStringGet(txn, &url_len);
               Dbg(dbg_ctl, "Effective url is is '%.*s'", url_len, url);
             }
-            Dbg(dbg_ctl, "checking: %s, %s", url, iptr->regex_text);
+            Dbg(dbg_ctl, "checking: %.*s, %s", url_len, url, iptr->regex_text);
 
             std::string_view const urlv(url, url_len);
             if (iptr->regex->exec(urlv)) {
