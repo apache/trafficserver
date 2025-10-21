@@ -771,7 +771,11 @@ ts_lua_server_request_server_addr_get_ip(lua_State *L)
       inet_ntop(AF_INET6, (const void *)&((struct sockaddr_in6 *)server_ip)->sin6_addr, sip, sizeof(sip));
     }
 
-    lua_pushstring(L, sip);
+    if (sip[0] == '\0') {
+      lua_pushnil(L);
+    } else {
+      lua_pushstring(L, sip);
+    }
   }
 
   return 1;
@@ -782,7 +786,7 @@ ts_lua_server_request_server_addr_get_port(lua_State *L)
 {
   struct sockaddr const *server_ip;
   ts_lua_http_ctx       *http_ctx;
-  int                    port;
+  int                    port = 0;
 
   GET_HTTP_CONTEXT(http_ctx, L);
 
@@ -794,7 +798,7 @@ ts_lua_server_request_server_addr_get_port(lua_State *L)
   } else {
     if (server_ip->sa_family == AF_INET) {
       port = ((struct sockaddr_in *)server_ip)->sin_port;
-    } else {
+    } else if (server_ip->sa_family == AF_INET6) {
       port = ((struct sockaddr_in6 *)server_ip)->sin6_port;
     }
 
@@ -809,7 +813,7 @@ ts_lua_server_request_server_addr_get_outgoing_port(lua_State *L)
 {
   struct sockaddr const *outgoing_addr;
   ts_lua_http_ctx       *http_ctx;
-  int                    port;
+  int                    port = 0;
 
   GET_HTTP_CONTEXT(http_ctx, L);
 
@@ -821,7 +825,7 @@ ts_lua_server_request_server_addr_get_outgoing_port(lua_State *L)
   } else {
     if (outgoing_addr->sa_family == AF_INET) {
       port = ((struct sockaddr_in *)outgoing_addr)->sin_port;
-    } else {
+    } else if (outgoing_addr->sa_family == AF_INET6) {
       port = ((struct sockaddr_in6 *)outgoing_addr)->sin6_port;
     }
 
@@ -858,6 +862,8 @@ ts_lua_server_request_server_addr_get_addr(lua_State *L)
       port = ntohs(((struct sockaddr_in6 *)server_ip)->sin6_port);
       inet_ntop(AF_INET6, (const void *)&((struct sockaddr_in6 *)server_ip)->sin6_addr, sip, sizeof(sip));
       family = AF_INET6;
+    } else if (server_ip->sa_family == AF_UNIX) {
+      family = AF_UNIX;
     }
 
     lua_pushstring(L, sip);
@@ -895,6 +901,8 @@ ts_lua_server_request_server_addr_get_nexthop_addr(lua_State *L)
       port = ntohs(((struct sockaddr_in6 *)server_ip)->sin6_port);
       inet_ntop(AF_INET6, (const void *)&((struct sockaddr_in6 *)server_ip)->sin6_addr, sip, sizeof(sip));
       family = AF_INET6;
+    } else if (server_ip->sa_family == AF_UNIX) {
+      family = AF_UNIX;
     }
 
     lua_pushstring(L, sip);
@@ -966,12 +974,14 @@ ts_lua_server_request_server_addr_set_addr(lua_State *L)
       if (!inet_pton(family, sip, &addr.sin4.sin_addr)) {
         return luaL_error(L, "invalid ipv4 address");
       }
-    } else {
+    } else if (family == AF_INET6) {
       addr.sin6.sin6_family = AF_INET6;
       addr.sin6.sin6_port   = htons(port);
       if (!inet_pton(family, sip, &addr.sin6.sin6_addr)) {
         return luaL_error(L, "invalid ipv6 address");
       }
+    } else {
+      return luaL_error(L, "invalid address family");
     }
 
     TSHttpTxnServerAddrSet(http_ctx->txnp, &addr.sa);
@@ -1012,12 +1022,14 @@ ts_lua_server_request_server_addr_set_outgoing_addr(lua_State *L)
       if (!inet_pton(family, sip, &addr.sin4.sin_addr)) {
         return luaL_error(L, "invalid ipv4 address");
       }
-    } else {
+    } else if (family == AF_INET6) {
       addr.sin6.sin6_family = AF_INET6;
       addr.sin6.sin6_port   = htons(port);
       if (!inet_pton(family, sip, &addr.sin6.sin6_addr)) {
         return luaL_error(L, "invalid ipv6 address");
       }
+    } else {
+      return luaL_error(L, "invalid address family");
     }
 
     TSHttpTxnOutgoingAddrSet(http_ctx->txnp, &addr.sa);
