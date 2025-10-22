@@ -39,8 +39,8 @@ class SymbolResolver(SymbolResolverBase):
 
     def get_statement_spec(self, name: str) -> tuple[str, Callable[[str], None] | None]:
         # Use cached lookup from base class
-        if result := self._lookup_statement_function_cached(name):
-            return result
+        if params := self._lookup_statement_function_cached(name):
+            return params.target, params.validate
         raise SymbolResolutionError(name, "Unknown operator or invalid standalone use")
 
     def declare_variable(self, name: str, type_name: str) -> str:
@@ -63,32 +63,31 @@ class SymbolResolver(SymbolResolverBase):
 
     def resolve_assignment(self, name: str, value: str, section: SectionType | None = None) -> str:
         with self.debug_context("resolve_assignment", name, value, section):
-            for op_key, (commands, validator, uppercase, restricted_sections) in self._operator_map.items():
+            for op_key, params in self._operator_map.items():
                 if op_key.endswith("."):
                     if name.startswith(op_key):
-                        self.validate_section_access(name, section, restricted_sections)
+                        self.validate_section_access(name, section, params.sections if params else None)
                         qualifier = name[len(op_key):]
-                        if uppercase:
+                        if params and params.upper:
                             qualifier = qualifier.upper()
-                        if validator:
-                            validator(qualifier)
+                        if params and params.validate:
+                            params.validate(qualifier)
 
-                        # Add boolean value validation for http.cntl assignments.
+                        # Add boolean value validation for http.cntl assignments
                         if op_key == "http.cntl.":
                             types.SuffixGroup.BOOL_FIELDS.validate(value)
 
+                        commands = params.target if params else None
                         if isinstance(commands, (list, tuple)):
-                            if value == '""':
-                                return f"{commands[0]} {qualifier}"
-                            else:
-                                return f"{commands[1]} {qualifier} {value}"
-                        else:
-                            return f"{commands} {qualifier} {value}"
+                            return f"{commands[0 if value == '\"\"' else 1]} {qualifier}" + ("" if value == '""' else f" {value}")
+                        return f"{commands} {qualifier} {value}"
+
                 elif name == op_key:
-                    self.validate_section_access(name, section, restricted_sections)
-                    if validator:
-                        validator(value)
-                    return f"{commands} {value}"
+                    # Exact match - validate and return
+                    self.validate_section_access(name, section, params.sections if params else None)
+                    if params and params.validate:
+                        params.validate(value)
+                    return f"{params.target if params else None} {value}"
 
             if resolved_lhs := self.symbol_for(name):
                 if resolved_rhs := self.symbol_for(value):
@@ -105,26 +104,51 @@ class SymbolResolver(SymbolResolverBase):
                 error.add_symbol_suggestion(suggestions)
             raise error
 
+    def resolve_add_assignment(self, name: str, value: str, section: SectionType | None = None) -> str:
+        """Resolve += assignment, if it is supported for the given operator."""
+        with self.debug_context("resolve_add_assignment", name, value, section):
+            for op_key, params in self._operator_map.items():
+                if op_key.endswith(".") and name.startswith(op_key) and params and params.add:
+                    self.validate_section_access(name, section, params.sections)
+                    qualifier = name[len(op_key):]
+                    if params.validate:
+                        params.validate(qualifier)
+
+                    from hrw4u.common import HeaderOperations
+                    return f"{HeaderOperations.ADD_OPERATION} {qualifier} {value}"
+
+            # += not allowed if no matching operator with 'add' flag found
+            error = SymbolResolutionError(name, "+= operator is not supported for this assignment")
+            error.add_note("Only operators with 'add' flag support +=")
+            raise error
+
     def resolve_condition(self, name: str, section: SectionType | None = None) -> tuple[str, bool]:
         with self.debug_context("resolve_condition", name, section):
             if symbol := self.symbol_for(name):
                 return symbol.as_cond(), False
 
-            if condition_info := self._lookup_condition_cached(name):
-                tag, _, _, restricted, default_expr, _ = condition_info
+            if params := self._lookup_condition_cached(name):
+                tag = params.target if params else None
+                restricted = params.sections if params else None
                 self.validate_section_access(name, section, restricted)
-                return tag, default_expr
+                # For exact matches, default_expr is determined by whether it's a prefix pattern
+                return tag, False
 
             # Check prefix matches using base class utility
             prefix_matches = self.find_prefix_matches(name, self._condition_map)
-            for prefix, (tag, validator, uppercase, restricted, default_expr, _) in prefix_matches:
+            for prefix, params in prefix_matches:
+                tag = params.target if params else None
+                validator = params.validate if params else None
+                restricted = params.sections if params else None
+
                 self.validate_section_access(name, section, restricted)
                 suffix = name[len(prefix):]
-                suffix_norm = suffix.upper() if uppercase else suffix
+                suffix_norm = suffix.upper() if (params and params.upper) else suffix
                 if validator:
                     validator(suffix_norm)
                 resolved = f"%{{{tag}:{suffix_norm}}}"
-                return resolved, default_expr
+                # For prefix matches, default_expr is True (indicated by prefix flag)
+                return resolved, (params.prefix if params else False)
 
             error = SymbolResolutionError(name, "Unknown condition symbol")
             declared_vars = list(self._symbols.keys())
@@ -135,8 +159,9 @@ class SymbolResolver(SymbolResolverBase):
 
     def resolve_function(self, func_name: str, args: list[str], strip_quotes: bool = False) -> str:
         with self.debug_context("resolve_function", func_name, args):
-            if function_info := self._lookup_function_cached(func_name):
-                tag, validator = function_info
+            if params := self._lookup_function_cached(func_name):
+                tag = params.target
+                validator = params.validate
                 if validator:
                     validator(args)
 
@@ -156,8 +181,9 @@ class SymbolResolver(SymbolResolverBase):
 
     def resolve_statement_func(self, func_name: str, args: list[str]) -> str:
         with self.debug_context("resolve_statement_func", func_name, args):
-            if function_info := self._lookup_statement_function_cached(func_name):
-                command, validator = function_info
+            if params := self._lookup_statement_function_cached(func_name):
+                command = params.target
+                validator = params.validate
                 if validator:
                     validator(args)
 

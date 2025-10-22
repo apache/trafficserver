@@ -1,7 +1,9 @@
 REMAP {
     if inbound.req.X-Remap == "yes" {
         inbound.req.X-Remap = "";
+        inbound.req.X-Appended += "HRW4U";
     } else {
         inbound.req.X-Remap = "It was not yes";
+        inbound.req.X-Appended = "";
     }
 }

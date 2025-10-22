@@ -356,6 +356,18 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                     self.emit_statement(out)
                     return
 
+                case _ if ctx.PLUSEQUAL():
+                    if ctx.lhs is None:
+                        raise SymbolResolutionError("assignment", "Missing left-hand side in += assignment")
+                    lhs = ctx.lhs.text
+                    rhs = ctx.value().getText()
+                    if rhs.startswith('"') and rhs.endswith('"'):
+                        rhs = self._substitute_strings(rhs, ctx)
+                    self._dbg(f"add assignment: {lhs} += {rhs}")
+                    out = self.symbol_resolver.resolve_add_assignment(lhs, rhs, self.current_section)
+                    self.emit_statement(out)
+                    return
+
                 case _:
                     if ctx.op is None:
                         raise SymbolResolutionError("operator", "Missing operator in statement")
