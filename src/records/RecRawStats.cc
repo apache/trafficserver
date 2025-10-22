@@ -22,7 +22,7 @@ Record statistics support
  */
 
 #include "P_RecCore.h"
-#include "P_RecProcess.h"
+#include "records/RecProcess.h"
 #include <string_view>
 #include <list>
 
