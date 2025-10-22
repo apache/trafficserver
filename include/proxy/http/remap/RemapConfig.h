@@ -76,6 +76,9 @@ struct BUILD_TABLE_INFO {
   // noncopyable
   BUILD_TABLE_INFO(const BUILD_TABLE_INFO &)            = delete; // disabled
   BUILD_TABLE_INFO &operator=(const BUILD_TABLE_INFO &) = delete; // disabled
+
+  // This is used to expose rewrite and its next hop strategy factory.
+  inline static BUILD_TABLE_INFO *instance = nullptr;
 };
 
 const char *remap_parse_directive(BUILD_TABLE_INFO *bti, char *errbuf, size_t errbufsize);

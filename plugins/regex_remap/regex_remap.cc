@@ -226,8 +226,18 @@ public:
   {
     return _lowercase_substitutions;
   }
+  inline bool
+  has_strategy_option() const
+  {
+    return _has_strategy;
+  }
   inline std::string const &
-  strategy() const
+  strategy_name_option() const
+  {
+    return _strategy_name;
+  }
+  inline void const *
+  strategy_option() const
   {
     return _strategy;
   }
@@ -268,7 +278,9 @@ private:
   int _connect_timeout     = -1;
   int _dns_timeout         = -1;
 
-  std::string _strategy = {};
+  bool        _has_strategy = false;
+  std::string _strategy_name;
+  void const *_strategy = nullptr;
 
   Override *_first_override = nullptr;
   int       _sub_pos[MAX_SUBS];
@@ -317,7 +329,16 @@ RemapRegex::initialize(const std::string &reg, const std::string &sub, const std
     } else if (opt.compare(start, 23, "lowercase_substitutions") == 0) {
       _lowercase_substitutions = true;
     } else if (opt.compare(start, 8, "strategy") == 0) {
-      _strategy = opt_val;
+      _has_strategy  = true;
+      _strategy_name = opt_val;
+      if (!_strategy_name.empty() && "null" != _strategy_name) {
+        _strategy = TSHttpInitNextHopNamedStrategyGet(_strategy_name.c_str());
+        if (nullptr == _strategy) {
+          TSError("[%s] Unable to resolve strategy: '%s'", PLUGIN_NAME, opt_val.c_str());
+          _has_strategy = false; // disable the strategy swap
+        }
+      }
+
     } else if (opt_val.size() <= 0) {
       // All other options have a required value
       TSError("[%s] Malformed options: %s", PLUGIN_NAME, opt.c_str());
@@ -980,18 +1001,14 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
         Dbg(dbg_ctl, "Setting DNS timeout to %d", re->dns_timeout_option());
         TSHttpTxnDNSTimeoutSet(txnp, re->dns_timeout_option());
       }
-      auto const &strat = re->strategy();
-      if (strat.empty() || "null" == strat) {
-        Dbg(dbg_ctl, "Clearing strategy (use parent.config)");
-        TSHttpTxnNextHopStrategySet(txnp, nullptr);
-      } else {
-        void const *const stratptr = TSHttpTxnNextHopNamedStrategyGet(txnp, strat.c_str());
-        if (nullptr == stratptr) {
-          Dbg(dbg_ctl, "No strategy found with name '%s'", strat.c_str());
+      if (re->has_strategy_option()) {
+        auto const strat = re->strategy_option();
+        if (nullptr == strat) {
+          Dbg(dbg_ctl, "Clearing strategy (use parent.config)");
         } else {
-          Dbg(dbg_ctl, "Setting strategy to %s", strat.c_str());
-          TSHttpTxnNextHopStrategySet(txnp, stratptr);
+          Dbg(dbg_ctl, "Setting strategy to %s", re->strategy_name_option().c_str());
         }
+        TSHttpTxnNextHopStrategySet(txnp, strat);
       }
       bool lowercase_substitutions = false;
       if (re->lowercase_substitutions_option() == true) {
