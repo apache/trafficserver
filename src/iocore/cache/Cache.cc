@@ -342,7 +342,9 @@ Cache::open_read(Continuation *cont, const CacheKey *key, CacheFragType type, st
   CacheVC      *c     = nullptr;
   {
     CACHE_TRY_LOCK(lock, stripe->mutex, mutex->thread_holding);
-    if (!lock.is_locked() || (od = stripe->open_read(key)) || stripe->directory.probe(key, stripe, &result, &last_collision)) {
+    CACHE_DIR_TRY_LOCK_SHARED(dir_lock, stripe->dir_mutex);
+    if (!lock.is_locked() || !dir_lock.is_locked() || (od = stripe->open_read(key)) ||
+        stripe->directory.probe(key, stripe, &result, &last_collision)) {
       c = new_CacheVC(cont);
       SET_CONTINUATION_HANDLER(c, &CacheVC::openReadStartHead);
       c->vio.op  = VIO::READ;
@@ -357,7 +359,7 @@ Cache::open_read(Continuation *cont, const CacheKey *key, CacheFragType type, st
     if (!c) {
       goto Lmiss;
     }
-    if (!lock.is_locked()) {
+    if (!lock.is_locked() || !dir_lock.is_locked()) {
       CONT_SCHED_LOCK_RETRY(c);
       return &c->_action;
     }
@@ -545,7 +547,9 @@ Cache::open_read(Continuation *cont, const CacheKey *key, CacheHTTPHdr *request,
 
   {
     CACHE_TRY_LOCK(lock, stripe->mutex, mutex->thread_holding);
-    if (!lock.is_locked() || (od = stripe->open_read(key)) || stripe->directory.probe(key, stripe, &result, &last_collision)) {
+    CACHE_DIR_TRY_LOCK_SHARED(dir_lock, stripe->dir_mutex);
+    if (!lock.is_locked() || !dir_lock.is_locked() || (od = stripe->open_read(key)) ||
+        stripe->directory.probe(key, stripe, &result, &last_collision)) {
       c            = new_CacheVC(cont);
       c->first_key = c->key = c->earliest_key = *key;
       c->stripe                               = stripe;
@@ -558,7 +562,7 @@ Cache::open_read(Continuation *cont, const CacheKey *key, CacheHTTPHdr *request,
       c->params    = params;
       c->od        = od;
     }
-    if (!lock.is_locked()) {
+    if (!lock.is_locked() || !dir_lock.is_locked()) {
       SET_CONTINUATION_HANDLER(c, &CacheVC::openReadStartHead);
       CONT_SCHED_LOCK_RETRY(c);
       return &c->_action;
@@ -678,7 +682,8 @@ Cache::open_write(Continuation *cont, const CacheKey *key, CacheHTTPInfo *info, 
 
   {
     CACHE_TRY_LOCK(lock, c->stripe->mutex, cont->mutex->thread_holding);
-    if (lock.is_locked()) {
+    CACHE_DIR_TRY_LOCK_SHARED(dir_lock, c->stripe->dir_mutex);
+    if (lock.is_locked() && dir_lock.is_locked()) {
       if ((err = c->stripe->open_write(c, if_writers, cache_config_http_max_alts > 1 ? cache_config_http_max_alts : 0)) > 0) {
         goto Lfailure;
       }

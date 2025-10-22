@@ -59,6 +59,59 @@ struct EvacuationBlock;
   CACHE_MUTEX_RELEASE(_l)
 #endif
 
+// Reader/writer lock RAII wrapper for directory operations
+class CacheDirSharedLock
+{
+public:
+  explicit CacheDirSharedLock(ts::shared_mutex &m) : _mutex(m), _locked(false) { _locked = _mutex.try_lock_shared(); }
+
+  ~CacheDirSharedLock()
+  {
+    if (_locked) {
+      _mutex.unlock_shared();
+    }
+  }
+
+  bool
+  is_locked() const
+  {
+    return _locked;
+  }
+
+private:
+  ts::shared_mutex &_mutex;
+  bool              _locked;
+};
+
+class CacheDirExclusiveLock
+{
+public:
+  explicit CacheDirExclusiveLock(ts::shared_mutex &m) : _mutex(m), _locked(false) { _locked = _mutex.try_lock(); }
+
+  ~CacheDirExclusiveLock()
+  {
+    if (_locked) {
+      _mutex.unlock();
+    }
+  }
+
+  bool
+  is_locked() const
+  {
+    return _locked;
+  }
+
+private:
+  ts::shared_mutex &_mutex;
+  bool              _locked;
+};
+
+// Use shared lock for directory reads (probe operations)
+#define CACHE_DIR_TRY_LOCK_SHARED(_l, _m) CacheDirSharedLock _l(_m)
+
+// Use exclusive lock for directory writes (insert/remove/update operations)
+#define CACHE_DIR_TRY_LOCK_EXCLUSIVE(_l, _m) CacheDirExclusiveLock _l(_m)
+
 #define VC_LOCK_RETRY_EVENT()                                                                                         \
   do {                                                                                                                \
     trigger = mutex->thread_holding->schedule_in_local(this, HRTIME_MSECONDS(cache_config_mutex_retry_delay), event); \
