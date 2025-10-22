@@ -17,6 +17,6 @@
 
 add_atsplugin(regex_remap regex_remap.cc)
 
-target_link_libraries(regex_remap PRIVATE PCRE::PCRE libswoc::libswoc)
+target_link_libraries(regex_remap PRIVATE libswoc::libswoc)
 
 verify_remap_plugin(regex_remap)
