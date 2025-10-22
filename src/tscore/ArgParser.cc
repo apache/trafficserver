@@ -508,6 +508,9 @@ ArgParser::Command::parse(Arguments &ret, AP_StrVec &args)
   // treating arguments as commands (e.g., "metric match host" where "host" is an arg, not a command)
   if (!args.empty() && _name == args[0]) {
     command_called = true;
+    // Note: handle_args modifies its index parameter (designed for loop usage), but we
+    // discard the result. This causes unsigned underflow (0 - 1 = UINT_MAX) which is
+    // harmless since we don't use index afterward.
     unsigned index{0};
     // handle the option
     append_option_data(ret, args, index);
