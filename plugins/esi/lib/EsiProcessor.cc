@@ -352,6 +352,8 @@ EsiProcessor::ReturnCode
 EsiProcessor::flush(string &data, int &overall_len)
 {
   if (_curr_state == ERRORED) {
+    overall_len = 0;
+    data.assign("");
     return FAILURE;
   }
   if (_curr_state == PROCESSED) {
