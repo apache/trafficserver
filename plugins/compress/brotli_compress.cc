@@ -22,6 +22,9 @@
  */
 
 #include "brotli_compress.h"
+
+#if HAVE_BROTLI_ENCODE_H
+
 #include "debug_macros.h"
 
 #include <brotli/encode.h>
@@ -141,3 +144,5 @@ transform_finish(Data *data)
 }
 
 } // namespace Brotli
+
+#endif // HAVE_BROTLI_ENCODE_H
