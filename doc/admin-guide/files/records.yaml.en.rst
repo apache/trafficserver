@@ -389,8 +389,8 @@ Thread Variables
    updated after processing an event given as a percentage from 0 to 100. 0
    would mean the timestamp is only updated once per event loop, 100 percent
    means the timestamp is updated after any potential operation that could take
-   time (i.e. processing and event or waiting on IO).  The timestamp is used for
-   queing events and comparing timestamps for processing.  Updating more often
+   time (i.e. processing an event or waiting on IO).  The timestamp is used for
+   queuing events and comparing timestamps for processing.  Updating more often
    might improve event timer accuracy and event loop metrics, but increases the
    number of times that the current time is obtained from the OS.  See also
    `proxy.config.system_clock`

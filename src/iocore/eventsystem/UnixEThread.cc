@@ -166,8 +166,12 @@ EThread::process_event(Event *e, int calling_code, ink_hrtime event_time)
     set_cont_flags(e->continuation->control_flags);
 
     e->continuation->handleEvent(calling_code, e);
-    if (static_cast<int>(generator.random() % 100) < event_time_update_rate) {
+    if (event_time_update_rate == 100) {
       event_time = ink_get_hrtime();
+    } else if (event_time_update_rate > 0) {
+      if (static_cast<int>(generator.random() % 100) < event_time_update_rate) {
+        event_time = ink_get_hrtime();
+      }
     }
     ink_assert(!e->in_the_priority_queue);
     ink_assert(c_temp == e->continuation);
