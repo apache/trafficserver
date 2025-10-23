@@ -21,6 +21,11 @@ storage.config
 
 .. configfile:: storage.config
 
+
+.. important::
+
+   Deprecated in favor of :file:`storage.yaml`.
+
 The :file:`storage.config` file (by default, located in
 ``/usr/local/etc/trafficserver/``) lists all the files, directories, and/or
 hard disk partitions that make up the Traffic Server cache. After you
