@@ -88,7 +88,7 @@ main([[maybe_unused]] int argc, const char **argv)
   auto &storage_command    = parser.add_command("storage", "Manipulate cache storage").require_commands();
   auto &plugin_command     = parser.add_command("plugin", "Interact with plugins").require_commands();
   auto &host_command       = parser.add_command("host", "Interact with host status").require_commands();
-  auto &hostdb_command     = parser.add_command("hostdb", "Interact with host status").require_commands();
+  auto &hostdb_command     = parser.add_command("hostdb", "Interact with HostDB status").require_commands();
   auto &direct_rpc_command = parser.add_command("rpc", "Interact with the rpc api").require_commands();
 
   // config commands
@@ -161,7 +161,7 @@ main([[maybe_unused]] int argc, const char **argv)
     .add_option("--interval", "-i", "Wait interval seconds between sending each metric request. Minimum value is 1s.", "", 1, "5");
 
   // hostdb commands
-  hostdb_command.add_command("status", "Get hostdb info", "", MORE_THAN_ZERO_ARG_N, [&]() { command->execute(); })
+  hostdb_command.add_command("status", "Get HostDB info", "", MORE_THAN_ZERO_ARG_N, [&]() { command->execute(); })
     .add_example_usage("traffic_ctl hostdb status");
 
   // plugin command
