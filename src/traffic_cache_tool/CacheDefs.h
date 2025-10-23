@@ -320,7 +320,7 @@ struct url_matcher {
       std::cout << "Check your regular expression" << std::endl;
       return;
     }
-    if (!port.compile(R"([0-9]+$)")) {
+    if (!port.compile(R"(^[0-9]+$)")) {
       std::cout << "Check your regular expression" << std::endl;
       return;
     }
