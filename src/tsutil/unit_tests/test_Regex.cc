@@ -171,7 +171,7 @@ TEST_CASE("Regex", "[libts][Regex]")
     Regex        r;
     RegexMatches matches;
     REQUIRE(r.exec("foo") == false);
-    REQUIRE(r.exec("foo", matches) == PCRE2_ERROR_NULL);
+    REQUIRE(r.exec("foo", matches) == RE_ERROR_NULL);
   }
 
   // test for recompiling the regular expression
@@ -217,10 +217,10 @@ TEST_CASE("Regex RE_NOTEMPTY flag behavior", "[libts][Regex][flags][RE_NOTEMPTY]
     // boolean overload with RE_NOTEMPTY should not match
     CHECK(r.exec(std::string_view(""), RE_NOTEMPTY) == false);
 
-    // matches overload should return a negative value (PCRE2_ERROR_NOMATCH)
+    // matches overload should return RE_ERROR_NOMATCH
     RegexMatches matches;
     int          rc = r.exec(std::string_view(""), matches, RE_NOTEMPTY);
-    CHECK(rc < 0);
+    CHECK(rc == RE_ERROR_NOMATCH);
   }
 
   SECTION("non-empty subject unaffected by RE_NOTEMPTY for this pattern")
@@ -228,5 +228,34 @@ TEST_CASE("Regex RE_NOTEMPTY flag behavior", "[libts][Regex][flags][RE_NOTEMPTY]
     // '^$' should not match 'a' in any case
     CHECK(r.exec(std::string_view("a")) == false);
     CHECK(r.exec(std::string_view("a"), RE_NOTEMPTY) == false);
+  }
+}
+
+TEST_CASE("Regex error codes", "[libts][Regex][errors]")
+{
+  SECTION("RE_ERROR_NULL when regex not compiled")
+  {
+    Regex        r;
+    RegexMatches matches;
+
+    // exec on uncompiled regex should return RE_ERROR_NULL
+    CHECK(r.exec("test", matches) == RE_ERROR_NULL);
+  }
+
+  SECTION("RE_ERROR_NOMATCH when pattern does not match")
+  {
+    Regex r;
+    REQUIRE(r.compile(R"(^foo$)") == true);
+
+    RegexMatches matches;
+
+    // Pattern does not match, should return RE_ERROR_NOMATCH
+    CHECK(r.exec("bar", matches) == RE_ERROR_NOMATCH);
+    CHECK(r.exec("foobar", matches) == RE_ERROR_NOMATCH);
+    CHECK(r.exec("", matches) == RE_ERROR_NOMATCH);
+
+    // The following should match and return 1 (which shouldn't be RE_ERROR_NOMATCH)
+    CHECK(r.exec("foo", matches) != RE_ERROR_NOMATCH);
+    CHECK(r.exec("foo", matches) == 1);
   }
 }
