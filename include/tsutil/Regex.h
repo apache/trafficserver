@@ -33,10 +33,18 @@
 /// @internal These values are copied from pcre2.h, to avoid having to include it.  The values are checked (with
 /// static_assert) in Regex.cc against PCRE2 named constants, in case they change in future PCRE2 releases.
 enum REFlags {
-  RE_CASE_INSENSITIVE = 0x00000008u, ///< Ignore case (default: case sensitive).
-  RE_UNANCHORED       = 0x00000400u, ///< Unanchored (DFA defaults to anchored).
-  RE_ANCHORED         = 0x80000000u, ///< Anchored (Regex defaults to unanchored).
-  RE_NOTEMPTY         = 0x00000004u  ///< Not empty (default: may match empty string).
+  RE_CASE_INSENSITIVE = 0x00000008u, ///< Ignore case (by default, matches are case sensitive).
+  RE_UNANCHORED       = 0x00000400u, ///< Unanchored (@a DFA defaults to anchored).
+  RE_ANCHORED         = 0x80000000u, ///< Anchored (@a Regex defaults to unanchored).
+  RE_NOTEMPTY         = 0x00000004u  ///< Not empty (by default, matches may match empty string).
+};
+
+/// @brief Error codes returned by regular expression operations.
+///
+/// @internal As with REFlags, these values are copied from pcre2.h, to avoid having to include it.
+enum REErrors {
+  RE_ERROR_NOMATCH = -1, ///< No match found.
+  RE_ERROR_NULL    = -51 ///< NULL code or subject was passed.
 };
 
 /// @brief Wrapper for PCRE2 match data.
