@@ -358,6 +358,7 @@ def run_server(listen_port, https_pem, ca_pem) -> List[int]:
     logging.info(f"Serving HTTP/2 Proxy on 127.0.0.1:{listen_port} with pem '{https_pem}'")
     pool = eventlet.GreenPool()
 
+    manager = None
     while True:
         try:
             new_connection_socket, _ = listening_socket.accept()
@@ -367,7 +368,9 @@ def run_server(listen_port, https_pem, ca_pem) -> List[int]:
             pool.spawn_n(manager.run_forever)
         except KeyboardInterrupt as e:
             logging.debug("Handling KeyboardInterrupt")
-            return manager.get_data_delays()
+            if manager is not None:
+                return manager.get_data_delays()
+            return []
         except SystemExit:
             break
 
@@ -391,6 +394,9 @@ def main() -> int:
     logging.basicConfig(level=log_level, format='%(asctime)s - %(levelname)s - %(message)s')
 
     data_delays = run_server(args.listen_port, args.cert_key, args.ca_cert)
+    if not data_delays:
+        logging.error('No data delays were recorded')
+        return 1
     logging.info(f'Smallest delay: {min(data_delays)} ms')
     logging.info(f'Largest delay: {max(data_delays)} ms')
     average = statistics.mean(data_delays)
