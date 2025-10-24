@@ -28,6 +28,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_session.hpp>
+#include <catch2/benchmark/catch_benchmark.hpp>
 
 #include "tsutil/Bravo.h"
 
@@ -113,7 +114,7 @@ main(int argc, char *argv[])
 {
   Catch::Session session;
 
-  using namespace Catch::clara;
+  using namespace Catch::Clara;
 
   // clang-format off
   auto cli = session.cli() |

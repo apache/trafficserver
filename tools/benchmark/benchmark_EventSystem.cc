@@ -26,6 +26,7 @@
 #include <catch2/reporters/catch_reporter_registrars.hpp>
 #include <catch2/interfaces/catch_interfaces_config.hpp>
 #include <catch2/catch_session.hpp>
+#include <catch2/benchmark/catch_benchmark.hpp>
 
 #include "iocore/eventsystem/Continuation.h"
 #include "iocore/eventsystem/EventSystem.h"
@@ -81,8 +82,8 @@ TEST_CASE("event process benchmark", "")
   };
 }
 
-struct EventProcessorListener : Catch::TestEventListenerBase {
-  using TestEventListenerBase::TestEventListenerBase;
+struct EventProcessorListener : Catch::EventListenerBase {
+  using EventListenerBase::EventListenerBase;
 
   void
   testRunStarting(Catch::TestRunInfo const & /* testRunInfo ATS_UNUSED */) override
@@ -108,7 +109,7 @@ main(int argc, char *argv[])
 {
   Catch::Session session;
 
-  using namespace Catch::clara;
+  using namespace Catch::Clara;
 
   auto cli = session.cli() | Opt(nevents, "n")["--ts-nevents"]("number of events (default: 1)\n") |
              Opt(nthreads, "n")["--ts-nthreads"]("number of ethreads (default: 1)\n");
