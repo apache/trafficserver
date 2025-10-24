@@ -81,8 +81,8 @@ Monitor::monitor_loop() const
         uint64_t warned_seq = t->heartbeat_state.warned_seq.load(std::memory_order_relaxed);
         if (warned_seq < seq) {
           // Warn once per loop iteration
-          Error("Watchdog: [ET_NET %zu] has been awake for %" PRIu64 " ms", i,
-                std::chrono::duration_cast<std::chrono::milliseconds>(awake_duration).count());
+          Warning("Watchdog: [ET_NET %zu] has been awake for %" PRIu64 " ms", i,
+                  std::chrono::duration_cast<std::chrono::milliseconds>(awake_duration).count());
           t->heartbeat_state.warned_seq.store(seq, std::memory_order_relaxed);
         }
       }

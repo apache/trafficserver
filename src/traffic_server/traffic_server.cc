@@ -2138,10 +2138,12 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   init_memory_tracker(nullptr, RECD_NULL, RecData(), nullptr);
 
   // Start the watchdog
-  int watchdog_timeout_ms = RecGetRecordInt("proxy.config.thread_watchdog.timeout_ms").value_or(1000);
-  watchdog                = std::make_unique<Watchdog::Monitor>(eventProcessor.thread_group[ET_NET]._thread,
-                                                                static_cast<size_t>(eventProcessor.thread_group[ET_NET]._count),
-                                                                std::chrono::milliseconds{watchdog_timeout_ms});
+  int watchdog_timeout_ms = RecGetRecordInt("proxy.config.exec_thread.watchdog.timeout_ms").value_or(1000);
+  if (watchdog_timeout_ms > 0) {
+    watchdog = std::make_unique<Watchdog::Monitor>(eventProcessor.thread_group[ET_NET]._thread,
+                                                   static_cast<size_t>(eventProcessor.thread_group[ET_NET]._count),
+                                                   std::chrono::milliseconds{watchdog_timeout_ms});
+  }
 
   {
     auto s{RecGetRecordStringAlloc("proxy.config.diags.debug.client_ip")};
