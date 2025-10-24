@@ -534,6 +534,22 @@ createDefaultExcludeHeaders()
   m.insert("x-forwarded-for");
   m.insert("forwarded");
   m.insert("via");
+  /* exclude hop-by-hop headers per AWS documentation:
+   * https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_sigv-create-signed-request.html
+   * "Do not include hop-by-hop headers that are frequently altered during transit across a complex system.
+   * This includes all volatile transport headers that are mutated by proxies, load balancers, and the nodes
+   * in a distributed system, including connection, x-amzn-trace-id, user-agent, keep-alive, transfer-encoding,
+   * TE, trailer, upgrade, proxy-authorization, and proxy-authenticate." */
+  m.insert("connection");
+  m.insert("x-amzn-trace-id");
+  m.insert("user-agent");
+  m.insert("keep-alive");
+  m.insert("transfer-encoding");
+  m.insert("te");
+  m.insert("trailer");
+  m.insert("upgrade");
+  m.insert("proxy-authorization");
+  m.insert("proxy-authenticate");
   return m;
 }
 const StringSet defaultExcludeHeaders = createDefaultExcludeHeaders();
