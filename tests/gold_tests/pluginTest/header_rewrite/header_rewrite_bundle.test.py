@@ -86,6 +86,14 @@ remap_rules = [
         "from": f"{url_base}_9/",
         "to": f"{origin_base}_9/",
         "plugins": [("header_rewrite", [f"{mgr.run_dir}/regex_tests.conf"])]
+    }, {
+        "from": f"{url_base}_10/",
+        "to": f"{origin_base}_10/",
+        "plugins": [("header_rewrite", [f"{mgr.run_dir}/rule_empty_body.conf"])]
+    }, {
+        "from": f"{url_base}_11/",
+        "to": f"{origin_base}_11/",
+        "plugins": [("header_rewrite", [f"{mgr.run_dir}/rule_set_body_status.conf"])]
     }
 ]
 
@@ -177,6 +185,26 @@ origin_rules = [
         "timestamp": "1469733493.993",
         "body": ""
     }, def_resp),
+    (
+        {
+            "headers": "GET /to_10/ HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
+            "timestamp": "1469733493.993",
+            "body": ""
+        }, {
+            "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
+            "timestamp": "1469733493.993",
+            "body": "ATS should not serve this body"
+        }),
+    (
+        {
+            "headers": "GET /to_11/ HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
+            "timestamp": "1469733493.993",
+            "body": ""
+        }, {
+            "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
+            "timestamp": "1469733493.993",
+            "body": "ATS should not serve this body"
+        }),
 ]
 mgr.add_server_responses(origin_rules)
 
@@ -288,6 +316,17 @@ test_runs = [
         "desc": "Regex test - X-Test1: none (expect X-Match-2 only)",
         "curl": f'{curl_proxy} "http://{url_base}_9/" -H "X-Test1: none"',
         "gold": "gold/regex_match2_only.gold",
+    },
+    {
+        "desc": "set-body with empty string (expect empty body with Content-Length: 0)",
+        "curl": f'{curl_proxy} "http://{url_base}_10/"',
+        "gold": "gold/set_body_empty.gold",
+    },
+    {
+        "desc": "set-body with STATUS variable (expect body with '200')",
+        "curl": f'{curl_proxy} "http://{url_base}_11/"',
+        "gold": "gold/set_body_status.gold",
+        "gold_stdout": "gold/set_body_status_stdout.gold",
     },
 ]
 
