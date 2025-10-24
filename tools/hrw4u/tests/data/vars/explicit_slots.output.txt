@@ -1,0 +1,3 @@
+cond %{SEND_RESPONSE_HDR_HOOK} [AND]
+cond %{STATE-FLAG:7}
+    set-header X-Parent true

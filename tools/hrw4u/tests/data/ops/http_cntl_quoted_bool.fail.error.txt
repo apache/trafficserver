@@ -1,1 +1,3 @@
-Invalid boolean value '"true"'. Must be one of: 0, 1, FALSE, NO, OFF, ON, TRUE, YES and must not be quoted
+tests/data/ops/http_cntl_quoted_bool.fail.input.txt:2:4: error: Invalid boolean value '"true"'. Must be one of: 0, 1, FALSE, NO, OFF, ON, TRUE, YES and must not be quoted
+   2 |     http.cntl.LOGGING = "true";
+     |     ^

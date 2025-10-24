@@ -80,6 +80,7 @@ NOT_TILDE     : '!~';
 COLON         : ':';
 COMMA         : ',';
 SEMICOLON     : ';';
+AT            : '@';
 
 COMMENT       : '#' ~[\r\n]* ;
 WS            : [ \t\r\n]+ -> skip ;
@@ -121,7 +122,7 @@ variablesItem
     ;
 
 variableDecl
-    : name=IDENT COLON typeName=IDENT SEMICOLON
+    : name=IDENT COLON typeName=IDENT (AT slot=NUMBER)? SEMICOLON
     ;
 
 statement
@@ -156,6 +157,7 @@ block
 
 blockItem
     : statement
+    | conditional
     | commentLine
     ;
 

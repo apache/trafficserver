@@ -323,9 +323,29 @@ TXN_CLOSE_HOOK                  TXN_CLOSE                End of transaction
 A special section `VARS` is used to declare variables. There is no equivalent in
 `header_rewrite`, where you managed the variables manually.
 
-.. note::
-    The section name is always required in HRW4U, there are no implicit or default hooks. There
-    can be several if/else block per section block.
+Variables and State Slots
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Each variable type has a limited number of slots available:
+
+- ``bool`` - 16 slots (0-15)
+- ``int8`` - 4 slots (0-3)
+- ``int16`` - 1 slot (0)
+
+By default, slots are assigned automatically in declaration order. You can explicitly assign
+a slot number using the ``@`` syntax::
+
+    VARS {
+        priority: bool @7;      # Explicitly use slot 7
+        active: bool;           # Auto-assigned to slot 0
+        config: bool @12;       # Explicitly use slot 12
+        counter: int8 @2;       # Explicitly use int8 slot 2
+    }
+
+Explicit slot assignment is useful when you need predictable slot numbers across configurations
+or when integrating with existing header_rewrite rules that reference specific slot numbers. In
+addition, a remap configuration can use ``@PPARAM`` to set one of these slot variables explicitly
+as part of the configuration.
 
 Groups
 ------

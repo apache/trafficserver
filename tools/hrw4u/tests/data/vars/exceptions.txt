@@ -1,0 +1,5 @@
+# Operations tests direction exceptions
+# Format: test_name: direction
+#
+# Explicit slot assignment syntax cannot be reversed
+explicit_slots.input: hrw4u

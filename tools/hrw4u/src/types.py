@@ -163,13 +163,13 @@ class VarType(Enum):
 @dataclass(slots=True, frozen=True)
 class Symbol:
     var_type: VarType
-    index: int
+    slot: int
 
     def as_cond(self) -> str:
-        return f"%{{STATE-{self.var_type.cond_tag}:{self.index}}}"
+        return f"%{{STATE-{self.var_type.cond_tag}:{self.slot}}}"
 
     def as_operator(self, value: str) -> str:
-        return f"{self.var_type.op_tag} {self.index} {value}"
+        return f"{self.var_type.op_tag} {self.slot} {value}"
 
 
 class MapParams:
