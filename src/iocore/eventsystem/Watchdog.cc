@@ -26,6 +26,7 @@
 #include "iocore/eventsystem/EThread.h"
 #include "tscore/Diags.h"
 #include "tscore/ink_assert.h"
+#include "tscore/ink_thread.h"
 #include "tsutil/DbgCtl.h"
 
 #include <atomic>
@@ -41,12 +42,14 @@ DbgCtl dbg_ctl_watchdog("watchdog");
 Monitor::Monitor(EThread *threads[], size_t n_threads, std::chrono::milliseconds timeout_ms)
   : _threads(threads, threads + n_threads), _watchdog_thread{std::bind_front(&Monitor::monitor_loop, this)}, _timeout{timeout_ms}
 {
+  // Precondition: timeout_ms must be > 0. A timeout of 0 indicates the watchdog is disabled
+  // and the caller should not instantiate the Monitor (see traffic_server.cc).
   ink_assert(timeout_ms.count() > 0);
 }
 
 Monitor::~Monitor()
 {
-  _shutdown.store(true);
+  _shutdown.store(true, std::memory_order_release);
   _watchdog_thread.join();
 }
 
@@ -59,7 +62,9 @@ Monitor::monitor_loop() const
   Dbg(dbg_ctl_watchdog, "Starting watchdog with timeout %" PRIu64 " ms on %zu threads.  sleep_time = %" PRIu64 " us",
       _timeout.count(), _threads.size(), std::chrono::duration_cast<std::chrono::microseconds>(sleep_time).count());
 
-  while (!_shutdown.load()) {
+  ink_set_thread_name("[WATCHDOG]");
+
+  while (!_shutdown.load(std::memory_order_acquire)) {
     std::chrono::time_point<std::chrono::steady_clock> now = std::chrono::steady_clock::now();
     for (size_t i = 0; i < _threads.size(); ++i) {
       EThread                                           *t          = _threads[i];
