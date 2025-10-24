@@ -102,10 +102,6 @@ initialize_record(const RecordElement *record, void *)
       RecRegisterStatFloat(type, record->name, tempFloat, RECP_NON_PERSISTENT);
       break;
 
-    case RECD_STRING:
-      RecRegisterStatString(type, record->name, (RecString)record->value, RECP_NON_PERSISTENT);
-      break;
-
     case RECD_COUNTER:
       tempCounter = static_cast<RecCounter>(ink_atoi64(record->value));
       RecRegisterStatCounter(type, record->name, tempCounter, RECP_NON_PERSISTENT);
