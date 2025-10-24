@@ -430,10 +430,9 @@ TEST_CASE("Regex copy assignment", "[libts][Regex][copy]")
     REQUIRE(regex.compile(R"(test)") == true);
 
     // Self-assign (disable warning for intentional self-assignment test)
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wself-assign-overloaded"
-    regex = regex;
-#pragma clang diagnostic pop
+    // Use a pointer indirection to avoid compiler warnings about self-assignment
+    Regex *ptr = &regex;
+    regex      = *ptr;
 
     // Should still work
     CHECK(regex.exec("test") == true);

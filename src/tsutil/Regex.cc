@@ -155,6 +155,7 @@ RegexMatches::malloc(size_t size, void *caller)
   return ::malloc(size);
 }
 
+//----------------------------------------------------------------------------
 void
 RegexMatches::free(void *p, void *caller)
 {
