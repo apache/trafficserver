@@ -92,6 +92,9 @@ headers.
 ``TS_HTTP_VALUE_GZIP``
    "gzip"
 
+``TS_HTTP_VALUE_ZSTD``
+   "zstd"
+
 ``TS_HTTP_VALUE_IDENTITY``
    "identity"
 
