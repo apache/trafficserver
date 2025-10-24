@@ -30,6 +30,7 @@
 #include <array>
 #include <vector>
 #include <mutex>
+#include <utility>
 
 static_assert(RE_CASE_INSENSITIVE == PCRE2_CASELESS, "Update RE_CASE_INSENSITIVE for current PCRE2 version.");
 static_assert(RE_UNANCHORED == PCRE2_MULTILINE, "Update RE_UNANCHORED for current PCRE2 version.");
@@ -154,6 +155,7 @@ RegexMatches::malloc(size_t size, void *caller)
   return ::malloc(size);
 }
 
+//----------------------------------------------------------------------------
 void
 RegexMatches::free(void *p, void *caller)
 {
@@ -219,6 +221,32 @@ struct Regex::_Code {
     p._ptr = ptr;
   }
 };
+
+//----------------------------------------------------------------------------
+Regex::Regex(Regex const &other)
+{
+  auto *other_code = _Code::get(other._code);
+  if (other_code != nullptr) {
+    // Use PCRE2's built-in function to deep copy the compiled pattern
+    auto *copied_code = pcre2_code_copy(other_code);
+    _Code::set(_code, copied_code);
+  }
+}
+
+//----------------------------------------------------------------------------
+Regex &
+Regex::operator=(Regex const &other)
+{
+  if (this != &other) {
+    // Use copy-and-swap idiom: create a temporary copy, then swap with it
+    Regex temp(other); // Copy constructor does the deep copy
+
+    // Swap the internal pointers
+    std::swap(_code, temp._code);
+    // temp's destructor will clean up our old _code
+  }
+  return *this;
+}
 
 //----------------------------------------------------------------------------
 Regex::Regex(Regex &&that) noexcept

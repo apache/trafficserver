@@ -259,3 +259,233 @@ TEST_CASE("Regex error codes", "[libts][Regex][errors]")
     CHECK(r.exec("foo", matches) == 1);
   }
 }
+
+TEST_CASE("Regex copy constructor", "[libts][Regex][copy]")
+{
+  SECTION("Copy constructor creates independent copy")
+  {
+    Regex original;
+    REQUIRE(original.compile(R"(^test\d+$)") == true);
+
+    // Test original works
+    CHECK(original.exec("test123") == true);
+    CHECK(original.exec("test") == false);
+
+    // Copy using copy constructor
+    Regex copy(original);
+
+    // Both should work independently
+    CHECK(copy.exec("test123") == true);
+    CHECK(copy.exec("test") == false);
+    CHECK(original.exec("test456") == true);
+    CHECK(original.exec("test") == false);
+  }
+
+  SECTION("Copy constructor with capture groups")
+  {
+    Regex original;
+    REQUIRE(original.compile(R"(^(\w+)@(\w+)\.(\w+)$)") == true);
+
+    Regex copy(original);
+
+    // Test both original and copy with captures
+    RegexMatches original_matches;
+    REQUIRE(original.exec("user@example.com", original_matches) == 4);
+    CHECK(original_matches[0] == "user@example.com");
+    CHECK(original_matches[1] == "user");
+    CHECK(original_matches[2] == "example");
+    CHECK(original_matches[3] == "com");
+
+    RegexMatches copy_matches;
+    REQUIRE(copy.exec("admin@test.org", copy_matches) == 4);
+    CHECK(copy_matches[0] == "admin@test.org");
+    CHECK(copy_matches[1] == "admin");
+    CHECK(copy_matches[2] == "test");
+    CHECK(copy_matches[3] == "org");
+  }
+
+  SECTION("Copy constructor with empty regex")
+  {
+    Regex original; // Not compiled
+    Regex copy(original);
+
+    // Both should be empty
+    CHECK(original.empty() == true);
+    CHECK(copy.empty() == true);
+
+    // Neither should match anything
+    CHECK(original.exec("test") == false);
+    CHECK(copy.exec("test") == false);
+  }
+
+  SECTION("Copy constructor with case insensitive flag")
+  {
+    Regex original;
+    REQUIRE(original.compile(R"(^FOO$)", RE_CASE_INSENSITIVE) == true);
+
+    Regex copy(original);
+
+    // Both should match case-insensitively
+    CHECK(original.exec("foo") == true);
+    CHECK(original.exec("FOO") == true);
+    CHECK(original.exec("FoO") == true);
+    CHECK(copy.exec("foo") == true);
+    CHECK(copy.exec("FOO") == true);
+    CHECK(copy.exec("FoO") == true);
+  }
+
+  SECTION("Multiple copies can coexist")
+  {
+    Regex original;
+    REQUIRE(original.compile(R"(\d+)") == true);
+
+    Regex copy1(original);
+    Regex copy2(original);
+    Regex copy3(copy1);
+
+    // All should work independently
+    CHECK(original.exec("123") == true);
+    CHECK(copy1.exec("456") == true);
+    CHECK(copy2.exec("789") == true);
+    CHECK(copy3.exec("000") == true);
+  }
+
+  SECTION("Copy can be stored in vector")
+  {
+    Regex pattern;
+    REQUIRE(pattern.compile(R"(test\d+)") == true);
+
+    std::vector<Regex> patterns;
+    patterns.push_back(pattern);
+    patterns.push_back(pattern);
+    patterns.push_back(pattern);
+
+    // All copies in vector should work
+    for (auto &p : patterns) {
+      CHECK(p.exec("test123") == true);
+      CHECK(p.exec("test") == false);
+    }
+  }
+}
+
+TEST_CASE("Regex copy assignment", "[libts][Regex][copy]")
+{
+  SECTION("Copy assignment replaces existing pattern")
+  {
+    Regex regex1;
+    Regex regex2;
+
+    REQUIRE(regex1.compile(R"(foo)") == true);
+    REQUIRE(regex2.compile(R"(bar)") == true);
+
+    CHECK(regex1.exec("foo") == true);
+    CHECK(regex1.exec("bar") == false);
+    CHECK(regex2.exec("foo") == false);
+    CHECK(regex2.exec("bar") == true);
+
+    // Copy assign regex1 to regex2
+    regex2 = regex1;
+
+    // Now both should match "foo"
+    CHECK(regex1.exec("foo") == true);
+    CHECK(regex1.exec("bar") == false);
+    CHECK(regex2.exec("foo") == true);
+    CHECK(regex2.exec("bar") == false);
+  }
+
+  SECTION("Copy assignment from empty regex")
+  {
+    Regex compiled;
+    Regex empty;
+
+    REQUIRE(compiled.compile(R"(test)") == true);
+    CHECK(compiled.exec("test") == true);
+
+    // Assign empty to compiled
+    compiled = empty;
+
+    // Now compiled should be empty
+    CHECK(compiled.empty() == true);
+    CHECK(compiled.exec("test") == false);
+  }
+
+  SECTION("Copy assignment to empty regex")
+  {
+    Regex empty;
+    Regex compiled;
+
+    REQUIRE(compiled.compile(R"(test)") == true);
+
+    // Assign compiled to empty
+    empty = compiled;
+
+    // Now empty should work
+    CHECK(empty.exec("test") == true);
+    CHECK(compiled.exec("test") == true);
+  }
+
+  SECTION("Self-assignment is safe")
+  {
+    Regex regex;
+    REQUIRE(regex.compile(R"(test)") == true);
+
+    // Self-assign (disable warning for intentional self-assignment test)
+    // Use a pointer indirection to avoid compiler warnings about self-assignment
+    Regex *ptr = &regex;
+    regex      = *ptr;
+
+    // Should still work
+    CHECK(regex.exec("test") == true);
+    CHECK(regex.exec("foo") == false);
+  }
+
+  SECTION("Copy assignment with capture groups")
+  {
+    Regex regex1;
+    Regex regex2;
+
+    REQUIRE(regex1.compile(R"(^(\d{3})-(\d{3})-(\d{4})$)") == true);
+    REQUIRE(regex2.compile(R"(foo)") == true);
+
+    regex2 = regex1;
+
+    RegexMatches matches;
+    REQUIRE(regex2.exec("123-456-7890", matches) == 4);
+    CHECK(matches[0] == "123-456-7890");
+    CHECK(matches[1] == "123");
+    CHECK(matches[2] == "456");
+    CHECK(matches[3] == "7890");
+  }
+
+  SECTION("Copy assignment chain")
+  {
+    Regex r1, r2, r3;
+    REQUIRE(r1.compile(R"(test\d+)") == true);
+
+    // Chain assignment
+    r3 = r2 = r1;
+
+    // All should work
+    CHECK(r1.exec("test123") == true);
+    CHECK(r2.exec("test456") == true);
+    CHECK(r3.exec("test789") == true);
+  }
+}
+
+TEST_CASE("Regex copy with RE_NOTEMPTY flag", "[libts][Regex][copy][flags]")
+{
+  SECTION("Copied regex preserves RE_NOTEMPTY behavior")
+  {
+    Regex original;
+    REQUIRE(original.compile("^$") == true);
+
+    Regex copy(original);
+
+    // Both should have same behavior with RE_NOTEMPTY
+    CHECK(original.exec(std::string_view("")) == true);
+    CHECK(original.exec(std::string_view(""), RE_NOTEMPTY) == false);
+
+    CHECK(copy.exec(std::string_view("")) == true);
+    CHECK(copy.exec(std::string_view(""), RE_NOTEMPTY) == false);
+  }
+}
