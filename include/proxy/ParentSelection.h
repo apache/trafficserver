@@ -35,11 +35,13 @@
 #include "proxy/ControlMatcher.h"
 #include "records/RecProcess.h"
 #include "tscore/ConsistentHash.h"
+#include "tscore/Hash.h"
 #include "tscore/Tokenizer.h"
 #include "tscore/ink_apidefs.h"
 #include "proxy/HostStatus.h"
 
 #include <algorithm>
+#include <memory>
 #include <vector>
 
 #define MAX_PARENTS           64
@@ -449,6 +451,10 @@ public:
 
 // Helper Functions
 ParentRecord *createDefaultParent(char *val);
+
+// Hash utility functions
+ParentHashAlgorithm        parseHashAlgorithm(std::string_view name);
+std::unique_ptr<ATSHash64> createHashInstance(ParentHashAlgorithm algo, uint64_t seed0, uint64_t seed1);
 
 // Unit Test Functions
 void show_result(ParentResult *aParentResult);

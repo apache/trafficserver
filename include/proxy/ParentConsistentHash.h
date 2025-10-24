@@ -48,8 +48,6 @@ class ParentConsistentHash : public ParentSelectionStrategy
   uint64_t                           hash_seed0;
   uint64_t                           hash_seed1;
 
-  std::unique_ptr<ATSHash64> createHashInstance(ParentHashAlgorithm algo, uint64_t seed0, uint64_t seed1);
-
 public:
   static const int PRIMARY   = 0;
   static const int SECONDARY = 1;

@@ -30,20 +30,6 @@ namespace
 DbgCtl dbg_ctl_parent_select{"parent_select"};
 }
 
-std::unique_ptr<ATSHash64>
-ParentConsistentHash::createHashInstance(ParentHashAlgorithm algo, uint64_t seed0, uint64_t seed1)
-{
-  switch (algo) {
-  case ParentHashAlgorithm::SIPHASH24:
-    return std::make_unique<ATSHash64Sip24>(seed0, seed1);
-  case ParentHashAlgorithm::SIPHASH13:
-    return std::make_unique<ATSHash64Sip13>(seed0, seed1);
-  default:
-    Warning("Unknown hash algorithm %d, using SipHash-2-4", static_cast<int>(algo));
-    return std::make_unique<ATSHash64Sip24>(seed0, seed1);
-  }
-}
-
 ParentConsistentHash::ParentConsistentHash(ParentRecord *parent_record)
 {
   int i;

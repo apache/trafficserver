@@ -27,6 +27,7 @@
 #include "iocore/utils/Machine.h"
 #include "tsutil/YamlCfg.h"
 #include "proxy/http/remap/NextHopConsistentHash.h"
+#include "proxy/ParentSelection.h"
 
 // hash_key strings.
 constexpr std::string_view hash_key_url           = "url";
@@ -57,16 +58,10 @@ std::shared_ptr<HostRecord>
 NextHopConsistentHash::chashLookup(const std::shared_ptr<ATSConsistentHash> &ring, uint32_t cur_ring, ParentResult &result,
                                    HttpRequestData &request_info, bool *wrapped, uint64_t sm_id)
 {
-  uint64_t hash_key = 0;
-  // Create hash instance based on configured algorithm and seeds
-  std::unique_ptr<ATSHash64> hash;
-  if (hash_algorithm == "siphash13") {
-    hash = std::make_unique<ATSHash64Sip13>(hash_seed0, hash_seed1);
-  } else {
-    hash = std::make_unique<ATSHash64Sip24>(hash_seed0, hash_seed1);
-  }
-  HostRecord            *host_rec = nullptr;
-  ATSConsistentHashIter *iter     = &result.chashIter[cur_ring];
+  uint64_t                   hash_key = 0;
+  std::unique_ptr<ATSHash64> hash     = createHashInstance(parseHashAlgorithm(hash_algorithm), hash_seed0, hash_seed1);
+  HostRecord                *host_rec = nullptr;
+  ATSConsistentHashIter     *iter     = &result.chashIter[cur_ring];
 
   if (result.chash_init[cur_ring] == false) {
     hash_key                    = getHashKey(sm_id, request_info, hash.get());
@@ -196,13 +191,7 @@ NextHopConsistentHash::NextHopConsistentHash(const std::string_view name, const 
                                 "', this strategy will be ignored.");
   }
 
-  // Create the hash instance based on configured algorithm and seeds
-  if (hash_algorithm == "siphash13") {
-    hash = std::make_unique<ATSHash64Sip13>(hash_seed0, hash_seed1);
-  } else {
-    // Default to siphash24
-    hash = std::make_unique<ATSHash64Sip24>(hash_seed0, hash_seed1);
-  }
+  hash = createHashInstance(parseHashAlgorithm(hash_algorithm), hash_seed0, hash_seed1);
 
   // load up the hash rings.
   for (uint32_t i = 0; i < groups; i++) {
