@@ -225,7 +225,7 @@ jws_parsing_helper(const char *uri, const char *paramName, const char *expected_
   cjose_jws_t *jws = get_jws_from_uri(uri, uri_ct, paramName, uri_strip, uri_ct, &strip_ct);
   if (jws) {
     resp = true;
-    if (strcmp(uri_strip, expected_strip) != 0) {
+    if (expected_strip != nullptr && strcmp(uri_strip, expected_strip) != 0) {
       cjose_jws_release(jws);
       resp = false;
     }
