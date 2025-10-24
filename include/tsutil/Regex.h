@@ -98,8 +98,24 @@ private:
 class Regex
 {
 public:
-  Regex()              = default;
-  Regex(Regex const &) = delete; // No copying.
+  Regex() = default;
+  /** Deep copy constructor.
+   *
+   * Creates a new Regex object with a deep copy of the compiled pattern.
+   * Uses pcre2_code_copy() to duplicate the compiled pattern without
+   * requiring the original pattern string.
+   *
+   * @param other The Regex object to copy from.
+   */
+  Regex(Regex const &other);
+  /** Deep copy assignment operator.
+   *
+   * Replaces the current compiled pattern with a deep copy of the other's pattern.
+   *
+   * @param other The Regex object to copy from.
+   * @return Reference to this object.
+   */
+  Regex &operator=(Regex const &other);
   Regex(Regex &&that) noexcept;
   Regex &operator=(Regex &&other);
   ~Regex();
