@@ -323,8 +323,15 @@ inline void
 ats_unix_append_id(sockaddr_un *s, int id)
 {
   char tmp[16];
-  int  cnt     = snprintf(tmp, sizeof(tmp), "-%d", id);
-  int  old_len = ats_unix_path_len(s);
+  int  cnt = snprintf(tmp, sizeof(tmp), "-%d", id);
+
+  // Defensive check: snprintf can return negative on error or >= sizeof(tmp) if truncated
+  if (cnt < 0 || cnt >= static_cast<int>(sizeof(tmp))) {
+    ink_assert(!"snprintf failed or truncated in ats_unix_append_id");
+    return;
+  }
+
+  int old_len = ats_unix_path_len(s);
   if (static_cast<size_t>(old_len + cnt) < TS_UNIX_SIZE) {
     memcpy(s->sun_path + old_len, tmp, cnt + 1); // +1 to include the null terminator
 #if HAVE_STRUCT_SOCKADDR_UN_SUN_LEN
