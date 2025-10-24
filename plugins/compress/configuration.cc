@@ -38,7 +38,7 @@
 
 #include <cctype>
 
-namespace Gzip
+namespace Compress
 {
 swoc::TextView
 extractFirstToken(swoc::TextView &view, int (*fp)(int))
@@ -410,4 +410,4 @@ Configuration::Parse(const char *path)
 
   return c;
 } // Configuration::Parse
-} // namespace Gzip
+} // namespace Compress

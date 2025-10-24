@@ -1,6 +1,6 @@
 /** @file
 
-  Transforms content using gzip, deflate or brotli
+  Brotli compression implementation
 
   @section license License
 
@@ -23,10 +23,24 @@
 
 #pragma once
 
-#include <ts/ts.h>
+#include "compress_common.h"
 
-void        normalize_accept_encoding(TSHttpTxn txnp, TSMBuffer reqp, TSMLoc hdr_loc);
-void        hide_accept_encoding(TSHttpTxn txnp, TSMBuffer reqp, TSMLoc hdr_loc, const char *hidden_header_name);
-void        restore_accept_encoding(TSHttpTxn txnp, TSMBuffer reqp, TSMLoc hdr_loc, const char *hidden_header_name);
-const char *init_hidden_header_name();
-int         register_plugin();
+#if HAVE_BROTLI_ENCODE_H
+
+namespace Brotli
+{
+// Initialize brotli compression context
+void data_alloc(Data *data);
+
+// Destroy brotli compression context
+void data_destroy(Data *data);
+
+// Compress one chunk of data
+void transform_one(Data *data, const char *upstream_buffer, int64_t upstream_length);
+
+// Finish compression and flush remaining data
+void transform_finish(Data *data);
+
+} // namespace Brotli
+
+#endif // HAVE_BROTLI_ENCODE_H

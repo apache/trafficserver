@@ -30,18 +30,6 @@
 #include <cinttypes>
 #include "debug_macros.h"
 
-voidpf
-gzip_alloc(voidpf /* opaque ATS_UNUSED */, uInt items, uInt size)
-{
-  return static_cast<voidpf>(TSmalloc(items * size));
-}
-
-void
-gzip_free(voidpf /* opaque ATS_UNUSED */, voidpf address)
-{
-  TSfree(address);
-}
-
 namespace
 {
 // Strips parameters from value.  Returns cleared TextView if a q=f parameter present, where f is less than or equal to
@@ -189,14 +177,4 @@ register_plugin()
     return 0;
   }
   return 1;
-}
-
-void
-log_compression_ratio(int64_t in, int64_t out)
-{
-  if (in) {
-    info("Compressed size %" PRId64 " (bytes), Original size %" PRId64 ", ratio: %f", out, in, ((float)(in - out) / in));
-  } else {
-    debug("Compressed size %" PRId64 " (bytes), Original size %" PRId64 ", ratio: %f", out, in, 0.0F);
-  }
 }
