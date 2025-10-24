@@ -574,6 +574,8 @@ if(ENABLE_DOCS)
     COMPONENTS Runtime
     REQUIRED
   )
+
+  find_program(GRAPHVIZ_DOT dot REQUIRED)
 endif()
 
 if(ENABLE_AUTEST)
