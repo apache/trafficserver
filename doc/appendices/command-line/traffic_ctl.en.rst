@@ -52,7 +52,9 @@ of subcommands that control different aspects of Traffic Server:
 :program:`traffic_ctl plugin`
    Interact with plugins.
 :program:`traffic_ctl host`
-   Manipulate host status.  parents for now but will be expanded to origins.
+   Manipulate host status.
+:program:`traffic_ctl hostdb`
+   Manipulate HostDB status.
 :program:`traffic_ctl rpc`
    Interact directly with the |RPC| server in |TS|
 
@@ -559,6 +561,16 @@ records may be viewed using the :program:`traffic_ctl host status` command.
    Supports :option:`--reason`.
 
 .. _traffic_ctl_rpc:
+
+traffic_ctl hostdb
+------------------
+.. program:: traffic_ctl hostdb
+
+.. option:: status
+
+   :ref:`admin_lookup_records`
+
+   Get the current status of HostDB.
 
 traffic_ctl rpc
 ---------------

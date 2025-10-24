@@ -1,0 +1,115 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "HostDB info definition",
+  "description":"This is the definition expected for a RPC hostdb status request. This should be used to obtain information of HostDB from Traffic Server Licensed under Apache V2 https://www.apache.org/licenses/LICENSE-2.0",
+  "type": "object",
+  "properties": {
+    "metadata": {
+      "type": "object",
+        "properties": {
+          "timestamp": {
+            "type": "integer"
+          },
+          "version": {
+            "type": "string"
+          }
+        }
+    },
+    "partitions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Partition identifier"
+          },
+          "records": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "metadata": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "enum": ["UNSPEC", "ADDR", "SRV", "HOST"]
+                    },
+                    "af_family": {
+                      "type": "string",
+                      "enum": ["UNSPEC", "UNIX", "AF_INET", "AF_INET6"]
+                    },
+                    "name": {
+                      "type": "string",
+                      "description": "Query hostname or resolved name"
+                    },
+                    "failed": {
+                      "type": "boolean"
+                    },
+                    "ip_timestamp": {
+                      "type": "integer"
+                    }
+                  }
+                },
+                "info": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "data": {
+                        "oneOf": [
+                          {
+                            "type": "object",
+                            "properties": {
+                              "ip": {
+                                "type": "string"
+                              }
+                            }
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "srv": {
+                                "type": "object",
+                                "properties": {
+                                  "weight": {
+                                    "type": "integer"
+                                  },
+                                  "priority": {
+                                    "type": "integer"
+                                  },
+                                  "port": {
+                                    "type": "integer"
+                                  },
+                                  "target": {
+                                    "type": "string"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        ]
+                      },
+                      "health": {
+                        "type": "object",
+                        "properties": {
+                          "last_failure": {
+                            "type": "integer"
+                          },
+                          "fail_count": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -433,6 +433,28 @@ HostCommand::status_up()
   _printer->write_output(response);
 }
 //------------------------------------------------------------------------------------------------------------------------------------
+HostDBCommand::HostDBCommand(ts::Arguments *args) : CtrlCommand(args)
+{
+  BasePrinter::Options printOpts{parse_print_opts(args)};
+  if (get_parsed_arguments()->get(STATUS_STR)) {
+    _printer      = std::make_unique<HostDBStatusPrinter>(printOpts);
+    _invoked_func = [&]() { status_get(); };
+  }
+}
+
+void
+HostDBCommand::status_get()
+{
+  auto const            &data = get_parsed_arguments()->get(STATUS_STR);
+  HostDBGetStatusRequest request{
+    {std::begin(data), std::end(data)}
+  };
+
+  auto response = invoke_rpc(request);
+
+  _printer->write_output(response);
+}
+//------------------------------------------------------------------------------------------------------------------------------------
 PluginCommand::PluginCommand(ts::Arguments *args) : CtrlCommand(args)
 {
   if (get_parsed_arguments()->get(MSG_STR)) {

@@ -314,7 +314,12 @@ SetHostStatusPrinter::write_output([[maybe_unused]] YAML::Node const &result)
   // do nothing.
 }
 //------------------------------------------------------------------------------------------------------------------------------------
-
+void
+HostDBStatusPrinter::write_output(YAML::Node const &result)
+{
+  write_output_json(result["data"] ? result["data"] : result);
+}
+//-------------------------------------------------------------------------------------------------------------------------------------
 void
 CacheDiskStoragePrinter::write_output(YAML::Node const &result)
 {

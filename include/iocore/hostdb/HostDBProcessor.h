@@ -411,6 +411,9 @@ public:
   /// Get the array of info instances.
   swoc::MemSpan<HostDBInfo> rr_info();
 
+  /// Get the array of info instances to read
+  swoc::MemSpan<const HostDBInfo> rr_info() const;
+
   /** Find a host record by IP address.
    *
    * @param addr Address key.
@@ -800,6 +803,12 @@ inline swoc::MemSpan<HostDBInfo>
 HostDBRecord::rr_info()
 {
   return {this->apply_offset<HostDBInfo>(rr_offset), rr_count};
+}
+
+inline swoc::MemSpan<const HostDBInfo>
+HostDBRecord::rr_info() const
+{
+  return {this->apply_offset<const HostDBInfo>(rr_offset), rr_count};
 }
 
 inline bool

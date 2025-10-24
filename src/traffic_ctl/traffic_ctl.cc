@@ -88,6 +88,7 @@ main([[maybe_unused]] int argc, const char **argv)
   auto &storage_command    = parser.add_command("storage", "Manipulate cache storage").require_commands();
   auto &plugin_command     = parser.add_command("plugin", "Interact with plugins").require_commands();
   auto &host_command       = parser.add_command("host", "Interact with host status").require_commands();
+  auto &hostdb_command     = parser.add_command("hostdb", "Interact with HostDB status").require_commands();
   auto &direct_rpc_command = parser.add_command("rpc", "Interact with the rpc api").require_commands();
 
   // config commands
@@ -158,6 +159,10 @@ main([[maybe_unused]] int argc, const char **argv)
                 "Terminate execution after requesting <count> metrics. If 0 is passed, program should be terminated by a SIGINT",
                 "", 1, "0")
     .add_option("--interval", "-i", "Wait interval seconds between sending each metric request. Minimum value is 1s.", "", 1, "5");
+
+  // hostdb commands
+  hostdb_command.add_command("status", "Get HostDB info", "", MORE_THAN_ZERO_ARG_N, [&]() { command->execute(); })
+    .add_example_usage("traffic_ctl hostdb status");
 
   // plugin command
   plugin_command
@@ -235,6 +240,8 @@ main([[maybe_unused]] int argc, const char **argv)
       command = std::make_shared<PluginCommand>(&args);
     } else if (args.get("host")) {
       command = std::make_shared<HostCommand>(&args);
+    } else if (args.get("hostdb")) {
+      command = std::make_shared<HostDBCommand>(&args);
     } else if (args.get("rpc")) {
       command = std::make_shared<DirectRPCCommand>(&args);
     }
