@@ -209,3 +209,31 @@ HostStatus::setHostStatus(const std::string_view host, TSHostStatus status, unsi
   NH_Dbg(DbgCtl{"next_hop"}, "setting host status for '%.*s' to %s", static_cast<int>(host.size()), host.data(),
          HostStatusNames[status]);
 }
+
+// Stub implementations for Parent Selection hash utilities
+#include "proxy/ParentSelection.h"
+#include "tscore/Hash.h"
+#include "tscore/HashSip.h"
+
+ParentHashAlgorithm
+parseHashAlgorithm(std::string_view name)
+{
+  if (name == "siphash13") {
+    return ParentHashAlgorithm::SIPHASH13;
+  } else {
+    return ParentHashAlgorithm::SIPHASH24;
+  }
+}
+
+std::unique_ptr<ATSHash64>
+createHashInstance(ParentHashAlgorithm algo, uint64_t seed0, uint64_t seed1)
+{
+  switch (algo) {
+  case ParentHashAlgorithm::SIPHASH24:
+    return std::make_unique<ATSHash64Sip24>(seed0, seed1);
+  case ParentHashAlgorithm::SIPHASH13:
+    return std::make_unique<ATSHash64Sip13>(seed0, seed1);
+  default:
+    return std::make_unique<ATSHash64Sip24>(seed0, seed1);
+  }
+}
