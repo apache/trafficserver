@@ -1,6 +1,6 @@
 /** @file
 
-  Transforms content using gzip, deflate or brotli
+  Common types and utilities for compression plugin
 
   @section license License
 
@@ -21,12 +21,17 @@
   limitations under the License.
  */
 
-#pragma once
+#include "compress_common.h"
+#include "debug_macros.h"
 
-#include <ts/ts.h>
+#include <cinttypes>
 
-void        normalize_accept_encoding(TSHttpTxn txnp, TSMBuffer reqp, TSMLoc hdr_loc);
-void        hide_accept_encoding(TSHttpTxn txnp, TSMBuffer reqp, TSMLoc hdr_loc, const char *hidden_header_name);
-void        restore_accept_encoding(TSHttpTxn txnp, TSMBuffer reqp, TSMLoc hdr_loc, const char *hidden_header_name);
-const char *init_hidden_header_name();
-int         register_plugin();
+void
+log_compression_ratio(int64_t in, int64_t out)
+{
+  if (in) {
+    info("Compressed size %" PRId64 " (bytes), Original size %" PRId64 ", ratio: %f", out, in, ((float)(in - out) / in));
+  } else {
+    debug("Compressed size %" PRId64 " (bytes), Original size %" PRId64 ", ratio: %f", out, in, 0.0F);
+  }
+}
