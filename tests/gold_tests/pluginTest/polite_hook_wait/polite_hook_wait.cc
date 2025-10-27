@@ -27,11 +27,11 @@ using atscppapi::TSContUniqPtr;
 using atscppapi::TSThreadUniqPtr;
 
 /*
-Test handling a blocking call (in a spawned thread) on a transaction hook without blocking the thread executing the hooks.
+Test spawning a thread in one transaction hook that runs in parallel with the transaction, until a transaction
+continuation on a later hook waits for the thread results.
 
-It is dependent on continuations hooked globally on a transaction hook running before continations hooked for just the
-one transaction.  It is dependent on the ability of a global continuation on a txn hook to add a per-txn continuation on
-the same hook.
+(To block the transaction until the thread completes, but allow the event task to continue processing events not
+related to the transaction, follow the simpler example in example/plugins/c-api/thread_1.)
 */
 
 #define PINAME "polite_hook_wait"
@@ -42,7 +42,7 @@ char PIName[] = PINAME;
 
 DbgCtl dbg_ctl{PINAME};
 
-enum Test_step { BEGIN, GLOBAL_CONT_READ_HDRS, THREAD, TXN_CONT_READ_HDRS, END };
+enum Test_step { BEGIN, GLOBAL_CONT_READ_HDRS, THREAD, TXN_CONT, END };
 
 char const *
 step_cstr(int test_step)
@@ -62,8 +62,8 @@ step_cstr(int test_step)
     result = "THREAD";
     break;
 
-  case TXN_CONT_READ_HDRS:
-    result = "TXN_CONT_READ_HDRS";
+  case TXN_CONT:
+    result = "TXN_CONT";
     break;
 
   default:
@@ -163,7 +163,7 @@ Blocking_action::_global_cont_func(TSCont, TSEvent event, void *eventData)
       return 0;
     }
 
-    TSHttpTxnHookAdd(txn, TS_HTTP_READ_REQUEST_HDR_HOOK, ba._txn_hook_cont.get());
+    TSHttpTxnHookAdd(txn, TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, ba._txn_hook_cont.get());
 
     while (!ba._cont_mutex_locked.load(std::memory_order_acquire)) {
       std::this_thread::yield();
@@ -171,7 +171,7 @@ Blocking_action::_global_cont_func(TSCont, TSEvent event, void *eventData)
   } break;
 
   case TS_EVENT_HTTP_SEND_RESPONSE_HDR:
-    next_step(TXN_CONT_READ_HDRS);
+    next_step(TXN_CONT);
 
     if (!AuxDataMgr::data(txn).txn_valid) {
       static const char msg[] = "authorization denied\n";
@@ -224,7 +224,7 @@ Blocking_action::_txn_cont_func(TSCont, TSEvent event, void *eventData)
   next_step(THREAD);
 
   TSReleaseAssert(eventData != nullptr);
-  TSReleaseAssert(TS_EVENT_HTTP_READ_REQUEST_HDR == event);
+  TSReleaseAssert(TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE == event);
 
   TSHttpTxn txn{static_cast<TSHttpTxn>(eventData)};
 
