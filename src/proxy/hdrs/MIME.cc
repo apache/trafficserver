@@ -54,16 +54,18 @@ using swoc::TextView;
  *                                                                     *
  ***********************************************************************/
 
-static constexpr std::array<std::string_view, 7> day_names = {
+namespace
+{
+constexpr std::array<std::string_view, 7> day_names = {
   "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat",
 };
 
-static constexpr std::array<std::string_view, 12> month_names = {
+constexpr std::array<std::string_view, 12> month_names = {
   "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 };
 
 template <size_t count>
-static consteval std::array<uint32_t, count>
+consteval std::array<uint32_t, count>
 make_packed(const std::array<std::string_view, count> &names)
 {
   std::array<uint32_t, count> packed{};
@@ -80,14 +82,14 @@ make_packed(const std::array<std::string_view, count> &names)
   return packed;
 }
 
-static constexpr std::array<uint32_t, day_names.size()>   day_names_packed   = make_packed(day_names);
-static constexpr std::array<uint32_t, month_names.size()> month_names_packed = make_packed(month_names);
+constexpr std::array<uint32_t, day_names.size()>   day_names_packed   = make_packed(day_names);
+constexpr std::array<uint32_t, month_names.size()> month_names_packed = make_packed(month_names);
 
 // Case-insensitive match of first 3 characters of input string against array of names
 // Longer strings will match if their first 3 characters match - this is intentional for
 // matching non-standard day/month names like "Thursday" or "September".
 template <size_t count>
-__attribute__((always_inline)) static constexpr int
+__attribute__((always_inline)) constexpr int
 match_3char_ci(const std::string_view s, const std::array<uint32_t, count> &names_packed)
 {
   if (s.size() < 3) {
@@ -104,6 +106,7 @@ match_3char_ci(const std::string_view s, const std::array<uint32_t, count> &name
   }
   return -1;
 }
+} // namespace
 
 struct MDY {
   uint8_t  m;
