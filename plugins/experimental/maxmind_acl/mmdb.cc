@@ -402,8 +402,9 @@ Acl::parseregex(const YAML::Node &regex, bool allow)
           std::string error;
           int         erroroffset = 0;
 
-          if (!temp._rex.compile(temp._regex_s, error, erroroffset, 0)) {
-            TSError("[%s] Failed to compile regular expression in %s", PLUGIN_NAME, temp._regex_s.c_str());
+          if (!temp._rex.compile(temp._regex_s, error, erroroffset)) {
+            TSError("[%s] Failed to compile regular expression in %s, err: %s(%d)", PLUGIN_NAME, temp._regex_s.c_str(),
+                    error.c_str(), erroroffset);
             return;
           }
 
