@@ -122,6 +122,38 @@ which is equivalent to
 
 In this case, `subinit` is the subcommand of `init` and `--initoption` is a switch of command `remove`.
 
+Mutually Exclusive Groups
+--------------------------
+
+ArgParser supports mutually exclusive option groups, where only one option from the group can be used at a time.
+This is useful for options that conflict with each other, such as ``--verbose`` and ``--quiet``, or ``--enable`` and ``--disable``.
+
+To create a mutually exclusive group:
+
+.. code-block:: cpp
+
+   // Create a mutex group (optional by default)
+   parser.add_mutex_group("verbosity", false, "Verbosity level");
+   
+   // Add options to the group
+   parser.add_option_to_group("verbosity", "--verbose", "-v", "Enable verbose output");
+   parser.add_option_to_group("verbosity", "--quiet", "-q", "Suppress output");
+
+The second parameter to ``add_mutex_group()`` specifies whether the group is required (``true``) or optional (``false``).
+If required, the user must specify exactly one option from the group. If optional, the user may specify zero or one option.
+
+When multiple options from the same group are used together, ArgParser will display an error message and exit.
+
+Example with a required group:
+
+.. code-block:: cpp
+
+   // Create a required mutex group for output format
+   parser.add_mutex_group("format", true, "Output format (required)");
+   parser.add_option_to_group("format", "--json", "-j", "JSON format");
+   parser.add_option_to_group("format", "--xml", "-x", "XML format");
+   
+   // User must specify either --json or --xml, but not both
 
 Parsing Arguments
 -----------------
@@ -203,6 +235,15 @@ Classes
 
       Return the error message of the parser.
 
+   .. function:: void add_mutex_group(std::string const &group_name, bool required, std::string const &description)
+
+      Create a mutually exclusive option group. Only one option from the group can be used at a time.
+      If *required* is true, exactly one option from the group must be specified.
+
+   .. function:: void add_option_to_group(std::string const &group_name, std::string const &long_option, std::string const &short_option, std::string const &description)
+
+      Add an option to a mutually exclusive group. The option will be created and associated with the specified group.
+
 .. class:: Option
 
    :class:`Option` is a data struct containing information about an option.
@@ -234,6 +275,14 @@ Classes
    .. function:: Command &set_default()
 
       set the current command as default
+
+   .. function:: void add_mutex_group(std::string const &group_name, bool required, std::string const &description)
+
+      Create a mutually exclusive option group for this command.
+
+   .. function:: void add_option_to_group(std::string const &group_name, std::string const &long_option, std::string const &short_option, std::string const &description)
+
+      Add an option to a mutually exclusive group for this command.
 
 .. class:: Arguments
 
