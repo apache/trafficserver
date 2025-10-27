@@ -43,7 +43,7 @@ class SymbolResolver(SymbolResolverBase):
             return params.target, params.validate
         raise SymbolResolutionError(name, "Unknown operator or invalid standalone use")
 
-    def declare_variable(self, name: str, type_name: str) -> str:
+    def declare_variable(self, name: str, type_name: str, explicit_slot: int | None = None) -> str:
         try:
             var_type = types.VarType.from_str(type_name)
         except ValueError as e:
@@ -51,13 +51,24 @@ class SymbolResolver(SymbolResolverBase):
             error.add_note(f"Available types: {', '.join([vt.name for vt in types.VarType])}")
             raise error
 
-        if self._var_counter[var_type] >= var_type.limit:
-            error = SymbolResolutionError(name, f"Too many '{type_name}' variables (max {var_type.limit})")
-            error.add_note(f"Current count: {self._var_counter[var_type]}")
-            raise error
+        # Determine slot number
+        if explicit_slot is not None:
+            if explicit_slot < 0 or explicit_slot >= var_type.limit:
+                raise SymbolResolutionError(
+                    name, f"Slot @{explicit_slot} out of range for type '{type_name}' (valid: 0-{var_type.limit-1})")
+            for var_name, sym in self._symbols.items():
+                if sym.var_type == var_type and sym.slot == explicit_slot:
+                    raise SymbolResolutionError(name, f"Slot @{explicit_slot} already used by variable '{var_name}'")
 
-        symbol = types.Symbol(var_type, self._var_counter[var_type])
-        self._var_counter[var_type] += 1
+            slot = explicit_slot
+        else:
+            used_slots = {sym.slot for sym in self._symbols.values() if sym.var_type == var_type}
+            slot = next((i for i in range(var_type.limit) if i not in used_slots), None)
+
+            if slot is None:
+                raise SymbolResolutionError(name, f"No available slots for type '{type_name}' (max {var_type.limit})")
+
+        symbol = types.Symbol(var_type, slot)
         self._symbols[name] = symbol
         return symbol.as_cond()
 

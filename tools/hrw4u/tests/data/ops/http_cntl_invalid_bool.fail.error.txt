@@ -1,1 +1,3 @@
-Invalid boolean value 'invalid_value'. Must be one of: 0, 1, FALSE, NO, OFF, ON, TRUE, YES
+tests/data/ops/http_cntl_invalid_bool.fail.input.txt:2:4: error: Invalid boolean value 'invalid_value'. Must be one of: 0, 1, FALSE, NO, OFF, ON, TRUE, YES
+   2 |     http.cntl.LOGGING = invalid_value;
+     |     ^
