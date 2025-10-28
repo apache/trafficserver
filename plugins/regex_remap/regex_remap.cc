@@ -50,8 +50,9 @@
 static const char *PLUGIN_NAME = "regex_remap";
 
 // Constants
-static const int MATCHCOUNT = 15;
-static const int MAX_SUBS   = 32; // No more than 32 substitution variables in the subst string
+static const int     MATCHCOUNT        = 15;   // We support $0 - $9 x2 ints, and this needs to be 1.5x that
+static const int     MAX_SUBS          = 32;   // No more than 32 substitution variables in the subst string
+static const int32_t REGEX_MATCH_LIMIT = 1750; // POOMA - also dependent on actual stack size. Crashes with previous value of 2047
 
 // Substitutions other than regex matches
 enum ExtraSubstitutions {
@@ -791,7 +792,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
     }
   }
 
-  ri->match_context.setMatchLimit(1750);
+  ri->match_context.setMatchLimit(REGEX_MATCH_LIMIT);
 
   // Make sure we got something...
   if (ri->first == nullptr) {
