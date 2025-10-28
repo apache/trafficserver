@@ -134,7 +134,7 @@ To create a mutually exclusive group:
 
    // Create a mutex group (optional by default)
    parser.add_mutex_group("verbosity", false, "Verbosity level");
-   
+
    // Add options to the group
    parser.add_option_to_group("verbosity", "--verbose", "-v", "Enable verbose output");
    parser.add_option_to_group("verbosity", "--quiet", "-q", "Suppress output");
@@ -152,7 +152,7 @@ Example with a required group:
    parser.add_mutex_group("format", true, "Output format (required)");
    parser.add_option_to_group("format", "--json", "-j", "JSON format");
    parser.add_option_to_group("format", "--xml", "-x", "XML format");
-   
+
    // User must specify either --json or --xml, but not both
 
 Parsing Arguments
