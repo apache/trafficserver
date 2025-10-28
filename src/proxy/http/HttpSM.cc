@@ -3426,9 +3426,9 @@ HttpSM::tunnel_handler_100_continue_ua(int event, HttpTunnelConsumer *c)
     _ua.get_entry()->in_tunnel = false;
     c->write_success           = true;
 
-    // remove the buffer reader from the consumer's vc
+    // Disable any write operation in case there are timeout events.
     if (c->vc != nullptr) {
-      c->vc->do_io_write();
+      c->vc->do_io_write(nullptr, 0, nullptr);
     }
   }
 
