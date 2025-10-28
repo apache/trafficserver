@@ -786,7 +786,7 @@ Acl::eval_country(MMDB_entry_data_s *entry_data, const std::string &url)
     Dbg(dbg_ctl, "saw url not empty: %s, %ld", url.c_str(), url.length());
     if (!allow_regex[output].empty()) {
       for (auto &i : allow_regex[output]) {
-        if (i._rex.exec(url)) {
+        if (i._rex.exec(url, RE_NOTEMPTY)) {
           Dbg(dbg_ctl, "Got a regex allow hit on regex: %s, country: %s", i._regex_s.c_str(), output);
           ret = true;
         }
@@ -794,7 +794,7 @@ Acl::eval_country(MMDB_entry_data_s *entry_data, const std::string &url)
     }
     if (!deny_regex[output].empty()) {
       for (auto &i : deny_regex[output]) {
-        if (i._rex.exec(url)) {
+        if (i._rex.exec(url, RE_NOTEMPTY)) {
           Dbg(dbg_ctl, "Got a regex deny hit on regex: %s, country: %s", i._regex_s.c_str(), output);
           ret = false;
         }
