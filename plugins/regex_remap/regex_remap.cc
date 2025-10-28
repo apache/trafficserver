@@ -129,12 +129,21 @@ public:
     fprintf(stderr, "[%s]:    Regex %d ( %s ): %.2f%%\n", now, ix, _rex_string, 100.0 * _hits / max);
   }
 
+  // Returns '0' on success
   int compile(std::string &error, int &erroffset);
 
+  // number of matches, or '0' if failed
   int
   match(std::string_view const str, RegexMatches &matches) const
   {
-    return _rex.exec(str, matches);
+    TSAssert(nullptr != _match_context);
+    bool const stat = _rex.exec(str, matches, 0, _match_context);
+    if (stat) {
+      return matches.size();
+    } else {
+      Dbg(dbg_ctl, "Regex match failure: %.*s", (int)str.length(), str.data());
+    }
+    return 0;
   }
 
   // Substitutions
@@ -152,6 +161,12 @@ public:
   next() const
   {
     return _next;
+  }
+
+  inline void
+  set_match_context(RegexMatchContext *const ctx)
+  {
+    _match_context = ctx;
   }
 
   // setter / getters for order number within the linked list
@@ -244,9 +259,10 @@ private:
 
   bool _lowercase_substitutions = false;
 
-  Regex        _rex;
-  RemapRegex  *_next   = nullptr;
-  TSHttpStatus _status = static_cast<TSHttpStatus>(0);
+  Regex              _rex;
+  RegexMatchContext *_match_context = nullptr; // owned by RemapInstance
+  RemapRegex        *_next          = nullptr;
+  TSHttpStatus       _status        = static_cast<TSHttpStatus>(0);
 
   int _active_timeout      = -1;
   int _no_activity_timeout = -1;
@@ -377,6 +393,7 @@ RemapRegex::compile(std::string &error, int &erroffset)
 
   bool const restat = _rex.compile(_rex_string, error, erroffset, _options);
   if (!restat) {
+    TSError("[%s] Error compiling : %s", PLUGIN_NAME, _rex_string);
     return -1;
   }
 
@@ -593,17 +610,18 @@ RemapRegex::substitute(char dest[], RegexMatches const &matches, const int lengt
 struct RemapInstance {
   RemapInstance() : filename("unknown") {}
 
-  RemapRegex *first        = nullptr;
-  RemapRegex *last         = nullptr;
-  bool        pristine_url = false;
-  bool        profile      = false;
-  bool        method       = false;
-  bool        query_string = true;
-  bool        host         = false;
-  int         hits         = 0;
-  int         misses       = 0;
-  int         failures     = 0;
-  std::string filename;
+  RemapRegex       *first         = nullptr;
+  RemapRegex       *last          = nullptr;
+  RegexMatchContext match_context = {};
+  bool              pristine_url  = false;
+  bool              profile       = false;
+  bool              method        = false;
+  bool              query_string  = true;
+  bool              host          = false;
+  int               hits          = 0;
+  int               misses        = 0;
+  int               failures      = 0;
+  std::string       filename;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -748,9 +766,10 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
 
     std::string error;
     int         erroffset;
-    if (!cur->compile(error, erroffset)) {
+    Dbg(dbg_ctl, "Compiling regex: %s", regex.c_str());
+    if (0 != cur->compile(error, erroffset)) {
       std::ostringstream oss;
-      oss << '[' << PLUGIN_NAME << "] PCRE failed in " << (ri->filename).c_str() << " (line " << lineno << ')';
+      oss << '[' << PLUGIN_NAME << "] Regex compile failed in " << (ri->filename).c_str() << " (line " << lineno << ')';
       if (erroffset > 0) {
         oss << " at offset " << erroffset;
       }
@@ -764,6 +783,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
     } else {
       Dbg(dbg_ctl, "Added regex=%s with subs=%s and options `%s'", regex.c_str(), subst.c_str(), options.c_str());
       cur->set_order(++count);
+      cur->set_match_context(&ri->match_context);
       auto tmp = cur.get();
       if (ri->first == nullptr) {
         ri->first = cur.release();
@@ -773,6 +793,8 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
       ri->last = tmp;
     }
   }
+
+  ri->match_context.setMatchLimit(1750);
 
   // Make sure we got something...
   if (ri->first == nullptr) {
@@ -786,6 +808,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
 void
 TSRemapDeleteInstance(void *ih)
 {
+  Dbg(dbg_ctl, "TSRemapDeleteInstance");
   RemapInstance *ri = static_cast<RemapInstance *>(ih);
   RemapRegex    *re;
   RemapRegex    *tmp;

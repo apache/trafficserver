@@ -94,6 +94,50 @@ private:
   _MatchDataPtr _match_data;
 };
 
+/// @brief Wrapper for PCRE2 match context
+class RegexMatchContext
+{
+  friend class Regex;
+
+public:
+  /** Construct a new RegexMatchContext object.
+   */
+  RegexMatchContext();
+  ~RegexMatchContext();
+
+  /// uses pcre2_match_context_copy to duplicate.
+  RegexMatchContext(RegexMatchContext const &orig);
+  RegexMatchContext &operator=(RegexMatchContext const &orig);
+
+  RegexMatchContext(RegexMatchContext &&)            = default;
+  RegexMatchContext &operator=(RegexMatchContext &&) = default;
+
+  /** maximum amount of heap memory (KiB) used to hold backtracking information.
+   */
+  void setHeapLimit(uint32_t limit);
+
+  /** Limits the amount of backtracking that can take place.
+   */
+  void setMatchLimit(uint32_t limit);
+
+  /** Limits the depth of nested backtracking.
+   */
+  void setDepthLimit(uint32_t limit);
+
+  /** Limits how far an unanchored search can advance in the subject string.
+   */
+  void setOffsetLimit(uint32_t limit);
+
+private:
+  /// @internal This wraps a void* so to avoid requiring a pcre2 include.
+  struct _MatchContext;
+  struct _MatchContextPtr {
+    void *_ptr = nullptr;
+  };
+
+  _MatchContextPtr _match_context;
+};
+
 /// @brief Wrapper for PCRE2 regular expression.
 class Regex
 {
@@ -179,6 +223,7 @@ public:
    * @param subject String to match against.
    * @param matches Place to store the capture groups.
    * @param flags Match flags (e.g., RE_NOTEMPTY).
+   * @param optional context Match context (set matching limits).
    * @return @c The number of capture groups. < 0 if an error occurred. 0 if the number of Matches is too small.
    *
    * It is safe to call this method concurrently on the same instance of @a this.
@@ -186,7 +231,8 @@ public:
    * Each capture group takes 3 elements of @a ovector, therefore @a ovecsize must
    * be a multiple of 3 and at least three times the number of desired capture groups.
    */
-  int exec(std::string_view subject, RegexMatches &matches, uint32_t flags) const;
+  int exec(std::string_view subject, RegexMatches &matches, uint32_t flags,
+           RegexMatchContext const *const matchContext = nullptr) const;
 
   /// @return The number of capture groups in the compiled pattern.
   int get_capture_count();

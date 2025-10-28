@@ -209,6 +209,103 @@ RegexMatches::operator[](size_t index) const
 }
 
 //----------------------------------------------------------------------------
+struct RegexMatchContext::_MatchContext {
+  static pcre2_match_context *
+  get(_MatchContextPtr const &p)
+  {
+    return static_cast<pcre2_match_context *>(p._ptr);
+  }
+  static void
+  set(_MatchContextPtr &p, pcre2_match_context *ptr)
+  {
+    p._ptr = ptr;
+  }
+};
+
+//----------------------------------------------------------------------------
+RegexMatchContext::RegexMatchContext()
+{
+  auto ctx = pcre2_match_context_create(nullptr);
+  debug_assert_message(ctx, "Failed to allocate custom pcre2 match context");
+  _MatchContext::set(_match_context, ctx);
+}
+
+//----------------------------------------------------------------------------
+RegexMatchContext::RegexMatchContext(RegexMatchContext const &other)
+{
+  auto ptr = _MatchContext::get(other._match_context);
+  if (nullptr != ptr) {
+    pcre2_match_context *const ctx = pcre2_match_context_copy(ptr);
+    _MatchContext::set(_match_context, ctx);
+  }
+}
+
+//----------------------------------------------------------------------------
+RegexMatchContext &
+RegexMatchContext::operator=(RegexMatchContext const &other)
+{
+  if (&other != this) {
+    auto ptr = _MatchContext::get(other._match_context);
+    if (nullptr != ptr) {
+      pcre2_match_context *const ctx = pcre2_match_context_copy(ptr);
+      _MatchContext::set(_match_context, ctx);
+    } else {
+      _MatchContext::set(_match_context, nullptr);
+    }
+  }
+  return *this;
+}
+
+//----------------------------------------------------------------------------
+RegexMatchContext::~RegexMatchContext()
+{
+  auto ptr = _MatchContext::get(_match_context);
+  if (ptr != nullptr) {
+    pcre2_match_context_free(ptr);
+  }
+}
+
+//----------------------------------------------------------------------------
+void
+RegexMatchContext::setHeapLimit(uint32_t limit)
+{
+  auto ptr = _MatchContext::get(_match_context);
+  if (ptr != nullptr) {
+    pcre2_set_heap_limit(ptr, limit);
+  }
+}
+
+//----------------------------------------------------------------------------
+void
+RegexMatchContext::setMatchLimit(uint32_t limit)
+{
+  auto ptr = _MatchContext::get(_match_context);
+  if (ptr != nullptr) {
+    pcre2_set_match_limit(ptr, limit);
+  }
+}
+
+//----------------------------------------------------------------------------
+void
+RegexMatchContext::setDepthLimit(uint32_t limit)
+{
+  auto ptr = _MatchContext::get(_match_context);
+  if (ptr != nullptr) {
+    pcre2_set_depth_limit(ptr, limit);
+  }
+}
+
+//----------------------------------------------------------------------------
+void
+RegexMatchContext::setOffsetLimit(uint32_t limit)
+{
+  auto ptr = _MatchContext::get(_match_context);
+  if (ptr != nullptr) {
+    pcre2_set_offset_limit(ptr, limit);
+  }
+}
+
+//----------------------------------------------------------------------------
 struct Regex::_Code {
   static pcre2_code *
   get(_CodePtr const &p)
@@ -355,7 +452,7 @@ Regex::exec(std::string_view subject, RegexMatches &matches) const
 
 //----------------------------------------------------------------------------
 int32_t
-Regex::exec(std::string_view subject, RegexMatches &matches, uint32_t flags) const
+Regex::exec(std::string_view subject, RegexMatches &matches, uint32_t flags, RegexMatchContext const *const matchContext) const
 {
   auto code = _Code::get(_code);
 
@@ -363,8 +460,18 @@ Regex::exec(std::string_view subject, RegexMatches &matches, uint32_t flags) con
   if (code == nullptr) {
     return PCRE2_ERROR_NULL;
   }
+
+  // Use the provided or the thread global context?
+  auto const match_context = [&]() -> pcre2_match_context * {
+    if (nullptr == matchContext) {
+      return RegexContext::get_instance()->get_match_context();
+    } else {
+      return RegexMatchContext::_MatchContext::get(matchContext->_match_context);
+    }
+  }();
+
   int count = pcre2_match(code, reinterpret_cast<PCRE2_SPTR>(subject.data()), subject.size(), 0, flags,
-                          RegexMatches::_MatchData::get(matches._match_data), RegexContext::get_instance()->get_match_context());
+                          RegexMatches::_MatchData::get(matches._match_data), match_context);
 
   matches._size = count;
 
