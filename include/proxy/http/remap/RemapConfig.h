@@ -77,7 +77,7 @@ struct BUILD_TABLE_INFO {
   BUILD_TABLE_INFO(const BUILD_TABLE_INFO &)            = delete; // disabled
   BUILD_TABLE_INFO &operator=(const BUILD_TABLE_INFO &) = delete; // disabled
 
-  // This is used to expose rewrite and its next hop strategy factory.
+  // Exposes the main build table to the API for use during TSRemapNewInstance.
   inline static BUILD_TABLE_INFO *instance = nullptr;
 };
 

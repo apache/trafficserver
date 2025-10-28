@@ -1619,10 +1619,10 @@ char const *TSHttpNextHopStrategyNameGet(void const *strategy);
 /**
     Retrieves a pointer to the named strategy in the strategy table.
                 This can only be called during TSRemapNewInstance.
-    Returns nullptr if no strategy found.
-    This uses the current RemapInit NextHopStrategyFactory.
+                                                                DO NOT FREE.
 
-                This strategy pointer can still be used by all following transactions.
+    Returns nullptr if no strategy found.
+    This uses the currently being loaded RemapConfig NextHopStrategyFactory.
 
     @param name of the strategy to look up.
 

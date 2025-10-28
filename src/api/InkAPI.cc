@@ -5051,13 +5051,14 @@ TSHttpInitNextHopNamedStrategyGet(const char *name)
 
   sdk_assert(sdk_sanity_check_null_ptr((void *)bt) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr((void *)bt->rewrite) == TS_SUCCESS);
-  sdk_assert(sdk_sanity_check_null_ptr((void *)bt->rewrite->strategyFactory) == TS_SUCCESS);
 
-  // HttpSM has a reference count handle to UrlRewrite which has a
-  // pointer to NextHopStrategyFactory
-  NextHopSelectionStrategy const *const strat = bt->rewrite->strategyFactory->strategyInstance(name);
+  NextHopSelectionStrategy const *strat = nullptr;
 
-  fprintf(stderr, "strategy: %s, ptr: %p\n", name, (void *)strat);
+  if (nullptr != bt->rewrite->strategyFactory) {
+    // HttpSM has a reference count handle to UrlRewrite which manages
+    // the NextHopStrategyFactory pointer.
+    strat = bt->rewrite->strategyFactory->strategyInstance(name);
+  }
 
   return static_cast<void const *>(strat);
 }
