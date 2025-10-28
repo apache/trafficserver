@@ -709,9 +709,9 @@ StripeSM::aggWriteDone(int event, Event *e)
 {
   cancel_trigger();
 
-  // ensure we have the cacheDirSync lock if we intend to call it later
+  // ensure we have the waiting_dir_sync lock if we intend to call it later
   // retaking the current mutex recursively is a NOOP
-  CACHE_TRY_LOCK(lock, dir_sync_waiting ? cacheDirSync->mutex : mutex, mutex->thread_holding);
+  CACHE_TRY_LOCK(lock, dir_sync_waiting ? waiting_dir_sync->mutex : mutex, mutex->thread_holding);
   if (!lock.is_locked()) {
     eventProcessor.schedule_in(this, HRTIME_MSECONDS(cache_config_mutex_retry_delay));
     return EVENT_CONT;
@@ -759,7 +759,8 @@ StripeSM::aggWriteDone(int event, Event *e)
   }
   if (dir_sync_waiting) {
     dir_sync_waiting = false;
-    cacheDirSync->handleEvent(EVENT_IMMEDIATE, nullptr);
+    waiting_dir_sync->handleEvent(EVENT_IMMEDIATE, nullptr);
+    waiting_dir_sync = nullptr;
   }
   if (this->_write_buffer.get_pending_writers().head || sync.head) {
     return aggWrite(event, e);

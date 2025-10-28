@@ -96,6 +96,7 @@ extern CacheStatsBlock cache_rsb;
 extern int cache_config_dir_sync_frequency;
 extern int cache_config_dir_sync_delay;
 extern int cache_config_dir_sync_max_write;
+extern int cache_config_dir_sync_parallel_tasks;
 extern int cache_config_http_max_alts;
 extern int cache_config_log_alternate_eviction;
 extern int cache_config_permit_pinning;
@@ -140,7 +141,6 @@ struct CacheRemoveCont : public Continuation {
 // Global Data
 extern ClassAllocator<CacheVC, false>            cacheVConnectionAllocator;
 extern ClassAllocator<CacheEvacuateDocVC, false> cacheEvacuateDocVConnectionAllocator;
-extern CacheSync                                *cacheDirSync;
 // Function Prototypes
 int                 cache_write(CacheVC *, CacheHTTPInfoVector *);
 int                 get_alternate_index(CacheHTTPInfoVector *cache_vector, CacheKey key);

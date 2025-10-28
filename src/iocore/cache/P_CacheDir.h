@@ -28,6 +28,7 @@
 #include "iocore/eventsystem/Continuation.h"
 #include "iocore/aio/AIO.h"
 #include "tscore/Version.h"
+#include "tscore/hugepages.h"
 
 #include <cstdint>
 #include <ctime>
@@ -246,10 +247,25 @@ struct CacheSync : public Continuation {
   AIOCallback io;
   Event      *trigger    = nullptr;
   ink_hrtime  start_time = 0;
-  int         mainEvent(int event, Event *e);
-  void        aio_write(int fd, char *b, int n, off_t o);
+
+  std::vector<int> stripe_indices;
+  int              current_index{0};
+
+  int  mainEvent(int event, Event *e);
+  void aio_write(int fd, char *b, int n, off_t o);
 
   CacheSync() : Continuation(new_ProxyMutex()) { SET_HANDLER(&CacheSync::mainEvent); }
+
+  ~CacheSync()
+  {
+    if (buf) {
+      if (buf_huge) {
+        ats_free_hugepage(buf, buflen);
+      } else {
+        ats_free(buf);
+      }
+    }
+  }
 };
 
 struct StripteHeaderFooter {

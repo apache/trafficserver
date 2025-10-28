@@ -85,13 +85,14 @@ public:
 
   StripeInitInfo *init_info = nullptr;
 
-  Cache   *cache                = nullptr;
-  uint32_t last_sync_serial     = 0;
-  uint32_t last_write_serial    = 0;
-  bool     recover_wrapped      = false;
-  bool     dir_sync_waiting     = false;
-  bool     dir_sync_in_progress = false;
-  bool     writing_end_marker   = false;
+  Cache     *cache                = nullptr;
+  uint32_t   last_sync_serial     = 0;
+  uint32_t   last_write_serial    = 0;
+  bool       recover_wrapped      = false;
+  bool       dir_sync_waiting     = false;
+  bool       dir_sync_in_progress = false;
+  CacheSync *waiting_dir_sync     = nullptr;
+  bool       writing_end_marker   = false;
 
   CacheKey          first_fragment_key;
   int64_t           first_fragment_offset = 0;
