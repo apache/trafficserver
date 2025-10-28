@@ -112,17 +112,9 @@ public:
   RegexMatchContext(RegexMatchContext &&)            = default;
   RegexMatchContext &operator=(RegexMatchContext &&) = default;
 
-  /** maximum amount of heap memory (KiB) used to hold backtracking information.
-   */
-  void setHeapLimit(uint32_t limit);
-
   /** Limits the amount of backtracking that can take place.
    */
   void setMatchLimit(uint32_t limit);
-
-  /** Limits the depth of nested backtracking.
-   */
-  void setDepthLimit(uint32_t limit);
 
   /** Limits how far an unanchored search can advance in the subject string.
    */

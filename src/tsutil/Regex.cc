@@ -267,31 +267,11 @@ RegexMatchContext::~RegexMatchContext()
 
 //----------------------------------------------------------------------------
 void
-RegexMatchContext::setHeapLimit(uint32_t limit)
-{
-  auto ptr = _MatchContext::get(_match_context);
-  if (ptr != nullptr) {
-    pcre2_set_heap_limit(ptr, limit);
-  }
-}
-
-//----------------------------------------------------------------------------
-void
 RegexMatchContext::setMatchLimit(uint32_t limit)
 {
   auto ptr = _MatchContext::get(_match_context);
   if (ptr != nullptr) {
     pcre2_set_match_limit(ptr, limit);
-  }
-}
-
-//----------------------------------------------------------------------------
-void
-RegexMatchContext::setDepthLimit(uint32_t limit)
-{
-  auto ptr = _MatchContext::get(_match_context);
-  if (ptr != nullptr) {
-    pcre2_set_depth_limit(ptr, limit);
   }
 }
 
