@@ -45,9 +45,9 @@ str(HostDBType type)
   case HostDBType::HOST:
     return "HOST";
   case HostDBType::UNSPEC:
-    [[fallthrough]];
-  default:
     return "UNSPEC";
+  default:
+    return "UNKNOWN";
   }
 }
 
@@ -62,9 +62,9 @@ str(sa_family_t type)
   case AF_INET6:
     return "AF_INET6";
   case AF_UNSPEC:
-    [[fallthrough]];
-  default:
     return "UNSPEC";
+  default:
+    return "UNKNOWN";
   }
 }
 } // end anonymous namespace
