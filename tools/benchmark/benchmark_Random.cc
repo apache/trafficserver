@@ -36,65 +36,40 @@ TEST_CASE("BenchRandom", "[bench][random]")
 {
   InkRand gen(42);
   ts::Random::seed(13);
-  int iterations = 1000000;
 
   BENCHMARK("IncRand")
   {
-    uint64_t sum = 0;
-    for (int i = 0; i < iterations; i++) {
-      sum += gen.random();
-    }
-    return sum;
+    return gen.random();
   };
 
   BENCHMARK("ts::Random")
   {
-    uint64_t sum = 0;
-    for (int i = 0; i < iterations; i++) {
-      sum += ts::Random::random();
-    }
-    return sum;
+    return ts::Random::random();
   };
 
   std::mt19937_64 mt;
   BENCHMARK("std::mt19937_64")
   {
-    uint64_t sum = 0;
-    for (int i = 0; i < iterations; i++) {
-      sum += mt();
-    }
-    return sum;
+    return mt();
   };
 
   std::ranlux48_base rb;
   BENCHMARK("std::ranlux48_base")
   {
-    uint64_t sum = 0;
-    for (int i = 0; i < iterations; i++) {
-      sum += rb();
-    }
-    return sum;
+    return rb();
   };
 
   std::ranlux24_base rb24;
   BENCHMARK("std::ranlux24_base")
   {
-    uint64_t sum = 0;
-    for (int i = 0; i < iterations; i++) {
-      sum += rb24();
-    }
-    return sum;
+    return rb24();
   };
 
   std::uniform_int_distribution<uint64_t> mtdist{0, UINT64_MAX};
 
   BENCHMARK("std::uniform_int_distribution")
   {
-    uint64_t sum = 0;
-    for (int i = 0; i < iterations; i++) {
-      sum += mtdist(mt);
-    }
-    return sum;
+    return mtdist(mt);
   };
 }
 
