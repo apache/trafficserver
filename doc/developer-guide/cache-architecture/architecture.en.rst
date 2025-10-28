@@ -963,6 +963,26 @@ own entry in the volume directory which are computationally chained (each
 table is accumulated in the earliest ``Doc`` which has the offsets of the first
 byte for each fragment.
 
+Directory Synchronization
+-------------------------
+
+The in-memory stripe directories are periodically synchronized to disk to ensure
+cache metadata persistence across restarts. This is handled by ``CacheSync``
+instances scheduled on ET_TASK threads.
+
+By default, directory syncing is sequential (one task handles all stripes). The
+:ts:cv:`proxy.config.cache.dir.sync_parallel_tasks` configuration allows parallel
+syncing across multiple drives:
+
+* ``1`` - Sequential (default): single task syncs all stripes
+* ``N`` - Parallel: up to N tasks sync concurrently
+* ``<0`` - Maximum: one task per physical drive
+
+Stripes are distributed across sync tasks based on their physical drives, ensuring
+that I/O operations for different drives can proceed in parallel on separate ET_TASK
+threads. Each ``CacheSync`` instance maintains a list of stripe indices to sync and
+processes them sequentially within its task.
+
 .. _evacuation-mechanics:
 
 Evacuation Mechanics
