@@ -384,9 +384,6 @@ RemapRegex::initialize(const std::string &reg, const std::string &sub, const std
 int
 RemapRegex::compile(std::string &error, int &erroffset)
 {
-  char *str;
-  // int   ccount;
-
   // Initialize these in case they are not set.
   error     = "unknown error";
   erroffset = -1;
@@ -398,7 +395,7 @@ RemapRegex::compile(std::string &error, int &erroffset)
   }
 
   // Get some info for the string substitutions
-  str       = _subst;
+  char *str = _subst;
   _num_subs = 0;
 
   while (str && *str) {
