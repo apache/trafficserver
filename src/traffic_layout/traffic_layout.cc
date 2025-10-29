@@ -45,11 +45,12 @@ main([[maybe_unused]] int argc, const char **argv)
     .add_option("--version", "-V", "Print version string");
 
   // info command
-  engine.parser.add_command("info", "Show the layout as default", [&]() { engine.info(); })
-    .add_option("--features", "", "Show the compiled features")
-    .add_option("--versions", "", "Show various library and other versioning information")
-    .add_option("--json", "-j", "Produce output in JSON format (when supported)")
-    .set_default();
+  auto &info_cmd = engine.parser.add_command("info", "Show the layout as default", [&]() { engine.info(); });
+  // Mutually exclusive display modes
+  info_cmd.add_option_to_group("display_mode", "--features", "", "Show the compiled features");
+  info_cmd.add_option_to_group("display_mode", "--versions", "", "Show various library and other versioning information");
+
+  info_cmd.add_option("--json", "-j", "Produce output in JSON format (when supported)").set_default();
   // init command
   engine.parser.add_command("init", "Initialize(create) the runroot sandbox", [&]() { engine.create_runroot(); })
     .add_option("--absolute", "-a", "Produce absolute path in the runroot.yaml")
