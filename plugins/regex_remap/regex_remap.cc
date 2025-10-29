@@ -165,7 +165,7 @@ public:
   }
 
   inline void
-  set_match_context(RegexMatchContext *const ctx)
+  set_match_context(RegexMatchContext const *const ctx)
   {
     _match_context = ctx;
   }
@@ -260,10 +260,10 @@ private:
 
   bool _lowercase_substitutions = false;
 
-  Regex              _rex;
-  RegexMatchContext *_match_context = nullptr; // owned by RemapInstance
-  RemapRegex        *_next          = nullptr;
-  TSHttpStatus       _status        = static_cast<TSHttpStatus>(0);
+  Regex                    _rex;
+  RegexMatchContext const *_match_context = nullptr; // owned by RemapInstance
+  RemapRegex              *_next          = nullptr;
+  TSHttpStatus             _status        = static_cast<TSHttpStatus>(0);
 
   int _active_timeout      = -1;
   int _no_activity_timeout = -1;
@@ -395,6 +395,12 @@ RemapRegex::compile(std::string &error, int &erroffset)
     return -1;
   }
 
+  int32_t const ccount = _rex.captureCount();
+  if (ccount < 0) {
+    error = "Failure to get capture count for Regex";
+    return -1;
+  }
+
   // Get some info for the string substitutions
   char *str = _subst;
   _num_subs = 0;
@@ -440,12 +446,10 @@ RemapRegex::compile(std::string &error, int &erroffset)
       }
 
       if (ix > -1) {
-        /*
-if ((ix < 10) && (ix > matches.size())) {
-error = "using unavailable captured substring ($n) in substitution";
-return -1;
-}
-        */
+        if ((ix < 10) && (ix > ccount)) {
+          error = "using unavailable captured substring ($n) in substitution";
+          return -1;
+        }
 
         _sub_ix[_num_subs]   = ix;
         _sub_pos[_num_subs]  = (str - _subst);
@@ -781,7 +785,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
     } else {
       Dbg(dbg_ctl, "Added regex=%s with subs=%s and options `%s'", regex.c_str(), subst.c_str(), options.c_str());
       cur->set_order(++count);
-      cur->set_match_context(&ri->match_context);
+      cur->set_match_context(&(ri->match_context));
       auto tmp = cur.get();
       if (ri->first == nullptr) {
         ri->first = cur.release();

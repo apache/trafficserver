@@ -385,7 +385,7 @@ public:
       return false;
     }
 
-    regex_ccount = regex->get_capture_count();
+    regex_ccount = regex->captureCount();
     if (regex_ccount < 0) {
       delete regex;
       regex = nullptr;
@@ -445,7 +445,7 @@ private:
 
   Regex      *regex = nullptr;
   std::string regex_string;
-  int         regex_ccount = 0;
+  int32_t     regex_ccount = 0;
 
   std::string  bucket;
   unsigned int how_many = 0;

@@ -276,16 +276,6 @@ RegexMatchContext::setMatchLimit(uint32_t limit)
 }
 
 //----------------------------------------------------------------------------
-void
-RegexMatchContext::setOffsetLimit(uint32_t limit)
-{
-  auto ptr = _MatchContext::get(_match_context);
-  if (ptr != nullptr) {
-    pcre2_set_offset_limit(ptr, limit);
-  }
-}
-
-//----------------------------------------------------------------------------
 struct Regex::_Code {
   static pcre2_code *
   get(_CodePtr const &p)
@@ -470,13 +460,24 @@ Regex::exec(std::string_view subject, RegexMatches &matches, uint32_t flags, Reg
 
 //----------------------------------------------------------------------------
 int32_t
-Regex::get_capture_count()
+Regex::captureCount() const
 {
-  int captures = -1;
+  uint32_t captures = 0;
   if (pcre2_pattern_info(_Code::get(_code), PCRE2_INFO_CAPTURECOUNT, &captures) != 0) {
     return -1;
   }
-  return captures;
+  return static_cast<int32_t>(captures);
+}
+
+//----------------------------------------------------------------------------
+int32_t
+Regex::backrefMax() const
+{
+  uint32_t refs = 0;
+  if (pcre2_pattern_info(_Code::get(_code), PCRE2_INFO_BACKREFMAX, &refs) != 0) {
+    return -1;
+  }
+  return static_cast<int32_t>(refs);
 }
 
 //----------------------------------------------------------------------------

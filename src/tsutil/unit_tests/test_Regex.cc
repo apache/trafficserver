@@ -81,7 +81,7 @@ struct submatch_t {
 
 struct submatch_test_t {
   std::string_view        regex;
-  int                     capture_count;
+  int32_t                 capture_count;
   std::vector<submatch_t> tests;
 };
 
@@ -129,7 +129,7 @@ TEST_CASE("Regex", "[libts][Regex]")
   for (auto &item : submatch_test_data) {
     Regex r;
     REQUIRE(r.compile(item.regex.data()) == true);
-    REQUIRE(r.get_capture_count() == item.capture_count);
+    REQUIRE(r.captureCount() == item.capture_count);
 
     for (auto &test : item.tests) {
       RegexMatches matches;
@@ -146,7 +146,7 @@ TEST_CASE("Regex", "[libts][Regex]")
   for (auto &item : submatch_test_data) {
     Regex r;
     REQUIRE(r.compile(item.regex.data()) == true);
-    REQUIRE(r.get_capture_count() == item.capture_count);
+    REQUIRE(r.captureCount() == item.capture_count);
 
     for (auto &test : item.tests) {
       RegexMatches matches;
@@ -487,5 +487,80 @@ TEST_CASE("Regex copy with RE_NOTEMPTY flag", "[libts][Regex][copy][flags]")
 
     CHECK(copy.exec(std::string_view("")) == true);
     CHECK(copy.exec(std::string_view(""), RE_NOTEMPTY) == false);
+  }
+}
+
+struct backref_test_t {
+  std::string_view regex;
+  bool             valid;
+  int32_t          backref_max;
+};
+
+std::vector<backref_test_t> backref_test_data{
+  {
+   {""},
+   true,         0,
+   },
+  {
+   {R"(\b(\w+)\s+\1\b)"},
+   true,                1,
+   },
+  {
+   {R"((.)\1)"},
+   true,1,
+   },
+  {
+   {R"((.)(.).\2\1)"},
+   true, 2,
+   },
+  {
+   {R"((.\2\1)"},
+   false,            -1,
+   },
+};
+
+TEST_CASE("Regex back reference counting", "[libts][Regex][backrefMax]")
+{
+  // case sensitive test
+  for (auto &item : backref_test_data) {
+    Regex r;
+    REQUIRE(r.compile(item.regex) == item.valid);
+    REQUIRE(r.backrefMax() == item.backref_max);
+  }
+}
+
+struct match_context_test_t {
+  std::string_view regex;
+  std::string_view str;
+  bool             valid;
+  int32_t          rcode;
+};
+
+std::vector<match_context_test_t> match_context_test_data{
+  {
+   {"abc"},
+   {"abc"},
+   true, 1,
+   },
+  {{"a+b"}, {"aaaaaab"}, true, 1},
+  {{"(a+)+b"}, {"aaaaab"}, true, -47}, // PCRE2_ERROR_MATCHLIMIT
+  {
+   {"(."},
+   {"a"},
+   false, -1,
+   },
+};
+
+TEST_CASE("RegexMatchContext", "[libts][Regex][RegexMatchContext]")
+{
+  RegexMatchContext match_context;
+  match_context.setMatchLimit(5);
+
+  // case sensitive test
+  for (auto &item : match_context_test_data) {
+    Regex r;
+    REQUIRE(r.compile(item.regex) == item.valid);
+    RegexMatches matches;
+    REQUIRE(r.exec(item.str, matches, 0, &match_context) == item.rcode);
   }
 }

@@ -116,10 +116,6 @@ public:
    */
   void setMatchLimit(uint32_t limit);
 
-  /** Limits how far an unanchored search can advance in the subject string.
-   */
-  void setOffsetLimit(uint32_t limit);
-
 private:
   /// @internal This wraps a void* so to avoid requiring a pcre2 include.
   struct _MatchContext;
@@ -226,8 +222,11 @@ public:
   int exec(std::string_view subject, RegexMatches &matches, uint32_t flags,
            RegexMatchContext const *const matchContext = nullptr) const;
 
-  /// @return The number of capture groups in the compiled pattern.
-  int get_capture_count();
+  /// @return The number of capture groups in the compiled pattern, -1 for fail.
+  int32_t captureCount() const;
+
+  /// @return number of highest back references, -1 for fail.
+  int32_t backrefMax() const;
 
   /// @return Is the compiled pattern empty?
   bool empty() const;
