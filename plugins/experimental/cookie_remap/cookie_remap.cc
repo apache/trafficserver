@@ -385,7 +385,7 @@ public:
       return false;
     }
 
-    regex_ccount = regex->captureCount();
+    regex_ccount = regex->get_capture_count();
     if (regex_ccount < 0) {
       delete regex;
       regex = nullptr;

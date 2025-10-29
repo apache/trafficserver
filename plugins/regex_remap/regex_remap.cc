@@ -395,7 +395,7 @@ RemapRegex::compile(std::string &error, int &erroffset)
     return -1;
   }
 
-  int32_t const ccount = _rex.captureCount();
+  int32_t const ccount = _rex.get_capture_count();
   if (ccount < 0) {
     error = "Failure to get capture count for Regex";
     return -1;
@@ -796,7 +796,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
     }
   }
 
-  ri->match_context.setMatchLimit(REGEX_MATCH_LIMIT);
+  ri->match_context.set_match_limit(REGEX_MATCH_LIMIT);
 
   // Make sure we got something...
   if (ri->first == nullptr) {

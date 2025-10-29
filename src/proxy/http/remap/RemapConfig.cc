@@ -989,7 +989,7 @@ process_regex_mapping_config(const char *from_host_lower, url_mapping *new_mappi
     goto lFail;
   }
 
-  captures = reg_map->regular_expression.captureCount();
+  captures = reg_map->regular_expression.get_capture_count();
   if (captures == -1) {
     Warning("pcre_fullinfo failed!");
     goto lFail;

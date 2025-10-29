@@ -260,6 +260,7 @@ RegexMatchContext::operator=(RegexMatchContext const &other)
 RegexMatchContext::~RegexMatchContext()
 {
   auto ptr = _MatchContext::get(_match_context);
+  debug_assert_message(ptr, "Failed to get the match context");
   if (ptr != nullptr) {
     pcre2_match_context_free(ptr);
   }
@@ -267,9 +268,10 @@ RegexMatchContext::~RegexMatchContext()
 
 //----------------------------------------------------------------------------
 void
-RegexMatchContext::setMatchLimit(uint32_t limit)
+RegexMatchContext::set_match_limit(uint32_t limit)
 {
   auto ptr = _MatchContext::get(_match_context);
+  debug_assert_message(ptr, "Failed to get the match context");
   if (ptr != nullptr) {
     pcre2_set_match_limit(ptr, limit);
   }
@@ -432,16 +434,15 @@ Regex::exec(std::string_view subject, RegexMatches &matches, uint32_t flags, Reg
   }
 
   // Use the provided or the thread global context?
-  auto const match_context = [&]() -> pcre2_match_context * {
-    if (nullptr == matchContext) {
-      return RegexContext::get_instance()->get_match_context();
-    } else {
-      return RegexMatchContext::_MatchContext::get(matchContext->_match_context);
-    }
-  }();
+  pcre2_match_context *match_context;
+  if (nullptr == matchContext) {
+    match_context = RegexContext::get_instance()->get_match_context();
+  } else {
+    match_context = RegexMatchContext::_MatchContext::get(matchContext->_match_context);
+  }
 
-  int count = pcre2_match(code, reinterpret_cast<PCRE2_SPTR>(subject.data()), subject.size(), 0, flags,
-                          RegexMatches::_MatchData::get(matches._match_data), match_context);
+  int const count = pcre2_match(code, reinterpret_cast<PCRE2_SPTR>(subject.data()), subject.size(), 0, flags,
+                                RegexMatches::_MatchData::get(matches._match_data), match_context);
 
   matches._size = count;
 
@@ -460,7 +461,7 @@ Regex::exec(std::string_view subject, RegexMatches &matches, uint32_t flags, Reg
 
 //----------------------------------------------------------------------------
 int32_t
-Regex::captureCount() const
+Regex::get_capture_count() const
 {
   uint32_t captures = 0;
   if (pcre2_pattern_info(_Code::get(_code), PCRE2_INFO_CAPTURECOUNT, &captures) != 0) {
@@ -471,7 +472,7 @@ Regex::captureCount() const
 
 //----------------------------------------------------------------------------
 int32_t
-Regex::backrefMax() const
+Regex::get_backref_max() const
 {
   uint32_t refs = 0;
   if (pcre2_pattern_info(_Code::get(_code), PCRE2_INFO_BACKREFMAX, &refs) != 0) {

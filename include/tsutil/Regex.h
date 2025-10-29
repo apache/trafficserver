@@ -95,6 +95,8 @@ private:
 };
 
 /// @brief Wrapper for PCRE2 match context
+///
+/// @internal This instance is not tied to any Regex and can be used with one of the Regex::exec overloads.
 class RegexMatchContext
 {
   friend class Regex;
@@ -105,7 +107,7 @@ public:
   RegexMatchContext();
   ~RegexMatchContext();
 
-  /// uses pcre2_match_context_copy to duplicate.
+  /// uses pcre2_match_context_copy for a deep copy.
   RegexMatchContext(RegexMatchContext const &orig);
   RegexMatchContext &operator=(RegexMatchContext const &orig);
 
@@ -113,8 +115,9 @@ public:
   RegexMatchContext &operator=(RegexMatchContext &&) = default;
 
   /** Limits the amount of backtracking that can take place.
+   * Any regex exec call that fails will return PCRE2_ERROR_MATCHLIMIT(-47)
    */
-  void setMatchLimit(uint32_t limit);
+  void set_match_limit(uint32_t limit);
 
 private:
   /// @internal This wraps a void* so to avoid requiring a pcre2 include.
@@ -223,10 +226,10 @@ public:
            RegexMatchContext const *const matchContext = nullptr) const;
 
   /// @return The number of capture groups in the compiled pattern, -1 for fail.
-  int32_t captureCount() const;
+  int32_t get_capture_count() const;
 
   /// @return number of highest back references, -1 for fail.
-  int32_t backrefMax() const;
+  int32_t get_backref_max() const;
 
   /// @return Is the compiled pattern empty?
   bool empty() const;

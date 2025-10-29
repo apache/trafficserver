@@ -129,7 +129,7 @@ TEST_CASE("Regex", "[libts][Regex]")
   for (auto &item : submatch_test_data) {
     Regex r;
     REQUIRE(r.compile(item.regex.data()) == true);
-    REQUIRE(r.captureCount() == item.capture_count);
+    REQUIRE(r.get_capture_count() == item.capture_count);
 
     for (auto &test : item.tests) {
       RegexMatches matches;
@@ -146,7 +146,7 @@ TEST_CASE("Regex", "[libts][Regex]")
   for (auto &item : submatch_test_data) {
     Regex r;
     REQUIRE(r.compile(item.regex.data()) == true);
-    REQUIRE(r.captureCount() == item.capture_count);
+    REQUIRE(r.get_capture_count() == item.capture_count);
 
     for (auto &test : item.tests) {
       RegexMatches matches;
@@ -497,35 +497,20 @@ struct backref_test_t {
 };
 
 std::vector<backref_test_t> backref_test_data{
-  {
-   {""},
-   true,         0,
-   },
-  {
-   {R"(\b(\w+)\s+\1\b)"},
-   true,                1,
-   },
-  {
-   {R"((.)\1)"},
-   true,1,
-   },
-  {
-   {R"((.)(.).\2\1)"},
-   true, 2,
-   },
-  {
-   {R"((.\2\1)"},
-   false,            -1,
-   },
+  {{""},                  true,  0 },
+  {{R"(\b(\w+)\s+\1\b)"}, true,  1 },
+  {{R"((.)\1)"},          true,  1 },
+  {{R"((.)(.).\2\1)"},    true,  2 },
+  {{R"((.\2\1)"},         false, -1},
 };
 
-TEST_CASE("Regex back reference counting", "[libts][Regex][backrefMax]")
+TEST_CASE("Regex back reference counting", "[libts][Regex][get_backref_max]")
 {
   // case sensitive test
   for (auto &item : backref_test_data) {
     Regex r;
     REQUIRE(r.compile(item.regex) == item.valid);
-    REQUIRE(r.backrefMax() == item.backref_max);
+    REQUIRE(r.get_backref_max() == item.backref_max);
   }
 }
 
@@ -537,30 +522,22 @@ struct match_context_test_t {
 };
 
 std::vector<match_context_test_t> match_context_test_data{
-  {
-   {"abc"},
-   {"abc"},
-   true, 1,
-   },
-  {{"a+b"}, {"aaaaaab"}, true, 1},
-  {{"(a+)+b"}, {"aaaaab"}, true, -47}, // PCRE2_ERROR_MATCHLIMIT
-  {
-   {"(."},
-   {"a"},
-   false, -1,
-   },
+  {{"abc"},                          {"abc"},          true,  1  },
+  {{"abc"},                          {"a"},            true,  -1 },
+  {{R"(^(\d{3})-(\d{3})-(\d{4})$)"}, {"123-456-7890"}, true,  -47},
+  {{"(."},                           {"a"},            false, -51},
 };
 
 TEST_CASE("RegexMatchContext", "[libts][Regex][RegexMatchContext]")
 {
   RegexMatchContext match_context;
-  match_context.setMatchLimit(5);
+  match_context.set_match_limit(2);
+  RegexMatches matches;
 
   // case sensitive test
   for (auto &item : match_context_test_data) {
     Regex r;
     REQUIRE(r.compile(item.regex) == item.valid);
-    RegexMatches matches;
     REQUIRE(r.exec(item.str, matches, 0, &match_context) == item.rcode);
   }
 }
