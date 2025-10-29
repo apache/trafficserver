@@ -424,17 +424,50 @@ ArgParser::Command::output_option() const
     }
   };
 
-  // First, output mutually exclusive groups
-  for (const auto &[group_name, group] : _mutex_groups) {
-    std::cout << "\nMutually Exclusive Group";
-    if (group.required) {
-      std::cout << " (required)";
+  // First, output regular options (excluding those in mutex groups)
+  for (const auto &it : _option_list) {
+    // Skip if this option is in a mutex group (it will be displayed in the mutex group)
+    if (_option_to_group.find(it.first) != _option_to_group.end()) {
+      continue;
     }
 
-    if (!group.description.empty()) {
-      std::cout << ": " << group.description;
+    std::string msg;
+    if (!it.second.short_option.empty()) {
+      msg = it.second.short_option + ", ";
     }
-    std::cout << ":" << std::endl;
+
+    msg += it.first;
+    if (it.second.arg_num != 0) {
+      msg += arg_msg_builder(it.second.arg_num);
+    }
+
+    if (!it.second.default_value.empty()) {
+      if (INDENT_ONE - static_cast<int>(msg.size()) < 0) {
+        msg = msg + "\n" + std::string(INDENT_ONE, ' ') + it.second.default_value;
+      } else {
+        msg = msg + std::string(INDENT_ONE - msg.size(), ' ') + it.second.default_value;
+      }
+    }
+    if (!it.second.description.empty()) {
+      if (INDENT_TWO - static_cast<int>(msg.size()) < 0) {
+        std::cout << msg << "\n" << std::string(INDENT_TWO, ' ') << it.second.description << std::endl;
+      } else {
+        std::cout << msg << std::string(INDENT_TWO - msg.size(), ' ') << it.second.description << std::endl;
+      }
+    }
+  }
+
+  // Then output mutually exclusive groups
+  for (const auto &[group_name, group] : _mutex_groups) {
+    std::cout << "\nGroup (" << group_name;
+    if (group.required) {
+      std::cout << ", required";
+    }
+    std::cout << ")";
+    if (!group.description.empty()) {
+      std::cout << " - " << group.description;
+    }
+    std::cout << std::endl;
 
     for (const auto &option_name : group.options) {
       auto const it = _option_list.find(option_name);
@@ -464,39 +497,6 @@ ArgParser::Command::output_option() const
             std::cout << msg << std::string(INDENT_TWO - msg.size(), ' ') << it->second.description << std::endl;
           }
         }
-      }
-    }
-  }
-
-  // Then output regular options (excluding those in mutex groups)
-  for (const auto &it : _option_list) {
-    // Skip if this option is in a mutex group (already displayed)
-    if (_option_to_group.find(it.first) != _option_to_group.end()) {
-      continue;
-    }
-
-    std::string msg;
-    if (!it.second.short_option.empty()) {
-      msg = it.second.short_option + ", ";
-    }
-
-    msg += it.first;
-    if (it.second.arg_num != 0) {
-      msg += arg_msg_builder(it.second.arg_num);
-    }
-
-    if (!it.second.default_value.empty()) {
-      if (INDENT_ONE - static_cast<int>(msg.size()) < 0) {
-        msg = msg + "\n" + std::string(INDENT_ONE, ' ') + it.second.default_value;
-      } else {
-        msg = msg + std::string(INDENT_ONE - msg.size(), ' ') + it.second.default_value;
-      }
-    }
-    if (!it.second.description.empty()) {
-      if (INDENT_TWO - static_cast<int>(msg.size()) < 0) {
-        std::cout << msg << "\n" << std::string(INDENT_TWO, ' ') << it.second.description << std::endl;
-      } else {
-        std::cout << msg << std::string(INDENT_TWO - msg.size(), ' ') << it.second.description << std::endl;
       }
     }
   }
