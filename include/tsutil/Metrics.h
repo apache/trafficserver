@@ -24,7 +24,6 @@
 #pragma once
 
 #include <array>
-#include <map>
 #include <unordered_map>
 #include <tuple>
 #include <memory>
@@ -540,7 +539,7 @@ public:
   class StaticString
   {
   public:
-    using StringStorage = std::map<std::string, std::string>;
+    using StringStorage = std::unordered_map<std::string, std::string>;
     using iterator      = StringStorage::iterator;
 
     static void
