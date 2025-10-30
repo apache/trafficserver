@@ -71,6 +71,57 @@ class Common():
         self._finish_callback(self)
         return self
 
+    def validate_with_text(self, text: str):
+        """
+        Validate command output matches expected text exactly.
+        
+        Example:
+            traffic_ctl.config().get("proxy.config.product_name").validate_with_text("Apache Traffic Server")
+        """
+        self._tr.Processes.Default.Streams.stdout = MakeGoldFileWithText(text, self._dir, self._tn)
+        self._finish_callback(self)
+        return self
+
+    def validate_result_with_text(self, text: str):
+        """
+        Validate RPC result matches expected JSON exactly. Wraps text in JSON-RPC envelope.
+        
+        Example:
+            traffic_ctl.rpc().invoke(handler="get_connection_tracker_info").validate_result_with_text(
+                '{"outbound": {"count": "0", "list": []}}'
+            )
+        """
+        full_text = f'{{\"jsonrpc\": \"2.0\", \"result\": {text}, \"id\": {"``"}}}'
+        self._tr.Processes.Default.Streams.stdout = MakeGoldFileWithText(full_text, self._dir, self._tn)
+        self._finish_callback(self)
+        return self
+
+    def validate_json_contains(self, **field_checks):
+        """
+        Validate JSON output contains specific field:value pairs. Only checks specified fields.
+        Prints detailed error on failure: "FAIL: field_name = actual_value (expected expected_value)"
+        stream.all.txt will contain the actual output with the failed fields.
+        
+        Example:
+            traffic_ctl.server().status().validate_json_contains(
+                initialized_done='true', is_draining='false'
+            )
+        """
+        import json
+        checks_str = ', '.join(f"'{k}': '{v}'" for k, v in field_checks.items())
+        self._cmd = (
+            f'{self._cmd} | python3 -c "'
+            f"import sys, json; "
+            f"d = json.load(sys.stdin); "
+            f"c = {{{checks_str}}}; "
+            f"failed = [(k, v, str(d.get(k))) for k, v in c.items() if str(d.get(k)) != v]; "
+            f"[print(f'FAIL: {{k}} = {{actual}} (expected {{expected}})', file=sys.stderr) "
+            f"for k, expected, actual in failed]; "
+            f"exit(0 if not failed else 1)"
+            f'"')
+        self._finish_callback(self)
+        return self
+
 
 class Config(Common):
     """
@@ -119,10 +170,6 @@ class Config(Common):
         self._tr.Processes.Default.Streams.stdout = os.path.join("gold", file)
         self.__finish()
 
-    def validate_with_text(self, text: str):
-        self._tr.Processes.Default.Streams.stdout = MakeGoldFileWithText(text, self._dir, self._tn)
-        self.__finish()
-
 
 class Server(Common):
     """
@@ -165,10 +212,6 @@ class Server(Common):
         """
         self._tr.Processes.Default.Command = self._cmd
 
-    def validate_with_text(self, text: str):
-        self._tr.Processes.Default.Streams.stdout = MakeGoldFileWithText(text, self._dir, self._tn)
-        self.__finish()
-
 
 class RPC(Common):
     """
@@ -196,15 +239,6 @@ class RPC(Common):
             validation is set. Without this call the test will fail.
         """
         self._tr.Processes.Default.Command = self._cmd
-
-    def validate_with_text(self, text: str):
-        self._tr.Processes.Default.Streams.stdout = MakeGoldFileWithText(text, self._dir, self._tn)
-        self.__finish()
-
-    def validate_result_with_text(self, text: str):
-        full_text = f'{{\"jsonrpc\": \"2.0\", \"result\": {text}, \"id\": {"``"}}}'
-        self._tr.Processes.Default.Streams.stdout = MakeGoldFileWithText(full_text, self._dir, self._tn)
-        self.__finish()
 
 
 '''
