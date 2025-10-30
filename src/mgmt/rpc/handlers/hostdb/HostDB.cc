@@ -125,10 +125,6 @@ template <> struct convert<HostDBRecord> {
 
     swoc::MemSpan<const HostDBInfo> span = record.rr_info();
     for (const HostDBInfo &info : span) {
-      if (!info.is_valid()) {
-        continue;
-      }
-
       YAML::Node info_node;
       if (record.is_srv()) {
         YAML::Node srv_node;
