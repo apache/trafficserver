@@ -35,6 +35,7 @@ add_library(
   ConfigProcessor.cc
   RecRawStatsImpl.cc
   RecProcess.cc
+  Watchdog.cc
 )
 add_library(ts::inkevent ALIAS inkevent)
 
