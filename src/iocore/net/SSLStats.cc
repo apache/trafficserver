@@ -34,10 +34,10 @@
 SSLStatsBlock                                                   ssl_rsb;
 std::unordered_map<std::string, Metrics::Counter::AtomicType *> cipher_map;
 
-#ifdef OPENSSL_IS_BORINGSSL
+#if defined(OPENSSL_IS_BORINGSSL) || HAVE_SSL_CTX_GET0_IMPLEMENTED_GROUPS
 std::unordered_map<std::string, Metrics::Counter::AtomicType *> tls_group_map;
 std::unordered_map<std::string, Metrics::Counter::AtomicType *> tls_group_handshake_time_map;
-#elif defined(SSL_get_negotiated_group)
+#elif HAVE_SSL_GET_NEGOTIATED_GROUP
 std::unordered_map<int, Metrics::Counter::AtomicType *> tls_group_map;
 std::unordered_map<int, Metrics::Counter::AtomicType *> tls_group_handshake_time_map;
 #endif
@@ -50,7 +50,7 @@ DbgCtl dbg_ctl_ssl{"ssl"};
 constexpr std::string_view UNKNOWN_CIPHER{"(NONE)"};
 #endif
 
-#if defined(OPENSSL_IS_BORINGSSL) || defined(SSL_get_negotiated_group)
+#if defined(OPENSSL_IS_BORINGSSL) || HAVE_SSL_CTX_GET0_IMPLEMENTED_GROUPS || HAVE_SSL_GET_NEGOTIATED_GROUP
 
 template <typename T>
 void
@@ -73,9 +73,10 @@ add_group_stat(T key, const std::string &name)
     Dbg(dbg_ctl_ssl, "registering SSL group handshake time metric '%s.handshake_time'", name.c_str());
   }
 }
-#endif // OPENSSL_IS_BORINGSSL or SSL_get_negotiated_group
+#endif // OPENSSL_IS_BORINGSSL or HAVE_SSL_CTX_GET0_IMPLEMENTED_GROUPS or HAVE_SSL_GET_NEGOTIATED_GROUP
 
-#if not defined(OPENSSL_IS_BORINGSSL) and defined(SSL_get_negotiated_group) // OPENSSL 3.x
+#if not defined(OPENSSL_IS_BORINGSSL) and not HAVE_SSL_CTX_GET0_IMPLEMENTED_GROUPS and \
+  HAVE_SSL_GET_NEGOTIATED_GROUP // OPENSSL 3.x without SSL_CTX_get0_implemented_groups
 
 struct TLSGroup {
   int         nid;
@@ -115,7 +116,7 @@ const TLSGroup TLS_GROUPS[] = {
 #endif
 };
 
-#endif // OPENSSL 3.x
+#endif // OPENSSL 3.x without SSL_CTX_get0_implemented_groups
 
 } // end anonymous namespace
 
@@ -294,16 +295,18 @@ SSLInitializeStatistics()
     add_cipher_stat(cipher_name, stat_name);
   }
 #else
-  // Get and register the SSL cipher stats. Note that we are using the default SSL context to obtain
-  // the cipher list. This means that the set of ciphers is fixed by the build configuration and not
-  // filtered by proxy.config.ssl.server.cipher_suite. This keeps the set of cipher suites stable across
-  // configuration reloads and works for the case where we honor the client cipher preference.
-  SSLMultiCertConfigLoader loader(nullptr);
-  SSL_CTX                 *ctx  = loader.default_server_ssl_ctx();
-  SSL                     *ssl  = SSL_new(ctx);
+  // Acquire the loaded SSL certificate configuration to enumerate ciphers and groups.
+  // This must be called AFTER SSLCertificateConfig::startup().
+  SSLCertificateConfig::scoped_config lookup;
+  if (!lookup || !lookup->ssl_default) {
+    Dbg(dbg_ctl_ssl, "No SSL configuration, skipping cipher/group statistics initialization");
+    return;
+  }
+
+  SSL_CTX *ctx                  = lookup->ssl_default.get();
+  SSL     *ssl                  = SSL_new(ctx);
   STACK_OF(SSL_CIPHER) *ciphers = SSL_get_ciphers(ssl);
 
-  // BoringSSL has sk_SSL_CIPHER_num() return a size_t (well, sk_num() is)
   for (int index = 0; index < static_cast<int>(sk_SSL_CIPHER_num(ciphers)); index++) {
     SSL_CIPHER *cipher     = const_cast<SSL_CIPHER *>(sk_SSL_CIPHER_value(ciphers, index));
     const char *cipherName = SSL_CIPHER_get_name(cipher);
@@ -312,14 +315,48 @@ SSLInitializeStatistics()
     add_cipher_stat(cipherName, statName);
   }
 
+  // TLS Group
+#if HAVE_SSL_CTX_GET0_IMPLEMENTED_GROUPS
+  STACK_OF(OPENSSL_CSTRING) *group_names = sk_OPENSSL_CSTRING_new_null();
+  if (group_names == nullptr) {
+    Error("Failed to allocate stack for TLS group names");
+  } else {
+    constexpr int ALL_GROUPS = 1;
+    DbgPrint(dbg_ctl_ssl, "Calling SSL_CTX_get0_implemented_groups on loaded SSL context");
+    if (SSL_CTX_get0_implemented_groups(ctx, ALL_GROUPS, group_names) != 1) {
+      Error("Failed to get implemented groups via SSL_CTX_get0_implemented_groups");
+    }
+    int const num_groups = sk_OPENSSL_CSTRING_num(group_names);
+    DbgPrint(dbg_ctl_ssl, "SSL_CTX_get0_implemented_groups returned %d groups", num_groups);
+
+    for (int index = 0; index < num_groups; index++) {
+      const char *name = sk_OPENSSL_CSTRING_value(group_names, index);
+      if (name == nullptr) {
+        Error("NULL group name returned for index %d in SSL_CTX_get0_implemented_groups", index);
+        continue;
+      }
+      add_group_stat<std::string>(name, name);
+    }
+
+    // Note: We don't free group_names as the strings are owned by OpenSSL's internal structures.
+    sk_OPENSSL_CSTRING_free(group_names);
+  }
+
+  // Add "OTHER" for groups not discovered.
+  add_group_stat<std::string>("OTHER", "OTHER");
+#elif HAVE_SSL_GET_NEGOTIATED_GROUP
+  // Use static NID table for group registration.
+  for (auto group : TLS_GROUPS) {
+    add_group_stat<int>(group.nid, group.name);
+  }
+#endif // HAVE_SSL_CTX_GET0_IMPLEMENTED_GROUPS or HAVE_SSL_GET_NEGOTIATED_GROUP
+
   SSL_free(ssl);
-  SSLReleaseContext(ctx);
 #endif
 
   // Add "OTHER" for ciphers not on the map
   add_cipher_stat(SSL_CIPHER_STAT_OTHER.c_str(), "proxy.process.ssl.cipher.user_agent." + SSL_CIPHER_STAT_OTHER);
 
-  // TLS Group
 #if defined(OPENSSL_IS_BORINGSSL)
   size_t                    list_size = SSL_get_all_group_names(nullptr, 0);
   std::vector<const char *> group_list(list_size);
@@ -328,9 +365,5 @@ SSLInitializeStatistics()
   for (const char *name : group_list) {
     add_group_stat<std::string>(name, name);
   }
-#elif defined(SSL_get_negotiated_group)
-  for (auto group : TLS_GROUPS) {
-    add_group_stat<int>(group.nid, group.name);
-  }
-#endif // OPENSSL_IS_BORINGSSL or SSL_get_negotiated_group
+#endif // OPENSSL_IS_BORINGSSL
 }
