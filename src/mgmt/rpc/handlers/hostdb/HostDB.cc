@@ -37,6 +37,7 @@ DbgCtl dbg_ctl_rpc_handler_server{"rpc.handler.hostdb"};
 constexpr std::string_view
 str(HostDBType type)
 {
+  // No default to find HostDBType change
   switch (type) {
   case HostDBType::ADDR:
     return "ADDR";
@@ -46,8 +47,6 @@ str(HostDBType type)
     return "HOST";
   case HostDBType::UNSPEC:
     return "UNSPEC";
-  default:
-    return "UNKNOWN";
   }
 }
 
