@@ -74,7 +74,7 @@ class Common():
     def validate_with_text(self, text: str):
         """
         Validate command output matches expected text exactly.
-        
+
         Example:
             traffic_ctl.config().get("proxy.config.product_name").validate_with_text("Apache Traffic Server")
         """
@@ -85,7 +85,7 @@ class Common():
     def validate_result_with_text(self, text: str):
         """
         Validate RPC result matches expected JSON exactly. Wraps text in JSON-RPC envelope.
-        
+
         Example:
             traffic_ctl.rpc().invoke(handler="get_connection_tracker_info").validate_result_with_text(
                 '{"outbound": {"count": "0", "list": []}}'
@@ -101,7 +101,7 @@ class Common():
         Validate JSON output contains specific field:value pairs. Only checks specified fields.
         Prints detailed error on failure: "FAIL: field_name = actual_value (expected expected_value)"
         stream.all.txt will contain the actual output with the failed fields.
-        
+
         Example:
             traffic_ctl.server().status().validate_json_contains(
                 initialized_done='true', is_draining='false'
