@@ -230,10 +230,10 @@ RecSetRecordFloat(const char *name, RecFloat rec_float, RecSourceT source, bool 
 }
 
 RecErrT
-RecSetRecordString(const char *name, const RecString rec_string, RecSourceT source, bool lock)
+RecSetRecordString(const char *name, RecStringConst rec_string, RecSourceT source, bool lock)
 {
   RecData data;
-  data.rec_string = rec_string;
+  data.rec_string = const_cast<RecString>(rec_string);
   return RecSetRecord(RECT_NULL, name, RECD_STRING, &data, nullptr, source, lock);
 }
 
