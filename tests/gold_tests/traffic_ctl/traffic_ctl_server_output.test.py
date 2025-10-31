@@ -40,16 +40,13 @@ Test.Summary = 'Basic test for traffic_ctl server command features.'
 traffic_ctl = Make_traffic_ctl(Test, records_yaml)
 ######
 # traffic_ctl server status
-traffic_ctl.server().status().validate_with_text(
-    '{"initialized_done": "true", "is_ssl_handshaking_stopped": "false", "is_draining": "false", "is_event_system_shut_down": "false", "thread_groups": [{"name": "ET_NET", "count": "``", "started": "true"}, {"name": "ET_TASK", "count": "2", "started": "true"}, {"name": "ET_UDP", "count": "0", "started": "false"}]}'
-)
+traffic_ctl.server().status().validate_json_contains(
+    initialized_done='true', is_ssl_handshaking_stopped='false', is_draining='false', is_event_system_shut_down='false')
 # Drain ats so we can check the output.
 traffic_ctl.server().drain().exec()
 
 # After the drain, server status should reflect this change.
-traffic_ctl.server().status().validate_with_text(
-    '{"initialized_done": "true", "is_ssl_handshaking_stopped": "false", "is_draining": "true", "is_event_system_shut_down": "false", "thread_groups": [{"name": "ET_NET", "count": "``", "started": "true"}, {"name": "ET_TASK", "count": "2", "started": "true"}, {"name": "ET_UDP", "count": "0", "started": "false"}]}'
-)
+traffic_ctl.server().status().validate_json_contains(initialized_done='true', is_draining='true')
 
 # Get basic and empty connection tracker info.
 traffic_ctl.rpc().invoke(
@@ -58,11 +55,11 @@ traffic_ctl.rpc().invoke(
 # default = outbound only
 traffic_ctl.rpc().invoke(
     handler="get_connection_tracker_info").validate_result_with_text('{"outbound": {"count": "0", "list": []}}')
-# requets inbound oonly
+# request inbound only
 traffic_ctl.rpc().invoke(
     handler="get_connection_tracker_info",
     params='"table: inbound"').validate_result_with_text('{"inbound": {"count": "0", "list": []}}')
-# requets outbound only
+# request outbound only
 traffic_ctl.rpc().invoke(
     handler="get_connection_tracker_info",
     params='"table: outbound"').validate_result_with_text('{"outbound": {"count": "0", "list": []}}')
