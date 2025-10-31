@@ -41,6 +41,7 @@ Cookie Based Routing Inside TrafficServer Using cookie_remap
     * :ref:`status: HTTP status-code <status-http-status-code>`
     * :ref:`else: url [optional] <else-url-optional>`
     * :ref:`connector: and <connector-and>`
+    * :ref:`disable_pristine_host_hdr: true|false [optional] <disable-pristine-host-hdr>`
 
   * :ref:`Reserved path expressions <reserved-path-expressions>`
 
@@ -216,6 +217,22 @@ connector: and
 
 'and' is the only supported connector
 
+.. _disable-pristine-host-hdr:
+
+disable_pristine_host_hdr: true|false [optional]
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When set to ``true``, disables the ``proxy.config.url_remap.pristine_host_hdr``
+configuration for the matched transaction, allowing the Host header to be
+updated to match the hostname in the ``sendto`` URL. This is useful when
+downstream routing (such as a parent proxy or origin server selection) depends
+on the Host header value matching the remapped destination. The default value
+is ``false``, which preserves the pristine host header behavior.
+
+This option only affects the successful match (``sendto``) path. The ``else``
+path will continue to use the configured pristine host header setting (typically
+enabled in production environments).
+
 .. _reserved-path-expressions:
 
 Reserved path expressions
@@ -388,6 +405,33 @@ An example configuration file
      match: foobar
      sendto: http://cnn.com/$1
      else: http://yahoo.com
+
+Example with Pristine Host Header Control
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This example demonstrates using ``disable_pristine_host_hdr`` to route a
+percentage of users to a canary server in an environment where
+``proxy.config.url_remap.pristine_host_hdr`` is normally enabled. When the
+cookie bucket matches, pristine host header is disabled for that transaction,
+allowing the Host header to be updated to match the remapped destination::
+
+   op:
+     cookie: SessionID
+     operation: bucket
+     bucket: 1/10
+     sendto: https://canary.example.com/app/$unmatched_path
+     disable_pristine_host_hdr: true
+     else: https://stable.example.com/app/$unmatched_path
+
+In this configuration:
+
+* 10% of users (based on the SessionID cookie) are sent to the canary server.
+* For canary traffic, pristine host header is disabled, so the Host header is
+  updated to ``canary.example.com``.
+* For regular traffic (else path), pristine host header remains enabled, so the
+  Host header stays as the original client value.
+* This allows downstream routing (parent proxies or origin servers) to direct
+  canary traffic correctly based on the updated Host header.
 
 .. _debugging-things:
 
