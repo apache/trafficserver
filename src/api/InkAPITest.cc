@@ -8697,7 +8697,6 @@ std::array<std::string_view, TS_CONFIG_LAST_ENTRY> SDK_Overridable_Configs = {
    "proxy.config.http.chunking_enabled",
    "proxy.config.http.negative_caching_enabled",
    "proxy.config.http.negative_caching_lifetime",
-   "proxy.config.http.negative_caching_list",
    "proxy.config.http.cache.when_to_revalidate",
    "proxy.config.http.keep_alive_enabled_in",
    "proxy.config.http.keep_alive_enabled_out",
@@ -8741,7 +8740,6 @@ std::array<std::string_view, TS_CONFIG_LAST_ENTRY> SDK_Overridable_Configs = {
    "proxy.config.http.connect_attempts_max_retries_down_server",
    "proxy.config.http.connect_attempts_rr_retries",
    "proxy.config.http.connect_attempts_timeout",
-   "proxy.config.http.connect_attempts_retry_backoff_base",
    "proxy.config.http.down_server.cache_time",
    "proxy.config.http.doc_in_cache_skip_dns",
    "proxy.config.http.background_fill_active_timeout",
@@ -8762,7 +8760,6 @@ std::array<std::string_view, TS_CONFIG_LAST_ENTRY> SDK_Overridable_Configs = {
    "proxy.config.http.response_header_max_size",
    "proxy.config.http.negative_revalidating_enabled",
    "proxy.config.http.negative_revalidating_lifetime",
-   "proxy.config.http.negative_revalidating_list",
    "proxy.config.ssl.hsts_max_age",
    "proxy.config.ssl.hsts_include_subdomains",
    "proxy.config.http.cache.open_read_retry_time",
@@ -8825,8 +8822,11 @@ std::array<std::string_view, TS_CONFIG_LAST_ENTRY> SDK_Overridable_Configs = {
    "proxy.config.http.no_dns_just_forward_to_parent",
    "proxy.config.http.cache.ignore_query",
    "proxy.config.http.drop_chunked_trailers",
-   "proxy.config.http.cache.post_method",
    "proxy.config.http.strict_chunk_parsing",
+   "proxy.config.http.negative_caching_list",
+   "proxy.config.http.connect_attempts_retry_backoff_base",
+   "proxy.config.http.negative_revalidating_list",
+   "proxy.config.http.cache.post_method",
   }
 };
 // clang-format on
