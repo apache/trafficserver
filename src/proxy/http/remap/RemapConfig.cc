@@ -90,7 +90,6 @@ clear_xstr_array(char *v[], size_t vsize)
 }
 
 BUILD_TABLE_INFO::BUILD_TABLE_INFO()
-
 {
   memset(this->paramv, 0, sizeof(this->paramv));
   memset(this->argv, 0, sizeof(this->argv));
@@ -1489,6 +1488,7 @@ bool
 remap_parse_config(const char *path, UrlRewrite *rewrite)
 {
   BUILD_TABLE_INFO bti;
+  BUILD_TABLE_INFO::instance = &bti; // needed for plugin init api
 
   /* If this happens to be a config reload, the list of loaded remap plugins is non-empty, and we
    * can signal all these plugins that a reload has begun. */
@@ -1502,6 +1502,8 @@ remap_parse_config(const char *path, UrlRewrite *rewrite)
   rewrite->pluginFactory.indicatePostReload(status);
 
   bti.clear_acl_rules_list();
+
+  BUILD_TABLE_INFO::instance = nullptr;
 
   return status;
 }

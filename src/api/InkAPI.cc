@@ -5044,6 +5044,25 @@ TSHttpTxnNextHopNamedStrategyGet(TSHttpTxn txnp, const char *name)
   return static_cast<void const *>(strat);
 }
 
+void const *
+TSHttpInitNextHopNamedStrategyGet(const char *name)
+{
+  auto const bt = BUILD_TABLE_INFO::instance;
+
+  sdk_assert(sdk_sanity_check_null_ptr((void *)bt) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void *)bt->rewrite) == TS_SUCCESS);
+
+  NextHopSelectionStrategy const *strat = nullptr;
+
+  if (nullptr != bt->rewrite->strategyFactory) {
+    // HttpSM has a reference count handle to UrlRewrite which manages
+    // the NextHopStrategyFactory pointer.
+    strat = bt->rewrite->strategyFactory->strategyInstance(name);
+  }
+
+  return static_cast<void const *>(strat);
+}
+
 TSReturnCode
 TSHttpTxnParentProxyGet(TSHttpTxn txnp, const char **hostname, int *port)
 {
