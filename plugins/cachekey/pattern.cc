@@ -18,7 +18,7 @@
 
 /**
  * @file pattern.cc
- * @brief PRCE related classes.
+ * @brief Regex related classes.
  * @see pattern.h
  */
 
@@ -41,16 +41,14 @@ replaceString(String &str, const String &from, const String &to)
 Pattern::Pattern() : _pattern(""), _replacement("") {}
 
 /**
- * @brief Initializes PCRE pattern by providing the subject and replacement strings.
- * @param pattern PCRE pattern, a string containing PCRE patterns, capturing groups.
- * @param replacement PCRE replacement, a string where $0 ... $9 will be replaced with the corresponding capturing groups
+ * @brief Initializes Regex pattern by providing the subject and replacement strings.
+ * @param pattern Regex pattern, a string containing regex patterns, capturing groups.
+ * @param replacement Regex replacement, a string where $0 ... $9 will be replaced with the corresponding capturing groups
  * @return true if successful, false if failure
  */
 bool
 Pattern::init(const String &pattern, const String &replacement, bool replace)
 {
-  pcreFree();
-
   _pattern.assign(pattern);
   _replacement.assign(replacement);
   _replace = replace;
@@ -59,7 +57,6 @@ Pattern::init(const String &pattern, const String &replacement, bool replace)
 
   if (!compile()) {
     CacheKeyDebug("failed to initialize pattern:'%s', replacement:'%s'", pattern.c_str(), replacement.c_str());
-    pcreFree();
     return false;
   }
 
@@ -67,9 +64,9 @@ Pattern::init(const String &pattern, const String &replacement, bool replace)
 }
 
 /**
- * @brief Initializes PCRE pattern by providing the pattern only or pattern+replacement in a single configuration string.
+ * @brief Initializes Regex pattern by providing the pattern only or pattern+replacement in a single configuration string.
  * @see init()
- * @param config PCRE pattern <pattern> or PCRE pattern + replacement in format /<pattern>/<replacement>/
+ * @param config Regex pattern <pattern> or Regex pattern + replacement in format /<pattern>/<replacement>/
  * @return true if successful, false if failure
  */
 bool
@@ -130,33 +127,13 @@ Pattern::init(const String &config)
 bool
 Pattern::empty() const
 {
-  return _pattern.empty() || nullptr == _re;
+  return _pattern.empty() || _re.empty();
 }
 
 /**
- * @brief Frees PCRE library related resources.
+ * @brief Destructor.
  */
-void
-Pattern::pcreFree()
-{
-  if (_re) {
-    pcre_free(_re);
-    _re = nullptr;
-  }
-
-  if (_extra) {
-    pcre_free(_extra);
-    _extra = nullptr;
-  }
-}
-
-/**
- * @brief Destructor, frees PCRE related resources.
- */
-Pattern::~Pattern()
-{
-  pcreFree();
-}
+Pattern::~Pattern() {}
 
 /**
  * @brief Capture or capture-and-replace depending on whether a replacement string is specified.
@@ -198,23 +175,23 @@ Pattern::process(const String &subject, StringVector &result)
 }
 
 /**
- * @brief PCRE matches a subject string against the regex pattern.
- * @param subject PCRE subject
+ * @brief Regex matches a subject string against the regex pattern.
+ * @param subject Regex subject
  * @return true - matched, false - did not.
  */
 bool
 Pattern::match(const String &subject)
 {
-  int matchCount;
   CacheKeyDebug("matching '%s' to '%s'", _pattern.c_str(), subject.c_str());
 
-  if (!_re) {
+  if (_re.empty()) {
     return false;
   }
 
-  matchCount = pcre_exec(_re, _extra, subject.c_str(), subject.length(), 0, PCRE_NOTEMPTY, nullptr, 0);
+  RegexMatches matches;
+  int          matchCount = _re.exec(subject, matches, RE_NOTEMPTY);
   if (matchCount < 0) {
-    if (matchCount != PCRE_ERROR_NOMATCH) {
+    if (matchCount != RE_ERROR_NOMATCH) {
       CacheKeyError("matching error %d", matchCount);
     }
     return false;
@@ -224,38 +201,34 @@ Pattern::match(const String &subject)
 }
 
 /**
- * @brief Return all PCRE capture groups that matched in the subject string
- * @param subject PCRE subject string
+ * @brief Return all Regex capture groups that matched in the subject string
+ * @param subject Regex subject string
  * @param result reference to vector of strings containing all capture groups
  */
 bool
 Pattern::capture(const String &subject, StringVector &result)
 {
-  int matchCount;
-  int ovector[OVECOUNT];
-
   CacheKeyDebug("capturing '%s' from '%s'", _pattern.c_str(), subject.c_str());
 
-  if (!_re) {
+  if (_re.empty()) {
     CacheKeyError("regular expression not initialized");
     return false;
   }
 
-  matchCount = pcre_exec(_re, nullptr, subject.c_str(), subject.length(), 0, PCRE_NOTEMPTY, ovector, OVECOUNT);
+  RegexMatches matches;
+  int          matchCount = _re.exec(subject, matches, RE_NOTEMPTY);
   if (matchCount < 0) {
-    if (matchCount != PCRE_ERROR_NOMATCH) {
+    if (matchCount != RE_ERROR_NOMATCH) {
       CacheKeyError("matching error %d", matchCount);
     }
     return false;
   }
 
   for (int i = 0; i < matchCount; i++) {
-    int start  = ovector[2 * i];
-    int length = ovector[2 * i + 1] - ovector[2 * i];
+    std::string_view capture = matches[i];
+    String           dst(capture.data(), capture.length());
 
-    String dst(subject, start, length);
-
-    CacheKeyDebug("capturing '%s' %d[%d,%d]", dst.c_str(), i, ovector[2 * i], ovector[2 * i + 1]);
+    CacheKeyDebug("capturing '%s' %d", dst.c_str(), i);
     result.push_back(dst);
   }
 
@@ -263,27 +236,25 @@ Pattern::capture(const String &subject, StringVector &result)
 }
 
 /**
- * @brief Replaces all replacements found in the replacement string with what matched in the PCRE capturing groups.
- * @param subject PCRE subject string
+ * @brief Replaces all replacements found in the replacement string with what matched in the Regex capturing groups.
+ * @param subject Regex subject string
  * @param result reference to A string where the result of the replacement will be stored
  * @return true - success, false - nothing matched or failure.
  */
 bool
 Pattern::replace(const String &subject, String &result)
 {
-  int matchCount;
-  int ovector[OVECOUNT];
-
   CacheKeyDebug("replacing:'%s' in pattern:'%s', subject:'%s'", _replacement.c_str(), _pattern.c_str(), subject.c_str());
 
-  if (!_re || !_replace) {
+  if (_re.empty() || !_replace) {
     CacheKeyError("regular expression not initialized or not configured to replace");
     return false;
   }
 
-  matchCount = pcre_exec(_re, nullptr, subject.c_str(), subject.length(), 0, PCRE_NOTEMPTY, ovector, OVECOUNT);
+  RegexMatches matches;
+  int          matchCount = _re.exec(subject, matches, RE_NOTEMPTY);
   if (matchCount < 0) {
-    if (matchCount != PCRE_ERROR_NOMATCH) {
+    if (matchCount != RE_ERROR_NOMATCH) {
       CacheKeyError("matching error %d", matchCount);
     }
     return false;
@@ -299,18 +270,11 @@ Pattern::replace(const String &subject, String &result)
 
   int previous = 0;
   for (int i = 0; i < _tokenCount; i++) {
-    int replIndex = _tokens[i];
-    int start     = ovector[2 * replIndex];
-    int length    = ovector[2 * replIndex + 1] - ovector[2 * replIndex];
-
-    /* Handle the case when no match / a group capture result in an empty string */
-    if (start < 0) {
-      start  = 0;
-      length = 0;
-    }
+    int              replIndex = _tokens[i];
+    std::string_view capture   = matches[replIndex];
 
     String src(_replacement, _tokenOffset[i], 2);
-    String dst(subject, start, length);
+    String dst(capture.data(), capture.length());
 
     CacheKeyDebug("replacing '%s' with '%s'", src.c_str(), dst.c_str());
 
@@ -328,37 +292,20 @@ Pattern::replace(const String &subject, String &result)
 }
 
 /**
- * @brief PCRE compiles the regex, called only during initialization.
+ * @brief Compiles the regex, called only during initialization.
  * @return true if successful, false if not.
  */
 bool
 Pattern::compile()
 {
-  const char *errPtr;    /* PCRE error */
-  int         errOffset; /* PCRE error offset */
+  std::string error;
+  int         errOffset;
 
   CacheKeyDebug("compiling pattern:'%s', replace: %s, replacement:'%s'", _pattern.c_str(), _replace ? "true" : "false",
                 _replacement.c_str());
 
-  _re = pcre_compile(_pattern.c_str(), /* the pattern */
-                     0,                /* options */
-                     &errPtr,          /* for error message */
-                     &errOffset,       /* for error offset */
-                     nullptr);         /* use default character tables */
-
-  if (nullptr == _re) {
-    CacheKeyError("compile of regex '%s' at char %d: %s", _pattern.c_str(), errOffset, errPtr);
-
-    return false;
-  }
-
-  _extra = pcre_study(_re, 0, &errPtr);
-
-  if ((nullptr == _extra) && (nullptr != errPtr) && (0 != *errPtr)) {
-    CacheKeyError("failed to study regex '%s': %s", _pattern.c_str(), errPtr);
-
-    pcre_free(_re);
-    _re = nullptr;
+  if (!_re.compile(_pattern, error, errOffset)) {
+    CacheKeyError("compile of regex '%s' at char %d: %s", _pattern.c_str(), errOffset, error.c_str());
     return false;
   }
 
@@ -392,10 +339,6 @@ Pattern::compile()
         i++;
       }
     }
-  }
-
-  if (!success) {
-    pcreFree();
   }
 
   return success;
