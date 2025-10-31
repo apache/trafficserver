@@ -46,8 +46,12 @@ class NextHopConsistentHash : public NextHopSelectionStrategy
   uint64_t getHashKey(uint64_t sm_id, const HttpRequestData &hrdata, ATSHash64 *h);
 
 public:
-  NHHashKeyType hash_key = NHHashKeyType::PATH_HASH_KEY;
-  NHHashUrlType hash_url = NHHashUrlType::REQUEST;
+  NHHashKeyType hash_key       = NHHashKeyType::PATH_HASH_KEY;
+  NHHashUrlType hash_url       = NHHashUrlType::REQUEST;
+  std::string   hash_algorithm = "siphash24"; // Default hash algorithm name
+  uint64_t      hash_seed0     = 0;           // First 64 bits of hash seed
+  uint64_t      hash_seed1     = 0;           // Second 64 bits of hash seed
+  int           hash_replicas  = 1024;        // Number of virtual nodes per host (int to match ATSConsistentHash constructor)
 
   NextHopConsistentHash() = delete;
   NextHopConsistentHash(const std::string_view name, const NHPolicyType &policy, ts::Yaml::Map &n);
