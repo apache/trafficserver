@@ -35,8 +35,7 @@
 #include "iocore/eventsystem/Action.h"
 #include "iocore/eventsystem/Continuation.h"
 
-#include "../../records/P_RecProcess.h"
-
+#include "iocore/eventsystem/Freer.h"
 #include "tscore/Diags.h"
 #include "tscore/Filenames.h"
 #include "tscore/ink_assert.h"
