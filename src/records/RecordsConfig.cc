@@ -21,6 +21,7 @@
   limitations under the License.
  */
 
+#include "records/RecDefs.h"
 #include "tscore/ink_config.h"
 #include "tscore/Filenames.h"
 #include "records/RecordsConfig.h"
@@ -116,6 +117,8 @@ static constexpr RecordElement RecordsConfig[] =
   {RECT_CONFIG, "proxy.config.exec_thread.affinity", RECD_INT, "1", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-4]", RECA_READ_ONLY}
   ,
   {RECT_CONFIG, "proxy.config.exec_thread.listen", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-1]", RECA_READ_ONLY}
+  ,
+  {RECT_CONFIG, "proxy.config.exec_thread.event_time_update_rate", RECD_INT, "10", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-100]", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.accept_threads", RECD_INT, "1", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-" TS_STR(TS_MAX_NUMBER_EVENT_THREADS) "]", RECA_READ_ONLY}
   ,
