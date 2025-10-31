@@ -127,5 +127,5 @@ tr.MakeCurlCommand(curl_and_args + \
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/regex_remap_crash.gold"
 ts.Disk.diags_log.Content = Testers.ContainsExpression(
-    'ERROR: .regex_remap. Bad regular expression result -21', "Resource limit exceeded")
+    'ERROR: .regex_remap. Bad regular expression result -46', "Recursion limit exceeded")
 tr.StillRunningAfter = ts

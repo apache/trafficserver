@@ -81,7 +81,7 @@ struct submatch_t {
 
 struct submatch_test_t {
   std::string_view        regex;
-  int                     capture_count;
+  int32_t                 capture_count;
   std::vector<submatch_t> tests;
 };
 
@@ -487,5 +487,57 @@ TEST_CASE("Regex copy with RE_NOTEMPTY flag", "[libts][Regex][copy][flags]")
 
     CHECK(copy.exec(std::string_view("")) == true);
     CHECK(copy.exec(std::string_view(""), RE_NOTEMPTY) == false);
+  }
+}
+
+struct backref_test_t {
+  std::string_view regex;
+  bool             valid;
+  int32_t          backref_max;
+};
+
+std::vector<backref_test_t> backref_test_data{
+  {{""},                  true,  0 },
+  {{R"(\b(\w+)\s+\1\b)"}, true,  1 },
+  {{R"((.)\1)"},          true,  1 },
+  {{R"((.)(.).\2\1)"},    true,  2 },
+  {{R"((.\2\1)"},         false, -1},
+};
+
+TEST_CASE("Regex back reference counting", "[libts][Regex][get_backref_max]")
+{
+  // case sensitive test
+  for (auto &item : backref_test_data) {
+    Regex r;
+    REQUIRE(r.compile(item.regex) == item.valid);
+    REQUIRE(r.get_backref_max() == item.backref_max);
+  }
+}
+
+struct match_context_test_t {
+  std::string_view regex;
+  std::string_view str;
+  bool             valid;
+  int32_t          rcode;
+};
+
+std::vector<match_context_test_t> match_context_test_data{
+  {{"abc"},                          {"abc"},          true,  1  },
+  {{"abc"},                          {"a"},            true,  -1 },
+  {{R"(^(\d{3})-(\d{3})-(\d{4})$)"}, {"123-456-7890"}, true,  -47},
+  {{"(."},                           {"a"},            false, -51},
+};
+
+TEST_CASE("RegexMatchContext", "[libts][Regex][RegexMatchContext]")
+{
+  RegexMatchContext match_context;
+  match_context.set_match_limit(2);
+  RegexMatches matches;
+
+  // case sensitive test
+  for (auto &item : match_context_test_data) {
+    Regex r;
+    REQUIRE(r.compile(item.regex) == item.valid);
+    REQUIRE(r.exec(item.str, matches, 0, &match_context) == item.rcode);
   }
 }

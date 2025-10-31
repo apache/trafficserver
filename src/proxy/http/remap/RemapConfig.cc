@@ -974,7 +974,7 @@ process_regex_mapping_config(const char *from_host_lower, url_mapping *new_mappi
   std::string_view to_host{};
   int              to_host_len;
   int              substitution_id;
-  int              captures;
+  int32_t          captures;
 
   reg_map->to_url_host_template     = nullptr;
   reg_map->to_url_host_template_len = 0;
