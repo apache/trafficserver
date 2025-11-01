@@ -22,6 +22,7 @@
   limitations under the License.
  */
 
+#include "P_SSLUtils.h"
 #include "SSLStats.h"
 #include "iocore/net/TLSBasicSupport.h"
 #if defined(OPENSSL_IS_BORINGSSL)
@@ -249,7 +250,21 @@ TLSBasicSupport::_record_tls_handshake_end_time()
       Metrics::Counter::increment(it->second, ssl_handshake_time);
     }
   }
-#elif defined(SSL_get_negotiated_group)
+#elif HAVE_SSL_CTX_GET0_IMPLEMENTED_GROUPS
+  SSL             *ssl        = this->_get_ssl_object();
+  std::string_view group_name = SSLGetGroupName(ssl);
+  if (!group_name.empty()) {
+    std::string group_str(group_name);
+    if (auto it = tls_group_handshake_time_map.find(group_str); it != tls_group_handshake_time_map.end()) {
+      Metrics::Counter::increment(it->second, ssl_handshake_time);
+    } else {
+      auto other = tls_group_handshake_time_map.find("OTHER");
+      if (other != tls_group_handshake_time_map.end()) {
+        Metrics::Counter::increment(other->second, ssl_handshake_time);
+      }
+    }
+  }
+#elif HAVE_SSL_GET_NEGOTIATED_GROUP
   SSL *ssl = this->_get_ssl_object();
   int  nid = SSL_get_negotiated_group(const_cast<SSL *>(ssl));
   if (nid != NID_undef) {
@@ -281,7 +296,21 @@ TLSBasicSupport::_update_end_of_handshake_stats()
       Warning("Unknown TLS Group");
     }
   }
-#elif defined(SSL_get_negotiated_group)
+#elif HAVE_SSL_CTX_GET0_IMPLEMENTED_GROUPS
+  SSL             *ssl        = this->_get_ssl_object();
+  std::string_view group_name = SSLGetGroupName(ssl);
+  if (!group_name.empty()) {
+    std::string group_str(group_name);
+    if (auto it = tls_group_map.find(group_str); it != tls_group_map.end()) {
+      Metrics::Counter::increment(it->second);
+    } else {
+      auto other = tls_group_map.find("OTHER");
+      if (other != tls_group_map.end()) {
+        Metrics::Counter::increment(other->second);
+      }
+    }
+  }
+#elif HAVE_SSL_GET_NEGOTIATED_GROUP
   SSL *ssl = this->_get_ssl_object();
   int  nid = SSL_get_negotiated_group(const_cast<SSL *>(ssl));
   if (nid != NID_undef) {
@@ -292,5 +321,5 @@ TLSBasicSupport::_update_end_of_handshake_stats()
       Metrics::Counter::increment(other->second);
     }
   }
-#endif // OPENSSL_IS_BORINGSSL or SSL_get_negotiated_group
+#endif // OPENSSL_IS_BORINGSSL or HAVE_SSL_CTX_GET0_IMPLEMENTED_GROUPS or HAVE_SSL_GET_NEGOTIATED_GROUP
 }
