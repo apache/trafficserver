@@ -21,6 +21,7 @@
   limitations under the License.
  */
 
+#include "records/RecProcess.h"
 #include "iocore/eventsystem/EventProcessor.h"
 #include "tscore/ink_platform.h"
 #include "tscore/EventNotify.h"
