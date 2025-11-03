@@ -33,6 +33,9 @@
 #include <cctype>
 #include <cstdint>
 
+#include <memory>
+#include <string>
+
 #include "tsutil/Regex.h"
 
 #include <ts/ts.h>
@@ -44,27 +47,26 @@ static const char PLUGIN_NAME[] = "url_sig";
 static DbgCtl dbg_ctl{PLUGIN_NAME};
 
 struct config {
-  TSHttpStatus err_status;
-  char        *err_url;
-  char         keys[MAX_KEY_NUM][MAX_KEY_LEN];
-  Regex       *excl_regex;
-  int          pristine_url_flag;
-  char        *sig_anchor;
-  bool         ignore_expiry;
+  config()                          = default;
+  config(const config &)            = delete;
+  config(config &&)                 = delete;
+  config &operator=(const config &) = delete;
+  config &operator=(config &&)      = delete;
+
+  ~config();
+
+  TSHttpStatus           err_status = TS_HTTP_STATUS_NONE;
+  std::string            err_url;
+  char                   keys[MAX_KEY_NUM][MAX_KEY_LEN];
+  std::unique_ptr<Regex> excl_regex;
+  bool                   pristine_url_flag = false;
+  std::string            sig_anchor;
+  bool                   ignore_expiry = false;
 };
 
-static void
-free_cfg(struct config *cfg)
+config::~config()
 {
   Dbg(dbg_ctl, "Cleaning up");
-  TSfree(cfg->err_url);
-  TSfree(cfg->sig_anchor);
-
-  if (cfg->excl_regex) {
-    delete cfg->excl_regex;
-  }
-
-  TSfree(cfg);
 }
 
 TSReturnCode
@@ -79,8 +81,7 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_size)
 {
-  char           config_filepath_buf[PATH_MAX], *config_file;
-  struct config *cfg;
+  char config_filepath_buf[PATH_MAX], *config_file;
 
   if ((argc < 3) || (argc > 4)) {
     snprintf(errbuf, errbuf_size,
@@ -109,8 +110,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
   int  keynum;
   bool eat_comment = false;
 
-  cfg = TSRalloc<config>();
-  memset(cfg, 0, sizeof(struct config));
+  auto cfg = std::make_unique<config>();
 
   while (fgets(line, sizeof(line), file) != nullptr) {
     Dbg(dbg_ctl, "LINE: %s (%d)", line, (int)strlen(line));
@@ -147,7 +147,6 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
     if (pos == nullptr || strlen(value) >= MAX_KEY_LEN) {
       snprintf(errbuf, errbuf_size, "[TSRemapNewInstance] - Maximum key length (%d) exceeded on line %d", MAX_KEY_LEN - 1, line_no);
       fclose(file);
-      free_cfg(cfg);
       return TS_ERROR;
     }
     if (strncmp(line, "key", 3) == 0) {
@@ -164,7 +163,6 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
       if (keynum >= MAX_KEY_NUM || keynum < 0) {
         snprintf(errbuf, errbuf_size, "[TSRemapNewInstance] - Key number (%d) >= MAX_KEY_NUM (%d) or NaN", keynum, MAX_KEY_NUM);
         fclose(file);
-        free_cfg(cfg);
         return TS_ERROR;
       }
       snprintf(&cfg->keys[keynum][0], MAX_KEY_LEN, "%s", value);
@@ -177,12 +175,12 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
         value++;
       }
       if (cfg->err_status == TS_HTTP_STATUS_MOVED_TEMPORARILY) {
-        cfg->err_url = TSstrndup(value, strlen(value));
+        cfg->err_url = value;
       } else {
-        cfg->err_url = nullptr;
+        cfg->err_url.clear();
       }
     } else if (strncmp(line, "sig_anchor", 10) == 0) {
-      cfg->sig_anchor = TSstrndup(value, strlen(value));
+      cfg->sig_anchor = value;
     } else if (strncmp(line, "excl_regex", 10) == 0) {
       // Compile regex.
       std::string error;
@@ -193,11 +191,10 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
         continue;
       }
 
-      cfg->excl_regex = new Regex();
+      cfg->excl_regex = std::make_unique<Regex>();
       if (!cfg->excl_regex->compile(value, error, erroffset, 0)) {
         Dbg(dbg_ctl, "Regex compilation failed with error (%s) at character %d", error.c_str(), erroffset);
-        delete cfg->excl_regex;
-        cfg->excl_regex = nullptr;
+        cfg->excl_regex.reset();
       }
     } else if (strncmp(line, "ignore_expiry", 13) == 0) {
       if (strncmp(value, "true", 4) == 0) {
@@ -206,7 +203,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
       }
     } else if (strncmp(line, "url_type", 8) == 0) {
       if (strncmp(value, "pristine", 8) == 0) {
-        cfg->pristine_url_flag = 1;
+        cfg->pristine_url_flag = true;
         Dbg(dbg_ctl, "Pristine URLs (from config) will be used");
       }
     } else {
@@ -218,45 +215,43 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
 
   if (argc > 3) {
     if (strcasecmp(argv[3], "pristineurl") == 0) {
-      cfg->pristine_url_flag = 1;
+      cfg->pristine_url_flag = true;
       Dbg(dbg_ctl, "Pristine URLs (from args) will be used");
 
     } else {
       snprintf(errbuf, errbuf_size, "[TSRemapNewInstance] - second pparam (if present) must be pristineurl");
-      free_cfg(cfg);
       return TS_ERROR;
     }
   }
 
   switch (cfg->err_status) {
   case TS_HTTP_STATUS_MOVED_TEMPORARILY:
-    if (cfg->err_url == nullptr) {
-      snprintf(errbuf, errbuf_size, "[TSRemapNewInstance] - Invalid config, err_status == 302, but err_url == nullptr");
-      free_cfg(cfg);
+    if (cfg->err_url.empty()) {
+      snprintf(errbuf, errbuf_size, "[TSRemapNewInstance] - Invalid config, err_status == 302, but err_url is empty");
       return TS_ERROR;
     }
     break;
   case TS_HTTP_STATUS_FORBIDDEN:
-    if (cfg->err_url != nullptr) {
-      snprintf(errbuf, errbuf_size, "[TSRemapNewInstance] - Invalid config, err_status == 403, but err_url != nullptr");
-      free_cfg(cfg);
+    if (!cfg->err_url.empty()) {
+      snprintf(errbuf, errbuf_size, "[TSRemapNewInstance] - Invalid config, err_status == 403, but err_url is not empty");
       return TS_ERROR;
     }
     break;
   default:
     snprintf(errbuf, errbuf_size, "[TSRemapNewInstance] - Return code %d not supported", cfg->err_status);
-    free_cfg(cfg);
     return TS_ERROR;
   }
 
-  *ih = (void *)cfg;
+  // Transfer ownership to ih which will later be deleted in TSRemapDeleteInstance.
+  *ih = (void *)cfg.release();
   return TS_SUCCESS;
 }
 
 void
 TSRemapDeleteInstance(void *ih)
 {
-  free_cfg(static_cast<struct config *>(ih));
+  auto *cfg = static_cast<config *>(ih);
+  delete cfg;
 }
 
 static void
@@ -344,7 +339,7 @@ fixedBufferWrite(char **dest_end, int *dest_len, const char *src, int src_len)
 }
 
 static char *
-urlParse(char const *const url_in, char *anchor, char *new_path_seg, int new_path_seg_len, char *signed_seg,
+urlParse(char const *const url_in, char const *anchor, char *new_path_seg, int new_path_seg_len, char *signed_seg,
          unsigned int signed_seg_len)
 {
   char         *segment[MAX_SEGMENTS];
@@ -582,7 +577,8 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 
     // check for path params.
     if (query == nullptr || strstr(query, "E=") == nullptr) {
-      char *const parsed = urlParse(url, cfg->sig_anchor, new_path, 8192, path_params, 8192);
+      char *const parsed =
+        urlParse(url, cfg->sig_anchor.empty() ? nullptr : cfg->sig_anchor.c_str(), new_path, 8192, path_params, 8192);
       if (parsed == nullptr) {
         err_log(url, url_len, "Unable to parse/decode new url path parameters");
         goto deny;
@@ -835,16 +831,16 @@ deny:
   TSfree((void *)current_url);
 
   switch (cfg->err_status) {
-  case TS_HTTP_STATUS_MOVED_TEMPORARILY:
-    Dbg(dbg_ctl, "Redirecting to %s", cfg->err_url);
-    char *start, *end;
-    start = cfg->err_url;
-    end   = start + strlen(cfg->err_url);
-    if (TSUrlParse(rri->requestBufp, rri->requestUrl, (const char **)&start, end) != TS_PARSE_DONE) {
-      err_log("url", 3, "Error inn TSUrlParse!");
+  case TS_HTTP_STATUS_MOVED_TEMPORARILY: {
+    Dbg(dbg_ctl, "Redirecting to %s", cfg->err_url.c_str());
+    char const *start = cfg->err_url.c_str();
+    char const *end   = start + cfg->err_url.size();
+    if (TSUrlParse(rri->requestBufp, rri->requestUrl, &start, end) != TS_PARSE_DONE) {
+      err_log("url", 3, "Error in TSUrlParse!");
     }
     rri->redirect = 1;
     break;
+  }
   default:
     TSHttpTxnErrorBodySet(txnp, TSstrdup("Authorization Denied"), sizeof("Authorization Denied") - 1, TSstrdup("text/plain"));
     break;

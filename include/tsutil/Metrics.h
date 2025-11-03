@@ -33,6 +33,7 @@
 #include <string>
 #include <string_view>
 #include <variant>
+#include <optional>
 
 #include "swoc/MemSpan.h"
 
@@ -534,6 +535,41 @@ public:
     }
 
   }; // class Counter
+
+  class StaticString
+  {
+  public:
+    using StringStorage = std::unordered_map<std::string, std::string>;
+    using iterator      = StringStorage::iterator;
+
+    static void
+    createString(const std::string &name, const std::string_view value)
+    {
+      auto &instance = Metrics::StaticString::instance();
+      return instance._createString(name, value);
+    }
+
+    static StaticString &instance();
+
+    iterator
+    begin()
+    {
+      return _strings.begin();
+    }
+    iterator
+    end()
+    {
+      return _strings.end();
+    };
+
+    std::optional<std::string_view> lookup(const std::string &name);
+
+  private:
+    void _createString(const std::string &name, const std::string_view value);
+
+    StringStorage      _strings;
+    mutable std::mutex _mutex;
+  };
 
   /**
    * Derive metrics by summing a set of other metrics.

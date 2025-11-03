@@ -1,0 +1,3 @@
+tests/data/vars/slot_conflict.fail.input.txt:3:4: error: Slot @5 already used by variable 'first'
+   3 |     second: bool @5;  # Error: slot already used
+     |     ^

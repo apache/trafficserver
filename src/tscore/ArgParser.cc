@@ -504,26 +504,28 @@ bool
 ArgParser::Command::parse(Arguments &ret, AP_StrVec &args)
 {
   bool command_called = false;
-  // iterate through all arguments
-  for (unsigned i = 0; i < args.size(); i++) {
-    if (_name == args[i]) {
-      command_called = true;
-      // handle the option
-      append_option_data(ret, args, i);
-      // handle the action
-      if (_f) {
-        ret._action = _f;
-      }
-      std::string err = handle_args(ret, args, _key, _arg_num, i);
-      if (!err.empty()) {
-        help_message(err);
-      }
-      // set ENV var
-      if (!_envvar.empty()) {
-        const char *const env = getenv(_envvar.c_str());
-        ret.set_env(_key, nullptr != env ? env : "");
-      }
-      break;
+  // Only check the first remaining argument for command name to avoid
+  // treating arguments as commands (e.g., "metric match host" where "host" is an arg, not a command)
+  if (!args.empty() && _name == args[0]) {
+    command_called = true;
+    // Note: handle_args modifies its index parameter (designed for loop usage), but we
+    // discard the result. This causes unsigned underflow (0 - 1 = UINT_MAX) which is
+    // harmless since we don't use index afterward.
+    unsigned index{0};
+    // handle the option
+    append_option_data(ret, args, index);
+    // handle the action
+    if (_f) {
+      ret._action = _f;
+    }
+    const std::string err = handle_args(ret, args, _key, _arg_num, index);
+    if (!err.empty()) {
+      help_message(err);
+    }
+    // set ENV var
+    if (!_envvar.empty()) {
+      const char *const env = getenv(_envvar.c_str());
+      ret.set_env(_key, nullptr != env ? env : "");
     }
   }
   if (command_called) {

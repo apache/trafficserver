@@ -45,7 +45,10 @@ struct CacheStatsBlock {
   ts::Metrics::Gauge::AtomicType   *direntries_total      = nullptr;
   ts::Metrics::Gauge::AtomicType   *direntries_used       = nullptr;
   ts::Metrics::Counter::AtomicType *ram_cache_hits        = nullptr;
+  ts::Metrics::Counter::AtomicType *last_open_read_hits   = nullptr;
+  ts::Metrics::Counter::AtomicType *agg_buffer_hits       = nullptr;
   ts::Metrics::Counter::AtomicType *ram_cache_misses      = nullptr;
+  ts::Metrics::Counter::AtomicType *all_mem_misses        = nullptr;
   ts::Metrics::Counter::AtomicType *pread_count           = nullptr;
   ts::Metrics::Gauge::AtomicType   *percent_full          = nullptr;
   ts::Metrics::Counter::AtomicType *read_seek_fail        = nullptr;

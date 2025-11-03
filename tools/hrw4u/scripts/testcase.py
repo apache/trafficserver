@@ -29,6 +29,29 @@ from hrw4u.visitor import HRW4UVisitor
 KNOWN_MARKS = {"hooks", "conds", "ops", "vars", "examples", "invalid"}
 
 
+def load_exceptions(test_dir: Path) -> dict[str, str]:
+    """Load exceptions from exceptions.txt in the test directory.
+    Returns a dict mapping test filename to direction (hrw4u or u4wrh)."""
+    exceptions_file = test_dir / "exceptions.txt"
+    exceptions = {}
+
+    if not exceptions_file.exists():
+        return exceptions
+
+    for line in exceptions_file.read_text().splitlines():
+        line = line.strip()
+        if not line or line.startswith('#'):
+            continue
+
+        parts = line.split(':', 1)
+        if len(parts) == 2:
+            test_name = parts[0].strip()
+            direction = parts[1].strip()
+            exceptions[test_name] = direction
+
+    return exceptions
+
+
 def parse_tree(input_text: str) -> tuple[hrw4uParser, any]:
     stream = InputStream(input_text)
     lexer = hrw4uLexer(stream)
@@ -38,11 +61,29 @@ def parse_tree(input_text: str) -> tuple[hrw4uParser, any]:
     return parser, tree
 
 
-def process_file(input_path: Path, update_ast: bool = False, update_output: bool = False, update_error: bool = False) -> bool:
+def process_file(
+        input_path: Path,
+        update_ast: bool = False,
+        update_output: bool = False,
+        update_error: bool = False,
+        exceptions: dict[str, str] = None) -> bool:
     base = input_path.with_suffix('')
     ast_path = base.with_suffix('.ast.txt')
     output_path = base.with_suffix('.output.txt')
     error_path = base.with_suffix('.error.txt')
+
+    # Check if this test has a direction exception
+    if exceptions is None:
+        exceptions = load_exceptions(input_path.parent)
+
+    test_filename = input_path.name.replace('.input.txt', '.input')
+    if test_filename in exceptions:
+        exception_direction = exceptions[test_filename]
+        # Skip updating for hrw4u if test is u4wrh-only (and vice versa)
+        # Since this script runs hrw4u, skip if marked as u4wrh
+        if exception_direction == 'u4wrh':
+            # This test is reverse-only, skip updating
+            return True
 
     input_text = input_path.read_text()
 
@@ -90,15 +131,33 @@ def run_batch(group: str | None = None, update_ast: bool = False, update_output:
         print(f"No test files found for pattern: {base_dir}/{pattern}")
         sys.exit(1)
 
+    # Group files by directory to load exceptions once per directory
+    files_by_dir = {}
+    for f in input_files:
+        if f.parent not in files_by_dir:
+            files_by_dir[f.parent] = []
+        files_by_dir[f.parent].append(f)
+
     total = len(input_files)
     failed = 0
+    skipped = 0
 
-    for f in input_files:
-        ok = process_file(f, update_ast=update_ast, update_output=update_output, update_error=update_error)
-        if not ok:
-            failed += 1
+    for test_dir, files in sorted(files_by_dir.items()):
+        exceptions = load_exceptions(test_dir)
 
-    print(f"\nUpdated: {total - failed}, Failed: {failed}")
+        for f in files:
+            # Check if this test should be skipped
+            test_filename = f.name.replace('.input.txt', '.input')
+            if test_filename in exceptions and exceptions[test_filename] == 'u4wrh':
+                skipped += 1
+                continue
+
+            ok = process_file(
+                f, update_ast=update_ast, update_output=update_output, update_error=update_error, exceptions=exceptions)
+            if not ok:
+                failed += 1
+
+    print(f"\nUpdated: {total - failed - skipped}, Skipped: {skipped}, Failed: {failed}")
     if failed:
         sys.exit(1)
 

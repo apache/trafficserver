@@ -15,13 +15,17 @@
 #
 #######################
 
-add_atsplugin(compress compress.cc configuration.cc misc.cc)
+add_atsplugin(compress compress.cc configuration.cc misc.cc compress_common.cc gzip_compress.cc)
 target_link_libraries(compress PRIVATE libswoc::libswoc)
+
 if(HAVE_BROTLI_ENCODE_H)
+  target_sources(compress PRIVATE brotli_compress.cc)
   target_link_libraries(compress PRIVATE brotli::brotlienc)
+  target_compile_definitions(compress PRIVATE HAVE_BROTLI_ENCODE_H=1)
 endif()
 
 if(HAVE_ZSTD_H)
+  target_sources(compress PRIVATE zstd_compress.cc)
   target_link_libraries(compress PRIVATE zstd::zstd)
 endif()
 

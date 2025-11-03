@@ -1,0 +1,16 @@
+``
+> GET ``
+> Host: www.example.com``
+> User-Agent: curl/``
+> Accept: */*
+> Proxy-Connection: Keep-Alive
+``
+< HTTP/1.1 200 OK
+< Date: ``
+< Proxy-Connection: keep-alive
+< Server: ATS/``
+< Cache-Control: no-store
+< Content-Type: text/html
+< Content-Language: en
+< Content-Length: 3
+``

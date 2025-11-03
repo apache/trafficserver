@@ -403,8 +403,15 @@ class OperatorHoverProvider:
 
         # Check exact matches first
         if operator in OPERATOR_MAP:
-            commands, _, is_prefix, sections = OPERATOR_MAP[operator]
-            cmd_str = commands if isinstance(commands, str) else ' / '.join(commands)
+            params = OPERATOR_MAP[operator]
+            commands = params.target if params else None
+            if isinstance(commands, str):
+                cmd_str = commands
+            elif commands:
+                cmd_str = ' / '.join(commands)
+            else:
+                cmd_str = "unknown"
+            sections = params.sections if params else None
 
             section_info = ""
             if sections:
@@ -415,10 +422,17 @@ class OperatorHoverProvider:
                 f"**{operator}** - HRW4U Operator\n\n" + f"**Maps to:** `{cmd_str}`{section_info}")
 
         # Check prefix matches
-        for key, (commands, _, is_prefix, sections) in OPERATOR_MAP.items():
-            if is_prefix and operator.startswith(key):
-                cmd_str = commands if isinstance(commands, str) else ' / '.join(commands)
+        for key, params in OPERATOR_MAP.items():
+            if key.endswith('.') and operator.startswith(key):
+                commands = params.target if params else None
+                if isinstance(commands, str):
+                    cmd_str = commands
+                elif commands:
+                    cmd_str = ' / '.join(commands)
+                else:
+                    cmd_str = "unknown"
                 suffix = operator[len(key):]
+                sections = params.sections if params else None
 
                 section_info = ""
                 if sections:
@@ -431,7 +445,9 @@ class OperatorHoverProvider:
 
         # Check condition map
         if operator in CONDITION_MAP:
-            tag, _, is_prefix, sections, _, _ = CONDITION_MAP[operator]
+            params = CONDITION_MAP[operator]
+            tag = params.target if params else None
+            sections = params.sections if params else None
 
             section_info = ""
             if sections:
@@ -442,9 +458,11 @@ class OperatorHoverProvider:
                 f"**{operator}** - HRW4U Condition\n\n" + f"**Maps to:** `{tag}`{section_info}")
 
         # Check condition prefix matches
-        for key, (tag, _, is_prefix, sections, is_conditional, _) in CONDITION_MAP.items():
-            if is_prefix and operator.startswith(key):
+        for key, params in CONDITION_MAP.items():
+            if key.endswith('.') and operator.startswith(key):
+                tag = params.target if params else None
                 suffix = operator[len(key):]
+                sections = params.sections if params else None
 
                 section_info = ""
                 if sections:
@@ -581,14 +599,15 @@ class FunctionHoverProvider:
 
         # Fallback to basic documentation
         if function_name in FUNCTION_MAP:
-            tag, _ = FUNCTION_MAP[function_name]
+            params = FUNCTION_MAP[function_name]
             return HoverInfoProvider.create_hover_info(
-                f"**{function_name}()** - HRW4U Function\n\n" + f"**Maps to:** `{tag}`\n\n" + f"Used in conditional expressions.")
+                f"**{function_name}()** - HRW4U Function\n\n" + f"**Maps to:** `{params.target}`\n\n" +
+                f"Used in conditional expressions.")
 
         if function_name in STATEMENT_FUNCTION_MAP:
-            tag, _ = STATEMENT_FUNCTION_MAP[function_name]
+            params = STATEMENT_FUNCTION_MAP[function_name]
             return HoverInfoProvider.create_hover_info(
-                f"**{function_name}()** - HRW4U Statement Function\n\n" + f"**Maps to:** `{tag}`\n\n" +
+                f"**{function_name}()** - HRW4U Statement Function\n\n" + f"**Maps to:** `{params.target}`\n\n" +
                 f"Used as statements in code blocks.")
 
         return HoverInfoProvider.create_hover_info(f"**{function_name}()** - Unknown HRW4U function")

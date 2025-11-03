@@ -30,6 +30,9 @@
 
 #include "operators.h"
 #include "ts/apidefs.h"
+#include "conditions.h"
+#include "factory.h"
+#include "ruleset.h"
 
 namespace
 {
@@ -816,8 +819,11 @@ OperatorSetBody::exec(const Resources &res) const
   std::string value;
 
   _value.append_value(value, res);
-  char *msg = TSstrdup(_value.get_value().c_str());
-  TSHttpTxnErrorBodySet(res.state.txnp, msg, _value.size(), nullptr);
+  char *msg = nullptr;
+  if (!value.empty()) {
+    msg = TSstrdup(value.c_str());
+  }
+  TSHttpTxnErrorBodySet(res.state.txnp, msg, value.size(), nullptr);
   return true;
 }
 
@@ -1673,4 +1679,124 @@ OperatorSetNextHopStrategy::exec(const Resources &res) const
   }
 
   return true;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// OperatorIf class implementations
+// Keep this at the end of the files, since this is not really an Operator.
+//
+ConditionGroup *
+OperatorIf::new_section(Parser::CondClause clause)
+{
+  TSAssert(_cur_section && !_cur_section->next);
+
+  _clause            = clause;
+  _cur_section->next = std::make_unique<CondOpSection>();
+  _cur_section       = _cur_section->next.get();
+
+  return &_cur_section->group;
+}
+
+bool
+OperatorIf::add_operator(Parser &p, const char *filename, int lineno)
+{
+  Operator *op = operator_factory(p.get_op());
+
+  if (!op) {
+    TSError("[%s] Unknown operator: %s, file: %s, line: %d", PLUGIN_NAME, p.get_op().c_str(), filename, lineno);
+    return false;
+  }
+
+  Dbg(pi_dbg_ctl, "    Adding operator: %s(%s)=\"%s\"", p.get_op().c_str(), p.get_arg().c_str(), p.get_value().c_str());
+
+  try {
+    op->initialize(p);
+  } catch (std::exception const &ex) {
+    delete op;
+    TSError("[%s] Failed to initialize operator: %s, file: %s, line: %d, error: %s", PLUGIN_NAME, p.get_op().c_str(), filename,
+            lineno, ex.what());
+    return false;
+  }
+
+  // Add to current section
+  if (_cur_section->ops.oper) {
+    _cur_section->ops.oper->append(op);
+  } else {
+    _cur_section->ops.oper.reset(op);
+    _cur_section->ops.oper_mods = op->get_oper_modifiers();
+  }
+
+  return true;
+}
+
+Condition *
+OperatorIf::make_condition(Parser &p, const char *filename, int lineno)
+{
+  Condition *cond = condition_factory(p.get_op());
+
+  if (!cond) {
+    TSError("[%s] Unknown condition: %s, file: %s, line: %d", PLUGIN_NAME, p.get_op().c_str(), filename, lineno);
+    return nullptr;
+  }
+
+  Dbg(pi_dbg_ctl, "    Creating condition: %%{%s} with arg: %s", p.get_op().c_str(), p.get_arg().c_str());
+
+  try {
+    cond->initialize(p);
+  } catch (std::exception const &ex) {
+    delete cond;
+    TSError("[%s] Failed to initialize condition: %s, file: %s, line: %d, error: %s", PLUGIN_NAME, p.get_op().c_str(), filename,
+            lineno, ex.what());
+    return nullptr;
+  }
+
+  return cond;
+}
+
+bool
+OperatorIf::has_operator() const
+{
+  const CondOpSection *section = &_sections;
+
+  while (section != nullptr) {
+    if (section->has_operator()) {
+      return true;
+    }
+    section = section->next.get();
+  }
+  return false;
+}
+
+OperModifiers
+OperatorIf::exec_and_return_mods(const Resources &res) const
+{
+  Dbg(dbg_ctl, "Executing OperatorIf");
+
+  // Go through each section (if/elif/else) until one matches
+  for (auto *section = const_cast<CondOpSection *>(&_sections); section != nullptr; section = section->next.get()) {
+    if (section->group.eval(res)) {
+      Dbg(dbg_ctl, "OperatorIf section condition matched, executing operators");
+      return exec_section(section, res);
+    }
+  }
+
+  Dbg(dbg_ctl, "OperatorIf: no section matched");
+  return OPER_NONE;
+}
+
+OperModifiers
+OperatorIf::exec_section(const CondOpSection *section, const Resources &res) const
+{
+  if (nullptr == section->ops.oper) {
+    return section->ops.oper_mods;
+  }
+
+  auto no_reenable_count = section->ops.oper->do_exec(res);
+
+  ink_assert(no_reenable_count < 2);
+  if (no_reenable_count) {
+    return static_cast<OperModifiers>(section->ops.oper_mods | OPER_NO_REENABLE);
+  }
+
+  return section->ops.oper_mods;
 }

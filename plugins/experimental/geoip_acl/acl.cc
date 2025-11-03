@@ -28,7 +28,6 @@ namespace geoip_acl_ns
 {
 DbgCtl dbg_ctl{PLUGIN_NAME};
 }
-
 // Implementation of the ACL base class. This wraps the underlying Geo library
 // that we've found and used.
 GeoDBHandle Acl::_geoip;
@@ -175,25 +174,22 @@ RegexAcl::parse_line(const char *filename, const std::string &line, int lineno, 
 bool
 RegexAcl::compile(const std::string &str, const char *filename, int lineno)
 {
-  const char *error;
+  bool        success{true};
+  std::string error;
   int         erroffset;
 
   _regex_s = str;
-  _rex     = pcre_compile(_regex_s.c_str(), 0, &error, &erroffset, nullptr);
+  _regex   = new Regex();
 
-  if (nullptr != _rex) {
-    _extra = pcre_study(_rex, 0, &error);
-    if ((nullptr == _extra) && error && (*error != 0)) {
-      TSError("[%s] Failed to study regular expression in %s:line %d at offset %d: %s", PLUGIN_NAME, filename, lineno, erroffset,
-              error);
-      return false;
-    }
-  } else {
-    TSError("[%s] Failed to compile regular expression in %s:line %d: %s", PLUGIN_NAME, filename, lineno, error);
-    return false;
+  if (!_regex->compile(_regex_s, error, erroffset, 0)) {
+    TSError("[%s] Regex compilation failed in %s:line %d with error (%s) at character %d", PLUGIN_NAME, filename, lineno,
+            error.c_str(), erroffset);
+    delete _regex;
+    _regex  = nullptr;
+    success = false;
   }
 
-  return true;
+  return success;
 }
 
 void

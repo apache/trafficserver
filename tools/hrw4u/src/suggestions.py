@@ -85,11 +85,12 @@ class SuggestionEngine:
 
     def _is_symbol_valid_in_section(self, symbol: str, section: SectionType, context_type: str) -> bool:
         table_map = tables.OPERATOR_MAP if context_type == 'assignment' else tables.CONDITION_MAP
-        tuple_index = 3 if context_type == 'assignment' else 3
 
-        for key, data in table_map.items():
-            if (key == symbol or key == f"{symbol}.") and data[tuple_index]:
-                return section in data[tuple_index]
+        for key, params in table_map.items():
+            if key == symbol or key == f"{symbol}.":
+                sections = params.sections if params else None
+                if sections:
+                    return section in sections
 
         return True
 

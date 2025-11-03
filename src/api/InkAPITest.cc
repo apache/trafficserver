@@ -5236,6 +5236,14 @@ REGRESSION_TEST(SDK_API_TSMimeHdrField)(RegressionTest *test, int /* atype ATS_U
       field1Value4Get   = TSMimeHdrFieldValueStringGet(bufp1, mime_loc1, field_loc11, 3, &lengthField1Value4);
       field1Value5Get   = TSMimeHdrFieldValueStringGet(bufp1, mime_loc1, field_loc11, 4, &lengthField1Value5);
       field1ValueAllGet = TSMimeHdrFieldValueStringGet(bufp1, mime_loc1, field_loc11, -1, &lengthField1ValueAll);
+
+      std::string_view sv1{field1Value1Get, static_cast<size_t>(lengthField1Value1)};
+      std::string_view sv2{field1Value2Get, static_cast<size_t>(lengthField1Value2)};
+      std::string_view sv3{field1Value3Get, static_cast<size_t>(lengthField1Value3)};
+      std::string_view sv4{field1Value4Get, static_cast<size_t>(lengthField1Value4)};
+      std::string_view sv5{field1Value5Get, static_cast<size_t>(lengthField1Value5)};
+      std::string_view svall{field1ValueAllGet, static_cast<size_t>(lengthField1ValueAll)};
+
       if (((strncmp(field1Value1Get, field1Value1, lengthField1Value1) == 0) &&
            lengthField1Value1 == static_cast<int>(strlen(field1Value1))) &&
           ((strncmp(field1Value2Get, field1Value2, lengthField1Value2) == 0) &&
@@ -5246,11 +5254,8 @@ REGRESSION_TEST(SDK_API_TSMimeHdrField)(RegressionTest *test, int /* atype ATS_U
            lengthField1Value4 == static_cast<int>(strlen(field1Value4))) &&
           ((strncmp(field1Value5Get, field1Value5, lengthField1Value5) == 0) &&
            lengthField1Value5 == static_cast<int>(strlen(field1Value5))) &&
-          (strstr(field1ValueAllGet, field1Value1Get) == field1Value1Get) &&
-          (strstr(field1ValueAllGet, field1Value2Get) == field1Value2Get) &&
-          (strstr(field1ValueAllGet, field1Value3Get) == field1Value3Get) &&
-          (strstr(field1ValueAllGet, field1Value4Get) == field1Value4Get) &&
-          (strstr(field1ValueAllGet, field1Value5Get) == field1Value5Get)) {
+          (svall.find(sv1) != svall.npos) && (svall.find(sv2) != svall.npos) && (svall.find(sv3) != svall.npos) &&
+          (svall.find(sv4) != svall.npos) && (svall.find(sv5) != svall.npos)) {
         SDK_RPRINT(test, "TSMimeHdrFieldValueStringInsert", "TestCase1&2&3&4&5", TC_PASS, "ok");
         SDK_RPRINT(test, "TSMimeHdrFieldValueStringGet", "TestCase1&2&3&4&5", TC_PASS, "ok");
         SDK_RPRINT(test, "TSMimeHdrFieldValueStringGet with IDX=-1", "TestCase1&2&3&4&5", TC_PASS, "ok");
@@ -8692,7 +8697,6 @@ std::array<std::string_view, TS_CONFIG_LAST_ENTRY> SDK_Overridable_Configs = {
    "proxy.config.http.chunking_enabled",
    "proxy.config.http.negative_caching_enabled",
    "proxy.config.http.negative_caching_lifetime",
-   "proxy.config.http.negative_caching_list",
    "proxy.config.http.cache.when_to_revalidate",
    "proxy.config.http.keep_alive_enabled_in",
    "proxy.config.http.keep_alive_enabled_out",
@@ -8736,7 +8740,6 @@ std::array<std::string_view, TS_CONFIG_LAST_ENTRY> SDK_Overridable_Configs = {
    "proxy.config.http.connect_attempts_max_retries_down_server",
    "proxy.config.http.connect_attempts_rr_retries",
    "proxy.config.http.connect_attempts_timeout",
-   "proxy.config.http.connect_attempts_retry_backoff_base",
    "proxy.config.http.down_server.cache_time",
    "proxy.config.http.doc_in_cache_skip_dns",
    "proxy.config.http.background_fill_active_timeout",
@@ -8757,7 +8760,6 @@ std::array<std::string_view, TS_CONFIG_LAST_ENTRY> SDK_Overridable_Configs = {
    "proxy.config.http.response_header_max_size",
    "proxy.config.http.negative_revalidating_enabled",
    "proxy.config.http.negative_revalidating_lifetime",
-   "proxy.config.http.negative_revalidating_list",
    "proxy.config.ssl.hsts_max_age",
    "proxy.config.ssl.hsts_include_subdomains",
    "proxy.config.http.cache.open_read_retry_time",
@@ -8820,8 +8822,11 @@ std::array<std::string_view, TS_CONFIG_LAST_ENTRY> SDK_Overridable_Configs = {
    "proxy.config.http.no_dns_just_forward_to_parent",
    "proxy.config.http.cache.ignore_query",
    "proxy.config.http.drop_chunked_trailers",
-   "proxy.config.http.cache.post_method",
    "proxy.config.http.strict_chunk_parsing",
+   "proxy.config.http.negative_caching_list",
+   "proxy.config.http.connect_attempts_retry_backoff_base",
+   "proxy.config.http.negative_revalidating_list",
+   "proxy.config.http.cache.post_method",
   }
 };
 // clang-format on

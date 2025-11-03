@@ -1,6 +1,6 @@
 /** @file
 
-  Transforms content using gzip, deflate or brotli
+  Transforms content using gzip, deflate, brotli or zstd
 
   @section license License
 
@@ -31,7 +31,7 @@
 #include "tscpp/api/noncopyable.h"
 #include "swoc/TextView.h"
 
-namespace Gzip
+namespace Compress
 {
 using StringContainer = std::vector<std::string>;
 
@@ -243,4 +243,4 @@ private:
 
 }; // class Configuration
 
-} // namespace Gzip
+} // namespace Compress
