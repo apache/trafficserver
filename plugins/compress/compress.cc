@@ -340,7 +340,7 @@ compress_transform_init(TSCont contp, Data *data)
 #if HAVE_ZSTD_H
   if (data->compression_type & COMPRESSION_TYPE_ZSTD && (data->compression_algorithms & ALGORITHM_ZSTD)) {
     if (!Zstd::transform_init(data)) {
-      TSError("Failed to configure Zstandard compression context");
+      error("Failed to configure Zstandard compression context");
       return;
     }
   }
