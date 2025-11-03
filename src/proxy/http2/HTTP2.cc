@@ -21,6 +21,7 @@
  *  limitations under the License.
  */
 
+#include "iocore/eventsystem/IOBuffer.h"
 #include "proxy/hdrs/VersionConverter.h"
 #include "proxy/hdrs/HeaderValidator.h"
 #include "proxy/http2/HTTP2.h"
@@ -30,7 +31,6 @@
 #include "tsutil/LocalBuffer.h"
 
 #include "../../records/P_RecCore.h"
-#include "../../records/P_RecProcess.h"
 
 const char *const HTTP2_CONNECTION_PREFACE = "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n";
 

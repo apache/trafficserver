@@ -24,8 +24,8 @@
 #include "SSLStats.h"
 #include "P_SSLConfig.h"
 #include "P_SSLUtils.h"
-#include "../../records/P_RecProcess.h"
 #include "iocore/net/SSLMultiCertConfigLoader.h"
+#include "records/RecProcess.h"
 
 #include <openssl/err.h>
 
