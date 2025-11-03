@@ -218,7 +218,11 @@ HostConfiguration::add_compression_algorithms(swoc::TextView line)
     } else if (token == "deflate") {
       compression_algorithms_ |= ALGORITHM_DEFLATE;
     } else {
+#ifdef HAVE_ZSTD_H
       error("Unknown compression type. Supported compression-algorithms <zstd,br,gzip,deflate>.");
+#else
+      error("Unknown compression type. Supported compression-algorithms <br,gzip,deflate>.");
+#endif
     }
   }
 }
