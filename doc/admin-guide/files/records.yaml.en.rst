@@ -383,7 +383,8 @@ Thread Variables
    will create its own domain socket with a ``-<thread id>`` suffix added to the
    end of the path.
 
-.. ts:cv:: CONFIG proxy.config.exec_thread.event_time_update_rate INT 10
+.. ts:cv:: CONFIG proxy.config.exec_thread.loop_time_update_probability INT 10
+   :reloadable:
 
    This dynamically loadable setting controls the rate that exec thread loop timestamps are
    updated after processing an event given as a percentage from 0 to 100. 0

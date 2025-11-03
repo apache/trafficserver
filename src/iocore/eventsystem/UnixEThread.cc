@@ -54,7 +54,7 @@ char const *const EThread::Metrics::Slice::STAT_NAME[] = {
 };
 
 int thread_max_heartbeat_mseconds = THREAD_MAX_HEARTBEAT_MSECONDS;
-int event_time_update_rate        = 10;
+int loop_time_update_probability  = 10;
 
 // To define a class inherits from Thread:
 //   1) Define an independent thread_local static member
@@ -166,10 +166,10 @@ EThread::process_event(Event *e, int calling_code, ink_hrtime event_time)
     set_cont_flags(e->continuation->control_flags);
 
     e->continuation->handleEvent(calling_code, e);
-    if (event_time_update_rate == 100) {
+    if (loop_time_update_probability == 100) {
       event_time = ink_get_hrtime();
-    } else if (event_time_update_rate > 0) {
-      if (static_cast<int>(generator.random() % 100) < event_time_update_rate) {
+    } else if (loop_time_update_probability > 0) {
+      if (static_cast<int>(generator.random() % 100) < loop_time_update_probability) {
         event_time = ink_get_hrtime();
       }
     }
