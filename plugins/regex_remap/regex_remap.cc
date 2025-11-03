@@ -133,18 +133,17 @@ public:
   // Returns '0' on success
   int compile(std::string &error, int &erroffset);
 
-  // number of matches, or '0' if failed
+  // number of matches, or negative if failed
   int
   match(std::string_view const str, RegexMatches &matches) const
   {
     TSAssert(nullptr != _match_context);
-    bool const stat = _rex.exec(str, matches, 0, _match_context);
-    if (stat) {
+    int const stat = _rex.exec(str, matches, 0, _match_context);
+    if (0 <= stat) {
+      Dbg(dbg_ctl, "Regex match (%d): %.*s", stat, (int)str.length(), str.data());
       return matches.size();
-    } else {
-      Dbg(dbg_ctl, "Regex match failure: %.*s", (int)str.length(), str.data());
     }
-    return 0;
+    return stat;
   }
 
   // Substitutions

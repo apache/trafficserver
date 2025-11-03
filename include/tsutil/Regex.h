@@ -225,6 +225,12 @@ public:
   int exec(std::string_view subject, RegexMatches &matches, uint32_t flags,
            RegexMatchContext const *const matchContext = nullptr) const;
 
+  /** Error string for exec failure.
+   *
+   * @param int return code from exec call.
+   */
+  static std::string get_error_string(int rc);
+
   /// @return The number of capture groups in the compiled pattern, -1 for fail.
   int32_t get_capture_count() const;
 

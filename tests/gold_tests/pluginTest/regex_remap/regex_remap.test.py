@@ -60,6 +60,7 @@ ts.Disk.File(
         [
             "# regex_remap configuration\n"
             "^/alpha/bravo/[?]((?!action=(newsfeed|calendar|contacts|notepad)).)*$ https://redirect.com/ @status=301\n"
+            "^/match_limit/(a+)+$ https://redirect.com/ @status=301\n"
         ])
 
 ts.Disk.File(
@@ -119,13 +120,13 @@ tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/regex_remap_simple.gold"
 tr.StillRunningAfter = ts
 
-# 3 Test - Crash test.
-tr = Test.AddTestRun("crash test")
-creq = replay_txns[1]['client-request']
+# 3 Test - Match limit test
+tr = Test.AddTestRun("match limit")
+creq = replay_txns[2]['client-request']
 tr.MakeCurlCommand(curl_and_args + \
     '--header "uuid: {}" '.format(creq["headers"]["fields"][1][1]) + '"{}"'.format(creq["url"]), ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/regex_remap_crash.gold"
 ts.Disk.diags_log.Content = Testers.ContainsExpression(
-    'ERROR: .regex_remap. Bad regular expression result -46', "Recursion limit exceeded")
+    'ERROR: .regex_remap. Bad regular expression result -47', "Match limit exceeded")
 tr.StillRunningAfter = ts

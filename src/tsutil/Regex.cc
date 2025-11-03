@@ -383,7 +383,7 @@ Regex::compile(std::string_view pattern, std::string &error, int &erroroffset, u
     // get pcre2 error message
     PCRE2_UCHAR buffer[256];
     pcre2_get_error_message(error_code, buffer, sizeof(buffer));
-    error.assign((char *)buffer);
+    error.assign((char const *)buffer);
     return false;
   }
 
@@ -441,22 +441,38 @@ Regex::exec(std::string_view subject, RegexMatches &matches, uint32_t flags, Reg
     match_context = RegexMatchContext::_MatchContext::get(matchContext->_match_context);
   }
 
-  int const count = pcre2_match(code, reinterpret_cast<PCRE2_SPTR>(subject.data()), subject.size(), 0, flags,
-                                RegexMatches::_MatchData::get(matches._match_data), match_context);
+  int const rc = pcre2_match(code, reinterpret_cast<PCRE2_SPTR>(subject.data()), subject.size(), 0, flags,
+                             RegexMatches::_MatchData::get(matches._match_data), match_context);
 
-  matches._size = count;
+  matches._size = rc;
 
   // match was successful
-  if (count >= 0) {
+  if (rc >= 0) {
     matches._subject = subject;
 
     // match but the output vector was too small, adjust the size of the matches
-    if (count == 0) {
+    if (rc == 0) {
       matches._size = pcre2_get_ovector_count(RegexMatches::_MatchData::get(matches._match_data));
     }
   }
 
-  return count;
+  return rc;
+}
+
+//----------------------------------------------------------------------------
+// static
+std::string
+Regex::get_error_string(int rc)
+{
+  std::string res;
+
+  if (rc < 0) {
+    PCRE2_UCHAR buffer[256];
+    pcre2_get_error_message(rc, buffer, sizeof(buffer));
+    res.assign((char const *)buffer);
+  }
+
+  return res;
 }
 
 //----------------------------------------------------------------------------
