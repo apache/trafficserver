@@ -49,6 +49,11 @@ compress_operation(Data *data, const char *upstream_buffer, int64_t upstream_len
     downstream_blkp         = TSIOBufferStart(data->downstream_buffer);
     char *downstream_buffer = TSIOBufferBlockWriteStart(downstream_blkp, &downstream_length);
 
+    if (downstream_length <= 0) {
+      error("zstd-transform: downstream block has non-positive length (%" PRId64 ")", downstream_length);
+      return false;
+    }
+
     ZSTD_outBuffer output = {downstream_buffer, static_cast<size_t>(downstream_length), 0};
 
     size_t result = ZSTD_compressStream2(data->zstrm_zstd.cctx, &output, &input, mode);
@@ -174,6 +179,11 @@ transform_finish(Data *data)
   for (;;) {
     downstream_blkp         = TSIOBufferStart(data->downstream_buffer);
     char *downstream_buffer = TSIOBufferBlockWriteStart(downstream_blkp, &downstream_length);
+
+    if (downstream_length <= 0) {
+      error("zstd-transform: downstream block has non-positive length (%" PRId64 ")", downstream_length);
+      break;
+    }
 
     ZSTD_outBuffer output = {downstream_buffer, static_cast<size_t>(downstream_length), 0};
 
