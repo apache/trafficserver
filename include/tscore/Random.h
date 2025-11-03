@@ -46,6 +46,8 @@ public:
   seed(uint64_t s)
   {
     _state.engine.seed(s);
+    _state.int_dist.reset();
+    _state.real_dist.reset();
   }
 
 private:
