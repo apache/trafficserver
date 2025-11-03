@@ -339,9 +339,8 @@ compress_transform_init(TSCont contp, Data *data)
 
 #if HAVE_ZSTD_H
   if (data->compression_type & COMPRESSION_TYPE_ZSTD && (data->compression_algorithms & ALGORITHM_ZSTD)) {
-    Zstd::transform_init(data);
-    if (!data->zstrm_zstd.cctx) {
-      TSError("Failed to create Zstandard compression context");
+    if (!Zstd::transform_init(data)) {
+      TSError("Failed to configure Zstandard compression context");
       return;
     }
   }
@@ -386,7 +385,13 @@ compress_transform_one(Data *data, TSIOBufferReader upstream_reader, int amount)
           (data->compression_algorithms & (ALGORITHM_GZIP | ALGORITHM_DEFLATE))) {
       Gzip::transform_one(data, upstream_buffer, upstream_length);
     } else {
-      warning("No compression supported. Shouldn't come here.");
+      warning("No compression supported. Passing data through without transformation.");
+      int64_t written = TSIOBufferWrite(data->downstream_buffer, upstream_buffer, upstream_length);
+      if (written == TS_ERROR || written != upstream_length) {
+        error("Failed to copy upstream data to downstream buffer");
+        return;
+      }
+      data->downstream_length += written;
     }
 
     TSIOBufferReaderConsume(upstream_reader, upstream_length);
@@ -414,7 +419,7 @@ compress_transform_finish(Data *data)
     Gzip::transform_finish(data);
     debug("compress_transform_finish: gzip compression finish");
   } else {
-    error("No Compression matched, shouldn't come here");
+    debug("compress_transform_finish: no compression active, passthrough mode");
   }
 }
 

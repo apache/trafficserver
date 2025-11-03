@@ -92,27 +92,36 @@ data_destroy(Data *data)
   }
 }
 
-void
+bool
 transform_init(Data *data)
 {
   if (!data->zstrm_zstd.cctx) {
     error("Failed to initialize Zstd compression context");
-    return;
+    return false;
   }
 
   size_t result = ZSTD_CCtx_setParameter(data->zstrm_zstd.cctx, ZSTD_c_compressionLevel, data->hc->zstd_compression_level());
   if (ZSTD_isError(result)) {
     error("Failed to set Zstd compression level: %s", ZSTD_getErrorName(result));
-    return;
+    ZSTD_freeCCtx(data->zstrm_zstd.cctx);
+    data->zstrm_zstd.cctx      = nullptr;
+    data->zstrm_zstd.total_in  = 0;
+    data->zstrm_zstd.total_out = 0;
+    return false;
   }
 
   result = ZSTD_CCtx_setParameter(data->zstrm_zstd.cctx, ZSTD_c_checksumFlag, 1);
   if (ZSTD_isError(result)) {
     error("Failed to enable Zstd checksum: %s", ZSTD_getErrorName(result));
-    return;
+    ZSTD_freeCCtx(data->zstrm_zstd.cctx);
+    data->zstrm_zstd.cctx      = nullptr;
+    data->zstrm_zstd.total_in  = 0;
+    data->zstrm_zstd.total_out = 0;
+    return false;
   }
 
   debug("zstd compression context initialized with level %d", data->hc->zstd_compression_level());
+  return true;
 }
 
 void

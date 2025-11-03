@@ -31,8 +31,8 @@ void data_alloc(Data *data);
 // Destroy Zstd compression context
 void data_destroy(Data *data);
 
-// Configure the context just before streaming starts
-void transform_init(Data *data);
+// Configure the context just before streaming starts. Returns true when ready.
+bool transform_init(Data *data);
 
 // Compress one upstream chunk
 void transform_one(Data *data, const char *upstream_buffer, int64_t upstream_length);
