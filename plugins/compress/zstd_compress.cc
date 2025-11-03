@@ -23,6 +23,7 @@
 #include "debug_macros.h"
 
 #include <cstring>
+#include <cinttypes>
 
 namespace
 {
@@ -31,6 +32,16 @@ compress_operation(Data *data, const char *upstream_buffer, int64_t upstream_len
 {
   TSIOBufferBlock downstream_blkp;
   int64_t         downstream_length;
+
+  if (upstream_length < 0) {
+    error("zstd-transform: negative upstream length (%" PRId64 ")", upstream_length);
+    return false;
+  }
+
+  if (upstream_buffer == nullptr && upstream_length > 0) {
+    error("upstream_buffer is NULL with non-zero length");
+    return false;
+  }
 
   ZSTD_inBuffer input = {upstream_buffer, static_cast<size_t>(upstream_length), 0};
 
@@ -127,6 +138,11 @@ transform_init(Data *data)
 void
 transform_one(Data *data, const char *upstream_buffer, int64_t upstream_length)
 {
+  if (upstream_length < 0) {
+    error("Zstd compression received negative upstream length (%" PRId64 ")", upstream_length);
+    return;
+  }
+
   if (!compress_operation(data, upstream_buffer, upstream_length, ZSTD_e_continue)) {
     error("Zstd compression (CONTINUE) failed");
     return;
