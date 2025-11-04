@@ -1063,8 +1063,9 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
       }
     } else if (match_result != -1) {
       ink_atomic_increment(&(ri->failures), 1);
-      TSError(R"([%s] Bad regular expression result %d from "%s" in file "%s".)", PLUGIN_NAME, match_result, re->regex(),
-              ri->filename.c_str());
+      std::string const errmsg = Regex::get_error_string(match_result);
+      TSError(R"([%s] Bad regular expression result %d ("%s") from "%s" in file "%s".)", PLUGIN_NAME, match_result, errmsg.c_str(),
+              re->regex(), ri->filename.c_str());
     }
 
     // Try the next regex

@@ -120,8 +120,19 @@ tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/regex_remap_simple.gold"
 tr.StillRunningAfter = ts
 
-# 3 Test - Match limit test
-tr = Test.AddTestRun("match limit")
+# 3 Test - Match limit test 0
+tr = Test.AddTestRun("match limit 0")
+creq = replay_txns[1]['client-request']
+tr.MakeCurlCommand(curl_and_args + \
+    '--header "uuid: {}" '.format(creq["headers"]["fields"][1][1]) + '"{}"'.format(creq["url"]), ts=ts)
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Streams.stdout = "gold/regex_remap_crash.gold"
+ts.Disk.diags_log.Content = Testers.ContainsExpression(
+    'ERROR: .regex_remap. Bad regular expression result -47', "Match limit exceeded")
+tr.StillRunningAfter = ts
+
+# 4 Test - Match limit test 1
+tr = Test.AddTestRun("match limit 1")
 creq = replay_txns[2]['client-request']
 tr.MakeCurlCommand(curl_and_args + \
     '--header "uuid: {}" '.format(creq["headers"]["fields"][1][1]) + '"{}"'.format(creq["url"]), ts=ts)
