@@ -143,7 +143,7 @@ print_port(struct sockaddr const *ip, std::string *result)
     if (ip->sa_family == AF_INET) {
       const auto *s_sockaddr_in = reinterpret_cast<const struct sockaddr_in *>(ip);
       port                      = s_sockaddr_in->sin_port;
-    } else {
+    } else if (ip->sa_family == AF_INET6) {
       const auto *s_sockaddr_in6 = reinterpret_cast<const struct sockaddr_in6 *>(ip);
       port                       = s_sockaddr_in6->sin6_port;
     }
