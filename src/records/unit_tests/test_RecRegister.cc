@@ -83,7 +83,7 @@ TEST_CASE("RecRegisterStat - Type Dispatch", "[librecords][RecStat]")
     RecErrT err = RecRegisterStatCounter(RECT_NODE, "proxy.node.test.counter", 500, RECP_NON_PERSISTENT);
     REQUIRE(err == REC_ERR_OKAY);
 
-    RecCounter value = RecGetRecordCounter("proxy.node.test.counter").value_or(-1);
+    RecCounter value = RecGetRecordCounter("proxy.node.test.counter").value_or(0);
     REQUIRE(value == 500);
   }
 }
