@@ -48,6 +48,8 @@ str(HostDBType type)
   case HostDBType::UNSPEC:
     return "UNSPEC";
   }
+
+  return "";
 }
 
 constexpr std::string_view
