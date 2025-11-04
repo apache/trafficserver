@@ -130,7 +130,7 @@ print_address(struct sockaddr const *ip, std::string *result)
       Dbg(dbg_ctl, "[%s] unsupported address family: %d", __FUNCTION__, static_cast<int>(ip->sa_family));
       *result = pv_empty;
       return;
-    }  
+    }
     Dbg(dbg_ctl, "[%s] property retrieval - address: %.*s", __FUNCTION__, static_cast<int>(sizeof(cip)), cip);
     std::string cip_str(cip);
     result->assign(cip_str + ":" + std::to_string(port));
