@@ -1,6 +1,6 @@
 /** @file
 
-   Catch-based tests for HdrsUtils.cc
+   Catch-based tests for RecRegister.cc
 
    @section license License
 
@@ -23,7 +23,6 @@
 #include "iocore/eventsystem/RecProcess.h"
 #include "tscore/Layout.h"
 #include "test_Diags.h"
-
 
 TEST_CASE("RecRegisterConfig - Type Dispatch", "[librecords][RecConfig]")
 {
