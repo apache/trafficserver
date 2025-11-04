@@ -322,12 +322,12 @@ SSLInitializeStatistics()
     Error("Failed to allocate stack for TLS group names");
   } else {
     constexpr int ALL_GROUPS = 1;
-    DbgPrint(dbg_ctl_ssl, "Calling SSL_CTX_get0_implemented_groups on loaded SSL context");
+    Dbg(dbg_ctl_ssl, "Calling SSL_CTX_get0_implemented_groups on loaded SSL context");
     if (SSL_CTX_get0_implemented_groups(ctx, ALL_GROUPS, group_names) != 1) {
       Error("Failed to get implemented groups via SSL_CTX_get0_implemented_groups");
     }
     int const num_groups = sk_OPENSSL_CSTRING_num(group_names);
-    DbgPrint(dbg_ctl_ssl, "SSL_CTX_get0_implemented_groups returned %d groups", num_groups);
+    Dbg(dbg_ctl_ssl, "SSL_CTX_get0_implemented_groups returned %d groups", num_groups);
 
     for (int index = 0; index < num_groups; index++) {
       const char *name = sk_OPENSSL_CSTRING_value(group_names, index);
