@@ -384,15 +384,7 @@ bool
 recordRegexCheck(const char *pattern, const char *value)
 {
   Regex regex;
-
-  bool rval = regex.compile(pattern);
-  if (rval == false) {
-    return false;
-  } else {
-    return regex.exec(value);
-  }
-
-  return false; // no-op
+  return regex.compile(pattern) && regex.exec(value);
 }
 
 bool
