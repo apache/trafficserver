@@ -146,6 +146,10 @@ print_port(struct sockaddr const *ip, std::string *result)
     } else if (ip->sa_family == AF_INET6) {
       const auto *s_sockaddr_in6 = reinterpret_cast<const struct sockaddr_in6 *>(ip);
       port                       = s_sockaddr_in6->sin6_port;
+    } else {
+      Dbg(dbg_ctl, "[%s] unsupported address family: %d", __FUNCTION__, static_cast<int>(ip->sa_family));
+      *result = pv_empty;
+      return;
     }
     Dbg(dbg_ctl, "[%s] looking for source port: %d", __FUNCTION__, static_cast<int>(port));
     result->assign(reinterpret_cast<const char *>(&port), sizeof(int64_t));
