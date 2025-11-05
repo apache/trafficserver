@@ -2573,6 +2573,7 @@ Cache Control
    :units: millisecond
 
    How long to wait between each write cycle when syncing the cache directory to disk.
+
 .. ts:cv:: CONFIG proxy.config.cache.dir.sync_parallel_tasks INT 1
    :reloadable:
 

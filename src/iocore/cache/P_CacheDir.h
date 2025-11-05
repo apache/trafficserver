@@ -270,6 +270,9 @@ struct CacheSync : public Continuation {
         ats_free(buf);
       }
     }
+    buf      = nullptr;
+    buflen   = 0;
+    buf_huge = false;
   }
 };
 
