@@ -25,6 +25,9 @@
 #include "tscore/Filenames.h"
 #include "records/RecordsConfig.h"
 
+#include <string_view>
+#include <cstddef>
+
 #if TS_USE_REMOTE_UNWINDING
 #define MGMT_CRASHLOG_HELPER "traffic_crashlog"
 #else
@@ -72,11 +75,11 @@ static constexpr RecordElement RecordsConfig[] =
   {RECT_CONFIG, "proxy.config.dump_mem_info_frequency", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
   //# 0 == CLOCK_REALTIME, change carefully
-  {RECT_CONFIG, "proxy.config.system_clock", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-9]+", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.system_clock", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.cache.max_disk_errors", RECD_INT, "5", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.cache.persist_bad_disks", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[01]", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.cache.persist_bad_disks", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.output.logfile.name", RECD_STRING, "traffic.out", RECU_RESTART_TS, RR_REQUIRED, RECC_NULL, nullptr,
    RECA_NULL}
@@ -204,7 +207,7 @@ static constexpr RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.diags.debug.tags", RECD_STRING, "http|dns", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.diags.debug.throttling_interval_msec", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "^[0-9]+$", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.diags.debug.throttling_interval_msec", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.diags.debug.client_ip", RECD_STRING, nullptr, RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
@@ -409,7 +412,7 @@ static constexpr RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.http.auth_server_session_private", RECD_INT, "1", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-2]", RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.http.max_post_size", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "^[0-9]+$", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.http.max_post_size", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
   ,
   //        ##############################
   //        # parent proxy configuration #
@@ -1075,9 +1078,9 @@ static constexpr RecordElement RecordsConfig[] =
   {RECT_CONFIG, "proxy.config.log.max_line_size", RECD_INT, "9216", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
   // How often periodic tasks get executed in the Log.cc infrastructure
-  {RECT_CONFIG, "proxy.config.log.periodic_tasks_interval", RECD_INT, "5", RECU_DYNAMIC, RR_NULL, RECC_INT, "^[0-9]+$", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.log.periodic_tasks_interval", RECD_INT, "5", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.log.throttling_interval_msec", RECD_INT, "60000", RECU_DYNAMIC, RR_NULL, RECC_INT, "^[0-9]+$", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.log.throttling_interval_msec", RECD_INT, "60000", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
   ,
 
   //##############################################################################
@@ -1097,7 +1100,7 @@ static constexpr RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.plugin.dynamic_reload_mode", RECD_INT, "1", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.url_remap.min_rules_required", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-9]+", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.url_remap.min_rules_required", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.url_remap.acl_behavior_policy", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,
@@ -1244,16 +1247,16 @@ static constexpr RecordElement RecordsConfig[] =
   {RECT_CONFIG, "proxy.config.ssl.ocsp.enabled", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,
   //        # Number of seconds before an OCSP response expires in the stapling cache. 3600s (1 hour) by default.
-  {RECT_CONFIG, "proxy.config.ssl.ocsp.cache_timeout", RECD_INT, "3600", RECU_DYNAMIC, RR_NULL, RECC_INT, "^[0-9]+$", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.ssl.ocsp.cache_timeout", RECD_INT, "3600", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
   ,
   //        # Request method "mode" for queries to OCSP responders; 0 is POST, 1 is "prefer GET."
   {RECT_CONFIG, "proxy.config.ssl.ocsp.request_mode", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,
   //        # Timeout for queries to OCSP responders. 10s by default.
-  {RECT_CONFIG, "proxy.config.ssl.ocsp.request_timeout", RECD_INT, "10", RECU_DYNAMIC, RR_NULL, RECC_INT, "^[0-9]+$", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.ssl.ocsp.request_timeout", RECD_INT, "10", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
   ,
   //        # Update period for stapling caches. 60s (1 min) by default.
-  {RECT_CONFIG, "proxy.config.ssl.ocsp.update_period", RECD_INT, "60", RECU_DYNAMIC, RR_NULL, RECC_INT, "^[0-9]+$", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.ssl.ocsp.update_period", RECD_INT, "60", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
   ,
   //        # Base path for OCSP prefetched responses
   {RECT_CONFIG, "proxy.config.ssl.ocsp.response.path", RECD_STRING, TS_BUILD_SYSCONFDIR, RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
@@ -1465,13 +1468,13 @@ static constexpr RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.quic.disable_active_migration", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_STR, "[0-1]", RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.quic.max_recv_udp_payload_size_in", RECD_INT, "65527", RECU_DYNAMIC, RR_NULL, RECC_INT, "^[0-9]+$", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.quic.max_recv_udp_payload_size_in", RECD_INT, "65527", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.quic.max_recv_udp_payload_size_out", RECD_INT, "65527", RECU_DYNAMIC, RR_NULL, RECC_INT, "^[0-9]+$", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.quic.max_recv_udp_payload_size_out", RECD_INT, "65527", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.quic.max_send_udp_payload_size_in", RECD_INT, "65527", RECU_DYNAMIC, RR_NULL, RECC_INT, "^[0-9]+$", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.quic.max_send_udp_payload_size_in", RECD_INT, "65527", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.quic.max_send_udp_payload_size_out", RECD_INT, "65527", RECU_DYNAMIC, RR_NULL, RECC_INT, "^[0-9]+$", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.quic.max_send_udp_payload_size_out", RECD_INT, "65527", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.quic.disable_http_0_9", RECD_INT, "1", RECU_DYNAMIC, RR_NULL, RECC_STR, "[0-1]", RECA_NULL}
   ,
@@ -1565,6 +1568,79 @@ validate_check_type_has_regex()
   return true;
 }
 
+//-------------------------------------------------------------------------
+// Compile-time validation helpers for RECC_INT patterns
+//-------------------------------------------------------------------------
+
+namespace
+{
+constexpr bool
+is_digit(char c)
+{
+  return c >= '0' && c <= '9';
+}
+
+// TODO: C++23 has std::from_chars for constexpr integer parsing
+constexpr bool
+parse_uint(std::string_view s, std::size_t &i)
+{
+  std::size_t start = i;
+  while (i < s.size() && is_digit(s[i])) {
+    ++i;
+  }
+  return i > start; // at least one digit
+}
+
+constexpr bool
+matches_bracketed_int_range(std::string_view s)
+{
+  std::size_t i = 0;
+  if (i >= s.size() || s[i++] != '[') {
+    return false;
+  }
+  if (!parse_uint(s, i)) {
+    return false;
+  }
+  if (i >= s.size() || s[i++] != '-') {
+    return false;
+  }
+  if (!parse_uint(s, i)) {
+    return false;
+  }
+  if (i >= s.size() || s[i++] != ']') {
+    return false;
+  }
+  return i == s.size(); // must end exactly here
+}
+
+// For string literals: deduces N and strips the trailing '\0'
+template <std::size_t N>
+consteval bool
+matches_bracketed_int_range(const char (&lit)[N])
+{
+  // N includes the null terminator
+  return matches_bracketed_int_range(std::string_view{lit, N - 1});
+}
+
+// Validate all RECC_INT entries in the RecordsConfig array at compile time
+template <std::size_t N>
+consteval bool
+validate_recc_int_patterns(const RecordElement (&config)[N])
+{
+  for (std::size_t i = 0; i < N; ++i) {
+    if (config[i].check == RECC_INT) {
+      if (config[i].regex == nullptr) {
+        return false; // RECC_INT must have a pattern
+      }
+      if (!matches_bracketed_int_range(config[i].regex)) {
+        return false; // Pattern must match [lower-upper] format
+      }
+    }
+  }
+  return true;
+}
+} // namespace
+
 static_assert(validate_regex_has_check_type(),
               "RecordsConfig validation failed: found RecordElement with regex pattern but no check type (RECC_NULL). "
               "Specify appropriate check type like RECC_INT, RECC_STRING, etc.");
@@ -1572,6 +1648,10 @@ static_assert(validate_regex_has_check_type(),
 static_assert(validate_check_type_has_regex(),
               "RecordsConfig validation failed: found RecordElement with check type but no regex pattern. "
               "Provide a regex pattern to validate the input or use RECC_NULL if no validation is needed.");
+
+static_assert(validate_recc_int_patterns(RecordsConfig),
+              "RecordsConfig validation failed: found RECC_INT with invalid pattern. "
+              "RECC_INT patterns must be in format [lower-upper] with numeric bounds, e.g., \"[0-2]\" or \"[1-256]\".");
 
 void
 RecordsConfigIterate(RecordElementCallback callback, void *data)

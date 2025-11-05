@@ -29,6 +29,9 @@
 #include "records/RecordsConfig.h"
 #include "P_RecUtils.h"
 #include "P_RecCore.h"
+
+#include <charconv>
+#include <string_view>
 //-------------------------------------------------------------------------
 // RecRecord initializer / Free
 //-------------------------------------------------------------------------
@@ -387,26 +390,49 @@ recordRegexCheck(const char *pattern, const char *value)
   return regex.compile(pattern) && regex.exec(value);
 }
 
+// Helper to parse integer from string_view using std::from_chars
+// Requires the ENTIRE string to be a valid integer (strict parsing)
+bool
+parse_int(std::string_view sv, int &out)
+{
+  auto [ptr, ec] = std::from_chars(sv.data(), sv.data() + sv.size(), out);
+  // Success only if no error AND entire string was consumed
+  return ec == std::errc{} && ptr == sv.data() + sv.size();
+}
+
 bool
 recordRangeCheck(const char *pattern, const char *value)
 {
-  char     *p = const_cast<char *>(pattern);
-  Tokenizer dashTok("-");
+  std::string_view sv_pattern(pattern);
 
-  if (recordRegexCheck("^[0-9]+$", value)) {
-    while (*p != '[') {
-      p++;
-    } // skip to '['
-    if (dashTok.Initialize(++p, COPY_TOKS) == 2) {
-      int l_limit = atoi(dashTok[0]);
-      int u_limit = atoi(dashTok[1]);
-      int val     = atoi(value);
-      if (val >= l_limit && val <= u_limit) {
-        return true;
-      }
-    }
+  // Find '[' and ']'
+  auto start = sv_pattern.find('[');
+  if (start == std::string_view::npos) {
+    return false; // No '[' found
   }
-  return false;
+
+  auto end = sv_pattern.find(']', start);
+  if (end == std::string_view::npos) {
+    return false; // No ']' found
+  }
+
+  // Extract range portion between brackets: "[0-10]" -> "0-10"
+  std::string_view range = sv_pattern.substr(start + 1, end - start - 1);
+
+  // Find the dash separator
+  auto dash_pos = range.find('-');
+  if (dash_pos == std::string_view::npos) {
+    return false; // No dash found
+  }
+
+  // Parse the three integers: lower bound, upper bound, and value
+  int l_limit, u_limit, val;
+  if (!parse_int(range.substr(0, dash_pos), l_limit) || !parse_int(range.substr(dash_pos + 1), u_limit) ||
+      !parse_int(std::string_view(value), val)) {
+    return false; // Parse error
+  }
+
+  return (val >= l_limit && val <= u_limit);
 }
 
 bool
