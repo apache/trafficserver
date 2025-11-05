@@ -1580,15 +1580,31 @@ is_digit(char c)
   return c >= '0' && c <= '9';
 }
 
+// Parse an integer (possibly negative) at compile time
+// Updates index i to point past the parsed number
 // TODO: C++23 has std::from_chars for constexpr integer parsing
 constexpr bool
-parse_uint(std::string_view s, std::size_t &i)
+parse_int(std::string_view s, std::size_t &i)
 {
   std::size_t start = i;
+
+  // Optional negative sign
+  if (i < s.size() && s[i] == '-') {
+    ++i;
+  }
+
+  // Must have at least one digit
+  if (i >= s.size() || !is_digit(s[i])) {
+    i = start; // restore position on failure
+    return false;
+  }
+
+  // Parse remaining digits
   while (i < s.size() && is_digit(s[i])) {
     ++i;
   }
-  return i > start; // at least one digit
+
+  return true; // Successfully parsed at least one digit
 }
 
 constexpr bool
@@ -1598,13 +1614,16 @@ matches_bracketed_int_range(std::string_view s)
   if (i >= s.size() || s[i++] != '[') {
     return false;
   }
-  if (!parse_uint(s, i)) {
+  // Parse first integer (may be negative)
+  if (!parse_int(s, i)) {
     return false;
   }
+  // Next character should be the dash separator
   if (i >= s.size() || s[i++] != '-') {
     return false;
   }
-  if (!parse_uint(s, i)) {
+  // Parse second integer (may be negative)
+  if (!parse_int(s, i)) {
     return false;
   }
   if (i >= s.size() || s[i++] != ']') {
@@ -1651,7 +1670,8 @@ static_assert(validate_check_type_has_regex(),
 
 static_assert(validate_recc_int_patterns(RecordsConfig),
               "RecordsConfig validation failed: found RECC_INT with invalid pattern. "
-              "RECC_INT patterns must be in format [lower-upper] with numeric bounds, e.g., \"[0-2]\" or \"[1-256]\".");
+              "RECC_INT patterns must be in format [lower-upper] with integer bounds (negative numbers supported), "
+              "e.g., \"[0-2]\", \"[1-256]\", or \"[-100--50]\".");
 
 void
 RecordsConfigIterate(RecordElementCallback callback, void *data)

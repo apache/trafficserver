@@ -23,9 +23,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 
-#include "records/RecordsConfig.h"
 #include "../P_RecUtils.h"
-#include "test_Diags.h"
 
 TEST_CASE("recordRangeCheck via RecordValidityCheck", "[librecords][RecUtils]")
 {
@@ -89,16 +87,28 @@ TEST_CASE("recordRangeCheck via RecordValidityCheck", "[librecords][RecUtils]")
     REQUIRE_FALSE(RecordValidityCheck(" 5 ", RECC_INT, "[0-10]"));
   }
 
-  SECTION("negative ranges not supported")
+  SECTION("negative ranges supported")
   {
-    // Patterns with negative numbers should be rejected
-    // (ambiguous parsing with dash as separator vs negative sign)
-    REQUIRE_FALSE(RecordValidityCheck("-5", RECC_INT, "[-10-0]"));
-    REQUIRE_FALSE(RecordValidityCheck("0", RECC_INT, "[-10-10]"));
-    REQUIRE_FALSE(RecordValidityCheck("-1", RECC_INT, "[-5--1]"));
+    // Patterns with negative numbers are now supported
+    // Parsed left-to-right to handle dash as separator vs negative sign
+    REQUIRE(RecordValidityCheck("-5", RECC_INT, "[-10-0]"));
+    REQUIRE(RecordValidityCheck("0", RECC_INT, "[-10-10]"));
+    REQUIRE(RecordValidityCheck("-1", RECC_INT, "[-5--1]"));
+    REQUIRE(RecordValidityCheck("-100", RECC_INT, "[-123--100]"));
+    REQUIRE(RecordValidityCheck("-50", RECC_INT, "[-100-0]"));
 
-    // Even if value is in range, negative pattern should fail
-    REQUIRE_FALSE(RecordValidityCheck("5", RECC_INT, "[-10-20]"));
+    // Positive value in negative range
+    REQUIRE(RecordValidityCheck("5", RECC_INT, "[-10-20]"));
+
+    // Out of range negative values
+    REQUIRE_FALSE(RecordValidityCheck("-11", RECC_INT, "[-10-0]"));
+    REQUIRE_FALSE(RecordValidityCheck("-6", RECC_INT, "[-5--1]"));
+    REQUIRE_FALSE(RecordValidityCheck("-124", RECC_INT, "[-123--100]"));
+
+    // Boundary conditions with negative numbers
+    REQUIRE(RecordValidityCheck("-123", RECC_INT, "[-123--100]"));      // lower bound
+    REQUIRE(RecordValidityCheck("-100", RECC_INT, "[-123--100]"));      // upper bound
+    REQUIRE_FALSE(RecordValidityCheck("-99", RECC_INT, "[-123--100]")); // just above upper bound
   }
 
   SECTION("invalid pattern formats")
@@ -160,5 +170,32 @@ TEST_CASE("recordRangeCheck via RecordValidityCheck", "[librecords][RecUtils]")
     // Out of typical ranges
     REQUIRE_FALSE(RecordValidityCheck("65536", RECC_INT, "[1-65535]"));
     REQUIRE_FALSE(RecordValidityCheck("100000", RECC_INT, "[1-65535]"));
+  }
+
+  SECTION("overflow and underflow handling")
+  {
+    // RecInt is int64_t:
+    // INT64_MAX = 9223372036854775807
+    // INT64_MIN = -9223372036854775808
+
+    // Valid boundary values for int64_t
+    REQUIRE(RecordValidityCheck("9223372036854775807", RECC_INT, "[0-9223372036854775807]"));   // INT64_MAX
+    REQUIRE(RecordValidityCheck("-9223372036854775808", RECC_INT, "[-9223372036854775808-0]")); // INT64_MIN
+
+    // Values that overflow INT64_MAX (should fail to parse)
+    REQUIRE_FALSE(RecordValidityCheck("9223372036854775808", RECC_INT, "[0-9999999999999999999]"));   // INT64_MAX + 1
+    REQUIRE_FALSE(RecordValidityCheck("99999999999999999999", RECC_INT, "[0-99999999999999999999]")); // Way over
+
+    // Values that underflow INT64_MIN (should fail to parse)
+    REQUIRE_FALSE(RecordValidityCheck("-9223372036854775809", RECC_INT, "[-9999999999999999999-0]"));   // INT64_MIN - 1
+    REQUIRE_FALSE(RecordValidityCheck("-99999999999999999999", RECC_INT, "[-99999999999999999999-0]")); // Way under
+
+    // Pattern bounds that overflow (should fail to parse the pattern itself)
+    REQUIRE_FALSE(RecordValidityCheck("5", RECC_INT, "[0-9223372036854775808]"));    // upper bound overflows
+    REQUIRE_FALSE(RecordValidityCheck("5", RECC_INT, "[-9223372036854775809-100]")); // lower bound underflows
+
+    // Valid values near the boundaries
+    REQUIRE(RecordValidityCheck("9223372036854775806", RECC_INT, "[0-9223372036854775807]"));   // INT64_MAX - 1
+    REQUIRE(RecordValidityCheck("-9223372036854775807", RECC_INT, "[-9223372036854775808-0]")); // INT64_MIN + 1
   }
 }

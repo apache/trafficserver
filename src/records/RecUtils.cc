@@ -390,16 +390,6 @@ recordRegexCheck(const char *pattern, const char *value)
   return regex.compile(pattern) && regex.exec(value);
 }
 
-// Helper to parse integer from string_view using std::from_chars
-// Requires the ENTIRE string to be a valid integer (strict parsing)
-bool
-parse_int(std::string_view sv, int &out)
-{
-  auto [ptr, ec] = std::from_chars(sv.data(), sv.data() + sv.size(), out);
-  // Success only if no error AND entire string was consumed
-  return ec == std::errc{} && ptr == sv.data() + sv.size();
-}
-
 bool
 recordRangeCheck(const char *pattern, const char *value)
 {
@@ -407,32 +397,52 @@ recordRangeCheck(const char *pattern, const char *value)
 
   // Find '[' and ']'
   auto start = sv_pattern.find('[');
-  if (start == std::string_view::npos) {
+  if (start != 0) {
+    Warning("recordRangeCheck: pattern '%s' does not start with '['", pattern);
     return false; // No '[' found
   }
 
   auto end = sv_pattern.find(']', start);
-  if (end == std::string_view::npos) {
+  if (end != sv_pattern.size() - 1) {
     return false; // No ']' found
   }
 
-  // Extract range portion between brackets: "[0-10]" -> "0-10"
-  std::string_view range = sv_pattern.substr(start + 1, end - start - 1);
+  // Extract range portion between brackets: "[0-10]" -> "0-10" or "[-123--100]" -> "-123--100"
+  sv_pattern = sv_pattern.substr(start + 1, end - start - 1);
 
-  // Find the dash separator
-  auto dash_pos = range.find('-');
-  if (dash_pos == std::string_view::npos) {
-    return false; // No dash found
+  RecInt lower_limit;
+  auto [lower_end, ec1] = std::from_chars(sv_pattern.data(), sv_pattern.data() + sv_pattern.size(), lower_limit);
+  if (ec1 != std::errc{}) {
+    Warning("recordRangeCheck: failed to parse lower bound in pattern '%s'", pattern);
+    return false; // Failed to parse lower bound
   }
 
-  // Parse the three integers: lower bound, upper bound, and value
-  int l_limit, u_limit, val;
-  if (!parse_int(range.substr(0, dash_pos), l_limit) || !parse_int(range.substr(dash_pos + 1), u_limit) ||
-      !parse_int(std::string_view(value), val)) {
-    return false; // Parse error
+  if (lower_end >= sv_pattern.data() + sv_pattern.size() || *lower_end != '-') {
+    Warning("recordRangeCheck: no dash separator found in pattern '%s'", pattern);
+    return false; // No dash separator found
   }
 
-  return (val >= l_limit && val <= u_limit);
+  auto pos = lower_end + 1 - sv_pattern.data();
+  sv_pattern.remove_prefix(pos);
+  RecInt upper_limit;
+  auto [upper_end, ec2] = std::from_chars(sv_pattern.data(), sv_pattern.data() + sv_pattern.size(), upper_limit);
+  if (ec2 != std::errc{} || upper_end != sv_pattern.data() + sv_pattern.size()) {
+    Warning("recordRangeCheck: failed to parse upper bound in pattern '%s'", pattern);
+    return false; // Failed to parse upper bound or extra characters
+  }
+
+  if (lower_limit > upper_limit) {
+    Warning("recordRangeCheck: invalid range [%lld-%lld] in pattern '%s'", lower_limit, upper_limit, pattern);
+    return false;
+  }
+
+  RecInt val;
+  auto [value_end, ec3] = std::from_chars(value, value + strlen(value), val);
+  if (ec3 != std::errc{} || value_end != value + strlen(value)) {
+    return false; // Value parse error
+  }
+
+  return (val >= lower_limit && val <= upper_limit);
 }
 
 bool
