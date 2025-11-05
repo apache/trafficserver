@@ -39,6 +39,10 @@ enum REFlags {
   RE_NOTEMPTY         = 0x00000004u  ///< Not empty (default: may match empty string).
 };
 
+enum REErrorC {
+  RE_ERROR_NOMATCH = -1, ///< No match.
+};
+
 /// @brief Wrapper for PCRE2 match data.
 class RegexMatches
 {

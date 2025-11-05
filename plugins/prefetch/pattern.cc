@@ -183,7 +183,16 @@ Pattern::match(const String &subject)
     return false;
   }
 
-  return _regex.exec(subject, RE_NOTEMPTY);
+  RegexMatches matches;
+  int          matchCount = _regex.exec(subject, matches, RE_NOTEMPTY);
+  if (matchCount < 0) {
+    if (matchCount != RE_ERROR_NOMATCH) {
+      PrefetchError("matching error %d", matchCount);
+    }
+    return false;
+  }
+
+  return true;
 }
 
 /**
@@ -204,6 +213,9 @@ Pattern::capture(const String &subject, StringVector &result)
   int          matchCount = _regex.exec(subject, matches, RE_NOTEMPTY);
 
   if (matchCount <= 0) {
+    if (matchCount != RE_ERROR_NOMATCH) {
+      PrefetchError("matching error %d", matchCount);
+    }
     return false;
   }
 
@@ -235,6 +247,9 @@ Pattern::replace(const String &subject, String &result)
   int          matchCount = _regex.exec(subject, matches, RE_NOTEMPTY);
 
   if (matchCount <= 0) {
+    if (matchCount != RE_ERROR_NOMATCH) {
+      PrefetchError("matching error %d", matchCount);
+    }
     return false;
   }
 

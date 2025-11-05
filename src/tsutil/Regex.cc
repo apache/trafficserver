@@ -36,6 +36,8 @@ static_assert(RE_UNANCHORED == PCRE2_MULTILINE, "Update RE_UNANCHORED for curren
 static_assert(RE_ANCHORED == PCRE2_ANCHORED, "Update RE_ANCHORED for current PCRE2 version.");
 static_assert(RE_NOTEMPTY == PCRE2_NOTEMPTY, "Update RE_NOTEMPTY for current PCRE2 version.");
 
+static_assert(RE_ERROR_NOMATCH == PCRE2_ERROR_NOMATCH, "Update RE_ERROR_NOMATCH for current PCRE2 version.");
+
 //----------------------------------------------------------------------------
 namespace
 {
