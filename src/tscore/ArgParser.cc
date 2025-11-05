@@ -42,7 +42,7 @@ int usage_return_code = EX_USAGE;
 
 namespace ts
 {
-thread_local bool ArgParser::_test_mode = false;
+bool ArgParser::_test_mode = false;
 
 ArgParser::ArgParser() {}
 
@@ -336,13 +336,8 @@ ArgParser::Command::add_option_to_group(std::string const &group_name, std::stri
 
   auto it_mutex_group = _mutex_groups.find(group_name);
   if (it_mutex_group == _mutex_groups.end()) {
-    // Auto-create group if it doesn't exist. No need to call add_mutex_group first.
-    auto ret = _mutex_groups.emplace(group_name, MutexGroup(group_name, false /** required */));
-    if (!ret.second) {
-      std::cerr << "Error: Failed to auto-create mutex group '" << group_name << "'" << std::endl;
-      exit(1);
-    }
-    it_mutex_group = ret.first;
+    std::cerr << "Error: Mutex group '" << group_name << "' not found" << std::endl;
+    ArgParser::do_exit(1);
   }
 
   // Add the option normally

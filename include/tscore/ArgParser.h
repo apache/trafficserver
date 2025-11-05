@@ -316,7 +316,7 @@ protected:
   static void set_test_mode(bool test = true);
 
   // When true, do_exit() throws instead of calling exit()
-  static thread_local bool _test_mode;
+  static bool _test_mode;
 
   // Converted from 'const char **argv' for the use of parsing and help
   AP_StrVec _argv;
@@ -327,7 +327,6 @@ protected:
 
   friend class Command;
   friend class Arguments;
-  friend class TestArgParser;
 };
 
 } // namespace ts

@@ -206,3 +206,10 @@ TEST_CASE("Mutex groups - with subcommands", "[mutex_groups]")
 
   REQUIRE_THROWS(parser.parse(argv2)); // Or check error handling
 }
+
+TEST_CASE("Mutex groups - error when group not created", "[mutex_groups]")
+{
+  TestArgParser parser;
+  // Try to add option to a group that doesn't exist - should throw
+  REQUIRE_THROWS(parser.add_option_to_group("nonexistent", "--test", "-t", "Test option"));
+}
