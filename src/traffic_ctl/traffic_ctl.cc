@@ -182,7 +182,7 @@ main([[maybe_unused]] int argc, const char **argv)
   auto &drain_cmd = server_command.add_command("drain", "Drain the requests", [&]() { command->execute(); });
   drain_cmd.add_example_usage("traffic_ctl server drain [OPTIONS]");
 
-  // Mutually exclusive drain mode options (auto-creates group)
+  drain_cmd.add_mutex_group("drain_mode", false, "Drain mode options");
   drain_cmd.add_option_to_group("drain_mode", "--no-new-connection", "-N",
                                 "Wait for new connections down to threshold before starting draining");
   drain_cmd.add_option_to_group("drain_mode", "--undo", "-U", "Recover server from the drain mode");
