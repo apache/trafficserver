@@ -42,6 +42,7 @@ add_library(
   handlers/common/ErrorUtils.cc
   handlers/common/RecordsUtils.cc
   handlers/config/Configuration.cc
+  handlers/hostdb/HostDB.cc
   handlers/records/Records.cc
   handlers/storage/Storage.cc
   handlers/server/Server.cc
