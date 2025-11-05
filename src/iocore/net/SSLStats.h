@@ -23,6 +23,7 @@
 
 #pragma once
 
+#include "tscore/ink_config.h"
 #include "tsutil/Metrics.h"
 
 #include <openssl/ssl.h>
@@ -114,16 +115,17 @@ struct SSLStatsBlock {
 extern SSLStatsBlock                                                   ssl_rsb;
 extern std::unordered_map<std::string, Metrics::Counter::AtomicType *> cipher_map;
 
-#if defined(OPENSSL_IS_BORINGSSL)
+#if defined(OPENSSL_IS_BORINGSSL) || HAVE_SSL_CTX_GET0_IMPLEMENTED_GROUPS
 extern std::unordered_map<std::string, Metrics::Counter::AtomicType *> tls_group_map;
 extern std::unordered_map<std::string, Metrics::Counter::AtomicType *> tls_group_handshake_time_map;
-#elif defined(SSL_get_negotiated_group)
+#elif HAVE_SSL_GET_NEGOTIATED_GROUP
 extern std::unordered_map<int, Metrics::Counter::AtomicType *> tls_group_map;
 extern std::unordered_map<int, Metrics::Counter::AtomicType *> tls_group_handshake_time_map;
 constexpr int                                                  SSL_GROUP_STAT_OTHER_KEY = 0;
 #endif
 
 // Initialize SSL statistics.
+// Must be called AFTER SSLCertificateConfig::startup() so SSL contexts are loaded.
 void SSLInitializeStatistics();
 
 const std::string SSL_CIPHER_STAT_OTHER = "OTHER";

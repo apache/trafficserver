@@ -38,11 +38,7 @@
 #include <maxminddb.h>
 #include "swoc/swoc_ip.h"
 
-#ifdef HAVE_PCRE_PCRE_H
-#include <pcre/pcre.h>
-#else
-#include <pcre.h>
-#endif
+#include "tsutil/Regex.h"
 
 #define PLUGIN_NAME  "maxmind_acl"
 #define CONFIG_TMOUT 60000
@@ -55,8 +51,7 @@ using namespace maxmind_acl_ns;
 
 struct plugin_regex {
   std::string _regex_s;
-  pcre       *_rex;
-  pcre_extra *_extra;
+  Regex       _rex;
 };
 
 enum ipstate { ALLOW_IP, DENY_IP, UNKNOWN_IP };

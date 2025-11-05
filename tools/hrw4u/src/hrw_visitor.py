@@ -54,8 +54,9 @@ class HRWInverseVisitor(u4wrhVisitor, BaseHRWVisitor):
         self.symbol_resolver = InverseSymbolResolver()
 
         self._section_opened = False
-        self._in_if_block = False
+        self._if_depth = 0  # Track nesting depth of if blocks
         self._in_elif_mode = False
+        self._just_closed_nested = False
 
     @lru_cache(maxsize=128)
     def _cached_percent_parsing(self, pct_text: str) -> tuple[str, str | None]:
@@ -87,10 +88,10 @@ class HRWInverseVisitor(u4wrhVisitor, BaseHRWVisitor):
         with self.debug_context(f"start_section {section_type.value}"):
             if self._section_opened and self._section_label == section_type:
                 self.debug(f"continuing existing section")
-                if self._in_if_block:
+                while self._if_depth > 0:
                     self.decrease_indent()
                     self.emit("}")
-                    self._in_if_block = False
+                    self._if_depth -= 1
                 self._reset_condition_state()
                 if self.output and self.output[-1] != "":
                     self.output.append("")
@@ -170,6 +171,20 @@ class HRWInverseVisitor(u4wrhVisitor, BaseHRWVisitor):
                 self.emit(comment_text)
             else:
                 self.output.append(comment_text)
+
+    def visitIfLine(self, ctx: u4wrhParser.IfLineContext) -> None:
+        """Handle if operator (starts nested conditional)."""
+        with self.debug_context("visitIfLine"):
+            self._flush_pending_condition()
+            self._just_closed_nested = False
+            return None
+
+    def visitEndifLine(self, ctx: u4wrhParser.EndifLineContext) -> None:
+        """Handle endif operator (closes nested conditional)."""
+        with self.debug_context("visitEndifLine"):
+            self._close_if_block()
+            self._just_closed_nested = True
+            return None
 
     def visitElifLine(self, ctx: u4wrhParser.ElifLineContext) -> None:
         """Handle elif line transitions."""
@@ -357,10 +372,10 @@ class HRWInverseVisitor(u4wrhVisitor, BaseHRWVisitor):
     # Condition block lifecycle methods - specific to inverse visitor
     def _close_if_block(self) -> None:
         """Close open if block."""
-        if self._in_if_block:
+        if self._if_depth > 0:
             self.decrease_indent()
             self.emit("}")
-            self._in_if_block = False
+            self._if_depth -= 1
 
     def _close_section(self) -> None:
         """Close open section."""
@@ -371,7 +386,8 @@ class HRWInverseVisitor(u4wrhVisitor, BaseHRWVisitor):
 
     def _close_if_and_section(self) -> None:
         """Close open if blocks and sections."""
-        self._close_if_block()
+        while self._if_depth > 0:
+            self._close_if_block()
         self._close_section()
         self._in_elif_mode = False
 
@@ -384,27 +400,22 @@ class HRWInverseVisitor(u4wrhVisitor, BaseHRWVisitor):
 
     def _start_elif_mode(self) -> None:
         """Handle elif line transitions."""
-        if self._in_if_block:
+        # After endif, we need to close the parent if-statement
+        if self._if_depth > 0:
             self.decrease_indent()
-            self._in_if_block = False
+            self._if_depth -= 1
         self._in_elif_mode = True
+        self._just_closed_nested = False
 
     def _handle_else_transition(self) -> None:
         """Handle else line transitions."""
-        if self._in_if_block:
+        if self._if_depth > 0:
             self.decrease_indent()
-
-            if self.output and self.output[-1].strip() == "}":
-                self.output[-1] = self.format_with_indent("} else {", self.current_indent)
-            else:
-                self.emit("} else {")
-
-            self._in_if_block = True
-            self.increase_indent()
-        else:
-            self.emit("else {")
-            self.increase_indent()
-            self._in_if_block = True
+            self._if_depth -= 1
+        self.emit("} else {")
+        self._if_depth += 1
+        self.increase_indent()
+        self._just_closed_nested = False
 
     def _start_if_block(self, condition_expr: str) -> None:
         """Start a new if block."""
@@ -414,5 +425,5 @@ class HRWInverseVisitor(u4wrhVisitor, BaseHRWVisitor):
         else:
             self.emit(f"if {condition_expr} {{")
 
-        self._in_if_block = True
+        self._if_depth += 1
         self.increase_indent()

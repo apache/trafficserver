@@ -307,7 +307,7 @@ struct url_matcher {
         std::cout << "Check your regular expression" << std::endl;
       }
 
-      if (!port.compile(R"([0-9]+$)")) {
+      if (!port.compile(R"(^[0-9]+$)")) {
         std::cout << "Check your regular expression" << std::endl;
         return;
       }
@@ -320,7 +320,7 @@ struct url_matcher {
       std::cout << "Check your regular expression" << std::endl;
       return;
     }
-    if (!port.compile(R"([0-9]+$)")) {
+    if (!port.compile(R"(^[0-9]+$)")) {
       std::cout << "Check your regular expression" << std::endl;
       return;
     }
@@ -336,12 +336,12 @@ struct url_matcher {
   uint8_t
   portmatch(const char *hostname, int length) const
   {
-    return port.match({hostname, size_t(length)}) ? 1 : 0;
+    return port.exec({hostname, static_cast<size_t>(length)}) ? 1 : 0;
   }
 
 private:
-  DFA port;
-  DFA regex;
+  Regex port;
+  DFA   regex;
 };
 
 using swoc::Errata;

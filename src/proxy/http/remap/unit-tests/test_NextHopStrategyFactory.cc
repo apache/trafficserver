@@ -62,7 +62,7 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
     {
       THEN("Expect that these results for 'strategy-1'")
       {
-        std::shared_ptr<NextHopSelectionStrategy> strategy = nhf.strategyInstance("strategy-1");
+        NextHopSelectionStrategy *const strategy = nhf.strategyInstance("strategy-1");
         REQUIRE(strategy != nullptr);
         CHECK(strategy->parent_is_proxy == true);
         CHECK(strategy->max_simple_retries == 1);
@@ -70,7 +70,7 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
 
         // down cast here using the stored pointer so that I can verify the hash_key was set
         // properly.
-        NextHopConsistentHash *ptr = static_cast<NextHopConsistentHash *>(strategy.get());
+        NextHopConsistentHash *const ptr = static_cast<NextHopConsistentHash *>(strategy);
         REQUIRE(ptr != nullptr);
         CHECK(ptr->hash_key == NHHashKeyType::CACHE_HASH_KEY);
 
@@ -147,7 +147,7 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
     {
       THEN("Expect that these results for 'strategy-2'")
       {
-        std::shared_ptr<NextHopSelectionStrategy> strategy = nhf.strategyInstance("strategy-2");
+        NextHopSelectionStrategy *const strategy = nhf.strategyInstance("strategy-2");
         REQUIRE(strategy != nullptr);
         CHECK(strategy->policy_type == NHPolicyType::RR_STRICT);
         CHECK(strategy->go_direct == true);
@@ -234,7 +234,7 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
     {
       THEN("Expect that these results for 'strategy-3'")
       {
-        std::shared_ptr<NextHopSelectionStrategy> strategy = nhf.strategyInstance("strategy-3");
+        NextHopSelectionStrategy *const strategy = nhf.strategyInstance("strategy-3");
         REQUIRE(strategy != nullptr);
         CHECK(strategy->policy_type == NHPolicyType::RR_IP);
         CHECK(strategy->go_direct == true);
@@ -309,7 +309,7 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
     {
       THEN("Expect that these results for 'strategy-4'")
       {
-        std::shared_ptr<NextHopSelectionStrategy> strategy = nhf.strategyInstance("strategy-4");
+        NextHopSelectionStrategy *const strategy = nhf.strategyInstance("strategy-4");
         REQUIRE(strategy != nullptr);
         CHECK(strategy->policy_type == NHPolicyType::RR_LATCHED);
         CHECK(strategy->go_direct == true);
@@ -375,7 +375,7 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
     {
       THEN("expect the following details.")
       {
-        std::shared_ptr<NextHopSelectionStrategy> strategy = nhf.strategyInstance("mid-tier-north");
+        NextHopSelectionStrategy *const strategy = nhf.strategyInstance("mid-tier-north");
         REQUIRE(strategy != nullptr);
         CHECK(strategy->parent_is_proxy == false);
         CHECK(strategy->max_simple_retries == 2);
@@ -454,7 +454,7 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
     {
       THEN("expect the following results.")
       {
-        std::shared_ptr<NextHopSelectionStrategy> strategy = nhf.strategyInstance("mid-tier-south");
+        NextHopSelectionStrategy *const strategy = nhf.strategyInstance("mid-tier-south");
         REQUIRE(strategy != nullptr);
         CHECK(strategy->policy_type == NHPolicyType::RR_LATCHED);
         CHECK(strategy->parent_is_proxy == false);
@@ -534,7 +534,7 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
     {
       THEN("expect the following results.")
       {
-        std::shared_ptr<NextHopSelectionStrategy> strategy = nhf.strategyInstance("mid-tier-east");
+        NextHopSelectionStrategy *const strategy = nhf.strategyInstance("mid-tier-east");
         REQUIRE(strategy != nullptr);
         CHECK(strategy->policy_type == NHPolicyType::FIRST_LIVE);
         CHECK(strategy->parent_is_proxy == false);
@@ -614,7 +614,7 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
     {
       THEN("expect the following results.")
       {
-        std::shared_ptr<NextHopSelectionStrategy> strategy = nhf.strategyInstance("mid-tier-west");
+        NextHopSelectionStrategy *const strategy = nhf.strategyInstance("mid-tier-west");
         REQUIRE(strategy != nullptr);
         CHECK(strategy->policy_type == NHPolicyType::RR_STRICT);
         CHECK(strategy->go_direct == true);
@@ -693,7 +693,7 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
     {
       THEN("expect the following results.")
       {
-        std::shared_ptr<NextHopSelectionStrategy> strategy = nhf.strategyInstance("mid-tier-midwest");
+        NextHopSelectionStrategy *const strategy = nhf.strategyInstance("mid-tier-midwest");
         REQUIRE(strategy != nullptr);
         CHECK(strategy->policy_type == NHPolicyType::CONSISTENT_HASH);
         CHECK(strategy->parent_is_proxy == false);
@@ -701,7 +701,7 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
 
         // I need to down cast here using the stored pointer so that I can verify that
         // the hash_key was set properly.
-        NextHopConsistentHash *ptr = static_cast<NextHopConsistentHash *>(strategy.get());
+        NextHopConsistentHash *const ptr = static_cast<NextHopConsistentHash *>(strategy);
         REQUIRE(ptr != nullptr);
         CHECK(ptr->hash_key == NHHashKeyType::URL_HASH_KEY);
 
@@ -797,7 +797,7 @@ SCENARIO("factory tests loading yaml configs from a directory", "[loadConfig]")
     {
       THEN("expect the following results.")
       {
-        std::shared_ptr<NextHopSelectionStrategy> strategy = nhf.strategyInstance("mid-tier-north");
+        NextHopSelectionStrategy *const strategy = nhf.strategyInstance("mid-tier-north");
         REQUIRE(strategy != nullptr);
         CHECK(strategy->parent_is_proxy == false);
         CHECK(strategy->max_simple_retries == 2);
@@ -879,7 +879,7 @@ SCENARIO("factory tests loading yaml configs from a directory", "[loadConfig]")
     {
       THEN("expect the following results.")
       {
-        std::shared_ptr<NextHopSelectionStrategy> strategy = nhf.strategyInstance("mid-tier-south");
+        NextHopSelectionStrategy *const strategy = nhf.strategyInstance("mid-tier-south");
         REQUIRE(strategy != nullptr);
         CHECK(strategy->policy_type == NHPolicyType::RR_LATCHED);
         CHECK(strategy->parent_is_proxy == false);

@@ -152,12 +152,6 @@ struct HostDBInfo {
    */
   bool select(ts_time now, ts_seconds fail_window) const;
 
-  /// Check if this info is valid.
-  bool is_valid() const;
-
-  /// Mark this info as invalid.
-  void invalidate();
-
   /** Mark the entry as down.
    *
    * @param now Time of the failure.
@@ -288,18 +282,6 @@ HostDBInfo::migrate_from(HostDBInfo::self_type const &that)
   this->last_failure = that.last_failure.load();
   this->fail_count   = that.fail_count.load();
   this->http_version = that.http_version;
-}
-
-inline bool
-HostDBInfo::is_valid() const
-{
-  return type != HostDBType::UNSPEC;
-}
-
-inline void
-HostDBInfo::invalidate()
-{
-  type = HostDBType::UNSPEC;
 }
 
 // ----
@@ -496,17 +478,6 @@ public:
 
   /// The index of @a target in this record.
   int index_of(HostDBInfo const *target) const;
-
-  /** Allocation and initialize an instance from a serialized buffer.
-   *
-   * @param buff Serialization data.
-   * @param size Size of @a buff.
-   * @return An instance initialized from @a buff.
-   */
-  static self_type *unmarshall(char *buff, unsigned size);
-
-  /// Database version.
-  static constexpr ts::VersionNumber Version{3, 0};
 
 protected:
   /// Current active info.

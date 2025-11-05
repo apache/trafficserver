@@ -128,13 +128,12 @@ extern HttpBodyFactory *body_factory;
 inline static bool
 bypass_ok(HttpTransact::State *s)
 {
-  url_mapping *mp = s->url_map.getMapping();
   if (s->response_action.handled) {
     return s->response_action.action.goDirect;
-  } else if (mp && mp->strategy) {
+  } else if (nullptr != s->next_hop_strategy) {
     // remap strategies do not support the TSHttpTxnParentProxySet API.
-    return mp->strategy->go_direct;
-  } else if (s->parent_params) {
+    return s->next_hop_strategy->go_direct;
+  } else if (nullptr != s->parent_params) {
     return s->parent_result.bypass_ok();
   }
   return false;
@@ -145,13 +144,11 @@ bypass_ok(HttpTransact::State *s)
 inline static bool
 is_api_result(HttpTransact::State *s)
 {
-  bool         r  = false;
-  url_mapping *mp = s->url_map.getMapping();
-
-  if (mp && mp->strategy) {
+  bool r = false;
+  if (nullptr != s->next_hop_strategy) {
     // remap strategies do not support the TSHttpTxnParentProxySet API.
     r = false;
-  } else if (s->parent_params) {
+  } else if (nullptr != s->parent_params) {
     r = s->parent_result.is_api_result();
   }
   return r;
@@ -184,12 +181,11 @@ numParents(HttpTransact::State *s)
 inline static bool
 parent_is_proxy(HttpTransact::State *s)
 {
-  url_mapping *mp = s->url_map.getMapping();
   if (s->response_action.handled) {
     return s->response_action.action.parentIsProxy;
-  } else if (mp && mp->strategy) {
-    return mp->strategy->parent_is_proxy;
-  } else if (s->parent_params) {
+  } else if (nullptr != s->next_hop_strategy) {
+    return s->next_hop_strategy->parent_is_proxy;
+  } else if (nullptr != s->parent_params) {
     return s->parent_result.parent_is_proxy();
   }
   return false;
@@ -211,7 +207,6 @@ retry_type(HttpTransact::State *s)
 inline static void
 findParent(HttpTransact::State *s)
 {
-  url_mapping *mp = s->url_map.getMapping();
   Metrics::Counter::increment(http_rsb.parent_count);
   if (s->response_action.handled) {
     s->parent_result.hostname = s->response_action.action.hostname;
@@ -224,9 +219,9 @@ findParent(HttpTransact::State *s)
     } else {
       s->parent_result.result = ParentResultType::FAIL;
     }
-  } else if (mp && mp->strategy) {
-    mp->strategy->findNextHop(reinterpret_cast<TSHttpTxn>(s->state_machine));
-  } else if (s->parent_params) {
+  } else if (nullptr != s->next_hop_strategy) {
+    s->next_hop_strategy->findNextHop(reinterpret_cast<TSHttpTxn>(s->state_machine));
+  } else if (nullptr != s->parent_params) {
     s->parent_params->findParent(&s->request_data, &s->parent_result, s->txn_conf->parent_fail_threshold,
                                  s->txn_conf->parent_retry_time);
   }
@@ -237,8 +232,6 @@ findParent(HttpTransact::State *s)
 inline static void
 markParentDown(HttpTransact::State *s)
 {
-  url_mapping *mp = s->url_map.getMapping();
-
   TxnDbg(dbg_ctl_http_trans, "enable_parent_timeout_markdowns: %d, disable_parent_markdowns: %d",
          s->txn_conf->enable_parent_timeout_markdowns, s->txn_conf->disable_parent_markdowns);
 
@@ -258,10 +251,10 @@ markParentDown(HttpTransact::State *s)
 
   if (s->response_action.handled) {
     // Do nothing. If a plugin handled the response, let it handle markdown.
-  } else if (mp && mp->strategy) {
-    mp->strategy->markNextHop(reinterpret_cast<TSHttpTxn>(s->state_machine), s->parent_result.hostname, s->parent_result.port,
-                              NHCmd::MARK_DOWN);
-  } else if (s->parent_params) {
+  } else if (nullptr != s->next_hop_strategy) {
+    s->next_hop_strategy->markNextHop(reinterpret_cast<TSHttpTxn>(s->state_machine), s->parent_result.hostname,
+                                      s->parent_result.port, NHCmd::MARK_DOWN);
+  } else if (nullptr != s->parent_params) {
     s->parent_params->markParentDown(&s->parent_result, s->txn_conf->parent_fail_threshold, s->txn_conf->parent_retry_time);
   }
 }
@@ -271,13 +264,12 @@ markParentDown(HttpTransact::State *s)
 inline static void
 markParentUp(HttpTransact::State *s)
 {
-  url_mapping *mp = s->url_map.getMapping();
   if (s->response_action.handled) {
     // Do nothing. If a plugin handled the response, let it handle markdown
-  } else if (mp && mp->strategy) {
-    mp->strategy->markNextHop(reinterpret_cast<TSHttpTxn>(s->state_machine), s->parent_result.hostname, s->parent_result.port,
-                              NHCmd::MARK_UP);
-  } else if (s->parent_params) {
+  } else if (nullptr != s->next_hop_strategy) {
+    s->next_hop_strategy->markNextHop(reinterpret_cast<TSHttpTxn>(s->state_machine), s->parent_result.hostname,
+                                      s->parent_result.port, NHCmd::MARK_UP);
+  } else if (nullptr != s->parent_params) {
     s->parent_params->markParentUp(&s->parent_result);
   }
 }
@@ -287,12 +279,11 @@ markParentUp(HttpTransact::State *s)
 inline static bool
 parentExists(HttpTransact::State *s)
 {
-  url_mapping *mp = s->url_map.getMapping();
   if (s->response_action.handled) {
     return s->response_action.action.nextHopExists;
-  } else if (mp && mp->strategy) {
-    return mp->strategy->nextHopExists(reinterpret_cast<TSHttpTxn>(s->state_machine));
-  } else if (s->parent_params) {
+  } else if (nullptr != s->next_hop_strategy) {
+    return s->next_hop_strategy->nextHopExists(reinterpret_cast<TSHttpTxn>(s->state_machine));
+  } else if (nullptr != s->parent_params) {
     return s->parent_params->parentExists(&s->request_data);
   } else {
     return false;
@@ -306,7 +297,6 @@ nextParent(HttpTransact::State *s)
 {
   TxnDbg(dbg_ctl_parent_down, "connection to parent %s failed, conn_state: %s, request to origin: %s", s->parent_result.hostname,
          HttpDebugNames::get_server_state_name(s->current.state), s->request_data.get_host());
-  url_mapping *mp = s->url_map.getMapping();
   Metrics::Counter::increment(http_rsb.parent_count);
   if (s->response_action.handled) {
     s->parent_result.hostname = s->response_action.action.hostname;
@@ -319,10 +309,10 @@ nextParent(HttpTransact::State *s)
     } else {
       s->parent_result.result = ParentResultType::FAIL;
     }
-  } else if (mp && mp->strategy) {
+  } else if (nullptr != s->next_hop_strategy) {
     // NextHop only has a findNextHop() function.
-    mp->strategy->findNextHop(reinterpret_cast<TSHttpTxn>(s->state_machine));
-  } else if (s->parent_params) {
+    s->next_hop_strategy->findNextHop(reinterpret_cast<TSHttpTxn>(s->state_machine));
+  } else if (nullptr != s->parent_params) {
     s->parent_params->nextParent(&s->request_data, &s->parent_result, s->txn_conf->parent_fail_threshold,
                                  s->txn_conf->parent_retry_time);
   }
@@ -404,12 +394,11 @@ response_is_retryable(HttpTransact::State *s, HTTPStatus response_code)
   if (s->response_action.handled) {
     return s->response_action.action.responseIsRetryable ? ParentRetry_t::SIMPLE : ParentRetry_t::NONE;
   }
-  const url_mapping *mp = s->url_map.getMapping();
-  if (mp && mp->strategy) {
-    return mp->strategy->responseIsRetryable(s->state_machine->sm_id, s->current, response_code);
+  if (nullptr != s->next_hop_strategy) {
+    return s->next_hop_strategy->responseIsRetryable(s->state_machine->sm_id, s->current, response_code);
   }
 
-  if (s->parent_params && !s->parent_result.response_is_retryable(s->parent_result.retry_type(), response_code)) {
+  if (nullptr != s->parent_params && !s->parent_result.response_is_retryable(s->parent_result.retry_type(), response_code)) {
     return ParentRetry_t::NONE;
   }
   const ParentRetry_t s_retry_type = retry_type(s);
@@ -1927,7 +1916,7 @@ HttpTransact::OSDNSLookup(State *s)
       SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
       if (!s->dns_info.record || s->dns_info.record->is_failed()) {
         // Set to internal server error so later logging will pick up SquidLogCode::ERR_DNS_FAIL
-        build_error_response(s, HTTPStatus::INTERNAL_SERVER_ERROR, "Cannot find server.", "connect#dns_failed");
+        build_error_response(s, HTTPStatus::INTERNAL_SERVER_ERROR, "Cannot find server.", Dns_error_body);
         log_msg = "looking up";
       } else {
         build_error_response(s, HTTPStatus::INTERNAL_SERVER_ERROR, "No valid server.", "connect#all_down");
@@ -6516,8 +6505,8 @@ HttpTransact::process_quick_http_filter(State *s, int method)
   }
 
   // if the "ip_allow" named filter is deactivated in the remap.config, then don't modify anything
-  url_mapping *mp = s->url_map.getMapping();
-  if (mp && !mp->ip_allow_check_enabled_p) {
+  url_mapping const *const mp = s->url_map.getMapping();
+  if (nullptr != mp && !mp->ip_allow_check_enabled_p) {
     return;
   }
 

@@ -1,6 +1,6 @@
 /** @file
 
-  Private record process declarations
+  Brotli compression implementation
 
   @section license License
 
@@ -23,22 +23,24 @@
 
 #pragma once
 
-// Must include 'P_EventSystem.h' before 'I_EventSystem.h' (which is
-// included in 'I_RecProcess.h') to prevent multiple-symbol-definition
-// complaints if the caller uses both 'P_EventSystem.h' and this 'P_'
-// file.
-#include "../iocore/eventsystem/P_EventSystem.h"
+#include "compress_common.h"
 
-#include "records/RecProcess.h"
-#include "P_RecDefs.h"
+#if HAVE_BROTLI_ENCODE_H
 
-#include <functional>
+namespace Brotli
+{
+// Initialize brotli compression context
+void data_alloc(Data *data);
 
-//-------------------------------------------------------------------------
-// Protected Interface
-//-------------------------------------------------------------------------
+// Destroy brotli compression context
+void data_destroy(Data *data);
 
-int RecExecRawStatSyncCbs();
+// Compress one chunk of data
+void transform_one(Data *data, const char *upstream_buffer, int64_t upstream_length);
 
-using RecCallbackFunction = std::function<void()>;
-void RecRegNewSyncStatSync(RecCallbackFunction callback);
+// Finish compression and flush remaining data
+void transform_finish(Data *data);
+
+} // namespace Brotli
+
+#endif // HAVE_BROTLI_ENCODE_H

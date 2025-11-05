@@ -33,6 +33,7 @@
 #include "tscore/ink_sys_control.h"
 #include "tscore/signals.h"
 #include "tscore/Layout.h"
+#include "tsutil/Metrics.h"
 #include "proxy/shared/DiagsConfig.h"
 
 // Needs LibRecordsConfigInit()
@@ -89,13 +90,13 @@ initialize_records()
   // Define version info records
   //
   auto &version = AppVersionInfo::get_version();
-  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.short", version.version(), RECP_NON_PERSISTENT);
-  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.long", version.full_version(), RECP_NON_PERSISTENT);
-  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_number", version.build_number(), RECP_NON_PERSISTENT);
-  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_time", version.build_time(), RECP_NON_PERSISTENT);
-  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_date", version.build_date(), RECP_NON_PERSISTENT);
-  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_machine", version.build_machine(), RECP_NON_PERSISTENT);
-  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_person", version.build_person(), RECP_NON_PERSISTENT);
+  ts::Metrics::StaticString::createString("proxy.process.version.server.short", version.version());
+  ts::Metrics::StaticString::createString("proxy.process.version.server.long", version.full_version());
+  ts::Metrics::StaticString::createString("proxy.process.version.server.build_number", version.build_number());
+  ts::Metrics::StaticString::createString("proxy.process.version.server.build_time", version.build_time());
+  ts::Metrics::StaticString::createString("proxy.process.version.server.build_date", version.build_date());
+  ts::Metrics::StaticString::createString("proxy.process.version.server.build_machine", version.build_machine());
+  ts::Metrics::StaticString::createString("proxy.process.version.server.build_person", version.build_person());
 }
 
 /*-------------------------------------------------------------------------

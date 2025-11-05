@@ -224,18 +224,22 @@ class CompletionProvider:
         seen_labels = set()
 
         # Add condition completions
-        for key, (tag, _, _, sections, _, _) in tables.CONDITION_MAP.items():
+        for key, params in tables.CONDITION_MAP.items():
             if key.startswith(base_prefix) and key not in seen_labels:
                 seen_labels.add(key)
+                sections = params.sections if params else None
+                tag = params.target if params else None
 
                 item = self.builder.condition_completion(key, tag, sections, current_section, replacement_range)
                 if item:
                     completions.append(item.to_lsp_dict())
 
         # Add operator completions
-        for key, (commands, _, _, sections) in tables.OPERATOR_MAP.items():
+        for key, params in tables.OPERATOR_MAP.items():
             if key.startswith(base_prefix) and key not in seen_labels:
                 seen_labels.add(key)
+                sections = params.sections if params else None
+                commands = params.target if params else None
 
                 item = self.builder.operator_completion(key, commands, sections, current_section, replacement_range)
                 if item:
@@ -248,13 +252,13 @@ class CompletionProvider:
         completions = []
 
         # Regular functions
-        for func_name, (tag, _) in tables.FUNCTION_MAP.items():
-            item = self.builder.function_completion(func_name, tag, "Function")
+        for func_name, params in tables.FUNCTION_MAP.items():
+            item = self.builder.function_completion(func_name, params.target, "Function")
             completions.append(item.to_lsp_dict())
 
         # Statement functions
-        for func_name, (tag, _) in tables.STATEMENT_FUNCTION_MAP.items():
-            item = self.builder.function_completion(func_name, tag, "Statement")
+        for func_name, params in tables.STATEMENT_FUNCTION_MAP.items():
+            item = self.builder.function_completion(func_name, params.target, "Statement")
             completions.append(item.to_lsp_dict())
 
         return completions

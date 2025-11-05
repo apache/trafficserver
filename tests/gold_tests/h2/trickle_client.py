@@ -17,7 +17,6 @@
 #  limitations under the License.
 
 import argparse
-from email.message import EmailMessage as HttpHeaders
 import logging
 import math
 import socket
@@ -252,11 +251,7 @@ def send_http2_request_to_server(hostname: str, port: int, cert_file: str, write
     :return: 0 if the request was successful, 1 otherwise.
     """
 
-    request_headers = HttpHeaders()
-    request_headers.add_header(':method', 'GET')
-    request_headers.add_header(':path', '/some/path')
-    request_headers.add_header(':authority', hostname)
-    request_headers.add_header(':scheme', 'https')
+    request_headers = {':method': 'GET', ':path': '/some/path', ':authority': hostname, ':scheme': 'https'}
 
     scheme = request_headers[':scheme']
     replay_server = f"127.0.0.1:{port}"

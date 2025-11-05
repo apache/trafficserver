@@ -314,8 +314,9 @@ HttpSM::init(bool from_early_data)
   // Added to skip dns if the document is in cache. DNS will be forced if there is a ip based ACL in
   // cache control or parent.config or if the doc_in_cache_skip_dns is disabled or if http caching is disabled
   // TODO: This probably doesn't honor this as a per-transaction overridable config.
-  t_state.force_dns = (ip_rule_in_CacheControlTable() || t_state.parent_params->parent_table->ipMatch ||
-                       !(t_state.txn_conf->doc_in_cache_skip_dns) || !(t_state.txn_conf->cache_http));
+  t_state.force_dns =
+    (ip_rule_in_CacheControlTable() || (nullptr != t_state.parent_params && t_state.parent_params->parent_table->ipMatch) ||
+     !(t_state.txn_conf->doc_in_cache_skip_dns) || !(t_state.txn_conf->cache_http));
 
   SET_HANDLER(&HttpSM::main_handler);
 
@@ -2355,13 +2356,6 @@ HttpSM::process_hostdb_info(HostDBRecord *record)
   }
 }
 
-int
-HttpSM::state_pre_resolve(int event, void * /* data ATS_UNUSED */)
-{
-  STATE_ENTER(&HttpSM::state_hostdb_lookup, event);
-  return 0;
-}
-
 //////////////////////////////////////////////////////////////////////////////
 //
 //  HttpSM::state_hostdb_lookup()
@@ -2430,31 +2424,6 @@ HttpSM::state_hostdb_reverse_lookup(int event, void *data)
   }
 
   return 0;
-}
-
-//////////////////////////////////////////////////////////////////////////////
-//
-//  HttpSM:state_mark_os_down()
-//
-//////////////////////////////////////////////////////////////////////////////
-int
-HttpSM::state_mark_os_down(int event, void *data)
-{
-  STATE_ENTER(&HttpSM::state_mark_os_down, event);
-
-  if (event == EVENT_HOST_DB_LOOKUP && data) {
-    auto r = static_cast<HostDBRecord *>(data);
-
-    // Look for the entry we need mark down in the round robin
-    ink_assert(t_state.current.server != nullptr);
-    ink_assert(t_state.dns_info.looking_up == ResolveInfo::ORIGIN_SERVER);
-    if (auto *info = r->find(&t_state.dns_info.addr.sa); info != nullptr) {
-      info->mark_down(ts_clock::now());
-    }
-  }
-  // We either found our entry or we did not.  Either way find
-  //  the entry we should use now
-  return state_hostdb_lookup(event, data);
 }
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -3425,9 +3394,9 @@ HttpSM::tunnel_handler_100_continue_ua(int event, HttpTunnelConsumer *c)
     _ua.get_entry()->in_tunnel = false;
     c->write_success           = true;
 
-    // remove the buffer reader from the consumer's vc
+    // Disable any write operation in case there are timeout events.
     if (c->vc != nullptr) {
-      c->vc->do_io_write();
+      c->vc->do_io_write(nullptr, 0, nullptr);
     }
   }
 

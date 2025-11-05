@@ -22,12 +22,19 @@
 #pragma once
 
 #include <string>
+#include <memory>
 
 #include "ts/ts.h"
 
 #include "operator.h"
 #include "resources.h"
 #include "value.h"
+
+// Forward declarations
+class Parser;
+
+// Full includes needed for member variables
+#include "conditions.h"
 
 ///////////////////////////////////////////////////////////////////////////////
 // Operator declarations.
@@ -650,4 +657,96 @@ protected:
 
 private:
   Value _value;
+};
+
+class OperatorSetNextHopStrategy : public Operator
+{
+public:
+  OperatorSetNextHopStrategy() { Dbg(dbg_ctl, "Calling CTOR for OperatorSetNextHopStrategy"); }
+
+  // noncopyable
+  OperatorSetNextHopStrategy(const OperatorSetNextHopStrategy &) = delete;
+  void operator=(const OperatorSetNextHopStrategy &)             = delete;
+
+  void initialize(Parser &p) override;
+
+protected:
+  void initialize_hooks() override;
+  bool exec(const Resources &res) const override;
+
+private:
+  Value _value;
+};
+
+///////////////////////////////////////////////////////////////////////////////
+// OperatorIf class - implements nested if/elif/else as a pseudo-operator.
+// Keep this at the end of the files, since this is not really an Operator.
+//
+class OperatorIf : public Operator
+{
+public:
+  struct CondOpSection {
+    CondOpSection() = default;
+
+    ~CondOpSection() = default;
+
+    CondOpSection(const CondOpSection &)            = delete;
+    CondOpSection &operator=(const CondOpSection &) = delete;
+
+    bool
+    has_operator() const
+    {
+      return ops.oper != nullptr;
+    }
+
+    ConditionGroup                 group;
+    OperatorAndMods                ops;
+    std::unique_ptr<CondOpSection> next; // For elif/else sections
+  };
+
+  OperatorIf() { Dbg(dbg_ctl, "Calling CTOR for OperatorIf"); }
+
+  // noncopyable
+  OperatorIf(const OperatorIf &)     = delete;
+  void operator=(const OperatorIf &) = delete;
+
+  ConditionGroup *new_section(Parser::CondClause clause);
+  bool            add_operator(Parser &p, const char *filename, int lineno);
+  Condition      *make_condition(Parser &p, const char *filename, int lineno);
+  bool            has_operator() const;
+
+  ConditionGroup *
+  get_group()
+  {
+    return &_cur_section->group;
+  }
+
+  Parser::CondClause
+  get_clause() const
+  {
+    return _clause;
+  }
+
+  CondOpSection *
+  cur_section() const
+  {
+    return _cur_section;
+  }
+
+  OperModifiers exec_and_return_mods(const Resources &res) const;
+
+protected:
+  bool
+  exec(const Resources &res) const override
+  {
+    OperModifiers mods = exec_and_return_mods(res);
+    return !(mods & OPER_NO_REENABLE);
+  }
+
+private:
+  OperModifiers exec_section(const CondOpSection *section, const Resources &res) const;
+
+  CondOpSection      _sections;
+  CondOpSection     *_cur_section = &_sections;
+  Parser::CondClause _clause      = Parser::CondClause::COND;
 };

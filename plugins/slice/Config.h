@@ -18,14 +18,10 @@
 
 #pragma once
 
+#include <tsutil/Regex.h>
+
 #include "slice.h"
 #include "ObjectSizeCache.h"
-
-#ifdef HAVE_PCRE_PCRE_H
-#include <pcre/pcre.h>
-#else
-#include <pcre.h>
-#endif
 
 #include <string>
 #include <mutex>
@@ -40,11 +36,10 @@ struct Config {
   std::string m_remaphost; // remap host to use for loopback slice GET
   std::string m_regexstr;  // regex string for things to slice (default all)
   enum RegexType { None, Include, Exclude };
-  RegexType   m_regex_type{None};
-  pcre       *m_regex{nullptr};
-  pcre_extra *m_regex_extra{nullptr};
-  int         m_paceerrsecs{0};   // -1 disable logging, 0 no pacing, max 60s
-  int         m_prefetchcount{0}; // 0 disables prefetching
+  RegexType m_regex_type{None};
+  Regex    *m_regex{nullptr};
+  int       m_paceerrsecs{0};   // -1 disable logging, 0 no pacing, max 60s
+  int       m_prefetchcount{0}; // 0 disables prefetching
   enum RefType { First, Relative };
   RefType  m_reftype{First};          // reference slice is relative to request
   bool     m_head_strip_range{false}; // strip range header for head requests

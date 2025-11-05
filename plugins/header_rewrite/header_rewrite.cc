@@ -36,6 +36,7 @@
 #include "resources.h"
 #include "conditions.h"
 #include "conditions_geo.h"
+#include "operators.h"
 
 // Debugs
 namespace header_rewrite_ns
@@ -145,15 +146,14 @@ validate_rule_completion(RuleSet *rule, const std::string &fname, int lineno)
 
   switch (rule->get_clause()) {
   case Parser::CondClause::ELIF:
-    if (!rule->cur_section()->group.has_conditions() || !rule->cur_section()->has_operator()) {
-      TSError("[%s] ELIF clause must have both conditions and operators in file: %s, lineno: %d", PLUGIN_NAME, fname.c_str(),
-              lineno);
+    if (!rule->section_has_condition() || !rule->section_has_operator()) {
+      TSError("[%s] ELIF conditions without operators are not allowed in file: %s, lineno: %d", PLUGIN_NAME, fname.c_str(), lineno);
       return false;
     }
     break;
 
   case Parser::CondClause::ELSE:
-    if (rule->cur_section()->group.has_conditions()) {
+    if (rule->section_has_condition()) {
       TSError("[%s] conditions not allowed in ELSE clause in file: %s, lineno: %d", PLUGIN_NAME, fname.c_str(), lineno);
       return false;
     }
@@ -167,6 +167,11 @@ validate_rule_completion(RuleSet *rule, const std::string &fname, int lineno)
     break;
 
   case Parser::CondClause::COND:
+    break;
+
+  case Parser::CondClause::IF:
+  case Parser::CondClause::ENDIF:
+    // IF and ENDIF are handled separately in the main parsing loop
     break;
   }
 
@@ -185,8 +190,11 @@ RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook, c
   std::unique_ptr<RuleSet>     rule(nullptr);
   std::string                  filename;
   int                          lineno = 0;
+  ConditionGroup              *group  = nullptr;
   std::stack<ConditionGroup *> group_stack;
-  ConditionGroup              *group = nullptr;
+  std::stack<OperatorIf *>     if_stack;
+
+  constexpr int MAX_IF_NESTING_DEPTH = 10;
 
   if (0 == fname.size()) {
     TSError("[%s] no config filename provided", PLUGIN_NAME);
@@ -246,7 +254,11 @@ RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook, c
     // Deal with the elif / else special keywords, these are neither conditions nor operators.
     if (p.is_else() || p.is_elif()) {
       Dbg(pi_dbg_ctl, "Entering elif/else, CondClause=%d", static_cast<int>(p.get_clause()));
-      if (rule) {
+
+      if (!if_stack.empty()) {
+        group = if_stack.top()->new_section(p.get_clause());
+        continue;
+      } else if (rule) {
         group = rule->new_section(p.get_clause());
         continue;
       } else {
@@ -256,8 +268,7 @@ RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook, c
     }
 
     // If we are at the beginning of a new condition, save away the previous rule (but only if it has operators).
-    // This also has to deal with the fact that we allow implicit hooks to end / start a new rule.
-    if (p.is_cond() && rule && (is_hook || rule->cur_section()->has_operator())) {
+    if (p.is_cond() && rule && if_stack.empty() && (is_hook || rule->section_has_operator())) {
       if (!validate_rule_completion(rule.get(), fname, lineno)) {
         return false;
       } else {
@@ -299,7 +310,13 @@ RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook, c
     // Long term, maybe we need to percolate all this up through add_condition() / add_operator() rather than this big ugly try.
     try {
       if (p.is_cond()) {
-        Condition *cond = rule->make_condition(p, filename.c_str(), lineno);
+        Condition *cond = nullptr;
+
+        if (!if_stack.empty()) {
+          cond = if_stack.top()->make_condition(p, filename.c_str(), lineno);
+        } else {
+          cond = rule->make_condition(p, filename.c_str(), lineno);
+        }
 
         if (!cond) {
           throw std::runtime_error("add_condition() failed");
@@ -327,9 +344,54 @@ RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook, c
             group->add_condition(cond);
           }
         }
-      } else { // Operator
-        if (!rule->add_operator(p, filename.c_str(), lineno)) {
-          throw std::runtime_error("add_operator() failed");
+      } else {
+        if (p.is_if()) {
+          if (if_stack.size() >= MAX_IF_NESTING_DEPTH) {
+            throw std::runtime_error("maximum if nesting depth exceeded");
+          }
+
+          auto *op_if = new OperatorIf();
+
+          if_stack.push(op_if);
+          group = op_if->get_group(); // Set group to the new OperatorIf's group
+          Dbg(dbg_ctl, "Started nested OperatorIf, depth: %zu", if_stack.size());
+
+        } else if (p.is_endif()) {
+          if (if_stack.empty()) {
+            throw std::runtime_error("endif without matching if");
+          }
+
+          OperatorIf *op_if = if_stack.top();
+
+          if_stack.pop();
+          if (!if_stack.empty()) {
+            auto *parent_sec = if_stack.top()->cur_section();
+
+            if (parent_sec->ops.oper) {
+              parent_sec->ops.oper->append(op_if);
+            } else {
+              parent_sec->ops.oper.reset(op_if);
+            }
+            group = if_stack.top()->get_group();
+          } else {
+            if (!rule->add_operator(op_if)) {
+              delete op_if;
+              throw std::runtime_error("Failed to add nested OperatorIf to RuleSet");
+            }
+            group = rule->get_group();
+          }
+          Dbg(dbg_ctl, "Completed nested OperatorIf, depth now: %zu", if_stack.size());
+
+        } else {
+          if (!if_stack.empty()) {
+            if (!if_stack.top()->add_operator(p, filename.c_str(), lineno)) {
+              throw std::runtime_error("add_operator() failed in nested OperatorIf");
+            }
+          } else {
+            if (!rule->add_operator(p, filename.c_str(), lineno)) {
+              throw std::runtime_error("add_operator() failed");
+            }
+          }
         }
       }
     } catch (std::runtime_error &e) {
@@ -350,6 +412,16 @@ RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook, c
 
   if (!group_stack.empty()) {
     TSError("[%s] missing final %%{GROUP:END} condition in file: %s, lineno: %d", PLUGIN_NAME, fname.c_str(), lineno);
+    return false;
+  }
+
+  // Check for unmatched if statements
+  if (!if_stack.empty()) {
+    TSError("[%s] %zu unmatched 'if' statement(s) without 'endif' in file: %s", PLUGIN_NAME, if_stack.size(), fname.c_str());
+    while (!if_stack.empty()) {
+      delete if_stack.top();
+      if_stack.pop();
+    }
     return false;
   }
 
@@ -376,10 +448,9 @@ static void
 setPluginControlValues(TSHttpTxn txnp, RulesConfig *conf)
 {
   if (conf->timezone() != 0 || conf->inboundIpSource() != 0) {
-    ConditionNow temporal_statement; // This could be any statement that use the private slot.
-    int          slot = temporal_statement.get_txn_private_slot();
-
+    int             slot = Statement::acquire_txn_private_slot();
     PrivateSlotData private_data;
+
     private_data.raw       = reinterpret_cast<uint64_t>(TSUserArgGet(txnp, slot));
     private_data.timezone  = conf->timezone();
     private_data.ip_source = conf->inboundIpSource();
@@ -435,10 +506,8 @@ cont_rewrite_headers(TSCont contp, TSEvent event, void *edata)
     // Get the resources necessary to process this event
     res.gather(conf->resid(hook), hook);
 
-    // Evaluation of all rules. This code is sort of duplicate in DoRemap as well.
     while (rule) {
-      const RuleSet::OperatorAndMods &ops = rule->eval(res);
-      const OperModifiers             rt  = rule->exec(ops, res);
+      const OperModifiers rt = rule->exec(res);
 
       if (rt & OPER_NO_REENABLE) {
         reenable = false;
@@ -704,8 +773,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
     res.gather(conf->resid(TS_REMAP_PSEUDO_HOOK), TS_REMAP_PSEUDO_HOOK);
 
     do {
-      const RuleSet::OperatorAndMods &ops = rule->eval(res);
-      const OperModifiers             rt  = rule->exec(ops, res);
+      const OperModifiers rt = rule->exec(res);
 
       ink_assert((rt & OPER_NO_REENABLE) == 0);
 

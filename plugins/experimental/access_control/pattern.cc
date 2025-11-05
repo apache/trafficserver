@@ -24,6 +24,8 @@
 
 #include "pattern.h"
 
+#include <tsutil/Regex.h>
+
 static void
 replaceString(String &str, const String &from, const String &to)
 {
@@ -40,6 +42,8 @@ replaceString(String &str, const String &from, const String &to)
 
 Pattern::Pattern() : _pattern(""), _replacement("") {}
 
+Pattern::~Pattern() = default;
+
 /**
  * @brief Initializes PCRE pattern by providing the subject and replacement strings.
  * @param pattern PCRE pattern, a string containing PCRE patterns, capturing groups.
@@ -49,8 +53,6 @@ Pattern::Pattern() : _pattern(""), _replacement("") {}
 bool
 Pattern::init(const String &pattern, const String &replacement, bool replace)
 {
-  pcreFree();
-
   _pattern.assign(pattern);
   _replacement.assign(replacement);
   _replace = replace;
@@ -59,7 +61,7 @@ Pattern::init(const String &pattern, const String &replacement, bool replace)
 
   if (!compile()) {
     AccessControlDebug("failed to initialize pattern:'%s', replacement:'%s'", pattern.c_str(), replacement.c_str());
-    pcreFree();
+    _re.reset();
     return false;
   }
 
@@ -139,33 +141,12 @@ Pattern::getPattern()
 bool
 Pattern::empty() const
 {
-  return _pattern.empty() || nullptr == _re;
-}
-
-/**
- * @brief Frees PCRE library related resources.
- */
-void
-Pattern::pcreFree()
-{
-  if (_re) {
-    pcre_free(_re);
-    _re = nullptr;
-  }
-
-  if (_extra) {
-    pcre_free(_extra);
-    _extra = nullptr;
-  }
+  return _pattern.empty() || !_re || _re->empty();
 }
 
 /**
  * @brief Destructor, frees PCRE related resources.
  */
-Pattern::~Pattern()
-{
-  pcreFree();
-}
 
 /**
  * @brief Capture or capture-and-replace depending on whether a replacement string is specified.
@@ -214,16 +195,16 @@ Pattern::process(const String &subject, StringVector &result)
 bool
 Pattern::match(const String &subject)
 {
-  int matchCount;
   AccessControlDebug("matching '%s' to '%s'", _pattern.c_str(), subject.c_str());
 
-  if (!_re) {
+  if (!_re || _re->empty()) {
     return false;
   }
 
-  matchCount = pcre_exec(_re, _extra, subject.c_str(), subject.length(), 0, PCRE_NOTEMPTY, nullptr, 0);
+  RegexMatches matches(TOKENCOUNT);
+  int          matchCount = _re->exec(subject, matches, RE_NOTEMPTY);
   if (matchCount < 0) {
-    if (matchCount != PCRE_ERROR_NOMATCH) {
+    if (matchCount != RE_ERROR_NOMATCH) {
       AccessControlError("matching error %d", matchCount);
     }
     return false;
@@ -240,31 +221,27 @@ Pattern::match(const String &subject)
 bool
 Pattern::capture(const String &subject, StringVector &result)
 {
-  int matchCount;
-  int ovector[OVECOUNT];
-
   AccessControlDebug("capturing '%s' from '%s'", _pattern.c_str(), subject.c_str());
 
-  if (!_re) {
+  if (!_re || _re->empty()) {
     AccessControlError("regular expression not initialized");
     return false;
   }
 
-  matchCount = pcre_exec(_re, nullptr, subject.c_str(), subject.length(), 0, PCRE_NOTEMPTY, ovector, OVECOUNT);
+  RegexMatches matches(TOKENCOUNT);
+  int          matchCount = _re->exec(subject, matches, RE_NOTEMPTY);
   if (matchCount < 0) {
-    if (matchCount != PCRE_ERROR_NOMATCH) {
+    if (matchCount != RE_ERROR_NOMATCH) {
       AccessControlError("matching error %d", matchCount);
     }
     return false;
   }
 
   for (int i = 0; i < matchCount; i++) {
-    int start  = ovector[2 * i];
-    int length = ovector[2 * i + 1] - ovector[2 * i];
+    std::string_view match_view = matches[i];
+    String           dst(match_view.data(), match_view.size());
 
-    String dst(subject, start, length);
-
-    AccessControlDebug("capturing '%s' %d[%d,%d]", dst.c_str(), i, ovector[2 * i], ovector[2 * i + 1]);
+    AccessControlDebug("capturing '%s' %d", dst.c_str(), i);
     result.push_back(dst);
   }
 
@@ -280,19 +257,17 @@ Pattern::capture(const String &subject, StringVector &result)
 bool
 Pattern::replace(const String &subject, String &result)
 {
-  int matchCount;
-  int ovector[OVECOUNT];
-
   AccessControlDebug("replacing:'%s' in pattern:'%s', subject:'%s'", _replacement.c_str(), _pattern.c_str(), subject.c_str());
 
-  if (!_re || !_replace) {
+  if (!_re || _re->empty() || !_replace) {
     AccessControlError("regular expression not initialized or not configured to replace");
     return false;
   }
 
-  matchCount = pcre_exec(_re, nullptr, subject.c_str(), subject.length(), 0, PCRE_NOTEMPTY, ovector, OVECOUNT);
+  RegexMatches matches(TOKENCOUNT);
+  int          matchCount = _re->exec(subject, matches, RE_NOTEMPTY);
   if (matchCount < 0) {
-    if (matchCount != PCRE_ERROR_NOMATCH) {
+    if (matchCount != RE_ERROR_NOMATCH) {
       AccessControlError("matching error %d", matchCount);
     }
     return false;
@@ -308,12 +283,11 @@ Pattern::replace(const String &subject, String &result)
 
   int previous = 0;
   for (int i = 0; i < _tokenCount; i++) {
-    int replIndex = _tokens[i];
-    int start     = ovector[2 * replIndex];
-    int length    = ovector[2 * replIndex + 1] - ovector[2 * replIndex];
+    int              replIndex  = _tokens[i];
+    std::string_view match_view = matches[replIndex];
 
     String src(_replacement, _tokenOffset[i], 2);
-    String dst(subject, start, length);
+    String dst(match_view.data(), match_view.size());
 
     AccessControlDebug("replacing '%s' with '%s'", src.c_str(), dst.c_str());
 
@@ -337,31 +311,16 @@ Pattern::replace(const String &subject, String &result)
 bool
 Pattern::compile()
 {
-  const char *errPtr;    /* PCRE error */
+  std::string error;     /* PCRE error description */
   int         errOffset; /* PCRE error offset */
 
   AccessControlDebug("compiling pattern:'%s', replace: %s, replacement:'%s'", _pattern.c_str(), _replace ? "true" : "false",
                      _replacement.c_str());
 
-  _re = pcre_compile(_pattern.c_str(), /* the pattern */
-                     0,                /* options */
-                     &errPtr,          /* for error message */
-                     &errOffset,       /* for error offset */
-                     nullptr);         /* use default character tables */
-
-  if (nullptr == _re) {
-    AccessControlError("compile of regex '%s' at char %d: %s", _pattern.c_str(), errOffset, errPtr);
-
-    return false;
-  }
-
-  _extra = pcre_study(_re, 0, &errPtr);
-
-  if ((nullptr == _extra) && (nullptr != errPtr) && (0 != *errPtr)) {
-    AccessControlError("failed to study regex '%s': %s", _pattern.c_str(), errPtr);
-
-    pcre_free(_re);
-    _re = nullptr;
+  _re = std::make_unique<Regex>();
+  if (!_re->compile(_pattern, error, errOffset, 0)) {
+    AccessControlError("compile of regex '%s' at char %d: %s", _pattern.c_str(), errOffset, error.c_str());
+    _re.reset();
     return false;
   }
 
@@ -398,7 +357,7 @@ Pattern::compile()
   }
 
   if (!success) {
-    pcreFree();
+    _re.reset();
   }
 
   return success;

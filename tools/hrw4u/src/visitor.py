@@ -356,6 +356,18 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                     self.emit_statement(out)
                     return
 
+                case _ if ctx.PLUSEQUAL():
+                    if ctx.lhs is None:
+                        raise SymbolResolutionError("assignment", "Missing left-hand side in += assignment")
+                    lhs = ctx.lhs.text
+                    rhs = ctx.value().getText()
+                    if rhs.startswith('"') and rhs.endswith('"'):
+                        rhs = self._substitute_strings(rhs, ctx)
+                    self._dbg(f"add assignment: {lhs} += {rhs}")
+                    out = self.symbol_resolver.resolve_add_assignment(lhs, rhs, self.current_section)
+                    self.emit_statement(out)
+                    return
+
                 case _:
                     if ctx.op is None:
                         raise SymbolResolutionError("operator", "Missing operator in statement")
@@ -387,17 +399,21 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                 if ctx.typeName is None:
                     raise SymbolResolutionError("variable", "Missing type name in declaration")
                 name = ctx.name.text
-                type = ctx.typeName.text
+                type_name = ctx.typeName.text
+                explicit_slot = int(ctx.slot.text) if ctx.slot else None
 
                 if '.' in name or ':' in name:
                     raise SymbolResolutionError("variable", f"Variable name '{name}' cannot contain '.' or ':' characters")
 
-                symbol = self.symbol_resolver.declare_variable(name, type)
-                self._dbg(f"bind `{name}' to {symbol}")
+                symbol = self.symbol_resolver.declare_variable(name, type_name, explicit_slot)
+                slot_info = f" @{explicit_slot}" if explicit_slot is not None else ""
+                self._dbg(f"bind `{name}' to {symbol}{slot_info}")
             except Exception as e:
                 name = getattr(ctx, 'name', None)
                 type_name = getattr(ctx, 'typeName', None)
-                note = f"Variable declaration: {name.text}:{type_name.text}" if name and type_name else None
+                slot = getattr(ctx, 'slot', None)
+                note = f"Variable declaration: {name.text}:{type_name.text}" + \
+                    (f" @{slot.text}" if slot else "") if name and type_name else None
                 with self.trap(ctx, note=note):
                     raise e
                 return
@@ -433,6 +449,15 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                 for item in ctx.blockItem():
                     if item.statement():
                         self.visit(item.statement())
+                    elif item.conditional():
+                        # Nested conditional - emit if/endif operators with saved state
+                        self.emit_statement("if")
+                        saved_indents = self.stmt_indent, self.cond_indent
+                        self.stmt_indent += 1
+                        self.cond_indent = self.stmt_indent
+                        self.visit(item.conditional())
+                        self.stmt_indent, self.cond_indent = saved_indents
+                        self.emit_statement("endif")
                     elif item.commentLine() and self.preserve_comments:
                         self.visit(item.commentLine())
 
@@ -452,7 +477,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                 else:
                     lhs = self.visitFunctionCall(comp.functionCall())
             if not lhs:
-                return  # Skip on error
+                return
             operator = ctx.getChild(1)
             negate = operator.symbol.type in (hrw4uParser.NEQ, hrw4uParser.NOT_TILDE)
 
@@ -484,7 +509,6 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                 case _ if ctx.set_():
                     inner = ctx.set_().getText()[1:-1]
                     # We no longer strip the quotes here for sets, fixed in #12256
-                    # parts = [s.strip().strip("'") for s in inner.split(",")]
                     cond_txt = f"{lhs} ({inner})"
 
                 case _:

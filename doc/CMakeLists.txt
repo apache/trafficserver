@@ -57,6 +57,7 @@ set(UML_FILES
     uml/extras/config-data.plantuml
     uml/extras/txn_box_config_schema.plantuml
 )
+
 # unfortunately, sphinx can't look else for files than its source directory
 # so these files must be create in the source tree
 foreach(UML ${UML_FILES})
@@ -64,8 +65,8 @@ foreach(UML ${UML_FILES})
   list(APPEND SVG_FILES ${CMAKE_CURRENT_SOURCE_DIR}/uml/images/${uml_name}.svg)
   add_custom_command(
     OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/uml/images/${uml_name}.svg
-    COMMAND ${Java_JAVA_EXECUTABLE} -jar ${PLANTUML_JAR} -o ${CMAKE_CURRENT_SOURCE_DIR}/uml/images -tsvg
-            ${CMAKE_CURRENT_SOURCE_DIR}/${UML}
+    COMMAND ${Java_JAVA_EXECUTABLE} -jar ${PLANTUML_JAR} -o ${CMAKE_CURRENT_SOURCE_DIR}/uml/images -tsvg -graphvizdot
+            ${GRAPHVIZ_DOT} ${CMAKE_CURRENT_SOURCE_DIR}/${UML}
     DEPENDS ${UML}
     VERBATIM
   )

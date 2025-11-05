@@ -19,10 +19,14 @@ from __future__ import annotations
 
 from enum import Enum
 from dataclasses import dataclass
-from typing import Self
+from typing import Self, Callable, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from hrw4u.states import SectionType
 
 
 class MagicStrings(str, Enum):
+    ADD_HEADER = "add-header"
     RM_HEADER = "rm-header"
     SET_HEADER = "set-header"
     RM_COOKIE = "rm-cookie"
@@ -159,10 +163,80 @@ class VarType(Enum):
 @dataclass(slots=True, frozen=True)
 class Symbol:
     var_type: VarType
-    index: int
+    slot: int
 
     def as_cond(self) -> str:
-        return f"%{{STATE-{self.var_type.cond_tag}:{self.index}}}"
+        return f"%{{STATE-{self.var_type.cond_tag}:{self.slot}}}"
 
     def as_operator(self, value: str) -> str:
-        return f"{self.var_type.op_tag} {self.index} {value}"
+        return f"{self.var_type.op_tag} {self.slot} {value}"
+
+
+class MapParams:
+    """Map parameters for table entries combining flags and metadata.
+    """
+
+    def __init__(
+            self,
+            upper: bool = False,
+            add: bool = False,
+            prefix: bool = False,
+            validate: Callable[[str], None] | None = None,
+            sections: set[SectionType] | None = None,
+            rev: dict | None = None,
+            target: str | list[str] | tuple[str, ...] | None = None) -> None:
+        object.__setattr__(
+            self, '_params', {
+                'upper': upper,
+                'add': add,
+                'prefix': prefix,
+                'validate': validate,
+                'sections': sections,
+                'rev': rev,
+                'target': target
+            })
+
+    def __getattr__(self, name: str):
+        if name.startswith('_'):
+            raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
+        return self._params.get(name, False if name in ('upper', 'add', 'prefix') else None)
+
+    def __setattr__(self, name: str, value: object) -> None:
+        """Prevent modification after initialization (immutable)."""
+        raise AttributeError(f"'{type(self).__name__}' object is immutable")
+
+    def __repr__(self) -> str:
+        non_defaults = []
+        for k, v in self._params.items():
+            if k in ('upper', 'add', 'prefix'):
+                if v:
+                    non_defaults.append(f"{k}=True")
+            elif v is not None:
+                if isinstance(v, set):
+                    non_defaults.append(f"{k}={{{', '.join(str(s) for s in v)}}}")
+                elif k == 'validate':
+                    non_defaults.append(f"{k}=<validator>")
+                else:
+                    non_defaults.append(f"{k}=...")
+
+        if not non_defaults:
+            return "MapParams()"
+        return f"MapParams({', '.join(non_defaults)})"
+
+    def __hash__(self) -> int:
+        hashable_items = []
+        for k, v in self._params.items():
+            if isinstance(v, set):
+                hashable_items.append((k, frozenset(v)))
+            elif isinstance(v, dict):
+                hashable_items.append((k, frozenset(v.items()) if v else None))
+            elif callable(v):
+                hashable_items.append((k, id(v)))
+            else:
+                hashable_items.append((k, v))
+        return hash(frozenset(hashable_items))
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, MapParams):
+            return NotImplemented
+        return self._params == other._params

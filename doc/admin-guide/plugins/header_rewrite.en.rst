@@ -153,9 +153,19 @@ like the following::
 Which converts any 4xx HTTP status code from the origin server to a 404. A
 response from the origin with a status of 200 would be unaffected by this rule.
 
+Advanced Conditionals
+---------------------
+
+The header_rewrite plugin supports advanced conditional logic that allows
+for more sophisticated rule construction, including branching logic, nested
+conditionals, and complex boolean expressions.
+
+else and elif Clauses
+~~~~~~~~~~~~~~~~~~~~~
+
 An optional ``else`` clause may be specified, which will be executed if the
-conditions are not met. The ``else`` clause is specified by starting a new line
-with the word ``else``. The following example illustrates this::
+conditions are not met. The ``else`` clause is specified by starting a new
+line with the word ``else``. The following example illustrates this::
 
     cond %{STATUS} >399 [AND]
     cond %{STATUS} <500
@@ -164,10 +174,12 @@ with the word ``else``. The following example illustrates this::
       set-status 503
 
 The ``else`` clause is not a condition, and does not take any flags, it is
-of course optional, but when specified must be followed by at least one operator.
+of course optional, but when specified must be followed by at least one
+operator.
 
-You can also do an ``elif`` (else if) clause, which is specified by starting a new line
-with the word ``elif``. The following example illustrates this::
+You can also do an ``elif`` (else if) clause, which is specified by
+starting a new line with the word ``elif``. The following example
+illustrates this::
 
     cond %{STATUS} >399 [AND]
     cond %{STATUS} <500
@@ -178,13 +190,104 @@ with the word ``elif``. The following example illustrates this::
     else
       set-status 503
 
-Keep in mind that nesting the ``else`` and ``elif`` clauses is not allowed, but any
-number of ``elif`` clauses can be specified. We can consider these clauses are more
-powerful and flexible ``switch`` statement. In an ``if-elif-else`` rule, only one
-will evaluate its operators.
+Any number of ``elif`` clauses can be specified. We can consider these
+clauses are more powerful and flexible ``switch`` statement. In an
+``if-elif-else`` rule, only one will evaluate its operators.
+
+Note that while ``else`` and ``elif`` themselves cannot be directly nested,
+you can use ``if``/``endif`` blocks within ``else`` or ``elif`` operator
+sections to achieve nested conditional logic (see `Nested Conditionals with
+if/endif`_).
 
 Similarly, each ``else`` and ``elif`` have the same implied
 :ref:`Hook Condition <hook_conditions>` as the initial condition.
+
+Nested Conditionals with if/endif
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For more complex logic requiring nested conditionals, the ``if`` and
+``endif`` pseudo-operators can be used. While ``else`` and ``elif``
+themselves cannot be directly nested, you can use ``if``/``endif`` blocks
+within any operator section (including inside ``else`` or ``elif`` blocks)
+to achieve arbitrary nesting depth.
+
+The ``if`` operator starts a new conditional block, and ``endif`` closes
+it. Each ``if`` must have a matching ``endif``. Here's an example::
+
+    cond %{READ_RESPONSE_HDR_HOOK} [AND]
+    cond %{STATUS} >399
+      if
+        cond %{HEADER:X-Custom-Error} ="true"
+          set-header X-Error-Handled "yes"
+        else
+          set-header X-Error-Handled "no"
+      endif
+      set-status 500
+
+In this example, the nested ``if``/``endif`` block is only evaluated when
+the status is greater than 399. The nested block itself can contain
+``else`` or ``elif`` clauses, and you can nest multiple levels deep::
+
+    cond %{READ_RESPONSE_HDR_HOOK}
+      if
+        cond %{STATUS} =404
+          if
+            cond %{CLIENT-HEADER:User-Agent} /mobile/
+              set-header X-Error-Type "mobile-404"
+            else
+              set-header X-Error-Type "desktop-404"
+          endif
+      elif
+        cond %{STATUS} =500
+          set-header X-Error-Type "server-error"
+      endif
+
+GROUP Conditions in Advanced Conditionals
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The `GROUP`_ condition can be combined with advanced conditionals to
+create very sophisticated boolean expressions. ``GROUP`` conditions act as
+parentheses in your conditional logic, allowing you to mix AND, OR, and NOT
+operators in complex ways.
+
+Here's an example combining ``GROUP`` with ``if``/``endif``::
+
+    cond %{READ_RESPONSE_HDR_HOOK} [AND]
+    cond %{STATUS} >399
+      if
+        cond %{GROUP} [OR]
+          cond %{CLIENT-HEADER:X-Retry} ="true" [AND]
+          cond %{METHOD} =GET
+        cond %{GROUP:END}
+        cond %{CLIENT-HEADER:X-Force-Cache} ="" [NOT]
+          set-header X-Can-Retry "yes"
+      else
+        set-header X-Can-Retry "no"
+      endif
+      set-status 500
+
+This creates the logic: if error status, then set retry header when
+``((X-Retry=true AND METHOD=GET) OR X-Force-Cache header exists)``.
+The GROUP is necessary here to properly combine the two conditions with OR.
+
+You can also use ``GROUP`` with ``else`` and ``elif`` inside nested conditionals::
+
+    cond %{SEND_RESPONSE_HDR_HOOK} [AND]
+    cond %{STATUS} >399
+      if
+        cond %{GROUP} [OR]
+          cond %{HEADER:X-Custom} ="retry" [AND]
+          cond %{METHOD} =POST
+        cond %{GROUP:END}
+        cond %{HEADER:Content-Type} /json/
+          set-header X-Error-Handler "json-retry"
+        elif
+          cond %{METHOD} =GET
+            set-header X-Error-Handler "get-error"
+        else
+          set-header X-Error-Handler "standard"
+      endif
+      set-status 500
 
 State variables
 ---------------
@@ -647,6 +750,7 @@ are supported::
 
     %{NEXT-HOP:HOST} Name of the current selected parent.
     %{NEXT-HOP:PORT} Port of the current selected parent.
+    %{NEXT-HOP:STRATEGY} Name of the current strategy (can be "" if not using a strategy)
 
 Note that the ``<part>`` of NEXT-HOP will likely not be available unless
 an origin server connection is attempted at which point it will available
@@ -922,6 +1026,29 @@ no facility to increment by other amounts, nor is it possible to initialize the
 counter with any value other than ``0``. Additionally, the counter will reset
 whenever |TS| is restarted.
 
+if
+~~
+::
+
+  if
+    <conditions>
+    <operators>
+  endif
+
+This is a pseudo-operator that enables nested conditional blocks within
+the operator section of a rule. While ``else`` and ``elif`` themselves
+cannot be directly nested, you can use ``if``/``endif`` blocks within any
+operator section (including inside ``else`` or ``elif`` blocks) to create
+arbitrary nesting depth for complex conditional logic.
+
+The ``if`` operator must be preceded by conditions and followed by at
+least one condition or operator. Each ``if`` must have a matching
+``endif`` to close the block. Within an ``if``/``endif`` block, you can
+use regular conditions, operators, and even ``else`` and ``elif`` clauses.
+
+For detailed usage and examples, see `Nested Conditionals with if/endif`_
+in the `Advanced Conditionals`_ section.
+
 no-op
 ~~~~~
 ::
@@ -1082,6 +1209,18 @@ if necessary.
 
 The header's ``<value>`` may be a literal string, or take advantage of
 `String concatenations`_ to calculate a dynamic value for the header.
+
+set-next-hop-strategy
+~~~~~~~~~~~~~~~~~~~~~
+::
+
+  set-next-hop-strategy <name>
+
+Replaces/Sets the current next hop parent selection strategy with
+the matching strategy specified in `strategies.yaml`
+
+Setting to "null" removes the current strategy which will fall back
+to other methods (ie: parent.config or remap to url).
 
 set-redirect
 ~~~~~~~~~~~~

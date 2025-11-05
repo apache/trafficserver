@@ -226,6 +226,16 @@ public:
   {
     return _lowercase_substitutions;
   }
+  inline bool
+  has_strategy() const
+  {
+    return _has_strategy;
+  }
+  inline std::string const &
+  strategy() const
+  {
+    return _strategy;
+  }
 
   // Hold an overridable configurations
   struct Override {
@@ -262,6 +272,9 @@ private:
   int _no_activity_timeout = -1;
   int _connect_timeout     = -1;
   int _dns_timeout         = -1;
+
+  bool        _has_strategy = false;
+  std::string _strategy     = {};
 
   Override *_first_override = nullptr;
   int       _sub_pos[MAX_SUBS];
@@ -309,6 +322,9 @@ RemapRegex::initialize(const std::string &reg, const std::string &sub, const std
       _options |= PCRE_CASELESS;
     } else if (opt.compare(start, 23, "lowercase_substitutions") == 0) {
       _lowercase_substitutions = true;
+    } else if (opt.compare(start, 8, "strategy") == 0) {
+      _has_strategy = true;
+      _strategy     = opt_val;
     } else if (opt_val.size() <= 0) {
       // All other options have a required value
       TSError("[%s] Malformed options: %s", PLUGIN_NAME, opt.c_str());
@@ -970,6 +986,21 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
       if (re->dns_timeout_option() > (-1)) {
         Dbg(dbg_ctl, "Setting DNS timeout to %d", re->dns_timeout_option());
         TSHttpTxnDNSTimeoutSet(txnp, re->dns_timeout_option());
+      }
+      if (re->has_strategy()) {
+        auto const &strat = re->strategy();
+        if (strat.empty() || "null" == strat) {
+          Dbg(dbg_ctl, "Clearing strategy (use parent.config)");
+          TSHttpTxnNextHopStrategySet(txnp, nullptr);
+        } else {
+          void const *const stratptr = TSHttpTxnNextHopNamedStrategyGet(txnp, strat.c_str());
+          if (nullptr == stratptr) {
+            Dbg(dbg_ctl, "No strategy found with name '%s'", strat.c_str());
+          } else {
+            Dbg(dbg_ctl, "Setting strategy to %s", strat.c_str());
+            TSHttpTxnNextHopStrategySet(txnp, stratptr);
+          }
+        }
       }
       bool lowercase_substitutions = false;
       if (re->lowercase_substitutions_option() == true) {

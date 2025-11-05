@@ -21,6 +21,7 @@
   limitations under the License.
  */
 
+#include "iocore/hostdb/HostDBProcessor.h"
 #include "swoc/swoc_file.h"
 #include "tscore/Regression.h"
 #include "tsutil/ts_bw_format.h"
@@ -279,9 +280,9 @@ HostDBCache::start(int flags)
   }
 
   // Setup the ref-counted cache (this must be done regardless of syncing or not).
-  this->refcountcache = new RefCountCache<HostDBRecord>(hostdb_partitions, hostdb_max_size, hostdb_max_count, HostDBRecord::Version,
-                                                        "proxy.process.hostdb.cache.");
-  this->pending_dns   = new Queue<HostDBContinuation, Continuation::Link_link>[hostdb_partitions];
+  this->refcountcache =
+    new RefCountCache<HostDBRecord>(hostdb_partitions, hostdb_max_size, hostdb_max_count, "proxy.process.hostdb.cache.");
+  this->pending_dns       = new Queue<HostDBContinuation, Continuation::Link_link>[hostdb_partitions];
   this->remoteHostDBQueue = new Queue<HostDBContinuation, Continuation::Link_link>[hostdb_partitions];
   return 0;
 }
@@ -740,20 +741,17 @@ HostDBContinuation::lookup_done(TextView query_name, ts_seconds answer_ttl, SRVH
   if (query_name.empty()) {
     if (hash.is_byname()) {
       Dbg(dbg_ctl_hostdb, "lookup_done() failed for '%.*s'", int(hash.host_name.size()), hash.host_name.data());
+      record->record_type = HostDBType::ADDR;
     } else if (hash.is_srv()) {
       Dbg(dbg_ctl_dns_srv, "SRV failed for '%.*s'", int(hash.host_name.size()), hash.host_name.data());
+      record->record_type = HostDBType::SRV;
     } else {
       ip_text_buffer b;
       Dbg(dbg_ctl_hostdb, "failed for %s", hash.ip.toString(b, sizeof b));
+      record->record_type = HostDBType::HOST;
     }
     record->ip_timestamp        = hostdb_current_timestamp;
     record->ip_timeout_interval = ts_seconds(std::clamp(hostdb_ip_fail_timeout_interval, 1u, HOST_DB_MAX_TTL));
-
-    if (hash.is_srv()) {
-      record->record_type = HostDBType::SRV;
-    } else if (!hash.is_byname()) {
-      record->record_type = HostDBType::HOST;
-    }
 
     record->set_failed();
 
@@ -785,6 +783,7 @@ HostDBContinuation::lookup_done(TextView query_name, ts_seconds answer_ttl, SRVH
 
     if (hash.is_byname()) {
       Dbg_bw(dbg_ctl_hostdb, "done {} TTL {}", hash.host_name, answer_ttl);
+      record->record_type = HostDBType::ADDR;
     } else if (hash.is_srv()) {
       ink_assert(srv && srv->hosts.size() && srv->hosts.size() <= hostdb_round_robin_max_count);
 
@@ -1570,22 +1569,6 @@ HostDBRecord::alloc(TextView query_name, unsigned int rr_count, size_t srv_name_
     new (&info) std::remove_reference_t<decltype(info)>;
   }
 
-  return self;
-}
-
-HostDBRecord::self_type *
-HostDBRecord::unmarshall(char *buff, unsigned size)
-{
-  if (size < sizeof(self_type)) {
-    return nullptr;
-  }
-  auto src = reinterpret_cast<self_type *>(buff);
-  ink_release_assert(size == src->_record_size);
-  auto ptr  = ioBufAllocator[src->_iobuffer_index].alloc_void();
-  auto self = static_cast<self_type *>(ptr);
-  new (self) self_type();
-  auto delta = sizeof(RefCountObj); // skip the VFTP and ref count.
-  memcpy(static_cast<std::byte *>(ptr) + delta, buff + delta, size - delta);
   return self;
 }
 

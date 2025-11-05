@@ -42,8 +42,9 @@ class InverseSymbolResolver(SymbolResolverBase):
             return reverse_map
         # Fallback to building from condition map if not available
         result = {}
-        for ident_key, (tag, _, uppercase, *_) in self._condition_map.items():
+        for ident_key, params in self._condition_map.items():
             if not ident_key.endswith("."):
+                tag = params.target
                 tag_key = tag.strip().removeprefix("%{").removesuffix("}").split(":", 1)[0]
                 result[tag_key] = ident_key
         return result
@@ -55,8 +56,10 @@ class InverseSymbolResolver(SymbolResolverBase):
             return reverse_map
         # Fallback to building from condition map if not available
         result = []
-        for ident_key, (tag, _, uppercase, *_) in self._condition_map.items():
+        for ident_key, params in self._condition_map.items():
             if ident_key.endswith("."):
+                tag = params.target
+                uppercase = params.upper if params else False
                 result.append((tag, ident_key, uppercase))
         return result
 
@@ -65,7 +68,7 @@ class InverseSymbolResolver(SymbolResolverBase):
         """Cached reverse function mapping."""
         if reverse_map := tables.REVERSE_RESOLUTION_MAP.get('FUNCTIONS'):
             return reverse_map
-        return {tag: fn_name for fn_name, (tag, _) in self._function_map.items()}
+        return {params.target: fn_name for fn_name, params in self._function_map.items()}
 
     @cached_property
     def _rev_sections(self) -> dict[str, str]:
@@ -138,8 +141,10 @@ class InverseSymbolResolver(SymbolResolverBase):
         elif tag == "IP":
             return None
 
-        for key, (mapped_tag, _, _, restricted, _, _) in self._condition_map.items():
+        for key, params in self._condition_map.items():
+            mapped_tag = params.target
             tag_part = mapped_tag.replace("%{", "").replace("}", "").split(":")[0]
+            restricted = params.sections if params else None
             if tag_part == tag:
                 if not restricted or not section or section not in restricted:
                     pass
@@ -279,12 +284,15 @@ class InverseSymbolResolver(SymbolResolverBase):
 
             qargs = [status_code, self._rewrite_inline_percents(f'"{url_arg}"', section)]
         elif name == "add-header" and args:
+            # Convert add-header command to += syntax for reverse mapping
             header_name = args[0]
             prefix = self.get_prefix_for_context("header_ops", section)
             prefixed_header = f"{prefix}{header_name}"
 
-            processed_args = [self._rewrite_inline_percents(arg, section) for arg in args[1:]]
-            qargs = [prefixed_header] + processed_args
+            if len(args) > 1:
+                value = self._rewrite_inline_percents(args[1], section)
+                return f"{prefixed_header} += {value}"
+            raise SymbolResolutionError("add-header", "Missing value for add-header")
         elif name == "set-plugin-cntl" and len(args) >= 2:
             qualifier = args[0]
             value = args[1]
@@ -472,12 +480,14 @@ class InverseSymbolResolver(SymbolResolverBase):
                     rewritten_value = self._rewrite_inline_percents(value, section)
                 return f"{var_name} = {rewritten_value}"
 
-        for lhs_key, (commands, _, uppercase, _) in tables.OPERATOR_MAP.items():
+        for lhs_key, params in tables.OPERATOR_MAP.items():
+            commands = params.target if params else None
             if (isinstance(commands, (list, tuple)) and cmd in commands) or (cmd == commands):
+                uppercase = params.upper if params else False
                 return self._handle_operator_command(cmd, toks, lhs_key, uppercase, section)
 
-        for name, (forward_cmd, _) in tables.STATEMENT_FUNCTION_MAP.items():
-            if forward_cmd == cmd:
+        for name, params in tables.STATEMENT_FUNCTION_MAP.items():
+            if params.target == cmd:
                 return self._handle_statement_function(name, args, section, op_state)
 
         raise SymbolResolutionError(line, f"Unknown operator: {cmd}")

@@ -1838,6 +1838,7 @@ Socket address family
 
     TS_LUA_AF_INET (2)
     TS_LUA_AF_INET6 (10)
+    TS_LUA_AF_UNIX (1)
 
 
 :ref:`TOP <admin-plugins-ts-lua>`
@@ -1927,6 +1928,50 @@ Here is an example:
         port = ts.server_request.server_addr.get_nexthop_port()
         print(name)             -- test
     end
+
+`TOP <#ts-lua-plugin>`_
+
+ts.http.get_next_hop_strategy
+-----------------------------
+**syntax:** *ts.http.get_next_hop_strategy()*
+
+**context:** function @ TS_LUA_HOOK_READ_REQUEST_HDR or do_remap()
+
+**description** Returns the name of the current next hop selection strategy, or nil string if no strategy is in use.
+
+Here is an example:
+
+::
+
+    function do_remap()
+		  local strategy = ts.http.get_next_hop_strategy()
+			ts.debug("Using strategy: " .. strategy)
+		end
+
+`TOP <#ts-lua-plugin>`_
+
+ts.http.set_next_hop_strategy
+-----------------------------
+**syntax:** *ts.http.set_next_hop_strategy(str)*
+
+**context:** function @ TS_LUA_HOOK_READ_REQUEST_HDR or do_remap()
+
+**description** Looks for the named strategy and sets the current
+transaction to use that strategy.
+
+Use empty string or "null" to clear the strategy and fall back to
+parent.config or the remap to url.
+
+Here is an example:
+
+::
+
+    function do_remap()
+		  local uri = ts.client_request.get_uri()
+			if uri == "otherhost" then
+			  ts.http.set_next_hop_strategy("otherhost")
+			end
+		end
 
 `TOP <#ts-lua-plugin>`_
 

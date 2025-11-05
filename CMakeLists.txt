@@ -477,6 +477,7 @@ check_symbol_exists(SSL_get_shared_curve "openssl/ssl.h" HAVE_SSL_GET_SHARED_CUR
 check_symbol_exists(SSL_get_curve_name "openssl/ssl.h" HAVE_SSL_GET_CURVE_NAME)
 check_symbol_exists(SSL_get0_group_name "openssl/ssl.h" HAVE_SSL_GET0_GROUP_NAME)
 check_symbol_exists(SSL_get_negotiated_group "openssl/ssl.h" HAVE_SSL_GET_NEGOTIATED_GROUP)
+check_symbol_exists(SSL_CTX_get0_implemented_groups "openssl/ssl.h" HAVE_SSL_CTX_GET0_IMPLEMENTED_GROUPS)
 check_symbol_exists(SSL_get_group_id "openssl/ssl.h" HAVE_SSL_GET_GROUP_ID)
 check_symbol_exists(SSL_get_group_name "openssl/ssl.h" HAVE_SSL_GET_GROUP_NAME)
 check_symbol_exists(SSL_group_to_name "openssl/ssl.h" HAVE_SSL_GROUP_TO_NAME)
@@ -574,6 +575,8 @@ if(ENABLE_DOCS)
     COMPONENTS Runtime
     REQUIRED
   )
+
+  find_program(GRAPHVIZ_DOT dot REQUIRED)
 endif()
 
 if(ENABLE_AUTEST)
@@ -782,17 +785,6 @@ add_custom_target(
   VERBATIM
 )
 
-# Leave autopep8 for historical reasons, but have it call yapf. It will not do
-# to have conflicting Python formatting targets. This can be removed when at
-# least CI is updated to use yapf instead of autopep8.
-add_custom_target(
-  autopep8
-  ${CMAKE_SOURCE_DIR}/tools/yapf.sh ${CMAKE_SOURCE_DIR}
-  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-  COMMENT "formatting python files"
-  VERBATIM
-)
-
 add_custom_target(
   yapf
   ${CMAKE_SOURCE_DIR}/tools/yapf.sh ${CMAKE_SOURCE_DIR}
@@ -812,7 +804,7 @@ add_custom_target(
 # Add a format target that runs all the formatters.
 add_custom_target(
   format
-  DEPENDS clang-format autopep8 cmake-format
+  DEPENDS clang-format yapf cmake-format
   COMMENT "formatting all files"
 )
 

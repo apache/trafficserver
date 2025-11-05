@@ -38,22 +38,19 @@ class SymbolResolverBase:
 
     # Cached table access for performance - Python 3.11+ cached_property
     @cached_property
-    def _condition_map(
-            self) -> dict[str, tuple[str, Callable[[str], None] | None, bool, set[SectionType] | None, bool, dict | None]]:
+    def _condition_map(self) -> dict[str, types.MapParams]:
         return tables.CONDITION_MAP
 
     @cached_property
-    def _operator_map(
-            self
-    ) -> dict[str, tuple[str | list[str] | tuple[str, ...], Callable[[str], None] | None, bool, set[SectionType] | None]]:
+    def _operator_map(self) -> dict[str, types.MapParams]:
         return tables.OPERATOR_MAP
 
     @cached_property
-    def _function_map(self) -> dict[str, tuple[str, Callable[[list[str]], None] | None]]:
+    def _function_map(self) -> dict[str, types.MapParams]:
         return tables.FUNCTION_MAP
 
     @cached_property
-    def _statement_function_map(self) -> dict[str, tuple[str, Callable[[list[str]], None] | None]]:
+    def _statement_function_map(self) -> dict[str, types.MapParams]:
         return tables.STATEMENT_FUNCTION_MAP
 
     @cached_property
@@ -65,22 +62,19 @@ class SymbolResolverBase:
             raise SymbolResolutionError(name, f"{name} is not available in the {section.value} section")
 
     @lru_cache(maxsize=256)
-    def _lookup_condition_cached(
-            self, name: str) -> tuple[str, Callable[[str], None] | None, bool, set[SectionType] | None, bool, dict | None] | None:
+    def _lookup_condition_cached(self, name: str) -> types.MapParams | None:
         return self._condition_map.get(name)
 
     @lru_cache(maxsize=256)
-    def _lookup_operator_cached(
-            self, name: str
-    ) -> tuple[str | list[str] | tuple[str, ...], Callable[[str], None] | None, bool, set[SectionType] | None] | None:
+    def _lookup_operator_cached(self, name: str) -> types.MapParams | None:
         return self._operator_map.get(name)
 
     @lru_cache(maxsize=128)
-    def _lookup_function_cached(self, name: str) -> tuple[str, Callable[[list[str]], None] | None] | None:
+    def _lookup_function_cached(self, name: str) -> types.MapParams | None:
         return self._function_map.get(name)
 
     @lru_cache(maxsize=128)
-    def _lookup_statement_function_cached(self, name: str) -> tuple[str, Callable[[list[str]], None] | None] | None:
+    def _lookup_statement_function_cached(self, name: str) -> types.MapParams | None:
         return self._statement_function_map.get(name)
 
     def _debug_enter(self, method_name: str, *args: Any) -> None:

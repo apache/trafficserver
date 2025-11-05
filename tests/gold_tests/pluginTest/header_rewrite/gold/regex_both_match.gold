@@ -1,0 +1,12 @@
+``
+> GET http://www.example.com/from_9/``
+> Host: www.example.com``
+> User-Agent: curl/``
+> X-Test1: Foobar``
+``
+< HTTP/1.1 200 OK
+< Date: ``
+``
+< X-Match: yes
+< X-Match-2: yes
+``
