@@ -47,10 +47,6 @@ enum REErrors {
   RE_ERROR_NULL    = -51 ///< NULL code or subject was passed.
 };
 
-enum REErrorC {
-  RE_ERROR_NOMATCH = -1, ///< No match.
-};
-
 /// @brief Wrapper for PCRE2 match data.
 class RegexMatches
 {
