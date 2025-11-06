@@ -1800,3 +1800,54 @@ OperatorIf::exec_section(const CondOpSection *section, const Resources &res) con
 
   return section->ops.oper_mods;
 }
+
+// OperatorSetCongestionCtrl
+void
+OperatorSetCCAlgorithm::initialize(Parser &p)
+{
+  Operator::initialize(p);
+  _cc_alg.set_value(p.get_arg());
+}
+
+void
+OperatorSetCCAlgorithm::initialize_hooks()
+{
+  add_allowed_hook(TS_REMAP_PSEUDO_HOOK);
+  add_allowed_hook(TS_HTTP_READ_REQUEST_HDR_HOOK);
+  add_allowed_hook(TS_HTTP_PRE_REMAP_HOOK);
+}
+
+bool
+OperatorSetCCAlgorithm::exec(const Resources &res) const
+{
+  Dbg(dbg_ctl, "OperatorSetCCAlgorithm");
+
+  if (!res.state.txnp) {
+    TSError("[%s] OperatorSetCCAlgorithm() failed. Transaction is null", PLUGIN_NAME);
+    return false;
+  }
+
+  int client_fd;
+  if (TSHttpTxnClientFdGet(res.state.txnp, &client_fd) != TS_SUCCESS) {
+    TSError("[OperatorSetCCAlgorithm] Error getting client fd");
+  }
+
+  char config[16];
+  int  config_len = sizeof(config);
+  RecGetRecordString("proxy.config.net.tcp_congestion_control_out", config, config_len, true);
+
+  if (config[0] != '\0' && strcmp(config, _cc_alg.get_value().data()) != 0) {
+    // Global config has been set. It will override this.
+    Dbg(dbg_ctl, "[OperatorSetCCAlgorithm] Congestion control algorithm has been set globally in records.yaml as %.*s", config_len,
+        config);
+    return true;
+  }
+
+#ifdef TCP_CONGESTION
+  if (safe_setsockopt(client_fd, IPPROTO_TCP, TCP_CONGESTION, _cc_alg.get_value().data(), _cc_alg.size()) == -1) {
+    TSError("[OperatorSetCCAlgorithm] Error setting congestion control algorithm, errno=%d %s", errno, strerror(errno));
+  }
+
+#endif
+  return true;
+}
