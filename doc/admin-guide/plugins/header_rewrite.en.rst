@@ -1403,6 +1403,9 @@ This operator lets you set the congestion control algorithm for a particular tra
 This will only work if your os supports TCP_CONGESTION at the protocol level IPPROTO_TCP.
 Supported algorithms are operating system dependent. Common algorithms include reno and cubic.
 
+If the config `proxy.config.net.tcp_congestion_control_out` is set in records.yaml, it will
+take precedence and override this.
+
 .......
 
 Operator Flags
