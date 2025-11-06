@@ -539,7 +539,13 @@ ArgParser::Command::parse(Arguments &ret, AP_StrVec &args)
     }
     // check for command required
     if (!flag && _command_required) {
-      help_message("No subcommand found for " + _name);
+      std::ostringstream msg;
+      if (!args.empty()) {
+        msg << "No sub-command '" << args[0] << "' found for " << _name;
+      } else {
+        msg << "No sub-command found for " << _name;
+      }
+      help_message(msg.str());
     }
     if (_name == parser_program_name) {
       // if we are at the top level
