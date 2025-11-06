@@ -1393,6 +1393,19 @@ operators that use client's IP address.
     This operator also changes `INBOUND_IP_SOURCE` to `PLUGIN` to make the address available for other conditions and operators.
     See `set-plugin-cntl`_ for the detail.
 
+set-cc-alg
+~~~~~~~~~~
+::
+
+  set-cc-alg <value>
+
+This operator lets you set the congestion control algorithm for a particular transaction.
+This will only work if your os supports TCP_CONGESTION at the protocol level IPPROTO_TCP.
+Supported algorithms are operating system dependent. Common algorithms include reno and cubic.
+
+
+.......
+
 Operator Flags
 --------------
 
