@@ -227,13 +227,11 @@ jws_parsing_helper(const char *uri, const char *paramName, const char *expected_
     resp = true;
     if (expected_strip != nullptr) {
       if (strcmp(uri_strip, expected_strip) != 0) {
-        cjose_jws_release(jws);
         resp = false;
       }
     } else {
       // expected_strip == nullptr means we expect uri_strip to be empty
       if (uri_strip[0] != '\0') {
-        cjose_jws_release(jws);
         resp = false;
       }
     }
