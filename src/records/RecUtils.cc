@@ -432,7 +432,7 @@ recordRangeCheck(const char *pattern, const char *value)
   }
 
   if (lower_limit > upper_limit) {
-    Warning("recordRangeCheck: invalid range [%lld-%lld] in pattern '%s'", lower_limit, upper_limit, pattern);
+    Warning("recordRangeCheck: invalid range in pattern '%s'", pattern);
     return false;
   }
 
