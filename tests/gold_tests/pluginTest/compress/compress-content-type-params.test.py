@@ -57,8 +57,7 @@ class CompressPluginContentTypeParamsTest:
 
     def run(self):
         tr = Test.AddTestRun()
-        tr.AddVerifierClientProcess(
-            "verifier-client", self.replayFile, http_ports=[self.ts.Variables.port], other_args='--thread-limit 1')
+        tr.AddVerifierClientProcess("verifier-client", self.replayFile, http_ports=[self.ts.Variables.port])
         tr.Processes.Default.StartBefore(self.ts)
         tr.Processes.Default.StartBefore(self.server)
         tr.StillRunningAfter = self.ts

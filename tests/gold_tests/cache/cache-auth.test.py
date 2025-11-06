@@ -56,8 +56,7 @@ class AuthDefaultTest:
         tr = Test.AddTestRun(
             "Verify the proper caching behavior for request/response containing auth-related fields when ATS is in default configuration"
         )
-        tr.AddVerifierClientProcess(
-            "auth-default-client", self.authDefaultReplayFile, http_ports=[self.ts.Variables.port], other_args='--thread-limit 1')
+        tr.AddVerifierClientProcess("auth-default-client", self.authDefaultReplayFile, http_ports=[self.ts.Variables.port])
         tr.Processes.Default.StartBefore(self.server)
         tr.Processes.Default.StartBefore(self.ts)
         tr.StillRunningAfter = self.server
@@ -98,8 +97,7 @@ class AuthIgnoredTest:
         tr = Test.AddTestRun(
             "Verify the proper caching behavior for request/response containing auth-related fields when ATS is configured to bypass caching for those"
         )
-        tr.AddVerifierClientProcess(
-            "auth-ignored-client", self.authIgnoredReplayFile, http_ports=[self.ts.Variables.port], other_args='--thread-limit 1')
+        tr.AddVerifierClientProcess("auth-ignored-client", self.authIgnoredReplayFile, http_ports=[self.ts.Variables.port])
         tr.Processes.Default.StartBefore(self.server)
         tr.Processes.Default.StartBefore(self.ts)
         tr.StillRunningAfter = self.server

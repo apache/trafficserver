@@ -65,11 +65,7 @@ class DynamicCertTest:
     def runHTTPSTraffic(self):
         tr = Test.AddTestRun("Test dynamic generation of certs")
         tr.AddVerifierClientProcess(
-            "client1",
-            self.httpsReplayFile,
-            http_ports=[self.ts.Variables.port],
-            https_ports=[self.ts.Variables.ssl_port],
-            other_args='--thread-limit 1')
+            "client1", self.httpsReplayFile, http_ports=[self.ts.Variables.port], https_ports=[self.ts.Variables.ssl_port])
         tr.Processes.Default.StartBefore(self.server)
         tr.Processes.Default.StartBefore(self.ts)
         tr.StillRunningAfter = self.server
@@ -144,11 +140,7 @@ class ReuseExistingCertTest:
     def runHTTPSTraffic(self):
         tr = Test.AddTestRun("Test dynamic generation of certs")
         tr.AddVerifierClientProcess(
-            "client2",
-            self.httpsReplayFile,
-            http_ports=[self.ts.Variables.port],
-            https_ports=[self.ts.Variables.ssl_port],
-            other_args='--thread-limit 1')
+            "client2", self.httpsReplayFile, http_ports=[self.ts.Variables.port], https_ports=[self.ts.Variables.ssl_port])
         tr.Processes.Default.StartBefore(self.server)
         tr.Processes.Default.StartBefore(self.ts)
         tr.StillRunningAfter = self.server

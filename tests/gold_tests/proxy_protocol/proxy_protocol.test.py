@@ -70,8 +70,7 @@ logging:
             "pp-in-client",
             self.replay_file,
             http_ports=[self.ts.Variables.proxy_protocol_port],
-            https_ports=[self.ts.Variables.proxy_protocol_ssl_port],
-            other_args='--thread-limit 1')
+            https_ports=[self.ts.Variables.proxy_protocol_ssl_port])
         tr.Processes.Default.StartBefore(self.server)
         tr.Processes.Default.StartBefore(self.ts)
         tr.StillRunningAfter = self.server
@@ -210,8 +209,7 @@ class ProxyProtocolOutTest:
             f"pp-out-client-{ProxyProtocolOutTest._client_counter}",
             self._pp_out_replay_file,
             http_ports=[self._ts.Variables.port],
-            https_ports=[self._ts.Variables.ssl_port],
-            other_args='--thread-limit 1')
+            https_ports=[self._ts.Variables.ssl_port])
         ProxyProtocolOutTest._client_counter += 1
         self._ts.StartBefore(self._server)
         self._ts.StartBefore(self._dns)
