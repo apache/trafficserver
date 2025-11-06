@@ -1580,9 +1580,18 @@ is_digit(char c)
   return c >= '0' && c <= '9';
 }
 
-// Parse an integer (possibly negative) at compile time
-// Updates index i to point past the parsed number
-// TODO: C++23 has std::from_chars for constexpr integer parsing
+/**
+ * Parses an integer (possibly negative) from the given string view at compile time.
+ * Updates the index `i` to point past the parsed number.
+ * Returns true if a valid integer was parsed, false otherwise.
+ *
+ * This function is intended for compile-time validation of integer patterns.
+ * Note: C++23 introduces std::from_chars for constexpr integer parsing.
+ *
+ * @param s The string view to parse.
+ * @param i The index into `s` where parsing starts; updated to point past the parsed integer.
+ * @return true if parsing succeeded, false otherwise.
+ */
 constexpr bool
 parse_int(std::string_view s, std::size_t &i)
 {
@@ -1607,6 +1616,15 @@ parse_int(std::string_view s, std::size_t &i)
   return true; // Successfully parsed at least one digit
 }
 
+/**
+ * @brief Validates whether a string matches the [lower-upper] format with integer bounds.
+ *
+ * Supports negative numbers for both bounds.
+ * Examples of valid formats: "[0-255]", "[-100--50]".
+ *
+ * @param s The string to validate.
+ * @return true if the string matches the format, false otherwise.
+ */
 constexpr bool
 matches_bracketed_int_range(std::string_view s)
 {
