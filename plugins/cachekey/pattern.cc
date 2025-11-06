@@ -131,11 +131,6 @@ Pattern::empty() const
 }
 
 /**
- * @brief Destructor.
- */
-Pattern::~Pattern() {}
-
-/**
  * @brief Capture or capture-and-replace depending on whether a replacement string is specified.
  * @see replace()
  * @see capture()
