@@ -1830,12 +1830,13 @@ OperatorSetCCAlgorithm::exec(const Resources &res) const
 
   int client_fd;
   if (TSHttpTxnClientFdGet(res.state.txnp, &client_fd) != TS_SUCCESS) {
-    TSError("[OperatorSetCCAlgorithm] Error getting client fd");
+    TSError("[%s] [OperatorSetCCAlgorithm] Error getting client fd", PLUGIN_NAME);
   }
 
 #ifdef TCP_CONGESTION
   if (safe_setsockopt(client_fd, IPPROTO_TCP, TCP_CONGESTION, _cc_alg.get_value().data(), _cc_alg.size()) == -1) {
-    TSError("[OperatorSetCCAlgorithm] Error setting congestion control algorithm, errno=%d %s", errno, strerror(errno));
+    TSError("[%s] [OperatorSetCCAlgorithm] Error setting congestion control algorithm, errno=%d %s", PLUGIN_NAME, errno,
+            strerror(errno));
   }
 
 #endif
