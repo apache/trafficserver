@@ -49,7 +49,7 @@ function do_remap()
     local real_ipv6 = ts.client_request.header["X-Real-IP-V6"]
     if real_ipv6 then
         local success, err = pcall(function()
-            ts.client_request.client_addr.set_verified_addr(real_ipv6, 10)
+            ts.client_request.client_addr.set_verified_addr(real_ipv6, TS_LUA_AF_INET6)
         end)
         
         if success then
