@@ -1222,7 +1222,8 @@ ts_lua_client_request_client_addr_set_verified_addr(lua_State *L)
 
     TSHttpTxnVerifiedAddrSet(http_ctx->txnp, &addr.sa);
   } else {
-    return luaL_error(L, "incorrect # of arguments to ts.client_request.client_addr.set_verified_addr, receiving %d instead of 2", n);
+    return luaL_error(L, "incorrect # of arguments to ts.client_request.client_addr.set_verified_addr, receiving %d instead of 2",
+                      n);
   }
 
   return 0;
