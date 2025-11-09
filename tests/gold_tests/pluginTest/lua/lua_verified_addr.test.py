@@ -44,7 +44,8 @@ ps.StartBefore(Test.Processes.ts)
 tr.MakeCurlCommand(f"-s -H 'X-Real-IP: 192.0.2.100' http://127.0.0.1:{ts.Variables.port}", ts=ts)
 ps.Env = ts.Env
 ps.ReturnCode = 0
-ps.Streams.stdout.Content = Testers.ContainsExpression("initial:nil;set:success;get:192.0.2.100:2;", "IPv4 verified address should be set and retrieved correctly")
+ps.Streams.stdout.Content = Testers.ContainsExpression(
+    "initial:nil;set:success;get:192.0.2.100:2;", "IPv4 verified address should be set and retrieved correctly")
 tr.StillRunningAfter = ts
 
 # Test 2: IPv6 verified address
@@ -53,7 +54,8 @@ ps = tr.Processes.Default
 tr.MakeCurlCommand(f"-s -H 'X-Real-IP-V6: 2001:db8::1' http://127.0.0.1:{ts.Variables.port}", ts=ts)
 ps.Env = ts.Env
 ps.ReturnCode = 0
-ps.Streams.stdout.Content = Testers.ContainsExpression("initial:nil;setv6:success;getv6:2001:db8::1:10;", "IPv6 verified address should be set and retrieved correctly")
+ps.Streams.stdout.Content = Testers.ContainsExpression(
+    "initial:nil;setv6:success;getv6:2001:db8::1:10;", "IPv6 verified address should be set and retrieved correctly")
 tr.StillRunningAfter = ts
 
 # Test 3: Invalid IP address (should be rejected)
