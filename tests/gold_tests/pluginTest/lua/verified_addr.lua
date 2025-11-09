@@ -71,7 +71,7 @@ function do_remap()
     local invalid_ip = ts.client_request.header["X-Invalid-IP"]
     if invalid_ip then
         local success, err = pcall(function()
-            ts.client_request.client_addr.set_verified_addr(invalid_ip, 2)
+            ts.client_request.client_addr.set_verified_addr(invalid_ip, TS_LUA_AF_INET)
         end)
         
         if not success then
