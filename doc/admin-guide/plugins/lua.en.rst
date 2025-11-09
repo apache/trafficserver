@@ -1053,6 +1053,90 @@ Here is an example:
 
 :ref:`TOP <admin-plugins-ts-lua>`
 
+ts.client_request.client_addr.get_verified_addr
+-----------------------------------------------
+**syntax:** *ip, family = ts.client_request.client_addr.get_verified_addr()*
+
+**context:** do_remap/do_os_response or do_global_* or later
+
+**description**: This function can be used to get the verified client IP address for the current transaction.
+
+The verified address is set by plugins (typically earlier in the transaction) to provide a reliable client IP address.
+This is useful when Traffic Server is behind a proxy or load balancer that provides the real client IP through
+mechanisms like PROXY protocol, X-Forwarded-For headers, or X-Real-IP headers.
+
+The ts.client_request.client_addr.get_verified_addr function returns two values: ip is a string and family is a number.
+If no verified address has been set, both return values will be nil.
+
+Here is an example:
+
+::
+
+    function do_remap()
+        ip, family = ts.client_request.client_addr.get_verified_addr()
+        if ip then
+            ts.debug(ip)               -- 192.168.1.100
+            ts.debug(family)           -- 2(AF_INET)
+        else
+            ts.debug("No verified address set")
+        end
+        return 0
+    end
+
+When ``proxy.config.acl.subjects`` is set to ``PLUGIN``, Traffic Server will use the verified address (if set)
+for ACL evaluation instead of the actual client connection address.
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
+ts.client_request.client_addr.set_verified_addr
+-----------------------------------------------
+**syntax:** *ts.client_request.client_addr.set_verified_addr(ip, family)*
+
+**context:** do_remap/do_os_response or do_global_* or later
+
+**description**: This function can be used to set a verified client IP address for the current transaction.
+
+This function enables plugins to provide a reliable client IP address for Traffic Server and other plugins.
+Plugins that call this function are expected to validate the IP address before setting it.
+
+**Parameters:**
+
+* ``ip`` - string: The IP address to set (e.g., "192.168.1.100" or "2001:db8::1")
+* ``family`` - number: The address family (2 for AF_INET/IPv4, 10 for AF_INET6/IPv6)
+
+Here is an example:
+
+::
+
+    function do_remap()
+        -- Get real client IP from X-Forwarded-For header
+        local xff = ts.client_request.header["X-Forwarded-For"]
+
+        if xff then
+            -- Parse the first IP from X-Forwarded-For
+            local real_ip = string.match(xff, "([^,]+)")
+
+            if real_ip then
+                -- Trim whitespace
+                real_ip = real_ip:match("^%s*(.-)%s*$")
+
+                -- Set as verified address (IPv4 example, family=2)
+                ts.client_request.client_addr.set_verified_addr(real_ip, 2)
+                ts.debug("Set verified address to: " .. real_ip)
+            end
+        end
+
+        return 0
+    end
+
+**Important Notes:**
+
+* For IPv6 addresses, use family value 10 (AF_INET6).
+* Set the verified address as early as possible in the transaction lifecycle to ensure it's available
+  for all subsequent processing.
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
 ts.client_request.get_url_host
 ------------------------------
 **syntax:** *host = ts.client_request.get_url_host()*
