@@ -1588,8 +1588,8 @@ is_digit(char c)
  * This function is intended for compile-time validation of integer patterns.
  * Note: C++23 introduces std::from_chars for constexpr integer parsing.
  *
- * @param s The string view to parse.
- * @param i The index into `s` where parsing starts; updated to point past the parsed integer.
+ * @param[in] s The string view to parse.
+ * @param[inout] i The index into `s` where parsing starts; updated to point past the parsed integer.
  * @return true if parsing succeeded, false otherwise.
  */
 constexpr bool
