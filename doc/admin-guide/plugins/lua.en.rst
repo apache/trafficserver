@@ -1102,7 +1102,7 @@ Plugins that call this function are expected to validate the IP address before s
 **Parameters:**
 
 * ``ip`` - string: The IP address to set (e.g., "192.168.1.100" or "2001:db8::1")
-* ``family`` - number: The address family (2 for AF_INET/IPv4, 10 for AF_INET6/IPv6)
+* ``family`` - number: The address family (`TS_LUA_AF_INET` for IPv4, `TS_LUA_AF_INET6` for IPv6)
 
 Here is an example:
 
