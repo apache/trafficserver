@@ -20,6 +20,24 @@
 #include <arpa/inet.h>
 #include "ts_lua_util.h"
 
+typedef enum {
+  TS_LUA_PP_INFO_VERSION   = TS_PP_INFO_VERSION,
+  TS_LUA_PP_INFO_SRC_ADDR  = TS_PP_INFO_SRC_ADDR,
+  TS_LUA_PP_INFO_SRC_PORT  = TS_PP_INFO_SRC_PORT,
+  TS_LUA_PP_INFO_DST_ADDR  = TS_PP_INFO_DST_ADDR,
+  TS_LUA_PP_INFO_DST_PORT  = TS_PP_INFO_DST_PORT,
+  TS_LUA_PP_INFO_PROTOCOL  = TS_PP_INFO_PROTOCOL,
+  TS_LUA_PP_INFO_SOCK_TYPE = TS_PP_INFO_SOCK_TYPE
+} TSLuaPPInfoKey;
+
+ts_lua_var_item ts_lua_pp_info_key_vars[] = {TS_LUA_MAKE_VAR_ITEM(TS_LUA_PP_INFO_VERSION),
+                                              TS_LUA_MAKE_VAR_ITEM(TS_LUA_PP_INFO_SRC_ADDR),
+                                              TS_LUA_MAKE_VAR_ITEM(TS_LUA_PP_INFO_SRC_PORT),
+                                              TS_LUA_MAKE_VAR_ITEM(TS_LUA_PP_INFO_DST_ADDR),
+                                              TS_LUA_MAKE_VAR_ITEM(TS_LUA_PP_INFO_DST_PORT),
+                                              TS_LUA_MAKE_VAR_ITEM(TS_LUA_PP_INFO_PROTOCOL),
+                                              TS_LUA_MAKE_VAR_ITEM(TS_LUA_PP_INFO_SOCK_TYPE)};
+
 static void ts_lua_inject_client_request_client_addr_api(lua_State *L);
 static void ts_lua_inject_client_request_server_addr_api(lua_State *L);
 
@@ -76,6 +94,10 @@ static int  ts_lua_client_request_get_ssl_protocol(lua_State *L);
 static void ts_lua_inject_client_request_ssl_curve_api(lua_State *L);
 static int  ts_lua_client_request_get_ssl_curve(lua_State *L);
 
+static void ts_lua_inject_client_request_pp_info_api(lua_State *L);
+static int  ts_lua_client_request_get_pp_info(lua_State *L);
+static int  ts_lua_client_request_get_pp_info_int(lua_State *L);
+
 void
 ts_lua_inject_client_request_api(lua_State *L)
 {
@@ -96,6 +118,7 @@ ts_lua_inject_client_request_api(lua_State *L)
   ts_lua_inject_client_request_ssl_cipher_api(L);
   ts_lua_inject_client_request_ssl_protocol_api(L);
   ts_lua_inject_client_request_ssl_curve_api(L);
+  ts_lua_inject_client_request_pp_info_api(L);
 
   lua_setfield(L, -2, "client_request");
 }
@@ -1137,5 +1160,94 @@ ts_lua_client_request_get_ssl_curve(lua_State *L)
 
   lua_pushstring(L, ssl_curve);
 
+  return 1;
+}
+
+static void
+ts_lua_inject_client_request_pp_info_api(lua_State *L)
+{
+  size_t i;
+
+  for (i = 0; i < sizeof(ts_lua_pp_info_key_vars) / sizeof(ts_lua_var_item); i++) {
+    lua_pushinteger(L, ts_lua_pp_info_key_vars[i].nvar);
+    lua_setglobal(L, ts_lua_pp_info_key_vars[i].svar);
+  }
+
+  lua_pushcfunction(L, ts_lua_client_request_get_pp_info);
+  lua_setfield(L, -2, "get_pp_info");
+
+  lua_pushcfunction(L, ts_lua_client_request_get_pp_info_int);
+  lua_setfield(L, -2, "get_pp_info_int");
+}
+
+static int
+ts_lua_client_request_get_pp_info(lua_State *L)
+{
+  uint16_t         key;
+  const char      *value = nullptr;
+  int              length;
+  ts_lua_http_ctx *http_ctx;
+  TSHttpSsn        ssnp;
+  TSVConn          client_conn;
+
+  GET_HTTP_CONTEXT(http_ctx, L);
+
+  key = static_cast<uint16_t>(luaL_checkinteger(L, 1));
+
+  ssnp        = TSHttpTxnSsnGet(http_ctx->txnp);
+  client_conn = TSHttpSsnClientVConnGet(ssnp);
+
+  if (TSVConnPPInfoGet(client_conn, key, &value, &length) == TS_SUCCESS) {
+    if (key == TS_PP_INFO_SRC_ADDR || key == TS_PP_INFO_DST_ADDR) {
+      // For addresses, convert sockaddr to string
+      char             ip_str[INET6_ADDRSTRLEN];
+      const sockaddr  *addr = reinterpret_cast<const sockaddr *>(value);
+      const sockaddr_in *addr_in;
+      const sockaddr_in6 *addr_in6;
+
+      if (addr->sa_family == AF_INET) {
+        addr_in = reinterpret_cast<const sockaddr_in *>(addr);
+        inet_ntop(AF_INET, &addr_in->sin_addr, ip_str, sizeof(ip_str));
+      } else if (addr->sa_family == AF_INET6) {
+        addr_in6 = reinterpret_cast<const sockaddr_in6 *>(addr);
+        inet_ntop(AF_INET6, &addr_in6->sin6_addr, ip_str, sizeof(ip_str));
+      } else {
+        lua_pushnil(L);
+        return 1;
+      }
+      lua_pushstring(L, ip_str);
+    } else {
+      // For other types, return as string
+      lua_pushlstring(L, value, length);
+    }
+    return 1;
+  }
+
+  lua_pushnil(L);
+  return 1;
+}
+
+static int
+ts_lua_client_request_get_pp_info_int(lua_State *L)
+{
+  uint16_t         key;
+  TSMgmtInt        value;
+  ts_lua_http_ctx *http_ctx;
+  TSHttpSsn        ssnp;
+  TSVConn          client_conn;
+
+  GET_HTTP_CONTEXT(http_ctx, L);
+
+  key = static_cast<uint16_t>(luaL_checkinteger(L, 1));
+
+  ssnp        = TSHttpTxnSsnGet(http_ctx->txnp);
+  client_conn = TSHttpSsnClientVConnGet(ssnp);
+
+  if (TSVConnPPInfoIntGet(client_conn, key, &value) == TS_SUCCESS) {
+    lua_pushinteger(L, value);
+    return 1;
+  }
+
+  lua_pushnil(L);
   return 1;
 }

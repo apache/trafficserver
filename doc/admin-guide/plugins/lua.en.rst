@@ -1258,6 +1258,75 @@ Here is an example:
 
 :ref:`TOP <admin-plugins-ts-lua>`
 
+ts.client_request.get_pp_info
+-----------------------------------------------
+**syntax:** *value = ts.client_request.get_pp_info(key)*
+
+**context:** do_remap/do_os_response or do_global_* or later
+
+**description**: This function can be used to get PROXY protocol information as a string value.
+
+The *key* parameter should be one of the following constants:
+
+* **TS_LUA_PP_INFO_SRC_ADDR** - Source IP address
+* **TS_LUA_PP_INFO_DST_ADDR** - Destination IP address
+
+You can also pass a TLV type ID (0x00-0xFF) to retrieve custom TLV values from PROXY protocol v2.
+
+Returns the string value if available, or **nil** if the information is not available or PROXY protocol is not in use.
+
+Here is an example:
+
+::
+
+    function do_remap()
+        local pp_version = ts.client_request.get_pp_info_int(TS_LUA_PP_INFO_VERSION)
+        if pp_version then
+            local src_addr = ts.client_request.get_pp_info(TS_LUA_PP_INFO_SRC_ADDR)
+            local dst_addr = ts.client_request.get_pp_info(TS_LUA_PP_INFO_DST_ADDR)
+            ts.debug(string.format('PROXY v%d: %s -> %s', pp_version, src_addr, dst_addr))
+        end
+        return 0
+    end
+
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
+ts.client_request.get_pp_info_int
+-----------------------------------------------
+**syntax:** *value = ts.client_request.get_pp_info_int(key)*
+
+**context:** do_remap/do_os_response or do_global_* or later
+
+**description**: This function can be used to get PROXY protocol information as an integer value.
+
+The *key* parameter should be one of the following constants:
+
+* **TS_LUA_PP_INFO_VERSION** - PROXY protocol version (1 or 2)
+* **TS_LUA_PP_INFO_SRC_PORT** - Source port number
+* **TS_LUA_PP_INFO_DST_PORT** - Destination port number
+* **TS_LUA_PP_INFO_PROTOCOL** - IP protocol family (AF_INET or AF_INET6)
+* **TS_LUA_PP_INFO_SOCK_TYPE** - Socket type (SOCK_STREAM, SOCK_DGRAM, etc.)
+
+Returns the integer value if available, or **nil** if the information is not available or PROXY protocol is not in use.
+
+Here is an example:
+
+::
+
+    function do_remap()
+        local pp_version = ts.client_request.get_pp_info_int(TS_LUA_PP_INFO_VERSION)
+        if pp_version then
+            local src_port = ts.client_request.get_pp_info_int(TS_LUA_PP_INFO_SRC_PORT)
+            local dst_port = ts.client_request.get_pp_info_int(TS_LUA_PP_INFO_DST_PORT)
+            ts.debug(string.format('PROXY v%d ports: %d -> %d', pp_version, src_port, dst_port))
+        end
+        return 0
+    end
+
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
 ts.http.set_cache_url
 ---------------------
 **syntax:** *ts.http.set_cache_url(KEY_URL)*
