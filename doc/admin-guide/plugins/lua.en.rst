@@ -1131,7 +1131,7 @@ Here is an example:
 
 **Important Notes:**
 
-* For IPv6 addresses, use family value 10 (AF_INET6).
+* For IPv6 addresses, use TS_LUA_AF_INET6.
 * Set the verified address as early as possible in the transaction lifecycle to ensure it's available
   for all subsequent processing.
 
