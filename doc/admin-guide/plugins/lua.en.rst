@@ -1120,8 +1120,8 @@ Here is an example:
                 -- Trim whitespace
                 real_ip = real_ip:match("^%s*(.-)%s*$")
 
-                -- Set as verified address (IPv4 example, family=2)
-                ts.client_request.client_addr.set_verified_addr(real_ip, 2)
+                -- Set as verified address (IPv4 example, family=TS_LUA_AF_INET)
+                ts.client_request.client_addr.set_verified_addr(real_ip, TS_LUA_AF_INET)
                 ts.debug("Set verified address to: " .. real_ip)
             end
         end
