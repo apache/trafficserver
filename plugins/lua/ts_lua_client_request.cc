@@ -1162,13 +1162,17 @@ ts_lua_client_request_client_addr_get_verified_addr(lua_State *L)
     if (verified_addr->sa_family == AF_INET) {
       inet_ntop(AF_INET, (const void *)&((struct sockaddr_in *)verified_addr)->sin_addr, vip, sizeof(vip));
       family = AF_INET;
+      lua_pushstring(L, vip);
+      lua_pushnumber(L, family);
     } else if (verified_addr->sa_family == AF_INET6) {
       inet_ntop(AF_INET6, (const void *)&((struct sockaddr_in6 *)verified_addr)->sin6_addr, vip, sizeof(vip));
       family = AF_INET6;
+      lua_pushstring(L, vip);
+      lua_pushnumber(L, family);
+    } else {
+      lua_pushnil(L);
+      lua_pushnil(L);
     }
-
-    lua_pushstring(L, vip);
-    lua_pushnumber(L, family);
   } else {
     lua_pushnil(L);
     lua_pushnil(L);
