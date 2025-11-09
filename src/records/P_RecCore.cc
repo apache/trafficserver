@@ -36,90 +36,158 @@
 
 #include <fstream>
 #include <iterator>
+#include <type_traits>
 
 //-------------------------------------------------------------------------
 // RecRegisterStatXXX
 //-------------------------------------------------------------------------
-#define REC_REGISTER_STAT_XXX(A, B)                                                                                           \
-  ink_assert((rec_type == RECT_NODE) || (rec_type == RECT_PROCESS) || (rec_type == RECT_LOCAL) || (rec_type == RECT_PLUGIN)); \
-  RecRecord *r;                                                                                                               \
-  RecData    my_data_default;                                                                                                 \
-  my_data_default.A = data_default;                                                                                           \
-  if ((r = RecRegisterStat(rec_type, name, B, my_data_default, persist_type)) != nullptr) {                                   \
-    if (i_am_the_record_owner(r->rec_type)) {                                                                                 \
-      r->sync_required = r->sync_required | REC_PEER_SYNC_REQUIRED;                                                           \
-    }                                                                                                                         \
-    return REC_ERR_OKAY;                                                                                                      \
-  } else {                                                                                                                    \
-    return REC_ERR_FAIL;                                                                                                      \
+namespace
+{
+
+template <typename> struct always_false : std::false_type {
+};
+
+// Tag types for template dispatch - distinguishes RecInt from RecCounter
+// even though they're both int64_t type aliases.
+// Needed to make sure the data_type is set correctly for the given type.
+// without this, the data_type would be set to RECD_INT for both RecInt and RecCounter.
+namespace rec_detail
+{
+  struct IntTag {
+    using type                          = RecInt;
+    static constexpr RecDataT data_type = RECD_INT;
+  };
+  struct CounterTag {
+    using type                          = RecCounter;
+    static constexpr RecDataT data_type = RECD_COUNTER;
+  };
+  struct FloatTag {
+    using type                          = RecFloat;
+    static constexpr RecDataT data_type = RECD_FLOAT;
+  };
+  struct StringTag {
+    using type                          = RecString;
+    static constexpr RecDataT data_type = RECD_STRING;
+  };
+} // namespace rec_detail
+
+template <typename Tag>
+RecErrT
+RecRegisterStatImpl(RecT rec_type, const char *name, typename Tag::type data_default, RecPersistT persist_type)
+{
+  ink_assert((rec_type == RECT_NODE) || (rec_type == RECT_PROCESS) || (rec_type == RECT_LOCAL) || (rec_type == RECT_PLUGIN));
+
+  RecData my_data_default;
+
+  if constexpr (std::is_same_v<Tag, rec_detail::IntTag>) {
+    my_data_default.rec_int = data_default;
+  } else if constexpr (std::is_same_v<Tag, rec_detail::CounterTag>) {
+    my_data_default.rec_counter = data_default;
+  } else if constexpr (std::is_same_v<Tag, rec_detail::FloatTag>) {
+    my_data_default.rec_float = data_default;
+  } else {
+    static_assert(always_false<Tag>::value, "Unsupported tag for RecRegisterStat");
   }
+
+  if (RecRecord *r = RecRegisterStat(rec_type, name, Tag::data_type, my_data_default, persist_type); r != nullptr) {
+    if (i_am_the_record_owner(r->rec_type)) {
+      r->sync_required = r->sync_required | REC_PEER_SYNC_REQUIRED;
+    }
+    return REC_ERR_OKAY;
+  }
+
+  return REC_ERR_FAIL;
+}
+} // namespace
 
 RecErrT
 _RecRegisterStatInt(RecT rec_type, const char *name, RecInt data_default, RecPersistT persist_type)
 {
-  REC_REGISTER_STAT_XXX(rec_int, RECD_INT);
+  return RecRegisterStatImpl<rec_detail::IntTag>(rec_type, name, data_default, persist_type);
 }
 
 RecErrT
 _RecRegisterStatFloat(RecT rec_type, const char *name, RecFloat data_default, RecPersistT persist_type)
 {
-  REC_REGISTER_STAT_XXX(rec_float, RECD_FLOAT);
+  return RecRegisterStatImpl<rec_detail::FloatTag>(rec_type, name, data_default, persist_type);
 }
 
 RecErrT
 _RecRegisterStatCounter(RecT rec_type, const char *name, RecCounter data_default, RecPersistT persist_type)
 {
-  REC_REGISTER_STAT_XXX(rec_counter, RECD_COUNTER);
+  return RecRegisterStatImpl<rec_detail::CounterTag>(rec_type, name, data_default, persist_type);
 }
 
 //-------------------------------------------------------------------------
 // RecRegisterConfigXXX
 //-------------------------------------------------------------------------
-#define REC_REGISTER_CONFIG_XXX(A, B)                                                                                           \
-  RecRecord *r;                                                                                                                 \
-  RecData    my_data_default;                                                                                                   \
-  my_data_default.A = data_default;                                                                                             \
-  if ((r = RecRegisterConfig(rec_type, name, B, my_data_default, update_type, check_type, check_regex, source, access_type)) != \
-      nullptr) {                                                                                                                \
-    if (i_am_the_record_owner(r->rec_type)) {                                                                                   \
-      r->sync_required = r->sync_required | REC_PEER_SYNC_REQUIRED;                                                             \
-    }                                                                                                                           \
-    return REC_ERR_OKAY;                                                                                                        \
-  } else {                                                                                                                      \
-    return REC_ERR_FAIL;                                                                                                        \
+namespace
+{
+
+template <typename Tag>
+RecErrT
+RecRegisterConfigImpl(RecT rec_type, const char *name, typename Tag::type data_default, RecUpdateT update_type,
+                      RecCheckT check_type, const char *check_regex, RecSourceT source, RecAccessT access_type)
+{
+  ink_assert((rec_type == RECT_CONFIG) || (rec_type == RECT_LOCAL));
+
+  RecData my_data_default;
+
+  if constexpr (std::is_same_v<Tag, rec_detail::IntTag>) {
+    my_data_default.rec_int = data_default;
+  } else if constexpr (std::is_same_v<Tag, rec_detail::CounterTag>) {
+    my_data_default.rec_counter = data_default;
+  } else if constexpr (std::is_same_v<Tag, rec_detail::FloatTag>) {
+    my_data_default.rec_float = data_default;
+  } else if constexpr (std::is_same_v<Tag, rec_detail::StringTag>) {
+    my_data_default.rec_string = data_default;
+  } else {
+    static_assert(always_false<Tag>::value, "Unsupported tag for RecRegisterConfig");
   }
+
+  if (RecRecord *r = RecRegisterConfig(rec_type, name, Tag::data_type, my_data_default, update_type, check_type, check_regex,
+                                       source, access_type);
+      r != nullptr) {
+    if (i_am_the_record_owner(r->rec_type)) {
+      r->sync_required = r->sync_required | REC_PEER_SYNC_REQUIRED;
+    }
+    return REC_ERR_OKAY;
+  }
+
+  return REC_ERR_FAIL;
+}
+} // namespace
 
 RecErrT
 RecRegisterConfigInt(RecT rec_type, const char *name, RecInt data_default, RecUpdateT update_type, RecCheckT check_type,
                      const char *check_regex, RecSourceT source, RecAccessT access_type)
 {
-  ink_assert((rec_type == RECT_CONFIG) || (rec_type == RECT_LOCAL));
-  REC_REGISTER_CONFIG_XXX(rec_int, RECD_INT);
+  return RecRegisterConfigImpl<rec_detail::IntTag>(rec_type, name, data_default, update_type, check_type, check_regex, source,
+                                                   access_type);
 }
 
 RecErrT
 RecRegisterConfigFloat(RecT rec_type, const char *name, RecFloat data_default, RecUpdateT update_type, RecCheckT check_type,
                        const char *check_regex, RecSourceT source, RecAccessT access_type)
 {
-  ink_assert((rec_type == RECT_CONFIG) || (rec_type == RECT_LOCAL));
-  REC_REGISTER_CONFIG_XXX(rec_float, RECD_FLOAT);
+  return RecRegisterConfigImpl<rec_detail::FloatTag>(rec_type, name, data_default, update_type, check_type, check_regex, source,
+                                                     access_type);
 }
 
 RecErrT
-RecRegisterConfigString(RecT rec_type, const char *name, const char *data_default_tmp, RecUpdateT update_type, RecCheckT check_type,
+RecRegisterConfigString(RecT rec_type, const char *name, const char *data_default, RecUpdateT update_type, RecCheckT check_type,
                         const char *check_regex, RecSourceT source, RecAccessT access_type)
 {
-  RecString data_default = const_cast<RecString>(data_default_tmp);
-  ink_assert((rec_type == RECT_CONFIG) || (rec_type == RECT_LOCAL));
-  REC_REGISTER_CONFIG_XXX(rec_string, RECD_STRING);
+  return RecRegisterConfigImpl<rec_detail::StringTag>(rec_type, name, const_cast<RecString>(data_default), update_type, check_type,
+                                                      check_regex, source, access_type);
 }
 
 RecErrT
 RecRegisterConfigCounter(RecT rec_type, const char *name, RecCounter data_default, RecUpdateT update_type, RecCheckT check_type,
                          const char *check_regex, RecSourceT source, RecAccessT access_type)
 {
-  ink_assert((rec_type == RECT_CONFIG) || (rec_type == RECT_LOCAL));
-  REC_REGISTER_CONFIG_XXX(rec_counter, RECD_COUNTER);
+  return RecRegisterConfigImpl<rec_detail::CounterTag>(rec_type, name, data_default, update_type, check_type, check_regex, source,
+                                                       access_type);
 }
 
 //-------------------------------------------------------------------------

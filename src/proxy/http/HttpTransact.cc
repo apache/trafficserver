@@ -1749,7 +1749,6 @@ HttpTransact::HandleApiErrorJump(State *s)
   **/
   if (s->http_return_code != HTTPStatus::NONE && s->http_return_code >= HTTPStatus::BAD_REQUEST) {
     const char *reason = http_hdr_reason_lookup(s->http_return_code);
-    ;
     build_response(s, &s->hdr_info.client_response, s->client_info.http_version, s->http_return_code, reason ? reason : "Error");
   } else {
     build_response(s, &s->hdr_info.client_response, s->client_info.http_version, HTTPStatus::INTERNAL_SERVER_ERROR, "INKApi Error");
