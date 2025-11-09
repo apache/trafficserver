@@ -32,16 +32,16 @@ Add the following line to :file:`plugin.config`::
     memory_profile.so
 
 In addition, |TS| must be able to read jemalloc configuration
-information either through the ``JEMALLOC_CONF`` environment variable
+information either through the ``MALLOC_CONF`` environment variable
 or via the string sym linked to ``/etc/malloc.conf``.
 
-For example, if the string below is in ``JEMALLOC_CONF`` or in the sym link string, it
+For example, if the string below is in ``MALLOC_CONF`` or in the sym link string, it
 enables profiling and indicates that the memory dump prefix is ``/tmp/jeprof``.::
 
     prof:true,prof_prefix:/tmp/jeprof
 
 Details on configuration jemalloc options at `<http://jemalloc.net/jemalloc.3.html>`.
-Changes to the configuration in ``JEMALLOC_CONF`` or ``/etc/malloc.conf`` require a process
+Changes to the configuration in ``MALLOC_CONF`` or ``/etc/malloc.conf`` require a process
 restart to pick up.
 
 Plugin Messages
@@ -68,7 +68,7 @@ Example Usage
 
 If your run time configuration string is::
 
-    prof:true,prof_prefix:/tmp/jeprof:prof_active:false
+    prof:true,prof_prefix:/tmp/jeprof,prof_active:false
 
 |TS| has started without profile sampling started.  Perhaps you didn't want to profile the start up phase of |TS|.  To start
 you need to send the activate message to the plugin::
