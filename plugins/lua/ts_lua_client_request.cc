@@ -1185,6 +1185,7 @@ ts_lua_client_request_client_addr_set_verified_addr(lua_State *L)
     struct sockaddr_in6 sin6;
     struct sockaddr     sa;
   } addr;
+  memset(&addr, 0, sizeof(addr));
   ts_lua_http_ctx *http_ctx;
   int              n;
   int              family;
