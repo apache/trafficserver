@@ -1838,7 +1838,8 @@ OperatorSetCCAlgorithm::exec(const Resources &res) const
     TSError("[%s] [OperatorSetCCAlgorithm] Error setting congestion control algorithm, errno=%d %s", PLUGIN_NAME, errno,
             strerror(errno));
   }
-
+#else
+  TSWarning("[%s] [OperatorSetCCAlgorithm] TCP_CONGESTION socket option is not supported on this platform", PLUGIN_NAME);
 #endif
   return true;
 }
