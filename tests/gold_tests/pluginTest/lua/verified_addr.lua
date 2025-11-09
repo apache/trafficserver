@@ -16,23 +16,23 @@
 
 function do_remap()
     local result = ""
-    
+
     -- Test 1: Check if verified address is initially nil
     local ip1, family1 = ts.client_request.client_addr.get_verified_addr()
     if not ip1 then
         result = result .. "initial:nil;"
     end
-    
+
     -- Test 2: Set an IPv4 verified address from X-Real-IP header
     local real_ip = ts.client_request.header["X-Real-IP"]
     if real_ip then
         local success, err = pcall(function()
-            ts.client_request.client_addr.set_verified_addr(real_ip, 2)
+            ts.client_request.client_addr.set_verified_addr(real_ip, TS_LUA_AF_INET)
         end)
-        
+
         if success then
             result = result .. "set:success;"
-            
+
             -- Test 3: Get the verified address we just set
             local ip2, family2 = ts.client_request.client_addr.get_verified_addr()
             if ip2 then
@@ -44,17 +44,17 @@ function do_remap()
             result = result .. "set:failed;"
         end
     end
-    
+
     -- Test 4: Try setting an IPv6 address from X-Real-IP-V6 header
     local real_ipv6 = ts.client_request.header["X-Real-IP-V6"]
     if real_ipv6 then
         local success, err = pcall(function()
             ts.client_request.client_addr.set_verified_addr(real_ipv6, TS_LUA_AF_INET6)
         end)
-        
+
         if success then
             result = result .. "setv6:success;"
-            
+
             -- Get the IPv6 verified address
             local ip3, family3 = ts.client_request.client_addr.get_verified_addr()
             if ip3 then
@@ -66,21 +66,21 @@ function do_remap()
             result = result .. "setv6:failed;"
         end
     end
-    
+
     -- Test 5: Try setting an invalid address (should fail)
     local invalid_ip = ts.client_request.header["X-Invalid-IP"]
     if invalid_ip then
         local success, err = pcall(function()
             ts.client_request.client_addr.set_verified_addr(invalid_ip, TS_LUA_AF_INET)
         end)
-        
+
         if not success then
             result = result .. "invalid:rejected;"
         else
             result = result .. "invalid:accepted;"
         end
     end
-    
+
     -- Return the result in the response
     ts.http.set_resp(200, result)
     return 0
