@@ -1009,6 +1009,7 @@ HttpSM::state_read_push_response_header(int event, void *data)
   switch (event) {
   case VC_EVENT_EOS:
     _ua.get_entry()->eos = true;
+    Log::error("Server closed connection while reading PUSH response header.");
     // Fall through
 
   case VC_EVENT_READ_READY:
@@ -1938,6 +1939,7 @@ HttpSM::state_read_server_response_header(int event, void *data)
 
   switch (event) {
   case VC_EVENT_EOS:
+    Log::error("Server closed connection while reading response header");
     server_entry->eos = true;
     // If we have received any bytes for this transaction do not retry
     if (server_response_hdr_bytes > 0) {
