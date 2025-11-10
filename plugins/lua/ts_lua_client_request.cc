@@ -30,13 +30,11 @@ typedef enum {
   TS_LUA_PP_INFO_SOCK_TYPE = TS_PP_INFO_SOCK_TYPE
 } TSLuaPPInfoKey;
 
-ts_lua_var_item ts_lua_pp_info_key_vars[] = {TS_LUA_MAKE_VAR_ITEM(TS_LUA_PP_INFO_VERSION),
-                                              TS_LUA_MAKE_VAR_ITEM(TS_LUA_PP_INFO_SRC_ADDR),
-                                              TS_LUA_MAKE_VAR_ITEM(TS_LUA_PP_INFO_SRC_PORT),
-                                              TS_LUA_MAKE_VAR_ITEM(TS_LUA_PP_INFO_DST_ADDR),
-                                              TS_LUA_MAKE_VAR_ITEM(TS_LUA_PP_INFO_DST_PORT),
-                                              TS_LUA_MAKE_VAR_ITEM(TS_LUA_PP_INFO_PROTOCOL),
-                                              TS_LUA_MAKE_VAR_ITEM(TS_LUA_PP_INFO_SOCK_TYPE)};
+ts_lua_var_item ts_lua_pp_info_key_vars[] = {
+  TS_LUA_MAKE_VAR_ITEM(TS_LUA_PP_INFO_VERSION), TS_LUA_MAKE_VAR_ITEM(TS_LUA_PP_INFO_SRC_ADDR),
+  TS_LUA_MAKE_VAR_ITEM(TS_LUA_PP_INFO_SRC_PORT), TS_LUA_MAKE_VAR_ITEM(TS_LUA_PP_INFO_DST_ADDR),
+  TS_LUA_MAKE_VAR_ITEM(TS_LUA_PP_INFO_DST_PORT), TS_LUA_MAKE_VAR_ITEM(TS_LUA_PP_INFO_PROTOCOL),
+  TS_LUA_MAKE_VAR_ITEM(TS_LUA_PP_INFO_SOCK_TYPE)};
 
 static void ts_lua_inject_client_request_client_addr_api(lua_State *L);
 static void ts_lua_inject_client_request_server_addr_api(lua_State *L);
@@ -1200,9 +1198,9 @@ ts_lua_client_request_get_pp_info(lua_State *L)
   if (TSVConnPPInfoGet(client_conn, key, &value, &length) == TS_SUCCESS) {
     if (key == TS_PP_INFO_SRC_ADDR || key == TS_PP_INFO_DST_ADDR) {
       // For addresses, convert sockaddr to string
-      char             ip_str[INET6_ADDRSTRLEN];
-      const sockaddr  *addr = reinterpret_cast<const sockaddr *>(value);
-      const sockaddr_in *addr_in;
+      char                ip_str[INET6_ADDRSTRLEN];
+      const sockaddr     *addr = reinterpret_cast<const sockaddr *>(value);
+      const sockaddr_in  *addr_in;
       const sockaddr_in6 *addr_in6;
 
       if (addr->sa_family == AF_INET) {
