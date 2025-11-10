@@ -44,7 +44,7 @@ Monitor::Monitor(EThread *threads[], size_t n_threads, std::chrono::milliseconds
 {
   // Precondition: timeout_ms must be > 0. A timeout of 0 indicates the watchdog is disabled
   // and the caller should not instantiate the Monitor (see traffic_server.cc).
-  ink_assert(timeout_ms.count() > 0);
+  ink_release_assert(timeout_ms.count() > 0);
   _watchdog_thread = std::thread(std::bind_front(&Monitor::monitor_loop, this));
 }
 
