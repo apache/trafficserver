@@ -28,10 +28,6 @@
 #include "tscore/PluginUserArgs.h"
 #include "iocore/eventsystem/EventSystem.h"
 
-#if !defined(I_VIO_h)
-#error "include VIO.h"
-#endif
-
 //
 // Data Types
 //

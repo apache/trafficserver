@@ -23,7 +23,6 @@
  */
 
 #pragma once
-#define I_VIO_h
 
 #include "IOBuffer.h"
 
