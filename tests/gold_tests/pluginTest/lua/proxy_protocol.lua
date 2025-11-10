@@ -16,40 +16,40 @@
 
 function do_remap()
   local req = ts.client_request
-  
+
   -- Get PROXY protocol version
   local pp_version = req.get_pp_info_int(TS_LUA_PP_INFO_VERSION)
   if pp_version then
     ts.debug(string.format("PP-Version: %d", pp_version))
-    
+
     -- Get source address and port
     local src_addr = req.get_pp_info(TS_LUA_PP_INFO_SRC_ADDR)
     local src_port = req.get_pp_info_int(TS_LUA_PP_INFO_SRC_PORT)
-    
+
     -- Get destination address and port
     local dst_addr = req.get_pp_info(TS_LUA_PP_INFO_DST_ADDR)
     local dst_port = req.get_pp_info_int(TS_LUA_PP_INFO_DST_PORT)
-    
+
     -- Get protocol and socket type
     local protocol = req.get_pp_info_int(TS_LUA_PP_INFO_PROTOCOL)
     local sock_type = req.get_pp_info_int(TS_LUA_PP_INFO_SOCK_TYPE)
-    
+
     if src_addr and src_port then
       ts.debug(string.format("PP-Source: %s:%d", src_addr, src_port))
     end
-    
+
     if dst_addr and dst_port then
       ts.debug(string.format("PP-Destination: %s:%d", dst_addr, dst_port))
     end
-    
+
     if protocol then
       ts.debug(string.format("PP-Protocol: %d", protocol))
     end
-    
+
     if sock_type then
       ts.debug(string.format("PP-SocketType: %d", sock_type))
     end
-    
+
     -- Add custom header with PP info
     if src_addr then
       ts.client_request.header['X-PP-Client-IP'] = src_addr
@@ -57,6 +57,6 @@ function do_remap()
   else
     ts.debug("PP-Not-Present")
   end
-  
+
   return 0
 end
