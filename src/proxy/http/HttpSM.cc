@@ -1127,6 +1127,13 @@ HttpSM::state_raw_http_server_open(int event, void *data)
   case VC_EVENT_ERROR:
   case VC_EVENT_EOS:
   case NET_EVENT_OPEN_FAILED:
+    if (t_state.cause_of_death_errno == -UNKNOWN_INTERNAL_ERROR) {
+      if (event == VC_EVENT_EOS) {
+        t_state.set_connect_fail(EPIPE);
+      } else {
+        t_state.set_connect_fail(EIO);
+      }
+    }
     t_state.current.state = HttpTransact::OPEN_RAW_ERROR;
     // use this value just to get around other values
     t_state.hdr_info.response_error = HttpTransact::ResponseError_t::STATUS_CODE_SERVER_ERROR;
@@ -2036,9 +2043,7 @@ HttpSM::state_read_server_response_header(int event, void *data)
     if (allow_error == false) {
       SMDbg(dbg_ctl_http_seq, "Error parsing server response header");
       t_state.current.state = HttpTransact::PARSE_ERROR;
-      // We set this to 0 because otherwise HttpTransact::retry_server_connection_not_open
-      // will raise an assertion if the value is the default UNKNOWN_INTERNAL_ERROR.
-      t_state.cause_of_death_errno = 0;
+      t_state.set_connect_fail(EBADMSG);
 
       // If the server closed prematurely on us, use the
       //   server setup error routine since it will forward
@@ -5150,6 +5155,9 @@ HttpSM::send_origin_throttled_response()
   if (t_state.dns_info.looking_up != ResolveInfo::PARENT_PROXY) {
     t_state.current.retry_attempts.maximize(t_state.configured_connect_attempts_max_retries());
   }
+  if (t_state.cause_of_death_errno == -UNKNOWN_INTERNAL_ERROR) {
+    t_state.set_connect_fail(EUSERS); // Too many users.
+  }
   t_state.current.state = HttpTransact::OUTBOUND_CONGESTION;
   call_transact_and_set_next_state(HttpTransact::HandleResponse);
 }
@@ -5560,6 +5568,9 @@ HttpSM::do_http_server_open(bool raw, bool only_direct)
       httpSessionManager.purge_keepalives();
       // Eventually may want to have a queue as the origin_max_connection does to allow for a combination
       // of retries and errors.  But at this point, we are just going to allow the error case.
+      if (t_state.cause_of_death_errno == -UNKNOWN_INTERNAL_ERROR) {
+        t_state.set_connect_fail(ENFILE); // Too many open files in system.
+      }
       t_state.current.state = HttpTransact::CONNECTION_ERROR;
       call_transact_and_set_next_state(HttpTransact::HandleResponse);
       return;
