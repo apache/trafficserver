@@ -2,6 +2,16 @@
 
   A watchdog for event loops
 
+  Each event thread advertises its current state through a lightweight
+  "heartbeat" struct: the thread publishes the timestamps for the most recent
+  sleep/wake pair along with a monotonically increasing sequence number.
+  `Watchdog::Monitor`, started from `traffic_server.cc`, runs in its own
+  `std::thread` and periodically scans those heartbeats; if a thread has been
+  awake longer than the configured timeout it emits a warning (timeout values
+  come from `proxy.config.exec_thread.watchdog.timeout_ms`, where 0 disables
+  the monitor).  The monitor never touches event-system locks, keeping the
+  runtime overhead in the hot loop confined to a handful of atomic updates.
+
   @section license License
 
   Licensed to the Apache Software Foundation (ASF) under one

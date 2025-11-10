@@ -68,12 +68,14 @@ Monitor::monitor_loop() const
   while (!_shutdown.load(std::memory_order_acquire)) {
     std::chrono::time_point<std::chrono::steady_clock> now = std::chrono::steady_clock::now();
     for (size_t i = 0; i < _threads.size(); ++i) {
-      EThread                                           *t          = _threads[i];
+      EThread *t = _threads[i];
+      // Relaxed load: each heartbeat field has a single writer (its EThread) so per-object coherence suffices.
       std::chrono::time_point<std::chrono::steady_clock> last_sleep = t->heartbeat_state.last_sleep.load(std::memory_order_relaxed);
       if (last_sleep == std::chrono::steady_clock::time_point::min()) {
         // initial value sentinel - event loop hasn't started
         continue;
       }
+      // Same reasoning for relaxed load on wake timestamp.
       std::chrono::time_point<std::chrono::steady_clock> last_wake = t->heartbeat_state.last_wake.load(std::memory_order_relaxed);
 
       if (last_wake == std::chrono::steady_clock::time_point::min() || last_wake < last_sleep) {
@@ -83,6 +85,7 @@ Monitor::monitor_loop() const
 
       auto awake_duration = now - last_wake;
       if (awake_duration > _timeout) {
+        // Monitor thread is the sole reader (and warned_seq writer), so relaxed accesses are race-free.
         uint64_t seq        = t->heartbeat_state.seq.load(std::memory_order_relaxed);
         uint64_t warned_seq = t->heartbeat_state.warned_seq.load(std::memory_order_relaxed);
         if (warned_seq < seq) {
