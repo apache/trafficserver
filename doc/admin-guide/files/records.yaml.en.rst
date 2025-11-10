@@ -419,6 +419,18 @@ Thread Variables
 
    This option only has an affect when |TS| has been compiled with ``--enable-hwloc``.
 
+.. ts:cv:: CONFIG proxy.config.exec_thread.watchdog.timeout_ms INT 0
+   :units: milliseconds
+
+   Set the timeout for the exec thread watchdog in milliseconds. If an exec thread
+   does not heartbeat within this time period, the watchdog will log a warning message.
+   If this value is zero, the watchdog is disabled.
+
+   The default of this watchdot timeout is set to 0 (disabled) for ATS 10.2 for
+   compatibility.  We recommend that administrators set a reasonable
+   value, such as 1000, for production configurations, in order to
+   catch hung plugins, or server overload scenarios.
+
 .. ts:cv:: CONFIG proxy.config.system.file_max_pct FLOAT 0.9
 
    Set the maximum number of file handles for the traffic_server process as a percentage of the fs.file-max proc value in Linux. The default is 90%.
