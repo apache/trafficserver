@@ -80,7 +80,7 @@ class ActionItem;
 
 struct SNIServerGroupsList {
   std::string group;
-  int         percentage = 100;
+  int         weight = 100;
 };
 
 struct YamlSNIConfig {

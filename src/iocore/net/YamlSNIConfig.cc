@@ -472,8 +472,8 @@ template <> struct convert<YamlSNIConfig::Item> {
           if (it["group"]) {
             input.group = it["group"].as<std::string>();
           }
-          if (it["percentage"]) {
-            input.percentage = it["percentage"].as<int>();
+          if (it["weight"]) {
+            input.weight = it["weight"].as<int>();
           }
           item.server_groups_list.emplace_back(std::move(input));
         }

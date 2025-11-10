@@ -519,7 +519,7 @@ ServerGroupsList::SNIAction(SSL &ssl, const Context & /* ctx ATS_UNUSED */) cons
 
   int total = 0;
   for (auto const &g : server_groups_list) {
-    total += g.percentage;
+    total += g.weight;
   }
 
   int         r         = random() % total;
@@ -527,7 +527,7 @@ ServerGroupsList::SNIAction(SSL &ssl, const Context & /* ctx ATS_UNUSED */) cons
   std::string group;
   for (auto const &g : server_groups_list) {
     int start  = culmative;
-    culmative += g.percentage;
+    culmative += g.weight;
     if (r >= start && r < culmative) {
       group = g.group;
       break;

@@ -171,13 +171,12 @@ server_groups_list                       Inbound   Specifies an override to the 
                                                    :file:`records.yaml` configuration. See the
                                                    `OpenSSL SSL_CTX_set_groups_list <https://docs.openssl.org/3.5/man3/SSL_CTX_set1_curves/>`_
                                                    documentation.
-                                                   
-                                                   Each item contains a group key identifying the server group name and optionally, 
-                                                   a percentage key that determines how frequently that group is selected when multiple 
+
+                                                   Each item contains a group key identifying the server group name and optionally,
+                                                   a weight that determines how frequently that group is selected when multiple
                                                    entries are present.
-                                                   
-                                                   Percentages are relative; they do not need to sum to 100. Any omitted percentage defaults to 100.
-                                                   
+
+                                                   Any omitted weight defaults to 100.
                                                    For example:
 
                                                     .. code-block:: yaml
@@ -186,18 +185,17 @@ server_groups_list                       Inbound   Specifies an override to the 
                                                           - fqdn: example1.com
                                                             server_groups_list:
                                                               - group: "group_1"
-                                                                percentage: 20
+                                                                weight: 20
                                                               - group: "group_2"
-                                                                percentage: 80
+                                                                weight: 80
                                                           - fqdn: example2.com
                                                             server_groups_list:
                                                               - group: "group_1"
                                                           - fqdn: example3.com
                                                             server_groups_list: "group_1"
-                                                            
-                                                  
+
                                                   In this configuration:
-                                                    - connections with SNI example1.com will be directed to group_1 about 20% 
+                                                    - connections with SNI example1.com will be directed to group_1 about 20%
                                                       of the time and to group_2 about 80% of the time
                                                     - Connections for example2.com and example3.com will always use group_1.
 
