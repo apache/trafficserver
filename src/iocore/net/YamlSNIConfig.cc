@@ -463,7 +463,21 @@ template <> struct convert<YamlSNIConfig::Item> {
       item.server_TLSv1_3_cipher_suites = node[TS_server_TLSv1_3_cipher_suites].as<std::string>();
     }
     if (node[TS_server_groups_list]) {
-      item.server_groups_list = node[TS_server_groups_list].as<std::string>();
+      SNIServerGroupsList input;
+      if (node[TS_server_groups_list].IsScalar()) {
+        input.group = node[TS_server_groups_list].as<std::string>();
+        item.server_groups_list.emplace_back(input);
+      } else {
+        for (auto const &it : node[TS_server_groups_list]) {
+          if (it["group"]) {
+            input.group = it["group"].as<std::string>();
+          }
+          if (it["percentage"]) {
+            input.percentage = it["percentage"].as<int>();
+          }
+          item.server_groups_list.emplace_back(std::move(input));
+        }
+      }
     }
     if (node[TS_ip_allow]) {
       item.ip_allow = node[TS_ip_allow].as<std::string>();

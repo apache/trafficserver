@@ -516,10 +516,28 @@ ServerGroupsList::SNIAction(SSL &ssl, const Context & /* ctx ATS_UNUSED */) cons
   if (tbs == nullptr) {
     return SSL_TLSEXT_ERR_OK;
   }
-  Dbg(dbg_ctl_ssl_sni, "Setting groups list from server_groups_list to %s", server_groups_list.c_str());
 
-  if (!tbs->set_groups_list(server_groups_list)) {
-    Error("Invalid server_groups_list: %s", server_groups_list.c_str());
+  int total = 0;
+  for (auto const &g : server_groups_list) {
+    total += g.percentage;
+  }
+
+  int         r         = random() % total;
+  int         culmative = 0;
+  std::string group;
+  for (auto const &g : server_groups_list) {
+    int start  = culmative;
+    culmative += g.percentage;
+    if (r >= start && r < culmative) {
+      group = g.group;
+      break;
+    }
+  }
+
+  Dbg(dbg_ctl_ssl_sni, "selecting server group '%s' (rand=%i, total_sum=%i)", group.c_str(), r, total);
+
+  if (!tbs->set_groups_list(group)) {
+    Warning("Invalid server group '%s' in SNI configuration", group.c_str());
     return SSL_TLSEXT_ERR_ALERT_WARNING;
   }
   return SSL_TLSEXT_ERR_OK;

@@ -349,11 +349,11 @@ private:
 class ServerGroupsList : public ActionItem
 {
 public:
-  ServerGroupsList(std::string const &p) : server_groups_list(p) {}
+  ServerGroupsList(std::vector<SNIServerGroupsList> const &p) : server_groups_list(p) {}
   ~ServerGroupsList() override {}
 
   int SNIAction(SSL &ssl, const Context &ctx) const override;
 
 private:
-  std::string const server_groups_list{};
+  std::vector<SNIServerGroupsList> const server_groups_list{};
 };
