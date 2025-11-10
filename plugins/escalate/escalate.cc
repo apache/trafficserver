@@ -209,6 +209,7 @@ EscalateResponse(TSCont cont, TSEvent event, void *edata)
 
   // Now update the Redirect URL, if set
   if (url_str) {
+    Dbg(dbg_ctl, "Calling TSHttpTxnRedirectUrlSet for status %d with URL: %.*s", status, url_len, url_str);
     TSHttpTxnRedirectUrlSet(txn, url_str, url_len); // Transfers ownership
 
     // Add our x-escalate-redirect header marker if it doesn't already exist and the option is enabled.
@@ -319,6 +320,11 @@ TSRemapStatus
 TSRemapDoRemap(void *instance, TSHttpTxn txn, TSRemapRequestInfo * /* rri */)
 {
   EscalationState *es = static_cast<EscalationState *>(instance);
+
+  // Note: For POST body buffering to work with escalation,
+  // proxy.config.http.post_copy_size should be set large enough to buffer the
+  // expected POST body sizes. This enables ATS to buffer POST bodies before
+  // sending to the origin so they can be replayed if escalation is needed.
 
   TSHttpTxnHookAdd(txn, TS_HTTP_READ_RESPONSE_HDR_HOOK, es->cont);
   TSHttpTxnHookAdd(txn, TS_HTTP_SEND_RESPONSE_HDR_HOOK, es->cont);

@@ -19,7 +19,7 @@ meta:
 
 sessions:
 - transactions:
-  # Original GET transactions from escalate_original.replay.yaml
+  # Non-escalated GET request.
   - client-request:
       method: "GET"
       version: "1.1"
@@ -51,6 +51,7 @@ sessions:
         fields:
         - [ X-Response, { value: first, as: equal } ]
 
+  # Non-escalated GET request with a chunked response.
   - client-request:
       method: "GET"
       version: "1.1"
@@ -84,6 +85,7 @@ sessions:
         fields:
         - [ X-Response, { value: second, as: equal } ]
 
+  # GET request that will fail and be escalated
   - client-request:
       method: "GET"
       version: "1.1"
@@ -107,13 +109,16 @@ sessions:
       headers:
         fields:
         - [ Content-Length, 0 ]
+        - [ X-Response, third ]
 
+    # With escalation, the failover responds with 200
     proxy-response:
-      # The failover server should reply with a 200 OK (GET requests are escalated with --escalate-non-get-methods).
       status: 200
       headers:
         fields:
         - [ X-Response, { value: third, as: equal } ]
+      content:
+        size: 320000
 
   # This will not make it to the origin server since the Host is set to a
   # non-responsive server. But the failover server should reply with a 200 OK.
@@ -134,6 +139,7 @@ sessions:
         fields:
         - [ X-Request, { value: fourth, as: equal } ]
 
+    # This server-response is just for replay file validity - origin server won't receive this transaction
     server-response:
       status: 200
       reason: OK
@@ -147,34 +153,32 @@ sessions:
         fields:
         - [ X-Response, { value: fourth, as: equal } ]
 
-  # POST request with sizable body that gets proxied normally.
+  # POST request that succeeds without escalation
   - client-request:
       method: "POST"
       version: "1.1"
-      url: /api/upload/data
+      url: /api/post/success
       headers:
         fields:
         - [ Host, origin.server.com ]
         - [ Content-Type, "application/json" ]
-        - [ Content-Length, 32 ]
+        - [ Content-Length, 320000 ]
         - [ X-Request, post_success ]
         - [ uuid, POST_success ]
-      content:
-        encoding: plain
-        size: 32
 
     proxy-request:
       method: "POST"
       headers:
         fields:
         - [ X-Request, { value: post_success, as: equal } ]
+        - [ Content-Length, { value: 320000, as: equal } ]
 
     server-response:
       status: 200
       reason: OK
       headers:
         fields:
-        - [ Content-Length, 32 ]
+        - [ Content-Length, 0 ]
         - [ X-Response, post_success ]
 
     proxy-response:
@@ -183,22 +187,25 @@ sessions:
         fields:
         - [ X-Response, { value: post_success, as: equal } ]
 
-  # A HEAD request that will be escalated with --escalate-non-get-methods
+  # POST request with body that will be escalated with --escalate-non-get-methods
   - client-request:
-      method: "HEAD"
+      method: "POST"
       version: "1.1"
-      url: /api/head/data
+      url: /api/post/data
       headers:
         fields:
         - [ Host, origin.server.com ]
-        - [ X-Request, head_fail_escalated ]
-        - [ uuid, HEAD_fail_escalated ]
+        - [ Content-Type, "application/json" ]
+        - [ Content-Length, 320000 ]
+        - [ X-Request, post_fail_escalated ]
+        - [ uuid, POST_fail_escalated ]
 
     proxy-request:
-      method: "HEAD"
+      method: "POST"
       headers:
         fields:
-        - [ X-Request, { value: head_fail_escalated, as: equal } ]
+        - [ X-Request, { value: post_fail_escalated, as: equal } ]
+        - [ Content-Length, { value: 320000, as: equal } ]
 
     server-response:
       status: 502
@@ -206,7 +213,78 @@ sessions:
       headers:
         fields:
         - [ Content-Length, 0 ]
-        - [ X-Response, head_fail_escalated ]
+        - [ X-Response, post_fail_escalated ]
+
+    # With --escalate-non-get-methods, POST request is escalated to failover.
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response, { value: post_fail_escalated, as: equal } ]
+
+  # Small POST request (32 bytes) that will be escalated
+  - client-request:
+      method: "POST"
+      version: "1.1"
+      url: /api/post/small
+      headers:
+        fields:
+        - [ Host, origin.server.com ]
+        - [ Content-Type, "application/json" ]
+        - [ Content-Length, 32 ]
+        - [ X-Request, post_small_fail ]
+        - [ uuid, POST_small_fail ]
+      content:
+        encoding: plain
+        data: '{"status":"active","id":123}'
+
+    proxy-request:
+      method: "POST"
+      headers:
+        fields:
+        - [ X-Request, { value: post_small_fail, as: equal } ]
+        - [ Content-Length, { value: 32, as: equal } ]
+
+    server-response:
+      status: 502
+      reason: Bad Gateway
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+        - [ X-Response, post_small_fail ]
+
+    # With --escalate-non-get-methods, POST request is escalated to failover.
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response, { value: post_small_fail, as: equal } ]
+
+  # HEAD request that will be escalated with --escalate-non-get-methods
+  - client-request:
+      method: "HEAD"
+      version: "1.1"
+      url: /path/head_fail
+      headers:
+        fields:
+        - [ Host, origin.server.com ]
+        - [ Content-Length, 0 ]
+        - [ X-Request, head_fail ]
+        - [ uuid, HEAD_fail_escalated ]
+
+    proxy-request:
+      method: "HEAD"
+      headers:
+        fields:
+        - [ X-Request, { value: head_fail, as: equal } ]
+
+    server-response:
+      status: 502
+      reason: Bad Gateway
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+        - [ X-Response, head_fail ]
 
     # With --escalate-non-get-methods, HEAD request is escalated to failover.
     proxy-response:
