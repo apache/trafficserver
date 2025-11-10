@@ -152,8 +152,7 @@ class ConnectViaPVTest:
 
     def runTraffic(self):
         tr = Test.AddTestRun("Verify correct handling of CONNECT request")
-        tr.AddVerifierClientProcess(
-            "connect-client", self.connectReplayFile, http_ports=[self.ts.Variables.port], other_args='--thread-limit 1')
+        tr.AddVerifierClientProcess("connect-client", self.connectReplayFile, http_ports=[self.ts.Variables.port])
         tr.Processes.Default.StartBefore(self.server)
         tr.Processes.Default.StartBefore(self.ts)
         tr.StillRunningAfter = self.server
@@ -238,8 +237,7 @@ class ConnectViaPVTest2:
 
     def runTraffic(self):
         tr = Test.AddTestRun("Verify correct handling of CONNECT request on HTTP/2")
-        tr.AddVerifierClientProcess(
-            "connect-client2", self.connectReplayFile, https_ports=[self.ts.Variables.ssl_port], other_args='--thread-limit 1')
+        tr.AddVerifierClientProcess("connect-client2", self.connectReplayFile, https_ports=[self.ts.Variables.ssl_port])
         tr.Processes.Default.StartBefore(self.server)
         tr.Processes.Default.StartBefore(self.ts)
         tr.StillRunningAfter = self.server
