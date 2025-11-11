@@ -74,8 +74,7 @@ tr.MakeCurlCommand(
     ts=ts)
 tr.ReturnCode = 0
 tr.StillRunningAfter = ts
-ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    "Setting groups list from server_groups_list to x25519", "Should log setting the server groups")
+ts.Disk.traffic_out.Content += Testers.ContainsExpression("selecting server group 'x25519'", "Should log setting the server groups")
 tr.Processes.Default.Streams.all = Testers.IncludesExpression(
     f"SSL connection using TLSv1.2 / ECDHE-RSA-AES256-GCM-SHA384 / x25519", "Curl should log using x25519 in the SSL connection")
 
@@ -89,7 +88,7 @@ tr.ReturnCode = 35
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 ts.Disk.diags_log.Content = Testers.ContainsExpression(
-    "ERROR: Invalid server_groups_list: ABC123", "Curl attempt should have failed")
+    "WARNING: Invalid server group 'ABC123' in SNI configuration", "Curl attempt should have failed")
 
 # Hybrid ECDH PQ key exchange TLS groups were added in OpenSSL 3.5
 if Condition.HasOpenSSLVersion("3.5.0"):
@@ -101,7 +100,7 @@ if Condition.HasOpenSSLVersion("3.5.0"):
     tr.ReturnCode = 0
     tr.StillRunningAfter = ts
     ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-        "Setting groups list from server_groups_list to X25519MLKEM768", "Should log setting the server groups")
+        "selecting server group 'X25519MLKEM768'", "Should log setting the server groups")
     tr.Processes.Default.Streams.all = Testers.IncludesExpression(
         f"SSL connection using TLSv1.3 / TLS_AES_256_GCM_SHA384 / X25519MLKEM768",
         f"Curl should log using X25519MLKEM768 in the SSL connection")
