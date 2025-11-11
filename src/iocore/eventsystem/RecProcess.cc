@@ -21,13 +21,14 @@
   limitations under the License.
  */
 
+#include "records/RecProcess.h"
+#include "iocore/eventsystem/EventProcessor.h"
 #include "tscore/ink_platform.h"
 #include "tscore/EventNotify.h"
 #include "tsutil/Metrics.h"
 
 #include "iocore/eventsystem/Tasks.h"
 
-#include "P_EventSystem.h"
 #include "../../records/P_RecCore.h"
 #include "../../records/P_RecMessage.h"
 #include "../../records/P_RecUtils.h"

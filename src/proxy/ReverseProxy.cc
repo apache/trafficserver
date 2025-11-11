@@ -30,7 +30,6 @@
 #include "tscore/ink_platform.h"
 #include "tscore/Filenames.h"
 #include <dlfcn.h>
-#include "../iocore/eventsystem/P_EventSystem.h"
 #include "iocore/eventsystem/ConfigProcessor.h"
 #include "proxy/ReverseProxy.h"
 #include "tscore/MatcherUtils.h"
