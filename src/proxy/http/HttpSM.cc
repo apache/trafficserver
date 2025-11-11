@@ -142,6 +142,31 @@ std::atomic<int64_t> next_sm_id(0);
 /// Buffer for some error logs.
 thread_local std::string error_bw_buffer;
 
+constexpr size_t ORIGIN_LOG_URL_LEN = 512;
+
+void
+log_server_close_with_origin(HttpTransact::State &state, const char *message)
+{
+  if (message == nullptr) {
+    return;
+  }
+
+  if (state.hdr_info.server_request.valid()) {
+    char origin_url[ORIGIN_LOG_URL_LEN] = {0};
+    int  offset                         = 0;
+    int  skip                           = 0;
+
+    state.hdr_info.server_request.url_print(origin_url, static_cast<int>(ORIGIN_LOG_URL_LEN) - 1, &offset, &skip);
+    if (offset > 0) {
+      origin_url[offset] = '\0';
+      Log::error("%s (origin %s)", message, origin_url);
+      return;
+    }
+  }
+
+  Log::error("%s", message);
+}
+
 } // namespace
 
 int64_t
@@ -1001,9 +1026,10 @@ HttpSM::state_read_push_response_header(int event, void *data)
   ink_assert(t_state.current.server == nullptr);
 
   switch (event) {
-  case VC_EVENT_EOS:
+  case VC_EVENT_EOS: {
     _ua.get_entry()->eos = true;
-    Log::error("Server closed connection while reading PUSH response header.");
+    log_server_close_with_origin(t_state, "Server closed connection while reading PUSH response header.");
+  }
     // Fall through
 
   case VC_EVENT_READ_READY:
@@ -1932,9 +1958,10 @@ HttpSM::state_read_server_response_header(int event, void *data)
   int bytes_used = 0;
 
   switch (event) {
-  case VC_EVENT_EOS:
-    Log::error("Server closed connection while reading response header");
+  case VC_EVENT_EOS: {
+    log_server_close_with_origin(t_state, "Server closed connection while reading response header");
     server_entry->eos = true;
+  }
 
   // Fall through
   case VC_EVENT_READ_READY:
