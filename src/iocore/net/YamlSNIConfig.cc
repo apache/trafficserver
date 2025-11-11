@@ -474,6 +474,9 @@ template <> struct convert<YamlSNIConfig::Item> {
           }
           if (it["weight"]) {
             input.weight = it["weight"].as<int>();
+            if (input.weight < 1) {
+              throw YAML::ParserException(node[TS_server_groups_list].Mark(), "server_groups_list weight must be greater than 0");
+            }
           }
           item.server_groups_list.emplace_back(std::move(input));
         }

@@ -521,6 +521,10 @@ ServerGroupsList::SNIAction(SSL &ssl, const Context & /* ctx ATS_UNUSED */) cons
   for (auto const &g : server_groups_list) {
     total += g.weight;
   }
+  if (total < 1) {
+    Warning("server_groups_list has invalid weights (sum <= 0)");
+    return SSL_TLSEXT_ERR_ALERT_WARNING;
+  }
 
   int         r         = random() % total;
   int         culmative = 0;
