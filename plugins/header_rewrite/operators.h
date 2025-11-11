@@ -750,3 +750,22 @@ private:
   CondOpSection     *_cur_section = &_sections;
   Parser::CondClause _clause      = Parser::CondClause::COND;
 };
+
+class OperatorSetCCAlgorithm : public Operator
+{
+public:
+  OperatorSetCCAlgorithm() { Dbg(dbg_ctl, "Calling CTOR for OperatorSetCCAlgorithm"); }
+
+  // noncopyable
+  OperatorSetCCAlgorithm(const OperatorSetCCAlgorithm &) = delete;
+  void operator=(const OperatorSetCCAlgorithm &)         = delete;
+
+  void initialize(Parser &p) override;
+
+protected:
+  void initialize_hooks() override;
+  bool exec(const Resources &res) const override;
+
+private:
+  Value _cc_alg;
+};
