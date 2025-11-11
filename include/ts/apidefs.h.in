@@ -1589,6 +1589,10 @@ struct TSResponseAction {
  */
 extern "C" void TSPluginInit(int argc, const char *argv[]);
 
+extern "C" TSReturnCode TSSNIInit();
+extern "C" TSReturnCode TSSNINewInstance(int argc, char *argv[], void **ih);
+extern "C" int          TSSNIDoAction(void *ih, TSSslConnection);
+
 namespace ts
 {
 static const int NO_FD = -1; ///< No or invalid file descriptor.
