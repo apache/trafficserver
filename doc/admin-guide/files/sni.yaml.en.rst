@@ -194,7 +194,7 @@ server_groups_list                       Inbound   Specifies an override to the 
                                                           - fqdn: example3.com
                                                             server_groups_list: "group_1"
 
-                                                  In this configuration:
+                                                   In this configuration:
                                                     - connections with SNI example1.com will be directed to group_1 about 20%
                                                       of the time and to group_2 about 80% of the time
                                                     - Connections for example2.com and example3.com will always use group_1.
