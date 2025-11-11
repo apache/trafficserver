@@ -76,4 +76,4 @@ tr2.StillRunningAfter = server
 tr2.StillRunningAfter = ts
 
 # Check that PP-Not-Present is logged when PROXY protocol is not used
-ts.Disk.traffic_out.Content += Testers.ContainsExpression(r"PP-Not-Present", "Should log when PROXY protocol is not present")
+ts.Disk.traffic_out.Content += Testers.ContainsExpression(r"PP-Version: 0", "Should log when PROXY protocol is not present")
