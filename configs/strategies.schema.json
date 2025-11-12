@@ -157,6 +157,29 @@
                     "url"
                   ]
                 },
+                "hash_algorithm": {
+                  "type": "string",
+                  "description": "when using consistent_hash, this specifies the hash algorithm to use",
+                  "enum": [
+                    "siphash24",
+                    "siphash13"
+                  ]
+                },
+                "hash_seed0": {
+                  "type": "integer",
+                  "description": "when using consistent_hash, this specifies the first 64 bits of the hash seed (decimal integer)",
+                  "minimum": 0
+                },
+                "hash_seed1": {
+                  "type": "integer",
+                  "description": "when using consistent_hash, this specifies the second 64 bits of the hash seed (decimal integer)",
+                  "minimum": 0
+                },
+                "hash_replicas": {
+                  "type": "integer",
+                  "description": "when using consistent_hash, this specifies the number of virtual nodes (replicas) per host",
+                  "minimum": 1
+                },
                 "go_direct": {
                     "type": "boolean",
                     "description": "wether, true/false, users of the strategy may bypass parents and go directly to the origin"
