@@ -620,7 +620,6 @@ fetch_resource(TSCont contp, TSEvent, void *)
   add_trailing_parameter(state->req_info->http_hdr_buf, state->req_info->http_hdr_loc);
   // copy all the headers into a buffer
   TSHttpHdrPrint(state->req_info->http_hdr_buf, state->req_info->http_hdr_loc, state->req_io_buf);
-  TSIOBufferWrite(state->req_io_buf, "\r\n", 2);
 
   // setup place to store body data
   if (state->sie_body) {
