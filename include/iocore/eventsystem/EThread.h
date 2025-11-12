@@ -353,8 +353,8 @@ public:
 
   void             execute() override;
   void             execute_regular();
-  void             process_queue(Que(Event, link) * NegativeQueue, int *ev_count, int *nq_count);
-  void             process_event(Event *e, int calling_code);
+  ink_hrtime       process_queue(Que(Event, link) * NegativeQueue, int *ev_count, int *nq_count, ink_hrtime event_time);
+  ink_hrtime       process_event(Event *e, int calling_code, ink_hrtime event_time);
   void             free_event(Event *e);
   LoopTailHandler *tail_cb = &DEFAULT_TAIL_HANDLER;
 

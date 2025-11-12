@@ -383,6 +383,19 @@ Thread Variables
    will create its own domain socket with a ``-<thread id>`` suffix added to the
    end of the path.
 
+.. ts:cv:: CONFIG proxy.config.exec_thread.loop_time_update_probability INT 10
+   :reloadable:
+
+   This dynamically loadable setting controls the rate that exec thread loop timestamps are
+   updated after processing an event given as a percentage from 0 to 100. 0
+   would mean the timestamp is only updated once per event loop, 100 percent
+   means the timestamp is updated after any potential operation that could take
+   time (i.e. processing an event or waiting on IO).  The timestamp is used for
+   queuing events and comparing timestamps for processing.  Updating more often
+   might improve event timer accuracy and event loop metrics, but increases the
+   number of times that the current time is obtained from the OS.  See also
+   `proxy.config.system_clock`
+
 .. ts:cv:: CONFIG proxy.config.accept_threads INT 1
 
    The number of accept threads. If disabled (``0``), then accepts will be done
