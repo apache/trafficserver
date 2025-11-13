@@ -172,6 +172,35 @@ server_groups_list                       Inbound   Specifies an override to the 
                                                    `OpenSSL SSL_CTX_set_groups_list <https://docs.openssl.org/3.5/man3/SSL_CTX_set1_curves/>`_
                                                    documentation.
 
+                                                   Each item contains a group key identifying the server group name and optionally,
+                                                   a weight that determines how frequently that group is selected when multiple
+                                                   entries are present.
+
+                                                   Any omitted weight defaults to 100.
+                                                   For example:
+
+                                                    .. code-block:: yaml
+
+                                                        sni:
+                                                          - fqdn: example1.com
+                                                            server_groups_list:
+                                                              - group: "group_1"
+                                                                weight: 20
+                                                              - group: "group_2"
+                                                                weight: 80
+                                                          - fqdn: example2.com
+                                                            server_groups_list:
+                                                              - group: "group_1"
+                                                          - fqdn: example3.com
+                                                            server_groups_list: "group_1"
+
+                                                   In this configuration:
+                                                    - connections with SNI example1.com will be directed to group_1 about 20%
+                                                      of the time and to group_2 about 80% of the time
+                                                    - Connections for example2.com and example3.com will always use group_1.
+
+
+
 host_sni_policy                          Inbound   One of the values :code:`DISABLED`, :code:`PERMISSIVE`, or :code:`ENFORCED`.
 
                                                    If not specified, the value of :ts:cv:`proxy.config.http.host_sni_policy` is used.
