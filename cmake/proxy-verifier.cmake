@@ -15,7 +15,8 @@
 #
 #######################
 
-# This will download and extract proxy-verifier and setup variables to point to it.
+# This sets up variables to point to proxy-verifier location in .git directory.
+# The actual download is deferred until first use (see download-proxy-verifier.cmake).
 #
 # Required variables:
 #   PROXY_VERIFIER_VERSION
@@ -34,15 +35,6 @@ endif()
 if(NOT PROXY_VERIFIER_HASH)
   message(FATAL_ERROR "PROXY_VERIFIER_HASH Required")
 endif()
-
-# Download proxy-verifier
-set(PV_ARCHIVE ${CMAKE_BINARY_DIR}/proxy-verifier/proxy-verifier.tar.gz)
-file(
-  DOWNLOAD https://ci.trafficserver.apache.org/bintray/proxy-verifier-${PROXY_VERIFIER_VERSION}.tar.gz ${PV_ARCHIVE}
-  EXPECTED_HASH ${PROXY_VERIFIER_HASH}
-  SHOW_PROGRESS
-)
-file(ARCHIVE_EXTRACT INPUT ${PV_ARCHIVE})
 
 if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux")
   if(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "x86_64"
@@ -70,8 +62,8 @@ else()
   message(FATAL_ERROR "Host ${CMAKE_HOST_SYSTEM_NAME} doesnt support running proxy verifier")
 endif()
 
-set(PROXY_VERIFIER_PATH ${CMAKE_BINARY_DIR}/proxy-verifier-${PROXY_VERIFIER_VERSION}/${PV_SUBDIR})
+set(PROXY_VERIFIER_PATH ${CMAKE_SOURCE_DIR}/.git/proxy-verifier-${PROXY_VERIFIER_VERSION}/${PV_SUBDIR})
 set(PROXY_VERIFIER_CLIENT ${PROXY_VERIFIER_PATH}/verifier-client)
 set(PROXY_VERIFIER_SERVER ${PROXY_VERIFIER_PATH}/verifier-server)
 
-message(STATUS "proxy-verifier setup in ${PROXY_VERIFIER_PATH}")
+message(STATUS "proxy-verifier will be used from ${PROXY_VERIFIER_PATH}")
