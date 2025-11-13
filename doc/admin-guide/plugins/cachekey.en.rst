@@ -77,7 +77,7 @@ Cache key structure and related plugin parameters
          </TR>
          <TR>
            <TD BGCOLOR="lightblue">Prefix<BR/>section<BR/>(default)</TD>
-           <TD BGCOLOR="lightgreen">User-Agent<BR/>section<BR/>(optional)</TD>
+           <TD BGCOLOR="palegreen">User-Agent<BR/>section<BR/>(optional)</TD>
            <TD BGCOLOR="lightyellow">Headers<BR/>section<BR/>(optional)</TD>
            <TD BGCOLOR="mistyrose">Cookies<BR/>section<BR/>(optional)</TD>
            <TD BGCOLOR="lightsteelblue">Path<BR/>section<BR/>(default)</TD>
@@ -116,7 +116,7 @@ Cache key structure and related plugin parameters
        <TABLE BORDER="1" CELLBORDER="1" CELLSPACING="0" BGCOLOR="lightyellow">
          <TR>
            <TD BGCOLOR="lightblue">--static-prefix</TD>
-           <TD BGCOLOR="lightgreen">--capture-prefix</TD>
+           <TD BGCOLOR="palegreen">--capture-prefix</TD>
            <TD BGCOLOR="lightcyan">--capture-prefix-uri</TD>
          </TR>
          <TR>
@@ -173,7 +173,7 @@ Cache key structure and related plugin parameters
        <TABLE BORDER="1" CELLBORDER="1" CELLSPACING="0" BGCOLOR="lightyellow">
          <TR>
            <TD BGCOLOR="lightblue">--ua-class</TD>
-           <TD BGCOLOR="lightgreen">--ua-capture</TD>
+           <TD BGCOLOR="palegreen">--ua-capture</TD>
          </TR>
          <TR>
            <TD COLSPAN="2" ALIGN="CENTER">(empty)</TD>
@@ -215,7 +215,7 @@ Cache key structure and related plugin parameters
        <TABLE BORDER="1" CELLBORDER="1" CELLSPACING="0" BGCOLOR="lightyellow">
          <TR>
            <TD BGCOLOR="lightblue">--include-headers</TD>
-           <TD BGCOLOR="lightgreen">--capture-header</TD>
+           <TD BGCOLOR="palegreen">--capture-header</TD>
          </TR>
          <TR>
            <TD COLSPAN="2" ALIGN="CENTER">(empty)</TD>
@@ -288,7 +288,7 @@ Cache key structure and related plugin parameters
        <TABLE BORDER="1" CELLBORDER="1" CELLSPACING="0" BGCOLOR="lightyellow">
          <TR>
            <TD BGCOLOR="lightblue">--capture-path-uri</TD>
-           <TD BGCOLOR="lightgreen">--capture-path</TD>
+           <TD BGCOLOR="palegreen">--capture-path</TD>
          </TR>
          <TR>
            <TD COLSPAN="2" ALIGN="CENTER">URI path</TD>
@@ -376,75 +376,95 @@ Detailed examples and troubleshooting
 
 .. graphviz::
    :alt: Cache Key Sample Breakdown
-   :align: center
+   :align: left
 
    digraph cache_key_samples {
      node [shape=none, fontname="monospace"];
 
      sample1 [label=<
        <TABLE BORDER="1" CELLBORDER="1" CELLSPACING="0">
-         <TR><TD COLSPAN="7" ALIGN="LEFT" BGCOLOR="lightgray"><B>Sample 1 Cache Key</B></TD></TR>
+         <TR><TD COLSPAN="12" ALIGN="LEFT" BGCOLOR="lightgray"><B>Sample 1 Cache Key</B></TD></TR>
          <TR>
-           <TD COLSPAN="6" ALIGN="CENTER" BGCOLOR="wheat"><FONT POINT-SIZE="9">hierarchical part</FONT></TD>
+           <TD COLSPAN="11" ALIGN="CENTER" BGCOLOR="wheat"><FONT POINT-SIZE="9">hierarchical part</FONT></TD>
            <TD COLSPAN="1" ALIGN="CENTER" BGCOLOR="lightcyan"><FONT POINT-SIZE="9">query</FONT></TD>
          </TR>
          <TR>
            <TD COLSPAN="2" ALIGN="CENTER" BGCOLOR="wheat"><FONT POINT-SIZE="8">URI host:port</FONT></TD>
-           <TD COLSPAN="3" ALIGN="CENTER" BGCOLOR="wheat"><FONT POINT-SIZE="8">HTTP headers and cookies</FONT></TD>
-           <TD ALIGN="CENTER" BGCOLOR="wheat"><FONT POINT-SIZE="8">URI path</FONT></TD>
-           <TD ALIGN="CENTER" BGCOLOR="lightcyan"><FONT POINT-SIZE="8">URI query</FONT></TD>
+           <TD COLSPAN="8" ALIGN="CENTER" BGCOLOR="wheat"><FONT POINT-SIZE="8">HTTP headers and cookies</FONT></TD>
+           <TD COLSPAN="1" ALIGN="CENTER" BGCOLOR="wheat"><FONT POINT-SIZE="8">URI path</FONT></TD>
+           <TD COLSPAN="1" ALIGN="CENTER" BGCOLOR="lightcyan"><FONT POINT-SIZE="8">URI query</FONT></TD>
          </TR>
          <TR>
            <TD BGCOLOR="lightblue">/www.example.com/80</TD>
-           <TD BGCOLOR="lightgreen">popular</TD>
+           <TD BORDER="0" WIDTH="10"><FONT POINT-SIZE="10">/</FONT></TD>
+           <TD BGCOLOR="palegreen">popular</TD>
+           <TD BORDER="0" WIDTH="10"><FONT POINT-SIZE="10">/</FONT></TD>
            <TD BGCOLOR="lightyellow">Mozilla/5.0</TD>
+           <TD BORDER="0" WIDTH="10"><FONT POINT-SIZE="10">/</FONT></TD>
            <TD BGCOLOR="mistyrose">H1:v1/H2:v2</TD>
+           <TD BORDER="0" WIDTH="10"><FONT POINT-SIZE="10">/</FONT></TD>
            <TD BGCOLOR="lavender">C1=v1;C2=v2</TD>
+           <TD BORDER="0" WIDTH="10"><FONT POINT-SIZE="10">/</FONT></TD>
            <TD BGCOLOR="lightsteelblue">path/to/data</TD>
            <TD BGCOLOR="lightgray">?a=1&amp;b=2&amp;c=3</TD>
          </TR>
          <TR>
-           <TD ALIGN="CENTER"><FONT POINT-SIZE="8">host:port</FONT></TD>
-           <TD ALIGN="CENTER"><FONT POINT-SIZE="8">UA-class</FONT></TD>
-           <TD ALIGN="CENTER"><FONT POINT-SIZE="8">UA-captures</FONT></TD>
-           <TD ALIGN="CENTER"><FONT POINT-SIZE="8">headers</FONT></TD>
-           <TD ALIGN="CENTER"><FONT POINT-SIZE="8">cookies</FONT></TD>
-           <TD ALIGN="CENTER"><FONT POINT-SIZE="8">path</FONT></TD>
-           <TD ALIGN="CENTER"><FONT POINT-SIZE="8">query</FONT></TD>
+           <TD ALIGN="CENTER" BGCOLOR="lightblue"><FONT POINT-SIZE="8">host:port</FONT></TD>
+           <TD WIDTH="10"></TD>
+           <TD ALIGN="CENTER" BGCOLOR="palegreen"><FONT POINT-SIZE="8">UA-class</FONT></TD>
+           <TD WIDTH="10"></TD>
+           <TD ALIGN="CENTER" BGCOLOR="lightyellow"><FONT POINT-SIZE="8">UA-captures</FONT></TD>
+           <TD WIDTH="10"></TD>
+           <TD ALIGN="CENTER" BGCOLOR="mistyrose"><FONT POINT-SIZE="8">headers</FONT></TD>
+           <TD WIDTH="10"></TD>
+           <TD ALIGN="CENTER" BGCOLOR="lavender"><FONT POINT-SIZE="8">cookies</FONT></TD>
+           <TD WIDTH="10"></TD>
+           <TD ALIGN="CENTER" BGCOLOR="lightsteelblue"><FONT POINT-SIZE="8">path</FONT></TD>
+           <TD ALIGN="CENTER" BGCOLOR="lightgray"><FONT POINT-SIZE="8">query</FONT></TD>
          </TR>
        </TABLE>
      >];
 
      sample2 [label=<
        <TABLE BORDER="1" CELLBORDER="1" CELLSPACING="0">
-         <TR><TD COLSPAN="7" ALIGN="LEFT" BGCOLOR="lightgray"><B>Sample 2 Cache Key</B></TD></TR>
+         <TR><TD COLSPAN="12" ALIGN="LEFT" BGCOLOR="lightgray"><B>Sample 2 Cache Key</B></TD></TR>
          <TR>
-           <TD COLSPAN="6" ALIGN="CENTER" BGCOLOR="wheat"><FONT POINT-SIZE="9">hierarchical part</FONT></TD>
+           <TD COLSPAN="11" ALIGN="CENTER" BGCOLOR="wheat"><FONT POINT-SIZE="9">hierarchical part</FONT></TD>
            <TD COLSPAN="1" ALIGN="CENTER" BGCOLOR="lightcyan"><FONT POINT-SIZE="9">query</FONT></TD>
          </TR>
          <TR>
            <TD COLSPAN="2" ALIGN="CENTER" BGCOLOR="wheat"><FONT POINT-SIZE="8">URI host:port</FONT></TD>
-           <TD COLSPAN="3" ALIGN="CENTER" BGCOLOR="wheat"><FONT POINT-SIZE="8">HTTP headers and cookies</FONT></TD>
-           <TD ALIGN="CENTER" BGCOLOR="wheat"><FONT POINT-SIZE="8">URI path</FONT></TD>
-           <TD ALIGN="CENTER" BGCOLOR="lightcyan"><FONT POINT-SIZE="8">URI query</FONT></TD>
+           <TD COLSPAN="8" ALIGN="CENTER" BGCOLOR="wheat"><FONT POINT-SIZE="8">HTTP headers and cookies</FONT></TD>
+           <TD COLSPAN="1" ALIGN="CENTER" BGCOLOR="wheat"><FONT POINT-SIZE="8">URI path</FONT></TD>
+           <TD COLSPAN="1" ALIGN="CENTER" BGCOLOR="lightcyan"><FONT POINT-SIZE="8">URI query</FONT></TD>
          </TR>
          <TR>
            <TD BGCOLOR="lightblue">/nice_custom_prefix</TD>
-           <TD BGCOLOR="lightgreen">popular</TD>
+           <TD BORDER="0" WIDTH="10"><FONT POINT-SIZE="10">/</FONT></TD>
+           <TD BGCOLOR="palegreen">popular</TD>
+           <TD BORDER="0" WIDTH="10"><FONT POINT-SIZE="10">/</FONT></TD>
            <TD BGCOLOR="lightyellow">Mozilla/5.0</TD>
+           <TD BORDER="0" WIDTH="10"><FONT POINT-SIZE="10">/</FONT></TD>
            <TD BGCOLOR="mistyrose">H1:v1/H2:v2</TD>
+           <TD BORDER="0" WIDTH="10"><FONT POINT-SIZE="10">/</FONT></TD>
            <TD BGCOLOR="lavender">C1=v1;C2=v2</TD>
+           <TD BORDER="0" WIDTH="10"><FONT POINT-SIZE="10">/</FONT></TD>
            <TD BGCOLOR="lightsteelblue">path/to/data</TD>
            <TD BGCOLOR="lightgray">?a=1&amp;b=2&amp;c=3</TD>
          </TR>
          <TR>
-           <TD ALIGN="CENTER"><FONT POINT-SIZE="8">custom prefix</FONT></TD>
-           <TD ALIGN="CENTER"><FONT POINT-SIZE="8">UA-class</FONT></TD>
-           <TD ALIGN="CENTER"><FONT POINT-SIZE="8">UA-captures</FONT></TD>
-           <TD ALIGN="CENTER"><FONT POINT-SIZE="8">headers</FONT></TD>
-           <TD ALIGN="CENTER"><FONT POINT-SIZE="8">cookies</FONT></TD>
-           <TD ALIGN="CENTER"><FONT POINT-SIZE="8">path</FONT></TD>
-           <TD ALIGN="CENTER"><FONT POINT-SIZE="8">query</FONT></TD>
+           <TD ALIGN="CENTER" BGCOLOR="lightblue"><FONT POINT-SIZE="8">custom prefix</FONT></TD>
+           <TD WIDTH="10"></TD>
+           <TD ALIGN="CENTER" BGCOLOR="palegreen"><FONT POINT-SIZE="8">UA-class</FONT></TD>
+           <TD WIDTH="10"></TD>
+           <TD ALIGN="CENTER" BGCOLOR="lightyellow"><FONT POINT-SIZE="8">UA-captures</FONT></TD>
+           <TD WIDTH="10"></TD>
+           <TD ALIGN="CENTER" BGCOLOR="mistyrose"><FONT POINT-SIZE="8">headers</FONT></TD>
+           <TD WIDTH="10"></TD>
+           <TD ALIGN="CENTER" BGCOLOR="lavender"><FONT POINT-SIZE="8">cookies</FONT></TD>
+           <TD WIDTH="10"></TD>
+           <TD ALIGN="CENTER" BGCOLOR="lightsteelblue"><FONT POINT-SIZE="8">path</FONT></TD>
+           <TD ALIGN="CENTER" BGCOLOR="lightgray"><FONT POINT-SIZE="8">query</FONT></TD>
          </TR>
        </TABLE>
      >];

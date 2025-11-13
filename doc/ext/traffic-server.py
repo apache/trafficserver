@@ -455,7 +455,8 @@ class TrafficServerDomain(Domain):
 
 # get the branch this documentation is building for in X.X.x form
 REPO_ROOT = os.path.join(os.path.dirname(os.path.dirname(os.environ['DOCUTILSCONFIG'])))
-contents = open('../CMakeLists.txt').read()
+with open('../CMakeLists.txt') as f:
+    contents = f.read()
 match = re.search(r'project\(ats VERSION ([0-9\.]+)', contents)
 
 if match:

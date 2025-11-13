@@ -23,16 +23,22 @@ Apache Traffic Server Documentation
 This is the LaTeX-only master document for improved PDF structure.
 HTML builds use index.rst instead.
 
+.. raw:: latex
+
+   \part{Introduction and Getting Started}
+
 .. toctree::
    :maxdepth: 1
-   :caption: Introduction and Getting Started
 
    preface/index.en
    getting-started/index.en
 
+.. raw:: latex
+
+   \part{Administrator's Guide}
+
 .. toctree::
    :maxdepth: 1
-   :caption: Administration
 
    admin-guide/introduction.en
    admin-guide/installation/index.en
@@ -49,7 +55,22 @@ HTML builds use index.rst instead.
 
 .. toctree::
    :maxdepth: 1
-   :caption: Development
+
+   admin-guide/files/index.en
+   admin-guide/tools/index.en
+
+.. toctree::
+   :maxdepth: 1
+
+   release-notes/index.en
+   appendices/index.en
+
+.. raw:: latex
+
+   \part{Developer's Guide}
+
+.. toctree::
+   :maxdepth: 1
 
    developer-guide/introduction/index.en
    developer-guide/release-process/index.en
@@ -72,20 +93,6 @@ HTML builds use index.rst instead.
    developer-guide/layout/index.en
    developer-guide/testing/index.en
    developer-guide/jsonrpc/index.en
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Reference Materials
-
-   admin-guide/files/index.en
-   admin-guide/tools/index.en
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Release Information and Appendices
-
-   release-notes/index.en
-   appendices/index.en
 
 Indices and tables
 ==================

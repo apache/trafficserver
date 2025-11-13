@@ -943,23 +943,26 @@ The condition flags are optional, and you can combine more than one into
 a comma-separated list of flags. Note that whitespaces are not allowed inside
 the brackets:
 
-====== ========================================================================
-Flag   Description
-====== ========================================================================
-AND    Indicates that both the current condition and the next must be true.
-       This is the default behavior for all conditions when no flags are
-       provided.
-NOT    Inverts the condition.
-OR     Indicates that either the current condition or the next one must be
-       true, as contrasted with the default behavior from ``[AND]``.
-NOCASE Indicates that the string comparison, or regular expression, should be
-       case-insensitive. The default is to be case-sensitive.
-PRE    Make a prefix match on a string comparison.
-SUF    Make a suffix match on a string comparison.
-MID    Make a substring match on a string comparison.
-EXT    The substring match only applies to the file extension following a dot.
-       This is generally mostly useful for the ``URL:PATH`` part.
-====== ========================================================================
+.. table:: Condition Flags
+   :widths: 15 85
+
+   ====== ========================================================================
+   Flag   Description
+   ====== ========================================================================
+   AND    Indicates that both the current condition and the next must be true.
+          This is the default behavior for all conditions when no flags are
+          provided.
+   NOT    Inverts the condition.
+   OR     Indicates that either the current condition or the next one must be
+          true, as contrasted with the default behavior from ``[AND]``.
+   NOCASE Indicates that the string comparison, or regular expression, should be
+          case-insensitive. The default is to be case-sensitive.
+   PRE    Make a prefix match on a string comparison.
+   SUF    Make a suffix match on a string comparison.
+   MID    Make a substring match on a string comparison.
+   EXT    The substring match only applies to the file extension following a dot.
+          This is generally mostly useful for the ``URL:PATH`` part.
+   ====== ========================================================================
 
 .. note::
     At most, one of ``[PRE]``, ``[SUF]``, ``[MID]``, or ``[EXT]`` may be
@@ -1495,7 +1498,7 @@ The URL part names which may be used for these conditions and actions are:
          <TR>
            <TD ALIGN="CENTER" BGCOLOR="lightblue">SCHEME</TD>
            <TD BORDER="0"></TD>
-           <TD ALIGN="CENTER" BGCOLOR="lightgreen">HOST</TD>
+           <TD ALIGN="CENTER" BGCOLOR="palegreen">HOST</TD>
            <TD BORDER="0"></TD>
            <TD ALIGN="CENTER" BGCOLOR="lightcyan">PORT</TD>
            <TD ALIGN="CENTER" BGCOLOR="wheat">PATH</TD>

@@ -393,6 +393,8 @@ latex_elements = {
     top=1in,
     bottom=1in
 }
+% Customize table of contents title
+\renewcommand{\contentsname}{Table of Contents}
 % Better TOC depth
 \setcounter{tocdepth}{1}
 \setcounter{secnumdepth}{1}

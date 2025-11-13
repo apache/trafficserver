@@ -162,7 +162,6 @@ Plugins that are considered experimental are located in the
 directory of the |TS| source tree. Experimental plugins can be compiled by passing the
 ``-DBUILD_EXPERIMENTAL_PLUGINS=ON``` variable to ``cmake`` command when building.
 
-
 .. toctree::
    :hidden:
 
