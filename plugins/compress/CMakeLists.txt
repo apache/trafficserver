@@ -23,5 +23,11 @@ if(HAVE_BROTLI_ENCODE_H)
   target_link_libraries(compress PRIVATE brotli::brotlienc)
   target_compile_definitions(compress PRIVATE HAVE_BROTLI_ENCODE_H=1)
 endif()
+
+if(HAVE_ZSTD_H)
+  target_sources(compress PRIVATE zstd_compress.cc)
+  target_link_libraries(compress PRIVATE zstd::zstd)
+endif()
+
 verify_global_plugin(compress)
 verify_remap_plugin(compress)

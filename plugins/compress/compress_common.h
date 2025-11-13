@@ -23,11 +23,19 @@
 
 #pragma once
 
-#include <zlib.h>
 #include <ts/ts.h>
+
+#include "tscore/ink_config.h"
+
+#include <cstdint>
+#include <zlib.h>
 
 #if HAVE_BROTLI_ENCODE_H
 #include <brotli/encode.h>
+#endif
+
+#if HAVE_ZSTD_H
+#include <zstd.h>
 #endif
 
 #include "configuration.h"
@@ -36,7 +44,8 @@ enum CompressionType {
   COMPRESSION_TYPE_DEFAULT = 0,
   COMPRESSION_TYPE_DEFLATE = 1,
   COMPRESSION_TYPE_GZIP    = 2,
-  COMPRESSION_TYPE_BROTLI  = 4
+  COMPRESSION_TYPE_BROTLI  = 4,
+  COMPRESSION_TYPE_ZSTD    = 8
 };
 
 enum transform_state {
@@ -57,6 +66,14 @@ struct BrotliStream {
 };
 #endif
 
+#if HAVE_ZSTD_H
+struct ZstdStream {
+  ZSTD_CCtx *cctx;
+  int64_t    total_in;
+  int64_t    total_out;
+};
+#endif
+
 struct Data {
   TSHttpTxn                    txn;
   Compress::HostConfiguration *hc;
@@ -70,6 +87,9 @@ struct Data {
   int                          compression_algorithms;
 #if HAVE_BROTLI_ENCODE_H
   BrotliStream bstrm;
+#endif
+#if HAVE_ZSTD_H
+  ZstdStream zstrm_zstd;
 #endif
 };
 

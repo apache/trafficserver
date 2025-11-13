@@ -1244,7 +1244,11 @@ HttpTransactCache::CalcVariability(const HttpConfigAccessor *http_config_params,
 
         // Disable Vary mismatch checking for Accept-Encoding.  This is only safe to
         // set if you are promising to fix any Accept-Encoding/Content-Encoding mismatches.
-        if (http_config_params->get_ignore_accept_encoding_mismatch() &&
+        // Only suppress variability checks when the operator explicitly set
+        // proxy.config.http.cache.ignore_accept_encoding_mismatch to 1. The
+        // documented default value of 2 should continue to enforce Vary header
+        // semantics whenever the origin sends one.
+        if ((http_config_params->get_ignore_accept_encoding_mismatch() == 1) &&
             !strcasecmp(const_cast<char *>(field->str), "Accept-Encoding")) {
           continue;
         }

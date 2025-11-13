@@ -25,9 +25,13 @@
 #include "debug_macros.h"
 
 #include <zlib.h>
+#include <cstring>
 #include <cinttypes>
 
-const char *dictionary = nullptr;
+namespace Compress
+{
+extern const char *dictionary;
+}
 
 namespace Gzip
 {
@@ -69,8 +73,8 @@ data_alloc(Data *data)
     fatal("gzip-transform: ERROR: deflateInit (%d)!", err);
   }
 
-  if (dictionary) {
-    err = deflateSetDictionary(&data->zstrm, reinterpret_cast<const Bytef *>(dictionary), strlen(dictionary));
+  if (Compress::dictionary) {
+    err = deflateSetDictionary(&data->zstrm, reinterpret_cast<const Bytef *>(Compress::dictionary), strlen(Compress::dictionary));
     if (err != Z_OK) {
       fatal("gzip-transform: ERROR: deflateSetDictionary (%d)!", err);
     }
