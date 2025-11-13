@@ -4,6 +4,12 @@
 #
 #
 
+# Ensure proxy-verifier is downloaded before running tests.
+if ! ${CMAKE_COMMAND} -D PROXY_VERIFIER_VERSION=${PROXY_VERIFIER_VERSION} -D PROXY_VERIFIER_HASH=${PROXY_VERIFIER_HASH} -D ATS_SOURCE_DIR=${CMAKE_SOURCE_DIR} -D HOST_SYSTEM_NAME=${CMAKE_HOST_SYSTEM_NAME} -D HOST_SYSTEM_PROCESSOR=${CMAKE_HOST_SYSTEM_PROCESSOR} -P ${CMAKE_SOURCE_DIR}/cmake/download-proxy-verifier.cmake; then
+  echo "Failed to download proxy-verifier"
+  exit 1
+fi
+
 export LD_LIBRARY_PATH=${CMAKE_INSTALL_PREFIX}/lib
 export PYTHONPATH=${CMAKE_CURRENT_SOURCE_DIR}/gold_tests/remap:${CMAKE_CURRENT_SOURCE_DIR}/gold_tests/lib:$PYTHONPATH
 
