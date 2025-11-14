@@ -253,4 +253,3 @@ then ATS will fail to start.
 .. code-block:: bash
 
    traffic_server WARNING: **** Found a legacy config file (/your/ats/records.config). Please remove it and migrate to the new YAML format before continuing. ****
-

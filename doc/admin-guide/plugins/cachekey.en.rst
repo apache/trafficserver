@@ -62,15 +62,30 @@ for examples of how to apply the **same** set of manipulations to both targets w
 Cache key structure and related plugin parameters
 =================================================
 
-::
+.. graphviz::
+   :alt: Cache Key Structure
+   :align: center
 
-                                hierarchical part                               query
-  ┌───────────────────────────────────┴────────────────────────────────────┐┌─────┴──────┐
-  ┌─────────────┬──────────────┬──────────────┬──────────────┬─────────────┬─────────────┐
-  │  Prefix     |  User-Agent  │  Headers     │  Cookies     │  Path       │  Query      │
-  │  section    |  section     │  section     │  section     │  section    │  section    │
-  │  (default)  |  (optional)  │  (optional)  │  (optional)  │  (default)  │  (default)  │
-  └─────────────┴──────────────┴──────────────┴──────────────┴─────────────┴─────────────┘
+   digraph cache_key_structure {
+     node [shape=none];
+
+     structure [label=<
+       <TABLE BORDER="1" CELLBORDER="1" CELLSPACING="0">
+         <TR>
+           <TD COLSPAN="5" ALIGN="CENTER" BGCOLOR="wheat"><B>hierarchical part</B></TD>
+           <TD COLSPAN="1" ALIGN="CENTER" BGCOLOR="lightcyan"><B>query</B></TD>
+         </TR>
+         <TR>
+           <TD BGCOLOR="lightblue">Prefix<BR/>section<BR/>(default)</TD>
+           <TD BGCOLOR="palegreen">User-Agent<BR/>section<BR/>(optional)</TD>
+           <TD BGCOLOR="lightyellow">Headers<BR/>section<BR/>(optional)</TD>
+           <TD BGCOLOR="mistyrose">Cookies<BR/>section<BR/>(optional)</TD>
+           <TD BGCOLOR="lightsteelblue">Path<BR/>section<BR/>(default)</TD>
+           <TD BGCOLOR="lightgray">Query<BR/>section<BR/>(default)</TD>
+         </TR>
+       </TABLE>
+     >];
+   }
 
 * The `cache key` set by the cachekey plugin can be considered as divided into several sections.
 * Every section is manipulated separately by the related plugin parameters (more info in each section description below).
@@ -81,23 +96,50 @@ Cache key structure and related plugin parameters
 "Prefix" section
 ^^^^^^^^^^^^^^^^
 
-::
+.. graphviz::
+   :alt: Prefix Section Options
+   :align: center
 
-  Optional components      | ┌─────────────────┬──────────────────┬──────────────────────┐
-  (included in this order) | │ --static-prefix │ --capture-prefix │ --capture-prefix-uri │
-                           | ├─────────────────┴──────────────────┴──────────────────────┤
-  Default values if no     | │ /host/port or scheme://host:port (see the table below)    │
-  optional components      | └───────────────────────────────────────────────────────────┘
-  configured               |
+   digraph prefix_options {
+     node [shape=none];
+     rankdir=LR;
 
-  ┌────────────────────┬─────────────────────────┬──────────────────────┐
-  │ --canonical-prefix │  default value if no    │ input used for       │
-  │                    │  prefix parameters used │ --capture-prefix     │
-  ├────────────────────┼─────────────────────────┼──────────────────────┤
-  │ false              │ /host/port              │ host:port            │
-  ├────────────────────┼─────────────────────────┼──────────────────────┤
-  │ true               │ scheme://host:port      │ scheme://host:port   │
-  └────────────────────┴─────────────────────────┴──────────────────────┘
+     labels [label=<
+       <TABLE BORDER="0" CELLBORDER="0" CELLSPACING="5">
+         <TR><TD ALIGN="RIGHT">Optional components<BR/>(included in this order)</TD></TR>
+         <TR><TD HEIGHT="40"></TD></TR>
+         <TR><TD ALIGN="RIGHT">Default values if no<BR/>optional components<BR/>configured</TD></TR>
+       </TABLE>
+     >];
+
+     options [label=<
+       <TABLE BORDER="1" CELLBORDER="1" CELLSPACING="0" BGCOLOR="lightyellow">
+         <TR>
+           <TD BGCOLOR="lightblue">--static-prefix</TD>
+           <TD BGCOLOR="palegreen">--capture-prefix</TD>
+           <TD BGCOLOR="lightcyan">--capture-prefix-uri</TD>
+         </TR>
+         <TR>
+           <TD COLSPAN="3" ALIGN="CENTER">/host/port or scheme://host:port (see table below)</TD>
+         </TR>
+       </TABLE>
+     >];
+
+     labels -> options [style=invis];
+   }
+
+**Canonical Prefix Behavior:**
+
+.. table::
+
+   +--------------------+-------------------------+----------------------+
+   | --canonical-prefix | default value if no     | input used for       |
+   |                    | prefix parameters used  | --capture-prefix     |
+   +====================+=========================+======================+
+   | false              | /host/port              | host:port            |
+   +--------------------+-------------------------+----------------------+
+   | true               | scheme://host:port      | scheme://host:port   |
+   +--------------------+-------------------------+----------------------+
 
 
 * ``--static-prefix=<value>`` (default: empty string) - if specified and not an empty string the ``<value>`` will be added to the `cache key`.
@@ -111,14 +153,36 @@ Cache key structure and related plugin parameters
 "User-Agent" section
 ^^^^^^^^^^^^^^^^^^^^
 
-::
+.. graphviz::
+   :alt: User-Agent Section Options
+   :align: center
 
-  Optional components      | ┌────────────┬──────────────┐
-  (included in this order) | │ --ua-class │ --ua-capture │
-                           | ├────────────┴──────────────┤
-  Default values if no     | │ (empty)                   │
-  optional components      | └───────────────────────────┘
-  configured               |
+   digraph ua_options {
+     node [shape=none];
+     rankdir=LR;
+
+     labels [label=<
+       <TABLE BORDER="0" CELLBORDER="0" CELLSPACING="5">
+         <TR><TD ALIGN="RIGHT">Optional components<BR/>(included in this order)</TD></TR>
+         <TR><TD HEIGHT="20"></TD></TR>
+         <TR><TD ALIGN="RIGHT">Default values if no<BR/>optional components<BR/>configured</TD></TR>
+       </TABLE>
+     >];
+
+     options [label=<
+       <TABLE BORDER="1" CELLBORDER="1" CELLSPACING="0" BGCOLOR="lightyellow">
+         <TR>
+           <TD BGCOLOR="lightblue">--ua-class</TD>
+           <TD BGCOLOR="palegreen">--ua-capture</TD>
+         </TR>
+         <TR>
+           <TD COLSPAN="2" ALIGN="CENTER">(empty)</TD>
+         </TR>
+       </TABLE>
+     >];
+
+     labels -> options [style=invis];
+   }
 
 * ``User-Agent`` classification
     * ``--ua-allowlist=<classname>:<filename>`` (default: empty string) - loads a regex patterns list from a file ``<filename>``, the patterns are matched against the ``User-Agent`` header and if matched ``<classname>`` is added it to the key.
@@ -131,14 +195,36 @@ Cache key structure and related plugin parameters
 "Headers" section
 ^^^^^^^^^^^^^^^^^
 
-::
+.. graphviz::
+   :alt: Headers Section Options
+   :align: center
 
-  Optional components      | ┌───────────────────┬───────────────────┐
-                           | │ --include-headers │  --capture-header │
-                           | ├───────────────────┼───────────────────┤
-  Default values if no     | │ (empty)           │  (empty)          │
-  optional components      | └───────────────────┴───────────────────┘
-  configured               |
+   digraph headers_options {
+     node [shape=none];
+     rankdir=LR;
+
+     labels [label=<
+       <TABLE BORDER="0" CELLBORDER="0" CELLSPACING="5">
+         <TR><TD ALIGN="RIGHT">Optional components<BR/>(included in this order)</TD></TR>
+         <TR><TD HEIGHT="20"></TD></TR>
+         <TR><TD ALIGN="RIGHT">Default values if no<BR/>optional components<BR/>configured</TD></TR>
+       </TABLE>
+     >];
+
+     options [label=<
+       <TABLE BORDER="1" CELLBORDER="1" CELLSPACING="0" BGCOLOR="lightyellow">
+         <TR>
+           <TD BGCOLOR="lightblue">--include-headers</TD>
+           <TD BGCOLOR="palegreen">--capture-header</TD>
+         </TR>
+         <TR>
+           <TD COLSPAN="2" ALIGN="CENTER">(empty)</TD>
+         </TR>
+       </TABLE>
+     >];
+
+     labels -> options [style=invis];
+   }
 
 * ``--include-headers`` (default: empty list) - comma separated list of headers to be added to the `cache key`. The list of headers defined by ``--include-headers`` are always sorted before adding them to the `cache key`. These header field names are matched case insensitively.
 
@@ -147,28 +233,71 @@ Cache key structure and related plugin parameters
 "Cookies" section
 ^^^^^^^^^^^^^^^^^
 
-::
+.. graphviz::
+   :alt: Cookies Section Options
+   :align: center
 
-  Optional components      | ┌───────────────────┐
-                           | │ --include-cookies │
-                           | ├───────────────────┤
-  Default values if no     | │ (empty)           │
-  optional components      | └───────────────────┘
-  configured               |
+   digraph cookies_options {
+     node [shape=none];
+     rankdir=LR;
+
+     labels [label=<
+       <TABLE BORDER="0" CELLBORDER="0" CELLSPACING="5">
+         <TR><TD ALIGN="RIGHT">Optional components</TD></TR>
+         <TR><TD HEIGHT="20"></TD></TR>
+         <TR><TD ALIGN="RIGHT">Default values if no<BR/>optional components<BR/>configured</TD></TR>
+       </TABLE>
+     >];
+
+     options [label=<
+       <TABLE BORDER="1" CELLBORDER="1" CELLSPACING="0" BGCOLOR="lightyellow">
+         <TR>
+           <TD BGCOLOR="lightblue">--include-cookies</TD>
+         </TR>
+         <TR>
+           <TD ALIGN="CENTER">(empty)</TD>
+         </TR>
+       </TABLE>
+     >];
+
+     labels -> options [style=invis];
+   }
 
 * ``--include-cookies`` (default: empty list) - comma separated list of cookies to be added to the `cache key`. The list of cookies defined by ``--include-cookies`` are always sorted before adding them to the `cache key`.
 
 "Path" section
 ^^^^^^^^^^^^^^
 
-::
+.. graphviz::
+   :alt: Path Section Options
+   :align: center
 
-  Optional components      | ┌────────────────────┬────────────────┐
-  (included in this order) | │ --capture-path-uri │ --capture-path │
-                           | ├────────────────────┴────────────────┤
-  Default values if no     | │ URI path                            │
-  optional components      | └─────────────────────────────────────┘
-  configured               |
+   digraph path_options {
+     node [shape=none];
+     rankdir=LR;
+
+     labels [label=<
+       <TABLE BORDER="0" CELLBORDER="0" CELLSPACING="5">
+         <TR><TD ALIGN="RIGHT">Optional components<BR/>(included in this order)</TD></TR>
+         <TR><TD HEIGHT="20"></TD></TR>
+         <TR><TD ALIGN="RIGHT">Default values if no<BR/>optional components<BR/>configured</TD></TR>
+       </TABLE>
+     >];
+
+     options [label=<
+       <TABLE BORDER="1" CELLBORDER="1" CELLSPACING="0" BGCOLOR="lightyellow">
+         <TR>
+           <TD BGCOLOR="lightblue">--capture-path-uri</TD>
+           <TD BGCOLOR="palegreen">--capture-path</TD>
+         </TR>
+         <TR>
+           <TD COLSPAN="2" ALIGN="CENTER">URI path</TD>
+         </TR>
+       </TABLE>
+     >];
+
+     labels -> options [style=invis];
+   }
 
 * if no path related plugin parameters are used, the URI path string is included in the `cache key`.
 * ``--capture-path=<capture_definition>`` (default: empty string) - if specified and not empty then strings are captured from URI path based on the ``<capture_definition>`` and are added to the `cache key`.
@@ -245,17 +374,113 @@ Because of the ATS core (remap) and the CacheKey plugin implementation there is 
 Detailed examples and troubleshooting
 =====================================
 
-::
+.. graphviz::
+   :alt: Cache Key Sample Breakdown
+   :align: left
 
-               |                           hierarchical part                                    query
-  HTTP request | ┌────────────────────────────────┴─────────────────────────────────────────┐┌────┴─────┐
-  components   |   URI host and port       HTTP headers and cookies               URI path    URI query
-               | ┌────────┴────────┐┌────────────────┴─────────────────────────┐┌─────┴─────┐┌────┴─────┐
-  Sample 1     | /www.example.com/80/popular/Mozilla/5.0/H1:v1/H2:v2/C1=v1;C2=v2/path/to/data?a=1&b=2&c=3
-  Sample 2     | /nice_custom_prefix/popular/Mozilla/5.0/H1:v1/H2:v2/C1=v1;C2=v2/path/to/data?a=1&b=2&c=3
-               | └────────┬────────┘└───┬──┘└─────┬────┘└────┬─────┘└─────┬────┘└─────┬─────┘└────┬─────┘
-  Cache Key    |     host:port or   UA-class UA-captures   headers     cookies       path       query
-  components   |     custom prefix           replacement
+   digraph cache_key_samples {
+     node [shape=none, fontname="monospace"];
+
+     sample1 [label=<
+       <TABLE BORDER="1" CELLBORDER="1" CELLSPACING="0">
+         <TR><TD COLSPAN="12" ALIGN="LEFT" BGCOLOR="lightgray"><B>Sample 1 Cache Key</B></TD></TR>
+         <TR>
+           <TD COLSPAN="11" ALIGN="CENTER" BGCOLOR="wheat"><FONT POINT-SIZE="9">hierarchical part</FONT></TD>
+           <TD COLSPAN="1" ALIGN="CENTER" BGCOLOR="lightcyan"><FONT POINT-SIZE="9">query</FONT></TD>
+         </TR>
+         <TR>
+           <TD COLSPAN="2" ALIGN="CENTER" BGCOLOR="wheat"><FONT POINT-SIZE="8">URI host:port</FONT></TD>
+           <TD COLSPAN="8" ALIGN="CENTER" BGCOLOR="wheat"><FONT POINT-SIZE="8">HTTP headers and cookies</FONT></TD>
+           <TD COLSPAN="1" ALIGN="CENTER" BGCOLOR="wheat"><FONT POINT-SIZE="8">URI path</FONT></TD>
+           <TD COLSPAN="1" ALIGN="CENTER" BGCOLOR="lightcyan"><FONT POINT-SIZE="8">URI query</FONT></TD>
+         </TR>
+         <TR>
+           <TD BGCOLOR="lightblue">/www.example.com/80</TD>
+           <TD BORDER="0" WIDTH="10"><FONT POINT-SIZE="10">/</FONT></TD>
+           <TD BGCOLOR="palegreen">popular</TD>
+           <TD BORDER="0" WIDTH="10"><FONT POINT-SIZE="10">/</FONT></TD>
+           <TD BGCOLOR="lightyellow">Mozilla/5.0</TD>
+           <TD BORDER="0" WIDTH="10"><FONT POINT-SIZE="10">/</FONT></TD>
+           <TD BGCOLOR="mistyrose">H1:v1/H2:v2</TD>
+           <TD BORDER="0" WIDTH="10"><FONT POINT-SIZE="10">/</FONT></TD>
+           <TD BGCOLOR="lavender">C1=v1;C2=v2</TD>
+           <TD BORDER="0" WIDTH="10"><FONT POINT-SIZE="10">/</FONT></TD>
+           <TD BGCOLOR="lightsteelblue">path/to/data</TD>
+           <TD BGCOLOR="lightgray">?a=1&amp;b=2&amp;c=3</TD>
+         </TR>
+         <TR>
+           <TD ALIGN="CENTER" BGCOLOR="lightblue"><FONT POINT-SIZE="8">host:port</FONT></TD>
+           <TD WIDTH="10"></TD>
+           <TD ALIGN="CENTER" BGCOLOR="palegreen"><FONT POINT-SIZE="8">UA-class</FONT></TD>
+           <TD WIDTH="10"></TD>
+           <TD ALIGN="CENTER" BGCOLOR="lightyellow"><FONT POINT-SIZE="8">UA-captures</FONT></TD>
+           <TD WIDTH="10"></TD>
+           <TD ALIGN="CENTER" BGCOLOR="mistyrose"><FONT POINT-SIZE="8">headers</FONT></TD>
+           <TD WIDTH="10"></TD>
+           <TD ALIGN="CENTER" BGCOLOR="lavender"><FONT POINT-SIZE="8">cookies</FONT></TD>
+           <TD WIDTH="10"></TD>
+           <TD ALIGN="CENTER" BGCOLOR="lightsteelblue"><FONT POINT-SIZE="8">path</FONT></TD>
+           <TD ALIGN="CENTER" BGCOLOR="lightgray"><FONT POINT-SIZE="8">query</FONT></TD>
+         </TR>
+       </TABLE>
+     >];
+
+     sample2 [label=<
+       <TABLE BORDER="1" CELLBORDER="1" CELLSPACING="0">
+         <TR><TD COLSPAN="12" ALIGN="LEFT" BGCOLOR="lightgray"><B>Sample 2 Cache Key</B></TD></TR>
+         <TR>
+           <TD COLSPAN="11" ALIGN="CENTER" BGCOLOR="wheat"><FONT POINT-SIZE="9">hierarchical part</FONT></TD>
+           <TD COLSPAN="1" ALIGN="CENTER" BGCOLOR="lightcyan"><FONT POINT-SIZE="9">query</FONT></TD>
+         </TR>
+         <TR>
+           <TD COLSPAN="2" ALIGN="CENTER" BGCOLOR="wheat"><FONT POINT-SIZE="8">URI host:port</FONT></TD>
+           <TD COLSPAN="8" ALIGN="CENTER" BGCOLOR="wheat"><FONT POINT-SIZE="8">HTTP headers and cookies</FONT></TD>
+           <TD COLSPAN="1" ALIGN="CENTER" BGCOLOR="wheat"><FONT POINT-SIZE="8">URI path</FONT></TD>
+           <TD COLSPAN="1" ALIGN="CENTER" BGCOLOR="lightcyan"><FONT POINT-SIZE="8">URI query</FONT></TD>
+         </TR>
+         <TR>
+           <TD BGCOLOR="lightblue">/nice_custom_prefix</TD>
+           <TD BORDER="0" WIDTH="10"><FONT POINT-SIZE="10">/</FONT></TD>
+           <TD BGCOLOR="palegreen">popular</TD>
+           <TD BORDER="0" WIDTH="10"><FONT POINT-SIZE="10">/</FONT></TD>
+           <TD BGCOLOR="lightyellow">Mozilla/5.0</TD>
+           <TD BORDER="0" WIDTH="10"><FONT POINT-SIZE="10">/</FONT></TD>
+           <TD BGCOLOR="mistyrose">H1:v1/H2:v2</TD>
+           <TD BORDER="0" WIDTH="10"><FONT POINT-SIZE="10">/</FONT></TD>
+           <TD BGCOLOR="lavender">C1=v1;C2=v2</TD>
+           <TD BORDER="0" WIDTH="10"><FONT POINT-SIZE="10">/</FONT></TD>
+           <TD BGCOLOR="lightsteelblue">path/to/data</TD>
+           <TD BGCOLOR="lightgray">?a=1&amp;b=2&amp;c=3</TD>
+         </TR>
+         <TR>
+           <TD ALIGN="CENTER" BGCOLOR="lightblue"><FONT POINT-SIZE="8">custom prefix</FONT></TD>
+           <TD WIDTH="10"></TD>
+           <TD ALIGN="CENTER" BGCOLOR="palegreen"><FONT POINT-SIZE="8">UA-class</FONT></TD>
+           <TD WIDTH="10"></TD>
+           <TD ALIGN="CENTER" BGCOLOR="lightyellow"><FONT POINT-SIZE="8">UA-captures</FONT></TD>
+           <TD WIDTH="10"></TD>
+           <TD ALIGN="CENTER" BGCOLOR="mistyrose"><FONT POINT-SIZE="8">headers</FONT></TD>
+           <TD WIDTH="10"></TD>
+           <TD ALIGN="CENTER" BGCOLOR="lavender"><FONT POINT-SIZE="8">cookies</FONT></TD>
+           <TD WIDTH="10"></TD>
+           <TD ALIGN="CENTER" BGCOLOR="lightsteelblue"><FONT POINT-SIZE="8">path</FONT></TD>
+           <TD ALIGN="CENTER" BGCOLOR="lightgray"><FONT POINT-SIZE="8">query</FONT></TD>
+         </TR>
+       </TABLE>
+     >];
+
+     sample1 -> sample2 [style=invis];
+   }
+
+**Component Description:**
+
+- **Prefix**: Host and port (``/www.example.com/80``) or custom static prefix (``/nice_custom_prefix``) from ``--static-prefix``
+- **UA-class**: User-Agent classification from ``--ua-allowlist`` (``popular``)
+- **UA-captures**: Captured from User-Agent via ``--ua-capture`` regex (``Mozilla/5.0``)
+- **Headers**: From ``--include-headers=H1,H2`` (``H1:v1/H2:v2``)
+- **Cookies**: From ``--include-cookies=C1,C2`` (``C1=v1;C2=v2``)
+- **Path**: URI path component (``path/to/data``)
+- **Query**: URI query, sorted via ``--sort-params=true`` (``?a=1&b=2&c=3``)
 
 The following is an example of how the above sample keys were generated (``Sample 1`` and ``Sample 2``).
 

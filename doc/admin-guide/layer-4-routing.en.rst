@@ -28,7 +28,7 @@ accomplished by examining the initial data from the inbound connection to decide
 destination. The initial data is then sent to the destination and subsequently |TS| forwards all
 data read on one connection to the other and vice versa.
 
-.. figure:: ../uml/images/l4-basic-sequence.svg
+.. uml:: ../uml/l4-basic-sequence.uml
    :align: center
 
 In this way it acts similarly to `nc <https://linux.die.net/man/1/nc>`__.
@@ -81,11 +81,9 @@ services.
 
 The basic set up is therefore
 
-.. figure:: ../uml/images/l4-example-cdn-layout.svg
+.. uml:: ../uml/l4-example-cdn-layout.uml
    :align: center
-
-   A Client connects to an edge |TS| which forwards the connection to the internal Service.
-   The Client then negotiates TLS with the Service.
+   :caption: A Client connects to an edge |TS| which forwards the connection to the internal Service. The Client then negotiates TLS with the Service.
 
 
 For the example, let us define two services inside the corporate network of Example, Inc.
@@ -118,7 +116,7 @@ In addition to this, in the :file:`records.yaml` file, edit ``connect_ports`` li
 
 The sequence of network activity for a Client connecting to ``service-2`` is
 
-.. figure:: ../uml/images/l4-sni-routing-seq.svg
+.. uml:: ../uml/l4-sni-routing-seq.uml
    :align: center
 
 Note the destination for the outbound TCP connection and the HTTP ``CONNECT`` is the same. If this
@@ -138,7 +136,7 @@ Pre-warming TLS Tunnel
 Pre-warming TLS Tunnel reduces the latency of TLS connections (``forward_route`` and ``partial_blind_route`` type SNI
 Routing). When this feature is enabled, each ET_NET thread makes TLS connections pool per routing type, SNI, and ALPN.
 
-.. figure:: ../uml/images/l4-pre-warming-overview.svg
+.. uml:: ../uml/l4-pre-warming-overview.uml
    :align: center
 
 Stats for connection pools are registered dynamically on start up. Details in :ref:`pre-warming-tls-tunnel-stats`.

@@ -15,19 +15,19 @@
 #
 #######################
 
-set(PLANTUML_DATE "1.2018.1")
+set(PLANTUML_DATE "1.2025.10")
 set(PLANTUML_ARCHIVE ${CMAKE_CURRENT_BINARY_DIR}/plantuml-${PLANTUML_DATE}.tar.bz2)
 set(PLANTUML_JAR ${CMAKE_CURRENT_BINARY_DIR}/plantuml-${PLANTUML_DATE}/plantuml.jar)
 
 file(DOWNLOAD https://ci.trafficserver.apache.org/bintray/plantuml-${PLANTUML_DATE}.tar.bz2 ${PLANTUML_ARCHIVE}
-     EXPECTED_HASH SHA1=4dbf218641a777007f9bc72ca8017a41a23e1081
+     EXPECTED_HASH SHA1=248b535bb361119d154e3435dfe5382ddeca55d6
 )
 file(ARCHIVE_EXTRACT INPUT ${PLANTUML_ARCHIVE} PATTERNS *.jar)
 
 configure_file(ext/local-config.cmake.in.py ext/local-config.py)
 configure_file(ext/traffic-server.cmake.in.py ext/traffic-server.py)
 configure_file(ext/extras/txnbox.cmake.in.py ext/extras/txnbox.py)
-configure_file(conf.cmake.in.py conf.py)
+configure_file(conf.cmake.in.py conf.py @ONLY)
 configure_file(manpages.cmake.in.py manpages.py)
 
 # copy static directory to build
@@ -65,8 +65,9 @@ foreach(UML ${UML_FILES})
   list(APPEND SVG_FILES ${CMAKE_CURRENT_SOURCE_DIR}/uml/images/${uml_name}.svg)
   add_custom_command(
     OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/uml/images/${uml_name}.svg
-    COMMAND ${Java_JAVA_EXECUTABLE} -jar ${PLANTUML_JAR} -o ${CMAKE_CURRENT_SOURCE_DIR}/uml/images -tsvg -graphvizdot
-            ${GRAPHVIZ_DOT} ${CMAKE_CURRENT_SOURCE_DIR}/${UML}
+    COMMAND ${CMAKE_COMMAND} -E env GRAPHVIZ_DOT=${GRAPHVIZ_DOT} ${Java_JAVA_EXECUTABLE} -Djava.awt.headless=true
+            -Dapple.awt.UIElement=true -jar ${PLANTUML_JAR} -o ${CMAKE_CURRENT_SOURCE_DIR}/uml/images -tsvg
+            ${CMAKE_CURRENT_SOURCE_DIR}/${UML}
     DEPENDS ${UML}
     VERBATIM
   )
@@ -74,22 +75,63 @@ endforeach()
 add_custom_target(generate_svg_from_uml DEPENDS ${SVG_FILES})
 
 # Docs are built with python so we need a target to setup pipenv
-set(RUNPIPENV PIPENV_PIPFILE=${CMAKE_CURRENT_SOURCE_DIR}/Pipfile ${PipEnv})
+# Copy Pipfile to build directory and explicitly point pipenv to it
+# PIPENV_VENV_IN_PROJECT=1 creates .venv next to the Pipfile location (if not already in a venv)
+# PIPENV_VERBOSITY=-1 suppresses warnings
+# If user is already in a virtualenv, pipenv will use it; otherwise creates one in build dir
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/Pipfile ${CMAKE_CURRENT_BINARY_DIR}/Pipfile COPYONLY)
+set(RUNPIPENV PIPENV_PIPFILE=${CMAKE_CURRENT_BINARY_DIR}/Pipfile PIPENV_VENV_IN_PROJECT=1 PIPENV_VERBOSITY=-1 ${PipEnv})
+# Create a marker file to indicate pipenv setup is complete
+# This is more reliable than using Pipfile.lock which might already exist
 add_custom_command(
-  OUTPUT Pipfile.lock
-  COMMAND ${RUNPIPENV} install
-  COMMENT "Setup pipenv"
-  DEPENDS Pipfile
+  OUTPUT .pipenv_installed
+  COMMAND ${RUNPIPENV} install --python ${Python3_EXECUTABLE}
+  COMMAND ${CMAKE_COMMAND} -E touch .pipenv_installed
+  COMMENT "Setup pipenv in build directory (${CMAKE_CURRENT_BINARY_DIR}/.venv) and install packages"
+  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Pipfile
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+  VERBATIM
 )
 
 add_custom_target(
   generate_docs
-  COMMAND ${RUNPIPENV} run python ${CMAKE_CURRENT_SOURCE_DIR}/checkvers.py --check-version
-  COMMAND ${RUNPIPENV} run python -m sphinx -W -c ${CMAKE_CURRENT_BINARY_DIR} -b html ${CMAKE_CURRENT_SOURCE_DIR}
+  COMMAND ${CMAKE_COMMAND} -E env "JAVA_TOOL_OPTIONS=-Djava.awt.headless=true -Dapple.awt.UIElement=true" ${RUNPIPENV}
+          run python ${CMAKE_CURRENT_SOURCE_DIR}/checkvers.py --check-version
+  COMMAND ${CMAKE_COMMAND} -E env "JAVA_TOOL_OPTIONS=-Djava.awt.headless=true -Dapple.awt.UIElement=true" ${RUNPIPENV}
+          run python -m sphinx -W -c ${CMAKE_CURRENT_BINARY_DIR} -b html ${CMAKE_CURRENT_SOURCE_DIR}
           ${CMAKE_CURRENT_BINARY_DIR}/docbuild/html
-  DEPENDS generate_docs_setup generate_svg_from_uml Pipfile.lock
+  DEPENDS generate_docs_setup .pipenv_installed
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+  COMMENT "Sphinx PlantUML extension now generates diagrams automatically in build tree"
+)
+# Generate PDF documentation (Letter paper size - US standard)
+add_custom_target(
+  generate_pdf
+  COMMAND ${CMAKE_COMMAND} -E env "JAVA_TOOL_OPTIONS=-Djava.awt.headless=true -Dapple.awt.UIElement=true" ${RUNPIPENV}
+          run python ${CMAKE_CURRENT_SOURCE_DIR}/checkvers.py --check-version
+  COMMAND ${CMAKE_COMMAND} -E env "JAVA_TOOL_OPTIONS=-Djava.awt.headless=true -Dapple.awt.UIElement=true" ${RUNPIPENV}
+          run python -m sphinx -c ${CMAKE_CURRENT_BINARY_DIR} -b latex -t latex_paper ${CMAKE_CURRENT_SOURCE_DIR}
+          ${CMAKE_CURRENT_BINARY_DIR}/docbuild/latex
+  COMMAND ${CMAKE_COMMAND} -E chdir ${CMAKE_CURRENT_BINARY_DIR}/docbuild/latex latexmk -pdf -interaction=nonstopmode -f
+          ApacheTrafficServer.tex
+  DEPENDS generate_docs_setup .pipenv_installed
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+  COMMENT "Building PDF documentation with Sphinx and LaTeX (Letter paper, PlantUML generates PNG automatically)"
+)
+
+# Generate PDF documentation (A4 paper size - International standard)
+add_custom_target(
+  generate_pdf_a4
+  COMMAND ${CMAKE_COMMAND} -E env "JAVA_TOOL_OPTIONS=-Djava.awt.headless=true -Dapple.awt.UIElement=true" ${RUNPIPENV}
+          run python ${CMAKE_CURRENT_SOURCE_DIR}/checkvers.py --check-version
+  COMMAND ${CMAKE_COMMAND} -E env "JAVA_TOOL_OPTIONS=-Djava.awt.headless=true -Dapple.awt.UIElement=true" ${RUNPIPENV}
+          run python -m sphinx -c ${CMAKE_CURRENT_BINARY_DIR} -b latex -t latex_a4 ${CMAKE_CURRENT_SOURCE_DIR}
+          ${CMAKE_CURRENT_BINARY_DIR}/docbuild/latex-a4
+  COMMAND ${CMAKE_COMMAND} -E chdir ${CMAKE_CURRENT_BINARY_DIR}/docbuild/latex-a4 latexmk -pdf -interaction=nonstopmode
+          -f ApacheTrafficServer.tex
+  DEPENDS generate_docs_setup .pipenv_installed
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+  COMMENT "Building PDF documentation with Sphinx and LaTeX (A4 paper, PlantUML generates PNG automatically)"
 )
 
 #add_custom_command(

@@ -34,7 +34,8 @@ Json RPC manager
 
 This class is the entrance point for both server calls and registered functions.
 
-.. figure:: ../../uml/images/JsonRPCManager.svg
+.. uml:: ../../uml/JsonRPCManager.uml
+   :align: center
 
 Dispatcher class
 ----------------
@@ -592,5 +593,3 @@ See also
 :ref:`admin-jsonrpc-configuration`
 :ref:`jsonrpc-protocol`
 :ref:`developer-guide-traffic_ctl-development`
-
-

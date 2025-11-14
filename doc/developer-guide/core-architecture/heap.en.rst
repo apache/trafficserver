@@ -144,7 +144,8 @@ Classes
 
 .. topic:: Header Heap Class Structure
 
-   .. figure:: /uml/images/hdr-heap-class.svg
+   .. uml:: /uml/hdr-heap-class.plantuml
+      :align: center
 
 
 Implementation
@@ -190,7 +191,8 @@ sufficient space to allocate the new string.
 
 .. topic:: Decision Diagram
 
-   .. figure:: /uml/images/hdr-heap-str-alloc.svg
+   .. uml:: /uml/hdr-heap-str-alloc.plantuml
+      :align: center
 
 Object Allocation
 -----------------
