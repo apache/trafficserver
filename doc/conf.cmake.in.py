@@ -398,6 +398,9 @@ latex_elements = {
 % Better TOC depth
 \setcounter{tocdepth}{1}
 \setcounter{secnumdepth}{1}
+% Make sections start on new pages
+\let\oldsection\section
+\renewcommand{\section}{\clearpage\oldsection}
 % Fix chapter number width in TOC for 3-digit numbers
 \makeatletter
 \renewcommand*\l@chapter{\@dottedtocline{0}{0em}{4em}}

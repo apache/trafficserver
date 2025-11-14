@@ -33,9 +33,11 @@ HTML builds use index.rst instead.
 
    preface/index.en
    getting-started/index.en
+   release-notes/index.en
 
 .. raw:: latex
 
+   \addtocontents{toc}{\protect\clearpage}
    \part{Administrator's Guide}
    \setcounter{chapter}{0}
 
@@ -52,6 +54,9 @@ HTML builds use index.rst instead.
 .. raw:: latex
 
    \addtocontents{toc}{\protect\setcounter{tocdepth}{2}}
+   % Make plugin subsections (individual plugins) start on new pages
+   \let\oldsubsection\subsection
+   \renewcommand{\subsection}{\clearpage\oldsubsection}
 
 .. toctree::
    :maxdepth: 1
@@ -61,6 +66,8 @@ HTML builds use index.rst instead.
 .. raw:: latex
 
    \addtocontents{toc}{\protect\setcounter{tocdepth}{1}}
+   % Restore normal subsection behavior
+   \let\subsection\oldsubsection
 
 .. toctree::
    :maxdepth: 1
@@ -77,15 +84,11 @@ HTML builds use index.rst instead.
 
    admin-guide/files/index.en
    admin-guide/tools/index.en
-
-.. toctree::
-   :maxdepth: 1
-
-   release-notes/index.en
    appendices/index.en
 
 .. raw:: latex
 
+   \addtocontents{toc}{\protect\clearpage}
    \part{Developer's Guide}
    \setcounter{chapter}{0}
 
