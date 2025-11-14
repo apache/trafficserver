@@ -26,6 +26,7 @@ HTML builds use index.rst instead.
 .. raw:: latex
 
    \part{Introduction and Getting Started}
+   \setcounter{chapter}{0}
 
 .. toctree::
    :maxdepth: 1
@@ -36,6 +37,7 @@ HTML builds use index.rst instead.
 .. raw:: latex
 
    \part{Administrator's Guide}
+   \setcounter{chapter}{0}
 
 .. toctree::
    :maxdepth: 1
@@ -46,7 +48,24 @@ HTML builds use index.rst instead.
    admin-guide/interaction/index.en
    admin-guide/security/index.en
    admin-guide/storage/index.en
+
+.. raw:: latex
+
+   \addtocontents{toc}{\protect\setcounter{tocdepth}{2}}
+
+.. toctree::
+   :maxdepth: 1
+
    admin-guide/plugins/index.en
+
+.. raw:: latex
+
+   \addtocontents{toc}{\protect\setcounter{tocdepth}{1}}
+
+.. toctree::
+   :maxdepth: 1
+
+   developer-guide/cripts/index.en
    admin-guide/logging/index.en
    admin-guide/monitoring/index.en
    admin-guide/configuring-traffic-server.en
@@ -68,6 +87,7 @@ HTML builds use index.rst instead.
 .. raw:: latex
 
    \part{Developer's Guide}
+   \setcounter{chapter}{0}
 
 .. toctree::
    :maxdepth: 1
@@ -81,7 +101,6 @@ HTML builds use index.rst instead.
    developer-guide/logging-architecture/index.en
    developer-guide/internal-libraries/index.en
    developer-guide/plugins/index.en
-   developer-guide/cripts/index.en
    developer-guide/config-vars.en
    developer-guide/api/index.en
    developer-guide/continuous-integration/index.en
