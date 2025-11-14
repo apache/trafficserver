@@ -58,14 +58,12 @@ def setup(app):
     app.add_css_file('override.css')
 
     # Exclude index-latex.rst from all builders except latex
-    # This must be done in builder-inited since builder isn't available earlier
     def exclude_latex_index(app):
         if app.builder.name != 'latex':
             if 'index-latex.rst' not in app.config.exclude_patterns:
                 app.config.exclude_patterns.append('index-latex.rst')
 
     # Force PNG output for graphviz in LaTeX builds
-    # LaTeX doesn't support SVG format, so we must use PNG
     def configure_graphviz_format(app):
         if app.builder.name == 'latex':
             app.config.graphviz_output_format = 'png'
@@ -398,6 +396,16 @@ latex_elements = {
 % Better TOC depth
 \setcounter{tocdepth}{1}
 \setcounter{secnumdepth}{1}
+% PDF bookmarks depth and settings (for sidebar navigation in PDF viewers)
+\hypersetup{
+    bookmarksdepth=subsubsection,
+    bookmarksopen=true,
+    bookmarksopenlevel=1,
+    bookmarksnumbered=true
+}
+% Make sections start on new pages
+\let\oldsection\section
+\renewcommand{\section}{\clearpage\oldsection}
 % Fix chapter number width in TOC for 3-digit numbers
 \makeatletter
 \renewcommand*\l@chapter{\@dottedtocline{0}{0em}{4em}}
