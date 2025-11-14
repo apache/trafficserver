@@ -75,13 +75,13 @@ def ATSReplayTest(obj, replay_file: str):
     '''Create a TestRun that configures ATS and runs HTTP traffic using the replay file.
 
     :param obj: The Test object to add the test run to.
-    :param replay_file: Replay file specifying the test configuraiton and test traffic.
+    :param replay_file: Replay file specifying the test configuration and test traffic.
     :returns: The TestRun object.
     '''
 
     replay_path = replay_file if os.path.isabs(replay_file) else os.path.join(obj.TestDirectory, replay_file)
     with open(replay_path, 'r') as f:
-        replay_config = yaml.load(f, Loader=yaml.FullLoader)
+        replay_config = yaml.safe_load(f)
 
     # The user must specify the 'autest' node.
     if not 'autest' in replay_config:
@@ -99,6 +99,7 @@ def ATSReplayTest(obj, replay_file: str):
         tr.Setup.Copy(dirs_to_copy)
 
     # DNS configuration.
+    dns = None
     if 'dns' in autest_config:
         dns_config = autest_config['dns']
         name = dns_config['name']
