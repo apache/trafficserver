@@ -33,24 +33,30 @@ public:
   static uint64_t
   random()
   {
-    std::uniform_int_distribution<uint64_t> dist{0, UINT64_MAX};
-    return dist(_engine);
+    return _state.int_dist(_state.engine);
   }
 
   static double
   drandom()
   {
-    std::uniform_real_distribution<double> dist{0, 1};
-    return dist(_engine);
+    return _state.real_dist(_state.engine);
   }
 
   static void
   seed(uint64_t s)
   {
-    _engine.seed(s);
+    _state.engine.seed(s);
+    _state.int_dist.reset();
+    _state.real_dist.reset();
   }
 
 private:
-  thread_local static std::mt19937_64 _engine;
+  struct State {
+    std::mt19937_64                         engine{std::random_device{}()};
+    std::uniform_int_distribution<uint64_t> int_dist{0, UINT64_MAX};
+    std::uniform_real_distribution<double>  real_dist{0.0, 1.0};
+  };
+
+  thread_local static State _state;
 };
 }; // namespace ts
