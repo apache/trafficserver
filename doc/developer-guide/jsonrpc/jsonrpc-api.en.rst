@@ -1120,7 +1120,7 @@ admin_server_stop_drain
 Description
 ~~~~~~~~~~~
 
-Stop the drain requests process. Recover server from the drain mode
+Stop the process of draining connections. See :ref:`admin-graceful-shutdown` for more information.
 
 Parameters
 ~~~~~~~~~~
@@ -1157,7 +1157,7 @@ admin_server_start_drain
 Description
 ~~~~~~~~~~~
 
-Drain TS requests.
+Drain TS connections. See :ref:`admin-graceful-shutdown` for more information.
 
 Parameters
 ~~~~~~~~~~
