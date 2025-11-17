@@ -1636,7 +1636,7 @@ char *TSHttpTxnErrorBodyGet(TSHttpTxn txnp, size_t *buflength, char **mimetype);
     @param name of the strategy to look up.
 
  */
-void const *TSHttpTxnNextHopStrategyFind(TSHttpTxn txnp, const char *name);
+TSStrategy TSHttpTxnNextHopStrategyFind(TSHttpTxn txnp, const char *name);
 
 /**
     Sets the Transaction's Next Hop Parent Strategy.
@@ -1648,7 +1648,7 @@ void const *TSHttpTxnNextHopStrategyFind(TSHttpTxn txnp, const char *name);
     @param pointer to the given strategy.
 
  */
-void TSHttpTxnNextHopStrategySet(TSHttpTxn txnp, void const *strategy);
+void TSHttpTxnNextHopStrategySet(TSHttpTxn txnp, TSStrategy strategy);
 
 /**
     Retrieves a pointer to the current next hop selection strategy.
@@ -1659,7 +1659,7 @@ void TSHttpTxnNextHopStrategySet(TSHttpTxn txnp, void const *strategy);
     @param txnp HTTP transaction whose next hop strategy to get.
 
  */
-void const *TSHttpTxnNextHopStrategyGet(TSHttpTxn txnp);
+TSStrategy TSHttpTxnNextHopStrategyGet(TSHttpTxn txnp);
 
 /**
     Returns either null pointer or null terminated pointer to name.
@@ -1672,7 +1672,7 @@ void const *TSHttpTxnNextHopStrategyGet(TSHttpTxn txnp);
     @param pointer to the NextHopStrategy.
 
  */
-char const *TSNextHopStrategyNameGet(void const *strategy);
+char const *TSNextHopStrategyNameGet(TSStrategy strategy);
 
 /**
     Retrieves a pointer to the named strategy in the strategy table.
@@ -1685,7 +1685,7 @@ char const *TSNextHopStrategyNameGet(void const *strategy);
     @param name of the strategy to look up.
 
  */
-void const *TSRemapNextHopStrategyFind(const char *name);
+TSStrategy TSRemapNextHopStrategyFind(const char *name);
 
 /**
     Retrieves a pointer to remap rule strategy pointer.
@@ -1695,7 +1695,7 @@ void const *TSRemapNextHopStrategyFind(const char *name);
     Returns nullptr if no strategy assigned.
 
  */
-void const *TSRemapNextHopStrategyGet();
+TSStrategy TSRemapNextHopStrategyGet();
 
 /**
     Sets the remap rule's next hop strategy.
@@ -1707,7 +1707,7 @@ void const *TSRemapNextHopStrategyGet();
     @param handle to the strategy to set.
 
  */
-void TSRemapNextHopStrategySet(void const *strategy);
+void TSRemapNextHopStrategySet(TSStrategy strategy);
 
 /**
     Sets the parent proxy name and port. The string hostname is copied

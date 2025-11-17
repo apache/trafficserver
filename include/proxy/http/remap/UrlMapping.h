@@ -123,7 +123,7 @@ public:
   std::atomic<CacheHostRecord *> volume_host_rec = nullptr;
 
   // For use with the strategies API to be called during TSRemapNewInstance.
-  static inline url_mapping *instance = nullptr;
+  static inline thread_local url_mapping *instance = nullptr;
 
   CacheHostRecord *
   getVolumeHostRec() const
