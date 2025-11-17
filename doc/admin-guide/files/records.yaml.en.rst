@@ -383,6 +383,19 @@ Thread Variables
    will create its own domain socket with a ``-<thread id>`` suffix added to the
    end of the path.
 
+.. ts:cv:: CONFIG proxy.config.exec_thread.loop_time_update_probability INT 10
+   :reloadable:
+
+   This dynamically loadable setting controls the rate that exec thread loop timestamps are
+   updated after processing an event given as a percentage from 0 to 100. 0
+   would mean the timestamp is only updated once per event loop, 100 percent
+   means the timestamp is updated after any potential operation that could take
+   time (i.e. processing an event or waiting on IO).  The timestamp is used for
+   queuing events and comparing timestamps for processing.  Updating more often
+   might improve event timer accuracy and event loop metrics, but increases the
+   number of times that the current time is obtained from the OS.  See also
+   `proxy.config.system_clock`
+
 .. ts:cv:: CONFIG proxy.config.accept_threads INT 1
 
    The number of accept threads. If disabled (``0``), then accepts will be done
@@ -418,6 +431,18 @@ Thread Variables
 .. note::
 
    This option only has an affect when |TS| has been compiled with ``--enable-hwloc``.
+
+.. ts:cv:: CONFIG proxy.config.exec_thread.watchdog.timeout_ms INT 0
+   :units: milliseconds
+
+   Set the timeout for the exec thread watchdog in milliseconds. If an exec thread
+   does not heartbeat within this time period, the watchdog will log a warning message.
+   If this value is zero, the watchdog is disabled.
+
+   The default of this watchdot timeout is set to 0 (disabled) for ATS 10.2 for
+   compatibility.  We recommend that administrators set a reasonable
+   value, such as 1000, for production configurations, in order to
+   catch hung plugins, or server overload scenarios.
 
 .. ts:cv:: CONFIG proxy.config.system.file_max_pct FLOAT 0.9
 

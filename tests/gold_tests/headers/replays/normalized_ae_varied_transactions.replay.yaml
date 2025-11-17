@@ -122,7 +122,7 @@ sessions:
         - [ X-Response-Identifier, Deflate-Accept-Encoding ]
 
     proxy-response:
-      status: 200
+      status: 404
       headers:
         fields:
         - [ X-Response-Identifier, { value: Deflate-Accept-Encoding, as: equal } ]

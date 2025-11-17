@@ -209,6 +209,75 @@ RegexMatches::operator[](size_t index) const
 }
 
 //----------------------------------------------------------------------------
+struct RegexMatchContext::_MatchContext {
+  static pcre2_match_context *
+  get(_MatchContextPtr const &p)
+  {
+    return static_cast<pcre2_match_context *>(p._ptr);
+  }
+  static void
+  set(_MatchContextPtr &p, pcre2_match_context *ptr)
+  {
+    p._ptr = ptr;
+  }
+};
+
+//----------------------------------------------------------------------------
+RegexMatchContext::RegexMatchContext()
+{
+  auto ctx = pcre2_match_context_create(nullptr);
+  debug_assert_message(ctx, "Failed to allocate custom pcre2 match context");
+  _MatchContext::set(_match_context, ctx);
+}
+
+//----------------------------------------------------------------------------
+RegexMatchContext::RegexMatchContext(RegexMatchContext const &other)
+{
+  auto ptr = _MatchContext::get(other._match_context);
+  if (nullptr != ptr) {
+    pcre2_match_context *const ctx = pcre2_match_context_copy(ptr);
+    _MatchContext::set(_match_context, ctx);
+  }
+}
+
+//----------------------------------------------------------------------------
+RegexMatchContext &
+RegexMatchContext::operator=(RegexMatchContext const &other)
+{
+  if (&other != this) {
+    auto ptr = _MatchContext::get(other._match_context);
+    if (nullptr != ptr) {
+      pcre2_match_context *const ctx = pcre2_match_context_copy(ptr);
+      _MatchContext::set(_match_context, ctx);
+    } else {
+      _MatchContext::set(_match_context, nullptr);
+    }
+  }
+  return *this;
+}
+
+//----------------------------------------------------------------------------
+RegexMatchContext::~RegexMatchContext()
+{
+  auto ptr = _MatchContext::get(_match_context);
+  debug_assert_message(ptr, "Failed to get the match context");
+  if (ptr != nullptr) {
+    pcre2_match_context_free(ptr);
+  }
+}
+
+//----------------------------------------------------------------------------
+void
+RegexMatchContext::set_match_limit(uint32_t limit)
+{
+  auto ptr = _MatchContext::get(_match_context);
+  debug_assert_message(ptr, "Failed to get the match context");
+  if (ptr != nullptr) {
+    pcre2_set_match_limit(ptr, limit);
+  }
+}
+
+//----------------------------------------------------------------------------
 struct Regex::_Code {
   static pcre2_code *
   get(_CodePtr const &p)
@@ -314,7 +383,7 @@ Regex::compile(std::string_view pattern, std::string &error, int &erroroffset, u
     // get pcre2 error message
     PCRE2_UCHAR buffer[256];
     pcre2_get_error_message(error_code, buffer, sizeof(buffer));
-    error.assign((char *)buffer);
+    error.assign((char const *)buffer);
     return false;
   }
 
@@ -355,7 +424,7 @@ Regex::exec(std::string_view subject, RegexMatches &matches) const
 
 //----------------------------------------------------------------------------
 int32_t
-Regex::exec(std::string_view subject, RegexMatches &matches, uint32_t flags) const
+Regex::exec(std::string_view subject, RegexMatches &matches, uint32_t flags, RegexMatchContext const *const matchContext) const
 {
   auto code = _Code::get(_code);
 
@@ -363,33 +432,69 @@ Regex::exec(std::string_view subject, RegexMatches &matches, uint32_t flags) con
   if (code == nullptr) {
     return PCRE2_ERROR_NULL;
   }
-  int count = pcre2_match(code, reinterpret_cast<PCRE2_SPTR>(subject.data()), subject.size(), 0, flags,
-                          RegexMatches::_MatchData::get(matches._match_data), RegexContext::get_instance()->get_match_context());
 
-  matches._size = count;
+  // Use the provided or the thread global context?
+  pcre2_match_context *match_context;
+  if (nullptr == matchContext) {
+    match_context = RegexContext::get_instance()->get_match_context();
+  } else {
+    match_context = RegexMatchContext::_MatchContext::get(matchContext->_match_context);
+  }
+
+  int const rc = pcre2_match(code, reinterpret_cast<PCRE2_SPTR>(subject.data()), subject.size(), 0, flags,
+                             RegexMatches::_MatchData::get(matches._match_data), match_context);
+
+  matches._size = rc;
 
   // match was successful
-  if (count >= 0) {
+  if (rc >= 0) {
     matches._subject = subject;
 
     // match but the output vector was too small, adjust the size of the matches
-    if (count == 0) {
+    if (rc == 0) {
       matches._size = pcre2_get_ovector_count(RegexMatches::_MatchData::get(matches._match_data));
     }
   }
 
-  return count;
+  return rc;
+}
+
+//----------------------------------------------------------------------------
+// static
+std::string
+Regex::get_error_string(int rc)
+{
+  std::string res;
+
+  if (rc < 0) {
+    PCRE2_UCHAR buffer[256];
+    pcre2_get_error_message(rc, buffer, sizeof(buffer));
+    res.assign((char const *)buffer);
+  }
+
+  return res;
 }
 
 //----------------------------------------------------------------------------
 int32_t
-Regex::get_capture_count()
+Regex::get_capture_count() const
 {
-  int captures = -1;
+  uint32_t captures = 0;
   if (pcre2_pattern_info(_Code::get(_code), PCRE2_INFO_CAPTURECOUNT, &captures) != 0) {
     return -1;
   }
-  return captures;
+  return static_cast<int32_t>(captures);
+}
+
+//----------------------------------------------------------------------------
+int32_t
+Regex::get_backref_max() const
+{
+  uint32_t refs = 0;
+  if (pcre2_pattern_info(_Code::get(_code), PCRE2_INFO_BACKREFMAX, &refs) != 0) {
+    return -1;
+  }
+  return static_cast<int32_t>(refs);
 }
 
 //----------------------------------------------------------------------------

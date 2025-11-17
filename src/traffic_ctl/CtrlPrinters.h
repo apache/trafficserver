@@ -261,6 +261,14 @@ public:
   SetHostStatusPrinter(BasePrinter::Options opt) : BasePrinter(opt) {}
 };
 //------------------------------------------------------------------------------------------------------------------------------------
+class HostDBStatusPrinter : public BasePrinter
+{
+  void write_output(YAML::Node const &result) override;
+
+public:
+  HostDBStatusPrinter(BasePrinter::Options opt) : BasePrinter(opt) {}
+};
+//------------------------------------------------------------------------------------------------------------------------------------
 class CacheDiskStoragePrinter : public BasePrinter
 {
   void write_output(YAML::Node const &result) override;

@@ -144,7 +144,11 @@ class PerClientConnectionMaxTest:
         """
         name = f'client{PerClientConnectionMaxTest._client_counter}'
         p = tr.AddVerifierClientProcess(
-            name, self._replay_file, http_ports=[self._ts.Variables.port], https_ports=[self._ts.Variables.ssl_port])
+            name,
+            self._replay_file,
+            http_ports=[self._ts.Variables.port],
+            https_ports=[self._ts.Variables.ssl_port],
+            run_parallel=True)
         PerClientConnectionMaxTest._client_counter += 1
 
         p.StartBefore(self._dns)

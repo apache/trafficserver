@@ -49,8 +49,7 @@ class InvalidRangeHeaderTest:
 
     def runTraffic(self):
         tr = Test.AddTestRun()
-        tr.AddVerifierClientProcess(
-            "client1", self.invalidRangeRequestReplayFile, http_ports=[self.ts.Variables.port], other_args='--thread-limit 1')
+        tr.AddVerifierClientProcess("client1", self.invalidRangeRequestReplayFile, http_ports=[self.ts.Variables.port])
         tr.Processes.Default.StartBefore(self.server)
         tr.Processes.Default.StartBefore(self.ts)
         tr.StillRunningAfter = self.server

@@ -167,8 +167,7 @@ sleep 5;
             "pv_client",
             "replay/bg_fill.yaml",
             http_ports=[self.ts['for_pv'].Variables.port],
-            https_ports=[self.ts['for_pv'].Variables.ssl_port],
-            other_args='--thread-limit 1')
+            https_ports=[self.ts['for_pv'].Variables.ssl_port])
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stdout = "gold/background_fill_3_stdout.gold"
         self.__checkProcessAfter(tr)

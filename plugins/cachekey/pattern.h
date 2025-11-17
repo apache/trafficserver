@@ -18,32 +18,26 @@
 
 /**
  * @file pattern.h
- * @brief PRCE related classes (header file).
+ * @brief Regex related classes (header file).
  */
 
 #pragma once
 
 #include "tscore/ink_defs.h"
-
-#ifdef HAVE_PCRE_PCRE_H
-#include <pcre/pcre.h>
-#else
-#include <pcre.h>
-#endif
+#include "tsutil/Regex.h"
 
 #include "common.h"
 
 /**
- * @brief PCRE matching, capturing and replacing
+ * @brief Regex matching, capturing and replacing
  */
 class Pattern
 {
 public:
-  static const int TOKENCOUNT = 10;             /**< @brief Capturing groups $0..$9 */
-  static const int OVECOUNT   = TOKENCOUNT * 3; /**< @brief pcre_exec() array count, handle 10 capture groups */
+  static const int TOKENCOUNT = 10; /**< @brief Capturing groups $0..$9 */
 
   Pattern();
-  virtual ~Pattern();
+  ~Pattern() = default;
 
   bool init(const String &pattern, const String &replacement, bool replace);
   bool init(const String &config);
@@ -55,13 +49,12 @@ public:
 
 private:
   bool compile();
-  void pcreFree();
 
-  pcre       *_re    = nullptr; /**< @brief PCRE compiled info structure, computed during initialization */
-  pcre_extra *_extra = nullptr; /**< @brief PCRE study data block, computed during initialization */
+  Regex _re; /**< @brief Regex compiled object */
 
-  String _pattern;     /**< @brief PCRE pattern string, containing PCRE patterns and capturing groups. */
-  String _replacement; /**< @brief PCRE replacement string, containing $0..$9 to be replaced with content of the capturing groups */
+  String _pattern; /**< @brief Regex pattern string, containing regex patterns and capturing groups. */
+  String
+    _replacement; /**< @brief Regex replacement string, containing $0..$9 to be replaced with content of the capturing groups */
 
   bool _replace = false; /**< @brief true if a replacement is needed, false if not, this is to distinguish between an empty
                     replacement string and no replacement needed case */

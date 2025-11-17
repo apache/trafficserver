@@ -31,6 +31,37 @@ testName = "NORMALIZE_AE_MATCH_VARY"
 replay_file = "replays/normalized_ae_varied_transactions.replay.yaml"
 server = Test.MakeVerifierServerProcess("server", replay_file)
 
+# Verify that cache hit requests never reach the server
+# Case 2 (normalize_ae:1) cache hits
+server.Streams.stdout += Testers.ExcludesExpression(
+    "uuid: 12", "Verify empty Accept-Encoding (uuid 12) is a cache hit and doesn't reach the server.")
+server.Streams.stdout += Testers.ExcludesExpression(
+    "uuid: 13", "Verify deflate request (uuid 13) is a cache hit and doesn't reach the server.")
+server.Streams.stdout += Testers.ExcludesExpression(
+    "uuid: 14", "Verify br,compress request (uuid 14) is a cache hit and doesn't reach the server.")
+server.Streams.stdout += Testers.ExcludesExpression(
+    "uuid: 16", "Verify br,compress,gzip request (uuid 16) is a cache hit and doesn't reach the server.")
+# Case 3 (normalize_ae:2) cache hits
+server.Streams.stdout += Testers.ExcludesExpression(
+    "uuid: 22", "Verify empty Accept-Encoding (uuid 22) is a cache hit and doesn't reach the server.")
+server.Streams.stdout += Testers.ExcludesExpression(
+    "uuid: 23", "Verify deflate request (uuid 23) is a cache hit and doesn't reach the server.")
+server.Streams.stdout += Testers.ExcludesExpression(
+    "uuid: 26", "Verify br,compress,gzip request (uuid 26) is a cache hit and doesn't reach the server.")
+server.Streams.stdout += Testers.ExcludesExpression(
+    "uuid: 27", "Verify compress,gzip request (uuid 27) is a cache hit and doesn't reach the server.")
+# Case 4 (normalize_ae:3) cache hits
+server.Streams.stdout += Testers.ExcludesExpression(
+    "uuid: 32", "Verify empty Accept-Encoding (uuid 32) is a cache hit and doesn't reach the server.")
+server.Streams.stdout += Testers.ExcludesExpression(
+    "uuid: 33", "Verify deflate request (uuid 33) is a cache hit and doesn't reach the server.")
+server.Streams.stdout += Testers.ExcludesExpression(
+    "uuid: 37", "Verify compress,gzip request (uuid 37) is a cache hit and doesn't reach the server.")
+server.Streams.stdout += Testers.ExcludesExpression(
+    "uuid: 38", "Verify br;q=1.1 request (uuid 38) is a cache hit and doesn't reach the server.")
+server.Streams.stdout += Testers.ExcludesExpression(
+    "uuid: 39", "Verify br,gzip;q=0.8 request (uuid 39) is a cache hit and doesn't reach the server.")
+
 ts = Test.MakeATSProcess("ts", enable_cache=True)
 ts.Disk.remap_config.AddLine(
     f"map http://www.ae-0.com http://127.0.0.1:{server.Variables.http_port}" +

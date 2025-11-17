@@ -1749,7 +1749,6 @@ HttpTransact::HandleApiErrorJump(State *s)
   **/
   if (s->http_return_code != HTTPStatus::NONE && s->http_return_code >= HTTPStatus::BAD_REQUEST) {
     const char *reason = http_hdr_reason_lookup(s->http_return_code);
-    ;
     build_response(s, &s->hdr_info.client_response, s->client_info.http_version, s->http_return_code, reason ? reason : "Error");
   } else {
     build_response(s, &s->hdr_info.client_response, s->client_info.http_version, HTTPStatus::INTERNAL_SERVER_ERROR, "INKApi Error");
@@ -1916,7 +1915,7 @@ HttpTransact::OSDNSLookup(State *s)
       SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
       if (!s->dns_info.record || s->dns_info.record->is_failed()) {
         // Set to internal server error so later logging will pick up SquidLogCode::ERR_DNS_FAIL
-        build_error_response(s, HTTPStatus::INTERNAL_SERVER_ERROR, "Cannot find server.", "connect#dns_failed");
+        build_error_response(s, HTTPStatus::INTERNAL_SERVER_ERROR, "Cannot find server.", Dns_error_body);
         log_msg = "looking up";
       } else {
         build_error_response(s, HTTPStatus::INTERNAL_SERVER_ERROR, "No valid server.", "connect#all_down");
@@ -3731,6 +3730,20 @@ HttpTransact::handle_response_from_server(State *s)
   case PARSE_ERROR:
   case CONNECTION_CLOSED:
   case BAD_INCOMING_RESPONSE:
+
+    // Ensure cause_of_death_errno is set for all error states if not already set.
+    // This prevents the assertion failure in retry_server_connection_not_open.
+    if (s->cause_of_death_errno == -UNKNOWN_INTERNAL_ERROR) {
+      if (s->current.state == PARSE_ERROR || s->current.state == BAD_INCOMING_RESPONSE) {
+        s->set_connect_fail(EBADMSG);
+      } else if (s->current.state == CONNECTION_CLOSED) {
+        s->set_connect_fail(EPIPE);
+      } else {
+        // Generic fallback for OPEN_RAW_ERROR, CONNECTION_ERROR,
+        // STATE_UNDEFINED, and any other unexpected error states.
+        s->set_connect_fail(EIO);
+      }
+    }
 
     if (is_server_negative_cached(s)) {
       max_connect_retries = s->txn_conf->connect_attempts_max_retries_down_server - 1;

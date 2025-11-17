@@ -44,6 +44,9 @@ ink_event_system_init(ts::ModuleVersion v)
 
   RecEstablishStaticConfigInt32(thread_freelist_low_watermark, "proxy.config.allocator.thread_freelist_low_watermark");
 
+  extern int loop_time_update_probability;
+  RecEstablishStaticConfigInt32(loop_time_update_probability, "proxy.config.exec_thread.loop_time_update_probability");
+
   int chunk_sizes[DEFAULT_BUFFER_SIZES] = {0};
   {
     auto chunk_sizes_string{RecGetRecordStringAlloc("proxy.config.allocator.iobuf_chunk_sizes")};

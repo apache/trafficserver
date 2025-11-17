@@ -445,7 +445,7 @@ private:
 
   Regex      *regex = nullptr;
   std::string regex_string;
-  int         regex_ccount = 0;
+  int32_t     regex_ccount = 0;
 
   std::string  bucket;
   unsigned int how_many = 0;
@@ -503,6 +503,18 @@ public:
   }
 
   void
+  setDisablePristineHostHdr(bool val)
+  {
+    disable_pristine_host_hdr = val;
+  }
+
+  bool
+  getDisablePristineHostHdr() const
+  {
+    return disable_pristine_host_hdr;
+  }
+
+  void
   printOp() const
   {
     Dbg(dbg_ctl, "++++operation++++");
@@ -515,10 +527,14 @@ public:
     if (else_sendto.size() > 0) {
       Dbg(dbg_ctl, "else: %s", else_sendto.c_str());
     }
+    if (disable_pristine_host_hdr) {
+      Dbg(dbg_ctl, "disable_pristine_host_hdr: true");
+    }
   }
 
   bool
-  process(CookieJar &jar, std::string &dest, TSHttpStatus &retstat, TSRemapRequestInfo *rri, UrlComponents &req_url) const
+  process(CookieJar &jar, std::string &dest, TSHttpStatus &retstat, TSRemapRequestInfo *rri, UrlComponents &req_url,
+          bool &used_sendto) const
   {
     if (sendto == "") {
       return false; // guessing every operation must have a
@@ -774,12 +790,14 @@ public:
       if (status > 0) {
         retstat = status;
       }
+      used_sendto = true; // We took the sendto path
       return true;
     } else if (else_sendto.size() > 0 && retval == 0) {
       dest = else_sendto;
       if (else_status > 0) {
         retstat = else_status;
       }
+      used_sendto = false; // We took the else path
       return true;
     } else {
       dest = "";
@@ -791,8 +809,9 @@ private:
   SubOpQueue   subops{};
   std::string  sendto{""};
   std::string  else_sendto{""};
-  TSHttpStatus status      = TS_HTTP_STATUS_NONE;
-  TSHttpStatus else_status = TS_HTTP_STATUS_NONE;
+  TSHttpStatus status                    = TS_HTTP_STATUS_NONE;
+  TSHttpStatus else_status               = TS_HTTP_STATUS_NONE;
+  bool         disable_pristine_host_hdr = false;
 };
 
 using StringPair = std::pair<std::string, std::string>;
@@ -829,6 +848,10 @@ build_op(op &o, OpMap const &q)
 
     if (key == "status") {
       o.setStatus(val);
+    }
+
+    if (key == "disable_pristine_host_hdr") {
+      o.setDisablePristineHostHdr(val == "true" || val == "1" || val == "yes");
     }
 
     if (key == "operation") {
@@ -1183,7 +1206,8 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 
   for (auto &op : *ops) {
     Dbg(dbg_ctl, ">>> processing new operation");
-    if (op->process(jar, rewrite_to, status, rri, req_url)) {
+    bool used_sendto = false;
+    if (op->process(jar, rewrite_to, status, rri, req_url, used_sendto)) {
       cr_substitutions(rewrite_to, req_url);
 
       size_t pos = 7;                             // 7 because we want to ignore the // in
@@ -1244,6 +1268,16 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
         TSError("can't parse substituted URL string");
         goto error;
       } else {
+        // Disable pristine host header if configured to do so and we took the
+        // sendto path. This allows the Host header to be updated to match the
+        // remapped destination. The else path (i.e., the non-sendto one)
+        // always preserves the pristine host header configuration, whether
+        // enabled or disabled.
+        if (op->getDisablePristineHostHdr() && used_sendto) {
+          Dbg(dbg_ctl, "Disabling pristine_host_hdr for this transaction (sendto path)");
+          TSHttpTxnConfigIntSet(txnp, TS_CONFIG_URL_REMAP_PRISTINE_HOST_HDR, 0);
+        }
+
         if (field != nullptr) {
           TSHandleMLocRelease(rri->requestBufp, rri->requestHdrp, field);
         }
