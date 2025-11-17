@@ -3752,6 +3752,9 @@ MIMEHdrImpl::recompute_cooked_stuff(MIMEField *changing_field_or_null)
 
         for (s = csv_iter.get_first(field, &len); s != nullptr; s = csv_iter.get_next(&len)) {
           e = s + len;
+          // Store set mask bits from this CSV value so we can clear them if needed.
+          uint32_t csv_value_mask = 0;
+
           for (c = s; (c < e) && (ParseRules::is_token(*c)); c++) {
             ;
           }
@@ -3766,6 +3769,7 @@ MIMEHdrImpl::recompute_cooked_stuff(MIMEField *changing_field_or_null)
             HdrTokenHeapPrefix *p                  = hdrtoken_wks_to_prefix(token_wks);
             mask                                   = p->wks_type_specific.u.cache_control.cc_mask;
             m_cooked_stuff.m_cache_control.m_mask |= mask;
+            csv_value_mask                        |= mask;
 
 #if TRACK_COOKING
             Dbg(dbg_ctl_http, "                        set mask 0x%0X", mask);
@@ -3795,6 +3799,26 @@ MIMEHdrImpl::recompute_cooked_stuff(MIMEField *changing_field_or_null)
                 if (token_wks == MIME_VALUE_MAX_STALE.c_str()) {
                   m_cooked_stuff.m_cache_control.m_secs_max_stale = INT_MAX;
                 }
+              }
+            }
+
+            // Detect whether there is any more non-whitespace content after the
+            // directive. This indicates an unrecognized or malformed directive.
+            // This can happen, for instance, if the host uses semicolons
+            // instead of commas as separators which is against RFC 7234 (see
+            // issue #12029). Regardless of the cause, this means we need to
+            // ignore the directive and clear any mask bits we set from it.
+            while (c < e && ParseRules::is_ws(*c)) {
+              ++c;
+            }
+            if (c < e) {
+              // There's non-whitespace content that wasn't parsed. This means
+              // that we cannot really understand what this directive is.
+              // Per RFC 7234 Section 5.2: "A cache MUST ignore unrecognized cache
+              // directives."
+              if (csv_value_mask != 0) {
+                // Reverse the mask that we set above.
+                m_cooked_stuff.m_cache_control.m_mask &= ~csv_value_mask;
               }
             }
           }

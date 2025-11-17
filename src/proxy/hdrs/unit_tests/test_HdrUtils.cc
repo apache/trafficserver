@@ -207,3 +207,87 @@ TEST_CASE("HdrUtils 3", "[proxy][hdrutils]")
   REQUIRE(0 == memcmp(swoc::TextView(buff, idx), text));
   heap->destroy();
 };
+
+TEST_CASE("HdrUtils Cache-Control", "[proxy][hdrutils]")
+{
+  // Verify Cache-Control directive parsing.
+  //
+  // Verify that HdrCsvIter properly handles directives like max-age=30.  Note:
+  // don't worry about the field names - we just keep them distinct to verify
+  // the value parsing.
+  static constexpr swoc::TextView text{"Cache-Control-Basic: max-age=30, public\r\n"
+                                       "Cache-Control-Ext: stale-if-error=1, stale-while-revalidate=60, no-cache\r\n"
+                                       "Cache-Control-Mixed: public, max-age=300, s-maxage=600\r\n"
+                                       "Cache-Control-Malformed: public; max-age=30\r\n"
+                                       "\r\n"};
+
+  static constexpr swoc::TextView cc_tag{"Cache-Control-Basic"};
+  static constexpr swoc::TextView cc_ext_tag{"Cache-Control-Ext"};
+  static constexpr swoc::TextView cc_mixed_tag{"Cache-Control-Mixed"};
+  static constexpr swoc::TextView cc_malformed_tag{"Cache-Control-Malformed"};
+
+  // Set up the field parsing for the HdrCsvIter.
+  HdrHeap    *heap = new_HdrHeap(HdrHeap::DEFAULT_SIZE + 64);
+  MIMEParser  parser;
+  char const *real_s = text.data();
+  char const *real_e = text.data_end();
+  MIMEHdr     mime;
+
+  mime.create(heap);
+  mime_parser_init(&parser);
+
+  auto result = mime_parser_parse(&parser, heap, mime.m_mime, &real_s, real_e, false, true, false);
+  REQUIRE(ParseResult::DONE == result);
+
+  // Now: test the parsing of the values.
+  HdrCsvIter iter;
+
+  // Test basic Cache-Control with max-age=value and simple directive.
+  MIMEField *field{mime.field_find(cc_tag)};
+  REQUIRE(field != nullptr);
+
+  auto value = iter.get_first(field);
+  REQUIRE(value == "max-age=30");
+  value = iter.get_next();
+  REQUIRE(value == "public");
+  value = iter.get_next();
+  REQUIRE(value.empty());
+
+  // Test extension directives (stale-if-error, stale-while-revalidate) with values.
+  field = mime.field_find(cc_ext_tag);
+  REQUIRE(field != nullptr);
+
+  value = iter.get_first(field);
+  REQUIRE(value == "stale-if-error=1");
+  value = iter.get_next();
+  REQUIRE(value == "stale-while-revalidate=60");
+  value = iter.get_next();
+  REQUIRE(value == "no-cache");
+  value = iter.get_next();
+  REQUIRE(value.empty());
+
+  // Test mixed directives with and without values.
+  field = mime.field_find(cc_mixed_tag);
+  REQUIRE(field != nullptr);
+
+  value = iter.get_first(field);
+  REQUIRE(value == "public");
+  value = iter.get_next();
+  REQUIRE(value == "max-age=300");
+  value = iter.get_next();
+  REQUIRE(value == "s-maxage=600");
+  value = iter.get_next();
+  REQUIRE(value.empty());
+
+  // Test malformed Cache-Control with semicolon separator instead of comma.
+  // The CSV iterator treats this as a single value since semicolons aren't separators.
+  field = mime.field_find(cc_malformed_tag);
+  REQUIRE(field != nullptr);
+
+  value = iter.get_first(field);
+  REQUIRE(value == "public; max-age=30");
+  value = iter.get_next();
+  REQUIRE(value.empty());
+
+  heap->destroy();
+};

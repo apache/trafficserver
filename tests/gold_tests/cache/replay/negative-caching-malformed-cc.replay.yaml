@@ -1,0 +1,161 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+#
+# This replay file tests negative caching with malformed Cache-Control headers
+# that use semicolons instead of commas as separators (issue #12029).
+#
+
+meta:
+  version: "1.0"
+
+# Configuration section for autest integration
+autest:
+  description: 'Test malformed Cache-Control header with semicolons instead of commas (issue #12029)'
+
+  # Server configuration
+  server:
+    name: 'server-malformed-cc'
+
+  # Client configuration
+  client:
+    name: 'client-malformed-cc'
+
+  # ATS configuration
+  ats:
+    name: 'ts-malformed-cc'
+
+    # ATS records.config settings
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http'
+      proxy.config.http.insert_age_in_response: 0
+      proxy.config.http.negative_caching_enabled: 0
+
+    # Remap configuration
+    remap_config:
+      - from: "/"
+        to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"
+
+sessions:
+- transactions:
+
+  # First, verify that a 400 response with a proper Cache-Control header is cached.
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /path/400_proper_cc
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, 1 ]
+
+    server-response:
+      status: 400
+      reason: "Bad Request"
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+        - [ Cache-Control, max-age=300 ]
+
+    proxy-response:
+      status: 400
+
+  - client-request:
+
+      # Add a delay for caching IO to complete.
+      delay: 100ms
+
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /path/400_proper_cc
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, 2 ]
+
+    # The server should not receives this request because it should be served from cache.
+    server-response:
+      status: 200
+      reason: "OK"
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+        - [ Cache-Control, max-age=300 ]
+
+    proxy-response:
+      status: 400
+
+  #
+  # Test: Verify that a 400 response with malformed Cache-Control using
+  # semicolons is not cached. The header "Cache-Control: public; max-age=30"
+  # uses semicolons instead of commas as separators, violating RFC 7234.
+  # Per RFC 7234 Section 5.2, caches must ignore unrecognized directives.
+  # Since the directive is malformed, it should be ignored, and the response
+  # should not be cached (no valid Cache-Control + negative_caching_enabled=0).
+  #
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /path/400_malformed_cc
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, 3 ]
+
+    # First request: origin returns 400 with malformed Cache-Control
+    server-response:
+      status: 400
+      reason: "Bad Request"
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+        # Note: Using semicolon instead of comma - this is malformed per RFC 7234
+        - [ Cache-Control, "public; max-age=30" ]
+
+    proxy-response:
+      status: 400
+
+  - client-request:
+
+      # Add a delay for caching IO to complete.
+      delay: 100ms
+
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /path/400_malformed_cc
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, 4 ]
+
+    # Since the initial CC was malformed, the response should not be cached.
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 16 ]
+        - [ Cache-Control, max-age=300 ]
+
+    # Expect the origin's 200 response.
+    proxy-response:
+      status: 200
+
