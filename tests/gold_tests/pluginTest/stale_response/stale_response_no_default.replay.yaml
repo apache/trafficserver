@@ -135,7 +135,7 @@ sessions:
         - [ Content-Type, image/jpeg ]
         - [ Content-Length, 100 ]
         - [ Connection, keep-alive ]
-        - [ Cache-Control, max-age=1 stale-if-error=30 ]
+        - [ Cache-Control, "max-age=1, stale-if-error=30" ]
         - [ X-Response, fourth-response ]
 
     # We better have gone back to the origin and gotten second-response.

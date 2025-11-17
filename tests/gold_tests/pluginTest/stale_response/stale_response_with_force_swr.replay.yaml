@@ -42,14 +42,14 @@ sessions:
         - [ Connection, keep-alive ]
         # The low stale-while-revalidate should be overridden by
         # --force-stale-while-revalidate.
-        - [ Cache-Control, max-age=1 stale-while-revalidate=1 ]
+        - [ Cache-Control, "max-age=1, stale-while-revalidate=1" ]
         - [ X-Response, first-response ]
 
     proxy-response:
       status: 200
       headers:
         fields:
-        - [ Cache-Control, { value: "max-age=1 stale-while-revalidate=1", as: equal } ]
+        - [ Cache-Control, { value: "max-age=1, stale-while-revalidate=1", as: equal } ]
         - [ X-Response, { value: first-response, as: equal } ]
 
   - client-request:
