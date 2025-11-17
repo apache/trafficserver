@@ -121,7 +121,7 @@ public:
   std::atomic<uint64_t> _hitCount = 0; // counter can overflow
 
   // For use with the strategies API to be called during TSRemapNewInstance.
-  static inline url_mapping *instance = nullptr;
+  static inline thread_local url_mapping *instance = nullptr;
 
   int
   getRank() const

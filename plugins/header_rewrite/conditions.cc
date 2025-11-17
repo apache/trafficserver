@@ -1573,7 +1573,7 @@ ConditionNextHop::append_value(std::string &s, const Resources &res)
     s.append(std::to_string(port));
   } break;
   case NEXT_HOP_STRATEGY: {
-    void const *const strategy = TSHttpTxnNextHopStrategyGet(res.state.txnp);
+    TSStrategy const strategy = TSHttpTxnNextHopStrategyGet(res.state.txnp);
     if (nullptr != strategy) {
       char const *const name = TSNextHopStrategyNameGet(strategy);
       Dbg(pi_dbg_ctl, "Appending '%s' to evaluation value", name);

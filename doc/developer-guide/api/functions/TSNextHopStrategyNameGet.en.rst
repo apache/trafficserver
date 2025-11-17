@@ -28,7 +28,7 @@ Synopsis
 
     #include <ts/ts.h>
 
-.. function:: char const* TSNextHopStrategyNameGet(void const* strategy)
+.. function:: char const* TSNextHopStrategyNameGet(TSStrategy strategy)
 
 Description
 ===========

@@ -3513,7 +3513,7 @@ mytest_handler(TSCont contp, TSEvent event, void *data)
 
     // Set the strategy pointer here
     // this is an invalid pointer but the contents don't matter for this test.
-    TSHttpTxnNextHopStrategySet(static_cast<TSHttpTxn>(data), (void *)0x01);
+    TSHttpTxnNextHopStrategySet(static_cast<TSHttpTxn>(data), (TSStrategy)0x01);
 
     checkHttpTxnClientReqGet(test, data);
 
