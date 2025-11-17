@@ -108,3 +108,39 @@ class AuthIgnoredTest:
 
 
 AuthIgnoredTest().run()
+
+
+class AuthSMaxageTest:
+    # Verify that s-maxage allows serving cached responses to requests with
+    # Authorization headers per RFC 7234 section 3.2
+    authSMaxageReplayFile = "replay/auth-s-maxage.replay.yaml"
+
+    def __init__(self):
+        self.setupOriginServer()
+        self.setupTS()
+
+    def setupOriginServer(self):
+        self.server = Test.MakeVerifierServerProcess("auth-s-maxage-verifier-server", self.authSMaxageReplayFile)
+
+    def setupTS(self):
+        self.ts = Test.MakeATSProcess("ts-auth-s-maxage")
+        self.ts.Disk.records_config.update({
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "http",
+        })
+        self.ts.Disk.remap_config.AddLine(f"map / http://127.0.0.1:{self.server.Variables.http_port}/",)
+
+    def runTraffic(self):
+        tr = Test.AddTestRun(
+            "Verify that s-maxage allows serving cached responses to requests with Authorization headers per RFC 7234 section 3.2")
+        tr.AddVerifierClientProcess("auth-s-maxage-client", self.authSMaxageReplayFile, http_ports=[self.ts.Variables.port])
+        tr.Processes.Default.StartBefore(self.server)
+        tr.Processes.Default.StartBefore(self.ts)
+        tr.StillRunningAfter = self.server
+        tr.StillRunningAfter = self.ts
+
+    def run(self):
+        self.runTraffic()
+
+
+AuthSMaxageTest().run()
