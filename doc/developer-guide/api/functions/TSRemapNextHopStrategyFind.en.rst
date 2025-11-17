@@ -28,7 +28,7 @@ Synopsis
 
     #include <ts/ts.h>
 
-.. function:: void const* TSRemapNextHopStrategyFind(const char *name)
+.. function:: TSStrategy TSRemapNextHopStrategyFind(const char *name)
 
 Description
 ===========
