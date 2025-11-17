@@ -376,14 +376,63 @@ traffic_ctl server
 
 .. program:: traffic_ctl server
 
+.. _traffic-control-command-server-drain:
+
 .. program:: traffic_ctl server
 .. option:: drain
 
-   :ref:`admin_server_start_drain`
+   Enable graceful connection draining mode. When enabled, |TS| signals clients
+   to close their connections gracefully by:
 
-   :ref:`admin_server_stop_drain`
+   - Adding ``Connection: close`` headers to HTTP/1.1 responses
+   - Sending GOAWAY frames to HTTP/2 clients for graceful shutdown
 
-   Drop the number of active client connections.
+   This allows active connections to complete naturally while encouraging clients
+   to establish new connections. |TS| continues accepting new connections while
+   in drain mode.
+
+   .. note::
+
+      Drain mode does NOT close listening sockets or terminate existing connections.
+      It only signals to clients that they should close their connections.
+
+   .. option:: --undo, -U
+
+      Disable drain mode and return to normal operation.
+
+   .. option:: --no-new-connection, -N
+
+      This option is accepted but not yet implemented. It has no effect in the
+      current version.
+
+   Examples:
+
+   Enable drain mode:
+
+   .. code-block:: bash
+
+      $ traffic_ctl server drain
+
+   Disable drain mode:
+
+   .. code-block:: bash
+
+      $ traffic_ctl server drain --undo
+
+   Check drain status:
+
+   .. code-block:: bash
+
+      $ traffic_ctl server status | jq '.is_draining'
+      "false"
+
+   For detailed information about drain behavior and best practices, see
+   :ref:`admin-graceful-shutdown`.
+
+   See also:
+
+   - :ref:`admin_server_start_drain` (JSONRPC API)
+   - :ref:`admin_server_stop_drain` (JSONRPC API)
 
 
 .. _traffic-control-command-server-status:
