@@ -5850,6 +5850,9 @@ HttpTransact::initialize_state_variables_from_response(State *s, HTTPHdr *incomi
           new_enc_val = new_enc_iter.get_next(&new_enc_len);
         }
 
+        // Store the original Transfer-Encoding value for logging before we delete it.
+        s->hdr_info.server_response_transfer_encoding.assign(field->value_get().data(), field->value_get().length());
+
         // We're done with the old field since we copied out everything
         //   we needed
         incoming_response->field_delete(field);
