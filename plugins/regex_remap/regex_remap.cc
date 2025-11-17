@@ -232,7 +232,7 @@ public:
   {
     return _strategy_name;
   }
-  inline void const *
+  inline TSStrategy
   strategy_option() const
   {
     return _strategy;
@@ -276,7 +276,7 @@ private:
 
   bool        _has_strategy  = false;
   std::string _strategy_name = {};
-  void const *_strategy      = nullptr;
+  TSStrategy  _strategy      = nullptr;
 
   Override *_first_override = nullptr;
   int       _sub_pos[MAX_SUBS];

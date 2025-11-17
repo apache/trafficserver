@@ -28,7 +28,7 @@ Synopsis
 
     #include <ts/ts.h>
 
-.. function:: void const* TSRemapNextHopStrategyGet()
+.. function:: TSStrategy TSRemapNextHopStrategyGet()
 
 Description
 ===========

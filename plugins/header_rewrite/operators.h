@@ -698,7 +698,7 @@ protected:
 private:
   bool        _apply = true;
   std::string _stratname;
-  void const *_strategy = nullptr;
+  TSStrategy  _strategy = nullptr;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
