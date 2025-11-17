@@ -56,5 +56,5 @@ Implementation
       regular expression match group substitutions so that if the regular expression matches, the
       results can be efficiently assembled in to the output host name.
 
-.. figure:: /uml/images/url_rewrite.svg
+.. uml:: /uml/url_rewrite.plantuml
    :align: center

@@ -115,7 +115,14 @@ relationship between a span block and a cache stripe is the same as between a di
 file system. A cache stripe is structured data contained in a span block and always occupies the
 entire span block.
 
-.. figure:: images/span-header.svg
+.. only:: html
+
+   .. figure:: images/span-header.svg
+
+.. only:: latex
+
+   .. figure:: images/span-header.png
+
    :align: center
 
 Stripe Structure
@@ -296,7 +303,14 @@ The header for a stripe is a variably sized instance of :class:`StripeHeaderFoot
 The variable trailing section contains the head indices of the directory entry
 free lists for the segments.
 
-.. figure:: images/stripe-header.svg
+.. only:: html
+
+   .. figure:: images/stripe-header.svg
+
+.. only:: latex
+
+   .. figure:: images/stripe-header.png
+
    :align: center
 
 The trailing :member:`StripeHeaderFooter::freelist` array overlays the disk storage with
