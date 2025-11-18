@@ -30,6 +30,7 @@
 
 #include "../common/RecordsUtils.h"
 #include "tsutil/Metrics.h"
+#include "proxy/VirtualHost.h"
 
 namespace utils = rpc::handlers::records::utils;
 
@@ -204,6 +205,36 @@ reload_config(std::string_view const & /* id ATS_UNUSED */, YAML::Node const & /
   metrics[reconf_time].store(time(nullptr));
   metrics[reconf_req].store(0);
 
+  return resp;
+}
+
+swoc::Rv<YAML::Node>
+reload_virtualhost_config(std::string_view const & /* id ATS_UNUSED */, YAML::Node const &params)
+{
+  swoc::Rv<YAML::Node> resp;
+  auto                 node = params["virtualhost"];
+  if (!node || !node.IsScalar()) {
+    resp.note("Failed to specify virtualhost");
+    return resp;
+  }
+
+  std::string name = node.as<std::string>();
+  if (!VirtualHost::reconfigure(name)) {
+    resp.note("Failed to reload virtualhost configuration");
+    return resp;
+  }
+
+  VirtualHost::scoped_config vhost_config;
+  auto                       vhost_entry = vhost_config->find_by_id(name);
+  if (vhost_entry) {
+    resp.result()["virtualhost"] = name;
+    resp.result()["status"]      = "ok";
+    resp.result()["message"]     = "Virtualhost successfully reloaded";
+  } else {
+    resp.result()["virtualhost"] = name;
+    resp.result()["status"]      = "missing";
+    resp.result()["message"]     = "Virtualhost missing or removed after reload";
+  }
   return resp;
 }
 } // namespace rpc::handlers::config

@@ -25,6 +25,11 @@
 
 #include "proxy/http/remap/AclFiltering.h"
 
+namespace YAML
+{
+class Node;
+}
+
 class UrlRewrite;
 
 #define BUILD_TABLE_MAX_ARGS 2048
@@ -79,7 +84,7 @@ struct BUILD_TABLE_INFO {
 };
 
 const char *remap_parse_directive(BUILD_TABLE_INFO *bti, char *errbuf, size_t errbufsize);
-bool        remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti);
+bool        remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti, YAML::Node const *remap_node = nullptr);
 
 const char *remap_validate_filter_args(acl_filter_rule **rule_pp, const char *const *argv, int argc, char *errStrBuf,
                                        size_t errStrBufSize, ACLBehaviorPolicy behavior_policy);
@@ -87,7 +92,7 @@ const char *remap_validate_filter_args(acl_filter_rule **rule_pp, const char *co
 unsigned long remap_check_option(const char *const *argv, int argc, unsigned long findmode = 0, int *_ret_idx = nullptr,
                                  const char **argptr = nullptr);
 
-bool remap_parse_config(const char *path, UrlRewrite *rewrite);
+bool remap_parse_config(const char *path, UrlRewrite *rewrite, YAML::Node const *remap_node);
 
 using load_remap_file_func = void (*)(const char *, const char *);
 

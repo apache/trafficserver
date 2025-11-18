@@ -43,6 +43,7 @@ namespace filename
   constexpr const char *SPLITDNS      = "splitdns.config";
   constexpr const char *SNI           = "sni.yaml";
   constexpr const char *JSONRPC       = "jsonrpc.yaml";
+  constexpr const char *VIRTUALHOST   = "virtualhost.yaml";
 
   ///////////////////////////////////////////////////////////////////
   // Various other file names
