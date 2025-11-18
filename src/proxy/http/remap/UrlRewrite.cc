@@ -77,14 +77,18 @@ UrlRewrite::get_acl_behavior_policy(ACLBehaviorPolicy &policy)
 bool
 UrlRewrite::load()
 {
-  ats_scoped_str config_file_path;
-
-  config_file_path = RecConfigReadConfigPath("proxy.config.url_remap.filename", ts::filename::REMAP);
-  if (!config_file_path) {
+  std::string config_file_path = RecConfigReadConfigPath("proxy.config.url_remap.filename", ts::filename::REMAP);
+  if (config_file_path.empty()) {
     Warning("%s Unable to locate %s. No remappings in effect", modulePrefix, ts::filename::REMAP);
     return false;
   }
 
+  return load_table(config_file_path, nullptr);
+}
+
+bool
+UrlRewrite::load_table(const std::string &config_file_path, YAML::Node const *remap_node)
+{
   this->ts_name = nullptr;
   if (auto rec_str{RecGetRecordStringAlloc("proxy.config.proxy_name")}; rec_str) {
     this->ts_name = ats_stringdup(rec_str);
@@ -132,7 +136,7 @@ UrlRewrite::load()
   Dbg(dbg_ctl_url_rewrite_regex, "strategyFactory file: %s", sf.c_str());
   strategyFactory = new NextHopStrategyFactory(sf.c_str());
 
-  if (TS_SUCCESS == this->BuildTable(config_file_path)) {
+  if (TS_SUCCESS == this->BuildTable(config_file_path.c_str(), remap_node)) {
     int n_rules = this->rule_count(); // Minimum # of rules to be considered a valid configuration.
     int required_rules;
     required_rules = RecGetRecordInt("proxy.config.url_remap.min_rules_required").value_or(0);
@@ -816,7 +820,7 @@ UrlRewrite::InsertForwardMapping(mapping_type maptype, url_mapping *mapping, con
 
 */
 int
-UrlRewrite::BuildTable(const char *path)
+UrlRewrite::BuildTable(const char *path, YAML::Node const *remap_node)
 {
   ink_assert(forward_mappings.empty());
   ink_assert(reverse_mappings.empty());
@@ -835,7 +839,7 @@ UrlRewrite::BuildTable(const char *path)
   temporary_redirects.hash_lookup.reset(new URLTable);
   forward_mappings_with_recv_port.hash_lookup.reset(new URLTable);
 
-  if (!remap_parse_config(path, this)) {
+  if (!remap_parse_config(path, this, remap_node)) {
     return TS_ERROR;
   }
 

@@ -26,5 +26,6 @@ namespace rpc::handlers::config
 {
 swoc::Rv<YAML::Node> set_config_records(std::string_view const &id, YAML::Node const &params);
 swoc::Rv<YAML::Node> reload_config(std::string_view const &id, YAML::Node const &params);
+swoc::Rv<YAML::Node> reload_virtualhost_config(std::string_view const &id, YAML::Node const &params);
 
 } // namespace rpc::handlers::config

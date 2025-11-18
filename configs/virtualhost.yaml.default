@@ -1,0 +1,13 @@
+# virtualhost.yaml
+#
+# This configuration file defines a virtual host that provides domain-scoped configs and
+# remap rules, overriding global configs.
+#
+#  Example:
+# virtualhost:
+#   - id: example
+#     domains:
+#       - example.com
+#
+#     remap:
+#       - map http://example.com http://origin.example.com/

@@ -172,8 +172,13 @@ DiffConfigPrinter::write_output(YAML::Node const &result)
 }
 //------------------------------------------------------------------------------------------------------------------------------------
 void
-ConfigReloadPrinter::write_output([[maybe_unused]] YAML::Node const &result)
+ConfigReloadPrinter::write_output(YAML::Node const &result)
 {
+  if (result.IsMap() && result["virtualhost"]) {
+    std::cout << "┌ Virtualhost: " << result["virtualhost"] << '\n';
+    std::cout << "└┬ Reload status: " << result["status"] << '\n';
+    std::cout << " ├ Message: " << result["message"] << '\n';
+  }
 }
 //------------------------------------------------------------------------------------------------------------------------------------
 void

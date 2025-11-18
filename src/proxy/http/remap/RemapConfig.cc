@@ -21,6 +21,8 @@
  *  limitations under the License.
  */
 
+#include <yaml-cpp/yaml.h>
+
 #include "proxy/http/remap/AclFiltering.h"
 #include "swoc/swoc_file.h"
 
@@ -1033,7 +1035,7 @@ lFail:
 }
 
 bool
-remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
+remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti, YAML::Node const *remap_node)
 {
   char        errBuf[1024];
   char        errStrBuf[1024];
@@ -1066,14 +1068,34 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
   bool                      is_cur_mapping_regex;
   const char               *type_id_str;
 
-  std::error_code ec;
-  std::string     content{swoc::file::load(swoc::file::path{path}, ec)};
-  if (ec.value() == ENOENT) { // a missing file is ok - treat as empty, no rules.
-    return true;
-  }
-  if (ec.value()) {
-    Warning("Failed to open remapping configuration file %s - %s", path, strerror(ec.value()));
-    return false;
+  std::string content;
+  if (remap_node) {
+    if (!remap_node->IsSequence()) {
+      Error("Remap node must be a sequence");
+      return false;
+    }
+
+    for (auto const &remap_rule : *remap_node) {
+      if (!remap_rule.IsScalar()) {
+        Error("Inline remap rule must be a string");
+        return false;
+      }
+
+      auto remap = remap_rule.as<std::string>();
+      content.append(remap);
+      content.push_back('\n');
+    }
+  } else {
+    std::error_code ec;
+    content = swoc::file::load(swoc::file::path{path}, ec);
+
+    if (ec.value() == ENOENT) { // a missing file is ok - treat as empty, no rules.
+      return true;
+    }
+    if (ec.value()) {
+      Warning("Failed to open remapping configuration file %s - %s", path, strerror(ec.value()));
+      return false;
+    }
   }
 
   Dbg(dbg_ctl_url_rewrite, "[BuildTable] UrlRewrite::BuildTable()");
@@ -1486,7 +1508,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
 }
 
 bool
-remap_parse_config(const char *path, UrlRewrite *rewrite)
+remap_parse_config(const char *path, UrlRewrite *rewrite, YAML::Node const *remap_node)
 {
   BUILD_TABLE_INFO bti;
 
@@ -1495,7 +1517,7 @@ remap_parse_config(const char *path, UrlRewrite *rewrite)
   rewrite->pluginFactory.indicatePreReload();
 
   bti.rewrite = rewrite;
-  bool status = remap_parse_config_bti(path, &bti);
+  bool status = remap_parse_config_bti(path, &bti, remap_node);
 
   /* Now after we parsed the configuration and (re)loaded plugins and plugin instances
    * accordingly notify all plugins that we are done */

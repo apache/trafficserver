@@ -78,4 +78,5 @@ initializeRegistry()
   registerFile("proxy.config.ssl.server.multicert.filename", ts::filename::SSL_MULTICERT, NOT_REQUIRED);
   registerFile("proxy.config.ssl.servername.filename", ts::filename::SNI, NOT_REQUIRED);
   registerFile("proxy.config.jsonrpc.filename", ts::filename::JSONRPC, NOT_REQUIRED);
+  registerFile("proxy.config.virtualhost.filename", ts::filename::VIRTUALHOST, NOT_REQUIRED);
 }

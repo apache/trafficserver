@@ -1108,6 +1108,8 @@ static constexpr RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.url_remap.acl_behavior_policy", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,
+  {RECT_CONFIG, "proxy.config.virtualhost.filename", RECD_STRING, ts::filename::VIRTUALHOST, RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  ,
 
   //##############################################################################
   //#

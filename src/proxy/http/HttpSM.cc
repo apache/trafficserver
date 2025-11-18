@@ -253,6 +253,11 @@ HttpSM::HttpSM() : Continuation(nullptr), vc_table(this) {}
 
 HttpSM::~HttpSM()
 {
+  if (m_virtualhost_entry) {
+    m_virtualhost_entry->release();
+    m_virtualhost_entry = nullptr;
+  }
+
   http_parser_clear(&http_parser);
 
   HttpConfig::release(t_state.http_config_param);
@@ -4419,11 +4424,59 @@ HttpSM::check_sni_host()
 }
 
 void
+HttpSM::set_virtualhost_entry(std::string_view domain)
+{
+  VirtualHost::scoped_config vhost_config;
+  // If already set, don't need to look at configs
+  if (m_virtualhost_entry || domain.empty() || !vhost_config) {
+    return;
+  }
+
+  auto vhost_entry = vhost_config->find_by_domain(std::string{domain});
+  if (vhost_entry) {
+    SMDbg(dbg_ctl_url_rewrite, "Found virtualhost: %s", vhost_entry->get_id().c_str());
+    // Explicitly acquire() since HttpSM holds raw pointer
+    m_virtualhost_entry = vhost_entry->acquire();
+  }
+}
+
+void
 HttpSM::do_remap_request(bool run_inline)
 {
   SMDbg(dbg_ctl_http_seq, "Remapping request");
   SMDbg(dbg_ctl_url_rewrite, "Starting a possible remapping for request");
+
+  if (!m_virtualhost_entry) {
+    auto host_name{t_state.hdr_info.client_request.host_get()};
+    set_virtualhost_entry(host_name);
+  }
+
+  // Check virtualhost remap rules before looking at remap.config
+  bool virtualhost_remap = false;
+  if (m_virtualhost_entry && m_virtualhost_entry->remap_table) {
+    UrlRewrite *vhost_table = m_virtualhost_entry->remap_table->acquire();
+    if (vhost_table) {
+      // If already acquired, release ref
+      if (vhost_table == m_remap) {
+        vhost_table->release();
+      } else {
+        m_remap->release();
+        m_remap = vhost_table;
+      }
+      SMDbg(dbg_ctl_url_rewrite, "Using virtualhost remap table: %s", m_virtualhost_entry->get_id().c_str());
+      virtualhost_remap = true;
+    }
+  }
+
   bool ret = remapProcessor.setup_for_remap(&t_state, m_remap);
+
+  // If no remap matches in virtualhost, revert to default remap.config
+  if (!ret && virtualhost_remap) {
+    SMDbg(dbg_ctl_url_rewrite, "No virtualhost remap rules found: using global remap table");
+    m_remap->release();
+    m_remap = rewrite_table->acquire();
+    ret     = remapProcessor.setup_for_remap(&t_state, m_remap);
+  }
 
   check_sni_host();
 
