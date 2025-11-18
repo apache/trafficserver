@@ -57,7 +57,7 @@ UrlMappingPathIndex::Insert(url_mapping *mapping)
     Dbg(dbg_ctl_UrlMappingPathIndex_Insert, "-- Checking for existing entry %*s", static_cast<int>(from_path.length()),
         from_path.data());
     if (auto retval = trie->Search(from_path.data(), from_path.length()); retval && retval->getRank() < mapping->getRank()) {
-      swoc::bwprint(ts::bw_dbg, "Exising remap {} shadows {}", retval->fromURL, mapping->fromURL);
+      swoc::bwprint(ts::bw_dbg, "Existing remap {} shadows {}", retval->fromURL, mapping->fromURL);
       Warning("%s", ts::bw_dbg.c_str());
     }
   }
