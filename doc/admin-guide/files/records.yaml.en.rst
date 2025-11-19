@@ -1496,6 +1496,63 @@ Parent Proxy Configuration
    ``2`` Mark the host down. This is the default.
    ===== ======================================================================
 
+.. ts:cv:: CONFIG proxy.config.http.parent_proxy.consistent_hash_algorithm STRING siphash24
+
+   Selects the hash algorithm used for consistent hash parent selection. This setting
+   only affects parent selection when ``round_robin=consistent_hash`` is configured in
+   :file:`parent.config`. The hash algorithm determines how requests are distributed
+   across parent proxies.
+
+   ============== ================================================================================
+   Value          Description
+   ============== ================================================================================
+   ``siphash24``  SipHash-2-4 (default). Cryptographically strong, DoS-resistant hash function.
+   ``siphash13``  SipHash-1-3. ~50% faster than SipHash-2-4, still DoS-resistant.
+   ============== ================================================================================
+
+   .. warning::
+
+      Changing this setting will cause requests to be redistributed differently across
+      parent proxies. This can lead to cache churn and increased origin load during the
+      transition period. Plan the migration carefully and consider doing it during
+      low-traffic periods.
+
+.. ts:cv:: CONFIG proxy.config.http.parent_proxy.consistent_hash_seed0 INT 0
+
+   The first 64 bits of the hash seed (key) for consistent hash parent selection.
+   This setting only affects parent selection when ``round_robin=consistent_hash`` is configured.
+
+   - For SipHash algorithms, this forms the first half of the 128-bit cryptographic key (k0)
+   - For future 64-bit hash algorithms (like XXH3), this is the full seed value
+
+   The value must be specified as a decimal integer (e.g. ``12345678901234567``). Default is ``0``.
+   Per-rule configuration is available in :file:`parent.config` using ``hash_seed0=<value>``.
+   Per-strategy configuration is available in :file:`strategies.yaml` using ``hash_seed0: <value>``.
+
+.. ts:cv:: CONFIG proxy.config.http.parent_proxy.consistent_hash_seed1 INT 0
+
+   The second 64 bits of the hash seed (key) for consistent hash parent selection.
+   This setting only affects parent selection when ``round_robin=consistent_hash`` is configured.
+
+   - For SipHash algorithms, this forms the second half of the 128-bit cryptographic key (k1)
+   - For future 64-bit hash algorithms, this value is ignored
+
+   The value must be specified as a decimal integer (e.g. ``9876543210987654321``). Default is ``0``.
+   Per-rule configuration is available in :file:`parent.config` using ``hash_seed1=<value>``.
+   Per-strategy configuration is available in :file:`strategies.yaml` using ``hash_seed1: <value>``.
+
+.. ts:cv:: CONFIG proxy.config.http.parent_proxy.consistent_hash_replicas INT 1024
+
+   The number of virtual nodes (replicas) per parent host on the consistent hash ring.
+   This setting only affects parent selection when ``round_robin=consistent_hash`` is configured.
+
+   Increasing the replica count improves the distribution of requests across parent proxies
+   but uses more memory. The default value of 1024 provides good distribution in most scenarios.
+
+   Must be greater than 0. Default is ``1024``.
+   Per-rule configuration is available in :file:`parent.config` using ``hash_replicas=<value>``.
+   Per-strategy configuration is available in :file:`strategies.yaml` using ``hash_replicas: <value>``.
+
 .. ts:cv:: CONFIG proxy.config.http.parent_proxy.enable_parent_timeout_markdowns INT 0
    :reloadable:
    :overridable:

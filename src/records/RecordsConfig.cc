@@ -439,6 +439,8 @@ static constexpr RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.http.parent_proxy.disable_parent_markdowns", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,
+  {RECT_CONFIG, "proxy.config.http.parent_proxy.consistent_hash_algorithm", RECD_STRING, "siphash24", RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  ,
   {RECT_CONFIG, "proxy.config.http.forward.proxy_auth_to_parent", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
 
