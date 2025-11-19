@@ -30,6 +30,7 @@
 #include "proxy/VirtualHost.h"
 #include "records/RecCore.h"
 #include "tscore/Filenames.h"
+#include "tsutil/Convert.h"
 
 namespace
 {
@@ -87,16 +88,36 @@ template <> struct YAML::convert<VirtualHostConfig::Entry> {
       Dbg(dbg_ctl_virtualhost, "Virtual host entry must provide at least one domain in `domains` sequence");
       return false;
     }
+    item.exact_domains.clear();
+    item.wildcard_domains.clear();
+
     for (const auto &it : domains) {
-      // TODO: filter/normalize domain name
-      auto domain = it.as<std::string>();
-      if (domain.empty()) {
+      auto domain_entry = it.as<std::string>();
+      if (domain_entry.empty()) {
         Dbg(dbg_ctl_virtualhost, "Virtual host entry can't have empty domain entry");
         return false;
       }
-      item.exact_domains.push_back(std::move(domain));
-      // TODO: add regex domain check
+      char domain[TS_MAX_HOST_NAME_LEN + 1];
+      ts::transform_lower(domain_entry, domain);
+
+      // Check if domain is wildcard, prefixed with *
+      if (domain[0] == '*') {
+        const char *subdomain = index(domain, '*');
+        if (subdomain && subdomain[1] == '.') {
+          item.wildcard_domains.push_back(subdomain + 2);
+        } else {
+          Dbg(dbg_ctl_virtualhost, "Virtual host wildcard entry must have '*.[domain]' format");
+        }
+      } else {
+        item.exact_domains.push_back(domain);
+      }
     }
+
+    if (item.exact_domains.empty() && item.wildcard_domains.empty()) {
+      Dbg(dbg_ctl_virtualhost, "Virtual host entry must have at least one domain defined");
+      return false;
+    }
+
     return true;
   }
 };
@@ -155,21 +176,29 @@ VirtualHostConfig::load()
         return false;
       }
 
-      std::string vhost_id = entry->id;
+      std::string vhost_id{entry->id};
       if (_entries.contains(vhost_id)) {
         Dbg(dbg_ctl_virtualhost, "Duplicate virtualhost id: %s", vhost_id.c_str());
         return false;
       }
 
       for (auto const &domain : entry->exact_domains) {
-        if (_domains_to_id.contains(domain)) {
-          Dbg(dbg_ctl_virtualhost, "Domain (%s) already in another virtualhost config", domain.c_str());
+        if (_exact_domains_to_id.contains(domain)) {
+          Dbg(dbg_ctl_virtualhost, "Exact domain (%s) already in another virtualhost config", domain.c_str());
           return false;
         }
-        _domains_to_id[domain] = vhost_id;
+        _exact_domains_to_id.emplace(domain, vhost_id);
       }
 
-      _entries[vhost_id] = std::move(entry);
+      for (auto const &domain_suffix : entry->wildcard_domains) {
+        if (_wildcard_domains_to_id.contains(domain_suffix)) {
+          Dbg(dbg_ctl_virtualhost, "Wildcard domain (%s) already in another virtualhost config", domain_suffix.c_str());
+          return false;
+        }
+        _wildcard_domains_to_id.emplace(domain_suffix, vhost_id);
+      }
+
+      _entries.emplace(vhost_id, std::move(entry));
     }
 
   } catch (std::exception &ex) {
@@ -217,28 +246,45 @@ VirtualHostConfig::load_entry(std::string_view id, Ptr<Entry> &entry)
     return false;
   }
   Dbg(dbg_ctl_virtualhost, "Virtualhost with id (%s) not found", id.data());
-  return false;
+  return true;
 }
 
 bool
-VirtualHostConfig::set_entry(Ptr<Entry> &entry)
+VirtualHostConfig::set_entry(std::string_view id, Ptr<Entry> &entry)
 {
-  std::string vhost_id = entry->id;
-  auto        it       = _entries.find(vhost_id);
-  if (it != _entries.end()) {
+  std::string vhost_id{id};
+  // If virtualhost entry already exists, remove current entry
+  if (auto it = _entries.find(vhost_id); it != _entries.end()) {
     Ptr<Entry> curr_entry = std::move(it->second);
     for (auto const &domain : curr_entry->exact_domains) {
-      _domains_to_id.erase(domain);
+      _exact_domains_to_id.erase(domain);
     }
-  }
-  for (auto const &domain : entry->exact_domains) {
-    if (_domains_to_id.contains(domain)) {
-      Dbg(dbg_ctl_virtualhost, "Domain (%s) already in another virtualhost config", domain.c_str());
-      return 0;
+    for (auto const &domain : curr_entry->wildcard_domains) {
+      _wildcard_domains_to_id.erase(domain);
     }
-    _domains_to_id[domain] = vhost_id;
+    _entries.erase(vhost_id);
   }
-  _entries[vhost_id] = std::move(entry);
+
+  // Add new entry into virtualhost config
+  if (entry) {
+    for (auto const &domain : entry->exact_domains) {
+      if (_exact_domains_to_id.contains(domain)) {
+        Dbg(dbg_ctl_virtualhost, "Exact domain (%s) already in another virtualhost config", domain.c_str());
+        return false;
+      }
+      _exact_domains_to_id.emplace(domain, vhost_id);
+    }
+
+    for (auto const &domain_suffix : entry->wildcard_domains) {
+      if (_wildcard_domains_to_id.contains(domain_suffix)) {
+        Dbg(dbg_ctl_virtualhost, "Wildcard domain (%s) already in another virtualhost config", domain_suffix.c_str());
+        return false;
+      }
+      _wildcard_domains_to_id.emplace(domain_suffix, vhost_id);
+    }
+
+    _entries.emplace(vhost_id, std::move(entry));
+  }
   return true;
 }
 
@@ -259,19 +305,34 @@ VirtualHostConfig::find_by_id(std::string_view id) const
 Ptr<VirtualHostConfig::Entry>
 VirtualHostConfig::find_by_domain(std::string_view domain) const
 {
-  if (_entries.empty() || _domains_to_id.empty() || domain.empty()) {
+  if (_entries.empty() || domain.empty()) {
     return Ptr<VirtualHostConfig::Entry>();
   }
 
-  auto id = _domains_to_id.find(std::string{domain});
-  if (id != _domains_to_id.end()) {
+  char lower_domain[TS_MAX_HOST_NAME_LEN + 1];
+  ts::transform_lower(std::string{domain}, lower_domain);
+
+  // Check for exact match domains first
+  auto id = _exact_domains_to_id.find(lower_domain);
+  if (id != _exact_domains_to_id.end()) {
     auto entry = _entries.find(id->second);
     if (entry != _entries.end()) {
       return entry->second;
     }
   }
 
-  // TODO: look through regex domains if exact domain is not found
+  // Check wildcard suffixes
+  const char *subdomain = index(lower_domain, '.');
+  while (subdomain) {
+    subdomain++;
+    if (auto suffix_id = _wildcard_domains_to_id.find(subdomain); suffix_id != _wildcard_domains_to_id.end()) {
+      auto entry = _entries.find(suffix_id->second);
+      if (entry != _entries.end()) {
+        return entry->second;
+      }
+    }
+    subdomain = index(subdomain, '.');
+  }
 
   return Ptr<VirtualHostConfig::Entry>();
 }
@@ -279,7 +340,9 @@ VirtualHostConfig::find_by_domain(std::string_view domain) const
 void
 VirtualHost::startup()
 {
-  reconfigure();
+  if (!reconfigure()) {
+    Fatal("failed to load %s", ts::filename::VIRTUALHOST);
+  }
   RecRegisterConfigUpdateCb("proxy.config.virtualhost.filename", &VirtualHost::config_callback, nullptr);
 }
 
@@ -290,6 +353,7 @@ VirtualHost::reconfigure()
   auto config = std::make_unique<VirtualHostConfig>();
 
   if (!config->load()) {
+    Error("%s failed to load", ts::filename::VIRTUALHOST);
     return 0;
   }
 
@@ -300,10 +364,10 @@ VirtualHost::reconfigure()
 }
 
 int
-VirtualHost::reconfigure(std::string const &id)
+VirtualHost::reconfigure(std::string_view id)
 {
   VirtualHost::scoped_config vhost_config;
-  Dbg(dbg_ctl_virtualhost, "Reconfiguring virtualhost entry: %s", id.c_str());
+  Dbg(dbg_ctl_virtualhost, "Reconfiguring virtualhost entry: %s", id.data());
   // Reconfigure all vhosts if id not specified
   if (id.empty()) {
     Dbg(dbg_ctl_virtualhost, "No virtualhost specified, reconfiguring all entries");
@@ -315,12 +379,16 @@ VirtualHost::reconfigure(std::string const &id)
     return 0;
   }
 
-  auto config = std::make_unique<VirtualHostConfig>(*vhost_config);
-
-  if (!config->set_entry(entry)) {
-    return 0;
+  std::unique_ptr<VirtualHostConfig> config;
+  if (vhost_config) {
+    config = std::make_unique<VirtualHostConfig>(*vhost_config);
+  } else {
+    config = std::make_unique<VirtualHostConfig>();
   }
 
+  if (!config->set_entry(id, entry)) {
+    return 0;
+  }
   _configid = configProcessor.set(_configid, config.release());
   return 1;
 }
