@@ -157,6 +157,12 @@ VirtualHostConfig::load()
   _entries.clear();
   std::string config_path = RecConfigReadConfigPath("proxy.config.virtualhost.filename", ts::filename::VIRTUALHOST);
 
+  struct stat sbuf;
+  if (stat(config_path.c_str(), &sbuf) == -1 && errno == ENOENT) {
+    Warning("Virtualhost configuration '%s' doesn't exist", config_path.c_str());
+    return true;
+  }
+
   try {
     YAML::Node config = YAML::LoadFile(config_path);
     if (config.IsNull()) {
