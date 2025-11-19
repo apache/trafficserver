@@ -34,13 +34,19 @@ class VirtualHostConfig : public ConfigInfo
 {
 public:
   VirtualHostConfig() = default;
-  VirtualHostConfig(const VirtualHostConfig &other) : _entries(other._entries), _domains_to_id(other._domains_to_id) {}
+  VirtualHostConfig(const VirtualHostConfig &other)
+    : _entries(other._entries),
+      _exact_domains_to_id(other._exact_domains_to_id),
+      _wildcard_domains_to_id(other._wildcard_domains_to_id)
+  {
+  }
   VirtualHostConfig &
   operator=(const VirtualHostConfig &other)
   {
     if (this != &other) {
-      _entries       = other._entries;
-      _domains_to_id = other._domains_to_id;
+      _entries                = other._entries;
+      _exact_domains_to_id    = other._exact_domains_to_id;
+      _wildcard_domains_to_id = other._wildcard_domains_to_id;
     }
     return *this;
   }
@@ -49,7 +55,7 @@ public:
   struct Entry : public RefCountObjInHeap {
     std::string              id;
     std::vector<std::string> exact_domains;
-    std::vector<std::string> regex_domains;
+    std::vector<std::string> wildcard_domains;
     Ptr<UrlRewrite>          remap_table;
 
     Entry      *acquire() const;
@@ -58,7 +64,7 @@ public:
   };
 
   bool        load();
-  bool        set_entry(Ptr<Entry> &entry);
+  bool        set_entry(std::string_view id, Ptr<Entry> &entry);
   static bool load_entry(std::string_view id, Ptr<Entry> &entry);
   Ptr<Entry>  find_by_id(std::string_view id) const;
   Ptr<Entry>  find_by_domain(std::string_view domain) const;
@@ -68,7 +74,8 @@ private:
   using name_map  = std::unordered_map<std::string, std::string>;
 
   entry_map _entries;
-  name_map  _domains_to_id;
+  name_map  _exact_domains_to_id;
+  name_map  _wildcard_domains_to_id;
 };
 
 class VirtualHost
@@ -78,7 +85,7 @@ public:
 
   static void               startup();
   static int                reconfigure();
-  static int                reconfigure(std::string const &id);
+  static int                reconfigure(std::string_view id);
   static VirtualHostConfig *acquire();
   static void               release(VirtualHostConfig *config);
 

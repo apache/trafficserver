@@ -3,11 +3,21 @@
 # This configuration file defines a virtual host that provides domain-scoped configs and
 # remap rules, overriding global configs.
 #
+# Remap rule config flow:
+#   1. Resolve to a single virtualhost
+#       A. Look through exact match virtualhost domains. If found, use virtualhost config.
+#       B. Look through wildcard virtualhost doamins. If found, use virtualhost config.
+#       C. If no virtualhost config found, skip to 3.
+#   2. Within virtualhost config, use virtualhost remap rules.
+#       A. Follow existing remap.config rules. If found, use remap rule. (See remap.config for details)
+#   3. If no virtualhost or remap rule found, use global remap.config
+#
 #  Example:
 # virtualhost:
 #   - id: example
 #     domains:
 #       - example.com
+#       - "*.com"        # Only allow single left-most: "*.[domain]" format
 #
 #     remap:
 #       - map http://example.com http://origin.example.com/
