@@ -29,7 +29,7 @@
 #include "iocore/net/TLSSNISupport.h"
 #include "iocore/net/TLSEarlyDataSupport.h"
 
-ClassAllocator<Http2ClientSession, true> http2ClientSessionAllocator("http2ClientSessionAllocator");
+ClassAllocator<Http2ClientSession> http2ClientSessionAllocator("http2ClientSessionAllocator");
 
 namespace
 {
