@@ -8827,6 +8827,7 @@ std::array<std::string_view, TS_CONFIG_LAST_ENTRY> SDK_Overridable_Configs = {
    "proxy.config.http.connect_attempts_retry_backoff_base",
    "proxy.config.http.negative_revalidating_list",
    "proxy.config.http.cache.post_method",
+   "proxy.config.http.cache.targeted_cache_control_headers",
   }
 };
 // clang-format on

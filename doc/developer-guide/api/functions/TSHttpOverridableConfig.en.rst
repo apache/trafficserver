@@ -196,6 +196,7 @@ TSOverridableConfigKey Value                                              Config
 :enumerator:`TS_CONFIG_NET_SOCK_NOTSENT_LOWAT`                          :ts:cv:`proxy.config.net.sock_notsent_lowat`
 :enumerator:`TS_CONFIG_BODY_FACTORY_RESPONSE_SUPPRESSION_MODE`          :ts:cv:`proxy.config.body_factory.response_suppression_mode`
 :enumerator:`TS_CONFIG_HTTP_CACHE_POST_METHOD`                          :ts:cv:`proxy.config.http.cache.post_method`
+:enumerator:`TS_CONFIG_HTTP_CACHE_TARGETED_CACHE_CONTROL_HEADERS`       :ts:cv:`proxy.config.http.cache.targeted_cache_control_headers`
 ======================================================================  ====================================================================
 
 Examples
