@@ -130,4 +130,4 @@ public:
   Http1ClientTransaction trans;
 };
 
-extern ClassAllocator<Http1ClientSession, true> http1ClientSessionAllocator;
+extern ClassAllocator<Http1ClientSession> http1ClientSessionAllocator;
