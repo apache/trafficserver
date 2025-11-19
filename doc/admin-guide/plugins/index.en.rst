@@ -43,7 +43,7 @@ Stable plugins
 Plugins that are considered stable are installed by default in |TS| releases.
 
 .. toctree::
-   :hidden:
+   :maxdepth: 1
 
    AuthProxy <authproxy.en>
    Background Fetch <background_fetch.en>
@@ -162,9 +162,8 @@ Plugins that are considered experimental are located in the
 directory of the |TS| source tree. Experimental plugins can be compiled by passing the
 ``-DBUILD_EXPERIMENTAL_PLUGINS=ON``` variable to ``cmake`` command when building.
 
-
 .. toctree::
-   :hidden:
+   :maxdepth: 1
 
    Access Control <access_control.en>
    Block Errors <block_errors.en>

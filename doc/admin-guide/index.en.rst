@@ -31,6 +31,7 @@ Table of Contents:
    installation/index.en
    configuration/index.en
    interaction/index.en
+   graceful-shutdown.en
    security/index.en
    storage/index.en
    plugins/index.en

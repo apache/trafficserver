@@ -943,23 +943,26 @@ The condition flags are optional, and you can combine more than one into
 a comma-separated list of flags. Note that whitespaces are not allowed inside
 the brackets:
 
-====== ========================================================================
-Flag   Description
-====== ========================================================================
-AND    Indicates that both the current condition and the next must be true.
-       This is the default behavior for all conditions when no flags are
-       provided.
-NOT    Inverts the condition.
-OR     Indicates that either the current condition or the next one must be
-       true, as contrasted with the default behavior from ``[AND]``.
-NOCASE Indicates that the string comparison, or regular expression, should be
-       case-insensitive. The default is to be case-sensitive.
-PRE    Make a prefix match on a string comparison.
-SUF    Make a suffix match on a string comparison.
-MID    Make a substring match on a string comparison.
-EXT    The substring match only applies to the file extension following a dot.
-       This is generally mostly useful for the ``URL:PATH`` part.
-====== ========================================================================
+.. table:: Condition Flags
+   :widths: 15 85
+
+   ====== ========================================================================
+   Flag   Description
+   ====== ========================================================================
+   AND    Indicates that both the current condition and the next must be true.
+          This is the default behavior for all conditions when no flags are
+          provided.
+   NOT    Inverts the condition.
+   OR     Indicates that either the current condition or the next one must be
+          true, as contrasted with the default behavior from ``[AND]``.
+   NOCASE Indicates that the string comparison, or regular expression, should be
+          case-insensitive. The default is to be case-sensitive.
+   PRE    Make a prefix match on a string comparison.
+   SUF    Make a suffix match on a string comparison.
+   MID    Make a substring match on a string comparison.
+   EXT    The substring match only applies to the file extension following a dot.
+          This is generally mostly useful for the ``URL:PATH`` part.
+   ====== ========================================================================
 
 .. note::
     At most, one of ``[PRE]``, ``[SUF]``, ``[MID]``, or ``[EXT]`` may be
@@ -1393,6 +1396,19 @@ operators that use client's IP address.
     This operator also changes `INBOUND_IP_SOURCE` to `PLUGIN` to make the address available for other conditions and operators.
     See `set-plugin-cntl`_ for the detail.
 
+set-cc-alg
+~~~~~~~~~~
+::
+
+  set-cc-alg <value>
+
+This operator lets you set the congestion control algorithm for a particular transaction.
+This will only work if your os supports TCP_CONGESTION at the protocol level IPPROTO_TCP.
+Supported algorithms are operating system dependent. Common algorithms include reno and cubic.
+
+
+.......
+
 Operator Flags
 --------------
 
@@ -1451,37 +1467,70 @@ parameters by writing it as::
 
 The URL part names which may be used for these conditions and actions are:
 
-.. code-block::
+.. graphviz::
+   :alt: URL Parts Diagram
+   :align: center
 
-  ┌─────────────────────────────────────────────────────────────────────────────────────────┐
-  │                                          URL                                            │
-  ├─────────────────────────────────────────────────────────────────────────────────────────┤
-  │  https://docs.trafficserver.apache.org:443/en/latest/search.html?q=header_rewrite&...   │
-  │  ┬────   ┬──────────────────────────── ┬── ─┬─────────────────── ┬───────────────────   │
-  │  │       │                             │    │                    │                      │
-  │  SCHEME  HOST                          PORT PATH                 QUERY                  │
-  └─────────────────────────────────────────────────────────────────────────────────────────┘
+   digraph url_parts {
+     node [shape=none, fontname="Courier"];
 
-======== ======================================================================
-Part     Description and value for ``https://docs.trafficserver.apache.org/en/latest/search.html?q=header_rewrite``
-======== ======================================================================
-SCHEME   URL scheme in use (e.g. ``http`` and ``https``). ``Value`` = `https`
+     url_diagram [label=<
+       <TABLE BORDER="1" CELLBORDER="1" CELLSPACING="0">
+         <TR><TD COLSPAN="9" ALIGN="CENTER" BGCOLOR="lightgray"><B>URL</B></TD></TR>
+         <TR>
+           <TD BORDER="0" BGCOLOR="lightyellow">https</TD>
+           <TD BORDER="0" BGCOLOR="lightyellow">://</TD>
+           <TD BORDER="0" BGCOLOR="lightyellow">docs.trafficserver.apache.org</TD>
+           <TD BORDER="0" BGCOLOR="lightyellow">:</TD>
+           <TD BORDER="0" BGCOLOR="lightyellow">443</TD>
+           <TD BORDER="0" BGCOLOR="lightyellow">/en/latest/search.html</TD>
+           <TD BORDER="0" BGCOLOR="lightyellow">?p=hrw&amp;v=1</TD>
+         </TR>
+         <TR>
+           <TD ALIGN="CENTER"><FONT POINT-SIZE="8">│</FONT></TD>
+           <TD BORDER="0"></TD>
+           <TD ALIGN="CENTER"><FONT POINT-SIZE="8">│</FONT></TD>
+           <TD BORDER="0"></TD>
+           <TD ALIGN="CENTER"><FONT POINT-SIZE="8">│</FONT></TD>
+           <TD ALIGN="CENTER"><FONT POINT-SIZE="8">│</FONT></TD>
+           <TD ALIGN="CENTER"><FONT POINT-SIZE="8">│</FONT></TD>
+         </TR>
+         <TR>
+           <TD ALIGN="CENTER" BGCOLOR="lightblue">SCHEME</TD>
+           <TD BORDER="0"></TD>
+           <TD ALIGN="CENTER" BGCOLOR="palegreen">HOST</TD>
+           <TD BORDER="0"></TD>
+           <TD ALIGN="CENTER" BGCOLOR="lightcyan">PORT</TD>
+           <TD ALIGN="CENTER" BGCOLOR="wheat">PATH</TD>
+           <TD ALIGN="CENTER" BGCOLOR="lavender">QUERY</TD>
+         </TR>
+       </TABLE>
+     >];
+   }
 
-HOST     Full hostname. ``Value`` = `docs.trafficserver.apache.org`
+.. table:: URL Part Descriptions
+   :widths: 10 90
 
-PORT     Port number. (Regardless if directly specified in the URL). ``Value`` = `443`
+   ========== ======================================================================
+   Part       Description and value for the URL above
+   ========== ======================================================================
+   SCHEME     URL scheme in use (e.g. ``http`` and ``https``). ``Value`` = `https`
 
-PATH     URL substring beginning with (but not including) the first ``/`` after
-         the hostname up to, but not including, the query string. **Note**: previous
-         versions of ATS had a `%{PATH}` directive, this will no longer work. Instead,
-         you want to use `%{CLIENT-URL:PATH}`. ``Value`` = `en/latest/search.html`
+   HOST       Full hostname. ``Value`` = `docs.trafficserver.apache.org`
 
-QUERY    URL substring from the ``?``, signifying the beginning of the query
-         parameters, until the end of the URL. Empty string if there were no
-         query parameters. ``Value`` = `  `
+   PORT       Port number. (Regardless if directly specified in the URL). ``Value`` = `443`
 
-URL      The complete URL.  ``Value`` = `https://docs.trafficserver.apache.org/en/latest/search.html?q=header_rewrite`
-======== ======================================================================
+   PATH       URL substring beginning with (but not including) the first ``/`` after
+              the hostname up to, but not including, the query string. **Note**: previous
+              versions of ATS had a `%{PATH}` directive, this will no longer work. Instead,
+              you want to use `%{CLIENT-URL:PATH}`. ``Value`` = `en/latest/search.html`
+
+   QUERY      URL substring from the ``?``, signifying the beginning of the query
+              parameters, until the end of the URL. Empty string if there were no
+              query parameters. ``Value`` = `p=hrw&v=1`
+
+   URL        The complete URL.  ``Value`` = `https://docs.trafficserver.apache.org/...`
+   ========== ======================================================================
 
 As another example, a remap rule might use the `set-destination`_ operator to
 change just the hostname via::

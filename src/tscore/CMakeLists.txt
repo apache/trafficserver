@@ -176,6 +176,7 @@ if(BUILD_TESTING)
     unit_tests/test_layout.cc
     unit_tests/test_scoped_resource.cc
     unit_tests/test_Version.cc
+    unit_tests/test_ArgParser_MutexGroup.cc
   )
   target_link_libraries(
     test_tscore
