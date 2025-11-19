@@ -2100,13 +2100,19 @@ HttpSM::state_read_server_response_header(int event, void *data)
   }
     // fallthrough
 
-  case ParseResult::DONE:
-
+  case ParseResult::DONE: {
     if (!t_state.hdr_info.server_response.check_hdr_implements()) {
       t_state.http_return_code = HTTPStatus::BAD_GATEWAY;
       call_transact_and_set_next_state(HttpTransact::BadRequest);
       break;
     }
+
+    // Recompute cooked cache control with targeted headers (pass nullptr if not configured).
+    const char *targeted_headers =
+      (t_state.txn_conf->targeted_cache_control_headers && t_state.txn_conf->targeted_cache_control_headers[0] != '\0') ?
+        t_state.txn_conf->targeted_cache_control_headers :
+        nullptr;
+    t_state.hdr_info.server_response.m_mime->recompute_cooked_stuff(nullptr, targeted_headers);
 
     SMDbg(dbg_ctl_http_seq, "Done parsing server response header");
 
@@ -2138,6 +2144,7 @@ HttpSM::state_read_server_response_header(int event, void *data)
       server_entry->read_vio->disable(); // Disable the read until we finish the tunnel
     }
     break;
+  }
   case ParseResult::CONT:
     ink_assert(server_entry->eos == false);
     server_entry->read_vio->reenable();

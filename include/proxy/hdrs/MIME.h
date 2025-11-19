@@ -325,7 +325,7 @@ struct MIMEHdrImpl : public HdrHeapObjImpl {
   void check_strings(HeapCheck *heaps, int num_heaps);
 
   // Cooked values
-  void recompute_cooked_stuff(MIMEField *changing_field_or_null = nullptr);
+  void recompute_cooked_stuff(MIMEField *changing_field_or_null = nullptr, const char *targeted_headers_str = nullptr);
   void recompute_accelerators_and_presence_bits();
 
   // Utility

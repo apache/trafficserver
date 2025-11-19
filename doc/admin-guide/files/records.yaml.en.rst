@@ -2518,6 +2518,31 @@ Cache Control
          ``Cache-Control: max-age``.
    ===== ======================================================================
 
+.. ts:cv:: CONFIG proxy.config.http.cache.targeted_cache_control_headers STRING ""
+   :reloadable:
+   :overridable:
+
+   Comma-separated list of targeted cache control header names to check in priority
+   order before falling back to the standard ``Cache-Control`` header. This implements
+   `RFC 9213 <https://httpwg.org/specs/rfc9213.html>`_ Targeted HTTP Cache Control.
+   When empty (the default), targeted cache control is disabled and only the standard
+   ``Cache-Control`` header is used.
+
+   Example values:
+
+   - ``CDN-Cache-Control`` - Use only CDN-Cache-Control if present
+   - ``ATS-Cache-Control,CDN-Cache-Control`` - Check ATS-Cache-Control first, then
+     CDN-Cache-Control, then fall back to Cache-Control
+
+   When a targeted header is found, its directives are used rather than those in the
+   standard ``Cache-Control`` header for caching decisions. The targeted headers are
+   passed through to downstream caches.
+
+   .. note::
+
+      This implementation uses the existing Cache-Control parser rather than the
+      strict RFC 8941 Structured Fields parser specified in RFC 9213.
+
 .. ts:cv:: CONFIG proxy.config.http.cache.max_stale_age INT 604800
    :reloadable:
    :overridable:

@@ -1093,6 +1093,10 @@ HttpConfig::startup()
   HttpEstablishStaticConfigByte(c.oride.cache_required_headers, "proxy.config.http.cache.required_headers");
   HttpEstablishStaticConfigByte(c.oride.cache_range_lookup, "proxy.config.http.cache.range.lookup");
   HttpEstablishStaticConfigByte(c.oride.cache_range_write, "proxy.config.http.cache.range.write");
+  HttpEstablishStaticConfigStringAlloc(c.oride.targeted_cache_control_headers,
+                                       "proxy.config.http.cache.targeted_cache_control_headers");
+  c.oride.targeted_cache_control_headers_len =
+    c.oride.targeted_cache_control_headers ? strlen(c.oride.targeted_cache_control_headers) : 0;
 
   HttpEstablishStaticConfigStringAlloc(c.connect_ports_string, "proxy.config.http.connect_ports");
 
@@ -1398,10 +1402,13 @@ HttpConfig::reconfigure()
   params->max_payload_iobuf_index        = m_master.max_payload_iobuf_index;
   params->max_msg_iobuf_index            = m_master.max_msg_iobuf_index;
 
-  params->oride.cache_required_headers = m_master.oride.cache_required_headers;
-  params->oride.cache_range_lookup     = INT_TO_BOOL(m_master.oride.cache_range_lookup);
-  params->oride.cache_range_write      = INT_TO_BOOL(m_master.oride.cache_range_write);
-  params->oride.allow_multi_range      = m_master.oride.allow_multi_range;
+  params->oride.cache_required_headers         = m_master.oride.cache_required_headers;
+  params->oride.cache_range_lookup             = INT_TO_BOOL(m_master.oride.cache_range_lookup);
+  params->oride.cache_range_write              = INT_TO_BOOL(m_master.oride.cache_range_write);
+  params->oride.targeted_cache_control_headers = ats_strdup(m_master.oride.targeted_cache_control_headers);
+  params->oride.targeted_cache_control_headers_len =
+    params->oride.targeted_cache_control_headers ? strlen(params->oride.targeted_cache_control_headers) : 0;
+  params->oride.allow_multi_range = m_master.oride.allow_multi_range;
 
   params->connect_ports_string = ats_strdup(m_master.connect_ports_string);
   params->connect_ports        = parse_ports_list(params->connect_ports_string);
