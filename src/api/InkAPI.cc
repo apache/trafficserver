@@ -7561,6 +7561,15 @@ TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
       s->t_state.my_txn_conf().host_res_data = std::get<HostResData>(parsed.parsed);
     }
     break;
+  case TS_CONFIG_HTTP_CACHE_TARGETED_CACHE_CONTROL_HEADERS:
+    if (value && length > 0) {
+      s->t_state.my_txn_conf().targeted_cache_control_headers     = const_cast<char *>(value);
+      s->t_state.my_txn_conf().targeted_cache_control_headers_len = length;
+    } else {
+      s->t_state.my_txn_conf().targeted_cache_control_headers     = nullptr;
+      s->t_state.my_txn_conf().targeted_cache_control_headers_len = 0;
+    }
+    break;
   default: {
     if (value && length > 0) {
       return _eval_conv(&(s->t_state.my_txn_conf()), conf, value, length);

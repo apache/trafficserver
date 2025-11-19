@@ -3713,7 +3713,7 @@ MIMEHdrImpl::recompute_accelerators_and_presence_bits()
 ////////////////////////////////////////////////////////
 
 void
-MIMEHdrImpl::recompute_cooked_stuff(MIMEField *changing_field_or_null)
+MIMEHdrImpl::recompute_cooked_stuff(MIMEField *changing_field_or_null, const char *targeted_headers_str)
 {
   int         len, tlen;
   const char *s;
@@ -3725,13 +3725,33 @@ MIMEHdrImpl::recompute_cooked_stuff(MIMEField *changing_field_or_null)
 
   mime_hdr_cooked_stuff_init(this, changing_field_or_null);
 
-  //////////////////////////////////////////////////
-  // (1) cook the Cache-Control header if present //
-  //////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
+  // (1) cook the Cache-Control header (or targeted variant) if present     //
+  /////////////////////////////////////////////////////////////////////////////
 
   // to be safe, recompute unless you know this call is for other cooked field
   if ((changing_field_or_null == nullptr) || (changing_field_or_null->m_wks_idx != MIME_WKSIDX_PRAGMA)) {
-    field = mime_hdr_field_find(this, static_cast<std::string_view>(MIME_FIELD_CACHE_CONTROL));
+    field = nullptr;
+
+    // Check for targeted cache control headers first (in priority order).
+    if (targeted_headers_str && *targeted_headers_str) {
+      swoc::TextView config_view{targeted_headers_str};
+      while (config_view) {
+        swoc::TextView header_name = config_view.take_prefix_at(',').trim_if(&isspace);
+        if (!header_name.empty()) {
+          field = mime_hdr_field_find(this, std::string_view{header_name.data(), header_name.size()});
+          if (field) {
+            // Found a targeted header, use it and stop searching.
+            break;
+          }
+        }
+      }
+    }
+
+    // If no targeted header was found, fall back to standard Cache-Control.
+    if (!field) {
+      field = mime_hdr_field_find(this, static_cast<std::string_view>(MIME_FIELD_CACHE_CONTROL));
+    }
 
     if (field) {
       // try pathpaths first -- unlike most other fastpaths, this one

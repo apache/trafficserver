@@ -550,6 +550,9 @@ struct OverridableHttpConfigParams {
   MgmtByte cache_range_write              = 0;
   MgmtByte allow_multi_range              = 0;
 
+  char  *targeted_cache_control_headers     = nullptr; // This does not get free'd by us!
+  size_t targeted_cache_control_headers_len = 0;       // Updated when targeted headers are set.
+
   MgmtByte ignore_accept_mismatch          = 0;
   MgmtByte ignore_accept_language_mismatch = 0;
   MgmtByte ignore_accept_encoding_mismatch = 0;
