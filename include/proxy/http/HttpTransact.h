@@ -849,6 +849,8 @@ public:
       //      memset((void *)&host_db_info, 0, sizeof(host_db_info));
     }
 
+    ~State() { destroy(); }
+
     void
     destroy()
     {
@@ -877,7 +879,6 @@ public:
       url_map.clear();
       arena.reset();
       unmapped_url.clear();
-      dns_info.~ResolveInfo();
       outbound_conn_track_state.clear();
 
       delete[] ranges;
