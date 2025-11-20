@@ -1,0 +1,96 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+#
+# Initial request that caches a 404 response.
+# This tests that negative_caching_lifetime is respected even when
+# ttl-in-cache is configured.
+#
+
+meta:
+  version: "1.0"
+
+sessions:
+- transactions:
+
+  #
+  # Test 1: Cache a 404 response.
+  #
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /path/404
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, 100 ]
+
+    server-response:
+      status: 404
+      reason: "Not Found"
+      headers:
+        fields:
+        - [ Content-Length, 8 ]
+
+    proxy-response:
+      status: 404
+
+  # Repeat the request and verify that the 404 is served from the cache.
+  - client-request:
+      # Add a delay so ATS has time to finish any caching IO for the previous
+      # transaction.
+      delay: 100ms
+
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /path/404
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, 101 ]
+
+
+    # The following should not reach the server since the 404 is cached.
+    server-response:
+      status: 200
+      reason: OK
+
+    # Verify the cached 404 response is served.
+    proxy-response:
+      status: 404
+
+
+  # Delay for 3 seconds to exceed negative_caching_lifetime and verify that the
+  # 200 OK is served from the server rather than the cached 404.
+  - client-request:
+      delay: 3s
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /path/404
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, 102 ]
+
+    server-response:
+      status: 200
+      reason: OK
+
+    proxy-response:
+      status: 200

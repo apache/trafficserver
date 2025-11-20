@@ -7284,18 +7284,27 @@ HttpTransact::what_is_document_freshness(State *s, HTTPHdr *client_request, HTTP
   //////////////////////////////////////////////////////
   // If config file has a ttl-in-cache field set,     //
   // it has priority over any other http headers and  //
-  // other configuration parameters.                  //
+  // other configuration parameters. Negative caching //
+  // is different however since the user would       //
+  // rather expect their explicitly configured        //
+  // negative_caching_lifetime to be used instead of  //
+  // ttl-in-cache.                                    //
   //////////////////////////////////////////////////////
   if (s->cache_control.ttl_in_cache > 0) {
-    // what matters if ttl is set is not the age of the document
-    // but for how long it has been stored in the cache (resident time)
-    int resident_time = s->current.now - s->response_received_time;
-
-    TxnDbg(dbg_ctl_http_match, "ttl-in-cache = %d, resident time = %d", s->cache_control.ttl_in_cache, resident_time);
-    if (resident_time > s->cache_control.ttl_in_cache) {
-      return (Freshness_t::STALE);
+    auto status = static_cast<int>(cached_obj_response->status_get());
+    if (s->txn_conf->negative_caching_enabled && s->txn_conf->negative_caching_list.contains(status)) {
+      TxnDbg(dbg_ctl_http_match, "ttl-in-cache set, but skipping for negative cached response %d", status);
     } else {
-      return (Freshness_t::FRESH);
+      // what matters if ttl is set is not the age of the document
+      // but for how long it has been stored in the cache (resident time)
+      int resident_time = s->current.now - s->response_received_time;
+
+      TxnDbg(dbg_ctl_http_match, "ttl-in-cache = %d, resident time = %d", s->cache_control.ttl_in_cache, resident_time);
+      if (resident_time > s->cache_control.ttl_in_cache) {
+        return (Freshness_t::STALE);
+      } else {
+        return (Freshness_t::FRESH);
+      }
     }
   }
 

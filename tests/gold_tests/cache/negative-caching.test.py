@@ -151,3 +151,32 @@ tr = Test.AddTestRun("Make sure object is fresh")
 tr.AddVerifierServerProcess("server-no-timeout", replay_file, http_ports=[server_port])
 tr.AddVerifierClientProcess("client-no-timeout", replay_file, http_ports=[ts.Variables.port])
 tr.StillRunningAfter = ts
+
+#
+# Verify that negative_caching_lifetime is respected even when cache.config
+# has ttl-in-cache configured.
+#
+replay_file = "replay/negative-caching-ttl-in-cache.replay.yaml"
+tr = Test.AddTestRun("Verify negative_caching_lifetime and ttl-in-cache interaction.")
+dns = tr.MakeDNServer("dns", default="127.0.0.1")
+server = tr.AddVerifierServerProcess("server-ttl-in-cache", replay_file)
+server_port = server.Variables.http_port
+ts = tr.MakeATSProcess("ts-ttl-in-cache")
+ts.Disk.records_config.update(
+    {
+        'proxy.config.dns.nameservers': f"127.0.0.1:{dns.Variables.Port}",
+        'proxy.config.dns.resolv_conf': 'NULL',
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'http',
+        'proxy.config.http.insert_age_in_response': 0,
+        'proxy.config.http.negative_caching_enabled': 1,
+        'proxy.config.http.negative_caching_lifetime': 2
+    })
+ts.Disk.remap_config.AddLine(f'map / http://backend.example.com:{server_port}')
+# Configure cache.config with a long ttl-in-cache that should NOT override
+# negative_caching_lifetime for negative responses.
+ts.Disk.cache_config.AddLine('dest_domain=backend.example.com ttl-in-cache=30d')
+p = tr.AddVerifierClientProcess("client-ttl-in-cache", replay_file, http_ports=[ts.Variables.port])
+p.StartBefore(dns)
+p.StartBefore(server)
+p.StartBefore(ts)
