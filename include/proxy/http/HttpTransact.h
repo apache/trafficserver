@@ -860,8 +860,10 @@ public:
       free_internal_msg_buffer();
       ats_free(internal_msg_buffer_type);
 
-      ParentConfig::release(parent_params);
-      parent_params = nullptr;
+      if (parent_params != nullptr) {
+        ParentConfig::release(parent_params);
+        parent_params = nullptr;
+      }
 
       hdr_info.client_request.destroy();
       hdr_info.client_response.destroy();
