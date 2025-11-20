@@ -1,0 +1,27 @@
+#!/usr/bin/env bpftrace
+/** @file
+
+  Trace cache directory SystemTap probes.
+
+*/
+
+BEGIN
+{
+  printf("cache_dir_probe: ready\n");
+}
+
+usdt:*:cache_dir_insert
+{
+  if (@inserted == 0) {
+    printf("cache_dir_insert\n");
+  }
+  @inserted = 1;
+}
+
+usdt:*:cache_dir_remove
+{
+  if (@removed == 0) {
+    printf("cache_dir_remove\n");
+  }
+  @removed = 1;
+}
