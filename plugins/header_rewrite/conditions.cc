@@ -25,6 +25,7 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <cctype>
+#include <cinttypes>
 #include <sstream>
 #include <array>
 #include <atomic>
@@ -1768,7 +1769,7 @@ getClientAddr(TSHttpTxn txnp, int txn_private_slot)
     TSHttpTxnVerifiedAddrGet(txnp, &addr);
     break;
   default:
-    Dbg(pi_dbg_ctl, "Unknown IP source (%d) was specified", private_data.ip_source);
+    Dbg(pi_dbg_ctl, "Unknown IP source (%" PRIu64 ") was specified", static_cast<uint64_t>(private_data.ip_source));
     addr = TSHttpTxnClientAddrGet(txnp);
     break;
   }
