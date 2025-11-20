@@ -23,6 +23,8 @@
 
 #pragma once
 
+#include <dlfcn.h>
+
 #include "iocore/net/SNIActionItem.h"
 #include "iocore/net/SSLTypes.h"
 #include "iocore/net/YamlSNIConfig.h"
@@ -356,4 +358,56 @@ public:
 
 private:
   std::string const server_groups_list{};
+};
+
+class SNIPlugins : public ActionItem
+{
+public:
+  SNIPlugins(std::vector<std::tuple<std::string, std::string>> plugins);
+  ~SNIPlugins() override {}
+
+  int SNIAction(SSL &ssl, const Context &ctx) const override;
+
+private:
+  class SNIPlugin
+  {
+  public:
+    using CallbackFunction = int (*)(void *, SSL *);
+    SNIPlugin(std::string path, std::string parameters)
+    {
+      if (_handle == nullptr) {
+        _handle = dlopen(path.c_str(), RTLD_NOW | RTLD_LOCAL);
+        if (void *init = dlsym(_handle, "TSSNIPluginInit"); init != nullptr) {
+          reinterpret_cast<int (*)()>(init)();
+        } else {
+          return;
+        }
+      }
+
+      void *newInstance = dlsym(_handle, "TSSNINewInstance");
+      _callback         = reinterpret_cast<CallbackFunction>(dlsym(_handle, "TSSNIDoAction"));
+      if (newInstance == nullptr || _callback == nullptr) {
+        return;
+      }
+
+      // TODO Split the string seriously (there must be code for it somewhere)
+      int         argc   = 2;
+      const char *argv[] = {path.c_str(), parameters.c_str()};
+      reinterpret_cast<int (*)(int, const char **, void **)>(newInstance)(argc, argv, &_instance);
+    }
+    ~SNIPlugin() { dlclose(_handle); }
+    int
+    invoke(SSL *ssl)
+    {
+      return _callback(_instance, ssl);
+    }
+
+  private:
+    static void *_handle;
+
+    void            *_instance;
+    CallbackFunction _callback;
+  };
+
+  std::vector<SNIPlugin> _plugins;
 };

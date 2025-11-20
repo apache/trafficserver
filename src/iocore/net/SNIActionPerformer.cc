@@ -42,6 +42,8 @@ DbgCtl dbg_ctl_ssl_sni{"ssl_sni"};
 
 } // end anonymous namespace
 
+void *SNIPlugins::SNIPlugin::_handle = nullptr;
+
 int
 ControlQUIC::SNIAction([[maybe_unused]] SSL &ssl, const Context & /* ctx ATS_UNUSED */) const
 {
@@ -521,6 +523,23 @@ ServerGroupsList::SNIAction(SSL &ssl, const Context & /* ctx ATS_UNUSED */) cons
   if (!tbs->set_groups_list(server_groups_list)) {
     Error("Invalid server_groups_list: %s", server_groups_list.c_str());
     return SSL_TLSEXT_ERR_ALERT_WARNING;
+  }
+  return SSL_TLSEXT_ERR_OK;
+}
+
+SNIPlugins::SNIPlugins(std::vector<std::tuple<std::string, std::string>> plugins)
+{
+  for (auto [name, parameters] : plugins) {
+    Dbg(dbg_ctl_ssl_sni, "%s: %s", name.c_str(), parameters.c_str());
+    _plugins.emplace_back(name, parameters);
+  }
+}
+
+int
+SNIPlugins::SNIAction(SSL &ssl, const Context & /* ctx ATS_UNUSED */) const
+{
+  for (auto p : _plugins) {
+    p.invoke(&ssl);
   }
   return SSL_TLSEXT_ERR_OK;
 }
