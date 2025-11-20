@@ -55,8 +55,9 @@ char const *const EThread::Metrics::Slice::STAT_NAME[] = {
   "proxy.process.eventloop.io.wait.max", "proxy.process.eventloop.io.work.max",
 };
 
-int thread_max_heartbeat_mseconds = THREAD_MAX_HEARTBEAT_MSECONDS;
-int loop_time_update_probability  = 10;
+int              thread_max_heartbeat_mseconds = THREAD_MAX_HEARTBEAT_MSECONDS;
+int              loop_time_update_probability  = 10;
+const ink_hrtime DELAY_FOR_RETRY               = HRTIME_MSECONDS(10);
 
 // To define a class inherits from Thread:
 //   1) Define an independent thread_local static member
