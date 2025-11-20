@@ -64,8 +64,8 @@
 
 using UDPNetContHandler = int (UDPNetHandler::*)(int, void *);
 
-ClassAllocator<UDPPacket> udpPacketAllocator("udpPacketAllocator");
-EventType                 ET_UDP;
+ClassAllocator<UDPPacket, false> udpPacketAllocator("udpPacketAllocator");
+EventType                        ET_UDP;
 
 namespace
 {
@@ -746,7 +746,7 @@ private:
   ink_hrtime           timeout_interval = 0;
 };
 
-ClassAllocator<UDPReadContinuation> udpReadContAllocator("udpReadContAllocator");
+ClassAllocator<UDPReadContinuation, false> udpReadContAllocator("udpReadContAllocator");
 
 UDPReadContinuation::UDPReadContinuation(Event *completionToken)
   : Continuation(nullptr),

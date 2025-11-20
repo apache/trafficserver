@@ -229,7 +229,7 @@ private:
   Event          *_retry_event      = nullptr;
 };
 
-extern ClassAllocator<PreWarmSM> preWarmSMAllocator;
+extern ClassAllocator<PreWarmSM, false> preWarmSMAllocator;
 
 /**
    @class PreWarmQueue

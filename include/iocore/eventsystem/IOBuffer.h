@@ -251,7 +251,7 @@ public:
   IOBufferData &operator=(const IOBufferData &) = delete;
 };
 
-extern ClassAllocator<IOBufferData> ioDataAllocator;
+extern ClassAllocator<IOBufferData, false> ioDataAllocator;
 
 /**
   A linkable portion of IOBufferData. IOBufferBlock is a chainable
@@ -494,7 +494,7 @@ public:
   IOBufferBlock &operator=(const IOBufferBlock &) = delete;
 };
 
-extern ClassAllocator<IOBufferBlock> ioBlockAllocator;
+extern ClassAllocator<IOBufferBlock, false> ioBlockAllocator;
 
 /** A class for holding a chain of IO buffer blocks.
     This class is intended to be used as a member variable for other classes that

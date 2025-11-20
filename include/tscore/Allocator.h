@@ -330,10 +330,12 @@ using Allocator = FreelistAllocator;
   Allocator for Class objects.
 
 */
-template <std::destructible C, typename BaseAllocator = Allocator> class ClassAllocator : public BaseAllocator
+template <std::destructible C, bool Destruct_on_free_ = true, typename BaseAllocator = Allocator>
+class ClassAllocator : public BaseAllocator
 {
 public:
-  using Value_type = C;
+  using Value_type                   = C;
+  static bool const Destruct_on_free = Destruct_on_free_;
 
   /** Allocates objects of the templated type.  Arguments are forwarded to the constructor for the object. */
   template <typename... Args>
@@ -380,7 +382,9 @@ public:
   void
   destroy_if_enabled(C *ptr)
   {
-    std::destroy_at(ptr);
+    if constexpr (Destruct_on_free) {
+      std::destroy_at(ptr);
+    }
   }
 
   // Ensure that C is big enough to hold a void pointer (when it's stored in the free list as raw memory).
@@ -388,11 +392,11 @@ public:
   static_assert(sizeof(C) >= sizeof(void *), "Can not allocate instances of this class using ClassAllocator");
 };
 
-template <class C> class TrackerClassAllocator : public ClassAllocator<C>
+template <class C, bool Destruct_on_free = true> class TrackerClassAllocator : public ClassAllocator<C, Destruct_on_free>
 {
 public:
   TrackerClassAllocator(const char *name, unsigned int chunk_size = 128, unsigned int alignment = 16)
-    : ClassAllocator<C>(name, chunk_size, alignment), allocations(0), trackerLock(PTHREAD_MUTEX_INITIALIZER)
+    : ClassAllocator<C, Destruct_on_free>(name, chunk_size, alignment), allocations(0), trackerLock(PTHREAD_MUTEX_INITIALIZER)
   {
   }
 
@@ -401,7 +405,7 @@ public:
   {
     void *callstack[3];
     int   frames = backtrace(callstack, 3);
-    C    *ptr    = ClassAllocator<C>::alloc();
+    C    *ptr    = ClassAllocator<C, Destruct_on_free>::alloc();
 
     const void *symbol = nullptr;
     if (frames == 3 && callstack[2] != nullptr) {
@@ -427,7 +431,7 @@ public:
       reverse_lookup.erase(it);
     }
     ink_mutex_release(&trackerLock);
-    ClassAllocator<C>::free(ptr);
+    ClassAllocator<C, Destruct_on_free>::free(ptr);
   }
 
 private:

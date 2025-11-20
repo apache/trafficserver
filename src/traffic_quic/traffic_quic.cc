@@ -314,8 +314,8 @@ HttpSM::init(bool from_early_data)
   ink_abort("do not call stub");
 }
 
-ClassAllocator<HttpSM> httpSMAllocator("httpSMAllocator");
-HttpAPIHooks          *http_global_hooks;
+ClassAllocator<HttpSM, false> httpSMAllocator("httpSMAllocator");
+HttpAPIHooks                 *http_global_hooks;
 
 HttpVCTable::HttpVCTable(HttpSM *) {}
 
@@ -345,7 +345,7 @@ PreWarmManager::reconfigure()
 PreWarmManager prewarmManager;
 
 #include "proxy/FetchSM.h"
-ClassAllocator<FetchSM> FetchSMAllocator("unusedFetchSMAllocator");
+ClassAllocator<FetchSM, false> FetchSMAllocator("unusedFetchSMAllocator");
 bool
 FetchSM::is_initialized()
 {

@@ -83,7 +83,7 @@ TSHttpTxnServerRespGet(TSHttpTxn, TSMBuffer *, TSMLoc *)
   return TS_SUCCESS;
 }
 
-ClassAllocator<ProxyMutex> mutexAllocator("mutexAllocator");
+ClassAllocator<ProxyMutex, false> mutexAllocator("mutexAllocator");
 
 TEST_CASE("Matcher", "[plugins][header_rewrite]")
 {

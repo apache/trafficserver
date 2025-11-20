@@ -24,7 +24,7 @@
 #include "cripts/Context.hpp"
 
 // Freelist management. These are here to avoid polluting the Context includes with ATS core includes.
-ClassAllocator<cripts::Context> criptContextAllocator("cripts::Context");
+ClassAllocator<cripts::Context, false> criptContextAllocator("cripts::Context");
 
 namespace cripts
 {

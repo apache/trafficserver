@@ -31,7 +31,7 @@
 #include "iocore/eventsystem/Event.h"
 #include "iocore/eventsystem/EThread.h"
 
-ClassAllocator<Event> eventAllocator("eventAllocator", 256);
+ClassAllocator<Event, false> eventAllocator("eventAllocator", 256);
 
 void
 Event::schedule_imm(int acallback_event)

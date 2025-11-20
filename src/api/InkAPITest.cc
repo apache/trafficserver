@@ -8831,7 +8831,7 @@ std::array<std::string_view, TS_CONFIG_LAST_ENTRY> SDK_Overridable_Configs = {
 };
 // clang-format on
 
-extern ClassAllocator<HttpSM> httpSMAllocator;
+extern ClassAllocator<HttpSM, false> httpSMAllocator;
 
 REGRESSION_TEST(SDK_API_OVERRIDABLE_CONFIGS)(RegressionTest *test, int /* atype ATS_UNUSED */, int *pstatus)
 {

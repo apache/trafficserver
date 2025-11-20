@@ -32,7 +32,7 @@ DbgCtl dbg_ctl_http_txn{"http_txn"};
 
 #define HttpTxnDebug(fmt, ...) SsnDbg(this, dbg_ctl_http_txn, fmt, __VA_ARGS__)
 
-extern ClassAllocator<HttpSM> httpSMAllocator;
+extern ClassAllocator<HttpSM, false> httpSMAllocator;
 
 ProxyTransaction::ProxyTransaction(ProxySession *session) : VConnection(nullptr), _proxy_ssn(session) {}
 

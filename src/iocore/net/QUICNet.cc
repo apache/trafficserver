@@ -30,7 +30,7 @@
 #include "tscore/ink_atomic.h"
 #include <quiche.h>
 
-ClassAllocator<QUICPollEvent> quicPollEventAllocator("quicPollEvent");
+ClassAllocator<QUICPollEvent, false> quicPollEventAllocator("quicPollEvent");
 
 void
 QUICPollEvent::init(QUICConnection *con, UDPPacket *packet)

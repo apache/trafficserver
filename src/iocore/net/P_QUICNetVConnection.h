@@ -236,4 +236,4 @@ private:
   bool _is_cert_verified  = false;
 };
 
-extern ClassAllocator<QUICNetVConnection> quicNetVCAllocator;
+extern ClassAllocator<QUICNetVConnection, false> quicNetVCAllocator;

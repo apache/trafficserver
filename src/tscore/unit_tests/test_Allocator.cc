@@ -105,7 +105,7 @@ struct CleanupTracker {
 
 TEST_CASE("ClassAllocator basic allocation", "[libts][allocator]")
 {
-  ClassAllocator<SimplePOD> allocator("test_simple_pod");
+  ClassAllocator<SimplePOD, false> allocator("test_simple_pod");
 
   SECTION("Allocate and free simple POD")
   {
@@ -232,7 +232,7 @@ TEST_CASE("ClassAllocator with RAII types", "[libts][allocator]")
 
 TEST_CASE("ClassAllocator with complex types", "[libts][allocator]")
 {
-  ClassAllocator<ComplexObject> allocator("test_complex");
+  ClassAllocator<ComplexObject, false> allocator("test_complex");
 
   SECTION("Complex object with std::string")
   {
