@@ -27,8 +27,7 @@
  ****************************************************************************/
 
 #include "iocore/utils/OneWayMultiTunnel.h"
-#include "../eventsystem/P_IOBuffer.h"
-#include "../eventsystem/P_VConnection.h"
+#include "iocore/eventsystem/IOBuffer.h"
 
 // #define TEST
 
@@ -43,6 +42,18 @@ ClassAllocator<OneWayMultiTunnel> OneWayMultiTunnelAllocator("OneWayMultiTunnelA
 OneWayMultiTunnel::OneWayMultiTunnel() : OneWayTunnel()
 {
   ink_zero(vioTargets);
+}
+
+VIO *
+vc_do_io_write(VConnection *vc, Continuation *cont, int64_t nbytes, MIOBuffer *buf, int64_t offset)
+{
+  IOBufferReader *reader = buf->alloc_reader();
+
+  if (offset > 0) {
+    reader->consume(offset);
+  }
+
+  return vc->do_io_write(cont, nbytes, reader, true);
 }
 
 void
