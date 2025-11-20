@@ -26,7 +26,7 @@
 
 namespace
 {
-ClassAllocator<RemapPlugins> pluginAllocator("RemapPluginsAlloc");
+ClassAllocator<RemapPlugins, false> pluginAllocator("RemapPluginsAlloc");
 
 DbgCtl dbg_ctl_url_rewrite{"url_rewrite"};
 

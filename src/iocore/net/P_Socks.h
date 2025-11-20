@@ -125,4 +125,4 @@ struct SocksEntry : public Continuation {
 
 using SocksEntryHandler = int (SocksEntry::*)(int, void *);
 
-extern ClassAllocator<SocksEntry> socksAllocator;
+extern ClassAllocator<SocksEntry, false> socksAllocator;

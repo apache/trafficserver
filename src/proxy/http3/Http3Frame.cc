@@ -27,10 +27,10 @@
 #include "proxy/http3/Http3Frame.h"
 #include "proxy/http3/Http3Config.h"
 
-ClassAllocator<Http3Frame>         http3FrameAllocator("http3FrameAllocator");
-ClassAllocator<Http3DataFrame>     http3DataFrameAllocator("http3DataFrameAllocator");
-ClassAllocator<Http3HeadersFrame>  http3HeadersFrameAllocator("http3HeadersFrameAllocator");
-ClassAllocator<Http3SettingsFrame> http3SettingsFrameAllocator("http3SettingsFrameAllocator");
+ClassAllocator<Http3Frame, false>         http3FrameAllocator("http3FrameAllocator");
+ClassAllocator<Http3DataFrame, false>     http3DataFrameAllocator("http3DataFrameAllocator");
+ClassAllocator<Http3HeadersFrame, false>  http3HeadersFrameAllocator("http3HeadersFrameAllocator");
+ClassAllocator<Http3SettingsFrame, false> http3SettingsFrameAllocator("http3SettingsFrameAllocator");
 
 namespace
 {

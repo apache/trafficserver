@@ -25,4 +25,4 @@
 #include "proxy/http/remap/PluginFactory.h"
 
 thread_local PluginThreadContext *pluginThreadContext;
-ClassAllocator<ProxyMutex>        mutexAllocator("mutexAllocator");
+ClassAllocator<ProxyMutex, false> mutexAllocator("mutexAllocator");

@@ -138,9 +138,9 @@ struct CacheRemoveCont : public Continuation {
 };
 
 // Global Data
-extern ClassAllocator<CacheVC>            cacheVConnectionAllocator;
-extern ClassAllocator<CacheEvacuateDocVC> cacheEvacuateDocVConnectionAllocator;
-extern CacheSync                         *cacheDirSync;
+extern ClassAllocator<CacheVC, false>            cacheVConnectionAllocator;
+extern ClassAllocator<CacheEvacuateDocVC, false> cacheEvacuateDocVConnectionAllocator;
+extern CacheSync                                *cacheDirSync;
 // Function Prototypes
 int                 cache_write(CacheVC *, CacheHTTPInfoVector *);
 int                 get_alternate_index(CacheHTTPInfoVector *cache_vector, CacheKey key);
@@ -411,7 +411,7 @@ next_rand(unsigned int *p)
   return seed;
 }
 
-extern ClassAllocator<CacheRemoveCont> cacheRemoveContAllocator;
+extern ClassAllocator<CacheRemoveCont, false> cacheRemoveContAllocator;
 
 inline CacheRemoveCont *
 new_CacheRemoveCont()

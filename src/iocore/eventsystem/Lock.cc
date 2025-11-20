@@ -31,7 +31,7 @@
 #include "P_EventSystem.h"
 #include "tscore/Diags.h"
 
-ClassAllocator<ProxyMutex> mutexAllocator("mutexAllocator");
+ClassAllocator<ProxyMutex, false> mutexAllocator("mutexAllocator");
 
 namespace
 {

@@ -72,7 +72,7 @@ static swoc::file::path hostdb_hostfile_path;
 int                     hostdb_disable_reverse_lookup = 0;
 int                     hostdb_max_iobuf_index        = BUFFER_SIZE_INDEX_32K;
 
-ClassAllocator<HostDBContinuation> hostDBContAllocator("hostDBContAllocator");
+ClassAllocator<HostDBContinuation, false> hostDBContAllocator("hostDBContAllocator");
 
 namespace
 {

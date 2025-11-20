@@ -103,4 +103,4 @@ private:
   bool in_session_table = false;
 };
 
-extern ClassAllocator<Http2ServerSession> http2ServerSessionAllocator;
+extern ClassAllocator<Http2ServerSession, false> http2ServerSessionAllocator;

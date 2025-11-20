@@ -175,10 +175,10 @@ using Http3FrameUPtr        = std::unique_ptr<Http3Frame, Http3FrameDeleterFunc>
 using Http3DataFrameUPtr    = std::unique_ptr<Http3DataFrame, Http3FrameDeleterFunc>;
 using Http3HeadersFrameUPtr = std::unique_ptr<Http3HeadersFrame, Http3FrameDeleterFunc>;
 
-extern ClassAllocator<Http3Frame>         http3FrameAllocator;
-extern ClassAllocator<Http3DataFrame>     http3DataFrameAllocator;
-extern ClassAllocator<Http3HeadersFrame>  http3HeadersFrameAllocator;
-extern ClassAllocator<Http3SettingsFrame> http3SettingsFrameAllocator;
+extern ClassAllocator<Http3Frame, false>         http3FrameAllocator;
+extern ClassAllocator<Http3DataFrame, false>     http3DataFrameAllocator;
+extern ClassAllocator<Http3HeadersFrame, false>  http3HeadersFrameAllocator;
+extern ClassAllocator<Http3SettingsFrame, false> http3SettingsFrameAllocator;
 
 class Http3FrameDeleter
 {

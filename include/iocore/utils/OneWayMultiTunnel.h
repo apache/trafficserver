@@ -131,4 +131,4 @@ struct OneWayMultiTunnel : public OneWayTunnel {
   VIO              *vioTargets[ONE_WAY_MULTI_TUNNEL_LIMIT];
 };
 
-extern ClassAllocator<OneWayMultiTunnel> OneWayMultiTunnelAllocator;
+extern ClassAllocator<OneWayMultiTunnel, false> OneWayMultiTunnelAllocator;

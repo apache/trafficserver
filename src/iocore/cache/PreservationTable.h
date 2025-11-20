@@ -197,8 +197,8 @@ PreservationTable::evac_bucket_valid(off_t bucket) const
   return (bucket >= 0 && bucket < evacuate_size);
 }
 
-extern ClassAllocator<EvacuationBlock> evacuationBlockAllocator;
-extern ClassAllocator<EvacuationKey>   evacuationKeyAllocator;
+extern ClassAllocator<EvacuationBlock, false> evacuationBlockAllocator;
+extern ClassAllocator<EvacuationKey, false>   evacuationKeyAllocator;
 
 inline EvacuationBlock *
 new_EvacuationBlock()

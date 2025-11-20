@@ -1936,7 +1936,7 @@ HTTPHdrImpl::check_strings(HeapCheck *heaps, int num_heaps)
   }
 }
 
-ClassAllocator<HTTPCacheAlt> httpCacheAltAllocator("httpCacheAltAllocator");
+ClassAllocator<HTTPCacheAlt, false> httpCacheAltAllocator("httpCacheAltAllocator");
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/

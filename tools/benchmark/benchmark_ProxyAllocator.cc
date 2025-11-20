@@ -52,7 +52,7 @@ struct BItem {
 } // namespace
 
 // THREAD_ALLOC/FREE requires allocators be global variables and are named after one of the defined ProxyAllocator members
-ClassAllocator<BItem> ioAllocator("io");
+ClassAllocator<BItem, false> ioAllocator("io");
 
 #define OLD_THREAD_FREE(_p, _a, _t)                                                                \
   do {                                                                                             \

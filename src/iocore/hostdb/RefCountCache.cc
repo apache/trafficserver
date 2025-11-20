@@ -22,9 +22,9 @@
 #include "P_RefCountCache.h"
 
 // Since the hashing values are all fixed size, we can simply use a classAllocator to avoid mallocs
-static ClassAllocator<RefCountCacheHashEntry> refCountCacheHashingValueAllocator("refCountCacheHashingValueAllocator");
+static ClassAllocator<RefCountCacheHashEntry, false> refCountCacheHashingValueAllocator("refCountCacheHashingValueAllocator");
 
-ClassAllocator<PriorityQueueEntry<RefCountCacheHashEntry *>> expiryQueueEntry("expiryQueueEntry");
+ClassAllocator<PriorityQueueEntry<RefCountCacheHashEntry *>, false> expiryQueueEntry("expiryQueueEntry");
 
 RefCountCacheHashEntry *
 RefCountCacheHashEntry::alloc()

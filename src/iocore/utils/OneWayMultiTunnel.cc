@@ -38,7 +38,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-ClassAllocator<OneWayMultiTunnel> OneWayMultiTunnelAllocator("OneWayMultiTunnelAllocator");
+ClassAllocator<OneWayMultiTunnel, false> OneWayMultiTunnelAllocator("OneWayMultiTunnelAllocator");
 
 OneWayMultiTunnel::OneWayMultiTunnel() : OneWayTunnel()
 {

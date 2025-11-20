@@ -40,7 +40,7 @@
 #include "iocore/eventsystem/ProxyAllocator.h"
 #include "iocore/eventsystem/VConnection.h"
 
-ClassAllocator<INKContInternal> INKContAllocator("INKContAllocator");
+ClassAllocator<INKContInternal, false> INKContAllocator("INKContAllocator");
 
 namespace
 {

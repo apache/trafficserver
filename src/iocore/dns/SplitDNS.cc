@@ -48,7 +48,7 @@ static const char modulePrefix[] = "[SplitDNS]";
 
 ConfigUpdateHandler<SplitDNSConfig> *SplitDNSConfig::splitDNSUpdate = nullptr;
 
-static ClassAllocator<DNSRequestData> DNSReqAllocator("DNSRequestDataAllocator");
+static ClassAllocator<DNSRequestData, false> DNSReqAllocator("DNSRequestDataAllocator");
 
 /* --------------------------------------------------------------
    used by a lot of protocols. We do not have dest ip in most

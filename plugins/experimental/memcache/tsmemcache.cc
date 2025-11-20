@@ -37,7 +37,7 @@
 #define REALTIME_MAXDELTA       60 * 60 * 24 * 30
 #define STRCMP_REST(_c, _s, _e) (((_e) - (_s)) < (int)sizeof(_c) || STRCMP(_s, _c) || !isspace((_s)[sizeof(_c) - 1]))
 
-ClassAllocator<MC> theMCAllocator("MC");
+ClassAllocator<MC, false> theMCAllocator("MC");
 
 static time_t base_day_time;
 

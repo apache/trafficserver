@@ -74,7 +74,7 @@ using namespace std::literals;
 #define SSL_WAIT_FOR_ASYNC         12
 #define SSL_RESTART                13
 
-ClassAllocator<SSLNetVConnection> sslNetVCAllocator("sslNetVCAllocator");
+ClassAllocator<SSLNetVConnection, false> sslNetVCAllocator("sslNetVCAllocator");
 
 namespace
 {
