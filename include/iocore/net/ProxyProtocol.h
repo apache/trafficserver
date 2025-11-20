@@ -25,14 +25,11 @@
 
 #pragma once
 
-#include "tscore/ink_memory.h"
-#include <filesystem>
 #include <tscore/ink_inet.h>
 #include <swoc/TextView.h>
 #include <unordered_map>
 #include <cstdlib>
 #include <optional>
-#include <utility>
 
 enum class ProxyProtocolVersion {
   UNDEFINED,
