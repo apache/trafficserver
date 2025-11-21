@@ -1800,3 +1800,46 @@ OperatorIf::exec_section(const CondOpSection *section, const Resources &res) con
 
   return section->ops.oper_mods;
 }
+
+// OperatorSetCongestionCtrl
+void
+OperatorSetCCAlgorithm::initialize(Parser &p)
+{
+  Operator::initialize(p);
+  _cc_alg.set_value(p.get_arg());
+}
+
+void
+OperatorSetCCAlgorithm::initialize_hooks()
+{
+  add_allowed_hook(TS_REMAP_PSEUDO_HOOK);
+  add_allowed_hook(TS_HTTP_SEND_REQUEST_HDR_HOOK);
+  add_allowed_hook(TS_HTTP_READ_REQUEST_HDR_HOOK);
+  add_allowed_hook(TS_HTTP_PRE_REMAP_HOOK);
+}
+
+bool
+OperatorSetCCAlgorithm::exec(const Resources &res) const
+{
+  Dbg(dbg_ctl, "OperatorSetCCAlgorithm");
+
+  if (!res.state.txnp) {
+    TSError("[%s] OperatorSetCCAlgorithm() failed. Transaction is null", PLUGIN_NAME);
+    return false;
+  }
+
+  int client_fd;
+  if (TSHttpTxnClientFdGet(res.state.txnp, &client_fd) != TS_SUCCESS) {
+    TSError("[%s] [OperatorSetCCAlgorithm] Error getting client fd", PLUGIN_NAME);
+  }
+
+#ifdef TCP_CONGESTION
+  if (safe_setsockopt(client_fd, IPPROTO_TCP, TCP_CONGESTION, _cc_alg.get_value().data(), _cc_alg.size()) == -1) {
+    TSError("[%s] [OperatorSetCCAlgorithm] Error setting congestion control algorithm, errno=%d %s", PLUGIN_NAME, errno,
+            strerror(errno));
+  }
+#else
+  TSWarning("[%s] [OperatorSetCCAlgorithm] TCP_CONGESTION socket option is not supported on this platform", PLUGIN_NAME);
+#endif
+  return true;
+}

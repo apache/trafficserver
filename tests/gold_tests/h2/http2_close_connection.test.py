@@ -51,11 +51,7 @@ tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(pv_server)
 tr.Processes.Default.StartBefore(ts)
 tr.AddVerifierClientProcess(
-    "pv_client",
-    "http2_close_connection.yaml",
-    http_ports=[ts.Variables.port],
-    https_ports=[ts.Variables.ssl_port],
-    other_args='--thread-limit 1')
+    "pv_client", "http2_close_connection.yaml", http_ports=[ts.Variables.port], https_ports=[ts.Variables.ssl_port])
 tr.Processes.Default.ReturnCode = 0
 
 tr.Processes.Default.Streams.All += Testers.ContainsExpression(

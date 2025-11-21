@@ -68,7 +68,7 @@ virtualenv or system-wide using:
 
 .. code-block:: none
 
-   pipx install dist/hrw4u-1.0.0-py3-none-any.whl
+   pipx install dist/hrw4u-1.4.0-py3-none-any.whl
 
 Using
 -----
@@ -85,6 +85,10 @@ Doing a compile is simply:
 .. code-block:: none
 
    hrw4u some_file.hrw4u
+
+in Addition to ``hrw4u``, you also have the reverse tool, converting existing ``header_rewrite``
+configurations to ``hrw4u``. This tool is named ``u4wrh``. For people using IDEs, the package also
+provides an LSP for this language, named ``hrw4u-lsp``.
 
 Syntax Differences
 ==================

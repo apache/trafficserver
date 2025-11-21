@@ -71,7 +71,13 @@ In each record is a variable length array of items, instances of ``HostDBInfo``,
 IP address in the record. This is called the "round robin" data for historical reasons. For SRV
 records there is an additional storage area in the record that is used to store the SRV names.
 
-.. figure:: HostDB-Data-Layout.svg
+.. only:: html
+
+   .. figure:: HostDB-Data-Layout.svg
+
+.. only:: latex
+
+   .. figure:: HostDB-Data-Layout.png
 
 The round robin data is accessed by using an offset and count in the base record. For SRV records
 each record has an offset, relative to that ``HostDBInfo`` instance, for its own name in the name

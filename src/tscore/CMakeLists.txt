@@ -44,7 +44,6 @@ add_library(
   FrequencyCounter.cc
   Hash.cc
   HashFNV.cc
-  HashSip.cc
   HostLookup.cc
   InkErrno.cc
   JeMiAllocator.cc
@@ -155,6 +154,7 @@ if(BUILD_TESTING)
     unit_tests/test_Extendible.cc
     unit_tests/test_Encoding.cc
     unit_tests/test_FrequencyCounter.cc
+    unit_tests/test_HashAlgorithms.cc
     unit_tests/test_HKDF.cc
     unit_tests/test_Histogram.cc
     unit_tests/test_History.cc
@@ -176,6 +176,7 @@ if(BUILD_TESTING)
     unit_tests/test_layout.cc
     unit_tests/test_scoped_resource.cc
     unit_tests/test_Version.cc
+    unit_tests/test_ArgParser_MutexGroup.cc
   )
   target_link_libraries(
     test_tscore

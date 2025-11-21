@@ -9,7 +9,8 @@ dd {
   scrollbar, instead of the much more desired behavior of wrapping cell contents.
   Source: https://github.com/snide/sphinx_rtd_theme/issues/117#issuecomment-41506687
 */
-.wy-table-responsive table td, .wy-table-responsive table th {
+.wy-table-responsive table td,
+.wy-table-responsive table th {
     white-space: normal;
 }
 
@@ -19,9 +20,13 @@ dd {
     overflow: visible;
 }
 
-div.figure.align-center{
-    margin: initial;
-    max-width: 800px;
+/* Centered figures - constrain to 1000px and align with text column */
+.rst-content div.figure.align-center,
+.rst-content figure.align-center {
+    max-width: 1000px;
+    margin-left: 0;
+    margin-right: 0;
+    text-align: center;
 }
 
 /* pre inside paragraphs gets weird spacing  */
@@ -42,15 +47,43 @@ nav.wy-nav-side {
 div.wy-nav-content {
     max-width: 100%;
 }
+
 .rst-content p,
 .rst-content ol,
 .rst-content ul,
 .rst-content dd,
 .rst-content blockquote,
 .rst-content .admonition,
+.rst-content .note,
+.rst-content .warning,
 .rst-content .rst-footer-buttons,
-div.highlight-c, div.highlight-cpp, div.highlight-http, div.highlight-perl,
-div.highlight-python, div.highlight-sh
-{
-    max-width: 800px;
+.rst-content div.align-center,
+.rst-content div[class*="highlight-"],
+.rst-content div.highlight {
+    max-width: 1000px;
+}
+
+/* Ensure code blocks don't overflow */
+.rst-content div[class*="highlight-"],
+.rst-content div.highlight {
+    overflow-x: auto;
+}
+
+/* Align centered content containers with text column (not viewport) */
+.rst-content div[align="center"],
+.rst-content div.align-center {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    text-align: center;
+}
+
+
+/* Constrain images to fit within column - scale down if needed, maintain aspect ratio */
+.rst-content .graphviz img,
+.rst-content img.graphviz,
+.rst-content div.graphviz img,
+.rst-content figure img,
+.rst-content div.figure img {
+    max-width: 1000px;
+    height: auto;
 }

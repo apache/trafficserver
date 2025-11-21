@@ -27,6 +27,22 @@
 #include "ts_lua_util.h"
 #include "ts_lua_client_cert_helpers.h"
 
+typedef enum {
+  TS_LUA_PP_INFO_VERSION   = TS_PP_INFO_VERSION,
+  TS_LUA_PP_INFO_SRC_ADDR  = TS_PP_INFO_SRC_ADDR,
+  TS_LUA_PP_INFO_SRC_PORT  = TS_PP_INFO_SRC_PORT,
+  TS_LUA_PP_INFO_DST_ADDR  = TS_PP_INFO_DST_ADDR,
+  TS_LUA_PP_INFO_DST_PORT  = TS_PP_INFO_DST_PORT,
+  TS_LUA_PP_INFO_PROTOCOL  = TS_PP_INFO_PROTOCOL,
+  TS_LUA_PP_INFO_SOCK_TYPE = TS_PP_INFO_SOCK_TYPE
+} TSLuaPPInfoKey;
+
+ts_lua_var_item ts_lua_pp_info_key_vars[] = {
+  TS_LUA_MAKE_VAR_ITEM(TS_LUA_PP_INFO_VERSION),  TS_LUA_MAKE_VAR_ITEM(TS_LUA_PP_INFO_SRC_ADDR),
+  TS_LUA_MAKE_VAR_ITEM(TS_LUA_PP_INFO_SRC_PORT), TS_LUA_MAKE_VAR_ITEM(TS_LUA_PP_INFO_DST_ADDR),
+  TS_LUA_MAKE_VAR_ITEM(TS_LUA_PP_INFO_DST_PORT), TS_LUA_MAKE_VAR_ITEM(TS_LUA_PP_INFO_PROTOCOL),
+  TS_LUA_MAKE_VAR_ITEM(TS_LUA_PP_INFO_SOCK_TYPE)};
+
 static void ts_lua_inject_client_request_client_addr_api(lua_State *L);
 static void ts_lua_inject_client_request_server_addr_api(lua_State *L);
 
@@ -73,6 +89,8 @@ static int ts_lua_client_request_client_addr_get_ip(lua_State *L);
 static int ts_lua_client_request_client_addr_get_port(lua_State *L);
 static int ts_lua_client_request_client_addr_get_addr(lua_State *L);
 static int ts_lua_client_request_client_addr_get_incoming_port(lua_State *L);
+static int ts_lua_client_request_client_addr_get_verified_addr(lua_State *L);
+static int ts_lua_client_request_client_addr_set_verified_addr(lua_State *L);
 
 static void ts_lua_inject_client_request_ssl_reused_api(lua_State *L);
 static int  ts_lua_client_request_get_ssl_reused(lua_State *L);
@@ -109,6 +127,9 @@ static int ts_lua_client_request_server_cert_get_san_dns(lua_State *L);
 static int ts_lua_client_request_server_cert_get_san_ip(lua_State *L);
 static int ts_lua_client_request_server_cert_get_san_email(lua_State *L);
 static int ts_lua_client_request_server_cert_get_san_uri(lua_State *L);
+static void ts_lua_inject_client_request_pp_info_api(lua_State *L);
+static int  ts_lua_client_request_get_pp_info(lua_State *L);
+static int  ts_lua_client_request_get_pp_info_int(lua_State *L);
 
 void
 ts_lua_inject_client_request_api(lua_State *L)
@@ -131,6 +152,7 @@ ts_lua_inject_client_request_api(lua_State *L)
   ts_lua_inject_client_request_ssl_protocol_api(L);
   ts_lua_inject_client_request_ssl_curve_api(L);
   ts_lua_inject_client_request_cert_api(L);
+  ts_lua_inject_client_request_pp_info_api(L);
 
   lua_setfield(L, -2, "client_request");
 }
@@ -158,6 +180,12 @@ ts_lua_inject_client_request_client_addr_api(lua_State *L)
 
   lua_pushcfunction(L, ts_lua_client_request_client_addr_get_incoming_port);
   lua_setfield(L, -2, "get_incoming_port");
+
+  lua_pushcfunction(L, ts_lua_client_request_client_addr_get_verified_addr);
+  lua_setfield(L, -2, "get_verified_addr");
+
+  lua_pushcfunction(L, ts_lua_client_request_client_addr_set_verified_addr);
+  lua_setfield(L, -2, "set_verified_addr");
 
   lua_setfield(L, -2, "client_addr");
 }
@@ -1438,12 +1466,6 @@ ts_lua_client_request_client_cert_get_signature(lua_State *L)
 static int
 ts_lua_client_request_client_cert_get_not_before(lua_State *L)
 {
-  ts_lua_http_ctx *http_ctx;
-  TSHttpSsn        ssnp;
-  TSVConn          client_conn;
-
-  GET_HTTP_CONTEXT(http_ctx, L);
-
   ssnp        = TSHttpTxnSsnGet(http_ctx->txnp);
   client_conn = TSHttpSsnClientVConnGet(ssnp);
 
@@ -2094,4 +2116,174 @@ ts_lua_client_request_server_cert_get_san_uri(lua_State *L)
 
   lua_pushnil(L);
   return 1;
+}
+
+static void
+ts_lua_inject_client_request_pp_info_api(lua_State *L)
+{
+  size_t i;
+
+  for (i = 0; i < sizeof(ts_lua_pp_info_key_vars) / sizeof(ts_lua_var_item); i++) {
+    lua_pushinteger(L, ts_lua_pp_info_key_vars[i].nvar);
+    lua_setglobal(L, ts_lua_pp_info_key_vars[i].svar);
+  }
+
+  lua_pushcfunction(L, ts_lua_client_request_get_pp_info);
+  lua_setfield(L, -2, "get_pp_info");
+
+  lua_pushcfunction(L, ts_lua_client_request_get_pp_info_int);
+  lua_setfield(L, -2, "get_pp_info_int");
+}
+
+static int
+ts_lua_client_request_get_pp_info(lua_State *L)
+{
+  uint16_t         key;
+  const char      *value = nullptr;
+  int              length;
+  ts_lua_http_ctx *http_ctx;
+  TSHttpSsn        ssnp;
+  TSVConn          client_conn;
+
+  GET_HTTP_CONTEXT(http_ctx, L);
+
+  key = static_cast<uint16_t>(luaL_checkinteger(L, 1));
+
+  ssnp        = TSHttpTxnSsnGet(http_ctx->txnp);
+  client_conn = TSHttpSsnClientVConnGet(ssnp);
+
+  if (TSVConnPPInfoGet(client_conn, key, &value, &length) == TS_SUCCESS) {
+    if (key == TS_PP_INFO_SRC_ADDR || key == TS_PP_INFO_DST_ADDR) {
+      // For addresses, convert sockaddr to string
+      char                ip_str[INET6_ADDRSTRLEN];
+      const sockaddr     *addr = reinterpret_cast<const sockaddr *>(value);
+      const sockaddr_in  *addr_in;
+      const sockaddr_in6 *addr_in6;
+
+      if (addr->sa_family == AF_INET) {
+        addr_in = reinterpret_cast<const sockaddr_in *>(addr);
+        inet_ntop(AF_INET, &addr_in->sin_addr, ip_str, sizeof(ip_str));
+      } else if (addr->sa_family == AF_INET6) {
+        addr_in6 = reinterpret_cast<const sockaddr_in6 *>(addr);
+        inet_ntop(AF_INET6, &addr_in6->sin6_addr, ip_str, sizeof(ip_str));
+      } else {
+        lua_pushnil(L);
+        return 1;
+      }
+      lua_pushstring(L, ip_str);
+    } else {
+      // For other types, return as string
+      lua_pushlstring(L, value, length);
+    }
+    return 1;
+  }
+
+  lua_pushnil(L);
+  return 1;
+}
+
+static int
+ts_lua_client_request_get_pp_info_int(lua_State *L)
+{
+  uint16_t         key;
+  TSMgmtInt        value;
+  ts_lua_http_ctx *http_ctx;
+  TSHttpSsn        ssnp;
+  TSVConn          client_conn;
+
+  GET_HTTP_CONTEXT(http_ctx, L);
+
+  key = static_cast<uint16_t>(luaL_checkinteger(L, 1));
+
+  ssnp        = TSHttpTxnSsnGet(http_ctx->txnp);
+  client_conn = TSHttpSsnClientVConnGet(ssnp);
+
+  if (TSVConnPPInfoIntGet(client_conn, key, &value) == TS_SUCCESS) {
+    lua_pushinteger(L, value);
+    return 1;
+  }
+
+  lua_pushnil(L);
+  return 1;
+}
+
+static int
+ts_lua_client_request_client_addr_get_verified_addr(lua_State *L)
+{
+  struct sockaddr const *verified_addr;
+  ts_lua_http_ctx       *http_ctx;
+  int                    family   = AF_UNSPEC;
+  char                   vip[128] = "";
+
+  GET_HTTP_CONTEXT(http_ctx, L);
+
+  if (TSHttpTxnVerifiedAddrGet(http_ctx->txnp, &verified_addr) == TS_SUCCESS) {
+    if (verified_addr->sa_family == AF_INET) {
+      inet_ntop(AF_INET, (const void *)&((struct sockaddr_in *)verified_addr)->sin_addr, vip, sizeof(vip));
+      family = AF_INET;
+      lua_pushstring(L, vip);
+      lua_pushnumber(L, family);
+    } else if (verified_addr->sa_family == AF_INET6) {
+      inet_ntop(AF_INET6, (const void *)&((struct sockaddr_in6 *)verified_addr)->sin6_addr, vip, sizeof(vip));
+      family = AF_INET6;
+      lua_pushstring(L, vip);
+      lua_pushnumber(L, family);
+    } else {
+      lua_pushnil(L);
+      lua_pushnil(L);
+    }
+  } else {
+    lua_pushnil(L);
+    lua_pushnil(L);
+  }
+
+  return 2;
+}
+
+static int
+ts_lua_client_request_client_addr_set_verified_addr(lua_State *L)
+{
+  union {
+    struct sockaddr_in  sin4;
+    struct sockaddr_in6 sin6;
+    struct sockaddr     sa;
+  } addr;
+  memset(&addr, 0, sizeof(addr));
+  ts_lua_http_ctx *http_ctx;
+  int              n;
+  int              family;
+  const char      *vip;
+  size_t           vip_len;
+
+  GET_HTTP_CONTEXT(http_ctx, L);
+
+  n = lua_gettop(L);
+
+  if (n == 2) {
+    vip    = luaL_checklstring(L, 1, &vip_len);
+    family = luaL_checknumber(L, 2);
+
+    if (family == AF_INET) {
+      addr.sin4.sin_family = AF_INET;
+      addr.sin4.sin_port   = 0;
+      if (!inet_pton(family, vip, &addr.sin4.sin_addr)) {
+        return luaL_error(L, "invalid ipv4 address");
+      }
+    } else if (family == AF_INET6) {
+      addr.sin6.sin6_family = AF_INET6;
+      addr.sin6.sin6_port   = 0;
+      if (!inet_pton(family, vip, &addr.sin6.sin6_addr)) {
+        return luaL_error(L, "invalid ipv6 address");
+      }
+    } else {
+      return luaL_error(L, "invalid address family");
+    }
+
+    TSHttpTxnVerifiedAddrSet(http_ctx->txnp, &addr.sa);
+  } else {
+    return luaL_error(L, "incorrect # of arguments to ts.client_request.client_addr.set_verified_addr, receiving %d instead of 2",
+                      n);
+  }
+
+  return 0;
 }

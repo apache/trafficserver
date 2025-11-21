@@ -143,8 +143,7 @@ tr.AddVerifierClientProcess(
     http_ports=[ts.Variables.port],
     https_ports=[ts.Variables.ssl_port],
     ssl_cert="ssl/server_combined.pem",
-    ca_cert="ssl/signer.pem",
-    other_args='--thread-limit 1')
+    ca_cert="ssl/signer.pem")
 
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(ts)

@@ -335,7 +335,7 @@ The overall exchange looks like the following:
 
 A detailed view of the plugin operation.
 
-.. figure:: ../../../uml/images/TLS-Bridge-Plugin.svg
+.. uml:: ../../../uml/TLS-Bridge-Plugin.uml
    :align: center
 
 A sequence diagram focusing on the request / response data flow. There is a :code:`NetVConn` for the
@@ -350,7 +350,7 @@ The :code:`200 OK` sent from the Peer |TS| is parsed and consumed by the plugin.
 means there was an error and the tunnel is shut down. To deal with the Client response clean up the
 response code is stored and used later during cleanup.
 
-.. figure:: ../../../uml/images/TLS-Bridge-Messages.svg
+.. uml:: ../../../uml/TLS-Bridge-Messages.uml
    :align: center
 
 A restartable state machine is used to recognize the end of the Peer |TS| response. The initial part
