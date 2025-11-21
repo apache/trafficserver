@@ -129,6 +129,7 @@ $ cmake --install build
 ```
 trafficserver ............. Top src dir
 ├── ci .................... Quality assurance and other CI tools and configs
+├── cmake ................. CMake build system files
 ├── configs ............... Configurations
 ├── contrib ............... Various contributed auxiliary pieces
 ├── doc ................... Documentation for Traffic Server
@@ -139,50 +140,64 @@ trafficserver ............. Top src dir
 │   ├── static ............ Static resources
 │   └── uml ............... Documentation in UML
 ├── example ............... Example plugins
-├── iocore ................
-│   ├── aio ............... Asynchronous I/O core
-│   ├── cache ............. Disk and RAM cache
-│   ├── dns ............... DNS (asynchronous)
-│   ├── eventsystem ....... Event Driven Engine
-│   ├── hostdb ............ Internal DNS cache
-│   ├── net ............... Network
-│   │   └── quic .......... QUIC implementation
-│   └── utils ............. Utilities
-├── lib ...................
-│   ├── records ........... Library for config files
-│   └── yamlcpp ........... Library for YAML of C++
-├── mgmt .................. JSONRPC server/management and tools
+├── ext ................... External dependencies and extensions
+├── include ............... Header files
+├── lib ................... Third-party libraries
+│   ├── Catch2 ............ Unit testing framework
+│   ├── fastlz ............ Fast compression library
+│   ├── ls-hpack .......... HPACK compression for HTTP/2
+│   ├── swoc .............. Solid Wall of Code utility library
+│   ├── systemtap ......... SystemTap integration
+│   └── yamlcpp ........... YAML parser library
+├── memory-bank ........... AI assistant context documentation
 ├── plugins ............... Stable core plugins
 │   └── experimental ...... Experimental core plugins
-├── proxy ................. HTTP proxy logic
-│   ├── hdrs .............. Headers parsing and management
-│   ├── http .............. The actual HTTP protocol implementation
-│   ├── http2 ............. HTTP/2 implementation
-│   ├── http3 ............. HTTP/3 implementation
-│   ├── logging ........... Flexible logging
-│   └── shared ............ Shared files
 ├── rc .................... Installation programs and scripts
 ├── src ................... Source for all the main binaries / applications
+│   ├── api ............... C Plugin API implementation
+│   ├── cripts ............ Cripts scripting framework
+│   ├── iocore ............ I/O core subsystem
+│   │   ├── aio ........... Asynchronous I/O core
+│   │   ├── cache ......... Disk and RAM cache
+│   │   ├── dns ........... DNS (asynchronous)
+│   │   ├── eventsystem ... Event Driven Engine
+│   │   ├── hostdb ........ Internal DNS cache
+│   │   ├── io_uring ...... io_uring support (Linux)
+│   │   ├── net ........... Network I/O
+│   │   │   └── quic ...... QUIC implementation
+│   │   └── utils ......... I/O utilities
+│   ├── mgmt .............. JSONRPC server/management and tools
+│   ├── proxy ............. HTTP proxy logic
+│   │   ├── hdrs .......... Headers parsing and management
+│   │   ├── http .......... HTTP/1.x implementation
+│   │   ├── http2 ......... HTTP/2 implementation
+│   │   ├── http3 ......... HTTP/3 implementation
+│   │   ├── logging ....... Flexible logging
+│   │   └── shared ........ Shared proxy files
+│   ├── records ........... Configuration records library
+│   ├── shared ............ Shared utilities and RPC
 │   ├── traffic_cache_tool  Tool to interact with the Traffic Server cache
 │   ├── traffic_crashlog .. Helper process that catches Traffic Server crashes
 │   ├── traffic_ctl ....... Command line management tool
 │   ├── traffic_layout .... Display information on the build and runtime directory structure
 │   ├── traffic_logcat .... Convert binary log file to plain text
 │   ├── traffic_logstats .. Log parsing and metrics calculation utility
+│   ├── traffic_quic ...... QUIC client tool
 │   ├── traffic_server .... Main proxy server
 │   ├── traffic_top ....... Top like tool for viewing Traffic Server statistics
 │   ├── traffic_via ....... Tool for decoding the Traffic Server Via header codes
 │   ├── tscore ............ Base / core library
 │   ├── tscpp ............. C++ api wrapper for plugin developers
+│   └── tsutil ............ Core utilities (metrics, debugging, regex, etc.)
 ├── tests ................. Different tests for Traffic Server
 ├── tools ................. Directory of various tools
+├── CONTRIBUTING.md ....... How to contribute to the project
 ├── INSTALL ............... Build and installation guide
-├── LAYOUT ................ Traffic Server default layout
 ├── LICENSE ............... Full license text
 ├── NOTICE ................ Copyright notices
-├── README ................ Intro, links, build info
+├── README.md ............. This file: intro, links, build info
 ├── README-EC2 ............ Info on EC2 support
-├── REVIEWERS ............. (Incomplete) list of areas with committer interest
+├── SECURITY.md ........... Security policy and vulnerability reporting
 └── STATUS ................ Release history and information
 ```
 ## REQUIREMENTS
@@ -202,7 +217,7 @@ ninja
 pkgconfig
 gcc/g++ or clang/clang++
 openssl-devel
-pcre-devel
+pcre2-devel
 ncurses-devel and libcurl-devel(optional, needed for traffic_top)
 libcap-devel (optional, highly recommended)
 hwloc-devel (optional, highly recommended)
@@ -216,7 +231,7 @@ pkg-config
 gcc/g++ or clang/clang++
 zlib1g-dev
 libssl-dev
-libpcre3-dev
+libpcre2-dev
 libcap-dev (optional, highly recommended)
 libhwloc-dev (optional, highly recommended)
 libncurses5-dev (optional, required for e.g.: traffic_top)
@@ -227,7 +242,7 @@ libcurl4-openssl-dev (optional, required for e.g.: traffic_top)
 ```
 build-base
 libexecinfo-dev
-pcre-dev
+pcre2-dev
 libressl-dev
 cmake
 ninja
@@ -240,7 +255,7 @@ cmake
 ninja
 pkg-config
 openssl
-pcre
+pcre2
 ```
 
 ### FreeBSD
@@ -250,7 +265,7 @@ ninja
 devel/gmake
 devel/pkgconf
 security/openssl
-devel/pcre
+devel/pcre2
 textproc/flex (optional, install newer version from ports, fix PATH)
 devel/hwloc (optional, highly recommended)
 ```
