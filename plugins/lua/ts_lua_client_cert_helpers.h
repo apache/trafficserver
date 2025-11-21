@@ -240,8 +240,9 @@ get_x509_san_strings(X509 *cert, int san_type)
         break;
       }
     }
-  }
+    }
 
-  GENERAL_NAMES_free(names);
-  return results;
+    GENERAL_NAMES_free(names);
+    return results;
+  }
 }
