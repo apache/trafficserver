@@ -237,8 +237,8 @@ get_x509_san_strings(X509 *cert, int san_type)
             results.emplace_back(ip_str);
           }
         }
-        break;
       }
+      break;
     }
     }
   }
