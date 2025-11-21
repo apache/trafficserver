@@ -34,7 +34,7 @@ add_atsplugin(
   ObjectSizeCache.cc
 )
 
-target_link_libraries(slice PRIVATE PCRE::PCRE libswoc::libswoc)
+target_link_libraries(slice PRIVATE PkgConfig::PCRE2 libswoc::libswoc)
 if(BUILD_TESTING)
   add_subdirectory(unit-tests)
 endif()

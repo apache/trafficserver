@@ -49,7 +49,7 @@ $ ccmake build
 To specify the location of a dependency (like `--with-*` for autotools builds), you generally set a variable with the `ROOT`. The big exception to this is for openssl. This variable is called `OPENSSL_ROOT_DIR`
 
 ```
-$ cmake -B build -Djemalloc_ROOT=/opt/jemalloc -DPCRE_ROOT=/opt/edge -DOPENSSL_ROOT_DIR=/opt/boringssl
+$ cmake -B build -Djemalloc_ROOT=/opt/jemalloc -DOPENSSL_ROOT_DIR=/opt/boringssl
 ```
 
 #### Using presets to configure the build

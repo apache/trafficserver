@@ -112,7 +112,7 @@ endif()
 target_link_libraries(
   tscore
   PUBLIC OpenSSL::Crypto
-         PCRE::PCRE
+         PkgConfig::PCRE2
          libswoc::libswoc
          yaml-cpp::yaml-cpp
          systemtap::systemtap
