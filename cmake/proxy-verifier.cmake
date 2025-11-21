@@ -15,7 +15,7 @@
 #
 #######################
 
-# This will download and extract proxy-verifier to .git directory and setup variables to point to it.
+# This will download and extract proxy-verifier to git common directory and setup variables to point to it.
 #
 # Required variables:
 #   PROXY_VERIFIER_VERSION
@@ -35,14 +35,26 @@ if(NOT PROXY_VERIFIER_HASH)
   message(FATAL_ERROR "PROXY_VERIFIER_HASH Required")
 endif()
 
-# Download proxy-verifier to .git directory.
-set(PV_ARCHIVE ${CMAKE_SOURCE_DIR}/.git/proxy-verifier/proxy-verifier.tar.gz)
+# Detect the git common directory (works for both regular repos and worktrees).
+execute_process(
+  COMMAND git rev-parse --git-common-dir
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  OUTPUT_VARIABLE GIT_COMMON_DIR
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+  RESULT_VARIABLE GIT_RESULT
+)
+if(NOT GIT_RESULT EQUAL 0)
+  message(FATAL_ERROR "Failed to determine git common directory")
+endif()
+
+# Download proxy-verifier to git common directory.
+set(PV_ARCHIVE ${GIT_COMMON_DIR}/proxy-verifier/proxy-verifier.tar.gz)
 file(
   DOWNLOAD https://ci.trafficserver.apache.org/bintray/proxy-verifier-${PROXY_VERIFIER_VERSION}.tar.gz ${PV_ARCHIVE}
   EXPECTED_HASH ${PROXY_VERIFIER_HASH}
   SHOW_PROGRESS
 )
-file(ARCHIVE_EXTRACT INPUT ${PV_ARCHIVE} DESTINATION ${CMAKE_SOURCE_DIR}/.git)
+file(ARCHIVE_EXTRACT INPUT ${PV_ARCHIVE} DESTINATION ${GIT_COMMON_DIR})
 
 if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux")
   if(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "x86_64"
@@ -70,7 +82,7 @@ else()
   message(FATAL_ERROR "Host ${CMAKE_HOST_SYSTEM_NAME} doesnt support running proxy verifier")
 endif()
 
-set(PROXY_VERIFIER_PATH ${CMAKE_SOURCE_DIR}/.git/proxy-verifier-${PROXY_VERIFIER_VERSION}/${PV_SUBDIR})
+set(PROXY_VERIFIER_PATH ${GIT_COMMON_DIR}/proxy-verifier-${PROXY_VERIFIER_VERSION}/${PV_SUBDIR})
 set(PROXY_VERIFIER_CLIENT ${PROXY_VERIFIER_PATH}/verifier-client)
 set(PROXY_VERIFIER_SERVER ${PROXY_VERIFIER_PATH}/verifier-server)
 
