@@ -32,6 +32,8 @@ if(BUILD_TESTING)
   #
   # Update the above comment about the version to update.
   add_subdirectory(Catch2)
+  include(CTest)
+  include(Catch)
 
   # Disable -Werror=parentheses for Catch2 to avoid issues with older compilers (GCC <=11)
   # that complain about the use of parentheses in macro expansions. We see errors like this:
@@ -51,6 +53,7 @@ if(BUILD_TESTING)
   macro(add_catch2_test)
     cmake_parse_arguments(CATCH2_TEST "" "NAME" "COMMAND" ${ARGN})
     add_test(NAME ${CATCH2_TEST_NAME} COMMAND ${CATCH2_TEST_COMMAND} --order decl)
+    catch_discover_tests(${CATCH2_TEST_NAME})
   endmacro()
 endif()
 
