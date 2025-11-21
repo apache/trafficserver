@@ -29,11 +29,18 @@ get_x509_name_string(X509_NAME *name)
     return "";
   }
 
-  X509_NAME_print_ex(bio, name, 0, XN_FLAG_RFC2253);
+  if (X509_NAME_print_ex(bio, name, 0, XN_FLAG_RFC2253) <= 0) {
+    BIO_free(bio);
+    return "";
+  }
 
   char       *data   = nullptr;
   long        length = BIO_get_mem_data(bio, &data);
-  std::string result(data, length);
+  std::string result;
+
+  if (data && length > 0) {
+    result.assign(data, length);
+  }
 
   BIO_free(bio);
   return result;
@@ -56,11 +63,18 @@ get_x509_serial_string(X509 *cert)
     return "";
   }
 
-  i2a_ASN1_INTEGER(bio, serial);
+  if (i2a_ASN1_INTEGER(bio, serial) <= 0) {
+    BIO_free(bio);
+    return "";
+  }
 
   char       *data   = nullptr;
   long        length = BIO_get_mem_data(bio, &data);
-  std::string result(data, length);
+  std::string result;
+
+  if (data && length > 0) {
+    result.assign(data, length);
+  }
 
   BIO_free(bio);
   return result;
@@ -78,11 +92,18 @@ get_x509_time_string(ASN1_TIME *time)
     return "";
   }
 
-  ASN1_TIME_print(bio, time);
+  if (ASN1_TIME_print(bio, time) <= 0) {
+    BIO_free(bio);
+    return "";
+  }
 
   char       *data   = nullptr;
   long        length = BIO_get_mem_data(bio, &data);
-  std::string result(data, length);
+  std::string result;
+
+  if (data && length > 0) {
+    result.assign(data, length);
+  }
 
   BIO_free(bio);
   return result;
@@ -100,11 +121,18 @@ get_x509_pem_string(X509 *cert)
     return "";
   }
 
-  PEM_write_bio_X509(bio, cert);
+  if (PEM_write_bio_X509(bio, cert) <= 0) {
+    BIO_free(bio);
+    return "";
+  }
 
   char       *data   = nullptr;
   long        length = BIO_get_mem_data(bio, &data);
-  std::string result(data, length);
+  std::string result;
+
+  if (data && length > 0) {
+    result.assign(data, length);
+  }
 
   BIO_free(bio);
   return result;
@@ -134,15 +162,25 @@ get_x509_signature_string(X509 *cert)
   }
 
   for (int i = 0; i < sig->length; i++) {
-    BIO_printf(bio, "%02x", sig->data[i]);
+    if (BIO_printf(bio, "%02x", sig->data[i]) <= 0) {
+      BIO_free(bio);
+      return "";
+    }
     if (i < sig->length - 1) {
-      BIO_printf(bio, ":");
+      if (BIO_printf(bio, ":") <= 0) {
+        BIO_free(bio);
+        return "";
+      }
     }
   }
 
   char       *data   = nullptr;
   long        length = BIO_get_mem_data(bio, &data);
-  std::string result(data, length);
+  std::string result;
+
+  if (data && length > 0) {
+    result.assign(data, length);
+  }
 
   BIO_free(bio);
   return result;
@@ -198,9 +236,9 @@ get_x509_san_strings(X509 *cert, int san_type)
           if (inet_ntop(AF_INET6, data, ip_str, sizeof(ip_str)) != nullptr) {
             results.emplace_back(ip_str);
           }
+        }
+        break;
       }
-      break;
-    }
     }
   }
 
