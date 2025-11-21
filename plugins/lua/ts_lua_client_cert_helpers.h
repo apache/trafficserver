@@ -191,12 +191,13 @@ get_x509_san_strings(X509 *cert, int san_type)
         char                 ip_str[INET6_ADDRSTRLEN];
 
         if (len == 4) { // IPv4
-          inet_ntop(AF_INET, data, ip_str, sizeof(ip_str));
-          results.emplace_back(ip_str);
+          if (inet_ntop(AF_INET, data, ip_str, sizeof(ip_str)) != nullptr) {
+            results.emplace_back(ip_str);
+          }
         } else if (len == 16) { // IPv6
-          inet_ntop(AF_INET6, data, ip_str, sizeof(ip_str));
-          results.emplace_back(ip_str);
-        }
+          if (inet_ntop(AF_INET6, data, ip_str, sizeof(ip_str)) != nullptr) {
+            results.emplace_back(ip_str);
+          }
       }
       break;
     }
