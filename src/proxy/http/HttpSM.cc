@@ -1032,10 +1032,9 @@ HttpSM::state_read_push_response_header(int event, void *data)
   ink_assert(t_state.current.server == nullptr);
 
   switch (event) {
-  case VC_EVENT_EOS: {
+  case VC_EVENT_EOS:
     _ua.get_entry()->eos = true;
     log_server_close_with_origin(t_state, "Server closed connection while reading PUSH response header.");
-  }
     // Fall through
 
   case VC_EVENT_READ_READY:
