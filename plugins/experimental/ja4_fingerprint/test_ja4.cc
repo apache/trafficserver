@@ -230,7 +230,12 @@ TEST_CASE("JA4")
           "when we create a JA4 fingerprint, "
           "then indices [8,9] thereof should contain \"aa\".")
   {
+    // Suppress false positive -Wrestrict warning in GCC 12 when optimizing
+    // See: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=105329
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wrestrict"
     TLS_summary.ALPN = "a";
+#pragma GCC diagnostic pop
     CHECK("aa" == call_JA4(TLS_summary).substr(8, 2));
   }
 
