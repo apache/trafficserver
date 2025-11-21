@@ -1258,6 +1258,353 @@ Here is an example:
 
 :ref:`TOP <admin-plugins-ts-lua>`
 
+ts.client_request.client_cert_get_pem
+-----------------------------------------------
+**syntax:** *ts.client_request.client_cert_get_pem()*
+
+**context:** do_remap/do_os_response or do_global_* or later
+
+**description**: Get the PEM-encoded client certificate (for mTLS connections).
+
+Returns the client certificate in PEM format, or nil if no client certificate is present.
+
+Here is an example:
+
+::
+
+    function do_global_read_request()
+        pem = ts.client_request.client_cert_get_pem()
+        if pem then
+            ts.debug('Client cert PEM: ' .. pem)
+        end
+    end
+
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
+ts.client_request.client_cert_get_subject
+-----------------------------------------------
+**syntax:** *ts.client_request.client_cert_get_subject()*
+
+**context:** do_remap/do_os_response or do_global_* or later
+
+**description**: Get the subject DN from the client certificate.
+
+Returns the subject distinguished name in RFC2253 format, or nil if not available.
+
+Here is an example:
+
+::
+
+    function do_global_read_request()
+        subject = ts.client_request.client_cert_get_subject()
+        if subject then
+            ts.debug('Client cert subject: ' .. subject)
+        end
+    end
+
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
+ts.client_request.client_cert_get_issuer
+-----------------------------------------------
+**syntax:** *ts.client_request.client_cert_get_issuer()*
+
+**context:** do_remap/do_os_response or do_global_* or later
+
+**description**: Get the issuer DN from the client certificate.
+
+Returns the issuer distinguished name in RFC2253 format, or nil if not available.
+
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
+ts.client_request.client_cert_get_serial
+-----------------------------------------------
+**syntax:** *ts.client_request.client_cert_get_serial()*
+
+**context:** do_remap/do_os_response or do_global_* or later
+
+**description**: Get the serial number from the client certificate.
+
+Returns the certificate serial number as a string, or nil if not available.
+
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
+ts.client_request.client_cert_get_signature
+-----------------------------------------------
+**syntax:** *ts.client_request.client_cert_get_signature()*
+
+**context:** do_remap/do_os_response or do_global_* or later
+
+**description**: Get the signature from the client certificate.
+
+Returns the certificate signature as a colon-separated hex string, or nil if not available.
+
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
+ts.client_request.client_cert_get_not_before
+-----------------------------------------------
+**syntax:** *ts.client_request.client_cert_get_not_before()*
+
+**context:** do_remap/do_os_response or do_global_* or later
+
+**description**: Get the "not before" timestamp from the client certificate.
+
+Returns the certificate validity start date/time as a string, or nil if not available.
+
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
+ts.client_request.client_cert_get_not_after
+-----------------------------------------------
+**syntax:** *ts.client_request.client_cert_get_not_after()*
+
+**context:** do_remap/do_os_response or do_global_* or later
+
+**description**: Get the "not after" timestamp from the client certificate.
+
+Returns the certificate validity end date/time as a string, or nil if not available.
+
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
+ts.client_request.client_cert_get_version
+-----------------------------------------------
+**syntax:** *ts.client_request.client_cert_get_version()*
+
+**context:** do_remap/do_os_response or do_global_* or later
+
+**description**: Get the X.509 version from the client certificate.
+
+Returns the certificate version as an integer (typically 2 for v3 certificates), or nil if not available.
+
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
+ts.client_request.client_cert_get_san_dns
+-----------------------------------------------
+**syntax:** *ts.client_request.client_cert_get_san_dns()*
+
+**context:** do_remap/do_os_response or do_global_* or later
+
+**description**: Get DNS Subject Alternative Names from the client certificate.
+
+Returns a Lua table (array) of DNS names, or nil if none are present.
+
+Here is an example:
+
+::
+
+    function do_global_read_request()
+        dns_names = ts.client_request.client_cert_get_san_dns()
+        if dns_names then
+            for i, name in ipairs(dns_names) do
+                ts.debug('DNS SAN: ' .. name)
+            end
+        end
+    end
+
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
+ts.client_request.client_cert_get_san_ip
+-----------------------------------------------
+**syntax:** *ts.client_request.client_cert_get_san_ip()*
+
+**context:** do_remap/do_os_response or do_global_* or later
+
+**description**: Get IP address Subject Alternative Names from the client certificate.
+
+Returns a Lua table (array) of IP addresses, or nil if none are present.
+
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
+ts.client_request.client_cert_get_san_email
+-----------------------------------------------
+**syntax:** *ts.client_request.client_cert_get_san_email()*
+
+**context:** do_remap/do_os_response or do_global_* or later
+
+**description**: Get email Subject Alternative Names from the client certificate.
+
+Returns a Lua table (array) of email addresses, or nil if none are present.
+
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
+ts.client_request.client_cert_get_san_uri
+-----------------------------------------------
+**syntax:** *ts.client_request.client_cert_get_san_uri()*
+
+**context:** do_remap/do_os_response or do_global_* or later
+
+**description**: Get URI Subject Alternative Names from the client certificate.
+
+Returns a Lua table (array) of URIs, or nil if none are present.
+
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
+ts.client_request.server_cert_get_pem
+-----------------------------------------------
+**syntax:** *ts.client_request.server_cert_get_pem()*
+
+**context:** do_remap/do_os_response or do_global_* or later
+
+**description**: Get the PEM-encoded server certificate (the certificate ATS presented to the client).
+
+Returns the server certificate in PEM format, or nil if not available.
+
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
+ts.client_request.server_cert_get_subject
+-----------------------------------------------
+**syntax:** *ts.client_request.server_cert_get_subject()*
+
+**context:** do_remap/do_os_response or do_global_* or later
+
+**description**: Get the subject DN from the server certificate.
+
+Returns the subject distinguished name in RFC2253 format, or nil if not available.
+
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
+ts.client_request.server_cert_get_issuer
+-----------------------------------------------
+**syntax:** *ts.client_request.server_cert_get_issuer()*
+
+**context:** do_remap/do_os_response or do_global_* or later
+
+**description**: Get the issuer DN from the server certificate.
+
+Returns the issuer distinguished name in RFC2253 format, or nil if not available.
+
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
+ts.client_request.server_cert_get_serial
+-----------------------------------------------
+**syntax:** *ts.client_request.server_cert_get_serial()*
+
+**context:** do_remap/do_os_response or do_global_* or later
+
+**description**: Get the serial number from the server certificate.
+
+Returns the certificate serial number as a string, or nil if not available.
+
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
+ts.client_request.server_cert_get_signature
+-----------------------------------------------
+**syntax:** *ts.client_request.server_cert_get_signature()*
+
+**context:** do_remap/do_os_response or do_global_* or later
+
+**description**: Get the signature from the server certificate.
+
+Returns the certificate signature as a colon-separated hex string, or nil if not available.
+
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
+ts.client_request.server_cert_get_not_before
+-----------------------------------------------
+**syntax:** *ts.client_request.server_cert_get_not_before()*
+
+**context:** do_remap/do_os_response or do_global_* or later
+
+**description**: Get the "not before" timestamp from the server certificate.
+
+Returns the certificate validity start date/time as a string, or nil if not available.
+
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
+ts.client_request.server_cert_get_not_after
+-----------------------------------------------
+**syntax:** *ts.client_request.server_cert_get_not_after()*
+
+**context:** do_remap/do_os_response or do_global_* or later
+
+**description**: Get the "not after" timestamp from the server certificate.
+
+Returns the certificate validity end date/time as a string, or nil if not available.
+
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
+ts.client_request.server_cert_get_version
+-----------------------------------------------
+**syntax:** *ts.client_request.server_cert_get_version()*
+
+**context:** do_remap/do_os_response or do_global_* or later
+
+**description**: Get the X.509 version from the server certificate.
+
+Returns the certificate version as an integer (typically 2 for v3 certificates), or nil if not available.
+
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
+ts.client_request.server_cert_get_san_dns
+-----------------------------------------------
+**syntax:** *ts.client_request.server_cert_get_san_dns()*
+
+**context:** do_remap/do_os_response or do_global_* or later
+
+**description**: Get DNS Subject Alternative Names from the server certificate.
+
+Returns a Lua table (array) of DNS names, or nil if none are present.
+
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
+ts.client_request.server_cert_get_san_ip
+-----------------------------------------------
+**syntax:** *ts.client_request.server_cert_get_san_ip()*
+
+**context:** do_remap/do_os_response or do_global_* or later
+
+**description**: Get IP address Subject Alternative Names from the server certificate.
+
+Returns a Lua table (array) of IP addresses, or nil if none are present.
+
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
+ts.client_request.server_cert_get_san_email
+-----------------------------------------------
+**syntax:** *ts.client_request.server_cert_get_san_email()*
+
+**context:** do_remap/do_os_response or do_global_* or later
+
+**description**: Get email Subject Alternative Names from the server certificate.
+
+Returns a Lua table (array) of email addresses, or nil if none are present.
+
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
+ts.client_request.server_cert_get_san_uri
+-----------------------------------------------
+**syntax:** *ts.client_request.server_cert_get_san_uri()*
+
+**context:** do_remap/do_os_response or do_global_* or later
+
+**description**: Get URI Subject Alternative Names from the server certificate.
+
+Returns a Lua table (array) of URIs, or nil if none are present.
+
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
 ts.http.set_cache_url
 ---------------------
 **syntax:** *ts.http.set_cache_url(KEY_URL)*
