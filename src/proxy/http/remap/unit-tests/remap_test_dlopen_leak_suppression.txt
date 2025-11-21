@@ -24,3 +24,6 @@
 # PluginDso::load
 leak:PluginDso::load
 leak:call_init
+# On Rocky Linux 8, ASAN reports leaks from the dynamic linker during dlopen
+# These are false positives as we properly call dlclose for each dlopen
+leak:ld-linux-x86-64.so

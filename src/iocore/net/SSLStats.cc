@@ -24,8 +24,8 @@
 #include "SSLStats.h"
 #include "P_SSLConfig.h"
 #include "P_SSLUtils.h"
-#include "../../records/P_RecProcess.h"
 #include "iocore/net/SSLMultiCertConfigLoader.h"
+#include "records/RecProcess.h"
 
 #include <openssl/err.h>
 
@@ -34,10 +34,12 @@
 SSLStatsBlock                                                   ssl_rsb;
 std::unordered_map<std::string, Metrics::Counter::AtomicType *> cipher_map;
 
-#ifdef OPENSSL_IS_BORINGSSL
+#if defined(OPENSSL_IS_BORINGSSL) || HAVE_SSL_CTX_GET0_IMPLEMENTED_GROUPS
 std::unordered_map<std::string, Metrics::Counter::AtomicType *> tls_group_map;
-#elif defined(SSL_get_negotiated_group)
+std::unordered_map<std::string, Metrics::Counter::AtomicType *> tls_group_handshake_time_map;
+#elif HAVE_SSL_GET_NEGOTIATED_GROUP
 std::unordered_map<int, Metrics::Counter::AtomicType *> tls_group_map;
+std::unordered_map<int, Metrics::Counter::AtomicType *> tls_group_handshake_time_map;
 #endif
 
 namespace
@@ -48,7 +50,7 @@ DbgCtl dbg_ctl_ssl{"ssl"};
 constexpr std::string_view UNKNOWN_CIPHER{"(NONE)"};
 #endif
 
-#if defined(OPENSSL_IS_BORINGSSL) || defined(SSL_get_negotiated_group)
+#if defined(OPENSSL_IS_BORINGSSL) || HAVE_SSL_CTX_GET0_IMPLEMENTED_GROUPS || HAVE_SSL_GET_NEGOTIATED_GROUP
 
 template <typename T>
 void
@@ -61,10 +63,20 @@ add_group_stat(T key, const std::string &name)
     tls_group_map.emplace(key, metric);
     Dbg(dbg_ctl_ssl, "registering SSL group metric '%s'", name.c_str());
   }
-}
-#endif // OPENSSL_IS_BORINGSSL or SSL_get_negotiated_group
 
-#if not defined(OPENSSL_IS_BORINGSSL) and defined(SSL_get_negotiated_group) // OPENSSL 3.x
+  // Register corresponding handshake time metric
+  if (tls_group_handshake_time_map.find(key) == tls_group_handshake_time_map.end()) {
+    Metrics::Counter::AtomicType *time_metric =
+      Metrics::Counter::createPtr("proxy.process.ssl.group.user_agent." + name + ".handshake_time");
+
+    tls_group_handshake_time_map.emplace(key, time_metric);
+    Dbg(dbg_ctl_ssl, "registering SSL group handshake time metric '%s.handshake_time'", name.c_str());
+  }
+}
+#endif // OPENSSL_IS_BORINGSSL or HAVE_SSL_CTX_GET0_IMPLEMENTED_GROUPS or HAVE_SSL_GET_NEGOTIATED_GROUP
+
+#if not defined(OPENSSL_IS_BORINGSSL) and not HAVE_SSL_CTX_GET0_IMPLEMENTED_GROUPS and \
+  HAVE_SSL_GET_NEGOTIATED_GROUP // OPENSSL 3.x without SSL_CTX_get0_implemented_groups
 
 struct TLSGroup {
   int         nid;
@@ -104,7 +116,7 @@ const TLSGroup TLS_GROUPS[] = {
 #endif
 };
 
-#endif // OPENSSL 3.x
+#endif // OPENSSL 3.x without SSL_CTX_get0_implemented_groups
 
 } // end anonymous namespace
 
@@ -113,6 +125,7 @@ void
 SSLPeriodicMetricsUpdate()
 {
   SSLCertificateConfig::scoped_config certLookup;
+  SSLConfig::scoped_config            sslConfig;
 
   int64_t sessions = 0;
   int64_t hits     = 0;
@@ -120,6 +133,43 @@ SSLPeriodicMetricsUpdate()
   int64_t timeouts = 0;
 
   Dbg(dbg_ctl_ssl, "Starting to update the new session metrics");
+
+  // Check if we're using the ATS session cache implementation rather than the
+  // OpenSSL internal cache.
+  bool const using_ats_session_cache =
+    sslConfig && sslConfig->ssl_session_cache == SSLConfigParams::SSL_SESSION_CACHE_MODE_SERVER_ATS_IMPL;
+
+  if (using_ats_session_cache) {
+    // Most of the SSL_CTX_sess_*() metrics are inclusive of OpenSSL's
+    // "internal" cache *and* the ATS "external" cache. The exception is the
+    // SSL_CTX_sess_misses() metric, which curiously only counts OpenSSL
+    // internal misses. Therefore, to make that metric accurate for the
+    // situation where ATS manages sessions via its own cache, which is the
+    // default configuration (see proxy.config.ssl.session_cache.value), we
+    // have to add in the misses we've counted in the
+    // TLSSessionResumptionSupport.cc callback hooks.
+
+    // We count timeouts as misses in TLSSessionResumptionSupport.cc for
+    // session_cache_miss, whereas OpenSSL tracks them separately and our
+    // user_agent_session_miss follows suit.
+    int64_t session_cache_timeouts = 0;
+    if (ssl_rsb.session_cache_timeout) {
+      session_cache_timeouts = Metrics::Counter::load(ssl_rsb.session_cache_timeout);
+    }
+#if defined(OPENSSL_IS_BORINGSSL)
+    // On BoringSSL, all SSL_CTX_sess_*() functions always return 0 for the ATS
+    // external cache, making them unusable for monitoring. We currently address
+    // hits and misses because they are the most relevant metrics for session
+    // cache performance monitoring and should be treated as a pair.
+    if (ssl_rsb.session_cache_hit) {
+      hits = Metrics::Counter::load(ssl_rsb.session_cache_hit);
+    }
+#endif
+    if (ssl_rsb.session_cache_miss) {
+      misses  = Metrics::Counter::load(ssl_rsb.session_cache_miss);
+      misses -= (session_cache_timeouts > misses) ? 0 : session_cache_timeouts;
+    }
+  }
   if (certLookup) {
     const unsigned ctxCount = certLookup->count();
     for (size_t i = 0; i < ctxCount; i++) {
@@ -136,6 +186,9 @@ SSLPeriodicMetricsUpdate()
     }
   }
 
+  // Store cumulative session statistics as gauges. These metrics represent cumulative
+  // counters semantically but are implemented as gauges because they need to be "set"
+  // to values read from external counter sources (OpenSSL and/or ATS session cache).
   Metrics::Gauge::store(ssl_rsb.user_agent_sessions, sessions);
   Metrics::Gauge::store(ssl_rsb.user_agent_session_hit, hits);
   Metrics::Gauge::store(ssl_rsb.user_agent_session_miss, misses);
@@ -181,11 +234,13 @@ SSLInitializeStatistics()
   ssl_rsb.sni_name_set_failure               = Metrics::Counter::createPtr("proxy.process.ssl.ssl_sni_name_set_failure");
   ssl_rsb.origin_session_cache_hit           = Metrics::Counter::createPtr("proxy.process.ssl.ssl_origin_session_cache_hit");
   ssl_rsb.origin_session_cache_miss          = Metrics::Counter::createPtr("proxy.process.ssl.ssl_origin_session_cache_miss");
+  ssl_rsb.origin_session_cache_timeout       = Metrics::Counter::createPtr("proxy.process.ssl.ssl_origin_session_cache_timeout");
   ssl_rsb.session_cache_eviction             = Metrics::Counter::createPtr("proxy.process.ssl.ssl_session_cache_eviction");
   ssl_rsb.session_cache_hit                  = Metrics::Counter::createPtr("proxy.process.ssl.ssl_session_cache_hit");
   ssl_rsb.session_cache_lock_contention      = Metrics::Counter::createPtr("proxy.process.ssl.ssl_session_cache_lock_contention");
   ssl_rsb.session_cache_miss                 = Metrics::Counter::createPtr("proxy.process.ssl.ssl_session_cache_miss");
   ssl_rsb.session_cache_new_session          = Metrics::Counter::createPtr("proxy.process.ssl.ssl_session_cache_new_session");
+  ssl_rsb.session_cache_timeout              = Metrics::Counter::createPtr("proxy.process.ssl.ssl_session_cache_timeout");
   ssl_rsb.total_attempts_handshake_count_in  = Metrics::Counter::createPtr("proxy.process.ssl.total_attempts_handshake_count_in");
   ssl_rsb.total_attempts_handshake_count_out = Metrics::Counter::createPtr("proxy.process.ssl.total_attempts_handshake_count_out");
   ssl_rsb.total_dyn_def_tls_record_count     = Metrics::Counter::createPtr("proxy.process.ssl.default_record_size_count");
@@ -240,16 +295,18 @@ SSLInitializeStatistics()
     add_cipher_stat(cipher_name, stat_name);
   }
 #else
-  // Get and register the SSL cipher stats. Note that we are using the default SSL context to obtain
-  // the cipher list. This means that the set of ciphers is fixed by the build configuration and not
-  // filtered by proxy.config.ssl.server.cipher_suite. This keeps the set of cipher suites stable across
-  // configuration reloads and works for the case where we honor the client cipher preference.
-  SSLMultiCertConfigLoader loader(nullptr);
-  SSL_CTX                 *ctx  = loader.default_server_ssl_ctx();
-  SSL                     *ssl  = SSL_new(ctx);
+  // Acquire the loaded SSL certificate configuration to enumerate ciphers and groups.
+  // This must be called AFTER SSLCertificateConfig::startup().
+  SSLCertificateConfig::scoped_config lookup;
+  if (!lookup || !lookup->ssl_default) {
+    Dbg(dbg_ctl_ssl, "No SSL configuration, skipping cipher/group statistics initialization");
+    return;
+  }
+
+  SSL_CTX *ctx                  = lookup->ssl_default.get();
+  SSL     *ssl                  = SSL_new(ctx);
   STACK_OF(SSL_CIPHER) *ciphers = SSL_get_ciphers(ssl);
 
-  // BoringSSL has sk_SSL_CIPHER_num() return a size_t (well, sk_num() is)
   for (int index = 0; index < static_cast<int>(sk_SSL_CIPHER_num(ciphers)); index++) {
     SSL_CIPHER *cipher     = const_cast<SSL_CIPHER *>(sk_SSL_CIPHER_value(ciphers, index));
     const char *cipherName = SSL_CIPHER_get_name(cipher);
@@ -258,14 +315,48 @@ SSLInitializeStatistics()
     add_cipher_stat(cipherName, statName);
   }
 
+  // TLS Group
+#if HAVE_SSL_CTX_GET0_IMPLEMENTED_GROUPS
+  STACK_OF(OPENSSL_CSTRING) *group_names = sk_OPENSSL_CSTRING_new_null();
+  if (group_names == nullptr) {
+    Error("Failed to allocate stack for TLS group names");
+  } else {
+    constexpr int ALL_GROUPS = 1;
+    Dbg(dbg_ctl_ssl, "Calling SSL_CTX_get0_implemented_groups on loaded SSL context");
+    if (SSL_CTX_get0_implemented_groups(ctx, ALL_GROUPS, group_names) != 1) {
+      Error("Failed to get implemented groups via SSL_CTX_get0_implemented_groups");
+    }
+    int const num_groups = sk_OPENSSL_CSTRING_num(group_names);
+    Dbg(dbg_ctl_ssl, "SSL_CTX_get0_implemented_groups returned %d groups", num_groups);
+
+    for (int index = 0; index < num_groups; index++) {
+      const char *name = sk_OPENSSL_CSTRING_value(group_names, index);
+      if (name == nullptr) {
+        Error("NULL group name returned for index %d in SSL_CTX_get0_implemented_groups", index);
+        continue;
+      }
+      add_group_stat<std::string>(name, name);
+    }
+
+    // Note: We don't free group_names as the strings are owned by OpenSSL's internal structures.
+    sk_OPENSSL_CSTRING_free(group_names);
+  }
+
+  // Add "OTHER" for groups not discovered.
+  add_group_stat<std::string>("OTHER", "OTHER");
+#elif HAVE_SSL_GET_NEGOTIATED_GROUP
+  // Use static NID table for group registration.
+  for (auto group : TLS_GROUPS) {
+    add_group_stat<int>(group.nid, group.name);
+  }
+#endif // HAVE_SSL_CTX_GET0_IMPLEMENTED_GROUPS or HAVE_SSL_GET_NEGOTIATED_GROUP
+
   SSL_free(ssl);
-  SSLReleaseContext(ctx);
 #endif
 
   // Add "OTHER" for ciphers not on the map
   add_cipher_stat(SSL_CIPHER_STAT_OTHER.c_str(), "proxy.process.ssl.cipher.user_agent." + SSL_CIPHER_STAT_OTHER);
 
-  // TLS Group
 #if defined(OPENSSL_IS_BORINGSSL)
   size_t                    list_size = SSL_get_all_group_names(nullptr, 0);
   std::vector<const char *> group_list(list_size);
@@ -274,9 +365,5 @@ SSLInitializeStatistics()
   for (const char *name : group_list) {
     add_group_stat<std::string>(name, name);
   }
-#elif defined(SSL_get_negotiated_group)
-  for (auto group : TLS_GROUPS) {
-    add_group_stat<int>(group.nid, group.name);
-  }
-#endif // OPENSSL_IS_BORINGSSL or SSL_get_negotiated_group
+#endif // OPENSSL_IS_BORINGSSL
 }

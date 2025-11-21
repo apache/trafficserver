@@ -95,7 +95,7 @@ namespace
         return false;
       }
     } else if constexpr (std::is_same_v<T, std::string>) {
-      if (RecSetRecordString(info.name.c_str(), const_cast<char *>(info.value.c_str()), REC_SOURCE_DEFAULT) != REC_ERR_OKAY) {
+      if (RecSetRecordString(info.name.c_str(), info.value.c_str(), REC_SOURCE_DEFAULT) != REC_ERR_OKAY) {
         return false;
       }
     }

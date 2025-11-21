@@ -84,10 +84,6 @@ RecErrT _RecRegisterStatFloat(RecT rec_type, const char *name, RecFloat data_def
 #define RecRegisterStatFloat(rec_type, name, data_default, persist_type) \
   _RecRegisterStatFloat((rec_type), (name), (data_default), REC_PERSISTENCE_TYPE(persist_type))
 
-RecErrT _RecRegisterStatString(RecT rec_type, const char *name, RecStringConst data_default, RecPersistT persist_type);
-#define RecRegisterStatString(rec_type, name, data_default, persist_type) \
-  _RecRegisterStatString((rec_type), (name), (data_default), REC_PERSISTENCE_TYPE(persist_type))
-
 RecErrT _RecRegisterStatCounter(RecT rec_type, const char *name, RecCounter data_default, RecPersistT persist_type);
 #define RecRegisterStatCounter(rec_type, name, data_default, persist_type) \
   _RecRegisterStatCounter((rec_type), (name), (data_default), REC_PERSISTENCE_TYPE(persist_type))
@@ -161,7 +157,7 @@ void Enable_Config_Var(std::string_view const &name, RecContextCb record_cb, Rec
 
 RecErrT RecSetRecordInt(const char *name, RecInt rec_int, RecSourceT source, bool lock = true);
 RecErrT RecSetRecordFloat(const char *name, RecFloat rec_float, RecSourceT source, bool lock = true);
-RecErrT RecSetRecordString(const char *name, const RecString rec_string, RecSourceT source, bool lock = true);
+RecErrT RecSetRecordString(const char *name, RecStringConst rec_string, RecSourceT source, bool lock = true);
 RecErrT RecSetRecordCounter(const char *name, RecCounter rec_counter, RecSourceT source, bool lock = true);
 
 std::optional<RecInt>           RecGetRecordInt(const char *name, bool lock = true);

@@ -1,5 +1,7 @@
 cond %{REMAP_PSEUDO_HOOK} [AND]
 cond %{CLIENT-HEADER:X-Remap} ="yes"
     rm-header X-Remap
+    add-header X-Appended "HRW4U"
 else
     set-header X-Remap "It was not yes"
+    rm-header X-Appended

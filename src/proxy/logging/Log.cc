@@ -343,6 +343,11 @@ Log::init_fields()
   global_field_list.add(field, false);
   field_symbol_hash.emplace("chih", field);
 
+  field = new LogField("client_host_ip_verified", "chiv", LogField::IP, &LogAccess::marshal_client_host_ip_verified,
+                       &LogAccess::unmarshal_ip_to_str);
+  global_field_list.add(field, false);
+  field_symbol_hash.emplace("chiv", field);
+
   // interface ip
 
   field =
@@ -530,6 +535,11 @@ Log::init_fields()
   global_field_list.add(field, false);
   field_symbol_hash.emplace("cqssr", field);
 
+  field = new LogField("client_req_ssl_resumption_type", "cqssrt", LogField::dINT, &LogAccess::marshal_client_ssl_resumption_type,
+                       &LogAccess::unmarshal_int_to_str);
+  global_field_list.add(field, false);
+  field_symbol_hash.emplace("cqssrt", field);
+
   field = new LogField("client_req_is_internal", "cqint", LogField::sINT, &LogAccess::marshal_client_req_is_internal,
                        &LogAccess::unmarshal_int_to_str);
   global_field_list.add(field, false);
@@ -628,6 +638,11 @@ Log::init_fields()
                        &LogAccess::unmarshal_http_status);
   global_field_list.add(field, false);
   field_symbol_hash.emplace("pssc", field);
+
+  field = new LogField("proxy_response_status_code_setter", "prscs", LogField::STRING, &LogAccess::marshal_status_plugin_entry,
+                       &LogAccess::unmarshal_str);
+  global_field_list.add(field, false);
+  field_symbol_hash.emplace("prscs", field);
 
   field = new LogField("proxy_resp_header_len", "pshl", LogField::sINT, &LogAccess::marshal_proxy_resp_header_len,
                        &LogAccess::unmarshal_int_to_str);

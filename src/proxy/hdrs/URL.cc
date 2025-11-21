@@ -34,7 +34,9 @@ c_str_view URL_SCHEME_FILE;
 c_str_view URL_SCHEME_FTP;
 c_str_view URL_SCHEME_GOPHER;
 c_str_view URL_SCHEME_HTTP;
+c_str_view URL_SCHEME_HTTP_UDS;
 c_str_view URL_SCHEME_HTTPS;
+c_str_view URL_SCHEME_HTTPS_UDS;
 c_str_view URL_SCHEME_WSS;
 c_str_view URL_SCHEME_WS;
 c_str_view URL_SCHEME_MAILTO;
@@ -76,7 +78,10 @@ namespace
 {
 // Whether we should implement url_CryptoHash_get() using url_CryptoHash_get_fast(). Note that
 // url_CryptoHash_get_fast() does NOT produce the same result as url_CryptoHash_get_general().
-int url_hash_method = 0;
+constexpr int url_hash_method = 0;
+
+// Buffer size for url_CryptoHash_get() and url_CryptoHash_get_92().
+constexpr size_t BUFSIZE = 4096;
 
 DbgCtl dbg_ctl_http{"http"};
 DbgCtl dbg_ctl_url_cachekey{"url_cachekey"};
@@ -142,32 +147,35 @@ url_init()
 
     hdrtoken_init();
 
-    URL_SCHEME_FILE     = hdrtoken_string_to_wks_sv("file");
-    URL_SCHEME_FTP      = hdrtoken_string_to_wks_sv("ftp");
-    URL_SCHEME_GOPHER   = hdrtoken_string_to_wks_sv("gopher");
-    URL_SCHEME_HTTP     = hdrtoken_string_to_wks_sv("http");
-    URL_SCHEME_HTTPS    = hdrtoken_string_to_wks_sv("https");
-    URL_SCHEME_WSS      = hdrtoken_string_to_wks_sv("wss");
-    URL_SCHEME_WS       = hdrtoken_string_to_wks_sv("ws");
-    URL_SCHEME_MAILTO   = hdrtoken_string_to_wks_sv("mailto");
-    URL_SCHEME_NEWS     = hdrtoken_string_to_wks_sv("news");
-    URL_SCHEME_NNTP     = hdrtoken_string_to_wks_sv("nntp");
-    URL_SCHEME_PROSPERO = hdrtoken_string_to_wks_sv("prospero");
-    URL_SCHEME_TELNET   = hdrtoken_string_to_wks_sv("telnet");
-    URL_SCHEME_TUNNEL   = hdrtoken_string_to_wks_sv("tunnel");
-    URL_SCHEME_WAIS     = hdrtoken_string_to_wks_sv("wais");
-    URL_SCHEME_PNM      = hdrtoken_string_to_wks_sv("pnm");
-    URL_SCHEME_RTSP     = hdrtoken_string_to_wks_sv("rtsp");
-    URL_SCHEME_RTSPU    = hdrtoken_string_to_wks_sv("rtspu");
-    URL_SCHEME_MMS      = hdrtoken_string_to_wks_sv("mms");
-    URL_SCHEME_MMSU     = hdrtoken_string_to_wks_sv("mmsu");
-    URL_SCHEME_MMST     = hdrtoken_string_to_wks_sv("mmst");
+    URL_SCHEME_FILE      = hdrtoken_string_to_wks_sv("file");
+    URL_SCHEME_FTP       = hdrtoken_string_to_wks_sv("ftp");
+    URL_SCHEME_GOPHER    = hdrtoken_string_to_wks_sv("gopher");
+    URL_SCHEME_HTTP      = hdrtoken_string_to_wks_sv("http");
+    URL_SCHEME_HTTP_UDS  = c_str_view("http+unix", 9);
+    URL_SCHEME_HTTPS     = hdrtoken_string_to_wks_sv("https");
+    URL_SCHEME_HTTPS_UDS = c_str_view("https+unix", 10);
+    URL_SCHEME_WSS       = hdrtoken_string_to_wks_sv("wss");
+    URL_SCHEME_WS        = hdrtoken_string_to_wks_sv("ws");
+    URL_SCHEME_MAILTO    = hdrtoken_string_to_wks_sv("mailto");
+    URL_SCHEME_NEWS      = hdrtoken_string_to_wks_sv("news");
+    URL_SCHEME_NNTP      = hdrtoken_string_to_wks_sv("nntp");
+    URL_SCHEME_PROSPERO  = hdrtoken_string_to_wks_sv("prospero");
+    URL_SCHEME_TELNET    = hdrtoken_string_to_wks_sv("telnet");
+    URL_SCHEME_TUNNEL    = hdrtoken_string_to_wks_sv("tunnel");
+    URL_SCHEME_WAIS      = hdrtoken_string_to_wks_sv("wais");
+    URL_SCHEME_PNM       = hdrtoken_string_to_wks_sv("pnm");
+    URL_SCHEME_RTSP      = hdrtoken_string_to_wks_sv("rtsp");
+    URL_SCHEME_RTSPU     = hdrtoken_string_to_wks_sv("rtspu");
+    URL_SCHEME_MMS       = hdrtoken_string_to_wks_sv("mms");
+    URL_SCHEME_MMSU      = hdrtoken_string_to_wks_sv("mmsu");
+    URL_SCHEME_MMST      = hdrtoken_string_to_wks_sv("mmst");
 
     ink_assert(URL_SCHEME_FILE.c_str() && URL_SCHEME_FTP.c_str() && URL_SCHEME_GOPHER.c_str() && URL_SCHEME_HTTP.c_str() &&
-               URL_SCHEME_HTTPS.c_str() && URL_SCHEME_WS.c_str() && URL_SCHEME_WSS.c_str() && URL_SCHEME_MAILTO.c_str() &&
-               URL_SCHEME_NEWS.c_str() && URL_SCHEME_NNTP.c_str() && URL_SCHEME_PROSPERO.c_str() && URL_SCHEME_TELNET.c_str() &&
-               URL_SCHEME_TUNNEL.c_str() && URL_SCHEME_WAIS.c_str() && URL_SCHEME_PNM.c_str() && URL_SCHEME_RTSP.c_str() &&
-               URL_SCHEME_RTSPU.c_str() && URL_SCHEME_MMS.c_str() && URL_SCHEME_MMSU.c_str() && URL_SCHEME_MMST.c_str());
+               URL_SCHEME_HTTP_UDS.c_str() && URL_SCHEME_HTTPS.c_str() && URL_SCHEME_HTTPS_UDS.c_str() && URL_SCHEME_WS.c_str() &&
+               URL_SCHEME_WSS.c_str() && URL_SCHEME_MAILTO.c_str() && URL_SCHEME_NEWS.c_str() && URL_SCHEME_NNTP.c_str() &&
+               URL_SCHEME_PROSPERO.c_str() && URL_SCHEME_TELNET.c_str() && URL_SCHEME_TUNNEL.c_str() && URL_SCHEME_WAIS.c_str() &&
+               URL_SCHEME_PNM.c_str() && URL_SCHEME_RTSP.c_str() && URL_SCHEME_RTSPU.c_str() && URL_SCHEME_MMS.c_str() &&
+               URL_SCHEME_MMSU.c_str() && URL_SCHEME_MMST.c_str());
 
     URL_WKSIDX_FILE     = hdrtoken_wks_to_index(URL_SCHEME_FILE.c_str());
     URL_WKSIDX_FTP      = hdrtoken_wks_to_index(URL_SCHEME_FTP.c_str());
@@ -398,7 +406,15 @@ URLImpl::set_scheme(HdrHeap *heap, std::string_view value, int scheme_wks_idx, b
     scheme_wks = nullptr;
   }
 
-  if (scheme_wks == URL_SCHEME_HTTP.c_str() || scheme_wks == URL_SCHEME_WS.c_str()) {
+  if (scheme_wks == nullptr) {
+    if (value == static_cast<std::string_view>(URL_SCHEME_HTTP_UDS)) {
+      this->m_url_type = URLType::HTTP;
+    } else if (value == static_cast<std::string_view>(URL_SCHEME_HTTPS_UDS)) {
+      this->m_url_type = URLType::HTTPS;
+    } else {
+      this->m_url_type = URLType::HTTP;
+    }
+  } else if (scheme_wks == URL_SCHEME_HTTP.c_str() || scheme_wks == URL_SCHEME_WS.c_str()) {
     this->m_url_type = URLType::HTTP;
   } else if (scheme_wks == URL_SCHEME_HTTPS.c_str() || scheme_wks == URL_SCHEME_WSS.c_str()) {
     this->m_url_type = URLType::HTTPS;
@@ -1678,8 +1694,6 @@ memcpy_tolower(char *d, const char *s, int n)
   }
 }
 
-#define BUFSIZE 4096
-
 // fast path for CryptoHash, HTTP, no user/password/params/query,
 // no buffer overflow, no unescaping needed
 
@@ -1826,7 +1840,7 @@ url_CryptoHash_get(const URLImpl *url, CryptoHash *hash, bool ignore_query, cach
   URLHashContext ctx;
   if ((url_hash_method != 0) && (url->m_url_type == URLType::HTTP) &&
       ((url->m_len_user + url->m_len_password + (ignore_query ? 0 : url->m_len_query)) == 0) &&
-      (3 + 1 + 1 + 1 + 1 + 1 + 2 + url->m_len_scheme + url->m_len_host + url->m_len_path < BUFSIZE) &&
+      (10u + url->m_len_scheme + url->m_len_host + url->m_len_path < BUFSIZE) &&
       (memchr(url->m_ptr_host, '%', url->m_len_host) == nullptr) && (memchr(url->m_ptr_path, '%', url->m_len_path) == nullptr)) {
     url_CryptoHash_get_fast(url, ctx, hash, generation);
 #ifdef DEBUG
@@ -1943,7 +1957,7 @@ url_CryptoHash_get_92(const URLImpl *url, CryptoHash *hash, bool ignore_query, c
   URLHashContext ctx;
   if ((url_hash_method != 0) && (url->m_url_type == URLType::HTTP) &&
       ((url->m_len_user + url->m_len_password + url->m_len_params + (ignore_query ? 0 : url->m_len_query)) == 0) &&
-      (3 + 1 + 1 + 1 + 1 + 1 + 2 + url->m_len_scheme + url->m_len_host + url->m_len_path < BUFSIZE) &&
+      (10u + url->m_len_scheme + url->m_len_host + url->m_len_path < BUFSIZE) &&
       (memchr(url->m_ptr_host, '%', url->m_len_host) == nullptr) && (memchr(url->m_ptr_path, '%', url->m_len_path) == nullptr)) {
     url_CryptoHash_get_fast(url, ctx, hash, generation);
 #ifdef DEBUG
@@ -1955,8 +1969,6 @@ url_CryptoHash_get_92(const URLImpl *url, CryptoHash *hash, bool ignore_query, c
     url_CryptoHash_get_general_92(url, ctx, *hash, ignore_query, generation);
   }
 }
-
-#undef BUFSIZE
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
@@ -1984,3 +1996,19 @@ url_host_CryptoHash_get(URLImpl *url, CryptoHash *hash)
   ctx.update(&port, sizeof(port));
   ctx.finalize(*hash);
 }
+
+namespace swoc
+{
+BufferWriter &
+bwformat(BufferWriter &w, bwf::Spec const &, URL const &url)
+{
+  char buff[2048];
+  int  idx    = 0;
+  int  offset = 0;
+  url.print(buff, sizeof(buff), &idx, &offset);
+
+  w.write(buff, idx);
+
+  return w;
+}
+} // namespace swoc

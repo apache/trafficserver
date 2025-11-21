@@ -324,8 +324,16 @@ ats_unix_append_id(sockaddr_un *s, int id)
 {
   char tmp[16];
   int  cnt = snprintf(tmp, sizeof(tmp), "-%d", id);
-  if (static_cast<size_t>(ats_unix_path_len(s) + cnt) < TS_UNIX_SIZE) {
-    strncat(s->sun_path, tmp, cnt);
+
+  // Defensive check: snprintf can return negative on error or >= sizeof(tmp) if truncated
+  if (cnt < 0 || cnt >= static_cast<int>(sizeof(tmp))) {
+    ink_assert(!"snprintf failed or truncated in ats_unix_append_id");
+    return;
+  }
+
+  int old_len = ats_unix_path_len(s);
+  if (static_cast<size_t>(old_len + cnt) < TS_UNIX_SIZE) {
+    memcpy(s->sun_path + old_len, tmp, cnt + 1); // +1 to include the null terminator
 #if HAVE_STRUCT_SOCKADDR_UN_SUN_LEN
     s->sun_len = SUN_LEN(s);
 #endif
@@ -1440,7 +1448,7 @@ struct IpAddr {
   ///< Pre-constructed invalid instance.
   static self const INVALID;
 
-  operator swoc::IPAddr()
+  operator swoc::IPAddr() const
   {
     switch (_family) {
     case AF_INET:
@@ -1603,17 +1611,17 @@ struct UnAddr {
   UnAddr() { _path[0] = 0; }
 
   UnAddr(self const &addr) { strncpy(_path, addr._path, TS_UNIX_SIZE); }
-  explicit constexpr UnAddr(const char *path) { strncpy(_path, path, TS_UNIX_SIZE - 1); }
-  explicit constexpr UnAddr(const std::string &path) { strncpy(_path, path.c_str(), TS_UNIX_SIZE); }
+  explicit UnAddr(const char *path) { strncpy(_path, path, TS_UNIX_SIZE - 1); }
+  explicit UnAddr(const std::string &path) { strncpy(_path, path.c_str(), TS_UNIX_SIZE); }
 
-  explicit constexpr UnAddr(sockaddr const *addr) { this->assign(addr); }
-  explicit constexpr UnAddr(sockaddr_un const *addr) { this->assign(ats_ip_sa_cast(addr)); }
+  explicit UnAddr(sockaddr const *addr) { this->assign(addr); }
+  explicit UnAddr(sockaddr_un const *addr) { this->assign(ats_ip_sa_cast(addr)); }
   /// Construct from @c IpEndpoint.
-  explicit constexpr UnAddr(IpEndpoint const &addr) { this->assign(&addr.sa); }
+  explicit UnAddr(IpEndpoint const &addr) { this->assign(&addr.sa); }
   /// Construct from @c IpEndpoint.
-  explicit constexpr UnAddr(IpEndpoint const *addr) { this->assign(&addr->sa); }
+  explicit UnAddr(IpEndpoint const *addr) { this->assign(&addr->sa); }
   /// Assign sockaddr storage.
-  constexpr self &assign(sockaddr const *addr);
+  self &assign(sockaddr const *addr);
 
   constexpr uint16_t
   family() const
@@ -1639,7 +1647,7 @@ struct UnAddr {
   char _path[TS_UNIX_SIZE];
 };
 
-inline constexpr UnAddr &
+inline UnAddr &
 UnAddr::assign(sockaddr const *addr)
 {
   if (addr) {

@@ -35,6 +35,7 @@
 #include "resources.h"
 #include "regex_helper.h"
 #include "lulu.h"
+#include "tsutil/Regex.h"
 
 // Possible operators that we support (at least partially)
 enum MatcherOps {
@@ -149,7 +150,6 @@ public:
         auto &re = std::get<regexHelper>(_data);
 
         if (!re.setRegexMatch(s, has_modifier(mods, CondModifiers::MOD_NOCASE))) {
-          TSError("[%s] Invalid regex: failed to precompile: %s", PLUGIN_NAME, s.c_str());
           Dbg(pi_dbg_ctl, "Invalid regex: failed to precompile: %s", s.c_str());
           throw std::runtime_error("Malformed regex");
         }
@@ -364,13 +364,10 @@ private:
     Dbg(pi_dbg_ctl, "Test regular expression against: %s (NOCASE = %s)", t.c_str(),
         has_modifier(_mods, CondModifiers::MOD_NOCASE) ? "true" : "false");
     const auto &re    = std::get<regexHelper>(_data);
-    int         count = re.regexMatch(t.c_str(), t.length(), const_cast<Resources &>(res).ovector);
+    int         count = re.regexMatch(t, const_cast<Resources &>(res).matches);
 
     if (count > 0) {
       Dbg(pi_dbg_ctl, "Successfully found regular expression match");
-      const_cast<Resources &>(res).ovector_ptr   = t.c_str();
-      const_cast<Resources &>(res).ovector_count = count;
-
       return true;
     }
 
@@ -380,3 +377,11 @@ private:
   std::variant<T, std::set<T>, swoc::IPRangeSet, regexHelper> _data;
   CondModifiers                                               _mods = CondModifiers::NONE;
 };
+
+// forward declare spcializations implemented in matcher.cc
+
+template <> bool Matchers<std::string>::test_eq(const std::string &) const;
+
+template <> bool Matchers<std::string>::test_set(const std::string &) const;
+
+template <> bool Matchers<const sockaddr *>::test(const sockaddr *const &, const Resources &) const;

@@ -324,7 +324,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
     return status;
   }
 fail:
-  TSHttpTxnStatusSet(txnp, TS_HTTP_STATUS_FORBIDDEN);
+  TSHttpTxnStatusSet(txnp, TS_HTTP_STATUS_FORBIDDEN, PLUGIN_NAME);
   if (url != nullptr) {
     PluginDebug("Invalid JWT for %.*s", url_ct, url);
     TSfree((void *)url);

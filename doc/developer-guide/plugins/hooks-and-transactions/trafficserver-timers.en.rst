@@ -29,9 +29,15 @@ picture illustrates the specific timers run at various states in the current imp
 The picture only depicts the HTTP transaction level timers and does not include the TLS handshake
 states and other more detailed/internal timers in each individual state.
 
-.. figure:: ../../../static/images/admin/transaction_states_timers.svg
+.. only:: html
+
+   .. figure:: ../../../static/images/admin/transaction_states_timers.svg
+
+.. only:: latex
+
+   .. figure:: ../../../static/images/admin/transaction_states_timers.png
+
    :align: center
    :alt: Transaction Timers in various states
 
    Transaction Timers in various states
-

@@ -29,7 +29,7 @@ add_executable(
   ex_UnitParser.cc
 )
 
-target_link_libraries(test_libswoc PUBLIC libswoc PRIVATE catch2::catch2)
+target_link_libraries(test_libswoc PUBLIC libswoc PRIVATE Catch2::Catch2)
 set_target_properties(test_libswoc PROPERTIES CLANG_FORMAT_DIRS ${CMAKE_CURRENT_SOURCE_DIR})
 if(CMAKE_COMPILER_IS_GNUCXX)
   target_compile_options(
@@ -47,4 +47,4 @@ if(CMAKE_COMPILER_IS_GNUCXX)
   endif()
 endif()
 
-add_test(NAME test_libswoc COMMAND test_libswoc)
+add_catch2_test(NAME test_libswoc COMMAND test_libswoc)

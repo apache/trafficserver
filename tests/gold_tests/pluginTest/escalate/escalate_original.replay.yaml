@@ -145,3 +145,74 @@ sessions:
       headers:
         fields:
         - [ X-Response, { value: fourth, as: equal } ]
+
+  # HEAD request that should NOT be escalated by default (only GET methods are escalated)
+  - client-request:
+      method: "HEAD"
+      version: "1.1"
+      url: /api/head/fail_not_escalated
+      headers:
+        fields:
+        - [ Host, origin.server.com ]
+        - [ X-Request, head_fail_not_escalated ]
+        - [ uuid, HEAD_fail_not_escalated ]
+
+    proxy-request:
+      method: "HEAD"
+      headers:
+        fields:
+        - [ X-Request, { value: head_fail_not_escalated, as: equal } ]
+
+    server-response:
+      status: 502
+      reason: Bad Gateway
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+        - [ X-Response, head_fail_not_escalated ]
+
+    # By default, non-GET methods are not escalated.
+    proxy-response:
+      status: 502
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+        - [ X-Response, { value: head_fail_not_escalated, as: equal } ]
+
+  # POST request that should NOT be escalated by default (only GET methods are escalated)
+  - client-request:
+      method: "POST"
+      version: "1.1"
+      url: /api/post/fail_not_escalated
+      headers:
+        fields:
+        - [ Host, origin.server.com ]
+        - [ Content-Type, "application/json" ]
+        - [ Content-Length, 1234 ]
+        - [ X-Request, post_fail_not_escalated ]
+        - [ uuid, POST_fail_not_escalated ]
+      content:
+        encoding: plain
+        size: 1234
+
+    proxy-request:
+      method: "POST"
+      headers:
+        fields:
+        - [ X-Request, { value: post_fail_not_escalated, as: equal } ]
+
+    server-response:
+      status: 502
+      reason: Bad Gateway
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+        - [ X-Response, post_fail_not_escalated ]
+
+    # By default, non-GET methods are not escalated.
+    proxy-response:
+      status: 502
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+        - [ X-Response, { value: post_fail_not_escalated, as: equal } ]

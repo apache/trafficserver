@@ -179,7 +179,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo * /* rri ATS_UNUSED 
   ArgIndexes *ix = static_cast<ArgIndexes *>(ih);
 
   TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, ix->contp);
-  TSHttpTxnStatusSet(txnp, TS_HTTP_STATUS_MOVED_TEMPORARILY);
+  TSHttpTxnStatusSet(txnp, TS_HTTP_STATUS_MOVED_TEMPORARILY, PLUGIN_NAME);
 
   return TSREMAP_DID_REMAP;
 }

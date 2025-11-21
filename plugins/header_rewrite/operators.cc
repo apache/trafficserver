@@ -30,6 +30,9 @@
 
 #include "operators.h"
 #include "ts/apidefs.h"
+#include "conditions.h"
+#include "factory.h"
+#include "ruleset.h"
 
 namespace
 {
@@ -52,6 +55,7 @@ handleFetchEvents(TSCont cont, TSEvent event, void *edata)
       TSHttpParser parser   = TSHttpParserCreate();
       TSMBuffer    hdr_buf  = TSMBufferCreate();
       TSMLoc       hdr_loc  = TSHttpHdrCreate(hdr_buf);
+
       TSHttpHdrTypeSet(hdr_buf, hdr_loc, TS_HTTP_TYPE_RESPONSE);
       if (TSHttpHdrParseResp(parser, hdr_buf, hdr_loc, &data_start, data_end) == TS_PARSE_DONE) {
         TSHttpTxnErrorBodySet(http_txn, TSstrdup(data_start), (data_end - data_start), nullptr);
@@ -120,7 +124,7 @@ OperatorSetConfig::initialize(Parser &p)
   _config = p.get_arg();
 
   if (TS_SUCCESS == TSHttpTxnConfigFind(_config.c_str(), _config.size(), &_key, &_type)) {
-    _value.set_value(p.get_value());
+    _value.set_value(p.get_value(), this);
   } else {
     _key = TS_CONFIG_NULL;
     TSError("[%s] no such records config: %s", PLUGIN_NAME, _config.c_str());
@@ -133,21 +137,21 @@ OperatorSetConfig::exec(const Resources &res) const
   if (TS_CONFIG_NULL != _key) {
     switch (_type) {
     case TS_RECORDDATATYPE_INT:
-      if (TS_SUCCESS == TSHttpTxnConfigIntSet(res.txnp, _key, _value.get_int_value())) {
+      if (TS_SUCCESS == TSHttpTxnConfigIntSet(res.state.txnp, _key, _value.get_int_value())) {
         Dbg(pi_dbg_ctl, "OperatorSetConfig::exec() invoked on %s=%d", _config.c_str(), _value.get_int_value());
       } else {
         Dbg(pi_dbg_ctl, "OperatorSetConfig::exec() invocation failed on %s=%d", _config.c_str(), _value.get_int_value());
       }
       break;
     case TS_RECORDDATATYPE_FLOAT:
-      if (TS_SUCCESS == TSHttpTxnConfigFloatSet(res.txnp, _key, _value.get_float_value())) {
+      if (TS_SUCCESS == TSHttpTxnConfigFloatSet(res.state.txnp, _key, _value.get_float_value())) {
         Dbg(pi_dbg_ctl, "OperatorSetConfig::exec() invoked on %s=%f", _config.c_str(), _value.get_float_value());
       } else {
         Dbg(pi_dbg_ctl, "OperatorSetConfig::exec() invocation failed on %s=%f", _config.c_str(), _value.get_float_value());
       }
       break;
     case TS_RECORDDATATYPE_STRING:
-      if (TS_SUCCESS == TSHttpTxnConfigStringSet(res.txnp, _key, _value.get_value().c_str(), _value.size())) {
+      if (TS_SUCCESS == TSHttpTxnConfigStringSet(res.state.txnp, _key, _value.get_value().c_str(), _value.size())) {
         Dbg(pi_dbg_ctl, "OperatorSetConfig::exec() invoked on %s=%s", _config.c_str(), _value.get_value().c_str());
       } else {
         Dbg(pi_dbg_ctl, "OperatorSetConfig::exec() invocation failed on %s=%s", _config.c_str(), _value.get_value().c_str());
@@ -167,7 +171,7 @@ OperatorSetStatus::initialize(Parser &p)
 {
   Operator::initialize(p);
 
-  _status.set_value(p.get_arg());
+  _status.set_value(p.get_arg(), this);
 
   if (nullptr == (_reason = TSHttpHdrReasonLookup(static_cast<TSHttpStatus>(_status.get_int_value())))) {
     TSError("[%s] unknown status %d", PLUGIN_NAME, _status.get_int_value());
@@ -198,14 +202,14 @@ OperatorSetStatus::exec(const Resources &res) const
   case TS_HTTP_READ_RESPONSE_HDR_HOOK:
   case TS_HTTP_SEND_RESPONSE_HDR_HOOK:
     if (res.bufp && res.hdr_loc) {
-      TSHttpHdrStatusSet(res.bufp, res.hdr_loc, static_cast<TSHttpStatus>(_status.get_int_value()));
+      TSHttpHdrStatusSet(res.bufp, res.hdr_loc, static_cast<TSHttpStatus>(_status.get_int_value()), res.state.txnp, PLUGIN_NAME);
       if (_reason && _reason_len > 0) {
         TSHttpHdrReasonSet(res.bufp, res.hdr_loc, _reason, _reason_len);
       }
     }
     break;
   default:
-    TSHttpTxnStatusSet(res.txnp, static_cast<TSHttpStatus>(_status.get_int_value()));
+    TSHttpTxnStatusSet(res.state.txnp, static_cast<TSHttpStatus>(_status.get_int_value()), PLUGIN_NAME);
     break;
   }
 
@@ -220,7 +224,7 @@ OperatorSetStatusReason::initialize(Parser &p)
 {
   Operator::initialize(p);
 
-  _reason.set_value(p.get_arg());
+  _reason.set_value(p.get_arg(), this);
   require_resources(RSRC_CLIENT_RESPONSE_HEADERS);
   require_resources(RSRC_SERVER_RESPONSE_HEADERS);
 }
@@ -254,7 +258,7 @@ OperatorSetDestination::initialize(Parser &p)
   Operator::initialize(p);
 
   _url_qual = parse_url_qualifier(p.get_arg());
-  _value.set_value(p.get_value());
+  _value.set_value(p.get_value(), this);
   require_resources(RSRC_CLIENT_REQUEST_HEADERS);
   require_resources(RSRC_SERVER_REQUEST_HEADERS);
 }
@@ -264,10 +268,10 @@ OperatorSetDestination::exec(const Resources &res) const
 {
   if (res._rri || (res.bufp && res.hdr_loc)) {
     std::string value;
+    TSMBuffer   bufp;
+    TSMLoc      url_m_loc;
 
     // Determine which TSMBuffer and TSMLoc to use
-    TSMBuffer bufp;
-    TSMLoc    url_m_loc;
     if (res._rri && !res.changed_url) {
       bufp      = res._rri->requestBufp;
       url_m_loc = res._rri->requestUrl;
@@ -480,8 +484,8 @@ OperatorSetRedirect::initialize(Parser &p)
 {
   Operator::initialize(p);
 
-  _status.set_value(p.get_arg());
-  _location.set_value(p.get_value());
+  _status.set_value(p.get_arg(), this);
+  _location.set_value(p.get_value(), this);
   auto status = _status.get_int_value();
   if (status < 300 || status > 399 || status == TS_HTTP_STATUS_NOT_MODIFIED) {
     TSError("[%s] unsupported redirect status %d", PLUGIN_NAME, status);
@@ -590,15 +594,15 @@ OperatorSetRedirect::exec(const Resources &res) const
         Dbg(pi_dbg_ctl, "Could not set Location field value to: %s", value.c_str());
       }
       // Set the new status.
-      TSHttpTxnStatusSet(res.txnp, static_cast<TSHttpStatus>(_status.get_int_value()));
+      TSHttpTxnStatusSet(res.state.txnp, static_cast<TSHttpStatus>(_status.get_int_value()), PLUGIN_NAME);
       const_cast<Resources &>(res).changed_url = true;
       res._rri->redirect                       = 1;
     } else {
       Dbg(pi_dbg_ctl, "OperatorSetRedirect::exec() hook=%d", int(get_hook()));
       // Set the new status code and reason.
       TSHttpStatus status = static_cast<TSHttpStatus>(_status.get_int_value());
-      TSHttpHdrStatusSet(res.bufp, res.hdr_loc, status);
-      EditRedirectResponse(res.txnp, value, status, res.bufp, res.hdr_loc);
+      TSHttpHdrStatusSet(res.bufp, res.hdr_loc, status, res.state.txnp, PLUGIN_NAME);
+      EditRedirectResponse(res.state.txnp, value, status, res.bufp, res.hdr_loc);
     }
     Dbg(pi_dbg_ctl, "OperatorSetRedirect::exec() invoked with destination=%s and status code=%d", value.c_str(),
         _status.get_int_value());
@@ -625,7 +629,7 @@ OperatorSetTimeoutOut::initialize(Parser &p)
     TSError("[%s] unsupported timeout qualifier: %s", PLUGIN_NAME, p.get_arg().c_str());
   }
 
-  _timeout.set_value(p.get_value());
+  _timeout.set_value(p.get_value(), this);
 }
 
 bool
@@ -634,22 +638,22 @@ OperatorSetTimeoutOut::exec(const Resources &res) const
   switch (_type) {
   case TO_OUT_ACTIVE:
     Dbg(pi_dbg_ctl, "OperatorSetTimeoutOut::exec(active, %d)", _timeout.get_int_value());
-    TSHttpTxnActiveTimeoutSet(res.txnp, _timeout.get_int_value());
+    TSHttpTxnActiveTimeoutSet(res.state.txnp, _timeout.get_int_value());
     break;
 
   case TO_OUT_INACTIVE:
     Dbg(pi_dbg_ctl, "OperatorSetTimeoutOut::exec(inactive, %d)", _timeout.get_int_value());
-    TSHttpTxnNoActivityTimeoutSet(res.txnp, _timeout.get_int_value());
+    TSHttpTxnNoActivityTimeoutSet(res.state.txnp, _timeout.get_int_value());
     break;
 
   case TO_OUT_CONNECT:
     Dbg(pi_dbg_ctl, "OperatorSetTimeoutOut::exec(connect, %d)", _timeout.get_int_value());
-    TSHttpTxnConnectTimeoutSet(res.txnp, _timeout.get_int_value());
+    TSHttpTxnConnectTimeoutSet(res.state.txnp, _timeout.get_int_value());
     break;
 
   case TO_OUT_DNS:
     Dbg(pi_dbg_ctl, "OperatorSetTimeoutOut::exec(dns, %d)", _timeout.get_int_value());
-    TSHttpTxnDNSTimeoutSet(res.txnp, _timeout.get_int_value());
+    TSHttpTxnDNSTimeoutSet(res.state.txnp, _timeout.get_int_value());
     break;
   default:
     TSError("[%s] unsupported timeout", PLUGIN_NAME);
@@ -674,7 +678,7 @@ bool
 OperatorSkipRemap::exec(const Resources &res) const
 {
   Dbg(pi_dbg_ctl, "OperatorSkipRemap::exec() skipping remap: %s", _skip_remap ? "True" : "False");
-  TSHttpTxnCntlSet(res.txnp, TS_HTTP_CNTL_SKIP_REMAPPING, _skip_remap);
+  TSHttpTxnCntlSet(res.state.txnp, TS_HTTP_CNTL_SKIP_REMAPPING, _skip_remap);
   return true;
 }
 
@@ -704,7 +708,7 @@ OperatorAddHeader::initialize(Parser &p)
 {
   OperatorHeaders::initialize(p);
 
-  _value.set_value(p.get_value());
+  _value.set_value(p.get_value(), this);
 }
 
 bool
@@ -741,7 +745,7 @@ OperatorSetHeader::initialize(Parser &p)
 {
   OperatorHeaders::initialize(p);
 
-  _value.set_value(p.get_value());
+  _value.set_value(p.get_value(), this);
 }
 
 bool
@@ -799,7 +803,7 @@ OperatorSetBody::initialize(Parser &p)
 {
   Operator::initialize(p);
   // we want the arg since body only takes one value
-  _value.set_value(p.get_arg());
+  _value.set_value(p.get_arg(), this);
 }
 
 void
@@ -815,8 +819,11 @@ OperatorSetBody::exec(const Resources &res) const
   std::string value;
 
   _value.append_value(value, res);
-  char *msg = TSstrdup(_value.get_value().c_str());
-  TSHttpTxnErrorBodySet(res.txnp, msg, _value.size(), nullptr);
+  char *msg = nullptr;
+  if (!value.empty()) {
+    msg = TSstrdup(value.c_str());
+  }
+  TSHttpTxnErrorBodySet(res.state.txnp, msg, value.size(), nullptr);
   return true;
 }
 
@@ -898,7 +905,7 @@ void
 OperatorAddCookie::initialize(Parser &p)
 {
   OperatorCookies::initialize(p);
-  _value.set_value(p.get_value());
+  _value.set_value(p.get_value(), this);
 }
 
 bool
@@ -944,7 +951,7 @@ void
 OperatorSetCookie::initialize(Parser &p)
 {
   OperatorCookies::initialize(p);
-  _value.set_value(p.get_value());
+  _value.set_value(p.get_value(), this);
 }
 
 bool
@@ -1082,7 +1089,7 @@ OperatorSetConnDSCP::initialize(Parser &p)
 {
   Operator::initialize(p);
 
-  _ds_value.set_value(p.get_arg());
+  _ds_value.set_value(p.get_arg(), this);
 }
 
 void
@@ -1096,8 +1103,8 @@ OperatorSetConnDSCP::initialize_hooks()
 bool
 OperatorSetConnDSCP::exec(const Resources &res) const
 {
-  if (res.txnp) {
-    TSHttpTxnClientPacketDscpSet(res.txnp, _ds_value.get_int_value());
+  if (res.state.txnp) {
+    TSHttpTxnClientPacketDscpSet(res.state.txnp, _ds_value.get_int_value());
     Dbg(pi_dbg_ctl, "   Setting DSCP to %d", _ds_value.get_int_value());
   }
   return true;
@@ -1109,7 +1116,7 @@ OperatorSetConnMark::initialize(Parser &p)
 {
   Operator::initialize(p);
 
-  _ds_value.set_value(p.get_arg());
+  _ds_value.set_value(p.get_arg(), this);
 }
 
 void
@@ -1123,8 +1130,8 @@ OperatorSetConnMark::initialize_hooks()
 bool
 OperatorSetConnMark::exec(const Resources &res) const
 {
-  if (res.txnp) {
-    TSHttpTxnClientPacketMarkSet(res.txnp, _ds_value.get_int_value());
+  if (res.state.txnp) {
+    TSHttpTxnClientPacketMarkSet(res.state.txnp, _ds_value.get_int_value());
     Dbg(pi_dbg_ctl, "   Setting MARK to %d", _ds_value.get_int_value());
   }
   return true;
@@ -1149,7 +1156,7 @@ OperatorSetDebug::initialize_hooks()
 bool
 OperatorSetDebug::exec(const Resources &res) const
 {
-  TSHttpTxnCntlSet(res.txnp, TS_HTTP_CNTL_TXN_DEBUG, true);
+  TSHttpTxnCntlSet(res.state.txnp, TS_HTTP_CNTL_TXN_DEBUG, true);
   return true;
 }
 
@@ -1186,10 +1193,10 @@ bool
 OperatorSetHttpCntl::exec(const Resources &res) const
 {
   if (_flag) {
-    TSHttpTxnCntlSet(res.txnp, _cntl_qual, true);
+    TSHttpTxnCntlSet(res.state.txnp, _cntl_qual, true);
     Dbg(pi_dbg_ctl, "   Turning ON %s for transaction", HttpCntls[static_cast<size_t>(_cntl_qual)]);
   } else {
-    TSHttpTxnCntlSet(res.txnp, _cntl_qual, false);
+    TSHttpTxnCntlSet(res.state.txnp, _cntl_qual, false);
     Dbg(pi_dbg_ctl, "   Turning OFF %s for transaction", HttpCntls[static_cast<size_t>(_cntl_qual)]);
   }
   return true;
@@ -1217,6 +1224,8 @@ OperatorSetPluginCntl::initialize(Parser &p)
       _value = IP_SRC_PEER;
     } else if (value == "PROXY") {
       _value = IP_SRC_PROXY;
+    } else if (value == "PLUGIN") {
+      _value = IP_SRC_PLUGIN;
     } else {
       TSError("[%s] Unknown value for INBOUND_IP_SOURCE control: %s", PLUGIN_NAME, value.c_str());
     }
@@ -1241,7 +1250,7 @@ bool
 OperatorSetPluginCntl::exec(const Resources &res) const
 {
   PrivateSlotData private_data;
-  private_data.raw = reinterpret_cast<uint64_t>(TSUserArgGet(res.txnp, _txn_private_slot));
+  private_data.raw = reinterpret_cast<uint64_t>(TSUserArgGet(res.state.txnp, _txn_private_slot));
 
   switch (_name) {
   case PluginCtrl::TIMEZONE:
@@ -1253,7 +1262,7 @@ OperatorSetPluginCntl::exec(const Resources &res) const
   }
 
   Dbg(pi_dbg_ctl, "   Setting plugin control %d to %d", static_cast<int>(_name), _value);
-  TSUserArgSet(res.txnp, _txn_private_slot, reinterpret_cast<void *>(private_data.raw));
+  TSUserArgSet(res.state.txnp, _txn_private_slot, reinterpret_cast<void *>(private_data.raw));
 
   return true;
 }
@@ -1286,7 +1295,7 @@ OperatorRunPlugin::initialize(Parser &p)
   argv[0] = p.from_url();
   argv[1] = p.to_url();
 
-  for (int i = 0; i < argc; ++i) {
+  for (size_t i = 0; i < tokens.size(); ++i) {
     argv[i + 2] = const_cast<char *>(tokens[i].c_str());
   }
 
@@ -1323,8 +1332,8 @@ OperatorRunPlugin::exec(const Resources &res) const
 {
   TSReleaseAssert(_plugin != nullptr);
 
-  if (res._rri && res.txnp) {
-    _plugin->doRemap(res.txnp, res._rri);
+  if (res._rri && res.state.txnp) {
+    _plugin->doRemap(res.state.txnp, res._rri);
   }
   return true;
 }
@@ -1335,7 +1344,7 @@ OperatorSetBodyFrom::initialize(Parser &p)
 {
   Operator::initialize(p);
   // we want the arg since body only takes one value
-  _value.set_value(p.get_arg());
+  _value.set_value(p.get_arg(), this);
   require_resources(RSRC_SERVER_RESPONSE_HEADERS);
   require_resources(RSRC_RESPONSE_STATUS);
 }
@@ -1349,7 +1358,7 @@ OperatorSetBodyFrom::initialize_hooks()
 bool
 OperatorSetBodyFrom::exec(const Resources &res) const
 {
-  if (TSHttpTxnIsInternal(res.txnp)) {
+  if (TSHttpTxnIsInternal(res.state.txnp)) {
     // If this is triggered by an internal transaction, a infinte loop may occur
     // It should only be triggered by the original transaction sent by the client
     Dbg(pi_dbg_ctl, "OperatorSetBodyFrom triggered by an internal transaction");
@@ -1360,9 +1369,9 @@ OperatorSetBodyFrom::exec(const Resources &res) const
   int  req_buf_size = 0;
   if (createRequestString(_value.get_value(), req_buf, &req_buf_size) == TS_SUCCESS) {
     TSCont fetchCont = TSContCreate(handleFetchEvents, TSMutexCreate());
-    TSContDataSet(fetchCont, static_cast<void *>(res.txnp));
+    TSContDataSet(fetchCont, static_cast<void *>(res.state.txnp));
 
-    TSHttpTxnHookAdd(res.txnp, TS_HTTP_TXN_CLOSE_HOOK, fetchCont);
+    TSHttpTxnHookAdd(res.state.txnp, TS_HTTP_TXN_CLOSE_HOOK, fetchCont);
 
     TSFetchEvent event_ids;
     event_ids.success_event_id = TS_EVENT_FETCHSM_SUCCESS;
@@ -1379,7 +1388,7 @@ OperatorSetBodyFrom::exec(const Resources &res) const
     // Forces original status code in event TSHttpTxnErrorBodySet changed
     // the code or another condition was set conflicting with this one.
     // Set here because res is the only structure that contains the original status code.
-    TSHttpTxnStatusSet(res.txnp, res.resp_status);
+    TSHttpTxnStatusSet(res.state.txnp, res.resp_status, PLUGIN_NAME);
   } else {
     TSError(PLUGIN_NAME, "OperatorSetBodyFrom:exec:: Could not create request");
     return true;
@@ -1429,16 +1438,16 @@ OperatorSetStateFlag::initialize_hooks()
 bool
 OperatorSetStateFlag::exec(const Resources &res) const
 {
-  if (!res.txnp) {
+  if (!res.state.txnp) {
     TSError("[%s] OperatorSetStateFlag() failed. Transaction is null", PLUGIN_NAME);
     return false;
   }
 
   Dbg(pi_dbg_ctl, "   Setting state flag %d to %d", _flag_ix, _flag);
 
-  auto data = reinterpret_cast<uint64_t>(TSUserArgGet(res.txnp, _txn_slot));
+  auto data = reinterpret_cast<uint64_t>(TSUserArgGet(res.state.txnp, _txn_slot));
 
-  TSUserArgSet(res.txnp, _txn_slot, reinterpret_cast<void *>(_flag ? data | _mask : data & _mask));
+  TSUserArgSet(res.state.txnp, _txn_slot, reinterpret_cast<void *>(_flag ? data | _mask : data & _mask));
 
   return true;
 }
@@ -1455,7 +1464,7 @@ OperatorSetStateInt8::initialize(Parser &p)
     return;
   }
 
-  _value.set_value(p.get_value());
+  _value.set_value(p.get_value(), this);
   if (!_value.has_conds()) {
     int v = _value.get_int_value();
 
@@ -1483,12 +1492,12 @@ OperatorSetStateInt8::initialize_hooks()
 bool
 OperatorSetStateInt8::exec(const Resources &res) const
 {
-  if (!res.txnp) {
+  if (!res.state.txnp) {
     TSError("[%s] OperatorSetStateInt8() failed. Transaction is null", PLUGIN_NAME);
     return false;
   }
 
-  auto ptr = reinterpret_cast<uint64_t>(TSUserArgGet(res.txnp, _txn_slot));
+  auto ptr = reinterpret_cast<uint64_t>(TSUserArgGet(res.state.txnp, _txn_slot));
   int  val = 0;
 
   if (_value.has_conds()) { // If there are conditions, we need to evaluate them, which gives us a string
@@ -1508,7 +1517,7 @@ OperatorSetStateInt8::exec(const Resources &res) const
   Dbg(pi_dbg_ctl, "   Setting state int8 %d to %d", _byte_ix, val);
   ptr &= ~STATE_INT8_MASKS[_byte_ix]; // Clear any old value
   ptr |= (static_cast<uint64_t>(val) << (NUM_STATE_FLAGS + _byte_ix * 8));
-  TSUserArgSet(res.txnp, _txn_slot, reinterpret_cast<void *>(ptr));
+  TSUserArgSet(res.state.txnp, _txn_slot, reinterpret_cast<void *>(ptr));
 
   return true;
 }
@@ -1525,7 +1534,7 @@ OperatorSetStateInt16::initialize(Parser &p)
     return;
   }
 
-  _value.set_value(p.get_value());
+  _value.set_value(p.get_value(), this);
   if (!_value.has_conds()) {
     int v = _value.get_int_value();
 
@@ -1553,12 +1562,12 @@ OperatorSetStateInt16::initialize_hooks()
 bool
 OperatorSetStateInt16::exec(const Resources &res) const
 {
-  if (!res.txnp) {
+  if (!res.state.txnp) {
     TSError("[%s] OperatorSetStateInt16() failed. Transaction is null", PLUGIN_NAME);
     return false;
   }
 
-  auto ptr = reinterpret_cast<uint64_t>(TSUserArgGet(res.txnp, _txn_slot));
+  auto ptr = reinterpret_cast<uint64_t>(TSUserArgGet(res.state.txnp, _txn_slot));
   int  val = 0;
 
   if (_value.has_conds()) { // If there are conditions, we need to evaluate them, which gives us a string
@@ -1578,7 +1587,259 @@ OperatorSetStateInt16::exec(const Resources &res) const
   Dbg(pi_dbg_ctl, "   Setting state int16 to %d", val);
   ptr &= ~STATE_INT16_MASK; // Clear any old value
   ptr |= (static_cast<uint64_t>(val) << 48);
-  TSUserArgSet(res.txnp, _txn_slot, reinterpret_cast<void *>(ptr));
+  TSUserArgSet(res.state.txnp, _txn_slot, reinterpret_cast<void *>(ptr));
 
+  return true;
+}
+
+void
+OperatorSetEffectiveAddress::initialize(Parser &p)
+{
+  Operator::initialize(p);
+
+  _value.set_value(p.get_arg(), this);
+}
+
+void
+OperatorSetEffectiveAddress::initialize_hooks()
+{
+  add_allowed_hook(TS_HTTP_READ_REQUEST_HDR_HOOK);
+  add_allowed_hook(TS_REMAP_PSEUDO_HOOK);
+}
+
+bool
+OperatorSetEffectiveAddress::exec(const Resources &res) const
+{
+  std::string value;
+  _value.append_value(value, res);
+
+  // Never set an empty address
+  if (value.empty()) {
+    Dbg(pi_dbg_ctl, "Address is empty, skipping");
+    return true;
+  }
+
+  auto                    addr = swoc::IPAddr(value);
+  struct sockaddr_storage storage;
+  addr.copy_to(reinterpret_cast<struct sockaddr *>(&storage));
+  TSHttpTxnVerifiedAddrSet(res.state.txnp, reinterpret_cast<struct sockaddr *>(&storage));
+
+  PrivateSlotData private_data;
+  private_data.raw       = reinterpret_cast<uint64_t>(TSUserArgGet(res.state.txnp, _txn_private_slot));
+  private_data.ip_source = IP_SRC_PLUGIN;
+
+  Dbg(pi_dbg_ctl, "   Setting plugin control INBOUND_IP_SOURCE to IP_SRC_PLUGIN");
+  TSUserArgSet(res.state.txnp, _txn_private_slot, reinterpret_cast<void *>(private_data.raw));
+
+  return true;
+}
+
+// OperatorSetNextHopStrategy
+void
+OperatorSetNextHopStrategy::initialize(Parser &p)
+{
+  Operator::initialize(p);
+
+  _value.set_value(p.get_arg(), this);
+  Dbg(pi_dbg_ctl, "OperatorSetNextHopStrategy::initialie: %s", _value.get_value().c_str());
+}
+
+void
+OperatorSetNextHopStrategy::initialize_hooks()
+{
+  add_allowed_hook(TS_HTTP_READ_REQUEST_HDR_HOOK);
+  add_allowed_hook(TS_REMAP_PSEUDO_HOOK);
+}
+
+bool
+OperatorSetNextHopStrategy::exec(const Resources &res) const
+{
+  if (!res.state.txnp) {
+    TSError("[%s] OperatorSetNextHopStrategy() failed. Transaction is null", PLUGIN_NAME);
+  }
+
+  auto const txnp = res.state.txnp;
+
+  std::string value;
+  _value.append_value(value, res);
+
+  // Setting an empty strategy clears it for either parent.config or remap to
+  if ("null" == value || value.empty()) {
+    Dbg(pi_dbg_ctl, "Clearing strategy");
+    TSHttpTxnNextHopStrategySet(txnp, nullptr);
+    return true;
+  }
+
+  void const *const stratptr = TSHttpTxnNextHopNamedStrategyGet(txnp, value.c_str());
+  if (nullptr == stratptr) {
+    TSWarning("[%s] Failed to get strategy '%s'", PLUGIN_NAME, value.c_str());
+  } else {
+    Dbg(pi_dbg_ctl, "   Setting strategy '%s'", value.c_str());
+    TSHttpTxnNextHopStrategySet(txnp, stratptr);
+  }
+
+  return true;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// OperatorIf class implementations
+// Keep this at the end of the files, since this is not really an Operator.
+//
+ConditionGroup *
+OperatorIf::new_section(Parser::CondClause clause)
+{
+  TSAssert(_cur_section && !_cur_section->next);
+
+  _clause            = clause;
+  _cur_section->next = std::make_unique<CondOpSection>();
+  _cur_section       = _cur_section->next.get();
+
+  return &_cur_section->group;
+}
+
+bool
+OperatorIf::add_operator(Parser &p, const char *filename, int lineno)
+{
+  Operator *op = operator_factory(p.get_op());
+
+  if (!op) {
+    TSError("[%s] Unknown operator: %s, file: %s, line: %d", PLUGIN_NAME, p.get_op().c_str(), filename, lineno);
+    return false;
+  }
+
+  Dbg(pi_dbg_ctl, "    Adding operator: %s(%s)=\"%s\"", p.get_op().c_str(), p.get_arg().c_str(), p.get_value().c_str());
+
+  try {
+    op->initialize(p);
+  } catch (std::exception const &ex) {
+    delete op;
+    TSError("[%s] Failed to initialize operator: %s, file: %s, line: %d, error: %s", PLUGIN_NAME, p.get_op().c_str(), filename,
+            lineno, ex.what());
+    return false;
+  }
+
+  // Add to current section
+  if (_cur_section->ops.oper) {
+    _cur_section->ops.oper->append(op);
+  } else {
+    _cur_section->ops.oper.reset(op);
+    _cur_section->ops.oper_mods = op->get_oper_modifiers();
+  }
+
+  return true;
+}
+
+Condition *
+OperatorIf::make_condition(Parser &p, const char *filename, int lineno)
+{
+  Condition *cond = condition_factory(p.get_op());
+
+  if (!cond) {
+    TSError("[%s] Unknown condition: %s, file: %s, line: %d", PLUGIN_NAME, p.get_op().c_str(), filename, lineno);
+    return nullptr;
+  }
+
+  Dbg(pi_dbg_ctl, "    Creating condition: %%{%s} with arg: %s", p.get_op().c_str(), p.get_arg().c_str());
+
+  try {
+    cond->initialize(p);
+  } catch (std::exception const &ex) {
+    delete cond;
+    TSError("[%s] Failed to initialize condition: %s, file: %s, line: %d, error: %s", PLUGIN_NAME, p.get_op().c_str(), filename,
+            lineno, ex.what());
+    return nullptr;
+  }
+
+  return cond;
+}
+
+bool
+OperatorIf::has_operator() const
+{
+  const CondOpSection *section = &_sections;
+
+  while (section != nullptr) {
+    if (section->has_operator()) {
+      return true;
+    }
+    section = section->next.get();
+  }
+  return false;
+}
+
+OperModifiers
+OperatorIf::exec_and_return_mods(const Resources &res) const
+{
+  Dbg(dbg_ctl, "Executing OperatorIf");
+
+  // Go through each section (if/elif/else) until one matches
+  for (auto *section = const_cast<CondOpSection *>(&_sections); section != nullptr; section = section->next.get()) {
+    if (section->group.eval(res)) {
+      Dbg(dbg_ctl, "OperatorIf section condition matched, executing operators");
+      return exec_section(section, res);
+    }
+  }
+
+  Dbg(dbg_ctl, "OperatorIf: no section matched");
+  return OPER_NONE;
+}
+
+OperModifiers
+OperatorIf::exec_section(const CondOpSection *section, const Resources &res) const
+{
+  if (nullptr == section->ops.oper) {
+    return section->ops.oper_mods;
+  }
+
+  auto no_reenable_count = section->ops.oper->do_exec(res);
+
+  ink_assert(no_reenable_count < 2);
+  if (no_reenable_count) {
+    return static_cast<OperModifiers>(section->ops.oper_mods | OPER_NO_REENABLE);
+  }
+
+  return section->ops.oper_mods;
+}
+
+// OperatorSetCongestionCtrl
+void
+OperatorSetCCAlgorithm::initialize(Parser &p)
+{
+  Operator::initialize(p);
+  _cc_alg.set_value(p.get_arg());
+}
+
+void
+OperatorSetCCAlgorithm::initialize_hooks()
+{
+  add_allowed_hook(TS_REMAP_PSEUDO_HOOK);
+  add_allowed_hook(TS_HTTP_SEND_REQUEST_HDR_HOOK);
+  add_allowed_hook(TS_HTTP_READ_REQUEST_HDR_HOOK);
+  add_allowed_hook(TS_HTTP_PRE_REMAP_HOOK);
+}
+
+bool
+OperatorSetCCAlgorithm::exec(const Resources &res) const
+{
+  Dbg(dbg_ctl, "OperatorSetCCAlgorithm");
+
+  if (!res.state.txnp) {
+    TSError("[%s] OperatorSetCCAlgorithm() failed. Transaction is null", PLUGIN_NAME);
+    return false;
+  }
+
+  int client_fd;
+  if (TSHttpTxnClientFdGet(res.state.txnp, &client_fd) != TS_SUCCESS) {
+    TSError("[%s] [OperatorSetCCAlgorithm] Error getting client fd", PLUGIN_NAME);
+  }
+
+#ifdef TCP_CONGESTION
+  if (safe_setsockopt(client_fd, IPPROTO_TCP, TCP_CONGESTION, _cc_alg.get_value().data(), _cc_alg.size()) == -1) {
+    TSError("[%s] [OperatorSetCCAlgorithm] Error setting congestion control algorithm, errno=%d %s", PLUGIN_NAME, errno,
+            strerror(errno));
+  }
+#else
+  TSWarning("[%s] [OperatorSetCCAlgorithm] TCP_CONGESTION socket option is not supported on this platform", PLUGIN_NAME);
+#endif
   return true;
 }

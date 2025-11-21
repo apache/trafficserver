@@ -383,6 +383,19 @@ Thread Variables
    will create its own domain socket with a ``-<thread id>`` suffix added to the
    end of the path.
 
+.. ts:cv:: CONFIG proxy.config.exec_thread.loop_time_update_probability INT 10
+   :reloadable:
+
+   This dynamically loadable setting controls the rate that exec thread loop timestamps are
+   updated after processing an event given as a percentage from 0 to 100. 0
+   would mean the timestamp is only updated once per event loop, 100 percent
+   means the timestamp is updated after any potential operation that could take
+   time (i.e. processing an event or waiting on IO).  The timestamp is used for
+   queuing events and comparing timestamps for processing.  Updating more often
+   might improve event timer accuracy and event loop metrics, but increases the
+   number of times that the current time is obtained from the OS.  See also
+   `proxy.config.system_clock`
+
 .. ts:cv:: CONFIG proxy.config.accept_threads INT 1
 
    The number of accept threads. If disabled (``0``), then accepts will be done
@@ -418,6 +431,18 @@ Thread Variables
 .. note::
 
    This option only has an affect when |TS| has been compiled with ``--enable-hwloc``.
+
+.. ts:cv:: CONFIG proxy.config.exec_thread.watchdog.timeout_ms INT 0
+   :units: milliseconds
+
+   Set the timeout for the exec thread watchdog in milliseconds. If an exec thread
+   does not heartbeat within this time period, the watchdog will log a warning message.
+   If this value is zero, the watchdog is disabled.
+
+   The default of this watchdot timeout is set to 0 (disabled) for ATS 10.2 for
+   compatibility.  We recommend that administrators set a reasonable
+   value, such as 1000, for production configurations, in order to
+   catch hung plugins, or server overload scenarios.
 
 .. ts:cv:: CONFIG proxy.config.system.file_max_pct FLOAT 0.9
 
@@ -780,7 +805,7 @@ proto
 
 pp
    Enables Proxy Protocol on the port.  If Proxy Protocol is enabled on the
-   port, all incoming requests must be prefaced with the PROXY header.  See
+   port, |TS| tries to parse the header first, and it falls back to the regular connection handling based on other keywords. See
    :ref:`Proxy Protocol <proxy-protocol>` for more details on how to configure
    this option properly.
 
@@ -1470,6 +1495,63 @@ Parent Proxy Configuration
    ``1`` Remove the matching host from the list.
    ``2`` Mark the host down. This is the default.
    ===== ======================================================================
+
+.. ts:cv:: CONFIG proxy.config.http.parent_proxy.consistent_hash_algorithm STRING siphash24
+
+   Selects the hash algorithm used for consistent hash parent selection. This setting
+   only affects parent selection when ``round_robin=consistent_hash`` is configured in
+   :file:`parent.config`. The hash algorithm determines how requests are distributed
+   across parent proxies.
+
+   ============== ================================================================================
+   Value          Description
+   ============== ================================================================================
+   ``siphash24``  SipHash-2-4 (default). Cryptographically strong, DoS-resistant hash function.
+   ``siphash13``  SipHash-1-3. ~50% faster than SipHash-2-4, still DoS-resistant.
+   ============== ================================================================================
+
+   .. warning::
+
+      Changing this setting will cause requests to be redistributed differently across
+      parent proxies. This can lead to cache churn and increased origin load during the
+      transition period. Plan the migration carefully and consider doing it during
+      low-traffic periods.
+
+.. ts:cv:: CONFIG proxy.config.http.parent_proxy.consistent_hash_seed0 INT 0
+
+   The first 64 bits of the hash seed (key) for consistent hash parent selection.
+   This setting only affects parent selection when ``round_robin=consistent_hash`` is configured.
+
+   - For SipHash algorithms, this forms the first half of the 128-bit cryptographic key (k0)
+   - For future 64-bit hash algorithms (like XXH3), this is the full seed value
+
+   The value must be specified as a decimal integer (e.g. ``12345678901234567``). Default is ``0``.
+   Per-rule configuration is available in :file:`parent.config` using ``hash_seed0=<value>``.
+   Per-strategy configuration is available in :file:`strategies.yaml` using ``hash_seed0: <value>``.
+
+.. ts:cv:: CONFIG proxy.config.http.parent_proxy.consistent_hash_seed1 INT 0
+
+   The second 64 bits of the hash seed (key) for consistent hash parent selection.
+   This setting only affects parent selection when ``round_robin=consistent_hash`` is configured.
+
+   - For SipHash algorithms, this forms the second half of the 128-bit cryptographic key (k1)
+   - For future 64-bit hash algorithms, this value is ignored
+
+   The value must be specified as a decimal integer (e.g. ``9876543210987654321``). Default is ``0``.
+   Per-rule configuration is available in :file:`parent.config` using ``hash_seed1=<value>``.
+   Per-strategy configuration is available in :file:`strategies.yaml` using ``hash_seed1: <value>``.
+
+.. ts:cv:: CONFIG proxy.config.http.parent_proxy.consistent_hash_replicas INT 1024
+
+   The number of virtual nodes (replicas) per parent host on the consistent hash ring.
+   This setting only affects parent selection when ``round_robin=consistent_hash`` is configured.
+
+   Increasing the replica count improves the distribution of requests across parent proxies
+   but uses more memory. The default value of 1024 provides good distribution in most scenarios.
+
+   Must be greater than 0. Default is ``1024``.
+   Per-rule configuration is available in :file:`parent.config` using ``hash_replicas=<value>``.
+   Per-strategy configuration is available in :file:`strategies.yaml` using ``hash_replicas: <value>``.
 
 .. ts:cv:: CONFIG proxy.config.http.parent_proxy.enable_parent_timeout_markdowns INT 0
    :reloadable:
@@ -2186,6 +2268,7 @@ IP Allow
    ============= ======================================================================
    ``PEER``      Use the IP address of the peer
    ``PROXY``     Use the IP address from PROXY protocol
+   ``PLUGIN``    Use the IP address verified by a plugin
    ============= ======================================================================
 
 
@@ -5185,8 +5268,8 @@ Sockets
    default: ``1`` meaning ``on`` all Platforms except Linux: ``45`` seconds
 
    This directive enables operating system specific optimizations for a listening socket. ``defer_accept`` holds a call to ``accept(2)``
-   back until data has arrived. In Linux' special case this is up to a maximum of 45 seconds.
-   On FreeBSD, ``accf_data`` module needs to be loaded.
+   back until data has arrived. In Linux' special case this is up to a maximum of 45 seconds. Note in Linux, additional delays may
+   occur as kernel handles retries using exponential backoff algorithm. On FreeBSD, ``accf_data`` module needs to be loaded.
    Note: If MPTCP is enabled, TCP_DEFER_ACCEPT is only supported on Linux kernels 5.19+.
 
 .. ts:cv:: CONFIG proxy.config.net.listen_backlog INT -1

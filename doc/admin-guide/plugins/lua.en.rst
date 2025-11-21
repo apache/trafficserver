@@ -1053,6 +1053,90 @@ Here is an example:
 
 :ref:`TOP <admin-plugins-ts-lua>`
 
+ts.client_request.client_addr.get_verified_addr
+-----------------------------------------------
+**syntax:** *ip, family = ts.client_request.client_addr.get_verified_addr()*
+
+**context:** do_remap/do_os_response or do_global_* or later
+
+**description**: This function can be used to get the verified client IP address for the current transaction.
+
+The verified address is set by plugins (typically earlier in the transaction) to provide a reliable client IP address.
+This is useful when Traffic Server is behind a proxy or load balancer that provides the real client IP through
+mechanisms like PROXY protocol, X-Forwarded-For headers, or X-Real-IP headers.
+
+The ts.client_request.client_addr.get_verified_addr function returns two values: ip is a string and family is a number.
+If no verified address has been set, both return values will be nil.
+
+Here is an example:
+
+::
+
+    function do_remap()
+        ip, family = ts.client_request.client_addr.get_verified_addr()
+        if ip then
+            ts.debug(ip)               -- 192.168.1.100
+            ts.debug(family)           -- 2(AF_INET)
+        else
+            ts.debug("No verified address set")
+        end
+        return 0
+    end
+
+When ``proxy.config.acl.subjects`` is set to ``PLUGIN``, Traffic Server will use the verified address (if set)
+for ACL evaluation instead of the actual client connection address.
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
+ts.client_request.client_addr.set_verified_addr
+-----------------------------------------------
+**syntax:** *ts.client_request.client_addr.set_verified_addr(ip, family)*
+
+**context:** do_remap/do_os_response or do_global_* or later
+
+**description**: This function can be used to set a verified client IP address for the current transaction.
+
+This function enables plugins to provide a reliable client IP address for Traffic Server and other plugins.
+Plugins that call this function are expected to validate the IP address before setting it.
+
+**Parameters:**
+
+* ``ip`` - string: The IP address to set (e.g., "192.168.1.100" or "2001:db8::1")
+* ``family`` - number: The address family (`TS_LUA_AF_INET` for IPv4, `TS_LUA_AF_INET6` for IPv6)
+
+Here is an example:
+
+::
+
+    function do_remap()
+        -- Get real client IP from X-Forwarded-For header
+        local xff = ts.client_request.header["X-Forwarded-For"]
+
+        if xff then
+            -- Parse the first IP from X-Forwarded-For
+            local real_ip = string.match(xff, "([^,]+)")
+
+            if real_ip then
+                -- Trim whitespace
+                real_ip = real_ip:match("^%s*(.-)%s*$")
+
+                -- Set as verified address (IPv4 example, family=TS_LUA_AF_INET)
+                ts.client_request.client_addr.set_verified_addr(real_ip, TS_LUA_AF_INET)
+                ts.debug("Set verified address to: " .. real_ip)
+            end
+        end
+
+        return 0
+    end
+
+**Important Notes:**
+
+* For IPv6 addresses, use TS_LUA_AF_INET6.
+* Set the verified address as early as possible in the transaction lifecycle to ensure it's available
+  for all subsequent processing.
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
 ts.client_request.get_url_host
 ------------------------------
 **syntax:** *host = ts.client_request.get_url_host()*
@@ -1253,6 +1337,75 @@ Here is an example:
     function do_global_read_request()
         ssl_curve = ts.client_request.get_ssl_curve()
         ts.debug(ssl_curve)             -- X25519
+    end
+
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
+ts.client_request.get_pp_info
+-----------------------------------------------
+**syntax:** *value = ts.client_request.get_pp_info(key)*
+
+**context:** do_remap/do_os_response or do_global_* or later
+
+**description**: This function can be used to get PROXY protocol information as a string value.
+
+The *key* parameter should be one of the following constants:
+
+* **TS_LUA_PP_INFO_SRC_ADDR** - Source IP address
+* **TS_LUA_PP_INFO_DST_ADDR** - Destination IP address
+
+You can also pass a TLV type ID (0x00-0xFF) to retrieve custom TLV values from PROXY protocol v2.
+
+Returns the string value if available, or **nil** if the information is not available or PROXY protocol is not in use.
+
+Here is an example:
+
+::
+
+    function do_remap()
+        local pp_version = ts.client_request.get_pp_info_int(TS_LUA_PP_INFO_VERSION)
+        if pp_version then
+            local src_addr = ts.client_request.get_pp_info(TS_LUA_PP_INFO_SRC_ADDR)
+            local dst_addr = ts.client_request.get_pp_info(TS_LUA_PP_INFO_DST_ADDR)
+            ts.debug(string.format('PROXY v%d: %s -> %s', pp_version, src_addr, dst_addr))
+        end
+        return 0
+    end
+
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
+ts.client_request.get_pp_info_int
+-----------------------------------------------
+**syntax:** *value = ts.client_request.get_pp_info_int(key)*
+
+**context:** do_remap/do_os_response or do_global_* or later
+
+**description**: This function can be used to get PROXY protocol information as an integer value.
+
+The *key* parameter should be one of the following constants:
+
+* **TS_LUA_PP_INFO_VERSION** - PROXY protocol version (1 or 2)
+* **TS_LUA_PP_INFO_SRC_PORT** - Source port number
+* **TS_LUA_PP_INFO_DST_PORT** - Destination port number
+* **TS_LUA_PP_INFO_PROTOCOL** - IP protocol family (AF_INET or AF_INET6)
+* **TS_LUA_PP_INFO_SOCK_TYPE** - Socket type (SOCK_STREAM, SOCK_DGRAM, etc.)
+
+Returns the integer value if available, or **nil** if the information is not available or PROXY protocol is not in use.
+
+Here is an example:
+
+::
+
+    function do_remap()
+        local pp_version = ts.client_request.get_pp_info_int(TS_LUA_PP_INFO_VERSION)
+        if pp_version then
+            local src_port = ts.client_request.get_pp_info_int(TS_LUA_PP_INFO_SRC_PORT)
+            local dst_port = ts.client_request.get_pp_info_int(TS_LUA_PP_INFO_DST_PORT)
+            ts.debug(string.format('PROXY v%d ports: %d -> %d', pp_version, src_port, dst_port))
+        end
+        return 0
     end
 
 
@@ -1838,6 +1991,7 @@ Socket address family
 
     TS_LUA_AF_INET (2)
     TS_LUA_AF_INET6 (10)
+    TS_LUA_AF_UNIX (1)
 
 
 :ref:`TOP <admin-plugins-ts-lua>`
@@ -1907,7 +2061,7 @@ Here is an example:
         print(name)             -- test
     end
 
-`TOP <#ts-lua-plugin>`_
+:ref:`TOP <admin-plugins-ts-lua>`
 
 ts.server_request.server_addr.get_nexthop_port
 ----------------------------------------------
@@ -1928,7 +2082,51 @@ Here is an example:
         print(name)             -- test
     end
 
-`TOP <#ts-lua-plugin>`_
+:ref:`TOP <admin-plugins-ts-lua>`
+
+ts.http.get_next_hop_strategy
+-----------------------------
+**syntax:** *ts.http.get_next_hop_strategy()*
+
+**context:** function @ TS_LUA_HOOK_READ_REQUEST_HDR or do_remap()
+
+**description** Returns the name of the current next hop selection strategy, or nil string if no strategy is in use.
+
+Here is an example:
+
+::
+
+    function do_remap()
+		  local strategy = ts.http.get_next_hop_strategy()
+			ts.debug("Using strategy: " .. strategy)
+		end
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
+ts.http.set_next_hop_strategy
+-----------------------------
+**syntax:** *ts.http.set_next_hop_strategy(str)*
+
+**context:** function @ TS_LUA_HOOK_READ_REQUEST_HDR or do_remap()
+
+**description** Looks for the named strategy and sets the current
+transaction to use that strategy.
+
+Use empty string or "null" to clear the strategy and fall back to
+parent.config or the remap to url.
+
+Here is an example:
+
+::
+
+    function do_remap()
+		  local uri = ts.client_request.get_uri()
+			if uri == "otherhost" then
+			  ts.http.set_next_hop_strategy("otherhost")
+			end
+		end
+
+:ref:`TOP <admin-plugins-ts-lua>`
 
 ts.sha256
 ---------
@@ -1949,7 +2147,7 @@ Here is an example:
     end
 
 
-`TOP <#ts-lua-plugin>`_
+:ref:`TOP <admin-plugins-ts-lua>`
 
 ts.sha256_bin
 -------------
@@ -1969,7 +2167,7 @@ Here is an example:
     end
 
 
-`TOP <#ts-lua-plugin>`_
+:ref:`TOP <admin-plugins-ts-lua>`
 
 ts.hmac_md5
 -----------
@@ -1995,7 +2193,7 @@ Here is an example:
     end
 
 
-`TOP <#ts-lua-plugin>`_
+:ref:`TOP <admin-plugins-ts-lua>`
 
 ts.hmac_sha1
 ------------
@@ -2021,7 +2219,7 @@ Here is an example:
     end
 
 
-`TOP <#ts-lua-plugin>`_
+:ref:`TOP <admin-plugins-ts-lua>`
 
 ts.hmac_sha256
 --------------
@@ -2047,7 +2245,7 @@ Here is an example:
     end
 
 
-`TOP <#ts-lua-plugin>`_
+:ref:`TOP <admin-plugins-ts-lua>`
 
 ts.server_request.server_addr.get_ip
 ------------------------------------
@@ -3356,7 +3554,7 @@ ts.http.get_ssn_remote_addr
 
 **description:** This function can be used to get the remote address (IP, port, family) of the session.
 
-`TOP <#ts-lua-plugin>`_
+:ref:`TOP <admin-plugins-ts-lua>`
 
 ts.http.get_client_received_error
 ---------------------------------
@@ -3376,7 +3574,7 @@ Here is an example
         ts.debug('txn_close: '..code)
     end
 
-`TOP <#ts-lua-plugin>`_
+:ref:`TOP <admin-plugins-ts-lua>`
 
 ts.http.get_client_sent_error
 -----------------------------
@@ -3386,7 +3584,7 @@ ts.http.get_client_sent_error
 
 **description:** This function can be used to get the client sent error from transaction.
 
-`TOP <#ts-lua-plugin>`_
+:ref:`TOP <admin-plugins-ts-lua>`
 
 ts.http.get_server_received_error
 ---------------------------------
@@ -3396,7 +3594,7 @@ ts.http.get_server_received_error
 
 **description:** This function can be used to get the server received error from transaction.
 
-`TOP <#ts-lua-plugin>`_
+:ref:`TOP <admin-plugins-ts-lua>`
 
 ts.http.get_server_sent_error
 -----------------------------
@@ -3406,7 +3604,7 @@ ts.http.get_server_sent_error
 
 **description:** This function can be used to get the server sent error from transaction.
 
-`TOP <#ts-lua-plugin>`_
+:ref:`TOP <admin-plugins-ts-lua>`
 
 ts.add_package_path
 -------------------
@@ -4579,7 +4777,7 @@ ts.vconn.get_fd
 
 **description:** This function can be used to get the file descriptor of the virtual connection.
 
-`TOP <#ts-lua-plugin>`_
+:ref:`TOP <admin-plugins-ts-lua>`
 
 ts.vconn.disable_h2
 -------------------
@@ -4589,7 +4787,7 @@ ts.vconn.disable_h2
 
 **description:** This function can be used to disable http/2 for the virtual connection.
 
-`TOP <#ts-lua-plugin>`_
+:ref:`TOP <admin-plugins-ts-lua>`
 
 ts.vconn.get_remote_addr
 ------------------------
@@ -4599,7 +4797,7 @@ ts.vconn.get_remote_addr
 
 **description:** This function can be used to get the remote address (IP, port, family) of the virtual connection.
 
-`TOP <#ts-lua-plugin>`_
+:ref:`TOP <admin-plugins-ts-lua>`
 
 Todo
 ====

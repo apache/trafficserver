@@ -36,8 +36,11 @@ class SSLNetVConnection;
 
 using ssl_error_t = int;
 
-// Return the SSL Curve ID associated to the specified SSL connection
+/// Return the SSL Curve ID associated with the specified SSL connection
 ssl_curve_id SSLGetCurveNID(SSL *ssl);
+
+/// Return the TLS Group Name associated with the specified SSL connection.
+std::string_view SSLGetGroupName(SSL *ssl);
 
 SSL_SESSION *SSLSessionDup(SSL_SESSION *sess);
 
@@ -122,11 +125,11 @@ struct ats_wildcard_matcher {
   bool
   match(const char *hostname) const
   {
-    return regex.match(hostname) != -1;
+    return regex.exec(hostname);
   }
 
 private:
-  DFA regex;
+  Regex regex;
 };
 
 using scoped_X509 = std::unique_ptr<X509, ssl::detail::X509Deleter>;

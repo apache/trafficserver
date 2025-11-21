@@ -45,7 +45,10 @@ public:
   NextHopStrategyFactory() = delete;
   NextHopStrategyFactory(const char *file);
   ~NextHopStrategyFactory();
-  std::shared_ptr<NextHopSelectionStrategy> strategyInstance(const char *name);
+
+  // The lifetime of this is attached to UrlRewrite which is reference
+  // counted and attached to an HttpSM.
+  NextHopSelectionStrategy *strategyInstance(const char *name) const;
 
   bool strategies_loaded;
 
@@ -53,5 +56,5 @@ private:
   std::string fn;
   void        loadConfigFile(const std::string &file, std::stringstream &doc, std::unordered_set<std::string> &include_once);
   void        createStrategy(const std::string &name, const NHPolicyType policy_type, ts::Yaml::Map &node);
-  std::unordered_map<std::string, std::shared_ptr<NextHopSelectionStrategy>> _strategies;
+  std::unordered_map<std::string, NextHopSelectionStrategy *> _strategies;
 };

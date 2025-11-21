@@ -582,7 +582,10 @@ protected:
 
 private:
   NetworkSessionQualifiers _net_qual = NET_QUAL_STACK;
-  void                     append_value(std::string &s, const Resources &res, NetworkSessionQualifiers qual);
+#if TS_HAS_CRIPTS
+  bool _mtls_cert = false;
+#endif
+  void append_value(std::string &s, const Resources &res, NetworkSessionQualifiers qual);
 };
 
 class ConditionStringLiteral : public Condition
@@ -783,6 +786,12 @@ public:
     }
   }
 
+  bool
+  has_conditions() const
+  {
+    return _cond != nullptr;
+  }
+
 private:
   Condition *_cond = nullptr; // First pre-condition (linked list)
   bool       _end  = false;
@@ -859,7 +868,7 @@ private:
   _get_data(const Resources &res) const
   {
     TSAssert(_byte_ix >= 0 && _byte_ix < NUM_STATE_INT8S);
-    auto    ptr  = reinterpret_cast<uint64_t>(TSUserArgGet(res.txnp, _txn_slot));
+    auto    ptr  = reinterpret_cast<uint64_t>(TSUserArgGet(res.state.txnp, _txn_slot));
     uint8_t data = (ptr & STATE_INT8_MASKS[_byte_ix]) >> (NUM_STATE_FLAGS + _byte_ix * 8);
 
     return data;
@@ -904,7 +913,7 @@ private:
   uint16_t
   _get_data(const Resources &res) const
   {
-    auto ptr = reinterpret_cast<uint64_t>(TSUserArgGet(res.txnp, _txn_slot));
+    auto ptr = reinterpret_cast<uint64_t>(TSUserArgGet(res.state.txnp, _txn_slot));
 
     return ((ptr & STATE_INT16_MASK) >> 48);
   }

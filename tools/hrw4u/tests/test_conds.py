@@ -14,17 +14,32 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+from __future__ import annotations
+
+from pathlib import Path
+
 import pytest
 import utils
 
 
 @pytest.mark.conds
-@pytest.mark.parametrize("input_file,output_file,ast_file", utils.collect_test_files("conds"))
-def test_output_matches(input_file, output_file, ast_file):
+@pytest.mark.parametrize("input_file,output_file", utils.collect_output_test_files("conds", "hrw4u"))
+def test_output_matches(input_file: Path, output_file: Path) -> None:
+    """Test that hrw4u output matches expected output for conds test cases."""
     utils.run_output_test(input_file, output_file)
 
 
 @pytest.mark.conds
-@pytest.mark.parametrize("input_file,output_file,ast_file", utils.collect_test_files("conds"))
-def test_ast_matches(input_file, output_file, ast_file):
+@pytest.mark.ast
+@pytest.mark.parametrize("input_file,ast_file", utils.collect_ast_test_files("conds"))
+def test_ast_matches(input_file: Path, ast_file: Path) -> None:
+    """Test that AST structure matches expected AST for conds test cases."""
     utils.run_ast_test(input_file, ast_file)
+
+
+@pytest.mark.conds
+@pytest.mark.invalid
+@pytest.mark.parametrize("input_file", utils.collect_failing_inputs("conds"))
+def test_invalid_inputs_fail(input_file: Path) -> None:
+    """Test that invalid conds inputs produce expected errors."""
+    utils.run_failing_test(input_file)

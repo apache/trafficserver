@@ -69,6 +69,7 @@ LBRACKET      : '[';
 RBRACKET      : ']';
 EQUALS        : '==';
 EQUAL         : '=';
+PLUSEQUAL     : '+=';
 NEQ           : '!=';
 GT            : '>';
 LT            : '<';
@@ -79,15 +80,21 @@ NOT_TILDE     : '!~';
 COLON         : ':';
 COMMA         : ',';
 SEMICOLON     : ';';
+AT            : '@';
 
-COMMENT       : '#' ~[\r\n]* -> skip ;
+COMMENT       : '#' ~[\r\n]* ;
 WS            : [ \t\r\n]+ -> skip ;
 
 // -----------------------------
 // Parser Rules
 // -----------------------------
 program
-    : section+ EOF
+    : programItem+ EOF
+    ;
+
+programItem
+    : section
+    | commentLine
     ;
 
 section
@@ -102,20 +109,27 @@ varSection
 sectionBody
     : statement
     | conditional
+    | commentLine
     ;
 
 variables
-    : variableDecl+
+    : variablesItem+
+    ;
+
+variablesItem
+    : variableDecl
+    | commentLine
     ;
 
 variableDecl
-    : name=IDENT COLON typeName=IDENT SEMICOLON
+    : name=IDENT COLON typeName=IDENT (AT slot=NUMBER)? SEMICOLON
     ;
 
 statement
     : BREAK SEMICOLON
     | functionCall SEMICOLON
     | lhs=IDENT EQUAL value SEMICOLON
+    | lhs=IDENT PLUSEQUAL value SEMICOLON
     | op=IDENT SEMICOLON
     ;
 
@@ -138,7 +152,13 @@ elifClause
     ;
 
 block
-    : LBRACE statement* RBRACE
+    : LBRACE blockItem* RBRACE
+    ;
+
+blockItem
+    : statement
+    | conditional
+    | commentLine
     ;
 
 // This helps us keep track of the last condition, which shouldn't emit the [] mods
@@ -229,4 +249,8 @@ value
     | ident=IDENT
     | ip
     | iprange
+    ;
+
+commentLine
+    : COMMENT
     ;

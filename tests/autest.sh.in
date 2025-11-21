@@ -5,7 +5,7 @@
 #
 
 export LD_LIBRARY_PATH=${CMAKE_INSTALL_PREFIX}/lib
-export PYTHONPATH=${CMAKE_CURRENT_SOURCE_DIR}/gold_tests/remap:$PYTHONPATH
+export PYTHONPATH=${CMAKE_CURRENT_SOURCE_DIR}/gold_tests/remap:${CMAKE_CURRENT_SOURCE_DIR}/gold_tests/lib:$PYTHONPATH
 
 # Define tests to skip for CURL_UDS_FLAG
 if [ -n "${CURL_UDS_FLAG}" ]; then
@@ -15,6 +15,9 @@ if [ -n "${CURL_UDS_FLAG}" ]; then
   fi
   if [ -d "${CMAKE_GOLD_DIR}/tls" ]; then
     mv "${CMAKE_GOLD_DIR}/tls" "${CMAKE_SKIP_GOLD_DIR}/tls"
+  fi
+  if [ -d "${CMAKE_GOLD_DIR}/tls_hooks" ]; then
+    mv "${CMAKE_GOLD_DIR}/tls_hooks" "${CMAKE_SKIP_GOLD_DIR}/tls_hooks"
   fi
 fi
 
@@ -34,6 +37,9 @@ if [ -n "${CURL_UDS_FLAG}" ]; then
   fi
   if [ -d "${CMAKE_SKIP_GOLD_DIR}/tls" ]; then
     mv "${CMAKE_SKIP_GOLD_DIR}/tls" "${CMAKE_GOLD_DIR}/tls"
+  fi
+  if [ -d "${CMAKE_SKIP_GOLD_DIR}/tls_hooks" ]; then
+    mv "${CMAKE_SKIP_GOLD_DIR}/tls_hooks" "${CMAKE_GOLD_DIR}/tls_hooks"
   fi
   if [ -d "${CMAKE_SKIP_GOLD_DIR}" ]; then
     rm -rf "${CMAKE_SKIP_GOLD_DIR}"

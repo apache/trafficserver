@@ -24,6 +24,7 @@ from ports import get_port
 Test.Summary = 'Tests the ja4_fingerprint plugin.'
 # The plugin is experimental and therefore may not always be built. It also
 # doesn't support QUIC yet.
+Test.SkipIf(Condition.CurlUsingUnixDomainSocket())
 Test.SkipUnless(Condition.PluginExists('ja4_fingerprint.so'))
 
 TestParams = Dict[str, Any]

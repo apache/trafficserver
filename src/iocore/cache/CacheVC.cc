@@ -276,7 +276,7 @@ CacheVC::get_data(int i, void *data)
     *(static_cast<CacheHTTPInfo **>(data)) = &alternate;
     return true;
   case CACHE_DATA_RAM_CACHE_HIT_FLAG:
-    *(static_cast<int *>(data)) = !f.not_from_ram_cache;
+    *(static_cast<int *>(data)) = f.doc_from_ram_cache;
     return true;
   default:
     break;
@@ -386,9 +386,6 @@ CacheVC::handleReadDone(int event, Event * /* e ATS_UNUSED */)
     // put into ram cache?
     if (io.ok() && ((doc->first_key == *read_key) || (doc->key == *read_key) || STORE_COLLISION) && doc->magic == DOC_MAGIC) {
       int okay = 1;
-      if (!f.doc_from_ram_cache) {
-        f.not_from_ram_cache = 1;
-      }
       if (cache_config_enable_checksum && doc->checksum != DOC_NO_CHECKSUM) {
         // verify that the checksum matches
         uint32_t checksum = 0;
@@ -462,10 +459,14 @@ CacheVC::handleRead(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   } else if (load_from_last_open_read_call()) {
     goto LmemHit;
   } else if (load_from_aggregation_buffer()) {
-    io.aio_result = io.aiocb.aio_nbytes;
+    f.doc_from_ram_cache = true;
+    io.aio_result        = io.aiocb.aio_nbytes;
     SET_HANDLER(&CacheVC::handleReadDone);
     return EVENT_RETURN;
   }
+
+  ts::Metrics::Counter::increment(cache_rsb.all_mem_misses);
+  ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.all_mem_misses);
 
   io.aiocb.aio_fildes = stripe->fd;
   io.aiocb.aio_offset = stripe->vol_offset(&dir);
@@ -517,6 +518,8 @@ CacheVC::load_from_last_open_read_call()
 {
   if (*this->read_key == this->stripe->first_fragment_key && dir_offset(&this->dir) == this->stripe->first_fragment_offset) {
     this->buf = this->stripe->first_fragment_data;
+    ts::Metrics::Counter::increment(cache_rsb.last_open_read_hits);
+    ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.last_open_read_hits);
     return true;
   }
   return false;
@@ -534,6 +537,8 @@ CacheVC::load_from_aggregation_buffer()
   [[maybe_unused]] bool success = this->stripe->copy_from_aggregate_write_buffer(doc, dir, this->io.aiocb.aio_nbytes);
   // We already confirmed that the copy was valid, so it should not fail.
   ink_assert(success);
+  ts::Metrics::Counter::increment(cache_rsb.agg_buffer_hits);
+  ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.agg_buffer_hits);
   return true;
 }
 

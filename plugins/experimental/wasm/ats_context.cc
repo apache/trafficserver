@@ -126,6 +126,10 @@ print_address(struct sockaddr const *ip, std::string *result)
       const auto *s_sockaddr_in6 = reinterpret_cast<const struct sockaddr_in6 *>(ip);
       inet_ntop(AF_INET6, &s_sockaddr_in6->sin6_addr, cip, sizeof(cip));
       port = s_sockaddr_in6->sin6_port;
+    } else {
+      Dbg(dbg_ctl, "[%s] unsupported address family: %d", __FUNCTION__, static_cast<int>(ip->sa_family));
+      *result = pv_empty;
+      return;
     }
     Dbg(dbg_ctl, "[%s] property retrieval - address: %.*s", __FUNCTION__, static_cast<int>(sizeof(cip)), cip);
     std::string cip_str(cip);
@@ -143,9 +147,13 @@ print_port(struct sockaddr const *ip, std::string *result)
     if (ip->sa_family == AF_INET) {
       const auto *s_sockaddr_in = reinterpret_cast<const struct sockaddr_in *>(ip);
       port                      = s_sockaddr_in->sin_port;
-    } else {
+    } else if (ip->sa_family == AF_INET6) {
       const auto *s_sockaddr_in6 = reinterpret_cast<const struct sockaddr_in6 *>(ip);
       port                       = s_sockaddr_in6->sin6_port;
+    } else {
+      Dbg(dbg_ctl, "[%s] unsupported address family: %d", __FUNCTION__, static_cast<int>(ip->sa_family));
+      *result = pv_empty;
+      return;
     }
     Dbg(dbg_ctl, "[%s] looking for source port: %d", __FUNCTION__, static_cast<int>(port));
     result->assign(reinterpret_cast<const char *>(&port), sizeof(int64_t));
@@ -1412,7 +1420,7 @@ Context::setProperty(std::string_view key, std::string_view serialized_value)
 
     if (TSHttpTxnServerRespGet(txnp_, &bufp, &hdr_loc) == TS_SUCCESS) {
       int64_t *status = reinterpret_cast<int64_t *>(const_cast<char *>(serialized_value.data()));
-      TSHttpHdrStatusSet(bufp, hdr_loc, static_cast<TSHttpStatus>(*status));
+      TSHttpHdrStatusSet(bufp, hdr_loc, static_cast<TSHttpStatus>(*status), txnp_, WASM_DEBUG_TAG);
       TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     }
     return WasmResult::Ok;
@@ -1487,7 +1495,7 @@ Context::sendLocalResponse(uint32_t response_code, std::string_view body_text, P
     TSError("[wasm][%s] Can't send local response without a transaction", __FUNCTION__);
     return WasmResult::InternalFailure;
   } else {
-    TSHttpTxnStatusSet(txnp_, static_cast<TSHttpStatus>(response_code));
+    TSHttpTxnStatusSet(txnp_, static_cast<TSHttpStatus>(response_code), WASM_DEBUG_TAG);
 
     if (body_text.size() > 0) {
       TSHttpTxnErrorBodySet(txnp_, TSstrndup(body_text.data(), body_text.size()), body_text.size(),

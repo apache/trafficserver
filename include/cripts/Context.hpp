@@ -44,7 +44,7 @@ public:
 
   // This will, and should, only be called via the ProxyAllocator as used in the factory.
   Context(TSHttpTxn txn_ptr, TSHttpSsn ssn_ptr, TSRemapRequestInfo *rri_ptr, cripts::Instance &inst)
-    : rri(rri_ptr), p_instance(inst), _client(this), _server(this), _urls(this, _client.url)
+    : rri(rri_ptr), p_instance(inst), _client(this), _server(this), _cache(this), _urls(this, _client.url)
   {
     state.txnp    = txn_ptr;
     state.ssnp    = ssn_ptr;
@@ -65,6 +65,12 @@ public:
   TSRemapRequestInfo                      *rri   = nullptr; // This may be nullptr, if not a remap
   cripts::Instance                        &p_instance;      // p_ == public_, since we can't use "instance"
 
+  bool
+  rriValid() const
+  {
+    return rri && rri->requestBufp && rri->requestHdrp && rri->requestUrl;
+  }
+
   // These are private, but needs to be visible to our friend classes that
   // depends on the Context.
   friend class Client::Request;
@@ -76,8 +82,10 @@ public:
   friend class Server::Request;
   friend class Server::Response;
   friend class Server::Connection;
-  friend class Pristine::URL;
+  friend class Server::Response;
+  friend class Cache::Response;
   friend class Cache::URL;
+  friend class Pristine::URL;
   friend class Parent::URL;
   friend class Plugin::Remap;
 
@@ -111,10 +119,21 @@ public:
 
   } _server;
 
+  struct _CacheBlock {
+    cripts::Cache::Response response;
+    cripts::Cache::URL      url;
+
+    _CacheBlock(Context *ctx)
+    {
+      response.set_state(&ctx->state);
+      url.set_context(ctx);
+    }
+
+  } _cache;
+
   struct _UrlBlock {
     cripts::Client::URL  &request;
     cripts::Pristine::URL pristine;
-    cripts::Cache::URL    cache;
     cripts::Parent::URL   parent;
 
     struct {
@@ -126,7 +145,6 @@ public:
     {
       request.set_context(ctx);
       pristine.set_context(ctx);
-      cache.set_context(ctx);
       parent.set_context(ctx);
       remap.from.set_context(ctx);
       remap.to.set_context(ctx);

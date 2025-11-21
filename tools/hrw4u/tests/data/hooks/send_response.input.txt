@@ -1,5 +1,5 @@
 SEND_RESPONSE {
     if inbound.resp.X-Send-Response == "yes" {
-      outbound.resp.X-Send-Response = "";
+        inbound.resp.X-Send-Response = "";
     }
 }

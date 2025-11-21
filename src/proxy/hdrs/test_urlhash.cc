@@ -34,8 +34,8 @@
 static void
 test_url()
 {
-  static const char *strs[] = {"http://npdev:19080/1.6664000000/4000", "http://npdev:19080/1.8666000000/4000"};
-  static int         nstrs  = sizeof(strs) / sizeof(strs[0]);
+  static constexpr const char *strs[] = {"http://npdev:19080/1.6664000000/4000", "http://npdev:19080/1.8666000000/4000"};
+  static constexpr int         nstrs  = sizeof(strs) / sizeof(strs[0]);
 
   int         err, failed;
   URL         url;

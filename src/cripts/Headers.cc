@@ -52,10 +52,10 @@ Header::Status::operator=(int status)
   case TS_HTTP_SEND_RESPONSE_HDR_HOOK:
   case TS_HTTP_READ_RESPONSE_HDR_HOOK:
   case TS_HTTP_TXN_CLOSE_HOOK:
-    TSHttpHdrStatusSet(_owner->_bufp, _owner->_hdr_loc, _status);
+    TSHttpHdrStatusSet(_owner->_bufp, _owner->_hdr_loc, _status, _owner->_state->txnp, "cripts");
     break;
   default:
-    TSHttpTxnStatusSet(_owner->_state->txnp, _status);
+    TSHttpTxnStatusSet(_owner->_state->txnp, _status, "cripts");
     break;
   }
 
@@ -108,30 +108,6 @@ Header::Method::GetSV()
   }
 
   return _method;
-}
-
-cripts::string_view
-Header::CacheStatus::GetSV()
-{
-  static std::array<cripts::string_view, 4> names{
-    "miss",      // TS_CACHE_LOOKUP_MISS,
-    "hit-stale", // TS_CACHE_LOOKUP_HIT_STALE,
-    "hit-fresh", // TS_CACHE_LOOKUP_HIT_FRESH,
-    "skipped"    // TS_CACHE_LOOKUP_SKIPPED
-  };
-  int status;
-
-  _ensure_initialized(_owner);
-  if (_cache.size() == 0) {
-    TSAssert(_owner->_state->txnp);
-    if (TSHttpTxnCacheLookupStatusGet(_owner->_state->txnp, &status) == TS_ERROR || status < 0 || status >= 4) {
-      _cache = "none";
-    } else {
-      _cache = names[status];
-    }
-  }
-
-  return _cache;
 }
 
 Header::String &
@@ -264,6 +240,24 @@ Header::operator[](const cripts::string_view str)
     ret._initialize(str, cripts::string_view(value, len), this, field_loc);
   } else {
     ret._initialize(str, {}, this, nullptr);
+  }
+
+  return ret;
+}
+
+time_t
+Header::AsDate(const cripts::string_view str)
+{
+  _ensure_initialized(this);
+  TSAssert(_bufp && _hdr_loc);
+
+  time_t ret       = 0;
+  TSMLoc field_loc = TSMimeHdrFieldFind(_bufp, _hdr_loc, str.data(), str.size());
+
+  if (field_loc) {
+    ret = TSMimeHdrFieldValueDateGet(_bufp, _hdr_loc, field_loc);
+    // Since this is not owned by a Header::String, we have to release it now
+    TSHandleMLocRelease(_bufp, _hdr_loc, field_loc);
   }
 
   return ret;
@@ -403,6 +397,74 @@ Server::Response::_initialize()
   } else {
     super_type::_initialize(); // Don't initialize unless properly setup
   }
+}
+
+Cache::Response &
+Cache::Response::_get(cripts::Context *context)
+{
+  _ensure_initialized(&context->_cache.response);
+  return context->_cache.response;
+}
+
+void
+Cache::Response::_initialize()
+{
+  CAssert(_state->hook != TS_HTTP_READ_REQUEST_HDR_HOOK);
+  CAssert(_state->hook != TS_HTTP_POST_REMAP_HOOK);
+  CAssert(_state->hook != TS_HTTP_SEND_REQUEST_HDR_HOOK);
+
+  TSAssert(_state->txnp);
+
+  if (TSHttpTxnCachedRespGet(_state->txnp, &_bufp, &_hdr_loc) != TS_SUCCESS) {
+    _state->error.Fail();
+  } else {
+    super_type::_initialize(); // Don't initialize unless properly setup
+  }
+}
+
+Cache::Response::LookupStatus::operator integer()
+{
+  if (_lookup == -1) {
+    TSAssert(_owner->_state->txnp);
+
+    if (TSHttpTxnCacheLookupStatusGet(_owner->_state->txnp, &_lookup) == TS_ERROR || _lookup < 0 || _lookup >= 4) {
+      _lookup = -1;
+    }
+  }
+
+  return _lookup;
+}
+
+cripts::string_view
+Cache::Response::LookupStatus::GetSV()
+{
+  static std::array<cripts::string_view, 4> names{
+    "miss",      // TS_CACHE_LOOKUP_MISS,
+    "hit-stale", // TS_CACHE_LOOKUP_HIT_STALE,
+    "hit-fresh", // TS_CACHE_LOOKUP_HIT_FRESH,
+    "skipped"    // TS_CACHE_LOOKUP_SKIPPED
+  };
+
+  int status = operator integer();
+
+  if (status == -1) {
+    return "none";
+  } else {
+    return names[status];
+  }
+}
+
+Cache::Response::LookupStatus &
+Cache::Response::LookupStatus::operator=(int lookup)
+{
+  if (TSHttpTxnCacheLookupStatusSet(_owner->_state->txnp, lookup) == TS_SUCCESS) {
+    _owner->_state->context->p_instance.debug("Setting LookupStatus = {}", lookup);
+  } else {
+    // ToDo: Should we fail here?
+    // _owner->_state->error.Fail();
+  }
+
+  return *this;
 }
 
 } // namespace cripts

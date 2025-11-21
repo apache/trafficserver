@@ -106,8 +106,8 @@ private:
     SslData *prev = nullptr;
     SslData *next = nullptr;
 
-    SslData() = default;
-    ~SslData() { /* Dbg(dbg_ctl, "Deleting ssl data for [%s]", commonName.c_str()); */ }
+    SslData()  = default;
+    ~SslData() = default;
   };
 
   using scoped_SslData = std::unique_ptr<SslLRUList::SslData>;

@@ -42,19 +42,19 @@ bool
 BgFetchConfig::parseOptions(int argc, const char *argv[])
 {
   static const struct option longopt[] = {
-    {const_cast<char *>("log"),       required_argument, nullptr, 'l' },
-    {const_cast<char *>("config"),    required_argument, nullptr, 'c' },
-    {const_cast<char *>("allow-304"), no_argument,       nullptr, 'a' },
-    {nullptr,                         no_argument,       nullptr, '\0'}
+    {const_cast<char *>("log"),             required_argument, nullptr, 'l' },
+    {const_cast<char *>("config"),          required_argument, nullptr, 'c' },
+    {const_cast<char *>("range-req-only"),  optional_argument, nullptr, 'r' },
+    {const_cast<char *>("cache-range-req"), optional_argument, nullptr, 'a' },
+    {nullptr,                               no_argument,       nullptr, '\0'},
   };
 
   while (true) {
-    int opt = getopt_long(argc, const_cast<char *const *>(argv), "lc", longopt, nullptr);
+    int opt = getopt_long(argc, const_cast<char *const *>(argv), "", longopt, nullptr);
 
     if (opt == -1) {
       break;
     }
-
     switch (opt) {
     case 'l':
       Dbg(dbg_ctl, "option: log file specified: %s", optarg);
@@ -67,15 +67,24 @@ BgFetchConfig::parseOptions(int argc, const char *argv[])
         return false;
       }
       break;
+    case 'r':
+      Dbg(dbg_ctl, "option: --range-req-only set");
+      _range_req_only = isTrue(optarg);
+      break;
     case 'a':
-      Dbg(dbg_ctl, "option: --allow-304 set");
-      _allow_304 = true;
+      Dbg(dbg_ctl, "option: --cache-range-req set");
+      _cache_range_req = isTrue(optarg);
       break;
     default:
       TSError("[%s] invalid plugin option: %c", PLUGIN_NAME, opt);
       return false;
       break;
     }
+  }
+
+  if (_range_req_only && !_cache_range_req) {
+    TSError("[%s] Cannot define _range_req_only=true and _cache_range_req=false", PLUGIN_NAME);
+    return false;
   }
 
   return true;
@@ -198,8 +207,29 @@ BgFetchConfig::bgFetchAllowed(TSHttpTxn txnp) const
     return false;
   }
 
-  bool allow_bg_fetch = true;
+  if (_range_req_only || !_cache_range_req) {
+    TSMBuffer bufp;
+    TSMLoc    hdr_loc;
+    if (TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc) == TS_SUCCESS) {
+      bool hasRangeHdrs = false;
+      for (auto const &header : FILTER_HEADERS) {
+        if (TSMimeHdrFieldFind(bufp, hdr_loc, header.data(), header.size() == TS_SUCCESS)) {
+          hasRangeHdrs = true;
+          break;
+        }
+      }
+      if (!hasRangeHdrs && _range_req_only) {
+        Dbg(dbg_ctl, "_range_req_only=true; This transaction is not a range request");
+        return false;
+      }
+      if (hasRangeHdrs && !_cache_range_req) {
+        Dbg(dbg_ctl, "_cache_range_req=false; This transaction is a range request");
+        return false;
+      }
+    }
+  }
 
+  bool allow_bg_fetch = true;
   // We could do this recursively, but following the linked list is probably more efficient.
   for (auto const &r : _rules) {
     if (r.check_field_configured(txnp)) {

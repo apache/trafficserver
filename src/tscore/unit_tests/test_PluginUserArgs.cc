@@ -21,7 +21,7 @@
 */
 
 #include "tscore/PluginUserArgs.h"
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
 
 TEST_CASE("get_user_arg_offset", "[libts][PluginUserArgs]")
 {

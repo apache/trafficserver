@@ -1,17 +1,17 @@
 VARS {
-  myFlag: bool;
+    bool_0: bool;
 }
 
 REMAP {
     if inbound.req.X-Foo == "bar" {
         inbound.resp.body = "This is a response body";
     } else {
-        myFlag = true;
+        bool_0 = true;
     }
 }
 
 READ_RESPONSE {
-    if myFlag {
+    if bool_0 {
         set-body-from("https://example.com/body.txt");
     }
 }

@@ -1,0 +1,19 @@
+SEND_RESPONSE {
+    http.cntl.LOGGING = TRUE;
+    http.cntl.TXN_DEBUG = FALSE;
+    http.cntl.REQ_CACHEABLE = YES;
+    http.cntl.RESP_CACHEABLE = NO;
+    http.cntl.SERVER_NO_STORE = ON;
+    http.cntl.SKIP_REMAP = OFF;
+    http.cntl.INTERCEPT_RETRY = 1;
+    http.cntl.LOGGING = 0;
+    http.cntl.TXN_DEBUG = true;
+    http.cntl.REQ_CACHEABLE = false;
+    http.cntl.RESP_CACHEABLE = yes;
+    http.cntl.SERVER_NO_STORE = no;
+    http.cntl.SKIP_REMAP = on;
+    http.cntl.INTERCEPT_RETRY = off;
+    http.cntl.LOGGING = True;
+    http.cntl.TXN_DEBUG = False;
+    http.cntl.LOGGING = TRue;
+}

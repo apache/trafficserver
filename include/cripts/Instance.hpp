@@ -112,7 +112,7 @@ public:
     }
   }
 
-  std::array<DataType, 32>                       data;
+  std::array<DataType, 16>                       data;
   cripts::string                                 to_url;
   cripts::string                                 from_url;
   cripts::string                                 plugin_debug_tag;

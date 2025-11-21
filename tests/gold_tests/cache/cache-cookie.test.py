@@ -48,11 +48,7 @@ class CookieDefaultTest:
 
     def runTraffic(self):
         tr = Test.AddTestRun("Verify the correct caching behavior when ATS is in default configuration")
-        tr.AddVerifierClientProcess(
-            "cookie-default-client",
-            self.cookieDefaultReplayFile,
-            http_ports=[self.ts.Variables.port],
-            other_args='--thread-limit 1')
+        tr.AddVerifierClientProcess("cookie-default-client", self.cookieDefaultReplayFile, http_ports=[self.ts.Variables.port])
         tr.Processes.Default.StartBefore(self.server)
         tr.Processes.Default.StartBefore(self.ts)
         tr.StillRunningAfter = self.server
@@ -91,8 +87,7 @@ class CookieBypassTest:
     def runTraffic(self):
         tr = Test.AddTestRun(
             "Verify the correct caching behavior when ATS is configured to not cache response to cookie for any content type")
-        tr.AddVerifierClientProcess(
-            "cookie-bypass-client", self.cookieBypassReplayFile, http_ports=[self.ts.Variables.port], other_args='--thread-limit 1')
+        tr.AddVerifierClientProcess("cookie-bypass-client", self.cookieBypassReplayFile, http_ports=[self.ts.Variables.port])
         tr.Processes.Default.StartBefore(self.server)
         tr.Processes.Default.StartBefore(self.ts)
         tr.StillRunningAfter = self.server
@@ -131,11 +126,7 @@ class CookieImgOnlyTest:
     def runTraffic(self):
         tr = Test.AddTestRun(
             "Verify the correct caching behavior when ATS is configured to cache response to cookie only for image content type")
-        tr.AddVerifierClientProcess(
-            "cookie-img-only-client",
-            self.cookieImgOnlyReplayFile,
-            http_ports=[self.ts.Variables.port],
-            other_args='--thread-limit 1')
+        tr.AddVerifierClientProcess("cookie-img-only-client", self.cookieImgOnlyReplayFile, http_ports=[self.ts.Variables.port])
         tr.Processes.Default.StartBefore(self.server)
         tr.Processes.Default.StartBefore(self.ts)
         tr.StillRunningAfter = self.server
@@ -175,10 +166,7 @@ class CookieAllButTextTest:
         tr = Test.AddTestRun(
             "Verify the correct caching behavior when ATS is configured to cache response to cookie for all but text types")
         tr.AddVerifierClientProcess(
-            "cookie-all-but-text-client",
-            self.cookieAllButTextReplayFile,
-            http_ports=[self.ts.Variables.port],
-            other_args='--thread-limit 1')
+            "cookie-all-but-text-client", self.cookieAllButTextReplayFile, http_ports=[self.ts.Variables.port])
         tr.Processes.Default.StartBefore(self.server)
         tr.Processes.Default.StartBefore(self.ts)
         tr.StillRunningAfter = self.server
@@ -222,10 +210,7 @@ class CookieAllButTextWithExcpTest:
             "Verify the correct caching behavior when ATS is configured to cache all content types but text, but with a few exceptions for text types which would also be cached"
         )
         tr.AddVerifierClientProcess(
-            "cookie-all-but-text-with-excp-client",
-            self.cookieAllButTextReplayFile,
-            http_ports=[self.ts.Variables.port],
-            other_args='--thread-limit 1')
+            "cookie-all-but-text-with-excp-client", self.cookieAllButTextReplayFile, http_ports=[self.ts.Variables.port])
         tr.Processes.Default.StartBefore(self.server)
         tr.Processes.Default.StartBefore(self.ts)
         tr.StillRunningAfter = self.server

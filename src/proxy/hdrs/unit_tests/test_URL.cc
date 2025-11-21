@@ -20,7 +20,7 @@
 
 #include <cstdio>
 
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
 
 #include "proxy/hdrs/URL.h"
 #include "tscore/CryptoHash.h"
@@ -68,6 +68,8 @@ TEST_CASE("Validate Scheme", "[proxy][validscheme]")
     {"example.",   true },
     {"example++",  true },
     {"example--.", true },
+    {"http+unix",  true },
+    {"https+unix", true },
     {"++example",  false},
     {"--example",  false},
     {".example",   false},

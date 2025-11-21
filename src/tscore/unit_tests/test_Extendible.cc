@@ -16,7 +16,9 @@
   limitations under the License.
  */
 
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_string.hpp>
+#include <catch2/matchers/catch_matchers.hpp>
 
 #include <iostream>
 #include <string>
@@ -329,19 +331,19 @@ TEST_CASE("Extendible", "")
   // test cases:
   //[constructor] [operator] [type] [access] [capacity] [modifier] [operation] [compare] [find]
   // I don't use SECTIONS because this modifies static variables many times, is not thread safe.
-  INFO("Extendible()")
+  INFO("Extendible()");
   {
     ptr = ext::create<Derived>();
     REQUIRE(ptr != nullptr);
   }
 
-  INFO("~Extendible")
+  INFO("~Extendible");
   {
     //
     delete ptr;
   }
 
-  INFO("Schema Reset")
+  INFO("Schema Reset");
   {
     ptr = ext::create<Derived>();
     REQUIRE(Derived::schema.no_instances() == false);
@@ -353,7 +355,7 @@ TEST_CASE("Extendible", "")
     ext::details::areFieldsFinalized() = true;
   }
 
-  INFO("shared_ptr")
+  INFO("shared_ptr");
   {
     shared_ptr<Derived> sptr(ext::create<Derived>());
     REQUIRE(Derived::schema.no_instances() == false);
@@ -361,7 +363,7 @@ TEST_CASE("Extendible", "")
   }
   REQUIRE(Derived::schema.no_instances() == true);
 
-  INFO("add a bit field")
+  INFO("add a bit field");
   {
     //
     ext::details::areFieldsFinalized() = false;
@@ -399,7 +401,7 @@ TEST_CASE("Extendible", "")
     CHECK(ext::get(ref, bit_a) == true);
   }
 
-  INFO("test bit packing")
+  INFO("test bit packing");
   {
     struct size_test {
       string   s;
@@ -425,10 +427,10 @@ TEST_CASE("Extendible", "")
     shared_ptr<Derived> sptr(ext::create<Derived>());
     Derived            &ref = *sptr;
     CHECK(ext::viewFormat(ref) == Derived::testFormat());
-    using Catch::Matchers::Contains;
-    REQUIRE_THAT(ext::toString(ref), Contains("bit_a: 0"));
-    REQUIRE_THAT(ext::toString(ref), Contains("bit_b: 0"));
-    REQUIRE_THAT(ext::toString(ref), Contains("bit_c: 0"));
+    using Catch::Matchers::ContainsSubstring;
+    REQUIRE_THAT(ext::toString(ref), ContainsSubstring("bit_a: 0"));
+    REQUIRE_THAT(ext::toString(ref), ContainsSubstring("bit_b: 0"));
+    REQUIRE_THAT(ext::toString(ref), ContainsSubstring("bit_c: 0"));
 
     ext::set(ref, bit_a) = true;
     ext::set(ref, bit_b) = false;
@@ -436,12 +438,12 @@ TEST_CASE("Extendible", "")
     CHECK(ext::get(ref, bit_a) == true);
     CHECK(ext::get(ref, bit_b) == false);
     CHECK(ext::get(ref, bit_c) == true);
-    REQUIRE_THAT(ext::toString(ref), Contains("bit_a: 1"));
-    REQUIRE_THAT(ext::toString(ref), Contains("bit_b: 0"));
-    REQUIRE_THAT(ext::toString(ref), Contains("bit_c: 1"));
+    REQUIRE_THAT(ext::toString(ref), ContainsSubstring("bit_a: 1"));
+    REQUIRE_THAT(ext::toString(ref), ContainsSubstring("bit_b: 0"));
+    REQUIRE_THAT(ext::toString(ref), ContainsSubstring("bit_c: 1"));
   }
 
-  INFO("store int field")
+  INFO("store int field");
   {
     ext::details::areFieldsFinalized() = false;
     REQUIRE(fieldAdd(int_a, "int_a"));
@@ -465,7 +467,7 @@ TEST_CASE("Extendible", "")
 
   printf("\n");
 
-  INFO("Extendible Test Complete")
+  INFO("Extendible Test Complete");
 }
 
 TEST_CASE("Extendible C API")
@@ -475,7 +477,7 @@ TEST_CASE("Extendible C API")
   CHECK(Derived::schema.no_instances() == true);
   ext::details::areFieldsFinalized() = true;
 
-  INFO("C API alloc instance")
+  INFO("C API alloc instance");
   {
     void *d = DerivedExtalloc();
 
@@ -487,7 +489,7 @@ TEST_CASE("Extendible C API")
     CHECK(Derived::schema.no_instances() == true);
   }
 
-  INFO("C API add int field")
+  INFO("C API add int field");
   {
     ExtFieldContext cf_a = DerivedExtfieldAdd("cf_a", 4, nullptr, nullptr);
 
@@ -495,7 +497,7 @@ TEST_CASE("Extendible C API")
     CHECK(ext::sizeOf<Derived>() == expected_size);
     CHECK(DerivedExtfieldFind("cf_a") == cf_a);
   }
-  INFO("C API test int field")
+  INFO("C API test int field");
   {
     void *d = DerivedExtalloc();
     REQUIRE(d != nullptr);
@@ -512,7 +514,7 @@ TEST_CASE("Extendible C API")
     CHECK(*data32 == 0x00070501);
     DerivedExtFree(d);
   }
-  INFO("Extendible C API Test Complete")
+  INFO("Extendible C API Test Complete");
 }
 
 //*/

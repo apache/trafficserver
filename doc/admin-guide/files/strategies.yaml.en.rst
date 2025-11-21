@@ -201,6 +201,62 @@ Each **strategy** in the list may using the following parameters:
    #. **parent**: Use the parent URL as set via the API :cpp:func:`TSHttpTxnParentSelectionUrlSet`.
       This again is likely set via an existing plugin such as the **cachekey** plugin.
 
+- **hash_algorithm**: The hash algorithm used by the **consistent_hash** policy. This parameter allows
+  per-strategy selection of the hash algorithm. If not specified, defaults to **siphash24** (or the value
+  set in :ts:cv:`proxy.config.http.parent_proxy.consistent_hash_algorithm`). Use one of:
+
+   #. **siphash24**: (**default**) SipHash-2-4. Cryptographically strong, DoS-resistant hash function.
+   #. **siphash13**: SipHash-1-3. ~50% faster than SipHash-2-4, still DoS-resistant.
+
+  Example:
+
+  .. code-block:: yaml
+
+     policy: consistent_hash
+     hash_algorithm: siphash13
+
+- **hash_seed0**: The first 64 bits of the hash seed (key) for the **consistent_hash** policy.
+
+  - For SipHash algorithms, this forms the first half of the 128-bit cryptographic key (k0)
+  - For future 64-bit hash algorithms, this is the full seed value
+
+  Value must be specified as a decimal integer. Default is **0**.
+
+  Example:
+
+  .. code-block:: yaml
+
+     policy: consistent_hash
+     hash_seed0: 12345678901234567
+
+- **hash_seed1**: The second 64 bits of the hash seed (key) for the **consistent_hash** policy.
+
+  - For SipHash algorithms, this forms the second half of the 128-bit cryptographic key (k1)
+  - For future 64-bit hash algorithms, this value is ignored
+
+  Value must be specified as a decimal integer. Default is **0**.
+
+  Example:
+
+  .. code-block:: yaml
+
+     policy: consistent_hash
+     hash_seed0: 12345678901234567
+     hash_seed1: 9876543210987654321
+
+- **hash_replicas**: The number of virtual nodes (replicas) per host on the consistent hash ring for
+  the **consistent_hash** policy.
+
+  Increasing the replica count improves the distribution of requests across hosts but uses more memory.
+  Must be greater than 0. Default is **1024**.
+
+  Example:
+
+  .. code-block:: yaml
+
+     policy: consistent_hash
+     hash_replicas: 2048
+
 - **go_direct**: A boolean value indicating whether a transaction may bypass proxies and go direct to the origin. Defaults to **true**
 - **parent_is_proxy**: A boolean value which indicates if the groups of hosts are proxy caches or origins.  **true** (default) means all the hosts used in the remap are |TS| caches.  **false** means the hosts are origins that the next hop strategies may use for load balancing and/or failover.
 - **cache_peer_result**: A boolean value that is only used when the **policy** is 'consistent_hash' and a **peering_ring** mode is used for the strategy. When set to true, the default, all responses from upstream and peer endpoints are allowed to be cached.  Setting this to false will disable caching responses received from a peer host. Only responses from upstream origins or parents will be cached for this strategy.

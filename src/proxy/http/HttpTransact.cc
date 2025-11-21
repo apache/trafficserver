@@ -128,13 +128,12 @@ extern HttpBodyFactory *body_factory;
 inline static bool
 bypass_ok(HttpTransact::State *s)
 {
-  url_mapping *mp = s->url_map.getMapping();
   if (s->response_action.handled) {
     return s->response_action.action.goDirect;
-  } else if (mp && mp->strategy) {
+  } else if (nullptr != s->next_hop_strategy) {
     // remap strategies do not support the TSHttpTxnParentProxySet API.
-    return mp->strategy->go_direct;
-  } else if (s->parent_params) {
+    return s->next_hop_strategy->go_direct;
+  } else if (nullptr != s->parent_params) {
     return s->parent_result.bypass_ok();
   }
   return false;
@@ -145,13 +144,11 @@ bypass_ok(HttpTransact::State *s)
 inline static bool
 is_api_result(HttpTransact::State *s)
 {
-  bool         r  = false;
-  url_mapping *mp = s->url_map.getMapping();
-
-  if (mp && mp->strategy) {
+  bool r = false;
+  if (nullptr != s->next_hop_strategy) {
     // remap strategies do not support the TSHttpTxnParentProxySet API.
     r = false;
-  } else if (s->parent_params) {
+  } else if (nullptr != s->parent_params) {
     r = s->parent_result.is_api_result();
   }
   return r;
@@ -184,12 +181,11 @@ numParents(HttpTransact::State *s)
 inline static bool
 parent_is_proxy(HttpTransact::State *s)
 {
-  url_mapping *mp = s->url_map.getMapping();
   if (s->response_action.handled) {
     return s->response_action.action.parentIsProxy;
-  } else if (mp && mp->strategy) {
-    return mp->strategy->parent_is_proxy;
-  } else if (s->parent_params) {
+  } else if (nullptr != s->next_hop_strategy) {
+    return s->next_hop_strategy->parent_is_proxy;
+  } else if (nullptr != s->parent_params) {
     return s->parent_result.parent_is_proxy();
   }
   return false;
@@ -211,7 +207,6 @@ retry_type(HttpTransact::State *s)
 inline static void
 findParent(HttpTransact::State *s)
 {
-  url_mapping *mp = s->url_map.getMapping();
   Metrics::Counter::increment(http_rsb.parent_count);
   if (s->response_action.handled) {
     s->parent_result.hostname = s->response_action.action.hostname;
@@ -224,9 +219,9 @@ findParent(HttpTransact::State *s)
     } else {
       s->parent_result.result = ParentResultType::FAIL;
     }
-  } else if (mp && mp->strategy) {
-    mp->strategy->findNextHop(reinterpret_cast<TSHttpTxn>(s->state_machine));
-  } else if (s->parent_params) {
+  } else if (nullptr != s->next_hop_strategy) {
+    s->next_hop_strategy->findNextHop(reinterpret_cast<TSHttpTxn>(s->state_machine));
+  } else if (nullptr != s->parent_params) {
     s->parent_params->findParent(&s->request_data, &s->parent_result, s->txn_conf->parent_fail_threshold,
                                  s->txn_conf->parent_retry_time);
   }
@@ -237,8 +232,6 @@ findParent(HttpTransact::State *s)
 inline static void
 markParentDown(HttpTransact::State *s)
 {
-  url_mapping *mp = s->url_map.getMapping();
-
   TxnDbg(dbg_ctl_http_trans, "enable_parent_timeout_markdowns: %d, disable_parent_markdowns: %d",
          s->txn_conf->enable_parent_timeout_markdowns, s->txn_conf->disable_parent_markdowns);
 
@@ -258,10 +251,10 @@ markParentDown(HttpTransact::State *s)
 
   if (s->response_action.handled) {
     // Do nothing. If a plugin handled the response, let it handle markdown.
-  } else if (mp && mp->strategy) {
-    mp->strategy->markNextHop(reinterpret_cast<TSHttpTxn>(s->state_machine), s->parent_result.hostname, s->parent_result.port,
-                              NHCmd::MARK_DOWN);
-  } else if (s->parent_params) {
+  } else if (nullptr != s->next_hop_strategy) {
+    s->next_hop_strategy->markNextHop(reinterpret_cast<TSHttpTxn>(s->state_machine), s->parent_result.hostname,
+                                      s->parent_result.port, NHCmd::MARK_DOWN);
+  } else if (nullptr != s->parent_params) {
     s->parent_params->markParentDown(&s->parent_result, s->txn_conf->parent_fail_threshold, s->txn_conf->parent_retry_time);
   }
 }
@@ -271,13 +264,12 @@ markParentDown(HttpTransact::State *s)
 inline static void
 markParentUp(HttpTransact::State *s)
 {
-  url_mapping *mp = s->url_map.getMapping();
   if (s->response_action.handled) {
     // Do nothing. If a plugin handled the response, let it handle markdown
-  } else if (mp && mp->strategy) {
-    mp->strategy->markNextHop(reinterpret_cast<TSHttpTxn>(s->state_machine), s->parent_result.hostname, s->parent_result.port,
-                              NHCmd::MARK_UP);
-  } else if (s->parent_params) {
+  } else if (nullptr != s->next_hop_strategy) {
+    s->next_hop_strategy->markNextHop(reinterpret_cast<TSHttpTxn>(s->state_machine), s->parent_result.hostname,
+                                      s->parent_result.port, NHCmd::MARK_UP);
+  } else if (nullptr != s->parent_params) {
     s->parent_params->markParentUp(&s->parent_result);
   }
 }
@@ -287,12 +279,11 @@ markParentUp(HttpTransact::State *s)
 inline static bool
 parentExists(HttpTransact::State *s)
 {
-  url_mapping *mp = s->url_map.getMapping();
   if (s->response_action.handled) {
     return s->response_action.action.nextHopExists;
-  } else if (mp && mp->strategy) {
-    return mp->strategy->nextHopExists(reinterpret_cast<TSHttpTxn>(s->state_machine));
-  } else if (s->parent_params) {
+  } else if (nullptr != s->next_hop_strategy) {
+    return s->next_hop_strategy->nextHopExists(reinterpret_cast<TSHttpTxn>(s->state_machine));
+  } else if (nullptr != s->parent_params) {
     return s->parent_params->parentExists(&s->request_data);
   } else {
     return false;
@@ -306,7 +297,6 @@ nextParent(HttpTransact::State *s)
 {
   TxnDbg(dbg_ctl_parent_down, "connection to parent %s failed, conn_state: %s, request to origin: %s", s->parent_result.hostname,
          HttpDebugNames::get_server_state_name(s->current.state), s->request_data.get_host());
-  url_mapping *mp = s->url_map.getMapping();
   Metrics::Counter::increment(http_rsb.parent_count);
   if (s->response_action.handled) {
     s->parent_result.hostname = s->response_action.action.hostname;
@@ -319,10 +309,10 @@ nextParent(HttpTransact::State *s)
     } else {
       s->parent_result.result = ParentResultType::FAIL;
     }
-  } else if (mp && mp->strategy) {
+  } else if (nullptr != s->next_hop_strategy) {
     // NextHop only has a findNextHop() function.
-    mp->strategy->findNextHop(reinterpret_cast<TSHttpTxn>(s->state_machine));
-  } else if (s->parent_params) {
+    s->next_hop_strategy->findNextHop(reinterpret_cast<TSHttpTxn>(s->state_machine));
+  } else if (nullptr != s->parent_params) {
     s->parent_params->nextParent(&s->request_data, &s->parent_result, s->txn_conf->parent_fail_threshold,
                                  s->txn_conf->parent_retry_time);
   }
@@ -404,12 +394,11 @@ response_is_retryable(HttpTransact::State *s, HTTPStatus response_code)
   if (s->response_action.handled) {
     return s->response_action.action.responseIsRetryable ? ParentRetry_t::SIMPLE : ParentRetry_t::NONE;
   }
-  const url_mapping *mp = s->url_map.getMapping();
-  if (mp && mp->strategy) {
-    return mp->strategy->responseIsRetryable(s->state_machine->sm_id, s->current, response_code);
+  if (nullptr != s->next_hop_strategy) {
+    return s->next_hop_strategy->responseIsRetryable(s->state_machine->sm_id, s->current, response_code);
   }
 
-  if (s->parent_params && !s->parent_result.response_is_retryable(s->parent_result.retry_type(), response_code)) {
+  if (nullptr != s->parent_params && !s->parent_result.response_is_retryable(s->parent_result.retry_type(), response_code)) {
     return ParentRetry_t::NONE;
   }
   const ParentRetry_t s_retry_type = retry_type(s);
@@ -906,6 +895,7 @@ HttpTransact::Forbidden(State *s)
 {
   TxnDbg(dbg_ctl_http_trans, "IpAllow marked request forbidden");
   bootstrap_state_variables_from_request(s, &s->hdr_info.client_request);
+  s->http_return_code_setter_name = "ip_allow";
   build_error_response(s, HTTPStatus::FORBIDDEN, "Access Denied", "access#denied");
   TRANSACT_RETURN(StateMachineAction_t::SEND_ERROR_CACHE_NOOP, nullptr);
 }
@@ -1109,6 +1099,7 @@ HttpTransact::EndRemapRequest(State *s)
   // We must close this connection if client_connection_enabled == false //
   /////////////////////////////////////////////////////////////////////////
   if (!s->client_connection_allowed) {
+    s->http_return_code_setter_name = "ip_allow";
     build_error_response(s, HTTPStatus::FORBIDDEN, "Access Denied", "access#denied");
     s->reverse_proxy = false;
     goto done;
@@ -1758,7 +1749,6 @@ HttpTransact::HandleApiErrorJump(State *s)
   **/
   if (s->http_return_code != HTTPStatus::NONE && s->http_return_code >= HTTPStatus::BAD_REQUEST) {
     const char *reason = http_hdr_reason_lookup(s->http_return_code);
-    ;
     build_response(s, &s->hdr_info.client_response, s->client_info.http_version, s->http_return_code, reason ? reason : "Error");
   } else {
     build_response(s, &s->hdr_info.client_response, s->client_info.http_version, HTTPStatus::INTERNAL_SERVER_ERROR, "INKApi Error");
@@ -1925,7 +1915,7 @@ HttpTransact::OSDNSLookup(State *s)
       SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
       if (!s->dns_info.record || s->dns_info.record->is_failed()) {
         // Set to internal server error so later logging will pick up SquidLogCode::ERR_DNS_FAIL
-        build_error_response(s, HTTPStatus::INTERNAL_SERVER_ERROR, "Cannot find server.", "connect#dns_failed");
+        build_error_response(s, HTTPStatus::INTERNAL_SERVER_ERROR, "Cannot find server.", Dns_error_body);
         log_msg = "looking up";
       } else {
         build_error_response(s, HTTPStatus::INTERNAL_SERVER_ERROR, "No valid server.", "connect#all_down");
@@ -3740,6 +3730,20 @@ HttpTransact::handle_response_from_server(State *s)
   case PARSE_ERROR:
   case CONNECTION_CLOSED:
   case BAD_INCOMING_RESPONSE:
+
+    // Ensure cause_of_death_errno is set for all error states if not already set.
+    // This prevents the assertion failure in retry_server_connection_not_open.
+    if (s->cause_of_death_errno == -UNKNOWN_INTERNAL_ERROR) {
+      if (s->current.state == PARSE_ERROR || s->current.state == BAD_INCOMING_RESPONSE) {
+        s->set_connect_fail(EBADMSG);
+      } else if (s->current.state == CONNECTION_CLOSED) {
+        s->set_connect_fail(EPIPE);
+      } else {
+        // Generic fallback for OPEN_RAW_ERROR, CONNECTION_ERROR,
+        // STATE_UNDEFINED, and any other unexpected error states.
+        s->set_connect_fail(EIO);
+      }
+    }
 
     if (is_server_negative_cached(s)) {
       max_connect_retries = s->txn_conf->connect_attempts_max_retries_down_server - 1;
@@ -6509,12 +6513,13 @@ HttpTransact::process_quick_http_filter(State *s, int method)
 {
   // connection already disabled by previous ACL filtering, don't modify it.
   if (!s->client_connection_allowed) {
+    s->http_return_code_setter_name = "ip_allow";
     return;
   }
 
   // if the "ip_allow" named filter is deactivated in the remap.config, then don't modify anything
-  url_mapping *mp = s->url_map.getMapping();
-  if (mp && !mp->ip_allow_check_enabled_p) {
+  url_mapping const *const mp = s->url_map.getMapping();
+  if (nullptr != mp && !mp->ip_allow_check_enabled_p) {
     return;
   }
 
@@ -6547,7 +6552,8 @@ HttpTransact::process_quick_http_filter(State *s, int method)
         TxnDbg(dbg_ctl_ip_allow, "Line %d denial for '%.*s' from %s", acl.source_line(), static_cast<int>(method_str.length()),
                method_str.data(), ats_ip_ntop(&s->client_info.src_addr.sa, ipb, sizeof(ipb)));
       }
-      s->client_connection_allowed = false;
+      s->http_return_code_setter_name = "ip_allow";
+      s->client_connection_allowed    = false;
     }
   }
 }
@@ -7278,18 +7284,27 @@ HttpTransact::what_is_document_freshness(State *s, HTTPHdr *client_request, HTTP
   //////////////////////////////////////////////////////
   // If config file has a ttl-in-cache field set,     //
   // it has priority over any other http headers and  //
-  // other configuration parameters.                  //
+  // other configuration parameters. Negative caching //
+  // is different however since the user would       //
+  // rather expect their explicitly configured        //
+  // negative_caching_lifetime to be used instead of  //
+  // ttl-in-cache.                                    //
   //////////////////////////////////////////////////////
   if (s->cache_control.ttl_in_cache > 0) {
-    // what matters if ttl is set is not the age of the document
-    // but for how long it has been stored in the cache (resident time)
-    int resident_time = s->current.now - s->response_received_time;
-
-    TxnDbg(dbg_ctl_http_match, "ttl-in-cache = %d, resident time = %d", s->cache_control.ttl_in_cache, resident_time);
-    if (resident_time > s->cache_control.ttl_in_cache) {
-      return (Freshness_t::STALE);
+    auto status = static_cast<int>(cached_obj_response->status_get());
+    if (s->txn_conf->negative_caching_enabled && s->txn_conf->negative_caching_list.contains(status)) {
+      TxnDbg(dbg_ctl_http_match, "ttl-in-cache set, but skipping for negative cached response %d", status);
     } else {
-      return (Freshness_t::FRESH);
+      // what matters if ttl is set is not the age of the document
+      // but for how long it has been stored in the cache (resident time)
+      int resident_time = s->current.now - s->response_received_time;
+
+      TxnDbg(dbg_ctl_http_match, "ttl-in-cache = %d, resident time = %d", s->cache_control.ttl_in_cache, resident_time);
+      if (resident_time > s->cache_control.ttl_in_cache) {
+        return (Freshness_t::STALE);
+      } else {
+        return (Freshness_t::FRESH);
+      }
     }
   }
 

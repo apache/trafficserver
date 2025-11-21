@@ -35,8 +35,7 @@
 #include "iocore/eventsystem/Action.h"
 #include "iocore/eventsystem/Continuation.h"
 
-#include "../../records/P_RecProcess.h"
-
+#include "iocore/eventsystem/Freer.h"
 #include "tscore/Diags.h"
 #include "tscore/Filenames.h"
 #include "tscore/ink_assert.h"
@@ -131,6 +130,10 @@ CacheProcessor::start(int, size_t)
 void
 CachePeriodicMetricsUpdate()
 {
+  if (cacheProcessor.initialized != CacheInitState::INITIALIZED) {
+    return;
+  }
+
   int64_t total_sum = 0;
 
   // Make sure the bytes_used per volume is always reset to zero, this can update the
@@ -140,21 +143,19 @@ CachePeriodicMetricsUpdate()
     ts::Metrics::Gauge::store(gstripes[i]->cache_vol->vol_rsb.bytes_used, 0);
   }
 
-  if (cacheProcessor.initialized == CacheInitState::INITIALIZED) {
-    for (int i = 0; i < gnstripes; ++i) {
-      StripeSM *v    = gstripes[i];
-      int64_t   used = cache_bytes_used(i);
+  for (int i = 0; i < gnstripes; ++i) {
+    StripeSM *v    = gstripes[i];
+    int64_t   used = cache_bytes_used(i);
 
-      ts::Metrics::Gauge::increment(v->cache_vol->vol_rsb.bytes_used, used); // This assumes they start at zero
-      total_sum += used;
-    }
-
-    // Also update the global (not per volume) metrics
-    int64_t total = ts::Metrics::Gauge::load(cache_rsb.bytes_total);
-
-    ts::Metrics::Gauge::store(cache_rsb.bytes_used, total_sum);
-    ts::Metrics::Gauge::store(cache_rsb.percent_full, total ? (total_sum * 100) / total : 0);
+    ts::Metrics::Gauge::increment(v->cache_vol->vol_rsb.bytes_used, used); // This assumes they start at zero
+    total_sum += used;
   }
+
+  // Also update the global (not per volume) metrics
+  int64_t total = ts::Metrics::Gauge::load(cache_rsb.bytes_total);
+
+  ts::Metrics::Gauge::store(cache_rsb.bytes_used, total_sum);
+  ts::Metrics::Gauge::store(cache_rsb.percent_full, total ? (total_sum * 100) / total : 0);
 }
 
 // ToDo: This gets called as part of librecords collection continuation, probably change this later.
@@ -1124,7 +1125,10 @@ register_cache_stats(CacheStatsBlock *rsb, const std::string &prefix)
   rsb->ram_cache_bytes_total = ts::Metrics::Gauge::createPtr(prefix + ".ram_cache.total_bytes");
   rsb->ram_cache_bytes       = ts::Metrics::Gauge::createPtr(prefix + ".ram_cache.bytes_used");
   rsb->ram_cache_hits        = ts::Metrics::Counter::createPtr(prefix + ".ram_cache.hits");
+  rsb->last_open_read_hits   = ts::Metrics::Counter::createPtr(prefix + ".last_open_read.hits");
+  rsb->agg_buffer_hits       = ts::Metrics::Counter::createPtr(prefix + ".aggregation_buffer.hits");
   rsb->ram_cache_misses      = ts::Metrics::Counter::createPtr(prefix + ".ram_cache.misses");
+  rsb->all_mem_misses        = ts::Metrics::Counter::createPtr(prefix + ".all_memory_caches.misses");
   rsb->pread_count           = ts::Metrics::Counter::createPtr(prefix + ".pread_count");
   rsb->percent_full          = ts::Metrics::Gauge::createPtr(prefix + ".percent_full");
   rsb->read_seek_fail        = ts::Metrics::Counter::createPtr(prefix + ".read.seek.failure");

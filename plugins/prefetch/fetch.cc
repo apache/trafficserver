@@ -707,7 +707,6 @@ BgFetch::handler(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
     if ((fetch->vc = TSHttpConnect(reinterpret_cast<sockaddr *>(&fetch->client_ip))) != nullptr) {
       TSHttpHdrPrint(fetch->_mbuf, fetch->_headerLoc, fetch->req_io_buf);
       // We never send a body with the request. ToDo: Do we ever need to support that ?
-      TSIOBufferWrite(fetch->req_io_buf, "\r\n", 2);
 
       fetch->r_vio = TSVConnRead(fetch->vc, contp, fetch->resp_io_buf, INT64_MAX);
       fetch->w_vio = TSVConnWrite(fetch->vc, contp, fetch->req_io_buf_reader, TSIOBufferReaderAvail(fetch->req_io_buf_reader));

@@ -125,6 +125,18 @@ struct HostGetStatusRequest : shared::rpc::ClientRequest {
   }
 };
 //------------------------------------------------------------------------------------------------------------------------------------
+struct HostDBGetStatusRequest : shared::rpc::ClientRequest {
+  using super  = shared::rpc::ClientRequest;
+  using Params = std::vector<std::string>;
+  HostDBGetStatusRequest(Params p) { super::params = std::move(p); }
+
+  std::string
+  get_method() const override
+  {
+    return "get_hostdb_status";
+  }
+};
+//------------------------------------------------------------------------------------------------------------------------------------
 struct BasicPluginMessageRequest : shared::rpc::ClientRequest {
   using super = BasicPluginMessageRequest;
   struct Params {

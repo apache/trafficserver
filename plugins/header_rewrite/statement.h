@@ -63,6 +63,7 @@ enum NextHopQualifiers {
   NEXT_HOP_NONE,
   NEXT_HOP_HOST,
   NEXT_HOP_PORT,
+  NEXT_HOP_STRATEGY,
 };
 
 // NOW data
@@ -112,6 +113,20 @@ enum NetworkSessionQualifiers {
   NET_QUAL_IPV6,        ///< 'ipv6' or not.
   NET_QUAL_IP_FAMILY,   ///< IP protocol family.
   NET_QUAL_STACK,       ///< Full protocol stack.
+#if TS_HAS_CRIPTS
+  NET_QUAL_CERT_PEM,        ///< The PEM encoded certificate
+  NET_QUAL_CERT_SIG,        ///< The signature of the certificate
+  NET_QUAL_CERT_SUBJECT,    ///< The subject of the certificate
+  NET_QUAL_CERT_ISSUER,     ///< The issuer of the certificate
+  NET_QUAL_CERT_SERIAL,     ///< The serial number of the certificate
+  NET_QUAL_CERT_NOT_BEFORE, ///< The not before date of the certificate
+  NET_QUAL_CERT_NOT_AFTER,  ///< The not after date of the certificate
+  NET_QUAL_CERT_VERSION,    ///< The version of the certificate
+  NET_QUAL_CERT_SAN_DNS,    ///< The DNS names in the SAN
+  NET_QUAL_CERT_SAN_IP,     ///< The IP addresses in the SAN
+  NET_QUAL_CERT_SAN_EMAIL,  ///< The email addresses in the SAN
+  NET_QUAL_CERT_SAN_URI,    ///< The URIs in the SAN
+#endif
 };
 
 class Statement
@@ -154,8 +169,13 @@ public:
   {
     TSReleaseAssert(_initialized == false);
     initialize_hooks();
-    acquire_txn_slot();
-    acquire_txn_private_slot();
+
+    if (need_txn_slot()) {
+      _txn_slot = acquire_txn_slot();
+    }
+    if (need_txn_private_slot()) {
+      _txn_private_slot = acquire_txn_private_slot();
+    }
 
     _initialized = true;
   }
@@ -166,12 +186,14 @@ public:
     return _initialized;
   }
 
-  int
-  get_txn_private_slot()
+  void
+  require_resources(const ResourceIDs ids)
   {
-    acquire_txn_private_slot();
-    return _txn_private_slot;
+    _rsrc = static_cast<ResourceIDs>(_rsrc | ids);
   }
+
+  static int acquire_txn_slot();
+  static int acquire_txn_private_slot();
 
 protected:
   virtual void initialize_hooks();
@@ -179,12 +201,6 @@ protected:
   UrlQualifiers     parse_url_qualifier(const std::string &q) const;
   NextHopQualifiers parse_next_hop_qualifier(const std::string &q) const;
   TSHttpCntlType    parse_http_cntl_qualifier(const std::string &q) const;
-
-  void
-  require_resources(const ResourceIDs ids)
-  {
-    _rsrc = static_cast<ResourceIDs>(_rsrc | ids);
-  }
 
   virtual bool
   need_txn_slot() const
@@ -203,9 +219,6 @@ protected:
   int        _txn_private_slot = -1;
 
 private:
-  void acquire_txn_slot();
-  void acquire_txn_private_slot();
-
   ResourceIDs               _rsrc = RSRC_NONE;
   TSHttpHookID              _hook = TS_HTTP_READ_RESPONSE_HDR_HOOK;
   std::vector<TSHttpHookID> _allowed_hooks;
@@ -224,8 +237,8 @@ union PrivateSlotData {
 enum { TIMEZONE_LOCAL, TIMEZONE_GMT };
 
 enum {
-  IP_SRC_PEER,  // Immediate connection
-  IP_SRC_PROXY, // PROXY protocl
+  IP_SRC_PEER,   // Immediate connection
+  IP_SRC_PROXY,  // PROXY protocl
+  IP_SRC_PLUGIN, // Plugin
   // IP_SRC_FORWARDED,  // Forwarded header field (TS core needs to support the header first. It can be done by a plugin as well.)
-  // IP_SRC_PLUGIN  // Plugin (Needs TS API to set and get a verified client IP address)
 };

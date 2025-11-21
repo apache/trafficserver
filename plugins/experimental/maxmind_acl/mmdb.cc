@@ -399,19 +399,12 @@ Acl::parseregex(const YAML::Node &regex, bool allow)
           plugin_regex temp;
           auto         temprule = i.as<std::vector<std::string>>();
           temp._regex_s         = temprule.back();
-          const char *error;
-          int         erroffset;
-          temp._rex = pcre_compile(temp._regex_s.c_str(), 0, &error, &erroffset, nullptr);
+          std::string error;
+          int         erroroffset = 0;
 
-          // Compile the regex for this set of countries
-          if (nullptr != temp._rex) {
-            temp._extra = pcre_study(temp._rex, 0, &error);
-            if ((nullptr == temp._extra) && error && (*error != 0)) {
-              TSError("[%s] Failed to study regular expression in %s:%s", PLUGIN_NAME, temp._regex_s.c_str(), error);
-              return;
-            }
-          } else {
-            TSError("[%s] Failed to compile regular expression in %s: %s", PLUGIN_NAME, temp._regex_s.c_str(), error);
+          if (!temp._rex.compile(temp._regex_s, error, erroroffset)) {
+            TSError("[%s] Failed to compile regular expression in %s, err: %s(%d)", PLUGIN_NAME, temp._regex_s.c_str(),
+                    error.c_str(), erroroffset);
             return;
           }
 
@@ -793,7 +786,7 @@ Acl::eval_country(MMDB_entry_data_s *entry_data, const std::string &url)
     Dbg(dbg_ctl, "saw url not empty: %s, %ld", url.c_str(), url.length());
     if (!allow_regex[output].empty()) {
       for (auto &i : allow_regex[output]) {
-        if (PCRE_ERROR_NOMATCH != pcre_exec(i._rex, i._extra, url.c_str(), url.length(), 0, PCRE_NOTEMPTY, nullptr, 0)) {
+        if (i._rex.exec(url, RE_NOTEMPTY)) {
           Dbg(dbg_ctl, "Got a regex allow hit on regex: %s, country: %s", i._regex_s.c_str(), output);
           ret = true;
         }
@@ -801,7 +794,7 @@ Acl::eval_country(MMDB_entry_data_s *entry_data, const std::string &url)
     }
     if (!deny_regex[output].empty()) {
       for (auto &i : deny_regex[output]) {
-        if (PCRE_ERROR_NOMATCH != pcre_exec(i._rex, i._extra, url.c_str(), url.length(), 0, PCRE_NOTEMPTY, nullptr, 0)) {
+        if (i._rex.exec(url, RE_NOTEMPTY)) {
           Dbg(dbg_ctl, "Got a regex deny hit on regex: %s, country: %s", i._regex_s.c_str(), output);
           ret = false;
         }

@@ -20,8 +20,7 @@
  * These are misc unit tests for uri signing
  */
 
-#define CATCH_CONFIG_MAIN
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
 
 extern "C" {
 #include <jansson.h>
@@ -226,9 +225,15 @@ jws_parsing_helper(const char *uri, const char *paramName, const char *expected_
   cjose_jws_t *jws = get_jws_from_uri(uri, uri_ct, paramName, uri_strip, uri_ct, &strip_ct);
   if (jws) {
     resp = true;
-    if (strcmp(uri_strip, expected_strip) != 0) {
-      cjose_jws_release(jws);
-      resp = false;
+    if (expected_strip != nullptr) {
+      if (strcmp(uri_strip, expected_strip) != 0) {
+        resp = false;
+      }
+    } else {
+      // expected_strip == nullptr means we expect uri_strip to be empty
+      if (uri_strip[0] != '\0') {
+        resp = false;
+      }
     }
   } else {
     resp = false;

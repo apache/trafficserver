@@ -83,7 +83,7 @@ json_printer = f'''
 test_run = Test.AddTestRun()
 test_run.MakeCurlCommand("-vs -k --http2 https://127.0.0.1:{0}/get | {1}".format(ts.Variables.ssl_port, json_printer), ts=ts)
 test_run.Processes.Default.ReturnCode = 0
-test_run.Processes.Default.StartBefore(httpbin, ready=When.PortOpen(httpbin.Variables.Port))
+test_run.Processes.Default.StartBefore(httpbin)
 test_run.Processes.Default.StartBefore(Test.Processes.ts)
 test_run.Processes.Default.Streams.stdout = "gold/httpbin_0_stdout.gold"
 # Different versions of curl will have different cases for HTTP/2 field names.

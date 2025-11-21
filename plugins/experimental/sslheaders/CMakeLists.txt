@@ -21,8 +21,8 @@ target_link_libraries(sslhdr PRIVATE OpenSSL::SSL libswoc::libswoc # transitive
 set_target_properties(sslhdr PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
 if(BUILD_TESTING)
-  add_executable(test_sslhdr unit_tests/unit_test_main.cc unit_tests/test_sslheaders.cc)
-  target_link_libraries(test_sslhdr PRIVATE sslhdr OpenSSL::SSL catch2::catch2 libswoc::libswoc)
+  add_executable(test_sslhdr unit_tests/test_sslheaders.cc)
+  target_link_libraries(test_sslhdr PRIVATE sslhdr OpenSSL::SSL Catch2::Catch2WithMain libswoc::libswoc)
 endif()
 
 add_atsplugin(sslheaders sslheaders.cc)

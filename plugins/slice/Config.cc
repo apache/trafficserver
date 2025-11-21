@@ -28,21 +28,13 @@
 namespace
 {
 constexpr std::string_view DefaultSliceSkipHeader = {"X-Slicer-Info"};
-constexpr std::string_view DefaultCrrImsHeader    = {"X-Crr-Ims"};
 constexpr std::string_view DefaultCrrIdentHeader  = {"X-Crr-Ident"};
 } // namespace
 
 Config::~Config()
 {
-  if (nullptr != m_regex_extra) {
-#ifndef PCRE_STUDY_JIT_COMPILE
-    pcre_free(m_regex_extra);
-#else
-    pcre_free_study(m_regex_extra);
-#endif
-  }
   if (nullptr != m_regex) {
-    pcre_free(m_regex);
+    delete m_regex;
   }
 }
 
@@ -114,7 +106,6 @@ Config::fromArgs(int const argc, char const *const argv[])
   // standard parsing
   constexpr struct option longopts[] = {
     {const_cast<char *>("blockbytes"),           required_argument, nullptr, 'b'},
-    {const_cast<char *>("crr-ims-header"),       required_argument, nullptr, 'c'},
     {const_cast<char *>("disable-errorlog"),     no_argument,       nullptr, 'd'},
     {const_cast<char *>("exclude-regex"),        required_argument, nullptr, 'e'},
     {const_cast<char *>("crr-ident-header"),     required_argument, nullptr, 'g'},
@@ -135,7 +126,7 @@ Config::fromArgs(int const argc, char const *const argv[])
   // getopt assumes args start at '1' so this hack is needed
   char *const *argvp = (const_cast<char *const *>(argv) - 1);
   for (;;) {
-    int const opt = getopt_long(argc + 1, argvp, "b:dc:e:g:i:lm:p:r:s:t:x:z:", longopts, nullptr);
+    int const opt = getopt_long(argc + 1, argvp, "b:de:g:i:lm:p:r:s:t:x:z:", longopts, nullptr);
     if (-1 == opt) {
       break;
     }
@@ -152,10 +143,6 @@ Config::fromArgs(int const argc, char const *const argv[])
         ERROR_LOG("Invalid blockbytes: %s", optarg);
       }
     } break;
-    case 'c': {
-      m_crr_ims_header.assign(optarg);
-      DEBUG_LOG("Using override crr ims header %s", optarg);
-    } break;
     case 'd': {
       m_paceerrsecs = -1;
     } break;
@@ -165,16 +152,16 @@ Config::fromArgs(int const argc, char const *const argv[])
         break;
       }
 
-      const char *errptr;
+      std::string err;
       int         erroffset;
       m_regexstr = optarg;
-      m_regex    = pcre_compile(m_regexstr.c_str(), 0, &errptr, &erroffset, nullptr);
-      if (nullptr == m_regex) {
-        ERROR_LOG("Invalid regex: '%s'", m_regexstr.c_str());
-      } else {
-        m_regex_type  = Exclude;
-        m_regex_extra = pcre_study(m_regex, 0, &errptr);
+      m_regex    = new Regex();
+
+      if (m_regex->compile(m_regexstr, err, erroffset)) {
+        m_regex_type = Exclude;
         DEBUG_LOG("Using regex for url exclude: '%s'", m_regexstr.c_str());
+      } else {
+        ERROR_LOG("Invalid regex: '%s' - %s at column %d", m_regexstr.c_str(), err.c_str(), erroffset);
       }
     } break;
     case 'g': {
@@ -186,17 +173,16 @@ Config::fromArgs(int const argc, char const *const argv[])
         ERROR_LOG("Regex already specified!");
         break;
       }
-
-      const char *errptr;
+      std::string err;
       int         erroffset;
       m_regexstr = optarg;
-      m_regex    = pcre_compile(m_regexstr.c_str(), 0, &errptr, &erroffset, nullptr);
-      if (nullptr == m_regex) {
-        ERROR_LOG("Invalid regex: '%s'", m_regexstr.c_str());
-      } else {
-        m_regex_type  = Include;
-        m_regex_extra = pcre_study(m_regex, 0, &errptr);
+      m_regex    = new Regex();
+
+      if (m_regex->compile(m_regexstr, err, erroffset)) {
+        m_regex_type = Include;
         DEBUG_LOG("Using regex for url include: '%s'", m_regexstr.c_str());
+      } else {
+        ERROR_LOG("Invalid regex: '%s' - %s at column %d", m_regexstr.c_str(), err.c_str(), erroffset);
       }
     } break;
     case 'l': {
@@ -280,10 +266,6 @@ Config::fromArgs(int const argc, char const *const argv[])
   } else {
     DEBUG_LOG("Block stitching error logs at most every %d sec(s)", m_paceerrsecs);
   }
-  if (m_crr_ims_header.empty()) {
-    m_crr_ims_header = DefaultCrrImsHeader;
-    DEBUG_LOG("Using default crr ims header %s", m_crr_ims_header.c_str());
-  }
   if (m_crr_ident_header.empty()) {
     m_crr_ident_header = DefaultCrrIdentHeader;
     DEBUG_LOG("Using default crr ident header %s", m_crr_ident_header.c_str());
@@ -340,12 +322,14 @@ Config::matchesRegex(char const *const url, int const urllen) const
 
   switch (m_regex_type) {
   case Exclude: {
-    if (0 <= pcre_exec(m_regex, m_regex_extra, url, urllen, 0, 0, nullptr, 0)) {
+    // Exclude means if the regex matches, it doesn't match
+    if (m_regex->exec({url, static_cast<size_t>(urllen)})) {
       matches = false;
     }
   } break;
   case Include: {
-    if (pcre_exec(m_regex, m_regex_extra, url, urllen, 0, 0, nullptr, 0) < 0) {
+    // Include means if the regex matches, it matches
+    if (!m_regex->exec({url, static_cast<size_t>(urllen)})) {
       matches = false;
     }
   } break;

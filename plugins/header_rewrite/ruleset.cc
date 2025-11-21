@@ -23,10 +23,24 @@
 
 #include "ruleset.h"
 #include "factory.h"
+#include "operators.h"
 
-///////////////////////////////////////////////////////////////////////////////
-// Class implementation (no reason to have these inline)
-//
+RuleSet::RuleSet()
+{
+  Dbg(dbg_ctl, "RuleSet CTOR");
+}
+
+RuleSet::~RuleSet()
+{
+  Dbg(dbg_ctl, "RulesSet DTOR");
+}
+
+OperModifiers
+RuleSet::exec(const Resources &res) const
+{
+  return _op_if.exec_and_return_mods(res);
+}
+
 void
 RuleSet::append(std::unique_ptr<RuleSet> rule)
 {
@@ -47,7 +61,7 @@ RuleSet::make_condition(Parser &p, const char *filename, int lineno)
   Condition *c = condition_factory(p.get_op());
 
   if (nullptr == c) {
-    return nullptr; // Complete failure in the factory
+    return nullptr;
   }
 
   Dbg(pi_dbg_ctl, "    Creating condition: %%{%s} with arg: %s", p.get_op().c_str(), p.get_arg().c_str());
@@ -65,7 +79,6 @@ RuleSet::make_condition(Parser &p, const char *filename, int lineno)
     return nullptr;
   }
 
-  // Update some ruleset state based on this new condition;
   _last |= c->last();
   _ids   = static_cast<ResourceIDs>(_ids | c->get_resource_ids());
 
@@ -89,17 +102,16 @@ RuleSet::add_operator(Parser &p, const char *filename, int lineno)
       return false;
     }
 
-    OperatorAndMods &ops = _cur_section->ops;
+    auto *cur_sec = _op_if.cur_section();
 
-    if (!ops.oper) {
-      ops.oper = op;
+    if (!cur_sec->ops.oper) {
+      cur_sec->ops.oper.reset(op);
     } else {
-      ops.oper->append(op);
+      cur_sec->ops.oper->append(op);
     }
 
-    // Update some ruleset state based on this new operator
-    ops.oper_mods = static_cast<OperModifiers>(ops.oper_mods | ops.oper->get_oper_modifiers());
-    _ids          = static_cast<ResourceIDs>(_ids | ops.oper->get_resource_ids());
+    cur_sec->ops.oper_mods = static_cast<OperModifiers>(cur_sec->ops.oper_mods | cur_sec->ops.oper->get_oper_modifiers());
+    _ids                   = static_cast<ResourceIDs>(_ids | cur_sec->ops.oper->get_resource_ids());
 
     return true;
   }
@@ -119,4 +131,22 @@ RuleSet::get_all_resource_ids() const
   }
 
   return ids;
+}
+
+bool
+RuleSet::add_operator(Operator *op)
+{
+  auto *cur_sec = _op_if.cur_section();
+
+  if (!cur_sec->ops.oper) {
+    cur_sec->ops.oper.reset(op);
+  } else {
+    cur_sec->ops.oper->append(op);
+  }
+
+  // Update some ruleset state based on this new operator
+  cur_sec->ops.oper_mods = static_cast<OperModifiers>(cur_sec->ops.oper_mods | cur_sec->ops.oper->get_oper_modifiers());
+  _ids                   = static_cast<ResourceIDs>(_ids | cur_sec->ops.oper->get_resource_ids());
+
+  return true;
 }

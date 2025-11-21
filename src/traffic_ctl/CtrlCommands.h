@@ -178,6 +178,17 @@ private:
   void status_up();
 };
 // -----------------------------------------------------------------------------------------------------------------------------------
+class HostDBCommand : public CtrlCommand
+{
+public:
+  HostDBCommand(ts::Arguments *args);
+
+private:
+  static inline const std::string STATUS_STR{"status"};
+
+  void status_get();
+};
+// -----------------------------------------------------------------------------------------------------------------------------------
 class PluginCommand : public CtrlCommand
 {
 public:

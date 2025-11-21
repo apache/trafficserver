@@ -28,7 +28,7 @@
 #include "swoc/bwf_ex.h"
 #include "swoc/bwf_ip.h"
 
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
 
 using namespace std::literals;
 using swoc::TextView;

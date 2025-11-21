@@ -25,10 +25,12 @@
 #include "tscore/ink_platform.h"
 #include "tscore/ink_memory.h"
 #include <cassert>
+#include <cctype>
 #include <cstdio>
 #include <cstring>
 #include <cctype>
 #include <algorithm>
+#include <string_view>
 #include "proxy/hdrs/MIME.h"
 #include "proxy/hdrs/HdrHeap.h"
 #include "proxy/hdrs/HdrToken.h"
@@ -51,16 +53,60 @@ using swoc::TextView;
  *                          C O N S T A N T S                          *
  *                                                                     *
  ***********************************************************************/
-static DFA *day_names_dfa   = nullptr;
-static DFA *month_names_dfa = nullptr;
 
-static const char *day_names[] = {
+namespace
+{
+constexpr std::array<std::string_view, 7> day_names = {
   "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat",
 };
 
-static const char *month_names[] = {
+constexpr std::array<std::string_view, 12> month_names = {
   "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 };
+
+template <size_t count>
+consteval std::array<uint32_t, count>
+make_packed(const std::array<std::string_view, count> &names)
+{
+  std::array<uint32_t, count> packed{};
+
+  auto tl = [](char c) -> char { return (c >= 'A' && c <= 'Z') ? (c + 32) : c; };
+
+  for (size_t i = 0; i < count; ++i) {
+    const auto    &sv = names[i];
+    const uint32_t c0 = tl(static_cast<unsigned char>(sv[0]));
+    const uint32_t c1 = tl(static_cast<unsigned char>(sv[1]));
+    const uint32_t c2 = tl(static_cast<unsigned char>(sv[2]));
+    packed[i]         = (c0 << 16) | (c1 << 8) | c2;
+  }
+  return packed;
+}
+
+constexpr std::array<uint32_t, day_names.size()>   day_names_packed   = make_packed(day_names);
+constexpr std::array<uint32_t, month_names.size()> month_names_packed = make_packed(month_names);
+
+// Case-insensitive match of first 3 characters of input string against array of names
+// Longer strings will match if their first 3 characters match - this is intentional for
+// matching non-standard day/month names like "Thursday" or "September".
+template <size_t count>
+__attribute__((always_inline)) constexpr int
+match_3char_ci(const std::string_view s, const std::array<uint32_t, count> &names_packed)
+{
+  if (s.size() < 3) {
+    return -1;
+  }
+
+  auto           tl     = [](char c) -> char { return (c >= 'A' && c <= 'Z') ? (c + 32) : c; };
+  const uint32_t packed = (tl(s[0]) << 16) | (tl(s[1]) << 8) | tl(s[2]);
+
+  for (size_t i = 0; i < count; i++) {
+    if (packed == names_packed[i]) {
+      return i;
+    }
+  }
+  return -1;
+}
+} // namespace
 
 struct MDY {
   uint8_t  m;
@@ -594,11 +640,6 @@ mime_init()
     init = 0;
 
     hdrtoken_init();
-    day_names_dfa = new DFA;
-    day_names_dfa->compile(day_names, SIZEOF(day_names), RE_CASE_INSENSITIVE);
-
-    month_names_dfa = new DFA;
-    month_names_dfa->compile(month_names, SIZEOF(month_names), RE_CASE_INSENSITIVE);
 
     MIME_FIELD_ACCEPT                    = hdrtoken_string_to_wks_sv("Accept");
     MIME_FIELD_ACCEPT_CHARSET            = hdrtoken_string_to_wks_sv("Accept-Charset");
@@ -2495,8 +2536,8 @@ mime_hdr_describe(HdrHeapObjImpl *raw, bool recurse)
 void
 mime_field_block_describe(HdrHeapObjImpl *raw, bool /* recurse ATS_UNUSED */)
 {
-  unsigned int       i;
-  static const char *readiness_names[] = {"EMPTY", "DETACHED", "LIVE", "DELETED"};
+  unsigned int                 i;
+  static constexpr const char *readiness_names[] = {"EMPTY", "DETACHED", "LIVE", "DELETED"};
 
   MIMEFieldBlockImpl *obj = (MIMEFieldBlockImpl *)raw;
 
@@ -2754,7 +2795,7 @@ mime_format_int64(char *buf, int64_t val, size_t buf_len)
 void
 mime_days_since_epoch_to_mdy_slowcase(time_t days_since_jan_1_1970, int *m_return, int *d_return, int *y_return)
 {
-  static const int DAYS_OFFSET = 25508;
+  static constexpr int DAYS_OFFSET = 25508;
 
   static const char months[] = {
     2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,
@@ -2770,7 +2811,7 @@ mime_days_since_epoch_to_mdy_slowcase(time_t days_since_jan_1_1970, int *m_retur
     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  1,  1,
     1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1};
 
-  static const int days[12] = {305, 336, -1, 30, 60, 91, 121, 152, 183, 213, 244, 274};
+  static constexpr int days[12] = {305, 336, -1, 30, 60, 91, 121, 152, 183, 213, 244, 274};
 
   time_t mday, year, month, d, dp;
 
@@ -2842,12 +2883,12 @@ int
 mime_format_date(char *buffer, time_t value)
 {
   // must be 3 characters!
-  static const char *daystrs[] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
+  static constexpr const char *daystrs[] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
 
   // must be 3 characters!
-  static const char *monthstrs[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+  static constexpr const char *monthstrs[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
 
-  static const char *digitstrs[] = {
+  static constexpr const char *digitstrs[] = {
     "00", "01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19",
     "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33", "34", "35", "36", "37", "38", "39",
     "40", "41", "42", "43", "44", "45", "46", "47", "48", "49", "50", "51", "52", "53", "54", "55", "56", "57", "58", "59",
@@ -3123,8 +3164,7 @@ mime_parse_int64(const char *buf, const char *end)
 int
 mime_parse_rfc822_date_fastcase(const char *buf, int length, struct tm *tp)
 {
-  unsigned int     three_char_wday, three_char_mon;
-  std::string_view view{buf, size_t(length)};
+  unsigned int three_char_wday, three_char_mon;
 
   ink_assert(length >= 29);
   ink_assert(!is_ws(buf[0]));
@@ -3155,7 +3195,7 @@ mime_parse_rfc822_date_fastcase(const char *buf, int length, struct tm *tp)
     }
   }
   if (tp->tm_wday < 0) {
-    tp->tm_wday = day_names_dfa->match(view);
+    tp->tm_wday = match_3char_ci({buf, 3}, day_names_packed);
     if (tp->tm_wday < 0) {
       return 0;
     }
@@ -3208,7 +3248,7 @@ mime_parse_rfc822_date_fastcase(const char *buf, int length, struct tm *tp)
     }
   }
   if (tp->tm_mon < 0) {
-    tp->tm_mon = month_names_dfa->match(view);
+    tp->tm_mon = match_3char_ci({buf + 8, 3}, month_names_packed);
     if (tp->tm_mon < 0) {
       return 0;
     }
@@ -3239,8 +3279,8 @@ mime_parse_rfc822_date_fastcase(const char *buf, int length, struct tm *tp)
 time_t
 mime_parse_date(const char *buf, const char *end)
 {
-  static const int DAYS_OFFSET = 25508;
-  static const int days[12]    = {305, 336, -1, 30, 60, 91, 121, 152, 183, 213, 244, 274};
+  static constexpr int DAYS_OFFSET = 25508;
+  static constexpr int days[12]    = {305, 336, -1, 30, 60, 91, 121, 152, 183, 213, 244, 274};
 
   struct tm tp;
   time_t    t;
@@ -3353,7 +3393,7 @@ mime_parse_day(const char *&buf, const char *end, int *day)
     e += 1;
   }
 
-  *day = day_names_dfa->match({buf, size_t(e - buf)});
+  *day = match_3char_ci({buf, static_cast<size_t>(e - buf)}, day_names_packed);
   if (*day < 0) {
     return false;
   } else {
@@ -3376,7 +3416,7 @@ mime_parse_month(const char *&buf, const char *end, int *month)
     e += 1;
   }
 
-  *month = month_names_dfa->match({buf, size_t(e - buf)});
+  *month = match_3char_ci({buf, static_cast<size_t>(e - buf)}, month_names_packed);
   if (*month < 0) {
     return false;
   } else {

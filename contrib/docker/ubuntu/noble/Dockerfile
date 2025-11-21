@@ -18,7 +18,7 @@ FROM ubuntu:noble AS build
 
 ARG LLVM_VERSION=18
 ARG BASE=/opt
-ARG ATS_VERSION=10.0.0
+ARG ATS_VERSION=10.1.0
 
 RUN apt update \
  && apt upgrade --yes \
@@ -48,7 +48,7 @@ RUN apt update \
     libpcre3-dev \
     hwloc \
     libbrotli-dev \
-    luajit \
+    libluajit-5.1-dev \
     libcap-dev \
     libmagick++-dev \
     libmaxminddb-dev \
@@ -201,6 +201,7 @@ RUN git clone --depth 1 -b ${ATS_VERSION} https://github.com/apache/trafficserve
      -DENABLE_QUICHE=ON \
      -DENABLE_CRIPTS=ON \
      -DENABLE_EXAMPLE=OFF \
+     -DENABLE_LUAJIT=ON \
      -DOPENSSL_ROOT_DIR=${BASE}/boringssl \
      -Dquiche_ROOT=${QUICHE_BASE} \
  && cmake --build build \

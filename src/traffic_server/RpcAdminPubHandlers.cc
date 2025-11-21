@@ -22,6 +22,7 @@
 
 // Admin API Implementation headers.
 #include "mgmt/rpc/handlers/config/Configuration.h"
+#include "mgmt/rpc/handlers/hostdb/HostDB.h"
 #include "mgmt/rpc/handlers/records/Records.h"
 #include "mgmt/rpc/handlers/storage/Storage.h"
 #include "mgmt/rpc/handlers/server/Server.h"
@@ -38,6 +39,10 @@ register_admin_jsonrpc_handlers()
   rpc::add_method_handler("admin_config_set_records", &set_config_records, &core_ats_rpc_service_provider_handle,
                           {{rpc::RESTRICTED_API}});
   rpc::add_method_handler("admin_config_reload", &reload_config, &core_ats_rpc_service_provider_handle, {{rpc::RESTRICTED_API}});
+
+  // HostDB
+  using namespace rpc::handlers::hostdb;
+  rpc::add_method_handler("get_hostdb_status", &get_hostdb_status, &core_ats_rpc_service_provider_handle, {{rpc::RESTRICTED_API}});
 
   // Records
   using namespace rpc::handlers::records;

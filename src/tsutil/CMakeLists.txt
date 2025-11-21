@@ -81,12 +81,11 @@ if(BUILD_TESTING)
     unit_tests/test_Regex.cc
     unit_tests/test_ts_meta.cc
     unit_tests/test_time_parser.cc
-    unit_tests/unit_test_main.cc
   )
 
-  target_link_libraries(test_tsutil PRIVATE tsutil catch2::catch2)
+  target_link_libraries(test_tsutil PRIVATE tsutil Catch2::Catch2WithMain)
 
-  add_test(NAME test_tsutil COMMAND $<TARGET_FILE:test_tsutil>)
+  add_catch2_test(NAME test_tsutil COMMAND $<TARGET_FILE:test_tsutil>)
 endif()
 
 clang_tidy_check(tsutil)

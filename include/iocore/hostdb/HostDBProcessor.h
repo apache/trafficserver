@@ -152,12 +152,6 @@ struct HostDBInfo {
    */
   bool select(ts_time now, ts_seconds fail_window) const;
 
-  /// Check if this info is valid.
-  bool is_valid() const;
-
-  /// Mark this info as invalid.
-  void invalidate();
-
   /** Mark the entry as down.
    *
    * @param now Time of the failure.
@@ -290,18 +284,6 @@ HostDBInfo::migrate_from(HostDBInfo::self_type const &that)
   this->http_version = that.http_version;
 }
 
-inline bool
-HostDBInfo::is_valid() const
-{
-  return type != HostDBType::UNSPEC;
-}
-
-inline void
-HostDBInfo::invalidate()
-{
-  type = HostDBType::UNSPEC;
-}
-
 // ----
 /** Root item for HostDB.
  * This is the container for HostDB data. It is always an array of @c HostDBInfo instances plus metadata.
@@ -411,6 +393,9 @@ public:
   /// Get the array of info instances.
   swoc::MemSpan<HostDBInfo> rr_info();
 
+  /// Get the array of info instances to read
+  swoc::MemSpan<const HostDBInfo> rr_info() const;
+
   /** Find a host record by IP address.
    *
    * @param addr Address key.
@@ -496,17 +481,6 @@ public:
 
   /// The index of @a target in this record.
   int index_of(HostDBInfo const *target) const;
-
-  /** Allocation and initialize an instance from a serialized buffer.
-   *
-   * @param buff Serialization data.
-   * @param size Size of @a buff.
-   * @return An instance initialized from @a buff.
-   */
-  static self_type *unmarshall(char *buff, unsigned size);
-
-  /// Database version.
-  static constexpr ts::VersionNumber Version{3, 0};
 
 protected:
   /// Current active info.
@@ -811,6 +785,12 @@ inline swoc::MemSpan<HostDBInfo>
 HostDBRecord::rr_info()
 {
   return {this->apply_offset<HostDBInfo>(rr_offset), rr_count};
+}
+
+inline swoc::MemSpan<const HostDBInfo>
+HostDBRecord::rr_info() const
+{
+  return {this->apply_offset<const HostDBInfo>(rr_offset), rr_count};
 }
 
 inline bool

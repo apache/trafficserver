@@ -33,11 +33,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#ifdef HAVE_PCRE_PCRE_H
-#include <pcre/pcre.h>
-#else
-#include <pcre.h>
-#endif
+#include "tsutil/Regex.h"
 
 #define CONFIG_TMOUT      60000
 #define FREE_TMOUT        300000
@@ -115,9 +111,8 @@ strForResult(TSCacheLookupResult const result)
 }
 
 typedef struct invalidate_t {
-  const char          *regex_text;
-  pcre                *regex;
-  pcre_extra          *regex_extra;
+  char                *regex_text;
+  Regex               *regex;
   time_t               epoch;
   time_t               expiry;
   TSCacheLookupResult  new_result;
@@ -136,31 +131,25 @@ typedef struct {
 static invalidate_t *
 init_invalidate_t(invalidate_t *i)
 {
-  i->regex_text  = nullptr;
-  i->regex       = nullptr;
-  i->regex_extra = nullptr;
-  i->epoch       = 0;
-  i->expiry      = 0;
-  i->new_result  = TS_CACHE_LOOKUP_HIT_STALE;
-  i->next        = nullptr;
+  i->regex_text = nullptr;
+  i->regex      = nullptr;
+  i->epoch      = 0;
+  i->expiry     = 0;
+  i->new_result = TS_CACHE_LOOKUP_HIT_STALE;
+  i->next       = nullptr;
   return i;
 }
 
 static void
 free_invalidate_t(invalidate_t *i)
 {
-  if (i->regex_extra) {
-#ifndef PCRE_STUDY_JIT_COMPILE
-    pcre_free(i->regex_extra);
-#else
-    pcre_free_study(i->regex_extra);
-#endif
+  if (nullptr != i->regex) {
+    delete i->regex;
+    i->regex = nullptr;
   }
-  if (i->regex) {
-    pcre_free(i->regex);
-  }
-  if (i->regex_text) {
-    pcre_free_substring(i->regex_text);
+  if (nullptr != i->regex_text) {
+    TSfree(i->regex_text);
+    i->regex_text = nullptr;
   }
   TSfree(i);
 }
@@ -212,17 +201,18 @@ static invalidate_t *
 copy_invalidate_t(invalidate_t *i)
 {
   invalidate_t *iptr;
-  const char   *errptr;
-  int           erroffset;
 
-  iptr              = (invalidate_t *)TSmalloc(sizeof(invalidate_t));
-  iptr->regex_text  = TSstrdup(i->regex_text);
-  iptr->regex       = pcre_compile(iptr->regex_text, 0, &errptr, &erroffset, nullptr); // There is no pcre_copy :-(
-  iptr->regex_extra = pcre_study(iptr->regex, 0, &errptr); // Assuming no errors since this worked before :-/
-  iptr->epoch       = i->epoch;
-  iptr->expiry      = i->expiry;
-  iptr->new_result  = i->new_result;
-  iptr->next        = nullptr;
+  iptr             = (invalidate_t *)TSmalloc(sizeof(invalidate_t));
+  iptr->regex_text = TSstrdup(i->regex_text);
+
+  // assume this works since the source exists.
+  iptr->regex = new Regex;
+  iptr->regex->compile(iptr->regex_text);
+
+  iptr->epoch      = i->epoch;
+  iptr->expiry     = i->expiry;
+  iptr->new_result = i->new_result;
+  iptr->next       = nullptr;
   return iptr;
 }
 
@@ -296,26 +286,30 @@ load_state(plugin_state_t *pstate, invalidate_t **ilist)
 
   time_t const now = time(nullptr);
 
-  const char *errptr;
-  int         erroffset;
-  int         ovector[OVECTOR_SIZE];
-  pcre *const config_re = pcre_compile("^([^#].+?)\\s+(\\d+)\\s+(\\d+)\\s+(\\w+)\\s*$", 0, &errptr, &erroffset, nullptr);
-  TSReleaseAssert(nullptr != config_re);
+  Regex      config_re;
+  bool const re_stat = config_re.compile("^([^#].+?)\\s+(\\d+)\\s+(\\d+)\\s+(\\w+)\\s*$");
+  TSReleaseAssert(true == re_stat);
 
   char line[LINE_MAX];
   int  ln = 0;
   while (fgets(line, LINE_MAX, fs) != nullptr) {
     Dbg(dbg_ctl, "state: processing: %d %s", ln, line);
     ++ln;
-    int const rc = pcre_exec(config_re, nullptr, line, strlen(line), 0, 0, ovector, OVECTOR_SIZE);
+
+    RegexMatches matches;
+    int const    rc = config_re.exec(line, matches);
 
     if (5 == rc) {
       invalidate_t *const inv = (invalidate_t *)TSmalloc(sizeof(invalidate_t));
       init_invalidate_t(inv);
 
-      pcre_get_substring(line, ovector, rc, 1, &(inv->regex_text));
-      inv->epoch  = atoi(line + ovector[4]);
-      inv->expiry = atoi(line + ovector[6]);
+      auto const regv = matches[1];
+      inv->regex_text = TSstrndup(regv.data(), regv.length());
+      Dbg(dbg_ctl, "regex_text: %s", inv->regex_text);
+
+      // atoi will terminate when whitespace/eol is reached
+      inv->epoch  = atoi(matches[2].data());
+      inv->expiry = atoi(matches[3].data());
 
       if (inv->expiry < now) {
         Dbg(dbg_ctl, "state: skipping expired : '%s'", inv->regex_text);
@@ -323,16 +317,15 @@ load_state(plugin_state_t *pstate, invalidate_t **ilist)
         continue;
       }
 
-      int const         len  = ovector[9] - ovector[8];
-      char const *const type = line + ovector[8];
-
-      if (0 == strncasecmp(type, RESULT_STALE, len)) {
+      auto const type = matches[4];
+      if (0 == strncasecmp(type.data(), RESULT_STALE, type.length())) {
         Dbg(dbg_ctl, "state: regex line set to result type %s: '%s'", RESULT_STALE, inv->regex_text);
-      } else if (0 == strncasecmp(type, RESULT_MISS, len)) {
+      } else if (0 == strncasecmp(type.data(), RESULT_MISS, type.length())) {
         Dbg(dbg_ctl, "state: regex line set to result type %s: '%s'", RESULT_MISS, inv->regex_text);
         inv->new_result = TS_CACHE_LOOKUP_MISS;
       } else {
-        Dbg(dbg_ctl, "state: unknown regex line result type '%.*s', skipping '%s'", len, type, inv->regex_text);
+        Dbg(dbg_ctl, "state: unknown regex line result type '%.*s', skipping '%s'", (int)type.length(), type.data(),
+            inv->regex_text);
       }
 
       // iterate through the loaded config and try to merge
@@ -358,7 +351,6 @@ load_state(plugin_state_t *pstate, invalidate_t **ilist)
     }
   }
 
-  pcre_free(config_re);
   fclose(fs);
   return true;
 }
@@ -402,11 +394,10 @@ load_config(plugin_state_t *pstate, invalidate_t **ilist)
     }
 
     Dbg(dbg_ctl, "Attempting to load rules from: '%s'", path);
-    const char *errptr;
-    int         erroffset;
-    int         ovector[OVECTOR_SIZE];
-    pcre *const config_re = pcre_compile("^([^#].+?)\\s+(\\d+)(\\s+(\\w+))?\\s*$", 0, &errptr, &erroffset, nullptr);
-    TSReleaseAssert(nullptr != config_re);
+
+    Regex      config_re;
+    bool const regstat = config_re.compile("^([^#].+?)\\s+(\\d+)(\\s+(\\w+))?\\s*$");
+    TSReleaseAssert(true == regstat);
 
     char          line[LINE_MAX];
     int           ln = 0;
@@ -415,25 +406,40 @@ load_config(plugin_state_t *pstate, invalidate_t **ilist)
     while (fgets(line, LINE_MAX, fs) != nullptr) {
       Dbg(dbg_ctl, "Processing: %d %s", ln, line);
       ++ln;
-      int const rc = pcre_exec(config_re, nullptr, line, strlen(line), 0, 0, ovector, OVECTOR_SIZE);
+      RegexMatches matches;
+      int const    rc = config_re.exec(line, matches);
 
       if (3 <= rc) {
         i = (invalidate_t *)TSmalloc(sizeof(invalidate_t));
         init_invalidate_t(i);
-        pcre_get_substring(line, ovector, rc, 1, &i->regex_text);
 
-        i->regex  = pcre_compile(i->regex_text, 0, &errptr, &erroffset, nullptr);
-        i->epoch  = now;
-        i->expiry = atoi(line + ovector[4]);
+        auto const regv = matches[1];
+
+        i->regex = new Regex;
+        std::string error;
+        int         erroff = 0;
+        bool        rstat  = i->regex->compile(regv, error, erroff);
+        if (!rstat) {
+          Dbg(dbg_ctl, "Invalid rule regex!, message: %s, offset: %d", error.c_str(), erroff);
+          free_invalidate_t(i);
+          i = nullptr;
+          continue;
+        }
+
+        i->regex_text = TSstrndup(regv.data(), regv.length());
+        Dbg(dbg_ctl, "regex_tex: %s", i->regex_text);
+        i->epoch = now;
+        // atoi will terminate when whitespace/eol is reached
+        i->expiry = atoi(matches[2].data());
 
         if (5 == rc) {
-          int const         len  = ovector[9] - ovector[8];
-          char const *const type = line + ovector[8];
-          if (0 == strncasecmp(type, RESULT_MISS, len)) {
+          auto const type = matches[4];
+          if (0 == strncasecmp(type.data(), RESULT_MISS, type.length())) {
             Dbg(dbg_ctl, "Regex line set to result type %s: '%s'", RESULT_MISS, i->regex_text);
             i->new_result = TS_CACHE_LOOKUP_MISS;
-          } else if (0 != strncasecmp(type, RESULT_STALE, len)) {
-            Dbg(dbg_ctl, "Unknown regex line result type '%s', using default '%s' '%s'", type, RESULT_STALE, i->regex_text);
+          } else if (0 != strncasecmp(type.data(), RESULT_STALE, type.length())) {
+            Dbg(dbg_ctl, "Unknown regex line result type '%.*s', using default '%s' '%s'", (int)type.length(), type.data(),
+                RESULT_STALE, i->regex_text);
           }
         }
 
@@ -446,7 +452,6 @@ load_config(plugin_state_t *pstate, invalidate_t **ilist)
           free_invalidate_t(i);
           i = nullptr;
         } else {
-          i->regex_extra = pcre_study(i->regex, 0, &errptr);
           if (!*ilist) {
             *ilist = i;
             Dbg(dbg_ctl, "Created new list and Loaded %s %jd %jd %s", i->regex_text, (intmax_t)i->epoch, (intmax_t)i->expiry,
@@ -485,7 +490,6 @@ load_config(plugin_state_t *pstate, invalidate_t **ilist)
         Dbg(dbg_ctl, "Skipping line %d, too few fields", ln);
       }
     }
-    pcre_free(config_re);
     fclose(fs);
     pstate->last_load = s.st_mtime;
     return true;
@@ -695,11 +699,14 @@ main_handler(TSCont cont, TSEvent event, void *edata)
             now = time(nullptr);
           }
           if (date <= iptr->epoch && now < iptr->expiry) {
-            if (!url) {
+            if (nullptr == url) {
               url = TSHttpTxnEffectiveUrlStringGet(txn, &url_len);
               Dbg(dbg_ctl, "Effective url is is '%.*s'", url_len, url);
             }
-            if (pcre_exec(iptr->regex, iptr->regex_extra, url, url_len, 0, 0, nullptr, 0) >= 0) {
+            Dbg(dbg_ctl, "checking: %.*s, %s", url_len, url, iptr->regex_text);
+
+            std::string_view const urlv(url, url_len);
+            if (iptr->regex->exec(urlv)) {
               Dbg(dbg_ctl, "Forced revalidate, Match with rule regex: '%s' epoch: %jd, expiry: %jd, result: '%s'", iptr->regex_text,
                   intmax_t(iptr->epoch), intmax_t(iptr->expiry), strForResult(iptr->new_result));
               TSHttpTxnCacheLookupStatusSet(txn, iptr->new_result);
@@ -715,7 +722,7 @@ main_handler(TSCont cont, TSEvent event, void *edata)
             iptr = iptr->next;
           }
         }
-        if (url) {
+        if (nullptr != url) {
           TSfree(url);
         }
       }

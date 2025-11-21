@@ -23,7 +23,7 @@
 
 #include <chrono>
 
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
 #include "tsutil/ts_time_parser.h"
 
 using namespace std::chrono;

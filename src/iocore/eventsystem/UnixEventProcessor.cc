@@ -86,8 +86,14 @@ ThreadAffinityInitializer Thread_Affinity_Initializer;
 
 namespace
 {
-int
-EventMetricStatSync(const char *, RecDataT, RecData *, RecRawStatBlock *rsb, int)
+struct EventStatsBlock {
+  static constexpr size_t STAT_COUNT =
+    EThread::Metrics::Graph::N_BUCKETS * 2 + EThread::Metrics::Slice::N_STAT_ID * EThread::Metrics::N_TIMESCALES;
+  std::array<ts::Metrics::Gauge::AtomicType *, STAT_COUNT> stats;
+} events_rsb;
+
+void
+EventMetricStatSync()
 {
   using Graph = EThread::Metrics::Graph;
 
@@ -99,15 +105,10 @@ EventMetricStatSync(const char *, RecDataT, RecData *, RecRawStatBlock *rsb, int
     t->metrics.summarize(summary);
   }
 
-  ink_mutex_acquire(&(rsb->mutex));
-
   // Update a specific enumerated stat.
   auto slice_stat_update = [=](EThread::Metrics::Slice::STAT_ID stat_id, int stat_idx, size_t value) {
-    auto idx    = stat_idx + static_cast<unsigned>(stat_id);
-    auto stat   = rsb->global[idx];
-    stat->sum   = value;
-    stat->count = 1;
-    RecRawStatUpdateSum(rsb, idx);
+    auto idx = stat_idx + static_cast<unsigned>(stat_id);
+    ts::Metrics::Gauge::store(events_rsb.stats[idx], value);
   };
 
   // Enumerated stats are first - one set for each time scale.
@@ -129,16 +130,12 @@ EventMetricStatSync(const char *, RecDataT, RecData *, RecRawStatBlock *rsb, int
 
   // Next are the event loop histogram buckets.
   for (Graph::raw_type idx = 0; idx < Graph::N_BUCKETS; ++idx, ++id) {
-    rsb->global[id]->sum   = summary._loop_timing[idx];
-    rsb->global[id]->count = 1;
-    RecRawStatUpdateSum(rsb, id);
+    ts::Metrics::Gauge::store(events_rsb.stats[id], summary._loop_timing[idx]);
   }
 
   // Last are the plugin API histogram buckets.
   for (Graph::raw_type idx = 0; idx < Graph::N_BUCKETS; ++idx, ++id) {
-    rsb->global[id]->sum   = summary._api_timing[idx];
-    rsb->global[id]->count = 1;
-    RecRawStatUpdateSum(rsb, id);
+    ts::Metrics::Gauge::store(events_rsb.stats[id], summary._api_timing[idx]);
   }
 
   // Check if it's time to schedule a decay of the histogram data.
@@ -150,9 +147,6 @@ EventMetricStatSync(const char *, RecDataT, RecData *, RecRawStatBlock *rsb, int
       ++(t->metrics._decay_count);
     }
   }
-
-  ink_mutex_release(&(rsb->mutex));
-  return REC_ERR_OKAY;
 }
 
 /// This is a wrapper used to convert a static function into a continuation. The function pointer is
@@ -524,16 +518,15 @@ EventProcessor::start(int n_event_threads, size_t stacksize)
   thread_group[ET_CALL]._spawnQueue.push(make_event_for_scheduling(&Thread_Affinity_Initializer, EVENT_IMMEDIATE, nullptr));
 
   // Get our statistics set up
-  RecRawStatBlock *rsb      = RecAllocateRawStatBlock(EThread::Metrics::N_STATS);
-  unsigned         stat_idx = 0;
-  char             name[256];
+  unsigned stat_idx = 0;
+  char     name[256];
 
   // Enumerated statistics, one set per time scale.
   for (unsigned ts_idx = 0; ts_idx < EThread::Metrics::N_TIMESCALES; ++ts_idx) {
     auto sample_count = EThread::Metrics::SLICE_SAMPLE_COUNT[ts_idx];
-    for (unsigned id = 0; id < EThread::Metrics::Slice::N_STAT_ID; ++id) {
-      snprintf(name, sizeof(name), "%s.%ds", EThread::Metrics::Slice::STAT_NAME[id], sample_count);
-      RecRegisterRawStat(rsb, RECT_PROCESS, name, RECD_INT, RECP_NON_PERSISTENT, stat_idx++, NULL);
+    for (auto id : EThread::Metrics::Slice::STAT_NAME) {
+      snprintf(name, sizeof(name), "%s.%ds", id, sample_count);
+      events_rsb.stats[stat_idx++] = ts::Metrics::Gauge::createPtr(name);
     }
   }
 
@@ -541,18 +534,19 @@ EventProcessor::start(int n_event_threads, size_t stacksize)
   for (Graph::raw_type id = 0; id < Graph::N_BUCKETS; ++id) {
     snprintf(name, sizeof(name), "%s%zums", EThread::Metrics::LOOP_HISTOGRAM_STAT_STEM.data(),
              static_cast<size_t>(EThread::Metrics::LOOP_HISTOGRAM_BUCKET_SIZE.count() * Graph::min_for_bucket(id)));
-    RecRegisterRawStat(rsb, RECT_PROCESS, name, RECD_INT, RECP_NON_PERSISTENT, stat_idx++, NULL);
+    events_rsb.stats[stat_idx++] = ts::Metrics::Gauge::createPtr(name);
   }
 
   // plugin API timings
   for (Graph::raw_type id = 0; id < Graph::N_BUCKETS; ++id) {
     snprintf(name, sizeof(name), "%s%zums", EThread::Metrics::API_HISTOGRAM_STAT_STEM.data(),
              static_cast<size_t>(EThread::Metrics::API_HISTOGRAM_BUCKET_SIZE.count() * Graph::min_for_bucket(id)));
-    RecRegisterRawStat(rsb, RECT_PROCESS, name, RECD_INT, RECP_NON_PERSISTENT, stat_idx++, NULL);
+    events_rsb.stats[stat_idx++] = ts::Metrics::Gauge::createPtr(name);
   }
 
-  // Name must be that of a stat, pick one at random since we do all of them in one pass/callback.
-  RecRegisterRawStatSyncCb(name, EventMetricStatSync, rsb, 0);
+  debug_assert_message(stat_idx == events_rsb.stats.size(), "events_rsp stats overrun!");
+
+  RecRegNewSyncStatSync(EventMetricStatSync);
 
   this->spawn_event_threads(ET_CALL, n_event_threads, stacksize);
 

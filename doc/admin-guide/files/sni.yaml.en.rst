@@ -167,7 +167,7 @@ server_TLSv1_3_cipher_suites             Inbound   Specifies an override to the 
                                                    documentation. Note that this configures the cipher suite used for inbound TLSv1.3 and
                                                    above connections.
 
-server_group_list                        Inbound   Specifies an override to the global :ts:cv:`proxy.config.ssl.server.groups_list`
+server_groups_list                       Inbound   Specifies an override to the global :ts:cv:`proxy.config.ssl.server.groups_list`
                                                    :file:`records.yaml` configuration. See the
                                                    `OpenSSL SSL_CTX_set_groups_list <https://docs.openssl.org/3.5/man3/SSL_CTX_set1_curves/>`_
                                                    documentation.
