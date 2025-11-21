@@ -31,8 +31,8 @@ get_x509_name_string(X509_NAME *name)
 
   X509_NAME_print_ex(bio, name, 0, XN_FLAG_RFC2253);
 
-  char  *data   = nullptr;
-  long   length = BIO_get_mem_data(bio, &data);
+  char       *data   = nullptr;
+  long        length = BIO_get_mem_data(bio, &data);
   std::string result(data, length);
 
   BIO_free(bio);
@@ -58,8 +58,8 @@ get_x509_serial_string(X509 *cert)
 
   i2a_ASN1_INTEGER(bio, serial);
 
-  char  *data   = nullptr;
-  long   length = BIO_get_mem_data(bio, &data);
+  char       *data   = nullptr;
+  long        length = BIO_get_mem_data(bio, &data);
   std::string result(data, length);
 
   BIO_free(bio);
@@ -80,8 +80,8 @@ get_x509_time_string(ASN1_TIME *time)
 
   ASN1_TIME_print(bio, time);
 
-  char  *data   = nullptr;
-  long   length = BIO_get_mem_data(bio, &data);
+  char       *data   = nullptr;
+  long        length = BIO_get_mem_data(bio, &data);
   std::string result(data, length);
 
   BIO_free(bio);
@@ -102,8 +102,8 @@ get_x509_pem_string(X509 *cert)
 
   PEM_write_bio_X509(bio, cert);
 
-  char  *data   = nullptr;
-  long   length = BIO_get_mem_data(bio, &data);
+  char       *data   = nullptr;
+  long        length = BIO_get_mem_data(bio, &data);
   std::string result(data, length);
 
   BIO_free(bio);
@@ -140,8 +140,8 @@ get_x509_signature_string(X509 *cert)
     }
   }
 
-  char  *data   = nullptr;
-  long   length = BIO_get_mem_data(bio, &data);
+  char       *data   = nullptr;
+  long        length = BIO_get_mem_data(bio, &data);
   std::string result(data, length);
 
   BIO_free(bio);
