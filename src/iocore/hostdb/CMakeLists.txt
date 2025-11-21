@@ -35,12 +35,12 @@ if(BUILD_TESTING)
             ts::inkhostdb
   )
 
-  add_executable(test_HostFile test_HostFile.cc HostFile.cc HostDBInfo.cc)
-  target_link_libraries(test_HostFile PRIVATE ts::tscore ts::tsutil ts::inkevent Catch2::Catch2WithMain)
-  add_catch2_test(NAME test_hostdb_HostFile COMMAND $<TARGET_FILE:test_HostFile>)
+  add_executable(test_hostdb_HostFile test_HostFile.cc HostFile.cc HostDBInfo.cc)
+  target_link_libraries(test_hostdb_HostFile PRIVATE ts::tscore ts::tsutil ts::inkevent Catch2::Catch2WithMain)
+  add_catch2_test(NAME test_hostdb_HostFile COMMAND $<TARGET_FILE:test_hostdb_HostFile>)
 
-  add_executable(test_RefCountCache test_RefCountCache.cc)
-  target_link_libraries(test_RefCountCache PRIVATE ts::tscore ts::tsutil ts::inkevent Catch2::Catch2WithMain)
-  add_catch2_test(NAME test_hostdb_RefCountCache COMMAND $<TARGET_FILE:test_RefCountCache>)
+  add_executable(test_hostdb_RefCountCache test_RefCountCache.cc)
+  target_link_libraries(test_hostdb_RefCountCache PRIVATE ts::tscore ts::tsutil ts::inkevent Catch2::Catch2WithMain)
+  add_test(NAME test_hostdb_RefCountCache COMMAND $<TARGET_FILE:test_hostdb_RefCountCache>)
 
 endif()
