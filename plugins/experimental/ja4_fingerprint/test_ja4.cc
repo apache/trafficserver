@@ -232,10 +232,14 @@ TEST_CASE("JA4")
   {
     // Suppress false positive -Wrestrict warning in GCC 12 when optimizing
     // See: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=105329
+#if defined(__GNUC__) && !defined(__clang__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wrestrict"
+#endif
     TLS_summary.ALPN = "a";
+#if defined(__GNUC__) && !defined(__clang__)
 #pragma GCC diagnostic pop
+#endif
     CHECK("aa" == call_JA4(TLS_summary).substr(8, 2));
   }
 
