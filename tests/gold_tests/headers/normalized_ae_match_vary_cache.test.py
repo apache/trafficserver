@@ -76,6 +76,12 @@ ts.Disk.remap_config.AddLine(
 ts.Disk.remap_config.AddLine(
     f"map http://www.ae-3.com http://127.0.0.1:{server.Variables.http_port}" +
     ' @plugin=conf_remap.so @pparam=proxy.config.http.normalize_ae=3')
+ts.Disk.remap_config.AddLine(
+    f"map http://www.ae-4.com http://127.0.0.1:{server.Variables.http_port}" +
+    ' @plugin=conf_remap.so @pparam=proxy.config.http.normalize_ae=4')
+ts.Disk.remap_config.AddLine(
+    f"map http://www.ae-5.com http://127.0.0.1:{server.Variables.http_port}" +
+    ' @plugin=conf_remap.so @pparam=proxy.config.http.normalize_ae=5')
 ts.Disk.plugin_config.AddLine('xdebug.so --enable=x-cache')
 ts.Disk.records_config.update(
     {
@@ -84,7 +90,7 @@ ts.Disk.records_config.update(
         'proxy.config.http.response_via_str': 3,
         # the following variables could affect the results of alternate cache matching,
         # define them with their default values explicitly
-        'proxy.config.cache.limits.http.max_alts': 5,
+        'proxy.config.cache.limits.http.max_alts': 6,
         'proxy.config.http.cache.ignore_accept_mismatch': 2,
         'proxy.config.http.cache.ignore_accept_language_mismatch': 2,
         'proxy.config.http.cache.ignore_accept_encoding_mismatch': 2,

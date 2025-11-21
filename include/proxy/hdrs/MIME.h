@@ -602,6 +602,8 @@ extern c_str_view MIME_VALUE_COMPRESS;
 extern c_str_view MIME_VALUE_DEFLATE;
 extern c_str_view MIME_VALUE_GZIP;
 extern c_str_view MIME_VALUE_BROTLI;
+extern c_str_view MIME_VALUE_ZSTD;
+
 extern c_str_view MIME_VALUE_IDENTITY;
 extern c_str_view MIME_VALUE_KEEP_ALIVE;
 extern c_str_view MIME_VALUE_MAX_AGE;
