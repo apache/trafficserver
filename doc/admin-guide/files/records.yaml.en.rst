@@ -5697,3 +5697,10 @@ AIO
    ============ ======================================================================
 
    Note: If you force the backend to use io_uring, you might experience failures with some (older, pre 5.4) kernel versions
+
+VirtualHost
+===========
+
+.. ts:cv:: CONFIG proxy.config.virtualhost.filename STRING virtualhost.yaml
+
+   Sets the name of the :file:`virtualhost.yaml` file.

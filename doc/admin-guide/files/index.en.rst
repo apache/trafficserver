@@ -38,6 +38,7 @@ Configuration Files
    sni.yaml.en
    storage.config.en
    strategies.yaml.en
+   virtualhost.yaml.en
    volume.config.en
    jsonrpc.yaml.en
 
@@ -90,6 +91,9 @@ Configuration Files
 
 :doc:`jsonrpc.yaml.en`
     Defines some of the configurable arguments of the jsonrpc endpoint.
+
+:doc:`virtualhost.yaml.en`
+    Defines configuration blocks that apply to a group of domains (virtualhosts).
 
 .. note::
 
