@@ -31,7 +31,7 @@ add_atsplugin(
   plugin.cc
 )
 
-target_link_libraries(prefetch PRIVATE OpenSSL::Crypto PkgConfig::PCRE2)
+target_link_libraries(prefetch PRIVATE OpenSSL::Crypto)
 
 verify_remap_plugin(prefetch)
 

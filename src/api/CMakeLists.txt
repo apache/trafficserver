@@ -26,8 +26,8 @@ set(TSAPI_PUBLIC_HEADERS ${PROJECT_SOURCE_DIR}/include/ts/ts.h ${PROJECT_SOURCE_
                          ${PROJECT_SOURCE_DIR}/include/ts/TsException.h ${PROJECT_BINARY_DIR}/include/ts/apidefs.h
 )
 
-# OpenSSL needs to be listed in before PCRE2 and other libraries that can be found in the system default lib directory (See # #11511)
-target_link_libraries(tsapi PRIVATE libswoc::libswoc yaml-cpp::yaml-cpp OpenSSL::SSL PkgConfig::PCRE2)
+# OpenSSL needs to be listed in before other libraries that can be found in the system default lib directory (See #11511)
+target_link_libraries(tsapi PRIVATE libswoc::libswoc yaml-cpp::yaml-cpp OpenSSL::SSL)
 set_target_properties(tsapi PROPERTIES PUBLIC_HEADER "${TSAPI_PUBLIC_HEADERS}")
 
 # Items common between api and other ts libraries
