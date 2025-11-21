@@ -804,7 +804,17 @@ stats_origin(TSCont contp, TSEvent /* event ATS_UNUSED */, void *edata)
   my_state->encoding    = encoding_format_t::NONE;
   if (accept_encoding_field != TS_NULL_MLOC) {
     int         len = -1;
-    const char *str = TSMimeHdrFieldValueStringGet(reqp, hdr_loc, accept_encoding_field, -1, &len);
+    const char *mime_str = TSMimeHdrFieldValueStringGet(reqp, hdr_loc, accept_encoding_field, -1, &len);
+    char       *str = nullptr;
+
+    // Ensure str is null-terminated for strstr()
+    if (len > 0) {
+      str = TSstrndup(mime_str, len);
+      if (str == nullptr) {
+        len = -1;
+      }
+    }
+
     if (len >= TS_HTTP_LEN_DEFLATE && strstr(str, TS_HTTP_VALUE_DEFLATE) != nullptr) {
       Dbg(dbg_ctl, "Saw deflate in accept encoding");
       my_state->encoding = init_gzip(my_state, DEFLATE_MODE);
@@ -821,6 +831,8 @@ stats_origin(TSCont contp, TSEvent /* event ATS_UNUSED */, void *edata)
     else {
       my_state->encoding = encoding_format_t::NONE;
     }
+
+    TSfree(str);
   }
   Dbg(dbg_ctl, "Finished AE check");
 
