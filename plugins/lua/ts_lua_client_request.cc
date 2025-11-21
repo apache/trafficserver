@@ -1466,6 +1466,12 @@ ts_lua_client_request_client_cert_get_signature(lua_State *L)
 static int
 ts_lua_client_request_client_cert_get_not_before(lua_State *L)
 {
+  ts_lua_http_ctx *http_ctx;
+  TSHttpSsn        ssnp;
+  TSVConn          client_conn;
+
+  GET_HTTP_CONTEXT(http_ctx, L);
+
   ssnp        = TSHttpTxnSsnGet(http_ctx->txnp);
   client_conn = TSHttpSsnClientVConnGet(ssnp);
 
