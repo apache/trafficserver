@@ -146,7 +146,7 @@ get_x509_signature_string(X509 *cert)
   }
 
   const ASN1_BIT_STRING *sig = nullptr;
-#if defined(OPENSSL_IS_OPENSSL3)
+#ifdef OPENSSL_IS_OPENSSL3
   X509_get0_signature(&sig, nullptr, cert);
 #else
   sig = cert->signature;
