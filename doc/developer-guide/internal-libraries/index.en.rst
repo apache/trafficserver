@@ -28,9 +28,7 @@ development team.
 .. toctree::
    :maxdepth: 1
 
-   AcidPtr.en
    ArgParser.en
-   Extendible.en
    MemArena.en
    MemSpan.en
    TextView.en
