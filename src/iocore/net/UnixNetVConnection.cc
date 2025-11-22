@@ -38,7 +38,7 @@
 #define STATE_FROM_VIO(_x) ((NetState *)(((char *)(_x)) - STATE_VIO_OFFSET))
 
 // Global
-ClassAllocator<UnixNetVConnection> netVCAllocator("netVCAllocator");
+ClassAllocator<UnixNetVConnection, false> netVCAllocator("netVCAllocator");
 
 namespace
 {

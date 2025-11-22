@@ -74,4 +74,4 @@ get_QUICPollCont(EThread *t)
   return static_cast<QUICPollCont *>(ETHREAD_GET_PTR(t, quic_NetProcessor.quicPollCont_offset));
 }
 
-extern ClassAllocator<QUICPollEvent> quicPollEventAllocator;
+extern ClassAllocator<QUICPollEvent, false> quicPollEventAllocator;

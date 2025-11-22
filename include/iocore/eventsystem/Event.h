@@ -280,7 +280,7 @@ public:
 //
 // Event Allocator
 //
-extern ClassAllocator<Event> eventAllocator;
+extern ClassAllocator<Event, false> eventAllocator;
 
 #define EVENT_ALLOC(_a, _t) THREAD_ALLOC(_a, _t)
 #define EVENT_FREE(_p, _a, _t) \

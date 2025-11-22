@@ -173,7 +173,7 @@ RamCacheCLFUSCompressor::mainEvent(int /* event ATS_UNUSED */, Event *e)
   return EVENT_CONT;
 }
 
-ClassAllocator<RamCacheCLFUSEntry> ramCacheCLFUSEntryAllocator("RamCacheCLFUSEntry");
+ClassAllocator<RamCacheCLFUSEntry, false> ramCacheCLFUSEntryAllocator("RamCacheCLFUSEntry");
 
 static const int bucket_sizes[] = {127,      251,      509,       1021,      2039,      4093,       8191,      16381,   32749,
                                    65521,    131071,   262139,    524287,    1048573,   2097143,    4194301,   8388593, 16777213,

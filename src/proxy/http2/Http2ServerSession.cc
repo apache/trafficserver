@@ -29,7 +29,7 @@
 #include "proxy/http2/Http2CommonSessionInternal.h"
 #include "proxy/http/HttpSessionManager.h"
 
-ClassAllocator<Http2ServerSession> http2ServerSessionAllocator("http2ServerSessionAllocator");
+ClassAllocator<Http2ServerSession, false> http2ServerSessionAllocator("http2ServerSessionAllocator");
 
 static int
 send_connection_event(Continuation *cont, int event, void *edata)

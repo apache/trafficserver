@@ -32,7 +32,7 @@
 #define DEBUG_TAG             "FetchSM"
 #define FETCH_LOCK_RETRY_TIME HRTIME_MSECONDS(10)
 
-ClassAllocator<FetchSM> FetchSMAllocator("FetchSMAllocator");
+ClassAllocator<FetchSM, false> FetchSMAllocator("FetchSMAllocator");
 
 namespace
 {

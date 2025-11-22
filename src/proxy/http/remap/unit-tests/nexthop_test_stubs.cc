@@ -32,11 +32,10 @@
 #include "proxy/http/HttpSM.h"
 #include "nexthop_test_stubs.h"
 
+int ParentConfig::m_id = 0;
+
 HttpSM::HttpSM() : Continuation(nullptr), vc_table(this) {}
-void
-HttpSM::cleanup()
-{
-}
+HttpSM::~HttpSM() {}
 void
 HttpSM::destroy()
 {

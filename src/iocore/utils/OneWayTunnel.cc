@@ -43,7 +43,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-ClassAllocator<OneWayTunnel> OneWayTunnelAllocator("OneWayTunnelAllocator");
+ClassAllocator<OneWayTunnel, false> OneWayTunnelAllocator("OneWayTunnelAllocator");
 
 namespace
 {

@@ -105,7 +105,7 @@ private:
   Http1ServerTransaction trans;
 };
 
-extern ClassAllocator<Http1ServerSession, true> httpServerSessionAllocator;
+extern ClassAllocator<Http1ServerSession> httpServerSessionAllocator;
 
 ////////////////////////////////////////////
 // INLINE

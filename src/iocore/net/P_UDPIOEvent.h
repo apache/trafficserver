@@ -100,7 +100,7 @@ private:
   int                bytesTransferred = 0; // actual bytes transferred
 };
 
-extern ClassAllocator<UDPIOEvent> UDPIOEventAllocator;
+extern ClassAllocator<UDPIOEvent, false> UDPIOEventAllocator;
 TS_INLINE void
 UDPIOEvent::free(UDPIOEvent *e)
 {

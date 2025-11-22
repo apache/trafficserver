@@ -58,7 +58,7 @@ DbgCtl dbg_ctl_dir_lookaside{"dir_lookaside"};
 
 // Globals
 
-ClassAllocator<OpenDirEntry> openDirEntryAllocator("openDirEntry");
+ClassAllocator<OpenDirEntry, false> openDirEntryAllocator("openDirEntry");
 
 // OpenDir
 

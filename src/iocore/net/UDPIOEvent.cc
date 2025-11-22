@@ -24,4 +24,4 @@
 #include "tscore/Allocator.h"
 #include "P_UDPIOEvent.h"
 
-ClassAllocator<UDPIOEvent> UDPIOEventAllocator("UDPIOEventAllocator");
+ClassAllocator<UDPIOEvent, false> UDPIOEventAllocator("UDPIOEventAllocator");
