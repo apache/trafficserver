@@ -28,7 +28,7 @@
 class Regex;
 
 /**
- * @brief PCRE matching, capturing and replacing
+ * @brief PCRE2 matching, capturing and replacing
  */
 class Pattern
 {
@@ -52,8 +52,8 @@ private:
 
   std::unique_ptr<Regex> _re; /**< @brief Regex compiled object, computed during initialization */
 
-  String _pattern;     /**< @brief PCRE pattern string, containing PCRE patterns and capturing groups. */
-  String _replacement; /**< @brief PCRE replacement string, containing $0..$9 to be replaced with content of the capturing groups */
+  String _pattern;     /**< @brief PCRE2 pattern string, containing PCRE2 patterns and capturing groups. */
+  String _replacement; /**< @brief PCRE2 replacement string with $0..$9 placeholders for capturing groups */
 
   bool _replace = false; /**< @brief true if a replacement is needed, false if not, this is to distinguish between an empty
                     replacement string and no replacement needed case */

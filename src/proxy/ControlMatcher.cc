@@ -481,10 +481,10 @@ RegexMatcher<Data, MatchResult>::Match(RequestData *rdata, MatchResult *result) 
     if (r >= 0) {
       Dbg(dbg_ctl_matcher, "%s Matched %s with regex at line %d", matcher_name, url_str, data_array[i].line_num);
       data_array[i].UpdateMatch(result, rdata);
-    } else if (r != PCRE2_ERROR_NOMATCH) {
+    } else if (r != RE_ERROR_NOMATCH) {
       // An error has occurred
       Warning("Error matching regex for url: %s:%d (%d)", file_name ? file_name : "unknown", data_array[i].line_num, r);
-    } // else: PCRE2_ERROR_NOMATCH
+    } // else: RE_ERROR_NOMATCH
   }
   ats_free(url_str);
 }
@@ -529,11 +529,11 @@ HostRegexMatcher<Data, MatchResult>::Match(RequestData *rdata, MatchResult *resu
       Dbg(dbg_ctl_matcher, "%s Matched %s with regex at line %d", const_cast<char *>(this->matcher_name), url_str,
           this->data_array[i].line_num);
       this->data_array[i].UpdateMatch(result, rdata);
-    } else if (r != PCRE2_ERROR_NOMATCH) {
+    } else if (r != RE_ERROR_NOMATCH) {
       // An error has occurred
       Warning("Error matching regex for host: %s:%d (%d)", this->file_name ? this->file_name : "unknown",
               this->data_array[i].line_num, r);
-    } // else: PCRE2_ERROR_NOMATCH
+    } // else: RE_ERROR_NOMATCH
   }
 }
 

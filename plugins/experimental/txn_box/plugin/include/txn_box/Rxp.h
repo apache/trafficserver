@@ -39,7 +39,7 @@
 /** Regular expression support.
  *
  * This is split out from @c Comparison because regular expressions will be used in additional
- * situations. It is non-copyable because it is basically a wrapper on a non-shared PCRE code
+ * situations. It is non-copyable because it is basically a wrapper on a non-shared PCRE2 code
  * block and it seems silly to have a handle to what is effectively a handle. Aggregrating classes
  * can deal with it the same way as a @c std::unique_ptr.
  */

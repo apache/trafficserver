@@ -55,11 +55,11 @@ Matcher::PCRE::Add(cripts::string_view regex, uint32_t options, bool jit)
     PCRE2_UCHAR error[256];
 
     pcre2_get_error_message(errorcode, error, sizeof(error));
-    CFatal("[Matcher::PCRE]: PCRE compile error `%s': %.*s", error, static_cast<int>(regex.length()), regex.data());
+    CFatal("[Matcher::PCRE]: PCRE2 compile error `%s': %.*s", error, static_cast<int>(regex.length()), regex.data());
   } else {
     if (jit) {
       if (0 != pcre2_jit_compile(re, PCRE2_JIT_COMPLETE)) {
-        CFatal("[Matcher::PCRE]: PCRE JIT compile error: %.*s", static_cast<int>(regex.length()), regex.data());
+        CFatal("[Matcher::PCRE]: PCRE2 JIT compile error: %.*s", static_cast<int>(regex.length()), regex.data());
       }
     }
     _regexes.emplace_back(regex, re);

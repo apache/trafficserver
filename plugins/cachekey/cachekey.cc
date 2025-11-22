@@ -676,8 +676,8 @@ CacheKey::appendQuery(const ConfigQuery &config)
 /**
  * @brief Append User-Agent header captures specified in the Pattern configuration object.
  *
- * Apply given PCRE pattern/replacement to the first User-Agent value, and append any captured portions to cache key.
- * @param config PCRE pattern which contains capture groups.
+ * Apply given PCRE2 pattern/replacement to the first User-Agent value, and append any captured portions to cache key.
+ * @param config PCRE2 pattern which contains capture groups.
  * @todo: TBD if ignoring the comma in the header as a field separator is generic enough.
  * @note Add the UA captures to hier-part (RFC 3986) in the original order.
  */
