@@ -292,12 +292,12 @@ struct Directory {
   int      remove(const CacheKey *key, StripeSM *stripe, Dir *del);
   void     free_entry(Dir *e, int s);
   int      check();
-  void     cleanup(Stripe *stripe);
-  void     clear_range(off_t start, off_t end, Stripe *stripe);
+  void     cleanup(StripeSM *stripe);
+  void     clear_range(off_t start, off_t end, StripeSM *stripe);
   uint64_t entries_used();
   int      bucket_length(Dir *b, int s);
   int      freelist_length(int s);
-  void     clean_segment(int s, Stripe *stripe);
+  void     clean_segment(int s, StripeSM *stripe);
 };
 
 inline int
