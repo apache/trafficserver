@@ -552,14 +552,9 @@ ProxyProtocol::set_additional_data(std::string_view data)
 {
   uint16_t len = data.length();
   Dbg(dbg_ctl_proxyprotocol_v2, "Parsing %d byte additional data", len);
-  additional_data = static_cast<char *>(ats_malloc(len));
-  if (additional_data == nullptr) {
-    Dbg(dbg_ctl_proxyprotocol_v2, "Memory allocation failed");
-    return -1;
-  }
-  data.copy(additional_data, len);
+  additional_data.assign(data);
 
-  const char *p   = additional_data;
+  const char *p   = additional_data.data();
   const char *end = p + len;
   while (p != end) {
     if (end - p < 3) {
