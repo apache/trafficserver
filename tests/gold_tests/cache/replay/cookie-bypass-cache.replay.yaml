@@ -22,6 +22,33 @@
 meta:
   version: "1.0"
 
+# Configuration section for autest integration
+autest:
+  dns:
+    name: 'dns-cookie_bypass_cache'
+  description: 'Verify the correct caching behavior when ATS is configured to not cache response to cookie for any content type'
+
+  server:
+    name: 'cookie-bypass-verifier-server'
+
+  client:
+    name: 'cookie-bypass-client'
+
+  ats:
+    name: 'ts-cookie-bypass'
+    process_config:
+      enable_cache: true
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http'
+      # Bypass cache for any responses to cookies
+      proxy.config.http.cache.cache_responses_to_cookies: 0
+
+    remap_config:
+      - from: "http://example.com/"
+        to: "http://backend.example.com:{SERVER_HTTP_PORT}/"
+
 sessions:
   - transactions:
       # Verify that response containing Set-Cookie with text content type is not

@@ -1,0 +1,218 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+# Configuration section for autest integration
+autest:
+  description: 'Test basic cache operations: miss, hit, no-cache-control, stale, and only-if-cached'
+
+  dns:
+    name: 'dns-cache-basic'
+
+  server:
+    name: 'server-cache-basic'
+
+  client:
+    name: 'client-cache-basic'
+
+  ats:
+    name: 'ts-cache-basic'
+    process_config:
+      enable_cache: true
+
+    plugin_config:
+      - 'xdebug.so --enable=x-cache,x-cache-key,via'
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http'
+      proxy.config.http.response_via_str: 3
+      proxy.config.http.insert_age_in_response: 0
+
+    remap_config:
+      - from: "http://www.example.com/"
+        to: "http://backend.example.com:{SERVER_HTTP_PORT}/"
+
+sessions:
+- transactions:
+
+  #############################################################################
+  # Test 1: Cache miss - populate cache with max-age=1
+  #############################################################################
+  - client-request:
+      method: GET
+      url: /cacheable
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, www.example.com]
+        - [x-debug, "x-cache,x-cache-key,via"]
+        - [uuid, cache-miss]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Type, text/plain]
+        - [Content-Length, "3"]
+        - [Cache-Control, "max-age=1"]
+      content:
+        encoding: plain
+        data: xxx
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [Cache-Control, { value: "max-age=1", as: equal }]
+        - [X-Cache, { value: "miss", as: equal }]
+        - [X-Cache-Key, { value: "http://", as: contains }]
+      content:
+        encoding: plain
+        data: xxx
+        verify: { as: equal }
+
+  #############################################################################
+  # Test 2: Cache hit-fresh - retrieve from cache
+  #############################################################################
+  - client-request:
+      delay: 100ms
+      method: GET
+      url: /cacheable
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, www.example.com]
+        - [x-debug, "x-cache,x-cache-key,via"]
+        - [uuid, cache-hit]
+
+    # Server should not receive this request (it's cached)
+    server-response:
+      status: 404
+      reason: Not Found
+
+    # Expect cached 200 response
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [Cache-Control, { value: "max-age=1", as: equal }]
+        - [X-Cache, { value: "hit-fresh", as: equal }]
+      content:
+        encoding: plain
+        data: xxx
+        verify: { as: equal }
+
+  #############################################################################
+  # Test 3: No cache-control - response without caching directive (cache miss)
+  #############################################################################
+  - client-request:
+      method: GET
+      url: /no_cache_control
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, www.example.com]
+        - [x-debug, "x-cache,x-cache-key,via"]
+        - [uuid, no-cache-control]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Type, text/plain]
+        - [Content-Length, "14"]
+        # No Cache-Control header
+      content:
+        encoding: plain
+        data: "the flinstones"
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Cache, { value: "miss", as: equal }]
+      content:
+        encoding: plain
+        data: "the flinstones"
+        verify: { as: equal }
+
+  #############################################################################
+  # Test 4: Hit stale cache - wait for cache entry to become stale
+  #############################################################################
+  - client-request:
+      # Wait for the cache entry from Test 1 to become stale
+      delay: 2s
+      method: GET
+      url: /cacheable
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, www.example.com]
+        - [x-debug, "x-cache,x-cache-key,via"]
+        - [uuid, cache-hit-stale]
+
+    # Server should receive revalidation request
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Type, text/plain]
+        - [Content-Length, "3"]
+        - [Cache-Control, "max-age=1"]
+      content:
+        encoding: plain
+        data: xxx
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Cache, { value: "hit-stale", as: equal }]
+
+  #############################################################################
+  # Test 5: only-if-cached - should return 504 if not in cache
+  #############################################################################
+  - client-request:
+      method: GET
+      url: /not_in_cache
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, www.example.com]
+        - [Cache-Control, "only-if-cached"]
+        - [x-debug, "x-cache,x-cache-key,via"]
+        - [uuid, only-if-cached]
+
+    # Server should not be contacted for only-if-cached requests
+    server-response:
+      status: 200
+      reason: OK
+
+    # Should get 504 Not Cached
+    proxy-response:
+      status: 504
+      reason: "Not Cached"
+      headers:
+        fields:
+        - [X-Cache, { value: "miss", as: equal }]
+        - [Cache-Control, { value: "no-store", as: equal }]
+

@@ -21,6 +21,41 @@
 meta:
   version: "1.0"
 
+# Configuration section for autest integration
+autest:
+  description: 'Verify the proper handling of cache-control directives in responses when ATS is configured to ignore server requests to bypass the cache'
+
+  dns:
+    name: 'dns-resp_ignored'
+
+  server:
+    name: 'response-cache-control-ignored-verifier-server'
+
+  client:
+    name: 'response-cache-control-client-ignored'
+
+  ats:
+    name: 'ts-response-cache-control-ignored'
+    process_config:
+      enable_cache: true
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http'
+      proxy.config.http.cache.ignore_server_no_cache: 1
+
+    remap_config:
+      - from: "http://example.com/"
+        to: "http://backend.example.com:{SERVER_HTTP_PORT}/"
+
+    log_validation:
+      traffic_out:
+        excludes:
+          - expression: "Revalidate document with server"
+            description: "Verify that ATS ignores the no-cache in response and therefore doesn't perform a revalidation."
+          - expression: "server does not permit storing and config file does not indicate that server directive should be ignored"
+            description: "Verify that ATS ignores the no-store in response and caches the responses despite its presence."
+
 sessions:
   - transactions:
       # Verify the no-cache in response is ignored and the response is cached

@@ -21,6 +21,32 @@
 meta:
   version: "1.0"
 
+# Configuration section for autest integration
+autest:
+  description: 'Verify the proper handling of cache-control directives in requests in default configuration'
+
+  dns:
+    name: 'dns-req_default'
+
+  server:
+    name: 'request-cache-control-default-verifier-server'
+
+  client:
+    name: 'request-cache-control-default-client'
+
+  ats:
+    name: 'ts-request-cache-control-default'
+    process_config:
+      enable_cache: true
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http'
+
+    remap_config:
+      - from: "http://example.com/"
+        to: "http://backend.example.com:{SERVER_HTTP_PORT}/"
+
 sessions:
   - transactions:
       # Populating the cache
