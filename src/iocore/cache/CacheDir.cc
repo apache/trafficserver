@@ -30,6 +30,11 @@
 
 #include "tscore/hugepages.h"
 #include "tscore/Random.h"
+#include "iocore/eventsystem/Tasks.h"
+
+#include <vector>
+#include <map>
+#include <atomic>
 
 #ifdef LOOP_CHECK_MODE
 #define DIR_LOOP_THRESHOLD 1000
@@ -849,14 +854,55 @@ dir_lookaside_remove(const CacheKey *key, StripeSM *stripe)
   return;
 }
 
-// Cache Sync
-//
+// Cache Dir Sync
+
+static std::vector<std::unique_ptr<CacheSync>> cache_syncs;
 
 void
 dir_sync_init()
 {
-  cacheDirSync          = new CacheSync;
-  cacheDirSync->trigger = eventProcessor.schedule_in(cacheDirSync, HRTIME_SECONDS(cache_config_dir_sync_frequency));
+  static std::atomic<bool> initialized{false};
+  ink_release_assert(!initialized.exchange(true));
+
+  std::map<CacheDisk *, std::vector<int>> drive_stripe_map;
+
+  // Group stripes by disk
+  for (int i = 0; i < gnstripes; i++) {
+    drive_stripe_map[gstripes[i]->disk].push_back(i);
+  }
+  // Any negative value means "all drives" (maximum parallelism)
+  int num_tasks = (cache_config_dir_sync_parallel_tasks < 0) ?
+                    drive_stripe_map.size() :
+                    std::min(drive_stripe_map.size(), static_cast<size_t>(std::max(1, cache_config_dir_sync_parallel_tasks)));
+
+  // Make clang-analyzer happy
+  if (num_tasks == 0) {
+    return;
+  }
+
+  cache_syncs.resize(num_tasks);
+  for (int i = 0; i < num_tasks; i++) {
+    cache_syncs[i] = std::make_unique<CacheSync>();
+  }
+
+  int task_idx = 0;
+
+  for (auto &[disk, indices] : drive_stripe_map) {
+    int target_task = task_idx % num_tasks;
+
+    Dbg(dbg_ctl_cache_dir_sync, "Disk %s: %zu stripe(s) assigned to task %d", disk->path, indices.size(), target_task);
+    for (int stripe_idx : indices) {
+      cache_syncs[target_task]->stripe_indices.push_back(stripe_idx);
+      gstripes[stripe_idx]->cache_sync = cache_syncs[target_task].get();
+    }
+    task_idx++;
+  }
+
+  for (int i = 0; i < num_tasks; i++) {
+    cache_syncs[i]->current_index = 0;
+    cache_syncs[i]->trigger =
+      eventProcessor.schedule_in(cache_syncs[i].get(), HRTIME_SECONDS(cache_config_dir_sync_frequency), ET_TASK);
+  }
 }
 
 void
@@ -909,6 +955,16 @@ void
 sync_cache_dir_on_shutdown()
 {
   Dbg(dbg_ctl_cache_dir_sync, "sync started");
+
+  // Cancel any active async sync tasks first
+  for (auto &sync : cache_syncs) {
+    if (sync && sync->trigger) {
+      sync->trigger->cancel_action();
+      sync->trigger = nullptr;
+    }
+  }
+  cache_syncs.clear();
+
   EThread *t = reinterpret_cast<EThread *>(0xdeadbeef);
   for (int i = 0; i < gnstripes; i++) {
     gstripes[i]->shutdown(t);
@@ -917,7 +973,7 @@ sync_cache_dir_on_shutdown()
 }
 
 int
-CacheSync::mainEvent(int event, Event *e)
+CacheSync::mainEvent(int event, Event * /* e ATS_UNUSED */)
 {
   if (trigger) {
     trigger->cancel_action();
@@ -925,26 +981,28 @@ CacheSync::mainEvent(int event, Event *e)
   }
 
 Lrestart:
-  if (stripe_index >= gnstripes) {
-    stripe_index = 0;
+  if (current_index >= static_cast<int>(stripe_indices.size())) {
+    current_index = 0;
+#if FREE_BUF_BETWEEN_CYCLES
+    // Free buffer between sync cycles to avoid holding large amounts of memory
+    // ToDo: If we decide needed, we should add a RecordsConfig here.
     if (buf) {
       if (buf_huge) {
         ats_free_hugepage(buf, buflen);
       } else {
         ats_free(buf);
       }
-      buflen   = 0;
       buf      = nullptr;
+      buflen   = 0;
       buf_huge = false;
     }
-    Dbg(dbg_ctl_cache_dir_sync, "sync done");
-    if (event == EVENT_INTERVAL) {
-      trigger = e->ethread->schedule_in(this, HRTIME_SECONDS(cache_config_dir_sync_frequency));
-    } else {
-      trigger = eventProcessor.schedule_in(this, HRTIME_SECONDS(cache_config_dir_sync_frequency));
-    }
+#endif
+    Dbg(dbg_ctl_cache_dir_sync, "sync cycle done");
+    trigger = eventProcessor.schedule_in(this, HRTIME_SECONDS(cache_config_dir_sync_frequency), ET_TASK);
     return EVENT_CONT;
   }
+  stripe_index = stripe_indices[current_index];
+  current_index++;
 
   StripeSM *stripe = gstripes[stripe_index]; // must be named "vol" to make STAT macros work.
 
@@ -1059,9 +1117,7 @@ Lrestart:
     return EVENT_CONT;
   }
 Ldone:
-  // done
   writepos = 0;
-  ++stripe_index;
   goto Lrestart;
 }
 
