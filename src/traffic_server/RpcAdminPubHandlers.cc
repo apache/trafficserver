@@ -39,6 +39,8 @@ register_admin_jsonrpc_handlers()
   rpc::add_method_handler("admin_config_set_records", &set_config_records, &core_ats_rpc_service_provider_handle,
                           {{rpc::RESTRICTED_API}});
   rpc::add_method_handler("admin_config_reload", &reload_config, &core_ats_rpc_service_provider_handle, {{rpc::RESTRICTED_API}});
+  rpc::add_method_handler("admin_config_reload_virtualhost", &reload_virtualhost_config, &core_ats_rpc_service_provider_handle,
+                          {{rpc::RESTRICTED_API}});
 
   // HostDB
   using namespace rpc::handlers::hostdb;

@@ -121,7 +121,8 @@ main([[maybe_unused]] int argc, const char **argv)
     .add_option("--records", "", "Emit output in YAML format")
     .add_option("--default", "", "Include the default value");
   config_command.add_command("reload", "Request a configuration reload", Command_Execute)
-    .add_example_usage("traffic_ctl config reload");
+    .add_example_usage("traffic_ctl config reload")
+    .add_option("--virtualhost", "", "Reload only the specific virtual host entry by id", "", 1, "");
   config_command.add_command("status", "Check the configuration status", Command_Execute)
     .add_example_usage("traffic_ctl config status");
   config_command.add_command("set", "Set a configuration value", "", 2, Command_Execute)
