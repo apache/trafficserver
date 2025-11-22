@@ -180,3 +180,22 @@ p = tr.AddVerifierClientProcess("client-ttl-in-cache", replay_file, http_ports=[
 p.StartBefore(dns)
 p.StartBefore(server)
 p.StartBefore(ts)
+
+#
+# Test malformed Cache-Control header with semicolons instead of commas (issue #12029)
+#
+ts = Test.MakeATSProcess("ts-malformed-cc")
+replay_file = "replay/negative-caching-malformed-cc.replay.yaml"
+server = Test.MakeVerifierServerProcess("server-malformed-cc", replay_file)
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'http',
+        'proxy.config.http.insert_age_in_response': 0,
+        'proxy.config.http.negative_caching_enabled': 0
+    })
+ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variables.http_port))
+tr = Test.AddTestRun("Test malformed Cache-Control with semicolons (issue #12029)")
+tr.Processes.Default.StartBefore(server)
+tr.Processes.Default.StartBefore(ts)
+tr.AddVerifierClientProcess("client-malformed-cc", replay_file, http_ports=[ts.Variables.port])
