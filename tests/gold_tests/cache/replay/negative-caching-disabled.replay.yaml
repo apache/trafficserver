@@ -21,33 +21,6 @@
 meta:
   version: "1.0"
 
-# Configuration section for autest integration
-autest:
-  dns:
-    name: 'dns-neg_caching_disabled'
-  description: 'Verify correct behavior without negative caching enabled'
-
-  server:
-    name: 'server-disabled'
-
-  client:
-    name: 'client-disabled'
-
-  ats:
-    name: 'ts-disabled'
-    process_config:
-      enable_cache: true
-
-    records_config:
-      proxy.config.diags.debug.enabled: 1
-      proxy.config.diags.debug.tags: 'http'
-      proxy.config.http.insert_age_in_response: 0
-      proxy.config.http.negative_caching_enabled: 0
-
-    remap_config:
-      - from: "http://example.com/"
-        to: "http://backend.example.com:{SERVER_HTTP_PORT}/"
-
   blocks:
   - request_for_path_200: &request_for_path_200
       client-request:

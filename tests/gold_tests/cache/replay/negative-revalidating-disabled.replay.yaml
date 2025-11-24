@@ -22,35 +22,6 @@
 meta:
   version: "1.0"
 
-# Configuration section for autest integration
-autest:
-  dns:
-    name: 'dns-neg_revalidating_disabled'
-  description: 'Verify negative revalidating disabled'
-
-  server:
-    name: 'server-negative-revalidating-disabled'
-
-  client:
-    name: 'client-negative-revalidating-disabled'
-
-  ats:
-    name: 'ts-negative-revalidating-disabled'
-    process_config:
-      enable_cache: true
-
-    records_config:
-      proxy.config.diags.debug.enabled: 1
-      proxy.config.diags.debug.tags: 'http|cache'
-      proxy.config.http.insert_age_in_response: 0
-      proxy.config.http.insert_response_via_str: 2
-      proxy.config.http.negative_revalidating_enabled: 0
-      proxy.config.http.cache.max_stale_age: 6
-
-    remap_config:
-      - from: "http://example.com/"
-        to: "http://backend.example.com:{SERVER_HTTP_PORT}/"
-
 sessions:
 - transactions:
 

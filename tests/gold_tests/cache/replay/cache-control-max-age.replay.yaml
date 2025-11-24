@@ -23,35 +23,6 @@
 meta:
   version: "1.0"
 
-# Configuration section for autest integration
-autest:
-  description: 'Verify correct handling of various max-age directives in both clients and responses'
-
-  dns:
-    name: 'dns-max_age'
-
-  server:
-    name: 'proxy-verifier-server'
-
-  client:
-    name: 'proxy-verifier-client'
-
-  ats:
-    name: 'ts-for-proxy-verifier'
-    process_config:
-      enable_cache: true
-
-    records_config:
-      proxy.config.diags.debug.enabled: 1
-      proxy.config.diags.debug.tags: 'http'
-      proxy.config.http.insert_age_in_response: 0
-      # Disable ignoring max-age in the client request so we can test that behavior too.
-      proxy.config.http.cache.ignore_client_cc_max_age: 0
-
-    remap_config:
-      - from: "http://example.com/"
-        to: "http://backend.example.com:{SERVER_HTTP_PORT}/"
-
   blocks:
   - request_for_positive_max_age: &request_for_positive_max_age
       client-request:
