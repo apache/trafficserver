@@ -22,6 +22,42 @@
 meta:
   version: "1.0"
 
+# Configuration section for autest integration
+autest:
+  description: 'Verify the proper handling of cache-control directives in requests when ATS is configured to honor client requests to bypass the cache'
+
+  dns:
+    name: 'dns-req_honor_client'
+
+  server:
+    name: 'request-cache-control-honor-client-verifier-server'
+
+  client:
+    name: 'request-cache-control-honor-client-client'
+
+  ats:
+    name: 'ts-request-cache-control-honor-client'
+    process_config:
+      enable_cache: true
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http'
+      # Configured to honor client requests to bypass the cache
+      proxy.config.http.cache.ignore_client_no_cache: 0
+
+    remap_config:
+      - from: "http://example.com/"
+        to: "http://backend.example.com:{SERVER_HTTP_PORT}/"
+
+    log_validation:
+      traffic_out:
+        contains:
+          - expression: "Revalidate document with server"
+            description: "Verify that ATS honors the no-cache and performs a revalidation."
+          - expression: "client does not permit storing, and cache control does not say to ignore client no-cache"
+            description: "Verify that ATS honors the no-store."
+
 sessions:
   - transactions:
       # Populating the cache

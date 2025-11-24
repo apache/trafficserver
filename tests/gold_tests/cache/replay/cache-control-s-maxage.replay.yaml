@@ -21,6 +21,33 @@
 meta:
   version: "1.0"
 
+# Configuration section for autest integration
+autest:
+  description: 'Verify correct handling of various s-maxage directives in responses'
+
+  dns:
+    name: 'dns-s_maxage'
+
+  server:
+    name: 's-maxage-server'
+
+  client:
+    name: 's-maxage-client'
+
+  ats:
+    name: 'ts-s-maxage'
+    process_config:
+      enable_cache: true
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http'
+      proxy.config.http.insert_age_in_response: 0
+
+    remap_config:
+      - from: "http://example.com/"
+        to: "http://backend.example.com:{SERVER_HTTP_PORT}/"
+
   blocks:
   - request_for_positive_s_maxage: &request_for_positive_s_maxage
       client-request:
