@@ -36,6 +36,38 @@ meta:
           - [ Content-Length, 16 ]
           - [ X-Response, should_not_see ]
 
+autest:
+  description: 'Verify that stale content is served when the parent is down'
+
+  dns:
+    name: 'dns-serve-stale'
+
+  server:
+    name: 'server-serve-stale'
+
+  client:
+    name: 'client-serve-stale'
+
+  ats:
+    name: 'ts_child'
+    process_config:
+      enable_cache: true
+
+    records_config:
+      proxy.config.http.push_method_enabled: 1
+      proxy.config.http.parent_proxy.fail_threshold: 2
+      proxy.config.http.parent_proxy.total_connect_attempts: 1
+      proxy.config.http.cache.max_stale_age: 10
+      proxy.config.http.parent_proxy.self_detect: 0
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'cache|http|dns|hostdb|parent_proxy'
+
+    parent_config:
+      - 'dest_domain=. parent="localhost:82" round_robin=consistent_hash go_direct=false'
+
+    remap_config:
+      - from: "http://example.com/"
+        to: "http://localhost:{SERVER_HTTP_PORT}/"
 
 sessions:
 - transactions:
