@@ -204,8 +204,8 @@ print_san_certificate(std::string *result, X509 *cert, int type)
       for (int i = 0; i < num; i++) {
         gen_name = sk_GENERAL_NAME_value(alt_names, i);
         if (gen_name->type == type) {
-          const char *dnsname = reinterpret_cast<const char *>(ASN1_STRING_get0_data(gen_name->d.dNSName));
-          int     dnsname_len = ASN1_STRING_length(gen_name->d.dNSName);
+          const char *dnsname     = reinterpret_cast<const char *>(ASN1_STRING_get0_data(gen_name->d.dNSName));
+          int         dnsname_len = ASN1_STRING_length(gen_name->d.dNSName);
           result->assign(dnsname, dnsname_len);
           found = true;
           break;
