@@ -298,6 +298,8 @@ struct ConfigVol {
   int       percent;
   int       avg_obj_size;
   int       fragment_size;
+  int64_t   ram_cache_size;   // Per-volume RAM cache size (-1 = use shared allocation)
+  int64_t   ram_cache_cutoff; // Per-volume RAM cache cutoff (-1 = use global cutoff)
   CacheVol *cachep;
   LINK(ConfigVol, link);
 };
