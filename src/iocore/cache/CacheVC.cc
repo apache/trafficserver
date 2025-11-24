@@ -412,15 +412,17 @@ CacheVC::handleReadDone(int event, Event * /* e ATS_UNUSED */)
       // Put the request in the ram cache only if its a open_read or lookup
       if (vio.op == VIO::READ && okay) {
         bool cutoff_check;
+        // Determine effective cutoff: use per-volume override if set, otherwise use global
+        int64_t effective_cutoff =
+          (stripe->cache_vol->ram_cache_cutoff > 0) ? stripe->cache_vol->ram_cache_cutoff : cache_config_ram_cache_cutoff;
         // cutoff_check :
         // doc_len == 0 for the first fragment (it is set from the vector)
         //                The decision on the first fragment is based on
         //                doc->total_len
         // After that, the decision is based of doc_len (doc_len != 0)
-        // (cache_config_ram_cache_cutoff == 0) : no cutoffs
-        cutoff_check =
-          ((!doc_len && static_cast<int64_t>(doc->total_len) < cache_config_ram_cache_cutoff) ||
-           (doc_len && static_cast<int64_t>(doc_len) < cache_config_ram_cache_cutoff) || !cache_config_ram_cache_cutoff);
+        // (effective_cutoff == 0) : no cutoffs
+        cutoff_check = ((!doc_len && static_cast<int64_t>(doc->total_len) < effective_cutoff) ||
+                        (doc_len && static_cast<int64_t>(doc_len) < effective_cutoff) || !effective_cutoff);
         if (cutoff_check && !f.doc_from_ram_cache) {
           uint64_t o = dir_offset(&dir);
           stripe->ram_cache->put(read_key, buf.get(), doc->len, http_copy_hdr, o);
