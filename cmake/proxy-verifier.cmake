@@ -47,6 +47,9 @@ if(NOT GIT_RESULT EQUAL 0)
   message(FATAL_ERROR "Failed to determine git common directory")
 endif()
 
+# Convert to absolute path (handles relative .git from regular non-worktree clones).
+get_filename_component(GIT_COMMON_DIR "${GIT_COMMON_DIR}" ABSOLUTE BASE_DIR "${CMAKE_SOURCE_DIR}")
+
 # Download proxy-verifier to git common directory.
 set(PV_ARCHIVE ${GIT_COMMON_DIR}/proxy-verifier/proxy-verifier.tar.gz)
 file(
