@@ -15,13 +15,43 @@
 #  limitations under the License.
 
 #
-# Verify negative_revalidating disabled behavior. This replay file assumes:
-#   * ATS is configured with negative_revalidating disabled.
+# Verify negative_revalidating enabled behavior. This replay file assumes:
+#   * ATS is configured with negative_revalidating enabled (default).
 #   * max_stale_age is set to 6 seconds.
 #
 
 meta:
   version: "1.0"
+
+# Configuration section for autest integration
+autest:
+  dns:
+    name: 'dns-neg_revalidating_enabled'
+  description: 'Verify negative revalidating enabled'
+
+  server:
+    name: 'server-negative-revalidating-enabled'
+
+  client:
+    name: 'client-negative-revalidating-enabled'
+
+  ats:
+    name: 'ts-negative-revalidating-enabled'
+    process_config:
+      enable_cache: true
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http|cache'
+      proxy.config.http.insert_age_in_response: 0
+      proxy.config.http.insert_response_via_str: 2
+      # Negative revalidating is on by default.
+      # proxy.config.http.negative_revalidating_enabled: 1
+      proxy.config.http.cache.max_stale_age: 6
+
+    remap_config:
+      - from: "http://example.com/"
+        to: "http://backend.example.com:{SERVER_HTTP_PORT}/"
 
 sessions:
 - transactions:
