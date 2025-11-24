@@ -25,6 +25,7 @@
 
 #include <cstddef>
 
+#include "iocore/net/ProxyProtocol.h"
 #include "tsutil/DbgCtl.h"
 #include "tscore/ink_assert.h"
 #include "tscore/ink_platform.h"
@@ -921,6 +922,9 @@ public:
       delete[] ranges;
       ranges      = nullptr;
       range_setup = RANGE_NONE;
+
+      // This avoids a potential leak since sometimes this class is not destructed (ClassAllocated via HttpSM)
+      pp_info.~ProxyProtocol();
       return;
     }
 
