@@ -1105,6 +1105,10 @@ CacheVC::openReadStartHead(int event, Event *e)
     }
     // the first fragment might have been gc'ed. Make sure the first
     // fragment is there before returning CACHE_EVENT_OPEN_READ
+    // For zero-length documents, don't attempt to read additional fragments.
+    if (doc_len == 0 && !f.single_fragment) {
+      f.single_fragment = true;
+    }
     if (!f.single_fragment) {
       goto Learliest;
     }
