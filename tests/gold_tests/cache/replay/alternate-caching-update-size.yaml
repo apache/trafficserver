@@ -53,6 +53,9 @@ meta:
 autest:
   description: 'Verify disabled negative revalidating behavior'
 
+  dns:
+    name: 'dns-alternate-caching'
+
   server:
     name: 'server-alternate-caching'
 

@@ -21,6 +21,9 @@ meta:
 autest:
   description: 'Verify correct caching behavior for range requests'
 
+  dns:
+    name: 'dns-range-response'
+
   server:
     name: 'server-range-response'
 

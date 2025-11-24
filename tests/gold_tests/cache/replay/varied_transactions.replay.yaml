@@ -36,6 +36,9 @@ meta:
 autest:
   description: 'Run traffic with max_alts behavior when set to 4'
 
+  dns:
+    name: 'dns-vary-handling'
+
   server:
     name: 'server-vary-handling'
 

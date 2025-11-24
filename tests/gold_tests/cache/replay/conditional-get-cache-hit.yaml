@@ -20,6 +20,9 @@ meta:
 autest:
   description: 'Verify conditional get with cache hit drains client body'
 
+  dns:
+    name: 'dns-conditional-get'
+
   server:
     name: 'server-conditional-get'
 
