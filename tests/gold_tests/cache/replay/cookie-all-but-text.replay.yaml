@@ -22,33 +22,6 @@
 meta:
   version: "1.0"
 
-# Configuration section for autest integration
-autest:
-  dns:
-    name: 'dns-cookie_all_but_text'
-  description: 'Verify the correct caching behavior when ATS is configured to cache response to cookie for all but text types'
-
-  server:
-    name: 'cookie-all-but-text-verifier-server'
-
-  client:
-    name: 'cookie-all-but-text-client'
-
-  ats:
-    name: 'ts-cookie-all-but-text'
-    process_config:
-      enable_cache: true
-
-    records_config:
-      proxy.config.diags.debug.enabled: 1
-      proxy.config.diags.debug.tags: 'http'
-      # Cache all content type except text
-      proxy.config.http.cache.cache_responses_to_cookies: 3
-
-    remap_config:
-      - from: "http://example.com/"
-        to: "http://backend.example.com:{SERVER_HTTP_PORT}/"
-
 sessions:
   - transactions:
       # Verify that response containing Set-Cookie with image content type is

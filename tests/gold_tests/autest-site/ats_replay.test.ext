@@ -36,17 +36,6 @@ def configure_ats(obj: 'TestRun', server: 'Process', ats_config: dict, dns: Opti
     ts = obj.MakeATSProcess(name, **process_config)
     records_config = ats_config.get('records_config', {})
     ts.Disk.records_config.update(records_config)
-
-    # Configure plugin_config if specified.
-    plugin_config = ats_config.get('plugin_config', [])
-    for plugin_line in plugin_config:
-        ts.Disk.plugin_config.AddLine(plugin_line)
-
-    # Configure parent_config if specified.
-    parent_config = ats_config.get('parent_config', [])
-    for parent_line in parent_config:
-        ts.Disk.parent_config.AddLine(parent_line)
-
     remap_config = ats_config.get('remap_config', [])
     for remap_entry in remap_config:
         if isinstance(remap_entry, str):
@@ -79,40 +68,6 @@ def configure_ats(obj: 'TestRun', server: 'Process', ats_config: dict, dns: Opti
             ts.Setup.Copy(src_dir, dst_dir)
         else:
             ts.Setup.CopyAs(item, ts.Variables.CONFIGDIR)
-
-    # Configure log validation if specified.
-    log_validation = ats_config.get('log_validation', {})
-    if log_validation:
-        # traffic_out validation.
-        traffic_out = log_validation.get('traffic_out', {})
-        for contains_entry in traffic_out.get('contains', []):
-            expression = contains_entry['expression']
-            description = contains_entry.get('description', f'Verify traffic_out contains: {expression}')
-            ts.Disk.traffic_out.Content += Testers.ContainsExpression(expression, description)
-        for excludes_entry in traffic_out.get('excludes', []):
-            expression = excludes_entry['expression']
-            description = excludes_entry.get('description', f'Verify traffic_out excludes: {expression}')
-            ts.Disk.traffic_out.Content += Testers.ExcludesExpression(expression, description)
-        # Gold file validation for traffic_out.
-        if 'gold_file' in traffic_out:
-            gold_file = traffic_out['gold_file']
-            ts.Disk.traffic_out.Content += gold_file
-
-        # diags_log validation.
-        diags_log = log_validation.get('diags_log', {})
-        for contains_entry in diags_log.get('contains', []):
-            expression = contains_entry['expression']
-            description = contains_entry.get('description', f'Verify diags_log contains: {expression}')
-            ts.Disk.diags_log.Content += Testers.ContainsExpression(expression, description)
-        for excludes_entry in diags_log.get('excludes', []):
-            expression = excludes_entry['expression']
-            description = excludes_entry.get('description', f'Verify diags_log excludes: {expression}')
-            ts.Disk.diags_log.Content += Testers.ExcludesExpression(expression, description)
-        # Gold file validation for diags_log.
-        if 'gold_file' in diags_log:
-            gold_file = diags_log['gold_file']
-            ts.Disk.diags_log.Content += gold_file
-
     return ts
 
 

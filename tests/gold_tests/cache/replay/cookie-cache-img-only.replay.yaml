@@ -22,33 +22,6 @@
 meta:
   version: "1.0"
 
-# Configuration section for autest integration
-autest:
-  dns:
-    name: 'dns-cookie_cache_img_only'
-  description: 'Verify the correct caching behavior when ATS is configured to cache response to cookie only for image content type'
-
-  server:
-    name: 'cookie-img-only-verifier-server'
-
-  client:
-    name: 'cookie-img-only-client'
-
-  ats:
-    name: 'ts-cookie-img-only'
-    process_config:
-      enable_cache: true
-
-    records_config:
-      proxy.config.diags.debug.enabled: 1
-      proxy.config.diags.debug.tags: 'http'
-      # Cache only for image types
-      proxy.config.http.cache.cache_responses_to_cookies: 2
-
-    remap_config:
-      - from: "http://example.com/"
-        to: "http://backend.example.com:{SERVER_HTTP_PORT}/"
-
 sessions:
   - transactions:
       # Verify that response containing Set-Cookie with text content type is not

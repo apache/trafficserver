@@ -15,44 +15,13 @@
 #  limitations under the License.
 
 #
-# Verify negative_revalidating_list behavior. This replay file assumes:
-#   * ATS is configured with negative_revalidating enabled.
+# Verify negative_revalidating disabled behavior. This replay file assumes:
+#   * ATS is configured with negative_revalidating disabled.
 #   * max_stale_age is set to 6 seconds.
-#   * negative_revalidating_list is set to "403 404"
 #
 
 meta:
   version: "1.0"
-
-# Configuration section for autest integration
-autest:
-  dns:
-    name: 'dns-neg_revalidating_list'
-  description: 'Verify negative_revalidating_list behavior'
-
-  server:
-    name: 'server-negative-revalidating-list'
-
-  client:
-    name: 'client-negative-revalidating-list'
-
-  ats:
-    name: 'ts-negative-revalidating-list'
-    process_config:
-      enable_cache: true
-
-    records_config:
-      proxy.config.diags.debug.enabled: 1
-      proxy.config.diags.debug.tags: 'http|cache'
-      proxy.config.http.insert_age_in_response: 0
-      proxy.config.http.insert_response_via_str: 2
-      proxy.config.http.cache.max_stale_age: 6
-      proxy.config.http.negative_revalidating_enabled: 1
-      proxy.config.http.negative_revalidating_list: "403 404"
-
-    remap_config:
-      - from: "http://example.com/"
-        to: "http://backend.example.com:{SERVER_HTTP_PORT}/"
 
 sessions:
 - transactions:

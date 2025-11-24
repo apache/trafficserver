@@ -16,36 +16,11 @@
 
 #
 # This replay file assumes that caching is enabled and
-# proxy.config.http.cache.cache_responses_to_cookies is set to 1 (current
+# proxy.config.http.cache.cache_responses_to_cookies is set to 1(current
 # default, cache for any content-type)
 #
 meta:
   version: "1.0"
-
-# Configuration section for autest integration
-autest:
-  dns:
-    name: 'dns-cookie_default'
-  description: 'Verify the correct caching behavior when ATS is in default configuration'
-
-  server:
-    name: 'cookie-default-verifier-server'
-
-  client:
-    name: 'cookie-default-client'
-
-  ats:
-    name: 'ts-cookie-default'
-    process_config:
-      enable_cache: true
-
-    records_config:
-      proxy.config.diags.debug.enabled: 1
-      proxy.config.diags.debug.tags: 'http'
-
-    remap_config:
-      - from: "http://example.com/"
-        to: "http://backend.example.com:{SERVER_HTTP_PORT}/"
 
 sessions:
   - transactions:
