@@ -652,6 +652,8 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
     bool        ramcache_enabled = true;
     int         avg_obj_size     = -1; // Defaults
     int         fragment_size    = -1;
+    int64_t     ram_cache_size   = -1; // -1 means use shared allocation
+    int64_t     ram_cache_cutoff = -1; // -1 means use global cutoff
 
     while (true) {
       // skip all blank spaces at beginning of line
@@ -741,16 +743,24 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
         }
       } else if (strcasecmp(tmp, "avg_obj_size") == 0) { // match avg_obj_size
         tmp          += 13;
-        avg_obj_size  = atoi(tmp);
+        avg_obj_size  = static_cast<int>(ink_atoi64(tmp));
 
-        while (ParseRules::is_digit(*tmp)) {
+        if (avg_obj_size < 0) {
+          err = "Invalid avg_obj_size value (must be >= 0)";
+          break;
+        }
+        while (*tmp && (ParseRules::is_digit(*tmp) || strchr("kmgtKMGT", *tmp))) {
           tmp++;
         }
       } else if (strcasecmp(tmp, "fragment_size") == 0) { // match fragment_size
         tmp           += 14;
-        fragment_size  = atoi(tmp);
+        fragment_size  = static_cast<int>(ink_atoi64(tmp));
 
-        while (ParseRules::is_digit(*tmp)) {
+        if (fragment_size < 0) {
+          err = "Invalid fragment_size value (must be >= 0)";
+          break;
+        }
+        while (*tmp && (ParseRules::is_digit(*tmp) || strchr("kmgtKMGT", *tmp))) {
           tmp++;
         }
       } else if (strcasecmp(tmp, "ramcache") == 0) { // match ramcache
@@ -764,6 +774,29 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
         } else {
           err = "Unexpected end of line";
           break;
+        }
+      } else if (strcasecmp(tmp, "ram_cache_size") == 0) { // match ram_cache_size
+        tmp            += 15;
+        ram_cache_size  = ink_atoi64(tmp);
+
+        if (ram_cache_size < 0) {
+          err = "Invalid ram_cache_size value (must be >= 0)";
+          break;
+        }
+        // Note: ram_cache_size=0 disables RAM cache for this volume, same as ramcache=false
+        while (*tmp && (ParseRules::is_digit(*tmp) || strchr("kmgtKMGT", *tmp))) {
+          tmp++;
+        }
+      } else if (strcasecmp(tmp, "ram_cache_cutoff") == 0) { // match ram_cache_cutoff
+        tmp              += 17;
+        ram_cache_cutoff  = ink_atoi64(tmp);
+
+        if (ram_cache_cutoff < 0) {
+          err = "Invalid ram_cache_cutoff value (must be >= 0)";
+          break;
+        }
+        while (*tmp && (ParseRules::is_digit(*tmp) || strchr("kmgtKMGT", *tmp))) {
+          tmp++;
         }
       }
 
@@ -791,6 +824,8 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
       configp->size             = size;
       configp->avg_obj_size     = avg_obj_size;
       configp->fragment_size    = fragment_size;
+      configp->ram_cache_size   = ram_cache_size;
+      configp->ram_cache_cutoff = ram_cache_cutoff;
       configp->cachep           = nullptr;
       configp->ramcache_enabled = ramcache_enabled;
       cp_queue.enqueue(configp);
