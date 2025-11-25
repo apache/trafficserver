@@ -477,6 +477,7 @@ check_symbol_exists(SSL_get_shared_curve "openssl/ssl.h" HAVE_SSL_GET_SHARED_CUR
 check_symbol_exists(SSL_get_curve_name "openssl/ssl.h" HAVE_SSL_GET_CURVE_NAME)
 check_symbol_exists(SSL_get0_group_name "openssl/ssl.h" HAVE_SSL_GET0_GROUP_NAME)
 check_symbol_exists(SSL_get_negotiated_group "openssl/ssl.h" HAVE_SSL_GET_NEGOTIATED_GROUP)
+check_symbol_exists(SSL_CTX_get0_implemented_groups "openssl/ssl.h" HAVE_SSL_CTX_GET0_IMPLEMENTED_GROUPS)
 check_symbol_exists(SSL_get_group_id "openssl/ssl.h" HAVE_SSL_GET_GROUP_ID)
 check_symbol_exists(SSL_get_group_name "openssl/ssl.h" HAVE_SSL_GET_GROUP_NAME)
 check_symbol_exists(SSL_group_to_name "openssl/ssl.h" HAVE_SSL_GROUP_TO_NAME)
@@ -574,6 +575,8 @@ if(ENABLE_DOCS)
     COMPONENTS Runtime
     REQUIRED
   )
+
+  find_program(GRAPHVIZ_DOT dot REQUIRED)
 endif()
 
 if(ENABLE_AUTEST)
@@ -586,6 +589,11 @@ if(ENABLE_AUTEST)
       ""
       CACHE STRING "Additional options for autest (default \"\")"
   )
+  # Also create AUTEST_OPTIONS_LIST from the string for use in cmake targets.
+  # This prevents cmake from escaping spaces in the arguments, which confuses
+  # the autest command. The original AUTEST_OPTIONS string is used in the
+  # autest.sh script.
+  separate_arguments(AUTEST_OPTIONS_LIST UNIX_COMMAND "${AUTEST_OPTIONS}")
   set(PROXY_VERIFIER_VERSION "v2.12.0")
   set(PROXY_VERIFIER_HASH "SHA1=8e9adc6e0b31251ca8e6fc2064ae54e5d752bb72")
   include(proxy-verifier)
@@ -782,17 +790,6 @@ add_custom_target(
   VERBATIM
 )
 
-# Leave autopep8 for historical reasons, but have it call yapf. It will not do
-# to have conflicting Python formatting targets. This can be removed when at
-# least CI is updated to use yapf instead of autopep8.
-add_custom_target(
-  autopep8
-  ${CMAKE_SOURCE_DIR}/tools/yapf.sh ${CMAKE_SOURCE_DIR}
-  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-  COMMENT "formatting python files"
-  VERBATIM
-)
-
 add_custom_target(
   yapf
   ${CMAKE_SOURCE_DIR}/tools/yapf.sh ${CMAKE_SOURCE_DIR}
@@ -809,10 +806,18 @@ add_custom_target(
   VERBATIM
 )
 
+add_custom_target(
+  whitespace-format
+  ${CMAKE_SOURCE_DIR}/tools/whitespace-format.sh
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  COMMENT "fixing whitespace issues (trailing whitespace, DOS line endings)"
+  VERBATIM
+)
+
 # Add a format target that runs all the formatters.
 add_custom_target(
   format
-  DEPENDS clang-format autopep8 cmake-format
+  DEPENDS clang-format yapf cmake-format whitespace-format
   COMMENT "formatting all files"
 )
 

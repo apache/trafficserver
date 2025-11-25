@@ -130,8 +130,7 @@ class TestStaleResponse:
 
         name = f'client_{TestStaleResponse._client_counter}'
         TestStaleResponse._client_counter += 1
-        p = tr.AddVerifierClientProcess(
-            name, self._replay_file, http_ports=[self._ts.Variables.port], other_args='--thread-limit 1')
+        p = tr.AddVerifierClientProcess(name, self._replay_file, http_ports=[self._ts.Variables.port])
         p.StartBefore(self._server)
         p.StartBefore(self._ts)
         p.StillRunningAfter = self._ts

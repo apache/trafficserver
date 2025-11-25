@@ -1,0 +1,15 @@
+VARS {
+    parent_config: bool @7;
+    parent_child: bool @12;
+    match: bool;
+    active_flag: bool @3;
+    counter: int8 @2;
+    priority: int8;
+    status: int16;
+}
+
+SEND_RESPONSE {
+    if parent_config {
+        inbound.resp.X-Parent = true;
+    }
+}

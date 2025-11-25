@@ -32,6 +32,7 @@
 
 #include "iocore/aio/AIO.h"
 #include "iocore/cache/Store.h"
+#include "iocore/eventsystem/Watchdog.h"
 #include "tscore/TSSystemState.h"
 #include "tscore/Version.h"
 #include "tscore/ink_platform.h"
@@ -48,6 +49,7 @@
 
 #include "ts/ts.h" // This is sadly needed because of us using TSThreadInit() for some reason.
 #include "swoc/swoc_file.h"
+#include "tsutil/Metrics.h"
 
 #include <syslog.h>
 #include <algorithm>
@@ -213,6 +215,8 @@ int cmd_block = 0;
 // -1: cache is already initialized, don't delay.
 int delay_listen_for_cache = 0;
 
+std::unique_ptr<Watchdog::Monitor> watchdog = nullptr;
+
 ArgumentDescription argument_descriptions[] = {
   {"net_threads",       'n', "Number of Net Threads",                                                                 "I",     &num_of_net_threads,             "PROXY_NET_THREADS",       nullptr                    },
   {"udp_threads",       'U', "Number of UDP Threads",                                                                 "I",     &num_of_udp_threads,             "PROXY_UDP_THREADS",       nullptr                    },
@@ -266,6 +270,9 @@ struct AutoStopCont : public Continuation {
   int
   mainEvent(int /* event */, Event * /* e */)
   {
+    // Stop the watchdog before shutting threads down
+    watchdog.reset();
+
     TSSystemState::stop_ssl_handshaking();
 
     APIHook *hook = g_lifecycle_hooks->get(TS_LIFECYCLE_SHUTDOWN_HOOK);
@@ -712,13 +719,13 @@ initialize_records()
   // Define version info records
   //
   auto &version = AppVersionInfo::get_version();
-  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.short", version.version(), RECP_NON_PERSISTENT);
-  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.long", version.full_version(), RECP_NON_PERSISTENT);
-  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_number", version.build_number(), RECP_NON_PERSISTENT);
-  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_time", version.build_time(), RECP_NON_PERSISTENT);
-  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_date", version.build_date(), RECP_NON_PERSISTENT);
-  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_machine", version.build_machine(), RECP_NON_PERSISTENT);
-  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_person", version.build_person(), RECP_NON_PERSISTENT);
+  ts::Metrics::StaticString::createString("proxy.process.version.server.short", version.version());
+  ts::Metrics::StaticString::createString("proxy.process.version.server.long", version.full_version());
+  ts::Metrics::StaticString::createString("proxy.process.version.server.build_number", version.build_number());
+  ts::Metrics::StaticString::createString("proxy.process.version.server.build_time", version.build_time());
+  ts::Metrics::StaticString::createString("proxy.process.version.server.build_date", version.build_date());
+  ts::Metrics::StaticString::createString("proxy.process.version.server.build_machine", version.build_machine());
+  ts::Metrics::StaticString::createString("proxy.process.version.server.build_person", version.build_person());
 }
 
 void
@@ -2030,8 +2037,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     Machine::init(hostname, &machine_addr.sa);
   }
 
-  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.uuid", (char *)Machine::instance()->process_uuid.getString(),
-                        RECP_NON_PERSISTENT);
+  ts::Metrics::StaticString::createString("proxy.process.version.server.uuid", Machine::instance()->process_uuid.getString());
 
   res_track_memory = RecGetRecordInt("proxy.config.res_track_memory").value_or(0);
 
@@ -2130,6 +2136,14 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   eventProcessor.schedule_every(new MemoryLimit, HRTIME_SECOND * 10, ET_TASK);
   RecRegisterConfigUpdateCb("proxy.config.dump_mem_info_frequency", init_memory_tracker, nullptr);
   init_memory_tracker(nullptr, RECD_NULL, RecData(), nullptr);
+
+  // Start the watchdog
+  int watchdog_timeout_ms = RecGetRecordInt("proxy.config.exec_thread.watchdog.timeout_ms").value_or(0);
+  if (watchdog_timeout_ms > 0) {
+    watchdog = std::make_unique<Watchdog::Monitor>(eventProcessor.thread_group[ET_NET]._thread,
+                                                   static_cast<size_t>(eventProcessor.thread_group[ET_NET]._count),
+                                                   std::chrono::milliseconds{watchdog_timeout_ms});
+  }
 
   {
     auto s{RecGetRecordStringAlloc("proxy.config.diags.debug.client_ip")};

@@ -1,8 +1,0 @@
-``
-> HEAD / HTTP/1.1
-> Host: no_path.com
-``
-< HTTP/1.1 301 Redirect
-``
-< Location: http://no_path.com?name=brian/
-``

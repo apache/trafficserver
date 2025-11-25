@@ -15,13 +15,43 @@
 #  limitations under the License.
 
 #
-# Verify negative_revalidating disabled behavior. This replay file assumes:
-#   * ATS is configured with negative_revalidating disabled.
+# Verify negative_revalidating enabled behavior. This replay file assumes:
+#   * ATS is configured with negative_revalidating enabled (default).
 #   * max_stale_age is set to 6 seconds.
 #
 
 meta:
   version: "1.0"
+
+# Configuration section for autest integration
+autest:
+  dns:
+    name: 'dns-neg_revalidating_enabled'
+  description: 'Verify negative revalidating enabled'
+
+  server:
+    name: 'server-negative-revalidating-enabled'
+
+  client:
+    name: 'client-negative-revalidating-enabled'
+
+  ats:
+    name: 'ts-negative-revalidating-enabled'
+    process_config:
+      enable_cache: true
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http|cache'
+      proxy.config.http.insert_age_in_response: 0
+      proxy.config.http.insert_response_via_str: 2
+      # Negative revalidating is on by default.
+      # proxy.config.http.negative_revalidating_enabled: 1
+      proxy.config.http.cache.max_stale_age: 6
+
+    remap_config:
+      - from: "http://example.com/"
+        to: "http://backend.example.com:{SERVER_HTTP_PORT}/"
 
 sessions:
 - transactions:
@@ -51,6 +81,29 @@ sessions:
     proxy-response:
       status: 200
 
+  # Also populate cache with a zero-length response (for issue #6649).
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /path/zero_length_item
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, 31 ]
+
+    # Populate the cache with a 200 response with zero-length content.
+    server-response:
+      status: 200
+      reason: "OK"
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+        - [ Cache-Control, max-age=2 ]
+
+    proxy-response:
+      status: 200
+
   # Verify we serve the 200 OK out of the cache if it is not stale.
   - client-request:
       method: "GET"
@@ -72,6 +125,29 @@ sessions:
       headers:
         fields:
         - [ Content-Length, 32 ]
+
+    # Again, we should serve this out of the cache.
+    proxy-response:
+      status: 200
+
+  # Verify zero-length is also served from cache when fresh.
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /path/zero_length_item
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, 32 ]
+
+    # This should not reach the origin server.
+    server-response:
+      status: 503
+      reason: "Service Unavailable"
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
 
     # Again, we should serve this out of the cache.
     proxy-response:
@@ -104,6 +180,54 @@ sessions:
     proxy-response:
       status: 200
 
+  # Test zero-length while stale - first request (regression test for issue #6649).
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /path/zero_length_item
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, 33 ]
+
+    server-response:
+      status: 503
+      reason: "Service Unavailable"
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+
+    # With negative_revalidating enabled, the cached response should be served
+    # even though it is stale.
+    proxy-response:
+      status: 200
+
+  # Make a second consecutive stale request for zero-length to verify the bug scenario.
+  # Per issue #6649: "only the first get on a 0 length cached object comes back
+  # as stale and the second succeeds" (meaning the second might fail).
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /path/zero_length_item
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, 34 ]
+
+    server-response:
+      status: 503
+      reason: "Service Unavailable"
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+
+    # This second consecutive stale request should also be served from cache.
+    # This is where the #6649 bug manifests - without the fix, it returns 503.
+    proxy-response:
+      status: 200
+
   # Verify that max_stale_age is respected.
   - client-request:
       method: "GET"
@@ -125,6 +249,29 @@ sessions:
       headers:
         fields:
         - [ Content-Length, 32 ]
+
+    # negative_revalidating is enabled, but now the cached item is older than
+    # max_stale_age.
+    proxy-response:
+      status: 503
+
+  # Verify max_stale_age is also respected for zero-length responses.
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /path/zero_length_item
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, 35 ]
+
+    server-response:
+      status: 503
+      reason: "Service Unavailable"
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
 
     # negative_revalidating is enabled, but now the cached item is older than
     # max_stale_age.

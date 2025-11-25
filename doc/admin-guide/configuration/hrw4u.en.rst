@@ -68,7 +68,7 @@ virtualenv or system-wide using:
 
 .. code-block:: none
 
-   pipx install dist/hrw4u-1.0.0-py3-none-any.whl
+   pipx install dist/hrw4u-1.4.0-py3-none-any.whl
 
 Using
 -----
@@ -85,6 +85,10 @@ Doing a compile is simply:
 .. code-block:: none
 
    hrw4u some_file.hrw4u
+
+in Addition to ``hrw4u``, you also have the reverse tool, converting existing ``header_rewrite``
+configurations to ``hrw4u``. This tool is named ``u4wrh``. For people using IDEs, the package also
+provides an LSP for this language, named ``hrw4u-lsp``.
 
 Syntax Differences
 ==================
@@ -231,6 +235,7 @@ The preference is the assignment style when appropriate.
 ============================= ================================= ================================================
 Header Rewrite                HRW4U                             Description
 ============================= ================================= ================================================
+add-header X-bar foo          inbound.{req,resp}.x-Bar += "bar" Add the header to (possibly) an existing header
 counter my_stat               counter("my_stat")                Increment internal counter
 rm-client-header X-Foo        inbound.req.X-Foo = ""            Remove a client request header
 rm-cookie foo                 {in,out}bound.cookie.foo = ""     Remove the cookie named foo
@@ -253,6 +258,28 @@ set-status 404                http.status = 404                 Set the response
 set-status-reason "No"        http.status.reason = "no"         Set the response status reason
 set-http-cntl                 http.cntl.<C> = bool              Turn on/off <:ref:`C<admin-plugins-header-rewrite-set-http-cntl>`> controllers
 ============================= ================================= ================================================
+
+Adding Headers with the += Operator
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+HRW4U provides a special ``+=`` operator for adding headers::
+
+    REMAP {
+        # Using += to add a header (maps to add-header)
+        inbound.req.X-Custom-Header += "new-value";
+    }
+
+The ``+=`` operator only works with the following pre-defined symbols:
+
+- ``inbound.req.<header>`` - Client request headers
+- ``inbound.resp.<header>`` - Origin response headers
+- ``outbound.req.<header>`` - Outbound request headers (context-restricted)
+- ``outbound.resp.<header>`` - Outbound response headers (context-restricted)
+
+.. note::
+    The ``+=`` operator differs from ``=`` in that ``=`` will replace/set the header value (mapping to
+    ``set-header``), while ``+=`` will add a new instance of the header (mapping to ``add-header``).
+    This is important for headers that can have multiple values, such as ``Set-Cookie`` or custom headers.
 
 In addition to those operators above, HRW4U supports the following special operators without arguments:
 
@@ -300,9 +327,29 @@ TXN_CLOSE_HOOK                  TXN_CLOSE                End of transaction
 A special section `VARS` is used to declare variables. There is no equivalent in
 `header_rewrite`, where you managed the variables manually.
 
-.. note::
-    The section name is always required in HRW4U, there are no implicit or default hooks. There
-    can be several if/else block per section block.
+Variables and State Slots
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Each variable type has a limited number of slots available:
+
+- ``bool`` - 16 slots (0-15)
+- ``int8`` - 4 slots (0-3)
+- ``int16`` - 1 slot (0)
+
+By default, slots are assigned automatically in declaration order. You can explicitly assign
+a slot number using the ``@`` syntax::
+
+    VARS {
+        priority: bool @7;      # Explicitly use slot 7
+        active: bool;           # Auto-assigned to slot 0
+        config: bool @12;       # Explicitly use slot 12
+        counter: int8 @2;       # Explicitly use int8 slot 2
+    }
+
+Explicit slot assignment is useful when you need predictable slot numbers across configurations
+or when integrating with existing header_rewrite rules that reference specific slot numbers. In
+addition, a remap configuration can use ``@PPARAM`` to set one of these slot variables explicitly
+as part of the configuration.
 
 Groups
 ------

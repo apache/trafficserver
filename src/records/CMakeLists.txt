@@ -40,8 +40,8 @@ target_link_libraries(
 )
 
 if(BUILD_TESTING)
-  add_executable(test_records unit_tests/unit_test_main.cc unit_tests/test_RecHttp.cc)
-  target_link_libraries(test_records PRIVATE records Catch2::Catch2 ts::tscore libswoc::libswoc)
+  add_executable(test_records unit_tests/unit_test_main.cc unit_tests/test_RecHttp.cc unit_tests/test_RecRegister.cc)
+  target_link_libraries(test_records PRIVATE records Catch2::Catch2 ts::tscore libswoc::libswoc ts::inkevent)
   add_catch2_test(NAME test_records COMMAND test_records)
 endif()
 

@@ -29,8 +29,6 @@ add_custom_target(ParseRules ALL DEPENDS ParseRulesCType ParseRulesCTypeToUpper 
 
 add_library(
   tscore
-  AcidPtr.cc
-  AcidPtr.cc
   Arena.cc
   ArgParser.cc
   BaseLogFile.cc
@@ -40,11 +38,9 @@ add_library(
   Diags.cc
   Encoding.cc
   EventNotify.cc
-  Extendible.cc
   FrequencyCounter.cc
   Hash.cc
   HashFNV.cc
-  HashSip.cc
   HostLookup.cc
   InkErrno.cc
   JeMiAllocator.cc
@@ -149,12 +145,11 @@ endif()
 if(BUILD_TESTING)
   add_executable(
     test_tscore
-    unit_tests/test_AcidPtr.cc
     unit_tests/test_ArgParser.cc
     unit_tests/test_CryptoHash.cc
-    unit_tests/test_Extendible.cc
     unit_tests/test_Encoding.cc
     unit_tests/test_FrequencyCounter.cc
+    unit_tests/test_HashAlgorithms.cc
     unit_tests/test_HKDF.cc
     unit_tests/test_Histogram.cc
     unit_tests/test_History.cc
@@ -176,6 +171,7 @@ if(BUILD_TESTING)
     unit_tests/test_layout.cc
     unit_tests/test_scoped_resource.cc
     unit_tests/test_Version.cc
+    unit_tests/test_ArgParser_MutexGroup.cc
   )
   target_link_libraries(
     test_tscore

@@ -1,0 +1,82 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+sessions:
+
+# Transaction 1: Cookie in bucket - should route to canary server with Host header updated.
+- transactions:
+
+  - client-request:
+      method: GET
+      url: /app/test
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ Cookie, "SessionID=333" ]
+        - [ uuid, 1 ]
+
+    # Verify the proxy request has the non-pristine Host header.
+    proxy-request:
+      headers:
+        fields:
+        - [ Host, { value: "canary.com", as: contains } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, "0" ]
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+
+# Transaction 2: No SessionID cookie - should route to stable server (else path)
+# without Host header updated. Pristine is never disabled for the else path.
+- transactions:
+
+  - client-request:
+      method: GET
+      url: /app/test
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, 2 ]
+
+    # Verify the proxy request has NOT updated the Host header (should still be
+    # pristine).
+    proxy-request:
+      headers:
+        fields:
+        - [ Host, { value: "example.com", as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, "0" ]
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+

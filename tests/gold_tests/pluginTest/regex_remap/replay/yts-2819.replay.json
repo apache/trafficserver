@@ -156,6 +156,80 @@
               ]
             }
           }
+        },
+        {
+          "uuid": "match_limit",
+          "client-request": {
+            "version": "1.1",
+            "scheme": "http",
+            "method": "GET",
+            "url": "http://example.one/match_limit/aaaaaaaaaaaaaaaaaaaf",
+            "headers": {
+              "fields": [
+                [
+                  "Host",
+                  "example.one"
+                ],
+                [
+                  "uuid",
+                  "match_limit"
+                ]
+              ]
+            }
+          },
+          "proxy-request": {
+            "version": "1.1",
+            "scheme": "http",
+            "method": "GET",
+            "url": "http://example.one/",
+            "headers": {
+              "fields": [
+                [
+                  "uuid",
+                  "match_limit"
+                ]
+              ]
+            }
+          },
+          "server-response": {
+            "status": 200,
+            "reason": "OK",
+            "content": {
+              "size": 6128
+            },
+            "headers": {
+              "fields": [
+                [
+                  "Host",
+                  "example.one"
+                ],
+                [
+                  "uuid",
+                  "180"
+                ],
+                [
+                  "Content-Length",
+                  "6128"
+                ],
+                [
+                  "Connection",
+                  "close"
+                ]
+              ]
+            }
+          },
+          "proxy-response": {
+            "status": 200,
+            "reason": "OK",
+            "content": {
+              "size": 6128
+            },
+            "headers": {
+              "fields": [
+                [ "Content-Length", 6128 ]
+              ]
+            }
+          }
         }
       ]
     }

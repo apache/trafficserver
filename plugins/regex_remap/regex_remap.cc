@@ -45,17 +45,14 @@
 #include "tscore/ink_time.h"
 #include "tscore/ink_inet.h"
 
-#ifdef HAVE_PCRE_PCRE_H
-#include <pcre/pcre.h>
-#else
-#include <pcre.h>
-#endif
+#include "tsutil/Regex.h"
 
 static const char *PLUGIN_NAME = "regex_remap";
 
 // Constants
-static const int OVECCOUNT = 30; // We support $0 - $9 x2 ints, and this needs to be 1.5x that
-static const int MAX_SUBS  = 32; // No more than 32 substitution variables in the subst string
+static const int     MATCHCOUNT        = 15;   // We support $0 - $9 x2 ints, and this needs to be 1.5x that
+static const int     MAX_SUBS          = 32;   // No more than 32 substitution variables in the subst string
+static const int32_t REGEX_MATCH_LIMIT = 1750; // POOMA - also dependent on actual stack size. Crashes with previous value of 2047
 
 // Substitutions other than regex matches
 enum ExtraSubstitutions {
@@ -117,13 +114,6 @@ public:
     Dbg(dbg_ctl, "Calling destructor");
     TSfree(_rex_string);
     TSfree(_subst);
-
-    if (_rex) {
-      pcre_free(_rex);
-    }
-    if (_extra) {
-      pcre_free(_extra);
-    }
   }
 
   bool initialize(const std::string &reg, const std::string &sub, const std::string &opt);
@@ -140,25 +130,25 @@ public:
     fprintf(stderr, "[%s]:    Regex %d ( %s ): %.2f%%\n", now, ix, _rex_string, 100.0 * _hits / max);
   }
 
-  int compile(const char *&error, int &erroffset);
+  // Returns '0' on success
+  int compile(std::string &error, int &erroffset);
 
-  // Perform the regular expression matching against a string.
+  // number of matches, or negative if failed
   int
-  match(const char *str, int len, int ovector[])
+  match(std::string_view const str, RegexMatches &matches) const
   {
-    return pcre_exec(_rex,       // the compiled pattern
-                     _extra,     // Extra data from study (maybe)
-                     str,        // the subject string
-                     len,        // the length of the subject
-                     0,          // start at offset 0 in the subject
-                     0,          // default options
-                     ovector,    // output vector for substring information
-                     OVECCOUNT); // number of elements in the output vector
+    TSAssert(nullptr != _match_context);
+    int const stat = _rex.exec(str, matches, 0, _match_context);
+    if (0 <= stat) {
+      Dbg(dbg_ctl, "Regex match (%d): %.*s", stat, (int)str.length(), str.data());
+      return matches.size();
+    }
+    return stat;
   }
 
   // Substitutions
-  int get_lengths(const int ovector[], int lengths[], TSRemapRequestInfo *rri, UrlComponents *req_url);
-  int substitute(char dest[], const char *src, const int ovector[], const int lengths[], TSHttpTxn txnp, TSRemapRequestInfo *rri,
+  int get_lengths(RegexMatches const &matches, int lengths[], TSRemapRequestInfo *rri, UrlComponents *req_url);
+  int substitute(char dest[], RegexMatches const &matches, const int lengths[], TSHttpTxn txnp, TSRemapRequestInfo *rri,
                  UrlComponents *req_url, bool lowercase_substitutions);
 
   // setter / getters for members the linked list.
@@ -171,6 +161,12 @@ public:
   next() const
   {
     return _next;
+  }
+
+  inline void
+  set_match_context(RegexMatchContext const *const ctx)
+  {
+    _match_context = ctx;
   }
 
   // setter / getters for order number within the linked list
@@ -226,6 +222,16 @@ public:
   {
     return _lowercase_substitutions;
   }
+  inline bool
+  has_strategy() const
+  {
+    return _has_strategy;
+  }
+  inline std::string const &
+  strategy() const
+  {
+    return _strategy;
+  }
 
   // Hold an overridable configurations
   struct Override {
@@ -253,15 +259,18 @@ private:
 
   bool _lowercase_substitutions = false;
 
-  pcre        *_rex    = nullptr;
-  pcre_extra  *_extra  = nullptr;
-  RemapRegex  *_next   = nullptr;
-  TSHttpStatus _status = static_cast<TSHttpStatus>(0);
+  Regex                    _rex;
+  RegexMatchContext const *_match_context = nullptr; // owned by RemapInstance
+  RemapRegex              *_next          = nullptr;
+  TSHttpStatus             _status        = static_cast<TSHttpStatus>(0);
 
   int _active_timeout      = -1;
   int _no_activity_timeout = -1;
   int _connect_timeout     = -1;
   int _dns_timeout         = -1;
+
+  bool        _has_strategy = false;
+  std::string _strategy     = {};
 
   Override *_first_override = nullptr;
   int       _sub_pos[MAX_SUBS];
@@ -306,9 +315,12 @@ RemapRegex::initialize(const std::string &reg, const std::string &sub, const std
 
     // These take an option 0|1 value, without value it implies 1
     if (opt.compare(start, 8, "caseless") == 0) {
-      _options |= PCRE_CASELESS;
+      _options |= RE_CASE_INSENSITIVE;
     } else if (opt.compare(start, 23, "lowercase_substitutions") == 0) {
       _lowercase_substitutions = true;
+    } else if (opt.compare(start, 8, "strategy") == 0) {
+      _has_strategy = true;
+      _strategy     = opt_val;
     } else if (opt_val.size() <= 0) {
       // All other options have a required value
       TSError("[%s] Malformed options: %s", PLUGIN_NAME, opt.c_str());
@@ -370,41 +382,26 @@ RemapRegex::initialize(const std::string &reg, const std::string &sub, const std
 
 // Compile and study the regular expression.
 int
-RemapRegex::compile(const char *&error, int &erroffset)
+RemapRegex::compile(std::string &error, int &erroffset)
 {
-  char *str;
-  int   ccount;
-
   // Initialize these in case they are not set.
   error     = "unknown error";
   erroffset = -1;
 
-  _rex = pcre_compile(_rex_string, // the pattern
-                      _options,    // options
-                      &error,      // for error message
-                      &erroffset,  // for error offset
-                      nullptr);    // use default character tables
-
-  if (nullptr == _rex) {
+  bool const restat = _rex.compile(_rex_string, error, erroffset, _options);
+  if (!restat) {
+    TSError("[%s] Error compiling : %s", PLUGIN_NAME, _rex_string);
     return -1;
   }
 
-  _extra = pcre_study(_rex, PCRE_STUDY_EXTRA_NEEDED, &error);
-  if (error != nullptr) {
-    return -1;
-  }
-
-  // POOMA - also dependent on actual stack size. Crashes with previous value of 2047,
-  _extra->match_limit_recursion  = 1750;
-  _extra->flags                 |= PCRE_EXTRA_MATCH_LIMIT_RECURSION;
-
-  if (pcre_fullinfo(_rex, _extra, PCRE_INFO_CAPTURECOUNT, &ccount) != 0) {
-    error = "call to pcre_fullinfo() failed";
+  int32_t const ccount = _rex.get_capture_count();
+  if (ccount < 0) {
+    error = "Failure to get capture count for Regex";
     return -1;
   }
 
   // Get some info for the string substitutions
-  str       = _subst;
+  char *str = _subst;
   _num_subs = 0;
 
   while (str && *str) {
@@ -471,7 +468,7 @@ RemapRegex::compile(const char *&error, int &erroffset)
 // We also calculate a total length for the new string, which is the max length the
 // substituted string can have (use it to allocate a buffer before calling substitute() ).
 int
-RemapRegex::get_lengths(const int ovector[], int lengths[], TSRemapRequestInfo *rri, UrlComponents *req_url)
+RemapRegex::get_lengths(RegexMatches const &matches, int lengths[], TSRemapRequestInfo *rri, UrlComponents *req_url)
 {
   int len = _subst_len + 1; // Bigger then necessary
 
@@ -479,7 +476,7 @@ RemapRegex::get_lengths(const int ovector[], int lengths[], TSRemapRequestInfo *
     int ix = _sub_ix[i];
 
     if (ix < 10) {
-      lengths[ix]  = ovector[2 * ix + 1] - ovector[2 * ix]; // -1 - -1 == 0
+      lengths[ix]  = matches[ix].length();
       len         += lengths[ix];
     } else {
       int tmp_len;
@@ -525,8 +522,8 @@ RemapRegex::get_lengths(const int ovector[], int lengths[], TSRemapRequestInfo *
 // regex that was matches, while $1 - $9 are the corresponding groups. Return the final
 // length of the string as written to dest (not including the trailing '0').
 int
-RemapRegex::substitute(char dest[], const char *src, const int ovector[], const int lengths[], TSHttpTxn txnp,
-                       TSRemapRequestInfo *rri, UrlComponents *req_url, bool lowercase_substitutions)
+RemapRegex::substitute(char dest[], RegexMatches const &matches, const int lengths[], TSHttpTxn txnp, TSRemapRequestInfo *rri,
+                       UrlComponents *req_url, bool lowercase_substitutions)
 {
   if (_num_subs > 0) {
     char *p1   = dest;
@@ -540,7 +537,7 @@ RemapRegex::substitute(char dest[], const char *src, const int ovector[], const 
       memcpy(p1, p2, _sub_pos[i] - prev);
       p1 += (_sub_pos[i] - prev);
       if (ix < 10) {
-        memcpy(p1, src + ovector[2 * ix], lengths[ix]);
+        memcpy(p1, matches[ix].data(), matches[ix].length());
         p1 += lengths[ix];
       } else {
         char        buff[INET6_ADDRSTRLEN];
@@ -614,17 +611,18 @@ RemapRegex::substitute(char dest[], const char *src, const int ovector[], const 
 struct RemapInstance {
   RemapInstance() : filename("unknown") {}
 
-  RemapRegex *first        = nullptr;
-  RemapRegex *last         = nullptr;
-  bool        pristine_url = false;
-  bool        profile      = false;
-  bool        method       = false;
-  bool        query_string = true;
-  bool        host         = false;
-  int         hits         = 0;
-  int         misses       = 0;
-  int         failures     = 0;
-  std::string filename;
+  RemapRegex       *first         = nullptr;
+  RemapRegex       *last          = nullptr;
+  RegexMatchContext match_context = {};
+  bool              pristine_url  = false;
+  bool              profile       = false;
+  bool              method        = false;
+  bool              query_string  = true;
+  bool              host          = false;
+  int               hits          = 0;
+  int               misses        = 0;
+  int               failures      = 0;
+  std::string       filename;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -767,11 +765,12 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
       continue;
     }
 
-    const char *error;
+    std::string error;
     int         erroffset;
-    if (cur->compile(error, erroffset) < 0) {
+    Dbg(dbg_ctl, "Compiling regex: %s", regex.c_str());
+    if (0 != cur->compile(error, erroffset)) {
       std::ostringstream oss;
-      oss << '[' << PLUGIN_NAME << "] PCRE failed in " << (ri->filename).c_str() << " (line " << lineno << ')';
+      oss << '[' << PLUGIN_NAME << "] Regex compile failed in " << (ri->filename).c_str() << " (line " << lineno << ')';
       if (erroffset > 0) {
         oss << " at offset " << erroffset;
       }
@@ -785,6 +784,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
     } else {
       Dbg(dbg_ctl, "Added regex=%s with subs=%s and options `%s'", regex.c_str(), subst.c_str(), options.c_str());
       cur->set_order(++count);
+      cur->set_match_context(&(ri->match_context));
       auto tmp = cur.get();
       if (ri->first == nullptr) {
         ri->first = cur.release();
@@ -794,6 +794,8 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
       ri->last = tmp;
     }
   }
+
+  ri->match_context.set_match_limit(REGEX_MATCH_LIMIT);
 
   // Make sure we got something...
   if (ri->first == nullptr) {
@@ -807,6 +809,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
 void
 TSRemapDeleteInstance(void *ih)
 {
+  Dbg(dbg_ctl, "TSRemapDeleteInstance");
   RemapInstance *ri = static_cast<RemapInstance *>(ih);
   RemapRegex    *re;
   RemapRegex    *tmp;
@@ -899,8 +902,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   UrlComponents req_url;
   req_url.populate(src_url.bufp, src_url.loc);
 
-  int           ovector[OVECCOUNT];
-  int           lengths[OVECCOUNT / 2 + 1];
+  int           lengths[MATCHCOUNT + 1];
   int           dest_len;
   TSRemapStatus retval    = TSREMAP_DID_REMAP;
   RemapRegex   *re        = ri->first;
@@ -947,12 +949,14 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   match_buf[match_len] = '\0'; // NULL terminate the match string
   Dbg(dbg_ctl, "Target match string is `%s'", match_buf);
 
+  RegexMatches matches(MATCHCOUNT);
+
   // Apply the regular expressions, in order. First one wins.
   while (re) {
     // Since we check substitutions on parse time, we don't need to reset ovector
-    auto match_result = re->match(match_buf, match_len, ovector);
+    auto match_result = re->match(match_buf, matches);
     if (match_result >= 0) {
-      int new_len = re->get_lengths(ovector, lengths, rri, &req_url);
+      int new_len = re->get_lengths(matches, lengths, rri, &req_url);
 
       // Set timeouts
       if (re->active_timeout_option() > (-1)) {
@@ -970,6 +974,21 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
       if (re->dns_timeout_option() > (-1)) {
         Dbg(dbg_ctl, "Setting DNS timeout to %d", re->dns_timeout_option());
         TSHttpTxnDNSTimeoutSet(txnp, re->dns_timeout_option());
+      }
+      if (re->has_strategy()) {
+        auto const &strat = re->strategy();
+        if (strat.empty() || "null" == strat) {
+          Dbg(dbg_ctl, "Clearing strategy (use parent.config)");
+          TSHttpTxnNextHopStrategySet(txnp, nullptr);
+        } else {
+          void const *const stratptr = TSHttpTxnNextHopNamedStrategyGet(txnp, strat.c_str());
+          if (nullptr == stratptr) {
+            Dbg(dbg_ctl, "No strategy found with name '%s'", strat.c_str());
+          } else {
+            Dbg(dbg_ctl, "Setting strategy to %s", strat.c_str());
+            TSHttpTxnNextHopStrategySet(txnp, stratptr);
+          }
+        }
       }
       bool lowercase_substitutions = false;
       if (re->lowercase_substitutions_option() == true) {
@@ -1009,7 +1028,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
         char *dest;
 
         dest     = static_cast<char *>(alloca(new_len + 8));
-        dest_len = re->substitute(dest, match_buf, ovector, lengths, txnp, rri, &req_url, lowercase_substitutions);
+        dest_len = re->substitute(dest, matches, lengths, txnp, rri, &req_url, lowercase_substitutions);
 
         Dbg(dbg_ctl, "New URL is estimated to be %d bytes long, or less", new_len);
         Dbg(dbg_ctl, "New URL is %s (length %d)", dest, dest_len);
@@ -1044,8 +1063,9 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
       }
     } else if (match_result != -1) {
       ink_atomic_increment(&(ri->failures), 1);
-      TSError(R"([%s] Bad regular expression result %d from "%s" in file "%s".)", PLUGIN_NAME, match_result, re->regex(),
-              ri->filename.c_str());
+      std::string const errmsg = Regex::get_error_string(match_result);
+      TSError(R"([%s] Bad regular expression result %d ("%s") from "%s" in file "%s".)", PLUGIN_NAME, match_result, errmsg.c_str(),
+              re->regex(), ri->filename.c_str());
     }
 
     // Try the next regex

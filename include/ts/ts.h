@@ -1575,6 +1575,67 @@ void TSHttpTxnErrorBodySet(TSHttpTxn txnp, char *buf, size_t buflength, char *mi
 char *TSHttpTxnErrorBodyGet(TSHttpTxn txnp, size_t *buflength, char **mimetype);
 
 /**
+    Sets the Transaction's Next Hop Parent Strategy.
+    Calling this after TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK will
+    result in bad behavior.
+
+    You can get this strategy pointer by calling TSHttpTxnParentStrategyGet().
+
+    @param txnp HTTP transaction whose parent strategy to set.
+    @param pointer to the given strategy.
+
+ */
+void TSHttpTxnNextHopStrategySet(TSHttpTxn txnp, void const *strategy);
+
+/**
+    Retrieves a pointer to the current next hop selection strategy.
+    This value may be a nullptr due to:
+      - parent proxying not enabled
+      - no parent selection strategy (using parent.config)
+
+    @param txnp HTTP transaction whose next hop strategy to get.
+
+ */
+void const *TSHttpTxnNextHopStrategyGet(TSHttpTxn txnp);
+
+/**
+    Returns either null pointer or null terminated pointer to name.
+                DO NOT FREE.
+
+    This value may be a nullptr due to:
+      - parent proxying not enabled
+      - no parent selection strategy (using parent.config)
+
+    @param txnp HTTP transaction whose next hop strategy to get.
+
+ */
+char const *TSHttpNextHopStrategyNameGet(void const *strategy);
+
+/**
+    Retrieves a pointer to the named strategy in the strategy table.
+    Returns nullptr if no strategy is set.
+    This uses the current transaction's state machine to get
+    access to UrlRewrite's NextHopStrategyFactory.
+
+    @param txnp HTTP transaction which holds the strategy table.
+    @param name of the strategy to look up.
+
+ */
+void const *TSHttpTxnNextHopNamedStrategyGet(TSHttpTxn txnp, const char *name);
+
+/**
+    Sets the parent proxy name and port. The string hostname is copied
+    into the TSHttpTxn; you can modify or delete the string after
+    calling TSHttpTxnParentProxySet().
+
+    @param txnp HTTP transaction whose parent proxy to set.
+    @param hostname parent proxy host name string.
+    @param port parent proxy port to set.
+
+ */
+void TSHttpTxnParentProxySet(TSHttpTxn txnp, const char *hostname, int port);
+
+/**
     Retrieves the parent proxy hostname and port, if parent
     proxying is enabled. If parent proxying is not enabled,
     TSHttpTxnParentProxyGet() sets hostname to nullptr and port to -1.

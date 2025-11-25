@@ -16,3 +16,4 @@
 
 plantuml = '@Java_JAVA_EXECUTABLE@ -jar @PLANTUML_JAR@'
 plantuml_output_format = 'svg'
+plantuml_latex_output_format = 'png'

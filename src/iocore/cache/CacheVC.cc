@@ -459,10 +459,14 @@ CacheVC::handleRead(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   } else if (load_from_last_open_read_call()) {
     goto LmemHit;
   } else if (load_from_aggregation_buffer()) {
-    io.aio_result = io.aiocb.aio_nbytes;
+    f.doc_from_ram_cache = true;
+    io.aio_result        = io.aiocb.aio_nbytes;
     SET_HANDLER(&CacheVC::handleReadDone);
     return EVENT_RETURN;
   }
+
+  ts::Metrics::Counter::increment(cache_rsb.all_mem_misses);
+  ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.all_mem_misses);
 
   io.aiocb.aio_fildes = stripe->fd;
   io.aiocb.aio_offset = stripe->vol_offset(&dir);
@@ -514,6 +518,8 @@ CacheVC::load_from_last_open_read_call()
 {
   if (*this->read_key == this->stripe->first_fragment_key && dir_offset(&this->dir) == this->stripe->first_fragment_offset) {
     this->buf = this->stripe->first_fragment_data;
+    ts::Metrics::Counter::increment(cache_rsb.last_open_read_hits);
+    ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.last_open_read_hits);
     return true;
   }
   return false;
@@ -531,6 +537,8 @@ CacheVC::load_from_aggregation_buffer()
   [[maybe_unused]] bool success = this->stripe->copy_from_aggregate_write_buffer(doc, dir, this->io.aiocb.aio_nbytes);
   // We already confirmed that the copy was valid, so it should not fail.
   ink_assert(success);
+  ts::Metrics::Counter::increment(cache_rsb.agg_buffer_hits);
+  ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.agg_buffer_hits);
   return true;
 }
 

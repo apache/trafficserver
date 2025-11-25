@@ -107,5 +107,5 @@ p.StartBefore(ts)
 p.StillRunningAfter = ts
 
 tr = Test.AddTestRun()
-p = tr.AddVerifierClientProcess('client', 'statichit.replay.yaml', http_ports=[ts.Variables.port], other_args='--thread-limit 1')
+p = tr.AddVerifierClientProcess('client', 'statichit.replay.yaml', http_ports=[ts.Variables.port])
 p.StillRunningAfter = ts

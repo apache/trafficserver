@@ -1,0 +1,27 @@
+VARS {
+    bool_0: bool;
+    bool_1: bool;
+    bool_2: bool;
+}
+
+REMAP {
+    if inbound.req.X-Foo == "bar" {
+        inbound.req.X-Hello = "there";
+        if inbound.req.X-Fie == "fie" {
+            inbound.req.X-first = "1";
+            if bool_0 || (bool_1 && bool_2) {
+                inbound.req.X-Parsed = "more";
+            } else {
+                inbound.req.X-Parsed = "yes";
+            }
+        } elif inbound.req.X-Fum == "bar" {
+            inbound.req.X-Parsed = "no";
+        } else {
+            inbound.req.X-More = "yes";
+        }
+    } elif inbound.req.X-Foo == "foo" with NOCASE,PRE {
+        inbound.req.X-Nocase = "foo";
+    } else {
+        inbound.req.X-Something = "no-bar";
+    }
+}

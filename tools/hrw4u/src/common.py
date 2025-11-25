@@ -66,6 +66,7 @@ class SystemDefaults:
 class HeaderOperations:
     """Operation constants for various resource types"""
     OPERATIONS: Final = (MagicStrings.RM_HEADER.value, MagicStrings.SET_HEADER.value)
+    ADD_OPERATION: Final = MagicStrings.ADD_HEADER.value
     COOKIE_OPERATIONS: Final = (MagicStrings.RM_COOKIE.value, MagicStrings.SET_COOKIE.value)
     DESTINATION_OPERATIONS: Final = (MagicStrings.RM_DESTINATION.value, MagicStrings.SET_DESTINATION.value)
 

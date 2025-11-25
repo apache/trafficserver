@@ -625,3 +625,293 @@ TEST_CASE("ProxyProtocol v2 Builder", "[ProxyProtocol][ProxyProtocolv2]")
     CHECK(memcmp(expected, buf, len) == 0);
   }
 }
+
+TEST_CASE("ProxyProtocol Rule of 5", "[ProxyProtocol]")
+{
+  SECTION("Copy constructor with no additional_data")
+  {
+    ProxyProtocol original;
+    original.version   = ProxyProtocolVersion::V2;
+    original.ip_family = AF_INET;
+    ats_ip_pton("192.0.2.1:50000", original.src_addr);
+    ats_ip_pton("198.51.100.1:443", original.dst_addr);
+
+    ProxyProtocol copy(original);
+
+    CHECK(copy.version == original.version);
+    CHECK(copy.ip_family == original.ip_family);
+    CHECK(copy.src_addr == original.src_addr);
+    CHECK(copy.dst_addr == original.dst_addr);
+  }
+
+  SECTION("Copy constructor with additional_data")
+  {
+    ProxyProtocol original;
+    original.version   = ProxyProtocolVersion::V2;
+    original.ip_family = AF_INET;
+    ats_ip_pton("192.0.2.1:50000", original.src_addr);
+
+    // Set properly formatted TLV data: type=0x01, length=0x0002, value="h2"
+    std::string_view tlv_data("\x01\x00\x02h2", 5);
+    original.set_additional_data(tlv_data);
+
+    ProxyProtocol copy(original);
+
+    CHECK(copy.version == original.version);
+    CHECK(copy.ip_family == original.ip_family);
+    CHECK(copy.src_addr == original.src_addr);
+
+    // Verify the data was copied
+    auto original_tlv = original.get_tlv(0x01);
+    auto copy_tlv     = copy.get_tlv(0x01);
+    REQUIRE(original_tlv.has_value());
+    REQUIRE(copy_tlv.has_value());
+    CHECK(original_tlv.value() == "h2");
+    CHECK(copy_tlv.value() == "h2");
+  }
+
+  SECTION("Move constructor with no additional_data")
+  {
+    ProxyProtocol original;
+    original.version   = ProxyProtocolVersion::V2;
+    original.ip_family = AF_INET;
+    ats_ip_pton("192.0.2.1:50000", original.src_addr);
+    ats_ip_pton("198.51.100.1:443", original.dst_addr);
+
+    ProxyProtocol moved(std::move(original));
+
+    CHECK(moved.version == ProxyProtocolVersion::V2);
+    CHECK(moved.ip_family == AF_INET);
+  }
+
+  SECTION("Move constructor with additional_data")
+  {
+    ProxyProtocol original;
+    original.version   = ProxyProtocolVersion::V2;
+    original.ip_family = AF_INET;
+    ats_ip_pton("192.0.2.1:50000", original.src_addr);
+
+    // Set properly formatted TLV data: type=0x01, length=0x0002, value="h2"
+    std::string_view tlv_data("\x01\x00\x02h2", 5);
+    original.set_additional_data(tlv_data);
+
+    auto original_tlv = original.get_tlv(0x01);
+    REQUIRE(original_tlv.has_value());
+    CHECK(original_tlv.value() == "h2");
+
+    ProxyProtocol moved(std::move(original));
+
+    // Verify the moved object has the data
+    CHECK(moved.version == ProxyProtocolVersion::V2);
+    auto moved_tlv = moved.get_tlv(0x01);
+    REQUIRE(moved_tlv.has_value());
+    CHECK(moved_tlv.value() == "h2");
+
+    // Original should have been moved from (additional_data set to nullptr)
+    auto original_tlv_after = original.get_tlv(0x01);
+    CHECK_FALSE(original_tlv_after.has_value());
+  }
+
+  SECTION("Copy assignment with no additional_data")
+  {
+    ProxyProtocol original;
+    original.version   = ProxyProtocolVersion::V2;
+    original.ip_family = AF_INET;
+    ats_ip_pton("192.0.2.1:50000", original.src_addr);
+
+    ProxyProtocol copy;
+    copy = original;
+
+    CHECK(copy.version == original.version);
+    CHECK(copy.ip_family == original.ip_family);
+    CHECK(copy.src_addr == original.src_addr);
+  }
+
+  SECTION("Copy assignment with additional_data")
+  {
+    ProxyProtocol original;
+    original.version   = ProxyProtocolVersion::V2;
+    original.ip_family = AF_INET;
+    ats_ip_pton("192.0.2.1:50000", original.src_addr);
+
+    // Set properly formatted TLV data: type=0x02, length=0x0003, value="abc"
+    std::string_view tlv_data("\x02\x00\x03"
+                              "abc",
+                              6);
+    original.set_additional_data(tlv_data);
+
+    ProxyProtocol copy;
+    copy = original;
+
+    CHECK(copy.version == original.version);
+    CHECK(copy.ip_family == original.ip_family);
+
+    // Verify deep copy - both should have independent data
+    auto original_tlv = original.get_tlv(0x02);
+    auto copy_tlv     = copy.get_tlv(0x02);
+    REQUIRE(original_tlv.has_value());
+    REQUIRE(copy_tlv.has_value());
+    CHECK(original_tlv.value() == "abc");
+    CHECK(copy_tlv.value() == "abc");
+  }
+
+  SECTION("Copy assignment overwrites existing additional_data")
+  {
+    ProxyProtocol original;
+    original.version   = ProxyProtocolVersion::V2; // Must be V2 for get_tlv to work
+    original.ip_family = AF_INET;
+
+    // Set properly formatted TLV data for original: type=0x01, length=0x0008, value="original"
+    std::string_view orig_tlv_data("\x01\x00\x08original", 11);
+    original.set_additional_data(orig_tlv_data);
+
+    ProxyProtocol copy;
+    copy.version   = ProxyProtocolVersion::V2;
+    copy.ip_family = AF_INET6;
+
+    // Set properly formatted TLV data for copy: type=0x02, length=0x0004, value="copy"
+    std::string_view copy_tlv_data("\x02\x00\x04copy", 7);
+    copy.set_additional_data(copy_tlv_data);
+
+    copy = original;
+
+    // After assignment, copy should have original's data
+    CHECK(copy.version == ProxyProtocolVersion::V2);
+    CHECK(copy.ip_family == AF_INET);
+
+    // Verify copy now has original's TLV data
+    auto copy_tlv = copy.get_tlv(0x01);
+    REQUIRE(copy_tlv.has_value());
+    CHECK(copy_tlv.value() == "original");
+
+    // Old TLV should be gone
+    auto old_tlv = copy.get_tlv(0x02);
+    CHECK_FALSE(old_tlv.has_value());
+  }
+
+  SECTION("Move assignment with no additional_data")
+  {
+    ProxyProtocol original;
+    original.version   = ProxyProtocolVersion::V2;
+    original.ip_family = AF_INET;
+    ats_ip_pton("192.0.2.1:50000", original.src_addr);
+
+    ProxyProtocol target;
+    target = std::move(original);
+
+    CHECK(target.version == ProxyProtocolVersion::V2);
+    CHECK(target.ip_family == AF_INET);
+  }
+
+  SECTION("Move assignment with additional_data")
+  {
+    ProxyProtocol original;
+    original.version   = ProxyProtocolVersion::V2;
+    original.ip_family = AF_INET;
+    ats_ip_pton("192.0.2.1:50000", original.src_addr);
+
+    // Set properly formatted TLV data: type=0x01, length=0x0004, value="test"
+    std::string_view tlv_data("\x01\x00\x04test", 7);
+    original.set_additional_data(tlv_data);
+
+    auto original_tlv = original.get_tlv(0x01);
+    REQUIRE(original_tlv.has_value());
+    CHECK(original_tlv.value() == "test");
+
+    ProxyProtocol target;
+    target = std::move(original);
+
+    // Verify target has the data
+    CHECK(target.version == ProxyProtocolVersion::V2);
+    auto target_tlv = target.get_tlv(0x01);
+    REQUIRE(target_tlv.has_value());
+    CHECK(target_tlv.value() == "test");
+
+    // Original should have been moved from
+    auto original_tlv_after = original.get_tlv(0x01);
+    CHECK_FALSE(original_tlv_after.has_value());
+  }
+
+  SECTION("Move assignment overwrites existing additional_data")
+  {
+    ProxyProtocol original;
+    original.version   = ProxyProtocolVersion::V2; // Must be V2 for get_tlv to work
+    original.ip_family = AF_INET;
+
+    // Set properly formatted TLV data for original: type=0x01, length=0x0008, value="original"
+    std::string_view orig_tlv_data("\x01\x00\x08original", 11);
+    original.set_additional_data(orig_tlv_data);
+
+    ProxyProtocol target;
+    target.version   = ProxyProtocolVersion::V2;
+    target.ip_family = AF_INET6;
+
+    // Set properly formatted TLV data for target: type=0x02, length=0x0006, value="target"
+    std::string_view target_tlv_data("\x02\x00\x06target", 9);
+    target.set_additional_data(target_tlv_data);
+
+    target = std::move(original);
+
+    // After move assignment, target should have original's data
+    CHECK(target.version == ProxyProtocolVersion::V2);
+    CHECK(target.ip_family == AF_INET);
+
+    // Verify target has original's TLV
+    auto target_tlv = target.get_tlv(0x01);
+    REQUIRE(target_tlv.has_value());
+    CHECK(target_tlv.value() == "original");
+
+    // Original should have been moved from
+    auto original_tlv = original.get_tlv(0x01);
+    CHECK_FALSE(original_tlv.has_value());
+  }
+
+  SECTION("Destructor cleans up additional_data")
+  {
+    // Test that destructor properly frees memory
+    // This is mainly tested through sanitizers (ASAN)
+    {
+      ProxyProtocol pp;
+      pp.version = ProxyProtocolVersion::V2; // get_tlv requires V2
+
+      // Set properly formatted TLV data: type=0x01, length=0x0004, value="test"
+      std::string_view tlv_data("\x01\x00\x04test", 7);
+      pp.set_additional_data(tlv_data);
+
+      auto tlv = pp.get_tlv(0x01);
+      REQUIRE(tlv.has_value());
+      CHECK(tlv.value() == "test");
+    }
+    // Object destroyed here - ASAN will catch any memory leaks
+  }
+
+  SECTION("Multiple copy and move operations")
+  {
+    ProxyProtocol original;
+    original.version   = ProxyProtocolVersion::V2;
+    original.ip_family = AF_INET;
+
+    // Set properly formatted TLV data: type=0x01, length=0x0008, value="original"
+    std::string_view tlv_data("\x01\x00\x08original", 11);
+    original.set_additional_data(tlv_data);
+
+    ProxyProtocol copy1(original);
+    ProxyProtocol copy2;
+    copy2 = copy1;
+
+    ProxyProtocol moved1(std::move(copy2));
+    ProxyProtocol moved2;
+    moved2 = std::move(moved1);
+
+    // Final object should have the data
+    CHECK(moved2.version == ProxyProtocolVersion::V2);
+    auto final_tlv = moved2.get_tlv(0x01);
+    REQUIRE(final_tlv.has_value());
+    CHECK(final_tlv.value() == "original");
+
+    // Original should still have its data (wasn't moved from)
+    auto orig_tlv = original.get_tlv(0x01);
+    REQUIRE(orig_tlv.has_value());
+    CHECK(orig_tlv.value() == "original");
+  }
+}

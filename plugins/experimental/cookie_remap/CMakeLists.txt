@@ -19,7 +19,7 @@ project(cookie_remap)
 
 add_atsplugin(cookie_remap cookie_remap.cc cookiejar.cc strip.cc hash.cc)
 
-target_link_libraries(cookie_remap PRIVATE PCRE::PCRE yaml-cpp::yaml-cpp)
+target_link_libraries(cookie_remap PRIVATE yaml-cpp::yaml-cpp)
 
 verify_remap_plugin(cookie_remap)
 

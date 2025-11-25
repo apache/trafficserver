@@ -21,66 +21,18 @@ Test.Summary = '''
 Test negative caching.
 '''
 
-#
-# Negative caching disabled.
-#
-ts = Test.MakeATSProcess("ts-disabled")
-replay_file = "replay/negative-caching-disabled.replay.yaml"
-server = Test.MakeVerifierServerProcess("server-disabled", replay_file)
-ts.Disk.records_config.update(
-    {
-        'proxy.config.diags.debug.enabled': 1,
-        'proxy.config.diags.debug.tags': 'http',
-        'proxy.config.http.insert_age_in_response': 0,
-        'proxy.config.http.negative_caching_enabled': 0
-    })
-ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variables.http_port))
-tr = Test.AddTestRun("Verify correct behavior without negative caching enabled.")
-tr.Processes.Default.StartBefore(server)
-tr.Processes.Default.StartBefore(ts)
-tr.AddVerifierClientProcess("client-disabled", replay_file, http_ports=[ts.Variables.port])
+# Negative caching disabled
+Test.ATSReplayTest(replay_file="replay/negative-caching-disabled.replay.yaml")
 
-#
-# Negative caching enabled with otherwise default configuration.
-#
-ts = Test.MakeATSProcess("ts-default")
-replay_file = "replay/negative-caching-default.replay.yaml"
-server = Test.MakeVerifierServerProcess("server-default", replay_file)
-ts.Disk.records_config.update(
-    {
-        'proxy.config.diags.debug.enabled': 1,
-        'proxy.config.diags.debug.tags': 'http',
-        'proxy.config.http.insert_age_in_response': 0,
-        'proxy.config.http.negative_caching_enabled': 1
-    })
-ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variables.http_port))
-tr = Test.AddTestRun("Verify default negative caching behavior")
-tr.Processes.Default.StartBefore(server)
-tr.Processes.Default.StartBefore(ts)
-tr.AddVerifierClientProcess("client-default", replay_file, http_ports=[ts.Variables.port])
+# Negative caching enabled with default configuration
+Test.ATSReplayTest(replay_file="replay/negative-caching-default.replay.yaml")
 
-#
-# Customized response caching for negative caching configuration.
-#
-ts = Test.MakeATSProcess("ts-customized")
-replay_file = "replay/negative-caching-customized.replay.yaml"
-server = Test.MakeVerifierServerProcess("server-customized", replay_file)
-ts.Disk.records_config.update(
-    {
-        'proxy.config.diags.debug.enabled': 1,
-        'proxy.config.diags.debug.tags': 'http',
-        'proxy.config.http.insert_age_in_response': 0,
-        'proxy.config.http.negative_caching_enabled': 1,
-        'proxy.config.http.negative_caching_list': "400"
-    })
-ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variables.http_port))
-tr = Test.AddTestRun("Verify customized negative caching list")
-tr.Processes.Default.StartBefore(server)
-tr.Processes.Default.StartBefore(ts)
-tr.AddVerifierClientProcess("client-customized", replay_file, http_ports=[ts.Variables.port])
+# Customized response caching for negative caching configuration
+Test.ATSReplayTest(replay_file="replay/negative-caching-customized.replay.yaml")
 
 #
 # Verify correct proxy.config.http.negative_caching_lifetime behavior.
+# These tests require multiple test runs with shared ATS processes, so use class-based approach.
 #
 ts = Test.MakeATSProcess("ts-lifetime")
 ts.Disk.records_config.update(
@@ -151,3 +103,32 @@ tr = Test.AddTestRun("Make sure object is fresh")
 tr.AddVerifierServerProcess("server-no-timeout", replay_file, http_ports=[server_port])
 tr.AddVerifierClientProcess("client-no-timeout", replay_file, http_ports=[ts.Variables.port])
 tr.StillRunningAfter = ts
+
+#
+# Verify that negative_caching_lifetime is respected even when cache.config
+# has ttl-in-cache configured.
+#
+replay_file = "replay/negative-caching-ttl-in-cache.replay.yaml"
+tr = Test.AddTestRun("Verify negative_caching_lifetime and ttl-in-cache interaction.")
+dns = tr.MakeDNServer("dns", default="127.0.0.1")
+server = tr.AddVerifierServerProcess("server-ttl-in-cache", replay_file)
+server_port = server.Variables.http_port
+ts = tr.MakeATSProcess("ts-ttl-in-cache")
+ts.Disk.records_config.update(
+    {
+        'proxy.config.dns.nameservers': f"127.0.0.1:{dns.Variables.Port}",
+        'proxy.config.dns.resolv_conf': 'NULL',
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'http',
+        'proxy.config.http.insert_age_in_response': 0,
+        'proxy.config.http.negative_caching_enabled': 1,
+        'proxy.config.http.negative_caching_lifetime': 2
+    })
+ts.Disk.remap_config.AddLine(f'map / http://backend.example.com:{server_port}')
+# Configure cache.config with a long ttl-in-cache that should NOT override
+# negative_caching_lifetime for negative responses.
+ts.Disk.cache_config.AddLine('dest_domain=backend.example.com ttl-in-cache=30d')
+p = tr.AddVerifierClientProcess("client-ttl-in-cache", replay_file, http_ports=[ts.Variables.port])
+p.StartBefore(dns)
+p.StartBefore(server)
+p.StartBefore(ts)

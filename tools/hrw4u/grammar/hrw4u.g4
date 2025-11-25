@@ -69,6 +69,7 @@ LBRACKET      : '[';
 RBRACKET      : ']';
 EQUALS        : '==';
 EQUAL         : '=';
+PLUSEQUAL     : '+=';
 NEQ           : '!=';
 GT            : '>';
 LT            : '<';
@@ -79,6 +80,7 @@ NOT_TILDE     : '!~';
 COLON         : ':';
 COMMA         : ',';
 SEMICOLON     : ';';
+AT            : '@';
 
 COMMENT       : '#' ~[\r\n]* ;
 WS            : [ \t\r\n]+ -> skip ;
@@ -120,13 +122,14 @@ variablesItem
     ;
 
 variableDecl
-    : name=IDENT COLON typeName=IDENT SEMICOLON
+    : name=IDENT COLON typeName=IDENT (AT slot=NUMBER)? SEMICOLON
     ;
 
 statement
     : BREAK SEMICOLON
     | functionCall SEMICOLON
     | lhs=IDENT EQUAL value SEMICOLON
+    | lhs=IDENT PLUSEQUAL value SEMICOLON
     | op=IDENT SEMICOLON
     ;
 
@@ -154,6 +157,7 @@ block
 
 blockItem
     : statement
+    | conditional
     | commentLine
     ;
 

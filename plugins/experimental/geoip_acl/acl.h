@@ -24,16 +24,14 @@
 
 #include <ts/ts.h>
 #include <ts/remap.h>
-
+#include <ts/apidefs.h>
+#include "tsutil/DbgCtl.h"
 #include "tscore/ink_defs.h"
 
-#ifdef HAVE_PCRE_PCRE_H
-#include <pcre/pcre.h>
-#else
-#include <pcre.h>
-#endif
+#include "tsutil/Regex.h"
 
 #include <string>
+#include <string_view>
 #include "lulu.h"
 
 namespace geoip_acl_ns
@@ -102,7 +100,16 @@ protected:
 class RegexAcl
 {
 public:
-  RegexAcl(Acl *acl) : _rex(nullptr), _extra(nullptr), _next(nullptr), _acl(acl) {}
+  RegexAcl(Acl *acl) : _regex(nullptr), _next(nullptr), _acl(acl) {}
+  ~RegexAcl()
+  {
+    if (_regex) {
+      delete _regex;
+    }
+    if (_acl) {
+      delete _acl;
+    }
+  }
   const std::string &
   get_regex() const
   {
@@ -125,8 +132,10 @@ public:
     if (0 == len) {
       return false;
     }
-
-    return (pcre_exec(_rex, _extra, str, len, 0, PCRE_NOTEMPTY, nullptr, 0) != -1);
+    if (_regex) {
+      return _regex->exec(std::string_view(str, len));
+    }
+    return false;
   }
 
   void append(RegexAcl *ra);
@@ -135,8 +144,7 @@ public:
 private:
   bool        compile(const std::string &str, const char *filename, int lineno);
   std::string _regex_s;
-  pcre       *_rex;
-  pcre_extra *_extra;
+  Regex      *_regex{nullptr};
   RegexAcl   *_next;
   Acl        *_acl;
 };
@@ -146,6 +154,15 @@ class CountryAcl : public Acl
 {
 public:
   CountryAcl() { memset(_iso_country_codes, 0, sizeof(_iso_country_codes)); }
+  ~CountryAcl()
+  {
+    RegexAcl *cur = _regexes;
+    while (cur) {
+      RegexAcl *next = cur->next();
+      delete cur;
+      cur = next;
+    }
+  }
   void read_regex(const char *fn, int &tokens) override;
   int  process_args(int argc, char *argv[]) override;
   bool eval(TSRemapRequestInfo *rri, TSHttpTxn txnp) const override;

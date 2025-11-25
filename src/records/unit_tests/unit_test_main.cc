@@ -21,6 +21,9 @@
 #include <vector>
 #include <string>
 #include "tscore/ink_resolver.h"
+#include "iocore/eventsystem/EventSystem.h"
+#include "iocore/eventsystem/RecProcess.h"
+#include "tscore/Layout.h"
 #include "test_Diags.h"
 
 #include <catch2/catch_test_macros.hpp>
@@ -32,8 +35,9 @@ int
 main(int argc, char *argv[])
 {
   // Set the global diags variable
+  Layout::create(); // RecProcess will fail if Layout is not created.
   DiagsPtr::set(new CatchDiags);
-
+  RecProcessInit();
   // Global data initialization needed for the unit tests.
   ts_session_protocol_well_known_name_indices_init();
   // Cheat for ts_host_res_global_init as there's no records.config to check for non-default.

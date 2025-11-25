@@ -31,7 +31,8 @@ Traffic Control interacts with |TS| through the |RPC| endpoint. All interaction 
 Overall structure
 =================
 
-.. figure:: ../../uml/images/traffic_ctl-class-diagram.svg
+.. uml:: ../../uml/traffic_ctl-class-diagram.uml
+   :align: center
 
 
 * The whole point is to separate the command handling from the printing part.

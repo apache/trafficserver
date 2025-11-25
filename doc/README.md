@@ -15,20 +15,30 @@ documentation will also require Java and graphviz system packages to be
 installed.
 
 ## Build Steps
-Building the docs is a relatively simple matter of passing
-`-DENABLE_DOCS=ON` to cmake (docs generation is off by default), and
-then using the `generate_docs` build target. The build steps for the
-`generate_docs` target will install a Pipenv using `docs/Pipfile` and do
-what is necessary to build and install the docs. Thus the following
-steps should build the docs:
+Building the docs requires passing `-DENABLE_DOCS=ON` to cmake (docs generation
+is off by default), and then using the appropriate build target. The build steps
+will automatically install a Pipenv virtual environment using `docs/Pipfile` and
+do what is necessary to build the docs.
 
+### Building HTML Documentation
 ```sh
 cmake -B docs-build -DENABLE_DOCS=ON
 cmake --build docs-build --target generate_docs
 ```
 
-The generated HTML docs will be installed in the cmake build's `doc/docbuild/html`
-directory, `docs-build/doc/docbuild/html` per the above example.
+The generated HTML docs will be in `docs-build/doc/docbuild/html`.
+
+### Building PDF Documentation
+```sh
+# Letter paper size (US standard)
+cmake --build docs-build --target generate_pdf
+
+# A4 paper size (International standard)
+cmake --build docs-build --target generate_pdf_a4
+```
+
+The generated PDF will be in `docs-build/doc/docbuild/latex/ApacheTrafficServer.pdf`
+(or `docs-build/doc/docbuild/latex-a4/` for A4 format).
 
 Once the build completes, you can use Python's
 [http.server](https://docs.python.org/3/library/http.server.html) module to

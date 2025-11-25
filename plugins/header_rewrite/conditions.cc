@@ -25,6 +25,7 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <cctype>
+#include <cinttypes>
 #include <sstream>
 #include <array>
 #include <atomic>
@@ -1538,6 +1539,15 @@ ConditionNextHop::append_value(std::string &s, const Resources &res)
     Dbg(pi_dbg_ctl, "Appending '%d' to evaluation value", port);
     s.append(std::to_string(port));
   } break;
+  case NEXT_HOP_STRATEGY: {
+    char const *const name = TSHttpNextHopStrategyNameGet(res.state.txnp);
+    if (nullptr != name) {
+      Dbg(pi_dbg_ctl, "Appending '%s' to evaluation value", name);
+      s.append(name);
+    } else {
+      Dbg(pi_dbg_ctl, "NextHopStrategyName is empty");
+    }
+  } break;
   default:
     TSReleaseAssert(!"All cases should have been handled");
     break;
@@ -1722,11 +1732,8 @@ ConditionLastCapture::set_qualifier(const std::string &q)
 void
 ConditionLastCapture::append_value(std::string &s, const Resources &res)
 {
-  if (res.ovector_ptr && res.ovector_count > _ix) {
-    int start = res.ovector[_ix * 2];
-    int end   = res.ovector[_ix * 2 + 1];
-
-    s.append(std::string_view(res.ovector_ptr).substr(start, (end - start)));
+  if (res.matches.size() > _ix) {
+    s.append(res.matches[_ix]);
     Dbg(pi_dbg_ctl, "Evaluating LAST-CAPTURE(%d)", _ix);
   }
 }
@@ -1762,7 +1769,7 @@ getClientAddr(TSHttpTxn txnp, int txn_private_slot)
     TSHttpTxnVerifiedAddrGet(txnp, &addr);
     break;
   default:
-    Dbg(pi_dbg_ctl, "Unknown IP source (%d) was specified", private_data.ip_source);
+    Dbg(pi_dbg_ctl, "Unknown IP source (%" PRIu64 ") was specified", static_cast<uint64_t>(private_data.ip_source));
     addr = TSHttpTxnClientAddrGet(txnp);
     break;
   }

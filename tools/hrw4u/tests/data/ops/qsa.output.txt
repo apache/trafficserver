@@ -2,4 +2,4 @@
 # test, because in hrw4u, we don't use QSA.
 cond %{REMAP_PSEUDO_HOOK} [AND]
 cond %{GEO:COUNTRY} =SE
-    set-redirect 302 https://www.example.com/SE/%{CLIENT-URL:PATH} [QSA]
+    set-redirect 302 "https://www.example.com/SE/%{CLIENT-URL:PATH}?%{CLIENT-URL:QUERY}"
