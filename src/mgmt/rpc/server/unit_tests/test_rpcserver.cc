@@ -71,8 +71,18 @@ add_method_handler(const std::string &name, Func &&call)
 
 namespace
 {
-const std::string sockPath{"tests/var/jsonrpc20_test.sock"};
-const std::string lockPath{"tests/var/jsonrpc20_test.lock"};
+
+std::string
+pid_specific_file(const char *suffix)
+{
+  char buffer[PATH_MAX];
+
+  snprintf(buffer, PATH_MAX, "tests/var/jsonrpc20_test.%d.%s", getpid(), suffix);
+  return std::string(buffer);
+}
+
+const std::string sockPath = pid_specific_file("sock");
+const std::string lockPath = pid_specific_file("lock");
 constexpr int     default_backlog{5};
 constexpr int     default_maxRetriesOnTransientErrors{64};
 constexpr size_t  default_incoming_req_max_size{32000 * 3};
