@@ -52,7 +52,6 @@ if(BUILD_TESTING)
   # we ensure declaration order execution via --order decl.
   macro(add_catch2_test)
     cmake_parse_arguments(CATCH2_TEST "" "NAME" "COMMAND" ${ARGN})
-    add_test(NAME ${CATCH2_TEST_NAME} COMMAND ${CATCH2_TEST_COMMAND} --order decl)
     catch_discover_tests(${CATCH2_TEST_NAME})
   endmacro()
 endif()
