@@ -1573,7 +1573,7 @@ HttpTransact::HandleRequest(State *s)
         }
       }
     }
-    if (s->txn_conf->request_buffer_enabled &&
+    if (s->txn_conf->request_buffer_enabled && s->http_config_param->post_copy_size > 0 &&
         s->state_machine->get_ua_txn()->has_request_body(s->hdr_info.request_content_length,
                                                          s->client_info.transfer_encoding == TransferEncoding_t::CHUNKED)) {
       TRANSACT_RETURN(StateMachineAction_t::WAIT_FOR_FULL_BODY, nullptr);

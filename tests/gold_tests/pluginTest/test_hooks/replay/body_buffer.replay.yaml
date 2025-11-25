@@ -1,0 +1,123 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+#
+# Test request body buffering with request_buffer.so plugin.
+#
+meta:
+  version: "1.0"
+
+autest:
+  description: 'Verify request body buffering with request_buffer.so plugin'
+
+  server:
+    name: 'body-buffer-server'
+
+  client:
+    name: 'body-buffer-client'
+
+  ats:
+    name: 'ts-body-buffer'
+    process_config:
+      enable_cache: false
+
+    plugin_config:
+      - request_buffer.so
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'request_buffer'
+
+    remap_config:
+      - from: /
+        to: http://127.0.0.1:{SERVER_HTTP_PORT}/
+
+    log_validation:
+      traffic_out:
+        contains:
+          - expression: "request_buffer_plugin gets the request body with length\\[22\\]"
+            description: "Verify that the plugin parsed the content-length request body data"
+          - expression: "request_buffer_plugin gets the request body with length\\[25\\]"
+            description: "Verify that the plugin parsed the chunked request body data"
+
+sessions:
+  - transactions:
+      # Content-Length POST request
+      - client-request:
+          method: "POST"
+          version: "1.1"
+          url: /contentlength
+          headers:
+            fields:
+              - [Host, www.example.com]
+              - [Content-Length, 22]
+              - [uuid, content-length-post]
+          content:
+            data: "content-length request"
+
+        proxy-request:
+          method: "POST"
+          url: /contentlength
+          content:
+            verify: { value: "content-length request", as: equal }
+
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Content-Length, 23]
+          content:
+            data: "content-length response"
+
+        proxy-response:
+          status: 200
+          content:
+            verify: { value: "content-length response", as: equal }
+
+      # Chunked POST request
+      - client-request:
+          method: "POST"
+          version: "1.1"
+          url: /chunked
+          headers:
+            fields:
+              - [Host, www.example.com]
+              - [Transfer-Encoding, chunked]
+              - [uuid, chunked-post]
+          content:
+            data: "chunked request"
+
+        proxy-request:
+          method: "POST"
+          url: /chunked
+          content:
+            verify: { value: "f\r\nchunked request\r\n0\r\n\r\n", as: equal }
+
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Transfer-Encoding, chunked]
+          content:
+            data: "chunked response"
+
+        proxy-response:
+          status: 200
+          content:
+            verify: { value: "10\r\nchunked response\r\n0\r\n\r\n", as: equal }
+
