@@ -39,7 +39,6 @@
 
 #pragma once
 
-#include <concepts>
 #include <cstdlib>
 #include <utility>
 #include "tscore/ink_queue.h"
@@ -330,8 +329,7 @@ using Allocator = FreelistAllocator;
   Allocator for Class objects.
 
 */
-template <std::destructible C, bool Destruct_on_free_ = true, typename BaseAllocator = Allocator>
-class ClassAllocator : public BaseAllocator
+template <class C, bool Destruct_on_free_ = true, typename BaseAllocator = Allocator> class ClassAllocator : public BaseAllocator
 {
 public:
   using Value_type                   = C;
