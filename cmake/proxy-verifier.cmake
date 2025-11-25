@@ -35,16 +35,9 @@ if(NOT PROXY_VERIFIER_HASH)
   message(FATAL_ERROR "PROXY_VERIFIER_HASH Required")
 endif()
 
-# Detect the git common directory (works for both regular repos and worktrees).
-execute_process(
-  COMMAND git rev-parse --git-common-dir
-  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-  OUTPUT_VARIABLE GIT_COMMON_DIR
-  OUTPUT_STRIP_TRAILING_WHITESPACE
-  RESULT_VARIABLE GIT_RESULT
-)
-if(NOT GIT_RESULT EQUAL 0)
-  message(FATAL_ERROR "Failed to determine git common directory")
+# GIT_COMMON_DIR is set by the top-level CMakeLists.txt.
+if(NOT GIT_COMMON_DIR)
+  message(FATAL_ERROR "GIT_COMMON_DIR not set. This should be set by the top-level CMakeLists.txt")
 endif()
 
 # Download proxy-verifier to git common directory.

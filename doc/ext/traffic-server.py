@@ -464,12 +464,11 @@ if match:
 else:
     release = 'x.y.z'
 
-# get the current branch the local repository is on
-REPO_GIT_DIR = os.path.join(REPO_ROOT, ".git")
-
+# Get the current branch the local repository is on.
+# Run git from the repository root to work with both normal repos and worktrees.
 try:
     git_branch = subprocess.check_output(
-        ['git', '--git-dir', REPO_GIT_DIR, 'rev-parse', '--abbrev-ref', 'HEAD'], stderr=subprocess.DEVNULL, text=True).strip()
+        ['git', '-C', REPO_ROOT, 'rev-parse', '--abbrev-ref', 'HEAD'], stderr=subprocess.DEVNULL, text=True).strip()
 except (subprocess.CalledProcessError, FileNotFoundError):
     git_branch = 'master'
 
