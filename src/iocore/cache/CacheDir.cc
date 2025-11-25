@@ -738,8 +738,8 @@ Directory::remove(const CacheKey *key, StripeSM *stripe, Dir *del)
       if (dir_compare_tag(e, key) && offset == dir_offset(del)) {
         ts::Metrics::Gauge::decrement(cache_rsb.direntries_used);
         ts::Metrics::Gauge::decrement(stripe->cache_vol->vol_rsb.direntries_used);
-        ATS_PROBE7(cache_dir_remove, stripe ? stripe->fd : -1, s, dir_to_offset(e, seg), offset, dir_approx_size(e),
-                   key->slice64(0), key->slice64(1));
+        ATS_PROBE7(cache_dir_remove, stripe->fd, s, dir_to_offset(e, seg), offset, dir_approx_size(e), key->slice64(0),
+                   key->slice64(1));
         dir_delete_entry(e, p, s, this);
         CHECK_DIR(d);
         return 1;
