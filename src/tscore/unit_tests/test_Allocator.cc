@@ -232,7 +232,7 @@ TEST_CASE("ClassAllocator with RAII types", "[libts][allocator]")
 
 TEST_CASE("ClassAllocator with complex types", "[libts][allocator]")
 {
-  ClassAllocator<ComplexObject, false> allocator("test_complex");
+  ClassAllocator<ComplexObject> allocator("test_complex");
 
   SECTION("Complex object with std::string")
   {
