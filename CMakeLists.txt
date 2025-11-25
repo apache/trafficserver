@@ -806,10 +806,18 @@ add_custom_target(
   VERBATIM
 )
 
+add_custom_target(
+  whitespace-format
+  ${CMAKE_SOURCE_DIR}/tools/whitespace-format.sh
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  COMMENT "fixing whitespace issues (trailing whitespace, DOS line endings)"
+  VERBATIM
+)
+
 # Add a format target that runs all the formatters.
 add_custom_target(
   format
-  DEPENDS clang-format yapf cmake-format
+  DEPENDS clang-format yapf cmake-format whitespace-format
   COMMENT "formatting all files"
 )
 

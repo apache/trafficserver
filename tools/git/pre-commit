@@ -123,6 +123,32 @@ else
     echo
 fi
 
+# Check for trailing whitespace in staged files.
+TRAILING_WS=$(git diff-index --cached --diff-filter=ACMR --name-only HEAD | grep -vE "lib/(yamlcpp|Catch2|systemtap)" | grep -vE "\.(gold|test_input)$" | xargs git diff --cached | grep -E '^\+.*[[:space:]]$' || true)
+if [ -n "$TRAILING_WS" ]; then
+    echo "The commit is not accepted because it contains trailing whitespace."
+    echo "The easiest way to fix this is to run:"
+    echo
+    echo "    $ cmake --build <build_dir> --target format"
+    exit 1
+else
+    echo "This commit complies with the trailing whitespace rules."
+    echo
+fi
+
+# Check for DOS carriage returns in staged files.
+DOS_CR=$(git diff-index --cached --diff-filter=ACMR --name-only HEAD | grep -vE "lib/(yamlcpp|Catch2|systemtap)" | grep -vE "\.test_input$" | xargs git diff --cached | grep -E '^\+.*\r$' || true)
+if [ -n "$DOS_CR" ]; then
+    echo "The commit is not accepted because it contains DOS carriage returns."
+    echo "The easiest way to fix this is to run:"
+    echo
+    echo "    $ cmake --build <build_dir> --target format"
+    exit 1
+else
+    echo "This commit complies with the DOS line ending rules."
+    echo
+fi
+
 # Cleanup before exit
 rm -f "$clang_patch_file" "$yapf_patch_file"
 exit 0
