@@ -208,3 +208,5 @@ tests/gold_tests/tls/ssl-post
 
 src/iocore/cache/test_*
 src/iocore/cache/unit_tests/var/trafficserver/cache.db
+
+.claude/settings.local.json
