@@ -15,7 +15,6 @@
 #  limitations under the License.
 
 import os
-import time
 import json
 
 Test.Summary = '''
@@ -53,7 +52,9 @@ testName = "regex_remap"
 
 regex_remap_conf_path = os.path.join(ts.Variables.CONFIGDIR, 'regex_remap.conf')
 regex_remap2_conf_path = os.path.join(ts.Variables.CONFIGDIR, 'regex_remap2.conf')
-curl_and_args = '-s -D - -v --proxy localhost:{} '.format(ts.Variables.port)
+regex_remap_host_conf_path = os.path.join(ts.Variables.CONFIGDIR, 'regex_remap_host.conf')
+regex_remap_method_conf_path = os.path.join(ts.Variables.CONFIGDIR, 'regex_remap_method.conf')
+curl_and_args = f'-s -D - -v --proxy localhost:{ts.Variables.port} '
 
 ts.Disk.File(
     regex_remap_conf_path, typename="ats:config").AddLines(
@@ -67,17 +68,40 @@ ts.Disk.File(
     regex_remap2_conf_path, typename="ats:config").AddLines(
         [
             "# 2nd regex_remap configuration\n"
-            "^/alpha/bravo/[?]((?!action=(newsfeed|calendar|contacts|notepad)).)*$ " + f"http://localhost:{server.Variables.Port}\n"
+            f"^/alpha/bravo/[?]((?!action=(newsfeed|calendar|contacts|notepad)).)*$ http://localhost:{server.Variables.Port}\n"
+        ])
+
+# Config for testing host option: match string should be "host/path" (no // prefix).
+ts.Disk.File(
+    regex_remap_host_conf_path,
+    typename="ats:config").AddLines(["# regex_remap configuration for host option test\n"
+                                     "^(.*)$ https://$1 @status=307\n"])
+
+# Config for testing method option: match string should be "METHOD/path" (no space).
+ts.Disk.File(
+    regex_remap_method_conf_path, typename="ats:config").AddLines(
+        [
+            "# regex_remap configuration for method option test\n"
+            "^GET/(.*)$ https://get.example.com/$1 @status=307\n"
+            "^POST/(.*)$ https://post.example.com/$1 @status=307\n"
         ])
 
 ts.Disk.remap_config.AddLine(
-    "map http://example.one/ http://localhost:{}/ @plugin=regex_remap.so @pparam=regex_remap.conf\n".format(server.Variables.Port))
+    f"map http://example.one/ http://localhost:{server.Variables.Port}/ @plugin=regex_remap.so @pparam=regex_remap.conf\n")
 ts.Disk.remap_config.AddLine(
-    "map http://example.two/ http://localhost:{}/ ".format(server.Variables.Port) +
+    f"map http://example.two/ http://localhost:{server.Variables.Port}/ "
     "@plugin=regex_remap.so @pparam=regex_remap.conf @pparam=pristine\n")
 ts.Disk.remap_config.AddLine(
-    "map http://example.three/ http://wrong.com/ ".format(server.Variables.Port) +
+    "map http://example.three/ http://wrong.com/ "
     "@plugin=regex_remap.so @pparam=regex_remap2.conf @pparam=pristine\n")
+# Remap rule for testing host option: verifies match string has no // prefix.
+ts.Disk.remap_config.AddLine(
+    f"map http://example.host.test/ http://localhost:{server.Variables.Port}/ "
+    "@plugin=regex_remap.so @pparam=regex_remap_host.conf @pparam=host @pparam=pristine\n")
+# Remap rule for testing method option: verifies match string includes HTTP method.
+ts.Disk.remap_config.AddLine(
+    f"map http://example.method.test/ http://localhost:{server.Variables.Port}/ "
+    "@plugin=regex_remap.so @pparam=regex_remap_method.conf @pparam=method @pparam=pristine\n")
 
 # minimal configuration
 ts.Disk.records_config.update(
@@ -94,7 +118,8 @@ tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(nameserver)
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 creq = replay_txns[0]['client-request']
-tr.MakeCurlCommand(curl_and_args + '--header "uuid: {}" '.format(creq["headers"]["fields"][1][1]) + creq["url"], ts=ts)
+uuid = creq["headers"]["fields"][1][1]
+tr.MakeCurlCommand(curl_and_args + f'--header "uuid: {uuid}" ' + creq["url"], ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/regex_remap_smoke.gold"
 tr.StillRunningAfter = ts
@@ -102,7 +127,7 @@ tr.StillRunningAfter = ts
 # 1 Test - Match and redirect
 tr = Test.AddTestRun("pristine test")
 tr.MakeCurlCommand(
-    curl_and_args + "'http://example.two/alpha/bravo/?action=newsfed;param0001=00003E;param0002=00004E;param0003=00005E'" +
+    curl_and_args + "'http://example.two/alpha/bravo/?action=newsfed;param0001=00003E;param0002=00004E;param0003=00005E'"
     f" | grep -e '^HTTP/' -e '^Location' | sed 's/{server.Variables.Port}/SERVER_PORT/'",
     ts=ts)
 tr.Processes.Default.ReturnCode = 0
@@ -112,8 +137,8 @@ tr.StillRunningAfter = ts
 # 2 Test - Match and remap
 tr = Test.AddTestRun("2nd pristine test")
 tr.MakeCurlCommand(
-    curl_and_args + '--header "uuid: {}" '.format(creq["headers"]["fields"][1][1]) +
-    " 'http://example.three/alpha/bravo/?action=newsfed;param0001=00003E;param0002=00004E;param0003=00005E'" +
+    curl_and_args + f'--header "uuid: {uuid}" '
+    " 'http://example.three/alpha/bravo/?action=newsfed;param0001=00003E;param0002=00004E;param0003=00005E'"
     " | grep -e '^HTTP/' -e '^Content-Length'",
     ts=ts)
 tr.Processes.Default.ReturnCode = 0
@@ -123,8 +148,9 @@ tr.StillRunningAfter = ts
 # 3 Test - Match limit test 0
 tr = Test.AddTestRun("match limit 0")
 creq = replay_txns[1]['client-request']
-tr.MakeCurlCommand(curl_and_args + \
-    '--header "uuid: {}" '.format(creq["headers"]["fields"][1][1]) + '"{}"'.format(creq["url"]), ts=ts)
+uuid = creq["headers"]["fields"][1][1]
+url = creq["url"]
+tr.MakeCurlCommand(curl_and_args + f'--header "uuid: {uuid}" "{url}"', ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/regex_remap_crash.gold"
 ts.Disk.diags_log.Content = Testers.ContainsExpression(
@@ -134,10 +160,30 @@ tr.StillRunningAfter = ts
 # 4 Test - Match limit test 1
 tr = Test.AddTestRun("match limit 1")
 creq = replay_txns[2]['client-request']
-tr.MakeCurlCommand(curl_and_args + \
-    '--header "uuid: {}" '.format(creq["headers"]["fields"][1][1]) + '"{}"'.format(creq["url"]), ts=ts)
+uuid = creq["headers"]["fields"][1][1]
+url = creq["url"]
+tr.MakeCurlCommand(curl_and_args + f'--header "uuid: {uuid}" "{url}"', ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/regex_remap_crash.gold"
 ts.Disk.diags_log.Content = Testers.ContainsExpression(
     'ERROR: .regex_remap. Bad regular expression result -47', "Match limit exceeded")
+tr.StillRunningAfter = ts
+
+# 5 Test - Host option test: verify match string has no // prefix.
+# With the host option, match string should be "host/path" not "//host/path".
+# The regex "^(.*)$ https://$1" should produce "https://example.host.test/somepath"
+# not "https:////example.host.test/somepath".
+tr = Test.AddTestRun("host option test")
+tr.MakeCurlCommand(curl_and_args + "'http://example.host.test/somepath'" + " | grep -e '^HTTP/' -e '^Location'", ts=ts)
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Streams.stdout = "gold/regex_remap_host.gold"
+tr.StillRunningAfter = ts
+
+# 6 Test - Method option test: verify match string includes HTTP method.
+# With the method option, match string should be "METHOD/path" (no space).
+# The regex "^GET/(.*)$" should match "GET/somepath" and redirect appropriately.
+tr = Test.AddTestRun("method option test")
+tr.MakeCurlCommand(curl_and_args + "'http://example.method.test/somepath'" + " | grep -e '^HTTP/' -e '^Location'", ts=ts)
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Streams.stdout = "gold/regex_remap_method.gold"
 tr.StillRunningAfter = ts

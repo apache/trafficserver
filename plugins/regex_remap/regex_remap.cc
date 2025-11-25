@@ -929,9 +929,8 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   }
 
   if (ri->host && req_url.host && req_url.host_len > 0) {
-    memcpy(match_buf + match_len, "//", 2);
-    memcpy(match_buf + match_len + 2, req_url.host, req_url.host_len);
-    match_len += (req_url.host_len + 2);
+    memcpy(match_buf + match_len, req_url.host, req_url.host_len);
+    match_len += req_url.host_len;
   }
 
   *(match_buf + match_len) = '/';
