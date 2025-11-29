@@ -107,7 +107,11 @@ public:
   */
   Ptr<ProxyMutex> mutex;
 
-  virtual void set_specific() = 0;
+  virtual void
+  set_specific()
+  {
+    this_thread_ptr = this;
+  }
 
   static thread_local Thread *this_thread_ptr;
 
@@ -170,4 +174,8 @@ protected:
   Thread();
 };
 
-extern Thread *this_thread();
+inline Thread *
+this_thread()
+{
+  return Thread::this_thread_ptr;
+}

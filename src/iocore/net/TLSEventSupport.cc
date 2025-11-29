@@ -23,6 +23,7 @@
  */
 
 #include "iocore/net/TLSEventSupport.h"
+#include "iocore/net/Net.h"
 #include "iocore/net/SSLAPIHooks.h"
 #include "SSLStats.h"
 

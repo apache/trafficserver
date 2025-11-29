@@ -27,6 +27,7 @@
 #include "proxy/http/remap/RemapPluginInfo.h"
 #include "records/RecCore.h"
 #include "proxy/http/remap/PluginFactory.h"
+#include "tscore/TSSystemState.h"
 #ifdef PLUGIN_DSO_TESTS
 #include "unit-tests/plugin_testing_common.h"
 #else
@@ -34,7 +35,6 @@
 #define PluginDbg   Dbg
 #define PluginError Error
 #endif
-#include "../../../iocore/eventsystem/P_EventSystem.h"
 
 #include <algorithm> /* std::swap */
 #include <filesystem>
