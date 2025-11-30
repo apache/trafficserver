@@ -176,7 +176,7 @@ do_outbound_proxy_protocol(MIOBuffer *miob, NetVConnection *vc_out, NetVConnecti
   return len;
 }
 
-ClassAllocator<HttpSM, false> httpSMAllocator("httpSMAllocator");
+ClassAllocator<HttpSM> httpSMAllocator("httpSMAllocator");
 
 void
 initialize_thread_for_connecting_pools(EThread *thread)

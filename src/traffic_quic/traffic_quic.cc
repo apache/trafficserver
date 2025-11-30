@@ -314,8 +314,8 @@ HttpSM::init(bool from_early_data)
   ink_abort("do not call stub");
 }
 
-ClassAllocator<HttpSM, false> httpSMAllocator("httpSMAllocator");
-HttpAPIHooks                 *http_global_hooks;
+ClassAllocator<HttpSM> httpSMAllocator("httpSMAllocator");
+HttpAPIHooks          *http_global_hooks;
 
 HttpVCTable::HttpVCTable(HttpSM *) {}
 
