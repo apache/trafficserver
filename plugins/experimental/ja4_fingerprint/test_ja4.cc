@@ -230,7 +230,7 @@ TEST_CASE("JA4")
           "when we create a JA4 fingerprint, "
           "then indices [8,9] thereof should contain \"aa\".")
   {
-    TLS_summary.ALPN = "a";
+    TLS_summary.ALPN = 'a';
     CHECK("aa" == call_JA4(TLS_summary).substr(8, 2));
   }
 
