@@ -115,6 +115,8 @@ SSLConfigParams::reset()
     clientKeyPath = clientCACertFilename = clientCACertPath = cipherSuite = client_cipherSuite = dhparamsFile = serverKeyPathOnly =
       clientKeyPathOnly = clientCertPathOnly = nullptr;
   ssl_ocsp_response_path_only                = nullptr;
+  server_cert_compression_algorithms         = nullptr;
+  client_cert_compression_algorithms         = nullptr;
   server_tls13_cipher_suites                 = nullptr;
   client_tls13_cipher_suites                 = nullptr;
   server_groups_list                         = nullptr;
@@ -151,11 +153,13 @@ SSLConfigParams::cleanup()
 
   ssl_ocsp_response_path_only = static_cast<char *>(ats_free_null(ssl_ocsp_response_path_only));
 
-  server_tls13_cipher_suites = static_cast<char *>(ats_free_null(server_tls13_cipher_suites));
-  client_tls13_cipher_suites = static_cast<char *>(ats_free_null(client_tls13_cipher_suites));
-  server_groups_list         = static_cast<char *>(ats_free_null(server_groups_list));
-  client_groups_list         = static_cast<char *>(ats_free_null(client_groups_list));
-  keylog_file                = static_cast<char *>(ats_free_null(keylog_file));
+  server_cert_compression_algorithms = static_cast<char *>(ats_free_null(server_cert_compression_algorithms));
+  client_cert_compression_algorithms = static_cast<char *>(ats_free_null(client_cert_compression_algorithms));
+  server_tls13_cipher_suites         = static_cast<char *>(ats_free_null(server_tls13_cipher_suites));
+  client_tls13_cipher_suites         = static_cast<char *>(ats_free_null(client_tls13_cipher_suites));
+  server_groups_list                 = static_cast<char *>(ats_free_null(server_groups_list));
+  client_groups_list                 = static_cast<char *>(ats_free_null(client_groups_list));
+  keylog_file                        = static_cast<char *>(ats_free_null(keylog_file));
 
   cleanupCTXTable();
   reset();
@@ -492,6 +496,13 @@ SSLConfigParams::initialize()
 
   if (auto rec_str{RecGetRecordStringAlloc("proxy.config.ssl.server.groups_list")}; rec_str) {
     server_groups_list = ats_stringdup(rec_str);
+  }
+
+  if (auto rec_str{RecGetRecordStringAlloc("proxy.config.ssl.server.cert_compression.algorithms")}; rec_str) {
+    server_cert_compression_algorithms = ats_stringdup(rec_str);
+  }
+  if (auto rec_str{RecGetRecordStringAlloc("proxy.config.ssl.client.cert_compression.algorithms")}; rec_str) {
+    client_cert_compression_algorithms = ats_stringdup(rec_str);
   }
 
   // ++++++++++++++++++++++++ Client part ++++++++++++++++++++

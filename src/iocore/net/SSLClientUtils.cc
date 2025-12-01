@@ -24,6 +24,7 @@
 #include "P_SSLNetVConnection.h"
 #include "P_TLSKeyLogger.h"
 #include "SSLSessionCache.h"
+#include "TLSCertCompression.h"
 #include "iocore/net/YamlSNIConfig.h"
 #include "iocore/net/SSLDiags.h"
 #include "tscore/ink_config.h"
@@ -246,6 +247,25 @@ SSLInitClientContext(const SSLConfigParams *params)
     }
   }
 #endif
+
+  if (params->client_cert_compression_algorithms) {
+    std::vector<std::string> algs;
+    std::string_view         algs_sv = params->client_cert_compression_algorithms;
+    size_t                   pos     = 0;
+
+    while (pos < algs_sv.size()) {
+      auto comma = algs_sv.find(',', pos);
+      if (comma == std::string_view::npos) {
+        comma = algs_sv.size();
+      }
+      auto alg = algs_sv.substr(pos, comma - pos);
+      if (!alg.empty()) {
+        algs.emplace_back(alg);
+      }
+      pos = comma + 1;
+    }
+    register_certificate_compression_preference(client_ctx, algs);
+  }
 
   SSL_CTX_set_verify_depth(client_ctx, params->client_verify_depth);
   if (SSLConfigParams::init_ssl_ctx_cb) {

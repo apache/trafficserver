@@ -175,6 +175,18 @@ SSLInitializeStatistics()
   // For now, register with the librecords global sync.
   RecRegNewSyncStatSync(SSLPeriodicMetricsUpdate);
 
+  ssl_rsb.cert_compress_zlib                 = Metrics::Counter::createPtr("proxy.process.ssl.cert_compress.zlib");
+  ssl_rsb.cert_compress_zlib_failure         = Metrics::Counter::createPtr("proxy.process.ssl.cert_compress.zlib_failure");
+  ssl_rsb.cert_decompress_zlib               = Metrics::Counter::createPtr("proxy.process.ssl.cert_decompress.zlib");
+  ssl_rsb.cert_decompress_zlib_failure       = Metrics::Counter::createPtr("proxy.process.ssl.cert_decompress.zlib_failure");
+  ssl_rsb.cert_compress_brotli               = Metrics::Counter::createPtr("proxy.process.ssl.cert_compress.brotli");
+  ssl_rsb.cert_compress_brotli_failure       = Metrics::Counter::createPtr("proxy.process.ssl.cert_compress.brotli_failure");
+  ssl_rsb.cert_decompress_brotli             = Metrics::Counter::createPtr("proxy.process.ssl.cert_decompress.brotli");
+  ssl_rsb.cert_decompress_brotli_failure     = Metrics::Counter::createPtr("proxy.process.ssl.cert_decompress.brotli_failure");
+  ssl_rsb.cert_compress_zstd                 = Metrics::Counter::createPtr("proxy.process.ssl.cert_compress.zstd");
+  ssl_rsb.cert_compress_zstd_failure         = Metrics::Counter::createPtr("proxy.process.ssl.cert_compress.zstd_failure");
+  ssl_rsb.cert_decompress_zstd               = Metrics::Counter::createPtr("proxy.process.ssl.cert_decompress.zstd");
+  ssl_rsb.cert_decompress_zstd_failure       = Metrics::Counter::createPtr("proxy.process.ssl.cert_decompress.zstd_failure");
   ssl_rsb.early_data_received_count          = Metrics::Counter::createPtr("proxy.process.ssl.early_data_received");
   ssl_rsb.error_async                        = Metrics::Counter::createPtr("proxy.process.ssl.ssl_error_async");
   ssl_rsb.error_ssl                          = Metrics::Counter::createPtr("proxy.process.ssl.ssl_error_ssl");
