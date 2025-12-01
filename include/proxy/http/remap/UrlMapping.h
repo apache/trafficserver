@@ -24,6 +24,8 @@
 
 #pragma once
 
+#include <atomic>
+#include <string>
 #include <vector>
 
 #include "tscore/ink_config.h"
@@ -36,6 +38,7 @@
 #include "tscore/List.h"
 
 class NextHopSelectionStrategy;
+struct CacheHostRecord;
 
 /**
  * Used to store http referrer strings (and/or regexp)
@@ -112,20 +115,41 @@ public:
   bool              ip_allow_check_enabled_p = false;
   acl_filter_rule  *filter                   = nullptr; // acl filtering (linked list of rules)
   LINK(url_mapping, link);                              // For use with the main Queue linked list holding all the mapping
-  NextHopSelectionStrategy *strategy = nullptr;
-  std::string               remapKey;
-  std::atomic<uint64_t>     _hitCount = 0; // counter can overflow
+  NextHopSelectionStrategy      *strategy = nullptr;
+  std::string                    remapKey;
+  std::atomic<uint64_t>          _hitCount       = 0; // counter can overflow
+  std::atomic<CacheHostRecord *> volume_host_rec = nullptr;
+
+  CacheHostRecord *
+  getVolumeHostRec() const
+  {
+    return volume_host_rec.load(std::memory_order_acquire);
+  }
+
+  void
+  setVolume(const char *str)
+  {
+    if (str && *str) {
+      _volume_str = str;
+    }
+  }
+
+  const std::string &
+  getVolume() const
+  {
+    return _volume_str;
+  }
 
   int
   getRank() const
   {
     return _rank;
-  };
+  }
   void
   setRank(int rank)
   {
     _rank = rank;
-  };
+  }
 
   void
   setRemapKey()
@@ -145,9 +169,12 @@ public:
     _hitCount++;
   }
 
+  bool initVolumeHostRec(char *errbuf, size_t errbufsize);
+
 private:
   std::vector<RemapPluginInst *> _plugin_inst_list;
   int                            _rank = 0;
+  std::string                    _volume_str;
 };
 
 /**
