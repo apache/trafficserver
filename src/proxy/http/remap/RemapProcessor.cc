@@ -171,6 +171,9 @@ RemapProcessor::finish_remap(HttpTransact::State *s, UrlRewrite *table)
     return false;
   }
 
+  // Pass the volume_host_rec to the transaction state
+  s->cache_info.volume_host_rec = map->getVolumeHostRec();
+
   // Do fast ACL filtering (it is safe to check map here)
   table->PerformACLFiltering(s, map);
 

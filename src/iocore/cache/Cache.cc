@@ -231,7 +231,7 @@ Cache::open_done()
   }
 
   ReplaceablePtr<CacheHostTable>::ScopedReader hosttable(&this->hosttable);
-  if (hosttable->gen_host_rec.num_cachevols == 0) {
+  if (hosttable->getGenHostRecCacheVols() == 0) {
     ready = CacheInitState::FAILED;
   } else {
     ready = CacheInitState::INITIALIZED;
@@ -529,7 +529,7 @@ Cache::scan(Continuation *cont, std::string_view hostname, int KB_per_second) co
 
 Action *
 Cache::open_read(Continuation *cont, const CacheKey *key, CacheHTTPHdr *request, const HttpConfigAccessor *params,
-                 CacheFragType type, std::string_view hostname) const
+                 CacheFragType type, std::string_view hostname, const CacheHostRecord *volume_host_rec) const
 {
   if (!CacheProcessor::IsCacheReady(type)) {
     cont->handleEvent(CACHE_EVENT_OPEN_READ_FAILED, reinterpret_cast<void *>(-ECACHE_NOT_READY));
@@ -537,7 +537,7 @@ Cache::open_read(Continuation *cont, const CacheKey *key, CacheHTTPHdr *request,
   }
   ink_assert(caches[type] == this);
 
-  StripeSM     *stripe = key_to_stripe(key, hostname);
+  StripeSM     *stripe = key_to_stripe(key, hostname, volume_host_rec);
   Dir           result, *last_collision = nullptr;
   ProxyMutex   *mutex = cont->mutex.get();
   OpenDirEntry *od    = nullptr;
@@ -603,8 +603,8 @@ Lcallreturn:
 
 // main entry point for writing of http documents
 Action *
-Cache::open_write(Continuation *cont, const CacheKey *key, CacheHTTPInfo *info, time_t apin_in_cache, CacheFragType type,
-                  std::string_view hostname) const
+Cache::open_write(Continuation *cont, const CacheKey *key, CacheHTTPInfo *old_info, time_t pin_in_cache, CacheFragType type,
+                  std::string_view hostname, const CacheHostRecord *volume_host_rec) const
 {
   if (!CacheProcessor::IsCacheReady(type)) {
     cont->handleEvent(CACHE_EVENT_OPEN_WRITE_FAILED, reinterpret_cast<void *>(-ECACHE_NOT_READY));
@@ -613,7 +613,7 @@ Cache::open_write(Continuation *cont, const CacheKey *key, CacheHTTPInfo *info, 
 
   ink_assert(caches[type] == this);
   intptr_t err        = 0;
-  int      if_writers = reinterpret_cast<uintptr_t>(info) == CACHE_ALLOW_MULTIPLE_WRITES;
+  int      if_writers = reinterpret_cast<uintptr_t>(old_info) == CACHE_ALLOW_MULTIPLE_WRITES;
   CacheVC *c          = new_CacheVC(cont);
   c->vio.op           = VIO::WRITE;
   c->first_key        = *key;
@@ -629,10 +629,10 @@ Cache::open_write(Continuation *cont, const CacheKey *key, CacheHTTPInfo *info, 
   } while (DIR_MASK_TAG(c->key.slice32(2)) == DIR_MASK_TAG(c->first_key.slice32(2)));
   c->earliest_key  = c->key;
   c->frag_type     = CACHE_FRAG_TYPE_HTTP;
-  c->stripe        = key_to_stripe(key, hostname);
+  c->stripe        = key_to_stripe(key, hostname, volume_host_rec);
   StripeSM *stripe = c->stripe;
-  c->info          = info;
-  if (c->info && reinterpret_cast<uintptr_t>(info) != CACHE_ALLOW_MULTIPLE_WRITES) {
+  c->info          = old_info;
+  if (c->info && reinterpret_cast<uintptr_t>(old_info) != CACHE_ALLOW_MULTIPLE_WRITES) {
     /*
        Update has the following code paths :
        a) Update alternate header only :
@@ -664,9 +664,9 @@ Cache::open_write(Continuation *cont, const CacheKey *key, CacheHTTPInfo *info, 
     c->f.update = 1;
     c->op_type  = static_cast<int>(CacheOpType::Update);
     DDbg(dbg_ctl_cache_update, "Update called");
-    info->object_key_get(&c->update_key);
+    old_info->object_key_get(&c->update_key);
     ink_assert(!(c->update_key.is_zero()));
-    c->update_len = info->object_size_get();
+    c->update_len = old_info->object_size_get();
   } else {
     c->op_type = static_cast<int>(CacheOpType::Write);
   }
@@ -674,7 +674,7 @@ Cache::open_write(Continuation *cont, const CacheKey *key, CacheHTTPInfo *info, 
   ts::Metrics::Gauge::increment(cache_rsb.status[c->op_type].active);
   ts::Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.status[c->op_type].active);
   // coverity[Y2K38_SAFETY:FALSE]
-  c->pin_in_cache = static_cast<uint32_t>(apin_in_cache);
+  c->pin_in_cache = static_cast<uint32_t>(pin_in_cache);
 
   {
     CACHE_TRY_LOCK(lock, c->stripe->mutex, cont->mutex->thread_holding);
@@ -745,41 +745,55 @@ CacheVConnection::CacheVConnection() : VConnection(nullptr) {}
 
 // if generic_host_rec.stripes == nullptr, what do we do???
 StripeSM *
-Cache::key_to_stripe(const CacheKey *key, std::string_view hostname) const
+Cache::key_to_stripe(const CacheKey *key, std::string_view hostname, const CacheHostRecord *volume_host_rec) const
 {
   ReplaceablePtr<CacheHostTable>::ScopedReader hosttable(&this->hosttable);
 
-  uint32_t               h          = (key->slice32(2) >> DIR_TAG_WIDTH) % STRIPE_HASH_TABLE_SIZE;
-  unsigned short        *hash_table = hosttable->gen_host_rec.vol_hash_table;
-  const CacheHostRecord *host_rec   = &hosttable->gen_host_rec;
+  uint32_t               h               = (key->slice32(2) >> DIR_TAG_WIDTH) % STRIPE_HASH_TABLE_SIZE;
+  const CacheHostRecord *host_rec        = hosttable->getGenHostRec();
+  unsigned short        *hash_table      = host_rec->vol_hash_table;
+  StripeSM              *selected_stripe = nullptr;
+  bool                   remap_selection = false;
 
-  if (hosttable->m_numEntries > 0 && !hostname.empty()) {
+  // Priority 1: @volume directive (highest priority)
+  if (volume_host_rec && volume_host_rec->vol_hash_table) {
+    selected_stripe = volume_host_rec->stripes[volume_host_rec->vol_hash_table[h]];
+    remap_selection = true;
+    Dbg(dbg_ctl_cache_hosting, "@volume directive: using volume hash table for stripe selection");
+  }
+  // Priority 2: Normal hostname-based volume selection (from hosting.config)
+  if (!selected_stripe && hosttable->getNumEntries() > 0 && !hostname.empty()) {
     CacheHostResult res;
+
     hosttable->Match(hostname, &res);
     if (res.record) {
       unsigned short *host_hash_table = res.record->vol_hash_table;
+
       if (host_hash_table) {
-        if (dbg_ctl_cache_hosting.on()) {
-          char format_str[50];
-          snprintf(format_str, sizeof(format_str), "Volume: %%xd for host: %%.%ds", static_cast<int>(hostname.length()));
-          Dbg(dbg_ctl_cache_hosting, format_str, res.record, hostname.data());
-        }
-        return res.record->stripes[host_hash_table[h]];
+        Dbg(dbg_ctl_cache_hosting, "Volume: %p for host: %.*s", res.record, static_cast<int>(hostname.length()), hostname.data());
+        selected_stripe = res.record->stripes[host_hash_table[h]];
       }
     }
   }
-  if (hash_table) {
-    if (dbg_ctl_cache_hosting.on()) {
-      char format_str[50];
-      snprintf(format_str, sizeof(format_str), "Generic volume: %%xd for host: %%.%ds", static_cast<int>(hostname.length()));
-      Dbg(dbg_ctl_cache_hosting, format_str, host_rec, hostname.data());
-    }
-    return host_rec->stripes[hash_table[h]];
-  } else {
-    return host_rec->stripes[0];
-  }
-}
 
+  // Priority 4: Generic/default volume selection (fallback)
+  if (!selected_stripe) {
+    if (hash_table) {
+      selected_stripe = host_rec->stripes[hash_table[h]];
+    } else {
+      selected_stripe = host_rec->stripes[0];
+    }
+  }
+
+  if (dbg_ctl_cache_hosting.on() && selected_stripe && selected_stripe->cache_vol) {
+    Dbg(dbg_ctl_cache_hosting, "Cache volume selected: %d (%s) for key=%08x%08x hostname='%.*s' %s",
+        selected_stripe->cache_vol->vol_number,
+        selected_stripe->cache_vol->ramcache_enabled ? "ramcache_enabled" : "ramcache_disabled", key->slice32(0), key->slice32(1),
+        static_cast<int>(hostname.length()), hostname.data(), remap_selection ? "(remap)" : "(calculated)");
+  }
+
+  return selected_stripe;
+}
 int
 FragmentSizeUpdateCb(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */, RecData data,
                      void * /* cookie ATS_UNUSED */)

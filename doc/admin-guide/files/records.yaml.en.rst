@@ -2817,12 +2817,22 @@ RAM Cache
    Alternatively, it can be set to a fixed value such as
    **20GB** (21474836480)
 
+   This global setting can be overridden on a per-volume basis using the
+   ``ram_cache_size`` parameter in :file:`volume.config`. Per-volume
+   allocations are subtracted from the total RAM cache size before
+   distributing the remainder among volumes without explicit settings.
+
 .. ts:cv:: CONFIG proxy.config.cache.ram_cache_cutoff INT 4194304
 
    Objects greater than this size will not be kept in the RAM cache.
    This should be set high enough to keep objects accessed frequently
    in memory in order to improve performance.
    **4MB** (4194304)
+
+   This global setting can be overridden on a per-volume basis using the
+   ``ram_cache_cutoff`` parameter in :file:`volume.config`. When set,
+   the per-volume cutoff takes precedence over this global setting for
+   that specific volume.
 
 .. ts:cv:: CONFIG proxy.config.cache.ram_cache.algorithm INT 1
 
