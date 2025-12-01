@@ -27,7 +27,7 @@ function main() {
   set -e # exit on error
   PACKAGE="plantuml-${PKGDATE}"
   JAR="plantuml.jar"
-  ROOT=${ROOT:-$(cd $(dirname $0) && git rev-parse --show-toplevel)/.git/doc-tools}
+  ROOT=${ROOT:-$(git rev-parse --git-common-dir)/doc-tools}
 
   URL=${URL:-https://ci.trafficserver.apache.org/bintray/${PACKAGE}.${PKG_EXT}}
   TAR=${TAR:-tar}
