@@ -829,6 +829,14 @@ remap_check_option(const char *const *argv, int argc, unsigned long findmode, in
           *argptr = &argv[i][9];
         }
         ret_flags |= REMAP_OPTFLG_STRATEGY;
+      } else if (!strncasecmp(argv[i], "volume=", 7)) {
+        if ((findmode & REMAP_OPTFLG_VOLUME) != 0) {
+          idx = i;
+        }
+        if (argptr) {
+          *argptr = &argv[i][7];
+        }
+        ret_flags |= REMAP_OPTFLG_VOLUME;
       } else {
         Warning("ignoring invalid remap option '%s'", argv[i]);
       }
@@ -1197,9 +1205,34 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
     if ((bti->remap_optflg & REMAP_OPTFLG_MAP_ID) != 0) {
       int idx = 0;
       int ret = remap_check_option(bti->argv, bti->argc, REMAP_OPTFLG_MAP_ID, &idx);
+
       if (ret & REMAP_OPTFLG_MAP_ID) {
-        char *c             = strchr(bti->argv[idx], static_cast<int>('='));
+        char *c = strchr(bti->argv[idx], static_cast<int>('='));
+
         new_mapping->map_id = static_cast<unsigned int>(atoi(++c));
+      }
+    }
+
+    // Parse @volume= option
+    new_mapping->cache_volume = -1;
+    if ((bti->remap_optflg & REMAP_OPTFLG_VOLUME) != 0) {
+      int idx = 0;
+      int ret = remap_check_option(bti->argv, bti->argc, REMAP_OPTFLG_VOLUME, &idx);
+
+      if (ret & REMAP_OPTFLG_VOLUME) {
+        char *c          = strchr(bti->argv[idx], static_cast<int>('='));
+        int   volume_num = atoi(++c);
+
+        new_mapping->cache_volume = volume_num;
+
+        // Validate volume number (basic validation - detailed validation later)
+        if (volume_num < 1) {
+          snprintf(errStrBuf, sizeof(errStrBuf), "Invalid cache volume number %d at line %d (must be >= 1)", volume_num, cln + 1);
+          errStr = errStrBuf;
+          goto MAP_ERROR;
+        }
+
+        Dbg(dbg_ctl_url_rewrite, "[BuildTable] Cache volume override set to %d", volume_num);
       }
     }
 

@@ -412,18 +412,18 @@ CacheProcessor::lookup(Continuation *cont, const HttpCacheKey *key, CacheFragTyp
 
 Action *
 CacheProcessor::open_read(Continuation *cont, const HttpCacheKey *key, CacheHTTPHdr *request, const HttpConfigAccessor *params,
-                          CacheFragType type)
+                          CacheFragType frag_type, int volume_override)
 {
-  return caches[type]->open_read(cont, &key->hash, request, params, type,
-                                 std::string_view{key->hostname, static_cast<std::string_view::size_type>(key->hostlen)});
+  return caches[frag_type]->open_read(cont, &key->hash, request, params, frag_type,
+                                      std::string_view{key->hostname, static_cast<size_t>(key->hostlen)}, volume_override);
 }
 
 Action *
 CacheProcessor::open_write(Continuation *cont, const HttpCacheKey *key, CacheHTTPInfo *old_info, time_t pin_in_cache,
-                           CacheFragType type)
+                           CacheFragType frag_type, int volume_override)
 {
-  return caches[type]->open_write(cont, &key->hash, old_info, pin_in_cache, type,
-                                  std::string_view{key->hostname, static_cast<std::string_view::size_type>(key->hostlen)});
+  return caches[frag_type]->open_write(cont, &key->hash, old_info, pin_in_cache, frag_type,
+                                       std::string_view{key->hostname, static_cast<size_t>(key->hostlen)}, volume_override);
 }
 
 //----------------------------------------------------------------------------
