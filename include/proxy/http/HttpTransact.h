@@ -636,6 +636,7 @@ public:
     bool            trust_response_cl          = false;
     ResponseError_t response_error             = ResponseError_t::NO_RESPONSE_HEADER_ERROR;
     bool            extension_method           = false;
+    std::string     server_response_transfer_encoding; ///< Storage for logging.
 
     _HeaderInfo() {}
   };
