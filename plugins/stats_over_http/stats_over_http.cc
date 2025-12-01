@@ -485,7 +485,10 @@ csv_out_stat(TSRecordType /* rec_type ATS_UNUSED */, void *edata, int /* registe
 static
 // Remove this check when we drop support for pre-13 GCC versions.
 #if defined(__cpp_lib_constexpr_string) && __cpp_lib_constexpr_string >= 201907L
+// Clang <= 16 doesn't fully support constexpr std::string.
+#if !defined(__clang__) || __clang_major__ > 16
   constexpr
+#endif
 #endif
   std::string
   sanitize_metric_name_for_prometheus(std::string_view name)
@@ -1133,6 +1136,8 @@ config_handler(TSCont cont, TSEvent /* event ATS_UNUSED */, void * /* edata ATS_
 #ifdef DEBUG
 // Remove this check when we drop support for pre-13 GCC versions.
 #if defined(__cpp_lib_constexpr_string) && __cpp_lib_constexpr_string >= 201907L
+// Clang <= 16 doesn't fully support constexpr std::string.
+#if !defined(__clang__) || __clang_major__ > 16
 constexpr void
 test_sanitize_metric_name_for_prometheus()
 {
@@ -1204,5 +1209,6 @@ test_sanitize_metric_name_for_prometheus()
   static_assert(sanitize_metric_name_for_prometheus("foo [[[bar]]]") == "foo____bar___");
   static_assert(sanitize_metric_name_for_prometheus("foo@#$%bar") == "foo____bar");
 }
+#endif // !defined(__clang__) || __clang_major__ > 16
 #endif // defined(__cpp_lib_constexpr_string) && __cpp_lib_constexpr_string >= 201907L
 #endif // DEBUG

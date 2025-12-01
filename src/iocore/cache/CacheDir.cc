@@ -30,6 +30,7 @@
 
 #include "tscore/hugepages.h"
 #include "tscore/Random.h"
+#include "ts/ats_probe.h"
 
 #ifdef LOOP_CHECK_MODE
 #define DIR_LOOP_THRESHOLD 1000
@@ -327,6 +328,9 @@ dir_delete_entry(Dir *e, Dir *p, int s, Directory *directory)
   } else {
     Dir *n = next_dir(e, seg);
     if (n) {
+      // "Shuffle" here means that we're copying the second entry's data to the head entry's location, and removing the second entry
+      // - because the head entry can't be moved.
+      ATS_PROBE3(cache_dir_shuffle, s, dir_to_offset(e, seg), dir_to_offset(n, seg));
       dir_assign(e, n);
       dir_delete_entry(n, e, s, directory);
       return e;
@@ -339,7 +343,7 @@ dir_delete_entry(Dir *e, Dir *p, int s, Directory *directory)
 }
 
 inline void
-dir_clean_bucket(Dir *b, int s, Stripe *stripe)
+dir_clean_bucket(Dir *b, int s, StripeSM *stripe)
 {
   Dir *e = b, *p = nullptr;
   Dir *seg = stripe->directory.get_segment(s);
@@ -363,6 +367,8 @@ dir_clean_bucket(Dir *b, int s, Stripe *stripe)
         ts::Metrics::Gauge::decrement(cache_rsb.direntries_used);
         ts::Metrics::Gauge::decrement(stripe->cache_vol->vol_rsb.direntries_used);
       }
+      // Match cache_dir_remove arguments
+      ATS_PROBE7(cache_dir_remove_clean_bucket, stripe->fd, s, dir_to_offset(e, seg), dir_offset(e), dir_approx_size(e), 0, 0);
       e = dir_delete_entry(e, p, s, &stripe->directory);
       continue;
     }
@@ -372,7 +378,7 @@ dir_clean_bucket(Dir *b, int s, Stripe *stripe)
 }
 
 void
-Directory::clean_segment(int s, Stripe *stripe)
+Directory::clean_segment(int s, StripeSM *stripe)
 {
   Dir *seg = this->get_segment(s);
   for (int64_t i = 0; i < this->buckets; i++) {
@@ -382,7 +388,7 @@ Directory::clean_segment(int s, Stripe *stripe)
 }
 
 void
-Directory::cleanup(Stripe *stripe)
+Directory::cleanup(StripeSM *stripe)
 {
   for (int64_t i = 0; i < this->segments; i++) {
     this->clean_segment(i, stripe);
@@ -391,7 +397,7 @@ Directory::cleanup(Stripe *stripe)
 }
 
 void
-Directory::clear_range(off_t start, off_t end, Stripe *stripe)
+Directory::clear_range(off_t start, off_t end, StripeSM *stripe)
 {
   for (off_t i = 0; i < this->entries(); i++) {
     Dir *e = dir_index(stripe, i);
@@ -522,6 +528,8 @@ Lagain:
         } else { // delete the invalid entry
           ts::Metrics::Gauge::decrement(cache_rsb.direntries_used);
           ts::Metrics::Gauge::decrement(stripe->cache_vol->vol_rsb.direntries_used);
+          ATS_PROBE7(cache_dir_remove_invalid, stripe->fd, s, dir_to_offset(e, seg), dir_offset(e), dir_approx_size(e),
+                     key->slice64(0), key->slice64(1));
           e = dir_delete_entry(e, p, s, this);
           continue;
         }
@@ -605,6 +613,8 @@ Lfill:
   ink_assert(stripe->vol_offset(e) < (stripe->skip + stripe->len));
   DDbg(dbg_ctl_dir_insert, "insert %p %X into vol %d bucket %d at %p tag %X %X boffset %" PRId64 "", e, key->slice32(0), stripe->fd,
        bi, e, key->slice32(1), dir_tag(e), dir_offset(e));
+  ATS_PROBE7(cache_dir_insert, stripe->fd, s, dir_to_offset(e, seg), dir_offset(e), dir_approx_size(e), key->slice64(0),
+             key->slice64(1));
   CHECK_DIR(d);
   stripe->directory.header->dirty = 1;
   ts::Metrics::Gauge::increment(cache_rsb.direntries_used);
@@ -724,9 +734,12 @@ Directory::remove(const CacheKey *key, StripeSM *stripe, Dir *del)
           return 0;
       }
 #endif
-      if (dir_compare_tag(e, key) && dir_offset(e) == dir_offset(del)) {
+      int64_t offset = dir_offset(e);
+      if (dir_compare_tag(e, key) && offset == dir_offset(del)) {
         ts::Metrics::Gauge::decrement(cache_rsb.direntries_used);
         ts::Metrics::Gauge::decrement(stripe->cache_vol->vol_rsb.direntries_used);
+        ATS_PROBE7(cache_dir_remove, stripe->fd, s, dir_to_offset(e, seg), offset, dir_approx_size(e), key->slice64(0),
+                   key->slice64(1));
         dir_delete_entry(e, p, s, this);
         CHECK_DIR(d);
         return 1;

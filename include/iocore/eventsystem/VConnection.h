@@ -28,10 +28,6 @@
 #include "tscore/PluginUserArgs.h"
 #include "iocore/eventsystem/EventSystem.h"
 
-#if !defined(I_VIO_h)
-#error "include VIO.h"
-#endif
-
 //
 // Data Types
 //
@@ -145,7 +141,7 @@ typedef struct tsapi_vio *TSVIO;
 class VConnection : public Continuation
 {
 public:
-  ~VConnection() override;
+  ~VConnection() override {}
 
   /**
     Read data from the VConnection.
@@ -306,17 +302,28 @@ public:
   */
   virtual void do_io_shutdown(ShutdownHowTo_t howto) = 0;
 
-  explicit VConnection(ProxyMutex *aMutex);
-  explicit VConnection(Ptr<ProxyMutex> &aMutex);
+  explicit VConnection(ProxyMutex *aMutex) : Continuation(aMutex), lerrno(0) { SET_HANDLER(nullptr); }
+  explicit VConnection(Ptr<ProxyMutex> &aMutex) : Continuation(aMutex), lerrno(0) { SET_HANDLER(nullptr); }
 
   // Private
   // Set continuation on a given vio. The public interface
   // is through VIO::set_continuation()
-  virtual void set_continuation(VIO *vio, Continuation *cont);
+  virtual void
+  set_continuation(VIO *, Continuation *)
+  {
+  }
 
   // Reenable a given vio.  The public interface is through VIO::reenable
-  virtual void reenable(VIO *vio);
-  virtual void reenable_re(VIO *vio);
+  virtual void
+  reenable(VIO *)
+  {
+  }
+
+  virtual void
+  reenable_re(VIO *vio)
+  {
+    reenable(vio);
+  }
 
   /**
     Convenience function to retrieve information from VConnection.
@@ -411,3 +418,32 @@ struct DummyVConnection : public VConnection, public PluginUserArgs<TS_USER_ARGS
 
   explicit DummyVConnection(ProxyMutex *m) : VConnection(m) {}
 };
+
+inline const char *
+get_vc_event_name(int event)
+{
+  switch (event) {
+  default:
+    return "unknown event";
+  case VC_EVENT_NONE:
+    return "VC_EVENT_NONE";
+  case VC_EVENT_IMMEDIATE:
+    return "VC_EVENT_IMMEDIATE";
+  case VC_EVENT_READ_READY:
+    return "VC_EVENT_READ_READY";
+  case VC_EVENT_WRITE_READY:
+    return "VC_EVENT_WRITE_READY";
+  case VC_EVENT_READ_COMPLETE:
+    return "VC_EVENT_READ_COMPLETE";
+  case VC_EVENT_WRITE_COMPLETE:
+    return "VC_EVENT_WRITE_COMPLETE";
+  case VC_EVENT_EOS:
+    return "VC_EVENT_EOS";
+  case VC_EVENT_ERROR:
+    return "VC_EVENT_ERROR";
+  case VC_EVENT_INACTIVITY_TIMEOUT:
+    return "VC_EVENT_INACTIVITY_TIMEOUT";
+  case VC_EVENT_ACTIVE_TIMEOUT:
+    return "VC_EVENT_ACTIVE_TIMEOUT";
+  }
+}

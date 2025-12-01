@@ -31,9 +31,11 @@
 // The EThread Class
 //
 /////////////////////////////////////////////////////////////////////
-#include "P_EventSystem.h"
+#include "iocore/eventsystem/EThread.h"
+#include "iocore/eventsystem/EventProcessor.h"
 #include "iocore/eventsystem/Lock.h"
 #include "tscore/ink_hrtime.h"
+#include "tscore/ink_atomic.h"
 
 #if HAVE_EVENTFD
 #include <sys/eventfd.h>
@@ -53,8 +55,9 @@ char const *const EThread::Metrics::Slice::STAT_NAME[] = {
   "proxy.process.eventloop.io.wait.max", "proxy.process.eventloop.io.work.max",
 };
 
-int thread_max_heartbeat_mseconds = THREAD_MAX_HEARTBEAT_MSECONDS;
-int loop_time_update_probability  = 10;
+int              thread_max_heartbeat_mseconds = THREAD_MAX_HEARTBEAT_MSECONDS;
+int              loop_time_update_probability  = 10;
+const ink_hrtime DELAY_FOR_RETRY               = HRTIME_MSECONDS(10);
 
 // To define a class inherits from Thread:
 //   1) Define an independent thread_local static member
@@ -438,4 +441,202 @@ EThread::Metrics::summarize(Metrics &global)
     global._loop_timing += _loop_timing;
     global._api_timing  += _api_timing;
   }
+}
+
+void
+EThread::set_tail_handler(LoopTailHandler *handler)
+{
+  ink_atomic_swap(&tail_cb, handler);
+}
+
+Event *
+EThread::schedule_imm(Continuation *cont, int callback_event, void *cookie)
+{
+  Event *e = ::eventAllocator.alloc();
+
+#ifdef ENABLE_EVENT_TRACKER
+  e->set_location();
+#endif
+
+  e->callback_event = callback_event;
+  e->cookie         = cookie;
+  return schedule(e->init(cont, 0, 0));
+}
+
+Event *
+EThread::schedule_at(Continuation *cont, ink_hrtime t, int callback_event, void *cookie)
+{
+  Event *e = ::eventAllocator.alloc();
+
+#ifdef ENABLE_EVENT_TRACKER
+  e->set_location();
+#endif
+
+  e->callback_event = callback_event;
+  e->cookie         = cookie;
+  return schedule(e->init(cont, t, 0));
+}
+
+Event *
+EThread::schedule_in(Continuation *cont, ink_hrtime t, int callback_event, void *cookie)
+{
+  Event *e = ::eventAllocator.alloc();
+
+#ifdef ENABLE_EVENT_TRACKER
+  e->set_location();
+#endif
+
+  e->callback_event = callback_event;
+  e->cookie         = cookie;
+  return schedule(e->init(cont, ink_get_hrtime() + t, 0));
+}
+
+Event *
+EThread::schedule_every(Continuation *cont, ink_hrtime t, int callback_event, void *cookie)
+{
+  Event *e = ::eventAllocator.alloc();
+
+#ifdef ENABLE_EVENT_TRACKER
+  e->set_location();
+#endif
+
+  e->callback_event = callback_event;
+  e->cookie         = cookie;
+  if (t < 0) {
+    return schedule(e->init(cont, t, t));
+  } else {
+    return schedule(e->init(cont, ink_get_hrtime() + t, t));
+  }
+}
+
+Event *
+EThread::schedule(Event *e)
+{
+  e->ethread = this;
+  if (tt != REGULAR) {
+    ink_assert(tt == DEDICATED);
+    return eventProcessor.schedule(e, ET_CALL);
+  }
+  if (e->continuation->mutex) {
+    e->mutex = e->continuation->mutex;
+  } else {
+    e->mutex = e->continuation->mutex = e->ethread->mutex;
+  }
+  ink_assert(e->mutex.get());
+
+  // Make sure client IP debugging works consistently
+  // The continuation that gets scheduled later is not always the
+  // client VC, it can be HttpCacheSM etc. so save the flags
+  e->continuation->control_flags.set_flags(get_cont_flags().get_flags());
+
+  if (e->ethread == this_ethread()) {
+    EventQueueExternal.enqueue_local(e);
+  } else {
+    EventQueueExternal.enqueue(e);
+  }
+
+  return e;
+}
+
+Event *
+EThread::schedule_imm_local(Continuation *cont, int callback_event, void *cookie)
+{
+  Event *e = EVENT_ALLOC(eventAllocator, this);
+
+#ifdef ENABLE_EVENT_TRACKER
+  e->set_location();
+#endif
+
+  e->callback_event = callback_event;
+  e->cookie         = cookie;
+  return schedule_local(e->init(cont, 0, 0));
+}
+
+Event *
+EThread::schedule_at_local(Continuation *cont, ink_hrtime t, int callback_event, void *cookie)
+{
+  Event *e = EVENT_ALLOC(eventAllocator, this);
+
+#ifdef ENABLE_EVENT_TRACKER
+  e->set_location();
+#endif
+
+  e->callback_event = callback_event;
+  e->cookie         = cookie;
+  return schedule_local(e->init(cont, t, 0));
+}
+
+Event *
+EThread::schedule_in_local(Continuation *cont, ink_hrtime t, int callback_event, void *cookie)
+{
+  Event *e = EVENT_ALLOC(eventAllocator, this);
+
+#ifdef ENABLE_EVENT_TRACKER
+  e->set_location();
+#endif
+
+  e->callback_event = callback_event;
+  e->cookie         = cookie;
+  return schedule_local(e->init(cont, ink_get_hrtime() + t, 0));
+}
+
+Event *
+EThread::schedule_every_local(Continuation *cont, ink_hrtime t, int callback_event, void *cookie)
+{
+  Event *e = EVENT_ALLOC(eventAllocator, this);
+
+#ifdef ENABLE_EVENT_TRACKER
+  e->set_location();
+#endif
+
+  e->callback_event = callback_event;
+  e->cookie         = cookie;
+  if (t < 0) {
+    return schedule_local(e->init(cont, t, t));
+  } else {
+    return schedule_local(e->init(cont, ink_get_hrtime() + t, t));
+  }
+}
+
+Event *
+EThread::schedule_local(Event *e)
+{
+  if (tt != REGULAR) {
+    ink_assert(tt == DEDICATED);
+    return eventProcessor.schedule(e, ET_CALL);
+  }
+  if (!e->mutex) {
+    e->ethread = this;
+    e->mutex   = e->continuation->mutex;
+  } else {
+    ink_assert(e->ethread == this);
+  }
+  e->globally_allocated = false;
+
+  // Make sure client IP debugging works consistently
+  // The continuation that gets scheduled later is not always the
+  // client VC, it can be HttpCacheSM etc. so save the flags
+  e->continuation->control_flags.set_flags(get_cont_flags().get_flags());
+
+  // If you need to schedule an event from a different thread, use Ethread::schedule_imm/at/in/every functions
+  ink_release_assert(this == this_ethread());
+
+  EventQueueExternal.enqueue_local(e);
+  return e;
+}
+
+Event *
+EThread::schedule_spawn(Continuation *c, int ev, void *cookie)
+{
+  ink_assert(this != this_ethread()); // really broken to call this from the same thread.
+  if (start_event) {
+    free_event(start_event);
+  }
+  start_event          = EVENT_ALLOC(eventAllocator, this);
+  start_event->ethread = this;
+  start_event->mutex   = this->mutex;
+  start_event->init(c);
+  start_event->callback_event = ev;
+  start_event->cookie         = cookie;
+  return start_event;
 }

@@ -23,10 +23,12 @@
 
 #include "../P_CacheInternal.h"
 #include "api/HttpAPIHooks.h"
+#include "iocore/net/Net.h"
 #include "iocore/net/NetProcessor.h"
 #include "records/RecordsConfig.h"
 #include "tscore/ink_config.h"
 #include "tscore/Layout.h"
+#include "tscore/TSSystemState.h"
 
 #include "main.h"
 #include "swoc/swoc_file.h"

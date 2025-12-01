@@ -26,23 +26,56 @@ CMAKE_FORMAT_VERSION="v0.6.13"
 VERSION="0.6.13"
 
 function main() {
+  # check for python3
+  python3 - << _END_
+import sys
+
+if sys.version_info.major < 3 or sys.version_info.minor < 8:
+    exit(1)
+_END_
+
+  if [ $? = 1 ]; then
+      echo "Python 3.8 or newer is not installed/enabled."
+      exit 1
+  fi
+
   set -e # exit on error
+
+  if command -v pip3 &> /dev/null; then
+    PIP_CMD="pip3"
+  elif command -v pip &> /dev/null; then
+    PIP_CMD="pip"
+  else
+    echo "pip is not installed."
+    exit 1
+  fi
 
   if ! type virtualenv >/dev/null 2>/dev/null
   then
-    pip install -q virtualenv
+    ${PIP_CMD} install -q virtualenv
   fi
 
+  if python3 -m venv --help &> /dev/null; then
+    VENV_LIB="venv"
+  elif python3 -m virtualenv --help &> /dev/null; then
+    VENV_LIB="virtualenv"
+  else
+    echo "Neither venv nor virtualenv is available."
+    exit 1
+  fi
+
+
+  REPO_ROOT=$(cd $(dirname $0) && git rev-parse --show-toplevel)
   GIT_DIR=$(git rev-parse --absolute-git-dir)
   CMAKE_FORMAT_VENV=${CMAKE_FORMAT_VENV:-${GIT_DIR}/fmt/cmake_format_${CMAKE_FORMAT_VERSION}_venv}
   if [ ! -e ${CMAKE_FORMAT_VENV} ]
   then
-    virtualenv ${CMAKE_FORMAT_VENV}
+    python3 -m ${VENV_LIB} ${CMAKE_FORMAT_VENV}
   fi
   source ${CMAKE_FORMAT_VENV}/bin/activate
 
-  pip install -q --upgrade pip
-  pip install -q "cmakelang==${CMAKE_FORMAT_VERSION}" pyaml
+  ${PIP_CMD} install -q --upgrade pip
+  ${PIP_CMD} install -q "cmakelang==${CMAKE_FORMAT_VERSION}" pyaml
 
   ver=$(cmake-format --version 2>&1)
   if [ "$ver" != "$VERSION" ]

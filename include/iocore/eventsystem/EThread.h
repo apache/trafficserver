@@ -710,6 +710,29 @@ operator new(size_t, ink_dummy_for_new *p)
 }
 #define ETHREAD_GET_PTR(thread, offset) ((void *)((char *)(thread) + (offset)))
 
-extern EThread *this_ethread();
+inline EThread *
+this_ethread()
+{
+  return EThread::this_ethread_ptr;
+}
+
+inline EThread *
+this_event_thread()
+{
+  EThread *ethread = this_ethread();
+  if (ethread != nullptr && ethread->tt == REGULAR) {
+    return ethread;
+  } else {
+    return nullptr;
+  }
+}
+
+inline void
+EThread::free_event(Event *e)
+{
+  ink_assert(!e->in_the_priority_queue && !e->in_the_prot_queue);
+  e->mutex = nullptr;
+  EVENT_FREE(e, eventAllocator, this);
+}
 
 extern int thread_max_heartbeat_mseconds;

@@ -57,11 +57,16 @@ Monitor::~Monitor()
 void
 Monitor::monitor_loop() const
 {
+  // this ensures `long long` duration for older compilers to match format specifiers
+  using printable_micro = std::chrono::duration<long long, std::micro>;
+  using printable_milli = std::chrono::duration<long long, std::milli>;
+
   // Divide by a floating point 2 to avoid truncation to zero.
   auto sleep_time = _timeout / 2.0;
   ink_release_assert(sleep_time.count() > 0);
-  Dbg(dbg_ctl_watchdog, "Starting watchdog with timeout %" PRIu64 " ms on %zu threads.  sleep_time = %" PRIu64 " us",
-      _timeout.count(), _threads.size(), std::chrono::duration_cast<std::chrono::microseconds>(sleep_time).count());
+  Dbg(dbg_ctl_watchdog, "Starting watchdog with timeout %lld ms on %zu threads.  sleep_time = %lld us",
+      std::chrono::duration_cast<printable_milli>(_timeout).count(), _threads.size(),
+      std::chrono::duration_cast<printable_micro>(sleep_time).count());
 
   ink_set_thread_name("[WATCHDOG]");
 
@@ -90,8 +95,8 @@ Monitor::monitor_loop() const
         uint64_t warned_seq = t->heartbeat_state.warned_seq.load(std::memory_order_relaxed);
         if (warned_seq < seq) {
           // Warn once per loop iteration
-          Warning("Watchdog: [ET_NET %zu] has been awake for %" PRIu64 " ms", i,
-                  std::chrono::duration_cast<std::chrono::milliseconds>(awake_duration).count());
+          Warning("Watchdog: [ET_NET %zu] has been awake for %lld ms", i,
+                  std::chrono::duration_cast<printable_milli>(awake_duration).count());
           t->heartbeat_state.warned_seq.store(seq, std::memory_order_relaxed);
         }
       }

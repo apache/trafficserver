@@ -75,7 +75,6 @@ extern "C" int plock(int);
 
 #include "Crash.h"
 #include "tscore/signals.h"
-#include "../iocore/eventsystem/P_EventSystem.h"
 #include "../iocore/net/P_Net.h"
 #if TS_HAS_QUICHE
 #include "../iocore/net/P_QUICNetProcessor.h"

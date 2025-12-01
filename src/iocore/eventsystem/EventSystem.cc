@@ -28,10 +28,13 @@
 
 ****************************************************************************/
 
-#include "P_EventSystem.h"
+#include "iocore/eventsystem/EventSystem.h"
+#include "tscore/Version.h"
 #include "tscore/hugepages.h"
 #include "records/RecCore.h"
 
+static constexpr ts::ModuleVersion EVENT_SYSTEM_MODULE_INTERNAL_VERSION{EVENT_SYSTEM_MODULE_PUBLIC_VERSION,
+                                                                        ts::ModuleVersion::PRIVATE};
 void
 ink_event_system_init(ts::ModuleVersion v)
 {

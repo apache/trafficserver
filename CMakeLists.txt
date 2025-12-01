@@ -89,6 +89,25 @@ execute_process(
   OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 
+# Detect git common directory (works for both regular repos and worktrees).
+if(EXISTS ${CMAKE_SOURCE_DIR}/.git)
+  execute_process(
+    COMMAND git rev-parse --git-common-dir
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    OUTPUT_VARIABLE GIT_COMMON_DIR
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    RESULT_VARIABLE GIT_RESULT
+    ERROR_QUIET
+  )
+  if(GIT_RESULT EQUAL 0 AND GIT_COMMON_DIR)
+    # Convert to absolute path if relative.
+    if(NOT IS_ABSOLUTE ${GIT_COMMON_DIR})
+      get_filename_component(GIT_COMMON_DIR "${CMAKE_SOURCE_DIR}/${GIT_COMMON_DIR}" ABSOLUTE)
+    endif()
+    message(STATUS "Git common directory: ${GIT_COMMON_DIR}")
+  endif()
+endif()
+
 # Options
 include(AutoOptionHelpers)
 find_package(PkgConfig)
@@ -748,8 +767,6 @@ if(ENABLE_BENCHMARKS)
   add_subdirectory(tools/benchmark)
 endif()
 
-set(GIT_COMMON_DIR git rev-parse --git-common-dir)
-
 add_custom_target(
   clang-format-install
   COMMAND ${CMAKE_SOURCE_DIR}/tools/clang-format.sh --install
@@ -821,10 +838,12 @@ add_custom_target(
   COMMENT "formatting all files"
 )
 
-if(IS_DIRECTORY ${CMAKE_SOURCE_DIR}/.git)
-  file(TIMESTAMP ${CMAKE_SOURCE_DIR}/.git/hooks/pre-commit PRE_COMMIT_BEFORE)
-  configure_file(${CMAKE_SOURCE_DIR}/tools/git/pre-commit ${CMAKE_SOURCE_DIR}/.git/hooks/pre-commit COPYONLY)
-  file(TIMESTAMP ${CMAKE_SOURCE_DIR}/.git/hooks/pre-commit PRE_COMMIT_AFTER)
+# Install pre-commit hook if this is a git repository (including worktrees).
+if(GIT_COMMON_DIR)
+  set(PRE_COMMIT_HOOK "${GIT_COMMON_DIR}/hooks/pre-commit")
+  file(TIMESTAMP ${PRE_COMMIT_HOOK} PRE_COMMIT_BEFORE)
+  configure_file(${CMAKE_SOURCE_DIR}/tools/git/pre-commit ${PRE_COMMIT_HOOK} COPYONLY)
+  file(TIMESTAMP ${PRE_COMMIT_HOOK} PRE_COMMIT_AFTER)
   if(NOT PRE_COMMIT_BEFORE STREQUAL PRE_COMMIT_AFTER)
     message(STATUS "Installing github hook")
   endif()

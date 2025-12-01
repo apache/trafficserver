@@ -1,6 +1,7 @@
+#!/usr/bin/env bpftrace
 /** @file
 
-  A brief file description
+  Trace cache directory SystemTap probes.
 
   @section license License
 
@@ -21,29 +22,23 @@
   limitations under the License.
  */
 
-/****************************************************************************
+BEGIN
+{
+  printf("cache_dir_probe: ready\n");
+}
 
-  Event Subsystem
+usdt:*:cache_dir_insert
+{
+  if (@inserted == 0) {
+    printf("cache_dir_insert\n");
+  }
+  @inserted = 1;
+}
 
-
-
-**************************************************************************/
-#pragma once
-#define _P_EventSystem_H
-
-#include "tscore/ink_platform.h"
-
-#include "iocore/eventsystem/EventSystem.h"
-#include "iocore/eventsystem/Freer.h"
-
-#include "P_Thread.h"
-#include "P_VIO.h"
-#include "P_IOBuffer.h"
-#include "P_VConnection.h"
-#include "P_UnixEvent.h"
-#include "P_UnixEThread.h"
-#include "P_ProtectedQueue.h"
-#include "P_UnixEventProcessor.h"
-
-static constexpr ts::ModuleVersion EVENT_SYSTEM_MODULE_INTERNAL_VERSION{EVENT_SYSTEM_MODULE_PUBLIC_VERSION,
-                                                                        ts::ModuleVersion::PRIVATE};
+usdt:*:cache_dir_remove
+{
+  if (@removed == 0) {
+    printf("cache_dir_remove\n");
+  }
+  @removed = 1;
+}

@@ -21,8 +21,10 @@
   limitations under the License.
  */
 
+#include "iocore/net/Net.h"
 #include "ts/apidefs.h"
 #include "ts/InkAPIPrivateIOCore.h"
+#include "tscore/ink_atomic.h"
 
 ClassAllocator<INKVConnInternal> INKVConnAllocator("INKVConnAllocator");
 

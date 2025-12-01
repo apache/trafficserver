@@ -21,29 +21,39 @@
   limitations under the License.
  */
 
-/****************************************************************************
+#include "iocore/eventsystem/VIO.h"
+#include "iocore/eventsystem/VConnection.h"
 
-  Basic Threads
-
-
-
-****************************************************************************/
-#pragma once
-
-#include "iocore/eventsystem/Thread.h"
-
-///////////////////////////////////////////////
-// Common Interface impl                     //
-///////////////////////////////////////////////
-
-TS_INLINE void
-Thread::set_specific()
+void
+VIO::set_continuation(Continuation *acont)
 {
-  this_thread_ptr = this;
+  if (vc_server) {
+    vc_server->set_continuation(this, acont);
+  }
+  if (acont) {
+    mutex = acont->mutex;
+    cont  = acont;
+  } else {
+    mutex = nullptr;
+    cont  = nullptr;
+  }
+  return;
 }
 
-TS_INLINE Thread *
-this_thread()
+void
+VIO::reenable()
 {
-  return Thread::this_thread_ptr;
+  this->_disabled = false;
+  if (vc_server) {
+    vc_server->reenable(this);
+  }
+}
+
+void
+VIO::reenable_re()
+{
+  this->_disabled = false;
+  if (vc_server) {
+    vc_server->reenable_re(this);
+  }
 }

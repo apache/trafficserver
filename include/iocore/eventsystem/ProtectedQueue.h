@@ -52,3 +52,53 @@ struct ProtectedQueue {
 
   ProtectedQueue();
 };
+
+inline ProtectedQueue::ProtectedQueue()
+{
+  Event e;
+  ink_mutex_init(&lock);
+  ink_atomiclist_init(&al, "ProtectedQueue", (char *)&e.link.next - (char *)&e);
+  ink_cond_init(&might_have_data);
+}
+
+inline void
+ProtectedQueue::signal()
+{
+  // Need to get the lock before you can signal the thread
+  ink_mutex_acquire(&lock);
+  ink_cond_signal(&might_have_data);
+  ink_mutex_release(&lock);
+}
+
+inline int
+ProtectedQueue::try_signal()
+{
+  // Need to get the lock before you can signal the thread
+  if (ink_mutex_try_acquire(&lock)) {
+    ink_cond_signal(&might_have_data);
+    ink_mutex_release(&lock);
+    return 1;
+  } else {
+    return 0;
+  }
+}
+
+// Called from the same thread (don't need to signal)
+inline void
+ProtectedQueue::enqueue_local(Event *e)
+{
+  ink_assert(!e->in_the_prot_queue && !e->in_the_priority_queue);
+  e->in_the_prot_queue = 1;
+  localQueue.enqueue(e);
+}
+
+inline Event *
+ProtectedQueue::dequeue_local()
+{
+  Event *e = localQueue.dequeue();
+  if (e) {
+    ink_assert(e->in_the_prot_queue);
+    e->in_the_prot_queue = 0;
+  }
+  return e;
+}

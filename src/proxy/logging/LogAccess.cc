@@ -3237,6 +3237,34 @@ LogAccess::marshal_http_header_field(LogField::Container container, char *field,
     }
   }
 
+  // The Transfer-Encoding:chunked value may have been removed from the header
+  // during processing, but we store it for logging purposes.
+  if (valid_field == false && container == LogField::SSH && strcmp(field, "Transfer-Encoding") == 0) {
+    const std::string &stored_te = m_http_sm->t_state.hdr_info.server_response_transfer_encoding;
+    if (!stored_te.empty()) {
+      valid_field = true;
+      actual_len  = stored_te.length();
+      str         = const_cast<char *>(stored_te.data());
+
+      int running_len = actual_len + 1; // +1 for null terminator
+      padded_len      = padded_length(running_len);
+
+      if (buf) {
+        memcpy(buf, str, actual_len);
+        buf[actual_len]  = '\0';
+        buf             += running_len;
+
+#ifdef DEBUG
+        int pad_len = padded_len - running_len;
+        for (int i = 0; i < pad_len; i++) {
+          *buf = '$';
+          buf++;
+        }
+#endif
+      }
+    }
+  }
+
   if (valid_field == false) {
     padded_len = INK_MIN_ALIGN;
     if (buf) {

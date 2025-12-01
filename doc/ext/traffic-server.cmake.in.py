@@ -468,9 +468,9 @@ class TrafficServerDomain(Domain):
 REPO_ROOT = '@PROJECT_SOURCE_DIR@'
 ts_version = '@TS_VERSION_STRING@'
 
-# get the current branch the local repository is on
-REPO_GIT_DIR = os.path.join(REPO_ROOT, ".git")
-git_branch = subprocess.check_output(['git', '--git-dir', REPO_GIT_DIR, 'rev-parse', '--abbrev-ref', 'HEAD'])
+# Get the current branch the local repository is on.
+# Run git from the repository root to work with both normal repos and worktrees.
+git_branch = subprocess.check_output(['git', '-C', REPO_ROOT, 'rev-parse', '--abbrev-ref', 'HEAD'])
 
 
 def make_github_link(name, rawtext, text, lineno, inliner, options=None, content=None):
