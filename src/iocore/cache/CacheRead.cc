@@ -749,8 +749,10 @@ Lcallreturn:
 int
 CacheVC::openReadStartEarliest(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
-  int  ret = 0;
-  Doc *doc = nullptr;
+  int  ret               = 0;
+  int  res               = 0;
+  Doc *doc               = nullptr;
+  bool is_recursive_call = false;
   cancel_trigger();
   set_io_not_in_progress();
   if (_action.cancelled) {
@@ -816,6 +818,15 @@ CacheVC::openReadStartEarliest(int /* event ATS_UNUSED */, Event * /* e ATS_UNUS
         dir_lookaside_probe(&key, stripe, &earliest_dir, nullptr)) {
       dir = earliest_dir;
       if ((ret = do_read_call(&key)) == EVENT_RETURN) {
+        if (this->handler == reinterpret_cast<ContinuationHandler>(&CacheVC::openReadStartEarliest)) {
+          is_recursive_call = true;
+          if (++recursive > 10) {
+            char tmpstring[CRYPTO_HEX_SIZE];
+            Error("Too many recursive call with %s", key.toHexStr(tmpstring));
+            goto Ldone;
+          }
+        }
+
         goto Lcallreturn;
       }
       return ret;
@@ -886,7 +897,11 @@ CacheVC::openReadStartEarliest(int /* event ATS_UNUSED */, Event * /* e ATS_UNUS
   _action.continuation->handleEvent(CACHE_EVENT_OPEN_READ_FAILED, reinterpret_cast<void *>(-ECACHE_NO_DOC));
   return free_CacheVC(this);
 Lcallreturn:
-  return handleEvent(AIO_EVENT_DONE, nullptr); // hopefully a tail call
+  res = handleEvent(AIO_EVENT_DONE, nullptr); // hopefully a tail call
+  if (is_recursive_call) {
+    --recursive;
+  }
+  return res;
 Lsuccess:
   if (write_vc) {
     ts::Metrics::Counter::increment(cache_rsb.read_busy_success);
