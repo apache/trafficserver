@@ -274,7 +274,6 @@ if(LibLZMA_FOUND)
   set(HAVE_LZMA_H TRUE)
 endif()
 
-find_package(PCRE REQUIRED)
 pkg_check_modules(PCRE2 REQUIRED IMPORTED_TARGET libpcre2-8)
 
 include(CheckOpenSSLIsBoringSSL)

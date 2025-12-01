@@ -663,7 +663,7 @@ LSP_COOKIE_DOCUMENTATION: Final[dict[str, DocumentationInfo]] = {
 class RegexPattern:
     """Parser and documentation provider for regular expression patterns."""
 
-    # PCRE flag documentation
+    # PCRE2 flag documentation
     FLAG_DOCUMENTATION: Final[dict[str, str]] = {
         'i': 'Case-insensitive matching - ignore letter case differences',
         'g': 'Global matching - find all matches, not just the first',
@@ -672,8 +672,8 @@ class RegexPattern:
         'x': 'Extended mode - ignore whitespace and allow comments',
     }
 
-    # Common PCRE syntax reference
-    PCRE_SYNTAX_REFERENCE: Final[list[tuple[str, str]]] = [
+    # Common PCRE2 syntax reference
+    PCRE2_SYNTAX_REFERENCE: Final[list[tuple[str, str]]] = [
         ('\\d', 'digit (0-9)'),
         ('\\w', 'word character (a-zA-Z0-9_)'),
         ('\\s', 'whitespace character'),
@@ -739,7 +739,7 @@ class RegexPattern:
             # Brief version for LSP hover - most important info first
             doc_parts = [
                 f"**Regular Expression Pattern**", "", f"**Pattern:** `{full_regex}`", "",
-                "**Context:** PCRE-compatible regex for string matching"
+                "**Context:** PCRE2-compatible regex for string matching"
             ]
 
             if flags:
@@ -749,7 +749,7 @@ class RegexPattern:
                         doc_parts.append(f"- `{flag}`: {RegexPattern.FLAG_DOCUMENTATION[flag]}")
 
             syntax_help = []
-            for syntax, description in RegexPattern.PCRE_SYNTAX_REFERENCE[:6]:  # First 6 most common
+            for syntax, description in RegexPattern.PCRE2_SYNTAX_REFERENCE[:6]:  # First 6 most common
                 if syntax.replace('\\', '\\') in pattern:
                     syntax_help.append(f"- `{syntax}` - {description}")
 
@@ -760,8 +760,8 @@ class RegexPattern:
             # Full documentation version
             doc_parts = [
                 f"**Regular Expression Pattern**", "", f"**Pattern:** `{full_regex}`", "",
-                "**Context:** PCRE-compatible regular expression for string matching", "",
-                "**Description:** This pattern uses Perl Compatible Regular Expression (PCRE) syntax for matching strings. Common in conditions with the `~` operator for pattern matching."
+                "**Context:** PCRE2-compatible regular expression for string matching", "",
+                "**Description:** This pattern uses Perl Compatible Regular Expression (PCRE2) syntax for matching strings. Common in conditions with the `~` operator for pattern matching."
             ]
 
             if flags:
@@ -770,9 +770,9 @@ class RegexPattern:
                     if flag in RegexPattern.FLAG_DOCUMENTATION:
                         doc_parts.append(f"- `{flag}`: {RegexPattern.FLAG_DOCUMENTATION[flag]}")
 
-            # Add complete PCRE syntax help
-            doc_parts.extend(["", "**Common PCRE Syntax:**"])
-            for syntax, description in RegexPattern.PCRE_SYNTAX_REFERENCE:
+            # Add complete PCRE2 syntax help
+            doc_parts.extend(["", "**Common PCRE2 Syntax:**"])
+            for syntax, description in RegexPattern.PCRE2_SYNTAX_REFERENCE:
                 doc_parts.append(f"- `{syntax}` - {description}")
 
             doc_parts.extend(

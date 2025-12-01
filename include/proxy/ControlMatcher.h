@@ -97,9 +97,6 @@
 #include "tsutil/Regex.h"
 #include "proxy/hdrs/URL.h"
 
-#define PCRE2_CODE_UNIT_WIDTH 8
-#include "pcre2.h"
-
 #include <swoc/swoc_ip.h>
 
 #ifdef HAVE_CTYPE_H

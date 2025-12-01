@@ -299,7 +299,7 @@ public:
   /// Should the active feature be updated (e.g., is used later).
   bool _update_remainder_p = false;
 
-  /// Context for working with PCRE - allocates from the transaction arena.
+  /// Context for working with PCRE2 - allocates from the transaction arena.
   pcre2_general_context *_rxp_ctx = nullptr;
 
   /** Set capture groups for a literal match.
@@ -428,7 +428,7 @@ public:
   /// Value to return from a remap invocation.
   TSRemapStatus _remap_status = TSREMAP_NO_REMAP;
 
-  /** Working match data for doing PCRE matching.
+  /** Working match data for doing PCRE2 matching.
    *
    * @param n Number of capture groups required.
    * @return Cpature data sufficient to match @a n groups.

@@ -134,7 +134,7 @@ Pattern::empty() const
  * @brief Capture or capture-and-replace depending on whether a replacement string is specified.
  * @see replace()
  * @see capture()
- * @param subject PCRE subject string
+ * @param subject PCRE2 subject string
  * @param result vector of strings where the result of captures or the replacements will be returned.
  * @return true if there was a match and capture or replacement succeeded, false if failure.
  */

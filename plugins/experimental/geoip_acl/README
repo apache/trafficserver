@@ -48,7 +48,7 @@ separate regex mapping filter. The remap.config file might then look like
         @plugin=geoip_acl.so @pparam=country @pparam=regex::/etc/music.regex
 
 
-where music.regex is a format with PCRE (perl compatible) regular
+where music.regex is a format with PCRE2 (perl compatible) regular
 expressions, and unique rules for match. E.g.
 
     .*\.mp3	 allow	US

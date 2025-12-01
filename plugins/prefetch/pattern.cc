@@ -42,9 +42,9 @@ replaceString(String &str, const String &from, const String &to)
 Pattern::Pattern() : _pattern(""), _replacement("") {}
 
 /**
- * @brief Initializes PCRE pattern by providing the subject and replacement strings.
- * @param pattern PCRE pattern, a string containing PCRE patterns, capturing groups.
- * @param replacement PCRE replacement, a string where $0 ... $9 will be replaced with the corresponding capturing groups
+ * @brief Initializes PCRE2 pattern by providing the subject and replacement strings.
+ * @param pattern PCRE2 pattern, a string containing PCRE2 patterns, capturing groups.
+ * @param replacement PCRE2 replacement, a string where $0 ... $9 will be replaced with the corresponding capturing groups
  * @return true if successful, false if failure
  */
 bool
@@ -64,9 +64,9 @@ Pattern::init(const String &pattern, const String &replacement)
 }
 
 /**
- * @brief Initializes PCRE pattern by providing the pattern only or pattern+replacement in a single configuration string.
+ * @brief Initializes PCRE2 pattern by providing the pattern only or pattern+replacement in a single configuration string.
  * @see init()
- * @param config PCRE pattern <pattern> or PCRE pattern + replacement in format /<pattern>/<replacement>/
+ * @param config PCRE2 pattern <pattern> or PCRE2 pattern + replacement in format /<pattern>/<replacement>/
  * @return true if successful, false if failure
  */
 bool
@@ -134,7 +134,7 @@ Pattern::empty() const
  * @brief Capture or capture-and-replace depending on whether a replacement string is specified.
  * @see replace()
  * @see capture()
- * @param subject PCRE subject string
+ * @param subject PCRE2 subject string
  * @param result vector of strings where the result of captures or the replacements will be returned.
  * @return true if there was a match and capture or replacement succeeded, false if failure.
  */
@@ -170,8 +170,8 @@ Pattern::process(const String &subject, StringVector &result)
 }
 
 /**
- * @brief PCRE matches a subject string against the regex pattern.
- * @param subject PCRE subject
+ * @brief PCRE2 matches a subject string against the regex pattern.
+ * @param subject PCRE2 subject
  * @return true - matched, false - did not.
  */
 bool
@@ -196,8 +196,8 @@ Pattern::match(const String &subject)
 }
 
 /**
- * @brief Return all PCRE capture groups that matched in the subject string
- * @param subject PCRE subject string
+ * @brief Return all PCRE2 capture groups that matched in the subject string
+ * @param subject PCRE2 subject string
  * @param result reference to vector of strings containing all capture groups
  */
 bool
@@ -229,8 +229,8 @@ Pattern::capture(const String &subject, StringVector &result)
 }
 
 /**
- * @brief Replaces all replacements found in the replacement string with what matched in the PCRE capturing groups.
- * @param subject PCRE subject string
+ * @brief Replaces all replacements found in the replacement string with what matched in the PCRE2 capturing groups.
+ * @param subject PCRE2 subject string
  * @param result reference to A string where the result of the replacement will be stored
  * @return true - success, false - nothing matched or failure.
  */
@@ -284,7 +284,7 @@ Pattern::replace(const String &subject, String &result)
 }
 
 /**
- * @brief PCRE compiles the regex, called only during initialization.
+ * @brief PCRE2 compiles the regex, called only during initialization.
  * @return true if successful, false if not.
  */
 bool

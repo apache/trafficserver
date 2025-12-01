@@ -72,7 +72,7 @@ extern "C" {
 #define TS_LUA_MAX_SHARED_DICT_COUNT       32
 #define TS_LUA_MAX_URL_LENGTH              32768
 #define TS_LUA_MAX_OVEC_SIZE               (3 * 32)
-#define TS_LUA_MAX_RESIDENT_PCRE           64
+#define TS_LUA_MAX_RESIDENT_PCRE2          64
 #define TS_LUA_MAX_STR_LENGTH              32768
 
 #define TS_LUA_MIN_ALIGN         sizeof(void *)

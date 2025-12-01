@@ -67,7 +67,7 @@ if(BUILD_TESTING)
   #  add_executable(test_matcher matcher_tests.cc matcher.cc lulu.cc regex_helper.cc resources.cc)
   #  add_catch2_test(NAME test_matcher COMMAND $<TARGET_FILE:test_matcher>)
   #
-  #  target_link_libraries(test_matcher PRIVATE Catch2::Catch2WithMain ts::tscore libswoc::libswoc PCRE::PCRE)
+  #  target_link_libraries(test_matcher PRIVATE Catch2::Catch2WithMain ts::tscore libswoc::libswoc PkgConfig::PCRE2)
 
 endif()
 verify_global_plugin(header_rewrite)
