@@ -411,16 +411,16 @@ CacheProcessor::lookup(Continuation *cont, const HttpCacheKey *key, CacheFragTyp
 
 Action *
 CacheProcessor::open_read(Continuation *cont, const HttpCacheKey *key, CacheHTTPHdr *request, const HttpConfigAccessor *params,
-                          CacheFragType type)
+                          CacheFragType frag_type, const CacheHostRecord *volume_host_rec)
 {
-  return caches[type]->open_read(cont, &key->hash, request, params, type, key->hostname);
+  return caches[frag_type]->open_read(cont, &key->hash, request, params, frag_type, key->hostname, volume_host_rec);
 }
 
 Action *
 CacheProcessor::open_write(Continuation *cont, const HttpCacheKey *key, CacheHTTPInfo *old_info, time_t pin_in_cache,
-                           CacheFragType type)
+                           CacheFragType frag_type, const CacheHostRecord *volume_host_rec)
 {
-  return caches[type]->open_write(cont, &key->hash, old_info, pin_in_cache, type, key->hostname);
+  return caches[frag_type]->open_write(cont, &key->hash, old_info, pin_in_cache, frag_type, key->hostname, volume_host_rec);
 }
 
 //----------------------------------------------------------------------------
@@ -483,7 +483,7 @@ CacheProcessor::mark_storage_offline(CacheDisk *d, ///< Target disk
   } else { // check cache types specifically
     if (theCache) {
       ReplaceablePtr<CacheHostTable>::ScopedReader hosttable(&theCache->hosttable);
-      if (!hosttable->gen_host_rec.vol_hash_table) {
+      if (!hosttable->getGenHostRec()->vol_hash_table) {
         unsigned int caches_ready    = 0;
         caches_ready                 = caches_ready | (1 << CACHE_FRAG_TYPE_HTTP);
         caches_ready                 = caches_ready | (1 << CACHE_FRAG_TYPE_NONE);
@@ -506,8 +506,8 @@ void
 rebuild_host_table(Cache *cache)
 {
   ReplaceablePtr<CacheHostTable>::ScopedWriter hosttable(&cache->hosttable);
-  build_vol_hash_table(&hosttable->gen_host_rec);
-  if (hosttable->m_numEntries != 0) {
+  build_vol_hash_table(const_cast<CacheHostRecord *>(hosttable->getGenHostRec()));
+  if (hosttable->getNumEntries() != 0) {
     CacheHostMatcher *hm        = hosttable->getHostMatcher();
     CacheHostRecord  *h_rec     = hm->getDataArray();
     int               h_rec_len = hm->getNumElements();
@@ -1478,8 +1478,13 @@ CacheProcessor::cacheInitialized()
           Warning("Total private RAM cache allocations (%" PRId64 " bytes) exceed global ram_cache.size (%" PRId64 " bytes). "
                   "Using global limit. Consider increasing proxy.config.cache.ram_cache.size.",
                   total_private_ram, cache_config_ram_cache_size);
-          shared_pool       = cache_config_ram_cache_size; // Fall back to using the global pool for all
-          total_private_ram = 0;                           // Disable private allocations
+          shared_pool = cache_config_ram_cache_size; // Fall back to using the global pool for all
+
+          CacheVol *cp = cp_list.head;
+
+          for (; cp; cp = cp->link.next) {
+            cp->ram_cache_size = 0;
+          }
         } else if (total_private_ram > 0) {
           Dbg(dbg_ctl_cache_init, "Shared RAM cache pool (after private allocations): %" PRId64 " bytes (%" PRId64 " MB)",
               shared_pool, shared_pool / (1024 * 1024));
@@ -1540,12 +1545,17 @@ CacheProcessor::cacheInitialized()
             ram_cache_bytes = stripe->dirlen() * DEFAULT_RAM_CACHE_MULTIPLIER;
           } else {
             // Use shared pool allocation - distribute only among volumes without explicit allocations
-            ink_assert(stripe->cache != nullptr);
-            int64_t divisor = (shared_cache_size > 0) ? shared_cache_size : theCache->cache_size;
-            double  factor  = static_cast<double>(static_cast<int64_t>(stripe->len >> STORE_BLOCK_SHIFT)) / divisor;
+            if (shared_cache_size > 0) {
+              ink_assert(stripe->cache != nullptr);
+              double factor = static_cast<double>(static_cast<int64_t>(stripe->len >> STORE_BLOCK_SHIFT)) / shared_cache_size;
 
-            Dbg(dbg_ctl_cache_init, "factor = %f (divisor = %" PRId64 ")", factor, divisor);
-            ram_cache_bytes = static_cast<int64_t>(http_ram_cache_size * factor);
+              Dbg(dbg_ctl_cache_init, "factor = %f (divisor = %" PRId64 ")", factor, shared_cache_size);
+              ram_cache_bytes = static_cast<int64_t>(http_ram_cache_size * factor);
+            } else {
+              ram_cache_bytes = 0;
+              Dbg(dbg_ctl_cache_init, "Volume %d stripe has no explicit RAM allocation, but shared pool is empty",
+                  stripe->cache_vol->vol_number);
+            }
           }
 
           stripe->ram_cache->init(ram_cache_bytes, stripe);

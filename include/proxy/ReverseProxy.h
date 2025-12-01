@@ -57,4 +57,5 @@ bool         response_url_remap(HTTPHdr *response_header, UrlRewrite *table);
 bool reloadUrlRewrite();
 bool urlRewriteVerify();
 
-int url_rewrite_CB(const char *name, RecDataT data_type, RecData data, void *cookie);
+void init_remap_volume_host_records();
+int  url_rewrite_CB(const char *name, RecDataT data_type, RecData data, void *cookie);

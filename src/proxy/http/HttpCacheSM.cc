@@ -323,12 +323,20 @@ HttpCacheSM::_schedule_read_retry()
 Action *
 HttpCacheSM::do_cache_open_read(const HttpCacheKey &key)
 {
+  Action *action_handle = nullptr;
+
   open_read_tries++;
   ink_assert(pending_action == nullptr);
 
   // Initialising read-while-write-inprogress flag
   this->readwhilewrite_inprogress = false;
-  Action *action_handle           = cacheProcessor.open_read(this, &key, this->read_request_hdr, &http_params);
+
+  if (master_sm && master_sm->t_state.cache_info.volume_host_rec) {
+    action_handle = cacheProcessor.open_read(this, &key, this->read_request_hdr, &http_params, CACHE_FRAG_TYPE_HTTP,
+                                             master_sm->t_state.cache_info.volume_host_rec);
+  } else {
+    action_handle = cacheProcessor.open_read(this, &key, this->read_request_hdr, &http_params);
+  }
 
   if (action_handle != ACTION_RESULT_DONE) {
     pending_action           = action_handle;
@@ -422,9 +430,15 @@ HttpCacheSM::open_write(const HttpCacheKey *key, URL *url, HTTPHdr *request, Cac
     return ACTION_RESULT_DONE;
   }
 
-  // INKqa11166
   CacheHTTPInfo *info          = allow_multiple ? reinterpret_cast<CacheHTTPInfo *>(CACHE_ALLOW_MULTIPLE_WRITES) : old_info;
-  Action        *action_handle = cacheProcessor.open_write(this, key, info, pin_in_cache);
+  Action        *action_handle = nullptr;
+
+  if (master_sm && master_sm->t_state.cache_info.volume_host_rec) {
+    action_handle =
+      cacheProcessor.open_write(this, key, info, pin_in_cache, CACHE_FRAG_TYPE_HTTP, master_sm->t_state.cache_info.volume_host_rec);
+  } else {
+    action_handle = cacheProcessor.open_write(this, key, info, pin_in_cache);
+  }
 
   if (action_handle != ACTION_RESULT_DONE) {
     pending_action           = action_handle;

@@ -40,6 +40,18 @@ public:
   void         Print() const;
   std::string  PrintUrlMappingPathIndex() const;
 
+  // Apply a function to each url_mapping in this index
+  template <typename Func>
+  void
+  foreach_mapping(Func &&f) const
+  {
+    for (const auto &trie_pair : m_tries) {
+      for (auto const &mapping : *trie_pair.second) {
+        f(const_cast<url_mapping &>(mapping));
+      }
+    }
+  }
+
 private:
   using UrlMappingTrie = Trie<url_mapping>;
 

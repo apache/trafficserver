@@ -38,6 +38,7 @@ namespace
 DbgCtl dbg_ctl_cache_hosting{"cache_hosting"};
 DbgCtl dbg_ctl_matcher{"matcher"};
 
+constexpr static int MAX_VOLUME_IDX = 255;
 } // end anonymous namespace
 
 /*************************************************************
@@ -698,7 +699,7 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
           break;
         }
 
-        if (volume_number < 1 || volume_number > 255) {
+        if (volume_number < 1 || volume_number > MAX_VOLUME_IDX) {
           err = "Bad Volume Number";
           break;
         }
@@ -742,8 +743,12 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
           in_percent = 0;
         }
       } else if (strcasecmp(tmp, "avg_obj_size") == 0) { // match avg_obj_size
-        tmp          += 13;
-        avg_obj_size  = static_cast<int>(ink_atoi64(tmp));
+        tmp += 13;
+        if (!ParseRules::is_digit(*tmp)) {
+          err = "Invalid avg_obj_size value (must start with a number, e.g., 64K)";
+          break;
+        }
+        avg_obj_size = static_cast<int>(ink_atoi64(tmp));
 
         if (avg_obj_size < 0) {
           err = "Invalid avg_obj_size value (must be >= 0)";
@@ -753,8 +758,12 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
           tmp++;
         }
       } else if (strcasecmp(tmp, "fragment_size") == 0) { // match fragment_size
-        tmp           += 14;
-        fragment_size  = static_cast<int>(ink_atoi64(tmp));
+        tmp += 14;
+        if (!ParseRules::is_digit(*tmp)) {
+          err = "Invalid fragment_size value (must start with a number, e.g., 1M)";
+          break;
+        }
+        fragment_size = static_cast<int>(ink_atoi64(tmp));
 
         if (fragment_size < 0) {
           err = "Invalid fragment_size value (must be >= 0)";
@@ -776,8 +785,12 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
           break;
         }
       } else if (strcasecmp(tmp, "ram_cache_size") == 0) { // match ram_cache_size
-        tmp            += 15;
-        ram_cache_size  = ink_atoi64(tmp);
+        tmp += 15;
+        if (!ParseRules::is_digit(*tmp)) {
+          err = "Invalid ram_cache_size value (must start with a number, e.g., 10G)";
+          break;
+        }
+        ram_cache_size = ink_atoi64(tmp);
 
         if (ram_cache_size < 0) {
           err = "Invalid ram_cache_size value (must be >= 0)";
@@ -788,8 +801,12 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
           tmp++;
         }
       } else if (strcasecmp(tmp, "ram_cache_cutoff") == 0) { // match ram_cache_cutoff
-        tmp              += 17;
-        ram_cache_cutoff  = ink_atoi64(tmp);
+        tmp += 17;
+        if (!ParseRules::is_digit(*tmp)) {
+          err = "Invalid ram_cache_cutoff value (must start with a number, e.g., 5M)";
+          break;
+        }
+        ram_cache_cutoff = ink_atoi64(tmp);
 
         if (ram_cache_cutoff < 0) {
           err = "Invalid ram_cache_cutoff value (must be >= 0)";
@@ -802,7 +819,7 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
 
       // ends here
       if (end < line_end) {
-        tmp++;
+        tmp = line_end;
       }
     }
 
@@ -843,4 +860,54 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
   }
 
   return;
+}
+
+// Wrapper function for deleting CacheHostRecord from outside the cache module.
+void
+destroyCacheHostRecord(CacheHostRecord *rec)
+{
+  delete rec;
+}
+
+// Build a CacheHostRecord for @volume= directive with comma-separated volumes
+// This reuses CacheHostRecord::Init() by constructing a minimal matcher_line
+CacheHostRecord *
+createCacheHostRecord(const char *volume_str, char *errbuf, size_t errbufsize)
+{
+  if (!volume_str || !*volume_str) {
+    snprintf(errbuf, errbufsize, "Empty volume specification");
+    return nullptr;
+  }
+
+  CacheHostRecord *host_rec = new CacheHostRecord();
+
+  if (!host_rec) {
+    snprintf(errbuf, errbufsize, "Memory allocation failed");
+    return nullptr;
+  }
+
+  // Build a minimal matcher_line structure with just the volume= directive
+  matcher_line ml;
+  memset(&ml, 0, sizeof(ml));
+
+  ml.line[0][0] = const_cast<char *>("volume");
+  ml.line[1][0] = const_cast<char *>(volume_str);
+  ml.num_el     = 1;
+  ml.dest_entry = -1;
+  ml.line_num   = 0;
+  ml.type       = MATCH_NONE;
+  ml.next       = nullptr;
+
+  int result = host_rec->Init(&ml, CacheType::HTTP);
+
+  if (result != 0) {
+    delete host_rec;
+    snprintf(errbuf, errbufsize, "Failed to initialize volume record (check volume.config)");
+    return nullptr;
+  }
+
+  Dbg(dbg_ctl_cache_hosting, "Created remap volume record with %d volumes, %d stripes", host_rec->num_cachevols,
+      host_rec->num_vols);
+
+  return host_rec;
 }

@@ -40,6 +40,7 @@ class UrlRewrite;
 #define REMAP_OPTFLG_INTERNAL         0x0080u     /* only allow internal requests to hit this remap */
 #define REMAP_OPTFLG_IN_IP            0x0100u     /* "in_ip=" option (used for ACL filtering)*/
 #define REMAP_OPTFLG_STRATEGY         0x0200u     /* "strategy=" the name of the nexthop selection strategy */
+#define REMAP_OPTFLG_VOLUME           0x0400u     /* "volume=" cache volume override */
 #define REMAP_OPTFLG_MAP_ID           0x0800u     /* associate a map ID with this rule */
 #define REMAP_OPTFLG_INVERT           0x80000000u /* "invert" the rule (for src_ip and src_ip_category at least) */
 #define REMAP_OPTFLG_ALL_FILTERS \
