@@ -1345,9 +1345,13 @@ HttpConfig::reconfigure()
   params->redirection_host_no_port          = INT_TO_BOOL(m_master.redirection_host_no_port);
   params->oride.number_of_redirections      = m_master.oride.number_of_redirections;
   params->post_copy_size                    = m_master.post_copy_size;
-  params->redirect_actions_string           = ats_strdup(m_master.redirect_actions_string);
-  params->redirect_actions_map = parse_redirect_actions(params->redirect_actions_string, params->redirect_actions_self_action);
-  params->http_host_sni_policy = m_master.http_host_sni_policy;
+  if (params->oride.request_buffer_enabled && params->post_copy_size == 0) {
+    Warning("proxy.config.http.request_buffer_enabled is set but proxy.config.http.post_copy_size is 0; request buffering "
+            "will be disabled");
+  }
+  params->redirect_actions_string = ats_strdup(m_master.redirect_actions_string);
+  params->redirect_actions_map    = parse_redirect_actions(params->redirect_actions_string, params->redirect_actions_self_action);
+  params->http_host_sni_policy    = m_master.http_host_sni_policy;
   params->scheme_proto_mismatch_policy = m_master.scheme_proto_mismatch_policy;
 
   params->oride.ssl_client_sni_policy     = ats_strdup(m_master.oride.ssl_client_sni_policy);

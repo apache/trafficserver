@@ -1,0 +1,127 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+#
+# Test for issue #6900: Verify that post_copy_size=0 with request_buffer_enabled=1
+# does not cause 403 errors. When post_copy_size is 0, request buffering should be
+# disabled and POST requests should proceed normally.
+#
+meta:
+  version: "1.0"
+
+autest:
+  description: 'Verify post_copy_size=0 with request_buffer_enabled does not cause 403 (issue #6900)'
+
+  server:
+    name: 'zero-copy-server'
+
+  client:
+    name: 'zero-copy-client'
+
+  ats:
+    name: 'ts-zero-copy'
+    process_config:
+      enable_cache: false
+
+    plugin_config:
+      - request_buffer.so
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http|request_buffer'
+      # The key configuration: post_copy_size=0 with request_buffer_enabled=1
+      # This should NOT cause 403 errors (issue #6900 fix)
+      proxy.config.http.post_copy_size: 0
+      proxy.config.http.request_buffer_enabled: 1
+
+    remap_config:
+      - from: /
+        to: http://127.0.0.1:{SERVER_HTTP_PORT}/
+
+    log_validation:
+      diags_log:
+        contains:
+          - expression: "request_buffer_enabled is set but proxy.config.http.post_copy_size is 0"
+            description: "Verify warning is logged at startup for misconfiguration"
+
+sessions:
+  - transactions:
+      # POST with a body - should return 200, not 403
+      - client-request:
+          method: "POST"
+          version: "1.1"
+          url: /post_small
+          headers:
+            fields:
+              - [Host, example.com]
+              - [Content-Length, 5]
+              - [uuid, zero-copy-small]
+          content:
+            data: "small"
+
+        proxy-request:
+          method: "POST"
+          url: /post_small
+          content:
+            verify: { value: "small", as: equal }
+
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Content-Length, 2]
+          content:
+            data: OK
+
+        proxy-response:
+          status: 200
+          content:
+            verify: { value: "OK", as: equal }
+
+      # Same with a large body.
+      - client-request:
+          method: "POST"
+          version: "1.1"
+          url: /post_large
+          headers:
+            fields:
+              - [Host, example.com]
+              - [Content-Length, 10000]
+              - [uuid, zero-copy-large]
+
+        proxy-request:
+          method: "POST"
+          url: /post_large
+          headers:
+            fields:
+              - [Content-Length, {value: 10000, as: equal}]
+          content:
+            size: 10000
+
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Content-Length, 2]
+          content:
+            data: OK
+
+        proxy-response:
+          status: 200
+          content:
+            verify: { value: "OK", as: equal }
