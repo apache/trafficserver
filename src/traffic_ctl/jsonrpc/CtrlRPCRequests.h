@@ -48,6 +48,21 @@ struct ConfigReloadRequest : shared::rpc::ClientRequest {
     return "admin_config_reload";
   }
 };
+struct ConfigReloadVirtualHostRequest : shared::rpc::ClientRequest {
+  using super                      = shared::rpc::ClientRequest;
+  ConfigReloadVirtualHostRequest() = default;
+  ConfigReloadVirtualHostRequest(std::string name)
+  {
+    if (!name.empty()) {
+      super::params["virtualhost"] = std::move(name);
+    }
+  }
+  std::string
+  get_method() const override
+  {
+    return "admin_config_reload_virtualhost";
+  }
+};
 //------------------------------------------------------------------------------------------------------------------------------------
 ///
 /// @brief To fetch config file registry from the RPC node.

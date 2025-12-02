@@ -39,6 +39,7 @@
 #include "proxy/http/remap/RemapProcessor.h"
 #include "proxy/http/remap/UrlRewrite.h"
 #include "proxy/http/remap/UrlMapping.h"
+#include "proxy/VirtualHost.h"
 
 namespace
 {
@@ -84,6 +85,8 @@ init_reverse_proxy()
 
   // Hold at least one lease, until we reload the configuration
   rewrite_table->acquire();
+
+  VirtualHost::startup();
 
   return 0;
 }
