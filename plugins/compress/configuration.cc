@@ -1,6 +1,6 @@
 /** @file
 
-  Transforms content using gzip, deflate or brotli
+  Transforms content using gzip, deflate, brotli or zstd
 
   @section license License
 
@@ -62,7 +62,11 @@ enum class ParserState {
   Flush,
   Allow,
   MinimumContentLength,
-  ContentTypeIgnoreParameters
+  ContentTypeIgnoreParameters,
+  GzipCompressionLevel,
+  BrotliCompressionLevel,
+  BrotliLGWSize,
+  ZstdCompressionLevel
 };
 
 void
@@ -197,6 +201,12 @@ HostConfiguration::add_compression_algorithms(swoc::TextView line)
     auto token = extractFirstToken(line, isCommaOrSpace);
     if (token.empty()) {
       break;
+    } else if (token == "zstd") {
+#ifdef HAVE_ZSTD_H
+      compression_algorithms_ |= ALGORITHM_ZSTD;
+#else
+      error("supported-algorithms: zstd support not compiled in.");
+#endif
     } else if (token == "br") {
 #ifdef HAVE_BROTLI_ENCODE_H
       compression_algorithms_ |= ALGORITHM_BROTLI;
@@ -208,7 +218,11 @@ HostConfiguration::add_compression_algorithms(swoc::TextView line)
     } else if (token == "deflate") {
       compression_algorithms_ |= ALGORITHM_DEFLATE;
     } else {
+#ifdef HAVE_ZSTD_H
+      error("Unknown compression type. Supported compression-algorithms <zstd,br,gzip,deflate>.");
+#else
       error("Unknown compression type. Supported compression-algorithms <br,gzip,deflate>.");
+#endif
     }
   }
 }
@@ -261,7 +275,11 @@ static const std::unordered_map<std::string_view, ParserState> KeywordToStateMap
   {"range-request",                  ParserState::RangeRequest               },
   {"flush",                          ParserState::Flush                      },
   {"allow",                          ParserState::Allow                      },
-  {"minimum-content-length",         ParserState::MinimumContentLength       }
+  {"minimum-content-length",         ParserState::MinimumContentLength       },
+  {"gzip-compression-level",         ParserState::GzipCompressionLevel       },
+  {"brotli-compression-level",       ParserState::BrotliCompressionLevel     },
+  {"brotli-lgwin",                   ParserState::BrotliLGWSize              },
+  {"zstd-compression-level",         ParserState::ZstdCompressionLevel       }
 };
 
 void
@@ -388,6 +406,50 @@ Configuration::Parse(const char *path)
         uintmax_t      length = swoc::svtou(token, &parsed);
         if (parsed.size() == token.size()) {
           current_host_configuration->set_minimum_content_length(length);
+        }
+        state = ParserState::Start;
+        break;
+      }
+      case ParserState::GzipCompressionLevel: {
+        swoc::TextView parsed;
+        intmax_t       level = swoc::svtoi(token, &parsed);
+        if (parsed.size() == token.size() && level >= 1 && level <= 9) {
+          current_host_configuration->set_gzip_compression_level(level);
+        } else {
+          error("gzip-compression-level must be between 1 and 9, got %.*s", static_cast<int>(token.size()), token.data());
+        }
+        state = ParserState::Start;
+        break;
+      }
+      case ParserState::BrotliCompressionLevel: {
+        swoc::TextView parsed;
+        intmax_t       level = swoc::svtoi(token, &parsed);
+        if (parsed.size() == token.size() && level >= 0 && level <= 11) {
+          current_host_configuration->set_brotli_compression_level(level);
+        } else {
+          error("brotli-compression-level must be between 0 and 11, got %.*s", static_cast<int>(token.size()), token.data());
+        }
+        state = ParserState::Start;
+        break;
+      }
+      case ParserState::BrotliLGWSize: {
+        swoc::TextView parsed;
+        intmax_t       lgw = swoc::svtoi(token, &parsed);
+        if (parsed.size() == token.size() && lgw >= 10 && lgw <= 24) {
+          current_host_configuration->set_brotli_lgw_size(lgw);
+        } else {
+          error("brotli-lgwin must be between 10 and 24, got %.*s", static_cast<int>(token.size()), token.data());
+        }
+        state = ParserState::Start;
+        break;
+      }
+      case ParserState::ZstdCompressionLevel: {
+        swoc::TextView parsed;
+        intmax_t       level = swoc::svtoi(token, &parsed);
+        if (parsed.size() == token.size() && level >= 1 && level <= 22) {
+          current_host_configuration->set_zstd_compression_level(level);
+        } else {
+          error("zstd-compression-level must be between 1 and 22, got %.*s", static_cast<int>(token.size()), token.data());
         }
         state = ParserState::Start;
         break;

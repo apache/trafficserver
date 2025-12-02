@@ -1,6 +1,6 @@
 /** @file
 
-  Transforms content using gzip, deflate or brotli
+  Transforms content using gzip, deflate, brotli or zstd
 
   @section license License
 
@@ -38,6 +38,7 @@
 #include "configuration.h"
 #include "gzip_compress.h"
 #include "brotli_compress.h"
+#include "zstd_compress.h"
 #include "ts/remap.h"
 #include "ts/remap_version.h"
 
@@ -133,9 +134,8 @@ namespace
 static Data *
 data_alloc(int compression_type, int compression_algorithms, HostConfiguration *hc)
 {
-  Data *data;
+  Data *data = static_cast<Data *>(TSmalloc(sizeof(Data)));
 
-  data                         = static_cast<Data *>(TSmalloc(sizeof(Data)));
   data->downstream_vio         = nullptr;
   data->downstream_buffer      = nullptr;
   data->downstream_reader      = nullptr;
@@ -156,6 +156,12 @@ data_alloc(int compression_type, int compression_algorithms, HostConfiguration *
     Brotli::data_alloc(data);
   }
 #endif
+#if HAVE_ZSTD_H
+  if ((compression_type & COMPRESSION_TYPE_ZSTD) && (compression_algorithms & ALGORITHM_ZSTD)) {
+    Zstd::data_alloc(data);
+  }
+#endif
+
   return data;
 }
 
@@ -179,6 +185,11 @@ data_destroy(Data *data)
     Brotli::data_destroy(data);
   }
 #endif
+#if HAVE_ZSTD_H
+  if (data->compression_type & COMPRESSION_TYPE_ZSTD && data->compression_algorithms & ALGORITHM_ZSTD) {
+    Zstd::data_destroy(data);
+  }
+#endif
 
   TSfree(data);
 }
@@ -191,7 +202,10 @@ content_encoding_header(TSMBuffer bufp, TSMLoc hdr_loc, const int compression_ty
   const char  *value     = nullptr;
   int          value_len = 0;
   // Delete Content-Encoding if present???
-  if (compression_type & COMPRESSION_TYPE_BROTLI && (algorithm & ALGORITHM_BROTLI)) {
+  if (compression_type & COMPRESSION_TYPE_ZSTD && (algorithm & ALGORITHM_ZSTD)) {
+    value     = TS_HTTP_VALUE_ZSTD;
+    value_len = TS_HTTP_LEN_ZSTD;
+  } else if (compression_type & COMPRESSION_TYPE_BROTLI && (algorithm & ALGORITHM_BROTLI)) {
     value     = TS_HTTP_VALUE_BROTLI;
     value_len = TS_HTTP_LEN_BROTLI;
   } else if (compression_type & COMPRESSION_TYPE_GZIP && (algorithm & ALGORITHM_GZIP)) {
@@ -323,6 +337,15 @@ compress_transform_init(TSCont contp, Data *data)
     data->downstream_vio    = TSVConnWrite(downstream_conn, contp, data->downstream_reader, INT64_MAX);
   }
 
+#if HAVE_ZSTD_H
+  if (data->compression_type & COMPRESSION_TYPE_ZSTD && (data->compression_algorithms & ALGORITHM_ZSTD)) {
+    if (!Zstd::transform_init(data)) {
+      error("Failed to configure Zstandard compression context");
+      return;
+    }
+  }
+#endif
+
   TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
 }
 
@@ -348,8 +371,13 @@ compress_transform_one(Data *data, TSIOBufferReader upstream_reader, int amount)
       upstream_length = amount;
     }
 
+#if HAVE_ZSTD_H
+    if (data->compression_type & COMPRESSION_TYPE_ZSTD && (data->compression_algorithms & ALGORITHM_ZSTD)) {
+      Zstd::transform_one(data, upstream_buffer, upstream_length);
+    } else
+#endif
 #if HAVE_BROTLI_ENCODE_H
-    if (data->compression_type & COMPRESSION_TYPE_BROTLI && (data->compression_algorithms & ALGORITHM_BROTLI)) {
+      if (data->compression_type & COMPRESSION_TYPE_BROTLI && (data->compression_algorithms & ALGORITHM_BROTLI)) {
       Brotli::transform_one(data, upstream_buffer, upstream_length);
     } else
 #endif
@@ -357,7 +385,13 @@ compress_transform_one(Data *data, TSIOBufferReader upstream_reader, int amount)
           (data->compression_algorithms & (ALGORITHM_GZIP | ALGORITHM_DEFLATE))) {
       Gzip::transform_one(data, upstream_buffer, upstream_length);
     } else {
-      warning("No compression supported. Shouldn't come here.");
+      warning("No compression supported. Passing data through without transformation.");
+      int64_t written = TSIOBufferWrite(data->downstream_buffer, upstream_buffer, upstream_length);
+      if (written == TS_ERROR || written != upstream_length) {
+        error("Failed to copy upstream data to downstream buffer");
+        return;
+      }
+      data->downstream_length += written;
     }
 
     TSIOBufferReaderConsume(upstream_reader, upstream_length);
@@ -368,8 +402,14 @@ compress_transform_one(Data *data, TSIOBufferReader upstream_reader, int amount)
 static void
 compress_transform_finish(Data *data)
 {
+#if HAVE_ZSTD_H
+  if (data->compression_type & COMPRESSION_TYPE_ZSTD && data->compression_algorithms & ALGORITHM_ZSTD) {
+    Zstd::transform_finish(data);
+    debug("compress_transform_finish: zstd compression finish");
+  } else
+#endif
 #if HAVE_BROTLI_ENCODE_H
-  if (data->compression_type & COMPRESSION_TYPE_BROTLI && data->compression_algorithms & ALGORITHM_BROTLI) {
+    if (data->compression_type & COMPRESSION_TYPE_BROTLI && data->compression_algorithms & ALGORITHM_BROTLI) {
     Brotli::transform_finish(data);
     debug("compress_transform_finish: brotli compression finish");
   } else
@@ -379,7 +419,7 @@ compress_transform_finish(Data *data)
     Gzip::transform_finish(data);
     debug("compress_transform_finish: gzip compression finish");
   } else {
-    error("No Compression matched, shouldn't come here");
+    debug("compress_transform_finish: no compression active, passthrough mode");
   }
 }
 
@@ -580,7 +620,14 @@ transformable(TSHttpTxn txnp, bool server, HostConfiguration *host_configuration
         continue;
       }
 
-      if (strncasecmp(value, "br", sizeof("br") - 1) == 0) {
+      debug("Accept-Encoding value [%.*s]", len, value);
+
+      if (strncasecmp(value, "zstd", sizeof("zstd") - 1) == 0) {
+        if (*algorithms & ALGORITHM_ZSTD) {
+          compression_acceptable = 1;
+        }
+        *compress_type |= COMPRESSION_TYPE_ZSTD;
+      } else if (strncasecmp(value, "br", sizeof("br") - 1) == 0) {
         if (*algorithms & ALGORITHM_BROTLI) {
           compression_acceptable = 1;
         }
