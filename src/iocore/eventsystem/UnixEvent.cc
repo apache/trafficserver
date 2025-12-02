@@ -30,6 +30,7 @@
 
 #include "iocore/eventsystem/Event.h"
 #include "iocore/eventsystem/EThread.h"
+#include "tscore/ink_stack_trace.h"
 
 ClassAllocator<Event> eventAllocator("eventAllocator", 256);
 
