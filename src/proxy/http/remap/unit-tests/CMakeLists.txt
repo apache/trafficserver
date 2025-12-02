@@ -94,7 +94,13 @@ if(NOT APPLE)
 endif()
 
 if(NOT APPLE)
-  add_catch2_test(NAME test_PluginDso)
+  add_catch2_test(
+    NAME
+    test_PluginDso
+    PROPERTIES
+    ENVIRONMENT
+    "ASAN_OPTIONS=detect_odr_violation=0;LSAN_OPTIONS=suppressions=${CMAKE_CURRENT_SOURCE_DIR}/remap_test_dlopen_leak_suppression.txt"
+  )
 endif()
 ### test_PluginFactory ########################################################################
 
@@ -133,7 +139,13 @@ target_link_libraries(
 )
 
 if(NOT APPLE)
-  add_catch2_test(NAME test_PluginFactory)
+  add_catch2_test(
+    NAME
+    test_PluginFactory
+    PROPERTIES
+    ENVIRONMENT
+    "ASAN_OPTIONS=detect_odr_violation=0;LSAN_OPTIONS=suppressions=${CMAKE_CURRENT_SOURCE_DIR}/remap_test_dlopen_leak_suppression.txt"
+  )
 endif()
 ### test_RemapPluginInfo ########################################################################
 
@@ -166,20 +178,15 @@ target_link_libraries(
 )
 
 if(NOT APPLE)
-  add_catch2_test(NAME test_RemapPluginInfo)
-endif()
-
-# not in the same if as the above will be removed shortly.
-if(NOT APPLE)
-  # Disable ORD violation caused by double definition inside a stub file libinknet_stub.cc
-  # see remap_test_dlopen_leak_suppression.txt for more info.
-  set_tests_properties(
-    test_RemapPluginInfo test_PluginDso test_PluginFactory
+  add_catch2_test(
+    NAME
+    test_RemapPluginInfo
     PROPERTIES
-      ENVIRONMENT
-      "ASAN_OPTIONS=detect_odr_violation=0;LSAN_OPTIONS=suppressions=${CMAKE_CURRENT_SOURCE_DIR}/remap_test_dlopen_leak_suppression.txt"
+    ENVIRONMENT
+    "ASAN_OPTIONS=detect_odr_violation=0;LSAN_OPTIONS=suppressions=${CMAKE_CURRENT_SOURCE_DIR}/remap_test_dlopen_leak_suppression.txt"
   )
 endif()
+
 ### test_NextHopStrategyFactory ########################################################################
 
 add_executable(
