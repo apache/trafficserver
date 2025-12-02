@@ -619,7 +619,7 @@ IOBufferReader::reset()
 //      inline functions definitions
 //
 ////////////////////////////////////////////////////////////////
-extern ClassAllocator<MIOBuffer> ioAllocator;
+extern ClassAllocator<MIOBuffer, false> ioAllocator;
 
 TS_INLINE
 MIOBuffer::MIOBuffer(int64_t default_size_index)
