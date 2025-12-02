@@ -60,7 +60,7 @@ if(BUILD_TESTING)
   macro(add_cache_test name)
     add_executable(${name} unit_tests/main.cc unit_tests/stub.cc unit_tests/CacheTestHandler.cc ${ARGN})
     target_link_libraries(${name} PRIVATE ts::inkcache Catch2::Catch2WithMain)
-    add_catch2_test(NAME ${name} COMMAND $<TARGET_FILE:${name}>)
+    add_catch2_test(NAME ${name})
   endmacro()
 
   add_cache_test(Cache unit_tests/test_Cache.cc)

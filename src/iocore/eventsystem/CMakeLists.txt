@@ -60,9 +60,9 @@ if(BUILD_TESTING)
   add_executable(test_MIOBufferWriter unit_tests/test_MIOBufferWriter.cc)
   target_link_libraries(test_MIOBufferWriter libswoc::libswoc Catch2::Catch2WithMain)
 
-  add_catch2_test(NAME test_EventSystem COMMAND test_EventSystem)
-  add_catch2_test(NAME test_IOBuffer COMMAND test_IOBuffer)
-  add_catch2_test(NAME test_MIOBufferWriter COMMAND test_MIOBufferWriter)
+  add_catch2_test(NAME test_EventSystem)
+  add_catch2_test(NAME test_IOBuffer)
+  add_catch2_test(NAME test_MIOBufferWriter)
 
 endif()
 

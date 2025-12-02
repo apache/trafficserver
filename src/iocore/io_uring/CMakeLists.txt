@@ -30,7 +30,7 @@ if(BUILD_TESTING)
 
   target_include_directories(test_iouring PRIVATE ${CATCH_INCLUDE_DIR})
 
-  add_catch2_test(NAME test_iouring COMMAND $<TARGET_FILE:test_iouring>)
+  add_catch2_test(NAME test_iouring)
 endif()
 
 clang_tidy_check(inkuring)

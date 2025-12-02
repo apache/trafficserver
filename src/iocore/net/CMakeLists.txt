@@ -172,12 +172,13 @@ if(BUILD_TESTING)
   endif()
   set(LIBINKNET_UNIT_TEST_DIR "${CMAKE_SOURCE_DIR}/src/iocore/net/unit_tests")
   target_compile_definitions(test_net PRIVATE LIBINKNET_UNIT_TEST_DIR=${LIBINKNET_UNIT_TEST_DIR})
-  add_catch2_test(NAME test_net COMMAND test_net)
 
-  if(NOT APPLE)
+  if(APPLE)
     # Disable ORD violation caused by double definition inside a stub file libinknet_stub.cc
     # see remap_test_dlopen_leak_suppression.txt for more info.
-    set_tests_properties(test_net PROPERTIES ENVIRONMENT "ASAN_OPTIONS=detect_odr_violation=0")
+    add_catch2_test(NAME test_net PROPERTIES ENVIRONMENT "ASAN_OPTIONS=detect_odr_violation=0")
+  else()
+    add_catch2_test(NAME test_net)
   endif()
 endif()
 
