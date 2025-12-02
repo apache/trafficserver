@@ -231,7 +231,7 @@ Cache::open_done()
   }
 
   ReplaceablePtr<CacheHostTable>::ScopedReader hosttable(&this->hosttable);
-  if (hosttable->gen_host_rec.num_cachevols == 0) {
+  if (hosttable->getGenHostRecCacheVols() == 0) {
     ready = CacheInitState::FAILED;
   } else {
     ready = CacheInitState::INITIALIZED;
@@ -750,34 +750,27 @@ Cache::key_to_stripe(const CacheKey *key, std::string_view hostname, int volume_
   ReplaceablePtr<CacheHostTable>::ScopedReader hosttable(&this->hosttable);
 
   uint32_t               h               = (key->slice32(2) >> DIR_TAG_WIDTH) % STRIPE_HASH_TABLE_SIZE;
-  unsigned short        *hash_table      = hosttable->gen_host_rec.vol_hash_table;
-  const CacheHostRecord *host_rec        = &hosttable->gen_host_rec;
+  const CacheHostRecord *host_rec        = hosttable->getGenHostRec();
+  unsigned short        *hash_table      = host_rec->vol_hash_table;
   StripeSM              *selected_stripe = nullptr;
   bool                   remap_selection = false;
 
   if (volume_override > 0) {
-    for (int i = 0; i < host_rec->num_cachevols; i++) {
-      if (host_rec->cp[i] && host_rec->cp[i]->vol_number == volume_override) {
-        for (int j = 0; j < host_rec->num_vols; j++) {
-          if (host_rec->stripes[j] && host_rec->stripes[j]->cache_vol &&
-              host_rec->stripes[j]->cache_vol->vol_number == volume_override) {
-            selected_stripe = host_rec->stripes[j];
-            remap_selection = true;
-            break;
-          }
-        }
-        break;
-      }
-    }
+    CacheVol *target_vol = hosttable->getVolumeByNumber(volume_override);
 
-    if (!selected_stripe) {
-      Warning("Invalid volume override %d, volume configured but no stripes available. Falling back to hostname-based selection.",
-              volume_override);
+    if (target_vol && target_vol->stripes && target_vol->num_vols > 0) {
+      int volume_stripe = h % target_vol->num_vols;
+
+      selected_stripe = target_vol->stripes[volume_stripe];
+      remap_selection = true;
+      Dbg(dbg_ctl_cache_hosting, "Volume override %d: stripe %d (hash-based)", volume_override, volume_stripe);
+    } else {
+      Dbg(dbg_ctl_cache_hosting, "Volume override %d: not found, using default selection", volume_override);
     }
   }
 
   // Normal hostname-based volume selection (if no valid override)
-  if (!selected_stripe && hosttable->m_numEntries > 0 && !hostname.empty()) {
+  if (!selected_stripe && hosttable->getNumEntries() > 0 && !hostname.empty()) {
     CacheHostResult res;
 
     hosttable->Match(hostname, &res);

@@ -38,6 +38,9 @@ namespace
 DbgCtl dbg_ctl_cache_hosting{"cache_hosting"};
 DbgCtl dbg_ctl_matcher{"matcher"};
 
+// Use same constant as defined in traffic_cache_tool/CacheDefs.h
+constexpr static int MAX_VOLUME_IDX = 255;
+
 } // end anonymous namespace
 
 /*************************************************************
@@ -225,6 +228,22 @@ void
 CacheHostTable::Match(std::string_view rdata, CacheHostResult *result) const
 {
   hostMatch->Match(rdata, result);
+}
+
+CacheVol *
+CacheHostTable::getVolumeByNumber(int volume_num) const
+{
+  if (volume_num < 1 || volume_num > MAX_VOLUME_IDX) {
+    return nullptr;
+  }
+
+  for (int i = 0; i < gen_host_rec.num_cachevols; i++) {
+    if (gen_host_rec.cp[i] && gen_host_rec.cp[i]->vol_number == volume_num) {
+      return gen_host_rec.cp[i];
+    }
+  }
+
+  return nullptr;
 }
 
 int
@@ -614,6 +633,17 @@ ConfigVolumes::read_config_file()
   return;
 }
 
+bool
+ConfigVolumes::volume_number_exists(int vol_number) const
+{
+  for (ConfigVol *config_vol = cp_queue.head; config_vol; config_vol = config_vol->link.next) {
+    if (config_vol->number == vol_number) {
+      return true;
+    }
+  }
+  return false;
+}
+
 void
 ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
 {
@@ -698,7 +728,7 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
           break;
         }
 
-        if (volume_number < 1 || volume_number > 255) {
+        if (volume_number < 1 || volume_number > MAX_VOLUME_IDX) {
           err = "Bad Volume Number";
           break;
         }
@@ -742,8 +772,12 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
           in_percent = 0;
         }
       } else if (strcasecmp(tmp, "avg_obj_size") == 0) { // match avg_obj_size
-        tmp          += 13;
-        avg_obj_size  = static_cast<int>(ink_atoi64(tmp));
+        tmp += 13;
+        if (!ParseRules::is_digit(*tmp)) {
+          err = "Invalid avg_obj_size value (must start with a number, e.g., 64K)";
+          break;
+        }
+        avg_obj_size = static_cast<int>(ink_atoi64(tmp));
 
         if (avg_obj_size < 0) {
           err = "Invalid avg_obj_size value (must be >= 0)";
@@ -753,8 +787,12 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
           tmp++;
         }
       } else if (strcasecmp(tmp, "fragment_size") == 0) { // match fragment_size
-        tmp           += 14;
-        fragment_size  = static_cast<int>(ink_atoi64(tmp));
+        tmp += 14;
+        if (!ParseRules::is_digit(*tmp)) {
+          err = "Invalid fragment_size value (must start with a number, e.g., 1M)";
+          break;
+        }
+        fragment_size = static_cast<int>(ink_atoi64(tmp));
 
         if (fragment_size < 0) {
           err = "Invalid fragment_size value (must be >= 0)";
@@ -776,8 +814,12 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
           break;
         }
       } else if (strcasecmp(tmp, "ram_cache_size") == 0) { // match ram_cache_size
-        tmp            += 15;
-        ram_cache_size  = ink_atoi64(tmp);
+        tmp += 15;
+        if (!ParseRules::is_digit(*tmp)) {
+          err = "Invalid ram_cache_size value (must start with a number, e.g., 10G)";
+          break;
+        }
+        ram_cache_size = ink_atoi64(tmp);
 
         if (ram_cache_size < 0) {
           err = "Invalid ram_cache_size value (must be >= 0)";
@@ -788,8 +830,12 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
           tmp++;
         }
       } else if (strcasecmp(tmp, "ram_cache_cutoff") == 0) { // match ram_cache_cutoff
-        tmp              += 17;
-        ram_cache_cutoff  = ink_atoi64(tmp);
+        tmp += 17;
+        if (!ParseRules::is_digit(*tmp)) {
+          err = "Invalid ram_cache_cutoff value (must start with a number, e.g., 5M)";
+          break;
+        }
+        ram_cache_cutoff = ink_atoi64(tmp);
 
         if (ram_cache_cutoff < 0) {
           err = "Invalid ram_cache_cutoff value (must be >= 0)";
@@ -802,7 +848,7 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
 
       // ends here
       if (end < line_end) {
-        tmp++;
+        tmp = line_end;
       }
     }
 

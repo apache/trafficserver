@@ -229,24 +229,59 @@ public:
   void Match(std::string_view rdata, CacheHostResult *result) const;
   void Print() const;
 
+  // Simple volume lookup for @volume= directive support
+  CacheVol *getVolumeByNumber(int volume_num) const;
+
+  // Getters for Cache::key_to_stripe access
+  const CacheHostRecord *
+  getGenHostRec() const
+  {
+    return &gen_host_rec;
+  }
   int
-  getEntryCount() const
+  getNumEntries() const
   {
     return m_numEntries;
   }
+
+  int
+  getGenHostRecCacheVols() const
+  {
+    return gen_host_rec.num_cachevols;
+  }
+
   CacheHostMatcher *
   getHostMatcher() const
   {
     return hostMatch.get();
   }
 
-  static int config_callback(const char *, RecDataT, RecData, void *);
+  CacheType
+  getType() const
+  {
+    return type;
+  }
+
+  Cache *
+  getCache() const
+  {
+    return cache;
+  }
 
   void
   register_config_callback(ReplaceablePtr<CacheHostTable> *p)
   {
     RecRegisterConfigUpdateCb("proxy.config.cache.hosting_filename", CacheHostTable::config_callback, (void *)p);
   }
+
+private:
+  int
+  getEntryCount() const
+  {
+    return m_numEntries;
+  }
+
+  static int config_callback(const char *, RecDataT, RecData, void *);
 
   CacheType       type         = CacheType::HTTP;
   Cache          *cache        = nullptr;
@@ -276,8 +311,8 @@ struct CacheHostTableConfig : public Continuation {
     Cache    *cache = nullptr;
     {
       ReplaceablePtr<CacheHostTable>::ScopedReader hosttable(ppt);
-      type  = hosttable->type;
-      cache = hosttable->cache;
+      type  = hosttable->getType();
+      cache = hosttable->getCache();
     }
     ppt->reset(new CacheHostTable(cache, type));
     delete this;
@@ -310,6 +345,7 @@ struct ConfigVolumes {
   Queue<ConfigVol> cp_queue;
   void             read_config_file();
   void             BuildListFromString(char *config_file_path, char *file_buf);
+  bool             volume_number_exists(int vol_number) const;
 
   void
   clear_all()

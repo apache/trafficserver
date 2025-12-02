@@ -89,7 +89,7 @@ for a smaller, or larger, fragment size for a particular volume. This may be
 useful together with ``avg_obj_size`` as well, since a larger fragment size could
 reduce the number of directory entries needed for a large object.
 
-Note that this setting has a maximmum value of 4MB.
+Note that this setting has a maximum value of 4MB.
 
 Optional RAM cache size allocation
 -----------------------------------
