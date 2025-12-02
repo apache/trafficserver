@@ -4,6 +4,11 @@ records:
       enabled: 1
   hostdb:
     enabled: 1
+  http:
+    parent_proxy:
+      disable_connect_tunneling: 0
+  incoming_ip_to_bind: 0.0.0.0
+  outgoing_ip_to_bind: 0.0.0.0
   output:
     logfile:
       name: traffic.out
