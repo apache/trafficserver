@@ -441,4 +441,4 @@ private:
 
 using SSLNetVConnHandler = int (SSLNetVConnection::*)(int, void *);
 
-extern ClassAllocator<SSLNetVConnection> sslNetVCAllocator;
+extern ClassAllocator<SSLNetVConnection, false> sslNetVCAllocator;

@@ -115,7 +115,7 @@ public:
 };
 
 // Since the hashing values are all fixed size, we can simply use a classAllocator to avoid mallocs
-extern ClassAllocator<PriorityQueueEntry<RefCountCacheHashEntry *>> expiryQueueEntry;
+extern ClassAllocator<PriorityQueueEntry<RefCountCacheHashEntry *>, false> expiryQueueEntry;
 
 struct RefCountCacheLinkage {
   using key_type   = uint64_t const;

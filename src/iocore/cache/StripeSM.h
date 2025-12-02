@@ -250,10 +250,10 @@ private:
 
 // Global Data
 
-extern StripeSM                   **gstripes;
-extern std::atomic<int>             gnstripes;
-extern ClassAllocator<OpenDirEntry> openDirEntryAllocator;
-extern unsigned short              *vol_hash_table;
+extern StripeSM                          **gstripes;
+extern std::atomic<int>                    gnstripes;
+extern ClassAllocator<OpenDirEntry, false> openDirEntryAllocator;
+extern unsigned short                     *vol_hash_table;
 
 // inline Functions
 

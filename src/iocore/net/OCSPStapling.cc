@@ -49,7 +49,7 @@
 // bytes
 #define MAX_OCSP_GET_ENCODED_LENGTH 255 // maximum of 254 bytes + \0
 
-extern ClassAllocator<FetchSM> FetchSMAllocator;
+extern ClassAllocator<FetchSM, false> FetchSMAllocator;
 
 // clang-format off
 #pragma GCC diagnostic push

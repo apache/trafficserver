@@ -50,7 +50,7 @@ DbgCtl dbg_ctl_v_quic_net{"v_quic_net"};
 #define QUICConDebug(fmt, ...)  Dbg(dbg_ctl_quic_net, "[%s] " fmt, this->cids().data(), ##__VA_ARGS__)
 #define QUICConVDebug(fmt, ...) Dbg(dbg_ctl_v_quic_net, "[%s] " fmt, this->cids().data(), ##__VA_ARGS__)
 
-ClassAllocator<QUICNetVConnection> quicNetVCAllocator("quicNetVCAllocator");
+ClassAllocator<QUICNetVConnection, false> quicNetVCAllocator("quicNetVCAllocator");
 
 QUICNetVConnection::QUICNetVConnection()
 {

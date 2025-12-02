@@ -36,7 +36,7 @@
 #include "proxy/http/HttpSessionManager.h"
 #include "proxy/http/HttpSM.h"
 
-ClassAllocator<Http1ServerSession, true> httpServerSessionAllocator("httpServerSessionAllocator");
+ClassAllocator<Http1ServerSession> httpServerSessionAllocator("httpServerSessionAllocator");
 
 namespace
 {

@@ -79,4 +79,4 @@ private:
   IpEndpoint cached_local_addr;
 };
 
-extern ClassAllocator<Http2ClientSession, true> http2ClientSessionAllocator;
+extern ClassAllocator<Http2ClientSession> http2ClientSessionAllocator;
