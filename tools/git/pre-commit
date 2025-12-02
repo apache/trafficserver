@@ -85,7 +85,7 @@ deactivate
 
 # Now repeat the above for CMakeLists.txt files.
 source ${CMAKE_FORMAT_VENV}/bin/activate
-git diff-index --cached --diff-filter=ACMR --name-only HEAD | grep -E 'CMakeLists.txt|.cmake$' | grep -vE "lib/(Catch2|fastlz|ls-hpack|swoc|yamlcpp)" | while read file; do
+git diff-index --cached --diff-filter=ACMR --name-only HEAD | grep -E 'CMakeLists.txt|\.cmake$' | grep -vE "lib/(Catch2|fastlz|ls-hpack|swoc|yamlcpp)" | while read file; do
     cmake-format "$file" | diff -u "$file" - >>"$cmake_format_patch_file"
 done
 deactivate
@@ -137,7 +137,8 @@ else
 fi
 
 # Check for DOS carriage returns in staged files.
-DOS_CR=$(git diff-index --cached --diff-filter=ACMR --name-only HEAD | grep -vE "lib/(yamlcpp|Catch2|systemtap)" | grep -vE "\.test_input$" | xargs git diff --cached | grep -E '^\+.*\r$' || true)
+CR=$(printf '\r')
+DOS_CR=$(git diff-index --cached --diff-filter=ACMR --name-only HEAD | grep -vE "lib/(yamlcpp|Catch2|systemtap)" | grep -vE "\.test_input$" | xargs git diff --cached | grep "^+.*${CR}$" || true)
 if [ -n "$DOS_CR" ]; then
     echo "The commit is not accepted because it contains DOS carriage returns."
     echo "The easiest way to fix this is to run:"
@@ -149,6 +150,4 @@ else
     echo
 fi
 
-# Cleanup before exit
-rm -f "$clang_patch_file" "$yapf_patch_file"
 exit 0
