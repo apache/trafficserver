@@ -49,6 +49,7 @@
 #include "proxy/PoolableSession.h"
 #include "proxy/http/HttpSM.h"
 #include "proxy/http/HttpConfig.h"
+#include "proxy/http/OverridableConfigDefs.h"
 #include "proxy/PluginHttpConnect.h"
 #include "../iocore/net/P_Net.h"
 #include "../iocore/net/P_UnixNet.h"
@@ -7202,6 +7203,27 @@ _memberp_to_generic(MgmtFloat *ptr, MgmtConverter const *&conv) -> typename std:
   return ptr;
 }
 
+// Converter dispatch macros for the X-macro expansion.
+// clang-format off
+#define _CONF_CASE_GENERIC(KEY, MEMBER)                                         \
+  case TS_CONFIG_##KEY: ret = _memberp_to_generic(&overridableHttpConfig->MEMBER, conv); break;
+#define _CONF_CASE_NONE(KEY, MEMBER)                                            \
+  case TS_CONFIG_##KEY: break;
+#define _CONF_CASE_HttpDownServerCacheTimeConv(KEY, MEMBER)                     \
+  case TS_CONFIG_##KEY: conv = &HttpDownServerCacheTimeConv; ret = &overridableHttpConfig->MEMBER; break;
+#define _CONF_CASE_HttpStatusCodeList_Conv(KEY, MEMBER)                         \
+  case TS_CONFIG_##KEY: ret = &overridableHttpConfig->MEMBER; conv = &HttpStatusCodeList::Conv; break;
+#define _CONF_CASE_ConnectionTracker_MIN_SERVER_CONV(KEY, MEMBER)               \
+  case TS_CONFIG_##KEY: ret = &overridableHttpConfig->MEMBER; conv = &ConnectionTracker::MIN_SERVER_CONV; break;
+#define _CONF_CASE_ConnectionTracker_MAX_SERVER_CONV(KEY, MEMBER)               \
+  case TS_CONFIG_##KEY: ret = &overridableHttpConfig->MEMBER; conv = &ConnectionTracker::MAX_SERVER_CONV; break;
+#define _CONF_CASE_ConnectionTracker_SERVER_MATCH_CONV(KEY, MEMBER)             \
+  case TS_CONFIG_##KEY: ret = &overridableHttpConfig->MEMBER; conv = &ConnectionTracker::SERVER_MATCH_CONV; break;
+#define _CONF_CASE_HttpTransact_HOST_RES_CONV(KEY, MEMBER)                      \
+  case TS_CONFIG_##KEY: ret = &overridableHttpConfig->MEMBER; conv = &HttpTransact::HOST_RES_CONV; break;
+#define _CONF_CASE_DISPATCH(KEY, MEMBER, RECORD_NAME, DATA_TYPE, CONV) _CONF_CASE_##CONV(KEY, MEMBER)
+// clang-format on
+
 // Little helper function to find the struct member
 static void *
 _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overridableHttpConfig, MgmtConverter const *&conv)
@@ -7210,403 +7232,7 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
   conv      = nullptr;
 
   switch (conf) {
-  case TS_CONFIG_URL_REMAP_PRISTINE_HOST_HDR:
-    ret = _memberp_to_generic(&overridableHttpConfig->maintain_pristine_host_hdr, conv);
-    break;
-  case TS_CONFIG_HTTP_CHUNKING_ENABLED:
-    ret = _memberp_to_generic(&overridableHttpConfig->chunking_enabled, conv);
-    break;
-  case TS_CONFIG_HTTP_NEGATIVE_CACHING_ENABLED:
-    ret = _memberp_to_generic(&overridableHttpConfig->negative_caching_enabled, conv);
-    break;
-  case TS_CONFIG_HTTP_NEGATIVE_CACHING_LIFETIME:
-    ret = _memberp_to_generic(&overridableHttpConfig->negative_caching_lifetime, conv);
-    break;
-  case TS_CONFIG_HTTP_NEGATIVE_CACHING_LIST:
-    ret  = &overridableHttpConfig->negative_caching_list;
-    conv = &HttpStatusCodeList::Conv;
-    break;
-  case TS_CONFIG_HTTP_CACHE_WHEN_TO_REVALIDATE:
-    ret = _memberp_to_generic(&overridableHttpConfig->cache_when_to_revalidate, conv);
-    break;
-  case TS_CONFIG_HTTP_KEEP_ALIVE_ENABLED_IN:
-    ret = _memberp_to_generic(&overridableHttpConfig->keep_alive_enabled_in, conv);
-    break;
-  case TS_CONFIG_HTTP_KEEP_ALIVE_ENABLED_OUT:
-    ret = _memberp_to_generic(&overridableHttpConfig->keep_alive_enabled_out, conv);
-    break;
-  case TS_CONFIG_HTTP_KEEP_ALIVE_POST_OUT:
-    ret = _memberp_to_generic(&overridableHttpConfig->keep_alive_post_out, conv);
-    break;
-  case TS_CONFIG_HTTP_SERVER_SESSION_SHARING_MATCH:
-    ret = _memberp_to_generic(&overridableHttpConfig->server_session_sharing_match, conv);
-    break;
-  case TS_CONFIG_NET_SOCK_RECV_BUFFER_SIZE_OUT:
-    ret = _memberp_to_generic(&overridableHttpConfig->sock_recv_buffer_size_out, conv);
-    break;
-  case TS_CONFIG_NET_SOCK_SEND_BUFFER_SIZE_OUT:
-    ret = _memberp_to_generic(&overridableHttpConfig->sock_send_buffer_size_out, conv);
-    break;
-  case TS_CONFIG_NET_SOCK_OPTION_FLAG_OUT:
-    ret = _memberp_to_generic(&overridableHttpConfig->sock_option_flag_out, conv);
-    break;
-  case TS_CONFIG_HTTP_FORWARD_PROXY_AUTH_TO_PARENT:
-    ret = _memberp_to_generic(&overridableHttpConfig->fwd_proxy_auth_to_parent, conv);
-    break;
-  case TS_CONFIG_HTTP_ANONYMIZE_REMOVE_FROM:
-    ret = _memberp_to_generic(&overridableHttpConfig->anonymize_remove_from, conv);
-    break;
-  case TS_CONFIG_HTTP_ANONYMIZE_REMOVE_REFERER:
-    ret = _memberp_to_generic(&overridableHttpConfig->anonymize_remove_referer, conv);
-    break;
-  case TS_CONFIG_HTTP_ANONYMIZE_REMOVE_USER_AGENT:
-    ret = _memberp_to_generic(&overridableHttpConfig->anonymize_remove_user_agent, conv);
-    break;
-  case TS_CONFIG_HTTP_ANONYMIZE_REMOVE_COOKIE:
-    ret = _memberp_to_generic(&overridableHttpConfig->anonymize_remove_cookie, conv);
-    break;
-  case TS_CONFIG_HTTP_ANONYMIZE_REMOVE_CLIENT_IP:
-    ret = _memberp_to_generic(&overridableHttpConfig->anonymize_remove_client_ip, conv);
-    break;
-  case TS_CONFIG_HTTP_ANONYMIZE_INSERT_CLIENT_IP:
-    ret = _memberp_to_generic(&overridableHttpConfig->anonymize_insert_client_ip, conv);
-    break;
-  case TS_CONFIG_HTTP_RESPONSE_SERVER_ENABLED:
-    ret = _memberp_to_generic(&overridableHttpConfig->proxy_response_server_enabled, conv);
-    break;
-  case TS_CONFIG_HTTP_INSERT_SQUID_X_FORWARDED_FOR:
-    ret = _memberp_to_generic(&overridableHttpConfig->insert_squid_x_forwarded_for, conv);
-    break;
-  case TS_CONFIG_HTTP_INSERT_FORWARDED:
-    ret = _memberp_to_generic(&overridableHttpConfig->insert_forwarded, conv);
-    break;
-  case TS_CONFIG_HTTP_PROXY_PROTOCOL_OUT:
-    ret = _memberp_to_generic(&overridableHttpConfig->proxy_protocol_out, conv);
-    break;
-  case TS_CONFIG_HTTP_SEND_HTTP11_REQUESTS:
-    ret = _memberp_to_generic(&overridableHttpConfig->send_http11_requests, conv);
-    break;
-  case TS_CONFIG_HTTP_CACHE_HTTP:
-    ret = _memberp_to_generic(&overridableHttpConfig->cache_http, conv);
-    break;
-  case TS_CONFIG_HTTP_CACHE_IGNORE_CLIENT_NO_CACHE:
-    ret = _memberp_to_generic(&overridableHttpConfig->cache_ignore_client_no_cache, conv);
-    break;
-  case TS_CONFIG_HTTP_CACHE_IGNORE_CLIENT_CC_MAX_AGE:
-    ret = _memberp_to_generic(&overridableHttpConfig->cache_ignore_client_cc_max_age, conv);
-    break;
-  case TS_CONFIG_HTTP_CACHE_IMS_ON_CLIENT_NO_CACHE:
-    ret = _memberp_to_generic(&overridableHttpConfig->cache_ims_on_client_no_cache, conv);
-    break;
-  case TS_CONFIG_HTTP_CACHE_IGNORE_SERVER_NO_CACHE:
-    ret = _memberp_to_generic(&overridableHttpConfig->cache_ignore_server_no_cache, conv);
-    break;
-  case TS_CONFIG_HTTP_CACHE_CACHE_RESPONSES_TO_COOKIES:
-    ret = _memberp_to_generic(&overridableHttpConfig->cache_responses_to_cookies, conv);
-    break;
-  case TS_CONFIG_HTTP_CACHE_IGNORE_AUTHENTICATION:
-    ret = _memberp_to_generic(&overridableHttpConfig->cache_ignore_auth, conv);
-    break;
-  case TS_CONFIG_HTTP_CACHE_IGNORE_QUERY:
-    ret = _memberp_to_generic(&overridableHttpConfig->cache_ignore_query, conv);
-    break;
-  case TS_CONFIG_HTTP_CACHE_REQUIRED_HEADERS:
-    ret = _memberp_to_generic(&overridableHttpConfig->cache_required_headers, conv);
-    break;
-  case TS_CONFIG_HTTP_INSERT_REQUEST_VIA_STR:
-    ret = _memberp_to_generic(&overridableHttpConfig->insert_request_via_string, conv);
-    break;
-  case TS_CONFIG_HTTP_INSERT_RESPONSE_VIA_STR:
-    ret = _memberp_to_generic(&overridableHttpConfig->insert_response_via_string, conv);
-    break;
-  case TS_CONFIG_HTTP_CACHE_HEURISTIC_MIN_LIFETIME:
-    ret = _memberp_to_generic(&overridableHttpConfig->cache_heuristic_min_lifetime, conv);
-    break;
-  case TS_CONFIG_HTTP_CACHE_HEURISTIC_MAX_LIFETIME:
-    ret = _memberp_to_generic(&overridableHttpConfig->cache_heuristic_max_lifetime, conv);
-    break;
-  case TS_CONFIG_HTTP_CACHE_GUARANTEED_MIN_LIFETIME:
-    ret = _memberp_to_generic(&overridableHttpConfig->cache_guaranteed_min_lifetime, conv);
-    break;
-  case TS_CONFIG_HTTP_CACHE_GUARANTEED_MAX_LIFETIME:
-    ret = _memberp_to_generic(&overridableHttpConfig->cache_guaranteed_max_lifetime, conv);
-    break;
-  case TS_CONFIG_HTTP_CACHE_MAX_STALE_AGE:
-    ret = _memberp_to_generic(&overridableHttpConfig->cache_max_stale_age, conv);
-    break;
-  case TS_CONFIG_HTTP_KEEP_ALIVE_NO_ACTIVITY_TIMEOUT_IN:
-    ret = _memberp_to_generic(&overridableHttpConfig->keep_alive_no_activity_timeout_in, conv);
-    break;
-  case TS_CONFIG_HTTP_KEEP_ALIVE_NO_ACTIVITY_TIMEOUT_OUT:
-    ret = _memberp_to_generic(&overridableHttpConfig->keep_alive_no_activity_timeout_out, conv);
-    break;
-  case TS_CONFIG_HTTP_TRANSACTION_NO_ACTIVITY_TIMEOUT_IN:
-    ret = _memberp_to_generic(&overridableHttpConfig->transaction_no_activity_timeout_in, conv);
-    break;
-  case TS_CONFIG_HTTP_TRANSACTION_NO_ACTIVITY_TIMEOUT_OUT:
-    ret = _memberp_to_generic(&overridableHttpConfig->transaction_no_activity_timeout_out, conv);
-    break;
-  case TS_CONFIG_HTTP_TRANSACTION_ACTIVE_TIMEOUT_OUT:
-    ret = _memberp_to_generic(&overridableHttpConfig->transaction_active_timeout_out, conv);
-    break;
-  case TS_CONFIG_HTTP_CONNECT_ATTEMPTS_MAX_RETRIES:
-    ret = _memberp_to_generic(&overridableHttpConfig->connect_attempts_max_retries, conv);
-    break;
-  case TS_CONFIG_HTTP_CONNECT_ATTEMPTS_MAX_RETRIES_DOWN_SERVER:
-    ret = _memberp_to_generic(&overridableHttpConfig->connect_attempts_max_retries_down_server, conv);
-    break;
-  case TS_CONFIG_HTTP_CONNECT_DOWN_POLICY:
-    ret = _memberp_to_generic(&overridableHttpConfig->connect_down_policy, conv);
-    break;
-  case TS_CONFIG_HTTP_CONNECT_ATTEMPTS_RR_RETRIES:
-    ret = _memberp_to_generic(&overridableHttpConfig->connect_attempts_rr_retries, conv);
-    break;
-  case TS_CONFIG_HTTP_CONNECT_ATTEMPTS_TIMEOUT:
-    ret = _memberp_to_generic(&overridableHttpConfig->connect_attempts_timeout, conv);
-    break;
-  case TS_CONFIG_HTTP_CONNECT_ATTEMPTS_RETRY_BACKOFF_BASE:
-    ret = _memberp_to_generic(&overridableHttpConfig->connect_attempts_retry_backoff_base, conv);
-    break;
-  case TS_CONFIG_HTTP_DOWN_SERVER_CACHE_TIME:
-    conv = &HttpDownServerCacheTimeConv;
-    ret  = &overridableHttpConfig->down_server_timeout;
-    break;
-  case TS_CONFIG_HTTP_DOC_IN_CACHE_SKIP_DNS:
-    ret = _memberp_to_generic(&overridableHttpConfig->doc_in_cache_skip_dns, conv);
-    break;
-  case TS_CONFIG_HTTP_BACKGROUND_FILL_ACTIVE_TIMEOUT:
-    ret = _memberp_to_generic(&overridableHttpConfig->background_fill_active_timeout, conv);
-    break;
-  case TS_CONFIG_HTTP_RESPONSE_SERVER_STR:
-    ret = _memberp_to_generic(&overridableHttpConfig->proxy_response_server_string, conv);
-    break;
-  case TS_CONFIG_HTTP_CACHE_HEURISTIC_LM_FACTOR:
-    ret = _memberp_to_generic(&overridableHttpConfig->cache_heuristic_lm_factor, conv);
-    break;
-  case TS_CONFIG_HTTP_BACKGROUND_FILL_COMPLETED_THRESHOLD:
-    ret = _memberp_to_generic(&overridableHttpConfig->background_fill_threshold, conv);
-    break;
-  case TS_CONFIG_NET_SOCK_PACKET_MARK_OUT:
-    ret = _memberp_to_generic(&overridableHttpConfig->sock_packet_mark_out, conv);
-    break;
-  case TS_CONFIG_NET_SOCK_PACKET_TOS_OUT:
-    ret = _memberp_to_generic(&overridableHttpConfig->sock_packet_tos_out, conv);
-    break;
-  case TS_CONFIG_HTTP_INSERT_AGE_IN_RESPONSE:
-    ret = _memberp_to_generic(&overridableHttpConfig->insert_age_in_response, conv);
-    break;
-  case TS_CONFIG_HTTP_CHUNKING_SIZE:
-    ret = _memberp_to_generic(&overridableHttpConfig->http_chunking_size, conv);
-    break;
-  case TS_CONFIG_HTTP_DROP_CHUNKED_TRAILERS:
-    ret = _memberp_to_generic(&overridableHttpConfig->http_drop_chunked_trailers, conv);
-    break;
-  case TS_CONFIG_HTTP_STRICT_CHUNK_PARSING:
-    ret = _memberp_to_generic(&overridableHttpConfig->http_strict_chunk_parsing, conv);
-    break;
-  case TS_CONFIG_HTTP_FLOW_CONTROL_ENABLED:
-    ret = _memberp_to_generic(&overridableHttpConfig->flow_control_enabled, conv);
-    break;
-  case TS_CONFIG_HTTP_FLOW_CONTROL_LOW_WATER_MARK:
-    ret = _memberp_to_generic(&overridableHttpConfig->flow_low_water_mark, conv);
-    break;
-  case TS_CONFIG_HTTP_FLOW_CONTROL_HIGH_WATER_MARK:
-    ret = _memberp_to_generic(&overridableHttpConfig->flow_high_water_mark, conv);
-    break;
-  case TS_CONFIG_HTTP_CACHE_RANGE_LOOKUP:
-    ret = _memberp_to_generic(&overridableHttpConfig->cache_range_lookup, conv);
-    break;
-  case TS_CONFIG_HTTP_NORMALIZE_AE:
-    ret = _memberp_to_generic(&overridableHttpConfig->normalize_ae, conv);
-    break;
-  case TS_CONFIG_HTTP_DEFAULT_BUFFER_SIZE:
-    ret = _memberp_to_generic(&overridableHttpConfig->default_buffer_size_index, conv);
-    break;
-  case TS_CONFIG_HTTP_DEFAULT_BUFFER_WATER_MARK:
-    ret = _memberp_to_generic(&overridableHttpConfig->default_buffer_water_mark, conv);
-    break;
-  case TS_CONFIG_HTTP_REQUEST_HEADER_MAX_SIZE:
-    ret = _memberp_to_generic(&overridableHttpConfig->request_hdr_max_size, conv);
-    break;
-  case TS_CONFIG_HTTP_RESPONSE_HEADER_MAX_SIZE:
-    ret = _memberp_to_generic(&overridableHttpConfig->response_hdr_max_size, conv);
-    break;
-  case TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_ENABLED:
-    ret = _memberp_to_generic(&overridableHttpConfig->negative_revalidating_enabled, conv);
-    break;
-  case TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_LIFETIME:
-    ret = _memberp_to_generic(&overridableHttpConfig->negative_revalidating_lifetime, conv);
-    break;
-  case TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_LIST:
-    ret  = &overridableHttpConfig->negative_revalidating_list;
-    conv = &HttpStatusCodeList::Conv;
-    break;
-  case TS_CONFIG_SSL_HSTS_MAX_AGE:
-    ret = _memberp_to_generic(&overridableHttpConfig->proxy_response_hsts_max_age, conv);
-    break;
-  case TS_CONFIG_SSL_HSTS_INCLUDE_SUBDOMAINS:
-    ret = _memberp_to_generic(&overridableHttpConfig->proxy_response_hsts_include_subdomains, conv);
-    break;
-  case TS_CONFIG_HTTP_CACHE_OPEN_READ_RETRY_TIME:
-    ret = _memberp_to_generic(&overridableHttpConfig->cache_open_read_retry_time, conv);
-    break;
-  case TS_CONFIG_HTTP_CACHE_MAX_OPEN_READ_RETRIES:
-    ret = _memberp_to_generic(&overridableHttpConfig->max_cache_open_read_retries, conv);
-    break;
-  case TS_CONFIG_HTTP_CACHE_RANGE_WRITE:
-    ret = _memberp_to_generic(&overridableHttpConfig->cache_range_write, conv);
-    break;
-  case TS_CONFIG_HTTP_POST_CHECK_CONTENT_LENGTH_ENABLED:
-    ret = _memberp_to_generic(&overridableHttpConfig->post_check_content_length_enabled, conv);
-    break;
-  case TS_CONFIG_HTTP_CACHE_POST_METHOD:
-    ret = _memberp_to_generic(&overridableHttpConfig->cache_post_method, conv);
-    break;
-  case TS_CONFIG_HTTP_REQUEST_BUFFER_ENABLED:
-    ret = _memberp_to_generic(&overridableHttpConfig->request_buffer_enabled, conv);
-    break;
-  case TS_CONFIG_HTTP_GLOBAL_USER_AGENT_HEADER:
-    ret = _memberp_to_generic(&overridableHttpConfig->global_user_agent_header, conv);
-    break;
-  case TS_CONFIG_HTTP_AUTH_SERVER_SESSION_PRIVATE:
-    ret = _memberp_to_generic(&overridableHttpConfig->auth_server_session_private, conv);
-    break;
-  case TS_CONFIG_HTTP_SLOW_LOG_THRESHOLD:
-    ret = _memberp_to_generic(&overridableHttpConfig->slow_log_threshold, conv);
-    break;
-  case TS_CONFIG_HTTP_CACHE_GENERATION:
-    ret = _memberp_to_generic(&overridableHttpConfig->cache_generation_number, conv);
-    break;
-  case TS_CONFIG_BODY_FACTORY_TEMPLATE_BASE:
-    ret = _memberp_to_generic(&overridableHttpConfig->body_factory_template_base, conv);
-    break;
-  case TS_CONFIG_HTTP_CACHE_OPEN_WRITE_FAIL_ACTION:
-    ret = _memberp_to_generic(&overridableHttpConfig->cache_open_write_fail_action, conv);
-    break;
-  case TS_CONFIG_HTTP_NUMBER_OF_REDIRECTIONS:
-    ret = _memberp_to_generic(&overridableHttpConfig->number_of_redirections, conv);
-    break;
-  case TS_CONFIG_HTTP_CACHE_MAX_OPEN_WRITE_RETRIES:
-    ret = _memberp_to_generic(&overridableHttpConfig->max_cache_open_write_retries, conv);
-    break;
-  case TS_CONFIG_HTTP_CACHE_MAX_OPEN_WRITE_RETRY_TIMEOUT:
-    ret = _memberp_to_generic(&overridableHttpConfig->max_cache_open_write_retry_timeout, conv);
-    break;
-  case TS_CONFIG_HTTP_REDIRECT_USE_ORIG_CACHE_KEY:
-    ret = _memberp_to_generic(&overridableHttpConfig->redirect_use_orig_cache_key, conv);
-    break;
-  case TS_CONFIG_HTTP_ATTACH_SERVER_SESSION_TO_CLIENT:
-    ret = _memberp_to_generic(&overridableHttpConfig->attach_server_session_to_client, conv);
-    break;
-  case TS_CONFIG_HTTP_MAX_PROXY_CYCLES:
-    ret = _memberp_to_generic(&overridableHttpConfig->max_proxy_cycles, conv);
-    break;
-  case TS_CONFIG_WEBSOCKET_NO_ACTIVITY_TIMEOUT:
-    ret = _memberp_to_generic(&overridableHttpConfig->websocket_inactive_timeout, conv);
-    break;
-  case TS_CONFIG_WEBSOCKET_ACTIVE_TIMEOUT:
-    ret = _memberp_to_generic(&overridableHttpConfig->websocket_active_timeout, conv);
-    break;
-  case TS_CONFIG_HTTP_UNCACHEABLE_REQUESTS_BYPASS_PARENT:
-    ret = _memberp_to_generic(&overridableHttpConfig->uncacheable_requests_bypass_parent, conv);
-    break;
-  case TS_CONFIG_HTTP_PARENT_PROXY_TOTAL_CONNECT_ATTEMPTS:
-    ret = _memberp_to_generic(&overridableHttpConfig->parent_connect_attempts, conv);
-    break;
-  case TS_CONFIG_HTTP_TRANSACTION_ACTIVE_TIMEOUT_IN:
-    ret = _memberp_to_generic(&overridableHttpConfig->transaction_active_timeout_in, conv);
-    break;
-  case TS_CONFIG_SRV_ENABLED:
-    ret = _memberp_to_generic(&overridableHttpConfig->srv_enabled, conv);
-    break;
-  case TS_CONFIG_HTTP_FORWARD_CONNECT_METHOD:
-    ret = _memberp_to_generic(&overridableHttpConfig->forward_connect_method, conv);
-    break;
-  case TS_CONFIG_SSL_CLIENT_VERIFY_SERVER_POLICY:
-  case TS_CONFIG_SSL_CLIENT_VERIFY_SERVER_PROPERTIES:
-  case TS_CONFIG_SSL_CLIENT_SNI_POLICY:
-  case TS_CONFIG_SSL_CLIENT_CERT_FILENAME:
-  case TS_CONFIG_SSL_CERT_FILEPATH:
-  case TS_CONFIG_SSL_CLIENT_PRIVATE_KEY_FILENAME:
-  case TS_CONFIG_SSL_CLIENT_CA_CERT_FILENAME:
-  case TS_CONFIG_SSL_CLIENT_ALPN_PROTOCOLS:
-    // String, must be handled elsewhere
-    break;
-  case TS_CONFIG_PARENT_FAILURES_UPDATE_HOSTDB:
-    ret = _memberp_to_generic(&overridableHttpConfig->parent_failures_update_hostdb, conv);
-    break;
-  case TS_CONFIG_HTTP_CACHE_IGNORE_ACCEPT_MISMATCH:
-    ret = _memberp_to_generic(&overridableHttpConfig->ignore_accept_mismatch, conv);
-    break;
-  case TS_CONFIG_HTTP_CACHE_IGNORE_ACCEPT_LANGUAGE_MISMATCH:
-    ret = _memberp_to_generic(&overridableHttpConfig->ignore_accept_language_mismatch, conv);
-    break;
-  case TS_CONFIG_HTTP_CACHE_IGNORE_ACCEPT_ENCODING_MISMATCH:
-    ret = _memberp_to_generic(&overridableHttpConfig->ignore_accept_encoding_mismatch, conv);
-    break;
-  case TS_CONFIG_HTTP_CACHE_IGNORE_ACCEPT_CHARSET_MISMATCH:
-    ret = _memberp_to_generic(&overridableHttpConfig->ignore_accept_charset_mismatch, conv);
-    break;
-  case TS_CONFIG_HTTP_PARENT_PROXY_FAIL_THRESHOLD:
-    ret = _memberp_to_generic(&overridableHttpConfig->parent_fail_threshold, conv);
-    break;
-  case TS_CONFIG_HTTP_PARENT_PROXY_RETRY_TIME:
-    ret = _memberp_to_generic(&overridableHttpConfig->parent_retry_time, conv);
-    break;
-  case TS_CONFIG_HTTP_PER_PARENT_CONNECT_ATTEMPTS:
-    ret = _memberp_to_generic(&overridableHttpConfig->per_parent_connect_attempts, conv);
-    break;
-  case TS_CONFIG_HTTP_ALLOW_MULTI_RANGE:
-    ret = _memberp_to_generic(&overridableHttpConfig->allow_multi_range, conv);
-    break;
-  case TS_CONFIG_HTTP_ALLOW_HALF_OPEN:
-    ret = _memberp_to_generic(&overridableHttpConfig->allow_half_open, conv);
-    break;
-  case TS_CONFIG_HTTP_PER_SERVER_CONNECTION_MAX:
-    ret  = &overridableHttpConfig->connection_tracker_config.server_max;
-    conv = &ConnectionTracker::MAX_SERVER_CONV;
-    break;
-  case TS_CONFIG_HTTP_SERVER_MIN_KEEP_ALIVE_CONNS:
-    ret  = &overridableHttpConfig->connection_tracker_config.server_min;
-    conv = &ConnectionTracker::MIN_SERVER_CONV;
-    break;
-  case TS_CONFIG_HTTP_PER_SERVER_CONNECTION_MATCH:
-    ret  = &overridableHttpConfig->connection_tracker_config.server_match;
-    conv = &ConnectionTracker::SERVER_MATCH_CONV;
-    break;
-  case TS_CONFIG_HTTP_HOST_RESOLUTION_PREFERENCE:
-    ret  = &overridableHttpConfig->host_res_data;
-    conv = &HttpTransact::HOST_RES_CONV;
-    break;
-  case TS_CONFIG_HTTP_NO_DNS_JUST_FORWARD_TO_PARENT:
-    ret = _memberp_to_generic(&overridableHttpConfig->no_dns_forward_to_parent, conv);
-    break;
-  case TS_CONFIG_PLUGIN_VC_DEFAULT_BUFFER_INDEX:
-    ret = _memberp_to_generic(&overridableHttpConfig->plugin_vc_default_buffer_index, conv);
-    break;
-  case TS_CONFIG_PLUGIN_VC_DEFAULT_BUFFER_WATER_MARK:
-    ret = _memberp_to_generic(&overridableHttpConfig->plugin_vc_default_buffer_water_mark, conv);
-    break;
-  case TS_CONFIG_NET_SOCK_NOTSENT_LOWAT:
-    ret = _memberp_to_generic(&overridableHttpConfig->sock_packet_notsent_lowat, conv);
-    break;
-  case TS_CONFIG_BODY_FACTORY_RESPONSE_SUPPRESSION_MODE:
-    ret = _memberp_to_generic(&overridableHttpConfig->response_suppression_mode, conv);
-    break;
-  case TS_CONFIG_HTTP_ENABLE_PARENT_TIMEOUT_MARKDOWNS:
-    ret = _memberp_to_generic(&overridableHttpConfig->enable_parent_timeout_markdowns, conv);
-    break;
-  case TS_CONFIG_HTTP_DISABLE_PARENT_MARKDOWNS:
-    ret = _memberp_to_generic(&overridableHttpConfig->disable_parent_markdowns, conv);
-    break;
-  case TS_CONFIG_NET_DEFAULT_INACTIVITY_TIMEOUT:
-    ret = _memberp_to_generic(&overridableHttpConfig->default_inactivity_timeout, conv);
-    break;
-  case TS_CONFIG_HTTP_CACHE_CACHE_URLS_THAT_LOOK_DYNAMIC:
-    ret = _memberp_to_generic(&overridableHttpConfig->cache_urls_that_look_dynamic, conv);
-    break;
-
-  // This helps avoiding compiler warnings, yet detect unhandled enum members.
+    OVERRIDABLE_CONFIGS(_CONF_CASE_DISPATCH)
   case TS_CONFIG_NULL:
   case TS_CONFIG_LAST_ENTRY:
     break;
@@ -7614,6 +7240,16 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
 
   return ret;
 }
+
+#undef _CONF_CASE_GENERIC
+#undef _CONF_CASE_NONE
+#undef _CONF_CASE_HttpDownServerCacheTimeConv
+#undef _CONF_CASE_HttpStatusCodeList_Conv
+#undef _CONF_CASE_ConnectionTracker_MIN_SERVER_CONV
+#undef _CONF_CASE_ConnectionTracker_MAX_SERVER_CONV
+#undef _CONF_CASE_ConnectionTracker_SERVER_MATCH_CONV
+#undef _CONF_CASE_HttpTransact_HOST_RES_CONV
+#undef _CONF_CASE_DISPATCH
 
 // 2nd little helper function to find the struct member for getting.
 static const void *
