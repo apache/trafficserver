@@ -51,8 +51,8 @@ if(BUILD_TESTING)
   # macro allows us to add common command line arguments to all tests. For now,
   # we ensure declaration order execution via --order decl.
   macro(add_catch2_test)
-    cmake_parse_arguments(CATCH2_TEST "" "NAME" "COMMAND" ${ARGN})
-    catch_discover_tests(${CATCH2_TEST_NAME})
+    cmake_parse_arguments(CATCH2_TEST "" "NAME" "" ${ARGN})
+    catch_discover_tests(${CATCH2_TEST_NAME} ${ARGN})
   endmacro()
 endif()
 

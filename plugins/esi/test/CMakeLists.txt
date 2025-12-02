@@ -21,7 +21,7 @@ target_link_libraries(esitest PUBLIC esi-common esicore)
 macro(ADD_ESI_TEST NAME)
   add_executable(${NAME} print_funcs.cc ${ARGN})
   target_link_libraries(${NAME} PRIVATE esitest)
-  add_catch2_test(NAME ${NAME} COMMAND $<TARGET_FILE:${NAME}>)
+  add_catch2_test(NAME ${NAME})
 endmacro()
 
 add_esi_test(test_docnode_esi docnode_test.cc)

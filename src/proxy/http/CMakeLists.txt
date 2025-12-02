@@ -66,7 +66,7 @@ if(BUILD_TESTING)
                     unit_tests/test_PreWarm.cc ForwardedConfig.cc HttpBodyFactory.cc
   )
   target_link_libraries(test_proxy_http PRIVATE Catch2::Catch2WithMain hdrs tscore inkevent proxy logging)
-  add_catch2_test(NAME test_proxy_http COMMAND test_proxy_http)
+  add_catch2_test(NAME test_proxy_http)
 endif(BUILD_TESTING)
 
 clang_tidy_check(http)

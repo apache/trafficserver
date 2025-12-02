@@ -21,4 +21,4 @@ target_link_libraries(test_evaluate PRIVATE Catch2::Catch2WithMain)
 
 target_compile_definitions(test_evaluate PRIVATE PREFETCH_UNIT_TEST)
 
-add_catch2_test(NAME test_evaluate COMMAND test_evaluate)
+add_catch2_test(NAME test_evaluate)
