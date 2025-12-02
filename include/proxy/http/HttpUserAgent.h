@@ -178,7 +178,7 @@ HttpUserAgent::set_txn(ProxyTransaction *txn, TransactionMilestones &milestones)
     if (auto group{tbs->get_tls_group()}; !group.empty()) {
       m_conn_info.security_group = group;
     } else {
-      m_conn_info.security_group = "-";
+      m_conn_info.security_group = '-';
     }
 
     if (!m_conn_info.tcp_reused) {
