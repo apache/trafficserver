@@ -138,7 +138,7 @@ private:
   int           recursion = 0;
 };
 
-ClassAllocator<SocksProxy> socksProxyAllocator("socksProxyAllocator");
+ClassAllocator<SocksProxy, false> socksProxyAllocator("socksProxyAllocator");
 
 void
 SocksProxy::init(NetVConnection *netVC)

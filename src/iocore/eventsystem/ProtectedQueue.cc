@@ -42,7 +42,7 @@
 //
 // #define EAGER_SIGNALLING
 
-extern ClassAllocator<Event> eventAllocator;
+extern ClassAllocator<Event, false> eventAllocator;
 
 void
 ProtectedQueue::enqueue(Event *e)

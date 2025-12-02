@@ -32,7 +32,7 @@
 #include "iocore/eventsystem/EThread.h"
 #include "tscore/ink_stack_trace.h"
 
-ClassAllocator<Event> eventAllocator("eventAllocator", 256);
+ClassAllocator<Event, false> eventAllocator("eventAllocator", 256);
 
 void
 Event::schedule_imm(int acallback_event)

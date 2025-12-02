@@ -38,7 +38,7 @@
 
 using namespace swoc::literals;
 
-ClassAllocator<SocksEntry> socksAllocator("socksAllocator");
+ClassAllocator<SocksEntry, false> socksAllocator("socksAllocator");
 
 namespace
 {

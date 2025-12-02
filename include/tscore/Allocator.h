@@ -329,7 +329,7 @@ using Allocator = FreelistAllocator;
   Allocator for Class objects.
 
 */
-template <class C, bool Destruct_on_free_ = false, typename BaseAllocator = Allocator> class ClassAllocator : public BaseAllocator
+template <class C, bool Destruct_on_free_ = true, typename BaseAllocator = Allocator> class ClassAllocator : public BaseAllocator
 {
 public:
   using Value_type                   = C;
@@ -380,8 +380,8 @@ public:
   void
   destroy_if_enabled(C *ptr)
   {
-    if (Destruct_on_free) {
-      ptr->~C();
+    if constexpr (Destruct_on_free) {
+      std::destroy_at(ptr);
     }
   }
 
@@ -390,7 +390,7 @@ public:
   static_assert(sizeof(C) >= sizeof(void *), "Can not allocate instances of this class using ClassAllocator");
 };
 
-template <class C, bool Destruct_on_free = false> class TrackerClassAllocator : public ClassAllocator<C, Destruct_on_free>
+template <class C, bool Destruct_on_free = true> class TrackerClassAllocator : public ClassAllocator<C, Destruct_on_free>
 {
 public:
   TrackerClassAllocator(const char *name, unsigned int chunk_size = 128, unsigned int alignment = 16)
