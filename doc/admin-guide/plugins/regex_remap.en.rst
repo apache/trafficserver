@@ -139,10 +139,21 @@ remap.config. The following options are available ::
     @connect_timeout=<nnn>      - Connect timeouts (in ms)
     @dns_timeout=<nnn>          - Connect timeouts (in ms)
 
-    @overridable-config=<value> - see :ref:`ts-overridable-config`
-
     @caseless                   - Make regular expressions case insensitive
     @lowercase_substitutions    - Turn on (enable) lower case substitutions
+
+In addition to the options listed above, you can override any configuration
+variable from ``records.yaml`` on a per-rule basis. When a regex rule matches,
+any overridable configuration specified in that rule will be applied to the
+transaction. The syntax is ``@<config-name>=<value>``, for example ::
+
+    @proxy.config.url_remap.pristine_host_hdr=0
+    @proxy.config.http.cache.http=1
+
+These configuration overrides support integer, floating point, and string values,
+and will be automatically converted to the appropriate type. See
+:ref:`ts-overridable-config` for the complete list of configuration variables
+that can be overridden.
 
 
 This can be useful to force a particular response for some URLs, e.g. ::
@@ -155,3 +166,7 @@ Or, to force a 302 redirect ::
 
 Setting the status to 301 or 302 will force the new URL to be used
 as a redirect (Location:).
+
+You can also combine multiple options, including overridable configs ::
+
+    ^/(.*)?$            https://example.com/sitemaps/$1 @proxy.config.url_remap.pristine_host_hdr=0 @status=301
