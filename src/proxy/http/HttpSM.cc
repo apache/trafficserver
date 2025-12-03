@@ -250,11 +250,8 @@ HttpSM::get_server_connect_timeout()
 
 HttpSM::HttpSM() : Continuation(nullptr), vc_table(this) {}
 
-void
-HttpSM::cleanup()
+HttpSM::~HttpSM()
 {
-  t_state.destroy();
-  api_hooks.clear();
   http_parser_clear(&http_parser);
 
   HttpConfig::release(t_state.http_config_param);
@@ -279,7 +276,6 @@ HttpSM::cleanup()
 void
 HttpSM::destroy()
 {
-  cleanup();
   THREAD_FREE(this, httpSMAllocator, this_thread());
 }
 

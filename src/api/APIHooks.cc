@@ -30,7 +30,7 @@
 #include "iocore/eventsystem/ProxyAllocator.h"
 #include "iocore/eventsystem/Thread.h"
 
-static ClassAllocator<APIHook> apiHookAllocator("apiHookAllocator");
+static ClassAllocator<APIHook, false> apiHookAllocator("apiHookAllocator");
 
 APIHook *
 APIHooks::head() const

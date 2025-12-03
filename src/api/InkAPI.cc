@@ -129,7 +129,7 @@ static ts::Metrics &global_api_metrics = ts::Metrics::instance();
 ConfigUpdateCbTable *global_config_cbs = nullptr;
 
 // Fetchpages SM
-extern ClassAllocator<FetchSM> FetchSMAllocator;
+extern ClassAllocator<FetchSM, false> FetchSMAllocator;
 
 /* From proxy/http/HttpProxyServerMain.c: */
 extern bool ssl_register_protocol(const char *, Continuation *);
@@ -139,13 +139,12 @@ extern SSLSessionCache *session_cache; // declared extern in P_SSLConfig.h
 // External converters.
 extern MgmtConverter const &HttpDownServerCacheTimeConv;
 
-extern HttpSessionAccept                 *plugin_http_accept;
-extern HttpSessionAccept                 *plugin_http_transparent_accept;
-extern thread_local PluginThreadContext  *pluginThreadContext;
-static ClassAllocator<APIHook>            apiHookAllocator("apiHookAllocator");
-extern ClassAllocator<INKContInternal>    INKContAllocator;
-extern ClassAllocator<INKVConnInternal>   INKVConnAllocator;
-static ClassAllocator<MIMEFieldSDKHandle> mHandleAllocator("MIMEFieldSDKHandle");
+extern HttpSessionAccept                        *plugin_http_accept;
+extern HttpSessionAccept                        *plugin_http_transparent_accept;
+extern thread_local PluginThreadContext         *pluginThreadContext;
+extern ClassAllocator<INKContInternal, false>    INKContAllocator;
+extern ClassAllocator<INKVConnInternal, false>   INKVConnAllocator;
+static ClassAllocator<MIMEFieldSDKHandle, false> mHandleAllocator("MIMEFieldSDKHandle");
 
 // forward declarations
 TSReturnCode sdk_sanity_check_null_ptr(void const *ptr);

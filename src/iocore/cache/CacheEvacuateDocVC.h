@@ -48,7 +48,7 @@ public:
   int evacuateReadHead(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */);
 };
 
-extern ClassAllocator<CacheEvacuateDocVC> cacheEvacuateDocVConnectionAllocator;
+extern ClassAllocator<CacheEvacuateDocVC, false> cacheEvacuateDocVConnectionAllocator;
 
 inline CacheEvacuateDocVC *
 new_CacheEvacuateDocVC(Continuation *cont)
