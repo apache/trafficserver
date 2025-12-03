@@ -170,7 +170,6 @@ NextHopRoundRobin::findNextHop(TSHttpTxn txnp, void * /* ih ATS_UNUSED */, time_
       result->last_parent = cur_hst_index;
       result->last_group  = cur_grp_index;
       result->retry       = parentRetry;
-      setHostHeader(txnp, result->hostname);
       ink_assert(result->hostname != nullptr);
       ink_assert(result->port != 0);
       NH_Dbg(NH_DBG_CTL, "[%" PRIu64 "] Chosen parent = %s.%d", sm_id, result->hostname, result->port);
