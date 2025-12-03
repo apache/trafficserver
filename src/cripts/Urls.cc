@@ -196,7 +196,7 @@ Url::Path::Reset()
   Component::Reset();
 
   _segments.clear();
-  _storage  = "";
+  _storage.clear();
   _size     = 0;
   _modified = false;
 }
@@ -401,7 +401,7 @@ Url::Query::Reset()
 
   _ordered.clear();
   _hashed.clear();
-  _storage  = "";
+  _storage.clear();
   _size     = 0;
   _modified = false;
 }

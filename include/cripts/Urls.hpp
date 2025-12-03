@@ -652,9 +652,14 @@ namespace Client
     void operator=(const self_type &) = delete;
 
     // We must not release the bufp etc. since it comes from the RRI structure
+    // However, we still need to clear cached data in query and path components
     void
     Reset() override
     {
+      query.Reset();
+      path.Reset();
+      _initialized = false;
+      _modified    = false;
     }
 
     static self_type &_get(cripts::Context *context);
