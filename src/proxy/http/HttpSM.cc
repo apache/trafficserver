@@ -1823,6 +1823,9 @@ HttpSM::state_http_server_open(int event, void *data)
       _netvc->do_io_write(this, 1, _netvc_reader);
       _netvc->set_inactivity_timeout(this->get_server_connect_timeout());
 
+      // Pre-emptively set a server connect failure that will be cleared once a WRITE_READY is received from origin or
+      // bytes are received back
+      t_state.set_connect_fail(EIO);
     } else { // in the case of an intercept plugin don't to the connect timeout change
       SMDbg(dbg_ctl_http_connect, "not setting handler for connection handshake");
       this->create_server_txn(this->create_server_session(*_netvc, _netvc_read_buffer, _netvc_reader));
@@ -1841,6 +1844,7 @@ HttpSM::state_http_server_open(int event, void *data)
   case CONNECT_EVENT_TXN:
     SMDbg(dbg_ctl_http, "Connection handshake complete via CONNECT_EVENT_TXN");
     if (this->create_server_txn(static_cast<PoolableSession *>(data))) {
+      t_state.current.server->clear_connect_fail();
       handle_http_server_open();
     } else { // Failed to create transaction.  Maybe too many active transactions already
       // Try again (probably need a bounding counter here)
@@ -8045,9 +8049,6 @@ HttpSM::set_next_state()
   }
 
   case HttpTransact::StateMachineAction_t::ORIGIN_SERVER_OPEN: {
-    // Pre-emptively set a server connect failure that will be cleared once a WRITE_READY is received from origin or
-    // bytes are received back
-    t_state.set_connect_fail(EIO);
     HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_http_server_open);
 
     // We need to close the previous attempt
