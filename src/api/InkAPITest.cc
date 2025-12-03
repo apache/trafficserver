@@ -7336,13 +7336,10 @@ parent_proxy_handler(TSCont contp, TSEvent event, void *edata)
         break;
       }
 
-      if (!ptest->parent_routing_enabled()) {
-        rprintf(ptest->regtest, "waiting for configuration\n");
-        TSContScheduleOnPool(contp, 100, TS_THREAD_POOL_NET);
-        break;
-      }
+      // This test uses TSHttpTxnParentProxySet() to dynamically set the parent proxy via
+      // the API, which works regardless of parent.config configuration.
 
-      // Now that the configuration is applied, it is safe to create a request.
+      // Now it is safe to create a request.
       // HTTP_REQUEST_FORMAT11 is a hostname with a no-cache response, so
       // we will need to set the parent to the synserver to get a
       // response.
