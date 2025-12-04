@@ -76,12 +76,13 @@ class TestIssue12611:
         tr.StillRunningAfter = self._ts
 
         # Check the diags.log for our diagnostic messages
-        # On buggy master: OS_DNS should be called only once
+        # After fix: OS_DNS should be called multiple times on retry
         self._ts.Disk.diags_log.Content += Testers.ContainsExpression("OS_DNS hook called, count=1", "First OS_DNS call logged")
 
-        # This message indicates the BUG exists - OS_DNS was only called once
+        # This message indicates the fix works - OS_DNS was called multiple times
+        # Test will FAIL on master (bug exists), PASS after fix is applied
         self._ts.Disk.diags_log.Content += Testers.ContainsExpression(
-            "BUG CONFIRMED", "Bug confirmation message in logs (expected on master)")
+            "SUCCESS: OS_DNS hook was called", "Plugin was able to retry with different address")
 
 
 test = TestIssue12611()
