@@ -7203,28 +7203,105 @@ _memberp_to_generic(MgmtFloat *ptr, MgmtConverter const *&conv) -> typename std:
   return ptr;
 }
 
-// Converter dispatch macros for the X-macro expansion.
+/**
+ * X-Macro Dispatch for _conf_to_memberp()
+ *
+ * Don't be intimidated by the macros below - they're simpler than they look!
+ * The end result is just a switch statement with one case per config, like:
+ *
+ *   switch (conf) {
+ *     case TS_CONFIG_HTTP_CHUNKING_ENABLED:
+ *       ret = _memberp_to_generic(&overridableHttpConfig->chunking_enabled, conv);
+ *       break;
+ *     case TS_CONFIG_HTTP_DOWN_SERVER_CACHE_TIME:
+ *       conv = &HttpDownServerCacheTimeConv;
+ *       ret = &overridableHttpConfig->down_server_timeout;
+ *       break;
+ *     // ... ~130 more cases, one per overridable config ...
+ *   }
+ *
+ * The macros just auto-generate these cases from OverridableConfigDefs.h so we
+ * don't have to maintain them by hand. Here's how an entry becomes a case:
+ *
+ * Example 1 - Standard config (GENERIC converter):
+ *   Entry in OverridableConfigDefs.h:
+ *     X(HTTP_CHUNKING_ENABLED, chunking_enabled, "...", INT, GENERIC)
+ *   Generates this case:
+ *     case TS_CONFIG_HTTP_CHUNKING_ENABLED:
+ *       ret = _memberp_to_generic(&overridableHttpConfig->chunking_enabled, conv);
+ *       break;
+ *
+ * Example 2 - Custom converter:
+ *   Entry in OverridableConfigDefs.h:
+ *     X(HTTP_DOWN_SERVER_CACHE_TIME, down_server_timeout, "...", INT, HttpDownServerCacheTimeConv)
+ *   Generates this case:
+ *     case TS_CONFIG_HTTP_DOWN_SERVER_CACHE_TIME:
+ *       conv = &HttpDownServerCacheTimeConv;
+ *       ret = &overridableHttpConfig->down_server_timeout;
+ *       break;
+ *
+ * The magic is in _CONF_CASE_DISPATCH which uses the CONV parameter (5th field)
+ * to select which _CONF_CASE_* macro generates the case. Token pasting (##)
+ * turns "GENERIC" into _CONF_CASE_GENERIC, "NONE" into _CONF_CASE_NONE, etc.
+ *
+ * Built-in converter types:
+ *   - GENERIC: Auto-selects converter based on member type (most common).
+ *   - NONE: No-op for configs handled elsewhere (e.g., SSL strings).
+ *   - Custom: Any other name maps to a _CONF_CASE_<name> macro defined below.
+ *
+ * To add a new custom converter:
+ *   1. Define your MgmtConverter (e.g., MyConv with load/store lambdas).
+ *   2. Add a macro here following this pattern:
+ *        #define _CONF_CASE_MyConv(KEY, MEMBER) \
+ *          case TS_CONFIG_##KEY: conv = &MyConv; \
+ *            ret = &overridableHttpConfig->MEMBER; break;
+ *   3. Add #undef _CONF_CASE_MyConv after _conf_to_memberp().
+ *   4. Use "MyConv" as the CONV parameter in OverridableConfigDefs.h.
+ */
+
 // clang-format off
+
+// GENERIC: Use _memberp_to_generic() which selects converter based on member type.
 #define _CONF_CASE_GENERIC(KEY, MEMBER)                                         \
   case TS_CONFIG_##KEY: ret = _memberp_to_generic(&overridableHttpConfig->MEMBER, conv); break;
+
+// NONE: No-op case for configs handled specially elsewhere.
 #define _CONF_CASE_NONE(KEY, MEMBER)                                            \
   case TS_CONFIG_##KEY: break;
+
+// Custom converter: Converts ts_seconds to/from integer seconds.
 #define _CONF_CASE_HttpDownServerCacheTimeConv(KEY, MEMBER)                     \
   case TS_CONFIG_##KEY: conv = &HttpDownServerCacheTimeConv; ret = &overridableHttpConfig->MEMBER; break;
+
+// Custom converter: Parses/formats HTTP status code lists (e.g., "404 500").
 #define _CONF_CASE_HttpStatusCodeList_Conv(KEY, MEMBER)                         \
   case TS_CONFIG_##KEY: ret = &overridableHttpConfig->MEMBER; conv = &HttpStatusCodeList::Conv; break;
+
+// Custom converters for ConnectionTracker config variables.
 #define _CONF_CASE_ConnectionTracker_MIN_SERVER_CONV(KEY, MEMBER)               \
   case TS_CONFIG_##KEY: ret = &overridableHttpConfig->MEMBER; conv = &ConnectionTracker::MIN_SERVER_CONV; break;
 #define _CONF_CASE_ConnectionTracker_MAX_SERVER_CONV(KEY, MEMBER)               \
   case TS_CONFIG_##KEY: ret = &overridableHttpConfig->MEMBER; conv = &ConnectionTracker::MAX_SERVER_CONV; break;
 #define _CONF_CASE_ConnectionTracker_SERVER_MATCH_CONV(KEY, MEMBER)             \
   case TS_CONFIG_##KEY: ret = &overridableHttpConfig->MEMBER; conv = &ConnectionTracker::SERVER_MATCH_CONV; break;
+
+// Custom converter: Parses/formats host resolution preference strings.
 #define _CONF_CASE_HttpTransact_HOST_RES_CONV(KEY, MEMBER)                      \
   case TS_CONFIG_##KEY: ret = &overridableHttpConfig->MEMBER; conv = &HttpTransact::HOST_RES_CONV; break;
+
+// Dispatcher: Routes to _CONF_CASE_<CONV> based on the CONV parameter.
 #define _CONF_CASE_DISPATCH(KEY, MEMBER, RECORD_NAME, DATA_TYPE, CONV) _CONF_CASE_##CONV(KEY, MEMBER)
+
 // clang-format on
 
-// Little helper function to find the struct member
+/**
+ * Map a TSOverridableConfigKey to its corresponding struct member pointer.
+ *
+ * @param[in] conf The config key to look up.
+ * @param[in] overridableHttpConfig Pointer to the config struct.
+ * @param[out] conv set to the appropriate MgmtConverter.
+ * @return Pointer to the struct member, or nullptr if not found/applicable.
+ */
 static void *
 _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overridableHttpConfig, MgmtConverter const *&conv)
 {

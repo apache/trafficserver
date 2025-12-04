@@ -21,42 +21,81 @@
   limitations under the License.
 */
 
-/*
+/**
+  @section overview Overview
+
   This file provides a single source of truth for all overridable configuration
-  variables. By defining configs here once, we can auto-generate:
-  - The Lua plugin enum and variable array (ts_lua_http_config.cc)
-  - The overridable_txn_vars.cc string-to-enum mapping
+  variables using the X-macro pattern. By defining configs here once, we
+  auto-generate code in multiple locations:
+
+  - Lua plugin enum and variable array (ts_lua_http_config.cc)
+  - String-to-enum mapping (overridable_txn_vars.cc)
   - The _conf_to_memberp switch statement (InkAPI.cc)
-  - The SDK_Overridable_Configs test array (InkAPITest.cc)
+  - SDK_Overridable_Configs test array (InkAPITest.cc)
+
+  @section xmacro_format X-Macro Format
+
+  Each entry in OVERRIDABLE_CONFIGS has 5 parameters:
+
+    X(CONFIG_KEY, MEMBER, RECORD_NAME, DATA_TYPE, CONV)
+
+  - CONFIG_KEY: Enum suffix, becomes TS_CONFIG_<CONFIG_KEY> in the public API.
+  - MEMBER: The struct member name in OverridableHttpConfigParams.
+  - RECORD_NAME: The proxy.config.* record name string (or a variable for
+    dynamic names like ConnectionTracker::CONFIG_SERVER_VAR_MIN).
+  - DATA_TYPE: One of INT, FLOAT, or STRING. Used for type validation.
+  - CONV: Converter specification (see below).
+
+  @section converters Converter Types (CONV parameter)
+
+  The CONV parameter controls how values are converted between the API and
+  internal storage. There are three categories:
+
+  1. GENERIC - Use _memberp_to_generic() which auto-selects the appropriate
+     converter based on the member's C++ type (MgmtByte, MgmtInt, MgmtFloat,
+     std::string_view, etc.). This is the most common case.
+
+  2. NONE - No conversion; the config is handled specially elsewhere (e.g.,
+     SSL string configs are processed directly in TSHttpTxnConfigStringSet).
+     The MEMBER field is ignored but must be provided.
+
+  3. Custom converter name - For configs needing special conversion logic.
+     The name must match a _CONF_CASE_<name> macro defined in InkAPI.cc.
+     Examples: HttpDownServerCacheTimeConv, HttpStatusCodeList_Conv,
+     ConnectionTracker_MIN_SERVER_CONV, HttpTransact_HOST_RES_CONV.
+     See the X-Macro Dispatch doxygen documentation in InkAPI.cc for more
+     details.
 
   @section adding_new_config Adding a New Overridable Config
 
-  To make a configuration variable overridable, follow these steps:
+  To make a configuration variable overridable:
 
-  1. Add the config member to OverridableHttpConfigParams in HttpConfig.h
-     (move it from HttpConfigParams if it already exists there as a
-     non-overridable config).
+  1. Add the config member to OverridableHttpConfigParams in HttpConfig.h.
+     (Move it from HttpConfigParams if it already exists as non-overridable.)
 
-  2. Add an entry to the OVERRIDABLE_CONFIGS macro below with:
-     - CONFIG_KEY: The enum suffix (becomes TS_CONFIG_<CONFIG_KEY>).
-     - MEMBER: The struct member name in OverridableHttpConfigParams.
-     - RECORD_NAME: The proxy.config.* record name string.
-     - DATA_TYPE: INT, FLOAT, or STRING.
-     - CONV: GENERIC (for standard types), a custom converter name, or NONE.
+  2. Add an entry to OVERRIDABLE_CONFIGS below. Place it at the END of the
+     list to match the enum order requirement.
 
-  Note on CONV=NONE: Some SSL string configs use NONE because they bypass
-  _conf_to_memberp and are handled directly in TSHttpTxnConfigStringSet().
-  For NONE entries, the MEMBER field is ignored but must still be provided
-  to satisfy the macro format.
+  3. Add the enum value to TSOverridableConfigKey in apidefs.h.in.
+     It MUST be added at the end, just before TS_CONFIG_LAST_ENTRY, to
+     preserve ABI compatibility.
 
-  3. Add the enum value to TSOverridableConfigKey in apidefs.h.in
-     (must be added at the end just before TS_CONFIG_LAST_ENTRY to preserve
-     ABI).
-     IMPORTANT: The X-macro order MUST match the enum order.
-     overridable_txn_vars.cc contains compile-time validation that the order
-     matches.
+     IMPORTANT: The X-macro order MUST match the enum order exactly.
+     overridable_txn_vars.cc has compile-time validation that will fail
+     if they don't match.
 
-  4. Update documentation in doc/developer-guide/api/
+  4. Update documentation in doc/developer-guide/api/.
+
+  @section adding_custom_converter Adding a Custom Converter
+
+  See the X-Macro Dispatch doxygen documentation in InkAPI.cc for more details.
+
+  @section none_configs Note on CONV=NONE
+
+  Some SSL string configs use NONE because they bypass _conf_to_memberp()
+  entirely and are handled directly in TSHttpTxnConfigStringSet(). For these
+  entries, the MEMBER field is ignored but must still be provided to satisfy
+  the macro format (typically using a placeholder member name).
 */
 
 #pragma once
