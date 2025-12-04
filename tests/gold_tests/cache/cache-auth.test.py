@@ -23,3 +23,7 @@ Test authorization-related caching behaviors
 
 # Verify proxy.config.http.cache.ignore_authentication behavior.
 Test.ATSReplayTest(replay_file="replay/ignore_authentication.replay.yaml")
+
+# Verify that s-maxage allows serving cached responses to requests with
+# Authorization headers per RFC 7234 section 3.2
+Test.ATSReplayTest(replay_file="replay/auth-s-maxage.replay.yaml")
