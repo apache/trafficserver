@@ -26,6 +26,7 @@ ${RUNPIPENV} run env autest \
   --build-root ${CMAKE_BINARY_DIR} \
   ${CURL_UDS_FLAG} ${AUTEST_OPTIONS} \
   "$@"
+autest_exit=$?
 
 # Restore tests back to source tree and remove temp dir
 if [ -n "${CURL_UDS_FLAG}" ]; then
@@ -39,3 +40,5 @@ if [ -n "${CURL_UDS_FLAG}" ]; then
     rm -rf "${CMAKE_SKIP_GOLD_DIR}"
   fi
 fi
+
+exit $autest_exit
