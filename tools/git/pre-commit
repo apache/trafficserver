@@ -67,7 +67,7 @@ REPO_ROOT=$(cd $(dirname $0)/../.. && git rev-parse --show-toplevel)
 YAPF_CONFIG=${REPO_ROOT}/.style.yapf
 git diff-index --cached --diff-filter=ACMR --name-only HEAD | grep -vE "lib/(Catch2|fastlz|ls-hpack|swoc|yamlcpp)" |  while read file; do
     case "$file" in
-    *.cc | *.c | *.h | *.h.in)
+    *.cc | *.c | *.h | *.h.in | *.cript)
         ${FORMAT} "$file" | diff -u "$file" - >>"$clang_patch_file"
         ;;
     # Keep this list of Python extensions the same with the list of
