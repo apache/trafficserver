@@ -3778,27 +3778,52 @@ MIMEHdrImpl::recompute_cooked_stuff(MIMEField *changing_field_or_null)
             if (mask & (MIME_COOKED_MASK_CC_MAX_AGE | MIME_COOKED_MASK_CC_S_MAXAGE | MIME_COOKED_MASK_CC_MAX_STALE |
                         MIME_COOKED_MASK_CC_MIN_FRESH)) {
               int value;
+              // Per RFC 7230 Section 3.2.3, there should be no whitespace around '='.
+              const char *value_start = c;
 
-              if (mime_parse_integer(c, e, &value)) {
+              // Check if the next character is '=' (no space allowed before '=').
+              if (c < e && *c == '=') {
+                ++c; // Move past the '='
+
+                // Again: no whitespace after the '=' either. Keep in mind that values can be negative.
+                bool valid_syntax = (c < e) && (is_digit(*c) || *c == '-');
+
+                if (valid_syntax) {
+                  // Reset to value_start to let mime_parse_integer do its work.
+                  c = value_start;
+                  if (mime_parse_integer(c, e, &value)) {
 #if TRACK_COOKING
-                Dbg(dbg_ctl_http, "                        set integer value %d", value);
+                    Dbg(dbg_ctl_http, "                        set integer value %d", value);
 #endif
-                if (token_wks == MIME_VALUE_MAX_AGE.c_str()) {
-                  m_cooked_stuff.m_cache_control.m_secs_max_age = value;
-                } else if (token_wks == MIME_VALUE_MIN_FRESH.c_str()) {
-                  m_cooked_stuff.m_cache_control.m_secs_min_fresh = value;
-                } else if (token_wks == MIME_VALUE_MAX_STALE.c_str()) {
-                  m_cooked_stuff.m_cache_control.m_secs_max_stale = value;
-                } else if (token_wks == MIME_VALUE_S_MAXAGE.c_str()) {
-                  m_cooked_stuff.m_cache_control.m_secs_s_maxage = value;
+                    if (token_wks == MIME_VALUE_MAX_AGE.c_str()) {
+                      m_cooked_stuff.m_cache_control.m_secs_max_age = value;
+                    } else if (token_wks == MIME_VALUE_MIN_FRESH.c_str()) {
+                      m_cooked_stuff.m_cache_control.m_secs_min_fresh = value;
+                    } else if (token_wks == MIME_VALUE_MAX_STALE.c_str()) {
+                      m_cooked_stuff.m_cache_control.m_secs_max_stale = value;
+                    } else if (token_wks == MIME_VALUE_S_MAXAGE.c_str()) {
+                      m_cooked_stuff.m_cache_control.m_secs_s_maxage = value;
+                    }
+                  } else {
+#if TRACK_COOKING
+                    Dbg(dbg_ctl_http, "                        set integer value %d", INT_MAX);
+#endif
+                    if (token_wks == MIME_VALUE_MAX_STALE.c_str()) {
+                      m_cooked_stuff.m_cache_control.m_secs_max_stale = INT_MAX;
+                    }
+                  }
+                } else {
+                  // Syntax is malformed (e.g., whitespace after '=', quotes around value, or no value).
+                  // Treat this as unrecognized and clear the mask.
+                  csv_value_mask                         = 0;
+                  m_cooked_stuff.m_cache_control.m_mask &= ~mask;
                 }
               } else {
-#if TRACK_COOKING
-                Dbg(dbg_ctl_http, "                        set integer value %d", INT_MAX);
-#endif
-                if (token_wks == MIME_VALUE_MAX_STALE.c_str()) {
-                  m_cooked_stuff.m_cache_control.m_secs_max_stale = INT_MAX;
-                }
+                // No '=' found, or whitespace before '='. This is malformed.
+                // For directives that require values, this is an error.
+                // Clear the mask for this directive.
+                csv_value_mask                         = 0;
+                m_cooked_stuff.m_cache_control.m_mask &= ~mask;
               }
             }
 

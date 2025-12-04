@@ -53,6 +53,13 @@ autest:
 sessions:
 - transactions:
 
+  #
+  # Phase 1: Initial requests to populate the cache.
+  #
+  # These requests are sent to the origin server and the responses are cached
+  # (or not cached, depending on the Cache-Control header).
+  #
+
   # First, verify that a 400 response with a proper Cache-Control header is cached.
   - client-request:
       method: "GET"
@@ -62,7 +69,7 @@ sessions:
       headers:
         fields:
         - [ Host, example.com ]
-        - [ uuid, 1 ]
+        - [ uuid, proper_cc ]
 
     server-response:
       status: 400
@@ -75,51 +82,22 @@ sessions:
     proxy-response:
       status: 400
 
-  - client-request:
-
-      # Add a delay for caching IO to complete.
-      delay: 100ms
-
-      method: "GET"
-      version: "1.1"
-      scheme: "http"
-      url: /path/400_proper_cc
-      headers:
-        fields:
-        - [ Host, example.com ]
-        - [ uuid, 2 ]
-
-    # The server should not receives this request because it should be served from cache.
-    server-response:
-      status: 200
-      reason: "OK"
-      headers:
-        fields:
-        - [ Content-Length, 0 ]
-        - [ Cache-Control, max-age=300 ]
-
-    proxy-response:
-      status: 400
-
-  #
   # Test: Verify that a 400 response with malformed Cache-Control using
   # semicolons is not cached. The header "Cache-Control: public; max-age=30"
   # uses semicolons instead of commas as separators, violating RFC 7234.
   # Per RFC 7234 Section 5.2, caches must ignore unrecognized directives.
   # Since the directive is malformed, it should be ignored, and the response
   # should not be cached (no valid Cache-Control + negative_caching_enabled=0).
-  #
   - client-request:
       method: "GET"
       version: "1.1"
       scheme: "http"
-      url: /path/400_malformed_cc
+      url: /path/400_malformed_cc_semicolon
       headers:
         fields:
         - [ Host, example.com ]
-        - [ uuid, 3 ]
+        - [ uuid, semicolon ]
 
-    # First request: origin returns 400 with malformed Cache-Control
     server-response:
       status: 400
       reason: "Bad Request"
@@ -132,19 +110,197 @@ sessions:
     proxy-response:
       status: 400
 
+  # Test: Verify that a 400 response with space before = in max-age is not cached.
+  # The header "Cache-Control: max-age =300" is malformed per RFC 7230.
+  # Per RFC 7234 Section 5.2, caches must ignore unrecognized directives.
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /path/400_malformed_cc_space_before_equals
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, space_before_equals ]
+
+    server-response:
+      status: 400
+      reason: "Bad Request"
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+        # Note: Space before = is malformed per RFC 7230
+        - [ Cache-Control, "max-age =300" ]
+
+    proxy-response:
+      status: 400
+
+  # Test: Verify that a 400 response with space after = in max-age is not cached.
+  # The header "Cache-Control: max-age= 300" is malformed per RFC 7230.
+  # Per RFC 7234 Section 5.2, caches must ignore unrecognized directives.
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /path/400_malformed_cc_space_after_equals
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, space_after_equals ]
+
+    server-response:
+      status: 400
+      reason: "Bad Request"
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+        # Note: Space after = is malformed per RFC 7230
+        - [ Cache-Control, "max-age= 300" ]
+
+    proxy-response:
+      status: 400
+
+  # Test: Verify that a 400 response with single-quoted max-age value is not cached.
+  # The header "Cache-Control: max-age='300'" is malformed per RFC 7230.
+  # Per RFC 7234 Section 5.2, caches must ignore unrecognized directives.
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /path/400_malformed_cc_single_quotes
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, single_quotes ]
+
+    server-response:
+      status: 400
+      reason: "Bad Request"
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+        # Note: Single quotes around value are malformed per RFC 7230
+        - [ Cache-Control, "max-age='300'" ]
+
+    proxy-response:
+      status: 400
+
+  #
+  # Phase 2: Verification requests to check if responses were cached.
+  #
+  # These requests should be served from the cache (if cached) or from the
+  # origin server (if not cached).
+  #
+
+  # Second request to /path/400_proper_cc should be served from cache.
   - client-request:
 
-      # Add a delay for caching IO to complete.
+      # Add delay to ensure time for cache IO processing.
       delay: 100ms
 
       method: "GET"
       version: "1.1"
       scheme: "http"
-      url: /path/400_malformed_cc
+      url: /path/400_proper_cc
       headers:
         fields:
         - [ Host, example.com ]
-        - [ uuid, 4 ]
+        - [ uuid, proper_cc_verify ]
+
+    # The server should not receive this request because it should be served from cache.
+    server-response:
+      status: 200
+      reason: "OK"
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+        - [ Cache-Control, max-age=300 ]
+
+    proxy-response:
+      status: 400
+
+  # Second request to /path/400_malformed_cc_semicolon should NOT be served from cache.
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /path/400_malformed_cc_semicolon
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, semicolon_verify ]
+
+    # Since the initial CC was malformed, the response should not be cached.
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 16 ]
+        - [ Cache-Control, max-age=300 ]
+
+    # Expect the origin's 200 response.
+    proxy-response:
+      status: 200
+
+  # Second request to /path/400_malformed_cc_space_before_equals should NOT be served from cache.
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /path/400_malformed_cc_space_before_equals
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, space_before_equals_verify ]
+
+    # Since the initial CC was malformed, the response should not be cached.
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 16 ]
+        - [ Cache-Control, max-age=300 ]
+
+    # Expect the origin's 200 response.
+    proxy-response:
+      status: 200
+
+  # Second request to /path/400_malformed_cc_space_after_equals should NOT be served from cache.
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /path/400_malformed_cc_space_after_equals
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, space_after_equals_verify ]
+
+    # Since the initial CC was malformed, the response should not be cached.
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 16 ]
+        - [ Cache-Control, max-age=300 ]
+
+    # Expect the origin's 200 response.
+    proxy-response:
+      status: 200
+
+  # Second request to /path/400_malformed_cc_single_quotes should NOT be served from cache.
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /path/400_malformed_cc_single_quotes
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, single_quotes_verify ]
 
     # Since the initial CC was malformed, the response should not be cached.
     server-response:
