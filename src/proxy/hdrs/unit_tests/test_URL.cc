@@ -19,18 +19,23 @@
  */
 
 #include <cstdio>
+#include <vector>
 
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/generators/catch_generators.hpp>
+#include <catch2/generators/catch_generators_range.hpp>
 
 #include "proxy/hdrs/URL.h"
 #include "tscore/CryptoHash.h"
 
 TEST_CASE("ValidateURL", "[proxy][validurl]")
 {
-  static const struct {
+  struct Test {
     const char *const text;
     bool              valid;
-  } http_validate_hdr_field_test_case[] = {
+  };
+
+  static const std::vector<Test> http_validate_hdr_field_test_case = {
     {"yahoo",                                               true },
     {"yahoo.com",                                           true },
     {"yahoo.wow.com",                                       true },
@@ -47,21 +52,20 @@ TEST_CASE("ValidateURL", "[proxy][validurl]")
     {"!@#$%^ &*(*&^%$#@#$%^&*(*&^%$#))",                    false},
     {":):(:O!!!!!!",                                        false}
   };
-  for (auto i : http_validate_hdr_field_test_case) {
-    const char *const txt = i.text;
-    if (validate_host_name({txt}) != i.valid) {
-      std::printf("Validation of FQDN (host) header: \"%s\", expected %s, but not\n", txt, (i.valid ? "true" : "false"));
-      CHECK(false);
-    }
-  }
+
+  auto i = GENERATE(from_range(http_validate_hdr_field_test_case));
+  CAPTURE(i.text, i.valid);
+  CHECK(validate_host_name({i.text}) == i.valid);
 }
 
 TEST_CASE("Validate Scheme", "[proxy][validscheme]")
 {
-  static const struct {
+  struct Test {
     std::string_view text;
     bool             valid;
-  } scheme_test_cases[] = {
+  };
+
+  static const std::vector<Test> scheme_test_cases = {
     {"http",       true },
     {"https",      true },
     {"example",    true },
@@ -76,16 +80,9 @@ TEST_CASE("Validate Scheme", "[proxy][validscheme]")
     {"example://", false}
   };
 
-  for (auto i : scheme_test_cases) {
-    // it's pretty hard to debug with
-    //     CHECK(validate_scheme(i.text) == i.valid);
-
-    std::string_view text = i.text;
-    if (validate_scheme(text) != i.valid) {
-      std::printf("Validation of scheme: \"%s\", expected %s, but not\n", text.data(), (i.valid ? "true" : "false"));
-      CHECK(false);
-    }
-  }
+  auto i = GENERATE(from_range(scheme_test_cases));
+  CAPTURE(i.text, i.valid);
+  CHECK(validate_scheme(i.text) == i.valid);
 }
 
 namespace UrlImpl
@@ -97,10 +94,12 @@ using namespace UrlImpl;
 
 TEST_CASE("ParseRulesStrictURI", "[proxy][parseuri]")
 {
-  const struct {
+  struct Test {
     const char *const uri;
     bool              valid;
-  } http_strict_uri_parsing_test_case[] = {
+  };
+
+  static const std::vector<Test> http_strict_uri_parsing_test_case = {
     {"//index.html",                  true },
     {"/home",                         true },
     {"/path/data?key=value#id",       true },
@@ -127,21 +126,19 @@ TEST_CASE("ParseRulesStrictURI", "[proxy][parseuri]")
     {"é",                            false}
   };
 
-  for (auto i : http_strict_uri_parsing_test_case) {
-    const char *const uri = i.uri;
-    if (url_is_strictly_compliant(uri, uri + strlen(uri)) != i.valid) {
-      std::printf("Strictly parse URI: \"%s\", expected %s, but not\n", uri, (i.valid ? "true" : "false"));
-      CHECK(false);
-    }
-  }
+  auto i = GENERATE(from_range(http_strict_uri_parsing_test_case));
+  CAPTURE(i.uri, i.valid);
+  CHECK(url_is_strictly_compliant(i.uri, i.uri + strlen(i.uri)) == i.valid);
 }
 
 TEST_CASE("ParseRulesMostlyStrictURI", "[proxy][parseuri]")
 {
-  const struct {
+  struct Test {
     const char *const uri;
     bool              valid;
-  } http_mostly_strict_uri_parsing_test_case[] = {
+  };
+
+  static const std::vector<Test> http_mostly_strict_uri_parsing_test_case = {
     {"//index.html",                  true },
     {"/home",                         true },
     {"/path/data?key=value#id",       true },
@@ -168,13 +165,9 @@ TEST_CASE("ParseRulesMostlyStrictURI", "[proxy][parseuri]")
     {"é",                            false}
   }; // Non-printable ascii
 
-  for (auto i : http_mostly_strict_uri_parsing_test_case) {
-    const char *const uri = i.uri;
-    if (url_is_mostly_compliant(uri, uri + strlen(uri)) != i.valid) {
-      std::printf("Mostly strictly parse URI: \"%s\", expected %s, but not\n", uri, (i.valid ? "true" : "false"));
-      CHECK(false);
-    }
-  }
+  auto i = GENERATE(from_range(http_mostly_strict_uri_parsing_test_case));
+  CAPTURE(i.uri, i.valid);
+  CHECK(url_is_mostly_compliant(i.uri, i.uri + strlen(i.uri)) == i.valid);
 }
 
 struct url_parse_test_case {
@@ -570,10 +563,10 @@ test_parse(url_parse_test_case const &test_case, bool parse_function)
 
 TEST_CASE("UrlParse", "[proxy][parseurl]")
 {
-  for (auto const &test_case : url_parse_test_cases) {
-    test_parse(test_case, URL_PARSE);
-    test_parse(test_case, URL_PARSE_REGEX);
-  }
+  auto test_case = GENERATE(from_range(url_parse_test_cases));
+  CAPTURE(test_case.input_uri, test_case.expected_printed_url, test_case.is_valid);
+  test_parse(test_case, URL_PARSE);
+  test_parse(test_case, URL_PARSE_REGEX);
 }
 
 struct get_hash_test_case {

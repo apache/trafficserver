@@ -30,6 +30,8 @@
 #include "tscore/ink_defs.h"
 #include "tsutil/Regex.h"
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/generators/catch_generators.hpp>
+#include <catch2/generators/catch_generators_range.hpp>
 
 struct subject_match_t {
   std::string_view subject;
@@ -97,41 +99,49 @@ TEST_CASE("Regex", "[libts][Regex]")
 {
   // case sensitive test
   for (auto &item : test_data) {
+    CAPTURE(item.regex);
     Regex r;
     REQUIRE(r.compile(item.regex.data()) == true);
 
     for (auto &test : item.tests) {
+      CAPTURE(test.subject, test.match);
       REQUIRE(r.exec(test.subject.data()) == test.match);
     }
   }
 
   // case insensitive test
   for (auto &item : test_data_case_insensitive) {
+    CAPTURE(item.regex);
     Regex r;
     REQUIRE(r.compile(item.regex.data(), RE_CASE_INSENSITIVE) == true);
 
     for (auto &test : item.tests) {
+      CAPTURE(test.subject, test.match);
       REQUIRE(r.exec(test.subject.data()) == test.match);
     }
   }
 
   // case anchored test
   for (auto &item : test_data_anchored) {
+    CAPTURE(item.regex);
     Regex r;
     REQUIRE(r.compile(item.regex.data(), RE_ANCHORED) == true);
 
     for (auto &test : item.tests) {
+      CAPTURE(test.subject, test.match);
       REQUIRE(r.exec(test.subject.data()) == test.match);
     }
   }
 
   // test getting submatches with operator[]
   for (auto &item : submatch_test_data) {
+    CAPTURE(item.regex, item.capture_count);
     Regex r;
     REQUIRE(r.compile(item.regex.data()) == true);
     REQUIRE(r.get_capture_count() == item.capture_count);
 
     for (auto &test : item.tests) {
+      CAPTURE(test.subject, test.count);
       RegexMatches matches;
       REQUIRE(r.exec(test.subject.data(), matches) == test.count);
       REQUIRE(matches.size() == test.count);
@@ -144,11 +154,13 @@ TEST_CASE("Regex", "[libts][Regex]")
 
   // test getting submatches with ovector pointer
   for (auto &item : submatch_test_data) {
+    CAPTURE(item.regex, item.capture_count);
     Regex r;
     REQUIRE(r.compile(item.regex.data()) == true);
     REQUIRE(r.get_capture_count() == item.capture_count);
 
     for (auto &test : item.tests) {
+      CAPTURE(test.subject, test.count);
       RegexMatches matches;
       REQUIRE(r.exec(test.subject.data(), matches) == test.count);
       REQUIRE(matches.size() == test.count);
@@ -838,12 +850,11 @@ std::vector<backref_test_t> backref_test_data{
 
 TEST_CASE("Regex back reference counting", "[libts][Regex][get_backref_max]")
 {
-  // case sensitive test
-  for (auto &item : backref_test_data) {
-    Regex r;
-    REQUIRE(r.compile(item.regex) == item.valid);
-    REQUIRE(r.get_backref_max() == item.backref_max);
-  }
+  auto item = GENERATE(from_range(backref_test_data));
+  CAPTURE(item.regex, item.valid, item.backref_max);
+  Regex r;
+  REQUIRE(r.compile(item.regex) == item.valid);
+  REQUIRE(r.get_backref_max() == item.backref_max);
 }
 
 struct match_context_test_t {
@@ -866,10 +877,9 @@ TEST_CASE("RegexMatchContext", "[libts][Regex][RegexMatchContext]")
   match_context.set_match_limit(2);
   RegexMatches matches;
 
-  // case sensitive test
-  for (auto &item : match_context_test_data) {
-    Regex r;
-    REQUIRE(r.compile(item.regex) == item.valid);
-    REQUIRE(r.exec(item.str, matches, 0, &match_context) == item.rcode);
-  }
+  auto item = GENERATE(from_range(match_context_test_data));
+  CAPTURE(item.regex, item.str, item.valid, item.rcode);
+  Regex r;
+  REQUIRE(r.compile(item.regex) == item.valid);
+  REQUIRE(r.exec(item.str, matches, 0, &match_context) == item.rcode);
 }
