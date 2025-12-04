@@ -7462,6 +7462,9 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
   case TS_CONFIG_HTTP_CACHE_POST_METHOD:
     ret = _memberp_to_generic(&overridableHttpConfig->cache_post_method, conv);
     break;
+  case TS_CONFIG_HTTP_CACHE_TARGETED_CACHE_CONTROL_HEADERS:
+    ret = _memberp_to_generic(&overridableHttpConfig->targeted_cache_control_headers, conv);
+    break;
   case TS_CONFIG_HTTP_REQUEST_BUFFER_ENABLED:
     ret = _memberp_to_generic(&overridableHttpConfig->request_buffer_enabled, conv);
     break;
@@ -7748,6 +7751,15 @@ TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
       s->t_state.my_txn_conf().global_user_agent_header_size = 0;
     }
     break;
+  case TS_CONFIG_HTTP_CACHE_TARGETED_CACHE_CONTROL_HEADERS:
+    if (value && length > 0) {
+      s->t_state.my_txn_conf().targeted_cache_control_headers     = const_cast<char *>(value); // The "core" likes non-const char*
+      s->t_state.my_txn_conf().targeted_cache_control_headers_len = length;
+    } else {
+      s->t_state.my_txn_conf().targeted_cache_control_headers     = nullptr;
+      s->t_state.my_txn_conf().targeted_cache_control_headers_len = 0;
+    }
+    break;
   case TS_CONFIG_BODY_FACTORY_TEMPLATE_BASE:
     if (value && length > 0) {
       s->t_state.my_txn_conf().body_factory_template_base     = const_cast<char *>(value);
@@ -7859,6 +7871,10 @@ TSHttpTxnConfigStringGet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
   case TS_CONFIG_HTTP_GLOBAL_USER_AGENT_HEADER:
     *value  = sm->t_state.txn_conf->global_user_agent_header;
     *length = sm->t_state.txn_conf->global_user_agent_header_size;
+    break;
+  case TS_CONFIG_HTTP_CACHE_TARGETED_CACHE_CONTROL_HEADERS:
+    *value  = sm->t_state.txn_conf->targeted_cache_control_headers;
+    *length = sm->t_state.txn_conf->targeted_cache_control_headers_len;
     break;
   case TS_CONFIG_BODY_FACTORY_TEMPLATE_BASE:
     *value  = sm->t_state.txn_conf->body_factory_template_base;
