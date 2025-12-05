@@ -73,8 +73,6 @@ class TestIssue12611:
         tr.Processes.Default.StartBefore(self._dns)
         tr.Processes.Default.StartBefore(self._ts)
 
-        tr.StillRunningAfter = self._ts
-
         # Override the default diags.log error check - we use TSError() for test output
         # Using '=' instead of '+=' replaces the default "no errors" check
         self._ts.Disk.diags_log.Content = Testers.ContainsExpression("OS_DNS hook called, count=1", "First OS_DNS call logged")
