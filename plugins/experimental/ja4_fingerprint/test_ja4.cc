@@ -91,6 +91,7 @@ TEST_CASE("JA4")
       {0xfefc, "d3"}
     };
     for (auto const &[version, expected] : values) {
+      CAPTURE(version, expected);
       TLS_summary.TLS_version = version;
       CHECK(expected == call_JA4(TLS_summary).substr(1, 2));
     }

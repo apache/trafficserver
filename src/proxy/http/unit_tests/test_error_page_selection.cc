@@ -103,6 +103,7 @@ TEST_CASE("error page selection test", "[http]")
   // (2) for each test, parse accept headers into lists, and test matching
   int count = 0;
   for (const auto &test : tests) {
+    CAPTURE(test.accept_language, test.accept_charset, test.expected_set, test.expected_Q, test.expected_La, test.expected_I);
     float       Q_best;
     int         La_best, Lc_best, I_best;
     const char *set_best;

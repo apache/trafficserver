@@ -24,6 +24,8 @@
 #include <tscore/ink_string.h>
 #include <tscore/ParseRules.h>
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/generators/catch_generators.hpp>
+#include <catch2/generators/catch_generators_range.hpp>
 #include <string_view>
 
 //-------------------------------------------------------------------------
@@ -80,14 +82,13 @@ constexpr int64_item int64_tests[] = {
 
 TEST_CASE("ink_fast_ltoa", "[libts][ink_fast_ltoa]")
 {
-  printf("ink_string\n");
+  auto test = GENERATE(from_range(std::begin(int64_tests), std::end(int64_tests)));
+  CAPTURE(test.n, test.s);
   char buffer[21];
-  for (auto const &test : int64_tests) {
-    REQUIRE(ink_atoi64(test.s.data()) == test.n);
-    int length = 0;
-    REQUIRE((length = ink_fast_ltoa(test.n, buffer, sizeof(buffer))) == (int)test.s.length());
-    REQUIRE(std::string_view(buffer, length) == test.s);
-  }
+  REQUIRE(ink_atoi64(test.s.data()) == test.n);
+  int length = 0;
+  REQUIRE((length = ink_fast_ltoa(test.n, buffer, sizeof(buffer))) == (int)test.s.length());
+  REQUIRE(std::string_view(buffer, length) == test.s);
 }
 
 //-------------------------------------------------------------------------
@@ -126,13 +127,13 @@ constexpr int_item int_tests[] = {
 
 TEST_CASE("ink_fast_inta", "[libts][ink_fast_inta]")
 {
+  auto test = GENERATE(from_range(std::begin(int_tests), std::end(int_tests)));
+  CAPTURE(test.n, test.s);
   char buffer[12];
-  for (auto const &test : int_tests) {
-    REQUIRE(ink_atoi(test.s.data()) == test.n);
-    int length = 0;
-    REQUIRE((length = ink_fast_itoa(test.n, buffer, sizeof(buffer))) == (int)test.s.length());
-    REQUIRE(std::string_view(buffer, length) == test.s);
-  }
+  REQUIRE(ink_atoi(test.s.data()) == test.n);
+  int length = 0;
+  REQUIRE((length = ink_fast_itoa(test.n, buffer, sizeof(buffer))) == (int)test.s.length());
+  REQUIRE(std::string_view(buffer, length) == test.s);
 }
 
 //-------------------------------------------------------------------------
@@ -160,11 +161,11 @@ constexpr uint_item uint_tests[] = {
 
 TEST_CASE("ink_fast_uinta", "[libts][ink_fast_uinta]")
 {
+  auto test = GENERATE(from_range(std::begin(uint_tests), std::end(uint_tests)));
+  CAPTURE(test.n, test.s);
   char buffer[12];
-  for (auto const &test : uint_tests) {
-    REQUIRE(ink_atoui(test.s.data()) == test.n);
-    int length = 0;
-    REQUIRE((length = ink_fast_uitoa(test.n, buffer, sizeof(buffer))) == (int)test.s.length());
-    REQUIRE(std::string_view(buffer, length) == test.s);
-  }
+  REQUIRE(ink_atoui(test.s.data()) == test.n);
+  int length = 0;
+  REQUIRE((length = ink_fast_uitoa(test.n, buffer, sizeof(buffer))) == (int)test.s.length());
+  REQUIRE(std::string_view(buffer, length) == test.s);
 }

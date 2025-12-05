@@ -44,14 +44,17 @@ TEST_CASE("Basic single char insert/full_match std::string_view")
     };
 
     for (auto const &[k, v] : kv) {
+      CAPTURE(k, v);
       REQUIRE(trie.insert(k, v));
     }
     // try again.
     for (auto const &[k, v] : kv) {
+      CAPTURE(k, v);
       REQUIRE(!trie.insert(k, v));
     }
 
     for (auto const &[k, v] : kv) {
+      CAPTURE(k, v);
       auto [found, value] = trie.full_match(k);
       REQUIRE(found);
       REQUIRE(value == v);
@@ -80,14 +83,17 @@ TEST_CASE("Basic insert/full_match TextView", "")
       {"H", "6"}
     };
     for (auto const &[k, v] : kv) {
+      CAPTURE(k, v);
       REQUIRE(trie.insert(k, v));
     }
     // try again.
     for (auto const &[k, v] : kv) {
+      CAPTURE(k, v);
       REQUIRE(!trie.insert(k, v));
     }
 
     for (auto const &[k, v] : kv) {
+      CAPTURE(k, v);
       auto [found, value] = trie.full_match(k);
       REQUIRE(found);
       REQUIRE(value == v);
@@ -121,16 +127,19 @@ TEST_CASE("Basic Prefix match Test on std::string", "[insert][prefix_match][std:
   StringTree<std::string, std::string>             trie;
   std::vector<std::pair<std::string, std::string>> kvs = generateKVFrom(std::string{"http://www.apache.com/trafficserver"});
   for (auto const &[k, v] : kvs) {
+    CAPTURE(k, v);
     trie.insert(k, v);
   }
 
   // basic check
   for (auto const &[k, v] : kvs) {
+    CAPTURE(k, v);
     auto [found, value] = trie.full_match(k);
     REQUIRE(found);
     REQUIRE(value == v);
   }
   for (auto iter = std::begin(kvs); iter != std::end(kvs); ++iter) {
+    CAPTURE(iter->first);
     auto const &keys = trie.prefix_match(iter->first);
     REQUIRE(std::equal(iter, std::end(kvs), std::begin(keys), std::end(keys)));
   }
@@ -164,6 +173,7 @@ TEST_CASE("Basic Prefix Match Test on a mix case strings", "")
   };
 
   for (auto const &[key, expected] : exp_results) {
+    CAPTURE(key, expected);
     auto const &items = trie.prefix_match(key);
     INFO("Looking for " << key << ", to be found " << expected.size() << "? found " << items.size());
 
@@ -188,6 +198,7 @@ TEST_CASE("Basic Suffix Match Test", "")
   string_tree_map trie;
 
   for (auto const &[k, v] : kv) {
+    CAPTURE(k, v);
     REQUIRE(trie.insert(k, v));
   }
 
@@ -201,6 +212,7 @@ TEST_CASE("Basic Suffix Match Test", "")
   };
 
   for (auto const &[key, expected] : exp_results) {
+    CAPTURE(key, expected);
     auto const &items = trie.suffix_match(key);
     REQUIRE(items.size() == expected.size());
     for (auto const &pair : items) {
