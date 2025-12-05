@@ -37,9 +37,12 @@
 #include <cstdio>
 #include <bitset>
 #include <map>
+#include <unordered_map>
 #include <cctype>
 #include <string_view>
 #include <chrono>
+#include <shared_mutex>
+#include <functional>
 
 #include "iocore/eventsystem/IOBuffer.h"
 #include "swoc/swoc_ip.h"
@@ -56,6 +59,7 @@
 #include "records/RecProcess.h"
 #include "tsutil/ts_ip.h"
 #include "tsutil/Metrics.h"
+#include "ts/apidefs.h"
 
 using ts::Metrics;
 
@@ -850,6 +854,72 @@ public:
   /////////////////////////////////////
   HttpConfigParams(const HttpConfigParams &)            = delete;
   HttpConfigParams &operator=(const HttpConfigParams &) = delete;
+};
+
+/////////////////////////////////////////////////////////////
+//
+// class ParsedConfigCache
+//
+/////////////////////////////////////////////////////////////
+
+/** Cache for pre-parsed string config values.
+ *
+ * Some overridable STRING configs require parsing (e.g., status code lists,
+ * host resolution preferences). Parsing can be non-trivial. This cache stores
+ * parsed results so repeated calls to TSHttpTxnConfigStringSet() with the same
+ * value don't re-parse.
+ *
+ * The static lookup() method handles everything: check cache, parse if needed,
+ * store in cache, and return the result.
+ */
+class ParsedConfigCache
+{
+public:
+  /** Pre-parsed representations for configs that need special parsing. */
+  struct ParsedValue {
+    HostResData                 host_res_data{};
+    HttpStatusCodeList          status_code_list{};
+    HttpForwarded::OptionBitSet forwarded_bitset{};
+    MgmtByte                    server_session_sharing_match{0};
+    std::string                 conf_value_storage{}; // Owns the string data.
+  };
+
+  /** Return the parsed value for the configuration.
+   *
+   * On first call for a given (key, value) pair, parses the value and caches it.
+   * Subsequent calls return the cached result.
+   *
+   * @param key The config key being referenced.
+   * @param value The string value to parse.
+   * @return Reference to the cached parsed value.
+   */
+  static const ParsedValue &lookup(TSOverridableConfigKey key, std::string_view value);
+
+private:
+  ParsedConfigCache() = default;
+
+  // Enforce singleton pattern.
+  ParsedConfigCache(const ParsedConfigCache &)            = delete;
+  ParsedConfigCache &operator=(const ParsedConfigCache &) = delete;
+  ParsedConfigCache(ParsedConfigCache &&)                 = delete;
+  ParsedConfigCache &operator=(ParsedConfigCache &&)      = delete;
+
+  static ParsedConfigCache &instance();
+
+  const ParsedValue &lookup_impl(TSOverridableConfigKey key, std::string_view value);
+  ParsedValue        parse(TSOverridableConfigKey key, std::string_view value);
+
+  // Custom hash for the cache key.
+  struct CacheKeyHash {
+    std::size_t
+    operator()(const std::pair<TSOverridableConfigKey, std::string> &k) const
+    {
+      return std::hash<int>()(static_cast<int>(k.first)) ^ (std::hash<std::string>()(k.second) << 1);
+    }
+  };
+
+  std::unordered_map<std::pair<TSOverridableConfigKey, std::string>, ParsedValue, CacheKeyHash> _cache;
+  mutable std::shared_mutex                                                                     _mutex;
 };
 
 /////////////////////////////////////////////////////////////

@@ -7309,6 +7309,19 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
   conv      = nullptr;
 
   switch (conf) {
+    // This uses OVERRIDABLE_CONFIGS to generate cases for each config.
+    // For example:
+    //
+    // case TS_CONFIG_HTTP_CHUNKING_ENABLED:
+    //   ret = _memberp_to_generic(&overridableHttpConfig->chunking_enabled, conv);
+    //   break;
+    // case TS_CONFIG_HTTP_DOWN_SERVER_CACHE_TIME:
+    //   conv = &HttpDownServerCacheTimeConv;
+    //   ret = &overridableHttpConfig->down_server_timeout;
+    //   break;
+    //
+    // ... ~130 more cases, one per overridable config ...
+    //
     OVERRIDABLE_CONFIGS(_CONF_CASE_DISPATCH)
   case TS_CONFIG_NULL:
   case TS_CONFIG_LAST_ENTRY:
@@ -7472,19 +7485,15 @@ TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
     break;
   case TS_CONFIG_HTTP_INSERT_FORWARDED:
     if (value && length > 0) {
-      swoc::LocalBufferWriter<1024> error;
-      HttpForwarded::OptionBitSet   bs = HttpForwarded::optStrToBitset(std::string_view(value, length), error);
-      if (!error.size()) {
-        s->t_state.my_txn_conf().insert_forwarded = bs;
-      } else {
-        Error("HTTP %.*s", static_cast<int>(error.size()), error.data());
-      }
+      auto &parsed                              = ParsedConfigCache::lookup(conf, std::string_view(value, length));
+      s->t_state.my_txn_conf().insert_forwarded = parsed.forwarded_bitset;
     }
     break;
   case TS_CONFIG_HTTP_SERVER_SESSION_SHARING_MATCH:
     if (value && length > 0) {
-      HttpConfig::load_server_session_sharing_match(value, s->t_state.my_txn_conf().server_session_sharing_match);
-      s->t_state.my_txn_conf().server_session_sharing_match_str = const_cast<char *>(value);
+      auto &parsed                                              = ParsedConfigCache::lookup(conf, std::string_view(value, length));
+      s->t_state.my_txn_conf().server_session_sharing_match     = parsed.server_session_sharing_match;
+      s->t_state.my_txn_conf().server_session_sharing_match_str = const_cast<char *>(parsed.conf_value_storage.data());
     }
     break;
   case TS_CONFIG_SSL_CLIENT_VERIFY_SERVER_POLICY:
@@ -7527,23 +7536,22 @@ TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
     break;
   case TS_CONFIG_HTTP_NEGATIVE_CACHING_LIST:
     if (value && length > 0) {
-      OverridableHttpConfigParams *target      = &s->t_state.my_txn_conf();
-      target->negative_caching_list.conf_value = const_cast<char *>(value);
-      return _eval_conv(target, conf, value, length);
+      auto &parsed                                   = ParsedConfigCache::lookup(conf, std::string_view(value, length));
+      s->t_state.my_txn_conf().negative_caching_list = parsed.status_code_list;
     }
     break;
   case TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_LIST:
     if (value && length > 0) {
-      OverridableHttpConfigParams *target           = &s->t_state.my_txn_conf();
-      target->negative_revalidating_list.conf_value = const_cast<char *>(value);
-      return _eval_conv(target, conf, value, length);
+      auto &parsed                                        = ParsedConfigCache::lookup(conf, std::string_view(value, length));
+      s->t_state.my_txn_conf().negative_revalidating_list = parsed.status_code_list;
     }
     break;
   case TS_CONFIG_HTTP_HOST_RESOLUTION_PREFERENCE:
     if (value && length > 0) {
-      s->t_state.my_txn_conf().host_res_data.conf_value = const_cast<char *>(value);
+      auto &parsed                           = ParsedConfigCache::lookup(conf, std::string_view(value, length));
+      s->t_state.my_txn_conf().host_res_data = parsed.host_res_data;
     }
-    [[fallthrough]];
+    break;
   default: {
     if (value && length > 0) {
       return _eval_conv(&(s->t_state.my_txn_conf()), conf, value, length);
