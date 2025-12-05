@@ -66,14 +66,24 @@ static_assert(sizeof(xmacro_enum_order) / sizeof(xmacro_enum_order[0]) == TS_CON
 static_assert(check_xmacro_order(xmacro_enum_order),
               "OVERRIDABLE_CONFIGS order must match TSOverridableConfigKey enum order in apidefs.h.in. "
               "Ensure entries are in the same order in both files.");
+// ============================================================================
+// End of compile-time validation.
+// ============================================================================
 
 // ============================================================================
-// String-to-enum mapping generated from X-macro.
+// Configuration string name to enum and type mapping.
 // ============================================================================
 
 // clang-format off
 const std::unordered_map<std::string_view, std::tuple<const TSOverridableConfigKey, const TSRecordDataType>>
   ts::Overridable_Txn_Vars({
+
+/** Use OVERRIDABLE_CONFIGS to populate the map with entries like:
+ * ...
+ * "proxy.config.http.chunking_enabled", {TS_CONFIG_HTTP_CHUNKING_ENABLED, TS_RECORDDATATYPE_INT}
+ * "proxy.config.http.negative_caching_list", {TS_CONFIG_HTTP_NEGATIVE_CACHING_LIST, TS_RECORDDATATYPE_STRING}
+ * ...
+ */
 #define X_TXN_VAR(CONFIG_KEY, MEMBER, RECORD_NAME, DATA_TYPE, CONV) \
     {RECORD_NAME, {TS_CONFIG_##CONFIG_KEY, TS_RECORDDATATYPE_##DATA_TYPE}},
     OVERRIDABLE_CONFIGS(X_TXN_VAR)

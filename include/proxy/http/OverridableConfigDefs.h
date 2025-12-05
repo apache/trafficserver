@@ -90,6 +90,20 @@
 
   See the X-Macro Dispatch doxygen documentation in InkAPI.cc for more details.
 
+  @section caching Automatic Caching for STRING Configs
+
+  Some STRING configs require parsing that is more expensive than a simple
+  string copy (e.g., parsing status code lists or host resolution preferences).
+  For these configs, TSHttpTxnConfigStringSet() automatically uses
+  ParsedConfigCache (defined in HttpConfig.h) to cache parsed results.
+
+  This means the parsing only happens once per unique (config_key, value) pair.
+  Subsequent calls with the same value use the cached result directly.
+  HTTP_NEGATIVE_CACHING_LIST is an example configuration that takes advantage
+  of this. This optimization is transparent to API users - they just call
+  TSHttpTxnConfigStringSet() as usual and get the performance benefit
+  automatically.
+
   @section none_configs Note on CONV=NONE
 
   Some SSL string configs use NONE because they bypass _conf_to_memberp()
