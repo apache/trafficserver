@@ -42,10 +42,11 @@ DbgCtl dbg_ctl{PLUGIN_NAME};
 // Class to hold a set of configurations (one for each remap rule instance)
 struct RemapConfigs {
   struct Item {
-    TSOverridableConfigKey _name;
-    TSRecordDataType       _type;
-    TSRecordData           _data;
-    int                    _data_len; // Used when data is a string
+    TSOverridableConfigKey    _name;
+    TSRecordDataType          _type;
+    TSRecordData              _data;
+    int                       _data_len;     // Used when data is a string.
+    TSPreconvertedConfigValue _preconverted; // Pre-converted value for efficient application.
   };
 
   RemapConfigs() { memset(_items, 0, sizeof(_items)); };
@@ -110,9 +111,13 @@ RemapConfigs::parse_inline(const char *arg)
     if (strcmp(value.c_str(), "NULL") == 0) {
       _items[_current]._data.rec_string = nullptr;
       _items[_current]._data_len        = 0;
+      // Pre-convert NULL for efficient application at remap time.
+      TSConfigStringPreconvert(name, nullptr, 0, &_items[_current]._preconverted);
     } else {
       _items[_current]._data.rec_string = TSstrdup(value.c_str());
       _items[_current]._data_len        = value.size();
+      // Pre-convert for efficient application at remap time.
+      TSConfigStringPreconvert(name, value.c_str(), value.size(), &_items[_current]._preconverted);
     }
     break;
   case TS_RECORDDATATYPE_FLOAT:
@@ -190,9 +195,13 @@ scalar_node_handler(const TSYAMLRecCfgFieldData *cfg, void *data)
       if (value.IsNull() || str == "NULL") {
         item->_data.rec_string = nullptr;
         item->_data_len        = 0;
+        // Pre-convert NULL for efficient application at remap time.
+        TSConfigStringPreconvert(name, nullptr, 0, &item->_preconverted);
       } else {
         item->_data.rec_string = TSstrdup(str.c_str());
         item->_data_len        = str.size();
+        // Pre-convert for efficient application at remap time.
+        TSConfigStringPreconvert(name, str.c_str(), str.size(), &item->_preconverted);
       }
     } break;
     case TS_RECORDDATATYPE_FLOAT:
@@ -321,6 +330,7 @@ TSRemapDeleteInstance(void *ih)
   for (int ix = 0; ix < conf->_current; ++ix) {
     if (TS_RECORDDATATYPE_STRING == conf->_items[ix]._type) {
       TSfree(conf->_items[ix]._data.rec_string);
+      TSPreconvertedConfigValueDestroy(conf->_items[ix]._preconverted);
     }
   }
 
@@ -343,7 +353,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo * /* rri ATS_UNUSED */
         Dbg(dbg_ctl, "Setting config id %d to %" PRId64 "", conf->_items[ix]._name, conf->_items[ix]._data.rec_int);
         break;
       case TS_RECORDDATATYPE_STRING:
-        TSHttpTxnConfigStringSet(txnp, conf->_items[ix]._name, conf->_items[ix]._data.rec_string, conf->_items[ix]._data_len);
+        TSHttpTxnConfigPreconvertedValueSet(txnp, conf->_items[ix]._name, conf->_items[ix]._preconverted);
         Dbg(dbg_ctl, "Setting config id %d to %s", conf->_items[ix]._name, conf->_items[ix]._data.rec_string);
         break;
       case TS_RECORDDATATYPE_FLOAT:

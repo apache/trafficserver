@@ -7613,6 +7613,139 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
   return TS_ERROR;
 }
 
+/** Internal struct for pre-converted config values.
+ * This holds the parsed representation of STRING config values, allowing any
+ * parsing to happen once at load time rather than on every transaction.
+ */
+struct PreconvertedConfigValue {
+  TSOverridableConfigKey key{TS_CONFIG_NULL};
+  std::string            conf_value{};             // Original string value.
+  bool                   is_null{false};           // True if representing a NULL value.
+  bool                   has_special_value{false}; // True if special parsing was done.
+
+  // Pre-converted storage for configs that require special parsing.
+  HostResData                 host_res_data{};
+  HttpStatusCodeList          status_code_list{};
+  HttpForwarded::OptionBitSet forwarded_bitset{};
+  MgmtByte                    server_session_sharing_match{0};
+};
+
+TSReturnCode
+TSConfigStringPreconvert(TSOverridableConfigKey conf, const char *value, int length, TSPreconvertedConfigValue *result)
+{
+  sdk_assert(sdk_sanity_check_null_ptr(result) == TS_SUCCESS);
+
+  auto *converted = new PreconvertedConfigValue();
+  converted->key  = conf;
+
+  // Handle NULL value case - distinct from empty string.
+  if (value == nullptr) {
+    converted->is_null           = true;
+    converted->has_special_value = false;
+    *result                      = reinterpret_cast<TSPreconvertedConfigValue>(converted);
+    return TS_SUCCESS;
+  }
+
+  if (length < 0) {
+    length = strlen(value);
+  }
+  converted->conf_value = std::string(value, length);
+
+  // Perform special parsing for configs that need it.
+  converted->has_special_value = true;
+  switch (conf) {
+  case TS_CONFIG_HTTP_HOST_RESOLUTION_PREFERENCE:
+    if (!converted->conf_value.empty()) {
+      parse_host_res_preference(converted->conf_value.c_str(), converted->host_res_data.order);
+      converted->host_res_data.conf_value = converted->conf_value.data();
+    }
+    break;
+  case TS_CONFIG_HTTP_NEGATIVE_CACHING_LIST:
+  case TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_LIST:
+    if (!converted->conf_value.empty()) {
+      converted->status_code_list.conf_value = converted->conf_value.data();
+      HttpStatusCodeList::Conv.store_string(&converted->status_code_list, converted->conf_value);
+    }
+    break;
+  case TS_CONFIG_HTTP_INSERT_FORWARDED:
+    if (!converted->conf_value.empty()) {
+      swoc::LocalBufferWriter<1024> error;
+      converted->forwarded_bitset = HttpForwarded::optStrToBitset(converted->conf_value, error);
+    }
+    break;
+  case TS_CONFIG_HTTP_SERVER_SESSION_SHARING_MATCH:
+    if (!converted->conf_value.empty()) {
+      HttpConfig::load_server_session_sharing_match(converted->conf_value.c_str(), converted->server_session_sharing_match);
+    }
+    break;
+  default:
+    // No special parsing needed - the string is stored as-is.
+    converted->has_special_value = false;
+    break;
+  }
+
+  *result = reinterpret_cast<TSPreconvertedConfigValue>(converted);
+  return TS_SUCCESS;
+}
+
+TSReturnCode
+TSHttpTxnConfigPreconvertedValueSet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSPreconvertedConfigValue value)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+
+  if (value == nullptr) {
+    return TS_ERROR;
+  }
+
+  auto *converted = reinterpret_cast<PreconvertedConfigValue *>(value);
+  if (converted->key != conf) {
+    return TS_ERROR;
+  }
+
+  // Handle NULL value - pass nullptr to the regular string set.
+  if (converted->is_null) {
+    return TSHttpTxnConfigStringSet(txnp, conf, nullptr, 0);
+  }
+
+  // For configs with special parsing, apply the pre-converted value directly.
+  if (converted->has_special_value) {
+    HttpSM *s = reinterpret_cast<HttpSM *>(txnp);
+    s->t_state.setup_per_txn_configs();
+
+    switch (conf) {
+    case TS_CONFIG_HTTP_HOST_RESOLUTION_PREFERENCE:
+      s->t_state.my_txn_conf().host_res_data = converted->host_res_data;
+      return TS_SUCCESS;
+    case TS_CONFIG_HTTP_NEGATIVE_CACHING_LIST:
+      s->t_state.my_txn_conf().negative_caching_list = converted->status_code_list;
+      return TS_SUCCESS;
+    case TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_LIST:
+      s->t_state.my_txn_conf().negative_revalidating_list = converted->status_code_list;
+      return TS_SUCCESS;
+    case TS_CONFIG_HTTP_INSERT_FORWARDED:
+      s->t_state.my_txn_conf().insert_forwarded = converted->forwarded_bitset;
+      return TS_SUCCESS;
+    case TS_CONFIG_HTTP_SERVER_SESSION_SHARING_MATCH:
+      s->t_state.my_txn_conf().server_session_sharing_match     = converted->server_session_sharing_match;
+      s->t_state.my_txn_conf().server_session_sharing_match_str = converted->conf_value.data();
+      return TS_SUCCESS;
+    default:
+      break;
+    }
+  }
+
+  // Fall back to regular string set for configs without special parsing.
+  return TSHttpTxnConfigStringSet(txnp, conf, converted->conf_value.data(), converted->conf_value.size());
+}
+
+void
+TSPreconvertedConfigValueDestroy(TSPreconvertedConfigValue value)
+{
+  if (value != nullptr) {
+    delete reinterpret_cast<PreconvertedConfigValue *>(value);
+  }
+}
+
 TSReturnCode
 TSHttpTxnPrivateSessionSet(TSHttpTxn txnp, int private_session)
 {

@@ -31,6 +31,10 @@ Synopsis
 
     #include <ts/ts.h>
 
+.. type:: TSPreconvertedConfigValue
+
+   Opaque handle to a pre-converted configuration value.
+
 .. function:: TSReturnCode TSHttpTxnConfigIntSet(TSHttpTxn txnp, TSOverridableConfigKey key, TSMgmtInt value)
 .. function:: TSReturnCode TSHttpTxnConfigIntGet(TSHttpTxn txnp, TSOverridableConfigKey key, TSMgmtInt* value)
 .. function:: TSReturnCode TSHttpTxnConfigFloatSet(TSHttpTxn txnp, TSOverridableConfigKey key, TSMgmtFloat value)
@@ -38,6 +42,9 @@ Synopsis
 .. function:: TSReturnCode TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey key, const char* value, int length)
 .. function:: TSReturnCode TSHttpTxnConfigStringGet(TSHttpTxn txnp, TSOverridableConfigKey key, const char** value, int* length)
 .. function:: TSReturnCode TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey* key, TSRecordDataType* type)
+.. function:: TSReturnCode TSConfigStringPreconvert(TSOverridableConfigKey key, const char* value, int length, TSPreconvertedConfigValue* result)
+.. function:: TSReturnCode TSHttpTxnConfigPreconvertedValueSet(TSHttpTxn txnp, TSOverridableConfigKey key, TSPreconvertedConfigValue value)
+.. function:: void TSPreconvertedConfigValueDestroy(TSPreconvertedConfigValue value)
 
 Description
 ===========
@@ -57,6 +64,35 @@ The values are identified by the enumeration :enum:`TSOverridableConfigKey`.
 String values can be used indirectly by first passing them to
 :func:`TSHttpTxnConfigFind` which, if the string matches an overridable value,
 return the key and data type.
+
+Pre-converted String Values
+---------------------------
+
+Some string configuration values require parsing before they can be applied
+(e.g., host resolution preferences, status code lists). When using
+:func:`TSHttpTxnConfigStringSet`, this parsing happens on every call, which
+can be wasteful for plugins like :ref:`conf_remap <admin-plugins-conf-remap>`
+that apply the same configuration value to many transactions.
+
+The pre-conversion API allows parsing to happen once at plugin initialization:
+
+1. Call :func:`TSConfigStringPreconvert` once at load time to parse the string
+   and obtain a :type:`TSPreconvertedConfigValue` handle.
+
+2. Call :func:`TSHttpTxnConfigPreconvertedValueSet` on each transaction to
+   efficiently apply the pre-converted value.
+
+3. Call :func:`TSPreconvertedConfigValueDestroy` when the plugin is unloaded
+   to free resources.
+
+This approach moves potentially expensive parsing from request time for every
+transaction to a single execution at load time, improving performance for
+high-traffic situations.
+
+To represent a NULL/unset configuration value (distinct from an empty string),
+pass ``nullptr`` as the value to :func:`TSConfigStringPreconvert`. When applied
+via :func:`TSHttpTxnConfigPreconvertedValueSet`, this will pass ``nullptr`` to
+the underlying :func:`TSHttpTxnConfigStringSet`.
 
 Configurations
 ==============
@@ -211,6 +247,42 @@ high water mark of :literal:`262144` and a low water mark of :literal:`65536`. :
       TSHttpTxnConfigIntSet(txnp, TS_CONFIG_HTTP_FLOW_CONTROL_HIGH_WATER_MARK, 262144);
       TSHttpTxnConfigIntSet(txnp, TS_CONFIG_HTTP_FLOW_CONTROL_LOWER_WATER_MARK, 65536);
       return 0;
+   }
+
+Pre-convert a negative caching list for efficient per-transaction application::
+
+   // At plugin initialization (called once).
+   TSPreconvertedConfigValue g_preconverted = nullptr;
+
+   TSReturnCode
+   TSRemapNewInstance(int argc, char* argv[], void** ih, ...)
+   {
+      TSConfigStringPreconvert(
+         TS_CONFIG_HTTP_NEGATIVE_CACHING_LIST,
+         "400 404 500",
+         -1, // The implementation will use strlen on the above string.
+         &g_preconverted);
+      return TS_SUCCESS;
+   }
+
+   // At remap time (called on every matching request).
+   TSRemapStatus
+   TSRemapDoRemap(void* ih, TSHttpTxn rh, TSRemapRequestInfo* rri)
+   {
+      // Pass the preconverted value - no string parsing needed
+      // for each transaction.
+      TSHttpTxnConfigPreconvertedValueSet(
+         rh,
+         TS_CONFIG_HTTP_NEGATIVE_CACHING_LIST,
+         g_preconverted);
+      return TSREMAP_NO_REMAP;
+   }
+
+   // At plugin destruction (called once).
+   void
+   TSRemapDeleteInstance(void* ih)
+   {
+      TSPreconvertedConfigValueDestroy(g_preconverted);
    }
 
 See Also

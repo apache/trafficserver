@@ -2670,6 +2670,56 @@ TSReturnCode TSHttpTxnConfigStringGet(TSHttpTxn txnp, TSOverridableConfigKey con
 
 TSReturnCode TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, TSRecordDataType *type);
 
+/** Pre-convert a string configuration value.
+
+   Some overridable STRING configs require parsing (e.g., host resolution
+   preferences, status code lists). When using TSHttpTxnConfigStringSet(),
+   this parsing happens on every call. For plugins like conf_remap that apply
+   the same config value to many transactions, this can be expensive.
+
+   This function performs any necessary parsing once and returns an opaque
+   handle that can be efficiently applied to transactions via
+   TSHttpTxnConfigPreconvertedValueSet(). For configs that don't require
+   special parsing, the string is still stored for convenient application.
+
+   If @a value is nullptr, the pre-converted value represents a NULL/unset
+   configuration, which is distinct from an empty string. When applied via
+   TSHttpTxnConfigPreconvertedValueSet(), this will pass nullptr to the
+   underlying TSHttpTxnConfigStringSet().
+
+   Note that @a result must be freed later via TSPreconvertedConfigValueDestroy().
+
+   @param[in] conf The configuration key (must be a STRING type config).
+   @param[in] value The string value to pre-convert, or nullptr for NULL.
+   @param[in] length Length of value, or -1 to use strlen(). Ignored if value is nullptr.
+   @param[out] result The pre-converted value handle.
+   @return TS_SUCCESS on success, TS_ERROR on invalid input.
+*/
+TSReturnCode TSConfigStringPreconvert(TSOverridableConfigKey conf, const char *value, int length,
+                                      TSPreconvertedConfigValue *result);
+
+/** Apply a pre-converted configuration value to a transaction.
+
+   This is faster than TSHttpTxnConfigStringSet() because any parsing was
+   already done by TSConfigStringPreconvert().
+
+   @param[in] txnp The transaction.
+   @param[in] conf The configuration key.
+   @param[in] value The pre-converted value from TSConfigStringPreconvert().
+   @return TS_SUCCESS on success, TS_ERROR on failure.
+*/
+TSReturnCode TSHttpTxnConfigPreconvertedValueSet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSPreconvertedConfigValue value);
+
+/**
+   Destroy a pre-converted configuration value.
+
+   Call this when the plugin instance is destroyed to free resources
+   associated with the pre-converted value.
+
+   @param[in] value The pre-converted value to destroy. Safe to pass nullptr.
+*/
+void TSPreconvertedConfigValueDestroy(TSPreconvertedConfigValue value);
+
 /**
    This is a generalization of the old TSHttpTxnFollowRedirect(), but gives finer
    control over the behavior. Instead of using the Location: header for the new
