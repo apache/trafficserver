@@ -83,9 +83,9 @@ struct CacheProcessor : public Processor {
   Action *scan(Continuation *cont, std::string_view hostname = std::string_view{}, int KB_per_second = SCAN_KB_PER_SECOND);
   Action *lookup(Continuation *cont, const HttpCacheKey *key, CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP);
   Action *open_read(Continuation *cont, const HttpCacheKey *key, CacheHTTPHdr *request, const HttpConfigAccessor *params,
-                    CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP);
+                    CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP, int volume_override = -1);
   Action *open_write(Continuation *cont, const HttpCacheKey *key, CacheHTTPInfo *old_info, time_t pin_in_cache = 0,
-                     CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP);
+                     CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP, int volume_override = -1);
   Action *remove(Continuation *cont, const HttpCacheKey *key, CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP);
 
   /** Mark physical disk/device/file as offline.

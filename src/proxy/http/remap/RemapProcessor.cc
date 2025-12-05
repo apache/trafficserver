@@ -171,6 +171,9 @@ RemapProcessor::finish_remap(HttpTransact::State *s, UrlRewrite *table)
     return false;
   }
 
+  // Set volume override from remap rule
+  s->cache_volume_override = map->cache_volume;
+
   // Do fast ACL filtering (it is safe to check map here)
   table->PerformACLFiltering(s, map);
 

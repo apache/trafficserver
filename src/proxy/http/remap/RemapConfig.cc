@@ -43,11 +43,22 @@ using namespace std::literals;
 
 load_remap_file_func load_remap_file_cb = nullptr;
 
+// Forward declaration and external reference for volume validation
+class ConfigVolumes
+{
+public:
+  bool volume_number_exists(int volume_num) const;
+};
+extern ConfigVolumes config_volumes;
+
 namespace
 {
 DbgCtl dbg_ctl_url_rewrite{"url_rewrite"};
 DbgCtl dbg_ctl_remap_plugin{"remap_plugin"};
 DbgCtl dbg_ctl_url_rewrite_regex{"url_rewrite_regex"};
+
+// Use same constant as defined in src/iocore/cache/CacheHosting.cc
+constexpr static int MAX_VOLUME_IDX = 255;
 } // end anonymous namespace
 
 /**
@@ -829,6 +840,14 @@ remap_check_option(const char *const *argv, int argc, unsigned long findmode, in
           *argptr = &argv[i][9];
         }
         ret_flags |= REMAP_OPTFLG_STRATEGY;
+      } else if (!strncasecmp(argv[i], "volume=", 7)) {
+        if ((findmode & REMAP_OPTFLG_VOLUME) != 0) {
+          idx = i;
+        }
+        if (argptr) {
+          *argptr = &argv[i][7];
+        }
+        ret_flags |= REMAP_OPTFLG_VOLUME;
       } else {
         Warning("ignoring invalid remap option '%s'", argv[i]);
       }
@@ -1197,9 +1216,42 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
     if ((bti->remap_optflg & REMAP_OPTFLG_MAP_ID) != 0) {
       int idx = 0;
       int ret = remap_check_option(bti->argv, bti->argc, REMAP_OPTFLG_MAP_ID, &idx);
+
       if (ret & REMAP_OPTFLG_MAP_ID) {
-        char *c             = strchr(bti->argv[idx], static_cast<int>('='));
+        char *c = strchr(bti->argv[idx], static_cast<int>('='));
+
         new_mapping->map_id = static_cast<unsigned int>(atoi(++c));
+      }
+    }
+
+    // Parse @volume= option
+    new_mapping->cache_volume = -1;
+    if ((bti->remap_optflg & REMAP_OPTFLG_VOLUME) != 0) {
+      int idx = 0;
+      int ret = remap_check_option(bti->argv, bti->argc, REMAP_OPTFLG_VOLUME, &idx);
+
+      if (ret & REMAP_OPTFLG_VOLUME) {
+        int volume_num = atoi(&bti->argv[idx][7]);
+
+        new_mapping->cache_volume = volume_num;
+
+        // Validate volume number
+        if (volume_num < 1 || volume_num > MAX_VOLUME_IDX) {
+          snprintf(errStrBuf, sizeof(errStrBuf), "Invalid cache volume number %d at line %d (must be between 1 and %d)", volume_num,
+                   cln + 1, MAX_VOLUME_IDX);
+          errStr = errStrBuf;
+          goto MAP_ERROR;
+        }
+
+        // Validate that the volume exists in volume.config
+        if (!config_volumes.volume_number_exists(volume_num)) {
+          snprintf(errStrBuf, sizeof(errStrBuf), "Cache volume %d specified at line %d is not defined in volume.config", volume_num,
+                   cln + 1);
+          errStr = errStrBuf;
+          goto MAP_ERROR;
+        }
+
+        Dbg(dbg_ctl_url_rewrite, "[BuildTable] Cache volume override set to %d", volume_num);
       }
     }
 

@@ -455,6 +455,51 @@ will pass "1" and "2" to plugin1.so and "3" to plugin2.so.
 
 This will pass "1" and "2" to plugin1.so and "3" to plugin2.so
 
+.. _remap-config-cache-volume-selection:
+
+Cache Volume Selection
+======================
+
+The ``@volume`` directive allows you to override the default cache volume selection
+for specific remap rules, bypassing the hostname-based volume selection configured in
+:file:`hosting.config`. This provides fine-grained control over which cache volumes
+are used for different URL patterns.
+
+Format
+------
+
+::
+
+    @volume=<volume_number>
+
+Where ``<volume_number>`` is the volume number as configured in :file:`volume.config`.
+Volume numbers must be between 1 and 255 (volume 0 is reserved and not usable).
+
+Examples
+--------
+
+::
+
+    # Route API requests to dedicated high-performance volume (volume 4)
+    map https://api.example.com/ https://api-origin.example.com/ @volume=4
+
+    # Everything gets the default volume allocations (hashing)
+    map https://www.example.com/ https://origin.example.com/
+
+Behavior
+--------
+
+- If the specified volume number is invalid (greater than the number of configured volumes),
+  the system falls back to hostname-based volume selection with a warning logged.
+- The ``@volume`` directive takes precedence over :file:`hosting.config` rules.
+- Volume override works with all cache operations including reads, writes, and deletes.
+- This feature integrates with per-volume RAM cache settings configured in :file:`volume.config`.
+
+.. note::
+
+   When using ``@volume``, ensure that the target volume has appropriate disk space and
+   performance characteristics for the expected traffic patterns.
+
 .. _remap-config-named-filters:
 
 NextHop Selection Strategies

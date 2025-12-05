@@ -704,8 +704,10 @@ public:
 
     MgmtByte cache_open_write_fail_action = 0;
 
-    HttpConfigParams           *http_config_param = nullptr;
-    CacheLookupInfo             cache_info;
+    HttpConfigParams *http_config_param = nullptr;
+    CacheLookupInfo   cache_info;
+
+    int                         cache_volume_override = -1;
     ResolveInfo                 dns_info;
     RedirectInfo                redirect_info;
     ConnectionTracker::TxnState outbound_conn_track_state;
