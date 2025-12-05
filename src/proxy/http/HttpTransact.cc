@@ -3770,6 +3770,18 @@ HttpTransact::handle_response_from_server(State *s)
         // families - that is locked in by the client source address.
         ats_force_order_by_family(s->current.server->dst_addr.family(), s->my_txn_conf().host_res_data.order);
         return CallOSDNSLookup(s);
+      } else if (ResolveInfo::OS_Addr::USE_API == s->dns_info.os_addr_style && !s->api_server_addr_set_retried) {
+        // Plugin set the server address via TSHttpTxnServerAddrSet(). Clear resolution
+        // state to allow the OS_DNS hook to be called again, giving the plugin a chance
+        // to set a different server address for retry (issue #12611).
+        // Only retry once to avoid infinite loops if the plugin keeps setting failing addresses.
+        s->api_server_addr_set_retried = true;
+        s->dns_info.resolved_p         = false;
+        s->dns_info.os_addr_style      = ResolveInfo::OS_Addr::TRY_DEFAULT;
+        // Clear the server request so it can be rebuilt for the new destination
+        s->hdr_info.server_request.destroy();
+        TxnDbg(dbg_ctl_http_trans, "Retrying with plugin-set address, returning to OS_DNS hook");
+        return CallOSDNSLookup(s);
       } else {
         if ((s->txn_conf->connect_attempts_rr_retries > 0) &&
             ((s->current.retry_attempts.get() + 1) % s->txn_conf->connect_attempts_rr_retries == 0)) {
