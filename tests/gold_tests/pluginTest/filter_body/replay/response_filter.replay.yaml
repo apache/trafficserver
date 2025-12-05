@@ -1,0 +1,86 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+#
+# Test filter_body plugin blocking responses with sensitive data.
+#
+meta:
+  version: "1.0"
+
+autest:
+  description: 'Verify filter_body blocks responses with sensitive data patterns'
+
+  server:
+    name: 'filter-server-resp'
+
+  client:
+    name: 'filter-client-resp'
+
+  ats:
+    name: 'ts-filter-resp'
+    process_config:
+      enable_cache: false
+
+    copy_to_config_dir:
+      - filter_body_response.yaml
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'filter_body'
+
+    remap_config:
+      - from: /
+        to: http://127.0.0.1:{SERVER_HTTP_PORT}/
+        plugins:
+          - name: "filter_body.so"
+            args:
+              - "filter_body_response.yaml"
+
+    log_validation:
+      traffic_out:
+        contains:
+          - expression: "Matched rule: sensitive_data_leak"
+            description: "Verify that the sensitive data rule matched"
+
+sessions:
+  - transactions:
+      # Request that gets response with sensitive data - should be blocked
+      - client-request:
+          method: "GET"
+          version: "1.1"
+          url: /api/user
+          headers:
+            fields:
+              - [Host, www.example.com]
+              - [uuid, resp-filter-test]
+
+        proxy-request:
+          method: "GET"
+          url: /api/user
+
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Content-Type, "application/json"]
+              - [Content-Length, 40]
+          content:
+            data: '{"name": "John", "SSN: 123-45-6789"}'
+
+        proxy-response:
+          status: 403
+

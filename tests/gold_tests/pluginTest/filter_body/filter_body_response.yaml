@@ -1,0 +1,15 @@
+# Configuration for response body filtering
+rules:
+  - name: "sensitive_data_leak"
+    direction: response
+    action: [log, block]
+    methods: [GET, POST]
+    headers:
+      - name: "Content-Type"
+        patterns:
+          - "application/json"
+          - "text/html"
+    body_patterns:
+      - "SSN:"
+      - "password:"
+

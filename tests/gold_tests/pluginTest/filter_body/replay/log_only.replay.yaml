@@ -1,0 +1,91 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+#
+# Test filter_body plugin in log-only mode (no blocking).
+#
+meta:
+  version: "1.0"
+
+autest:
+  description: 'Verify filter_body logs but does not block when action is log only'
+
+  server:
+    name: 'filter-server-log'
+
+  client:
+    name: 'filter-client-log'
+
+  ats:
+    name: 'ts-filter-log'
+    process_config:
+      enable_cache: false
+
+    copy_to_config_dir:
+      - filter_body_log.yaml
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'filter_body'
+
+    remap_config:
+      - from: /
+        to: http://127.0.0.1:{SERVER_HTTP_PORT}/
+        plugins:
+          - name: "filter_body.so"
+            args:
+              - "filter_body_log.yaml"
+
+    log_validation:
+      traffic_out:
+        contains:
+          - expression: "Matched rule: xxe_detection_log"
+            description: "Verify that the rule matched and was logged"
+
+sessions:
+  - transactions:
+      # Request with XXE pattern - should be logged but pass through
+      - client-request:
+          method: "POST"
+          version: "1.1"
+          url: /api/data
+          headers:
+            fields:
+              - [Host, www.example.com]
+              - [Content-Type, "application/xml"]
+              - [Content-Length, 30]
+              - [uuid, xxe-log-test]
+          content:
+            data: '<?xml?><!ENTITY xxe "test">'
+
+        proxy-request:
+          method: "POST"
+          url: /api/data
+
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Content-Length, 7]
+          content:
+            data: "Success"
+
+        proxy-response:
+          status: 200
+          content:
+            verify: { value: "Success", as: equal }
+
