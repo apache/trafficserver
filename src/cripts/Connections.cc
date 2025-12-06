@@ -89,6 +89,20 @@ detail::ConnBase::TcpInfo::Log()
   return _logging;
 }
 
+cripts::Certs::Client
+detail::ConnBase::ClientCert()
+{
+  _ensure_initialized(this);
+  return cripts::Certs::Client{*this};
+}
+
+cripts::Certs::Server
+detail::ConnBase::ServerCert()
+{
+  _ensure_initialized(this);
+  return cripts::Certs::Server{*this};
+}
+
 namespace cripts
 {
 

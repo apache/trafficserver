@@ -19,6 +19,9 @@ Test basic cripts functionality
 
 import os
 
+# Needed if we want to use sed -i '' on macOS, but autest doesn't like that ...
+# import platform
+
 Test.testName = "cripts: basic functions"
 Test.Summary = '''
 Simple cripts test that sets a response header back to the client
@@ -45,19 +48,26 @@ class CriptsBasicTest:
         self.server.addResponse("sessionfile.log", request_header, response_header)
 
     def setUpTS(self):
-        self.ts = Test.MakeATSProcess("ts")
+        self.ts = Test.MakeATSProcess("ts_in", enable_tls=True, enable_cache=False)
+
+        self.ts.addDefaultSSLFiles()
+        self.ts.Disk.ssl_multicert_config.AddLine("dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key")
 
         self.ts.Setup.Copy('files/basic.cript', self.ts.Variables.CONFIGDIR)
 
         self.ts.Disk.records_config.update(
             {
-                'proxy.config.diags.debug.enabled': 1,
                 'proxy.config.plugin.dynamic_reload_mode': 1,
                 'proxy.config.plugin.compiler_path': self._compiler_location,
+                "proxy.config.ssl.server.cert.path": f"{self.ts.Variables.SSLDir}",
+                "proxy.config.ssl.server.private_key.path": f"{self.ts.Variables.SSLDir}",
             })
 
         self.ts.Disk.remap_config.AddLine(
             f'map http://www.example.com http://127.0.0.1:{self.server.Variables.Port} @plugin=basic.cript')
+        self.ts.Disk.remap_config.AddLine(
+            f'map https://www.example.com:{self.ts.Variables.ssl_port} http://127.0.0.1:{self.server.Variables.Port} @plugin=basic.cript'
+        )
 
     def updateCompilerForTest(self):
         '''Update the compiler script for the install location of the ATS process.'''
@@ -66,7 +76,11 @@ class CriptsBasicTest:
         compiler_source = os.path.join(p.Variables.RepoDir, 'tools', 'cripts', 'compiler.sh')
         p.Setup.Copy(compiler_source, self._compiler_location)
         install_dir = os.path.split(p.Variables.BINDIR)[0]
-        p.Command = f'sed -i "s|\"/tmp/ats\"|{install_dir}|g" {self._compiler_location}'
+        # autest doesn't like the -i '' that's necessary on Darwin/macOS
+        # sed_in_place = "-i ''" if platform.system() == 'Darwin' else "-i"
+        # p.Command = f"sed -i '' 's|\"/tmp/ats\"|\"{install_dir}\"|' {self._compiler_location}"
+        p.Command = (f'perl -pi -e \'s|\\"/tmp/ats\\"|\\"{install_dir}\\"|g\' {self._compiler_location}')
+
         p.ReturnCode = 0
 
     def runHeaderTest(self):
@@ -78,9 +92,19 @@ class CriptsBasicTest:
         tr.Processes.Default.Streams.stderr = "gold/basic_cript.gold"
         tr.StillRunningAfter = self.server
 
+    def runCertsTest(self):
+        tr = Test.AddTestRun('Exercise Cripts certificate introspection.')
+        tr.MakeCurlCommand(
+            f'-v --http1.1 -k -H "Host: www.example.com:{self.ts.Variables.ssl_port}" https://127.0.0.1:{self.ts.Variables.ssl_port}'
+        )
+        tr.Processes.Default.ReturnCode = 0
+        tr.Processes.Default.Streams.stderr = "gold/certs_cript.gold"
+        tr.StillRunningAfter = self.server
+
     def run(self):
         self.updateCompilerForTest()
         self.runHeaderTest()
+        self.runCertsTest()
 
 
 CriptsBasicTest().run()

@@ -1,0 +1,17 @@
+``
+> GET / HTTP/1.1
+> Host: www.example.com``
+> User-Agent: curl/``
+> Accept: */*
+``
+< HTTP/1.1 200 OK
+< responseHeader: changed
+< Date: ``
+< Age: ``
+< Connection: keep-alive
+< Server: ATS/``
+< criptsResponseHeader: response
+< X-Subject: C = IE, ST = Dublin, L = Dublin, O = example.com, OU = example.com, CN = example.com
+< X-NotBefore: Jan 26 14:56:08 2021 GMT
+< X-NotAfter: Aug 21 14:56:08 2119 GMT
+``

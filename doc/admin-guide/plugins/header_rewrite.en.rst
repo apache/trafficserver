@@ -454,7 +454,7 @@ INBOUND
 ~~~~~~~
 ::
 
-   cond %{INBOUND:TLS} /./
+   cond %{INBOUND:TLS} ="" [NOT]
 
 This condition provides access to information about the inbound (client, user agent) connection to ATS.
 The data that can be checked is ::
@@ -482,7 +482,7 @@ will be true for *non*-TLS connections because it will be true when ``%{INBOUND:
 string. This happens because the default matching is equality and the default value the empty
 string. Therefore the condition is treated as if it were ::
 
-  cond %{INBOUND:TLS}=""
+  cond %{INBOUND:TLS} =""
 
 which is true when the connection is not TLS. The arguments ``H2``, ``IPV4``, and ``IPV6`` work the
 same way.
@@ -496,6 +496,42 @@ As a special matcher, the inbound IP addresses can be matched against a list of 
     This will not work against the non-IP based conditions, such as the protocol families,
     and the configuration parser will error out. The format here is very specific, in particular no
     white spaces are allowed between the ranges.
+
+If |ATS| is built with :ref:`Cripts <developer-guide-cripts>` support, a number of additional
+qualifiers are available exclusively on TLS sessions, for X509 certificate introspection.
+The client certificate (for mutual TLS) is accessed with qualifier prefix of ``CLIENT-CERT:``
+and the server certificate with a prefix qualifier of ``SERVER-CERT:``. The X509 naming of the
+specific fields are the same for the two certificates::
+
+   PEM              The PEM-encoded certificate, as a string.
+   SIG              The signature of the certificate.
+   SUBJECT          The subject of the certificate.
+   ISSUER           The issuer of the certificate.
+   SERIAL           The serial number of the certificate.
+   NOT_BEFORE       The date and time when the certificate becomes valid.
+   NOT_AFTER        The date and time when the certificate expires.
+   VERSION          The version of the certificate.
+   SAN:DNS          The Subject Alternative Name (SAN) DNS entries.
+   SAN:IP           The Subject Alternative Name (SAN) IP addresses.
+   SAN:EMAIL        The Subject Alternative Name (SAN) email addresses.
+   SAN:URI          The Subject Alternative Name (SAN) URIs.
+
+These conditions and qualifiers can be used in conditions of course, but more importantly,
+are also very useful when adding or modifying headers. For example, you can add some
+client certificate and server subject to the response headers, so that the client can see it
+as part of the response ::
+
+    cond %{SEND_RESPONSE_HDR_HOOK} [AND]
+    cond %{INBOUND:TLS} ="" [NOT]
+      set-header X-Client-Cert "%{INBOUND:CLIENT-CERT:PEM}"
+      set-header X-Client-Cert-Subject "%{INBOUND:CLIENT-CERT:SUBJECT}"
+      set-header X-Client-Cert-Issuer "%{INBOUND:CLIENT-CERT:ISSUER}"
+      set-header X-Server-Cert-Subject "%{INBOUND:SERVER-CERT:SUBJECT}""
+
+The ``SAN:`` fields will return a semicolon-separated list of the respective
+values, there can be zero, one or many of each SAN type. Example ::
+
+    cond %{CLIENT-CERT:SAN:DNS} /example\.com/
 
 IP
 ~~

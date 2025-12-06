@@ -27,7 +27,15 @@ do_read_response()
 do_send_response()
 {
   borrow resp = cripts::Client::Response::Get();
+  borrow conn =cripts::Client::Connection::Get();
   resp["criptsResponseHeader"] = "response";
+
+  if (conn.IsTLS()) {
+    const auto tls = cripts::Certs::Server(conn);
+    resp["X-Subject"] = tls.subject;
+    resp["X-NotBefore"] = tls.notBefore;
+    resp["X-NotAfter"] = tls.notAfter;
+  }
 }
 
 #include <cripts/Epilogue.hpp>

@@ -36,6 +36,10 @@
 
 static const sockaddr *getClientAddr(TSHttpTxn txnp, int txn_private_slot);
 
+#if TS_HAS_CRIPTS
+#include "cripts/Certs.hpp"
+#endif
+
 // ConditionStatus
 void
 ConditionStatus::initialize(Parser &p)
@@ -280,7 +284,7 @@ ConditionUrl::append_value(std::string &s, const Resources &res)
   if (_type == CLIENT) {
     // CLIENT always uses the pristine URL
     Dbg(pi_dbg_ctl, "   Using the pristine url");
-    if (TSHttpTxnPristineUrlGet(res.txnp, &bufp, &url) != TS_SUCCESS) {
+    if (TSHttpTxnPristineUrlGet(res.state.txnp, &bufp, &url) != TS_SUCCESS) {
       TSError("[%s] Error getting the pristine URL", PLUGIN_NAME);
       return;
     }
@@ -503,7 +507,7 @@ ConditionCookie::eval(const Resources &res)
 bool
 ConditionInternalTxn::eval(const Resources &res)
 {
-  bool ret = (0 != TSHttpTxnIsInternal(res.txnp));
+  bool ret = (0 != TSHttpTxnIsInternal(res.state.txnp));
 
   Dbg(pi_dbg_ctl, "Evaluating INTERNAL-TRANSACTION() -> %d", ret);
   return ret;
@@ -555,16 +559,16 @@ ConditionIp::eval(const Resources &res)
 
     switch (_ip_qual) {
     case IP_QUAL_CLIENT:
-      addr = getClientAddr(res.txnp, _txn_private_slot);
+      addr = getClientAddr(res.state.txnp, _txn_private_slot);
       break;
     case IP_QUAL_INBOUND:
-      addr = TSHttpTxnIncomingAddrGet(res.txnp);
+      addr = TSHttpTxnIncomingAddrGet(res.state.txnp);
       break;
     case IP_QUAL_SERVER:
-      addr = TSHttpTxnServerAddrGet(res.txnp);
+      addr = TSHttpTxnServerAddrGet(res.state.txnp);
       break;
     case IP_QUAL_OUTBOUND:
-      addr = TSHttpTxnOutgoingAddrGet(res.txnp);
+      addr = TSHttpTxnOutgoingAddrGet(res.state.txnp);
       break;
     }
 
@@ -593,17 +597,17 @@ ConditionIp::append_value(std::string &s, const Resources &res)
 
   switch (_ip_qual) {
   case IP_QUAL_CLIENT:
-    ip_set = (nullptr != getIP(getClientAddr(res.txnp, _txn_private_slot), ip));
+    ip_set = (nullptr != getIP(getClientAddr(res.state.txnp, _txn_private_slot), ip));
     break;
   case IP_QUAL_INBOUND:
-    ip_set = (nullptr != getIP(TSHttpTxnIncomingAddrGet(res.txnp), ip));
+    ip_set = (nullptr != getIP(TSHttpTxnIncomingAddrGet(res.state.txnp), ip));
     break;
   case IP_QUAL_SERVER:
-    ip_set = (nullptr != getIP(TSHttpTxnServerAddrGet(res.txnp), ip));
+    ip_set = (nullptr != getIP(TSHttpTxnServerAddrGet(res.state.txnp), ip));
     break;
   case IP_QUAL_OUTBOUND:
     Dbg(pi_dbg_ctl, "Requesting output ip");
-    ip_set = (nullptr != getIP(TSHttpTxnOutgoingAddrGet(res.txnp), ip));
+    ip_set = (nullptr != getIP(TSHttpTxnOutgoingAddrGet(res.state.txnp), ip));
     break;
   }
 
@@ -627,10 +631,8 @@ ConditionTransactCount::initialize(Parser &p)
 bool
 ConditionTransactCount::eval(const Resources &res)
 {
-  TSHttpSsn ssn = TSHttpTxnSsnGet(res.txnp);
-
-  if (ssn) {
-    int n = TSHttpSsnTransactionCount(ssn);
+  if (res.state.ssnp) {
+    int n = TSHttpSsnTransactionCount(res.state.ssnp);
 
     Dbg(pi_dbg_ctl, "Evaluating TXN-COUNT()");
     return static_cast<MatcherType *>(_matcher)->test(n, res);
@@ -643,11 +645,9 @@ ConditionTransactCount::eval(const Resources &res)
 void
 ConditionTransactCount::append_value(std::string &s, Resources const &res)
 {
-  TSHttpSsn ssn = TSHttpTxnSsnGet(res.txnp);
-
-  if (ssn) {
+  if (res.state.ssnp) {
     char value[32]; // enough for UINT64_MAX
-    int  count  = TSHttpSsnTransactionCount(ssn);
+    int  count  = TSHttpSsnTransactionCount(res.state.ssnp);
     int  length = ink_fast_itoa(count, value, sizeof(value));
 
     if (length > 0) {
@@ -673,7 +673,7 @@ ConditionNow::get_now_qualified(NowQualifiers qual, const Resources &resources) 
     struct tm res;
 
     PrivateSlotData private_data;
-    private_data.raw = reinterpret_cast<uint64_t>(TSUserArgGet(resources.txnp, _txn_private_slot));
+    private_data.raw = reinterpret_cast<uint64_t>(TSUserArgGet(resources.state.txnp, _txn_private_slot));
     if (private_data.timezone == 1) {
       gmtime_r(&now, &res);
     } else {
@@ -826,9 +826,9 @@ void
 ConditionGeo::append_value(std::string &s, const Resources &res)
 {
   if (is_int_type()) {
-    s += std::to_string(get_geo_int(getClientAddr(res.txnp, _txn_private_slot)));
+    s += std::to_string(get_geo_int(getClientAddr(res.state.txnp, _txn_private_slot)));
   } else {
-    s += get_geo_string(getClientAddr(res.txnp, _txn_private_slot));
+    s += get_geo_string(getClientAddr(res.state.txnp, _txn_private_slot));
   }
   Dbg(pi_dbg_ctl, "Appending GEO() to evaluation value -> %s", s.c_str());
 }
@@ -840,7 +840,7 @@ ConditionGeo::eval(const Resources &res)
 
   Dbg(pi_dbg_ctl, "Evaluating GEO()");
   if (is_int_type()) {
-    int64_t geo = get_geo_int(getClientAddr(res.txnp, _txn_private_slot));
+    int64_t geo = get_geo_int(getClientAddr(res.state.txnp, _txn_private_slot));
 
     ret = static_cast<const Matchers<int64_t> *>(_matcher)->test(geo, res);
   } else {
@@ -899,7 +899,7 @@ ConditionId::append_value(std::string &s, const Resources &res ATS_UNUSED)
 {
   switch (_id_qual) {
   case ID_QUAL_REQUEST: {
-    s += std::to_string(TSHttpTxnIdGet(res.txnp));
+    s += std::to_string(TSHttpTxnIdGet(res.state.txnp));
   } break;
   case ID_QUAL_PROCESS: {
     TSUuid process = TSProcessUuidGet();
@@ -911,7 +911,7 @@ ConditionId::append_value(std::string &s, const Resources &res ATS_UNUSED)
   case ID_QUAL_UNIQUE: {
     char uuid[TS_CRUUID_STRING_LEN + 1];
 
-    if (TS_SUCCESS == TSClientRequestUuidGet(res.txnp, uuid)) {
+    if (TS_SUCCESS == TSClientRequestUuidGet(res.state.txnp, uuid)) {
       s += uuid;
     }
   } break;
@@ -923,7 +923,7 @@ bool
 ConditionId::eval(const Resources &res)
 {
   if (_id_qual == ID_QUAL_REQUEST) {
-    uint64_t id = TSHttpTxnIdGet(res.txnp);
+    uint64_t id = TSHttpTxnIdGet(res.state.txnp);
 
     Dbg(pi_dbg_ctl, "Evaluating GEO() -> %" PRIu64, id);
     return static_cast<const Matchers<uint64_t> *>(_matcher)->test(id, res);
@@ -997,7 +997,7 @@ ConditionCidr::eval(const Resources &res)
 void
 ConditionCidr::append_value(std::string &s, const Resources &res)
 {
-  struct sockaddr const *addr = getClientAddr(res.txnp, _txn_private_slot);
+  struct sockaddr const *addr = getClientAddr(res.state.txnp, _txn_private_slot);
 
   if (addr) {
     switch (addr->sa_family) {
@@ -1057,6 +1057,17 @@ ConditionInbound::initialize(Parser &p)
     match->set(p.get_arg(), mods());
     _matcher = match;
   }
+
+#if TS_HAS_CRIPTS
+  if (_net_qual >= NET_QUAL_CERT_PEM && _net_qual <= NET_QUAL_CERT_SAN_URI) {
+    if (_mtls_cert) {
+      require_resources(RSRC_MTLS_CERTIFICATE);
+    } else {
+      require_resources(RSRC_SERVER_CERTIFICATE);
+    }
+    require_resources(RSRC_CLIENT_CONNECTION);
+  }
+#endif
 }
 
 void
@@ -1086,6 +1097,68 @@ ConditionInbound::set_qualifier(const std::string &q)
     _net_qual = NET_QUAL_IP_FAMILY;
   } else if (q == "STACK") {
     _net_qual = NET_QUAL_STACK;
+#if TS_HAS_CRIPTS
+  } else if (q == "SERVER-CERT:PEM") {
+    _net_qual = NET_QUAL_CERT_PEM;
+  } else if (q == "SERVER-CERT:SIG") {
+    _net_qual = NET_QUAL_CERT_SIG;
+  } else if (q == "SERVER-CERT:SUBJECT") {
+    _net_qual = NET_QUAL_CERT_SUBJECT;
+  } else if (q == "SERVER-CERT:ISSUER") {
+    _net_qual = NET_QUAL_CERT_ISSUER;
+  } else if (q == "SERVER-CERT:SERIAL") {
+    _net_qual = NET_QUAL_CERT_SERIAL;
+  } else if (q == "SERVER-CERT:NOT_BEFORE") {
+    _net_qual = NET_QUAL_CERT_NOT_BEFORE;
+  } else if (q == "SERVER-CERT:NOT_AFTER") {
+    _net_qual = NET_QUAL_CERT_NOT_AFTER;
+  } else if (q == "SERVER-CERT:VERSION") {
+    _net_qual = NET_QUAL_CERT_VERSION;
+  } else if (q == "SERVER-CERT:SAN:DNS") {
+    _net_qual = NET_QUAL_CERT_SAN_DNS;
+  } else if (q == "SERVER-CERT:SAN:IP") {
+    _net_qual = NET_QUAL_CERT_SAN_IP;
+  } else if (q == "SERVER-CERT:SAN:EMAIL") {
+    _net_qual = NET_QUAL_CERT_SAN_EMAIL;
+  } else if (q == "SERVER-CERT:SAN:URI") {
+    _net_qual = NET_QUAL_CERT_SAN_URI;
+  } else if (q == "CLIENT-CERT:PEM") {
+    _net_qual  = NET_QUAL_CERT_PEM;
+    _mtls_cert = true;
+  } else if (q == "CLIENT-CERT:SIG") {
+    _net_qual  = NET_QUAL_CERT_SIG;
+    _mtls_cert = true;
+  } else if (q == "CLIENT-CERT:SUBJECT") {
+    _net_qual  = NET_QUAL_CERT_SUBJECT;
+    _mtls_cert = true;
+  } else if (q == "CLIENT-CERT:ISSUER") {
+    _net_qual  = NET_QUAL_CERT_ISSUER;
+    _mtls_cert = true;
+  } else if (q == "CLIENT-CERT:SERIAL") {
+    _net_qual  = NET_QUAL_CERT_SERIAL;
+    _mtls_cert = true;
+  } else if (q == "CLIENT-CERT:NOT_BEFORE") {
+    _net_qual  = NET_QUAL_CERT_NOT_BEFORE;
+    _mtls_cert = true;
+  } else if (q == "CLIENT-CERT:NOT_AFTER") {
+    _net_qual  = NET_QUAL_CERT_NOT_AFTER;
+    _mtls_cert = true;
+  } else if (q == "CLIENT-CERT:VERSION") {
+    _net_qual  = NET_QUAL_CERT_VERSION;
+    _mtls_cert = true;
+  } else if (q == "CLIENT-CERT:SAN:DNS") {
+    _net_qual  = NET_QUAL_CERT_SAN_DNS;
+    _mtls_cert = true;
+  } else if (q == "CLIENT-CERT:SAN:IP") {
+    _net_qual  = NET_QUAL_CERT_SAN_IP;
+    _mtls_cert = true;
+  } else if (q == "CLIENT-CERT:SAN:EMAIL") {
+    _net_qual  = NET_QUAL_CERT_SAN_EMAIL;
+    _mtls_cert = true;
+  } else if (q == "CLIENT-CERT:SAN:URI") {
+    _net_qual  = NET_QUAL_CERT_SAN_URI;
+    _mtls_cert = true;
+#endif
   } else {
     TSError("[%s] Unknown %s() qualifier: %s", PLUGIN_NAME, TAG, q.c_str());
   }
@@ -1100,10 +1173,10 @@ ConditionInbound::eval(const Resources &res)
 
     switch (_net_qual) {
     case NET_QUAL_LOCAL_ADDR:
-      addr = TSHttpTxnIncomingAddrGet(res.txnp);
+      addr = TSHttpTxnIncomingAddrGet(res.state.txnp);
       break;
     case NET_QUAL_REMOTE_ADDR:
-      addr = getClientAddr(res.txnp, _txn_private_slot);
+      addr = getClientAddr(res.state.txnp, _txn_private_slot);
       break;
     default:
       // Only support actual IP addresses of course...
@@ -1140,43 +1213,59 @@ ConditionInbound::append_value(std::string &s, const Resources &res, NetworkSess
   const char *zret = nullptr;
   char        text[INET6_ADDRSTRLEN];
 
+#if TS_HAS_CRIPTS
+  detail::CertBase *cert = nullptr;
+
+  if (_net_qual >= NET_QUAL_CERT_PEM && _net_qual <= NET_QUAL_CERT_SAN_URI) {
+    if (_mtls_cert) {
+      cert = static_cast<detail::CertBase *>(res.mtls_cert);
+    } else {
+      cert = static_cast<detail::CertBase *>(res.server_cert);
+    }
+
+    if (!cert) {
+      return;
+    }
+  }
+#endif
+
   switch (qual) {
   case NET_QUAL_LOCAL_ADDR: {
-    zret = getIP(TSHttpTxnIncomingAddrGet(res.txnp), text);
+    zret = getIP(TSHttpTxnIncomingAddrGet(res.state.txnp), text);
   } break;
   case NET_QUAL_LOCAL_PORT: {
-    uint16_t port = getPort(TSHttpTxnIncomingAddrGet(res.txnp));
+    uint16_t port = getPort(TSHttpTxnIncomingAddrGet(res.state.txnp));
     snprintf(text, sizeof(text), "%d", port);
     zret = text;
   } break;
   case NET_QUAL_REMOTE_ADDR: {
-    zret = getIP(getClientAddr(res.txnp, _txn_private_slot), text);
+    zret = getIP(getClientAddr(res.state.txnp, _txn_private_slot), text);
   } break;
   case NET_QUAL_REMOTE_PORT: {
-    uint16_t port = getPort(getClientAddr(res.txnp, _txn_private_slot));
+    uint16_t port = getPort(getClientAddr(res.state.txnp, _txn_private_slot));
     snprintf(text, sizeof(text), "%d", port);
     zret = text;
   } break;
   case NET_QUAL_TLS:
-    zret = TSHttpTxnClientProtocolStackContains(res.txnp, "tls/");
+    zret = TSHttpTxnClientProtocolStackContains(res.state.txnp, "tls/");
     break;
   case NET_QUAL_H2:
-    zret = TSHttpTxnClientProtocolStackContains(res.txnp, "h2");
+    zret = TSHttpTxnClientProtocolStackContains(res.state.txnp, "h2");
     break;
   case NET_QUAL_IPV4:
-    zret = TSHttpTxnClientProtocolStackContains(res.txnp, "ipv4");
+    zret = TSHttpTxnClientProtocolStackContains(res.state.txnp, "ipv4");
     break;
   case NET_QUAL_IPV6:
-    zret = TSHttpTxnClientProtocolStackContains(res.txnp, "ipv6");
+    zret = TSHttpTxnClientProtocolStackContains(res.state.txnp, "ipv6");
     break;
   case NET_QUAL_IP_FAMILY:
-    zret = TSHttpTxnClientProtocolStackContains(res.txnp, "ip");
+    zret = TSHttpTxnClientProtocolStackContains(res.state.txnp, "ip");
     break;
   case NET_QUAL_STACK: {
     std::array<char const *, 8> tags  = {};
     int                         count = 0;
     size_t                      len   = 0;
-    TSHttpTxnClientProtocolStackGet(res.txnp, tags.size(), tags.data(), &count);
+    TSHttpTxnClientProtocolStackGet(res.state.txnp, tags.size(), tags.data(), &count);
     for (int i = 0; i < count; ++i) {
       len += 1 + strlen(tags[i]);
     }
@@ -1188,6 +1277,44 @@ ConditionInbound::append_value(std::string &s, const Resources &res, NetworkSess
       s += tags[i];
     }
   } break;
+#if TS_HAS_CRIPTS
+  case NET_QUAL_CERT_PEM:
+    s += cert->certificate;
+    break;
+  case NET_QUAL_CERT_SIG:
+    s += cert->signature;
+    break;
+  case NET_QUAL_CERT_SUBJECT:
+    s += cert->subject;
+    break;
+  case NET_QUAL_CERT_ISSUER:
+    s += cert->issuer;
+    break;
+  case NET_QUAL_CERT_SERIAL:
+    s += cert->serialNumber;
+    break;
+  case NET_QUAL_CERT_NOT_BEFORE:
+    s += cert->notBefore;
+    break;
+  case NET_QUAL_CERT_NOT_AFTER:
+    s += cert->notAfter;
+    break;
+  case NET_QUAL_CERT_VERSION:
+    s += cert->version;
+    break;
+  case NET_QUAL_CERT_SAN_DNS:
+    s += cert->san.dns.Join(";");
+    break;
+  case NET_QUAL_CERT_SAN_IP:
+    s += cert->san.ipadd.Join(";");
+    break;
+  case NET_QUAL_CERT_SAN_EMAIL:
+    s += cert->san.email.Join(";");
+    break;
+  case NET_QUAL_CERT_SAN_URI:
+    s += cert->san.uri.Join(";");
+    break;
+#endif
   }
 
   if (zret) {
@@ -1231,7 +1358,7 @@ ConditionSessionTransactCount::initialize(Parser &p)
 bool
 ConditionSessionTransactCount::eval(const Resources &res)
 {
-  int const val = TSHttpTxnServerSsnTransactionCount(res.txnp);
+  int const val = TSHttpTxnServerSsnTransactionCount(res.state.txnp);
 
   Dbg(pi_dbg_ctl, "Evaluating SSN-TXN-COUNT()");
   return static_cast<MatcherType *>(_matcher)->test(val, res);
@@ -1241,7 +1368,7 @@ void
 ConditionSessionTransactCount::append_value(std::string &s, Resources const &res)
 {
   char      value[32]; // enough for UINT64_MAX
-  int const count  = TSHttpTxnServerSsnTransactionCount(res.txnp);
+  int const count  = TSHttpTxnServerSsnTransactionCount(res.state.txnp);
   int const length = ink_fast_itoa(count, value, sizeof(value));
 
   if (length > 0) {
@@ -1287,7 +1414,7 @@ void
 ConditionTcpInfo::append_value(std::string &s, [[maybe_unused]] Resources const &res)
 {
 #if defined(TCP_INFO) && defined(HAVE_STRUCT_TCP_INFO)
-  if (TSHttpTxnIsInternal(res.txnp)) {
+  if (TSHttpTxnIsInternal(res.state.txnp)) {
     Dbg(pi_dbg_ctl, "No TCP-INFO available for internal transactions");
     return;
   }
@@ -1295,7 +1422,7 @@ ConditionTcpInfo::append_value(std::string &s, [[maybe_unused]] Resources const 
   int             fd;
   struct tcp_info info;
   socklen_t       tcp_info_len = sizeof(info);
-  tsSsn                        = TSHttpTxnClientFdGet(res.txnp, &fd);
+  tsSsn                        = TSHttpTxnClientFdGet(res.state.txnp, &fd);
   if (tsSsn != TS_SUCCESS || fd <= 0) {
     Dbg(pi_dbg_ctl, "error getting the client socket fd from ssn");
   }
@@ -1347,7 +1474,7 @@ ConditionCache::eval(const Resources &res)
 void
 ConditionCache::append_value(std::string &s, const Resources &res)
 {
-  TSHttpTxn txn = res.txnp;
+  TSHttpTxn txn = res.state.txnp;
   int       status;
 
   static const char *names[] = {
@@ -1394,7 +1521,7 @@ ConditionNextHop::append_value(std::string &s, const Resources &res)
 {
   switch (_next_hop_qual) {
   case NEXT_HOP_HOST: {
-    char const *const name = TSHttpTxnNextHopNameGet(res.txnp);
+    char const *const name = TSHttpTxnNextHopNameGet(res.state.txnp);
     if (nullptr != name) {
       Dbg(pi_dbg_ctl, "Appending '%s' to evaluation value", name);
       s.append(name);
@@ -1403,7 +1530,7 @@ ConditionNextHop::append_value(std::string &s, const Resources &res)
     }
   } break;
   case NEXT_HOP_PORT: {
-    int const port = TSHttpTxnNextHopPortGet(res.txnp);
+    int const port = TSHttpTxnNextHopPortGet(res.state.txnp);
     Dbg(pi_dbg_ctl, "Appending '%d' to evaluation value", port);
     s.append(std::to_string(port));
   } break;
@@ -1436,7 +1563,7 @@ ConditionHttpCntl::set_qualifier(const std::string &q)
 void
 ConditionHttpCntl::append_value(std::string &s, const Resources &res)
 {
-  s += TSHttpTxnCntlGet(res.txnp, _http_cntl_qual) ? "TRUE" : "FALSE";
+  s += TSHttpTxnCntlGet(res.state.txnp, _http_cntl_qual) ? "TRUE" : "FALSE";
   Dbg(pi_dbg_ctl, "Evaluating HTTP-CNTL(%s)", _qualifier.c_str());
 }
 
@@ -1444,7 +1571,7 @@ bool
 ConditionHttpCntl::eval(const Resources &res)
 {
   Dbg(pi_dbg_ctl, "Evaluating HTTP-CNTL()");
-  return TSHttpTxnCntlGet(res.txnp, _http_cntl_qual);
+  return TSHttpTxnCntlGet(res.state.txnp, _http_cntl_qual);
 }
 
 // ConditionStateFlag
@@ -1472,7 +1599,7 @@ ConditionStateFlag::append_value(std::string &s, const Resources &res)
 bool
 ConditionStateFlag::eval(const Resources &res)
 {
-  auto data = reinterpret_cast<uint64_t>(TSUserArgGet(res.txnp, _txn_slot));
+  auto data = reinterpret_cast<uint64_t>(TSUserArgGet(res.state.txnp, _txn_slot));
 
   Dbg(pi_dbg_ctl, "Evaluating STATE-FLAG()");
 

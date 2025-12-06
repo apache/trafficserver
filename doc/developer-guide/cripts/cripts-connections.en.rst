@@ -71,6 +71,9 @@ Method                    Description
 ``LocalIP()``             The server (ATS) IP address of the connection.
 ``IsInternal()``          Returns ``true`` or ``false`` if the connection is internal to ATS.
 ``Socket()``              Returns the raw socket structure for the connection (use with care).
+``IsTLS()``               Returns ``true`` if the connection is a TLS connection.
+``ClientCert()``          Returns the client certificiate (mTLS) for the connection (if any).
+``ServerCert()``          Returns the server certificate for the connection, if it's a TLS connection.
 =======================   =========================================================================
 
 The ``IP()`` and ``LocalIP()`` methods return the IP address as an object. In addition to the
@@ -102,6 +105,7 @@ Variable                   Description
 ``pacing``                Configure socket pacing for the connection.
 ``dscp``                  Manage the DSCP value for the connection socket.
 ``mark``                  Manage the Mark value for the connection socket.
+``tls``                   Access to the TLS object for the connection.
 =======================   =========================================================================
 
 For other advanced features, a Cript has access to the socket file descriptor, via the ``FD()``
@@ -165,3 +169,24 @@ Method                    Description
 .. note::
    All methods return string values. These are methods and not fields, so they must be called as
    functions.
+
+.. _cripts-connections-tls:
+
+TLS
+===
+
+The ``tls`` variable provides access to the TLS object for the session. This object
+provides access to the TLS certificate and other TLS related information. The following methods
+are available:
+
+=======================   =========================================================================
+Method                    Description
+=======================   =========================================================================
+``Connection``            Returns the connection object for the TLS connection.
+``GetX509()``             Returns the X509 certificate for the connection, an OpenSSL object.
+=======================   =========================================================================
+
+Both of these can return a null pointer, if the connection is not a TLS connection or
+if the certificate is not available. The ``GetX509()`` method can take an optional
+boolean argument, which indicates if the certificate should be for a mutual TLS connection. The
+default is ``false``, which means that the server certificate for the connection will be returned.
