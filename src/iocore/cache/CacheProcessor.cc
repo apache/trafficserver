@@ -406,24 +406,21 @@ CacheProcessor::scan(Continuation *cont, std::string_view hostname, int KB_per_s
 Action *
 CacheProcessor::lookup(Continuation *cont, const HttpCacheKey *key, CacheFragType frag_type)
 {
-  return lookup(cont, &key->hash, frag_type,
-                std::string_view{key->hostname, static_cast<std::string_view::size_type>(key->hostlen)});
+  return lookup(cont, &key->hash, frag_type, key->hostname);
 }
 
 Action *
 CacheProcessor::open_read(Continuation *cont, const HttpCacheKey *key, CacheHTTPHdr *request, const HttpConfigAccessor *params,
                           CacheFragType type)
 {
-  return caches[type]->open_read(cont, &key->hash, request, params, type,
-                                 std::string_view{key->hostname, static_cast<std::string_view::size_type>(key->hostlen)});
+  return caches[type]->open_read(cont, &key->hash, request, params, type, key->hostname);
 }
 
 Action *
 CacheProcessor::open_write(Continuation *cont, const HttpCacheKey *key, CacheHTTPInfo *old_info, time_t pin_in_cache,
                            CacheFragType type)
 {
-  return caches[type]->open_write(cont, &key->hash, old_info, pin_in_cache, type,
-                                  std::string_view{key->hostname, static_cast<std::string_view::size_type>(key->hostlen)});
+  return caches[type]->open_write(cont, &key->hash, old_info, pin_in_cache, type, key->hostname);
 }
 
 //----------------------------------------------------------------------------
@@ -432,8 +429,7 @@ CacheProcessor::open_write(Continuation *cont, const HttpCacheKey *key, CacheHTT
 Action *
 CacheProcessor::remove(Continuation *cont, const HttpCacheKey *key, CacheFragType frag_type)
 {
-  return caches[frag_type]->remove(cont, &key->hash, frag_type,
-                                   std::string_view{key->hostname, static_cast<std::string_view::size_type>(key->hostlen)});
+  return caches[frag_type]->remove(cont, &key->hash, frag_type, key->hostname);
 }
 
 /** Set the state of a disk programmatically.
