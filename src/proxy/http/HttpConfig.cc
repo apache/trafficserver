@@ -720,8 +720,8 @@ ParsedConfigCache::lookup_impl(TSOverridableConfigKey key, std::string_view valu
 
   // Fast path: check cache under read lock.
   {
-    std::shared_lock lock(_mutex);
-    auto             it = _cache.find(cache_key);
+    ts::bravo::shared_lock lock(_mutex);
+    auto                   it = _cache.find(cache_key);
     if (it != _cache.end()) {
       return it->second;
     }
@@ -750,29 +750,38 @@ ParsedConfigCache::parse(TSOverridableConfigKey key, std::string_view value)
   result.conf_value_storage = std::string(value);
 
   switch (key) {
-  case TS_CONFIG_HTTP_HOST_RESOLUTION_PREFERENCE:
-    parse_host_res_preference(result.conf_value_storage.c_str(), result.host_res_data.order);
-    result.host_res_data.conf_value = result.conf_value_storage.data();
+  case TS_CONFIG_HTTP_HOST_RESOLUTION_PREFERENCE: {
+    HostResData host_res_data{};
+    parse_host_res_preference(result.conf_value_storage.c_str(), host_res_data.order);
+    host_res_data.conf_value = result.conf_value_storage.data();
+    result.parsed            = host_res_data;
     break;
+  }
 
   case TS_CONFIG_HTTP_NEGATIVE_CACHING_LIST:
-  case TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_LIST:
-    result.status_code_list.conf_value = result.conf_value_storage.data();
-    HttpStatusCodeList::Conv.store_string(&result.status_code_list, result.conf_value_storage);
+  case TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_LIST: {
+    HttpStatusCodeList status_code_list{};
+    status_code_list.conf_value = result.conf_value_storage.data();
+    HttpStatusCodeList::Conv.store_string(&status_code_list, result.conf_value_storage);
+    result.parsed = status_code_list;
     break;
+  }
 
   case TS_CONFIG_HTTP_INSERT_FORWARDED: {
     swoc::LocalBufferWriter<1024> error;
-    result.forwarded_bitset = HttpForwarded::optStrToBitset(result.conf_value_storage, error);
+    result.parsed = HttpForwarded::optStrToBitset(result.conf_value_storage, error);
     if (error.size()) {
       Error("HTTP %.*s", static_cast<int>(error.size()), error.data());
     }
     break;
   }
 
-  case TS_CONFIG_HTTP_SERVER_SESSION_SHARING_MATCH:
-    HttpConfig::load_server_session_sharing_match(result.conf_value_storage, result.server_session_sharing_match);
+  case TS_CONFIG_HTTP_SERVER_SESSION_SHARING_MATCH: {
+    MgmtByte server_session_sharing_match{0};
+    HttpConfig::load_server_session_sharing_match(result.conf_value_storage, server_session_sharing_match);
+    result.parsed = server_session_sharing_match;
     break;
+  }
 
   default:
     // No special parsing needed for this config.

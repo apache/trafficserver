@@ -41,8 +41,8 @@
 #include <cctype>
 #include <string_view>
 #include <chrono>
-#include <shared_mutex>
 #include <functional>
+#include <variant>
 
 #include "iocore/eventsystem/IOBuffer.h"
 #include "swoc/swoc_ip.h"
@@ -57,6 +57,7 @@
 #include "iocore/net/ConnectionTracker.h"
 #include "iocore/net/SessionSharingAPIEnums.h"
 #include "records/RecProcess.h"
+#include "tsutil/Bravo.h"
 #include "tsutil/ts_ip.h"
 #include "tsutil/Metrics.h"
 #include "ts/apidefs.h"
@@ -875,13 +876,15 @@ public:
 class ParsedConfigCache
 {
 public:
-  /** Pre-parsed representations for configs that need special parsing. */
+  /** Pre-parsed representations for configs that need special parsing.
+   *
+   * Uses std::variant since each cache entry only stores one type of parsed
+   * result. The conf_value_storage string is always present as it owns the
+   * string data that the parsed structures may reference.
+   */
   struct ParsedValue {
-    HostResData                 host_res_data{};
-    HttpStatusCodeList          status_code_list{};
-    HttpForwarded::OptionBitSet forwarded_bitset{};
-    MgmtByte                    server_session_sharing_match{0};
-    std::string                 conf_value_storage{}; // Owns the string data.
+    std::string conf_value_storage{}; // Owns the string data.
+    std::variant<std::monostate, HostResData, HttpStatusCodeList, HttpForwarded::OptionBitSet, MgmtByte> parsed{};
   };
 
   /** Return the parsed value for the configuration.
@@ -919,7 +922,7 @@ private:
   };
 
   std::unordered_map<std::pair<TSOverridableConfigKey, std::string>, ParsedValue, CacheKeyHash> _cache;
-  mutable std::shared_mutex                                                                     _mutex;
+  ts::bravo::shared_mutex                                                                       _mutex;
 };
 
 /////////////////////////////////////////////////////////////

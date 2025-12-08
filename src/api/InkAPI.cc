@@ -7486,13 +7486,13 @@ TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
   case TS_CONFIG_HTTP_INSERT_FORWARDED:
     if (value && length > 0) {
       auto &parsed                              = ParsedConfigCache::lookup(conf, std::string_view(value, length));
-      s->t_state.my_txn_conf().insert_forwarded = parsed.forwarded_bitset;
+      s->t_state.my_txn_conf().insert_forwarded = std::get<HttpForwarded::OptionBitSet>(parsed.parsed);
     }
     break;
   case TS_CONFIG_HTTP_SERVER_SESSION_SHARING_MATCH:
     if (value && length > 0) {
       auto &parsed                                              = ParsedConfigCache::lookup(conf, std::string_view(value, length));
-      s->t_state.my_txn_conf().server_session_sharing_match     = parsed.server_session_sharing_match;
+      s->t_state.my_txn_conf().server_session_sharing_match     = std::get<MgmtByte>(parsed.parsed);
       s->t_state.my_txn_conf().server_session_sharing_match_str = const_cast<char *>(parsed.conf_value_storage.data());
     }
     break;
@@ -7537,19 +7537,19 @@ TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
   case TS_CONFIG_HTTP_NEGATIVE_CACHING_LIST:
     if (value && length > 0) {
       auto &parsed                                   = ParsedConfigCache::lookup(conf, std::string_view(value, length));
-      s->t_state.my_txn_conf().negative_caching_list = parsed.status_code_list;
+      s->t_state.my_txn_conf().negative_caching_list = std::get<HttpStatusCodeList>(parsed.parsed);
     }
     break;
   case TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_LIST:
     if (value && length > 0) {
       auto &parsed                                        = ParsedConfigCache::lookup(conf, std::string_view(value, length));
-      s->t_state.my_txn_conf().negative_revalidating_list = parsed.status_code_list;
+      s->t_state.my_txn_conf().negative_revalidating_list = std::get<HttpStatusCodeList>(parsed.parsed);
     }
     break;
   case TS_CONFIG_HTTP_HOST_RESOLUTION_PREFERENCE:
     if (value && length > 0) {
       auto &parsed                           = ParsedConfigCache::lookup(conf, std::string_view(value, length));
-      s->t_state.my_txn_conf().host_res_data = parsed.host_res_data;
+      s->t_state.my_txn_conf().host_res_data = std::get<HostResData>(parsed.parsed);
     }
     break;
   default: {
