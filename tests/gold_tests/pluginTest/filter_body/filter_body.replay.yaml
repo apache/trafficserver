@@ -173,7 +173,7 @@ sessions:
           headers:
             fields:
               - [Host, request-block.example.com]
-              - [Content-Type, "application/xml"]
+              - [Content-Type, "application/xml+plus_other_stuff"]
               - [Content-Length, 49]
               - [uuid, request-block-test]
           content:
