@@ -132,7 +132,6 @@ struct HttpCacheKey {
   int         hostlen;
   const char *hostname;
   CacheKey    hash;
-  CacheKey    hash2;
 };
 
 #define CACHE_ALLOW_MULTIPLE_WRITES 1
