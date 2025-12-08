@@ -162,6 +162,10 @@ def ATSReplayTest(obj, replay_file: str):
     process_config = server_config.get('process_config', {})
     server = tr.AddVerifierServerProcess(name, replay_file, **process_config)
 
+    # Set expected return code for server if specified.
+    if 'return_code' in server_config:
+        server.ReturnCode = server_config['return_code']
+
     # ATS configuration.
     if not 'ats' in autest_config:
         raise ValueError(f"Replay file {replay_file} does not contain 'autest.ats' section")
@@ -178,6 +182,10 @@ def ATSReplayTest(obj, replay_file: str):
     https_ports = [ts.Variables.ssl_port] if enable_tls else None
     client = tr.AddVerifierClientProcess(
         name, replay_file, http_ports=[ts.Variables.port], https_ports=https_ports, **process_config)
+
+    # Set expected return code if specified.
+    if 'return_code' in client_config:
+        client.ReturnCode = client_config['return_code']
 
     if dns:
         ts.StartBefore(dns)
