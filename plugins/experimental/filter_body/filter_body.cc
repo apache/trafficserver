@@ -355,22 +355,6 @@ add_header_to_message(TSMBuffer bufp, TSMLoc hdr_loc, std::string const &name, s
 }
 
 /**
- * @brief Execute the configured actions for a matched rule.
- *
- * Performs the actions specified in the rule: log, add_header, and/or block.
- * For request rules, headers are added to the server request (proxy request to origin).
- * For response rules, headers are added to the client response.
- *
- * @note Headers are added during body inspection, which occurs after headers may have
- *       already been sent. For request transforms, the server request headers should
- *       still be modifiable. For response transforms, headers are added before the
- *       response is sent to the client.
- *
- * @param[in,out] data            The transform data containing transaction state.
- * @param[in]     rule            The matched rule containing actions to execute.
- * @param[in]     matched_pattern The pattern that triggered the match (for logging).
- */
-/**
  * @brief Substitute <rule_name> placeholder in header value.
  *
  * @param[in] value     The header value that may contain <rule_name>.
@@ -390,6 +374,22 @@ substitute_rule_name(std::string const &value, std::string const &rule_name)
   return result;
 }
 
+/**
+ * @brief Execute the configured actions for a matched rule.
+ *
+ * Performs the actions specified in the rule: log, add_header, and/or block.
+ * For request rules, headers are added to the server request (proxy request to origin).
+ * For response rules, headers are added to the client response.
+ *
+ * @note Headers are added during body inspection, which occurs after headers may have
+ *       already been sent. For request transforms, the server request headers should
+ *       still be modifiable. For response transforms, headers are added before the
+ *       response is sent to the client.
+ *
+ * @param[in,out] data            The transform data containing transaction state.
+ * @param[in]     rule            The matched rule containing actions to execute.
+ * @param[in]     matched_pattern The pattern that triggered the match (for logging).
+ */
 void
 execute_actions(TransformData *data, Rule const *rule, std::string const *matched_pattern)
 {
