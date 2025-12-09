@@ -100,6 +100,7 @@ ClassAllocator<EvacuationBlock, false>    evacuationBlockAllocator("evacuationBl
 ClassAllocator<CacheRemoveCont, false>    cacheRemoveContAllocator("cacheRemoveCont");
 ClassAllocator<EvacuationKey, false>      evacuationKeyAllocator("evacuationKey");
 std::unordered_set<std::string>           known_bad_disks;
+CacheHostRecord                          *default_volumes_host_rec = nullptr;
 
 namespace
 {
@@ -240,6 +241,22 @@ Cache::open_done()
   // TS-3848
   if (ready == CacheInitState::FAILED && cacheProcessor.waitForCache() >= 2) {
     Emergency("Failed to initialize cache host table");
+  }
+
+  // Initialize default_volumes_host_rec from proxy.config.cache.default_volumes
+  if (ready == CacheInitState::INITIALIZED && default_volumes_host_rec == nullptr) {
+    auto default_volumes_str = RecGetRecordStringAlloc("proxy.config.cache.default_volumes");
+
+    if (default_volumes_str && !default_volumes_str.value().empty()) {
+      char errbuf[256];
+
+      default_volumes_host_rec = createCacheHostRecord(default_volumes_str.value().c_str(), errbuf, sizeof(errbuf));
+      if (default_volumes_host_rec != nullptr) {
+        Dbg(dbg_ctl_cache_init, "Initialized default_volumes from '%s'", default_volumes_str.value().c_str());
+      } else {
+        Warning("Failed to parse proxy.config.cache.default_volumes '%s': %s", default_volumes_str.value().c_str(), errbuf);
+      }
+    }
   }
 
   cacheProcessor.cacheInitialized();
@@ -774,6 +791,12 @@ Cache::key_to_stripe(const CacheKey *key, std::string_view hostname, const Cache
         selected_stripe = res.record->stripes[host_hash_table[h]];
       }
     }
+  }
+
+  // Priority 3: Global default volumes from proxy.config.cache.default_volumes
+  if (!selected_stripe && default_volumes_host_rec && default_volumes_host_rec->vol_hash_table) {
+    selected_stripe = default_volumes_host_rec->stripes[default_volumes_host_rec->vol_hash_table[h]];
+    Dbg(dbg_ctl_cache_hosting, "Using default_volumes for stripe selection");
   }
 
   // Priority 4: Generic/default volume selection (fallback)
