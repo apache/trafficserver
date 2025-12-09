@@ -170,7 +170,7 @@ Action Options
     Valid values:
 
     - ``log``: Log the match to the Traffic Server log.
-    - ``block``: Block the request/response with a 403 Forbidden status.
+    - ``block``: Block the request/response (see Block Action below for details).
     - ``add_header``: Add custom headers to the request/response. This action
       takes a map of header names to values. Use ``<rule_name>`` in header
       values to substitute the rule's name dynamically. Example::
@@ -242,11 +242,8 @@ on configuring access logs.
 Block Action
 ------------
 
-When the ``block`` action is configured, the request or response is blocked:
-
-- For request transforms: The connection to the origin is closed and no further
-  data is forwarded.
-- The HTTP status is set to 403 Forbidden.
+When the ``block`` action is configured, the request or response is blocked. The
+connection to the origin is closed and no further data is forwarded.
 
 .. warning::
 
@@ -259,9 +256,11 @@ When the ``block`` action is configured, the request or response is blocked:
 
 .. note::
 
-    For request body transforms, blocking occurs after body inspection begins.
-    The connection is closed rather than returning a clean HTTP 403 response
-    to the client.
+    For request body transforms, the plugin cannot send a custom error response
+    (such as 403 Forbidden) because the request headers have already been sent
+    to the origin by the time the body is inspected. Instead, ATS closes the
+    connection. Depending upon timing, the client may receive a 502 status
+    response.
 
 Add Header Action
 -----------------
@@ -414,9 +413,11 @@ Debug output includes:
 Limitations
 ===========
 
-1. **Request blocking**: When blocking request bodies, the connection is closed
-   rather than returning a proper HTTP 403 response. This is a limitation of
-   request body transforms in |TS|.
+1. **Request blocking**: When blocking request bodies, the connection to the
+   origin is closed and the client receives a 502 Bad Gateway response. The
+   plugin cannot send a custom error response (such as 403 Forbidden) because
+   the request headers have already been sent to the origin by the time the
+   body is inspected. This is a limitation of request body transforms in |TS|.
 
 2. **Pattern matching**: The plugin uses simple substring matching. Regular
    expressions are not currently supported.

@@ -55,7 +55,7 @@ autest:
             args:
               - "config/filter_body_request_log.yaml"
 
-      # Request block - request with XXE pattern is blocked with 403
+      # Request block - request with XXE pattern is blocked
       - from: http://request-block.example.com/
         to: http://127.0.0.1:{SERVER_HTTP_PORT}/
         plugins:
@@ -163,9 +163,13 @@ sessions:
           status: 200
 
   #############################################################################
-  # Test 2: Request block - request with XXE pattern triggers blocking action
-  # Note: Due to streaming nature, the response status may be 403 or 502
-  # depending on timing. We verify blocking via log messages instead.
+  # Test 2: Request block - request with XXE pattern is blocked
+  #
+  # When blocking request bodies, ATS closes the connection to the origin and
+  # the client either experiences simply a closed connection or, depending upon
+  # timeing, a 502 Bad Gateway response. The plugin cannot send a custom error
+  # response (like 403) because the request headers have already been sent to
+  # the origin by the time the body is inspected.
   #############################################################################
   - transactions:
       - client-request:
@@ -190,7 +194,8 @@ sessions:
           content:
             data: "OK"
 
-        # Status intentionally not verified - may be 403 or 502 due to streaming
+        proxy-response:
+          status: 502
 
   #############################################################################
   # Test 3: Request header - request passes, header added to server request
