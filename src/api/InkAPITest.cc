@@ -8781,9 +8781,11 @@ REGRESSION_TEST(SDK_API_OVERRIDABLE_CONFIGS)(RegressionTest *test, int /* atype 
     case TS_RECORDDATATYPE_STRING:
       TSHttpTxnConfigStringSet(txnp, key, test_string, -1);
       TSHttpTxnConfigStringGet(txnp, key, &sval_read, &len);
-      if (test_string != sval_read) {
-        SDK_RPRINT(test, "TSHttpTxnConfigStringSet", "TestCase1", TC_FAIL, "Failed on %s, %s != %s", conf.data(), sval_read,
-                   test_string);
+      // Compare string content, not pointers - the implementation may store
+      // a copy of the string (e.g., in ParsedConfigCache for efficiency).
+      if (sval_read == nullptr || std::string_view(test_string) != std::string_view(sval_read, len)) {
+        SDK_RPRINT(test, "TSHttpTxnConfigStringSet", "TestCase1", TC_FAIL, "Failed on %s, %s != %s", conf.data(),
+                   sval_read ? sval_read : "(null)", test_string);
         success = false;
         continue;
       }
