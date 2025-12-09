@@ -582,8 +582,8 @@ transform_handler(TSCont contp, TSEvent event, void *edata ATS_UNUSED)
             // Skip if we've already found a match or bytes already covered by Phase 1
             if (!data->matched_rule && search_offset < static_cast<size_t>(block_avail)) {
               for (Rule const *rule : data->active_rules) {
-                std::string const *matched =
-                  search_body_patterns(*rule, swoc::TextView(block_data + search_offset, block_avail - search_offset));
+                std::string const *matched = search_body_patterns(
+                  *rule, swoc::TextView(block_data + search_offset, static_cast<size_t>(block_avail) - search_offset));
                 if (matched) {
                   data->matched_rule = rule;
                   execute_actions(data, rule, matched);
