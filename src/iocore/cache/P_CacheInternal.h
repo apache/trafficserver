@@ -108,6 +108,9 @@ struct EvacuationBlock;
 
 extern CacheStatsBlock cache_rsb;
 
+// Global default volumes host record (initialized from proxy.config.cache.default_volumes)
+extern CacheHostRecord *default_volumes_host_rec;
+
 // Configuration
 extern int cache_config_dir_sync_frequency;
 extern int cache_config_dir_sync_delay;

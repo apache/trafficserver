@@ -62,7 +62,9 @@ struct CacheHostRecord {
   CacheHostRecord() {}
 };
 
-void build_vol_hash_table(CacheHostRecord *cp);
+void             build_vol_hash_table(CacheHostRecord *cp);
+CacheHostRecord *createCacheHostRecord(const char *volume_str, char *errbuf, size_t errbufsize);
+void             destroyCacheHostRecord(CacheHostRecord *rec);
 
 struct CacheHostResult {
   CacheHostRecord *record = nullptr;

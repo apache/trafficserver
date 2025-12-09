@@ -2677,6 +2677,34 @@ Cache Control
    used in determining the number of :term:`directory buckets <directory bucket>`
    to allocate for the in-memory cache directory.
 
+.. ts:cv:: CONFIG proxy.config.cache.default_volumes STRING ""
+
+   Specifies a comma-separated list of cache volume numbers to use as the default
+   for cache stripe selection when no more specific volume configuration applies.
+   For example, ``"1,2"`` would use volumes 1 and 2 as the default.
+
+   The volume selection priority order is:
+
+   1. ``@volume=`` directive in :file:`remap.config` (highest priority)
+   2. Hostname matching in :file:`hosting.config`
+   3. ``proxy.config.cache.default_volumes`` (if non-empty)
+   4. All available cache volumes (lowest priority)
+
+   An empty string (the default) disables this feature, causing |TS| to fall
+   back directly to using all available volumes when no other configuration
+   matches.
+
+   This is useful for scenarios where you want to restrict default caching to
+   specific volumes without configuring hostname patterns in :file:`hosting.config`.
+   For example, you might want to reserve certain volumes for specific remap rules
+   while having a different set of default volumes for all other traffic.
+
+.. topic:: Example
+
+   Assign volumes 1 and 2 as defaults for general traffic ::
+
+      CONFIG proxy.config.cache.default_volumes STRING "1,2"
+
 .. ts:cv:: CONFIG proxy.config.cache.permit.pinning INT 0
    :reloadable:
 
