@@ -95,6 +95,7 @@ public:
    * @see START_POS
    */
   Stripe(CacheDisk *disk, off_t blocks, off_t dir_skip, int avg_obj_size = -1, int fragment_size = -1);
+  virtual ~Stripe();
 
   int dir_check();
 
