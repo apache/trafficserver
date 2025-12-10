@@ -116,7 +116,7 @@ attach_tmpfile_to_stripe(StripeSM &stripe)
 // We can't return a stripe from this function because the copy
 // and move constructors are deleted.
 static std::FILE *
-init_stripe_for_writing(StripeSM &stripe, StripteHeaderFooter &header, CacheVol &cache_vol)
+init_stripe_for_writing(StripeSM &stripe, StripeHeaderFooter &header, CacheVol &cache_vol)
 {
   stripe.cache_vol                             = &cache_vol;
   cache_rsb.write_bytes                        = ts::Metrics::Counter::createPtr("unit_test.write.bytes");
@@ -200,12 +200,12 @@ TEST_CASE("aggWrite behavior with f.evacuator unset")
 {
   CacheDisk disk;
   init_disk(disk);
-  StripeSM            stripe{&disk, 10, 0};
-  StripteHeaderFooter header;
-  CacheVol            cache_vol;
-  auto               *file{init_stripe_for_writing(stripe, header, cache_vol)};
-  WaitingVC           vc{&stripe};
-  char const         *source = "yay";
+  StripeSM           stripe{&disk, 10, 0};
+  StripeHeaderFooter header;
+  CacheVol           cache_vol;
+  auto              *file{init_stripe_for_writing(stripe, header, cache_vol)};
+  WaitingVC          vc{&stripe};
+  char const        *source = "yay";
   vc.set_test_data(source, 4);
   vc.set_write_len(4);
   vc.set_agg_len(stripe.round_to_approx_size(vc.write_len + vc.header_len + vc.frag_len));
@@ -309,14 +309,14 @@ TEST_CASE("aggWrite behavior with f.evacuator set")
 {
   CacheDisk disk;
   init_disk(disk);
-  StripeSM            stripe{&disk, 10, 0};
-  StripteHeaderFooter header;
-  CacheVol            cache_vol;
-  auto               *file{init_stripe_for_writing(stripe, header, cache_vol)};
-  WaitingVC           vc{&stripe};
-  char               *source = new char[sizeof(Doc) + 4]{};
-  const char         *yay    = "yay";
-  Doc                 doc{};
+  StripeSM           stripe{&disk, 10, 0};
+  StripeHeaderFooter header;
+  CacheVol           cache_vol;
+  auto              *file{init_stripe_for_writing(stripe, header, cache_vol)};
+  WaitingVC          vc{&stripe};
+  char              *source = new char[sizeof(Doc) + 4]{};
+  const char        *yay    = "yay";
+  Doc                doc{};
   doc.magic     = DOC_MAGIC;
   doc.len       = sizeof(Doc) + 4;
   doc.total_len = 4;
