@@ -96,6 +96,8 @@ public:
    */
   Stripe(CacheDisk *disk, off_t blocks, off_t dir_skip, int avg_obj_size = -1, int fragment_size = -1);
 
+  ~Stripe();
+
   int dir_check();
 
   uint32_t round_to_approx_size(uint32_t l) const;
@@ -150,6 +152,8 @@ protected:
   bool flush_aggregate_write_buffer(int fd);
 
 private:
+  bool _dir_uses_hugepages{false};
+
   void _init_hash_text(CacheDisk const *disk, off_t blocks, off_t dir_skip);
   void _init_data(off_t store_block_size, int avg_obj_size = -1);
   void _init_data_internal(int avg_obj_size = -1); // Defaults to cache_config_min_average_object_size;

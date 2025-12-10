@@ -32,6 +32,7 @@
 #include "tscore/ink_memory.h"
 
 #include <cstddef>
+#include <cstdlib>
 #include <cstring>
 
 using CacheHTTPInfo = HTTPInfo;
@@ -97,6 +98,18 @@ Stripe::Stripe(CacheDisk *disk, off_t blocks, off_t dir_skip, int avg_obj_size, 
   this->_init_directory(this->dirlen(), this->headerlen(), DIRECTORY_FOOTER_SIZE);
 }
 
+Stripe::~Stripe()
+{
+  if (this->directory.raw_dir != nullptr) {
+    if (this->_dir_uses_hugepages) {
+      ats_free_hugepage(this->directory.raw_dir, this->dirlen());
+    } else {
+      ats_free(this->directory.raw_dir);
+    }
+    this->directory.raw_dir = nullptr;
+  }
+}
+
 void
 Stripe::_init_hash_text(CacheDisk const *disk, off_t blocks, off_t dir_skip)
 {
@@ -154,6 +167,9 @@ Stripe::_init_directory(std::size_t directory_size, int header_size, int footer_
       directory_size, (long long)this->len, percent(directory_size, this->len));
   if (ats_hugepage_enabled()) {
     this->directory.raw_dir = static_cast<char *>(ats_alloc_hugepage(directory_size));
+    if (this->directory.raw_dir != nullptr) {
+      this->_dir_uses_hugepages = true;
+    }
   }
   if (nullptr == this->directory.raw_dir) {
     this->directory.raw_dir = static_cast<char *>(ats_memalign(ats_pagesize(), directory_size));
