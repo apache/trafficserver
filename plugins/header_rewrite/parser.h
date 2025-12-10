@@ -195,11 +195,21 @@ public:
     return _val;
   }
 
+  // Check if the modifier exists and consume it from the list.
   bool
-  mod_exist(const std::string &m) const
+  consume_mod(const std::string &m)
   {
-    return std::find(_mods.begin(), _mods.end(), m) != _mods.end();
+    auto it = std::find(_mods.begin(), _mods.end(), m);
+
+    if (it != _mods.end()) {
+      _mods.erase(it);
+      return true;
+    }
+    return false;
   }
+
+  // Validate that all modifiers were consumed; logs error and returns false if not
+  bool validate_mods() const;
 
   bool cond_is_hook(TSHttpHookID &hook) const;
 

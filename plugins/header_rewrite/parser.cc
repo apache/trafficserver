@@ -181,7 +181,12 @@ Parser::preprocess(std::vector<std::string> tokens)
           std::string        t;
 
           while (getline(iss, t, ',')) {
-            _mods.push_back(t);
+            if (std::find(_mods.begin(), _mods.end(), t) != _mods.end()) {
+              // This produces an error, but it's not fatal for load / reload. ToDo: ATS v11 fix.
+              TSError("[%s] Duplicate modifier: %s", PLUGIN_NAME, t.c_str());
+            } else {
+              _mods.push_back(t);
+            }
           }
         } else {
           _mods.push_back(m);
@@ -300,6 +305,26 @@ Parser::cond_is_hook(TSHttpHookID &hook) const
     return true;
   }
 
+  return false;
+}
+
+// This is a TSError() here, but where this is called from does not treat "false" as a
+// load failure. This is a systemic problem in a some of the parsing. ToDo: ATS v11 fix.
+bool
+Parser::validate_mods() const
+{
+  if (_mods.empty()) {
+    return true;
+  }
+
+  auto        it   = _mods.begin();
+  std::string list = *it++;
+
+  for (; it != _mods.end(); ++it) {
+    list += ", ";
+    list += *it;
+  }
+  TSError("[%s] Unknown modifier(s): [%s]", PLUGIN_NAME, list.c_str());
   return false;
 }
 
