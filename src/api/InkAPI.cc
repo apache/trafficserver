@@ -8947,12 +8947,15 @@ TSReturnCode
 TSConnectionLimitExemptListAdd(std::string_view ip_ranges)
 {
   swoc::TextView ip_ranges_tv{ip_ranges};
+
   while (auto ip_range_tv = ip_ranges_tv.take_prefix_at(',')) {
     swoc::IPRange ip_range;
+
     if (!ip_range.load(ip_range_tv)) {
       return TS_ERROR;
     }
     bool success = ConnectionTracker::add_client_exempt_range(ip_range);
+
     if (!success) {
       return TS_ERROR;
     }
@@ -8964,12 +8967,15 @@ TSReturnCode
 TSConnectionLimitExemptListRemove(std::string_view ip_ranges)
 {
   swoc::TextView ip_ranges_tv{ip_ranges};
+
   while (auto ip_range_tv = ip_ranges_tv.take_prefix_at(',')) {
     swoc::IPRange ip_range;
+
     if (!ip_range.load(ip_range_tv)) {
       return TS_ERROR;
     }
     bool success = ConnectionTracker::remove_client_exempt_range(ip_range);
+
     if (!success) {
       return TS_ERROR;
     }
