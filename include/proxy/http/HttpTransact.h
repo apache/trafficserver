@@ -683,6 +683,7 @@ public:
     bool api_server_request_body_set  = false;
     bool api_req_cacheable            = false;
     bool api_resp_cacheable           = false;
+    bool api_server_addr_set_retried  = false;
     bool reverse_proxy                = false;
     bool url_remap_success            = false;
     bool api_skip_all_remapping       = false;
