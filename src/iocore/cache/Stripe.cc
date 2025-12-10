@@ -154,14 +154,31 @@ Stripe::_init_directory(std::size_t directory_size, int header_size, int footer_
       directory_size, (long long)this->len, percent(directory_size, this->len));
   if (ats_hugepage_enabled()) {
     this->directory.raw_dir = static_cast<char *>(ats_alloc_hugepage(directory_size));
+    if (this->directory.raw_dir != nullptr) {
+      this->directory.raw_dir_huge = true;
+    }
   }
   if (nullptr == this->directory.raw_dir) {
-    this->directory.raw_dir = static_cast<char *>(ats_memalign(ats_pagesize(), directory_size));
+    this->directory.raw_dir      = static_cast<char *>(ats_memalign(ats_pagesize(), directory_size));
+    this->directory.raw_dir_huge = false;
   }
-  this->directory.dir    = reinterpret_cast<Dir *>(this->directory.raw_dir + header_size);
-  this->directory.header = reinterpret_cast<StripteHeaderFooter *>(this->directory.raw_dir);
+  this->directory.raw_dir_size = directory_size;
+  this->directory.dir          = reinterpret_cast<Dir *>(this->directory.raw_dir + header_size);
+  this->directory.header       = reinterpret_cast<StripteHeaderFooter *>(this->directory.raw_dir);
   std::size_t const footer_offset{directory_size - static_cast<std::size_t>(footer_size)};
   this->directory.footer = reinterpret_cast<StripteHeaderFooter *>(this->directory.raw_dir + footer_offset);
+}
+
+Stripe::~Stripe()
+{
+  if (this->directory.raw_dir != nullptr) {
+    if (this->directory.raw_dir_huge) {
+      ats_free_hugepage(this->directory.raw_dir, this->directory.raw_dir_size);
+    } else {
+      ats_free(this->directory.raw_dir);
+    }
+    this->directory.raw_dir = nullptr;
+  }
 }
 
 int
