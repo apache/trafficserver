@@ -45,6 +45,8 @@ DbgCtl dbg_ctl_cache_hit_evac{"cache_hit_evac"};
 
 #endif
 
+constexpr int MAX_READ_RECURSION_DEPTH = 10;
+
 } // end anonymous namespace
 
 uint32_t
@@ -749,8 +751,10 @@ Lcallreturn:
 int
 CacheVC::openReadStartEarliest(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
-  int  ret = 0;
-  Doc *doc = nullptr;
+  int  call_result       = 0;
+  int  event_result      = 0;
+  Doc *doc               = nullptr;
+  bool is_recursive_call = false;
   cancel_trigger();
   set_io_not_in_progress();
   if (_action.cancelled) {
@@ -814,10 +818,20 @@ CacheVC::openReadStartEarliest(int /* event ATS_UNUSED */, Event * /* e ATS_UNUS
   Lread:
     if (dir_probe(&key, stripe, &earliest_dir, &last_collision) || dir_lookaside_probe(&key, stripe, &earliest_dir, nullptr)) {
       dir = earliest_dir;
-      if ((ret = do_read_call(&key)) == EVENT_RETURN) {
+      if ((call_result = do_read_call(&key)) == EVENT_RETURN) {
+        if (this->handler == reinterpret_cast<ContinuationHandler>(&CacheVC::openReadStartEarliest)) {
+          is_recursive_call = true;
+          if (recursive > MAX_READ_RECURSION_DEPTH) {
+            char tmpstring[CRYPTO_HEX_SIZE];
+            Error("Too many recursive calls with %s", key.toHexStr(tmpstring));
+            goto Ldone;
+          }
+          ++recursive;
+        }
+
         goto Lcallreturn;
       }
-      return ret;
+      return call_result;
     }
     // read has detected that alternate does not exist in the cache.
     // rewrite the vector.
@@ -867,10 +881,10 @@ CacheVC::openReadStartEarliest(int /* event ATS_UNUSED */, Event * /* e ATS_UNUS
             dir_set_tag(&od->single_doc_dir, od->single_doc_key.slice32(2));
           }
           SET_HANDLER(&CacheVC::openReadVecWrite);
-          if ((ret = do_write_call()) == EVENT_RETURN) {
+          if ((call_result = do_write_call()) == EVENT_RETURN) {
             goto Lcallreturn;
           }
-          return ret;
+          return call_result;
         }
       }
     }
@@ -885,7 +899,11 @@ CacheVC::openReadStartEarliest(int /* event ATS_UNUSED */, Event * /* e ATS_UNUS
   _action.continuation->handleEvent(CACHE_EVENT_OPEN_READ_FAILED, reinterpret_cast<void *>(-ECACHE_NO_DOC));
   return free_CacheVC(this);
 Lcallreturn:
-  return handleEvent(AIO_EVENT_DONE, nullptr); // hopefully a tail call
+  event_result = handleEvent(AIO_EVENT_DONE, nullptr); // hopefully a tail call
+  if (is_recursive_call) {
+    --recursive;
+  }
+  return event_result;
 Lsuccess:
   if (write_vc) {
     ts::Metrics::Counter::increment(cache_rsb.read_busy_success);
