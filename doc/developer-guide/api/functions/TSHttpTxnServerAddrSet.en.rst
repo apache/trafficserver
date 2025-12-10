@@ -51,10 +51,10 @@ Notes
 =====
 
 If |TS| is configured to retry connections to origin servers and
-:func:`TSHttpTxnServerAddrGet` has been called, |TS| will return
-to TS_HTTP_OS_DNS_HOOK so to let the plugin set a different server
-address. Plugins should be prepared for TS_HTTP_OS_DNS_HOOK and any
-subsequent hooks to be called multiple times.
+:func:`TSHttpTxnServerAddrSet` has been called, |TS| will return
+to TS_HTTP_OS_DNS_HOOK once to let the plugin set a different server
+address. Plugins should be prepared for TS_HTTP_OS_DNS_HOOK to be
+called one additional time on connection failure.
 
 Once a plugin calls :func:`TSHttpTxnServerAddrGet` any prior DNS
 resolution results are lost. The plugin should use
