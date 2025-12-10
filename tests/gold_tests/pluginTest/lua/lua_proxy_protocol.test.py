@@ -25,7 +25,7 @@ Test Lua plugin PROXY protocol API
 
 Test.SkipUnless(
     Condition.PluginExists('tslua.so'),
-    Condition.HasCurlVersion("8.2.0"),
+    Condition.HasCurlOption("--haproxy-clientip"),
 )
 
 Test.ContinueOnFail = True
