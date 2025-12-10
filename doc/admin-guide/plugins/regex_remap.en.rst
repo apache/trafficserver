@@ -217,7 +217,9 @@ a malformed URL with four slashes::
     # redirect.conf:
     ^(.*)$    https:$1    @status=307
 
-This will redirect ``http://example.com/path`` to ``https://example.com/path``.
+This will redirect any plaintext HTTP (``http://``) request for any host to the
+``https://`` equivalent. For instance, a request to ``http://example.com/path``
+would be redirected to ``https://example.com/path``.
 
 **Example: Method-based routing**
 
