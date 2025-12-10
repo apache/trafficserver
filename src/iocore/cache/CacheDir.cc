@@ -990,7 +990,7 @@ Lrestart:
       goto Ldone;
     }
 
-    int    headerlen = ROUND_TO_STORE_BLOCK(sizeof(StripteHeaderFooter));
+    int    headerlen = ROUND_TO_STORE_BLOCK(sizeof(StripeHeaderFooter));
     size_t dirlen    = stripe->dirlen();
     if (!writepos) {
       // start

@@ -252,7 +252,7 @@ struct CacheSync : public Continuation {
   CacheSync() : Continuation(new_ProxyMutex()) { SET_HANDLER(&CacheSync::mainEvent); }
 };
 
-struct StripteHeaderFooter {
+struct StripeHeaderFooter {
   unsigned int      magic;
   ts::VersionNumber version;
   time_t            create_time;
@@ -271,14 +271,14 @@ struct StripteHeaderFooter {
 };
 
 struct Directory {
-  char                *raw_dir{nullptr};
-  Dir                 *dir{};
-  StripteHeaderFooter *header{};
-  StripteHeaderFooter *footer{};
-  int                  segments{};
-  off_t                buckets{};
-  size_t               raw_dir_size{0};     // size of raw_dir allocation (for freeing hugepages)
-  bool                 raw_dir_huge{false}; // true if raw_dir was allocated with hugepages
+  char               *raw_dir{nullptr};
+  Dir                *dir{};
+  StripeHeaderFooter *header{};
+  StripeHeaderFooter *footer{};
+  int                 segments{};
+  off_t               buckets{};
+  size_t              raw_dir_size{0};     // size of raw_dir allocation (for freeing hugepages)
+  bool                raw_dir_huge{false}; // true if raw_dir was allocated with hugepages
 
   /* Total number of dir entries.
    */
