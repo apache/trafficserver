@@ -279,6 +279,8 @@ struct Directory {
   StripteHeaderFooter *footer{};
   int                  segments{};
   off_t                buckets{};
+  size_t               raw_dir_size{0};     // size of raw_dir allocation (for freeing hugepages)
+  bool                 raw_dir_huge{false}; // true if raw_dir was allocated with hugepages
 
   /* Total number of dir entries.
    */
