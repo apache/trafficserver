@@ -41,7 +41,7 @@ namespace
 
 DbgCtl dbg_ctl_cache_init{"cache_init"};
 
-constexpr int DIRECTORY_FOOTER_SIZE{ROUND_TO_STORE_BLOCK(sizeof(StripteHeaderFooter))};
+constexpr int DIRECTORY_FOOTER_SIZE{ROUND_TO_STORE_BLOCK(sizeof(StripeHeaderFooter))};
 
 int
 compare_ushort(void const *a, void const *b)
@@ -164,9 +164,9 @@ Stripe::_init_directory(std::size_t directory_size, int header_size, int footer_
   }
   this->directory.raw_dir_size = directory_size;
   this->directory.dir          = reinterpret_cast<Dir *>(this->directory.raw_dir + header_size);
-  this->directory.header       = reinterpret_cast<StripteHeaderFooter *>(this->directory.raw_dir);
+  this->directory.header       = reinterpret_cast<StripeHeaderFooter *>(this->directory.raw_dir);
   std::size_t const footer_offset{directory_size - static_cast<std::size_t>(footer_size)};
-  this->directory.footer = reinterpret_cast<StripteHeaderFooter *>(this->directory.raw_dir + footer_offset);
+  this->directory.footer = reinterpret_cast<StripeHeaderFooter *>(this->directory.raw_dir + footer_offset);
 }
 
 Stripe::~Stripe()
