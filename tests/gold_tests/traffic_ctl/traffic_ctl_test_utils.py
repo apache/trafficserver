@@ -59,27 +59,63 @@ class Common():
         Handy class to map common traffic_ctl test options.
     """
 
-    def __init__(self, tr, finish_callback):
+    def __init__(self, tr):
         self._tr = tr
-        self._finish_callback = finish_callback
+
+    def _finish(self):
+        """
+            Sets the command to the test. Make sure this gets called after
+            validation is set. Without this call the test will fail.
+        """
+        self._tr.Processes.Default.Command = self._cmd
+
+    def exec(self):
+        """
+        If you need to just run the command with no validation, this is ok in the context of a test, but not to be
+        used in isolation (as to run traffic_ctl commands)
+        """
+        self._finish()
 
     def validate_with_exit_code(self, exit_code: int):
         """
             Sets the exit code for the test.
         """
         self._tr.Processes.Default.ReturnCode = exit_code
-        self._finish_callback(self)
+        self._finish()
         return self
 
     def validate_with_text(self, text: str):
         """
         Validate command output matches expected text exactly.
+        If text is empty, validates that output is completely empty (no newline).
 
         Example:
             traffic_ctl.config().get("proxy.config.product_name").validate_with_text("Apache Traffic Server")
+            traffic_ctl.config().diff().validate_with_text("")  # expects empty output
         """
-        self._tr.Processes.Default.Streams.stdout = MakeGoldFileWithText(text, self._dir, self._tn)
-        self._finish_callback(self)
+        self._tr.Processes.Default.Streams.stdout = MakeGoldFileWithText(text, self._dir, self._tn, text != "")
+        self._finish()
+        return self
+
+    def validate_contains_all(self, *strings):
+        """
+        Validate command output contains all specified strings (order independent).
+        Uses Testers.IncludesExpression for each string.
+
+        Example:
+            traffic_ctl.config().reset("proxy.config.diags").validate_contains_all(
+                "Set proxy.config.diags.debug.tags",
+                "Set proxy.config.diags.debug.enabled"
+            )
+        """
+        import sys
+        # Testers and All are injected by autest into the test file's globals
+        caller_globals = sys._getframe(1).f_globals
+        _Testers = caller_globals['Testers']
+        _All = caller_globals['All']
+        testers = [_Testers.IncludesExpression(s, f"should contain: {s}") for s in strings]
+        self._tr.Processes.Default.Streams.stdout = _All(*testers)
+        self._finish()
         return self
 
     def validate_result_with_text(self, text: str):
@@ -93,7 +129,7 @@ class Common():
         """
         full_text = f'{{\"jsonrpc\": \"2.0\", \"result\": {text}, \"id\": {"``"}}}'
         self._tr.Processes.Default.Streams.stdout = MakeGoldFileWithText(full_text, self._dir, self._tn)
-        self._finish_callback(self)
+        self._finish()
         return self
 
     def validate_json_contains(self, **field_checks):
@@ -119,7 +155,7 @@ class Common():
             f"for k, expected, actual in failed]; "
             f"exit(0 if not failed else 1)"
             f'"')
-        self._finish_callback(self)
+        self._finish()
         return self
 
 
@@ -129,9 +165,8 @@ class Config(Common):
     """
 
     def __init__(self, dir, tr, tn):
-        super().__init__(tr, lambda x: self.__finish())
+        super().__init__(tr)
         self._cmd = "traffic_ctl config "
-        self._tr = tr
         self._dir = dir
         self._tn = tn
 
@@ -147,8 +182,42 @@ class Config(Common):
         self._cmd = f'{self._cmd}  match {value}'
         return self
 
+    def set(self, record, value):
+        """
+        Set a configuration record to a specific value.
+        
+        Args:
+            record: The record name (e.g., "proxy.config.diags.debug.enabled")
+            value: The value to set
+        
+        Example:
+            traffic_ctl.config().set("proxy.config.diags.debug.enabled", "1")
+        """
+        self._cmd = f'{self._cmd} set {record} {value}'
+        return self
+
     def describe(self, value):
         self._cmd = f'{self._cmd}  describe {value}'
+        return self
+
+    def reset(self, *paths):
+        """
+        Reset configuration values matching path pattern(s) to their defaults.
+        
+        Args:
+            *paths: One or more path patterns (e.g., "records", "proxy.config.http", 
+                   "proxy.config.diags.debug.enabled")
+        
+        Example:
+            traffic_ctl.config().reset("records")
+            traffic_ctl.config().reset("proxy.config.http")
+            traffic_ctl.config().reset("proxy.config.diags.debug.enabled")
+        """
+        if not paths:
+            self._cmd = f'{self._cmd} reset records'
+        else:
+            paths_str = ' '.join(paths)
+            self._cmd = f'{self._cmd} reset {paths_str}'
         return self
 
     def as_records(self):
@@ -159,16 +228,9 @@ class Config(Common):
         self._cmd = f'{self._cmd}  --default'
         return self
 
-    def __finish(self):
-        """
-            Sets the command to the test. Make sure this gets called after
-            validation is set. Without this call the test will fail.
-        """
-        self._tr.Processes.Default.Command = self._cmd
-
     def validate_with_goldfile(self, file: str):
         self._tr.Processes.Default.Streams.stdout = os.path.join("gold", file)
-        self.__finish()
+        self._finish()
 
 
 class Server(Common):
@@ -177,9 +239,8 @@ class Server(Common):
     """
 
     def __init__(self, dir, tr, tn):
-        super().__init__(tr, lambda x: self.__finish())
+        super().__init__(tr)
         self._cmd = "traffic_ctl server "
-        self._tr = tr
         self._dir = dir
         self._tn = tn
 
@@ -197,21 +258,6 @@ class Server(Common):
         self._cmd = f'{self._cmd} -f json'
         return self
 
-    """
-    If you need to just run the command with no validation, this is ok in the context of a test, but not to be
-    used in isolation(as to run traffic_ctl commands)
-    """
-
-    def exec(self):
-        self.__finish()
-
-    def __finish(self):
-        """
-            Sets the command to the test. Make sure this gets called after
-            validation is set. Without this call the test will fail.
-        """
-        self._tr.Processes.Default.Command = self._cmd
-
 
 class RPC(Common):
     """
@@ -219,9 +265,8 @@ class RPC(Common):
     """
 
     def __init__(self, dir, tr, tn):
-        super().__init__(tr, lambda x: self.__finish())
+        super().__init__(tr)
         self._cmd = "traffic_ctl rpc "
-        self._tr = tr
         self._dir = dir
         self._tn = tn
 
@@ -232,13 +277,6 @@ class RPC(Common):
             self._cmd = f'{self._cmd}  invoke {handler} -p {str(params)} -f json'
 
         return self
-
-    def __finish(self):
-        """
-            Sets the command to the test. Make sure this gets called after
-            validation is set. Without this call the test will fail.
-        """
-        self._tr.Processes.Default.Command = self._cmd
 
 
 '''
