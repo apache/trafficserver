@@ -56,7 +56,13 @@ ts.Disk.remap_config.AddLine('map /delay-chunked-response http://127.0.0.1:{0}'.
 ts.Disk.remap_config.AddLine('map /post-full http://127.0.0.1:{0}'.format(Test.Variables.upstream_port2))
 ts.Disk.remap_config.AddLine('map /post-chunked http://127.0.0.1:{0}'.format(Test.Variables.upstream_port3))
 
-ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+ts.Disk.ssl_multicert_yaml.AddLines(
+    """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: server.pem
+    ssl_key_name: server.key
+""".split("\n"))
 
 # Using netcat as a cheap origin server in case 1 so we can insert a delay in sending back the response.
 # Replaced microserver for cases 2 and 3 as well because I was getting python exceptions when running

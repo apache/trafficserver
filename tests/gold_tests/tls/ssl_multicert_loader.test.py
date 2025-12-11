@@ -15,7 +15,7 @@
 #  limitations under the License.
 
 Test.Summary = '''
-Test reloading ssl_multicert.config with errors and keeping around the old ssl config structure
+Test reloading ssl_multicert.yaml with errors and keeping around the old ssl config structure
 '''
 
 sni_domain = 'example.com'
@@ -39,7 +39,13 @@ ts.addDefaultSSLFiles()
 
 ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{server.Variables.Port}')
 
-ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+ts.Disk.ssl_multicert_yaml.AddLines(
+    """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: server.pem
+    ssl_key_name: server.key
+""".split("\n"))
 
 tr = Test.AddTestRun("ensure we can connect for SNI $sni_domain")
 tr.Processes.Default.StartBefore(Test.Processes.ts)
@@ -53,15 +59,19 @@ tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Conn
 tr.Processes.Default.Streams.stderr = Testers.IncludesExpression(f"CN={sni_domain}", "Check response")
 
 tr2 = Test.AddTestRun("Update config files")
-# Update the configs
-sslcertpath = ts.Disk.ssl_multicert_config.AbsPath
+# Update the configs - overwrite the ssl_multicert.yaml file with an invalid config
+sslcertpath = ts.Disk.ssl_multicert_yaml.AbsPath
 
-tr2.Disk.File(sslcertpath, id="ssl_multicert_config", typename="ats:config")
-tr2.Disk.ssl_multicert_config.AddLines(
-    [
-        'ssl_cert_name=server_does_not_exist.pem ssl_key_name=server_does_not_exist.key',
-        'dest_ip=* ssl_cert_name=server.pem_doesnotexist ssl_key_name=server.key',
-    ])
+tr2.Disk.File(sslcertpath, id="ssl_multicert_update", typename="ats:config")
+tr2.Disk.ssl_multicert_update.AddLines(
+    """
+ssl_multicert:
+  - ssl_cert_name: server_does_not_exist.pem
+    ssl_key_name: server_does_not_exist.key
+  - dest_ip: "*"
+    ssl_cert_name: server.pem_doesnotexist
+    ssl_key_name: server.key
+""".split("\n"))
 tr2.StillRunningAfter = ts
 tr2.StillRunningAfter = server
 tr2.Processes.Default.Command = 'echo Updated configs'
@@ -76,7 +86,7 @@ tr2reload.Processes.Default.Env = ts.Env
 tr2reload.Processes.Default.ReturnCode = 0
 ts.Disk.diags_log.Content = Testers.ContainsExpression('ERROR: ', 'ERROR')
 
-# Reload of ssl_multicert.config should fail, BUT the old config structure
+# Reload of ssl_multicert.yaml should fail, BUT the old config structure
 # should be in place to successfully answer for the test domain
 tr3 = Test.AddTestRun("Make request again for $sni_domain")
 # Wait for the reload to complete
@@ -95,9 +105,13 @@ tr3.Processes.Default.Streams.stderr = Testers.IncludesExpression(f"CN={sni_doma
 # to catch if the current default (1) changes in the future
 
 ts2 = Test.MakeATSProcess("ts2", enable_tls=True)
-ts2.Disk.ssl_multicert_config.AddLines([
-    'dest_ip=* ssl_cert_name=server.pem_doesnotexist ssl_key_name=server.key',
-])
+ts2.Disk.ssl_multicert_yaml.AddLines(
+    """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: server.pem_doesnotexist
+    ssl_key_name: server.key
+""".split("\n"))
 
 tr4 = Test.AddTestRun()
 tr4.Processes.Default.Command = 'echo Waiting'

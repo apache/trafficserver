@@ -27,7 +27,13 @@ pv_server = Test.MakeVerifierServerProcess("pv_server", "http2_close_connection.
 ts = Test.MakeATSProcess('ts', select_ports=True, enable_tls=True)
 
 ts.addDefaultSSLFiles()
-ts.Disk.ssl_multicert_config.AddLine("dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key")
+ts.Disk.ssl_multicert_yaml.AddLines(
+    """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: server.pem
+    ssl_key_name: server.key
+""".split("\n"))
 ts.Disk.records_config.update(
     {
         "proxy.config.http.server_ports": f"{ts.Variables.port} {ts.Variables.ssl_port}:ssl",

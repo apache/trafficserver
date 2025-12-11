@@ -39,7 +39,7 @@ ts.Disk.records_config.update(
         'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
     })
 
-ts.Disk.ssl_multicert_config.AddLines(
+ts.Disk.ssl_multicert_yaml.AddLines(
     [
         'dest_ip=* ssl_cert_name=passphrase.pem ssl_key_name=passphrase.key ssl_key_dialog="exec:/bin/bash -c \'echo -n passphrase\'"',
     ])
@@ -63,9 +63,9 @@ tr.StillRunningAfter = ts
 
 tr2 = Test.AddTestRun("Update config files")
 # Update the multicert config
-sslcertpath = ts.Disk.ssl_multicert_config.AbsPath
+sslcertpath = ts.Disk.ssl_multicert_yaml.AbsPath
 tr2.Disk.File(sslcertpath, id="ssl_multicert_config", typename="ats:config"),
-tr2.Disk.ssl_multicert_config.AddLines(
+tr2.Disk.ssl_multicert_yaml.AddLines(
     [
         'dest_ip=* ssl_cert_name=passphrase2.pem ssl_key_name=passphrase2.key ssl_key_dialog="exec:/bin/bash -c \'echo -n passphrase\'"',
     ])
@@ -90,7 +90,7 @@ p.Command = 'echo awaiting config reload'
 p.Env = ts.Env
 p.ReturnCode = 0
 await_config_reload = tr.Processes.Process(f'config_reload_succeeded', 'sleep 30')
-await_config_reload.Ready = When.FileContains(ts.Disk.diags_log.Name, "ssl_multicert.config finished loading", 2)
+await_config_reload.Ready = When.FileContains(ts.Disk.diags_log.Name, "ssl_multicert.yaml finished loading", 2)
 p.StartBefore(await_config_reload)
 
 tr3 = Test.AddTestRun("use a key with passphrase")

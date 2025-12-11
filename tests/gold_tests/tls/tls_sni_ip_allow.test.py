@@ -121,7 +121,13 @@ class TestSniIpAllow:
                 '  ip_allow: 1.2.3.4',
             ])
         ts.addDefaultSSLFiles()
-        ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+        ts.Disk.ssl_multicert_yaml.AddLines(
+            """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: server.pem
+    ssl_key_name: server.key
+""".split("\n"))
         ts.Disk.remap_config.AddLine(f'map / http://remapped.backend.server.com:{server.Variables.http_port}/')
         ts.Disk.records_config.update(
             {

@@ -41,7 +41,13 @@ ts.Disk.records_config.update(
         'proxy.config.url_remap.remap_required': 0
     })
 
-ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+ts.Disk.ssl_multicert_yaml.AddLines(
+    """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: server.pem
+    ssl_key_name: server.key
+""".split("\n"))
 
 ts.Disk.remap_config.AddLine(f'map https://localhost:{ts.Variables.ssl_port} http://localhost:{ts.Variables.port}')
 ts.Disk.remap_config.AddLine(f'map https://localhost:{ts.Variables.ssl_portv6} http://localhost:{ts.Variables.port}')
@@ -120,7 +126,13 @@ ts.Disk.records_config.update(
         'proxy.config.url_remap.remap_required': 0
     })
 
-ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+ts.Disk.ssl_multicert_yaml.AddLines(
+    """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: server.pem
+    ssl_key_name: server.key
+""".split("\n"))
 
 ts.Disk.remap_config.AddLine(f'map https://localhost:{ts.Variables.ssl_port} http://localhost:{ts.Variables.port}')
 ts.Disk.remap_config.AddLine(f'map https://localhost:{ts.Variables.ssl_portv6} http://localhost:{ts.Variables.port}')

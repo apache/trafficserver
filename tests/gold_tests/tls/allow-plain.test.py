@@ -53,7 +53,13 @@ ts.Disk.remap_config.AddLines(
         'map /post http://127.0.0.1:{0}/post'.format(server.Variables.http_port),
     ])
 
-ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+ts.Disk.ssl_multicert_yaml.AddLines(
+    """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: server.pem
+    ssl_key_name: server.key
+""".split("\n"))
 
 big_post_body = "0123456789" * 50000
 big_post_body_file = open(os.path.join(Test.RunDirectory, "big_post_body"), "w")

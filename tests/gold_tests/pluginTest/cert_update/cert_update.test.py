@@ -57,7 +57,13 @@ ts.Disk.records_config.update(
         'proxy.config.url_remap.pristine_host_hdr': 1
     })
 
-ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server1.pem ssl_key_name=server1.pem')
+ts.Disk.ssl_multicert_yaml.AddLines(
+    """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: server1.pem
+    ssl_key_name: server1.pem
+""".split("\n"))
 
 ts.Disk.remap_config.AddLines(
     [

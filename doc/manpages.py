@@ -52,8 +52,8 @@ man_pages = [
     ('admin-guide/files/sni.yaml.en', 'sni.yaml', u'Traffic Server sni rules configuration file', None, '5'),
     ('admin-guide/files/splitdns.config.en', 'splitdns.config', u'Traffic Server split DNS configuration file', None, '5'),
     (
-        'admin-guide/files/ssl_multicert.config.en', 'ssl_multicert.config', u'Traffic Server SSL certificate configuration file',
-        None, '5'),
+        'admin-guide/files/ssl_multicert.yaml.en', 'ssl_multicert.yaml', u'Traffic Server SSL certificate configuration file', None,
+        '5'),
     ('admin-guide/files/storage.config.en', 'storage.config', u'Traffic Server cache storage configuration file', None, '5'),
     ('admin-guide/files/strategies.yaml.en', 'strategies.yaml', u'Traffic Server cache hierarchy configuration file', None, '5'),
     ('admin-guide/files/volume.config.en', 'volume.config', u'Traffic Server cache volume configuration file', None, '5'),

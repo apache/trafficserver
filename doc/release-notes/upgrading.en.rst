@@ -181,6 +181,18 @@ The following :file:`records.yaml` changes have been made:
   system.
 - The records.yaml entry ``proxy.config.plugin.compiler_path`` has been added to specify an optional compiler tool path for compiling plugins.
 
+The ``ssl_multicert.config`` file has been replaced with
+:file:`ssl_multicert.yaml`. The new file uses YAML format with a top-level
+``ssl_multicert`` key containing a sequence of certificate entries. Use
+``traffic_ctl config convert ssl_multicert`` to convert existing
+configuration files:
+
+.. code-block:: bash
+
+    traffic_ctl config convert ssl_multicert ssl_multicert.config ssl_multicert.yaml
+
+See :file:`ssl_multicert.yaml` for the new format documentation.
+
 The following changes have been made to the :file:`sni.yaml` file:
 
 - ``disable_h2`` has been removed. Use ``http2`` with :code:`off` instead.

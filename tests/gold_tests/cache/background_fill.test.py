@@ -50,7 +50,13 @@ class BackgroundFillTest:
             self.ts[name] = Test.MakeATSProcess(name, select_ports=True, enable_tls=True, enable_cache=True)
 
             self.ts[name].addDefaultSSLFiles()
-            self.ts[name].Disk.ssl_multicert_config.AddLine("dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key")
+            self.ts[name].Disk.ssl_multicert_yaml.AddLines(
+                """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: server.pem
+    ssl_key_name: server.key
+""".split("\n"))
 
             self.ts[name].Disk.records_config.update(
                 {

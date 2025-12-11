@@ -108,6 +108,8 @@ Configuration
 
 * Added :ts:cv:`proxy.config.http.negative_revalidating_list` to configure the
   list of status codes that apply to the negative revalidating feature
+* The ``ssl_multicert.config`` file has been replaced with :file:`ssl_multicert.yaml`.
+  Use ``traffic_ctl config convert ssl_multicert`` to convert existing configuration files.
 
 
 
