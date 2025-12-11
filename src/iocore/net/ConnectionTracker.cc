@@ -234,12 +234,14 @@ Config_Update_Conntrack_Client_Exempt_List(const char * /* name ATS_UNUSED */, R
   // This ensures we don't lose the previous configuration if parsing fails.
   swoc::IPRangeSet new_exempt_list;
   swoc::TextView   ranges{exempt_list_string};
+
   while (!ranges.empty()) {
     swoc::TextView range_sv = ranges.take_prefix_at(',');
     range_sv.trim_if(&isspace);
 
     if (!range_sv.empty()) {
       swoc::IPRange range;
+
       if (!range.load(range_sv)) {
         Warning("%s: '%.*s' is not a valid IP range in configuration '%s'", ConnectionTracker::CONFIG_CLIENT_VAR_EXEMPT_LIST.data(),
                 static_cast<int>(range_sv.size()), range_sv.data(), ConnectionTracker::CONFIG_CLIENT_VAR_EXEMPT_LIST.data());
@@ -251,6 +253,7 @@ Config_Update_Conntrack_Client_Exempt_List(const char * /* name ATS_UNUSED */, R
 
   // Parsing succeeded. Now acquire the lock and replace the global exempt list.
   std::lock_guard<ts::bravo::shared_mutex> lock(config->client_exempt_list_mutex);
+
   config->client_exempt_list.clear();
   for (auto const &ip_range : new_exempt_list) {
     config->client_exempt_list.mark(ip_range);
@@ -267,6 +270,7 @@ ConnectionTracker::GlobalConfig::GlobalConfig(GlobalConfig const &other)
   this->server_alert_delay = other.server_alert_delay;
   this->metric_enabled     = other.metric_enabled;
   this->metric_prefix      = other.metric_prefix;
+
   // Lock the source to safely copy the exempt list.
   // Note: the mutex itself is not copied; it's default-constructed.
   ts::bravo::shared_lock<ts::bravo::shared_mutex> lock(other.client_exempt_list_mutex);
@@ -322,6 +326,7 @@ ConnectionTracker::set_client_exempt_list(swoc::IPRangeSet const &ip_ranges)
 
   // Acquire exclusive lock and replace the exempt list.
   std::lock_guard<ts::bravo::shared_mutex> lock(_global_config->client_exempt_list_mutex);
+
   _global_config->client_exempt_list.clear();
   for (auto const &ip_range : ip_ranges) {
     _global_config->client_exempt_list.mark(ip_range);

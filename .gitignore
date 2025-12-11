@@ -170,7 +170,8 @@ rc/trafficserver.service
 .libs/
 
 .svn/
-.vscode/
+.vscode/*
+!.vscode/settings.json
 target
 
 tsxs
