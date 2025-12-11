@@ -39,6 +39,7 @@
 #include <map>
 #include <unordered_map>
 #include <cctype>
+#include <span>
 #include <string_view>
 #include <chrono>
 #include <functional>
@@ -90,6 +91,37 @@ public:
 private:
   // TODO: change container to std::unordered_set or something
   HttpStatusBitset _data;
+};
+
+/**
+ * Pre-parsed list of targeted cache control header names (RFC 9213).
+ *
+ * Instead of parsing a comma-separated string on each request, this class
+ * stores the header names as an array of string_views into a stable backing
+ * string. The Converter ensures the string is parsed once at config load time
+ * and whenever the per-transaction override is set.
+ */
+class TargetedCacheControlHeaders
+{
+public:
+  static const MgmtConverter Conv;
+
+  /// Maximum number of targeted headers supported.
+  static constexpr size_t MAX_HEADERS = 8;
+
+  char            *conf_value{nullptr};
+  std::string_view headers[MAX_HEADERS];
+  size_t           count{0};
+
+  /// Parse a comma-separated header list into the headers array.
+  void parse(std::string_view src);
+
+  /// Return a span of the parsed headers.
+  std::span<const std::string_view>
+  get_headers() const
+  {
+    return std::span<const std::string_view>{headers, count};
+  }
 };
 
 struct HttpStatsBlock {
@@ -550,8 +582,7 @@ struct OverridableHttpConfigParams {
   MgmtByte cache_range_write              = 0;
   MgmtByte allow_multi_range              = 0;
 
-  char  *targeted_cache_control_headers     = nullptr; // This does not get free'd by us!
-  size_t targeted_cache_control_headers_len = 0;       // Updated when targeted headers are set.
+  TargetedCacheControlHeaders targeted_cache_control_headers;
 
   MgmtByte ignore_accept_mismatch          = 0;
   MgmtByte ignore_accept_language_mismatch = 0;
@@ -887,7 +918,9 @@ public:
    */
   struct ParsedValue {
     std::string conf_value_storage{}; // Owns the string data.
-    std::variant<std::monostate, HostResData, HttpStatusCodeList, HttpForwarded::OptionBitSet, MgmtByte> parsed{};
+    std::variant<std::monostate, HostResData, HttpStatusCodeList, HttpForwarded::OptionBitSet, MgmtByte,
+                 TargetedCacheControlHeaders>
+      parsed{};
   };
 
   /** Return the parsed value for the configuration.
@@ -988,6 +1021,7 @@ inline HttpConfigParams::~HttpConfigParams()
   ats_free(oride.host_res_data.conf_value);
   ats_free(oride.negative_caching_list.conf_value);
   ats_free(oride.negative_revalidating_list.conf_value);
+  ats_free(oride.targeted_cache_control_headers.conf_value);
 
   delete connect_ports;
   delete redirect_actions_map;
