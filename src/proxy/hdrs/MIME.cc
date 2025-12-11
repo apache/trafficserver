@@ -3713,7 +3713,7 @@ MIMEHdrImpl::recompute_accelerators_and_presence_bits()
 ////////////////////////////////////////////////////////
 
 void
-MIMEHdrImpl::recompute_cooked_stuff(MIMEField *changing_field_or_null, const char *targeted_headers_str)
+MIMEHdrImpl::recompute_cooked_stuff(MIMEField *changing_field_or_null, std::span<const std::string_view> targeted_headers)
 {
   int         len, tlen;
   const char *s;
@@ -3734,17 +3734,10 @@ MIMEHdrImpl::recompute_cooked_stuff(MIMEField *changing_field_or_null, const cha
     field = nullptr;
 
     // Check for targeted cache control headers first (in priority order).
-    if (targeted_headers_str && *targeted_headers_str) {
-      swoc::TextView config_view{targeted_headers_str};
-      while (config_view) {
-        swoc::TextView header_name = config_view.take_prefix_at(',').trim_if(&isspace);
-        if (!header_name.empty()) {
-          field = mime_hdr_field_find(this, std::string_view{header_name.data(), header_name.size()});
-          if (field) {
-            // Found a targeted header, use it and stop searching.
-            break;
-          }
-        }
+    for (const auto &header_name : targeted_headers) {
+      field = mime_hdr_field_find(this, header_name);
+      if (field) {
+        break;
       }
     }
 

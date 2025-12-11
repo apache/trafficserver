@@ -7298,6 +7298,10 @@ _memberp_to_generic(MgmtFloat *ptr, MgmtConverter const *&conv) -> typename std:
 #define _CONF_CASE_HttpTransact_HOST_RES_CONV(KEY, MEMBER)                      \
   case TS_CONFIG_##KEY: ret = &overridableHttpConfig->MEMBER; conv = &HttpTransact::HOST_RES_CONV; break;
 
+// Custom converter: Parses/formats targeted cache control header lists.
+#define _CONF_CASE_TargetedCacheControlHeaders_Conv(KEY, MEMBER)                \
+  case TS_CONFIG_##KEY: ret = &overridableHttpConfig->MEMBER; conv = &TargetedCacheControlHeaders::Conv; break;
+
 // Dispatcher: Routes to _CONF_CASE_<CONV> based on the CONV parameter.
 #define _CONF_CASE_DISPATCH(KEY, MEMBER, RECORD_NAME, DATA_TYPE, CONV) _CONF_CASE_##CONV(KEY, MEMBER)
 
@@ -7348,6 +7352,7 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
 #undef _CONF_CASE_ConnectionTracker_MAX_SERVER_CONV
 #undef _CONF_CASE_ConnectionTracker_SERVER_MATCH_CONV
 #undef _CONF_CASE_HttpTransact_HOST_RES_CONV
+#undef _CONF_CASE_TargetedCacheControlHeaders_Conv
 #undef _CONF_CASE_DISPATCH
 
 // 2nd little helper function to find the struct member for getting.
@@ -7563,11 +7568,10 @@ TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
     break;
   case TS_CONFIG_HTTP_CACHE_TARGETED_CACHE_CONTROL_HEADERS:
     if (value && length > 0) {
-      s->t_state.my_txn_conf().targeted_cache_control_headers     = const_cast<char *>(value);
-      s->t_state.my_txn_conf().targeted_cache_control_headers_len = length;
+      auto &parsed                                            = ParsedConfigCache::lookup(conf, std::string_view(value, length));
+      s->t_state.my_txn_conf().targeted_cache_control_headers = std::get<TargetedCacheControlHeaders>(parsed.parsed);
     } else {
-      s->t_state.my_txn_conf().targeted_cache_control_headers     = nullptr;
-      s->t_state.my_txn_conf().targeted_cache_control_headers_len = 0;
+      s->t_state.my_txn_conf().targeted_cache_control_headers = TargetedCacheControlHeaders{};
     }
     break;
   default: {

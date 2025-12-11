@@ -125,7 +125,10 @@ const char *const _hdrtoken_strs[] = {
   "br",
 
   // RFC-8878
-  "zstd"};
+  "zstd",
+
+  // RFC-9213 Targeted Cache Control
+  "CDN-Cache-Control"};
 
 HdrTokenTypeBinding _hdrtoken_strs_type_initializers[] = {
   {"file",                 HdrTokenType::SCHEME        },
@@ -267,6 +270,7 @@ HdrTokenFieldInfo _hdrtoken_strs_field_initializers[] = {
   {"Forwarded",                 MIME_SLOTID_NONE,                MIME_PRESENCE_NONE,                (HdrTokenInfoFlags::COMMAS | HdrTokenInfoFlags::MULTVALS)                              },
   {"Sec-WebSocket-Key",         MIME_SLOTID_NONE,                MIME_PRESENCE_NONE,                HdrTokenInfoFlags::NONE                                                                },
   {"Sec-WebSocket-Version",     MIME_SLOTID_NONE,                MIME_PRESENCE_NONE,                HdrTokenInfoFlags::NONE                                                                },
+  {"CDN-Cache-Control",         MIME_SLOTID_NONE,                MIME_PRESENCE_NONE,                (HdrTokenInfoFlags::COMMAS | HdrTokenInfoFlags::MULTVALS)                              },
   {nullptr,                     0,                               0,                                 HdrTokenInfoFlags::NONE                                                                },
 };
 
