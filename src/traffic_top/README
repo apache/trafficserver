@@ -1,4 +1,99 @@
-Top type program for Apache Traffic Server that displays common
-statistical information about the server.  Requires the server to be
-running the stats_over_http plugin.
+traffic_top - Real-time Statistics Monitor for Apache Traffic Server
+====================================================================
 
+A top-like program for Apache Traffic Server that displays real-time
+statistical information about the proxy server.
+
+REQUIREMENTS
+------------
+- Running traffic_server instance
+- Access to the ATS RPC socket (typically requires running as the
+  traffic_server user or root)
+- ncurses library (for interactive mode)
+
+USAGE
+-----
+Interactive mode (default):
+  traffic_top [options]
+
+Batch mode:
+  traffic_top -b [options]
+
+OPTIONS
+-------
+  -s, --sleep SECONDS    Delay between updates (default: 5)
+  -c, --count N          Number of iterations (default: infinite in
+                         interactive, 1 in batch)
+  -b, --batch            Batch mode (non-interactive output)
+  -o, --output FILE      Output file for batch mode (default: stdout)
+  -j, --json             Output in JSON format (batch mode only)
+  -a, --ascii            Use ASCII characters instead of Unicode boxes
+  -h, --help             Show help message
+  -V, --version          Show version information
+
+INTERACTIVE MODE
+----------------
+Navigation:
+  1-6         Switch between pages
+  Left/Right  Previous/Next page
+  h, ?        Show help
+  a           Toggle absolute/rate display
+  q           Quit
+
+Pages:
+  1 - Overview    Cache, client, and server summary
+  2 - Responses   HTTP response code breakdown
+  3 - Connections HTTP/1.x vs HTTP/2, keep-alive stats
+  4 - Cache       Detailed cache statistics
+  5 - SSL/TLS     SSL handshake and session stats
+  6 - Errors      Error breakdown by type
+
+BATCH MODE
+----------
+Batch mode outputs statistics in a format suitable for scripting
+and monitoring systems.
+
+Text format (default):
+  traffic_top -b -c 10 -s 5
+
+  Outputs vmstat-style columnar data every 5 seconds for 10 iterations.
+
+JSON format:
+  traffic_top -b -j -c 0
+
+  Outputs JSON objects (one per line) continuously.
+
+Example output (text):
+  TIMESTAMP            client_req  ram_ratio      fresh       cold ...
+  --------------------  ----------  ----------  ----------  ----------
+  2024-01-15T10:30:00       1523.0       85.2%      72.1%      15.3%
+
+Example output (JSON):
+  {"timestamp":"2024-01-15T10:30:00","host":"proxy1","client_req":1523.0,...}
+
+TROUBLESHOOTING
+---------------
+"Permission denied accessing RPC socket"
+  - Ensure you have permission to access the ATS runtime directory
+  - Run as the traffic_server user or with sudo
+
+"Cannot connect to ATS - is traffic_server running?"
+  - Verify traffic_server is running: traffic_ctl server status
+  - Check the RPC socket exists in the ATS runtime directory
+
+"No data displayed"
+  - Wait a few seconds for rate calculations to have baseline data
+  - Use -a flag to show absolute values instead of rates
+
+FILES
+-----
+Source files in src/traffic_top/:
+  traffic_top.cc  - Main entry point and argument parsing
+  Stats.cc/h      - Statistics collection via RPC
+  StatType.h      - Stat type enumeration
+  Display.cc/h    - Curses UI rendering
+  Output.cc/h     - Batch output formatters
+
+SEE ALSO
+--------
+traffic_ctl(8), traffic_server(8)

@@ -21,19 +21,15 @@
     limitations under the License.
 */
 
-#include "tscore/ink_config.h"
-#include <map>
-#include <list>
-#include <string>
-#include <cstring>
-#include <iostream>
-#include <cassert>
 #include <cstdlib>
+#include <cstring>
+#include <string>
 #include <unistd.h>
-#include <getopt.h>
+#include <csignal>
 
-// At least on solaris, the default ncurses defines macros such as
-// clear() that break stdlibc++.
+#include "tscore/ink_config.h"
+
+// Prevent ncurses macros from conflicting with C++ stdlib
 #define NOMACROS         1
 #define NCURSES_NOMACROS 1
 
@@ -51,342 +47,254 @@
 #error "SysV or X/Open-compatible Curses header file required"
 #endif
 
-#include "stats.h"
-
 #include "tscore/Layout.h"
 #include "tscore/ink_args.h"
 #include "tscore/Version.h"
 #include "tscore/runroot.h"
 
-using namespace std;
+#include "Stats.h"
+#include "Display.h"
+#include "Output.h"
 
-string response;
+using namespace traffic_top;
 
-namespace colorPair
+namespace
 {
-const short red    = 1;
-const short yellow = 2;
-const short green  = 3;
-const short blue   = 4;
-//  const short black = 5;
-const short grey   = 6;
-const short cyan   = 7;
-const short border = 8;
-}; // namespace colorPair
+// Command-line options
+int  g_sleep_time  = 5;   // Seconds between updates
+int  g_count       = 0;   // Number of iterations (0 = infinite)
+int  g_batch_mode  = 0;   // Batch mode flag
+int  g_ascii_mode  = 0;   // ASCII mode flag (no Unicode)
+int  g_json_format = 0;   // JSON output format
+char g_output_file[1024]; // Output file path
 
-//----------------------------------------------------------------------------
-static void
-prettyPrint(const int x, const int y, const double number, const int type)
+// Signal handling for clean shutdown
+volatile sig_atomic_t g_shutdown = 0;
+
+void
+signal_handler(int)
 {
-  char   buffer[32];
-  char   exp       = ' ';
-  double my_number = number;
-  short  color;
-  if (number > 1000000000000LL) {
-    my_number = number / 1000000000000LL;
-    exp       = 'T';
-    color     = colorPair::red;
-  } else if (number > 1000000000) {
-    my_number = number / 1000000000;
-    exp       = 'G';
-    color     = colorPair::red;
-  } else if (number > 1000000) {
-    my_number = number / 1000000;
-    exp       = 'M';
-    color     = colorPair::yellow;
-  } else if (number > 1000) {
-    my_number = number / 1000;
-    exp       = 'K';
-    color     = colorPair::cyan;
-  } else if (my_number <= .09) {
-    color = colorPair::grey;
-  } else {
-    color = colorPair::green;
+  g_shutdown = 1;
+}
+
+void
+setup_signals()
+{
+  struct sigaction sa;
+  sa.sa_handler = signal_handler;
+  sigemptyset(&sa.sa_mask);
+  sa.sa_flags = 0;
+  sigaction(SIGINT, &sa, nullptr);
+  sigaction(SIGTERM, &sa, nullptr);
+}
+
+/**
+ * Run in interactive curses mode.
+ */
+int
+run_interactive(Stats &stats, int sleep_time, bool ascii_mode)
+{
+  Display display;
+  display.setAsciiMode(ascii_mode);
+
+  if (!display.initialize()) {
+    fprintf(stderr, "Failed to initialize display\n");
+    return 1;
   }
 
-  if (type == 4 || type == 5) {
-    if (number > 90) {
-      color = colorPair::red;
-    } else if (number > 80) {
-      color = colorPair::yellow;
-    } else if (number > 50) {
-      color = colorPair::blue;
-    } else if (my_number <= .09) {
-      color = colorPair::grey;
-    } else {
-      color = colorPair::green;
+  Page current_page = Page::Main;
+  bool connected    = false;
+  int  anim_frame   = 0;
+
+  // Try initial connection
+  if (stats.getStats()) {
+    connected = true;
+  }
+
+  while (!g_shutdown) {
+    // Render current page
+    display.render(stats, current_page, stats.isAbsolute());
+
+    // Draw status bar
+    std::string host_display = stats.getHost();
+    if (!connected) {
+      const char *anim = "|/-\\";
+      host_display     = std::string("connecting ") + anim[anim_frame % 4];
+      ++anim_frame;
     }
-    snprintf(buffer, sizeof(buffer), "%6.1f%%%%", my_number);
-  } else {
-    snprintf(buffer, sizeof(buffer), "%6.1f%c", my_number, exp);
-  }
-  attron(COLOR_PAIR(color));
-  attron(A_BOLD);
-  mvprintw(y, x, "%s", buffer);
-  attroff(COLOR_PAIR(color));
-  attroff(A_BOLD);
-}
+    display.drawStatusBar(host_display, current_page, stats.isAbsolute(), connected);
+    fflush(stdout);
 
-//----------------------------------------------------------------------------
-static void
-makeTable(const int x, const int y, const list<string> &items, Stats &stats)
-{
-  int my_y = y;
+    timeout(sleep_time * 1000);
 
-  for (const auto &item : items) {
-    string prettyName;
-    double value = 0;
-    int    type;
+    int ch = getch();
 
-    stats.getStat(item, value, prettyName, type);
-    mvprintw(my_y, x, "%s", prettyName.c_str());
-    prettyPrint(x + 10, my_y++, value, type);
-  }
-}
+    // Handle input
+    switch (ch) {
+    case 'q':
+    case 'Q':
+      goto quit;
 
-//----------------------------------------------------------------------------
-size_t
-write_data(void *ptr, size_t size, size_t nmemb, void * /* stream */)
-{
-  response.append(static_cast<char *>(ptr), size * nmemb);
-  return size * nmemb;
-}
+    case 'h':
+    case 'H':
+    case '?':
+      current_page = Page::Help;
+      break;
 
-//----------------------------------------------------------------------------
-static void
-response_code_page(Stats &stats)
-{
-  attron(COLOR_PAIR(colorPair::border));
-  attron(A_BOLD);
-  mvprintw(0, 0, "                              RESPONSE CODES                                   ");
-  attroff(COLOR_PAIR(colorPair::border));
-  attroff(A_BOLD);
+    case '1':
+      current_page = Page::Main;
+      break;
+    case '2':
+      current_page = Page::Response;
+      break;
+    case '3':
+      current_page = Page::Connection;
+      break;
+    case '4':
+      current_page = Page::Cache;
+      break;
+    case '5':
+      current_page = Page::SSL;
+      break;
+    case '6':
+      current_page = Page::Errors;
+      break;
+    case '7':
+    case 'g':
+    case 'G':
+      current_page = Page::Graphs;
+      break;
 
-  list<string> response1;
-  response1.push_back("100");
-  response1.push_back("101");
-  response1.push_back("1xx");
-  response1.push_back("200");
-  response1.push_back("201");
-  response1.push_back("202");
-  response1.push_back("203");
-  response1.push_back("204");
-  response1.push_back("205");
-  response1.push_back("206");
-  response1.push_back("2xx");
-  response1.push_back("300");
-  response1.push_back("301");
-  response1.push_back("302");
-  response1.push_back("303");
-  response1.push_back("304");
-  response1.push_back("305");
-  response1.push_back("307");
-  response1.push_back("3xx");
-  makeTable(0, 1, response1, stats);
+    case 'a':
+    case 'A':
+      stats.toggleAbsolute();
+      break;
 
-  list<string> response2;
-  response2.push_back("400");
-  response2.push_back("401");
-  response2.push_back("402");
-  response2.push_back("403");
-  response2.push_back("404");
-  response2.push_back("405");
-  response2.push_back("406");
-  response2.push_back("407");
-  response2.push_back("408");
-  response2.push_back("409");
-  response2.push_back("410");
-  response2.push_back("411");
-  response2.push_back("412");
-  response2.push_back("413");
-  response2.push_back("414");
-  response2.push_back("415");
-  response2.push_back("416");
-  response2.push_back("4xx");
-  makeTable(21, 1, response2, stats);
+    case KEY_LEFT:
+    case 'm':
+    case 'M':
+      if (current_page != Page::Help) {
+        int p = static_cast<int>(current_page);
+        if (p > 0) {
+          current_page = static_cast<Page>(p - 1);
+        } else {
+          current_page = static_cast<Page>(Display::getPageCount() - 1);
+        }
+      }
+      break;
 
-  list<string> response3;
-  response3.push_back("500");
-  response3.push_back("501");
-  response3.push_back("502");
-  response3.push_back("503");
-  response3.push_back("504");
-  response3.push_back("505");
-  response3.push_back("5xx");
-  makeTable(42, 1, response3, stats);
-}
+    case KEY_RIGHT:
+    case 'r':
+    case 'R':
+      if (current_page != Page::Help) {
+        int p = static_cast<int>(current_page);
+        if (p < Display::getPageCount() - 1) {
+          current_page = static_cast<Page>(p + 1);
+        } else {
+          current_page = Page::Main;
+        }
+      }
+      break;
 
-//----------------------------------------------------------------------------
-static void
-help(const string &host, const string &version)
-{
-  timeout(1000);
+    case 'b':
+    case 'B':
+    case KEY_BACKSPACE:
+    case 27: // ESC
+      if (current_page == Page::Help) {
+        current_page = Page::Main;
+      }
+      break;
 
-  while (true) {
-    clear();
-    time_t    now = time(nullptr);
-    struct tm nowtm;
-    char      timeBuf[32];
-    localtime_r(&now, &nowtm);
-    strftime(timeBuf, sizeof(timeBuf), "%H:%M:%S", &nowtm);
-
-    // clear();
-    attron(A_BOLD);
-    mvprintw(0, 0, "Overview:");
-    attroff(A_BOLD);
-    mvprintw(
-      1, 0,
-      "traffic_top is a top like program for Apache Traffic Server (ATS). "
-      "There is a lot of statistical information gathered by ATS. "
-      "This program tries to show some of the more important stats and gives a good overview of what the proxy server is doing. "
-      "Hopefully this can be used as a tool for diagnosing the proxy server if there are problems.");
-
-    attron(A_BOLD);
-    mvprintw(7, 0, "Definitions:");
-    attroff(A_BOLD);
-    mvprintw(8, 0, "Fresh      => Requests that were served by fresh entries in cache");
-    mvprintw(9, 0, "Revalidate => Requests that contacted the origin to verify if still valid");
-    mvprintw(10, 0, "Cold       => Requests that were not in cache at all");
-    mvprintw(11, 0, "Changed    => Requests that required entries in cache to be updated");
-    mvprintw(12, 0, "Changed    => Requests that can't be cached for some reason");
-    mvprintw(12, 0, "No Cache   => Requests that the client sent Cache-Control: no-cache header");
-
-    attron(COLOR_PAIR(colorPair::border));
-    attron(A_BOLD);
-    mvprintw(23, 0, "%s - %.12s - %.12s      (b)ack                            ", timeBuf, version.c_str(), host.c_str());
-    attroff(COLOR_PAIR(colorPair::border));
-    attroff(A_BOLD);
-    refresh();
-    int x = getch();
-    if (x == 'b') {
+    default:
+      // Any key exits help
+      if (current_page == Page::Help && ch != ERR) {
+        current_page = Page::Main;
+      }
       break;
     }
+
+    // Refresh stats
+    connected = stats.getStats();
   }
+
+quit:
+  display.shutdown();
+  return 0;
 }
 
-//----------------------------------------------------------------------------
-void
-main_stats_page(Stats &stats)
+/**
+ * Run in batch mode (non-interactive).
+ */
+int
+run_batch(Stats &stats, int sleep_time, int count, OutputFormat format, const char *output_path)
 {
-  attron(COLOR_PAIR(colorPair::border));
-  attron(A_BOLD);
-  mvprintw(0, 0, "         CACHE INFORMATION             ");
-  mvprintw(0, 40, "       CLIENT REQUEST & RESPONSE        ");
-  mvprintw(16, 0, "             CLIENT                    ");
-  mvprintw(16, 40, "           ORIGIN SERVER                ");
+  FILE *output = stdout;
 
-  for (int i = 0; i <= 22; ++i) {
-    mvprintw(i, 39, " ");
+  if (output_path[0] != '\0') {
+    output = fopen(output_path, "w");
+    if (!output) {
+      fprintf(stderr, "Error: Cannot open output file '%s': %s\n", output_path, strerror(errno));
+      return 1;
+    }
   }
-  attroff(COLOR_PAIR(colorPair::border));
-  attroff(A_BOLD);
 
-  list<string> cache1;
-  cache1.push_back("disk_used");
-  cache1.push_back("disk_total");
-  cache1.push_back("ram_used");
-  cache1.push_back("ram_total");
-  cache1.push_back("lookups");
-  cache1.push_back("cache_writes");
-  cache1.push_back("cache_updates");
-  cache1.push_back("cache_deletes");
-  cache1.push_back("read_active");
-  cache1.push_back("write_active");
-  cache1.push_back("update_active");
-  cache1.push_back("entries");
-  cache1.push_back("avg_size");
-  cache1.push_back("dns_lookups");
-  cache1.push_back("dns_hits");
-  makeTable(0, 1, cache1, stats);
+  Output out(format, output);
 
-  list<string> cache2;
-  cache2.push_back("ram_ratio");
-  cache2.push_back("fresh");
-  cache2.push_back("reval");
-  cache2.push_back("cold");
-  cache2.push_back("changed");
-  cache2.push_back("not");
-  cache2.push_back("no");
-  cache2.push_back("fresh_time");
-  cache2.push_back("reval_time");
-  cache2.push_back("cold_time");
-  cache2.push_back("changed_time");
-  cache2.push_back("not_time");
-  cache2.push_back("no_time");
-  cache2.push_back("dns_ratio");
-  cache2.push_back("dns_entry");
-  makeTable(21, 1, cache2, stats);
+  // Default count to 1 if not specified in batch mode
+  if (count == 0) {
+    count = 1;
+  }
 
-  list<string> response1;
-  response1.push_back("get");
-  response1.push_back("head");
-  response1.push_back("post");
-  response1.push_back("2xx");
-  response1.push_back("3xx");
-  response1.push_back("4xx");
-  response1.push_back("5xx");
-  response1.push_back("conn_fail");
-  response1.push_back("other_err");
-  response1.push_back("abort");
-  makeTable(41, 1, response1, stats);
+  int iterations = 0;
+  while (!g_shutdown && (count < 0 || iterations < count)) {
+    if (!stats.getStats()) {
+      out.printError(stats.getLastError());
+      if (output != stdout) {
+        fclose(output);
+      }
+      return 1;
+    }
 
-  list<string> response2;
-  response2.push_back("200");
-  response2.push_back("206");
-  response2.push_back("301");
-  response2.push_back("302");
-  response2.push_back("304");
-  response2.push_back("404");
-  response2.push_back("502");
-  makeTable(62, 1, response2, stats);
+    out.printStats(stats);
+    ++iterations;
 
-  list<string> client1;
-  client1.push_back("client_req");
-  client1.push_back("client_req_conn");
-  client1.push_back("client_conn");
-  client1.push_back("client_curr_conn");
-  client1.push_back("client_actv_conn");
-  client1.push_back("client_dyn_ka");
-  makeTable(0, 17, client1, stats);
+    if (count < 0 || iterations < count) {
+      sleep(sleep_time);
+    }
+  }
 
-  list<string> client2;
-  client2.push_back("client_head");
-  client2.push_back("client_body");
-  client2.push_back("client_avg_size");
-  client2.push_back("client_net");
-  client2.push_back("client_req_time");
-  makeTable(21, 17, client2, stats);
+  if (output != stdout) {
+    fclose(output);
+  }
 
-  list<string> server1;
-  server1.push_back("server_req");
-  server1.push_back("server_req_conn");
-  server1.push_back("server_conn");
-  server1.push_back("server_curr_conn");
-  makeTable(41, 17, server1, stats);
-
-  list<string> server2;
-  server2.push_back("server_head");
-  server2.push_back("server_body");
-  server2.push_back("server_avg_size");
-  server2.push_back("server_net");
-  makeTable(62, 17, server2, stats);
+  return 0;
 }
 
-enum class HostStatus { UP, DOWN };
-char reconnecting_animation[4] = {'|', '/', '-', '\\'};
+} // anonymous namespace
 
-//----------------------------------------------------------------------------
 int
 main([[maybe_unused]] int argc, const char **argv)
 {
-  static const char USAGE[] = "Usage: traffic_top [-s seconds]";
+  static const char USAGE[] = "Usage: traffic_top [options]\n"
+                              "\n"
+                              "Interactive mode (default):\n"
+                              "  Display real-time ATS statistics in a curses interface.\n"
+                              "  Use number keys (1-7) to switch pages, 'g' for graphs, 'q' to quit.\n"
+                              "\n"
+                              "Batch mode (-b):\n"
+                              "  Output statistics to stdout/file for scripting.\n";
 
-  int   sleep_time = 6; // In seconds
-  bool  absolute   = false;
-  auto &version    = AppVersionInfo::setup_version("traffic_top");
+  g_output_file[0] = '\0';
+
+  auto &version = AppVersionInfo::setup_version("traffic_top");
 
   const ArgumentDescription argument_descriptions[] = {
-    {"sleep", 's', "Sets the delay between updates (in seconds)", "I", &sleep_time, nullptr, nullptr},
+    {"sleep",  's', "Seconds between updates (default: 5)",                                "I",     &g_sleep_time,  nullptr, nullptr},
+    {"count",  'c', "Number of iterations (default: 1 in batch, infinite in interactive)", "I",     &g_count,       nullptr, nullptr},
+    {"batch",  'b', "Batch mode (non-interactive output)",                                 "F",     &g_batch_mode,  nullptr, nullptr},
+    {"output", 'o', "Output file for batch mode (default: stdout)",                        "S1023", g_output_file,  nullptr, nullptr},
+    {"json",   'j', "Output in JSON format (batch mode)",                                  "F",     &g_json_format, nullptr, nullptr},
+    {"ascii",  'a', "Use ASCII characters instead of Unicode",                             "F",     &g_ascii_mode,  nullptr, nullptr},
     HELP_ARGUMENT_DESCRIPTION(),
     VERSION_ARGUMENT_DESCRIPTION(),
     RUNROOT_ARGUMENT_DESCRIPTION(),
@@ -397,101 +305,23 @@ main([[maybe_unused]] int argc, const char **argv)
   runroot_handler(argv);
   Layout::create();
 
-  if (n_file_arguments == 1) {
-    usage(argument_descriptions, countof(argument_descriptions), USAGE);
-  } else if (n_file_arguments > 1) {
-    usage(argument_descriptions, countof(argument_descriptions), USAGE);
+  // Validate arguments
+  if (g_sleep_time < 1) {
+    fprintf(stderr, "Error: Sleep time must be at least 1 second\n");
+    return 1;
   }
 
-  HostStatus host_status{HostStatus::DOWN};
-  Stats      stats;
-  if (stats.getStats()) {
-    host_status = HostStatus::UP;
+  setup_signals();
+
+  Stats stats;
+
+  int result;
+  if (g_batch_mode) {
+    OutputFormat format = g_json_format ? OutputFormat::Json : OutputFormat::Text;
+    result              = run_batch(stats, g_sleep_time, g_count, format, g_output_file);
+  } else {
+    result = run_interactive(stats, g_sleep_time, g_ascii_mode != 0);
   }
 
-  const string &host = stats.getHost();
-
-  initscr();
-  curs_set(0);
-
-  start_color(); /* Start color functionality	*/
-
-  init_pair(colorPair::red, COLOR_RED, COLOR_BLACK);
-  init_pair(colorPair::yellow, COLOR_YELLOW, COLOR_BLACK);
-  init_pair(colorPair::grey, COLOR_BLACK, COLOR_BLACK);
-  init_pair(colorPair::green, COLOR_GREEN, COLOR_BLACK);
-  init_pair(colorPair::blue, COLOR_BLUE, COLOR_BLACK);
-  init_pair(colorPair::cyan, COLOR_CYAN, COLOR_BLACK);
-  init_pair(colorPair::border, COLOR_WHITE, COLOR_BLUE);
-  //  mvchgat(0, 0, -1, A_BLINK, 1, nullptr);
-
-  enum Page {
-    MAIN_PAGE,
-    RESPONSE_PAGE,
-  };
-  Page   page     = MAIN_PAGE;
-  string page_alt = "(r)esponse";
-
-  int animation_index{0};
-  while (true) {
-    attron(COLOR_PAIR(colorPair::border));
-    attron(A_BOLD);
-
-    string    version;
-    time_t    now = time(nullptr);
-    struct tm nowtm;
-    char      timeBuf[32];
-    localtime_r(&now, &nowtm);
-    strftime(timeBuf, sizeof(timeBuf), "%H:%M:%S", &nowtm);
-    stats.getStat("version", version);
-
-    std::string hh;
-    if (host_status == HostStatus::DOWN) {
-      hh.append("connecting ");
-      hh.append(1, reconnecting_animation[animation_index % 4]);
-      ++animation_index;
-    } else {
-      hh = host;
-    }
-
-    mvprintw(23, 0, "%-20.20s   %30s (q)uit (h)elp (%c)bsolute  ", hh.c_str(), page_alt.c_str(), absolute ? 'A' : 'a');
-    attroff(COLOR_PAIR(colorPair::border));
-    attroff(A_BOLD);
-
-    if (page == MAIN_PAGE) {
-      main_stats_page(stats);
-    } else if (page == RESPONSE_PAGE) {
-      response_code_page(stats);
-    }
-
-    curs_set(0);
-    refresh();
-    timeout(sleep_time * 1000);
-
-    int x = getch();
-    switch (x) {
-    case 'h':
-      help(host, version);
-      break;
-    case 'q':
-      goto quit;
-    case 'm':
-      page     = MAIN_PAGE;
-      page_alt = "(r)esponse";
-      break;
-    case 'r':
-      page     = RESPONSE_PAGE;
-      page_alt = "(m)ain";
-      break;
-    case 'a':
-      absolute = stats.toggleAbsolute();
-    }
-    host_status = !stats.getStats() ? HostStatus::DOWN : HostStatus::UP;
-    clear();
-  }
-
-quit:
-  endwin();
-
-  return 0;
+  return result;
 }
