@@ -78,6 +78,7 @@ c_str_view HTTP_VALUE_COMPRESS;
 c_str_view HTTP_VALUE_DEFLATE;
 c_str_view HTTP_VALUE_GZIP;
 c_str_view HTTP_VALUE_BROTLI;
+c_str_view HTTP_VALUE_ZSTD;
 c_str_view HTTP_VALUE_IDENTITY;
 c_str_view HTTP_VALUE_KEEP_ALIVE;
 c_str_view HTTP_VALUE_MAX_AGE;
@@ -183,6 +184,7 @@ http_init()
     HTTP_VALUE_DEFLATE              = hdrtoken_string_to_wks_sv("deflate");
     HTTP_VALUE_GZIP                 = hdrtoken_string_to_wks_sv("gzip");
     HTTP_VALUE_BROTLI               = hdrtoken_string_to_wks_sv("br");
+    HTTP_VALUE_ZSTD                 = hdrtoken_string_to_wks_sv("zstd");
     HTTP_VALUE_IDENTITY             = hdrtoken_string_to_wks_sv("identity");
     HTTP_VALUE_KEEP_ALIVE           = hdrtoken_string_to_wks_sv("keep-alive");
     HTTP_VALUE_MAX_AGE              = hdrtoken_string_to_wks_sv("max-age");
@@ -1936,7 +1938,7 @@ HTTPHdrImpl::check_strings(HeapCheck *heaps, int num_heaps)
   }
 }
 
-ClassAllocator<HTTPCacheAlt> httpCacheAltAllocator("httpCacheAltAllocator");
+ClassAllocator<HTTPCacheAlt, false> httpCacheAltAllocator("httpCacheAltAllocator");
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/

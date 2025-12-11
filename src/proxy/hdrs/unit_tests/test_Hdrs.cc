@@ -21,6 +21,7 @@
 
 #include <string>
 #include <string_view>
+#include <vector>
 #include <cstring>
 #include <cctype>
 #include <bitset>
@@ -38,6 +39,8 @@ using namespace std::literals;
 #include "tsutil/PostScript.h"
 
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/generators/catch_generators.hpp>
+#include <catch2/generators/catch_generators_range.hpp>
 
 #include "proxy/hdrs/HTTP.h"
 #include "proxy/hdrs/HttpCompat.h"
@@ -50,58 +53,55 @@ TEST_CASE("HdrTestHttpParse", "[proxy][hdrtest]")
     ParseResult    expected_result;
     int            expected_bytes_consumed;
   };
-  static const std::array<Test, 26> tests = {
-    {
-     {"GET /index.html HTTP/1.0\r\n", ParseResult::DONE, 26},
-     {"GET /index.html HTTP/1.0\r\n\r\n***BODY****", ParseResult::DONE, 28},
-     {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n\r\n***BODY****", ParseResult::DONE, 48},
-     {"GET", ParseResult::ERROR, 3},
-     {"GET /index.html", ParseResult::ERROR, 15},
-     {"GET /index.html\r\n", ParseResult::ERROR, 17},
-     {"GET /index.html HTTP/1.0", ParseResult::ERROR, 24},
-     {"GET /index.html HTTP/1.0\r", ParseResult::ERROR, 25},
-     {"GET /index.html HTTP/1.0\n", ParseResult::DONE, 25},
-     {"GET /index.html HTTP/1.0\n\n", ParseResult::DONE, 26},
-     {"GET /index.html HTTP/1.0\r\n\r\n", ParseResult::DONE, 28},
-     {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar", ParseResult::ERROR, 44},
-     {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\n", ParseResult::DONE, 45},
-     {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n", ParseResult::DONE, 46},
-     {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n\r\n", ParseResult::DONE, 48},
-     {"GET /index.html HTTP/1.0\nUser-Agent: foobar\n", ParseResult::DONE, 44},
-     {"GET /index.html HTTP/1.0\nUser-Agent: foobar\nBoo: foo\n", ParseResult::DONE, 53},
-     {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n", ParseResult::DONE, 46},
-     {"GET /index.html HTTP/1.0\r\n", ParseResult::DONE, 26},
-     {"GET /index.html hTTP/1.0\r\n", ParseResult::ERROR, 26},
-     {"POST /index.html HTTP/1.0\r\nContent-Length: 0\r\n\r\n", ParseResult::DONE, 48},
-     {"POST /index.html HTTP/1.0\r\nContent-Length: \r\n\r\n", ParseResult::ERROR, 47},
-     {"POST /index.html HTTP/1.0\r\nContent-Length:\r\n\r\n", ParseResult::ERROR, 46},
-     {"CONNECT foo.example HTTP/1.1\r\n", ParseResult::DONE, 30},
-     {"GET foo.example HTTP/1.1\r\n", ParseResult::ERROR, 26},
-     {"", ParseResult::ERROR, 0},
-     }
+
+  static const std::vector<Test> http_parse_tests = {
+    {"GET /index.html HTTP/1.0\r\n",                                      ParseResult::DONE,  26},
+    {"GET /index.html HTTP/1.0\r\n\r\n***BODY****",                       ParseResult::DONE,  28},
+    {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n\r\n***BODY****", ParseResult::DONE,  48},
+    {"GET",                                                               ParseResult::ERROR, 3 },
+    {"GET /index.html",                                                   ParseResult::ERROR, 15},
+    {"GET /index.html\r\n",                                               ParseResult::ERROR, 17},
+    {"GET /index.html HTTP/1.0",                                          ParseResult::ERROR, 24},
+    {"GET /index.html HTTP/1.0\r",                                        ParseResult::ERROR, 25},
+    {"GET /index.html HTTP/1.0\n",                                        ParseResult::DONE,  25},
+    {"GET /index.html HTTP/1.0\n\n",                                      ParseResult::DONE,  26},
+    {"GET /index.html HTTP/1.0\r\n\r\n",                                  ParseResult::DONE,  28},
+    {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar",                    ParseResult::ERROR, 44},
+    {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\n",                  ParseResult::DONE,  45},
+    {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n",                ParseResult::DONE,  46},
+    {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n\r\n",            ParseResult::DONE,  48},
+    {"GET /index.html HTTP/1.0\nUser-Agent: foobar\n",                    ParseResult::DONE,  44},
+    {"GET /index.html HTTP/1.0\nUser-Agent: foobar\nBoo: foo\n",          ParseResult::DONE,  53},
+    {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n",                ParseResult::DONE,  46},
+    {"GET /index.html HTTP/1.0\r\n",                                      ParseResult::DONE,  26},
+    {"GET /index.html hTTP/1.0\r\n",                                      ParseResult::ERROR, 26},
+    {"POST /index.html HTTP/1.0\r\nContent-Length: 0\r\n\r\n",            ParseResult::DONE,  48},
+    {"POST /index.html HTTP/1.0\r\nContent-Length: \r\n\r\n",             ParseResult::ERROR, 47},
+    {"POST /index.html HTTP/1.0\r\nContent-Length:\r\n\r\n",              ParseResult::ERROR, 46},
+    {"CONNECT foo.example HTTP/1.1\r\n",                                  ParseResult::DONE,  30},
+    {"GET foo.example HTTP/1.1\r\n",                                      ParseResult::ERROR, 26},
+    {"",                                                                  ParseResult::ERROR, 0 },
   };
 
-  HTTPParser parser;
+  auto test = GENERATE(from_range(http_parse_tests));
+  CAPTURE(test.msg, test.expected_result, test.expected_bytes_consumed);
 
+  HTTPParser parser;
   http_parser_init(&parser);
 
-  for (auto const &test : tests) {
-    HTTPHdr  req_hdr;
-    HdrHeap *heap = new_HdrHeap(HdrHeap::DEFAULT_SIZE + 64); // extra to prevent proxy allocation.
+  HTTPHdr  req_hdr;
+  HdrHeap *heap = new_HdrHeap(HdrHeap::DEFAULT_SIZE + 64); // extra to prevent proxy allocation.
 
-    req_hdr.create(HTTPType::REQUEST, HTTP_1_1, heap);
+  req_hdr.create(HTTPType::REQUEST, HTTP_1_1, heap);
 
-    http_parser_clear(&parser);
+  auto start          = test.msg.data();
+  auto ret            = req_hdr.parse_req(&parser, &start, test.msg.data_end(), true);
+  auto bytes_consumed = start - test.msg.data();
 
-    auto start          = test.msg.data();
-    auto ret            = req_hdr.parse_req(&parser, &start, test.msg.data_end(), true);
-    auto bytes_consumed = start - test.msg.data();
+  REQUIRE(bytes_consumed == test.expected_bytes_consumed);
+  REQUIRE(ret == test.expected_result);
 
-    REQUIRE(bytes_consumed == test.expected_bytes_consumed);
-    REQUIRE(ret == test.expected_result);
-
-    req_hdr.destroy();
-  }
+  req_hdr.destroy();
 }
 
 TEST_CASE("MIMEScanner_fragments", "[proxy][mimescanner_fragments]")
@@ -125,6 +125,7 @@ TEST_CASE("MIMEScanner_fragments", "[proxy][mimescanner_fragments]")
   swoc::TextView output; // only set on last call
 
   for (auto const &frag : fragments) {
+    CAPTURE(frag.msg, frag.shares_input, frag.expected_result);
     swoc::TextView       input            = frag.msg;
     bool                 got_shares_input = !frag.shares_input;
     constexpr bool const is_eof           = false;
@@ -611,6 +612,7 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
     mime_parser_init(&parser);
 
     for (const auto &t : test_cases) {
+      CAPTURE(t.line, t.expected);
       mime_parser_clear(&parser);
 
       const char *start = t.line.data();

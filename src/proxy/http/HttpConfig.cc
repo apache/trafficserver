@@ -694,6 +694,103 @@ const MgmtConverter HttpStatusCodeList::Conv{
   }};
 // clang-format on
 
+/////////////////////////////////////////////////////////////
+//
+// ParsedConfigCache implementation
+//
+/////////////////////////////////////////////////////////////
+
+ParsedConfigCache &
+ParsedConfigCache::instance()
+{
+  static ParsedConfigCache inst;
+  return inst;
+}
+
+const ParsedConfigCache::ParsedValue &
+ParsedConfigCache::lookup(TSOverridableConfigKey key, std::string_view value)
+{
+  return instance().lookup_impl(key, value);
+}
+
+const ParsedConfigCache::ParsedValue &
+ParsedConfigCache::lookup_impl(TSOverridableConfigKey key, std::string_view value)
+{
+  auto cache_key = std::make_pair(key, std::string(value));
+
+  // Fast path: check cache under read lock.
+  {
+    ts::bravo::shared_lock lock(_mutex);
+    auto                   it = _cache.find(cache_key);
+    if (it != _cache.end()) {
+      return it->second;
+    }
+  }
+
+  // Slow path: parse and insert under write lock.
+  std::unique_lock lock(_mutex);
+
+  // Double-check after acquiring write lock.
+  auto it = _cache.find(cache_key);
+  if (it != _cache.end()) {
+    return it->second;
+  }
+
+  // Parse and insert.
+  auto [inserted_it, success] = _cache.emplace(cache_key, parse(key, value));
+  return inserted_it->second;
+}
+
+ParsedConfigCache::ParsedValue
+ParsedConfigCache::parse(TSOverridableConfigKey key, std::string_view value)
+{
+  ParsedValue result;
+
+  // Store the string value - the parsed structures may reference this.
+  result.conf_value_storage = std::string(value);
+
+  switch (key) {
+  case TS_CONFIG_HTTP_HOST_RESOLUTION_PREFERENCE: {
+    HostResData host_res_data{};
+    parse_host_res_preference(result.conf_value_storage.c_str(), host_res_data.order);
+    host_res_data.conf_value = result.conf_value_storage.data();
+    result.parsed            = host_res_data;
+    break;
+  }
+
+  case TS_CONFIG_HTTP_NEGATIVE_CACHING_LIST:
+  case TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_LIST: {
+    HttpStatusCodeList status_code_list{};
+    status_code_list.conf_value = result.conf_value_storage.data();
+    HttpStatusCodeList::Conv.store_string(&status_code_list, result.conf_value_storage);
+    result.parsed = status_code_list;
+    break;
+  }
+
+  case TS_CONFIG_HTTP_INSERT_FORWARDED: {
+    swoc::LocalBufferWriter<1024> error;
+    result.parsed = HttpForwarded::optStrToBitset(result.conf_value_storage, error);
+    if (error.size()) {
+      Error("HTTP %.*s", static_cast<int>(error.size()), error.data());
+    }
+    break;
+  }
+
+  case TS_CONFIG_HTTP_SERVER_SESSION_SHARING_MATCH: {
+    MgmtByte server_session_sharing_match{0};
+    HttpConfig::load_server_session_sharing_match(result.conf_value_storage, server_session_sharing_match);
+    result.parsed = server_session_sharing_match;
+    break;
+  }
+
+  default:
+    // No special parsing needed for this config.
+    break;
+  }
+
+  return result;
+}
+
 /** Template for creating conversions and initialization for @c std::chrono based configuration variables.
  *
  * @tparam V The exact type of the configuration variable.
@@ -1345,9 +1442,13 @@ HttpConfig::reconfigure()
   params->redirection_host_no_port          = INT_TO_BOOL(m_master.redirection_host_no_port);
   params->oride.number_of_redirections      = m_master.oride.number_of_redirections;
   params->post_copy_size                    = m_master.post_copy_size;
-  params->redirect_actions_string           = ats_strdup(m_master.redirect_actions_string);
-  params->redirect_actions_map = parse_redirect_actions(params->redirect_actions_string, params->redirect_actions_self_action);
-  params->http_host_sni_policy = m_master.http_host_sni_policy;
+  if (params->oride.request_buffer_enabled && params->post_copy_size == 0) {
+    Warning("proxy.config.http.request_buffer_enabled is set but proxy.config.http.post_copy_size is 0; request buffering "
+            "will be disabled");
+  }
+  params->redirect_actions_string = ats_strdup(m_master.redirect_actions_string);
+  params->redirect_actions_map    = parse_redirect_actions(params->redirect_actions_string, params->redirect_actions_self_action);
+  params->http_host_sni_policy    = m_master.http_host_sni_policy;
   params->scheme_proto_mismatch_policy = m_master.scheme_proto_mismatch_policy;
 
   params->oride.ssl_client_sni_policy     = ats_strdup(m_master.oride.ssl_client_sni_policy);

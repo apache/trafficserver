@@ -16,6 +16,7 @@
 #######################
 
 include(add_atsplugin)
+include(add_cript)
 
 # The experimental plugins are handled in cmake/ExperimentalPlugins.cmake.
 

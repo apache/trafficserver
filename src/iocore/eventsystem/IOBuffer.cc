@@ -583,7 +583,7 @@ IOBufferReader::reset()
 //      inline functions definitions
 //
 ////////////////////////////////////////////////////////////////
-extern ClassAllocator<MIOBuffer> ioAllocator;
+extern ClassAllocator<MIOBuffer, false> ioAllocator;
 
 MIOBuffer::MIOBuffer(int64_t default_size_index)
 {
@@ -1001,12 +1001,12 @@ MeteredAllocator<FreelistAllocator> ioBufAllocator[DEFAULT_BUFFER_SIZES];
 #else
 FreelistAllocator ioBufAllocator[DEFAULT_BUFFER_SIZES];
 #endif
-ClassAllocator<MIOBuffer>     ioAllocator("ioAllocator", DEFAULT_BUFFER_NUMBER);
-ClassAllocator<IOBufferData>  ioDataAllocator("ioDataAllocator", DEFAULT_BUFFER_NUMBER);
-ClassAllocator<IOBufferBlock> ioBlockAllocator("ioBlockAllocator", DEFAULT_BUFFER_NUMBER);
-int64_t                       default_large_iobuffer_size = DEFAULT_LARGE_BUFFER_SIZE;
-int64_t                       default_small_iobuffer_size = DEFAULT_SMALL_BUFFER_SIZE;
-int64_t                       max_iobuffer_size           = DEFAULT_BUFFER_SIZES - 1;
+ClassAllocator<MIOBuffer, false>     ioAllocator("ioAllocator", DEFAULT_BUFFER_NUMBER);
+ClassAllocator<IOBufferData, false>  ioDataAllocator("ioDataAllocator", DEFAULT_BUFFER_NUMBER);
+ClassAllocator<IOBufferBlock, false> ioBlockAllocator("ioBlockAllocator", DEFAULT_BUFFER_NUMBER);
+int64_t                              default_large_iobuffer_size = DEFAULT_LARGE_BUFFER_SIZE;
+int64_t                              default_small_iobuffer_size = DEFAULT_SMALL_BUFFER_SIZE;
+int64_t                              max_iobuffer_size           = DEFAULT_BUFFER_SIZES - 1;
 
 //
 // Initialization

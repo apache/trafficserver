@@ -2953,6 +2953,36 @@ TSReturnCode TSHostStatusGet(const char *hostname, const size_t hostname_len, TS
 void TSHostStatusSet(const char *hostname, const size_t hostname_len, TSHostStatus status, const unsigned int down_time,
                      const unsigned int reason);
 
+/**
+ * Add one or more IP addresses or CIDR ranges to the per-client connection limit exempt list.
+ * This function allows plugins to programmatically add to the list of IP addresses
+ * that should be exempt from per-client connection limits (see
+ * proxy.config.net.per_client.max_connections_in).
+ *
+ * @param ip_ranges The IP address or CIDR range to exempt, or a comma-separated list of ranges.
+ * @return TS_SUCCESS if the exempt list was successfully updated, TS_ERROR otherwise.
+ */
+TSReturnCode TSConnectionLimitExemptListAdd(std::string_view ip_ranges);
+
+/**
+ * Remove one or more IP addresses or CIDR ranges from the per-client connection limit exempt list.
+ * This function allows plugins to programmatically remove from the list of IP addresses
+ * that should be exempt from per-client connection limits (see
+ * proxy.config.net.per_client.max_connections_in).
+ *
+ * @param ip_ranges The IP address or CIDR range to remove, or a comma-separated list of ranges.
+ * @return TS_SUCCESS if the exempt list was successfully updated, TS_ERROR otherwise.
+ */
+TSReturnCode TSConnectionLimitExemptListRemove(std::string_view ip_ranges);
+
+/**
+ * Clear the per-client connection limit exempt list.
+ * This function allows plugins to programmatically clear the list of IP addresses
+ * that should be exempt from per-client connection limits (see
+ * proxy.config.net.per_client.max_connections_in).
+ */
+void TSConnectionLimitExemptListClear();
+
 /*
  * Set or get various HTTP Transaction control settings.
  */

@@ -1,6 +1,7 @@
 {
     "files.associations": {
+        "*.cript": "cpp",
+        "*.test.py": "python",
         "*.test.ext": "python"
     }
 }
-

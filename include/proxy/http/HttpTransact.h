@@ -683,6 +683,7 @@ public:
     bool api_server_request_body_set  = false;
     bool api_req_cacheable            = false;
     bool api_resp_cacheable           = false;
+    bool api_server_addr_set_retried  = false;
     bool reverse_proxy                = false;
     bool url_remap_success            = false;
     bool api_skip_all_remapping       = false;
@@ -851,6 +852,8 @@ public:
       //      memset((void *)&host_db_info, 0, sizeof(host_db_info));
     }
 
+    ~State() { destroy(); }
+
     void
     destroy()
     {
@@ -859,8 +862,10 @@ public:
       free_internal_msg_buffer();
       ats_free(internal_msg_buffer_type);
 
-      ParentConfig::release(parent_params);
-      parent_params = nullptr;
+      if (parent_params != nullptr) {
+        ParentConfig::release(parent_params);
+        parent_params = nullptr;
+      }
 
       hdr_info.client_request.destroy();
       hdr_info.client_response.destroy();
@@ -879,15 +884,12 @@ public:
       url_map.clear();
       arena.reset();
       unmapped_url.clear();
-      dns_info.~ResolveInfo();
       outbound_conn_track_state.clear();
 
       delete[] ranges;
       ranges      = nullptr;
       range_setup = RangeSetup_t::NONE;
 
-      // This avoids a potential leak since sometimes this class is not destructed (ClassAllocated via HttpSM)
-      pp_info.~ProxyProtocol();
       return;
     }
 

@@ -138,9 +138,9 @@ struct CacheRemoveCont : public Continuation {
 };
 
 // Global Data
-extern ClassAllocator<CacheVC>            cacheVConnectionAllocator;
-extern ClassAllocator<CacheEvacuateDocVC> cacheEvacuateDocVConnectionAllocator;
-extern CacheSync                         *cacheDirSync;
+extern ClassAllocator<CacheVC, false>            cacheVConnectionAllocator;
+extern ClassAllocator<CacheEvacuateDocVC, false> cacheEvacuateDocVConnectionAllocator;
+extern CacheSync                                *cacheDirSync;
 // Function Prototypes
 int                 cache_write(CacheVC *, CacheHTTPInfoVector *);
 int                 get_alternate_index(CacheHTTPInfoVector *cache_vector, CacheKey key);
@@ -411,7 +411,7 @@ next_rand(unsigned int *p)
   return seed;
 }
 
-extern ClassAllocator<CacheRemoveCont> cacheRemoveContAllocator;
+extern ClassAllocator<CacheRemoveCont, false> cacheRemoveContAllocator;
 
 inline CacheRemoveCont *
 new_CacheRemoveCont()
@@ -497,9 +497,7 @@ Cache::generate_key(CryptoHash *hash, CacheURL *url)
 inline void
 Cache::generate_key(HttpCacheKey *key, CacheURL *url, bool ignore_query, cache_generation_t generation)
 {
-  auto host{url->host_get()};
-  key->hostname = host.data();
-  key->hostlen  = static_cast<int>(host.length());
+  key->hostname = url->host_get();
   url->hash_get(&key->hash, ignore_query, generation);
 }
 
@@ -512,9 +510,7 @@ Cache::generate_key92(CryptoHash *hash, CacheURL *url)
 inline void
 Cache::generate_key92(HttpCacheKey *key, CacheURL *url, bool ignore_query, cache_generation_t generation)
 {
-  auto host{url->host_get()};
-  key->hostname = host.data();
-  key->hostlen  = static_cast<int>(host.length());
+  key->hostname = url->host_get();
   url->hash_get92(&key->hash, ignore_query, generation);
 }
 

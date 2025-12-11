@@ -345,7 +345,7 @@ PreWarmManager::reconfigure()
 PreWarmManager prewarmManager;
 
 #include "proxy/FetchSM.h"
-ClassAllocator<FetchSM> FetchSMAllocator("unusedFetchSMAllocator");
+ClassAllocator<FetchSM, false> FetchSMAllocator("unusedFetchSMAllocator");
 bool
 FetchSM::is_initialized()
 {

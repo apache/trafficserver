@@ -95,6 +95,7 @@ public:
    * @see START_POS
    */
   Stripe(CacheDisk *disk, off_t blocks, off_t dir_skip, int avg_obj_size = -1, int fragment_size = -1);
+  virtual ~Stripe();
 
   int dir_check();
 
@@ -166,7 +167,7 @@ Stripe::round_to_approx_size(uint32_t l) const
 inline int
 Stripe::headerlen() const
 {
-  return ROUND_TO_STORE_BLOCK(sizeof(StripteHeaderFooter) + sizeof(uint16_t) * (this->directory.segments - 1));
+  return ROUND_TO_STORE_BLOCK(sizeof(StripeHeaderFooter) + sizeof(uint16_t) * (this->directory.segments - 1));
 }
 
 inline size_t
@@ -174,7 +175,7 @@ Stripe::dirlen() const
 {
   return this->headerlen() +
          ROUND_TO_STORE_BLOCK(((size_t)this->directory.buckets) * DIR_DEPTH * this->directory.segments * SIZEOF_DIR) +
-         ROUND_TO_STORE_BLOCK(sizeof(StripteHeaderFooter));
+         ROUND_TO_STORE_BLOCK(sizeof(StripeHeaderFooter));
 }
 
 /**

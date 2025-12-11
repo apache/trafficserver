@@ -26,7 +26,7 @@
 #include "ts/InkAPIPrivateIOCore.h"
 #include "tscore/ink_atomic.h"
 
-ClassAllocator<INKVConnInternal> INKVConnAllocator("INKVConnAllocator");
+ClassAllocator<INKVConnInternal, false> INKVConnAllocator("INKVConnAllocator");
 
 INKVConnInternal::INKVConnInternal() : INKContInternal(), m_read_vio(), m_write_vio(), m_output_vc(nullptr)
 {

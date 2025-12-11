@@ -644,6 +644,7 @@ TEST_CASE("TextView tokenizing", "[libswoc][TextView]") {
   TextView src = "alpha,bravo,,charlie";
   auto tokens  = {"alpha", "bravo", "", "charlie"};
   for (auto token : tokens) {
+    CAPTURE(token);
     REQUIRE(src.take_prefix_at(',') == token);
   }
 }

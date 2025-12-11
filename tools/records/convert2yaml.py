@@ -48,7 +48,10 @@ Renamed_Records = {
     'proxy.config.ssl.origin_session_cache': 'proxy.config.ssl.origin_session_cache.enabled',
     'proxy.config.ssl.session_cache': 'proxy.config.ssl.session_cache.mode',
     'proxy.config.ssl.TLSv1_3': 'proxy.config.ssl.TLSv1_3.enabled',
-    'proxy.config.ssl.client.TLSv1_3': 'proxy.config.ssl.client.TLSv1_3.enabled'
+    'proxy.config.ssl.client.TLSv1_3': 'proxy.config.ssl.client.TLSv1_3.enabled',
+    'proxy.local.incoming_ip_to_bind': 'proxy.config.incoming_ip_to_bind',
+    'proxy.local.outgoing_ip_to_bind': 'proxy.config.outgoing_ip_to_bind',
+    'proxy.local.http.parent_proxy.disable_connect_tunneling': 'proxy.config.http.parent_proxy.disable_connect_tunneling'
 }
 
 ###############################################################################################

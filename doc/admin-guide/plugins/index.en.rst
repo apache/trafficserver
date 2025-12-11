@@ -170,6 +170,7 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
    Cache Fill <cache_fill.en>
    Certifier <certifier.en>
    Cert Reporting Tool <cert_reporting_tool.en>
+   Connection Exempt List <connection_exempt_list.en>
    Cookie Remap <cookie_remap.en>
    GeoIP ACL <geoip_acl.en>
    FQ Pacing <fq_pacing.en>
@@ -207,6 +208,10 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
 
 :doc:`Cert Reporting Tool <cert_reporting_tool.en>`
    Examines and logs information on loaded certificates.
+
+:doc:`Connection Exempt List <connection_exempt_list.en>`
+   Provides a way for administrators to set
+   :ts:cv:`proxy.config.http.per_client.connection.exempt_list` via a YAML file.
 
 :doc:`Cookie Remap <cookie_remap.en>`
    Makes decisions on destinations based on cookies.

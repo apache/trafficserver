@@ -138,8 +138,7 @@ class PreWarmSM;
 class PreWarmManager;
 class SNIConfigParams;
 
-extern ClassAllocator<PreWarmSM> preWarmSMAllocator;
-extern PreWarmManager            prewarmManager;
+extern PreWarmManager prewarmManager;
 
 /**
    @class PreWarmSM
@@ -229,6 +228,8 @@ private:
   IOBufferReader *_write_buf_reader = nullptr;
   Event          *_retry_event      = nullptr;
 };
+
+extern ClassAllocator<PreWarmSM, false> preWarmSMAllocator;
 
 /**
    @class PreWarmQueue

@@ -207,6 +207,7 @@ pygments_style = 'default'
 
 nitpicky = True
 nitpick_ignore = [
+    # Standard C/C++ types
     ('cpp:identifier', 'int64_t'),
     ('cpp:identifier', 'uint64_t'),
     ('cpp:identifier', 'uint8_t'),
@@ -215,26 +216,84 @@ nitpick_ignore = [
     ('cpp:identifier', 'ssize_t'),
     ('cpp:identifier', 'sockaddr'),
     ('cpp:identifier', 'time_t'),
-    ('cpp:identifier', 'time_t'),
+    # External library types
     ('cpp:identifier', 'swoc'),
     ('cpp:identifier', 'swoc::Rv<Directive::Handle>'),
     ('cpp:identifier', 'Directive::Handle'),
     ('cpp:identifier', 'CfgStaticData'),
     ('cpp:identifier', 'YAML'),
     ('cpp:identifier', 'YAML::Node'),
-    ('cpp:identifier', 'swoc'),
     ('cpp:identifier', 'swoc::TextView'),
-    ('cpp:identifier', 'swoc'),
-    ('cpp:identifier', 'swoc::TextView'),
-    ('cpp:identifier', 'YAML'),
-    ('cpp:identifier', 'YAML::Node'),
-    ('cpp:identifier', 'swoc'),
     ('cpp:identifier', 'swoc::Errata'),
-    ('cpp:identifier', 'CfgStaticData'),
-    ('cpp:identifier', 'T'),  # template arg
-    ('cpp:identifier', 'F'),  # template arg
-    ('cpp:identifier', 'Args'),  # variadic template arg
-    ('cpp:identifier', 'Rest'),  # variadic template arg
+    # Template arguments
+    ('cpp:identifier', 'T'),
+    ('cpp:identifier', 'F'),
+    ('cpp:identifier', 'Args'),
+    ('cpp:identifier', 'Rest'),
+    # Event system
+    ('cpp:identifier', 'EVENT_IMMEDIATE'),
+    # API return values
+    ('cpp:enumerator', 'TS_SUCCESS'),
+    ('cpp:enumerator', 'TS_ERROR'),
+    # HTTP hook IDs
+    ('cpp:enumerator', 'TS_HTTP_READ_REQUEST_HDR_HOOK'),
+    ('cpp:enumerator', 'TS_HTTP_READ_RESPONSE_HDR_HOOK'),
+    ('cpp:enumerator', 'TS_HTTP_SEND_REQUEST_HDR_HOOK'),
+    ('cpp:enumerator', 'TS_HTTP_SEND_RESPONSE_HDR_HOOK'),
+    ('cpp:enumerator', 'TS_HTTP_OS_DNS_HOOK'),
+    ('cpp:enumerator', 'TS_HTTP_PRE_REMAP_HOOK'),
+    ('cpp:enumerator', 'TS_HTTP_POST_REMAP_HOOK'),
+    ('cpp:enumerator', 'TS_HTTP_TXN_START_HOOK'),
+    ('cpp:enumerator', 'TS_HTTP_TXN_CLOSE_HOOK'),
+    ('cpp:enumerator', 'TS_HTTP_SSN_START_HOOK'),
+    ('cpp:enumerator', 'TS_HTTP_SSN_CLOSE_HOOK'),
+    ('cpp:enumerator', 'TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK'),
+    ('cpp:enumerator', 'TS_HTTP_READ_CACHE_HDR_HOOK'),
+    ('cpp:enumerator', 'TS_HTTP_SELECT_ALT_HOOK'),
+    ('cpp:enumerator', 'TS_HTTP_REQUEST_TRANSFORM_HOOK'),
+    ('cpp:enumerator', 'TS_HTTP_RESPONSE_TRANSFORM_HOOK'),
+    ('cpp:enumerator', 'TS_HTTP_REQUEST_BUFFER_READ_COMPLETE_HOOK'),
+    # SSL/TLS hook IDs
+    ('cpp:enumerator', 'TS_SSL_CLIENT_HELLO_HOOK'),
+    ('cpp:enumerator', 'TS_SSL_SERVERNAME_HOOK'),
+    ('cpp:enumerator', 'TS_SSL_SNI_HOOK'),
+    ('cpp:enumerator', 'TS_SSL_CERT_HOOK'),
+    ('cpp:enumerator', 'TS_VCONN_START_HOOK'),
+    # Lifecycle hooks
+    ('cpp:enumerator', 'TS_LIFECYCLE_SSL_SECRET_HOOK'),
+    # Transaction milestones
+    ('cpp:enumerator', 'TS_MILESTONE_SM_START'),
+    ('cpp:enumerator', 'TS_MILESTONE_UA_CLOSE'),
+    ('cpp:enumerator', 'TS_MILESTONE_SERVER_CLOSE'),
+    ('cpp:enumerator', 'TS_MILESTONE_PLUGIN_ACTIVE'),
+    ('cpp:enumerator', 'TS_MILESTONE_PLUGIN_TOTAL'),
+    # HTTP types and status
+    ('cpp:enumerator', 'TS_HTTP_TYPE_UNKNOWN'),
+    ('cpp:enumerator', 'TS_HTTP_STATUS_NONE'),
+    ('cpp:enumerator', 'TS_HTTP_STATUS_BAD_REQUEST'),
+    # Parse results
+    ('cpp:enumerator', 'TS_PARSE_ERROR'),
+    ('cpp:enumerator', 'TS_PARSE_DONE'),
+    ('cpp:enumerator', 'TS_PARSE_CONT'),
+    # VConnection
+    ('cpp:enumerator', 'TS_VC_CLOSE_ABORT'),
+    # Record types and data types
+    ('cpp:enumerator', 'TS_RECORDTYPE_NULL'),
+    ('cpp:enumerator', 'TS_RECORDTYPE_CONFIG'),
+    ('cpp:enumerator', 'TS_RECORDDATATYPE_INT'),
+    ('cpp:enumerator', 'TS_RECORDDATATYPE_FLOAT'),
+    ('cpp:enumerator', 'TS_RECORDDATATYPE_STRING'),
+    ('cpp:enumerator', 'TS_RECORDDATATYPE_COUNTER'),
+    ('cpp:enumerator', 'TS_RECORDCHECK_STR'),
+    # Remap plugin return values
+    ('cpp:enumerator', 'TSREMAP_DID_REMAP'),
+    ('cpp:enumerator', 'TSREMAP_DID_REMAP_STOP'),
+    ('cpp:enumerator', 'TSREMAP_NO_REMAP'),
+    ('cpp:enumerator', 'TSREMAP_NO_REMAP_STOP'),
+    ('cpp:enumerator', 'TSREMAP_ERROR'),
+    ('cpp:enumerator', 'TSREMAP_CONFIG_RELOAD_FAILURE'),
+    ('cpp:enumerator', 'TSREMAP_CONFIG_RELOAD_SUCCESS_PLUGIN_USED'),
+    ('cpp:enumerator', 'TSREMAP_CONFIG_RELOAD_SUCCESS_PLUGIN_UNUSED'),
 ]
 
 # Autolink issue references.

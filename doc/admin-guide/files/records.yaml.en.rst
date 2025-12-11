@@ -549,6 +549,40 @@ Network
    below this limit. A value of 0 disables the per client concurrent connection
    limit.
 
+   See :ts:cv:`proxy.config.http.per_client.connection.exempt_list` for a way to
+   allow (not count) certain client IP addresses when applying this limit.
+
+.. ts:cv:: CONFIG proxy.config.http.per_client.connection.exempt_list STRING NULL
+   :reloadable:
+
+   A comma-separated list of IP addresses or CIDR ranges to exempt when
+   counting incoming client connections for per client connection
+   throttling. Incoming addresses in this specified set will not count
+   against :ts:cv:`proxy.config.net.per_client.max_connections_in` and
+   thus will not be blocked by that configuration. This may be useful,
+   for example, to allow any number of incoming connections from within
+   an organization's network without blocking them due to the per client
+   connection max feature.
+
+   This configuration is reloadable via :program:`traffic_ctl config reload`.
+
+   This configuration takes a comma-separated list of IP addresses, CIDR
+   networks, or ranges separated by a dash.
+
+   ============================== ===========================================================
+   Example                        Effect
+   ============================== ===========================================================
+   ``10.0.2.123``                 Exempt a single IP Address.
+   ``10.0.3.1-10.0.3.254``        Exempt a range of IP address.
+   ``10.0.4.0/24``                Exempt a range of IP address specified by CIDR notation.
+   ``10.0.2.123,172.16.0.0/20``   Exempt multiple addresses/ranges.
+   ============================== ===========================================================
+
+   Here is an example configuration value::
+
+      10.0.2.123,172.16.0.0/20,192.168.1.0/24
+
+
 .. ts:cv:: CONFIG proxy.config.http.per_client.connection.alert_delay INT 60
    :reloadable:
    :units: seconds
@@ -2123,7 +2157,7 @@ Proxy User Variables
    by a dash or by using CIDR notation.
 
    ======================= ===========================================================
-   Example  Effect
+   Example                 Effect
    ======================= ===========================================================
    ``10.0.2.123``          A single IP Address.
    ``10.0.3.1-10.0.3.254`` A range of IP address.
@@ -2170,10 +2204,14 @@ Proxy User Variables
          normalize as for value ``1``
    ``3`` ``Accept-Encoding: br, gzip`` (if the header has ``br`` and ``gzip`` (with any ``q`` for either) then ``br, gzip``) **ELSE**
          normalize as for value ``2``
+   ``4`` ``Accept-Encoding: zstd`` if the header has ``zstd`` (with any ``q``) **ELSE**
+         normalize as for value ``2``
+   ``5`` ``Accept-Encoding: zstd, br, gzip`` (supports all combinations of ``zstd``, ``br``, and ``gzip``) **ELSE**
+         normalize as for value ``4``
    ===== ======================================================================
 
    This is useful for minimizing cached alternates of documents (e.g. ``gzip, deflate`` vs. ``deflate, gzip``).
-   Enabling this option is recommended if your origin servers use no encodings other than ``gzip`` or ``br`` (Brotli).
+   Enabling this option is recommended if your origin servers use no encodings other than ``gzip``, ``br`` (Brotli), or ``zstd`` (Zstandard).
 
 Security
 ========

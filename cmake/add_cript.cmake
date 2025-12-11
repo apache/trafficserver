@@ -15,34 +15,21 @@
 #
 #######################
 
-# FindPCRE.cmake
-#
-# This will define the following variables
-#
-#     PCRE_FOUND
-#     PCRE_LIBRARIES
-#     PCRE_INCLUDE_DIRS
-#
-# and the following imported targets
-#
-#     PCRE::PCRE
-#
+# Function to build pre-compiled cript scripts
+function(add_cript name source_file)
+  # Check if ENABLE_CRIPTS is ON, if not, skip
+  if(NOT ENABLE_CRIPTS)
+    message(STATUS "Skipping cript ${name} - ENABLE_CRIPTS is OFF")
+    return()
+  endif()
 
-find_path(PCRE_INCLUDE_DIR NAMES pcre.h) # PATH_SUFFIXES pcre)
-find_library(PCRE_LIBRARY NAMES pcre)
+  # Use the standard ATS plugin macro and link with cripts
+  add_atsplugin(${name} ${source_file})
+  target_link_libraries(${name} PRIVATE ts::cripts)
 
-mark_as_advanced(PCRE_FOUND PCRE_LIBRARY PCRE_INCLUDE_DIR)
+  # Tell CMake that .cript files are C++ files
+  set_target_properties(${name} PROPERTIES LINKER_LANGUAGE CXX)
+  set_source_files_properties(${source_file} PROPERTIES LANGUAGE CXX)
 
-include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(PCRE REQUIRED_VARS PCRE_INCLUDE_DIR PCRE_LIBRARY)
-
-if(PCRE_FOUND)
-  set(PCRE_INCLUDE_DIRS "${PCRE_INCLUDE_DIR}")
-  set(PCRE_LIBRARIES "${PCRE_LIBRARY}")
-endif()
-
-if(PCRE_FOUND AND NOT TARGET PCRE::PCRE)
-  add_library(PCRE::PCRE INTERFACE IMPORTED)
-  target_include_directories(PCRE::PCRE INTERFACE ${PCRE_INCLUDE_DIRS})
-  target_link_libraries(PCRE::PCRE INTERFACE "${PCRE_LIBRARY}")
-endif()
+  verify_remap_plugin(${name})
+endfunction()

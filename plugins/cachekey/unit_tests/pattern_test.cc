@@ -83,7 +83,7 @@ TEST_CASE("Pattern compile and match behavior", "[cachekey][pattern]")
   {
     Pattern p;
     REQUIRE(p.init("^$"));
-    // Pattern::match uses PCRE_NOTEMPTY which prevents empty-string matches.
+    // Pattern::match uses PCRE2_NOTEMPTY which prevents empty-string matches.
     // Therefore '^$' will NOT match an empty subject with the current implementation.
     CHECK(p.match("") == false);
     CHECK(p.match("not-empty") == false);
@@ -92,7 +92,7 @@ TEST_CASE("Pattern compile and match behavior", "[cachekey][pattern]")
   SECTION("Case-insensitive inline flag")
   {
     Pattern p;
-    // PCRE inline flag for case-insensitive
+    // PCRE2 inline flag for case-insensitive
     REQUIRE(p.init("(?i)AbC"));
     CHECK(p.match("aBc") == true);
     CHECK(p.match("ABC") == true);

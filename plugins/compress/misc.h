@@ -1,6 +1,6 @@
 /** @file
 
-  Transforms content using gzip, deflate or brotli
+  Transforms content using gzip, deflate, brotli or zstd
 
   @section license License
 

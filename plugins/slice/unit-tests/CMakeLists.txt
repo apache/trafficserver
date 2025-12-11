@@ -27,7 +27,7 @@ add_catch2_test(NAME test_range COMMAND test_range)
 
 add_executable(test_config test_config.cc ${PROJECT_SOURCE_DIR}/Config.cc ${PROJECT_SOURCE_DIR}/ObjectSizeCache.cc)
 target_compile_definitions(test_config PRIVATE UNITTEST)
-target_link_libraries(test_config PRIVATE PCRE::PCRE Catch2::Catch2WithMain ts::tsutil)
+target_link_libraries(test_config PRIVATE Catch2::Catch2WithMain ts::tsutil)
 add_catch2_test(NAME test_config COMMAND test_config)
 
 add_executable(test_cache test_cache.cc ${PROJECT_SOURCE_DIR}/ObjectSizeCache.cc)

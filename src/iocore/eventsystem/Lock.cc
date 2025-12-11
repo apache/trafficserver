@@ -31,7 +31,7 @@
 #include "iocore/eventsystem/Lock.h"
 #include "tsutil/DbgCtl.h"
 
-ClassAllocator<ProxyMutex> mutexAllocator("mutexAllocator");
+ClassAllocator<ProxyMutex, false> mutexAllocator("mutexAllocator");
 
 namespace
 {

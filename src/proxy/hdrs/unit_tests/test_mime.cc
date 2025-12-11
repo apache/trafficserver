@@ -28,6 +28,8 @@
 using namespace std::literals;
 
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/generators/catch_generators.hpp>
+#include <catch2/generators/catch_generators_range.hpp>
 #include "tscore/ink_platform.h"
 #include "proxy/hdrs/MIME.h"
 
@@ -183,9 +185,6 @@ TEST_CASE("MimeGetHostPortValues", "[proxy][mimeport]")
 
 TEST_CASE("MimeParsers", "[proxy][mimeparsers]")
 {
-  const char *end;
-  int         value;
-
   static const std::vector<std::pair<const char *, int>> tests = {
     {"0",             0         },
     {"1234",          1234      },
@@ -200,35 +199,23 @@ TEST_CASE("MimeParsers", "[proxy][mimeparsers]")
     {"-999999999999", INT_MIN   }
   };
 
-  for (const auto &it : tests) {
-    auto [buf, val] = it;
+  auto [buf, val] = GENERATE(from_range(tests));
+  CAPTURE(buf, val);
 
-    end = buf + strlen(buf);
-    if (mime_parse_int(buf, end) != val) {
-      std::printf("Failed mime_parse_int\n");
-      CHECK(false);
-    }
-    if (!mime_parse_integer(buf, end, &value)) {
-      std::printf("Failed mime_parse_integer call\n");
-      CHECK(false);
-    } else if (value != val) {
-      std::printf("Failed mime_parse_integer value\n");
-      CHECK(false);
-    }
-  }
+  const char *end = buf + strlen(buf);
+  int         value;
+  CHECK(mime_parse_int(buf, end) == val);
+  REQUIRE(mime_parse_integer(buf, end, &value));
+  CHECK(value == val);
+}
 
-  // Also check the date parser, which relies heavily on the mime_parse_integer() function
+TEST_CASE("MimeDateParser", "[proxy][mimedateparser]")
+{
   const char *date1 = "Sun, 05 Dec 1999 08:49:37 GMT";
   const char *date2 = "Sunday, 05-Dec-1999 08:49:37 GMT";
 
   time_t d1 = mime_parse_date(date1, date1 + strlen(date1));
   time_t d2 = mime_parse_date(date2, date2 + strlen(date2));
 
-  if (d1 != d2) {
-    std::printf("Failed mime_parse_date\n");
-    CHECK(false);
-  }
-
-  std::printf("Date1: %" PRIdMAX "\n", d1);
-  std::printf("Date2: %" PRIdMAX "\n", d2);
+  CHECK(d1 == d2);
 }

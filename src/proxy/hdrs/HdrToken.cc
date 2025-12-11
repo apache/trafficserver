@@ -43,7 +43,7 @@ DbgCtl dbg_ctl_hdr_token{"hdr_token"};
 
  You want a regexp like 'Accept' after "greedier" choices so it doesn't match 'Accept-Ranges' earlier than
  it should. The regexp are anchored (^Accept), but I dont see a way with the current system to
- match the word ONLY without making _hdrtoken_strs a real PCRE, but then that breaks the hashing
+ match the word ONLY without making _hdrtoken_strs a real PCRE2, but then that breaks the hashing
  hdrtoken_hash("^Accept$") != hdrtoken_hash("Accept")
 
  So, the current hack is to have "Accept" follow "Accept-.*", lame, I know
@@ -122,7 +122,10 @@ const char *const _hdrtoken_strs[] = {
   "Early-Data",
 
   // RFC-7932
-  "br"};
+  "br",
+
+  // RFC-8878
+  "zstd"};
 
 HdrTokenTypeBinding _hdrtoken_strs_type_initializers[] = {
   {"file",                 HdrTokenType::SCHEME        },

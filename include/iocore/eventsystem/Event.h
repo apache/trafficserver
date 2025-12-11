@@ -289,7 +289,7 @@ public:
 //
 // Event Allocator
 //
-extern ClassAllocator<Event> eventAllocator;
+extern ClassAllocator<Event, false> eventAllocator;
 
 inline void
 Event::free()

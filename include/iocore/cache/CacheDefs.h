@@ -129,10 +129,8 @@ enum CacheFragType {
 using CacheKey = CryptoHash;
 
 struct HttpCacheKey {
-  int         hostlen;
-  const char *hostname;
-  CacheKey    hash;
-  CacheKey    hash2;
+  std::string_view hostname;
+  CacheKey         hash;
 };
 
 #define CACHE_ALLOW_MULTIPLE_WRITES 1
