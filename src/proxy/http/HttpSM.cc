@@ -2107,12 +2107,9 @@ HttpSM::state_read_server_response_header(int event, void *data)
       break;
     }
 
-    // Recompute cooked cache control with targeted headers (pass nullptr if not configured).
-    const char *targeted_headers =
-      (t_state.txn_conf->targeted_cache_control_headers && t_state.txn_conf->targeted_cache_control_headers[0] != '\0') ?
-        t_state.txn_conf->targeted_cache_control_headers :
-        nullptr;
-    t_state.hdr_info.server_response.m_mime->recompute_cooked_stuff(nullptr, targeted_headers);
+    // Recompute cooked cache control with targeted headers.
+    t_state.hdr_info.server_response.m_mime->recompute_cooked_stuff(nullptr,
+                                                                    t_state.txn_conf->targeted_cache_control_headers.get_headers());
 
     SMDbg(dbg_ctl_http_seq, "Done parsing server response header");
 
