@@ -34,6 +34,7 @@
 
 #include "tscore/CryptoHash.h"
 #include "tscore/List.h"
+#include "tsutil/TsSharedMutex.h"
 
 #include <atomic>
 
@@ -84,6 +85,10 @@ public:
   CacheEvacuateDocVC  *doc_evacuator = nullptr;
 
   StripeInitInfo *init_info = nullptr;
+
+  // Reader/writer lock for directory operations to reduce contention
+  // Reads (directory.probe) use shared lock, writes (insert/remove) use exclusive lock
+  ts::shared_mutex dir_mutex;
 
   Cache   *cache                = nullptr;
   uint32_t last_sync_serial     = 0;
