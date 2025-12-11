@@ -31,7 +31,9 @@
 #include "tscore/signals.h"
 
 #include "CtrlCommands.h"
+#include "ConvertConfigCommand.h"
 #include "FileConfigCommand.h"
+#include "SSLMultiCertCommand.h"
 #include "TrafficCtlStatus.h"
 
 // Define the global variable
@@ -137,6 +139,20 @@ main([[maybe_unused]] int argc, const char **argv)
 
   config_command.add_command("registry", "Show configuration file registry", Command_Execute)
     .add_example_usage("traffic_ctl config registry");
+
+  // ssl-multicert subcommand
+  auto &ssl_multicert_command =
+    config_command.add_command("ssl-multicert", "Manage ssl_multicert configuration").require_commands();
+  ssl_multicert_command.add_command("show", "Show the ssl_multicert configuration in JSON format", Command_Execute)
+    .add_example_usage("traffic_ctl config ssl-multicert show");
+
+  // convert subcommand - convert config files between formats
+  auto &convert_command = config_command.add_command("convert", "Convert configuration files to YAML format").require_commands();
+  convert_command.add_command("ssl_multicert", "Convert ssl_multicert.config to ssl_multicert.yaml", "", 2, Command_Execute)
+    .add_example_usage("traffic_ctl config convert ssl_multicert <input_file> <output_file>")
+    .add_example_usage("traffic_ctl config convert ssl_multicert ssl_multicert.config ssl_multicert.yaml")
+    .add_example_usage("traffic_ctl config convert ssl_multicert ssl_multicert.config -  # output to stdout");
+
   // host commands
   host_command.add_command("status", "Get one or more host statuses", "", MORE_THAN_ZERO_ARG_N, Command_Execute)
     .add_example_usage("traffic_ctl host status HOST  [HOST  ...]");
@@ -217,6 +233,12 @@ main([[maybe_unused]] int argc, const char **argv)
 
   auto create_command = [](ts::Arguments &args) -> std::unique_ptr<CtrlCommand> {
     if (args.get("config")) {
+      if (args.get("convert")) {
+        return std::make_unique<ConvertConfigCommand>(&args);
+      }
+      if (args.get("ssl-multicert")) {
+        return std::make_unique<SSLMultiCertCommand>(&args);
+      }
       if (args.get("cold")) {
         return std::make_unique<FileConfigCommand>(&args);
       }

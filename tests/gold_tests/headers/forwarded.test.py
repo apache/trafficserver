@@ -99,7 +99,13 @@ def baselineTsSetup(ts):
             'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir)
         })
 
-    ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+    ts.Disk.ssl_multicert_yaml.AddLines(
+        """
+    ssl_multicert:
+      - dest_ip: "*"
+        ssl_cert_name: server.pem
+        ssl_key_name: server.key
+    """.split("\n"))
 
     ts.Disk.remap_config.AddLine('map http://www.no-oride.com http://127.0.0.1:{0}'.format(server.Variables.Port))
 
