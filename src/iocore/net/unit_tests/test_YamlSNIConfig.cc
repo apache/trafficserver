@@ -114,6 +114,8 @@ TEST_CASE("YamlConfig handles bad ports appropriately.")
   std::string filepath;
   swoc::bwprint(filepath, "{}/sni_conf_test_bad_port_{}.yaml", _XSTR(LIBINKNET_UNIT_TEST_DIR), port_str);
 
+  CAPTURE(port_str, filepath);
+
   swoc::Errata      zret{conf.loader(filepath)};
   std::stringstream errorstream;
   errorstream << zret;
