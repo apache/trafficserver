@@ -23,7 +23,10 @@ Test.Summary = '''
 Test Lua plugin PROXY protocol API
 '''
 
-Test.SkipUnless(Condition.PluginExists('tslua.so'),)
+Test.SkipUnless(
+    Condition.PluginExists('tslua.so'),
+    Condition.HasCurlOption("--haproxy-clientip"),
+)
 
 Test.ContinueOnFail = True
 
