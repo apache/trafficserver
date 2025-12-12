@@ -29,7 +29,6 @@
 #include <sstream>
 #include <unistd.h>
 
-#include "tscore/ink_assert.h"
 #include "shared/rpc/RPCRequests.h"
 #include "shared/rpc/RPCClient.h"
 #include "shared/rpc/yaml_codecs.h"
@@ -562,7 +561,8 @@ Stats::getStat(const std::string &key, std::string &value)
   auto it = _lookup_table.find(key);
   if (it == _lookup_table.end()) {
     fprintf(stderr, "ERROR: Unknown stat key '%s' not found in lookup table\n", key.c_str());
-    ink_assert(it != _lookup_table.end());
+    value = "";
+    return;
   }
   const auto &item = it->second;
 
@@ -584,7 +584,9 @@ Stats::getStat(const std::string &key, double &value, std::string &prettyName, S
   auto it = _lookup_table.find(key);
   if (it == _lookup_table.end()) {
     fprintf(stderr, "ERROR: Unknown stat key '%s' not found in lookup table\n", key.c_str());
-    ink_assert(it != _lookup_table.end());
+    prettyName = key;
+    type       = StatType::Absolute;
+    return;
   }
   const auto &item = it->second;
 
