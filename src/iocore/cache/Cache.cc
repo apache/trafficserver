@@ -64,6 +64,7 @@ int     cache_config_log_alternate_eviction        = 0;
 int     cache_config_dir_sync_frequency            = 60;
 int     cache_config_dir_sync_delay                = 500;
 int     cache_config_dir_sync_max_write            = (2 * 1024 * 1024);
+int     cache_config_dir_sync_parallel_tasks       = 1;
 int     cache_config_permit_pinning                = 0;
 int     cache_config_select_alternate              = 1;
 int     cache_config_max_doc_size                  = 0;
@@ -90,7 +91,6 @@ Cache                                    *theCache = nullptr;
 std::vector<std::unique_ptr<CacheDisk>>   gdisks;
 int                                       gndisks                      = 0;
 Cache                                    *caches[NUM_CACHE_FRAG_TYPES] = {nullptr};
-CacheSync                                *cacheDirSync                 = nullptr;
 Store                                     theCacheStore;
 StripeSM                                **gstripes  = nullptr;
 std::atomic<int>                          gnstripes = 0;
@@ -883,6 +883,9 @@ ink_cache_init(ts::ModuleVersion v)
   register_cache_stats(&cache_rsb, "proxy.process.cache");
 
   cacheProcessor.wait_for_cache = RecGetRecordInt("proxy.config.http.wait_for_cache").value_or(0);
+
+  RecEstablishStaticConfigInt32(cache_config_dir_sync_parallel_tasks, "proxy.config.cache.dir.sync_parallel_tasks");
+  Dbg(dbg_ctl_cache_init, "proxy.config.cache.dir.sync_parallel_tasks = %d", cache_config_dir_sync_parallel_tasks);
 
   RecEstablishStaticConfigInt32(cache_config_persist_bad_disks, "proxy.config.cache.persist_bad_disks");
   Dbg(dbg_ctl_cache_init, "proxy.config.cache.persist_bad_disks = %d", cache_config_persist_bad_disks);
