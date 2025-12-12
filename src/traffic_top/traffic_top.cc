@@ -109,13 +109,14 @@ run_interactive(Stats &stats, int sleep_time, bool ascii_mode)
   int  connect_retry     = 0;
   int  max_retries       = 10;    // Max connection retries before slowing down
   bool user_toggled_mode = false; // Track if user manually changed mode
+  bool running           = true;  // Main loop control flag
 
   // Try initial connection - start with absolute values
   if (stats.getStats()) {
     connected = true;
   }
 
-  while (!g_shutdown) {
+  while (running && !g_shutdown) {
     // Auto-switch from absolute to rate mode once we can calculate rates
     // (unless user has manually toggled the mode)
     if (!user_toggled_mode && stats.isAbsolute() && stats.canCalculateRates()) {
@@ -158,7 +159,8 @@ run_interactive(Stats &stats, int sleep_time, bool ascii_mode)
     switch (ch) {
     case 'q':
     case 'Q':
-      goto quit;
+      running = false;
+      break;
 
     case 'h':
     case 'H':
@@ -254,7 +256,6 @@ run_interactive(Stats &stats, int sleep_time, bool ascii_mode)
     }
   }
 
-quit:
   display.shutdown();
   return 0;
 }
