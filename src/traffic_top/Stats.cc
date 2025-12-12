@@ -256,7 +256,7 @@ Stats::initializeLookupTable()
   // SSL/TLS stats
   _lookup_table.emplace("ssl_handshake_success",
                         LookupItem("SSL Handshk", "proxy.process.ssl.total_success_handshake_count_in", StatType::Rate));
-  _lookup_table.emplace("ssl_handshake_fail", LookupItem("SSL HS Fail", "proxy.process.ssl.total_handshake_time", StatType::Rate));
+  _lookup_table.emplace("ssl_handshake_fail", LookupItem("SSL HS Fail", "proxy.process.ssl.ssl_error_ssl", StatType::Rate));
   _lookup_table.emplace("ssl_session_hit", LookupItem("SSL Sess Hit", "proxy.process.ssl.ssl_session_cache_hit", StatType::Rate));
   _lookup_table.emplace("ssl_session_miss",
                         LookupItem("SSL Sess Miss", "proxy.process.ssl.ssl_session_cache_miss", StatType::Rate));

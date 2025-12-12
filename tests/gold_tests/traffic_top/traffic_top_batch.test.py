@@ -25,16 +25,30 @@ Test traffic_top batch mode with JSON and text output.
 
 Test.ContinueOnFail = True
 
-# Get traffic_top path - try ATS_BIN first (from --ats-bin), fallback to BINDIR
-ats_bin = os.environ.get('ATS_BIN', Test.Variables.BINDIR)
-traffic_top_path = os.path.join(ats_bin, 'traffic_top')
+# Get traffic_top path
+# Test.TestDirectory is the directory containing this test file
+# Navigate up from gold_tests/traffic_top to find the source root
+test_dir = Test.TestDirectory
+source_root = os.path.dirname(os.path.dirname(os.path.dirname(test_dir)))
 
-# If running from build directory, the path structure is different
-if not os.path.exists(traffic_top_path):
-    # Try the build directory structure
-    build_path = os.path.join(os.path.dirname(ats_bin), 'src', 'traffic_top', 'traffic_top')
-    if os.path.exists(build_path):
-        traffic_top_path = build_path
+# Look for build directories with traffic_top
+build_dirs = ['build-dev-asan', 'build-default', 'build', 'build-autest']
+traffic_top_path = None
+
+for build_dir in build_dirs:
+    candidate = os.path.join(source_root, build_dir, 'src', 'traffic_top', 'traffic_top')
+    if os.path.exists(candidate):
+        traffic_top_path = candidate
+        break
+    # Also check bin/ directory for symlink
+    candidate = os.path.join(source_root, build_dir, 'bin', 'traffic_top')
+    if os.path.exists(candidate):
+        traffic_top_path = candidate
+        break
+
+# Fallback to BINDIR if no build directory found
+if traffic_top_path is None:
+    traffic_top_path = os.path.join(Test.Variables.BINDIR, 'traffic_top')
 
 
 class TrafficTopHelper:
