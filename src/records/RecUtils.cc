@@ -29,6 +29,9 @@
 #include "records/RecordsConfig.h"
 #include "P_RecUtils.h"
 #include "P_RecCore.h"
+
+#include <charconv>
+#include <string_view>
 //-------------------------------------------------------------------------
 // RecRecord initializer / Free
 //-------------------------------------------------------------------------
@@ -390,23 +393,56 @@ recordRegexCheck(const char *pattern, const char *value)
 bool
 recordRangeCheck(const char *pattern, const char *value)
 {
-  char     *p = const_cast<char *>(pattern);
-  Tokenizer dashTok("-");
+  std::string_view sv_pattern(pattern);
 
-  if (recordRegexCheck("^[0-9]+$", value)) {
-    while (*p != '[') {
-      p++;
-    } // skip to '['
-    if (dashTok.Initialize(++p, COPY_TOKS) == 2) {
-      int l_limit = atoi(dashTok[0]);
-      int u_limit = atoi(dashTok[1]);
-      int val     = atoi(value);
-      if (val >= l_limit && val <= u_limit) {
-        return true;
-      }
-    }
+  // Find '[' and ']'
+  auto start = sv_pattern.find('[');
+  if (start != 0) {
+    Warning("recordRangeCheck: pattern '%s' does not start with '['", pattern);
+    return false; // No '[' found
   }
-  return false;
+
+  auto end = sv_pattern.find(']', start);
+  if (end != sv_pattern.size() - 1) {
+    return false; // No ']' found
+  }
+
+  // Extract range portion between brackets: "[0-10]" -> "0-10" or "[-123--100]" -> "-123--100"
+  sv_pattern = sv_pattern.substr(start + 1, end - start - 1);
+
+  RecInt lower_limit;
+  auto [lower_end, ec1] = std::from_chars(sv_pattern.data(), sv_pattern.data() + sv_pattern.size(), lower_limit);
+  if (ec1 != std::errc{}) {
+    Warning("recordRangeCheck: failed to parse lower bound in pattern '%s'", pattern);
+    return false; // Failed to parse lower bound
+  }
+
+  if (lower_end >= sv_pattern.data() + sv_pattern.size() || *lower_end != '-') {
+    Warning("recordRangeCheck: no dash separator found in pattern '%s'", pattern);
+    return false; // No dash separator found
+  }
+
+  auto pos = lower_end + 1 - sv_pattern.data();
+  sv_pattern.remove_prefix(pos);
+  RecInt upper_limit;
+  auto [upper_end, ec2] = std::from_chars(sv_pattern.data(), sv_pattern.data() + sv_pattern.size(), upper_limit);
+  if (ec2 != std::errc{} || upper_end != sv_pattern.data() + sv_pattern.size()) {
+    Warning("recordRangeCheck: failed to parse upper bound in pattern '%s'", pattern);
+    return false; // Failed to parse upper bound or extra characters
+  }
+
+  if (lower_limit > upper_limit) {
+    Warning("recordRangeCheck: invalid range in pattern '%s'", pattern);
+    return false;
+  }
+
+  RecInt val;
+  auto [value_end, ec3] = std::from_chars(value, value + strlen(value), val);
+  if (ec3 != std::errc{} || value_end != value + strlen(value)) {
+    return false; // Value parse error
+  }
+
+  return (val >= lower_limit && val <= upper_limit);
 }
 
 bool
