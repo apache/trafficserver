@@ -209,26 +209,62 @@ public:
   int validateLookupTable() const;
 
 private:
-  static constexpr size_t MAX_HISTORY_LENGTH = 120; // 2 minutes at 1 sample/sec, or 10 min at 5 sec/sample
+  // Maximum number of historical data points to store for graphs
+  // At 5 second intervals, 120 points = 10 minutes of history
+  static constexpr size_t MAX_HISTORY_LENGTH = 120;
 
+  /**
+   * Get raw metric value from the stats map.
+   * @param key The ATS metric name (e.g., "proxy.process.http.incoming_requests")
+   * @param stats Pointer to the stats map (current or old)
+   * @return The metric value as int64_t, or 0 if not found
+   */
   int64_t getValue(const std::string &key, const std::map<std::string, std::string> *stats) const;
 
+  /**
+   * Fetch all metrics from ATS via JSON-RPC and populate the stats map.
+   * @param lookup_table The lookup table defining which metrics to fetch
+   * @param stats Output map to populate with metric name -> value pairs
+   * @return Empty string on success, error message on failure
+   */
   std::string fetch_and_fill_stats(const std::map<std::string, LookupItem> &lookup_table,
                                    std::map<std::string, std::string>      *stats);
 
+  /**
+   * Initialize the lookup table with all stat definitions.
+   * This defines the mapping from display keys (e.g., "client_req") to
+   * ATS metrics (e.g., "proxy.process.http.incoming_requests") and
+   * how to calculate/display each stat.
+   */
   void initializeLookupTable();
 
-  std::unique_ptr<std::map<std::string, std::string>> _stats;
-  std::unique_ptr<std::map<std::string, std::string>> _old_stats;
-  std::map<std::string, LookupItem>                   _lookup_table;
-  std::map<std::string, std::deque<double>>           _history; // Historical values for graphs
-  std::string                                         _host;
-  std::string                                         _last_error;
-  double                                              _old_time  = 0;
-  double                                              _now       = 0;
-  double                                              _time_diff = 0;
-  struct timeval                                      _time      = {0, 0};
-  bool                                                _absolute  = true; // Start with absolute values
+  // -------------------------------------------------------------------------
+  // Stats storage
+  // -------------------------------------------------------------------------
+  // We keep two snapshots of stats to calculate rates (delta / time_diff)
+  std::unique_ptr<std::map<std::string, std::string>> _stats;     ///< Current stats snapshot
+  std::unique_ptr<std::map<std::string, std::string>> _old_stats; ///< Previous stats snapshot
+
+  // -------------------------------------------------------------------------
+  // Configuration and metadata
+  // -------------------------------------------------------------------------
+  std::map<std::string, LookupItem>         _lookup_table; ///< Stat key -> metric mapping
+  std::map<std::string, std::deque<double>> _history;      ///< Historical values for graphs
+  std::string                               _host;         ///< Hostname for display
+  std::string                               _last_error;   ///< Last error message from RPC
+
+  // -------------------------------------------------------------------------
+  // Timing for rate calculations
+  // -------------------------------------------------------------------------
+  double         _old_time  = 0;      ///< Timestamp of previous stats fetch (seconds)
+  double         _now       = 0;      ///< Timestamp of current stats fetch (seconds)
+  double         _time_diff = 0;      ///< Time between fetches (for rate calculation)
+  struct timeval _time      = {0, 0}; ///< Raw timeval from gettimeofday()
+
+  // -------------------------------------------------------------------------
+  // Display mode
+  // -------------------------------------------------------------------------
+  bool _absolute = true; ///< True = show absolute values, False = show rates
 };
 
 } // namespace traffic_top
