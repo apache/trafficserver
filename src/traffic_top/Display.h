@@ -242,35 +242,63 @@ public:
   } // Exclude Help
 
 private:
-  void renderMainPage(Stats &stats);
-  void renderResponsePage(Stats &stats);
-  void renderConnectionPage(Stats &stats);
-  void renderCachePage(Stats &stats);
-  void renderSSLPage(Stats &stats);
-  void renderErrorsPage(Stats &stats);
-  void renderPerformancePage(Stats &stats);
-  void renderGraphsPage(Stats &stats);
+  // -------------------------------------------------------------------------
+  // Page rendering functions
+  // -------------------------------------------------------------------------
+  // Each page has a dedicated render function that draws the appropriate
+  // stats and layout for that category.
+
+  void renderMainPage(Stats &stats);        ///< Overview page with cache, connections, requests
+  void renderResponsePage(Stats &stats);    ///< HTTP response code breakdown (2xx, 4xx, 5xx, etc.)
+  void renderConnectionPage(Stats &stats);  ///< HTTP/1.x vs HTTP/2 connection details
+  void renderCachePage(Stats &stats);       ///< Cache storage, operations, hit rates
+  void renderSSLPage(Stats &stats);         ///< SSL/TLS handshake and session statistics
+  void renderErrorsPage(Stats &stats);      ///< Connection errors, HTTP errors, cache errors
+  void renderPerformancePage(Stats &stats); ///< HTTP milestone timing (request lifecycle)
+  void renderGraphsPage(Stats &stats);      ///< Real-time graphs (btop++ style)
   void renderHelpPage(const std::string &host, const std::string &version);
 
-  // Main page layouts per LAYOUT.md
-  void render80Layout(Stats &stats);
-  void render120Layout(Stats &stats);
-  void render160Layout(Stats &stats);
+  // -------------------------------------------------------------------------
+  // Responsive layout functions for the main overview page
+  // -------------------------------------------------------------------------
+  // The main page adapts its layout based on terminal width:
+  // - 80 columns:  2 boxes per row, 2 rows (minimal layout)
+  // - 120 columns: 3 boxes per row, more stats visible
+  // - 160+ columns: 4 boxes per row, full stat coverage
+  // See LAYOUT.md for detailed layout specifications.
+
+  void render80Layout(Stats &stats);  ///< Layout for 80-column terminals
+  void render120Layout(Stats &stats); ///< Layout for 120-column terminals
+  void render160Layout(Stats &stats); ///< Layout for 160+ column terminals
 
   /**
    * Draw a row of stat pairs inside a 40-char box.
+   * This is the core layout primitive for the main page boxes.
+   *
    * Format: | Label1   Value1   Label2   Value2 |
-   * @param x Box starting column
-   * @param y Row
-   * @param key1 First stat key
-   * @param key2 Second stat key
-   * @param stats Stats object
+   *         ^-- border                   border--^
+   *
+   * @param x Box starting column (where the left border is)
+   * @param y Row number
+   * @param key1 First stat key (from lookup table)
+   * @param key2 Second stat key (from lookup table)
+   * @param stats Stats object to fetch values from
+   * @param borderColor Color for the vertical borders
    */
   void drawStatPairRow(int x, int y, const std::string &key1, const std::string &key2, Stats &stats,
                        short borderColor = ColorPair::Border);
 
+  /**
+   * Draw a section header line spanning between two x positions.
+   */
   void drawSectionHeader(int y, int x1, int x2, const std::string &title);
 
+  /**
+   * Helper to select Unicode or ASCII box-drawing character.
+   * @param unicode The Unicode character to use normally
+   * @param ascii The ASCII fallback character
+   * @return The appropriate character based on _ascii_mode
+   */
   const char *
   boxChar(const char *unicode, const char *ascii) const
   {
@@ -278,15 +306,19 @@ private:
   }
 
   /**
-   * Detect UTF-8 support from environment variables.
-   * @return true if UTF-8 is supported
+   * Detect UTF-8 support from environment variables (LANG, LC_ALL, etc.).
+   * Used to auto-detect whether to use Unicode or ASCII box characters.
+   * @return true if UTF-8 appears to be supported
    */
   static bool detectUtf8Support();
 
-  bool _initialized = false;
-  bool _ascii_mode  = false;
-  int  _width       = 80;
-  int  _height      = 24;
+  // -------------------------------------------------------------------------
+  // State variables
+  // -------------------------------------------------------------------------
+  bool _initialized = false; ///< True after successful initialize() call
+  bool _ascii_mode  = false; ///< True = use ASCII box chars, False = use Unicode
+  int  _width       = 80;    ///< Current terminal width in columns
+  int  _height      = 24;    ///< Current terminal height in rows
 };
 
 } // namespace traffic_top
