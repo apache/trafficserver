@@ -27,17 +27,6 @@ Breakdown: `| ` (2) + stat1 (17) + gap (3) + stat2 (16) + ` |` (2) = 40 ✓
 ## 80x24 Terminal (2 boxes)
 
 ```
-+--------------- CACHE ----------------++----------- REQS/RESPONSES -----------+
-| Disk Used    120G   RAM Used    512M || GET           15K   POST        800  |
-| Disk Total   500G   RAM Total     1G || HEAD         200    PUT          50  |
-| RAM Hit       85%   Fresh        72% || DELETE        10    OPTIONS      25  |
-| Revalidate    12%   Cold          8% || 200           78%   206           5% |
-| Changed        3%   Not Cached    2% || 301            2%   304          12% |
-| No Cache       3%   Entries      50K || 404            1%   502           0% |
-| Lookups       25K   Writes        8K || 2xx           83%   3xx          14% |
-| Read Active  150    Write Act    45  || 4xx            2%   5xx           1% |
-| Updates      500    Deletes     100  || Error         15    Other Err     3  |
-+--------------------------------------++--------------------------------------+
 +--------------- CLIENT ---------------++--------------- ORIGIN ---------------+
 | Requests      15K   Connections 800  || Requests      12K   Connections 400  |
 | Current Conn 500    Active Conn 450  || Current Conn 200    Req/Conn     30  |
@@ -48,6 +37,17 @@ Breakdown: `| ` (2) + stat1 (17) + gap (3) + stat2 (16) + ` |` (2) = 40 ✓
 | HTTP/2 Conn  300    SSL Session 450  || DNS Lookups  800    DNS Hits    720  |
 | SSL Handshk  120    SSL Errors    3  || DNS Ratio     90%   DNS Entry   500  |
 | Hit Latency    2    Miss Laten   45  || Error         12    Other Err     5  |
++--------------------------------------++--------------------------------------+
++--------------- CACHE ----------------++----------- REQS/RESPONSES -----------+
+| Disk Used    120G   RAM Used    512M || GET           15K   POST        800  |
+| Disk Total   500G   RAM Total     1G || HEAD         200    PUT          50  |
+| RAM Hit       85%   Fresh        72% || DELETE        10    OPTIONS      25  |
+| Revalidate    12%   Cold          8% || 200           78%   206           5% |
+| Changed        3%   Not Cached    2% || 301            2%   304          12% |
+| No Cache       3%   Entries      50K || 404            1%   502           0% |
+| Lookups       25K   Writes        8K || 2xx           83%   3xx          14% |
+| Read Act     150    Write Act    45  || 4xx            2%   5xx           1% |
+| Updates      500    Deletes     100  || Error         15    Other Err     3  |
 +--------------------------------------++--------------------------------------+
  12:30:45  proxy.example.com            [1/6] Overview               q h 1-6
 ```
