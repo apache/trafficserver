@@ -1117,10 +1117,10 @@ Display::render120Layout(Stats &stats)
   drawStatPairRow(0, row + 1, "ram_ratio", "fresh", stats, ColorPair::Border6);
   drawStatPairRow(0, row + 2, "reval", "cold", stats, ColorPair::Border6);
   drawStatPairRow(0, row + 3, "changed", "not", stats, ColorPair::Border6);
-  drawStatPairRow(0, row + 4, "no", "abort", stats, ColorPair::Border6);
-  drawStatPairRow(0, row + 5, "fresh_time", "reval_time", stats, ColorPair::Border6);
+  drawStatPairRow(0, row + 4, "no", "ram_hit", stats, ColorPair::Border6);
+  drawStatPairRow(0, row + 5, "ram_miss", "fresh_time", stats, ColorPair::Border6);
   if (row2_height > 7)
-    drawStatPairRow(0, row + 6, "cold_time", "changed_time", stats, ColorPair::Border6);
+    drawStatPairRow(0, row + 6, "reval_time", "cold_time", stats, ColorPair::Border6);
 
   drawStatPairRow(BOX_WIDTH, row + 1, "200", "206", stats, ColorPair::Border5);
   drawStatPairRow(BOX_WIDTH, row + 2, "301", "304", stats, ColorPair::Border5);
@@ -1136,7 +1136,7 @@ Display::render120Layout(Stats &stats)
   drawStatPairRow(BOX_WIDTH * 2, row + 4, "client_net", "server_net", stats, ColorPair::Border3);
   drawStatPairRow(BOX_WIDTH * 2, row + 5, "client_size", "server_size", stats, ColorPair::Border3);
   if (row2_height > 7)
-    drawStatPairRow(BOX_WIDTH * 2, row + 6, "client_req_time", "ka_total", stats, ColorPair::Border3);
+    drawStatPairRow(BOX_WIDTH * 2, row + 6, "client_req_time", "total_time", stats, ColorPair::Border3);
 
   row += row2_height;
 
@@ -1172,36 +1172,39 @@ Display::render120Layout(Stats &stats)
 
   row += row3_height;
 
-  // Row 4: CLIENT | ORIGIN | TOTALS
-  // Consistent colors: CLIENT=Cyan, ORIGIN=Bright Blue, TOTALS=Blue
+  // Row 4: HTTP METHODS | RESPONSE TIMES | HTTP CODES
+  // These boxes show different stats from rows 1-3
   if (row + row4_height <= _height - 1) {
-    drawBox(0, row, BOX_WIDTH, row4_height, "CLIENT", ColorPair::Border);
-    drawBox(BOX_WIDTH, row, BOX_WIDTH, row4_height, "ORIGIN", ColorPair::Border4);
-    drawBox(BOX_WIDTH * 2, row, BOX_WIDTH, row4_height, "TOTALS", ColorPair::Border2);
+    drawBox(0, row, BOX_WIDTH, row4_height, "HTTP METHODS", ColorPair::Border);
+    drawBox(BOX_WIDTH, row, BOX_WIDTH, row4_height, "RESPONSE TIMES", ColorPair::Border4);
+    drawBox(BOX_WIDTH * 2, row, BOX_WIDTH, row4_height, "HTTP CODES", ColorPair::Border2);
 
-    drawStatPairRow(0, row + 1, "client_req", "client_conn", stats, ColorPair::Border);
-    drawStatPairRow(0, row + 2, "client_curr_conn", "client_actv_conn", stats, ColorPair::Border);
-    drawStatPairRow(0, row + 3, "client_avg_size", "client_net", stats, ColorPair::Border);
-    drawStatPairRow(0, row + 4, "client_req_time", "client_head", stats, ColorPair::Border);
-    drawStatPairRow(0, row + 5, "client_body", "client_dyn_ka", stats, ColorPair::Border);
+    // HTTP Methods breakdown
+    drawStatPairRow(0, row + 1, "get", "post", stats, ColorPair::Border);
+    drawStatPairRow(0, row + 2, "head", "put", stats, ColorPair::Border);
+    drawStatPairRow(0, row + 3, "delete", "options", stats, ColorPair::Border);
+    drawStatPairRow(0, row + 4, "client_req", "server_req", stats, ColorPair::Border);
+    drawStatPairRow(0, row + 5, "client_req_conn", "server_req_conn", stats, ColorPair::Border);
     if (row4_height > 7)
-      drawStatPairRow(0, row + 6, "client_conn_h1", "client_conn_h2", stats, ColorPair::Border);
+      drawStatPairRow(0, row + 6, "client_dyn_ka", "client_req_time", stats, ColorPair::Border);
 
-    drawStatPairRow(BOX_WIDTH, row + 1, "server_req", "server_conn", stats, ColorPair::Border4);
-    drawStatPairRow(BOX_WIDTH, row + 2, "server_curr_conn", "server_req_conn", stats, ColorPair::Border4);
-    drawStatPairRow(BOX_WIDTH, row + 3, "server_avg_size", "server_net", stats, ColorPair::Border4);
-    drawStatPairRow(BOX_WIDTH, row + 4, "ka_total", "ka_count", stats, ColorPair::Border4);
-    drawStatPairRow(BOX_WIDTH, row + 5, "server_head", "server_body", stats, ColorPair::Border4);
+    // Response times for different cache states
+    drawStatPairRow(BOX_WIDTH, row + 1, "fresh_time", "reval_time", stats, ColorPair::Border4);
+    drawStatPairRow(BOX_WIDTH, row + 2, "cold_time", "changed_time", stats, ColorPair::Border4);
+    drawStatPairRow(BOX_WIDTH, row + 3, "not_time", "no_time", stats, ColorPair::Border4);
+    drawStatPairRow(BOX_WIDTH, row + 4, "total_time", "client_req_time", stats, ColorPair::Border4);
+    drawStatPairRow(BOX_WIDTH, row + 5, "ssl_handshake_time", "ka_total", stats, ColorPair::Border4);
     if (row4_height > 7)
-      drawStatPairRow(BOX_WIDTH, row + 6, "ssl_origin_reused", "ssl_handshake_time", stats, ColorPair::Border4);
+      drawStatPairRow(BOX_WIDTH, row + 6, "ka_count", "ssl_origin_reused", stats, ColorPair::Border4);
 
-    drawStatPairRow(BOX_WIDTH * 2, row + 1, "disk_total", "disk_used", stats, ColorPair::Border2);
-    drawStatPairRow(BOX_WIDTH * 2, row + 2, "ram_total", "ram_used", stats, ColorPair::Border2);
-    drawStatPairRow(BOX_WIDTH * 2, row + 3, "entries", "avg_size", stats, ColorPair::Border2);
-    drawStatPairRow(BOX_WIDTH * 2, row + 4, "net_open_conn", "net_throttled", stats, ColorPair::Border2);
-    drawStatPairRow(BOX_WIDTH * 2, row + 5, "fresh_time", "cold_time", stats, ColorPair::Border2);
+    // Additional HTTP codes not shown elsewhere
+    drawStatPairRow(BOX_WIDTH * 2, row + 1, "100", "101", stats, ColorPair::Border2);
+    drawStatPairRow(BOX_WIDTH * 2, row + 2, "201", "204", stats, ColorPair::Border2);
+    drawStatPairRow(BOX_WIDTH * 2, row + 3, "302", "307", stats, ColorPair::Border2);
+    drawStatPairRow(BOX_WIDTH * 2, row + 4, "400", "401", stats, ColorPair::Border2);
+    drawStatPairRow(BOX_WIDTH * 2, row + 5, "403", "500", stats, ColorPair::Border2);
     if (row4_height > 7)
-      drawStatPairRow(BOX_WIDTH * 2, row + 6, "reval_time", "changed_time", stats, ColorPair::Border2);
+      drawStatPairRow(BOX_WIDTH * 2, row + 6, "501", "505", stats, ColorPair::Border2);
   }
 }
 
@@ -1260,10 +1263,10 @@ Display::render160Layout(Stats &stats)
   drawStatPairRow(BOX_WIDTH * 3, row + 1, "get", "post", stats, ColorPair::Border5);
   drawStatPairRow(BOX_WIDTH * 3, row + 2, "head", "put", stats, ColorPair::Border5);
   drawStatPairRow(BOX_WIDTH * 3, row + 3, "delete", "options", stats, ColorPair::Border5);
-  drawStatPairRow(BOX_WIDTH * 3, row + 4, "2xx", "3xx", stats, ColorPair::Border5);
-  drawStatPairRow(BOX_WIDTH * 3, row + 5, "4xx", "5xx", stats, ColorPair::Border5);
+  drawStatPairRow(BOX_WIDTH * 3, row + 4, "1xx", "2xx", stats, ColorPair::Border5);
+  drawStatPairRow(BOX_WIDTH * 3, row + 5, "3xx", "4xx", stats, ColorPair::Border5);
   if (row1_height > 7)
-    drawStatPairRow(BOX_WIDTH * 3, row + 6, "client_req", "server_req", stats, ColorPair::Border5);
+    drawStatPairRow(BOX_WIDTH * 3, row + 6, "5xx", "client_req_conn", stats, ColorPair::Border5);
 
   row += row1_height;
 
@@ -1277,10 +1280,10 @@ Display::render160Layout(Stats &stats)
   drawStatPairRow(0, row + 1, "ram_ratio", "fresh", stats, ColorPair::Border6);
   drawStatPairRow(0, row + 2, "reval", "cold", stats, ColorPair::Border6);
   drawStatPairRow(0, row + 3, "changed", "not", stats, ColorPair::Border6);
-  drawStatPairRow(0, row + 4, "no", "entries", stats, ColorPair::Border6);
-  drawStatPairRow(0, row + 5, "fresh_time", "reval_time", stats, ColorPair::Border6);
+  drawStatPairRow(0, row + 4, "no", "ram_hit", stats, ColorPair::Border6);
+  drawStatPairRow(0, row + 5, "ram_miss", "fresh_time", stats, ColorPair::Border6);
   if (row2_height > 7)
-    drawStatPairRow(0, row + 6, "cold_time", "changed_time", stats, ColorPair::Border6);
+    drawStatPairRow(0, row + 6, "reval_time", "cold_time", stats, ColorPair::Border6);
 
   drawStatPairRow(BOX_WIDTH, row + 1, "client_conn_h1", "client_curr_conn_h1", stats, ColorPair::Border2);
   drawStatPairRow(BOX_WIDTH, row + 2, "client_conn_h2", "client_curr_conn_h2", stats, ColorPair::Border2);
@@ -1298,13 +1301,13 @@ Display::render160Layout(Stats &stats)
   if (row2_height > 7)
     drawStatPairRow(BOX_WIDTH * 2, row + 6, "ssl_attempts_in", "ssl_attempts_out", stats, ColorPair::Border3);
 
-  drawStatPairRow(BOX_WIDTH * 3, row + 1, "200", "206", stats, ColorPair::Border5);
-  drawStatPairRow(BOX_WIDTH * 3, row + 2, "301", "304", stats, ColorPair::Border5);
-  drawStatPairRow(BOX_WIDTH * 3, row + 3, "404", "502", stats, ColorPair::Border5);
-  drawStatPairRow(BOX_WIDTH * 3, row + 4, "503", "504", stats, ColorPair::Border5);
-  drawStatPairRow(BOX_WIDTH * 3, row + 5, "2xx", "3xx", stats, ColorPair::Border5);
+  drawStatPairRow(BOX_WIDTH * 3, row + 1, "200", "201", stats, ColorPair::Border5);
+  drawStatPairRow(BOX_WIDTH * 3, row + 2, "204", "206", stats, ColorPair::Border5);
+  drawStatPairRow(BOX_WIDTH * 3, row + 3, "301", "302", stats, ColorPair::Border5);
+  drawStatPairRow(BOX_WIDTH * 3, row + 4, "304", "307", stats, ColorPair::Border5);
+  drawStatPairRow(BOX_WIDTH * 3, row + 5, "400", "404", stats, ColorPair::Border5);
   if (row2_height > 7)
-    drawStatPairRow(BOX_WIDTH * 3, row + 6, "4xx", "5xx", stats, ColorPair::Border5);
+    drawStatPairRow(BOX_WIDTH * 3, row + 6, "500", "502", stats, ColorPair::Border5);
 
   row += row2_height;
 
@@ -1321,7 +1324,7 @@ Display::render160Layout(Stats &stats)
   drawStatPairRow(0, row + 4, "client_net", "server_net", stats, ColorPair::Border3);
   drawStatPairRow(0, row + 5, "client_size", "server_size", stats, ColorPair::Border3);
   if (row3_height > 7)
-    drawStatPairRow(0, row + 6, "client_req_time", "fresh_time", stats, ColorPair::Border3);
+    drawStatPairRow(0, row + 6, "client_req_time", "total_time", stats, ColorPair::Border3);
 
   drawStatPairRow(BOX_WIDTH, row + 1, "dns_lookups", "dns_hits", stats, ColorPair::Border);
   drawStatPairRow(BOX_WIDTH, row + 2, "dns_ratio", "dns_entry", stats, ColorPair::Border);
@@ -1339,13 +1342,13 @@ Display::render160Layout(Stats &stats)
   if (row3_height > 7)
     drawStatPairRow(BOX_WIDTH * 2, row + 6, "err_client_read", "cache_lookup_fail", stats, ColorPair::Border6);
 
-  drawStatPairRow(BOX_WIDTH * 3, row + 1, "disk_total", "disk_used", stats, ColorPair::Border2);
-  drawStatPairRow(BOX_WIDTH * 3, row + 2, "ram_total", "ram_used", stats, ColorPair::Border2);
-  drawStatPairRow(BOX_WIDTH * 3, row + 3, "net_open_conn", "net_throttled", stats, ColorPair::Border2);
-  drawStatPairRow(BOX_WIDTH * 3, row + 4, "lookups", "cache_writes", stats, ColorPair::Border2);
-  drawStatPairRow(BOX_WIDTH * 3, row + 5, "read_active", "write_active", stats, ColorPair::Border2);
+  drawStatPairRow(BOX_WIDTH * 3, row + 1, "client_req", "server_req", stats, ColorPair::Border2);
+  drawStatPairRow(BOX_WIDTH * 3, row + 2, "client_conn", "server_conn", stats, ColorPair::Border2);
+  drawStatPairRow(BOX_WIDTH * 3, row + 3, "2xx", "3xx", stats, ColorPair::Border2);
+  drawStatPairRow(BOX_WIDTH * 3, row + 4, "4xx", "5xx", stats, ColorPair::Border2);
+  drawStatPairRow(BOX_WIDTH * 3, row + 5, "abort", "conn_fail", stats, ColorPair::Border2);
   if (row3_height > 7)
-    drawStatPairRow(BOX_WIDTH * 3, row + 6, "cache_updates", "cache_deletes", stats, ColorPair::Border2);
+    drawStatPairRow(BOX_WIDTH * 3, row + 6, "other_err", "t_conn_fail", stats, ColorPair::Border2);
 
   row += row3_height;
 
@@ -1365,29 +1368,29 @@ Display::render160Layout(Stats &stats)
     if (row4_height > 7)
       drawStatPairRow(0, row + 6, "400", "401", stats, ColorPair::Border5);
 
-    drawStatPairRow(BOX_WIDTH, row + 1, "lookups", "cache_writes", stats, ColorPair::Border7);
-    drawStatPairRow(BOX_WIDTH, row + 2, "read_active", "cache_writes", stats, ColorPair::Border7);
-    drawStatPairRow(BOX_WIDTH, row + 3, "write_active", "cache_writes", stats, ColorPair::Border7);
-    drawStatPairRow(BOX_WIDTH, row + 4, "cache_updates", "cache_writes", stats, ColorPair::Border7);
-    drawStatPairRow(BOX_WIDTH, row + 5, "cache_deletes", "cache_writes", stats, ColorPair::Border7);
+    drawStatPairRow(BOX_WIDTH, row + 1, "ram_hit", "ram_miss", stats, ColorPair::Border7);
+    drawStatPairRow(BOX_WIDTH, row + 2, "update_active", "cache_updates", stats, ColorPair::Border7);
+    drawStatPairRow(BOX_WIDTH, row + 3, "cache_deletes", "avg_size", stats, ColorPair::Border7);
+    drawStatPairRow(BOX_WIDTH, row + 4, "fresh", "reval", stats, ColorPair::Border7);
+    drawStatPairRow(BOX_WIDTH, row + 5, "cold", "changed", stats, ColorPair::Border7);
     if (row4_height > 7)
-      drawStatPairRow(BOX_WIDTH, row + 6, "entries", "avg_size", stats, ColorPair::Border7);
+      drawStatPairRow(BOX_WIDTH, row + 6, "not", "no", stats, ColorPair::Border7);
 
-    drawStatPairRow(BOX_WIDTH * 2, row + 1, "server_req", "server_conn", stats, ColorPair::Border4);
-    drawStatPairRow(BOX_WIDTH * 2, row + 2, "server_curr_conn", "server_req_conn", stats, ColorPair::Border4);
-    drawStatPairRow(BOX_WIDTH * 2, row + 3, "dns_lookups", "dns_hits", stats, ColorPair::Border4);
-    drawStatPairRow(BOX_WIDTH * 2, row + 4, "ssl_success_out", "ssl_error_ssl", stats, ColorPair::Border4);
-    drawStatPairRow(BOX_WIDTH * 2, row + 5, "ka_total", "ka_count", stats, ColorPair::Border4);
+    drawStatPairRow(BOX_WIDTH * 2, row + 1, "ssl_origin_reused", "ssl_origin_bad_cert", stats, ColorPair::Border4);
+    drawStatPairRow(BOX_WIDTH * 2, row + 2, "ssl_origin_expired", "ssl_origin_revoked", stats, ColorPair::Border4);
+    drawStatPairRow(BOX_WIDTH * 2, row + 3, "ssl_origin_unknown_ca", "ssl_origin_verify_fail", stats, ColorPair::Border4);
+    drawStatPairRow(BOX_WIDTH * 2, row + 4, "ssl_origin_decrypt_fail", "ssl_origin_wrong_ver", stats, ColorPair::Border4);
+    drawStatPairRow(BOX_WIDTH * 2, row + 5, "ssl_origin_other", "ssl_handshake_time", stats, ColorPair::Border4);
     if (row4_height > 7)
-      drawStatPairRow(BOX_WIDTH * 2, row + 6, "conn_fail", "abort", stats, ColorPair::Border4);
+      drawStatPairRow(BOX_WIDTH * 2, row + 6, "tls_v10", "tls_v11", stats, ColorPair::Border4);
 
-    drawStatPairRow(BOX_WIDTH * 3, row + 1, "client_conn_h1", "client_conn_h2", stats, ColorPair::Border);
-    drawStatPairRow(BOX_WIDTH * 3, row + 2, "h2_streams_total", "h2_streams_current", stats, ColorPair::Border);
-    drawStatPairRow(BOX_WIDTH * 3, row + 3, "net_open_conn", "net_throttled", stats, ColorPair::Border);
-    drawStatPairRow(BOX_WIDTH * 3, row + 4, "client_dyn_ka", "ssl_curr_sessions", stats, ColorPair::Border);
-    drawStatPairRow(BOX_WIDTH * 3, row + 5, "disk_used", "ram_used", stats, ColorPair::Border);
+    drawStatPairRow(BOX_WIDTH * 3, row + 1, "txn_aborts", "txn_possible_aborts", stats, ColorPair::Border);
+    drawStatPairRow(BOX_WIDTH * 3, row + 2, "txn_other_errors", "h2_session_die_error", stats, ColorPair::Border);
+    drawStatPairRow(BOX_WIDTH * 3, row + 3, "h2_session_die_high_error", "err_conn_fail", stats, ColorPair::Border);
+    drawStatPairRow(BOX_WIDTH * 3, row + 4, "err_client_abort", "err_client_read", stats, ColorPair::Border);
+    drawStatPairRow(BOX_WIDTH * 3, row + 5, "changed_time", "not_time", stats, ColorPair::Border);
     if (row4_height > 7)
-      drawStatPairRow(BOX_WIDTH * 3, row + 6, "entries", "dns_entry", stats, ColorPair::Border);
+      drawStatPairRow(BOX_WIDTH * 3, row + 6, "no_time", "client_dyn_ka", stats, ColorPair::Border);
   }
 }
 
