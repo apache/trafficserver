@@ -104,7 +104,7 @@ traffic_ctl.config().get("proxy.config.diags.debug.tags").validate_with_text("pr
 traffic_ctl.config().set("proxy.config.diags.debug.tags", "rpc").exec()
 # Test 16: This will reset all modified records (including proxy.config.diags.debug.tags)
 # Some may require restart, which is ok, we can use diff anyways as the records that needs
-# restart will just chage the value but won't have any effect.
+# restart will just change the value but won't have any effect.
 traffic_ctl.config().reset("records").exec()
 # Validate the diff
 # Test 17: Validate the diff

@@ -185,11 +185,11 @@ class Config(Common):
     def set(self, record, value):
         """
         Set a configuration record to a specific value.
-        
+
         Args:
             record: The record name (e.g., "proxy.config.diags.debug.enabled")
             value: The value to set
-        
+
         Example:
             traffic_ctl.config().set("proxy.config.diags.debug.enabled", "1")
         """
@@ -203,11 +203,11 @@ class Config(Common):
     def reset(self, *paths):
         """
         Reset configuration values matching path pattern(s) to their defaults.
-        
+
         Args:
-            *paths: One or more path patterns (e.g., "records", "proxy.config.http", 
+            *paths: One or more path patterns (e.g., "records", "proxy.config.http",
                    "proxy.config.diags.debug.enabled")
-        
+
         Example:
             traffic_ctl.config().reset("records")
             traffic_ctl.config().reset("proxy.config.http")
