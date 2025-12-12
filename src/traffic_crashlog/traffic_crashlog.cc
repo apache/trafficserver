@@ -109,6 +109,11 @@ crashlog_write_backtrace(FILE *fp, pid_t pid, const crashlog_target &)
     return false;
   }
 
+  if (trace == nullptr) {
+    fprintf(fp, "Unable to retrieve backtrace: trace is null\n");
+    return false;
+  }
+
   fprintf(fp, "%s", trace);
   free(trace);
   return true;
