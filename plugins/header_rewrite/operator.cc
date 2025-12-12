@@ -49,6 +49,8 @@ Operator::initialize(Parser &p)
   if (p.mod_exist("I") || p.mod_exist("INV")) {
     _mods = static_cast<OperModifiers>(_mods | OPER_INV);
   }
+
+  p.validate_mods();
 }
 
 void

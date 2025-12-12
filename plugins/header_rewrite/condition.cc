@@ -125,10 +125,10 @@ Condition::initialize(Parser &p)
     throw std::runtime_error("Only one substring modifier (EXT, SUF, PRE, MID) may be used.");
   }
 
-  // Deal with the "last" modifier as well.
   if (p.mod_exist("L")) {
     _mods |= CondModifiers::MOD_L;
   }
 
   _cond_op = parse_matcher_op(p.get_arg());
+  p.validate_mods();
 }
