@@ -42,6 +42,7 @@ Cookie Based Routing Inside TrafficServer Using cookie_remap
     * :ref:`else: url [optional] <else-url-optional>`
     * :ref:`connector: and <connector-and>`
     * :ref:`disable_pristine_host_hdr: true|false [optional] <disable-pristine-host-hdr>`
+    * :ref:`set_sendto_headers: [optional] <set-sendto-headers>`
 
   * :ref:`Reserved path expressions <reserved-path-expressions>`
 
@@ -232,6 +233,110 @@ is ``false``, which preserves the pristine host header behavior.
 This option only affects the successful match (``sendto``) path. The ``else``
 path will continue to use the configured pristine host header setting (typically
 enabled in production environments).
+
+.. _set-sendto-headers:
+
+set_sendto_headers: [optional]
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Sets arbitrary HTTP request headers when a rule matches and takes the ``sendto``
+path. This provides a flexible way to modify request headers, including the
+Host header, for redirected requests.
+
+Headers are only set when:
+
+* The operation matches successfully.
+* The ``sendto`` path is taken (not the ``else`` path).
+
+**Format:**
+
+The value must be a YAML sequence (list) where each item is a single-key map
+representing a header name and its value:
+
+.. code-block:: yaml
+
+   set_sendto_headers:
+     - Header-Name: header-value
+     - Another-Header: another-value
+
+**Header Value Substitution:**
+
+The special variables mentioned below for regex capture groups, path variables,
+URL variables, unmatched path, and URL encoding can be used in the header value.
+
+* **Regex capture groups**: ``$1``, ``$2``, ... ``$9`` (from regex operations).
+* **Path variables**: ``$path``, ``$ppath`` (pre-remapped path).
+* **URL variables**: ``$cr_req_url``, ``$cr_req_purl`` (pre-remapped URL).
+* **Unmatched path**: ``$unmatched_path``, ``$unmatched_ppath``.
+* **URL encoding**: ``$cr_urlencode(...)``.
+
+**Special Behavior for Host Header:**
+
+When ``set_sendto_headers`` includes a ``Host`` header (case-insensitive), the
+pristine host header is automatically disabled for that transaction. This allows
+the Host header to be updated to the specified value. You do not need to also
+set ``disable_pristine_host_hdr: true`` in this case.
+
+**Interaction with disable_pristine_host_hdr:**
+
+* If ``set_sendto_headers`` sets the Host header, pristine host header is
+  automatically disabled.
+* If ``set_sendto_headers`` does NOT set Host but ``disable_pristine_host_hdr``
+  is ``true``, pristine host header is still disabled
+* If neither condition applies, pristine host header behavior follows the
+  global configuration.
+
+**Examples:**
+
+Setting a static Host header to the bucketed destination:
+
+.. code-block:: yaml
+
+   op:
+     cookie: SessionID
+     operation: exists
+     sendto: http://backend.internal.com/app
+     set_sendto_headers:
+       - Host: backend.internal.com
+
+Using regex capture groups in headers:
+
+.. code-block:: yaml
+
+   op:
+     cookie: UserSegment
+     operation: regex
+     regex: (premium|standard)
+     sendto: http://$1.service.com/app
+     set_sendto_headers:
+       - Host: $1.service.com
+       - X-User-Tier: $1
+
+Using path variables:
+
+.. code-block:: yaml
+
+   op:
+     cookie: Debug
+     operation: exists
+     sendto: http://debug.example.com
+     set_sendto_headers:
+       - X-Original-Path: $path
+       - X-Original-URL: $cr_urlencode($cr_req_url)
+
+Multiple headers with bucket routing:
+
+.. code-block:: yaml
+
+   op:
+     cookie: SessionID
+     operation: bucket
+     bucket: 10/100
+     sendto: http://canary.example.com/app/$unmatched_path
+     set_sendto_headers:
+       - Host: canary.example.com
+       - X-Canary-Request: true
+       - X-Session-Bucket: canary
 
 .. _reserved-path-expressions:
 
