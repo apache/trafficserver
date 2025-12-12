@@ -75,9 +75,13 @@ class Test_http2_no_activity_timeout:
 
         self._ts.addSSLfile("ssl/cert.crt")
         self._ts.addSSLfile("ssl/private-key.key")
-        self._ts.Disk.ssl_multicert_config.AddLine(
-            f'dest_ip=* ssl_cert_name={self._ts.Variables.SSLDir}/cert.crt '
-            f'ssl_key_name={self._ts.Variables.SSLDir}/private-key.key')
+        self._ts.Disk.ssl_multicert_yaml.AddLines(
+            f"""
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: {self._ts.Variables.SSLDir}/cert.crt
+    ssl_key_name: {self._ts.Variables.SSLDir}/private-key.key
+""".split("\n"))
 
         self._ts.Disk.records_config.update(
             {

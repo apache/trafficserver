@@ -25,6 +25,7 @@ add_library(
   ConnectionTracker.cc
   EventIO.cc
   YamlSNIConfig.cc
+  YamlSSLMultiCertConfig.cc
   Net.cc
   NetHandler.cc
   NetVCOptions.cc
@@ -108,7 +109,7 @@ target_link_libraries(
          OpenSSL::Crypto
          OpenSSL::SSL
          ts::tsapibackend
-  PRIVATE ts::tsutil yaml-cpp::yaml-cpp
+  PRIVATE ts::config ts::tsutil yaml-cpp::yaml-cpp
 )
 
 # Is this necessary?

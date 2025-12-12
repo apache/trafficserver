@@ -96,7 +96,13 @@ class JA3FingerprintTest:
         self._ts = Test.MakeATSProcess(name, enable_cache=False, enable_tls=True)
         JA3FingerprintTest._ts_counter += 1
         self._ts.addDefaultSSLFiles()
-        self._ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+        self._ts.Disk.ssl_multicert_yaml.AddLines(
+            """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: server.pem
+    ssl_key_name: server.key
+""".split("\n"))
         server_port = self._server.Variables.https_port
         self._ts.Disk.remap_config.AddLine(f'map https://https.server.com https://https.backend.com:{server_port}')
 
