@@ -139,8 +139,8 @@ run_interactive(Stats &stats, int sleep_time, bool ascii_mode)
     // This allows quick display updates and responsive connection retry
     int current_timeout;
     if (first_display && connected) {
-      // First successful display - very short timeout for responsiveness
-      current_timeout = 100; // 100ms
+      // First successful display - short timeout for responsiveness
+      current_timeout = 1000; // 1 second
       first_display   = false;
     } else if (!connected && connect_retry < max_retries) {
       // Still trying to connect - retry quickly
