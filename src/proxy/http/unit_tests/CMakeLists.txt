@@ -39,4 +39,4 @@ target_link_libraries(
           ts::jsonrpc_protocol
 )
 
-add_catch2_test(NAME test_http COMMAND $<TARGET_FILE:test_http>)
+add_catch2_test(NAME test_http)

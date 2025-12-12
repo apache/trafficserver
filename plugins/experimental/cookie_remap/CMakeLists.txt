@@ -28,5 +28,5 @@ if(BUILD_TESTING)
 
   target_link_libraries(test_cookiejar PRIVATE Catch2::Catch2WithMain)
 
-  add_catch2_test(NAME test_cookiejar COMMAND test_cookiejar)
+  add_catch2_test(NAME test_cookiejar)
 endif()
