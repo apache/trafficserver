@@ -1976,13 +1976,17 @@ Display::renderHelpPage(const std::string &host, const std::string &version)
   resetColor();
 
   moveTo(y++, x);
-  printf("  1-8          Switch pages");
+  printf("  1-8          Switch to page N");
   moveTo(y++, x);
-  printf("  Left/Right   Previous/Next page");
+  printf("  Left/m       Previous page");
+  moveTo(y++, x);
+  printf("  Right/r      Next page");
   moveTo(y++, x);
   printf("  h or ?       Show this help");
   moveTo(y++, x);
   printf("  a            Toggle absolute/rate mode");
+  moveTo(y++, x);
+  printf("  b/ESC        Back (from help)");
   moveTo(y++, x);
   printf("  q            Quit");
   y++;
