@@ -60,6 +60,12 @@ using namespace traffic_top;
 
 namespace
 {
+// Timeout constants (in milliseconds)
+constexpr int FIRST_DISPLAY_TIMEOUT_MS = 1000; // Initial display timeout for responsiveness
+constexpr int CONNECT_RETRY_TIMEOUT_MS = 500;  // Timeout between connection retry attempts
+constexpr int MAX_CONNECTION_RETRIES   = 10;   // Max retries before falling back to normal timeout
+constexpr int MS_PER_SECOND            = 1000; // Milliseconds per second for timeout conversion
+
 // Command-line options
 int  g_sleep_time  = 5;   // Seconds between updates
 int  g_count       = 0;   // Number of iterations (0 = infinite)
@@ -121,7 +127,6 @@ run_interactive(Stats &stats, int sleep_time, bool ascii_mode)
   int  anim_frame        = 0;
   bool first_display     = true;
   int  connect_retry     = 0;
-  int  max_retries       = 10;    // Max connection retries before slowing down
   bool user_toggled_mode = false; // Track if user manually changed mode
   bool running           = true;  // Main loop control flag
 
@@ -163,15 +168,15 @@ run_interactive(Stats &stats, int sleep_time, bool ascii_mode)
     int current_timeout;
     if (first_display && connected) {
       // First successful display - short timeout for responsiveness
-      current_timeout = 1000; // 1 second
+      current_timeout = FIRST_DISPLAY_TIMEOUT_MS;
       first_display   = false;
-    } else if (!connected && connect_retry < max_retries) {
+    } else if (!connected && connect_retry < MAX_CONNECTION_RETRIES) {
       // Still trying to connect - retry quickly
-      current_timeout = 500; // 500ms between connection attempts
+      current_timeout = CONNECT_RETRY_TIMEOUT_MS;
       ++connect_retry;
     } else {
       // Normal operation - use configured sleep time
-      current_timeout = sleep_time * 1000;
+      current_timeout = sleep_time * MS_PER_SECOND;
     }
     timeout(current_timeout);
 
