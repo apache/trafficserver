@@ -117,7 +117,7 @@ sessions:
         - [ X-Response, "binary-data" ]
       content:
         encoding: plain
-        data: "Binary data with quotes!"
+        data: '"Binary data with quotes!"'
 
     proxy-response:
       status: 200
@@ -128,5 +128,44 @@ sessions:
         - [ X-Original-Content-Type, { value: "application/octet-stream", as: equal } ]
       content:
         # Expect hex encoding: "Binary data with quotes!" -> hex
-        data: '42696e617279206461746120776974682071756f74657321'
+        data: '"2242696e617279206461746120776974682071756f7465732122",'
+        verify: { as: contains }
+
+  # Test 3: CSP header with single quotes (should NOT be escaped in JSON)
+  - client-request:
+      method: GET
+      url: /csp-test
+      version: '1.1'
+      headers:
+        fields:
+        - [ uuid, '3' ]
+        - [ Host, example.com ]
+        - [ X-Debug, probe-full-json ]
+
+    proxy-request:
+      headers:
+        fields:
+        - [ x-debug, { as: absent } ]
+
+    server-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Type, "text/html" ]
+        - [ Content-Security-Policy, "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'" ]
+        - [ X-Response, "csp-test" ]
+      content:
+        encoding: plain
+        data: "<html><body>CSP Test</body></html>"
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Type, { value: "application/json", as: equal } ]
+        - [ X-Original-Content-Type, { value: "text/html", as: equal } ]
+      content:
+        # Single quotes in CSP should NOT be escaped as \' (invalid JSON)
+        # They should appear as plain single quotes (valid JSON)
+        data: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'"
         verify: { as: contains }

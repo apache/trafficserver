@@ -15,12 +15,12 @@
 #
 #######################
 
-add_atsplugin(xdebug xdebug.cc xdebug_headers.cc xdebug_transforms.cc xdebug_utils.cc)
+add_atsplugin(xdebug xdebug.cc xdebug_headers.cc xdebug_transforms.cc xdebug_utils.cc xdebug_escape.cc)
 target_link_libraries(xdebug PRIVATE libswoc::libswoc)
 verify_global_plugin(xdebug)
 
 if(BUILD_TESTING)
-  add_executable(test_xdebug unit_tests/test_xdebug_utils.cc xdebug_utils.cc)
+  add_executable(test_xdebug unit_tests/test_xdebug_utils.cc xdebug_utils.cc xdebug_escape.cc)
   target_include_directories(test_xdebug PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
   target_link_libraries(test_xdebug PRIVATE Catch2::Catch2WithMain libswoc::libswoc)
   add_catch2_test(NAME test_xdebug COMMAND test_xdebug)
