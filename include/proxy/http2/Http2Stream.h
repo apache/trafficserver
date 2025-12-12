@@ -390,11 +390,11 @@ inline bool
 Http2Stream::payload_length_is_valid() const
 {
   uint32_t content_length = _receive_header.get_content_length();
-  if (content_length != 0 && content_length != data_length) {
+  if (content_length != 0 && data_length != 0 && content_length != data_length) {
     Warning("Bad payload length content_length=%d data_legnth=%d session_id=%" PRId64, content_length,
             static_cast<int>(data_length), _proxy_ssn->connection_id());
   }
-  return content_length == 0 || content_length == data_length;
+  return content_length == 0 || data_length == 0 || content_length == data_length;
 }
 
 inline bool
