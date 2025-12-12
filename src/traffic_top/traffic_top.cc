@@ -68,13 +68,20 @@ int  g_ascii_mode  = 0;   // ASCII mode flag (no Unicode)
 int  g_json_format = 0;   // JSON output format
 char g_output_file[1024]; // Output file path
 
-// Signal handling for clean shutdown
-volatile sig_atomic_t g_shutdown = 0;
+// Signal handling for clean shutdown and window resize
+volatile sig_atomic_t g_shutdown       = 0;
+volatile sig_atomic_t g_window_resized = 0;
 
 void
 signal_handler(int)
 {
   g_shutdown = 1;
+}
+
+void
+resize_handler(int)
+{
+  g_window_resized = 1;
 }
 
 void
@@ -86,6 +93,13 @@ setup_signals()
   sa.sa_flags = 0;
   sigaction(SIGINT, &sa, nullptr);
   sigaction(SIGTERM, &sa, nullptr);
+
+  // Handle window resize
+  struct sigaction sa_resize;
+  sa_resize.sa_handler = resize_handler;
+  sigemptyset(&sa_resize.sa_mask);
+  sa_resize.sa_flags = SA_RESTART;
+  sigaction(SIGWINCH, &sa_resize, nullptr);
 }
 
 /**
@@ -117,6 +131,14 @@ run_interactive(Stats &stats, int sleep_time, bool ascii_mode)
   }
 
   while (running && !g_shutdown) {
+    // Handle window resize
+    if (g_window_resized) {
+      g_window_resized = 0;
+      // Notify ncurses about the resize
+      endwin();
+      refresh();
+    }
+
     // Auto-switch from absolute to rate mode once we can calculate rates
     // (unless user has manually toggled the mode)
     if (!user_toggled_mode && stats.isAbsolute() && stats.canCalculateRates()) {
