@@ -38,6 +38,10 @@ namespace traffic_top
 
 namespace
 {
+  // RPC communication constants
+  constexpr int RPC_TIMEOUT_MS  = 1000; // Timeout for RPC calls in milliseconds
+  constexpr int RPC_RETRY_COUNT = 10;   // Number of retries for RPC calls
+
   /// Convenience class for creating metric lookup requests
   struct MetricParam : shared::rpc::RecordLookupRequest::Params {
     explicit MetricParam(std::string name)
@@ -488,7 +492,7 @@ Stats::fetch_and_fill_stats(const std::map<std::string, LookupItem> &lookup_tabl
     }
 
     rpc::RPCClient rpcClient;
-    auto const    &rpcResponse = rpcClient.invoke<>(request, std::chrono::milliseconds(1000), 10);
+    auto const    &rpcResponse = rpcClient.invoke<>(request, std::chrono::milliseconds(RPC_TIMEOUT_MS), RPC_RETRY_COUNT);
 
     if (!rpcResponse.is_error()) {
       auto const &records = rpcResponse.result.as<rpc::RecordLookUpResponse>();
