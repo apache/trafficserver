@@ -125,12 +125,30 @@ public:
   bool toggleAbsolute();
 
   /**
+   * Set absolute display mode.
+   */
+  void
+  setAbsolute(bool absolute)
+  {
+    _absolute = absolute;
+  }
+
+  /**
    * Check if currently in absolute display mode.
    */
   bool
   isAbsolute() const
   {
     return _absolute;
+  }
+
+  /**
+   * Check if we can calculate rates (have previous stats).
+   */
+  bool
+  canCalculateRates() const
+  {
+    return _old_stats != nullptr && _time_diff > 0;
   }
 
   /**
@@ -203,7 +221,7 @@ private:
   double                                              _now       = 0;
   double                                              _time_diff = 0;
   struct timeval                                      _time      = {0, 0};
-  bool                                                _absolute  = false;
+  bool                                                _absolute  = true; // Start with absolute values
 };
 
 } // namespace traffic_top

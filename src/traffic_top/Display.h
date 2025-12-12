@@ -46,6 +46,11 @@ namespace ColorPair
   constexpr short Border3 = 9; // Tertiary border color (magenta)
   constexpr short Dim     = 10;
   constexpr short Magenta = 11;
+  // Bright border colors
+  constexpr short Border4 = 12; // Bright blue
+  constexpr short Border5 = 13; // Bright yellow
+  constexpr short Border6 = 14; // Bright red
+  constexpr short Border7 = 15; // Bright green
 } // namespace ColorPair
 
 /// Unicode box-drawing characters with rounded corners
@@ -90,7 +95,18 @@ namespace GraphChars
 } // namespace GraphChars
 
 /// Available display pages
-enum class Page { Main = 0, Response = 1, Connection = 2, Cache = 3, SSL = 4, Errors = 5, Graphs = 6, Help = 7, PageCount = 8 };
+enum class Page {
+  Main        = 0,
+  Response    = 1,
+  Connection  = 2,
+  Cache       = 3,
+  SSL         = 4,
+  Errors      = 5,
+  Performance = 6,
+  Graphs      = 7,
+  Help        = 8,
+  PageCount   = 9
+};
 
 /**
  * Display manager for traffic_top curses interface.
@@ -232,6 +248,7 @@ private:
   void renderCachePage(Stats &stats);
   void renderSSLPage(Stats &stats);
   void renderErrorsPage(Stats &stats);
+  void renderPerformancePage(Stats &stats);
   void renderGraphsPage(Stats &stats);
   void renderHelpPage(const std::string &host, const std::string &version);
 
@@ -249,7 +266,8 @@ private:
    * @param key2 Second stat key
    * @param stats Stats object
    */
-  void drawStatPairRow(int x, int y, const std::string &key1, const std::string &key2, Stats &stats);
+  void drawStatPairRow(int x, int y, const std::string &key1, const std::string &key2, Stats &stats,
+                       short borderColor = ColorPair::Border);
 
   void drawSectionHeader(int y, int x1, int x2, const std::string &title);
 

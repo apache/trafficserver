@@ -102,16 +102,26 @@ run_interactive(Stats &stats, int sleep_time, bool ascii_mode)
     return 1;
   }
 
-  Page current_page = Page::Main;
-  bool connected    = false;
-  int  anim_frame   = 0;
+  Page current_page      = Page::Main;
+  bool connected         = false;
+  int  anim_frame        = 0;
+  bool first_display     = true;
+  int  connect_retry     = 0;
+  int  max_retries       = 10;    // Max connection retries before slowing down
+  bool user_toggled_mode = false; // Track if user manually changed mode
 
-  // Try initial connection
+  // Try initial connection - start with absolute values
   if (stats.getStats()) {
     connected = true;
   }
 
   while (!g_shutdown) {
+    // Auto-switch from absolute to rate mode once we can calculate rates
+    // (unless user has manually toggled the mode)
+    if (!user_toggled_mode && stats.isAbsolute() && stats.canCalculateRates()) {
+      stats.setAbsolute(false);
+    }
+
     // Render current page
     display.render(stats, current_page, stats.isAbsolute());
 
@@ -125,7 +135,22 @@ run_interactive(Stats &stats, int sleep_time, bool ascii_mode)
     display.drawStatusBar(host_display, current_page, stats.isAbsolute(), connected);
     fflush(stdout);
 
-    timeout(sleep_time * 1000);
+    // Use short timeout when first starting or still connecting
+    // This allows quick display updates and responsive connection retry
+    int current_timeout;
+    if (first_display && connected) {
+      // First successful display - very short timeout for responsiveness
+      current_timeout = 100; // 100ms
+      first_display   = false;
+    } else if (!connected && connect_retry < max_retries) {
+      // Still trying to connect - retry quickly
+      current_timeout = 500; // 500ms between connection attempts
+      ++connect_retry;
+    } else {
+      // Normal operation - use configured sleep time
+      current_timeout = sleep_time * 1000;
+    }
+    timeout(current_timeout);
 
     int ch = getch();
 
@@ -160,6 +185,11 @@ run_interactive(Stats &stats, int sleep_time, bool ascii_mode)
       current_page = Page::Errors;
       break;
     case '7':
+    case 'p':
+    case 'P':
+      current_page = Page::Performance;
+      break;
+    case '8':
     case 'g':
     case 'G':
       current_page = Page::Graphs;
@@ -168,6 +198,7 @@ run_interactive(Stats &stats, int sleep_time, bool ascii_mode)
     case 'a':
     case 'A':
       stats.toggleAbsolute();
+      user_toggled_mode = true; // User manually changed mode, don't auto-switch
       break;
 
     case KEY_LEFT:
@@ -214,7 +245,13 @@ run_interactive(Stats &stats, int sleep_time, bool ascii_mode)
     }
 
     // Refresh stats
-    connected = stats.getStats();
+    bool was_connected = connected;
+    connected          = stats.getStats();
+
+    // Reset retry counter when we successfully connect
+    if (connected && !was_connected) {
+      connect_retry = 0;
+    }
   }
 
 quit:
@@ -279,7 +316,7 @@ main([[maybe_unused]] int argc, const char **argv)
                               "\n"
                               "Interactive mode (default):\n"
                               "  Display real-time ATS statistics in a curses interface.\n"
-                              "  Use number keys (1-7) to switch pages, 'g' for graphs, 'q' to quit.\n"
+                              "  Use number keys (1-8) to switch pages, 'p' for performance, 'g' for graphs, 'q' to quit.\n"
                               "\n"
                               "Batch mode (-b):\n"
                               "  Output statistics to stdout/file for scripting.\n";

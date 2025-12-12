@@ -78,18 +78,25 @@ Stats::initializeLookupTable()
   _lookup_table.emplace("cache_writes", LookupItem("Writes", "proxy.process.http.cache_writes", StatType::Rate));
   _lookup_table.emplace("cache_updates", LookupItem("Updates", "proxy.process.http.cache_updates", StatType::Rate));
   _lookup_table.emplace("cache_deletes", LookupItem("Deletes", "proxy.process.http.cache_deletes", StatType::Rate));
-  _lookup_table.emplace("read_active", LookupItem("Read Active", "proxy.process.cache.read.active", StatType::Absolute));
-  _lookup_table.emplace("write_active", LookupItem("Write Active", "proxy.process.cache.write.active", StatType::Absolute));
-  _lookup_table.emplace("update_active", LookupItem("Update Active", "proxy.process.cache.update.active", StatType::Absolute));
+  _lookup_table.emplace("read_active", LookupItem("Read Act", "proxy.process.cache.read.active", StatType::Absolute));
+  _lookup_table.emplace("write_active", LookupItem("Write Act", "proxy.process.cache.write.active", StatType::Absolute));
+  _lookup_table.emplace("update_active", LookupItem("Update Act", "proxy.process.cache.update.active", StatType::Absolute));
   _lookup_table.emplace("entries", LookupItem("Entries", "proxy.process.cache.direntries.used", StatType::Absolute));
   _lookup_table.emplace("avg_size", LookupItem("Avg Size", "disk_used", "entries", StatType::Ratio));
 
   // DNS stats
-  _lookup_table.emplace("dns_entry", LookupItem("DNS Entries", "proxy.process.hostdb.cache.current_items", StatType::Absolute));
+  _lookup_table.emplace("dns_entry", LookupItem("DNS Entry", "proxy.process.hostdb.cache.current_items", StatType::Absolute));
   _lookup_table.emplace("dns_hits", LookupItem("DNS Hits", "proxy.process.hostdb.total_hits", StatType::Rate));
   _lookup_table.emplace("dns_lookups", LookupItem("DNS Lookups", "proxy.process.hostdb.total_lookups", StatType::Rate));
-  _lookup_table.emplace("dns_serve_stale", LookupItem("DNS Serve Stale", "proxy.process.hostdb.total_serve_stale", StatType::Rate));
-  _lookup_table.emplace("dns_ratio", LookupItem("DNS Hit Rate", "dns_hits", "dns_lookups", StatType::Percentage));
+  _lookup_table.emplace("dns_serve_stale", LookupItem("DNS Stale", "proxy.process.hostdb.total_serve_stale", StatType::Rate));
+  _lookup_table.emplace("dns_ratio", LookupItem("DNS Ratio", "dns_hits", "dns_lookups", StatType::Percentage));
+  _lookup_table.emplace("dns_in_flight", LookupItem("DNS InFlight", "proxy.process.dns.in_flight", StatType::Absolute));
+  _lookup_table.emplace("dns_success", LookupItem("DNS Success", "proxy.process.dns.lookup_successes", StatType::Rate));
+  _lookup_table.emplace("dns_fail", LookupItem("DNS Fail", "proxy.process.dns.lookup_failures", StatType::Rate));
+  _lookup_table.emplace("dns_lookup_time", LookupItem("DNS Time", "proxy.process.dns.lookup_time", StatType::Absolute));
+  _lookup_table.emplace("dns_success_time", LookupItem("DNS Succ Time", "proxy.process.dns.success_time", StatType::Absolute));
+  _lookup_table.emplace("dns_total", LookupItem("DNS Total", "proxy.process.dns.total_dns_lookups", StatType::Rate));
+  _lookup_table.emplace("dns_retries", LookupItem("DNS Retries", "proxy.process.dns.retries", StatType::Rate));
 
   // Client connections - HTTP/1.x and HTTP/2
   _lookup_table.emplace("client_req", LookupItem("Requests", "proxy.process.http.incoming_requests", StatType::Rate));
@@ -102,19 +109,17 @@ Stats::initializeLookupTable()
 
   // Current client connections
   _lookup_table.emplace("client_curr_conn_h1",
-                        LookupItem("Curr Conn HTTP/1.x", "proxy.process.http.current_client_connections", StatType::Absolute));
+                        LookupItem("Curr H1", "proxy.process.http.current_client_connections", StatType::Absolute));
   _lookup_table.emplace("client_curr_conn_h2",
-                        LookupItem("Curr Conn HTTP/2", "proxy.process.http2.current_client_connections", StatType::Absolute));
+                        LookupItem("Curr H2", "proxy.process.http2.current_client_connections", StatType::Absolute));
   _lookup_table.emplace("client_curr_conn",
                         LookupItem("Current Conn", "client_curr_conn_h1", "client_curr_conn_h2", StatType::SumAbsolute));
 
   // Active client connections
-  _lookup_table.emplace(
-    "client_actv_conn_h1",
-    LookupItem("Active Conn HTTP/1.x", "proxy.process.http.current_active_client_connections", StatType::Absolute));
-  _lookup_table.emplace(
-    "client_actv_conn_h2",
-    LookupItem("Active Conn HTTP/2", "proxy.process.http2.current_active_client_connections", StatType::Absolute));
+  _lookup_table.emplace("client_actv_conn_h1",
+                        LookupItem("Active H1", "proxy.process.http.current_active_client_connections", StatType::Absolute));
+  _lookup_table.emplace("client_actv_conn_h2",
+                        LookupItem("Active H2", "proxy.process.http2.current_active_client_connections", StatType::Absolute));
   _lookup_table.emplace("client_actv_conn",
                         LookupItem("Active Conn", "client_actv_conn_h1", "client_actv_conn_h2", StatType::SumAbsolute));
 
@@ -127,11 +132,11 @@ Stats::initializeLookupTable()
 
   // Bandwidth stats
   _lookup_table.emplace("client_head",
-                        LookupItem("Header Bytes", "proxy.process.http.user_agent_response_header_total_size", StatType::Rate));
+                        LookupItem("Header Byte", "proxy.process.http.user_agent_response_header_total_size", StatType::Rate));
   _lookup_table.emplace("client_body",
                         LookupItem("Body Bytes", "proxy.process.http.user_agent_response_document_total_size", StatType::Rate));
   _lookup_table.emplace("server_head",
-                        LookupItem("Header Bytes", "proxy.process.http.origin_server_response_header_total_size", StatType::Rate));
+                        LookupItem("Header Byte", "proxy.process.http.origin_server_response_header_total_size", StatType::Rate));
   _lookup_table.emplace("server_body",
                         LookupItem("Body Bytes", "proxy.process.http.origin_server_response_document_total_size", StatType::Rate));
 
@@ -139,7 +144,7 @@ Stats::initializeLookupTable()
   _lookup_table.emplace("ram_hit", LookupItem("RAM Hits", "proxy.process.cache.ram_cache.hits", StatType::Rate));
   _lookup_table.emplace("ram_miss", LookupItem("RAM Misses", "proxy.process.cache.ram_cache.misses", StatType::Rate));
   _lookup_table.emplace("ram_hit_miss", LookupItem("RAM Hit+Miss", "ram_hit", "ram_miss", StatType::Sum));
-  _lookup_table.emplace("ram_ratio", LookupItem("RAM Hit Rate", "ram_hit", "ram_hit_miss", StatType::Percentage));
+  _lookup_table.emplace("ram_ratio", LookupItem("RAM Hit", "ram_hit", "ram_hit_miss", StatType::Percentage));
 
   // Keep-alive stats
   _lookup_table.emplace("ka_total",
@@ -149,39 +154,38 @@ Stats::initializeLookupTable()
   _lookup_table.emplace("client_dyn_ka", LookupItem("Dynamic KA", "ka_total", "ka_count", StatType::Ratio));
 
   // Error stats
-  _lookup_table.emplace("client_abort", LookupItem("Client Abort", "proxy.process.http.err_client_abort_count", StatType::Rate));
+  _lookup_table.emplace("client_abort", LookupItem("Cli Abort", "proxy.process.http.err_client_abort_count", StatType::Rate));
   _lookup_table.emplace("conn_fail", LookupItem("Conn Failed", "proxy.process.http.err_connect_fail_count", StatType::Rate));
   _lookup_table.emplace("abort", LookupItem("Aborts", "proxy.process.http.transaction_counts.errors.aborts", StatType::Rate));
   _lookup_table.emplace("t_conn_fail",
-                        LookupItem("Conn Failed", "proxy.process.http.transaction_counts.errors.connect_failed", StatType::Rate));
-  _lookup_table.emplace("other_err",
-                        LookupItem("Other Errors", "proxy.process.http.transaction_counts.errors.other", StatType::Rate));
+                        LookupItem("Conn Fail", "proxy.process.http.transaction_counts.errors.connect_failed", StatType::Rate));
+  _lookup_table.emplace("other_err", LookupItem("Other Err", "proxy.process.http.transaction_counts.errors.other", StatType::Rate));
 
   // Cache hit/miss breakdown (percentage of requests)
   _lookup_table.emplace("fresh", LookupItem("Fresh", "proxy.process.http.transaction_counts.hit_fresh", StatType::RequestPct));
   _lookup_table.emplace("reval",
-                        LookupItem("Revalidated", "proxy.process.http.transaction_counts.hit_revalidated", StatType::RequestPct));
+                        LookupItem("Revalidate", "proxy.process.http.transaction_counts.hit_revalidated", StatType::RequestPct));
   _lookup_table.emplace("cold", LookupItem("Cold Miss", "proxy.process.http.transaction_counts.miss_cold", StatType::RequestPct));
   _lookup_table.emplace("changed",
                         LookupItem("Changed", "proxy.process.http.transaction_counts.miss_changed", StatType::RequestPct));
-  _lookup_table.emplace(
-    "not", LookupItem("Not Cacheable", "proxy.process.http.transaction_counts.miss_not_cacheable", StatType::RequestPct));
+  _lookup_table.emplace("not",
+                        LookupItem("Not Cached", "proxy.process.http.transaction_counts.miss_not_cacheable", StatType::RequestPct));
   _lookup_table.emplace("no",
                         LookupItem("No Cache", "proxy.process.http.transaction_counts.miss_client_no_cache", StatType::RequestPct));
 
   // Transaction times
   _lookup_table.emplace(
     "fresh_time", LookupItem("Fresh (ms)", "proxy.process.http.transaction_totaltime.hit_fresh", "fresh", StatType::TimeRatio));
-  _lookup_table.emplace("reval_time", LookupItem("Revalidated (ms)", "proxy.process.http.transaction_totaltime.hit_revalidated",
-                                                 "reval", StatType::TimeRatio));
+  _lookup_table.emplace("reval_time", LookupItem("Reval (ms)", "proxy.process.http.transaction_totaltime.hit_revalidated", "reval",
+                                                 StatType::TimeRatio));
   _lookup_table.emplace("cold_time",
                         LookupItem("Cold (ms)", "proxy.process.http.transaction_totaltime.miss_cold", "cold", StatType::TimeRatio));
-  _lookup_table.emplace("changed_time", LookupItem("Changed (ms)", "proxy.process.http.transaction_totaltime.miss_changed",
-                                                   "changed", StatType::TimeRatio));
-  _lookup_table.emplace("not_time", LookupItem("Not Cacheable (ms)", "proxy.process.http.transaction_totaltime.miss_not_cacheable",
-                                               "not", StatType::TimeRatio));
-  _lookup_table.emplace("no_time", LookupItem("No Cache (ms)", "proxy.process.http.transaction_totaltime.miss_client_no_cache",
-                                              "no", StatType::TimeRatio));
+  _lookup_table.emplace("changed_time", LookupItem("Chg (ms)", "proxy.process.http.transaction_totaltime.miss_changed", "changed",
+                                                   StatType::TimeRatio));
+  _lookup_table.emplace("not_time", LookupItem("NotCch (ms)", "proxy.process.http.transaction_totaltime.miss_not_cacheable", "not",
+                                               StatType::TimeRatio));
+  _lookup_table.emplace("no_time", LookupItem("NoCch (ms)", "proxy.process.http.transaction_totaltime.miss_client_no_cache", "no",
+                                              StatType::TimeRatio));
 
   // HTTP methods (percentage of requests)
   _lookup_table.emplace("get", LookupItem("GET", "proxy.process.http.get_requests", StatType::RequestPct));
@@ -189,6 +193,7 @@ Stats::initializeLookupTable()
   _lookup_table.emplace("post", LookupItem("POST", "proxy.process.http.post_requests", StatType::RequestPct));
   _lookup_table.emplace("put", LookupItem("PUT", "proxy.process.http.put_requests", StatType::RequestPct));
   _lookup_table.emplace("delete", LookupItem("DELETE", "proxy.process.http.delete_requests", StatType::RequestPct));
+  _lookup_table.emplace("options", LookupItem("OPTIONS", "proxy.process.http.options_requests", StatType::RequestPct));
 
   // HTTP response codes (percentage of requests)
   _lookup_table.emplace("100", LookupItem("100", "proxy.process.http.100_responses", StatType::RequestPct));
@@ -237,26 +242,24 @@ Stats::initializeLookupTable()
   _lookup_table.emplace("5xx", LookupItem("5xx", "proxy.process.http.5xx_responses", StatType::RequestPct));
 
   // Derived bandwidth stats
-  _lookup_table.emplace("client_net", LookupItem("Net (bits/s)", "client_head", "client_body", StatType::SumBits));
+  _lookup_table.emplace("client_net", LookupItem("Net (Mb/s)", "client_head", "client_body", StatType::SumBits));
   _lookup_table.emplace("client_size", LookupItem("Total Size", "client_head", "client_body", StatType::Sum));
   _lookup_table.emplace("client_avg_size", LookupItem("Avg Size", "client_size", "client_req", StatType::Ratio));
-  _lookup_table.emplace("server_net", LookupItem("Net (bits/s)", "server_head", "server_body", StatType::SumBits));
+  _lookup_table.emplace("server_net", LookupItem("Net (Mb/s)", "server_head", "server_body", StatType::SumBits));
   _lookup_table.emplace("server_size", LookupItem("Total Size", "server_head", "server_body", StatType::Sum));
   _lookup_table.emplace("server_avg_size", LookupItem("Avg Size", "server_size", "server_req", StatType::Ratio));
 
   // Total transaction time
   _lookup_table.emplace("total_time", LookupItem("Total Time", "proxy.process.http.total_transactions_time", StatType::Rate));
-  _lookup_table.emplace("client_req_time", LookupItem("Resp Time (ms)", "total_time", "client_req", StatType::Ratio));
+  _lookup_table.emplace("client_req_time", LookupItem("Resp Time", "total_time", "client_req", StatType::Ratio));
 
   // SSL/TLS stats
   _lookup_table.emplace("ssl_handshake_success",
-                        LookupItem("SSL Handshake OK", "proxy.process.ssl.total_success_handshake_count_in", StatType::Rate));
-  _lookup_table.emplace("ssl_handshake_fail",
-                        LookupItem("SSL Handshake Fail", "proxy.process.ssl.total_handshake_time", StatType::Rate));
-  _lookup_table.emplace("ssl_session_hit",
-                        LookupItem("SSL Session Hit", "proxy.process.ssl.ssl_session_cache_hit", StatType::Rate));
+                        LookupItem("SSL Handshk", "proxy.process.ssl.total_success_handshake_count_in", StatType::Rate));
+  _lookup_table.emplace("ssl_handshake_fail", LookupItem("SSL HS Fail", "proxy.process.ssl.total_handshake_time", StatType::Rate));
+  _lookup_table.emplace("ssl_session_hit", LookupItem("SSL Sess Hit", "proxy.process.ssl.ssl_session_cache_hit", StatType::Rate));
   _lookup_table.emplace("ssl_session_miss",
-                        LookupItem("SSL Session Miss", "proxy.process.ssl.ssl_session_cache_miss", StatType::Rate));
+                        LookupItem("SSL Sess Miss", "proxy.process.ssl.ssl_session_cache_miss", StatType::Rate));
   _lookup_table.emplace("ssl_curr_sessions",
                         LookupItem("SSL Current Sessions", "proxy.process.ssl.user_agent_sessions", StatType::Absolute));
 
@@ -351,6 +354,63 @@ Stats::initializeLookupTable()
                         LookupItem("Open Conn", "proxy.process.net.connections_currently_open", StatType::Absolute));
   _lookup_table.emplace("net_throttled",
                         LookupItem("Throttled Conn", "proxy.process.net.connections_throttled_in", StatType::Rate));
+
+  // HTTP Milestones - timing stats in nanoseconds (cumulative), displayed as ms/s
+  // Listed in chronological order of when they occur during a request
+
+  // State machine start
+  _lookup_table.emplace("ms_sm_start", LookupItem("SM Start", "proxy.process.http.milestone.sm_start", StatType::RateNsToMs));
+
+  // Client-side milestones
+  _lookup_table.emplace("ms_ua_begin", LookupItem("Client Begin", "proxy.process.http.milestone.ua_begin", StatType::RateNsToMs));
+  _lookup_table.emplace("ms_ua_first_read",
+                        LookupItem("Client 1st Read", "proxy.process.http.milestone.ua_first_read", StatType::RateNsToMs));
+  _lookup_table.emplace("ms_ua_read_header",
+                        LookupItem("Client Hdr Done", "proxy.process.http.milestone.ua_read_header_done", StatType::RateNsToMs));
+
+  // Cache read milestones
+  _lookup_table.emplace("ms_cache_read_begin",
+                        LookupItem("Cache Rd Begin", "proxy.process.http.milestone.cache_open_read_begin", StatType::RateNsToMs));
+  _lookup_table.emplace("ms_cache_read_end",
+                        LookupItem("Cache Rd End", "proxy.process.http.milestone.cache_open_read_end", StatType::RateNsToMs));
+
+  // DNS milestones
+  _lookup_table.emplace("ms_dns_begin",
+                        LookupItem("DNS Begin", "proxy.process.http.milestone.dns_lookup_begin", StatType::RateNsToMs));
+  _lookup_table.emplace("ms_dns_end", LookupItem("DNS End", "proxy.process.http.milestone.dns_lookup_end", StatType::RateNsToMs));
+
+  // Origin server connection milestones
+  _lookup_table.emplace("ms_server_connect",
+                        LookupItem("Origin Connect", "proxy.process.http.milestone.server_connect", StatType::RateNsToMs));
+  _lookup_table.emplace("ms_server_first_connect",
+                        LookupItem("Origin 1st Conn", "proxy.process.http.milestone.server_first_connect", StatType::RateNsToMs));
+  _lookup_table.emplace("ms_server_connect_end",
+                        LookupItem("Origin Conn End", "proxy.process.http.milestone.server_connect_end", StatType::RateNsToMs));
+
+  // Origin server I/O milestones
+  _lookup_table.emplace("ms_server_begin_write",
+                        LookupItem("Origin Write", "proxy.process.http.milestone.server_begin_write", StatType::RateNsToMs));
+  _lookup_table.emplace("ms_server_first_read",
+                        LookupItem("Origin 1st Read", "proxy.process.http.milestone.server_first_read", StatType::RateNsToMs));
+  _lookup_table.emplace(
+    "ms_server_read_header",
+    LookupItem("Origin Hdr Done", "proxy.process.http.milestone.server_read_header_done", StatType::RateNsToMs));
+
+  // Cache write milestones
+  _lookup_table.emplace("ms_cache_write_begin",
+                        LookupItem("Cache Wr Begin", "proxy.process.http.milestone.cache_open_write_begin", StatType::RateNsToMs));
+  _lookup_table.emplace("ms_cache_write_end",
+                        LookupItem("Cache Wr End", "proxy.process.http.milestone.cache_open_write_end", StatType::RateNsToMs));
+
+  // Client write and close milestones
+  _lookup_table.emplace("ms_ua_begin_write",
+                        LookupItem("Client Write", "proxy.process.http.milestone.ua_begin_write", StatType::RateNsToMs));
+  _lookup_table.emplace("ms_server_close",
+                        LookupItem("Origin Close", "proxy.process.http.milestone.server_close", StatType::RateNsToMs));
+  _lookup_table.emplace("ms_ua_close", LookupItem("Client Close", "proxy.process.http.milestone.ua_close", StatType::RateNsToMs));
+
+  // State machine finish
+  _lookup_table.emplace("ms_sm_finish", LookupItem("SM Finish", "proxy.process.http.milestone.sm_finish", StatType::RateNsToMs));
 }
 
 bool
@@ -419,7 +479,7 @@ Stats::fetch_and_fill_stats(const std::map<std::string, LookupItem> &lookup_tabl
     for (const auto &[key, item] : lookup_table) {
       // Only add direct metrics (not derived ones)
       if (item.type == StatType::Absolute || item.type == StatType::Rate || item.type == StatType::RequestPct ||
-          item.type == StatType::TimeRatio) {
+          item.type == StatType::TimeRatio || item.type == StatType::RateNsToMs) {
         try {
           request.emplace_rec(MetricParam{item.name});
         } catch (const std::exception &e) {
@@ -500,7 +560,10 @@ void
 Stats::getStat(const std::string &key, std::string &value)
 {
   auto it = _lookup_table.find(key);
-  ink_assert(it != _lookup_table.end());
+  if (it == _lookup_table.end()) {
+    fprintf(stderr, "ERROR: Unknown stat key '%s' not found in lookup table\n", key.c_str());
+    ink_assert(it != _lookup_table.end());
+  }
   const auto &item = it->second;
 
   if (_stats) {
@@ -519,7 +582,10 @@ Stats::getStat(const std::string &key, double &value, std::string &prettyName, S
   value = 0;
 
   auto it = _lookup_table.find(key);
-  ink_assert(it != _lookup_table.end());
+  if (it == _lookup_table.end()) {
+    fprintf(stderr, "ERROR: Unknown stat key '%s' not found in lookup table\n", key.c_str());
+    ink_assert(it != _lookup_table.end());
+  }
   const auto &item = it->second;
 
   prettyName = item.pretty;
@@ -529,7 +595,8 @@ Stats::getStat(const std::string &key, double &value, std::string &prettyName, S
   case StatType::Absolute:
   case StatType::Rate:
   case StatType::RequestPct:
-  case StatType::TimeRatio: {
+  case StatType::TimeRatio:
+  case StatType::RateNsToMs: {
     if (_stats) {
       value = getValue(item.name, _stats.get());
     }
@@ -540,13 +607,18 @@ Stats::getStat(const std::string &key, double &value, std::string &prettyName, S
     }
 
     // Calculate rate if needed
-    if ((type == StatType::Rate || type == StatType::RequestPct || type == StatType::TimeRatio) && _old_stats != nullptr &&
-        !_absolute) {
+    if ((type == StatType::Rate || type == StatType::RequestPct || type == StatType::TimeRatio || type == StatType::RateNsToMs) &&
+        _old_stats != nullptr && !_absolute) {
       double old = getValue(item.name, _old_stats.get());
       if (key == "total_time") {
         old = old / 10000000;
       }
       value = _time_diff > 0 ? (value - old) / _time_diff : 0;
+    }
+
+    // Convert nanoseconds to milliseconds for RateNsToMs
+    if (type == StatType::RateNsToMs) {
+      value = value / 1000000.0; // ns to ms
     }
     break;
   }
@@ -587,11 +659,12 @@ Stats::getStat(const std::string &key, double &value, std::string &prettyName, S
   }
   }
 
-  // Post-processing for TimeRatio: convert to milliseconds
+  // Post-processing for TimeRatio: calculate average time in milliseconds
+  // Note: transaction_totaltime metrics are already stored in milliseconds (ua_msecs_*)
   if (type == StatType::TimeRatio) {
     double denominator = 0;
     getStat(item.denominator, denominator, StatType::Rate);
-    value = (denominator != 0) ? value / denominator * 1000 : 0;
+    value = (denominator != 0) ? value / denominator : 0;
   }
 
   // Post-processing for RequestPct: calculate percentage of client requests

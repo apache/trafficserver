@@ -38,8 +38,9 @@ enum class StatType {
   RequestPct  = 5, ///< Percentage of client requests (value / client_req * 100)
   Sum         = 6, ///< Sum of two rate stats
   SumBits     = 7, ///< Sum of two rate stats * 8 (bytes to bits conversion)
-  TimeRatio   = 8, ///< Time ratio in milliseconds (totaltime / count * 1000)
-  SumAbsolute = 9  ///< Sum of two absolute stats
+  TimeRatio   = 8, ///< Time ratio in milliseconds (totaltime / count)
+  SumAbsolute = 9, ///< Sum of two absolute stats
+  RateNsToMs  = 10 ///< Rate in nanoseconds, converted to milliseconds (divide by 1,000,000)
 };
 
 /**
@@ -66,7 +67,7 @@ isPercentage(StatType type)
 inline bool
 needsPreviousStats(StatType type)
 {
-  return type == StatType::Rate || type == StatType::RequestPct || type == StatType::TimeRatio;
+  return type == StatType::Rate || type == StatType::RequestPct || type == StatType::TimeRatio || type == StatType::RateNsToMs;
 }
 
 } // namespace traffic_top
