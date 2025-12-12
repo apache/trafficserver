@@ -172,6 +172,7 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
    Cert Reporting Tool <cert_reporting_tool.en>
    Connection Exempt List <connection_exempt_list.en>
    Cookie Remap <cookie_remap.en>
+   Filter Body <filter_body.en>
    GeoIP ACL <geoip_acl.en>
    FQ Pacing <fq_pacing.en>
    Header Frequency <header_freq.en>
@@ -215,6 +216,9 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
 
 :doc:`Cookie Remap <cookie_remap.en>`
    Makes decisions on destinations based on cookies.
+
+:doc:`Filter Body <filter_body.en>`
+   Streaming body content inspection with configurable pattern matching for detecting security threats.
 
 :doc:`FQ Pacing <fq_pacing.en>`
    FQ Pacing: Rate Limit TCP connections using Linux's Fair Queuing queue discipline

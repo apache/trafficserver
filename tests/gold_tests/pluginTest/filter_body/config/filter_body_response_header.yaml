@@ -1,0 +1,17 @@
+# Configuration for adding header on response match.
+rules:
+  - name: "sensitive_response_header"
+    filter:
+      direction: response
+      status: [200]
+      headers:
+        - name: "Content-Type"
+          patterns:
+            - "application/json"
+      body_patterns:
+        - "secret_data"
+    action:
+      - log
+      - add_header:
+          X-Data-Classification: "sensitive"
+          X-Rule-Name: "<rule_name>"

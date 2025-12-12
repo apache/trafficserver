@@ -58,7 +58,8 @@ def MakeATSProcess(
         log_data=default_log_data,
         use_traffic_out=True,
         dump_runroot=True,
-        enable_proxy_protocol=False):
+        enable_proxy_protocol=False,
+        disable_log_checks=False):
     """Create a traffic server process.
 
     :param block_for_debug: if True, causes traffic_server to run with the
@@ -240,11 +241,12 @@ def MakeATSProcess(
         tmpname = os.path.join(log_dir, fname)
         p.Disk.File(tmpname, id='diags_log')
     # add this test back once we have network namespaces working again
-    p.Disk.diags_log.Content = Testers.ExcludesExpression("ERROR:", f"Diags log file {fname} should not contain errors")
-    p.Disk.diags_log.Content += Testers.ExcludesExpression("FATAL:", f"Diags log file {fname} should not contain errors")
-    p.Disk.diags_log.Content += Testers.ExcludesExpression(
-        "Unrecognized configuration value",
-        f"Diags log file {fname} should not contain a warning about an unrecognized configuration")
+    if not disable_log_checks:
+        p.Disk.diags_log.Content = Testers.ExcludesExpression("ERROR:", f"Diags log file {fname} should not contain errors")
+        p.Disk.diags_log.Content += Testers.ExcludesExpression("FATAL:", f"Diags log file {fname} should not contain errors")
+        p.Disk.diags_log.Content += Testers.ExcludesExpression(
+            "Unrecognized configuration value",
+            f"Diags log file {fname} should not contain a warning about an unrecognized configuration")
 
     # traffic.out
     fname = "traffic.out"

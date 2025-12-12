@@ -1,0 +1,16 @@
+# Configuration for logging sensitive data in responses (no blocking).
+rules:
+  - name: "sensitive_response_log"
+    filter:
+      direction: response
+      status: [200]
+      headers:
+        - name: "Content-Type"
+          patterns:
+            - "application/json"
+            - "text/html"
+      body_patterns:
+        - "SSN:"
+        - "password:"
+    action: [log]
+

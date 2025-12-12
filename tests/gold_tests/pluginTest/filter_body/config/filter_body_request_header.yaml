@@ -1,0 +1,17 @@
+# Configuration for adding header on request match.
+rules:
+  - name: "xxe_request_header"
+    filter:
+      direction: request
+      methods: [POST]
+      headers:
+        - name: "Content-Type"
+          patterns:
+            - "application/xml"
+      body_patterns:
+        - "<!ENTITY"
+    action:
+      - log
+      - add_header:
+          X-Security-Match: "<rule_name>"
+

@@ -1,0 +1,16 @@
+# Configuration for blocking responses with sensitive data.
+rules:
+  - name: "sensitive_response_block"
+    filter:
+      direction: response
+      status: [200]
+      headers:
+        - name: "Content-Type"
+          patterns:
+            - "application/json"
+            - "text/html"
+      body_patterns:
+        - "SSN:"
+        - "password:"
+    action: [log, block]
+
