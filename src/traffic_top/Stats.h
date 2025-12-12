@@ -201,6 +201,14 @@ public:
     return MAX_HISTORY_LENGTH;
   }
 
+  /**
+   * Validate the lookup table for internal consistency.
+   * Checks that derived stats (Ratio, Percentage, Sum, etc.) reference
+   * valid numerator and denominator keys.
+   * @return Number of validation errors found (0 = all valid)
+   */
+  int validateLookupTable() const;
+
 private:
   static constexpr size_t MAX_HISTORY_LENGTH = 120; // 2 minutes at 1 sample/sec, or 10 min at 5 sec/sample
 

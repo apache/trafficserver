@@ -62,6 +62,14 @@ Stats::Stats()
   }
 
   initializeLookupTable();
+
+  // Validate lookup table in debug builds
+#ifndef NDEBUG
+  int validation_errors = validateLookupTable();
+  if (validation_errors > 0) {
+    fprintf(stderr, "WARNING: Found %d stat lookup table validation errors\n", validation_errors);
+  }
+#endif
 }
 
 void
@@ -739,6 +747,32 @@ Stats::getHistory(const std::string &key, double maxValue) const
   }
 
   return result;
+}
+
+int
+Stats::validateLookupTable() const
+{
+  int errors = 0;
+
+  for (const auto &[key, item] : _lookup_table) {
+    // Check derived stats that require numerator and denominator
+    if (item.type == StatType::Ratio || item.type == StatType::Percentage || item.type == StatType::Sum ||
+        item.type == StatType::SumBits || item.type == StatType::SumAbsolute || item.type == StatType::TimeRatio) {
+      // Numerator must be a valid key
+      if (item.numerator[0] != '\0' && _lookup_table.find(item.numerator) == _lookup_table.end()) {
+        fprintf(stderr, "WARNING: Stat '%s' references unknown numerator '%s'\n", key.c_str(), item.numerator);
+        ++errors;
+      }
+
+      // Denominator must be a valid key
+      if (item.denominator[0] != '\0' && _lookup_table.find(item.denominator) == _lookup_table.end()) {
+        fprintf(stderr, "WARNING: Stat '%s' references unknown denominator '%s'\n", key.c_str(), item.denominator);
+        ++errors;
+      }
+    }
+  }
+
+  return errors;
 }
 
 } // namespace traffic_top
