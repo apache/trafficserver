@@ -154,7 +154,7 @@ public:
   void getTerminalSize(int &width, int &height) const;
 
   /**
-   * Draw a box around a region (btop++ style with rounded corners).
+   * Draw a box around a region with rounded corners.
    * @param x Starting column
    * @param y Starting row
    * @param width Box width
@@ -191,7 +191,7 @@ public:
   void printStatValue(int x, int y, double value, StatType type);
 
   /**
-   * Draw a mini progress bar for percentage values (btop++ style).
+   * Draw a mini progress bar for percentage values.
    * @param x Starting column
    * @param y Row
    * @param percent Value 0-100
@@ -255,7 +255,7 @@ private:
   void renderSSLPage(Stats &stats);         ///< SSL/TLS handshake and session statistics
   void renderErrorsPage(Stats &stats);      ///< Connection errors, HTTP errors, cache errors
   void renderPerformancePage(Stats &stats); ///< HTTP milestone timing (request lifecycle)
-  void renderGraphsPage(Stats &stats);      ///< Real-time graphs (btop++ style)
+  void renderGraphsPage(Stats &stats);      ///< Real-time graphs
   void renderHelpPage(const std::string &host, const std::string &version);
 
   // -------------------------------------------------------------------------
