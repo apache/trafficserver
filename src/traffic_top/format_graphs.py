@@ -2,7 +2,7 @@
 """
 Generate graph layouts for traffic_top using Unicode block characters.
 
-Uses btop-style vertical bar graphs with block characters:
+Uses vertical bar graphs with block characters:
 ▁ ▂ ▃ ▄ ▅ ▆ ▇ █ (heights 1-8)
 
 Color gradient (ANSI escape codes):

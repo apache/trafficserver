@@ -195,7 +195,7 @@ The status bar appears on the last line and contains:
 
 ## Graph Page Layouts
 
-Graphs use Unicode block characters for btop-style visualization:
+Graphs use Unicode block characters for visualization:
 `▁▂▃▄▅▆▇█` (8 height levels from 0% to 100%)
 
 ### Multi-Graph Box Format

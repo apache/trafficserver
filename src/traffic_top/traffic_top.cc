@@ -3,7 +3,7 @@
     Main file for the traffic_top application.
 
     traffic_top is a real-time monitoring tool for Apache Traffic Server (ATS).
-    It displays statistics in a curses-based terminal UI, similar to htop/btop++.
+    It displays statistics in a curses-based terminal UI.
 
     Features:
     - Real-time display of cache hits, requests, connections, bandwidth

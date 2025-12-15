@@ -614,7 +614,7 @@ Display::drawGraphLine(int x, int y, const std::vector<double> &data, int width,
     if (blockIdx > 8)
       blockIdx = 8;
 
-    // Color based on value (btop-style gradient: blue -> cyan -> green -> yellow -> red)
+    // Color based on value (gradient: blue -> cyan -> green -> yellow -> red)
     if (colored) {
       if (val < 0.2) {
         setColor(ColorPair::Blue);
@@ -2014,7 +2014,7 @@ Display::renderHelpPage(const std::string &host, const std::string &version)
   moveTo(y++, x);
   printf("  7/p  Performance  HTTP milestones timing (ms/s)");
   moveTo(y++, x);
-  printf("  8/g  Graphs       Real-time graphs (btop style)");
+  printf("  8/g  Graphs       Real-time graphs");
   y++;
 
   // Right column - Cache definitions
