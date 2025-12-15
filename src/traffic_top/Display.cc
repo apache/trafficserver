@@ -134,10 +134,8 @@ namespace
 //   120x40 - Common larger terminal (3 columns)
 //   160x50 - Wide terminal (4 columns)
 //   300x75 - Extra large/tiled display (4 columns, wider boxes)
-constexpr int WIDTH_SMALL  = 80;  // Classic terminal width
-constexpr int WIDTH_MEDIUM = 120; // Larger terminal
-constexpr int WIDTH_LARGE  = 160; // Wide terminal
-constexpr int HEIGHT_SMALL = 24;  // Classic terminal height
+constexpr int WIDTH_MEDIUM = 120; // Larger terminal (minimum for 3-column layout)
+constexpr int WIDTH_LARGE  = 160; // Wide terminal (minimum for 4-column layout)
 
 constexpr int LABEL_WIDTH_SM = 12; // Small label width (80-col terminals)
 constexpr int LABEL_WIDTH_MD = 14; // Medium label width (120-col terminals)
