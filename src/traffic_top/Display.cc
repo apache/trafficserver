@@ -24,6 +24,7 @@
 #include "Display.h"
 
 #include <algorithm>
+#include <clocale>
 #include <cstdio>
 #include <ctime>
 #include <cstring>
