@@ -25,6 +25,7 @@
 
 #include <algorithm>
 #include <clocale>
+#include <cmath>
 #include <cstdio>
 #include <ctime>
 #include <cstring>
@@ -916,8 +917,8 @@ namespace
     double display = value;
 
     if (isPercentage(type)) {
-      // Format percentage
-      snprintf(buffer, sizeof(buffer), "%*d%%", width - 1, static_cast<int>(display));
+      // Format percentage (use rounding for accurate display)
+      snprintf(buffer, sizeof(buffer), "%*ld%%", width - 1, std::lround(display));
     } else {
       // Format with SI suffix
       if (value >= 1000000000000.0) {
@@ -934,10 +935,11 @@ namespace
         suffix  = 'K';
       }
 
+      // Use rounding for accurate display (e.g., 1.9K displays as 2K, not 1K)
       if (suffix != ' ') {
-        snprintf(buffer, sizeof(buffer), "%*d%c", width - 1, static_cast<int>(display), suffix);
+        snprintf(buffer, sizeof(buffer), "%*ld%c", width - 1, std::lround(display), suffix);
       } else {
-        snprintf(buffer, sizeof(buffer), "%*d ", width - 1, static_cast<int>(display));
+        snprintf(buffer, sizeof(buffer), "%*ld ", width - 1, std::lround(display));
       }
     }
 
