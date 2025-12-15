@@ -9,7 +9,7 @@ REQUIREMENTS
 - Running traffic_server instance
 - Access to the ATS RPC socket (typically requires running as the
   traffic_server user or root)
-- ncurses library (for interactive mode)
+- POSIX-compatible terminal (for interactive mode)
 
 USAGE
 -----

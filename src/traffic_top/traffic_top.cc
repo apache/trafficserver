@@ -37,26 +37,6 @@
 #include <unistd.h>
 #include <csignal>
 
-#include "tscore/ink_config.h"
-
-// Prevent ncurses macros from conflicting with C++ stdlib
-#define NOMACROS         1
-#define NCURSES_NOMACROS 1
-
-#if defined HAVE_NCURSESW_CURSES_H
-#include <ncursesw/curses.h>
-#elif defined HAVE_NCURSESW_H
-#include <ncursesw.h>
-#elif defined HAVE_NCURSES_CURSES_H
-#include <ncurses/curses.h>
-#elif defined HAVE_NCURSES_H
-#include <ncurses.h>
-#elif defined HAVE_CURSES_H
-#include <curses.h>
-#else
-#error "SysV or X/Open-compatible Curses header file required"
-#endif
-
 #include "tscore/Layout.h"
 #include "tscore/ink_args.h"
 #include "tscore/Version.h"
@@ -190,12 +170,9 @@ run_interactive(Stats &stats, int sleep_time, bool ascii_mode)
   }
 
   while (running && !g_shutdown) {
-    // Handle window resize
+    // Handle window resize - terminal size is re-read in render() via ioctl()
     if (g_window_resized) {
       g_window_resized = 0;
-      // Notify ncurses about the resize
-      endwin();
-      refresh();
     }
 
     // Auto-switch from absolute to rate mode once we can calculate rates
@@ -232,11 +209,10 @@ run_interactive(Stats &stats, int sleep_time, bool ascii_mode)
       // Normal operation - use configured sleep time
       current_timeout = sleep_time * MS_PER_SECOND;
     }
-    timeout(current_timeout);
 
-    // getch() blocks for up to current_timeout milliseconds, then returns ERR
+    // getInput() blocks for up to current_timeout milliseconds, then returns -1
     // This allows the UI to update even if no key is pressed
-    int ch = getch();
+    int ch = display.getInput(current_timeout);
 
     // -------------------------------------------------------------------------
     // Keyboard input handling
@@ -304,7 +280,7 @@ run_interactive(Stats &stats, int sleep_time, bool ascii_mode)
       break;
 
     // Navigate to previous page (with wraparound)
-    case KEY_LEFT:
+    case Display::KEY_LEFT:
     case 'm':
     case 'M':
       if (current_page != Page::Help) {
@@ -319,7 +295,7 @@ run_interactive(Stats &stats, int sleep_time, bool ascii_mode)
       break;
 
     // Navigate to next page (with wraparound)
-    case KEY_RIGHT:
+    case Display::KEY_RIGHT:
     case 'r':
     case 'R':
       if (current_page != Page::Help) {
@@ -336,8 +312,9 @@ run_interactive(Stats &stats, int sleep_time, bool ascii_mode)
     // Return from help page
     case 'b':
     case 'B':
-    case KEY_BACKSPACE:
-    case 27: // ESC key
+    case 0x7f: // Backspace (ASCII DEL)
+    case 0x08: // Backspace (ASCII BS)
+    case 27:   // ESC key
       if (current_page == Page::Help) {
         current_page = Page::Main;
       }
@@ -345,7 +322,7 @@ run_interactive(Stats &stats, int sleep_time, bool ascii_mode)
 
     default:
       // Any other key exits help page (convenience feature)
-      if (current_page == Page::Help && ch != ERR) {
+      if (current_page == Page::Help && ch != Display::KEY_NONE) {
         current_page = Page::Main;
       }
       break;
