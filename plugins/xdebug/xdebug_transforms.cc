@@ -296,8 +296,13 @@ body_transform(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
     }
 
     if (TSVIONTodoGet(src_vio) > 0) {
-      TSVIOReenable(data->output_vio);
-      TSContCall(TSVIOContGet(src_vio), TS_EVENT_VCONN_WRITE_READY, src_vio);
+      if (towrite > 0) {
+        // Only reenable and notify upstream if we consumed data.
+        // If no data was available, just return and wait for the
+        // upstream to call us again when more data arrives.
+        TSVIOReenable(data->output_vio);
+        TSContCall(TSVIOContGet(src_vio), TS_EVENT_VCONN_WRITE_READY, src_vio);
+      }
     } else {
       // End of src vio
       // Write post body content and update output VIO
