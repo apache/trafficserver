@@ -30,27 +30,8 @@
 #include <cstdlib>
 #include <unistd.h>
 #include <sys/ioctl.h>
+#include <sys/select.h>
 #include <termios.h>
-
-#include "tscore/ink_config.h"
-
-// ncurses is only used for keyboard input (getch)
-#define NOMACROS         1
-#define NCURSES_NOMACROS 1
-
-#if defined HAVE_NCURSESW_CURSES_H
-#include <ncursesw/curses.h>
-#elif defined HAVE_NCURSESW_H
-#include <ncursesw.h>
-#elif defined HAVE_NCURSES_CURSES_H
-#include <ncurses/curses.h>
-#elif defined HAVE_NCURSES_H
-#include <ncurses.h>
-#elif defined HAVE_CURSES_H
-#include <curses.h>
-#else
-#error "SysV or X/Open-compatible Curses header file required"
-#endif
 
 namespace traffic_top
 {
@@ -211,13 +192,18 @@ Display::initialize()
   // Auto-detect UTF-8 support from environment
   _ascii_mode = !detectUtf8Support();
 
-  // Initialize ncurses only for keyboard input
-  initscr();
-  cbreak();
-  noecho();
-  keypad(stdscr, TRUE);
-  nodelay(stdscr, FALSE);
-  curs_set(0);
+  // Save original terminal settings and configure raw mode
+  if (tcgetattr(STDIN_FILENO, &_orig_termios) == 0) {
+    _termios_saved = true;
+
+    struct termios raw = _orig_termios;
+    // Disable canonical mode (line buffering) and echo
+    raw.c_lflag &= ~(ICANON | ECHO);
+    // Set minimum characters for read to 0 (non-blocking)
+    raw.c_cc[VMIN]  = 0;
+    raw.c_cc[VTIME] = 0;
+    tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw);
+  }
 
   // Get terminal size
   struct winsize ws;
@@ -225,7 +211,8 @@ Display::initialize()
     _width  = ws.ws_col;
     _height = ws.ws_row;
   } else {
-    getmaxyx(stdscr, _height, _width);
+    _width  = 80;
+    _height = 24;
   }
 
   // Setup terminal for direct output
@@ -245,9 +232,74 @@ Display::shutdown()
     printf("\033[?1049l"); // Switch back to normal screen buffer
     resetColor();
     fflush(stdout);
-    endwin();
+
+    // Restore original terminal settings
+    if (_termios_saved) {
+      tcsetattr(STDIN_FILENO, TCSAFLUSH, &_orig_termios);
+    }
+
     _initialized = false;
   }
+}
+
+int
+Display::getInput(int timeout_ms)
+{
+  // Use select() for timeout-based input
+  fd_set          readfds;
+  struct timeval  tv;
+  struct timeval *tv_ptr = nullptr;
+
+  FD_ZERO(&readfds);
+  FD_SET(STDIN_FILENO, &readfds);
+
+  if (timeout_ms >= 0) {
+    tv.tv_sec  = timeout_ms / 1000;
+    tv.tv_usec = (timeout_ms % 1000) * 1000;
+    tv_ptr     = &tv;
+  }
+
+  int result = select(STDIN_FILENO + 1, &readfds, nullptr, nullptr, tv_ptr);
+  if (result <= 0) {
+    return KEY_NONE; // Timeout or error
+  }
+
+  // Read the character
+  unsigned char c;
+  if (read(STDIN_FILENO, &c, 1) != 1) {
+    return KEY_NONE;
+  }
+
+  // Check for escape sequence (arrow keys, etc.)
+  if (c == 0x1B) { // ESC
+    // Check if more characters are available (escape sequence)
+    FD_ZERO(&readfds);
+    FD_SET(STDIN_FILENO, &readfds);
+    tv.tv_sec  = 0;
+    tv.tv_usec = 50000; // 50ms timeout to detect escape sequences
+
+    if (select(STDIN_FILENO + 1, &readfds, nullptr, nullptr, &tv) > 0) {
+      unsigned char seq[2];
+      if (read(STDIN_FILENO, &seq[0], 1) == 1 && seq[0] == '[') {
+        if (read(STDIN_FILENO, &seq[1], 1) == 1) {
+          switch (seq[1]) {
+          case 'A':
+            return KEY_UP;
+          case 'B':
+            return KEY_DOWN;
+          case 'C':
+            return KEY_RIGHT;
+          case 'D':
+            return KEY_LEFT;
+          }
+        }
+      }
+    }
+    // Just ESC key pressed (no sequence)
+    return 0x1B;
+  }
+
+  return c;
 }
 
 void

@@ -25,6 +25,7 @@
 #include <string>
 #include <tuple>
 #include <vector>
+#include <termios.h>
 
 #include "Stats.h"
 #include "StatType.h"
@@ -130,9 +131,24 @@ public:
   bool initialize();
 
   /**
-   * Clean up curses.
+   * Clean up terminal.
    */
   void shutdown();
+
+  /**
+   * Get keyboard input with timeout.
+   * @param timeout_ms Timeout in milliseconds (0 = non-blocking, -1 = blocking)
+   * @return Character code, or -1 if no input within timeout.
+   *         Special keys: KEY_LEFT=0x104, KEY_RIGHT=0x105, KEY_UP=0x103, KEY_DOWN=0x102
+   */
+  int getInput(int timeout_ms);
+
+  /// Special key codes (compatible with ncurses KEY_* values)
+  static constexpr int KEY_NONE  = -1;
+  static constexpr int KEY_UP    = 0x103;
+  static constexpr int KEY_DOWN  = 0x102;
+  static constexpr int KEY_LEFT  = 0x104;
+  static constexpr int KEY_RIGHT = 0x105;
 
   /**
    * Set whether to use ASCII box characters instead of Unicode.
@@ -315,10 +331,12 @@ private:
   // -------------------------------------------------------------------------
   // State variables
   // -------------------------------------------------------------------------
-  bool _initialized = false; ///< True after successful initialize() call
-  bool _ascii_mode  = false; ///< True = use ASCII box chars, False = use Unicode
-  int  _width       = 80;    ///< Current terminal width in columns
-  int  _height      = 24;    ///< Current terminal height in rows
+  bool           _initialized = false;   ///< True after successful initialize() call
+  bool           _ascii_mode  = false;   ///< True = use ASCII box chars, False = use Unicode
+  int            _width       = 80;      ///< Current terminal width in columns
+  int            _height      = 24;      ///< Current terminal height in rows
+  struct termios _orig_termios;          ///< Original terminal settings (restored on shutdown)
+  bool           _termios_saved = false; ///< True if _orig_termios has valid saved state
 };
 
 } // namespace traffic_top
