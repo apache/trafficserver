@@ -31,6 +31,7 @@
 #include "proxy/ProxyTransaction.h"
 #include "records/RecHttp.h"
 #include "iocore/net/TLSBasicSupport.h"
+#include "iocore/net/TLSEarlyDataSupport.h"
 #include "iocore/net/TLSSessionResumptionSupport.h"
 #include "tscore/ink_assert.h"
 
@@ -59,6 +60,7 @@ struct ClientConnectionInfo {
   // TLS handshake bytes (rx = received from client, tx = sent to client)
   uint64_t tls_handshake_bytes_rx{0};
   uint64_t tls_handshake_bytes_tx{0};
+  size_t   tls_early_data_len{0};
 };
 
 class HttpUserAgent
@@ -104,6 +106,8 @@ public:
   uint64_t get_client_tls_handshake_bytes_rx() const;
 
   uint64_t get_client_tls_handshake_bytes_tx() const;
+
+  size_t get_client_tls_early_data_len() const;
 
 private:
   HttpVCTableEntry *m_entry{nullptr};
@@ -194,7 +198,11 @@ HttpUserAgent::set_txn(ProxyTransaction *txn, TransactionMilestones &milestones)
       milestones[TS_MILESTONE_TLS_HANDSHAKE_START] = tbs->get_tls_handshake_begin_time();
       milestones[TS_MILESTONE_TLS_HANDSHAKE_END]   = tbs->get_tls_handshake_end_time();
     }
-    netvc->capture_handshake_bytes(m_conn_info.tls_handshake_bytes_rx, m_conn_info.tls_handshake_bytes_tx);
+    tbs->get_tls_handshake_bytes(m_conn_info.tls_handshake_bytes_rx, m_conn_info.tls_handshake_bytes_tx);
+  }
+
+  if (auto eds = netvc->get_service<TLSEarlyDataSupport>()) {
+    m_conn_info.tls_early_data_len = eds->get_early_data_len();
   }
 
   if (auto as = netvc->get_service<ALPNSupport>()) {
@@ -320,6 +328,12 @@ inline uint64_t
 HttpUserAgent::get_client_tls_handshake_bytes_tx() const
 {
   return m_conn_info.tls_handshake_bytes_tx;
+}
+
+inline size_t
+HttpUserAgent::get_client_tls_early_data_len() const
+{
+  return m_conn_info.tls_early_data_len;
 }
 
 inline void

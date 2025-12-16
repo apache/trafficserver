@@ -2208,6 +2208,9 @@ LogAccess::marshal_client_req_squid_len(char *buf)
 
 /*-------------------------------------------------------------------------
   Client request squid length plus TLS handshake bytes received for TLS connections.
+  For TLS 1.3 early data (0-RTT), we subtract the early data length from the
+  handshake bytes to avoid double-counting since the early data bytes are
+  already included in client_request_body_bytes.
   -------------------------------------------------------------------------*/
 int
 LogAccess::marshal_client_req_squid_len_tls(char *buf)
@@ -2220,7 +2223,14 @@ LogAccess::marshal_client_req_squid_len_tls(char *buf)
     }
 
     if (!m_http_sm->get_user_agent().get_client_tcp_reused()) {
-      val += m_http_sm->get_user_agent().get_client_tls_handshake_bytes_rx();
+      uint64_t handshake_rx   = m_http_sm->get_user_agent().get_client_tls_handshake_bytes_rx();
+      size_t   early_data_len = m_http_sm->get_user_agent().get_client_tls_early_data_len();
+
+      if (early_data_len > 0 && handshake_rx > early_data_len) {
+        handshake_rx -= early_data_len;
+      }
+
+      val += handshake_rx;
     }
     marshal_int(buf, val);
   }

@@ -976,8 +976,6 @@ SSLNetVConnection::clear()
   sslLastWriteTime            = 0;
   sslTotalBytesSent           = 0;
   sslClientRenegotiationAbort = false;
-  _tls_handshake_bytes_in     = 0;
-  _tls_handshake_bytes_out    = 0;
   hookOpRequested             = SslVConnOp::SSL_HOOK_OP_DEFAULT;
 
   free_handshake_buffers();
@@ -2482,32 +2480,4 @@ SSLNetVConnection::_ssl_read_buffer(void *buf, int64_t nbytes, int64_t &nread)
   }
 
   return ssl_error;
-}
-
-bool
-SSLNetVConnection::capture_handshake_bytes(uint64_t &bytes_in, uint64_t &bytes_out)
-{
-  if (_tls_handshake_bytes_in > 0 || _tls_handshake_bytes_out > 0) {
-    bytes_in  = _tls_handshake_bytes_in;
-    bytes_out = _tls_handshake_bytes_out;
-
-    return false;
-  }
-
-  // If no SSL object, nothing to capture
-  if (this->ssl == nullptr) {
-    bytes_in  = 0;
-    bytes_out = 0;
-
-    return false;
-  }
-
-  // Capture bytes from BIO statistics
-  BIO *rbio = SSL_get_rbio(this->ssl);
-  BIO *wbio = SSL_get_wbio(this->ssl);
-
-  bytes_in = _tls_handshake_bytes_in = rbio ? BIO_number_read(rbio) : 0;
-  bytes_out = _tls_handshake_bytes_out = wbio ? BIO_number_written(wbio) : 0;
-
-  return true;
 }

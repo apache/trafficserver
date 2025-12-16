@@ -455,10 +455,8 @@ cqql  Client Request         Client request header and content length combined,
                              in bytes.
 cqqtl Client Request         Same as cqql_, but for the first transaction on a
                              TLS connection, also includes TLS handshake bytes
-                             received from the client. Since the TLS handshake
-                             only occurs once per connection, the handshake bytes
-                             are only attributed to the first transaction to
-                             prevent double-counting.
+                             received from the client. Note that this metrics
+                             may not always be 100% accurate.
 csscl Cached Origin Response Content body length from cached origin response.
 csshl Cached Origin Response Header length from cached origin response.
 cssql Cached Origin Response Content and header length from cached origin
@@ -476,10 +474,8 @@ psql  Proxy Response         Content body and header length combined of the
                              |TS| response to client.
 psqtl Proxy Response         Same as psql_, but for the first transaction on a
                              TLS connection, also includes TLS handshake bytes
-                             sent to the client. Since the TLS handshake only
-                             occurs once per connection, the handshake bytes are
-                             only attributed to the first transaction to prevent
-                             double-counting.
+                             sent to the client. Note that this metric may not
+                             always be 100% accurate.
 sscl  Origin Response        Content body length of the origin server response
                              to |TS|.
 sshl  Origin Response        Header length of the origin server response.

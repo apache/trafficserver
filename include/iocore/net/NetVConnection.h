@@ -329,15 +329,6 @@ public:
     return 0;
   }
 
-  /** Capture handshake byte statistics.  */
-  virtual bool
-  capture_handshake_bytes(uint64_t &bytes_in, uint64_t &bytes_out)
-  {
-    bytes_in  = 0;
-    bytes_out = 0;
-    return false;
-  }
-
   /** Structure holding user options. */
   NetVCOptions options;
 

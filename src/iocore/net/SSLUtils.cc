@@ -1081,11 +1081,11 @@ ssl_callback_info(const SSL *ssl, int where, int ret)
       Metrics::Counter::increment(it->second);
     }
 
-    // Capture TLS handshake byte statistics
     if (netvc && netvc->get_context() == NET_VCONNECTION_IN) {
       uint64_t bytes_in = 0, bytes_out = 0;
+      auto     tbs = TLSBasicSupport::getInstance(const_cast<SSL *>(ssl));
 
-      if (netvc->capture_handshake_bytes(bytes_in, bytes_out)) {
+      if (tbs && tbs->get_tls_handshake_bytes(bytes_in, bytes_out)) {
         Metrics::Counter::increment(ssl_rsb.tls_handshake_bytes_in_total, bytes_in);
         Metrics::Counter::increment(ssl_rsb.tls_handshake_bytes_out_total, bytes_out);
       }

@@ -309,8 +309,6 @@ public:
   EThread        *getThreadForTLSEvents() override;
   Ptr<ProxyMutex> getMutexForTLSEvents() override;
 
-  bool capture_handshake_bytes(uint64_t &bytes_in, uint64_t &bytes_out) override;
-
 protected:
   // UnixNetVConnection
   bool _isReadyToTransferData() const override;
@@ -377,10 +375,6 @@ private:
    * contiguous memory buffer.
    */
   char *_getCoalescedHandShakeBuffer(int64_t total_chain_size);
-
-  // TLS handshake byte tracking (bytes read/written during handshake only)
-  uint64_t _tls_handshake_bytes_in  = 0;
-  uint64_t _tls_handshake_bytes_out = 0;
 
   enum SSLHandshakeStatus sslHandshakeStatus          = SSLHandshakeStatus::SSL_HANDSHAKE_ONGOING;
   bool                    sslClientRenegotiationAbort = false;
