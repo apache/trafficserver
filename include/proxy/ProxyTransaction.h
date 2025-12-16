@@ -24,6 +24,7 @@
 #pragma once
 
 #include "proxy/ProxySession.h"
+#include <cstdint>
 #include <string_view>
 
 class HttpSM;
@@ -130,6 +131,10 @@ public:
 
   void            set_verified_client_addr(const sockaddr *addr);
   sockaddr const *get_verified_client_addr() const;
+
+  // this is the client address for the transaction, which may not be the same as the connection remote address
+  sockaddr const *get_client_addr() const;
+  uint16_t        get_client_port() const;
 
   // This function must return a non-negative number that is different for two in-progress transactions with the same proxy_ssn
   // session.
@@ -334,6 +339,18 @@ inline struct sockaddr const *
 ProxyTransaction::get_verified_client_addr() const
 {
   return reinterpret_cast<const struct sockaddr *>(&_verified_addr);
+}
+
+inline sockaddr const *
+ProxyTransaction::get_client_addr() const
+{
+  return _proxy_ssn ? _proxy_ssn->get_client_addr() : nullptr;
+}
+
+inline uint16_t
+ProxyTransaction::get_client_port() const
+{
+  return _proxy_ssn ? _proxy_ssn->get_client_port() : 0;
 }
 
 inline void

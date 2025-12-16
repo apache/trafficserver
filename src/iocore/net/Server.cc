@@ -291,7 +291,11 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
   }
 
   if (opt.f_proxy_protocol) {
-    Dbg(dbg_ctl_proxyprotocol, "Proxy Protocol enabled.");
+    if (opt.f_proxy_protocol_client_src) {
+      Dbg(dbg_ctl_proxyprotocol, "Proxy Protocol enabled(Using src IP as remote IP).");
+    } else {
+      Dbg(dbg_ctl_proxyprotocol, "Proxy Protocol enabled.");
+    }
   }
 
 #if defined(TCP_MAXSEG)

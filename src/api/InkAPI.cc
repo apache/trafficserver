@@ -4692,7 +4692,7 @@ TSHttpSsnClientAddrGet(TSHttpSsn ssnp)
   if (cs == nullptr) {
     return nullptr;
   }
-  return cs->get_remote_addr();
+  return cs->get_client_addr();
 }
 sockaddr const *
 TSHttpTxnClientAddrGet(TSHttpTxn txnp)
@@ -6166,6 +6166,14 @@ TSNetVConnRemoteAddrGet(TSVConn connp)
   sdk_assert(sdk_sanity_check_iocore_structure(connp) == TS_SUCCESS);
   NetVConnection *vc = reinterpret_cast<NetVConnection *>(connp);
   return vc->get_remote_addr();
+}
+
+sockaddr const *
+TSNetVConnClientAddrGet(TSVConn connp)
+{
+  sdk_assert(sdk_sanity_check_iocore_structure(connp) == TS_SUCCESS);
+  NetVConnection *vc = reinterpret_cast<NetVConnection *>(connp);
+  return vc->get_client_addr();
 }
 
 TSAction

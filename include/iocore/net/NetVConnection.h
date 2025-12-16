@@ -26,6 +26,7 @@
 #include "iocore/net/NetVCOptions.h"
 #include "iocore/net/ProxyProtocol.h"
 
+#include <cstdint>
 #include <string_view>
 #include <optional>
 
@@ -283,6 +284,12 @@ public:
   uint16_t get_local_port();
 
   /** Returns remote sockaddr storage. */
+  sockaddr const   *get_client_addr();
+  IpEndpoint const &get_client_endpoint();
+
+  uint16_t get_client_port();
+
+  /** Returns remote sockaddr storage. */
   sockaddr const   *get_remote_addr();
   IpEndpoint const &get_remote_endpoint();
 
@@ -426,11 +433,18 @@ public:
   {
     return is_proxy_protocol;
   }
+  /// Get the proxy protocol copy src IP flag
+  bool
+  get_is_proxy_protocol_cp_src() const
+  {
+    return is_proxy_protocol_cp_src;
+  }
   /// Set the proxy protocol enabled flag on the port
   void
-  set_is_proxy_protocol(bool state = true)
+  set_is_proxy_protocol(bool state, bool cp_src_ip)
   {
-    is_proxy_protocol = state;
+    is_proxy_protocol        = state;
+    is_proxy_protocol_cp_src = cp_src_ip;
   }
 
   virtual int
@@ -510,7 +524,8 @@ protected:
     N_SERVICES,
   };
 
-  IpEndpoint    local_addr;
+  IpEndpoint local_addr;
+  // This can be the remote peer address or the proxy protocol SRC IP address
   IpEndpoint    remote_addr;
   ProxyProtocol pp_info;
 
@@ -523,7 +538,8 @@ protected:
   /// Set if this connection is transparent.
   bool is_transparent = false;
   /// Set if proxy protocol is enabled
-  bool is_proxy_protocol = false;
+  bool is_proxy_protocol        = false;
+  bool is_proxy_protocol_cp_src = false;
   /// This is essentially a tri-state, we leave it undefined to mean no MPTCP support
   std::optional<bool> mptcp_state;
   /// Set if the next write IO that empties the write buffer should generate an event.
@@ -691,6 +707,33 @@ inline void
 NetVConnection::_set_service(QUICSupport *instance)
 {
   this->_set_service(NetVConnection::Service::QUIC, instance);
+}
+
+inline sockaddr const *
+NetVConnection::get_client_addr()
+{
+  if (pp_info.version != ProxyProtocolVersion::UNDEFINED && is_proxy_protocol_cp_src) {
+    return get_proxy_protocol_src_addr();
+  } else {
+    return get_remote_addr();
+  }
+}
+
+inline IpEndpoint const &
+NetVConnection::get_client_endpoint()
+{
+  if (pp_info.version != ProxyProtocolVersion::UNDEFINED && is_proxy_protocol_cp_src) {
+    return pp_info.src_addr;
+  } else {
+    return remote_addr;
+  }
+}
+
+/// @return The remote port in host order.
+inline uint16_t
+NetVConnection::get_client_port()
+{
+  return ats_ip_port_host_order(this->get_client_addr());
 }
 
 inline sockaddr const *
