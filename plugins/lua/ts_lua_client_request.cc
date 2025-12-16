@@ -18,7 +18,14 @@
 
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <openssl/ssl.h>
+#include <openssl/x509.h>
+#include <openssl/x509v3.h>
+#include <openssl/bio.h>
+#include <vector>
+#include <string>
 #include "ts_lua_util.h"
+#include "ts_lua_client_cert_helpers.h"
 
 typedef enum {
   TS_LUA_PP_INFO_VERSION   = TS_PP_INFO_VERSION,
@@ -94,6 +101,32 @@ static int  ts_lua_client_request_get_ssl_protocol(lua_State *L);
 static void ts_lua_inject_client_request_ssl_curve_api(lua_State *L);
 static int  ts_lua_client_request_get_ssl_curve(lua_State *L);
 
+static void ts_lua_inject_client_request_cert_api(lua_State *L);
+static int  ts_lua_client_request_client_cert_get_pem(lua_State *L);
+static int  ts_lua_client_request_client_cert_get_subject(lua_State *L);
+static int  ts_lua_client_request_client_cert_get_issuer(lua_State *L);
+static int  ts_lua_client_request_client_cert_get_serial(lua_State *L);
+static int  ts_lua_client_request_client_cert_get_signature(lua_State *L);
+static int  ts_lua_client_request_client_cert_get_not_before(lua_State *L);
+static int  ts_lua_client_request_client_cert_get_not_after(lua_State *L);
+static int  ts_lua_client_request_client_cert_get_version(lua_State *L);
+static int  ts_lua_client_request_client_cert_get_san_dns(lua_State *L);
+static int  ts_lua_client_request_client_cert_get_san_ip(lua_State *L);
+static int  ts_lua_client_request_client_cert_get_san_email(lua_State *L);
+static int  ts_lua_client_request_client_cert_get_san_uri(lua_State *L);
+static int  ts_lua_client_request_server_cert_get_pem(lua_State *L);
+static int  ts_lua_client_request_server_cert_get_subject(lua_State *L);
+static int  ts_lua_client_request_server_cert_get_issuer(lua_State *L);
+static int  ts_lua_client_request_server_cert_get_serial(lua_State *L);
+static int  ts_lua_client_request_server_cert_get_signature(lua_State *L);
+static int  ts_lua_client_request_server_cert_get_not_before(lua_State *L);
+static int  ts_lua_client_request_server_cert_get_not_after(lua_State *L);
+static int  ts_lua_client_request_server_cert_get_version(lua_State *L);
+static int  ts_lua_client_request_server_cert_get_san_dns(lua_State *L);
+static int  ts_lua_client_request_server_cert_get_san_ip(lua_State *L);
+static int  ts_lua_client_request_server_cert_get_san_email(lua_State *L);
+static int  ts_lua_client_request_server_cert_get_san_uri(lua_State *L);
+
 static void ts_lua_inject_client_request_pp_info_api(lua_State *L);
 static int  ts_lua_client_request_get_pp_info(lua_State *L);
 static int  ts_lua_client_request_get_pp_info_int(lua_State *L);
@@ -118,6 +151,7 @@ ts_lua_inject_client_request_api(lua_State *L)
   ts_lua_inject_client_request_ssl_cipher_api(L);
   ts_lua_inject_client_request_ssl_protocol_api(L);
   ts_lua_inject_client_request_ssl_curve_api(L);
+  ts_lua_inject_client_request_cert_api(L);
   ts_lua_inject_client_request_pp_info_api(L);
 
   lua_setfield(L, -2, "client_request");
@@ -1166,6 +1200,927 @@ ts_lua_client_request_get_ssl_curve(lua_State *L)
 
   lua_pushstring(L, ssl_curve);
 
+  return 1;
+}
+
+// Certificate API Functions
+static void
+ts_lua_inject_client_request_cert_api(lua_State *L)
+{
+  // Client certificate functions
+  lua_pushcfunction(L, ts_lua_client_request_client_cert_get_pem);
+  lua_setfield(L, -2, "client_cert_get_pem");
+
+  lua_pushcfunction(L, ts_lua_client_request_client_cert_get_subject);
+  lua_setfield(L, -2, "client_cert_get_subject");
+
+  lua_pushcfunction(L, ts_lua_client_request_client_cert_get_issuer);
+  lua_setfield(L, -2, "client_cert_get_issuer");
+
+  lua_pushcfunction(L, ts_lua_client_request_client_cert_get_serial);
+  lua_setfield(L, -2, "client_cert_get_serial");
+
+  lua_pushcfunction(L, ts_lua_client_request_client_cert_get_signature);
+  lua_setfield(L, -2, "client_cert_get_signature");
+
+  lua_pushcfunction(L, ts_lua_client_request_client_cert_get_not_before);
+  lua_setfield(L, -2, "client_cert_get_not_before");
+
+  lua_pushcfunction(L, ts_lua_client_request_client_cert_get_not_after);
+  lua_setfield(L, -2, "client_cert_get_not_after");
+
+  lua_pushcfunction(L, ts_lua_client_request_client_cert_get_version);
+  lua_setfield(L, -2, "client_cert_get_version");
+
+  lua_pushcfunction(L, ts_lua_client_request_client_cert_get_san_dns);
+  lua_setfield(L, -2, "client_cert_get_san_dns");
+
+  lua_pushcfunction(L, ts_lua_client_request_client_cert_get_san_ip);
+  lua_setfield(L, -2, "client_cert_get_san_ip");
+
+  lua_pushcfunction(L, ts_lua_client_request_client_cert_get_san_email);
+  lua_setfield(L, -2, "client_cert_get_san_email");
+
+  lua_pushcfunction(L, ts_lua_client_request_client_cert_get_san_uri);
+  lua_setfield(L, -2, "client_cert_get_san_uri");
+
+  // Server certificate functions
+  lua_pushcfunction(L, ts_lua_client_request_server_cert_get_pem);
+  lua_setfield(L, -2, "server_cert_get_pem");
+
+  lua_pushcfunction(L, ts_lua_client_request_server_cert_get_subject);
+  lua_setfield(L, -2, "server_cert_get_subject");
+
+  lua_pushcfunction(L, ts_lua_client_request_server_cert_get_issuer);
+  lua_setfield(L, -2, "server_cert_get_issuer");
+
+  lua_pushcfunction(L, ts_lua_client_request_server_cert_get_serial);
+  lua_setfield(L, -2, "server_cert_get_serial");
+
+  lua_pushcfunction(L, ts_lua_client_request_server_cert_get_signature);
+  lua_setfield(L, -2, "server_cert_get_signature");
+
+  lua_pushcfunction(L, ts_lua_client_request_server_cert_get_not_before);
+  lua_setfield(L, -2, "server_cert_get_not_before");
+
+  lua_pushcfunction(L, ts_lua_client_request_server_cert_get_not_after);
+  lua_setfield(L, -2, "server_cert_get_not_after");
+
+  lua_pushcfunction(L, ts_lua_client_request_server_cert_get_version);
+  lua_setfield(L, -2, "server_cert_get_version");
+
+  lua_pushcfunction(L, ts_lua_client_request_server_cert_get_san_dns);
+  lua_setfield(L, -2, "server_cert_get_san_dns");
+
+  lua_pushcfunction(L, ts_lua_client_request_server_cert_get_san_ip);
+  lua_setfield(L, -2, "server_cert_get_san_ip");
+
+  lua_pushcfunction(L, ts_lua_client_request_server_cert_get_san_email);
+  lua_setfield(L, -2, "server_cert_get_san_email");
+
+  lua_pushcfunction(L, ts_lua_client_request_server_cert_get_san_uri);
+  lua_setfield(L, -2, "server_cert_get_san_uri");
+}
+
+// Client Certificate Functions
+static int
+ts_lua_client_request_client_cert_get_pem(lua_State *L)
+{
+  ts_lua_http_ctx *http_ctx;
+  TSHttpSsn        ssnp;
+  TSVConn          client_conn;
+
+  GET_HTTP_CONTEXT(http_ctx, L);
+
+  ssnp        = TSHttpTxnSsnGet(http_ctx->txnp);
+  client_conn = TSHttpSsnClientVConnGet(ssnp);
+
+  if (TSVConnIsSsl(client_conn)) {
+    TSSslConnection ssl_conn = TSVConnSslConnectionGet(client_conn);
+    if (ssl_conn) {
+      SSL *ssl = reinterpret_cast<SSL *>(ssl_conn);
+#ifdef OPENSSL_IS_OPENSSL3
+      X509 *cert = SSL_get1_peer_certificate(ssl);
+#else
+      X509 *cert = SSL_get_peer_certificate(ssl);
+#endif
+      if (cert) {
+        std::string pem = get_x509_pem_string(cert);
+        X509_free(cert);
+        if (!pem.empty()) {
+          lua_pushlstring(L, pem.c_str(), pem.length());
+          return 1;
+        }
+      }
+    }
+  }
+
+  lua_pushnil(L);
+  return 1;
+}
+
+static int
+ts_lua_client_request_client_cert_get_subject(lua_State *L)
+{
+  ts_lua_http_ctx *http_ctx;
+  TSHttpSsn        ssnp;
+  TSVConn          client_conn;
+
+  GET_HTTP_CONTEXT(http_ctx, L);
+
+  ssnp        = TSHttpTxnSsnGet(http_ctx->txnp);
+  client_conn = TSHttpSsnClientVConnGet(ssnp);
+
+  if (TSVConnIsSsl(client_conn)) {
+    TSSslConnection ssl_conn = TSVConnSslConnectionGet(client_conn);
+    if (ssl_conn) {
+      SSL *ssl = reinterpret_cast<SSL *>(ssl_conn);
+#ifdef OPENSSL_IS_OPENSSL3
+      X509 *cert = SSL_get1_peer_certificate(ssl);
+#else
+      X509 *cert = SSL_get_peer_certificate(ssl);
+#endif
+      if (cert) {
+        std::string subject = get_x509_name_string(X509_get_subject_name(cert));
+        X509_free(cert);
+        if (!subject.empty()) {
+          lua_pushlstring(L, subject.c_str(), subject.length());
+          return 1;
+        }
+      }
+    }
+  }
+
+  lua_pushnil(L);
+  return 1;
+}
+
+static int
+ts_lua_client_request_client_cert_get_issuer(lua_State *L)
+{
+  ts_lua_http_ctx *http_ctx;
+  TSHttpSsn        ssnp;
+  TSVConn          client_conn;
+
+  GET_HTTP_CONTEXT(http_ctx, L);
+
+  ssnp        = TSHttpTxnSsnGet(http_ctx->txnp);
+  client_conn = TSHttpSsnClientVConnGet(ssnp);
+
+  if (TSVConnIsSsl(client_conn)) {
+    TSSslConnection ssl_conn = TSVConnSslConnectionGet(client_conn);
+    if (ssl_conn) {
+      SSL *ssl = reinterpret_cast<SSL *>(ssl_conn);
+#ifdef OPENSSL_IS_OPENSSL3
+      X509 *cert = SSL_get1_peer_certificate(ssl);
+#else
+      X509 *cert = SSL_get_peer_certificate(ssl);
+#endif
+      if (cert) {
+        std::string issuer = get_x509_name_string(X509_get_issuer_name(cert));
+        X509_free(cert);
+        if (!issuer.empty()) {
+          lua_pushlstring(L, issuer.c_str(), issuer.length());
+          return 1;
+        }
+      }
+    }
+  }
+
+  lua_pushnil(L);
+  return 1;
+}
+
+static int
+ts_lua_client_request_client_cert_get_serial(lua_State *L)
+{
+  ts_lua_http_ctx *http_ctx;
+  TSHttpSsn        ssnp;
+  TSVConn          client_conn;
+
+  GET_HTTP_CONTEXT(http_ctx, L);
+
+  ssnp        = TSHttpTxnSsnGet(http_ctx->txnp);
+  client_conn = TSHttpSsnClientVConnGet(ssnp);
+
+  if (TSVConnIsSsl(client_conn)) {
+    TSSslConnection ssl_conn = TSVConnSslConnectionGet(client_conn);
+    if (ssl_conn) {
+      SSL *ssl = reinterpret_cast<SSL *>(ssl_conn);
+#ifdef OPENSSL_IS_OPENSSL3
+      X509 *cert = SSL_get1_peer_certificate(ssl);
+#else
+      X509 *cert = SSL_get_peer_certificate(ssl);
+#endif
+      if (cert) {
+        std::string serial = get_x509_serial_string(cert);
+        X509_free(cert);
+        if (!serial.empty()) {
+          lua_pushlstring(L, serial.c_str(), serial.length());
+          return 1;
+        }
+      }
+    }
+  }
+
+  lua_pushnil(L);
+  return 1;
+}
+
+static int
+ts_lua_client_request_client_cert_get_signature(lua_State *L)
+{
+  ts_lua_http_ctx *http_ctx;
+  TSHttpSsn        ssnp;
+  TSVConn          client_conn;
+
+  GET_HTTP_CONTEXT(http_ctx, L);
+
+  ssnp        = TSHttpTxnSsnGet(http_ctx->txnp);
+  client_conn = TSHttpSsnClientVConnGet(ssnp);
+
+  if (TSVConnIsSsl(client_conn)) {
+    TSSslConnection ssl_conn = TSVConnSslConnectionGet(client_conn);
+    if (ssl_conn) {
+      SSL *ssl = reinterpret_cast<SSL *>(ssl_conn);
+#ifdef OPENSSL_IS_OPENSSL3
+      X509 *cert = SSL_get1_peer_certificate(ssl);
+#else
+      X509 *cert = SSL_get_peer_certificate(ssl);
+#endif
+      if (cert) {
+        std::string sig = get_x509_signature_string(cert);
+        X509_free(cert);
+        if (!sig.empty()) {
+          lua_pushlstring(L, sig.c_str(), sig.length());
+          return 1;
+        }
+      }
+    }
+  }
+
+  lua_pushnil(L);
+  return 1;
+}
+
+static int
+ts_lua_client_request_client_cert_get_not_before(lua_State *L)
+{
+  ts_lua_http_ctx *http_ctx;
+  TSHttpSsn        ssnp;
+  TSVConn          client_conn;
+
+  GET_HTTP_CONTEXT(http_ctx, L);
+
+  ssnp        = TSHttpTxnSsnGet(http_ctx->txnp);
+  client_conn = TSHttpSsnClientVConnGet(ssnp);
+
+  if (TSVConnIsSsl(client_conn)) {
+    TSSslConnection ssl_conn = TSVConnSslConnectionGet(client_conn);
+    if (ssl_conn) {
+      SSL *ssl = reinterpret_cast<SSL *>(ssl_conn);
+#ifdef OPENSSL_IS_OPENSSL3
+      X509 *cert = SSL_get1_peer_certificate(ssl);
+#else
+      X509 *cert = SSL_get_peer_certificate(ssl);
+#endif
+      if (cert) {
+        std::string not_before = get_x509_time_string(X509_get_notBefore(cert));
+        X509_free(cert);
+        if (!not_before.empty()) {
+          lua_pushlstring(L, not_before.c_str(), not_before.length());
+          return 1;
+        }
+      }
+    }
+  }
+
+  lua_pushnil(L);
+  return 1;
+}
+
+static int
+ts_lua_client_request_client_cert_get_not_after(lua_State *L)
+{
+  ts_lua_http_ctx *http_ctx;
+  TSHttpSsn        ssnp;
+  TSVConn          client_conn;
+
+  GET_HTTP_CONTEXT(http_ctx, L);
+
+  ssnp        = TSHttpTxnSsnGet(http_ctx->txnp);
+  client_conn = TSHttpSsnClientVConnGet(ssnp);
+
+  if (TSVConnIsSsl(client_conn)) {
+    TSSslConnection ssl_conn = TSVConnSslConnectionGet(client_conn);
+    if (ssl_conn) {
+      SSL *ssl = reinterpret_cast<SSL *>(ssl_conn);
+#ifdef OPENSSL_IS_OPENSSL3
+      X509 *cert = SSL_get1_peer_certificate(ssl);
+#else
+      X509 *cert = SSL_get_peer_certificate(ssl);
+#endif
+      if (cert) {
+        std::string not_after = get_x509_time_string(X509_get_notAfter(cert));
+        X509_free(cert);
+        if (!not_after.empty()) {
+          lua_pushlstring(L, not_after.c_str(), not_after.length());
+          return 1;
+        }
+      }
+    }
+  }
+
+  lua_pushnil(L);
+  return 1;
+}
+
+static int
+ts_lua_client_request_client_cert_get_version(lua_State *L)
+{
+  ts_lua_http_ctx *http_ctx;
+  TSHttpSsn        ssnp;
+  TSVConn          client_conn;
+
+  GET_HTTP_CONTEXT(http_ctx, L);
+
+  ssnp        = TSHttpTxnSsnGet(http_ctx->txnp);
+  client_conn = TSHttpSsnClientVConnGet(ssnp);
+
+  if (TSVConnIsSsl(client_conn)) {
+    TSSslConnection ssl_conn = TSVConnSslConnectionGet(client_conn);
+    if (ssl_conn) {
+      SSL *ssl = reinterpret_cast<SSL *>(ssl_conn);
+#ifdef OPENSSL_IS_OPENSSL3
+      X509 *cert = SSL_get1_peer_certificate(ssl);
+#else
+      X509 *cert = SSL_get_peer_certificate(ssl);
+#endif
+      if (cert) {
+        long version = X509_get_version(cert);
+        X509_free(cert);
+        lua_pushinteger(L, version);
+        return 1;
+      }
+    }
+  }
+
+  lua_pushnil(L);
+  return 1;
+}
+
+static int
+ts_lua_client_request_client_cert_get_san_dns(lua_State *L)
+{
+  ts_lua_http_ctx *http_ctx;
+  TSHttpSsn        ssnp;
+  TSVConn          client_conn;
+
+  GET_HTTP_CONTEXT(http_ctx, L);
+
+  ssnp        = TSHttpTxnSsnGet(http_ctx->txnp);
+  client_conn = TSHttpSsnClientVConnGet(ssnp);
+
+  if (TSVConnIsSsl(client_conn)) {
+    TSSslConnection ssl_conn = TSVConnSslConnectionGet(client_conn);
+    if (ssl_conn) {
+      SSL *ssl = reinterpret_cast<SSL *>(ssl_conn);
+#ifdef OPENSSL_IS_OPENSSL3
+      X509 *cert = SSL_get1_peer_certificate(ssl);
+#else
+      X509 *cert = SSL_get_peer_certificate(ssl);
+#endif
+      if (cert) {
+        std::vector<std::string> dns_names = get_x509_san_strings(cert, GEN_DNS);
+        X509_free(cert);
+
+        if (!dns_names.empty()) {
+          lua_newtable(L);
+          for (size_t i = 0; i < dns_names.size(); i++) {
+            lua_pushlstring(L, dns_names[i].c_str(), dns_names[i].length());
+            lua_rawseti(L, -2, i + 1);
+          }
+          return 1;
+        }
+      }
+    }
+  }
+
+  lua_pushnil(L);
+  return 1;
+}
+
+static int
+ts_lua_client_request_client_cert_get_san_ip(lua_State *L)
+{
+  ts_lua_http_ctx *http_ctx;
+  TSHttpSsn        ssnp;
+  TSVConn          client_conn;
+
+  GET_HTTP_CONTEXT(http_ctx, L);
+
+  ssnp        = TSHttpTxnSsnGet(http_ctx->txnp);
+  client_conn = TSHttpSsnClientVConnGet(ssnp);
+
+  if (TSVConnIsSsl(client_conn)) {
+    TSSslConnection ssl_conn = TSVConnSslConnectionGet(client_conn);
+    if (ssl_conn) {
+      SSL *ssl = reinterpret_cast<SSL *>(ssl_conn);
+#ifdef OPENSSL_IS_OPENSSL3
+      X509 *cert = SSL_get1_peer_certificate(ssl);
+#else
+      X509 *cert = SSL_get_peer_certificate(ssl);
+#endif
+      if (cert) {
+        std::vector<std::string> ip_addrs = get_x509_san_strings(cert, GEN_IPADD);
+        X509_free(cert);
+
+        if (!ip_addrs.empty()) {
+          lua_newtable(L);
+          for (size_t i = 0; i < ip_addrs.size(); i++) {
+            lua_pushlstring(L, ip_addrs[i].c_str(), ip_addrs[i].length());
+            lua_rawseti(L, -2, i + 1);
+          }
+          return 1;
+        }
+      }
+    }
+  }
+
+  lua_pushnil(L);
+  return 1;
+}
+
+static int
+ts_lua_client_request_client_cert_get_san_email(lua_State *L)
+{
+  ts_lua_http_ctx *http_ctx;
+  TSHttpSsn        ssnp;
+  TSVConn          client_conn;
+
+  GET_HTTP_CONTEXT(http_ctx, L);
+
+  ssnp        = TSHttpTxnSsnGet(http_ctx->txnp);
+  client_conn = TSHttpSsnClientVConnGet(ssnp);
+
+  if (TSVConnIsSsl(client_conn)) {
+    TSSslConnection ssl_conn = TSVConnSslConnectionGet(client_conn);
+    if (ssl_conn) {
+      SSL *ssl = reinterpret_cast<SSL *>(ssl_conn);
+#ifdef OPENSSL_IS_OPENSSL3
+      X509 *cert = SSL_get1_peer_certificate(ssl);
+#else
+      X509 *cert = SSL_get_peer_certificate(ssl);
+#endif
+      if (cert) {
+        std::vector<std::string> emails = get_x509_san_strings(cert, GEN_EMAIL);
+        X509_free(cert);
+
+        if (!emails.empty()) {
+          lua_newtable(L);
+          for (size_t i = 0; i < emails.size(); i++) {
+            lua_pushlstring(L, emails[i].c_str(), emails[i].length());
+            lua_rawseti(L, -2, i + 1);
+          }
+          return 1;
+        }
+      }
+    }
+  }
+
+  lua_pushnil(L);
+  return 1;
+}
+
+static int
+ts_lua_client_request_client_cert_get_san_uri(lua_State *L)
+{
+  ts_lua_http_ctx *http_ctx;
+  TSHttpSsn        ssnp;
+  TSVConn          client_conn;
+
+  GET_HTTP_CONTEXT(http_ctx, L);
+
+  ssnp        = TSHttpTxnSsnGet(http_ctx->txnp);
+  client_conn = TSHttpSsnClientVConnGet(ssnp);
+
+  if (TSVConnIsSsl(client_conn)) {
+    TSSslConnection ssl_conn = TSVConnSslConnectionGet(client_conn);
+    if (ssl_conn) {
+      SSL *ssl = reinterpret_cast<SSL *>(ssl_conn);
+#ifdef OPENSSL_IS_OPENSSL3
+      X509 *cert = SSL_get1_peer_certificate(ssl);
+#else
+      X509 *cert = SSL_get_peer_certificate(ssl);
+#endif
+      if (cert) {
+        std::vector<std::string> uris = get_x509_san_strings(cert, GEN_URI);
+        X509_free(cert);
+
+        if (!uris.empty()) {
+          lua_newtable(L);
+          for (size_t i = 0; i < uris.size(); i++) {
+            lua_pushlstring(L, uris[i].c_str(), uris[i].length());
+            lua_rawseti(L, -2, i + 1);
+          }
+          return 1;
+        }
+      }
+    }
+  }
+
+  lua_pushnil(L);
+  return 1;
+}
+
+// Server Certificate Functions
+static int
+ts_lua_client_request_server_cert_get_pem(lua_State *L)
+{
+  ts_lua_http_ctx *http_ctx;
+  TSHttpSsn        ssnp;
+  TSVConn          client_conn;
+
+  GET_HTTP_CONTEXT(http_ctx, L);
+
+  ssnp        = TSHttpTxnSsnGet(http_ctx->txnp);
+  client_conn = TSHttpSsnClientVConnGet(ssnp);
+
+  if (TSVConnIsSsl(client_conn)) {
+    TSSslConnection ssl_conn = TSVConnSslConnectionGet(client_conn);
+    if (ssl_conn) {
+      SSL  *ssl  = reinterpret_cast<SSL *>(ssl_conn);
+      X509 *cert = SSL_get_certificate(ssl);
+      if (cert) {
+        std::string pem = get_x509_pem_string(cert);
+        if (!pem.empty()) {
+          lua_pushlstring(L, pem.c_str(), pem.length());
+          return 1;
+        }
+      }
+    }
+  }
+
+  lua_pushnil(L);
+  return 1;
+}
+
+static int
+ts_lua_client_request_server_cert_get_subject(lua_State *L)
+{
+  ts_lua_http_ctx *http_ctx;
+  TSHttpSsn        ssnp;
+  TSVConn          client_conn;
+
+  GET_HTTP_CONTEXT(http_ctx, L);
+
+  ssnp        = TSHttpTxnSsnGet(http_ctx->txnp);
+  client_conn = TSHttpSsnClientVConnGet(ssnp);
+
+  if (TSVConnIsSsl(client_conn)) {
+    TSSslConnection ssl_conn = TSVConnSslConnectionGet(client_conn);
+    if (ssl_conn) {
+      SSL  *ssl  = reinterpret_cast<SSL *>(ssl_conn);
+      X509 *cert = SSL_get_certificate(ssl);
+      if (cert) {
+        std::string subject = get_x509_name_string(X509_get_subject_name(cert));
+        if (!subject.empty()) {
+          lua_pushlstring(L, subject.c_str(), subject.length());
+          return 1;
+        }
+      }
+    }
+  }
+
+  lua_pushnil(L);
+  return 1;
+}
+
+static int
+ts_lua_client_request_server_cert_get_issuer(lua_State *L)
+{
+  ts_lua_http_ctx *http_ctx;
+  TSHttpSsn        ssnp;
+  TSVConn          client_conn;
+
+  GET_HTTP_CONTEXT(http_ctx, L);
+
+  ssnp        = TSHttpTxnSsnGet(http_ctx->txnp);
+  client_conn = TSHttpSsnClientVConnGet(ssnp);
+
+  if (TSVConnIsSsl(client_conn)) {
+    TSSslConnection ssl_conn = TSVConnSslConnectionGet(client_conn);
+    if (ssl_conn) {
+      SSL  *ssl  = reinterpret_cast<SSL *>(ssl_conn);
+      X509 *cert = SSL_get_certificate(ssl);
+      if (cert) {
+        std::string issuer = get_x509_name_string(X509_get_issuer_name(cert));
+        if (!issuer.empty()) {
+          lua_pushlstring(L, issuer.c_str(), issuer.length());
+          return 1;
+        }
+      }
+    }
+  }
+
+  lua_pushnil(L);
+  return 1;
+}
+
+static int
+ts_lua_client_request_server_cert_get_serial(lua_State *L)
+{
+  ts_lua_http_ctx *http_ctx;
+  TSHttpSsn        ssnp;
+  TSVConn          client_conn;
+
+  GET_HTTP_CONTEXT(http_ctx, L);
+
+  ssnp        = TSHttpTxnSsnGet(http_ctx->txnp);
+  client_conn = TSHttpSsnClientVConnGet(ssnp);
+
+  if (TSVConnIsSsl(client_conn)) {
+    TSSslConnection ssl_conn = TSVConnSslConnectionGet(client_conn);
+    if (ssl_conn) {
+      SSL  *ssl  = reinterpret_cast<SSL *>(ssl_conn);
+      X509 *cert = SSL_get_certificate(ssl);
+      if (cert) {
+        std::string serial = get_x509_serial_string(cert);
+        if (!serial.empty()) {
+          lua_pushlstring(L, serial.c_str(), serial.length());
+          return 1;
+        }
+      }
+    }
+  }
+
+  lua_pushnil(L);
+  return 1;
+}
+
+static int
+ts_lua_client_request_server_cert_get_signature(lua_State *L)
+{
+  ts_lua_http_ctx *http_ctx;
+  TSHttpSsn        ssnp;
+  TSVConn          client_conn;
+
+  GET_HTTP_CONTEXT(http_ctx, L);
+
+  ssnp        = TSHttpTxnSsnGet(http_ctx->txnp);
+  client_conn = TSHttpSsnClientVConnGet(ssnp);
+
+  if (TSVConnIsSsl(client_conn)) {
+    TSSslConnection ssl_conn = TSVConnSslConnectionGet(client_conn);
+    if (ssl_conn) {
+      SSL  *ssl  = reinterpret_cast<SSL *>(ssl_conn);
+      X509 *cert = SSL_get_certificate(ssl);
+      if (cert) {
+        std::string sig = get_x509_signature_string(cert);
+        if (!sig.empty()) {
+          lua_pushlstring(L, sig.c_str(), sig.length());
+          return 1;
+        }
+      }
+    }
+  }
+
+  lua_pushnil(L);
+  return 1;
+}
+
+static int
+ts_lua_client_request_server_cert_get_not_before(lua_State *L)
+{
+  ts_lua_http_ctx *http_ctx;
+  TSHttpSsn        ssnp;
+  TSVConn          client_conn;
+
+  GET_HTTP_CONTEXT(http_ctx, L);
+
+  ssnp        = TSHttpTxnSsnGet(http_ctx->txnp);
+  client_conn = TSHttpSsnClientVConnGet(ssnp);
+
+  if (TSVConnIsSsl(client_conn)) {
+    TSSslConnection ssl_conn = TSVConnSslConnectionGet(client_conn);
+    if (ssl_conn) {
+      SSL  *ssl  = reinterpret_cast<SSL *>(ssl_conn);
+      X509 *cert = SSL_get_certificate(ssl);
+      if (cert) {
+        std::string not_before = get_x509_time_string(X509_get_notBefore(cert));
+        if (!not_before.empty()) {
+          lua_pushlstring(L, not_before.c_str(), not_before.length());
+          return 1;
+        }
+      }
+    }
+  }
+
+  lua_pushnil(L);
+  return 1;
+}
+
+static int
+ts_lua_client_request_server_cert_get_not_after(lua_State *L)
+{
+  ts_lua_http_ctx *http_ctx;
+  TSHttpSsn        ssnp;
+  TSVConn          client_conn;
+
+  GET_HTTP_CONTEXT(http_ctx, L);
+
+  ssnp        = TSHttpTxnSsnGet(http_ctx->txnp);
+  client_conn = TSHttpSsnClientVConnGet(ssnp);
+
+  if (TSVConnIsSsl(client_conn)) {
+    TSSslConnection ssl_conn = TSVConnSslConnectionGet(client_conn);
+    if (ssl_conn) {
+      SSL  *ssl  = reinterpret_cast<SSL *>(ssl_conn);
+      X509 *cert = SSL_get_certificate(ssl);
+      if (cert) {
+        std::string not_after = get_x509_time_string(X509_get_notAfter(cert));
+        if (!not_after.empty()) {
+          lua_pushlstring(L, not_after.c_str(), not_after.length());
+          return 1;
+        }
+      }
+    }
+  }
+
+  lua_pushnil(L);
+  return 1;
+}
+
+static int
+ts_lua_client_request_server_cert_get_version(lua_State *L)
+{
+  ts_lua_http_ctx *http_ctx;
+  TSHttpSsn        ssnp;
+  TSVConn          client_conn;
+
+  GET_HTTP_CONTEXT(http_ctx, L);
+
+  ssnp        = TSHttpTxnSsnGet(http_ctx->txnp);
+  client_conn = TSHttpSsnClientVConnGet(ssnp);
+
+  if (TSVConnIsSsl(client_conn)) {
+    TSSslConnection ssl_conn = TSVConnSslConnectionGet(client_conn);
+    if (ssl_conn) {
+      SSL  *ssl  = reinterpret_cast<SSL *>(ssl_conn);
+      X509 *cert = SSL_get_certificate(ssl);
+      if (cert) {
+        long version = X509_get_version(cert);
+        lua_pushinteger(L, version);
+        return 1;
+      }
+    }
+  }
+
+  lua_pushnil(L);
+  return 1;
+}
+
+static int
+ts_lua_client_request_server_cert_get_san_dns(lua_State *L)
+{
+  ts_lua_http_ctx *http_ctx;
+  TSHttpSsn        ssnp;
+  TSVConn          client_conn;
+
+  GET_HTTP_CONTEXT(http_ctx, L);
+
+  ssnp        = TSHttpTxnSsnGet(http_ctx->txnp);
+  client_conn = TSHttpSsnClientVConnGet(ssnp);
+
+  if (TSVConnIsSsl(client_conn)) {
+    TSSslConnection ssl_conn = TSVConnSslConnectionGet(client_conn);
+    if (ssl_conn) {
+      SSL  *ssl  = reinterpret_cast<SSL *>(ssl_conn);
+      X509 *cert = SSL_get_certificate(ssl);
+      if (cert) {
+        std::vector<std::string> dns_names = get_x509_san_strings(cert, GEN_DNS);
+
+        if (!dns_names.empty()) {
+          lua_newtable(L);
+          for (size_t i = 0; i < dns_names.size(); i++) {
+            lua_pushlstring(L, dns_names[i].c_str(), dns_names[i].length());
+            lua_rawseti(L, -2, i + 1);
+          }
+          return 1;
+        }
+      }
+    }
+  }
+
+  lua_pushnil(L);
+  return 1;
+}
+
+static int
+ts_lua_client_request_server_cert_get_san_ip(lua_State *L)
+{
+  ts_lua_http_ctx *http_ctx;
+  TSHttpSsn        ssnp;
+  TSVConn          client_conn;
+
+  GET_HTTP_CONTEXT(http_ctx, L);
+
+  ssnp        = TSHttpTxnSsnGet(http_ctx->txnp);
+  client_conn = TSHttpSsnClientVConnGet(ssnp);
+
+  if (TSVConnIsSsl(client_conn)) {
+    TSSslConnection ssl_conn = TSVConnSslConnectionGet(client_conn);
+    if (ssl_conn) {
+      SSL  *ssl  = reinterpret_cast<SSL *>(ssl_conn);
+      X509 *cert = SSL_get_certificate(ssl);
+      if (cert) {
+        std::vector<std::string> ip_addrs = get_x509_san_strings(cert, GEN_IPADD);
+
+        if (!ip_addrs.empty()) {
+          lua_newtable(L);
+          for (size_t i = 0; i < ip_addrs.size(); i++) {
+            lua_pushlstring(L, ip_addrs[i].c_str(), ip_addrs[i].length());
+            lua_rawseti(L, -2, i + 1);
+          }
+          return 1;
+        }
+      }
+    }
+  }
+
+  lua_pushnil(L);
+  return 1;
+}
+
+static int
+ts_lua_client_request_server_cert_get_san_email(lua_State *L)
+{
+  ts_lua_http_ctx *http_ctx;
+  TSHttpSsn        ssnp;
+  TSVConn          client_conn;
+
+  GET_HTTP_CONTEXT(http_ctx, L);
+
+  ssnp        = TSHttpTxnSsnGet(http_ctx->txnp);
+  client_conn = TSHttpSsnClientVConnGet(ssnp);
+
+  if (TSVConnIsSsl(client_conn)) {
+    TSSslConnection ssl_conn = TSVConnSslConnectionGet(client_conn);
+    if (ssl_conn) {
+      SSL  *ssl  = reinterpret_cast<SSL *>(ssl_conn);
+      X509 *cert = SSL_get_certificate(ssl);
+      if (cert) {
+        std::vector<std::string> emails = get_x509_san_strings(cert, GEN_EMAIL);
+
+        if (!emails.empty()) {
+          lua_newtable(L);
+          for (size_t i = 0; i < emails.size(); i++) {
+            lua_pushlstring(L, emails[i].c_str(), emails[i].length());
+            lua_rawseti(L, -2, i + 1);
+          }
+          return 1;
+        }
+      }
+    }
+  }
+
+  lua_pushnil(L);
+  return 1;
+}
+
+static int
+ts_lua_client_request_server_cert_get_san_uri(lua_State *L)
+{
+  ts_lua_http_ctx *http_ctx;
+  TSHttpSsn        ssnp;
+  TSVConn          client_conn;
+
+  GET_HTTP_CONTEXT(http_ctx, L);
+
+  ssnp        = TSHttpTxnSsnGet(http_ctx->txnp);
+  client_conn = TSHttpSsnClientVConnGet(ssnp);
+
+  if (TSVConnIsSsl(client_conn)) {
+    TSSslConnection ssl_conn = TSVConnSslConnectionGet(client_conn);
+    if (ssl_conn) {
+      SSL  *ssl  = reinterpret_cast<SSL *>(ssl_conn);
+      X509 *cert = SSL_get_certificate(ssl);
+      if (cert) {
+        std::vector<std::string> uris = get_x509_san_strings(cert, GEN_URI);
+
+        if (!uris.empty()) {
+          lua_newtable(L);
+          for (size_t i = 0; i < uris.size(); i++) {
+            lua_pushlstring(L, uris[i].c_str(), uris[i].length());
+            lua_rawseti(L, -2, i + 1);
+          }
+          return 1;
+        }
+      }
+    }
+  }
+
+  lua_pushnil(L);
   return 1;
 }
 
