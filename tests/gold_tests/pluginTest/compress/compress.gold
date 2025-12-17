@@ -3,8 +3,8 @@
 > Accept-Encoding: gzip, deflate, sdch, br
 < HTTP/1.1 200 OK
 < Content-Type: text/javascript
-< Content-Encoding: br
 < Vary: Accept-Encoding
+< Content-Encoding: br
 < Content-Length: 46
 ===
 > GET ``/obj0 HTTP/1.1
@@ -12,8 +12,8 @@
 > Accept-Encoding: gzip
 < HTTP/1.1 200 OK
 < Content-Type: text/javascript
-< Content-Encoding: gzip
 < Vary: Accept-Encoding
+< Content-Encoding: gzip
 < Content-Length: 7``
 ===
 > GET ``/obj0 HTTP/1.1
@@ -21,8 +21,8 @@
 > Accept-Encoding: br
 < HTTP/1.1 200 OK
 < Content-Type: text/javascript
-< Content-Encoding: br
 < Vary: Accept-Encoding
+< Content-Encoding: br
 < Content-Length: 46
 ===
 > GET ``/obj0 HTTP/1.1
@@ -31,14 +31,15 @@
 < HTTP/1.1 200 OK
 < Content-Type: text/javascript
 < Content-Length: 1049
+< Vary: Accept-Encoding
 ===
 > GET ``/obj1 HTTP/1.1
 > X-Ats-Compress-Test: 1/gzip, deflate, sdch, br
 > Accept-Encoding: gzip, deflate, sdch, br
 < HTTP/1.1 200 OK
 < Content-Type: text/javascript
-< Content-Encoding: gzip
 < Vary: Accept-Encoding
+< Content-Encoding: gzip
 < Content-Length: 7``
 ===
 > GET ``/obj1 HTTP/1.1
@@ -46,8 +47,8 @@
 > Accept-Encoding: gzip
 < HTTP/1.1 200 OK
 < Content-Type: text/javascript
-< Content-Encoding: gzip
 < Vary: Accept-Encoding
+< Content-Encoding: gzip
 < Content-Length: 7``
 ===
 > GET ``/obj1 HTTP/1.1
@@ -56,6 +57,7 @@
 < HTTP/1.1 200 OK
 < Content-Type: text/javascript
 < Content-Length: 1049
+< Vary: Accept-Encoding
 ===
 > GET ``/obj1 HTTP/1.1
 > X-Ats-Compress-Test: 1/deflate
@@ -63,14 +65,15 @@
 < HTTP/1.1 200 OK
 < Content-Type: text/javascript
 < Content-Length: 1049
+< Vary: Accept-Encoding
 ===
 > GET ``/obj2 HTTP/1.1
 > X-Ats-Compress-Test: 2/gzip, deflate, sdch, br
 > Accept-Encoding: gzip, deflate, sdch, br
 < HTTP/1.1 200 OK
 < Content-Type: text/javascript
-< Content-Encoding: br
 < Vary: Accept-Encoding
+< Content-Encoding: br
 < Content-Length: 46
 ===
 > GET ``/obj2 HTTP/1.1
@@ -78,8 +81,8 @@
 > Accept-Encoding: gzip
 < HTTP/1.1 200 OK
 < Content-Type: text/javascript
-< Content-Encoding: gzip
 < Vary: Accept-Encoding
+< Content-Encoding: gzip
 < Content-Length: 7``
 ===
 > GET ``/obj2 HTTP/1.1
@@ -87,8 +90,8 @@
 > Accept-Encoding: br
 < HTTP/1.1 200 OK
 < Content-Type: text/javascript
-< Content-Encoding: br
 < Vary: Accept-Encoding
+< Content-Encoding: br
 < Content-Length: 46
 ===
 > GET ``/obj2 HTTP/1.1
@@ -97,14 +100,15 @@
 < HTTP/1.1 200 OK
 < Content-Type: text/javascript
 < Content-Length: 1049
+< Vary: Accept-Encoding
 ===
 > GET ``/obj0 HTTP/1.1
 > X-Ats-Compress-Test: 0/gzip;q=0.666
 > Accept-Encoding: gzip;q=0.666
 < HTTP/1.1 200 OK
 < Content-Type: text/javascript
-< Content-Encoding: gzip
 < Vary: Accept-Encoding
+< Content-Encoding: gzip
 < Content-Length: 7``
 ===
 > GET ``/obj0 HTTP/1.1
@@ -112,8 +116,8 @@
 > Accept-Encoding: gzip;q=0.666x
 < HTTP/1.1 200 OK
 < Content-Type: text/javascript
-< Content-Encoding: gzip
 < Vary: Accept-Encoding
+< Content-Encoding: gzip
 < Content-Length: 7``
 ===
 > GET ``/obj0 HTTP/1.1
@@ -121,8 +125,8 @@
 > Accept-Encoding: gzip;q=#0.666
 < HTTP/1.1 200 OK
 < Content-Type: text/javascript
-< Content-Encoding: gzip
 < Vary: Accept-Encoding
+< Content-Encoding: gzip
 < Content-Length: 7``
 ===
 > GET ``/obj0 HTTP/1.1
@@ -130,24 +134,25 @@
 > Accept-Encoding: gzip; Q = 0.666
 < HTTP/1.1 200 OK
 < Content-Type: text/javascript
-< Content-Encoding: gzip
 < Vary: Accept-Encoding
+< Content-Encoding: gzip
 < Content-Length: 7``
 ===
-> GET ``obj0 HTTP/1.1
+> GET ``/obj0 HTTP/1.1
 > X-Ats-Compress-Test: 0/gzip;q=0.0
 > Accept-Encoding: gzip;q=0.0
 < HTTP/1.1 200 OK
 < Content-Type: text/javascript
 < Content-Length: 1049
+< Vary: Accept-Encoding
 ===
-> GET ``obj0 HTTP/1.1
+> GET ``/obj0 HTTP/1.1
 > X-Ats-Compress-Test: 0/gzip;q=-0.1
 > Accept-Encoding: gzip;q=-0.1
 < HTTP/1.1 200 OK
 < Content-Type: text/javascript
-< Content-Encoding: gzip
 < Vary: Accept-Encoding
+< Content-Encoding: gzip
 < Content-Length: 7``
 ===
 > GET ``/obj0 HTTP/1.1
@@ -155,8 +160,8 @@
 > Accept-Encoding: aaa, gzip;q=0.666, bbb
 < HTTP/1.1 200 OK
 < Content-Type: text/javascript
-< Content-Encoding: gzip
 < Vary: Accept-Encoding
+< Content-Encoding: gzip
 < Content-Length: 7``
 ===
 > GET ``/obj0 HTTP/1.1
@@ -164,8 +169,8 @@
 > Accept-Encoding:  br ; q=0.666, bbb
 < HTTP/1.1 200 OK
 < Content-Type: text/javascript
-< Content-Encoding: br
 < Vary: Accept-Encoding
+< Content-Encoding: br
 < Content-Length: 46
 ===
 > GET ``/obj0 HTTP/1.1
@@ -173,8 +178,8 @@
 > Accept-Encoding: aaa, gzip;q=0.666 , 
 < HTTP/1.1 200 OK
 < Content-Type: text/javascript
-< Content-Encoding: gzip
 < Vary: Accept-Encoding
+< Content-Encoding: gzip
 < Content-Length: 7``
 ===
 > POST ``/obj3 HTTP/1.1
@@ -182,7 +187,7 @@
 > Accept-Encoding: gzip
 < HTTP/1.1 200 OK
 < Content-Type: text/javascript
-< Content-Encoding: gzip
 < Vary: Accept-Encoding
+< Content-Encoding: gzip
 < Content-Length: 7``
 ===
