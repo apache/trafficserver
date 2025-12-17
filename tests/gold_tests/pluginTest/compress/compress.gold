@@ -174,8 +174,8 @@
 < Content-Length: 46
 ===
 > GET ``/obj0 HTTP/1.1
-> X-Ats-Compress-Test: 0/aaa, gzip;q=0.666 ,
-> Accept-Encoding: aaa, gzip;q=0.666 ,
+> X-Ats-Compress-Test: 0/aaa, gzip;q=0.666 , 
+> Accept-Encoding: aaa, gzip;q=0.666 , 
 < HTTP/1.1 200 OK
 < Content-Type: text/javascript
 < Vary: Accept-Encoding
