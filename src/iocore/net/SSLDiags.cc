@@ -164,7 +164,7 @@ SSLDiagnostic(const SourceLocation &loc, bool debug, SSLNetVConnection *vc, cons
   ip_text_buffer ip_buf = {'\0'};
 
   if (vc) {
-    ats_ip_ntop(vc->get_remote_addr(), ip_buf, sizeof(ip_buf));
+    ats_ip_ntop(vc->get_client_addr(), ip_buf, sizeof(ip_buf));
   }
 
   es = reinterpret_cast<unsigned long>(pthread_self());

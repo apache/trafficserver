@@ -46,7 +46,7 @@ Http2SessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferRead
 
   for (int i = 0; i < IpAllow::Subject::MAX_SUBJECTS; ++i) {
     if (IpAllow::Subject::PEER == IpAllow::subjects[i]) {
-      client_ip = netvc->get_remote_addr();
+      client_ip = netvc->get_client_addr();
       break;
     } else if (IpAllow::Subject::PROXY == IpAllow::subjects[i] &&
                netvc->get_proxy_protocol_version() != ProxyProtocolVersion::UNDEFINED) {

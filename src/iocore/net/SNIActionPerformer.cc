@@ -417,7 +417,7 @@ SNI_IpAllow::SNIAction(SSL &ssl, ActionItem::Context const & /* ctx ATS_UNUSED *
   const sockaddr *client_ip = nullptr;
   for (int i = 0; i < IpAllow::Subject::MAX_SUBJECTS; ++i) {
     if (IpAllow::Subject::PEER == IpAllow::subjects[i]) {
-      client_ip = ssl_vc->get_remote_addr();
+      client_ip = ssl_vc->get_client_addr();
       break;
     } else if (IpAllow::Subject::PROXY == IpAllow::subjects[i] &&
                ssl_vc->get_proxy_protocol_version() != ProxyProtocolVersion::UNDEFINED) {
