@@ -447,15 +447,17 @@ class IOBufferReader;
 class HTTPHdr : public MIMEHdr
 {
 public:
-  HTTPHdrImpl       *m_http = nullptr;
-  mutable URL        m_url_cached;
-  mutable MIMEField *m_host_mime             = nullptr;
-  mutable int        m_host_length           = 0;     ///< Length of hostname.
-  mutable int        m_port                  = 0;     ///< Target port.
-  mutable bool       m_target_cached         = false; ///< Whether host name and port are cached.
-  mutable bool       m_target_in_url         = false; ///< Whether host name and port are in the URL.
-  mutable bool       m_100_continue_sent     = false; ///< Whether ATS sent a 100 Continue optimized response.
-  mutable bool       m_100_continue_required = false; ///< Whether 100_continue is in the Expect header.
+  HTTPHdrImpl        *m_http = nullptr;
+  mutable URL         m_url_cached;
+  mutable MIMEField  *m_host_mime             = nullptr;
+  mutable const char *m_host_ptr              = nullptr; ///< Cached host value pointer for staleness detection.
+  mutable int         m_host_value_len        = 0;       ///< Cached raw Host header value length for staleness detection.
+  mutable int         m_host_length           = 0;       ///< Length of hostname (parsed, excludes port).
+  mutable int         m_port                  = 0;       ///< Target port.
+  mutable bool        m_target_cached         = false;   ///< Whether host name and port are cached.
+  mutable bool        m_target_in_url         = false;   ///< Whether host name and port are in the URL.
+  mutable bool        m_100_continue_sent     = false;   ///< Whether ATS sent a 100 Continue optimized response.
+  mutable bool        m_100_continue_required = false;   ///< Whether 100_continue is in the Expect header.
   /// Set if the port was effectively specified in the header.
   /// @c true if the target (in the URL or the HOST field) also specified
   /// a port. That is, @c true if whatever source had the target host
@@ -732,8 +734,13 @@ HTTPHdr::print(char *buf, int bufsize, int *bufindex, int *dumpoffset) const
 inline void
 HTTPHdr::_test_and_fill_target_cache() const
 {
-  if (!m_target_cached)
+  // Check if cache is stale: either not cached, or the Host header value has changed.
+  // We check both pointer and length to detect modifications even in the unlikely case
+  // where heap compaction causes a new allocation at the same address.
+  if (!m_target_cached ||
+      (m_host_mime && (m_host_mime->m_ptr_value != m_host_ptr || m_host_mime->m_len_value != m_host_value_len))) {
     this->_fill_target_cache();
+  }
 }
 
 /*-------------------------------------------------------------------------
