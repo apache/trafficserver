@@ -1512,7 +1512,7 @@ HttpTunnel::consumer_handler(int event, HttpTunnelConsumer *c)
     this->consumer_reenable(c);
     // Once we get a write ready from the origin, we can assume the connect to some degree succeeded
     if (c->vc_type == HttpTunnelType_t::HTTP_SERVER) {
-      sm->t_state.set_success();
+      sm->t_state.current.server->clear_connect_fail();
     }
     break;
 

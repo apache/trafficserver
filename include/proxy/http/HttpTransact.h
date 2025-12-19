@@ -512,8 +512,8 @@ public:
     bool receive_chunked_response = false;
     bool proxy_connect_hdr        = false;
     /// @c errno from the most recent attempt to connect.
-    /// zero means succeeded.
-    int                connect_result = -UNKNOWN_INTERNAL_ERROR;
+    /// zero means no failure (not attempted, succeeded).
+    int                connect_result = 0;
     char              *name           = nullptr;
     swoc::IPAddr       name_addr;
     TransferEncoding_t transfer_encoding = TransferEncoding_t::NONE;
@@ -539,10 +539,10 @@ public:
     bool
     had_connect_fail() const
     {
-      return 0 != connect_result && -UNKNOWN_INTERNAL_ERROR != connect_result;
+      return 0 != connect_result;
     }
     void
-    set_connect_success()
+    clear_connect_fail()
     {
       connect_result = 0;
     }
@@ -553,7 +553,7 @@ public:
     {
       ink_zero(src_addr);
       ink_zero(dst_addr);
-      connect_result = -UNKNOWN_INTERNAL_ERROR;
+      connect_result = 0;
     }
   };
 
@@ -750,7 +750,7 @@ public:
     int  method                    = 0;
     bool method_metric_incremented = false;
 
-    /// The errno that caused the HTTP error response to be returned.
+    /// The errno associated with a failed connect attempt.
     ///
     /// This is used for logging and (in some code paths) for determing HTTP
     /// response reason phrases.
@@ -923,32 +923,22 @@ public:
     ProxyProtocol pp_info;
 
     void
-    set_fail(int e)
+    set_connect_fail(int e)
     {
-      const auto original_connect_result = this->current.server->connect_result;
-      const auto connection_succeeded    = (original_connect_result == 0);
-      if (this->next_action == StateMachineAction_t::ORIGIN_SERVER_OPEN && !connection_succeeded) {
+      int const original_connect_result = this->current.server->connect_result;
+      if (e == EUSERS) {
         // EUSERS is used when the number of connections exceeds the configured
         // limit. Since this is not a network connectivity issue with the
         // server, we should not mark it as such. Otherwise we will incorrectly
         // mark the server as down.
-        if (e != EUSERS) {
-          this->current.server->connect_result = e;
-          Dbg(_dbg_ctl, "Setting upstream connection failure %d to %d", original_connect_result,
-              this->current.server->connect_result);
-        }
+        this->current.server->connect_result = 0;
+      } else if (e == EIO || this->current.server->connect_result == EIO) {
+        this->current.server->connect_result = e;
       }
-      this->cause_of_death_errno = e;
-    }
-
-    void
-    set_success()
-    {
-      const auto connection_succeeded = (this->current.server->connect_result == 0);
-      if (this->next_action == StateMachineAction_t::ORIGIN_SERVER_OPEN && !connection_succeeded) {
-        this->current.server->set_connect_success();
+      if (e != EIO) {
+        this->cause_of_death_errno = e;
       }
-      this->cause_of_death_errno = 0;
+      Dbg(_dbg_ctl, "Setting upstream connection failure %d to %d", original_connect_result, this->current.server->connect_result);
     }
 
     MgmtInt

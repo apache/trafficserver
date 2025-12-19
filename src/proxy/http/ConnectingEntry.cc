@@ -139,7 +139,7 @@ ConnectingEntry::state_http_server_open(int event, void *data)
     while (!connect_sms.empty()) {
       auto entry = connect_sms.begin();
       SCOPED_MUTEX_LOCK(lock, (*entry)->mutex, this_ethread());
-      (*entry)->t_state.set_fail(lerrno);
+      (*entry)->t_state.set_connect_fail(lerrno);
       (*entry)->server_connection_provided_cert = vc_provided_cert;
       (*entry)->handleEvent(event, data);
       connect_sms.erase(entry);
