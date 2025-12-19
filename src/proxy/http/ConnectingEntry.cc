@@ -130,7 +130,7 @@ ConnectingEntry::state_http_server_open(int event, void *data)
     Dbg(dbg_ctl_http_connect, "Stop %zd state machines waiting for failed origin", connect_sms.size());
     this->remove_entry();
     int vc_provided_cert = 0;
-    int lerrno           = -UNKNOWN_INTERNAL_ERROR;
+    int lerrno           = EIO;
     if (netvc != nullptr) {
       vc_provided_cert = netvc->provided_cert();
       lerrno           = netvc->lerrno == 0 ? lerrno : netvc->lerrno;
@@ -139,9 +139,7 @@ ConnectingEntry::state_http_server_open(int event, void *data)
     while (!connect_sms.empty()) {
       auto entry = connect_sms.begin();
       SCOPED_MUTEX_LOCK(lock, (*entry)->mutex, this_ethread());
-      if (lerrno != -UNKNOWN_INTERNAL_ERROR) {
-        (*entry)->t_state.set_fail(lerrno);
-      }
+      (*entry)->t_state.set_fail(lerrno);
       (*entry)->server_connection_provided_cert = vc_provided_cert;
       (*entry)->handleEvent(event, data);
       connect_sms.erase(entry);
