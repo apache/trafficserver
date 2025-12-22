@@ -822,12 +822,12 @@ CacheVC::openReadStartEarliest(int /* event ATS_UNUSED */, Event * /* e ATS_UNUS
       if ((call_result = do_read_call(&key)) == EVENT_RETURN) {
         if (this->handler == reinterpret_cast<ContinuationHandler>(&CacheVC::openReadStartEarliest)) {
           is_recursive_call = true;
-          if (recursive > MAX_READ_RECURSION_DEPTH) {
+          if (read_recursive > MAX_READ_RECURSION_DEPTH) {
             char tmpstring[CRYPTO_HEX_SIZE];
             Error("Too many recursive calls with %s", key.toHexStr(tmpstring));
             goto Ldone;
           }
-          ++recursive;
+          ++read_recursive;
         }
 
         goto Lcallreturn;
@@ -902,7 +902,7 @@ CacheVC::openReadStartEarliest(int /* event ATS_UNUSED */, Event * /* e ATS_UNUS
 Lcallreturn:
   event_result = handleEvent(AIO_EVENT_DONE, nullptr); // hopefully a tail call
   if (is_recursive_call) {
-    --recursive;
+    --read_recursive;
   }
   return event_result;
 Lsuccess:
