@@ -24,7 +24,6 @@
 #include <mutex>
 #include <shared_mutex>
 #include <fstream>
-#include <atomic>
 #include <memory>
 #include <cstdint>
 
@@ -49,6 +48,14 @@ private:
     uint64_t            hash;      // Hash value of the group ID, needed when writing to disk
   };
 
+  // Header structure for on-disk map files (after VERSION field)
+  struct _MapHeader {
+    time_t created_ts;
+    time_t last_write_ts;
+    time_t last_sync_ts;
+    size_t count;
+  };
+
   using _MapType = std::unordered_map<uint64_t, _Entry>;
 
   struct _MapSlot {
@@ -65,9 +72,11 @@ public:
                                       (static_cast<uint64_t>('P') << 24) | (static_cast<uint64_t>('S') << 16) |
                                       (static_cast<uint64_t>('0') << 8) | 0x00; // Change this on version bump
 
+  static constexpr std::chrono::seconds DEFAULT_MAX_AGE{63072000}; // 2 Years, max cache lifetime in ATS as well
+
   Group(const std::string &name, const std::string &base_dir, size_t max_entries = 1024, size_t num_maps = 3)
   {
-    Initialize(name, base_dir, num_maps, max_entries, std::chrono::seconds{63072000});
+    Initialize(name, base_dir, max_entries, num_maps, DEFAULT_MAX_AGE);
   }
 
   // Not used at the moment.
@@ -78,8 +87,8 @@ public:
   Group(const self_type &)                = delete;
   self_type &operator=(const self_type &) = delete;
 
-  void Initialize(const std::string &name, const std::string &base_dir, size_t num_maps = 3, size_t max_entries = 1024,
-                  std::chrono::seconds max_age = std::chrono::seconds{63072000});
+  void Initialize(const std::string &name, const std::string &base_dir, size_t max_entries = 1024, size_t num_maps = 3,
+                  std::chrono::seconds max_age = DEFAULT_MAX_AGE);
 
   void
   SetMaxEntries(size_t max_entries)
@@ -127,8 +136,8 @@ private:
   std::string               _name        = "CacheGroup";
   size_t                    _num_maps    = 3;
   size_t                    _max_entries = 1024;
-  std::chrono::seconds      _max_age     = std::chrono::seconds(63072000);
-  std::atomic<size_t>       _map_index   = 0;
+  std::chrono::seconds      _max_age     = DEFAULT_MAX_AGE;
+  size_t                    _map_index   = 0;
   cripts::Time::Point       _last_sync   = cripts::Time::Point{};
 
   std::vector<_MapSlot> _slots;
@@ -166,8 +175,19 @@ public:
       if (std::filesystem::exists(_base_dir)) {
         _base_dir += "/cache_groups";
         if (!std::filesystem::exists(_base_dir)) {
-          std::filesystem::create_directories(_base_dir);
-          std::filesystem::permissions(_base_dir, std::filesystem::perms::group_write, std::filesystem::perm_options::add);
+          std::error_code ec;
+
+          std::filesystem::create_directories(_base_dir, ec);
+          if (ec) {
+            TSError("cripts::Cache::Group::Manager: Failed to create directory `%s': %s", _base_dir.c_str(), ec.message().c_str());
+          } else {
+            std::filesystem::permissions(_base_dir, std::filesystem::perms::group_write, std::filesystem::perm_options::add, ec);
+
+            if (ec) {
+              TSWarning("cripts::Cache::Group::Manager: Failed to set permissions on `%s': %s", _base_dir.c_str(),
+                        ec.message().c_str());
+            }
+          }
         }
       }
       _scheduleCont(); // Kick it off

@@ -17,8 +17,8 @@
 */
 
 #include <algorithm>
-#include <iostream>
 #include <filesystem>
+#include <unordered_set>
 
 #include "ts/ts.h"
 #include "cripts/CacheGroup.hpp"
@@ -32,7 +32,7 @@ _make_prefix_int(cripts::string_view key)
   return prefix;
 }
 
-// Stuff around the disk sync contination
+// Stuff around the disk sync continuation
 constexpr auto _CONT_SYNC_INTERVAL = 10; // How often to run the continuation
 constexpr int  _SYNC_GROUP_EVERY   = 60; // Sync each group every 60s
 
@@ -47,14 +47,15 @@ _cripts_cache_group_sync(TSCont cont, TSEvent /* event */, void * /* edata */)
   size_t       processed      = 0;
   auto         now            = cripts::Time::Clock::now();
 
-  for (auto it = groups.begin(); it != groups.end() && processed < max_to_process; ++it) {
+  for (auto it = groups.begin(); it != groups.end() && processed < max_to_process;) {
     if (auto group = it->second.lock()) {
       if (group->LastSync() + std::chrono::seconds{_SYNC_GROUP_EVERY} < now) {
         group->WriteToDisk();
         ++processed;
       }
+      ++it;
     } else {
-      // The group has been deleted, remove it from the map ??
+      // The group has been deleted, remove it from the map
       it = groups.erase(it);
     }
   }
@@ -66,7 +67,7 @@ namespace cripts
 {
 
 void
-Cache::Group::Initialize(const std::string &name, const std::string &base_dir, size_t num_maps, size_t max_entries,
+Cache::Group::Initialize(const std::string &name, const std::string &base_dir, size_t max_entries, size_t num_maps,
                          std::chrono::seconds max_age)
 {
   cripts::Time::Point zero = cripts::Time::Point{};
@@ -81,8 +82,17 @@ Cache::Group::Initialize(const std::string &name, const std::string &base_dir, s
   _log_path = _base_dir + "/" + "txn.log";
 
   if (!std::filesystem::exists(_base_dir)) {
-    std::filesystem::create_directories(_base_dir);
-    std::filesystem::permissions(_base_dir, std::filesystem::perms::group_write, std::filesystem::perm_options::add);
+    std::error_code ec;
+
+    std::filesystem::create_directories(_base_dir, ec);
+    if (ec) {
+      TSWarning("cripts::Cache::Group: Failed to create directory `%s': %s", _base_dir.c_str(), ec.message().c_str());
+    } else {
+      std::filesystem::permissions(_base_dir, std::filesystem::perms::group_write, std::filesystem::perm_options::add, ec);
+      if (ec) {
+        TSWarning("cripts::Cache::Group: Failed to set permissions on `%s': %s", _base_dir.c_str(), ec.message().c_str());
+      }
+    }
   }
 
   for (size_t ix = 0; ix < _num_maps; ++ix) {
@@ -203,16 +213,14 @@ Cache::Group::Lookup(const std::vector<cripts::string_view> &keys, cripts::Time:
 void
 Cache::Group::LoadFromDisk()
 {
-  std::unique_lock lock(_mutex);
-  std::ifstream    log(_log_path, std::ios::binary);
+  std::unique_lock             lock(_mutex);
+  std::ifstream                log(_log_path, std::ios::binary);
+  std::unordered_set<uint64_t> loaded_hashes;
 
   for (size_t slot_ix = 0; slot_ix < _slots.size(); ++slot_ix) {
-    auto         &slot          = _slots[slot_ix];
-    uint64_t      version_id    = 0;
-    size_t        count         = 0;
-    time_t        created_ts    = 0;
-    time_t        last_write_ts = 0;
-    time_t        last_sync_ts  = 0;
+    auto         &slot       = _slots[slot_ix];
+    uint64_t      version_id = 0;
+    _MapHeader    header{};
     std::ifstream file(slot.path, std::ios::binary);
 
     if (!file) {
@@ -226,21 +234,27 @@ Cache::Group::LoadFromDisk()
       continue;
     }
 
-    file.read(reinterpret_cast<char *>(&created_ts), sizeof(created_ts));
-    file.read(reinterpret_cast<char *>(&last_write_ts), sizeof(last_write_ts));
-    file.read(reinterpret_cast<char *>(&last_sync_ts), sizeof(last_sync_ts));
-    file.read(reinterpret_cast<char *>(&count), sizeof(count));
+    file.read(reinterpret_cast<char *>(&header), sizeof(header));
+    if (!file) {
+      TSWarning("cripts::Cache::Group: Failed to read header from map file: %s. Skipping this map.", slot.path.c_str());
+      continue;
+    }
 
-    slot.created    = cripts::Time::Clock::from_time_t(created_ts);
-    slot.last_write = cripts::Time::Clock::from_time_t(last_write_ts);
-    slot.last_sync  = cripts::Time::Clock::from_time_t(last_sync_ts);
+    slot.created    = cripts::Time::Clock::from_time_t(header.created_ts);
+    slot.last_write = cripts::Time::Clock::from_time_t(header.last_write_ts);
+    slot.last_sync  = cripts::Time::Clock::from_time_t(header.last_sync_ts);
 
-    for (size_t i = 0; i < count; ++i) {
+    for (size_t i = 0; i < header.count; ++i) {
       Cache::Group::_Entry entry;
 
       file.read(reinterpret_cast<char *>(&entry), sizeof(entry));
-      if (!std::ranges::any_of(_slots, [&](const auto &slot) { return slot.map->find(entry.hash) != slot.map->end(); })) {
+      if (!file) {
+        TSWarning("cripts::Cache::Group: Failed to read entry %zu from map file: %s. Stopping entry load.", i, slot.path.c_str());
+        break;
+      }
+      if (loaded_hashes.find(entry.hash) == loaded_hashes.end()) {
         slot.map->insert_or_assign(entry.hash, entry);
+        loaded_hashes.insert(entry.hash);
       }
     }
   }
@@ -286,14 +300,14 @@ Cache::Group::WriteToDisk()
 
 //
 // Here comes the private member methods, these must never be called without
-// already hodling an exclusive lock on the mutex.
+// already holding an exclusive lock on the mutex.
 //
 
 void
 Cache::Group::appendLog(const Cache::Group::_Entry &entry)
 {
   if (!_txn_log.is_open() || !_txn_log.good()) {
-    _txn_log.open(_log_path, std::ios::app | std::ios::out);
+    _txn_log.open(_log_path, std::ios::app | std::ios::out | std::ios::binary);
     if (!_txn_log) {
       TSWarning("cripts::Cache::Group: Failed to open transaction log `%s'.", _log_path.c_str());
       return;
@@ -309,47 +323,58 @@ Cache::Group::syncMap(size_t index)
 {
   constexpr size_t                   BUFFER_SIZE = 64 * 1024;
   std::array<std::byte, BUFFER_SIZE> buffer;
-  size_t                             buf_pos  = 0;
-  const auto                        &slot     = _slots[index];
-  const std::string                  tmp_path = slot.path + ".tmp";
-  std::ofstream                      o_file(tmp_path, std::ios::binary | std::ios::trunc);
+  size_t                             buf_pos      = 0;
+  bool                               write_failed = false;
+  const auto                        &slot         = _slots[index];
+  const std::string                  tmp_path     = slot.path + ".tmp";
+  std::ofstream                      tmp_file(tmp_path, std::ios::binary | std::ios::trunc);
 
-  if (!o_file) {
-    std::cerr << "Failed to open temp file for sync: " << tmp_path << "\n";
+  if (!tmp_file) {
+    TSWarning("cripts::Cache::Group: Failed to open temp file for sync: %s.", tmp_path.c_str());
     return;
   }
 
   // Helper lambda to append data to the write buffer
-  auto _AppendToBuffer = [&](const void *data, size_t size) {
+  auto _appendToBuffer = [&](const void *data, size_t size) {
+    if (write_failed) {
+      return;
+    }
     if (buf_pos + size > buffer.size()) {
-      o_file.write(reinterpret_cast<const char *>(buffer.data()), buf_pos);
+      tmp_file.write(reinterpret_cast<const char *>(buffer.data()), buf_pos);
+      if (!tmp_file) {
+        write_failed = true;
+        return;
+      }
       buf_pos = 0;
     }
     std::memcpy(buffer.data() + buf_pos, static_cast<const std::byte *>(data), size);
     buf_pos += size;
   };
 
-  time_t created_ts    = cripts::Time::Clock::to_time_t(slot.created);
-  time_t last_write_ts = cripts::Time::Clock::to_time_t(slot.last_write);
-  time_t last_sync_ts  = cripts::Time::Clock::to_time_t(slot.last_sync);
-  size_t count         = slot.map->size();
+  _MapHeader header{.created_ts    = cripts::Time::Clock::to_time_t(slot.created),
+                    .last_write_ts = cripts::Time::Clock::to_time_t(slot.last_write),
+                    .last_sync_ts  = cripts::Time::Clock::to_time_t(slot.last_sync),
+                    .count         = slot.map->size()};
 
-  _AppendToBuffer(&VERSION, sizeof(VERSION));
-  _AppendToBuffer(&created_ts, sizeof(created_ts));
-  _AppendToBuffer(&last_write_ts, sizeof(last_write_ts));
-  _AppendToBuffer(&last_sync_ts, sizeof(last_sync_ts));
-  _AppendToBuffer(&count, sizeof(count));
+  _appendToBuffer(&VERSION, sizeof(VERSION));
+  _appendToBuffer(&header, sizeof(header));
 
   // Write entries
   for (const auto &[_, entry] : *slot.map) {
-    _AppendToBuffer(&entry, sizeof(entry));
+    _appendToBuffer(&entry, sizeof(entry));
   }
 
-  if (buf_pos > 0) {
-    o_file.write(reinterpret_cast<const char *>(buffer.data()), buf_pos);
+  if (buf_pos > 0 && !write_failed) {
+    tmp_file.write(reinterpret_cast<const char *>(buffer.data()), buf_pos);
   }
-  o_file.flush();
-  o_file.close();
+  tmp_file.flush();
+  tmp_file.close();
+
+  if (write_failed || !tmp_file) {
+    TSWarning("cripts::Cache::Group: Failed to write to temp file `%s'.", tmp_path.c_str());
+    std::filesystem::remove(tmp_path);
+    return;
+  }
 
   if (std::rename(tmp_path.c_str(), slot.path.c_str()) != 0) {
     TSWarning("cripts::Cache::Group: Failed to rename temp file `%s' to `%s'.", tmp_path.c_str(), slot.path.c_str());
@@ -409,7 +434,7 @@ Cache::Group::Manager::_scheduleCont()
   }
 
   if (_action) {
-    TSActionCancel(_action); // Can this even happen ?
+    TSActionCancel(_action);
     _action = nullptr;
   }
 
