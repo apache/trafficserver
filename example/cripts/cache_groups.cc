@@ -45,7 +45,7 @@ do_cache_lookup()
     if (ptr) {
       auto date = cached.response.AsDate("Date");
 
-      if (date > 0) {
+      if (date != 0) {
         auto cache_groups = cached.response["Cache-Groups"];
 
         CDebug("Looking up {}", cache_groups);

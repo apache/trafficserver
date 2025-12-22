@@ -418,7 +418,7 @@ Debug logging uses the same format string syntax as ``fmt::format()`` in ``libfm
 Cache Groups
 ============
 
-As a way to manage assosication between cache entries, Cripts provides an infrastructure
+As a way to manage association between cache entries, Cripts provides an infrastructure
 for cache groups. A cache group is a set of cache entries that are logically
 associated with each other via custom identifiers.
 
@@ -449,7 +449,7 @@ Example implementation of the Cache Groups RFC
 
        if (ptr) {
          auto date = cached.response.AsDate("Date");
-         if (date > 0) {
+         if (date != 0) {
            auto cache_groups = cached.response["Cache-Groups"];
            if (!cache_groups.empty()) {
              borrow cg = *static_cast<std::shared_ptr<cripts::Cache::Group> *>(ptr);
