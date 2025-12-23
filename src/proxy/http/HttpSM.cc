@@ -4432,7 +4432,7 @@ HttpSM::set_virtualhost_entry(std::string_view domain)
     return;
   }
 
-  auto vhost_entry = vhost_config->find_by_domain(std::string{domain});
+  auto vhost_entry = vhost_config->find_by_domain(domain);
   if (vhost_entry) {
     SMDbg(dbg_ctl_url_rewrite, "Found virtualhost: %s", vhost_entry->get_id().c_str());
     // Explicitly acquire() since HttpSM holds raw pointer
@@ -4460,7 +4460,9 @@ HttpSM::do_remap_request(bool run_inline)
       if (vhost_table == m_remap) {
         vhost_table->release();
       } else {
-        m_remap->release();
+        if (m_remap) {
+          m_remap->release();
+        }
         m_remap = vhost_table;
       }
       SMDbg(dbg_ctl_url_rewrite, "Using virtualhost remap table: %s", m_virtualhost_entry->get_id().c_str());
@@ -4473,7 +4475,9 @@ HttpSM::do_remap_request(bool run_inline)
   // If no remap matches in virtualhost, revert to default remap.config
   if (!ret && virtualhost_remap) {
     SMDbg(dbg_ctl_url_rewrite, "No virtualhost remap rules found: using global remap table");
-    m_remap->release();
+    if (m_remap) {
+      m_remap->release();
+    }
     m_remap = rewrite_table->acquire();
     ret     = remapProcessor.setup_for_remap(&t_state, m_remap);
   }

@@ -225,7 +225,12 @@ reload_virtualhost_config(std::string_view const & /* id ATS_UNUSED */, YAML::No
   }
 
   VirtualHost::scoped_config vhost_config;
-  auto                       vhost_entry = vhost_config->find_by_id(name);
+  if (!vhost_config) {
+    resp.note("Virtualhost not initialized");
+    return resp;
+  }
+
+  auto vhost_entry = vhost_config->find_by_id(name);
   if (vhost_entry) {
     resp.result()["virtualhost"] = name;
     resp.result()["status"]      = "ok";
