@@ -4460,7 +4460,9 @@ HttpSM::do_remap_request(bool run_inline)
       if (vhost_table == m_remap) {
         vhost_table->release();
       } else {
-        m_remap->release();
+        if (m_remap) {
+          m_remap->release();
+        }
         m_remap = vhost_table;
       }
       SMDbg(dbg_ctl_url_rewrite, "Using virtualhost remap table: %s", m_virtualhost_entry->get_id().c_str());
@@ -4473,7 +4475,9 @@ HttpSM::do_remap_request(bool run_inline)
   // If no remap matches in virtualhost, revert to default remap.config
   if (!ret && virtualhost_remap) {
     SMDbg(dbg_ctl_url_rewrite, "No virtualhost remap rules found: using global remap table");
-    m_remap->release();
+    if (m_remap) {
+      m_remap->release();
+    }
     m_remap = rewrite_table->acquire();
     ret     = remapProcessor.setup_for_remap(&t_state, m_remap);
   }
