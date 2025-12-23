@@ -23,6 +23,8 @@
 
 #pragma once
 
+#include <string>
+
 // The max number of levels in the stack trace
 #define INK_STACK_TRACE_MAX_LEVELS 100
 
@@ -33,3 +35,18 @@ void ink_stack_trace_dump();
   Get symbol of @n-th frame
 */
 const void *ink_backtrace(const int n);
+
+/**
+  Get a demangled stack trace and write it to a file descriptor.
+
+  @param[in] fd The file descriptor to write to.
+  @return The number of bytes written, or -1 on error.
+*/
+ssize_t ink_stack_trace_dump_to_fd(int fd);
+
+/**
+  Get a demangled stack trace as a string.
+
+  @param[out] bt The string to populate with the backtrace.
+*/
+void ink_stack_trace_get(std::string &bt);

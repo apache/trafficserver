@@ -105,10 +105,12 @@ backtrace_for_thread(pid_t threadid, TextBuffer &text)
   void            *ap     = nullptr;
   pid_t            target = -1;
   unsigned         level  = 0;
+  int              step_result;
 
   // First, attach to the child, causing it to stop.
   status = ptrace(PTRACE_ATTACH, threadid, 0, 0);
   if (status < 0) {
+    text.format("  [ptrace ATTACH failed: %s (%d)]\n", strerror(errno), errno);
     Dbg(dbg_ctl_backtrace, "ptrace(ATTACH, %ld) -> %s (%d)\n", (long)threadid, strerror(errno), errno);
     return;
   }
@@ -118,28 +120,37 @@ backtrace_for_thread(pid_t threadid, TextBuffer &text)
   Dbg(dbg_ctl_backtrace, "waited for target %ld, found PID %ld, %s\n", (long)threadid, (long)target,
       WIFSTOPPED(status) ? "STOPPED" : "???");
   if (target < 0) {
+    text.format("  [waitpid failed: %s (%d)]\n", strerror(errno), errno);
     goto done;
   }
 
   ap = _UPT_create(threadid);
   Dbg(dbg_ctl_backtrace, "created UPT %p", ap);
   if (ap == nullptr) {
+    text.format("  [_UPT_create failed]\n");
     goto done;
   }
 
   addr_space = unw_create_addr_space(&_UPT_accessors, 0 /* byteorder */);
   Dbg(dbg_ctl_backtrace, "created address space %p\n", addr_space);
   if (addr_space == nullptr) {
+    text.format("  [unw_create_addr_space failed]\n");
     goto done;
   }
 
   status = unw_init_remote(&cursor, addr_space, ap);
   Dbg(dbg_ctl_backtrace, "unw_init_remote(...) -> %d\n", status);
   if (status != 0) {
+    text.format("  [unw_init_remote failed: %d]\n", status);
     goto done;
   }
 
-  while (unw_step(&cursor) > 0) {
+  step_result = unw_step(&cursor);
+  if (step_result <= 0) {
+    text.format("  [unw_step returned %d on first call]\n", step_result);
+  }
+
+  while (step_result > 0) {
     unw_word_t ip;
     unw_word_t offset;
     char       buf[256];
@@ -147,8 +158,8 @@ backtrace_for_thread(pid_t threadid, TextBuffer &text)
     unw_get_reg(&cursor, UNW_REG_IP, &ip);
 
     if (unw_get_proc_name(&cursor, buf, sizeof(buf), &offset) == 0) {
-      int   status;
-      char *name = abi::__cxa_demangle(buf, nullptr, nullptr, &status);
+      int   demangle_status;
+      char *name = abi::__cxa_demangle(buf, nullptr, nullptr, &demangle_status);
       text.format("%-4u 0x%016llx %s + %p\n", level, static_cast<unsigned long long>(ip), name ? name : buf, (void *)offset);
       free(name);
     } else {
@@ -156,6 +167,7 @@ backtrace_for_thread(pid_t threadid, TextBuffer &text)
     }
 
     ++level;
+    step_result = unw_step(&cursor);
   }
 
 done:
@@ -167,8 +179,10 @@ done:
     _UPT_destroy(ap);
   }
 
-  status = ptrace(PTRACE_DETACH, target, NULL, DATA_NULL);
-  Dbg(dbg_ctl_backtrace, "ptrace(DETACH, %ld) -> %d (errno %d)\n", (long)target, status, errno);
+  if (target > 0) {
+    status = ptrace(PTRACE_DETACH, target, NULL, DATA_NULL);
+    Dbg(dbg_ctl_backtrace, "ptrace(DETACH, %ld) -> %d (errno %d)\n", (long)target, status, errno);
+  }
 }
 } // namespace
 int

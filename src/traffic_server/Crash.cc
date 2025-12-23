@@ -28,6 +28,9 @@
 #include "tscore/Version.h"
 #include "tscore/signals.h"
 
+#include <string>
+#include <unistd.h>
+
 // ucontext.h is deprecated on Darwin, and we really only need it on Linux, so only
 // include it if we are planning to use it.
 #if defined(__linux__)
@@ -167,6 +170,13 @@ crash_logger_invoke(int signo, siginfo_t *info, void *ctx)
     // a single memory block that we can just puke out.
     ATS_UNUSED_RETURN(write(crash_logger_fd, info, sizeof(siginfo_t)));
     ATS_UNUSED_RETURN(write(crash_logger_fd, static_cast<ucontext_t *>(ctx), sizeof(ucontext_t)));
+
+    // Send zero-length backtrace. We cannot safely generate a backtrace here
+    // because backtrace() can acquire locks (e.g., in the dynamic linker) that
+    // the crashing thread might be holding, causing a deadlock. The crash
+    // logger will get the backtrace via ptrace from a separate process instead.
+    uint32_t bt_len = 0;
+    ATS_UNUSED_RETURN(write(crash_logger_fd, &bt_len, sizeof(bt_len)));
 #endif
 
     close(crash_logger_fd);

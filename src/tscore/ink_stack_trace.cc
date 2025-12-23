@@ -28,7 +28,16 @@
 #include <strings.h>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
+#include <string>
 #include <unistd.h>
+
+#if __has_include(<cxxabi.h>)
+#include <cxxabi.h>
+#define HAS_CXXABI 1
+#else
+#define HAS_CXXABI 0
+#endif
 
 #ifndef STDERR_FILENO
 #define STDERR_FILENO 2
@@ -85,6 +94,110 @@ ink_backtrace(const int n)
   return symbol;
 }
 
+namespace
+{
+// Demangle a symbol name if possible. The caller must free the returned string
+// if it is non-null and different from the input.
+char *
+demangle_symbol(const char *symbol)
+{
+#if HAS_CXXABI
+  // Symbol format is typically: "binary(mangled_name+0x1234) [0xaddr]"
+  // We need to extract the mangled name between '(' and '+' or ')'
+  const char *start = strchr(symbol, '(');
+  if (start == nullptr) {
+    return nullptr;
+  }
+  start++;
+
+  const char *end = strchr(start, '+');
+  if (end == nullptr) {
+    end = strchr(start, ')');
+  }
+  if (end == nullptr || end <= start) {
+    return nullptr;
+  }
+
+  size_t len     = end - start;
+  char  *mangled = static_cast<char *>(malloc(len + 1));
+  if (mangled == nullptr) {
+    return nullptr;
+  }
+  memcpy(mangled, start, len);
+  mangled[len] = '\0';
+
+  int   status    = 0;
+  char *demangled = abi::__cxa_demangle(mangled, nullptr, nullptr, &status);
+  free(mangled);
+
+  if (status == 0 && demangled != nullptr) {
+    return demangled;
+  }
+  return nullptr;
+#else
+  (void)symbol;
+  return nullptr;
+#endif
+}
+} // anonymous namespace
+
+ssize_t
+ink_stack_trace_dump_to_fd(int fd)
+{
+  void *stack[INK_STACK_TRACE_MAX_LEVELS + 1];
+  memset(stack, 0, sizeof(stack));
+  int btl = backtrace(stack, INK_STACK_TRACE_MAX_LEVELS);
+  if (btl <= 2) {
+    return 0;
+  }
+
+  // Use backtrace_symbols_fd which is async-signal-safe (doesn't call malloc).
+  // Skip the first 2 frames (this function and its caller).
+  backtrace_symbols_fd(stack + 2, btl - 2, fd);
+
+  // We can't easily know how many bytes were written by backtrace_symbols_fd,
+  // so return a positive value to indicate success.
+  return 1;
+}
+
+void
+ink_stack_trace_get(std::string &bt)
+{
+  bt.clear();
+
+  void *stack[INK_STACK_TRACE_MAX_LEVELS + 1];
+  memset(stack, 0, sizeof(stack));
+  int btl = backtrace(stack, INK_STACK_TRACE_MAX_LEVELS);
+  if (btl <= 2) {
+    return;
+  }
+
+  // Skip the first 2 frames (this function and its caller).
+  char **symbols = backtrace_symbols(stack + 2, btl - 2);
+  if (symbols == nullptr) {
+    return;
+  }
+
+  char line[1024];
+  for (int i = 0; i < btl - 2; ++i) {
+    char *demangled = demangle_symbol(symbols[i]);
+
+    if (demangled != nullptr) {
+      // Extract the address part from the original symbol.
+      const char *addr_start = strchr(symbols[i], '[');
+      const char *addr       = addr_start ? addr_start : "";
+      snprintf(line, sizeof(line), "%-4d %s %s\n", i, demangled, addr);
+      free(demangled);
+    } else {
+      snprintf(line, sizeof(line), "%-4d %s\n", i, symbols[i]);
+    }
+
+    bt += line;
+  }
+
+  free(symbols);
+}
+
 #else /* !TS_HAS_BACKTRACE */
 
 void
@@ -100,6 +213,18 @@ const void *
 ink_backtrace(const int /* n */)
 {
   return nullptr;
+}
+
+ssize_t
+ink_stack_trace_dump_to_fd(int /* fd */)
+{
+  return -1;
+}
+
+void
+ink_stack_trace_get(std::string &bt)
+{
+  bt.clear();
 }
 
 #endif /* TS_HAS_BACKTRACE */

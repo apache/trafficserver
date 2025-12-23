@@ -94,29 +94,36 @@ crashlog_open(const char *path)
 extern int ServerBacktrace(unsigned /* options */, int pid, char **trace);
 
 bool
-crashlog_write_backtrace(FILE *fp, pid_t pid, const crashlog_target &)
+crashlog_write_backtrace(FILE *fp, pid_t pid, const crashlog_target &target)
 {
-  char *trace = nullptr;
-  int   mgmterr;
+  char     *trace   = nullptr;
+  int const mgmterr = ServerBacktrace(0, static_cast<int>(pid), &trace);
 
   // NOTE: sometimes we can't get a backtrace because the ptrace attach will fail with
   // EPERM. I've seen this happen when a debugger is attached, which makes sense, but it
   // can also happen without a debugger. Possibly in that case, there is a race with the
   // kernel locking the process information?
 
-  if ((mgmterr = ServerBacktrace(0, static_cast<int>(pid), &trace)) != 0) {
-    fprintf(fp, "Unable to retrieve backtrace: %d\n", mgmterr);
-    return false;
+  if (mgmterr == 0 && trace != nullptr) {
+    // ServerBacktrace succeeded - this gives us all threads' backtraces.
+    fprintf(fp, "%s", trace);
+    free(trace);
+    return true;
   }
 
-  if (trace == nullptr) {
-    fprintf(fp, "Unable to retrieve backtrace: trace is null\n");
-    return false;
+  // ServerBacktrace failed. Fall back to the in-process backtrace from the crashing thread.
+  if ((target.flags & CRASHLOG_HAVE_BACKTRACE) && !target.backtrace.empty()) {
+    fprintf(fp, "Crashing Thread Backtrace:\n%s", target.backtrace.c_str());
+    return true;
   }
 
-  fprintf(fp, "%s", trace);
-  free(trace);
-  return true;
+  // No backtrace available from either source.
+  if (mgmterr != 0) {
+    fprintf(fp, "Unable to retrieve backtrace: ServerBacktrace returned %d\n", mgmterr);
+  } else {
+    fprintf(fp, "Unable to retrieve backtrace: no backtrace data available\n");
+  }
+  return false;
 }
 
 void
@@ -200,7 +207,6 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   Note("crashlog started, target=%ld, debug=%s syslog=%s, uid=%ld euid=%ld", static_cast<long>(target_pid),
        debug_mode ? "true" : "false", syslog_mode ? "true" : "false", (long)getuid(), (long)geteuid());
 
-  ink_zero(target);
   target.pid       = static_cast<pid_t>(target_pid);
   target.timestamp = timestamp();
 
@@ -218,6 +224,21 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     if (nbytes < static_cast<ssize_t>(sizeof(target.ucontext))) {
       Warning("received %zd of %zu expected thread context bytes", nbytes, sizeof(target.ucontext));
       target.flags &= ~CRASHLOG_HAVE_THREADINFO;
+    }
+
+    // Read the in-process backtrace from the crashing thread.
+    uint32_t bt_len = 0;
+    nbytes          = read(STDIN_FILENO, &bt_len, sizeof(bt_len));
+    if (nbytes == static_cast<ssize_t>(sizeof(bt_len)) && bt_len > 0 && bt_len < 1024 * 1024) {
+      target.backtrace.resize(bt_len);
+      nbytes = read(STDIN_FILENO, target.backtrace.data(), bt_len);
+      if (nbytes == static_cast<ssize_t>(bt_len)) {
+        target.flags |= CRASHLOG_HAVE_BACKTRACE;
+        Note("received %u bytes of in-process backtrace", bt_len);
+      } else {
+        Warning("received %zd of %u expected backtrace bytes", nbytes, bt_len);
+        target.backtrace.clear();
+      }
     }
   }
 
