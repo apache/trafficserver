@@ -28,7 +28,7 @@ Synopsis
 
     #include <ts/ts.h>
 
-.. function:: void TSHttpTxnNextHopStrategySet(TSHttpTxn txnp, void const* strategy)
+.. function:: void TSHttpTxnNextHopStrategySet(TSHttpTxn txnp, TSStrategy strategy)
 
 Description
 ===========
@@ -39,7 +39,7 @@ nullptr to indicate that parent.config will be used instead.
 
 Plugins can get a strategy by name by calling
 :func:`TSHttpTxnNextHopStrategyGet` to get the current transaction's
-active strategy or :func:`TSHttpTxnNextHopNamedStrategyGet` to
+active strategy or :func:`TSHttpTxnNextHopStrategyFind` to
 look up a strategy by name using the transaction's pointer to the
 NextHopStrategyFactory strategy database.
 
@@ -53,4 +53,4 @@ NextHopStrategyFactory strategy database.
 See Also
 ========
 
-:func:`TSHttpTxnNextHopStrategyGet`, :func:`TSHttpTxnNextHopNamedStrategyGet`.
+:func:`TSHttpTxnNextHopStrategyGet`, :func:`TSHttpTxnNextHopStrategyFind`.
