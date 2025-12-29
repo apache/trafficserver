@@ -24,7 +24,7 @@ Test TS API to get PROXY protocol info
 
 Test.SkipUnless(
     Condition.HasProgram("nghttp", "Nghttp need to be installed on system for this test to work"),
-    Condition.HasCurlVersion("8.2.0"),
+    Condition.HasCurlOption("--haproxy-clientip"),
 )
 Test.ContinueOnFail = True
 

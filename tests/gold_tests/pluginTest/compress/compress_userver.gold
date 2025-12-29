@@ -36,5 +36,7 @@
 0/gzip;q=-0.1
 0/aaa, gzip;q=0.666, bbb
 0/ br ; q=0.666, bbb
-0/aaa, gzip;q=0.666 , 
+0/aaa, gzip;q=0.666 ,
 3/gzip
+vary-no-accept-encoding
+0/compress, identity

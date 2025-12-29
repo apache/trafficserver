@@ -99,8 +99,19 @@ With this enabled, the string that you will need to match will look like ::
 
     //host/path?query=bar
 
+Note carefully that this includes the ``//`` prefix.  This makes it possible to
+distinguish between the hostname and path components in cases where hostnames
+appear in the path. Consider, for example, a CDN that routes requests based on
+the origin hostname in the path, like this::
 
-A typical regex would look like ::
+    https://cdn.example.com/origin1.example.com/some/path
+
+The ``//`` prefix allows you to write a regex that reliably identifies the
+actual hostname versus a hostname-like string in the path. See the example
+for a demonstration of how to use the ``host`` option.
+
+A typical regex, without the above mentioned method or host options, would look
+like::
 
     ^/(ogre.*)/more     http://www.ogre.com/$h/$0/$1
 
@@ -171,3 +182,56 @@ as a redirect (Location:).
 You can also combine multiple options, including overridable configs ::
 
     ^/(.*)?$            https://example.com/sitemaps/$1 @proxy.config.url_remap.pristine_host_hdr=0 @status=301
+
+Examples
+~~~~~~~~
+
+**Example: Basic path rewriting**
+
+By default, regex_remap matches against the URL path and query string, which
+always starts with ``/``. This example rewrites requests from an old URL
+structure to a new one::
+
+    # remap.config:
+    map http://www.example.com http://backend.example.com @plugin=regex_remap.so @pparam=rewrites.conf
+
+    # rewrites.conf:
+    ^/old/(.*)$    http://backend.example.com/new/$1
+
+A request to ``http://www.example.com/old/page.html`` will be rewritten to
+``http://backend.example.com/new/page.html``. The ``$1`` substitution captures
+the first parenthesized group from the regex match.
+
+**Example: HTTP to HTTPS redirect with host matching**
+
+To redirect all HTTP requests to HTTPS while preserving the host and path,
+use the ``host`` option. With ``@pparam=host``, the match string is
+``//host/path?query`` (note the ``//`` prefix), so the following rule captures
+the entire string and redirects to HTTPS. Because the captured group includes
+the ``//``, the substitution uses ``https:`` without ``//`` to avoid producing
+a malformed URL with four slashes::
+
+    # remap.config:
+    regex_map http://(.*) https://unused.invalid @plugin=regex_remap.so @pparam=redirect.conf @pparam=host @pparam=pristine
+
+    # redirect.conf:
+    ^(.*)$    https:$1    @status=307
+
+This will redirect any plaintext HTTP (``http://``) request for any host to the
+``https://`` equivalent. For instance, a request to ``http://example.com/path``
+would be redirected to ``https://example.com/path``.
+
+**Example: Method-based routing**
+
+To route requests differently based on the HTTP method, use the ``method``
+option. With ``@pparam=method``, the match string is ``METHOD/path?query``
+(note no space between method and path)::
+
+    # remap.config:
+    map http://api.example.com http://backend.example.com @plugin=regex_remap.so @pparam=api.conf @pparam=method
+
+    # api.conf:
+    ^GET/api/v1/(.*)$     http://read-replica.example.com/api/v1/$1
+    ^POST/api/v1/(.*)$    http://write-primary.example.com/api/v1/$1
+
+This routes GET requests to a read replica and POST requests to the primary.
