@@ -1,0 +1,5 @@
+# ESI unit test leak suppressions
+# DbgCtl leaky singleton pattern - intentional, see issue #12776
+leak:DbgCtl::_new_reference
+leak:_new_reference
+

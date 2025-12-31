@@ -63,14 +63,12 @@ class DbgCtl::_RegistryAccessor
 {
 public:
   // No mutex protection, assuming unit test is single threaded.
-  //
   static std::map<char const *, bool> &
   registry()
   {
     static std::map<char const *, bool> r;
     return r;
   }
-  static inline int ref_count{0};
 };
 
 std::atomic<int> DbgCtl::_config_mode{1};
@@ -78,26 +76,14 @@ std::atomic<int> DbgCtl::_config_mode{1};
 DbgCtl::_TagData const *
 DbgCtl::_new_reference(char const *tag)
 {
-  ++_RegistryAccessor::ref_count;
-
   auto it{_RegistryAccessor::registry().find(tag)};
   if (it == _RegistryAccessor::registry().end()) {
-    char *s = new char[std::strlen(tag) + 1];
+    char *s = new char[std::strlen(tag) + 1]; // Never deleted - leaky singleton pattern.
     std::strcpy(s, tag);
     auto r{_RegistryAccessor::registry().emplace(s, true)}; // Tag is always enabled.
     it = r.first;
   }
   return &(*it);
-}
-
-void
-DbgCtl::_rm_reference()
-{
-  if (!--_RegistryAccessor::ref_count) {
-    for (auto &elem : _RegistryAccessor::registry()) {
-      delete[] elem.first;
-    }
-  }
 }
 
 bool
