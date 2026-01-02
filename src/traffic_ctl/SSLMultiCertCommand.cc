@@ -52,6 +52,8 @@ SSLMultiCertCommand::SSLMultiCertCommand(ts::Arguments *args) : CtrlCommand(args
   _printer = std::make_unique<GenericPrinter>(print_opts);
 
   if (args->get("show")) {
+    // Default to YAML; use JSON only if explicitly requested.
+    _output_json  = args->get("json");
     _invoked_func = [this]() { show_config(); };
   } else {
     throw std::invalid_argument("Unsupported ssl-multicert subcommand");
@@ -77,8 +79,6 @@ SSLMultiCertCommand::show_config()
   }
 
   config::SSLMultiCertMarshaller marshaller;
-
-  // Output in JSON format for easy consumption by tools.
-  std::string const output = marshaller.to_json(result.value);
+  std::string const              output = _output_json ? marshaller.to_json(result.value) : marshaller.to_yaml(result.value);
   _printer->write_output(output);
 }

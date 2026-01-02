@@ -42,4 +42,6 @@ public:
 
 private:
   void show_config();
+
+  bool _output_json = false;
 };

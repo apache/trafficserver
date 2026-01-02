@@ -149,8 +149,13 @@ main([[maybe_unused]] int argc, const char **argv)
   // ssl-multicert subcommand
   auto &ssl_multicert_command =
     config_command.add_command("ssl-multicert", "Manage ssl_multicert configuration").require_commands();
-  ssl_multicert_command.add_command("show", "Show the ssl_multicert configuration in JSON format", Command_Execute)
-    .add_example_usage("traffic_ctl config ssl-multicert show");
+  auto &ssl_multicert_show = ssl_multicert_command.add_command("show", "Show the ssl_multicert configuration", Command_Execute)
+                               .add_example_usage("traffic_ctl config ssl-multicert show")
+                               .add_example_usage("traffic_ctl config ssl-multicert show --yaml")
+                               .add_example_usage("traffic_ctl config ssl-multicert show --json");
+  ssl_multicert_show.add_mutex_group("format", false, "Output format");
+  ssl_multicert_show.add_option_to_group("format", "--yaml", "-y", "Output in YAML format (default)");
+  ssl_multicert_show.add_option_to_group("format", "--json", "-j", "Output in JSON format");
 
   // convert subcommand - convert config files between formats
   auto &convert_command = config_command.add_command("convert", "Convert configuration files to YAML format").require_commands();
