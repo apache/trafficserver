@@ -129,44 +129,6 @@ parse_legacy_line(std::string_view line)
   return result;
 }
 
-/// Escape a string for JSON output.
-std::string
-json_escape(std::string const &s)
-{
-  std::string result;
-  result.reserve(s.size() + 2);
-  result += '"';
-  for (char c : s) {
-    switch (c) {
-    case '"':
-      result += "\\\"";
-      break;
-    case '\\':
-      result += "\\\\";
-      break;
-    case '\b':
-      result += "\\b";
-      break;
-    case '\f':
-      result += "\\f";
-      break;
-    case '\n':
-      result += "\\n";
-      break;
-    case '\r':
-      result += "\\r";
-      break;
-    case '\t':
-      result += "\\t";
-      break;
-    default:
-      result += c;
-    }
-  }
-  result += '"';
-  return result;
-}
-
 /// Escape a string for YAML output if needed.
 std::string
 yaml_escape(std::string const &value)
@@ -454,39 +416,24 @@ SSLMultiCertMarshaller::to_yaml(SSLMultiCertConfig const &config)
 std::string
 SSLMultiCertMarshaller::to_json(SSLMultiCertConfig const &config)
 {
-  std::ostringstream out;
-  out << "{\n  \"ssl_multicert\": [\n";
+  YAML::Emitter json;
+  json << YAML::DoubleQuoted << YAML::Flow;
+  json << YAML::BeginMap;
+  json << YAML::Key << KEY_SSL_MULTICERT << YAML::Value << YAML::BeginSeq;
 
-  bool first_entry = true;
   for (auto const &entry : config) {
-    if (!first_entry) {
-      out << ",\n";
-    }
-    first_entry = false;
-
-    out << "    {";
-    bool first_field = true;
+    json << YAML::BeginMap;
 
     auto write_field = [&](char const *key, std::string const &value) {
-      if (value.empty()) {
-        return;
+      if (!value.empty()) {
+        json << YAML::Key << key << YAML::Value << value;
       }
-      if (!first_field) {
-        out << ", ";
-      }
-      first_field = false;
-      out << json_escape(key) << ": " << json_escape(value);
     };
 
     auto write_int_field = [&](char const *key, std::optional<int> const &value) {
-      if (!value.has_value()) {
-        return;
+      if (value.has_value()) {
+        json << YAML::Key << key << YAML::Value << value.value();
       }
-      if (!first_field) {
-        out << ", ";
-      }
-      first_field = false;
-      out << json_escape(key) << ": " << value.value();
     };
 
     write_field(KEY_SSL_CERT_NAME, entry.ssl_cert_name);
@@ -500,11 +447,11 @@ SSLMultiCertMarshaller::to_json(SSLMultiCertConfig const &config)
     write_int_field(KEY_SSL_TICKET_ENABLED, entry.ssl_ticket_enabled);
     write_int_field(KEY_SSL_TICKET_NUMBER, entry.ssl_ticket_number);
 
-    out << "}";
+    json << YAML::EndMap;
   }
 
-  out << "\n  ]\n}\n";
-  return out.str();
+  json << YAML::EndSeq << YAML::EndMap;
+  return json.c_str();
 }
 
 } // namespace config

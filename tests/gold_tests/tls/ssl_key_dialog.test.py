@@ -40,9 +40,13 @@ ts.Disk.records_config.update(
     })
 
 ts.Disk.ssl_multicert_yaml.AddLines(
-    [
-        'dest_ip=* ssl_cert_name=passphrase.pem ssl_key_name=passphrase.key ssl_key_dialog="exec:/bin/bash -c \'echo -n passphrase\'"',
-    ])
+    """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: passphrase.pem
+    ssl_key_name: passphrase.key
+    ssl_key_dialog: "exec:/bin/bash -c 'echo -n passphrase'"
+""".split("\n"))
 
 request_header = {"headers": "GET / HTTP/1.1\r\nHost: bogus\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": "success!"}
@@ -65,10 +69,14 @@ tr2 = Test.AddTestRun("Update config files")
 # Update the multicert config
 sslcertpath = ts.Disk.ssl_multicert_yaml.AbsPath
 tr2.Disk.File(sslcertpath, id="ssl_multicert_config", typename="ats:config"),
-tr2.Disk.ssl_multicert_yaml.AddLines(
-    [
-        'dest_ip=* ssl_cert_name=passphrase2.pem ssl_key_name=passphrase2.key ssl_key_dialog="exec:/bin/bash -c \'echo -n passphrase\'"',
-    ])
+tr2.Disk.ssl_multicert_config.AddLines(
+    """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: passphrase2.pem
+    ssl_key_name: passphrase2.key
+    ssl_key_dialog: "exec:/bin/bash -c 'echo -n passphrase'"
+""".split("\n"))
 tr2.StillRunningAfter = ts
 tr2.StillRunningAfter = server
 tr2.Processes.Default.Command = 'echo Updated configs'
