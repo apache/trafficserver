@@ -32,6 +32,7 @@
 #include "tscore/BaseLogFile.h"
 #include "tscore/runroot.h"
 #include "iocore/eventsystem/RecProcess.h"
+#include <poll.h>
 #include <unistd.h>
 
 static int   syslog_mode  = false;
@@ -169,6 +170,25 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   // emit a crashlog because traffic_server is gone.
   if (getppid() != parent) {
     return 0;
+  }
+
+  // In wait mode, we need to verify this is a real crash by checking if crash_logger_invoke
+  // sent us signal info via the pipe. If traffic_server just exited normally, the pipe will be
+  // closed with no data, and we should exit without logging a false "crash".
+  if (wait_mode) {
+    // Use poll to check if there's data available on stdin without blocking indefinitely.
+    struct pollfd pfd;
+    pfd.fd     = STDIN_FILENO;
+    pfd.events = POLLIN;
+
+    // Wait briefly for data. If crash_logger_invoke was called, data should already be there.
+    int poll_result = poll(&pfd, 1, 100); // 100ms timeout
+
+    // POLLHUP means the write end of the pipe was closed - normal exit, not crash.
+    // No data or error also means no crash occurred.
+    if (poll_result <= 0 || (pfd.revents & POLLHUP) || !(pfd.revents & POLLIN)) {
+      return 0;
+    }
   }
 
   runroot_handler(argv);
