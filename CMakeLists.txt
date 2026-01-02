@@ -15,6 +15,8 @@
 #
 #######################
 
+# newline
+
 # Adjust default RelWithDebInfo flags to be in line with "Release with Debug".
 # The default RelWithDebInfo uses -O2, but Release uses -O3. This difference can be astonishing to users
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3 -g -DNDEBUG")
