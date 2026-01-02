@@ -124,7 +124,7 @@ A number of file objects are also defined to help test TrafficServer. Files that
 - sni.yaml
 - socks.config
 - splitdns.config
-- ssl_multicert.config
+- ssl_multicert.yaml
 - storage.config
 - volume.config
 

@@ -300,7 +300,7 @@ def MakeATSProcess(
     tmpname = os.path.join(config_dir, fname)
     p.Disk.File(tmpname, id=make_id(fname), typename="ats:config")
 
-    fname = "ssl_multicert.config"
+    fname = "ssl_multicert.yaml"
     tmpname = os.path.join(config_dir, fname)
     p.Disk.File(tmpname, id=make_id(fname), typename="ats:config")
 

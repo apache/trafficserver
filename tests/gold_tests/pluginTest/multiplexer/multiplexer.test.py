@@ -130,7 +130,13 @@ class MultiplexerTestBase:
                 'proxy.config.dns.nameservers': f'127.0.0.1:{self.dns.Variables.Port}',
                 'proxy.config.dns.resolv_conf': 'NULL',
             })
-        self.ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+        self.ts.Disk.ssl_multicert_yaml.AddLines(
+            """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: server.pem
+    ssl_key_name: server.key
+""".split("\n"))
         skip_remap_param = ''
         if skip_post:
             skip_remap_param = ' @pparam=proxy.config.multiplexer.skip_post_put=1'

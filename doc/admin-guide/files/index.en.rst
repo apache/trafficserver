@@ -34,7 +34,7 @@ Configuration Files
    records.yaml.en
    remap.config.en
    splitdns.config.en
-   ssl_multicert.config.en
+   ssl_multicert.yaml.en
    sni.yaml.en
    storage.config.en
    strategies.yaml.en
@@ -72,7 +72,7 @@ Configuration Files
 :doc:`splitdns.config.en`
    Configures DNS servers to use under specific conditions.
 
-:doc:`ssl_multicert.config.en`
+:doc:`ssl_multicert.yaml.en`
    Configures |TS| to use different server certificates for SSL termination
    when listening on multiple addresses or when clients employ SNI.
 

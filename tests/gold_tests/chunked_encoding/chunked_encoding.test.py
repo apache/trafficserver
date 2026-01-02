@@ -90,7 +90,13 @@ ts.Disk.remap_config.AddLine(
     'map https://www.anotherexample.com https://127.0.0.1:{0}'.format(server2.Variables.SSL_Port, ts.Variables.ssl_port))
 ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(Test.Variables.upstream_port))
 
-ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+ts.Disk.ssl_multicert_yaml.AddLines(
+    """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: server.pem
+    ssl_key_name: server.key
+""".split("\n"))
 
 # smuggle-client is built via `make`. Here we copy the built binary down to the
 # test directory so that the test runs in this file can use it.

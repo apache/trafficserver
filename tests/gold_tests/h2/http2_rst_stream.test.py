@@ -45,7 +45,13 @@ ts.Disk.records_config.update(
         'proxy.config.http.server_session_sharing.match': 'ip,sni,cert',
     })
 ts.Disk.remap_config.AddLine(f'map / https://127.0.0.1:{server.Variables.https_port}')
-ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+ts.Disk.ssl_multicert_yaml.AddLines(
+    """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: server.pem
+    ssl_key_name: server.key
+""".split("\n"))
 
 tr = Test.AddTestRun('Client sends RST_STREAM after DATA frame')
 tr.Processes.Default.StartBefore(server)
@@ -89,7 +95,13 @@ ts.Disk.records_config.update(
         'proxy.config.http.server_session_sharing.match': 'ip,sni,cert',
     })
 ts.Disk.remap_config.AddLine(f'map / https://127.0.0.1:{server.Variables.https_port}')
-ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+ts.Disk.ssl_multicert_yaml.AddLines(
+    """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: server.pem
+    ssl_key_name: server.key
+""".split("\n"))
 
 tr = Test.AddTestRun('Client sends RST_STREAM after HEADERS frame')
 tr.Processes.Default.StartBefore(server)
@@ -133,7 +145,13 @@ ts.Disk.records_config.update(
         'proxy.config.http.server_session_sharing.match': 'ip,sni,cert',
     })
 ts.Disk.remap_config.AddLine(f'map / https://127.0.0.1:{server.Variables.https_port}')
-ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+ts.Disk.ssl_multicert_yaml.AddLines(
+    """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: server.pem
+    ssl_key_name: server.key
+""".split("\n"))
 
 tr = Test.AddTestRun('Server sends RST_STREAM after HEADERS frame')
 tr.Processes.Default.StartBefore(server)

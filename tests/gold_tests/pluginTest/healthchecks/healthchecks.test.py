@@ -72,7 +72,13 @@ class TestFileChangeBehavior:
                 "proxy.config.ssl.server.private_key.path": f'{ts.Variables.SSLDir}',
                 "proxy.config.ssl.client.verify.server.policy": 'PERMISSIVE',
             })
-        ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+        ts.Disk.ssl_multicert_yaml.AddLines(
+            """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: server.pem
+    ssl_key_name: server.key
+""".split("\n"))
 
         # Other configuration.
         ts.Disk.records_config.update({

@@ -3973,24 +3973,24 @@ SSL Termination
    ===== ======================================================================
 
 
-.. ts:cv:: CONFIG proxy.config.ssl.server.multicert.filename STRING ssl_multicert.config
+.. ts:cv:: CONFIG proxy.config.ssl.server.multicert.filename STRING ssl_multicert.yaml
    :deprecated:
 
-   The location of the :file:`ssl_multicert.config` file, relative
+   The location of the :file:`ssl_multicert.yaml` file, relative
    to the |TS| configuration directory. In the following
    example, if the |TS| configuration directory is
    `/etc/trafficserver`, the |TS| SSL configuration file
    and the corresponding certificates are located in
    `/etc/trafficserver/ssl`::
 
-      CONFIG proxy.config.ssl.server.multicert.filename STRING ssl/ssl_multicert.config
+      CONFIG proxy.config.ssl.server.multicert.filename STRING ssl/ssl_multicert.yaml
       CONFIG proxy.config.ssl.server.cert.path STRING etc/trafficserver/ssl
       CONFIG proxy.config.ssl.server.private_key.path STRING etc/trafficserver/ssl
 
 .. ts:cv:: CONFIG proxy.config.ssl.server.multicert.exit_on_load_fail INT 1
 
    By default (``1``), |TS| will not start unless all the SSL certificates listed in the
-   :file:`ssl_multicert.config` file successfully load.  If false (``0``), SSL certificate
+   :file:`ssl_multicert.yaml` file successfully load.  If false (``0``), SSL certificate
    load failures will not prevent |TS| from starting.
 
 .. ts:cv:: CONFIG proxy.config.ssl.server.cert.path STRING /config
@@ -3999,21 +3999,21 @@ SSL Termination
    and validation new SSL sessions. If this is a relative path,
    it is appended to the |TS| installation PREFIX. All
    certificates and certificate chains listed in
-   :file:`ssl_multicert.config` will be loaded relative to this path.
+   :file:`ssl_multicert.yaml` will be loaded relative to this path.
 
 .. ts:cv:: CONFIG proxy.config.ssl.server.private_key.path STRING NULL
 
    The location of the SSL certificate private keys. Change this
    variable only if the private key is not located in the SSL
    certificate file. All private keys listed in
-   :file:`ssl_multicert.config` will be loaded relative to this
+   :file:`ssl_multicert.yaml` will be loaded relative to this
    path.
 
 .. ts:cv:: CONFIG proxy.config.ssl.server.cert_chain.filename STRING NULL
 
    The name of a file containing a global certificate chain that
    should be used with every server certificate. This file is only
-   used if there are certificates defined in :file:`ssl_multicert.config`.
+   used if there are certificates defined in :file:`ssl_multicert.yaml`.
    Unless this is an absolute path, it is loaded relative to the
    path specified by :ts:cv:`proxy.config.ssl.server.cert.path`.
 
@@ -4522,7 +4522,7 @@ OCSP Stapling Configuration
    The directory path of the prefetched OCSP stapling responses. Change this
    variable only if you intend to use and administratively maintain
    prefetched OCSP stapling responses. All stapling responses listed in
-   :file:`ssl_multicert.config` will be loaded relative to this
+   :file:`ssl_multicert.yaml` will be loaded relative to this
    path.
 
 HTTP/2 Configuration
