@@ -268,6 +268,7 @@ struct CacheVC : public CacheVConnection {
   ink_hrtime                start_time;
   int                       op_type; // Index into the metrics array for this operation, rather than a CacheOpType (fewer casts)
   int                       recursive;
+  int                       read_recursive;
   int                       closed;
   uint64_t                  seek_to;       // pread offset
   int64_t                   offset;        // offset into 'blocks' of data to write
