@@ -209,8 +209,22 @@ def generate_output(
     else:
         if tree is not None:
             preserve_comments = not getattr(args, 'no_comments', False)
-            visitor = visitor_class(
-                filename=filename, debug=args.debug, error_collector=error_collector, preserve_comments=preserve_comments)
+            merge_sections = not getattr(args, 'no_merge_sections', False)
+
+            # Build visitor kwargs based on what the visitor class supports
+            visitor_kwargs = {
+                'filename': filename,
+                'debug': args.debug,
+                'error_collector': error_collector,
+                'preserve_comments': preserve_comments
+            }
+
+            # Only add merge_sections if the visitor supports it (u4wrh)
+            import inspect
+            if 'merge_sections' in inspect.signature(visitor_class.__init__).parameters:
+                visitor_kwargs['merge_sections'] = merge_sections
+
+            visitor = visitor_class(**visitor_kwargs)
             try:
                 result = visitor.visit(tree)
                 if result:
