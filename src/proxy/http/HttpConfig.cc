@@ -1087,6 +1087,7 @@ HttpConfig::startup()
   HttpEstablishStaticConfigByte(c.disallow_post_100_continue, "proxy.config.http.disallow_post_100_continue");
 
   HttpEstablishStaticConfigByte(c.oride.cache_open_write_fail_action, "proxy.config.http.cache.open_write_fail_action");
+  HttpEstablishStaticConfigByte(c.oride.cache_defer_write_on_miss, "proxy.config.http.cache.defer_write_on_miss");
 
   HttpEstablishStaticConfigByte(c.oride.cache_when_to_revalidate, "proxy.config.http.cache.when_to_revalidate");
   HttpEstablishStaticConfigByte(c.oride.cache_required_headers, "proxy.config.http.cache.required_headers");
@@ -1391,6 +1392,7 @@ HttpConfig::reconfigure()
               params->oride.max_cache_open_write_retries);
     }
   }
+  params->oride.cache_defer_write_on_miss = m_master.oride.cache_defer_write_on_miss;
 
   params->oride.cache_when_to_revalidate = m_master.oride.cache_when_to_revalidate;
   params->max_post_size                  = m_master.max_post_size;
