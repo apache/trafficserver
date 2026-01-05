@@ -96,6 +96,13 @@
       }
     },
     {
+      "name": "tsan",
+      "hidden": true,
+      "cacheVariables": {
+        "ENABLE_TSAN": "ON"
+      }
+    },
+    {
       "name": "hardened",
       "hidden": true,
       "cacheVariables": {
