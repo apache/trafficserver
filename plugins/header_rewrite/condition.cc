@@ -132,3 +132,71 @@ Condition::initialize(Parser &p)
   _cond_op = parse_matcher_op(p.get_arg());
   p.validate_mods();
 }
+
+bool
+Condition::equals(const Statement *other) const
+{
+  if (!Statement::equals(other)) {
+    return false;
+  }
+
+  auto *cond = static_cast<const Condition *>(other);
+
+  // Compare base Condition state
+  if (_qualifier != cond->_qualifier || _cond_op != cond->_cond_op || _mods != cond->_mods) {
+    return false;
+  }
+
+  // Compare matcher state if both have matchers
+  if (_matcher && cond->_matcher) {
+    // For now, we'll compare matcher operator type
+    // Full matcher comparison requires template specializations
+    return _matcher->op() == cond->_matcher->op();
+  }
+
+  // Both should have or not have matchers
+  return (_matcher == nullptr) == (cond->_matcher == nullptr);
+}
+
+void
+Condition::initialize(const hrw::ConditionSpec &spec)
+{
+  initialize_hooks();
+
+  if (need_txn_slot()) {
+    _txn_slot = acquire_txn_slot();
+  }
+  if (need_txn_private_slot()) {
+    _txn_private_slot = acquire_txn_private_slot();
+  }
+
+  if (spec.mod_or) {
+    _mods |= CondModifiers::OR;
+  } else if (spec.mod_and) {
+    _mods |= CondModifiers::AND;
+  }
+
+  if (spec.mod_not) {
+    _mods |= CondModifiers::NOT;
+  }
+
+  if (spec.mod_nocase) {
+    _mods |= CondModifiers::MOD_NOCASE;
+  }
+
+  if (spec.mod_ext) {
+    _mods |= CondModifiers::MOD_EXT;
+  }
+
+  if (spec.mod_pre) {
+    _mods |= CondModifiers::MOD_PRE;
+  }
+
+  if (spec.mod_last) {
+    _mods |= CondModifiers::MOD_L;
+  }
+
+  // Parse matcher operation from match_arg
+  std::string arg = spec.match_arg;
+  _cond_op        = parse_matcher_op(arg);
+}

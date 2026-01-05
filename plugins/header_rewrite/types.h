@@ -15,18 +15,38 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
-//////////////////////////////////////////////////////////////////////////////////////////////
-//
-// Implement the classes for the various types of hash keys we support.
-//
 #pragma once
 
 #include <string>
 
-#include "operator.h"
-#include "condition.h"
 #include "hrw4u/ObjTypes.h"
 
-Operator  *operator_factory(hrw::OperatorType op_type);
-Operator  *operator_factory(const std::string &op);
-Condition *condition_factory(const std::string &cond);
+namespace hrw
+{
+struct ConditionSpec {
+  ConditionType type = ConditionType::NONE;
+  std::string   qualifier;
+  std::string   match_arg;
+  int           slot = -1;
+
+  bool mod_not    = false;
+  bool mod_or     = false;
+  bool mod_and    = false;
+  bool mod_nocase = false;
+  bool mod_last   = false;
+  bool mod_ext    = false;
+  bool mod_pre    = false;
+};
+
+struct OperatorSpec {
+  OperatorType type = OperatorType::NONE;
+  std::string  arg;
+  std::string  value;
+  int          slot = -1;
+
+  bool mod_last = false;
+  bool mod_qsa  = false;
+  bool mod_inv  = false;
+};
+
+} // namespace hrw

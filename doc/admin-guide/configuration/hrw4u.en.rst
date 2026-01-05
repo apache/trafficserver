@@ -29,11 +29,19 @@ Overview
 ========
 
 HRW4U replaces the free-form text parsing of ``header_rewrite`` with a formally defined
-grammar using ANTLR. This makes HRW4U easier to parse, validate, and extend.
+grammar using ANTLR. When |TS| is built with ANTLR4 support, the plugin **natively**
+parses ``.hrw4u`` files. Simply use files with the ``.hrw4u`` extension:
 
-Rather than repeating ``header_rewrite`` documentation, please refer to:
-  - :ref:`admin-plugins-header-rewrite` for feature behavior and semantics
-  - This page focuses on syntax and behavior *differences* in HRW4U
+.. code-block:: none
+
+   # In plugin.config for global rules
+   header_rewrite.so rules.hrw4u
+
+   # In remap.config for per-mapping rules
+   map http://a http://b @plugin=header_rewrite.so @pparam=rules.hrw4u
+
+For feature behavior and semantics, refer to :ref:`admin-plugins-header-rewrite`.
+This page focuses on syntax differences in HRW4U.
 
 Why HRW4U?
 ----------
@@ -43,93 +51,22 @@ HRW4U aims to improve the following:
 
 - Structured grammar and parser
 - Better error diagnostics (line/col, filename, hints)
-- Proper nested condition support using `if (...)` and `{ ... }` blocks
+- Proper nested condition support using ``if (...) { ... }`` blocks
 - Symbol tables for variable declarations and usage
 - Static validation of operand types and value ranges
-- Explicit `VARS` declarations with typed variables (`bool`, `int8`, `int16`)
+- Explicit ``VARS`` declarations with typed variables (``bool``, ``int8``, ``int16``)
 - Optional debug output to trace logic evaluation
 
-Building
---------
+Standalone Compiler
+-------------------
 
-Currently, the HRW4U compiler is not built as part of the ATS build process. You need to
-build it separately using Python 3.10+ and pyenv environments. There's a ``bootstrap.sh``
-script in the ``tools/hrw4u`` directory that helps with the setup process.
+A standalone Python compiler is available in ``tools/hrw4u`` for development:
 
-Once set up, simply run:
+- Debug tracing (``--debug``)
+- IDE integration via LSP (``hrw4u-lsp``)
+- Reverse conversion (``u4wrh``) to convert header_rewrite to hrw4u
 
-.. code-block:: none
-
-   make
-   make package
-
-This will produce a PIP package in the ``dist`` directory. You can install it in a
-virtualenv or system-wide using:
-
-.. code-block:: none
-
-   pipx install dist/hrw4u-1.4.0-py3-none-any.whl
-
-Using
------
-
-Once installed, you will have a ``hrw4u`` command available. You can run it as
-follows to produce the help output:
-
-.. code-block:: none
-
-   hrw4u --help
-
-Basic Usage
-^^^^^^^^^^^
-
-Compile a single file to stdout:
-
-.. code-block:: none
-
-   hrw4u some_file.hrw4u
-
-Compile from stdin:
-
-.. code-block:: none
-
-   cat some_file.hrw4u | hrw4u
-
-Compile multiple files to stdout (separated by ``# ---``):
-
-.. code-block:: none
-
-   hrw4u file1.hrw4u file2.hrw4u file3.hrw4u
-
-Bulk Compilation
-^^^^^^^^^^^^^^^^
-
-For bulk compilation, use the ``input:output`` format to compile multiple files
-to their respective output files in a single command:
-
-.. code-block:: none
-
-   hrw4u file1.hrw4u:file1.conf file2.hrw4u:file2.conf file3.hrw4u:file3.conf
-
-This is particularly useful for build systems or when processing many configuration
-files at once. All files are processed in a single invocation, improving performance
-for large batches of files.
-
-Reverse Tool (u4wrh)
-^^^^^^^^^^^^^^^^^^^^
-
-In addition to ``hrw4u``, you also have the reverse tool, converting existing ``header_rewrite``
-configurations to ``hrw4u``. This tool is named ``u4wrh`` and supports the same usage patterns:
-
-.. code-block:: none
-
-   # Convert single file to stdout
-   u4wrh existing_config.conf
-
-   # Bulk conversion
-   u4wrh file1.conf:file1.hrw4u file2.conf:file2.hrw4u
-
-For people using IDEs, the package also provides an LSP for this language, named ``hrw4u-lsp``.
+Build with Python 3.10+ using ``./bootstrap.sh && make package``.
 
 Syntax Differences
 ==================
@@ -291,11 +228,13 @@ rm-destination QUERY ... [I]  keep_query("foo,bar")             Keep only specif
 run-plugin foo.so "args"      run-plugin("foo.so", "arg1", ...) Run an external remap plugin
 set-body "foo"                inbound.resp.body = "foo"         Set the response body
 set-body-from "\https://..."  set-body-from("\https://...")     Set the response body from a URL
+set-cc-alg "cubic"            set-cc-alg("cubic")               Set the TCP congestion control algorithm
 set-config <name> 12          set-config("name", 17)            Set a configuration variable to a value
 set-conn-dscp 8               inbound.conn.dscp = 8             Set the DSCP value for the connection
 set-conn-mark 17              inbound.conn.mark = 17            Set the MARK value for the connection
 set-cookie foo bar            {in,out}bound.cookie.foo = "bar"  Set a request/response cookie named foo
 set-destination <C> bar       {in,out}bound.url.<C> = "bar"     Set a URL component, <:ref:`C<admin-plugins-header-rewrite-url-parts>`> is path, query etc.
+set-effective-address "1.2.3" set-effective-address("1.2.3.4")  Set the client's effective address
 set-header X-Bar foo          inbound.{req,resp}.X-Bar = "foo"  Assign a client request/origin response header
 set-plugin-cntl <C> <T>       set-plugin-cntl(<C>) = <T>        Set the plugin control <C> to <T>, see <:ref:`C<admin-plugins-header-rewrite-plugin-cntl>`>
 set-redirect <Code> <URL>     set-redirect(302, "\https://...") Set a redirect response
@@ -459,20 +398,11 @@ These can be used with both sets and equality checks, using the ``with`` keyword
      ...
    }
 
-Running and Debugging
-=====================
+Debugging
+=========
 
-To run HRW4U, just install and run the hrw4u compiler:
-
-.. code-block:: none
-
-   hrw4u /path/to/rules.hrw4u
-
-Run with `--debug all` to trace:
-
-- Lexer, parser, visitor behavior
-- Condition evaluations
-- State and output emission
+Syntax errors are reported with filename, line, and column position. For development,
+the standalone compiler's ``--debug all`` option traces lexer, parser, and evaluation.
 
 Examples
 ========

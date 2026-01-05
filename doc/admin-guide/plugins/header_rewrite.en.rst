@@ -72,6 +72,12 @@ to keep it in the same location as your other proxy configuration files.
 The paths given to the configuration file(s) may be absolute (leading with a
 ``/`` character), or they may be relative to the |TS| configuration directory.
 
+.. note::
+   An alternative syntax called **HRW4U** is available, offering cleaner syntax
+   with ``if/else`` blocks and better error messages. Files with the ``.hrw4u``
+   extension are automatically parsed using this format. See :ref:`admin-hrw4u`
+   for details.
+
 There are two methods for enabling this plugin, based on whether you wish it to
 operate globally on every request that passes through your proxy, or only on
 some subset of the requests by enabling it only for specific mapping rules.
