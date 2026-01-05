@@ -97,7 +97,6 @@ if(NOT APPLE)
   add_catch2_test(
     NAME
     test_PluginDso
-    PROPERTIES
     ENVIRONMENT
     "ASAN_OPTIONS=detect_odr_violation=0;LSAN_OPTIONS=suppressions=${CMAKE_CURRENT_SOURCE_DIR}/remap_test_dlopen_leak_suppression.txt"
   )
@@ -142,7 +141,6 @@ if(NOT APPLE)
   add_catch2_test(
     NAME
     test_PluginFactory
-    PROPERTIES
     ENVIRONMENT
     "ASAN_OPTIONS=detect_odr_violation=0;LSAN_OPTIONS=suppressions=${CMAKE_CURRENT_SOURCE_DIR}/remap_test_dlopen_leak_suppression.txt"
   )
@@ -181,7 +179,6 @@ if(NOT APPLE)
   add_catch2_test(
     NAME
     test_RemapPluginInfo
-    PROPERTIES
     ENVIRONMENT
     "ASAN_OPTIONS=detect_odr_violation=0;LSAN_OPTIONS=suppressions=${CMAKE_CURRENT_SOURCE_DIR}/remap_test_dlopen_leak_suppression.txt"
   )
