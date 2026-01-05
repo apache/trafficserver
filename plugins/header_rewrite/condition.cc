@@ -80,17 +80,17 @@ Condition::initialize(Parser &p)
 {
   Statement::initialize(p);
 
-  if (p.mod_exist("OR")) {
-    if (p.mod_exist("AND")) {
+  if (p.consume_mod("OR")) {
+    if (p.consume_mod("AND")) {
       TSError("[%s] Can't have both AND and OR in mods", PLUGIN_NAME);
     } else {
       _mods |= CondModifiers::OR;
     }
-  } else if (p.mod_exist("AND")) {
+  } else if (p.consume_mod("AND")) {
     _mods |= CondModifiers::AND;
   }
 
-  if (p.mod_exist("NOT")) {
+  if (p.consume_mod("NOT")) {
     _mods |= CondModifiers::NOT;
   }
 
@@ -98,25 +98,25 @@ Condition::initialize(Parser &p)
   // strings and regexes.
   int _substr_seen = 0;
 
-  if (p.mod_exist("NOCASE")) {
+  if (p.consume_mod("NOCASE")) {
     _mods |= CondModifiers::MOD_NOCASE;
-  } else if (p.mod_exist("CASE")) {
+  } else if (p.consume_mod("CASE")) {
     // Nothing to do — default is case-sensitive, but still allow this string for clearness.
   }
 
-  if (p.mod_exist("EXT")) {
+  if (p.consume_mod("EXT")) {
     _mods |= CondModifiers::MOD_EXT;
     _substr_seen++;
   }
-  if (p.mod_exist("SUF")) {
+  if (p.consume_mod("SUF")) {
     _mods |= CondModifiers::MOD_SUF;
     _substr_seen++;
   }
-  if (p.mod_exist("PRE")) {
+  if (p.consume_mod("PRE")) {
     _mods |= CondModifiers::MOD_PRE;
     _substr_seen++;
   }
-  if (p.mod_exist("MID")) {
+  if (p.consume_mod("MID")) {
     _mods |= CondModifiers::MOD_MID;
     _substr_seen++;
   }
@@ -125,10 +125,10 @@ Condition::initialize(Parser &p)
     throw std::runtime_error("Only one substring modifier (EXT, SUF, PRE, MID) may be used.");
   }
 
-  // Deal with the "last" modifier as well.
-  if (p.mod_exist("L")) {
+  if (p.consume_mod("L")) {
     _mods |= CondModifiers::MOD_L;
   }
 
   _cond_op = parse_matcher_op(p.get_arg());
+  p.validate_mods();
 }
