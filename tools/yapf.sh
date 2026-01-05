@@ -22,68 +22,27 @@
 # yapf version is desired.
 # See:
 # https://github.com/google/yapf/tags
-YAPF_VERSION="v0.43.0"
+YAPF_VERSION="0.43.0"
 VERSION="yapf 0.43.0"
 
 function main() {
-  # check for python3
-  python3 - << _END_
-import sys
-
-if sys.version_info.major < 3 or sys.version_info.minor < 8:
-    exit(1)
-_END_
-
-  if [ $? = 1 ]; then
-      echo "Python 3.8 or newer is not installed/enabled."
-      exit 1
-  fi
-
   set -e # exit on error
 
-  if command -v pip3 &> /dev/null; then
-    PIP_CMD="pip3"
-  elif command -v pip &> /dev/null; then
-    PIP_CMD="pip"
-  else
-    echo "pip is not installed."
+  # Check for uv.
+  if ! command -v uv &> /dev/null; then
+    echo "uv is not installed. Please install it: https://docs.astral.sh/uv/getting-started/installation/"
     exit 1
   fi
 
-  if ! type virtualenv >/dev/null 2>/dev/null
-  then
-    ${PIP_CMD} install -q virtualenv
-  fi
-
-  if python3 -m venv --help &> /dev/null; then
-    VENV_LIB="venv"
-  elif python3 -m virtualenv --help &> /dev/null; then
-    VENV_LIB="virtualenv"
-  else
-    echo "Neither venv nor virtualenv is available."
-    exit 1
-  fi
-
-
-  REPO_ROOT=$(cd $(dirname $0) && git rev-parse --show-toplevel)
-  GIT_DIR=$(git rev-parse --absolute-git-dir)
-  YAPF_VENV=${YAPF_VENV:-${GIT_DIR}/fmt/yapf_${YAPF_VERSION}_venv}
-  if [ ! -e ${YAPF_VENV} ]
-  then
-    python3 -m ${VENV_LIB} ${YAPF_VENV}
-  fi
-  source ${YAPF_VENV}/bin/activate
-
-  ${PIP_CMD} install -q --upgrade pip
-  ${PIP_CMD} install -q "yapf==${YAPF_VERSION}"
-
-  ver=$(yapf --version 2>&1)
+  ver=$(uv tool run --quiet yapf@${YAPF_VERSION} --version 2>&1)
   if [ "$ver" != "$VERSION" ]
   then
       echo "Wrong version of yapf!"
       echo "Expected: \"${VERSION}\", got: \"${ver}\""
       exit 1
   fi
+
+  REPO_ROOT=$(cd $(dirname $0) && git rev-parse --show-toplevel)
 
   DIR=${@:-.}
 
@@ -113,7 +72,7 @@ _END_
   start_time_file=${tmp_dir}/format_start.$$
   touch ${start_time_file}
   YAPF_CONFIG=${REPO_ROOT}/.style.yapf
-  yapf \
+  uv tool run --quiet yapf@${YAPF_VERSION} \
       --style ${YAPF_CONFIG} \
       --parallel \
       --in-place \
@@ -121,12 +80,8 @@ _END_
   find $(cat ${files_filtered}) -newer ${start_time_file}
 
   rm -rf ${tmp_dir}
-  deactivate
 }
 
 if [[ "$(basename -- "$0")" == 'yapf.sh' ]]; then
   main "$@"
-else
-  GIT_DIR=$(git rev-parse --absolute-git-dir)
-  YAPF_VENV=${YAPF_VENV:-${GIT_DIR}/fmt/yapf_${YAPF_VERSION}_venv}
 fi

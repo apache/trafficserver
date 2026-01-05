@@ -24,7 +24,6 @@ PKG_DIR_HRW4U:=$(BUILD_DIR)/hrw4u
 PKG_DIR_U4WRH:=$(BUILD_DIR)/u4wrh
 PKG_DIR_LSP:=$(BUILD_DIR)/hrw4u_lsp
 
-VENV_NAME:=hrw4u
 ANTLR=antlr
 
 # Scripts (each becomes the package __main__.py)
@@ -166,26 +165,26 @@ $(PKG_DIR_LSP)/%: src/%
 	cp $< $@
 
 test:
-	pytest --tb=short tests
+	uv run pytest --tb=short tests
 
 # Build standalone binaries (optional)
 build: gen
-	pyinstaller --onefile --name hrw4u --strip $(SCRIPT_HRW4U)
-	pyinstaller --onefile --name u4wrh --strip $(SCRIPT_U4WRH)
-	pyinstaller --onefile --name hrw4u-lsp --strip $(SCRIPT_LSP)
-	pyinstaller --onefile --name hrw4u-kg --strip $(SCRIPT_KG)
+	uv run pyinstaller --onefile --name hrw4u --strip $(SCRIPT_HRW4U)
+	uv run pyinstaller --onefile --name u4wrh --strip $(SCRIPT_U4WRH)
+	uv run pyinstaller --onefile --name hrw4u-lsp --strip $(SCRIPT_LSP)
+	uv run pyinstaller --onefile --name hrw4u-kg --strip $(SCRIPT_KG)
 
 # Wheel packaging (adjust pyproject to include both packages if desired)
 package: gen
 	@echo "==> Building pip package(s)..."
-	python3 -m build --wheel --outdir $(DIST_DIR)
+	uv run python -m build --wheel --outdir $(DIST_DIR)
 
 clean:
-	rm -rf build dist __pycache__ *.spec *.egg-info
+	rm -rf build dist __pycache__ *.spec *.egg-info .venv
 	find tests -name '__pycache__' -type d -exec rm -r {} +
 
-setup-deps: env
-	$(PYTHON) -m pip install -r requirements.txt
+setup-deps:
+	uv sync --all-extras
 
 activate:
-	@echo "Run: pyenv activate $(VENV_NAME)"
+	@echo "Run: source .venv/bin/activate"

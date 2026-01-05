@@ -23,7 +23,7 @@ Decompiles existing `header_rewrite` rules back into HRW4U source code.
 
 - **Python 3.11+** (uses modern type annotations and performance features)
 - **ANTLR4** for grammar parsing
-- **pyenv** (recommended for development)
+- **uv** (for Python environment management)
 
 ## Development Setup
 
@@ -32,10 +32,11 @@ Decompiles existing `header_rewrite` rules back into HRW4U source code.
 git clone https://github.com/apache/trafficserver.git
 cd trafficserver/tools/hrw4u
 
-# Create pyenv virtual environment
-pyenv virtualenv 3.11 hrw4u
-pyenv activate hrw4u
-pip install -r requirements.txt
+# Install uv if not already installed
+# See: https://docs.astral.sh/uv/getting-started/installation/
+
+# Create virtual environment and install dependencies
+uv sync --all-extras
 ```
 
 ### 2. Build the Package
@@ -50,10 +51,10 @@ make package
 ### 3. Install for Development
 ```bash
 # Install in development mode
-pip install -e .
+uv pip install -e .
 
 # Or install the built wheel
-pip install dist/hrw4u-*.whl
+uv pip install dist/hrw4u-*.whl
 ```
 
 ## Testing
@@ -63,10 +64,10 @@ pip install dist/hrw4u-*.whl
 make test
 
 # Run specific test categories
-pytest -m examples    # Documentation examples
-pytest -m conds       # Condition tests
-pytest -m ops          # Operator tests
-pytest -m reverse      # Reverse compilation tests
+uv run pytest -m examples    # Documentation examples
+uv run pytest -m conds       # Condition tests
+uv run pytest -m ops         # Operator tests
+uv run pytest -m reverse     # Reverse compilation tests
 ```
 
 ## Usage

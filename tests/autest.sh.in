@@ -21,7 +21,7 @@ if [ -n "${CURL_UDS_FLAG}" ]; then
   fi
 fi
 
-${RUNPIPENV} run env autest \
+uv run autest \
   --sandbox ${AUTEST_SANDBOX} \
   --directory ${CMAKE_GOLD_DIR} \
   --ats-bin=${CMAKE_INSTALL_PREFIX}/bin \

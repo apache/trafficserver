@@ -6,19 +6,19 @@ This directory contains the source code for Traffic Server documentation.
 
 ## Package Requirements
 Traffic Server documentation is built using the Sphinx documentation generator.
-The Sphinx build tool is distributed as a Python package. A Pipfile is provided
-to conveniently configure a Python virtual environment with the needed Sphinx
-packages.
+The Sphinx build tool is distributed as a Python package. A `pyproject.toml` is
+provided to conveniently configure a Python virtual environment with the needed
+Sphinx packages via uv.
 
 In addition to the Sphinx Python package requirements, building the
-documentation will also require Java and graphviz system packages to be
+documentation will also require Java, graphviz, and uv system packages to be
 installed.
 
 ## Build Steps
 Building the docs requires passing `-DENABLE_DOCS=ON` to cmake (docs generation
 is off by default), and then using the appropriate build target. The build steps
-will automatically install a Pipenv virtual environment using `docs/Pipfile` and
-do what is necessary to build the docs.
+will automatically install a virtual environment via uv using `doc/pyproject.toml`
+and do what is necessary to build the docs.
 
 ### Building HTML Documentation
 ```sh
