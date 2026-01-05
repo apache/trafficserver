@@ -104,14 +104,8 @@ endif()
 ### test_PluginFactory ########################################################################
 
 add_executable(
-  test_PluginFactory
-  test_PluginFactory.cc
-  plugin_testing_common.cc
-  ../PluginFactory.cc
-  ../PluginDso.cc
-  ../RemapPluginInfo.cc
-  ${PROJECT_SOURCE_DIR}/src/iocore/net/libinknet_stub.cc
-  ${PROJECT_SOURCE_DIR}/src/api/APIHooks.cc
+  test_PluginFactory test_PluginFactory.cc plugin_testing_common.cc ../PluginFactory.cc ../PluginDso.cc
+                     ../RemapPluginInfo.cc ${PROJECT_SOURCE_DIR}/src/api/APIHooks.cc
 )
 
 target_compile_definitions(test_PluginFactory PRIVATE PLUGIN_DSO_TESTS)
