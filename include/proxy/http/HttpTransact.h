@@ -697,6 +697,10 @@ public:
     bool is_method_stats_incremented  = false;
     bool skip_ip_allow_yaml           = false;
 
+    /// True if we deferred opening the cache for write until after response headers.
+    /// This is an optimization to avoid cache overhead for non-cacheable responses.
+    bool cache_open_write_deferred = false;
+
     /// True if the response is cacheable because of negative caching configuration.
     ///
     /// This being true implies the following:
@@ -1018,6 +1022,7 @@ public:
   static void handle_cache_write_lock(State *s);
   static void handle_cache_write_lock_go_to_origin(State *s);
   static void handle_cache_write_lock_go_to_origin_continue(State *s);
+  static void handle_deferred_cache_write_complete(State *s);
   static void HandleResponse(State *s);
   static void HandleUpdateCachedObject(State *s);
   static void HandleUpdateCachedObjectContinue(State *s);
