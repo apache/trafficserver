@@ -40,13 +40,15 @@ class HRWInverseVisitor(u4wrhVisitor, BaseHRWVisitor):
             section_label: SectionType = SectionType.REMAP,
             debug: bool = SystemDefaults.DEFAULT_DEBUG,
             error_collector=None,
-            preserve_comments: bool = True) -> None:
+            preserve_comments: bool = True,
+            merge_sections: bool = True) -> None:
 
         super().__init__(filename=filename, debug=debug, error_collector=error_collector)
 
         # HRW inverse-specific state
         self.section_label = section_label
         self.preserve_comments = preserve_comments
+        self.merge_sections = merge_sections
         self._pending_terms: list[tuple[str, CondState]] = []
         self._in_group: bool = False
         self._group_terms: list[tuple[str, CondState]] = []
@@ -86,7 +88,7 @@ class HRWInverseVisitor(u4wrhVisitor, BaseHRWVisitor):
     def _start_new_section(self, section_type: SectionType) -> None:
         """Start a new section, handling continuation of existing sections."""
         with self.debug_context(f"start_section {section_type.value}"):
-            if self._section_opened and self._section_label == section_type:
+            if self.merge_sections and self._section_opened and self._section_label == section_type:
                 self.debug(f"continuing existing section")
                 while self._if_depth > 0:
                     self.decrease_indent()

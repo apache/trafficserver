@@ -29,6 +29,7 @@
 #include "resources.h"
 #include "statement.h"
 #include "parser.h"
+#include "types.h"
 
 // Operator modifiers
 enum OperModifiers {
@@ -68,8 +69,28 @@ public:
   Operator(const Operator &)       = delete;
   void operator=(const Operator &) = delete;
 
+  // Comparison - compares type, resources, and modifiers (masking OPER_LAST).
+  bool
+  equals(const Statement *other) const override
+  {
+    if (!other || strcmp(type_name(), other->type_name()) != 0) {
+      return false;
+    }
+
+    if (get_resource_ids() != other->get_resource_ids()) {
+      return false;
+    }
+
+    auto         *op           = static_cast<const Operator *>(other);
+    OperModifiers mods1_masked = static_cast<OperModifiers>(_mods & ~OPER_LAST);
+    OperModifiers mods2_masked = static_cast<OperModifiers>(op->_mods & ~OPER_LAST);
+
+    return mods1_masked == mods2_masked;
+  }
+
   OperModifiers get_oper_modifiers() const;
   void          initialize(Parser &p) override;
+  virtual void  initialize(const hrw::OperatorSpec &spec);
 
   // Returns number of executed operators that need to defer call to TSHttpTxnReenable().  It is a fatal error if this
   // returns more than 1.  If multiple operators need to defer reenable on the same hook, issue 11549 should be
