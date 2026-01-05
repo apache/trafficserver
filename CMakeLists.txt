@@ -761,6 +761,9 @@ add_subdirectory(src/traffic_via)
 if(ENABLE_CRIPTS)
   add_subdirectory(src/cripts)
 endif()
+
+# HRW4U C++ parser library (optional, requires ANTLR4)
+add_subdirectory(src/hrw4u)
 if(ENABLE_AUTEST)
   add_subdirectory(tests)
 endif()
@@ -799,6 +802,9 @@ if(ENABLE_BENCHMARKS)
   message(STATUS "Building benchmarks in tools/benchmark")
   add_subdirectory(tools/benchmark)
 endif()
+
+# Add hrw_confcmp comparison tool (requires ANTLR4)
+add_subdirectory(tools/hrw_confcmp)
 
 add_custom_target(
   clang-format-install

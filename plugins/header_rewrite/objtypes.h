@@ -15,18 +15,20 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
-//////////////////////////////////////////////////////////////////////////////////////////////
-//
-// Implement the classes for the various types of hash keys we support.
-//
 #pragma once
 
-#include <string>
+#include "types.h"
 
-#include "operator.h"
-#include "condition.h"
-#include "hrw4u/ObjTypes.h"
+class Condition;
+class Operator;
 
-Operator  *operator_factory(hrw::OperatorType op_type);
-Operator  *operator_factory(const std::string &op);
-Condition *condition_factory(const std::string &cond);
+namespace hrw
+{
+
+Condition *create_condition(const ConditionSpec &spec);
+Operator  *create_operator(const OperatorSpec &spec);
+
+ConditionSpec parse_condition_string(const std::string &cond_str, const std::string &arg);
+OperatorSpec  parse_operator_string(const std::string &op_str, const std::string &arg, const std::string &val);
+
+} // namespace hrw
