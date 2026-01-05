@@ -143,7 +143,7 @@ endif()
 
 add_executable(
   test_RemapPluginInfo test_RemapPlugin.cc plugin_testing_common.cc ../PluginDso.cc ../RemapPluginInfo.cc
-                       ${PROJECT_SOURCE_DIR}/src/iocore/net/libinknet_stub.cc ${PROJECT_SOURCE_DIR}/src/api/APIHooks.cc
+                       ${PROJECT_SOURCE_DIR}/src/api/APIHooks.cc
 )
 
 target_compile_definitions(test_RemapPluginInfo PRIVATE PLUGIN_DSO_TESTS)
