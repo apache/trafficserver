@@ -209,10 +209,14 @@ private:
   Http2StreamState _state      = Http2StreamState::HTTP2_STREAM_STATE_IDLE;
   int64_t          _http_sm_id = -1;
 
-  HTTPHdr   _receive_header;
+  HTTPHdr _receive_header;
+#if TS_USE_MALLOC_ALLOCATOR
+  MIOBuffer _receive_buffer{BUFFER_SIZE_INDEX_FOR_XMALLOC_SIZE(4096)};
+#else
   MIOBuffer _receive_buffer{BUFFER_SIZE_INDEX_4K};
-  VIO       read_vio;
-  VIO       write_vio;
+#endif
+  VIO read_vio;
+  VIO write_vio;
 
   History<HISTORY_DEFAULT_SIZE>                                                           _history;
   Milestones<Http2StreamMilestone, static_cast<size_t>(Http2StreamMilestone::LAST_ENTRY)> _milestones;
