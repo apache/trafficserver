@@ -257,6 +257,7 @@
   X(HTTP_PER_SERVER_CONNECTION_METRIC_AGGREGATE,    connection_tracker_config.metric_aggregate, ConnectionTracker::CONFIG_SERVER_VAR_METRIC_AGGREGATE,            INT,    ConnectionTracker_METRIC_AGGREGATE_CONV) \
   X(HTTP_BYPASS_PARENT,                             bypass_parent,                              "proxy.config.http.bypass_parent",                                INT,    GENERIC) \
   X(HTTP_REJECT_HEAD_WITH_CONTENT,                  reject_head_with_content,                   "proxy.config.http.reject_head_with_content",                     INT,    GENERIC) \
-  X(SSL_CLIENT_CA_RPK_FILENAME,                     ssl_client_ca_rpk_filename,                 "proxy.config.ssl.client.CA.rpk.filename",                        STRING, NONE)
+  X(SSL_CLIENT_CA_RPK_FILENAME,                     ssl_client_ca_rpk_filename,                 "proxy.config.ssl.client.CA.rpk.filename",                        STRING, NONE) \
+  X(HTTP_CACHE_DEFER_WRITE_ON_MISS,                 cache_defer_write_on_miss,                  "proxy.config.http.cache.defer_write_on_miss",                    INT,    GENERIC)
 
 // clang-format on
