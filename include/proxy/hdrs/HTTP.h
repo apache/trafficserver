@@ -162,6 +162,7 @@ enum class SquidLogCode {
   ERR_FUTURE_1              = 'I',
   ERR_CLIENT_READ_ERROR     = 'J', // Client side abort logging
   ERR_LOOP_DETECTED         = 'K', // Loop or cycle detected, request came back to this server
+  ERR_TUN_ACTIVE_TIMEOUT    = 'T', // Tunnel (CONNECT) active timeout
   ERR_UNKNOWN               = 'Z'
 };
 
