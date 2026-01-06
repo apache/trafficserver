@@ -20,6 +20,7 @@
 #include <unordered_map>
 #include <limits>
 #include <swoc/IPAddr.h>
+#include <swoc/TextView.h>
 #include <swoc/bwf_ip.h>
 #include <unistd.h>
 #include <arpa/inet.h>
@@ -37,31 +38,46 @@ static bool     enabled             = true;
 
 //-------------------------------------------------------------------------
 static int
-msg_hook(TSCont * /* contp ATS_UNUSED */, TSEvent /* event ATS_UNUSED */, void *edata)
+msg_hook(TSCont * /* contp ATS_UNUSED */, TSEvent event, void *edata)
 {
-  TSPluginMsg     *msg = static_cast<TSPluginMsg *>(edata);
-  std::string_view tag(static_cast<const char *>(msg->tag));
-  std::string_view data(static_cast<const char *>(msg->data));
+  if (event != TS_EVENT_LIFECYCLE_MSG) {
+    TSError("block_errors: unexpected event %d", event);
+    return TS_EVENT_NONE;
+  }
 
-  Dbg(dbg_ctl, "msg_hook: tag=%s data=%s", tag.data(), data.data());
+  TSPluginMsg   *msg = static_cast<TSPluginMsg *>(edata);
+  swoc::TextView message{msg->tag, strlen(msg->tag)};
+  swoc::TextView target  = message.take_prefix_at('.');
+  swoc::TextView command = message;
 
-  if (tag == "block_errors.enabled") {
+  // Filter for messages meant for this plugin.
+  if (target != "block_errors") {
+    Dbg(dbg_ctl, "msg_hook: message for a different plugin: %.*s", static_cast<int>(target.size()), target.data());
+    return TS_EVENT_NONE;
+  }
+
+  swoc::TextView data{static_cast<const char *>(msg->data), msg->data_size};
+
+  Dbg(dbg_ctl, "msg_hook: command=%.*s data=%.*s", static_cast<int>(command.size()), command.data(), static_cast<int>(data.size()),
+      data.data());
+
+  if (command == "enabled") {
     enabled = static_cast<bool>(atoi(data.data()));
-  } else if (tag == "block_errors.limit") {
+  } else if (command == "limit") {
     RESET_LIMIT = atoi(data.data());
-  } else if (tag == "block_errors.cycles") {
+  } else if (command == "cycles") {
     TIMEOUT_CYCLES = atoi(data.data());
-  } else if (tag == "block_errors.shutdown") {
+  } else if (command == "shutdown") {
     shutdown_connection = static_cast<bool>(atoi(data.data()));
   } else {
-    Dbg(dbg_ctl, "msg_hook: unknown message tag '%s'", tag.data());
-    TSError("block_errors: unknown message tag '%s'", tag.data());
+    Dbg(dbg_ctl, "msg_hook: unknown command '%.*s'", static_cast<int>(command.size()), command.data());
+    TSError("block_errors: unknown command '%.*s'", static_cast<int>(command.size()), command.data());
   }
 
   Dbg(dbg_ctl, "reset limit: %d per minute, timeout limit: %d minutes, shutdown connection: %d enabled: %d", RESET_LIMIT,
       TIMEOUT_CYCLES, shutdown_connection, enabled);
 
-  return 0;
+  return TS_EVENT_NONE;
 }
 
 //-------------------------------------------------------------------------
