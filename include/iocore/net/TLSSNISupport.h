@@ -43,7 +43,8 @@ public:
     /**
      * @return 1 if successful
      */
-    int getExtension(int type, const uint8_t **out, size_t *outlen);
+    int                  getExtension(int type, const uint8_t **out, size_t *outlen);
+    ClientHelloContainer get_client_hello_container();
 
   private:
     ClientHelloContainer _chc;
@@ -55,8 +56,9 @@ public:
   static TLSSNISupport *getInstance(SSL *ssl);
   static void           bind(SSL *ssl, TLSSNISupport *snis);
   static void           unbind(SSL *ssl);
-
-  int perform_sni_action(SSL &ssl);
+  int                   perform_sni_action(SSL &ssl);
+  ClientHelloContainer  get_client_hello_container() const;
+  void                  set_client_hello_container(ClientHelloContainer container);
   // Callback functions for OpenSSL libraries
 
   /** Process a CLIENT_HELLO from a client.
@@ -114,5 +116,6 @@ private:
   // Null-terminated string, or nullptr if there is no SNI server name.
   std::unique_ptr<char[]> _sni_server_name;
 
-  void _set_sni_server_name_buffer(std::string_view name);
+  void                 _set_sni_server_name_buffer(std::string_view name);
+  ClientHelloContainer _chc = nullptr;
 };
