@@ -67,12 +67,10 @@ public:
   //
   DbgCtl() : _ptr{&_No_tag_dummy()} {}
 
-  ~DbgCtl()
-  {
-    if (_ptr != &_No_tag_dummy()) {
-      _rm_reference();
-    }
-  }
+  // Default destructor: the registry uses a "leaky singleton" pattern to avoid
+  // use-after-free crashes during shutdown due to undefined static destruction
+  // order. See issue #12776.
+  ~DbgCtl() = default;
 
   // No copying. Only moving from a tagged to a tagless instance allowed.
   //
@@ -152,8 +150,6 @@ private:
   }
 
   static const _TagData *_new_reference(char const *tag);
-
-  static void _rm_reference();
 
   class _RegistryAccessor;
 
