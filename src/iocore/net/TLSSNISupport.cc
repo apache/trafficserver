@@ -50,6 +50,25 @@ TLSSNISupport::getInstance(SSL *ssl)
   return static_cast<TLSSNISupport *>(SSL_get_ex_data(ssl, _ex_data_index));
 }
 
+ClientHelloContainer
+TLSSNISupport::ClientHello::get_client_hello_container()
+{
+  return this->_chc;
+}
+
+// In TLSSNISupport.h
+ClientHelloContainer
+TLSSNISupport::get_client_hello_container() const
+{
+  return this->_chc;
+}
+
+void
+TLSSNISupport::set_client_hello_container(ClientHelloContainer container)
+{
+  this->_chc = container;
+}
+
 void
 TLSSNISupport::bind(SSL *ssl, TLSSNISupport *snis)
 {
@@ -98,6 +117,7 @@ TLSSNISupport::on_client_hello(ClientHello &client_hello)
   const char          *servername = nullptr;
   const unsigned char *p;
   size_t               remaining, len;
+
   // Parse the server name if the get extension call succeeds and there are more than 2 bytes to parse
   if (client_hello.getExtension(TLSEXT_TYPE_server_name, &p, &remaining) && remaining > 2) {
     // Parse to get to the name, originally from test/handshake_helper.c in openssl tree

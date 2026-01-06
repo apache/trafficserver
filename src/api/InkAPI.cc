@@ -7890,6 +7890,23 @@ TSVConnSslSniGet(TSVConn sslp, int *length)
   return server_name;
 }
 
+TSClientHello
+TSVConnClientHelloGet(TSVConn sslp)
+{
+  NetVConnection *netvc = reinterpret_cast<NetVConnection *>(sslp);
+  if (netvc == nullptr) {
+    return nullptr;
+  }
+
+  if (auto snis = netvc->get_service<TLSSNISupport>(); snis) {
+    ClientHelloContainer client_hello = snis->get_client_hello_container();
+    // Cast the pointer value directly (no const_cast needed if types match)
+    return reinterpret_cast<TSClientHello>(const_cast<void *>(static_cast<const void *>(client_hello)));
+  }
+
+  return nullptr;
+}
+
 TSSslVerifyCTX
 TSVConnSslVerifyCTXGet(TSVConn sslp)
 {

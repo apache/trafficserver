@@ -53,11 +53,12 @@ static bool               create_log_file();
 static void               register_hooks();
 static int                handle_client_hello(TSCont cont, TSEvent event, void *edata);
 static std::string        get_fingerprint(SSL *ssl);
+static std::string        get_fingerprint(SSL_CLIENT_HELLO *ssl);
 char                     *get_IP(sockaddr const *s_sockaddr, char res[INET6_ADDRSTRLEN]);
 static void               log_fingerprint(JA4_data const *data);
 static std::uint16_t      get_version(SSL *ssl);
 static std::string        get_first_ALPN(SSL *ssl);
-static void               add_ciphers(JA4::TLSClientHelloSummary &summary, SSL *ssl);
+static void               add_ciphers(JA4::TLSClientHelloSummary &summary, SSL_CLIENT_HELLO *ssl);
 static void               add_extensions(JA4::TLSClientHelloSummary &summary, SSL *ssl);
 static std::string        hash_with_SHA256(std::string_view sv);
 static int                handle_read_request_hdr(TSCont cont, TSEvent event, void *edata);
@@ -163,8 +164,11 @@ handle_client_hello(TSCont /* cont ATS_UNUSED */, TSEvent event, void *edata)
     // We ignore the event, but we don't want to reject the connection.
     return TS_SUCCESS;
   }
-  TSVConn const         ssl_vc{static_cast<TSVConn>(edata)};
-  TSSslConnection const ssl{TSVConnSslConnectionGet(ssl_vc)};
+  TSVConn const           ssl_vc{static_cast<TSVConn>(edata)};
+  TSSslConnection const   ssl{TSVConnSslConnectionGet(ssl_vc)};
+  TSClientHello           ssl_client_hello = TSVConnClientHelloGet(ssl_vc);
+  const SSL_CLIENT_HELLO *client_hello     = reinterpret_cast<const SSL_CLIENT_HELLO *>(ssl_client_hello);
+
   if (nullptr == ssl) {
     Dbg(dbg_ctl, "Could not get SSL object.");
   } else {
@@ -180,14 +184,27 @@ handle_client_hello(TSCont /* cont ATS_UNUSED */, TSEvent event, void *edata)
 }
 
 std::string
-get_fingerprint(SSL *ssl)
+get_fingerprint(SSL_CLIENT_HELLO *ssl)
 {
   JA4::TLSClientHelloSummary summary{};
   summary.protocol    = JA4::Protocol::TLS;
-  summary.TLS_version = get_version(ssl);
-  summary.ALPN        = get_first_ALPN(ssl);
+  summary.TLS_version = ssl->;
+  // summary.ALPN        = get_first_ALPN(ssl);
   add_ciphers(summary, ssl);
-  add_extensions(summary, ssl);
+  // add_extensions(summary, ssl);
+  std::string result{JA4::make_JA4_fingerprint(summary, hash_with_SHA256)};
+  return result;
+}
+
+std::string
+get_fingerprint(SSL *ssl)
+{
+  JA4::TLSClientHelloSummary summary{};
+  summary.protocol = JA4::Protocol::TLS;
+  // summary.TLS_version = get_version(ssl);
+  // summary.ALPN        = get_first_ALPN(ssl);
+  add_ciphers(summary, ssl);
+  // add_extensions(summary, ssl);
   std::string result{JA4::make_JA4_fingerprint(summary, hash_with_SHA256)};
   return result;
 }
@@ -228,68 +245,88 @@ log_fingerprint(JA4_data const *data)
   }
 }
 
-std::uint16_t
-get_version(SSL *ssl)
-{
-  unsigned char const *buf{};
-  std::size_t          buflen{};
-  if (SSL_SUCCESS == SSL_client_hello_get0_ext(ssl, EXT_SUPPORTED_VERSIONS, &buf, &buflen)) {
-    std::uint16_t max_version{0};
-    for (std::size_t i{1}; i < buflen; i += 2) {
-      std::uint16_t version{make_word(buf[i - 1], buf[i])};
-      if ((!JA4::is_GREASE(version)) && version > max_version) {
-        max_version = version;
-      }
-    }
-    return max_version;
-  } else {
-    Dbg(dbg_ctl, "No supported_versions extension... using legacy version.");
-    return SSL_client_hello_get0_legacy_version(ssl);
-  }
-}
+// std::uint16_t
+// get_version(SSL *ssl)
+// {
+//   unsigned char const *buf{};
+//   std::size_t          buflen{};
+//   if (SSL_SUCCESS == SSL_client_hello_get0_ext(ssl, EXT_SUPPORTED_VERSIONS, &buf, &buflen)) {
+//     std::uint16_t max_version{0};
+//     for (std::size_t i{1}; i < buflen; i += 2) {
+//       std::uint16_t version{make_word(buf[i - 1], buf[i])};
+//       if ((!JA4::is_GREASE(version)) && version > max_version) {
+//         max_version = version;
+//       }
+//     }
+//     return max_version;
+//   } else {
+//     Dbg(dbg_ctl, "No supported_versions extension... using legacy version.");
+//     return SSL_client_hello_get0_legacy_version(ssl);
+//   }
+// }
 
-std::string
-get_first_ALPN(SSL *ssl)
-{
-  unsigned char const *buf{};
-  std::size_t          buflen{};
-  std::string          result{""};
-  if (SSL_SUCCESS == SSL_client_hello_get0_ext(ssl, EXT_ALPN, &buf, &buflen)) {
-    // The first two bytes are a 16bit encoding of the total length.
-    unsigned char first_ALPN_length{buf[2]};
-    TSAssert(buflen > 4);
-    TSAssert(0 != first_ALPN_length);
-    result.assign(&buf[3], (&buf[3]) + first_ALPN_length);
-  }
-  return result;
-}
-
-void
-add_ciphers(JA4::TLSClientHelloSummary &summary, SSL *ssl)
-{
-  unsigned char const *buf{};
-  std::size_t          buflen{SSL_client_hello_get0_ciphers(ssl, &buf)};
-  if (buflen > 0) {
-    for (std::size_t i{1}; i < buflen; i += 2) {
-      summary.add_cipher(make_word(buf[i], buf[i - 1]));
-    }
-  } else {
-    Dbg(dbg_ctl, "Failed to get ciphers.");
-  }
-}
+// std::string
+// get_first_ALPN(SSL *ssl)
+// {
+//   unsigned char const *buf{};
+//   std::size_t          buflen{};
+//   std::string          result{""};
+//   if (SSL_SUCCESS == SSL_client_hello_get0_ext(ssl, EXT_ALPN, &buf, &buflen)) {
+//     // The first two bytes are a 16bit encoding of the total length.
+//     unsigned char first_ALPN_length{buf[2]};
+//     TSAssert(buflen > 4);
+//     TSAssert(0 != first_ALPN_length);
+//     result.assign(&buf[3], (&buf[3]) + first_ALPN_length);
+//   }
+//   return result;
+// }
 
 void
-add_extensions(JA4::TLSClientHelloSummary &summary, SSL *ssl)
+add_ciphers(JA4::TLSClientHelloSummary &summary, SSL_CLIENT_HELLO *client_hello)
 {
-  int        *buf{};
-  std::size_t buflen{};
-  if (SSL_SUCCESS == SSL_client_hello_get1_extensions_present(ssl, &buf, &buflen)) {
-    for (std::size_t i{1}; i < buflen; i += 2) {
-      summary.add_extension(make_word(buf[i], buf[i - 1]));
+  const uint8_t *ciphers = client_hello->cipher_suites;
+  size_t         len     = client_hello->cipher_suites_len;
+
+  for (size_t i = 0; i + 1 < len; i += 2) {
+    uint16_t cipher_value = (ciphers[i] << 8) | ciphers[i + 1];
+    summary.add_extension(cipher_value);
+
+    const SSL_CIPHER *cipher = SSL_get_cipher_by_value(cipher_value);
+
+    if (cipher != nullptr) {
+      const char *cipher_name = SSL_CIPHER_get_name(cipher);
+      Dbg(dbg_ctl, "0x%04X: %s", cipher_value, cipher_name);
+    } else {
+      Dbg(dbg_ctl, "  0x%04X: (unknown/unsupported)", cipher_value);
     }
   }
-  OPENSSL_free(buf);
 }
+// void
+// add_ciphers(JA4::TLSClientHelloSummary &summary, SSL *ssl)
+// {
+//   unsigned char const *buf{};
+//   std::size_t          buflen{SSL_client_hello_get0_ciphers(ssl, &buf)};
+//   if (buflen > 0) {
+//     for (std::size_t i{1}; i < buflen; i += 2) {
+//       summary.add_cipher(make_word(buf[i], buf[i - 1]));
+//     }
+//   } else {
+//     Dbg(dbg_ctl, "Failed to get ciphers.");
+//   }
+// }
+
+// void
+// add_extensions(JA4::TLSClientHelloSummary &summary, SSL *ssl)
+// {
+//   int        *buf{};
+//   std::size_t buflen{};
+//   if (SSL_SUCCESS == SSL_client_hello_get1_extensions_present(ssl, &buf, &buflen)) {
+//     for (std::size_t i{1}; i < buflen; i += 2) {
+//       summary.add_extension(make_word(buf[i], buf[i - 1]));
+//     }
+//   }
+//   OPENSSL_free(buf);
+// }
 
 std::string
 hash_with_SHA256(std::string_view sv)
