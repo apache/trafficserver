@@ -290,7 +290,7 @@ ProxySession::get_version(HTTPHdr &hdr) const
 sockaddr const *
 ProxySession::get_client_addr() const
 {
-  return _vc ? _vc->get_client_addr() : nullptr;
+  return _vc ? _vc->get_effective_remote_addr() : nullptr;
 }
 
 uint16_t

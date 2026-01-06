@@ -6173,7 +6173,7 @@ TSNetVConnClientAddrGet(TSVConn connp)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(connp) == TS_SUCCESS);
   NetVConnection *vc = reinterpret_cast<NetVConnection *>(connp);
-  return vc->get_client_addr();
+  return vc->get_effective_remote_addr();
 }
 
 TSAction

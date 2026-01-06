@@ -284,7 +284,7 @@ public:
   uint16_t get_local_port();
 
   /** Returns remote sockaddr storage. */
-  sockaddr const   *get_client_addr();
+  sockaddr const   *get_effective_remote_addr();
   IpEndpoint const &get_client_endpoint();
 
   uint16_t get_client_port();
@@ -710,7 +710,7 @@ NetVConnection::_set_service(QUICSupport *instance)
 }
 
 inline sockaddr const *
-NetVConnection::get_client_addr()
+NetVConnection::get_effective_remote_addr()
 {
   if (pp_info.version != ProxyProtocolVersion::UNDEFINED && is_proxy_protocol_cp_src) {
     return get_proxy_protocol_src_addr();
@@ -733,7 +733,7 @@ NetVConnection::get_client_endpoint()
 inline uint16_t
 NetVConnection::get_client_port()
 {
-  return ats_ip_port_host_order(this->get_client_addr());
+  return ats_ip_port_host_order(this->get_effective_remote_addr());
 }
 
 inline sockaddr const *
