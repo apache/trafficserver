@@ -176,17 +176,16 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   // sent us signal info via the pipe. If traffic_server just exited normally, the pipe will be
   // closed with no data, and we should exit without logging a false "crash".
   if (wait_mode) {
-    // Use poll to check if there's data available on stdin without blocking indefinitely.
+    // Use poll to wait briefly for potential crash data. If crash_logger_invoke was called,
+    // data should already be there. We only use poll() as a timeout guard here - the actual
+    // verification that crash data was received happens when we try to read() below.
     struct pollfd pfd;
     pfd.fd     = STDIN_FILENO;
     pfd.events = POLLIN;
 
-    // Wait briefly for data. If crash_logger_invoke was called, data should already be there.
     int poll_result = poll(&pfd, 1, 100); // 100ms timeout
 
-    // POLLHUP means the write end of the pipe was closed - normal exit, not crash.
-    // No data or error also means no crash occurred.
-    if (poll_result <= 0 || (pfd.revents & POLLHUP) || !(pfd.revents & POLLIN)) {
+    if (poll_result < 0) {
       return 0;
     }
   }
@@ -229,6 +228,13 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     target.flags |= CRASHLOG_HAVE_THREADINFO;
 
     nbytes = read(STDIN_FILENO, &target.siginfo, sizeof(target.siginfo));
+    if (nbytes <= 0) {
+      // No data received. In wait mode, this means traffic_server exited normally without
+      // crashing - crash_logger_invoke was never called, so no signal info was written.
+      if (wait_mode) {
+        return 0;
+      }
+    }
     if (nbytes < static_cast<ssize_t>(sizeof(target.siginfo))) {
       Warning("received %zd of %zu expected signal info bytes", nbytes, sizeof(target.siginfo));
       target.flags &= ~CRASHLOG_HAVE_THREADINFO;
@@ -240,6 +246,9 @@ main(int /* argc ATS_UNUSED */, const char **argv)
       target.flags &= ~CRASHLOG_HAVE_THREADINFO;
     }
   }
+  // Note: On non-Linux platforms, crash_logger_invoke doesn't write signal info to the pipe,
+  // so we cannot distinguish a crash from a normal exit. This may result in false crash logs
+  // being generated when traffic_server exits normally on those platforms.
 
   logname = crashlog_name();
 
