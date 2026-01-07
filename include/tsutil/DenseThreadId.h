@@ -27,21 +27,19 @@
 
 #include "tsutil/Assert.h"
 
+#include <array>
 #include <cstddef>
 #include <mutex>
-#include <vector>
 
-// Provide an alternate thread id, suitible for use as an array index.
+// Provide an alternate thread id, suitable for use as an array index.
 //
 class DenseThreadId
 {
 public:
-  // This can onlhy be called during single-threaded initialization.
-  //
-  static void
-  set_num_possible_values(std::size_t num_possible_values)
+  static constexpr std::size_t
+  num_possible_values()
   {
-    _num_possible_values = num_possible_values;
+    return _num_possible_values;
   }
 
   static std::size_t
@@ -50,23 +48,15 @@ public:
     return _id.val;
   }
 
-  static std::size_t
-  num_possible_values()
-  {
-    return _num_possible_values;
-  }
-
 private:
-  inline static std::mutex               _mtx;
-  inline static std::vector<std::size_t> _id_stack;
-  inline static std::size_t              _stack_top_idx;
-  inline static std::size_t              _num_possible_values{256};
+  static constexpr std::size_t                                _num_possible_values{256};
+  inline static std::mutex                                    _mtx;
+  inline static std::array<std::size_t, _num_possible_values> _id_stack;
+  inline static std::size_t                                   _stack_top_idx;
 
   static void
   _init()
   {
-    _id_stack.resize(_num_possible_values);
-
     _stack_top_idx = 0;
     for (std::size_t i{0}; i < _num_possible_values; ++i) {
       _id_stack[i] = i + 1;
@@ -82,8 +72,8 @@ private:
         _init();
         _inited = true;
       }
-      if (_id_stack.size() == _stack_top_idx) {
-        fatal_error("DenseThreadId:  number of threads exceeded maximum {}", unsigned(_id_stack.size()));
+      if (_num_possible_values == _stack_top_idx) {
+        fatal_error("DenseThreadId:  number of threads exceeded maximum {}", unsigned(_num_possible_values));
       }
       val            = _stack_top_idx;
       _stack_top_idx = _id_stack[_stack_top_idx];
