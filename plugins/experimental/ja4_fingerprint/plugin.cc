@@ -57,11 +57,11 @@ static int                handle_client_hello(TSCont cont, TSEvent event, void *
 char                     *get_IP(sockaddr const *s_sockaddr, char res[INET6_ADDRSTRLEN]);
 static void               log_fingerprint(JA4_data const *data);
 #ifdef OPENSSL_IS_BORINGSSL
-static std::string   get_fingerprint(SSL_CLIENT_HELLO *ssl);
-static std::uint16_t get_version(SSL_CLIENT_HELLO *ssl);
-static std::string   get_first_ALPN(SSL_CLIENT_HELLO *ssl);
-static void          add_ciphers(JA4::TLSClientHelloSummary &summary, SSL_CLIENT_HELLO *ssl);
-static void          add_extensions(JA4::TLSClientHelloSummary &summary, SSL_CLIENT_HELLO *ssl);
+static std::string   get_fingerprint(const SSL_CLIENT_HELLO *ssl);
+static std::uint16_t get_version(const SSL_CLIENT_HELLO *ssl);
+static std::string   get_first_ALPN(const SSL_CLIENT_HELLO *ssl);
+static void          add_ciphers(JA4::TLSClientHelloSummary &summary, const SSL_CLIENT_HELLO *ssl);
+static void          add_extensions(JA4::TLSClientHelloSummary &summary, const SSL_CLIENT_HELLO *ssl);
 #else
 static std::string   get_fingerprint(SSL *ssl);
 static std::uint16_t get_version(SSL *ssl);
@@ -210,14 +210,14 @@ handle_client_hello(TSCont /* cont ATS_UNUSED */, TSEvent event, void *edata)
   TSVConn const ssl_vc{static_cast<TSVConn>(edata)};
 
 #ifdef OPENSSL_IS_BORINGSSL
-  TSClientHello     ssl_client_hello = TSVConnClientHelloGet(ssl_vc);
-  SSL_CLIENT_HELLO *ssl              = reinterpret_cast<SSL_CLIENT_HELLO *>(ssl_client_hello);
+  TSClientHello           ssl_client_hello = TSVConnClientHelloGet(ssl_vc);
+  const SSL_CLIENT_HELLO *ssl              = reinterpret_cast<const SSL_CLIENT_HELLO *>(ssl_client_hello);
 #else
   TSSslConnection const ssl_conn{TSVConnSslConnectionGet(ssl_vc)};
   SSL                  *ssl = reinterpret_cast<SSL *>(ssl_conn);
 #endif
   if (nullptr == ssl) {
-    Dbg(dbg_ctl, "Could not get SSL client hello object.");
+    Dbg(dbg_ctl, "Could not get SSL object.");
   } else {
     auto data{std::make_unique<JA4_data>()};
     data->fingerprint = get_fingerprint(ssl);
@@ -233,7 +233,7 @@ handle_client_hello(TSCont /* cont ATS_UNUSED */, TSEvent event, void *edata)
 
 std::string
 #ifdef OPENSSL_IS_BORINGSSL
-get_fingerprint(SSL_CLIENT_HELLO *ssl)
+get_fingerprint(const SSL_CLIENT_HELLO *ssl)
 #else
 get_fingerprint(SSL *ssl)
 #endif
@@ -286,7 +286,7 @@ log_fingerprint(JA4_data const *data)
 
 std::uint16_t
 #ifdef OPENSSL_IS_BORINGSSL
-get_version(SSL_CLIENT_HELLO *client_hello)
+get_version(const SSL_CLIENT_HELLO *client_hello)
 #else
 get_version(SSL *ssl)
 #endif
@@ -323,7 +323,7 @@ get_version(SSL *ssl)
 
 std::string
 #ifdef OPENSSL_IS_BORINGSSL
-get_first_ALPN(SSL_CLIENT_HELLO *client_hello)
+get_first_ALPN(const SSL_CLIENT_HELLO *client_hello)
 #else
 get_first_ALPN(SSL *ssl)
 #endif
@@ -348,7 +348,7 @@ get_first_ALPN(SSL *ssl)
 
 #ifdef OPENSSL_IS_BORINGSSL
 void
-add_ciphers(JA4::TLSClientHelloSummary &summary, SSL_CLIENT_HELLO *client_hello)
+add_ciphers(JA4::TLSClientHelloSummary &summary, const SSL_CLIENT_HELLO *client_hello)
 {
   const uint8_t *buf    = client_hello->cipher_suites;
   size_t         buflen = client_hello->cipher_suites_len;
@@ -371,7 +371,7 @@ add_ciphers(JA4::TLSClientHelloSummary &summary, SSL *ssl)
 
 #ifdef OPENSSL_IS_BORINGSSL
 void
-add_extensions(JA4::TLSClientHelloSummary &summary, SSL_CLIENT_HELLO *client_hello)
+add_extensions(JA4::TLSClientHelloSummary &summary, const SSL_CLIENT_HELLO *client_hello)
 {
   const uint8_t *ext       = client_hello->extensions;
   size_t         remaining = client_hello->extensions_len;
