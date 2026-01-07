@@ -270,8 +270,8 @@ def handle_file_input(args):
             elif args.node and name.startswith("proxy.node."):
                 name = name[len("proxy."):]
 
-            # Build the object
-            add_object(config, name, value[:-1], type, track_info)
+            # Build the object (use rstrip to handle files without trailing newline)
+            add_object(config, name, value.rstrip('\n'), type, track_info)
             idx = idx + 1
 
     ts = {}
