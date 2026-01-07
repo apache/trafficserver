@@ -1640,8 +1640,6 @@ HTTPHdr::_fill_target_cache() const
   m_target_in_url  = false;
   m_port_in_header = false;
   m_host_mime      = nullptr;
-  m_host_ptr       = nullptr;
-  m_host_value_len = 0;
   // Check in the URL first, then the HOST field.
   std::string_view host;
   if (host = url->host_get(); nullptr != host.data()) {
@@ -1656,10 +1654,7 @@ HTTPHdr::_fill_target_cache() const
     m_host_length                     = static_cast<int>(host.length());
 
     if (m_host_mime != nullptr) {
-      // Cache pointer and length for staleness detection - if either changes, the value was modified.
-      m_host_ptr       = m_host_mime->m_ptr_value;
-      m_host_value_len = m_host_mime->m_len_value;
-      m_port           = 0;
+      m_port = 0;
       if (!port.empty()) {
         for (auto c : port) {
           if (isdigit(c)) {
