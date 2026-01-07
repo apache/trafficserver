@@ -304,7 +304,6 @@ ssl_client_hello_callback(const SSL_CLIENT_HELLO *client_hello)
 {
   SSL                       *s  = client_hello->ssl;
   TLSSNISupport::ClientHello ch = {client_hello};
-
 #endif
 
   TLSSNISupport *snis = TLSSNISupport::getInstance(s);

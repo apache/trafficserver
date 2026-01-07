@@ -117,7 +117,6 @@ TLSSNISupport::on_client_hello(ClientHello &client_hello)
   const char          *servername = nullptr;
   const unsigned char *p;
   size_t               remaining, len;
-
   // Parse the server name if the get extension call succeeds and there are more than 2 bytes to parse
   if (client_hello.getExtension(TLSEXT_TYPE_server_name, &p, &remaining) && remaining > 2) {
     // Parse to get to the name, originally from test/handshake_helper.c in openssl tree
