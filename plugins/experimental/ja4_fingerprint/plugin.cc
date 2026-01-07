@@ -191,7 +191,6 @@ handle_client_hello(TSCont /* cont ATS_UNUSED */, TSEvent event, void *edata)
     // The VCONN_CLOSE handler is now responsible for freeing the resource.
     TSUserArgSet(ssl_vc, *get_user_arg_index(), static_cast<void *>(data.release()));
   }
-
   TSVConnReenable(ssl_vc);
   return TS_SUCCESS;
 }
