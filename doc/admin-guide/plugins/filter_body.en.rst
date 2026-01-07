@@ -25,38 +25,41 @@ Filter Body Plugin
 Description
 ===========
 
-The ``filter_body`` plugin provides streaming request and response body content
-inspection with configurable pattern matching and actions. It can be used to
-detect and mitigate security threats such as CVE exploits, XXE (XML External
-Entity) attacks, SQL injection patterns, and other malicious content.
+The ``filter_body`` plugin is an experimental plugin that provides streaming
+request and response body content inspection with configurable pattern matching
+and actions. It can be used to detect and mitigate security threats such as CVE
+exploits, XXE (XML External Entity) attacks, SQL injection patterns, and other
+malicious content.
 
-The plugin uses a streaming transform approach with a lookback buffer to handle
-patterns that may span buffer boundaries, avoiding the need to buffer the entire
-request or response body.
+The plugin uses a streaming transform approach, processing data as it arrives
+without buffering the entire request or response body. A small lookback buffer
+(sized to the longest pattern minus one byte) is maintained to detect patterns
+that span chunk boundaries.
 
 Features
 --------
 
-- YAML-based configuration with flexible rule definitions.
-- Header-based filtering with AND/OR logic.
-- Case-insensitive header matching, case-sensitive body patterns.
-- Configurable actions per rule: ``log``, ``block``, ``add_header``.
-- Support for both request and response body inspection.
-- Streaming transform with lookback buffer for cross-boundary pattern matching.
-- Optional ``max_content_length`` to skip inspection of large bodies.
-- Configurable HTTP methods to match (GET, POST, PUT, etc.).
-- Optional ``status`` codes to match for response rules.
-- Per-rule metrics counters for monitoring match activity.
+- YAML-based configuration with flexible rule definitions
+- Header-based filtering with AND/OR logic
+- Case-insensitive header matching, case-sensitive body patterns
+- Configurable actions per rule: ``log``, ``block``, ``add_header``
+- Support for both request and response body inspection
+- Configurable HTTP methods to match (GET, POST, PUT, etc.)
+- Per-rule metrics counters for monitoring match activity
+- Streaming transform with lookback buffer for cross-boundary pattern matching
+- Optional ``max_content_length`` to skip inspection of large bodies
+- Optional ``status`` codes to match for response rules
 
 Installation
 ============
 
-The ``filter_body`` plugin is an experimental plugin. To build it, either pass
-``-DENABLE_FILTER_BODY=ON`` to ``cmake`` when configuring the build::
+The ``filter_body`` plugin is an experimental plugin and is not built by default.
+To build it, pass ``-DENABLE_FILTER_BODY=ON`` to ``cmake`` when configuring::
 
     cmake -DENABLE_FILTER_BODY=ON ...
 
-Or enable all experimental plugins with ``-DBUILD_EXPERIMENTAL_PLUGINS=ON``::
+Alternatively, build all experimental plugins at once with
+``-DBUILD_EXPERIMENTAL_PLUGINS=ON``::
 
     cmake -DBUILD_EXPERIMENTAL_PLUGINS=ON ...
 
@@ -242,25 +245,26 @@ on configuring access logs.
 Block Action
 ------------
 
-When the ``block`` action is configured, the request or response is blocked. The
-connection to the origin is closed and no further data is forwarded.
+When the ``block`` action is configured, the connections are closed and no
+further data is forwarded.
 
 .. warning::
 
     Because the plugin uses streaming body inspection, a malicious pattern may
-    not be detected until after some (or all) of the body has already been sent
-    to the origin. The ``block`` action stops further transmission but cannot
-    recall data already sent. For maximum protection, consider using
-    ``max_content_length`` to limit inspection to smaller bodies that can be
-    buffered, or use header-based filtering to reduce the attack surface.
+    not be detected until after some (or all) of the body has already been sent.
+    The ``block`` action stops further transmission but cannot recall data
+    already sent. For maximum protection, consider using ``max_content_length``
+    to limit inspection to smaller bodies, or use header-based filtering to
+    reduce the attack surface.
 
-.. note::
+**Request body blocking**: Both the client and origin connections are closed.
+The client does not receive any HTTP response - the connection simply closes.
+This is because body inspection occurs after request headers have been sent to
+the origin.
 
-    For request body transforms, the plugin cannot send a custom error response
-    (such as 403 Forbidden) because the request headers have already been sent
-    to the origin by the time the body is inspected. Instead, ATS closes the
-    connection. Depending upon timing, the client may receive a 502 status
-    response.
+**Response body blocking**: The HTTP status code has already been sent to the
+client before body inspection begins. The connection is closed, leaving the
+client with a partial response body.
 
 Add Header Action
 -----------------
@@ -413,24 +417,28 @@ Debug output includes:
 Limitations
 ===========
 
-1. **Request blocking**: When blocking request bodies, the connection to the
-   origin is closed and the client receives a 502 Bad Gateway response. The
-   plugin cannot send a custom error response (such as 403 Forbidden) because
-   the request headers have already been sent to the origin by the time the
-   body is inspected. This is a limitation of request body transforms in |TS|.
+1. **Request blocking**: When blocking request bodies, both the client and
+   origin connections are closed. The client does not receive any HTTP response
+   code - the connection simply closes. This is because body inspection occurs
+   after the request headers have already been sent to the origin.
 
-2. **Pattern matching**: The plugin uses simple substring matching. Regular
+2. **Response blocking**: When blocking response bodies, the HTTP status code
+   has already been sent to the client before body inspection begins. The
+   plugin closes the connection, leaving the client with a partial response
+   body.
+
+3. **Pattern matching**: The plugin uses simple substring matching. Regular
    expressions are not currently supported.
 
-3. **Memory usage**: The lookback buffer size is determined by the longest
+4. **Memory usage**: The lookback buffer size is determined by the longest
    body pattern configured. Very long patterns may increase memory usage.
 
-4. **Cross-boundary pattern search**: When searching for patterns that may span
+5. **Cross-boundary pattern search**: When searching for patterns that may span
    buffer block boundaries, the plugin uses a two-phase search. The boundary
    search copies only a small region (at most 2 * max pattern length bytes) to
    detect patterns spanning boundaries. The main block search is zero-copy.
 
-5. **Performance**: Body inspection adds processing overhead. Use
+6. **Performance**: Body inspection adds processing overhead. Use
    ``max_content_length`` to limit inspection to smaller bodies when appropriate.
 
 See Also
