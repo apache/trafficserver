@@ -56,7 +56,8 @@ consumed_count=$(grep -c "consumed.*bytes" "$LOGFILE" 2>/dev/null || echo "0")
 echo "  'consumed' lines: $consumed_count (expected: 2)"
 
 if [[ $consumed_count -ne 2 ]]; then
-    echo "WARNING: Expected 2 consumed lines but found $consumed_count"
+    echo "FAIL: Expected 2 consumed lines but found $consumed_count"
+    exit 1
 fi
 
 echo "PASS: Transform completed normally"
