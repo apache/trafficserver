@@ -7900,8 +7900,7 @@ TSVConnClientHelloGet(TSVConn sslp)
 
   if (auto snis = netvc->get_service<TLSSNISupport>(); snis) {
     ClientHelloContainer client_hello = snis->get_client_hello_container();
-    // Cast the pointer value directly (no const_cast needed if types match)
-    return reinterpret_cast<TSClientHello>(const_cast<void *>(static_cast<const void *>(client_hello)));
+    return reinterpret_cast<TSClientHello>(client_hello);
   }
 
   return nullptr;
