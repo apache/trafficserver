@@ -390,9 +390,10 @@ For example, a rule named ``xxe_detection`` would have a metric named::
 
     plugin.filter_body.rule.xxe_detection.matches
 
-You can query these metrics using ``traffic_ctl``::
+You can query these metrics using ``traffic_ctl``, replacing ``<rule_name>`` with
+the name from your configuration::
 
-    traffic_ctl metric get plugin.filter_body.rule.xxe_detection.matches
+    traffic_ctl metric get plugin.filter_body.rule.<rule_name>.matches
 
 Or list all filter_body metrics::
 

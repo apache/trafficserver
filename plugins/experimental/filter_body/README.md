@@ -169,10 +169,10 @@ The plugin creates a metrics counter for each rule:
 plugin.filter_body.rule.<rule_name>.matches
 ```
 
-Query with `traffic_ctl`:
+Query with `traffic_ctl`, replacing `<rule_name>` with the name from your config:
 
 ```bash
-traffic_ctl metric get plugin.filter_body.rule.xxe_detection.matches
+traffic_ctl metric get plugin.filter_body.rule.<rule_name>.matches
 traffic_ctl metric match plugin.filter_body
 ```
 
