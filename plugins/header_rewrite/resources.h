@@ -27,6 +27,7 @@
 #include "ts/remap.h"
 
 #include "lulu.h"
+#include "tsutil/Regex.h"
 
 #if TS_HAS_CRIPTS
 #include "cripts/Certs.hpp"
@@ -93,11 +94,9 @@ public:
 #else
   TransactionState state; // Without cripts, txnp / ssnp goes here
 #endif
-  const char  *ovector_ptr = nullptr;
   TSHttpStatus resp_status = TS_HTTP_STATUS_NONE;
-  int          ovector[OVECCOUNT];
-  int          ovector_count = 0;
-  bool         changed_url   = false;
+  RegexMatches matches;
+  bool         changed_url = false;
 
 private:
   void
