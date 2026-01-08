@@ -34,6 +34,7 @@
 
 #include "tscore/CryptoHash.h"
 #include "tscore/List.h"
+#include "tsutil/Bravo.h"
 
 #include <atomic>
 
@@ -78,7 +79,6 @@ public:
 
   CacheDisk *disk{};
 
-  OpenDir              open_dir;
   RamCache            *ram_cache = nullptr;
   DLL<EvacuationBlock> lookaside[LOOKASIDE_SIZE];
   CacheEvacuateDocVC  *doc_evacuator = nullptr;
@@ -102,14 +102,15 @@ public:
 
   int recover_data();
 
-  int open_write(CacheVC *cont, int allow_if_writers, int max_writers);
-  int open_write_lock(CacheVC *cont, int allow_if_writers, int max_writers);
-  int close_write(CacheVC *cont);
-  int begin_read(CacheVC *cont) const;
-  // unused read-write interlock code
-  // currently http handles a write-lock failure by retrying the read
+  // OpenDir API
+  int           open_write(CacheVC *cont, int allow_if_writers, int max_writers);
+  int           open_write_lock(CacheVC *cont, int allow_if_writers, int max_writers);
+  int           close_write(CacheVC *cont);
   OpenDirEntry *open_read(const CryptoHash *key) const;
-  int           close_read(CacheVC *cont) const;
+
+  // PreservationTable API
+  int begin_read(CacheVC *cont) const;
+  int close_read(CacheVC *cont) const;
 
   int clear_dir_aio();
   int clear_dir();
@@ -238,8 +239,21 @@ public:
     return this->_preserved_dirs;
   }
 
+  // shared_mutex lock guard helpers
+  template <typename U, typename Func> U read_op(Func) const;
+  template <typename U, typename Func> U write_op(Func);
+
 private:
-  mutable PreservationTable _preserved_dirs;
+  /**
+    Reader-Writer lock to cover OpenDir access.
+    For now, only OpenDir access is covered, but when we clarify other functions as reader or writer, we can use this shared_mutex
+    for them to reduce current heavy lock contention of StripeSM::mutex.
+   */
+  mutable ts::bravo::recursive_shared_mutex _shared_mutex;
+  mutable PreservationTable                 _preserved_dirs;
+
+  // All access to this OpenDir requires _shared_mutex lock guard
+  OpenDir _open_dir;
 
   int _agg_copy(CacheVC *vc);
   int _copy_writer_to_aggregation(CacheVC *vc);
@@ -252,6 +266,24 @@ extern StripeSM                          **gstripes;
 extern std::atomic<int>                    gnstripes;
 extern ClassAllocator<OpenDirEntry, false> openDirEntryAllocator;
 extern unsigned short                     *vol_hash_table;
+
+template <typename U, typename Func>
+U
+StripeSM::read_op(Func read_op) const
+{
+  ts::bravo::shared_lock lock(_shared_mutex);
+
+  return read_op();
+}
+
+template <typename U, typename Func>
+U
+StripeSM::write_op(Func write_op)
+{
+  std::lock_guard lock(_shared_mutex);
+
+  return write_op();
+}
 
 // inline Functions
 
@@ -267,7 +299,9 @@ StripeSM::cancel_trigger()
 inline OpenDirEntry *
 StripeSM::open_read(const CryptoHash *key) const
 {
-  return open_dir.open_read(key);
+  ts::bravo::shared_lock lock(_shared_mutex);
+
+  return _open_dir.open_read(key);
 }
 
 inline int
