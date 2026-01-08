@@ -66,6 +66,7 @@ static int                handle_read_request_hdr(TSCont cont, TSEvent event, vo
 static void               append_JA4_headers(TSCont cont, TSHttpTxn txnp, std::string const *fingerprint);
 static void append_to_field(TSMBuffer bufp, TSMLoc hdr_loc, char const *field, int field_len, char const *value, int value_len);
 static int  handle_vconn_close(TSCont cont, TSEvent event, void *edata);
+int         client_hello_ext_get(TSClientHello ch, unsigned int type, const unsigned char **out, size_t *outlen);
 
 namespace
 {
@@ -206,6 +207,7 @@ handle_client_hello(TSCont /* cont ATS_UNUSED */, TSEvent event, void *edata)
   TSSslConnection const ssl_conn{TSVConnSslConnectionGet(ssl_vc)};
   TSClientHello         ch = reinterpret_cast<TSClientHello>(ssl_conn);
 #endif
+
   if (nullptr == ch) {
     Dbg(dbg_ctl, "Could not get TSClientHello object.");
   } else {
@@ -274,7 +276,7 @@ get_version(TSClientHello ch)
 {
   unsigned char const *buf{};
   std::size_t          buflen{};
-  if (TS_SUCCESS == TSVConnClientHelloExtGet(ch, EXT_SUPPORTED_VERSIONS, &buf, &buflen)) {
+  if (TS_SUCCESS == client_hello_ext_get(ch, EXT_SUPPORTED_VERSIONS, &buf, &buflen)) {
     std::uint16_t max_version{0};
     uint8_t       list_len = buf[0];
     for (size_t i = 1; i + 1 < buflen && i < list_len + 1; i += 2) {
@@ -300,7 +302,7 @@ get_first_ALPN(TSClientHello ch)
   unsigned char const *buf{};
   std::size_t          buflen{};
   std::string          result{""};
-  if (TS_SUCCESS == TSVConnClientHelloExtGet(ch, EXT_ALPN, &buf, &buflen)) {
+  if (TS_SUCCESS == client_hello_ext_get(ch, EXT_ALPN, &buf, &buflen)) {
     // The first two bytes are a 16bit encoding of the total length.
     unsigned char first_ALPN_length{buf[2]};
     TSAssert(buflen > 4);
@@ -321,7 +323,7 @@ add_ciphers(JA4::TLSClientHelloSummary &summary, TSClientHello ch)
 #else
   unsigned char const *buf = nullptr;
   // Fix: Add const_cast to remove const from ch
-  SSL        *ssl    = const_cast<SSL *>(reinterpret_cast<const SSL *>(ch));
+  SSL        *ssl    = const_cast<SSL *>(reinterpret_cast<SSL *>(ch));
   std::size_t buflen = SSL_client_hello_get0_ciphers(ssl, &buf);
 #endif
 
@@ -359,7 +361,7 @@ add_extensions(JA4::TLSClientHelloSummary &summary, TSClientHello ch)
 #else
   int        *buf{};
   std::size_t buflen{};
-  if (1 == SSL_client_hello_get1_extensions_present(reinterpret_cast<SSL *>(ch), &buf, &buflen)) {
+  if (1 == SSL_client_hello_get1_extensions_present(const_cast<SSL *>(reinterpret_cast<SSL *>(ch)), &buf, &buflen)) {
     for (std::size_t i{1}; i < buflen; i += 2) {
       summary.add_extension(make_word(buf[i], buf[i - 1]));
     }
@@ -491,4 +493,28 @@ handle_vconn_close(TSCont /* cont ATS_UNUSED */, TSEvent event, void *edata)
   TSUserArgSet(ssl_vc, *get_user_arg_index(), nullptr);
   TSVConnReenable(ssl_vc);
   return TS_SUCCESS;
+}
+
+int
+client_hello_ext_get(TSClientHello ch, unsigned int type, const unsigned char **out, size_t *outlen)
+{
+  TSReturnCode retval = TS_SUCCESS;
+
+  if (ch == nullptr) {
+    return TS_ERROR;
+  }
+
+#ifdef OPENSSL_IS_BORINGSSL
+  const SSL_CLIENT_HELLO *client_hello = reinterpret_cast<const SSL_CLIENT_HELLO *>(ch);
+  if (SSL_early_callback_ctx_extension_get(client_hello, type, out, outlen) == 1) {
+    return TS_SUCCESS;
+  }
+#else
+  SSL *ssl = const_cast<SSL *>(reinterpret_cast<const SSL *>(ch));
+  if (SSL_client_hello_get0_ext(ssl, type, out, outlen) == 1) {
+    return TS_SUCCESS;
+  }
+#endif
+
+  return retval;
 }
