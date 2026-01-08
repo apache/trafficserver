@@ -46,6 +46,8 @@ ts.Disk.records_config.update(
         'proxy.config.http.connect_ports': f'{server.Variables.SSL_Port}',
         # Set a short active timeout for tunnels (2 seconds)
         'proxy.config.http.transaction_active_timeout_in': 2,
+        # Force log flush every second for test reliability
+        'proxy.config.log.max_secs_per_buffer': 1,
     })
 
 ts.Disk.remap_config.AddLine(f'map / https://127.0.0.1:{server.Variables.SSL_Port}')
@@ -79,7 +81,13 @@ tr.Processes.Default.Command = (
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = ts
 
+# Wait for the access log to be written
+tr = Test.AddTestRun("Wait for the access log to write out")
+tr.DelayStart = 3
+tr.StillRunningAfter = ts
+tr.Processes.Default.Command = 'echo "waiting for log flush"'
+tr.Processes.Default.ReturnCode = 0
+
 # Verify the squid code in the access log
-squid_log_path = ts.Disk.File(os.path.join(ts.Variables.LOGDIR, 'squid.log'))
-squid_log_path.Content = Testers.ContainsExpression(
+ts.Disk.File(os.path.join(ts.Variables.LOGDIR, 'squid.log')).Content = Testers.ContainsExpression(
     'ERR_TUN_ACTIVE_TIMEOUT.*CONNECT', 'Verify the tunnel timeout squid code is logged')

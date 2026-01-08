@@ -21,7 +21,6 @@ idle to trigger an active timeout.
 
 import socket
 import sys
-import time
 
 
 def main():
