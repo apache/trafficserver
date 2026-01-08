@@ -240,7 +240,12 @@ ConfigCommand::config_set()
 void
 ConfigCommand::config_reload()
 {
-  _printer->write_output(invoke_rpc(ConfigReloadRequest{}));
+  auto vhost = get_parsed_arguments()->get("virtualhost");
+  if (vhost && !vhost.value().empty()) {
+    _printer->write_output(invoke_rpc(ConfigReloadVirtualHostRequest{vhost.value()}));
+  } else {
+    _printer->write_output(invoke_rpc(ConfigReloadRequest{}));
+  }
 }
 void
 ConfigCommand::config_show_file_registry()

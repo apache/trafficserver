@@ -79,12 +79,14 @@ public:
    */
   bool load();
 
+  bool load_table(const std::string &config_file_path, YAML::Node const *remap_node);
+
   /** Build the internal url write tables.
    *
    * @param path Path to configuration file.
    * @return 0 on success, non-zero error code on failure.
    */
-  int BuildTable(const char *path);
+  int BuildTable(const char *path, YAML::Node const *remap_node = nullptr);
 
   mapping_type Remap_redirect(HTTPHdr *request_header, URL *redirect_url);
   bool         ReverseMap(HTTPHdr *response_header);
