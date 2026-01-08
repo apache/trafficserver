@@ -437,7 +437,7 @@ def MakeATSProcess(
             ppcfg = "pp"
             if enable_proxy_protocol_cp_src:
                 ppcfg += ":pp-clnt"
-            port_str += f" {p.Variables.proxy_protocol_port}:{ppcfg} {p.Variables.proxy_protocol_portv6}:pp:ipv6"
+            port_str += f" {p.Variables.proxy_protocol_port}:{ppcfg} {p.Variables.proxy_protocol_portv6}:{ppcfg}:ipv6"
             if enable_tls:
                 port_str += f" {p.Variables.proxy_protocol_ssl_port}:{ppcfg}:ssl {p.Variables.proxy_protocol_ssl_portv6}:{ppcfg}:ssl:ipv6"
             if enable_uds:

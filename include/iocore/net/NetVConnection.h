@@ -524,8 +524,7 @@ protected:
     N_SERVICES,
   };
 
-  IpEndpoint local_addr;
-  // This can be the remote peer address or the proxy protocol SRC IP address
+  IpEndpoint    local_addr;
   IpEndpoint    remote_addr;
   ProxyProtocol pp_info;
 
