@@ -498,8 +498,6 @@ handle_vconn_close(TSCont /* cont ATS_UNUSED */, TSEvent event, void *edata)
 int
 client_hello_ext_get(TSClientHello ch, unsigned int type, const unsigned char **out, size_t *outlen)
 {
-  TSReturnCode retval = TS_SUCCESS;
-
   if (ch == nullptr) {
     return TS_ERROR;
   }
@@ -516,5 +514,5 @@ client_hello_ext_get(TSClientHello ch, unsigned int type, const unsigned char **
   }
 #endif
 
-  return retval;
+  return TS_ERROR;
 }
