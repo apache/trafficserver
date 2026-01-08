@@ -1334,7 +1334,6 @@ int TSVConnIsSsl(TSVConn sslp);
 int           TSVConnProvidedSslCert(TSVConn sslp);
 const char   *TSVConnSslSniGet(TSVConn sslp, int *length);
 TSClientHello TSVConnClientHelloGet(TSVConn sslp);
-TSReturnCode  TSVConnClientHelloExtGet(TSClientHello ch, unsigned int type, const unsigned char **out, size_t *outlen);
 TSSslSession  TSSslSessionGet(const TSSslSessionID *session_id);
 int           TSSslSessionGetBuffer(const TSSslSessionID *session_id, char *buffer, int *len_ptr);
 TSReturnCode  TSSslSessionInsert(const TSSslSessionID *session_id, TSSslSession add_session, TSSslConnection ssl_conn);
