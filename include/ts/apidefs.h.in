@@ -1084,7 +1084,7 @@ using TSHostLookupResult = struct tsapi_hostlookupresult *;
 using TSAIOCallback      = struct tsapi_aiocallback *;
 using TSAcceptor         = struct tsapi_net_accept *;
 using TSRemapPluginInfo  = struct tsapi_remap_plugin_info *;
-using TSClientHello      = void *;
+using TSClientHello      = struct tsapi_ssl_client_hello *;
 
 using TSFetchSM = struct tsapi_fetchsm *;
 
