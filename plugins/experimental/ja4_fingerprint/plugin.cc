@@ -243,7 +243,7 @@ get_version(TSClientHello ch)
   std::size_t          buflen{};
   if (TS_SUCCESS == client_hello_ext_get(ch, EXT_SUPPORTED_VERSIONS, &buf, &buflen)) {
     std::uint16_t max_version{0};
-    uint8_t       list_len = buf[0];
+    size_t        list_len = buf[0];
     for (size_t i = 1; i + 1 < buflen && i < list_len + 1; i += 2) {
       std::uint16_t version = (buf[i] << 8) | buf[i + 1];
       if (!JA4::is_GREASE(version) && version > max_version) {
