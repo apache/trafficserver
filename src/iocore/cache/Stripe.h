@@ -58,6 +58,8 @@ struct CacheVol {
   int          avg_obj_size     = -1; // Defer to the records.config if not overriden
   int          fragment_size    = -1; // Defer to the records.config if not overriden
   bool         ramcache_enabled = true;
+  int64_t      ram_cache_size   = -1; // Per-volume RAM cache size (-1 = use shared allocation)
+  int64_t      ram_cache_cutoff = -1; // Per-volume RAM cache cutoff (-1 = use global cutoff)
   StripeSM   **stripes          = nullptr;
   DiskStripe **disk_stripes     = nullptr;
   LINK(CacheVol, link);
