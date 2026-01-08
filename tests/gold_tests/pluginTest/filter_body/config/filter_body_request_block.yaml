@@ -1,0 +1,16 @@
+# Configuration for blocking requests with XXE patterns.
+rules:
+  - name: "xxe_request_block"
+    filter:
+      direction: request
+      methods: [POST]
+      headers:
+        - name: "Content-Type"
+          patterns:
+            - "application/xml"
+            - "text/xml"
+      body_patterns:
+        - "<!ENTITY"
+        - "SYSTEM"
+    action: [log, block]
+
