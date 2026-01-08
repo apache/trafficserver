@@ -7890,6 +7890,7 @@ TSVConnSslSniGet(TSVConn sslp, int *length)
   return server_name;
 }
 
+#ifdef OPENSSL_IS_BORINGSSL
 TSClientHello
 TSVConnClientHelloGet(TSVConn sslp)
 {
@@ -7900,35 +7901,12 @@ TSVConnClientHelloGet(TSVConn sslp)
 
   if (auto snis = netvc->get_service<TLSSNISupport>(); snis) {
     ClientHelloContainer client_hello = snis->get_client_hello_container();
-    return reinterpret_cast<TSClientHello>(client_hello);
+    return reinterpret_cast<TSClientHello>(const_cast<SSL_CLIENT_HELLO *>(client_hello));
   }
 
   return nullptr;
 }
-
-TSReturnCode
-TSVConnClientHelloExtGet(TSClientHello ch, unsigned int type, const unsigned char **out, size_t *outlen)
-{
-  TSReturnCode retval = TS_SUCCESS;
-
-  if (ch == nullptr) {
-    return TS_ERROR;
-  }
-
-#ifdef OPENSSL_IS_BORINGSSL
-  const SSL_CLIENT_HELLO *client_hello = reinterpret_cast<const SSL_CLIENT_HELLO *>(ch);
-  if (SSL_early_callback_ctx_extension_get(client_hello, type, out, outlen) == 1) {
-    return TS_SUCCESS;
-  }
-#else
-  SSL *ssl = const_cast<SSL *>(reinterpret_cast<const SSL *>(ch));
-  if (SSL_client_hello_get0_ext(ssl, type, out, outlen) == 1) {
-    return TS_SUCCESS;
-  }
 #endif
-
-  return retval;
-}
 
 TSSslVerifyCTX
 TSVConnSslVerifyCTXGet(TSVConn sslp)
