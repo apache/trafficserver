@@ -182,20 +182,21 @@ const char *const HttpProxyPort::OPT_INBOUND_IP_PREFIX  = "ip-in";
 const char *const HttpProxyPort::OPT_HOST_RES_PREFIX    = "ip-resolve";
 const char *const HttpProxyPort::OPT_PROTO_PREFIX       = "proto";
 
-const char *const HttpProxyPort::OPT_IPV6                    = "ipv6";
-const char *const HttpProxyPort::OPT_IPV4                    = "ipv4";
-const char *const HttpProxyPort::OPT_TRANSPARENT_INBOUND     = "tr-in";
-const char *const HttpProxyPort::OPT_TRANSPARENT_OUTBOUND    = "tr-out";
-const char *const HttpProxyPort::OPT_TRANSPARENT_FULL        = "tr-full";
-const char *const HttpProxyPort::OPT_TRANSPARENT_PASSTHROUGH = "tr-pass";
-const char *const HttpProxyPort::OPT_ALLOW_PLAIN             = "allow-plain";
-const char *const HttpProxyPort::OPT_SSL                     = "ssl";
-const char *const HttpProxyPort::OPT_PROXY_PROTO             = "pp";
-const char *const HttpProxyPort::OPT_PLUGIN                  = "plugin";
-const char *const HttpProxyPort::OPT_BLIND_TUNNEL            = "blind";
-const char *const HttpProxyPort::OPT_COMPRESSED              = "compressed";
-const char *const HttpProxyPort::OPT_MPTCP                   = "mptcp";
-const char *const HttpProxyPort::OPT_QUIC                    = "quic";
+const char *const HttpProxyPort::OPT_IPV6                      = "ipv6";
+const char *const HttpProxyPort::OPT_IPV4                      = "ipv4";
+const char *const HttpProxyPort::OPT_TRANSPARENT_INBOUND       = "tr-in";
+const char *const HttpProxyPort::OPT_TRANSPARENT_OUTBOUND      = "tr-out";
+const char *const HttpProxyPort::OPT_TRANSPARENT_FULL          = "tr-full";
+const char *const HttpProxyPort::OPT_TRANSPARENT_PASSTHROUGH   = "tr-pass";
+const char *const HttpProxyPort::OPT_ALLOW_PLAIN               = "allow-plain";
+const char *const HttpProxyPort::OPT_SSL                       = "ssl";
+const char *const HttpProxyPort::OPT_PROXY_PROTO               = "pp";
+const char *const HttpProxyPort::OPT_PLUGIN                    = "plugin";
+const char *const HttpProxyPort::OPT_BLIND_TUNNEL              = "blind";
+const char *const HttpProxyPort::OPT_COMPRESSED                = "compressed";
+const char *const HttpProxyPort::OPT_MPTCP                     = "mptcp";
+const char *const HttpProxyPort::OPT_QUIC                      = "quic";
+const char *const HttpProxyPort::OPT_PROXY_PROTO_CLIENT_SRC_IP = "pp-clnt";
 
 // File local constants.
 namespace
@@ -469,6 +470,8 @@ HttpProxyPort::processOptions(const char *opts)
       } else {
         Warning("Multipath TCP requested [%s] in port descriptor '%s' but it is not supported by this host.", item, opts);
       }
+    } else if (0 == strcasecmp(OPT_PROXY_PROTO_CLIENT_SRC_IP, item)) {
+      m_proxy_protocol_client_src = true;
     } else if (nullptr != (value = this->checkPrefix(item, OPT_HOST_RES_PREFIX, OPT_HOST_RES_PREFIX_LEN))) {
       this->processFamilyPreference(value);
       host_res_set_p = true;
@@ -661,6 +664,10 @@ HttpProxyPort::print(char *out, size_t n)
 
   if (m_proxy_protocol) {
     zret += snprintf(out + zret, n - zret, ":%s", OPT_PROXY_PROTO);
+  }
+
+  if (m_proxy_protocol_client_src) {
+    zret += snprintf(out + zret, n - zret, ":%s", OPT_PROXY_PROTO_CLIENT_SRC_IP);
   }
 
   if (m_outbound_transparent_p && m_inbound_transparent_p) {
