@@ -45,6 +45,21 @@ const StringToFormatFlagsMap _Fmt_str_to_enum = {
   {"json", BasePrinter::Options::FormatFlags::JSON},
   {"rpc",  BasePrinter::Options::FormatFlags::RPC }
 };
+
+constexpr std::string_view YAML_PREFIX{"records."};
+constexpr std::string_view RECORD_PREFIX{"proxy.config."};
+
+/// Convert YAML-style path (records.diags.debug) to record name format (proxy.config.diags.debug).
+/// If the path doesn't start with "records.", it's returned unchanged.
+std::string
+yaml_to_record_name(std::string_view path)
+{
+  swoc::TextView tv{path};
+  if (tv.starts_with(YAML_PREFIX)) {
+    return std::string{RECORD_PREFIX} + std::string{path.substr(YAML_PREFIX.size())};
+  }
+  return std::string{path};
+}
 } // namespace
 
 BasePrinter::Options::FormatFlags
@@ -142,6 +157,9 @@ ConfigCommand::ConfigCommand(ts::Arguments *args) : RecordCommand(args)
   } else if (args->get(SET_STR)) {
     _printer      = std::make_unique<ConfigSetPrinter>(printOpts);
     _invoked_func = [&]() { config_set(); };
+  } else if (args->get(RESET_STR)) {
+    _printer      = std::make_unique<ConfigSetPrinter>(printOpts);
+    _invoked_func = [&]() { config_reset(); };
   } else if (args->get(STATUS_STR)) {
     _printer      = std::make_unique<ConfigStatusPrinter>(printOpts);
     _invoked_func = [&]() { config_status(); };
@@ -235,6 +253,49 @@ ConfigCommand::config_set()
   shared::rpc::JSONRPCResponse response = invoke_rpc(request);
 
   _printer->write_output(response);
+}
+
+void
+ConfigCommand::config_reset()
+{
+  auto const &paths = get_parsed_arguments()->get(RESET_STR);
+
+  // Build lookup request - always use REGEX to support partial path matching
+  shared::rpc::RecordLookupRequest lookup_request;
+
+  if (paths.empty() || (paths.size() == 1 && paths[0] == "records")) {
+    lookup_request.emplace_rec(".*", shared::rpc::REGEX, shared::rpc::CONFIG_REC_TYPES);
+  } else {
+    for (auto const &path : paths) {
+      // Convert YAML-style path (records.*) to record name format (proxy.config.*)
+      auto record_path = yaml_to_record_name(path);
+      lookup_request.emplace_rec(record_path, shared::rpc::REGEX, shared::rpc::CONFIG_REC_TYPES);
+    }
+  }
+
+  // Lookup matching records
+  auto lookup_response = invoke_rpc(lookup_request);
+  if (lookup_response.is_error()) {
+    _printer->write_output(lookup_response);
+    return;
+  }
+
+  // Build reset request from modified records (current != default)
+  auto const            &records = lookup_response.result.as<shared::rpc::RecordLookUpResponse>();
+  ConfigSetRecordRequest set_request;
+
+  for (auto const &rec : records.recordList) {
+    if (rec.currentValue != rec.defaultValue) {
+      set_request.params.push_back(ConfigSetRecordRequest::Params{rec.name, rec.defaultValue});
+    }
+  }
+
+  if (set_request.params.size() == 0) {
+    std::cout << "No records to reset (all matching records are already at default values)\n";
+    return;
+  }
+
+  _printer->write_output(invoke_rpc(set_request));
 }
 
 void

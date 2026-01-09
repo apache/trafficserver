@@ -295,6 +295,60 @@ Display the current value of a configuration record.
 
 
 .. program:: traffic_ctl config
+.. option:: reset PATH [PATH ...]
+
+   Reset configuration record(s) to their default values. The PATH argument is used as a
+   regex pattern to match against record names. Multiple paths at once can be provided.
+
+   - ``records`` - Reset all configuration records to defaults
+   - A partial path like ``proxy.config.http`` or ``records.http`` - Reset all records matching the pattern
+   - A full record name like ``proxy.config.diags.debug.enabled`` - Reset a specific record
+
+   **Path Format Support**
+
+   Both record name format and YAML format are supported. Paths starting with ``records.``
+   are automatically converted to ``proxy.config.`` before matching:
+
+   ======================================  ======================================
+   YAML Format                             Record Name Format
+   ======================================  ======================================
+   ``records.http``                        ``proxy.config.http``
+   ``records.diags.debug.enabled``         ``proxy.config.diags.debug.enabled``
+   ``records.cache.ram_cache.size``        ``proxy.config.cache.ram_cache.size``
+   ======================================  ======================================
+
+   This allows you to use the same path style as in :file:`records.yaml` configuration files.
+
+   Examples:
+
+   Reset all records to defaults:
+
+   .. code-block:: bash
+
+      $ traffic_ctl config reset records
+
+   Reset all HTTP configuration records (both formats are equivalent):
+
+   .. code-block:: bash
+
+      $ traffic_ctl config reset proxy.config.http
+      $ traffic_ctl config reset records.http
+
+   Reset a specific record:
+
+   .. code-block:: bash
+
+      $ traffic_ctl config reset proxy.config.diags.debug.enabled
+
+   Using YAML-style path for the same record:
+
+   .. code-block:: bash
+
+      $ traffic_ctl config reset records.diags.debug.enabled
+
+
+
+.. program:: traffic_ctl config
 .. option:: status
 
    :ref:`admin_lookup_records`
