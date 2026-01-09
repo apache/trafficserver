@@ -22,6 +22,7 @@
 #  condwait [ MAX-WAIT [ POST-WAIT ] ] CONDITION
 #
 # CONDITION is the ('test' command) condition to wait for.  (It may contain white space.)
+# For file existence tests (-f, -e, -d), glob patterns are supported (e.g., -f /path/crash-*.log).
 #
 # MAX-WAIT is the maximum number of seconds to wait for the condition.  If it is omitted, it defaults to 60.
 #
@@ -58,9 +59,20 @@ if [[ "$1" = "" ]] ; then
     exit 1
 fi
 
+# Check if this is a simple file existence test (-f, -e, -d). If so, use ls -d
+# which handles glob patterns properly. Otherwise, use test for the condition.
+check_condition() {
+    if [[ "$1" = "-f" || "$1" = "-e" || "$1" = "-d" ]] && [[ $# -eq 2 ]]; then
+        # Use ls -d for file existence tests to support glob patterns.
+        ls -d $2 >/dev/null 2>&1
+    else
+        test $*
+    fi
+}
+
 while (( WAIT > 0 ))
 do
-    if test $*
+    if check_condition $*
     then
         if (( POST_WAIT > 0 ))
         then
