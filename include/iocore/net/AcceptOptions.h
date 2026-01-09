@@ -85,5 +85,6 @@ struct AcceptOptions {
   bool f_mptcp = false;
 
   /// Proxy Protocol enabled
-  bool f_proxy_protocol = false;
+  bool f_proxy_protocol            = false;
+  bool f_proxy_protocol_client_src = false;
 };

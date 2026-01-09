@@ -59,6 +59,7 @@ def MakeATSProcess(
         use_traffic_out=True,
         dump_runroot=True,
         enable_proxy_protocol=False,
+        enable_proxy_protocol_cp_src=False,
         disable_log_checks=False):
     """Create a traffic server process.
 
@@ -433,11 +434,14 @@ def MakeATSProcess(
             port_str += " {ssl_port}:quic {ssl_portv6}:quic:ipv6".format(
                 ssl_port=p.Variables.ssl_port, ssl_portv6=p.Variables.ssl_portv6)
         if enable_proxy_protocol:
-            port_str += f" {p.Variables.proxy_protocol_port}:pp {p.Variables.proxy_protocol_portv6}:pp:ipv6"
+            ppcfg = "pp"
+            if enable_proxy_protocol_cp_src:
+                ppcfg += ":pp-clnt"
+            port_str += f" {p.Variables.proxy_protocol_port}:{ppcfg} {p.Variables.proxy_protocol_portv6}:{ppcfg}:ipv6"
             if enable_tls:
-                port_str += f" {p.Variables.proxy_protocol_ssl_port}:pp:ssl {p.Variables.proxy_protocol_ssl_portv6}:pp:ssl:ipv6"
+                port_str += f" {p.Variables.proxy_protocol_ssl_port}:{ppcfg}:ssl {p.Variables.proxy_protocol_ssl_portv6}:{ppcfg}:ssl:ipv6"
             if enable_uds:
-                port_str += f" {uds_path}:pp"
+                port_str += f" {uds_path}:{ppcfg}"
         elif enable_uds:
             port_str += f" {uds_path}"
         #p.Env['PROXY_CONFIG_HTTP_SERVER_PORTS'] = port_str

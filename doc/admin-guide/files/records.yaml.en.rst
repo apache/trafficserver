@@ -786,6 +786,7 @@ HTTP Engine
    ip-resolve   Value           IP address resolution style.
    proto        Value           List of supported session protocols.
    pp                           Enable Proxy Protocol.
+   pp-clnt                      Use the Proxy Protocol SRC IP as the client IP.
    ssl                          SSL terminated.
    quic                         QUIC terminated.
    tr-full                      Fully transparent (inbound and outbound)
