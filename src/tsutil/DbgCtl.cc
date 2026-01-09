@@ -54,9 +54,6 @@ DbgCtl::operator=(DbgCtl &&src)
   return *this;
 }
 
-// The resistry of fast debug controllers has a ugly implementation to handle the whole-program initialization
-// and destruction order problem with C++.
-//
 class DbgCtl::_RegistryAccessor
 {
 private:
@@ -79,15 +76,8 @@ public:
   private:
     Registry() = default;
 
-    // Mutex must be locked before this is called.
-    //
-    ~Registry()
-    {
-      for (auto &elem : map) {
-        delete[] elem.first;
-      }
-      _mtx.unlock();
-    }
+    // Destructor never called - this is a leaky singleton. See issue #12776.
+    ~Registry() = default;
 
     std::mutex _mtx;
 
@@ -115,28 +105,14 @@ public:
     }
   }
 
-  // This is not static so it can't be called with the registry mutex is unlocked.  It should not be called
-  // after registry is deleted.
+  // This is not static so it can't be called with the registry mutex unlocked.
+  // The registry is never deleted (leaky singleton pattern), so it's always safe to call after creation.
   //
   Registry &
   data()
   {
     return *_registry_instance;
   }
-
-  void
-  delete_registry()
-  {
-    auto r = _registry_instance.load();
-    debug_assert(r != nullptr);
-    _registry_instance = nullptr;
-    delete r;
-    _mtx_is_locked = false;
-  }
-
-  // Reference count of references to Registry.
-  //
-  inline static std::atomic<unsigned> registry_reference_count{0};
 
 private:
   bool _mtx_is_locked{false};
@@ -152,13 +128,6 @@ DbgCtl::_new_reference(char const *tag)
 
   _TagData *new_tag_data{nullptr};
 
-  // DbgCtl instances may be declared as static objects in the destructors of objects not destroyed till program exit.
-  // So, we must handle the case where the construction of such instances of DbgCtl overlaps with the destruction of
-  // other instances of DbgCtl.  That is why it is important to make sure the reference count is non-zero before
-  // constructing _RegistryAccessor.  The _RegistryAccessor constructor is thereby able to assume that, if it creates
-  // the Registry, the new Registry will not be destroyed before the mutex in the new Registry is locked.
-
-  ++_RegistryAccessor::registry_reference_count;
   {
     _RegistryAccessor ra;
 
@@ -172,7 +141,7 @@ DbgCtl::_new_reference(char const *tag)
 
     debug_assert(sz > 0);
 
-    char *t = new char[sz + 1]; // Deleted by ~Registry().
+    char *t = new char[sz + 1]; // Never deleted (leaky singleton) - reclaimed by OS at process exit.
     std::memcpy(t, tag, sz + 1);
     _TagData new_elem{t, false};
 
@@ -202,29 +171,10 @@ DbgCtl::_new_reference(char const *tag)
 }
 
 void
-DbgCtl::_rm_reference()
-{
-  _RegistryAccessor ra;
-
-  debug_assert(ra.registry_reference_count != 0);
-
-  --ra.registry_reference_count;
-
-  if (0 == ra.registry_reference_count) {
-    ra.delete_registry();
-  }
-}
-
-void
 DbgCtl::update(const std::function<bool(const char *)> &f)
 {
   _RegistryAccessor ra;
-
-  if (!ra.registry_reference_count) {
-    return;
-  }
-
-  auto &d{ra.data()};
+  auto             &d{ra.data()};
 
   for (auto &i : d.map) {
     i.second = f(i.first);

@@ -499,16 +499,19 @@ incoming/outgoing ports, and network interfaces used during transactions.
 Field Source         Description
 ===== ============== ==========================================================
 chi   Client         IP address of the client's host. If :ref:`Proxy Protocol <proxy-protocol>`
-                     is used, this represents the IP address of the peer, rather than
-                     the client IP behind the peer.
+                     is configured with the pp-clnt flag, this represents the proxy protocol SRC IP address, otherwise
+                     the IP is that of the connected peer.
 chih  Client         IP address of the client's host, in hexadecimal.
 chiv  Client         IP address of the client's host verified by a plugin. If not available,
                      ``chi`` is used.
+rchi  Remote Client  This is alway the IP address of the inbound remote peer.
+rchh  Remote Client  The IP address of the inbound remote peer in hexadecimal.
 hii   Proxy          IP address for the proxy's incoming interface (to which
                      the client connected).
 hiih  Proxy          IP address for the proxy's incoming interface (to which
                      the client connected), in hexadecimal.
 chp   Client         Port number of the client's host.
+rchp  Remote Client  Port number of the inbound remote peer.
 php   Proxy Response TCP port number from which |TS| serviced the request.
 pqsi  Proxy Request  IP address from which |TS| issued the proxy request to the
                      origin server. Cache hits will result in a value of ``0``.
@@ -529,7 +532,6 @@ ppd   Proxy Protocol Destination IP received via Proxy Protocol context from the
       Dest IP        to the |TS|
 ppa   Proxy Protocol The Authority TLV from Proxy Protocol context from the LB
       Authority      to the |TS|
-
 ===== ============== ==========================================================
 
 .. note::

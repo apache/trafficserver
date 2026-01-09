@@ -1442,6 +1442,21 @@ LogAccess::marshal_plugin_identity_tag(char *buf)
 int
 LogAccess::marshal_client_host_ip(char *buf)
 {
+  if (m_http_sm) {
+    auto txn = m_http_sm->get_ua_txn();
+    if (txn) {
+      sockaddr const *addr = txn->get_client_addr();
+      if (addr && ats_is_ip(addr)) {
+        return marshal_ip(buf, addr);
+      }
+    }
+  }
+  return INK_MIN_ALIGN;
+}
+
+int
+LogAccess::marshal_remote_host_ip(char *buf)
+{
   return marshal_ip(buf, &m_http_sm->t_state.client_info.src_addr.sa);
 }
 
@@ -1463,7 +1478,7 @@ LogAccess::marshal_client_host_ip_verified(char *buf)
       }
     }
   }
-  return marshal_ip(buf, &m_http_sm->t_state.client_info.src_addr.sa);
+  return marshal_client_host_ip(buf);
 }
 
 /*-------------------------------------------------------------------------
@@ -1658,6 +1673,19 @@ LogAccess::marshal_proxy_protocol_authority(char *buf)
   -------------------------------------------------------------------------*/
 int
 LogAccess::marshal_client_host_port(char *buf)
+{
+  if (m_http_sm) {
+    auto txn = m_http_sm->get_ua_txn();
+    if (txn) {
+      uint16_t port = txn->get_client_port();
+      marshal_int(buf, port);
+    }
+  }
+  return INK_MIN_ALIGN;
+}
+
+int
+LogAccess::marshal_remote_host_port(char *buf)
 {
   if (buf) {
     uint16_t port = m_http_sm->t_state.client_info.src_addr.host_order_port();

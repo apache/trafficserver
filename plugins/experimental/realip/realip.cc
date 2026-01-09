@@ -53,7 +53,7 @@ TSPluginInit(int argc, const char *argv[])
         return;
       }
       AddressSetter::set_source(source);
-      auto cont = TSContCreate(AddressSetter::event_handler, TSMutexCreate());
+      auto cont = TSContCreate(AddressSetter::event_handler, nullptr);
       TSReleaseAssert(cont);
       TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, cont);
     } catch (YAML::BadFile const &e) {

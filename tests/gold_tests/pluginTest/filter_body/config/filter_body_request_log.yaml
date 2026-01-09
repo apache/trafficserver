@@ -1,0 +1,16 @@
+# Configuration for logging requests with XXE patterns (no blocking).
+rules:
+  - name: "xxe_request_log"
+    filter:
+      direction: request
+      methods: [POST]
+      headers:
+        - name: "Content-Type"
+          patterns:
+            - "application/xml"
+            - "text/xml"
+      body_patterns:
+        - "<!ENTITY"
+        - "SYSTEM"
+    action: [log]
+

@@ -21,7 +21,12 @@
 
 #include "xdebug_utils.h"
 #include "xdebug_types.h"
+#include "xdebug_escape.h"
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/generators/catch_generators.hpp>
+#include <catch2/generators/catch_generators_range.hpp>
+#include <sstream>
+#include <vector>
 
 TEST_CASE("xdebug::parse_probe_full_json_field_value basic functionality", "[xdebug][utils]")
 {
@@ -192,4 +197,129 @@ TEST_CASE("xdebug::is_textual_content_type functionality", "[xdebug][utils]")
     REQUIRE(xdebug::is_textual_content_type("contains-json-somewhere"));
     REQUIRE(xdebug::is_textual_content_type("has-xml-in-name"));
   }
+}
+
+// Helper function to process a string through EscapeCharForJson.
+static std::string
+escape_string(std::string_view input, bool full_json)
+{
+  xdebug::EscapeCharForJson escaper(full_json);
+  std::stringstream         ss;
+  for (char c : input) {
+    ss << escaper(c);
+  }
+  return ss.str();
+}
+
+struct EscapeTestCase {
+  std::string description;
+  bool        full_json;
+  std::string input;
+  std::string expected;
+};
+
+TEST_CASE("xdebug::EscapeCharForJson escaping", "[xdebug][headers]")
+{
+  // clang-format off
+  static std::vector<EscapeTestCase> const tests = {
+    // Single quotes are NOT escaped in either mode.
+    {"full JSON: single quotes are not escaped",
+         xdebug::FULL_JSON,
+         R"('self')",
+         R"('self')"},
+
+    {"full JSON: CSP header with multiple single-quoted directives",
+         xdebug::FULL_JSON,
+         R"(child-src blob: 'self'; connect-src 'self' 'unsafe-inline')",
+         R"(child-src blob: 'self'; connect-src 'self' 'unsafe-inline')"},
+
+    {"legacy: single quotes are not escaped",
+         !xdebug::FULL_JSON,
+         R"('self')",
+         R"('self')"},
+
+    {"legacy: CSP header with multiple single-quoted directives",
+         !xdebug::FULL_JSON,
+         R"(child-src blob: 'self'; connect-src 'self' 'unsafe-inline')",
+         R"(child-src blob: 'self'; connect-src 'self' 'unsafe-inline')"},
+
+    // Common escapes work the same in both modes.
+    {"full JSON: double quotes are escaped",
+         xdebug::FULL_JSON,
+         R"(say "hello")",
+         R"(say \"hello\")"},
+
+    {"legacy: double quotes are escaped",
+         !xdebug::FULL_JSON,
+         R"(say "hello")",
+         R"(say \"hello\")"},
+
+    {"full JSON: backslashes are escaped",
+         xdebug::FULL_JSON,
+         R"(path\to\file)",
+         R"(path\\to\\file)"},
+
+    {"legacy: backslashes are escaped",
+         !xdebug::FULL_JSON,
+         R"(path\to\file)",
+         R"(path\\to\\file)"},
+
+    {"full JSON: tab characters are escaped",
+         xdebug::FULL_JSON,
+         "line1\tline2",
+         R"(line1\tline2)"},
+
+    {"full JSON: backspace characters are escaped",
+         xdebug::FULL_JSON,
+         "a\bb",
+         R"(a\bb)"},
+
+    {"full JSON: form feed characters are escaped",
+         xdebug::FULL_JSON,
+         "a\fb",
+         R"(a\fb)"},
+
+    {"full JSON: plain text passes through unchanged",
+         xdebug::FULL_JSON,
+         R"(hello world)",
+         R"(hello world)"},
+
+    {"legacy: plain text passes through unchanged",
+         !xdebug::FULL_JSON,
+         R"(hello world)",
+         R"(hello world)"},
+  };
+  // clang-format on
+
+  auto const &test = GENERATE_REF(from_range(tests));
+  CAPTURE(test.description, test.full_json, test.input, test.expected);
+
+  std::string result = escape_string(test.input, test.full_json);
+  REQUIRE(result == test.expected);
+}
+
+TEST_CASE("xdebug::EscapeCharForJson backup calculation", "[xdebug][headers]")
+{
+  struct BackupTestCase {
+    std::string description;
+    bool        full_json;
+    std::size_t expected_backup;
+  };
+
+  // clang-format off
+  static std::vector<BackupTestCase> const tests = {
+    {R"(full JSON uses "," separator (backup = 2))",
+         xdebug::FULL_JSON,
+         2},
+
+    {R"(legacy uses "',\n\t'" separator (backup = 4))",
+         !xdebug::FULL_JSON,
+         4},
+  };
+  // clang-format on
+
+  auto const &test = GENERATE_REF(from_range(tests));
+  CAPTURE(test.description, test.full_json, test.expected_backup);
+
+  REQUIRE(xdebug::EscapeCharForJson::backup(test.full_json) == test.expected_backup);
 }

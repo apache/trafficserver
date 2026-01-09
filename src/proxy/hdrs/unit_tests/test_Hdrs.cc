@@ -2104,3 +2104,367 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
     }
   }
 }
+
+// Test that HTTPHdr::host_get() returns correct length after Host header is modified.
+// This reproduces a bug where the cached host length was stale after the Host header
+// was changed via MIME layer functions, causing host_get() to return a string_view
+// with the wrong length (reading garbage bytes past the actual hostname).
+TEST_CASE("HdrTestHostCacheInvalidation", "[proxy][hdrtest]")
+{
+  hdrtoken_init();
+  url_init();
+  mime_init();
+  http_init();
+
+  // Test case: modify Host header to a shorter value, verify host_get() returns correct length
+  SECTION("Host header modification invalidates cache")
+  {
+    static const char request[] = {
+      "GET / HTTP/1.1\r\n"
+      "Host: very.long.hostname.example.com\r\n"
+      "\r\n",
+    };
+
+    HTTPHdr     req_hdr;
+    HTTPParser  parser;
+    const char *start = request;
+    const char *end   = start + strlen(start);
+
+    http_parser_init(&parser);
+    req_hdr.create(HTTPType::REQUEST);
+
+    ParseResult err;
+    while (true) {
+      err = req_hdr.parse_req(&parser, &start, end, true);
+      if (err != ParseResult::CONT) {
+        break;
+      }
+    }
+    REQUIRE(err == ParseResult::DONE);
+    http_parser_clear(&parser);
+
+    // First call to host_get() - this populates the cache
+    std::string_view host1 = req_hdr.host_get();
+    REQUIRE(host1 == "very.long.hostname.example.com"sv);
+    REQUIRE(host1.length() == 30);
+
+    // Now modify the Host header to a SHORTER value via MIME layer
+    MIMEField *host_field = req_hdr.field_find("Host"sv);
+    REQUIRE(host_field != nullptr);
+
+    // Set to a shorter hostname - this is what plugins do
+    host_field->value_set(req_hdr.m_heap, req_hdr.m_mime, "short.com"sv);
+
+    // Second call to host_get() - should return the NEW, SHORTER hostname
+    // BUG: Without the fix, this returns a string_view with the old cached length (30)
+    // but pointing to the new value buffer, causing it to read garbage past "short.com"
+    std::string_view host2 = req_hdr.host_get();
+
+    // This is the key assertion that fails without the fix:
+    // The length should be 9 ("short.com"), not 30 (the old cached length)
+    CHECK(host2.length() == 9);
+    CHECK(host2 == "short.com"sv);
+
+    req_hdr.destroy();
+  }
+
+  // Test case: modify Host header to a longer value
+  SECTION("Host header modification to longer value")
+  {
+    static const char request[] = {
+      "GET / HTTP/1.1\r\n"
+      "Host: short.com\r\n"
+      "\r\n",
+    };
+
+    HTTPHdr     req_hdr;
+    HTTPParser  parser;
+    const char *start = request;
+    const char *end   = start + strlen(start);
+
+    http_parser_init(&parser);
+    req_hdr.create(HTTPType::REQUEST);
+
+    ParseResult err;
+    while (true) {
+      err = req_hdr.parse_req(&parser, &start, end, true);
+      if (err != ParseResult::CONT) {
+        break;
+      }
+    }
+    REQUIRE(err == ParseResult::DONE);
+    http_parser_clear(&parser);
+
+    // First call to host_get() - populates the cache
+    std::string_view host1 = req_hdr.host_get();
+    REQUIRE(host1 == "short.com"sv);
+
+    // Modify to a longer hostname
+    MIMEField *host_field = req_hdr.field_find("Host"sv);
+    REQUIRE(host_field != nullptr);
+    host_field->value_set(req_hdr.m_heap, req_hdr.m_mime, "very.long.hostname.example.com"sv);
+
+    // Should return the new longer hostname
+    std::string_view host2 = req_hdr.host_get();
+    CHECK(host2.length() == 30);
+    CHECK(host2 == "very.long.hostname.example.com"sv);
+
+    req_hdr.destroy();
+  }
+
+  // Test case: multiple modifications
+  SECTION("Multiple Host header modifications")
+  {
+    static const char request[] = {
+      "GET / HTTP/1.1\r\n"
+      "Host: first.example.com\r\n"
+      "\r\n",
+    };
+
+    HTTPHdr     req_hdr;
+    HTTPParser  parser;
+    const char *start = request;
+    const char *end   = start + strlen(start);
+
+    http_parser_init(&parser);
+    req_hdr.create(HTTPType::REQUEST);
+
+    ParseResult err;
+    while (true) {
+      err = req_hdr.parse_req(&parser, &start, end, true);
+      if (err != ParseResult::CONT) {
+        break;
+      }
+    }
+    REQUIRE(err == ParseResult::DONE);
+    http_parser_clear(&parser);
+
+    MIMEField *host_field = req_hdr.field_find("Host"sv);
+    REQUIRE(host_field != nullptr);
+
+    // Initial
+    std::string_view host = req_hdr.host_get();
+    REQUIRE(host == "first.example.com"sv);
+
+    // Modification 1
+    host_field->value_set(req_hdr.m_heap, req_hdr.m_mime, "second.com"sv);
+    host = req_hdr.host_get();
+    CHECK(host == "second.com"sv);
+
+    // Modification 2
+    host_field->value_set(req_hdr.m_heap, req_hdr.m_mime, "third.very.long.example.org"sv);
+    host = req_hdr.host_get();
+    CHECK(host == "third.very.long.example.org"sv);
+
+    // Modification 3 - back to short
+    host_field->value_set(req_hdr.m_heap, req_hdr.m_mime, "x.co"sv);
+    host = req_hdr.host_get();
+    CHECK(host == "x.co"sv);
+
+    req_hdr.destroy();
+  }
+
+  // Test case: Host header with port - incoming request has port
+  SECTION("Host header with port - modify hostname only")
+  {
+    static const char request[] = {
+      "GET / HTTP/1.1\r\n"
+      "Host: original.example.com:8080\r\n"
+      "\r\n",
+    };
+
+    HTTPHdr     req_hdr;
+    HTTPParser  parser;
+    const char *start = request;
+    const char *end   = start + strlen(start);
+
+    http_parser_init(&parser);
+    req_hdr.create(HTTPType::REQUEST);
+
+    ParseResult err;
+    while (true) {
+      err = req_hdr.parse_req(&parser, &start, end, true);
+      if (err != ParseResult::CONT) {
+        break;
+      }
+    }
+    REQUIRE(err == ParseResult::DONE);
+    http_parser_clear(&parser);
+
+    // First call - populates the cache
+    std::string_view host1 = req_hdr.host_get();
+    int              port1 = req_hdr.port_get();
+    REQUIRE(host1 == "original.example.com"sv);
+    REQUIRE(port1 == 8080);
+
+    // Now modify the Host header to a shorter value with different port
+    MIMEField *host_field = req_hdr.field_find("Host"sv);
+    REQUIRE(host_field != nullptr);
+
+    host_field->value_set(req_hdr.m_heap, req_hdr.m_mime, "short.com:9090"sv);
+
+    // Should return the new hostname and port
+    std::string_view host2 = req_hdr.host_get();
+    int              port2 = req_hdr.port_get();
+    CHECK(host2 == "short.com"sv);
+    CHECK(port2 == 9090);
+
+    req_hdr.destroy();
+  }
+
+  // Test case: Host header without port - add port
+  SECTION("Host header without port - add port")
+  {
+    static const char request[] = {
+      "GET / HTTP/1.1\r\n"
+      "Host: original.example.com\r\n"
+      "\r\n",
+    };
+
+    HTTPHdr     req_hdr;
+    HTTPParser  parser;
+    const char *start = request;
+    const char *end   = start + strlen(start);
+
+    http_parser_init(&parser);
+    req_hdr.create(HTTPType::REQUEST);
+
+    ParseResult err;
+    while (true) {
+      err = req_hdr.parse_req(&parser, &start, end, true);
+      if (err != ParseResult::CONT) {
+        break;
+      }
+    }
+    REQUIRE(err == ParseResult::DONE);
+    http_parser_clear(&parser);
+
+    // First call - populates the cache
+    // Note: port is 0 when no port in Host header and no URL scheme
+    std::string_view host1 = req_hdr.host_get();
+    int              port1 = req_hdr.port_get();
+    REQUIRE(host1 == "original.example.com"sv);
+    REQUIRE(port1 == 0); // no port specified, no scheme to default from
+
+    // Modify to add a port
+    MIMEField *host_field = req_hdr.field_find("Host"sv);
+    REQUIRE(host_field != nullptr);
+
+    host_field->value_set(req_hdr.m_heap, req_hdr.m_mime, "newhost.com:3128"sv);
+
+    // Should return the new hostname and port
+    std::string_view host2 = req_hdr.host_get();
+    int              port2 = req_hdr.port_get();
+    CHECK(host2 == "newhost.com"sv);
+    CHECK(port2 == 3128);
+
+    req_hdr.destroy();
+  }
+
+  // Test case: Host header with port - remove port
+  SECTION("Host header with port - remove port")
+  {
+    static const char request[] = {
+      "GET / HTTP/1.1\r\n"
+      "Host: original.example.com:8080\r\n"
+      "\r\n",
+    };
+
+    HTTPHdr     req_hdr;
+    HTTPParser  parser;
+    const char *start = request;
+    const char *end   = start + strlen(start);
+
+    http_parser_init(&parser);
+    req_hdr.create(HTTPType::REQUEST);
+
+    ParseResult err;
+    while (true) {
+      err = req_hdr.parse_req(&parser, &start, end, true);
+      if (err != ParseResult::CONT) {
+        break;
+      }
+    }
+    REQUIRE(err == ParseResult::DONE);
+    http_parser_clear(&parser);
+
+    // First call - populates the cache
+    std::string_view host1 = req_hdr.host_get();
+    int              port1 = req_hdr.port_get();
+    REQUIRE(host1 == "original.example.com"sv);
+    REQUIRE(port1 == 8080);
+
+    // Modify to remove the port
+    MIMEField *host_field = req_hdr.field_find("Host"sv);
+    REQUIRE(host_field != nullptr);
+
+    host_field->value_set(req_hdr.m_heap, req_hdr.m_mime, "noport.example.org"sv);
+
+    // Should return the new hostname
+    // Note: port is 0 when no port in Host header and no URL scheme
+    std::string_view host2 = req_hdr.host_get();
+    int              port2 = req_hdr.port_get();
+    CHECK(host2 == "noport.example.org"sv);
+    CHECK(port2 == 0); // no port specified, no scheme to default from
+
+    req_hdr.destroy();
+  }
+
+  // Test case: Multiple modifications with varying ports
+  SECTION("Multiple Host modifications with ports")
+  {
+    static const char request[] = {
+      "GET / HTTP/1.1\r\n"
+      "Host: first.com:1111\r\n"
+      "\r\n",
+    };
+
+    HTTPHdr     req_hdr;
+    HTTPParser  parser;
+    const char *start = request;
+    const char *end   = start + strlen(start);
+
+    http_parser_init(&parser);
+    req_hdr.create(HTTPType::REQUEST);
+
+    ParseResult err;
+    while (true) {
+      err = req_hdr.parse_req(&parser, &start, end, true);
+      if (err != ParseResult::CONT) {
+        break;
+      }
+    }
+    REQUIRE(err == ParseResult::DONE);
+    http_parser_clear(&parser);
+
+    MIMEField *host_field = req_hdr.field_find("Host"sv);
+    REQUIRE(host_field != nullptr);
+
+    // Initial
+    CHECK(req_hdr.host_get() == "first.com"sv);
+    CHECK(req_hdr.port_get() == 1111);
+
+    // Modification 1: change host and port
+    host_field->value_set(req_hdr.m_heap, req_hdr.m_mime, "second.com:2222"sv);
+    CHECK(req_hdr.host_get() == "second.com"sv);
+    CHECK(req_hdr.port_get() == 2222);
+
+    // Modification 2: longer host, remove port
+    // Note: port is 0 when no port in Host header and no URL scheme
+    host_field->value_set(req_hdr.m_heap, req_hdr.m_mime, "very.long.third.example.org"sv);
+    CHECK(req_hdr.host_get() == "very.long.third.example.org"sv);
+    CHECK(req_hdr.port_get() == 0);
+
+    // Modification 3: short host, add port back
+    host_field->value_set(req_hdr.m_heap, req_hdr.m_mime, "x.co:443"sv);
+    CHECK(req_hdr.host_get() == "x.co"sv);
+    CHECK(req_hdr.port_get() == 443);
+
+    // Modification 4: change just the port
+    host_field->value_set(req_hdr.m_heap, req_hdr.m_mime, "x.co:8443"sv);
+    CHECK(req_hdr.host_get() == "x.co"sv);
+    CHECK(req_hdr.port_get() == 8443);
+
+    req_hdr.destroy();
+  }
+}

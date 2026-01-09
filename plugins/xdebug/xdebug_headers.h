@@ -23,14 +23,10 @@
 
 #include <sstream>
 #include "ts/ts.h"
+#include "xdebug_escape.h"
 
 namespace xdebug
 {
-
-/**
- * Whether to print the headers for the "probe-full-json" format.
- */
-static constexpr bool FULL_JSON = true;
 
 /**
  * Print headers to a stringstream with JSON-like formatting.
