@@ -21,11 +21,8 @@ target_link_libraries(esitest PUBLIC esi-common esicore)
 macro(ADD_ESI_TEST NAME)
   add_executable(${NAME} print_funcs.cc ${ARGN})
   target_link_libraries(${NAME} PRIVATE esitest)
-  add_catch2_test(NAME ${NAME} COMMAND $<TARGET_FILE:${NAME}>)
-  # Use ASan leak suppression for intentional DbgCtl leaks (issue #12776)
-  set_tests_properties(
-    ${NAME} PROPERTIES ENVIRONMENT
-                           "LSAN_OPTIONS=suppressions=${CMAKE_CURRENT_SOURCE_DIR}/esi_test_leak_suppression.txt"
+  add_catch2_test(
+    NAME ${NAME} ENVIRONMENT "LSAN_OPTIONS=suppressions=${CMAKE_CURRENT_SOURCE_DIR}/esi_test_leak_suppression.txt"
   )
 endmacro()
 
