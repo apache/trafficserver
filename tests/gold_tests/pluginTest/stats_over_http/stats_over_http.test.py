@@ -93,6 +93,44 @@ class StatsOverHttpPluginTest:
             p.Streams.stdout += Testers.ContainsExpression(
                 'proxy_process_http_delete_requests 0', 'Verify the successful parsing of Prometheus metrics for a counter.')
 
+    def __checkPrometheusV2Metrics(self, p: "Test.Process"):
+        """Check the Prometheus v2 metrics output.
+        :param p: The process whose output to check.
+        """
+        p.Streams.stdout += Testers.ContainsExpression(
+            "# HELP proxy_process_http_requests proxy.process.http.requests",
+            "Output should have a help line for the base metric name.",
+        )
+        p.Streams.stdout += Testers.ContainsExpression(
+            "# TYPE proxy_process_http_requests counter",
+            "Output should have a type line for the base metric name.",
+        )
+
+        p.Streams.stdout += Testers.ContainsExpression(
+            'proxy_process_http_requests{method="completed"}',
+            "Verify that method labels are extracted correctly.",
+        )
+
+        p.Streams.stdout += Testers.ContainsExpression(
+            'proxy_process_http_cache_fresh{result="hit"}',
+            "Verify that result labels are extracted correctly.",
+        )
+
+        p.Streams.stdout += Testers.ContainsExpression(
+            'proxy_process_http_disallowed_continue{method="post", status="100"}',
+            "Verify that status code labels are extracted correctly.",
+        )
+
+        p.Streams.stdout += Testers.ContainsExpression(
+            'proxy_process_cache_volume_lookup_active{volume="0"}',
+            "Verify that volume labels are extracted from volume_N patterns.",
+        )
+
+        p.Streams.stdout += Testers.ContainsExpression(
+            'proxy_process_eventloop_count{le="',
+            "Verify that time buckets are correctly transformed into le labels.",
+        )
+
     def __testCaseNoAccept(self):
         tr = Test.AddTestRun('Fetch stats over HTTP in JSON format: no Accept and default path')
         self.__checkProcessBefore(tr)
@@ -124,6 +162,19 @@ class StatsOverHttpPluginTest:
         tr.Processes.Default.ReturnCode = 0
         self.__checkPrometheusMetrics(tr.Processes.Default, from_prometheus=False)
         tr.Processes.Default.Streams.stderr = "gold/stats_over_http_prometheus_stderr.gold"
+        tr.Processes.Default.TimeOut = 3
+        self.__checkProcessAfter(tr)
+
+    def __testCaseAcceptPrometheusV2(self):
+        tr = Test.AddTestRun("Fetch stats over HTTP in Prometheus v2 format via Accept header")
+        self.__checkProcessBefore(tr)
+        tr.MakeCurlCommand(
+            f"-vs -H'Accept: text/plain; version=2.0.0' --http1.1 http://127.0.0.1:{self.ts.Variables.port}/_stats",
+            ts=self.ts,
+        )
+        tr.Processes.Default.ReturnCode = 0
+        self.__checkPrometheusV2Metrics(tr.Processes.Default)
+        tr.Processes.Default.Streams.stderr = ("gold/stats_over_http_prometheus_v2_accept_stderr.gold")
         tr.Processes.Default.TimeOut = 3
         self.__checkProcessAfter(tr)
 
@@ -160,6 +211,19 @@ class StatsOverHttpPluginTest:
         tr.Processes.Default.TimeOut = 3
         self.__checkProcessAfter(tr)
 
+    def __testCasePathPrometheusV2(self):
+        tr = Test.AddTestRun("Fetch stats over HTTP in Prometheus v2 format via /_stats/prometheus_v2")
+        self.__checkProcessBefore(tr)
+        tr.MakeCurlCommand(
+            f"-vs --http1.1 http://127.0.0.1:{self.ts.Variables.port}/_stats/prometheus_v2",
+            ts=self.ts,
+        )
+        tr.Processes.Default.ReturnCode = 0
+        self.__checkPrometheusV2Metrics(tr.Processes.Default)
+        tr.Processes.Default.Streams.stderr = ("gold/stats_over_http_prometheus_v2_stderr.gold")
+        tr.Processes.Default.TimeOut = 3
+        self.__checkProcessAfter(tr)
+
     def __testCaseAcceptIgnoredIfPathExplicit(self):
         tr = Test.AddTestRun('Fetch stats over HTTP in Prometheus format with Accept csv header')
         self.__checkProcessBefore(tr)
@@ -189,9 +253,11 @@ class StatsOverHttpPluginTest:
         self.__testCaseNoAccept()
         self.__testCaseAcceptCSV()
         self.__testCaseAcceptPrometheus()
+        self.__testCaseAcceptPrometheusV2()
         self.__testCasePathJSON()
         self.__testCasePathCSV()
         self.__testCasePathPrometheus()
+        self.__testCasePathPrometheusV2()
         self.__testCaseAcceptIgnoredIfPathExplicit()
         self.__queryAndParsePrometheusMetrics()
 

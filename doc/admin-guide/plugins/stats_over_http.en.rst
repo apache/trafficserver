@@ -105,20 +105,28 @@ if you wish to have it in CSV format you can do so by passing an ``Accept`` head
 
 .. option:: Accept: text/csv
 
-Prometheus formatted output is also supported via the ``Accept`` header:
+Prometheus formatted output is also supported via the ``Accept`` header. Version 0.0.4
+(flat metric names) and version 2.0.0 (labeled metrics for better aggregation)
+are supported:
 
 .. option:: Accept: text/plain; version=0.0.4
+.. option:: Accept: text/plain; version=2.0.0
 
 Alternatively, the output format can be specified as a suffix to the configured
 path in the HTTP request target.  The supported suffixes are ``/json``,
-``/csv``, and ``/prometheus``.  For example, if the path is set to ``/_stats``
-(the default), you can access the stats in CSV format by using the URL::
+``/csv``, ``/prometheus``, and ``/prometheus_v2``.  For example, if the path
+is set to ``/_stats`` (the default), you can access the stats in CSV format by
+using the URL::
 
     http://host:port/_stats/csv
 
-The Prometheus format can be requested by using the URL::
+The Prometheus version 0.0.4 format (flat) can be requested by using the URL::
 
     http://host:port/_stats/prometheus
+
+The Prometheus v2 labeled format can be requested by using the URL::
+
+    http://host:port/_stats/prometheus_v2
 
 The JSON format is the default, but you can also access it explicitly by using the URL::
 
@@ -129,9 +137,11 @@ specify a path suffix, the plugin will return the data in that format regardless
 the ``Accept`` header.
 
 In either case the ``Content-Type`` header returned by ``stats_over_http.so`` will
-reflect the content that has been returned: ``text/json``, ``text/csv``, or
-``text/plain; version=0.0.4; charset=utf-8`` for JSON, CSV, and Prometheus
-formats respectively.
+reflect the content that has been returned: ``text/json``, ``text/csv``,
+``text/plain; version=0.0.4; charset=utf-8``, or
+``text/plain; version=2.0.0; charset=utf-8`` for JSON, CSV, Prometheus v1, and
+Prometheus v2 formats respectively.
+
 
 Stats over http also accepts returning data in gzip or br compressed format per the
 ``Accept-encoding`` header. If the header is present, the plugin will return the
