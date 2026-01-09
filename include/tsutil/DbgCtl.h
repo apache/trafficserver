@@ -151,6 +151,11 @@ private:
 
   static const _TagData *_new_reference(char const *tag);
 
+  // Backward compatibility stub: no-op since we now use leaky singleton.
+  // TODO: This can be removed in 11.x because we don't have to worry about
+  // compatibility there.
+  static void _rm_reference();
+
   class _RegistryAccessor;
 
   static std::atomic<int> _config_mode;
