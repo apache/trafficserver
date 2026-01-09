@@ -170,6 +170,14 @@ DbgCtl::_new_reference(char const *tag)
   return new_tag_data;
 }
 
+// Backward compatibility stub for ABI compatibility with plugins compiled
+// against pre-leaky-singleton versions. Does nothing since the registry is
+// now never destroyed.
+void
+DbgCtl::_rm_reference()
+{
+}
+
 void
 DbgCtl::update(const std::function<bool(const char *)> &f)
 {
