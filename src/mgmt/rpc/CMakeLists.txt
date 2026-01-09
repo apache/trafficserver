@@ -63,13 +63,13 @@ if(BUILD_TESTING)
   target_link_libraries(
     test_jsonrpc ts::tsutil Catch2::Catch2WithMain ts::rpcpublichandlers ts::jsonrpc_protocol libswoc::libswoc
   )
-  add_catch2_test(NAME test_jsonrpc COMMAND test_jsonrpc)
+  add_catch2_test(NAME test_jsonrpc)
 
   add_executable(
     test_jsonrpcserver server/unit_tests/test_rpcserver.cc ${CMAKE_SOURCE_DIR}/src/shared/rpc/IPCSocketClient.cc
   )
   target_link_libraries(test_jsonrpcserver Catch2::Catch2WithMain ts::jsonrpc_server ts::inkevent libswoc::libswoc)
-  add_catch2_test(NAME test_jsonrpcserver COMMAND test_jsonrpcserver)
+  add_catch2_test(NAME test_jsonrpcserver)
 endif()
 
 clang_tidy_check(jsonrpc_protocol)
