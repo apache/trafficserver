@@ -109,6 +109,28 @@ DbgCtl dbg_ctl_cache_init{"cache_init"};
 DbgCtl dbg_ctl_cache_hosting{"cache_hosting"};
 DbgCtl dbg_ctl_cache_update{"cache_update"};
 
+CacheVC *
+new_CacheVC_for_read(Continuation *cont, const CacheKey *key, CacheHTTPHdr *request, const HttpConfigAccessor *params,
+                     StripeSM *stripe)
+{
+  CacheVC *cache_vc = new_CacheVC(cont);
+
+  cache_vc->first_key    = *key;
+  cache_vc->key          = *key;
+  cache_vc->earliest_key = *key;
+  cache_vc->stripe       = stripe;
+  cache_vc->vio.op       = VIO::READ;
+  cache_vc->op_type      = static_cast<int>(CacheOpType::Read);
+  cache_vc->frag_type    = CACHE_FRAG_TYPE_HTTP;
+  cache_vc->params       = params;
+  cache_vc->request.copy_shallow(request);
+
+  ts::Metrics::Gauge::increment(cache_rsb.status[cache_vc->op_type].active);
+  ts::Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.status[cache_vc->op_type].active);
+
+  return cache_vc;
+}
+
 } // end anonymous namespace
 
 // Global list of the volumes created
@@ -543,20 +565,24 @@ Cache::open_read(Continuation *cont, const CacheKey *key, CacheHTTPHdr *request,
   OpenDirEntry *od    = nullptr;
   CacheVC      *c     = nullptr;
 
+  // Read-While-Writer
+  // This OpenDirEntry lookup doesn't need stripe mutex lock because OpenDir has own reader-writer lock
+  od = stripe->open_read(key);
+  if (od != nullptr) {
+    c     = new_CacheVC_for_read(cont, key, request, params, stripe);
+    c->od = od;
+    cont->handleEvent(CACHE_EVENT_OPEN_READ_RWW, nullptr);
+    SET_CONTINUATION_HANDLER(c, &CacheVC::openReadFromWriter);
+    if (c->handleEvent(EVENT_IMMEDIATE, nullptr) == EVENT_DONE) {
+      return ACTION_RESULT_DONE;
+    }
+    return &c->_action;
+  }
+
   {
     CACHE_TRY_LOCK(lock, stripe->mutex, mutex->thread_holding);
-    if (!lock.is_locked() || (od = stripe->open_read(key)) || stripe->directory.probe(key, stripe, &result, &last_collision)) {
-      c            = new_CacheVC(cont);
-      c->first_key = c->key = c->earliest_key = *key;
-      c->stripe                               = stripe;
-      c->vio.op                               = VIO::READ;
-      c->op_type                              = static_cast<int>(CacheOpType::Read);
-      ts::Metrics::Gauge::increment(cache_rsb.status[c->op_type].active);
-      ts::Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.status[c->op_type].active);
-      c->request.copy_shallow(request);
-      c->frag_type = CACHE_FRAG_TYPE_HTTP;
-      c->params    = params;
-      c->od        = od;
+    if (!lock.is_locked() || stripe->directory.probe(key, stripe, &result, &last_collision)) {
+      c = new_CacheVC_for_read(cont, key, request, params, stripe);
     }
     if (!lock.is_locked()) {
       SET_CONTINUATION_HANDLER(c, &CacheVC::openReadStartHead);
@@ -566,9 +592,7 @@ Cache::open_read(Continuation *cont, const CacheKey *key, CacheHTTPHdr *request,
     if (!c) {
       goto Lmiss;
     }
-    if (c->od) {
-      goto Lwriter;
-    }
+
     // hit
     c->dir = c->first_dir = result;
     c->last_collision     = last_collision;
@@ -587,13 +611,6 @@ Lmiss:
   ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
   cont->handleEvent(CACHE_EVENT_OPEN_READ_FAILED, reinterpret_cast<void *>(-ECACHE_NO_DOC));
   return ACTION_RESULT_DONE;
-Lwriter:
-  cont->handleEvent(CACHE_EVENT_OPEN_READ_RWW, nullptr);
-  SET_CONTINUATION_HANDLER(c, &CacheVC::openReadFromWriter);
-  if (c->handleEvent(EVENT_IMMEDIATE, nullptr) == EVENT_DONE) {
-    return ACTION_RESULT_DONE;
-  }
-  return &c->_action;
 Lcallreturn:
   if (c->handleEvent(AIO_EVENT_DONE, nullptr) == EVENT_DONE) {
     return ACTION_RESULT_DONE;

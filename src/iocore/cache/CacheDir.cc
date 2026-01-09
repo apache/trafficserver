@@ -28,9 +28,12 @@
 #include "PreservationTable.h"
 #include "Stripe.h"
 
+#include "iocore/eventsystem/Event.h"
 #include "tscore/hugepages.h"
 #include "tscore/Random.h"
 #include "ts/ats_probe.h"
+#include "tsutil/Bravo.h"
+#include <mutex>
 
 #ifdef LOOP_CHECK_MODE
 #define DIR_LOOP_THRESHOLD 1000
@@ -46,6 +49,7 @@ DbgCtl dbg_ctl_dir_clean{"dir_clean"};
 #ifdef DEBUG
 
 DbgCtl dbg_ctl_cache_stats{"cache_stats"};
+DbgCtl dbg_ctl_cache_open_dir{"cache_open_dir"};
 DbgCtl dbg_ctl_dir_probe_hit{"dir_probe_hit"};
 DbgCtl dbg_ctl_dir_probe_tag{"dir_probe_tag"};
 DbgCtl dbg_ctl_dir_probe_miss{"dir_probe_miss"};
@@ -78,10 +82,11 @@ OpenDir::OpenDir()
 int
 OpenDir::open_write(CacheVC *cont, int allow_if_writers, int max_writers)
 {
-  ink_assert(cont->stripe->mutex->thread_holding == this_ethread());
+  std::lock_guard lock(_shared_mutex);
+
   unsigned int h = cont->first_key.slice32(0);
   int          b = h % OPEN_DIR_BUCKETS;
-  for (OpenDirEntry *d = bucket[b].head; d; d = d->link.next) {
+  for (OpenDirEntry *d = _bucket[b].head; d; d = d->link.next) {
     if (!(d->writers.head->first_key == cont->first_key)) {
       continue;
     }
@@ -107,17 +112,27 @@ OpenDir::open_write(CacheVC *cont, int allow_if_writers, int max_writers)
   dir_clear(&od->first_dir);
   cont->od           = od;
   cont->write_vector = &od->vector;
-  bucket[b].push(od);
+  _bucket[b].push(od);
   return 1;
 }
 
+/**
+  This event handler is called in two cases:
+
+  1. Direct call from OpenDir::close_write - writer lock is already acquired
+  2. Self retry through event system - need to acquire writer lock
+ */
 int
-OpenDir::signal_readers(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
+OpenDir::signal_readers(int event, Event * /* ATS UNUSED*/)
 {
+  if (event == CACHE_EVENT_OPEN_DIR_RETRY) {
+    _shared_mutex.lock();
+  }
+
   Queue<CacheVC, Link_CacheVC_opendir_link> newly_delayed_readers;
   EThread                                  *t = mutex->thread_holding;
   CacheVC                                  *c = nullptr;
-  while ((c = delayed_readers.dequeue())) {
+  while ((c = _delayed_readers.dequeue())) {
     CACHE_TRY_LOCK(lock, c->mutex, t);
     if (lock.is_locked()) {
       c->f.open_read_timeout = 0;
@@ -127,28 +142,34 @@ OpenDir::signal_readers(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     newly_delayed_readers.push(c);
   }
   if (newly_delayed_readers.head) {
-    delayed_readers = newly_delayed_readers;
-    EThread *t1     = newly_delayed_readers.head->mutex->thread_holding;
+    _delayed_readers = newly_delayed_readers;
+    EThread *t1      = newly_delayed_readers.head->mutex->thread_holding;
     if (!t1) {
       t1 = mutex->thread_holding;
     }
-    t1->schedule_in(this, HRTIME_MSECONDS(cache_config_mutex_retry_delay));
+    t1->schedule_in(this, HRTIME_MSECONDS(cache_config_mutex_retry_delay), CACHE_EVENT_OPEN_DIR_RETRY);
   }
-  return 0;
+
+  if (event == CACHE_EVENT_OPEN_DIR_RETRY) {
+    _shared_mutex.unlock();
+  }
+
+  return EVENT_DONE;
 }
 
 int
 OpenDir::close_write(CacheVC *cont)
 {
-  ink_assert(cont->stripe->mutex->thread_holding == this_ethread());
+  std::lock_guard lock(_shared_mutex);
+
   cont->od->writers.remove(cont);
   cont->od->num_writers--;
   if (!cont->od->writers.head) {
     unsigned int h = cont->first_key.slice32(0);
     int          b = h % OPEN_DIR_BUCKETS;
-    bucket[b].remove(cont->od);
-    delayed_readers.append(cont->od->readers);
-    signal_readers(0, nullptr);
+    _bucket[b].remove(cont->od);
+    _delayed_readers.append(cont->od->readers);
+    signal_readers(EVENT_CALL, nullptr);
     cont->od->vector.clear();
     THREAD_FREE(cont->od, openDirEntryAllocator, cont->mutex->thread_holding);
   }
@@ -159,9 +180,11 @@ OpenDir::close_write(CacheVC *cont)
 OpenDirEntry *
 OpenDir::open_read(const CryptoHash *key) const
 {
+  ts::bravo::shared_lock lock(_shared_mutex);
+
   unsigned int h = key->slice32(0);
   int          b = h % OPEN_DIR_BUCKETS;
-  for (OpenDirEntry *d = bucket[b].head; d; d = d->link.next) {
+  for (OpenDirEntry *d = _bucket[b].head; d; d = d->link.next) {
     if (d->writers.head->first_key == *key) {
       return d;
     }

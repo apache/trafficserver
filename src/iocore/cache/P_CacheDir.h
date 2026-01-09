@@ -28,6 +28,7 @@
 #include "iocore/eventsystem/Continuation.h"
 #include "iocore/aio/AIO.h"
 #include "tscore/Version.h"
+#include "tsutil/Bravo.h"
 
 #include <cstdint>
 #include <ctime>
@@ -225,16 +226,23 @@ struct OpenDirEntry {
   }
 };
 
-struct OpenDir : public Continuation {
-  Queue<CacheVC, Link_CacheVC_opendir_link> delayed_readers;
-  DLL<OpenDirEntry>                         bucket[OPEN_DIR_BUCKETS];
+class OpenDir : public Continuation
+{
+public:
+  OpenDir();
 
   int           open_write(CacheVC *c, int allow_if_writers, int max_writers);
   int           close_write(CacheVC *c);
   OpenDirEntry *open_read(const CryptoHash *key) const;
-  int           signal_readers(int event, Event *e);
 
-  OpenDir();
+  // event handler
+  int signal_readers(int event, Event *e);
+
+private:
+  mutable ts::bravo::shared_mutex _shared_mutex;
+
+  Queue<CacheVC, Link_CacheVC_opendir_link> _delayed_readers;
+  DLL<OpenDirEntry>                         _bucket[OPEN_DIR_BUCKETS];
 };
 
 struct CacheSync : public Continuation {
