@@ -63,7 +63,7 @@ if(BUILD_TESTING)
       list(APPEND _catch_properties ENVIRONMENT "${CATCH2_TEST_ENVIRONMENT}")
     endif()
 
-    catch_discover_tests(${CATCH2_TEST_NAME} PROPERTIES ${_catch_properties})
+    catch_discover_tests(${CATCH2_TEST_NAME} DISCOVERY_MODE PRE_TEST PROPERTIES ${_catch_properties})
   endmacro()
 
 endif()
