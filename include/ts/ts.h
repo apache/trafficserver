@@ -1331,13 +1331,13 @@ TSReturnCode TSVConnProtocolEnable(TSVConn connp, const char *protocol_name);
 int TSVConnIsSsl(TSVConn sslp);
 /* Returns 1 if a certificate was provided in the TLS handshake, 0 otherwise.
  */
-int         TSVConnProvidedSslCert(TSVConn sslp);
-const char *TSVConnSslSniGet(TSVConn sslp, int *length);
-
-TSSslSession TSSslSessionGet(const TSSslSessionID *session_id);
-int          TSSslSessionGetBuffer(const TSSslSessionID *session_id, char *buffer, int *len_ptr);
-TSReturnCode TSSslSessionInsert(const TSSslSessionID *session_id, TSSslSession add_session, TSSslConnection ssl_conn);
-TSReturnCode TSSslSessionRemove(const TSSslSessionID *session_id);
+int           TSVConnProvidedSslCert(TSVConn sslp);
+const char   *TSVConnSslSniGet(TSVConn sslp, int *length);
+TSClientHello TSVConnClientHelloGet(TSVConn sslp);
+TSSslSession  TSSslSessionGet(const TSSslSessionID *session_id);
+int           TSSslSessionGetBuffer(const TSSslSessionID *session_id, char *buffer, int *len_ptr);
+TSReturnCode  TSSslSessionInsert(const TSSslSessionID *session_id, TSSslSession add_session, TSSslConnection ssl_conn);
+TSReturnCode  TSSslSessionRemove(const TSSslSessionID *session_id);
 
 /* --------------------------------------------------------------------------
    HTTP transactions */

@@ -7898,6 +7898,24 @@ TSVConnSslSniGet(TSVConn sslp, int *length)
   return server_name;
 }
 
+#ifdef OPENSSL_IS_BORINGSSL
+TSClientHello
+TSVConnClientHelloGet(TSVConn sslp)
+{
+  NetVConnection *netvc = reinterpret_cast<NetVConnection *>(sslp);
+  if (netvc == nullptr) {
+    return nullptr;
+  }
+
+  if (auto snis = netvc->get_service<TLSSNISupport>(); snis) {
+    ClientHelloContainer client_hello = snis->get_client_hello_container();
+    return reinterpret_cast<TSClientHello>(const_cast<SSL_CLIENT_HELLO *>(client_hello));
+  }
+
+  return nullptr;
+}
+#endif
+
 TSSslVerifyCTX
 TSVConnSslVerifyCTXGet(TSVConn sslp)
 {
