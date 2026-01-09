@@ -163,8 +163,8 @@ public:
   bool    reconfiguration_needed  = false;
   bool    logging_space_exhausted = false;
   int64_t m_space_used            = 0;
-  int64_t m_partition_space_left;
-  bool    roll_log_files_now; // signal that files must be rolled
+  int64_t m_partition_space_left  = static_cast<int64_t>(UINT_MAX);
+  bool    roll_log_files_now      = false; // signal that files must be rolled
 
   LogObjectManager log_object_manager;
 
