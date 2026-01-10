@@ -74,47 +74,44 @@ foreach(UML ${UML_FILES})
 endforeach()
 add_custom_target(generate_svg_from_uml DEPENDS ${SVG_FILES})
 
-# Docs are built with python so we need a target to setup pipenv
-# Copy Pipfile to build directory and explicitly point pipenv to it
-# PIPENV_VENV_IN_PROJECT=1 creates .venv next to the Pipfile location (if not already in a venv)
-# PIPENV_VERBOSITY=-1 suppresses warnings
-# If user is already in a virtualenv, pipenv will use it; otherwise creates one in build dir
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/Pipfile ${CMAKE_CURRENT_BINARY_DIR}/Pipfile COPYONLY)
-set(RUNPIPENV PIPENV_PIPFILE=${CMAKE_CURRENT_BINARY_DIR}/Pipfile PIPENV_VENV_IN_PROJECT=1 PIPENV_VERBOSITY=-1 ${PipEnv})
-# Create a marker file to indicate pipenv setup is complete
-# This is more reliable than using Pipfile.lock which might already exist
+# Docs are built with python so we need a target to setup the virtual environment.
+# Copy pyproject.toml to build directory and use uv to manage dependencies.
+# uv creates .venv in the project directory by default.
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/pyproject.toml ${CMAKE_CURRENT_BINARY_DIR}/pyproject.toml COPYONLY)
+set(RUNUV ${UV} --project ${CMAKE_CURRENT_BINARY_DIR})
+# Create a marker file to indicate uv setup is complete.
 add_custom_command(
-  OUTPUT .pipenv_installed
-  COMMAND ${RUNPIPENV} install --python ${Python3_EXECUTABLE}
-  COMMAND ${CMAKE_COMMAND} -E touch .pipenv_installed
-  COMMENT "Setup pipenv in build directory (${CMAKE_CURRENT_BINARY_DIR}/.venv) and install packages"
-  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Pipfile
+  OUTPUT .uv_installed
+  COMMAND ${RUNUV} sync
+  COMMAND ${CMAKE_COMMAND} -E touch .uv_installed
+  COMMENT "Setup uv virtual environment in build directory (${CMAKE_CURRENT_BINARY_DIR}/.venv) and install packages"
+  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/pyproject.toml
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   VERBATIM
 )
 
 add_custom_target(
   generate_docs
-  COMMAND ${CMAKE_COMMAND} -E env "JAVA_TOOL_OPTIONS=-Djava.awt.headless=true -Dapple.awt.UIElement=true" ${RUNPIPENV}
-          run python ${CMAKE_CURRENT_SOURCE_DIR}/checkvers.py --check-version
-  COMMAND ${CMAKE_COMMAND} -E env "JAVA_TOOL_OPTIONS=-Djava.awt.headless=true -Dapple.awt.UIElement=true" ${RUNPIPENV}
-          run python -m sphinx -W -c ${CMAKE_CURRENT_BINARY_DIR} -b html ${CMAKE_CURRENT_SOURCE_DIR}
+  COMMAND ${CMAKE_COMMAND} -E env "JAVA_TOOL_OPTIONS=-Djava.awt.headless=true -Dapple.awt.UIElement=true" ${RUNUV} run
+          python ${CMAKE_CURRENT_SOURCE_DIR}/checkvers.py --check-version
+  COMMAND ${CMAKE_COMMAND} -E env "JAVA_TOOL_OPTIONS=-Djava.awt.headless=true -Dapple.awt.UIElement=true" ${RUNUV} run
+          python -m sphinx -W -c ${CMAKE_CURRENT_BINARY_DIR} -b html ${CMAKE_CURRENT_SOURCE_DIR}
           ${CMAKE_CURRENT_BINARY_DIR}/docbuild/html
-  DEPENDS generate_docs_setup .pipenv_installed
+  DEPENDS generate_docs_setup .uv_installed
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   COMMENT "Sphinx PlantUML extension now generates diagrams automatically in build tree"
 )
 # Generate PDF documentation (Letter paper size - US standard)
 add_custom_target(
   generate_pdf
-  COMMAND ${CMAKE_COMMAND} -E env "JAVA_TOOL_OPTIONS=-Djava.awt.headless=true -Dapple.awt.UIElement=true" ${RUNPIPENV}
-          run python ${CMAKE_CURRENT_SOURCE_DIR}/checkvers.py --check-version
-  COMMAND ${CMAKE_COMMAND} -E env "JAVA_TOOL_OPTIONS=-Djava.awt.headless=true -Dapple.awt.UIElement=true" ${RUNPIPENV}
-          run python -m sphinx -c ${CMAKE_CURRENT_BINARY_DIR} -b latex -t latex_paper ${CMAKE_CURRENT_SOURCE_DIR}
+  COMMAND ${CMAKE_COMMAND} -E env "JAVA_TOOL_OPTIONS=-Djava.awt.headless=true -Dapple.awt.UIElement=true" ${RUNUV} run
+          python ${CMAKE_CURRENT_SOURCE_DIR}/checkvers.py --check-version
+  COMMAND ${CMAKE_COMMAND} -E env "JAVA_TOOL_OPTIONS=-Djava.awt.headless=true -Dapple.awt.UIElement=true" ${RUNUV} run
+          python -m sphinx -c ${CMAKE_CURRENT_BINARY_DIR} -b latex -t latex_paper ${CMAKE_CURRENT_SOURCE_DIR}
           ${CMAKE_CURRENT_BINARY_DIR}/docbuild/latex
   COMMAND ${CMAKE_COMMAND} -E chdir ${CMAKE_CURRENT_BINARY_DIR}/docbuild/latex latexmk -pdf -interaction=nonstopmode -f
           ApacheTrafficServer.tex
-  DEPENDS generate_docs_setup .pipenv_installed
+  DEPENDS generate_docs_setup .uv_installed
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   COMMENT "Building PDF documentation with Sphinx and LaTeX (Letter paper, PlantUML generates PNG automatically)"
 )
@@ -122,21 +119,14 @@ add_custom_target(
 # Generate PDF documentation (A4 paper size - International standard)
 add_custom_target(
   generate_pdf_a4
-  COMMAND ${CMAKE_COMMAND} -E env "JAVA_TOOL_OPTIONS=-Djava.awt.headless=true -Dapple.awt.UIElement=true" ${RUNPIPENV}
-          run python ${CMAKE_CURRENT_SOURCE_DIR}/checkvers.py --check-version
-  COMMAND ${CMAKE_COMMAND} -E env "JAVA_TOOL_OPTIONS=-Djava.awt.headless=true -Dapple.awt.UIElement=true" ${RUNPIPENV}
-          run python -m sphinx -c ${CMAKE_CURRENT_BINARY_DIR} -b latex -t latex_a4 ${CMAKE_CURRENT_SOURCE_DIR}
+  COMMAND ${CMAKE_COMMAND} -E env "JAVA_TOOL_OPTIONS=-Djava.awt.headless=true -Dapple.awt.UIElement=true" ${RUNUV} run
+          python ${CMAKE_CURRENT_SOURCE_DIR}/checkvers.py --check-version
+  COMMAND ${CMAKE_COMMAND} -E env "JAVA_TOOL_OPTIONS=-Djava.awt.headless=true -Dapple.awt.UIElement=true" ${RUNUV} run
+          python -m sphinx -c ${CMAKE_CURRENT_BINARY_DIR} -b latex -t latex_a4 ${CMAKE_CURRENT_SOURCE_DIR}
           ${CMAKE_CURRENT_BINARY_DIR}/docbuild/latex-a4
   COMMAND ${CMAKE_COMMAND} -E chdir ${CMAKE_CURRENT_BINARY_DIR}/docbuild/latex-a4 latexmk -pdf -interaction=nonstopmode
           -f ApacheTrafficServer.tex
-  DEPENDS generate_docs_setup .pipenv_installed
+  DEPENDS generate_docs_setup .uv_installed
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   COMMENT "Building PDF documentation with Sphinx and LaTeX (A4 paper, PlantUML generates PNG automatically)"
 )
-
-#add_custom_command(
-#    TARGET generate_docs
-#    POST_BUILD
-#    COMMAND ${RUNPIPENV} --rm
-#    COMMENT "Cleaning up pipenv"
-#)

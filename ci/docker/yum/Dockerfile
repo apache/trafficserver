@@ -55,8 +55,10 @@ RUN yum -y update; \
     ImageMagick-devel ImageMagick-c++-devel hiredis-devel zlib-devel zstd-devel \
     perl-ExtUtils-MakeMaker perl-Digest-SHA perl-URI; \
     # This is for autest stuff
-    yum -y install python3 httpd-tools procps-ng nmap-ncat pipenv \
+    yum -y install python3 httpd-tools procps-ng nmap-ncat \
     python3-virtualenv python3-gunicorn python3-requests python3-httpbin; \
+    # Install uv for Python environment management
+    curl -LsSf https://astral.sh/uv/install.sh | sh; \
     # Optional: This is for the OpenSSH server, and Jenkins account + access (comment out if not needed)
     yum -y install java openssh-server && ssh-keygen -A; rm -f /run/nologin; \
     groupadd  -g 665 jenkins && \

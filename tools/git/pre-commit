@@ -43,17 +43,15 @@ if [ ! -x "$FORMAT" ]; then
     exit 1
 fi
 
-source "$GIT_TOP/tools/yapf.sh"
-if [ ! -d ${YAPF_VENV} ]; then
-    echo "Run \"cmake --build <build_dir> --target yapf\""
+# Check for uv which is required for yapf and cmake-format.
+if ! command -v uv &> /dev/null; then
+    echo "uv is not installed. Please install it: https://docs.astral.sh/uv/getting-started/installation/"
     exit 1
 fi
 
+# Get version variables from the formatting scripts.
+source "$GIT_TOP/tools/yapf.sh"
 source "$GIT_TOP/tools/cmake-format.sh"
-if [ ! -d ${CMAKE_FORMAT_VENV} ]; then
-    echo "Run \"cmake --build <build_dir> --target cmake-format\""
-    exit 1
-fi
 
 # Where to store the patch
 clang_patch_file=$(mktemp -t clang-format.XXXXXXXXXX)
@@ -62,7 +60,6 @@ cmake_format_patch_file=$(mktemp -t cmake-format.XXXXXXXXXX)
 trap "rm -f $clang_patch_file $yapf_patch_file $cmake_format_patch_file" 0 1 2 3 5 15
 
 # Loop over all files that are changed, and produce a diff file
-source ${YAPF_VENV}/bin/activate
 REPO_ROOT=$(cd $(dirname $0)/../.. && git rev-parse --show-toplevel)
 YAPF_CONFIG=${REPO_ROOT}/.style.yapf
 git diff-index --cached --diff-filter=ACMR --name-only HEAD | grep -vE "lib/(Catch2|fastlz|ls-hpack|swoc|yamlcpp)" |  while read file; do
@@ -71,9 +68,9 @@ git diff-index --cached --diff-filter=ACMR --name-only HEAD | grep -vE "lib/(Cat
         ${FORMAT} "$file" | diff -u "$file" - >>"$clang_patch_file"
         ;;
     # Keep this list of Python extensions the same with the list of
-    # extensions searched for in the toosl/yapf.sh script.
+    # extensions searched for in the tools/yapf.sh script.
     *.py | *.cli.ext | *.test.ext)
-        yapf \
+        uv tool run --quiet yapf@${YAPF_VERSION} \
             --style ${YAPF_CONFIG} \
             --parallel \
             --diff \
@@ -81,14 +78,11 @@ git diff-index --cached --diff-filter=ACMR --name-only HEAD | grep -vE "lib/(Cat
         ;;
     esac
 done
-deactivate
 
 # Now repeat the above for CMakeLists.txt files.
-source ${CMAKE_FORMAT_VENV}/bin/activate
 git diff-index --cached --diff-filter=ACMR --name-only HEAD | grep -E 'CMakeLists.txt|\.cmake$' | grep -vE "lib/(Catch2|fastlz|ls-hpack|swoc|yamlcpp)" | while read file; do
-    cmake-format "$file" | diff -u "$file" - >>"$cmake_format_patch_file"
+    uv tool run --quiet --from cmakelang@${CMAKE_FORMAT_VERSION} --with pyaml cmake-format "$file" | diff -u "$file" - >>"$cmake_format_patch_file"
 done
-deactivate
 
 if [ -s "$clang_patch_file" ]; then
     echo "The commit is not accepted, because clang-format does not match current"

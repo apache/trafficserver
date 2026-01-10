@@ -13,8 +13,34 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-antlr4-python3-runtime>=4.9,<5.0
-pytest>=7.0,<8.0
-pyinstaller>=5.0,<7.0
-build>=0.8,<2.0
-rapidfuzz>=3.0,<4.0
+
+[project]
+name = "ats-docs"
+version = "0.1.0"
+description = "Documentation dependencies for Apache Traffic Server"
+requires-python = ">=3.11"
+
+dependencies = [
+    # We pin Sphinx because the sphinx-rtd-theme suggests this as a best practice.
+    # If not, we will often face issues when Sphinx updates their version before
+    # sphinx-rtd-theme has had time to update their component for the new sphinx
+    # version.
+    "sphinx==8.2.3",
+
+    "sphinx-rtd-theme>=3.0.0,<4.0.0",
+    "sphinxcontrib-jquery",
+    "sphinxcontrib-plantuml",
+    # i18n
+    "sphinx-intl",
+
+    "pyyaml",
+
+    # For parsing Doxygen XML output, to add links from an API description
+    # to the source code for that object.
+    "lxml",
+
+    "polib>=1.0.3",
+]
+
+
+

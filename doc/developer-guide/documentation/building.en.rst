@@ -41,16 +41,18 @@ System installs
    python3
       Python 3 is required. The build system will use this to create a virtual environment.
 
-   pipenv
-      Used to manage Python dependencies. Install with ``pip3 install pipenv`` or your system package manager.
+   uv
+      Used to manage Python dependencies. See from https://docs.astral.sh/uv/getting-started/installation/
+      for installation instructions. ``curl -LsSf https://astral.sh/uv/install.sh | sh``, or
+      or ``pip3 install uv``, or your system package manager.
 
 Python packages
-   Python dependencies are managed automatically via `pipenv <https://docs.pipenv.org/>`__
-   and the :ts:git:`doc/Pipfile`. The build system will automatically create a virtual environment
+   Python dependencies are managed automatically via `uv <https://docs.astral.sh/uv/>`__
+   and the :ts:git:`doc/pyproject.toml`. The build system will automatically create a virtual environment
    and install all required packages (including Sphinx, sphinx-rtd-theme, sphinxcontrib-plantuml,
    sphinx-intl for internationalization, and other dependencies) when you build the documentation.
 
-   You do not need to manually install these packages or set up pipenv yourself - the CMake build
+   You do not need to manually install these packages or set up uv yourself - the CMake build
    targets handle this automatically.
 
 Building the documentation
@@ -72,8 +74,8 @@ With CMake configured with ``-DENABLE_DOCS=ON``, building the documentation is s
 
 The build system will automatically:
 
-1. Create a pipenv virtual environment in the build directory
-2. Install all required Python packages from :ts:git:`doc/Pipfile`
+1. Create a virtual environment in the build directory via uv
+2. Install all required Python packages from :ts:git:`doc/pyproject.toml`
 3. Generate the documentation
 
 For repeated builds while working on the documentation, simply run the build command again.

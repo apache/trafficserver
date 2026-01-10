@@ -64,5 +64,7 @@ RUN apt-get update; apt-get -y dist-upgrade; \
     mkdir -p /var/jenkins && chown jenkins.jenkins /var/jenkins
 
 # This is for autest stuff, skipping since it's pulling in a *lot* ...
-# apt-get -y install python3 httpd-tools procps-ng nmap-ncat pipenv \
+# apt-get -y install python3 httpd-tools procps-ng nmap-ncat \
 # python3-virtualenv python3-gunicorn python3-requests python3-httpbin; \
+# Install uv for Python environment management:
+# curl -LsSf https://astral.sh/uv/install.sh | sh

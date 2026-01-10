@@ -27,7 +27,7 @@ Running the tests can be done using the `autest` target
 
     $ cmake --build build -t autest
 
-This will build ATS, install it to a temporary directory, setup the pipenv and run all of the autests.
+This will build ATS, install it to a temporary directory, setup the virtual environment via uv, and run all of the autests.
 
 To run autest again, or to run individual tests, the cmake build generates a helper script in the build directory at
 `<build>/tests/autest.sh`.  This script can be used to run individual tests and further configure autest.
