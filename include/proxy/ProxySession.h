@@ -23,6 +23,7 @@
 
 #pragma once
 
+#include "tscore/ink_inet.h"
 #include "tscore/ink_platform.h"
 #include "tscore/ink_resolver.h"
 #include "tscore/TSSystemState.h"
@@ -115,6 +116,8 @@ public:
   virtual uint64_t get_received_frame_count(uint64_t type) const;
 
   // Replicate NetVConnection API
+  virtual sockaddr const *get_client_addr() const;
+  virtual uint16_t        get_client_port() const;
   virtual sockaddr const *get_remote_addr() const;
   virtual sockaddr const *get_local_addr();
 

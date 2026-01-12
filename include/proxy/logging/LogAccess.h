@@ -125,6 +125,8 @@ public:
   int marshal_client_host_ip(char *);                // STR
   int marshal_host_interface_ip(char *);             // STR
   int marshal_client_host_port(char *);              // INT
+  int marshal_remote_host_ip(char *);                // STR
+  int marshal_remote_host_port(char *);              // STR
   int marshal_client_auth_user_name(char *);         // STR
   int marshal_client_req_timestamp_sec(char *);      // INT
   int marshal_client_req_timestamp_ms(char *);       // INT
