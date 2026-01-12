@@ -67,6 +67,34 @@ base16Encode(const char *in, size_t inLen)
 }
 
 /**
+ * @brief URI-decode a character string
+ *
+ * Decodes percent-encoded characters (e.g., %20 -> space, %2F -> /)
+ *
+ * @param in string to be URI decoded
+ * @return decoded string
+ */
+String
+uriDecode(const String &in)
+{
+  String result;
+  result.reserve(in.length()); /* Decoded string will be same size or smaller */
+
+  for (size_t i = 0; i < in.length(); i++) {
+    if (in[i] == '%' && i + 2 < in.length() && std::isxdigit(in[i + 1]) && std::isxdigit(in[i + 2])) {
+      /* Decode %XX to character */
+      char hex[3]  = {in[i + 1], in[i + 2], '\0'};
+      result      += static_cast<char>(std::strtol(hex, nullptr, 16));
+      i           += 2; /* Skip past the hex digits */
+    } else {
+      result += in[i];
+    }
+  }
+
+  return result;
+}
+
+/**
  * @brief URI-encode a character string (AWS specific version, see spec)
  *
  * @see AWS spec: http://docs.aws.amazon.com/AmazonS3/latest/API/sig-v4-header-based-auth.html
@@ -108,7 +136,7 @@ uriEncode(const String &in, bool isObjectName)
 }
 
 /**
- * @brief checks if the string is URI-encoded (AWS specific encoding version, see spec)
+ * @brief checks if the string is FULLY URI-encoded (AWS specific encoding version, see spec)
  *
  * @see AWS spec: http://docs.aws.amazon.com/AmazonS3/latest/API/sig-v4-header-based-auth.html
  *
@@ -116,13 +144,20 @@ uriEncode(const String &in, bool isObjectName)
  *       be followed by 2 hexadecimal symbols otherwise '%' should be encoded with %25:
  *          https://tools.ietf.org/html/rfc3986#section-2.1
  *
+ * @note This function checks if ALL characters that need encoding ARE encoded. A string with
+ *       mixed encoding (some chars encoded, some not) returns false. This fixes a bug where
+ *       URLs like /app/(channel)/%5B%5Bparts%5D%5D/ would incorrectly return true because
+ *       %5B was found, even though parentheses () were not encoded.
+ *
  * @param in string to be URI checked
  * @param isObjectName if true encoding didn't encode '/', kept it as it is.
- * @return true if encoded, false not encoded.
+ * @return true if fully encoded, false if not encoded or partially encoded.
  */
 bool
 isUriEncoded(const String &in, bool isObjectName)
 {
+  bool foundEncodedChar = false;
+
   for (size_t pos = 0; pos < in.length(); pos++) {
     char c = in[pos];
 
@@ -132,43 +167,56 @@ isUriEncoded(const String &in, bool isObjectName)
       continue;
     }
 
-    if (' ' == c) {
-      /* space should have been encoded with %20 if the string was encoded */
-      return false;
-    }
-
-    if ('/' == c && !isObjectName) {
-      /* if this is not an object name '/' should have been encoded */
-      return false;
+    if ('/' == c && isObjectName) {
+      /* '/' is allowed unencoded in object names */
+      continue;
     }
 
     if ('%' == c) {
       if (pos + 2 < in.length() && std::isxdigit(in[pos + 1]) && std::isxdigit(in[pos + 2])) {
-        /* if string was encoded we should have exactly 2 hexadecimal chars following it */
-        return true;
+        /* Valid encoded sequence found */
+        foundEncodedChar  = true;
+        pos              += 2; /* Skip past the hex digits */
+        continue;
       } else {
-        /* lonely '%' should have been encoded with %25 according to the RFC so likely not encoded */
+        /* lonely '%' should have been encoded with %25 according to the RFC */
         return false;
       }
     }
+
+    /* Any other character that reaches here should have been encoded but wasn't.
+     * This includes: space, '/', '(', ')', '[', ']', etc.
+     * Return false to indicate the string is not fully encoded. */
+    return false;
   }
 
-  return false;
+  /* If we found at least one encoded character and no unencoded special chars,
+   * the string is fully encoded. If no encoded chars were found, the string
+   * contains only unreserved chars (and possibly '/' for object names). */
+  return foundEncodedChar;
 }
 
 String
 canonicalEncode(const String &in, bool isObjectName)
 {
-  String canonical;
-  if (!isUriEncoded(in, isObjectName)) {
-    /* Not URI-encoded */
-    canonical = uriEncode(in, isObjectName);
-  } else {
-    /* URI-encoded, then don't encode since AWS does not encode which is not mentioned in the spec,
-     * asked AWS, still waiting for confirmation */
-    canonical = in;
+  if (isUriEncoded(in, isObjectName)) {
+    /* Fully URI-encoded, return as-is */
+    return in;
   }
 
+  /* Not fully encoded (either unencoded or partially encoded).
+   * Decode first to avoid double-encoding, then re-encode with AWS canonical rules.
+   *
+   * This fixes a bug where mixed-encoding URLs (e.g., /app/(channel)/%5B%5Bparts%5D%5D/)
+   * would cause signature mismatch. The parentheses were not encoded but brackets were.
+   *
+   * Example:
+   * - Input: /app/(channel)/%5B%5Bparts%5D%5D/page.js  (partially encoded)
+   * - Decode: /app/(channel)/[[parts]]/page.js
+   * - Encode: /app/%28channel%29/%5B%5Bparts%5D%5D/page.js
+   */
+  String decoded   = uriDecode(in);
+  String canonical = uriEncode(decoded, isObjectName);
   return canonical;
 }
 
