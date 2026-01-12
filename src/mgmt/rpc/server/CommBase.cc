@@ -44,6 +44,8 @@ CommInternalErrorCategory::message(int ev) const
     return {"No more data to be read, but the buffer contains some invalid? data."};
   case rpc::comm::InternalError::FULL_BUFFER:
     return {"Buffer's full."};
+  case rpc::comm::InternalError::SOCKET_NAME_TOO_LONG:
+    return {"Socket name is too long."};
   default:
     return "Internal Communication Error" + std::to_string(ev);
   }
