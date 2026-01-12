@@ -142,6 +142,86 @@ TEST_CASE("isUriEncoded(): reserved chars in the input", "[AWS][auth][utility]")
   CHECK(true == isUriEncoded(encoded));
 }
 
+/*
+ * BUG: isUriEncoded() returns true if ANY %XX sequence is found, even if other
+ * reserved characters are NOT encoded. This causes canonicalEncode() to skip
+ * encoding, resulting in signature mismatch with S3.
+ *
+ * Example from YTSATS-4835:
+ *   Client sends: /app/%28channel%29/%5B%5Bparts%5D%5D/page.js
+ *   ATS decodes to: /app/(channel)/%5B%5Bparts%5D%5D/page.js  (partial decode)
+ *   isUriEncoded() sees %5B -> returns true (incorrectly assumes fully encoded)
+ *   canonicalEncode() returns as-is: /app/(channel)/%5B%5Bparts%5D%5D/page.js
+ *   Signature calculated for partially-encoded path
+ *   S3 expects signature for: /app/%28channel%29/%5B%5Bparts%5D%5D/page.js
+ *   Result: 403 signature mismatch
+ */
+TEST_CASE("isUriEncoded(): BUG - mixed encoding with unencoded parentheses and encoded brackets", "[AWS][auth][utility][!mayfail]")
+{
+  // Path with parentheses NOT encoded but brackets ARE encoded
+  // This is the bug case from YTSATS-4835
+  const String mixedEncoding = "/app/(channel)/%5B%5Bparts%5D%5D/page.js";
+
+  // Current behavior: returns true because it finds %5B
+  // This is WRONG - parentheses () should have been encoded too if the string was properly encoded
+  // CHECK(false == isUriEncoded(mixedEncoding, /* isObjectName */ true));
+
+  // For now, document the current (buggy) behavior
+  // TODO: Fix isUriEncoded() to detect partial encoding
+  CHECK(true == isUriEncoded(mixedEncoding, /* isObjectName */ true));
+}
+
+TEST_CASE("isUriEncoded(): BUG - unencoded parentheses should indicate not fully encoded", "[AWS][auth][utility][!mayfail]")
+{
+  // Parentheses are reserved characters per AWS spec and should be encoded
+  // If we see unencoded parentheses, the string is NOT properly URI-encoded
+  const String withParens = "/app/(channel)/test.js";
+
+  // Current behavior: returns false (no %XX found)
+  CHECK(false == isUriEncoded(withParens, /* isObjectName */ true));
+
+  // After encoding, parentheses become %28 and %29
+  String encoded = uriEncode(withParens, /* isObjectName */ true);
+  CHECK(encoded == "/app/%28channel%29/test.js");
+}
+
+TEST_CASE("canonicalEncode(): BUG - mixed encoding produces wrong canonical URI", "[AWS][auth][utility][!mayfail]")
+{
+  // This is the core bug: when path has SOME encoded chars but not ALL,
+  // canonicalEncode() thinks it's already encoded and returns as-is
+
+  const String mixedEncoding = "/app/(channel)/%5B%5Bparts%5D%5D/page.js";
+
+  // Current (buggy) behavior: returns the mixed-encoding string as-is
+  // because isUriEncoded() returns true when it sees %5B
+  String canonical = canonicalEncode(mixedEncoding, /* isObjectName */ true);
+
+  // BUG: This passes with current code but is WRONG
+  // The parentheses should have been encoded to %28 and %29
+  CHECK(canonical == "/app/(channel)/%5B%5Bparts%5D%5D/page.js");
+
+  // CORRECT behavior would be:
+  // CHECK(canonical == "/app/%28channel%29/%5B%5Bparts%5D%5D/page.js");
+}
+
+TEST_CASE("canonicalEncode(): fully encoded input should pass through unchanged", "[AWS][auth][utility]")
+{
+  // When ALL reserved chars are properly encoded, canonicalEncode should return as-is
+  const String fullyEncoded = "/app/%28channel%29/%5B%5Bparts%5D%5D/page.js";
+
+  String canonical = canonicalEncode(fullyEncoded, /* isObjectName */ true);
+  CHECK(canonical == fullyEncoded);
+}
+
+TEST_CASE("canonicalEncode(): unencoded input should be fully encoded", "[AWS][auth][utility]")
+{
+  // When NO encoding is present, canonicalEncode should encode everything
+  const String unencoded = "/app/(channel)/[[parts]]/page.js";
+
+  String canonical = canonicalEncode(unencoded, /* isObjectName */ true);
+  CHECK(canonical == "/app/%28channel%29/%5B%5Bparts%5D%5D/page.js");
+}
+
 /* base16Encode() ************************************************************************************************************** */
 
 TEST_CASE("base16Encode(): base16 encode empty string", "[utility]")

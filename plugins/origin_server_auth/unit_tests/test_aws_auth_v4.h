@@ -122,6 +122,7 @@ public:
 String base16Encode(const char *in, size_t inLen);
 String uriEncode(const String &in, bool isObjectName = false);
 bool   isUriEncoded(const String &in, bool isObjectName = false);
+String canonicalEncode(const String &in, bool isObjectName = false);
 String lowercase(const char *in, size_t inLen);
 String trimWhiteSpacesAndSqueezeInnerSpaces(const char *in, size_t inLen);
 
