@@ -432,9 +432,14 @@ force_link_CacheTest()
 
 REGRESSION_TEST(cache_disk_replacement_stability)(RegressionTest *t, int level, int *pstatus)
 {
-  static int const                                MAX_VOLS            = 26; // maximum values used in any test.
-  static uint64_t                                 DEFAULT_SKIP        = 8192;
-  static uint64_t                                 DEFAULT_STRIPE_SIZE = 1024ULL * 1024 * 1024 * 911; // 911G
+  static int const MAX_VOLS     = 26; // maximum values used in any test.
+  static uint64_t  DEFAULT_SKIP = 8192;
+  // Reduced from 911GB to 1GB for CI stability. The Stripe constructor
+  // allocates a directory buffer proportional to stripe size, and 26 stripes
+  // of 911GB each exhausted memory in CI environments (especially under
+  // Valgrind). The hash stability algorithm works identically regardless of
+  // absolute stripe size.
+  static uint64_t                                 DEFAULT_STRIPE_SIZE = 1024ULL * 1024 * 1024; // 1GB
   CacheDisk                                       disk; // Only need one because it's just checked for failure.
   CacheHostRecord                                 hr1, hr2;
   StripeSM                                       *sample;
@@ -471,7 +476,7 @@ REGRESSION_TEST(cache_disk_replacement_stability)(RegressionTest *t, int level, 
   hr2.num_vols       = MAX_VOLS;
 
   sample      = stripes[sample_idx].get();
-  sample->len = 1024ULL * 1024 * 1024 * (1024 + 128); // 1.1 TB
+  sample->len = 1024ULL * 1024 * 1024 + 256ULL * 1024 * 1024; // 1.25GB (proportional increase from 1GB)
   snprintf(buff, sizeof(buff), "/dev/sd%c %" PRIu64 ":%" PRIu64, 'a' + sample_idx, DEFAULT_SKIP, sample->len);
   CryptoContext().hash_immediate(sample->hash_id, buff, strlen(buff));
   build_vol_hash_table(&hr2);
