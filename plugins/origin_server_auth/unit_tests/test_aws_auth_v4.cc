@@ -68,65 +68,65 @@ TEST_CASE("uriEncode(): encode reserved chars in an object name", "[AWS][auth][u
   CHECK_FALSE(encoded.compare("%20/%21%22%23%24%25%26%27%28%29%2A%20%2C%3A%3B%3C%3D%3E%3F%40%5B%5C%5D%5E%60%7B%7C%7D"));
 }
 
-TEST_CASE("isUriEncoded(): check an empty input", "[AWS][auth][utility]")
+TEST_CASE("isCanonical(): check an empty input", "[AWS][auth][utility]")
 {
   // Empty string has no characters that need encoding - it's already canonical
-  CHECK(true == isUriEncoded(""));
+  CHECK(true == isCanonical(""));
 }
 
-TEST_CASE("isUriEncoded(): '%' and nothing else", "[AWS][auth][utility]")
+TEST_CASE("isCanonical(): '%' and nothing else", "[AWS][auth][utility]")
 {
-  CHECK(false == isUriEncoded("%"));
+  CHECK(false == isCanonical("%"));
 }
 
-TEST_CASE("isUriEncoded(): '%' but no hex digits", "[AWS][auth][utility]")
+TEST_CASE("isCanonical(): '%' but no hex digits", "[AWS][auth][utility]")
 {
-  CHECK(false == isUriEncoded("XXX%XXX"));
+  CHECK(false == isCanonical("XXX%XXX"));
 }
 
-TEST_CASE("isUriEncoded(): '%' but only one hex digit", "[AWS][auth][utility]")
+TEST_CASE("isCanonical(): '%' but only one hex digit", "[AWS][auth][utility]")
 {
-  CHECK(false == isUriEncoded("XXXXX%1XXXXXX"));
-  CHECK(false == isUriEncoded("XXX%1")); // test end of string case
+  CHECK(false == isCanonical("XXXXX%1XXXXXX"));
+  CHECK(false == isCanonical("XXX%1")); // test end of string case
 }
 
-TEST_CASE("isUriEncoded(): '%' and 2 hex digit", "[AWS][auth][utility]")
+TEST_CASE("isCanonical(): '%' and 2 hex digit", "[AWS][auth][utility]")
 {
-  CHECK(true == isUriEncoded("XXX%12XXX"));
-  CHECK(true == isUriEncoded("XXX%12")); // test end of string case
+  CHECK(true == isCanonical("XXX%12XXX"));
+  CHECK(true == isCanonical("XXX%12")); // test end of string case
 }
 
-TEST_CASE("isUriEncoded(): space not encoded", "[AWS][auth][utility]")
+TEST_CASE("isCanonical(): space not encoded", "[AWS][auth][utility]")
 {
   // Having a space always means it was not encoded.
-  CHECK(false == isUriEncoded("XXXXX XXXXXX"));
+  CHECK(false == isCanonical("XXXXX XXXXXX"));
 }
 
-TEST_CASE("isUriEncoded(): '/' in strings which are not object names", "[AWS][auth][utility]")
+TEST_CASE("isCanonical(): '/' in strings which are not object names", "[AWS][auth][utility]")
 {
   // This is not an object name so if we have '/' => the string was not encoded.
-  CHECK(false == isUriEncoded("XXXXX/XXXXXX", /* isObjectName */ false));
+  CHECK(false == isCanonical("XXXXX/XXXXXX", /* isObjectName */ false));
 
   // There is no '/' and '%2F' shows that it was encoded.
-  CHECK(true == isUriEncoded("XXXXX%2FXXXXXX", /* isObjectName */ false));
+  CHECK(true == isCanonical("XXXXX%2FXXXXXX", /* isObjectName */ false));
 
   // This is not an object name so if we have '/' => the string was not encoded despite '%20' in it.
-  CHECK(false == isUriEncoded("XXXXX/%20XXXXX", /* isObjectName */ false));
+  CHECK(false == isCanonical("XXXXX/%20XXXXX", /* isObjectName */ false));
 }
 
-TEST_CASE("isUriEncoded(): '/' in strings that are object names", "[AWS][auth][utility]")
+TEST_CASE("isCanonical(): '/' in strings that are object names", "[AWS][auth][utility]")
 {
   // Object name with only unreserved chars and slashes - already canonical, return true
-  CHECK(true == isUriEncoded("XXXXX/XXXXXX", /* isObjectName */ true));
+  CHECK(true == isCanonical("XXXXX/XXXXXX", /* isObjectName */ true));
 
   // Encoded slash - properly encoded, return true
-  CHECK(true == isUriEncoded("XXXXX%2FXXXXXX", /* isObjectName */ true));
+  CHECK(true == isCanonical("XXXXX%2FXXXXXX", /* isObjectName */ true));
 
   // Mix of slash and encoded space - properly encoded, return true
-  CHECK(true == isUriEncoded("XXXXX/%20XXXXX", /* isObjectName */ true));
+  CHECK(true == isCanonical("XXXXX/%20XXXXX", /* isObjectName */ true));
 }
 
-TEST_CASE("isUriEncoded(): no reserved chars in the input", "[AWS][auth][utility]")
+TEST_CASE("isCanonical(): no reserved chars in the input", "[AWS][auth][utility]")
 {
   // Strings with only unreserved characters are already in canonical form
   // and don't need encoding - return true to skip unnecessary decode/encode
@@ -134,39 +134,39 @@ TEST_CASE("isUriEncoded(): no reserved chars in the input", "[AWS][auth][utility
                             "abcdefghijklmnopqrstuvwxyz"
                             "0123456789"
                             "-._~";
-  CHECK(true == isUriEncoded(unreserved));
+  CHECK(true == isCanonical(unreserved));
 
   // Simple paths with only unreserved chars should also return true
-  CHECK(true == isUriEncoded("/something/foo.jpg", /* isObjectName */ true));
-  CHECK(true == isUriEncoded("/path/to/file-name_v2.txt", /* isObjectName */ true));
+  CHECK(true == isCanonical("/something/foo.jpg", /* isObjectName */ true));
+  CHECK(true == isCanonical("/path/to/file-name_v2.txt", /* isObjectName */ true));
 }
 
-TEST_CASE("isUriEncoded(): reserved chars in the input", "[AWS][auth][utility]")
+TEST_CASE("isCanonical(): reserved chars in the input", "[AWS][auth][utility]")
 {
   // some printable but reserved chars " /!\"#$%&'()*+,:;<=>?@[\\]^`{|}"
   const String encoded = "%20%2F%21%22%23%24%25%26%27%28%29%2A%2B%2C%3A%3B%3C%3D%3E%3F%40%5B%5C%5D%5E%60%7B%7C%7D";
 
-  CHECK(true == isUriEncoded(encoded));
+  CHECK(true == isCanonical(encoded));
 }
 
 /*
- * This test verifies the fix for a bug where isUriEncoded() would return true
+ * This test verifies the fix for a bug where isCanonical() would return true
  * if ANY %XX sequence was found, even if other reserved characters were NOT
  * encoded. That caused canonicalEncode() to skip encoding, resulting in
  * signature mismatch with S3.
  *
  * Historical example (now fixed):
  *   Client sent: /app/(channel)/%5B%5Bparts%5D%5D/page.js  (mixed encoding)
- *   Old isUriEncoded() saw %5B -> returned true (incorrectly assumed fully encoded)
+ *   Old isCanonical() saw %5B -> returned true (incorrectly assumed fully encoded)
  *   Old canonicalEncode() returned as-is without normalizing
  *   Signature was calculated for partially-encoded path
  *   S3 expected signature for: /app/%28channel%29/%5B%5Bparts%5D%5D/page.js
  *   Result: 403 signature mismatch
  *
- * With the fix, isUriEncoded() now returns false for mixed-encoding URLs,
+ * With the fix, isCanonical() now returns false for mixed-encoding URLs,
  * triggering decode/re-encode to produce the correct canonical form.
  */
-TEST_CASE("isUriEncoded(): mixed encoding with unencoded parentheses and encoded brackets", "[AWS][auth][utility]")
+TEST_CASE("isCanonical(): mixed encoding with unencoded parentheses and encoded brackets", "[AWS][auth][utility]")
 {
   // Path with parentheses NOT encoded but brackets ARE encoded
   // This is the bug case from YTSATS-4835
@@ -174,17 +174,17 @@ TEST_CASE("isUriEncoded(): mixed encoding with unencoded parentheses and encoded
 
   // Fixed behavior: returns false because parentheses () are not encoded
   // Even though %5B is present, the string is only PARTIALLY encoded
-  CHECK(false == isUriEncoded(mixedEncoding, /* isObjectName */ true));
+  CHECK(false == isCanonical(mixedEncoding, /* isObjectName */ true));
 }
 
-TEST_CASE("isUriEncoded(): unencoded parentheses should indicate not fully encoded", "[AWS][auth][utility]")
+TEST_CASE("isCanonical(): unencoded parentheses should indicate not fully encoded", "[AWS][auth][utility]")
 {
   // Parentheses are reserved characters per AWS spec and should be encoded
   // If we see unencoded parentheses, the string is NOT properly URI-encoded
   const String withParens = "/app/(channel)/test.js";
 
   // Returns false (no encoded chars found, string needs encoding)
-  CHECK(false == isUriEncoded(withParens, /* isObjectName */ true));
+  CHECK(false == isCanonical(withParens, /* isObjectName */ true));
 
   // After encoding, parentheses become %28 and %29
   String encoded = uriEncode(withParens, /* isObjectName */ true);
@@ -266,21 +266,21 @@ TEST_CASE("uriEncode(): S3 safe chars that need SigV4 encoding", "[AWS][auth][ut
   CHECK(encoded == "/bucket/file%21name%2Awith%27quotes%28and%29parens.js");
 }
 
-TEST_CASE("isUriEncoded(): mixed encoding with other S3 safe chars", "[AWS][auth][utility]")
+TEST_CASE("isCanonical(): mixed encoding with other S3 safe chars", "[AWS][auth][utility]")
 {
   // Test mixed encoding with exclamation mark (S3 safe, needs SigV4 encoding)
-  CHECK(false == isUriEncoded("/path/file!name/%20space/", /* isObjectName */ true));
+  CHECK(false == isCanonical("/path/file!name/%20space/", /* isObjectName */ true));
 
   // Test mixed encoding with asterisk
-  CHECK(false == isUriEncoded("/path/file*name/%20space/", /* isObjectName */ true));
+  CHECK(false == isCanonical("/path/file*name/%20space/", /* isObjectName */ true));
 
   // Test mixed encoding with single quote
-  CHECK(false == isUriEncoded("/path/file'name/%20space/", /* isObjectName */ true));
+  CHECK(false == isCanonical("/path/file'name/%20space/", /* isObjectName */ true));
 
   // All properly encoded should return true
-  CHECK(true == isUriEncoded("/path/file%21name/%20space/", /* isObjectName */ true));
-  CHECK(true == isUriEncoded("/path/file%2Aname/%20space/", /* isObjectName */ true));
-  CHECK(true == isUriEncoded("/path/file%27name/%20space/", /* isObjectName */ true));
+  CHECK(true == isCanonical("/path/file%21name/%20space/", /* isObjectName */ true));
+  CHECK(true == isCanonical("/path/file%2Aname/%20space/", /* isObjectName */ true));
+  CHECK(true == isCanonical("/path/file%27name/%20space/", /* isObjectName */ true));
 }
 
 TEST_CASE("canonicalEncode(): handles all S3 safe chars correctly", "[AWS][auth][utility]")
@@ -314,20 +314,20 @@ TEST_CASE("canonicalEncode(): handles all S3 safe chars correctly", "[AWS][auth]
  *   Need to document/verify this matches AWS SigV4 expectations.
  */
 
-TEST_CASE("isUriEncoded(): lowercase hex digits should NOT be considered fully encoded", "[AWS][auth][utility]")
+TEST_CASE("isCanonical(): lowercase hex digits should NOT be considered fully encoded", "[AWS][auth][utility]")
 {
   // AWS SigV4 requires uppercase hex digits. URLs with lowercase hex need normalization.
   // Example: %2f should become %2F after canonical encoding
 
   // Lowercase hex - should return false to trigger normalization
-  CHECK(false == isUriEncoded("/path/file%2ftest", /* isObjectName */ true)); // lowercase 'f'
-  CHECK(true == isUriEncoded("/path/file%2Ftest", /* isObjectName */ true));  // uppercase 'F' - this IS properly encoded
-  CHECK(false == isUriEncoded("/path/%5btest%5d", /* isObjectName */ true));  // lowercase brackets
-  CHECK(true == isUriEncoded("/path/%5Btest%5D", /* isObjectName */ true));   // uppercase brackets - properly encoded
+  CHECK(false == isCanonical("/path/file%2ftest", /* isObjectName */ true)); // lowercase 'f'
+  CHECK(true == isCanonical("/path/file%2Ftest", /* isObjectName */ true));  // uppercase 'F' - this IS properly encoded
+  CHECK(false == isCanonical("/path/%5btest%5d", /* isObjectName */ true));  // lowercase brackets
+  CHECK(true == isCanonical("/path/%5Btest%5D", /* isObjectName */ true));   // uppercase brackets - properly encoded
 
   // Mixed case - should return false
-  CHECK(false == isUriEncoded("/path/%5btest%5D", /* isObjectName */ true)); // mixed: lowercase 'b', uppercase 'D'
-  CHECK(false == isUriEncoded("/path/%5Btest%5d", /* isObjectName */ true)); // mixed: uppercase 'B', lowercase 'd'
+  CHECK(false == isCanonical("/path/%5btest%5D", /* isObjectName */ true)); // mixed: lowercase 'b', uppercase 'D'
+  CHECK(false == isCanonical("/path/%5Btest%5d", /* isObjectName */ true)); // mixed: uppercase 'B', lowercase 'd'
 }
 
 TEST_CASE("canonicalEncode(): lowercase hex should be normalized to uppercase", "[AWS][auth][utility]")

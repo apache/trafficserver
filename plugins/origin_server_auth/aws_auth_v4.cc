@@ -137,26 +137,22 @@ uriEncode(const String &in, bool isObjectName)
 }
 
 /**
- * @brief Check if a string is FULLY URI-encoded per AWS SigV4 canonical encoding rules.
+ * @brief Check if a string is already in AWS SigV4 canonical form.
+ *
+ * A string is canonical if it either:
+ *   1. Contains only unreserved characters (A-Z, a-z, 0-9, '-', '.', '_', '~')
+ *      and optionally '/' for object names - no encoding needed
+ *   2. Is properly percent-encoded with UPPERCASE hex digits
  *
  * @see AWS spec: http://docs.aws.amazon.com/AmazonS3/latest/API/sig-v4-header-based-auth.html
  * @see https://docs.aws.amazon.com/IAM/latest/UserGuide/create-signed-request.html
  *
- * @note According to RFC 3986, if a string contains '%' it must be followed by 2 hexadecimal
- *       symbols, otherwise '%' should be encoded as %25:
- *          https://tools.ietf.org/html/rfc3986#section-2.1
- *
- * @note This function checks if ALL characters that need encoding ARE encoded, AND that
- *       all percent-encoded sequences use UPPERCASE hex digits (per AWS SigV4 requirement).
- *       A string with mixed encoding (some chars encoded, some not) or lowercase hex digits
- *       returns false, which triggers canonicalEncode() to normalize via decode/re-encode.
- *
- * @param in string to be URI checked
+ * @param in string to check
  * @param isObjectName if true, '/' is allowed unencoded (object name context).
- * @return true if fully and correctly encoded, false if normalization is needed.
+ * @return true if already canonical (no processing needed), false if normalization required.
  */
 bool
-isUriEncoded(const String &in, bool isObjectName)
+isCanonical(const String &in, bool isObjectName)
 {
   for (size_t pos = 0; pos < in.length(); pos++) {
     unsigned char c = static_cast<unsigned char>(in[pos]);
@@ -206,7 +202,7 @@ isUriEncoded(const String &in, bool isObjectName)
 String
 canonicalEncode(const String &in, bool isObjectName)
 {
-  if (isUriEncoded(in, isObjectName)) {
+  if (isCanonical(in, isObjectName)) {
     /* Fully URI-encoded with uppercase hex, return as-is */
     return in;
   }
