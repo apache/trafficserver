@@ -32,7 +32,6 @@
 #include "SSLDynlock.h" // IWYU pragma: keep - for ssl_dyn_*
 
 #include "iocore/net/SSLMultiCertConfigLoader.h"
-#include "iocore/net/YamlSSLMultiCertConfig.h"
 #include "config/ssl_multicert.h"
 #include "iocore/net/SSLAPIHooks.h"
 #include "iocore/net/SSLDiags.h"

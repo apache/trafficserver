@@ -87,19 +87,10 @@ public:
    *
    * The format is auto-detected based on file extension and content.
    *
-   * @param filename Path to the configuration file.
+   * @param[in] filename Path to the configuration file.
    * @return ConfigResult containing the parsed entries or errors.
    */
   ConfigResult<SSLMultiCertConfig> parse(std::string const &filename);
-
-  /**
-   * Parse ssl_multicert configuration from a string.
-   *
-   * @param content The configuration content.
-   * @param filename Optional filename hint for format detection.
-   * @return ConfigResult containing the parsed entries or errors.
-   */
-  ConfigResult<SSLMultiCertConfig> parse_string(std::string_view content, std::string const &filename = "");
 
 private:
   enum class Format { YAML, Legacy };

@@ -25,7 +25,6 @@ add_library(
   ConnectionTracker.cc
   EventIO.cc
   YamlSNIConfig.cc
-  YamlSSLMultiCertConfig.cc
   Net.cc
   NetHandler.cc
   NetVCOptions.cc
