@@ -164,8 +164,9 @@ Stripe::_init_directory(std::size_t directory_size, int header_size, int footer_
     this->directory.raw_dir_huge = false;
   }
   this->directory.raw_dir_size = directory_size;
-  this->directory.dir          = reinterpret_cast<Dir *>(this->directory.raw_dir + header_size);
-  this->directory.header       = reinterpret_cast<StripeHeaderFooter *>(this->directory.raw_dir);
+  memset(this->directory.raw_dir, 0, directory_size);
+  this->directory.dir    = reinterpret_cast<Dir *>(this->directory.raw_dir + header_size);
+  this->directory.header = reinterpret_cast<StripeHeaderFooter *>(this->directory.raw_dir);
   std::size_t const footer_offset{directory_size - static_cast<std::size_t>(footer_size)};
   this->directory.footer = reinterpret_cast<StripeHeaderFooter *>(this->directory.raw_dir + footer_offset);
 }

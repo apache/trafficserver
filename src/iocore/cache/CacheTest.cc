@@ -571,6 +571,7 @@ test_RamCache(RegressionTest *t, RamCache *cache, const char *name, int64_t cach
       CryptoHash    hash;
 
       d->alloc(BUFFER_SIZE_INDEX_16K);
+      memset(d->data(), 0, BUFFER_SIZE_FOR_INDEX(BUFFER_SIZE_INDEX_16K));
       data.push_back(make_ptr(d));
       hash.u64[0] = (static_cast<uint64_t>(i) << 32) + i;
       hash.u64[1] = (static_cast<uint64_t>(i) << 32) + i;
@@ -615,6 +616,7 @@ test_RamCache(RegressionTest *t, RamCache *cache, const char *name, int64_t cach
     if (!cache->get(&hash, &get_data)) {
       IOBufferData *d = THREAD_ALLOC(ioDataAllocator, this_thread());
       d->alloc(BUFFER_SIZE_INDEX_16K);
+      memset(d->data(), 0, d->block_size());
       data.push_back(make_ptr(d));
       cache->put(&hash, data.back().get(), 1 << 15);
       if (i >= sample_size / 2) {
@@ -635,6 +637,7 @@ test_RamCache(RegressionTest *t, RamCache *cache, const char *name, int64_t cach
     if (!cache->get(&hash, &get_data)) {
       IOBufferData *d = THREAD_ALLOC(ioDataAllocator, this_thread());
       d->alloc(BUFFER_SIZE_INDEX_8K + (r[i] % 3));
+      memset(d->data(), 0, d->block_size());
       data.push_back(make_ptr(d));
       cache->put(&hash, data.back().get(), d->block_size());
       if (i >= sample_size / 2) {
