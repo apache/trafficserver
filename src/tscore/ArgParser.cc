@@ -448,7 +448,7 @@ ArgParser::Command::output_option() const
       }
     }
     // Build description with dependency info if applicable
-    std::string desc = it.second.description;
+    std::string desc   = it.second.description;
     auto        dep_it = _option_dependencies.find(it.first);
     if (dep_it != _option_dependencies.end() && !dep_it->second.empty()) {
       if (!desc.empty()) {
