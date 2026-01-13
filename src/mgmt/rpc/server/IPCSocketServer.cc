@@ -144,7 +144,7 @@ IPCSocketServer::init()
   // this.
   if (_conf.sockPathName.empty() || _conf.sockPathName.size() > sizeof _serverAddr.sun_path) {
     Dbg(dbg_ctl, "Invalid unix path name, check the size. Empty or too long.");
-    ec = InternalError::SOCKET_NAME_TOO_LONG;
+    ec = InternalError::INVALID_SOCKET_PATH;
     return ec;
   }
 
