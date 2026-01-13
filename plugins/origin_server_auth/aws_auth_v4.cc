@@ -81,7 +81,8 @@ uriDecode(const String &in)
   result.reserve(in.length()); /* Decoded string will be same size or smaller */
 
   for (size_t i = 0; i < in.length(); i++) {
-    if (in[i] == '%' && i + 2 < in.length() && std::isxdigit(in[i + 1]) && std::isxdigit(in[i + 2])) {
+    if (in[i] == '%' && i + 2 < in.length() && std::isxdigit(static_cast<unsigned char>(in[i + 1])) &&
+        std::isxdigit(static_cast<unsigned char>(in[i + 2]))) {
       /* Decode %XX to character */
       char hex[3]  = {in[i + 1], in[i + 2], '\0'};
       result      += static_cast<char>(std::strtol(hex, nullptr, 16));
@@ -158,9 +159,9 @@ bool
 isUriEncoded(const String &in, bool isObjectName)
 {
   for (size_t pos = 0; pos < in.length(); pos++) {
-    char c = in[pos];
+    unsigned char c = static_cast<unsigned char>(in[pos]);
 
-    if (isalnum(c) || c == '-' || c == '_' || c == '.' || c == '~') {
+    if (std::isalnum(c) || c == '-' || c == '_' || c == '.' || c == '~') {
       /* Unreserved characters don't need encoding:
        * 'A'-'Z', 'a'-'z', '0'-'9', '-', '.', '_', and '~' */
       continue;
@@ -172,20 +173,23 @@ isUriEncoded(const String &in, bool isObjectName)
     }
 
     if ('%' == c) {
-      if (pos + 2 < in.length() && std::isxdigit(in[pos + 1]) && std::isxdigit(in[pos + 2])) {
-        /* Valid percent-encoded sequence found. AWS SigV4 requires UPPERCASE hex digits.
-         * If lowercase hex is found, return false to trigger normalization.
-         * See: https://docs.aws.amazon.com/IAM/latest/UserGuide/create-signed-request.html
-         * "Letters in the hexadecimal value must be uppercase, for example "%1A"." */
-        if (std::islower(in[pos + 1]) || std::islower(in[pos + 2])) {
-          return false; /* Lowercase hex needs normalization to uppercase */
+      if (pos + 2 < in.length()) {
+        unsigned char c1 = static_cast<unsigned char>(in[pos + 1]);
+        unsigned char c2 = static_cast<unsigned char>(in[pos + 2]);
+        if (std::isxdigit(c1) && std::isxdigit(c2)) {
+          /* Valid percent-encoded sequence found. AWS SigV4 requires UPPERCASE hex digits.
+           * If lowercase hex is found, return false to trigger normalization.
+           * See: https://docs.aws.amazon.com/IAM/latest/UserGuide/create-signed-request.html
+           * "Letters in the hexadecimal value must be uppercase, for example "%1A"." */
+          if (std::islower(c1) || std::islower(c2)) {
+            return false; /* Lowercase hex needs normalization to uppercase */
+          }
+          pos += 2; /* Skip past the hex digits */
+          continue;
         }
-        pos += 2; /* Skip past the hex digits */
-        continue;
-      } else {
-        /* Lone '%' or incomplete sequence - needs encoding as %25 */
-        return false;
       }
+      /* Lone '%' or incomplete sequence - needs encoding as %25 */
+      return false;
     }
 
     /* Any other character needs encoding (space, '(', ')', '[', ']', etc.) */

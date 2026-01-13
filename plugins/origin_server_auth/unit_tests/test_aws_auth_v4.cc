@@ -150,18 +150,21 @@ TEST_CASE("isUriEncoded(): reserved chars in the input", "[AWS][auth][utility]")
 }
 
 /*
- * BUG: isUriEncoded() returns true if ANY %XX sequence is found, even if other
- * reserved characters are NOT encoded. This causes canonicalEncode() to skip
- * encoding, resulting in signature mismatch with S3.
+ * This test verifies the fix for a bug where isUriEncoded() would return true
+ * if ANY %XX sequence was found, even if other reserved characters were NOT
+ * encoded. That caused canonicalEncode() to skip encoding, resulting in
+ * signature mismatch with S3.
  *
- * Example from YTSATS-4835:
- *   Client sends: /app/%28channel%29/%5B%5Bparts%5D%5D/page.js
- *   ATS decodes to: /app/(channel)/%5B%5Bparts%5D%5D/page.js  (partial decode)
- *   isUriEncoded() sees %5B -> returns true (incorrectly assumes fully encoded)
- *   canonicalEncode() returns as-is: /app/(channel)/%5B%5Bparts%5D%5D/page.js
- *   Signature calculated for partially-encoded path
- *   S3 expects signature for: /app/%28channel%29/%5B%5Bparts%5D%5D/page.js
+ * Historical example (now fixed):
+ *   Client sent: /app/(channel)/%5B%5Bparts%5D%5D/page.js  (mixed encoding)
+ *   Old isUriEncoded() saw %5B -> returned true (incorrectly assumed fully encoded)
+ *   Old canonicalEncode() returned as-is without normalizing
+ *   Signature was calculated for partially-encoded path
+ *   S3 expected signature for: /app/%28channel%29/%5B%5Bparts%5D%5D/page.js
  *   Result: 403 signature mismatch
+ *
+ * With the fix, isUriEncoded() now returns false for mixed-encoding URLs,
+ * triggering decode/re-encode to produce the correct canonical form.
  */
 TEST_CASE("isUriEncoded(): mixed encoding with unencoded parentheses and encoded brackets", "[AWS][auth][utility]")
 {

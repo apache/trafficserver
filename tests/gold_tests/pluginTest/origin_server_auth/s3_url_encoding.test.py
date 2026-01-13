@@ -1,23 +1,26 @@
 '''
-Test origin_server_auth URL encoding bug (YTSATS-4835)
+Test origin_server_auth URL encoding fix (verifies fix for mixed-encoding bug)
 
-This test demonstrates a bug where mixed URL encoding in the request path
-causes signature mismatch with S3.
+This test verifies the fix for a bug where mixed URL encoding in request paths
+caused signature mismatch with S3.
 
-Bug: When a URL has SOME characters encoded (e.g., %5B) but others NOT encoded
-(e.g., parentheses), the isUriEncoded() function incorrectly returns true,
-causing canonicalEncode() to skip re-encoding. This results in a signature
-calculated for a partially-encoded path, which won't match what S3 expects.
+Fixed bug: When a URL had SOME characters encoded (e.g., %5B) but others NOT
+encoded (e.g., parentheses), the old isUriEncoded() function incorrectly
+returned true, causing canonicalEncode() to skip re-encoding. This resulted
+in a signature calculated for a partially-encoded path, which didn't match
+what S3 expected.
 
-Example:
+With the fix, isUriEncoded() now correctly returns false for mixed-encoding
+URLs, triggering the decode/re-encode path to normalize the URL.
+
+Example (now handled correctly):
   Client sends:    /app/(channel)/%5B%5Bparts%5D%5D/page.js
-  isUriEncoded():  Returns true (finds %5B)
-  canonicalEncode(): Returns as-is (thinks already encoded)
-  Signature for:   /app/(channel)/%5B%5Bparts%5D%5D/page.js  <- WRONG
-  S3 expects:      /app/%28channel%29/%5B%5Bparts%5D%5D/page.js  <- CORRECT
+  isUriEncoded():  Returns false (detects unencoded parentheses)
+  canonicalEncode(): Decodes then re-encodes properly
+  Signature for:   /app/%28channel%29/%5B%5Bparts%5D%5D/page.js  <- CORRECT
 
-This test sends requests with various URL encodings and captures what
-the origin receives, including the Authorization header signature.
+This test sends requests with various URL encodings and verifies that
+the origin receives correctly normalized Authorization headers.
 '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
