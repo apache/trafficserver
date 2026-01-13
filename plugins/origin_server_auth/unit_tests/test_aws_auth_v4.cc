@@ -70,7 +70,8 @@ TEST_CASE("uriEncode(): encode reserved chars in an object name", "[AWS][auth][u
 
 TEST_CASE("isUriEncoded(): check an empty input", "[AWS][auth][utility]")
 {
-  CHECK(false == isUriEncoded(""));
+  // Empty string has no characters that need encoding - it's already canonical
+  CHECK(true == isUriEncoded(""));
 }
 
 TEST_CASE("isUriEncoded(): '%' and nothing else", "[AWS][auth][utility]")
@@ -115,23 +116,29 @@ TEST_CASE("isUriEncoded(): '/' in strings which are not object names", "[AWS][au
 
 TEST_CASE("isUriEncoded(): '/' in strings that are object names", "[AWS][auth][utility]")
 {
-  // This is an object name so having '/' is normal but not enough to conclude if it is encoded or not.
-  CHECK(false == isUriEncoded("XXXXX/XXXXXX", /* isObjectName */ true));
+  // Object name with only unreserved chars and slashes - already canonical, return true
+  CHECK(true == isUriEncoded("XXXXX/XXXXXX", /* isObjectName */ true));
 
-  // There is no '/' and '%2F' shows it is encoded.
+  // Encoded slash - properly encoded, return true
   CHECK(true == isUriEncoded("XXXXX%2FXXXXXX", /* isObjectName */ true));
 
-  // This is an object name so having '/' is normal and because of '%20' we can conclude it was encoded.
+  // Mix of slash and encoded space - properly encoded, return true
   CHECK(true == isUriEncoded("XXXXX/%20XXXXX", /* isObjectName */ true));
 }
 
 TEST_CASE("isUriEncoded(): no reserved chars in the input", "[AWS][auth][utility]")
 {
-  const String encoded = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-                         "abcdefghijklmnopqrstuvwxyz"
-                         "0123456789"
-                         "-._~";
-  CHECK(false == isUriEncoded(encoded));
+  // Strings with only unreserved characters are already in canonical form
+  // and don't need encoding - return true to skip unnecessary decode/encode
+  const String unreserved = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                            "abcdefghijklmnopqrstuvwxyz"
+                            "0123456789"
+                            "-._~";
+  CHECK(true == isUriEncoded(unreserved));
+
+  // Simple paths with only unreserved chars should also return true
+  CHECK(true == isUriEncoded("/something/foo.jpg", /* isObjectName */ true));
+  CHECK(true == isUriEncoded("/path/to/file-name_v2.txt", /* isObjectName */ true));
 }
 
 TEST_CASE("isUriEncoded(): reserved chars in the input", "[AWS][auth][utility]")

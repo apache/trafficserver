@@ -157,14 +157,12 @@ uriEncode(const String &in, bool isObjectName)
 bool
 isUriEncoded(const String &in, bool isObjectName)
 {
-  bool foundEncodedChar = false;
-
   for (size_t pos = 0; pos < in.length(); pos++) {
     char c = in[pos];
 
     if (isalnum(c) || c == '-' || c == '_' || c == '.' || c == '~') {
-      /* found a unreserved character which should not have been be encoded regardless
-       * 'A'-'Z', 'a'-'z', '0'-'9', '-', '.', '_', and '~'.  */
+      /* Unreserved characters don't need encoding:
+       * 'A'-'Z', 'a'-'z', '0'-'9', '-', '.', '_', and '~' */
       continue;
     }
 
@@ -175,32 +173,30 @@ isUriEncoded(const String &in, bool isObjectName)
 
     if ('%' == c) {
       if (pos + 2 < in.length() && std::isxdigit(in[pos + 1]) && std::isxdigit(in[pos + 2])) {
-        /* Valid encoded sequence found, but AWS SigV4 requires UPPERCASE hex digits.
-         * If lowercase hex is found, return false to trigger normalization via decode/re-encode.
+        /* Valid percent-encoded sequence found. AWS SigV4 requires UPPERCASE hex digits.
+         * If lowercase hex is found, return false to trigger normalization.
          * See: https://docs.aws.amazon.com/IAM/latest/UserGuide/create-signed-request.html
          * "Letters in the hexadecimal value must be uppercase, for example "%1A"." */
         if (std::islower(in[pos + 1]) || std::islower(in[pos + 2])) {
           return false; /* Lowercase hex needs normalization to uppercase */
         }
-        foundEncodedChar  = true;
-        pos              += 2; /* Skip past the hex digits */
+        pos += 2; /* Skip past the hex digits */
         continue;
       } else {
-        /* lonely '%' should have been encoded with %25 according to the RFC */
+        /* Lone '%' or incomplete sequence - needs encoding as %25 */
         return false;
       }
     }
 
-    /* Any other character that reaches here should have been encoded but wasn't.
-     * This includes: space, '/', '(', ')', '[', ']', etc.
-     * Return false to indicate the string is not fully encoded. */
+    /* Any other character needs encoding (space, '(', ')', '[', ']', etc.) */
     return false;
   }
 
-  /* If we found at least one encoded character and no unencoded special chars,
-   * the string is fully encoded. If no encoded chars were found, the string
-   * contains only unreserved chars (and possibly '/' for object names). */
-  return foundEncodedChar;
+  /* String is already in canonical form:
+   *   - Only contains unreserved chars, slashes (for object names), or
+   *   - Properly percent-encoded sequences with uppercase hex
+   * No decode/re-encode needed. */
+  return true;
 }
 
 String
