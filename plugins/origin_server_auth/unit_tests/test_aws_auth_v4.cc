@@ -292,6 +292,104 @@ TEST_CASE("canonicalEncode(): handles all S3 safe chars correctly", "[AWS][auth]
   CHECK(canonicalEncode(allSafe, true) == "/bucket/test%21file%2Awith%27all%28chars%29.js");
 }
 
+/*
+ * BUG FIX TESTS: Copilot review identified these issues
+ *
+ * Issue 1: Lowercase hex digits
+ *   AWS SigV4 requires UPPERCASE hex digits in percent-encoding (e.g., %2F not %2f).
+ *   URLs with lowercase hex should be normalized to uppercase.
+ *
+ * Issue 2: Plus sign (%2B) handling
+ *   The decode-then-reencode approach may convert %2B (encoded +) to %20 (space).
+ *   Need to document/verify this matches AWS SigV4 expectations.
+ */
+
+TEST_CASE("isUriEncoded(): lowercase hex digits should NOT be considered fully encoded", "[AWS][auth][utility]")
+{
+  // AWS SigV4 requires uppercase hex digits. URLs with lowercase hex need normalization.
+  // Example: %2f should become %2F after canonical encoding
+
+  // Lowercase hex - should return false to trigger normalization
+  CHECK(false == isUriEncoded("/path/file%2ftest", /* isObjectName */ true)); // lowercase 'f'
+  CHECK(true == isUriEncoded("/path/file%2Ftest", /* isObjectName */ true));  // uppercase 'F' - this IS properly encoded
+  CHECK(false == isUriEncoded("/path/%5btest%5d", /* isObjectName */ true));  // lowercase brackets
+  CHECK(true == isUriEncoded("/path/%5Btest%5D", /* isObjectName */ true));   // uppercase brackets - properly encoded
+
+  // Mixed case - should return false
+  CHECK(false == isUriEncoded("/path/%5btest%5D", /* isObjectName */ true)); // mixed: lowercase 'b', uppercase 'D'
+  CHECK(false == isUriEncoded("/path/%5Btest%5d", /* isObjectName */ true)); // mixed: uppercase 'B', lowercase 'd'
+}
+
+TEST_CASE("canonicalEncode(): lowercase hex should be normalized to uppercase", "[AWS][auth][utility]")
+{
+  // AWS SigV4 requires uppercase hex digits
+  // Input with lowercase hex should be normalized to uppercase
+
+  // Lowercase slash encoding - when isObjectName=true, slashes are allowed unencoded
+  // So %2f decodes to / and stays as / (not re-encoded)
+  CHECK(canonicalEncode("/path/file%2ftest/", true) == "/path/file/test/");
+
+  // When isObjectName=false, slashes must be encoded, so %2f becomes %2F
+  CHECK(canonicalEncode("/path/file%2ftest/", false) == "%2Fpath%2Ffile%2Ftest%2F");
+
+  // Lowercase bracket encoding - brackets are always encoded
+  CHECK(canonicalEncode("/path/%5btest%5d/file.js", true) == "/path/%5Btest%5D/file.js");
+
+  // Mixed case should be normalized
+  CHECK(canonicalEncode("/path/%5btest%5D/file.js", true) == "/path/%5Btest%5D/file.js");
+
+  // Already uppercase should pass through
+  CHECK(canonicalEncode("/path/%5Btest%5D/file.js", true) == "/path/%5Btest%5D/file.js");
+}
+
+TEST_CASE("uriDecode(): lowercase hex decoding", "[AWS][auth][utility]")
+{
+  // uriDecode should handle both uppercase and lowercase hex
+  CHECK(uriDecode("%2f") == "/");
+  CHECK(uriDecode("%2F") == "/");
+  CHECK(uriDecode("%5b") == "[");
+  CHECK(uriDecode("%5B") == "[");
+  CHECK(uriDecode("/path/%5btest%5d") == "/path/[test]");
+  CHECK(uriDecode("/path/%5Btest%5D") == "/path/[test]");
+}
+
+TEST_CASE("canonicalEncode(): plus sign handling", "[AWS][auth][utility]")
+{
+  // Per AWS SigV4 spec, plus signs in URLs are treated as spaces and encoded as %20
+  // This test documents and verifies that behavior
+
+  // Literal plus sign should be encoded as %20 (treated as space per AWS spec)
+  CHECK(uriEncode("+", false) == "%20");
+
+  // Already-encoded plus (%2B) should be preserved as-is when the string is fully encoded
+  // The canonicalEncode function treats %2B as already-encoded and doesn't change it
+  String withEncodedPlus = "/path/file%2Bname/test";
+  String canonical       = canonicalEncode(withEncodedPlus, true);
+
+  // %2B is preserved because the string is already properly URI-encoded
+  CHECK(canonical == "/path/file%2Bname/test");
+
+  // However, if we have a literal + in a partially encoded string, it will be encoded as %20
+  String withLiteralPlus = "/path/file+name/%5Btest%5D"; // + is not encoded, brackets are
+  String canonicalMixed  = canonicalEncode(withLiteralPlus, true);
+  // After decode: /path/file+name/[test]
+  // After encode: + becomes %20, brackets become %5B%5D
+  CHECK(canonicalMixed == "/path/file%20name/%5Btest%5D");
+}
+
+TEST_CASE("canonicalEncode(): already canonical input is unchanged", "[AWS][auth][utility]")
+{
+  // Performance optimization: fully canonical input should pass through unchanged
+  // This includes properly uppercase hex-encoded strings
+
+  const String canonical = "/path/%5Btest%5D/%28name%29/file.js";
+  CHECK(canonicalEncode(canonical, true) == canonical);
+
+  // With encoded space
+  const String withSpace = "/path/file%20name/test.js";
+  CHECK(canonicalEncode(withSpace, true) == withSpace);
+}
+
 /* base16Encode() ************************************************************************************************************** */
 
 TEST_CASE("base16Encode(): base16 encode empty string", "[utility]")

@@ -136,22 +136,23 @@ uriEncode(const String &in, bool isObjectName)
 }
 
 /**
- * @brief checks if the string is FULLY URI-encoded (AWS specific encoding version, see spec)
+ * @brief Check if a string is FULLY URI-encoded per AWS SigV4 canonical encoding rules.
  *
  * @see AWS spec: http://docs.aws.amazon.com/AmazonS3/latest/API/sig-v4-header-based-auth.html
+ * @see https://docs.aws.amazon.com/IAM/latest/UserGuide/create-signed-request.html
  *
- * @note According to the following RFC if the string is encoded and contains '%' it should
- *       be followed by 2 hexadecimal symbols otherwise '%' should be encoded with %25:
+ * @note According to RFC 3986, if a string contains '%' it must be followed by 2 hexadecimal
+ *       symbols, otherwise '%' should be encoded as %25:
  *          https://tools.ietf.org/html/rfc3986#section-2.1
  *
- * @note This function checks if ALL characters that need encoding ARE encoded. A string with
- *       mixed encoding (some chars encoded, some not) returns false. This fixes a bug where
- *       URLs like /app/(channel)/%5B%5Bparts%5D%5D/ would incorrectly return true because
- *       %5B was found, even though parentheses () were not encoded.
+ * @note This function checks if ALL characters that need encoding ARE encoded, AND that
+ *       all percent-encoded sequences use UPPERCASE hex digits (per AWS SigV4 requirement).
+ *       A string with mixed encoding (some chars encoded, some not) or lowercase hex digits
+ *       returns false, which triggers canonicalEncode() to normalize via decode/re-encode.
  *
  * @param in string to be URI checked
- * @param isObjectName if true encoding didn't encode '/', kept it as it is.
- * @return true if fully encoded, false if not encoded or partially encoded.
+ * @param isObjectName if true, '/' is allowed unencoded (object name context).
+ * @return true if fully and correctly encoded, false if normalization is needed.
  */
 bool
 isUriEncoded(const String &in, bool isObjectName)
@@ -174,7 +175,13 @@ isUriEncoded(const String &in, bool isObjectName)
 
     if ('%' == c) {
       if (pos + 2 < in.length() && std::isxdigit(in[pos + 1]) && std::isxdigit(in[pos + 2])) {
-        /* Valid encoded sequence found */
+        /* Valid encoded sequence found, but AWS SigV4 requires UPPERCASE hex digits.
+         * If lowercase hex is found, return false to trigger normalization via decode/re-encode.
+         * See: https://docs.aws.amazon.com/IAM/latest/UserGuide/create-signed-request.html
+         * "Letters in the hexadecimal value must be uppercase, for example "%1A"." */
+        if (std::islower(in[pos + 1]) || std::islower(in[pos + 2])) {
+          return false; /* Lowercase hex needs normalization to uppercase */
+        }
         foundEncodedChar  = true;
         pos              += 2; /* Skip past the hex digits */
         continue;
@@ -200,20 +207,26 @@ String
 canonicalEncode(const String &in, bool isObjectName)
 {
   if (isUriEncoded(in, isObjectName)) {
-    /* Fully URI-encoded, return as-is */
+    /* Fully URI-encoded with uppercase hex, return as-is */
     return in;
   }
 
-  /* Not fully encoded (either unencoded or partially encoded).
-   * Decode first to avoid double-encoding, then re-encode with AWS canonical rules.
+  /* Input needs normalization. This handles:
+   *   1. Unencoded strings - encode all reserved characters
+   *   2. Partially encoded - some chars encoded, some not (e.g., parentheses vs brackets)
+   *   3. Lowercase hex - convert %2f to %2F per AWS SigV4 requirement
    *
-   * This fixes a bug where mixed-encoding URLs (e.g., /app/(channel)/%5B%5Bparts%5D%5D/)
-   * would cause signature mismatch. The parentheses were not encoded but brackets were.
+   * Decode first to get the raw string, then re-encode with AWS canonical rules.
    *
-   * Example:
-   * - Input: /app/(channel)/%5B%5Bparts%5D%5D/page.js  (partially encoded)
-   * - Decode: /app/(channel)/[[parts]]/page.js
-   * - Encode: /app/%28channel%29/%5B%5Bparts%5D%5D/page.js
+   * Example (mixed encoding):
+   *   Input:  /app/(channel)/%5B%5Bparts%5D%5D/page.js  (parentheses not encoded)
+   *   Decode: /app/(channel)/[[parts]]/page.js
+   *   Encode: /app/%28channel%29/%5B%5Bparts%5D%5D/page.js
+   *
+   * Example (lowercase hex):
+   *   Input:  /path/%5btest%5d/file.js  (lowercase hex)
+   *   Decode: /path/[test]/file.js
+   *   Encode: /path/%5Btest%5D/file.js  (uppercase hex)
    */
   String decoded   = uriDecode(in);
   String canonical = uriEncode(decoded, isObjectName);
