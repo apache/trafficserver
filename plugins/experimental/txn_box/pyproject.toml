@@ -13,17 +13,15 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-[[source]]
-url = "https://pypi.org/simple"
-verify_ssl = true
-name = "pypi"
 
-[dev-packages]
+[project]
+name = "txn-box-tests"
+version = "0.1.0"
+description = "Test dependencies for txn_box plugin"
+requires-python = ">=3.6"
 
-[packages]
-scons = "*"
-scons-parts = "*"
-autest = "==1.7.4"
-
-[requires]
-python_version = "3"
+dependencies = [
+    "scons",
+    "scons-parts",
+    "autest==1.7.4",
+]

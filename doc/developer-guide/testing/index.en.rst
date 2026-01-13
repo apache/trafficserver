@@ -26,4 +26,3 @@ Testing Traffic Server
    :maxdepth: 2
 
    autests.en
-   blackbox-testing.en
