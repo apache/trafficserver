@@ -1741,12 +1741,11 @@ ConditionLastCapture::append_value(std::string &s, const Resources &res)
 bool
 ConditionLastCapture::eval(const Resources &res)
 {
-  std::string s;
-
-  append_value(s, res);
+  _storage.clear();
+  append_value(_storage, res);
   Dbg(pi_dbg_ctl, "Evaluating LAST-CAPTURE()");
 
-  return static_cast<const MatcherType *>(_matcher.get())->test(s, res);
+  return static_cast<const MatcherType *>(_matcher.get())->test(_storage, res);
 }
 
 static const struct sockaddr *
