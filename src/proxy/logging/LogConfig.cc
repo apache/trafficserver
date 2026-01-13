@@ -252,7 +252,7 @@ LogConfig::read_configuration_variables()
   -------------------------------------------------------------------------*/
 
 // TODO: Is UINT_MAX here really correct?
-LogConfig::LogConfig() : m_partition_space_left(static_cast<int64_t>(UINT_MAX))
+LogConfig::LogConfig()
 {
   // Setup the default values for all LogConfig public variables so that
   // a LogConfig object is valid upon return from the constructor even
