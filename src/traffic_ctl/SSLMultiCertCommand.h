@@ -36,7 +36,7 @@ public:
   /**
    * Construct the command from parsed arguments.
    *
-   * @param args Parsed command line arguments.
+   * @param[in] args Parsed command line arguments.
    */
   SSLMultiCertCommand(ts::Arguments *args);
 

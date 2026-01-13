@@ -98,8 +98,8 @@ private:
   /**
    * Detect the configuration format from content and filename.
    *
-   * @param content The configuration content.
-   * @param filename The filename (used for extension-based detection).
+   * @param[in] content The configuration content.
+   * @param[in] filename The filename (used for extension-based detection).
    * @return The detected format.
    */
   Format detect_format(std::string_view content, std::string const &filename);
@@ -107,7 +107,7 @@ private:
   /**
    * Parse YAML-formatted configuration content.
    *
-   * @param content The YAML content.
+   * @param[in] content The YAML content.
    * @return ConfigResult containing the parsed entries or errors.
    */
   ConfigResult<SSLMultiCertConfig> parse_yaml(std::string_view content);
@@ -115,7 +115,7 @@ private:
   /**
    * Parse legacy (.config) formatted configuration content.
    *
-   * @param content The legacy config content.
+   * @param[in] content The legacy config content.
    * @return ConfigResult containing the parsed entries or errors.
    */
   ConfigResult<SSLMultiCertConfig> parse_legacy(std::string_view content);
@@ -132,7 +132,7 @@ public:
   /**
    * Serialize configuration to YAML format.
    *
-   * @param config The configuration to serialize.
+   * @param[in] config The configuration to serialize.
    * @return YAML string representation.
    */
   std::string to_yaml(SSLMultiCertConfig const &config);
@@ -140,7 +140,7 @@ public:
   /**
    * Serialize configuration to JSON format.
    *
-   * @param config The configuration to serialize.
+   * @param[in] config The configuration to serialize.
    * @return JSON string representation.
    */
   std::string to_json(SSLMultiCertConfig const &config);
