@@ -40,18 +40,17 @@ else
     exit 1
 fi
 
-# check for pipenv
-pipenv --version &> /dev/null
+# check for uv
+uv --version &> /dev/null
 if [ $? -eq 0 ]; then
-    echo "pipenv detected!"
-    pipenv --venv &> /dev/null
-    if [ $? -ne 0 ]; then
-        echo "Installing a new virtual environment via pipenv"
-        pipenv install
+    echo "uv detected!"
+    if [ ! -d .venv ]; then
+        echo "Installing a new virtual environment via uv"
+        uv sync
     else
         echo "Using the pre-existing virtual environment."
     fi
 else
-    echo "pipenv is not installed/enabled. "
+    echo "uv is not installed/enabled. "
     exit 1
 fi
