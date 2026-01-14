@@ -15,7 +15,9 @@
 #
 #######################
 
-set(CONFIG_PUBLIC_HEADERS ${PROJECT_SOURCE_DIR}/include/config/ssl_multicert.h)
+set(CONFIG_PUBLIC_HEADERS ${PROJECT_SOURCE_DIR}/include/config/config_result.h
+                          ${PROJECT_SOURCE_DIR}/include/config/ssl_multicert.h
+)
 
 add_library(tsconfig ssl_multicert.cc)
 

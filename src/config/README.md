@@ -5,8 +5,7 @@ used by various ATS components including `traffic_server` and `traffic_ctl`.
 
 ## Architecture Overview
 
-Each configuration file type (ssl_multicert, logging, sni, etc.) follows the
-same pattern:
+Each configuration file type (ssl_multicert, etc.) follows the same pattern:
 
 ```
 include/config/<config_name>.h   - Header with data types, parser, marshaller
@@ -73,7 +72,7 @@ The parser automatically detects the configuration format:
 
 ## Adding a New Configuration Type
 
-To add support for a new configuration (e.g., `logging.yaml`):
+To add support for a new configuration (maybe, `logging.yaml`):
 
 1. Create `include/config/logging.h`:
    - Define `LoggingEntry` struct with fields matching the config

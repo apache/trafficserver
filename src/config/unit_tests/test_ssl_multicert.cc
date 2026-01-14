@@ -297,7 +297,7 @@ TEST_CASE("SSLMultiCertMarshaller produces valid JSON", "[ssl_multicert][marshal
   CHECK(json.find(']') != std::string::npos);
 }
 
-TEST_CASE("SSLMultiCertMarshaller escapes special characters", "[ssl_multicert][marshaller][escaping]")
+TEST_CASE("SSLMultiCertMarshaller handles special characters", "[ssl_multicert][marshaller][escaping]")
 {
   SSLMultiCertConfig config;
 
@@ -309,11 +309,16 @@ TEST_CASE("SSLMultiCertMarshaller escapes special characters", "[ssl_multicert][
 
   SSLMultiCertMarshaller marshaller;
 
-  SECTION("YAML escapes quotes")
+  SECTION("YAML output contains the field and can be re-parsed")
   {
     std::string yaml = marshaller.to_yaml(config);
     CHECK(yaml.find("ssl_key_dialog:") != std::string::npos);
-    CHECK(yaml.find("\\\"with quotes\\\"") != std::string::npos);
+
+    // Verify round-trip preserves the value.
+    auto result = parse_content(yaml, "test.yaml");
+    REQUIRE(result.ok());
+    REQUIRE(result.value.size() == 1);
+    CHECK(result.value[0].ssl_key_dialog == "exec:/path/to/script \"with quotes\"");
   }
 
   SECTION("JSON escapes quotes")

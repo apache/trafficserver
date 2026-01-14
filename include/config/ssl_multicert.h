@@ -28,7 +28,7 @@
 #include <string_view>
 #include <vector>
 
-#include "swoc/Errata.h"
+#include "config/config_result.h"
 
 namespace config
 {
@@ -51,27 +51,6 @@ struct SSLMultiCertEntry {
 
 /// A configuration is a vector of certificate entries.
 using SSLMultiCertConfig = std::vector<SSLMultiCertEntry>;
-
-/**
- * Result of a configuration parse operation.
- *
- * @tparam T The configuration type.
- */
-template <typename T> struct ConfigResult {
-  T            value;  ///< The parsed configuration value.
-  swoc::Errata errata; ///< Errors or warnings from parsing.
-
-  /**
-   * Check if parsing succeeded without errors.
-   *
-   * @return true if no errors occurred, false otherwise.
-   */
-  bool
-  ok() const
-  {
-    return errata.is_ok();
-  }
-};
 
 /**
  * Parser for ssl_multicert configuration files.

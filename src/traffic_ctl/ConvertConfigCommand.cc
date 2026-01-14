@@ -66,14 +66,14 @@ ConvertConfigCommand::convert_ssl_multicert()
 
   // Write to output file or stdout if output is "-".
   if (_output_file == "-") {
-    std::cout << yaml_output;
+    std::cout << yaml_output << '\n';
   } else {
     std::ofstream out(_output_file);
     if (!out) {
       _printer->write_output("Failed to open output file '" + _output_file + "' for writing");
       return;
     }
-    out << yaml_output;
+    out << yaml_output << '\n';
     out.close();
     _printer->write_output("Converted " + _input_file + " -> " + _output_file);
   }
