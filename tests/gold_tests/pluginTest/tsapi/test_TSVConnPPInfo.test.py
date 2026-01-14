@@ -49,7 +49,13 @@ ts.addDefaultSSLFiles()
 
 ts.Disk.remap_config.AddLines(['map /httpbin/ http://127.0.0.1:{0}/'.format(httpbin.Variables.Port)])
 
-ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+ts.Disk.ssl_multicert_yaml.AddLines(
+    """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: server.pem
+    ssl_key_name: server.key
+""".split("\n"))
 
 Test.PrepareTestPlugin(
     os.path.join(Test.Variables.AtsBuildGoldTestsDir, 'pluginTest', 'tsapi', '.libs', 'test_TSVConnPPInfo.so'), ts)

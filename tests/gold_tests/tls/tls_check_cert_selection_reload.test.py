@@ -39,11 +39,14 @@ ts.addSSLfile("ssl/combo.pem")
 
 ts.Disk.remap_config.AddLine('map /stuff https://foo.com:{1}'.format(ts.Variables.ssl_port, server.Variables.SSL_Port))
 
-ts.Disk.ssl_multicert_config.AddLines(
-    [
-        'ssl_cert_name=signed-bar.pem ssl_key_name=signed-bar.key',
-        'dest_ip=* ssl_cert_name=combo.pem',
-    ])
+ts.Disk.ssl_multicert_yaml.AddLines(
+    """
+ssl_multicert:
+  - ssl_cert_name: signed-bar.pem
+    ssl_key_name: signed-bar.key
+  - dest_ip: "*"
+    ssl_cert_name: combo.pem
+""".split("\n"))
 
 # Case 1, global config policy=permissive properties=signature
 #         override for foo.com policy=enforced properties=all
@@ -106,8 +109,7 @@ tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun("Try with signer 1 again")
 # Wait for the reload to complete
-tr.Processes.Default.StartBefore(
-    server3, ready=When.FileContains(ts.Disk.diags_log.Name, 'ssl_multicert.config finished loading', 2))
+tr.Processes.Default.StartBefore(server3, ready=When.FileContains(ts.Disk.diags_log.Name, 'ssl_multicert.yaml finished loading', 2))
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 tr.MakeCurlCommand(

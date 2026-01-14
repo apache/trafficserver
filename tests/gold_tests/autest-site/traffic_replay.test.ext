@@ -29,7 +29,13 @@ def Replay(obj, name, replay_dir, key=None, cert=None, conn_type='mixed', option
     ts.addSSLfile(os.path.join(obj.Variables["AtsTestToolsDir"], "microserver", "ssl", "server.pem"))
     ts.addSSLfile(os.path.join(obj.Variables["AtsTestToolsDir"], "microserver", "ssl", "server.crt"))
 
-    ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.pem')
+    ts.Disk.ssl_multicert_yaml.AddLines(
+        """
+    ssl_multicert:
+      - ssl_cert_name: server.pem
+        ssl_key_name: server.pem
+        dest_ip: "*"
+    """.split("\n"))
 
     # MicroServer setup - NOTE: expand to multiple microserver in future?
     server = obj.MakeOriginServer("server", both=True, lookup_key='{%uuid}')

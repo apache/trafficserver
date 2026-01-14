@@ -48,12 +48,17 @@ ts.addSSLfile("ssl/server.key")
 
 ts.Disk.remap_config.AddLine('map / https://foo.com:{1}'.format(ts.Variables.ssl_port, server.Variables.SSL_Port))
 
-ts.Disk.ssl_multicert_config.AddLines(
-    [
-        'ssl_cert_name=signed-foo-ec.pem,signed-foo.pem ssl_key_name=signed-foo-ec.key,signed-foo.key',
-        'ssl_cert_name=signed-san-ec.pem,signed-san.pem ssl_key_name=signed-san-ec.key,signed-san.key',
-        'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key',
-    ])
+ts.Disk.ssl_multicert_yaml.AddLines(
+    """
+ssl_multicert:
+  - ssl_cert_name: signed-foo-ec.pem,signed-foo.pem
+    ssl_key_name: signed-foo-ec.key,signed-foo.key
+  - ssl_cert_name: signed-san-ec.pem,signed-san.pem
+    ssl_key_name: signed-san-ec.key,signed-san.key
+  - dest_ip: "*"
+    ssl_cert_name: server.pem
+    ssl_key_name: server.key
+""".split("\n"))
 
 # Case 1, global config policy=permissive properties=signature
 #         override for foo.com policy=enforced properties=all

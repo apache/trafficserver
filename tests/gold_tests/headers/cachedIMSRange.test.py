@@ -109,7 +109,13 @@ server.addResponse("sessionlog.json", request_etagfill_header, response_etagfill
 ts = Test.MakeATSProcess("ts", enable_tls=True)
 ts.Disk.plugin_config.AddLine('xdebug.so --enable=x-cache,x-cache-key,via')
 ts.addDefaultSSLFiles()
-ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+ts.Disk.ssl_multicert_yaml.AddLines(
+    """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: server.pem
+    ssl_key_name: server.key
+""".split("\n"))
 ts.Disk.records_config.update(
     {
         'proxy.config.diags.debug.enabled': 1,

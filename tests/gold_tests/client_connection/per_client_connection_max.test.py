@@ -125,7 +125,13 @@ class PerClientConnectionMaxTest:
         name = f'ts{self._process_counter}'
         self._ts = Test.MakeATSProcess(name, enable_cache=False, enable_tls=True)
         self._ts.addDefaultSSLFiles()
-        self._ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+        self._ts.Disk.ssl_multicert_yaml.AddLines(
+            """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: server.pem
+    ssl_key_name: server.key
+""".split("\n"))
         if self._protocol == Protocol.HTTP:
             server_port = self._server.Variables.http_port
             scheme = 'http'

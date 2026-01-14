@@ -55,7 +55,13 @@ class TlsKeyloggingTest:
                 'proxy.config.diags.debug.enabled': 1,
                 'proxy.config.diags.debug.tags': 'ssl_keylog'
             })
-        self.ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+        self.ts.Disk.ssl_multicert_yaml.AddLines(
+            """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: server.pem
+    ssl_key_name: server.key
+""".split("\n"))
         self.ts.Disk.remap_config.AddLine(f'map / https://127.0.0.1:{self.server.Variables.https_port}')
 
         keylog_file = os.path.join(self.ts.Variables.LOGDIR, "tls_secrets.txt")

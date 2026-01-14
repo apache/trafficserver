@@ -44,7 +44,13 @@ class ProxyProtocolInTest:
             enable_proxy_protocol_cp_src=enable_cp)
 
         self.ts.addDefaultSSLFiles()
-        self.ts.Disk.ssl_multicert_config.AddLine("dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key")
+        self.ts.Disk.ssl_multicert_yaml.AddLines(
+            """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: server.pem
+    ssl_key_name: server.key
+""".split("\n"))
 
         self.ts.Disk.remap_config.AddLine(f"map / http://127.0.0.1:{self.server.Variables.http_port}/")
 
@@ -146,7 +152,13 @@ class ProxyProtocolOutTest:
         self._ts = tr.MakeATSProcess(process_name, enable_tls=True, enable_cache=False)
 
         self._ts.addDefaultSSLFiles()
-        self._ts.Disk.ssl_multicert_config.AddLine("dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key")
+        self._ts.Disk.ssl_multicert_yaml.AddLines(
+            """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: server.pem
+    ssl_key_name: server.key
+""".split("\n"))
         scheme = 'https' if self._is_tls_to_origin else 'http'
         server_port = self._server.Variables.https_port if self._is_tls_to_origin else self._server.Variables.http_port
         self._ts.Disk.remap_config.AddLine(f"map / {scheme}://backend.pp.origin.com:{server_port}/")
