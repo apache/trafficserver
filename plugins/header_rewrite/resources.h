@@ -86,14 +86,14 @@ public:
     // For last capture to work safely, this has to make a copy of the subject string
     // so the matches results will point into that and avoid any lifetime issues with
     // the passed in `s`
-    _extended_match_info.subject_storage = s;
-    return re.regexMatch(_extended_match_info.subject_storage, _extended_match_info.matches);
+    _extended_info.subject_storage = s;
+    return re.regexMatch(_extended_info.subject_storage, _extended_info.matches);
   }
 
   const RegexMatches &
   matches() const
   {
-    return _extended_match_info.matches;
+    return _extended_info.matches;
   }
 
   TSCont              contp          = nullptr;
@@ -113,12 +113,12 @@ public:
 #endif
   TSHttpStatus resp_status = TS_HTTP_STATUS_NONE;
 
-  struct LastMatchLifetimeExtension {
+  struct LifetimeExtension {
     std::string  subject_storage;
     RegexMatches matches;
   };
-  bool                               changed_url = false;
-  mutable LastMatchLifetimeExtension _extended_match_info;
+  bool                      changed_url = false;
+  mutable LifetimeExtension _extended_info;
 
 private:
   void
