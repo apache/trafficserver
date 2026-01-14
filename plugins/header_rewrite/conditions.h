@@ -940,6 +940,5 @@ protected:
   bool eval(const Resources &res) override;
 
 private:
-  int      _ix = -1;
-  DataType _storage;
+  int _ix = -1;
 };

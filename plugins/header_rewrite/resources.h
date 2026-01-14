@@ -23,6 +23,7 @@
 
 #include <string>
 
+#include "regex_helper.h"
 #include "ts/ts.h"
 #include "ts/remap.h"
 
@@ -79,6 +80,22 @@ public:
     return _ready;
   }
 
+  int
+  match(const regexHelper &re, const std::string &s) const
+  {
+    // For last capture to work safely, this has to make a copy of the subject string
+    // so the matches results will point into that and avoid any lifetime issues with
+    // the passed in `s`
+    _extended_match_info.subject_storage = s;
+    return re.regexMatch(_extended_match_info.subject_storage, _extended_match_info.matches);
+  }
+
+  const RegexMatches &
+  matches() const
+  {
+    return _extended_match_info.matches;
+  }
+
   TSCont              contp          = nullptr;
   TSRemapRequestInfo *_rri           = nullptr;
   TSMBuffer           bufp           = nullptr;
@@ -95,8 +112,13 @@ public:
   TransactionState state; // Without cripts, txnp / ssnp goes here
 #endif
   TSHttpStatus resp_status = TS_HTTP_STATUS_NONE;
-  RegexMatches matches;
-  bool         changed_url = false;
+
+  struct LastMatchLifetimeExtension {
+    std::string  subject_storage;
+    RegexMatches matches;
+  };
+  bool                               changed_url = false;
+  mutable LastMatchLifetimeExtension _extended_match_info;
 
 private:
   void

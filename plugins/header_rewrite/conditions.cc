@@ -1732,8 +1732,8 @@ ConditionLastCapture::set_qualifier(const std::string &q)
 void
 ConditionLastCapture::append_value(std::string &s, const Resources &res)
 {
-  if (res.matches.size() > _ix) {
-    s.append(res.matches[_ix]);
+  if (res.matches().size() > _ix) {
+    s.append(res.matches()[_ix]);
     Dbg(pi_dbg_ctl, "Evaluating LAST-CAPTURE(%d)", _ix);
   }
 }
@@ -1741,11 +1741,12 @@ ConditionLastCapture::append_value(std::string &s, const Resources &res)
 bool
 ConditionLastCapture::eval(const Resources &res)
 {
-  _storage.clear();
-  append_value(_storage, res);
+  std::string s;
+
+  append_value(s, res);
   Dbg(pi_dbg_ctl, "Evaluating LAST-CAPTURE()");
 
-  return static_cast<const MatcherType *>(_matcher.get())->test(_storage, res);
+  return static_cast<const MatcherType *>(_matcher.get())->test(s, res);
 }
 
 static const struct sockaddr *

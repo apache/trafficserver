@@ -364,7 +364,7 @@ private:
     Dbg(pi_dbg_ctl, "Test regular expression against: %s (NOCASE = %s)", t.c_str(),
         has_modifier(_mods, CondModifiers::MOD_NOCASE) ? "true" : "false");
     const auto &re    = std::get<regexHelper>(_data);
-    int         count = re.regexMatch(t, const_cast<Resources &>(res).matches);
+    int         count = res.match(re, t);
 
     if (count > 0) {
       Dbg(pi_dbg_ctl, "Successfully found regular expression match");
