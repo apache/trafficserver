@@ -149,7 +149,8 @@ cmake \
   -DCMAKE_CXX_FLAGS='-Wno-error=ignored-attributes -UBORINGSSL_HAVE_LIBUNWIND' \
   -DCMAKE_C_FLAGS=${BSSL_C_FLAGS} \
   -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
-  -DBUILD_SHARED_LIBS=1
+  -DBUILD_SHARED_LIBS=1 \
+  -DBUILD_TESTING=OFF
 cmake \
   -B build-static \
   -DGO_EXECUTABLE=${GO_BINARY_PATH} \
@@ -158,7 +159,8 @@ cmake \
   -DCMAKE_CXX_FLAGS='-Wno-error=ignored-attributes -UBORINGSSL_HAVE_LIBUNWIND' \
   -DCMAKE_C_FLAGS="${BSSL_C_FLAGS}" \
   -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
-  -DBUILD_SHARED_LIBS=0
+  -DBUILD_SHARED_LIBS=0 \
+  -DBUILD_TESTING=OFF
 cmake --build build-shared -j ${num_threads}
 cmake --build build-static -j ${num_threads}
 sudo cmake --install build-shared
