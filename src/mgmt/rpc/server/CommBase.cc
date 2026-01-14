@@ -44,6 +44,9 @@ CommInternalErrorCategory::message(int ev) const
     return {"No more data to be read, but the buffer contains some invalid? data."};
   case rpc::comm::InternalError::FULL_BUFFER:
     return {"Buffer's full."};
+  case rpc::comm::InternalError::INVALID_SOCKET_PATH:
+    return {"Invalid RPC socket path: the path is either empty or exceeds the maximum length supported by the operating system. "
+            "Check the value of rpc.unix.sock_path_name in the configuration file."};
   default:
     return "Internal Communication Error" + std::to_string(ev);
   }
