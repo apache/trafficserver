@@ -86,13 +86,14 @@ sessions:
       content:
         size: 399
 
+    # With --preserve and any JA3 header present, no new headers are added.
     proxy-request:
       headers:
         fields:
         - [ x-request, { value: 'http2-request', as: equal } ]
         - [ x-ja3-via, { value: 'first-via', as: equal } ]
-        - [ X-JA3-Sig, { as: present } ]
-        - [ X-JA3-Raw, { as: present } ]
+        - [ x-ja3-raw, { value: 'first-signature', as: equal } ]
+        - [ x-ja3-sig, { as: absent } ]
 
     server-response:
       headers:

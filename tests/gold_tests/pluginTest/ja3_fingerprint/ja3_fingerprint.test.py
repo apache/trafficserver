@@ -81,13 +81,15 @@ class JA3FingerprintTest:
         self._server.Streams.All += Testers.ContainsExpression("https-request", "Verify the HTTPS request was received.")
         self._server.Streams.All += Testers.ContainsExpression("http2-request", "Verify the HTTP/2 request was received.")
         if not self._test_remap:
-            # Verify --preserve worked.
-            self._server.Streams.All += Testers.ContainsExpression("x-ja3-raw: .*,", "Verify the new raw header was added.")
+            # The first request has no existing JA3 headers, so headers are added.
             self._server.Streams.All += Testers.ContainsExpression(
-                "x-ja3-raw: first-signature", "Verify the already-existing raw header was preserved.")
-            self._server.Streams.All += Testers.ExcludesExpression(
-                "x-ja3-raw: first-signature;", "Verify no extra values were added due to preserve.")
+                "x-ja3-raw: .*,", "Verify the new raw header was added.", reflags=re.IGNORECASE)
             self._server.Streams.All += Testers.ContainsExpression("x-ja3-via: test.proxy.com", "The x-ja3-via string was added.")
+            # The second request has existing JA3 headers. With --preserve,
+            # no new JA3 headers are added (including x-ja3-sig). The replay
+            # file verifies x-ja3-sig is absent for the http2 transaction.
+            self._server.Streams.All += Testers.ContainsExpression(
+                "x-ja3-raw: first-signature", "Verify the already-existing raw header was preserved.", reflags=re.IGNORECASE)
 
     def _configure_trafficserver(self) -> None:
         """Configure Traffic Server to be used in the test."""
@@ -189,8 +191,10 @@ class JA3FingerprintTest:
 
         if self._modify_incoming:
             p.Streams.All += "modify-incoming-proxy.gold"
+        elif self._test_remap:
+            p.Streams.All += "modify-sent-proxy-remap.gold"
         else:
-            p.Streams.All += "modify-sent-proxy.gold"
+            p.Streams.All += "modify-sent-proxy-global.gold"
 
 
 JA3FingerprintTest(test_remap=False, modify_incoming=False)
