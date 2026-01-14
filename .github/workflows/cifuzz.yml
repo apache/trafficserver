@@ -15,12 +15,12 @@ jobs:
     steps:
     - name: Build Fuzzers
       id: build
-      uses: google/oss-fuzz/infra/cifuzz/actions/build_fuzzers@master
+      uses: shukitchan/oss-fuzz/infra/cifuzz/actions/build_fuzzers@shukitchan-patch-12
       with:
         oss-fuzz-project-name: 'trafficserver'
         language: c++
     - name: Run Fuzzers
-      uses: google/oss-fuzz/infra/cifuzz/actions/run_fuzzers@master
+      uses: shukitchan/oss-fuzz/infra/cifuzz/actions/run_fuzzers@shukitchan-patch-12
       with:
         oss-fuzz-project-name: 'trafficserver'
         language: c++
