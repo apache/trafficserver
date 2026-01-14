@@ -1729,12 +1729,6 @@ SSLMultiCertConfigLoader::load(SSLCertLookup *lookup)
   config::SSLMultiCertParser                       parser;
   config::ConfigResult<config::SSLMultiCertConfig> parse_result = parser.parse(params->configFilePath);
   if (!parse_result.ok()) {
-    // Check if it is a missing file (acceptable runtime state). Verify the errata has annotations before accessing them.
-    if (!parse_result.errata.empty() && (parse_result.errata.front().text().find("bad file") != std::string::npos ||
-                                         parse_result.errata.front().text().find("No such file") != std::string::npos ||
-                                         parse_result.errata.front().text().find("failed to open file") != std::string::npos)) {
-      return swoc::Errata(ERRATA_WARN, "Cannot open SSL certificate configuration \"{}\"", params->configFilePath);
-    }
     return std::move(parse_result.errata);
   }
 

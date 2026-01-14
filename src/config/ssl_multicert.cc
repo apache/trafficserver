@@ -23,6 +23,7 @@
 
 #include "config/ssl_multicert.h"
 
+#include <cerrno>
 #include <cctype>
 #include <exception>
 #include <set>
@@ -32,9 +33,14 @@
 
 #include "swoc/swoc_file.h"
 #include "swoc/TextView.h"
+#include "tsutil/ts_diag_levels.h"
 
 namespace
 {
+
+constexpr swoc::Errata::Severity ERRATA_NOTE_SEV{static_cast<swoc::Errata::severity_type>(DL_Note)};
+constexpr swoc::Errata::Severity ERRATA_WARN_SEV{static_cast<swoc::Errata::severity_type>(DL_Warning)};
+constexpr swoc::Errata::Severity ERRATA_ERROR_SEV{static_cast<swoc::Errata::severity_type>(DL_Error)};
 
 // YAML key names.
 constexpr char KEY_SSL_CERT_NAME[]      = "ssl_cert_name";
@@ -141,13 +147,6 @@ template <> struct convert<config::SSLMultiCertEntry> {
   static bool
   decode(Node const &node, config::SSLMultiCertEntry &entry)
   {
-    for (auto const &elem : node) {
-      std::string key = elem.first.as<std::string>();
-      if (valid_keys.find(key) == valid_keys.end()) {
-        // Unknown key - we could warn here, but for now we skip silently.
-      }
-    }
-
     if (node[KEY_SSL_CERT_NAME]) {
       entry.ssl_cert_name = node[KEY_SSL_CERT_NAME].as<std::string>();
     }
@@ -202,7 +201,11 @@ SSLMultiCertParser::parse(std::string const &filename)
   std::error_code ec;
   std::string     content = swoc::file::load(filename, ec);
   if (ec) {
-    return {{}, swoc::Errata("failed to load file: {}", filename)};
+    // Missing ssl_multicert.* is an acceptable runtime state.
+    if (ec.value() == ENOENT) {
+      return {{}, swoc::Errata(ERRATA_WARN_SEV, "Cannot open SSL certificate configuration \"{}\" - {}", filename, ec)};
+    }
+    return {{}, swoc::Errata(ERRATA_ERROR_SEV, "Failed to read SSL certificate configuration from \"{}\" - {}", filename, ec)};
   }
 
   if (content.empty()) {
@@ -246,12 +249,14 @@ SSLMultiCertParser::detect_format(std::string_view content, std::string const &f
 ConfigResult<SSLMultiCertConfig>
 SSLMultiCertParser::parse_yaml(std::string_view content)
 {
-  SSLMultiCertConfig result;
+  SSLMultiCertConfig    result;
+  swoc::Errata          errata;
+  std::set<std::string> unknown_keys;
 
   try {
     YAML::Node config = YAML::Load(std::string(content));
     if (config.IsNull()) {
-      return {result, {}};
+      return {result, std::move(errata)};
     }
 
     if (!config[KEY_SSL_MULTICERT]) {
@@ -264,20 +269,37 @@ SSLMultiCertParser::parse_yaml(std::string_view content)
     }
 
     for (auto it = entries.begin(); it != entries.end(); ++it) {
-      result.push_back(it->as<SSLMultiCertEntry>());
+      YAML::Node entry_node = *it;
+      auto const mark       = entry_node.Mark();
+      if (!entry_node.IsMap()) {
+        return {result, swoc::Errata(ERRATA_ERROR_SEV, "Expected ssl_multicert entries to be maps at line {}, column {}", mark.line,
+                                     mark.column)};
+      }
+
+      for (auto const &field : entry_node) {
+        std::string key = field.first.as<std::string>();
+        if (valid_keys.find(key) == valid_keys.end() && unknown_keys.insert(key).second) {
+          errata.note(ERRATA_NOTE_SEV, "Ignoring unknown ssl_multicert key '{}' at line {}, column {}", key, mark.line,
+                      mark.column);
+        }
+      }
+
+      result.push_back(entry_node.as<SSLMultiCertEntry>());
     }
   } catch (std::exception const &ex) {
     return {result, swoc::Errata("YAML parse error: {}", ex.what())};
   }
 
-  return {result, {}};
+  return {result, std::move(errata)};
 }
 
 ConfigResult<SSLMultiCertConfig>
 SSLMultiCertParser::parse_legacy(std::string_view content)
 {
-  SSLMultiCertConfig result;
-  swoc::TextView     src{content};
+  SSLMultiCertConfig    result;
+  swoc::Errata          errata;
+  std::set<std::string> unknown_keys;
+  swoc::TextView        src{content};
 
   while (!src.empty()) {
     swoc::TextView line = src.take_prefix_at('\n');
@@ -316,13 +338,15 @@ SSLMultiCertParser::parse_legacy(std::string_view content)
         entry.ssl_ticket_enabled = swoc::svtoi(value);
       } else if (key == KEY_SSL_TICKET_NUMBER) {
         entry.ssl_ticket_number = swoc::svtoi(value);
+      } else if (unknown_keys.insert(key).second) {
+        errata.note(ERRATA_NOTE_SEV, "Ignoring unknown ssl_multicert key '{}' in legacy format", key);
       }
     }
 
     result.push_back(std::move(entry));
   }
 
-  return {result, {}};
+  return {result, std::move(errata)};
 }
 
 std::string

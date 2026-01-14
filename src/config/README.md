@@ -56,13 +56,6 @@ for (const auto& entry : result.value) {
 }
 ```
 
-### Parsing from a String
-
-```cpp
-std::string content = "ssl_multicert:\n  - ssl_cert_name: server.pem\n";
-auto result = parser.parse_string(content, "config.yaml");
-```
-
 ### Marshalling to YAML/JSON
 
 ```cpp
