@@ -280,6 +280,8 @@ SSLInitializeStatistics()
   ssl_rsb.user_agent_version_too_high       = Metrics::Counter::createPtr("proxy.process.ssl.user_agent_version_too_high");
   ssl_rsb.user_agent_version_too_low        = Metrics::Counter::createPtr("proxy.process.ssl.user_agent_version_too_low");
   ssl_rsb.user_agent_wrong_version          = Metrics::Counter::createPtr("proxy.process.ssl.user_agent_wrong_version");
+  ssl_rsb.tls_handshake_bytes_in_total      = Metrics::Counter::createPtr("proxy.process.ssl.total_handshake_bytes_read_in");
+  ssl_rsb.tls_handshake_bytes_out_total     = Metrics::Counter::createPtr("proxy.process.ssl.total_handshake_bytes_write_in");
 
 #if defined(OPENSSL_IS_BORINGSSL)
   size_t                    n = SSL_get_all_cipher_names(nullptr, 0);
