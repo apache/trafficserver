@@ -117,6 +117,18 @@ public:
     return _valid;
   };
 
+  bool
+  is_remap_yaml() const
+  {
+    return _remap_yaml;
+  };
+
+  void
+  set_remap_yaml(bool yaml)
+  {
+    _remap_yaml = yaml;
+  };
+
   /// @return  Number of rules defined.
   int
   rule_count() const
@@ -234,6 +246,7 @@ public:
 
 private:
   bool              _valid               = false;
+  bool              _remap_yaml          = false;
   ACLBehaviorPolicy _acl_behavior_policy = ACLBehaviorPolicy::ACL_BEHAVIOR_LEGACY;
 
   bool _mappingLookup(MappingsStore &mappings, URL *request_url, int request_port, const char *request_host, int request_host_len,
@@ -251,3 +264,5 @@ private:
 };
 
 void url_rewrite_remap_request(const UrlMappingContainer &mapping_container, URL *request_url, int scheme = -1);
+
+mapping_type get_mapping_type(const char *type_str, BUILD_TABLE_INFO *bti);

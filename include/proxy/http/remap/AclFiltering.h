@@ -31,6 +31,7 @@
 #include <string>
 #include <string_view>
 #include <vector>
+#include <yaml-cpp/yaml.h>
 
 // ===============================================================================
 // ACL like filtering defs (per one remap rule)
@@ -108,8 +109,9 @@ public:
     internal                  : 1;        // filter internal HTTP requests
 
   // we need arguments as string array for directive processing
-  int   argc = 0;                  // argument counter (only for filter defs)
-  char *argv[ACL_FILTER_MAX_ARGV]; // argument strings (only for filter defs)
+  int        argc = 0;                  // argument counter (only for filter defs)
+  char      *argv[ACL_FILTER_MAX_ARGV]; // argument strings (only for filter defs)
+  YAML::Node node;                      // argument node (only for filter defs)
 
   // methods
   bool              method_restriction_enabled;
@@ -133,6 +135,7 @@ public:
   ~acl_filter_rule();
   void name(const char *_name = nullptr);
   int  add_argv(int _argc, char *_argv[]);
+  void add_node(const YAML::Node &_node);
   void print();
 
   /** Return a description of the action.
