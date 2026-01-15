@@ -259,7 +259,7 @@ public:
 
     // Option dependencies: dependent_option -> list of required options
     std::map<std::string, std::vector<std::string>> _option_dependencies;
-    // Track the last added option for requires() chaining
+    // Track the last added option for with_required() chaining
     std::string _last_added_option;
 
     // require command / option for this parser

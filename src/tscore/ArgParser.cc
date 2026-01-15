@@ -306,7 +306,7 @@ ArgParser::Command::add_option(std::string const &long_option, std::string const
   if (short_option != "-" && !short_option.empty()) {
     _option_map[short_option] = long_option;
   }
-  _last_added_option = long_option; // track for with_requires() chaining
+  _last_added_option = long_option; // track for with_required() chaining
   return *this;
 }
 
