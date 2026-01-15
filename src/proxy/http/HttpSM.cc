@@ -750,6 +750,21 @@ HttpSM::state_read_client_request_header(int event, void *data)
          t_state.hdr_info.client_request.method_get_wksidx() == HTTP_WKSIDX_PUT)) {
       auto expect{t_state.hdr_info.client_request.value_get(static_cast<std::string_view>(MIME_FIELD_EXPECT))};
       if (strcasecmp(expect, static_cast<std::string_view>(HTTP_VALUE_100_CONTINUE)) == 0) {
+        // Check Content-Length against post_copy_size BEFORE sending 100 Continue.
+        // This avoids telling the client to send a body that we'll reject anyway.
+        // For chunked requests (no Content-Length), we must send 100 Continue since
+        // we can't know the body size upfront.
+        int64_t content_length = t_state.hdr_info.client_request.get_content_length();
+        if (t_state.txn_conf->request_buffer_enabled && t_state.http_config_param->post_copy_size > 0 && content_length > 0 &&
+            content_length > t_state.http_config_param->post_copy_size) {
+          // Content-Length exceeds post_copy_size - reject with 413 immediately
+          // Do NOT send 100 Continue, as that would waste bandwidth
+          SMDbg(dbg_ctl_http, "Expect: 100-continue with Content-Length %" PRId64 " exceeds post_copy_size %" PRId64 ", rejecting",
+                content_length, t_state.http_config_param->post_copy_size);
+          call_transact_and_set_next_state(HttpTransact::PostBodyTooLarge);
+          return 0;
+        }
+
         // When receive an "Expect: 100-continue" request from client, ATS sends a "100 Continue" response to client
         // immediately, before receive the real response from original server.
         if (t_state.http_config_param->send_100_continue_response) {
@@ -2803,7 +2818,11 @@ HttpSM::tunnel_handler_post(int event, void *data)
   // The tunnel calls this when it is done
 
   int p_handler_state = p->handler_state;
-  if (is_waiting_for_full_body && !this->is_postbuf_valid()) {
+  // Only override to SERVER_FAIL if the UA hasn't already failed.
+  // If UA_FAIL, the client connection is already closed and we should not
+  // call handle_post_failure() which expects a valid UA entry.
+  if (is_waiting_for_full_body && !this->is_postbuf_valid() &&
+      static_cast<HttpSmPost_t>(p_handler_state) != HttpSmPost_t::UA_FAIL) {
     p_handler_state = static_cast<int>(HttpSmPost_t::SERVER_FAIL);
   }
   if (p->vc_type != HttpTunnelType_t::BUFFER_READ) {
@@ -2821,6 +2840,14 @@ HttpSM::tunnel_handler_post(int event, void *data)
   case HttpSmPost_t::SUCCESS:
     // It's time to start reading the response
     if (is_waiting_for_full_body) {
+      // Check if the request body exceeded the size limit during buffering
+      // This handles chunked requests where we couldn't check upfront
+      if (request_body_too_large) {
+        is_waiting_for_full_body = false;
+        request_body_too_large   = false;
+        call_transact_and_set_next_state(HttpTransact::PostBodyTooLarge);
+        break;
+      }
       is_waiting_for_full_body  = false;
       is_buffering_request_body = true;
       client_request_body_bytes = this->postbuf_buffer_avail();
@@ -6018,7 +6045,13 @@ HttpSM::handle_post_failure()
   ink_assert(is_waiting_for_full_body || server_entry->eos == true);
 
   if (is_waiting_for_full_body) {
-    call_transact_and_set_next_state(HttpTransact::Forbidden);
+    if (request_body_too_large) {
+      request_body_too_large   = false;
+      is_waiting_for_full_body = false;
+      call_transact_and_set_next_state(HttpTransact::PostBodyTooLarge);
+    } else {
+      call_transact_and_set_next_state(HttpTransact::Forbidden);
+    }
     return;
   }
   // First order of business is to clean up from

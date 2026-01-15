@@ -521,6 +521,7 @@ public:
   bool    server_connection_is_ssl        = false;
   bool    is_waiting_for_full_body        = false;
   bool    is_buffering_request_body       = false;
+  bool    request_body_too_large          = false; // Set when POST body exceeds post_copy_size during buffering
   // hooks_set records whether there are any hooks relevant
   //  to this transaction.  Used to avoid costly calls
   //  do_api_callout_internal()
