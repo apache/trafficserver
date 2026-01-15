@@ -193,7 +193,7 @@ private:
   test_reg(const std::string &t, const Resources &res) const
   {
     Dbg(pi_dbg_ctl, "Test regular expression %s : %s (NOCASE = %d)", _data.c_str(), t.c_str(), static_cast<int>(_nocase));
-    int count = _reHelper.regexMatch(t, const_cast<Resources &>(res).matches);
+    int count = res.match(_reHelper, t);
 
     if (count > 0) {
       Dbg(pi_dbg_ctl, "Successfully found regular expression match");
