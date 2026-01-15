@@ -76,6 +76,31 @@ UrlWhack(char *toWhack, int *origLength)
   return length;
 }
 
+const char *
+is_valid_scheme(std::string_view fromScheme, std::string_view toScheme)
+{
+  const char *errStr = nullptr;
+  // Include support for HTTPS scheme
+  // includes support for FILE scheme
+  if ((fromScheme != std::string_view{URL_SCHEME_HTTP} && fromScheme != std::string_view{URL_SCHEME_HTTPS} &&
+       fromScheme != std::string_view{URL_SCHEME_FILE} && fromScheme != std::string_view{URL_SCHEME_TUNNEL} &&
+       fromScheme != std::string_view{URL_SCHEME_WS} && fromScheme != std::string_view{URL_SCHEME_WSS} &&
+       fromScheme != std::string_view{URL_SCHEME_HTTP_UDS} && fromScheme != std::string_view{URL_SCHEME_HTTPS_UDS}) ||
+      (toScheme != std::string_view{URL_SCHEME_HTTP} && toScheme != std::string_view{URL_SCHEME_HTTPS} &&
+       toScheme != std::string_view{URL_SCHEME_TUNNEL} && toScheme != std::string_view{URL_SCHEME_WS} &&
+       toScheme != std::string_view{URL_SCHEME_WSS})) {
+    errStr = "only http, https, http+unix, https+unix, ws, wss, and tunnel remappings are supported";
+    return errStr;
+  }
+
+  // If mapping from WS or WSS we must map out to WS or WSS
+  if ((fromScheme == std::string_view{URL_SCHEME_WSS} || fromScheme == std::string_view{URL_SCHEME_WS}) &&
+      (toScheme != std::string_view{URL_SCHEME_WSS} && toScheme != std::string_view{URL_SCHEME_WS})) {
+    errStr = "WS or WSS can only be mapped out to WS or WSS.";
+  }
+  return errStr;
+}
+
 /**
   Cleanup *char[] array - each item in array must be allocated via
   ats_malloc or similar "x..." function.
@@ -175,7 +200,7 @@ process_filter_opt(url_mapping *mp, const BUILD_TABLE_INFO *bti, char *errStrBuf
   return errStr;
 }
 
-static bool
+bool
 is_inkeylist(const char *key, ...)
 {
   va_list ap;
@@ -303,7 +328,7 @@ parse_deactivate_directive(const char *directive, BUILD_TABLE_INFO *bti, char *e
   return nullptr;
 }
 
-static void
+void
 free_directory_list(int n_entries, struct dirent **entrylist)
 {
   for (int i = 0; i < n_entries; ++i) {
@@ -1155,28 +1180,8 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
     type_id_str          = is_cur_mapping_regex ? (bti->paramv[0] + 6) : bti->paramv[0];
 
     // Check to see whether is a reverse or forward mapping
-    if (!strcasecmp("reverse_map", type_id_str)) {
-      Dbg(dbg_ctl_url_rewrite, "[BuildTable] - mapping_type::REVERSE_MAP");
-      maptype = mapping_type::REVERSE_MAP;
-    } else if (!strcasecmp("map", type_id_str)) {
-      Dbg(dbg_ctl_url_rewrite, "[BuildTable] - %s",
-          ((bti->remap_optflg & REMAP_OPTFLG_MAP_WITH_REFERER) == 0) ? "mapping_type::FORWARD_MAP" :
-                                                                       "mapping_type::FORWARD_MAP_REFERER");
-      maptype =
-        ((bti->remap_optflg & REMAP_OPTFLG_MAP_WITH_REFERER) == 0) ? mapping_type::FORWARD_MAP : mapping_type::FORWARD_MAP_REFERER;
-    } else if (!strcasecmp("redirect", type_id_str)) {
-      Dbg(dbg_ctl_url_rewrite, "[BuildTable] - mapping_type::PERMANENT_REDIRECT");
-      maptype = mapping_type::PERMANENT_REDIRECT;
-    } else if (!strcasecmp("redirect_temporary", type_id_str)) {
-      Dbg(dbg_ctl_url_rewrite, "[BuildTable] - mapping_type::TEMPORARY_REDIRECT");
-      maptype = mapping_type::TEMPORARY_REDIRECT;
-    } else if (!strcasecmp("map_with_referer", type_id_str)) {
-      Dbg(dbg_ctl_url_rewrite, "[BuildTable] - mapping_type::FORWARD_MAP_REFERER");
-      maptype = mapping_type::FORWARD_MAP_REFERER;
-    } else if (!strcasecmp("map_with_recv_port", type_id_str)) {
-      Dbg(dbg_ctl_url_rewrite, "[BuildTable] - mapping_type::FORWARD_MAP_WITH_RECV_PORT");
-      maptype = mapping_type::FORWARD_MAP_WITH_RECV_PORT;
-    } else {
+    maptype = get_mapping_type(type_id_str, bti);
+    if (maptype == mapping_type::NONE) {
       snprintf(errStrBuf, sizeof(errStrBuf), "unknown mapping type at line %d", cln + 1);
       errStr = errStrBuf;
       goto MAP_ERROR;
@@ -1251,23 +1256,8 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
     }
     toScheme = new_mapping->toURL.scheme_get();
 
-    // Include support for HTTPS scheme
-    // includes support for FILE scheme
-    if ((fromScheme != std::string_view{URL_SCHEME_HTTP} && fromScheme != std::string_view{URL_SCHEME_HTTPS} &&
-         fromScheme != std::string_view{URL_SCHEME_FILE} && fromScheme != std::string_view{URL_SCHEME_TUNNEL} &&
-         fromScheme != std::string_view{URL_SCHEME_WS} && fromScheme != std::string_view{URL_SCHEME_WSS} &&
-         fromScheme != std::string_view{URL_SCHEME_HTTP_UDS} && fromScheme != std::string_view{URL_SCHEME_HTTPS_UDS}) ||
-        (toScheme != std::string_view{URL_SCHEME_HTTP} && toScheme != std::string_view{URL_SCHEME_HTTPS} &&
-         toScheme != std::string_view{URL_SCHEME_TUNNEL} && toScheme != std::string_view{URL_SCHEME_WS} &&
-         toScheme != std::string_view{URL_SCHEME_WSS})) {
-      errStr = "only http, https, http+unix, https+unix, ws, wss, and tunnel remappings are supported";
-      goto MAP_ERROR;
-    }
-
-    // If mapping from WS or WSS we must map out to WS or WSS
-    if ((fromScheme == std::string_view{URL_SCHEME_WSS} || fromScheme == std::string_view{URL_SCHEME_WS}) &&
-        (toScheme != std::string_view{URL_SCHEME_WSS} && toScheme != std::string_view{URL_SCHEME_WS})) {
-      errStr = "WS or WSS can only be mapped out to WS or WSS.";
+    errStr = is_valid_scheme(fromScheme, toScheme);
+    if (errStr != nullptr) {
       goto MAP_ERROR;
     }
 

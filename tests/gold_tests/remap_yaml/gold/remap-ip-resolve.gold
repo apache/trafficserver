@@ -1,0 +1,14 @@
+``
+> GET http://testDNS.com/``
+> Host: testDNS.com``
+> User-Agent: curl/``
+> Accept: */*
+``
+< HTTP/1.1 200 OK
+< Server: ATS/``
+< Date: ``
+< Age: ``
+< Transfer-Encoding: chunked
+< Proxy-Connection: keep-alive
+<
+``
