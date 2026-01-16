@@ -194,10 +194,12 @@ remap_validate_yaml_filter_args(acl_filter_rule **rule_pp, const YAML::Node &nod
   }
 
   if (!node || !node.IsMap()) {
+    if (new_rule_flg) {
+      delete rule;
+      *rule_pp = nullptr;
+    }
     return swoc::Errata("filters must be a map");
   }
-
-  bool action_flag = false;
 
   // Parse method
   auto parse_method = [&](const std::string &method_str) {
@@ -226,10 +228,6 @@ remap_validate_yaml_filter_args(acl_filter_rule **rule_pp, const YAML::Node &nod
   auto parse_src_ip = [&](const std::string &ip_str, bool invert) -> swoc::Errata {
     if (rule->src_ip_cnt >= ACL_FILTER_MAX_SRC_IP) {
       Dbg(dbg_ctl_url_rewrite, "[validate_filter_args] Too many \"src_ip=\" filters");
-      if (new_rule_flg) {
-        delete rule;
-        *rule_pp = nullptr;
-      }
       return swoc::Errata("Defined more than {} src_ip filters", ACL_FILTER_MAX_SRC_IP);
     }
 
@@ -242,10 +240,6 @@ remap_validate_yaml_filter_args(acl_filter_rule **rule_pp, const YAML::Node &nod
       ipi->match_all_addresses = true;
     } else if (ats_ip_range_parse(arg, ipi->start, ipi->end) != 0) {
       Dbg(dbg_ctl_url_rewrite, "[validate_filter_args] Unable to parse IP value in %s", ip_str.c_str());
-      if (new_rule_flg) {
-        delete rule;
-        *rule_pp = nullptr;
-      }
       return swoc::Errata("Unable to parse IP value: {}", ip_str);
     }
     for (j = 0; j < rule->src_ip_cnt; j++) {
@@ -266,12 +260,20 @@ remap_validate_yaml_filter_args(acl_filter_rule **rule_pp, const YAML::Node &nod
       for (const auto &src_ip : node["src_ip"]) {
         auto errata = parse_src_ip(src_ip.as<std::string>(), false);
         if (!errata.is_ok()) {
+          if (new_rule_flg) {
+            delete rule;
+            *rule_pp = nullptr;
+          }
           return errata;
         }
       }
     } else {
       auto errata = parse_src_ip(node["src_ip"].as<std::string>(), false);
       if (!errata.is_ok()) {
+        if (new_rule_flg) {
+          delete rule;
+          *rule_pp = nullptr;
+        }
         return errata;
       }
     }
@@ -282,12 +284,20 @@ remap_validate_yaml_filter_args(acl_filter_rule **rule_pp, const YAML::Node &nod
       for (const auto &src_ip_invert : node["src_ip_invert"]) {
         auto errata = parse_src_ip(src_ip_invert.as<std::string>(), true);
         if (!errata.is_ok()) {
+          if (new_rule_flg) {
+            delete rule;
+            *rule_pp = nullptr;
+          }
           return errata;
         }
       }
     } else {
       auto errata = parse_src_ip(node["src_ip_invert"].as<std::string>(), true);
       if (!errata.is_ok()) {
+        if (new_rule_flg) {
+          delete rule;
+          *rule_pp = nullptr;
+        }
         return errata;
       }
     }
@@ -297,10 +307,6 @@ remap_validate_yaml_filter_args(acl_filter_rule **rule_pp, const YAML::Node &nod
   auto parse_src_ip_category = [&](const std::string &ip_category, bool invert) -> swoc::Errata {
     if (rule->src_ip_category_cnt >= ACL_FILTER_MAX_SRC_IP) {
       Dbg(dbg_ctl_url_rewrite, "[validate_filter_args] Too many \"src_ip_category=\" filters");
-      if (new_rule_flg) {
-        delete rule;
-        *rule_pp = nullptr;
-      }
       return swoc::Errata("Defined more than {} src_ip_category filters", ACL_FILTER_MAX_SRC_IP);
     }
     src_ip_category_info_t *ipi = &rule->src_ip_category_array[rule->src_ip_category_cnt];
@@ -324,6 +330,10 @@ remap_validate_yaml_filter_args(acl_filter_rule **rule_pp, const YAML::Node &nod
   if (node["src_ip_category"]) {
     auto errata = parse_src_ip_category(node["src_ip_category"].as<std::string>(), false);
     if (!errata.is_ok()) {
+      if (new_rule_flg) {
+        delete rule;
+        *rule_pp = nullptr;
+      }
       return errata;
     }
   }
@@ -331,6 +341,10 @@ remap_validate_yaml_filter_args(acl_filter_rule **rule_pp, const YAML::Node &nod
   if (node["src_ip_category_invert"]) {
     auto errata = parse_src_ip_category(node["src_ip_category_invert"].as<std::string>(), true);
     if (!errata.is_ok()) {
+      if (new_rule_flg) {
+        delete rule;
+        *rule_pp = nullptr;
+      }
       return errata;
     }
   }
@@ -339,10 +353,6 @@ remap_validate_yaml_filter_args(acl_filter_rule **rule_pp, const YAML::Node &nod
   auto parse_in_ip = [&](const std::string &in_ip, bool invert) -> swoc::Errata {
     if (rule->in_ip_cnt >= ACL_FILTER_MAX_IN_IP) {
       Dbg(dbg_ctl_url_rewrite, "[validate_filter_args] Too many \"in_ip=\" filters");
-      if (new_rule_flg) {
-        delete rule;
-        *rule_pp = nullptr;
-      }
       return swoc::Errata("Defined more than {} in_ip filters", ACL_FILTER_MAX_IN_IP);
     }
     src_ip_info_t *ipi = &rule->in_ip_array[rule->in_ip_cnt];
@@ -355,10 +365,6 @@ remap_validate_yaml_filter_args(acl_filter_rule **rule_pp, const YAML::Node &nod
       ipi->match_all_addresses = true;
     } else if (ats_ip_range_parse(arg, ipi->start, ipi->end) != 0) {
       Dbg(dbg_ctl_url_rewrite, "[validate_filter_args] Unable to parse IP value in %s", in_ip.c_str());
-      if (new_rule_flg) {
-        delete rule;
-        *rule_pp = nullptr;
-      }
       return swoc::Errata("Unable to parse IP value: {}", in_ip);
     }
     for (j = 0; j < rule->in_ip_cnt; j++) {
@@ -379,12 +385,20 @@ remap_validate_yaml_filter_args(acl_filter_rule **rule_pp, const YAML::Node &nod
       for (const auto &in_ip : node["in_ip"]) {
         auto errata = parse_in_ip(in_ip.as<std::string>(), false);
         if (!errata.is_ok()) {
+          if (new_rule_flg) {
+            delete rule;
+            *rule_pp = nullptr;
+          }
           return errata;
         }
       }
     } else {
       auto errata = parse_in_ip(node["in_ip"].as<std::string>(), false);
       if (!errata.is_ok()) {
+        if (new_rule_flg) {
+          delete rule;
+          *rule_pp = nullptr;
+        }
         return errata;
       }
     }
@@ -395,12 +409,20 @@ remap_validate_yaml_filter_args(acl_filter_rule **rule_pp, const YAML::Node &nod
       for (const auto &in_ip_invert : node["in_ip_invert"]) {
         auto errata = parse_in_ip(in_ip_invert.as<std::string>(), true);
         if (!errata.is_ok()) {
+          if (new_rule_flg) {
+            delete rule;
+            *rule_pp = nullptr;
+          }
           return errata;
         }
       }
     } else {
       auto errata = parse_in_ip(node["in_ip_invert"].as<std::string>(), true);
       if (!errata.is_ok()) {
+        if (new_rule_flg) {
+          delete rule;
+          *rule_pp = nullptr;
+        }
         return errata;
       }
     }
@@ -408,15 +430,6 @@ remap_validate_yaml_filter_args(acl_filter_rule **rule_pp, const YAML::Node &nod
 
   // Parse action
   if (node["action"]) {
-    if (action_flag) {
-      Dbg(dbg_ctl_url_rewrite, "Only one action: is allowed per remap ACL");
-      if (new_rule_flg) {
-        delete rule;
-        *rule_pp = nullptr;
-      }
-      return swoc::Errata("Only one action is allowed per remap ACL");
-    }
-    action_flag            = true;
     std::string action_str = node["action"].as<std::string>();
     if (behavior_policy == ACLBehaviorPolicy::ACL_BEHAVIOR_MODERN) {
       // With the new matching policy, we don't allow the legacy "allow" and
@@ -652,9 +665,9 @@ parse_yaml_define_directive(const YAML::Node &node, BUILD_TABLE_INFO *bti)
 
   // When iterating over a YAML map, each element is a key-value pair
   // We expect a single-entry map here
-  auto              it          = node.begin();
-  std::string       filter_name = it->first.as<std::string>();
-  const YAML::Node &filter_spec = it->second;
+  auto             it          = node.begin();
+  std::string      filter_name = it->first.as<std::string>();
+  const YAML::Node filter_spec = it->second;
 
   flg = ((rp = acl_filter_rule::find_byname(bti->rules_list, filter_name.c_str())) == nullptr) ? true : false;
   // coverity[alloc_arg]
@@ -1030,7 +1043,8 @@ parse_yaml_remap_rule(const YAML::Node &node, BUILD_TABLE_INFO *bti)
   if (node["plugins"] && (maptype == mapping_type::FORWARD_MAP || maptype == mapping_type::FORWARD_MAP_REFERER ||
                           maptype == mapping_type::FORWARD_MAP_WITH_RECV_PORT)) {
     if (!node["plugins"] || !node["plugins"].IsSequence()) {
-      return swoc::Errata("plugins must be a sequence");
+      errStr = "plugins must be a sequence";
+      goto MAP_ERROR;
     }
 
     for (const auto &plugin : node["plugins"]) {
@@ -1048,7 +1062,7 @@ parse_yaml_remap_rule(const YAML::Node &node, BUILD_TABLE_INFO *bti)
     goto MAP_ERROR;
   }
 
-  fromHost_lower_ptr = static_cast<char *>(ats_free_null(fromHost_lower_ptr));
+  ats_free_null(fromHost_lower_ptr);
 
   Dbg(dbg_ctl_remap_yaml, "Successfully added mapping rule");
   return {};
