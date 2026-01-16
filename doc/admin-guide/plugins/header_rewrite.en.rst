@@ -1533,6 +1533,11 @@ The URL part names which may be used for these conditions and actions are:
               syntax ``QUERY:<param_name>``. For example, ``%{CLIENT-URL:QUERY:p}``
               would return ``hrw`` for the URL above.
 
+              .. note::
+                 Query parameter names and values are matched as-is without URL
+                 decoding. For example, ``%{CLIENT-URL:QUERY:my%20param}`` matches
+                 the literal parameter name ``my%20param``, not ``my param``.
+
    URL        The complete URL.  ``Value`` = `https://docs.trafficserver.apache.org/...`
    ========== ======================================================================
 
