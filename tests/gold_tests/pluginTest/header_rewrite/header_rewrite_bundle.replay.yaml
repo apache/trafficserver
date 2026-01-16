@@ -754,12 +754,12 @@ sessions:
         - [ X-Match-2, { value: yes, as: equal } ]
         - [ X-Match, { as: absent } ]
 
-# Test 19: set-body with empty string
+# Test 19: Regex test - query parameter capture
 - transactions:
   - client-request:
       method: "GET"
       version: "1.1"
-      url: /from_10/
+      url: /from_9/?uid=123
       headers:
         fields:
         - [ Host, www.example.com ]
@@ -771,25 +771,20 @@ sessions:
       headers:
         fields:
         - [ Connection, close ]
-      content:
-        size: 31
-        data: "ATS should not serve this body"
 
     proxy-response:
       status: 200
       headers:
         fields:
-        - [ Cache-Control, { value: "no-store", as: equal } ]
-        - [ Content-Length, { value: "0", as: equal } ]
-      content:
-        size: 0
+        - [ X-Match-3, { value: "123", as: equal } ]
+        - [ X-Match-2, { as: absent } ]
 
-# Test 20: set-body with STATUS variable
+# Test 20: set-body with empty string
 - transactions:
   - client-request:
       method: "GET"
       version: "1.1"
-      url: /from_11/
+      url: /from_10/
       headers:
         fields:
         - [ Host, www.example.com ]
@@ -810,11 +805,41 @@ sessions:
       headers:
         fields:
         - [ Cache-Control, { value: "no-store", as: equal } ]
+        - [ Content-Length, { value: "0", as: equal } ]
+      content:
+        size: 0
+
+# Test 21: set-body with STATUS variable
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_11/
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ uuid, 27 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+      content:
+        size: 31
+        data: "ATS should not serve this body"
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Cache-Control, { value: "no-store", as: equal } ]
         - [ Content-Length, { value: "3", as: equal } ]
       content:
         data: "200"
 
-# Test 21: Nested if/elif/else - X-Foo=foo + X-Bar=bar path
+# Test 22: Nested if/elif/else - X-Foo=foo + X-Bar=bar path
 - transactions:
   - client-request:
       method: "GET"
@@ -825,7 +850,7 @@ sessions:
         - [ Host, www.example.com ]
         - [ X-Foo, "foo" ]
         - [ X-Bar, "bar" ]
-        - [ uuid, 27 ]
+        - [ uuid, 28 ]
 
     server-response:
       status: 200
@@ -845,7 +870,7 @@ sessions:
         - [ X-Fie-Anywhere, { as: absent } ]
         - [ X-When-200-After, { value: "Yes", as: equal } ]
 
-# Test 22: Nested if/elif/else - X-Foo=foo + X-Fie=fie path
+# Test 23: Nested if/elif/else - X-Foo=foo + X-Fie=fie path
 - transactions:
   - client-request:
       method: "GET"
@@ -856,7 +881,7 @@ sessions:
         - [ Host, www.example.com ]
         - [ X-Foo, "foo" ]
         - [ X-Fie, "fie" ]
-        - [ uuid, 28 ]
+        - [ uuid, 29 ]
 
     server-response:
       status: 200
@@ -876,7 +901,7 @@ sessions:
         - [ X-Fie-Anywhere, { value: "Yes", as: equal } ]
         - [ X-When-200-After, { value: "Yes", as: equal } ]
 
-# Test 23: Nested if/elif/else - X-Foo=maybe path
+# Test 24: Nested if/elif/else - X-Foo=maybe path
 - transactions:
   - client-request:
       method: "GET"
@@ -886,7 +911,7 @@ sessions:
         fields:
         - [ Host, www.example.com ]
         - [ X-Foo, "maybe" ]
-        - [ uuid, 29 ]
+        - [ uuid, 30 ]
 
     server-response:
       status: 200
@@ -906,7 +931,7 @@ sessions:
         - [ X-Fie-Anywhere, { as: absent } ]
         - [ X-When-200-After, { value: "Yes", as: equal } ]
 
-# Test 24: Nested if/elif/else - X-Foo=definitely path
+# Test 25: Nested if/elif/else - X-Foo=definitely path
 - transactions:
   - client-request:
       method: "GET"
@@ -916,7 +941,7 @@ sessions:
         fields:
         - [ Host, www.example.com ]
         - [ X-Foo, "definitely" ]
-        - [ uuid, 30 ]
+        - [ uuid, 31 ]
 
     server-response:
       status: 200
@@ -936,7 +961,7 @@ sessions:
         - [ X-Fie-Anywhere, { as: absent } ]
         - [ X-When-200-After, { value: "Yes", as: equal } ]
 
-# Test 25: Nested if/elif/else - else path (no X-Foo)
+# Test 26: Nested if/elif/else - else path (no X-Foo)
 - transactions:
   - client-request:
       method: "GET"
@@ -945,7 +970,7 @@ sessions:
       headers:
         fields:
         - [ Host, www.example.com ]
-        - [ uuid, 31 ]
+        - [ uuid, 32 ]
 
     server-response:
       status: 200
@@ -965,7 +990,7 @@ sessions:
         - [ X-Fie-Anywhere, { as: absent } ]
         - [ X-When-200-After, { value: "Yes", as: equal } ]
 
-# Test 26: Nested if/elif/else - else path with X-Fie
+# Test 27: Nested if/elif/else - else path with X-Fie
 - transactions:
   - client-request:
       method: "GET"
@@ -975,7 +1000,7 @@ sessions:
         fields:
         - [ Host, www.example.com ]
         - [ X-Fie, "fie" ]
-        - [ uuid, 32 ]
+        - [ uuid, 33 ]
 
     server-response:
       status: 200
