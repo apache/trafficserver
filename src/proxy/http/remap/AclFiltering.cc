@@ -97,6 +97,12 @@ acl_filter_rule::add_argv(int _argc, char *_argv[])
 }
 
 void
+acl_filter_rule::add_node(const YAML::Node &_node)
+{
+  node = _node;
+}
+
+void
 acl_filter_rule::name(const char *_name)
 {
   filter_name = static_cast<char *>(ats_free_null(filter_name));

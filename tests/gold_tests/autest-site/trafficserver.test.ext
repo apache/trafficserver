@@ -295,6 +295,10 @@ def MakeATSProcess(
     tmpname = os.path.join(config_dir, fname)
     p.Disk.File(tmpname, id=make_id(fname), typename="ats:config")
 
+    fname = "remap.yaml"
+    tmpname = os.path.join(config_dir, fname)
+    p.Disk.File(tmpname, id=make_id(fname), typename="ats:config")
+
     fname = "socks.config"
     tmpname = os.path.join(config_dir, fname)
     p.Disk.File(tmpname, id=make_id(fname), typename="ats:config")
