@@ -6,7 +6,7 @@ VARS {
   Big16: int16;
 }
 
-TXN_START {
+REMAP {
   # Plugin controls
   http.cntl.TXN_DEBUG = true;
   http.cntl.LOGGING = true;

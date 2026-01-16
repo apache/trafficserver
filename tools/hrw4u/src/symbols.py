@@ -140,8 +140,8 @@ class SymbolResolver(SymbolResolverBase):
 
             if params := self._lookup_condition_cached(name):
                 tag = params.target if params else None
-                restricted = params.sections if params else None
-                self.validate_section_access(name, section, restricted)
+                allowed_sections = params.sections if params else None
+                self.validate_section_access(name, section, allowed_sections)
                 # For exact matches, default_expr is determined by whether it's a prefix pattern
                 return tag, False
 
@@ -150,9 +150,9 @@ class SymbolResolver(SymbolResolverBase):
             for prefix, params in prefix_matches:
                 tag = params.target if params else None
                 validator = params.validate if params else None
-                restricted = params.sections if params else None
+                allowed_sections = params.sections if params else None
 
-                self.validate_section_access(name, section, restricted)
+                self.validate_section_access(name, section, allowed_sections)
                 suffix = name[len(prefix):]
                 suffix_norm = suffix.upper() if (params and params.upper) else suffix
                 if validator:
@@ -190,9 +190,11 @@ class SymbolResolver(SymbolResolverBase):
                 error.add_symbol_suggestion(suggestions)
             raise error
 
-    def resolve_statement_func(self, func_name: str, args: list[str]) -> str:
-        with self.debug_context("resolve_statement_func", func_name, args):
+    def resolve_statement_func(self, func_name: str, args: list[str], section: SectionType | None = None) -> str:
+        with self.debug_context("resolve_statement_func", func_name, args, section):
             if params := self._lookup_statement_function_cached(func_name):
+                allowed_sections = params.sections if params else None
+                self.validate_section_access(func_name, section, allowed_sections)
                 command = params.target
                 validator = params.validate
                 if validator:

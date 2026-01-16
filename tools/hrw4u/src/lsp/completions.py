@@ -100,7 +100,7 @@ class CompletionBuilder:
             cls, label: str, commands: str | list[str] | tuple[str, ...], sections: set[SectionType] | None,
             current_section: SectionType | None, replacement_range: dict[str, Any]) -> CompletionItem | None:
         """Create completion item for operators."""
-        if sections and current_section and current_section in sections:
+        if sections and current_section and current_section not in sections:
             return None
 
         cmd_str = commands if isinstance(commands, str) else " / ".join(commands)
@@ -108,7 +108,7 @@ class CompletionBuilder:
 
         if sections:
             section_names = [s.value for s in sections]
-            detail += f" (Restricted in: {', '.join(section_names)})"
+            detail += f" (Available in: {', '.join(section_names)})"
 
         documentation = cls.create_markdown_doc(f"**{label}** - HRW4U Operator\n\nMaps to: `{cmd_str}`")
 
@@ -127,14 +127,14 @@ class CompletionBuilder:
             cls, label: str, tag: str, sections: set[SectionType] | None, current_section: SectionType | None,
             replacement_range: dict[str, Any]) -> CompletionItem | None:
         """Create completion item for conditions."""
-        if sections and current_section and current_section in sections:
+        if sections and current_section and current_section not in sections:
             return None
 
         detail = f"Condition: {tag}"
 
         if sections:
             section_names = [s.value for s in sections]
-            detail += f" (Restricted in: {', '.join(section_names)})"
+            detail += f" (Available in: {', '.join(section_names)})"
 
         documentation = cls.create_markdown_doc(f"**{label}** - HRW4U Condition\n\nMaps to: `{tag}`")
 

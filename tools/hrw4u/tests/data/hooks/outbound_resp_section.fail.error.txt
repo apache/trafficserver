@@ -1,0 +1,3 @@
+tests/data/hooks/outbound_resp_section.fail.input.txt:2:4: error: symbol error in {}: outbound.resp.X-Origin is not available in the REMAP section
+   2 |     inbound.req.X-Test = "resp={outbound.resp.X-Origin}";
+     |     ^

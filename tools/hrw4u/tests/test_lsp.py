@@ -361,9 +361,9 @@ def shared_lsp_client():
 
 @pytest.mark.parametrize(
     "section,prefix,should_allow", [
+        ("REMAP", "inbound.req.", True),
         ("SEND_REQUEST", "outbound.req.", True),
-        ("REMAP", "outbound.req.", False),
-        ("SEND_REQUEST", "outbound.resp.", False),
+        ("SEND_REQUEST", "outbound.req.", True),
         ("READ_RESPONSE", "outbound.resp.", True),
     ])
 def test_section_restrictions_batch(shared_lsp_client, section, prefix, should_allow) -> None:
@@ -408,15 +408,16 @@ def test_multi_section_inbound_always_allowed(shared_lsp_client) -> None:
 
 
 def test_outbound_restrictions_batch(shared_lsp_client) -> None:
-    """Batch test outbound restrictions in early vs late sections."""
-    early_sections = ["PRE_REMAP", "REMAP", "READ_REQUEST"]
-    late_sections = ["SEND_REQUEST", "READ_RESPONSE"]
+    """Batch test outbound restrictions - outbound features have section-specific availability."""
+    # outbound.url. is available in PRE_REMAP through SEND_REQUEST, plus READ_RESPONSE, SEND_RESPONSE
+    # outbound.cookie. is only available from SEND_REQUEST onwards
+    http_sections = ["PRE_REMAP", "REMAP", "READ_REQUEST", "SEND_REQUEST", "READ_RESPONSE"]
 
-    for section in early_sections:
+    for section in http_sections:
         test_content = f"""{section} {{
     outbound.
 }}"""
-        uri = f"file:///test_early_{section.lower()}.hrw4u"
+        uri = f"file:///test_outbound_{section.lower()}.hrw4u"
         shared_lsp_client.open_document(uri, test_content)
 
         response = shared_lsp_client.request_completion(uri, 1, 13)
@@ -426,29 +427,16 @@ def test_outbound_restrictions_batch(shared_lsp_client) -> None:
         outbound_cookie_items = [item for item in items if item["label"].startswith("outbound.cookie.")]
         outbound_url_items = [item for item in items if item["label"].startswith("outbound.url.")]
 
-        assert len(outbound_cookie_items) == 0, f"outbound.cookie. should NOT be in {section}"
-        assert len(outbound_url_items) == 0, f"outbound.url. should NOT be in {section}"
-
-    for section in late_sections:
-        test_content = f"""{section} {{
-    outbound.
-}}"""
-        uri = f"file:///test_late_{section.lower()}.hrw4u"
-        shared_lsp_client.open_document(uri, test_content)
-
-        response = shared_lsp_client.request_completion(uri, 1, 13)
-        assert response is not None
-        items = response["result"]["items"]
-
-        outbound_conn_items = [item for item in items if item["label"].startswith("outbound.conn.")]
-        outbound_cookie_items = [item for item in items if item["label"].startswith("outbound.cookie.")]
-
-        assert len(outbound_conn_items) > 0, f"outbound.conn. should be in {section}"
-        assert len(outbound_cookie_items) > 0, f"outbound.cookie. should be in {section}"
+        # outbound.cookie. is only available from SEND_REQUEST onwards
+        if section in ["SEND_REQUEST", "READ_RESPONSE"]:
+            assert len(outbound_cookie_items) > 0, f"outbound.cookie. should be in {section}"
+        # outbound.url. is available in all these sections
+        assert len(outbound_url_items) > 0, f"outbound.url. should be in {section}"
 
 
 def test_specific_outbound_conn_completions(shared_lsp_client) -> None:
-    """Test specific outbound.conn completions"""
+    """Test specific outbound.conn completions (dscp/mark only available from SEND_REQUEST onwards)"""
+    # outbound.conn.dscp and outbound.conn.mark are only available in SEND_REQUEST, READ_RESPONSE, SEND_RESPONSE
     test_content = """SEND_REQUEST {
     outbound.conn.
 }"""

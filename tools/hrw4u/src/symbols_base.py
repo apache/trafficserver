@@ -57,8 +57,8 @@ class SymbolResolverBase:
     def _reverse_resolution_map(self) -> dict[str, Any]:
         return tables.REVERSE_RESOLUTION_MAP
 
-    def validate_section_access(self, name: str, section: SectionType | None, restricted: set[SectionType] | None) -> None:
-        if section and restricted and section in restricted:
+    def validate_section_access(self, name: str, section: SectionType | None, allowed_sections: set[SectionType] | None) -> None:
+        if section and allowed_sections and section not in allowed_sections:
             raise SymbolResolutionError(name, f"{name} is not available in the {section.value} section")
 
     @lru_cache(maxsize=256)

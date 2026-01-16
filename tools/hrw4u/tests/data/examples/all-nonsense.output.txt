@@ -1,7 +1,7 @@
 # Boolean and integer state you can flip/use across sections
 
 
-cond %{TXN_START_HOOK} [AND]
+cond %{REMAP_PSEUDO_HOOK} [AND]
 # Plugin controls
     set-http-cntl TXN_DEBUG true
     set-http-cntl LOGGING true
