@@ -324,6 +324,7 @@ OperatorSetDestination::exec(const Resources &res) const
 
         const_cast<Resources &>(res).changed_url = true;
         TSUrlHttpQuerySet(bufp, url_m_loc, value.c_str(), value.size());
+        res.reset_query_cache();
         Dbg(pi_dbg_ctl, "OperatorSetDestination::exec() invoked with QUERY: %s", value.c_str());
       }
       break;
@@ -348,6 +349,7 @@ OperatorSetDestination::exec(const Resources &res) const
         if (TSUrlCreate(bufp, &new_url_loc) == TS_SUCCESS && TSUrlParse(bufp, new_url_loc, &start, end) == TS_PARSE_DONE &&
             TSHttpHdrUrlSet(bufp, res.hdr_loc, new_url_loc) == TS_SUCCESS) {
           const_cast<Resources &>(res).changed_url = true;
+          res.reset_query_cache();
           Dbg(pi_dbg_ctl, "Set destination URL to %s", value.c_str());
         } else {
           Dbg(pi_dbg_ctl, "Failed to set URL %s", value.c_str());
@@ -461,6 +463,7 @@ OperatorRMDestination::exec(const Resources &res) const
       }
       const_cast<Resources &>(res).changed_url = true;
       TSUrlHttpQuerySet(bufp, url_m_loc, value.c_str(), value.size());
+      res.reset_query_cache();
       break;
     case URL_QUAL_PORT:
       const_cast<Resources &>(res).changed_url = true;
