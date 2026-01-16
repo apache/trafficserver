@@ -852,6 +852,7 @@ public:
       //      memset((void *)&host_db_info, 0, sizeof(host_db_info));
     }
 
+    // coverity[exn_spec_violation] - destroy() only frees memory and does ref counting
     ~State() { destroy(); }
 
     void
