@@ -287,6 +287,7 @@ SCENARIO("Testing NextHopRoundRobin class, using policy 'rr-ip'", "[NextHopRound
         build_request(10017, &sm, &sa2, "rabbit.net", nullptr);
         result->reset();
         strategy->findNextHop(txnp);
+        REQUIRE(result->hostname != nullptr);
         CHECK(strcmp(result->hostname, "p3.foo.com") == 0);
 
         // call and test parentExists(), this call should not affect
@@ -297,6 +298,7 @@ SCENARIO("Testing NextHopRoundRobin class, using policy 'rr-ip'", "[NextHopRound
         build_request(10018, &sm, &sa2, "rabbit.net", nullptr);
         result->reset();
         strategy->findNextHop(txnp);
+        REQUIRE(result->hostname != nullptr);
         CHECK(strcmp(result->hostname, "p3.foo.com") == 0);
 
         // call and test parentExists(), this call should not affect
