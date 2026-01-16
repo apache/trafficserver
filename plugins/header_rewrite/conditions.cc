@@ -30,6 +30,8 @@
 #include <array>
 #include <atomic>
 
+#include "swoc/TextView.h"
+
 #include "ts/ts.h"
 
 #include "conditions.h"
@@ -280,7 +282,27 @@ ConditionUrl::set_qualifier(const std::string &q)
   Condition::set_qualifier(q);
 
   Dbg(pi_dbg_ctl, "\tParsing %%{URL:%s}", q.c_str());
-  _url_qual = parse_url_qualifier(q);
+
+  std::string::size_type pos = q.find(':');
+
+  if (pos != std::string::npos) {
+    std::string qual_part = q.substr(0, pos);
+    std::string sub_qual  = q.substr(pos + 1);
+
+    _url_qual = parse_url_qualifier(qual_part);
+
+    if (_url_qual == URL_QUAL_QUERY) {
+      if (!sub_qual.empty()) {
+        _query_param = sub_qual;
+        Dbg(pi_dbg_ctl, "\tQuery parameter sub-key: %s", _query_param.c_str());
+      }
+    } else {
+      TSError("[%s] Sub-qualifier syntax (component:subkey) is only supported for QUERY component, got: %s", PLUGIN_NAME,
+              qual_part.c_str());
+    }
+  } else {
+    _url_qual = parse_url_qualifier(q);
+  }
 }
 
 void
@@ -347,8 +369,19 @@ ConditionUrl::append_value(std::string &s, const Resources &res)
     break;
   case URL_QUAL_QUERY:
     q_str = TSUrlHttpQueryGet(bufp, url, &i);
-    s.append(q_str, i);
-    Dbg(pi_dbg_ctl, "   Query parameters to match is: %.*s", i, q_str);
+    if (_query_param.empty()) {
+      s.append(q_str, i);
+      Dbg(pi_dbg_ctl, "   Query parameters to match is: %.*s", i, q_str);
+    } else {
+      swoc::TextView value = res.get_query_param(_query_param, q_str, i);
+
+      if (value.data() != nullptr && value.size() > 0) {
+        s.append(value.data(), value.size());
+        Dbg(pi_dbg_ctl, "   Query parameter %s value is: %.*s", _query_param.c_str(), static_cast<int>(value.size()), value.data());
+      } else {
+        Dbg(pi_dbg_ctl, "   Query parameter %s is empty or not present", _query_param.c_str());
+      }
+    }
     break;
   case URL_QUAL_SCHEME:
     q_str = TSUrlSchemeGet(bufp, url, &i);
