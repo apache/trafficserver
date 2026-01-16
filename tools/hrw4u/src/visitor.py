@@ -162,7 +162,8 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                     return replacement
                 if m.group("var"):
                     var_name = m.group("var").strip()
-                    replacement, _ = self._cached_symbol_resolution(var_name, self.current_section.value)
+                    # Use resolve_condition directly to properly validate section restrictions
+                    replacement, _ = self.symbol_resolver.resolve_condition(var_name, self.current_section)
                     self.debug_log(f"substitute: {{{var_name}}} -> {replacement}")
                     return replacement
                 raise SymbolResolutionError(m.group(0), "Unrecognized substitution format")

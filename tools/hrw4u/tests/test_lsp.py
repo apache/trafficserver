@@ -408,8 +408,9 @@ def test_multi_section_inbound_always_allowed(shared_lsp_client) -> None:
 
 
 def test_outbound_restrictions_batch(shared_lsp_client) -> None:
-    """Batch test outbound restrictions - outbound features are available in HTTP sections."""
-    # outbound.cookie. and outbound.url. are available in all HTTP sections
+    """Batch test outbound restrictions - outbound features have section-specific availability."""
+    # outbound.url. is available in PRE_REMAP through SEND_REQUEST, plus READ_RESPONSE, SEND_RESPONSE
+    # outbound.cookie. is only available from SEND_REQUEST onwards
     http_sections = ["PRE_REMAP", "REMAP", "READ_REQUEST", "SEND_REQUEST", "READ_RESPONSE"]
 
     for section in http_sections:
@@ -426,16 +427,17 @@ def test_outbound_restrictions_batch(shared_lsp_client) -> None:
         outbound_cookie_items = [item for item in items if item["label"].startswith("outbound.cookie.")]
         outbound_url_items = [item for item in items if item["label"].startswith("outbound.url.")]
 
-        assert len(outbound_cookie_items) > 0, f"outbound.cookie. should be in {section}"
-        # outbound.url. is available in PRE_REMAP, REMAP, READ_REQUEST, SEND_REQUEST (not READ_RESPONSE)
-        if section != "READ_RESPONSE":
-            assert len(outbound_url_items) > 0, f"outbound.url. should be in {section}"
+        # outbound.cookie. is only available from SEND_REQUEST onwards
+        if section in ["SEND_REQUEST", "READ_RESPONSE"]:
+            assert len(outbound_cookie_items) > 0, f"outbound.cookie. should be in {section}"
+        # outbound.url. is available in all these sections
+        assert len(outbound_url_items) > 0, f"outbound.url. should be in {section}"
 
 
 def test_specific_outbound_conn_completions(shared_lsp_client) -> None:
-    """Test specific outbound.conn completions (dscp/mark only available in early hooks)"""
-    # outbound.conn.dscp and outbound.conn.mark are only available in PRE_REMAP, REMAP, READ_REQUEST
-    test_content = """READ_REQUEST {
+    """Test specific outbound.conn completions (dscp/mark only available from SEND_REQUEST onwards)"""
+    # outbound.conn.dscp and outbound.conn.mark are only available in SEND_REQUEST, READ_RESPONSE, SEND_RESPONSE
+    test_content = """SEND_REQUEST {
     outbound.conn.
 }"""
 
