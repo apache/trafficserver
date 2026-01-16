@@ -805,7 +805,9 @@ ts::HttpTxn::outbound_remote_addr() const
 Errata
 ts::HttpTxn::cache_key_assign(TextView const &key)
 {
-  TSCacheUrlSet(_txn, key.data(), key.size());
+  if (TS_ERROR == TSCacheUrlSet(_txn, key.data(), key.size())) {
+    return Errata(S_ERROR, R"(Failed to set cache key to "{}".)", key);
+  }
   return {};
 }
 
