@@ -148,6 +148,8 @@ crashlog_exec_pgm(FILE *fp, pid_t pid)
 int
 main(int /* argc ATS_UNUSED */, const char **argv)
 {
+  // coverity[fun_call_w_exception] - ats_as_c_str checks optional before .value(),
+  // and callers guard with if(opt) before calling ats_as_c_str(opt)
   FILE           *fp;
   char           *logname;
   crashlog_target target;
