@@ -891,6 +891,17 @@ HttpTransact::PostInactiveTimeoutResponse(State *s)
 }
 
 void
+HttpTransact::PostBodyTooLarge(State *s)
+{
+  TxnDbg(dbg_ctl_http_trans, "post body too large during request buffering");
+  bootstrap_state_variables_from_request(s, &s->hdr_info.client_request);
+  Metrics::Counter::increment(http_rsb.post_body_too_large);
+  build_error_response(s, HTTPStatus::REQUEST_ENTITY_TOO_LARGE, "Request Entity Too Large", "request#entity_too_large");
+  s->squid_codes.log_code = SquidLogCode::ERR_POST_ENTITY_TOO_LARGE;
+  TRANSACT_RETURN(StateMachineAction_t::SEND_ERROR_CACHE_NOOP, nullptr);
+}
+
+void
 HttpTransact::Forbidden(State *s)
 {
   TxnDbg(dbg_ctl_http_trans, "IpAllow marked request forbidden");
@@ -1573,9 +1584,22 @@ HttpTransact::HandleRequest(State *s)
         }
       }
     }
+    // Check if request buffering is enabled and we have a request body
     if (s->txn_conf->request_buffer_enabled && s->http_config_param->post_copy_size > 0 &&
         s->state_machine->get_ua_txn()->has_request_body(s->hdr_info.request_content_length,
                                                          s->client_info.transfer_encoding == TransferEncoding_t::CHUNKED)) {
+      // For requests with known Content-Length, check against post_copy_size upfront
+      // This avoids entering request buffering only to fail mid-stream
+      if (s->hdr_info.request_content_length > 0 && s->hdr_info.request_content_length > s->http_config_param->post_copy_size) {
+        TxnDbg(dbg_ctl_http_trans, "Request body %" PRId64 " exceeds post_copy_size %" PRId64 ", returning 413",
+               s->hdr_info.request_content_length, s->http_config_param->post_copy_size);
+        Metrics::Counter::increment(http_rsb.post_body_too_large);
+        bootstrap_state_variables_from_request(s, &s->hdr_info.client_request);
+        build_error_response(s, HTTPStatus::REQUEST_ENTITY_TOO_LARGE, "Request Entity Too Large", "request#entity_too_large");
+        s->squid_codes.log_code = SquidLogCode::ERR_POST_ENTITY_TOO_LARGE;
+        TRANSACT_RETURN(StateMachineAction_t::SEND_ERROR_CACHE_NOOP, nullptr);
+      }
+      // For chunked requests or requests within limit, proceed with buffering
       TRANSACT_RETURN(StateMachineAction_t::WAIT_FOR_FULL_BODY, nullptr);
     }
   }
