@@ -448,6 +448,7 @@ HttpSM::attach_client_session(ProxyTransaction *txn)
 
   ats_ip_copy(&t_state.client_info.src_addr, netvc->get_remote_addr());
   ats_ip_copy(&t_state.client_info.dst_addr, netvc->get_local_addr());
+  ats_ip_copy(&t_state.effective_client_addr, netvc->get_effective_remote_addr());
   t_state.client_info.is_transparent = netvc->get_is_transparent();
   t_state.client_info.port_attribute = static_cast<HttpProxyPort::TransportType>(netvc->attributes);
 
