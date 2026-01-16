@@ -459,6 +459,7 @@ public:
 int
 main(int argc, char *argv[])
 {
+  // coverity[fun_call_w_exception] - called functions may throw but this is a test program
   int i;
 
   // Read the configuration file
