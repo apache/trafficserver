@@ -97,6 +97,7 @@ initialize_records()
   ts::Metrics::StaticString::createString("proxy.process.version.server.build_date", version.build_date());
   ts::Metrics::StaticString::createString("proxy.process.version.server.build_machine", version.build_machine());
   ts::Metrics::StaticString::createString("proxy.process.version.server.build_person", version.build_person());
+  ts::Metrics::StaticString::finalize();
 }
 
 /*-------------------------------------------------------------------------

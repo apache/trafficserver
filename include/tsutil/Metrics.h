@@ -536,11 +536,20 @@ public:
 
   }; // class Counter
 
+  /**
+   * Static string metrics storage.
+   *
+   * Thread-safety note: No mutex is needed because all strings are created during
+   * single-threaded initialization (before worker threads start). After startup,
+   * the collection is read-only and can be safely accessed from any thread.
+   *
+   * Call finalize() after all strings are created to catch accidental late writes.
+   */
   class StaticString
   {
   public:
-    using StringStorage = std::unordered_map<std::string, std::string>;
-    using iterator      = StringStorage::iterator;
+    using StringStorage  = std::unordered_map<std::string, std::string>;
+    using const_iterator = StringStorage::const_iterator;
 
     static void
     createString(const std::string &name, const std::string_view value)
@@ -549,26 +558,37 @@ public:
       return instance._createString(name, value);
     }
 
+    /**
+     * Mark the string collection as finalized (read-only).
+     * Must be called after all strings are created during initialization.
+     * In debug builds, subsequent createString() calls will assert.
+     */
+    static void
+    finalize()
+    {
+      instance()._finalized = true;
+    }
+
     static StaticString &instance();
 
-    iterator
-    begin()
+    const_iterator
+    begin() const
     {
       return _strings.begin();
     }
-    iterator
-    end()
+    const_iterator
+    end() const
     {
       return _strings.end();
-    };
+    }
 
-    std::optional<std::string_view> lookup(const std::string &name);
+    std::optional<std::string_view> lookup(const std::string &name) const;
 
   private:
     void _createString(const std::string &name, const std::string_view value);
 
-    StringStorage      _strings;
-    mutable std::mutex _mutex;
+    StringStorage _strings;
+    bool          _finalized{false};
   };
 
   /**
