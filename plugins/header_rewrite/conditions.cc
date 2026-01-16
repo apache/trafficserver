@@ -297,7 +297,8 @@ ConditionUrl::set_qualifier(const std::string &q)
         Dbg(pi_dbg_ctl, "\tQuery parameter sub-key: %s", _query_param.c_str());
       }
     } else {
-      TSError("[%s] Sub-qualifier not supported for URL component: %s", PLUGIN_NAME, qual_part.c_str());
+      TSError("[%s] Sub-qualifier syntax (component:subkey) is only supported for QUERY component, got: %s", PLUGIN_NAME,
+              qual_part.c_str());
     }
   } else {
     _url_qual = parse_url_qualifier(q);
@@ -374,8 +375,12 @@ ConditionUrl::append_value(std::string &s, const Resources &res)
     } else {
       swoc::TextView value = res.get_query_param(_query_param, q_str, i);
 
-      s.append(value.data(), value.size());
-      Dbg(pi_dbg_ctl, "   Query parameter %s value is: %.*s", _query_param.c_str(), static_cast<int>(value.size()), value.data());
+      if (value.data() != nullptr && value.size() > 0) {
+        s.append(value.data(), value.size());
+        Dbg(pi_dbg_ctl, "   Query parameter %s value is: %.*s", _query_param.c_str(), static_cast<int>(value.size()), value.data());
+      } else {
+        Dbg(pi_dbg_ctl, "   Query parameter %s is empty or not present", _query_param.c_str());
+      }
     }
     break;
   case URL_QUAL_SCHEME:

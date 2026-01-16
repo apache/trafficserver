@@ -185,6 +185,8 @@ Resources::destroy()
 swoc::TextView
 Resources::get_query_param(const std::string &name, const char *query_str, int query_len) const
 {
+  // Note: Query parameter names and values are matched as-is without URL decoding.
+  // For example, searching for "my%20param" matches the literal string, not "my param".
   if (!_extended_info.query_parsed) {
     if (query_str && query_len > 0) {
       swoc::TextView query_view(query_str, query_len);
@@ -195,6 +197,7 @@ Resources::get_query_param(const std::string &name, const char *query_str, int q
         swoc::TextView param_value = param;
 
         if (!param_name.empty()) {
+          // We only allow caching / using the first instance of a query param
           _extended_info.query_params[param_name] = param_value;
         }
       }
