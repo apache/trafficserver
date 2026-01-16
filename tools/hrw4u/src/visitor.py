@@ -340,7 +340,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                     subst_args = [
                         self._substitute_strings(arg, ctx) if arg.startswith('"') and arg.endswith('"') else arg for arg in args
                     ]
-                    symbol = self.symbol_resolver.resolve_statement_func(func, subst_args)
+                    symbol = self.symbol_resolver.resolve_statement_func(func, subst_args, self.current_section)
                     self.emit_statement(symbol)
                     return
 
