@@ -833,6 +833,7 @@ Cmp_Rxp::expr_visitor::operator()(std::monostate)
 Rv<Comparison::Handle>
 Cmp_Rxp::expr_visitor::operator()(Expr::Direct &d)
 {
+  // coverity[use_after_move] - intentional: visitor consumes the variant alternative
   return Handle(new Cmp_RxpSingle(Expr{std::move(d)}, _rxp_opt));
 }
 
