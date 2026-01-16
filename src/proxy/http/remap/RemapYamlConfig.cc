@@ -430,6 +430,14 @@ remap_validate_yaml_filter_args(acl_filter_rule **rule_pp, const YAML::Node &nod
 
   // Parse action
   if (node["action"]) {
+    if (node["action"].IsSequence()) {
+      Dbg(dbg_ctl_url_rewrite, "[validate_filter_args] Only one action is allowed per remap ACL");
+      if (new_rule_flg) {
+        delete rule;
+        *rule_pp = nullptr;
+      }
+      return swoc::Errata("Only one action is allowed per remap ACL");
+    }
     std::string action_str = node["action"].as<std::string>();
     if (behavior_policy == ACLBehaviorPolicy::ACL_BEHAVIOR_MODERN) {
       // With the new matching policy, we don't allow the legacy "allow" and
