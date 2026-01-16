@@ -773,6 +773,7 @@ TEST_CASE("ProxyProtocol Rule of 5", "[ProxyProtocol]")
     std::string_view copy_tlv_data("\x02\x00\x04copy", 7);
     copy.set_additional_data(copy_tlv_data);
 
+    // coverity[copy_instead_of_move] - intentionally testing copy assignment
     copy = original;
 
     // After assignment, copy should have original's data
