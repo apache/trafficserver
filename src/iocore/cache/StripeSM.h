@@ -101,14 +101,15 @@ public:
 
   int recover_data();
 
-  int open_write(CacheVC *cont, int allow_if_writers, int max_writers);
-  int open_write_lock(CacheVC *cont, int allow_if_writers, int max_writers);
-  int close_write(CacheVC *cont);
-  int begin_read(CacheVC *cont) const;
-  // unused read-write interlock code
-  // currently http handles a write-lock failure by retrying the read
+  // OpenDir API
+  int           open_write(CacheVC *cont, int allow_if_writers, int max_writers);
+  int           open_write_lock(CacheVC *cont, int allow_if_writers, int max_writers);
+  int           close_write(CacheVC *cont);
   OpenDirEntry *open_read(const CryptoHash *key) const;
-  int           close_read(CacheVC *cont) const;
+
+  // PreservationTable API
+  int begin_read(CacheVC *cont) const;
+  int close_read(CacheVC *cont) const;
 
   int clear_dir_aio();
   int clear_dir();
