@@ -1442,16 +1442,7 @@ LogAccess::marshal_plugin_identity_tag(char *buf)
 int
 LogAccess::marshal_client_host_ip(char *buf)
 {
-  if (m_http_sm) {
-    auto txn = m_http_sm->get_ua_txn();
-    if (txn) {
-      sockaddr const *addr = txn->get_client_addr();
-      if (addr && ats_is_ip(addr)) {
-        return marshal_ip(buf, addr);
-      }
-    }
-  }
-  return INK_MIN_ALIGN;
+  return marshal_ip(buf, &m_http_sm->t_state.effective_client_addr.sa);
 }
 
 int
