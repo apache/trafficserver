@@ -31,11 +31,13 @@
 #include <openssl/ssl.h>
 
 #include <arpa/inet.h>
+#include <getopt.h>
 #include <netinet/in.h>
 
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
+#include <cstring>
 #include <memory>
 #include <string>
 #include <string_view>
@@ -79,7 +81,36 @@ constexpr int          SSL_SUCCESS{1};
 
 DbgCtl dbg_ctl{PLUGIN_NAME};
 
+int global_preserve_enabled{0};
+
 } // end anonymous namespace
+
+static bool
+read_config_option(int argc, char const *argv[], int &preserve)
+{
+  const struct option longopts[] = {
+    {"preserve", no_argument, &preserve, 1},
+    {nullptr,    0,           nullptr,   0}
+  };
+
+  optind = 0;
+  int opt{0};
+  while ((opt = getopt_long(argc, const_cast<char *const *>(argv), "", longopts, nullptr)) >= 0) {
+    switch (opt) {
+    case '?':
+      Dbg(dbg_ctl, "Unrecognized command argument.");
+    case 0:
+    case -1:
+      break;
+    default:
+      Dbg(dbg_ctl, "Unexpected options error.");
+      return false;
+    }
+  }
+
+  Dbg(dbg_ctl, "JA4 preserve is %s", (preserve == 1) ? "enabled" : "disabled");
+  return true;
+}
 
 static int *
 get_user_arg_index()
@@ -112,10 +143,14 @@ make_word(unsigned char lowbyte, unsigned char highbyte)
 }
 
 void
-TSPluginInit(int /* argc ATS_UNUSED */, char const ** /* argv ATS_UNUSED */)
+TSPluginInit(int argc, char const **argv)
 {
   if (!register_plugin()) {
     TSError("[%s] Failed to register.", PLUGIN_NAME);
+    return;
+  }
+  if (!read_config_option(argc, argv, global_preserve_enabled)) {
+    TSError("[%s] Failed to parse options.", PLUGIN_NAME);
     return;
   }
   reserve_user_arg();
@@ -334,12 +369,36 @@ handle_read_request_hdr(TSCont cont, TSEvent event, void *edata)
   return TS_SUCCESS;
 }
 
+// Check if a header field exists in the request.
+static bool
+header_exists(TSMBuffer bufp, TSMLoc hdr_loc, char const *field, int field_len)
+{
+  TSMLoc loc = TSMimeHdrFieldFind(bufp, hdr_loc, field, field_len);
+  if (loc != TS_NULL_MLOC) {
+    TSHandleMLocRelease(bufp, hdr_loc, loc);
+    return true;
+  }
+  return false;
+}
+
 void
 append_JA4_headers(TSCont /* cont ATS_UNUSED */, TSHttpTxn txnp, std::string const *fingerprint)
 {
   TSMBuffer bufp;
   TSMLoc    hdr_loc;
-  if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc)) {
+  if (TS_SUCCESS != TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc)) {
+    Dbg(dbg_ctl, "Failed to get headers.");
+    return;
+  }
+
+  // When preserve is enabled, check if ANY JA4 header exists. If so, skip
+  // adding ALL JA4 headers to avoid mismatched fingerprint data when requests
+  // traverse multiple proxies.
+  bool const ja4_header_exists = header_exists(bufp, hdr_loc, "ja4", 3) ||
+                                 header_exists(bufp, hdr_loc, JA4_VIA_HEADER.data(), static_cast<int>(JA4_VIA_HEADER.length()));
+  bool const skip_ja4_headers = global_preserve_enabled && ja4_header_exists;
+
+  if (!skip_ja4_headers) {
     append_to_field(bufp, hdr_loc, "ja4", 3, fingerprint->data(), fingerprint->size());
 
     TSMgmtString proxy_name = nullptr;
@@ -351,9 +410,6 @@ append_JA4_headers(TSCont /* cont ATS_UNUSED */, TSHttpTxn txnp, std::string con
     append_to_field(bufp, hdr_loc, JA4_VIA_HEADER.data(), static_cast<int>(JA4_VIA_HEADER.length()), proxy_name,
                     static_cast<int>(std::strlen(proxy_name)));
     TSfree(proxy_name);
-
-  } else {
-    Dbg(dbg_ctl, "Failed to get headers.");
   }
 
   TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
