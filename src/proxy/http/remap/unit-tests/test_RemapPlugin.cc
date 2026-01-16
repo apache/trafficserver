@@ -395,6 +395,7 @@ SCENARIO("unloading the plugin", "[plugin][core]")
     {
       debugObject->clear();
 
+      // coverity[wrapper_escape] - plugin pointer temporarily escapes to thread context but is reset before return
       plugin->doneInstance(INSTANCE_HANDLER);
 
       THEN("expect it to run and receive the right instance handler")
