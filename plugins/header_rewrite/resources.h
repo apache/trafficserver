@@ -22,6 +22,9 @@
 #pragma once
 
 #include <string>
+#include <unordered_map>
+
+#include "swoc/TextView.h"
 
 #include "regex_helper.h"
 #include "ts/ts.h"
@@ -96,6 +99,16 @@ public:
     return _extended_info.matches;
   }
 
+  // Get a query parameter value by name, with caching
+  swoc::TextView get_query_param(const std::string &name, const char *query_str, int query_len) const;
+
+  void
+  reset_query_cache() const
+  {
+    _extended_info.query_params.clear();
+    _extended_info.query_parsed = false;
+  }
+
   TSCont              contp          = nullptr;
   TSRemapRequestInfo *_rri           = nullptr;
   TSMBuffer           bufp           = nullptr;
@@ -114,8 +127,10 @@ public:
   TSHttpStatus resp_status = TS_HTTP_STATUS_NONE;
 
   struct LifetimeExtension {
-    std::string  subject_storage;
-    RegexMatches matches;
+    std::string                                        subject_storage;
+    RegexMatches                                       matches;
+    std::unordered_map<swoc::TextView, swoc::TextView> query_params;
+    bool                                               query_parsed = false;
   };
   bool                      changed_url = false;
   mutable LifetimeExtension _extended_info;
