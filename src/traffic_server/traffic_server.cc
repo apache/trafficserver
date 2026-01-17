@@ -2341,6 +2341,8 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   }
 #endif
 
+  // All static string metrics must be created before initialization is complete
+  ts::Metrics::StaticString::finalize();
   TSSystemState::initialization_done();
 
   while (!TSSystemState::is_event_system_shut_down()) {

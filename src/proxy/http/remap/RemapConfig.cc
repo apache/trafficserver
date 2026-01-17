@@ -365,7 +365,7 @@ parse_include_directive(const char *directive, BUILD_TABLE_INFO *bti, char *errb
     path = RecConfigReadConfigPath(nullptr, bti->paramv[i]);
 
     if (ink_file_is_directory(path)) {
-      struct dirent **entrylist;
+      struct dirent **entrylist = nullptr;
       int             n_entries;
 
       n_entries = scandir(path, &entrylist, nullptr, alphasort);
