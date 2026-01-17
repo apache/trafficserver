@@ -28,6 +28,13 @@
 #include "tscore/Version.h"
 #include "tscore/signals.h"
 
+#include <string>
+#include <unistd.h>
+#if defined(__linux__)
+#include <sys/prctl.h>
+#include <sys/syscall.h>
+#endif
+
 // ucontext.h is deprecated on Darwin, and we really only need it on Linux, so only
 // include it if we are planning to use it.
 #if defined(__linux__)
@@ -139,6 +146,12 @@ crash_logger_init(const char *user)
   crash_logger_pid = child;
   crash_logger_fd  = pipe[0];
 
+#if defined(__linux__)
+  // Allow the crash logger to ptrace us. Without this, Yama's ptrace_scope=1
+  // (the default on many distros) prevents a child process from tracing its parent.
+  prctl(PR_SET_PTRACER, crash_logger_pid, 0, 0, 0);
+#endif
+
   // Wait for the helper to stop
   if (waitpid(crash_logger_pid, &status, WUNTRACED) > 0) {
     Dbg(dbg_ctl_server, "waited on PID %ld, %s", (long)crash_logger_pid, WIFSTOPPED(status) ? "STOPPED" : "???");
@@ -165,8 +178,17 @@ crash_logger_invoke(int signo, siginfo_t *info, void *ctx)
     // Write the crashing thread information to the crash logger. While the siginfo_t is blesses by POSIX, the
     // ucontext_t can contain pointers, so it's highly platform dependent. On Linux with glibc, however, it is
     // a single memory block that we can just puke out.
+    pid_t crashing_tid = static_cast<pid_t>(syscall(SYS_gettid));
+    ATS_UNUSED_RETURN(write(crash_logger_fd, &crashing_tid, sizeof(crashing_tid)));
     ATS_UNUSED_RETURN(write(crash_logger_fd, info, sizeof(siginfo_t)));
     ATS_UNUSED_RETURN(write(crash_logger_fd, static_cast<ucontext_t *>(ctx), sizeof(ucontext_t)));
+
+    // Send zero-length backtrace. We cannot safely generate a backtrace here
+    // because backtrace() can acquire locks (e.g., in the dynamic linker) that
+    // the crashing thread might be holding, causing a deadlock. The crash
+    // logger will get the backtrace via ptrace from a separate process instead.
+    uint32_t bt_len = 0;
+    ATS_UNUSED_RETURN(write(crash_logger_fd, &bt_len, sizeof(bt_len)));
 #endif
 
     close(crash_logger_fd);
