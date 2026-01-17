@@ -138,6 +138,13 @@ autest:
             args:
               - "rules/nested_ifs.conf"
 
+      - from: "http://www.example.com/from_13/"
+        to: "http://backend.ex:{SERVER_HTTP_PORT}/to_13/"
+        plugins:
+          - name: "header_rewrite.so"
+            args:
+              - "rules/query_sub_key.conf"
+
 
 
 # Proxy verifier sessions
@@ -1019,3 +1026,51 @@ sessions:
         - [ X-Foo-And-Fie, { as: absent } ]
         - [ X-Fie-Anywhere, { value: "Yes", as: equal } ]
         - [ X-When-200-After, { value: "Yes", as: equal } ]
+
+# Test 28: Query parameter sub-key extraction
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_13/?sub=Hello
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ uuid, 34 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Query-Sub, { value: "Hello", as: equal } ]
+
+# Test 29: Query parameter sub-key - parameter not present
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_13/?other=value
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ uuid, 35 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Query-Sub, { as: absent } ]
