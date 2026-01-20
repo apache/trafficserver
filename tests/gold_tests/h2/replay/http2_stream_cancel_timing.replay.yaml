@@ -1,0 +1,253 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+#
+# This replay file tests that canceled streams are cleaned up in time
+# to allow new streams to be created without hitting max_concurrent_streams limit.
+#
+
+meta:
+  version: "1.0"
+
+sessions:
+- protocol:
+  - name: http
+    version: 2
+  - name: tls
+    sni: test_sni
+  - name: tcp
+  - name: ip
+  transactions:
+  # Stream 1 - will be canceled
+  - client-request:
+      frames:
+        - HEADERS:
+            headers:
+              fields:
+              - [ :method, GET ]
+              - [ :scheme, https ]
+              - [ :authority, www.example.com ]
+              - [ :path, /path/1 ]
+              - [ uuid, 1 ]
+        - RST_STREAM:
+            error-code: CANCEL
+
+    server-response:
+      delay: 5s
+      headers:
+        fields:
+        - [ :status, 200 ]
+        - [ Content-Length, '100' ]
+      content:
+        size: 100
+
+  # Stream 3 - will be canceled
+  - client-request:
+      frames:
+        - HEADERS:
+            headers:
+              fields:
+              - [ :method, GET ]
+              - [ :scheme, https ]
+              - [ :authority, www.example.com ]
+              - [ :path, /path/3 ]
+              - [ uuid, 3 ]
+        - RST_STREAM:
+            error-code: CANCEL
+
+    server-response:
+      delay: 5s
+      headers:
+        fields:
+        - [ :status, 200 ]
+        - [ Content-Length, '100' ]
+      content:
+        size: 100
+
+  # Stream 5 - will be canceled
+  - client-request:
+      frames:
+        - HEADERS:
+            headers:
+              fields:
+              - [ :method, GET ]
+              - [ :scheme, https ]
+              - [ :authority, www.example.com ]
+              - [ :path, /path/5 ]
+              - [ uuid, 5 ]
+        - RST_STREAM:
+            error-code: CANCEL
+
+    server-response:
+      delay: 5s
+      headers:
+        fields:
+        - [ :status, 200 ]
+        - [ Content-Length, '100' ]
+      content:
+        size: 100
+
+  # Stream 7 - will be canceled
+  - client-request:
+      frames:
+        - HEADERS:
+            headers:
+              fields:
+              - [ :method, GET ]
+              - [ :scheme, https ]
+              - [ :authority, www.example.com ]
+              - [ :path, /path/7 ]
+              - [ uuid, 7 ]
+        - RST_STREAM:
+            error-code: CANCEL
+
+    server-response:
+      delay: 5s
+      headers:
+        fields:
+        - [ :status, 200 ]
+        - [ Content-Length, '100' ]
+      content:
+        size: 100
+
+  # Stream 9 - will be canceled
+  - client-request:
+      frames:
+        - HEADERS:
+            headers:
+              fields:
+              - [ :method, GET ]
+              - [ :scheme, https ]
+              - [ :authority, www.example.com ]
+              - [ :path, /path/9 ]
+              - [ uuid, 9 ]
+        - RST_STREAM:
+            error-code: CANCEL
+
+    server-response:
+      delay: 5s
+      headers:
+        fields:
+        - [ :status, 200 ]
+        - [ Content-Length, '100' ]
+      content:
+        size: 100
+
+  # Stream 11 - should be accepted, not refused
+  - client-request:
+      headers:
+        fields:
+        - [ :method, GET ]
+        - [ :scheme, https ]
+        - [ :authority, www.example.com ]
+        - [ :path, /path/11 ]
+        - [ uuid, 11 ]
+
+    server-response:
+      headers:
+        fields:
+        - [ :status, 200 ]
+        - [ Content-Length, '100' ]
+      content:
+        size: 100
+
+    proxy-response:
+      status: 200
+
+  # Stream 13 - should be accepted, not refused
+  - client-request:
+      headers:
+        fields:
+        - [ :method, GET ]
+        - [ :scheme, https ]
+        - [ :authority, www.example.com ]
+        - [ :path, /path/13 ]
+        - [ uuid, 13 ]
+
+    server-response:
+      headers:
+        fields:
+        - [ :status, 200 ]
+        - [ Content-Length, '100' ]
+      content:
+        size: 100
+
+    proxy-response:
+      status: 200
+
+  # Stream 15 - should be accepted, not refused
+  - client-request:
+      headers:
+        fields:
+        - [ :method, GET ]
+        - [ :scheme, https ]
+        - [ :authority, www.example.com ]
+        - [ :path, /path/15 ]
+        - [ uuid, 15 ]
+
+    server-response:
+      headers:
+        fields:
+        - [ :status, 200 ]
+        - [ Content-Length, '100' ]
+      content:
+        size: 100
+
+    proxy-response:
+      status: 200
+
+  # Stream 17 - should be accepted, not refused
+  - client-request:
+      headers:
+        fields:
+        - [ :method, GET ]
+        - [ :scheme, https ]
+        - [ :authority, www.example.com ]
+        - [ :path, /path/17 ]
+        - [ uuid, 17 ]
+
+    server-response:
+      headers:
+        fields:
+        - [ :status, 200 ]
+        - [ Content-Length, '100' ]
+      content:
+        size: 100
+
+    proxy-response:
+      status: 200
+
+  # Stream 19 - should be accepted, not refused
+  - client-request:
+      headers:
+        fields:
+        - [ :method, GET ]
+        - [ :scheme, https ]
+        - [ :authority, www.example.com ]
+        - [ :path, /path/19 ]
+        - [ uuid, 19 ]
+
+    server-response:
+      headers:
+        fields:
+        - [ :status, 200 ]
+        - [ Content-Length, '100' ]
+      content:
+        size: 100
+
+    proxy-response:
+      status: 200
+
