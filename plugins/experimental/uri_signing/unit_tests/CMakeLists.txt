@@ -46,8 +46,7 @@ target_link_libraries(
           ts::inknet
           ts::overridable_txn_vars
 )
-add_catch2_test(NAME uri_signing_test COMMAND uri_signing_test)
-set_tests_properties(
-  uri_signing_test
-  PROPERTIES ENVIRONMENT "LSAN_OPTIONS=suppressions=${CMAKE_CURRENT_SOURCE_DIR}/uri_signing_test_leak_suppression.txt"
+add_catch2_test(
+  NAME uri_signing_test PROPERTIES ENVIRONMENT
+  "LSAN_OPTIONS=suppressions=${CMAKE_CURRENT_SOURCE_DIR}/uri_signing_test_leak_suppression.txt"
 )

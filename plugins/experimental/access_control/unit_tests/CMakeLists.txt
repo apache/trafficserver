@@ -23,4 +23,4 @@ add_executable(
 target_link_libraries(test_access_control PRIVATE ts::tscore OpenSSL::SSL OpenSSL::Crypto Catch2::Catch2WithMain)
 target_compile_definitions(test_access_control PRIVATE ACCESS_CONTROL_UNIT_TEST)
 
-add_catch2_test(NAME test_access_control COMMAND test_access_control)
+add_catch2_test(NAME test_access_control)

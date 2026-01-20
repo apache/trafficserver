@@ -21,4 +21,4 @@ target_link_libraries(test_origin_server_auth PRIVATE OpenSSL::Crypto Catch2::Ca
 
 target_compile_definitions(test_origin_server_auth PRIVATE AWS_AUTH_V4_UNIT_TEST)
 
-add_catch2_test(NAME test_origin_server_auth COMMAND test_origin_server_auth)
+add_catch2_test(NAME test_origin_server_auth)
