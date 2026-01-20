@@ -749,6 +749,9 @@ public:
     ConnectionAttributes        client_info;
     ConnectionAttributes        parent_info;
     ConnectionAttributes        server_info;
+    // This is a copy of the effective client IP address (see pp-clnt) to
+    // ensure this is available for logging
+    IpEndpoint effective_client_addr;
 
     Source_t            source               = SOURCE_NONE;
     Source_t            pre_transform_source = SOURCE_NONE;
