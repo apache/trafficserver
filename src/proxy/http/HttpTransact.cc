@@ -1508,12 +1508,6 @@ HttpTransact::HandleRequest(State *s)
   if (!s->state_machine->is_waiting_for_full_body && !s->state_machine->is_buffering_request_body) {
     ink_assert(!s->hdr_info.server_request.valid());
 
-    Metrics::Counter::increment(http_rsb.incoming_requests);
-
-    if (s->client_info.port_attribute == HttpProxyPort::TRANSPORT_SSL) {
-      Metrics::Counter::increment(http_rsb.https_incoming_requests);
-    }
-
     ///////////////////////////////////////////////
     // if request is bad, return error response  //
     ///////////////////////////////////////////////

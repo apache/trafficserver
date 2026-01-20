@@ -451,6 +451,11 @@ HttpSM::attach_client_session(ProxyTransaction *txn)
   t_state.client_info.is_transparent = netvc->get_is_transparent();
   t_state.client_info.port_attribute = static_cast<HttpProxyPort::TransportType>(netvc->attributes);
 
+  Metrics::Counter::increment(http_rsb.incoming_requests);
+  if (t_state.client_info.port_attribute == HttpProxyPort::TRANSPORT_SSL) {
+    Metrics::Counter::increment(http_rsb.https_incoming_requests);
+  }
+
   // Record api hook set state
   hooks_set = txn->has_hooks();
 
