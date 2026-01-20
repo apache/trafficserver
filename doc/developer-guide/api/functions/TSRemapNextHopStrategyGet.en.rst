@@ -18,8 +18,8 @@
 
 .. default-domain:: cpp
 
-TSHttpTxnNextHopStrategyGet
-***************************
+TSRemapNextHopStrategyGet
+*************************
 
 Synopsis
 ========
@@ -28,13 +28,16 @@ Synopsis
 
     #include <ts/ts.h>
 
-.. function:: TSStrategy TSHttpTxnNextHopStrategyGet(TSHttpTxn txnp)
+.. function:: TSStrategy TSRemapNextHopStrategyGet()
 
 Description
 ===========
 
-Gets a pointer to the current transaction :arg:`txnp` NextHopSelectionStrategy.
+Gets a pointer to the current remap rule being loaded.
 This may be nullptr indicating that parent.config is in use.
+
+This function may ONLY be called during TSRemapNewInstance.
+The resulting strategy pointer is valid for all subsequent transactions.
 
 .. note::
 
@@ -46,4 +49,4 @@ This may be nullptr indicating that parent.config is in use.
 See Also
 ========
 
-:func:`TSHttpTxnNextHopStrategySet`
+:func:`TSRemapNextHopStrategySet`
