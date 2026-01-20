@@ -7920,7 +7920,6 @@ TSVConnSslSniGet(TSVConn sslp, int *length)
   return server_name;
 }
 
-#ifdef OPENSSL_IS_BORINGSSL
 TSClientHello
 TSVConnClientHelloGet(TSVConn sslp)
 {
@@ -7930,13 +7929,86 @@ TSVConnClientHelloGet(TSVConn sslp)
   }
 
   if (auto snis = netvc->get_service<TLSSNISupport>(); snis) {
+    // Allocate the TSClientHello structure
+    auto ch = new tsapi_ssl_client_hello();
+
+#ifdef OPENSSL_IS_BORINGSSL
+    // Get the BoringSSL client hello container
     ClientHelloContainer client_hello = snis->get_client_hello_container();
-    return reinterpret_cast<TSClientHello>(const_cast<SSL_CLIENT_HELLO *>(client_hello));
+    if (client_hello == nullptr) {
+      delete ch;
+      return nullptr;
+    }
+
+    // Populate from BoringSSL SSL_CLIENT_HELLO structure
+    ch->version           = client_hello->version;
+    ch->cipher_suites     = client_hello->cipher_suites;
+    ch->cipher_suites_len = client_hello->cipher_suites_len;
+    ch->extensions        = client_hello->extensions;
+    ch->extensions_len    = client_hello->extensions_len;
+    ch->extension_ids     = nullptr;
+    ch->extension_ids_len = 0;
+    ch->ssl_ptr           = const_cast<SSL_CLIENT_HELLO *>(client_hello);
+#else
+    // Get the OpenSSL SSL* object
+    auto tbs = netvc->get_service<TLSBasicSupport>();
+    if (!tbs) {
+      delete ch;
+      return nullptr;
+    }
+    SSL *ssl = tbs->get_tls_handle();
+    if (ssl == nullptr) {
+      delete ch;
+      return nullptr;
+    }
+
+    // Get legacy version (OpenSSL doesn't expose the direct version field from client hello)
+    ch->version = SSL_client_hello_get0_legacy_version(ssl);
+
+    // Get cipher suites
+    const unsigned char *cipher_buf = nullptr;
+    ch->cipher_suites_len           = SSL_client_hello_get0_ciphers(ssl, &cipher_buf);
+    ch->cipher_suites               = cipher_buf;
+
+    // For OpenSSL, we can't get direct access to the raw extensions buffer
+    // Instead, get the list of extension IDs
+    ch->extensions     = nullptr;
+    ch->extensions_len = 0;
+    int   *ext_ids     = nullptr;
+    size_t ext_count;
+    if (SSL_client_hello_get1_extensions_present(ssl, &ext_ids, &ext_count) == 1) {
+      ch->extension_ids     = ext_ids;
+      ch->extension_ids_len = ext_count;
+    } else {
+      ch->extension_ids     = nullptr;
+      ch->extension_ids_len = 0;
+    }
+    ch->ssl_ptr = ssl;
+#endif
+
+    return ch;
   }
 
   return nullptr;
 }
+
+void
+TSClientHelloDestroy(TSClientHello ch)
+{
+  if (ch == nullptr) {
+    return;
+  }
+
+#ifndef OPENSSL_IS_BORINGSSL
+  // For OpenSSL, we need to free the extension IDs array that was allocated
+  // by SSL_client_hello_get1_extensions_present
+  if (ch->extension_ids != nullptr) {
+    OPENSSL_free(ch->extension_ids);
+  }
 #endif
+
+  delete ch;
+}
 
 TSSslVerifyCTX
 TSVConnSslVerifyCTXGet(TSVConn sslp)

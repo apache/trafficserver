@@ -201,12 +201,7 @@ handle_client_hello(TSCont /* cont ATS_UNUSED */, TSEvent event, void *edata)
 
   TSVConn const ssl_vc{static_cast<TSVConn>(edata)};
 
-#ifdef OPENSSL_IS_BORINGSSL
   TSClientHello ch = TSVConnClientHelloGet(ssl_vc);
-#else
-  TSSslConnection const ssl_conn{TSVConnSslConnectionGet(ssl_vc)};
-  TSClientHello         ch = reinterpret_cast<TSClientHello>(ssl_conn);
-#endif
 
   if (nullptr == ch) {
     Dbg(dbg_ctl, "Could not get TSClientHello object.");
@@ -215,6 +210,8 @@ handle_client_hello(TSCont /* cont ATS_UNUSED */, TSEvent event, void *edata)
     data->fingerprint = get_fingerprint(ch);
     get_IP(TSNetVConnRemoteAddrGet(ssl_vc), data->IP_addr);
     log_fingerprint(data.get());
+    // Clean up the TSClientHello structure
+    TSClientHelloDestroy(ch);
     // The VCONN_CLOSE handler is now responsible for freeing the resource.
     TSUserArgSet(ssl_vc, *get_user_arg_index(), static_cast<void *>(data.release()));
   }
@@ -288,11 +285,7 @@ get_version(TSClientHello ch)
     return max_version;
   } else {
     Dbg(dbg_ctl, "No supported_versions extension... using legacy version.");
-#ifdef OPENSSL_IS_BORINGSSL
-    return reinterpret_cast<const SSL_CLIENT_HELLO *>(ch)->version;
-#else
-    return SSL_client_hello_get0_legacy_version(reinterpret_cast<SSL *>(ch));
-#endif
+    return ch->version;
   }
 }
 
@@ -316,16 +309,8 @@ get_first_ALPN(TSClientHello ch)
 void
 add_ciphers(JA4::TLSClientHelloSummary &summary, TSClientHello ch)
 {
-#ifdef OPENSSL_IS_BORINGSSL
-  const SSL_CLIENT_HELLO *client_hello = reinterpret_cast<const SSL_CLIENT_HELLO *>(ch);
-  const uint8_t          *buf          = client_hello->cipher_suites;
-  size_t                  buflen       = client_hello->cipher_suites_len;
-#else
-  unsigned char const *buf = nullptr;
-  // Fix: Add const_cast to remove const from ch
-  SSL        *ssl    = const_cast<SSL *>(reinterpret_cast<SSL *>(ch));
-  std::size_t buflen = SSL_client_hello_get0_ciphers(ssl, &buf);
-#endif
+  const uint8_t *buf    = ch->cipher_suites;
+  size_t         buflen = ch->cipher_suites_len;
 
   if (buflen > 0) {
     for (std::size_t i = 0; i + 1 < buflen; i += 2) {
@@ -339,35 +324,28 @@ add_ciphers(JA4::TLSClientHelloSummary &summary, TSClientHello ch)
 void
 add_extensions(JA4::TLSClientHelloSummary &summary, TSClientHello ch)
 {
-#ifdef OPENSSL_IS_BORINGSSL
-  const SSL_CLIENT_HELLO *client_hello = reinterpret_cast<const SSL_CLIENT_HELLO *>(ch);
-  const uint8_t          *ext          = client_hello->extensions;
-  size_t                  remaining    = client_hello->extensions_len;
+  if (ch->extensions != nullptr) {
+    const uint8_t *ext       = ch->extensions;
+    size_t         remaining = ch->extensions_len;
 
-  while (remaining >= 4) {
-    uint16_t ext_type = (ext[0] << 8) | ext[1];
+    while (remaining >= 4) {
+      uint16_t ext_type = (ext[0] << 8) | ext[1];
+      uint16_t ext_len  = (ext[2] << 8) | ext[3];
+      summary.add_extension(ext_type);
+      size_t total_ext_size = 4 + ext_len;
+      if (total_ext_size > remaining) {
+        break;
+      }
 
-    // Read extension length (2 bytes, big endian)
-    uint16_t ext_len = (ext[2] << 8) | ext[3];
-    summary.add_extension(ext_type);
-    size_t total_ext_size = 4 + ext_len; // 4 bytes header + data
-    if (total_ext_size > remaining) {
-      break; // Malformed extension, stop parsing
+      ext       += total_ext_size;
+      remaining -= total_ext_size;
     }
-
-    ext       += total_ext_size;
-    remaining -= total_ext_size;
-  }
-#else
-  int        *buf{};
-  std::size_t buflen{};
-  if (1 == SSL_client_hello_get1_extensions_present(const_cast<SSL *>(reinterpret_cast<SSL *>(ch)), &buf, &buflen)) {
-    for (std::size_t i{1}; i < buflen; i += 2) {
-      summary.add_extension(make_word(buf[i], buf[i - 1]));
+  } else if (ch->extension_ids != nullptr) {
+    // OpenSSL's extension_ids is an array of ints, each element is a complete extension ID
+    for (std::size_t i = 0; i < ch->extension_ids_len; i++) {
+      summary.add_extension(static_cast<uint16_t>(ch->extension_ids[i]));
     }
   }
-  OPENSSL_free(buf);
-#endif
 }
 
 std::string
@@ -498,17 +476,25 @@ handle_vconn_close(TSCont /* cont ATS_UNUSED */, TSEvent event, void *edata)
 int
 client_hello_ext_get(TSClientHello ch, unsigned int type, const unsigned char **out, size_t *outlen)
 {
-  if (ch == nullptr) {
+  if (ch == nullptr || out == nullptr || outlen == nullptr) {
     return TS_ERROR;
   }
 
 #ifdef OPENSSL_IS_BORINGSSL
-  const SSL_CLIENT_HELLO *client_hello = reinterpret_cast<const SSL_CLIENT_HELLO *>(ch);
+  const SSL_CLIENT_HELLO *client_hello = static_cast<const SSL_CLIENT_HELLO *>(ch->ssl_ptr);
+  if (client_hello == nullptr) {
+    return TS_ERROR;
+  }
+
   if (SSL_early_callback_ctx_extension_get(client_hello, type, out, outlen) == 1) {
     return TS_SUCCESS;
   }
 #else
-  SSL *ssl = const_cast<SSL *>(reinterpret_cast<const SSL *>(ch));
+  SSL *ssl = static_cast<SSL *>(ch->ssl_ptr);
+  if (ssl == nullptr) {
+    return TS_ERROR;
+  }
+
   if (SSL_client_hello_get0_ext(ssl, type, out, outlen) == 1) {
     return TS_SUCCESS;
   }

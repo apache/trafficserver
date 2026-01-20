@@ -1084,7 +1084,19 @@ using TSHostLookupResult = struct tsapi_hostlookupresult *;
 using TSAIOCallback      = struct tsapi_aiocallback *;
 using TSAcceptor         = struct tsapi_net_accept *;
 using TSRemapPluginInfo  = struct tsapi_remap_plugin_info *;
-using TSClientHello      = struct tsapi_ssl_client_hello *;
+
+struct tsapi_ssl_client_hello {
+  uint16_t       version;
+  const uint8_t *cipher_suites;
+  size_t         cipher_suites_len;
+  const uint8_t *extensions;
+  size_t         extensions_len;
+  int           *extension_ids;
+  size_t         extension_ids_len;
+  void          *ssl_ptr;
+};
+
+using TSClientHello = struct tsapi_ssl_client_hello *;
 
 using TSFetchSM = struct tsapi_fetchsm *;
 
