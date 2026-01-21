@@ -59,6 +59,14 @@ when the origin server in the remap rule returns a 401,
   option overrides the default behavior and enables escalation for non-GET
   requests in addition to GET.
 
+  .. note::
+
+    For POST body buffering to work with escalation,
+    :ts:cv:`proxy.config.http.post_copy_size` must be set large enough to buffer
+    the expected POST body sizes (e.g., 2048 bytes or larger). This enables
+    Traffic Server to buffer POST bodies before sending to the origin, so they
+    can be replayed if escalation is needed.
+
 Installation
 ------------
 

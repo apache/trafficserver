@@ -1028,7 +1028,18 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
         return;
       }
     } else {
-      body_bytes_copied  += sm->postbuf_copy_partial_data(body_bytes_to_copy);
+      int64_t bytes_to_copy_now = body_bytes_to_copy;
+
+      // For POST redirect buffering with HTTP_CLIENT producer, we need special handling.
+      // When POST data is pre-buffered (common for small POSTs), producer_n (ntodo) is 0,
+      // so body_bytes_to_copy calculated earlier would be 0. Instead, copy what's available,
+      // but limit it to the actual content length to avoid copying pipelined requests.
+      if (p->vc_type == HttpTunnelType_t::HTTP_CLIENT && sm->enable_redirection && body_bytes_to_copy == 0) {
+        int64_t bytes_available = p->buffer_start->read_avail();
+        bytes_to_copy_now       = (p->total_bytes >= 0) ? std::min(bytes_available, p->total_bytes) : bytes_available;
+      }
+
+      body_bytes_copied  += sm->postbuf_copy_partial_data(bytes_to_copy_now);
       body_bytes_to_copy  = 0;
     }
   } // end of added logic for partial POST
