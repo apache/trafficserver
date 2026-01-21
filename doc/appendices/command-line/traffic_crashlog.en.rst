@@ -37,6 +37,8 @@ for users to run directly.
 
 When :ref:`traffic_server` starts, it will launch a :program:`traffic_crashlog`
 process and keep it stopped, activating it only if a crash occurs.
+The crash report includes backtraces for all threads, with the crashing thread
+listed first.
 
 Options
 =======
@@ -48,8 +50,8 @@ Options
     This option specifies the host triple for the process that
     :program:`traffic_crashlog` should examine. If a supported host
     triple is specified, :program:`traffic_crashlog` expects to
-    receive a ``siginfo_t`` structure on it's standard input,
-    followed by a ``ucontext_t``.
+    receive the crashing thread ID, then a ``siginfo_t`` structure on
+    its standard input, followed by a ``ucontext_t``.
 
 .. option:: --target PID
 

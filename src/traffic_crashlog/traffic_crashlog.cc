@@ -32,7 +32,24 @@
 #include "tscore/BaseLogFile.h"
 #include "tscore/runroot.h"
 #include "iocore/eventsystem/RecProcess.h"
+
+#include <csignal>
 #include <unistd.h>
+
+namespace
+{
+// Timeout in seconds for backtrace collection. If ptrace/waitpid hangs, this
+// prevents the crashlog helper from blocking indefinitely.
+constexpr unsigned BACKTRACE_TIMEOUT_SECS = 10;
+
+volatile sig_atomic_t backtrace_timed_out = 0;
+
+void
+backtrace_alarm_handler(int /* sig */)
+{
+  backtrace_timed_out = 1;
+}
+} // namespace
 
 static int   syslog_mode  = false;
 static int   debug_mode   = false;
@@ -91,32 +108,65 @@ crashlog_open(const char *path)
   return (fd == -1) ? nullptr : fdopen(fd, "w");
 }
 
-extern int ServerBacktrace(unsigned /* options */, int pid, char **trace);
+extern int ServerBacktrace(unsigned /* options */, pid_t pid, pid_t crashing_tid, char **trace);
 
 bool
-crashlog_write_backtrace(FILE *fp, pid_t pid, const crashlog_target &)
+crashlog_write_backtrace(FILE *fp, const crashlog_target &target)
 {
-  char *trace = nullptr;
-  int   mgmterr;
+  char *trace   = nullptr;
+  int   mgmterr = -1;
+
+  if (target.pid > 0) {
+    // Set up a timeout to prevent indefinite hangs in ptrace/waitpid.
+    backtrace_timed_out = 0;
+    struct sigaction new_action;
+    struct sigaction old_action;
+    new_action.sa_handler = backtrace_alarm_handler;
+    sigemptyset(&new_action.sa_mask);
+    new_action.sa_flags = 0;
+    sigaction(SIGALRM, &new_action, &old_action);
+    alarm(BACKTRACE_TIMEOUT_SECS);
+
+    mgmterr = ServerBacktrace(0, target.pid, target.crashing_tid, &trace);
+
+    // Cancel the alarm and restore the old handler.
+    alarm(0);
+    sigaction(SIGALRM, &old_action, nullptr);
+
+    if (backtrace_timed_out) {
+      fprintf(fp, "Backtrace collection timed out after %u seconds\n", BACKTRACE_TIMEOUT_SECS);
+      free(trace);
+      return false;
+    }
+  }
 
   // NOTE: sometimes we can't get a backtrace because the ptrace attach will fail with
   // EPERM. I've seen this happen when a debugger is attached, which makes sense, but it
   // can also happen without a debugger. Possibly in that case, there is a race with the
   // kernel locking the process information?
 
-  if ((mgmterr = ServerBacktrace(0, static_cast<int>(pid), &trace)) != 0) {
-    fprintf(fp, "Unable to retrieve backtrace: %d\n", mgmterr);
-    return false;
+  if (mgmterr == 0 && trace != nullptr) {
+    // ServerBacktrace succeeded - this gives us backtraces for all threads.
+    fprintf(fp, "%s", trace);
+    free(trace);
+    return true;
   }
 
-  if (trace == nullptr) {
-    fprintf(fp, "Unable to retrieve backtrace: trace is null\n");
-    return false;
+  // ServerBacktrace failed. Fall back to the in-process backtrace from the crashing thread.
+  if ((target.flags & CRASHLOG_HAVE_BACKTRACE) && !target.backtrace.empty()) {
+    fprintf(fp, "Crashing Thread Backtrace:\n%s", target.backtrace.c_str());
+    return true;
   }
 
-  fprintf(fp, "%s", trace);
-  free(trace);
-  return true;
+  // No backtrace available from either source.
+  if (mgmterr != 0) {
+    fprintf(fp, "Unable to retrieve backtrace: ServerBacktrace returned %d\n", mgmterr);
+  } else if (target.pid <= 0) {
+    fprintf(fp, "Unable to retrieve backtrace: process ID not available\n");
+  } else {
+    fprintf(fp, "Unable to retrieve backtrace: no backtrace data available\n");
+  }
+  return false;
 }
 
 void
@@ -200,13 +250,23 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   Note("crashlog started, target=%ld, debug=%s syslog=%s, uid=%ld euid=%ld", static_cast<long>(target_pid),
        debug_mode ? "true" : "false", syslog_mode ? "true" : "false", (long)getuid(), (long)geteuid());
 
-  ink_zero(target);
   target.pid       = static_cast<pid_t>(target_pid);
   target.timestamp = timestamp();
 
-  if (host_triplet && strncmp(host_triplet, "x86_64-unknown-linux", sizeof("x86_64-unknown-linux") - 1) == 0) {
+  // Read crash context on Linux platforms. The siginfo_t and ucontext_t
+  // structures are platform-specific but should be defined for all Linux
+  // architectures.
+  if (host_triplet && (strstr(host_triplet, "linux") != nullptr || strstr(host_triplet, "Linux") != nullptr)) {
     ssize_t nbytes;
     target.flags |= CRASHLOG_HAVE_THREADINFO;
+
+    nbytes = read(STDIN_FILENO, &target.crashing_tid, sizeof(target.crashing_tid));
+    if (nbytes < static_cast<ssize_t>(sizeof(target.crashing_tid))) {
+      Warning("received %zd of %zu expected crashing thread ID bytes", nbytes, sizeof(target.crashing_tid));
+      target.flags &= ~CRASHLOG_HAVE_THREADINFO;
+    } else {
+      Note("received crashing thread ID: %ld", static_cast<long>(target.crashing_tid));
+    }
 
     nbytes = read(STDIN_FILENO, &target.siginfo, sizeof(target.siginfo));
     if (nbytes < static_cast<ssize_t>(sizeof(target.siginfo))) {
@@ -218,6 +278,21 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     if (nbytes < static_cast<ssize_t>(sizeof(target.ucontext))) {
       Warning("received %zd of %zu expected thread context bytes", nbytes, sizeof(target.ucontext));
       target.flags &= ~CRASHLOG_HAVE_THREADINFO;
+    }
+
+    // Read the in-process backtrace from the crashing thread.
+    uint32_t bt_len = 0;
+    nbytes          = read(STDIN_FILENO, &bt_len, sizeof(bt_len));
+    if (nbytes == static_cast<ssize_t>(sizeof(bt_len)) && bt_len > 0 && bt_len < 1024 * 1024) {
+      target.backtrace.resize(bt_len);
+      nbytes = read(STDIN_FILENO, target.backtrace.data(), bt_len);
+      if (nbytes == static_cast<ssize_t>(bt_len)) {
+        target.flags |= CRASHLOG_HAVE_BACKTRACE;
+        Note("received %u bytes of in-process backtrace", bt_len);
+      } else {
+        Warning("received %zd of %u expected backtrace bytes", nbytes, bt_len);
+        target.backtrace.clear();
+      }
     }
   }
 
@@ -245,15 +320,12 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   crashlog_write_registers(fp, target);
 
   fprintf(fp, "\n");
-  crashlog_write_backtrace(fp, parent, target);
+  crashlog_write_backtrace(fp, target);
 
   fprintf(fp, "\n");
   crashlog_write_procstatus(fp, target);
   fprintf(fp, "\n");
   crashlog_write_proclimits(fp, target);
-
-  fprintf(fp, "\n");
-  crashlog_write_regions(fp, target);
 
   fprintf(fp, "\n");
   crashlog_exec_pgm(fp, target.pid);
