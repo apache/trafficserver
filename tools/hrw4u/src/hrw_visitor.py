@@ -46,7 +46,7 @@ class HRWInverseVisitor(u4wrhVisitor, BaseHRWVisitor):
         super().__init__(filename=filename, debug=debug, error_collector=error_collector)
 
         # HRW inverse-specific state
-        self.section_label = section_label
+        self._section_label = section_label
         self.preserve_comments = preserve_comments
         self.merge_sections = merge_sections
         self._pending_terms: list[tuple[str, CondState]] = []
@@ -59,6 +59,7 @@ class HRWInverseVisitor(u4wrhVisitor, BaseHRWVisitor):
         self._if_depth = 0  # Track nesting depth of if blocks
         self._in_elif_mode = False
         self._just_closed_nested = False
+        self._expecting_if_cond = False  # True after 'if' operator, before its condition
 
     @lru_cache(maxsize=128)
     def _cached_percent_parsing(self, pct_text: str) -> tuple[str, str | None]:
@@ -84,6 +85,16 @@ class HRWInverseVisitor(u4wrhVisitor, BaseHRWVisitor):
         self._in_elif_mode = False
         self._in_group = False
         self._group_terms.clear()
+        self._expecting_if_cond = False
+
+    def _close_if_chain_for_new_rule(self) -> None:
+        """Close if-else chain when a new rule starts without elif/else."""
+        expecting_nested_if = self._expecting_if_cond
+        self._expecting_if_cond = False
+
+        if (self._if_depth > 0 and not self._in_elif_mode and not self._pending_terms and not expecting_nested_if):
+            self.debug("new rule detected - closing if chain")
+            self._start_new_section(SectionType.REMAP)
 
     def _start_new_section(self, section_type: SectionType) -> None:
         """Start a new section, handling continuation of existing sections."""
@@ -179,6 +190,7 @@ class HRWInverseVisitor(u4wrhVisitor, BaseHRWVisitor):
         with self.debug_context("visitIfLine"):
             self._flush_pending_condition()
             self._just_closed_nested = False
+            self._expecting_if_cond = True
             return None
 
     def visitEndifLine(self, ctx: u4wrhParser.EndifLineContext) -> None:
@@ -231,6 +243,9 @@ class HRWInverseVisitor(u4wrhVisitor, BaseHRWVisitor):
                     except ValueError:
                         pass
 
+                    # Not a hook - check if we need to close existing if-else chain
+                    self._close_if_chain_for_new_rule()
+
                     match tag:
                         case "GROUP":
                             if payload is None:
@@ -266,6 +281,9 @@ class HRWInverseVisitor(u4wrhVisitor, BaseHRWVisitor):
                             return None
 
                 case _:
+                    # No percent block - check if we need to close existing if-else chain
+                    self._close_if_chain_for_new_rule()
+
                     if body.comparison():
                         comparison_expr = self._build_comparison_expression(body.comparison())
                         if comparison_expr != "ERROR":  # Skip if error occurred
