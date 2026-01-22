@@ -53,6 +53,22 @@ autest:
       - from: "http://example.com/"
         to: "http://backend.example.com:{SERVER_HTTP_PORT}/"
 
+    logging_yaml:
+      logging:
+        formats:
+          - name: access
+            format: '%<crc>'
+
+        logs:
+          - filename: access
+            format: access
+            mode: ascii
+
+    log_validation:
+      access_log:
+        filename: access.log
+        gold_file: gold/negative-revalidating-enabled-access.gold
+
 sessions:
 - transactions:
 
