@@ -14,9 +14,22 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+SEND_RESPONSE {
+    if inbound.req.X-Test1 ~ /^[Ff]o+[bB]ar/ {
+        inbound.resp.X-Match = "yes";
+    }
+}
 
-cond %{REMAP_PSEUDO_HOOK}
-  set-effective-address %{CLIENT-HEADER:Real-IP}
+SEND_RESPONSE {
+    if inbound.url.query ~ /uid=([0-9]+)/ {
+        inbound.resp.X-Match-3 = "{capture.1}";
+    } elif inbound.req.X-We-Set ~ /^fie[0-9]+fum$/ with NOCASE {
+        inbound.resp.X-Match-2 = "yes";
+    }
+}
 
-cond %{SEND_RESPONSE_HDR_HOOK}
-  set-header Effective-IP %{INBOUND:REMOTE-ADDR}
+REMAP {
+    if inbound.url.path ~ /^from/ {
+        inbound.req.X-We-Set = "FIe123fuM";
+    }
+}
