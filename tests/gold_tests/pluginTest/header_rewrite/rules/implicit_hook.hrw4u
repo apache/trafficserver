@@ -14,9 +14,22 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+SEND_RESPONSE {
+    if inbound.req.X-Client-Foo == "foo" with NOCASE,PRE {
+        inbound.resp.X-Response-Foo = "Prefix";
+    } elif inbound.req.X-Client-Foo == "bar" {
+        inbound.resp.X-Response-Foo = "Never";
+    } elif inbound.req.X-Client-Foo {
+        inbound.resp.X-Response-Foo = "Yes";
+    } else {
+        inbound.resp.X-Response-Foo = "No";
+    }
+}
 
-cond %{REMAP_PSEUDO_HOOK}
-  set-effective-address %{CLIENT-HEADER:Real-IP}
-
-cond %{SEND_RESPONSE_HDR_HOOK}
-  set-header Effective-IP %{INBOUND:REMOTE-ADDR}
+REMAP {
+    if inbound.req.X-Fie == "fie" with NOCASE {
+        inbound.req.X-Client-Foo += "Yes";
+    } elif inbound.req.X-Fie == "nope" {
+        inbound.req.X-client-Foo += "Yes";
+    }
+}

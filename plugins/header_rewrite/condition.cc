@@ -196,6 +196,10 @@ Condition::initialize(const hrw::ConditionSpec &spec)
     _mods |= CondModifiers::MOD_L;
   }
 
+  if (!spec.qualifier.empty()) {
+    set_qualifier(spec.qualifier);
+  }
+
   // Parse matcher operation from match_arg
   std::string arg = spec.match_arg;
   _cond_op        = parse_matcher_op(arg);

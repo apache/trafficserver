@@ -46,6 +46,7 @@ fi
 
 USE_BATCH=false
 SHOW_HELP=false
+DEBUG_MODE=false
 TEST_DIRS=()
 
 # Parse arguments
@@ -53,6 +54,10 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --batch)
       USE_BATCH=true
+      shift
+      ;;
+    --debug)
+      DEBUG_MODE=true
       shift
       ;;
     --help|-h)
@@ -67,15 +72,27 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ "$SHOW_HELP" == true ]] || [[ ${#TEST_DIRS[@]} -eq 0 ]]; then
-  echo "Usage: $0 [--batch] <test_directory> [test_directory...]"
+  echo "Usage: $0 [--batch] [--debug] <test_directory> [test_directory...]"
   echo ""
   echo "Options:"
   echo "  --batch  Use batch mode for faster execution (single process)"
+  echo "  --debug  Stop after first failure and show detailed comparison"
   echo ""
-  echo "Example:"
+  echo "The script will automatically test:"
+  echo "  1. Original config files (.conf, .config, .hrw) vs their .hrw4u conversions"
+  echo "  2. Standard test pairs (*.input.txt + *.output.txt)"
+  echo ""
+  echo "Examples:"
   echo "  $0 tools/hrw4u/tests/data/vars"
   echo "  $0 --batch tools/hrw4u/tests/data/{hooks,conds,ops,vars}"
+  echo "  $0 --debug tests/gold_tests/pluginTest/header_rewrite/rules"
   exit 1
+fi
+
+# Debug mode forces serial mode (can't stop on first failure in batch mode)
+if [[ "$DEBUG_MODE" == true ]] && [[ "$USE_BATCH" == true ]]; then
+  echo "Note: --debug mode forces serial execution (incompatible with --batch)"
+  USE_BATCH=false
 fi
 
 # Get time in milliseconds (portable across macOS/Linux)
@@ -89,13 +106,18 @@ get_time_ms() {
   fi
 }
 
-# Check if a test should be skipped based on exceptions.txt
+# Check if a test should be skipped based on exceptions
 is_test_excepted() {
   local test_dir="$1"
   local test_name="$2"
 
-  # Only except examples/all-nonsense
+  # examples/all-nonsense: Intentionally invalid syntax for testing error handling
   if [[ "$test_dir" =~ /examples$ ]] && [[ "$test_name" == "all-nonsense" ]]; then
+    return 0  # Test is excepted
+  fi
+
+  # ops/skip-remap: Uses READ_REQUEST_PRE_REMAP_HOOK which cannot be used in remap rules
+  if [[ "$test_dir" =~ /ops$ ]] && [[ "$test_name" == "skip-remap" ]]; then
     return 0  # Test is excepted
   fi
 
@@ -112,6 +134,20 @@ collect_test_pairs() {
 
     local abs_test_dir="$(cd "$test_dir" && pwd)"
 
+    # First, find original config files (.conf, .config, .hrw) with matching .hrw4u files
+    while IFS= read -r orig_file; do
+      local base_name="${orig_file%.*}"
+      local hrw4u_file="${base_name}.hrw4u"
+
+      if [[ -f "$hrw4u_file" ]]; then
+        local abs_orig="$(cd "$(dirname "$orig_file")" && pwd)/$(basename "$orig_file")"
+        local abs_hrw4u="$(cd "$(dirname "$hrw4u_file")" && pwd)/$(basename "$hrw4u_file")"
+        # Output: expected (original) then input (hrw4u)
+        echo "$abs_orig $abs_hrw4u"
+      fi
+    done < <(find "$test_dir" -maxdepth 1 \( -name "*.conf" -o -name "*.config" -o -name "*.hrw" \) | sort)
+
+    # Then, find .input.txt/.output.txt pairs
     while IFS= read -r input_file; do
       local base_name="${input_file%.input.txt}"
       local test_name="${base_name##*/}"
@@ -239,6 +275,64 @@ run_serial_mode() {
     local dir_passed=0
     local dir_failed=0
 
+    # First, process original config files (.conf, .config, .hrw) with matching .hrw4u files
+    while IFS= read -r orig_file; do
+      local base_name="${orig_file%.*}"
+      local test_name="${base_name##*/}"
+      local hrw4u_file="${base_name}.hrw4u"
+
+      if [[ ! -f "$hrw4u_file" ]]; then
+        continue
+      fi
+
+      dir_tests=$((dir_tests + 1))
+
+      local abs_orig="$(cd "$(dirname "$orig_file")" && pwd)/$(basename "$orig_file")"
+      local abs_hrw4u="$(cd "$(dirname "$hrw4u_file")" && pwd)/$(basename "$hrw4u_file")"
+
+      local start_ms=$(get_time_ms)
+      if "$CONFCMP" "$abs_orig" "$abs_hrw4u" >/dev/null 2>&1; then
+        local end_ms=$(get_time_ms)
+        local elapsed=$((end_ms - start_ms))
+        total_time_ms=$((total_time_ms + elapsed))
+        printf "  ✓ %-30s %4d ms\n" "${dir_name}/${test_name}:" "$elapsed"
+        dir_passed=$((dir_passed + 1))
+      else
+        local end_ms=$(get_time_ms)
+        local elapsed=$((end_ms - start_ms))
+        total_time_ms=$((total_time_ms + elapsed))
+        printf "  ✗ %-30s %4d ms (FAILED)\n" "${dir_name}/${test_name}:" "$elapsed"
+        dir_failed=$((dir_failed + 1))
+        failed_tests+=("${dir_name}/${test_name}|$CONFCMP \"$abs_orig\" \"$abs_hrw4u\"")
+
+        # In debug mode, stop immediately and show details
+        if [[ "$DEBUG_MODE" == true ]]; then
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "  FIRST FAILURE (debug mode): ${dir_name}/${test_name}"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
+          echo "To re-run this test:"
+          echo "  $CONFCMP \"$abs_orig\" \"$abs_hrw4u\""
+          echo ""
+          echo "Original Config File (authority):"
+          echo "────────────────────────────────────────────────────────────"
+          cat "$abs_orig" 2>/dev/null || echo "Error: Could not read $abs_orig"
+          echo ""
+          echo "Generated HRW4U File:"
+          echo "────────────────────────────────────────────────────────────"
+          cat "$abs_hrw4u" 2>/dev/null || echo "Error: Could not read $abs_hrw4u"
+          echo ""
+          echo "Comparison Details (--debug):"
+          echo "────────────────────────────────────────────────────────────"
+          $CONFCMP --debug "$abs_orig" "$abs_hrw4u" 2>&1
+          echo ""
+          exit 1
+        fi
+      fi
+    done < <(find "$test_dir" -maxdepth 1 \( -name "*.conf" -o -name "*.config" -o -name "*.hrw" \) | sort)
+
+    # Then, process .input.txt/.output.txt pairs
     while IFS= read -r input_file; do
       local base_name="${input_file%.input.txt}"
       local test_name="${base_name##*/}"
@@ -273,11 +367,36 @@ run_serial_mode() {
         printf "  ✗ %-30s %4d ms (FAILED)\n" "${dir_name}/${test_name}:" "$elapsed"
         dir_failed=$((dir_failed + 1))
         failed_tests+=("${dir_name}/${test_name}|$CONFCMP \"$abs_output\" \"$abs_input\"")
+
+        # In debug mode, stop immediately and show details
+        if [[ "$DEBUG_MODE" == true ]]; then
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "  FIRST FAILURE (debug mode): ${dir_name}/${test_name}"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
+          echo "To re-run this test:"
+          echo "  $CONFCMP \"$abs_output\" \"$abs_input\""
+          echo ""
+          echo "Expected Output (.output.txt):"
+          echo "────────────────────────────────────────────────────────────"
+          cat "$abs_output" 2>/dev/null || echo "Error: Could not read $abs_output"
+          echo ""
+          echo "HRW4U Input (.input.txt):"
+          echo "────────────────────────────────────────────────────────────"
+          cat "$abs_input" 2>/dev/null || echo "Error: Could not read $abs_input"
+          echo ""
+          echo "Comparison Details (--debug):"
+          echo "────────────────────────────────────────────────────────────"
+          $CONFCMP --debug "$abs_output" "$abs_input" 2>&1
+          echo ""
+          exit 1
+        fi
       fi
     done < <(find "$test_dir" -maxdepth 1 -name "*.input.txt" | sort)
 
     if [[ $dir_tests -eq 0 ]]; then
-      echo "  No test pairs found (*.input.txt + *.output.txt)"
+      echo "  No test pairs found"
     else
       echo ""
       echo "  Directory Summary: $dir_passed passed, $dir_failed failed (total: $dir_tests)"
@@ -316,28 +435,43 @@ run_serial_mode() {
       echo "  Failed Test: $test_name"
       echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-      # Extract file paths from command
-      output_file=$(echo "$cmd" | grep -o '"[^"]*\.output\.txt"' | tr -d '"')
-      input_file=$(echo "$cmd" | grep -o '"[^"]*\.input\.txt"' | tr -d '"')
-
       echo ""
       echo "To re-run this test:"
       echo "  $cmd"
       echo ""
 
-      echo "Expected Output (.output.txt):"
-      echo "────────────────────────────────────────────────────────────"
-      cat "$output_file" 2>/dev/null || echo "Error: Could not read $output_file"
-      echo ""
+      # Extract file paths from command - try both types
+      local first_file=$(echo "$cmd" | grep -o '"[^"]*"' | head -1 | tr -d '"')
+      local second_file=$(echo "$cmd" | grep -o '"[^"]*"' | tail -1 | tr -d '"')
 
-      echo "HRW4U Input (.input.txt):"
-      echo "────────────────────────────────────────────────────────────"
-      cat "$input_file" 2>/dev/null || echo "Error: Could not read $input_file"
-      echo ""
+      # Determine test type based on file extensions
+      if [[ "$first_file" =~ \.(conf|config|hrw)$ ]]; then
+        # Config file test: original vs .hrw4u
+        echo "Original Config File (authority):"
+        echo "────────────────────────────────────────────────────────────"
+        cat "$first_file" 2>/dev/null || echo "Error: Could not read $first_file"
+        echo ""
+
+        echo "Generated HRW4U File:"
+        echo "────────────────────────────────────────────────────────────"
+        cat "$second_file" 2>/dev/null || echo "Error: Could not read $second_file"
+        echo ""
+      else
+        # Standard test: .output.txt vs .input.txt
+        echo "Expected Output (.output.txt):"
+        echo "────────────────────────────────────────────────────────────"
+        cat "$first_file" 2>/dev/null || echo "Error: Could not read $first_file"
+        echo ""
+
+        echo "HRW4U Input (.input.txt):"
+        echo "────────────────────────────────────────────────────────────"
+        cat "$second_file" 2>/dev/null || echo "Error: Could not read $second_file"
+        echo ""
+      fi
 
       echo "Comparison Details (--debug):"
       echo "────────────────────────────────────────────────────────────"
-      $CONFCMP --debug "$output_file" "$input_file" 2>&1
+      $CONFCMP --debug "$first_file" "$second_file" 2>&1
       echo ""
     done
     echo ""

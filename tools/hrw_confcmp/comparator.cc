@@ -24,6 +24,7 @@
 #include "conditions.h"
 #include "matcher.h"
 
+#include <cstdlib>
 #include <iostream>
 #include <sstream>
 
@@ -315,14 +316,45 @@ ConfigComparator::compare_statement_chains(Statement *s1, Statement *s2, const s
   bool                     all_match = true;
   int                      count1 = 0, count2 = 0;
   std::vector<std::string> types1, types2;
+  std::vector<Statement *> stmts1, stmts2;
 
   for (Statement *s = s1; s; s = s->next()) {
     count1++;
     types1.push_back(std::string(s->type_name()));
+    stmts1.push_back(s);
   }
   for (Statement *s = s2; s; s = s->next()) {
     count2++;
     types2.push_back(std::string(s->type_name()));
+    stmts2.push_back(s);
+  }
+
+  // Handle semantic equivalence: [Operator[L]] == [Operator, OperatorNoOp[L]]
+  // When one chain has an operator with [L], and the other has the same operator
+  // followed by a trailing OperatorNoOp with [L], they are semantically equivalent.
+  if (count1 != count2 && std::abs(count1 - count2) == 1) {
+    std::vector<Statement *> &shorter     = (count1 < count2) ? stmts1 : stmts2;
+    std::vector<Statement *> &longer      = (count1 < count2) ? stmts2 : stmts1;
+    Statement                *last_longer = longer.back();
+    auto                     *last_op     = dynamic_cast<Operator *>(last_longer);
+
+    if (last_op && last_op->type_name() == "OperatorNoOp" && (last_op->get_oper_modifiers() & OPER_LAST)) {
+      Statement *last_shorter    = shorter.back();
+      auto      *last_shorter_op = dynamic_cast<Operator *>(last_shorter);
+
+      if (last_shorter_op && (last_shorter_op->get_oper_modifiers() & OPER_LAST)) {
+        longer.pop_back();
+        for (size_t i = 0; i < shorter.size(); i++) {
+          std::string ctx = context + "[" + std::to_string(i) + "]";
+
+          if (!compare_single_statement(shorter[i], longer[i], ctx)) {
+            all_match = false;
+          }
+        }
+
+        return all_match;
+      }
+    }
   }
 
   while (s1 || s2) {

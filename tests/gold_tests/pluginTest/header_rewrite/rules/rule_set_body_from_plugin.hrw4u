@@ -14,9 +14,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+# Test uses cond %{CLIENT-URL:PATH} to differentiate tests
+# It is not needed to make set-body-from work
+READ_RESPONSE {
+    if inbound.url.path == "plugin_success" {
+        set-body-from("http://www.example.com/404.html");
+    }
+}
 
-cond %{REMAP_PSEUDO_HOOK}
-  set-effective-address %{CLIENT-HEADER:Real-IP}
-
-cond %{SEND_RESPONSE_HDR_HOOK}
-  set-header Effective-IP %{INBOUND:REMOTE-ADDR}
+READ_RESPONSE {
+    if inbound.url.path == "plugin_fail" {
+        set-body-from("http://www.example.com/plugin_no_server");
+    }
+}

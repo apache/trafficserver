@@ -92,7 +92,7 @@ compare_pair(const char *hrw_file, const char *hrw4u_file, bool debug, bool quie
   auto         t_hrw_start = Clock::now();
   RulesConfig *hrw_config  = create_rules_config(0, 0);
 
-  if (!rules_config_parse(hrw_config, hrw_file, TS_HTTP_READ_RESPONSE_HDR_HOOK, nullptr, nullptr, false)) {
+  if (!rules_config_parse(hrw_config, hrw_file, TS_HTTP_LAST_HOOK, nullptr, nullptr, false)) {
     std::cerr << "ERROR: Failed to parse hrw config file: " << hrw_file << "\n";
     destroy_rules_config(hrw_config);
 
@@ -107,7 +107,7 @@ compare_pair(const char *hrw_file, const char *hrw4u_file, bool debug, bool quie
     std::cout << "Parsing hrw4u config: " << hrw4u_file << " (using native hrw4u parser)\n";
   }
 
-  if (!rules_config_parse(hrw4u_config, hrw4u_file, TS_HTTP_READ_RESPONSE_HDR_HOOK, nullptr, nullptr, true)) {
+  if (!rules_config_parse(hrw4u_config, hrw4u_file, TS_HTTP_LAST_HOOK, nullptr, nullptr, true)) {
     std::cerr << "ERROR: Failed to parse hrw4u config file: " << hrw4u_file << "\n";
     destroy_rules_config(hrw_config);
     destroy_rules_config(hrw4u_config);

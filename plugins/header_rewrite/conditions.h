@@ -328,6 +328,7 @@ public:
   void append_value(std::string &s, const Resources &res) override;
 
 protected:
+  void initialize_hooks() override;
   bool eval(const Resources &res) override;
 
 private:

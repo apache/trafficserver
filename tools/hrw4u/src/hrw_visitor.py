@@ -387,6 +387,11 @@ class HRWInverseVisitor(u4wrhVisitor, BaseHRWVisitor):
             stmt = self.symbol_resolver.op_to_hrw4u(cmd, args, self._section_label, op_state)
             self.emit(stmt + ";")
 
+            # If [L] modifier was on a non-no-op operator, emit break; after the statement
+            # (no-op [L] is already converted to "break" by op_to_hrw4u)
+            if op_state.last and cmd != "no-op":
+                self.emit("break;")
+
             return None
 
     # Condition block lifecycle methods - specific to inverse visitor
