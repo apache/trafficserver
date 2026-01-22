@@ -76,6 +76,8 @@ struct CondState {
   bool nocase_modifier = false;
   bool ext_modifier    = false;
   bool pre_modifier    = false;
+  bool mid_modifier    = false;
+  bool suf_modifier    = false;
 
   void reset();
   void add_modifier(std::string_view mod);

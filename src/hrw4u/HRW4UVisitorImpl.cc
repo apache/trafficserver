@@ -169,6 +169,13 @@ HRW4UVisitorImpl::get_or_create_ruleset()
   if (_current_ruleset == nullptr && _callbacks.create_ruleset) {
     _current_ruleset = _callbacks.create_ruleset();
     track_object(_current_ruleset, "ruleset");
+
+    // Set the hook on the ruleset immediately so operators added to it get the correct hook
+    if (_current_ruleset && _callbacks.set_ruleset_hook) {
+      // Use current section if set, otherwise use the default hook from config
+      SectionType effective_section = (_current_section != SectionType::UNKNOWN) ? _current_section : _config.default_hook;
+      _callbacks.set_ruleset_hook(_current_ruleset, static_cast<int>(effective_section));
+    }
   }
   return _current_ruleset;
 }
@@ -816,9 +823,15 @@ HRW4UVisitorImpl::visitConditional(hrw4uParser::ConditionalContext *ctx)
       if (ctx->ifStatement()->condition()) {
         visit(ctx->ifStatement()->condition());
       }
+
+      // Push marker so nested conditionals know they're not at section level
+      IfBlockState state{.op_if = nullptr, .clause_index = 0};
+
+      _if_stack.push(state);
       if (ctx->ifStatement()->block()) {
         visit(ctx->ifStatement()->block());
       }
+      _if_stack.pop();
     }
   } else if (is_section_level && has_elif_else) {
     IfBlockState state{.op_if = nullptr, .clause_index = 0};
@@ -1311,7 +1324,7 @@ HRW4UVisitorImpl::process_identifier_condition(const std::string &ident, bool ne
   bool actual_negation = negated;
 
   if (result.prefix) {
-    arg             = "=\"\"";
+    arg             = "=";
     actual_negation = !negated;
   }
 
@@ -1482,6 +1495,8 @@ CondState::reset()
   nocase_modifier = false;
   ext_modifier    = false;
   pre_modifier    = false;
+  mid_modifier    = false;
+  suf_modifier    = false;
 }
 
 void
@@ -1501,6 +1516,10 @@ CondState::add_modifier(std::string_view mod)
     ext_modifier = true;
   } else if (mod == "PRE") {
     pre_modifier = true;
+  } else if (mod == "MID") {
+    mid_modifier = true;
+  } else if (mod == "SUF") {
+    suf_modifier = true;
   }
 }
 
@@ -1529,6 +1548,12 @@ CondState::to_list() const
   }
   if (pre_modifier) {
     result.push_back("PRE");
+  }
+  if (mid_modifier) {
+    result.push_back("MID");
+  }
+  if (suf_modifier) {
+    result.push_back("SUF");
   }
   return result;
 }
@@ -1643,7 +1668,7 @@ bool
 ModifierInfo::is_condition_modifier(std::string_view mod)
 {
   return mod == "NOT" || mod == "N" || mod == "OR" || mod == "O" || mod == "AND" || mod == "NC" || mod == "NOCASE" || mod == "I" ||
-         mod == "EXT" || mod == "PRE";
+         mod == "EXT" || mod == "PRE" || mod == "MID" || mod == "SUF";
 }
 
 bool

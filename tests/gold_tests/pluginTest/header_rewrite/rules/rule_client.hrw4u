@@ -14,9 +14,32 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+REMAP {
+    if inbound.url.path ~ /^from_1\// && inbound.url.scheme == http && inbound.url.host == www.example.com && inbound.url.query ~ /foo=bar/ {
+        inbound.status = 304;
+    }
+}
 
-cond %{REMAP_PSEUDO_HOOK}
-  set-effective-address %{CLIENT-HEADER:Real-IP}
+SEND_RESPONSE {
+    if inbound.url.path in [png, gif, jpeg] with EXT,NOCASE {
+        inbound.resp.X-Extension = "Yes";
+    }
+}
 
-cond %{SEND_RESPONSE_HDR_HOOK}
-  set-header Effective-IP %{INBOUND:REMOTE-ADDR}
+SEND_RESPONSE {
+    if inbound.url.path in [hrw, foo] with NOCASE,MID {
+        no-op();
+    } else {
+        inbound.resp.X-Pre-Else = "Yes";
+    }
+}
+
+SEND_RESPONSE {
+    if inbound.req.X-Testing in [foo, bar, "foo,bar"] {
+        inbound.resp.X-Testing = "Yes";
+    } elif inbound.req.X-Testing == "elif" {
+        inbound.resp.X-Testing = "elif";
+    } else {
+        inbound.resp.X-Testing = "No";
+    }
+}

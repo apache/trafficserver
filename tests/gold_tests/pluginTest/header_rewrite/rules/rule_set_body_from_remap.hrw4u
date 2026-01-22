@@ -14,9 +14,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+READ_RESPONSE {
+    if inbound.url.path == "remap_success" || inbound.url.path == "200" {
+        set-body-from("http://www.example.com/404.html");
+    }
+}
 
-cond %{REMAP_PSEUDO_HOOK}
-  set-effective-address %{CLIENT-HEADER:Real-IP}
-
-cond %{SEND_RESPONSE_HDR_HOOK}
-  set-header Effective-IP %{INBOUND:REMOTE-ADDR}
+READ_RESPONSE {
+    if inbound.url.path == "remap_fail" {
+        set-body-from("http://www.example.com/fail");
+    }
+}
