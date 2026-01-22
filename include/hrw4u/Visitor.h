@@ -86,6 +86,7 @@ using AddConditionToGroupCallback = std::function<bool(void *group, void *condit
 using CreateIfOperatorCallback    = std::function<void *()>;
 using NewSectionCallback          = std::function<void *(void *op_if, CondClause clause)>;
 using NewRuleSetSectionCallback   = std::function<void *(void *ruleset, CondClause clause)>;
+using SetRuleSetHookCallback      = std::function<void(void *ruleset, int section_type)>;
 using DestroyCallback             = std::function<void(void *ptr, std::string_view type)>;
 
 struct FactoryCallbacks {
@@ -100,6 +101,7 @@ struct FactoryCallbacks {
   CreateIfOperatorCallback    create_if_operator;
   NewSectionCallback          new_section;
   NewRuleSetSectionCallback   new_ruleset_section;
+  SetRuleSetHookCallback      set_ruleset_hook;
   DestroyCallback             destroy;
 
   [[nodiscard]] bool

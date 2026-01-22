@@ -209,7 +209,13 @@ namespace
 
       auto *ruleset = static_cast<RuleSet *>(rule);
       auto *cond    = static_cast<Condition *>(condition);
-      auto *group   = ruleset->get_group();
+
+      if (!cond->set_hook(ruleset->get_hook())) {
+        TSError("[header_rewrite:hrw4u] can't use this condition in hook=%s", TSHttpHookNameLookup(ruleset->get_hook()));
+        return false;
+      }
+
+      auto *group = ruleset->get_group();
 
       if (group) {
         group->add_condition(cond);
@@ -243,6 +249,10 @@ namespace
 
       auto *op_if = static_cast<OperatorIf *>(op_if_ptr);
       auto *cond  = static_cast<Condition *>(condition);
+
+      // Note: We don't set the hook here because the OperatorIf's hook isn't set yet.
+      // The hook will be set when the OperatorIf is added to the RuleSet.
+
       auto *group = op_if->get_group();
 
       if (group) {
@@ -279,7 +289,11 @@ namespace
 
       auto *op_if     = static_cast<OperatorIf *>(op_if_ptr);
       auto *operator_ = static_cast<Operator *>(op);
-      auto *cur_sec   = op_if->cur_section();
+
+      // Note: We don't set the hook here because the OperatorIf's hook isn't set yet.
+      // The hook will be set when the OperatorIf is added to the RuleSet.
+
+      auto *cur_sec = op_if->cur_section();
 
       if (!cur_sec) {
         return false;
@@ -349,6 +363,19 @@ namespace
         delete static_cast<RuleSet *>(ptr);
       }
     }
+
+    static void
+    set_ruleset_hook(void *ruleset_ptr, int section_type)
+    {
+      if (!ruleset_ptr) {
+        return;
+      }
+
+      auto        *ruleset = static_cast<RuleSet *>(ruleset_ptr);
+      TSHttpHookID hook    = section_to_hook(section_type);
+
+      ruleset->set_hook(hook);
+    }
   };
 
   hrw4u::FactoryCallbacks
@@ -366,6 +393,7 @@ namespace
     callbacks.create_if_operator     = FactoryBridge::create_if_operator;
     callbacks.new_section            = FactoryBridge::new_section;
     callbacks.new_ruleset_section    = FactoryBridge::new_ruleset_section;
+    callbacks.set_ruleset_hook       = FactoryBridge::set_ruleset_hook;
     callbacks.destroy                = FactoryBridge::destroy;
 
     return callbacks;
