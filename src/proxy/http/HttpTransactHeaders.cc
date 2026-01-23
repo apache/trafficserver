@@ -482,6 +482,8 @@ HttpTransactHeaders::generate_and_set_squid_codes(HTTPHdr *header, char *via_str
       } else {
         if (via_string[VIA_CACHE_RESULT] == VIA_IN_CACHE_STALE && via_string[VIA_SERVER_RESULT] == VIA_SERVER_NOT_MODIFIED) {
           log_code = SquidLogCode::TCP_REFRESH_HIT;
+        } else if (via_string[VIA_CACHE_RESULT] == VIA_IN_CACHE_STALE && via_string[VIA_SERVER_RESULT] == VIA_SERVER_ERROR) {
+          log_code = SquidLogCode::TCP_REF_FAIL_HIT;
         } else {
           log_code = SquidLogCode::TCP_IMS_MISS;
         }
