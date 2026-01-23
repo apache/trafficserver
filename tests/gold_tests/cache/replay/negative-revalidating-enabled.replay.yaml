@@ -57,7 +57,7 @@ autest:
       logging:
         formats:
           - name: access
-            format: '%<crc>'
+            format: '%<{uuid}cqh> %<crc> %<pssc> %<sssc>'
 
         logs:
           - filename: access
