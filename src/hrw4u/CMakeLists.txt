@@ -20,6 +20,10 @@ find_package(antlr4-runtime QUIET)
 
 if(NOT antlr4-runtime_FOUND)
   message(STATUS "ANTLR4 runtime not found - hrw4u library will not be built")
+  set(TS_HAS_CPP_HRW4U
+      FALSE
+      PARENT_SCOPE
+  )
   return()
 endif()
 
@@ -28,8 +32,18 @@ find_program(ANTLR4_EXECUTABLE antlr4 NAMES antlr4 antlr)
 
 if(NOT ANTLR4_EXECUTABLE)
   message(STATUS "ANTLR4 tool not found - hrw4u library will not be built")
+  set(TS_HAS_CPP_HRW4U
+      FALSE
+      PARENT_SCOPE
+  )
   return()
 endif()
+
+# ANTLR4 available - hrw4u will be built
+set(TS_HAS_CPP_HRW4U
+    TRUE
+    PARENT_SCOPE
+)
 
 message(STATUS "Building hrw4u library with ANTLR4 support")
 
