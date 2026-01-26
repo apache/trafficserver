@@ -619,6 +619,13 @@ static constexpr RecordElement RecordsConfig[] =
   //       #  4 - return error if cache miss or if revalidate
   {RECT_CONFIG, "proxy.config.http.cache.open_write_fail_action", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
+  //       #  defer_write_on_miss:
+  //       #  0 - disabled (default). Open cache for write immediately on miss.
+  //       #  1 - enabled. Defer cache open write until response headers received.
+  //       #      Improves performance for non-cacheable responses but may affect
+  //       #      read-while-write and request coalescing for popular uncached URLs.
+  {RECT_CONFIG, "proxy.config.http.cache.defer_write_on_miss", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  ,
   //       #  when_to_revalidate has 4 options:
   //       #
   //       #  0 - default. use cache directives or heuristic

@@ -578,6 +578,11 @@ struct OverridableHttpConfigParams {
 
   MgmtByte cache_open_write_fail_action = 0;
 
+  ////////////////////////////////////////////////
+  // Defer cache open write until response hdrs //
+  ////////////////////////////////////////////////
+  MgmtByte cache_defer_write_on_miss = 0;
+
   ////////////////////////
   // Check Post request //
   ////////////////////////
