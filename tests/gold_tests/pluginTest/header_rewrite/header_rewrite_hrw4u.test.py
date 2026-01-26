@@ -21,4 +21,7 @@ Test.Summary = '''
 A set of remap rules and tests for header_rewrite using hrw4u configuration format.
 '''
 
+# hrw4u native parsing requires ANTLR4
+Test.SkipUnless(Condition.HasATSFeature('TS_HAS_CPP_HRW4U'))
+
 Test.ATSReplayTest(replay_file="header_rewrite_hrw4u.replay.yaml",)
