@@ -67,6 +67,9 @@ ConditionStatus::initialize_hooks()
 {
   add_allowed_hook(TS_HTTP_READ_RESPONSE_HDR_HOOK);
   add_allowed_hook(TS_HTTP_SEND_RESPONSE_HDR_HOOK);
+  require_resources(RSRC_SERVER_RESPONSE_HEADERS);
+  require_resources(RSRC_CLIENT_RESPONSE_HEADERS);
+  require_resources(RSRC_RESPONSE_STATUS);
 }
 
 bool
@@ -201,6 +204,16 @@ ConditionAccess::eval(const Resources & /* res ATS_UNUSED */)
 
 // ConditionHeader: request or response header
 void
+ConditionHeader::initialize_hooks()
+{
+  Condition::initialize_hooks();
+  require_resources(RSRC_CLIENT_REQUEST_HEADERS);
+  require_resources(RSRC_CLIENT_RESPONSE_HEADERS);
+  require_resources(RSRC_SERVER_REQUEST_HEADERS);
+  require_resources(RSRC_SERVER_RESPONSE_HEADERS);
+}
+
+void
 ConditionHeader::initialize(Parser &p)
 {
   Condition::initialize(p);
@@ -208,11 +221,6 @@ ConditionHeader::initialize(Parser &p)
 
   match->set(p.get_arg(), mods());
   _matcher = std::move(match);
-
-  require_resources(RSRC_CLIENT_REQUEST_HEADERS);
-  require_resources(RSRC_CLIENT_RESPONSE_HEADERS);
-  require_resources(RSRC_SERVER_REQUEST_HEADERS);
-  require_resources(RSRC_SERVER_RESPONSE_HEADERS);
 }
 
 void
