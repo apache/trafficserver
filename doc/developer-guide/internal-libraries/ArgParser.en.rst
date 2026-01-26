@@ -155,6 +155,40 @@ Example with a required group:
 
    // User must specify either --json or --xml, but not both
 
+Option Dependencies
+-------------------
+
+ArgParser supports option dependencies, where one option requires another option to be present.
+This is useful when an option only makes sense in combination with another option.
+
+To specify that an option requires another option, use the ``with_required()`` method immediately after
+adding the option:
+
+.. code-block:: cpp
+
+   command.add_option("--tags", "-t", "Debug tags", "", 1)
+   command.add_option("--append", "-a", "Append tags to existing tags")
+     .with_required("--tags");  // --append requires --tags to be present
+
+When ``--append`` is used without ``--tags``, ArgParser will display an error message and exit:
+
+.. code-block:: text
+
+   Error: Option '--append' requires '--tags' to be specified
+
+Multiple dependencies can be specified by chaining ``with_required()`` calls:
+
+.. code-block:: cpp
+
+   command.add_option("--verbose-append", "-V", "Verbose append mode")
+     .with_required("--tags")
+     .with_required("--append");  // requires both --tags and --append
+
+.. Note::
+
+   The ``with_required()`` method must be called immediately after ``add_option()`` or
+   ``add_option_to_group()``. It applies to the most recently added option.
+
 Parsing Arguments
 -----------------
 
@@ -267,10 +301,23 @@ Classes
    is called under certain command, it will be added as a subcommand for the current command. For Example, :code:`command1.add_command("command2", "description")`
    will make :code:`command2` a subcommand of :code:`command1`. :code:`require_commands()` is also available within :class:`Command`.
 
-   .. function:: void add_example_usage(std::string const &usage)
+   .. function:: Command &add_example_usage(std::string const &usage)
 
-      Add an example usage for the command to output in `help_message`.
-      For Example: :code:`command.add_example_usage("traffic_blabla init --path=/path/to/file")`.
+      Add an example usage for the command to output in ``help_message``. This method can be
+      called multiple times to add multiple examples. Returns the Command instance for chained calls.
+
+      Example::
+
+         command.add_example_usage("traffic_ctl server debug enable -t my_tags")
+                .add_example_usage("traffic_ctl server debug enable -t new_tag -a  # append mode");
+
+      This will output in help:
+
+      .. code-block:: text
+
+         Example Usage:
+           traffic_ctl server debug enable -t my_tags
+           traffic_ctl server debug enable -t new_tag -a  # append mode
 
    .. function:: Command &set_default()
 
@@ -283,6 +330,12 @@ Classes
    .. function:: void add_option_to_group(std::string const &group_name, std::string const &long_option, std::string const &short_option, std::string const &description)
 
       Add an option to a mutually exclusive group for this command.
+
+   .. function:: Command &with_required(std::string const &required_option)
+
+      Specify that the last added option requires another option to be present.
+      Must be called immediately after ``add_option()`` or ``add_option_to_group()``.
+      Returns the Command instance for chained calls.
 
 .. class:: Arguments
 

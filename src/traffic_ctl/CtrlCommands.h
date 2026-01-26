@@ -236,6 +236,7 @@ private:
   static inline const std::string ENABLE_STR{"enable"};
   static inline const std::string DISABLE_STR{"disable"};
   static inline const std::string TAGS_STR{"tags"};
+  static inline const std::string APPEND_STR{"append"};
   static inline const std::string CLIENT_IP_STR{"client_ip"};
 
   static inline const std::string STATUS_STR{"status"};
