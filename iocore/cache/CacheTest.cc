@@ -655,8 +655,7 @@ test_RamCache(RegressionTest *t, RamCache *cache, const char *name, int64_t cach
 
 REGRESSION_TEST(ram_cache)(RegressionTest *t, int level, int *pstatus)
 {
-  // Run with -R 3 for now to trigger this check, until we figure out the CI
-  if (REGRESSION_TEST_EXTENDED > level) {
+  if (REGRESSION_TEST_NIGHTLY > level) {
     *pstatus = REGRESSION_TEST_PASSED;
     return;
   }
@@ -666,7 +665,12 @@ REGRESSION_TEST(ram_cache)(RegressionTest *t, int level, int *pstatus)
     *pstatus = REGRESSION_TEST_FAILED;
     return;
   }
-  for (int s = 20; s <= 28; s += 4) {
+
+  // Test cache sizes from 1MB to 16MB. The sample_size is cache_size >> 6, so
+  // the 16MB test runs 262K iterations which completes in reasonable time. This
+  // used to run with 256MB (s=28) at 4M+ iterations, which is too much for CI
+  // resulting in failures, either due to timeout or OOM issues.
+  for (int s = 20; s <= 24; s += 4) {
     int64_t cache_size = 1LL << s;
     *pstatus           = REGRESSION_TEST_PASSED;
     if (!test_RamCache(t, new_RamCacheLRU(), "LRU", cache_size) || !test_RamCache(t, new_RamCacheCLFUS(), "CLFUS", cache_size)) {
