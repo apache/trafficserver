@@ -212,5 +212,10 @@ src/iocore/cache/unit_tests/var/trafficserver/cache.db
 
 # LLM / AI
 .cursor/
-.claude/*
+.claude/
 !.claude/CLAUDE.md
+
+# Extensions
+ext/
+!ext/CMakeLists.txt
+!ext/README.md
