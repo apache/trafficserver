@@ -1,0 +1,15 @@
+Changes with Apache Traffic Server 9.2.12
+  #12315 - Initialize the OptionInfo in the ESI plugin using default member initializer
+  #12319 - 9.2.x: Support CLIENT_HELLO split across multiple packets
+  #12395 - Fix host.db load failure due to incorrect object_version compatibility check
+  #12431 - Fix HostDB sync issue by preserving expiry_time on load
+  #12498 - ypaf update: v0.32.0 -> v0.43.0 (#12008)
+  #12499 - Cherry-pick of #12002
+  #12500 - Use ats_free instead of free in LogFlushData destructor (#12024)
+  #12507 - Add nullptr check in HttpTransact::is_stale_cache_response_returnable…
+  #12558 - Reuse prepared cache write on redirected request (#11542)
+  #12559 - Reset write lock state to init after closing write (#12215)
+  #12796 - Fix: HTTPHdr host cache invalidation when Host header modified (#12768)
+  #12827 - 9.2.x: Reduce ram_cache regression test scope for CI stability
+  #12828 - 9.2.x: Make chunk size parsing more strict
+  #12829 - [compress] Fix compressible-status-code config (#12116)
