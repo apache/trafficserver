@@ -2,10 +2,6 @@ name: CIFuzz
 on:
   schedule:
     - cron: '0 0 * * 0'
-  workflow_dispatch:
-  push:
-    branches: 
-      - 'shukitchan-patch-30' 
 permissions: {}
 jobs:
   Fuzzing:
@@ -15,12 +11,12 @@ jobs:
     steps:
     - name: Build Fuzzers
       id: build
-      uses: shukitchan/oss-fuzz/infra/cifuzz/actions/build_fuzzers@shukitchan-patch-12
+      uses: google/oss-fuzz/infra/cifuzz/actions/build_fuzzers@master
       with:
         oss-fuzz-project-name: 'trafficserver'
         language: c++
     - name: Run Fuzzers
-      uses: shukitchan/oss-fuzz/infra/cifuzz/actions/run_fuzzers@shukitchan-patch-12
+      uses: google/oss-fuzz/infra/cifuzz/actions/run_fuzzers@master
       with:
         oss-fuzz-project-name: 'trafficserver'
         language: c++
