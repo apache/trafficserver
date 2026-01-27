@@ -848,6 +848,9 @@ AS_IF([test "x${has_optimizer_flags}" = "xno"],
         ]
 )
 
+AX_CXX_COMPILE_FLAG([-Wno-cast-function-type-mismatch], [NO_WARN_CAST_FUNCTION_TYPE_MISMATCH="-Wno-cast-function-type-mismatch"], [NO_WARN_CAST_FUNCTION_TYPE_MISMATCH=""])
+AC_SUBST([NO_WARN_CAST_FUNCTION_TYPE_MISMATCH])
+
 case $host_os_def in
   linux)
     AS_IF([test "x$ax_cv_c_compiler_vendor" = "xintel"], [
@@ -885,7 +888,7 @@ case $host_os_def in
 
   darwin)
     AS_IF([test "x$ax_cv_c_compiler_vendor" = "xclang"], [
-      common_opt="-pipe -Wall -Wno-deprecated-declarations -Qunused-arguments -Wextra -Wno-ignored-qualifiers -Wno-unused-parameter -Wno-vla-extension -Wno-cast-function-type-mismatch"
+      common_opt="-pipe -Wall -Wno-deprecated-declarations -Qunused-arguments -Wextra -Wno-ignored-qualifiers -Wno-unused-parameter -Wno-vla-extension $(NO_WARN_CAST_FUNCTION_TYPE_MISMATCH)"
       debug_opt="-g $common_opt"
       release_opt="-g $common_opt $optimizing_flags -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
