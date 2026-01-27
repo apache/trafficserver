@@ -401,7 +401,7 @@ Http2Stream::payload_length_is_valid() const
   bool is_payload_precluded =
     this->is_outbound_connection() && (_send_header.method_get_wksidx() == HTTP_WKSIDX_HEAD ||
                                        (_send_header.method_get_wksidx() == HTTP_WKSIDX_GET && _send_header.presence(mask) &&
-                                        _receive_header.status_get() == HTTPStatus::NOT_MODIFIED));
+                                        _receive_header.status_get() == HTTP_STATUS_NOT_MODIFIED));
 
   if (content_length != 0 && !is_payload_precluded && content_length != data_length) {
     Warning("Bad payload length content_length=%d data_legnth=%d session_id=%" PRId64, content_length,
