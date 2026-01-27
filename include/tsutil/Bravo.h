@@ -372,4 +372,195 @@ private:
 
 using shared_mutex = shared_mutex_impl<>;
 
+/**
+   ts::bravo::recursive_shared_mutex_impl
+
+   A recursive version of shared_mutex_impl that allows the same thread
+   to acquire exclusive and shared locks multiple times.
+
+   Uses DenseThreadId for efficient per-thread state tracking without map overhead.
+   Optimized to minimize expensive std::this_thread::get_id() calls by using
+   DenseThreadId for ownership tracking.
+
+   Mixed lock semantics:
+   - Upgrade prevention: A thread holding a shared lock cannot acquire an exclusive lock
+     (would cause deadlock). try_lock() returns false, lock() asserts.
+   - Downgrade allowed: A thread holding an exclusive lock can acquire a shared lock.
+ */
+template <typename T = shared_mutex_impl<>, size_t SLOT_SIZE = 256> class recursive_shared_mutex_impl
+{
+  // Use a sentinel value for "no owner" - DenseThreadId values are 0 to SLOT_SIZE-1
+  static constexpr size_t NO_OWNER = SLOT_SIZE;
+
+public:
+  recursive_shared_mutex_impl()  = default;
+  ~recursive_shared_mutex_impl() = default;
+
+  // No copying or moving
+  recursive_shared_mutex_impl(recursive_shared_mutex_impl const &)            = delete;
+  recursive_shared_mutex_impl &operator=(recursive_shared_mutex_impl const &) = delete;
+  recursive_shared_mutex_impl(recursive_shared_mutex_impl &&)                 = delete;
+  recursive_shared_mutex_impl &operator=(recursive_shared_mutex_impl &&)      = delete;
+
+  ////
+  // Exclusive locking (recursive)
+  //
+  void
+  lock()
+  {
+    size_t tid = DenseThreadId::self();
+    // Fast path: check if we already own the lock
+    if (_exclusive_owner.load(std::memory_order_relaxed) == tid) {
+      ++_exclusive_count;
+      return;
+    }
+    // Upgrade prevention: cannot acquire exclusive lock while holding shared lock
+    ThreadState &state = _thread_states[tid];
+    debug_assert(state.shared_count == 0);
+    _mutex.lock();
+    _exclusive_owner.store(tid, std::memory_order_relaxed);
+    _exclusive_count = 1;
+  }
+
+  bool
+  try_lock()
+  {
+    size_t tid = DenseThreadId::self();
+    // Fast path: check if we already own the lock
+    if (_exclusive_owner.load(std::memory_order_relaxed) == tid) {
+      ++_exclusive_count;
+      return true;
+    }
+    // Upgrade prevention: cannot acquire exclusive lock while holding shared lock
+    ThreadState &state = _thread_states[tid];
+    if (state.shared_count > 0) {
+      return false;
+    }
+    if (_mutex.try_lock()) {
+      _exclusive_owner.store(tid, std::memory_order_relaxed);
+      _exclusive_count = 1;
+      return true;
+    }
+    return false;
+  }
+
+  void
+  unlock()
+  {
+    if (--_exclusive_count == 0) {
+      _exclusive_owner.store(NO_OWNER, std::memory_order_relaxed);
+      _mutex.unlock();
+    }
+  }
+
+  ////
+  // Shared locking (recursive)
+  //
+  void
+  lock_shared(Token &token)
+  {
+    size_t       tid   = DenseThreadId::self();
+    ThreadState &state = _thread_states[tid];
+
+    // Fast path: already holding shared lock - just increment count (most common case)
+    size_t count = state.shared_count;
+    if (count > 0) {
+      state.shared_count = count + 1;
+      token              = state.cached_token;
+      return;
+    }
+
+    // Check for downgrade: if we hold exclusive lock, allow shared lock without acquiring underlying
+    if (_exclusive_owner.load(std::memory_order_relaxed) == tid) {
+      state.shared_count = 1;
+      token              = 0; // Special token indicating we're under exclusive lock
+      return;
+    }
+
+    // Slow path: acquire underlying lock
+    _mutex.lock_shared(state.cached_token);
+    state.shared_count = 1;
+    token              = state.cached_token;
+  }
+
+  bool
+  try_lock_shared(Token &token)
+  {
+    size_t       tid   = DenseThreadId::self();
+    ThreadState &state = _thread_states[tid];
+
+    // Fast path: already holding shared lock - just increment count (most common case)
+    size_t count = state.shared_count;
+    if (count > 0) {
+      state.shared_count = count + 1;
+      token              = state.cached_token;
+      return true;
+    }
+
+    // Check for downgrade: if we hold exclusive lock, allow shared lock without acquiring underlying
+    if (_exclusive_owner.load(std::memory_order_relaxed) == tid) {
+      state.shared_count = 1;
+      token              = 0; // Special token indicating we're under exclusive lock
+      return true;
+    }
+
+    // Slow path: try to acquire underlying lock
+    if (_mutex.try_lock_shared(state.cached_token)) {
+      state.shared_count = 1;
+      token              = state.cached_token;
+      return true;
+    }
+    return false;
+  }
+
+  void
+  unlock_shared(const Token /* token */)
+  {
+    size_t       tid   = DenseThreadId::self();
+    ThreadState &state = _thread_states[tid];
+    if (--state.shared_count == 0) {
+      // Only unlock underlying mutex if we're not holding exclusive lock
+      if (_exclusive_owner.load(std::memory_order_relaxed) != tid) {
+        _mutex.unlock_shared(state.cached_token);
+      }
+      state.cached_token = 0;
+    }
+  }
+
+  // Extensions to check
+  bool
+  has_unique_lock()
+  {
+    return _exclusive_owner.load(std::memory_order_relaxed) == DenseThreadId::self();
+  }
+
+  bool
+  has_shared_lock()
+  {
+    size_t       tid   = DenseThreadId::self();
+    ThreadState &state = _thread_states[tid];
+
+    if (state.shared_count > 0) {
+      return true;
+    } else if (_exclusive_owner.load(std::memory_order_relaxed) == tid) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+private:
+  struct ThreadState {
+    size_t shared_count{0};
+    Token  cached_token{0};
+  };
+
+  T                                  _mutex;
+  std::atomic<size_t>                _exclusive_owner{NO_OWNER};
+  size_t                             _exclusive_count{0};
+  std::array<ThreadState, SLOT_SIZE> _thread_states{};
+};
+
+using recursive_shared_mutex = recursive_shared_mutex_impl<>;
+
 } // namespace ts::bravo

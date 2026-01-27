@@ -117,9 +117,9 @@ StripeSM::StripeSM(CacheDisk *disk, off_t blocks, off_t dir_skip, int avg_obj_si
     Stripe{disk, blocks, dir_skip, avg_obj_size, fragment_size},
     fd{disk->fd},
     disk{disk},
-    _preserved_dirs{len}
+    _preserved_dirs{len},
+    _open_dir(this)
 {
-  open_dir.mutex = this->mutex;
   SET_HANDLER(&StripeSM::aggWrite);
 }
 
@@ -1381,8 +1381,12 @@ StripeSM::open_write(CacheVC *cont, int allow_if_writers, int max_writers)
     return ECACHE_WRITE_FAIL;
   }
 
-  if (open_dir.open_write(cont, allow_if_writers, max_writers)) {
-    return 0;
+  {
+    std::lock_guard lock(_shared_mutex);
+
+    if (_open_dir.open_write(cont, allow_if_writers, max_writers)) {
+      return 0;
+    }
   }
   return ECACHE_DOC_BUSY;
 }
@@ -1401,7 +1405,9 @@ StripeSM::open_write_lock(CacheVC *cont, int allow_if_writers, int max_writers)
 int
 StripeSM::close_write(CacheVC *cont)
 {
-  return open_dir.close_write(cont);
+  std::lock_guard lock(_shared_mutex);
+
+  return _open_dir.close_write(cont);
 }
 
 void
