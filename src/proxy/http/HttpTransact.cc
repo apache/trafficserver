@@ -3808,6 +3808,20 @@ HttpTransact::handle_response_from_server(State *s)
   case CONNECTION_CLOSED:
   case BAD_INCOMING_RESPONSE:
 
+    // Ensure cause_of_death_errno is set for all error states if not already set.
+    // This prevents the assertion failure in retry_server_connection_not_open.
+    if (s->cause_of_death_errno == -UNKNOWN_INTERNAL_ERROR) {
+      if (s->current.state == PARSE_ERROR || s->current.state == BAD_INCOMING_RESPONSE) {
+        s->set_connect_fail(EBADMSG);
+      } else if (s->current.state == CONNECTION_CLOSED) {
+        s->set_connect_fail(EPIPE);
+      } else {
+        // Generic fallback for OPEN_RAW_ERROR, CONNECTION_ERROR,
+        // STATE_UNDEFINED, and any other unexpected error states.
+        s->set_connect_fail(EIO);
+      }
+    }
+
     if (is_server_negative_cached(s)) {
       max_connect_retries = s->txn_conf->connect_attempts_max_retries_down_server - 1;
     } else {
@@ -4401,6 +4415,9 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
         base_response->set_expires(exp_time);
 
         SET_VIA_STRING(VIA_CACHE_FILL_ACTION, VIA_CACHE_UPDATED);
+        SET_VIA_STRING(VIA_CACHE_RESULT, VIA_IN_CACHE_STALE);
+        // change VIA_SERVER_RESULT to ERROR because this status hit the negative_revalidating_list
+        SET_VIA_STRING(VIA_SERVER_RESULT, VIA_SERVER_ERROR);
         Metrics::Counter::increment(http_rsb.cache_updates);
 
         // unset Cache-control: "need-revalidate-once" (if it's set)

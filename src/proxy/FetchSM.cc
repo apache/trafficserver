@@ -295,6 +295,9 @@ FetchSM::InvokePluginExt(int fetch_event)
     MUTEX_TAKE_LOCK(cont_mutex, mythread);
   }
 
+  bool const dechunk = 0 != (fetch_flags & TS_FETCH_FLAGS_DECHUNK);
+  bool       chunked = false;
+
   if (!contp) {
     goto out;
   }
@@ -330,11 +333,13 @@ FetchSM::InvokePluginExt(int fetch_event)
     goto out;
   }
 
+  chunked = check_chunked();
+
   Dbg(dbg_ctl, "[%s] chunked:%d, content_len: %" PRId64 ", received_len: %" PRId64 ", avail: %" PRId64 "", __FUNCTION__,
       resp_is_chunked, resp_content_length, resp_received_body_len,
-      resp_is_chunked > 0 ? chunked_handler.chunked_reader->read_avail() : resp_reader->read_avail());
+      chunked && dechunk ? chunked_handler.chunked_reader->read_avail() : resp_reader->read_avail());
 
-  if (resp_is_chunked > 0) {
+  if (chunked && dechunk) {
     if (!chunked_handler.chunked_reader->read_avail()) {
       if (read_complete_event) {
         contp->handleEvent(TS_FETCH_EVENT_EXT_BODY_DONE, this);
@@ -348,13 +353,13 @@ FetchSM::InvokePluginExt(int fetch_event)
     goto out;
   }
 
-  if (!check_chunked()) {
+  if (!chunked) {
     if (!check_body_done() && !read_complete_event) {
       contp->handleEvent(TS_FETCH_EVENT_EXT_BODY_READY, this);
     } else {
       contp->handleEvent(TS_FETCH_EVENT_EXT_BODY_DONE, this);
     }
-  } else if (fetch_flags & TS_FETCH_FLAGS_DECHUNK) {
+  } else if (dechunk) {
     do {
       if (chunked_handler.state == ChunkedHandler::CHUNK_FLOW_CONTROL) {
         chunked_handler.state = ChunkedHandler::CHUNK_READ_SIZE_START;

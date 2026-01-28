@@ -24,6 +24,7 @@
 #pragma once
 
 #include "proxy/ProxySession.h"
+#include <cstdint>
 #include <string_view>
 
 class HttpSM;
@@ -127,6 +128,10 @@ public:
   ProxySession const *get_proxy_ssn() const;
   PoolableSession    *get_server_session() const;
   HttpSM             *get_sm() const;
+
+  // this is the client address for the transaction, which may not be the same as the connection remote address
+  sockaddr const *get_client_addr() const;
+  uint16_t        get_client_port() const;
 
   // This function must return a non-negative number that is different for two in-progress transactions with the same proxy_ssn
   // session.
@@ -324,4 +329,16 @@ ProxyTransaction::get_remote_addr() const
   } else {
     return nullptr;
   }
+}
+
+inline sockaddr const *
+ProxyTransaction::get_client_addr() const
+{
+  return _proxy_ssn ? _proxy_ssn->get_client_addr() : nullptr;
+}
+
+inline uint16_t
+ProxyTransaction::get_client_port() const
+{
+  return _proxy_ssn ? _proxy_ssn->get_client_port() : 0;
 }

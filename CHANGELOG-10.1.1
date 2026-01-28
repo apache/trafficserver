@@ -1,0 +1,86 @@
+Changes with Apache Traffic Server 10.1.1
+  #12278 - Update url_m_loc variable to the newly generated one in set-destination
+  #12320 - Cripts: Adds some certificate introspection
+  #12360 - [10.1.x] Run autests with curl UDS default
+  #12363 - HRW: Adds  %{INBOUND:SERVER-CERT} and %{INBOUND:CLIENT-CERT} conds
+  #12391 - Add range request support to cache fill + global plugin support
+  #12399 - HRW: Fix parser when conditions are values
+  #12402 - AuTest: reduce port usage in the Remap ACL test
+  #12425 - AuTest: cache after following redirect
+  #12426 - Remove constexpr from UnAddr constructors
+  #12435 - XDebug Probe missing comma prevents valid json
+  #12446 - Retry connect if server closes before receiving response
+  #12449 - Fix a crash due to unsatisfied precondition
+  #12450 - stats_over_http: respect Prometheus character constraints
+  #12452 - Print note when listen is delayed
+  #12454 - These two plugins depends on libswoc
+  #12455 - Fix document syntax errors #12385
+  #12457 - [cache_promote] Add --disable-on-redirect option
+  #12462 - Cripts: Fix standalone query URI component
+  #12465 - Fallback to malloc for larger regex buffers
+  #12469 - [10.1.x] Update cache metrics after initialized (#12430)
+  #12472 - Fix validation regex for proxy.config.http2.default_buffer_water_mark
+  #12474 - Skip SO_REUSEPORT for AF_UNIX sockets (#12470)
+  #12477 - Cripts: Obscure issue where rri->requestUrl may be nullptr
+  #12481 - test: make test_layout independent of TS_ROOT
+  #12485 - Make sure we don't create a tunnel when no request body is present.
+  #12492 - Docs: Correct the mismatch between the documentation and actual behavior
+  #12502 - Fix background fill on TLS connections
+  #12504 - background_fetch: add Unix domain support.
+  #12506 - Add thread_groups to server status result
+  #12509 - header_rewrite: explicit check for TS_SUCCESS to avoid erroring out on success
+  #12511 - Add a freebsd ifdef check for tcpinfo retrans
+  #12513 - Fix a merge issue with PR #12485
+  #12514 - test: make test_layout independent of TS_ROOT part 2
+  #12519 - 10.1.x: Fix pqus marshaling (#12490)
+  #12520 - header_rewrite: Fix uninitialized bufp/hdr_loc
+  #12527 - Convert const and #define to constexpr
+  #12529 - Fix connection leak on client abort
+  #12531 - Fixes sni.yaml-configured initial window sizing
+  #12537 - Fix traffic_ctl server AuTest
+  #12547 - HRW: Support \r, \n and \t as ctrl chars in values (#12528)
+  #12560 - [header_rewrite] Fix set-body
+  #12561 - Fix of use-after-free tunnel_handler_100_continue_ua
+  #12582 - asan: regression test assume null terminated strings
+  #12589 - [10.1.x] HRW: Better txn slot management (#12566)
+  #12596 - Another attempt to keep plugin DSOs in place
+  #12598 - Fix ArgParser command disambiguation to prevent args being treated as commands
+  #12600 - Fix crash when ESI plugin exceeds max_doc_size limit
+  #12604 - Fix setting HostDBRecord::record_type
+  #12610 - Find dot cmd for docs build
+  #12615 - fedora:43 autest updates
+  #12640 - remap_reload.test.py: fix override warnings
+  #12642 - vscode: associate .test.ext files with Python
+  #12649 - autest: --thread-limit 1 by default for Proxy Verifier
+  #12656 - 10.1.x: Fix DNS error logging to use ERR_DNS_FAIL (#12638)
+  #12664 - Store proxy-verifier in .git directory and fix AUTEST_OPTIONS escaping
+  #12666 - Add documentation for graceful shutdown
+  #12680 - cleanup ProxyProtocol and prevent memory leak
+  #12686 - Fix proxy-verifier storage for git worktrees
+  #12699 - Fix proxy-verifier path for non-worktree repositories
+  #12705 - various worktree fixes
+  #12707 - Fix for fetchsm chunked response handling with dechunking turned off
+  #12710 - Break recursive call of CacheVC::openReadStartEarliest
+  #12716 - 10.1: Fix regex_remap doc for overridable config syntax (#12663)
+  #12720 - [10.1.x] Require and call destructors on ClassAllocated objects
+  #12721 - Fix hanging SDK_API_HttpParentProxySet regression tests
+  #12722 - stats_over_http: fix incorrect use of C string functions
+  #12724 - Fix ProxyProtocol double destructor call in HttpTransact::State
+  #12725 - Cripts: tighten context cleanup
+  #12730 - regex_remap: Document host option // prefix behavior
+  #12732 - Fix autest.sh.in to preserve autest exit code
+  #12737 - regression tests: reduce ram_cache test scope for CI stability
+  #12748 - Fix http2 content-length header check (#12747)
+  #12750 - ASAN: Fix leak with the Stripe raw-dirs allocation
+  #12751 - Rename `Stripte` identifier prefix to `Stripe`
+  #12757 - block_errors: Fix plugin message handling
+  #12761 - Use ProxyProtocol SRC IP as Client IP
+  #12764 - Fix HTTP caching compliance by adding Vary headers for compressible c…
+  #12767 - Use malloc allocated buffers for h2 headers if enabled
+  #12771 - Decouple recursive var in CacheVC
+  #12784 - Fix convert2yaml.py to handle files without trailing newline
+  #12787 - Update header_rewrite to use Regex (#12573)
+  #12818 - Keep a copy of the effective client ip for logging
+  #12819 - header_rewrite fix storage lifetime for LAST-CAPTURE (#12809)
+  #12830 - Fix PR#12748 cherry-pick for 10.1.x
+  #12831 - Fix Cache Result Code of negative revalidation cases (#12824)

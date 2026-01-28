@@ -1,0 +1,3 @@
+records:
+  http:
+    negative_caching_enabled: 0

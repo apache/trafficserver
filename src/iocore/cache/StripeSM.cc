@@ -179,7 +179,7 @@ StripeSM::init(bool clear)
   }
 
   init_info           = new StripeInitInfo();
-  int   footerlen     = ROUND_TO_STORE_BLOCK(sizeof(StripteHeaderFooter));
+  int   footerlen     = ROUND_TO_STORE_BLOCK(sizeof(StripeHeaderFooter));
   off_t footer_offset = this->dirlen() - footerlen;
   // try A
   off_t as = skip;
@@ -222,7 +222,7 @@ StripeSM::handle_dir_clear(int event, void *data)
       /* clear the header for directory B. We don't need to clear the
          whole of directory B. The header for directory B starts at
          skip + len */
-      op->aiocb.aio_nbytes = ROUND_TO_STORE_BLOCK(sizeof(StripteHeaderFooter));
+      op->aiocb.aio_nbytes = ROUND_TO_STORE_BLOCK(sizeof(StripeHeaderFooter));
       op->aiocb.aio_offset = skip + dir_len;
       ink_assert(ink_aio_write(op));
       return EVENT_DONE;
@@ -566,7 +566,7 @@ Ldone: {
     aio->thread           = AIO_CALLBACK_THREAD_ANY;
     aio->then             = (i < 2) ? &(init_info->vol_aio[i + 1]) : nullptr;
   }
-  int    footerlen = ROUND_TO_STORE_BLOCK(sizeof(StripteHeaderFooter));
+  int    footerlen = ROUND_TO_STORE_BLOCK(sizeof(StripeHeaderFooter));
   size_t dirlen    = this->dirlen();
   int    B         = directory.header->sync_serial & 1;
   off_t  ss        = skip + (B ? dirlen : 0);
@@ -628,14 +628,14 @@ new_DocEvacuator(int nbytes, StripeSM *stripe)
 int
 StripeSM::handle_header_read(int event, void *data)
 {
-  AIOCallback         *op;
-  StripteHeaderFooter *hf[4];
+  AIOCallback        *op;
+  StripeHeaderFooter *hf[4];
   switch (event) {
   case AIO_EVENT_DONE:
     op = static_cast<AIOCallback *>(data);
     for (auto &i : hf) {
       ink_assert(op != nullptr);
-      i = static_cast<StripteHeaderFooter *>(op->aiocb.aio_buf);
+      i = static_cast<StripeHeaderFooter *>(op->aiocb.aio_buf);
       if (!op->ok()) {
         Note("Header read failed: clearing cache directory %s", this->hash_text.get());
         clear_dir_aio();
