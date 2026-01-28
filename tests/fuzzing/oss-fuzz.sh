@@ -64,8 +64,8 @@ cp /opt/h3-tools-boringssl/boringssl/lib/libcrypto.so $OUT/lib/
 cp /opt/h3-tools-boringssl/quiche/lib/libquiche.so $OUT/lib/
 cp /opt/h3-tools-boringssl/quiche/lib/libquiche.so $OUT/lib/libquiche.so.0
 
-ln -s $OUT/lib/libswoc.so.1.5.15 libswoc.so.1
-ln -s $OUT/lib/libswoc.so.1.5.15 libswoc.so
+ln -sf $OUT/lib/libswoc.so.1.5.15 libswoc.so.1
+ln -sf $OUT/lib/libswoc.so.1.5.15 libswoc.so
 
 export LD_LIBRARY_PATH=$OUT/lib/
 ldconfig
