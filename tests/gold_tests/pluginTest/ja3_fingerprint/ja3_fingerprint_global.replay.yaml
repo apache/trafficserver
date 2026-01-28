@@ -90,15 +90,16 @@ sessions:
       content:
         size: 399
 
+    # With --preserve and any JA3/JAWS header present, no new headers are added.
     proxy-request:
       headers:
         fields:
         - [ x-request, { value: 'http2-request', as: equal } ]
         - [ x-ja3-via, { value: 'first-via', as: equal } ]
         - [ x-jaws-via, { value: 'first-via', as: equal } ]
-        - [ X-JA3-Sig, { as: present } ]
-        - [ X-JA3-Raw, { as: present } ]
-        - [ x-jaws, { as: present } ]
+        - [ X-JA3-Raw, { value: 'first-signature', as: equal } ]
+        - [ x-jaws, { value: 'first-signature', as: equal } ]
+        - [ X-JA3-Sig, { as: absent } ]
 
     server-response:
       headers:
@@ -113,3 +114,101 @@ sessions:
         fields:
         - [ :status, { value: 200, as: equal } ]
         - [ x-response, { value: 'http2-response', as: equal } ]
+
+# Session 3: JA3 headers exist (no JAWS) - JA3 skipped, JAWS added.
+- protocol:
+  - name: http
+    version: 2
+  - name: tls
+    sni: http2.server.com
+  - name: tcp
+  - name: ip
+
+  transactions:
+
+  - client-request:
+      headers:
+        fields:
+        - [ :method, GET ]
+        - [ :scheme, https ]
+        - [ :authority, http2.server.com ]
+        - [ :path, /ja3-only ]
+        - [ uuid, ja3-only-request ]
+        - [ x-request, ja3-only-request ]
+        - [ x-ja3-sig, upstream-ja3-sig ]
+        - [ x-ja3-via, upstream.proxy.com ]
+
+    # With --preserve: JA3 headers exist, so JA3 skipped. JAWS headers don't
+    # exist, so JAWS should be added.
+    proxy-request:
+      headers:
+        fields:
+        - [ x-request, { value: 'ja3-only-request', as: equal } ]
+        - [ x-ja3-sig, { value: 'upstream-ja3-sig', as: equal } ]
+        - [ x-ja3-via, { value: 'upstream.proxy.com', as: equal } ]
+        - [ X-JA3-Raw, { as: absent } ]
+        - [ x-jaws, { as: present } ]
+        - [ x-jaws-via, { value: 'test.proxy.com', as: equal } ]
+
+    server-response:
+      headers:
+        fields:
+        - [ :status, 200 ]
+        - [ Content-Length, 9 ]
+        - [ x-response, ja3-only-response ]
+        - [ Connection, close ]
+
+    proxy-response:
+      headers:
+        fields:
+        - [ :status, { value: 200, as: equal } ]
+        - [ x-response, { value: 'ja3-only-response', as: equal } ]
+
+# Session 4: Only JAWS headers exist (no JA3) - JAWS skipped, JA3 added.
+- protocol:
+  - name: http
+    version: 2
+  - name: tls
+    sni: http2.server.com
+  - name: tcp
+  - name: ip
+
+  transactions:
+
+  - client-request:
+      headers:
+        fields:
+        - [ :method, GET ]
+        - [ :scheme, https ]
+        - [ :authority, http2.server.com ]
+        - [ :path, /jaws-only ]
+        - [ uuid, jaws-only-request ]
+        - [ x-request, jaws-only-request ]
+        - [ x-jaws, upstream-jaws-score ]
+        - [ x-jaws-via, upstream.proxy.com ]
+
+    # With --preserve: JAWS headers exist, so JAWS skipped. JA3 headers don't
+    # exist, so JA3 should be added.
+    proxy-request:
+      headers:
+        fields:
+        - [ x-request, { value: 'jaws-only-request', as: equal } ]
+        - [ x-jaws, { value: 'upstream-jaws-score', as: equal } ]
+        - [ x-jaws-via, { value: 'upstream.proxy.com', as: equal } ]
+        - [ X-JA3-Sig, { as: present } ]
+        - [ X-JA3-Raw, { as: present } ]
+        - [ x-ja3-via, { value: 'test.proxy.com', as: equal } ]
+
+    server-response:
+      headers:
+        fields:
+        - [ :status, 200 ]
+        - [ Content-Length, 10 ]
+        - [ x-response, jaws-only-response ]
+        - [ Connection, close ]
+
+    proxy-response:
+      headers:
+        fields:
+        - [ :status, { value: 200, as: equal } ]
+        - [ x-response, { value: 'jaws-only-response', as: equal } ]

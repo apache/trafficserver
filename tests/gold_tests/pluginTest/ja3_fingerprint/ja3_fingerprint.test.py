@@ -81,14 +81,28 @@ class JA3FingerprintTest:
         self._server.Streams.All += Testers.ContainsExpression("https-request", "Verify the HTTPS request was received.")
         self._server.Streams.All += Testers.ContainsExpression("http2-request", "Verify the HTTP/2 request was received.")
         if not self._test_remap:
-            # Verify --preserve worked.
+            # The first request has no existing JA3 headers, so headers are added.
             self._server.Streams.All += Testers.ContainsExpression(
                 "x-ja3-raw: .*,", "Verify the new raw header was added.", reflags=re.IGNORECASE)
+            self._server.Streams.All += Testers.ContainsExpression("x-ja3-via: test.proxy.com", "The x-ja3-via string was added.")
+            # The second request has existing JA3 headers. With --preserve,
+            # no new JA3 headers are added (including x-ja3-sig).
             self._server.Streams.All += Testers.ContainsExpression(
                 "x-ja3-raw: first-signature", "Verify the already-existing raw header was preserved.", reflags=re.IGNORECASE)
             self._server.Streams.All += Testers.ExcludesExpression(
-                "x-ja3-raw: first-signature;", "Verify no extra values were added due to preserve.", reflags=re.IGNORECASE)
-            self._server.Streams.All += Testers.ContainsExpression("x-ja3-via: test.proxy.com", "The x-ja3-via string was added.")
+                "X-JA3-Sig:.*http2-request",
+                "Verify no JA3-Sig was added when other JA3 headers existed.",
+                reflags=re.IGNORECASE | re.DOTALL)
+
+            # Verify JA3/JAWS group independence.
+            self._server.Streams.All += Testers.ContainsExpression(
+                r'Presence Success.*ja3-only-request.*x-jaws',
+                "JAWS header should be added when JA3 headers exist.",
+                reflags=re.IGNORECASE | re.DOTALL)
+            self._server.Streams.All += Testers.ContainsExpression(
+                r'Presence Success.*jaws-only-request.*X-JA3-Sig',
+                "JA3-Sig header should be added when only JAWS headers exist.",
+                reflags=re.IGNORECASE | re.DOTALL)
 
     def _configure_trafficserver(self) -> None:
         """Configure Traffic Server to be used in the test."""
@@ -132,7 +146,7 @@ class JA3FingerprintTest:
             # had the plugin configured for that remap rule.
             regex = r'(.*JA3.*MD5){1}'
         else:
-            regex = r'(.*JA3.*MD5){2}'
+            regex = r'(.*JA3.*MD5){4}'
 
         self._ts.Disk.ja3_log.Content += Testers.ContainsExpression(
             regex, "Verify the JA3 log contains a JA3 line.", reflags=re.MULTILINE | re.DOTALL)

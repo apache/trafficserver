@@ -198,6 +198,18 @@ append_to_field(TSMBuffer bufp, TSMLoc hdr_loc, const char *field, int field_len
   TSHandleMLocRelease(bufp, hdr_loc, target);
 }
 
+// Check if a header field exists in the request.
+static bool
+header_exists(TSMBuffer bufp, TSMLoc hdr_loc, char const *field, int field_len)
+{
+  TSMLoc loc = TSMimeHdrFieldFind(bufp, hdr_loc, field, field_len);
+  if (loc != TS_NULL_MLOC) {
+    TSHandleMLocRelease(bufp, hdr_loc, loc);
+    return true;
+  }
+  return false;
+}
+
 static ja3_data *
 create_ja3_data(TSVConn const ssl_vc)
 {
@@ -263,31 +275,45 @@ modify_ja3_headers(TSCont contp, TSHttpTxn txnp, ja3_data const *ja3_vconn_data)
     TSAssert(TS_SUCCESS == TSHttpTxnServerReqGet(txnp, &bufp, &hdr_loc));
   }
 
+  // When preserve is enabled, check if ANY header in each group exists. If so,
+  // skip adding ALL headers in that group to avoid mismatched fingerprint data
+  // when requests traverse multiple proxies.
+  bool const ja3_header_exists = header_exists(bufp, hdr_loc, JA3_VIA_HEADER.data(), static_cast<int>(JA3_VIA_HEADER.length())) ||
+                                 header_exists(bufp, hdr_loc, "X-JA3-Sig", 9) || header_exists(bufp, hdr_loc, "x-JA3-RAW", 9);
+  bool const skip_ja3_headers = preserve_flag && ja3_header_exists;
+
+  bool const jaws_header_exists =
+    header_exists(bufp, hdr_loc, JAWS_VIA_HEADER.data(), static_cast<int>(JAWS_VIA_HEADER.length())) ||
+    header_exists(bufp, hdr_loc, "x-jaws", 6);
+  bool const skip_jaws_headers = preserve_flag && jaws_header_exists;
+
   TSMgmtString proxy_name = nullptr;
   if (TS_SUCCESS != TSMgmtStringGet("proxy.config.proxy_name", &proxy_name)) {
     TSError("[%s] Failed to get proxy name for %s, set 'proxy.config.proxy_name' in records.config", PLUGIN_NAME,
             JA3_VIA_HEADER.data());
     proxy_name = TSstrdup("unknown");
   }
-  append_to_field(bufp, hdr_loc, JA3_VIA_HEADER.data(), static_cast<int>(JA3_VIA_HEADER.length()), proxy_name,
-                  static_cast<int>(std::strlen(proxy_name)), preserve_flag);
 
-  // Add JA3 md5 fingerprints
-  append_to_field(bufp, hdr_loc, "X-JA3-Sig", 9, ja3_vconn_data->md5_string, 32, preserve_flag);
+  if (!skip_ja3_headers) {
+    append_to_field(bufp, hdr_loc, JA3_VIA_HEADER.data(), static_cast<int>(JA3_VIA_HEADER.length()), proxy_name,
+                    static_cast<int>(std::strlen(proxy_name)), false);
 
-  // If raw string is configured, added JA3 raw string to header as well
-  if (raw_flag) {
-    append_to_field(bufp, hdr_loc, "x-JA3-RAW", 9, ja3_vconn_data->ja3_string.data(), ja3_vconn_data->ja3_string.size(),
-                    preserve_flag);
+    // Add JA3 md5 fingerprints.
+    append_to_field(bufp, hdr_loc, "X-JA3-Sig", 9, ja3_vconn_data->md5_string, 32, false);
+
+    // If raw string is configured, add JA3 raw string to header as well.
+    if (raw_flag) {
+      append_to_field(bufp, hdr_loc, "x-JA3-RAW", 9, ja3_vconn_data->ja3_string.data(), ja3_vconn_data->ja3_string.size(), false);
+    }
   }
 
   // Compute and add JAWS header.
   std::string const JAWS_score = JAWS::score(ja3_vconn_data->ja3_string.data());
   Dbg(dbg_ctl, "JAWS score: %s", JAWS_score.data());
-  if (jaws_flag) {
+  if (jaws_flag && !skip_jaws_headers) {
     append_to_field(bufp, hdr_loc, JAWS_VIA_HEADER.data(), static_cast<int>(JAWS_VIA_HEADER.length()), proxy_name,
-                    static_cast<int>(std::strlen(proxy_name)), preserve_flag);
-    append_to_field(bufp, hdr_loc, "x-jaws", 6, JAWS_score.data(), JAWS_score.size(), preserve_flag);
+                    static_cast<int>(std::strlen(proxy_name)), false);
+    append_to_field(bufp, hdr_loc, "x-jaws", 6, JAWS_score.data(), JAWS_score.size(), false);
   }
   TSfree(proxy_name);
   TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
