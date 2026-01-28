@@ -26,7 +26,9 @@
 #include "tscore/ink_config.h"
 
 #ifdef HAVE_SYS_ENDIAN_H
+#if !defined(darwin)
 #include <sys/endian.h>
+#endif
 #endif
 #ifdef HAVE_MACHINE_ENDIAN_H
 #include <machine/endian.h>
