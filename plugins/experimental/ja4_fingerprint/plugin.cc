@@ -66,7 +66,6 @@ static int                handle_read_request_hdr(TSCont cont, TSEvent event, vo
 static void               append_JA4_headers(TSCont cont, TSHttpTxn txnp, std::string const *fingerprint);
 static void append_to_field(TSMBuffer bufp, TSMLoc hdr_loc, char const *field, int field_len, char const *value, int value_len);
 static int  handle_vconn_close(TSCont cont, TSEvent event, void *edata);
-int         client_hello_ext_get(TSClientHello ch, unsigned int type, const unsigned char **out, size_t *outlen);
 
 namespace
 {
@@ -273,7 +272,7 @@ get_version(TSClientHello ch)
 {
   unsigned char const *buf{};
   std::size_t          buflen{};
-  if (TS_SUCCESS == client_hello_ext_get(ch, EXT_SUPPORTED_VERSIONS, &buf, &buflen)) {
+  if (TS_SUCCESS == TSClientHelloExtensionGet(ch, EXT_SUPPORTED_VERSIONS, &buf, &buflen)) {
     std::uint16_t max_version{0};
     size_t        list_len = buf[0];
     for (size_t i = 1; i + 1 < buflen && i < list_len + 1; i += 2) {
@@ -285,7 +284,7 @@ get_version(TSClientHello ch)
     return max_version;
   } else {
     Dbg(dbg_ctl, "No supported_versions extension... using legacy version.");
-    return ch->version;
+    return ch->get_version();
   }
 }
 
@@ -295,7 +294,7 @@ get_first_ALPN(TSClientHello ch)
   unsigned char const *buf{};
   std::size_t          buflen{};
   std::string          result{""};
-  if (TS_SUCCESS == client_hello_ext_get(ch, EXT_ALPN, &buf, &buflen)) {
+  if (TS_SUCCESS == TSClientHelloExtensionGet(ch, EXT_ALPN, &buf, &buflen)) {
     // The first two bytes are a 16bit encoding of the total length.
     unsigned char first_ALPN_length{buf[2]};
     TSAssert(buflen > 4);
@@ -309,8 +308,8 @@ get_first_ALPN(TSClientHello ch)
 void
 add_ciphers(JA4::TLSClientHelloSummary &summary, TSClientHello ch)
 {
-  const uint8_t *buf    = ch->cipher_suites;
-  size_t         buflen = ch->cipher_suites_len;
+  const uint8_t *buf    = ch->get_cipher_suites();
+  size_t         buflen = ch->get_cipher_suites_len();
 
   if (buflen > 0) {
     for (std::size_t i = 0; i + 1 < buflen; i += 2) {
@@ -324,9 +323,10 @@ add_ciphers(JA4::TLSClientHelloSummary &summary, TSClientHello ch)
 void
 add_extensions(JA4::TLSClientHelloSummary &summary, TSClientHello ch)
 {
-  if (ch->extensions != nullptr) {
-    const uint8_t *ext       = ch->extensions;
-    size_t         remaining = ch->extensions_len;
+  // For BoringSSL, we have direct access to the extensions buffer
+  if (ch->get_extensions() != nullptr) {
+    const uint8_t *ext       = ch->get_extensions();
+    size_t         remaining = ch->get_extensions_len();
 
     while (remaining >= 4) {
       uint16_t ext_type = (ext[0] << 8) | ext[1];
@@ -340,10 +340,12 @@ add_extensions(JA4::TLSClientHelloSummary &summary, TSClientHello ch)
       ext       += total_ext_size;
       remaining -= total_ext_size;
     }
-  } else if (ch->extension_ids != nullptr) {
+  }
+  // For OpenSSL, we use the extension IDs array
+  else if (ch->get_extension_ids() != nullptr) {
     // OpenSSL's extension_ids is an array of ints, each element is a complete extension ID
-    for (std::size_t i = 0; i < ch->extension_ids_len; i++) {
-      summary.add_extension(static_cast<uint16_t>(ch->extension_ids[i]));
+    for (std::size_t i = 0; i < ch->get_extension_ids_len(); i++) {
+      summary.add_extension(static_cast<uint16_t>(ch->get_extension_ids()[i]));
     }
   }
 }
@@ -465,40 +467,9 @@ handle_vconn_close(TSCont /* cont ATS_UNUSED */, TSEvent event, void *edata)
     // We ignore the event, but we don't want to reject the connection.
     return TS_SUCCESS;
   }
-
   TSVConn const ssl_vc{static_cast<TSVConn>(edata)};
   delete static_cast<std::string *>(TSUserArgGet(ssl_vc, *get_user_arg_index()));
   TSUserArgSet(ssl_vc, *get_user_arg_index(), nullptr);
   TSVConnReenable(ssl_vc);
   return TS_SUCCESS;
-}
-
-int
-client_hello_ext_get(TSClientHello ch, unsigned int type, const unsigned char **out, size_t *outlen)
-{
-  if (ch == nullptr || out == nullptr || outlen == nullptr) {
-    return TS_ERROR;
-  }
-
-#ifdef OPENSSL_IS_BORINGSSL
-  const SSL_CLIENT_HELLO *client_hello = static_cast<const SSL_CLIENT_HELLO *>(ch->ssl_ptr);
-  if (client_hello == nullptr) {
-    return TS_ERROR;
-  }
-
-  if (SSL_early_callback_ctx_extension_get(client_hello, type, out, outlen) == 1) {
-    return TS_SUCCESS;
-  }
-#else
-  SSL *ssl = static_cast<SSL *>(ch->ssl_ptr);
-  if (ssl == nullptr) {
-    return TS_ERROR;
-  }
-
-  if (SSL_client_hello_get0_ext(ssl, type, out, outlen) == 1) {
-    return TS_SUCCESS;
-  }
-#endif
-
-  return TS_ERROR;
 }

@@ -1048,6 +1048,86 @@ struct TSHttp2Priority {
    * or -1 if the stream has no dependency. */
   int32_t stream_dependency;
 };
+/**
+ * A structure for SSL Client Hello data
+ */
+struct tsapi_ssl_client_hello {
+  uint16_t       version{0};
+  const uint8_t *cipher_suites{nullptr};
+  size_t         cipher_suites_len{0};
+  const uint8_t *extensions{nullptr};
+  size_t         extensions_len{0};
+  int           *extension_ids{nullptr};
+  size_t         extension_ids_len{0};
+  void          *ssl_ptr{nullptr};
+};
+
+// Wrapper class that provides controlled access to client hello data
+class TSClientHelloImpl
+{
+public:
+  TSClientHelloImpl(tsapi_ssl_client_hello *ch) : _ssl_client_hello(ch) {}
+
+  ~TSClientHelloImpl() { delete _ssl_client_hello; }
+
+  uint16_t
+  get_version() const
+  {
+    return _ssl_client_hello->version;
+  }
+
+  const uint8_t *
+  get_cipher_suites() const
+  {
+    return _ssl_client_hello->cipher_suites;
+  }
+
+  size_t
+  get_cipher_suites_len() const
+  {
+    return _ssl_client_hello->cipher_suites_len;
+  }
+
+  const uint8_t *
+  get_extensions() const
+  {
+    return _ssl_client_hello->extensions;
+  }
+
+  size_t
+  get_extensions_len() const
+  {
+    return _ssl_client_hello->extensions_len;
+  }
+
+  const int *
+  get_extension_ids() const
+  {
+    return _ssl_client_hello->extension_ids;
+  }
+
+  size_t
+  get_extension_ids_len() const
+  {
+    return _ssl_client_hello->extension_ids_len;
+  }
+
+  void *
+  get_ssl_ptr() const
+  {
+    return _ssl_client_hello->ssl_ptr;
+  }
+
+  // Internal accessor for API implementation
+  tsapi_ssl_client_hello *
+  _get_internal() const
+  {
+    return _ssl_client_hello;
+  }
+
+private:
+  tsapi_ssl_client_hello *_ssl_client_hello;
+};
 
 using TSFile = struct tsapi_file *;
 
@@ -1084,19 +1164,7 @@ using TSHostLookupResult = struct tsapi_hostlookupresult *;
 using TSAIOCallback      = struct tsapi_aiocallback *;
 using TSAcceptor         = struct tsapi_net_accept *;
 using TSRemapPluginInfo  = struct tsapi_remap_plugin_info *;
-
-struct tsapi_ssl_client_hello {
-  uint16_t       version;
-  const uint8_t *cipher_suites;
-  size_t         cipher_suites_len;
-  const uint8_t *extensions;
-  size_t         extensions_len;
-  int           *extension_ids;
-  size_t         extension_ids_len;
-  void          *ssl_ptr;
-};
-
-using TSClientHello = struct tsapi_ssl_client_hello *;
+using TSClientHello      = TSClientHelloImpl *;
 
 using TSFetchSM = struct tsapi_fetchsm *;
 
