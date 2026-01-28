@@ -1331,10 +1331,80 @@ TSReturnCode TSVConnProtocolEnable(TSVConn connp, const char *protocol_name);
 int TSVConnIsSsl(TSVConn sslp);
 /* Returns 1 if a certificate was provided in the TLS handshake, 0 otherwise.
  */
-int           TSVConnProvidedSslCert(TSVConn sslp);
-const char   *TSVConnSslSniGet(TSVConn sslp, int *length);
+int         TSVConnProvidedSslCert(TSVConn sslp);
+const char *TSVConnSslSniGet(TSVConn sslp, int *length);
+
+/**
+    Retrieve TLS Client Hello information from an SSL virtual connection.
+
+    This function extracts TLS Client Hello data from a TLS handshake.
+    The returned object provides access to version, cipher suites, and extensions
+    in a way that is portable across both BoringSSL and OpenSSL implementations.
+
+    IMPORTANT: This function must be called during the TS_SSL_CLIENT_HELLO_HOOK.
+    The underlying SSL context may not be available at other hooks, particularly
+    for BoringSSL where the SSL_CLIENT_HELLO structure is only valid during
+    specific callback functions. Calling this function outside of the client
+    hello hook may result in nullptr being returned.
+
+    For BoringSSL, the Client Hello data is copied from the SSL_CLIENT_HELLO
+    structure. For OpenSSL, cipher suites and extension IDs are extracted using
+    SSL_client_hello_get0_* functions.
+
+    Memory Management: The caller must call TSClientHelloDestroy() to free the
+    returned object when it is no longer needed. Failure to do so will result
+    in memory leaks, especially for OpenSSL which allocates memory for the
+    extension IDs array.
+
+    @param sslp The SSL virtual connection handle. Must not be nullptr.
+    @return Pointer to TSClientHello object containing Client Hello data, or
+            nullptr if the client hello is not available or if an error occurs.
+
+    @see TSClientHelloDestroy
+    @see TSClientHelloExtensionGet
+ */
 TSClientHello TSVConnClientHelloGet(TSVConn sslp);
-void          TSClientHelloDestroy(TSClientHello ch);
+/**
+    Destroys a Client Hello object and frees associated memory.
+
+    This function must be called to properly free a TSClientHello object
+    obtained from TSVConnClientHelloGet(). It handles SSL library-specific
+    cleanup, including freeing the extension IDs array allocated by OpenSSL's
+    SSL_client_hello_get1_extensions_present() function.
+
+    @param ch The Client Hello object to destroy.
+
+    @see TSVConnClientHelloGet
+ */
+void TSClientHelloDestroy(TSClientHello ch);
+
+/**
+    Retrieve a specific TLS extension from the Client Hello.
+
+    This function looks up a TLS extension by its type (e.g., 0x10 for ALPN,
+    0x00 for SNI) and returns a pointer to its data. The lookup is performed
+    using SSL library-specific functions that work with both BoringSSL and
+    OpenSSL without requiring conditional compilation in the plugin.
+
+    The returned buffer is still owned by the underlying SSL context and must
+    not be freed by the caller. The buffer is valid only as long as the
+    TSClientHello object has not been destroyed.
+
+    @param ch The Client Hello object obtained from TSVConnClientHelloGet().
+              Must not be nullptr.
+    @param type The TLS extension type to retrieve.
+    @param out Pointer to receive the extension data buffer. Must not be nullptr.
+    @param outlen Pointer to receive the length of the extension data in bytes.
+                  Must not be nullptr.
+
+    @return TS_SUCCESS if the extension was found and retrieved successfully.
+            TS_ERROR if the extension is not present, or if any parameter is nullptr,
+            or if an error occurred during lookup.
+
+    @see TSVConnClientHelloGet
+    @see TSClientHelloDestroy
+ */
+TSReturnCode TSClientHelloExtensionGet(TSClientHello ch, unsigned int type, const unsigned char **out, size_t *outlen);
 
 TSSslSession TSSslSessionGet(const TSSslSessionID *session_id);
 int          TSSslSessionGetBuffer(const TSSslSessionID *session_id, char *buffer, int *len_ptr);
