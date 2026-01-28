@@ -121,7 +121,7 @@ GO_BINARY_PATH=${BASE}/go/bin/go
 if [ ! -d boringssl ]; then
   git clone https://boringssl.googlesource.com/boringssl
   cd boringssl
-  git checkout 45b2464158379f48cec6e35a1ef503ddea1511a6
+  git checkout 02bc0949e5cac0e1ee82c6f365f5a6c3cfd0cfa9
   cd ..
 fi
 cd boringssl
@@ -146,21 +146,25 @@ cmake \
   -DGO_EXECUTABLE=${GO_BINARY_PATH} \
   -DCMAKE_INSTALL_PREFIX=${BASE}/boringssl \
   -DCMAKE_BUILD_TYPE=Release \
-  -DCMAKE_CXX_FLAGS='-Wno-error=ignored-attributes -UBORINGSSL_HAVE_LIBUNWIND' \
+  -DCMAKE_CXX_FLAGS='-Wno-error=character-conversion -Wno-error=ignored-attributes -UBORINGSSL_HAVE_LIBUNWIND' \
   -DCMAKE_C_FLAGS=${BSSL_C_FLAGS} \
   -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
-  -DBUILD_SHARED_LIBS=1 \
-  -DBUILD_TESTING=OFF
+  -DBUILD_TESTING=0 \
+  -DCMAKE_THREAD_LIBS_INIT="-lpthread" \
+  -DTHREADS_PREFER_PTHREAD_FLAG=ON \
+  -DBUILD_SHARED_LIBS=1
 cmake \
   -B build-static \
   -DGO_EXECUTABLE=${GO_BINARY_PATH} \
   -DCMAKE_INSTALL_PREFIX=${BASE}/boringssl \
   -DCMAKE_BUILD_TYPE=Release \
-  -DCMAKE_CXX_FLAGS='-Wno-error=ignored-attributes -UBORINGSSL_HAVE_LIBUNWIND' \
+  -DCMAKE_CXX_FLAGS='-Wno-error=character-conversion -Wno-error=ignored-attributes -UBORINGSSL_HAVE_LIBUNWIND' \
   -DCMAKE_C_FLAGS="${BSSL_C_FLAGS}" \
   -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
-  -DBUILD_SHARED_LIBS=0 \
-  -DBUILD_TESTING=OFF
+  -DBUILD_TESTING=0 \
+  -DCMAKE_THREAD_LIBS_INIT="-lpthread" \
+  -DTHREADS_PREFER_PTHREAD_FLAG=ON \
+  -DBUILD_SHARED_LIBS=0
 cmake --build build-shared -j ${num_threads}
 cmake --build build-static -j ${num_threads}
 sudo cmake --install build-shared
