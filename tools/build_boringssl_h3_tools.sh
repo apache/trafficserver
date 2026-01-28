@@ -112,7 +112,7 @@ else
     OS="linux"
 fi
 
-go_version=1.24.1
+go_version=1.24.12
 wget https://go.dev/dl/go${go_version}.${OS}-${ARCH}.tar.gz
 rm -rf ${BASE}/go && tar -C ${BASE} -xf go${go_version}.${OS}-${ARCH}.tar.gz
 rm go${go_version}.${OS}-${ARCH}.tar.gz
