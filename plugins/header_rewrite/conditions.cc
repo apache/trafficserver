@@ -293,7 +293,7 @@ ConditionUrl::set_qualifier(const std::string &q)
 
     if (_url_qual == URL_QUAL_QUERY) {
       if (!sub_qual.empty()) {
-        _query_param = sub_qual;
+        _query_param = std::move(sub_qual);
         Dbg(pi_dbg_ctl, "\tQuery parameter sub-key: %s", _query_param.c_str());
       }
     } else {
