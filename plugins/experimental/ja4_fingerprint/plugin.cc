@@ -288,30 +288,8 @@ add_ciphers(JA4::TLSClientHelloSummary &summary, TSClientHello ch)
 void
 add_extensions(JA4::TLSClientHelloSummary &summary, TSClientHello ch)
 {
-  // For BoringSSL, we have direct access to the extensions buffer
-  if (ch->get_extensions() != nullptr) {
-    const uint8_t *ext       = ch->get_extensions();
-    size_t         remaining = ch->get_extensions_len();
-
-    while (remaining >= 4) {
-      uint16_t ext_type = (ext[0] << 8) | ext[1];
-      uint16_t ext_len  = (ext[2] << 8) | ext[3];
-      summary.add_extension(ext_type);
-      size_t total_ext_size = 4 + ext_len;
-      if (total_ext_size > remaining) {
-        break;
-      }
-
-      ext       += total_ext_size;
-      remaining -= total_ext_size;
-    }
-  }
-  // For OpenSSL, we use the extension IDs array
-  else if (ch->get_extension_ids() != nullptr) {
-    // OpenSSL's extension_ids is an array of ints, each element is a complete extension ID
-    for (std::size_t i = 0; i < ch->get_extension_ids_len(); i++) {
-      summary.add_extension(static_cast<uint16_t>(ch->get_extension_ids()[i]));
-    }
+  for (auto ext_type : ch->get_extension_types()) {
+    summary.add_extension(ext_type);
   }
 }
 
