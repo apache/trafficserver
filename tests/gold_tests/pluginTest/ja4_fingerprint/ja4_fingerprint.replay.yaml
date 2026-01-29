@@ -18,6 +18,8 @@ meta:
   version: "1.0"
 
 sessions:
+
+# Session 1: No pre-existing JA4 headers - new headers should be added.
 - protocol:
   - name: http
     version: 1
@@ -33,11 +35,12 @@ sessions:
         fields:
         - [ Connection, keep-alive ]
         - [ Content-Length, 0 ]
+        - [ uuid, no-existing-headers ]
 
     proxy-request:
       headers:
         fields:
-        - [ ja4, { as: contains } ]
+        - [ ja4, { as: present } ]
         - [ x-ja4-via, { value: 'test.proxy.com', as: equal } ]
 
     server-response:
@@ -46,3 +49,70 @@ sessions:
       content:
         encoding: plain
         data: Yay!
+
+# Session 2: Pre-existing JA4 headers - with preserve, no new headers added.
+- protocol:
+  - name: http
+    version: 1
+  - name: tcp
+  - name: ip
+
+  transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /resource-with-headers
+      headers:
+        fields:
+        - [ Connection, keep-alive ]
+        - [ Content-Length, 0 ]
+        - [ uuid, existing-ja4-headers ]
+        - [ ja4, upstream-fingerprint ]
+        - [ x-ja4-via, upstream.proxy.com ]
+
+    # With --preserve and existing JA4 headers, no new headers should be added.
+    proxy-request:
+      headers:
+        fields:
+        - [ ja4, { value: 'upstream-fingerprint', as: equal } ]
+        - [ x-ja4-via, { value: 'upstream.proxy.com', as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      content:
+        encoding: plain
+        data: Preserved!
+
+# Session 3: Only x-ja4-via exists - should still trigger preserve for all.
+- protocol:
+  - name: http
+    version: 1
+  - name: tcp
+  - name: ip
+
+  transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /resource-via-only
+      headers:
+        fields:
+        - [ Connection, keep-alive ]
+        - [ Content-Length, 0 ]
+        - [ uuid, existing-via-only ]
+        - [ x-ja4-via, upstream.proxy.com ]
+
+    # With --preserve and only x-ja4-via present, no JA4 headers should be added.
+    proxy-request:
+      headers:
+        fields:
+        - [ ja4, { as: absent } ]
+        - [ x-ja4-via, { value: 'upstream.proxy.com', as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      content:
+        encoding: plain
+        data: Via only!
