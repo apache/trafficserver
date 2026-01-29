@@ -145,7 +145,7 @@ net_accept(NetAccept *na, void *ep, bool blockable)
     vc->submit_time = ink_get_hrtime();
     vc->action_     = *na->action_;
     vc->set_is_transparent(na->opt.f_inbound_transparent);
-    vc->set_is_proxy_protocol(na->opt.f_proxy_protocol);
+    vc->set_is_proxy_protocol(na->opt.f_proxy_protocol, na->opt.f_proxy_protocol_client_src);
     vc->set_context(NET_VCONNECTION_IN);
     if (na->opt.f_mptcp) {
       vc->set_mptcp_state(); // Try to get the MPTCP state, and update accordingly
@@ -432,7 +432,7 @@ NetAccept::do_blocking_accept(EThread *t)
     vc->submit_time = ink_get_hrtime();
     vc->action_     = *action_;
     vc->set_is_transparent(opt.f_inbound_transparent);
-    vc->set_is_proxy_protocol(opt.f_proxy_protocol);
+    vc->set_is_proxy_protocol(opt.f_proxy_protocol, opt.f_proxy_protocol_client_src);
     vc->options.sockopt_flags        = opt.sockopt_flags;
     vc->options.packet_mark          = opt.packet_mark;
     vc->options.packet_tos           = opt.packet_tos;
@@ -598,7 +598,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
     vc->submit_time = ink_get_hrtime();
     vc->action_     = *action_;
     vc->set_is_transparent(opt.f_inbound_transparent);
-    vc->set_is_proxy_protocol(opt.f_proxy_protocol);
+    vc->set_is_proxy_protocol(opt.f_proxy_protocol, opt.f_proxy_protocol_client_src);
     vc->options.sockopt_flags        = opt.sockopt_flags;
     vc->options.packet_mark          = opt.packet_mark;
     vc->options.packet_tos           = opt.packet_tos;

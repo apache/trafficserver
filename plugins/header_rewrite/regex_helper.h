@@ -18,30 +18,17 @@
 #pragma once
 
 #include "tscore/ink_defs.h"
-
-#ifdef HAVE_PCRE_PCRE_H
-#include <pcre/pcre.h>
-#else
-#include <pcre.h>
-#endif
+#include "tsutil/Regex.h"
 
 #include <string>
 
 class regexHelper
 {
 public:
-  ~regexHelper()
-  {
-    pcre_free(regex);
-    pcre_free(regexExtra);
-  }
-
   bool setRegexMatch(const std::string &s, bool nocase = false);
-  int  regexMatch(const char *, int, int ovector[]) const;
+  int  regexMatch(std::string_view subject, RegexMatches &matches) const;
 
 private:
   std::string regexString;
-  pcre       *regex       = nullptr;
-  pcre_extra *regexExtra  = nullptr;
-  int         regexCcount = 0;
+  Regex       regex;
 };

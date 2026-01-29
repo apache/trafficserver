@@ -354,7 +354,7 @@ compress_transform_init(TSCont contp, Data *data)
   }
 
   if (content_encoding_header(bufp, hdr_loc, data->compression_type, data->compression_algorithms) == TS_SUCCESS &&
-      vary_header(bufp, hdr_loc) == TS_SUCCESS && etag_header(bufp, hdr_loc) == TS_SUCCESS) {
+      etag_header(bufp, hdr_loc) == TS_SUCCESS) {
     downstream_conn         = TSTransformOutputVConnGet(contp);
     data->downstream_buffer = TSIOBufferCreate();
     data->downstream_reader = TSIOBufferReaderAlloc(data->downstream_buffer);
@@ -685,7 +685,7 @@ compress_transform(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
 }
 
 static int
-transformable(TSHttpTxn txnp, bool server, HostConfiguration *host_configuration, int *compress_type, int *algorithms)
+is_content_compressible(TSHttpTxn txnp, bool server, HostConfiguration *host_configuration)
 {
   /* Server response header */
   TSMBuffer bufp;
@@ -695,7 +695,6 @@ transformable(TSHttpTxn txnp, bool server, HostConfiguration *host_configuration
   /* Client request header */
   TSMBuffer cbuf;
   TSMLoc    chdr;
-  TSMLoc    cfield;
 
   const char  *value;
   int          len;
@@ -737,6 +736,100 @@ transformable(TSHttpTxn txnp, bool server, HostConfiguration *host_configuration
     return 0;
   }
 
+  // the only compressible method is currently GET or POST.
+  int         method_length;
+  const char *method = TSHttpHdrMethodGet(cbuf, chdr, &method_length);
+
+  if (!((method_length == TS_HTTP_LEN_GET && memcmp(method, TS_HTTP_METHOD_GET, TS_HTTP_LEN_GET) == 0) ||
+        (method_length == TS_HTTP_LEN_POST && memcmp(method, TS_HTTP_METHOD_POST, TS_HTTP_LEN_POST) == 0))) {
+    debug("method is not GET or POST, not compressible");
+    TSHandleMLocRelease(cbuf, TS_NULL_MLOC, chdr);
+    TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
+    return 0;
+  }
+
+  TSHandleMLocRelease(cbuf, TS_NULL_MLOC, chdr);
+
+  /* If there already exists a content encoding then we don't want
+     to do anything. */
+  field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, TS_MIME_FIELD_CONTENT_ENCODING, -1);
+  if (field_loc) {
+    info("response is already content encoded, not compressible");
+    TSHandleMLocRelease(bufp, hdr_loc, field_loc);
+    TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
+    return 0;
+  }
+
+  field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, TS_MIME_FIELD_CONTENT_LENGTH, TS_MIME_LEN_CONTENT_LENGTH);
+  if (field_loc != TS_NULL_MLOC) {
+    unsigned int hdr_value = TSMimeHdrFieldValueUintGet(bufp, hdr_loc, field_loc, -1);
+    TSHandleMLocRelease(bufp, hdr_loc, field_loc);
+    if (hdr_value == 0) {
+      info("response is 0-length, not compressible");
+      TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
+      return 0;
+    }
+
+    if (hdr_value < host_configuration->minimum_content_length()) {
+      info("response is smaller than minimum content length, not compressing");
+      TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
+      return 0;
+    }
+  }
+
+  // Check if content type is compressible based on configuration.
+  field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, TS_MIME_FIELD_CONTENT_TYPE, -1);
+  if (!field_loc) {
+    info("no content type header found, not compressible");
+    TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
+    return 0;
+  }
+
+  value = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, -1, &len);
+
+  int rv = host_configuration->is_content_type_compressible(value, len);
+
+  if (!rv) {
+    info("content-type [%.*s] not compressible", len, value);
+  }
+
+  TSHandleMLocRelease(bufp, hdr_loc, field_loc);
+  TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
+
+  return rv;
+}
+
+static int
+client_accepts_compression(TSHttpTxn txnp, bool server, HostConfiguration *host_configuration, int *compress_type, int *algorithms)
+{
+  /* Server response header */
+  TSMBuffer bufp;
+  TSMLoc    hdr_loc;
+
+  /* Client request header */
+  TSMBuffer cbuf;
+  TSMLoc    chdr;
+  TSMLoc    cfield;
+
+  const char *value;
+  int         len;
+
+  if (server) {
+    if (TS_SUCCESS != TSHttpTxnServerRespGet(txnp, &bufp, &hdr_loc)) {
+      return 0;
+    }
+  } else {
+    if (TS_SUCCESS != TSHttpTxnCachedRespGet(txnp, &bufp, &hdr_loc)) {
+      return 0;
+    }
+  }
+
+  if (TS_SUCCESS != TSHttpTxnClientReqGet(txnp, &cbuf, &chdr)) {
+    info("cound not get client request");
+    TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
+    return 0;
+  }
+
   // check Partial Object is transformable
   if (host_configuration->range_request_ctl() == RangeRequestCtrl::NO_COMPRESSION) {
     // check Range header in client request
@@ -759,21 +852,6 @@ transformable(TSHttpTxn txnp, bool server, HostConfiguration *host_configuration
       TSHandleMLocRelease(cbuf, TS_NULL_MLOC, chdr);
       return 0;
     }
-
-    TSHandleMLocRelease(bufp, hdr_loc, content_range_hdr_field);
-    TSHandleMLocRelease(cbuf, chdr, range_hdr_field);
-  }
-
-  // the only compressible method is currently GET.
-  int         method_length;
-  const char *method = TSHttpHdrMethodGet(cbuf, chdr, &method_length);
-
-  if (!((method_length == TS_HTTP_LEN_GET && memcmp(method, TS_HTTP_METHOD_GET, TS_HTTP_LEN_GET) == 0) ||
-        (method_length == TS_HTTP_LEN_POST && memcmp(method, TS_HTTP_METHOD_POST, TS_HTTP_LEN_POST) == 0))) {
-    debug("method is not GET or POST, not compressible");
-    TSHandleMLocRelease(cbuf, TS_NULL_MLOC, chdr);
-    TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
-    return 0;
   }
 
   *algorithms = host_configuration->compression_algorithms();
@@ -807,10 +885,10 @@ transformable(TSHttpTxn txnp, bool server, HostConfiguration *host_configuration
 
     TSHandleMLocRelease(cbuf, chdr, cfield);
     TSHandleMLocRelease(cbuf, TS_NULL_MLOC, chdr);
+    TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
 
     if (!compression_acceptable) {
       info("no acceptable encoding match found in request header, not compressible");
-      TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
       return 0;
     }
   } else {
@@ -821,52 +899,48 @@ transformable(TSHttpTxn txnp, bool server, HostConfiguration *host_configuration
     return 0;
   }
 
-  /* If there already exists a content encoding then we don't want
-     to do anything. */
-  field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, TS_MIME_FIELD_CONTENT_ENCODING, -1);
-  if (field_loc) {
-    info("response is already content encoded, not compressible");
-    TSHandleMLocRelease(bufp, hdr_loc, field_loc);
-    TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
+  return 1;
+}
+
+static int
+transformable(TSHttpTxn txnp, bool server, HostConfiguration *host_configuration, int *compress_type, int *algorithms,
+              bool *content_is_compressible)
+{
+  // First check if content could be compressible
+  *content_is_compressible = is_content_compressible(txnp, server, host_configuration);
+  if (!*content_is_compressible) {
     return 0;
   }
 
-  field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, TS_MIME_FIELD_CONTENT_LENGTH, TS_MIME_LEN_CONTENT_LENGTH);
-  if (field_loc != TS_NULL_MLOC) {
-    unsigned int hdr_value = TSMimeHdrFieldValueUintGet(bufp, hdr_loc, field_loc, -1);
-    TSHandleMLocRelease(bufp, hdr_loc, field_loc);
-    if (hdr_value == 0) {
-      info("response is 0-length, not compressible");
-      return 0;
+  // Then check if client accepts compression
+  return client_accepts_compression(txnp, server, host_configuration, compress_type, algorithms);
+}
+
+static void
+add_vary_header_for_compressible_content(TSHttpTxn txnp, bool server, HostConfiguration * /* hc ATS_UNUSED */)
+{
+  TSMBuffer resp_buf;
+  TSMLoc    resp_loc;
+
+  // Get the response headers
+  if (server) {
+    if (TS_SUCCESS != TSHttpTxnServerRespGet(txnp, &resp_buf, &resp_loc)) {
+      return;
     }
-
-    if (hdr_value < host_configuration->minimum_content_length()) {
-      info("response is smaller than minimum content length, not compressing");
-      return 0;
+  } else {
+    if (TS_SUCCESS != TSHttpTxnCachedRespGet(txnp, &resp_buf, &resp_loc)) {
+      return;
     }
   }
 
-  /* We only want to do gzip compression on documents that have a
-     content type of "text/" or "application/x-javascript". */
-  field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, TS_MIME_FIELD_CONTENT_TYPE, -1);
-  if (!field_loc) {
-    info("no content type header found, not compressible");
-    TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
-    return 0;
+  // Add Vary: Accept-Encoding header
+  if (vary_header(resp_buf, resp_loc) != TS_SUCCESS) {
+    error("failed to add Vary header for compressible content");
+    TSHandleMLocRelease(resp_buf, TS_NULL_MLOC, resp_loc);
+    return;
   }
 
-  value = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, -1, &len);
-
-  int rv = host_configuration->is_content_type_compressible(value, len);
-
-  if (!rv) {
-    info("content-type [%.*s] not compressible", len, value);
-  }
-
-  TSHandleMLocRelease(bufp, hdr_loc, field_loc);
-  TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
-
-  return rv;
+  TSHandleMLocRelease(resp_buf, TS_NULL_MLOC, resp_loc);
 }
 
 static void
@@ -893,6 +967,21 @@ compress_transform_add(TSHttpTxn txnp, HostConfiguration *hc, int compress_type,
 
   TSContDataSet(connp, data);
   TSHttpTxnHookAdd(txnp, TS_HTTP_RESPONSE_TRANSFORM_HOOK, connp);
+}
+
+static void
+handle_compression_and_vary(TSHttpTxn txnp, bool server, HostConfiguration *hc, int *compress_type, int *algorithms)
+{
+  // Check if content is compressible and add compression if client accepts it
+  bool content_is_compressible;
+  if (transformable(txnp, server, hc, compress_type, algorithms, &content_is_compressible)) {
+    compress_transform_add(txnp, hc, *compress_type, *algorithms);
+  }
+
+  // Add Vary: Accept-Encoding for all compressible content to ensure proper HTTP caching
+  if (content_is_compressible) {
+    add_vary_header_for_compressible_content(txnp, server, hc);
+  }
 }
 
 HostConfiguration *
@@ -939,9 +1028,7 @@ transform_plugin(TSCont contp, TSEvent event, void *edata)
         }
       }
 
-      if (transformable(txnp, true, hc, &compress_type, &algorithms)) {
-        compress_transform_add(txnp, hc, compress_type, algorithms);
-      }
+      handle_compression_and_vary(txnp, true, hc, &compress_type, &algorithms);
     }
     break;
 
@@ -967,9 +1054,7 @@ transform_plugin(TSCont contp, TSEvent event, void *edata)
     if (TS_ERROR != TSHttpTxnCacheLookupStatusGet(txnp, &obj_status) && (TS_CACHE_LOOKUP_HIT_FRESH == obj_status)) {
       if (hc != nullptr) {
         info("handling compression of cached object");
-        if (transformable(txnp, false, hc, &compress_type, &algorithms)) {
-          compress_transform_add(txnp, hc, compress_type, algorithms);
-        }
+        handle_compression_and_vary(txnp, false, hc, &compress_type, &algorithms);
       }
     } else {
       // Prepare for going to origin

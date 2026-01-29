@@ -27,15 +27,21 @@ class ProxyProtocolInTest:
 
     replay_file = "replay/proxy_protocol_in.replay.yaml"
 
-    def __init__(self):
-        self.setupOriginServer()
-        self.setupTS()
+    def __init__(self, name, enable_cp=False):
+        self.setupOriginServer(name)
+        self.setupTS(name, enable_cp)
+        self.name = name
 
-    def setupOriginServer(self):
-        self.server = Test.MakeVerifierServerProcess("pp-in-server", self.replay_file)
+    def setupOriginServer(self, name):
+        self.server = Test.MakeVerifierServerProcess(f"pp-in-server-{name}", self.replay_file)
 
-    def setupTS(self):
-        self.ts = Test.MakeATSProcess("ts_in", enable_tls=True, enable_cache=False, enable_proxy_protocol=True)
+    def setupTS(self, name, enable_cp):
+        self.ts = Test.MakeATSProcess(
+            f"ts_in_{name}",
+            enable_tls=True,
+            enable_cache=False,
+            enable_proxy_protocol=True,
+            enable_proxy_protocol_cp_src=enable_cp)
 
         self.ts.addDefaultSSLFiles()
         self.ts.Disk.ssl_multicert_config.AddLine("dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key")
@@ -57,7 +63,7 @@ class ProxyProtocolInTest:
 logging:
   formats:
     - name: access
-      format: '%<chi> %<pps>'
+      format: '%<chi> %<pps> %<rchi>'
 
   logs:
     - filename: access
@@ -65,9 +71,9 @@ logging:
 '''.split("\n"))
 
     def runTraffic(self):
-        tr = Test.AddTestRun("Verify correct handling of incoming PROXY header.")
+        tr = Test.AddTestRun(f"Verify correct handling of incoming PROXY header. {self.name}")
         tr.AddVerifierClientProcess(
-            "pp-in-client",
+            f"pp-in-client-{self.name}",
             self.replay_file,
             http_ports=[self.ts.Variables.proxy_protocol_port],
             https_ports=[self.ts.Variables.proxy_protocol_ssl_port])
@@ -80,7 +86,7 @@ logging:
         """
         check access log
         """
-        Test.Disk.File(os.path.join(self.ts.Variables.LOGDIR, 'access.log'), exists=True, content='gold/access.gold')
+        Test.Disk.File(os.path.join(self.ts.Variables.LOGDIR, 'access.log'), exists=True, content=f"gold/access-{self.name}.gold")
 
         # Wait for log file to appear, then wait one extra second to make sure
         # TS is done writing it.
@@ -219,7 +225,8 @@ class ProxyProtocolOutTest:
         self.setLogExpectations(tr)
 
 
-ProxyProtocolInTest().run()
+ProxyProtocolInTest("nocp", False).run()
+ProxyProtocolInTest("cp", True).run()
 
 # non-tunnling HTTP to origin
 ProxyProtocolOutTest(pp_version=-1, is_tunnel=False, is_tls_to_origin=False).run()

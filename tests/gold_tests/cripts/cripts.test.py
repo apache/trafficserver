@@ -95,8 +95,8 @@ class CriptsBasicTest:
     def runCertsTest(self):
         tr = Test.AddTestRun('Exercise Cripts certificate introspection.')
         tr.MakeCurlCommand(
-            f'-v --http1.1 -k -H "Host: www.example.com:{self.ts.Variables.ssl_port}" https://127.0.0.1:{self.ts.Variables.ssl_port}'
-        )
+            f'-v --http1.1 -k -H "Host: www.example.com:{self.ts.Variables.ssl_port}" https://127.0.0.1:{self.ts.Variables.ssl_port}',
+            ts=self.ts)
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stderr = "gold/certs_cript.gold"
         tr.StillRunningAfter = self.server

@@ -253,6 +253,31 @@ tr = Test.AddTestRun(f'verify gzip post')
 tr.ReturnCode = 0
 tr.Processes.Default.Command = get_verify_command(out_path, "gunzip -k")
 
+# Test Vary header: compressible content without Accept-Encoding should get Vary: Accept-Encoding
+tr = Test.AddTestRun('vary header test: no accept-encoding')
+tr.Processes.Default.ReturnCode = 0
+out_path = get_out_path()
+tr.MakeCurlCommand(
+    f"-o {out_path} --verbose --proxy http://127.0.0.1:{ts.Variables.port}"
+    f" --header 'X-Ats-Compress-Test: vary-no-accept-encoding'"
+    f" 'http://ae-0/obj0'"
+    " 2>> compress_vary.log",
+    ts=ts)
+
+# Test Vary header: compressible content with unsupported Accept-Encoding should get Vary: Accept-Encoding
+tr = Test.AddTestRun('vary header test: unsupported accept-encoding')
+tr.Processes.Default.ReturnCode = 0
+out_path = get_out_path()
+tr.MakeCurlCommand(curl(ts, 0, "compress, identity", out_path).replace("compress_long.log", "compress_vary.log"), ts=ts)
+
+# Verify Vary header is present in both cases
+tr = Test.AddTestRun('verify vary headers')
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Command = (
+    r"tr -d '\r' < compress_vary.log | grep -i 'vary:.*accept-encoding' | sort > compress_vary_short.log")
+f = tr.Disk.File("compress_vary_short.log")
+f.Content = "compress_vary.gold"
+
 # compress_long.log contains all the output from the curl commands.  The tr removes the carriage returns for easier
 # readability.  Curl seems to have a bug, where it will neglect to output an end of line before outputting an HTTP
 # message header line.  The sed command is a work-around for this problem.  greplog.sh uses the grep command to
