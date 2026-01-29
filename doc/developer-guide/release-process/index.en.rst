@@ -95,12 +95,13 @@ tag of the form ``X.Y.Z-rcA``.
 Distribute
 ==========
 
-The release candidate files should be uploaded to apache dists. ::
 
-   svn co https://dist.apache.org/repos/dist/dev/trafficserver <local-directory>
+The release candidate files should be uploaded to the Apache distribution
+repository (``dist.apache.org``) under the ``trafficserver`` directory.
 
-Create a directory for the next release version if necessary and then add and
-commit the release files produced above.
+
+Create a directory for the next release version if necessary and add the
+release files produced above following the Apache distribution guidelines.
 
 Send the release candidate announcement to the *users* and *dev* mailing
 lists, noting that it is a release *candidate* and providing a link to the
@@ -128,10 +129,8 @@ Be sure to not have changed anything since the release candidate was built so
 the checksums are identical. This will create a signed git tag of the form
 ``X.Y.Z`` and produce the distribution files.
 
-The distribution files must be added to an SVN repository. This can be accessed
-with the command::
-
-   svn co https://dist.apache.org/repos/dist/release/trafficserver <local-directory>
+The distribution files must be added to the Apache distribution repository
+(``dist.apache.org``) as part of the official release process.
 
 All three (.tar.bz2, .asc and .sha512) of the distribution files go here. If you are making a point release
 then you should also remove the distribution files for the previous release.
