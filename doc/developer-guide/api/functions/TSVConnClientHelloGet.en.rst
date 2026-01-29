@@ -48,12 +48,3 @@ The caller must call :func:`TSClientHelloDestroy` to free the returned object.
 :arg:`type` (e.g., ``0x10`` for ALPN). Returns :enumerator:`TS_SUCCESS` if
 found, :enumerator:`TS_ERROR` otherwise. The returned pointer in :arg:`out` is
 valid only while :arg:`ch` exists.
-
-Types
-=====
-
-.. type:: TSClientHello
-
-   Opaque type representing a TLS ClientHello message. This is an opaque handle
-   that provides access to ClientHello data via accessor methods.
-
