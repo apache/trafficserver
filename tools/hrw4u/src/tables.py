@@ -111,6 +111,7 @@ CONDITION_MAP: dict[str, MapParams] = {
     "inbound.req.": MapParams(target="CLIENT-HEADER", prefix=True, validate=Validator.http_header_name(), sections=HTTP_SECTIONS, rev={"reverse_fallback": "inbound.req."}),
     "inbound.resp.": MapParams(target="HEADER", prefix=True, validate=Validator.http_header_name(), sections={SectionType.READ_RESPONSE, SectionType.SEND_RESPONSE}, rev={"reverse_context": "header_condition"}),
     "inbound.url.": MapParams(target="CLIENT-URL", upper=True, prefix=True, validate=Validator.suffix_group(SuffixGroup.URL_FIELDS), sections=HTTP_SECTIONS),
+    "nexthop.": MapParams(target="NEXT-HOP", upper=True, prefix=True, validate=Validator.suffix_group(SuffixGroup.NEXTHOP_FIELDS), sections={SectionType.SEND_REQUEST, SectionType.READ_RESPONSE, SectionType.SEND_RESPONSE}, rev={"reverse_fallback": "nexthop."}),
     "now.": MapParams(target="NOW", upper=True, validate=Validator.suffix_group(SuffixGroup.DATE_FIELDS)),
     "outbound.conn.client-cert.SAN.": MapParams(target="OUTBOUND:CLIENT-CERT:SAN", upper=True, prefix=True, validate=Validator.suffix_group(SuffixGroup.SAN_FIELDS), sections={SectionType.SEND_REQUEST, SectionType.READ_RESPONSE, SectionType.SEND_RESPONSE}),
     "outbound.conn.server-cert.SAN.": MapParams(target="OUTBOUND:SERVER-CERT:SAN", upper=True, prefix=True, validate=Validator.suffix_group(SuffixGroup.SAN_FIELDS), sections={SectionType.SEND_REQUEST, SectionType.READ_RESPONSE, SectionType.SEND_RESPONSE}),
@@ -120,15 +121,18 @@ CONDITION_MAP: dict[str, MapParams] = {
     "outbound.conn.server-cert.": MapParams(target="OUTBOUND:SERVER-CERT", upper=True, prefix=True, validate=Validator.suffix_group(SuffixGroup.CERT_FIELDS), sections={SectionType.SEND_REQUEST, SectionType.READ_RESPONSE, SectionType.SEND_RESPONSE}),
     "outbound.conn.": MapParams(target="OUTBOUND", upper=True, prefix=True, validate=Validator.suffix_group(SuffixGroup.CONN_FIELDS), sections={SectionType.SEND_REQUEST, SectionType.READ_RESPONSE, SectionType.SEND_RESPONSE}),
     "outbound.cookie.": MapParams(target="COOKIE", prefix=True, validate=Validator.http_token(), sections={SectionType.SEND_REQUEST, SectionType.READ_RESPONSE, SectionType.SEND_RESPONSE}, rev={"reverse_fallback": "inbound.cookie."}),
-    "outbound.req.": MapParams(target="HEADER", prefix=True, validate=Validator.http_header_name(), sections={SectionType.SEND_REQUEST, SectionType.READ_RESPONSE, SectionType.SEND_RESPONSE}, rev={"reverse_context": "header_condition"}),
+    "outbound.req.": MapParams(target="SERVER-HEADER", prefix=True, validate=Validator.http_header_name(), sections={SectionType.SEND_REQUEST, SectionType.READ_RESPONSE, SectionType.SEND_RESPONSE}, rev={"reverse_fallback": "outbound.req."}),
     "outbound.resp.": MapParams(target="HEADER", prefix=True, validate=Validator.http_header_name(), sections={SectionType.READ_RESPONSE, SectionType.SEND_RESPONSE}, rev={"reverse_context": "header_condition"}),
-    "outbound.url.": MapParams(target="NEXT-HOP", upper=True, prefix=True, validate=Validator.suffix_group(SuffixGroup.URL_FIELDS), sections={SectionType.PRE_REMAP, SectionType.REMAP, SectionType.READ_REQUEST, SectionType.SEND_REQUEST, SectionType.READ_RESPONSE, SectionType.SEND_RESPONSE}),
+    "outbound.url.": MapParams(target="SERVER-URL", upper=True, prefix=True, validate=Validator.suffix_group(SuffixGroup.URL_FIELDS), sections={SectionType.SEND_REQUEST, SectionType.READ_RESPONSE, SectionType.SEND_RESPONSE}, rev={"reverse_fallback": "outbound.url."}),
     "to.url.": MapParams(target="TO-URL", upper=True, prefix=True, validate=Validator.suffix_group(SuffixGroup.URL_FIELDS), sections=HTTP_SECTIONS),
 }
 
 FALLBACK_TAG_MAP: dict[str, tuple[str, bool]] = {
     "HEADER": ("header_condition", True),
     "CLIENT-HEADER": ("inbound.req.", False),
+    "SERVER-HEADER": ("outbound.req.", False),
+    "SERVER-URL": ("outbound.url.", False),
+    "NEXT-HOP": ("nexthop.", False),
     "COOKIE": ("inbound.cookie.", False),
     "INBOUND:CLIENT-CERT": ("inbound.conn.client-cert.", False),
     "INBOUND:SERVER-CERT": ("inbound.conn.server-cert.", False),

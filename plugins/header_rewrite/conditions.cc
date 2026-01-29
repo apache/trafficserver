@@ -224,12 +224,20 @@ ConditionHeader::append_value(std::string &s, const Resources &res)
   TSMLoc    hdr_loc;
   int       len;
 
-  if (_client) {
+  switch (_type) {
+  case CLIENT:
     bufp    = res.client_bufp;
     hdr_loc = res.client_hdr_loc;
-  } else {
+    break;
+  case SERVER:
+    bufp    = res.server_bufp;
+    hdr_loc = res.server_hdr_loc;
+    break;
+  case HEADER:
+  default:
     bufp    = res.bufp;
     hdr_loc = res.hdr_loc;
+    break;
   }
 
   if (bufp && hdr_loc) {
@@ -272,8 +280,13 @@ ConditionUrl::initialize(Parser &p)
   Condition::initialize(p);
 
   auto match = std::make_unique<MatcherType>(_cond_op);
+
   match->set(p.get_arg(), mods());
   _matcher = std::move(match);
+
+  if (_type == SERVER) {
+    require_resources(RSRC_SERVER_REQUEST_HEADERS);
+  }
 }
 
 void
@@ -316,6 +329,18 @@ ConditionUrl::append_value(std::string &s, const Resources &res)
     Dbg(pi_dbg_ctl, "   Using the pristine url");
     if (TSHttpTxnPristineUrlGet(res.state.txnp, &bufp, &url) != TS_SUCCESS) {
       TSError("[%s] Error getting the pristine URL", PLUGIN_NAME);
+      return;
+    }
+  } else if (_type == SERVER) {
+    Dbg(pi_dbg_ctl, "   Using the server request url");
+    bufp = res.server_bufp;
+    if (bufp && res.server_hdr_loc) {
+      if (TSHttpHdrUrlGet(bufp, res.server_hdr_loc, &url) != TS_SUCCESS) {
+        TSError("[%s] Error getting the server request URL", PLUGIN_NAME);
+        return;
+      }
+    } else {
+      Dbg(pi_dbg_ctl, "   Server request not available");
       return;
     }
   } else if (res._rri != nullptr) {
