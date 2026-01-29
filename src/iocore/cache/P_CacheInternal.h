@@ -79,6 +79,13 @@ struct EvacuationBlock;
     return EVENT_CONT;                                                                                         \
   } while (0)
 
+// Variant without metric increment for non-stripe lock retries (e.g., write_vc->mutex)
+#define VC_SCHED_LOCK_RETRY_NO_METRIC()                                                                        \
+  do {                                                                                                         \
+    trigger = mutex->thread_holding->schedule_in_local(this, HRTIME_MSECONDS(cache_config_mutex_retry_delay)); \
+    return EVENT_CONT;                                                                                         \
+  } while (0)
+
 #define CONT_SCHED_LOCK_RETRY_RET(_c)                                                                  \
   do {                                                                                                 \
     _c->mutex->thread_holding->schedule_in_local(_c, HRTIME_MSECONDS(cache_config_mutex_retry_delay)); \
