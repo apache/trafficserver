@@ -280,9 +280,17 @@ HttpSM::~HttpSM()
 {
   http_parser_clear(&http_parser);
 
+  // coverity[exn_spec_violation] - release() only does ref counting and delete on POD types
   HttpConfig::release(t_state.http_config_param);
-  m_remap->release();
 
+  // m_remap->release() can allocate (new_Deleter), so catch potential bad_alloc
+  try {
+    m_remap->release();
+  } catch (...) {
+    Error("Exception in ~HttpSM during m_remap->release");
+  }
+
+  // coverity[exn_spec_violation] - cancel_pending_action() only sets boolean flags
   cache_sm.cancel_pending_action();
 
   mutex.clear();
@@ -293,6 +301,7 @@ HttpSM::~HttpSM()
   debug_on = false;
 
   if (_prewarm_sm) {
+    // coverity[exn_spec_violation] - destroy() only frees memory and resets shared_ptrs
     _prewarm_sm->destroy();
     THREAD_FREE(_prewarm_sm, preWarmSMAllocator, this_ethread());
     _prewarm_sm = nullptr;

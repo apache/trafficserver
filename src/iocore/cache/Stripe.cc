@@ -173,6 +173,7 @@ Stripe::_init_directory(std::size_t directory_size, int header_size, int footer_
 Stripe::~Stripe()
 {
   if (this->directory.raw_dir != nullptr) {
+    // coverity[fun_call_w_exception] - ink_assert aborts (doesn't throw), Dbg is exception-safe
     // Debug logging to track cleanup - helps correlate with crash location
     Dbg(dbg_ctl_cache_free, "Stripe %s: freeing raw_dir=%p size=%zu huge=%s", hash_text.get() ? hash_text.get() : "(null)",
         this->directory.raw_dir, this->directory.raw_dir_size, this->directory.raw_dir_huge ? "true" : "false");

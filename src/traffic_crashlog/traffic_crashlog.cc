@@ -229,6 +229,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   if (syslog_mode) {
     int facility = -1;
     if (auto name{RecGetRecordStringAlloc("proxy.config.syslog_facility")}; name) {
+      // coverity[fun_call_w_exception] - guarded by if(name) check above
       facility = facility_string_to_int(ats_as_c_str(name));
     }
 
