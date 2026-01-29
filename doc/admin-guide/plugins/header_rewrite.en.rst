@@ -369,6 +369,25 @@ header operated on by this condition will be a comma separated string of the
 values from every occurrence of the header. More details are provided in
 `Repeated Headers`_ below.
 
+SERVER-HEADER
+~~~~~~~~~~~~~
+::
+
+    cond %{SERVER-HEADER:<name>} <operand>
+
+Value of the header ``<name>`` from the request sent to the origin server
+(regardless of the hook context in which the rule is being evaluated). This is
+useful when you need to check headers that have been modified or added during
+the request processing before being sent to the origin. Note that some headers
+may appear in an HTTP message more than once. In these cases, the value of the
+header operated on by this condition will be a comma separated string of the
+values from every occurrence of the header. More details are provided in
+`Repeated Headers`_ below.
+
+Note that the server request headers are only available after the
+``SEND_REQUEST_HDR_HOOK`` has been reached. Using this condition in earlier
+hooks will result in an empty value.
+
 CLIENT-URL
 ~~~~~~~~~~
 ::
@@ -384,6 +403,20 @@ Note that the HOST ``<part>`` of the CLIENT-URL might not be set until the remap
 phase of the transaction.  This happens when there is no host in the incoming URL
 and only set as a host header.  During the remap phase the host header is copied
 to the CLIENT-URL.  Use CLIENT-HEADER:Host if you are going to match the host.
+
+SERVER-URL
+~~~~~~~~~~
+::
+
+    cond %{SERVER-URL:<part>} <operand>
+
+The URL of the request being sent to the origin server. This is the URL after
+any remapping and modifications have been applied. The ``<part>`` may be
+specified according to the options documented in `URL Parts`_.
+
+Note that the server request URL is only available after the
+``SEND_REQUEST_HDR_HOOK`` has been reached. Using this condition in earlier
+hooks will result in an empty value.
 
 CIDR
 ~~~~
