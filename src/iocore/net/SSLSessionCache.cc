@@ -179,7 +179,8 @@ SSLSessionBucket::insertSession(const SSLSessionID &id, SSL_SESSION *sess, SSL *
   } else {
     std::string_view group_name = SSLGetGroupName(ssl);
     ink_release_assert(group_name.size() < sizeof(exdata->group_name));
-    strcpy(exdata->group_name, group_name.data());
+    memcpy(exdata->group_name, group_name.data(), group_name.size());
+    exdata->group_name[group_name.size()] = '\0';
   }
 
   std::unique_ptr<SSLSession> ssl_session(new SSLSession(id, buf, len, buf_exdata));

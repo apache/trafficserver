@@ -31,7 +31,7 @@ namespace ts
 {
 
 auto
-UnitParser::operator()(swoc::TextView const &src) const noexcept -> Rv<value_type>
+UnitParser::operator()(swoc::TextView const &src) const -> Rv<value_type>
 {
   value_type zret = 0;
   TextView   text = src; // Keep @a src around to report error offsets.
