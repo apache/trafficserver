@@ -79,9 +79,10 @@ struct EvacuationBlock;
     return EVENT_CONT;                                                                                         \
   } while (0)
 
-// Variant without metric increment for non-stripe lock retries (e.g., write_vc->mutex)
-#define VC_SCHED_LOCK_RETRY_NO_METRIC()                                                                        \
+// Variant for writer lock contention (write_vc->mutex during read aggregation)
+#define VC_SCHED_WRITER_LOCK_RETRY()                                                                           \
   do {                                                                                                         \
+    ts::Metrics::Counter::increment(cache_rsb.writer_lock_contention);                                         \
     trigger = mutex->thread_holding->schedule_in_local(this, HRTIME_MSECONDS(cache_config_mutex_retry_delay)); \
     return EVENT_CONT;                                                                                         \
   } while (0)

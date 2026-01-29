@@ -275,7 +275,7 @@ CacheVC::openReadFromWriter(int event, Event *e)
   CACHE_TRY_LOCK(writer_lock, write_vc->mutex, mutex->thread_holding);
   if (!writer_lock.is_locked()) {
     DDbg(dbg_ctl_cache_read_agg, "%p: key: %X lock miss", this, first_key.slice32(1));
-    VC_SCHED_LOCK_RETRY_NO_METRIC(); // Not stripe->mutex, don't count as stripe contention
+    VC_SCHED_WRITER_LOCK_RETRY();
   }
   MUTEX_RELEASE(lock);
 

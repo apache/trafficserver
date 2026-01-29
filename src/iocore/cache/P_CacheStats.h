@@ -73,4 +73,5 @@ struct CacheStatsBlock {
   ts::Metrics::Gauge::AtomicType   *span_online            = nullptr;
   ts::Metrics::Gauge::AtomicType   *span_failing           = nullptr;
   ts::Metrics::Counter::AtomicType *stripe_lock_contention = nullptr;
+  ts::Metrics::Counter::AtomicType *writer_lock_contention = nullptr;
 };

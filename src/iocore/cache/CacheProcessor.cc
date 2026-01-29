@@ -1151,6 +1151,7 @@ register_cache_stats(CacheStatsBlock *rsb, const std::string &prefix)
   rsb->span_offline           = ts::Metrics::Gauge::createPtr(prefix + ".span.offline");
   rsb->span_online            = ts::Metrics::Gauge::createPtr(prefix + ".span.online");
   rsb->stripe_lock_contention = ts::Metrics::Counter::createPtr(prefix + ".stripe.lock_contention");
+  rsb->writer_lock_contention = ts::Metrics::Counter::createPtr(prefix + ".writer.lock_contention");
 }
 
 void
