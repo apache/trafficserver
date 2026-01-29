@@ -109,7 +109,7 @@ When loaded, the plugin will:
 Log Output
 ==========
 
-The plugin writes to :file:`ja4_fingerprint.log` in the Traffic Server log
+The plugin writes to ``ja4_fingerprint.log`` in the Traffic Server log
 directory (typically ``/var/log/trafficserver/``).
 
 **Log Format**::
