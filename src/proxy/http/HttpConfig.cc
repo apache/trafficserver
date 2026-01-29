@@ -745,7 +745,7 @@ ParsedConfigCache::lookup_impl(TSOverridableConfigKey key, std::string_view valu
 ParsedConfigCache::ParsedValue
 ParsedConfigCache::parse(TSOverridableConfigKey key, std::string_view value)
 {
-  ParsedValue result;
+  ParsedValue result{};
 
   // Store the string value - the parsed structures may reference this.
   result.conf_value_storage = std::string(value);
