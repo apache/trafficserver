@@ -7929,13 +7929,12 @@ TSVConnClientHelloGet(TSVConn sslp)
   }
 
   if (auto snis = netvc->get_service<TLSSNISupport>(); snis) {
-    auto ch = new tsapi_ssl_client_hello();
+    auto ch = std::make_unique<tsapi_ssl_client_hello>();
 
 #ifdef OPENSSL_IS_BORINGSSL
     // Get the BoringSSL client hello container
     ClientHelloContainer client_hello = snis->get_client_hello_container();
     if (client_hello == nullptr) {
-      delete ch;
       return nullptr;
     }
 
@@ -7950,12 +7949,10 @@ TSVConnClientHelloGet(TSVConn sslp)
     // Get the OpenSSL SSL* object
     auto tbs = netvc->get_service<TLSBasicSupport>();
     if (!tbs) {
-      delete ch;
       return nullptr;
     }
     SSL *ssl = tbs->get_tls_handle();
     if (ssl == nullptr) {
-      delete ch;
       return nullptr;
     }
 
@@ -7980,7 +7977,7 @@ TSVConnClientHelloGet(TSVConn sslp)
 #endif
 
     // Wrap the POD structure in the wrapper class and return
-    return new TSClientHelloImpl(ch);
+    return new TSClientHelloImpl(std::move(ch));
   }
 
   return nullptr;

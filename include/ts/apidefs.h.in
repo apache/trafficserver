@@ -43,6 +43,8 @@
  */
 
 #include <cstdint>
+#include <memory>
+#include <vector>
 #include <netinet/in.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -1066,9 +1068,9 @@ struct tsapi_ssl_client_hello {
 class TSClientHelloImpl
 {
 public:
-  TSClientHelloImpl(tsapi_ssl_client_hello *ch) : _ssl_client_hello(ch) {}
+  TSClientHelloImpl(std::unique_ptr<tsapi_ssl_client_hello> ch) : _ssl_client_hello(std::move(ch)) {}
 
-  ~TSClientHelloImpl() { delete _ssl_client_hello; }
+  ~TSClientHelloImpl() = default;
 
   uint16_t
   get_version() const
@@ -1118,15 +1120,51 @@ public:
     return _ssl_client_hello->ssl_ptr;
   }
 
+  // Returns a vector of extension type IDs
+  // This abstracts the difference between BoringSSL (extensions buffer) and OpenSSL (extension_ids array)
+  std::vector<uint16_t>
+  get_extension_types() const
+  {
+    std::vector<uint16_t> result;
+
+    // For BoringSSL, parse the extensions buffer
+    if (_ssl_client_hello->extensions != nullptr) {
+      const uint8_t *ext       = _ssl_client_hello->extensions;
+      size_t         remaining = _ssl_client_hello->extensions_len;
+
+      while (remaining >= 4) {
+        uint16_t ext_type       = (ext[0] << 8) | ext[1];
+        uint16_t ext_len        = (ext[2] << 8) | ext[3];
+        size_t   total_ext_size = 4 + ext_len;
+
+        result.push_back(ext_type);
+
+        if (total_ext_size > remaining) {
+          break;
+        }
+        ext       += total_ext_size;
+        remaining -= total_ext_size;
+      }
+    }
+    // For OpenSSL, use the extension IDs array
+    else if (_ssl_client_hello->extension_ids != nullptr) {
+      for (size_t i = 0; i < _ssl_client_hello->extension_ids_len; i++) {
+        result.push_back(static_cast<uint16_t>(_ssl_client_hello->extension_ids[i]));
+      }
+    }
+
+    return result;
+  }
+
   // Internal accessor for API implementation
   tsapi_ssl_client_hello *
   _get_internal() const
   {
-    return _ssl_client_hello;
+    return _ssl_client_hello.get();
   }
 
 private:
-  tsapi_ssl_client_hello *_ssl_client_hello;
+  std::unique_ptr<tsapi_ssl_client_hello> _ssl_client_hello;
 };
 
 using TSFile = struct tsapi_file *;
