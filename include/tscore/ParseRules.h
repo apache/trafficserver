@@ -542,7 +542,7 @@ inline CTypeResult
 ParseRules::is_token(char c)
 {
 #ifndef COMPILE_PARSE_RULES
-  return (parseRulesCType[static_cast<unsigned char>(c)] & is_token_BIT);
+  return (parseRulesCType[(unsigned char)c] & is_token_BIT);
 #else
   return (is_char(c) && !(is_ctl(c) || is_tspecials(c)));
 #endif
@@ -712,7 +712,7 @@ ParseRules::is_http_field_name(char c)
 #ifndef COMPILE_PARSE_RULES
   return (parseRulesCType[static_cast<unsigned char>(c)] & is_http_field_name_BIT);
 #else
-  if (!is_char(c) || is_control(c) || (is_mime_sep(c) && c != '@') || c == '=' || c == ':') {
+  if (!is_char(c) || is_control(c) || is_mime_sep(c) || c == '=' || c == ':') {
     return false;
   }
   return true;
