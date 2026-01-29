@@ -80,6 +80,7 @@ class LanguageKeyword(Enum):
 
 class SuffixGroup(Enum):
     URL_FIELDS = frozenset({"SCHEME", "HOST", "PORT", "PATH", "QUERY", "URL"})
+    NEXTHOP_FIELDS = frozenset({"HOST", "PORT", "STRATEGY"})
     GEO_FIELDS = frozenset({"COUNTRY", "COUNTRY-ISO", "ASN", "ASN-NAME"})
     CONN_FIELDS = frozenset(
         {

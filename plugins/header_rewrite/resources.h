@@ -115,6 +115,8 @@ public:
   TSMLoc              hdr_loc        = nullptr;
   TSMBuffer           client_bufp    = nullptr;
   TSMLoc              client_hdr_loc = nullptr;
+  TSMBuffer           server_bufp    = nullptr;
+  TSMLoc              server_hdr_loc = nullptr;
 #if TS_HAS_CRIPTS
   cripts::Transaction         state; // This now holds txpn / ssnp
   cripts::Client::Connection *client_conn = nullptr;

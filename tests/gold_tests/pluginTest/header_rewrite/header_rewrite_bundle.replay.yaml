@@ -162,6 +162,13 @@ autest:
             args:
               - "rules/complex_logics.conf"
 
+      - from: "http://www.example.com/from_16/"
+        to: "http://backend.ex:{SERVER_HTTP_PORT}/to_16/"
+        plugins:
+          - name: "header_rewrite.so"
+            args:
+              - "rules/rule_server_conditions.conf"
+
     log_validation:
       traffic_out:
         excludes:
@@ -1123,7 +1130,7 @@ sessions:
       status: 200
 
 # ==========================================================================
-# Tests 31-52: Complex GROUP logic tests (rules/complex_logics.conf)
+# Tests 31-62: Complex GROUP logic tests (rules/complex_logics.conf)
 # ==========================================================================
 
 # Test 31: GROUP [OR] - only A header present (should match via group)
@@ -1783,3 +1790,30 @@ sessions:
       headers:
         fields:
         - [ X-Group-First-Result, { as: absent } ]
+
+# Test 63: SERVER-HEADER and SERVER-URL conditions
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_16/test
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ uuid, 63 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Server-Path, { value: "to_16/test", as: equal } ]
+        - [ X-Marker-Found, { value: "Yes", as: equal } ]
+        - [ X-Server-Host-Header, { value: "backend.ex", as: contains } ]
+        - [ X-Path-Match, { value: "Yes", as: equal } ]
