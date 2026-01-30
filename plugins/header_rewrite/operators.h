@@ -48,6 +48,22 @@ public:
   OperatorSetConfig(const OperatorSetConfig &) = delete;
   void operator=(const OperatorSetConfig &)    = delete;
 
+  std::string_view
+  type_name() const override
+  {
+    return "OperatorSetConfig";
+  }
+
+  bool
+  equals(const Statement *other) const override
+  {
+    if (!Operator::equals(other)) {
+      return false;
+    }
+    auto *op = static_cast<const OperatorSetConfig *>(other);
+    return _key == op->_key && _type == op->_type && _config == op->_config && _value.equals(&op->_value);
+  }
+
   void initialize(Parser &p) override;
 
 protected:
@@ -70,6 +86,23 @@ public:
   OperatorSetStatus(const OperatorSetStatus &) = delete;
   void operator=(const OperatorSetStatus &)    = delete;
 
+  std::string_view
+  type_name() const override
+  {
+    return "OperatorSetStatus";
+  }
+
+  bool
+  equals(const Statement *other) const override
+  {
+    if (!Operator::equals(other)) {
+      return false;
+    }
+    auto *op = static_cast<const OperatorSetStatus *>(other);
+    return _status.equals(&op->_status) && _reason_len == op->_reason_len &&
+           (!_reason || !op->_reason || strncmp(_reason, op->_reason, _reason_len) == 0);
+  }
+
   void initialize(Parser &p) override;
 
 protected:
@@ -91,6 +124,22 @@ public:
   OperatorSetStatusReason(const OperatorSetStatusReason &) = delete;
   void operator=(const OperatorSetStatusReason &)          = delete;
 
+  std::string_view
+  type_name() const override
+  {
+    return "OperatorSetStatusReason";
+  }
+
+  bool
+  equals(const Statement *other) const override
+  {
+    if (!Operator::equals(other)) {
+      return false;
+    }
+    auto *op = static_cast<const OperatorSetStatusReason *>(other);
+    return _reason.equals(&op->_reason);
+  }
+
   void initialize(Parser &p) override;
 
 protected:
@@ -109,6 +158,28 @@ public:
   // noncopyable
   OperatorSetDestination(const OperatorSetDestination &) = delete;
   void operator=(const OperatorSetDestination &)         = delete;
+
+  std::string_view
+  type_name() const override
+  {
+    return "OperatorSetDestination";
+  }
+
+  bool
+  equals(const Statement *other) const override
+  {
+    if (!Operator::equals(other)) {
+      return false;
+    }
+    auto *op = static_cast<const OperatorSetDestination *>(other);
+    return _url_qual == op->_url_qual && _value.equals(&op->_value);
+  }
+
+  std::string
+  debug_string() const override
+  {
+    return std::string(type_name()) + " " + _value.get_value();
+  }
 
   void initialize(Parser &p) override;
 
@@ -130,6 +201,12 @@ public:
   OperatorRMDestination(const OperatorRMDestination &) = delete;
   void operator=(const OperatorRMDestination &)        = delete;
 
+  std::string_view
+  type_name() const override
+  {
+    return "OperatorRMDestination";
+  }
+
   void initialize(Parser &p) override;
 
 protected:
@@ -150,6 +227,28 @@ public:
   // noncopyable
   OperatorSetRedirect(const OperatorSetRedirect &) = delete;
   void operator=(const OperatorSetRedirect &)      = delete;
+
+  std::string_view
+  type_name() const override
+  {
+    return "OperatorSetRedirect";
+  }
+
+  bool
+  equals(const Statement *other) const override
+  {
+    if (!Operator::equals(other)) {
+      return false;
+    }
+    auto *op = static_cast<const OperatorSetRedirect *>(other);
+    return _status.equals(&op->_status) && _location.equals(&op->_location);
+  }
+
+  std::string
+  debug_string() const override
+  {
+    return std::string(type_name()) + " " + std::to_string(_status.get_int_value()) + " " + _location.get_value();
+  }
 
   void initialize(Parser &p) override;
 
@@ -184,6 +283,12 @@ public:
   OperatorNoOp(const OperatorNoOp &)   = delete;
   void operator=(const OperatorNoOp &) = delete;
 
+  std::string_view
+  type_name() const override
+  {
+    return "OperatorNoOp";
+  }
+
 protected:
   bool
   exec(const Resources & /* res ATS_UNUSED */) const override
@@ -200,6 +305,22 @@ public:
   // noncopyable
   OperatorSetTimeoutOut(const OperatorSetTimeoutOut &) = delete;
   void operator=(const OperatorSetTimeoutOut &)        = delete;
+
+  std::string_view
+  type_name() const override
+  {
+    return "OperatorSetTimeoutOut";
+  }
+
+  bool
+  equals(const Statement *other) const override
+  {
+    if (!Operator::equals(other)) {
+      return false;
+    }
+    auto *op = static_cast<const OperatorSetTimeoutOut *>(other);
+    return _type == op->_type && _timeout.equals(&op->_timeout);
+  }
 
   void initialize(Parser &p) override;
 
@@ -228,6 +349,12 @@ public:
   OperatorSkipRemap(const OperatorSkipRemap &) = delete;
   void operator=(const OperatorSkipRemap &)    = delete;
 
+  std::string_view
+  type_name() const override
+  {
+    return "OperatorSkipRemap";
+  }
+
   void initialize(Parser &p) override;
 
 protected:
@@ -247,6 +374,12 @@ public:
   OperatorRMHeader(const OperatorRMHeader &) = delete;
   void operator=(const OperatorRMHeader &)   = delete;
 
+  std::string_view
+  type_name() const override
+  {
+    return "OperatorRMHeader";
+  }
+
 protected:
   bool exec(const Resources &res) const override;
 };
@@ -259,6 +392,28 @@ public:
   // noncopyable
   OperatorAddHeader(const OperatorAddHeader &) = delete;
   void operator=(const OperatorAddHeader &)    = delete;
+
+  std::string_view
+  type_name() const override
+  {
+    return "OperatorAddHeader";
+  }
+
+  bool
+  equals(const Statement *other) const override
+  {
+    if (!Operator::equals(other)) {
+      return false;
+    }
+    auto *op = static_cast<const OperatorAddHeader *>(other);
+    return _header == op->_header && _value.equals(&op->_value);
+  }
+
+  std::string
+  debug_string() const override
+  {
+    return std::string(type_name()) + " " + _header + "=\"" + _value.get_value() + "\"";
+  }
 
   void initialize(Parser &p) override;
 
@@ -278,6 +433,28 @@ public:
   OperatorSetHeader(const OperatorSetHeader &) = delete;
   void operator=(const OperatorSetHeader &)    = delete;
 
+  std::string_view
+  type_name() const override
+  {
+    return "OperatorSetHeader";
+  }
+
+  bool
+  equals(const Statement *other) const override
+  {
+    if (!Operator::equals(other)) {
+      return false;
+    }
+    auto *op = static_cast<const OperatorSetHeader *>(other);
+    return _header == op->_header && _value.equals(&op->_value);
+  }
+
+  std::string
+  debug_string() const override
+  {
+    return std::string(type_name()) + " " + _header + "=\"" + _value.get_value() + "\"";
+  }
+
   void initialize(Parser &p) override;
 
 protected:
@@ -295,6 +472,12 @@ public:
   // noncopyable
   OperatorCounter(const OperatorCounter &) = delete;
   void operator=(const OperatorCounter &)  = delete;
+
+  std::string_view
+  type_name() const override
+  {
+    return "OperatorCounter";
+  }
 
   void initialize(Parser &p) override;
 
@@ -315,6 +498,12 @@ public:
   OperatorRMCookie(const OperatorRMCookie &) = delete;
   void operator=(const OperatorRMCookie &)   = delete;
 
+  std::string_view
+  type_name() const override
+  {
+    return "OperatorRMCookie";
+  }
+
 protected:
   bool exec(const Resources &res) const override;
 };
@@ -327,6 +516,28 @@ public:
   // noncopyable
   OperatorAddCookie(const OperatorAddCookie &) = delete;
   void operator=(const OperatorAddCookie &)    = delete;
+
+  std::string_view
+  type_name() const override
+  {
+    return "OperatorAddCookie";
+  }
+
+  bool
+  equals(const Statement *other) const override
+  {
+    if (!Operator::equals(other)) {
+      return false;
+    }
+    auto *op = static_cast<const OperatorAddCookie *>(other);
+    return _cookie == op->_cookie && _value.equals(&op->_value);
+  }
+
+  std::string
+  debug_string() const override
+  {
+    return std::string(type_name()) + " " + _cookie + "=\"" + _value.get_value() + "\"";
+  }
 
   void initialize(Parser &p) override;
 
@@ -345,6 +556,28 @@ public:
   // noncopyable
   OperatorSetCookie(const OperatorSetCookie &) = delete;
   void operator=(const OperatorSetCookie &)    = delete;
+
+  std::string_view
+  type_name() const override
+  {
+    return "OperatorSetCookie";
+  }
+
+  bool
+  equals(const Statement *other) const override
+  {
+    if (!Operator::equals(other)) {
+      return false;
+    }
+    auto *op = static_cast<const OperatorSetCookie *>(other);
+    return _cookie == op->_cookie && _value.equals(&op->_value);
+  }
+
+  std::string
+  debug_string() const override
+  {
+    return std::string(type_name()) + " " + _cookie + "=\"" + _value.get_value() + "\"";
+  }
 
   void initialize(Parser &p) override;
 
@@ -376,6 +609,22 @@ public:
   OperatorSetConnDSCP(const OperatorSetConnDSCP &) = delete;
   void operator=(const OperatorSetConnDSCP &)      = delete;
 
+  std::string_view
+  type_name() const override
+  {
+    return "OperatorSetConnDSCP";
+  }
+
+  bool
+  equals(const Statement *other) const override
+  {
+    if (!Operator::equals(other)) {
+      return false;
+    }
+    auto *op = static_cast<const OperatorSetConnDSCP *>(other);
+    return _ds_value.equals(&op->_ds_value);
+  }
+
   void initialize(Parser &p) override;
 
 protected:
@@ -394,6 +643,22 @@ public:
   // noncopyable
   OperatorSetConnMark(const OperatorSetConnMark &) = delete;
   void operator=(const OperatorSetConnMark &)      = delete;
+
+  std::string_view
+  type_name() const override
+  {
+    return "OperatorSetConnMark";
+  }
+
+  bool
+  equals(const Statement *other) const override
+  {
+    if (!Operator::equals(other)) {
+      return false;
+    }
+    auto *op = static_cast<const OperatorSetConnMark *>(other);
+    return _ds_value.equals(&op->_ds_value);
+  }
 
   void initialize(Parser &p) override;
 
@@ -414,6 +679,12 @@ public:
   OperatorSetDebug(const OperatorSetDebug &) = delete;
   void operator=(const OperatorSetDebug &)   = delete;
 
+  std::string_view
+  type_name() const override
+  {
+    return "OperatorSetDebug";
+  }
+
   void initialize(Parser &p) override;
 
 protected:
@@ -429,6 +700,22 @@ public:
   // noncopyable
   OperatorSetBody(const OperatorSetBody &) = delete;
   void operator=(const OperatorSetBody &)  = delete;
+
+  std::string_view
+  type_name() const override
+  {
+    return "OperatorSetBody";
+  }
+
+  bool
+  equals(const Statement *other) const override
+  {
+    if (!Operator::equals(other)) {
+      return false;
+    }
+    auto *op = static_cast<const OperatorSetBody *>(other);
+    return _value.equals(&op->_value);
+  }
 
   void initialize(Parser &p) override;
 
@@ -449,6 +736,12 @@ public:
   OperatorSetHttpCntl(const OperatorSetHttpCntl &) = delete;
   void operator=(const OperatorSetHttpCntl &)      = delete;
 
+  std::string_view
+  type_name() const override
+  {
+    return "OperatorSetHttpCntl";
+  }
+
   void initialize(Parser &p) override;
 
 protected:
@@ -468,6 +761,12 @@ public:
   // noncopyable
   OperatorSetPluginCntl(const OperatorSetPluginCntl &) = delete;
   void operator=(const OperatorSetPluginCntl &)        = delete;
+
+  std::string_view
+  type_name() const override
+  {
+    return "OperatorSetPluginCntl";
+  }
 
   void initialize(Parser &p) override;
 
@@ -513,6 +812,12 @@ public:
   OperatorRunPlugin(const OperatorRunPlugin &) = delete;
   void operator=(const OperatorRunPlugin &)    = delete;
 
+  std::string_view
+  type_name() const override
+  {
+    return "OperatorRunPlugin";
+  }
+
   void initialize(Parser &p) override;
 
 protected:
@@ -531,6 +836,22 @@ public:
   // noncopyable
   OperatorSetBodyFrom(const OperatorSetBodyFrom &) = delete;
   void operator=(const OperatorSetBodyFrom &)      = delete;
+
+  std::string_view
+  type_name() const override
+  {
+    return "OperatorSetBodyFrom";
+  }
+
+  bool
+  equals(const Statement *other) const override
+  {
+    if (!Operator::equals(other)) {
+      return false;
+    }
+    auto *op = static_cast<const OperatorSetBodyFrom *>(other);
+    return _value.equals(&op->_value);
+  }
 
   void initialize(Parser &p) override;
 
@@ -556,6 +877,12 @@ public:
   // noncopyable
   OperatorSetStateFlag(const OperatorSetStateFlag &) = delete;
   void operator=(const OperatorSetStateFlag &)       = delete;
+
+  std::string_view
+  type_name() const override
+  {
+    return "OperatorSetStateFlag";
+  }
 
   void initialize(Parser &p) override;
 
@@ -588,6 +915,22 @@ public:
   OperatorSetStateInt8(const OperatorSetStateInt8 &) = delete;
   void operator=(const OperatorSetStateInt8 &)       = delete;
 
+  std::string_view
+  type_name() const override
+  {
+    return "OperatorSetStateInt8";
+  }
+
+  bool
+  equals(const Statement *other) const override
+  {
+    if (!Operator::equals(other)) {
+      return false;
+    }
+    auto *op = static_cast<const OperatorSetStateInt8 *>(other);
+    return _byte_ix == op->_byte_ix && _value.equals(&op->_value);
+  }
+
   void initialize(Parser &p) override;
 
 protected:
@@ -618,6 +961,12 @@ public:
   OperatorSetStateInt16(const OperatorSetStateInt16 &) = delete;
   void operator=(const OperatorSetStateInt16 &)        = delete;
 
+  std::string_view
+  type_name() const override
+  {
+    return "OperatorSetStateInt16";
+  }
+
   void initialize(Parser &p) override;
 
 protected:
@@ -643,6 +992,22 @@ public:
   OperatorSetEffectiveAddress(const OperatorSetEffectiveAddress &) = delete;
   void operator=(const OperatorSetEffectiveAddress &)              = delete;
 
+  std::string_view
+  type_name() const override
+  {
+    return "OperatorSetEffectiveAddress";
+  }
+
+  bool
+  equals(const Statement *other) const override
+  {
+    if (!Operator::equals(other)) {
+      return false;
+    }
+    auto *op = static_cast<const OperatorSetEffectiveAddress *>(other);
+    return _value.equals(&op->_value);
+  }
+
   void initialize(Parser &p) override;
 
 protected:
@@ -667,6 +1032,22 @@ public:
   // noncopyable
   OperatorSetNextHopStrategy(const OperatorSetNextHopStrategy &) = delete;
   void operator=(const OperatorSetNextHopStrategy &)             = delete;
+
+  std::string_view
+  type_name() const override
+  {
+    return "OperatorSetNextHopStrategy";
+  }
+
+  bool
+  equals(const Statement *other) const override
+  {
+    if (!Operator::equals(other)) {
+      return false;
+    }
+    auto *op = static_cast<const OperatorSetNextHopStrategy *>(other);
+    return _value.equals(&op->_value);
+  }
 
   void initialize(Parser &p) override;
 
@@ -710,6 +1091,12 @@ public:
   OperatorIf(const OperatorIf &)     = delete;
   void operator=(const OperatorIf &) = delete;
 
+  std::string_view
+  type_name() const override
+  {
+    return "OperatorIf";
+  }
+
   ConditionGroup *new_section(Parser::CondClause clause);
   bool            add_operator(Parser &p, const char *filename, int lineno);
   Condition      *make_condition(Parser &p, const char *filename, int lineno);
@@ -731,6 +1118,13 @@ public:
   cur_section() const
   {
     return _cur_section;
+  }
+
+  // For comparison tool access
+  const CondOpSection *
+  get_sections() const
+  {
+    return &_sections;
   }
 
   OperModifiers exec_and_return_mods(const Resources &res) const;
@@ -759,6 +1153,22 @@ public:
   // noncopyable
   OperatorSetCCAlgorithm(const OperatorSetCCAlgorithm &) = delete;
   void operator=(const OperatorSetCCAlgorithm &)         = delete;
+
+  std::string_view
+  type_name() const override
+  {
+    return "OperatorSetCCAlgorithm";
+  }
+
+  bool
+  equals(const Statement *other) const override
+  {
+    if (!Operator::equals(other)) {
+      return false;
+    }
+    auto *op = static_cast<const OperatorSetCCAlgorithm *>(other);
+    return _cc_alg.equals(&op->_cc_alg);
+  }
 
   void initialize(Parser &p) override;
 
