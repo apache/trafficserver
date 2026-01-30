@@ -56,8 +56,6 @@ TEST_CASE("testIsHeaderValid", "[proxy][hdrtest]")
 {
   HTTPHdr hdr;
   // extra to prevent proxy allocation.
-  // coverity[resource_leak] - heap is freed via hdr.destroy() which calls
-  // HdrHeapSDKHandle::destroy() -> m_heap->destroy()
   HdrHeap *heap = new_HdrHeap(HdrHeap::DEFAULT_SIZE + 64);
 
   SECTION("Test (valid) request with 4 required pseudo headers")
@@ -249,4 +247,6 @@ TEST_CASE("testIsHeaderValid", "[proxy][hdrtest]")
   }
   // teardown
   hdr.destroy();
+  // coverity[leaked_storage] - heap is freed via hdr.destroy() which calls
+  // HdrHeapSDKHandle::destroy() -> m_heap->destroy()
 }
