@@ -1,0 +1,180 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+#
+# This replay file tests cache_open_write_fail_action = 5 (READ_RETRY)
+# with a basic scenario where read-while-writer eventually succeeds.
+#
+# Scenario:
+# - Two concurrent requests arrive for the same uncached URL
+# - Request 1 gets write lock, connects to origin (slow, 3 second response)
+# - Request 2 fails write lock, enters READ_RETRY mode
+# - Request 2 retries reads, eventually gets read-while-writer access
+# - Both requests should succeed with 200 responses
+# - Only ONE origin connection should be made (request collapsing)
+#
+
+meta:
+  version: "1.0"
+
+autest:
+  dns:
+    name: 'dns-read-retry-basic'
+  description: 'Test cache_open_write_fail_action = 5 (READ_RETRY) with successful read-while-writer'
+
+  server:
+    name: 'origin-read-retry-basic'
+
+  client:
+    name: 'client-read-retry-basic'
+
+  ats:
+    name: 'ts-read-retry-basic'
+    process_config:
+      enable_cache: true
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http|cache|http_cache'
+      # Enable READ_RETRY mode
+      proxy.config.http.cache.open_write_fail_action: 5
+      # Configure retry parameters
+      proxy.config.http.cache.max_open_write_retries: 1
+      proxy.config.http.cache.max_open_write_retry_timeout: 0
+      proxy.config.http.cache.max_open_read_retries: 20
+      proxy.config.http.cache.open_read_retry_time: 100
+      # Enable read-while-writer
+      proxy.config.cache.enable_read_while_writer: 1
+
+    remap_config:
+      - from: "http://example.com/"
+        to: "http://backend.example.com:{SERVER_HTTP_PORT}/"
+
+    log_validation:
+      traffic_out:
+        # Should NOT contain crash indicators
+        excludes:
+          - expression: "FATAL|ALERT|Emergency|ink_release_assert"
+            description: "Verify ATS does not crash with READ_RETRY mode"
+        # Should contain cache operations (basic validation)
+        contains:
+          - expression: "state_cache_open_write|CACHE_EVENT_OPEN"
+            description: "Verify cache operations occur"
+
+sessions:
+  #############################################################################
+  # First session: Request that gets the write lock (slow origin response)
+  #############################################################################
+  - transactions:
+      - client-request:
+          method: "GET"
+          version: "1.1"
+          url: /bigfile
+          headers:
+            fields:
+              - [uuid, first-request-write-lock]
+              - [Host, example.com]
+              - [X-Request, first]
+
+        proxy-request:
+          headers:
+            fields:
+              - [X-Request, {value: 'first', as: equal}]
+
+        server-response:
+          # Slow response (3 seconds) to allow second request to retry reads
+          delay: 3s
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Content-Length, 100]
+              - [Cache-Control, "max-age=300"]
+              - [X-Response, from-origin]
+
+        proxy-response:
+          status: 200
+          headers:
+            fields:
+              - [X-Response, {value: 'from-origin', as: equal}]
+
+  #############################################################################
+  # Second session: Concurrent request that should use READ_RETRY
+  # This runs in parallel with the first session
+  #############################################################################
+  - transactions:
+      - client-request:
+          # Small delay to ensure first request gets write lock first
+          delay: 100ms
+          method: "GET"
+          version: "1.1"
+          url: /bigfile
+          headers:
+            fields:
+              - [uuid, second-request-read-retry]
+              - [Host, example.com]
+              - [X-Request, second]
+
+        # Server should NOT receive this request (read-while-writer should work)
+        # If server receives it, request collapsing failed
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Content-Length, 100]
+              - [Cache-Control, "max-age=300"]
+              - [X-Response, duplicate-origin-connection]
+
+        # Proxy should respond with 200, either from read-while-writer or cache
+        proxy-response:
+          status: 200
+          headers:
+            fields:
+              # Should get the response, but preferably from read-while-writer
+              - [X-Response, {value: 'from-origin', as: equal}]
+
+  #############################################################################
+  # Third session: Verify content is cached after both requests complete
+  #############################################################################
+  - transactions:
+      - client-request:
+          # Wait for previous transactions to complete
+          delay: 4s
+          method: "GET"
+          version: "1.1"
+          url: /bigfile
+          headers:
+            fields:
+              - [uuid, third-request-cache-hit]
+              - [Host, example.com]
+              - [X-Request, third]
+
+        # Server should NOT receive this request (should be cache hit)
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Content-Length, 100]
+              - [X-Response, should-not-see-this]
+
+        # Proxy should respond from cache
+        proxy-response:
+          status: 200
+          headers:
+            fields:
+              - [X-Response, {value: 'from-origin', as: equal}]
