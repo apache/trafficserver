@@ -233,6 +233,50 @@ class Config(Common):
         self._finish()
 
 
+class Debug(Common):
+    """
+        Handy class to map traffic_ctl server debug options.
+    """
+
+    def __init__(self, dir, tr, tn):
+        super().__init__(tr)
+        self._cmd = "traffic_ctl server debug "
+        self._dir = dir
+        self._tn = tn
+
+    def enable(self, tags=None, append=False, client_ip=None):
+        """
+        Enable debug logging at runtime.
+
+        Args:
+            tags: Debug tags to set (e.g., "http|dns")
+            append: If True, append tags to existing tags instead of replacing
+            client_ip: Client IP filter for debug output
+
+        Example:
+            traffic_ctl.server().debug().enable(tags="http").exec()
+            traffic_ctl.server().debug().enable(tags="dns", append=True).exec()
+        """
+        self._cmd = f'{self._cmd} enable'
+        if tags:
+            self._cmd = f'{self._cmd} --tags {tags}'
+        if append:
+            self._cmd = f'{self._cmd} --append'
+        if client_ip:
+            self._cmd = f'{self._cmd} --client_ip {client_ip}'
+        return self
+
+    def disable(self):
+        """
+        Disable debug logging at runtime.
+
+        Example:
+            traffic_ctl.server().debug().disable().exec()
+        """
+        self._cmd = f'{self._cmd} disable'
+        return self
+
+
 class Server(Common):
     """
         Handy class to map traffic_ctl server options.
@@ -253,6 +297,16 @@ class Server(Common):
         if undo:
             self._cmd = f'{self._cmd} --undo'
         return self
+
+    def debug(self):
+        """
+        Returns a Debug object for debug enable/disable commands.
+
+        Example:
+            traffic_ctl.server().debug().enable(tags="http").exec()
+            traffic_ctl.server().debug().disable().exec()
+        """
+        return Debug(self._dir, self._tr, self._tn)
 
     def as_json(self):
         self._cmd = f'{self._cmd} -f json'

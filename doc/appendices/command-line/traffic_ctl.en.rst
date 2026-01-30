@@ -535,6 +535,11 @@ traffic_ctl server
    This string should contain an anchored regular expression that filters the messages based on the debug tag tag.
    Please refer to :ts:cv:`proxy.config.diags.debug.tags` for more information
 
+   .. option:: --append, -a
+
+   Append the specified tags to the existing debug tags instead of replacing them. This option requires
+   ``--tags`` to be specified. The new tags will be combined with existing tags using the ``|`` separator.
+
    .. option:: --client_ip, -c ip
 
    Please see :ts:cv:`proxy.config.diags.debug.client_ip` for information.
@@ -547,12 +552,21 @@ traffic_ctl server
    Disables logging for diagnostic messages. Equivalent to set :ts:cv:`proxy.config.diags.debug.enabled` to ``0``.
 
 
-   Example:
+   Examples:
 
    .. code-block:: bash
 
+      # Set debug tags (replaces existing tags)
       $ traffic_ctl server debug enable --tags "quic|quiche"
       ■ TS Runtime debug set to »ON(1)« - tags »"quic|quiche"«, client_ip »unchanged«
+
+      # Append debug tags to existing tags
+      $ traffic_ctl server debug enable --tags "http" --append
+      ■ TS Runtime debug set to »ON(1)« - tags »"quic|quiche|http"«, client_ip »unchanged«
+
+      # Disable debug logging
+      $ traffic_ctl server debug disable
+      ■ TS Runtime debug set to »OFF(0)«
 
 .. _traffic-control-command-storage:
 
