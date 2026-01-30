@@ -61,12 +61,28 @@ struct EvacuationBlock;
 
 #define VC_LOCK_RETRY_EVENT()                                                                                         \
   do {                                                                                                                \
+    ts::Metrics::Counter::increment(cache_rsb.stripe_lock_contention);                                                \
+    if (stripe && stripe->cache_vol) {                                                                                \
+      ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.stripe_lock_contention);                             \
+    }                                                                                                                 \
     trigger = mutex->thread_holding->schedule_in_local(this, HRTIME_MSECONDS(cache_config_mutex_retry_delay), event); \
     return EVENT_CONT;                                                                                                \
   } while (0)
 
 #define VC_SCHED_LOCK_RETRY()                                                                                  \
   do {                                                                                                         \
+    ts::Metrics::Counter::increment(cache_rsb.stripe_lock_contention);                                         \
+    if (stripe && stripe->cache_vol) {                                                                         \
+      ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.stripe_lock_contention);                      \
+    }                                                                                                          \
+    trigger = mutex->thread_holding->schedule_in_local(this, HRTIME_MSECONDS(cache_config_mutex_retry_delay)); \
+    return EVENT_CONT;                                                                                         \
+  } while (0)
+
+// Variant for writer lock contention (write_vc->mutex during read aggregation)
+#define VC_SCHED_WRITER_LOCK_RETRY()                                                                           \
+  do {                                                                                                         \
+    ts::Metrics::Counter::increment(cache_rsb.writer_lock_contention);                                         \
     trigger = mutex->thread_holding->schedule_in_local(this, HRTIME_MSECONDS(cache_config_mutex_retry_delay)); \
     return EVENT_CONT;                                                                                         \
   } while (0)
@@ -330,6 +346,10 @@ CacheVC::handleWriteLock(int /* event ATS_UNUSED */, Event *e)
   {
     CACHE_TRY_LOCK(lock, stripe->mutex, mutex->thread_holding);
     if (!lock.is_locked()) {
+      ts::Metrics::Counter::increment(cache_rsb.stripe_lock_contention);
+      if (stripe && stripe->cache_vol) {
+        ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.stripe_lock_contention);
+      }
       set_agg_write_in_progress();
       trigger = mutex->thread_holding->schedule_in_local(this, HRTIME_MSECONDS(cache_config_mutex_retry_delay));
       return EVENT_CONT;
