@@ -145,6 +145,12 @@ autest:
             args:
               - "rules/query_sub_key.conf"
 
+      - from: "http://www.example.com/from_14/"
+        to: "http://backend.ex:{SERVER_HTTP_PORT}/to_14/"
+        plugins:
+          - name: "header_rewrite.so"
+            args:
+              - "rules/rule_server_conditions.conf"
 
 
 # Proxy verifier sessions
@@ -1074,3 +1080,30 @@ sessions:
       headers:
         fields:
         - [ X-Query-Sub, { as: absent } ]
+
+# Test 30: SERVER-HEADER and SERVER-URL conditions
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_14/test
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ uuid, 36 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Server-Path, { value: "to_14/test", as: equal } ]
+        - [ X-Marker-Found, { value: "Yes", as: equal } ]
+        - [ X-Server-Host-Header, { value: "backend.ex", as: contains } ]
+        - [ X-Path-Match, { value: "Yes", as: equal } ]
