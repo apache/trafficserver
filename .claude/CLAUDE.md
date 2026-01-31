@@ -16,7 +16,7 @@ with a sophisticated plugin system.
 
 ## Personal Preferences
 
-If `.claude/PERSONAL.md` sub-agent exists, load it for user-specific code style
+If `.claude/CLAUDE.local.md` sub-agent exists, load it for user-specific code style
 preferences and working conventions. This file is gitignored and optional.
 
 ## Build Commands
@@ -272,7 +272,7 @@ SMDebug(dbg_ctl, "Processing request for URL: %s", url);
 - Don't use templates unless needed and appropriate
 - Run `cmake --build build -t format` before committing
 - Line length: 132 characters maximum
-- Don't add comments where the code documents itself
+- Don't add comments where the code documents itself, don't comment claude interactions
 
 **C++ Formatting (Mozilla-based style):**
 - Indentation: 2 spaces for C/C++
