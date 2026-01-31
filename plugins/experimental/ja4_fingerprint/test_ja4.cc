@@ -37,7 +37,7 @@ static std::string inc(std::string_view sv);
 
 TEST_CASE("JA4")
 {
-  JA4::TLSClientHelloSummary TLS_summary;
+  JA4::TLSClientHelloSummary TLS_summary{};
 
   SECTION("Given the protocol is TCP, "
           "when we create a JA4 fingerprint, "

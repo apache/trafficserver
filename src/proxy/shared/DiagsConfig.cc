@@ -42,7 +42,7 @@ void
 DiagsConfig::reconfigure_diags()
 {
   int              i;
-  DiagsConfigState c;
+  DiagsConfigState c{};
   bool             found, all_found;
 
   static struct {
