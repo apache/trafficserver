@@ -39,7 +39,7 @@ class ReadRetryParallelTest:
 
     Strategy:
     1. Fire multiple parallel requests for the same uncached URL
-    2. Origin server responds slowly (2 seconds via httpbin /delay)
+    2. Origin server responds slowly (3 seconds via httpbin /delay)
     3. First request gets write lock and starts writing to cache
     4. Subsequent requests fail to get write lock, enter READ_RETRY
     5. All requests should complete successfully (no crashes)
@@ -87,19 +87,19 @@ class ReadRetryParallelTest:
         ps.StartBefore(self.server)
         ps.StartBefore(self.ts)
 
-        # Fire 5 parallel requests using shell backgrounding
-        # The /delay/2 endpoint makes origin respond after 2 seconds
-        # First request gets the write lock, others should enter READ_RETRY
+        # Fire 5 parallel requests using direct backgrounding
+        # The /delay/3 endpoint makes origin respond after 3 seconds
+        # This provides ample overlap time for write lock contention
         port = self.ts.Variables.port
         tr.MakeCurlCommandMulti(
             f'''
-# Fire all requests in parallel (backgrounded) to same slow URL
-({{curl}} -s -o /dev/null -w "Request 1: HTTP %{{{{http_code}}}}\\n" -H "Host: example.com" http://127.0.0.1:{port}/delay/2) &
-({{curl}} -s -o /dev/null -w "Request 2: HTTP %{{{{http_code}}}}\\n" -H "Host: example.com" http://127.0.0.1:{port}/delay/2) &
-({{curl}} -s -o /dev/null -w "Request 3: HTTP %{{{{http_code}}}}\\n" -H "Host: example.com" http://127.0.0.1:{port}/delay/2) &
-({{curl}} -s -o /dev/null -w "Request 4: HTTP %{{{{http_code}}}}\\n" -H "Host: example.com" http://127.0.0.1:{port}/delay/2) &
-({{curl}} -s -o /dev/null -w "Request 5: HTTP %{{{{http_code}}}}\\n" -H "Host: example.com" http://127.0.0.1:{port}/delay/2) &
-# Wait for all background jobs to complete
+# Launch all curl requests in rapid succession (no subshells for faster startup)
+# The 3-second origin delay provides ample overlap time for write lock contention
+{{curl}} -s -o /dev/null -w "Request 1: HTTP %{{{{http_code}}}}\\n" -H "Host: example.com" http://127.0.0.1:{port}/delay/3 &
+{{curl}} -s -o /dev/null -w "Request 2: HTTP %{{{{http_code}}}}\\n" -H "Host: example.com" http://127.0.0.1:{port}/delay/3 &
+{{curl}} -s -o /dev/null -w "Request 3: HTTP %{{{{http_code}}}}\\n" -H "Host: example.com" http://127.0.0.1:{port}/delay/3 &
+{{curl}} -s -o /dev/null -w "Request 4: HTTP %{{{{http_code}}}}\\n" -H "Host: example.com" http://127.0.0.1:{port}/delay/3 &
+{{curl}} -s -o /dev/null -w "Request 5: HTTP %{{{{http_code}}}}\\n" -H "Host: example.com" http://127.0.0.1:{port}/delay/3 &
 wait
 echo "All parallel requests completed"
 ''',
@@ -125,10 +125,10 @@ echo "All parallel requests completed"
         ps = tr.Processes.Default
 
         port = self.ts.Variables.port
-        # Request without delay - should be served from cache quickly
+        # Request same URL - should be served from cache quickly
         tr.MakeCurlCommandMulti(
             f'''
-{{curl}} -s -D - -o /dev/null -H "Host: example.com" http://127.0.0.1:{port}/delay/2
+{{curl}} -s -D - -o /dev/null -H "Host: example.com" http://127.0.0.1:{port}/delay/3
 ''', ts=self.ts)
 
         ps.ReturnCode = 0
@@ -197,26 +197,30 @@ class ReadRetryRevalidationTest:
                 'proxy.config.cache.enable_read_while_writer': 1,
                 # Required for caching
                 'proxy.config.http.cache.required_headers': 0,
+                # Set short heuristic freshness so content becomes stale quickly
+                'proxy.config.http.cache.heuristic_min_lifetime': 1,
+                'proxy.config.http.cache.heuristic_max_lifetime': 2,
             })
 
         self.ts.Disk.remap_config.AddLine(f'map http://example.com/ http://127.0.0.1:{self.server.Variables.Port}/')
 
     def test_populate_cache(self):
         """
-        Populate cache with content that has short TTL.
-        Using /cache/{seconds} which returns Cache-Control: max-age={seconds}
+        Populate cache with content using a slow origin response.
+        The /delay/3 endpoint returns after 3 seconds. With required_headers=0,
+        ATS will cache this content using heuristic freshness.
         """
-        tr = Test.AddTestRun("Populate cache with short-TTL content")
+        tr = Test.AddTestRun("Populate cache with content")
         ps = tr.Processes.Default
 
         ps.StartBefore(self.server)
         ps.StartBefore(self.ts)
 
         port = self.ts.Variables.port
-        # /cache/1 returns content with max-age=1
+        # Use /delay/3 - same URL as revalidation test to ensure cache hit/revalidation
         tr.MakeCurlCommandMulti(
             f'''
-{{curl}} -s -D - -o /dev/null -H "Host: example.com" http://127.0.0.1:{port}/cache/1 && echo "Cache populated with 1-second TTL content"
+{{curl}} -s -D - -o /dev/null -H "Host: example.com" http://127.0.0.1:{port}/delay/3 && echo "Cache populated"
 ''',
             ts=self.ts)
 
@@ -229,20 +233,26 @@ class ReadRetryRevalidationTest:
     def test_parallel_revalidation(self):
         """
         Wait for content to become stale, then send parallel revalidation requests.
+        All requests should complete successfully.
         """
         tr = Test.AddTestRun("Parallel revalidation requests for stale content")
         ps = tr.Processes.Default
 
         port = self.ts.Variables.port
-        # Wait 2 seconds for content to become stale, then fire parallel requests
-        # Use /delay/2 for the revalidation to be slow (simulating slow origin)
+        # Wait 3 seconds for content to become stale, then fire parallel requests
         tr.MakeCurlCommandMulti(
             f'''
-sleep 2 && ({{curl}} -s -o /dev/null -w "Revalidate 1: HTTP %{{{{http_code}}}}" -H "Host: example.com" http://127.0.0.1:{port}/delay/2 && echo) &
-({{curl}} -s -o /dev/null -w "Revalidate 2: HTTP %{{{{http_code}}}}" -H "Host: example.com" http://127.0.0.1:{port}/delay/2 && echo) &
-({{curl}} -s -o /dev/null -w "Revalidate 3: HTTP %{{{{http_code}}}}" -H "Host: example.com" http://127.0.0.1:{port}/delay/2 && echo) &
-({{curl}} -s -o /dev/null -w "Revalidate 4: HTTP %{{{{http_code}}}}" -H "Host: example.com" http://127.0.0.1:{port}/delay/2 && echo) &
-wait && echo "All revalidation requests completed"
+# Wait for content to become stale
+sleep 3
+
+# Launch all curl requests in rapid succession (no subshells for faster startup)
+# The 3-second origin delay provides ample overlap time for write lock contention
+{{curl}} -s -o /dev/null -w "Revalidate 1: HTTP %{{{{http_code}}}}\\n" -H "Host: example.com" http://127.0.0.1:{port}/delay/3 &
+{{curl}} -s -o /dev/null -w "Revalidate 2: HTTP %{{{{http_code}}}}\\n" -H "Host: example.com" http://127.0.0.1:{port}/delay/3 &
+{{curl}} -s -o /dev/null -w "Revalidate 3: HTTP %{{{{http_code}}}}\\n" -H "Host: example.com" http://127.0.0.1:{port}/delay/3 &
+{{curl}} -s -o /dev/null -w "Revalidate 4: HTTP %{{{{http_code}}}}\\n" -H "Host: example.com" http://127.0.0.1:{port}/delay/3 &
+wait
+echo "All revalidation requests completed"
 ''',
             ts=self.ts)
 
