@@ -27,5 +27,4 @@ Test cache_open_write_fail_action = 5 (READ_RETRY mode) to verify:
 
 Test.ContinueOnFail = True
 
-Test.ATSReplayTest(replay_file="replay/cache-read-retry-basic.replay.yaml")
-Test.ATSReplayTest(replay_file="replay/cache-read-retry-exhausted.replay.yaml")
+Test.ATSReplayTest(replay_file="replay/cache-read-retry.replay.yaml")

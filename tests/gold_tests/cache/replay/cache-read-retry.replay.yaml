@@ -60,7 +60,7 @@ autest:
       # Configure retry parameters to exhaust quickly
       proxy.config.http.cache.max_open_write_retries: 1
       proxy.config.http.cache.max_open_write_retry_timeout: 0
-      # Only 5 read retries @ 100ms = 500ms total (not enough for 10s origin)
+      # Only 5 read retries @ 100ms = 500ms total (not enough for 3s origin)
       proxy.config.http.cache.max_open_read_retries: 5
       proxy.config.http.cache.open_read_retry_time: 100
       proxy.config.cache.enable_read_while_writer: 1

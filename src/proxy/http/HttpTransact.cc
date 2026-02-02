@@ -3354,7 +3354,7 @@ HttpTransact::set_cache_prepare_write_action_for_new_request(State *s)
     // that uses a different cache key (redirect_use_orig_cache_key == 0).
     // When redirect_use_orig_cache_key is enabled, the redirect uses the same cache key
     // as the original request, so we'd hit the same write lock contention.
-    Warning("set_cache_prepare_write_action_for_new_request called with READ_RETRY state");
+    Error("set_cache_prepare_write_action_for_new_request called with READ_RETRY state");
     s->cache_info.action = CacheAction_t::NO_ACTION;
   } else {
     s->cache_info.action           = CacheAction_t::PREPARE_TO_WRITE;
