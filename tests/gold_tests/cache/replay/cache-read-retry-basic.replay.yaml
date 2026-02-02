@@ -20,7 +20,7 @@
 #
 # Scenario:
 # - Two concurrent requests arrive for the same uncached URL
-# - Request 1 gets write lock, connects to origin (slow, 3 second response)
+# - Request 1 gets write lock, connects to origin (slow, 2 second response)
 # - Request 2 fails write lock, enters READ_RETRY mode
 # - Request 2 retries reads, eventually gets read-while-writer access
 # - Both requests should succeed with 200 responses
@@ -31,9 +31,9 @@ meta:
   version: "1.0"
 
 autest:
+  description: 'Test cache_open_write_fail_action = 5 (READ_RETRY) with successful read-while-writer'
   dns:
     name: 'dns-read-retry-basic'
-  description: 'Test cache_open_write_fail_action = 5 (READ_RETRY) with successful read-while-writer'
 
   server:
     name: 'origin-read-retry-basic'
@@ -56,7 +56,6 @@ autest:
       proxy.config.http.cache.max_open_write_retry_timeout: 0
       proxy.config.http.cache.max_open_read_retries: 20
       proxy.config.http.cache.open_read_retry_time: 100
-      # Enable read-while-writer
       proxy.config.cache.enable_read_while_writer: 1
 
     remap_config:
@@ -95,8 +94,8 @@ sessions:
               - [X-Request, {value: 'first', as: equal}]
 
         server-response:
-          # Slow response (3 seconds) to allow second request to retry reads
-          delay: 3s
+          # Slow response (2 seconds) to allow second request to retry reads
+          delay: 2s
           status: 200
           reason: OK
           headers:
@@ -165,7 +164,7 @@ sessions:
 
         # Server should NOT receive this request (should be cache hit)
         server-response:
-          status: 200
+          status: 400
           reason: OK
           headers:
             fields:

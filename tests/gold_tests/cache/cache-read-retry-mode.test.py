@@ -27,7 +27,5 @@ Test cache_open_write_fail_action = 5 (READ_RETRY mode) to verify:
 
 Test.ContinueOnFail = True
 
-# Tests using Proxy Verifier replays (deterministic, CI-friendly)
-# These validate basic READ_RETRY behavior without timing-sensitive parallel requests
 Test.ATSReplayTest(replay_file="replay/cache-read-retry-basic.replay.yaml")
 Test.ATSReplayTest(replay_file="replay/cache-read-retry-exhausted.replay.yaml")

@@ -37,9 +37,9 @@ meta:
   version: "1.0"
 
 autest:
+  description: 'Test cache_open_write_fail_action = 5 (READ_RETRY) with slow origin and concurrent requests to verify request collapsing and stability'
   dns:
     name: 'dns-read-retry-exhausted'
-  description: 'Test cache_open_write_fail_action = 5 (READ_RETRY) with slow origin and concurrent requests to verify request collapsing and stability'
 
   server:
     name: 'origin-read-retry-exhausted'
@@ -63,7 +63,6 @@ autest:
       # Only 5 read retries @ 100ms = 500ms total (not enough for 10s origin)
       proxy.config.http.cache.max_open_read_retries: 5
       proxy.config.http.cache.open_read_retry_time: 100
-      # Enable read-while-writer
       proxy.config.cache.enable_read_while_writer: 1
 
     remap_config:
@@ -127,7 +126,7 @@ sessions:
   - transactions:
       - client-request:
           # Small delay to ensure first request gets write lock first
-          delay: 50ms
+          delay: 100ms
           method: "GET"
           version: "1.1"
           url: /slowfile
@@ -145,7 +144,7 @@ sessions:
         # This request should NOT reach the server if read-while-writer works
         # It should be served from Request 1's response
         server-response:
-          status: 200
+          status: 400
           reason: OK
           headers:
             fields:
@@ -168,7 +167,7 @@ sessions:
   - transactions:
       - client-request:
           # Arrives after second request starts but before first completes
-          delay: 100ms
+          delay: 300ms
           method: "GET"
           version: "1.1"
           url: /slowfile
@@ -185,7 +184,7 @@ sessions:
 
         # This request will also be served via read-while-writer
         server-response:
-          status: 200
+          status: 400
           reason: OK
           headers:
             fields:
@@ -220,7 +219,7 @@ sessions:
 
         # Server should NOT receive this request (should be cache hit)
         server-response:
-          status: 200
+          status: 400
           reason: OK
           headers:
             fields:
