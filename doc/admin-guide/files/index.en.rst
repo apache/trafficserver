@@ -90,7 +90,7 @@ Configuration Files
    Configures NextHop strategies used with `remap.config` and replaces parent.config.
 
 :doc:`volume.config.en`
-    Defines cache space usage by individual protocols. (Deprecated :file:`storage.yaml`)
+    Defines cache space usage by individual protocols. (Deprecated in favor of :file:`storage.yaml`)
 
 :doc:`jsonrpc.yaml.en`
     Defines some of the configurable arguments of the jsonrpc endpoint.

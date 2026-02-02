@@ -43,7 +43,7 @@ The format of the :file:`storage.yaml` file is a series of lines of the form
          hash_seed: # optional, used to isolate lookup from path changes
      volumes:       # optional
        - id:        # identifier [1-255]
-         size:      # optional, size in percentage
+         size:      # optional, size in bytes or percentage
          scheme:    # optional, default to "http"
          ram_cache: # optional, default to "true"
          spans:     # optional
@@ -86,7 +86,7 @@ For :code:`volumes` the keys are
 |               | string      | use.                                                                                                    |
 +---------------+-------------+---------------------------------------------------------------------------------------------------------+
 | ram_cache     | boolean     | Control of ram caching for this volume. Default is ``true``. This may be desirable if you are using     |
-|               |             | something like ramdisks, to avoid wasting RAM and cpu time on double caching objects.                   |
+|               |             | something like ramdisks, to avoid wasting RAM and CPU time on double caching objects.                   |
 +---------------+-------------+---------------------------------------------------------------------------------------------------------+
 | avg_obj_size  | integer     | Overrides the global :ts:cv:`proxy.config.cache.min_average_object_size` configuration for this volume. |
 |               |             | This is useful if you have a volume that is dedicated for say very small objects, and you need a lot of |
@@ -115,7 +115,7 @@ For :code:`volumes:spans` the keys are
 
 .. important::
 
-   Any change to this files can (and almost always will) invalidate the existing cache in its entirety.
+   Any change to this file can (and almost always will) invalidate the existing cache in its entirety.
 
 You can use any partition of any size. For best performance:
 
@@ -164,24 +164,24 @@ rounded down.
 Assignment Table
 ----------------
 
-Each storage element defined in :file:`storage.yaml` is divided in to :term:`stripes <cache stripe>`. The
+Each storage element defined in :file:`storage.yaml` is divided into :term:`stripes <cache stripe>`. The
 assignment table maps from an object URL to a specific stripe. The table is initialized based on a
 pseudo-random process which is seeded by hashing a string for each stripe. This string is composed
 of a base string, an offset (the start of the stripe on the storage element), and the length of the
 stripe. By default the path for the storage is used as the base string. This ensures that each
 stripe has a unique string for the assignment hash. This does make the assignment table very
 sensitive to the path for the storage elements and changing even one can have a cascading effect
-which will effectively clear most of the cache. This can be problem when drives fail and a system
+which will effectively clear most of the cache. This can be a problem when drives fail and a system
 reboot causes the path names to change.
 
-The :arg:`id` option can be used to create a fixed string that an administrator can use to keep the
+The :arg:`name` option can be used to create a fixed string that an administrator can use to keep the
 assignment table consistent by maintaining the mapping from physical device to base string even in the presence of hardware changes and failures.
 
 Backwards Compatibility
 -----------------------
 
 In previous versions of |TS| it was possible to have "exclusive" spans which were used by only one volume. This is
-now down by specifying the span in the volume and using a size of "100%". E.g. old configuration like ::
+now done by specifying the span in the volume and using a size of "100%". E.g. old configuration like ::
 
    /dev/disk2 volume=3 # storage.config
    volume=3 scheme=http size=512 # volume.config
@@ -230,7 +230,7 @@ Examples
 
 The following basic example shows 128 MB of cache storage in the "/big_dir" directory
 
-.. code-block: yaml
+.. code-block:: yaml
 
    cache:
      spans:
@@ -239,9 +239,9 @@ The following basic example shows 128 MB of cache storage in the "/big_dir" dire
          size: 134217728
 
 By default a volume uses all spans, therefore a volume uses all of span "store" because there are no other
-volumes. It would be equivalent is using the spans explicitly, e.g.
+volumes. It would be equivalent to using the spans explicitly, e.g.
 
-.. code-block: yaml
+.. code-block:: yaml
 
    cache:
      spans:
@@ -252,11 +252,11 @@ volumes. It would be equivalent is using the spans explicitly, e.g.
        - id: 1
          size: 100%
          spans:
-           - id: store
+           - use: store
 
 You can use the ``.`` symbol for the current directory. Here is an example for 128 MB of cache storage in the current directory
 
-.. code-block: yaml
+.. code-block:: yaml
 
    cache:
      spans:
@@ -275,7 +275,7 @@ Linux Example
    Rather than refer to disk devices like ``/dev/sda``, ``/dev/sdb``, etc.,
    modern Linux supports `alternative symlinked names for disk devices
    <https://wiki.archlinux.org/index.php/persistent_block_device_naming#by-id_and_by-path>`_ in the ``/dev/disk``
-   directory structure. As noted for the :ref:`storage-assignment-table` the path used for the disk can effect
+   directory structure. As noted for the :ref:`storage-assignment-table` the path used for the disk can affect
    the cache if it changes. This can be ameliorated in some cases by using one of the alternate paths
    in via ``/dev/disk``. Note that if the ``by-id`` or ``by-path`` style is used, replacing a failed drive will cause
    that path to change because the new drive will have a different physical ID or path.
@@ -283,7 +283,7 @@ Linux Example
    If this is not sufficient then the :arg:`hash_seed` key should be used to create a more permanent
    assignment table. An example would be
 
-   .. code-block: yaml
+   .. code-block:: yaml
 
       cache:
         spans:
@@ -297,7 +297,7 @@ Linux Example
 The following example will use an entire raw disk in the Linux operating
 system
 
-.. code-block: yaml
+.. code-block:: yaml
 
    cache:
      spans:
@@ -324,7 +324,7 @@ following rules are targeted for an Ubuntu system, and stored in
    # make the assignment final, no later changes allowed to the group!
    SUBSYSTEM=="block", KERNEL=="sd[ef]", GROUP:="tserver"
 
-In order to apply these settings, trigger a reload with :manpage:`udevadm(8)`:::
+In order to apply these settings, trigger a reload with :manpage:`udevadm(8)`::
 
    udevadm trigger --subsystem-match=block
 
@@ -338,7 +338,7 @@ devices on FreeBSD can be accessed raw now.
 The following example will use an entire raw disk in the FreeBSD
 operating system
 
-.. code-block: yaml
+.. code-block:: yaml
 
    cache:
      spans:
@@ -367,7 +367,7 @@ Despite the name, the cachedir value is not used for this file.
 Examples
 ========
 
-The following example partitions the cache across 5 volumes to decreasing single-lock pressure for a
+The following example partitions the cache across 5 volumes to decrease single-lock pressure for a
 machine with few drives. The last volume being an example of one that might be composed of purely
 ramdisks so that the ram cache has been disabled.
 
@@ -386,6 +386,7 @@ ramdisks so that the ram cache has been disabled.
          size: 20%
        - id: 4
          size: 20%
+         avg_obj_size: 4096
        - id: 5
          size: 20%
          ram_cache: false
@@ -461,7 +462,7 @@ as large as volume "2".
       - id: 3
 
 Instead, suppose the physical spans ("disk.1" and "disk.2") should be split across volumes. This can be done by adding volumes
-with only defaults, as the phisycal spans will be divided evenly among four volumes (3 - 6), each volume allocated 25% of
+with only defaults, as the physical spans will be divided evenly among four volumes (3 - 6), each volume allocated 25% of
 "disk.1" and 25% of "disk.2".
 
 OTOH, the ram spans ("ram.1" and "ram.2") will be divided evenly among volume 1 and 2.
