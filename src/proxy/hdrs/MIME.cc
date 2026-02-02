@@ -3752,6 +3752,9 @@ MIMEHdrImpl::recompute_cooked_stuff(MIMEField *changing_field_or_null)
 
         for (s = csv_iter.get_first(field, &len); s != nullptr; s = csv_iter.get_next(&len)) {
           e = s + len;
+          // Store set mask bits from this CSV value so we can clear them if needed.
+          uint32_t csv_value_mask = 0;
+
           for (c = s; (c < e) && (ParseRules::is_token(*c)); c++) {
             ;
           }
@@ -3766,6 +3769,7 @@ MIMEHdrImpl::recompute_cooked_stuff(MIMEField *changing_field_or_null)
             HdrTokenHeapPrefix *p                  = hdrtoken_wks_to_prefix(token_wks);
             mask                                   = p->wks_type_specific.u.cache_control.cc_mask;
             m_cooked_stuff.m_cache_control.m_mask |= mask;
+            csv_value_mask                        |= mask;
 
 #if TRACK_COOKING
             Dbg(dbg_ctl_http, "                        set mask 0x%0X", mask);
@@ -3774,27 +3778,72 @@ MIMEHdrImpl::recompute_cooked_stuff(MIMEField *changing_field_or_null)
             if (mask & (MIME_COOKED_MASK_CC_MAX_AGE | MIME_COOKED_MASK_CC_S_MAXAGE | MIME_COOKED_MASK_CC_MAX_STALE |
                         MIME_COOKED_MASK_CC_MIN_FRESH)) {
               int value;
+              // Per RFC 7230 Section 3.2.3, there should be no whitespace around '='.
+              const char *value_start = c;
 
-              if (mime_parse_integer(c, e, &value)) {
+              // Check if the next character is '=' (no space allowed before '=').
+              if (c < e && *c == '=') {
+                ++c; // Move past the '='
+
+                // Again: no whitespace after the '=' either. Keep in mind that values can be negative.
+                bool valid_syntax = (c < e) && (is_digit(*c) || *c == '-');
+
+                if (valid_syntax) {
+                  // Reset to value_start to let mime_parse_integer do its work.
+                  c = value_start;
+                  if (mime_parse_integer(c, e, &value)) {
 #if TRACK_COOKING
-                Dbg(dbg_ctl_http, "                        set integer value %d", value);
+                    Dbg(dbg_ctl_http, "                        set integer value %d", value);
 #endif
-                if (token_wks == MIME_VALUE_MAX_AGE.c_str()) {
-                  m_cooked_stuff.m_cache_control.m_secs_max_age = value;
-                } else if (token_wks == MIME_VALUE_MIN_FRESH.c_str()) {
-                  m_cooked_stuff.m_cache_control.m_secs_min_fresh = value;
-                } else if (token_wks == MIME_VALUE_MAX_STALE.c_str()) {
-                  m_cooked_stuff.m_cache_control.m_secs_max_stale = value;
-                } else if (token_wks == MIME_VALUE_S_MAXAGE.c_str()) {
-                  m_cooked_stuff.m_cache_control.m_secs_s_maxage = value;
+                    if (token_wks == MIME_VALUE_MAX_AGE.c_str()) {
+                      m_cooked_stuff.m_cache_control.m_secs_max_age = value;
+                    } else if (token_wks == MIME_VALUE_MIN_FRESH.c_str()) {
+                      m_cooked_stuff.m_cache_control.m_secs_min_fresh = value;
+                    } else if (token_wks == MIME_VALUE_MAX_STALE.c_str()) {
+                      m_cooked_stuff.m_cache_control.m_secs_max_stale = value;
+                    } else if (token_wks == MIME_VALUE_S_MAXAGE.c_str()) {
+                      m_cooked_stuff.m_cache_control.m_secs_s_maxage = value;
+                    }
+                  } else {
+#if TRACK_COOKING
+                    Dbg(dbg_ctl_http, "                        set integer value %d", INT_MAX);
+#endif
+                    if (token_wks == MIME_VALUE_MAX_STALE.c_str()) {
+                      m_cooked_stuff.m_cache_control.m_secs_max_stale = INT_MAX;
+                    }
+                  }
+                } else {
+                  // Syntax is malformed (e.g., whitespace after '=', quotes around value, or no value).
+                  // Treat this as unrecognized and clear the mask.
+                  csv_value_mask                         = 0;
+                  m_cooked_stuff.m_cache_control.m_mask &= ~mask;
                 }
               } else {
-#if TRACK_COOKING
-                Dbg(dbg_ctl_http, "                        set integer value %d", INT_MAX);
-#endif
-                if (token_wks == MIME_VALUE_MAX_STALE.c_str()) {
-                  m_cooked_stuff.m_cache_control.m_secs_max_stale = INT_MAX;
-                }
+                // No '=' found, or whitespace before '='. This is malformed.
+                // For directives that require values, this is an error.
+                // Clear the mask for this directive.
+                csv_value_mask                         = 0;
+                m_cooked_stuff.m_cache_control.m_mask &= ~mask;
+              }
+            }
+
+            // Detect whether there is any more non-whitespace content after the
+            // directive. This indicates an unrecognized or malformed directive.
+            // This can happen, for instance, if the host uses semicolons
+            // instead of commas as separators which is against RFC 7234 (see
+            // issue #12029). Regardless of the cause, this means we need to
+            // ignore the directive and clear any mask bits we set from it.
+            while (c < e && ParseRules::is_ws(*c)) {
+              ++c;
+            }
+            if (c < e) {
+              // There's non-whitespace content that wasn't parsed. This means
+              // that we cannot really understand what this directive is.
+              // Per RFC 7234 Section 5.2: "A cache MUST ignore unrecognized cache
+              // directives."
+              if (csv_value_mask != 0) {
+                // Reverse the mask that we set above.
+                m_cooked_stuff.m_cache_control.m_mask &= ~csv_value_mask;
               }
             }
           }
