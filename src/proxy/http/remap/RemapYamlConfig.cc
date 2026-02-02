@@ -437,6 +437,7 @@ remap_validate_yaml_filter_args(acl_filter_rule **rule_pp, const YAML::Node &nod
     rule->print();
   }
 
+  free_rule.release();
   return {};
 }
 
