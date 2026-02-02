@@ -76,7 +76,7 @@ For :code:`volumes` the keys are
 | Key           | Type        | Meaning                                                                                                 |
 +===============+=============+=========================================================================================================+
 | id            | integer     | Id of the volume. Range is [1-255]. This id can be referred                                             |
-|               |             | from  :file:`hosting.config`                                                                            |
+|               |             | from :file:`hosting.config`                                                                             |
 +---------------+-------------+---------------------------------------------------------------------------------------------------------+
 | size          | bytes       | Target size of the entire volume. This can be an absolute                                               |
 |               | _or_        | number of bytes or a percentage.                                                                        |
@@ -154,7 +154,7 @@ rounded down.
    *  Absolute sizes are allocated first.
    *  Percentages are allocated from remaining space.
    *  Remaining storage from spans that are used without an explicit size is divided evenly among the volumes that use the span.
-*  Span storage is allocated to volumes by the :code:`cache:volumes::size` values.
+*  Span storage is allocated to volumes by the :code:`cache:volumes:size` values.
    *  Absolute sizes are allocated first.
    *  Percentages are applied to remaining space.
    *  Remaining storage is divided evenly among volumes without an explicit size.
@@ -442,24 +442,24 @@ as large as volume "2".
 
    cache:
       spans:
-      - name: disk
-        path: "/dev/sdb"
-      - name: ram.1
-        path: "/dev/ram.1"
-      - name: ram.2
-        path: "/dev/ram.2"
+        - name: disk
+          path: "/dev/sdb"
+        - name: ram.1
+          path: "/dev/ram.1"
+        - name: ram.2
+          path: "/dev/ram.2"
       volumes:
-      - id: 1
-        spans:
-          - use: ram.1
-            size: 66%
-          - use: ram.2
-            size: 66%
-      - id: 2
-        spans:
-          - use: ram.1
-          - use: ram.2
-      - id: 3
+        - id: 1
+          spans:
+            - use: ram.1
+              size: 66%
+            - use: ram.2
+              size: 66%
+        - id: 2
+          spans:
+            - use: ram.1
+            - use: ram.2
+        - id: 3
 
 Instead, suppose the physical spans ("disk.1" and "disk.2") should be split across volumes. This can be done by adding volumes
 with only defaults, as the physical spans will be divided evenly among four volumes (3 - 6), each volume allocated 25% of
