@@ -176,6 +176,13 @@ public:
                                  std::string const &description, std::string const &envvar = "", unsigned arg_num = 0,
                                  std::string const &default_value = "", std::string const &key = "");
 
+    /** Specify that the last added option requires another option to be present.
+        Must be called immediately after add_option() or add_option_to_group().
+        @param required_option The option that must be present (e.g., "--tags")
+        @return The Command instance for chained calls.
+    */
+    Command &with_required(std::string const &required_option);
+
     /** Two ways of adding a sub-command to current command:
         @return The new sub-command instance.
     */
@@ -217,6 +224,8 @@ public:
     void append_option_data(Arguments &ret, AP_StrVec &args, int index);
     // Helper method to validate mutually exclusive groups
     void validate_mutex_groups(Arguments &ret) const;
+    // Helper method to validate option dependencies
+    void validate_dependencies(Arguments &ret) const;
     // The command name and help message
     std::string _name;
     std::string _description;
@@ -225,8 +234,8 @@ public:
     unsigned _arg_num = 0;
     // Stored Env variable
     std::string _envvar;
-    // An example usage can be added for the help message
-    std::string _example_usage;
+    // Example usages can be added for the help message
+    std::vector<std::string> _example_usages;
     // Function associated with this command
     Function _f;
     // look up key
@@ -247,6 +256,11 @@ public:
     // Map option to its mutex group (for fast lookup during validation)
     // Key: long option name. Value: group name
     std::map<std::string, std::string> _option_to_group;
+
+    // Option dependencies: dependent_option -> list of required options
+    std::map<std::string, std::vector<std::string>> _option_dependencies;
+    // Track the last added option for with_required() chaining
+    std::string _last_added_option;
 
     // require command / option for this parser
     bool _command_required = false;

@@ -132,9 +132,12 @@ ArgParser::Command::help_message(std::string_view err) const
     std::cout << "\nOptions ======================= Default ===== Description =============" << std::endl;
     output_option();
   }
-  // output example usage
-  if (!_example_usage.empty()) {
-    std::cout << "\nExample Usage: " << _example_usage << std::endl;
+  // output example usages
+  if (!_example_usages.empty()) {
+    std::cout << "\nExample Usage:" << std::endl;
+    for (const auto &example : _example_usages) {
+      std::cout << "  " << example << std::endl;
+    }
   }
   // standard return code
   ArgParser::do_exit(usage_return_code);
@@ -303,6 +306,7 @@ ArgParser::Command::add_option(std::string const &long_option, std::string const
   if (short_option != "-" && !short_option.empty()) {
     _option_map[short_option] = long_option;
   }
+  _last_added_option = long_option; // track for with_required() chaining
   return *this;
 }
 
@@ -340,7 +344,7 @@ ArgParser::Command::add_option_to_group(std::string const &group_name, std::stri
     ArgParser::do_exit(1);
   }
 
-  // Add the option normally
+  // Add the option normally (this also sets _last_added_option)
   add_option(long_option, short_option, description, envvar, arg_num, default_value, key);
 
   // Track this option in the mutex group
@@ -375,7 +379,7 @@ ArgParser::Command::add_command(std::string const &cmd_name, std::string const &
 ArgParser::Command &
 ArgParser::Command::add_example_usage(std::string const &usage)
 {
-  _example_usage = usage;
+  _example_usages.push_back(usage);
   return *this;
 }
 
@@ -443,11 +447,28 @@ ArgParser::Command::output_option() const
         msg = msg + std::string(INDENT_ONE - msg.size(), ' ') + it.second.default_value;
       }
     }
-    if (!it.second.description.empty()) {
+    // Build description with dependency info if applicable
+    std::string desc   = it.second.description;
+    auto        dep_it = _option_dependencies.find(it.first);
+    if (dep_it != _option_dependencies.end() && !dep_it->second.empty()) {
+      if (!desc.empty()) {
+        desc += " ";
+      }
+      desc += "(requires";
+      for (size_t i = 0; i < dep_it->second.size(); ++i) {
+        desc += " " + dep_it->second[i];
+        if (i < dep_it->second.size() - 1) {
+          desc += ",";
+        }
+      }
+      desc += ")";
+    }
+
+    if (!desc.empty()) {
       if (INDENT_TWO - static_cast<int>(msg.size()) < 0) {
-        std::cout << msg << "\n" << std::string(INDENT_TWO, ' ') << it.second.description << std::endl;
+        std::cout << msg << "\n" << std::string(INDENT_TWO, ' ') << desc << std::endl;
       } else {
-        std::cout << msg << std::string(INDENT_TWO - msg.size(), ' ') << it.second.description << std::endl;
+        std::cout << msg << std::string(INDENT_TWO - msg.size(), ' ') << desc << std::endl;
       }
     }
   }
@@ -574,6 +595,59 @@ ArgParser::Command::validate_mutex_groups(Arguments &ret) const
   }
 }
 
+// Specify that the last added option requires another option
+ArgParser::Command &
+ArgParser::Command::with_required(std::string const &required_option)
+{
+  if (_last_added_option.empty()) {
+    std::cerr << "Error: with_required() must be called after add_option()" << std::endl;
+    ArgParser::do_exit(1);
+  }
+
+  // Validate that required option exists
+  if (_option_list.find(required_option) == _option_list.end()) {
+    std::cerr << "Error: Required option '" << required_option << "' not found" << std::endl;
+    ArgParser::do_exit(1);
+  }
+
+  _option_dependencies[_last_added_option].push_back(required_option);
+
+  return *this;
+}
+
+// Validate option dependencies
+void
+ArgParser::Command::validate_dependencies(Arguments &ret) const
+{
+  for (const auto &[dependent, required_list] : _option_dependencies) {
+    // Get the key for the dependent option
+    auto it = _option_list.find(dependent);
+    if (it == _option_list.end()) {
+      continue;
+    }
+
+    const std::string &dep_key = it->second.key;
+
+    // Check if dependent option was used
+    if (ret.get(dep_key)) {
+      // Dependent option was used, check all required options
+      for (const auto &required : required_list) {
+        auto req_it = _option_list.find(required);
+        if (req_it == _option_list.end()) {
+          continue;
+        }
+
+        const std::string &req_key = req_it->second.key;
+
+        if (!ret.get(req_key)) {
+          std::string error_msg = "Option '" + dependent + "' requires '" + required + "' to be specified";
+          help_message(error_msg); // exit with status code 64 (EX_USAGE - command line usage error)
+        }
+      }
+    }
+  }
+}
+
 // Append the args of option to parsed data. Return true if there is any option called
 void
 ArgParser::Command::append_option_data(Arguments &ret, AP_StrVec &args, int index)
@@ -694,6 +768,9 @@ ArgParser::Command::parse(Arguments &ret, AP_StrVec &args)
 
     // Validate mutually exclusive groups
     validate_mutex_groups(ret);
+
+    // Validate option dependencies
+    validate_dependencies(ret);
   }
 
   if (command_called) {
