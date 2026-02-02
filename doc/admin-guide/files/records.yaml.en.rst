@@ -2892,7 +2892,7 @@ Dynamic Content & Content Negotiation
     The number of times to attempt a cache open write upon failure to get a write lock.
 
     This config is ignored when :ts:cv:`proxy.config.http.cache.open_write_fail_action` is
-    set to ``5`` or :ts:cv:`proxy.config.http.cache.max_open_write_retry_timeout` is set to gt ``0``.
+    set to ``5`` or ``6``, or when :ts:cv:`proxy.config.http.cache.max_open_write_retry_timeout` is set to gt ``0``.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.max_open_write_retry_timeout INT 0
    :reloadable:
@@ -2901,7 +2901,7 @@ Dynamic Content & Content Negotiation
     A timeout for attempting a cache open write upon failure to get a write lock.
 
     This config is ignored when :ts:cv:`proxy.config.http.cache.open_write_fail_action` is
-    set to ``5``.
+    set to ``5`` or ``6``.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.open_write_fail_action INT 0
    :reloadable:
@@ -2931,6 +2931,12 @@ Dynamic Content & Content Negotiation
          Make sure to configure the :ref:`admin-config-read-while-writer` feature
          correctly. Note that this option may result in CACHE_LOOKUP_COMPLETE HOOK
          being called back more than once.
+   ``6`` Retry Cache Read on a Cache Write Lock failure (same as ``5``), but if
+         read retries are exhausted and a stale cached object exists, serve the
+         stale content if allowed. This combines the request collapsing behavior
+         of ``5`` with the stale-serving fallback of ``2``. If stale is not
+         returnable (e.g., due to ``Cache-Control: must-revalidate``), go to
+         origin server.
    ===== ======================================================================
 
 Customizable User Response Pages

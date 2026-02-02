@@ -703,6 +703,10 @@ public:
     ///   configuration.
     bool is_cacheable_due_to_negative_caching_configuration = false;
 
+    /// Set when stale content is served due to cache write lock failure.
+    /// Used to correctly attribute statistics and VIA strings.
+    bool serving_stale_due_to_write_lock = false;
+
     MgmtByte cache_open_write_fail_action = 0;
 
     HttpConfigParams           *http_config_param = nullptr;
@@ -998,9 +1002,11 @@ public:
   static void HandleCacheOpenReadHitFreshness(State *s);
   static void HandleCacheOpenReadHit(State *s);
   static void HandleCacheOpenReadMiss(State *s);
+  static void HandleCacheOpenReadMissGoToOrigin(State *s);
   static void set_cache_prepare_write_action_for_new_request(State *s);
   static void build_response_from_cache(State *s, HTTPWarningCode warning_code);
   static void handle_cache_write_lock(State *s);
+  static void handle_cache_write_lock_go_to_origin(State *s);
   static void HandleResponse(State *s);
   static void HandleUpdateCachedObject(State *s);
   static void HandleUpdateCachedObjectContinue(State *s);
