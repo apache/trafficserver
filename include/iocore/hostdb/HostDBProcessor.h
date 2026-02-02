@@ -233,7 +233,7 @@ inline bool
 HostDBInfo::is_down(ts_time now, ts_seconds fail_window)
 {
   auto last_fail = this->last_fail_time();
-  return (last_fail != TS_TIME_ZERO) && (last_fail + fail_window < now);
+  return (last_fail != TS_TIME_ZERO) && (last_fail + fail_window >= now);
 }
 
 inline bool
