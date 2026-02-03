@@ -36,7 +36,7 @@ if(BUILD_TESTING)
   )
 
   add_executable(test_HostFile test_HostFile.cc HostFile.cc HostDBInfo.cc)
-  target_link_libraries(test_HostFile PRIVATE ts::tscore ts::tsutil ts::inkevent Catch2::Catch2WithMain)
+  target_link_libraries(test_HostFile PRIVATE ts::inkhostdb ts::tscore ts::tsutil ts::inkevent Catch2::Catch2WithMain)
   add_catch2_test(NAME test_hostdb_HostFile COMMAND $<TARGET_FILE:test_HostFile>)
 
   add_executable(test_RefCountCache test_RefCountCache.cc)
