@@ -1,0 +1,110 @@
+# Abuse Shield Plugin Configuration
+#
+# This plugin uses the Udi "King of the Hill" algorithm to track abusive IPs
+# with bounded memory. It detects HTTP/2 protocol attacks and rate-based abuse.
+
+ip_reputation:
+  slots: 50000              # Number of IP tracking slots (~8.4 MB)
+  window_seconds: 60        # Time window for rate calculations
+
+blocking:
+  duration_seconds: 300     # Block duration (5 minutes)
+
+# Trusted IPs file - one IP or CIDR per line
+trusted_ips_file: /etc/trafficserver/abuse_shield_trusted.txt
+
+# Server-wide limits (future use)
+server_limits:
+  max_req_rate: 10000
+  max_latency_ms: 500
+  window_seconds: 5
+
+# All detection logic is unified under rules
+# Rules evaluated in order, first match wins
+rules:
+  # --- H2 Client Errors (block/downgrade) ---
+  - name: "protocol_error_flood"
+    filter:
+      h2_error: 0x01            # PROTOCOL_ERROR
+      min_count: 10
+    action: [log, block, close]
+    # CVE-2019-9513, CVE-2019-9518
+
+  - name: "compression_error_flood"
+    filter:
+      h2_error: 0x09            # COMPRESSION_ERROR
+      min_count: 5
+    action: [log, block, close]
+    # CVE-2016-1544 (HPACK bomb)
+
+  - name: "flow_control_error"
+    filter:
+      h2_error: 0x03            # FLOW_CONTROL_ERROR
+      min_count: 5
+    action: [log, block]
+    # CVE-2019-9511, CVE-2019-9517
+
+  - name: "frame_size_error"
+    filter:
+      h2_error: 0x06            # FRAME_SIZE_ERROR
+      min_count: 5
+    action: [log, block]
+
+  - name: "cancel_flood"
+    filter:
+      h2_error: 0x08            # CANCEL (RST_STREAM)
+      min_count: 50
+    action: [log, downgrade]
+    # CVE-2023-44487 (Rapid Reset)
+
+  # --- H2 Server Errors (log only) ---
+  - name: "internal_error"
+    filter:
+      h2_error: 0x02            # INTERNAL_ERROR
+      min_count: 100
+    action: [log]
+
+  - name: "refused_stream"
+    filter:
+      h2_error: 0x07            # REFUSED_STREAM
+      min_count: 100
+    action: [log]
+
+  - name: "enhance_your_calm"
+    filter:
+      h2_error: 0x0b            # ENHANCE_YOUR_CALM
+      min_count: 10
+    action: [log]
+
+  # --- Aggregate Error Rules ---
+  - name: "total_client_errors"
+    filter:
+      min_client_errors: 20
+    action: [log, block, close]
+
+  - name: "pure_attack"
+    filter:
+      min_client_errors: 10
+      max_successes: 0          # Errors with zero successful requests
+    action: [log, block, close]
+
+  # --- Combined Conditions ---
+  - name: "compression_pure_attack"
+    filter:
+      h2_error: 0x09            # COMPRESSION_ERROR
+      min_count: 3
+      max_successes: 0          # Combined: specific error + no successes
+    action: [log, block, close]
+
+  # --- Rate Limits ---
+  - name: "conn_rate_flood"
+    filter:
+      max_conn_rate: 50
+    action: [log, block]
+
+  - name: "req_rate_flood"
+    filter:
+      max_req_rate: 500
+    action: [log, block]
+
+enabled: true

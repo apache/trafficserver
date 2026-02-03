@@ -39,6 +39,7 @@ set(TSUTIL_PUBLIC_HEADERS
     ${PROJECT_SOURCE_DIR}/include/tsutil/ts_time_parser.h
     ${PROJECT_SOURCE_DIR}/include/tsutil/ts_unit_parser.h
     ${PROJECT_SOURCE_DIR}/include/tsutil/ts_errata.h
+    ${PROJECT_SOURCE_DIR}/include/tsutil/UdiTable.h
 )
 add_library(
   tsutil
@@ -81,11 +82,20 @@ if(BUILD_TESTING)
     unit_tests/test_Regex.cc
     unit_tests/test_ts_meta.cc
     unit_tests/test_time_parser.cc
+    unit_tests/test_UdiTable.cc
   )
 
   target_link_libraries(test_tsutil PRIVATE tsutil Catch2::Catch2WithMain)
 
   add_catch2_test(NAME test_tsutil COMMAND $<TARGET_FILE:test_tsutil>)
+
+  # UdiTable benchmark
+  add_executable(benchmark_UdiTable unit_tests/benchmark_UdiTable.cc)
+  target_link_libraries(benchmark_UdiTable PRIVATE tsutil Catch2::Catch2)
+
+  # UdiTable locking strategy comparison benchmark
+  add_executable(benchmark_UdiTable_locking unit_tests/benchmark_UdiTable_locking.cc)
+  target_link_libraries(benchmark_UdiTable_locking PRIVATE tsutil)
 endif()
 
 clang_tidy_check(tsutil)

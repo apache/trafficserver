@@ -1,0 +1,21 @@
+# Abuse Shield - Trusted IPs
+#
+# IPs in this file are never blocked or tracked.
+# One IP or CIDR per line. Lines starting with # are comments.
+
+# Localhost
+127.0.0.1
+::1
+
+# Internal networks (RFC 1918)
+10.0.0.0/8
+172.16.0.0/12
+192.168.0.0/16
+
+# Link-local
+169.254.0.0/16
+fe80::/10
+
+# Example: Add monitoring servers, load balancers, etc.
+# 203.0.113.50
+# 198.51.100.0/24

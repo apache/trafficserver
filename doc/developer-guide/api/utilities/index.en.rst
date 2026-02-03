@@ -15,20 +15,14 @@
    specific language governing permissions and limitations
    under the License.
 
-.. include:: ../../common.defs
+.. include:: ../../../common.defs
 
-.. _developer-api-reference:
+Utility Classes
+***************
 
-API Reference
-*************
-
-For an introduction to the |TS| API, how to link it to your plugin, and the
-methods of passing parameters to your plugin at runtime, please refer to
-:manpage:`TSAPI(3ts)`.
+This section documents utility classes available for plugin and core development.
 
 .. toctree::
    :maxdepth: 1
 
-   types/index.en
-   functions/index.en
-   utilities/index.en
+   UdiTable.en

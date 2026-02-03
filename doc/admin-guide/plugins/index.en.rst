@@ -166,6 +166,7 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
 .. toctree::
    :hidden:
 
+   Abuse Shield <abuse_shield.en>
    Access Control <access_control.en>
    Block Errors <block_errors.en>
    Cache Fill <cache_fill.en>
@@ -196,6 +197,9 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
    Wasm <wasm.en>
    Prefetch <prefetch.en>
    Transaction Box(TxnBox) <txn_box/index.en>
+
+:doc:`Abuse Shield <abuse_shield.en>`
+   Unified abuse protection with rate limiting and HTTP/2 error tracking.
 
 :doc:`Access Control <access_control.en>`
    Access control plugin that handles various access control use-cases.
