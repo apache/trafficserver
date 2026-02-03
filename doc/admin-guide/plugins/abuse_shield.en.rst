@@ -319,7 +319,7 @@ Tracked IP data and current block states are preserved across reloads.
 Dump Tracked IPs
 ----------------
 
-Dump all currently tracked IPs and their token bucket states to the error log::
+Dump all currently tracked IPs and their token bucket states to the ``diags.log`` file::
 
     traffic_ctl plugin msg abuse_shield.dump
 
@@ -350,6 +350,24 @@ The dump output includes three trackers:
 * ``tokens=49``: Positive = within rate limit
 * ``count=502``: Debug counter - total events seen (not used for blocking)
 * ``blocked=91011139``: Block expiration timestamp (steady_clock ms, 0 = not blocked)
+
+List Trusted IPs
+----------------
+
+List all currently loaded trusted IP ranges::
+
+    traffic_ctl plugin msg abuse_shield.trusted
+
+The output appears in ``diags.log`` and includes the count of loaded ranges:
+
+.. code-block:: text
+
+    Trusted IP ranges (5 total):
+      127.0.0.1
+      ::1
+      10.0.0.0-10.255.255.255
+      192.168.0.0-192.168.255.255
+      203.0.113.50
 
 Enable/Disable
 --------------

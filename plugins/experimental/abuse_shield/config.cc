@@ -161,7 +161,9 @@ Config::parse(const std::string &path)
       // Trusted IPs file.
       if (global["trusted_ips_file"]) {
         std::string trusted_path = global["trusted_ips_file"].as<std::string>();
-        config->load_trusted_ips(trusted_path);
+        if (!config->load_trusted_ips(trusted_path)) {
+          return nullptr;
+        }
       }
 
       // Log rate limiting.

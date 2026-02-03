@@ -93,7 +93,7 @@ def convert_csv_to_trusted_ips(input_path: Path, output_path: Path) -> int:
     with open(output_path, "w") as f:
         f.write("trusted_ips:\n")
         for entry in ip_entries:
-            f.write(f"  - {entry}\n")
+            f.write(f'  - "{entry}"\n')
 
     return len(ip_entries)
 

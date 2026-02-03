@@ -900,6 +900,18 @@ handle_lifecycle_msg(TSCont /* contp */, TSEvent /* event */, void *edata)
         TSNote("[%s] Plugin %s", PLUGIN_NAME, enabled ? "enabled" : "disabled");
       }
     }
+  } else if (tag == "abuse_shield.trusted") {
+    std::shared_lock lock(g_config_mutex);
+    if (g_config) {
+      std::ostringstream oss;
+      oss << "Trusted IP ranges (" << g_config->trusted_ips().count() << " total):\n";
+      for (auto const &[range, flag] : g_config->trusted_ips()) {
+        swoc::LocalBufferWriter<64> w;
+        w.print("{}", range);
+        oss << "  " << w.view() << "\n";
+      }
+      TSNote("[%s] %s", PLUGIN_NAME, oss.str().c_str());
+    }
   }
 
   return TS_SUCCESS;
@@ -940,7 +952,7 @@ TSPluginInit(int argc, const char *argv[])
   // Load configuration.
   g_config = abuse_shield::Config::parse(config_path);
   if (!g_config) {
-    TSError("[%s] Failed to load configuration from %s", PLUGIN_NAME, config_path.c_str());
+    TSFatal("[%s] Failed to load configuration from %s", PLUGIN_NAME, config_path.c_str());
     return;
   }
 
