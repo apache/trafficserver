@@ -1,0 +1,25 @@
+REMAP {
+    if inbound.url.query.version == "v2" {
+        inbound.req.X-API-Version = "v2";
+    }
+
+    if from.url.query.source == "mobile" {
+        inbound.req.X-Source = "mobile";
+    }
+
+    if to.url.query.target {
+        inbound.req.X-Target = "set";
+    }
+}
+
+SEND_REQUEST {
+    if outbound.url.query.backend == "fast" {
+        outbound.req.X-Priority = "high";
+    }
+}
+
+SEND_RESPONSE {
+    inbound.resp.X-Query-Sub = "{inbound.url.query.sub}";
+    inbound.resp.X-From-Param = "{from.url.query.param}";
+    inbound.resp.X-To-Param = "{to.url.query.redirect}";
+}

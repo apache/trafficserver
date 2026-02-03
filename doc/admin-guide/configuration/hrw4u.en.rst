@@ -182,8 +182,10 @@ cond %{CACHE} =hit-fresh         cache() == "hit-fresh"             Cache lookup
 cond %{CIDR:24,48} =ip           cidr(24,48) == "ip"                Match masked client IP address
 cond %{CLIENT-HEADER:X} =foo     inbound.req.X == "foo"             Original client request header
 cond %{CLIENT-URL:<C>} =bar      inbound.url.<C> == "bar"           URL component match, <:ref:`C<admin-plugins-header-rewrite-url-parts>`> is ``host``, ``path`` etc.
+cond %{CLIENT-URL:QUERY:<P>}     inbound.url.query.<P> == "bar"     Extract specific query parameter ``P`` from URL
 cond %{COOKIE:foo} =bar          {in,out}bound.cookie.foo == "bar"  Check a cookie value
 cond %{FROM-URL:<C>} =bar        from.url.<C> == "bar"              Remap ``From URL`` component match, <:ref:`C<admin-plugins-header-rewrite-url-parts>`> is ``host`` etc.
+cond %{FROM-URL:QUERY:<P>}       from.url.query.<P> == "bar"        Extract specific query parameter ``P`` from remap ``From URL``
 cond %{HEADER:X} =fo             {in,out}bound.{req,resp}.X == "fo" Context sensitive header conditions
 cond %{ID:UNIQUE} =...           id.UNIQUE == "..."                 (:ref:`Unique/request/process<admin-plugins-header-rewrite-id>`) transaction identifier
 cond %{INTERNAL-TRANSACTION}     internal()                         Check if transaction is internally generated
@@ -196,12 +198,14 @@ cond %{IP:OUTBOUND} ="..."       outbound.server == "..."           ATS's outbou
 cond %{LAST-CAPTURE:<#>} ="..."  capture.<#> == "..."               Last capture group from regex match (range: `0-9`)
 cond %{METHOD} =GET              inbound.method == "GET"            HTTP method match
 cond %{NEXT-HOP:<C>} ="bar"      outbound.url.<C> == "bar"          Next-hop URL component match, <:ref:`C<admin-plugins-header-rewrite-url-parts>`> is ``host`` etc.
+cond %{NEXT-HOP:QUERY:<P>}       outbound.url.query.<P> == "bar"    Extract specific query parameter ``P`` from next-hop URL
 cond %{NOW:<U>} ="..."           now.<U> == "..."                   Current date/time in format,  <:ref:`U<admin-plugins-header-rewrite-geo>`> selects time unit
 cond %{OUTBOUND:CLIENT-CERT:<X>} outbound.client-cert.<X>           Access the mTLS / client certificate details, on the outbound (upstream) connection
 cond %{OUTbOUND:SERVER-CERT:<X>} outbound.client-cert.<X>           Access the server (handshake) certificate details, on the outbound connection
 cond %{RANDOM:500} >250          random(500) > 250                  Random number between 0 and the specified range
 cond %{SSN-TXN-COUNT} >10        ssn-txn-count() > 10               Number of transactions on server connection
 cond %{TO-URL:<C>} =bar          to.url.<C> == "bar"                Remap ``To URL`` component match, <:ref:`C<admin-plugins-header-rewrite-url-parts>`> is ``host`` etc.
+cond %{TO-URL:QUERY:<P>}         to.url.query.<P> == "bar"          Extract specific query parameter ``P`` from remap ``To URL``
 cond %{TXN-COUNT} >10            txn-count() > 10                   Number of transactions on client connection
 cond %{URL:<C> =bar              {in,out}bound.url.<C> == "bar"     Context aware URL component match
 cond %{GEO:<C>} =bar             geo.<C> == "bar"                   IP to Geo mapping. <:ref:`C<admin-plugins-header-rewrite-geo>`> is country, asn, etc.
@@ -697,6 +701,28 @@ limiting to the request.::
            run-plugin("rate_limit.so", "--limit=300", "--error=429");
        }
    }
+
+Route Based on Query Parameter Value
+------------------------------------
+
+This rule extracts a specific query parameter value and uses it to make routing
+decisions or set custom headers. The ``query.<param_name>`` syntax allows
+extracting individual query parameter values::
+
+   REMAP {
+       if inbound.url.query.version == "v2" {
+           inbound.req.X-API-Version = "v2";
+       }
+   }
+
+   SEND_RESPONSE {
+       inbound.resp.X-Debug-Param = "{inbound.url.query.debug}";
+   }
+
+.. note::
+   Query parameter names are case-sensitive and matched as-is without URL
+   decoding. For example, ``inbound.url.query.my%20param`` matches the literal
+   parameter name ``my%20param``, not ``my param``.
 
 References
 ==========
