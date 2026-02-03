@@ -2929,8 +2929,8 @@ Dynamic Content & Content Negotiation
          with :ts:cv:`proxy.config.cache.enable_read_while_writer` configuration
          allows to collapse concurrent requests without a need for any plugin.
          Make sure to configure the :ref:`admin-config-read-while-writer` feature
-         correctly. Note that this option may result in CACHE_LOOKUP_COMPLETE HOOK
-         being called back more than once.
+         correctly. With this option, CACHE_LOOKUP_COMPLETE HOOK is deferred for
+         read retries so that plugins see only the final cache lookup result.
    ``6`` Retry Cache Read on a Cache Write Lock failure (same as ``5``), but if
          read retries are exhausted and a stale cached object exists, serve the
          stale content if allowed. This combines the request collapsing behavior
