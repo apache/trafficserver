@@ -18,10 +18,14 @@ Test cache_open_write_fail_action = 6 (READ_RETRY with stale fallback)
 #  limitations under the License.
 
 Test.Summary = '''
-Test cache_open_write_fail_action = 6 (READ_RETRY_STALE_ON_REVALIDATE) to verify:
-1. READ_RETRY behavior (same as action 5)
-2. Stale fallback when read retries are exhausted
-3. System does not crash under write lock contention with stale objects
+Smoke test for cache_open_write_fail_action = 6 (READ_RETRY_STALE_ON_REVALIDATE) to verify:
+1. Action 6 is accepted by the configuration system
+2. Basic caching works correctly with action 6 enabled
+3. The system does not crash
+
+Note: The stale fallback behavior (serving stale on read retry exhaustion) is
+difficult to reliably test due to timing sensitivity. This test focuses on
+verifying the feature is functional without causing instability.
 '''
 
 Test.ContinueOnFail = True

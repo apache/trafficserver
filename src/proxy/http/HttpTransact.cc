@@ -3337,6 +3337,18 @@ HttpTransact::HandleCacheOpenReadMiss(State *s)
     HttpTransact::set_cache_prepare_write_action_for_new_request(s);
   }
 
+  // If action 5/6 configured, we set NO_ACTION, and we're not in READ_RETRY,
+  // fire the deferred CACHE_LOOKUP_COMPLETE hook now with MISS.
+  // We won't enter READ_RETRY since we're not caching, so fire the hook now.
+  if (s->cache_info.action == CacheAction_t::NO_ACTION && s->cache_info.write_lock_state != CacheWriteLock_t::READ_RETRY &&
+      (s->txn_conf->cache_open_write_fail_action == static_cast<MgmtByte>(CacheOpenWriteFailAction_t::READ_RETRY) ||
+       s->txn_conf->cache_open_write_fail_action ==
+         static_cast<MgmtByte>(CacheOpenWriteFailAction_t::READ_RETRY_STALE_ON_REVALIDATE))) {
+    TxnDbg(dbg_ctl_http_trans, "Action 5/6 NO_ACTION path, firing deferred CACHE_LOOKUP_COMPLETE with MISS");
+    s->cache_lookup_result = CacheLookupResult_t::MISS;
+    TRANSACT_RETURN(StateMachineAction_t::API_CACHE_LOOKUP_COMPLETE, HandleCacheOpenReadMissGoToOrigin);
+  }
+
   // Proceed to origin server (handles DNS lookup, parent proxy, etc.)
   HandleCacheOpenReadMissGoToOrigin(s);
 }
