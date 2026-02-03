@@ -36,9 +36,14 @@ Description
 ===========
 
 :func:`TSVConnClientHelloGet` retrieves ClientHello message data from the TLS
-virtual connection :arg:`sslp`. This function is typically called from the
-``TS_EVENT_SSL_CLIENT_HELLO`` hook. Returns ``nullptr`` if
-:arg:`sslp` is invalid or not a TLS connection.
+virtual connection :arg:`sslp`. Returns ``nullptr`` if :arg:`sslp` is invalid
+or not a TLS connection.
+
+.. important::
+
+   This function should only be called from the ``TS_EVENT_SSL_CLIENT_HELLO`` hook.
+   The returned :type:`TSClientHello` is only valid during the SSL ClientHello event processing.
+   Using this function from other hooks may result in accessing invalid or stale data.
 
 The caller must call :func:`TSClientHelloDestroy` to free the returned object.
 

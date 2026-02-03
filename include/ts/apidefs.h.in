@@ -1068,6 +1068,9 @@ struct tsapi_ssl_client_hello {
 class TSClientHelloImpl
 {
 public:
+  // Type alias for extension type list
+  using TSExtensionTypeList = std::vector<uint16_t>;
+
   TSClientHelloImpl(std::unique_ptr<tsapi_ssl_client_hello> ch) : _ssl_client_hello(std::move(ch)) {}
 
   ~TSClientHelloImpl() = default;
@@ -1120,12 +1123,12 @@ public:
     return _ssl_client_hello->ssl_ptr;
   }
 
-  // Returns a vector of extension type IDs
+  // Returns an iterable container of extension type IDs
   // This abstracts the difference between BoringSSL (extensions buffer) and OpenSSL (extension_ids array)
-  std::vector<uint16_t>
+  TSExtensionTypeList
   get_extension_types() const
   {
-    std::vector<uint16_t> result;
+    TSExtensionTypeList result;
 
     // For BoringSSL, parse the extensions buffer
     if (_ssl_client_hello->extensions != nullptr) {
