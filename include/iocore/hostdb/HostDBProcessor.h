@@ -229,11 +229,24 @@ HostDBInfo::is_alive()
   return this->last_fail_time() == TS_TIME_ZERO;
 }
 
+/**
+  Check if this HostDBInfo is currently marked down (true) or not (false). Returns true while within the `fail_window` period after
+  `last_failure`. Once `fail_window` expires, the host is treated as UP and this function returns false.
+
+                    |<-- fail_window -->|
+    ----------------+-------------------+-----------------> time
+           UP       |       DOWN        |        UP
+    (is_down=false) |  (is_down=true)   | (is_down=false)
+                    |                   |
+                    ^                   ^
+                     \                   \
+                    last_failure        last_failure + fail_window
+ */
 inline bool
 HostDBInfo::is_down(ts_time now, ts_seconds fail_window)
 {
   auto last_fail = this->last_fail_time();
-  return (last_fail != TS_TIME_ZERO) && (last_fail + fail_window >= now);
+  return (last_fail != TS_TIME_ZERO) && (now <= last_fail + fail_window);
 }
 
 inline bool
