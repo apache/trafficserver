@@ -174,46 +174,46 @@ Conditions
 
 Below is a partial mapping of `header_rewrite` condition symbols to their HRW4U equivalents:
 
-================================ ================================== ================================================
-Header Rewrite                    HRW4U                             Description
-================================ ================================== ================================================
-cond %{ACCESS:/path}             access("/path")                    File exists at "/path" and is accessible by ATS
-cond %{CACHE} =hit-fresh         cache() == "hit-fresh"             Cache lookup result status
-cond %{CIDR:24,48} =ip           cidr(24,48) == "ip"                Match masked client IP address
-cond %{CLIENT-HEADER:X} =foo     inbound.req.X == "foo"             Original client request header
-cond %{CLIENT-URL:<C>} =bar      inbound.url.<C> == "bar"           URL component match, <:ref:`C<admin-plugins-header-rewrite-url-parts>`> is ``host``, ``path`` etc.
-cond %{CLIENT-URL:QUERY:<P>}     inbound.url.query.<P> == "bar"     Extract specific query parameter ``P`` from URL
-cond %{COOKIE:foo} =bar          {in,out}bound.cookie.foo == "bar"  Check a cookie value
-cond %{FROM-URL:<C>} =bar        from.url.<C> == "bar"              Remap ``From URL`` component match, <:ref:`C<admin-plugins-header-rewrite-url-parts>`> is ``host`` etc.
-cond %{FROM-URL:QUERY:<P>}       from.url.query.<P> == "bar"        Extract specific query parameter ``P`` from remap ``From URL``
-cond %{HEADER:X} =fo             {in,out}bound.{req,resp}.X == "fo" Context sensitive header conditions
-cond %{ID:UNIQUE} =...           id.UNIQUE == "..."                 (:ref:`Unique/request/process<admin-plugins-header-rewrite-id>`) transaction identifier
-cond %{INTERNAL-TRANSACTION}     internal()                         Check if transaction is internally generated
-cond %{INBOUND:CLIENT-CERT:<X>}  inbound.client-cert.<X>            Access the mTLS / client certificate details, on the inbound (client) connection
-cond %{INBOUND:SERVER-CERT:<X>}  inbound.client-cert.<X>            Access the server (handshake) certificate details, on the inbound connection
-cond %{IP:CLIENT} ="..."         inbound.ip == "..."                Client's IP address. Same as ``inbound.REMOTE_ADDR``
-cond %{IP:INBOUND} ="..."        inbound.server == "..."            ATS's IP address to which the client connected
-cond %{IP:SERVER} ="..."         outbound.ip == "..."               Upstream (next-hop) server IP address
-cond %{IP:OUTBOUND} ="..."       outbound.server == "..."           ATS's outbound IP address, connecting upstream
-cond %{LAST-CAPTURE:<#>} ="..."  capture.<#> == "..."               Last capture group from regex match (range: `0-9`)
-cond %{METHOD} =GET              inbound.method == "GET"            HTTP method match
-cond %{NEXT-HOP:<C>} ="bar"      outbound.url.<C> == "bar"          Next-hop URL component match, <:ref:`C<admin-plugins-header-rewrite-url-parts>`> is ``host`` etc.
-cond %{NEXT-HOP:QUERY:<P>}       outbound.url.query.<P> == "bar"    Extract specific query parameter ``P`` from next-hop URL
-cond %{NOW:<U>} ="..."           now.<U> == "..."                   Current date/time in format,  <:ref:`U<admin-plugins-header-rewrite-geo>`> selects time unit
-cond %{OUTBOUND:CLIENT-CERT:<X>} outbound.client-cert.<X>           Access the mTLS / client certificate details, on the outbound (upstream) connection
-cond %{OUTbOUND:SERVER-CERT:<X>} outbound.client-cert.<X>           Access the server (handshake) certificate details, on the outbound connection
-cond %{RANDOM:500} >250          random(500) > 250                  Random number between 0 and the specified range
-cond %{SSN-TXN-COUNT} >10        ssn-txn-count() > 10               Number of transactions on server connection
-cond %{TO-URL:<C>} =bar          to.url.<C> == "bar"                Remap ``To URL`` component match, <:ref:`C<admin-plugins-header-rewrite-url-parts>`> is ``host`` etc.
-cond %{TO-URL:QUERY:<P>}         to.url.query.<P> == "bar"          Extract specific query parameter ``P`` from remap ``To URL``
-cond %{TXN-COUNT} >10            txn-count() > 10                   Number of transactions on client connection
-cond %{URL:<C> =bar              {in,out}bound.url.<C> == "bar"     Context aware URL component match
-cond %{GEO:<C>} =bar             geo.<C> == "bar"                   IP to Geo mapping. <:ref:`C<admin-plugins-header-rewrite-geo>`> is country, asn, etc.
-cond %{STATUS} =200              inbound.status ==200               Origin http status code
-cond %{TCP-INFO}                 tcp.info                           TCP Info struct field values
-cond %{HTTP-CNTL:<C>}            http.cntl.<C>                      Check the state of the <:ref:`C<admin-plugins-header-rewrite-set-http-cntl>`> HTTP control
-cond %{INBOUND:<C>}              {in,out}bound.conn.<c>             inbound (:ref:`client, user agent<admin-plugins-header-rewrite-inbound>`) connection to ATS
-================================ ================================== ================================================
+================================= ================================== ================================================
+Header Rewrite                     HRW4U                             Description
+================================= ================================== ================================================
+cond %{ACCESS:/path}              access("/path")                    File exists at "/path" and is accessible by ATS
+cond %{CACHE} =hit-fresh          cache() == "hit-fresh"             Cache lookup result status
+cond %{CIDR:24,48} =ip            cidr(24,48) == "ip"                Match masked client IP address
+cond %{CLIENT-HEADER:X} =foo      inbound.req.X == "foo"             Original client request header
+cond %{CLIENT-URL:<C>} =bar       inbound.url.<C> == "bar"           URL component match, <:ref:`C<admin-plugins-header-rewrite-url-parts>`> is ``host``, ``path`` etc.
+cond %{CLIENT-URL:QUERY:<P>} =bar inbound.url.query.<P> == "bar"     Extract specific query parameter ``P`` from URL
+cond %{COOKIE:foo} =bar           {in,out}bound.cookie.foo == "bar"  Check a cookie value
+cond %{FROM-URL:<C>} =bar         from.url.<C> == "bar"              Remap ``From URL`` component match, <:ref:`C<admin-plugins-header-rewrite-url-parts>`> is ``host`` etc.
+cond %{FROM-URL:QUERY:<P>} =bar   from.url.query.<P> == "bar"        Extract specific query parameter ``P`` from remap ``From URL``
+cond %{HEADER:X} =fo              {in,out}bound.{req,resp}.X == "fo" Context sensitive header conditions
+cond %{ID:UNIQUE} =...            id.UNIQUE == "..."                 (:ref:`Unique/request/process<admin-plugins-header-rewrite-id>`) transaction identifier
+cond %{INTERNAL-TRANSACTION}      internal()                         Check if transaction is internally generated
+cond %{INBOUND:CLIENT-CERT:<X>}   inbound.client-cert.<X>            Access the mTLS / client certificate details, on the inbound (client) connection
+cond %{INBOUND:SERVER-CERT:<X>}   inbound.client-cert.<X>            Access the server (handshake) certificate details, on the inbound connection
+cond %{IP:CLIENT} ="..."          inbound.ip == "..."                Client's IP address. Same as ``inbound.REMOTE_ADDR``
+cond %{IP:INBOUND} ="..."         inbound.server == "..."            ATS's IP address to which the client connected
+cond %{IP:SERVER} ="..."          outbound.ip == "..."               Upstream (next-hop) server IP address
+cond %{IP:OUTBOUND} ="..."        outbound.server == "..."           ATS's outbound IP address, connecting upstream
+cond %{LAST-CAPTURE:<#>} ="..."   capture.<#> == "..."               Last capture group from regex match (range: `0-9`)
+cond %{METHOD} =GET               inbound.method == "GET"            HTTP method match
+cond %{NEXT-HOP:<C>} ="bar"       outbound.url.<C> == "bar"          Next-hop URL component match, <:ref:`C<admin-plugins-header-rewrite-url-parts>`> is ``host`` etc.
+cond %{NEXT-HOP:QUERY:<P>} =bar   outbound.url.query.<P> == "bar"    Extract specific query parameter ``P`` from next-hop URL
+cond %{NOW:<U>} ="..."            now.<U> == "..."                   Current date/time in format,  <:ref:`U<admin-plugins-header-rewrite-geo>`> selects time unit
+cond %{OUTBOUND:CLIENT-CERT:<X>}  outbound.client-cert.<X>           Access the mTLS / client certificate details, on the outbound (upstream) connection
+cond %{OUTbOUND:SERVER-CERT:<X>}  outbound.client-cert.<X>           Access the server (handshake) certificate details, on the outbound connection
+cond %{RANDOM:500} >250           random(500) > 250                  Random number between 0 and the specified range
+cond %{SSN-TXN-COUNT} >10         ssn-txn-count() > 10               Number of transactions on server connection
+cond %{TO-URL:<C>} =bar           to.url.<C> == "bar"                Remap ``To URL`` component match, <:ref:`C<admin-plugins-header-rewrite-url-parts>`> is ``host`` etc.
+cond %{TO-URL:QUERY:<P>} =bar     to.url.query.<P> == "bar"          Extract specific query parameter ``P`` from remap ``To URL``
+cond %{TXN-COUNT} >10             txn-count() > 10                   Number of transactions on client connection
+cond %{URL:<C> =bar               {in,out}bound.url.<C> == "bar"     Context aware URL component match
+cond %{GEO:<C>} =bar              geo.<C> == "bar"                   IP to Geo mapping. <:ref:`C<admin-plugins-header-rewrite-geo>`> is country, asn, etc.
+cond %{STATUS} =200               inbound.status ==200               Origin http status code
+cond %{TCP-INFO}                  tcp.info                           TCP Info struct field values
+cond %{HTTP-CNTL:<C>}             http.cntl.<C>                      Check the state of the <:ref:`C<admin-plugins-header-rewrite-set-http-cntl>`> HTTP control
+cond %{INBOUND:<C>}               {in,out}bound.conn.<c>             inbound (:ref:`client, user agent<admin-plugins-header-rewrite-inbound>`) connection to ATS
+================================= ================================== ================================================
 
 The conditions operating on headers and URLs are also available as operators. E.g.:
 
