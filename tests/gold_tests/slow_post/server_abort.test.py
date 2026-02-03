@@ -30,7 +30,13 @@ ts.Disk.remap_config.AddLine(
     # on the origin server so that it aborts the connection upon receiving a
     # request
     'map / https://127.0.0.1:{0}'.format(server.Variables.Port))
-ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=aaa-signed.pem ssl_key_name=aaa-signed.key')
+ts.Disk.ssl_multicert_yaml.AddLines(
+    """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: aaa-signed.pem
+    ssl_key_name: aaa-signed.key
+""".split("\n"))
 ts.Disk.records_config.update(
     {
         'proxy.config.diags.debug.tags': 'http|dns',

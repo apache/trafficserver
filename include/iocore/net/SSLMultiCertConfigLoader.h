@@ -39,7 +39,7 @@ struct SSLMultiCertConfigParams;
 struct SSLLoadingContext;
 
 /**
-    @brief Load SSL certificates from ssl_multicert.config and setup SSLCertLookup for SSLCertificateConfig
+    @brief Load SSL certificates from ssl_multicert.yaml and setup SSLCertLookup for SSLCertificateConfig
  */
 class SSLMultiCertConfigLoader
 {

@@ -46,7 +46,7 @@ enum class SSLCertContextOption {
 };
 
 /**
-   @brief Gather user provided settings from ssl_multicert.config in to this single struct
+   @brief Gather user provided settings from ssl_multicert.yaml in to this single struct
  */
 struct SSLMultiCertConfigParams {
   SSLMultiCertConfigParams() : opt(SSLCertContextOption::OPT_NONE)

@@ -51,7 +51,13 @@ ts.Disk.remap_config.AddLines(
         'map /five http://127.0.0.1:{0}'.format(Test.Variables.upstream_port5),
         'map /six http://127.0.0.1:{0}'.format(Test.Variables.upstream_port6),
     ])
-ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+ts.Disk.ssl_multicert_yaml.AddLines(
+    """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: server.pem
+    ssl_key_name: server.key
+""".split("\n"))
 ts.Disk.records_config.update(
     {
         'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),

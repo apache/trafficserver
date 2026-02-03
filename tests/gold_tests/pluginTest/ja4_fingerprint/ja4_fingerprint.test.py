@@ -125,7 +125,13 @@ class TestJA4Fingerprint:
 
         ts.Disk.remap_config.AddLine(f'map / http://localhost:{server_one.Variables.http_port}')
 
-        ts.Disk.ssl_multicert_config.AddLine(f'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+        ts.Disk.ssl_multicert_yaml.AddLines(
+            """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: server.pem
+    ssl_key_name: server.key
+""".split("\n"))
 
         ts.Disk.plugin_config.AddLine(f'ja4_fingerprint.so')
 

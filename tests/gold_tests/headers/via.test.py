@@ -57,7 +57,13 @@ ts.Disk.remap_config.AddLine('map http://www.example.com http://127.0.0.1:{0}'.f
 ts.Disk.remap_config.AddLine(
     'map https://www.example.com http://127.0.0.1:{0}'.format(server.Variables.Port, ts.Variables.ssl_port))
 
-ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+ts.Disk.ssl_multicert_yaml.AddLines(
+    """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: server.pem
+    ssl_key_name: server.key
+""".split("\n"))
 
 # Set up to check the output after the tests have run.
 via_log_id = Test.Disk.File("via.log")

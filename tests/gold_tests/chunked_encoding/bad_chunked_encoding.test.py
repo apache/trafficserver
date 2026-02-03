@@ -96,7 +96,13 @@ class HTTP10Test:
                 "proxy.config.ssl.server.private_key.path": f'{self.ts.Variables.SSLDir}',
                 "proxy.config.ssl.client.verify.server.policy": 'PERMISSIVE',
             })
-        self.ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+        self.ts.Disk.ssl_multicert_yaml.AddLines(
+            """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: server.pem
+    ssl_key_name: server.key
+""".split("\n"))
         self.ts.Disk.remap_config.AddLine(f"map / http://127.0.0.1:{self.server.Variables.http_port}/",)
 
     def runChunkedTraffic(self):
@@ -150,7 +156,13 @@ class MalformedChunkHeaderTest:
                 "proxy.config.ssl.server.private_key.path": f'{self.ts.Variables.SSLDir}',
                 "proxy.config.ssl.client.verify.server.policy": 'PERMISSIVE',
             })
-        self.ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+        self.ts.Disk.ssl_multicert_yaml.AddLines(
+            """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: server.pem
+    ssl_key_name: server.key
+""".split("\n"))
         self.ts.Disk.remap_config.AddLine(f"map / http://127.0.0.1:{self.server.Variables.http_port}/",)
         self.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
             "user agent post chunk decoding error", "Verify that ATS detected a problem parsing a chunk.")

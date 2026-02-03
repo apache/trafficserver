@@ -101,7 +101,13 @@ ts.Disk.remap_config.AddLine(
     'map /snipolicybarhost  https://bar.com:{0} @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.properties=NAME @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.policy=ENFORCED @plugin=conf_remap.so @pparam=proxy.config.ssl.client.sni_policy=host'
     .format(server_bar.Variables.SSL_Port))
 
-ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+ts.Disk.ssl_multicert_yaml.AddLines(
+    """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: server.pem
+    ssl_key_name: server.key
+""".split("\n"))
 
 # Case 1, global config policy=permissive properties=signature
 #         override for foo.com policy=enforced properties=all

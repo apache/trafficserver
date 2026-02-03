@@ -74,9 +74,13 @@ class Test_quic_no_activity_timeout:
             self._ts.Disk.records_config.update(self.extra_recs)
 
         self._ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{self._server.Variables.http_port}')
-        self._ts.Disk.ssl_multicert_config.AddLine(
-            f'dest_ip=* ssl_cert_name={self._ts.Variables.SSLDir}/cert.crt ssl_key_name={self._ts.Variables.SSLDir}/private-key.key'
-        )
+        self._ts.Disk.ssl_multicert_yaml.AddLines(
+            f"""
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: {self._ts.Variables.SSLDir}/cert.crt
+    ssl_key_name: {self._ts.Variables.SSLDir}/private-key.key
+""".split("\n"))
 
     def run(self, check_for_max_idle_timeout=False):
         """Run the test."""

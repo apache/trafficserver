@@ -365,6 +365,35 @@ Display the current value of a configuration record.
    Display information about the registered files in |TS|. This includes the full file path, config record name, parent config (if any)
    if needs root access and if the file is required in |TS|.
 
+.. program:: traffic_ctl config
+.. option:: ssl-multicert show [--yaml | --json]
+
+   Display the current ``ssl_multicert.yaml`` configuration. By default, output is in YAML format.
+   Use ``--json`` or ``-j`` to output in JSON format.
+
+   .. option:: --yaml, -y
+
+      Output in YAML format (default).
+
+   .. option:: --json, -j
+
+      Output in JSON format.
+
+   Example:
+
+   .. code-block:: bash
+
+      $ traffic_ctl config ssl-multicert show
+      ssl_multicert:
+        - ssl_cert_name: server.pem
+          dest_ip: "*"
+          ssl_key_name: server.key
+
+   .. code-block:: bash
+
+      $ traffic_ctl config ssl-multicert show --json
+      {"ssl_multicert": [{"ssl_cert_name": "server.pem", "dest_ip": "*", "ssl_key_name": "server.key"}]}
+
 .. _traffic-control-command-metric:
 
 traffic_ctl metric
