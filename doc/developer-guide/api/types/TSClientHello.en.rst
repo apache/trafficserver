@@ -30,7 +30,7 @@ Synopsis
 
 .. type:: TSClientHello
 
-.. type:: TSClientHelloImpl::TSExtensionTypeList
+.. type:: TSClientHello::TSExtensionTypeList
 
    A type alias for an iterable container of extension type IDs.
 
@@ -84,7 +84,7 @@ The following methods are available to access ClientHello data:
 
    Returns the number of extension IDs in the array.
 
-.. function:: TSClientHelloImpl::TSExtensionTypeList get_extension_types() const
+.. function:: TSClientHello::TSExtensionTypeList get_extension_types() const
 
    Returns an iterable container of extension type IDs present in the ClientHello.
    This method abstracts the differences between BoringSSL (which uses an extensions
