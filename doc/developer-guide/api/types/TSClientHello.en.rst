@@ -30,6 +30,10 @@ Synopsis
 
 .. type:: TSClientHello
 
+.. type:: TSClientHelloImpl::TSExtensionTypeList
+
+   A type alias for an iterable container of extension type IDs.
+
 
 Description
 ===========
@@ -80,15 +84,12 @@ The following methods are available to access ClientHello data:
 
    Returns the number of extension IDs in the array.
 
-.. function:: TSExtensionTypeList get_extension_types() const
+.. function:: TSClientHelloImpl::TSExtensionTypeList get_extension_types() const
 
    Returns an iterable container of extension type IDs present in the ClientHello.
    This method abstracts the differences between BoringSSL (which uses an extensions
    buffer) and OpenSSL (which uses an extension_ids array), providing a consistent
    interface regardless of the SSL library in use.
-
-   Note: :type:`TSExtensionTypeList` is currently implemented as ``std::vector<uint16_t>``,
-   but this may be optimized in future versions to use a custom iterator without copying.
 
 .. function:: void* get_ssl_ptr() const
 
