@@ -2965,7 +2965,7 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
 
   if (s->cache_lookup_result == CacheLookupResult_t::HIT_WARNING) {
     build_response_from_cache(s, HTTPWarningCode::HERUISTIC_EXPIRATION);
-  } else if (s->cache_lookup_result == CacheLookupResult_t::HIT_STALE) {
+  } else if (s->cache_lookup_result == CacheLookupResult_t::HIT_STALE && !s->serving_stale_due_to_write_lock) {
     ink_assert(server_up == false);
     build_response_from_cache(s, HTTPWarningCode::REVALIDATION_FAILED);
   } else if (s->serving_stale_due_to_write_lock) {
