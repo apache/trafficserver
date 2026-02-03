@@ -146,7 +146,7 @@ BgFetchConfig::readConfig(const char *config_file)
         if ("Client-IP"_tv == cfg_name) {
           swoc::IPRange r;
           // '*' is special - match any address. Signalled by empty range.
-          if (cfg_value.size() != 1 || cfg_value.front() == '*') {
+          if (cfg_value.size() != 1 || cfg_value.front() != '*') {
             if (!r.load(cfg_value)) { // assume if it loads, it's not empty.
               TSError("[%s] invalid IP address range %.*s, skipping config value", PLUGIN_NAME, int(cfg_value.size()),
                       cfg_value.data());
