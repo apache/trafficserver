@@ -145,7 +145,23 @@ autest:
             args:
               - "rules/query_sub_key.conf"
 
+      # Test run-plugin with a relative plugin path. This verifies that the
+      # plugin factory is properly initialized when header_rewrite is used as a
+      # remap plugin without a geo database.
+      - from: "http://www.example.com/from_14/"
+        to: "http://backend.ex:{SERVER_HTTP_PORT}/to_14/"
+        plugins:
+          - name: "header_rewrite.so"
+            args:
+              - "rules/run_plugin.conf"
 
+    log_validation:
+      traffic_out:
+        excludes:
+          - expression: "failed to find plugin"
+            description: "Should not fail to find plugin with relative path"
+          - expression: "Unable to load plugin"
+            description: "Should not fail to load plugin"
 
 # Proxy verifier sessions
 sessions:
@@ -1074,3 +1090,27 @@ sessions:
       headers:
         fields:
         - [ X-Query-Sub, { as: absent } ]
+
+# Test 30: run-plugin with relative path
+# This test verifies that the plugin factory is properly initialized when
+# header_rewrite is used as a remap plugin without a geo database. If the fix
+# is not applied, run-plugin with a relative path would fail to find the plugin.
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_14/
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ uuid, 36 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
