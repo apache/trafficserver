@@ -25,6 +25,7 @@
 
 #include <chrono>
 #include <atomic>
+#include <cstdint>
 #include <utility>
 
 #include "tscore/HashFNV.h"
@@ -312,11 +313,13 @@ public:
    * @param query_name Name of the query for the record.
    * @param rr_count Number of info instances.
    * @param srv_name_size Storage for SRV names, if any.
+   * @param port Port Number, if any.
+   *
    * @return An instance sufficient to hold the specified data.
    *
    * The query name will stored and initialized, and the info instances initialized.
    */
-  static self_type *alloc(swoc::TextView query_name, unsigned rr_count, size_t srv_name_size = 0);
+  static self_type *alloc(swoc::TextView query_name, unsigned rr_count, size_t srv_name_size = 0, int port = 0);
 
   /// Type of data stored in this record.
   HostDBType record_type = HostDBType::UNSPEC;
@@ -389,6 +392,11 @@ public:
    * be used as a C-string.
    */
   swoc::TextView name_view() const;
+
+  /**
+    @return Port Number
+   */
+  int port() const;
 
   /// Get the array of info instances.
   swoc::MemSpan<HostDBInfo> rr_info();
@@ -519,6 +527,10 @@ protected:
       unsigned failed_p : 1; ///< DNS error.
     } f;
   } flags{0};
+
+private:
+  /// Port Number if hash key includes it.
+  int _port = 0;
 };
 
 struct HostDBCache;
@@ -731,6 +743,12 @@ inline swoc::TextView
 HostDBRecord::name_view() const
 {
   return {this->name(), swoc::TextView::npos};
+}
+
+inline int
+HostDBRecord::port() const
+{
+  return _port;
 }
 
 inline ts_time

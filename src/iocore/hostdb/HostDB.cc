@@ -434,7 +434,7 @@ probe_ip(HostDBHash const &hash)
     Dbg(dbg_ctl_hostdb, "DNS %.*s", int(hash.host_name.size()), hash.host_name.data());
     IpAddr tip;
     if (0 == tip.load(hash.host_name)) {
-      result            = HostDBRecord::Handle{HostDBRecord::alloc(hash.host_name, 1)};
+      result            = HostDBRecord::Handle{HostDBRecord::alloc(hash.host_name, 1, 0, hash.port)};
       result->af_family = tip.family();
       auto &info        = result->rr_info()[0];
       info.assign(tip);
@@ -919,10 +919,11 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
 
     // In the event that the lookup failed (SOA response-- for example) we want to use hash.host_name, since it'll be ""
     TextView query_name = (failed || !hash.host_name.empty()) ? hash.host_name : TextView{e->ent.h_name, strlen(e->ent.h_name)};
-    HostDBRecord::Handle r{HostDBRecord::alloc(query_name, valid_records, failed ? 0 : e->srv_hosts.srv_hosts_length)};
+    HostDBRecord::Handle r{HostDBRecord::alloc(query_name, valid_records, failed ? 0 : e->srv_hosts.srv_hosts_length, hash.port)};
     r->key              = hash.hash.fold(); // always set the key
     r->af_family        = af;
     r->flags.f.failed_p = failed;
+    r->_port            = hash.port;
 
     // If the DNS lookup failed (errors such as SERVFAIL, etc.) but we have an old record
     // which is okay with being served stale-- lets continue to serve the stale record as long as
@@ -1542,7 +1543,7 @@ HostDBRecord::free()
 }
 
 HostDBRecord *
-HostDBRecord::alloc(TextView query_name, unsigned int rr_count, size_t srv_name_size)
+HostDBRecord::alloc(TextView query_name, unsigned int rr_count, size_t srv_name_size, int port)
 {
   const swoc::Scalar<8, ssize_t> qn_size = round_up(query_name.size() + 1);
   const swoc::Scalar<8, ssize_t> r_size  = round_up(sizeof(self_type) + qn_size + rr_count * sizeof(HostDBInfo) + srv_name_size);
@@ -1554,6 +1555,7 @@ HostDBRecord::alloc(TextView query_name, unsigned int rr_count, size_t srv_name_
   new (self) self_type();
   self->_iobuffer_index = iobuffer_index;
   self->_record_size    = r_size;
+  self->_port           = port;
 
   Dbg(dbg_ctl_hostdb, "allocating %ld bytes for %.*s with %d RR records at [%p]", r_size.value(), int(query_name.size()),
       query_name.data(), rr_count, self);
