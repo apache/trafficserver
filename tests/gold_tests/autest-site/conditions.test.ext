@@ -63,25 +63,32 @@ def HasLegacyTLSSupport(self):
     causes 'openssl ciphers -v -tls1' to still list TLSv1 ciphers, but actual
     TLS 1.0 connections will fail with "no protocols available".
 
-    This check attempts to create an actual TLSv1 connection to detect if
-    the protocol is truly available, not just listed.
+    This check attempts to create an actual TLSv1 connection to a known HTTPS
+    server to detect if the protocol is truly available at runtime.
     """
     def check_tls1_support():
         try:
-            # Try to actually use TLSv1 - this catches crypto-policy restrictions
-            # that aren't visible in cipher listings
+            # Try to actually use TLSv1 against a real HTTPS server
+            # This catches crypto-policy restrictions that aren't visible in cipher listings
+            # We use a well-known server that's likely to be reachable
             result = subprocess.run(
-                ['openssl', 's_client', '-tls1', '-connect', 'localhost:1'],
-                capture_output=True, text=True, timeout=5
+                ['openssl', 's_client', '-tls1', '-connect', 'www.google.com:443'],
+                capture_output=True, text=True, timeout=10,
+                input=''  # Don't wait for input
             )
+            # Combine stdout and stderr for checking
+            output = result.stdout + result.stderr
             # If we get "no protocols available", TLSv1 is disabled by policy
-            if 'no protocols available' in result.stderr:
+            if 'no protocols available' in output:
                 return False
-            # Connection refused is fine - we're just testing if TLSv1 is allowed
+            # If we get a successful connection or a server-side TLS version mismatch,
+            # it means TLSv1 is enabled on this client
             return True
         except subprocess.TimeoutExpired:
-            return True  # Timeout means TLSv1 was at least attempted
+            # If network is slow but TLSv1 was attempted, assume it's available
+            return True
         except Exception:
+            # If we can't determine, assume TLSv1 is not available (safer)
             return False
 
     return self.Condition(check_tls1_support, "System does not support legacy TLS protocols (TLSv1.0/TLSv1.1)")
