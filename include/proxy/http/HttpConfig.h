@@ -208,6 +208,7 @@ struct HttpStatsBlock {
   Metrics::Counter::AtomicType *pushed_document_total_size;
   Metrics::Counter::AtomicType *pushed_response_header_total_size;
   Metrics::Counter::AtomicType *put_requests;
+  Metrics::Counter::AtomicType *response_status_000_count;
   Metrics::Counter::AtomicType *response_status_100_count;
   Metrics::Counter::AtomicType *response_status_101_count;
   Metrics::Counter::AtomicType *response_status_1xx_count;
