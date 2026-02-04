@@ -181,7 +181,9 @@ cond %{ACCESS:/path}             access("/path")                    File exists 
 cond %{CACHE} =hit-fresh         cache() == "hit-fresh"             Cache lookup result status
 cond %{CIDR:24,48} =ip           cidr(24,48) == "ip"                Match masked client IP address
 cond %{CLIENT-HEADER:X} =foo     inbound.req.X == "foo"             Original client request header
+cond %{SERVER-HEADER:X} =foo     outbound.req.X == "foo"            Server request header (sent to origin)
 cond %{CLIENT-URL:<C>} =bar      inbound.url.<C> == "bar"           URL component match, <:ref:`C<admin-plugins-header-rewrite-url-parts>`> is ``host``, ``path`` etc.
+cond %{SERVER-URL:<C>} =bar      outbound.url.<C> == "bar"          Server request URL component (sent to origin)
 cond %{COOKIE:foo} =bar          {in,out}bound.cookie.foo == "bar"  Check a cookie value
 cond %{FROM-URL:<C>} =bar        from.url.<C> == "bar"              Remap ``From URL`` component match, <:ref:`C<admin-plugins-header-rewrite-url-parts>`> is ``host`` etc.
 cond %{HEADER:X} =fo             {in,out}bound.{req,resp}.X == "fo" Context sensitive header conditions
@@ -195,7 +197,7 @@ cond %{IP:SERVER} ="..."         outbound.ip == "..."               Upstream (ne
 cond %{IP:OUTBOUND} ="..."       outbound.server == "..."           ATS's outbound IP address, connecting upstream
 cond %{LAST-CAPTURE:<#>} ="..."  capture.<#> == "..."               Last capture group from regex match (range: `0-9`)
 cond %{METHOD} =GET              inbound.method == "GET"            HTTP method match
-cond %{NEXT-HOP:<C>} ="bar"      outbound.url.<C> == "bar"          Next-hop URL component match, <:ref:`C<admin-plugins-header-rewrite-url-parts>`> is ``host`` etc.
+cond %{NEXT-HOP:<C>} ="bar"      nexthop.<C> == "bar"               Next-hop destination, ``<C>`` is ``host``, ``port``, or ``strategy``
 cond %{NOW:<U>} ="..."           now.<U> == "..."                   Current date/time in format,  <:ref:`U<admin-plugins-header-rewrite-geo>`> selects time unit
 cond %{OUTBOUND:CLIENT-CERT:<X>} outbound.client-cert.<X>           Access the mTLS / client certificate details, on the outbound (upstream) connection
 cond %{OUTbOUND:SERVER-CERT:<X>} outbound.client-cert.<X>           Access the server (handshake) certificate details, on the outbound connection
@@ -203,13 +205,27 @@ cond %{RANDOM:500} >250          random(500) > 250                  Random numbe
 cond %{SSN-TXN-COUNT} >10        ssn-txn-count() > 10               Number of transactions on server connection
 cond %{TO-URL:<C>} =bar          to.url.<C> == "bar"                Remap ``To URL`` component match, <:ref:`C<admin-plugins-header-rewrite-url-parts>`> is ``host`` etc.
 cond %{TXN-COUNT} >10            txn-count() > 10                   Number of transactions on client connection
-cond %{URL:<C> =bar              {in,out}bound.url.<C> == "bar"     Context aware URL component match
+cond %{URL:<C> =bar              inbound.url.<C> == "bar"           Context aware URL component match (use ``inbound.url`` or ``outbound.url``)
 cond %{GEO:<C>} =bar             geo.<C> == "bar"                   IP to Geo mapping. <:ref:`C<admin-plugins-header-rewrite-geo>`> is country, asn, etc.
 cond %{STATUS} =200              inbound.status ==200               Origin http status code
 cond %{TCP-INFO}                 tcp.info                           TCP Info struct field values
 cond %{HTTP-CNTL:<C>}            http.cntl.<C>                      Check the state of the <:ref:`C<admin-plugins-header-rewrite-set-http-cntl>`> HTTP control
 cond %{INBOUND:<C>}              {in,out}bound.conn.<c>             inbound (:ref:`client, user agent<admin-plugins-header-rewrite-inbound>`) connection to ATS
 ================================ ================================== ================================================
+
+.. note::
+    **Header and URL prefix summary:**
+
+    - ``inbound.req.<header>`` → ``CLIENT-HEADER`` - Headers from the client request
+    - ``outbound.req.<header>`` → ``SERVER-HEADER`` - Headers in the request sent to origin
+    - ``inbound.url.<part>`` → ``CLIENT-URL`` - URL from the original client request
+    - ``outbound.url.<part>`` → ``SERVER-URL`` - URL in the request sent to origin (after remapping)
+    - ``nexthop.<field>`` → ``NEXT-HOP`` - Network destination info (host, port, strategy)
+
+    The distinction between ``outbound.url`` and ``nexthop`` is important:
+
+    - ``outbound.url`` is the HTTP request URL (what's in the request line/Host header)
+    - ``nexthop`` is the network destination (where ATS connects, may be a parent proxy)
 
 The conditions operating on headers and URLs are also available as operators. E.g.:
 
@@ -271,9 +287,9 @@ HRW4U provides a special ``+=`` operator for adding headers::
 
 The ``+=`` operator only works with the following pre-defined symbols:
 
-- ``inbound.req.<header>`` - Client request headers
+- ``inbound.req.<header>`` - Client request headers (maps to ``CLIENT-HEADER``)
 - ``inbound.resp.<header>`` - Origin response headers
-- ``outbound.req.<header>`` - Outbound request headers (context-restricted)
+- ``outbound.req.<header>`` - Server request headers (maps to ``SERVER-HEADER``)
 - ``outbound.resp.<header>`` - Outbound response headers (context-restricted)
 
 .. note::

@@ -132,9 +132,13 @@ condition_factory(const std::string &cond)
   } else if (c_name == "HEADER") { // This condition adapts to the hook
     c = new ConditionHeader();
   } else if (c_name == "CLIENT-HEADER") {
-    c = new ConditionHeader(true);
+    c = new ConditionHeader(ConditionHeader::CLIENT);
+  } else if (c_name == "SERVER-HEADER") {
+    c = new ConditionHeader(ConditionHeader::SERVER);
   } else if (c_name == "CLIENT-URL") { // This condition adapts to the hook
     c = new ConditionUrl(ConditionUrl::CLIENT);
+  } else if (c_name == "SERVER-URL") {
+    c = new ConditionUrl(ConditionUrl::SERVER);
   } else if (c_name == "URL") {
     c = new ConditionUrl(ConditionUrl::URL);
   } else if (c_name == "FROM-URL") {

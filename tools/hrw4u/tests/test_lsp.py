@@ -409,7 +409,7 @@ def test_multi_section_inbound_always_allowed(shared_lsp_client) -> None:
 
 def test_outbound_restrictions_batch(shared_lsp_client) -> None:
     """Batch test outbound restrictions - outbound features have section-specific availability."""
-    # outbound.url. is available in PRE_REMAP through SEND_REQUEST, plus READ_RESPONSE, SEND_RESPONSE
+    # outbound.url. (SERVER-URL) is only available from SEND_REQUEST onwards (server request must exist)
     # outbound.cookie. is only available from SEND_REQUEST onwards
     http_sections = ["PRE_REMAP", "REMAP", "READ_REQUEST", "SEND_REQUEST", "READ_RESPONSE"]
 
@@ -430,8 +430,11 @@ def test_outbound_restrictions_batch(shared_lsp_client) -> None:
         # outbound.cookie. is only available from SEND_REQUEST onwards
         if section in ["SEND_REQUEST", "READ_RESPONSE"]:
             assert len(outbound_cookie_items) > 0, f"outbound.cookie. should be in {section}"
-        # outbound.url. is available in all these sections
-        assert len(outbound_url_items) > 0, f"outbound.url. should be in {section}"
+        # outbound.url. (SERVER-URL) is only available from SEND_REQUEST onwards
+        if section in ["SEND_REQUEST", "READ_RESPONSE"]:
+            assert len(outbound_url_items) > 0, f"outbound.url. should be in {section}"
+        else:
+            assert len(outbound_url_items) == 0, f"outbound.url. should NOT be in {section}"
 
 
 def test_specific_outbound_conn_completions(shared_lsp_client) -> None:
