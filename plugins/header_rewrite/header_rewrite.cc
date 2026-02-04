@@ -704,14 +704,17 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
     }
   }
 
-  if (!geoDBpath.empty()) {
-    if (!geoDBpath.starts_with('/')) {
-      geoDBpath = std::string(TSConfigDirGet()) + '/' + geoDBpath;
-    }
-
-    Dbg(pi_dbg_ctl, "Remap geo db %s", geoDBpath.c_str());
-    std::call_once(initHRWLibs, [&geoDBpath]() { initHRWLibraries(geoDBpath); });
+  if (!geoDBpath.empty() && !geoDBpath.starts_with('/')) {
+    geoDBpath = std::string(TSConfigDirGet()) + '/' + geoDBpath;
   }
+
+  if (!geoDBpath.empty()) {
+    Dbg(pi_dbg_ctl, "Remap geo db %s", geoDBpath.c_str());
+  }
+
+  // Always initialize the plugin factory, even if no geo DB is specified. This
+  // is needed for run-plugin to work with relative paths.
+  std::call_once(initHRWLibs, [&geoDBpath]() { initHRWLibraries(geoDBpath); });
 
   auto *conf = new RulesConfig(timezone, inboundIpSource);
 
