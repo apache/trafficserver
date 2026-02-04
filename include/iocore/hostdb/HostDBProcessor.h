@@ -319,7 +319,7 @@ public:
    *
    * The query name will stored and initialized, and the info instances initialized.
    */
-  static self_type *alloc(swoc::TextView query_name, unsigned rr_count, size_t srv_name_size = 0, int port = 0);
+  static self_type *alloc(swoc::TextView query_name, unsigned rr_count, size_t srv_name_size = 0, in_port_t port = 0);
 
   /// Type of data stored in this record.
   HostDBType record_type = HostDBType::UNSPEC;
@@ -396,7 +396,7 @@ public:
   /**
     @return Port Number
    */
-  int port() const;
+  in_port_t port() const;
 
   /// Get the array of info instances.
   swoc::MemSpan<HostDBInfo> rr_info();
@@ -530,7 +530,7 @@ protected:
 
 private:
   /// Port Number if hash key includes it.
-  int _port = 0;
+  in_port_t _port = 0;
 };
 
 struct HostDBCache;
@@ -745,7 +745,7 @@ HostDBRecord::name_view() const
   return {this->name(), swoc::TextView::npos};
 }
 
-inline int
+inline in_port_t
 HostDBRecord::port() const
 {
   return _port;

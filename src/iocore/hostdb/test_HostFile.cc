@@ -168,7 +168,7 @@ HostDBHash::~HostDBHash() {}
 #include "swoc/Scalar.h"
 
 HostDBRecord *
-HostDBRecord::alloc(swoc::TextView query_name, unsigned int rr_count, size_t srv_name_size, int port)
+HostDBRecord::alloc(swoc::TextView query_name, unsigned int rr_count, size_t srv_name_size, in_port_t port)
 {
   const swoc::Scalar<8, ssize_t> qn_size = swoc::round_up(query_name.size() + 1);
   const swoc::Scalar<8, ssize_t> r_size =

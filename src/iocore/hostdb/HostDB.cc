@@ -923,7 +923,6 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
     r->key              = hash.hash.fold(); // always set the key
     r->af_family        = af;
     r->flags.f.failed_p = failed;
-    r->_port            = hash.port;
 
     // If the DNS lookup failed (errors such as SERVFAIL, etc.) but we have an old record
     // which is okay with being served stale-- lets continue to serve the stale record as long as
@@ -1543,7 +1542,7 @@ HostDBRecord::free()
 }
 
 HostDBRecord *
-HostDBRecord::alloc(TextView query_name, unsigned int rr_count, size_t srv_name_size, int port)
+HostDBRecord::alloc(TextView query_name, unsigned int rr_count, size_t srv_name_size, in_port_t port)
 {
   const swoc::Scalar<8, ssize_t> qn_size = round_up(query_name.size() + 1);
   const swoc::Scalar<8, ssize_t> r_size  = round_up(sizeof(self_type) + qn_size + rr_count * sizeof(HostDBInfo) + srv_name_size);
