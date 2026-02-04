@@ -55,19 +55,36 @@ def IsOpenSSL(self):
 def HasLegacyTLSSupport(self):
     """Check if the system supports legacy TLS protocols (TLSv1.0 and TLSv1.1).
 
-    Modern OpenSSL 3.x installations often disable these protocols entirely.
-    This condition checks if curl can use the --tlsv1 flag, which indicates
-    TLSv1.0 support is available.
+    Modern OpenSSL 3.x installations often disable these protocols entirely,
+    even if the openssl binary still accepts the -tls1 flag. This condition
+    checks if actual TLSv1.0 ciphers are available (not just TLSv1.2/TLSv1.3
+    ciphers returned when using the -tls1 flag).
+
+    On Fedora/RHEL systems, the crypto-policies framework may disable legacy
+    TLS even when OpenSSL is compiled with support for it.
     """
     def check_tls1_support():
         try:
-            # Check if openssl supports TLSv1
+            # Check if openssl has actual TLSv1.0 ciphers available
+            # When TLSv1.0 is disabled by crypto-policy, 'openssl ciphers -v -tls1'
+            # will still return ciphers, but they'll be TLSv1.2/TLSv1.3 ciphers
             result = subprocess.run(
                 ['openssl', 'ciphers', '-v', '-tls1'],
                 capture_output=True, text=True
             )
-            # If the command succeeds and returns ciphers, TLSv1 is supported
-            return result.returncode == 0 and len(result.stdout.strip()) > 0
+            if result.returncode != 0:
+                return False
+
+            # Check if any cipher is specifically TLSv1 (not TLSv1.2 or TLSv1.3)
+            # TLSv1.0 ciphers show as "SSLv3" or "TLSv1" in the version column
+            for line in result.stdout.strip().split('\n'):
+                parts = line.split()
+                if len(parts) >= 2:
+                    # The second column is the protocol version
+                    version = parts[1]
+                    if version in ('SSLv3', 'TLSv1'):
+                        return True
+            return False
         except Exception:
             return False
 
