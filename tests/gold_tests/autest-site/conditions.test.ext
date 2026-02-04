@@ -66,6 +66,7 @@ def HasLegacyTLSSupport(self):
     This check attempts to create an actual TLSv1 connection to a known HTTPS
     server to detect if the protocol is truly available at runtime.
     """
+
     def check_tls1_support():
         try:
             # Try to actually use TLSv1 against a real HTTPS server
@@ -73,7 +74,9 @@ def HasLegacyTLSSupport(self):
             # We use a well-known server that's likely to be reachable
             result = subprocess.run(
                 ['openssl', 's_client', '-tls1', '-connect', 'www.google.com:443'],
-                capture_output=True, text=True, timeout=10,
+                capture_output=True,
+                text=True,
+                timeout=10,
                 input=''  # Don't wait for input
             )
             # Combine stdout and stderr for checking
