@@ -707,6 +707,11 @@ public:
     /// Used to correctly attribute statistics and VIA strings.
     bool serving_stale_due_to_write_lock = false;
 
+    /// Set when CACHE_LOOKUP_COMPLETE hook is deferred for action 5/6.
+    /// The hook will fire later with the final result once we know if
+    /// stale content will be served or if we're going to origin.
+    bool cache_lookup_complete_deferred = false;
+
     MgmtByte cache_open_write_fail_action = 0;
 
     HttpConfigParams           *http_config_param = nullptr;

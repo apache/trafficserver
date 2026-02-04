@@ -2676,6 +2676,7 @@ HttpSM::state_cache_open_read(int event, void *data)
         t_state.txn_conf->cache_open_write_fail_action ==
           static_cast<MgmtByte>(CacheOpenWriteFailAction_t::READ_RETRY_STALE_ON_REVALIDATE)) {
       SMDbg(dbg_ctl_http, "READ_RETRY configured, deferring CACHE_LOOKUP_COMPLETE hook");
+      t_state.cache_lookup_complete_deferred = true;
       call_transact_and_set_next_state(nullptr);
     } else {
       setup_cache_lookup_complete_api();

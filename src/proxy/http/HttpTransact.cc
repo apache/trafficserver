@@ -2604,6 +2604,9 @@ HttpTransact::HandleCacheOpenReadHitFreshness(State *s)
     SET_VIA_STRING(VIA_CACHE_RESULT, VIA_IN_CACHE_STALE);
   }
 
+  // Clear the deferred flag if set (for READ_RETRY cases that found stale content)
+  s->cache_lookup_complete_deferred = false;
+
   TRANSACT_RETURN(StateMachineAction_t::API_CACHE_LOOKUP_COMPLETE, HttpTransact::HandleCacheOpenReadHit);
 }
 
@@ -3232,16 +3235,27 @@ HttpTransact::handle_cache_write_lock(State *s)
   if (s->cache_info.write_lock_state == CacheWriteLock_t::READ_RETRY) {
     TxnDbg(dbg_ctl_http_trans, "READ_RETRY: destroying server_request before cache hit handling");
     s->hdr_info.server_request.destroy();
-    HandleCacheOpenReadHitFreshness(s);
+
+    // For READ_RETRY with stale object, set up state and serve stale.
+    // The CACHE_LOOKUP_COMPLETE hook already fired with HIT_STALE during the initial
+    // cache hit (before revalidation was attempted), so we skip the hook here to
+    // avoid double-firing. Call what_is_document_freshness to set up
+    // serving_stale_due_to_write_lock, then go directly to HandleCacheOpenReadHit.
+    CacheHTTPInfo *obj = s->cache_info.object_read;
+    if (obj != nullptr) {
+      what_is_document_freshness(s, &s->hdr_info.client_request, obj->response_get());
+      s->cache_lookup_result = CacheLookupResult_t::HIT_STALE;
+      HandleCacheOpenReadHit(s);
+    } else {
+      HandleCacheOpenReadMiss(s);
+    }
   } else {
-    // For action 5/6, the CACHE_LOOKUP_COMPLETE hook was deferred in state_cache_open_read.
-    // Since we're not in READ_RETRY (write lock succeeded or failed without retry), fire
-    // the deferred hook now with MISS before going to origin.
-    if (s->txn_conf->cache_open_write_fail_action == static_cast<MgmtByte>(CacheOpenWriteFailAction_t::READ_RETRY) ||
-        s->txn_conf->cache_open_write_fail_action ==
-          static_cast<MgmtByte>(CacheOpenWriteFailAction_t::READ_RETRY_STALE_ON_REVALIDATE)) {
-      TxnDbg(dbg_ctl_http_trans, "Action 5/6 configured, firing deferred CACHE_LOOKUP_COMPLETE with MISS");
-      s->cache_lookup_result = CacheLookupResult_t::MISS;
+    // If the CACHE_LOOKUP_COMPLETE hook was deferred, fire it now with MISS
+    // since we're not in READ_RETRY (write lock succeeded or failed without retry).
+    if (s->cache_lookup_complete_deferred) {
+      TxnDbg(dbg_ctl_http_trans, "Firing deferred CACHE_LOOKUP_COMPLETE with MISS");
+      s->cache_lookup_complete_deferred = false;
+      s->cache_lookup_result            = CacheLookupResult_t::MISS;
       TRANSACT_RETURN(StateMachineAction_t::API_CACHE_LOOKUP_COMPLETE, handle_cache_write_lock_go_to_origin);
     }
     handle_cache_write_lock_go_to_origin(s);
@@ -3319,15 +3333,8 @@ HttpTransact::HandleCacheOpenReadMiss(State *s)
   } else if (s->cache_info.write_lock_state == CacheWriteLock_t::READ_RETRY && !s->serving_stale_due_to_write_lock) {
     // We've looped back around due to failing to read during READ_RETRY mode.
     // Don't attempt another cache write - just proxy to origin without caching.
-    // Fire the deferred CACHE_LOOKUP_COMPLETE hook with MISS result so plugins
-    // see the final cache lookup status before we go to origin.
-    // NOTE: Only fire if serving_stale_due_to_write_lock is false. If true, we already
-    // found a stale object and the hook was fired from HandleCacheOpenReadHitFreshness.
-    // We're here because authentication (MUST_PROXY) requires going to origin anyway.
-    TxnDbg(dbg_ctl_http_trans, "READ_RETRY cache read failed, firing deferred CACHE_LOOKUP_COMPLETE with MISS");
-    s->cache_info.action   = CacheAction_t::NO_ACTION;
-    s->cache_lookup_result = CacheLookupResult_t::MISS;
-    TRANSACT_RETURN(StateMachineAction_t::API_CACHE_LOOKUP_COMPLETE, HandleCacheOpenReadMissGoToOrigin);
+    TxnDbg(dbg_ctl_http_trans, "READ_RETRY cache read failed, bypassing cache");
+    s->cache_info.action = CacheAction_t::NO_ACTION;
   } else if (s->cache_info.write_lock_state == CacheWriteLock_t::READ_RETRY) {
     // READ_RETRY with serving_stale_due_to_write_lock = true means we found stale content
     // but can't serve it (e.g., MUST_PROXY auth). Hook already fired, just go to origin.
@@ -3337,15 +3344,12 @@ HttpTransact::HandleCacheOpenReadMiss(State *s)
     HttpTransact::set_cache_prepare_write_action_for_new_request(s);
   }
 
-  // If action 5/6 configured, we set NO_ACTION, and we're not in READ_RETRY,
-  // fire the deferred CACHE_LOOKUP_COMPLETE hook now with MISS.
-  // We won't enter READ_RETRY since we're not caching, so fire the hook now.
-  if (s->cache_info.action == CacheAction_t::NO_ACTION && s->cache_info.write_lock_state != CacheWriteLock_t::READ_RETRY &&
-      (s->txn_conf->cache_open_write_fail_action == static_cast<MgmtByte>(CacheOpenWriteFailAction_t::READ_RETRY) ||
-       s->txn_conf->cache_open_write_fail_action ==
-         static_cast<MgmtByte>(CacheOpenWriteFailAction_t::READ_RETRY_STALE_ON_REVALIDATE))) {
-    TxnDbg(dbg_ctl_http_trans, "Action 5/6 NO_ACTION path, firing deferred CACHE_LOOKUP_COMPLETE with MISS");
-    s->cache_lookup_result = CacheLookupResult_t::MISS;
+  // If the CACHE_LOOKUP_COMPLETE hook was deferred, fire it now with MISS.
+  // This covers all deferred cases: NO_ACTION, PREPARE_TO_WRITE, READ_RETRY without stale, etc.
+  if (s->cache_lookup_complete_deferred) {
+    TxnDbg(dbg_ctl_http_trans, "Firing deferred CACHE_LOOKUP_COMPLETE with MISS");
+    s->cache_lookup_complete_deferred = false;
+    s->cache_lookup_result            = CacheLookupResult_t::MISS;
     TRANSACT_RETURN(StateMachineAction_t::API_CACHE_LOOKUP_COMPLETE, HandleCacheOpenReadMissGoToOrigin);
   }
 
