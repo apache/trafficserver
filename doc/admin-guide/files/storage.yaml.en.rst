@@ -35,20 +35,22 @@ The format of the :file:`storage.yaml` file is a series of lines of the form
 
 .. code-block:: yaml
 
-   cache:           # file level key
-     spans:         #
-       - name:      # name of the span
-         path:      # path to storage
-         size:      # size in bytes, required for file system storage, optional for raw device
-         hash_seed: # optional, used to isolate lookup from path changes
-     volumes:       # optional
-       - id:        # identifier [1-255]
-         size:      # optional, size in bytes or percentage
-         scheme:    # optional, default to "http"
-         ram_cache: # optional, default to "true"
-         spans:     # optional
-           - use:   # Span identifier
-             size:  # size allocated to this volume
+   cache:               # file level key
+     spans:             #
+       - name:          # name of the span
+         path:          # path to storage
+         size:          # size in bytes, required for file system storage, optional for raw device
+         hash_seed:     # optional, used to isolate lookup from path changes
+     volumes:           # optional
+       - id:            # identifier [1-255]
+         size:          # optional, size in bytes or percentage
+         scheme:        # optional, default to "http"
+         ram_cache:     # optional, default to "true"
+         avg_obj_size:  # optional, overrides proxy.config.cache.min_average_object_size
+         fragment_size: # optional, overrides proxy.config.cache.target_fragment_size
+         spans:         # optional
+           - use:       # Span identifier
+             size:      # size allocated to this volume
 
 :code:`spans` lists the raw storage used for the cache. :code:`volumes` organizes the storage into locations for
 storing cached objects. This is very similar to operating system partitions and file systems.
