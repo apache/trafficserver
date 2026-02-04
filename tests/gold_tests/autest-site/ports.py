@@ -145,6 +145,11 @@ def _get_listening_ports() -> Set[int]:
 def _setup_port_queue(amount=1000):
     """
     Build up the set of ports that the OS in theory will not use.
+
+    The AUTEST_PORT_OFFSET environment variable can be used to offset the
+    starting port range. This is useful when running multiple autest processes
+    in parallel to avoid port conflicts. Each parallel worker should use a
+    different offset (e.g., 0, 1000, 2000, etc.).
     """
     global g_ports
     if g_ports is None:
@@ -154,6 +159,12 @@ def _setup_port_queue(amount=1000):
         # The queue has already been populated.
         host.WriteDebug('_setup_port_queue', f"Queue was previously populated. Queue size: {g_ports.qsize()}")
         return
+
+    # Get port offset for parallel execution support
+    port_offset = int(os.environ.get('AUTEST_PORT_OFFSET', 0))
+    if port_offset > 0:
+        host.WriteVerbose('_setup_port_queue', f"Using port offset: {port_offset}")
+
     try:
         # Use sysctl to find the range of ports that the OS publishes it uses.
         # some docker setups don't have sbin setup correctly
@@ -177,7 +188,8 @@ def _setup_port_queue(amount=1000):
     listening_ports = _get_listening_ports()
     if rmax > amount:
         # Fill in ports, starting above the upper OS-usable port range.
-        port = dmax + 1
+        # Add port_offset to support parallel test execution.
+        port = dmax + 1 + port_offset
         while port < 65536 and g_ports.qsize() < amount:
             if PortOpen(port, listening_ports=listening_ports):
                 host.WriteDebug('_setup_port_queue', f"Rejecting an already open port: {port}")
