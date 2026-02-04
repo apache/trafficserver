@@ -622,9 +622,9 @@ static
     labels += "\"";
   };
 
-  constexpr std::string_view methods[]    = {"get",      "post",      "head",          "put",   "delete",           "options",
-                                             "trace",    "connect",   "push",          "purge", "extension_method", "incoming",
-                                             "outgoing", "completed", "invalid_client"};
+  constexpr std::string_view methods[]    = {"get",   "post",    "head", "put",   "delete",          "options",
+                                             "trace", "connect", "push", "purge", "extension_method"};
+  constexpr std::string_view directions[] = {"incoming", "outgoing"};
   constexpr std::string_view results[]    = {"hit", "miss", "error", "errors", "success", "failure"};
   constexpr std::string_view categories[] = {"volume", "thread", "interface", "net", "host", "port"};
 
@@ -660,6 +660,11 @@ static
     if (token.length() == 3 && (token[0] >= '0' && token[0] <= '9') && ((token[1] >= '0' && token[1] <= '9') || token[1] == 'x') &&
         ((token[2] >= '0' && token[2] <= '9') || token[2] == 'x')) {
       add_label("status", token);
+      token_handled = true;
+    }
+    // Direction (incoming / outgoing)
+    else if (contains(directions, sizeof(directions) / sizeof(directions[0]), token)) {
+      add_label("direction", token);
       token_handled = true;
     }
     // Methods

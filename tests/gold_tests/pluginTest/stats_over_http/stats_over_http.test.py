@@ -107,8 +107,13 @@ class StatsOverHttpPluginTest:
         )
 
         p.Streams.stdout += Testers.ContainsExpression(
-            'proxy_process_http_requests{method="completed"}',
-            "Verify that method labels are extracted correctly.",
+            'proxy_process_http_requests{method="delete"}',
+            "Verify that HTTP method labels (GET, POST, DELETE, etc.) are extracted correctly.",
+        )
+
+        p.Streams.stdout += Testers.ContainsExpression(
+            'proxy_process_http_requests{direction="incoming"}',
+            "Verify that direction labels (incoming / outgoing) are extracted correctly.",
         )
 
         p.Streams.stdout += Testers.ContainsExpression(
