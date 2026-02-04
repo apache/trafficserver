@@ -1012,6 +1012,7 @@ public:
   static void build_response_from_cache(State *s, HTTPWarningCode warning_code);
   static void handle_cache_write_lock(State *s);
   static void handle_cache_write_lock_go_to_origin(State *s);
+  static void handle_cache_write_lock_go_to_origin_continue(State *s);
   static void HandleResponse(State *s);
   static void HandleUpdateCachedObject(State *s);
   static void HandleUpdateCachedObjectContinue(State *s);
