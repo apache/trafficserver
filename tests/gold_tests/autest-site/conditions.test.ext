@@ -16,6 +16,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import os
 import subprocess
 import json
 import re
@@ -49,6 +50,28 @@ def IsOpenSSL(self):
         # OpenSSL 1.1.1k  25 Mar 2021
         lambda: "OpenSSL" in openssl_str and "compatible; BoringSSL" not in openssl_str,
         "SSL library is not OpenSSL")
+
+
+def HasLegacyTLSSupport(self):
+    """Check if the system supports legacy TLS protocols (TLSv1.0 and TLSv1.1).
+
+    Modern OpenSSL 3.x installations often disable these protocols entirely.
+    This condition checks if curl can use the --tlsv1 flag, which indicates
+    TLSv1.0 support is available.
+    """
+    def check_tls1_support():
+        try:
+            # Check if openssl supports TLSv1
+            result = subprocess.run(
+                ['openssl', 'ciphers', '-v', '-tls1'],
+                capture_output=True, text=True
+            )
+            # If the command succeeds and returns ciphers, TLSv1 is supported
+            return result.returncode == 0 and len(result.stdout.strip()) > 0
+        except Exception:
+            return False
+
+    return self.Condition(check_tls1_support, "System does not support legacy TLS protocols (TLSv1.0/TLSv1.1)")
 
 
 def HasCurlVersion(self, version):
@@ -118,6 +141,7 @@ ExtendCondition(HasOpenSSLVersion)
 ExtendCondition(HasProxyVerifierVersion)
 ExtendCondition(IsBoringSSL)
 ExtendCondition(IsOpenSSL)
+ExtendCondition(HasLegacyTLSSupport)
 ExtendCondition(HasATSFeature)
 ExtendCondition(HasCurlVersion)
 ExtendCondition(HasCurlFeature)
