@@ -1,0 +1,254 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+# Configuration section for autest integration
+autest:
+  description: "Test cache volume features: per-volume RAM cache and @volume= directive"
+
+  dns:
+    name: "dns"
+
+  server:
+    name: "server"
+
+  client:
+    name: "client"
+
+  ats:
+    name: "ts"
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: "cache|cache_hosting|ram_cache"
+      proxy.config.cache.ram_cache.size: 128M
+      proxy.config.cache.ram_cache_cutoff: 4K
+      proxy.config.http.insert_response_via_str: 0
+      proxy.config.cache.enable_read_while_writer: 0
+
+    volume_config:
+      # Volume 1: Explicit 32MB RAM cache, 8KB cutoff
+      - volume: 1
+        scheme: "http"
+        size: "64M"
+        ram_cache_size: "32M"
+        ram_cache_cutoff: "8K"
+
+      # Volume 2: Explicit 16MB RAM cache, 2KB cutoff
+      - volume: 2
+        scheme: "http"
+        size: "32M"
+        ram_cache_size: "16M"
+        ram_cache_cutoff: "2K"
+
+      # Volume 3: Default RAM cache settings (will use shared pool)
+      - volume: 3
+        scheme: "http"
+        size: "32M"
+
+    remap_config:
+      # Default volume selection (no @volume=)
+      - from: "http://default.example.com/"
+        to: "http://backend.ex:{SERVER_HTTP_PORT}/"
+
+      # Explicit volume 1 selection
+      - from: "http://volume1.example.com/"
+        to: "http://backend.ex:{SERVER_HTTP_PORT}/"
+        options:
+          - "@volume=1"
+
+      # Explicit volume 2 selection
+      - from: "http://volume2.example.com/"
+        to: "http://backend.ex:{SERVER_HTTP_PORT}/"
+        options:
+          - "@volume=2"
+
+      # Invalid volume selection (should fallback)
+      - from: "http://invalid.example.com/"
+        to: "http://backend.ex:{SERVER_HTTP_PORT}/"
+        options:
+          - "@volume=99"
+
+# Proxy verifier test sessions
+sessions:
+  # Test 1: Volume selection via @volume=1
+  - transactions:
+      - client-request:
+          method: "GET"
+          version: "1.1"
+          url: "/test1"
+          headers:
+            fields:
+              - [Host, volume1.example.com]
+              - [X-Test-ID, "volume1-test"]
+              - [uuid, 1]
+
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Content-Type, "text/plain"]
+              - [Cache-Control, "max-age=3600"]
+              - [X-Volume-Test, "1"]
+          content:
+            data: "Content for volume 1"
+
+        proxy-response:
+          status: 200
+          headers:
+            fields:
+              - [X-Volume-Test, { value: "1", as: equal }]
+
+  # Test 2: Volume selection via @volume=2
+  - transactions:
+      - client-request:
+          method: "GET"
+          version: "1.1"
+          url: "/test2"
+          headers:
+            fields:
+              - [Host, volume2.example.com]
+              - [X-Test-ID, "volume2-test"]
+              - [uuid, 2]
+
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Content-Type, "text/plain"]
+              - [Cache-Control, "max-age=3600"]
+              - [X-Volume-Test, "2"]
+          content:
+            data: "Content for volume 2"
+
+        proxy-response:
+          status: 200
+          headers:
+            fields:
+              - [X-Volume-Test, { value: "2", as: equal }]
+
+  # Test 3: Invalid volume selection (should fallback to default)
+  - transactions:
+      - client-request:
+          method: "GET"
+          version: "1.1"
+          url: "/test_invalid"
+          headers:
+            fields:
+              - [Host, invalid.example.com]
+              - [X-Test-ID, "invalid-volume-test"]
+              - [uuid, 3]
+
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Content-Type, "text/plain"]
+              - [Cache-Control, "max-age=3600"]
+              - [X-Volume-Test, "fallback"]
+          content:
+            data: "Content for invalid volume (fallback)"
+
+        proxy-response:
+          status: 200
+          headers:
+            fields:
+              - [X-Volume-Test, { value: "fallback", as: equal }]
+
+  # Test 4: Default volume selection (no @volume=)
+  - transactions:
+      - client-request:
+          method: "GET"
+          version: "1.1"
+          url: "/default"
+          headers:
+            fields:
+              - [Host, default.example.com]
+              - [X-Test-ID, "default-volume-test"]
+              - [uuid, 4]
+
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Content-Type, "text/plain"]
+              - [Cache-Control, "max-age=3600"]
+              - [X-Volume-Test, "default"]
+          content:
+            data: "Content for default volume selection"
+
+        proxy-response:
+          status: 200
+          headers:
+            fields:
+              - [X-Volume-Test, { value: "default", as: equal }]
+
+  # Test 5: Cache hit test (verify caching works)
+  - transactions:
+      - client-request:
+          method: "GET"
+          version: "1.1"
+          url: "/cached_content"
+          headers:
+            fields:
+              - [Host, volume2.example.com]
+              - [X-Test-ID, "cache-hit-setup"]
+              - [uuid, 5]
+
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Content-Type, "text/plain"]
+              - [Cache-Control, "max-age=3600"]
+              - [X-Origin-Response, "yes"]
+          content:
+            data: "This content should be cached"
+
+        proxy-response:
+          status: 200
+          headers:
+            fields:
+              - [X-Origin-Response, { value: "yes", as: equal }]
+
+  # Test 6: Second request for cached content (should be cache hit)
+  - transactions:
+      - client-request:
+          method: "GET"
+          version: "1.1"
+          url: "/cached_content"
+          headers:
+            fields:
+              - [Host, volume2.example.com]
+              - [X-Test-ID, "cache-hit-test"]
+              - [uuid, 6]
+
+        # Server should not be contacted for cache hit
+        server-response:
+          status: 500
+          reason: "Should not reach server"
+
+        proxy-response:
+          status: 200
+          content:
+            data: "This content should be cached"
