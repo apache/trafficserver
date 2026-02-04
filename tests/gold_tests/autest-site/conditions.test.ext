@@ -56,35 +56,31 @@ def HasLegacyTLSSupport(self):
     """Check if the system supports legacy TLS protocols (TLSv1.0 and TLSv1.1).
 
     Modern OpenSSL 3.x installations often disable these protocols entirely,
-    even if the openssl binary still accepts the -tls1 flag. This condition
-    checks if actual TLSv1.0 ciphers are available (not just TLSv1.2/TLSv1.3
-    ciphers returned when using the -tls1 flag).
+    even if the openssl binary still accepts the -tls1 flag and lists TLSv1 ciphers.
 
     On Fedora/RHEL systems, the crypto-policies framework may disable legacy
-    TLS even when OpenSSL is compiled with support for it.
+    TLS at runtime even when OpenSSL is compiled with support for it. This
+    causes 'openssl ciphers -v -tls1' to still list TLSv1 ciphers, but actual
+    TLS 1.0 connections will fail with "no protocols available".
+
+    This check attempts to create an actual TLSv1 connection to detect if
+    the protocol is truly available, not just listed.
     """
     def check_tls1_support():
         try:
-            # Check if openssl has actual TLSv1.0 ciphers available
-            # When TLSv1.0 is disabled by crypto-policy, 'openssl ciphers -v -tls1'
-            # will still return ciphers, but they'll be TLSv1.2/TLSv1.3 ciphers
+            # Try to actually use TLSv1 - this catches crypto-policy restrictions
+            # that aren't visible in cipher listings
             result = subprocess.run(
-                ['openssl', 'ciphers', '-v', '-tls1'],
-                capture_output=True, text=True
+                ['openssl', 's_client', '-tls1', '-connect', 'localhost:1'],
+                capture_output=True, text=True, timeout=5
             )
-            if result.returncode != 0:
+            # If we get "no protocols available", TLSv1 is disabled by policy
+            if 'no protocols available' in result.stderr:
                 return False
-
-            # Check if any cipher is specifically TLSv1 (not TLSv1.2 or TLSv1.3)
-            # TLSv1.0 ciphers show as "SSLv3" or "TLSv1" in the version column
-            for line in result.stdout.strip().split('\n'):
-                parts = line.split()
-                if len(parts) >= 2:
-                    # The second column is the protocol version
-                    version = parts[1]
-                    if version in ('SSLv3', 'TLSv1'):
-                        return True
-            return False
+            # Connection refused is fine - we're just testing if TLSv1 is allowed
+            return True
+        except subprocess.TimeoutExpired:
+            return True  # Timeout means TLSv1 was at least attempted
         except Exception:
             return False
 
