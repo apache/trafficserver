@@ -214,8 +214,11 @@ main([[maybe_unused]] int argc, const char **argv)
     server_command.add_command("debug", "Enable/Disable ATS for diagnostic messages at runtime").require_commands();
   debug_command.add_command("enable", "Enables logging for diagnostic messages at runtime", Command_Execute)
     .add_option("--tags", "-t", "Debug tags", "TS_DEBUG_TAGS", 1)
+    .add_option("--append", "-a", "Append tags to existing tags instead of replacing")
+    .with_required("--tags")
     .add_option("--client_ip", "-c", "Client's ip", "", 1, "")
-    .add_example_usage("traffic_ctl server debug enable -t my_tags -c X.X.X.X");
+    .add_example_usage("traffic_ctl server debug enable -t my_tags -c X.X.X.X")
+    .add_example_usage("traffic_ctl server debug enable -t new_tag -a  # append mode");
   debug_command.add_command("disable", "Disables logging for diagnostic messages at runtime", Command_Execute)
     .add_example_usage("traffic_ctl server debug disable");
 

@@ -142,6 +142,31 @@ std::atomic<int64_t> next_sm_id(0);
 /// Buffer for some error logs.
 thread_local std::string error_bw_buffer;
 
+constexpr size_t ORIGIN_LOG_URL_LEN = 512;
+
+void
+log_server_close_with_origin(HttpTransact::State &state, const char *message)
+{
+  if (message == nullptr) {
+    return;
+  }
+
+  if (state.hdr_info.server_request.valid()) {
+    char origin_url[ORIGIN_LOG_URL_LEN] = {0};
+    int  offset                         = 0;
+    int  skip                           = 0;
+
+    state.hdr_info.server_request.url_print(origin_url, static_cast<int>(ORIGIN_LOG_URL_LEN) - 1, &offset, &skip);
+    if (offset > 0) {
+      origin_url[offset] = '\0';
+      Log::error("%s (origin %s)", message, origin_url);
+      return;
+    }
+  }
+
+  Log::error("%s", message);
+}
+
 } // namespace
 
 int64_t
@@ -255,9 +280,17 @@ HttpSM::~HttpSM()
 {
   http_parser_clear(&http_parser);
 
+  // coverity[exn_spec_violation] - release() only does ref counting and delete on POD types
   HttpConfig::release(t_state.http_config_param);
-  m_remap->release();
 
+  // m_remap->release() can allocate (new_Deleter), so catch potential bad_alloc
+  try {
+    m_remap->release();
+  } catch (...) {
+    Error("Exception in ~HttpSM during m_remap->release");
+  }
+
+  // coverity[exn_spec_violation] - cancel_pending_action() only sets boolean flags
   cache_sm.cancel_pending_action();
 
   mutex.clear();
@@ -268,6 +301,7 @@ HttpSM::~HttpSM()
   debug_on = false;
 
   if (_prewarm_sm) {
+    // coverity[exn_spec_violation] - destroy() only frees memory and resets shared_ptrs
     _prewarm_sm->destroy();
     THREAD_FREE(_prewarm_sm, preWarmSMAllocator, this_ethread());
     _prewarm_sm = nullptr;
@@ -423,8 +457,14 @@ HttpSM::attach_client_session(ProxyTransaction *txn)
 
   ats_ip_copy(&t_state.client_info.src_addr, netvc->get_remote_addr());
   ats_ip_copy(&t_state.client_info.dst_addr, netvc->get_local_addr());
+  ats_ip_copy(&t_state.effective_client_addr, netvc->get_effective_remote_addr());
   t_state.client_info.is_transparent = netvc->get_is_transparent();
   t_state.client_info.port_attribute = static_cast<HttpProxyPort::TransportType>(netvc->attributes);
+
+  Metrics::Counter::increment(http_rsb.incoming_requests);
+  if (t_state.client_info.port_attribute == HttpProxyPort::TRANSPORT_SSL) {
+    Metrics::Counter::increment(http_rsb.https_incoming_requests);
+  }
 
   // Record api hook set state
   hooks_set = txn->has_hooks();
@@ -1945,6 +1985,7 @@ HttpSM::state_read_server_response_header(int event, void *data)
 
   switch (event) {
   case VC_EVENT_EOS:
+    log_server_close_with_origin(t_state, "Server closed connection while reading response header.");
     server_entry->eos = true;
     // If we have received any bytes for this transaction do not retry
     if (server_response_hdr_bytes > 0) {

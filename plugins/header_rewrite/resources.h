@@ -22,7 +22,11 @@
 #pragma once
 
 #include <string>
+#include <unordered_map>
 
+#include "swoc/TextView.h"
+
+#include "regex_helper.h"
 #include "ts/ts.h"
 #include "ts/remap.h"
 
@@ -79,6 +83,32 @@ public:
     return _ready;
   }
 
+  int
+  match(const regexHelper &re, const std::string &s) const
+  {
+    // For last capture to work safely, this has to make a copy of the subject string
+    // so the matches results will point into that and avoid any lifetime issues with
+    // the passed in `s`
+    _extended_info.subject_storage = s;
+    return re.regexMatch(_extended_info.subject_storage, _extended_info.matches);
+  }
+
+  const RegexMatches &
+  matches() const
+  {
+    return _extended_info.matches;
+  }
+
+  // Get a query parameter value by name, with caching
+  swoc::TextView get_query_param(const std::string &name, const char *query_str, int query_len) const;
+
+  void
+  reset_query_cache() const
+  {
+    _extended_info.query_params.clear();
+    _extended_info.query_parsed = false;
+  }
+
   TSCont              contp          = nullptr;
   TSRemapRequestInfo *_rri           = nullptr;
   TSMBuffer           bufp           = nullptr;
@@ -95,8 +125,15 @@ public:
   TransactionState state; // Without cripts, txnp / ssnp goes here
 #endif
   TSHttpStatus resp_status = TS_HTTP_STATUS_NONE;
-  RegexMatches matches;
-  bool         changed_url = false;
+
+  struct LifetimeExtension {
+    std::string                                        subject_storage;
+    RegexMatches                                       matches;
+    std::unordered_map<swoc::TextView, swoc::TextView> query_params;
+    bool                                               query_parsed = false;
+  };
+  bool                      changed_url = false;
+  mutable LifetimeExtension _extended_info;
 
 private:
   void

@@ -713,6 +713,9 @@ public:
     ConnectionAttributes        client_info;
     ConnectionAttributes        parent_info;
     ConnectionAttributes        server_info;
+    // This is a copy of the effective client IP address (see pp-clnt) to
+    // ensure this is available for logging
+    IpEndpoint effective_client_addr;
 
     Source_t            source               = Source_t::NONE;
     Source_t            pre_transform_source = Source_t::NONE;
@@ -852,6 +855,7 @@ public:
       //      memset((void *)&host_db_info, 0, sizeof(host_db_info));
     }
 
+    // coverity[exn_spec_violation] - destroy() only frees memory and does ref counting
     ~State() { destroy(); }
 
     void

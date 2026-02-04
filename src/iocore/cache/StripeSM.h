@@ -60,6 +60,56 @@ struct StripeInitInfo;
 class CacheEvacuateDocVC;
 class RamCache;
 
+/**
+  @class StripeSM
+
+  @startuml
+  hide empty description
+
+  [*] --> aggWrite : Constructor
+
+  note right of aggWrite
+    Can be called:
+    1. As handler (event system)
+    2. Directly from CacheVC::handleWrite
+    3. Directly from CacheSync::mainEvent
+    4. Directly from aggWriteDone
+  end note
+
+  aggWrite --> aggWriteDone
+
+  note bottom of aggWriteDone
+    calls aggWrite() directly
+    without changing state
+  end note
+
+  aggWrite --> evacuateDocReadDone : evac_range()
+
+  note bottom of evacuateDocReadDone
+    calls aggWrite() directly
+    without changing state
+  end note
+
+  aggWrite --> handle_header_read  : init(false)
+  aggWrite --> handle_dir_clear : init(true)
+
+  handle_header_read --> handle_dir_read
+  handle_header_read --> handle_dir_clear : clear_dir_aio()
+
+  handle_dir_read --> handle_recover_from_data : recover_data()
+  handle_dir_read --> handle_dir_clear : clear_dir_aio()
+
+  handle_recover_from_data --> handle_recover_write_dir
+  handle_recover_from_data --> handle_dir_clear : clear_dir_aio()
+
+  handle_recover_write_dir --> dir_init_done
+
+  handle_dir_clear --> dir_init_done
+
+  dir_init_done--> aggWrite
+
+  @enduml
+ */
 class StripeSM : public Continuation, public Stripe
 {
 public:
@@ -85,13 +135,14 @@ public:
 
   StripeInitInfo *init_info = nullptr;
 
-  Cache   *cache                = nullptr;
-  uint32_t last_sync_serial     = 0;
-  uint32_t last_write_serial    = 0;
-  bool     recover_wrapped      = false;
-  bool     dir_sync_waiting     = false;
-  bool     dir_sync_in_progress = false;
-  bool     writing_end_marker   = false;
+  Cache     *cache                = nullptr;
+  uint32_t   last_sync_serial     = 0;
+  uint32_t   last_write_serial    = 0;
+  bool       recover_wrapped      = false;
+  bool       dir_sync_waiting     = false;
+  bool       dir_sync_in_progress = false;
+  CacheSync *waiting_dir_sync     = nullptr;
+  bool       writing_end_marker   = false;
 
   CacheKey          first_fragment_key;
   int64_t           first_fragment_offset = 0;

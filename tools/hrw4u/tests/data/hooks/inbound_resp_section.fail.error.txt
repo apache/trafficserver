@@ -1,0 +1,3 @@
+tests/data/hooks/inbound_resp_section.fail.input.txt:2:4: error: inbound.resp.X-Test is not available in the REMAP section
+   2 |     inbound.resp.X-Test = "should fail";
+     |     ^

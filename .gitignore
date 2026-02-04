@@ -210,4 +210,12 @@ tests/gold_tests/tls/ssl-post
 src/iocore/cache/test_*
 src/iocore/cache/unit_tests/var/trafficserver/cache.db
 
-.claude/settings.local.json
+# LLM / AI
+.cursor/
+.claude/
+!.claude/CLAUDE.md
+
+# Extensions
+ext/
+!ext/CMakeLists.txt
+!ext/README.md

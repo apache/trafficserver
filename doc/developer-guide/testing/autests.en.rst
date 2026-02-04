@@ -65,7 +65,6 @@ If |TS| cmake build is configured via ``-DENABLE_AUTEST=ON``, tests can be run w
    cmake --build build
    cmake --install build
    cd build/tests
-   pipenv install
    ./autest.sh --sandbox /tmp/sbcursor --clean=none -f <test_name_without_test_py_extension>
 
 For example, to run ``cache-auth.test.py``:

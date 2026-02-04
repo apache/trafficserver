@@ -695,11 +695,30 @@ ServerCommand::server_debug()
 {
   // Set ATS to enable or disable debug at runtime.
   const bool enable = get_parsed_arguments()->get(ENABLE_STR);
+  const bool append = get_parsed_arguments()->get(APPEND_STR);
 
   // If the following is not passed as options then the request will ignore them as default values
   // will be set.
-  const std::string tags      = get_parsed_arguments()->get(TAGS_STR).value();
+  std::string       tags      = get_parsed_arguments()->get(TAGS_STR).value();
   const std::string client_ip = get_parsed_arguments()->get(CLIENT_IP_STR).value();
+
+  // If append mode is enabled and tags are provided, fetch current tags and combine
+  if (append && !tags.empty()) {
+    shared::rpc::RecordLookupRequest lookup_request;
+    lookup_request.emplace_rec("proxy.config.diags.debug.tags", shared::rpc::NOT_REGEX, shared::rpc::CONFIG_REC_TYPES);
+    auto lookup_response = invoke_rpc(lookup_request);
+
+    if (!lookup_response.is_error()) {
+      auto const &records = lookup_response.result.as<shared::rpc::RecordLookUpResponse>();
+      if (!records.recordList.empty()) {
+        std::string current_tags = records.recordList[0].currentValue;
+        if (!current_tags.empty()) {
+          // Combine: current|new
+          tags = current_tags + "|" + tags;
+        }
+      }
+    }
+  }
 
   const SetDebugServerRequest         request{enable, tags, client_ip};
   shared::rpc::JSONRPCResponse const &response = invoke_rpc(request);

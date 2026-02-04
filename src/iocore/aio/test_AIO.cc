@@ -456,6 +456,7 @@ public:
 
 #endif
 
+// coverity[exn_spec_violation] - called functions may throw but this is a test program
 int
 main(int argc, char *argv[])
 {

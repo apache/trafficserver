@@ -2694,6 +2694,22 @@ Cache Control
    :units: millisecond
 
    How long to wait between each write cycle when syncing the cache directory to disk.
+.. ts:cv:: CONFIG proxy.config.cache.dir.sync_parallel_tasks INT 1
+
+   Number of parallel tasks to use for directory syncing. Each task syncs
+   directories for a different physical drive on ET_TASK threads.
+
+   ======= ==================================================================
+   Value   Description
+   ======= ==================================================================
+   ``-1``  Unlimited - one task per drive (maximum parallelism)
+   ``1``   Sequential - one task for all drives (default, safe)
+   ``N``   Parallel - up to N tasks (drives) sync concurrently
+   ======= ==================================================================
+
+   Default is ``1`` (sequential). Set to ``-1`` for maximum parallelism on
+   high-end NVMe arrays, or to ``4-8`` for balanced performance on multi-drive
+   systems.
 
 .. ts:cv:: CONFIG proxy.config.cache.limits.http.max_alts INT 5
 

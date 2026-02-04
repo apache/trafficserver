@@ -80,7 +80,7 @@ public:
    * @param src Input string.
    * @return The computed value if the input is valid, or an error report.
    */
-  Rv<value_type> operator()(swoc::TextView const &src) const noexcept;
+  Rv<value_type> operator()(swoc::TextView const &src) const;
 
 protected:
   bool  _unit_required_p = true; ///< Whether unitless values are allowed.

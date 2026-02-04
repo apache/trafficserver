@@ -1,0 +1,3 @@
+REMAP {
+    inbound.req.X-Test = "resp={outbound.resp.X-Origin}";
+}

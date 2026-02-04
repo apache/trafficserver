@@ -170,6 +170,7 @@ Stripe::_init_directory(std::size_t directory_size, int header_size, int footer_
   this->directory.footer = reinterpret_cast<StripeHeaderFooter *>(this->directory.raw_dir + footer_offset);
 }
 
+// coverity[exn_spec_violation] - ink_assert aborts (doesn't throw), Dbg is exception-safe
 Stripe::~Stripe()
 {
   if (this->directory.raw_dir != nullptr) {

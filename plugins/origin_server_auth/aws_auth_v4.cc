@@ -67,6 +67,35 @@ base16Encode(const char *in, size_t inLen)
 }
 
 /**
+ * @brief URI-decode a character string
+ *
+ * Decodes percent-encoded characters (e.g., %20 -> space, %2F -> /)
+ *
+ * @param in string to be URI decoded
+ * @return decoded string
+ */
+String
+uriDecode(const String &in)
+{
+  String result;
+  result.reserve(in.length()); /* Decoded string will be same size or smaller */
+
+  for (size_t i = 0; i < in.length(); i++) {
+    if (in[i] == '%' && i + 2 < in.length() && std::isxdigit(static_cast<unsigned char>(in[i + 1])) &&
+        std::isxdigit(static_cast<unsigned char>(in[i + 2]))) {
+      /* Decode %XX to character */
+      char hex[3]  = {in[i + 1], in[i + 2], '\0'};
+      result      += static_cast<char>(std::strtol(hex, nullptr, 16));
+      i           += 2; /* Skip past the hex digits */
+    } else {
+      result += in[i];
+    }
+  }
+
+  return result;
+}
+
+/**
  * @brief URI-encode a character string (AWS specific version, see spec)
  *
  * @see AWS spec: http://docs.aws.amazon.com/AmazonS3/latest/API/sig-v4-header-based-auth.html
@@ -108,67 +137,95 @@ uriEncode(const String &in, bool isObjectName)
 }
 
 /**
- * @brief checks if the string is URI-encoded (AWS specific encoding version, see spec)
+ * @brief Check if a string is already in AWS SigV4 canonical form.
+ *
+ * A string is canonical if it either:
+ *   1. Contains only unreserved characters (A-Z, a-z, 0-9, '-', '.', '_', '~')
+ *      and optionally '/' for object names - no encoding needed
+ *   2. Is properly percent-encoded with UPPERCASE hex digits
  *
  * @see AWS spec: http://docs.aws.amazon.com/AmazonS3/latest/API/sig-v4-header-based-auth.html
+ * @see https://docs.aws.amazon.com/IAM/latest/UserGuide/create-signed-request.html
  *
- * @note According to the following RFC if the string is encoded and contains '%' it should
- *       be followed by 2 hexadecimal symbols otherwise '%' should be encoded with %25:
- *          https://tools.ietf.org/html/rfc3986#section-2.1
- *
- * @param in string to be URI checked
- * @param isObjectName if true encoding didn't encode '/', kept it as it is.
- * @return true if encoded, false not encoded.
+ * @param in string to check
+ * @param isObjectName if true, '/' is allowed unencoded (object name context).
+ * @return true if already canonical (no processing needed), false if normalization required.
  */
 bool
-isUriEncoded(const String &in, bool isObjectName)
+isCanonical(const String &in, bool isObjectName)
 {
   for (size_t pos = 0; pos < in.length(); pos++) {
-    char c = in[pos];
+    unsigned char c = static_cast<unsigned char>(in[pos]);
 
-    if (isalnum(c) || c == '-' || c == '_' || c == '.' || c == '~') {
-      /* found a unreserved character which should not have been be encoded regardless
-       * 'A'-'Z', 'a'-'z', '0'-'9', '-', '.', '_', and '~'.  */
+    if (std::isalnum(c) || c == '-' || c == '_' || c == '.' || c == '~') {
+      /* Unreserved characters don't need encoding:
+       * 'A'-'Z', 'a'-'z', '0'-'9', '-', '.', '_', and '~' */
       continue;
     }
 
-    if (' ' == c) {
-      /* space should have been encoded with %20 if the string was encoded */
-      return false;
-    }
-
-    if ('/' == c && !isObjectName) {
-      /* if this is not an object name '/' should have been encoded */
-      return false;
+    if ('/' == c && isObjectName) {
+      /* '/' is allowed unencoded in object names */
+      continue;
     }
 
     if ('%' == c) {
-      if (pos + 2 < in.length() && std::isxdigit(in[pos + 1]) && std::isxdigit(in[pos + 2])) {
-        /* if string was encoded we should have exactly 2 hexadecimal chars following it */
-        return true;
-      } else {
-        /* lonely '%' should have been encoded with %25 according to the RFC so likely not encoded */
-        return false;
+      if (pos + 2 < in.length()) {
+        unsigned char c1 = static_cast<unsigned char>(in[pos + 1]);
+        unsigned char c2 = static_cast<unsigned char>(in[pos + 2]);
+        if (std::isxdigit(c1) && std::isxdigit(c2)) {
+          /* Valid percent-encoded sequence found. AWS SigV4 requires UPPERCASE hex digits.
+           * If lowercase hex is found, return false to trigger normalization.
+           * See: https://docs.aws.amazon.com/IAM/latest/UserGuide/create-signed-request.html
+           * "Letters in the hexadecimal value must be uppercase, for example "%1A"." */
+          if (std::islower(c1) || std::islower(c2)) {
+            return false; /* Lowercase hex needs normalization to uppercase */
+          }
+          pos += 2; /* Skip past the hex digits */
+          continue;
+        }
       }
+      /* Lone '%' or incomplete sequence - needs encoding as %25 */
+      return false;
     }
+
+    /* Any other character needs encoding (space, '(', ')', '[', ']', etc.) */
+    return false;
   }
 
-  return false;
+  /* String is already in canonical form:
+   *   - Only contains unreserved chars, slashes (for object names), or
+   *   - Properly percent-encoded sequences with uppercase hex
+   * No decode/re-encode needed. */
+  return true;
 }
 
 String
 canonicalEncode(const String &in, bool isObjectName)
 {
-  String canonical;
-  if (!isUriEncoded(in, isObjectName)) {
-    /* Not URI-encoded */
-    canonical = uriEncode(in, isObjectName);
-  } else {
-    /* URI-encoded, then don't encode since AWS does not encode which is not mentioned in the spec,
-     * asked AWS, still waiting for confirmation */
-    canonical = in;
+  if (isCanonical(in, isObjectName)) {
+    /* Fully URI-encoded with uppercase hex, return as-is */
+    return in;
   }
 
+  /* Input needs normalization. This handles:
+   *   1. Unencoded strings - encode all reserved characters
+   *   2. Partially encoded - some chars encoded, some not (e.g., parentheses vs brackets)
+   *   3. Lowercase hex - convert %2f to %2F per AWS SigV4 requirement
+   *
+   * Decode first to get the raw string, then re-encode with AWS canonical rules.
+   *
+   * Example (mixed encoding):
+   *   Input:  /app/(channel)/%5B%5Bparts%5D%5D/page.js  (parentheses not encoded)
+   *   Decode: /app/(channel)/[[parts]]/page.js
+   *   Encode: /app/%28channel%29/%5B%5Bparts%5D%5D/page.js
+   *
+   * Example (lowercase hex):
+   *   Input:  /path/%5btest%5d/file.js  (lowercase hex)
+   *   Decode: /path/[test]/file.js
+   *   Encode: /path/%5Btest%5D/file.js  (uppercase hex)
+   */
+  String decoded   = uriDecode(in);
+  String canonical = uriEncode(decoded, isObjectName);
   return canonical;
 }
 

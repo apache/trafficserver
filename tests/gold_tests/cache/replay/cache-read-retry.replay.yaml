@@ -1,0 +1,234 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+#
+# This replay file tests cache_open_write_fail_action = 5 (READ_RETRY)
+# with concurrent requests and slow origin responses.
+#
+# Scenario:
+# - Multiple concurrent requests arrive for the same uncached URL
+# - Request 1 gets write lock, connects to origin (slow, 3 second response)
+# - Request 2-3 try to read, retry reads, eventually get read-while-writer access
+# - All requests should succeed with 200 responses from read-while-writer
+# - Only ONE origin connection should be made (request collapsing works)
+# - System should NOT crash (validates stability with fail_action=5 enabled)
+#
+# Expected Behavior:
+# 1. Request collapsing works correctly (all requests get first-origin response)
+# 2. Read-while-writer functions properly
+# 3. No crashes occur
+# 4. Content is cached properly
+#
+
+meta:
+  version: "1.0"
+
+autest:
+  description: 'Test cache_open_write_fail_action = 5 (READ_RETRY) with slow origin and concurrent requests to verify request collapsing and stability'
+  dns:
+    name: 'dns-read-retry-exhausted'
+
+  server:
+    name: 'origin-read-retry-exhausted'
+
+  client:
+    name: 'client-read-retry-exhausted'
+
+  ats:
+    name: 'ts-read-retry-exhausted'
+    process_config:
+      enable_cache: true
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http|cache|http_cache|http_trans'
+      # Enable READ_RETRY mode
+      proxy.config.http.cache.open_write_fail_action: 5
+      # Configure retry parameters to exhaust quickly
+      proxy.config.http.cache.max_open_write_retries: 1
+      proxy.config.http.cache.max_open_write_retry_timeout: 0
+      # Only 5 read retries @ 100ms = 500ms total (not enough for 3s origin)
+      proxy.config.http.cache.max_open_read_retries: 5
+      proxy.config.http.cache.open_read_retry_time: 100
+      proxy.config.cache.enable_read_while_writer: 1
+
+    remap_config:
+      - from: "http://example.com/"
+        to: "http://backend.example.com:{SERVER_HTTP_PORT}/"
+
+    log_validation:
+      traffic_out:
+        # Should NOT contain crash indicators
+        excludes:
+          - expression: "FATAL|ALERT|Emergency|ink_release_assert|ink_abort"
+            description: "Verify ATS does not crash with READ_RETRY mode enabled"
+        # Should contain cache read retries (shows the system is working)
+        contains:
+          - expression: "retrying cache open read|read while write"
+            description: "Verify cache retry mechanism is active"
+
+sessions:
+  #############################################################################
+  # First session: Request that gets the write lock (VERY slow origin)
+  #############################################################################
+  - transactions:
+      - client-request:
+          method: "GET"
+          version: "1.1"
+          url: /slowfile
+          headers:
+            fields:
+              - [uuid, first-request-slow-origin]
+              - [Host, example.com]
+              - [X-Request, first-slow]
+
+        proxy-request:
+          headers:
+            fields:
+              - [X-Request, {value: 'first-slow', as: equal}]
+
+        server-response:
+          # Slow response (3 seconds) to allow second request to retry reads
+          # Must be less than client timeout (5s) but long enough to trigger retries
+          delay: 3s
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Content-Length, 200]
+              - [Cache-Control, "max-age=300"]
+              - [X-Response, first-origin]
+              - [X-Origin-Request, first]
+
+        proxy-response:
+          status: 200
+          headers:
+            fields:
+              - [X-Response, {value: 'first-origin', as: equal}]
+
+  #############################################################################
+  # Second session: Concurrent request that exhausts READ_RETRY attempts
+  # This runs in parallel and triggers the bug path
+  #############################################################################
+  - transactions:
+      - client-request:
+          # Small delay to ensure first request gets write lock first
+          delay: 100ms
+          method: "GET"
+          version: "1.1"
+          url: /slowfile
+          headers:
+            fields:
+              - [uuid, second-request-exhausted]
+              - [Host, example.com]
+              - [X-Request, second-exhausted]
+
+        proxy-request:
+          headers:
+            fields:
+              - [X-Request, {value: 'second-exhausted', as: equal}]
+
+        # This request should NOT reach the server if read-while-writer works
+        # It should be served from Request 1's response
+        server-response:
+          status: 400
+          reason: OK
+          headers:
+            fields:
+              - [Content-Length, 200]
+              - [Cache-Control, "max-age=300"]
+              - [X-Response, second-origin]
+              - [X-Origin-Request, second]
+
+        # Proxy should respond with 200 from read-while-writer (first request's response)
+        proxy-response:
+          status: 200
+          headers:
+            fields:
+              # Should get first-origin via read-while-writer (request collapsing works)
+              - [X-Response, {value: 'first-origin', as: equal}]
+
+  #############################################################################
+  # Third session: Another concurrent request to stress test the system
+  #############################################################################
+  - transactions:
+      - client-request:
+          # Arrives after second request starts but before first completes
+          delay: 300ms
+          method: "GET"
+          version: "1.1"
+          url: /slowfile
+          headers:
+            fields:
+              - [uuid, third-request-concurrent]
+              - [Host, example.com]
+              - [X-Request, third-concurrent]
+
+        proxy-request:
+          headers:
+            fields:
+              - [X-Request, {value: 'third-concurrent', as: equal}]
+
+        # This request will also be served via read-while-writer
+        server-response:
+          status: 400
+          reason: OK
+          headers:
+            fields:
+              - [Content-Length, 200]
+              - [Cache-Control, "max-age=300"]
+              - [X-Response, third-origin]
+              - [X-Origin-Request, third]
+
+        # Should get a response from read-while-writer
+        proxy-response:
+          status: 200
+          headers:
+            fields:
+              # Should get first-origin via read-while-writer
+              - [X-Response, {value: 'first-origin', as: equal}]
+
+  #############################################################################
+  # Fourth session: Verify cache state after all the chaos
+  #############################################################################
+  - transactions:
+      - client-request:
+          # Wait for all previous transactions to complete (3s origin + buffer)
+          delay: 5s
+          method: "GET"
+          version: "1.1"
+          url: /slowfile
+          headers:
+            fields:
+              - [uuid, fourth-request-verify]
+              - [Host, example.com]
+              - [X-Request, fourth-verify]
+
+        # Server should NOT receive this request (should be cache hit)
+        server-response:
+          status: 400
+          reason: OK
+          headers:
+            fields:
+              - [Content-Length, 200]
+              - [X-Response, should-not-reach-origin]
+
+        # Proxy should respond from cache with the first-origin response
+        proxy-response:
+          status: 200
+          headers:
+            fields:
+              - [X-Response, {value: 'first-origin', as: equal}]

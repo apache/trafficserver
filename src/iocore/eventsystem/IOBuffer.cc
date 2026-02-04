@@ -1046,25 +1046,26 @@ auto
 make_buffer_size_parser()
 {
   using L = swoc::Lexicon<int>;
-  return [l = L{
-            L::with_multi{{0, {"128"}},
-                          {1, {"256"}},
-                          {2, {"512"}},
-                          {3, {"1k", "1024"}},
-                          {4, {"2k", "2048"}},
-                          {5, {"4k", "4096"}},
-                          {6, {"8k", "8192"}},
-                          {7, {"16k"}},
-                          {8, {"32k"}},
-                          {9, {"64k"}},
-                          {10, {"128k"}},
-                          {11, {"256k"}},
-                          {12, {"512k"}},
-                          {13, {"1M", "1024k"}},
-                          {14, {"2M", "2048k"}}},
-            -1
-  }](swoc::TextView esize) -> std::optional<int> {
-    int result = l[esize];
+  static const L lexicon{
+    L::with_multi{{0, {"128"}},
+                  {1, {"256"}},
+                  {2, {"512"}},
+                  {3, {"1k", "1024"}},
+                  {4, {"2k", "2048"}},
+                  {5, {"4k", "4096"}},
+                  {6, {"8k", "8192"}},
+                  {7, {"16k"}},
+                  {8, {"32k"}},
+                  {9, {"64k"}},
+                  {10, {"128k"}},
+                  {11, {"256k"}},
+                  {12, {"512k"}},
+                  {13, {"1M", "1024k"}},
+                  {14, {"2M", "2048k"}}},
+    -1
+  };
+  return [](swoc::TextView esize) -> std::optional<int> {
+    int result = lexicon[esize];
     if (result == -1) {
       return std::nullopt;
     }

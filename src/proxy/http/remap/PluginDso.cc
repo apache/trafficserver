@@ -329,10 +329,18 @@ PluginDso::LoadedPlugins::add(PluginDso *plugin)
 void
 PluginDso::LoadedPlugins::remove(PluginDso *plugin)
 {
-  SCOPED_MUTEX_LOCK(lock, _mutex, this_ethread());
+  EThread *ethread = this_ethread();
+  if (ethread == nullptr) {
+    // During static destruction, EThreads are gone. Just delete directly.
+    _list.erase(plugin);
+    delete plugin;
+    return;
+  }
+
+  SCOPED_MUTEX_LOCK(lock, _mutex, ethread);
 
   _list.erase(plugin);
-  this_ethread()->schedule_imm(new DeleterContinuation<PluginDso>(plugin));
+  ethread->schedule_imm(new DeleterContinuation<PluginDso>(plugin));
 }
 
 /* check if need to reload the plugin DSO

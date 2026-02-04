@@ -53,6 +53,22 @@ autest:
       - from: "http://example.com/"
         to: "http://backend.example.com:{SERVER_HTTP_PORT}/"
 
+    logging_yaml:
+      logging:
+        formats:
+          - name: access
+            format: '%<{uuid}cqh> %<crc> %<pssc> %<sssc>'
+
+        logs:
+          - filename: access
+            format: access
+            mode: ascii
+
+    log_validation:
+      access_log:
+        filename: access.log
+        gold_file: gold/negative-revalidating-enabled-access.gold
+
 sessions:
 - transactions:
 
@@ -77,6 +93,7 @@ sessions:
         fields:
         - [ Content-Length, 32 ]
         - [ Cache-Control, max-age=2 ]
+        - [ ETag, C0FFEE ]
 
     proxy-response:
       status: 200
@@ -130,6 +147,30 @@ sessions:
     proxy-response:
       status: 200
 
+  # Verify we serve the 304 Not Modified out of the cache with INM request
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /path/reques_item
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, 42 ]
+        - [ If-None-Match, C0FFEE ]
+
+    # This should not reach the origin server.
+    server-response:
+      status: 503
+      reason: "Service Unavailable"
+      headers:
+        fields:
+        - [ Content-Length, 32 ]
+
+    # Again, we should serve this out of the cache.
+    proxy-response:
+      status: 304
+
   # Verify zero-length is also served from cache when fresh.
   - client-request:
       method: "GET"
@@ -179,6 +220,30 @@ sessions:
     # even though it is stale.
     proxy-response:
       status: 200
+
+  # Verify that we serve the 304 Not Modified out of the cache with INM request
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /path/reques_item
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, 43 ]
+        - [ If-None-Match, C0FFEE ]
+
+    # This should not reach the origin server.
+    server-response:
+      status: 503
+      reason: "Service Unavailable"
+      headers:
+        fields:
+        - [ Content-Length, 32 ]
+
+    # Again, we should serve this out of the cache.
+    proxy-response:
+      status: 304
 
   # Test zero-length while stale - first request (regression test for issue #6649).
   - client-request:

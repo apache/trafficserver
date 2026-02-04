@@ -22,62 +22,19 @@
 # a new cmakelang version is desired.
 # See:
 # https://github.com/cheshirekow/cmake_format/tags
-CMAKE_FORMAT_VERSION="v0.6.13"
+CMAKE_FORMAT_VERSION="0.6.13"
 VERSION="0.6.13"
 
 function main() {
-  # check for python3
-  python3 - << _END_
-import sys
-
-if sys.version_info.major < 3 or sys.version_info.minor < 8:
-    exit(1)
-_END_
-
-  if [ $? = 1 ]; then
-      echo "Python 3.8 or newer is not installed/enabled."
-      exit 1
-  fi
-
   set -e # exit on error
 
-  if command -v pip3 &> /dev/null; then
-    PIP_CMD="pip3"
-  elif command -v pip &> /dev/null; then
-    PIP_CMD="pip"
-  else
-    echo "pip is not installed."
+  # Check for uv.
+  if ! command -v uv &> /dev/null; then
+    echo "uv is not installed. Please install it: https://docs.astral.sh/uv/getting-started/installation/"
     exit 1
   fi
 
-  if ! type virtualenv >/dev/null 2>/dev/null
-  then
-    ${PIP_CMD} install -q virtualenv
-  fi
-
-  if python3 -m venv --help &> /dev/null; then
-    VENV_LIB="venv"
-  elif python3 -m virtualenv --help &> /dev/null; then
-    VENV_LIB="virtualenv"
-  else
-    echo "Neither venv nor virtualenv is available."
-    exit 1
-  fi
-
-
-  REPO_ROOT=$(cd $(dirname $0) && git rev-parse --show-toplevel)
-  GIT_DIR=$(git rev-parse --absolute-git-dir)
-  CMAKE_FORMAT_VENV=${CMAKE_FORMAT_VENV:-${GIT_DIR}/fmt/cmake_format_${CMAKE_FORMAT_VERSION}_venv}
-  if [ ! -e ${CMAKE_FORMAT_VENV} ]
-  then
-    python3 -m ${VENV_LIB} ${CMAKE_FORMAT_VENV}
-  fi
-  source ${CMAKE_FORMAT_VENV}/bin/activate
-
-  ${PIP_CMD} install -q --upgrade pip
-  ${PIP_CMD} install -q "cmakelang==${CMAKE_FORMAT_VERSION}" pyaml
-
-  ver=$(cmake-format --version 2>&1)
+  ver=$(uv tool run --quiet --from cmakelang@${CMAKE_FORMAT_VERSION} --with pyaml cmake-format --version 2>&1)
   if [ "$ver" != "$VERSION" ]
   then
       echo "Wrong version of cmake-format!"
@@ -109,16 +66,13 @@ _END_
   # after this we assume was modified by cmake-format.
   start_time_file=${tmp_dir}/format_start.$$
   touch ${start_time_file}
-  cmake-format  -i $(cat ${files_filtered})
+  uv tool run --quiet --from cmakelang@${CMAKE_FORMAT_VERSION} --with pyaml cmake-format -i $(cat ${files_filtered})
   find $(cat ${files_filtered}) -newer ${start_time_file}
 
   rm -rf ${tmp_dir}
-  deactivate
 }
 
 if [[ "$(basename -- "$0")" == 'cmake-format.sh' ]]; then
   main "$@"
-else
-  GIT_DIR=$(git rev-parse --absolute-git-dir)
-  CMAKE_FORMAT_VENV=${CMAKE_FORMAT_VENV:-${GIT_DIR}/fmt/cmake_format_${CMAKE_FORMAT_VERSION}_venv}
 fi
+# When sourced, CMAKE_FORMAT_VERSION is already set at the top of this file.

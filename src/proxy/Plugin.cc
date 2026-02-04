@@ -254,7 +254,7 @@ plugin_expand(char *arg)
   }
   case RECD_COUNTER: {
     auto count_val{RecGetRecordCounter(arg)};
-    if (count_val) {
+    if (!count_val) {
       goto not_found;
     }
     str = static_cast<char *>(ats_malloc(128));

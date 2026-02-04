@@ -26,7 +26,7 @@ unset CXXFLAGS
 unset RUSTFLAGS
 export AFL_NOOPT=1
 
-apt-get install -y libev-dev libjemalloc-dev python2-dev libxml2-dev libpython2-dev libc-ares-dev libsystemd-dev libevent-dev libjansson-dev zlib1g-dev sudo autoconf libtool pkg-config
+apt-get install -y libev-dev libjemalloc-dev python3-dev libxml2-dev libpython3-dev libpsl-dev libc-ares-dev libsystemd-dev libevent-dev libjansson-dev zlib1g-dev sudo autoconf libtool pkg-config
 curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain=nightly
 export PATH="/root/.cargo/bin:${PATH}"
 
@@ -63,6 +63,11 @@ cp /opt/h3-tools-boringssl/boringssl/lib/libssl.so $OUT/lib/
 cp /opt/h3-tools-boringssl/boringssl/lib/libcrypto.so $OUT/lib/
 cp /opt/h3-tools-boringssl/quiche/lib/libquiche.so $OUT/lib/
 cp /opt/h3-tools-boringssl/quiche/lib/libquiche.so $OUT/lib/libquiche.so.0
+
+cd $OUT/lib
+ln -sf libswoc.so.1.5.15 libswoc.so.1
+ln -sf libswoc.so.1.5.15 libswoc.so
+
 export LD_LIBRARY_PATH=$OUT/lib/
 ldconfig
 

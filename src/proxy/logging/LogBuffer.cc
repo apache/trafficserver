@@ -126,6 +126,8 @@ LogBuffer::LogBuffer(const LogConfig *cfg, LogObject *owner, size_t size, size_t
   }
   m_buffer = static_cast<char *>(align_pointer_forward(m_unaligned_buffer, buf_align));
 
+  memset(m_buffer, 0, size);
+
   // add the header
   hdr_size = _add_buffer_header(cfg);
 

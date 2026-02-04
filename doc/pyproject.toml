@@ -14,34 +14,33 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-[[source]]
-name = "pypi"
-url = "https://pypi.org/simple"
-verify_ssl = true
+[project]
+name = "ats-docs"
+version = "0.1.0"
+description = "Documentation dependencies for Apache Traffic Server"
+requires-python = ">=3.11"
 
-[dev-packages]
+dependencies = [
+    # We pin Sphinx because the sphinx-rtd-theme suggests this as a best practice.
+    # If not, we will often face issues when Sphinx updates their version before
+    # sphinx-rtd-theme has had time to update their component for the new sphinx
+    # version.
+    "sphinx==8.2.3",
 
-[packages]
+    "sphinx-rtd-theme>=3.0.0,<4.0.0",
+    "sphinxcontrib-jquery",
+    "sphinxcontrib-plantuml",
+    # i18n
+    "sphinx-intl",
 
-# We pin Sphinx because the sphinx-rtd-theme suggests this as a best practice.
-# If not, we will often face issues when Sphinx updates their version before
-# sphinx-rtd-theme has had time to update their component for the new sphinx
-# version.
-sphinx = "==8.2.3"
+    "pyyaml",
 
-sphinx-rtd-theme = "==3.*"
-sphinxcontrib-jquery = "*"
-sphinxcontrib-plantuml = "*"
-# i18n
-sphinx-intl = "*"
+    # For parsing Doxygen XML output, to add links from an API description
+    # to the source code for that object.
+    "lxml",
 
-pyyaml = "*"
+    "polib>=1.0.3",
+]
 
-# For parsing Doxygen XML output, to add links from an API description
-# to the source code for that object
-lxml = "*"
 
-polib = ">=1.0.3"
 
-[requires]
-python_version = "3"

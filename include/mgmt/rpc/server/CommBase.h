@@ -36,7 +36,7 @@ struct BaseCommInterface {
   virtual std::string const &name() const                        = 0;
 };
 
-enum class InternalError { MAX_TRANSIENT_ERRORS_HANDLED = 1, POLLIN_ERROR, PARTIAL_READ, FULL_BUFFER };
+enum class InternalError { MAX_TRANSIENT_ERRORS_HANDLED = 1, POLLIN_ERROR, PARTIAL_READ, FULL_BUFFER, INVALID_SOCKET_PATH };
 std::error_code make_error_code(rpc::comm::InternalError e);
 
 } // namespace rpc::comm

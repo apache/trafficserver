@@ -536,11 +536,15 @@ public:
 
   }; // class Counter
 
+  /**
+   * Static string metrics storage.
+   *
+   * All methods are thread-safe.
+   */
   class StaticString
   {
   public:
     using StringStorage = std::unordered_map<std::string, std::string>;
-    using iterator      = StringStorage::iterator;
 
     static void
     createString(const std::string &name, const std::string_view value)
@@ -551,18 +555,21 @@ public:
 
     static StaticString &instance();
 
-    iterator
-    begin()
+    /**
+     * Thread-safe iteration over all string metrics.
+     * The callback is invoked for each metric while holding the mutex.
+     */
+    template <typename Func>
+    void
+    for_each(Func &&func) const
     {
-      return _strings.begin();
+      std::lock_guard lock(_mutex);
+      for (const auto &[name, value] : _strings) {
+        func(name, value);
+      }
     }
-    iterator
-    end()
-    {
-      return _strings.end();
-    };
 
-    std::optional<std::string_view> lookup(const std::string &name);
+    std::optional<std::string_view> lookup(const std::string &name) const;
 
   private:
     void _createString(const std::string &name, const std::string_view value);
