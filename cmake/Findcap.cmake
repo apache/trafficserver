@@ -28,20 +28,22 @@
 #     cap::cap
 #
 
+# Check for Linux libcap
 find_library(cap_LIBRARY NAMES cap)
 find_path(cap_INCLUDE_DIR NAMES sys/capability.h)
 
-mark_as_advanced(cap_FOUND cap_LIBRARY cap_INCLUDE_DIR)
+# Check for FreeBSD Capsicum (Base system)
+find_path(capsicum_INCLUDE_DIR NAMES sys/capsicum.h)
 
-include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(cap REQUIRED_VARS cap_LIBRARY cap_INCLUDE_DIR)
-
-if(cap_FOUND)
-  set(cap_INCLUDE_DIRS ${cap_INCLUDE_DIR})
-endif()
-
-if(cap_FOUND AND NOT TARGET cap::cap)
+if(capsicum_INCLUDE_DIR)
+  # FreeBSD native path
   add_library(cap::cap INTERFACE IMPORTED)
-  target_include_directories(cap::cap INTERFACE ${cap_INCLUDE_DIRS})
+  target_compile_definitions(cap::cap INTERFACE HAVE_SYS_CAPSICUM_H)
+  # No target_link_libraries needed as it's in libc
+elseif(cap_LIBRARY AND cap_INCLUDE_DIR)
+  # Linux/Other path
+  add_library(cap::cap INTERFACE IMPORTED)
+  target_include_directories(cap::cap INTERFACE ${cap_INCLUDE_DIR})
   target_link_libraries(cap::cap INTERFACE ${cap_LIBRARY})
+  target_compile_definitions(cap::cap INTERFACE HAVE_SYS_CAPABILITY_H)
 endif()
