@@ -993,7 +993,7 @@ remap_load_plugin(const char *const *argv, int argc, url_mapping *mp, char *errb
     output argument reg_map. It assumes existing data in reg_map is
     inconsequential and will be perfunctorily null-ed;
 */
-static bool
+bool
 process_regex_mapping_config(const char *from_host_lower, url_mapping *new_mapping, UrlRewrite::RegexMapping *reg_map)
 {
   std::string_view to_host{};
