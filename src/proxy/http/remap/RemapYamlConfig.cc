@@ -50,74 +50,6 @@ namespace
 {
 DbgCtl dbg_ctl_remap_yaml{"remap_yaml"};
 DbgCtl dbg_ctl_url_rewrite{"url_rewrite"};
-
-/** will process the regex mapping configuration and create objects in
-    output argument reg_map. It assumes existing data in reg_map is
-    inconsequential and will be perfunctorily null-ed;
-*/
-static bool
-process_regex_mapping_config(const char *from_host_lower, url_mapping *new_mapping, UrlRewrite::RegexMapping *reg_map)
-{
-  std::string_view to_host{};
-  int              to_host_len;
-  int              substitution_id;
-  int32_t          captures;
-
-  reg_map->to_url_host_template     = nullptr;
-  reg_map->to_url_host_template_len = 0;
-  reg_map->n_substitutions          = 0;
-
-  reg_map->url_map = new_mapping;
-
-  // using from_host_lower (and not new_mapping->fromURL.host_get())
-  // as this one will be nullptr-terminated (required by pcre_compile)
-  if (reg_map->regular_expression.compile(from_host_lower) == false) {
-    Warning("pcre_compile failed! Regex has error starting at %s", from_host_lower);
-    goto lFail;
-  }
-
-  captures = reg_map->regular_expression.get_capture_count();
-  if (captures == -1) {
-    Warning("pcre_fullinfo failed!");
-    goto lFail;
-  }
-  if (captures >= UrlRewrite::MAX_REGEX_SUBS) { // off by one for $0 (implicit capture)
-    Warning("regex has %d capturing subpatterns (including entire regex); Max allowed: %d", captures + 1,
-            UrlRewrite::MAX_REGEX_SUBS);
-    goto lFail;
-  }
-
-  to_host     = new_mapping->toURL.host_get();
-  to_host_len = static_cast<int>(to_host.length());
-  for (int i = 0; i < to_host_len - 1; ++i) {
-    if (to_host[i] == '$') {
-      substitution_id = to_host[i + 1] - '0';
-      if ((substitution_id < 0) || (substitution_id > captures)) {
-        Warning("Substitution id [%c] has no corresponding capture pattern in regex [%s]", to_host[i + 1], from_host_lower);
-        goto lFail;
-      }
-      reg_map->substitution_markers[reg_map->n_substitutions] = i;
-      reg_map->substitution_ids[reg_map->n_substitutions]     = substitution_id;
-      ++reg_map->n_substitutions;
-    }
-  }
-
-  // so the regex itself is stored in fromURL.host; string to match
-  // will be in the request; string to use for substitutions will be
-  // in this buffer
-  reg_map->to_url_host_template_len = to_host_len;
-  reg_map->to_url_host_template     = static_cast<char *>(ats_malloc(to_host_len));
-  memcpy(reg_map->to_url_host_template, to_host.data(), to_host_len);
-
-  return true;
-
-lFail:
-  ats_free(reg_map->to_url_host_template);
-  reg_map->to_url_host_template     = nullptr;
-  reg_map->to_url_host_template_len = 0;
-
-  return false;
-}
 } // end anonymous namespace
 
 swoc::Errata
@@ -176,12 +108,9 @@ remap_validate_yaml_filter_args(acl_filter_rule **rule_pp, const YAML::Node &nod
     return swoc::Errata("Invalid argument(s)");
   }
 
-  if (dbg_ctl_url_rewrite.on()) {
-    printf("validate_filter_args: ");
-    for (const auto &rule : node) {
-      printf("\"%s\" ", rule.first.as<std::string>().c_str());
-    }
-    printf("\n");
+  Dbg(dbg_ctl_url_rewrite, "validate_filter_args: ");
+  for (const auto &rule : node) {
+    Dbg(dbg_ctl_url_rewrite, "\"%s\" \n", rule.first.as<std::string>().c_str());
   }
 
   ts::PostScript free_rule([&]() -> void {
@@ -497,9 +426,6 @@ swoc::Errata
 parse_yaml_plugins(const YAML::Node &node, url_mapping *url_mapping, BUILD_TABLE_INFO *bti)
 {
   char *err;
-  char *pargv[1024];
-  int   parc = 0;
-  memset(pargv, 0, sizeof(pargv));
 
   if (!node["name"]) {
     return swoc::Errata("plugin missing 'name' field");
@@ -508,30 +434,32 @@ parse_yaml_plugins(const YAML::Node &node, url_mapping *url_mapping, BUILD_TABLE
   std::string plugin_name = node["name"].as<std::string>();
   Dbg(dbg_ctl_remap_yaml, "Loading plugin: %s", plugin_name.c_str());
 
+  auto &param_storage = url_mapping->getPluginParamsStorage();
+
   /* Prepare remap plugin parameters from the config */
   if ((err = url_mapping->fromURL.string_get(nullptr)) == nullptr) {
     return swoc::Errata("Can't load fromURL from URL class");
   }
-  pargv[parc++] = ats_strdup(err);
+  param_storage.emplace_back(err);
   ats_free(err);
 
   if ((err = url_mapping->toURL.string_get(nullptr)) == nullptr) {
     return swoc::Errata("Can't load toURL from URL class");
   }
-  pargv[parc++] = ats_strdup(err);
+  param_storage.emplace_back(err);
   ats_free(err);
 
   // Add plugin parameters
   if (node["params"] && node["params"].IsSequence()) {
-    auto &param_storage = url_mapping->getPluginParamsStorage();
     for (const auto &param : node["params"]) {
       param_storage.push_back(param.as<std::string>());
+      Dbg(dbg_ctl_remap_yaml, "  Plugin param: %s", param_storage.back().c_str());
     }
-    size_t param_idx = param_storage.size() - node["params"].size();
-    for (size_t i = 0; i < node["params"].size() && parc < static_cast<int>(countof(pargv) - 1); ++i, ++param_idx) {
-      pargv[parc++] = const_cast<char *>(param_storage[param_idx].c_str());
-      Dbg(dbg_ctl_remap_yaml, "  Plugin param: %s", param_storage[param_idx].c_str());
-    }
+  }
+
+  std::vector<char *> pargv;
+  for (auto &param : param_storage) {
+    pargv.push_back(const_cast<char *>(param.c_str()));
   }
 
   RemapPluginInst *pi = nullptr;
@@ -541,21 +469,15 @@ parse_yaml_plugins(const YAML::Node &node, url_mapping *url_mapping, BUILD_TABLE
     elevate_access          = RecGetRecordInt("proxy.config.plugin.load_elevated").value_or(0);
     ElevateAccess access(elevate_access ? ElevateAccess::FILE_PRIVILEGE : 0);
 
-    pi =
-      bti->rewrite->pluginFactory.getRemapPlugin(swoc::file::path(plugin_name), parc, pargv, error, isPluginDynamicReloadEnabled());
+    pi = bti->rewrite->pluginFactory.getRemapPlugin(swoc::file::path(plugin_name), pargv.size(), pargv.data(), error,
+                                                    isPluginDynamicReloadEnabled());
   } // done elevating access
 
   if (nullptr == pi) {
-    ats_free(pargv[0]);
-    ats_free(pargv[1]);
     return swoc::Errata("failed to instantiate plugin ({}) to remap rule: {}", plugin_name.c_str(), error.c_str());
-  } else {
-    url_mapping->add_plugin_instance(pi);
   }
 
-  ats_free(pargv[0]); // fromURL
-  ats_free(pargv[1]); // toURL
-
+  url_mapping->add_plugin_instance(pi);
   return {};
 }
 
@@ -569,7 +491,7 @@ parse_yaml_filter_directive(const YAML::Node &node, BUILD_TABLE_INFO *bti)
     std::string filter_name = node["activate_filter"].as<std::string>();
 
     // Check if for ip_allow filter
-    if (strcmp(filter_name.c_str(), "ip_allow") == 0) {
+    if (filter_name == "ip_allow") {
       bti->ip_allow_check_enabled_p = true;
       return {};
     }
@@ -732,7 +654,7 @@ parse_yaml_remap_fragment(const char *path, BUILD_TABLE_INFO *bti)
   if (success) {
     // register the included file with the management subsystem so that we can correctly
     // reload them when they change
-    load_remap_file_cb(ts::filename::REMAP, path);
+    load_remap_file_cb(ts::filename::REMAP_YAML, path);
   } else {
     return swoc::Errata("failed to parse included file {}", path);
   }
@@ -799,14 +721,13 @@ parse_yaml_remap_rule(const YAML::Node &node, BUILD_TABLE_INFO *bti)
   char            *fromHost_lower_ptr = nullptr;
   char             fromHost_lower_buf[1024];
   mapping_type     maptype;
-  url_mapping     *new_mapping = nullptr;
+  bool             is_cur_mapping_regex;
+  const char      *type_id_str;
 
-  UrlRewrite::RegexMapping *reg_map = nullptr;
-  bool                      is_cur_mapping_regex;
-  const char               *type_id_str;
-
-  swoc::Errata errata;
-  const char  *valid_scheme = nullptr;
+  swoc::Errata                              errata;
+  const char                               *valid_scheme = nullptr;
+  std::unique_ptr<url_mapping>              new_mapping;
+  std::unique_ptr<UrlRewrite::RegexMapping> reg_map;
 
   if (!node || !node.IsMap()) {
     return swoc::Errata("remap rule must be a map");
@@ -837,10 +758,10 @@ parse_yaml_remap_rule(const YAML::Node &node, BUILD_TABLE_INFO *bti)
     return swoc::Errata("unknown mapping type: {}", type_str);
   }
 
-  new_mapping = new url_mapping();
+  new_mapping = std::make_unique<url_mapping>();
 
   // apply filter rules if we have to
-  errata = process_yaml_filter_opt(new_mapping, node, bti);
+  errata = process_yaml_filter_opt(new_mapping.get(), node, bti);
   if (!errata.is_ok()) {
     swoc::bwprint(errStr, "Failed to process filter: {}", errata);
     goto MAP_ERROR;
@@ -894,7 +815,7 @@ parse_yaml_remap_rule(const YAML::Node &node, BUILD_TABLE_INFO *bti)
 
   // Check if map_with_referer is used
   if (node["redirect"] && maptype == mapping_type::FORWARD_MAP_REFERER) {
-    errata = parse_map_referer(node["redirect"], new_mapping);
+    errata = parse_map_referer(node["redirect"], new_mapping.get());
     if (!errata.is_ok()) {
       swoc::bwprint(errStr, "invalid map_with_referer: {}", errata);
       goto MAP_ERROR;
@@ -947,8 +868,8 @@ parse_yaml_remap_rule(const YAML::Node &node, BUILD_TABLE_INFO *bti)
   new_mapping->fromURL.host_set({fromHost_lower, fromHost.length()});
 
   if (is_cur_mapping_regex) {
-    reg_map = new UrlRewrite::RegexMapping();
-    if (!process_regex_mapping_config(fromHost_lower, new_mapping, reg_map)) {
+    reg_map = std::make_unique<UrlRewrite::RegexMapping>();
+    if (!process_regex_mapping_config(fromHost_lower, new_mapping.get(), reg_map.get())) {
       errStr = "could not process regex mapping config line";
       goto MAP_ERROR;
     }
@@ -1014,7 +935,7 @@ parse_yaml_remap_rule(const YAML::Node &node, BUILD_TABLE_INFO *bti)
     }
 
     for (const auto &plugin : node["plugins"]) {
-      errata = parse_yaml_plugins(plugin, new_mapping, bti);
+      errata = parse_yaml_plugins(plugin, new_mapping.get(), bti);
       if (!errata.is_ok()) {
         swoc::bwprint(errStr, "{}", errata);
         goto MAP_ERROR;
@@ -1023,7 +944,7 @@ parse_yaml_remap_rule(const YAML::Node &node, BUILD_TABLE_INFO *bti)
   }
 
   // Now add the mapping to appropriate container
-  if (!bti->rewrite->InsertMapping(maptype, new_mapping, reg_map, fromHost_lower, is_cur_mapping_regex)) {
+  if (!bti->rewrite->InsertMapping(maptype, new_mapping.release(), reg_map.release(), fromHost_lower, is_cur_mapping_regex)) {
     errStr = "unable to add mapping rule to lookup table";
     goto MAP_ERROR;
   }
@@ -1037,9 +958,6 @@ parse_yaml_remap_rule(const YAML::Node &node, BUILD_TABLE_INFO *bti)
 MAP_ERROR:
 
   Error("%s", errStr.c_str());
-
-  delete reg_map;
-  delete new_mapping;
   return swoc::Errata(errStr);
 }
 

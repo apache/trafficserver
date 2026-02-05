@@ -266,3 +266,5 @@ private:
 void url_rewrite_remap_request(const UrlMappingContainer &mapping_container, URL *request_url, int scheme = -1);
 
 mapping_type get_mapping_type(const char *type_str, BUILD_TABLE_INFO *bti);
+
+bool process_regex_mapping_config(const char *from_host_lower, url_mapping *new_mapping, UrlRewrite::RegexMapping *reg_map);

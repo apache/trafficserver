@@ -37,6 +37,7 @@
 #include "tscore/BaseLogFile.h"
 #include "tsutil/PostScript.h"
 
+#include <filesystem>
 #include <fstream>
 #include <memory>
 
@@ -55,8 +56,6 @@ struct TestListener : Catch::EventListenerBase {
     main_thread->set_specific();
 
     DiagsPtr::set(new Diags("test_RemapRulesYaml", "*", "", new BaseLogFile("stderr")));
-    // diags()->activate_taglist(".*", DiagsTagType_Debug);
-    // diags()->config.enabled(DiagsTagType_Debug, 1);
     diags()->show_location = SHOW_LOCATION_DEBUG;
 
     url_init();
@@ -95,14 +94,15 @@ SCENARIO("Parsing ACL named filters", "[proxy][remap]")
 
     WHEN("filter rule definition has multiple @action")
     {
-      std::string config = R"RMCFG(
+      std::string    config = R"RMCFG(
       remap:
         - define_filter:
             deny_methods:
                action: [deny, allow]
                method: [CONNECT, PUT, DELETE]
       )RMCFG";
-      auto        cpath  = write_test_remap(config, "test2");
+      auto           cpath  = write_test_remap(config, "test2");
+      ts::PostScript file_cleanup([&]() -> void { std::filesystem::remove(cpath.c_str()); });
       THEN("The remap parse fails with an error")
       {
         REQUIRE(remap_parse_yaml_bti(cpath.c_str(), &bti) == false);
@@ -111,7 +111,7 @@ SCENARIO("Parsing ACL named filters", "[proxy][remap]")
 
     WHEN("filter rule redefine has multiple @action")
     {
-      std::string config = R"RMCFG(
+      std::string    config = R"RMCFG(
       remap:
         - define_filter:
             deny_methods:
@@ -121,7 +121,9 @@ SCENARIO("Parsing ACL named filters", "[proxy][remap]")
                action: allow
                method: [PUT, DELETE]
       )RMCFG";
-      auto        cpath  = write_test_remap(config, "test2");
+      auto           cpath  = write_test_remap(config, "test2");
+      ts::PostScript file_cleanup([&]() -> void { std::filesystem::remove(cpath.c_str()); });
+
       THEN("The rule uses the first action specified")
       {
         REQUIRE(remap_parse_yaml_bti(cpath.c_str(), &bti) == true);
@@ -168,7 +170,9 @@ SCENARIO("Parsing UrlRewrite", "[proxy][remap]")
         - deactivate_filter: deny_methods
   )RMCFG";
 
-    auto cpath = write_test_remap(config, "test1");
+    auto           cpath = write_test_remap(config, "test1");
+    ts::PostScript file_cleanup([&]() -> void { std::filesystem::remove(cpath.c_str()); });
+
     printf("wrote config to path: %s\n", cpath.c_str());
     int         rc = urlrw->BuildTable(cpath.c_str());
     EasyURL     url("https://h1.example.com");
@@ -201,7 +205,8 @@ SCENARIO("Parsing UrlRewrite", "[proxy][remap]")
             url: http://origin.example.com
   )RMCFG";
 
-    auto cpath = write_test_remap(config, "unix-scheme");
+    auto           cpath = write_test_remap(config, "unix-scheme");
+    ts::PostScript file_cleanup([&]() -> void { std::filesystem::remove(cpath.c_str()); });
     printf("wrote config to path: %s\n", cpath.c_str());
     int         rc = urlrw->BuildTable(cpath.c_str());
     EasyURL     url("http+unix://front.example.com");
@@ -234,7 +239,8 @@ SCENARIO("Parsing UrlRewrite", "[proxy][remap]")
             url: http://origin.example.com
   )RMCFG";
 
-    auto cpath = write_test_remap(config, "regular-scheme");
+    auto           cpath = write_test_remap(config, "regular-scheme");
+    ts::PostScript file_cleanup([&]() -> void { std::filesystem::remove(cpath.c_str()); });
     printf("wrote config to path: %s\n", cpath.c_str());
     int         rc = urlrw->BuildTable(cpath.c_str());
     EasyURL     url("http://front.example.com");
