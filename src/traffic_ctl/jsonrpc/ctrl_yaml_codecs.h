@@ -71,6 +71,16 @@ template <> struct convert<HostSetStatusRequest::Params> {
   }
 };
 //------------------------------------------------------------------------------------------------------------------------------------
+template <> struct convert<HostDBGetStatusRequest::Params> {
+  static Node
+  encode(HostDBGetStatusRequest::Params const &params)
+  {
+    Node node;
+    node["hostname"] = params.hostname;
+    return node;
+  }
+};
+//------------------------------------------------------------------------------------------------------------------------------------
 template <> struct convert<BasicPluginMessageRequest::Params> {
   static Node
   encode(BasicPluginMessageRequest::Params const &params)

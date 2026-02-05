@@ -126,8 +126,10 @@ struct HostGetStatusRequest : shared::rpc::ClientRequest {
 };
 //------------------------------------------------------------------------------------------------------------------------------------
 struct HostDBGetStatusRequest : shared::rpc::ClientRequest {
-  using super  = shared::rpc::ClientRequest;
-  using Params = std::vector<std::string>;
+  using super = shared::rpc::ClientRequest;
+  struct Params {
+    std::string hostname;
+  };
   HostDBGetStatusRequest(Params p) { super::params = std::move(p); }
 
   std::string

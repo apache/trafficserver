@@ -24,15 +24,21 @@
 #include "iocore/hostdb/HostDBProcessor.h"
 #include "../src/iocore/hostdb/P_HostDBProcessor.h"
 #include "swoc/MemSpan.h"
+#include "swoc/TextView.h"
 #include "tsutil/TsSharedMutex.h"
 #include "yaml-cpp/node/node.h"
 #include <shared_mutex>
 #include <string>
+#include <string_view>
 
 namespace
 {
 DbgCtl dbg_ctl_rpc_server{"rpc.server"};
 DbgCtl dbg_ctl_rpc_handler_server{"rpc.handler.hostdb"};
+
+struct HostDBGetStatusCmdInfo {
+  std::string hostname;
+};
 
 constexpr std::string_view
 str(HostDBType type)
@@ -74,7 +80,7 @@ namespace YAML
 {
 template <> struct convert<HostDBCache> {
   static Node
-  encode(const HostDBCache *const hostDB)
+  encode(const HostDBCache *const hostDB, std::string_view hostname)
   {
     Node partitions;
     for (size_t i = 0; i < hostDB->refcountcache->partition_count(); i++) {
@@ -96,6 +102,9 @@ template <> struct convert<HostDBCache> {
 
       for (RefCountCacheHashEntry *entry : partition_entries) {
         HostDBRecord *record = static_cast<HostDBRecord *>(entry->item.get());
+        if (!hostname.empty() && record->name_view().find(hostname) == std::string_view::npos) {
+          continue;
+        }
         partition_node["records"].push_back(*record);
       }
 
@@ -157,6 +166,20 @@ template <> struct convert<HostDBRecord> {
     return node;
   }
 };
+
+template <> struct convert<HostDBGetStatusCmdInfo> {
+  static bool
+  decode(const Node &node, HostDBGetStatusCmdInfo &rhs)
+  {
+    if (auto n = node["hostname"]) {
+      rhs.hostname = n.as<std::string>();
+    } else {
+      return false;
+    }
+
+    return true;
+  }
+};
 } // namespace YAML
 
 namespace rpc::handlers::hostdb
@@ -164,11 +187,13 @@ namespace rpc::handlers::hostdb
 namespace err = rpc::handlers::errors;
 
 swoc::Rv<YAML::Node>
-get_hostdb_status(std::string_view const & /* params ATS_UNUSED */, YAML::Node const & /* params ATS_UNUSED */)
+get_hostdb_status(std::string_view const & /* id ATS_UNUSED */, YAML::Node const &params)
 {
   swoc::Rv<YAML::Node> resp;
   try {
-    YAML::Node data = YAML::convert<HostDBCache>::encode(hostDBProcessor.cache());
+    HostDBGetStatusCmdInfo cmd = params.as<HostDBGetStatusCmdInfo>();
+
+    YAML::Node data = YAML::convert<HostDBCache>::encode(hostDBProcessor.cache(), cmd.hostname);
 
     resp.result()["data"] = data;
   } catch (std::exception const &ex) {
