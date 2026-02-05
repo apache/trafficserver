@@ -87,6 +87,10 @@ template <> struct convert<HostDBCache> {
         partition.copy(partition_entries);
       }
 
+      if (partition_entries.empty()) {
+        continue;
+      }
+
       Node partition_node;
       partition_node["id"] = i;
 
@@ -116,10 +120,12 @@ template <> struct convert<HostDBRecord> {
   {
     Node metadata;
     metadata["name"]         = record.name();
+    metadata["port"]         = record.port();
     metadata["type"]         = str(record.record_type);
-    metadata["af_familiy"]   = str(record.af_family);
+    metadata["af_family"]    = str(record.af_family);
     metadata["failed"]       = record.is_failed();
     metadata["ip_timestamp"] = record.ip_timestamp.time_since_epoch().count();
+    metadata["hash_key"]     = record.key;
 
     Node node;
     node["metadata"] = metadata;
