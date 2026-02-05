@@ -2962,6 +2962,7 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
   // This ensures correct statistics attribution (cache_hit_stale_served instead of cache_hit_fresh).
   if (s->serving_stale_due_to_write_lock) {
     TxnDbg(dbg_ctl_http_trans, "Serving stale due to write lock failure, adjusting VIA for statistics");
+    SET_VIA_STRING(VIA_DETAIL_CACHE_LOOKUP, VIA_DETAIL_MISS_EXPIRED);
     SET_VIA_STRING(VIA_CACHE_RESULT, VIA_IN_CACHE_STALE);
     SET_VIA_STRING(VIA_SERVER_RESULT, VIA_SERVER_ERROR);
   }
@@ -3242,6 +3243,13 @@ HttpTransact::handle_cache_write_lock(State *s)
     // HIT_STALE (revalidation case), the hook already fired and deferred is false.
     CacheHTTPInfo *obj = s->cache_info.object_read;
     if (obj != nullptr) {
+      // Restore request/response times from cached object for freshness calculations and Age header.
+      // Similar to HandleCacheOpenReadHitFreshness, handle clock skew by capping times.
+      s->request_sent_time      = obj->request_sent_time_get();
+      s->response_received_time = obj->response_received_time_get();
+      s->request_sent_time      = std::min(s->client_request_time, s->request_sent_time);
+      s->response_received_time = std::min(s->client_request_time, s->response_received_time);
+
       // Evaluate actual document freshness - don't let STALE_ON_REVALIDATE short-circuit this
       // by temporarily clearing the flag. We need to know if the object is truly fresh or stale.
       MgmtByte saved_action           = s->cache_open_write_fail_action;
@@ -3401,7 +3409,7 @@ HttpTransact::HandleCacheOpenReadMiss(State *s)
   // Don't fire yet if action == PREPARE_TO_WRITE and write_lock_state != READ_RETRY,
   // because we're about to attempt the write lock and may find content on retry.
   // In that case, the hook will fire later:
-  // - If READ_RETRY finds HIT: HandleCacheOpenReadHitFreshness fires with HIT
+  // - If READ_RETRY finds HIT: handle_cache_write_lock fires CACHE_LOOKUP_COMPLETE with HIT
   // - If READ_RETRY finds MISS: We come back here with write_lock_state == READ_RETRY
   if (s->cache_lookup_complete_deferred) {
     if (s->cache_info.action == CacheAction_t::NO_ACTION || s->cache_info.write_lock_state == CacheWriteLock_t::READ_RETRY) {
