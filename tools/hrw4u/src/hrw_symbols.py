@@ -399,12 +399,15 @@ class InverseSymbolResolver(SymbolResolverBase):
         tag = match.group(1)
         payload = match.group(2)
 
-        # Handle certificate tags explicitly to ensure proper parsing
+        # Handle multi-colon tags explicitly to ensure proper parsing
+        # Multi-colon parsing for certificate tags (CLIENT-CERT, SERVER-CERT) and query parameter tags (QUERY)
         original_inner = percent[2:-1]
-        if ":" in original_inner and any(cert_tag in original_inner for cert_tag in ["CLIENT-CERT", "SERVER-CERT"]):
-            new_tag, new_payload = self.parse_percent_block(percent)
-            if new_tag != tag or new_payload != payload:
-                tag, payload = new_tag, new_payload
+        if ":" in original_inner:
+            if (any(cert_tag in original_inner for cert_tag in ["CLIENT-CERT", "SERVER-CERT"]) or
+                (payload and payload.startswith("QUERY:"))):
+                new_tag, new_payload = self.parse_percent_block(percent)
+                if new_tag != tag or new_payload != payload:
+                    tag, payload = new_tag, new_payload
 
         if types.BooleanLiteral.contains(tag):
             return tag, False

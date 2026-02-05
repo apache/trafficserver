@@ -1,0 +1,20 @@
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{CLIENT-URL:QUERY:version} ="v2"
+    set-header X-API-Version "v2"
+
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{FROM-URL:QUERY:source} ="mobile"
+    set-header X-Source "mobile"
+
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{TO-URL:QUERY:target} ="" [NOT]
+    set-header X-Target "set"
+
+cond %{SEND_REQUEST_HDR_HOOK} [AND]
+cond %{NEXT-HOP:QUERY:backend} ="fast"
+    set-header X-Priority "high"
+
+cond %{SEND_RESPONSE_HDR_HOOK} [AND]
+    set-header X-Query-Sub "%{CLIENT-URL:QUERY:sub}"
+    set-header X-From-Param "%{FROM-URL:QUERY:param}"
+    set-header X-To-Param "%{TO-URL:QUERY:redirect}"

@@ -96,6 +96,7 @@ CONDITION_MAP: dict[str, MapParams] = {
 
     # Prefix matches
     "capture.": MapParams(target="LAST-CAPTURE", prefix=True, validate=Validator.range(0, 9)),
+    "from.url.query.": MapParams(target="FROM-URL:QUERY", prefix=True, validate=Validator.http_token(), sections=HTTP_SECTIONS),
     "from.url.": MapParams(target="FROM-URL", upper=True, prefix=True, validate=Validator.suffix_group(SuffixGroup.URL_FIELDS), sections=HTTP_SECTIONS),
     "geo.": MapParams(target="GEO", upper=True, prefix=True, validate=Validator.suffix_group(SuffixGroup.GEO_FIELDS)),
     "http.cntl.": MapParams(target="HTTP-CNTL", upper=True, validate=Validator.suffix_group(SuffixGroup.HTTP_CNTL_FIELDS), sections=HTTP_SECTIONS),
@@ -110,6 +111,7 @@ CONDITION_MAP: dict[str, MapParams] = {
     "inbound.cookie.": MapParams(target="COOKIE", prefix=True, validate=Validator.http_token(), sections=HTTP_SECTIONS, rev={"reverse_fallback": "inbound.cookie."}),
     "inbound.req.": MapParams(target="CLIENT-HEADER", prefix=True, validate=Validator.http_header_name(), sections=HTTP_SECTIONS, rev={"reverse_fallback": "inbound.req."}),
     "inbound.resp.": MapParams(target="HEADER", prefix=True, validate=Validator.http_header_name(), sections={SectionType.READ_RESPONSE, SectionType.SEND_RESPONSE}, rev={"reverse_context": "header_condition"}),
+    "inbound.url.query.": MapParams(target="CLIENT-URL:QUERY", prefix=True, validate=Validator.http_token(), sections=HTTP_SECTIONS),
     "inbound.url.": MapParams(target="CLIENT-URL", upper=True, prefix=True, validate=Validator.suffix_group(SuffixGroup.URL_FIELDS), sections=HTTP_SECTIONS),
     "now.": MapParams(target="NOW", upper=True, validate=Validator.suffix_group(SuffixGroup.DATE_FIELDS)),
     "outbound.conn.client-cert.SAN.": MapParams(target="OUTBOUND:CLIENT-CERT:SAN", upper=True, prefix=True, validate=Validator.suffix_group(SuffixGroup.SAN_FIELDS), sections={SectionType.SEND_REQUEST, SectionType.READ_RESPONSE, SectionType.SEND_RESPONSE}),
@@ -122,7 +124,9 @@ CONDITION_MAP: dict[str, MapParams] = {
     "outbound.cookie.": MapParams(target="COOKIE", prefix=True, validate=Validator.http_token(), sections={SectionType.SEND_REQUEST, SectionType.READ_RESPONSE, SectionType.SEND_RESPONSE}, rev={"reverse_fallback": "inbound.cookie."}),
     "outbound.req.": MapParams(target="HEADER", prefix=True, validate=Validator.http_header_name(), sections={SectionType.SEND_REQUEST, SectionType.READ_RESPONSE, SectionType.SEND_RESPONSE}, rev={"reverse_context": "header_condition"}),
     "outbound.resp.": MapParams(target="HEADER", prefix=True, validate=Validator.http_header_name(), sections={SectionType.READ_RESPONSE, SectionType.SEND_RESPONSE}, rev={"reverse_context": "header_condition"}),
+    "outbound.url.query.": MapParams(target="NEXT-HOP:QUERY", prefix=True, validate=Validator.http_token(), sections={SectionType.PRE_REMAP, SectionType.REMAP, SectionType.READ_REQUEST, SectionType.SEND_REQUEST, SectionType.READ_RESPONSE, SectionType.SEND_RESPONSE}),
     "outbound.url.": MapParams(target="NEXT-HOP", upper=True, prefix=True, validate=Validator.suffix_group(SuffixGroup.URL_FIELDS), sections={SectionType.PRE_REMAP, SectionType.REMAP, SectionType.READ_REQUEST, SectionType.SEND_REQUEST, SectionType.READ_RESPONSE, SectionType.SEND_RESPONSE}),
+    "to.url.query.": MapParams(target="TO-URL:QUERY", prefix=True, validate=Validator.http_token(), sections=HTTP_SECTIONS),
     "to.url.": MapParams(target="TO-URL", upper=True, prefix=True, validate=Validator.suffix_group(SuffixGroup.URL_FIELDS), sections=HTTP_SECTIONS),
 }
 
@@ -137,7 +141,11 @@ FALLBACK_TAG_MAP: dict[str, tuple[str, bool]] = {
     "OUTBOUND:CLIENT-CERT": ("outbound.conn.client-cert.", False),
     "OUTBOUND:SERVER-CERT": ("outbound.conn.server-cert.", False),
     "OUTBOUND:CLIENT-CERT:SAN": ("outbound.conn.client-cert.SAN.", False),
-    "OUTBOUND:SERVER-CERT:SAN": ("outbound.conn.server-cert.SAN.", False)
+    "OUTBOUND:SERVER-CERT:SAN": ("outbound.conn.server-cert.SAN.", False),
+    "CLIENT-URL:QUERY": ("inbound.url.query.", False),
+    "NEXT-HOP:QUERY": ("outbound.url.query.", False),
+    "FROM-URL:QUERY": ("from.url.query.", False),
+    "TO-URL:QUERY": ("to.url.query.", False)
 }
 
 # Context type to mapping name associations
