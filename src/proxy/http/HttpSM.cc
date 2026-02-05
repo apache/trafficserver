@@ -1882,6 +1882,8 @@ HttpSM::state_http_server_open(int event, void *data)
     do_http_server_open();
     break;
   case CONNECT_EVENT_TXN: {
+    // Multiplexed connection path (e.g. HTTP/2): ConnectingEntry created the session
+    // and dispatched this event. Get the netvc from the PoolableSession.
     SMDbg(dbg_ctl_http, "Connection handshake complete via CONNECT_EVENT_TXN");
     PoolableSession *session = static_cast<PoolableSession *>(data);
     ink_assert(session != nullptr);
@@ -1904,7 +1906,8 @@ HttpSM::state_http_server_open(int event, void *data)
   case VC_EVENT_READ_COMPLETE:
   case VC_EVENT_WRITE_READY:
   case VC_EVENT_WRITE_COMPLETE:
-    // Update the time out to the regular connection timeout.
+    // Direct connection path (e.g. HTTP/1): HttpSM owns the netvc directly
+    // and creates the session itself.
     SMDbg(dbg_ctl_http_ss, "Connection handshake complete");
     // Capture server TLS handshake timing if this is a TLS connection
     if (auto tbs = _netvc->get_service<TLSBasicSupport>()) {
