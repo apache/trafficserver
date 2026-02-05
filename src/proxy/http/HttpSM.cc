@@ -1881,9 +1881,18 @@ HttpSM::state_http_server_open(int event, void *data)
   case CONNECT_EVENT_RETRY:
     do_http_server_open();
     break;
-  case CONNECT_EVENT_TXN:
+  case CONNECT_EVENT_TXN: {
     SMDbg(dbg_ctl_http, "Connection handshake complete via CONNECT_EVENT_TXN");
-    if (this->create_server_txn(static_cast<PoolableSession *>(data))) {
+    PoolableSession *session = static_cast<PoolableSession *>(data);
+    ink_assert(session != nullptr);
+    // Capture server TLS handshake timing from the session's netvc
+    if (auto *netvc = session->get_netvc()) {
+      if (auto tbs = netvc->get_service<TLSBasicSupport>()) {
+        milestones[TS_MILESTONE_SERVER_TLS_HANDSHAKE_START] = tbs->get_tls_handshake_begin_time();
+        milestones[TS_MILESTONE_SERVER_TLS_HANDSHAKE_END]   = tbs->get_tls_handshake_end_time();
+      }
+    }
+    if (this->create_server_txn(session)) {
       t_state.current.server->clear_connect_fail();
       handle_http_server_open();
     } else { // Failed to create transaction.  Maybe too many active transactions already
@@ -1891,11 +1900,17 @@ HttpSM::state_http_server_open(int event, void *data)
       do_http_server_open(false);
     }
     return 0;
+  }
   case VC_EVENT_READ_COMPLETE:
   case VC_EVENT_WRITE_READY:
   case VC_EVENT_WRITE_COMPLETE:
     // Update the time out to the regular connection timeout.
     SMDbg(dbg_ctl_http_ss, "Connection handshake complete");
+    // Capture server TLS handshake timing if this is a TLS connection
+    if (auto tbs = _netvc->get_service<TLSBasicSupport>()) {
+      milestones[TS_MILESTONE_SERVER_TLS_HANDSHAKE_START] = tbs->get_tls_handshake_begin_time();
+      milestones[TS_MILESTONE_SERVER_TLS_HANDSHAKE_END]   = tbs->get_tls_handshake_end_time();
+    }
     this->create_server_txn(this->create_server_session(*_netvc, _netvc_read_buffer, _netvc_reader));
     t_state.current.server->clear_connect_fail();
     handle_http_server_open();
@@ -7799,7 +7814,7 @@ HttpSM::update_stats()
           "fd: %d "
           "client state: %d "
           "server state: %d "
-          "tls_handshake: %.3f "
+          "ua_tls_handshake: %.3f "
           "ua_begin: %.3f "
           "ua_first_read: %.3f "
           "ua_read_header_done: %.3f "
@@ -7811,6 +7826,7 @@ HttpSM::update_stats()
           "dns_lookup_end: %.3f "
           "server_connect: %.3f "
           "server_connect_end: %.3f "
+          "server_tls_handshake: %.3f "
           "server_first_read: %.3f "
           "server_read_header_done: %.3f "
           "server_close: %.3f "
@@ -7834,6 +7850,7 @@ HttpSM::update_stats()
           milestones.difference_sec(TS_MILESTONE_SM_START, TS_MILESTONE_DNS_LOOKUP_END),
           milestones.difference_sec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_CONNECT),
           milestones.difference_sec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_CONNECT_END),
+          milestones.difference_sec(TS_MILESTONE_SERVER_TLS_HANDSHAKE_START, TS_MILESTONE_SERVER_TLS_HANDSHAKE_END),
           milestones.difference_sec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_FIRST_READ),
           milestones.difference_sec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_READ_HEADER_DONE),
           milestones.difference_sec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_CLOSE),
