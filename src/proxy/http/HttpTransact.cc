@@ -2960,11 +2960,11 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
 
   // If serving stale due to write lock failure (actions 2, 3, or 6), adjust VIA to reflect stale serving.
   // This ensures correct statistics attribution (cache_hit_stale_served instead of cache_hit_fresh).
+  // Note: VIA_SERVER_RESULT is left as default (space) since the origin server was never contacted.
   if (s->serving_stale_due_to_write_lock) {
     TxnDbg(dbg_ctl_http_trans, "Serving stale due to write lock failure, adjusting VIA for statistics");
     SET_VIA_STRING(VIA_DETAIL_CACHE_LOOKUP, VIA_DETAIL_MISS_EXPIRED);
     SET_VIA_STRING(VIA_CACHE_RESULT, VIA_IN_CACHE_STALE);
-    SET_VIA_STRING(VIA_SERVER_RESULT, VIA_SERVER_ERROR);
   }
 
   if (s->cache_lookup_result == CacheLookupResult_t::HIT_WARNING) {
@@ -3234,9 +3234,6 @@ HttpTransact::handle_cache_write_lock(State *s)
   }
 
   if (s->cache_info.write_lock_state == CacheWriteLock_t::READ_RETRY) {
-    TxnDbg(dbg_ctl_http_trans, "READ_RETRY: destroying server_request before cache hit handling");
-    s->hdr_info.server_request.destroy();
-
     // For READ_RETRY with cached object, evaluate actual freshness to decide the path.
     // If the initial lookup was a MISS, cache_lookup_complete_deferred is true and we
     // need to fire the hook here with the final result. If the initial lookup was a
@@ -3250,17 +3247,16 @@ HttpTransact::handle_cache_write_lock(State *s)
       s->request_sent_time      = std::min(s->client_request_time, s->request_sent_time);
       s->response_received_time = std::min(s->client_request_time, s->response_received_time);
 
-      // Evaluate actual document freshness - don't let STALE_ON_REVALIDATE short-circuit this
-      // by temporarily clearing the flag. We need to know if the object is truly fresh or stale.
-      MgmtByte saved_action           = s->cache_open_write_fail_action;
-      s->cache_open_write_fail_action = static_cast<MgmtByte>(CacheOpenWriteFailAction_t::READ_RETRY);
-      Freshness_t freshness           = what_is_document_freshness(s, &s->hdr_info.client_request, obj->response_get());
-      s->cache_open_write_fail_action = saved_action;
+      // Evaluate actual document freshness. Pass true to skip the STALE_ON_REVALIDATE
+      // short-circuit so we get the real freshness, not the "return FRESH to bypass revalidation" result.
+      Freshness_t freshness = what_is_document_freshness(s, &s->hdr_info.client_request, obj->response_get(), true);
 
       if (freshness == Freshness_t::FRESH || freshness == Freshness_t::WARNING) {
         // Object is fresh - serve it from cache for both action 5 and 6.
         // This is the main benefit of request collapsing: we found a valid cached object.
+        // Destroy server_request since we're serving from cache.
         TxnDbg(dbg_ctl_http_trans, "READ_RETRY: found fresh object, serving from cache");
+        s->hdr_info.server_request.destroy();
         s->cache_lookup_result =
           (freshness == Freshness_t::FRESH) ? CacheLookupResult_t::HIT_FRESH : CacheLookupResult_t::HIT_WARNING;
 
@@ -3276,8 +3272,10 @@ HttpTransact::handle_cache_write_lock(State *s)
           is_stale_cache_response_returnable(s);
 
         if (can_serve_stale) {
-          // Action 6: Serve stale content without revalidation
+          // Action 6: Serve stale content without revalidation.
+          // Destroy server_request since we're serving from cache.
           TxnDbg(dbg_ctl_http_trans, "READ_RETRY: object stale, serving stale (action 6)");
+          s->hdr_info.server_request.destroy();
           s->serving_stale_due_to_write_lock = true;
           s->cache_lookup_result             = CacheLookupResult_t::HIT_STALE;
 
@@ -3288,8 +3286,9 @@ HttpTransact::handle_cache_write_lock(State *s)
           HandleCacheOpenReadHit(s);
         } else {
           // Action 5: Object is stale, go to origin for revalidation.
-          // Set NO_ACTION to prevent cache write attempts.
-          TxnDbg(dbg_ctl_http_trans, "READ_RETRY: object stale, going to origin (action 5)");
+          // Keep server_request intact - it has conditional headers (If-Modified-Since, If-None-Match).
+          // Set NO_ACTION since we can't write to cache (no write lock).
+          TxnDbg(dbg_ctl_http_trans, "READ_RETRY: object stale, going to origin with conditional request (action 5)");
           s->cache_info.action = CacheAction_t::NO_ACTION;
           handle_cache_write_lock_go_to_origin(s);
         }
@@ -7440,7 +7439,8 @@ HttpTransact::calculate_document_freshness_limit(State *s, HTTPHdr *response, ti
 //
 //////////////////////////////////////////////////////////////////////////////
 HttpTransact::Freshness_t
-HttpTransact::what_is_document_freshness(State *s, HTTPHdr *client_request, HTTPHdr *cached_obj_response)
+HttpTransact::what_is_document_freshness(State *s, HTTPHdr *client_request, HTTPHdr *cached_obj_response,
+                                         bool evaluate_actual_freshness)
 {
   bool       heuristic, do_revalidate = false;
   int        age_limit;
@@ -7456,7 +7456,9 @@ HttpTransact::what_is_document_freshness(State *s, HTTPHdr *client_request, HTTP
   // but for write lock failure scenarios we want to serve the stale content directly without
   // revalidation. The serving_stale_due_to_write_lock flag tracks that we're actually serving
   // stale content, so VIA strings and statistics can be correctly attributed.
-  if (s->cache_open_write_fail_action & static_cast<MgmtByte>(CacheOpenWriteFailAction_t::STALE_ON_REVALIDATE)) {
+  // When evaluate_actual_freshness is true, skip this short-circuit to get the real freshness.
+  if (!evaluate_actual_freshness &&
+      (s->cache_open_write_fail_action & static_cast<MgmtByte>(CacheOpenWriteFailAction_t::STALE_ON_REVALIDATE))) {
     if (is_stale_cache_response_returnable(s)) {
       TxnDbg(dbg_ctl_http_match, "cache_serve_stale_on_write_lock_fail, return FRESH to bypass revalidation");
       s->serving_stale_due_to_write_lock = true;

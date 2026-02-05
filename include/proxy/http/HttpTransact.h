@@ -1105,7 +1105,8 @@ public:
   static void             handle_response_keep_alive_headers(State *s, HTTPVersion ver, HTTPHdr *heads);
   static int              get_max_age(HTTPHdr *response);
   static int              calculate_document_freshness_limit(State *s, HTTPHdr *response, time_t response_date, bool *heuristic);
-  static Freshness_t      what_is_document_freshness(State *s, HTTPHdr *client_request, HTTPHdr *cached_obj_response);
+  static Freshness_t      what_is_document_freshness(State *s, HTTPHdr *client_request, HTTPHdr *cached_obj_response,
+                                                     bool evaluate_actual_freshness = false);
   static Authentication_t AuthenticationNeeded(const OverridableHttpConfigParams *p, HTTPHdr *client_request,
                                                HTTPHdr *obj_response);
   static void             handle_parent_down(State *s);
