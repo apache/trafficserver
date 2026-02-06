@@ -7773,12 +7773,21 @@ HttpSM::update_stats()
 
   // print slow requests if the threshold is set (> 0) and if we are over the time threshold
   if (t_state.txn_conf->slow_log_threshold != 0 && ink_hrtime_from_msec(t_state.txn_conf->slow_log_threshold) < total_time) {
+    // Use the unmapped (pre-remap) URL so the slow log shows the incoming client URL.
+    // unmapped_url may not be valid if the transaction ended before reaching the remap
+    // stage (e.g. client timeout during header read, malformed request). In that case
+    // fall back to client_request URL which hasn't been remapped yet either.
     char url_string[256] = "";
-    int  offset          = 0;
-    int  skip            = 0;
-
-    t_state.hdr_info.client_request.url_print(url_string, sizeof(url_string) - 1, &offset, &skip);
-    url_string[offset] = 0; // NULL terminate the string
+    int  url_length      = 0;
+    if (t_state.unmapped_url.valid()) {
+      t_state.unmapped_url.string_get_buf(url_string, sizeof(url_string) - 1, &url_length);
+    } else {
+      int offset = 0;
+      int skip   = 0;
+      t_state.hdr_info.client_request.url_print(url_string, sizeof(url_string) - 1, &offset, &skip);
+      url_length = offset;
+    }
+    url_string[url_length] = 0; // NULL terminate the string
 
     // unique id
     char unique_id_string[128] = "";
