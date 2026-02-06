@@ -1580,9 +1580,21 @@ void TSHttpTxnErrorBodySet(TSHttpTxn txnp, char *buf, size_t buflength, char *mi
 char *TSHttpTxnErrorBodyGet(TSHttpTxn txnp, size_t *buflength, char **mimetype);
 
 /**
+    Retrieves a handle to the named strategy in the strategy table.
+    Returns nullptr if no strategy is found.
+    This uses the current transaction's state machine to get
+    access to UrlRewrite's NextHopStrategyFactory.
+    It's preferable to retrieve strategies during TSRemapNewInstance.
+
+    @param txnp HTTP transaction which holds the strategy table.
+    @param name of the strategy to look up.
+
+ */
+TSStrategy TSHttpTxnNextHopStrategyFind(TSHttpTxn txnp, const char *name);
+
+/**
     Sets the Transaction's Next Hop Parent Strategy.
-    Calling this after TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK will
-    result in bad behavior.
+    Must be called before parent selection logic is required.
 
     You can get this strategy pointer by calling TSHttpTxnParentStrategyGet().
 
@@ -1590,7 +1602,7 @@ char *TSHttpTxnErrorBodyGet(TSHttpTxn txnp, size_t *buflength, char **mimetype);
     @param pointer to the given strategy.
 
  */
-void TSHttpTxnNextHopStrategySet(TSHttpTxn txnp, void const *strategy);
+void TSHttpTxnNextHopStrategySet(TSHttpTxn txnp, TSStrategy strategy);
 
 /**
     Retrieves a pointer to the current next hop selection strategy.
@@ -1601,32 +1613,55 @@ void TSHttpTxnNextHopStrategySet(TSHttpTxn txnp, void const *strategy);
     @param txnp HTTP transaction whose next hop strategy to get.
 
  */
-void const *TSHttpTxnNextHopStrategyGet(TSHttpTxn txnp);
+TSStrategy TSHttpTxnNextHopStrategyGet(TSHttpTxn txnp);
 
 /**
     Returns either null pointer or null terminated pointer to name.
-                DO NOT FREE.
+    DO NOT FREE.
 
     This value may be a nullptr due to:
       - parent proxying not enabled
       - no parent selection strategy (using parent.config)
 
-    @param txnp HTTP transaction whose next hop strategy to get.
+    @param pointer to the NextHopStrategy.
 
  */
-char const *TSHttpNextHopStrategyNameGet(void const *strategy);
+char const *TSNextHopStrategyNameGet(TSStrategy strategy);
 
 /**
     Retrieves a pointer to the named strategy in the strategy table.
-    Returns nullptr if no strategy is set.
-    This uses the current transaction's state machine to get
-    access to UrlRewrite's NextHopStrategyFactory.
+    This can only be called during TSRemapNewInstance.
+    DO NOT FREE.
 
-    @param txnp HTTP transaction which holds the strategy table.
+    Returns nullptr if no strategy found.
+    This uses the currently being loaded RemapConfig NextHopStrategyFactory.
+
     @param name of the strategy to look up.
 
  */
-void const *TSHttpTxnNextHopNamedStrategyGet(TSHttpTxn txnp, const char *name);
+TSStrategy TSRemapNextHopStrategyFind(const char *name);
+
+/**
+    Retrieves a pointer to remap rule strategy pointer.
+    This can only be called during TSRemapNewInstance.
+    DO NOT FREE.
+
+    Returns nullptr if no strategy assigned.
+
+ */
+TSStrategy TSRemapNextHopStrategyGet();
+
+/**
+    Sets the remap rule's next hop strategy.
+    This can only be called during TSRemapNewInstance.
+    DO NOT FREE.
+
+    This strategy must be present in the loading NextHopStrategyFactory.
+
+    @param handle to the strategy to set.
+
+ */
+void TSRemapNextHopStrategySet(TSStrategy strategy);
 
 /**
     Sets the parent proxy name and port. The string hostname is copied
