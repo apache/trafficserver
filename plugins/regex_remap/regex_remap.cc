@@ -326,7 +326,7 @@ RemapRegex::initialize(const std::string &reg, const std::string &sub, const std
       _lowercase_substitutions = true;
     } else if (opt.compare(start, 8, "strategy") == 0) {
       _has_strategy  = true;
-      _strategy_name = std::move(opt_val);
+      _strategy_name = opt_val;
       if (!_strategy_name.empty() && "null" != _strategy_name) {
         _strategy = TSRemapNextHopStrategyFind(_strategy_name.c_str());
         if (nullptr == _strategy) {
