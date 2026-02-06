@@ -1681,6 +1681,23 @@ LogAccess::marshal_proxy_protocol_tls_cipher(char *buf)
   return len;
 }
 
+int
+LogAccess::marshal_proxy_protocol_tls_version(char *buf)
+{
+  int len = INK_MIN_ALIGN;
+
+  if (m_http_sm) {
+    if (auto version = m_http_sm->t_state.pp_info.get_tlv_ssl_version(); version) {
+      len = padded_length(version->size() + 1);
+      if (buf) {
+        marshal_str(buf, version->data(), len);
+        buf[version->size()] = '\0';
+      }
+    }
+  }
+  return len;
+}
+
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 int
