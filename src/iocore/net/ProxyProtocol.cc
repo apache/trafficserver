@@ -557,7 +557,7 @@ ProxyProtocol::get_tlv(const uint8_t tlvCode) const
  */
 
 std::optional<std::string_view>
-ProxyProtocol::get_tlv_ssl_cipher() const
+ProxyProtocol::_get_tlv_ssl_subtype(int subtype) const
 {
   if (auto v = tlv.find(PP2_TYPE_SSL); v != tlv.end() && v->second.length() != 0) {
     auto ssl = v->second;
@@ -568,10 +568,10 @@ ProxyProtocol::get_tlv_ssl_cipher() const
       return std::nullopt;
     }
 
-    // Find PP2_SUBTYPE_SSL_CIPHER
+    // Find the given subtype
     uint16_t    len = ssl.length();
     const char *p   = ssl.data() + 5; // Skip client (uint8_t) + verify (uint32_t)
-    const char *end = p + len;
+    const char *end = p + len + 1;
     while (p != end) {
       if (end - p < 3) {
         // The size of a sub TLV entry must be 3 bytes or more
@@ -596,7 +596,7 @@ ProxyProtocol::get_tlv_ssl_cipher() const
       }
 
       // Found it?
-      if (type == PP2_SUBTYPE_SSL_CIPHER) {
+      if (type == subtype) {
         Dbg(dbg_ctl_proxyprotocol, "TLV: ID=%u LEN=%hu", type, length);
         return std::string_view(p, length);
       }
@@ -605,6 +605,20 @@ ProxyProtocol::get_tlv_ssl_cipher() const
     }
   }
   return std::nullopt;
+}
+
+std::optional<std::string_view>
+ProxyProtocol::get_tlv_ssl_version() const
+{
+  // The specification only says "the US-ASCII string representation of the TLS version".
+  // HAProxy sends a string returned by SSL_get_version.
+  return this->_get_tlv_ssl_subtype(PP2_SUBTYPE_SSL_VERSION);
+}
+
+std::optional<std::string_view>
+ProxyProtocol::get_tlv_ssl_cipher() const
+{
+  return this->_get_tlv_ssl_subtype(PP2_SUBTYPE_SSL_CIPHER);
 }
 
 int
