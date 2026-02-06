@@ -3266,32 +3266,16 @@ HttpTransact::handle_cache_write_lock(State *s)
         }
         HandleCacheOpenReadHit(s);
       } else {
-        // Object is stale. Decision depends on action type.
-        bool can_serve_stale =
-          (s->cache_open_write_fail_action & static_cast<MgmtByte>(CacheOpenWriteFailAction_t::STALE_ON_REVALIDATE)) &&
-          is_stale_cache_response_returnable(s);
-
-        if (can_serve_stale) {
-          // Action 6: Serve stale content without revalidation.
-          // Destroy server_request since we're serving from cache.
-          TxnDbg(dbg_ctl_http_trans, "READ_RETRY: object stale, serving stale (action 6)");
-          s->hdr_info.server_request.destroy();
-          s->serving_stale_due_to_write_lock = true;
-          s->cache_lookup_result             = CacheLookupResult_t::HIT_STALE;
-
-          if (s->cache_lookup_complete_deferred) {
-            s->cache_lookup_complete_deferred = false;
-            TRANSACT_RETURN(StateMachineAction_t::API_CACHE_LOOKUP_COMPLETE, HandleCacheOpenReadHit);
-          }
-          HandleCacheOpenReadHit(s);
-        } else {
-          // Action 5: Object is stale, go to origin for revalidation.
-          // Keep server_request intact - it has conditional headers (If-Modified-Since, If-None-Match).
-          // Set NO_ACTION since we can't write to cache (no write lock).
-          TxnDbg(dbg_ctl_http_trans, "READ_RETRY: object stale, going to origin with conditional request (action 5)");
-          s->cache_info.action = CacheAction_t::NO_ACTION;
-          handle_cache_write_lock_go_to_origin(s);
+        // Object is stale. Save it as potential fallback, then trigger actual cache retry.
+        // HandleCacheOpenReadMiss will serve stale fallback (action 6) or go to origin (action 5).
+        if (is_stale_cache_response_returnable(s)) {
+          s->cache_info.stale_fallback = s->cache_info.object_read;
         }
+        TxnDbg(dbg_ctl_http_trans, "READ_RETRY: object stale, triggering actual cache retry");
+        s->cache_info.object_read  = nullptr;
+        s->cache_info.write_status = CacheWriteStatus_t::LOCK_MISS;
+        s->hdr_info.server_request.destroy();
+        TRANSACT_RETURN(StateMachineAction_t::CACHE_LOOKUP, nullptr);
       }
     } else {
       HandleCacheOpenReadMiss(s);
@@ -3391,9 +3375,23 @@ HttpTransact::HandleCacheOpenReadMiss(State *s)
   } else if (s->api_server_response_no_store) { // plugin may have decided not to cache the response
     s->cache_info.action = CacheAction_t::NO_ACTION;
   } else if (s->cache_info.write_lock_state == CacheWriteLock_t::READ_RETRY) {
-    // READ_RETRY cache read failed (no object found). If there was a stale object,
-    // handle_cache_write_lock would have called HandleCacheOpenReadHit, not us.
-    // Don't attempt cache write - just proxy to origin without caching.
+    // READ_RETRY cache read failed (no fresh object found).
+    // Check if we have a stale fallback (saved from action 6 revalidation case).
+    bool is_action_6 =
+      (s->cache_open_write_fail_action & static_cast<MgmtByte>(CacheOpenWriteFailAction_t::STALE_ON_REVALIDATE)) != 0;
+
+    if (is_action_6 && s->cache_info.stale_fallback != nullptr) {
+      // Action 6: Serve stale fallback after retries exhausted.
+      TxnDbg(dbg_ctl_http_trans, "READ_RETRY: retries exhausted, serving stale (action 6)");
+      s->cache_info.object_read          = s->cache_info.stale_fallback;
+      s->cache_info.stale_fallback       = nullptr;
+      s->serving_stale_due_to_write_lock = true;
+      s->cache_lookup_result             = CacheLookupResult_t::HIT_STALE;
+      s->cache_lookup_complete_deferred  = false;
+      HandleCacheOpenReadHit(s);
+      return;
+    }
+    // Action 5 or no stale fallback: proceed to origin without caching.
     TxnDbg(dbg_ctl_http_trans, "READ_RETRY cache read failed, bypassing cache");
     s->cache_info.action = CacheAction_t::NO_ACTION;
   } else {

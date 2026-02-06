@@ -487,6 +487,7 @@ public:
     HTTPInfo         transform_store;
     CacheDirectives  directives;
     HTTPInfo        *object_read          = nullptr;
+    HTTPInfo        *stale_fallback       = nullptr; // Saved stale object for action 6 fallback during retry
     CacheWriteLock_t write_lock_state     = CacheWriteLock_t::INIT;
     int              lookup_count         = 0;
     SquidHitMissCode hit_miss_code        = SQUID_MISS_NONE;
