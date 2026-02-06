@@ -1,15 +1,3 @@
-'''
-Test cache write lock contention behavior with parallel requests for actions 5 and 6.
-
-This test issues multiple parallel curl requests to trigger actual cache write lock
-contention. It is skipped by default because the behavior is timing-sensitive and
-not suitable for CI environments.
-
-To run this test manually:
-    export RUN_CACHE_CONTENTION_TEST=1
-    cd build/tests
-    ./autest.sh --sandbox /tmp/sbcursor --clean=none -f cache-write-lock-contention
-'''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -25,6 +13,19 @@ To run this test manually:
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+
+'''
+Test cache write lock contention behavior with parallel requests for actions 5 and 6.
+
+This test issues multiple parallel curl requests to trigger actual cache write lock
+contention. It is skipped by default because the behavior is timing-sensitive and
+not suitable for CI environments.
+
+To run this test manually:
+    export RUN_CACHE_CONTENTION_TEST=1
+    cd build/tests
+    ./autest.sh --sandbox /tmp/sbcursor --clean=none -f cache-write-lock-contention
+'''
 
 import os
 
