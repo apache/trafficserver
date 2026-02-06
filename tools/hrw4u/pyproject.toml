@@ -20,7 +20,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "hrw4u"
-version = "1.4.1"
+version = "1.4.2"
 description = "HRW4U CLI tool for Apache Traffic Server header rewrite rules"
 authors = [
     {name = "Leif Hedstrom", email = "leif@apache.org"}

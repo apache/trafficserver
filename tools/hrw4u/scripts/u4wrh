@@ -32,6 +32,10 @@ def main() -> None:
     # Argument parsing
     output_group.add_argument("--hrw4u", action="store_true", help="Produce reconstructed hrw4u output (default)")
     parser.add_argument("--no-comments", action="store_true", help="Skip comment preservation (ignore comments in output)")
+    parser.add_argument(
+        "--no-merge-sections",
+        action="store_true",
+        help="Disable section merging (create separate sections for each cond directive)")
     args = parser.parse_args()
 
     # Default to hrw4u output if neither AST nor hrw4u specified
