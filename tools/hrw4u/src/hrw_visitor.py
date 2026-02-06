@@ -45,7 +45,7 @@ class HRWInverseVisitor(u4wrhVisitor, BaseHRWVisitor):
         super().__init__(filename=filename, debug=debug, error_collector=error_collector)
 
         # HRW inverse-specific state
-        self.section_label = section_label
+        self._section_label = section_label
         self.preserve_comments = preserve_comments
         self._pending_terms: list[tuple[str, CondState]] = []
         self._in_group: bool = False

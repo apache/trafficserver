@@ -17,6 +17,9 @@
 from __future__ import annotations
 
 import re
+import subprocess
+import sys
+import tempfile
 from pathlib import Path
 from typing import Final, Iterator
 
@@ -52,6 +55,7 @@ __all__: Final[list[str]] = [
     "run_ast_test",
     "run_failing_test",
     "run_reverse_test",
+    "run_bulk_test",
 ]
 
 
@@ -315,3 +319,69 @@ def create_reverse_test(group: str):
         run_reverse_test(input_file, output_file)
 
     return test_reverse_conversion
+
+
+def run_bulk_test(group: str) -> None:
+    """
+    Run bulk compilation test for a specific test group.
+
+    Collects all .input.txt files in the group, runs hrw4u with bulk
+    input:output pairs, and compares each output with expected .output.txt.
+    """
+    base_dir = Path("tests/data") / group
+    exceptions = _read_exceptions(base_dir)
+
+    input_files = []
+    expected_outputs = []
+    file_pairs = []
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmp_path = Path(tmpdir)
+
+        for input_file in sorted(base_dir.glob("*.input.txt")):
+            if ".fail." in input_file.name:
+                continue
+
+            base = input_file.with_suffix('')
+            expected_output_file = base.with_suffix('.output.txt')
+            test_id = base.name
+
+            if test_id in exceptions:
+                test_direction = exceptions[test_id]
+                if test_direction != "hrw4u":
+                    continue
+
+            if not expected_output_file.exists():
+                continue
+
+            input_files.append(input_file)
+            expected_outputs.append(expected_output_file)
+
+            actual_output_file = tmp_path / f"{input_file.stem}.output.txt"
+            file_pairs.append(f"{input_file.resolve()}:{actual_output_file.resolve()}")
+
+        if not file_pairs:
+            pytest.skip(f"No valid test files found for bulk test in {group}")
+            return
+
+        hrw4u_script = Path("scripts/hrw4u").resolve()
+        cmd = [sys.executable, str(hrw4u_script)] + file_pairs
+
+        result = subprocess.run(cmd, capture_output=True, text=True, cwd=Path.cwd())
+
+        if result.returncode != 0:
+            pytest.fail(f"hrw4u bulk compilation failed:\nstdout: {result.stdout}\nstderr: {result.stderr}")
+
+        for input_file, expected_output_file in zip(input_files, expected_outputs):
+            actual_output_file = tmp_path / f"{input_file.stem}.output.txt"
+
+            if not actual_output_file.exists():
+                pytest.fail(f"Output file not created for {input_file.name}: {actual_output_file}")
+
+            actual_output = actual_output_file.read_text().strip()
+            expected_output = expected_output_file.read_text().strip()
+
+            assert actual_output == expected_output, (
+                f"Bulk output mismatch for {input_file.name}\n"
+                f"Expected:\n{expected_output}\n\n"
+                f"Actual:\n{actual_output}")
