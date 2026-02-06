@@ -64,7 +64,7 @@ public:
   int64_t
   difference_msec(T ms_start, T ms_end, int64_t missing = -1) const // Return "missing" when Milestone is not set
   {
-    if (this->_milestones[static_cast<size_t>(ms_end)] == 0) {
+    if (this->_milestones[static_cast<size_t>(ms_start)] == 0 || this->_milestones[static_cast<size_t>(ms_end)] == 0) {
       return missing;
     }
     return ink_hrtime_to_msec(this->_milestones[static_cast<size_t>(ms_end)] - this->_milestones[static_cast<size_t>(ms_start)]);

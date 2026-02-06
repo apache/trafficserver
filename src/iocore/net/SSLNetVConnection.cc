@@ -1579,6 +1579,12 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
     Metrics::Counter::increment(ssl_rsb.total_success_handshake_count_out);
 
     sslHandshakeStatus = SSLHandshakeStatus::SSL_HANDSHAKE_DONE;
+
+    // Record TLS handshake end time for outbound connections
+    if (this->get_tls_handshake_begin_time()) {
+      this->_record_tls_handshake_end_time();
+    }
+
     return EVENT_DONE;
 
   case SSL_ERROR_WANT_WRITE:
