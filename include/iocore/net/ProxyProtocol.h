@@ -86,6 +86,7 @@ public:
   void set_ipv6_addrs(const in6_addr &src_addr, uint16_t src_port, const in6_addr &dst_addr, uint16_t dst_port);
 
   std::optional<std::string_view> get_tlv(const uint8_t tlvCode) const;
+  std::optional<std::string_view> get_tlv_ssl_version() const;
   std::optional<std::string_view> get_tlv_ssl_cipher() const;
 
   ProxyProtocolVersion                          version   = ProxyProtocolVersion::UNDEFINED;
@@ -135,6 +136,8 @@ public:
 
 private:
   std::string additional_data;
+
+  std::optional<std::string_view> _get_tlv_ssl_subtype(int subtype) const;
 };
 
 const size_t PPv1_CONNECTION_HEADER_LEN_MAX = 108;
