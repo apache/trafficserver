@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import re
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 from typing import Final, Iterator
@@ -364,7 +365,7 @@ def run_bulk_test(group: str) -> None:
             return
 
         hrw4u_script = Path("scripts/hrw4u").resolve()
-        cmd = ["python3", str(hrw4u_script)] + file_pairs
+        cmd = [sys.executable, str(hrw4u_script)] + file_pairs
 
         result = subprocess.run(cmd, capture_output=True, text=True, cwd=Path.cwd())
 

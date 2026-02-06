@@ -246,8 +246,6 @@ def run_main(
         output_flag_name: Name of output flag (e.g., "hrw", "hrw4u")
         output_flag_help: Help text for output flag
     """
-    import argparse
-
     parser = argparse.ArgumentParser(
         description=description,
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -305,19 +303,20 @@ def run_main(
                 content, filename, lexer_class, parser_class, error_prefix, not args.stop_on_error)
 
             try:
-                original_stdout = sys.stdout
                 with open(output_path, 'w', encoding='utf-8') as output_file:
-                    sys.stdout = output_file
-                    generate_output(tree, parser_obj, visitor_class, filename, args, error_collector)
-                sys.stdout = original_stdout
+                    original_stdout = sys.stdout
+                    try:
+                        sys.stdout = output_file
+                        generate_output(tree, parser_obj, visitor_class, filename, args, error_collector)
+                    finally:
+                        sys.stdout = original_stdout
             except Exception as e:
-                sys.stdout = original_stdout
                 print(f"Error writing to '{output_path}': {e}", file=sys.stderr)
                 sys.exit(1)
     else:
         for i, input_path in enumerate(args.files):
             if i > 0:
-                print("\n# ---")
+                print("# ---")
 
             try:
                 with open(input_path, 'r', encoding='utf-8') as input_file:
