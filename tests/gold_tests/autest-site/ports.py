@@ -74,7 +74,7 @@ def PortOpen(port: int, address: str = None, listening_ports: Set[int] = None) -
         host.WriteDebug(
             'PortOpen', f"Connection to port {port} succeeded, the port is open, "
             "and a future connection cannot use it")
-    except socket.error:
+    except OSError:
         host.WriteDebug(
             'PortOpen', f"socket error for port {port}, port is closed, "
             "and therefore a future connection can use it")
