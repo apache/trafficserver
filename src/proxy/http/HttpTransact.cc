@@ -5747,11 +5747,7 @@ HttpTransact::initialize_state_variables_from_request(State *s, HTTPHdr *obsolet
   memset(&s->request_data.dest_ip, 0, sizeof(s->request_data.dest_ip));
   if (vc) {
     s->request_data.incoming_port = vc->get_local_port();
-    s->pp_info.version            = vc->get_proxy_protocol_version();
-    if (s->pp_info.version != ProxyProtocolVersion::UNDEFINED) {
-      ats_ip_copy(s->pp_info.src_addr, vc->get_proxy_protocol_src_addr());
-      ats_ip_copy(s->pp_info.dst_addr, vc->get_proxy_protocol_dst_addr());
-    }
+    s->pp_info                    = vc->get_proxy_protocol_info();
   }
   s->request_data.xact_start                      = s->client_request_time;
   s->request_data.api_info                        = &s->api_info;

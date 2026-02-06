@@ -1650,14 +1650,18 @@ LogAccess::marshal_proxy_protocol_dst_ip(char *buf)
 int
 LogAccess::marshal_proxy_protocol_authority(char *buf)
 {
-  if (buf && m_http_sm) {
+  int len = INK_MIN_ALIGN;
+
+  if (m_http_sm) {
     if (auto authority = m_http_sm->t_state.pp_info.get_tlv(PP2_TYPE_AUTHORITY)) {
-      int len = static_cast<int>(authority->size());
-      marshal_str(buf, authority->data(), len);
-      return len;
+      len = padded_length(authority->size() + 1);
+      if (buf) {
+        marshal_str(buf, authority->data(), len);
+        buf[authority->size()] = '\0';
+      }
     }
   }
-  return 0;
+  return len;
 }
 
 /*-------------------------------------------------------------------------
