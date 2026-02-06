@@ -86,6 +86,7 @@ public:
   void set_ipv6_addrs(const in6_addr &src_addr, uint16_t src_port, const in6_addr &dst_addr, uint16_t dst_port);
 
   std::optional<std::string_view> get_tlv(const uint8_t tlvCode) const;
+  std::optional<std::string_view> get_tlv_ssl_cipher() const;
 
   ProxyProtocolVersion                          version   = ProxyProtocolVersion::UNDEFINED;
   uint16_t                                      ip_family = AF_UNSPEC;
