@@ -39,7 +39,6 @@
 #include <map>
 #include <unordered_map>
 #include <cctype>
-#include <span>
 #include <string_view>
 #include <chrono>
 #include <functional>
@@ -116,11 +115,18 @@ public:
   /// Parse a comma-separated header list into the headers array.
   void parse(std::string_view src);
 
-  /// Return a span of the parsed headers.
-  std::span<const std::string_view>
+  /// Return a pointer to the parsed headers array.
+  const std::string_view *
   get_headers() const
   {
-    return std::span<const std::string_view>{headers, count};
+    return headers;
+  }
+
+  /// Return the number of parsed headers.
+  size_t
+  get_count() const
+  {
+    return count;
   }
 };
 
