@@ -198,9 +198,10 @@ def _setup_port_queue(amount=1000):
                 g_ports.put(port)
             port += 1
     if rmin > amount and g_ports.qsize() < amount:
-        port = 2001
         # Fill in more ports, starting at 2001, well above well known ports,
         # and going up until the minimum port range used by the OS.
+        # Add port_offset to support parallel test execution (same as high range).
+        port = 2001 + port_offset
         while port < dmin and g_ports.qsize() < amount:
             if PortOpen(port, listening_ports=listening_ports):
                 host.WriteDebug('_setup_port_queue', f"Rejecting an already open port: {port}")
