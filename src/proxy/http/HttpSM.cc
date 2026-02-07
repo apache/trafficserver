@@ -2109,7 +2109,8 @@ HttpSM::state_read_server_response_header(int event, void *data)
 
     // Recompute cooked cache control with targeted headers.
     t_state.hdr_info.server_response.m_mime->recompute_cooked_stuff(nullptr,
-                                                                    t_state.txn_conf->targeted_cache_control_headers.get_headers());
+                                                                    t_state.txn_conf->targeted_cache_control_headers.get_headers(),
+                                                                    t_state.txn_conf->targeted_cache_control_headers.get_count());
 
     SMDbg(dbg_ctl_http_seq, "Done parsing server response header");
 

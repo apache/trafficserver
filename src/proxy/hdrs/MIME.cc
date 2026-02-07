@@ -3713,7 +3713,8 @@ MIMEHdrImpl::recompute_accelerators_and_presence_bits()
 ////////////////////////////////////////////////////////
 
 void
-MIMEHdrImpl::recompute_cooked_stuff(MIMEField *changing_field_or_null, std::span<const std::string_view> targeted_headers)
+MIMEHdrImpl::recompute_cooked_stuff(MIMEField *changing_field_or_null, const std::string_view *targeted_headers,
+                                    size_t targeted_headers_count)
 {
   int         len, tlen;
   const char *s;
@@ -3734,8 +3735,8 @@ MIMEHdrImpl::recompute_cooked_stuff(MIMEField *changing_field_or_null, std::span
     field = nullptr;
 
     // Check for targeted cache control headers first (in priority order).
-    for (const auto &header_name : targeted_headers) {
-      field = mime_hdr_field_find(this, header_name);
+    for (size_t i = 0; i < targeted_headers_count; ++i) {
+      field = mime_hdr_field_find(this, targeted_headers[i]);
       if (field) {
         break;
       }
