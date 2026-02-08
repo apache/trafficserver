@@ -337,19 +337,22 @@ def run_single_test(
     script_dir: Path,
     sandbox: Path,
     ats_bin: str,
+    build_root: str,
     extra_args: List[str],
     env: dict
-) -> Tuple[str, float, bool, str]:
+) -> Tuple[str, float, str, str]:
     """
     Run a single test and return its timing.
 
     Returns:
-        Tuple of (test_name, duration, passed, output)
+        Tuple of (test_name, duration, status, output)
+        status is one of: "PASS", "FAIL", "SKIP"
     """
     cmd = [
         'uv', 'run', 'autest', 'run',
         '--directory', 'gold_tests',
         '--ats-bin', ats_bin,
+        '--build-root', build_root,
         '--sandbox', str(sandbox / test),
         '--filters', test
     ]
@@ -368,12 +371,22 @@ def run_single_test(
         duration = time.time() - start
         output = proc.stdout + proc.stderr
         parsed = parse_autest_output(output)
-        passed = parsed['failed'] == 0 and parsed['exceptions'] == 0
-        return (test, duration, passed, output)
+        # Determine status:
+        # - SKIP: test was skipped (missing dependency, unsupported feature)
+        # - PASS: test ran and passed
+        # - FAIL: test failed, had exceptions, or nothing ran at all
+        if parsed['skipped'] > 0 and parsed['passed'] == 0 and parsed['failed'] == 0:
+            status = "SKIP"
+        elif (parsed['failed'] == 0 and parsed['exceptions'] == 0
+              and proc.returncode == 0 and (parsed['passed'] > 0 or parsed['skipped'] > 0)):
+            status = "PASS"
+        else:
+            status = "FAIL"
+        return (test, duration, status, output)
     except subprocess.TimeoutExpired:
-        return (test, 600.0, False, "TIMEOUT")
+        return (test, 600.0, "FAIL", "TIMEOUT")
     except Exception as e:
-        return (test, time.time() - start, False, str(e))
+        return (test, time.time() - start, "FAIL", str(e))
 
 
 def run_worker(
@@ -382,6 +395,7 @@ def run_worker(
     script_dir: Path,
     sandbox_base: Path,
     ats_bin: str,
+    build_root: str,
     extra_args: List[str],
     port_offset_step: int = 1000,
     verbose: bool = False,
@@ -396,6 +410,7 @@ def run_worker(
         script_dir: Directory containing autest.sh
         sandbox_base: Base sandbox directory
         ats_bin: Path to ATS bin directory
+        build_root: Path to the build directory (for test plugins etc.)
         extra_args: Additional arguments to pass to autest
         port_offset_step: Port offset between workers
         verbose: Whether to print verbose output
@@ -423,19 +438,20 @@ def run_worker(
         all_output = []
         total_tests = len(tests)
         for idx, test in enumerate(tests, 1):
-            test_name, duration, passed, output = run_single_test(
-                test, script_dir, sandbox, ats_bin, extra_args, env
+            test_name, duration, status, output = run_single_test(
+                test, script_dir, sandbox, ats_bin, build_root, extra_args, env
             )
             result.test_timings[test_name] = duration
             all_output.append(output)
 
-            if passed:
+            if status == "PASS":
                 result.passed += 1
+            elif status == "SKIP":
+                result.skipped += 1
             else:
                 result.failed += 1
                 result.failed_tests.append(test_name)
 
-            status = "PASS" if passed else "FAIL"
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             # Fixed-width format: date time status duration worker progress test_name
             print(f"{timestamp} {status:4s} {duration:6.1f}s Worker:{worker_id:2d} {idx:2d}/{total_tests:2d} {test}", flush=True)
@@ -448,6 +464,7 @@ def run_worker(
             'uv', 'run', 'autest', 'run',
             '--directory', 'gold_tests',
             '--ats-bin', ats_bin,
+            '--build-root', build_root,
             '--sandbox', str(sandbox),
         ]
 
@@ -482,6 +499,14 @@ def run_worker(
             result.exceptions = parsed['exceptions']
             result.unknown = parsed['unknown']
             result.failed_tests = parsed['failed_tests']
+
+            # If no tests ran at all (passed + failed + skipped == 0),
+            # autest likely errored at setup (e.g., missing proxy verifier).
+            # Count all tests as failed to avoid false positives.
+            total_ran = result.passed + result.failed + result.skipped
+            if total_ran == 0 and proc.returncode != 0:
+                result.failed = len(tests)
+                result.failed_tests = list(tests)
 
         except subprocess.TimeoutExpired:
             result.output = "TIMEOUT: Worker exceeded 1 hour timeout"
@@ -610,6 +635,12 @@ Examples:
         help='Path to ATS bin directory'
     )
     parser.add_argument(
+        '--build-root',
+        default=None,
+        help='Path to the build directory (for test plugins, etc.). '
+             'Defaults to the source tree root.'
+    )
+    parser.add_argument(
         '--sandbox',
         default='/tmp/autest-parallel',
         help='Base sandbox directory (default: /tmp/autest-parallel)'
@@ -680,6 +711,12 @@ Examples:
     script_dir = Path(__file__).parent.resolve()
     test_dir = script_dir / args.test_dir
 
+    # Resolve build root (defaults to source tree root, i.e. parent of tests/)
+    if args.build_root:
+        build_root = str(Path(args.build_root).resolve())
+    else:
+        build_root = str(script_dir.parent)
+
     if not test_dir.exists():
         print(f"Error: Test directory not found: {test_dir}", file=sys.stderr)
         sys.exit(1)
@@ -740,6 +777,7 @@ Examples:
 
     if partitions:
         print(f"Running with {len(partitions)} parallel workers")
+    print(f"Build root: {build_root}")
     print(f"Port offset step: {args.port_offset_step}")
     print(f"Sandbox: {args.sandbox}")
     if args.collect_timings:
@@ -766,6 +804,7 @@ Examples:
                     script_dir=script_dir,
                     sandbox_base=sandbox_base,
                     ats_bin=args.ats_bin,
+                    build_root=build_root,
                     extra_args=args.extra_args or [],
                     port_offset_step=args.port_offset_step,
                     verbose=args.verbose,
@@ -808,19 +847,20 @@ Examples:
         serial_result = TestResult(worker_id=serial_worker_id, tests=serial_tests_to_run, is_serial=True)
 
         for idx, test in enumerate(serial_tests_to_run, 1):
-            test_name, duration, passed, output = run_single_test(
+            test_name, duration, status, output = run_single_test(
                 test, script_dir, sandbox_base / "serial", args.ats_bin,
-                args.extra_args or [], env
+                build_root, args.extra_args or [], env
             )
             serial_result.test_timings[test_name] = duration
 
-            if passed:
+            if status == "PASS":
                 serial_result.passed += 1
+            elif status == "SKIP":
+                serial_result.skipped += 1
             else:
                 serial_result.failed += 1
                 serial_result.failed_tests.append(test_name)
 
-            status = "PASS" if passed else "FAIL"
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             print(f"{timestamp} {status:4s} {duration:6.1f}s Serial    {idx:2d}/{len(serial_tests_to_run):2d} {test}", flush=True)
 
