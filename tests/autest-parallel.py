@@ -477,18 +477,44 @@ def run_worker(
 
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         print(f"{timestamp} Worker:{worker_id:2d} Starting batch of {len(tests)} tests (port offset {port_offset})", flush=True)
+        if verbose:
+            print(f"             Worker:{worker_id:2d} Tests: {', '.join(tests[:5])}"
+                  f"{'...' if len(tests) > 5 else ''}", flush=True)
 
         try:
-            proc = subprocess.run(
-                cmd,
-                cwd=script_dir,
-                capture_output=True,
-                text=True,
-                env=env,
-                timeout=3600  # 1 hour timeout per worker
-            )
-            result.output = proc.stdout + proc.stderr
-            result.return_code = proc.returncode
+            if verbose:
+                # Stream output in real-time so the user sees test progress
+                proc = subprocess.Popen(
+                    cmd,
+                    cwd=script_dir,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    text=True,
+                    env=env,
+                )
+                output_lines = []
+                for line in proc.stdout:
+                    output_lines.append(line)
+                    # Print lines that show test progress
+                    clean = strip_ansi(line).strip()
+                    if clean.startswith('Running Test') or 'Passed' in clean or 'Failed' in clean:
+                        if clean.startswith('Running Test'):
+                            ts = datetime.now().strftime("%H:%M:%S")
+                            print(f"  [{ts}] Worker:{worker_id:2d} {clean}", flush=True)
+                proc.wait(timeout=3600)
+                result.output = ''.join(output_lines)
+                result.return_code = proc.returncode
+            else:
+                proc = subprocess.run(
+                    cmd,
+                    cwd=script_dir,
+                    capture_output=True,
+                    text=True,
+                    env=env,
+                    timeout=3600  # 1 hour timeout per worker
+                )
+                result.output = proc.stdout + proc.stderr
+                result.return_code = proc.returncode
 
             # Parse results
             parsed = parse_autest_output(result.output)
@@ -504,7 +530,7 @@ def run_worker(
             # autest likely errored at setup (e.g., missing proxy verifier).
             # Count all tests as failed to avoid false positives.
             total_ran = result.passed + result.failed + result.skipped
-            if total_ran == 0 and proc.returncode != 0:
+            if total_ran == 0 and (hasattr(proc, 'returncode') and proc.returncode != 0):
                 result.failed = len(tests)
                 result.failed_tests = list(tests)
 
@@ -767,11 +793,18 @@ Examples:
             print(f"Using timing-based load balancing")
             if args.verbose:
                 for i, load in enumerate(expected_loads):
-                    print(f"  Worker {i}: {len(partitions[i])} tests, ~{load:.1f}s expected")
+                    tests_preview = ', '.join(partitions[i][:3])
+                    suffix = f", ... (+{len(partitions[i])-3} more)" if len(partitions[i]) > 3 else ""
+                    print(f"  Worker {i}: {len(partitions[i])} tests, ~{load:.1f}s expected [{tests_preview}{suffix}]")
         else:
             # Fall back to simple round-robin partitioning
             partitions = partition_tests(parallel_tests, num_jobs)
             print(f"Using round-robin partitioning")
+            if args.verbose:
+                for i in range(len(partitions)):
+                    tests_preview = ', '.join(partitions[i][:3])
+                    suffix = f", ... (+{len(partitions[i])-3} more)" if len(partitions[i]) > 3 else ""
+                    print(f"  Worker {i}: {len(partitions[i])} tests [{tests_preview}{suffix}]")
     else:
         partitions = []
 
@@ -819,8 +852,11 @@ Examples:
                     result = future.result()
                     results.append(result)
                     status = "PASS" if result.failed == 0 else "FAIL"
-                    print(f"[Worker {worker_id}] Completed: {result.passed} passed, "
-                          f"{result.failed} failed ({result.duration:.1f}s) [{status}]")
+                    ts = datetime.now().strftime("%H:%M:%S")
+                    parts = [f"{result.passed} passed", f"{result.failed} failed"]
+                    if result.skipped > 0:
+                        parts.append(f"{result.skipped} skipped")
+                    print(f"[{ts}] Worker:{worker_id:2d} Done: {', '.join(parts)} ({result.duration:.1f}s) [{status}]")
                 except Exception as e:
                     print(f"[Worker {worker_id}] Error: {e}", file=sys.stderr)
                     results.append(TestResult(
