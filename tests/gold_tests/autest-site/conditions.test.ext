@@ -63,33 +63,39 @@ def HasLegacyTLSSupport(self):
     causes 'openssl ciphers -v -tls1' to still list TLSv1 ciphers, but actual
     TLS 1.0 connections will fail with "no protocols available".
 
-    This check attempts to create an actual TLSv1 connection to a known HTTPS
-    server to detect if the protocol is truly available at runtime.
+    We only probe TLSv1.0 (not TLSv1.1 separately) because crypto-policies
+    always disable both legacy versions together. If TLSv1.0 is unavailable,
+    TLSv1.1 will be too.
+
+    The check connects to localhost on a closed port to avoid any external
+    network dependency. A "connection refused" error means the TLS protocol
+    was available but nothing was listening; "no protocols available" means
+    the crypto-policy blocked TLSv1.0 entirely.
     """
 
     def check_tls1_support():
         try:
-            # Try to actually use TLSv1 against a real HTTPS server
-            # This catches crypto-policy restrictions that aren't visible in cipher listings
-            # We use a well-known server that's likely to be reachable
+            # Connect to localhost on a port nothing is listening on.
+            # This avoids external network dependency while still detecting
+            # whether the crypto-policy allows TLSv1.0.
             result = subprocess.run(
-                ['openssl', 's_client', '-tls1', '-connect', 'www.google.com:443'],
+                ['openssl', 's_client', '-tls1', '-connect', '127.0.0.1:1'],
                 capture_output=True,
                 text=True,
-                timeout=10,
-                input=''  # Don't wait for input
+                timeout=5,
+                input=''  # Don't wait for interactive input
             )
-            # Combine stdout and stderr for checking
             output = result.stdout + result.stderr
-            # If we get "no protocols available", TLSv1 is disabled by policy
+            # "no protocols available" means TLSv1 is disabled by crypto-policy
             if 'no protocols available' in output:
                 return False
-            # If we get a successful connection or a server-side TLS version mismatch,
-            # it means TLSv1 is enabled on this client
+            # Connection refused or other errors mean TLSv1 was attempted
+            # (the protocol is available, just no server listening)
             return True
         except subprocess.TimeoutExpired:
-            # If network is slow but TLSv1 was attempted, assume it's available
-            return True
+            # Timeout on localhost shouldn't happen, but if it does,
+            # assume TLSv1 is not available (safer than false positive)
+            return False
         except Exception:
             # If we can't determine, assume TLSv1 is not available (safer)
             return False
