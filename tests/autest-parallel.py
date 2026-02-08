@@ -808,25 +808,65 @@ Examples:
     else:
         partitions = []
 
+    # Compute totals for progress tracking
+    total_tests = len(parallel_tests) + (len(serial_tests_to_run) if serial_tests_to_run and not args.no_serial else 0)
+    serial_count = len(serial_tests_to_run) if serial_tests_to_run and not args.no_serial else 0
+
     if partitions:
         print(f"Running with {len(partitions)} parallel workers")
+    print(f"Total: {total_tests} tests ({len(parallel_tests)} parallel across {len(partitions)} workers"
+          f"{f', {serial_count} serial' if serial_count else ''})")
     print(f"Build root: {build_root}")
     print(f"Port offset step: {args.port_offset_step}")
     print(f"Sandbox: {args.sandbox}")
     if args.collect_timings:
         print("Collecting per-test timing data (tests run sequentially per worker)")
-    if serial_tests_to_run and not args.no_serial:
-        print(f"Serial tests will run after parallel tests complete ({len(serial_tests_to_run)} tests)")
+    print()
 
     # Create sandbox base directory
     sandbox_base = Path(args.sandbox)
     sandbox_base.mkdir(parents=True, exist_ok=True)
+
+    # Progress tracking state
+    tests_done = 0
+    tests_passed = 0
+    tests_failed = 0
+    tests_skipped = 0
+    workers_done = 0
+    total_workers = len(partitions)
+
+    def format_eta(elapsed: float, done: int, total: int) -> str:
+        """Estimate remaining time based on progress so far."""
+        if done == 0 or done >= total:
+            return "--:--"
+        rate = elapsed / done
+        remaining = rate * (total - done)
+        mins, secs = divmod(int(remaining), 60)
+        if mins >= 60:
+            hours, mins = divmod(mins, 60)
+            return f"{hours}h {mins:02d}m"
+        return f"{mins}m {secs:02d}s"
+
+    def print_progress(phase: str = "Parallel"):
+        """Print an in-place progress line using \\r."""
+        elapsed = time.time() - start_time
+        elapsed_str = f"{int(elapsed)}s"
+        eta = format_eta(elapsed, tests_done, total_tests)
+        pct = (tests_done * 100 // total_tests) if total_tests > 0 else 0
+        fail_str = f" | {tests_failed} FAILED" if tests_failed > 0 else ""
+        skip_str = f" | {tests_skipped} skipped" if tests_skipped > 0 else ""
+        line = (f"\r[{phase}] {tests_done}/{total_tests} tests ({pct}%) "
+                f"| {workers_done}/{total_workers} workers done"
+                f"{fail_str}{skip_str}"
+                f" | {elapsed_str} elapsed | ETA: {eta}  ")
+        print(line, end='', flush=True)
 
     # Run workers in parallel
     start_time = time.time()
     results: List[TestResult] = []
 
     if partitions:
+        print_progress()
         with ProcessPoolExecutor(max_workers=len(partitions)) as executor:
             futures = {}
             for worker_id, worker_tests in enumerate(partitions):
@@ -851,24 +891,43 @@ Examples:
                 try:
                     result = future.result()
                     results.append(result)
-                    status = "PASS" if result.failed == 0 else "FAIL"
-                    ts = datetime.now().strftime("%H:%M:%S")
-                    parts = [f"{result.passed} passed", f"{result.failed} failed"]
-                    if result.skipped > 0:
-                        parts.append(f"{result.skipped} skipped")
-                    print(f"[{ts}] Worker:{worker_id:2d} Done: {', '.join(parts)} ({result.duration:.1f}s) [{status}]")
+                    workers_done += 1
+                    tests_done += result.passed + result.failed + result.skipped
+                    tests_passed += result.passed
+                    tests_failed += result.failed
+                    tests_skipped += result.skipped
+
+                    if args.verbose:
+                        # In verbose mode, print detail line then progress
+                        status = "PASS" if result.failed == 0 else "FAIL"
+                        ts = datetime.now().strftime("%H:%M:%S")
+                        parts = [f"{result.passed} passed", f"{result.failed} failed"]
+                        if result.skipped > 0:
+                            parts.append(f"{result.skipped} skipped")
+                        # Clear the progress line, print detail, then re-print progress
+                        print(f"\r[{ts}] Worker:{worker_id:2d} Done: {', '.join(parts)} "
+                              f"({result.duration:.1f}s) [{status}]" + " " * 20)
+
+                    print_progress()
                 except Exception as e:
-                    print(f"[Worker {worker_id}] Error: {e}", file=sys.stderr)
+                    print(f"\r[Worker {worker_id}] Error: {e}" + " " * 20, file=sys.stderr)
+                    workers_done += 1
+                    tests_done += len(partitions[worker_id])
+                    tests_failed += len(partitions[worker_id])
                     results.append(TestResult(
                         worker_id=worker_id,
                         tests=partitions[worker_id],
                         failed=len(partitions[worker_id]),
                         output=str(e)
                     ))
+                    print_progress()
+
+        # Clear the progress line after parallel phase
+        print()
 
     # Run serial tests after parallel tests complete
     if serial_tests_to_run and not args.no_serial:
-        print(f"\n{'=' * 70}")
+        print(f"{'=' * 70}")
         print("RUNNING SERIAL TESTS")
         print(f"{'=' * 70}")
         serial_start = time.time()
@@ -891,20 +950,27 @@ Examples:
 
             if status == "PASS":
                 serial_result.passed += 1
+                tests_passed += 1
             elif status == "SKIP":
                 serial_result.skipped += 1
+                tests_skipped += 1
             else:
                 serial_result.failed += 1
                 serial_result.failed_tests.append(test_name)
+                tests_failed += 1
+            tests_done += 1
 
-            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            print(f"{timestamp} {status:4s} {duration:6.1f}s Serial    {idx:2d}/{len(serial_tests_to_run):2d} {test}", flush=True)
+            if args.verbose:
+                timestamp = datetime.now().strftime("%H:%M:%S")
+                print(f"\r[{timestamp}] {status:4s} {duration:6.1f}s Serial {idx:2d}/{len(serial_tests_to_run):2d} {test}" + " " * 20)
+
+            print_progress(phase="Serial")
 
         serial_result.duration = time.time() - serial_start
         results.append(serial_result)
 
-        print(f"\n[Serial] Completed: {serial_result.passed} passed, "
-              f"{serial_result.failed} failed ({serial_result.duration:.1f}s)")
+        # Clear the progress line after serial phase
+        print()
 
     total_duration = time.time() - start_time
 
