@@ -161,7 +161,13 @@ def _setup_port_queue(amount=1000):
         return
 
     # Get port offset for parallel execution support
-    port_offset = int(os.environ.get('AUTEST_PORT_OFFSET', 0))
+    try:
+        port_offset = int(os.environ.get('AUTEST_PORT_OFFSET', 0))
+    except ValueError:
+        host.WriteWarning("AUTEST_PORT_OFFSET is not a valid integer, defaulting to 0")
+        port_offset = 0
+    # Clamp to a safe range to avoid exceeding the valid port space
+    port_offset = max(0, min(port_offset, 60000))
     if port_offset > 0:
         host.WriteVerbose('_setup_port_queue', f"Using port offset: {port_offset}")
 

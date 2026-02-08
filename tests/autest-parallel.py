@@ -98,12 +98,12 @@ def load_serial_tests(serial_file: Path) -> set:
     Load list of tests that must run serially from a file.
 
     The file format is one test name per line, with # for comments.
-    Test names can be:
-    - Simple names: test_name (matches any test containing this)
-    - Full paths: subdir/test_name.test.py
+    Test names can be full paths like ``subdir/test_name.test.py``.
+    The .test.py extension is stripped, and only the basename (stem) is
+    used for matching against discovered test names.
 
     Returns:
-        Set of test names that must run serially
+        Set of test base names that must run serially
     """
     serial_tests = set()
     if not serial_file.exists():
@@ -123,7 +123,7 @@ def load_serial_tests(serial_file: Path) -> set:
                 test_name = Path(line).stem.replace('.test', '')
                 serial_tests.add(test_name)
     except IOError:
-        pass
+        pass  # File is optional; missing file means no serial tests
 
     return serial_tests
 
@@ -135,7 +135,7 @@ def load_timings(timing_file: Path) -> Dict[str, float]:
             with open(timing_file) as f:
                 return json.load(f)
         except (json.JSONDecodeError, IOError):
-            pass
+            pass  # Timing data is optional; fall back to equal partitioning
     return {}
 
 
@@ -252,14 +252,6 @@ def parse_autest_output(output: str) -> dict:
     # Strip ANSI codes for easier parsing
     clean_output = strip_ansi(output)
     lines = clean_output.split('\n')
-
-    # Track test start times to calculate duration
-    # Autest output format:
-    #   Running Test: test_name
-    #   ... test output ...
-    #   Test: test_name: Passed/Failed
-    current_test = None
-    test_start_line = None
 
     # First pass: find test results and their line positions
     test_results = []  # (line_num, test_name, result)
@@ -474,7 +466,9 @@ def run_worker(
 
         try:
             if verbose:
-                # Stream output in real-time so the user sees test progress
+                # Stream output in real-time so the user sees test progress.
+                # We use Popen + line-by-line read so partial results are visible
+                # even if the overall run takes a long time.
                 proc = subprocess.Popen(
                     cmd,
                     cwd=script_dir,
@@ -492,7 +486,12 @@ def run_worker(
                         if clean.startswith('Running Test'):
                             ts = datetime.now().strftime("%H:%M:%S")
                             print(f"  [{ts}] Worker:{worker_id:2d} {clean}", flush=True)
-                proc.wait(timeout=3600)
+                # stdout is exhausted, wait for process to finish
+                try:
+                    proc.wait(timeout=60)
+                except subprocess.TimeoutExpired:
+                    proc.kill()
+                    proc.wait()
                 result.output = ''.join(output_lines)
                 result.return_code = proc.returncode
             else:
@@ -648,7 +647,7 @@ Examples:
 
     parser.add_argument(
         '-j', '--jobs', type=int, default=os.cpu_count() or 4, help='Number of parallel workers (default: CPU count)')
-    parser.add_argument('--ats-bin', required=True, help='Path to ATS bin directory')
+    parser.add_argument('--ats-bin', default=None, help='Path to ATS bin directory (required unless --list is used)')
     parser.add_argument(
         '--build-root',
         default=None,
@@ -679,6 +678,10 @@ Examples:
     parser.add_argument('extra_args', nargs='*', help='Additional arguments to pass to autest')
 
     args = parser.parse_args()
+
+    # --ats-bin is required unless --list is used
+    if not args.list and not args.ats_bin:
+        parser.error("--ats-bin is required when running tests (not needed for --list)")
 
     # Determine paths
     script_dir = Path(__file__).parent.resolve()
