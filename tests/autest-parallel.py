@@ -170,11 +170,7 @@ def partition_tests(tests: List[str], num_jobs: int) -> List[List[str]]:
     return [p for p in partitions if p]  # Remove empty partitions
 
 
-def partition_tests_by_time(
-    tests: List[str],
-    num_jobs: int,
-    timings: Dict[str, float]
-) -> Tuple[List[List[str]], List[float]]:
+def partition_tests_by_time(tests: List[str], num_jobs: int, timings: Dict[str, float]) -> Tuple[List[List[str]], List[float]]:
     """
     Partition tests using LPT (Longest Processing Time first) algorithm.
     This balances the load across workers based on expected test duration.
@@ -332,15 +328,8 @@ def parse_autest_output(output: str) -> dict:
     return result
 
 
-def run_single_test(
-    test: str,
-    script_dir: Path,
-    sandbox: Path,
-    ats_bin: str,
-    build_root: str,
-    extra_args: List[str],
-    env: dict
-) -> Tuple[str, float, str, str]:
+def run_single_test(test: str, script_dir: Path, sandbox: Path, ats_bin: str, build_root: str, extra_args: List[str],
+                    env: dict) -> Tuple[str, float, str, str]:
     """
     Run a single test and return its timing.
 
@@ -349,12 +338,8 @@ def run_single_test(
         status is one of: "PASS", "FAIL", "SKIP"
     """
     cmd = [
-        'uv', 'run', 'autest', 'run',
-        '--directory', 'gold_tests',
-        '--ats-bin', ats_bin,
-        '--build-root', build_root,
-        '--sandbox', str(sandbox / test),
-        '--filters', test
+        'uv', 'run', 'autest', 'run', '--directory', 'gold_tests', '--ats-bin', ats_bin, '--build-root', build_root, '--sandbox',
+        str(sandbox / test), '--filters', test
     ]
     cmd.extend(extra_args)
 
@@ -377,8 +362,8 @@ def run_single_test(
         # - FAIL: test failed, had exceptions, or nothing ran at all
         if parsed['skipped'] > 0 and parsed['passed'] == 0 and parsed['failed'] == 0:
             status = "SKIP"
-        elif (parsed['failed'] == 0 and parsed['exceptions'] == 0
-              and proc.returncode == 0 and (parsed['passed'] > 0 or parsed['skipped'] > 0)):
+        elif (parsed['failed'] == 0 and parsed['exceptions'] == 0 and proc.returncode == 0 and
+              (parsed['passed'] > 0 or parsed['skipped'] > 0)):
             status = "PASS"
         else:
             status = "FAIL"
@@ -390,17 +375,16 @@ def run_single_test(
 
 
 def run_worker(
-    worker_id: int,
-    tests: List[str],
-    script_dir: Path,
-    sandbox_base: Path,
-    ats_bin: str,
-    build_root: str,
-    extra_args: List[str],
-    port_offset_step: int = 1000,
-    verbose: bool = False,
-    collect_timings: bool = False
-) -> TestResult:
+        worker_id: int,
+        tests: List[str],
+        script_dir: Path,
+        sandbox_base: Path,
+        ats_bin: str,
+        build_root: str,
+        extra_args: List[str],
+        port_offset_step: int = 1000,
+        verbose: bool = False,
+        collect_timings: bool = False) -> TestResult:
     """
     Run autest on a subset of tests with isolated sandbox and port range.
 
@@ -438,9 +422,7 @@ def run_worker(
         all_output = []
         total_tests = len(tests)
         for idx, test in enumerate(tests, 1):
-            test_name, duration, status, output = run_single_test(
-                test, script_dir, sandbox, ats_bin, build_root, extra_args, env
-            )
+            test_name, duration, status, output = run_single_test(test, script_dir, sandbox, ats_bin, build_root, extra_args, env)
             result.test_timings[test_name] = duration
             all_output.append(output)
 
@@ -461,11 +443,18 @@ def run_worker(
     else:
         # Run all tests in batch (faster but no per-test timing)
         cmd = [
-            'uv', 'run', 'autest', 'run',
-            '--directory', 'gold_tests',
-            '--ats-bin', ats_bin,
-            '--build-root', build_root,
-            '--sandbox', str(sandbox),
+            'uv',
+            'run',
+            'autest',
+            'run',
+            '--directory',
+            'gold_tests',
+            '--ats-bin',
+            ats_bin,
+            '--build-root',
+            build_root,
+            '--sandbox',
+            str(sandbox),
         ]
 
         # Add test filters
@@ -478,8 +467,10 @@ def run_worker(
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         print(f"{timestamp} Worker:{worker_id:2d} Starting batch of {len(tests)} tests (port offset {port_offset})", flush=True)
         if verbose:
-            print(f"             Worker:{worker_id:2d} Tests: {', '.join(tests[:5])}"
-                  f"{'...' if len(tests) > 5 else ''}", flush=True)
+            print(
+                f"             Worker:{worker_id:2d} Tests: {', '.join(tests[:5])}"
+                f"{'...' if len(tests) > 5 else ''}",
+                flush=True)
 
         try:
             if verbose:
@@ -547,8 +538,7 @@ def run_worker(
     return result
 
 
-def print_summary(results: List[TestResult], total_duration: float,
-                  expected_timings: Optional[Dict[str, float]] = None):
+def print_summary(results: List[TestResult], total_duration: float, expected_timings: Optional[Dict[str, float]] = None):
     """Print aggregated results from all workers."""
     total_passed = sum(r.passed for r in results)
     total_failed = sum(r.failed for r in results)
@@ -623,13 +613,15 @@ def print_summary(results: List[TestResult], total_duration: float,
             worker_label = "  Serial:  "
         else:
             worker_label = f"  Worker:{r.worker_id:2d}"
-        print(f"{worker_label} {r.passed:3d} passed, {r.failed:3d} failed, "
-              f"{r.skipped:3d} skipped ({r.duration:6.1f}s) [{status}]")
+        print(
+            f"{worker_label} {r.passed:3d} passed, {r.failed:3d} failed, "
+            f"{r.skipped:3d} skipped ({r.duration:6.1f}s) [{status}]")
 
     # Total summary line
     print("-" * 70)
-    print(f"  TOTAL:    {total_passed:3d} passed, {total_failed:3d} failed, "
-          f"{total_skipped:3d} skipped ({total_duration:6.1f}s)")
+    print(
+        f"  TOTAL:    {total_passed:3d} passed, {total_failed:3d} failed, "
+        f"{total_skipped:3d} skipped ({total_duration:6.1f}s)")
 
 
 def main():
@@ -652,90 +644,39 @@ Examples:
 
     # Use saved timing data for load-balanced partitioning
     %(prog)s -j 16 --timings-file test-timings.json --ats-bin /opt/ats/bin --sandbox /tmp/autest
-'''
-    )
+''')
 
     parser.add_argument(
-        '-j', '--jobs',
-        type=int,
-        default=os.cpu_count() or 4,
-        help='Number of parallel workers (default: CPU count)'
-    )
-    parser.add_argument(
-        '--ats-bin',
-        required=True,
-        help='Path to ATS bin directory'
-    )
+        '-j', '--jobs', type=int, default=os.cpu_count() or 4, help='Number of parallel workers (default: CPU count)')
+    parser.add_argument('--ats-bin', required=True, help='Path to ATS bin directory')
     parser.add_argument(
         '--build-root',
         default=None,
         help='Path to the build directory (for test plugins, etc.). '
-             'Defaults to the source tree root.'
-    )
+        'Defaults to the source tree root.')
+    parser.add_argument('--sandbox', default='/tmp/autest-parallel', help='Base sandbox directory (default: /tmp/autest-parallel)')
     parser.add_argument(
-        '--sandbox',
-        default='/tmp/autest-parallel',
-        help='Base sandbox directory (default: /tmp/autest-parallel)'
-    )
+        '-f', '--filter', action='append', dest='filters', help='Filter tests by glob pattern (can be specified multiple times)')
+    parser.add_argument('--list', action='store_true', help='List tests without running')
+    parser.add_argument('--port-offset-step', type=int, default=1000, help='Port offset between workers (default: 1000)')
+    parser.add_argument('-v', '--verbose', action='store_true', help='Verbose output')
+    parser.add_argument('--test-dir', default='gold_tests', help='Test directory relative to script location (default: gold_tests)')
     parser.add_argument(
-        '-f', '--filter',
-        action='append',
-        dest='filters',
-        help='Filter tests by glob pattern (can be specified multiple times)'
-    )
-    parser.add_argument(
-        '--list',
-        action='store_true',
-        help='List tests without running'
-    )
-    parser.add_argument(
-        '--port-offset-step',
-        type=int,
-        default=1000,
-        help='Port offset between workers (default: 1000)'
-    )
-    parser.add_argument(
-        '-v', '--verbose',
-        action='store_true',
-        help='Verbose output'
-    )
-    parser.add_argument(
-        '--test-dir',
-        default='gold_tests',
-        help='Test directory relative to script location (default: gold_tests)'
-    )
-    parser.add_argument(
-        '--collect-timings',
-        action='store_true',
-        help='Run tests one at a time to collect accurate per-test timing data'
-    )
+        '--collect-timings', action='store_true', help='Run tests one at a time to collect accurate per-test timing data')
     parser.add_argument(
         '--timings-file',
         type=Path,
         default=DEFAULT_TIMING_FILE,
-        help=f'Path to timing data JSON file (default: {DEFAULT_TIMING_FILE})'
-    )
+        help=f'Path to timing data JSON file (default: {DEFAULT_TIMING_FILE})')
     parser.add_argument(
-        '--no-timing',
-        action='store_true',
-        help='Disable timing-based load balancing (use round-robin partitioning)'
-    )
+        '--no-timing', action='store_true', help='Disable timing-based load balancing (use round-robin partitioning)')
     parser.add_argument(
         '--serial-tests-file',
         type=Path,
         default=DEFAULT_SERIAL_TESTS_FILE,
-        help=f'Path to file listing tests that must run serially (default: {DEFAULT_SERIAL_TESTS_FILE})'
-    )
-    parser.add_argument(
-        '--no-serial',
-        action='store_true',
-        help='Skip serial tests entirely'
-    )
-    parser.add_argument(
-        'extra_args',
-        nargs='*',
-        help='Additional arguments to pass to autest'
-    )
+        help=f'Path to file listing tests that must run serially (default: {DEFAULT_SERIAL_TESTS_FILE})')
+    parser.add_argument('--no-serial', action='store_true', help='Skip serial tests entirely')
+    parser.add_argument('extra_args', nargs='*', help='Additional arguments to pass to autest')
 
     args = parser.parse_args()
 
@@ -820,8 +761,9 @@ Examples:
 
     if partitions:
         print(f"Running with {len(partitions)} parallel workers")
-    print(f"Total: {total_tests} tests ({len(parallel_tests)} parallel across {len(partitions)} workers"
-          f"{f', {serial_count} serial' if serial_count else ''})")
+    print(
+        f"Total: {total_tests} tests ({len(parallel_tests)} parallel across {len(partitions)} workers"
+        f"{f', {serial_count} serial' if serial_count else ''})")
     print(f"Build root: {build_root}")
     print(f"Port offset step: {args.port_offset_step}")
     print(f"Sandbox: {args.sandbox}")
@@ -860,10 +802,11 @@ Examples:
         pct = (tests_done * 100 // total_tests) if total_tests > 0 else 0
         fail_str = f" | {tests_failed} FAILED" if tests_failed > 0 else ""
         skip_str = f" | {tests_skipped} skipped" if tests_skipped > 0 else ""
-        line = (f"\r[{phase}] {tests_done}/{total_tests} tests ({pct}%) "
-                f"| {workers_done}/{total_workers} workers done"
-                f"{fail_str}{skip_str}"
-                f" | {elapsed_str} elapsed | ETA: {eta}  ")
+        line = (
+            f"\r[{phase}] {tests_done}/{total_tests} tests ({pct}%) "
+            f"| {workers_done}/{total_workers} workers done"
+            f"{fail_str}{skip_str}"
+            f" | {elapsed_str} elapsed | ETA: {eta}  ")
         print(line, end='', flush=True)
 
     # Run workers in parallel
@@ -886,8 +829,7 @@ Examples:
                     extra_args=args.extra_args or [],
                     port_offset_step=args.port_offset_step,
                     verbose=args.verbose,
-                    collect_timings=args.collect_timings
-                )
+                    collect_timings=args.collect_timings)
                 futures[future] = worker_id
 
             # Collect results as they complete
@@ -912,8 +854,9 @@ Examples:
                         if result.skipped > 0:
                             parts.append(f"{result.skipped} skipped")
                         # Clear the progress line, print detail, then re-print progress
-                        print(f"\r[{ts}] Worker:{worker_id:2d} Done: {', '.join(parts)} "
-                              f"({result.duration:.1f}s) [{status}]" + " " * 20)
+                        print(
+                            f"\r[{ts}] Worker:{worker_id:2d} Done: {', '.join(parts)} "
+                            f"({result.duration:.1f}s) [{status}]" + " " * 20)
 
                     print_progress()
                 except Exception as e:
@@ -921,12 +864,9 @@ Examples:
                     workers_done += 1
                     tests_done += len(partitions[worker_id])
                     tests_failed += len(partitions[worker_id])
-                    results.append(TestResult(
-                        worker_id=worker_id,
-                        tests=partitions[worker_id],
-                        failed=len(partitions[worker_id]),
-                        output=str(e)
-                    ))
+                    results.append(
+                        TestResult(
+                            worker_id=worker_id, tests=partitions[worker_id], failed=len(partitions[worker_id]), output=str(e)))
                     print_progress()
 
         # Clear the progress line after parallel phase
@@ -950,9 +890,7 @@ Examples:
 
         for idx, test in enumerate(serial_tests_to_run, 1):
             test_name, duration, status, output = run_single_test(
-                test, script_dir, sandbox_base / "serial", args.ats_bin,
-                build_root, args.extra_args or [], env
-            )
+                test, script_dir, sandbox_base / "serial", args.ats_bin, build_root, args.extra_args or [], env)
             serial_result.test_timings[test_name] = duration
 
             if status == "PASS":
@@ -968,7 +906,8 @@ Examples:
 
             if args.verbose:
                 timestamp = datetime.now().strftime("%H:%M:%S")
-                print(f"\r[{timestamp}] {status:4s} {duration:6.1f}s Serial {idx:2d}/{len(serial_tests_to_run):2d} {test}" + " " * 20)
+                print(
+                    f"\r[{timestamp}] {status:4s} {duration:6.1f}s Serial {idx:2d}/{len(serial_tests_to_run):2d} {test}" + " " * 20)
 
             print_progress(phase="Serial")
 
