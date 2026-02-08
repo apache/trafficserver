@@ -1,14 +1,8 @@
-# Tests that must run serially (not in parallel) due to hardcoded ports or
-# other constraints that prevent parallel execution.
+# Tests that must run serially (not in parallel) due to resource conflicts
+# or other constraints that prevent parallel execution.
 #
 # Format: One test file path per line, relative to tests/gold_tests/
 # Lines starting with # are comments and ignored.
 
-# Tests that intentionally use select_ports=False for specific port testing
-tls/tls_sni_with_port.test.py
-
-# Tests using select_ports=False without dynamic ports
-redirect/redirect_to_same_origin_on_cache.test.py
-
-# Tests with hardcoded ports that are difficult to make dynamic
-parent_proxy/parent-retry.test.py
+# Spins up 12 ATS instances with varying thread configs; fails under parallel load
+thread_config/thread_config.test.py

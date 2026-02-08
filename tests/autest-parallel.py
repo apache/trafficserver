@@ -556,11 +556,17 @@ def print_summary(results: List[TestResult], total_duration: float,
     total_warnings = sum(r.warnings for r in results)
     total_exceptions = sum(r.exceptions for r in results)
     total_unknown = sum(r.unknown for r in results)
-    total_tests = total_passed + total_failed + total_skipped + total_warnings + total_exceptions + total_unknown
+    # Use actual test count (top-level tests), not sub-test counts from autest
+    total_tests = sum(len(r.tests) for r in results)
 
+    # Deduplicate failed test names (a test may appear in sub-test output multiple times)
+    seen = set()
     all_failed_tests = []
     for r in results:
-        all_failed_tests.extend(r.failed_tests)
+        for t in r.failed_tests:
+            if t not in seen:
+                seen.add(t)
+                all_failed_tests.append(t)
 
     # Collect actual timings from results
     actual_timings = {}
@@ -827,9 +833,8 @@ Examples:
     sandbox_base = Path(args.sandbox)
     sandbox_base.mkdir(parents=True, exist_ok=True)
 
-    # Progress tracking state
+    # Progress tracking state (counts top-level tests, not autest sub-tests)
     tests_done = 0
-    tests_passed = 0
     tests_failed = 0
     tests_skipped = 0
     workers_done = 0
@@ -892,9 +897,11 @@ Examples:
                     result = future.result()
                     results.append(result)
                     workers_done += 1
-                    tests_done += result.passed + result.failed + result.skipped
-                    tests_passed += result.passed
-                    tests_failed += result.failed
+                    # Use actual test count (top-level), not autest sub-test counts
+                    tests_done += len(result.tests)
+                    # Count top-level tests that failed (from failed_tests list)
+                    tests_failed += len(result.failed_tests)
+                    # Skipped is still useful from autest counts for visibility
                     tests_skipped += result.skipped
 
                     if args.verbose:
@@ -950,7 +957,6 @@ Examples:
 
             if status == "PASS":
                 serial_result.passed += 1
-                tests_passed += 1
             elif status == "SKIP":
                 serial_result.skipped += 1
                 tests_skipped += 1
