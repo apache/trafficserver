@@ -3387,7 +3387,11 @@ HttpTransact::HandleCacheOpenReadMiss(State *s)
       s->cache_info.stale_fallback       = nullptr;
       s->serving_stale_due_to_write_lock = true;
       s->cache_lookup_result             = CacheLookupResult_t::HIT_STALE;
-      s->cache_lookup_complete_deferred  = false;
+
+      if (s->cache_lookup_complete_deferred) {
+        s->cache_lookup_complete_deferred = false;
+        TRANSACT_RETURN(StateMachineAction_t::API_CACHE_LOOKUP_COMPLETE, HandleCacheOpenReadHit);
+      }
       HandleCacheOpenReadHit(s);
       return;
     }
