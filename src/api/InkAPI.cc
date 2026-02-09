@@ -8996,3 +8996,15 @@ TSConnectionLimitExemptListClear()
 {
   ConnectionTracker::clear_client_exempt_list();
 }
+
+TSReturnCode
+TSLogFieldRegister(std::string_view name, std::string_view symbol, TSLogType type, TSLogMarshalCallback marshal_cb,
+                   TSLogUnmarshalCallback unmarshal_cb)
+{
+  LogField *field = new LogField(name.data(), symbol.data(), static_cast<LogField::Type>(type),
+                                 reinterpret_cast<LogField::CustomMarshalFunc>(marshal_cb), unmarshal_cb);
+  Log::global_field_list.add(field, false);
+  Log::field_symbol_hash.emplace(symbol.data(), field);
+
+  return TS_SUCCESS;
+}

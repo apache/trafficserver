@@ -84,6 +84,8 @@ public:
   using UnmarshalFuncWithSlice = int (*)(char **, char *, int, LogSlice *, LogEscapeType);
   using UnmarshalFuncWithMap   = int (*)(char **, char *, int, const Ptr<LogFieldAliasMap> &);
   using SetFunc                = void (LogAccess::*)(char *, int);
+  using CustomMarshalFunc      = int (*)(void *, char *);
+  using CustomUnmarshalFunc    = int (*)(char **, char *, int);
 
   using VarUnmarshalFuncSliceOnly = std::variant<UnmarshalFunc, UnmarshalFuncWithSlice>;
   using VarUnmarshalFunc          = std::variant<decltype(nullptr), UnmarshalFunc, UnmarshalFuncWithSlice, UnmarshalFuncWithMap>;
@@ -131,6 +133,8 @@ public:
 
   LogField(const char *name, const char *symbol, Type type, MarshalFunc marshal, UnmarshalFuncWithMap unmarshal,
            const Ptr<LogFieldAliasMap> &map, SetFunc _setFunc = nullptr);
+
+  LogField(const char *name, const char *symbol, Type type, CustomMarshalFunc custom_marshal, CustomUnmarshalFunc custom_unmarshal);
 
   LogField(const char *field, Container container);
   LogField(const LogField &rhs);
@@ -207,6 +211,8 @@ private:
   SetFunc               m_set_func;
   TSMilestonesType      milestone_from_m_name();
   int                   milestones_from_m_name(TSMilestonesType *m1, TSMilestonesType *m2);
+  CustomMarshalFunc     m_custom_marshal_func;
+  CustomUnmarshalFunc   m_custom_unmarshal_func;
 
 public:
   LINK(LogField, link);

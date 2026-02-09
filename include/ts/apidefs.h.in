@@ -361,6 +361,7 @@ enum TSEvent {
   TS_EVENT_LIFECYCLE_MSG                        = 60105,
   TS_EVENT_LIFECYCLE_TASK_THREADS_READY         = 60106,
   TS_EVENT_LIFECYCLE_SHUTDOWN                   = 60107,
+  TS_EVENT_LIFECYCLE_LOG_INITIAZLIED            = 60108,
 
   TS_EVENT_INTERNAL_60200    = 60200,
   TS_EVENT_INTERNAL_60201    = 60201,
@@ -578,6 +579,7 @@ enum TSLifecycleHookID {
   TS_LIFECYCLE_TASK_THREADS_READY_HOOK,
   TS_LIFECYCLE_SHUTDOWN_HOOK,
   TS_LIFECYCLE_SSL_SECRET_HOOK,
+  TS_LIFECYCLE_LOG_INITIAZLIED_HOOK,
   TS_LIFECYCLE_LAST_HOOK,
 };
 
@@ -1083,9 +1085,11 @@ using TSRemapPluginInfo  = struct tsapi_remap_plugin_info *;
 
 using TSFetchSM = struct tsapi_fetchsm *;
 
-using TSThreadFunc        = void *(*)(void *data);
-using TSEventFunc         = int (*)(TSCont contp, TSEvent event, void *edata);
-using TSConfigDestroyFunc = void (*)(void *data);
+using TSThreadFunc           = void *(*)(void *data);
+using TSEventFunc            = int (*)(TSCont contp, TSEvent event, void *edata);
+using TSConfigDestroyFunc    = void (*)(void *data);
+using TSLogMarshalCallback   = int (*)(TSHttpTxn, char *);
+using TSLogUnmarshalCallback = int (*)(char **, char *, int);
 
 struct TSFetchEvent {
   int success_event_id;
@@ -1568,6 +1572,13 @@ struct TSResponseAction {
   bool        goDirect;
   bool        parentIsProxy;
   bool        no_cache;
+};
+
+enum TSLogType {
+  TS_LOG_TYPE_S_INT,
+  TS_LOG_TYPE_D_INT,
+  TS_LOG_TYPE_STRING,
+  TS_LOG_TYPE_IP,
 };
 
 /* --------------------------------------------------------------------------

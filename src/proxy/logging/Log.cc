@@ -54,6 +54,8 @@
 
 #include "tscore/MgmtDefs.h"
 
+#include <api/LifecycleAPIHooks.h>
+
 #define PERIODIC_TASKS_INTERVAL_FALLBACK 5
 
 // Log global objects
@@ -1043,7 +1045,19 @@ Log::init_fields()
   global_field_list.add(field, false);
   field_symbol_hash.emplace("vs", field);
 
+  Log::init_plugin_fields();
+
   init_status |= FIELDS_INITIALIZED;
+}
+
+void
+Log::init_plugin_fields()
+{
+  APIHook *hook = g_lifecycle_hooks->get(TS_LIFECYCLE_LOG_INITIAZLIED_HOOK);
+  while (hook) {
+    hook->invoke(TS_EVENT_LIFECYCLE_LOG_INITIAZLIED, nullptr);
+    hook = hook->next();
+  }
 }
 
 /*-------------------------------------------------------------------------

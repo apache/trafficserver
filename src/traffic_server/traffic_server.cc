@@ -2212,9 +2212,6 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 
     hostDBProcessor.start();
 
-    // initialize logging (after event and net processor)
-    Log::init();
-
     (void)parsePluginConfig();
 
     // Init plugins as soon as logging is ready.
@@ -2227,6 +2224,9 @@ main(int /* argc ATS_UNUSED */, const char **argv)
       lock.unlock();
       pluginInitCheck.notify_one();
     }
+
+    // initialize logging (after event and net processor)
+    Log::init();
 
     if (IpAllow::has_no_rules()) {
       Error("No ip_allow.yaml entries found.  All requests will be denied!");

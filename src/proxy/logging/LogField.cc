@@ -287,6 +287,34 @@ LogField::LogField(const char *name, const char *symbol, Type type, MarshalFunc 
                   strcmp(m_symbol, "cqtn") == 0 || strcmp(m_symbol, "cqtd") == 0 || strcmp(m_symbol, "cqtt") == 0);
 }
 
+LogField::LogField(const char *name, const char *symbol, Type type, CustomMarshalFunc custom_marshal,
+                   CustomUnmarshalFunc custom_unmarshal)
+  : m_name(ats_strdup(name)),
+    m_symbol(ats_strdup(symbol)),
+    m_type(type),
+    m_container(NO_CONTAINER),
+    m_marshal_func(nullptr),
+    m_unmarshal_func(VarUnmarshalFunc(nullptr)),
+    m_agg_op(NO_AGGREGATE),
+    m_agg_cnt(0),
+    m_agg_val(0),
+    m_milestone1(TS_MILESTONE_LAST_ENTRY),
+    m_milestone2(TS_MILESTONE_LAST_ENTRY),
+    m_time_field(false),
+    m_alias_map(nullptr),
+    m_set_func(nullptr),
+    m_custom_marshal_func(custom_marshal),
+    m_custom_unmarshal_func(custom_unmarshal)
+{
+  ink_assert(m_name != nullptr);
+  ink_assert(m_symbol != nullptr);
+  ink_assert(m_type >= 0 && m_type < N_TYPES);
+  ink_assert(m_marshal_func != (MarshalFunc) nullptr);
+
+  m_time_field = (strcmp(m_symbol, "cqts") == 0 || strcmp(m_symbol, "cqth") == 0 || strcmp(m_symbol, "cqtq") == 0 ||
+                  strcmp(m_symbol, "cqtn") == 0 || strcmp(m_symbol, "cqtd") == 0 || strcmp(m_symbol, "cqtt") == 0);
+}
+
 TSMilestonesType
 LogField::milestone_from_m_name()
 {
@@ -413,7 +441,9 @@ LogField::LogField(const LogField &rhs)
     m_milestone2(rhs.m_milestone2),
     m_time_field(rhs.m_time_field),
     m_alias_map(rhs.m_alias_map),
-    m_set_func(rhs.m_set_func)
+    m_set_func(rhs.m_set_func),
+    m_custom_marshal_func(rhs.m_custom_marshal_func),
+    m_custom_unmarshal_func(rhs.m_custom_unmarshal_func)
 {
   ink_assert(m_name != nullptr);
   ink_assert(m_symbol != nullptr);
@@ -441,7 +471,11 @@ unsigned
 LogField::marshal_len(LogAccess *lad)
 {
   if (m_container == NO_CONTAINER) {
-    return (lad->*m_marshal_func)(nullptr);
+    if (m_custom_marshal_func == nullptr) {
+      return (lad->*m_marshal_func)(nullptr);
+    } else {
+      return lad->marshal_custom_field(nullptr, m_custom_marshal_func);
+    }
   }
 
   switch (m_container) {
@@ -523,7 +557,11 @@ unsigned
 LogField::marshal(LogAccess *lad, char *buf)
 {
   if (m_container == NO_CONTAINER) {
-    return (lad->*m_marshal_func)(buf);
+    if (m_custom_marshal_func == nullptr) {
+      return (lad->*m_marshal_func)(buf);
+    } else {
+      return lad->marshal_custom_field(buf, m_custom_marshal_func);
+    }
   }
 
   switch (m_container) {
@@ -615,6 +653,11 @@ LogField::unmarshal(char **buf, char *dest, int len, LogEscapeType escape_type)
                      [&](UnmarshalFuncWithMap f) -> unsigned { return (*f)(buf, dest, len, m_alias_map); },
                      [&](UnmarshalFunc f) -> unsigned { return (*f)(buf, dest, len); },
                      [&](decltype(nullptr)) -> unsigned {
+                       if (m_custom_unmarshal_func) {
+                         int l  = m_custom_unmarshal_func(buf, dest, len);
+                         buf   += LogAccess::padded_length(l);
+                         return l;
+                       }
                        ink_assert(false);
                        return 0;
                      }},
