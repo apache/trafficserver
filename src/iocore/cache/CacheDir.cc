@@ -1003,7 +1003,6 @@ Lrestart:
     return EVENT_CONT;
   }
   stripe_index = stripe_indices[current_index];
-  current_index++;
 
   StripeSM *stripe = gstripes[stripe_index]; // must be named "vol" to make STAT macros work.
 
@@ -1120,6 +1119,7 @@ Lrestart:
   }
 Ldone:
   writepos = 0;
+  current_index++;
   goto Lrestart;
 }
 
