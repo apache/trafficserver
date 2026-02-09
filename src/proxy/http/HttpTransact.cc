@@ -3254,8 +3254,9 @@ HttpTransact::handle_cache_write_lock(State *s)
       if (freshness == Freshness_t::FRESH || freshness == Freshness_t::WARNING) {
         // Object is fresh - serve it from cache for both action 5 and 6.
         // This is the main benefit of request collapsing: we found a valid cached object.
-        // Clear stale-serving flag in case it was set during initial stale short-circuit.
+        // Clear stale-related state in case it was set during initial stale short-circuit.
         s->serving_stale_due_to_write_lock = false;
+        s->cache_info.stale_fallback       = nullptr;
 
         // Destroy server_request since we're serving from cache.
         TxnDbg(dbg_ctl_http_trans, "READ_RETRY: found fresh object, serving from cache");
@@ -3400,7 +3401,8 @@ HttpTransact::HandleCacheOpenReadMiss(State *s)
     }
     // Action 5 or no stale fallback: proceed to origin without caching.
     TxnDbg(dbg_ctl_http_trans, "READ_RETRY cache read failed, bypassing cache");
-    s->cache_info.action = CacheAction_t::NO_ACTION;
+    s->cache_info.stale_fallback = nullptr; // Clear unused fallback
+    s->cache_info.action         = CacheAction_t::NO_ACTION;
   } else {
     HttpTransact::set_cache_prepare_write_action_for_new_request(s);
   }
