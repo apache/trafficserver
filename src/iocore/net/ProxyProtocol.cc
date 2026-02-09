@@ -557,7 +557,7 @@ ProxyProtocol::get_tlv(const uint8_t tlvCode) const
  */
 
 std::optional<std::string_view>
-ProxyProtocol::_get_tlv_ssl_subtype(int subtype) const
+ProxyProtocol::_get_tlv_ssl_subtype(uint8_t subtype) const
 {
   if (auto v = tlv.find(PP2_TYPE_SSL); v != tlv.end() && v->second.length() != 0) {
     auto ssl = v->second;

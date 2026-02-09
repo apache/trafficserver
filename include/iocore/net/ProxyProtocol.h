@@ -137,7 +137,7 @@ public:
 private:
   std::string additional_data;
 
-  std::optional<std::string_view> _get_tlv_ssl_subtype(int subtype) const;
+  std::optional<std::string_view> _get_tlv_ssl_subtype(uint8_t subtype) const;
 };
 
 const size_t PPv1_CONNECTION_HEADER_LEN_MAX = 108;
