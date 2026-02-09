@@ -692,7 +692,7 @@ ts_lua_connection_limit_exempt_list_remove(lua_State *L)
 }
 
 static int
-ts_lua_connection_limit_exempt_list_clear(lua_State *L)
+ts_lua_connection_limit_exempt_list_clear(lua_State * /* L ATS_UNUSED */)
 {
   TSConnectionLimitExemptListClear();
   return 0;
