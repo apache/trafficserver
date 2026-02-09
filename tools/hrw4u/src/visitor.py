@@ -480,7 +480,13 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
             if not lhs:
                 return
             operator = ctx.getChild(1)
-            negate = operator.symbol.type in (hrw4uParser.NEQ, hrw4uParser.NOT_TILDE)
+
+            # Detect negation: '!=' and '!~' are single tokens (NEQ, NOT_TILDE),
+            # but '!in' is two separate tokens ('!' + IN).
+            if operator.getText() == '!':
+                negate = True
+            else:
+                negate = operator.symbol.type in (hrw4uParser.NEQ, hrw4uParser.NOT_TILDE)
 
             match ctx:
                 case _ if ctx.value():

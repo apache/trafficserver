@@ -382,7 +382,9 @@ class InverseSymbolResolver(SymbolResolverBase):
             return t
         if " ~ " in t and " !~ " not in t:
             return t.replace(" ~ ", " !~ ", 1)
-        if any(op in t for op in (" in ", " > ", " < ")):
+        if " in " in t:
+            return t.replace(" in ", " !in ", 1)
+        if any(op in t for op in (" > ", " < ")):
             return f"!({t})"
         if t.endswith(')'):
             return f"!{t}"
