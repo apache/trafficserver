@@ -93,11 +93,12 @@ provides an LSP for this language, named ``hrw4u-lsp``.
 Syntax Differences
 ==================
 
-The basic structure is a `section` name defining the part of the transaction to run in
-followed by conditionals and operators. It uses `if () {} else {}` conditional syntax
-with `&& , || and ==`, with conditions and operators generally following function() or
-object.style grammar. Operator lines are terminated with `;` (whitespace is still not
-significant). For instance:
+The basic structure consists of a `section` name defining the part of the transaction to run,
+followed by conditionals and operators. It uses `if ... {...} elif ... {...} else {...}` conditional syntax
+with `&& , || and ==`. Conditionals support parenthesized grouping for complex expressions (`if (...) {...}`)
+and can be nested up to a maximum depth of 10 levels. Conditions and operators generally follow
+function() or object.style grammar. Operator lines are terminated with `;` and whitespace is still
+insignificant. For instance:
 
 .. code-block:: none
 
@@ -107,10 +108,28 @@ significant). For instance:
    }
 
    REMAP {
-     if inbound.status == 403 || access("/etc/lock") {
+     if inbound.status == 403 {
        inbound.req.X-Fail = "1";
+     } elif inbound.status == 404 {
+       inbound.req.X-NotFound = "1";
      } else {
        no-op();
+     }
+   }
+
+   READ_RESPONSE {
+     if inbound.status > 399 {
+       if inbound.status < 500 {
+         # Client error - check specific cases
+         if inbound.status == 404 {
+           counter("errors.not_found");
+         } elif inbound.status == 403 {
+           counter("errors.forbidden");
+         }
+       } else {
+         # Server error
+         counter("errors.server");
+       }
      }
    }
 
@@ -158,7 +177,8 @@ Syntax               Free-form                     Structured `if (...) { ... }`
 Conditions           `cond %{...}`                 Implicit in `if (...)`
 Operators            Raw text (`set-header`)       Structured assignments or statements
 Grouping             `GROUP` / `GROUP:END`         Use `()` inside `if` expressions
-Else branches        `else` with indented ops      `else { ... }` with full block
+Else branches        `else` with indented ops      `elif ... { ... }` and `else { ... }`
+                                                   with full blocks
 Debugging            Manual with logs              Built-in debug tracing (`--debug`)
 Quotes               Quoted strings optional       Quoted strings required / encouraged
 Validation           Runtime                       Static during parsing and symbol resolution
