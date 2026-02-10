@@ -568,10 +568,14 @@ ProxyProtocol::_get_tlv_ssl_subtype(uint8_t subtype) const
       return std::nullopt;
     }
 
+    if (ssl.length() < 5) {
+      return std::nullopt;
+    }
+
     // Find the given subtype
     uint16_t    len = ssl.length();
     const char *p   = ssl.data() + 5; // Skip client (uint8_t) + verify (uint32_t)
-    const char *end = p + len;
+    const char *end = ssl.data() + len;
     while (p != end) {
       if (end - p < 3) {
         // The size of a sub TLV entry must be 3 bytes or more
