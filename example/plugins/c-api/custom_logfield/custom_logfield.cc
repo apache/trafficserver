@@ -45,7 +45,7 @@ marshal_function(TSHttpTxn txnp, char *buf)
     if (char *value = static_cast<char *>(TSUserArgGet(txnp, index)); value) {
       len = strlen(value);
       if (buf) {
-        strlcpy(buf, value, len + 1);
+        TSstrlcpy(buf, value, len + 1);
       }
     }
   }
