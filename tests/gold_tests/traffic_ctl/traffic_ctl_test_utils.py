@@ -14,36 +14,43 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import atexit
 import os
+import shutil
+import tempfile
 
-# This function can(eventually) be used to have a single yaml file and read nodes from it.
-# The idea would be to avoid having multiple gold files with yaml content.
-# The only issue would be the comments, this is because how the yaml lib reads yaml,
-# comments  aren't rendered in the same way as traffic_ctl throws it, it should only
-# be used if no comments need to be compared.
-#
-# def GoldFilePathFor(node:str, main_file="gold/test_gold_file.yaml"):
-#     if node == "":
-#         raise Exception("node should not be empty")
+_gold_tmpdir = None
 
-#     yaml = ruamel.yaml.YAML()
-#     yaml.indent(sequence=4, offset=2)
-#     with open(os.path.join(Test.TestDirectory, main_file), 'r') as f:
-#         content = yaml.load(f)
 
-#     node_data = content[node]
-#     data_dirname = 'generated_gold_files'
-#     data_path = os.path.join(Test.TestDirectory, data_dirname)
-#     os.makedirs(data_path, exist_ok=True)
-#     gold_filepath = os.path.join(data_path, f'test_{TestNumber}.gold')
-#     with open(os.path.join(data_path, f'test_{TestNumber}.gold'), 'w') as gold_file:
-#         yaml.dump(node_data, gold_file)
+def _get_gold_tmpdir():
+    """Return a temporary directory for generated gold files.
 
-#     return gold_filepath
+    The directory is created on first call and registered for cleanup at
+    process exit so generated gold files never accumulate in /tmp.
+    """
+    global _gold_tmpdir
+    if _gold_tmpdir is None:
+        _gold_tmpdir = tempfile.mkdtemp(prefix='autest_gold_')
+        atexit.register(shutil.rmtree, _gold_tmpdir, True)
+    return _gold_tmpdir
 
 
 def MakeGoldFileWithText(content, dir, test_number, add_new_line=True):
-    data_path = os.path.join(dir, "gold")
+    """Write expected-output text to a temporary gold file and return its path.
+
+    The gold file is placed in a process-unique temporary directory rather than
+    the source tree so that generated files don't pollute the repository.
+
+    Args:
+        content: The expected output text.
+        dir: Unused (kept for API compatibility).
+        test_number: Numeric identifier used to name the gold file.
+        add_new_line: If True, append a trailing newline to content.
+
+    Returns:
+        Absolute path to the generated gold file.
+    """
+    data_path = os.path.join(_get_gold_tmpdir(), "gold")
     os.makedirs(data_path, exist_ok=True)
     gold_filepath = os.path.join(data_path, f'test_{test_number}.gold')
     with open(gold_filepath, 'w') as gold_file:
