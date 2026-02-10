@@ -18,8 +18,7 @@
 
 Test.Summary = "Test start up of Traffic server with configuration modification of starting port"
 
-ts = Test.MakeATSProcess("ts", select_ports=False)
-ts.Variables.port = 8090
+ts = Test.MakeATSProcess("ts")
 ts.Disk.records_config.update({
     'proxy.config.http.server_ports': str(ts.Variables.port) + f" {ts.Variables.uds_path}",
 })
