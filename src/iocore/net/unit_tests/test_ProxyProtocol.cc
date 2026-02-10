@@ -335,6 +335,38 @@ TEST_CASE("PROXY Protocol v2 Parser", "[ProxyProtocol][ProxyProtocolv2]")
     CHECK(pp_info.get_tlv_ssl_version() == "TLS");
   }
 
+  SECTION("TLVs with PP2_TYPE_SSL but SSL is unused")
+  {
+    uint8_t raw_data[] = {
+      0x0D, 0x0A, 0x0D, 0x0A, 0x00, 0x0D, 0x0A, 0x51, ///< preface
+      0x55, 0x49, 0x54, 0x0A,                         ///<
+      0x21,                                           ///< version & command
+      0x11,                                           ///< protocol & family
+      0x00, 0x14,                                     ///< len
+      0xC0, 0x00, 0x02, 0x01,                         ///< src_addr
+      0xC6, 0x33, 0x64, 0x01,                         ///< dst_addr
+      0xC3, 0x50,                                     ///< src_port
+      0x01, 0xBB,                                     ///< dst_port
+      0x20, 0x00, 0x05, 0x00, 0x00, 0x00, 0x00, 0x00, /// PP2_TYPE_SSL (client=0x00, verify=0)
+    };
+
+    swoc::TextView tv(reinterpret_cast<char *>(raw_data), sizeof(raw_data));
+
+    ProxyProtocol pp_info;
+    REQUIRE(proxy_protocol_parse(&pp_info, tv) == tv.size());
+
+    REQUIRE(ats_ip_pton("192.0.2.1:50000", src_addr) == 0);
+    REQUIRE(ats_ip_pton("198.51.100.1:443", dst_addr) == 0);
+
+    CHECK(pp_info.version == ProxyProtocolVersion::V2);
+    CHECK(pp_info.ip_family == AF_INET);
+    CHECK(pp_info.src_addr == src_addr);
+    CHECK(pp_info.dst_addr == dst_addr);
+
+    CHECK(pp_info.get_tlv_ssl_cipher().has_value() == false);
+    CHECK(pp_info.get_tlv_ssl_version().has_value() == false);
+  }
+
   SECTION("TLVs with extra data")
   {
     uint8_t raw_data[] = {
