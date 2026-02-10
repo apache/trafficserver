@@ -74,7 +74,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
 
     def _make_condition(self, cond_text: str, last: bool = False, negate: bool = False) -> str:
         self._dbg(f"make_condition: {cond_text} last={last} negate={negate}")
-        self._cond_state.not_ |= negate
+        self._cond_state.not_ ^= negate
         self._cond_state.last = last
         return f"cond {cond_text}"
 
