@@ -16,6 +16,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+# /// script
+# dependencies = ["matplotlib>=3.7", "pyyaml>=6.0"]
+# requires-python = ">=3.9"
+# ///
 """
 Traffic Grapher - Real-time ATS metrics visualization.
 
@@ -34,14 +38,13 @@ import fcntl
 import gc
 import io
 import os
-import select
+import re
 import shutil
 import struct
 import subprocess
 import sys
 import termios
 import time
-import tty
 from collections import deque
 from datetime import datetime, timezone
 from typing import Optional, Tuple
@@ -321,11 +324,8 @@ DEFAULT_PAGES = [
     },
 ]
 
-# Command template for traffic_ctl
-# Default path (adjust for your installation)
-# Note: awk runs locally to avoid SSH quote escaping issues
-METRIC_COMMAND_REMOTE = "/opt/edge/trafficserver/10.0/bin/traffic_ctl metric get {key}"
-METRIC_COMMAND_LOCAL = "/opt/edge/trafficserver/10.0/bin/traffic_ctl metric get {key} | awk '{{print $2}}'"
+# Default traffic_ctl path (configurable via --traffic-ctl or TRAFFIC_CTL_PATH env var)
+DEFAULT_TRAFFIC_CTL_PATH = os.environ.get("TRAFFIC_CTL_PATH", "traffic_ctl")
 
 # =============================================================================
 # Terminal Utilities
@@ -444,7 +444,7 @@ def get_terminal_pixel_size() -> Tuple[int, int]:
 
         # Estimate from rows/cols (typical cell: 9x18 pixels)
         return (cols * 9, rows * 18)
-    except:
+    except (OSError, io.UnsupportedOperation, struct.error, ValueError):
         # Fallback: assume reasonable terminal size
         size = shutil.get_terminal_size((80, 24))
         return (size.columns * 9, size.lines * 18)
@@ -516,7 +516,7 @@ class KeyboardHandler:
                             return 'up'
                         elif ch3 == b'B':
                             return 'down'
-                except:
+                except (OSError, IOError):
                     pass
                 return 'escape'
             elif ch in (b'q', b'Q'):
@@ -562,8 +562,18 @@ for rec in data.get("result", {{}}).get("recordList", []):
     print(f"{{name}}={{value}}={{dtype}}")
 '''
 
-# Default JSONRPC socket path (adjust for your installation)
-JSONRPC_SOCKET_PATH = "/opt/edge/trafficserver/10.0/var/trafficserver/jsonrpc20.sock"
+# Default JSONRPC socket path (configurable via --socket-path or TRAFFICSERVER_JSONRPC_SOCKET env var)
+DEFAULT_JSONRPC_SOCKET_PATH = os.environ.get(
+    "TRAFFICSERVER_JSONRPC_SOCKET",
+    "/usr/local/var/trafficserver/jsonrpc20.sock",
+)
+
+
+def _validate_hostname(hostname: str) -> str:
+    """Validate hostname to prevent command injection."""
+    if not re.match(r'^[a-zA-Z0-9][a-zA-Z0-9._:-]*$', hostname):
+        raise ValueError(f"Invalid hostname: {hostname!r}")
+    return hostname
 
 
 class JSONRPCBatchCollector:
@@ -572,8 +582,8 @@ class JSONRPCBatchCollector:
     Collects all metrics for a host in a single SSH call.
     """
 
-    def __init__(self, hostname: str, metric_keys: list, socket_path: str = JSONRPC_SOCKET_PATH):
-        self.hostname = hostname  # Bare hostname like "ats-server1.example.com"
+    def __init__(self, hostname: str, metric_keys: list, socket_path: str = DEFAULT_JSONRPC_SOCKET_PATH):
+        self.hostname = _validate_hostname(hostname)
         self.metric_keys = metric_keys
         self.socket_path = socket_path
 
@@ -592,13 +602,13 @@ class JSONRPCBatchCollector:
         """
         script = JSONRPC_SCRIPT.format(socket_path=self.socket_path, pattern=self.pattern)
 
-        # Build SSH command - hostname is passed directly, we add "ssh" prefix
-        # Encode script as base64 to avoid quoting issues
+        # Encode script as base64 to avoid quoting issues.
+        # Use subprocess with list args (no shell=True) to prevent command injection.
         script_b64 = base64.b64encode(script.encode()).decode()
-        cmd = f"ssh {self.hostname} \"echo '{script_b64}' | base64 -d | python3\""
+        remote_cmd = f"echo '{script_b64}' | base64 -d | python3"
 
         try:
-            result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=10)
+            result = subprocess.run(["ssh", self.hostname, remote_cmd], capture_output=True, text=True, timeout=10)
 
             if result.returncode != 0:
                 return self.last_values
@@ -612,7 +622,7 @@ class JSONRPCBatchCollector:
                         key = parts[0]
                         try:
                             value = float(parts[1])
-                        except:
+                        except (ValueError, TypeError):
                             continue
                         dtype = parts[2] if len(parts) > 2 else "INT"
                         values[key] = (value, dtype)
@@ -627,22 +637,27 @@ class JSONRPCBatchCollector:
 class MetricCollector:
     """Collects metric values from a host via shell commands."""
 
-    def __init__(self, name: str, key: str, metric_type: str, color: str, host_prefix: str = "", host_name: str = ""):
+    def __init__(
+            self,
+            name: str,
+            key: str,
+            metric_type: str,
+            color: str,
+            hostname: str = "",
+            host_name: str = "",
+            traffic_ctl_path: str = DEFAULT_TRAFFIC_CTL_PATH):
         self.name = name
         self.key = key
         self.metric_type = metric_type.lower()
         self.color = color
-        self.host_prefix = host_prefix
         self.host_name = host_name
 
-        # Build the full command
-        if host_prefix:
-            # For remote hosts: run traffic_ctl on remote, awk locally
-            remote_cmd = METRIC_COMMAND_REMOTE.format(key=key)
-            self.command = f"{host_prefix} '{remote_cmd}' | awk '{{print $2}}'"
+        # Build the command as a list (no shell=True needed)
+        if hostname:
+            _validate_hostname(hostname)
+            self.command = ["ssh", hostname, traffic_ctl_path, "metric", "get", key]
         else:
-            # Local: run everything locally
-            self.command = METRIC_COMMAND_LOCAL.format(key=key)
+            self.command = [traffic_ctl_path, "metric", "get", key]
 
         # For counter metrics, track previous value and time
         self._prev_value: Optional[float] = None
@@ -654,7 +669,7 @@ class MetricCollector:
     def _get_raw_value(self) -> Optional[float]:
         """Run the command and return the raw numeric value."""
         try:
-            result = subprocess.run(self.command, shell=True, capture_output=True, text=True, timeout=5)
+            result = subprocess.run(self.command, capture_output=True, text=True, timeout=5)
             if result.returncode != 0:
                 return None
 
@@ -662,6 +677,10 @@ class MetricCollector:
             if not output:
                 return None
 
+            # Parse "key value" output from traffic_ctl
+            parts = output.split()
+            if len(parts) >= 2:
+                return float(parts[1])
             return float(output)
         except (subprocess.TimeoutExpired, ValueError, OSError):
             return None
@@ -731,7 +750,8 @@ class ATSGrapher:
             log_stats: Optional[str] = None,
             run_for: Optional[int] = None,
             no_keyboard: bool = False,
-            tz_name: str = "UTC"):
+            tz_name: str = "UTC",
+            socket_path: str = DEFAULT_JSONRPC_SOCKET_PATH):
         self.hostnames = hostnames  # Bare hostnames like ["ats-server1.example.com"]
         self.interval = interval
         self.history_seconds = history_seconds
@@ -748,7 +768,7 @@ class ATSGrapher:
         if ZoneInfo and tz_name != "UTC":
             try:
                 self.tz = ZoneInfo(tz_name)
-            except:
+            except Exception:
                 self.tz = timezone.utc
                 self.tz_name = "UTC"
         else:
@@ -783,7 +803,9 @@ class ATSGrapher:
                         all_metric_keys.append(metric["key2"])
 
         # Create ONE combined batch collector per host (collects all metrics at once)
-        self.combined_collectors = [JSONRPCBatchCollector(hostname, all_metric_keys) for hostname in hostnames]
+        self.combined_collectors = [
+            JSONRPCBatchCollector(hostname, all_metric_keys, socket_path=socket_path) for hostname in hostnames
+        ]
 
         # Initialize metric info and data for all pages
         # metric_info[page][panel][metric] = {name, key, type, color}
@@ -1343,6 +1365,16 @@ Examples:
     # Display options
     parser.add_argument('--timezone', '-tz', default='UTC', help='Timezone for display (default: UTC, e.g., America/Los_Angeles)')
 
+    # ATS paths
+    parser.add_argument(
+        '--traffic-ctl',
+        default=DEFAULT_TRAFFIC_CTL_PATH,
+        help='Path to traffic_ctl binary (default: $TRAFFIC_CTL_PATH or "traffic_ctl")')
+    parser.add_argument(
+        '--socket-path',
+        default=DEFAULT_JSONRPC_SOCKET_PATH,
+        help='Path to JSONRPC Unix socket (default: $TRAFFICSERVER_JSONRPC_SOCKET)')
+
     # Debug options
     parser.add_argument(
         '--save-png', default=None, metavar='FILE', help='Save PNG to file after each render (use {iter} for iteration number)')
@@ -1385,7 +1417,8 @@ Examples:
         log_stats=args.log_stats,
         run_for=args.run_for,
         no_keyboard=args.no_keyboard,
-        tz_name=tz_name)
+        tz_name=tz_name,
+        socket_path=args.socket_path)
 
     print(f"Traffic Grapher - {len(pages)} pages, {args.interval}s refresh, {history}s history")
     if len(args.hosts) > 1:
