@@ -1673,8 +1673,12 @@ LogAccess::marshal_proxy_protocol_tls_cipher(char *buf)
     if (auto cipher = m_http_sm->t_state.pp_info.get_tlv_ssl_cipher(); cipher) {
       len = padded_length(cipher->size() + 1);
       if (buf) {
-        marshal_str(buf, cipher->data(), len);
-        buf[cipher->size()] = '\0';
+        marshal_mem(buf, cipher->data(), cipher->size(), len);
+      }
+    } else {
+      if (buf) {
+        // This prints the default value ("-")
+        marshal_mem(buf, nullptr, 0, len);
       }
     }
   }
@@ -1690,8 +1694,12 @@ LogAccess::marshal_proxy_protocol_tls_version(char *buf)
     if (auto version = m_http_sm->t_state.pp_info.get_tlv_ssl_version(); version) {
       len = padded_length(version->size() + 1);
       if (buf) {
-        marshal_str(buf, version->data(), len);
-        buf[version->size()] = '\0';
+        marshal_mem(buf, version->data(), version->size(), len);
+      }
+    } else {
+      if (buf) {
+        // This prints the default value ("-")
+        marshal_mem(buf, nullptr, 0, len);
       }
     }
   }
