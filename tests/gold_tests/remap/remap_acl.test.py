@@ -15,16 +15,23 @@ Verify remap.config acl behavior.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import atexit
 import os
 import io
 import re
 import inspect
+import shutil
 import tempfile
 from yaml import load, dump
 from yaml import CLoader as Loader
 from typing import List, Tuple
 
 from ports import get_port
+
+# Temporary directory for generated replay files.  Cleaned up at process exit
+# so the files don't accumulate in /tmp across test runs.
+_replay_tmpdir = tempfile.mkdtemp(prefix='autest_replay_')
+atexit.register(shutil.rmtree, _replay_tmpdir, True)
 
 Test.Summary = '''
 Verify remap.config acl behavior.
@@ -588,7 +595,8 @@ from all_acl_combinations import all_acl_combination_tests
 Test all acl combinations
 """
 for idx, test in enumerate(all_acl_combination_tests):
-    (_, replay_file_name) = tempfile.mkstemp(suffix="acl_table_test_{}.replay".format(idx))
+    (fd, replay_file_name) = tempfile.mkstemp(suffix="acl_table_test_{}.replay".format(idx), dir=_replay_tmpdir)
+    os.close(fd)
     replay_proxy_response(
         "base.replay.yaml",
         replay_file_name,
@@ -614,7 +622,8 @@ for idx, test in enumerate(all_deactivate_ip_allow_tests):
         test["deactivate_ip_allow"]
     except:
         print(test)
-    (_, replay_file_name) = tempfile.mkstemp(suffix="deactivate_ip_allow_table_test_{}.replay".format(idx))
+    (fd, replay_file_name) = tempfile.mkstemp(suffix="deactivate_ip_allow_table_test_{}.replay".format(idx), dir=_replay_tmpdir)
+    os.close(fd)
     replay_proxy_response(
         "base.replay.yaml",
         replay_file_name,

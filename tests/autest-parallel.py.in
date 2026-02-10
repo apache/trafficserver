@@ -31,6 +31,7 @@ import fnmatch
 import json
 import os
 import re
+import signal
 import subprocess
 import sys
 import time
@@ -40,10 +41,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
-# Default timing file location
-DEFAULT_TIMING_FILE = Path(__file__).parent / "test-timings.json"
 # Default serial tests file location
-DEFAULT_SERIAL_TESTS_FILE = Path(__file__).parent / "serial_tests.txt"
+DEFAULT_SERIAL_TESTS_FILE = Path("${CMAKE_CURRENT_SOURCE_DIR}") / "serial_tests.txt"
 # Default estimate for unknown tests (seconds)
 DEFAULT_TEST_TIME = 15.0
 
@@ -330,7 +329,8 @@ def run_single_test(test: str, script_dir: Path, sandbox: Path, ats_bin: str, bu
         status is one of: "PASS", "FAIL", "SKIP"
     """
     cmd = [
-        'uv', 'run', 'autest', 'run', '--directory', 'gold_tests', '--ats-bin', ats_bin, '--build-root', build_root, '--sandbox',
+        'uv', 'run', 'autest', 'run', '--directory', '${CMAKE_GOLD_DIR}', '--ats-bin', ats_bin, '--proxy-verifier-bin',
+        '${PROXY_VERIFIER_PATH}', '--build-root', build_root, '--sandbox',
         str(sandbox / test), '--filters', test
     ]
     cmd.extend(extra_args)
@@ -405,33 +405,45 @@ def run_worker(
     # Calculate port offset for this worker
     port_offset = worker_id * port_offset_step
 
-    # Set up environment with port offset
+    # Set up environment with port offset and PYTHONPATH for test extensions.
     env = os.environ.copy()
     env['AUTEST_PORT_OFFSET'] = str(port_offset)
+    pythonpath_dirs = [
+        '${CMAKE_CURRENT_SOURCE_DIR}/gold_tests/remap',
+        '${CMAKE_CURRENT_SOURCE_DIR}/gold_tests/lib',
+    ]
+    existing = env.get('PYTHONPATH', '')
+    env['PYTHONPATH'] = ':'.join(pythonpath_dirs + ([existing] if existing else []))
 
     if collect_timings:
         # Run tests one at a time to collect accurate timing
         all_output = []
         total_tests = len(tests)
-        for idx, test in enumerate(tests, 1):
-            test_name, duration, status, output = run_single_test(test, script_dir, sandbox, ats_bin, build_root, extra_args, env)
-            result.test_timings[test_name] = duration
-            all_output.append(output)
+        try:
+            for idx, test in enumerate(tests, 1):
+                test_name, duration, status, output = run_single_test(
+                    test, script_dir, sandbox, ats_bin, build_root, extra_args, env)
+                result.test_timings[test_name] = duration
+                all_output.append(output)
 
-            if status == "PASS":
-                result.passed += 1
-            elif status == "SKIP":
-                result.skipped += 1
-            else:
-                result.failed += 1
-                result.failed_tests.append(test_name)
+                if status == "PASS":
+                    result.passed += 1
+                elif status == "SKIP":
+                    result.skipped += 1
+                else:
+                    result.failed += 1
+                    result.failed_tests.append(test_name)
 
-            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            # Fixed-width format: date time status duration worker progress test_name
-            print(f"{timestamp} {status:4s} {duration:6.1f}s Worker:{worker_id:2d} {idx:2d}/{total_tests:2d} {test}", flush=True)
+                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                # Fixed-width format: date time status duration worker progress test_name
+                print(
+                    f"{timestamp} {status:4s} {duration:6.1f}s Worker:{worker_id:2d} {idx:2d}/{total_tests:2d} {test}", flush=True)
+        except KeyboardInterrupt:
+            result.return_code = 130
 
         result.output = "\n".join(all_output)
-        result.return_code = 0 if result.failed == 0 else 1
+        if result.return_code != 130:
+            result.return_code = 0 if result.failed == 0 else 1
     else:
         # Run all tests in batch (faster but no per-test timing)
         cmd = [
@@ -440,9 +452,11 @@ def run_worker(
             'autest',
             'run',
             '--directory',
-            'gold_tests',
+            '${CMAKE_GOLD_DIR}',
             '--ats-bin',
             ats_bin,
+            '--proxy-verifier-bin',
+            '${PROXY_VERIFIER_PATH}',
             '--build-root',
             build_root,
             '--sandbox',
@@ -478,20 +492,30 @@ def run_worker(
                     env=env,
                 )
                 output_lines = []
-                for line in proc.stdout:
-                    output_lines.append(line)
-                    # Print lines that show test progress
-                    clean = strip_ansi(line).strip()
-                    if clean.startswith('Running Test') or 'Passed' in clean or 'Failed' in clean:
-                        if clean.startswith('Running Test'):
-                            ts = datetime.now().strftime("%H:%M:%S")
-                            print(f"  [{ts}] Worker:{worker_id:2d} {clean}", flush=True)
-                # stdout is exhausted, wait for process to finish
                 try:
-                    proc.wait(timeout=60)
-                except subprocess.TimeoutExpired:
-                    proc.kill()
-                    proc.wait()
+                    for line in proc.stdout:
+                        output_lines.append(line)
+                        # Print lines that show test progress
+                        clean = strip_ansi(line).strip()
+                        if clean.startswith('Running Test') or 'Passed' in clean or 'Failed' in clean:
+                            if clean.startswith('Running Test'):
+                                ts = datetime.now().strftime("%H:%M:%S")
+                                print(f"  [{ts}] Worker:{worker_id:2d} {clean}", flush=True)
+                    # stdout is exhausted, wait for process to finish
+                    try:
+                        proc.wait(timeout=60)
+                    except subprocess.TimeoutExpired:
+                        proc.kill()
+                        proc.wait()
+                finally:
+                    # Ensure the subprocess is always cleaned up.
+                    if proc.poll() is None:
+                        proc.terminate()
+                        try:
+                            proc.wait(timeout=5)
+                        except subprocess.TimeoutExpired:
+                            proc.kill()
+                            proc.wait()
                 result.output = ''.join(output_lines)
                 result.return_code = proc.returncode
             else:
@@ -524,6 +548,10 @@ def run_worker(
                 result.failed = len(tests)
                 result.failed_tests = list(tests)
 
+        except KeyboardInterrupt:
+            result.output = "INTERRUPTED by user"
+            result.return_code = 130
+            result.failed = len(tests)
         except subprocess.TimeoutExpired:
             result.output = "TIMEOUT: Worker exceeded 1 hour timeout"
             result.return_code = -1
@@ -623,7 +651,14 @@ def print_summary(results: List[TestResult], total_duration: float, expected_tim
         f"{total_skipped:3d} skipped ({total_duration:6.1f}s)")
 
 
+def _sigterm_handler(signum, frame):
+    """Translate SIGTERM into KeyboardInterrupt so the same cleanup path runs."""
+    raise KeyboardInterrupt
+
+
 def main():
+    signal.signal(signal.SIGTERM, _sigterm_handler)
+
     parser = argparse.ArgumentParser(
         description='Run autest tests in parallel',
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -655,18 +690,20 @@ Examples:
         'Defaults to the source tree root.')
     parser.add_argument('--sandbox', default='/tmp/autest-parallel', help='Base sandbox directory (default: /tmp/autest-parallel)')
     parser.add_argument(
-        '-f', '--filter', action='append', dest='filters', help='Filter tests by glob pattern (can be specified multiple times)')
+        '-f',
+        '--filter',
+        nargs='+',
+        action='extend',
+        dest='filters',
+        help='Filter tests by name or glob pattern (multiple names can follow a single -f)')
     parser.add_argument('--list', action='store_true', help='List tests without running')
     parser.add_argument('--port-offset-step', type=int, default=1000, help='Port offset between workers (default: 1000)')
     parser.add_argument('-v', '--verbose', action='store_true', help='Verbose output')
-    parser.add_argument('--test-dir', default='gold_tests', help='Test directory relative to script location (default: gold_tests)')
+    parser.add_argument('--test-dir', default='${CMAKE_GOLD_DIR}', help='Path to gold_tests directory (default: ${CMAKE_GOLD_DIR})')
     parser.add_argument(
         '--collect-timings', action='store_true', help='Run tests one at a time to collect accurate per-test timing data')
     parser.add_argument(
-        '--timings-file',
-        type=Path,
-        default=DEFAULT_TIMING_FILE,
-        help=f'Path to timing data JSON file (default: {DEFAULT_TIMING_FILE})')
+        '--timings-file', type=Path, default=None, help='Path to timing data JSON file (default: <sandbox>/test-timings.json)')
     parser.add_argument(
         '--no-timing', action='store_true', help='Disable timing-based load balancing (use round-robin partitioning)')
     parser.add_argument(
@@ -675,9 +712,12 @@ Examples:
         default=DEFAULT_SERIAL_TESTS_FILE,
         help=f'Path to file listing tests that must run serially (default: {DEFAULT_SERIAL_TESTS_FILE})')
     parser.add_argument('--no-serial', action='store_true', help='Skip serial tests entirely')
-    parser.add_argument('extra_args', nargs='*', help='Additional arguments to pass to autest')
+    args, unknown_args = parser.parse_known_args()
+    args.extra_args = unknown_args
 
-    args = parser.parse_args()
+    # Default timing file to sandbox to avoid writing into the source tree.
+    if args.timings_file is None:
+        args.timings_file = Path(args.sandbox) / "test-timings.json"
 
     # --ats-bin is required unless --list is used
     if not args.list and not args.ats_bin:
@@ -815,110 +855,137 @@ Examples:
     # Run workers in parallel
     start_time = time.time()
     results: List[TestResult] = []
+    interrupted = False
+    futures = {}
+    serial_result = None
+    serial_start = None
 
-    if partitions:
-        print_progress()
-        with ProcessPoolExecutor(max_workers=len(partitions)) as executor:
-            futures = {}
-            for worker_id, worker_tests in enumerate(partitions):
-                future = executor.submit(
-                    run_worker,
-                    worker_id=worker_id,
-                    tests=worker_tests,
-                    script_dir=script_dir,
-                    sandbox_base=sandbox_base,
-                    ats_bin=args.ats_bin,
-                    build_root=build_root,
-                    extra_args=args.extra_args or [],
-                    port_offset_step=args.port_offset_step,
-                    verbose=args.verbose,
-                    collect_timings=args.collect_timings)
-                futures[future] = worker_id
+    try:
+        if partitions:
+            print_progress()
+            with ProcessPoolExecutor(max_workers=len(partitions)) as executor:
+                for worker_id, worker_tests in enumerate(partitions):
+                    future = executor.submit(
+                        run_worker,
+                        worker_id=worker_id,
+                        tests=worker_tests,
+                        script_dir=script_dir,
+                        sandbox_base=sandbox_base,
+                        ats_bin=args.ats_bin,
+                        build_root=build_root,
+                        extra_args=args.extra_args or [],
+                        port_offset_step=args.port_offset_step,
+                        verbose=args.verbose,
+                        collect_timings=args.collect_timings)
+                    futures[future] = worker_id
 
-            # Collect results as they complete
-            for future in as_completed(futures):
-                worker_id = futures[future]
+                # Collect results as they complete
+                for future in as_completed(futures):
+                    worker_id = futures[future]
+                    try:
+                        result = future.result()
+                        results.append(result)
+                        workers_done += 1
+                        # Use actual test count (top-level), not autest sub-test counts
+                        tests_done += len(result.tests)
+                        # Count top-level tests that failed (from failed_tests list)
+                        tests_failed += len(result.failed_tests)
+                        # Skipped is still useful from autest counts for visibility
+                        tests_skipped += result.skipped
+
+                        if args.verbose:
+                            # In verbose mode, print detail line then progress
+                            status = "PASS" if result.failed == 0 else "FAIL"
+                            ts = datetime.now().strftime("%H:%M:%S")
+                            parts = [f"{result.passed} passed", f"{result.failed} failed"]
+                            if result.skipped > 0:
+                                parts.append(f"{result.skipped} skipped")
+                            # Clear the progress line, print detail, then re-print progress
+                            print(
+                                f"\r[{ts}] Worker:{worker_id:2d} Done: {', '.join(parts)} "
+                                f"({result.duration:.1f}s) [{status}]" + " " * 20)
+
+                        print_progress()
+                    except Exception as e:
+                        print(f"\r[Worker {worker_id}] Error: {e}" + " " * 20, file=sys.stderr)
+                        workers_done += 1
+                        tests_done += len(partitions[worker_id])
+                        tests_failed += len(partitions[worker_id])
+                        results.append(
+                            TestResult(
+                                worker_id=worker_id, tests=partitions[worker_id], failed=len(partitions[worker_id]), output=str(e)))
+                        print_progress()
+
+            # Clear the progress line after parallel phase
+            print()
+
+        # Run serial tests after parallel tests complete
+        if serial_tests_to_run and not args.no_serial:
+            print(f"{'=' * 70}")
+            print("RUNNING SERIAL TESTS")
+            print(f"{'=' * 70}")
+            serial_start = time.time()
+
+            # Use a special worker ID for serial tests (after parallel workers)
+            serial_worker_id = len(partitions) if partitions else 0
+
+            # Set up environment without port offset (serial tests run alone)
+            env = os.environ.copy()
+            env['AUTEST_PORT_OFFSET'] = '0'
+
+            serial_result = TestResult(worker_id=serial_worker_id, tests=serial_tests_to_run, is_serial=True)
+
+            for idx, test in enumerate(serial_tests_to_run, 1):
+                test_name, duration, status, output = run_single_test(
+                    test, script_dir, sandbox_base / "serial", args.ats_bin, build_root, args.extra_args or [], env)
+                serial_result.test_timings[test_name] = duration
+
+                if status == "PASS":
+                    serial_result.passed += 1
+                elif status == "SKIP":
+                    serial_result.skipped += 1
+                    tests_skipped += 1
+                else:
+                    serial_result.failed += 1
+                    serial_result.failed_tests.append(test_name)
+                    tests_failed += 1
+                tests_done += 1
+
+                if args.verbose:
+                    timestamp = datetime.now().strftime("%H:%M:%S")
+                    print(
+                        f"\r[{timestamp}] {status:4s} {duration:6.1f}s Serial {idx:2d}/{len(serial_tests_to_run):2d} {test}" +
+                        " " * 20)
+
+                print_progress(phase="Serial")
+
+            serial_result.duration = time.time() - serial_start
+            results.append(serial_result)
+
+            # Clear the progress line after serial phase
+            print()
+
+    except KeyboardInterrupt:
+        interrupted = True
+        print("\n\nInterrupted! Collecting completed results...")
+        # Collect any parallel worker results that completed before the
+        # interrupt. The ProcessPoolExecutor's shutdown(wait=True) in __exit__
+        # will have waited for workers (which also received SIGINT) to finish,
+        # so completed futures are available here.
+        seen_workers = {r.worker_id for r in results}
+        for future in futures:
+            if future.done() and not future.cancelled():
                 try:
-                    result = future.result()
-                    results.append(result)
-                    workers_done += 1
-                    # Use actual test count (top-level), not autest sub-test counts
-                    tests_done += len(result.tests)
-                    # Count top-level tests that failed (from failed_tests list)
-                    tests_failed += len(result.failed_tests)
-                    # Skipped is still useful from autest counts for visibility
-                    tests_skipped += result.skipped
-
-                    if args.verbose:
-                        # In verbose mode, print detail line then progress
-                        status = "PASS" if result.failed == 0 else "FAIL"
-                        ts = datetime.now().strftime("%H:%M:%S")
-                        parts = [f"{result.passed} passed", f"{result.failed} failed"]
-                        if result.skipped > 0:
-                            parts.append(f"{result.skipped} skipped")
-                        # Clear the progress line, print detail, then re-print progress
-                        print(
-                            f"\r[{ts}] Worker:{worker_id:2d} Done: {', '.join(parts)} "
-                            f"({result.duration:.1f}s) [{status}]" + " " * 20)
-
-                    print_progress()
-                except Exception as e:
-                    print(f"\r[Worker {worker_id}] Error: {e}" + " " * 20, file=sys.stderr)
-                    workers_done += 1
-                    tests_done += len(partitions[worker_id])
-                    tests_failed += len(partitions[worker_id])
-                    results.append(
-                        TestResult(
-                            worker_id=worker_id, tests=partitions[worker_id], failed=len(partitions[worker_id]), output=str(e)))
-                    print_progress()
-
-        # Clear the progress line after parallel phase
-        print()
-
-    # Run serial tests after parallel tests complete
-    if serial_tests_to_run and not args.no_serial:
-        print(f"{'=' * 70}")
-        print("RUNNING SERIAL TESTS")
-        print(f"{'=' * 70}")
-        serial_start = time.time()
-
-        # Use a special worker ID for serial tests (after parallel workers)
-        serial_worker_id = len(partitions) if partitions else 0
-
-        # Set up environment without port offset (serial tests run alone)
-        env = os.environ.copy()
-        env['AUTEST_PORT_OFFSET'] = '0'
-
-        serial_result = TestResult(worker_id=serial_worker_id, tests=serial_tests_to_run, is_serial=True)
-
-        for idx, test in enumerate(serial_tests_to_run, 1):
-            test_name, duration, status, output = run_single_test(
-                test, script_dir, sandbox_base / "serial", args.ats_bin, build_root, args.extra_args or [], env)
-            serial_result.test_timings[test_name] = duration
-
-            if status == "PASS":
-                serial_result.passed += 1
-            elif status == "SKIP":
-                serial_result.skipped += 1
-                tests_skipped += 1
-            else:
-                serial_result.failed += 1
-                serial_result.failed_tests.append(test_name)
-                tests_failed += 1
-            tests_done += 1
-
-            if args.verbose:
-                timestamp = datetime.now().strftime("%H:%M:%S")
-                print(
-                    f"\r[{timestamp}] {status:4s} {duration:6.1f}s Serial {idx:2d}/{len(serial_tests_to_run):2d} {test}" + " " * 20)
-
-            print_progress(phase="Serial")
-
-        serial_result.duration = time.time() - serial_start
-        results.append(serial_result)
-
-        # Clear the progress line after serial phase
-        print()
+                    r = future.result(timeout=0)
+                    if r.worker_id not in seen_workers:
+                        results.append(r)
+                        seen_workers.add(r.worker_id)
+                except Exception:
+                    pass
+        # Capture partial serial results if we were in the serial phase.
+        if serial_result is not None and serial_result.worker_id not in seen_workers:
+            serial_result.duration = time.time() - serial_start
+            results.append(serial_result)
 
     total_duration = time.time() - start_time
 
@@ -942,6 +1009,9 @@ Examples:
     print_summary(results, total_duration, timings if args.collect_timings else None)
 
     # Exit with non-zero if any tests failed
+    if interrupted:
+        print("\nRun was interrupted by user.")
+        sys.exit(130)
     total_failed = sum(r.failed + r.exceptions for r in results)
     sys.exit(1 if total_failed > 0 else 0)
 
