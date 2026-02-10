@@ -547,6 +547,84 @@ ProxyProtocol::get_tlv(const uint8_t tlvCode) const
   return std::nullopt;
 }
 
+/*
+ * PP2_TYPE_SSL
+ * struct pp2_tlv_ssl {
+ *   uint8_t  client;
+ *   uint32_t verify;
+ *   struct pp2_tlv sub_tlv[0];
+ * };
+ */
+
+std::optional<std::string_view>
+ProxyProtocol::_get_tlv_ssl_subtype(uint8_t subtype) const
+{
+  if (auto v = tlv.find(PP2_TYPE_SSL); v != tlv.end() && v->second.length() != 0) {
+    auto ssl = v->second;
+
+    // Is the client connected over TLS
+    if ((ssl.data()[0] & 0x01) == 0) {
+      // Not over TLS
+      return std::nullopt;
+    }
+
+    if (ssl.length() < 5) {
+      return std::nullopt;
+    }
+
+    // Find the given subtype
+    uint16_t    len = ssl.length();
+    const char *p   = ssl.data() + 5; // Skip client (uint8_t) + verify (uint32_t)
+    const char *end = ssl.data() + len;
+    while (p != end) {
+      if (end - p < 3) {
+        // The size of a sub TLV entry must be 3 bytes or more
+        Dbg(dbg_ctl_proxyprotocol_v2, "Remaining data (%ld bytes) is not enough for a sub TLV field", end - p);
+        return std::nullopt;
+      }
+
+      // Type
+      uint8_t type  = *p;
+      p            += 1;
+
+      // Length
+      uint16_t length  = ntohs(*reinterpret_cast<const uint16_t *>(p));
+      p               += 2;
+
+      // Value
+      if (end - p < length) {
+        // Does not have enough data
+        Dbg(dbg_ctl_proxyprotocol_v2, "Remaining data (%ld bytes) is not enough for a TLV field (ID:%u LEN:%hu)", end - p, type,
+            length);
+        return std::nullopt;
+      }
+
+      // Found it?
+      if (type == subtype) {
+        Dbg(dbg_ctl_proxyprotocol, "TLV: ID=%u LEN=%hu", type, length);
+        return std::string_view(p, length);
+      }
+
+      p += length;
+    }
+  }
+  return std::nullopt;
+}
+
+std::optional<std::string_view>
+ProxyProtocol::get_tlv_ssl_version() const
+{
+  // The specification only says "the US-ASCII string representation of the TLS version".
+  // HAProxy sends a string returned by SSL_get_version.
+  return this->_get_tlv_ssl_subtype(PP2_SUBTYPE_SSL_VERSION);
+}
+
+std::optional<std::string_view>
+ProxyProtocol::get_tlv_ssl_cipher() const
+{
+  return this->_get_tlv_ssl_subtype(PP2_SUBTYPE_SSL_CIPHER);
+}
+
 int
 ProxyProtocol::set_additional_data(std::string_view data)
 {
