@@ -1053,10 +1053,12 @@ Log::init_fields()
 void
 Log::init_plugin_fields()
 {
-  APIHook *hook = g_lifecycle_hooks->get(TS_LIFECYCLE_LOG_INITIAZLIED_HOOK);
-  while (hook) {
-    hook->invoke(TS_EVENT_LIFECYCLE_LOG_INITIAZLIED, nullptr);
-    hook = hook->next();
+  if (g_lifecycle_hooks) {
+    APIHook *hook = g_lifecycle_hooks->get(TS_LIFECYCLE_LOG_INITIAZLIED_HOOK);
+    while (hook) {
+      hook->invoke(TS_EVENT_LIFECYCLE_LOG_INITIAZLIED, nullptr);
+      hook = hook->next();
+    }
   }
 }
 
