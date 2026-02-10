@@ -755,7 +755,7 @@ initialize_jsonrpc_server()
     // jsonrpcServer object.
     ink_assert(jsonrpcServer == nullptr);
     std::string msg;
-    return {false, swoc::bwprint(msg, "Server failed: '{}'", ex.what())};
+    return {false, swoc::bwprint(msg, "Error: '{}'", ex.what())};
   }
   // Register admin handlers.
   rpc::admin::register_admin_jsonrpc_handlers();
@@ -1995,7 +1995,10 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   if (!command_flag) { // No need if we are going into command mode.
     // JSONRPC server and handlers
     if (auto &&[ok, msg] = initialize_jsonrpc_server(); !ok) {
-      Warning("JSONRPC server could not be started.\n  Why?: '%s' ... Continuing without it.", msg.c_str());
+      fprintf(stderr,
+              "[ERROR] JSONRPC server could not be started because: '%s', ATS will start without it, but traffic_ctl will not be "
+              "available.\n",
+              msg.c_str());
     }
   }
 

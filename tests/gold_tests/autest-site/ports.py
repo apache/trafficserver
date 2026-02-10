@@ -74,7 +74,7 @@ def PortOpen(port: int, address: str = None, listening_ports: Set[int] = None) -
         host.WriteDebug(
             'PortOpen', f"Connection to port {port} succeeded, the port is open, "
             "and a future connection cannot use it")
-    except socket.error:
+    except OSError:
         host.WriteDebug(
             'PortOpen', f"socket error for port {port}, port is closed, "
             "and therefore a future connection can use it")
@@ -145,6 +145,11 @@ def _get_listening_ports() -> Set[int]:
 def _setup_port_queue(amount=1000):
     """
     Build up the set of ports that the OS in theory will not use.
+
+    The AUTEST_PORT_OFFSET environment variable can be used to offset the
+    starting port range. This is useful when running multiple autest processes
+    in parallel to avoid port conflicts. Each parallel worker should use a
+    different offset (e.g., 0, 1000, 2000, etc.).
     """
     global g_ports
     if g_ports is None:
@@ -154,6 +159,18 @@ def _setup_port_queue(amount=1000):
         # The queue has already been populated.
         host.WriteDebug('_setup_port_queue', f"Queue was previously populated. Queue size: {g_ports.qsize()}")
         return
+
+    # Get port offset for parallel execution support
+    try:
+        port_offset = int(os.environ.get('AUTEST_PORT_OFFSET', 0))
+    except ValueError:
+        host.WriteWarning("AUTEST_PORT_OFFSET is not a valid integer, defaulting to 0")
+        port_offset = 0
+    # Clamp to a safe range to avoid exceeding the valid port space
+    port_offset = max(0, min(port_offset, 60000))
+    if port_offset > 0:
+        host.WriteVerbose('_setup_port_queue', f"Using port offset: {port_offset}")
+
     try:
         # Use sysctl to find the range of ports that the OS publishes it uses.
         # some docker setups don't have sbin setup correctly
@@ -177,7 +194,8 @@ def _setup_port_queue(amount=1000):
     listening_ports = _get_listening_ports()
     if rmax > amount:
         # Fill in ports, starting above the upper OS-usable port range.
-        port = dmax + 1
+        # Add port_offset to support parallel test execution.
+        port = dmax + 1 + port_offset
         while port < 65536 and g_ports.qsize() < amount:
             if PortOpen(port, listening_ports=listening_ports):
                 host.WriteDebug('_setup_port_queue', f"Rejecting an already open port: {port}")
@@ -186,9 +204,10 @@ def _setup_port_queue(amount=1000):
                 g_ports.put(port)
             port += 1
     if rmin > amount and g_ports.qsize() < amount:
-        port = 2001
         # Fill in more ports, starting at 2001, well above well known ports,
         # and going up until the minimum port range used by the OS.
+        # Add port_offset to support parallel test execution (same as high range).
+        port = 2001 + port_offset
         while port < dmin and g_ports.qsize() < amount:
             if PortOpen(port, listening_ports=listening_ports):
                 host.WriteDebug('_setup_port_queue', f"Rejecting an already open port: {port}")

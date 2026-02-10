@@ -1,3 +1,6 @@
+'''
+Verify filter_body plugin for request/response body content filtering.
+'''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -14,34 +17,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-[[source]]
-name = "pypi"
-url = "https://pypi.org/simple"
-verify_ssl = true
+Test.Summary = 'Verify filter_body plugin for request/response body content filtering.'
 
-[dev-packages]
+Test.SkipUnless(Condition.PluginExists('filter_body.so'))
 
-[packages]
-
-# We pin Sphinx because the sphinx-rtd-theme suggests this as a best practice.
-# If not, we will often face issues when Sphinx updates their version before
-# sphinx-rtd-theme has had time to update their component for the new sphinx
-# version.
-sphinx = "==8.2.3"
-
-sphinx-rtd-theme = "==3.*"
-sphinxcontrib-jquery = "*"
-sphinxcontrib-plantuml = "*"
-# i18n
-sphinx-intl = "*"
-
-pyyaml = "*"
-
-# For parsing Doxygen XML output, to add links from an API description
-# to the source code for that object
-lxml = "*"
-
-polib = ">=1.0.3"
-
-[requires]
-python_version = "3"
+Test.ATSReplayTest(replay_file="filter_body.replay.yaml")

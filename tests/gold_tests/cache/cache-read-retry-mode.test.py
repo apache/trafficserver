@@ -1,3 +1,6 @@
+'''
+Test cache_open_write_fail_action = 5 (READ_RETRY mode)
+'''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -13,8 +16,15 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-antlr4-python3-runtime>=4.9,<5.0
-pytest>=7.0,<8.0
-pyinstaller>=5.0,<7.0
-build>=0.8,<2.0
-rapidfuzz>=3.0,<4.0
+
+Test.Summary = '''
+Test cache_open_write_fail_action = 5 (READ_RETRY mode) to verify:
+1. Basic read-while-writer behavior with fail_action=5
+2. READ_RETRY mode configuration is accepted and functional
+3. System does not crash under write lock contention
+4. Requests are served correctly when read retries are exhausted
+'''
+
+Test.ContinueOnFail = True
+
+Test.ATSReplayTest(replay_file="replay/cache-read-retry.replay.yaml")

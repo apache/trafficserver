@@ -2036,6 +2036,7 @@ TSVConn TSTransformOutputVConnGet(TSVConn connp);
 /* --------------------------------------------------------------------------
    Net VConnections */
 struct sockaddr const *TSNetVConnRemoteAddrGet(TSVConn vc);
+struct sockaddr const *TSNetVConnClientAddrGet(TSVConn vc);
 
 /**
     Opens a network connection to the host specified by ip on the port

@@ -595,7 +595,7 @@ RecLookupMatchingRecords(unsigned rec_type, const char *match, void (*callback)(
       }
     }
     // Finally check string metrics
-    for (auto &&[name, value] : ts::Metrics::StaticString::instance()) {
+    ts::Metrics::StaticString::instance().for_each([&](const std::string &name, const std::string &value) {
       if (regex.exec(name)) {
         RecRecord tmp;
 
@@ -608,7 +608,7 @@ RecLookupMatchingRecords(unsigned rec_type, const char *match, void (*callback)(
         tmp.data.rec_string = const_cast<char *>(value.c_str());
         callback(&tmp, data);
       }
-    }
+    });
   }
 
   int num_records = g_num_records;

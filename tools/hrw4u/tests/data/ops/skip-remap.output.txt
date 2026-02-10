@@ -1,3 +1,3 @@
-cond %{SEND_REQUEST_HDR_HOOK} [AND]
+cond %{REMAP_PSEUDO_HOOK} [AND]
 cond %{CLIENT-HEADER:path} /foo/
     skip-remap TRUE

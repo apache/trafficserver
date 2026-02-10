@@ -1,0 +1,1020 @@
+#!/usr/bin/env python3
+'''
+Parallel autest runner for Apache Traffic Server.
+
+This script runs autest tests in parallel by spawning multiple autest processes,
+each with a different port offset to avoid port conflicts.
+
+Usage:
+    ./autest-parallel.py -j 4 --sandbox /tmp/autest-parallel
+    ./autest-parallel.py -j 8 --filter "cache-*" --sandbox /tmp/sb
+    ./autest-parallel.py --list  # Just list tests without running
+'''
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+import argparse
+import fnmatch
+import json
+import os
+import re
+import signal
+import subprocess
+import sys
+import time
+from concurrent.futures import ProcessPoolExecutor, as_completed
+from dataclasses import dataclass, field
+from datetime import datetime
+from pathlib import Path
+from typing import Dict, List, Optional, Tuple
+
+# Default serial tests file location
+DEFAULT_SERIAL_TESTS_FILE = Path("${CMAKE_CURRENT_SOURCE_DIR}") / "serial_tests.txt"
+# Default estimate for unknown tests (seconds)
+DEFAULT_TEST_TIME = 15.0
+
+
+@dataclass
+class TestResult:
+    """Result from running a single autest process."""
+    worker_id: int
+    tests: List[str]
+    passed: int = 0
+    failed: int = 0
+    skipped: int = 0
+    warnings: int = 0
+    exceptions: int = 0
+    unknown: int = 0
+    duration: float = 0.0
+    failed_tests: List[str] = field(default_factory=list)
+    test_timings: Dict[str, float] = field(default_factory=dict)
+    output: str = ""
+    return_code: int = 0
+    is_serial: bool = False
+
+
+def discover_tests(test_dir: Path, filter_patterns: Optional[List[str]] = None) -> List[str]:
+    """
+    Discover all .test.py files in the test directory.
+
+    Args:
+        test_dir: Path to gold_tests directory
+        filter_patterns: Optional list of glob patterns to filter tests
+
+    Returns:
+        List of test names (without .test.py extension)
+    """
+    tests = []
+    for test_file in test_dir.rglob("*.test.py"):
+        # Extract test name (filename without .test.py)
+        test_name = test_file.stem.replace('.test', '')
+
+        # Apply filters if provided
+        if filter_patterns:
+            if any(fnmatch.fnmatch(test_name, pattern) for pattern in filter_patterns):
+                tests.append(test_name)
+        else:
+            tests.append(test_name)
+
+    return sorted(tests)
+
+
+def load_serial_tests(serial_file: Path) -> set:
+    """
+    Load list of tests that must run serially from a file.
+
+    The file format is one test name per line, with # for comments.
+    Test names can be full paths like ``subdir/test_name.test.py``.
+    The .test.py extension is stripped, and only the basename (stem) is
+    used for matching against discovered test names.
+
+    Returns:
+        Set of test base names that must run serially
+    """
+    serial_tests = set()
+    if not serial_file.exists():
+        return serial_tests
+
+    try:
+        with open(serial_file) as f:
+            for line in f:
+                line = line.strip()
+                # Skip empty lines and comments
+                if not line or line.startswith('#'):
+                    continue
+                # Remove .test.py extension if present
+                if line.endswith('.test.py'):
+                    line = line[:-8]  # Remove .test.py
+                # Extract just the test name from path
+                test_name = Path(line).stem.replace('.test', '')
+                serial_tests.add(test_name)
+    except IOError:
+        pass  # File is optional; missing file means no serial tests
+
+    return serial_tests
+
+
+def load_timings(timing_file: Path) -> Dict[str, float]:
+    """Load test timing data from JSON file."""
+    if timing_file.exists():
+        try:
+            with open(timing_file) as f:
+                return json.load(f)
+        except (json.JSONDecodeError, IOError):
+            pass  # Timing data is optional; fall back to equal partitioning
+    return {}
+
+
+def save_timings(timing_file: Path, timings: Dict[str, float]):
+    """Save test timing data to JSON file."""
+    try:
+        with open(timing_file, 'w') as f:
+            json.dump(timings, f, indent=2, sort_keys=True)
+    except IOError as e:
+        print(f"Warning: Could not save timings: {e}", file=sys.stderr)
+
+
+def partition_tests(tests: List[str], num_jobs: int) -> List[List[str]]:
+    """
+    Partition tests into roughly equal groups for parallel execution.
+    Simple round-robin partitioning (used when no timing data available).
+
+    Args:
+        tests: List of test names
+        num_jobs: Number of parallel workers
+
+    Returns:
+        List of test lists, one per worker
+    """
+    if num_jobs <= 0:
+        num_jobs = 1
+
+    partitions = [[] for _ in range(min(num_jobs, len(tests)))]
+    for i, test in enumerate(tests):
+        partitions[i % len(partitions)].append(test)
+
+    return [p for p in partitions if p]  # Remove empty partitions
+
+
+def partition_tests_by_time(tests: List[str], num_jobs: int, timings: Dict[str, float]) -> Tuple[List[List[str]], List[float]]:
+    """
+    Partition tests using LPT (Longest Processing Time first) algorithm.
+    This balances the load across workers based on expected test duration.
+
+    Args:
+        tests: List of test names
+        num_jobs: Number of parallel workers
+        timings: Dictionary of test name -> expected duration in seconds
+
+    Returns:
+        Tuple of (partitions, expected_durations) where:
+        - partitions: List of test lists, one per worker
+        - expected_durations: Expected total duration for each worker
+    """
+    if num_jobs <= 0:
+        num_jobs = 1
+
+    num_workers = min(num_jobs, len(tests))
+
+    # Get timing for each test, use default for unknown
+    test_times = []
+    unknown_tests = []
+    for test in tests:
+        if test in timings:
+            test_times.append((test, timings[test]))
+        else:
+            unknown_tests.append(test)
+
+    # Sort known tests by time (longest first) for LPT algorithm
+    test_times.sort(key=lambda x: x[1], reverse=True)
+
+    # Initialize workers
+    partitions = [[] for _ in range(num_workers)]
+    worker_loads = [0.0] * num_workers
+
+    # Assign known tests using LPT: assign to worker with least load
+    for test, duration in test_times:
+        min_worker = min(range(num_workers), key=lambda w: worker_loads[w])
+        partitions[min_worker].append(test)
+        worker_loads[min_worker] += duration
+
+    # Distribute unknown tests evenly across workers with least load
+    # Sort unknown tests and distribute them one at a time to balance
+    for test in unknown_tests:
+        min_worker = min(range(num_workers), key=lambda w: worker_loads[w])
+        partitions[min_worker].append(test)
+        worker_loads[min_worker] += DEFAULT_TEST_TIME
+
+    return partitions, worker_loads
+
+
+def strip_ansi(text: str) -> str:
+    """Remove ANSI escape codes from text."""
+    ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+    return ansi_escape.sub('', text)
+
+
+def parse_autest_output(output: str) -> dict:
+    """
+    Parse autest output to extract pass/fail counts and per-test timings.
+
+    Args:
+        output: Raw autest output string
+
+    Returns:
+        Dictionary with counts for passed, failed, skipped, etc. and test_timings
+    """
+    result = {
+        'passed': 0,
+        'failed': 0,
+        'skipped': 0,
+        'warnings': 0,
+        'exceptions': 0,
+        'unknown': 0,
+        'failed_tests': [],
+        'test_timings': {}
+    }
+
+    # Strip ANSI codes for easier parsing
+    clean_output = strip_ansi(output)
+    lines = clean_output.split('\n')
+
+    # First pass: find test results and their line positions
+    test_results = []  # (line_num, test_name, result)
+    for i, line in enumerate(lines):
+        line_stripped = line.strip()
+
+        # Match "Running Test: test_name" or "Test: test_name: Passed/Failed"
+        running_match = re.match(r'Running Test:\s+(\S+)', line_stripped)
+        result_match = re.match(r'Test:\s+(\S+):\s+(Passed|Failed|Skipped)', line_stripped, re.IGNORECASE)
+
+        if running_match:
+            test_results.append((i, running_match.group(1), 'start'))
+        elif result_match:
+            test_results.append((i, result_match.group(1), result_match.group(2).lower()))
+
+    # Calculate per-test timing based on line positions
+    # (rough approximation - actual timing would be better from autest if available)
+    for i, (line_num, test_name, status) in enumerate(test_results):
+        if status == 'start':
+            # Find the corresponding end
+            for j in range(i + 1, len(test_results)):
+                end_line, end_name, end_status = test_results[j]
+                if end_name == test_name and end_status != 'start':
+                    # We don't have actual time, but we'll track it from the worker
+                    break
+
+    # Parse the summary section
+    for line in lines:
+        line = line.strip()
+        if 'Passed:' in line:
+            try:
+                result['passed'] = int(line.split(':')[-1].strip())
+            except ValueError:
+                pass
+        elif 'Failed:' in line and 'test' not in line.lower():
+            try:
+                result['failed'] = int(line.split(':')[-1].strip())
+            except ValueError:
+                pass
+        elif 'Skipped:' in line:
+            try:
+                result['skipped'] = int(line.split(':')[-1].strip())
+            except ValueError:
+                pass
+        elif 'Warning:' in line:
+            try:
+                result['warnings'] = int(line.split(':')[-1].strip())
+            except ValueError:
+                pass
+        elif 'Exception:' in line:
+            try:
+                result['exceptions'] = int(line.split(':')[-1].strip())
+            except ValueError:
+                pass
+        elif 'Unknown:' in line:
+            try:
+                result['unknown'] = int(line.split(':')[-1].strip())
+            except ValueError:
+                pass
+
+    # Extract failed test names
+    failed_pattern = re.compile(r'Test:\s+(\S+):\s+Failed', re.IGNORECASE)
+    for match in failed_pattern.finditer(clean_output):
+        result['failed_tests'].append(match.group(1))
+
+    return result
+
+
+def run_single_test(test: str, script_dir: Path, sandbox: Path, ats_bin: str, build_root: str, extra_args: List[str],
+                    env: dict) -> Tuple[str, float, str, str]:
+    """
+    Run a single test and return its timing.
+
+    Returns:
+        Tuple of (test_name, duration, status, output)
+        status is one of: "PASS", "FAIL", "SKIP"
+    """
+    cmd = [
+        'uv', 'run', 'autest', 'run', '--directory', '${CMAKE_GOLD_DIR}', '--ats-bin', ats_bin, '--proxy-verifier-bin',
+        '${PROXY_VERIFIER_PATH}', '--build-root', build_root, '--sandbox',
+        str(sandbox / test), '--filters', test
+    ]
+    cmd.extend(extra_args)
+
+    start = time.time()
+    try:
+        proc = subprocess.run(
+            cmd,
+            cwd=script_dir,
+            capture_output=True,
+            text=True,
+            env=env,
+            timeout=600  # 10 minute timeout per test
+        )
+        duration = time.time() - start
+        output = proc.stdout + proc.stderr
+        parsed = parse_autest_output(output)
+        # Determine status:
+        # - SKIP: test was skipped (missing dependency, unsupported feature)
+        # - PASS: test ran and passed
+        # - FAIL: test failed, had exceptions, or nothing ran at all
+        if parsed['skipped'] > 0 and parsed['passed'] == 0 and parsed['failed'] == 0:
+            status = "SKIP"
+        elif (parsed['failed'] == 0 and parsed['exceptions'] == 0 and proc.returncode == 0 and
+              (parsed['passed'] > 0 or parsed['skipped'] > 0)):
+            status = "PASS"
+        else:
+            status = "FAIL"
+        return (test, duration, status, output)
+    except subprocess.TimeoutExpired:
+        return (test, 600.0, "FAIL", "TIMEOUT")
+    except Exception as e:
+        return (test, time.time() - start, "FAIL", str(e))
+
+
+def run_worker(
+        worker_id: int,
+        tests: List[str],
+        script_dir: Path,
+        sandbox_base: Path,
+        ats_bin: str,
+        build_root: str,
+        extra_args: List[str],
+        port_offset_step: int = 1000,
+        verbose: bool = False,
+        collect_timings: bool = False) -> TestResult:
+    """
+    Run autest on a subset of tests with isolated sandbox and port range.
+
+    Args:
+        worker_id: Worker identifier (0, 1, 2, ...)
+        tests: List of test names to run
+        script_dir: Directory containing autest.sh
+        sandbox_base: Base sandbox directory
+        ats_bin: Path to ATS bin directory
+        build_root: Path to the build directory (for test plugins etc.)
+        extra_args: Additional arguments to pass to autest
+        port_offset_step: Port offset between workers
+        verbose: Whether to print verbose output
+        collect_timings: If True, run tests one at a time to collect accurate timing
+
+    Returns:
+        TestResult with pass/fail counts and per-test timings
+    """
+    start_time = time.time()
+    result = TestResult(worker_id=worker_id, tests=tests)
+
+    # Create worker-specific sandbox
+    sandbox = sandbox_base / f"worker-{worker_id}"
+    sandbox.mkdir(parents=True, exist_ok=True)
+
+    # Calculate port offset for this worker
+    port_offset = worker_id * port_offset_step
+
+    # Set up environment with port offset and PYTHONPATH for test extensions.
+    env = os.environ.copy()
+    env['AUTEST_PORT_OFFSET'] = str(port_offset)
+    pythonpath_dirs = [
+        '${CMAKE_CURRENT_SOURCE_DIR}/gold_tests/remap',
+        '${CMAKE_CURRENT_SOURCE_DIR}/gold_tests/lib',
+    ]
+    existing = env.get('PYTHONPATH', '')
+    env['PYTHONPATH'] = ':'.join(pythonpath_dirs + ([existing] if existing else []))
+
+    if collect_timings:
+        # Run tests one at a time to collect accurate timing
+        all_output = []
+        total_tests = len(tests)
+        try:
+            for idx, test in enumerate(tests, 1):
+                test_name, duration, status, output = run_single_test(
+                    test, script_dir, sandbox, ats_bin, build_root, extra_args, env)
+                result.test_timings[test_name] = duration
+                all_output.append(output)
+
+                if status == "PASS":
+                    result.passed += 1
+                elif status == "SKIP":
+                    result.skipped += 1
+                else:
+                    result.failed += 1
+                    result.failed_tests.append(test_name)
+
+                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                # Fixed-width format: date time status duration worker progress test_name
+                print(
+                    f"{timestamp} {status:4s} {duration:6.1f}s Worker:{worker_id:2d} {idx:2d}/{total_tests:2d} {test}", flush=True)
+        except KeyboardInterrupt:
+            result.return_code = 130
+
+        result.output = "\n".join(all_output)
+        if result.return_code != 130:
+            result.return_code = 0 if result.failed == 0 else 1
+    else:
+        # Run all tests in batch (faster but no per-test timing)
+        cmd = [
+            'uv',
+            'run',
+            'autest',
+            'run',
+            '--directory',
+            '${CMAKE_GOLD_DIR}',
+            '--ats-bin',
+            ats_bin,
+            '--proxy-verifier-bin',
+            '${PROXY_VERIFIER_PATH}',
+            '--build-root',
+            build_root,
+            '--sandbox',
+            str(sandbox),
+        ]
+
+        # Add test filters
+        cmd.append('--filters')
+        cmd.extend(tests)
+
+        # Add any extra arguments
+        cmd.extend(extra_args)
+
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        print(f"{timestamp} Worker:{worker_id:2d} Starting batch of {len(tests)} tests (port offset {port_offset})", flush=True)
+        if verbose:
+            print(
+                f"             Worker:{worker_id:2d} Tests: {', '.join(tests[:5])}"
+                f"{'...' if len(tests) > 5 else ''}",
+                flush=True)
+
+        try:
+            if verbose:
+                # Stream output in real-time so the user sees test progress.
+                # We use Popen + line-by-line read so partial results are visible
+                # even if the overall run takes a long time.
+                proc = subprocess.Popen(
+                    cmd,
+                    cwd=script_dir,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    text=True,
+                    env=env,
+                )
+                output_lines = []
+                try:
+                    for line in proc.stdout:
+                        output_lines.append(line)
+                        # Print lines that show test progress
+                        clean = strip_ansi(line).strip()
+                        if clean.startswith('Running Test') or 'Passed' in clean or 'Failed' in clean:
+                            if clean.startswith('Running Test'):
+                                ts = datetime.now().strftime("%H:%M:%S")
+                                print(f"  [{ts}] Worker:{worker_id:2d} {clean}", flush=True)
+                    # stdout is exhausted, wait for process to finish
+                    try:
+                        proc.wait(timeout=60)
+                    except subprocess.TimeoutExpired:
+                        proc.kill()
+                        proc.wait()
+                finally:
+                    # Ensure the subprocess is always cleaned up.
+                    if proc.poll() is None:
+                        proc.terminate()
+                        try:
+                            proc.wait(timeout=5)
+                        except subprocess.TimeoutExpired:
+                            proc.kill()
+                            proc.wait()
+                result.output = ''.join(output_lines)
+                result.return_code = proc.returncode
+            else:
+                proc = subprocess.run(
+                    cmd,
+                    cwd=script_dir,
+                    capture_output=True,
+                    text=True,
+                    env=env,
+                    timeout=3600  # 1 hour timeout per worker
+                )
+                result.output = proc.stdout + proc.stderr
+                result.return_code = proc.returncode
+
+            # Parse results
+            parsed = parse_autest_output(result.output)
+            result.passed = parsed['passed']
+            result.failed = parsed['failed']
+            result.skipped = parsed['skipped']
+            result.warnings = parsed['warnings']
+            result.exceptions = parsed['exceptions']
+            result.unknown = parsed['unknown']
+            result.failed_tests = parsed['failed_tests']
+
+            # If no tests ran at all (passed + failed + skipped == 0),
+            # autest likely errored at setup (e.g., missing proxy verifier).
+            # Count all tests as failed to avoid false positives.
+            total_ran = result.passed + result.failed + result.skipped
+            if total_ran == 0 and (hasattr(proc, 'returncode') and proc.returncode != 0):
+                result.failed = len(tests)
+                result.failed_tests = list(tests)
+
+        except KeyboardInterrupt:
+            result.output = "INTERRUPTED by user"
+            result.return_code = 130
+            result.failed = len(tests)
+        except subprocess.TimeoutExpired:
+            result.output = "TIMEOUT: Worker exceeded 1 hour timeout"
+            result.return_code = -1
+            result.failed = len(tests)
+        except Exception as e:
+            result.output = f"ERROR: {str(e)}"
+            result.return_code = -1
+            result.failed = len(tests)
+
+    result.duration = time.time() - start_time
+    return result
+
+
+def print_summary(results: List[TestResult], total_duration: float, expected_timings: Optional[Dict[str, float]] = None):
+    """Print aggregated results from all workers."""
+    total_passed = sum(r.passed for r in results)
+    total_failed = sum(r.failed for r in results)
+    total_skipped = sum(r.skipped for r in results)
+    total_warnings = sum(r.warnings for r in results)
+    total_exceptions = sum(r.exceptions for r in results)
+    total_unknown = sum(r.unknown for r in results)
+    # Use actual test count (top-level tests), not sub-test counts from autest
+    total_tests = sum(len(r.tests) for r in results)
+
+    # Deduplicate failed test names (a test may appear in sub-test output multiple times)
+    seen = set()
+    all_failed_tests = []
+    for r in results:
+        for t in r.failed_tests:
+            if t not in seen:
+                seen.add(t)
+                all_failed_tests.append(t)
+
+    # Collect actual timings from results
+    actual_timings = {}
+    for r in results:
+        actual_timings.update(r.test_timings)
+
+    print("\n" + "=" * 70)
+    print("PARALLEL AUTEST SUMMARY")
+    print("=" * 70)
+    print(f"Workers:     {len(results)}")
+    print(f"Total tests: {total_tests}")
+    print(f"Duration:    {total_duration:.1f}s")
+    print("-" * 70)
+    print(f"  Passed:     {total_passed}")
+    print(f"  Failed:     {total_failed}")
+    print(f"  Skipped:    {total_skipped}")
+    print(f"  Warnings:   {total_warnings}")
+    print(f"  Exceptions: {total_exceptions}")
+    print(f"  Unknown:    {total_unknown}")
+
+    if all_failed_tests:
+        print("-" * 70)
+        print("FAILED TESTS:")
+        for test in sorted(all_failed_tests):
+            print(f"  - {test}")
+
+    # Check for timing discrepancies
+    if expected_timings and actual_timings:
+        timing_warnings = []
+        for test, actual in actual_timings.items():
+            if test in expected_timings:
+                expected = expected_timings[test]
+                if expected > 0:
+                    ratio = actual / expected
+                    diff = abs(actual - expected)
+                    # Flag if: (>2x ratio AND >10s diff) OR (>30s diff regardless of ratio)
+                    if ((ratio > 2.0 or ratio < 0.5) and diff > 10) or diff > 30:
+                        timing_warnings.append((test, expected, actual, ratio))
+
+        if timing_warnings:
+            print("-" * 70)
+            print("TIMING DISCREPANCIES (expected vs actual):")
+            for test, expected, actual, ratio in sorted(timing_warnings, key=lambda x: -abs(x[2] - x[1])):
+                direction = "slower" if actual > expected else "faster"
+                print(f"  {test}: {expected:.1f}s -> {actual:.1f}s ({ratio:.1f}x {direction})")
+
+    print("=" * 70)
+
+    # Per-worker summary
+    print("\nPer-worker breakdown:")
+    for r in results:
+        status = "OK" if r.failed == 0 and r.exceptions == 0 else "FAIL"
+        if r.is_serial:
+            worker_label = "  Serial:  "
+        else:
+            worker_label = f"  Worker:{r.worker_id:2d}"
+        print(
+            f"{worker_label} {r.passed:3d} passed, {r.failed:3d} failed, "
+            f"{r.skipped:3d} skipped ({r.duration:6.1f}s) [{status}]")
+
+    # Total summary line
+    print("-" * 70)
+    print(
+        f"  TOTAL:    {total_passed:3d} passed, {total_failed:3d} failed, "
+        f"{total_skipped:3d} skipped ({total_duration:6.1f}s)")
+
+
+def _sigterm_handler(signum, frame):
+    """Translate SIGTERM into KeyboardInterrupt so the same cleanup path runs."""
+    raise KeyboardInterrupt
+
+
+def main():
+    signal.signal(signal.SIGTERM, _sigterm_handler)
+
+    parser = argparse.ArgumentParser(
+        description='Run autest tests in parallel',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog='''
+Examples:
+    # Run all tests with 4 parallel workers
+    %(prog)s -j 4 --ats-bin /opt/ats/bin --sandbox /tmp/autest
+
+    # Run specific tests
+    %(prog)s -j 2 --filter "cache-*" --filter "tls-*" --ats-bin /opt/ats/bin --sandbox /tmp/autest
+
+    # List tests without running
+    %(prog)s --list --ats-bin /opt/ats/bin
+
+    # Collect timing data (runs tests one at a time for accurate timing)
+    %(prog)s -j 4 --collect-timings --ats-bin /opt/ats/bin --sandbox /tmp/autest
+
+    # Use saved timing data for load-balanced partitioning
+    %(prog)s -j 16 --timings-file test-timings.json --ats-bin /opt/ats/bin --sandbox /tmp/autest
+''')
+
+    parser.add_argument(
+        '-j', '--jobs', type=int, default=os.cpu_count() or 4, help='Number of parallel workers (default: CPU count)')
+    parser.add_argument('--ats-bin', default=None, help='Path to ATS bin directory (required unless --list is used)')
+    parser.add_argument(
+        '--build-root',
+        default=None,
+        help='Path to the build directory (for test plugins, etc.). '
+        'Defaults to the source tree root.')
+    parser.add_argument('--sandbox', default='/tmp/autest-parallel', help='Base sandbox directory (default: /tmp/autest-parallel)')
+    parser.add_argument(
+        '-f',
+        '--filter',
+        nargs='+',
+        action='extend',
+        dest='filters',
+        help='Filter tests by name or glob pattern (multiple names can follow a single -f)')
+    parser.add_argument('--list', action='store_true', help='List tests without running')
+    parser.add_argument('--port-offset-step', type=int, default=1000, help='Port offset between workers (default: 1000)')
+    parser.add_argument('-v', '--verbose', action='store_true', help='Verbose output')
+    parser.add_argument('--test-dir', default='${CMAKE_GOLD_DIR}', help='Path to gold_tests directory (default: ${CMAKE_GOLD_DIR})')
+    parser.add_argument(
+        '--collect-timings', action='store_true', help='Run tests one at a time to collect accurate per-test timing data')
+    parser.add_argument(
+        '--timings-file', type=Path, default=None, help='Path to timing data JSON file (default: <sandbox>/test-timings.json)')
+    parser.add_argument(
+        '--no-timing', action='store_true', help='Disable timing-based load balancing (use round-robin partitioning)')
+    parser.add_argument(
+        '--serial-tests-file',
+        type=Path,
+        default=DEFAULT_SERIAL_TESTS_FILE,
+        help=f'Path to file listing tests that must run serially (default: {DEFAULT_SERIAL_TESTS_FILE})')
+    parser.add_argument('--no-serial', action='store_true', help='Skip serial tests entirely')
+    args, unknown_args = parser.parse_known_args()
+    args.extra_args = unknown_args
+
+    # Default timing file to sandbox to avoid writing into the source tree.
+    if args.timings_file is None:
+        args.timings_file = Path(args.sandbox) / "test-timings.json"
+
+    # --ats-bin is required unless --list is used
+    if not args.list and not args.ats_bin:
+        parser.error("--ats-bin is required when running tests (not needed for --list)")
+
+    # Determine paths
+    script_dir = Path(__file__).parent.resolve()
+    test_dir = script_dir / args.test_dir
+
+    # Resolve build root (defaults to source tree root, i.e. parent of tests/)
+    if args.build_root:
+        build_root = str(Path(args.build_root).resolve())
+    else:
+        build_root = str(script_dir.parent)
+
+    if not test_dir.exists():
+        print(f"Error: Test directory not found: {test_dir}", file=sys.stderr)
+        sys.exit(1)
+
+    # Load serial tests list
+    serial_tests = load_serial_tests(args.serial_tests_file)
+    if serial_tests:
+        print(f"Loaded {len(serial_tests)} serial tests from {args.serial_tests_file}")
+
+    # Discover tests
+    all_tests = discover_tests(test_dir, args.filters)
+
+    if not all_tests:
+        print("No tests found matching the specified filters.", file=sys.stderr)
+        sys.exit(1)
+
+    # Separate parallel and serial tests
+    parallel_tests = [t for t in all_tests if t not in serial_tests]
+    serial_tests_to_run = [t for t in all_tests if t in serial_tests]
+
+    print(f"Found {len(all_tests)} tests ({len(parallel_tests)} parallel, {len(serial_tests_to_run)} serial)")
+
+    if args.list:
+        print("\nParallel tests:")
+        for test in parallel_tests:
+            print(f"  {test}")
+        if serial_tests_to_run:
+            print("\nSerial tests (will run after parallel tests):")
+            for test in serial_tests_to_run:
+                print(f"  {test}")
+        sys.exit(0)
+
+    # Load existing timing data
+    timings = {}
+    if not args.no_timing:
+        timings = load_timings(args.timings_file)
+        if timings:
+            known_tests = sum(1 for t in parallel_tests if t in timings)
+            print(f"Loaded timing data for {known_tests}/{len(parallel_tests)} parallel tests from {args.timings_file}")
+
+    # Partition parallel tests
+    num_jobs = min(args.jobs, len(parallel_tests)) if parallel_tests else 0
+
+    if parallel_tests:
+        if timings and not args.no_timing:
+            # Use timing-based load balancing (LPT algorithm)
+            partitions, expected_loads = partition_tests_by_time(parallel_tests, num_jobs, timings)
+            print(f"Using timing-based load balancing")
+            if args.verbose:
+                for i, load in enumerate(expected_loads):
+                    tests_preview = ', '.join(partitions[i][:3])
+                    suffix = f", ... (+{len(partitions[i])-3} more)" if len(partitions[i]) > 3 else ""
+                    print(f"  Worker {i}: {len(partitions[i])} tests, ~{load:.1f}s expected [{tests_preview}{suffix}]")
+        else:
+            # Fall back to simple round-robin partitioning
+            partitions = partition_tests(parallel_tests, num_jobs)
+            print(f"Using round-robin partitioning")
+            if args.verbose:
+                for i in range(len(partitions)):
+                    tests_preview = ', '.join(partitions[i][:3])
+                    suffix = f", ... (+{len(partitions[i])-3} more)" if len(partitions[i]) > 3 else ""
+                    print(f"  Worker {i}: {len(partitions[i])} tests [{tests_preview}{suffix}]")
+    else:
+        partitions = []
+
+    # Compute totals for progress tracking
+    total_tests = len(parallel_tests) + (len(serial_tests_to_run) if serial_tests_to_run and not args.no_serial else 0)
+    serial_count = len(serial_tests_to_run) if serial_tests_to_run and not args.no_serial else 0
+
+    if partitions:
+        print(f"Running with {len(partitions)} parallel workers")
+    print(
+        f"Total: {total_tests} tests ({len(parallel_tests)} parallel across {len(partitions)} workers"
+        f"{f', {serial_count} serial' if serial_count else ''})")
+    print(f"Build root: {build_root}")
+    print(f"Port offset step: {args.port_offset_step}")
+    print(f"Sandbox: {args.sandbox}")
+    if args.collect_timings:
+        print("Collecting per-test timing data (tests run sequentially per worker)")
+    print()
+
+    # Create sandbox base directory
+    sandbox_base = Path(args.sandbox)
+    sandbox_base.mkdir(parents=True, exist_ok=True)
+
+    # Progress tracking state (counts top-level tests, not autest sub-tests)
+    tests_done = 0
+    tests_failed = 0
+    tests_skipped = 0
+    workers_done = 0
+    total_workers = len(partitions)
+
+    def format_eta(elapsed: float, done: int, total: int) -> str:
+        """Estimate remaining time based on progress so far."""
+        if done == 0 or done >= total:
+            return "--:--"
+        rate = elapsed / done
+        remaining = rate * (total - done)
+        mins, secs = divmod(int(remaining), 60)
+        if mins >= 60:
+            hours, mins = divmod(mins, 60)
+            return f"{hours}h {mins:02d}m"
+        return f"{mins}m {secs:02d}s"
+
+    def print_progress(phase: str = "Parallel"):
+        """Print an in-place progress line using \\r."""
+        elapsed = time.time() - start_time
+        elapsed_str = f"{int(elapsed)}s"
+        eta = format_eta(elapsed, tests_done, total_tests)
+        pct = (tests_done * 100 // total_tests) if total_tests > 0 else 0
+        fail_str = f" | {tests_failed} FAILED" if tests_failed > 0 else ""
+        skip_str = f" | {tests_skipped} skipped" if tests_skipped > 0 else ""
+        line = (
+            f"\r[{phase}] {tests_done}/{total_tests} tests ({pct}%) "
+            f"| {workers_done}/{total_workers} workers done"
+            f"{fail_str}{skip_str}"
+            f" | {elapsed_str} elapsed | ETA: {eta}  ")
+        print(line, end='', flush=True)
+
+    # Run workers in parallel
+    start_time = time.time()
+    results: List[TestResult] = []
+    interrupted = False
+    futures = {}
+    serial_result = None
+    serial_start = None
+
+    try:
+        if partitions:
+            print_progress()
+            with ProcessPoolExecutor(max_workers=len(partitions)) as executor:
+                for worker_id, worker_tests in enumerate(partitions):
+                    future = executor.submit(
+                        run_worker,
+                        worker_id=worker_id,
+                        tests=worker_tests,
+                        script_dir=script_dir,
+                        sandbox_base=sandbox_base,
+                        ats_bin=args.ats_bin,
+                        build_root=build_root,
+                        extra_args=args.extra_args or [],
+                        port_offset_step=args.port_offset_step,
+                        verbose=args.verbose,
+                        collect_timings=args.collect_timings)
+                    futures[future] = worker_id
+
+                # Collect results as they complete
+                for future in as_completed(futures):
+                    worker_id = futures[future]
+                    try:
+                        result = future.result()
+                        results.append(result)
+                        workers_done += 1
+                        # Use actual test count (top-level), not autest sub-test counts
+                        tests_done += len(result.tests)
+                        # Count top-level tests that failed (from failed_tests list)
+                        tests_failed += len(result.failed_tests)
+                        # Skipped is still useful from autest counts for visibility
+                        tests_skipped += result.skipped
+
+                        if args.verbose:
+                            # In verbose mode, print detail line then progress
+                            status = "PASS" if result.failed == 0 else "FAIL"
+                            ts = datetime.now().strftime("%H:%M:%S")
+                            parts = [f"{result.passed} passed", f"{result.failed} failed"]
+                            if result.skipped > 0:
+                                parts.append(f"{result.skipped} skipped")
+                            # Clear the progress line, print detail, then re-print progress
+                            print(
+                                f"\r[{ts}] Worker:{worker_id:2d} Done: {', '.join(parts)} "
+                                f"({result.duration:.1f}s) [{status}]" + " " * 20)
+
+                        print_progress()
+                    except Exception as e:
+                        print(f"\r[Worker {worker_id}] Error: {e}" + " " * 20, file=sys.stderr)
+                        workers_done += 1
+                        tests_done += len(partitions[worker_id])
+                        tests_failed += len(partitions[worker_id])
+                        results.append(
+                            TestResult(
+                                worker_id=worker_id, tests=partitions[worker_id], failed=len(partitions[worker_id]), output=str(e)))
+                        print_progress()
+
+            # Clear the progress line after parallel phase
+            print()
+
+        # Run serial tests after parallel tests complete
+        if serial_tests_to_run and not args.no_serial:
+            print(f"{'=' * 70}")
+            print("RUNNING SERIAL TESTS")
+            print(f"{'=' * 70}")
+            serial_start = time.time()
+
+            # Use a special worker ID for serial tests (after parallel workers)
+            serial_worker_id = len(partitions) if partitions else 0
+
+            # Set up environment without port offset (serial tests run alone)
+            env = os.environ.copy()
+            env['AUTEST_PORT_OFFSET'] = '0'
+
+            serial_result = TestResult(worker_id=serial_worker_id, tests=serial_tests_to_run, is_serial=True)
+
+            for idx, test in enumerate(serial_tests_to_run, 1):
+                test_name, duration, status, output = run_single_test(
+                    test, script_dir, sandbox_base / "serial", args.ats_bin, build_root, args.extra_args or [], env)
+                serial_result.test_timings[test_name] = duration
+
+                if status == "PASS":
+                    serial_result.passed += 1
+                elif status == "SKIP":
+                    serial_result.skipped += 1
+                    tests_skipped += 1
+                else:
+                    serial_result.failed += 1
+                    serial_result.failed_tests.append(test_name)
+                    tests_failed += 1
+                tests_done += 1
+
+                if args.verbose:
+                    timestamp = datetime.now().strftime("%H:%M:%S")
+                    print(
+                        f"\r[{timestamp}] {status:4s} {duration:6.1f}s Serial {idx:2d}/{len(serial_tests_to_run):2d} {test}" +
+                        " " * 20)
+
+                print_progress(phase="Serial")
+
+            serial_result.duration = time.time() - serial_start
+            results.append(serial_result)
+
+            # Clear the progress line after serial phase
+            print()
+
+    except KeyboardInterrupt:
+        interrupted = True
+        print("\n\nInterrupted! Collecting completed results...")
+        # Collect any parallel worker results that completed before the
+        # interrupt. The ProcessPoolExecutor's shutdown(wait=True) in __exit__
+        # will have waited for workers (which also received SIGINT) to finish,
+        # so completed futures are available here.
+        seen_workers = {r.worker_id for r in results}
+        for future in futures:
+            if future.done() and not future.cancelled():
+                try:
+                    r = future.result(timeout=0)
+                    if r.worker_id not in seen_workers:
+                        results.append(r)
+                        seen_workers.add(r.worker_id)
+                except Exception:
+                    pass
+        # Capture partial serial results if we were in the serial phase.
+        if serial_result is not None and serial_result.worker_id not in seen_workers:
+            serial_result.duration = time.time() - serial_start
+            results.append(serial_result)
+
+    total_duration = time.time() - start_time
+
+    # Sort results by worker_id for consistent output
+    results.sort(key=lambda r: r.worker_id)
+
+    # Collect and save timing data if collected
+    if args.collect_timings:
+        new_timings = dict(timings)  # Start with existing timings
+        tests_timed = 0
+        for r in results:
+            for test_name, duration in r.test_timings.items():
+                new_timings[test_name] = duration
+                tests_timed += 1
+        if tests_timed > 0:
+            save_timings(args.timings_file, new_timings)
+            print(f"\nSaved timing data for {tests_timed} tests to {args.timings_file}")
+            print(f"Total tests in timing database: {len(new_timings)}")
+
+    # Print summary (pass expected timings for discrepancy check)
+    print_summary(results, total_duration, timings if args.collect_timings else None)
+
+    # Exit with non-zero if any tests failed
+    if interrupted:
+        print("\nRun was interrupted by user.")
+        sys.exit(130)
+    total_failed = sum(r.failed + r.exceptions for r in results)
+    sys.exit(1 if total_failed > 0 else 0)
+
+
+if __name__ == '__main__':
+    main()

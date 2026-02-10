@@ -721,7 +721,8 @@ ParsedConfigCache::lookup_impl(TSOverridableConfigKey key, std::string_view valu
   // Fast path: check cache under read lock.
   {
     ts::bravo::shared_lock lock(_mutex);
-    auto                   it = _cache.find(cache_key);
+    // coverity[missing_lock] - ts::bravo::shared_lock properly holds the mutex
+    auto it = _cache.find(cache_key);
     if (it != _cache.end()) {
       return it->second;
     }
@@ -744,7 +745,7 @@ ParsedConfigCache::lookup_impl(TSOverridableConfigKey key, std::string_view valu
 ParsedConfigCache::ParsedValue
 ParsedConfigCache::parse(TSOverridableConfigKey key, std::string_view value)
 {
-  ParsedValue result;
+  ParsedValue result{};
 
   // Store the string value - the parsed structures may reference this.
   result.conf_value_storage = std::string(value);

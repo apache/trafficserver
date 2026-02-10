@@ -247,4 +247,6 @@ TEST_CASE("testIsHeaderValid", "[proxy][hdrtest]")
   }
   // teardown
   hdr.destroy();
+  // coverity[leaked_storage] - heap is freed via hdr.destroy() which calls
+  // HdrHeapSDKHandle::destroy() -> m_heap->destroy()
 }

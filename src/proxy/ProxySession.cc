@@ -26,6 +26,7 @@
 #include "proxy/ProxySession.h"
 #include "iocore/net/TLSBasicSupport.h"
 #include "private/SSLProxySession.h"
+#include <cstdint>
 
 std::map<int, std::function<PoolableSession *()>> ProtocolSessionCreateMap;
 
@@ -284,6 +285,18 @@ HTTPVersion
 ProxySession::get_version(HTTPHdr &hdr) const
 {
   return hdr.version_get();
+}
+
+sockaddr const *
+ProxySession::get_client_addr() const
+{
+  return _vc ? _vc->get_effective_remote_addr() : nullptr;
+}
+
+uint16_t
+ProxySession::get_client_port() const
+{
+  return _vc ? _vc->get_client_endpoint().host_order_port() : 0;
 }
 
 sockaddr const *

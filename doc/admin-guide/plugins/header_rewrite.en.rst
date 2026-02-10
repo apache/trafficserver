@@ -1529,6 +1529,16 @@ The URL part names which may be used for these conditions and actions are:
               parameters, until the end of the URL. Empty string if there were no
               query parameters. ``Value`` = `p=hrw&v=1`
 
+              A specific query parameter value can be extracted using the sub-key
+              syntax ``QUERY:<param_name>``. For example, ``%{CLIENT-URL:QUERY:p}``
+              would return ``hrw`` for the URL above. If there are duplicate query
+              parameter names, the first value listed wins.
+
+              .. note::
+                 Query parameter names and values are matched as-is without URL
+                 decoding. For example, ``%{CLIENT-URL:QUERY:my%20param}`` matches
+                 the literal parameter name ``my%20param``, not ``my param``.
+
    URL        The complete URL.  ``Value`` = `https://docs.trafficserver.apache.org/...`
    ========== ======================================================================
 
@@ -2000,3 +2010,17 @@ Those will pick the address provided by PROXY protocol, instead of the peer's ad
 
    cond %{SEND_RESPONSE_HDR_HOOK}
       set-header real-ip %{INBOUND:REMOTE-ADDR}
+
+Route Based on Query Parameter Value
+------------------------------------
+
+This rule extracts a specific query parameter value and uses it to set a custom
+header or make routing decisions. The ``QUERY:<param_name>`` sub-key syntax
+allows extracting individual query parameter values::
+
+   cond %{REMAP_PSEUDO_HOOK} [AND]
+   cond %{CLIENT-URL:QUERY:version} ="v2"
+      set-destination HOST api-v2.example.com
+
+   cond %{SEND_RESPONSE_HDR_HOOK}
+      set-header X-API-Version %{CLIENT-URL:QUERY:version}

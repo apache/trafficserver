@@ -347,6 +347,21 @@ Log::init_fields()
   global_field_list.add(field, false);
   field_symbol_hash.emplace("chiv", field);
 
+  // remote client (Not necessarily the requesting client IP - See proxy protocol)
+  field = new LogField("remote_host_ip", "rchi", LogField::IP, &LogAccess::marshal_remote_host_ip, &LogAccess::unmarshal_ip_to_str);
+  global_field_list.add(field, false);
+  field_symbol_hash.emplace("rchi", field);
+
+  field = new LogField("remote_host_port", "rchp", LogField::sINT, &LogAccess::marshal_remote_host_port,
+                       &LogAccess::unmarshal_int_to_str);
+  global_field_list.add(field, false);
+  field_symbol_hash.emplace("rchp", field);
+
+  field =
+    new LogField("remote_host_ip_hex", "rchh", LogField::IP, &LogAccess::marshal_remote_host_ip, &LogAccess::unmarshal_ip_to_hex);
+  global_field_list.add(field, false);
+  field_symbol_hash.emplace("rchh", field);
+
   // interface ip
 
   field =

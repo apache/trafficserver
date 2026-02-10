@@ -67,12 +67,6 @@ write_procfd_file(const char *filename, const char *label, FILE *fp, const crash
 }
 
 bool
-crashlog_write_regions(FILE *fp, const crashlog_target &target)
-{
-  return write_procfd_file("maps", "Memory Regions", fp, target);
-}
-
-bool
 crashlog_write_procstatus(FILE *fp, const crashlog_target &target)
 {
   return write_procfd_file("status", "Process Status", fp, target);

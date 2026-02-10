@@ -206,4 +206,5 @@ reload_config(std::string_view const & /* id ATS_UNUSED */, YAML::Node const & /
 
   return resp;
 }
+
 } // namespace rpc::handlers::config

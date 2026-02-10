@@ -295,6 +295,60 @@ Display the current value of a configuration record.
 
 
 .. program:: traffic_ctl config
+.. option:: reset PATH [PATH ...]
+
+   Reset configuration record(s) to their default values. The PATH argument is used as a
+   regex pattern to match against record names. Multiple paths at once can be provided.
+
+   - ``records`` - Reset all configuration records to defaults
+   - A partial path like ``proxy.config.http`` or ``records.http`` - Reset all records matching the pattern
+   - A full record name like ``proxy.config.diags.debug.enabled`` - Reset a specific record
+
+   **Path Format Support**
+
+   Both record name format and YAML format are supported. Paths starting with ``records.``
+   are automatically converted to ``proxy.config.`` before matching:
+
+   ======================================  ======================================
+   YAML Format                             Record Name Format
+   ======================================  ======================================
+   ``records.http``                        ``proxy.config.http``
+   ``records.diags.debug.enabled``         ``proxy.config.diags.debug.enabled``
+   ``records.cache.ram_cache.size``        ``proxy.config.cache.ram_cache.size``
+   ======================================  ======================================
+
+   This allows you to use the same path style as in :file:`records.yaml` configuration files.
+
+   Examples:
+
+   Reset all records to defaults:
+
+   .. code-block:: bash
+
+      $ traffic_ctl config reset records
+
+   Reset all HTTP configuration records (both formats are equivalent):
+
+   .. code-block:: bash
+
+      $ traffic_ctl config reset proxy.config.http
+      $ traffic_ctl config reset records.http
+
+   Reset a specific record:
+
+   .. code-block:: bash
+
+      $ traffic_ctl config reset proxy.config.diags.debug.enabled
+
+   Using YAML-style path for the same record:
+
+   .. code-block:: bash
+
+      $ traffic_ctl config reset records.diags.debug.enabled
+
+
+
+.. program:: traffic_ctl config
 .. option:: status
 
    :ref:`admin_lookup_records`
@@ -481,6 +535,11 @@ traffic_ctl server
    This string should contain an anchored regular expression that filters the messages based on the debug tag tag.
    Please refer to :ts:cv:`proxy.config.diags.debug.tags` for more information
 
+   .. option:: --append, -a
+
+   Append the specified tags to the existing debug tags instead of replacing them. This option requires
+   ``--tags`` to be specified. The new tags will be combined with existing tags using the ``|`` separator.
+
    .. option:: --client_ip, -c ip
 
    Please see :ts:cv:`proxy.config.diags.debug.client_ip` for information.
@@ -493,12 +552,21 @@ traffic_ctl server
    Disables logging for diagnostic messages. Equivalent to set :ts:cv:`proxy.config.diags.debug.enabled` to ``0``.
 
 
-   Example:
+   Examples:
 
    .. code-block:: bash
 
+      # Set debug tags (replaces existing tags)
       $ traffic_ctl server debug enable --tags "quic|quiche"
       ■ TS Runtime debug set to »ON(1)« - tags »"quic|quiche"«, client_ip »unchanged«
+
+      # Append debug tags to existing tags
+      $ traffic_ctl server debug enable --tags "http" --append
+      ■ TS Runtime debug set to »ON(1)« - tags »"quic|quiche|http"«, client_ip »unchanged«
+
+      # Disable debug logging
+      $ traffic_ctl server debug disable
+      ■ TS Runtime debug set to »OFF(0)«
 
 .. _traffic-control-command-storage:
 
@@ -615,11 +683,13 @@ traffic_ctl hostdb
 ------------------
 .. program:: traffic_ctl hostdb
 
-.. option:: status
+.. option:: status [HOSTNAME]
 
    :ref:`admin_lookup_records`
 
    Get the current status of HostDB.
+
+   If ``HOSTNAME`` is specified, the output is filtered to show only records whose names contain the given string.
 
 traffic_ctl rpc
 ---------------

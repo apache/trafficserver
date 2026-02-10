@@ -296,8 +296,13 @@ body_transform(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
     }
 
     if (TSVIONTodoGet(src_vio) > 0) {
-      TSVIOReenable(data->output_vio);
-      TSContCall(TSVIOContGet(src_vio), TS_EVENT_VCONN_WRITE_READY, src_vio);
+      if (towrite > 0) {
+        // Only reenable when we consumed data. If we reenable and call
+        // WRITE_READY when towrite is 0 (no data available yet), we create
+        // a tight loop that starves other transactions and causes high CPU.
+        TSVIOReenable(data->output_vio);
+        TSContCall(TSVIOContGet(src_vio), TS_EVENT_VCONN_WRITE_READY, src_vio);
+      }
     } else {
       // End of src vio
       // Write post body content and update output VIO

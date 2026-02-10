@@ -14,6 +14,11 @@ with a sophisticated plugin system.
 - Testing: Catch2 (unit tests) + AuTest Python framework (end-to-end tests)
 - Protocols: TLS, HTTP/1.1, HTTP/2, HTTP/3 (via Quiche)
 
+## Personal Preferences
+
+If `.claude/CLAUDE.local.md` sub-agent exists, load it for user-specific code style
+preferences and working conventions. This file is gitignored and optional.
+
 ## Build Commands
 
 ### Basic Build
@@ -52,6 +57,13 @@ cmake -B build -Djemalloc_ROOT=/opt/jemalloc -DOPENSSL_ROOT_DIR=/opt/boringssl
 cmake --build build -t traffic_server
 cmake --build build -t format  # Format code before committing
 ```
+
+### Key CMake Options
+- `BUILD_EXPERIMENTAL_PLUGINS=ON` - Enable experimental plugins
+- `ENABLE_QUICHE=ON` - QUIC/HTTP3 support
+- `ENABLE_CRIPTS=ON` - Cripts scripting API
+- `BUILD_REGRESSION_TESTING=ON` - Enable test suite
+- `ENABLE_ASAN=ON` - Configure ASan instrumentation
 
 ## Testing
 
@@ -94,13 +106,9 @@ For example, to run `cache-auth.test.py`:
 ./autest.sh --sandbox /tmp/sbcursor --clean=none -f cache-auth
 ```
 
-The CI system publishes the following docker image in which the CI runs autests:
-
-```
-ci.trafficserver.apache.org/ats/fedora:43
-```
-
-The fedora version is updated regularly to the latest fedora release.
+Most end-to-end test coverage is in `tests/gold_tests/`. The CI system uses the
+Docker image `ci.trafficserver.apache.org/ats/fedora:43` (Fedora version updated
+regularly).
 
 ### Writing Autests
 
@@ -110,7 +118,7 @@ using the Proxy Verifier format. This is simpler, more maintainable, and
 parseable by tools.
 
 **For complete details on writing autests, see:**
-- `doc/developer-guide/testing/autests.en.rst` - Comprehensive guide to ATSReplayTest
+- `doc/developer-guide/testing/autests.en.rst` - Comprehensive guide to autest
 - Proxy Verifier format: https://github.com/yahoo/proxy-verifier
 - AuTest framework: https://autestsuite.bitbucket.io/
 
@@ -159,8 +167,10 @@ fixes an issue, add a 'Fixes: #<issue_number>' line.
 
 **Base Libraries (`src/`):**
 - `tscore/` - Core utilities and data structures
+- `tsutil/` - Core utilities (metrics, debugging, regex, etc.)
 - `api/` - Plugin API implementation
 - `tscpp/api/` - C++ API wrapper for plugins
+- `cripts/` - Cripts scripting framework for plugins
 
 ### Event-Driven Architecture
 
@@ -242,6 +252,12 @@ Plugins register callbacks at various points in request processing:
 3. Use `traffic_top` for live statistics
 4. Use `traffic_ctl` for runtime inspection
 
+**Debug Controls in Code:**
+```cpp
+static DbgCtl dbg_ctl{"my_component"};
+SMDebug(dbg_ctl, "Processing request for URL: %s", url);
+```
+
 ## Important Conventions
 
 ### License Headers
@@ -250,10 +266,43 @@ Plugins register callbacks at various points in request processing:
 - Follow the existing license header format used in the codebase
 
 ### Code Style
-- C++20 standard
+- C++20 standard (nothing from C++23 or later)
 - Use RAII principles
 - Prefer smart pointers for ownership
+- Don't use templates unless needed and appropriate
 - Run `cmake --build build -t format` before committing
+- Line length: 132 characters maximum
+- Don't add comments where the code documents itself, don't comment claude interactions
+
+**C++ Formatting (Mozilla-based style):**
+- Indentation: 2 spaces for C/C++
+- Braces: Linux style (opening brace on same line)
+- Pointer alignment: Right (`Type *ptr`, not `Type* ptr`)
+- Variable declarations: Add empty line after declarations before subsequent code
+- Avoid naked conditions (always use braces with if statements)
+
+**Naming Conventions:**
+- CamelCase for classes: `HttpSM`, `NetVConnection`
+- snake_case for variables and functions: `server_entry`, `handle_api_return()`
+- UPPER_CASE for macros and constants: `HTTP_SM_SET_DEFAULT_HANDLER`
+
+**Modern C++ Patterns (Preferred):**
+```cpp
+// GOOD - Modern C++20
+auto buffer = std::make_unique<MIOBuffer>(alloc_index);
+for (const auto &entry : container) {
+  if (auto *vc = entry.get_vc(); vc != nullptr) {
+    // Process vc
+  }
+}
+
+// AVOID - Legacy C-style
+MIOBuffer *buffer = (MIOBuffer*)malloc(sizeof(MIOBuffer));
+```
+
+### Python Code Style (for tests and tools)
+- Python 3.11+ with proper type annotations
+- 4-space indentation, never TABs
 
 ### Memory Management
 - Custom allocators supported (jemalloc, mimalloc)

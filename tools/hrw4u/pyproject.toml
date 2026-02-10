@@ -20,7 +20,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "hrw4u"
-version = "1.4.0"
+version = "1.4.1"
 description = "HRW4U CLI tool for Apache Traffic Server header rewrite rules"
 authors = [
     {name = "Leif Hedstrom", email = "leif@apache.org"}
@@ -76,4 +76,11 @@ markers = [
     "examples: marks tests for all header_rewrite docs examples",
     "reverse: marks tests for reverse conversion (header_rewrite -> hrw4u)",
     "ast: marks tests for AST validation",
+]
+
+[dependency-groups]
+dev = [
+    "build>=1.4.0",
+    "pyinstaller>=6.18.0",
+    "pytest>=7.4.4",
 ]

@@ -128,6 +128,7 @@ class ConfigCommand : public RecordCommand
   static inline const std::string DIFF_STR{"diff"};
   static inline const std::string DEFAULTS_STR{"defaults"};
   static inline const std::string SET_STR{"set"};
+  static inline const std::string RESET_STR{"reset"};
   static inline const std::string COLD_STR{"cold"};
   static inline const std::string APPEND_STR{"append"};
   static inline const std::string STATUS_STR{"status"};
@@ -141,6 +142,7 @@ class ConfigCommand : public RecordCommand
   void config_diff();
   void config_status();
   void config_set();
+  void config_reset();
   void file_config_set();
   void config_reload();
   void config_show_file_registry();
@@ -234,6 +236,7 @@ private:
   static inline const std::string ENABLE_STR{"enable"};
   static inline const std::string DISABLE_STR{"disable"};
   static inline const std::string TAGS_STR{"tags"};
+  static inline const std::string APPEND_STR{"append"};
   static inline const std::string CLIENT_IP_STR{"client_ip"};
 
   static inline const std::string STATUS_STR{"status"};

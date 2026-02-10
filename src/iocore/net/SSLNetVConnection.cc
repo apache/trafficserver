@@ -356,10 +356,8 @@ SSLNetVConnection::read_raw_data()
       if (pp_ipmap->count() > 0) {
         Dbg(dbg_ctl_proxyprotocol, "proxy protocol has a configured allowlist of trusted IPs - checking");
 
-        // At this point, using get_remote_addr() will return the ip of the
-        // proxy source IP, not the Proxy Protocol client ip. Since we are
-        // checking the ip of the actual source of this connection, this is
-        // what we want now.
+        // Using get_remote_addr() will return the ip of the
+        // proxy source IP, not the Proxy Protocol client ip.
         if (!pp_ipmap->contains(swoc::IPAddr(get_remote_addr()))) {
           Dbg(dbg_ctl_proxyprotocol, "Source IP is NOT in the configured allowlist of trusted IPs - closing connection");
           r = -ENOTCONN; // Need a quick close/exit here to refuse the connection!!!!!!!!!

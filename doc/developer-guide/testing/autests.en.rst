@@ -65,7 +65,6 @@ If |TS| cmake build is configured via ``-DENABLE_AUTEST=ON``, tests can be run w
    cmake --build build
    cmake --install build
    cd build/tests
-   pipenv install
    ./autest.sh --sandbox /tmp/sbcursor --clean=none -f <test_name_without_test_py_extension>
 
 For example, to run ``cache-auth.test.py``:
@@ -73,6 +72,15 @@ For example, to run ``cache-auth.test.py``:
 .. code-block:: bash
 
    ./autest.sh --sandbox /tmp/sbcursor --clean=none -f cache-auth
+
+To run tests in parallel, pass ``-j N`` where ``N`` is the number of worker
+processes. Each worker gets an isolated port range to avoid conflicts:
+
+.. code-block:: bash
+
+   ./autest.sh -j 10 --sandbox /tmp/sbcursor -f cache-auth -f cache-control
+
+Without ``-j``, tests run sequentially.
 
 Recommended Approach: ATSReplayTest
 ====================================

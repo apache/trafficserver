@@ -47,6 +47,11 @@ def configure_ats(obj: 'TestRun', server: 'Process', ats_config: dict, dns: Opti
     for parent_line in parent_config:
         ts.Disk.parent_config.AddLine(parent_line)
 
+    # Configure logging.yaml if specified.
+    logging_yaml = ats_config.get('logging_yaml')
+    if logging_yaml != None:
+        ts.Disk.logging_yaml.AddLines(yaml.dump(logging_yaml).split('\n'))
+
     remap_config = ats_config.get('remap_config', [])
     for remap_entry in remap_config:
         if isinstance(remap_entry, str):
@@ -113,6 +118,11 @@ def configure_ats(obj: 'TestRun', server: 'Process', ats_config: dict, dns: Opti
             gold_file = diags_log['gold_file']
             ts.Disk.diags_log.Content += gold_file
 
+        # access_log validation.
+        access_log = log_validation.get('access_log', {})
+        if 'gold_file' in access_log:
+            obj.Disk.File(os.path.join(ts.Variables.LOGDIR, access_log['filename']), exists=True, content=access_log['gold_file'])
+
     return ts
 
 
@@ -162,6 +172,10 @@ def ATSReplayTest(obj, replay_file: str):
     process_config = server_config.get('process_config', {})
     server = tr.AddVerifierServerProcess(name, replay_file, **process_config)
 
+    # Set expected return code for server if specified.
+    if 'return_code' in server_config:
+        server.ReturnCode = server_config['return_code']
+
     # ATS configuration.
     if not 'ats' in autest_config:
         raise ValueError(f"Replay file {replay_file} does not contain 'autest.ats' section")
@@ -178,6 +192,10 @@ def ATSReplayTest(obj, replay_file: str):
     https_ports = [ts.Variables.ssl_port] if enable_tls else None
     client = tr.AddVerifierClientProcess(
         name, replay_file, http_ports=[ts.Variables.port], https_ports=https_ports, **process_config)
+
+    # Set expected return code if specified.
+    if 'return_code' in client_config:
+        client.ReturnCode = client_config['return_code']
 
     if dns:
         ts.StartBefore(dns)

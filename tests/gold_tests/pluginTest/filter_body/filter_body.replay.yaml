@@ -1,0 +1,365 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+#
+# Consolidated filter_body plugin tests.
+# Each remap rule tests a different configuration, differentiated by host header.
+#
+meta:
+  version: "1.0"
+
+autest:
+  description: 'Verify filter_body plugin for request/response body content filtering'
+
+  server:
+    name: 'server'
+
+  client:
+    name: 'client'
+    return_code: 1
+
+  ats:
+    name: 'ts'
+    process_config:
+      enable_cache: false
+      # The filtered requests produce an ERROR message, so we have to disable
+      # the default log checks of the trafficserver extension.
+      disable_log_checks: true
+
+    copy_to_config_dir:
+      - config
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'filter_body'
+
+    remap_config:
+      # Request log only - pattern logged but request passes through
+      - from: http://request-log.example.com/
+        to: http://127.0.0.1:{SERVER_HTTP_PORT}/
+        plugins:
+          - name: "filter_body.so"
+            args:
+              - "config/filter_body_request_log.yaml"
+
+      # Request block - request with XXE pattern is blocked
+      - from: http://request-block.example.com/
+        to: http://127.0.0.1:{SERVER_HTTP_PORT}/
+        plugins:
+          - name: "filter_body.so"
+            args:
+              - "config/filter_body_request_block.yaml"
+
+      # Request header - request passes, header added to server request
+      - from: http://request-header.example.com/
+        to: http://127.0.0.1:{SERVER_HTTP_PORT}/
+        plugins:
+          - name: "filter_body.so"
+            args:
+              - "config/filter_body_request_header.yaml"
+
+      # Request no match - header mismatch, no body inspection
+      - from: http://request-nomatch.example.com/
+        to: http://127.0.0.1:{SERVER_HTTP_PORT}/
+        plugins:
+          - name: "filter_body.so"
+            args:
+              - "config/filter_body_request_block.yaml"
+
+      # Response log - detect sensitive data in responses
+      - from: http://response-log.example.com/
+        to: http://127.0.0.1:{SERVER_HTTP_PORT}/
+        plugins:
+          - name: "filter_body.so"
+            args:
+              - "config/filter_body_response_log.yaml"
+
+      # Response header - add header when sensitive data detected
+      - from: http://response-header.example.com/
+        to: http://127.0.0.1:{SERVER_HTTP_PORT}/
+        plugins:
+          - name: "filter_body.so"
+            args:
+              - "config/filter_body_response_header.yaml"
+
+      # Response block - block responses with sensitive data
+      - from: http://response-block.example.com/
+        to: http://127.0.0.1:{SERVER_HTTP_PORT}/
+        plugins:
+          - name: "filter_body.so"
+            args:
+              - "config/filter_body_response_block.yaml"
+
+    log_validation:
+      diags_log:
+        contains:
+          - expression: "Matched rule: xxe_request_log"
+            description: "Verify request log rule matched"
+          - expression: "Matched rule: xxe_request_block"
+            description: "Verify request block rule matched"
+          - expression: "Matched rule: xxe_request_header"
+            description: "Verify request header rule matched"
+          - expression: "Matched rule: sensitive_response_log"
+            description: "Verify response log rule matched"
+          - expression: "Matched rule: sensitive_response_header"
+            description: "Verify response header rule matched"
+          - expression: "Matched rule: sensitive_response_block"
+            description: "Verify response block rule matched"
+      traffic_out:
+        contains:
+          - expression: "Blocking request due to rule"
+            description: "Verify request blocking action was taken"
+          - expression: "Added header X-Security-Match"
+            description: "Verify header was added for request"
+          # Adding an internal response is not supported while streaming the body.
+          #- expression: "Added header X-Data-Classification"
+          #  description: "Verify header was added for response"
+
+sessions:
+  #############################################################################
+  # Test 1: Request log only - pattern logged but request passes through
+  #############################################################################
+  - transactions:
+      - client-request:
+          method: "POST"
+          version: "1.1"
+          url: /api/data
+          headers:
+            fields:
+              - [Host, request-log.example.com]
+              - [Content-Type, "application/xml"]
+              - [Content-Length, 49]
+              - [uuid, request-log-test]
+          content:
+            data: '<?xml version="1.0"?><!ENTITY xxe SYSTEM "file:">'
+
+        proxy-request:
+          method: "POST"
+          url: /api/data
+
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Content-Length, 2]
+          content:
+            data: "OK"
+
+        proxy-response:
+          status: 200
+
+  #############################################################################
+  # Test 2: Request block - request with XXE pattern is blocked
+  #
+  # When blocking request bodies, ATS closes the connection to the origin and
+  # the client either experiences simply a closed connection or, depending upon
+  # timeing, a 502 Bad Gateway response. The plugin cannot send a custom error
+  # response (like 403) because the request headers have already been sent to
+  # the origin by the time the body is inspected.
+  #############################################################################
+  - transactions:
+      - client-request:
+          method: "POST"
+          version: "1.1"
+          url: /api/data
+          headers:
+            fields:
+              - [Host, request-block.example.com]
+              - [Content-Type, "application/xml+plus_other_stuff"]
+              - [Content-Length, 49]
+              - [uuid, request-block-test]
+          content:
+            data: '<?xml version="1.0"?><!ENTITY xxe SYSTEM "file:">'
+
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Content-Length, 2]
+          content:
+            data: "OK"
+
+        proxy-response:
+          status: 502
+
+  #############################################################################
+  # Test 3: Request header - request passes, header added to server request
+  #############################################################################
+  - transactions:
+      - client-request:
+          method: "POST"
+          version: "1.1"
+          url: /api/data
+          headers:
+            fields:
+              - [Host, request-header.example.com]
+              - [Content-Type, "application/xml"]
+              - [Content-Length, 24]
+              - [uuid, request-header-test]
+          content:
+            data: '<?xml?><!ENTITY test="">'
+
+        proxy-request:
+          method: "POST"
+          url: /api/data
+          # Note that only internal headers are added since the body is
+          # inspected after the headers are sent to the origin. So
+          # don't expect to see any external headers added.
+
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Content-Length, 2]
+          content:
+            data: "OK"
+
+        proxy-response:
+          status: 200
+
+  #############################################################################
+  # Test 4: Request no match - header mismatch, no body inspection
+  # Uses block config but with wrong Content-Type, so no inspection occurs
+  #############################################################################
+  - transactions:
+      - client-request:
+          method: "POST"
+          version: "1.1"
+          url: /api/data
+          headers:
+            fields:
+              - [Host, request-nomatch.example.com]
+              - [Content-Type, "application/json"]
+              - [Content-Length, 49]
+              - [uuid, request-nomatch-test]
+          content:
+            data: '<?xml version="1.0"?><!ENTITY xxe SYSTEM "file:">'
+
+        proxy-request:
+          method: "POST"
+          url: /api/data
+
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Content-Length, 2]
+          content:
+            data: "OK"
+
+        proxy-response:
+          status: 200
+
+  #############################################################################
+  # Test 5: Response log - detect sensitive data in responses
+  #############################################################################
+  - transactions:
+      - client-request:
+          method: "GET"
+          version: "1.1"
+          url: /api/user
+          headers:
+            fields:
+              - [Host, response-log.example.com]
+              - [uuid, response-log-test]
+
+        proxy-request:
+          method: "GET"
+          url: /api/user
+
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Content-Type, "application/json"]
+              - [Content-Length, 36]
+          content:
+            data: '{"name": "John", "SSN: 123-45-6789"}'
+
+        proxy-response:
+          status: 200
+
+  #############################################################################
+  # Test 6: Response header - detect pattern and attempt header addition
+  # Note: Response header addition during transforms has timing limitations
+  #############################################################################
+  - transactions:
+      - client-request:
+          method: "GET"
+          version: "1.1"
+          url: /api/secret
+          headers:
+            fields:
+              - [Host, response-header.example.com]
+              - [uuid, response-header-test]
+
+        proxy-request:
+          method: "GET"
+          url: /api/secret
+
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Content-Type, "application/json"]
+              - [Content-Length, 28]
+          content:
+            data: '{"data": "secret_data here"}'
+
+        proxy-response:
+          status: 200
+          # Note that only internal headers are added since the body is
+          # inspected after the headers are sent to the origin. So
+          # don't expect to see any external headers added.
+
+  #############################################################################
+  # Test 7: Response block - detect pattern and attempt blocking
+  # Note: Response blocking after streaming starts has limitations - the
+  # response will still return 200 but the body will be blocked.
+  #############################################################################
+  - transactions:
+      - client-request:
+          method: "GET"
+          version: "1.1"
+          url: /api/blocked
+          headers:
+            fields:
+              - [Host, response-block.example.com]
+              - [uuid, response-block-test]
+
+        proxy-request:
+          method: "GET"
+          url: /api/blocked
+
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Content-Type, "application/json"]
+              - [Content-Length, 36]
+          content:
+            data: '{"name": "John", "SSN: 123-45-6789"}'
+
+        # Note that blocking happens after the 200 response headers are sent.
+        proxy-response:
+          status: 200

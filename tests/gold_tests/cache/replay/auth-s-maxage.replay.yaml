@@ -1,0 +1,204 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+#
+# This replay file tests RFC 7234 section 3.2:
+# A shared cache can serve cached responses to requests with Authorization
+# headers if the response has s-maxage directive (along with must-revalidate
+# and public).
+#
+# This replay file assumes that caching is enabled and
+# proxy.config.http.cache.ignore_authentication is set to 0 (current default).
+#
+meta:
+  version: "1.0"
+
+# Configuration section for autest integration
+autest:
+  description: 'Test s-maxage allows serving cached responses to requests with Authorization headers per RFC 7234 section 3.2'
+
+  # Server configuration
+  server:
+    name: 'server-s-maxage'
+
+  # Client configuration
+  client:
+    name: 'client-s-maxage'
+
+  # ATS configuration
+  ats:
+    name: 'ts-auth-s-maxage'
+
+    # ATS process configuration
+    process_config:
+      enable_cache: true
+
+    # ATS records.config settings
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http'
+
+    # Remap configuration
+    remap_config:
+      - from: "/"
+        to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"
+
+sessions:
+  - transactions:
+      # First request: Cache a 200 response with s-maxage.
+      - client-request:
+          method: "GET"
+          version: "1.1"
+          url: /auth/s-maxage-test
+          headers:
+            fields:
+              - [uuid, s-maxage-cache-fill]
+              - [Host, example.com]
+
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Content-Length, 16]
+              - [Cache-Control, "s-maxage=300"]
+
+        proxy-response:
+          status: 200
+
+      # Second request: Request with Authorization header should be served from cache
+      # because response has s-maxage per RFC 7234 section 3.2.
+      - client-request:
+          # Add a delay so ATS has time to finish any caching IO for the
+          # previous transaction.
+          delay: 100ms
+          method: "GET"
+          version: "1.1"
+          url: /auth/s-maxage-test
+          headers:
+            fields:
+              - [uuid, s-maxage-with-auth]
+              - [Host, example.com]
+              - [Authorization, "Basic ZGVtbzphdHNAc3Ryb25ncHc="]
+
+        # The server should NOT be reached because the cached response
+        # with s-maxage should be served. Return 400 to verify caching.
+        server-response:
+          status: 400
+          reason: "Bad Request"
+          headers:
+            fields:
+              - [Content-Length, 0]
+
+        # Expect the cached 200 response per RFC 7234 section 3.2
+        proxy-response:
+          status: 200
+
+  - transactions:
+      # Test 2: Verify that public also works.
+      - client-request:
+          method: "GET"
+          version: "1.1"
+          url: /auth/public-test
+          headers:
+            fields:
+              - [uuid, public-cache-fill]
+              - [Host, example.com]
+
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Content-Length, 16]
+              - [Cache-Control, "public, max-age=300"]
+
+        proxy-response:
+          status: 200
+
+      # Request with Authorization header should be served from cache with public
+      - client-request:
+          delay: 100ms
+          method: "GET"
+          version: "1.1"
+          url: /auth/public-test
+          headers:
+            fields:
+              - [uuid, public-with-auth]
+              - [Host, example.com]
+              - [Authorization, "Basic ZGVtbzphdHNAc3Ryb25ncHc="]
+
+        # The server should NOT be reached because the cached response
+        # with public should be served. Return 400 to verify caching.
+        server-response:
+          status: 400
+          reason: "Bad Request"
+          headers:
+            fields:
+              - [Content-Length, 0]
+
+        # Expect cached 200 response
+        proxy-response:
+          status: 200
+
+  - transactions:
+      # Test 3: Without s-maxage or public, Authorization should require revalidation
+      - client-request:
+          method: "GET"
+          version: "1.1"
+          url: /auth/no-directive-test
+          headers:
+            fields:
+              - [uuid, no-directive-cache-fill]
+              - [Host, example.com]
+
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Content-Length, 16]
+              - [Cache-Control, "max-age=300"]
+
+        proxy-response:
+          status: 200
+
+      # Request with Authorization header should NOT be served from cache
+      - client-request:
+          delay: 100ms
+          method: "GET"
+          version: "1.1"
+          url: /auth/no-directive-test
+          headers:
+            fields:
+              - [uuid, no-directive-with-auth]
+              - [Host, example.com]
+              - [Authorization, "Basic ZGVtbzphdHNAc3Ryb25ncHc="]
+
+        # The request should be forwarded to the server and a 404 response
+        # should be returned.
+        server-response:
+          status: 404
+          reason: "Not Found"
+          headers:
+            fields:
+              - [Content-Length, 20]
+
+        # Expect the new 404 response from server rather than the previous 200
+        # response.
+        proxy-response:
+          status: 404
+

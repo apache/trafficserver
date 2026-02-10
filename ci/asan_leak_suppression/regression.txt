@@ -19,5 +19,8 @@ leak:RegressionTest_HostDBProcessor
 leak:RegressionTest_DNS
 leak:RegressionTest_UDPNet_echo
 leak:HttpConfig::startup
+# DbgCtl leaky singleton pattern - intentional, see issue #12776.
+leak:DbgCtl::_new_reference
+leak:_new_reference
 # libswoc
 leak:MemArena::make_block

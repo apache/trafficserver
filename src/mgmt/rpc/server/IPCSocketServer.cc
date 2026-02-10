@@ -139,14 +139,14 @@ IPCSocketServer::configure(YAML::Node const &params)
 std::error_code
 IPCSocketServer::init()
 {
+  std::error_code ec; // Flag possible errors.
   // Need to run some validations on the pathname to avoid issue. Normally this would not be an issue, but some tests may fail on
   // this.
   if (_conf.sockPathName.empty() || _conf.sockPathName.size() > sizeof _serverAddr.sun_path) {
-    Dbg(dbg_ctl, "Invalid unix path name, check the size.");
-    return std::make_error_code(static_cast<std::errc>(ENAMETOOLONG));
+    Dbg(dbg_ctl, "Invalid unix path name, check the size. Empty or too long.");
+    ec = InternalError::INVALID_SOCKET_PATH;
+    return ec;
   }
-
-  std::error_code ec; // Flag possible errors.
 
   if (this->create_socket(ec); ec) {
     return ec;

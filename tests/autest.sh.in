@@ -1,13 +1,18 @@
 #!/bin/bash
 #
-# conveinience script for running autest after building the target
+# convenience script for running autest after building the target
 #
+# Usage:
+#   ./autest.sh [autest args]           # run tests sequentially
+#   ./autest.sh -j N [autest args]      # run tests in parallel with N workers
 #
 
 export LD_LIBRARY_PATH=${CMAKE_INSTALL_PREFIX}/lib
 export PYTHONPATH=${CMAKE_CURRENT_SOURCE_DIR}/gold_tests/remap:${CMAKE_CURRENT_SOURCE_DIR}/gold_tests/lib:$PYTHONPATH
 
-# Define tests to skip for CURL_UDS_FLAG
+# Move test directories that require features not supported by the current curl
+# build. This must happen before the parallel runner dispatches because it
+# discovers tests by scanning the gold_tests directory.
 if [ -n "${CURL_UDS_FLAG}" ]; then
   mkdir -p "${CMAKE_SKIP_GOLD_DIR}"
   if [ -d "${CMAKE_GOLD_DIR}/h2" ]; then
@@ -21,17 +26,37 @@ if [ -n "${CURL_UDS_FLAG}" ]; then
   fi
 fi
 
-${RUNPIPENV} run env autest \
-  --sandbox ${AUTEST_SANDBOX} \
-  --directory ${CMAKE_GOLD_DIR} \
-  --ats-bin=${CMAKE_INSTALL_PREFIX}/bin \
-  --proxy-verifier-bin ${PROXY_VERIFIER_PATH} \
-  --build-root ${CMAKE_BINARY_DIR} \
-  ${CURL_UDS_FLAG} ${AUTEST_OPTIONS} \
-  "$@"
-autest_exit=$?
+# Check whether parallel mode was requested.
+parallel_mode=false
+for arg in "$@"; do
+  case "$arg" in
+    -j|-j[0-9]*|--jobs|--jobs=*)
+      parallel_mode=true
+      break
+      ;;
+  esac
+done
 
-# Restore tests back to source tree and remove temp dir
+if $parallel_mode; then
+  python3 "$(dirname "$0")/autest-parallel.py" \
+    --ats-bin=${CMAKE_INSTALL_PREFIX}/bin \
+    --build-root ${CMAKE_BINARY_DIR} \
+    --sandbox ${AUTEST_SANDBOX} \
+    ${CURL_UDS_FLAG} ${AUTEST_OPTIONS} "$@"
+  autest_exit=$?
+else
+  uv run autest \
+    --sandbox ${AUTEST_SANDBOX} \
+    --directory ${CMAKE_GOLD_DIR} \
+    --ats-bin=${CMAKE_INSTALL_PREFIX}/bin \
+    --proxy-verifier-bin ${PROXY_VERIFIER_PATH} \
+    --build-root ${CMAKE_BINARY_DIR} \
+    ${CURL_UDS_FLAG} ${AUTEST_OPTIONS} \
+    "$@"
+  autest_exit=$?
+fi
+
+# Restore tests back to source tree and remove temp dir.
 if [ -n "${CURL_UDS_FLAG}" ]; then
   if [ -d "${CMAKE_SKIP_GOLD_DIR}/h2" ]; then
     mv "${CMAKE_SKIP_GOLD_DIR}/h2" "${CMAKE_GOLD_DIR}/h2"

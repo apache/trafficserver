@@ -18,34 +18,22 @@
 
 set -e
 
-VENV_NAME="hrw4u"
-
 if ! which antlr; then
     echo "Make sure antlr is installed, e.g. brew install antlr"
     echo "Once its in your path, re-run this script."
-    exit
+    exit 1
 fi
 
-eval "$(pyenv init --path)"
-eval "$(pyenv init -)"
-# eval "$(pyenv virtualenv-init -)"
-
-if pyenv virtualenvs | grep hrw4u; then
-    pyenv uninstall -f "$VENV_NAME"
-else
-    echo "==> Creating virtualenv $VENV_NAME..."
-    pyenv virtualenv "$VENV_NAME"
+if ! command -v uv &> /dev/null; then
+    echo "uv is not installed. Please install it: https://docs.astral.sh/uv/getting-started/installation/"
+    exit 1
 fi
 
-echo "==> Activating virtualenv..."
-pyenv activate "$VENV_NAME"
+echo "==> Creating virtual environment and installing dependencies..."
+uv sync --all-extras
 
+echo "==> Done. To run commands, use: uv run <command>"
+echo "    Or activate manually: source .venv/bin/activate"
 
-echo "==> Installing dependencies..."
-pip install --upgrade pip
-pip install -r requirements.txt
-
-echo "==> Done. To activate manually: pyenv activate $VENV_NAME"
-
-# Probably need for running in the local build tree
+# Set PYTHONPATH for running in the local build tree.
 export PYTHONPATH=./build:${PYTHONPATH}

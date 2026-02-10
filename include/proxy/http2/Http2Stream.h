@@ -209,10 +209,14 @@ private:
   Http2StreamState _state      = Http2StreamState::HTTP2_STREAM_STATE_IDLE;
   int64_t          _http_sm_id = -1;
 
-  HTTPHdr   _receive_header;
+  HTTPHdr _receive_header;
+#if TS_USE_MALLOC_ALLOCATOR
+  MIOBuffer _receive_buffer{BUFFER_SIZE_INDEX_FOR_XMALLOC_SIZE(4096)};
+#else
   MIOBuffer _receive_buffer{BUFFER_SIZE_INDEX_4K};
-  VIO       read_vio;
-  VIO       write_vio;
+#endif
+  VIO read_vio;
+  VIO write_vio;
 
   History<HISTORY_DEFAULT_SIZE>                                                           _history;
   Milestones<Http2StreamMilestone, static_cast<size_t>(Http2StreamMilestone::LAST_ENTRY)> _milestones;
@@ -390,11 +394,21 @@ inline bool
 Http2Stream::payload_length_is_valid() const
 {
   uint32_t content_length = _receive_header.get_content_length();
-  if (content_length != 0 && content_length != data_length) {
+  uint64_t mask           = (MIME_PRESENCE_IF_UNMODIFIED_SINCE | MIME_PRESENCE_IF_MODIFIED_SINCE | MIME_PRESENCE_IF_RANGE |
+                   MIME_PRESENCE_IF_MATCH | MIME_PRESENCE_IF_NONE_MATCH);
+
+  // Skip Content-Length check on [RFC 7230] 3.3.2 conditions
+  bool is_payload_precluded =
+    this->is_outbound_connection() && (_send_header.method_get_wksidx() == HTTP_WKSIDX_HEAD ||
+                                       (_send_header.method_get_wksidx() == HTTP_WKSIDX_GET && _send_header.presence(mask) &&
+                                        _receive_header.status_get() == HTTPStatus::NOT_MODIFIED));
+
+  if (content_length != 0 && !is_payload_precluded && content_length != data_length) {
     Warning("Bad payload length content_length=%d data_legnth=%d session_id=%" PRId64, content_length,
             static_cast<int>(data_length), _proxy_ssn->connection_id());
+    return false;
   }
-  return content_length == 0 || content_length == data_length;
+  return true;
 }
 
 inline bool

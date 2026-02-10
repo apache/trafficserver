@@ -120,8 +120,10 @@ public:
 
 /* Expose the following methods only to the unit tests */
 String base16Encode(const char *in, size_t inLen);
+String uriDecode(const String &in);
 String uriEncode(const String &in, bool isObjectName = false);
-bool   isUriEncoded(const String &in, bool isObjectName = false);
+bool   isCanonical(const String &in, bool isObjectName = false);
+String canonicalEncode(const String &in, bool isObjectName = false);
 String lowercase(const char *in, size_t inLen);
 String trimWhiteSpacesAndSqueezeInnerSpaces(const char *in, size_t inLen);
 

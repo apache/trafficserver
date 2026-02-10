@@ -1508,12 +1508,6 @@ HttpTransact::HandleRequest(State *s)
   if (!s->state_machine->is_waiting_for_full_body && !s->state_machine->is_buffering_request_body) {
     ink_assert(!s->hdr_info.server_request.valid());
 
-    Metrics::Counter::increment(http_rsb.incoming_requests);
-
-    if (s->client_info.port_attribute == HttpProxyPort::TRANSPORT_SSL) {
-      Metrics::Counter::increment(http_rsb.https_incoming_requests);
-    }
-
     ///////////////////////////////////////////////
     // if request is bad, return error response  //
     ///////////////////////////////////////////////
@@ -3339,6 +3333,11 @@ HttpTransact::HandleCacheOpenReadMiss(State *s)
     s->cache_open_write_deferred = true;
     s->cache_info.action         = CacheAction_t::NO_ACTION;
     TxnDbg(dbg_ctl_http_trans, "[HandleCacheOpenReadMiss] deferring cache open write until response");
+  } else if (s->cache_info.write_lock_state == CacheWriteLock_t::READ_RETRY) {
+    // We've looped back around due to failing to read during READ_RETRY mode.
+    // Don't attempt another cache write - just proxy to origin without caching.
+    TxnDbg(dbg_ctl_http_trans, "READ_RETRY cache read failed, bypassing cache");
+    s->cache_info.action = CacheAction_t::NO_ACTION;
   } else {
     HttpTransact::set_cache_prepare_write_action_for_new_request(s);
   }
@@ -3411,6 +3410,15 @@ HttpTransact::set_cache_prepare_write_action_for_new_request(State *s)
     // don't have a state for that.
     ink_release_assert(s->redirect_info.redirect_in_process);
     s->cache_info.action = CacheAction_t::WRITE;
+  } else if (s->cache_info.write_lock_state == CacheWriteLock_t::READ_RETRY &&
+             (!s->redirect_info.redirect_in_process || s->txn_conf->redirect_use_orig_cache_key)) {
+    // Defensive: Should not reach here if HandleCacheOpenReadMiss check is working.
+    // If we somehow get here in READ_RETRY state, bypass cache unless we're in a redirect
+    // that uses a different cache key (redirect_use_orig_cache_key == 0).
+    // When redirect_use_orig_cache_key is enabled, the redirect uses the same cache key
+    // as the original request, so we'd hit the same write lock contention.
+    Error("set_cache_prepare_write_action_for_new_request called with READ_RETRY state");
+    s->cache_info.action = CacheAction_t::NO_ACTION;
   } else {
     s->cache_info.action           = CacheAction_t::PREPARE_TO_WRITE;
     s->cache_info.write_lock_state = HttpTransact::CacheWriteLock_t::INIT;
@@ -4412,6 +4420,9 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
         base_response->set_expires(exp_time);
 
         SET_VIA_STRING(VIA_CACHE_FILL_ACTION, VIA_CACHE_UPDATED);
+        SET_VIA_STRING(VIA_CACHE_RESULT, VIA_IN_CACHE_STALE);
+        // change VIA_SERVER_RESULT to ERROR because this status hit the negative_revalidating_list
+        SET_VIA_STRING(VIA_SERVER_RESULT, VIA_SERVER_ERROR);
         Metrics::Counter::increment(http_rsb.cache_updates);
 
         // unset Cache-control: "need-revalidate-once" (if it's set)
@@ -5817,11 +5828,7 @@ HttpTransact::initialize_state_variables_from_request(State *s, HTTPHdr *obsolet
   memset(&s->request_data.dest_ip, 0, sizeof(s->request_data.dest_ip));
   if (vc) {
     s->request_data.incoming_port = vc->get_local_port();
-    s->pp_info.version            = vc->get_proxy_protocol_version();
-    if (s->pp_info.version != ProxyProtocolVersion::UNDEFINED) {
-      ats_ip_copy(s->pp_info.src_addr, vc->get_proxy_protocol_src_addr());
-      ats_ip_copy(s->pp_info.dst_addr, vc->get_proxy_protocol_dst_addr());
-    }
+    s->pp_info                    = vc->get_proxy_protocol_info();
   }
   s->request_data.xact_start                      = s->client_request_time;
   s->request_data.api_info                        = &s->api_info;
@@ -7582,11 +7589,11 @@ HttpTransact::what_is_document_freshness(State *s, HTTPHdr *client_request, HTTP
 HttpTransact::Authentication_t
 HttpTransact::AuthenticationNeeded(const OverridableHttpConfigParams *p, HTTPHdr *client_request, HTTPHdr *obj_response)
 {
-  ///////////////////////////////////////////////////////////////////////
-  // from RFC2068, sec 14.8, if a client request has the Authorization //
-  // header set, we can't serve it unless the response is public, or   //
-  // if it has a Cache-Control revalidate flag, and we do revalidate.  //
-  ///////////////////////////////////////////////////////////////////////
+  ///////////////////////////////////////////////////////////////////////////////
+  // Per RFC 7234 section 3.2, if a client request has the Authorization      //
+  // header set, we can't serve a cached response unless the response has one //
+  // of: must-revalidate, proxy-revalidate, public, or s-maxage directives.   //
+  ///////////////////////////////////////////////////////////////////////////////
 
   if ((p->cache_ignore_auth == 0) && client_request->presence(MIME_PRESENCE_AUTHORIZATION)) {
     if (obj_response->is_cache_control_set(HTTP_VALUE_MUST_REVALIDATE.c_str()) ||
@@ -7595,6 +7602,8 @@ HttpTransact::AuthenticationNeeded(const OverridableHttpConfigParams *p, HTTPHdr
     } else if (obj_response->is_cache_control_set(HTTP_VALUE_PROXY_REVALIDATE.c_str())) {
       return Authentication_t::MUST_REVALIDATE;
     } else if (obj_response->is_cache_control_set(HTTP_VALUE_PUBLIC.c_str())) {
+      return Authentication_t::SUCCESS;
+    } else if (obj_response->is_cache_control_set(HTTP_VALUE_S_MAXAGE.c_str())) {
       return Authentication_t::SUCCESS;
     } else {
       if (obj_response->field_find("@WWW-Auth"sv) && client_request->method_get_wksidx() == HTTP_WKSIDX_GET) {
