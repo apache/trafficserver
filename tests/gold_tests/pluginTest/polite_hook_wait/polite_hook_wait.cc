@@ -202,8 +202,9 @@ Blocking_action::_thread_func(void *vba)
   ba->_cont_mutex_locked.store(true, std::memory_order_release);
 
   // This is a stand-in for some blocking call to validate the HTTP request in some way.
+  // Use a longer delay to account for slower systems and variable scheduling latency.
   //
-  std::this_thread::sleep_for(std::chrono::milliseconds(200));
+  std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
   // Pass "validation" for first transaction, fail it for second.
   //
