@@ -16,6 +16,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import os
 import subprocess
 import json
 import re
@@ -49,6 +50,57 @@ def IsOpenSSL(self):
         # OpenSSL 1.1.1k  25 Mar 2021
         lambda: "OpenSSL" in openssl_str and "compatible; BoringSSL" not in openssl_str,
         "SSL library is not OpenSSL")
+
+
+def HasLegacyTLSSupport(self):
+    """Check if the system supports legacy TLS protocols (TLSv1.0 and TLSv1.1).
+
+    Modern OpenSSL 3.x installations often disable these protocols entirely,
+    even if the openssl binary still accepts the -tls1 flag and lists TLSv1 ciphers.
+
+    On Fedora/RHEL systems, the crypto-policies framework may disable legacy
+    TLS at runtime even when OpenSSL is compiled with support for it. This
+    causes 'openssl ciphers -v -tls1' to still list TLSv1 ciphers, but actual
+    TLS 1.0 connections will fail with "no protocols available".
+
+    We only probe TLSv1.0 (not TLSv1.1 separately) because crypto-policies
+    always disable both legacy versions together. If TLSv1.0 is unavailable,
+    TLSv1.1 will be too.
+
+    The check connects to localhost on a closed port to avoid any external
+    network dependency. A "connection refused" error means the TLS protocol
+    was available but nothing was listening; "no protocols available" means
+    the crypto-policy blocked TLSv1.0 entirely.
+    """
+
+    def check_tls1_support():
+        try:
+            # Connect to localhost on a port nothing is listening on.
+            # This avoids external network dependency while still detecting
+            # whether the crypto-policy allows TLSv1.0.
+            result = subprocess.run(
+                ['openssl', 's_client', '-tls1', '-connect', '127.0.0.1:1'],
+                capture_output=True,
+                text=True,
+                timeout=5,
+                input=''  # Don't wait for interactive input
+            )
+            output = result.stdout + result.stderr
+            # "no protocols available" means TLSv1 is disabled by crypto-policy
+            if 'no protocols available' in output:
+                return False
+            # Connection refused or other errors mean TLSv1 was attempted
+            # (the protocol is available, just no server listening)
+            return True
+        except subprocess.TimeoutExpired:
+            # Timeout on localhost shouldn't happen, but if it does,
+            # assume TLSv1 is not available (safer than false positive)
+            return False
+        except Exception:
+            # If we can't determine, assume TLSv1 is not available (safer)
+            return False
+
+    return self.Condition(check_tls1_support, "System does not support legacy TLS protocols (TLSv1.0/TLSv1.1)")
 
 
 def HasCurlVersion(self, version):
@@ -118,6 +170,7 @@ ExtendCondition(HasOpenSSLVersion)
 ExtendCondition(HasProxyVerifierVersion)
 ExtendCondition(IsBoringSSL)
 ExtendCondition(IsOpenSSL)
+ExtendCondition(HasLegacyTLSSupport)
 ExtendCondition(HasATSFeature)
 ExtendCondition(HasCurlVersion)
 ExtendCondition(HasCurlFeature)

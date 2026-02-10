@@ -17,6 +17,7 @@
 #  limitations under the License.
 
 import json
+import os
 import socket
 import ssl
 
@@ -109,7 +110,7 @@ def addSessionFromFiles(self, session_dir):
 # make headers with the key and values provided
 def makeHeader(self, requestString, **kwargs):
     headerStr = requestString + '\r\n'
-    for k, v in kwargs.iteritems():
+    for k, v in kwargs.items():
         headerStr += k + ': ' + v + '\r\n'
     headerStr = headerStr + '\r\n'
     return headerStr
@@ -142,14 +143,20 @@ def uServerUpAndRunning(serverHost, port, isSsl, isIPv6, request, clientcert='',
 
     sock.sendall(request.encode())
     decoded_output = ''
-    while True:
-        host.WriteDebug("??")
-        output = sock.recv(4096)  # suggested bufsize from docs.python.org
-        host.WriteDebug("!!")
-        if len(output) <= 0:
-            break
-        else:
-            decoded_output += output.decode()
+    sock.settimeout(10.0)  # 10 second timeout for recv
+    try:
+        while True:
+            host.WriteDebug("??")
+            output = sock.recv(4096)  # suggested bufsize from docs.python.org
+            host.WriteDebug("!!")
+            if len(output) <= 0:
+                break
+            else:
+                decoded_output += output.decode('utf-8', errors='replace')
+    except socket.timeout:
+        host.WriteDebug(['uServerUpAndRunning', 'when'], "Socket timeout waiting for response")
+        sock.close()
+        return False
     sock.close()
     sock = None
 
