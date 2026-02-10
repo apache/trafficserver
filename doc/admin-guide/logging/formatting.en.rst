@@ -532,6 +532,10 @@ ppd   Proxy Protocol Destination IP received via Proxy Protocol context from the
       Dest IP        to the |TS|
 ppa   Proxy Protocol The Authority TLV from Proxy Protocol context from the LB
       Authority      to the |TS|
+pptc  Proxy Protocol The TLS cipher from Proxy Protocol context from the LB
+      TLS Cipher     to the |TS|
+pptv  Proxy Protocol The TLS version from Proxy Protocol context from the LB
+      TLS version    to the |TS|
 ===== ============== ==========================================================
 
 .. note::
