@@ -27,7 +27,7 @@
 
 DbgCtl dbg_ctl{"custom_logfield"};
 
-char PLUGIN_NAME[]   = "header_freq";
+char PLUGIN_NAME[]   = "custom_logfield";
 char VENDOR_NAME[]   = "Apache Software Foundation";
 char SUPPORT_EMAIL[] = "dev@trafficserver.apache.org";
 char USER_ARG_NAME[] = "cstm_field";
