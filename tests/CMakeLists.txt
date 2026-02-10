@@ -57,6 +57,7 @@ endif()
 
 configure_file(pyproject.toml pyproject.toml COPYONLY)
 configure_file(autest.sh.in autest.sh)
+configure_file(autest-parallel.py.in autest-parallel.py)
 
 add_custom_target(
   autest
