@@ -506,10 +506,16 @@ HostDBCommand::HostDBCommand(ts::Arguments *args) : CtrlCommand(args)
 void
 HostDBCommand::status_get()
 {
-  auto const            &data = get_parsed_arguments()->get(STATUS_STR);
-  HostDBGetStatusRequest request{
-    {std::begin(data), std::end(data)}
-  };
+  HostDBGetStatusRequest::Params params;
+
+  auto const &data = get_parsed_arguments()->get(STATUS_STR);
+  if (data.size() >= 1) {
+    params = {
+      data[0],
+    };
+  }
+
+  HostDBGetStatusRequest request{params};
 
   auto response = invoke_rpc(request);
 

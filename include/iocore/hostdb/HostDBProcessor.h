@@ -25,6 +25,7 @@
 
 #include <chrono>
 #include <atomic>
+#include <cstdint>
 #include <utility>
 
 #include "tscore/HashFNV.h"
@@ -229,11 +230,24 @@ HostDBInfo::is_alive()
   return this->last_fail_time() == TS_TIME_ZERO;
 }
 
+/**
+  Check if this HostDBInfo is currently marked DOWN (true) or UP (false). Returns true while within the `fail_window` period after
+  `last_failure`. Once `fail_window` expires, the host is treated as UP and this function returns false.
+
+                    |<-- fail_window -->|
+    ----------------+-------------------+-----------------> time
+           UP       |       DOWN        |        UP
+    (is_down=false) |  (is_down=true)   | (is_down=false)
+                    |                   |
+                    ^                   ^
+                     \                   \
+                      last_failure        last_failure + fail_window
+ */
 inline bool
 HostDBInfo::is_down(ts_time now, ts_seconds fail_window)
 {
   auto last_fail = this->last_fail_time();
-  return (last_fail != TS_TIME_ZERO) && (last_fail + fail_window < now);
+  return (last_fail != TS_TIME_ZERO) && (now <= last_fail + fail_window);
 }
 
 inline bool
@@ -312,11 +326,13 @@ public:
    * @param query_name Name of the query for the record.
    * @param rr_count Number of info instances.
    * @param srv_name_size Storage for SRV names, if any.
+   * @param port Port Number, if any.
+   *
    * @return An instance sufficient to hold the specified data.
    *
    * The query name will stored and initialized, and the info instances initialized.
    */
-  static self_type *alloc(swoc::TextView query_name, unsigned rr_count, size_t srv_name_size = 0);
+  static self_type *alloc(swoc::TextView query_name, unsigned rr_count, size_t srv_name_size = 0, in_port_t port = 0);
 
   /// Type of data stored in this record.
   HostDBType record_type = HostDBType::UNSPEC;
@@ -389,6 +405,11 @@ public:
    * be used as a C-string.
    */
   swoc::TextView name_view() const;
+
+  /**
+    @return Port Number
+   */
+  in_port_t port() const;
 
   /// Get the array of info instances.
   swoc::MemSpan<HostDBInfo> rr_info();
@@ -519,6 +540,10 @@ protected:
       unsigned failed_p : 1; ///< DNS error.
     } f;
   } flags{0};
+
+private:
+  /// Port Number if hash key includes it.
+  in_port_t _port = 0;
 };
 
 struct HostDBCache;
@@ -731,6 +756,12 @@ inline swoc::TextView
 HostDBRecord::name_view() const
 {
   return {this->name(), swoc::TextView::npos};
+}
+
+inline in_port_t
+HostDBRecord::port() const
+{
+  return _port;
 }
 
 inline ts_time

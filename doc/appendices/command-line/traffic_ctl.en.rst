@@ -712,11 +712,13 @@ traffic_ctl hostdb
 ------------------
 .. program:: traffic_ctl hostdb
 
-.. option:: status
+.. option:: status [HOSTNAME]
 
    :ref:`admin_lookup_records`
 
    Get the current status of HostDB.
+
+   If ``HOSTNAME`` is specified, the output is filtered to show only records whose names contain the given string.
 
 traffic_ctl rpc
 ---------------
