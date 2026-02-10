@@ -251,9 +251,7 @@ QUICNetProcessor::main_accept(Continuation *cont, SOCKET fd, AcceptOptions const
   na->server.sock = UnixSocket{fd};
   ats_ip_copy(&na->server.accept_addr, &accept_ip);
 
-  na->action_         = new NetAcceptAction();
-  *na->action_        = cont;
-  na->action_->server = &na->server;
+  na->action_ = new NetAcceptAction(cont, &na->server);
   na->init_accept();
 
   return na->action_.get();
