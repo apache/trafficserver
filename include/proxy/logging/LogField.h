@@ -211,8 +211,8 @@ private:
   SetFunc               m_set_func;
   TSMilestonesType      milestone_from_m_name();
   int                   milestones_from_m_name(TSMilestonesType *m1, TSMilestonesType *m2);
-  CustomMarshalFunc     m_custom_marshal_func;
-  CustomUnmarshalFunc   m_custom_unmarshal_func;
+  CustomMarshalFunc     m_custom_marshal_func   = nullptr;
+  CustomUnmarshalFunc   m_custom_unmarshal_func = nullptr;
 
 public:
   LINK(LogField, link);
