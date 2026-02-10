@@ -73,6 +73,15 @@ For example, to run ``cache-auth.test.py``:
 
    ./autest.sh --sandbox /tmp/sbcursor --clean=none -f cache-auth
 
+To run tests in parallel, pass ``-j N`` where ``N`` is the number of worker
+processes. Each worker gets an isolated port range to avoid conflicts:
+
+.. code-block:: bash
+
+   ./autest.sh -j 10 --sandbox /tmp/sbcursor -f cache-auth -f cache-control
+
+Without ``-j``, tests run sequentially.
+
 Recommended Approach: ATSReplayTest
 ====================================
 
