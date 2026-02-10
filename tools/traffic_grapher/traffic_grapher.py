@@ -324,7 +324,7 @@ DEFAULT_PAGES = [
     },
 ]
 
-# Default traffic_ctl path (configurable via --traffic-ctl or TRAFFIC_CTL_PATH env var)
+# Default traffic_ctl path (used by MetricCollector, configurable via TRAFFIC_CTL_PATH env var)
 DEFAULT_TRAFFIC_CTL_PATH = os.environ.get("TRAFFIC_CTL_PATH", "traffic_ctl")
 
 # =============================================================================
@@ -1367,11 +1367,7 @@ Examples:
 
     # ATS paths
     parser.add_argument(
-        '--traffic-ctl',
-        default=DEFAULT_TRAFFIC_CTL_PATH,
-        help='Path to traffic_ctl binary (default: $TRAFFIC_CTL_PATH or "traffic_ctl")')
-    parser.add_argument(
-        '--socket-path',
+        '--socket',
         default=DEFAULT_JSONRPC_SOCKET_PATH,
         help='Path to JSONRPC Unix socket (default: $TRAFFICSERVER_JSONRPC_SOCKET)')
 
@@ -1418,7 +1414,7 @@ Examples:
         run_for=args.run_for,
         no_keyboard=args.no_keyboard,
         tz_name=tz_name,
-        socket_path=args.socket_path)
+        socket_path=args.socket)
 
     print(f"Traffic Grapher - {len(pages)} pages, {args.interval}s refresh, {history}s history")
     if len(args.hosts) > 1:
