@@ -24,6 +24,7 @@ Test TLS protocol offering  based on SNI
 # for special domain foo.com only offer TLSv1 and TLSv1_1
 
 Test.SkipUnless(Condition.HasOpenSSLVersion("1.1.1"))
+Test.SkipUnless(Condition.HasLegacyTLSSupport())
 
 # Define default ATS
 ts = Test.MakeATSProcess("ts", enable_tls=True)
