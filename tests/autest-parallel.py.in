@@ -319,6 +319,54 @@ def parse_autest_output(output: str) -> dict:
     return result
 
 
+def extract_failure_output(output: str, failed_tests: List[str]) -> Dict[str, str]:
+    """
+    Extract the detailed autest output section for each failed test.
+
+    Autest emits a block per test starting with a line like
+    ``Test: <name>: Failed`` and continuing with indented detail lines until
+    the next top-level ``Test:`` line or the end of meaningful output.
+
+    Args:
+        output: Raw autest output from a worker
+        failed_tests: List of test names that failed
+
+    Returns:
+        Dictionary mapping each failed test name to its detail block
+    """
+    if not failed_tests:
+        return {}
+
+    clean = strip_ansi(output)
+    lines = clean.split('\n')
+
+    # Identify line ranges for each top-level "Test: <name>:" block.
+    test_block_re = re.compile(r'^Test:\s+(\S+):\s+(Passed|Failed|Skipped)', re.IGNORECASE)
+    block_starts: List[Tuple[int, str]] = []
+    for i, line in enumerate(lines):
+        m = test_block_re.match(line.strip())
+        if m:
+            block_starts.append((i, m.group(1)))
+
+    failed_set = set(failed_tests)
+    details: Dict[str, str] = {}
+
+    for idx, (start_line, name) in enumerate(block_starts):
+        if name not in failed_set:
+            continue
+        # The block extends until the next top-level Test: line or end of
+        # output.
+        if idx + 1 < len(block_starts):
+            end_line = block_starts[idx + 1][0]
+        else:
+            end_line = len(lines)
+        block = '\n'.join(lines[start_line:end_line]).rstrip()
+        if block:
+            details[name] = block
+
+    return details
+
+
 def run_single_test(test: str, script_dir: Path, sandbox: Path, ats_bin: str, build_root: str, extra_args: List[str],
                     env: dict) -> Tuple[str, float, str, str]:
     """
@@ -609,6 +657,20 @@ def print_summary(results: List[TestResult], total_duration: float, expected_tim
         print("FAILED TESTS:")
         for test in sorted(all_failed_tests):
             print(f"  - {test}")
+
+        # Print detailed failure output extracted from each worker's autest
+        # output so CI logs contain actionable diagnostics.
+        print("-" * 70)
+        print("FAILED TEST OUTPUT:")
+        print("-" * 70)
+        for r in results:
+            if not r.failed_tests or not r.output:
+                continue
+            details = extract_failure_output(r.output, r.failed_tests)
+            for test_name in sorted(details):
+                print(f"\n--- {test_name} ---")
+                print(details[test_name])
+        print("-" * 70)
 
     # Check for timing discrepancies
     if expected_timings and actual_timings:
