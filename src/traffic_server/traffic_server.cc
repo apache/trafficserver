@@ -2212,6 +2212,9 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 
     hostDBProcessor.start();
 
+    // initialize logging (after event and net processor)
+    Log::init();
+
     (void)parsePluginConfig();
 
     // Init plugins as soon as logging is ready.
@@ -2225,8 +2228,12 @@ main(int /* argc ATS_UNUSED */, const char **argv)
       pluginInitCheck.notify_one();
     }
 
-    // initialize logging (after event and net processor)
-    Log::init();
+    // Give plugins a chance to customize log fields
+    APIHook *hook = g_lifecycle_hooks->get(TS_LIFECYCLE_LOG_INITIAZLIED_HOOK);
+    while (hook) {
+      hook->invoke(TS_EVENT_LIFECYCLE_LOG_INITIAZLIED, nullptr);
+      hook = hook->next();
+    }
 
     if (IpAllow::has_no_rules()) {
       Error("No ip_allow.yaml entries found.  All requests will be denied!");

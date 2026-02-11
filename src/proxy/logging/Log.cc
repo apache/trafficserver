@@ -1050,18 +1050,6 @@ Log::init_fields()
   init_status |= FIELDS_INITIALIZED;
 }
 
-void
-Log::init_plugin_fields()
-{
-  if (g_lifecycle_hooks) {
-    APIHook *hook = g_lifecycle_hooks->get(TS_LIFECYCLE_LOG_INITIAZLIED_HOOK);
-    while (hook) {
-      hook->invoke(TS_EVENT_LIFECYCLE_LOG_INITIAZLIED, nullptr);
-      hook = hook->next();
-    }
-  }
-}
-
 /*-------------------------------------------------------------------------
 
   Initialization functions
