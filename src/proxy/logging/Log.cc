@@ -1045,8 +1045,6 @@ Log::init_fields()
   global_field_list.add(field, false);
   field_symbol_hash.emplace("vs", field);
 
-  Log::init_plugin_fields();
-
   init_status |= FIELDS_INITIALIZED;
 }
 
