@@ -1,0 +1,3 @@
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{GEO:ASN} ("64496","64511") [NOT]
+    set-header X-Cloud "false"

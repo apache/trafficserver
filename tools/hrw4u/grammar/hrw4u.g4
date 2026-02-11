@@ -192,7 +192,9 @@ comparison
     : comparable (EQUALS | NEQ | GT | LT) value modifier?
     | comparable (TILDE | NOT_TILDE) regex modifier?
     | comparable IN set modifier?
+    | comparable '!' IN set modifier?
     | comparable IN iprange
+    | comparable '!' IN iprange
     ;
 
 modifier
