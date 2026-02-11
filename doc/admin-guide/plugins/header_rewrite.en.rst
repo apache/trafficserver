@@ -1109,8 +1109,31 @@ set-body
 
   set-body <text>
 
-Sets the body to ``<text>``. Can also be used to delete a body with ``""``. This is only useful when overriding the origin status, i.e.
-intercepting/pre-empting a request so that you can override the body from the body-factory with your own.
+Sets the response body to ``<text>``. Can also be used to delete a body with ``""``.
+
+This operator can be used to replace the response body in two scenarios:
+
+1. **ATS-generated responses**: When overriding the origin status at remap time (e.g.
+   with ``set-status``), you can use ``set-body`` at ``SEND_RESPONSE_HDR_HOOK`` to
+   override the body from the body-factory with your own.
+
+2. **Origin server responses**: When the origin returns a response with a body,
+   ``set-body`` can replace the origin body with the specified text. This is useful
+   for sanitizing error responses (e.g. replacing a 403 body that contains sensitive
+   information). Use ``READ_RESPONSE_HDR_HOOK`` to inspect the origin response
+   headers and replace the body, or ``SEND_RESPONSE_HDR_HOOK`` to replace the body
+   just before sending to the client.
+
+When replacing an origin response body, ATS will attempt to drain the origin body
+from the server connection buffer so the connection can be reused. If the origin
+body is too large to be fully buffered or uses chunked encoding, the server
+connection will be closed instead.
+
+Example: sanitize a 403 response from the origin::
+
+   cond %{READ_RESPONSE_HDR_HOOK} [AND]
+   cond %{STATUS} =403
+       set-body "Access Denied"
 
 set-body-from
 ~~~~~~~~~~~~~
