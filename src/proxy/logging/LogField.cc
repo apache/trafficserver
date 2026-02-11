@@ -655,7 +655,7 @@ LogField::unmarshal(char **buf, char *dest, int len, LogEscapeType escape_type)
                      [&](decltype(nullptr)) -> unsigned {
                        if (m_custom_unmarshal_func) {
                          int l  = m_custom_unmarshal_func(buf, dest, len);
-                         buf   += LogAccess::padded_length(l);
+                         *buf  += LogAccess::padded_length(l);
                          return l;
                        }
                        ink_assert(false);
@@ -824,6 +824,19 @@ LogFieldList::add(LogField *field, bool copy)
   if (field->type() == LogField::sINT) {
     m_marshal_len += INK_MIN_ALIGN;
   }
+}
+
+void
+LogFieldList::remove(LogField *field)
+{
+  ink_assert(field != nullptr);
+
+  if (field->type() == LogField::sINT) {
+    m_marshal_len -= INK_MIN_ALIGN;
+  }
+  m_field_list.remove(field);
+
+  delete field;
 }
 
 LogField *

@@ -8999,8 +8999,20 @@ TSConnectionLimitExemptListClear()
 
 TSReturnCode
 TSLogFieldRegister(std::string_view name, std::string_view symbol, TSLogType type, TSLogMarshalCallback marshal_cb,
-                   TSLogUnmarshalCallback unmarshal_cb)
+                   TSLogUnmarshalCallback unmarshal_cb, bool replace)
 {
+  if (auto ite = Log::field_symbol_hash.find(symbol.data()); ite != Log::field_symbol_hash.end()) {
+    if (replace) {
+      // Symbol is registered and the plugin wants to replace it.
+      // Need to unregister the existing entry first.
+      Log::global_field_list.remove(ite->second);
+      Log::field_symbol_hash.erase(ite);
+    } else {
+      // Symbol conflict.
+      return TS_ERROR;
+    }
+  }
+
   LogField *field = new LogField(name.data(), symbol.data(), static_cast<LogField::Type>(type),
                                  reinterpret_cast<LogField::CustomMarshalFunc>(marshal_cb), unmarshal_cb);
   Log::global_field_list.add(field, false);
