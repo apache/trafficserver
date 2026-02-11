@@ -429,6 +429,7 @@ Operator             HRW4U Syntax              Description
 ~                    foo ~ /pattern/           Regular expression match
 !~                   foo !~ /pattern/          Regular expression non-match
 in [...]             foo in ["a", "b"]         Membership in a list of values
+!in [...]            foo !in ["a", "b"]        Negated membership in a list of values
 ==================== ========================= ============================================
 
 Modifiers
@@ -608,6 +609,30 @@ Query string when the Origin server times out or the connection is refused::
    READ_RESPONSE {
        if outbound.status in [502, 504] {
            set-redirect(302, "http://different_origin.example.com/{inbound.url.path}?{inbound.url.query}");
+       }
+   }
+
+Flag Unrecognized ASNs
+----------------------
+
+This rule flags requests whose origin ASN is not in a known allowlist,
+using the negated membership operator ``!in``::
+
+   REMAP {
+       if geo.ASN !in ["64496", "64511"] {
+           inbound.req.X-Known-ASN = "false";
+       }
+   }
+
+Restrict to Internal Networks
+-----------------------------
+
+This rule rejects requests that do not originate from known internal
+IP ranges, using ``!in`` with an IP range::
+
+   REMAP {
+       if inbound.ip !in {192.168.0.0/16, 10.0.0.0/8} {
+           http.status = 403;
        }
    }
 

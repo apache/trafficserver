@@ -1,0 +1,5 @@
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{GROUP}
+    cond %{CLIENT-HEADER:X-Debug} ="keep"
+cond %{GROUP:END}
+    set-header X-Found "yes"
