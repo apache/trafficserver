@@ -30,6 +30,7 @@
 #include "iocore/utils/Machine.h"
 #include "proxy/logging/LogFormat.h"
 #include "proxy/logging/LogBuffer.h"
+#include "swoc/BufferWriter.h"
 #include "tscore/Encoding.h"
 #include "../private/SSLProxySession.h"
 #include "tscore/ink_inet.h"
@@ -3492,6 +3493,44 @@ LogAccess::marshal_milestone_diff(TSMilestonesType ms1, TSMilestonesType ms2, ch
     marshal_int(buf, val);
   }
   return INK_MIN_ALIGN;
+}
+
+int
+LogAccess::marshal_milestones_csv(char *buf)
+{
+  Dbg(dbg_ctl_log_unmarshal_data, "marshal_milestones_csv");
+
+  swoc::LocalBufferWriter<256> bw;
+
+  bw.print("{}", m_http_sm->milestones.difference_msec(TS_MILESTONE_TLS_HANDSHAKE_START, TS_MILESTONE_TLS_HANDSHAKE_END));
+  bw.print(",{}", m_http_sm->milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_UA_BEGIN));
+  bw.print(",{}", m_http_sm->milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_UA_FIRST_READ));
+  bw.print(",{}", m_http_sm->milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_UA_READ_HEADER_DONE));
+  bw.print(",{}", m_http_sm->milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_CACHE_OPEN_READ_BEGIN));
+  bw.print(",{}", m_http_sm->milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_CACHE_OPEN_READ_END));
+  bw.print(",{}", m_http_sm->milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_CACHE_OPEN_WRITE_BEGIN));
+  bw.print(",{}", m_http_sm->milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_CACHE_OPEN_WRITE_END));
+  bw.print(",{}", m_http_sm->milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_DNS_LOOKUP_BEGIN));
+  bw.print(",{}", m_http_sm->milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_DNS_LOOKUP_END));
+  bw.print(",{}", m_http_sm->milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_CONNECT));
+  bw.print(",{}", m_http_sm->milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_CONNECT_END));
+  bw.print(",{}", m_http_sm->milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_FIRST_READ));
+  bw.print(",{}", m_http_sm->milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_READ_HEADER_DONE));
+  bw.print(",{}", m_http_sm->milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_CLOSE));
+  bw.print(",{}", m_http_sm->milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_UA_BEGIN_WRITE));
+  bw.print(",{}", m_http_sm->milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_UA_CLOSE));
+  bw.print(",{}", m_http_sm->milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SM_FINISH));
+  bw.print(",{}", m_http_sm->milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_PLUGIN_ACTIVE));
+  bw.print(",{}", m_http_sm->milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_PLUGIN_TOTAL));
+  bw.print("\0");
+
+  auto const view = bw.view();
+  int const  len  = LogAccess::padded_strlen(view.data());
+
+  if (nullptr != buf) {
+    marshal_str(buf, view.data(), len);
+  }
+  return len;
 }
 
 void

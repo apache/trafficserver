@@ -61,6 +61,7 @@ const char *container_names[] = {
   "record",
   "ms",
   "msdms",
+  "mstsms",
 };
 
 const char *aggregate_names[] = {
@@ -362,6 +363,7 @@ LogField::LogField(const char *field, Container container)
   case ESSH:
   case ECSSH:
   case SCFG:
+  case MSTSMS:
     m_unmarshal_func = &(LogAccess::unmarshal_str);
     break;
 
@@ -474,6 +476,9 @@ LogField::marshal_len(LogAccess *lad)
   case MSDMS:
     return lad->marshal_milestone_diff(m_milestone1, m_milestone2, nullptr);
 
+  case MSTSMS:
+    return lad->marshal_milestones_csv(nullptr);
+
   default:
     return 0;
   }
@@ -555,6 +560,9 @@ LogField::marshal(LogAccess *lad, char *buf)
 
   case MSDMS:
     return lad->marshal_milestone_diff(m_milestone1, m_milestone2, buf);
+
+  case MSTSMS:
+    return lad->marshal_milestones_csv(buf);
 
   default:
     return 0;

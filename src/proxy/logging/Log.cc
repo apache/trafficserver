@@ -858,6 +858,10 @@ Log::init_fields()
   global_field_list.add(field, false);
   field_symbol_hash.emplace("sshv", field);
 
+  field = new LogField("milestones_csv", "mstsms", LogField::STRING, &LogAccess::marshal_milestones_csv, &LogAccess::unmarshal_str);
+  global_field_list.add(field, false);
+  field_symbol_hash.emplace("mstsms", field);
+
   field = new LogField("server_resp_time", "stms", LogField::sINT, &LogAccess::marshal_server_resp_time_ms,
                        &LogAccess::unmarshal_int_to_str);
   global_field_list.add(field, false);
