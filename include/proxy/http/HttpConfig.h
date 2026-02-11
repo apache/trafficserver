@@ -245,6 +245,7 @@ struct HttpStatsBlock {
   Metrics::Counter::AtomicType *response_status_414_count;
   Metrics::Counter::AtomicType *response_status_415_count;
   Metrics::Counter::AtomicType *response_status_416_count;
+  Metrics::Counter::AtomicType *response_status_429_count;
   Metrics::Counter::AtomicType *response_status_4xx_count;
   Metrics::Counter::AtomicType *response_status_500_count;
   Metrics::Counter::AtomicType *response_status_501_count;

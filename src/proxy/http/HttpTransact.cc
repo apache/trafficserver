@@ -8590,6 +8590,9 @@ HttpTransact::client_result_stat(State *s, ink_hrtime total_time, ink_hrtime req
     case 416:
       Metrics::Counter::increment(http_rsb.response_status_416_count);
       break;
+    case 429:
+      Metrics::Counter::increment(http_rsb.response_status_429_count);
+      break;
     case 500:
       Metrics::Counter::increment(http_rsb.response_status_500_count);
       break;
