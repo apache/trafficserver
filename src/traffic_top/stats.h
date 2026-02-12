@@ -231,6 +231,7 @@ public:
     lookup_table.insert(make_pair("414", LookupItem("414", "proxy.process.http.414_responses", 5)));
     lookup_table.insert(make_pair("415", LookupItem("415", "proxy.process.http.415_responses", 5)));
     lookup_table.insert(make_pair("416", LookupItem("416", "proxy.process.http.416_responses", 5)));
+    lookup_table.insert(make_pair("429", LookupItem("429", "proxy.process.http.429_responses", 5)));
     lookup_table.insert(make_pair("4xx", LookupItem("4xx", "proxy.process.http.4xx_responses", 5)));
     lookup_table.insert(make_pair("500", LookupItem("500", "proxy.process.http.500_responses", 5)));
     lookup_table.insert(make_pair("501", LookupItem("501", "proxy.process.http.501_responses", 5)));

@@ -1,0 +1,85 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+autest:
+  description: 'Verify proxy.process.http.429_responses metric is incremented'
+
+  dns:
+    name: 'dns'
+
+  server:
+    name: 'server'
+
+  client:
+    name: 'client'
+
+  ats:
+    name: 'ts'
+
+    process_config:
+      enable_cache: false
+
+    remap_config:
+      - from: "http://example.com/"
+        to: "http://backend.example.com:{SERVER_HTTP_PORT}/"
+
+    metric_checks:
+      - metric: "proxy.process.http.429_responses"
+        value: 1
+
+sessions:
+- transactions:
+
+  - client-request:
+      method: GET
+      url: /rate-limited
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, 429-response]
+
+    server-response:
+      status: 429
+      reason: Too Many Requests
+      headers:
+        fields:
+        - [Content-Length, "0"]
+
+    proxy-response:
+      status: 429
+
+  - client-request:
+      method: GET
+      url: /ok
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, 200-response]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "0"]
+
+    proxy-response:
+      status: 200
