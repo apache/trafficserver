@@ -136,14 +136,13 @@ class HeaderRewriteSetBodyFromTest:
         '''
         Test where set-body-from request succeeds and returns 200 OK
         Triggered from remap file
-        This is tested because right now, TSHttpTxnErrorBodySet will change OK status codes to 500 INKApi Error
-        Ideally, this would not occur.
+        The origin status code should be preserved when set-body-from replaces the body.
         '''
         tr = Test.AddTestRun()
         tr.MakeCurlCommand('-s -v --proxy 127.0.0.1:{0} "http://www.example.com/200"'.format(self.ts.Variables.port), ts=self.ts)
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stdout = "gold/header_rewrite-set_body_from_200.gold"
-        tr.Processes.Default.Streams.stderr.Content = Testers.ContainsExpression("500 INKApi Error", "Expected 500 response")
+        tr.Processes.Default.Streams.stderr.Content = Testers.ContainsExpression("200 OK", "Expected 200 response")
         tr.StillRunningAfter = self.server
 
     def runTraffic(self):

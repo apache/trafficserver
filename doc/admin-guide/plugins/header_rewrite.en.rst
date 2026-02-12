@@ -1141,26 +1141,30 @@ set-body-from
 
   set-body-from <URL>
 
-Will call ``<URL>`` (see URL in `URL Parts`_) to retrieve a custom error response
-and set the body with the result. Triggering this rule on an OK transaction will
-send a 500 status code to the client with the desired response. If this is triggered
-on any error status code, that original status code will be sent to the client.
+Will call ``<URL>`` (see URL in `URL Parts`_) to retrieve a response body from a
+secondary URL and use it to replace the origin's response body. The origin's response
+status code and headers are preserved, and the fetched content replaces only the body.
 
-.. note::
-    This config should only be set using READ_RESPONSE_HDR_HOOK
+This operator can be used at ``READ_RESPONSE_HDR_HOOK`` or ``SEND_RESPONSE_HDR_HOOK``.
+When the origin response body is fully buffered and has a known ``Content-Length``,
+ATS will drain the origin body to allow connection reuse. Otherwise, the origin
+connection is closed.
+
+If the fetch fails or times out, the original origin response is sent unmodified.
 
 An example config would look like::
 
-   cond %{READ_RESPONSE_HDR_HOOK}
-      set-body-from http://www.example.com/second
+   cond %{READ_RESPONSE_HDR_HOOK} [AND]
+   cond %{STATUS} =403
+      set-body-from http://www.example.com/custom-error-page
 
-Where ``http://www.example.com/second`` is the destination to retrieve the custom response from.
-This can be enabled per-mapping or globally.
-Ensure there is a remap rule for the second endpoint as well!
+Where ``http://www.example.com/custom-error-page`` is the destination to retrieve the
+custom response body from. This can be enabled per-mapping or globally.
+Ensure there is a remap rule for the secondary endpoint as well!
 An example remap config would look like::
 
    map /first http://www.example.com/first @plugin=header_rewrite.so @pparam=cond1.conf
-   map /second http://www.example.com/second
+   map /custom-error-page http://www.example.com/custom-error-page
 
 set-config
 ~~~~~~~~~~

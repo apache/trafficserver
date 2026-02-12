@@ -68,7 +68,7 @@ handleFetchEvents(TSCont cont, TSEvent event, void *edata)
     } else {
       TSWarning("[%s] Successful set-custom-body fetch did not result in any content", __FUNCTION__);
     }
-    TSHttpTxnReenable(http_txn, TS_EVENT_HTTP_ERROR);
+    TSHttpTxnReenable(http_txn, TS_EVENT_HTTP_CONTINUE);
   } break;
   case OperatorSetBodyFrom::TS_EVENT_FETCHSM_FAILURE: {
     Dbg(pi_dbg_ctl, "OperatorSetBodyFrom: Error getting custom body");
@@ -1357,6 +1357,7 @@ void
 OperatorSetBodyFrom::initialize_hooks()
 {
   add_allowed_hook(TS_HTTP_READ_RESPONSE_HDR_HOOK);
+  add_allowed_hook(TS_HTTP_SEND_RESPONSE_HDR_HOOK);
 }
 
 bool
@@ -1388,11 +1389,6 @@ OperatorSetBodyFrom::exec(const Resources &res) const
     addr.sin_port        = LOCAL_PORT;
     TSFetchUrl(static_cast<const char *>(req_buf), req_buf_size, reinterpret_cast<struct sockaddr const *>(&addr), fetchCont,
                AFTER_BODY, event_ids);
-
-    // Forces original status code in event TSHttpTxnErrorBodySet changed
-    // the code or another condition was set conflicting with this one.
-    // Set here because res is the only structure that contains the original status code.
-    TSHttpTxnStatusSet(res.state.txnp, res.resp_status, PLUGIN_NAME);
   } else {
     TSError(PLUGIN_NAME, "OperatorSetBodyFrom:exec:: Could not create request");
     return true;
