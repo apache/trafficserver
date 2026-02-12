@@ -1679,8 +1679,10 @@ HttpSM::handle_api_return()
       // A plugin replaced the response body via TSHttpTxnErrorBodySet().
       // Use internal transfer instead of the transform tunnel.
       SMDbg(dbg_ctl_http, "plugin set internal body, bypassing transform for internal transfer");
-      do_drain_server_response_body();
-      release_server_session();
+      if (server_txn != nullptr) {
+        do_drain_server_response_body();
+        release_server_session();
+      }
       setup_internal_transfer(&HttpSM::tunnel_handler);
     } else {
       HttpTunnelProducer *p = setup_transfer_from_transform();
@@ -1722,8 +1724,10 @@ HttpSM::handle_api_return()
       // A plugin replaced the origin response body via TSHttpTxnErrorBodySet().
       // Drain the origin body if possible, then use internal transfer.
       SMDbg(dbg_ctl_http, "plugin set internal body, using internal transfer instead of server tunnel");
-      do_drain_server_response_body();
-      release_server_session();
+      if (server_txn != nullptr) {
+        do_drain_server_response_body();
+        release_server_session();
+      }
       setup_internal_transfer(&HttpSM::tunnel_handler);
     } else {
       HttpTunnelProducer *p = setup_server_transfer();
@@ -6016,10 +6020,8 @@ HttpSM::release_server_session(bool serve_from_cache)
       t_state.hdr_info.server_request.valid() &&
       (t_state.hdr_info.server_response.status_get() == HTTPStatus::NOT_MODIFIED ||
        (t_state.hdr_info.server_request.method_get_wksidx() == HTTP_WKSIDX_HEAD &&
-        t_state.www_auth_content != HttpTransact::CacheAuth_t::NONE) ||
-       t_state.internal_msg_buffer != nullptr) && // body drained by do_drain_server_response_body()
-      plugin_tunnel_type == HttpPluginTunnel_t::NONE &&
-      (!server_entry || !server_entry->eos)) {
+        t_state.www_auth_content != HttpTransact::CacheAuth_t::NONE)) &&
+      plugin_tunnel_type == HttpPluginTunnel_t::NONE && (!server_entry || !server_entry->eos)) {
     if (t_state.www_auth_content == HttpTransact::CacheAuth_t::NONE || serve_from_cache == false) {
       // Must explicitly set the keep_alive_no_activity time before doing the release
       server_txn->set_inactivity_timeout(HRTIME_SECONDS(t_state.txn_conf->keep_alive_no_activity_timeout_out));

@@ -1235,6 +1235,7 @@ done:
   } else {
     s->hdr_info.client_response.destroy(); // release the underlying memory.
     s->hdr_info.client_response.clear();   // clear the pointers.
+    s->free_internal_msg_buffer();         // clear error body so plugin tunnel is not bypassed.
     TxnDbg(dbg_ctl_http_trans, "END HttpTransact::EndRemapRequest");
 
     if (s->is_upgrade_request && s->post_remap_upgrade_return_point) {
