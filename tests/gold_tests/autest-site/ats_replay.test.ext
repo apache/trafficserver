@@ -172,9 +172,11 @@ def ATSReplayTest(obj, replay_file: str):
     process_config = server_config.get('process_config', {})
     server = tr.AddVerifierServerProcess(name, replay_file, **process_config)
 
-    # Set expected return code for server if specified.
+    # Set expected return code for server if specified. A list of codes is
+    # wrapped in Any() so that any of the listed values is accepted.
     if 'return_code' in server_config:
-        server.ReturnCode = server_config['return_code']
+        rc = server_config['return_code']
+        server.ReturnCode = Any(*rc) if isinstance(rc, list) else rc
 
     # ATS configuration.
     if not 'ats' in autest_config:
@@ -193,9 +195,11 @@ def ATSReplayTest(obj, replay_file: str):
     client = tr.AddVerifierClientProcess(
         name, replay_file, http_ports=[ts.Variables.port], https_ports=https_ports, **process_config)
 
-    # Set expected return code if specified.
+    # Set expected return code if specified. A list of codes is wrapped in
+    # Any() so that any of the listed values is accepted.
     if 'return_code' in client_config:
-        client.ReturnCode = client_config['return_code']
+        rc = client_config['return_code']
+        client.ReturnCode = Any(*rc) if isinstance(rc, list) else rc
 
     if dns:
         ts.StartBefore(dns)
