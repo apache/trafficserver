@@ -786,6 +786,19 @@ how_to_open_connection(HttpTransact::State *s)
 {
   ink_assert((s->pending_work == nullptr) || (s->current.request_to == ResolveInfo::PARENT_PROXY));
 
+  // If a plugin has already set a response body (e.g., set-body at remap),
+  // skip the origin connection and serve the synthetic response directly.
+  if (s->internal_msg_buffer) {
+    HTTPStatus  status = (s->http_return_code != HTTPStatus::NONE) ? s->http_return_code : HTTPStatus::OK;
+    const char *reason = http_hdr_reason_lookup(status);
+    if (s->hdr_info.client_response.valid()) {
+      s->hdr_info.client_response.fields_clear();
+    }
+    HttpTransact::build_response(s, &s->hdr_info.client_response, s->client_info.http_version, status, reason ? reason : "OK");
+    s->source = HttpTransact::Source_t::INTERNAL;
+    return HttpTransact::StateMachineAction_t::INTERNAL_CACHE_NOOP;
+  }
+
   // Originally we returned which type of server to open
   // Now, however, we may want to issue a cache
   // operation first in order to lock the cache

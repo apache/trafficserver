@@ -1111,23 +1111,37 @@ set-body
 
 Sets the response body to ``<text>``. Can also be used to delete a body with ``""``.
 
-This operator can be used to replace the response body in two scenarios:
+This operator can be used to replace the response body in three scenarios:
 
-1. **ATS-generated responses**: When overriding the origin status at remap time (e.g.
+1. **Synthetic responses (no origin connection)**: When used at ``REMAP_PSEUDO_HOOK``
+   (before the origin connection is established), ``set-body`` will skip the origin
+   connection entirely and serve a synthetic response directly. Use ``set-status`` to
+   control the response status code (defaults to 200 OK if not specified). This is
+   useful for blocking requests, serving synthetic pages, or returning canned responses
+   without touching the origin.
+
+2. **ATS-generated responses**: When overriding the origin status at remap time (e.g.
    with ``set-status``), you can use ``set-body`` at ``SEND_RESPONSE_HDR_HOOK`` to
    override the body from the body-factory with your own.
 
-2. **Origin server responses**: When the origin returns a response with a body,
+3. **Origin server responses**: When the origin returns a response with a body,
    ``set-body`` can replace the origin body with the specified text. This is useful
    for sanitizing error responses (e.g. replacing a 403 body that contains sensitive
    information). Use ``READ_RESPONSE_HDR_HOOK`` to inspect the origin response
    headers and replace the body, or ``SEND_RESPONSE_HDR_HOOK`` to replace the body
    just before sending to the client.
 
-When replacing an origin response body, ATS will attempt to drain the origin body
-from the server connection buffer so the connection can be reused. If the origin
-body is too large to be fully buffered or uses chunked encoding, the server
+When replacing an origin response body (scenario 3), ATS will attempt to drain the
+origin body from the server connection buffer so the connection can be reused. If the
+origin body is too large to be fully buffered or uses chunked encoding, the server
 connection will be closed instead.
+
+Example: block a request at remap time without contacting the origin::
+
+   cond %{REMAP_PSEUDO_HOOK} [AND]
+   cond %{CLIENT-URL:PATH} /blocked
+       set-status 403
+       set-body "Access Denied"
 
 Example: sanitize a 403 response from the origin::
 
