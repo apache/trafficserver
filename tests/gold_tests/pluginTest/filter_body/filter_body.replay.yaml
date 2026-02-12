@@ -29,9 +29,6 @@ autest:
 
   client:
     name: 'client'
-    # There's a race condition for when the connection is droped by ATS - this
-    # can result in either a 0 or 1 return code.
-    return_code: [0, 1]
 
   ats:
     name: 'ts'
@@ -122,8 +119,10 @@ autest:
             description: "Verify response block rule matched"
       traffic_out:
         contains:
-          - expression: "Blocking request due to rule"
+          - expression: "Blocking request body due to rule"
             description: "Verify request blocking action was taken"
+          - expression: "Overriding response to 403 for blocked request"
+            description: "Verify SEND_RESPONSE_HDR hook enforced 403 status"
           - expression: "Added header X-Security-Match"
             description: "Verify header was added for request"
           # Adding an internal response is not supported while streaming the body.
@@ -167,11 +166,10 @@ sessions:
   #############################################################################
   # Test 2: Request block - request with XXE pattern is blocked
   #
-  # When blocking request bodies, ATS closes the connection to the origin and
-  # the client either experiences simply a closed connection or, depending upon
-  # timeing, a 502 Bad Gateway response. The plugin cannot send a custom error
-  # response (like 403) because the request headers have already been sent to
-  # the origin by the time the body is inspected.
+  # The plugin detects the malicious pattern in the request body and blocks it.
+  # The transform aborts the origin-side VConn to prevent the body from being
+  # forwarded, and a SEND_RESPONSE_HDR hook overrides whatever error ATS
+  # generates (typically 502) to a deterministic 403.
   #############################################################################
   - transactions:
       - client-request:
@@ -197,7 +195,7 @@ sessions:
             data: "OK"
 
         proxy-response:
-          status: 502
+          status: 403
 
   #############################################################################
   # Test 3: Request header - request passes, header added to server request
@@ -334,9 +332,10 @@ sessions:
           # don't expect to see any external headers added.
 
   #############################################################################
-  # Test 7: Response block - detect pattern and attempt blocking
-  # Note: Response blocking after streaming starts has limitations - the
-  # response will still return 200 but the body will be blocked.
+  # Test 7: Response pattern detection - detect sensitive data in response
+  # This test uses log-only action because response body blocking is racy:
+  # response headers (including Content-Length) are committed before the body
+  # is inspected, so blocking the body causes a Content-Length mismatch.
   #############################################################################
   - transactions:
       - client-request:
@@ -362,6 +361,5 @@ sessions:
           content:
             data: '{"name": "John", "SSN: 123-45-6789"}'
 
-        # Note that blocking happens after the 200 response headers are sent.
         proxy-response:
           status: 200
