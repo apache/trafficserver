@@ -1233,9 +1233,19 @@ done:
     Metrics::Counter::increment(http_rsb.invalid_client_requests);
     TRANSACT_RETURN(StateMachineAction_t::SEND_ERROR_CACHE_NOOP, nullptr);
   } else {
-    s->hdr_info.client_response.destroy(); // release the underlying memory.
-    s->hdr_info.client_response.clear();   // clear the pointers.
-    s->free_internal_msg_buffer();         // clear error body so plugin tunnel is not bypassed.
+    // This else branch handles two cases:
+    // 1. Remap succeeded (reverse_proxy == true) - normal request processing
+    // 2. Remap failed but plugin tunnel exists - plugin overrides error
+    //
+    // For case 2, clear the stale error response that build_error_response()
+    // created during remap failure, because the plugin tunnel will provide
+    // its own response. For case 1, preserve any plugin-set internal_msg_buffer
+    // (e.g., from set-body at remap) so how_to_open_connection() can short-circuit.
+    if (s->state_machine->plugin_tunnel_type != HttpPluginTunnel_t::NONE) {
+      s->hdr_info.client_response.destroy(); // release the underlying memory.
+      s->hdr_info.client_response.clear();   // clear the pointers.
+      s->free_internal_msg_buffer();         // clear error body so plugin tunnel is not bypassed.
+    }
     TxnDbg(dbg_ctl_http_trans, "END HttpTransact::EndRemapRequest");
 
     if (s->is_upgrade_request && s->post_remap_upgrade_return_point) {

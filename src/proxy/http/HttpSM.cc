@@ -8558,6 +8558,10 @@ HttpSM::redirect_request(const char *arg_redirect_url, const int arg_redirect_le
     // XXX - doing a destroy() for now, we can do a fileds_clear() if we have performance issue
     t_state.hdr_info.client_response.destroy();
   }
+  // Clear any error body from a previous failed connection attempt (e.g., from
+  // build_error_response) so that how_to_open_connection() does not mistake it
+  // for a plugin-set synthetic body and short-circuit the retry.
+  t_state.free_internal_msg_buffer();
 
   int         scheme          = t_state.next_hop_scheme;
   int         scheme_len      = hdrtoken_index_to_length(scheme);
