@@ -12,8 +12,4 @@ rules:
       body_patterns:
         - "SSN:"
         - "password:"
-    # Use log-only action because response body blocking is inherently racy:
-    # the response headers (including Content-Length) are committed before the
-    # body is inspected, so blocking the body causes a Content-Length mismatch.
-    action: [log]
-
+    action: [log, block]

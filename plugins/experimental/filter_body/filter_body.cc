@@ -44,8 +44,6 @@ namespace
 {
 DbgCtl dbg_ctl{PLUGIN_NAME};
 
-int txn_arg_index = -1; // reserved txn user arg index for blocked state
-
 // Action flags
 constexpr unsigned ACTION_LOG        = 1 << 0;
 constexpr unsigned ACTION_BLOCK      = 1 << 1;
@@ -102,6 +100,10 @@ struct TransformData {
   bool                      blocked       = false;
   bool                      headers_added = false;
 };
+
+// Forward declaration - send_response_handler is used in execute_actions
+// but defined later in the file.
+int send_response_handler(TSCont contp, TSEvent event, void *edata);
 
 /**
  * @brief Case-insensitive substring search.
@@ -444,14 +446,15 @@ execute_actions(TransformData *data, Rule const *rule, std::string const *matche
     char const *error_body = "Blocked by content filter";
     TSHttpTxnErrorBodySet(data->txnp, TSstrdup(error_body), strlen(error_body), TSstrdup("text/plain"));
     if (data->direction == Direction::REQUEST) {
-      // Mark the transaction so the SEND_RESPONSE_HDR hook can enforce 403.
-      TSUserArgSet(data->txnp, txn_arg_index, reinterpret_cast<void *>(1));
-      // Set a short origin-side timeout. The transform zeros its output, which
-      // creates a Content-Length mismatch at the origin (the origin waits for
-      // body data that will never arrive). Without this, ATS would wait for
-      // the default 30-second no-activity timeout before closing the origin
-      // connection and generating the error response. A 1-second timeout
-      // ensures the SEND_RESPONSE_HDR hook fires quickly.
+      // Add a SEND_RESPONSE_HDR hook to override the error response to 403.
+      // Only added here (when actually blocking) to avoid hook overhead on
+      // every transaction.  The transform zeros its output, creating a
+      // Content-Length mismatch at the origin.  The short timeout below makes
+      // ATS close the hanging origin connection quickly instead of waiting the
+      // default 30 seconds.
+      TSCont send_resp_contp = TSContCreate(send_response_handler, nullptr);
+      TSHttpTxnHookAdd(data->txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, send_resp_contp);
+      TSHttpTxnHookAdd(data->txnp, TS_HTTP_TXN_CLOSE_HOOK, send_resp_contp);
       TSHttpTxnConfigIntSet(data->txnp, TS_CONFIG_HTTP_TRANSACTION_NO_ACTIVITY_TIMEOUT_OUT, 1);
     }
     Dbg(dbg_ctl, "Blocking %s body due to rule: %s", data->direction == Direction::REQUEST ? "request" : "response",
@@ -763,13 +766,13 @@ response_handler(TSCont contp, TSEvent event, void *edata)
 }
 
 /**
- * @brief Send response handler to enforce blocked status for request blocking.
+ * @brief Send response handler to enforce 403 for blocked requests.
  *
- * Called on TS_HTTP_SEND_RESPONSE_HDR_HOOK. When the request body transform
- * detects a blocked pattern, it aborts the origin-side VConn and marks the
- * transaction via the txn user arg. ATS generates an error response (typically
- * 502) due to the aborted origin connection. This hook overrides that error
- * to a deterministic 403 Forbidden before it is sent to the client.
+ * Called on TS_HTTP_SEND_RESPONSE_HDR_HOOK only when the request body
+ * transform has blocked a request (hook is added in execute_actions).
+ * The transform zeros its output, creating a Content-Length mismatch that
+ * causes ATS to generate an error response (typically 502). This hook
+ * overrides that error to a deterministic 403 Forbidden.
  *
  * @param[in] contp The continuation.
  * @param[in] event The event type (SEND_RESPONSE_HDR or TXN_CLOSE).
@@ -788,17 +791,16 @@ send_response_handler(TSCont contp, TSEvent event, void *edata)
   }
 
   if (event == TS_EVENT_HTTP_SEND_RESPONSE_HDR) {
-    void *blocked = TSUserArgGet(txnp, txn_arg_index);
-    if (blocked != nullptr) {
-      TSMBuffer bufp;
-      TSMLoc    hdr_loc;
-      if (TSHttpTxnClientRespGet(txnp, &bufp, &hdr_loc) == TS_SUCCESS) {
-        Dbg(dbg_ctl, "Overriding response to 403 for blocked request");
-        TSHttpHdrStatusSet(bufp, hdr_loc, TS_HTTP_STATUS_FORBIDDEN);
-        TSHttpHdrReasonSet(bufp, hdr_loc, TSHttpHdrReasonLookup(TS_HTTP_STATUS_FORBIDDEN),
-                           strlen(TSHttpHdrReasonLookup(TS_HTTP_STATUS_FORBIDDEN)));
-        TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
-      }
+    // This hook is only added when the request body was blocked, so we
+    // unconditionally override the response to 403.
+    TSMBuffer bufp;
+    TSMLoc    hdr_loc;
+    if (TSHttpTxnClientRespGet(txnp, &bufp, &hdr_loc) == TS_SUCCESS) {
+      Dbg(dbg_ctl, "Overriding response to 403 for blocked request");
+      TSHttpHdrStatusSet(bufp, hdr_loc, TS_HTTP_STATUS_FORBIDDEN);
+      TSHttpHdrReasonSet(bufp, hdr_loc, TSHttpHdrReasonLookup(TS_HTTP_STATUS_FORBIDDEN),
+                         strlen(TSHttpHdrReasonLookup(TS_HTTP_STATUS_FORBIDDEN)));
+      TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     }
   }
 
@@ -1025,11 +1027,6 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
     return TS_ERROR;
   }
 
-  if (TSUserArgIndexReserve(TS_USER_ARGS_TXN, PLUGIN_NAME, "blocked transaction flag", &txn_arg_index) != TS_SUCCESS) {
-    TSstrlcpy(errbuf, "[TSRemapInit] Failed to reserve txn user arg index", errbuf_size);
-    return TS_ERROR;
-  }
-
   Dbg(dbg_ctl, "filter_body remap plugin initialized");
   return TS_SUCCESS;
 }
@@ -1065,15 +1062,6 @@ TSRemapDoRemap(void *instance, TSHttpTxn txnp, TSRemapRequestInfo *rri ATS_UNUSE
   auto *config = static_cast<FilterConfig *>(instance);
   if (config == nullptr) {
     return TSREMAP_NO_REMAP;
-  }
-
-  // Add SEND_RESPONSE_HDR hook to enforce 403 for blocked request bodies.
-  // When the request body transform aborts the origin connection, ATS generates
-  // an error response (e.g. 502). This hook overrides it to a deterministic 403.
-  {
-    TSCont send_resp_contp = TSContCreate(send_response_handler, nullptr);
-    TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, send_resp_contp);
-    TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, send_resp_contp);
   }
 
   // For request rules, check headers now (in TSRemapDoRemap, headers are already available)

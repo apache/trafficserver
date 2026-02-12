@@ -29,6 +29,9 @@ autest:
 
   client:
     name: 'client'
+    # Response body blocking truncates the body, causing a Content-Length
+    # mismatch that proxy-verifier may report as an error (exit code 1).
+    return_code: [0, 1]
 
   ats:
     name: 'ts'
@@ -123,6 +126,8 @@ autest:
             description: "Verify request blocking action was taken"
           - expression: "Overriding response to 403 for blocked request"
             description: "Verify SEND_RESPONSE_HDR hook enforced 403 status"
+          - expression: "Blocking response body due to rule"
+            description: "Verify response blocking action was taken"
           - expression: "Added header X-Security-Match"
             description: "Verify header was added for request"
           # Adding an internal response is not supported while streaming the body.
@@ -332,10 +337,10 @@ sessions:
           # don't expect to see any external headers added.
 
   #############################################################################
-  # Test 7: Response pattern detection - detect sensitive data in response
-  # This test uses log-only action because response body blocking is racy:
+  # Test 7: Response block - block responses with sensitive data
+  # The response body is blocked (zeroed) when a pattern is detected. Because
   # response headers (including Content-Length) are committed before the body
-  # is inspected, so blocking the body causes a Content-Length mismatch.
+  # is inspected, the client sees a Content-Length mismatch.
   #############################################################################
   - transactions:
       - client-request:
