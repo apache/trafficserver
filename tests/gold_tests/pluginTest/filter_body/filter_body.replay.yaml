@@ -29,7 +29,9 @@ autest:
 
   client:
     name: 'client'
-    return_code: 1
+    # There's a race condition for when the connection is droped by ATS - this
+    # can result in either a 0 or 1 return code.
+    return_code: [0, 1]
 
   ats:
     name: 'ts'
