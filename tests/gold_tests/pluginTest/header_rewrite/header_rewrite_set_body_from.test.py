@@ -15,9 +15,17 @@
 #  limitations under the License.
 
 Test.Summary = '''
-Test for successful response manipulation using set-body-from
+Test set-body-from replacing origin response bodies with content fetched from
+a secondary URL. Covers READ_RESPONSE_HDR_HOOK, SEND_RESPONSE_HDR_HOOK, and
+fetch failure scenarios. Verifies that the origin status code and headers are
+preserved while only the body is replaced.
 '''
 Test.ContinueOnFail = True
+
+# Note: This test uses MakeOriginServer rather than ATSReplayTest because
+# set-body-from uses TSFetchUrl internally, which creates a secondary HTTP
+# request back through ATS. The replay framework's client-driven model doesn't
+# handle these internal multi-hop requests cleanly.
 
 
 class HeaderRewriteSetBodyFromTest:
@@ -29,131 +37,154 @@ class HeaderRewriteSetBodyFromTest:
     def setUpOriginServer(self):
         self.server = Test.MakeOriginServer("server")
 
-        # Response for original transaction
-        response_header = {"headers": "HTTP/1.1 404 Not Found\r\nConnection: close\r\n\r\n", "body": "404 Not Found"}
+        # -- Custom body endpoint (served when set-body-from fetch succeeds) --
+        custom_body_request = {"headers": "GET /custom_body HTTP/1.1\r\nHost: www.example.com\r\n\r\n"}
+        custom_body_response = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "body": "Custom body found\n"}
+        self.server.addResponse("sessionfile.log", custom_body_request, custom_body_response)
 
-        # Request/response for original transaction where transaction returns a 200 status code
-        remap_success_request_header = {"headers": "GET /200 HTTP/1.1\r\nHost: www.example.com\r\n\r\n"}
-        ooo = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "body": "200 OK"}
+        # -- Primary endpoints for READ_RESPONSE_HDR tests --
+        # Origin returns 404 (body should be replaced by custom_body)
+        read_resp_404_request = {"headers": "GET /read_resp_404 HTTP/1.1\r\nHost: www.example.com\r\n\r\n"}
+        read_resp_404_response = {"headers": "HTTP/1.1 404 Not Found\r\nConnection: close\r\n\r\n", "body": "Original 404 body"}
+        self.server.addResponse("sessionfile.log", read_resp_404_request, read_resp_404_response)
 
-        self.server.addResponse("sessionfile.log", remap_success_request_header, ooo)
+        # Origin returns 200 (body should be replaced by custom_body)
+        read_resp_200_request = {"headers": "GET /read_resp_200 HTTP/1.1\r\nHost: www.example.com\r\n\r\n"}
+        read_resp_200_response = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "body": "Original 200 body"}
+        self.server.addResponse("sessionfile.log", read_resp_200_request, read_resp_200_response)
 
-        # Request/response for original transaction with failed second tranasaction
-        remap_fail_1_request_header = {"headers": "GET /remap_fail HTTP/1.1\r\nHost: www.example.com\r\n\r\n"}
-        self.server.addResponse("sessionfile.log", remap_fail_1_request_header, response_header)
+        # -- Primary endpoints for SEND_RESPONSE_HDR tests --
+        # Origin returns 404 (body should be replaced by custom_body)
+        send_resp_404_request = {"headers": "GET /send_resp_404 HTTP/1.1\r\nHost: www.example.com\r\n\r\n"}
+        send_resp_404_response = {"headers": "HTTP/1.1 404 Not Found\r\nConnection: close\r\n\r\n", "body": "Original 404 body"}
+        self.server.addResponse("sessionfile.log", send_resp_404_request, send_resp_404_response)
 
-        plugin_fail_1_request_header = {"headers": "GET /plugin_fail HTTP/1.1\r\nHost: www.example.com\r\n\r\n"}
-        self.server.addResponse("sessionfile.log", plugin_fail_1_request_header, response_header)
+        # Origin returns 200 (body should be replaced by custom_body)
+        send_resp_200_request = {"headers": "GET /send_resp_200 HTTP/1.1\r\nHost: www.example.com\r\n\r\n"}
+        send_resp_200_response = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "body": "Original 200 body"}
+        self.server.addResponse("sessionfile.log", send_resp_200_request, send_resp_200_response)
 
-        # Request/response for original successful transaction with successful second tranasaction
-        remap_success_1_request_header = {"headers": "GET /remap_success HTTP/1.1\r\nHost: www.example.com\r\n\r\n"}
-        self.server.addResponse("sessionfile.log", remap_success_1_request_header, response_header)
-
-        plugin_success_1_request_header = {"headers": "GET /plugin_success HTTP/1.1\r\nHost: www.example.com\r\n\r\n"}
-        self.server.addResponse("sessionfile.log", plugin_success_1_request_header, response_header)
-
-        # Request/response for custom body transaction that successfully retrieves body
-        success_2_request_header = {"headers": "GET /404.html HTTP/1.1\r\nHost: www.example.com\r\n\r\n"}
-        success_2_response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "body": "Custom body found\n"}
-        self.server.addResponse("sessionfile.log", success_2_request_header, success_2_response_header)
+        # -- Primary endpoint for fetch failure test --
+        # Origin returns 404 (body should NOT be replaced because fetch fails)
+        fetch_fail_request = {"headers": "GET /fetch_fail HTTP/1.1\r\nHost: www.example.com\r\n\r\n"}
+        fetch_fail_response = {"headers": "HTTP/1.1 404 Not Found\r\nConnection: close\r\n\r\n", "body": "Original 404 body"}
+        self.server.addResponse("sessionfile.log", fetch_fail_request, fetch_fail_response)
 
     def setUpTS(self):
         self.ts = Test.MakeATSProcess("ts")
 
-        # Set header rewrite rules
-        self.ts.Setup.CopyAs('rules/rule_set_body_from_remap.conf', Test.RunDirectory)
-        self.ts.Setup.CopyAs('rules/rule_set_body_from_plugin.conf', Test.RunDirectory)
+        self.ts.Setup.CopyAs('rules/rule_set_body_from_read_resp.conf', Test.RunDirectory)
+        self.ts.Setup.CopyAs('rules/rule_set_body_from_send_resp.conf', Test.RunDirectory)
+        self.ts.Setup.CopyAs('rules/rule_set_body_from_read_resp_fail.conf', Test.RunDirectory)
 
-        self.ts.Disk.remap_config.AddLine(
-            """\
-             map http://www.example.com/remap_success http://127.0.0.1:{0}/remap_success @plugin=header_rewrite.so @pparam={1}/rule_set_body_from_remap.conf
-             map http://www.example.com/200 http://127.0.0.1:{0}/200 @plugin=header_rewrite.so @pparam={1}/rule_set_body_from_remap.conf
-             map http://www.example.com/remap_fail http://127.0.0.1:{0}/remap_fail @plugin=header_rewrite.so @pparam={1}/rule_set_body_from_remap.conf
-             map http://www.example.com/plugin_success http://127.0.0.1:{0}/plugin_success
-             map http://www.example.com/plugin_fail http://127.0.0.1:{0}/plugin_fail
-             map http://www.example.com/404.html http://127.0.0.1:{0}/404.html
-             map http://www.example.com/plugin_no_server http://127.0.0.1::{2}/plugin_no_server
-             """.format(self.server.Variables.Port, Test.RunDirectory, Test.GetTcpPort("bad_port")))
-        self.ts.Disk.plugin_config.AddLine('header_rewrite.so {0}/rule_set_body_from_plugin.conf'.format(Test.RunDirectory))
+        self.ts.Disk.remap_config.AddLines(
+            [
+                # Primary endpoints with set-body-from at READ_RESPONSE_HDR_HOOK
+                'map http://www.example.com/read_resp_404'
+                ' http://127.0.0.1:{0}/read_resp_404'
+                ' @plugin=header_rewrite.so @pparam={1}/rule_set_body_from_read_resp.conf'.format(
+                    self.server.Variables.Port, Test.RunDirectory),
+                'map http://www.example.com/read_resp_200'
+                ' http://127.0.0.1:{0}/read_resp_200'
+                ' @plugin=header_rewrite.so @pparam={1}/rule_set_body_from_read_resp.conf'.format(
+                    self.server.Variables.Port, Test.RunDirectory),
 
-    def test_setBodyFromFails_remap(self):
-        '''
-        Test where set-body-from request fails
-        Triggered from remap file
-        This uses the case where no remap rule is provided
-        '''
-        tr = Test.AddTestRun()
+                # Primary endpoints with set-body-from at SEND_RESPONSE_HDR_HOOK
+                'map http://www.example.com/send_resp_404'
+                ' http://127.0.0.1:{0}/send_resp_404'
+                ' @plugin=header_rewrite.so @pparam={1}/rule_set_body_from_send_resp.conf'.format(
+                    self.server.Variables.Port, Test.RunDirectory),
+                'map http://www.example.com/send_resp_200'
+                ' http://127.0.0.1:{0}/send_resp_200'
+                ' @plugin=header_rewrite.so @pparam={1}/rule_set_body_from_send_resp.conf'.format(
+                    self.server.Variables.Port, Test.RunDirectory),
+
+                # Primary endpoint for fetch failure test (fetch URL goes to bad port)
+                'map http://www.example.com/fetch_fail'
+                ' http://127.0.0.1:{0}/fetch_fail'
+                ' @plugin=header_rewrite.so @pparam={1}/rule_set_body_from_read_resp_fail.conf'.format(
+                    self.server.Variables.Port, Test.RunDirectory),
+
+                # Fetch URL endpoint (served for successful set-body-from fetches)
+                'map http://www.example.com/custom_body http://127.0.0.1:{0}/custom_body'.format(self.server.Variables.Port),
+
+                # Fetch failure URL maps to a port with no server (will cause fetch failure)
+                'map http://www.example.com/no_server http://127.0.0.1:{0}/no_server'.format(Test.GetTcpPort("bad_port")),
+            ])
+
+    # Test 1: READ_RESPONSE_HDR + origin 404, fetch succeeds -> body replaced, 404 preserved
+    def test_read_resp_404_fetch_succeeds(self):
+        tr = Test.AddTestRun("read_resp_404: fetch succeeds, body replaced, 404 preserved")
         tr.MakeCurlCommand(
-            '-s -v --proxy 127.0.0.1:{0} "http://www.example.com/remap_fail"'.format(self.ts.Variables.port), ts=self.ts)
+            '-s -D - --proxy 127.0.0.1:{0} "http://www.example.com/read_resp_404"'.format(self.ts.Variables.port), ts=self.ts)
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.StartBefore(self.server)
         tr.Processes.Default.StartBefore(self.ts)
-        tr.Processes.Default.Streams.stdout = "gold/header_rewrite-set_body_from_remap_fail.gold"
-        tr.Processes.Default.Streams.stderr.Content = Testers.ContainsExpression("404 Not Found", "Expected 404 response")
+        tr.Processes.Default.Streams.stdout.Content = Testers.ContainsExpression("HTTP/1.1 404", "Expected 404 status")
+        tr.Processes.Default.Streams.stdout.Content += Testers.ContainsExpression("Custom body found", "Expected custom body")
+        tr.Processes.Default.Streams.stdout.Content += Testers.ExcludesExpression(
+            "Original 404 body", "Original body should be replaced")
         tr.StillRunningAfter = self.server
 
-    def test_setBodyFromSucceeds_remap(self):
-        '''
-        Test where set-body-from request succeeds
-        Triggered from remap file
-        '''
-        tr = Test.AddTestRun()
+    # Test 2: READ_RESPONSE_HDR + origin 200, fetch succeeds -> body replaced, 200 preserved
+    def test_read_resp_200_fetch_succeeds(self):
+        tr = Test.AddTestRun("read_resp_200: fetch succeeds, body replaced, 200 preserved")
         tr.MakeCurlCommand(
-            '-s -v --proxy 127.0.0.1:{0} "http://www.example.com/remap_success"'.format(self.ts.Variables.port), ts=self.ts)
+            '-s -D - --proxy 127.0.0.1:{0} "http://www.example.com/read_resp_200"'.format(self.ts.Variables.port), ts=self.ts)
         tr.Processes.Default.ReturnCode = 0
-        tr.Processes.Default.Streams.stdout = "gold/header_rewrite-set_body_from_success.gold"
-        tr.Processes.Default.Streams.stderr.Content = Testers.ContainsExpression("404 Not Found", "Expected 404 response")
+        tr.Processes.Default.Streams.stdout.Content = Testers.ContainsExpression("HTTP/1.1 200", "Expected 200 status")
+        tr.Processes.Default.Streams.stdout.Content += Testers.ContainsExpression("Custom body found", "Expected custom body")
+        tr.Processes.Default.Streams.stdout.Content += Testers.ExcludesExpression(
+            "Original 200 body", "Original body should be replaced")
         tr.StillRunningAfter = self.server
 
-    def test_setBodyFromSucceeds_plugin(self):
-        '''
-        Test where set-body-from request succeeds
-        Triggered from plugin file
-        '''
-        tr = Test.AddTestRun()
+    # Test 3: SEND_RESPONSE_HDR + origin 404, fetch succeeds -> body replaced, 404 preserved
+    def test_send_resp_404_fetch_succeeds(self):
+        tr = Test.AddTestRun("send_resp_404: fetch succeeds, body replaced, 404 preserved")
         tr.MakeCurlCommand(
-            '-s -v --proxy 127.0.0.1:{0} "http://www.example.com/plugin_success"'.format(self.ts.Variables.port), ts=self.ts)
+            '-s -D - --proxy 127.0.0.1:{0} "http://www.example.com/send_resp_404"'.format(self.ts.Variables.port), ts=self.ts)
         tr.Processes.Default.ReturnCode = 0
-        tr.Processes.Default.Streams.stdout = "gold/header_rewrite-set_body_from_success.gold"
-        tr.Processes.Default.Streams.stderr.Content = Testers.ContainsExpression("404 Not Found", "Expected 404 response")
+        tr.Processes.Default.Streams.stdout.Content = Testers.ContainsExpression("HTTP/1.1 404", "Expected 404 status")
+        tr.Processes.Default.Streams.stdout.Content += Testers.ContainsExpression("Custom body found", "Expected custom body")
+        tr.Processes.Default.Streams.stdout.Content += Testers.ExcludesExpression(
+            "Original 404 body", "Original body should be replaced")
         tr.StillRunningAfter = self.server
 
-    def test_setBodyFromFails_plugin(self):
-        '''
-        Test where set-body-from request fails
-        This uses the case where the second endpoint cannot connect to the requested server
-        Triggered from plugin file
-        '''
-        tr = Test.AddTestRun()
+    # Test 4: SEND_RESPONSE_HDR + origin 200, fetch succeeds -> body replaced, 200 preserved
+    def test_send_resp_200_fetch_succeeds(self):
+        tr = Test.AddTestRun("send_resp_200: fetch succeeds, body replaced, 200 preserved")
         tr.MakeCurlCommand(
-            '-s -v --proxy 127.0.0.1:{0} "http://www.example.com/plugin_fail"'.format(self.ts.Variables.port), ts=self.ts)
+            '-s -D - --proxy 127.0.0.1:{0} "http://www.example.com/send_resp_200"'.format(self.ts.Variables.port), ts=self.ts)
         tr.Processes.Default.ReturnCode = 0
-        tr.Processes.Default.Streams.stdout = "gold/header_rewrite-set_body_from_conn_fail.gold"
-        tr.Processes.Default.Streams.stderr.Content = Testers.ContainsExpression("404 Not Found", "Expected 404 response")
+        tr.Processes.Default.Streams.stdout.Content = Testers.ContainsExpression("HTTP/1.1 200", "Expected 200 status")
+        tr.Processes.Default.Streams.stdout.Content += Testers.ContainsExpression("Custom body found", "Expected custom body")
+        tr.Processes.Default.Streams.stdout.Content += Testers.ExcludesExpression(
+            "Original 200 body", "Original body should be replaced")
         tr.StillRunningAfter = self.server
 
-    def test_setBodyFromSucceeds_200(self):
-        '''
-        Test where set-body-from request succeeds and returns 200 OK
-        Triggered from remap file
-        The origin status code should be preserved when set-body-from replaces the body.
-        '''
-        tr = Test.AddTestRun()
-        tr.MakeCurlCommand('-s -v --proxy 127.0.0.1:{0} "http://www.example.com/200"'.format(self.ts.Variables.port), ts=self.ts)
+    # Test 5: READ_RESPONSE_HDR + fetch backend unreachable -> ATS error page replaces body, status preserved
+    # When the fetch URL's backend is unreachable, ATS returns its own error page to the FetchSM.
+    # The FetchSM treats this as a successful fetch and replaces the body with the error page.
+    # The original origin status code (404) is preserved.
+    def test_fetch_backend_unreachable(self):
+        tr = Test.AddTestRun("fetch_fail: backend unreachable, ATS error page replaces body, 404 preserved")
+        tr.MakeCurlCommand(
+            '-s -D - --proxy 127.0.0.1:{0} "http://www.example.com/fetch_fail"'.format(self.ts.Variables.port), ts=self.ts)
         tr.Processes.Default.ReturnCode = 0
-        tr.Processes.Default.Streams.stdout = "gold/header_rewrite-set_body_from_200.gold"
-        tr.Processes.Default.Streams.stderr.Content = Testers.ContainsExpression("200 OK", "Expected 200 response")
+        tr.Processes.Default.Streams.stdout.Content = Testers.ContainsExpression(
+            "HTTP/1.1 404", "Expected original 404 status preserved")
+        tr.Processes.Default.Streams.stdout.Content += Testers.ContainsExpression(
+            "Could Not Connect", "Expected ATS error page from unreachable fetch backend")
+        tr.Processes.Default.Streams.stdout.Content += Testers.ExcludesExpression(
+            "Original 404 body", "Original body should be replaced by ATS error page")
         tr.StillRunningAfter = self.server
-
-    def runTraffic(self):
-        self.test_setBodyFromFails_remap()
-        self.test_setBodyFromSucceeds_remap()
-        self.test_setBodyFromSucceeds_plugin()
-        self.test_setBodyFromFails_plugin()
-        self.test_setBodyFromSucceeds_200()
 
     def run(self):
-        self.runTraffic()
+        self.test_read_resp_404_fetch_succeeds()
+        self.test_read_resp_200_fetch_succeeds()
+        self.test_send_resp_404_fetch_succeeds()
+        self.test_send_resp_200_fetch_succeeds()
+        self.test_fetch_backend_unreachable()
 
 
 HeaderRewriteSetBodyFromTest().run()
