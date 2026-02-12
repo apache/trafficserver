@@ -712,7 +712,7 @@ ParseRules::is_http_field_name(char c)
 #ifndef COMPILE_PARSE_RULES
   return (parseRulesCType[static_cast<unsigned char>(c)] & is_http_field_name_BIT);
 #else
-  if (!is_char(c) || is_control(c) || (is_mime_sep(c) && c != '@') || c == '=' || c == ':') {
+  if (!is_char(c) || is_control(c) || (is_mime_sep(c)) || c == '=' || c == ':') {
     return false;
   }
   return true;
