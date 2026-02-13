@@ -146,6 +146,67 @@ def HasCurlOption(self, option):
     return self.CheckOutput(['curl', '--help', 'all'], default, "Curl needs to support option: {option}".format(option=option))
 
 
+def HasCurlTLSVersionSupport(self, tls_version):
+    """Check whether curl can attempt a given TLS version.
+
+    This probes curl directly because OpenSSL capability checks do not always
+    reflect curl runtime policy behavior on hardened systems.
+    """
+
+    def check_curl_tls_support():
+        # Map semantic versions used by tests to curl flags.
+        version_map = {
+            "1.0": ("--tlsv1", "1.0"),
+            "1.1": ("--tlsv1.1", "1.1"),
+            "1.2": ("--tlsv1.2", "1.2"),
+            "1.3": ("--tlsv1.3", "1.3"),
+        }
+        if tls_version not in version_map:
+            return False
+
+        tls_flag, tls_max = version_map[tls_version]
+        try:
+            # Connect to localhost closed port to avoid network dependencies.
+            # "connection refused" means curl accepted the TLS flags and tried.
+            result = subprocess.run(
+                [
+                    "curl",
+                    "-svk",
+                    "--connect-timeout",
+                    "2",
+                    "--max-time",
+                    "3",
+                    tls_flag,
+                    "--tls-max",
+                    tls_max,
+                    "https://127.0.0.1:1",
+                ],
+                capture_output=True,
+                text=True,
+                timeout=5,
+            )
+            output = (result.stdout + result.stderr).lower()
+            unsupported_markers = [
+                "unsupported protocol",
+                "no protocols available",
+                "option --tlsv",
+                "unknown option",
+                "is unknown",
+            ]
+            if any(marker in output for marker in unsupported_markers):
+                return False
+
+            # Any attempt to connect implies curl accepted the TLS setting.
+            return True
+        except subprocess.TimeoutExpired:
+            return False
+        except Exception:
+            return False
+
+    return self.Condition(
+        check_curl_tls_support, "Curl does not support TLSv{version} in this environment".format(version=tls_version))
+
+
 def HasATSFeature(self, feature):
 
     val = self.Variables.get(feature, None)
@@ -175,5 +236,6 @@ ExtendCondition(HasATSFeature)
 ExtendCondition(HasCurlVersion)
 ExtendCondition(HasCurlFeature)
 ExtendCondition(HasCurlOption)
+ExtendCondition(HasCurlTLSVersionSupport)
 ExtendCondition(PluginExists)
 ExtendCondition(CurlUsingUnixDomainSocket)
