@@ -488,7 +488,7 @@ tr.StillRunningAfter = test.ts
 tr.StillRunningAfter = test.server
 
 tr = Test.AddTestRun("Get the log to rotate.")
-test.tr.MakeCurlCommandMulti(test.get_command_to_rotate_once(), ts=test.ts)
+tr.MakeCurlCommandMulti(test.get_command_to_rotate_once(), ts=test.ts)
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = test.ts
 tr.StillRunningAfter = test.server
