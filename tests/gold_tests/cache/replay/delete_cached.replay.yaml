@@ -1,0 +1,187 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+# Configuration section for autest integration
+autest:
+  description: 'Verify DELETE method handling'
+
+  dns:
+    name: 'dns-delete'
+
+  server:
+    name: 'server-delete'
+
+  client:
+    name: 'client-delete'
+
+  ats:
+    name: 'ts-cache-delete'
+    process_config:
+      enable_cache: true
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http.*|cache.*'
+      proxy.config.http.insert_age_in_response: 0
+
+    remap_config:
+      - from: "http://example.com/"
+        to: "http://backend.example.com:{SERVER_HTTP_PORT}/"
+
+sessions:
+- transactions:
+
+  # Populate the cache with a response to a GET request.
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /some/path
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, 1 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 16 ]
+        - [ Cache-Control, max-age=300 ]
+        - [ X-Response, first_get_response ]
+
+    proxy-response:
+      status: 200
+
+  # Verify that we reply to the request out of the cache.
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /some/path
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, 2 ]
+
+      # Add a delay so ATS has time to finish any caching IO for the previous transaction.
+      delay: 100ms
+
+    # The request should be served out of cache, so this 403 should not be
+    # received.
+    server-response:
+      status: 403
+      reason: Forbidden
+
+    # ATS should serve the cached 200 response.
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response, { value: first_get_response, as: equal} ]
+
+  # Verify that we do NOT purge cache if origin returns error response for DELETE request
+  - client-request:
+      method: "DELETE"
+      version: "1.1"
+      url: /some/path
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, 3 ]
+
+    # DELETE request is not allowed
+    server-response:
+      status: 405
+      reason: Method Not Allowed
+
+    # ATS should forward the response from origin server
+    proxy-response:
+      status: 405
+      reason: Method Not Allowed
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /some/path
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, 4 ]
+
+    # The request should be served out of cache, so this 403 should not be
+    # received.
+    server-response:
+      status: 403
+      reason: Forbidden
+
+    # ATS should serve the cached 200 response.
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response, { value: first_get_response, as: equal} ]
+
+  # Verify that we "purge" cache if origin returns non-error response for DELETE request
+  - client-request:
+      method: "DELETE"
+      version: "1.1"
+      url: /some/path
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, 5 ]
+
+    # DELETE request is accepted
+    server-response:
+      status: 204
+      reason: No Content
+
+    # ATS should forward the response from origin server
+    proxy-response:
+      status: 204
+      reason: No Content
+
+  # Verify that we cache is purged by DELETE request and returns cache miss
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /some/path
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, 6 ]
+
+      # Add a delay so ATS has time to finish any caching IO for the previous transaction.
+      delay: 100ms
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 32 ]
+        - [ Cache-Control, max-age=300 ]
+        - [ X-Response, second_get_response ]
+
+    # ATS should serve the 200 response.
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response, { value: second_get_response, as: equal} ]
