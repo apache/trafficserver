@@ -32,3 +32,6 @@ Test.ATSReplayTest(replay_file="replay/post_with_post_caching_override.replay.ya
 
 # Verify correct HEAD response handling with cached GET response
 Test.ATSReplayTest(replay_file="replay/head_with_get_cached.replay.yaml")
+
+# Verify DELETE request handling - RFC 9111 4.4. Invalidating Stored Responses
+Test.ATSReplayTest(replay_file="replay/delete_cached.replay.yaml")
