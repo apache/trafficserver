@@ -25,6 +25,7 @@ Test TLS protocol offering  based on SNI
 
 Test.SkipUnless(Condition.HasOpenSSLVersion("1.1.1"))
 Test.SkipUnless(Condition.HasLegacyTLSSupport())
+has_curl_tlsv1 = Condition.HasCurlTLSVersionSupport("1.0")
 
 # Define default ATS
 ts = Test.MakeATSProcess("ts", enable_tls=True)
@@ -85,22 +86,24 @@ tr.ReturnCode = 35
 tr.StillRunningAfter = ts
 
 # Target foo.com for TLSv1.  Should succeed
-tr = Test.AddTestRun("foo.com TLSv1")
-tr.MakeCurlCommand(
-    "-v --ciphers DEFAULT@SECLEVEL=0 --tls-max 1.0 --tlsv1 --resolve 'foo.com:{0}:127.0.0.1' -k  https://foo.com:{0}".format(
-        ts.Variables.ssl_port),
-    ts=ts)
-tr.ReturnCode = 0
-tr.StillRunningAfter = ts
+if has_curl_tlsv1:
+    tr = Test.AddTestRun("foo.com TLSv1")
+    tr.MakeCurlCommand(
+        "-v --ciphers DEFAULT@SECLEVEL=0 --tls-max 1.0 --tlsv1 --resolve 'foo.com:{0}:127.0.0.1' -k  https://foo.com:{0}".format(
+            ts.Variables.ssl_port),
+        ts=ts)
+    tr.ReturnCode = 0
+    tr.StillRunningAfter = ts
 
 # Target bar.com for TLSv1.  Should fail
-tr = Test.AddTestRun("bar.com TLSv1")
-tr.MakeCurlCommand(
-    "-v --ciphers DEFAULT@SECLEVEL=0 --tls-max 1.0 --tlsv1 --resolve 'bar.com:{0}:127.0.0.1' -k  https://bar.com:{0}".format(
-        ts.Variables.ssl_port),
-    ts=ts)
-tr.ReturnCode = 35
-tr.StillRunningAfter = ts
+if has_curl_tlsv1:
+    tr = Test.AddTestRun("bar.com TLSv1")
+    tr.MakeCurlCommand(
+        "-v --ciphers DEFAULT@SECLEVEL=0 --tls-max 1.0 --tlsv1 --resolve 'bar.com:{0}:127.0.0.1' -k  https://bar.com:{0}".format(
+            ts.Variables.ssl_port),
+        ts=ts)
+    tr.ReturnCode = 35
+    tr.StillRunningAfter = ts
 
 # Target bar.com for TLSv1_2.  Should succeed
 tr = Test.AddTestRun("bar.com TLSv1_2")
