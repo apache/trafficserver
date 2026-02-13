@@ -43,6 +43,7 @@
 #include "iocore/net/NetAcceptEventIO.h"
 #include "Server.h"
 
+#include <atomic>
 #include <vector>
 
 struct NetAccept;
@@ -60,21 +61,30 @@ AcceptFunction net_accept;
 
 class UnixNetVConnection;
 
-// TODO fix race between cancel accept and call back
 struct NetAcceptAction : public Action, public RefCountObjInHeap {
-  Server *server;
+  std::atomic<Server *> server{nullptr};
+
+  NetAcceptAction(Continuation *cont, Server *s)
+  {
+    continuation = cont;
+    if (cont != nullptr) {
+      mutex = cont->mutex;
+    }
+    server.store(s, std::memory_order_release);
+  }
 
   void
   cancel(Continuation *cont = nullptr) override
   {
-    Action::cancel(cont);
-    server->close();
-  }
-
-  Continuation *
-  operator=(Continuation *acont)
-  {
-    return Action::operator=(acont);
+    // Use atomic exchange so only one thread closes the server, preventing
+    // use-after-free races between cancel() and acceptEvent() cleanup.
+    Server *s = server.exchange(nullptr, std::memory_order_acq_rel);
+    if (s != nullptr) {
+      s->close();
+    }
+    if (!cancelled) {
+      Action::cancel(cont);
+    }
   }
 
   ~NetAcceptAction() override

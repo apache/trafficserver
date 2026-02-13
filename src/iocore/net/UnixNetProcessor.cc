@@ -133,9 +133,7 @@ UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions cons
   na->proxyPort     = sa ? sa->proxyPort : nullptr;
   na->snpa          = dynamic_cast<SSLNextProtocolAccept *>(cont);
 
-  na->action_         = new NetAcceptAction();
-  *na->action_        = cont;
-  na->action_->server = &na->server;
+  na->action_ = new NetAcceptAction(cont, &na->server);
 
   if (opt.frequent_accept) { // true
     if (accept_threads > 0 && listen_per_thread == 0) {
