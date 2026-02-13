@@ -317,9 +317,7 @@ NetAccept::init_accept_per_thread()
 void
 NetAccept::stop_accept()
 {
-  if (!action_->cancelled) {
-    action_->cancel();
-  }
+  action_->cancel();
   server.close();
 }
 
@@ -479,6 +477,7 @@ NetAccept::acceptEvent(int event, void *ep)
   MUTEX_TRY_LOCK(lock, m, e->ethread);
   if (lock.is_locked()) {
     if (action_->cancelled) {
+      // Server was already closed by whoever called cancel().
       e->cancel();
       Metrics::Gauge::decrement(net_rsb.accepts_currently_open);
       delete this;
@@ -487,6 +486,7 @@ NetAccept::acceptEvent(int event, void *ep)
 
     int res;
     if ((res = net_accept(this, e, false)) < 0) {
+      action_->cancel();
       Metrics::Gauge::decrement(net_rsb.accepts_currently_open);
       /* INKqa11179 */
       Warning("Accept on port %d failed with error no %d", ats_ip_port_host_order(&server.addr), res);
@@ -637,6 +637,7 @@ Ldone:
   return EVENT_CONT;
 
 Lerror:
+  action_->cancel();
   server.close();
   e->cancel();
   Metrics::Gauge::decrement(net_rsb.accepts_currently_open);
@@ -656,6 +657,7 @@ NetAccept::acceptLoopEvent(int event, Event *e)
   }
 
   // Don't think this ever happens ...
+  action_->cancel();
   Metrics::Gauge::decrement(net_rsb.accepts_currently_open);
   delete this;
   return EVENT_DONE;
