@@ -83,7 +83,7 @@ big_post_body_file.close()
 # The third case has an explicit multi-second sleep which ensures the early response path is exercised
 test_run = Test.AddTestRun("http1.1 Post with small body early return")
 test_run.Processes.Default.StartBefore(Test.Processes.ts)
-test_run.Processes.Default.StartBefore(server1)
+test_run.Processes.Default.StartBefore(server1, ready=When.PortOpen(Test.Variables.upstream_port1))
 test_run.MakeCurlCommand(
     '-v -o /dev/null --http1.1 -d "small body" -k https://127.0.0.1:{}/one'.format(ts.Variables.ssl_port), ts=ts)
 test_run.Processes.Default.Streams.All = Testers.ContainsExpression("HTTP/1.1 420 Be Calm", "Receive the early response")
@@ -91,7 +91,7 @@ test_run.StillRunningAfter = ts
 test_run.Processes.Default.ReturnCode = 0
 
 test_run = Test.AddTestRun("http1.1 Post with large body early return")
-test_run.Processes.Default.StartBefore(server2)
+test_run.Processes.Default.StartBefore(server2, ready=When.PortOpen(Test.Variables.upstream_port2))
 test_run.MakeCurlCommand(
     '-H "Expect:" -v -o /dev/null --http1.1 -d @big_post_body -k https://127.0.0.1:{}/two'.format(ts.Variables.ssl_port), ts=ts)
 test_run.Processes.Default.Streams.All = Testers.ContainsExpression("HTTP/1.1 420 Be Calm", "Receive the early response")
@@ -99,7 +99,7 @@ test_run.StillRunningAfter = ts
 test_run.Processes.Default.ReturnCode = 0
 
 test_run = Test.AddTestRun("http2 Post with large body, small window and early return")
-test_run.Processes.Default.StartBefore(server3)
+test_run.Processes.Default.StartBefore(server3, ready=When.PortOpen(Test.Variables.upstream_port3))
 test_run.MakeCurlCommand(
     '-v -o /dev/null --http2 -d @big_post_body -k https://127.0.0.1:{}/three'.format(ts.Variables.ssl_port), ts=ts)
 test_run.Processes.Default.Streams.All = Testers.ContainsExpression("HTTP/2 420", "Receive the early response")
@@ -122,21 +122,21 @@ client_out3.Content += Testers.ContainsExpression("HTTP/1.1 420 Be Calm", "Recei
 client_out3.Content += Testers.ContainsExpression("Connection: close", "ATS marks the client connection to close")
 
 test_run = Test.AddTestRun("http1.1 Post with paused body")
-test_run.Processes.Default.StartBefore(server4)
+test_run.Processes.Default.StartBefore(server4, ready=When.PortOpen(Test.Variables.upstream_port4))
 test_run.Setup.Copy("delay_client.sh")
 test_run.Processes.Default.Command = "sh ./delay_client.sh {} clientout".format(ts.Variables.port)
 test_run.StillRunningAfter = ts
 test_run.Processes.Default.ReturnCode = 0
 
 test_run = Test.AddTestRun("http1.1 Post with delayed and paused body")
-test_run.Processes.Default.StartBefore(server5)
+test_run.Processes.Default.StartBefore(server5, ready=When.PortOpen(Test.Variables.upstream_port5))
 test_run.Setup.Copy("delay_client2.sh")
 test_run.Processes.Default.Command = "sh ./delay_client2.sh {} clientout2".format(ts.Variables.port)
 test_run.StillRunningAfter = ts
 test_run.Processes.Default.ReturnCode = 0
 
 test_run = Test.AddTestRun("http1.1 Post with paused body and no delay on server")
-test_run.Processes.Default.StartBefore(server6)
+test_run.Processes.Default.StartBefore(server6, ready=When.PortOpen(Test.Variables.upstream_port6))
 test_run.Setup.Copy("delay_client3.sh")
 test_run.Processes.Default.Command = "sh ./delay_client3.sh {} clientout3".format(ts.Variables.port)
 test_run.StillRunningAfter = ts
