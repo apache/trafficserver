@@ -39,7 +39,7 @@ tr = Test.AddTestRun()
 TS_ROOT = ts.Env['TS_ROOT']
 tr.Processes.Default.Command = f'{sys.executable} check_threads.py -p {TS_ROOT} -e 1 -a 0 -t 1 -c 1'
 tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.StartBefore(ts, ready=When.PortOpen(ts.Variables.port))
+tr.Processes.Default.StartBefore(ts)
 
 ts = Test.MakeATSProcess('ts-1_exec-1_accept-2_task-8_aio')
 ts.Disk.records_config.update(
@@ -58,7 +58,7 @@ tr = Test.AddTestRun()
 TS_ROOT = ts.Env['TS_ROOT']
 tr.Processes.Default.Command = f'{sys.executable} check_threads.py -p {TS_ROOT} -e 1 -a 1 -t 2 -c 8'
 tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.StartBefore(ts, ready=When.PortOpen(ts.Variables.port))
+tr.Processes.Default.StartBefore(ts)
 
 ts = Test.MakeATSProcess('ts-1_exec-10_accept-10_task-32_aio')
 ts.Disk.records_config.update(
@@ -77,7 +77,7 @@ tr = Test.AddTestRun()
 TS_ROOT = ts.Env['TS_ROOT']
 tr.Processes.Default.Command = f'{sys.executable} check_threads.py -p {TS_ROOT} -e 1 -a 10 -t 10 -c 32'
 tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.StartBefore(ts, ready=When.PortOpen(ts.Variables.port))
+tr.Processes.Default.StartBefore(ts)
 
 ts = Test.MakeATSProcess('ts-2_exec-0_accept-1_task-1_aio')
 ts.Disk.records_config.update(
@@ -96,7 +96,7 @@ tr = Test.AddTestRun()
 TS_ROOT = ts.Env['TS_ROOT']
 tr.Processes.Default.Command = f'{sys.executable} check_threads.py -p {TS_ROOT} -e 2 -a 0 -t 1 -c 1'
 tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.StartBefore(ts, ready=When.PortOpen(ts.Variables.port))
+tr.Processes.Default.StartBefore(ts)
 
 ts = Test.MakeATSProcess('ts-2_exec-1_accept-2_task-8_aio')
 ts.Disk.records_config.update(
@@ -115,7 +115,7 @@ tr = Test.AddTestRun()
 TS_ROOT = ts.Env['TS_ROOT']
 tr.Processes.Default.Command = f'{sys.executable} check_threads.py -p {TS_ROOT} -e 2 -a 1 -t 2 -c 8'
 tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.StartBefore(ts, ready=When.PortOpen(ts.Variables.port))
+tr.Processes.Default.StartBefore(ts)
 
 ts = Test.MakeATSProcess('ts-2_exec-10_accept-10_task-32_aio')
 ts.Disk.records_config.update(
@@ -134,7 +134,7 @@ tr = Test.AddTestRun()
 TS_ROOT = ts.Env['TS_ROOT']
 tr.Processes.Default.Command = f'{sys.executable} check_threads.py -p {TS_ROOT} -e 2 -a 10 -t 10 -c 32'
 tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.StartBefore(ts, ready=When.PortOpen(ts.Variables.port))
+tr.Processes.Default.StartBefore(ts)
 
 ts = Test.MakeATSProcess('ts-32_exec-0_accept-1_task-1_aio')
 ts.Disk.records_config.update(
@@ -153,7 +153,7 @@ tr = Test.AddTestRun()
 TS_ROOT = ts.Env['TS_ROOT']
 tr.Processes.Default.Command = f'{sys.executable} check_threads.py -p {TS_ROOT} -e 32 -a 0 -t 1 -c 1'
 tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.StartBefore(ts, ready=When.PortOpen(ts.Variables.port))
+tr.Processes.Default.StartBefore(ts)
 
 ts = Test.MakeATSProcess('ts-32_exec-1_accept-2_task-8_aio')
 ts.Disk.records_config.update(
@@ -172,7 +172,7 @@ tr = Test.AddTestRun()
 TS_ROOT = ts.Env['TS_ROOT']
 tr.Processes.Default.Command = f'{sys.executable} check_threads.py -p {TS_ROOT} -e 32 -a 1 -t 2 -c 8'
 tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.StartBefore(ts, ready=When.PortOpen(ts.Variables.port))
+tr.Processes.Default.StartBefore(ts)
 
 ts = Test.MakeATSProcess('ts-32_exec-10_accept-10_task-32_aio')
 ts.Disk.records_config.update(
@@ -191,7 +191,7 @@ tr = Test.AddTestRun()
 TS_ROOT = ts.Env['TS_ROOT']
 tr.Processes.Default.Command = f'{sys.executable} check_threads.py -p {TS_ROOT} -e 32 -a 10 -t 10 -c 32'
 tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.StartBefore(ts, ready=When.PortOpen(ts.Variables.port))
+tr.Processes.Default.StartBefore(ts)
 
 ts = Test.MakeATSProcess('ts-100_exec-0_accept-1_task-1_aio')
 ts.Disk.records_config.update(
@@ -210,7 +210,7 @@ tr = Test.AddTestRun()
 TS_ROOT = ts.Env['TS_ROOT']
 tr.Processes.Default.Command = f'{sys.executable} check_threads.py -p {TS_ROOT} -e 100 -a 0 -t 1 -c 1'
 tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.StartBefore(ts, ready=When.PortOpen(ts.Variables.port))
+tr.Processes.Default.StartBefore(ts)
 
 ts = Test.MakeATSProcess('ts-100_exec-1_accept-2_task-8_aio')
 ts.Disk.records_config.update(
@@ -229,7 +229,7 @@ tr = Test.AddTestRun()
 TS_ROOT = ts.Env['TS_ROOT']
 tr.Processes.Default.Command = f'{sys.executable} check_threads.py -p {TS_ROOT} -e 100 -a 1 -t 2 -c 8'
 tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.StartBefore(ts, ready=When.PortOpen(ts.Variables.port))
+tr.Processes.Default.StartBefore(ts)
 
 ts = Test.MakeATSProcess('ts-100_exec-10_accept-10_task-32_aio')
 ts.Disk.records_config.update(
@@ -248,4 +248,4 @@ tr = Test.AddTestRun()
 TS_ROOT = ts.Env['TS_ROOT']
 tr.Processes.Default.Command = f'{sys.executable} check_threads.py -p {TS_ROOT} -e 100 -a 10 -t 10 -c 32'
 tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.StartBefore(ts, ready=When.PortOpen(ts.Variables.port))
+tr.Processes.Default.StartBefore(ts)
