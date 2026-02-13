@@ -367,7 +367,7 @@ LogField::LogField(const char *field, Container container)
 
   case ICFG:
     m_unmarshal_func = &(LogAccess::unmarshal_int_to_str);
-    m_type           = LogField::sINT;
+    m_type           = LogField::INT;
     break;
 
   case RECORD:
@@ -380,7 +380,7 @@ LogField::LogField(const char *field, Container container)
       Note("Invalid milestone name in LogField ctor: %s", m_name);
     }
     m_unmarshal_func = &(LogAccess::unmarshal_int_to_str);
-    m_type           = LogField::sINT;
+    m_type           = LogField::INT;
     break;
 
   case MSDMS: {
@@ -389,7 +389,7 @@ LogField::LogField(const char *field, Container container)
       Note("Invalid milestone range in LogField ctor: %s", m_name);
     }
     m_unmarshal_func = &(LogAccess::unmarshal_int_to_str);
-    m_type           = LogField::sINT;
+    m_type           = LogField::INT;
     break;
   }
 
@@ -627,7 +627,7 @@ LogField::unmarshal(char **buf, char *dest, int len, LogEscapeType escape_type)
 void
 LogField::display(FILE *fd)
 {
-  static const char *names[LogField::N_TYPES] = {"sINT", "dINT", "STR", "IP"};
+  static const char *names[LogField::N_TYPES] = {"INT", "dINT", "STR", "IP"};
 
   fprintf(fd, "    %30s %10s %5s\n", m_name, m_symbol, names[m_type]);
 }
@@ -778,7 +778,7 @@ LogFieldList::add(LogField *field, bool copy)
     m_field_list.enqueue(field);
   }
 
-  if (field->type() == LogField::sINT) {
+  if (field->type() == LogField::INT) {
     m_marshal_len += INK_MIN_ALIGN;
   }
 }
@@ -820,7 +820,7 @@ LogFieldList::marshal_len(LogAccess *lad)
 {
   int bytes = 0;
   for (LogField *f = first(); f; f = next(f)) {
-    if (f->type() != LogField::sINT) {
+    if (f->type() != LogField::INT) {
       const int len = f->marshal_len(lad);
       ink_release_assert(len >= INK_MIN_ALIGN);
       bytes += len;

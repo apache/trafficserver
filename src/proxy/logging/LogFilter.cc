@@ -171,12 +171,12 @@ LogFilter::parse(const char *name, Action action, const char *condition)
   LogFilter     *filter;
 
   switch (field_type) {
-  case LogField::sINT:
+  case LogField::INT:
     filter = new LogFilterInt(name, logfield.get(), action, oper, val_str);
     break;
 
-  case LogField::dINT:
-    Error("Invalid field type (double int); cannot create filter '%s'", name);
+  case LogField::DONT_USE_dINT:
+    Error("Invalid field type (obsolete double int); cannot create filter '%s'", name);
     return nullptr;
 
   case LogField::STRING:

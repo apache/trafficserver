@@ -89,8 +89,8 @@ public:
   using VarUnmarshalFunc          = std::variant<decltype(nullptr), UnmarshalFunc, UnmarshalFuncWithSlice, UnmarshalFuncWithMap>;
 
   enum Type {
-    sINT = 0,
-    dINT,
+    INT = 0,
+    DONT_USE_dINT,
     STRING,
     IP, ///< IP Address.
     N_TYPES

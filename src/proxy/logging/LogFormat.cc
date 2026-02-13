@@ -459,8 +459,8 @@ LogFormat::parse_symbol_string(const char *symbol_string, LogFieldList *field_li
             Note("Invalid field symbol %s used in aggregate "
                  "operation",
                  name);
-          } else if (f->type() != LogField::sINT) {
-            Note("Only single integer field types may be aggregated");
+          } else if (f->type() != LogField::INT) {
+            Note("Only integer field types may be aggregated");
           } else {
             LogField *new_f = new LogField(*f);
             new_f->set_aggregate_op(aggregate);
