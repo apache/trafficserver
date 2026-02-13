@@ -15,6 +15,8 @@
    specific language governing permissions and limitations
    under the License.
 
+.. include:: ../../common.defs
+
 .. _admin-cache-storage:
 
 Cache Storage
@@ -311,6 +313,27 @@ cache. While the object remains on disk, Traffic Server will no longer able to f
 the object. The next request for that object will result in a fresh copy of the
 object fetched. Users may still see the old (removed) content if it was cached by
 intermediary caches or by the end-users' web browser.
+
+Conditional Cache Invalidation on DELETE Requests
+=================================================
+
+In compliance with :rfc:`9111` Section 4.4 "Invalidating Stored Responses", |TS|
+automatically invalidates cached responses when it receives a **successful**
+(non-error, i.e., 2xx or 3xx status code) response to a ``DELETE`` request for the same URL.
+This behavior ensures cache consistency when resources are deleted at the origin server.
+
+This means:
+
+- If a ``DELETE`` request to the origin server returns a success response
+  (e.g., ``200 OK``, ``204 No Content``), the cached object for that URL is invalidated.
+- If the ``DELETE`` request returns an error response (e.g., ``404 Not Found``,
+  ``405 Method Not Allowed``), the cached object remains unchanged.
+
+.. note::
+
+    This automatic invalidation differs from the ``PURGE`` method, which is a |TS| specific
+    mechanism for explicit cache removal. The ``DELETE`` method invalidation follows standard
+    HTTP semantics and requires the request to be forwarded to the origin server.
 
 Pushing an Object into the Cache
 ================================
