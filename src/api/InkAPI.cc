@@ -9020,3 +9020,31 @@ TSLogFieldRegister(std::string_view name, std::string_view symbol, TSLogType typ
 
   return TS_SUCCESS;
 }
+
+std::tuple<int, int>
+TSLogStringUnmarshal(char **buf, char *dest, int len)
+{
+  // We cannot use LogAccess::unmarshal_str, etc. here because those internal
+  // functions take care of log buffer alignment. This function needs to be
+  // implemented as if it's a piece of code in plugin code, which is unaware
+  // of the alignment.
+  if (int l = strlen(*buf); l < len) {
+    memcpy(dest, *buf, l);
+    return {l, l};
+  } else {
+    return {-1, -1};
+  }
+}
+
+std::tuple<int, int>
+TSLogIntUnmarshal(char **buf, char *dest, int len)
+{
+  int64_t val     = *(reinterpret_cast<int64_t *>(*buf));
+  auto [end, err] = std::to_chars(dest, dest + len, val);
+  if (err == std::errc()) {
+    *end = '\0';
+    return {sizeof(uint64_t), end - dest};
+  }
+
+  return {-1, -1};
+}

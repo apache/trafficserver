@@ -654,9 +654,9 @@ LogField::unmarshal(char **buf, char *dest, int len, LogEscapeType escape_type)
                      [&](UnmarshalFunc f) -> unsigned { return (*f)(buf, dest, len); },
                      [&](decltype(nullptr)) -> unsigned {
                        if (m_custom_unmarshal_func) {
-                         int l  = m_custom_unmarshal_func(buf, dest, len);
-                         *buf  += LogAccess::padded_length(l);
-                         return l;
+                         auto [read_len, written_len]  = m_custom_unmarshal_func(buf, dest, len);
+                         *buf                         += LogAccess::padded_length(read_len);
+                         return written_len;
                        }
                        ink_assert(false);
                        return 0;

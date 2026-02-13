@@ -2235,6 +2235,9 @@ main(int /* argc ATS_UNUSED */, const char **argv)
       hook = hook->next();
     }
 
+    // Log config needs to be loaded after the custom field registration
+    Log::load_config();
+
     if (IpAllow::has_no_rules()) {
       Error("No ip_allow.yaml entries found.  All requests will be denied!");
     }

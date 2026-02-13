@@ -22,16 +22,19 @@
   limitations under the License.
  */
 
+#include <inttypes.h>
+
 #include <ts/ts.h>
 #include <ts/remap.h>
 
 DbgCtl dbg_ctl{"custom_logfield"};
 
-char PLUGIN_NAME[]   = "custom_logfield";
-char VENDOR_NAME[]   = "Apache Software Foundation";
-char SUPPORT_EMAIL[] = "dev@trafficserver.apache.org";
-char USER_ARG_CSTM[] = "cstm_field";
-char USER_ARG_CSSN[] = "cssn_field";
+char PLUGIN_NAME[]    = "custom_logfield";
+char VENDOR_NAME[]    = "Apache Software Foundation";
+char SUPPORT_EMAIL[]  = "dev@trafficserver.apache.org";
+char USER_ARG_CSTM[]  = "cstm_field";
+char USER_ARG_CSTMI[] = "cstmi_field";
+char USER_ARG_CSSN[]  = "cssn_field";
 
 int
 write_text_from_user_arg(TSHttpTxn txnp, char *buf, const char *user_arg_name)
@@ -75,9 +78,35 @@ marshal_function_cssn(TSHttpTxn txnp, char *buf)
 }
 
 int
+marshal_function_cstmi(TSHttpTxn txnp, char *buf)
+{
+  int index;
+
+  if (buf) {
+    Dbg(dbg_ctl, "Marshaling a custom field cstmi");
+  } else {
+    Dbg(dbg_ctl, "Marshaling a custom field cstmi for size calculation");
+  }
+
+  if (buf) {
+    if (TSUserArgIndexNameLookup(TS_USER_ARGS_TXN, USER_ARG_CSTMI, &index, nullptr) == TS_SUCCESS) {
+      Dbg(dbg_ctl, "User Arg Index: %d", index);
+      if (int64_t value = reinterpret_cast<int64_t>(TSUserArgGet(txnp, index)); value) {
+        Dbg(dbg_ctl, "Value: %" PRId64, value);
+        *(reinterpret_cast<int64_t *>(buf)) = value;
+      }
+    }
+  }
+  return sizeof(int64_t);
+}
+
+std::tuple<int, int>
 unmarshal_function_string(char **buf, char *dest, int len)
 {
   Dbg(dbg_ctl, "Unmarshaling a string field");
+
+  // This implementation is just to demonstrate unmarshaling.
+  // Predefined unmarshal function, TSLogStringUnmarshal, works for simple string values
 
   int l = strlen(*buf);
   Dbg(dbg_ctl, "Dest buf size: %d", len);
@@ -85,9 +114,9 @@ unmarshal_function_string(char **buf, char *dest, int len)
   if (l < len) {
     memcpy(dest, *buf, l);
     Dbg(dbg_ctl, "Unmarshaled value: %.*s", l, dest);
-    return l;
+    return {l, l};
   } else {
-    return -1;
+    return {-1, -1};
   }
 }
 
@@ -102,7 +131,11 @@ lifecycle_event_handler(TSCont /* contp ATS_UNUSED */, TSEvent event, void * /* 
 
   // This replaces marshaling and unmarshaling functions for a built-in log field "cssn".
   Dbg(dbg_ctl, "Overriding cssn log field");
-  TSLogFieldRegister("modified cssn", "cssn", TS_LOG_TYPE_STRING, marshal_function_cssn, unmarshal_function_string, true);
+  TSLogFieldRegister("modified cssn", "cssn", TS_LOG_TYPE_STRING, marshal_function_cssn, TSLogStringUnmarshal, true);
+
+  // This registers a custom log field "cstmi"
+  Dbg(dbg_ctl, "Registering cstmi log field");
+  TSLogFieldRegister("custom integer log field", "cstmi", TS_LOG_TYPE_INT, marshal_function_cstmi, TSLogIntUnmarshal);
 
   return TS_SUCCESS;
 }
@@ -124,6 +157,8 @@ TSPluginInit(int /* argc ATS_UNUSED */, const char ** /* argv ATS_UNUSED */)
   TSUserArgIndexReserve(TS_USER_ARGS_TXN, USER_ARG_CSTM, "This is for cstm log field", &argIndex);
   Dbg(dbg_ctl, "User Arg Index: %d", argIndex);
   TSUserArgIndexReserve(TS_USER_ARGS_TXN, USER_ARG_CSSN, "This is for cssn log field", &argIndex);
+  Dbg(dbg_ctl, "User Arg Index: %d", argIndex);
+  TSUserArgIndexReserve(TS_USER_ARGS_TXN, USER_ARG_CSTMI, "This is for cstmi log field", &argIndex);
   Dbg(dbg_ctl, "User Arg Index: %d", argIndex);
 }
 
@@ -151,16 +186,22 @@ TSRemapDoRemap(void *, TSHttpTxn txn, TSRemapRequestInfo *)
 
   int index;
 
-  // Store value for cstm field
+  // Store a string value for cstm field
   if (TSUserArgIndexNameLookup(TS_USER_ARGS_TXN, USER_ARG_CSTM, &index, nullptr) == TS_SUCCESS) {
     Dbg(dbg_ctl, "User Arg Index: %d", index);
     TSUserArgSet(txn, index, const_cast<char *>("abc"));
   }
 
-  // Store value for cssn field
+  // Store a string value for cssn field
   if (TSUserArgIndexNameLookup(TS_USER_ARGS_TXN, USER_ARG_CSSN, &index, nullptr) == TS_SUCCESS) {
     Dbg(dbg_ctl, "User Arg Index: %d", index);
     TSUserArgSet(txn, index, const_cast<char *>("xyz"));
+  }
+
+  // Store an integer value for cstmi field
+  if (TSUserArgIndexNameLookup(TS_USER_ARGS_TXN, USER_ARG_CSTMI, &index, nullptr) == TS_SUCCESS) {
+    Dbg(dbg_ctl, "User Arg Index: %d", index);
+    TSUserArgSet(txn, index, reinterpret_cast<void *>(43));
   }
 
   return TSREMAP_NO_REMAP;

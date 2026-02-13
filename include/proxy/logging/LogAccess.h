@@ -305,8 +305,7 @@ public:
   void set_http_header_field(LogField::Container container, char *field, char *buf, int len);
 
   // Plugin
-  int        marshal_custom_field(char *buf, LogField::CustomMarshalFunc plugin_marshal_func);
-  static int unmarshal_custom_field(char **buf, char *dest, int len, LogField::CustomUnmarshalFunc plugin_unmarshal_func);
+  int marshal_custom_field(char *buf, LogField::CustomMarshalFunc plugin_marshal_func);
 
   //
   // unmarshalling routines

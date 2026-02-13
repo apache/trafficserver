@@ -3227,3 +3227,5 @@ TSReturnCode TSVConnPPInfoIntGet(TSVConn vconn, uint16_t key, TSMgmtInt *value);
 
 TSReturnCode TSLogFieldRegister(std::string_view name, std::string_view symbol, TSLogType type, TSLogMarshalCallback marshal_cb,
                                 TSLogUnmarshalCallback unmarshal_cb, bool replace = false);
+std::tuple<int, int> TSLogStringUnmarshal(char **buf, char *dest, int len);
+std::tuple<int, int> TSLogIntUnmarshal(char **buf, char *dest, int len);

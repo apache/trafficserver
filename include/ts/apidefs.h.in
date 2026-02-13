@@ -46,6 +46,7 @@
 #include <netinet/in.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <tuple>
 
 /** Apply printf format string compile-time argument checking to a function.
  *
@@ -1089,7 +1090,7 @@ using TSThreadFunc           = void *(*)(void *data);
 using TSEventFunc            = int (*)(TSCont contp, TSEvent event, void *edata);
 using TSConfigDestroyFunc    = void (*)(void *data);
 using TSLogMarshalCallback   = int (*)(TSHttpTxn, char *);
-using TSLogUnmarshalCallback = int (*)(char **, char *, int);
+using TSLogUnmarshalCallback = std::tuple<int, int> (*)(char **, char *, int);
 
 struct TSFetchEvent {
   int success_event_id;
@@ -1575,8 +1576,8 @@ struct TSResponseAction {
 };
 
 enum TSLogType {
-  TS_LOG_TYPE_S_INT,
-  TS_LOG_TYPE_D_INT,
+  TS_LOG_TYPE_INT,
+  TS_LOG_TYPE_DINT,
   TS_LOG_TYPE_STRING,
   TS_LOG_TYPE_IP,
 };

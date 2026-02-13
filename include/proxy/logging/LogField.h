@@ -26,6 +26,7 @@
 #include <string_view>
 #include <string>
 #include <variant>
+#include <tuple>
 
 #include "tscore/ink_inet.h"
 #include "tscore/ink_platform.h"
@@ -85,7 +86,7 @@ public:
   using UnmarshalFuncWithMap   = int (*)(char **, char *, int, const Ptr<LogFieldAliasMap> &);
   using SetFunc                = void (LogAccess::*)(char *, int);
   using CustomMarshalFunc      = int (*)(void *, char *);
-  using CustomUnmarshalFunc    = int (*)(char **, char *, int);
+  using CustomUnmarshalFunc    = std::tuple<int, int> (*)(char **, char *, int);
 
   using VarUnmarshalFuncSliceOnly = std::variant<UnmarshalFunc, UnmarshalFuncWithSlice>;
   using VarUnmarshalFunc          = std::variant<decltype(nullptr), UnmarshalFunc, UnmarshalFuncWithSlice, UnmarshalFuncWithMap>;
