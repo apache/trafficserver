@@ -151,11 +151,10 @@ lifecycle_event_handler(TSCont /* contp ATS_UNUSED */, TSEvent event, void * /* 
   TSLogFieldRegister(
     "modified cssn", "chi", TS_LOG_TYPE_ADDR,
     [](TSHttpTxn /* txnp */, char *buf) -> int {
-      sockaddr_in addr{
-        .sin_family      = AF_INET,
-        .sin_port        = htons(80),
-        .sin_addr.s_addr = inet_addr("192.168.0.1"),
-      };
+      sockaddr_in addr;
+      addr.sin_family      = AF_INET;
+      addr.sin_port        = htons(80);
+      addr.sin_addr.s_addr = inet_addr("192.168.0.1");
       return TSLogAddrMarshal(buf, reinterpret_cast<sockaddr *>(&addr));
     },
     TSLogAddrUnmarshal, true);
