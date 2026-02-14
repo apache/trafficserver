@@ -23,6 +23,9 @@
  */
 
 #include <inttypes.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 #include <ts/ts.h>
 #include <ts/remap.h>
@@ -114,7 +117,10 @@ unmarshal_function_string(char **buf, char *dest, int len)
   if (l < len) {
     memcpy(dest, *buf, l);
     Dbg(dbg_ctl, "Unmarshaled value: %.*s", l, dest);
-    return {l, l};
+    return {
+      l, // The length of data read from buf
+      l  // The length of data written to dest
+    };
   } else {
     return {-1, -1};
   }
@@ -136,6 +142,20 @@ lifecycle_event_handler(TSCont /* contp ATS_UNUSED */, TSEvent event, void * /* 
   // This registers a custom log field "cstmi"
   Dbg(dbg_ctl, "Registering cstmi log field");
   TSLogFieldRegister("custom integer log field", "cstmi", TS_LOG_TYPE_INT, marshal_function_cstmi, TSLogIntUnmarshal);
+
+  // This replaces marshaling and unmarshaling functions for a built-in log field "chi".
+  Dbg(dbg_ctl, "Overriding chi log field");
+  TSLogFieldRegister(
+    "modified cssn", "chi", TS_LOG_TYPE_ADDR,
+    [](TSHttpTxn /* txnp */, char *buf) -> int {
+      sockaddr_in addr{
+        .sin_family      = AF_INET,
+        .sin_addr.s_addr = inet_addr("192.168.0.1"),
+        .sin_port        = htons(80),
+      };
+      return TSLogAddrMarshal(buf, reinterpret_cast<sockaddr *>(&addr));
+    },
+    TSLogAddrUnmarshal, true);
 
   return TS_SUCCESS;
 }

@@ -1579,7 +1579,7 @@ enum TSLogType {
   TS_LOG_TYPE_INT,
   TS_LOG_TYPE_DINT,
   TS_LOG_TYPE_STRING,
-  TS_LOG_TYPE_IP,
+  TS_LOG_TYPE_ADDR,
 };
 
 /* --------------------------------------------------------------------------
