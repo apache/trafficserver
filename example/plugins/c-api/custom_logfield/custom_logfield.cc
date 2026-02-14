@@ -153,8 +153,8 @@ lifecycle_event_handler(TSCont /* contp ATS_UNUSED */, TSEvent event, void * /* 
     [](TSHttpTxn /* txnp */, char *buf) -> int {
       sockaddr_in addr{
         .sin_family      = AF_INET,
-        .sin_addr.s_addr = inet_addr("192.168.0.1"),
         .sin_port        = htons(80),
+        .sin_addr.s_addr = inet_addr("192.168.0.1"),
       };
       return TSLogAddrMarshal(buf, reinterpret_cast<sockaddr *>(&addr));
     },
