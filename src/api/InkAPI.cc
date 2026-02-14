@@ -9022,6 +9022,15 @@ TSLogFieldRegister(std::string_view name, std::string_view symbol, TSLogType typ
   return TS_SUCCESS;
 }
 
+int
+TSLogStringMarshal(char *buf, char *str, int str_len)
+{
+  if (buf) {
+    ink_strlcpy(buf, str, str_len + 1);
+  }
+  return str_len + 1;
+}
+
 std::tuple<int, int>
 TSLogStringUnmarshal(char **buf, char *dest, int len)
 {
@@ -9035,6 +9044,15 @@ TSLogStringUnmarshal(char **buf, char *dest, int len)
   } else {
     return {-1, -1};
   }
+}
+
+int
+TSLogIntMarshal(char *buf, int64_t value)
+{
+  if (buf) {
+    *(reinterpret_cast<int64_t *>(buf)) = value;
+  }
+  return sizeof(int64_t);
 }
 
 std::tuple<int, int>

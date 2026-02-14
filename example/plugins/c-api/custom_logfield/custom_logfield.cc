@@ -83,6 +83,9 @@ marshal_function_cssn(TSHttpTxn txnp, char *buf)
 int
 marshal_function_cstmi(TSHttpTxn txnp, char *buf)
 {
+  // This implementation is just to demonstrate marshaling an integer value.
+  // Predefined marshal function, TSLogIntMarshal, works for simple integer values
+
   int index;
 
   if (buf) {
@@ -108,7 +111,7 @@ unmarshal_function_string(char **buf, char *dest, int len)
 {
   Dbg(dbg_ctl, "Unmarshaling a string field");
 
-  // This implementation is just to demonstrate unmarshaling.
+  // This implementation is just to demonstrate unmarshaling a string value.
   // Predefined unmarshal function, TSLogStringUnmarshal, works for simple string values
 
   int l = strlen(*buf);
