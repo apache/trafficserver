@@ -54,8 +54,6 @@
 
 #include "tscore/MgmtDefs.h"
 
-#include <api/LifecycleAPIHooks.h>
-
 #define PERIODIC_TASKS_INTERVAL_FALLBACK 5
 
 // Log global objects
