@@ -9023,12 +9023,12 @@ TSLogFieldRegister(std::string_view name, std::string_view symbol, TSLogType typ
 }
 
 int
-TSLogStringMarshal(char *buf, char *str, int str_len)
+TSLogStringMarshal(char *buf, std::string_view str)
 {
   if (buf) {
-    ink_strlcpy(buf, str, str_len + 1);
+    ink_strlcpy(buf, str.data(), str.length() + 1);
   }
-  return str_len + 1;
+  return str.length() + 1;
 }
 
 std::tuple<int, int>
