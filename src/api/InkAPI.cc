@@ -26,6 +26,7 @@
 #include <unordered_map>
 #include <string_view>
 #include <string>
+#include <charconv>
 
 #include "iocore/net/NetVConnection.h"
 #include "iocore/net/NetHandler.h"
