@@ -21,7 +21,7 @@
 TSLogFieldRegister
 ******************
 
-Registers a custom log field, or modify an existing log field with a new definition.
+Registers a custom log field, or modifies an existing log field with a new definition.
 
 Synopsis
 ========
@@ -68,14 +68,14 @@ Synopsis
 Description
 ===========
 
-The function registers or modify a log field for access log. This is useful if you want to log something that |TS| does not expose,
+The function registers or modifies a log field for access log. This is useful if you want to log something that |TS| does not expose,
 log plugin state, or redefine existing log fields.
 
-The `name` is a human friendly name, and only used for debug log. The `symbol` is the keyword you'd want to use on logging.yaml for
+The `name` is a human friendly name, and only used for debugging. The `symbol` is the keyword you'd want to use on logging.yaml for
 the log field. It needs to be unique unless you are replacing an existing field by passing `true` to the optional argument
 `replace`, otherwise the API call fails.
 
-The `type` is the data type of a log field. You can log any data as a string value, but please note that aggregating function such
+The `type` is the data type of a log field. You can log any data as a string value, but please note that aggregating functions such
 as AVG and SUM are only available for integer log fields.
 
 In many cases, you don't need to write code for marshaling and unmarshaling from scratch. The predefined functions are provided for
