@@ -62,7 +62,7 @@ Round-trip test: `hrw4u example.hrw4u | u4wrh` should produce equivalent output.
 
 **New resource/variable:**
 1. Define in `resources.h`, implement in `resources.cc`
-2. Update hrw4u: `types.py` for type system, `tables.py` (OPERATOR_MAP/CONDITION_MAP/etc.) for symbol tables, and `symbols.py` for resolver wiring
+2. Update hrw4u: `types.py` for type system, `tables.py` (OPERATOR_MAP/CONDITION_MAP/etc.) for symbol tables, `symbols.py` for resolver wiring, and `generators.py` for reverse mappings
 
 ## HRW4U Transpiler
 
@@ -116,7 +116,7 @@ tools/hrw4u/
 **Visitors:**
 - `visitor.py` (HRW4UVisitor) - Forward compilation: hrw4u DSL → header_rewrite config
 - `hrw_visitor.py` (HRWInverseVisitor) - Reverse compilation: header_rewrite config → hrw4u DSL
-- `kg_visitor.py` - Knowledge graph generation
+- `kg_visitor.py` (KnowledgeGraphVisitor) - Extracts structured graph data for analysis/visualization (used by `hrw4u-kg` script, rarely modified)
 
 ### Adding Features
 
@@ -163,7 +163,9 @@ tools/hrw4u/
 
 ## Feature Addition Example
 
-**Adding `has-prefix` operator:**
+**Hypothetical example to illustrate the workflow:**
+
+Adding a `has-prefix` operator (this operator does not exist):
 
 1. **header_rewrite plugin:**
    ```cpp

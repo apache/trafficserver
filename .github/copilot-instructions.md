@@ -95,14 +95,14 @@ for (int i = 0; i < container.size(); i++) {
 
 **Memory Management:**
 - Use RAII and smart pointers (`std::unique_ptr`, `std::shared_ptr`)
+- Prefer smart pointers over raw `new`/`delete` when possible
 - Use `ats_malloc()`/`ats_free()` for large allocations (not `malloc`)
 - Use `IOBuffer` for network data (zero-copy design)
-- Prefer RAII/smart pointers over manual `delete` where practical; some subsystems legitimately use explicit deletes / `delete this`
+- Note: Some subsystems legitimately use explicit deletes / `delete this` (e.g., continuation-based code)
 
 **What NOT to Use:**
 - ❌ C++23 features (code must compile with C++20)
-- ❌ Raw `new`/`delete` (use smart pointers)
-- ❌ `malloc`/`free` for large allocations (use `ats_malloc`)
+- ❌ `malloc`/`free` for large allocations (use `ats_malloc`), or prefer heaps or stack allocations
 - ❌ Blocking operations in event threads
 - ❌ Creating threads manually (use async event system)
 
@@ -245,9 +245,14 @@ class HttpSM : public Continuation {
 // At file scope
 static DbgCtl dbg_ctl{"http_sm"};
 
-// In code
+// In code (preferred)
+Dbg(dbg_ctl, "Processing request for URL: %s", url);
+
+// Alternative (less common)
 DbgPrint(dbg_ctl, "Processing request for URL: %s", url);
 ```
+
+**Note:** Use `Dbg()` for new code. `DbgPrint()` exists but is rarely used (~60 vs ~3400 uses).
 
 ## Project Structure (Key Paths)
 
