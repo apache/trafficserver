@@ -13,8 +13,9 @@ Apache Traffic Server (ATS) is a high-performance HTTP/HTTPS caching proxy serve
 
 ## Code Style Requirements
 
-### C++ Style (Enforced by CI)
+### C++ Style Guidelines
 
+Some of these rules are enforced automatically by CI (via clang-format and clang-tidy); others are recommended conventions that will not themselves cause CI failures but should still be followed in code reviews.
 **Formatting Rules:**
 - **Line length:** 132 characters maximum
 - **Indentation:** 2 spaces (never tabs)
