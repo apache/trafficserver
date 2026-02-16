@@ -96,7 +96,7 @@ for (int i = 0; i < container.size(); i++) {
 - Use RAII and smart pointers (`std::unique_ptr`, `std::shared_ptr`)
 - Use `ats_malloc()`/`ats_free()` for large allocations (not `malloc`)
 - Use `IOBuffer` for network data (zero-copy design)
-- Never call `delete` manually - use RAII
+- Prefer RAII/smart pointers over manual `delete` where practical; some subsystems legitimately use explicit deletes / `delete this`
 
 **What NOT to Use:**
 - ❌ C++23 features (code must compile with C++20)
