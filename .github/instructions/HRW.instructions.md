@@ -53,12 +53,12 @@ Round-trip test: `hrw4u example.hrw4u | u4wrh` should produce equivalent output.
 **New operator:**
 1. Define class in `operators.h`, implement in `operators.cc`
 2. Register in `factory.cc`
-3. Update hrw4u: `generators.py` for code gen, `hrw_symbols.py` for symbols
+3. Update hrw4u: `tables.py` (forward mapping tables), `visitor.py` (forward compiler logic), and `generators.py` if reverse mappings are affected
 
 **New condition:**
 1. Define class in `conditions.h`, implement in `conditions.cc`
 2. Register in `factory.cc`
-3. Update hrw4u: `hrw_visitor.py` for parsing, `hrw_symbols.py` for symbols
+3. Update hrw4u: `visitor.py` for parsing/forward logic and `tables.py` for mapping/symbol tables
 
 **New resource/variable:**
 1. Define in `resources.h`, implement in `resources.cc`
