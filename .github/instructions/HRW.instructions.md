@@ -62,7 +62,7 @@ Round-trip test: `hrw4u example.hrw4u | u4wrh` should produce equivalent output.
 
 **New resource/variable:**
 1. Define in `resources.h`, implement in `resources.cc`
-2. Update hrw4u: `types.py` for type system, `symbols.py` for symbol tables
+2. Update hrw4u: `types.py` for type system, `tables.py` (OPERATOR_MAP/CONDITION_MAP/etc.) for symbol tables, and `symbols.py` for resolver wiring
 
 ## HRW4U Transpiler
 
