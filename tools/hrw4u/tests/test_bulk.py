@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 #
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -15,27 +14,37 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-"""U4WRH script - Process header_rewrite (HRW) lines and reconstruct hrw4u source."""
-
 from __future__ import annotations
 
-from hrw4u.common import run_main
-from u4wrh.hrw_visitor import HRWInverseVisitor
-from u4wrh.u4wrhLexer import u4wrhLexer
-from u4wrh.u4wrhParser import u4wrhParser
+import pytest
+import utils
 
 
-def main() -> None:
-    """Main entry point for the u4wrh script."""
-    run_main(
-        description="Process header_rewrite (HRW) lines and reconstruct hrw4u source.",
-        lexer_class=u4wrhLexer,
-        parser_class=u4wrhParser,
-        visitor_class=HRWInverseVisitor,
-        error_prefix="u4wrh",
-        output_flag_name="hrw4u",
-        output_flag_help="Produce reconstructed hrw4u output (default)")
+@pytest.mark.conds
+def test_conds_bulk_compilation() -> None:
+    """Test bulk compilation of all conds test cases."""
+    utils.run_bulk_test("conds")
 
 
-if __name__ == "__main__":
-    main()
+@pytest.mark.examples
+def test_examples_bulk_compilation() -> None:
+    """Test bulk compilation of all examples test cases."""
+    utils.run_bulk_test("examples")
+
+
+@pytest.mark.hooks
+def test_hooks_bulk_compilation() -> None:
+    """Test bulk compilation of all hooks test cases."""
+    utils.run_bulk_test("hooks")
+
+
+@pytest.mark.ops
+def test_ops_bulk_compilation() -> None:
+    """Test bulk compilation of all ops test cases."""
+    utils.run_bulk_test("ops")
+
+
+@pytest.mark.vars
+def test_vars_bulk_compilation() -> None:
+    """Test bulk compilation of all vars test cases."""
+    utils.run_bulk_test("vars")
