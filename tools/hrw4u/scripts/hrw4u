@@ -22,28 +22,19 @@ from __future__ import annotations
 from hrw4u.hrw4uLexer import hrw4uLexer
 from hrw4u.hrw4uParser import hrw4uParser
 from hrw4u.visitor import HRW4UVisitor
-from hrw4u.common import create_base_parser, create_parse_tree, generate_output, process_input
+from hrw4u.common import run_main
 
 
 def main() -> None:
     """Main entry point for the hrw4u script."""
-    parser, output_group = create_base_parser("Process HRW4U input and produce output (AST or HRW).")
-
-    # Argument parsing
-    output_group.add_argument("--hrw", action="store_true", help="Produce the HRW output (default)")
-    parser.add_argument("--no-comments", action="store_true", help="Skip comment preservation (ignore comments in output)")
-    args = parser.parse_args()
-
-    # Default to HRW output if neither AST nor HRW specified
-    if not (args.ast or args.hrw):
-        args.hrw = True
-
-    content, filename = process_input(args.input_file)
-    tree, parser_obj, error_collector = create_parse_tree(
-        content, filename, hrw4uLexer, hrw4uParser, "hrw4u", not args.stop_on_error)
-
-    # Generate output
-    generate_output(tree, parser_obj, HRW4UVisitor, filename, args, error_collector)
+    run_main(
+        description="Process HRW4U input and produce output (AST or HRW).",
+        lexer_class=hrw4uLexer,
+        parser_class=hrw4uParser,
+        visitor_class=HRW4UVisitor,
+        error_prefix="hrw4u",
+        output_flag_name="hrw",
+        output_flag_help="Produce the HRW output (default)")
 
 
 if __name__ == "__main__":

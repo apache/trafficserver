@@ -229,3 +229,107 @@ def generate_output(
         print(error_collector.get_error_summary(), file=sys.stderr)
         if not args.ast and tree is None:
             sys.exit(1)
+
+
+def run_main(
+        description: str, lexer_class: type[LexerProtocol], parser_class: type[ParserProtocol],
+        visitor_class: type[VisitorProtocol], error_prefix: str, output_flag_name: str, output_flag_help: str) -> None:
+    """
+    Generic main function for hrw4u and u4wrh scripts with bulk compilation support.
+
+    Args:
+        description: Description for argument parser
+        lexer_class: ANTLR lexer class to use
+        parser_class: ANTLR parser class to use
+        visitor_class: Visitor class to use
+        error_prefix: Error prefix for error messages
+        output_flag_name: Name of output flag (e.g., "hrw", "hrw4u")
+        output_flag_help: Help text for output flag
+    """
+    parser = argparse.ArgumentParser(
+        description=description,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="For bulk compilation to files, use: input1.txt:output1.txt input2.txt:output2.txt ...")
+
+    parser.add_argument(
+        "files", help="Input file(s) to parse. Use input:output for bulk file output (default: stdin to stdout)", nargs="*")
+
+    output_group = parser.add_mutually_exclusive_group()
+    output_group.add_argument("--ast", action="store_true", help="Produce the ANTLR parse tree only")
+    output_group.add_argument(f"--{output_flag_name}", action="store_true", help=output_flag_help)
+
+    parser.add_argument("--no-comments", action="store_true", help="Skip comment preservation (ignore comments in output)")
+    parser.add_argument("--debug", action="store_true", help="Enable debug output")
+    parser.add_argument(
+        "--stop-on-error", action="store_true", help="Stop processing on first error (default: collect and report multiple errors)")
+
+    args = parser.parse_args()
+
+    if not hasattr(args, output_flag_name):
+        setattr(args, output_flag_name, False)
+
+    if not (args.ast or getattr(args, output_flag_name)):
+        setattr(args, output_flag_name, True)
+
+    if not args.files:
+        content, filename = process_input(sys.stdin)
+        tree, parser_obj, error_collector = create_parse_tree(
+            content, filename, lexer_class, parser_class, error_prefix, not args.stop_on_error)
+        generate_output(tree, parser_obj, visitor_class, filename, args, error_collector)
+        return
+
+    if any(':' in f for f in args.files):
+        for pair in args.files:
+            if ':' not in pair:
+                print(
+                    f"Error: Mixed formats not allowed. All files must use 'input:output' format for bulk compilation.",
+                    file=sys.stderr)
+                sys.exit(1)
+
+            input_path, output_path = pair.split(':', 1)
+
+            try:
+                with open(input_path, 'r', encoding='utf-8') as input_file:
+                    content = input_file.read()
+                    filename = input_path
+            except FileNotFoundError:
+                print(f"Error: Input file '{input_path}' not found", file=sys.stderr)
+                sys.exit(1)
+            except Exception as e:
+                print(f"Error reading '{input_path}': {e}", file=sys.stderr)
+                sys.exit(1)
+
+            tree, parser_obj, error_collector = create_parse_tree(
+                content, filename, lexer_class, parser_class, error_prefix, not args.stop_on_error)
+
+            try:
+                with open(output_path, 'w', encoding='utf-8') as output_file:
+                    original_stdout = sys.stdout
+                    try:
+                        sys.stdout = output_file
+                        generate_output(tree, parser_obj, visitor_class, filename, args, error_collector)
+                    finally:
+                        sys.stdout = original_stdout
+            except Exception as e:
+                print(f"Error writing to '{output_path}': {e}", file=sys.stderr)
+                sys.exit(1)
+    else:
+        for i, input_path in enumerate(args.files):
+            if i > 0:
+                print("# ---")
+
+            try:
+                with open(input_path, 'r', encoding='utf-8') as input_file:
+                    content = input_file.read()
+                    filename = input_path
+            except FileNotFoundError:
+                print(f"Error: Input file '{input_path}' not found", file=sys.stderr)
+                sys.exit(1)
+            except Exception as e:
+                print(f"Error reading '{input_path}': {e}", file=sys.stderr)
+                sys.exit(1)
+
+            tree, parser_obj, error_collector = create_parse_tree(
+                content, filename, lexer_class, parser_class, error_prefix, not args.stop_on_error)
+
+            generate_output(tree, parser_obj, visitor_class, filename, args, error_collector)
