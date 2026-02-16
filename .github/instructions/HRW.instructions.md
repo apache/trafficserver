@@ -53,12 +53,12 @@ Round-trip test: `hrw4u example.hrw4u | u4wrh` should produce equivalent output.
 **New operator:**
 1. Define class in `operators.h`, implement in `operators.cc`
 2. Register in `factory.cc`
-3. Update hrw4u: `tables.py` (forward mapping tables), `visitor.py` (forward compiler logic), and `generators.py` if reverse mappings are affected
+3. Update hrw4u: `tables.py` (forward mapping tables), `visitor.py` (forward compiler - HRW4UVisitor), and `generators.py` (reverse-resolution tables used by u4wrh)
 
 **New condition:**
 1. Define class in `conditions.h`, implement in `conditions.cc`
 2. Register in `factory.cc`
-3. Update hrw4u: `visitor.py` for parsing/forward logic and `tables.py` for mapping/symbol tables
+3. Update hrw4u: `visitor.py` for parsing, `tables.py` for symbol maps
 
 **New resource/variable:**
 1. Define in `resources.h`, implement in `resources.cc`
@@ -82,14 +82,14 @@ tools/hrw4u/
 │   ├── symbols.py         # Symbol resolution
 │   ├── hrw_symbols.py     # Header rewrite symbols
 │   ├── tables.py          # Symbol/type tables
-│   ├── hrw_visitor.py     # Forward compiler
-│   ├── visitor.py         # Reverse compiler
-│   ├── generators.py      # Code generation
+│   ├── visitor.py         # Forward compiler (HRW4UVisitor - hrw4u script)
+│   ├── hrw_visitor.py     # Reverse compiler (HRWInverseVisitor - u4wrh script)
+│   ├── generators.py      # Reverse-resolution table generation
 │   ├── validation.py      # Semantic validation
 │   └── lsp/               # LSP server
 ├── scripts/               # CLI tools
-│   ├── hrw4u             # Forward compiler
-│   ├── u4wrh             # Reverse compiler
+│   ├── hrw4u             # Forward compiler (hrw4u → HRW config)
+│   ├── u4wrh             # Reverse compiler (HRW config → hrw4u)
 │   └── hrw4u-lsp         # LSP server
 ├── grammar/              # ANTLR4 grammars
 └── tests/                # Test suite
@@ -108,14 +108,14 @@ tools/hrw4u/
 - Scope management
 - Built-in symbols for header_rewrite resources
 
-**Code Generation (`generators.py`):**
-- Generates header_rewrite config from AST
-- Operator and condition translation
-- Hook translation
+**Reverse-Resolution Tables (`generators.py`):**
+- Generates derived tables and reverse mappings from primary forward tables
+- Used by u4wrh (reverse compiler) to map HRW config back to hrw4u syntax
+- Eliminates duplication by maintaining single source of truth in forward tables
 
 **Visitors:**
-- `hrw_visitor.py` - Forward compilation
-- `visitor.py` - Reverse compilation
+- `visitor.py` (HRW4UVisitor) - Forward compilation: hrw4u DSL → header_rewrite config
+- `hrw_visitor.py` (HRWInverseVisitor) - Reverse compilation: header_rewrite config → hrw4u DSL
 - `kg_visitor.py` - Knowledge graph generation
 
 ### Adding Features
@@ -124,25 +124,28 @@ tools/hrw4u/
 1. Update grammar if new syntax needed
 2. Add symbol definition in `hrw_symbols.py`
 3. Add type signature in `types.py`
-4. Implement code generation in `generators.py`
-5. Update visitor in `hrw_visitor.py`
-6. Add tests in `tests/test_ops.py` and `tests/test_ops_reverse.py`
-7. Update corresponding header_rewrite plugin code
+4. Update forward compiler in `visitor.py` (HRW4UVisitor) to handle new operator
+5. Update `generators.py` to generate reverse mappings for u4wrh
+6. Update reverse compiler in `hrw_visitor.py` (HRWInverseVisitor) if special handling needed
+7. Add tests in `tests/test_ops.py` and `tests/test_ops_reverse.py`
+8. Update corresponding header_rewrite plugin code
 
 **New condition:**
 1. Update grammar if needed
-2. Add symbol and type info
-3. Implement visitor logic
-4. Add code generation
-5. Add tests
-6. Update header_rewrite plugin
+2. Add symbol definition in `hrw_symbols.py` and type info in `types.py`
+3. Update forward compiler in `visitor.py` (HRW4UVisitor)
+4. Update `generators.py` for reverse mappings
+5. Update reverse compiler in `hrw_visitor.py` (HRWInverseVisitor) if needed
+6. Add tests
+7. Update header_rewrite plugin
 
 **New variable:**
 1. Add to symbol tables (`tables.py`, `hrw_symbols.py`)
 2. Add type definition (`types.py`)
-3. Update visitor for property access
-4. Add tests
-5. Ensure header_rewrite supports it
+3. Update forward compiler in `visitor.py` (HRW4UVisitor) for property access
+4. Update `generators.py` for reverse mappings
+5. Add tests
+6. Ensure header_rewrite supports it
 
 ### Code Style
 

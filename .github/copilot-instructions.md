@@ -156,7 +156,7 @@ for (auto &conn : connections) {
 
 ### License Headers
 
-**ALL new files** must start with Apache License 2.0 header:
+**New source and test files** must start with Apache License 2.0 header (`.cc`, `.h`, `.py`, and other code files):
 ```cpp
 /** @file
  *
