@@ -289,7 +289,7 @@ trafficserver/
 - `src/proxy/http/HttpSM.cc` - HTTP state machine (most important)
 - `src/iocore/cache/Cache.cc` - Cache implementation
 - `include/ts/ts.h` - Plugin API (most stable interface)
-- `src/tscore/ink_memory.h` - Memory allocation functions
+- `include/tscore/ink_memory.h` - Memory allocation functions
 
 ## Common Patterns
 
