@@ -121,7 +121,7 @@ New reload with token 'reload_ip_allow' was scheduled. Waiting for details...
    Token     : reload_ip_allow
 ``
    Files:
-    - IpAllow ``  [success]  source: ``
+    - ``ip_allow.yaml``  [success]  source: file``
 ``
 """)
 

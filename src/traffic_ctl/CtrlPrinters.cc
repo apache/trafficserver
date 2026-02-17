@@ -177,7 +177,7 @@ DiffConfigPrinter::write_output(YAML::Node const &result)
 }
 //------------------------------------------------------------------------------------------------------------------------------------
 void
-ConfigReloadPrinter::write_output(YAML::Node const &result)
+ConfigReloadPrinter::write_output([[maybe_unused]] YAML::Node const &result)
 {
   // no op, ctrl command will handle the output directly.
   // BasePrinter will handle the error and the json output if needed.
@@ -378,8 +378,7 @@ ConfigReloadPrinter::print_reload_report(const ConfigReloadResponse::ReloadInfo 
   }
 
   for (size_t i = 0; i < files.size(); i++) {
-    const auto &f    = files[i];
-    bool        last = (i == files.size() - 1);
+    const auto &f = files[i];
 
     std::string fname;
     std::string source;

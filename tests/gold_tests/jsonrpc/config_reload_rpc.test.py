@@ -100,69 +100,62 @@ tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_emp
 tr.StillRunningAfter = ts
 
 # ============================================================================
-# Test 3: Unknown config key (error code 2004)
+# Test 3: Unknown config key (error code 6010)
 # ============================================================================
-tr = Test.AddTestRun("Unknown config key should error with code 2004")
+tr = Test.AddTestRun("Unknown config key should error with code 6010")
 tr.DelayStart = 2
 tr.AddJsonRPCClientRequest(ts, Request.admin_config_reload(configs={"unknown_config_key": {"some": "data"}}))
 
 
 def validate_unknown_key(resp: Response):
-    '''Verify error for unknown config key - should return error code 2004'''
+    '''Verify error for unknown config key - should return error code 6010'''
     result = resp.result
-
-    # Should have failed count or errors
-    failed = result.get('failed', 0)
     errors = result.get('errors', [])
 
-    if failed > 0 or errors:
-        # Check for error code 2004 (not registered)
-        error_str = str(errors)
-        if '2004' in error_str or 'not registered' in error_str:
-            return (True, f"Unknown key rejected with code 2004: {errors}")
-        return (True, f"Unknown key rejected: failed={failed}, errors={errors}")
+    if not errors:
+        return (False, f"Expected error for unknown key, got: {result}")
 
-    return (False, f"Expected error for unknown key, got: {result}")
+    error_str = str(errors)
+    if '6010' in error_str or 'not registered' in error_str:
+        return (True, f"Unknown key rejected with code 6010: {errors}")
+    return (False, f"Expected error 6010, got: {errors}")
 
 
 tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_unknown_key)
 tr.StillRunningAfter = ts
 
 # ============================================================================
-# Test 3b: Legacy config inline not supported (error code 2004)
-# Note: This test requires a legacy config to be registered (e.g., remap.config)
+# Test 3b: Unregistered config rejected (error code 6010)
+# Note: remap.config is not registered in ConfigRegistry
 # ============================================================================
-tr = Test.AddTestRun("Legacy config should error with code 2004")
+tr = Test.AddTestRun("Unregistered config should error with code 6010")
 tr.DelayStart = 1
 tr.AddJsonRPCClientRequest(ts, Request.admin_config_reload(configs={"remap.config": {"some": "data"}}))
 
 
 def validate_legacy_not_supported(resp: Response):
-    '''Verify legacy config returns error code 2004 (inline not supported)'''
+    '''Verify unregistered config returns error code 6010'''
     result = resp.result
     errors = result.get('errors', [])
 
-    if errors:
-        error_str = str(errors)
-        # Error 2004 = legacy config, 2002 = not registered (if not registered yet)
-        if '2004' in error_str or 'legacy' in error_str.lower():
-            return (True, f"Legacy config correctly rejected with 2004: {errors}")
-        if '2002' in error_str or 'not registered' in error_str:
-            return (True, f"Legacy config not registered yet (expected): {errors}")
-        return (True, f"Legacy config error: {errors}")
+    if not errors:
+        return (False, f"Expected rejection for unregistered config, got: {result}")
 
-    return (True, f"Result: {result}")
+    error_str = str(errors)
+    if '6010' in error_str or 'not registered' in error_str:
+        return (True, f"Unregistered config correctly rejected: {errors}")
+    return (False, f"Expected error 6010, got: {errors}")
 
 
 tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_legacy_not_supported)
 tr.StillRunningAfter = ts
 
 # ============================================================================
-# Test 4: Single valid config (ip_allow) - requires registration
+# Test 4: RPC-injected content rejected for FileOnly config (ip_allow)
+# ip_allow is registered with ConfigSource::FileOnly — RPC content must be rejected
 # ============================================================================
-tr = Test.AddTestRun("Single config reload - ip_allow")
+tr = Test.AddTestRun("RPC-injected content rejected for FileOnly config (ip_allow)")
 tr.DelayStart = 2
-# Note: This test will only pass if ip_allow is registered in ConfigRegistry
 tr.AddJsonRPCClientRequest(
     ts,
     Request.admin_config_reload(
@@ -174,29 +167,21 @@ tr.AddJsonRPCClientRequest(
         }]}))
 
 
-def validate_ip_allow_reload(resp: Response):
-    '''Verify ip_allow inline reload'''
+def validate_rpc_inject_rejected(resp: Response):
+    '''ip_allow is registered as FileOnly — RPC-injected content must be rejected with 6011'''
     result = resp.result
-
-    # Check if it worked or if ip_allow isn't registered
     errors = result.get('errors', [])
-    success = result.get('success', 0)
-    failed = result.get('failed', 0)
 
-    if success > 0:
-        return (True, f"ip_allow reload succeeded: token={result.get('token')}")
+    if not errors:
+        return (False, f"Expected rejection for FileOnly config, got: {result}")
 
-    if errors:
-        # ip_allow might not be registered yet
-        error_msg = str(errors)
-        if 'not registered' in error_msg:
-            return (True, f"ip_allow not registered (expected during development): {errors}")
-        return (True, f"ip_allow reload errors: {errors}")
-
-    return (True, f"ip_allow reload result: {result}")
+    error_str = str(errors)
+    if '6011' in error_str or 'does not support RPC' in error_str:
+        return (True, f"FileOnly config correctly rejected RPC injection: {errors}")
+    return (False, f"Expected error 6011, got: {errors}")
 
 
-tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_ip_allow_reload)
+tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_rpc_inject_rejected)
 tr.StillRunningAfter = ts
 
 # ============================================================================
@@ -228,16 +213,18 @@ tr.AddJsonRPCClientRequest(
 
 
 def validate_multiple_configs(resp: Response):
-    '''Verify multiple configs reload'''
+    '''All configs should be rejected — none support RPC content source at this stage'''
     result = resp.result
-
-    success = result.get('success', 0)
-    failed = result.get('failed', 0)
     errors = result.get('errors', [])
-    token = result.get('token', '')
 
-    # Some may succeed, some may fail (depending on what's registered)
-    return (True, f"Multiple configs: success={success}, failed={failed}, errors={len(errors)}, token={token}")
+    if not errors:
+        return (False, f"Expected rejections for all configs, got: {result}")
+
+    # Each config should produce an error (6010=not registered, 6011=RPC source not supported)
+    error_str = str(errors)
+    if '6010' in error_str or '6011' in error_str:
+        return (True, f"All configs rejected as expected: {len(errors)} errors")
+    return (False, f"Unexpected errors: {errors}")
 
 
 tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_multiple_configs)
@@ -268,18 +255,18 @@ tr.AddJsonRPCClientRequest(ts, Request.admin_config_reload(configs={"ip_allow": 
 
 
 def validate_in_progress_rejection(resp: Response):
-    '''Should be rejected or return current status'''
+    '''Should be rejected for RPC source not supported or reload in progress'''
     result = resp.result
     errors = result.get('errors', [])
 
-    if errors:
-        error_msg = str(errors)
-        if 'in progress' in error_msg.lower() or '1004' in error_msg:
-            return (True, f"Correctly detected reload in progress: {errors}")
+    if not errors:
+        return (False, f"Expected rejection, got: {result}")
 
-    # If no error, it might have succeeded after the other completed
-    token = result.get('token', '')
-    return (True, f"Inline reload result: token={token}, errors={errors}")
+    error_str = str(errors)
+    # Either 6011 (RPC source not supported) or 6004 (reload in progress)
+    if '6011' in error_str or '6004' in error_str:
+        return (True, f"Correctly rejected: {errors}")
+    return (False, f"Unexpected error: {errors}")
 
 
 tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_in_progress_rejection)
@@ -393,13 +380,17 @@ tr.AddJsonRPCClientRequest(ts, Request.admin_config_reload(configs={"ip_allow": 
 
 
 def validate_large_config(resp: Response):
-    '''Verify large config handling'''
+    '''Large ip_allow config should also be rejected (FileOnly)'''
     result = resp.result
-    success = result.get('success', 0)
-    failed = result.get('failed', 0)
     errors = result.get('errors', [])
 
-    return (True, f"Large config: success={success}, failed={failed}, errors={len(errors)}")
+    if not errors:
+        return (False, f"Expected rejection for FileOnly config, got: {result}")
+
+    error_str = str(errors)
+    if '6011' in error_str:
+        return (True, f"Large config correctly rejected: {errors}")
+    return (False, f"Expected error 6011, got: {errors}")
 
 
 tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_large_config)

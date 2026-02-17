@@ -47,7 +47,7 @@ Ptr<ProxyMutex> reconfig_mutex;
 DbgCtl dbg_ctl_url_rewrite{"url_rewrite"};
 
 struct URLRewriteReconfigure {
-  static void reconfigure(ConfigContext ctx);
+  static void reconfigure([[maybe_unused]] ConfigContext ctx);
 };
 
 std::unique_ptr<ConfigUpdateHandler<URLRewriteReconfigure>> url_rewrite_reconf;
@@ -130,7 +130,7 @@ urlRewriteVerify()
 
 */
 bool
-reloadUrlRewrite(ConfigContext ctx)
+reloadUrlRewrite([[maybe_unused]] ConfigContext ctx)
 {
   std::string msg_buffer;
   msg_buffer.reserve(1024);
@@ -175,7 +175,7 @@ url_rewrite_CB(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNU
 }
 
 void
-URLRewriteReconfigure::reconfigure(ConfigContext ctx)
+URLRewriteReconfigure::reconfigure([[maybe_unused]] ConfigContext ctx)
 {
   reloadUrlRewrite(ctx);
 }

@@ -40,8 +40,6 @@
 #include "swoc/swoc_ip.h"
 #include "swoc/Errata.h"
 
-// forward declare in name only so it can be a friend.
-struct IpAllowUpdate;
 namespace YAML
 {
 class Node;

@@ -196,8 +196,8 @@ set_config_records(std::string_view const & /* id ATS_UNUSED */, YAML::Node cons
 }
 
 ///
-// Unified config reload handler - supports both file-based and inline modes
-// Inline mode is detected by presence of "configs" parameter
+// Unified config reload handler - supports file source and RPC source modes
+// RPC source is detected by presence of "configs" parameter
 //
 swoc::Rv<YAML::Node>
 reload_config(std::string_view const & /* id ATS_UNUSED */, YAML::Node const &params)
@@ -231,38 +231,43 @@ reload_config(std::string_view const & /* id ATS_UNUSED */, YAML::Node const &pa
   }
 
   ///
-  // Inline mode: detected by presence of "configs" parameter
+  // RPC source: detected by presence of "configs" parameter
   // Expected format:
   //   configs:
   //     ip_allow:
-  //       ip_allow:
-  //         - apply: in
-  //           ...
+  //       - apply: in
+  //         ...
   //     sni:
-  //       sni:
-  //         - fqdn: '*.example.com'
-  //           ...
+  //       - fqdn: '*.example.com'
+  //         ...
   //
   if (params["configs"] && params["configs"].IsMap()) {
     auto const &configs  = params["configs"];
     auto       &registry = ::config::ConfigRegistry::Get_Instance();
 
-    // Phase 1: Validate all configs and collect valid ones (before creating task)
-    std::vector<std::pair<std::string, YAML::Node>> valid_configs;
+    // Dependency keys (registered via add_file_and_node_dependency) are resolved to their
+    // parent entry. Multiple dependency keys for the same parent are merged into a single
+    // YAML node so the parent handler fires only once.
+    struct ResolvedConfig {
+      std::string parent_key;
+      std::string original_key;
+      YAML::Node  content;
+    };
+    std::vector<ResolvedConfig> valid_configs;
+
     for (auto it = configs.begin(); it != configs.end(); ++it) {
       std::string key = it->first.as<std::string>();
 
-      auto const *entry = registry.find(key);
+      auto [parent_key, entry] = registry.resolve(key);
       if (!entry) {
         resp.result()["errors"].push_back(
           make_error(swoc::bwprint(buf, "Config '{}' not registered", key), errc(ConfigError::CONFIG_NOT_REGISTERED)));
         continue;
       }
 
-      if (entry->type == ::config::ConfigType::LEGACY) {
-        resp.result()["errors"].push_back(
-          make_error(swoc::bwprint(buf, "Config '{}' is a legacy .config file - inline reload not supported", key),
-                     errc(ConfigError::LEGACY_NO_INLINE)));
+      if (entry->source != ::config::ConfigSource::FileAndRpc) {
+        resp.result()["errors"].push_back(make_error(swoc::bwprint(buf, "Config '{}' does not support direct RPC content", key),
+                                                     errc(ConfigError::RPC_SOURCE_NOT_SUPPORTED)));
         continue;
       }
 
@@ -272,7 +277,7 @@ reload_config(std::string_view const & /* id ATS_UNUSED */, YAML::Node const &pa
         continue;
       }
 
-      valid_configs.emplace_back(key, it->second);
+      valid_configs.push_back({parent_key, key, it->second});
     }
 
     // If no valid configs, return early without creating a task
@@ -281,7 +286,7 @@ reload_config(std::string_view const & /* id ATS_UNUSED */, YAML::Node const &pa
       return resp;
     }
 
-    // Phase 2: Create reload task only if we have valid configs
+    // Create reload task only if we have valid configs
     std::string token_prefix = token.empty() ? "rpc-" : "";
     if (auto ret = ReloadCoordinator::Get_Instance().prepare_reload(token, token_prefix.c_str(), force); !ret.is_ok()) {
       resp.result()["errors"].push_back(
@@ -289,11 +294,30 @@ reload_config(std::string_view const & /* id ATS_UNUSED */, YAML::Node const &pa
       return resp;
     }
 
-    // Phase 3: Schedule all valid configs
-    for (auto const &[key, yaml_content] : valid_configs) {
-      Dbg(dbg_ctl_RPC, "Storing passed config for '%s' and scheduling reload", key.c_str());
-      registry.set_passed_config(key, yaml_content);
-      registry.schedule_reload(key);
+    // - Direct entries (key == parent_key): content passed as-is (existing behavior).
+    // - Dependency keys (key != parent_key): content merged under original keys,
+    //   so the handler can check yaml["sni"], yaml["ssl_multicert"], etc.
+    std::unordered_map<std::string, YAML::Node>                                      grouped_content;
+    std::unordered_map<std::string, std::vector<std::pair<std::string, YAML::Node>>> by_parent;
+
+    for (auto &vc : valid_configs) {
+      by_parent[vc.parent_key].emplace_back(vc.original_key, std::move(vc.content));
+    }
+
+    for (auto &[parent_key, items] : by_parent) {
+      if (items.size() == 1 && items[0].first == parent_key) {
+        // Single direct entry — pass content as-is (preserves existing behavior)
+        registry.set_passed_config(parent_key, items[0].second);
+      } else {
+        // Dependency key(s) or multiple items — merge under original keys
+        YAML::Node merged;
+        for (auto &[orig_key, content] : items) {
+          merged[orig_key] = content;
+        }
+        registry.set_passed_config(parent_key, merged);
+      }
+      Dbg(dbg_ctl_RPC, "Scheduling reload for '%s' (%zu config(s))", parent_key.c_str(), items.size());
+      registry.schedule_reload(parent_key);
     }
 
     // Build response
@@ -306,7 +330,7 @@ reload_config(std::string_view const & /* id ATS_UNUSED */, YAML::Node const &pa
   }
 
   ///
-  // File-based mode: default when no "configs" param
+  // File source: default when no "configs" param
   //
   if (auto ret = ReloadCoordinator::Get_Instance().prepare_reload(token, "rldtk-", force); !ret.is_ok()) {
     resp.result()["errors"].push_back(make_error(swoc::bwprint(buf, "Failed to prepare reload for token '{}': {}", token, ret),

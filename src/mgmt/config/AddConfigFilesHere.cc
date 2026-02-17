@@ -66,16 +66,16 @@ initializeRegistry()
   registerFile("", ts::filename::STORAGE, REQUIRED);
   registerFile("proxy.config.socks.socks_config_file", ts::filename::SOCKS, NOT_REQUIRED);
   registerFile(ts::filename::RECORDS, ts::filename::RECORDS, NOT_REQUIRED);
-  registerFile("proxy.config.cache.control.filename", ts::filename::CACHE, NOT_REQUIRED);
-  registerFile("proxy.config.cache.ip_allow.filename", ts::filename::IP_ALLOW, NOT_REQUIRED);
-  registerFile("proxy.config.cache.ip_categories.filename", ts::filename::IP_CATEGORIES, NOT_REQUIRED);
-  registerFile("proxy.config.http.parent_proxy.file", ts::filename::PARENT, NOT_REQUIRED);
+  // cache.config: now registered via ConfigRegistry::register_config() in CacheControl.cc
+  // ip_allow: now registered via ConfigRegistry::register_config() in IPAllow.cc
+  // ip_categories: registered via ConfigRegistry::add_file_dependency() in IPAllow.cc
+  // parent.config: now registered via ConfigRegistry::register_config() in ParentSelection.cc
   registerFile("proxy.config.url_remap.filename", ts::filename::REMAP, NOT_REQUIRED);
   registerFile("", ts::filename::VOLUME, NOT_REQUIRED);
-  registerFile("proxy.config.cache.hosting_filename", ts::filename::HOSTING, NOT_REQUIRED);
+  // hosting.config: now registered via ConfigRegistry::register_config() in Cache.cc (open_done)
   registerFile("", ts::filename::PLUGIN, NOT_REQUIRED);
-  registerFile("proxy.config.dns.splitdns.filename", ts::filename::SPLITDNS, NOT_REQUIRED);
-  registerFile("proxy.config.ssl.server.multicert.filename", ts::filename::SSL_MULTICERT, NOT_REQUIRED);
-  registerFile("proxy.config.ssl.servername.filename", ts::filename::SNI, NOT_REQUIRED);
+  // splitdns.config: now registered via ConfigRegistry::register_config() in SplitDNS.cc
+  // ssl_multicert.config: now registered via ConfigRegistry::add_file_and_node_dependency() in SSLClientCoordinator.cc
+  // sni.yaml: now registered via ConfigRegistry::add_file_and_node_dependency() in SSLClientCoordinator.cc
   registerFile("proxy.config.jsonrpc.filename", ts::filename::JSONRPC, NOT_REQUIRED);
 }

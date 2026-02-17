@@ -51,9 +51,8 @@ struct SplitDNSConfig {
   static void      release(SplitDNS *params);
   static void      print();
 
-  static int                                  m_id;
-  static Ptr<ProxyMutex>                      dnsHandler_mutex;
-  static ConfigUpdateHandler<SplitDNSConfig> *splitDNSUpdate;
+  static int             m_id;
+  static Ptr<ProxyMutex> dnsHandler_mutex;
 
   static int gsplit_dns_enabled;
 };

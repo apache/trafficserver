@@ -181,7 +181,7 @@ class ConfigReload(Common):
     """
 
     def __init__(self, dir, tr, tn):
-        super().__init__(tr, lambda x: self.__finish())
+        super().__init__(tr)
         self._cmd = "traffic_ctl config reload"
         self._tr = tr
         self._dir = dir
@@ -260,7 +260,7 @@ class ConfigStatus(Common):
     """
 
     def __init__(self, dir, tr, tn):
-        super().__init__(tr, lambda x: self.__finish())
+        super().__init__(tr)
         self._cmd = "traffic_ctl config status"
         self._tr = tr
         self._dir = dir

@@ -100,9 +100,12 @@ public:
     fail(errata, swoc::bwprint(buf, fmt, std::forward<Args>(args)...));
   }
 
+  /// Check if the task has reached a terminal state (SUCCESS, FAIL, TIMEOUT).
+  [[nodiscard]] bool is_terminal() const;
+
   /// Get the description associated with this context's task.
   /// For registered configs this is the registration key (e.g., "sni", "ssl").
-  /// For dependants it is the label passed to create_dependant().
+  /// For child contexts it is the label passed to child_context().
   [[nodiscard]] std::string_view get_description() const;
 
   /// Create a child sub-task that tracks progress independently under this parent.
@@ -112,12 +115,12 @@ public:
   /// @code
   ///   // SSLClientCoordinator delegates to multiple sub-configs:
   ///   void SSLClientCoordinator::reconfigure(ConfigContext ctx) {
-  ///     SSLConfig::reconfigure(ctx.create_dependant("SSLConfig"));
-  ///     SNIConfig::reconfigure(ctx.create_dependant("SNIConfig"));
-  ///     SSLCertificateConfig::reconfigure(ctx.create_dependant("SSLCertificateConfig"));
+  ///     SSLConfig::reconfigure(ctx.child_context("SSLConfig"));
+  ///     SNIConfig::reconfigure(ctx.child_context("SNIConfig"));
+  ///     SSLCertificateConfig::reconfigure(ctx.child_context("SSLCertificateConfig"));
   ///   }
   /// @endcode
-  [[nodiscard]] ConfigContext create_dependant(std::string_view description = "");
+  [[nodiscard]] ConfigContext child_context(std::string_view description = "");
 
   /// Get supplied YAML node (for RPC-based reloads).
   /// A default-constructed YAML::Node is Undefined (operator bool() == false).

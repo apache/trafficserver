@@ -53,7 +53,7 @@ PreWarmConfig::startup()
 }
 
 void
-PreWarmConfig::reconfigure(ConfigContext ctx)
+PreWarmConfig::reconfigure([[maybe_unused]] ConfigContext ctx)
 {
   PreWarmConfigParams *params = new PreWarmConfigParams();
   _config_id                  = configProcessor.set(_config_id, params);
