@@ -1,7 +1,7 @@
 /** @file
 
-  This plugin counts the number of times every header has appeared.
-  Maintains separate counts for client and origin headers.
+  This plugin demonstrates custom log field registration and usage.
+  It populates custom log fields from per-transaction user arguments.
 
   @section license License
 
