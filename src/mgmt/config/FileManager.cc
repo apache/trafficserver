@@ -25,8 +25,6 @@
 #include <vector>
 #include <algorithm>
 
-#include "api/InkAPIInternal.h" // TODO: this brings a lot of dependencies, double check this.
-
 #include "tscore/ink_platform.h"
 #include "tscore/ink_file.h"
 #include "../../records/P_RecCore.h"
@@ -54,24 +52,23 @@ process_config_update(std::string const &fileName, std::string const &configName
   swoc::Errata ret;
   // TODO: make sure records holds the name after change, if not we should change it.
   if (fileName == ts::filename::RECORDS) {
-    auto status = config::make_config_reload_context("Reloading records.yaml file.", fileName);
-    status.in_progress();
-    sleep(2);
+    auto ctx = config::make_config_reload_context("Reloading records.yaml file.", fileName);
+    ctx.in_progress();
     if (auto zret = RecReadYamlConfigFile(); zret) {
-      RecConfigWarnIfUnregistered(status);
+      RecConfigWarnIfUnregistered(ctx);
     } else {
       // Make sure we report all messages from the Errata
       for (auto &&m : zret) {
-        status.log(m.text());
+        ctx.log(m.text());
       }
       ret.note("Error reading {}", fileName).note(zret);
       if (zret.severity() >= ERRATA_ERROR) {
-        status.fail("Failed to reload records.yaml");
+        ctx.fail("Failed to reload records.yaml");
         return ret;
       }
     }
 
-    status.complete();
+    ctx.complete();
   } else if (!configName.empty()) { // Could be the case we have a child file to reload with no related config record.
     RecT rec_type;
     if (auto r = RecGetRecordType(configName.c_str(), &rec_type); r == REC_ERR_OKAY && rec_type == RECT_CONFIG) {
@@ -166,21 +163,18 @@ FileManager::fileChanged(std::string const &fileName, std::string const &configN
   return ret;
 }
 
-// TODO: To do the following here, we have to pull up a lot of dependencies we don't really
-// need, #include "InkAPIInternal.h" brings plenty of them. Double check this approach. RPC will
-// also be able to pass messages to plugins, once that's designed it can also cover this.
 void
-FileManager::registerConfigPluginCallbacks(ConfigUpdateCbTable *cblist)
+FileManager::registerConfigPluginCallbacks(std::function<void()> cb)
 {
-  _pluginCallbackList = cblist;
+  _pluginCallback = std::move(cb);
 }
 
 void
 FileManager::invokeConfigPluginCallbacks()
 {
   Dbg(dbg_ctl, "invoke plugin callbacks");
-  if (_pluginCallbackList) {
-    _pluginCallbackList->invoke();
+  if (_pluginCallback) {
+    _pluginCallback();
   }
 }
 
