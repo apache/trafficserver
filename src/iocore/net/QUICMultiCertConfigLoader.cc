@@ -38,7 +38,7 @@ QUICCertConfig::startup()
 }
 
 void
-QUICCertConfig::reconfigure(ConfigContext ctx)
+QUICCertConfig::reconfigure([[maybe_unused]] ConfigContext ctx)
 {
   bool                     retStatus = true;
   SSLConfig::scoped_config params;

@@ -1,3 +1,26 @@
+/** @file
+ *
+ *  ConfigReloadTrace - Reload task tracking and progress reporting
+ *
+ *  @section license License
+ *
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
 #pragma once
 
 #include <atomic>
@@ -29,8 +52,19 @@ using ConfigReloadTaskPtr = std::shared_ptr<ConfigReloadTask>;
 ///
 /// @brief Progress checker for reload tasks — detects stuck/hanging tasks.
 ///
-/// Periodically checks if a reload task has exceeded its configured timeout.
-/// If it has, the task is marked as TIMEOUT (bad state).
+/// Created per-reload by ConfigReloadTask::start_progress_checker(), which is called
+/// only for main tasks in the IN_PROGRESS state. Each instance is bound to a single
+/// ConfigReloadTask and holds a shared_ptr to it.
+///
+/// Lifecycle:
+///   - Scheduled on ET_TASK when a reload starts.
+///   - check_progress() runs periodically (every check_interval).
+///   - Self-terminates (returns EVENT_DONE) when:
+///       * The task reaches a terminal state (SUCCESS, FAIL, TIMEOUT).
+///       * The task exceeds the configured timeout (marked as TIMEOUT, then stops).
+///       * The _reload pointer is null (defensive).
+///   - Reschedules itself (EVENT_CONT) only while the task is still non-terminal.
+///   - No idle polling — when no reload is in progress, no checker exists.
 ///
 /// Configurable via records:
 ///   - proxy.config.admin.reload.timeout: Duration string (default: "1h")
@@ -39,7 +73,8 @@ using ConfigReloadTaskPtr = std::shared_ptr<ConfigReloadTask>;
 ///     Minimum: 1s (enforced). How often to check task progress.
 ///
 /// If timeout is 0 or empty, timeout is disabled. Tasks can hang forever (BAD).
-/// Use --force (traffic_ctl / RPC API) flag to mark stuck tasks as stale and start a new reload.
+/// Use --force (traffic_ctl / RPC API) flag to bypass the in-progress guard and start a new reload.
+/// Note: --force only marks the existing tracking task as stale; it does not cancel the actual work.
 ///
 struct ConfigReloadProgress : public Continuation {
   /// Record names for configuration
@@ -79,15 +114,15 @@ private:
 /// config module. Tasks form a tree: the main task has sub-tasks for each config,
 /// and sub-tasks can themselves have children (e.g., SSLClientCoordinator → SSLConfig, SNIConfig).
 ///
-/// Status flows: CREATED → IN_PROGRESS → SUCCESS / FAIL / TIMEOUT
-/// Parent tasks aggregate status from their children automatically.
+/// State flows: CREATED → IN_PROGRESS → SUCCESS / FAIL / TIMEOUT
+/// Parent tasks aggregate state from their children automatically.
 ///
 /// Serialized to YAML via YAML::convert<ConfigReloadTask::Info> for RPC responses.
 ///
 class ConfigReloadTask : public std::enable_shared_from_this<ConfigReloadTask>
 {
 public:
-  enum class Status {
+  enum class State {
     INVALID = -1,
     CREATED,     ///< Initial state — task exists but not started
     IN_PROGRESS, ///< Work is actively happening
@@ -96,29 +131,29 @@ public:
     TIMEOUT      ///< Terminal: task exceeded time limit
   };
 
-  /// Check if a status represents a terminal (final) state
+  /// Check if a state represents a terminal (final) state
   [[nodiscard]] static constexpr bool
-  is_terminal(Status s) noexcept
+  is_terminal(State s) noexcept
   {
-    return s == Status::SUCCESS || s == Status::FAIL || s == Status::TIMEOUT;
+    return s == State::SUCCESS || s == State::FAIL || s == State::TIMEOUT;
   }
 
-  /// Convert Status enum to string
+  /// Convert State enum to string
   [[nodiscard]] static constexpr std::string_view
-  status_to_string(Status s) noexcept
+  state_to_string(State s) noexcept
   {
     switch (s) {
-    case Status::INVALID:
+    case State::INVALID:
       return "invalid";
-    case Status::CREATED:
+    case State::CREATED:
       return "created";
-    case Status::IN_PROGRESS:
+    case State::IN_PROGRESS:
       return "in_progress";
-    case Status::SUCCESS:
+    case State::SUCCESS:
       return "success";
-    case Status::FAIL:
+    case State::FAIL:
       return "fail";
-    case Status::TIMEOUT:
+    case State::TIMEOUT:
       return "timeout";
     }
     return "unknown";
@@ -136,8 +171,8 @@ public:
     /// Grant friendship to the specific YAML::convert specialization.
     friend struct YAML::convert<ConfigReloadTask::Info>;
     Info() = default;
-    Info(Status p_status, std::string_view p_token, std::string_view p_description, bool p_main_task)
-      : status(p_status), token(p_token), description(p_description), main_task(p_main_task)
+    Info(State p_state, std::string_view p_token, std::string_view p_description, bool p_main_task)
+      : state(p_state), token(p_token), description(p_description), main_task(p_main_task)
     {
     }
 
@@ -145,21 +180,21 @@ public:
     int64_t                          created_time_ms{now_ms()};      ///< milliseconds since epoch
     int64_t                          last_updated_time_ms{now_ms()}; ///< last time this task was updated (ms)
     std::vector<std::string>         logs;                           ///< log messages from handler
-    Status                           status{Status::CREATED};
+    State                            state{State::CREATED};
     std::string                      token;
     std::string                      description;
     std::string                      filename;         ///< source file, if applicable
-    std::vector<ConfigReloadTaskPtr> sub_tasks;        ///< dependant tasks (if any)
+    std::vector<ConfigReloadTaskPtr> sub_tasks;        ///< child tasks (if any)
     bool                             main_task{false}; ///< true for the top-level reload task
   };
 
   using self_type    = ConfigReloadTask;
   ConfigReloadTask() = default;
   ConfigReloadTask(std::string_view token, std::string_view description, bool main_task, ConfigReloadTaskPtr parent)
-    : _info(Status::CREATED, token, description, main_task), _parent{parent}
+    : _info(State::CREATED, token, description, main_task), _parent{parent}
   {
     if (_info.main_task) {
-      _info.status = Status::IN_PROGRESS;
+      _info.state = State::IN_PROGRESS;
     }
   }
 
@@ -170,7 +205,7 @@ public:
 
   /// Create a child sub-task and return a ConfigContext wrapping it.
   /// The child inherits the parent's token and if passed, the supplied YAML content.
-  [[nodiscard]] ConfigContext add_dependant(std::string_view description = "");
+  [[nodiscard]] ConfigContext add_child(std::string_view description = "");
 
   self_type &log(std::string const &text);
   void       set_completed();
@@ -180,30 +215,33 @@ public:
   void
   set_description(std::string_view description)
   {
+    std::unique_lock<std::shared_mutex> lock(_mutex);
     _info.description = description;
   }
 
   [[nodiscard]] std::string_view
   get_description() const
   {
+    std::shared_lock<std::shared_mutex> lock(_mutex);
     return _info.description;
   }
 
   void
   set_filename(std::string_view filename)
   {
+    std::unique_lock<std::shared_mutex> lock(_mutex);
     _info.filename = filename;
   }
 
   [[nodiscard]] std::string_view
   get_filename() const
   {
+    std::shared_lock<std::shared_mutex> lock(_mutex);
     return _info.filename;
   }
 
   /// Debug utility: dump task tree to an output stream.
   /// Recursively prints this task and all sub-tasks with indentation.
-  static void dump(std::ostream &os, ConfigReloadTask::Info const &data, int indent = 0);
 
   [[nodiscard]] bool
   contains_dependents() const
@@ -227,11 +265,11 @@ public:
     return _info.created_time_ms;
   }
 
-  [[nodiscard]] Status
-  get_status() const
+  [[nodiscard]] State
+  get_state() const
   {
     std::shared_lock<std::shared_mutex> lock(_mutex);
-    return _info.status;
+    return _info.state;
   }
 
   /// Mark task as TIMEOUT with an optional reason logged
@@ -258,14 +296,14 @@ public:
     return _info.main_task;
   }
 
-  /// Create a snapshot of the current task info (thread-safe)
+  /// Create a copy of the current task info
   [[nodiscard]] Info
   get_info() const
   {
     std::shared_lock<std::shared_mutex> lock(_mutex);
-    Info                                snapshot = _info;
-    snapshot.last_updated_time_ms                = _atomic_last_updated_ms.load(std::memory_order_acquire);
-    return snapshot;
+    Info                                copy = _info;
+    copy.last_updated_time_ms                = _atomic_last_updated_ms.load(std::memory_order_acquire);
+    return copy;
   }
 
   /// Get last updated time in seconds (considers subtasks)
@@ -289,13 +327,13 @@ public:
 
 private:
   /// Add a pre-created sub-task to this task's children list.
-  /// Called by ReloadCoordinator::create_config_update_status().
+  /// Called by ReloadCoordinator::create_config_context().
   void add_sub_task(ConfigReloadTaskPtr sub_task);
+  void on_sub_task_update(State state);
+  void aggregate_status();
+  void notify_parent();
+  void set_state_and_notify(State state);
 
-  void                      on_sub_task_update(Status status);
-  void                      update_state_from_children(Status status);
-  void                      notify_parent();
-  void                      set_status_and_notify(Status status);
   mutable std::shared_mutex _mutex;
   bool                      _reload_progress_checker_started{false};
   Info                      _info;

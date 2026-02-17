@@ -40,6 +40,15 @@ ConfigContext::~ConfigContext()
   }
 }
 
+bool
+ConfigContext::is_terminal() const
+{
+  if (auto p = _task.lock()) {
+    return ConfigReloadTask::is_terminal(p->get_status());
+  }
+  return true; // expired task is supposed to be terminal
+}
+
 void
 ConfigContext::in_progress(std::string_view text)
 {
@@ -107,12 +116,12 @@ ConfigContext::get_description() const
 }
 
 ConfigContext
-ConfigContext::create_dependant(std::string_view description)
+ConfigContext::child_context(std::string_view description)
 {
   if (auto p = _task.lock()) {
-    auto child = p->add_dependant(description);
+    auto child = p->add_child(description);
     // child task will get the full content of the parent task
-    // TODO: eventyually we can have a "key" passed so dependant module
+    // TODO: eventyually we can have a "key" passed so child module
     // only gets their node of interest.
     child._supplied_yaml = _supplied_yaml;
     return child;

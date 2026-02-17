@@ -33,7 +33,7 @@
 #include "tscore/Filenames.h"
 #include "proxy/CacheControl.h"
 #include "proxy/ControlMatcher.h"
-#include "iocore/eventsystem/ConfigProcessor.h"
+#include "mgmt/config/ConfigRegistry.h"
 #include "proxy/http/HttpConfig.h"
 namespace
 {
@@ -60,15 +60,6 @@ DbgCtl dbg_ctl_v_http3{"v_http3"};
 DbgCtl dbg_ctl_http3{"http3"};
 DbgCtl dbg_ctl_cache_control{"cache_control"};
 
-struct CacheControlFileReload {
-  static void
-  reconfigure(ConfigContext ctx)
-  {
-    reloadCacheControl(ctx);
-  }
-};
-
-std::unique_ptr<ConfigUpdateHandler<CacheControlFileReload>> cache_control_reconf;
 } // end anonymous namespace
 
 // Global Ptrs
@@ -139,9 +130,14 @@ initCacheControl()
   ink_assert(CacheControlTable == nullptr);
   reconfig_mutex    = new_ProxyMutex();
   CacheControlTable = new CC_table("proxy.config.cache.control.filename", modulePrefix, &http_dest_tags);
-  cache_control_reconf.reset(new ConfigUpdateHandler<CacheControlFileReload>("Cache Control Configuration"));
 
-  cache_control_reconf->attach("proxy.config.cache.control.filename");
+  config::ConfigRegistry::Get_Instance().register_config( // File registration.
+    "cache_control",                                      // registry key
+    ts::filename::CACHE,                                  // default filename
+    "proxy.config.cache.control.filename",                // record holding the filename
+    [](ConfigContext &ctx) { reloadCacheControl(ctx); },  // reload handler
+    config::ConfigSource::FileOnly,                       // no RPC content source
+    {"proxy.config.cache.control.filename"});             // trigger records
 }
 
 // void reloadCacheControl()
@@ -162,6 +158,7 @@ reloadCacheControl(ConfigContext ctx)
   ink_atomic_swap(&CacheControlTable, newTable);
 
   Note("%s finished loading", ts::filename::CACHE);
+  ctx.complete("Finished loading");
 }
 
 void

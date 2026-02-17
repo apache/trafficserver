@@ -57,7 +57,7 @@ ConfigReloadProgress::get_configured_check_interval()
 }
 
 ConfigContext
-ConfigReloadTask::add_dependant(std::string_view description)
+ConfigReloadTask::add_child(std::string_view description)
 {
   std::unique_lock<std::shared_mutex> lock(_mutex);
   // Read token directly - can't call get_token() as it would deadlock (tries to acquire shared_lock on same mutex)
@@ -168,8 +168,6 @@ ConfigReloadTask::update_state_from_children(Status /* status ATS_UNUSED */)
 {
   // Use unique_lock throughout to avoid TOCTOU race and data races
   std::unique_lock<std::shared_mutex> lock(_mutex);
-
-  Dbg(dbg_ctl_config, "### subtask size=%d", (int)_info.sub_tasks.size());
 
   if (_info.sub_tasks.empty()) {
     // No subtasks - keep current status (don't change to CREATED)

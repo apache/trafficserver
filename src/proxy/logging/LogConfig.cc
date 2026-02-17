@@ -422,7 +422,7 @@ LogConfig::setup_log_objects()
 //   return 0;
 // }
 void
-LogConfig::reconfigure(ConfigContext ctx) // ConfigUpdateHandler callback
+LogConfig::reconfigure([[maybe_unused]] ConfigContext ctx) // ConfigUpdateHandler callback
 {
   Dbg(dbg_ctl_log_config, "[v2] Reconfiguration request accepted");
 

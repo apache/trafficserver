@@ -714,7 +714,7 @@ SSLConfig::startup()
 }
 
 void
-SSLConfig::reconfigure(ConfigContext ctx)
+SSLConfig::reconfigure([[maybe_unused]] ConfigContext ctx)
 {
   Dbg(dbg_ctl_ssl_load, "Reload SSLConfig");
   SSLConfigParams *params;
@@ -765,7 +765,7 @@ SSLCertificateConfig::startup()
 }
 
 bool
-SSLCertificateConfig::reconfigure(ConfigContext ctx)
+SSLCertificateConfig::reconfigure([[maybe_unused]] ConfigContext ctx)
 {
   bool                     retStatus = true;
   SSLConfig::scoped_config params;
@@ -914,7 +914,7 @@ SSLTicketKeyConfig::startup()
 }
 
 bool
-SSLTicketKeyConfig::reconfigure(ConfigContext ctx)
+SSLTicketKeyConfig::reconfigure([[maybe_unused]] ConfigContext ctx)
 {
   SSLTicketParams *ticketKey = new SSLTicketParams();
 
