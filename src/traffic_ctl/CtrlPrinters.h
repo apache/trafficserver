@@ -228,14 +228,8 @@ class ConfigReloadPrinter : public BasePrinter
 public:
   ConfigReloadPrinter(BasePrinter::Options opt) : BasePrinter(opt) {}
 
-  void print_basic_ri_line(const ConfigReloadResponse::ReloadInfo &info, bool json = true);
-
   void print_reload_report(const ConfigReloadResponse::ReloadInfo &info, bool full_report = false);
-  void
-  write_single_line_info(const ConfigReloadResponse::ReloadInfo &info)
-  {
-    print_basic_ri_line(info, false);
-  }
+  void write_progress_line(const ConfigReloadResponse::ReloadInfo &info);
 };
 //------------------------------------------------------------------------------------------------------------------------------------
 class ConfigShowFileRegistryPrinter : public BasePrinter
