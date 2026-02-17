@@ -24,7 +24,40 @@
 
 namespace rpc::handlers::config
 {
+/// Only records.yaml config.
 swoc::Rv<YAML::Node> set_config_records(std::string_view const &id, YAML::Node const &params);
+
+/**
+ * @brief Unified config reload handler — supports file source and RPC source modes.
+ *
+ * File source (default):
+ *   Reloads all changed config files from disk (on-disk configuration).
+ *   Params:
+ *     token: optional custom reload token
+ *     force: force reload even if one is in progress
+ *
+ * RPC source (when "configs" param present):
+ *   Reloads specific configs using YAML content injected through the RPC call,
+ *   bypassing on-disk files.
+ *   Params:
+ *     token: optional custom reload token
+ *     configs: map of config_key -> yaml_content
+ *       e.g.:
+ *         configs:
+ *           ip_allow:
+ *             - apply: in
+ *               ip_addrs: 0.0.0.0/0
+ *           sni:
+ *             - fqdn: '*.example.com'
+ *
+ * Response:
+ *   token: reload task token
+ *   created_time: task creation timestamp
+ *   message: status message
+ *   errors: array of errors (if any)
+ */
 swoc::Rv<YAML::Node> reload_config(std::string_view const &id, YAML::Node const &params);
+
+swoc::Rv<YAML::Node> get_reload_config_status(std::string_view const &id, YAML::Node const &params);
 
 } // namespace rpc::handlers::config

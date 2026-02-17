@@ -34,6 +34,7 @@
 #include "proxy/logging/RolledLogDeleter.h"
 #include "swoc/MemSpan.h"
 #include "tsutil/Metrics.h"
+#include "mgmt/config/ReloadCoordinator.h"
 
 using ts::Metrics;
 
@@ -103,7 +104,8 @@ public:
   void display(FILE *fd = stdout);
   void setup_log_objects();
 
-  static int reconfigure(const char *name, RecDataT data_type, RecData data, void *cookie);
+  // static int reconfigure(const char *name, RecDataT data_type, RecData data, void *cookie);
+  static void reconfigure(ConfigContext ctx = {}); // ConfigUpdateHandler callback
 
   static void register_config_callbacks();
   static void register_stat_callbacks();
@@ -211,6 +213,8 @@ private:
   bool m_log_directory_inaccessible = false;
 
   RolledLogDeleter rolledLogDeleter;
+
+  ConfigContext ctx; // track reload status.
 
   // noncopyable
   // -- member functions not allowed --

@@ -46,6 +46,11 @@ Ptr<ProxyMutex> reconfig_mutex;
 
 DbgCtl dbg_ctl_url_rewrite{"url_rewrite"};
 
+struct URLRewriteReconfigure {
+  static void reconfigure(ConfigContext ctx);
+};
+
+std::unique_ptr<ConfigUpdateHandler<URLRewriteReconfigure>> url_rewrite_reconf;
 } // end anonymous namespace
 
 // Global Ptrs
@@ -77,10 +82,13 @@ init_reverse_proxy()
     Note("%s finished loading", ts::filename::REMAP);
   }
 
-  RecRegisterConfigUpdateCb("proxy.config.url_remap.filename", url_rewrite_CB, (void *)FILE_CHANGED);
-  RecRegisterConfigUpdateCb("proxy.config.proxy_name", url_rewrite_CB, (void *)TSNAME_CHANGED);
   RecRegisterConfigUpdateCb("proxy.config.reverse_proxy.enabled", url_rewrite_CB, (void *)REVERSE_CHANGED);
-  RecRegisterConfigUpdateCb("proxy.config.http.referer_default_redirect", url_rewrite_CB, (void *)HTTP_DEFAULT_REDIRECT_CHANGED);
+
+  // reload hooks
+  url_rewrite_reconf.reset(new ConfigUpdateHandler<URLRewriteReconfigure>("Url Rewrite Config"));
+  url_rewrite_reconf->attach("proxy.config.url_remap.filename");
+  url_rewrite_reconf->attach("proxy.config.proxy_name");
+  url_rewrite_reconf->attach("proxy.config.http.referer_default_redirect");
 
   // Hold at least one lease, until we reload the configuration
   rewrite_table->acquire();
@@ -109,18 +117,6 @@ response_url_remap(HTTPHdr *response_header, UrlRewrite *table)
 //  End API Functions
 //
 
-/** Used to read the remap.config file after the manager signals a change. */
-struct UR_UpdateContinuation : public Continuation {
-  int
-  file_update_handler(int /* etype ATS_UNUSED */, void * /* data ATS_UNUSED */)
-  {
-    static_cast<void>(reloadUrlRewrite());
-    delete this;
-    return EVENT_DONE;
-  }
-  UR_UpdateContinuation(Ptr<ProxyMutex> &m) : Continuation(m) { SET_HANDLER(&UR_UpdateContinuation::file_update_handler); }
-};
-
 bool
 urlRewriteVerify()
 {
@@ -134,15 +130,17 @@ urlRewriteVerify()
 
 */
 bool
-reloadUrlRewrite()
+reloadUrlRewrite(ConfigContext ctx)
 {
+  std::string msg_buffer;
+  msg_buffer.reserve(1024);
   UrlRewrite *newTable, *oldTable;
 
   Note("%s loading ...", ts::filename::REMAP);
   Dbg(dbg_ctl_url_rewrite, "%s updated, reloading...", ts::filename::REMAP);
   newTable = new UrlRewrite();
   if (newTable->load()) {
-    static const char *msg_format = "%s finished loading";
+    swoc::bwprint(msg_buffer, "{} finished loading", ts::filename::REMAP);
 
     // Hold at least one lease, until we reload the configuration
     newTable->acquire();
@@ -155,43 +153,29 @@ reloadUrlRewrite()
     // Release the old one
     oldTable->release();
 
-    Dbg(dbg_ctl_url_rewrite, msg_format, ts::filename::REMAP);
-    Note(msg_format, ts::filename::REMAP);
+    Dbg(dbg_ctl_url_rewrite, "%s", msg_buffer.c_str());
+    Note(msg_buffer.c_str());
     return true;
   } else {
-    static const char *msg_format = "%s failed to load";
+    swoc::bwprint(msg_buffer, "{} failed to load", ts::filename::REMAP);
 
     delete newTable;
-    Dbg(dbg_ctl_url_rewrite, msg_format, ts::filename::REMAP);
-    Error(msg_format, ts::filename::REMAP);
+    Dbg(dbg_ctl_url_rewrite, "%s", msg_buffer.c_str());
+    Error(msg_buffer.c_str());
     return false;
   }
 }
 
 int
-url_rewrite_CB(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */, RecData data, void *cookie)
+url_rewrite_CB(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */, RecData data,
+               void * /* cookie ATS_UNUSED */)
 {
-  int my_token = static_cast<int>((long)cookie);
-
-  switch (my_token) {
-  case REVERSE_CHANGED:
-    rewrite_table->SetReverseFlag(data.rec_int);
-    break;
-
-  case TSNAME_CHANGED:
-  case FILE_CHANGED:
-  case HTTP_DEFAULT_REDIRECT_CHANGED:
-    eventProcessor.schedule_imm(new UR_UpdateContinuation(reconfig_mutex), ET_TASK);
-    break;
-
-  case URL_REMAP_MODE_CHANGED:
-    // You need to restart TS.
-    break;
-
-  default:
-    ink_assert(0);
-    break;
-  }
-
+  rewrite_table->SetReverseFlag(data.rec_int);
   return 0;
+}
+
+void
+URLRewriteReconfigure::reconfigure(ConfigContext ctx)
+{
+  reloadUrlRewrite(ctx);
 }

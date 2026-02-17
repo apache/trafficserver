@@ -21,11 +21,13 @@
   limitations under the License.
  */
 
+#include "iocore/eventsystem/ConfigProcessor.h"
+
 // A class to pass the ConfigUpdateHandler, so both SSLConfig and SNIConfig get updated
 // when the relevant files/configs get updated.
 class SSLClientCoordinator
 {
 public:
   static void startup();
-  static void reconfigure();
+  static void reconfigure(ConfigContext ctx = {});
 };

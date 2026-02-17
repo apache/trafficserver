@@ -264,7 +264,7 @@ DbgCtl dbg_ctl_diags{"diags"};
 DbgCtl dbg_ctl_hugepages{"hugepages"};
 DbgCtl dbg_ctl_rpc_init{"rpc.init"};
 DbgCtl dbg_ctl_statsproc{"statsproc"};
-
+DbgCtl dbg_ctl_conf_reload{"confreload"};
 struct AutoStopCont : public Continuation {
   int
   mainEvent(int /* event */, Event * /* e */)
@@ -2238,7 +2238,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 #if TS_USE_QUIC == 1
     quic_NetProcessor.start(-1, stacksize);
 #endif
-    FileManager::instance().registerConfigPluginCallbacks(global_config_cbs);
+    FileManager::instance().registerConfigPluginCallbacks([&]() { global_config_cbs->invoke(); });
     cacheProcessor.afterInitCallbackSet(&CB_After_Cache_Init);
     cacheProcessor.start();
 

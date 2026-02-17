@@ -117,7 +117,7 @@ SplitDNSConfig::startup()
 {
   // startup just check gsplit_dns_enabled
   gsplit_dns_enabled             = RecGetRecordInt("proxy.config.dns.splitDNS.enabled").value_or(0);
-  SplitDNSConfig::splitDNSUpdate = new ConfigUpdateHandler<SplitDNSConfig>();
+  SplitDNSConfig::splitDNSUpdate = new ConfigUpdateHandler<SplitDNSConfig>("SplitDNSConfig");
   SplitDNSConfig::splitDNSUpdate->attach("proxy.config.cache.splitdns.filename");
 }
 
@@ -125,7 +125,7 @@ SplitDNSConfig::startup()
    SplitDNSConfig::reconfigure()
    -------------------------------------------------------------- */
 void
-SplitDNSConfig::reconfigure()
+SplitDNSConfig::reconfigure(ConfigContext ctx)
 {
   if (0 == gsplit_dns_enabled) {
     return;

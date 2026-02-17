@@ -447,11 +447,11 @@ QUICConfigParams::get_cc_algorithm() const
 void
 QUICConfig::startup()
 {
-  reconfigure();
+  reconfigure({});
 }
 
 void
-QUICConfig::reconfigure()
+QUICConfig::reconfigure(ConfigContext ctx)
 {
   QUICConfigParams *params;
   params = new QUICConfigParams;
