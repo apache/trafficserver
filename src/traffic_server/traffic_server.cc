@@ -2229,9 +2229,9 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     }
 
     // Give plugins a chance to customize log fields
-    APIHook *hook = g_lifecycle_hooks->get(TS_LIFECYCLE_LOG_INITIAZLIED_HOOK);
+    APIHook *hook = g_lifecycle_hooks->get(TS_LIFECYCLE_LOG_INITIALIZED_HOOK);
     while (hook) {
-      hook->invoke(TS_EVENT_LIFECYCLE_LOG_INITIAZLIED, nullptr);
+      hook->invoke(TS_EVENT_LIFECYCLE_LOG_INITIALIZED, nullptr);
       hook = hook->next();
     }
 

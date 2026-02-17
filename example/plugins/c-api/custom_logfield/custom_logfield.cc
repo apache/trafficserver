@@ -132,7 +132,7 @@ unmarshal_function_string(char **buf, char *dest, int len)
 int
 lifecycle_event_handler(TSCont /* contp ATS_UNUSED */, TSEvent event, void * /* edata ATS_UNUSED */)
 {
-  TSAssert(event == TS_EVENT_LIFECYCLE_LOG_INITIAZLIED);
+  TSAssert(event == TS_EVENT_LIFECYCLE_LOG_INITIALIZED);
 
   // This registers a custom log field "cstm".
   Dbg(dbg_ctl, "Registering cstm log field");
@@ -173,7 +173,7 @@ TSPluginInit(int /* argc ATS_UNUSED */, const char ** /* argv ATS_UNUSED */)
   }
 
   TSCont cont = TSContCreate(lifecycle_event_handler, nullptr);
-  TSLifecycleHookAdd(TS_LIFECYCLE_LOG_INITIAZLIED_HOOK, cont);
+  TSLifecycleHookAdd(TS_LIFECYCLE_LOG_INITIALIZED_HOOK, cont);
 
   int argIndex;
   TSUserArgIndexReserve(TS_USER_ARGS_TXN, USER_ARG_CSTM, "This is for cstm log field", &argIndex);
