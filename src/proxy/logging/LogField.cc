@@ -309,7 +309,6 @@ LogField::LogField(const char *name, const char *symbol, Type type, CustomMarsha
   ink_assert(m_name != nullptr);
   ink_assert(m_symbol != nullptr);
   ink_assert(m_type >= 0 && m_type < N_TYPES);
-  ink_assert(m_marshal_func != (MarshalFunc) nullptr);
 
   m_time_field = (strcmp(m_symbol, "cqts") == 0 || strcmp(m_symbol, "cqth") == 0 || strcmp(m_symbol, "cqtq") == 0 ||
                   strcmp(m_symbol, "cqtn") == 0 || strcmp(m_symbol, "cqtd") == 0 || strcmp(m_symbol, "cqtt") == 0);
