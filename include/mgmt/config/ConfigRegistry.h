@@ -55,13 +55,14 @@ enum class ConfigType {
 /// @note If more sources are needed (e.g., Plugin, Env), consider
 ///       converting to bitwise flags instead of adding combinatorial values.
 enum class ConfigSource {
-  FileOnly,  ///< Handler only reloads from file on disk
-  FileAndRpc ///< Handler can also process YAML content supplied via RPC
+  FileOnly,   ///< Handler only reloads from file on disk
+  RecordOnly, ///< Handler only reacts to record changes (no file, no RPC content)
+  FileAndRpc  ///< Handler can also process YAML content supplied via RPC
 };
 
 /// Handler signature for config reload - receives ConfigContext
 /// Handler can check ctx.supplied_yaml() for rpc-supplied content
-using ConfigReloadHandler = std::function<void(ConfigContext &)>;
+using ConfigReloadHandler = std::function<void(ConfigContext)>;
 
 ///
 /// @brief Central registry for configuration files
@@ -132,6 +133,25 @@ public:
   void register_config(const std::string &key, const std::string &default_filename, const std::string &filename_record,
                        ConfigReloadHandler handler, ConfigSource source, std::initializer_list<const char *> trigger_records = {});
 
+  /// @brief Register a record-only config handler (no file).
+  ///
+  /// Convenience method for modules that have no config file but need their
+  /// reload handler to participate in the config tracking system (tracing,
+  /// status reporting, traffic_ctl config reload).
+  ///
+  /// This is NOT for arbitrary record-change callbacks — use RecRegisterConfigUpdateCb
+  /// for that. This is for config modules like SSLTicketKeyConfig that are reloaded
+  /// via record changes and need visibility in the reload infrastructure.
+  ///
+  /// Internally uses ConfigSource::RecordOnly.
+  ///
+  /// @param key              Registry key (e.g., "ssl_ticket_key")
+  /// @param handler          Handler that receives ConfigContext
+  /// @param trigger_records  Records that trigger reload
+  ///
+  void register_record_config(const std::string &key, ConfigReloadHandler handler,
+                              std::initializer_list<const char *> trigger_records);
+
   ///
   /// @brief Attach a trigger record to an existing config
   ///
@@ -155,8 +175,6 @@ public:
   /// This is for auxiliary/companion files that a config module depends on but that
   /// are not the primary config file. For example, ip_allow depends on ip_categories.
   ///
-  /// @note This is done to avoid the need to register the file with FileManager and
-  ///       set up a record callback for each file.
   ///
   /// @param key              The registered config key (must already exist)
   /// @param filename_record  Record holding the filename (e.g., "proxy.config.cache.ip_categories.filename")
@@ -271,7 +289,7 @@ private:
   /// Does NOT modify trigger_records — callers decide whether to store the record.
   int wire_record_callback(const char *record_name, const std::string &config_key);
 
-  /// Hash for heterogeneous lookup (string_view → string key)
+  /// Hash for lookup.
   struct StringHash {
     using is_transparent = void;
     size_t

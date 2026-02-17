@@ -36,11 +36,11 @@ SSLClientCoordinator::reconfigure(ConfigContext reconf_ctx)
   // The SSLConfig must have its configuration loaded before the SNIConfig.
   // The SSLConfig owns the client cert context storage and the SNIConfig will load
   // into it.
-  SSLConfig::reconfigure(reconf_ctx.child_context("SSLConfig"));
-  SNIConfig::reconfigure(reconf_ctx.child_context("SNIConfig"));
-  SSLCertificateConfig::reconfigure(reconf_ctx.child_context("SSLCertificateConfig"));
+  SSLConfig::reconfigure(reconf_ctx.add_dependent_ctx("SSLConfig"));
+  SNIConfig::reconfigure(reconf_ctx.add_dependent_ctx("SNIConfig"));
+  SSLCertificateConfig::reconfigure(reconf_ctx.add_dependent_ctx("SSLCertificateConfig"));
 #if TS_USE_QUIC == 1
-  QUICCertConfig::reconfigure(reconf_ctx.child_context("QUICCertConfig"));
+  QUICCertConfig::reconfigure(reconf_ctx.add_dependent_ctx("QUICCertConfig"));
 #endif
   reconf_ctx.complete("SSL configs reloaded");
 }
@@ -50,14 +50,11 @@ SSLClientCoordinator::startup()
 {
   // Register with ConfigRegistry — no primary file, this is a pure coordinator.
   // File dependencies (sni.yaml, ssl_multicert.config) are tracked via add_file_and_node_dependency
-  // so(when enabled) the RPC handler can route injected YAML content to the coordinator's handler.
-  config::ConfigRegistry::Get_Instance().register_config(
-    "ssl_client_coordinator",                                           // registry key
-    "",                                                                 // no primary file (coordinator)
-    "",                                                                 // no filename record
-    [](ConfigContext &ctx) { SSLClientCoordinator::reconfigure(ctx); }, // reload handler
-    config::ConfigSource::FileOnly,                                     // RPC content blocked for now; flip to FileAndRpc to enable
-    {"proxy.config.ssl.client.cert.path",                               // trigger records
+  // so (when enabled) the RPC handler can route injected YAML content to the coordinator's handler.
+  config::ConfigRegistry::Get_Instance().register_record_config(
+    "ssl_client_coordinator",                                          // registry key
+    [](ConfigContext ctx) { SSLClientCoordinator::reconfigure(ctx); }, // reload handler
+    {"proxy.config.ssl.client.cert.path",                              // trigger records
      "proxy.config.ssl.client.cert.filename", "proxy.config.ssl.client.private_key.path",
      "proxy.config.ssl.client.private_key.filename", "proxy.config.ssl.keylog_file", "proxy.config.ssl.server.cert.path",
      "proxy.config.ssl.server.private_key.path", "proxy.config.ssl.server.cert_chain.filename",

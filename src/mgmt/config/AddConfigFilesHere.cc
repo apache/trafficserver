@@ -62,7 +62,9 @@ initializeRegistry()
     ink_assert(!"Configuration Object Registry Initialized More than Once");
   }
 
-  registerFile("proxy.config.log.config.filename", ts::filename::LOGGING, NOT_REQUIRED);
+  // NOTE: Just to keep track of the files that are registered here. I'll remove this once I can.
+
+  // logging.yaml: now registered via ConfigRegistry::register_config() in LogConfig.cc
   registerFile("", ts::filename::STORAGE, REQUIRED);
   registerFile("proxy.config.socks.socks_config_file", ts::filename::SOCKS, NOT_REQUIRED);
   registerFile(ts::filename::RECORDS, ts::filename::RECORDS, NOT_REQUIRED);
@@ -70,7 +72,7 @@ initializeRegistry()
   // ip_allow: now registered via ConfigRegistry::register_config() in IPAllow.cc
   // ip_categories: registered via ConfigRegistry::add_file_dependency() in IPAllow.cc
   // parent.config: now registered via ConfigRegistry::register_config() in ParentSelection.cc
-  registerFile("proxy.config.url_remap.filename", ts::filename::REMAP, NOT_REQUIRED);
+  // remap.config: now registered via ConfigRegistry::register_config() in ReverseProxy.cc
   registerFile("", ts::filename::VOLUME, NOT_REQUIRED);
   // hosting.config: now registered via ConfigRegistry::register_config() in Cache.cc (open_done)
   registerFile("", ts::filename::PLUGIN, NOT_REQUIRED);

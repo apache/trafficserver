@@ -234,7 +234,7 @@ Cache::open_done()
       "cache_hosting",                                      // registry key
       ts::filename::HOSTING,                                // default filename
       "proxy.config.cache.hosting_filename",                // record holding the filename
-      [ppt](ConfigContext &ctx) {                           // reload handler
+      [ppt](ConfigContext ctx) {                            // reload handler
         CacheType type  = CacheType::HTTP;
         Cache    *cache = nullptr;
         {

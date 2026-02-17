@@ -266,6 +266,72 @@ format_time_s(std::time_t seconds)
   swoc::bwprint(buf, "{}", swoc::bwf::Date(seconds));
   return buf;
 }
+// Map task status string to a single-character icon for compact display.
+const char *
+status_icon(const std::string &status)
+{
+  if (status == "success") {
+    return "\xe2\x9c\x94"; // ✔
+  }
+  if (status == "fail") {
+    return "\xe2\x9c\x97"; // ✗
+  }
+  if (status == "in_progress" || status == "created") {
+    return "\xe2\x97\x8c"; // ◌
+  }
+  if (status == "timeout") {
+    return "\xe2\x9f\xb3"; // ⟳
+  }
+  return "?";
+}
+
+// Recursively print a task and its children using tree-drawing characters.
+// @param prefix        characters printed before this task's icon (tree connectors from parent)
+// @param child_prefix  base prefix for this task's log lines and its children's connectors
+void
+print_task_tree(const ConfigReloadResponse::ReloadInfo &f, bool full_report, const std::string &prefix,
+                const std::string &child_prefix)
+{
+  std::string fname;
+  std::string source;
+  if (f.filename.empty() || f.filename == "<none>") {
+    fname  = f.description;
+    source = "rpc";
+  } else {
+    fname  = f.filename;
+    source = "file";
+  }
+
+  int dur_ms;
+  if (!f.meta.created_time_ms.empty() && !f.meta.last_updated_time_ms.empty()) {
+    dur_ms = duration_ms(stoms(f.meta.created_time_ms), stoms(f.meta.last_updated_time_ms));
+  } else {
+    dur_ms =
+      static_cast<int>(duration_between<std::chrono::milliseconds>(stot(f.meta.created_time), stot(f.meta.last_updated_time)));
+  }
+
+  // Task line: <prefix><icon>  <name>  (duration)  [source]
+  std::cout << prefix << status_icon(f.status) << "  " << fname << "  (" << dur_ms << "ms)  [" << source << "]\n";
+
+  bool has_children = !f.sub_tasks.empty();
+
+  // Log lines: indented under the task, with tree continuation line if children follow.
+  if (full_report && !f.logs.empty()) {
+    std::string log_pfx = has_children ? (child_prefix + "\xe2\x94\x82  ") : (child_prefix + "   ");
+    for (const auto &log : f.logs) {
+      std::cout << log_pfx << log << '\n';
+    }
+  }
+
+  // Children: draw tree connectors.
+  for (size_t i = 0; i < f.sub_tasks.size(); ++i) {
+    bool        is_last          = (i == f.sub_tasks.size() - 1);
+    std::string sub_prefix       = child_prefix + (is_last ? "\xe2\x94\x94\xe2\x94\x80 " : "\xe2\x94\x9c\xe2\x94\x80 ");
+    std::string sub_child_prefix = child_prefix + (is_last ? "   " : "\xe2\x94\x82  ");
+    print_task_tree(f.sub_tasks[i], full_report, sub_prefix, sub_child_prefix);
+  }
+}
+
 } // namespace
 void
 ConfigReloadPrinter::print_basic_ri_line(const ConfigReloadResponse::ReloadInfo &info, bool json)
@@ -363,49 +429,18 @@ ConfigReloadPrinter::print_reload_report(const ConfigReloadResponse::ReloadInfo 
             << (overall_duration < 0 ? "-" :
                                        (overall_duration < 1000 ? "less than a second" : std::to_string(overall_duration) + "ms"))
             << "\n\n";
-  std::cout << "   Summary   : Total=" << total << ", success=" << completed << ", in-progress=" << in_progress
-            << ", failed=" << failed << "\n\n";
+  std::cout << "   Summary   : " << total << " total \xe2\x94\x82 \xe2\x9c\x94 " << completed
+            << " success \xe2\x94\x82 \xe2\x97\x8c " << in_progress << " in-progress \xe2\x94\x82 \xe2\x9c\x97 " << failed
+            << " failed\n\n";
 
-  if (files.size() > 0) {
-    std::cout << "\n   Files:\n";
-  }
-  size_t maxlen = 0;
-  for (auto *f : files) {
-    size_t mmax = std::max(f->description.size(), f->filename.size());
-    if (mmax > maxlen) {
-      maxlen = mmax;
-    }
+  if (!files.empty()) {
+    std::cout << "\n   Tasks:\n";
   }
 
-  for (size_t i = 0; i < files.size(); i++) {
-    const auto &f = files[i];
-
-    std::string fname;
-    std::string source;
-    if (f->filename.empty() || f->filename == "<none>") {
-      fname  = f->description;
-      source = "rpc";
-    } else {
-      fname  = f->filename;
-      source = "file";
-    }
-
-    // Use millisecond precision if available, fallback to second precision
-    int dur_ms;
-    if (!f->meta.created_time_ms.empty() && !f->meta.last_updated_time_ms.empty()) {
-      dur_ms = duration_ms(stoms(f->meta.created_time_ms), stoms(f->meta.last_updated_time_ms));
-    } else {
-      dur_ms =
-        static_cast<int>(duration_between<std::chrono::milliseconds>(stot(f->meta.created_time), stot(f->meta.last_updated_time)));
-    }
-
-    std::cout << "    - " << std::left << std::setw(maxlen + 2) << fname << "(" << dur_ms << "ms)  " << "[" << f->status
-              << "]  source: " << source << "\n";
-    if (full_report && !f->logs.empty()) {
-      for (size_t j = 0; j < f->logs.size(); j++) {
-        std::cout << std::setw(7) << "      - " << f->logs[j] << '\n';
-      }
-    }
+  // Walk the tree recursively — children use tree-drawing characters.
+  const std::string base_prefix("    ");
+  for (const auto &sub : info.sub_tasks) {
+    print_task_tree(sub, full_report, base_prefix, base_prefix);
   }
 }
 

@@ -40,7 +40,21 @@
 
 namespace
 {
-DbgCtl dbg_ctl{"config.registry"};
+DbgCtl dbg_ctl{"config.reload"};
+
+// Resolve a config filename: read the current value from the named record,
+// fallback to default_filename if the record is empty or absent.
+// Returns the bare filename (no sysconfdir prefix) — suitable for FileManager::addFile().
+std::string
+resolve_config_filename(const char *record_name, const std::string &default_filename)
+{
+  if (record_name && record_name[0] != '\0') {
+    if (auto val = RecGetRecordStringAlloc(record_name); val && !val->empty()) {
+      return std::string{*val};
+    }
+  }
+  return default_filename;
+}
 
 ///
 // Continuation that executes config reload on ET_TASK thread
@@ -69,7 +83,7 @@ private:
 
 ///
 // Continuation used by record-triggered reloads (via on_record_change callback)
-// This is separate from ConfigNodeReloadContinuation as it always reloads from file
+// This is separate from ScheduledReloadContinuation as it always reloads from file
 //
 class RecordTriggeredReloadContinuation : public Continuation
 {
@@ -92,7 +106,7 @@ public:
       Warning("Config '%s' has no handler", _config_key.c_str());
     } else {
       // File reload: create context, invoke handler directly
-      auto ctx = ReloadCoordinator::Get_Instance().create_config_update_status(_config_key, entry->resolve_filename());
+      auto ctx = ReloadCoordinator::Get_Instance().create_config_context(_config_key, entry->resolve_filename());
       ctx.in_progress();
       entry->handler(ctx);
       Dbg(dbg_ctl, "Config '%s' file reload completed", _config_key.c_str());
@@ -107,7 +121,9 @@ private:
 };
 
 ///
-// Callback invoked by Records system when a trigger record changes
+// Callback invoked by the Records system when a trigger record changes.
+// Only fires for records registered with ConfigRegistry (via trigger_records
+// in register_config()/register_record_config(), or via add_file_dependency()).
 //
 int
 on_record_change(const char *name, RecDataT /* data_type */, RecData /* data */, void *cookie)
@@ -137,16 +153,7 @@ ConfigRegistry::Get_Instance()
 std::string
 ConfigRegistry::Entry::resolve_filename() const
 {
-  std::string fname = default_filename;
-
-  // If we have a record that holds the filename, read from it
-  if (!filename_record.empty()) {
-    if (auto val = RecGetRecordStringAlloc(filename_record.c_str())) {
-      if (!val->empty()) {
-        fname = *val;
-      }
-    }
-  }
+  auto fname = resolve_config_filename(filename_record.empty() ? nullptr : filename_record.c_str(), default_filename);
 
   // Build full path if not already absolute
   if (!fname.empty() && fname[0] != '/') {
@@ -175,13 +182,8 @@ ConfigRegistry::do_register(Entry entry)
     // When rereadConfig() detects the file changed, it calls RecSetSyncRequired()
     // on the filename_record, which eventually triggers our on_record_change callback.
     if (!it->second.default_filename.empty()) {
-      std::string resolved;
-      if (!it->second.filename_record.empty()) {
-        auto fname = RecGetRecordStringAlloc(it->second.filename_record.c_str());
-        resolved   = (fname && !fname->empty()) ? std::string{*fname} : it->second.default_filename;
-      } else {
-        resolved = it->second.default_filename;
-      }
+      auto resolved = resolve_config_filename(it->second.filename_record.empty() ? nullptr : it->second.filename_record.c_str(),
+                                              it->second.default_filename);
       FileManager::instance().addFile(resolved.c_str(), it->second.filename_record.c_str(), false, false);
     }
   } else {
@@ -213,32 +215,31 @@ ConfigRegistry::register_config(const std::string &key, const std::string &defau
 }
 
 void
+ConfigRegistry::register_record_config(const std::string &key, ConfigReloadHandler handler,
+                                       std::initializer_list<const char *> trigger_records)
+{
+  register_config(key, "", "", std::move(handler), ConfigSource::RecordOnly, trigger_records);
+}
+
+void
 ConfigRegistry::setup_triggers(Entry &entry)
 {
   for (auto const &record : entry.trigger_records) {
-    // TriggerContext lives for the lifetime of the process - intentionally not deleted
-    // as RecRegisterConfigUpdateCb stores the pointer and may invoke the callback at any time.
-    // This is a small, bounded allocation (one per trigger record).
-    auto *ctx       = new TriggerContext();
-    ctx->config_key = entry.key;
-    ctx->mutex      = new_ProxyMutex();
-
-    Dbg(dbg_ctl, "Attaching trigger '%s' to config '%s'", record.c_str(), entry.key.c_str());
-
-    int result = RecRegisterConfigUpdateCb(record.c_str(), on_record_change, ctx);
-    if (result != 0) {
-      Warning("Failed to attach trigger '%s' to config '%s'", record.c_str(), entry.key.c_str());
-      delete ctx;
-    }
+    wire_record_callback(record.c_str(), entry.key);
   }
 }
 
 int
 ConfigRegistry::wire_record_callback(const char *record_name, const std::string &config_key)
 {
-  auto *ctx       = new TriggerContext(); // This lives for the lifetime of the process - intentionally not deleted
+  // TriggerContext lives for the lifetime of the process — intentionally not deleted
+  // as RecRegisterConfigUpdateCb stores the pointer and may invoke the callback at any time.
+  // This is a small, bounded allocation (one per trigger record).
+  auto *ctx       = new TriggerContext();
   ctx->config_key = config_key;
   ctx->mutex      = new_ProxyMutex();
+
+  Dbg(dbg_ctl, "Wiring record callback '%s' to config '%s'", record_name, config_key.c_str());
 
   int result = RecRegisterConfigUpdateCb(record_name, on_record_change, ctx);
   if (result != 0) {
@@ -289,14 +290,7 @@ ConfigRegistry::add_file_dependency(const std::string &key, const char *filename
     config_key = it->second.key;
   }
 
-  // Resolve the filename: read from record, fallback to default if empty
-  std::string resolved;
-  if (filename_record && filename_record[0] != '\0') {
-    auto fname = RecGetRecordStringAlloc(filename_record);
-    resolved   = (fname && !fname->empty()) ? std::string{*fname} : std::string{default_filename};
-  } else {
-    resolved = default_filename;
-  }
+  auto resolved = resolve_config_filename(filename_record, default_filename);
 
   Dbg(dbg_ctl, "Adding file dependency '%s' (resolved: %s) to config '%s'", filename_record, resolved.c_str(), key.c_str());
 
@@ -395,7 +389,7 @@ ConfigRegistry::execute_reload(const std::string &key)
   Dbg(dbg_ctl, "Executing reload for config '%s'", key.c_str());
 
   // Single lock for both lookups: passed config (from RPC) and registry entry
-  YAML::Node passed_config; // default-constructed = Undefined
+  YAML::Node passed_config;
   Entry      entry_copy;
   {
     std::shared_lock lock(_mutex);
@@ -419,7 +413,7 @@ ConfigRegistry::execute_reload(const std::string &key)
   // For rpc reload: use key as description, no filename (source: rpc)
   // For file reload: use key as description, filename indicates source: file
   std::string filename = passed_config.IsDefined() ? "" : entry_copy.resolve_filename();
-  auto        ctx      = ReloadCoordinator::Get_Instance().create_config_update_status(entry_copy.key, filename);
+  auto        ctx      = ReloadCoordinator::Get_Instance().create_config_context(entry_copy.key, filename);
   ctx.in_progress();
 
   if (passed_config.IsDefined()) {

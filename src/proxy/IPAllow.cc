@@ -93,13 +93,13 @@ IpAllow::startup()
   ink_assert(IpAllow::configid == 0);
 
   config::ConfigRegistry::Get_Instance().register_config(
-    "ip_allow",                                            // registry key
-    ts::filename::IP_ALLOW,                                // default filename
-    "proxy.config.cache.ip_allow.filename",                // record holding the filename
-    [](ConfigContext &ctx) { IpAllow::reconfigure(ctx); }, // reload handler
-    config::ConfigSource::FileOnly,                        // no RPC content source. Change to FileAndRpc if we want to support RPC.
-                                                           // if supplied, YAML can be sourced by calling ctx.supplied_yaml()
-    {"proxy.config.cache.ip_allow.filename"});             // trigger records
+    "ip_allow",                                           // registry key
+    ts::filename::IP_ALLOW,                               // default filename
+    "proxy.config.cache.ip_allow.filename",               // record holding the filename
+    [](ConfigContext ctx) { IpAllow::reconfigure(ctx); }, // reload handler
+    config::ConfigSource::FileOnly,                       // no RPC content source. Change to FileAndRpc if we want to support RPC.
+                                                          // if supplied, YAML can be sourced by calling ctx.supplied_yaml()
+    {"proxy.config.cache.ip_allow.filename"});            // trigger records
 
   // ip_categories is an auxiliary data file loaded by ip_allow (see BuildCategories()).
   // Track it with FileManager for mtime detection and register a record callback

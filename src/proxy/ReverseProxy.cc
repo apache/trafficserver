@@ -30,8 +30,8 @@
 #include "tscore/ink_platform.h"
 #include "tscore/Filenames.h"
 #include <dlfcn.h>
-#include "iocore/eventsystem/ConfigProcessor.h"
 #include "proxy/ReverseProxy.h"
+#include "mgmt/config/ConfigRegistry.h"
 #include "tscore/MatcherUtils.h"
 #include "tscore/Tokenizer.h"
 #include "ts/remap.h"
@@ -46,11 +46,6 @@ Ptr<ProxyMutex> reconfig_mutex;
 
 DbgCtl dbg_ctl_url_rewrite{"url_rewrite"};
 
-struct URLRewriteReconfigure {
-  static void reconfigure([[maybe_unused]] ConfigContext ctx);
-};
-
-std::unique_ptr<ConfigUpdateHandler<URLRewriteReconfigure>> url_rewrite_reconf;
 } // end anonymous namespace
 
 // Global Ptrs
@@ -75,6 +70,17 @@ init_reverse_proxy()
   reconfig_mutex = new_ProxyMutex();
   rewrite_table  = new UrlRewrite();
 
+  // Register with ConfigRegistry BEFORE load() so that remap.config is in
+  // FileManager's bindings when .include directives call configFileChild()
+  // to register child files (e.g. test.inc).
+  config::ConfigRegistry::Get_Instance().register_config("remap",                           // registry key
+                                                         ts::filename::REMAP,               // default filename
+                                                         "proxy.config.url_remap.filename", // record holding the filename
+                                                         [](ConfigContext ctx) { reloadUrlRewrite(ctx); }, // reload handler
+                                                         config::ConfigSource::FileOnly,                   // file-based only
+                                                         {"proxy.config.url_remap.filename",               // trigger records
+                                                          "proxy.config.proxy_name", "proxy.config.http.referer_default_redirect"});
+
   Note("%s loading ...", ts::filename::REMAP);
   if (!rewrite_table->load()) {
     Emergency("%s failed to load", ts::filename::REMAP);
@@ -83,12 +89,6 @@ init_reverse_proxy()
   }
 
   RecRegisterConfigUpdateCb("proxy.config.reverse_proxy.enabled", url_rewrite_CB, (void *)REVERSE_CHANGED);
-
-  // reload hooks
-  url_rewrite_reconf.reset(new ConfigUpdateHandler<URLRewriteReconfigure>("Url Rewrite Config"));
-  url_rewrite_reconf->attach("proxy.config.url_remap.filename");
-  url_rewrite_reconf->attach("proxy.config.proxy_name");
-  url_rewrite_reconf->attach("proxy.config.http.referer_default_redirect");
 
   // Hold at least one lease, until we reload the configuration
   rewrite_table->acquire();
@@ -130,7 +130,7 @@ urlRewriteVerify()
 
 */
 bool
-reloadUrlRewrite([[maybe_unused]] ConfigContext ctx)
+reloadUrlRewrite(ConfigContext ctx)
 {
   std::string msg_buffer;
   msg_buffer.reserve(1024);
@@ -155,6 +155,7 @@ reloadUrlRewrite([[maybe_unused]] ConfigContext ctx)
 
     Dbg(dbg_ctl_url_rewrite, "%s", msg_buffer.c_str());
     Note(msg_buffer.c_str());
+    ctx.complete(msg_buffer);
     return true;
   } else {
     swoc::bwprint(msg_buffer, "{} failed to load", ts::filename::REMAP);
@@ -162,6 +163,7 @@ reloadUrlRewrite([[maybe_unused]] ConfigContext ctx)
     delete newTable;
     Dbg(dbg_ctl_url_rewrite, "%s", msg_buffer.c_str());
     Error(msg_buffer.c_str());
+    ctx.fail(msg_buffer);
     return false;
   }
 }
@@ -172,10 +174,4 @@ url_rewrite_CB(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNU
 {
   rewrite_table->SetReverseFlag(data.rec_int);
   return 0;
-}
-
-void
-URLRewriteReconfigure::reconfigure([[maybe_unused]] ConfigContext ctx)
-{
-  reloadUrlRewrite(ctx);
 }

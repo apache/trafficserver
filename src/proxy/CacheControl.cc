@@ -85,30 +85,6 @@ struct CC_FreerContinuation : public Continuation {
   CC_FreerContinuation(CC_table *ap) : Continuation(nullptr), p(ap) { SET_HANDLER(&CC_FreerContinuation::freeEvent); }
 };
 
-// struct CC_UpdateContinuation
-//
-//   Used to read the cache.conf file after the manager signals
-//      a change
-// //
-// struct CC_UpdateContinuation : public Continuation, protected ConfigReloadTrackerHelper {
-//   int
-//   file_update_handler(int /* etype ATS_UNUSED */, void * /* data ATS_UNUSED */)
-//   {
-//     reloadCacheControl(make_config_reload_context(ts::filename::CACHE));
-//     delete this;
-//     return EVENT_DONE;
-//   }
-//   CC_UpdateContinuation(Ptr<ProxyMutex> &m) : Continuation(m) { SET_HANDLER(&CC_UpdateContinuation::file_update_handler); }
-// };
-
-// int
-// cacheControlFile_CB(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */, RecData /* data ATS_UNUSED */,
-//                     void * /* cookie ATS_UNUSED */)
-// {
-//   eventProcessor.schedule_imm(new CC_UpdateContinuation(reconfig_mutex), ET_CALL);
-//   return 0;
-// }
-
 //
 //   Begin API functions
 //
@@ -135,7 +111,7 @@ initCacheControl()
     "cache_control",                                      // registry key
     ts::filename::CACHE,                                  // default filename
     "proxy.config.cache.control.filename",                // record holding the filename
-    [](ConfigContext &ctx) { reloadCacheControl(ctx); },  // reload handler
+    [](ConfigContext ctx) { reloadCacheControl(ctx); },   // reload handler
     config::ConfigSource::FileOnly,                       // no RPC content source
     {"proxy.config.cache.control.filename"});             // trigger records
 }

@@ -27,24 +27,11 @@ ConfigContext::ConfigContext(std::shared_ptr<ConfigReloadTask> t, std::string_vi
   }
 }
 
-ConfigContext::~ConfigContext()
-{
-  if (auto p = _task.lock()) {
-    if (p->get_status() == ConfigReloadTask::Status::CREATED) {
-      // Workaround for tasks that are never explicitly completed.
-      // Object destroyed without being completed or failed.
-      // In case the code does not interact with the context.
-      p->log("Assumed to be completed.");
-      p->set_completed();
-    }
-  }
-}
-
 bool
 ConfigContext::is_terminal() const
 {
   if (auto p = _task.lock()) {
-    return ConfigReloadTask::is_terminal(p->get_status());
+    return ConfigReloadTask::is_terminal(p->get_state());
   }
   return true; // expired task is supposed to be terminal
 }
@@ -116,7 +103,7 @@ ConfigContext::get_description() const
 }
 
 ConfigContext
-ConfigContext::child_context(std::string_view description)
+ConfigContext::add_dependent_ctx(std::string_view description)
 {
   if (auto p = _task.lock()) {
     auto child = p->add_child(description);
@@ -135,7 +122,7 @@ ConfigContext::set_supplied_yaml(YAML::Node node)
   _supplied_yaml = node; // YAML::Node has no move semantics; copy is cheap (ref-counted).
 }
 
-const YAML::Node &
+YAML::Node
 ConfigContext::supplied_yaml() const
 {
   return _supplied_yaml;
@@ -146,6 +133,6 @@ namespace config
 ConfigContext
 make_config_reload_context(std::string_view description, std::string_view filename)
 {
-  return ReloadCoordinator::Get_Instance().create_config_update_status(description, filename);
+  return ReloadCoordinator::Get_Instance().create_config_context(description, filename);
 }
 } // namespace config

@@ -1,15 +1,28 @@
 /** @file
- *
- *  ConfigContext - Context for configuration loading/reloading operations
- *
- *  Provides:
- *  - Status tracking (in_progress, complete, fail, log)
- *  - Inline content support for YAML configs (via -d flag or RPC API)
- *
- *  @section license License
- *
- *  Licensed to the Apache Software Foundation (ASF) under one
- *  or more contributor license agreements.
+
+   ConfigContext - Context for configuration loading/reloading operations
+
+   Provides:
+   - Status tracking (in_progress, complete, fail, log)
+   - Inline content support for YAML configs (via -d flag or RPC API)
+
+  @section license License
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
  */
 
 #pragma once
@@ -76,22 +89,56 @@ public:
 
   explicit ConfigContext(std::shared_ptr<ConfigReloadTask> t, std::string_view description = "", std::string_view filename = "");
 
-  ~ConfigContext();
+  ~ConfigContext() = default;
 
-  // Allow copy/move (weak_ptr is safe to copy)
+  // Copy only — move is intentionally suppressed.
+  // ConfigContext holds a weak_ptr (cheap to copy) and a YAML::Node (ref-counted).
+  // Suppressing move ensures that std::move(ctx) silently copies, keeping the
+  // original valid. This is critical for execute_reload()'s post-handler check:
+  // if a handler defers work (e.g. LogConfig), the original ctx must remain
+  // valid so is_terminal() can detect the non-terminal state and emit a warning.
   ConfigContext(ConfigContext const &)            = default;
   ConfigContext &operator=(ConfigContext const &) = default;
-  ConfigContext(ConfigContext &&)                 = default;
-  ConfigContext &operator=(ConfigContext &&)      = default;
 
   void in_progress(std::string_view text = "");
+  template <typename... Args>
+  void
+  in_progress(swoc::TextView fmt, Args &&...args)
+  {
+    std::string buf;
+    in_progress(swoc::bwprint(buf, fmt, std::forward<Args>(args)...));
+  }
+
   void log(std::string_view text);
+  template <typename... Args>
+  void
+  log(swoc::TextView fmt, Args &&...args)
+  {
+    std::string buf;
+    log(swoc::bwprint(buf, fmt, std::forward<Args>(args)...));
+  }
+
   /// Mark operation as successfully completed
   void complete(std::string_view text = "");
+  template <typename... Args>
+  void
+  complete(swoc::TextView fmt, Args &&...args)
+  {
+    std::string buf;
+    complete(swoc::bwprint(buf, fmt, std::forward<Args>(args)...));
+  }
+
   /// Mark operation as failed.
   void fail(swoc::Errata const &errata, std::string_view summary = "");
   void fail(std::string_view reason = "");
-  /// Eg: fail(errata, "Failed to load config: %s", filename);
+  template <typename... Args>
+  void
+  fail(swoc::TextView fmt, Args &&...args)
+  {
+    std::string buf;
+    fail(swoc::bwprint(buf, fmt, std::forward<Args>(args)...));
+  }
+  /// Eg: fail(errata, "Failed to load config: {}", filename);
   template <typename... Args>
   void
   fail(swoc::Errata const &errata, swoc::TextView fmt, Args &&...args)
@@ -105,30 +152,22 @@ public:
 
   /// Get the description associated with this context's task.
   /// For registered configs this is the registration key (e.g., "sni", "ssl").
-  /// For child contexts it is the label passed to child_context().
+  /// For dependent contexts it is the label passed to add_dependent_ctx().
   [[nodiscard]] std::string_view get_description() const;
 
-  /// Create a child sub-task that tracks progress independently under this parent.
-  /// Each child reports its own status (in_progress/complete/fail) and the parent
-  /// task aggregates them. The child also inherits the parent's supplied YAML node.
+  /// Create a dependent sub-task that tracks progress independently under this parent.
+  /// Each dependent reports its own status (in_progress/complete/fail) and the parent
+  /// task aggregates them. The dependent context also inherits the parent's supplied YAML node.
   ///
-  /// @code
-  ///   // SSLClientCoordinator delegates to multiple sub-configs:
-  ///   void SSLClientCoordinator::reconfigure(ConfigContext ctx) {
-  ///     SSLConfig::reconfigure(ctx.child_context("SSLConfig"));
-  ///     SNIConfig::reconfigure(ctx.child_context("SNIConfig"));
-  ///     SSLCertificateConfig::reconfigure(ctx.child_context("SSLCertificateConfig"));
-  ///   }
-  /// @endcode
-  [[nodiscard]] ConfigContext child_context(std::string_view description = "");
+  [[nodiscard]] ConfigContext add_dependent_ctx(std::string_view description = "");
 
   /// Get supplied YAML node (for RPC-based reloads).
   /// A default-constructed YAML::Node is Undefined (operator bool() == false).
   /// @code
   ///   if (auto yaml = ctx.supplied_yaml()) { /* use yaml node */ }
   /// @endcode
-  /// @return const reference to the supplied YAML node.
-  [[nodiscard]] const YAML::Node &supplied_yaml() const;
+  /// @return copy of the supplied YAML node (cheap — YAML::Node is internally reference-counted).
+  [[nodiscard]] YAML::Node supplied_yaml() const;
 
 private:
   /// Set supplied YAML node. Only ConfigRegistry should call this during reload setup.
