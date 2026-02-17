@@ -110,6 +110,8 @@ public:
   static void register_config_callbacks();
   static void register_stat_callbacks();
 
+  ConfigContext reload_ctx; ///< Tracks reload status;
+
   bool space_to_write(int64_t bytes_to_write) const;
 
   bool
@@ -213,8 +215,6 @@ private:
   bool m_log_directory_inaccessible = false;
 
   RolledLogDeleter rolledLogDeleter;
-
-  ConfigContext ctx; // track reload status.
 
   // noncopyable
   // -- member functions not allowed --

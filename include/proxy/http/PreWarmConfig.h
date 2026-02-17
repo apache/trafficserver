@@ -51,6 +51,5 @@ public:
   static void                 release(PreWarmConfigParams *params);
 
 private:
-  inline static int                                                 _config_id = 0;
-  inline static std::unique_ptr<ConfigUpdateHandler<PreWarmConfig>> _config_update_handler;
+  inline static int _config_id = 0;
 };

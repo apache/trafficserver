@@ -39,9 +39,9 @@ enum class ConfigReloadError : int {
   NO_RELOAD_TASKS      = 6005, ///< No reload tasks found in history
 
   // --- Per-config validation errors ---
-  CONFIG_NOT_REGISTERED = 6010, ///< Config key not found in ConfigRegistry
-  LEGACY_NO_INLINE      = 6011, ///< Legacy .config file does not support inline reload
-  CONFIG_NO_HANDLER     = 6012, ///< Config is registered but has no reload handler
+  CONFIG_NOT_REGISTERED    = 6010, ///< Config key not found in ConfigRegistry
+  RPC_SOURCE_NOT_SUPPORTED = 6011, ///< Config does not support RPC as a content source
+  CONFIG_NO_HANDLER        = 6012, ///< Config is registered but has no reload handler
 };
 
 /// Helper to convert enum to int for YAML node construction
