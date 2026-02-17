@@ -38,7 +38,10 @@ register_admin_jsonrpc_handlers()
   using namespace rpc::handlers::config;
   rpc::add_method_handler("admin_config_set_records", &set_config_records, &core_ats_rpc_service_provider_handle,
                           {{rpc::RESTRICTED_API}});
+  // Unified reload handler - supports both file-based and rpc-supplied modes.
   rpc::add_method_handler("admin_config_reload", &reload_config, &core_ats_rpc_service_provider_handle, {{rpc::RESTRICTED_API}});
+  rpc::add_method_handler("get_reload_config_status", &get_reload_config_status, &core_ats_rpc_service_provider_handle,
+                          {{rpc::RESTRICTED_API}});
 
   // HostDB
   using namespace rpc::handlers::hostdb;

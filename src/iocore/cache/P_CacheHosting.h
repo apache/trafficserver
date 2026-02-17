@@ -27,6 +27,8 @@
 #include "tscore/MatcherUtils.h"
 #include "tscore/HostLookup.h"
 #include "tsutil/Bravo.h"
+#include "iocore/eventsystem/ConfigProcessor.h"
+#include "tscore/Filenames.h"
 
 #include <memory>
 
@@ -272,6 +274,8 @@ struct CacheHostTableConfig : public Continuation {
   int
   mainEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   {
+    [[maybe_unused]] auto status = config::make_config_reload_context(ts::filename::HOSTING);
+
     CacheType type  = CacheType::HTTP;
     Cache    *cache = nullptr;
     {

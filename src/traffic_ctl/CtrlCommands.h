@@ -147,6 +147,14 @@ class ConfigCommand : public RecordCommand
   void config_reload();
   void config_show_file_registry();
 
+  // Helper functions for config reload
+  ConfigReloadResponse fetch_config_reload(std::string const &token, std::string const &count = "1");
+  void track_config_reload_progress(std::string const &token, std::chrono::milliseconds refresh_interval, int output = 1);
+  ConfigReloadResponse config_reload(std::string const &token, bool force, YAML::Node const &configs);
+
+  // Helper to read data from file, stdin, or inline string
+  std::string read_data_input(std::string const &data_arg);
+
 public:
   ConfigCommand(ts::Arguments *args);
 };

@@ -54,11 +54,24 @@ process_config_update(std::string const &fileName, std::string const &configName
   swoc::Errata ret;
   // TODO: make sure records holds the name after change, if not we should change it.
   if (fileName == ts::filename::RECORDS) {
+    auto status = config::make_config_reload_context("Reloading records.yaml file.", fileName);
+    status.in_progress();
+    sleep(2);
     if (auto zret = RecReadYamlConfigFile(); zret) {
-      RecConfigWarnIfUnregistered();
+      RecConfigWarnIfUnregistered(status);
     } else {
+      // Make sure we report all messages from the Errata
+      for (auto &&m : zret) {
+        status.log(m.text());
+      }
       ret.note("Error reading {}", fileName).note(zret);
+      if (zret.severity() >= ERRATA_ERROR) {
+        status.fail("Failed to reload records.yaml");
+        return ret;
+      }
     }
+
+    status.complete();
   } else if (!configName.empty()) { // Could be the case we have a child file to reload with no related config record.
     RecT rec_type;
     if (auto r = RecGetRecordType(configName.c_str(), &rec_type); r == REC_ERR_OKAY && rec_type == RECT_CONFIG) {
@@ -72,13 +85,13 @@ process_config_update(std::string const &fileName, std::string const &configName
 }
 
 // JSONRPC endpoint defs.
-const std::string CONFIG_REGISTRY_KEY_STR{"config_registry"};
-const std::string FILE_PATH_KEY_STR{"file_path"};
-const std::string RECORD_NAME_KEY_STR{"config_record_name"};
-const std::string PARENT_CONFIG_KEY_STR{"parent_config"};
-const std::string ROOT_ACCESS_NEEDED_KEY_STR{"root_access_needed"};
-const std::string IS_REQUIRED_KEY_STR{"is_required"};
-const std::string NA_STR{"N/A"};
+constexpr const char *CONFIG_REGISTRY_KEY_STR{"config_registry"};
+constexpr const char *FILE_PATH_KEY_STR{"file_path"};
+constexpr const char *RECORD_NAME_KEY_STR{"config_record_name"};
+constexpr const char *PARENT_CONFIG_KEY_STR{"parent_config"};
+constexpr const char *ROOT_ACCESS_NEEDED_KEY_STR{"root_access_needed"};
+constexpr const char *IS_REQUIRED_KEY_STR{"is_required"};
+constexpr const char *NA_STR{"N/A"};
 
 } // namespace
 
@@ -194,7 +207,8 @@ FileManager::rereadConfig()
     // ToDo: rb->isVersions() was always true before, because numberBackups was always >= 1. So ROLLBACK_CHECK_ONLY could not
     // happen at all...
     if (rb->checkForUserUpdate(FileManager::ROLLBACK_CHECK_AND_UPDATE)) {
-      Dbg(dbg_ctl, "File %s changed.", it.first.c_str());
+      Dbg(dbg_ctl, "File %s changed. Has a parent=%s, ", it.first.c_str(),
+          rb->getParentConfig() ? rb->getParentConfig()->getFileName() : "none");
       if (auto const &r = fileChanged(rb->getFileName(), rb->getConfigName()); !r) {
         ret.note(r);
       }

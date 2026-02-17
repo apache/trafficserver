@@ -264,7 +264,7 @@ DbgCtl dbg_ctl_diags{"diags"};
 DbgCtl dbg_ctl_hugepages{"hugepages"};
 DbgCtl dbg_ctl_rpc_init{"rpc.init"};
 DbgCtl dbg_ctl_statsproc{"statsproc"};
-
+DbgCtl dbg_ctl_conf_reload{"confreload"};
 struct AutoStopCont : public Continuation {
   int
   mainEvent(int /* event */, Event * /* e */)
@@ -2340,6 +2340,8 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     change_uid_gid(user);
   }
 #endif
+  // Make this configurable???
+  // eventProcessor.schedule_in(new ReloadStatusCleanUpContinuation(), HRTIME_SECONDS(2), ET_TASK);
 
   TSSystemState::initialization_done();
 

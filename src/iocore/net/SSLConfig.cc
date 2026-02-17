@@ -709,11 +709,12 @@ SSLConfig::commit_config_id()
 void
 SSLConfig::startup()
 {
+  Dbg(dbg_ctl_ssl_load, "startup SSLConfig");
   reconfigure();
 }
 
 void
-SSLConfig::reconfigure()
+SSLConfig::reconfigure(ConfigContext ctx)
 {
   Dbg(dbg_ctl_ssl_load, "Reload SSLConfig");
   SSLConfigParams *params;
@@ -756,7 +757,7 @@ SSLCertificateConfig::startup()
   // Exit if there are problems on the certificate loading and the
   // proxy.config.ssl.server.multicert.exit_on_load_fail is true
   SSLConfig::scoped_config params;
-  if (!reconfigure() && params->configExitOnLoadError) {
+  if (!reconfigure({}) && params->configExitOnLoadError) {
     Emergency("failed to load SSL certificate file, %s", params->configFilePath);
   }
 
@@ -764,7 +765,7 @@ SSLCertificateConfig::startup()
 }
 
 bool
-SSLCertificateConfig::reconfigure()
+SSLCertificateConfig::reconfigure(ConfigContext ctx)
 {
   bool                     retStatus = true;
   SSLConfig::scoped_config params;
@@ -903,7 +904,7 @@ SSLTicketParams::LoadTicketData(char *ticket_data, int ticket_data_len)
 void
 SSLTicketKeyConfig::startup()
 {
-  sslTicketKey.reset(new ConfigUpdateHandler<SSLTicketKeyConfig>());
+  sslTicketKey.reset(new ConfigUpdateHandler<SSLTicketKeyConfig>("SSLTicketKeyConfig"));
 
   sslTicketKey->attach("proxy.config.ssl.server.ticket_key.filename");
   SSLConfig::scoped_config params;
@@ -913,7 +914,7 @@ SSLTicketKeyConfig::startup()
 }
 
 bool
-SSLTicketKeyConfig::reconfigure()
+SSLTicketKeyConfig::reconfigure(ConfigContext ctx)
 {
   SSLTicketParams *ticketKey = new SSLTicketParams();
 

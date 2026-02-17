@@ -60,6 +60,15 @@ DbgCtl dbg_ctl_v_http3{"v_http3"};
 DbgCtl dbg_ctl_http3{"http3"};
 DbgCtl dbg_ctl_cache_control{"cache_control"};
 
+struct CacheControlFileReload {
+  static void
+  reconfigure(ConfigContext ctx)
+  {
+    reloadCacheControl(ctx);
+  }
+};
+
+std::unique_ptr<ConfigUpdateHandler<CacheControlFileReload>> cache_control_reconf;
 } // end anonymous namespace
 
 // Global Ptrs
@@ -89,25 +98,25 @@ struct CC_FreerContinuation : public Continuation {
 //
 //   Used to read the cache.conf file after the manager signals
 //      a change
-//
-struct CC_UpdateContinuation : public Continuation {
-  int
-  file_update_handler(int /* etype ATS_UNUSED */, void * /* data ATS_UNUSED */)
-  {
-    reloadCacheControl();
-    delete this;
-    return EVENT_DONE;
-  }
-  CC_UpdateContinuation(Ptr<ProxyMutex> &m) : Continuation(m) { SET_HANDLER(&CC_UpdateContinuation::file_update_handler); }
-};
+// //
+// struct CC_UpdateContinuation : public Continuation, protected ConfigReloadTrackerHelper {
+//   int
+//   file_update_handler(int /* etype ATS_UNUSED */, void * /* data ATS_UNUSED */)
+//   {
+//     reloadCacheControl(make_config_reload_context(ts::filename::CACHE));
+//     delete this;
+//     return EVENT_DONE;
+//   }
+//   CC_UpdateContinuation(Ptr<ProxyMutex> &m) : Continuation(m) { SET_HANDLER(&CC_UpdateContinuation::file_update_handler); }
+// };
 
-int
-cacheControlFile_CB(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */, RecData /* data ATS_UNUSED */,
-                    void * /* cookie ATS_UNUSED */)
-{
-  eventProcessor.schedule_imm(new CC_UpdateContinuation(reconfig_mutex), ET_CALL);
-  return 0;
-}
+// int
+// cacheControlFile_CB(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */, RecData /* data ATS_UNUSED */,
+//                     void * /* cookie ATS_UNUSED */)
+// {
+//   eventProcessor.schedule_imm(new CC_UpdateContinuation(reconfig_mutex), ET_CALL);
+//   return 0;
+// }
 
 //
 //   Begin API functions
@@ -130,7 +139,9 @@ initCacheControl()
   ink_assert(CacheControlTable == nullptr);
   reconfig_mutex    = new_ProxyMutex();
   CacheControlTable = new CC_table("proxy.config.cache.control.filename", modulePrefix, &http_dest_tags);
-  RecRegisterConfigUpdateCb("proxy.config.cache.control.filename", cacheControlFile_CB, nullptr);
+  cache_control_reconf.reset(new ConfigUpdateHandler<CacheControlFileReload>("Cache Control Configuration"));
+
+  cache_control_reconf->attach("proxy.config.cache.control.filename");
 }
 
 // void reloadCacheControl()
@@ -140,10 +151,9 @@ initCacheControl()
 //   lock acquire is also blocking
 //
 void
-reloadCacheControl()
+reloadCacheControl(ConfigContext ctx)
 {
   Note("%s loading ...", ts::filename::CACHE);
-
   CC_table *newTable;
 
   Dbg(dbg_ctl_cache_control, "%s updated, reloading", ts::filename::CACHE);

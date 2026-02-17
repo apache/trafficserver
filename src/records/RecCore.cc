@@ -1072,16 +1072,20 @@ RecConfigReadPersistentStatsPath()
 //-------------------------------------------------------------------------
 /// Generate a warning if the record is a configuration name/value but is not registered.
 void
-RecConfigWarnIfUnregistered()
+RecConfigWarnIfUnregistered(ConfigContext ctx)
 {
   RecDumpRecords(
     RECT_CONFIG,
-    [](RecT, void *, int registered_p, const char *name, int, RecData *) -> void {
+    [](RecT, void *edata, int registered_p, const char *name, int, RecData *) -> void {
       if (!registered_p) {
-        Warning("Unrecognized configuration value '%s'", name);
+        std::string err;
+        swoc::bwprint(err, "Unrecognized configuration value '{}'", name);
+        Warning(err.c_str());
+        auto *ctx_ptr = static_cast<ConfigContext *>(edata);
+        ctx_ptr->log(err);
       }
     },
-    nullptr);
+    &ctx);
 }
 
 //-------------------------------------------------------------------------

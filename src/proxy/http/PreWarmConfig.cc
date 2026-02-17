@@ -43,7 +43,7 @@ PreWarmConfigParams::PreWarmConfigParams()
 void
 PreWarmConfig::startup()
 {
-  _config_update_handler = std::make_unique<ConfigUpdateHandler<PreWarmConfig>>();
+  _config_update_handler = std::make_unique<ConfigUpdateHandler<PreWarmConfig>>("PreWarmConfig");
 
   // dynamic configs
   _config_update_handler->attach("proxy.config.tunnel.prewarm.event_period");
@@ -53,7 +53,7 @@ PreWarmConfig::startup()
 }
 
 void
-PreWarmConfig::reconfigure()
+PreWarmConfig::reconfigure(ConfigContext ctx)
 {
   PreWarmConfigParams *params = new PreWarmConfigParams();
   _config_id                  = configProcessor.set(_config_id, params);

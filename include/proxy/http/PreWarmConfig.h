@@ -44,7 +44,7 @@ public:
   static void startup();
 
   // ConfigUpdateContinuation interface
-  static void reconfigure();
+  static void reconfigure(ConfigContext ctx = {});
 
   // ConfigProcessor::scoped_config interface
   static PreWarmConfigParams *acquire();
