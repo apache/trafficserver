@@ -60,13 +60,86 @@ HRW4U aims to improve the following:
 Standalone Compiler
 -------------------
 
-A standalone Python compiler is available in ``tools/hrw4u`` for development:
+A standalone Python compiler is available in ``tools/hrw4u`` for development,
+testing, and migration workflows. It provides additional features not available
+in the native C++ parser:
 
 - Debug tracing (``--debug``)
 - IDE integration via LSP (``hrw4u-lsp``)
 - Reverse conversion (``u4wrh``) to convert header_rewrite to hrw4u
 
-Build with Python 3.10+ using ``./bootstrap.sh && make package``.
+Building the Standalone Compiler
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Build with Python 3.10+ using the bootstrap script:
+
+.. code-block:: none
+
+   cd tools/hrw4u
+   ./bootstrap.sh
+   make package
+
+This produces a PIP package in the ``dist`` directory. Install with:
+
+.. code-block:: none
+
+   pipx install dist/hrw4u-1.4.0-py3-none-any.whl
+
+Basic Usage
+^^^^^^^^^^^
+
+Compile a single file to stdout:
+
+.. code-block:: none
+
+   hrw4u some_file.hrw4u
+
+Compile from stdin:
+
+.. code-block:: none
+
+   cat some_file.hrw4u | hrw4u
+
+Compile multiple files to stdout (separated by ``# ---``):
+
+.. code-block:: none
+
+   hrw4u file1.hrw4u file2.hrw4u file3.hrw4u
+
+Bulk Compilation
+^^^^^^^^^^^^^^^^
+
+For bulk compilation, use the ``input:output`` format to compile multiple files
+to their respective output files in a single command:
+
+.. code-block:: none
+
+   hrw4u file1.hrw4u:file1.conf file2.hrw4u:file2.conf file3.hrw4u:file3.conf
+
+This is particularly useful for build systems or when processing many configuration
+files at once. All files are processed in a single invocation, improving performance
+for large batches of files.
+
+Reverse Tool (u4wrh)
+^^^^^^^^^^^^^^^^^^^^
+
+The reverse tool converts existing ``header_rewrite`` configurations to ``hrw4u``.
+It supports the same usage patterns:
+
+.. code-block:: none
+
+   # Convert single file to stdout
+   u4wrh existing_config.conf
+
+   # Bulk conversion
+   u4wrh file1.conf:file1.hrw4u file2.conf:file2.hrw4u
+
+IDE Support
+^^^^^^^^^^^
+
+For IDE integration, the package provides an LSP server named ``hrw4u-lsp``.
+This enables syntax highlighting, error diagnostics, and auto-completion in
+editors that support the Language Server Protocol.
 
 Syntax Differences
 ==================
@@ -401,8 +474,19 @@ These can be used with both sets and equality checks, using the ``with`` keyword
 Debugging
 =========
 
-Syntax errors are reported with filename, line, and column position. For development,
-the standalone compiler's ``--debug all`` option traces lexer, parser, and evaluation.
+Syntax errors are reported with filename, line, and column position. The native
+parser in ``header_rewrite`` provides clear error messages when parsing fails.
+
+For development and debugging complex rules, use the standalone Python compiler
+with ``--debug`` to trace:
+
+- Lexer and parser behavior
+- Condition evaluations
+- State and output emission
+
+.. code-block:: none
+
+   hrw4u --debug /path/to/rules.hrw4u
 
 Examples
 ========

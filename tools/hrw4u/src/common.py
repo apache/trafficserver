@@ -109,26 +109,6 @@ def fatal(message: str) -> NoReturn:
     sys.exit(1)
 
 
-def create_base_parser(description: str) -> tuple[argparse.ArgumentParser, argparse._MutuallyExclusiveGroup]:
-    """Create base argument parser with common options."""
-    parser = argparse.ArgumentParser(description=description, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument(
-        "input_file",
-        help="The input file to parse (default: stdin)",
-        nargs="?",
-        type=argparse.FileType("r", encoding="utf-8"),
-        default=sys.stdin)
-
-    output_group = parser.add_mutually_exclusive_group()
-    output_group.add_argument("--ast", action="store_true", help="Produce the ANTLR parse tree only")
-
-    parser.add_argument("--debug", action="store_true", help="Enable debug output")
-    parser.add_argument(
-        "--stop-on-error", action="store_true", help="Stop processing on first error (default: collect and report multiple errors)")
-
-    return parser, output_group
-
-
 def process_input(input_file: TextIO) -> tuple[str, str]:
     """Read input content and determine filename."""
     content = input_file.read()
