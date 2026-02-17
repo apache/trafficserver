@@ -189,7 +189,7 @@ ErrorCollector::summary() const
 ParseException::ParseException(ParseError error) : _error(std::move(error)), _formatted(_error.format()) {}
 
 ParseException::ParseException(std::string message, SourceLocation location)
-  : _error{.message = std::move(message), .severity = ErrorSeverity::Fatal, .location = std::move(location)},
+  : _error{.message = std::move(message), .code = "", .severity = ErrorSeverity::Fatal, .location = std::move(location)},
     _formatted(_error.format())
 {
 }
