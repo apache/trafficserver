@@ -2238,7 +2238,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 #if TS_USE_QUIC == 1
     quic_NetProcessor.start(-1, stacksize);
 #endif
-    FileManager::instance().registerConfigPluginCallbacks(global_config_cbs);
+    FileManager::instance().registerConfigPluginCallbacks([&]() { global_config_cbs->invoke(); });
     cacheProcessor.afterInitCallbackSet(&CB_After_Cache_Init);
     cacheProcessor.start();
 
@@ -2340,8 +2340,6 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     change_uid_gid(user);
   }
 #endif
-  // Make this configurable???
-  // eventProcessor.schedule_in(new ReloadStatusCleanUpContinuation(), HRTIME_SECONDS(2), ET_TASK);
 
   TSSystemState::initialization_done();
 
