@@ -10,7 +10,6 @@ namespace
 DbgCtl dbg_ctl_config{"config.reload"};
 
 /// Helper to read a time duration from records configuration.
-/// Thread-safe: uses only local variables, RecGetRecordString is thread-safe.
 [[nodiscard]] std::chrono::milliseconds
 read_time_record(std::string_view record_name, std::string_view default_value, std::chrono::milliseconds fallback,
                  std::chrono::milliseconds minimum = std::chrono::milliseconds{0})
@@ -18,15 +17,13 @@ read_time_record(std::string_view record_name, std::string_view default_value, s
   // record_name / default_value are compile-time string_view constants, always null-terminated.
   char str[128] = {0};
 
-  auto result = RecGetRecordString(record_name.data(), str, sizeof(str));
-  if (!result.has_value() || str[0] == '\0') {
-    std::strncpy(str, default_value.data(), sizeof(str) - 1);
-  }
+  auto             result = RecGetRecordString(record_name.data(), str, sizeof(str));
+  std::string_view value  = (result.has_value() && !result->empty()) ? result.value() : default_value;
 
-  auto [duration, errata] = ts::time_parser(str);
+  auto [duration, errata] = ts::time_parser(value);
   if (!errata.is_ok()) {
-    Dbg(dbg_ctl_config, "Failed to parse '%.*s' value '%s': using fallback", static_cast<int>(record_name.size()),
-        record_name.data(), str);
+    Dbg(dbg_ctl_config, "Failed to parse '%.*s' value '%.*s': using fallback", static_cast<int>(record_name.size()),
+        record_name.data(), static_cast<int>(value.size()), value.data());
     return fallback;
   }
 
@@ -86,51 +83,30 @@ ConfigReloadTask::add_sub_task(ConfigReloadTaskPtr sub_task)
 void
 ConfigReloadTask::set_in_progress()
 {
-  this->set_status_and_notify(Status::IN_PROGRESS);
+  this->set_state_and_notify(State::IN_PROGRESS);
 }
 
 void
 ConfigReloadTask::set_completed()
 {
-  this->set_status_and_notify(Status::SUCCESS);
+  this->set_state_and_notify(State::SUCCESS);
 }
 
 void
 ConfigReloadTask::set_failed()
 {
-  this->set_status_and_notify(Status::FAIL);
+  this->set_state_and_notify(State::FAIL);
 }
 
 void
 ConfigReloadTask::mark_as_bad_state(std::string_view reason)
 {
   std::unique_lock<std::shared_mutex> lock(_mutex);
-  _info.status = Status::TIMEOUT;
+  _info.state = State::TIMEOUT;
   _atomic_last_updated_ms.store(now_ms(), std::memory_order_release);
   if (!reason.empty()) {
     // Push directly to avoid deadlock (log() would try to acquire same mutex)
     _info.logs.emplace_back(reason);
-  }
-}
-void
-ConfigReloadTask::dump(std::ostream &os, ConfigReloadTask::Info const &info, int indent)
-{
-  std::string indent_str(indent, ' ');
-  // Print the passed info first
-  auto to_string = [](std::time_t t) {
-    std::ostringstream oss;
-    oss << std::put_time(std::localtime(&t), "%Y-%m-%d %H:%M:%S");
-    return oss.str();
-  };
-  os << indent_str << "* Token: " << info.token << " | Status: " << ConfigReloadTask::status_to_string(info.status)
-     << " | Created: "
-     << to_string(static_cast<std::time_t>(
-          std::chrono::duration_cast<std::chrono::seconds>(std::chrono::milliseconds{info.created_time_ms}).count()))
-     << " | Description: " << info.description << " | Filename: " << (info.filename.empty() ? "<none>" : info.filename)
-     << " | Main Task: " << (info.main_task ? "true" : "false") << "\n";
-  // Then print all dependents recursively
-  for (auto const &data : info.sub_tasks) {
-    dump(os, data->get_info(), indent + 2);
   }
 }
 
@@ -141,21 +117,28 @@ ConfigReloadTask::notify_parent()
       (_parent && _parent->is_main_task()) ? "true" : "false");
 
   if (_parent) {
-    _parent->update_state_from_children(_info.status);
+    _parent->aggregate_status();
   }
 }
 
 void
-ConfigReloadTask::set_status_and_notify(Status status)
+ConfigReloadTask::set_state_and_notify(State state)
 {
-  Dbg(dbg_ctl_config, "Status changed to %.*s for task %s", static_cast<int>(status_to_string(status).size()),
-      status_to_string(status).data(), _info.description.c_str());
   {
     std::unique_lock<std::shared_mutex> lock(_mutex);
-    if (_info.status == status) {
+    if (_info.state == state) {
       return;
     }
-    _info.status = status;
+    // Once a task reaches a terminal state, reject further transitions.
+    if (is_terminal(_info.state)) {
+      Warning("ConfigReloadTask '%s': ignoring transition from %.*s to %.*s — already terminal.", _info.description.c_str(),
+              static_cast<int>(state_to_string(_info.state).size()), state_to_string(_info.state).data(),
+              static_cast<int>(state_to_string(state).size()), state_to_string(state).data());
+      return;
+    }
+    Dbg(dbg_ctl_config, "State changed to %.*s for task %s", static_cast<int>(state_to_string(state).size()),
+        state_to_string(state).data(), _info.description.c_str());
+    _info.state = state;
     _atomic_last_updated_ms.store(now_ms(), std::memory_order_release);
   }
 
@@ -164,13 +147,13 @@ ConfigReloadTask::set_status_and_notify(Status status)
 }
 
 void
-ConfigReloadTask::update_state_from_children(Status /* status ATS_UNUSED */)
+ConfigReloadTask::aggregate_status()
 {
   // Use unique_lock throughout to avoid TOCTOU race and data races
   std::unique_lock<std::shared_mutex> lock(_mutex);
 
   if (_info.sub_tasks.empty()) {
-    // No subtasks - keep current status (don't change to CREATED)
+    // No subtasks - keep current state (don't change to CREATED)
     return;
   }
 
@@ -180,60 +163,60 @@ ConfigReloadTask::update_state_from_children(Status /* status ATS_UNUSED */)
   bool all_created     = true;
 
   for (const auto &sub_task : _info.sub_tasks) {
-    Status sub_status = sub_task->get_status();
-    switch (sub_status) {
-    case Status::FAIL:
-    case Status::TIMEOUT: // Treat TIMEOUT as failure
+    State sub_state = sub_task->get_state();
+    switch (sub_state) {
+    case State::FAIL:
+    case State::TIMEOUT: // Treat TIMEOUT as failure
       any_failed  = true;
       all_success = false;
       all_created = false;
       break;
-    case Status::IN_PROGRESS: // Handle IN_PROGRESS explicitly!
+    case State::IN_PROGRESS: // Handle IN_PROGRESS explicitly!
       any_in_progress = true;
       all_success     = false;
       all_created     = false;
       break;
-    case Status::SUCCESS:
+    case State::SUCCESS:
       all_created = false;
       break;
-    case Status::CREATED:
+    case State::CREATED:
       all_success = false;
       break;
-    case Status::INVALID:
+    case State::INVALID:
     default:
-      // Unknown status - treat as not success, not created
+      // Unknown state - treat as not success, not created
       all_success = false;
       all_created = false;
       break;
     }
   }
 
-  // Determine new parent status based on children
+  // Determine new parent state based on children
   // Priority: FAIL/TIMEOUT > IN_PROGRESS > SUCCESS > CREATED
-  Status new_status;
+  State new_state;
   if (any_failed) {
-    new_status = Status::FAIL;
+    new_state = State::FAIL;
   } else if (any_in_progress) {
     // If any subtask is still working, parent is IN_PROGRESS
-    new_status = Status::IN_PROGRESS;
+    new_state = State::IN_PROGRESS;
   } else if (all_success) {
     Dbg(dbg_ctl_config, "Setting %s task '%s' to SUCCESS (all subtasks succeeded)", _info.main_task ? "main" : "sub",
         _info.description.c_str());
-    new_status = Status::SUCCESS;
+    new_state = State::SUCCESS;
   } else if (all_created && !_info.main_task) {
     Dbg(dbg_ctl_config, "Setting %s task '%s' to CREATED (all subtasks created)", _info.main_task ? "main" : "sub",
         _info.description.c_str());
-    new_status = Status::CREATED;
+    new_state = State::CREATED;
   } else {
     // Mixed state or main task with created subtasks - keep as IN_PROGRESS
     Dbg(dbg_ctl_config, "Setting %s task '%s' to IN_PROGRESS (mixed state)", _info.main_task ? "main" : "sub",
         _info.description.c_str());
-    new_status = Status::IN_PROGRESS;
+    new_state = State::IN_PROGRESS;
   }
 
-  // Only update if status actually changed
-  if (_info.status != new_status) {
-    _info.status = new_status;
+  // Only update if state actually changed
+  if (_info.state != new_state) {
+    _info.state = new_state;
     _atomic_last_updated_ms.store(now_ms(), std::memory_order_release);
   }
 
@@ -241,7 +224,7 @@ ConfigReloadTask::update_state_from_children(Status /* status ATS_UNUSED */)
   lock.unlock();
 
   if (_parent) {
-    _parent->update_state_from_children(new_status);
+    _parent->aggregate_status();
   }
 }
 
@@ -250,7 +233,6 @@ ConfigReloadTask::get_last_updated_time_ms() const
 {
   int64_t last_time_ms = _atomic_last_updated_ms.load(std::memory_order_acquire);
 
-  // Read sub-tasks under lock (vector may be modified), but read their timestamps lock-free
   std::shared_lock<std::shared_mutex> lock(_mutex);
   for (const auto &sub_task : _info.sub_tasks) {
     int64_t sub_time_ms = sub_task->get_own_last_updated_time_ms();
@@ -271,7 +253,7 @@ void
 ConfigReloadTask::start_progress_checker()
 {
   std::unique_lock<std::shared_mutex> lock(_mutex);
-  if (!_reload_progress_checker_started && _info.main_task && _info.status == Status::IN_PROGRESS) { // can only start once
+  if (!_reload_progress_checker_started && _info.main_task && _info.state == State::IN_PROGRESS) { // can only start once
     auto *checker = new ConfigReloadProgress(shared_from_this());
     eventProcessor.schedule_in(checker, HRTIME_MSECONDS(checker->get_check_interval().count()), ET_TASK);
     _reload_progress_checker_started = true;
@@ -289,12 +271,12 @@ ConfigReloadProgress::check_progress(int /* etype */, void * /* data */)
     return EVENT_DONE;
   }
 
-  auto const current_status = _reload->get_status();
-  if (ConfigReloadTask::is_terminal(current_status)) {
+  auto const current_state = _reload->get_state();
+  if (ConfigReloadTask::is_terminal(current_state)) {
     Dbg(dbg_ctl_config, "Reload task %.*s is in %.*s state, stopping progress check.",
         static_cast<int>(_reload->get_token().size()), _reload->get_token().data(),
-        static_cast<int>(ConfigReloadTask::status_to_string(current_status).size()),
-        ConfigReloadTask::status_to_string(current_status).data());
+        static_cast<int>(ConfigReloadTask::state_to_string(current_state).size()),
+        ConfigReloadTask::state_to_string(current_state).data());
     return EVENT_DONE;
   }
 
@@ -317,11 +299,11 @@ ConfigReloadProgress::check_progress(int /* etype */, void * /* data */)
   std::string buf;
   if (lut + max_running_time < std::chrono::system_clock::now()) {
     if (_reload->contains_dependents()) {
-      swoc::bwprint(buf, "Task {} timed out after {}ms with no reload action (no config to reload). Last status: {}",
-                    _reload->get_token(), max_running_time.count(), ConfigReloadTask::status_to_string(current_status));
+      swoc::bwprint(buf, "Task {} timed out after {}ms with no reload action (no config to reload). Last state: {}",
+                    _reload->get_token(), max_running_time.count(), ConfigReloadTask::state_to_string(current_state));
     } else {
-      swoc::bwprint(buf, "Reload task {} timed out after {}ms. Previous status: {}.", _reload->get_token(),
-                    max_running_time.count(), ConfigReloadTask::status_to_string(current_status));
+      swoc::bwprint(buf, "Reload task {} timed out after {}ms. Previous state: {}.", _reload->get_token(), max_running_time.count(),
+                    ConfigReloadTask::state_to_string(current_state));
     }
     _reload->mark_as_bad_state(buf);
     Dbg(dbg_ctl_config, "%s", buf.c_str());
@@ -329,8 +311,8 @@ ConfigReloadProgress::check_progress(int /* etype */, void * /* data */)
   }
 
   swoc::bwprint(buf,
-                "Reload task {} ongoing with status {}, created at {} and last update at {}. Timeout in {}ms. Will check again.",
-                _reload->get_token(), ConfigReloadTask::status_to_string(current_status),
+                "Reload task {} ongoing with state {}, created at {} and last update at {}. Timeout in {}ms. Will check again.",
+                _reload->get_token(), ConfigReloadTask::state_to_string(current_state),
                 swoc::bwf::Date(std::chrono::system_clock::to_time_t(ct)),
                 swoc::bwf::Date(std::chrono::system_clock::to_time_t(lut)), max_running_time.count());
   Dbg(dbg_ctl_config, "%s", buf.c_str());

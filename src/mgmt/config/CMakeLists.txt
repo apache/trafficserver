@@ -21,7 +21,7 @@ add_library(ts::configmanager ALIAS configmanager)
 target_link_libraries(
   configmanager
   PUBLIC ts::tscore ts::records
-  PRIVATE ts::inkevent yaml-cpp::yaml-cpp
+  PRIVATE ts::inkevent ts::jsonrpc_protocol yaml-cpp::yaml-cpp
 )
 
 clang_tidy_check(configmanager)

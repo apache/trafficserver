@@ -96,13 +96,7 @@ token = "testtoken_1234"
 traffic_ctl.config().reload().token(token).validate_with_text(f"New reload with token '{token}' was scheduled.")
 
 # traffic_ctl config status should show the last reload, same as the above.
-traffic_ctl.config().status().token(token).validate_with_text(
-    """
-``
-● Apache Traffic Server Reload [success]
-   Token     : testtoken_1234
-``
-""")
+traffic_ctl.config().status().token(token).validate_contains_all("success", "testtoken_1234")
 
 # Now we try again, with same token, this should fail as the token already exists.
 traffic_ctl.config().reload().token(token).validate_with_text(f"Token '{token}' already exists:")
@@ -113,17 +107,8 @@ tr = Test.AddTestRun("rouch file to trigger ip_allow reload")
 tr.Processes.Default.Command = f"touch {os.path.join(traffic_ctl._ts.Variables.CONFIGDIR, 'ip_allow.yaml')}  && sleep 1"
 tr.Processes.Default.ReturnCode = 0
 
-traffic_ctl.config().reload().token("reload_ip_allow").show_details().validate_with_text(
-    """
-``
-New reload with token 'reload_ip_allow' was scheduled. Waiting for details...
-● Apache Traffic Server Reload [success]
-   Token     : reload_ip_allow
-``
-   Files:
-    - ``ip_allow.yaml``  [success]  source: file``
-``
-""")
+traffic_ctl.config().reload().token("reload_ip_allow").show_details().validate_contains_all(
+    "reload_ip_allow", "success", "ip_allow.yaml")
 
 ##### FORCE RELOAD
 

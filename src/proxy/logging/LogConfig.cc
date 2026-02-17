@@ -48,6 +48,7 @@ using namespace std::literals;
 #include "tscore/SimpleTokenizer.h"
 
 #include "proxy/logging/YamlLogConfig.h"
+#include "mgmt/config/ConfigRegistry.h"
 
 #define DISK_IS_CONFIG_FULL_MESSAGE                    \
   "Access logging to local log directory suspended - " \
@@ -70,7 +71,7 @@ DbgCtl dbg_ctl_logspace{"logspace"};
 DbgCtl dbg_ctl_log{"log"};
 DbgCtl dbg_ctl_log_config{"log-config"};
 
-std::unique_ptr<ConfigUpdateHandler<LogConfig>> logConfigUpdate;
+// Removed: ConfigUpdateHandler<LogConfig> — now uses ConfigRegistry
 
 } // end anonymous namespace
 
@@ -288,6 +289,13 @@ LogConfig::init(LogConfig *prev_config)
 
   ink_assert(!initialized);
 
+  // Inherit the reload context so evaluate_config() can log parse details
+  // and access RPC-supplied YAML content. At startup prev_config is nullptr,
+  // so reload_ctx stays default-constructed (all calls are safe no-ops).
+  if (prev_config) {
+    reload_ctx = prev_config->reload_ctx;
+  }
+
   update_space_used();
 
   // create log objects
@@ -427,7 +435,7 @@ LogConfig::reconfigure([[maybe_unused]] ConfigContext ctx) // ConfigUpdateHandle
   Dbg(dbg_ctl_log_config, "[v2] Reconfiguration request accepted");
 
   Log::config->reconfiguration_needed = true;
-  Log::config->ctx                    = std::move(ctx);
+  Log::config->reload_ctx             = ctx;
 }
 
 /*-------------------------------------------------------------------------
@@ -464,14 +472,14 @@ LogConfig::register_config_callbacks()
     "proxy.config.log.throttling_interval_msec",
     "proxy.config.diags.debug.throttling_interval_msec",
   };
-  // change this for ConfigUpdateHandler, create a subclass
-  // for (unsigned i = 0; i < countof(names); ++i) {
-  //   RecRegisterConfigUpdateCb(names[i], &LogConfig::reconfigure, nullptr);
-  // }
 
-  logConfigUpdate.reset(new ConfigUpdateHandler<LogConfig>("LogConfig"));
+  auto &registry = config::ConfigRegistry::Get_Instance();
+  registry.register_config(
+    "logging", ts::filename::LOGGING, "proxy.config.log.config.filename", [](ConfigContext ctx) { LogConfig::reconfigure(ctx); },
+    config::ConfigSource::FileOnly);
+
   for (unsigned i = 0; i < countof(names); ++i) {
-    logConfigUpdate->attach(names[i]);
+    registry.attach("logging", names[i]);
   }
 }
 
@@ -777,6 +785,7 @@ LogConfig::evaluate_config()
   struct stat    sbuf;
   if (stat(path.get(), &sbuf) == -1 && errno == ENOENT) {
     Warning("logging configuration '%s' doesn't exist", path.get());
+    reload_ctx.fail("logging configuration '{}' doesn't exist", path.get());
     return false;
   }
 
@@ -786,8 +795,10 @@ LogConfig::evaluate_config()
   bool zret = y.parse(path.get());
   if (zret) {
     Note("%s finished loading", path.get());
+    reload_ctx.complete("{} finished loading", path.get());
   } else {
     Note("%s failed to load", path.get());
+    reload_ctx.fail("{} failed to load", path.get());
   }
 
   return zret;

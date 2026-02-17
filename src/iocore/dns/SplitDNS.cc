@@ -47,8 +47,6 @@
    -------------------------------------------------------------- */
 static const char modulePrefix[] = "[SplitDNS]";
 
-// Removed: ConfigUpdateHandler<SplitDNSConfig> *SplitDNSConfig::splitDNSUpdate — now uses ConfigRegistry
-
 static ClassAllocator<DNSRequestData, false> DNSReqAllocator("DNSRequestDataAllocator");
 
 /* --------------------------------------------------------------
@@ -119,12 +117,12 @@ SplitDNSConfig::startup()
   gsplit_dns_enabled = RecGetRecordInt("proxy.config.dns.splitDNS.enabled").value_or(0);
 
   config::ConfigRegistry::Get_Instance().register_config(
-    "split_dns",                                                  // registry key
-    ts::filename::SPLITDNS,                                       // default filename
-    "proxy.config.dns.splitdns.filename",                         // record holding the filename
-    [](ConfigContext &ctx) { SplitDNSConfig::reconfigure(ctx); }, // reload handler
-    config::ConfigSource::FileOnly,                               // no RPC content
-    {"proxy.config.dns.splitdns.filename"});                      // trigger records
+    "split_dns",                                                 // registry key
+    ts::filename::SPLITDNS,                                      // default filename
+    "proxy.config.dns.splitdns.filename",                        // record holding the filename
+    [](ConfigContext ctx) { SplitDNSConfig::reconfigure(ctx); }, // reload handler
+    config::ConfigSource::FileOnly,                              // no RPC content
+    {"proxy.config.dns.splitdns.filename"});                     // trigger records
 }
 
 /* --------------------------------------------------------------

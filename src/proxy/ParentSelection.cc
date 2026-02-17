@@ -288,12 +288,12 @@ void
 ParentConfig::startup()
 {
   config::ConfigRegistry::Get_Instance().register_config(
-    "parent_proxy",                                             // registry key
-    ts::filename::PARENT,                                       // default filename
-    file_var,                                                   // record holding the filename
-    [](ConfigContext &ctx) { ParentConfig::reconfigure(ctx); }, // reload handler
-    config::ConfigSource::FileOnly,                             // file-based only
-    {file_var, default_var, retry_var, threshold_var});         // trigger records
+    "parent_proxy",                                            // registry key
+    ts::filename::PARENT,                                      // default filename
+    file_var,                                                  // record holding the filename
+    [](ConfigContext ctx) { ParentConfig::reconfigure(ctx); }, // reload handler
+    config::ConfigSource::FileOnly,                            // file-based only
+    {file_var, default_var, retry_var, threshold_var});        // trigger records
 
   // Load the initial configuration
   reconfigure();

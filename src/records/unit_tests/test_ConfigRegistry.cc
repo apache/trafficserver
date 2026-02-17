@@ -30,7 +30,7 @@ using config::ConfigRegistry;
 using config::ConfigSource;
 
 // Shared no-op handler for test registrations
-static config::ConfigReloadHandler noop_handler = [](ConfigContext &) {};
+static config::ConfigReloadHandler noop_handler = [](ConfigContext) {};
 
 namespace
 {
