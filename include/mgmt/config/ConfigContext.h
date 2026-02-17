@@ -85,11 +85,11 @@ class ConfigRegistry;
 class ConfigContext
 {
 public:
-  ConfigContext() = default;
+  ConfigContext();
 
   explicit ConfigContext(std::shared_ptr<ConfigReloadTask> t, std::string_view description = "", std::string_view filename = "");
 
-  ~ConfigContext() = default;
+  ~ConfigContext();
 
   // Copy only — move is intentionally suppressed.
   // ConfigContext holds a weak_ptr (cheap to copy) and a YAML::Node (ref-counted).
@@ -97,8 +97,8 @@ public:
   // original valid. This is critical for execute_reload()'s post-handler check:
   // if a handler defers work (e.g. LogConfig), the original ctx must remain
   // valid so is_terminal() can detect the non-terminal state and emit a warning.
-  ConfigContext(ConfigContext const &)            = default;
-  ConfigContext &operator=(ConfigContext const &) = default;
+  ConfigContext(ConfigContext const &);
+  ConfigContext &operator=(ConfigContext const &);
 
   void in_progress(std::string_view text = "");
   template <typename... Args>

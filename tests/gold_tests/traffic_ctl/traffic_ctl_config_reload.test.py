@@ -79,27 +79,27 @@ Message: Token 'test1' not found, Code: 6001
 ##### CONFIG RELOAD
 
 # basic reload, no params. no existing reload in progress, we expect this to start a new reload.
-traffic_ctl.config().reload().validate_with_text("New reload with token '``' was scheduled.")
+traffic_ctl.config().reload().validate_with_text(
+    "\u2714 Reload scheduled [``]\n\n  Monitor : traffic_ctl config reload -t `` -m\n  Details : traffic_ctl config reload -t `` -s -l"
+)
 
 # basic reload, but traffic_ctl should create and wait for the details, showing the newly created
 # reload and some details.
-traffic_ctl.config().reload().show_details().validate_with_text(
-    """
-``
-New reload with token '``' was scheduled. Waiting for details...
-● Apache Traffic Server Reload [success]
-``
-""")
+traffic_ctl.config().reload().show_details().validate_contains_all("Reload scheduled", "Waiting for details", "Reload [success]")
 
 # Now we try with a token, this should start a new reload with the given token.
 token = "testtoken_1234"
-traffic_ctl.config().reload().token(token).validate_with_text(f"New reload with token '{token}' was scheduled.")
+traffic_ctl.config().reload().token(token).validate_with_text(
+    f"\u2714 Reload scheduled [{token}]\n\n  Monitor : traffic_ctl config reload -t {token} -m\n  Details : traffic_ctl config reload -t {token} -s -l"
+)
 
 # traffic_ctl config status should show the last reload, same as the above.
 traffic_ctl.config().status().token(token).validate_contains_all("success", "testtoken_1234")
 
 # Now we try again, with same token, this should fail as the token already exists.
-traffic_ctl.config().reload().token(token).validate_with_text(f"Token '{token}' already exists:")
+traffic_ctl.config().reload().token(token).validate_with_text(
+    f"\u2717 Token '{token}' already in use\n\n  Status : traffic_ctl config status -t {token}\n  Retry  : traffic_ctl config reload"
+)
 
 # Modify ip_allow.yaml and validate the reload status.
 
@@ -113,7 +113,7 @@ traffic_ctl.config().reload().token("reload_ip_allow").show_details().validate_c
 ##### FORCE RELOAD
 
 # Force reload should work even if we just did a reload
-traffic_ctl.config().reload().force().validate_with_text("``New reload with token '``' was scheduled.")
+traffic_ctl.config().reload().force().validate_contains_all("Reload scheduled")
 
 ##### INLINE DATA RELOAD
 
@@ -130,7 +130,8 @@ tr.Processes.Default.Streams.All.Content = Testers.ContainsExpression(
 
 # Verify no stuck task - new reload should work immediately after
 traffic_ctl.config().reload().token("after_inline_test").validate_with_text(
-    "New reload with token 'after_inline_test' was scheduled.")
+    "\u2714 Reload scheduled [after_inline_test]\n\n  Monitor : traffic_ctl config reload -t after_inline_test -m\n  Details : traffic_ctl config reload -t after_inline_test -s -l"
+)
 
 ##### MULTI-KEY FILE RELOAD
 

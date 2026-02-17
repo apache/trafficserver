@@ -150,7 +150,8 @@ main([[maybe_unused]] int argc, const char **argv)
     //
     // Refresh interval in seconds used with --monitor.
     // Controls how often to poll the server for reload status.
-    .add_option("--refresh-int", "-r", "Refresh interval in seconds (used with --monitor)", "", 1, "1")
+    .add_option("--refresh-int", "-r", "Refresh interval in seconds (used with --monitor). Accepts fractional values (e.g. 0.5)",
+                "", 1, "0.5")
     //
     // The server will not let you start two reload at the same time. This option will force a new reload
     // even if there is one in progress. Use with caution as this may have unexpected results.
@@ -163,7 +164,10 @@ main([[maybe_unused]] int argc, const char **argv)
     //   -d @-                      - read config from stdin
     //   -d "yaml: content"         - inline yaml string
     .add_option("--data", "-d", "Inline config data (@file, @- for stdin, or yaml string)", "", MORE_THAN_ZERO_ARG_N, "")
-    .add_option("--delay", "-w", "Initial wait (seconds) before first status check (with --monitor or --show-details)", "", 1, "4");
+    .add_option(
+      "--initial-wait", "-w",
+      "Initial wait before first poll, giving the server time to schedule all handlers (seconds). Accepts fractional values", "", 1,
+      "2");
 
   config_command.add_command("status", "Check the configuration status", [&]() { command->execute(); })
     .add_option("--token", "-t", "Configuration token to check status.", "", 1, "")

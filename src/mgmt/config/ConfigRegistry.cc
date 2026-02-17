@@ -436,6 +436,10 @@ ConfigRegistry::execute_reload(const std::string &key)
               entry_copy.key.c_str());
     }
     Dbg(dbg_ctl, "Config '%s' reload completed", entry_copy.key.c_str());
+    // TODO: For future diff/etc support, snapshot the config content here.
+    //       For RPC reloads: serialize passed_config to string.
+    //       For file reloads: read the file content at reload time.
+    //       Store in ConfigReloadTask::Info for history-based diffing.
   } catch (std::exception const &ex) {
     ctx.fail(ex.what());
     Warning("Config '%s' reload failed: %s", entry_copy.key.c_str(), ex.what());

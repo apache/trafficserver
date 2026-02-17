@@ -195,48 +195,11 @@ group_files(const ConfigReloadResponse::ReloadInfo &info, std::vector<const Conf
   }
 }
 
-template <class Duration>
-inline typename Duration::rep
-duration_between(std::time_t start, std::time_t end)
-{
-  if (end < start) {
-    return typename Duration::rep(-1);
-  }
-  using clock = std::chrono::system_clock;
-  auto delta  = clock::from_time_t(end) - clock::from_time_t(start);
-  return std::chrono::duration_cast<Duration>(delta).count();
-}
-
-auto
-stot(const std::string &s) -> std::time_t
-{
-  std::istringstream ss(s);
-  std::time_t        t;
-  ss >> t;
-  return t;
-}
-
-// Parse milliseconds from string (for precise duration calculation)
-auto
-stoms(const std::string &s) -> int64_t
-{
-  if (s.empty()) {
-    return 0;
-  }
-  std::istringstream ss(s);
-  int64_t            ms;
-  ss >> ms;
-  return ms;
-}
-
-// Calculate duration in milliseconds from ms timestamps
+// Calculate duration in milliseconds from ms-since-epoch timestamps
 inline int
 duration_ms(int64_t start_ms, int64_t end_ms)
 {
-  if (end_ms < start_ms) {
-    return -1;
-  }
-  return static_cast<int>(end_ms - start_ms);
+  return (end_ms >= start_ms) ? static_cast<int>(end_ms - start_ms) : -1;
 }
 
 // Format millisecond timestamp as human-readable date with milliseconds
@@ -255,17 +218,35 @@ format_time_ms(int64_t ms_timestamp)
   return buf;
 }
 
-// Fallback: format second-precision timestamp
+// Build a UTF-8 progress bar.  @a width = number of visual characters.
 std::string
-format_time_s(std::time_t seconds)
+build_progress_bar(int done, int total, int width = 20)
 {
-  if (seconds <= 0) {
+  int         filled = total > 0 ? (done * width / total) : 0;
+  std::string bar;
+  bar.reserve(width * 3);
+  for (int i = 0; i < width; ++i) {
+    bar += (i < filled) ? "\xe2\x96\x88" : "\xe2\x96\x91"; // █ or ░
+  }
+  return bar;
+}
+
+// Human-readable duration string from milliseconds.
+std::string
+format_duration(int ms)
+{
+  if (ms < 0) {
     return "-";
   }
-  std::string buf;
-  swoc::bwprint(buf, "{}", swoc::bwf::Date(seconds));
-  return buf;
+  if (ms < 1000) {
+    return std::to_string(ms) + "ms";
+  }
+  if (ms < 60000) {
+    return std::to_string(ms / 1000) + "." + std::to_string((ms % 1000) / 100) + "s";
+  }
+  return std::to_string(ms / 60000) + "m " + std::to_string((ms % 60000) / 1000) + "s";
 }
+
 // Map task status string to a single-character icon for compact display.
 const char *
 status_icon(const std::string &status)
@@ -285,33 +266,82 @@ status_icon(const std::string &status)
   return "?";
 }
 
+// Approximate visual width of a UTF-8 string (each code point counts as 1 column).
+int
+visual_width(const std::string &s)
+{
+  int w = 0;
+  for (size_t i = 0; i < s.size();) {
+    auto c = static_cast<unsigned char>(s[i]);
+    if (c < 0x80) {
+      ++i;
+    } else if (c < 0xE0) {
+      i += 2;
+    } else if (c < 0xF0) {
+      i += 3;
+    } else {
+      i += 4;
+    }
+    ++w;
+  }
+  return w;
+}
+
+// Build a dot-leader string: " ···· " of the given visual width (min 2).
+std::string
+dot_fill(int width)
+{
+  if (width < 2) {
+    width = 2;
+  }
+  std::string out(" ");
+  for (int i = 1; i < width - 1; ++i) {
+    out += "\xc2\xb7"; // · (middle dot U+00B7)
+  }
+  out += ' ';
+  return out;
+}
+
 // Recursively print a task and its children using tree-drawing characters.
 // @param prefix        characters printed before this task's icon (tree connectors from parent)
 // @param child_prefix  base prefix for this task's log lines and its children's connectors
+// @param content_width visual columns available for icon+name+dots+duration (shrinks per nesting)
 void
 print_task_tree(const ConfigReloadResponse::ReloadInfo &f, bool full_report, const std::string &prefix,
-                const std::string &child_prefix)
+                const std::string &child_prefix, int content_width = 55)
 {
   std::string fname;
-  std::string source;
   if (f.filename.empty() || f.filename == "<none>") {
-    fname  = f.description;
-    source = "rpc";
+    fname = f.description;
   } else {
-    fname  = f.filename;
-    source = "file";
+    fname = f.filename;
   }
 
-  int dur_ms;
-  if (!f.meta.created_time_ms.empty() && !f.meta.last_updated_time_ms.empty()) {
-    dur_ms = duration_ms(stoms(f.meta.created_time_ms), stoms(f.meta.last_updated_time_ms));
-  } else {
-    dur_ms =
-      static_cast<int>(duration_between<std::chrono::milliseconds>(stot(f.meta.created_time), stot(f.meta.last_updated_time)));
+  int dur_ms = duration_ms(f.meta.created_time_ms, f.meta.last_updated_time_ms);
+
+  // Build label and right-aligned duration
+  std::string label   = std::string(status_icon(f.status)) + " " + fname;
+  std::string dur_str = format_duration(dur_ms);
+
+  // Right-pad duration to fixed width so values align
+  constexpr int DUR_COL = 6;
+  while (static_cast<int>(dur_str.size()) < DUR_COL) {
+    dur_str = " " + dur_str;
   }
 
-  // Task line: <prefix><icon>  <name>  (duration)  [source]
-  std::cout << prefix << status_icon(f.status) << "  " << fname << "  (" << dur_ms << "ms)  [" << source << "]\n";
+  // Dot fill between label and duration
+  int label_vw = visual_width(label);
+  int gap      = content_width - label_vw - DUR_COL;
+
+  std::cout << prefix << label << dot_fill(gap) << dur_str;
+
+  // Annotate non-success terminal states so failures stand out
+  if (f.status == "fail") {
+    std::cout << "  \xe2\x9c\x97 FAIL";
+  } else if (f.status == "timeout") {
+    std::cout << "  \xe2\x9f\xb3 TIMEOUT";
+  }
+  std::cout << "\n";
 
   bool has_children = !f.sub_tasks.empty();
 
@@ -323,66 +353,65 @@ print_task_tree(const ConfigReloadResponse::ReloadInfo &f, bool full_report, con
     }
   }
 
-  // Children: draw tree connectors.
+  // Children: draw tree connectors.  Each nesting level eats 3 visual columns.
   for (size_t i = 0; i < f.sub_tasks.size(); ++i) {
     bool        is_last          = (i == f.sub_tasks.size() - 1);
     std::string sub_prefix       = child_prefix + (is_last ? "\xe2\x94\x94\xe2\x94\x80 " : "\xe2\x94\x9c\xe2\x94\x80 ");
     std::string sub_child_prefix = child_prefix + (is_last ? "   " : "\xe2\x94\x82  ");
-    print_task_tree(f.sub_tasks[i], full_report, sub_prefix, sub_child_prefix);
+    print_task_tree(f.sub_tasks[i], full_report, sub_prefix, sub_child_prefix, content_width - 3);
   }
 }
 
 } // namespace
 void
-ConfigReloadPrinter::print_basic_ri_line(const ConfigReloadResponse::ReloadInfo &info, bool json)
+ConfigReloadPrinter::write_progress_line(const ConfigReloadResponse::ReloadInfo &info)
 {
-  if (json && this->is_json_format()) {
-    // json should have been handled already.
+  if (this->is_json_format()) {
     return;
   }
 
-  int success{0}, running{0}, failed{0}, created{0};
+  int done{0}, total{0};
 
-  std::vector<const ConfigReloadResponse::ReloadInfo *> files;
-  group_files(info, files);
-  int total = files.size();
-  for (const auto *f : files) {
-    if (f->status == "success") {
-      success++;
-    } else if (f->status == "in_progress") {
-      running++;
-    } else if (f->status == "fail") {
-      failed++;
-    } else if (f->status == "created") {
-      created++;
+  auto count_tasks = [&](auto &&self, const ConfigReloadResponse::ReloadInfo &ri) -> void {
+    if (ri.sub_tasks.empty()) {
+      if (ri.status == "success" || ri.status == "fail") {
+        done++;
+      }
+      total++;
     }
-  }
+    for (const auto &sub : ri.sub_tasks) {
+      self(self, sub);
+    }
+  };
+  count_tasks(count_tasks, info);
 
-  std::cout << "● Reload: " << info.config_token << ", status: " << info.status << ", descr: '" << info.description << "', ("
-            << (success + failed) << "/" << total << ")\n";
+  bool terminal = (info.status == "success" || info.status == "fail" || info.status == "timeout");
+
+  int dur_ms = duration_ms(info.meta.created_time_ms, info.meta.last_updated_time_ms);
+
+  std::string bar = build_progress_bar(done, total);
+
+  // \r + ANSI clear-to-EOL overwrites the previous line in place.
+  std::cout << "\r\033[K" << status_icon(info.status) << " [" << info.config_token << "] " << bar << " " << done << "/" << total
+            << "  " << info.status;
+  if (terminal) {
+    std::cout << "  (" << format_duration(dur_ms) << ")";
+  }
+  std::cout << std::flush;
 }
 
 void
 ConfigReloadPrinter::print_reload_report(const ConfigReloadResponse::ReloadInfo &info, bool full_report)
 {
   if (this->is_json_format()) {
-    // json should have been handled already.
     return;
   }
 
-  // Use millisecond precision if available, fallback to second precision
-  int overall_duration;
-  if (!info.meta.created_time_ms.empty() && !info.meta.last_updated_time_ms.empty()) {
-    overall_duration = duration_ms(stoms(info.meta.created_time_ms), stoms(info.meta.last_updated_time_ms));
-  } else {
-    overall_duration = static_cast<int>(
-      duration_between<std::chrono::milliseconds>(stot(info.meta.created_time), stot(info.meta.last_updated_time)));
-  }
+  int overall_duration = duration_ms(info.meta.created_time_ms, info.meta.last_updated_time_ms);
 
   int total{0}, completed{0}, failed{0}, created{0}, in_progress{0};
 
   auto calculate_summary = [&](auto &&self, const ConfigReloadResponse::ReloadInfo &ri) -> void {
-    // we do not count if it's main task, or if contains subtasks.
     if (ri.sub_tasks.empty()) {
       if (ri.status == "success") {
         completed++;
@@ -395,7 +424,6 @@ ConfigReloadPrinter::print_reload_report(const ConfigReloadResponse::ReloadInfo 
       }
       total++;
     }
-
     if (!ri.sub_tasks.empty()) {
       for (const auto &sub : ri.sub_tasks) {
         self(self, sub);
@@ -405,40 +433,26 @@ ConfigReloadPrinter::print_reload_report(const ConfigReloadResponse::ReloadInfo 
 
   std::vector<const ConfigReloadResponse::ReloadInfo *> files;
   group_files(info, files);
-
   calculate_summary(calculate_summary, info);
 
-  // Format times with millisecond precision if available
-  std::string start_time_str, end_time_str;
-  if (!info.meta.created_time_ms.empty()) {
-    start_time_str = format_time_ms(stoms(info.meta.created_time_ms));
-  } else {
-    start_time_str = format_time_s(stot(info.meta.created_time));
-  }
-  if (!info.meta.last_updated_time_ms.empty()) {
-    end_time_str = format_time_ms(stoms(info.meta.last_updated_time_ms));
-  } else {
-    end_time_str = format_time_s(stot(info.meta.last_updated_time));
-  }
+  std::string start_time_str = format_time_ms(info.meta.created_time_ms);
+  std::string end_time_str   = format_time_ms(info.meta.last_updated_time_ms);
 
-  std::cout << "● Apache Traffic Server Reload [" << info.status << "]\n";
-  std::cout << "   Token     : " << info.config_token << '\n';
-  std::cout << "   Start Time: " << start_time_str << '\n';
-  std::cout << "   End Time  : " << end_time_str << '\n';
-  std::cout << "   Duration  : "
-            << (overall_duration < 0 ? "-" :
-                                       (overall_duration < 1000 ? "less than a second" : std::to_string(overall_duration) + "ms"))
-            << "\n\n";
-  std::cout << "   Summary   : " << total << " total \xe2\x94\x82 \xe2\x9c\x94 " << completed
-            << " success \xe2\x94\x82 \xe2\x97\x8c " << in_progress << " in-progress \xe2\x94\x82 \xe2\x9c\x97 " << failed
-            << " failed\n\n";
+  // ── Header ──
+  std::cout << status_icon(info.status) << " Reload [" << info.status << "] \xe2\x80\x94 " << info.config_token << "\n";
+  std::cout << "  Started : " << start_time_str << '\n';
+  std::cout << "  Finished: " << end_time_str << '\n';
+  std::cout << "  Duration: " << format_duration(overall_duration) << "\n\n";
 
+  // ── Summary ──
+  std::cout << "  \xe2\x9c\x94 " << completed << " success  \xe2\x97\x8c " << in_progress << " in-progress  \xe2\x9c\x97 " << failed
+            << " failed  (" << total << " total)\n";
+
+  // ── Task tree ──
   if (!files.empty()) {
-    std::cout << "\n   Tasks:\n";
+    std::cout << "\n  Tasks:\n";
   }
-
-  // Walk the tree recursively — children use tree-drawing characters.
-  const std::string base_prefix("    ");
+  const std::string base_prefix("   ");
   for (const auto &sub : info.sub_tasks) {
     print_task_tree(sub, full_report, base_prefix, base_prefix);
   }
