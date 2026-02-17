@@ -430,7 +430,7 @@ class HttpRequestData;
 struct ParentConfig {
 public:
   static void startup();
-  static void reconfigure();
+  static void reconfigure(ConfigContext ctx = {});
   static void print();
   static void set_parent_table(P_table *pTable, ParentRecord *rec, int num_elements);
 

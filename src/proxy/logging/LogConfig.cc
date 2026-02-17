@@ -70,6 +70,8 @@ DbgCtl dbg_ctl_logspace{"logspace"};
 DbgCtl dbg_ctl_log{"log"};
 DbgCtl dbg_ctl_log_config{"log-config"};
 
+std::unique_ptr<ConfigUpdateHandler<LogConfig>> logConfigUpdate;
+
 } // end anonymous namespace
 
 void
@@ -411,13 +413,21 @@ LogConfig::setup_log_objects()
   function from the logging thread.
   -------------------------------------------------------------------------*/
 
-int
-LogConfig::reconfigure(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */, RecData /* data ATS_UNUSED */,
-                       void * /* cookie ATS_UNUSED */)
+// int
+// LogConfig::reconfigure(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */, RecData /* data ATS_UNUSED */,
+//                        void * /* cookie ATS_UNUSED */)
+// {
+//   Dbg(dbg_ctl_log_config, "Reconfiguration request accepted");
+//   Log::config->reconfiguration_needed = true;
+//   return 0;
+// }
+void
+LogConfig::reconfigure(ConfigContext ctx) // ConfigUpdateHandler callback
 {
-  Dbg(dbg_ctl_log_config, "Reconfiguration request accepted");
+  Dbg(dbg_ctl_log_config, "[v2] Reconfiguration request accepted");
+
   Log::config->reconfiguration_needed = true;
-  return 0;
+  Log::config->ctx                    = std::move(ctx);
 }
 
 /*-------------------------------------------------------------------------
@@ -454,9 +464,14 @@ LogConfig::register_config_callbacks()
     "proxy.config.log.throttling_interval_msec",
     "proxy.config.diags.debug.throttling_interval_msec",
   };
+  // change this for ConfigUpdateHandler, create a subclass
+  // for (unsigned i = 0; i < countof(names); ++i) {
+  //   RecRegisterConfigUpdateCb(names[i], &LogConfig::reconfigure, nullptr);
+  // }
 
+  logConfigUpdate.reset(new ConfigUpdateHandler<LogConfig>("LogConfig"));
   for (unsigned i = 0; i < countof(names); ++i) {
-    RecRegisterConfigUpdateCb(names[i], &LogConfig::reconfigure, nullptr);
+    logConfigUpdate->attach(names[i]);
   }
 }
 

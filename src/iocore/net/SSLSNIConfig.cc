@@ -319,9 +319,12 @@ SNIConfig::startup()
 }
 
 int
-SNIConfig::reconfigure()
+SNIConfig::reconfigure(ConfigContext ctx)
 {
   Dbg(dbg_ctl_ssl, "Reload SNI file");
+  std::string sni_filename = RecConfigReadConfigPath("proxy.config.ssl.servername.filename");
+  // Note: filename is already set by ConfigRegistry before calling this handler
+
   SNIConfigParams *params = new SNIConfigParams;
 
   bool retStatus = params->initialize();
@@ -334,11 +337,12 @@ SNIConfig::reconfigure()
     delete params;
   }
 
-  std::string sni_filename = RecConfigReadConfigPath("proxy.config.ssl.servername.filename");
   if (retStatus || TSSystemState::is_initializing()) {
     Note("%s finished loading", sni_filename.c_str());
+    ctx.complete("Loading finished");
   } else {
     Error("%s failed to load", sni_filename.c_str());
+    ctx.fail("Failed to load");
   }
 
   return retStatus ? 1 : 0;

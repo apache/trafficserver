@@ -1,6 +1,6 @@
 /** @file
 
-  P_SSLClientCoordinator.h - coordinate the loading of SSL related configs
+  Config reload execution logic - schedules async reload work on ET_TASK.
 
   @section license License
 
@@ -21,13 +21,23 @@
   limitations under the License.
  */
 
-#include "iocore/eventsystem/ConfigProcessor.h"
+#pragma once
 
-// A class to pass the ConfigUpdateHandler, so both SSLConfig and SNIConfig get updated
-// when the relevant files/configs get updated.
-class SSLClientCoordinator
+#include <chrono>
+
+namespace config
 {
-public:
-  static void startup();
-  static void reconfigure(ConfigContext ctx = {});
-};
+
+/// Schedule the config reload work to be executed on the ET_TASK thread.
+///
+/// This function schedules the actual reload work which includes:
+/// - Calling FileManager::rereadConfig() to detect and reload changed files
+/// - Calling FileManager::invokeConfigPluginCallbacks() to notify registered plugins
+///
+/// The reload status is tracked via ReloadCoordinator which must have been
+/// initialized with a task before calling this function.
+///
+/// @param delay Delay before executing the reload (default: 10ms)
+void schedule_reload_work(std::chrono::milliseconds delay = std::chrono::milliseconds{10});
+
+} // namespace config

@@ -27,11 +27,19 @@
 #include "tscore/Diags.h"
 
 #include "mgmt/config/FileManager.h"
+#include "mgmt/config/ConfigReloadExecutor.h"
+#include "mgmt/config/ConfigRegistry.h"
 
 #include "../common/RecordsUtils.h"
 #include "tsutil/Metrics.h"
 
-namespace utils = rpc::handlers::records::utils;
+#include "mgmt/config/ReloadCoordinator.h"
+#include "mgmt/config/ConfigReloadErrors.h"
+#include "records/YAMLConfigReloadTaskEncoder.h"
+
+namespace utils     = rpc::handlers::records::utils;
+using ConfigError   = config::reload::errors::ConfigReloadError;
+constexpr auto errc = config::reload::errors::to_int;
 
 namespace
 {
@@ -41,11 +49,12 @@ struct SetRecordCmdInfo {
   std::string value;
 };
 
-DbgCtl dbg_ctl_RPC{"RPC"};
+DbgCtl dbg_ctl_RPC{"rpc"};
 } // namespace
 
 namespace YAML
 {
+
 template <> struct convert<SetRecordCmdInfo> {
   static bool
   decode(Node const &node, SetRecordCmdInfo &info)
@@ -186,25 +195,174 @@ set_config_records(std::string_view const & /* id ATS_UNUSED */, YAML::Node cons
   return resp;
 }
 
+///
+// Unified config reload handler - supports both file-based and inline modes
+// Inline mode is detected by presence of "configs" parameter
+//
 swoc::Rv<YAML::Node>
-reload_config(std::string_view const & /* id ATS_UNUSED */, YAML::Node const & /* params ATS_UNUSED */)
+reload_config(std::string_view const & /* id ATS_UNUSED */, YAML::Node const &params)
 {
-  ts::Metrics         &metrics     = ts::Metrics::instance();
-  static auto          reconf_time = metrics.lookup("proxy.process.proxy.reconfigure_time");
-  static auto          reconf_req  = metrics.lookup("proxy.process.proxy.reconfigure_required");
+  std::string          token = params["token"] ? params["token"].as<std::string>() : std::string{};
+  bool const           force = params["force"] ? params["force"].as<bool>() : false;
+  std::string          buf;
   swoc::Rv<YAML::Node> resp;
-  Dbg(dbg_ctl_RPC, "invoke plugin callbacks");
-  // if there is any error, report it back.
-  if (auto err = FileManager::instance().rereadConfig(); !err.empty()) {
-    resp.note(err);
-  }
-  // If any callback was register(TSMgmtUpdateRegister) for config notifications, then it will be eventually notify.
-  FileManager::instance().invokeConfigPluginCallbacks();
 
-  metrics[reconf_time].store(time(nullptr));
-  metrics[reconf_req].store(0);
+  auto make_error = [&](std::string_view msg, int code) -> YAML::Node {
+    YAML::Node err;
+    err["message"] = msg;
+    err["code"]    = code;
+    return err;
+  };
+
+  // Check if reload is already in progress
+  if (!force && ReloadCoordinator::Get_Instance().is_reload_in_progress()) {
+    resp.result()["errors"].push_back(make_error(
+      swoc::bwprint(buf, "Reload ongoing with token '{}'", ReloadCoordinator::Get_Instance().get_current_task()->get_token()),
+      errc(ConfigError::RELOAD_IN_PROGRESS)));
+    resp.result()["tasks"].push_back(ReloadCoordinator::Get_Instance().get_current_task()->get_info());
+    return resp;
+  }
+
+  // Validate token doesn't already exist
+  if (!token.empty() && ReloadCoordinator::Get_Instance().has_token(token)) {
+    resp.result()["errors"].push_back(
+      make_error(swoc::bwprint(buf, "Token '{}' already exists.", token), errc(ConfigError::TOKEN_ALREADY_EXISTS)));
+    return resp;
+  }
+
+  ///
+  // Inline mode: detected by presence of "configs" parameter
+  // Expected format:
+  //   configs:
+  //     ip_allow:
+  //       ip_allow:
+  //         - apply: in
+  //           ...
+  //     sni:
+  //       sni:
+  //         - fqdn: '*.example.com'
+  //           ...
+  //
+  if (params["configs"] && params["configs"].IsMap()) {
+    auto const &configs  = params["configs"];
+    auto       &registry = ::config::ConfigRegistry::Get_Instance();
+
+    // Phase 1: Validate all configs and collect valid ones (before creating task)
+    std::vector<std::pair<std::string, YAML::Node>> valid_configs;
+    for (auto it = configs.begin(); it != configs.end(); ++it) {
+      std::string key = it->first.as<std::string>();
+
+      auto const *entry = registry.find(key);
+      if (!entry) {
+        resp.result()["errors"].push_back(
+          make_error(swoc::bwprint(buf, "Config '{}' not registered", key), errc(ConfigError::CONFIG_NOT_REGISTERED)));
+        continue;
+      }
+
+      if (entry->type == ::config::ConfigType::LEGACY) {
+        resp.result()["errors"].push_back(
+          make_error(swoc::bwprint(buf, "Config '{}' is a legacy .config file - inline reload not supported", key),
+                     errc(ConfigError::LEGACY_NO_INLINE)));
+        continue;
+      }
+
+      if (!entry->handler) {
+        resp.result()["errors"].push_back(
+          make_error(swoc::bwprint(buf, "Config '{}' has no handler", key), errc(ConfigError::CONFIG_NO_HANDLER)));
+        continue;
+      }
+
+      valid_configs.emplace_back(key, it->second);
+    }
+
+    // If no valid configs, return early without creating a task
+    if (valid_configs.empty()) {
+      resp.result()["message"].push_back("No configs were scheduled for reload");
+      return resp;
+    }
+
+    // Phase 2: Create reload task only if we have valid configs
+    std::string token_prefix = token.empty() ? "rpc-" : "";
+    if (auto ret = ReloadCoordinator::Get_Instance().prepare_reload(token, token_prefix.c_str(), force); !ret.is_ok()) {
+      resp.result()["errors"].push_back(
+        make_error(swoc::bwprint(buf, "Failed to create reload task: {}", ret), errc(ConfigError::RELOAD_TASK_FAILED)));
+      return resp;
+    }
+
+    // Phase 3: Schedule all valid configs
+    for (auto const &[key, yaml_content] : valid_configs) {
+      Dbg(dbg_ctl_RPC, "Storing passed config for '%s' and scheduling reload", key.c_str());
+      registry.set_passed_config(key, yaml_content);
+      registry.schedule_reload(key);
+    }
+
+    // Build response
+    resp.result()["token"] = token;
+    resp.result()["created_time"] =
+      swoc::bwprint(buf, "{}", swoc::bwf::Date(ReloadCoordinator::Get_Instance().get_current_task()->get_created_time()));
+    resp.result()["message"].push_back("Inline reload scheduled");
+
+    return resp;
+  }
+
+  ///
+  // File-based mode: default when no "configs" param
+  //
+  if (auto ret = ReloadCoordinator::Get_Instance().prepare_reload(token, "rldtk-", force); !ret.is_ok()) {
+    resp.result()["errors"].push_back(make_error(swoc::bwprint(buf, "Failed to prepare reload for token '{}': {}", token, ret),
+                                                 errc(ConfigError::RELOAD_TASK_FAILED)));
+    return resp;
+  }
+
+  // Schedule the actual reload work asynchronously on ET_TASK
+  ::config::schedule_reload_work();
+
+  resp.result()["created_time"] =
+    swoc::bwprint(buf, "{}", swoc::bwf::Date(ReloadCoordinator::Get_Instance().get_current_task()->get_created_time()));
+  resp.result()["message"].push_back("Reload task scheduled");
+  resp.result()["token"] = token;
 
   return resp;
 }
 
+swoc::Rv<YAML::Node>
+get_reload_config_status(std::string_view const & /* id ATS_UNUSED */, YAML::Node const &params)
+{
+  swoc::Rv<YAML::Node> resp;
+
+  auto make_error = [&](std::string const &msg, int code) -> YAML::Node {
+    YAML::Node err;
+    err["message"] = msg;
+    err["code"]    = code;
+    return err;
+  };
+
+  const std::string token = params["token"] ? params["token"].as<std::string>() : "";
+
+  if (!token.empty()) {
+    if (auto [found, info] = ReloadCoordinator::Get_Instance().find_by_token(token); !found) {
+      std::string text;
+      Dbg(dbg_ctl_RPC, "No reload task found with token: %s", token.c_str());
+      resp.result()["errors"].push_back(
+        make_error(swoc::bwprint(text, "Token '{}' not found", token), errc(ConfigError::TOKEN_NOT_FOUND)));
+      resp.result()["token"] = token;
+    } else {
+      resp.result()["tasks"].push_back(info);
+    }
+  } else {
+    const int count = params["count"] ? params["count"].as<int>() : 1;
+    Dbg(dbg_ctl_RPC, "No token provided, count=%d", count);
+    // no token provided and no count, get last one.
+    auto infos = ReloadCoordinator::Get_Instance().get_all(count);
+    if (infos.empty()) {
+      resp.result()["errors"].push_back(make_error("No reload tasks found", errc(ConfigError::NO_RELOAD_TASKS)));
+    } else {
+      for (const auto &info : infos) {
+        resp.result()["tasks"].push_back(info);
+      }
+    }
+  }
+
+  return resp;
+}
 } // namespace rpc::handlers::config

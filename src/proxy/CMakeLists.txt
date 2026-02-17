@@ -41,8 +41,8 @@ add_library(ts::proxy ALIAS proxy)
 
 target_link_libraries(
   proxy
-  PUBLIC ts::inkcache ts::inkevent ts::tsutil ts::tscore ts::inknet
-  PRIVATE ts::rpcpublichandlers ts::jsonrpc_protocol ts::inkutils ts::tsapibackend
+  PUBLIC ts::inkcache ts::inkevent ts::tsutil ts::tscore ts::inknet ts::http
+  PRIVATE ts::http ts::rpcpublichandlers ts::jsonrpc_protocol ts::inkutils ts::tsapibackend
 )
 
 add_subdirectory(hdrs)

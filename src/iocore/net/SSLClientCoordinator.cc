@@ -31,16 +31,16 @@
 std::unique_ptr<ConfigUpdateHandler<SSLClientCoordinator>> sslClientUpdate;
 
 void
-SSLClientCoordinator::reconfigure()
+SSLClientCoordinator::reconfigure(ConfigContext reconf_ctx)
 {
   // The SSLConfig must have its configuration loaded before the SNIConfig.
   // The SSLConfig owns the client cert context storage and the SNIConfig will load
   // into it.
-  SSLConfig::reconfigure();
-  SNIConfig::reconfigure();
-  SSLCertificateConfig::reconfigure();
+  SSLConfig::reconfigure(reconf_ctx.create_dependant("SSLConfig"));
+  SNIConfig::reconfigure(reconf_ctx.create_dependant("SNIConfig"));
+  SSLCertificateConfig::reconfigure(reconf_ctx.create_dependant("SSLCertificateConfig"));
 #if TS_USE_QUIC == 1
-  QUICCertConfig::reconfigure();
+  QUICCertConfig::reconfigure(reconf_ctx.create_dependant("QUICCertConfig"));
 #endif
 }
 
@@ -50,7 +50,7 @@ SSLClientCoordinator::startup()
   // The SSLConfig must have its configuration loaded before the SNIConfig.
   // The SSLConfig owns the client cert context storage and the SNIConfig will load
   // into it.
-  sslClientUpdate.reset(new ConfigUpdateHandler<SSLClientCoordinator>());
+  sslClientUpdate.reset(new ConfigUpdateHandler<SSLClientCoordinator>("SSLClientCoordinator"));
   sslClientUpdate->attach("proxy.config.ssl.client.cert.path");
   sslClientUpdate->attach("proxy.config.ssl.client.cert.filename");
   sslClientUpdate->attach("proxy.config.ssl.client.private_key.path");

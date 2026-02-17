@@ -166,6 +166,126 @@ class Common():
         return self
 
 
+class ConfigReload(Common):
+    """
+        Handy class to map traffic_ctl config reload options.
+
+        Options (in command order):
+            --token, -t         Configuration token
+            --monitor, -m       Monitor reload progress until completion
+            --show-details, -s  Show detailed information of the reload
+            --include-logs, -l  Include logs (with --show-details)
+            --refresh-int, -r   Refresh interval in seconds (with --monitor)
+            --force, -F         Force reload even if one in progress
+            --data, -d          Inline config data (@file1 @file2, @- for stdin, or yaml string)
+    """
+
+    def __init__(self, dir, tr, tn):
+        super().__init__(tr, lambda x: self.__finish())
+        self._cmd = "traffic_ctl config reload"
+        self._tr = tr
+        self._dir = dir
+        self._tn = tn
+
+    def __finish(self):
+        """
+            Sets the command to the test. Make sure this gets called after
+            validation is set. Without this call the test will fail.
+        """
+        self._tr.Processes.Default.Command = self._cmd
+
+    # --- Options in command order ---
+
+    def token(self, token: str):
+        """Set a custom token for the reload (--token, -t)"""
+        self._cmd = f'{self._cmd} --token {token} '
+        return self
+
+    def monitor(self):
+        """Monitor reload progress until completion (--monitor, -m)"""
+        self._cmd = f'{self._cmd} --monitor '
+        return self
+
+    def show_details(self):
+        """Show detailed information of the reload (--show-details, -s)"""
+        self._cmd = f'{self._cmd} --show-details '
+        return self
+
+    def include_logs(self):
+        """Include logs in details (--include-logs, -l). Use with show_details()"""
+        self._cmd = f'{self._cmd} --include-logs '
+        return self
+
+    def refresh_int(self, seconds: int):
+        """Set refresh interval in seconds (--refresh-int, -r). Use with monitor()"""
+        self._cmd = f'{self._cmd} --refresh-int {seconds} '
+        return self
+
+    def force(self):
+        """Force reload even if one in progress (--force, -F)"""
+        self._cmd = f'{self._cmd} --force '
+        return self
+
+    def data(self, data_arg: str):
+        """Set inline YAML data string (--data, -d)"""
+        self._cmd = f'{self._cmd} --data \'{data_arg}\' '
+        return self
+
+    def data_file(self, filepath: str):
+        """Set file-based inline data (--data @filepath, -d @filepath)"""
+        self._cmd = f'{self._cmd} --data @{filepath} '
+        return self
+
+    def data_files(self, filepaths: list):
+        """Set multiple file-based inline data (--data @file1 @file2 ...)"""
+        files_str = ' '.join([f'@{fp}' for fp in filepaths])
+        self._cmd = f'{self._cmd} --data {files_str} '
+        return self
+
+    def delay(self, seconds: int):
+        """Set initial wait before first status check (--delay, -w). Use with monitor() or show_details()"""
+        self._cmd = f'{self._cmd} --delay {seconds} '
+        return self
+
+    # --- Validation ---
+
+    def validate_with_text(self, text: str):
+        self._tr.Processes.Default.Streams.stdout = MakeGoldFileWithText(text, self._dir, self._tn)
+        self.__finish()
+
+
+class ConfigStatus(Common):
+    """
+        Handy class to map traffic_ctl config status.
+    """
+
+    def __init__(self, dir, tr, tn):
+        super().__init__(tr, lambda x: self.__finish())
+        self._cmd = "traffic_ctl config status"
+        self._tr = tr
+        self._dir = dir
+        self._tn = tn
+
+    def __finish(self):
+        """
+            Sets the command to the test. Make sure this gets called after
+            validation is set. Without this call the test will fail.
+        """
+        self._tr.Processes.Default.Command = self._cmd
+
+    def token(self, token: str):
+        self._cmd = f'{self._cmd} --token {token} '
+        return self
+
+    def count(self, count: str):
+        self._cmd = f'{self._cmd} --count {count}'
+        return self
+
+    def validate_with_text(self, text: str):
+        self._tr.Processes.Default.Streams.stdout = MakeGoldFileWithText(text, self._dir, self._tn)
+        self.__finish()
+
+
 class Config(Common):
     """
         Handy class to map traffic_ctl config options.
@@ -226,6 +346,12 @@ class Config(Common):
             paths_str = ' '.join(paths)
             self._cmd = f'{self._cmd} reset {paths_str}'
         return self
+
+    def reload(self):
+        return ConfigReload(self._dir, self._tr, self._tn)
+
+    def status(self):
+        return ConfigStatus(self._dir, self._tr, self._tn)
 
     def as_records(self):
         self._cmd = f'{self._cmd} --records'
@@ -367,10 +493,10 @@ class TrafficCtl(Config, Server):
         Every time a config() is called, a new test is created.
     """
 
-    def __init__(self, test, records_yaml=None):
+    def __init__(self, test, records_yaml=None, retcode=0):
         self._testNumber = 0
         self._current_test_number = self._testNumber
-
+        self._retcode = retcode
         self._Test = test
         self._ts = self._Test.MakeATSProcess(f"ts_{self._testNumber}")
         if records_yaml != None:
@@ -389,7 +515,7 @@ class TrafficCtl(Config, Server):
 
         tr.Processes.Default.Env = self._ts.Env
         tr.DelayStart = 3
-        tr.Processes.Default.ReturnCode = 0
+        tr.Processes.Default.ReturnCode = self._retcode
         tr.StillRunningAfter = self._ts
 
         self._tests.insert(self.__get_index(), tr)
@@ -408,6 +534,6 @@ class TrafficCtl(Config, Server):
         return RPC(self._Test.TestDirectory, self._tests[self.__get_index()], self._testNumber)
 
 
-def Make_traffic_ctl(test, records_yaml=None):
-    tctl = TrafficCtl(test, records_yaml)
+def Make_traffic_ctl(test, records_yaml=None, retcode=0):
+    tctl = TrafficCtl(test, records_yaml, retcode)
     return tctl

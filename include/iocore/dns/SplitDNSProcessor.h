@@ -46,7 +46,7 @@ struct SplitDNSConfig {
 
   static bool isSplitDNSEnabled();
 
-  static void      reconfigure();
+  static void      reconfigure(ConfigContext ctx = {});
   static SplitDNS *acquire();
   static void      release(SplitDNS *params);
   static void      print();

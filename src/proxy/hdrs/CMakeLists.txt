@@ -55,7 +55,14 @@ if(BUILD_TESTING)
     unit_tests/unit_test_main.cc
   )
   target_link_libraries(
-    test_proxy_hdrs PRIVATE ts::hdrs ts::tscore ts::inkevent libswoc::libswoc Catch2::Catch2WithMain lshpack
+    test_proxy_hdrs
+    PRIVATE ts::hdrs
+            ts::tscore
+            ts::inkevent
+            libswoc::libswoc
+            Catch2::Catch2WithMain
+            lshpack
+            configmanager
   )
   add_catch2_test(NAME test_proxy_hdrs COMMAND test_proxy_hdrs)
 

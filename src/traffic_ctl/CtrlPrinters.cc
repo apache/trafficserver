@@ -85,6 +85,11 @@ BasePrinter::write_output(shared::rpc::JSONRPCResponse const &response)
 void
 BasePrinter::write_output(std::string_view output) const
 {
+  if (is_json_format()) {
+    // if json format, no other output is expected to avoid mixing formats.
+    // Specially if you consume the json output with a tool.
+    return;
+  }
   std::cout << output << '\n';
 }
 
@@ -99,7 +104,7 @@ BasePrinter::write_output_json(YAML::Node const &node) const
   YAML::Emitter out;
   out << YAML::DoubleQuoted << YAML::Flow;
   out << node;
-  write_output(std::string_view{out.c_str()});
+  std::cout << out.c_str() << '\n';
 }
 //------------------------------------------------------------------------------------------------------------------------------------
 void
@@ -172,9 +177,239 @@ DiffConfigPrinter::write_output(YAML::Node const &result)
 }
 //------------------------------------------------------------------------------------------------------------------------------------
 void
-ConfigReloadPrinter::write_output([[maybe_unused]] YAML::Node const &result)
+ConfigReloadPrinter::write_output(YAML::Node const &result)
 {
+  // no op, ctrl command will handle the output directly.
+  // BasePrinter will handle the error and the json output if needed.
 }
+namespace
+{
+void
+group_files(const ConfigReloadResponse::ReloadInfo &info, std::vector<const ConfigReloadResponse::ReloadInfo *> &files)
+{
+  if (!info.meta.is_main_task) {
+    files.push_back(&info);
+  }
+  for (const auto &sub : info.sub_tasks) {
+    group_files(sub, files);
+  }
+}
+
+template <class Duration>
+inline typename Duration::rep
+duration_between(std::time_t start, std::time_t end)
+{
+  if (end < start) {
+    return typename Duration::rep(-1);
+  }
+  using clock = std::chrono::system_clock;
+  auto delta  = clock::from_time_t(end) - clock::from_time_t(start);
+  return std::chrono::duration_cast<Duration>(delta).count();
+}
+
+auto
+stot(const std::string &s) -> std::time_t
+{
+  std::istringstream ss(s);
+  std::time_t        t;
+  ss >> t;
+  return t;
+}
+
+// Parse milliseconds from string (for precise duration calculation)
+auto
+stoms(const std::string &s) -> int64_t
+{
+  if (s.empty()) {
+    return 0;
+  }
+  std::istringstream ss(s);
+  int64_t            ms;
+  ss >> ms;
+  return ms;
+}
+
+// Calculate duration in milliseconds from ms timestamps
+inline int
+duration_ms(int64_t start_ms, int64_t end_ms)
+{
+  if (end_ms < start_ms) {
+    return -1;
+  }
+  return static_cast<int>(end_ms - start_ms);
+}
+
+// Format millisecond timestamp as human-readable date with milliseconds
+// Output format: "YYYY Mon DD HH:MM:SS.mmm"
+std::string
+format_time_ms(int64_t ms_timestamp)
+{
+  if (ms_timestamp <= 0) {
+    return "-";
+  }
+  std::time_t seconds = ms_timestamp / 1000;
+  int         millis  = ms_timestamp % 1000;
+
+  std::string buf;
+  swoc::bwprint(buf, "{}.{:03d}", swoc::bwf::Date(seconds), millis);
+  return buf;
+}
+
+// Fallback: format second-precision timestamp
+std::string
+format_time_s(std::time_t seconds)
+{
+  if (seconds <= 0) {
+    return "-";
+  }
+  std::string buf;
+  swoc::bwprint(buf, "{}", swoc::bwf::Date(seconds));
+  return buf;
+}
+} // namespace
+void
+ConfigReloadPrinter::print_basic_ri_line(const ConfigReloadResponse::ReloadInfo &info, bool json)
+{
+  if (json && this->is_json_format()) {
+    // json should have been handled already.
+    return;
+  }
+
+  int success{0}, running{0}, failed{0}, created{0};
+
+  std::vector<const ConfigReloadResponse::ReloadInfo *> files;
+  group_files(info, files);
+  int total = files.size();
+  for (const auto *f : files) {
+    if (f->status == "success") {
+      success++;
+    } else if (f->status == "in_progress") {
+      running++;
+    } else if (f->status == "fail") {
+      failed++;
+    } else if (f->status == "created") {
+      created++;
+    }
+  }
+
+  std::cout << "● Reload: " << info.config_token << ", status: " << info.status << ", descr: '" << info.description << "', ("
+            << (success + failed) << "/" << total << ")\n";
+}
+
+void
+ConfigReloadPrinter::print_reload_report(const ConfigReloadResponse::ReloadInfo &info, bool full_report)
+{
+  if (this->is_json_format()) {
+    // json should have been handled already.
+    return;
+  }
+
+  // Use millisecond precision if available, fallback to second precision
+  int overall_duration;
+  if (!info.meta.created_time_ms.empty() && !info.meta.last_updated_time_ms.empty()) {
+    overall_duration = duration_ms(stoms(info.meta.created_time_ms), stoms(info.meta.last_updated_time_ms));
+  } else {
+    overall_duration = static_cast<int>(
+      duration_between<std::chrono::milliseconds>(stot(info.meta.created_time), stot(info.meta.last_updated_time)));
+  }
+
+  int total{0}, completed{0}, failed{0}, created{0}, in_progress{0};
+
+  auto calculate_summary = [&](auto &&self, const ConfigReloadResponse::ReloadInfo &ri) -> void {
+    // we do not count if it's main task, or if contains subtasks.
+    if (ri.sub_tasks.empty()) {
+      if (ri.status == "success") {
+        completed++;
+      } else if (ri.status == "fail") {
+        failed++;
+      } else if (ri.status == "created") {
+        created++;
+      } else if (ri.status == "in_progress") {
+        in_progress++;
+      }
+      total++;
+    }
+
+    if (!ri.sub_tasks.empty()) {
+      for (const auto &sub : ri.sub_tasks) {
+        self(self, sub);
+      }
+    }
+  };
+
+  std::vector<const ConfigReloadResponse::ReloadInfo *> files;
+  group_files(info, files);
+
+  calculate_summary(calculate_summary, info);
+
+  // Format times with millisecond precision if available
+  std::string start_time_str, end_time_str;
+  if (!info.meta.created_time_ms.empty()) {
+    start_time_str = format_time_ms(stoms(info.meta.created_time_ms));
+  } else {
+    start_time_str = format_time_s(stot(info.meta.created_time));
+  }
+  if (!info.meta.last_updated_time_ms.empty()) {
+    end_time_str = format_time_ms(stoms(info.meta.last_updated_time_ms));
+  } else {
+    end_time_str = format_time_s(stot(info.meta.last_updated_time));
+  }
+
+  std::cout << "● Apache Traffic Server Reload [" << info.status << "]\n";
+  std::cout << "   Token     : " << info.config_token << '\n';
+  std::cout << "   Start Time: " << start_time_str << '\n';
+  std::cout << "   End Time  : " << end_time_str << '\n';
+  std::cout << "   Duration  : "
+            << (overall_duration < 0 ? "-" :
+                                       (overall_duration < 1000 ? "less than a second" : std::to_string(overall_duration) + "ms"))
+            << "\n\n";
+  std::cout << "   Summary   : Total=" << total << ", success=" << completed << ", in-progress=" << in_progress
+            << ", failed=" << failed << "\n\n";
+
+  if (files.size() > 0) {
+    std::cout << "\n   Files:\n";
+  }
+  size_t maxlen = 0;
+  for (auto *f : files) {
+    size_t mmax = std::max(f->description.size(), f->filename.size());
+    if (mmax > maxlen) {
+      maxlen = mmax;
+    }
+  }
+
+  for (size_t i = 0; i < files.size(); i++) {
+    const auto &f    = files[i];
+    bool        last = (i == files.size() - 1);
+
+    std::string fname;
+    std::string source;
+    if (f->filename.empty() || f->filename == "<none>") {
+      fname  = f->description;
+      source = "rpc";
+    } else {
+      fname  = f->filename;
+      source = "file";
+    }
+
+    // Use millisecond precision if available, fallback to second precision
+    int dur_ms;
+    if (!f->meta.created_time_ms.empty() && !f->meta.last_updated_time_ms.empty()) {
+      dur_ms = duration_ms(stoms(f->meta.created_time_ms), stoms(f->meta.last_updated_time_ms));
+    } else {
+      dur_ms =
+        static_cast<int>(duration_between<std::chrono::milliseconds>(stot(f->meta.created_time), stot(f->meta.last_updated_time)));
+    }
+
+    std::cout << "    - " << std::left << std::setw(maxlen + 2) << fname << "(" << dur_ms << "ms)  " << "[" << f->status
+              << "]  source: " << source << "\n";
+    if (full_report && !f->logs.empty()) {
+      for (size_t j = 0; j < f->logs.size(); j++) {
+        std::cout << std::setw(7) << "      - " << f->logs[j] << '\n';
+      }
+    }
+  }
+}
+
 //------------------------------------------------------------------------------------------------------------------------------------
 void
 ConfigShowFileRegistryPrinter::write_output(YAML::Node const &result)

@@ -39,6 +39,7 @@
 #include "proxy/http/remap/RemapPluginInfo.h"
 #include "proxy/http/remap/UrlRewrite.h"
 #include "proxy/http/remap/UrlMapping.h"
+#include "mgmt/config/ConfigContext.h"
 
 #define EMPTY_PORT_MAPPING (int32_t) ~0
 
@@ -54,7 +55,7 @@ mapping_type request_url_remap_redirect(HTTPHdr *request_header, URL *redirect_u
 bool         response_url_remap(HTTPHdr *response_header, UrlRewrite *table);
 
 // Reload Functions
-bool reloadUrlRewrite();
+bool reloadUrlRewrite(ConfigContext ctx);
 bool urlRewriteVerify();
 
 int url_rewrite_CB(const char *name, RecDataT data_type, RecData data, void *cookie);

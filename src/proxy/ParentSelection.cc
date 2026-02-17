@@ -288,7 +288,7 @@ int ParentConfig::m_id = 0;
 void
 ParentConfig::startup()
 {
-  parentConfigUpdate = new ConfigUpdateHandler<ParentConfig>();
+  parentConfigUpdate = new ConfigUpdateHandler<ParentConfig>("ParentConfig");
 
   // Load the initial configuration
   reconfigure();
@@ -305,7 +305,7 @@ ParentConfig::startup()
 }
 
 void
-ParentConfig::reconfigure()
+ParentConfig::reconfigure(ConfigContext ctx)
 {
   Note("%s loading ...", ts::filename::PARENT);
 

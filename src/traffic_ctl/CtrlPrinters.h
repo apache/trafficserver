@@ -24,6 +24,8 @@
 #include <string_view>
 #include <yaml-cpp/yaml.h>
 
+#include "jsonrpc/CtrlRPCRequests.h"
+#include "jsonrpc/ctrl_yaml_codecs.h"
 #include "shared/rpc/RPCRequests.h"
 #include <swoc/BufferWriter.h>
 
@@ -112,8 +114,16 @@ public:
   Options::FormatFlags get_format() const;
   bool                 print_rpc_message() const;
   bool                 is_json_format() const;
-  bool                 is_records_format() const;
-  bool                 should_include_default() const;
+  void                 disable_json_format();
+
+  bool is_records_format() const;
+  bool should_include_default() const;
+
+  /// In case a derived class needs to call derived class functions. Ugly but works.
+  /// Note: CRTP may worth a try.
+  template <typename Derived> // TODO, move it down the file.
+  const Derived                       *as() const;
+  template <typename Derived> Derived *as();
 
 protected:
   void    write_output_json(YAML::Node const &node) const;
@@ -154,6 +164,12 @@ inline bool
 BasePrinter::is_json_format() const
 {
   return _printOpt._format & Options::FormatFlags::JSON;
+}
+
+inline void
+BasePrinter::disable_json_format()
+{
+  _printOpt._format = static_cast<Options::FormatFlags>(_printOpt._format & ~Options::FormatFlags::JSON);
 }
 
 inline bool
@@ -211,6 +227,15 @@ class ConfigReloadPrinter : public BasePrinter
 
 public:
   ConfigReloadPrinter(BasePrinter::Options opt) : BasePrinter(opt) {}
+
+  void print_basic_ri_line(const ConfigReloadResponse::ReloadInfo &info, bool json = true);
+
+  void print_reload_report(const ConfigReloadResponse::ReloadInfo &info, bool full_report = false);
+  void
+  write_single_line_info(const ConfigReloadResponse::ReloadInfo &info)
+  {
+    print_basic_ri_line(info, false);
+  }
 };
 //------------------------------------------------------------------------------------------------------------------------------------
 class ConfigShowFileRegistryPrinter : public BasePrinter
@@ -293,7 +318,6 @@ public:
   RPCAPIPrinter(BasePrinter::Options opt) : BasePrinter(opt) {}
 };
 //------------------------------------------------------------------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------------------------------------------------
 class ServerStatusPrinter : public BasePrinter
 {
   void write_output(YAML::Node const &result) override;
@@ -302,3 +326,26 @@ public:
   ServerStatusPrinter(BasePrinter::Options opt) : BasePrinter(opt) {}
 };
 //------------------------------------------------------------------------------------------------------------------------------------
+
+/// In case a derived class needs to call derived class functions. Ugly but works.
+/// Note: CRTP may worth a try.
+template <typename Derived> // TODO, move it down the file.
+const Derived *
+BasePrinter::as() const
+{
+  auto r = dynamic_cast<const Derived *>(this);
+  if (!r) {
+    throw std::runtime_error("Internal error: Couldn't get Derived instance");
+  }
+  return r;
+}
+template <typename Derived>
+Derived *
+BasePrinter::as()
+{
+  auto r = dynamic_cast<Derived *>(this);
+  if (!r) {
+    throw std::runtime_error("Internal error: Couldn't get Derived instance");
+  }
+  return r;
+}

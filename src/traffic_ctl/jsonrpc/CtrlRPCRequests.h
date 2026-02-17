@@ -24,6 +24,8 @@
 // We base on the common client types.
 #include "shared/rpc/RPCRequests.h"
 
+#include <yaml-cpp/yaml.h>
+
 /// This file defines all the traffic_ctl API client request and responses objects needed to model the jsonrpc messages used in the
 /// TS JSONRPC Node API.
 
@@ -39,15 +41,67 @@ struct GetAllRecordsRequest : shared::rpc::RecordLookupRequest {
 };
 //------------------------------------------------------------------------------------------------------------------------------------
 ///
-/// @brief Models the config reload request. No params are needed.
+/// @brief Models the config reload request. Supports both file-based and rpc-supplied  modes.
+/// rpc-supplied mode is triggered when configs is present.
 ///
 struct ConfigReloadRequest : shared::rpc::ClientRequest {
+  struct Params {
+    std::string token;
+    bool        force{false};
+    YAML::Node  configs; // Optional: if present, triggers inline mode
+  };
+  ConfigReloadRequest(Params p) { super::params = std::move(p); }
   std::string
   get_method() const override
   {
     return "admin_config_reload";
   }
 };
+
+// Full list of reload tasks, could be nested.
+struct ConfigReloadResponse {
+  // Existing reload task info, could be nested.
+  struct ReloadInfo {
+    std::string              config_token;
+    std::string              status;
+    std::string              description;
+    std::string              filename;
+    std::vector<std::string> logs;
+    std::vector<ReloadInfo>  sub_tasks;
+    struct Meta { // internal info.
+      int64_t created_time_ms{0};
+      int64_t last_updated_time_ms{0};
+      bool    is_main_task{false};
+    } meta;
+  };
+
+  struct Error {
+    int         code;
+    std::string message;
+  };
+  std::vector<Error> error; ///< Error list, if any.
+
+  // when requestiong existing tasks.
+  std::vector<ReloadInfo> tasks;
+
+  std::string              created_time;
+  std::vector<std::string> messages;
+  std::string              config_token;
+};
+
+struct FetchConfigReloadStatusRequest : shared::rpc::ClientRequest {
+  struct Params {
+    std::string token;
+    std::string count{"1"}; // number of latest reloads to return, 0 means all.
+  };
+  FetchConfigReloadStatusRequest(Params p) { super::params = std::move(p); }
+  std::string
+  get_method() const override
+  {
+    return "get_reload_config_status";
+  }
+};
+
 //------------------------------------------------------------------------------------------------------------------------------------
 ///
 /// @brief To fetch config file registry from the RPC node.

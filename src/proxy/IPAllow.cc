@@ -93,7 +93,7 @@ IpAllow::startup()
   // Should not have been initialized before
   ink_assert(IpAllow::configid == 0);
 
-  ipAllowUpdate = new ConfigUpdateHandler<IpAllow>();
+  ipAllowUpdate = new ConfigUpdateHandler<IpAllow>("IpAllow");
   ipAllowUpdate->attach("proxy.config.cache.ip_allow.filename");
   ipAllowUpdate->attach("proxy.config.cache.ip_categories.filename");
 
@@ -108,34 +108,36 @@ IpAllow::startup()
 }
 
 void
-IpAllow::reconfigure()
+IpAllow::reconfigure(ConfigContext ctx)
 {
-  self_type *new_table;
-
+  self_type  *new_table;
+  std::string text;
   Note("%s loading ...", ts::filename::IP_ALLOW);
+  ctx.in_progress();
 
   new_table = new self_type("proxy.config.cache.ip_allow.filename", "proxy.config.cache.ip_categories.filename");
   // IP rules need categories, so load them first (if they exist).
   if (auto errata = new_table->BuildCategories(); !errata.is_ok()) {
-    std::string text;
-    swoc::bwprint(text, "{} failed to load\n{}", new_table->ip_categories_config_file, errata);
-    Error("%s", text.c_str());
+    swoc::bwprint(text, "{} failed to load", new_table->ip_categories_config_file);
+    Error("%s\n%s", text.c_str(), swoc::bwprint(text, "{}", errata).c_str());
+    ctx.fail(errata, "{} failed to load", new_table->ip_categories_config_file);
     delete new_table;
     return;
   }
   if (auto errata = new_table->BuildTable(); !errata.is_ok()) {
-    std::string text;
-    swoc::bwprint(text, "{} failed to load\n{}", ts::filename::IP_ALLOW, errata);
+    swoc::bwprint(text, "{} failed to load", ts::filename::IP_ALLOW);
     if (errata.severity() <= ERRATA_ERROR) {
       Error("%s", text.c_str());
     } else {
       Fatal("%s", text.c_str());
     }
+    ctx.fail(errata, "{} failed to load", ts::filename::IP_ALLOW);
     delete new_table;
     return;
   }
   configid = configProcessor.set(configid, new_table);
   Note("%s finished loading", ts::filename::IP_ALLOW);
+  ctx.complete("Finished loading");
 }
 
 IpAllow *
