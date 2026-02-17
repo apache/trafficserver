@@ -9128,8 +9128,8 @@ TSLogAddrUnmarshal(char **buf, char *dest, int len)
   }
 
   if (!ats_is_ip(&endpoint) && !ats_is_unix(&endpoint)) {
-    *dest = '0';
-    *dest = '\0';
+    dest[0] = '0';
+    dest[1] = '\0';
     return {-1, 1};
   } else if (ats_ip_ntop(&endpoint, dest, len)) {
     return {read_len, static_cast<int>(::strlen(dest))};
