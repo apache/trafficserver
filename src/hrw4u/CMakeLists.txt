@@ -83,6 +83,12 @@ set(HRW4U_SOURCES Error.cc Types.cc Tables.cc Visitor.cc HRW4UVisitorImpl.cc)
 add_library(hrw4u STATIC ${HRW4U_SOURCES} ${HRW4U_GENERATED_SOURCES})
 add_library(ts::hrw4u ALIAS hrw4u)
 
+# GCC treats out-of-order and missing designated initializers as errors under
+# -Werror. The hrw4u tables use Clang-style designated initializers that rely
+# on default member values, which is safe but upsets GCC.
+target_compile_options(hrw4u PRIVATE -Wno-missing-field-initializers)
+set_target_properties(hrw4u PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
 add_dependencies(hrw4u hrw4u_generated)
 
 target_include_directories(
@@ -91,7 +97,13 @@ target_include_directories(
   PRIVATE ${HRW4U_GENERATED_DIR} ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-target_link_libraries(hrw4u PUBLIC antlr4_static)
+# Prefer static ANTLR4, fall back to shared if unavailable.
+if(TARGET antlr4_static)
+  target_link_libraries(hrw4u PUBLIC antlr4_static)
+else()
+  target_link_libraries(hrw4u PUBLIC antlr4_shared)
+  target_include_directories(hrw4u PRIVATE ${ANTLR4_INCLUDE_DIR})
+endif()
 
 set(HRW4U_PUBLIC_HEADERS
     ${PROJECT_SOURCE_DIR}/include/hrw4u/Error.h ${PROJECT_SOURCE_DIR}/include/hrw4u/Types.h

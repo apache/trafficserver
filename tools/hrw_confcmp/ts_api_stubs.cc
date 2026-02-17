@@ -24,6 +24,7 @@
 #include <cstdio>
 #include <cstdarg>
 #include <openssl/ssl.h>
+#include "cripts/Lulu.hpp"
 
 #ifndef TS_REMAP_PSEUDO_HOOK
 constexpr int TS_REMAP_PSEUDO_HOOK = 30;
@@ -848,7 +849,7 @@ public:
     class SANBase
     {
     public:
-      std::string Join(const char *) const;
+      cripts::string Join(const char *) const;
     };
     SANBase dns;
     SANBase ipadd;
@@ -914,7 +915,7 @@ CertBase::Certificate::~Certificate() {}
 CertBase::Signature::Signature(CertBase *) {}
 CertBase::Signature::~Signature() {}
 
-std::string
+cripts::string
 CertBase::SAN::SANBase::Join(const char *) const
 {
   return "";

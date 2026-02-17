@@ -57,6 +57,7 @@ if(TARGET ts::hrw4u)
 
   target_link_libraries(
     hrw_confcmp_lib
+    PUBLIC hrw_confcmp_parser
     PUBLIC libswoc::libswoc
     PUBLIC OpenSSL::Crypto
     PUBLIC OpenSSL::SSL
@@ -78,23 +79,34 @@ if(TARGET ts::hrw4u)
 
   add_executable(hrw_confcmp main.cc comparator.cc)
 
-  target_link_libraries(
-    hrw_confcmp
-    PRIVATE hrw_confcmp_parser
-    PRIVATE hrw_confcmp_lib
-    PRIVATE ts::inkevent
-    PRIVATE ts::records
-  )
+  # GNU ld's single-pass archive processing can miss symbols when objects
+  # within the same static library reference each other (e.g. conditions.cc
+  # references stubs in ts_api_stubs.cc). Wrapping with --whole-archive
+  # ensures all objects are included. macOS ld iterates until convergence
+  # so it doesn't need this.
+  if(APPLE)
+    target_link_libraries(
+      hrw_confcmp
+      PRIVATE hrw_confcmp_lib
+      PRIVATE hrw_confcmp_parser
+      PRIVATE ts::inkevent
+      PRIVATE ts::records
+    )
+  else()
+    target_link_libraries(
+      hrw_confcmp
+      PRIVATE -Wl,--whole-archive hrw_confcmp_lib -Wl,--no-whole-archive
+      PRIVATE hrw_confcmp_parser
+      PRIVATE ts::inkevent
+      PRIVATE ts::records
+    )
+  endif()
 
   target_include_directories(
     hrw_confcmp
     PRIVATE ${CMAKE_SOURCE_DIR}/plugins/header_rewrite
     PRIVATE ${CMAKE_SOURCE_DIR}/include
   )
-
-  # Note: This tool needs significant refactoring to properly link against
-  # header_rewrite parsing infrastructure. The header_rewrite plugin code
-  # needs to be split into a library that can be reused by this tool.
 
   message(STATUS "hrw_confcmp tool will be built (hrw4u support available)")
 
