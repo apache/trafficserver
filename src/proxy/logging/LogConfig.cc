@@ -71,8 +71,6 @@ DbgCtl dbg_ctl_logspace{"logspace"};
 DbgCtl dbg_ctl_log{"log"};
 DbgCtl dbg_ctl_log_config{"log-config"};
 
-// Removed: ConfigUpdateHandler<LogConfig> — now uses ConfigRegistry
-
 } // end anonymous namespace
 
 void
@@ -421,18 +419,10 @@ LogConfig::setup_log_objects()
   function from the logging thread.
   -------------------------------------------------------------------------*/
 
-// int
-// LogConfig::reconfigure(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */, RecData /* data ATS_UNUSED */,
-//                        void * /* cookie ATS_UNUSED */)
-// {
-//   Dbg(dbg_ctl_log_config, "Reconfiguration request accepted");
-//   Log::config->reconfiguration_needed = true;
-//   return 0;
-// }
 void
-LogConfig::reconfigure([[maybe_unused]] ConfigContext ctx) // ConfigUpdateHandler callback
+LogConfig::reconfigure(ConfigContext ctx)
 {
-  Dbg(dbg_ctl_log_config, "[v2] Reconfiguration request accepted");
+  Dbg(dbg_ctl_log_config, "Reconfiguration request accepted");
 
   Log::config->reconfiguration_needed = true;
   Log::config->reload_ctx             = ctx;
