@@ -183,11 +183,15 @@ main([[maybe_unused]] int argc, const char **argv)
   // server commands
   server_command.add_command("backtrace", "Show a full stack trace of the traffic_server process",
                              [&]() { CtrlUnimplementedCommand("backtrace"); });
-  server_command.add_command("status", "Show the proxy status", Command_Execute).add_example_usage("traffic_ctl server status");
-  server_command.add_command("drain", "Drain the requests", Command_Execute)
-    .add_example_usage("traffic_ctl server drain [OPTIONS]")
-    .add_option("--no-new-connection", "-N", "Wait for new connections down to threshold before starting draining")
-    .add_option("--undo", "-U", "Recover server from the drain mode");
+  server_command.add_command("status", "Show the proxy status", [&]() { command->execute(); })
+    .add_example_usage("traffic_ctl server status");
+  auto &drain_cmd = server_command.add_command("drain", "Drain the requests", [&]() { command->execute(); });
+  drain_cmd.add_example_usage("traffic_ctl server drain [OPTIONS]");
+
+  drain_cmd.add_mutex_group("drain_mode", false, "Drain mode options");
+  drain_cmd.add_option_to_group("drain_mode", "--no-new-connection", "-N",
+                                "Wait for new connections down to threshold before starting draining");
+  drain_cmd.add_option_to_group("drain_mode", "--undo", "-U", "Recover server from the drain mode");
 
   auto &debug_command =
     server_command.add_command("debug", "Enable/Disable ATS for diagnostic messages at runtime").require_commands();
