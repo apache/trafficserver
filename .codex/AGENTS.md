@@ -1,6 +1,6 @@
-# CLAUDE.md
+# AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to coding agents working with this repository.
 
 ## Project Overview
 
@@ -14,56 +14,56 @@ with a sophisticated plugin system.
 - Testing: Catch2 (unit tests) + AuTest Python framework (end-to-end tests)
 - Protocols: TLS, HTTP/1.1, HTTP/2, HTTP/3 (via Quiche)
 
-## Personal Preferences
+## Project Structure
 
-If `.claude/CLAUDE.local.md` sub-agent exists, load it for user-specific code style
-preferences and working conventions. This file is gitignored and optional.
+Core sources live in `src/` (for example `src/proxy`, `src/iocore`,
+`src/traffic_server`). Public headers are in `include/`. Built-in plugins are
+in `plugins/` and `plugins/experimental/`. End-to-end tests are in `tests/`,
+especially `tests/gold_tests/`. Build system files are in `cmake/` plus the
+top-level `CMakeLists.txt`, and docs are in `doc/`. Third party libraries that
+we include locally are in `lib/`.
 
-## Build Commands
+## Codex Agent Quick Start
 
-### Basic Build
+Use this sequence for most tasks:
+
 ```bash
-# Configure (creates out-of-source build directory)
-cmake -B build
-
-# Build everything
-cmake --build build
-
-# Install (default: /usr/local)
-cmake --install build
-```
-
-### Common Build Presets
-```bash
-# Development build with compile_commands.json for IDE support
+# Configure and build a dev tree.
 cmake --preset dev
 cmake --build build-dev
 
-# Release build
-cmake --preset release
-cmake --build build-release
+# Run a focused unit test or test suite.
+ctest --test-dir build-dev -j4
 
-# Build with autests enabled
-cmake --preset ci-fedora-autest
-cmake --build build-autest
+# Format before commit.
+cmake --build build-dev -t format
 ```
 
-### Useful Build Options
+For environments using the default preset naming:
+
 ```bash
-# Specify dependency locations (like autotools --with-*)
-cmake -B build -Djemalloc_ROOT=/opt/jemalloc -DOPENSSL_ROOT_DIR=/opt/boringssl
-
-# Build specific targets
-cmake --build build -t traffic_server
-cmake --build build -t format  # Format code before committing
+cmake --preset default
+cmake --build build-default
+ctest --test-dir build-default
+cmake --build build-default -t format
 ```
+
+If this file drifts from current project conventions, run `/init` to
+re-bootstrap agent guidance, then keep repository-specific commands and rules
+below.
+
+## Personal Preferences
+
+If `.codex/AGENTS.local.md` exists, load it for user-specific style preferences
+and working conventions. This file is optional and should stay untracked.
 
 ### Key CMake Options
 - `BUILD_EXPERIMENTAL_PLUGINS=ON` - Enable experimental plugins
 - `ENABLE_QUICHE=ON` - QUIC/HTTP3 support
 - `ENABLE_CRIPTS=ON` - Cripts scripting API
-- `BUILD_REGRESSION_TESTING=ON` - Enable test suite
+- `BUILD_REGRESSION_TESTING=ON` - Enable legacy test suite
 - `ENABLE_ASAN=ON` - Configure ASan instrumentation
+- `BUILD_TESTING=ON` - Enable building of the Catch2 tests
 
 ## Testing
 
@@ -97,13 +97,19 @@ cmake --build build -t autest
 **Run specific test(s):**
 ```bash
 cd build/tests
-pipenv install  # First time only
-./autest.sh --sandbox /tmp/sbcursor --clean=none -f <test_name_without_test_py>
+./autest.sh --sandbox /tmp/sbcodex --clean=none -f <test_name_without_test_py>
 ```
 
 For example, to run `cache-auth.test.py`:
 ```bash
 ./autest.sh --sandbox /tmp/sbcursor --clean=none -f cache-auth
+```
+
+To run multiple tests efficiently, pass the -j option.
+
+```bash
+cd build/tests
+./autest.sh -j4 --sandbox /tmp/sbcodex --clean=none -f 'header_rewrite*'
 ```
 
 Most end-to-end test coverage is in `tests/gold_tests/`. The CI system uses the
@@ -130,17 +136,30 @@ Always format code before committing:
 cmake --build build -t format
 ```
 
+### Before Commit Checklist
+- Keep scope tight and avoid unrelated file churn.
+- Run formatter: `cmake --build build -t format` (or `build-dev` when used).
+- Run targeted tests for changed areas (or explain why tests were skipped).
+- Keep commit message body wrapped to 72 characters per line.
+- Describe why the change was needed, not only what changed.
+
+### Editing Safety
+- Do not revert unrelated working tree changes.
+- Prefer minimal diffs over broad refactors unless requested.
+- Do not edit generated artifacts unless the task explicitly requires it.
+- When touching behavior, add or update tests when practical.
+
 ### Git Workflow
-- Branch off `master` for all PRs
+- Branch off `master` for almost all PRs
 - PRs must pass all Jenkins CI jobs before merging
 - Use the GitHub PR workflow (not Jira)
 - Set appropriate labels: **Backport**, **WIP**, etc.
 
 ### Commit Message Format
-When Claude Code creates commits, start with a short summary line, use concise
-description (1-3 sentences) that focus on "why" rather than "what". If the PR
-fixes an issue, add a 'Fixes: #<issue_number>' line. Keep line lengths of the
-commit messages to 72 characters.
+When an agent creates commits, use a short imperative summary line (under 50
+characters when practical) plus concise body text (1-3 sentences) focused on
+"why" rather than only "what". If the PR fixes an issue, add 'Fixes:
+#<issue_number>'. Keep commit message body lines to 72 characters.
 
 ## Architecture Overview
 
@@ -267,13 +286,14 @@ SMDebug(dbg_ctl, "Processing request for URL: %s", url);
 - Follow the existing license header format used in the codebase
 
 ### Code Style
+- `.editorconfig` and `.clang-format` is the source of truth for baseline formatting rules.
 - C++20 standard (nothing from C++23 or later)
 - Use RAII principles
 - Prefer smart pointers for ownership
 - Don't use templates unless needed and appropriate
 - Run `cmake --build build -t format` before committing
-- Line length: 132 characters maximum
-- Don't add comments where the code documents itself, don't comment claude interactions
+- Source code line length: 132 characters maximum
+- Don't add comments where the code documents itself, don't comment AI interactions
 
 **C++ Formatting (Mozilla-based style):**
 - Indentation: 2 spaces for C/C++
@@ -286,6 +306,7 @@ SMDebug(dbg_ctl, "Processing request for URL: %s", url);
 - CamelCase for classes: `HttpSM`, `NetVConnection`
 - snake_case for variables and functions: `server_entry`, `handle_api_return()`
 - UPPER_CASE for macros and constants: `HTTP_SM_SET_DEFAULT_HANDLER`
+- Private member variables have the `m_` prefix.
 
 **Modern C++ Patterns (Preferred):**
 ```cpp
