@@ -1080,7 +1080,7 @@ RecConfigWarnIfUnregistered(ConfigContext ctx)
       if (!registered_p) {
         std::string err;
         swoc::bwprint(err, "Unrecognized configuration value '{}'", name);
-        Warning(err.c_str());
+        Warning("%s", err.c_str());
         auto *ctx_ptr = static_cast<ConfigContext *>(edata);
         ctx_ptr->log(err);
       }

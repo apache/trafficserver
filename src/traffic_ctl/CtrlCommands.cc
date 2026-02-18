@@ -579,7 +579,6 @@ ConfigCommand::config_reload()
   } else {
     ConfigReloadResponse resp = config_reload(token, force, configs);
     if (contains_error(resp.error, ConfigError::RELOAD_IN_PROGRESS)) {
-      in_progress = true;
       if (!resp.tasks.empty()) {
         std::string tk = resp.tasks[0].config_token;
         _printer->write_output(swoc::bwprint(text, "\xe2\x9f\xb3 Reload in progress [{}]\n", tk));
