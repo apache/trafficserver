@@ -27,6 +27,14 @@
 
 #include <yaml-cpp/yaml.h>
 
+// Defined here (not = default in header) so that YAML::Node ctor/dtor/copy
+// symbols are only emitted in this TU (part of librecords, which links yaml-cpp).
+// Otherwise every consumer of RecCore.h would need yaml-cpp at link time.
+ConfigContext::ConfigContext()                                 = default;
+ConfigContext::~ConfigContext()                                = default;
+ConfigContext::ConfigContext(ConfigContext const &)            = default;
+ConfigContext &ConfigContext::operator=(ConfigContext const &) = default;
+
 ConfigContext::ConfigContext(std::shared_ptr<ConfigReloadTask> t, std::string_view description, std::string_view filename)
   : _task(t)
 {

@@ -154,7 +154,7 @@ reloadUrlRewrite(ConfigContext ctx)
     oldTable->release();
 
     Dbg(dbg_ctl_url_rewrite, "%s", msg_buffer.c_str());
-    Note(msg_buffer.c_str());
+    Note("%s", msg_buffer.c_str());
     ctx.complete(msg_buffer);
     return true;
   } else {
@@ -162,7 +162,7 @@ reloadUrlRewrite(ConfigContext ctx)
 
     delete newTable;
     Dbg(dbg_ctl_url_rewrite, "%s", msg_buffer.c_str());
-    Error(msg_buffer.c_str());
+    Error("%s", msg_buffer.c_str());
     ctx.fail(msg_buffer);
     return false;
   }
