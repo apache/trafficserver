@@ -26,11 +26,18 @@ autest:
 
   server:
     name: 'server'
+    process_config:
+      other_args: '--verbose diag'
+    log_validation:
+      traffic_out:
+        excludes:
+          - expression: "FILTER_BODY_BLOCK_CANARY"
+            description: "Verify blocked request body never reached the origin"
 
   client:
     name: 'client'
-    # Response body blocking truncates the body, causing a Content-Length
-    # mismatch that proxy-verifier may report as an error (exit code 1).
+    # There's a race condition for when the connection is dropped by ATS - this
+    # can result in either a 0 or 1 return code.
     return_code: [0, 1]
 
   ats:
@@ -185,10 +192,10 @@ sessions:
             fields:
               - [Host, request-block.example.com]
               - [Content-Type, "application/xml+plus_other_stuff"]
-              - [Content-Length, 49]
+              - [Content-Length, 74]
               - [uuid, request-block-test]
           content:
-            data: '<?xml version="1.0"?><!ENTITY xxe SYSTEM "file:">'
+            data: 'FILTER_BODY_BLOCK_CANARY <?xml version="1.0"?><!ENTITY xxe SYSTEM "file:">'
 
         server-response:
           status: 200

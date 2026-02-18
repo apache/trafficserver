@@ -178,6 +178,19 @@ def ATSReplayTest(obj, replay_file: str):
         rc = server_config['return_code']
         server.ReturnCode = Any(*rc) if isinstance(rc, list) else rc
 
+    # Configure server log validation if specified.
+    server_log_validation = server_config.get('log_validation', {})
+    if server_log_validation:
+        traffic_out = server_log_validation.get('traffic_out', {})
+        for contains_entry in traffic_out.get('contains', []):
+            expression = contains_entry['expression']
+            description = contains_entry.get('description', f'Verify server traffic_out contains: {expression}')
+            server.Streams.All += Testers.ContainsExpression(expression, description)
+        for excludes_entry in traffic_out.get('excludes', []):
+            expression = excludes_entry['expression']
+            description = excludes_entry.get('description', f'Verify server traffic_out excludes: {expression}')
+            server.Streams.All += Testers.ExcludesExpression(expression, description)
+
     # ATS configuration.
     if not 'ats' in autest_config:
         raise ValueError(f"Replay file {replay_file} does not contain 'autest.ats' section")
