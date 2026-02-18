@@ -53,8 +53,8 @@ read_time_record(std::string_view record_name, std::string_view default_value, s
 
   // Enforce minimum if specified
   if (minimum.count() > 0 && ms < minimum) {
-    Dbg(dbg_ctl_config, "'%.*s' value %ldms below minimum, using %ldms", static_cast<int>(record_name.size()), record_name.data(),
-        ms.count(), minimum.count());
+    Dbg(dbg_ctl_config, "'%.*s' value %lldms below minimum, using %lldms", static_cast<int>(record_name.size()), record_name.data(),
+        static_cast<long long>(ms.count()), static_cast<long long>(minimum.count()));
     return minimum;
   }
 
