@@ -40,6 +40,9 @@ static int ts_lua_get_config_dir(lua_State *L);
 static int ts_lua_get_runtime_dir(lua_State *L);
 static int ts_lua_get_plugin_dir(lua_State *L);
 static int ts_lua_get_traffic_server_version(lua_State *L);
+static int ts_lua_connection_limit_exempt_list_add(lua_State *L);
+static int ts_lua_connection_limit_exempt_list_remove(lua_State *L);
+static int ts_lua_connection_limit_exempt_list_clear(lua_State *L);
 
 static int ts_lua_sleep_cleanup(ts_lua_async_item *ai);
 static int ts_lua_sleep_handler(TSCont contp, TSEvent event, void *edata);
@@ -135,6 +138,18 @@ ts_lua_inject_misc_api(lua_State *L)
   /* ts.get_traffic_server_version(...) */
   lua_pushcfunction(L, ts_lua_get_traffic_server_version);
   lua_setfield(L, -2, "get_traffic_server_version");
+
+  /* ts.connection_limit_exempt_list_add(...) */
+  lua_pushcfunction(L, ts_lua_connection_limit_exempt_list_add);
+  lua_setfield(L, -2, "connection_limit_exempt_list_add");
+
+  /* ts.connection_limit_exempt_list_remove(...) */
+  lua_pushcfunction(L, ts_lua_connection_limit_exempt_list_remove);
+  lua_setfield(L, -2, "connection_limit_exempt_list_remove");
+
+  /* ts.connection_limit_exempt_list_clear(...) */
+  lua_pushcfunction(L, ts_lua_connection_limit_exempt_list_clear);
+  lua_setfield(L, -2, "connection_limit_exempt_list_clear");
 
   ts_lua_inject_misc_variables(L);
 }
@@ -630,4 +645,55 @@ ts_lua_get_traffic_server_version(lua_State *L)
   const char *s = TSTrafficServerVersionGet();
   lua_pushstring(L, s);
   return 1;
+}
+
+static int
+ts_lua_connection_limit_exempt_list_add(lua_State *L)
+{
+  size_t      len;
+  const char *ip_ranges;
+
+  ip_ranges = luaL_checklstring(L, 1, &len);
+
+  if (ip_ranges && len > 0) {
+    TSReturnCode ret = TSConnectionLimitExemptListAdd(std::string_view(ip_ranges, len));
+    if (ret == TS_SUCCESS) {
+      lua_pushboolean(L, 1);
+    } else {
+      lua_pushboolean(L, 0);
+    }
+  } else {
+    lua_pushboolean(L, 0);
+  }
+
+  return 1;
+}
+
+static int
+ts_lua_connection_limit_exempt_list_remove(lua_State *L)
+{
+  size_t      len;
+  const char *ip_ranges;
+
+  ip_ranges = luaL_checklstring(L, 1, &len);
+
+  if (ip_ranges && len > 0) {
+    TSReturnCode ret = TSConnectionLimitExemptListRemove(std::string_view(ip_ranges, len));
+    if (ret == TS_SUCCESS) {
+      lua_pushboolean(L, 1);
+    } else {
+      lua_pushboolean(L, 0);
+    }
+  } else {
+    lua_pushboolean(L, 0);
+  }
+
+  return 1;
+}
+
+static int
+ts_lua_connection_limit_exempt_list_clear(lua_State * /* L ATS_UNUSED */)
+{
+  TSConnectionLimitExemptListClear();
+  return 0;
 }
