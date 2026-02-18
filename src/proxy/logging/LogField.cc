@@ -476,9 +476,6 @@ LogField::marshal_len(LogAccess *lad)
   case MSDMS:
     return lad->marshal_milestone_diff(m_milestone1, m_milestone2, nullptr);
 
-  case MSTSMS:
-    return lad->marshal_milestones_csv(nullptr);
-
   default:
     return 0;
   }
