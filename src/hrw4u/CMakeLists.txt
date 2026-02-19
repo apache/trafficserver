@@ -15,7 +15,6 @@
 #
 #######################
 
-# Find ANTLR4 runtime
 find_package(antlr4-runtime QUIET)
 
 if(NOT antlr4-runtime_FOUND)
@@ -27,7 +26,6 @@ if(NOT antlr4-runtime_FOUND)
   return()
 endif()
 
-# Find ANTLR4 generator tool
 find_program(ANTLR4_EXECUTABLE antlr4 NAMES antlr4 antlr)
 
 if(NOT ANTLR4_EXECUTABLE)
@@ -39,22 +37,55 @@ if(NOT ANTLR4_EXECUTABLE)
   return()
 endif()
 
-# ANTLR4 available - hrw4u will be built
+# Verify tool version matches runtime (ANTLR4 C++ API breaks between minor versions).
+if(ANTLR_VERSION)
+  execute_process(
+    COMMAND ${ANTLR4_EXECUTABLE}
+    OUTPUT_VARIABLE _antlr4_tool_stdout
+    ERROR_VARIABLE _antlr4_tool_stderr
+    OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_STRIP_TRAILING_WHITESPACE
+    TIMEOUT 10
+  )
+  set(_antlr4_tool_output "${_antlr4_tool_stdout} ${_antlr4_tool_stderr}")
+  string(REGEX MATCH "[Vv]ersion[ \t]+([0-9]+\\.[0-9]+\\.?[0-9]*)" _antlr4_version_match "${_antlr4_tool_output}")
+  set(_antlr4_tool_version "${CMAKE_MATCH_1}")
+  unset(_antlr4_tool_stdout)
+  unset(_antlr4_tool_stderr)
+  unset(_antlr4_tool_output)
+  unset(_antlr4_version_match)
+
+  if(_antlr4_tool_version)
+    string(REGEX MATCH "^([0-9]+\\.[0-9]+)" _tool_major_minor "${_antlr4_tool_version}")
+    string(REGEX MATCH "^([0-9]+\\.[0-9]+)" _runtime_major_minor "${ANTLR_VERSION}")
+    if(NOT _tool_major_minor STREQUAL _runtime_major_minor)
+      message(WARNING "ANTLR4 version mismatch: tool is ${_antlr4_tool_version}, runtime is ${ANTLR_VERSION}. "
+                      "hrw4u will not be built. Install matching versions to enable hrw4u."
+      )
+      set(TS_HAS_CPP_HRW4U
+          FALSE
+          PARENT_SCOPE
+      )
+      return()
+    endif()
+    message(STATUS "ANTLR4 tool version ${_antlr4_tool_version} matches runtime ${ANTLR_VERSION}")
+    unset(_tool_major_minor)
+    unset(_runtime_major_minor)
+  else()
+    message(STATUS "Could not determine ANTLR4 tool version, proceeding with runtime ${ANTLR_VERSION}")
+  endif()
+  unset(_antlr4_tool_version)
+endif()
+
 set(TS_HAS_CPP_HRW4U
     TRUE
     PARENT_SCOPE
 )
-
 message(STATUS "Building hrw4u library with ANTLR4 support")
 
-# Grammar file location
 set(HRW4U_GRAMMAR_FILE "${PROJECT_SOURCE_DIR}/tools/hrw4u/grammar/hrw4u.g4")
-
-# Generated parser output directory
 set(HRW4U_GENERATED_DIR "${CMAKE_CURRENT_BINARY_DIR}/generated")
 file(MAKE_DIRECTORY ${HRW4U_GENERATED_DIR})
 
-# Generate C++ parser from grammar
 set(HRW4U_GENERATED_SOURCES ${HRW4U_GENERATED_DIR}/hrw4uLexer.cpp ${HRW4U_GENERATED_DIR}/hrw4uParser.cpp
                             ${HRW4U_GENERATED_DIR}/hrw4uBaseVisitor.cpp ${HRW4U_GENERATED_DIR}/hrw4uVisitor.cpp
 )
@@ -73,19 +104,14 @@ add_custom_command(
 
 add_custom_target(hrw4u_generated DEPENDS ${HRW4U_GENERATED_SOURCES})
 
-# Suppress warnings for generated ANTLR4 code
 set_source_files_properties(${HRW4U_GENERATED_SOURCES} PROPERTIES COMPILE_FLAGS "-Wno-unused-parameter")
 
-# Library sources
 set(HRW4U_SOURCES Error.cc Types.cc Tables.cc Visitor.cc HRW4UVisitorImpl.cc)
 
-# Create static library
 add_library(hrw4u STATIC ${HRW4U_SOURCES} ${HRW4U_GENERATED_SOURCES})
 add_library(ts::hrw4u ALIAS hrw4u)
 
-# GCC treats out-of-order and missing designated initializers as errors under
-# -Werror. The hrw4u tables use Clang-style designated initializers that rely
-# on default member values, which is safe but upsets GCC.
+# GCC errors on Clang-style designated initializers under -Werror.
 target_compile_options(hrw4u PRIVATE -Wno-missing-field-initializers)
 set_target_properties(hrw4u PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
@@ -97,12 +123,16 @@ target_include_directories(
   PRIVATE ${HRW4U_GENERATED_DIR} ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-# Prefer static ANTLR4, fall back to shared if unavailable.
-if(TARGET antlr4_static)
-  target_link_libraries(hrw4u PUBLIC antlr4_static)
-else()
+# Prefer shared ANTLR4 runtime (distro static libs may lack -fPIC).
+if(TARGET antlr4_shared)
   target_link_libraries(hrw4u PUBLIC antlr4_shared)
-  target_include_directories(hrw4u PRIVATE ${ANTLR4_INCLUDE_DIR})
+elseif(TARGET antlr4_static)
+  target_link_libraries(hrw4u PUBLIC antlr4_static)
+endif()
+
+# Fallback for distro packages that don't set INTERFACE_INCLUDE_DIRECTORIES.
+if(ANTLR4_INCLUDE_DIR)
+  target_include_directories(hrw4u PUBLIC ${ANTLR4_INCLUDE_DIR})
 endif()
 
 set(HRW4U_PUBLIC_HEADERS

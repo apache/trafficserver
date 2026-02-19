@@ -70,67 +70,20 @@ initHRWLibraries(const std::string &dbPath)
 // Forward declaration for the main continuation.
 static int cont_rewrite_headers(TSCont, TSEvent, void *);
 
-// Simple wrapper around a configuration file / set. This is useful such that
-// we can reuse most of the code for both global and per-remap rule sets.
-class RulesConfig
+#include "rules_config.h"
+
+RulesConfig::RulesConfig(int timezone, int inboundIpSource) : _timezone(timezone), _inboundIpSource(inboundIpSource)
 {
-public:
-  RulesConfig(int timezone, int inboundIpSource) : _timezone(timezone), _inboundIpSource(inboundIpSource)
-  {
-    Dbg(dbg_ctl, "RulesConfig CTOR");
-    _cont = TSContCreate(cont_rewrite_headers, nullptr);
-    TSContDataSet(_cont, static_cast<void *>(this));
-  }
+  Dbg(dbg_ctl, "RulesConfig CTOR");
+  _cont = TSContCreate(cont_rewrite_headers, nullptr);
+  TSContDataSet(_cont, static_cast<void *>(this));
+}
 
-  ~RulesConfig()
-  {
-    Dbg(dbg_ctl, "RulesConfig DTOR");
-    TSContDestroy(_cont);
-  }
-
-  [[nodiscard]] TSCont
-  continuation() const
-  {
-    return _cont;
-  }
-
-  [[nodiscard]] ResourceIDs
-  resid(int hook) const
-  {
-    return _resids[hook];
-  }
-
-  [[nodiscard]] RuleSet *
-  rule(int hook) const
-  {
-    return _rules[hook].get();
-  }
-
-  [[nodiscard]] int
-  timezone() const
-  {
-    return _timezone;
-  }
-
-  [[nodiscard]] int
-  inboundIpSource() const
-  {
-    return _inboundIpSource;
-  }
-
-  bool parse_config(const std::string &fname, TSHttpHookID default_hook, char *from_url = nullptr, char *to_url = nullptr,
-                    bool force_hrw4u = false);
-
-private:
-  void add_rule(std::unique_ptr<RuleSet> rule);
-
-  TSCont                                                      _cont;
-  std::array<std::unique_ptr<RuleSet>, TS_HTTP_LAST_HOOK + 1> _rules{};
-  std::array<ResourceIDs, TS_HTTP_LAST_HOOK + 1>              _resids{};
-
-  int _timezone        = 0;
-  int _inboundIpSource = 0;
-};
+RulesConfig::~RulesConfig()
+{
+  Dbg(dbg_ctl, "RulesConfig DTOR");
+  TSContDestroy(_cont);
+}
 
 void
 RulesConfig::add_rule(std::unique_ptr<RuleSet> rule)
