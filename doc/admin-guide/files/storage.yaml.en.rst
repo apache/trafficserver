@@ -97,7 +97,7 @@ For :code:`volumes` the keys are
 | fragment_size | integer     | Overrides the global :ts:cv:`proxy.config.cache.target_fragment_size` configuration for this volume.    |
 |               |             | This allows for a smaller, or larger, fragment size for a particular volume. This may be useful         |
 |               |             | together with ``avg_obj_size`` as well, since a larger fragment size could reduce the number of         |
-|               |             | directory entries needed for a large object.                                                            |
+|               |             | directory entries needed for a large object. Note that this setting has a maximmum value of 4MB.        |
 +---------------+-------------+---------------------------------------------------------------------------------------------------------+
 | spans         | list        | Spans that provide storage for this volume. Defaults to                                                 |
 |               |             | all spans.                                                                                              |
@@ -240,6 +240,16 @@ The following basic example shows 128 MB of cache storage in the "/big_dir" dire
          path: /big_dir
          size: 134217728
 
+As an alternative, using the human readable prefixes, you can express a 64GB cache file with
+
+.. code-block:: yaml
+
+   cache:
+     spans:
+       - name: store
+         path: /really_big_dir
+         size: 64G
+
 By default a volume uses all spans, therefore a volume uses all of span "store" because there are no other
 volumes. It would be equivalent to using the spans explicitly, e.g.
 
@@ -249,7 +259,7 @@ volumes. It would be equivalent to using the spans explicitly, e.g.
      spans:
        - name: store
          path: /big_dir
-         size: 134217728
+         size: 128M
      volumes:
        - id: 1
          size: 100%
@@ -264,7 +274,7 @@ You can use the ``.`` symbol for the current directory. Here is an example for 1
      spans:
        - name: store
          path: "."
-         size: 134217728
+         size: 128M
 
 .. note::
     When using on-filesystem cache disk storage, you can only have one such
