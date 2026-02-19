@@ -399,6 +399,7 @@ register_stat_callbacks()
   http_rsb.pushed_document_total_size        = Metrics::Counter::createPtr("proxy.process.http.pushed_document_total_size");
   http_rsb.pushed_response_header_total_size = Metrics::Counter::createPtr("proxy.process.http.pushed_response_header_total_size");
   http_rsb.put_requests                      = Metrics::Counter::createPtr("proxy.process.http.put_requests");
+  http_rsb.response_status_000_count         = Metrics::Counter::createPtr("proxy.process.http.000_responses");
   http_rsb.response_status_100_count         = Metrics::Counter::createPtr("proxy.process.http.100_responses");
   http_rsb.response_status_101_count         = Metrics::Counter::createPtr("proxy.process.http.101_responses");
   http_rsb.response_status_1xx_count         = Metrics::Counter::createPtr("proxy.process.http.1xx_responses");
