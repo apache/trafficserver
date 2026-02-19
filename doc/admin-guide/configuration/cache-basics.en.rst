@@ -234,6 +234,84 @@ Traffic Server applies ``Cache-Control`` servability criteria after HTTP
 freshness criteria. For example, an object might be considered fresh but will
 not be served if its age is greater than its ``max-age``.
 
+Targeted Cache Control (RFC 9213)
+----------------------------------
+
+Traffic Server supports `RFC 9213 <https://httpwg.org/specs/rfc9213.html>`_
+Targeted HTTP Cache Control, which allows origin servers to provide different
+cache directives for different classes of caches. This is particularly useful in CDN deployments where you want to
+give different caching instructions to CDN caches versus browser caches.
+
+For example, an origin server might send::
+
+    Cache-Control: max-age=60
+    CDN-Cache-Control: max-age=3600
+
+When targeted cache control is enabled (via
+:ts:cv:`proxy.config.http.cache.targeted_cache_control_headers`), Traffic
+Server will use the ``CDN-Cache-Control`` directives instead of the standard
+``Cache-Control`` directives for caching decisions. The browser receiving the
+response will see both headers and use the standard ``Cache-Control``, allowing
+the object to be cached for 60 seconds in the browser but 3600 seconds in the CDN.
+
+Configuration
+~~~~~~~~~~~~~
+
+To enable targeted cache control, set
+:ts:cv:`proxy.config.http.cache.targeted_cache_control_headers` to a
+comma-separated list of header names to check in priority order::
+
+    # In records.yaml:
+    proxy.config.http.cache.targeted_cache_control_headers: CDN-Cache-Control
+
+Or with multiple targeted headers in priority order::
+
+    proxy.config.http.cache.targeted_cache_control_headers: ATS-Cache-Control,CDN-Cache-Control
+
+This configuration is overridable per-remap, allowing different rules for
+different origins::
+
+    # In remap.config:
+    map / https://origin.example.com/ @plugin=conf_remap.so \
+        @pparam=proxy.config.http.cache.targeted_cache_control_headers=CDN-Cache-Control
+
+Behavior
+~~~~~~~~
+
+- When a targeted header is found (first match in the priority list), its
+  directives replace the standard ``Cache-Control`` directives for all caching
+  decisions.
+
+- If no targeted headers are present or they are all empty, Traffic Server falls
+  back to the standard ``Cache-Control`` header.
+
+- Targeted headers are passed through to downstream caches, allowing CDN chains
+  to use the same directives.
+
+- All standard cache control directives are supported in targeted headers:
+  ``max-age``, ``s-maxage``, ``no-cache``, ``no-store``, ``private``,
+  ``must-revalidate``, etc.
+
+Use Cases
+~~~~~~~~~
+
+**CDN with origin cache**: An origin might have its own caching layer but want
+CDNs to cache more aggressively::
+
+    Cache-Control: max-age=60
+    CDN-Cache-Control: max-age=86400
+
+**Different CDN policies**: Using multiple CDN providers with different needs::
+
+    Cache-Control: max-age=300
+    CDN1-Cache-Control: max-age=3600
+    CDN2-Cache-Control: max-age=1800
+
+**Prevent CDN caching while allowing browser caching**::
+
+    Cache-Control: max-age=300
+    CDN-Cache-Control: no-store
+
 Revalidating HTTP Objects
 -------------------------
 

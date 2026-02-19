@@ -696,6 +696,52 @@ const MgmtConverter HttpStatusCodeList::Conv{
 
 /////////////////////////////////////////////////////////////
 //
+// TargetedCacheControlHeaders implementation
+//
+/////////////////////////////////////////////////////////////
+
+void
+TargetedCacheControlHeaders::parse(std::string_view src)
+{
+  size_t dropped = 0;
+
+  count = 0;
+  swoc::TextView config_view{src};
+
+  while (config_view) {
+    swoc::TextView header_name = config_view.take_prefix_at(',').trim_if(&isspace);
+    if (!header_name.empty()) {
+      if (count < MAX_HEADERS) {
+        headers[count++] = std::string_view{header_name.data(), header_name.size()};
+      } else {
+        ++dropped;
+      }
+    }
+  }
+
+  if (dropped > 0) {
+    Warning("Ignoring %zu headers for proxy.config.http.cache.targeted_cache_control_headers (maximum is %zu).", dropped,
+            MAX_HEADERS);
+  }
+}
+
+// clang-format off
+const MgmtConverter TargetedCacheControlHeaders::Conv{
+  [](const void *data) -> std::string_view {
+    const TargetedCacheControlHeaders *hdrs = static_cast<const TargetedCacheControlHeaders *>(data);
+    return hdrs->conf_value ? hdrs->conf_value : "";
+  },
+  [](void *data, std::string_view src) -> void {
+    TargetedCacheControlHeaders *hdrs = static_cast<TargetedCacheControlHeaders *>(data);
+    // Keep conf_value and parse source consistent; headers[] points into src.
+    // The caller is responsible for src lifetime for as long as this object is used.
+    hdrs->conf_value = const_cast<char *>(src.data());
+    hdrs->parse(src);
+  }};
+// clang-format on
+
+/////////////////////////////////////////////////////////////
+//
 // ParsedConfigCache implementation
 //
 /////////////////////////////////////////////////////////////
@@ -781,6 +827,13 @@ ParsedConfigCache::parse(TSOverridableConfigKey key, std::string_view value)
     MgmtByte server_session_sharing_match{0};
     HttpConfig::load_server_session_sharing_match(result.conf_value_storage, server_session_sharing_match);
     result.parsed = server_session_sharing_match;
+    break;
+  }
+
+  case TS_CONFIG_HTTP_CACHE_TARGETED_CACHE_CONTROL_HEADERS: {
+    TargetedCacheControlHeaders targeted_headers{};
+    TargetedCacheControlHeaders::Conv.store_string(&targeted_headers, result.conf_value_storage);
+    result.parsed = targeted_headers;
     break;
   }
 
@@ -1093,6 +1146,11 @@ HttpConfig::startup()
   HttpEstablishStaticConfigByte(c.oride.cache_required_headers, "proxy.config.http.cache.required_headers");
   HttpEstablishStaticConfigByte(c.oride.cache_range_lookup, "proxy.config.http.cache.range.lookup");
   HttpEstablishStaticConfigByte(c.oride.cache_range_write, "proxy.config.http.cache.range.write");
+  HttpEstablishStaticConfigStringAlloc(c.oride.targeted_cache_control_headers.conf_value,
+                                       "proxy.config.http.cache.targeted_cache_control_headers");
+  if (c.oride.targeted_cache_control_headers.conf_value) {
+    c.oride.targeted_cache_control_headers.parse(c.oride.targeted_cache_control_headers.conf_value);
+  }
 
   HttpEstablishStaticConfigStringAlloc(c.connect_ports_string, "proxy.config.http.connect_ports");
 
@@ -1398,10 +1456,14 @@ HttpConfig::reconfigure()
   params->max_payload_iobuf_index        = m_master.max_payload_iobuf_index;
   params->max_msg_iobuf_index            = m_master.max_msg_iobuf_index;
 
-  params->oride.cache_required_headers = m_master.oride.cache_required_headers;
-  params->oride.cache_range_lookup     = INT_TO_BOOL(m_master.oride.cache_range_lookup);
-  params->oride.cache_range_write      = INT_TO_BOOL(m_master.oride.cache_range_write);
-  params->oride.allow_multi_range      = m_master.oride.allow_multi_range;
+  params->oride.cache_required_headers                    = m_master.oride.cache_required_headers;
+  params->oride.cache_range_lookup                        = INT_TO_BOOL(m_master.oride.cache_range_lookup);
+  params->oride.cache_range_write                         = INT_TO_BOOL(m_master.oride.cache_range_write);
+  params->oride.targeted_cache_control_headers.conf_value = ats_strdup(m_master.oride.targeted_cache_control_headers.conf_value);
+  if (params->oride.targeted_cache_control_headers.conf_value) {
+    params->oride.targeted_cache_control_headers.parse(params->oride.targeted_cache_control_headers.conf_value);
+  }
+  params->oride.allow_multi_range = m_master.oride.allow_multi_range;
 
   params->connect_ports_string = ats_strdup(m_master.connect_ports_string);
   params->connect_ports        = parse_ports_list(params->connect_ports_string);

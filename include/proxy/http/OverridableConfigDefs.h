@@ -249,6 +249,7 @@
   X(HTTP_NEGATIVE_CACHING_LIST,                     negative_caching_list,                      "proxy.config.http.negative_caching_list",                        STRING, HttpStatusCodeList_Conv) \
   X(HTTP_CONNECT_ATTEMPTS_RETRY_BACKOFF_BASE,       connect_attempts_retry_backoff_base,        "proxy.config.http.connect_attempts_retry_backoff_base",          INT,    GENERIC) \
   X(HTTP_NEGATIVE_REVALIDATING_LIST,                negative_revalidating_list,                 "proxy.config.http.negative_revalidating_list",                   STRING, HttpStatusCodeList_Conv) \
-  X(HTTP_CACHE_POST_METHOD,                         cache_post_method,                          "proxy.config.http.cache.post_method",                            INT,    GENERIC)
+  X(HTTP_CACHE_POST_METHOD,                         cache_post_method,                          "proxy.config.http.cache.post_method",                            INT,    GENERIC) \
+  X(HTTP_CACHE_TARGETED_CACHE_CONTROL_HEADERS,      targeted_cache_control_headers,             "proxy.config.http.cache.targeted_cache_control_headers",         STRING, TargetedCacheControlHeaders_Conv)
 
 // clang-format on
