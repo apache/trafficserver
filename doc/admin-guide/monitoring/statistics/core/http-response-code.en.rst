@@ -136,6 +136,9 @@ code means.
 .. ts:stat:: global proxy.process.http.416_responses integer
    :type: counter
 
+.. ts:stat:: global proxy.process.http.429_responses integer
+   :type: counter
+
 .. ts:stat:: global proxy.process.http.4xx_responses integer
    :type: counter
 

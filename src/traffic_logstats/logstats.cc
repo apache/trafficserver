@@ -209,6 +209,7 @@ struct OriginStats {
     StatsCounter c_415;
     StatsCounter c_416;
     StatsCounter c_417;
+    StatsCounter c_429;
     StatsCounter c_4xx;
     StatsCounter c_500;
     StatsCounter c_501;
@@ -1082,6 +1083,9 @@ update_codes(OriginStats *stat, int code, int size)
     break;
   case 417:
     update_counter(stat->codes.c_417, size);
+    break;
+  case 429:
+    update_counter(stat->codes.c_429, size);
     break;
 
   // 500's
@@ -2116,6 +2120,7 @@ print_detail_stats(const OriginStats *stat, bool json, bool concise)
   format_line(json ? "status.415" : "415 Unsupported Media Type", stat->codes.c_415, stat->total, json, concise);
   format_line(json ? "status.416" : "416 Req Range Not Satisfiable", stat->codes.c_416, stat->total, json, concise);
   format_line(json ? "status.417" : "417 Expectation Failed", stat->codes.c_417, stat->total, json, concise);
+  format_line(json ? "status.429" : "429 Too Many Requests", stat->codes.c_429, stat->total, json, concise);
   format_line(json ? "status.4xx" : "4xx Total", stat->codes.c_4xx, stat->total, json, concise);
 
   if (!json) {

@@ -19,6 +19,7 @@ Implement general-purpose ATS test extensions using proxy verifier replay files.
 
 from typing import Optional
 import os
+import re
 import yaml
 
 
@@ -126,6 +127,24 @@ def configure_ats(obj: 'TestRun', server: 'Process', ats_config: dict, dns: Opti
     return ts
 
 
+def _requires_persistent_ats(ats_config: dict) -> bool:
+    '''Determine whether ATS must span multiple test runs.
+
+    Some features, such as metric verification, require additional test runs
+    using the ATS process after traffic completes. In those cases the ATS
+    process must be owned by Test rather than a TestRun so it persists across
+    test runs.
+
+    :param ats_config: The autest.ats configuration from the replay file.
+    :returns: True if ATS must span multiple test runs.
+    '''
+
+    # This will become more complicated over time. For example, it would be nice
+    # to add transaction log support which would require a longer-lived ATS
+    # process.
+    return bool(ats_config.get('metric_checks'))
+
+
 def ATSReplayTest(obj, replay_file: str):
     '''Create a TestRun that configures ATS and runs HTTP traffic using the replay file.
 
@@ -195,7 +214,10 @@ def ATSReplayTest(obj, replay_file: str):
         raise ValueError(f"Replay file {replay_file} does not contain 'autest.ats' section")
     ats_config = autest_config['ats']
     enable_tls = ats_config.get('enable_tls', False)
-    ts = configure_ats(tr, server=server, ats_config=ats_config, dns=dns)
+    metric_checks = ats_config.get('metric_checks', [])
+
+    ats_owner = obj if _requires_persistent_ats(ats_config) else tr
+    ts = configure_ats(ats_owner, server=server, ats_config=ats_config, dns=dns)
 
     # Proxy Verifier Client configuration.
     if not 'client' in autest_config:
@@ -229,6 +251,26 @@ def ATSReplayTest(obj, replay_file: str):
         ts.StartBefore(dns)
     ts.StartBefore(server)
     client.StartBefore(ts)
+
+    # Metric verification test runs.
+    if metric_checks:
+        tr.StillRunningAfter = ts
+
+        wait_tr = obj.AddTestRun('Wait for stats to propagate')
+        wait_tr.Processes.Default.Command = 'sleep 2'
+        wait_tr.Processes.Default.ReturnCode = 0
+        wait_tr.StillRunningAfter = ts
+
+        for check in metric_checks:
+            metric_name = check['metric']
+            expected_value = check['value']
+            check_tr = obj.AddTestRun(f'Verify {metric_name} == {expected_value}')
+            check_tr.Processes.Default.Command = f'traffic_ctl metric get {metric_name}'
+            check_tr.Processes.Default.Env = ts.Env
+            check_tr.Processes.Default.ReturnCode = 0
+            check_tr.Processes.Default.Streams.All = Testers.ContainsExpression(
+                f'^{re.escape(metric_name)}\\s+{expected_value}$', f'{metric_name} should be {expected_value}')
+            check_tr.StillRunningAfter = ts
 
     return tr
 

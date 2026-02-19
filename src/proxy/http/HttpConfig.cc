@@ -436,6 +436,7 @@ register_stat_callbacks()
   http_rsb.response_status_414_count         = Metrics::Counter::createPtr("proxy.process.http.414_responses");
   http_rsb.response_status_415_count         = Metrics::Counter::createPtr("proxy.process.http.415_responses");
   http_rsb.response_status_416_count         = Metrics::Counter::createPtr("proxy.process.http.416_responses");
+  http_rsb.response_status_429_count         = Metrics::Counter::createPtr("proxy.process.http.429_responses");
   http_rsb.response_status_4xx_count         = Metrics::Counter::createPtr("proxy.process.http.4xx_responses");
   http_rsb.response_status_500_count         = Metrics::Counter::createPtr("proxy.process.http.500_responses");
   http_rsb.response_status_501_count         = Metrics::Counter::createPtr("proxy.process.http.501_responses");
