@@ -925,6 +925,7 @@ Examples:
     try:
         if partitions:
             print_progress()
+            print()  # Newline so worker output starts on a fresh line
             with ProcessPoolExecutor(max_workers=len(partitions)) as executor:
                 for worker_id, worker_tests in enumerate(partitions):
                     future = executor.submit(
