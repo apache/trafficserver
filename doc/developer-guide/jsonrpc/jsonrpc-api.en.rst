@@ -922,26 +922,61 @@ admin_config_reload
 Description
 ~~~~~~~~~~~
 
-Instruct |TS| to start the reloading process. You can find more information about config reload here(add link TBC)
+Initiate a configuration reload. This method supports two modes:
+
+- **File-based reload** (default) — re-reads all registered configuration files from disk and invokes
+  their handlers for any files whose modification time has changed.
+- **Inline reload** — when the ``configs`` parameter is present, the supplied YAML content is passed
+  directly to the targeted handler(s) at runtime. Inline content is **not persisted to disk** — a
+  server restart will revert to the file-based configuration.
+
+Each reload is assigned a **token** that can be used to query its status via
+:ref:`get_reload_config_status`. If no token is provided, the server generates one automatically.
+
+Only one reload can be active at a time. If a reload is already in progress, the request is rejected
+unless ``force`` is set to ``true``.
+
+For more information about the configuration reload framework, see
+:ref:`config-reload-framework`.
 
 
 Parameters
 ~~~~~~~~~~
 
-* ``params``: Omitted
+All parameters are optional.
 
-.. note::
+=================== ============= ================================================================================================================
+Field               Type          Description
+=================== ============= ================================================================================================================
+``token``           |str|         Custom token for this reload. Must be unique. If omitted, the server generates one (e.g. ``rldtk-<timestamp>``).
+``force``           ``bool``      Force a new reload even if one is in progress. Default: ``false``. Use with caution.
+``configs``         ``object``    YAML content for inline reload. Each key is a registry key (e.g. ``ip_allow``, ``sni``), and each value is the
+                                  full configuration content for that handler. When present, triggers an inline reload instead of a file-based one.
+=================== ============= ================================================================================================================
 
-   There is no need to add any parameters here.
 
 Result
 ~~~~~~
 
-A |str| with the success message indicating that the command was acknowledged by the server.
+On success, the response contains:
+
+=================== ============= ================================================================================================================
+Field               Type          Description
+=================== ============= ================================================================================================================
+``token``           |str|         The token assigned to this reload (server-generated or the one provided in the request).
+``message``         ``array``     Human-readable status messages.
+``created_time``    |str|         Timestamp when the reload task was created.
+=================== ============= ================================================================================================================
+
+If a reload is already in progress (and ``force`` is not set), the response includes an ``errors`` array
+with code ``RELOAD_IN_PROGRESS`` and the ``tasks`` array with the current reload's status.
+
 
 Examples
 ~~~~~~~~
 
+
+**File-based reload (default):**
 
 Request:
 
@@ -951,18 +986,262 @@ Request:
    {
       "id": "89fc5aea-0740-11eb-82c0-001fc69cc946",
       "jsonrpc": "2.0",
-      "method": "admin_config_reload"
+      "method": "admin_config_reload",
+      "params": {
+         "token": "deploy-v2.1"
+      }
    }
 
 
 Response:
 
-The response will contain the default `success_response`  or a proper rpc error, check :ref:`jsonrpc-node-errors` for mode details.
+.. code-block:: json
+   :linenos:
+
+   {
+      "jsonrpc": "2.0",
+      "result": {
+         "token": "deploy-v2.1",
+         "message": ["Reload task scheduled"],
+         "created_time": "2025 Feb 17 12:00:00"
+      },
+      "id": "89fc5aea-0740-11eb-82c0-001fc69cc946"
+   }
 
 
-Validation:
+**Inline reload (with ``configs``):**
 
-You can request for the record `proxy.process.proxy.reconfigure_time` which will be updated with the time of the requested update.
+The ``configs`` parameter is a map where each key is a **registry key** (e.g. ``ip_allow``, ``sni``)
+and each value is the **config content** — the inner data, not the full file structure. For example,
+``ip_allow.yaml`` on disk wraps rules under an ``ip_allow:`` top-level key, but when injecting via
+RPC, you pass the rules array directly. The handler receives this content via
+``ctx.supplied_yaml()`` and is responsible for using it without the file's wrapper key.
+
+Request:
+
+.. code-block:: json
+   :linenos:
+
+   {
+      "id": "b1c2d3e4-0001-0001-0001-000000000001",
+      "jsonrpc": "2.0",
+      "method": "admin_config_reload",
+      "params": {
+         "token": "update-ip-and-sni",
+         "configs": {
+            "ip_allow": [
+               {
+                  "apply": "in",
+                  "ip_addrs": "0.0.0.0/0",
+                  "action": "allow",
+                  "methods": "ALL"
+               }
+            ],
+            "sni": [
+               {
+                  "fqdn": "*.example.com",
+                  "verify_client": "NONE"
+               }
+            ]
+         }
+      }
+   }
+
+Response:
+
+.. code-block:: json
+   :linenos:
+
+   {
+      "jsonrpc": "2.0",
+      "result": {
+         "token": "update-ip-and-sni",
+         "message": ["Inline reload scheduled"],
+         "created_time": "2025 Feb 17 14:30:10"
+      },
+      "id": "b1c2d3e4-0001-0001-0001-000000000001"
+   }
+
+.. note::
+
+   Inline reload requires the target config handler to support ``ConfigSource::FileAndRpc``.
+   Handlers that only support ``ConfigSource::FileOnly`` will return an error for the
+   corresponding key.
+
+
+**Reload already in progress:**
+
+.. code-block:: json
+   :linenos:
+
+   {
+      "jsonrpc": "2.0",
+      "result": {
+         "errors": [
+            {
+               "message": "Reload ongoing with token 'deploy-v2.1'",
+               "code": 1
+            }
+         ],
+         "tasks": []
+      },
+      "id": "89fc5aea-0740-11eb-82c0-001fc69cc946"
+   }
+
+
+.. _get_reload_config_status:
+
+get_reload_config_status
+------------------------
+
+|method|
+
+Description
+~~~~~~~~~~~
+
+Query the status of configuration reloads. Can retrieve a specific reload by token, or the last
+``N`` reloads from the history.
+
+Each reload status includes an overall result, a task tree with per-handler status, durations,
+and optional log messages.
+
+
+Parameters
+~~~~~~~~~~
+
+All parameters are optional. If neither is provided, returns the most recent reload.
+
+=================== ============= ================================================================================================================
+Field               Type          Description
+=================== ============= ================================================================================================================
+``token``           |str|         Token of the reload to query. Takes precedence over ``count`` if both are provided.
+``count``           ``number``    Number of recent reloads to return. Use ``0`` to return the full history. Default: ``1``.
+=================== ============= ================================================================================================================
+
+``traffic_ctl`` maps ``--count all`` to ``count: 0`` in the RPC request. The server keeps a
+rolling history of the last 100 reloads — when the limit is reached, the oldest entry is evicted
+to make room for new ones. ``count: 0`` returns the full history, most recent first.
+
+
+Result
+~~~~~~
+
+The response contains a ``tasks`` array. Each element represents a reload operation with the following
+structure:
+
+======================= ============= ===================================================================
+Field                   Type          Description
+======================= ============= ===================================================================
+``config_token``        |str|         The reload token.
+``status``              |str|         Overall status: ``success``, ``fail``, ``in_progress``, ``timeout``.
+``description``         |str|         Human-readable description.
+``filename``            |str|         Associated filename (empty for the main task).
+``meta``                ``object``    Metadata: ``created_time_ms``, ``last_updated_time_ms``, ``main_task``.
+``log``                 ``array``     Log messages from the handler.
+``sub_tasks``           ``array``     Nested sub-tasks (same structure, recursive).
+======================= ============= ===================================================================
+
+
+Examples
+~~~~~~~~
+
+
+**Query a specific reload by token:**
+
+Request:
+
+.. code-block:: json
+   :linenos:
+
+   {
+      "id": "f1e2d3c4-0001-0001-0001-000000000001",
+      "jsonrpc": "2.0",
+      "method": "get_reload_config_status",
+      "params": {
+         "token": "deploy-v2.1"
+      }
+   }
+
+Response:
+
+.. code-block:: json
+   :linenos:
+
+   {
+      "jsonrpc": "2.0",
+      "result": {
+         "tasks": [
+            {
+               "config_token": "deploy-v2.1",
+               "status": "success",
+               "description": "Main reload task - 2025 Feb 17 12:00:00",
+               "filename": "",
+               "meta": {
+                  "created_time_ms": "1739808000123",
+                  "last_updated_time_ms": "1739808000368",
+                  "main_task": "true"
+               },
+               "log": [],
+               "sub_tasks": [
+                  {
+                     "config_token": "deploy-v2.1",
+                     "status": "success",
+                     "description": "ip_allow",
+                     "filename": "/opt/ats/etc/trafficserver/ip_allow.yaml",
+                     "meta": {
+                        "created_time_ms": "1739808000200",
+                        "last_updated_time_ms": "1739808000218",
+                        "main_task": "false"
+                     },
+                     "log": [],
+                     "logs": ["Finished loading"],
+                     "sub_tasks": []
+                  }
+               ]
+            }
+         ]
+      },
+      "id": "f1e2d3c4-0001-0001-0001-000000000001"
+   }
+
+
+**Query reload history (last 3):**
+
+Request:
+
+.. code-block:: json
+   :linenos:
+
+   {
+      "id": "a1b2c3d4-0001-0001-0001-000000000002",
+      "jsonrpc": "2.0",
+      "method": "get_reload_config_status",
+      "params": {
+         "count": 3
+      }
+   }
+
+Response contains up to 3 entries in the ``tasks`` array.
+
+
+**Token not found:**
+
+.. code-block:: json
+   :linenos:
+
+   {
+      "jsonrpc": "2.0",
+      "result": {
+         "errors": [
+            {
+               "message": "Token 'nonexistent' not found",
+               "code": 4
+            }
+         ],
+         "token": "nonexistent"
+      },
+      "id": "f1e2d3c4-0001-0001-0001-000000000001"
+   }
 
 
 Host
