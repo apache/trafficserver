@@ -480,12 +480,12 @@ Log::init_fields()
   global_field_list.add(field, false);
   field_symbol_hash.emplace("pqup", field);
 
-  field = new LogField("client_req_protocol_version", "cqpv", LogField::dINT, &LogAccess::marshal_client_req_protocol_version,
+  field = new LogField("client_req_protocol_version", "cqpv", LogField::STRING, &LogAccess::marshal_client_req_protocol_version,
                        &LogAccess::unmarshal_str);
   global_field_list.add(field, false);
   field_symbol_hash.emplace("cqpv", field);
 
-  field = new LogField("server_req_protocol_version", "sqpv", LogField::dINT, &LogAccess::marshal_server_req_protocol_version,
+  field = new LogField("server_req_protocol_version", "sqpv", LogField::STRING, &LogAccess::marshal_server_req_protocol_version,
                        &LogAccess::unmarshal_str);
   global_field_list.add(field, false);
   field_symbol_hash.emplace("sqpv", field);
