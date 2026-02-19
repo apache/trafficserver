@@ -157,7 +157,7 @@ public:
   ///
   /// Can be called from any module to add additional triggers.
   ///
-  /// @note Resembles the attach() method in ConfigUpdateHandler.
+  /// @note Attaches an additional record trigger to an existing config entry.
   ///
   /// @param key          The registered config key
   /// @param record_name  The record that triggers reload

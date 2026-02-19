@@ -105,7 +105,7 @@ public:
   void setup_log_objects();
 
   // static int reconfigure(const char *name, RecDataT data_type, RecData data, void *cookie);
-  static void reconfigure(ConfigContext ctx = {}); // ConfigUpdateHandler callback
+  static void reconfigure(ConfigContext ctx = {}); // ConfigRegistry reload handler
 
   static void register_config_callbacks();
   static void register_stat_callbacks();
