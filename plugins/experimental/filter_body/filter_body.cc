@@ -101,6 +101,10 @@ struct TransformData {
   bool                      headers_added = false;
 };
 
+// Forward declaration - send_response_handler is used in execute_actions
+// but defined later in the file.
+int send_response_handler(TSCont contp, TSEvent event, void *edata);
+
 /**
  * @brief Case-insensitive substring search.
  *
@@ -439,10 +443,22 @@ execute_actions(TransformData *data, Rule const *rule, std::string const *matche
   if (rule->actions & ACTION_BLOCK) {
     data->blocked = true;
     TSHttpTxnStatusSet(data->txnp, TS_HTTP_STATUS_FORBIDDEN);
-    // Set error body so client gets a proper response
     char const *error_body = "Blocked by content filter";
     TSHttpTxnErrorBodySet(data->txnp, TSstrdup(error_body), strlen(error_body), TSstrdup("text/plain"));
-    Dbg(dbg_ctl, "Blocking request due to rule: %s", rule->name.c_str());
+    if (data->direction == Direction::REQUEST) {
+      // Add a SEND_RESPONSE_HDR hook to override the error response to 403.
+      // Only added here (when actually blocking) to avoid hook overhead on
+      // every transaction.  The transform zeros its output, creating a
+      // Content-Length mismatch at the origin.  The short timeout below makes
+      // ATS close the hanging origin connection quickly instead of waiting the
+      // default 30 seconds.
+      TSCont send_resp_contp = TSContCreate(send_response_handler, nullptr);
+      TSHttpTxnHookAdd(data->txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, send_resp_contp);
+      TSHttpTxnHookAdd(data->txnp, TS_HTTP_TXN_CLOSE_HOOK, send_resp_contp);
+      TSHttpTxnConfigIntSet(data->txnp, TS_CONFIG_HTTP_TRANSACTION_NO_ACTIVITY_TIMEOUT_OUT, 1);
+    }
+    Dbg(dbg_ctl, "Blocking %s body due to rule: %s", data->direction == Direction::REQUEST ? "request" : "response",
+        rule->name.c_str());
   }
 }
 
@@ -611,19 +627,21 @@ transform_handler(TSCont contp, TSEvent event, void *edata ATS_UNUSED)
         }
 
         if (data->blocked) {
-          // Blocking action - complete the transform with zero output
-          // The 403 status we set will cause ATS to generate the error response
+          // Zero the transform output so the blocked body is not forwarded.
+          // This creates a Content-Length mismatch at the origin (headers
+          // advertised the original body size but 0 bytes arrive). The short
+          // no-activity timeout set in execute_actions causes ATS to close
+          // the hanging origin connection quickly and generate an error
+          // response. The SEND_RESPONSE_HDR hook then overrides it to 403.
           TSVIONBytesSet(data->output_vio, 0);
           TSVIOReenable(data->output_vio);
 
-          // Consume all remaining input
+          // Consume all remaining input so the client side completes cleanly
           int64_t const remaining = TSIOBufferReaderAvail(reader);
           if (remaining > 0) {
             TSIOBufferReaderConsume(reader, remaining);
           }
           TSVIONDoneSet(write_vio, TSVIONBytesGet(write_vio));
-
-          // Signal write complete
           TSContCall(TSVIOContGet(write_vio), TS_EVENT_VCONN_WRITE_COMPLETE, write_vio);
           return 0;
         }
@@ -740,6 +758,49 @@ response_handler(TSCont contp, TSEvent event, void *edata)
     if (!active_rules.empty()) {
       TSVConn transform = create_transform(txnp, config, active_rules, Direction::RESPONSE);
       TSHttpTxnHookAdd(txnp, TS_HTTP_RESPONSE_TRANSFORM_HOOK, transform);
+    }
+  }
+
+  TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
+  return 0;
+}
+
+/**
+ * @brief Send response handler to enforce 403 for blocked requests.
+ *
+ * Called on TS_HTTP_SEND_RESPONSE_HDR_HOOK only when the request body
+ * transform has blocked a request (hook is added in execute_actions).
+ * The transform zeros its output, creating a Content-Length mismatch that
+ * causes ATS to generate an error response (typically 502). This hook
+ * overrides that error to a deterministic 403 Forbidden.
+ *
+ * @param[in] contp The continuation.
+ * @param[in] event The event type (SEND_RESPONSE_HDR or TXN_CLOSE).
+ * @param[in] edata The HTTP transaction.
+ * @return Always returns 0.
+ */
+int
+send_response_handler(TSCont contp, TSEvent event, void *edata)
+{
+  TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
+
+  if (event == TS_EVENT_HTTP_TXN_CLOSE) {
+    TSContDestroy(contp);
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
+    return 0;
+  }
+
+  if (event == TS_EVENT_HTTP_SEND_RESPONSE_HDR) {
+    // This hook is only added when the request body was blocked, so we
+    // unconditionally override the response to 403.
+    TSMBuffer bufp;
+    TSMLoc    hdr_loc;
+    if (TSHttpTxnClientRespGet(txnp, &bufp, &hdr_loc) == TS_SUCCESS) {
+      Dbg(dbg_ctl, "Overriding response to 403 for blocked request");
+      TSHttpHdrStatusSet(bufp, hdr_loc, TS_HTTP_STATUS_FORBIDDEN);
+      TSHttpHdrReasonSet(bufp, hdr_loc, TSHttpHdrReasonLookup(TS_HTTP_STATUS_FORBIDDEN),
+                         strlen(TSHttpHdrReasonLookup(TS_HTTP_STATUS_FORBIDDEN)));
+      TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     }
   }
 

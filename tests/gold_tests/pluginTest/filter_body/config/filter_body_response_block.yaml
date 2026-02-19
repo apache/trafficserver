@@ -13,4 +13,3 @@ rules:
         - "SSN:"
         - "password:"
     action: [log, block]
-
