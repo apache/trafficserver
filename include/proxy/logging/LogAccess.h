@@ -316,6 +316,7 @@ public:
   static int     unmarshal_itox(int64_t val, char *dest, int field_width = 0, char leading_char = ' ');
   static int     unmarshal_int_to_str(char **buf, char *dest, int len);
   static int     unmarshal_int_to_str_hex(char **buf, char *dest, int len);
+  static int     unmarshal_milestone_diff(char **buf, char *dest, int len);
   static int     unmarshal_str(char **buf, char *dest, int len, LogSlice *slice, LogEscapeType escape_type);
   static int     unmarshal_ttmsf(char **buf, char *dest, int len);
   static int     unmarshal_int_to_date_str(char **buf, char *dest, int len);
