@@ -171,13 +171,14 @@ class ConfigReload(Common):
         Handy class to map traffic_ctl config reload options.
 
         Options (in command order):
-            --token, -t         Configuration token
-            --monitor, -m       Monitor reload progress until completion
-            --show-details, -s  Show detailed information of the reload
-            --include-logs, -l  Include logs (with --show-details)
-            --refresh-int, -r   Refresh interval in seconds (with --monitor)
-            --force, -F         Force reload even if one in progress
-            --data, -d          Inline config data (@file1 @file2, @- for stdin, or yaml string)
+            --token, -t          Configuration token
+            --monitor, -m        Monitor reload progress until completion
+            --show-details, -s   Show detailed information of the reload
+            --include-logs, -l   Include logs (with --show-details)
+            --refresh-int, -r    Refresh interval in seconds (with --monitor). Accepts fractional values
+            --force, -F          Force reload even if one in progress
+            --data, -d           Inline config data (@file1 @file2, @- for stdin, or yaml string)
+            --initial-wait, -w   Initial wait before first poll (seconds). Accepts fractional values
     """
 
     def __init__(self, dir, tr, tn):
@@ -216,8 +217,8 @@ class ConfigReload(Common):
         self._cmd = f'{self._cmd} --include-logs '
         return self
 
-    def refresh_int(self, seconds: int):
-        """Set refresh interval in seconds (--refresh-int, -r). Use with monitor()"""
+    def refresh_int(self, seconds: float):
+        """Set refresh interval in seconds (--refresh-int, -r). Use with monitor(). Accepts fractional values (e.g. 0.5)"""
         self._cmd = f'{self._cmd} --refresh-int {seconds} '
         return self
 
@@ -242,9 +243,9 @@ class ConfigReload(Common):
         self._cmd = f'{self._cmd} --data {files_str} '
         return self
 
-    def delay(self, seconds: int):
-        """Set initial wait before first status check (--delay, -w). Use with monitor() or show_details()"""
-        self._cmd = f'{self._cmd} --delay {seconds} '
+    def initial_wait(self, seconds: float):
+        """Set initial wait before first poll (--initial-wait, -w). Use with monitor() or show_details()"""
+        self._cmd = f'{self._cmd} --initial-wait {seconds} '
         return self
 
     # --- Validation ---

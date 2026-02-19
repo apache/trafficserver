@@ -343,7 +343,7 @@ ConfigCommand::track_config_reload_progress(std::string const &token, std::chron
       }
       break;
     }
-    sleep(refresh_interval.count() / 1000);
+    std::this_thread::sleep_for(refresh_interval);
 
     request = FetchConfigReloadStatusRequest{
       FetchConfigReloadStatusRequest::Params{token, "1" /* last reload if any*/}
@@ -450,8 +450,8 @@ ConfigCommand::config_reload()
   bool show_details = get_parsed_arguments()->get("show-details") ? true : false;
   bool monitor      = get_parsed_arguments()->get("monitor") ? true : false;
 
-  std::string timeout_secs = get_parsed_arguments()->get("refresh-int").value();
-  int         delay_secs   = std::stoi(get_parsed_arguments()->get("delay").value());
+  float refresh_secs      = std::stof(get_parsed_arguments()->get("refresh-int").value());
+  float initial_wait_secs = std::stof(get_parsed_arguments()->get("initial-wait").value());
 
   if (monitor && show_details) {
     // ignore monitor if details is set.
@@ -534,7 +534,7 @@ ConfigCommand::config_reload()
       _printer->write_output(swoc::bwprint(text, "\xe2\x9c\x97 Token '{}' already in use", token));
     } else {
       _printer->write_output(swoc::bwprint(text, "\xe2\x9c\x94 Reload scheduled [{}]. Waiting for details...", resp.config_token));
-      sleep(delay_secs);
+      std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<int>(initial_wait_secs * 1000)));
     }
 
     resp = fetch_config_reload(token);
@@ -572,10 +572,10 @@ ConfigCommand::config_reload()
     }
 
     if (!in_progress) {
-      sleep(1); // short delay for first poll; bar updates in real-time
+      std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<int>(initial_wait_secs * 1000))); // wait before first poll
     } // else no need to wait, we can start fetching right away.
 
-    track_config_reload_progress(resp.config_token, std::chrono::milliseconds(std::stoi(timeout_secs) * 1000));
+    track_config_reload_progress(resp.config_token, std::chrono::milliseconds(static_cast<int>(refresh_secs * 1000)));
   } else {
     ConfigReloadResponse resp = config_reload(token, force, configs);
     if (contains_error(resp.error, ConfigError::RELOAD_IN_PROGRESS)) {
