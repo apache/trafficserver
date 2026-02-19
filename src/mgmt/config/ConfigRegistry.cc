@@ -42,6 +42,13 @@ namespace
 {
 DbgCtl dbg_ctl{"config.reload"};
 
+/// Infer ConfigType from the filename extension.
+config::ConfigType
+infer_config_type(swoc::TextView filename)
+{
+  return (filename.ends_with(".yaml") || filename.ends_with(".yml")) ? config::ConfigType::YAML : config::ConfigType::LEGACY;
+}
+
 // Resolve a config filename: read the current value from the named record,
 // fallback to default_filename if the record is empty or absent.
 // Returns the bare filename (no sysconfdir prefix) — suitable for FileManager::addFile().
@@ -102,14 +109,24 @@ public:
 
     if (entry == nullptr) {
       Warning("Config key '%s' not found in registry", _config_key.c_str());
-    } else if (!entry->handler) {
+    } else if (!entry->has_handler()) {
       Warning("Config '%s' has no handler", _config_key.c_str());
     } else {
-      // File reload: create context, invoke handler directly
-      auto ctx = ReloadCoordinator::Get_Instance().create_config_context(_config_key, entry->resolve_filename());
-      ctx.in_progress();
-      entry->handler(ctx);
-      Dbg(dbg_ctl, "Config '%s' file reload completed", _config_key.c_str());
+      auto ctx = ReloadCoordinator::Get_Instance().create_config_context(_config_key, _config_key, entry->resolve_filename());
+      if (!ctx) {
+        if (ReloadCoordinator::Get_Instance().is_reload_in_progress()) {
+          // True duplicate — same config key already handled in this reload cycle
+          Dbg(dbg_ctl, "Config '%s' reload skipped (duplicate in this reload cycle)", _config_key.c_str());
+        } else {
+          // Standalone record change (no active reload) — run handler directly
+          Dbg(dbg_ctl, "Config '%s' standalone record-triggered reload (no active reload task)", _config_key.c_str());
+          entry->handler(ctx);
+        }
+      } else {
+        ctx.in_progress();
+        entry->handler(ctx);
+        Dbg(dbg_ctl, "Config '%s' file reload completed", _config_key.c_str());
+      }
     }
 
     delete this;
@@ -121,10 +138,24 @@ private:
 };
 
 ///
-// Callback invoked by the Records system when a trigger record changes.
-// Only fires for records registered with ConfigRegistry (via trigger_records
-// in register_config()/register_record_config(), or via add_file_dependency()).
-//
+/// Callback invoked by the Records system when a trigger record changes.
+/// Only fires for records registered with ConfigRegistry (via trigger_records
+/// in register_config()/register_record_config(), or via add_file_dependency()).
+///
+/// Record-triggered reload: fan-in deduplication
+/// ──────────────────────────────────────────────
+/// When a config key has N trigger records (e.g., ssl_client_coordinator has 11),
+/// setup_triggers() registers an independent on_record_change callback for each.
+/// The Records system (RecExecConfigUpdateCbs) fires all record
+/// callbacks synchronously in one pass — N records produce N calls here, each
+/// scheduling its own RecordTriggeredReloadContinuation on ET_TASK.
+///
+/// All N continuations carry the same config_key and would invoke the same handler.
+/// The handler doesn't know which specific record triggered it — trigger records are
+/// an OR-set meaning "any of these changed → reconfigure this subsystem."
+///
+/// If different records need different handlers, register them under separate config keys.
+///
 int
 on_record_change(const char *name, RecDataT /* data_type */, RecData /* data */, void *cookie)
 {
@@ -184,7 +215,7 @@ ConfigRegistry::do_register(Entry entry)
     if (!it->second.default_filename.empty()) {
       auto resolved = resolve_config_filename(it->second.filename_record.empty() ? nullptr : it->second.filename_record.c_str(),
                                               it->second.default_filename);
-      FileManager::instance().addFile(resolved.c_str(), it->second.filename_record.c_str(), false, false);
+      FileManager::instance().addFile(resolved.c_str(), it->second.filename_record.c_str(), false, it->second.is_required);
     }
   } else {
     Warning("Config '%s' already registered, ignoring", it->first.c_str());
@@ -194,7 +225,7 @@ ConfigRegistry::do_register(Entry entry)
 void
 ConfigRegistry::register_config(const std::string &key, const std::string &default_filename, const std::string &filename_record,
                                 ConfigReloadHandler handler, ConfigSource source,
-                                std::initializer_list<const char *> trigger_records)
+                                std::initializer_list<const char *> trigger_records, bool is_required)
 {
   Entry entry;
   entry.key              = key;
@@ -202,10 +233,8 @@ ConfigRegistry::register_config(const std::string &key, const std::string &defau
   entry.filename_record  = filename_record;
   entry.handler          = std::move(handler);
   entry.source           = source;
-
-  // Infer type from extension: .yaml/.yml = YAML (supports rpc reload), else = LEGACY
-  swoc::TextView fn{default_filename};
-  entry.type = (fn.ends_with(".yaml") || fn.ends_with(".yml")) ? ConfigType::YAML : ConfigType::LEGACY;
+  entry.is_required      = is_required;
+  entry.type             = infer_config_type(default_filename);
 
   for (auto const *record : trigger_records) {
     entry.trigger_records.emplace_back(record);
@@ -219,6 +248,14 @@ ConfigRegistry::register_record_config(const std::string &key, ConfigReloadHandl
                                        std::initializer_list<const char *> trigger_records)
 {
   register_config(key, "", "", std::move(handler), ConfigSource::RecordOnly, trigger_records);
+}
+
+void
+ConfigRegistry::register_static_file(const std::string &key, const std::string &default_filename,
+                                     const std::string &filename_record, bool is_required)
+{
+  // Delegate — no handler, no trigger records, FileOnly source.
+  register_config(key, default_filename, filename_record, nullptr, ConfigSource::FileOnly, {}, is_required);
 }
 
 void
@@ -407,13 +444,13 @@ ConfigRegistry::execute_reload(const std::string &key)
     }
   }
 
-  ink_release_assert(entry_copy.handler);
+  ink_release_assert(entry_copy.has_handler());
 
   // Create context with subtask tracking
   // For rpc reload: use key as description, no filename (source: rpc)
   // For file reload: use key as description, filename indicates source: file
   std::string filename = passed_config.IsDefined() ? "" : entry_copy.resolve_filename();
-  auto        ctx      = ReloadCoordinator::Get_Instance().create_config_context(entry_copy.key, filename);
+  auto        ctx      = ReloadCoordinator::Get_Instance().create_config_context(entry_copy.key, entry_copy.key, filename);
   ctx.in_progress();
 
   if (passed_config.IsDefined()) {

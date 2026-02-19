@@ -100,6 +100,14 @@ public:
   ConfigContext(ConfigContext const &);
   ConfigContext &operator=(ConfigContext const &);
 
+  /// Check if this context wraps a live task.
+  /// Returns false for default-constructed or dedup-rejected contexts.
+  explicit
+  operator bool() const
+  {
+    return !_task.expired();
+  }
+
   void in_progress(std::string_view text = "");
   template <typename... Args>
   void
@@ -153,7 +161,7 @@ public:
   /// Get the description associated with this context's task.
   /// For registered configs this is the registration key (e.g., "sni", "ssl").
   /// For dependent contexts it is the label passed to add_dependent_ctx().
-  [[nodiscard]] std::string_view get_description() const;
+  [[nodiscard]] std::string get_description() const;
 
   /// Create a dependent sub-task that tracks progress independently under this parent.
   /// Each dependent reports its own status (in_progress/complete/fail) and the parent

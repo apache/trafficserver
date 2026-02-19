@@ -100,6 +100,38 @@ ReloadCoordinator::generate_token_name(const char *prefix) const
   return std::string(prefix) + std::to_string(time);
 }
 
+ConfigContext
+ReloadCoordinator::create_config_context(std::string_view config_key, std::string_view description, std::string_view filename)
+{
+  std::unique_lock lock(_mutex);
+  if (!_current_task) {
+    // No active reload — return empty context (safe no-op for startup path)
+    return ConfigContext{};
+  }
+
+  // Dedup: reject if a subtask for this config key already exists.
+  //
+  // This handles the N-to-1(handler) issue of duplicate subtasks from trigger records. When a config key has N triggers,
+  // setup_triggers() registers N independent on_record_change callbacks. The Records system's
+  // fires all dirty-record callbacks in one pass, producing N continuations
+  // that all carry the same config_key. Only the first one should create a subtask and run
+  // the handler; the rest are duplicates.
+  if (!config_key.empty() && !ConfigReloadTask::is_terminal(_current_task->get_state()) &&
+      _current_task->has_subtask_for_key(config_key)) {
+    Dbg(dbg_ctl, "Duplicate reload for config '%.*s' — subtask already exists, skipping", static_cast<int>(config_key.size()),
+        config_key.data());
+    return ConfigContext{};
+  }
+
+  auto task =
+    std::make_shared<ConfigReloadTask>(_current_task->get_token(), description, false /*not a main reload job*/, _current_task);
+  task->set_config_key(config_key);
+  _current_task->add_sub_task(task);
+
+  ConfigContext ctx{task, description, filename};
+  return ctx;
+}
+
 bool
 ReloadCoordinator::is_reload_in_progress() const
 {
@@ -112,7 +144,7 @@ ReloadCoordinator::is_reload_in_progress() const
 
   auto state = _current_task->get_state();
   if (!ConfigReloadTask::is_terminal(state) && state != ConfigReloadTask::State::INVALID) {
-    Dbg(dbg_ctl, "Found reload in progress for task: %s", _current_task->get_token().data());
+    Dbg(dbg_ctl, "Found reload in progress for task: %s", _current_task->get_token().c_str());
     return true;
   } else {
     auto state_str = ConfigReloadTask::state_to_string(state);
@@ -183,14 +215,13 @@ ReloadCoordinator::mark_task_as_stale(std::string_view token, std::string_view r
 
   auto state = task_to_mark->get_state();
   if (ConfigReloadTask::is_terminal(state)) {
-    Dbg(dbg_ctl, "Task %.*s already in terminal state (%.*s), cannot mark stale",
-        static_cast<int>(task_to_mark->get_token().size()), task_to_mark->get_token().data(),
+    Dbg(dbg_ctl, "Task %s already in terminal state (%.*s), cannot mark stale", task_to_mark->get_token().c_str(),
         static_cast<int>(ConfigReloadTask::state_to_string(state).size()), ConfigReloadTask::state_to_string(state).data());
     return false;
   }
 
   auto state_str = ConfigReloadTask::state_to_string(state);
-  Dbg(dbg_ctl, "Marking task %s as stale (state: %s) - reason: %s", task_to_mark->get_token().data(), state_str.data(),
+  Dbg(dbg_ctl, "Marking task %s as stale (state: %s) - reason: %s", task_to_mark->get_token().c_str(), state_str.data(),
       reason.data());
 
   task_to_mark->mark_as_bad_state(reason);

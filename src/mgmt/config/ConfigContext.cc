@@ -114,13 +114,13 @@ ConfigContext::fail(swoc::Errata const &errata, std::string_view summary)
   }
 }
 
-std::string_view
+std::string
 ConfigContext::get_description() const
 {
   if (auto p = _task.lock()) {
     return p->get_description();
   }
-  return "";
+  return {};
 }
 
 ConfigContext
@@ -154,6 +154,6 @@ namespace config
 ConfigContext
 make_config_reload_context(std::string_view description, std::string_view filename)
 {
-  return ReloadCoordinator::Get_Instance().create_config_context(description, filename);
+  return ReloadCoordinator::Get_Instance().create_config_context({}, description, filename);
 }
 } // namespace config

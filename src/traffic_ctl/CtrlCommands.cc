@@ -35,6 +35,7 @@
 #include "jsonrpc/ctrl_yaml_codecs.h"
 
 #include "mgmt/config/ConfigReloadErrors.h"
+#include "tsutil/ts_time_parser.h"
 #include "TrafficCtlStatus.h"
 namespace
 {
@@ -309,7 +310,8 @@ ConfigCommand::fetch_config_reload(std::string const &token, std::string const &
 }
 
 void
-ConfigCommand::track_config_reload_progress(std::string const &token, std::chrono::milliseconds refresh_interval)
+ConfigCommand::track_config_reload_progress(std::string const &token, std::chrono::milliseconds refresh_interval,
+                                            std::chrono::milliseconds timeout, std::string const &timeout_str)
 {
   FetchConfigReloadStatusRequest request{
     FetchConfigReloadStatusRequest::Params{token, "1" /* last reload if any*/}
@@ -320,6 +322,8 @@ ConfigCommand::track_config_reload_progress(std::string const &token, std::chron
     _printer->write_output(resp);
     return;
   }
+
+  auto start_time = std::chrono::steady_clock::now();
 
   while (!Signal_Flagged.load()) {
     auto decoded_response = resp.result.as<ConfigReloadResponse>();
@@ -338,11 +342,26 @@ ConfigCommand::track_config_reload_progress(std::string const &token, std::chron
     if (current_task.status == "success" || current_task.status == "fail" || current_task.status == "timeout") {
       std::cout << "\n";
       if (current_task.status != "success") {
+        App_Exit_Status_Code = CTRL_EX_ERROR;
         std::string hint;
         _printer->write_output(swoc::bwprint(hint, "\n  Details : traffic_ctl config status -t {}", current_task.config_token));
       }
-      break;
+      return;
     }
+
+    // Check timeout (0 means no timeout)
+    if (timeout.count() > 0) {
+      auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start_time);
+      if (elapsed >= timeout) {
+        std::cout << "\n";
+        std::string text;
+        _printer->write_output(swoc::bwprint(text, "Monitor timed out after {} waiting for reload completion.", timeout_str));
+        _printer->write_output(swoc::bwprint(text, "  Details : traffic_ctl config status -t {}", token));
+        App_Exit_Status_Code = CTRL_EX_TEMPFAIL;
+        return;
+      }
+    }
+
     std::this_thread::sleep_for(refresh_interval);
 
     request = FetchConfigReloadStatusRequest{
@@ -351,8 +370,14 @@ ConfigCommand::track_config_reload_progress(std::string const &token, std::chron
     resp = invoke_rpc(request);
     if (resp.is_error()) {
       _printer->write_output(resp);
-      break;
+      App_Exit_Status_Code = CTRL_EX_ERROR;
+      return;
     }
+  }
+
+  // Signal received (e.g. Ctrl+C) — assume reload still in progress.
+  if (Signal_Flagged.load()) {
+    App_Exit_Status_Code = CTRL_EX_TEMPFAIL;
   }
 }
 
@@ -452,6 +477,18 @@ ConfigCommand::config_reload()
 
   float refresh_secs      = std::stof(get_parsed_arguments()->get("refresh-int").value());
   float initial_wait_secs = std::stof(get_parsed_arguments()->get("initial-wait").value());
+  // Parse timeout using ts::time_parser (supports: 30s, 1m, 500ms, etc.)
+  std::chrono::milliseconds timeout_ms{0};
+  std::string               timeout_str = get_parsed_arguments()->get("timeout").value();
+  if (timeout_str != "0") {
+    auto &&[ns, errata] = ts::time_parser(swoc::TextView{timeout_str});
+    if (!errata.is_ok()) {
+      _printer->write_output("Error: Invalid timeout value '" + timeout_str + "'. Use duration format: 30s, 1m, 500ms, etc.");
+      App_Exit_Status_Code = CTRL_EX_ERROR;
+      return;
+    }
+    timeout_ms = std::chrono::duration_cast<std::chrono::milliseconds>(ns);
+  }
 
   if (monitor && show_details) {
     // ignore monitor if details is set.
@@ -516,6 +553,7 @@ ConfigCommand::config_reload()
 
     ConfigReloadResponse resp = config_reload(token, force, configs);
     if (contains_error(resp.error, ConfigError::RELOAD_IN_PROGRESS)) {
+      App_Exit_Status_Code = CTRL_EX_TEMPFAIL;
       if (resp.tasks.size() > 0) {
         const auto &task = resp.tasks[0];
         _printer->write_output(swoc::bwprint(text, "\xe2\x9f\xb3 Reload in progress [{}]", task.config_token));
@@ -523,7 +561,8 @@ ConfigCommand::config_reload()
       }
       return;
     } else if (contains_error(resp.error, ConfigError::TOKEN_ALREADY_EXISTS)) {
-      token_exist = true;
+      App_Exit_Status_Code = CTRL_EX_ERROR;
+      token_exist          = true;
     } else if (resp.error.size()) {
       display_errors(_printer.get(), resp.error);
       App_Exit_Status_Code = CTRL_EX_ERROR;
@@ -559,6 +598,7 @@ ConfigCommand::config_reload()
         _printer->write_output(swoc::bwprint(text, "\xe2\x9f\xb3 Reload in progress [{}]", resp.tasks[0].config_token));
       }
     } else if (contains_error(resp.error, ConfigError::TOKEN_ALREADY_EXISTS)) {
+      App_Exit_Status_Code = CTRL_EX_ERROR;
       _printer->write_output(swoc::bwprint(text, "\xe2\x9c\x97 Token '{}' already in use\n", token));
       _printer->write_output(swoc::bwprint(text, "  Status : traffic_ctl config status -t {}", token));
       _printer->write_output("  Retry  : traffic_ctl config reload");
@@ -575,10 +615,12 @@ ConfigCommand::config_reload()
       std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<int>(initial_wait_secs * 1000))); // wait before first poll
     } // else no need to wait, we can start fetching right away.
 
-    track_config_reload_progress(resp.config_token, std::chrono::milliseconds(static_cast<int>(refresh_secs * 1000)));
+    track_config_reload_progress(resp.config_token, std::chrono::milliseconds(static_cast<int>(refresh_secs * 1000)), timeout_ms,
+                                 timeout_str);
   } else {
     ConfigReloadResponse resp = config_reload(token, force, configs);
     if (contains_error(resp.error, ConfigError::RELOAD_IN_PROGRESS)) {
+      App_Exit_Status_Code = CTRL_EX_TEMPFAIL;
       if (!resp.tasks.empty()) {
         std::string tk = resp.tasks[0].config_token;
         _printer->write_output(swoc::bwprint(text, "\xe2\x9f\xb3 Reload in progress [{}]\n", tk));
@@ -587,6 +629,7 @@ ConfigCommand::config_reload()
         _printer->write_output("  Force   : traffic_ctl config reload --force  (may conflict with the running reload)");
       }
     } else if (contains_error(resp.error, ConfigError::TOKEN_ALREADY_EXISTS)) {
+      App_Exit_Status_Code = CTRL_EX_ERROR;
       _printer->write_output(swoc::bwprint(text, "\xe2\x9c\x97 Token '{}' already in use\n", token));
       _printer->write_output(swoc::bwprint(text, "  Status : traffic_ctl config status -t {}", token));
       _printer->write_output("  Retry  : traffic_ctl config reload");

@@ -104,11 +104,19 @@ public:
     std::string              filename_record;  ///< Record containing filename (e.g., "proxy.config.cache.ip_allow.filename")
     ConfigType               type;             ///< YAML or LEGACY - we set that based on the filename extension.
     ConfigSource             source{ConfigSource::FileOnly}; ///< What content sources this handler supports
-    ConfigReloadHandler      handler;                        ///< Handler function
+    ConfigReloadHandler      handler;                        ///< Handler function (empty = static file/not reloadable)
     std::vector<std::string> trigger_records;                ///< Records that trigger reload
+    bool                     is_required{false};             ///< Whether the file must exist on disk
 
     /// Resolve the actual filename (reads from record, falls back to default)
     std::string resolve_filename() const;
+
+    /// Whether this entry has a reload handler (false for static/non-reloadable files).
+    bool
+    has_handler() const
+    {
+      return static_cast<bool>(handler);
+    }
   };
 
   ///
@@ -129,9 +137,11 @@ public:
   ///                         If empty, default_filename is always used.
   /// @param handler          Handler that receives ConfigContext
   /// @param trigger_records  Records that trigger reload (optional)
+  /// @param is_required      Whether the file must exist on disk (default false)
   ///
   void register_config(const std::string &key, const std::string &default_filename, const std::string &filename_record,
-                       ConfigReloadHandler handler, ConfigSource source, std::initializer_list<const char *> trigger_records = {});
+                       ConfigReloadHandler handler, ConfigSource source, std::initializer_list<const char *> trigger_records = {},
+                       bool is_required = false);
 
   /// @brief Register a record-only config handler (no file).
   ///
@@ -151,6 +161,21 @@ public:
   ///
   void register_record_config(const std::string &key, ConfigReloadHandler handler,
                               std::initializer_list<const char *> trigger_records);
+
+  /// @brief Register a non-reloadable config file (startup files).
+  ///
+  /// Static files are registered for informational purposes only — no reload
+  /// handler and no trigger records. This allows the registry to serve as the
+  /// single source of truth for all known configuration files, so that RPC
+  /// endpoints can gather and expose this information.
+  ///
+  /// @param key              Registry key (e.g., "storage")
+  /// @param default_filename Default filename (e.g., "storage.config")
+  /// @param filename_record  Record holding the filename path (optional)
+  /// @param is_required      Whether the file must exist on disk
+  ///
+  void register_static_file(const std::string &key, const std::string &default_filename, const std::string &filename_record = {},
+                            bool is_required = false);
 
   ///
   /// @brief Attach a trigger record to an existing config

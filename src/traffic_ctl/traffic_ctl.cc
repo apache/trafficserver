@@ -167,7 +167,12 @@ main([[maybe_unused]] int argc, const char **argv)
     .add_option(
       "--initial-wait", "-w",
       "Initial wait before first poll, giving the server time to schedule all handlers (seconds). Accepts fractional values", "", 1,
-      "2");
+      "2")
+    .add_option("--timeout", "-T",
+                "Maximum time to wait for reload completion (used with --monitor). "
+                "Accepts duration units: 30s, 1m, 500ms, etc. 0 means no timeout",
+                "", 1, "0")
+    .with_required("--monitor");
 
   config_command.add_command("status", "Check the configuration status", [&]() { command->execute(); })
     .add_option("--token", "-t", "Configuration token to check status.", "", 1, "")

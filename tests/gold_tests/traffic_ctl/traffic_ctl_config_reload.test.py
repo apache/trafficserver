@@ -170,3 +170,23 @@ tr.Processes.Default.ReturnCode = Any(0, 1, 2)
 tr.StillRunningAfter = traffic_ctl._ts
 tr.Processes.Default.Streams.All.Content = Testers.ContainsExpression(
     r'not registered|No configs were scheduled|scheduled', "Should handle force with inline data")
+
+##### EXIT CODE TESTS
+# Exit codes: 0 = success, 2 = error, 75 = temporary failure / in-progress (EX_TEMPFAIL from sysexits.h)
+
+# Test: Successful reload should return exit code 0
+traffic_ctl.config().reload().token("exit_code_ok").validate_with_exit_code(0)
+
+# Test: Successful reload with --monitor should return exit code 0
+traffic_ctl.config().reload().token("exit_code_monitor_ok").monitor().initial_wait(0.5).validate_with_exit_code(0)
+
+# Test: Token already in use should return exit code 2 (CTRL_EX_ERROR)
+traffic_ctl.config().reload().token("exit_code_ok").validate_with_exit_code(2)
+
+# NOTE: Exit code 75 (CTRL_EX_TEMPFAIL / RELOAD_IN_PROGRESS) is not tested here
+# because the reload completes almost instantly in the test environment, making it
+# impossible to reliably trigger the "in progress" window with a second concurrent
+# request. Testing this path would require a test plugin that artificially delays
+# reload processing. The exit code 75 paths are validated by code review:
+#   1. Server returns RELOAD_IN_PROGRESS when a second reload is attempted while one is active.
+#   2. Ctrl+C during --monitor sets CTRL_EX_TEMPFAIL when the reload hasn't finished.

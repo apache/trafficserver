@@ -148,3 +148,40 @@ TEST_CASE("Invoke test", "[invoke]")
   parsed_data.invoke();
   REQUIRE(global == 2);
 }
+
+TEST_CASE("Case sensitive short options", "[parse]")
+{
+  ts::ArgParser cs_parser;
+  cs_parser.add_global_usage("test_prog [--SWITCH]");
+
+  // Add a command with two options that differ only in case: -t and -T
+  ts::ArgParser::Command &cmd = cs_parser.add_command("reload", "reload config");
+  cmd.add_option("--token", "-t", "reload token", "", 1, "");
+  cmd.add_option("--timeout", "-T", "reload timeout", "", 1, "30s");
+
+  ts::Arguments parsed;
+
+  // Use lowercase -t: should set "token" only
+  const char *argv1[] = {"test_prog", "reload", "-t", "my_token", nullptr};
+  parsed              = cs_parser.parse(argv1);
+  REQUIRE(parsed.get("token") == true);
+  REQUIRE(parsed.get("token").value() == "my_token");
+  // timeout should still have its default
+  REQUIRE(parsed.get("timeout").value() == "30s");
+
+  // Use uppercase -T: should set "timeout" only
+  const char *argv2[] = {"test_prog", "reload", "-T", "60s", nullptr};
+  parsed              = cs_parser.parse(argv2);
+  REQUIRE(parsed.get("timeout") == true);
+  REQUIRE(parsed.get("timeout").value() == "60s");
+  // token should be empty (no default)
+  REQUIRE(parsed.get("token").value() == "");
+
+  // Use both -t and -T together
+  const char *argv3[] = {"test_prog", "reload", "-t", "abc123", "-T", "2m", nullptr};
+  parsed              = cs_parser.parse(argv3);
+  REQUIRE(parsed.get("token") == true);
+  REQUIRE(parsed.get("token").value() == "abc123");
+  REQUIRE(parsed.get("timeout") == true);
+  REQUIRE(parsed.get("timeout").value() == "2m");
+}

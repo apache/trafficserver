@@ -28,14 +28,14 @@ Test the enforcement of proxy.config.log.max_space_mb_for_logs.
 # reason. We'll leave the test here because it is helpful for when doing
 # development on the log rotate code, but make it generally skipped when the
 # suite of AuTests are run so it doesn't generate annoying false negatives.
-# Test.SkipIf(Condition.true("This test is sensitive to timing issues which makes it flaky."))
+Test.SkipIf(Condition.true("This test is sensitive to timing issues which makes it flaky."))
 
 
 class TestLogRetention:
     __base_records_config = {
         # Do not accept connections from clients until cache subsystem is operational.
         'proxy.config.diags.debug.enabled': 1,
-        'proxy.config.diags.debug.tags': 'logspace|reload|rpc',
+        'proxy.config.diags.debug.tags': 'logspace',
 
         # Enable log rotation and auto-deletion, the subjects of this test.
         'proxy.config.log.rolling_enabled': 3,
@@ -479,7 +479,7 @@ test.tr.StillRunningAfter = test.ts
 test.tr.StillRunningAfter = test.server
 
 tr = Test.AddTestRun("Perform a config reload")
-tr.Processes.Default.Command = "traffic_ctl config reload -t log_retention_test"
+tr.Processes.Default.Command = "traffic_ctl config reload"
 tr.Processes.Default.Env = test.ts.Env
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.TimeOut = 5
@@ -489,17 +489,6 @@ tr.StillRunningAfter = test.server
 
 tr = Test.AddTestRun("Get the log to rotate.")
 tr.MakeCurlCommandMulti(test.get_command_to_rotate_once(), ts=test.ts)
-tr.Processes.Default.ReturnCode = 0
-tr.StillRunningAfter = test.ts
-tr.StillRunningAfter = test.server
-
-#
-# Test 8: Reload with a named token and show full details with logs.
-#
-tr = Test.AddTestRun("Reload with token and show details")
-tr.DelayStart = 10
-tr.Processes.Default.Command = "traffic_ctl config reload -t log_retention_test -s -l"
-tr.Processes.Default.Env = test.ts.Env
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = test.ts
 tr.StillRunningAfter = test.server

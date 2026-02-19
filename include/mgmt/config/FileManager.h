@@ -167,5 +167,3 @@ private:
   /// JSONRPC endpoint
   swoc::Rv<YAML::Node> get_files_registry_rpc_endpoint(std::string_view const &id, YAML::Node const &params);
 };
-
-void initializeRegistry(); // implemented in AddConfigFilesHere.cc
