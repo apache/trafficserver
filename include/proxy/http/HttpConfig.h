@@ -104,6 +104,8 @@ class TargetedCacheControlHeaders
 {
 public:
   static const MgmtConverter Conv;
+  // Must remain copy/move-capable: instances are stored in ParsedValue's
+  // std::variant and then kept inside ParsedConfigCache containers.
 
   /// Maximum number of targeted headers supported.
   static constexpr size_t MAX_HEADERS = 8;
