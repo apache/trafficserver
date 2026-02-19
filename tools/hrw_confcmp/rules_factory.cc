@@ -19,48 +19,7 @@
 // Factory functions to create/destroy RulesConfig without exposing the full definition.
 // This avoids ODR violations between main.cc and the library.
 
-#include "parser.h"
-#include "ruleset.h"
-#include "resources.h"
-
-// Forward declare RulesConfig from header_rewrite.cc
-class RulesConfig;
-
-#include <fstream>
-#include <mutex>
-#include <string>
-#include <stack>
-#include <stdexcept>
-#include <array>
-
-#include "ts/ts.h"
-#include "hrw4u.h"
-
-// RulesConfig definition must match header_rewrite.cc exactly
-class RulesConfig
-{
-public:
-  RulesConfig(int timezone, int inboundIpSource);
-  ~RulesConfig();
-
-  bool parse_config(const std::string &fname, TSHttpHookID default_hook, char *from_url = nullptr, char *to_url = nullptr,
-                    bool force_hrw4u = false);
-
-  ResourceIDs resid(int hook) const;
-  RuleSet    *rule(int hook) const;
-  int         timezone() const;
-  int         inboundIpSource() const;
-
-private:
-  void add_rule(std::unique_ptr<RuleSet> rule);
-
-  TSCont                                                      _cont;
-  std::array<std::unique_ptr<RuleSet>, TS_HTTP_LAST_HOOK + 1> _rules{};
-  std::array<ResourceIDs, TS_HTTP_LAST_HOOK + 1>              _resids{};
-
-  int _timezone        = 0;
-  int _inboundIpSource = 0;
-};
+#include "rules_config.h"
 
 // Factory function implementations
 extern "C" {
