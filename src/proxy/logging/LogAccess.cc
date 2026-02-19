@@ -630,8 +630,10 @@ LogAccess::unmarshal_int_to_str(char **buf, char *dest, int len)
   LogAccess::unmarshal_milestone_diff
 
   Unmarshal a milestone difference value.  Returns "-" when the
-  marshalled value is negative (milestone was unset), otherwise
-  the decimal string representation.
+  marshalled value is -1 (the "missing" sentinel from difference_msec,
+  meaning one or both milestones were unset).  Other negative values
+  (reversed milestone order) are preserved as numeric output for
+  debugging.
   -------------------------------------------------------------------------*/
 
 int
@@ -642,7 +644,7 @@ LogAccess::unmarshal_milestone_diff(char **buf, char *dest, int len)
   ink_assert(dest != nullptr);
 
   int64_t val = unmarshal_int(buf);
-  if (val < 0) {
+  if (val == -1) {
     if (len >= 1) {
       dest[0] = '-';
       return 1;
