@@ -7568,7 +7568,15 @@ TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
     break;
   case TS_CONFIG_HTTP_CACHE_TARGETED_CACHE_CONTROL_HEADERS:
     if (value && length > 0) {
-      auto &parsed                                            = ParsedConfigCache::lookup(conf, std::string_view(value, length));
+      auto &parsed = ParsedConfigCache::lookup(conf, std::string_view(value, length));
+      // This is intentionally a non-owning copy of the parsed representation.
+      // ParsedConfigCache::ParsedValue owns the backing string in conf_value_storage,
+      // and TargetedCacheControlHeaders stores string_view entries into that stable
+      // storage. The per-transaction override struct in HttpTransact::State is raw
+      // storage (not an owning/destructed HttpConfigParams object), so this path
+      // does not free conf_value. Reusing the cached parsed object avoids reparsing
+      // and avoids allocating/duplicating a second backing string on every txn
+      // override update, while preserving valid lifetimes for all string_view data.
       s->t_state.my_txn_conf().targeted_cache_control_headers = std::get<TargetedCacheControlHeaders>(parsed.parsed);
     } else {
       s->t_state.my_txn_conf().targeted_cache_control_headers = TargetedCacheControlHeaders{};
