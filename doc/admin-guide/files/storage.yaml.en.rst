@@ -115,6 +115,13 @@ For :code:`volumes:spans` the keys are
 |               | percentage  | total size of the span.                                     |
 +---------------+-------------+-------------------------------------------------------------+
 
+Each volume is striped across several disks to achieve parallel I/O. For
+example: if there are four disks, then a 1-GB volume will have 256 MB on
+each disk (assuming each disk has enough free space available). If you
+do not allocate all the disk space in the cache, then the extra disk
+space is not used. You can use the extra space later to create new
+volumes without deleting and clearing the existing volumes.
+
 .. important::
 
    Any change to this file can (and almost always will) invalidate the existing cache in its entirety.
@@ -197,10 +204,10 @@ The corresponding configuration would be
        - name: disk.2
          path: /dev/disk2
      volumes:
-       - id: 1
+       - id: 3
          spans:
            - use: disk.2
-             size: 100%
+             size: 512
 
 Because volume sizes that are percentages are computed on span storage not already explicitly allocated, this will
 leave none of "disk.2" for such allocation and therefore "disk.2" will be used only by volume "1". Note this
