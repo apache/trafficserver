@@ -3732,6 +3732,7 @@ MIMEHdrImpl::recompute_cooked_stuff(MIMEField *changing_field_or_null, const std
 
   // to be safe, recompute unless you know this call is for other cooked field
   if ((changing_field_or_null == nullptr) || (changing_field_or_null->m_wks_idx != MIME_WKSIDX_PRAGMA)) {
+    ink_assert(targeted_headers != nullptr || targeted_headers_count == 0);
     field = nullptr;
 
     // Check for targeted cache control headers first (in priority order).

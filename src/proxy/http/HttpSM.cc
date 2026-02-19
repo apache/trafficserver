@@ -1639,7 +1639,17 @@ HttpSM::handle_api_return()
   case HttpTransact::StateMachineAction_t::API_READ_REQUEST_HDR:
   case HttpTransact::StateMachineAction_t::REQUEST_BUFFER_READ_COMPLETE:
   case HttpTransact::StateMachineAction_t::API_OS_DNS:
+    call_transact_and_set_next_state(nullptr);
+    return;
   case HttpTransact::StateMachineAction_t::API_READ_RESPONSE_HDR:
+    // Plugins may mutate response cache-control headers in this hook. Re-cook
+    // targeted cache-control after hooks so downstream cache decisions see the
+    // final header state with targeted precedence.
+    if (t_state.hdr_info.server_response.m_mime) {
+      t_state.hdr_info.server_response.m_mime->recompute_cooked_stuff(
+        nullptr, t_state.txn_conf->targeted_cache_control_headers.get_headers(),
+        t_state.txn_conf->targeted_cache_control_headers.get_count());
+    }
     call_transact_and_set_next_state(nullptr);
     return;
   case HttpTransact::StateMachineAction_t::API_TUNNEL_START:

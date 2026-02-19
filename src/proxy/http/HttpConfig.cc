@@ -703,14 +703,25 @@ const MgmtConverter HttpStatusCodeList::Conv{
 void
 TargetedCacheControlHeaders::parse(std::string_view src)
 {
+  size_t dropped = 0;
+
   count = 0;
   swoc::TextView config_view{src};
 
-  while (config_view && count < MAX_HEADERS) {
+  while (config_view) {
     swoc::TextView header_name = config_view.take_prefix_at(',').trim_if(&isspace);
     if (!header_name.empty()) {
-      headers[count++] = std::string_view{header_name.data(), header_name.size()};
+      if (count < MAX_HEADERS) {
+        headers[count++] = std::string_view{header_name.data(), header_name.size()};
+      } else {
+        ++dropped;
+      }
     }
+  }
+
+  if (dropped > 0) {
+    Warning("Ignoring %zu headers for proxy.config.http.cache.targeted_cache_control_headers (maximum is %zu).", dropped,
+            MAX_HEADERS);
   }
 }
 
@@ -722,8 +733,9 @@ const MgmtConverter TargetedCacheControlHeaders::Conv{
   },
   [](void *data, std::string_view src) -> void {
     TargetedCacheControlHeaders *hdrs = static_cast<TargetedCacheControlHeaders *>(data);
-    // The string_views in headers[] point into conf_value, so conf_value must
-    // remain stable for the lifetime of the parsed headers.
+    // Keep conf_value and parse source consistent; headers[] points into src.
+    // The caller is responsible for src lifetime for as long as this object is used.
+    hdrs->conf_value = const_cast<char *>(src.data());
     hdrs->parse(src);
   }};
 // clang-format on
@@ -820,8 +832,7 @@ ParsedConfigCache::parse(TSOverridableConfigKey key, std::string_view value)
 
   case TS_CONFIG_HTTP_CACHE_TARGETED_CACHE_CONTROL_HEADERS: {
     TargetedCacheControlHeaders targeted_headers{};
-    targeted_headers.conf_value = const_cast<char *>(result.conf_value_storage.data());
-    targeted_headers.parse(result.conf_value_storage);
+    TargetedCacheControlHeaders::Conv.store_string(&targeted_headers, result.conf_value_storage);
     result.parsed = targeted_headers;
     break;
   }
