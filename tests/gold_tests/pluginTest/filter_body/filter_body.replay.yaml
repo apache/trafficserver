@@ -29,10 +29,9 @@ autest:
     process_config:
       other_args: '--verbose diag'
     log_validation:
-      traffic_out:
-        excludes:
-          - expression: "FILTER_BODY_BLOCK_CANARY"
-            description: "Verify blocked request body never reached the origin"
+      excludes:
+        - expression: "FILTER_BODY_BLOCK_CANARY"
+          description: "Verify blocked request body never reached the origin"
 
   client:
     name: 'client'
