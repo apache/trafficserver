@@ -66,6 +66,7 @@ HTTP return codes                      Count    Percent       Bytes    Percent
 415 Unsupported Media Type                 0      0.00%      0.00KB      0.00%
 416 Req Range Not Satisfiable              0      0.00%      0.00KB      0.00%
 417 Expectation Failed                     0      0.00%      0.00KB      0.00%
+429 Too Many Requests                      0      0.00%      0.00KB      0.00%
 4xx Total                                  0      0.00%      0.00KB      0.00%
 
 500 Internal Server Error                  0      0.00%      0.00KB      0.00%
