@@ -160,7 +160,7 @@ class LogFilenamesTest:
 
         diags_path = self.ts.Disk.diags_log.AbsPath
         self.ts.Disk.diags_log.Content += Testers.ContainsExpression(
-            "Traffic Server is fully initialized", f"{diags_path} should contain traffic_server diag messages")
+            "logging.yaml finished loading", f"{diags_path} should contain traffic_server diag messages")
 
         error_log_path = self.ts.Disk.error_log.AbsPath
         self.ts.Disk.error_log.Content += Testers.ContainsExpression(
