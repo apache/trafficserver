@@ -43,7 +43,7 @@ public:
 
   static void startup();
 
-  // ConfigUpdateContinuation interface
+  // ConfigRegistry reload handler
   static void reconfigure(ConfigContext ctx = {});
 
   // ConfigProcessor::scoped_config interface
