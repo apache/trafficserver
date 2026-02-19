@@ -92,6 +92,46 @@ private:
   HttpStatusBitset _data;
 };
 
+/**
+ * Pre-parsed list of targeted cache control header names (RFC 9213).
+ *
+ * Instead of parsing a comma-separated string on each request, this class
+ * stores the header names as an array of string_views into a stable backing
+ * string. The Converter ensures the string is parsed once at config load time
+ * and whenever the per-transaction override is set.
+ */
+class TargetedCacheControlHeaders
+{
+public:
+  static const MgmtConverter Conv;
+  // Must remain copy/move-capable: instances are stored in ParsedValue's
+  // std::variant and then kept inside ParsedConfigCache containers.
+
+  /// Maximum number of targeted headers supported.
+  static constexpr size_t MAX_HEADERS = 8;
+
+  char            *conf_value{nullptr};
+  std::string_view headers[MAX_HEADERS];
+  size_t           count{0};
+
+  /// Parse a comma-separated header list into the headers array.
+  void parse(std::string_view src);
+
+  /// Return a pointer to the parsed headers array.
+  const std::string_view *
+  get_headers() const
+  {
+    return headers;
+  }
+
+  /// Return the number of parsed headers.
+  size_t
+  get_count() const
+  {
+    return count;
+  }
+};
+
 struct HttpStatsBlock {
   // Need two stats for these for counts and times
   Metrics::Counter::AtomicType *background_fill_bytes_aborted;
@@ -208,6 +248,7 @@ struct HttpStatsBlock {
   Metrics::Counter::AtomicType *pushed_document_total_size;
   Metrics::Counter::AtomicType *pushed_response_header_total_size;
   Metrics::Counter::AtomicType *put_requests;
+  Metrics::Counter::AtomicType *response_status_000_count;
   Metrics::Counter::AtomicType *response_status_100_count;
   Metrics::Counter::AtomicType *response_status_101_count;
   Metrics::Counter::AtomicType *response_status_1xx_count;
@@ -245,6 +286,7 @@ struct HttpStatsBlock {
   Metrics::Counter::AtomicType *response_status_414_count;
   Metrics::Counter::AtomicType *response_status_415_count;
   Metrics::Counter::AtomicType *response_status_416_count;
+  Metrics::Counter::AtomicType *response_status_429_count;
   Metrics::Counter::AtomicType *response_status_4xx_count;
   Metrics::Counter::AtomicType *response_status_500_count;
   Metrics::Counter::AtomicType *response_status_501_count;
@@ -549,6 +591,8 @@ struct OverridableHttpConfigParams {
   MgmtByte cache_range_lookup             = 1;
   MgmtByte cache_range_write              = 0;
   MgmtByte allow_multi_range              = 0;
+
+  TargetedCacheControlHeaders targeted_cache_control_headers;
 
   MgmtByte ignore_accept_mismatch          = 0;
   MgmtByte ignore_accept_language_mismatch = 0;
@@ -884,7 +928,9 @@ public:
    */
   struct ParsedValue {
     std::string conf_value_storage{}; // Owns the string data.
-    std::variant<std::monostate, HostResData, HttpStatusCodeList, HttpForwarded::OptionBitSet, MgmtByte> parsed{};
+    std::variant<std::monostate, HostResData, HttpStatusCodeList, HttpForwarded::OptionBitSet, MgmtByte,
+                 TargetedCacheControlHeaders>
+      parsed{};
   };
 
   /** Return the parsed value for the configuration.
@@ -985,6 +1031,7 @@ inline HttpConfigParams::~HttpConfigParams()
   ats_free(oride.host_res_data.conf_value);
   ats_free(oride.negative_caching_list.conf_value);
   ats_free(oride.negative_revalidating_list.conf_value);
+  ats_free(oride.targeted_cache_control_headers.conf_value);
 
   delete connect_ports;
   delete redirect_actions_map;

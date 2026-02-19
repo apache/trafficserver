@@ -1,0 +1,5 @@
+REMAP {
+    if geo.ASN !in ["64496", "64511"] {
+        inbound.req.X-Cloud = "false";
+    }
+}

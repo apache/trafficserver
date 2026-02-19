@@ -28,6 +28,13 @@ HTTP status code of the response. Please refer to the
 :ref:`appendix-http-status-codes` appendix for more details on what each status
 code means.
 
+.. ts:stat:: global proxy.process.http.000_responses integer
+   :type: counter
+
+   The number of HTTP transactions where no valid HTTP response status code was
+   sent to the client. This typically occurs when the client aborts the
+   connection before a response is sent (ERR_CLIENT_ABORT).
+
 .. ts:stat:: global proxy.process.http.100_responses integer
    :type: counter
 
@@ -134,6 +141,9 @@ code means.
    :type: counter
 
 .. ts:stat:: global proxy.process.http.416_responses integer
+   :type: counter
+
+.. ts:stat:: global proxy.process.http.429_responses integer
    :type: counter
 
 .. ts:stat:: global proxy.process.http.4xx_responses integer

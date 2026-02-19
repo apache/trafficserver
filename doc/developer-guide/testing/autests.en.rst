@@ -73,6 +73,15 @@ For example, to run ``cache-auth.test.py``:
 
    ./autest.sh --sandbox /tmp/sbcursor --clean=none -f cache-auth
 
+To run tests in parallel, pass ``-j N`` where ``N`` is the number of worker
+processes. Each worker gets an isolated port range to avoid conflicts:
+
+.. code-block:: bash
+
+   ./autest.sh -j 10 --sandbox /tmp/sbcursor -f cache-auth -f cache-control
+
+Without ``-j``, tests run sequentially.
+
 Recommended Approach: ATSReplayTest
 ====================================
 
@@ -242,6 +251,11 @@ YAML node). Here is an example:
              - expression: "Unwanted message in diags.log"
                description: "Verify this does NOT appear in diags.log"
 
+       # Optional: Verify ATS metric values after traffic completes.
+       metric_checks:
+         - metric: "proxy.process.http.200_responses"
+           value: 1
+
    # Traffic specification using Proxy Verifier format
    # client-request and server-response generate request and response traffic
    #   toward the ATS proxy.
@@ -344,6 +358,7 @@ The ``autest`` section configures the test environment:
   - **remap_config**: List of remap rules (string or dict format)
   - **copy_to_config_dir**: List of files/directories to copy to ATS config directory
   - **log_validation**: Log validation rules for ``traffic_out`` and ``diags_log``
+  - **metric_checks**: List of metric name/value pairs to verify after traffic completes
 
 Log Validation
 ~~~~~~~~~~~~~~
@@ -365,6 +380,22 @@ The ``log_validation`` section allows you to verify the contents of
        contains:
          - expression: "Plugin initialized"
            description: "Verify plugin loaded"
+
+Metric Verification
+~~~~~~~~~~~~~~~~~~~~
+
+The ``metric_checks`` section allows you to verify |TS| metric values after all
+traffic in the test has completed. Each entry specifies a metric name and its
+expected value. After the traffic test run, ``ATSReplayTest`` automatically adds
+follow-up test runs that use ``traffic_ctl metric get`` to verify each metric.
+
+.. code-block:: yaml
+
+   metric_checks:
+     - metric: "proxy.process.http.429_responses"
+       value: 1
+     - metric: "proxy.process.http.200_responses"
+       value: 2
 
 Sessions and Transactions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~

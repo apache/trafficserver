@@ -16,6 +16,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import os
 import subprocess
 import json
 import re
@@ -49,6 +50,57 @@ def IsOpenSSL(self):
         # OpenSSL 1.1.1k  25 Mar 2021
         lambda: "OpenSSL" in openssl_str and "compatible; BoringSSL" not in openssl_str,
         "SSL library is not OpenSSL")
+
+
+def HasLegacyTLSSupport(self):
+    """Check if the system supports legacy TLS protocols (TLSv1.0 and TLSv1.1).
+
+    Modern OpenSSL 3.x installations often disable these protocols entirely,
+    even if the openssl binary still accepts the -tls1 flag and lists TLSv1 ciphers.
+
+    On Fedora/RHEL systems, the crypto-policies framework may disable legacy
+    TLS at runtime even when OpenSSL is compiled with support for it. This
+    causes 'openssl ciphers -v -tls1' to still list TLSv1 ciphers, but actual
+    TLS 1.0 connections will fail with "no protocols available".
+
+    We only probe TLSv1.0 (not TLSv1.1 separately) because crypto-policies
+    always disable both legacy versions together. If TLSv1.0 is unavailable,
+    TLSv1.1 will be too.
+
+    The check connects to localhost on a closed port to avoid any external
+    network dependency. A "connection refused" error means the TLS protocol
+    was available but nothing was listening; "no protocols available" means
+    the crypto-policy blocked TLSv1.0 entirely.
+    """
+
+    def check_tls1_support():
+        try:
+            # Connect to localhost on a port nothing is listening on.
+            # This avoids external network dependency while still detecting
+            # whether the crypto-policy allows TLSv1.0.
+            result = subprocess.run(
+                ['openssl', 's_client', '-tls1', '-connect', '127.0.0.1:1'],
+                capture_output=True,
+                text=True,
+                timeout=5,
+                input=''  # Don't wait for interactive input
+            )
+            output = result.stdout + result.stderr
+            # "no protocols available" means TLSv1 is disabled by crypto-policy
+            if 'no protocols available' in output:
+                return False
+            # Connection refused or other errors mean TLSv1 was attempted
+            # (the protocol is available, just no server listening)
+            return True
+        except subprocess.TimeoutExpired:
+            # Timeout on localhost shouldn't happen, but if it does,
+            # assume TLSv1 is not available (safer than false positive)
+            return False
+        except Exception:
+            # If we can't determine, assume TLSv1 is not available (safer)
+            return False
+
+    return self.Condition(check_tls1_support, "System does not support legacy TLS protocols (TLSv1.0/TLSv1.1)")
 
 
 def HasCurlVersion(self, version):
@@ -94,6 +146,67 @@ def HasCurlOption(self, option):
     return self.CheckOutput(['curl', '--help', 'all'], default, "Curl needs to support option: {option}".format(option=option))
 
 
+def HasCurlTLSVersionSupport(self, tls_version):
+    """Check whether curl can attempt a given TLS version.
+
+    This probes curl directly because OpenSSL capability checks do not always
+    reflect curl runtime policy behavior on hardened systems.
+    """
+
+    def check_curl_tls_support():
+        # Map semantic versions used by tests to curl flags.
+        version_map = {
+            "1.0": ("--tlsv1", "1.0"),
+            "1.1": ("--tlsv1.1", "1.1"),
+            "1.2": ("--tlsv1.2", "1.2"),
+            "1.3": ("--tlsv1.3", "1.3"),
+        }
+        if tls_version not in version_map:
+            return False
+
+        tls_flag, tls_max = version_map[tls_version]
+        try:
+            # Connect to localhost closed port to avoid network dependencies.
+            # "connection refused" means curl accepted the TLS flags and tried.
+            result = subprocess.run(
+                [
+                    "curl",
+                    "-svk",
+                    "--connect-timeout",
+                    "2",
+                    "--max-time",
+                    "3",
+                    tls_flag,
+                    "--tls-max",
+                    tls_max,
+                    "https://127.0.0.1:1",
+                ],
+                capture_output=True,
+                text=True,
+                timeout=5,
+            )
+            output = (result.stdout + result.stderr).lower()
+            unsupported_markers = [
+                "unsupported protocol",
+                "no protocols available",
+                "option --tlsv",
+                "unknown option",
+                "is unknown",
+            ]
+            if any(marker in output for marker in unsupported_markers):
+                return False
+
+            # Any attempt to connect implies curl accepted the TLS setting.
+            return True
+        except subprocess.TimeoutExpired:
+            return False
+        except Exception:
+            return False
+
+    return self.Condition(
+        check_curl_tls_support, "Curl does not support TLSv{version} in this environment".format(version=tls_version))
+
+
 def HasATSFeature(self, feature):
 
     val = self.Variables.get(feature, None)
@@ -118,9 +231,11 @@ ExtendCondition(HasOpenSSLVersion)
 ExtendCondition(HasProxyVerifierVersion)
 ExtendCondition(IsBoringSSL)
 ExtendCondition(IsOpenSSL)
+ExtendCondition(HasLegacyTLSSupport)
 ExtendCondition(HasATSFeature)
 ExtendCondition(HasCurlVersion)
 ExtendCondition(HasCurlFeature)
 ExtendCondition(HasCurlOption)
+ExtendCondition(HasCurlTLSVersionSupport)
 ExtendCondition(PluginExists)
 ExtendCondition(CurlUsingUnixDomainSocket)

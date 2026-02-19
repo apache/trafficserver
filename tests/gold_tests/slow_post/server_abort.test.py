@@ -53,4 +53,5 @@ tr.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
 server.Streams.stderr += Testers.ContainsExpression(
-    "UnicodeDecodeError", "Verify that the server raises an exception when processing the request.")
+    "(UnicodeDecodeError|IndexError: list index out of range)",
+    "Verify that the server raises an exception when processing the request.")

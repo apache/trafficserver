@@ -1,0 +1,5 @@
+SEND_REQUEST {
+    if inbound.ip !in {192.168.0.0/16, 10.0.0.0/8} {
+        outbound.req.X-External = "true";
+    }
+}

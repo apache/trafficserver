@@ -8485,6 +8485,10 @@ HttpTransact::client_result_stat(State *s, ink_hrtime total_time, ink_hrtime req
   if (s->client_info.abort == ABORTED) {
     client_transaction_result = ClientTransactionResult_t::ERROR_ABORT;
   }
+  // Count 000 responses separately since they include aborts (the main source of 000).
+  if (static_cast<int>(client_response_status) == 0) {
+    Metrics::Counter::increment(http_rsb.response_status_000_count);
+  }
   // Count the status codes, assuming the client didn't abort (i.e. there is an m_http)
   if ((s->source != Source_t::NONE) && (s->client_info.abort == DIDNOT_ABORT)) {
     switch (static_cast<int>(client_response_status)) {
@@ -8589,6 +8593,9 @@ HttpTransact::client_result_stat(State *s, ink_hrtime total_time, ink_hrtime req
       break;
     case 416:
       Metrics::Counter::increment(http_rsb.response_status_416_count);
+      break;
+    case 429:
+      Metrics::Counter::increment(http_rsb.response_status_429_count);
       break;
     case 500:
       Metrics::Counter::increment(http_rsb.response_status_500_count);

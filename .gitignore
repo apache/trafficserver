@@ -214,6 +214,11 @@ src/iocore/cache/unit_tests/var/trafficserver/cache.db
 .cursor/
 .claude/
 !.claude/CLAUDE.md
+.agents/
+.codex/
+!.codex/
+.codex/*
+!.codex/AGENTS.md
 
 # Extensions
 ext/

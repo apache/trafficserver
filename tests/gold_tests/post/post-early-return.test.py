@@ -67,18 +67,27 @@ ts.Disk.records_config.update(
         'proxy.config.diags.debug.tags': 'http',
     })
 
+mock_origin = os.path.join(Test.Variables.AtsTestToolsDir, 'mock_origin.py')
+mock_origin_args = '--status 420 --reason "Be Calm"'
+
 server1 = Test.Processes.Process(
-    "server1", "bash -c '" + Test.TestDirectory + "/server1.sh {} outserver1'".format(Test.Variables.upstream_port1))
+    "server1", f"python3 {mock_origin} {Test.Variables.upstream_port1} {mock_origin_args} --output outserver1")
 server2 = Test.Processes.Process(
-    "server2", "bash -c '" + Test.TestDirectory + "/server1.sh {} outserver1'".format(Test.Variables.upstream_port2))
+    "server2", f"python3 {mock_origin} {Test.Variables.upstream_port2} {mock_origin_args} --output outserver1")
 server3 = Test.Processes.Process(
-    "server3", "bash -c '" + Test.TestDirectory + "/server1.sh {} outserver1'".format(Test.Variables.upstream_port3))
+    "server3", f"python3 {mock_origin} {Test.Variables.upstream_port3} {mock_origin_args} --output outserver1")
 server4 = Test.Processes.Process(
-    "server4", "bash -c '" + Test.TestDirectory + "/server1.sh {} outserver1'".format(Test.Variables.upstream_port4))
+    "server4", f"python3 {mock_origin} {Test.Variables.upstream_port4} {mock_origin_args} --output outserver1")
 server5 = Test.Processes.Process(
-    "server5", "bash -c '" + Test.TestDirectory + "/server1.sh {} outserver1'".format(Test.Variables.upstream_port5))
+    "server5", f"python3 {mock_origin} {Test.Variables.upstream_port5} {mock_origin_args} --output outserver1")
 server6 = Test.Processes.Process(
-    "server6", "bash -c '" + Test.TestDirectory + "/server1.sh {} outserver1'".format(Test.Variables.upstream_port6))
+    "server6", f"python3 {mock_origin} {Test.Variables.upstream_port6} {mock_origin_args} --output outserver1")
+server1.Ready = When.PortOpen(Test.Variables.upstream_port1)
+server2.Ready = When.PortOpen(Test.Variables.upstream_port2)
+server3.Ready = When.PortOpen(Test.Variables.upstream_port3)
+server4.Ready = When.PortOpen(Test.Variables.upstream_port4)
+server5.Ready = When.PortOpen(Test.Variables.upstream_port5)
+server6.Ready = When.PortOpen(Test.Variables.upstream_port6)
 
 big_post_body = "0123456789" * 231070
 big_post_body_file = open(os.path.join(Test.RunDirectory, "big_post_body"), "w")

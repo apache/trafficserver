@@ -139,7 +139,8 @@ cmake --build build -t format
 ### Commit Message Format
 When Claude Code creates commits, start with a short summary line, use concise
 description (1-3 sentences) that focus on "why" rather than "what". If the PR
-fixes an issue, add a 'Fixes: #<issue_number>' line.
+fixes an issue, add a 'Fixes: #<issue_number>' line. Keep line lengths of the
+commit messages to 72 characters.
 
 ## Architecture Overview
 

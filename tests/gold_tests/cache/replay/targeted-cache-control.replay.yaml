@@ -1,0 +1,389 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+# Test targeted cache control headers per RFC 9213
+# Test that CDN-Cache-Control overrides Cache-Control when configured
+
+meta:
+  version: "1.0"
+
+# Configuration section for autest integration
+autest:
+  description: 'Test targeted cache control headers per RFC 9213'
+
+  dns:
+    name: 'dns'
+
+  server:
+    name: 'server'
+
+  client:
+    name: 'client'
+
+  ats:
+    name: 'ts'
+    enable_cache: true
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http|cache'
+      proxy.config.http.cache.http: 1
+      proxy.config.http.cache.required_headers: 0
+      proxy.config.http.cache.targeted_cache_control_headers: 'ATS-Cache-Control,CDN-Cache-Control'
+
+    remap_config:
+      - from: "http://example.com/"
+        to: "http://backend.example.com:{SERVER_HTTP_PORT}/"
+
+      - from: "http://acme.com/"
+        to: "http://backend.acme.com:{SERVER_HTTP_PORT}/"
+        plugins:
+          - name: "conf_remap.so"
+            args:
+              - "proxy.config.http.cache.targeted_cache_control_headers=ACME-Cache-Control"
+
+
+sessions:
+- transactions:
+
+  #############################################################################
+  # Test 1: CDN-Cache-Control with higher max-age overrides Cache-Control
+  #############################################################################
+  - client-request:
+      method: GET
+      url: /targeted/test1
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, targeted-test1-request1]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Type, text/plain]
+        - [Content-Length, "14"]
+        - [Cache-Control, "max-age=1"]
+        - [CDN-Cache-Control, "max-age=30"] # Should be used.
+        - [Connection, close]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Cache-Control, { value: "max-age=1", as: equal } ]
+        - [ CDN-Cache-Control, { value: "max-age=30", as: equal } ]
+
+  #############################################################################
+  # Test 2: Priority order - first targeted header wins (verify lowercase).
+  #############################################################################
+  - client-request:
+      method: GET
+      url: /targeted/test2
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, targeted-test2-request1]
+
+    # Test lowercase *cache-control.
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Type, text/plain]
+        - [Content-Length, "14"]
+        - [cache-control, "no-store"]
+        - [cdn-cache-control, "no-store"]
+        - [ats-cache-control, "max-age=30"]  # Should take precedence. Test lowercase.
+        - [Connection, close]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ cache-control, { value: "no-store", as: equal } ]
+        - [ cdn-cache-control, { value: "no-store", as: equal } ]
+        - [ ats-cache-control, { value: "max-age=30", as: equal } ]
+
+
+  #############################################################################
+  # Test 3: no-store in targeted header
+  #############################################################################
+  - client-request:
+      method: GET
+      url: /targeted/test3
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, targeted-test3-request1]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Type, text/plain]
+        - [Content-Length, "14"]
+        - [Cache-Control, "max-age=3600"]
+        - [CDN-Cache-Control, "no-store"] # Should be used.
+        - [Connection, close]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Cache-Control, { value: "max-age=3600", as: equal } ]
+        - [ CDN-Cache-Control, { value: "no-store", as: equal } ]
+
+  #############################################################################
+  # Test 4: Vanilla Cache-Control should still function.
+  #############################################################################
+  - client-request:
+      method: GET
+      url: /targeted/test4
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, targeted-test4-request1]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Type, text/plain]
+        - [Content-Length, "14"]
+        - [Cache-Control, "max-age=30"]
+        - [Connection, close]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Cache-Control, { value: "max-age=30", as: equal } ]
+
+
+  #############################################################################
+  # Test 5: conf_remap.so override with ACME-Cache-Control
+  #############################################################################
+  - client-request:
+      method: GET
+      url: /acme/test1
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, acme.com]
+        - [uuid, acme-test1-request1]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Type, text/plain]
+        - [Content-Length, "14"]
+        - [Cache-Control, "no-store"]
+        - [CDN-Cache-Control, "no-store"]
+        - [ATS-Cache-Control, "no-store"]
+        - [ACME-Cache-Control, "max-age=30"]  # Should be used due to override
+        - [Connection, close]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Cache-Control, { value: "no-store", as: equal } ]
+        - [ CDN-Cache-Control, { value: "no-store", as: equal } ]
+        - [ ATS-Cache-Control, { value: "no-store", as: equal } ]
+        - [ ACME-Cache-Control, { value: "max-age=30", as: equal } ]
+
+  #############################################################################
+  # Test 6: Verify ACME-Cache-Control override works (no-cache)
+  #############################################################################
+  - client-request:
+      method: GET
+      url: /acme/test2
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, acme.com]
+        - [uuid, acme-test2-request1]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Type, text/plain]
+        - [Content-Length, "14"]
+        - [Cache-Control, "max-age=3600"]
+        - [ACME-Cache-Control, "no-store"]  # Should prevent caching
+        - [Connection, close]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Cache-Control, { value: "max-age=3600", as: equal } ]
+        - [ ACME-Cache-Control, { value: "no-store", as: equal } ]
+
+  #############################################################################
+  # Now verify the correct cache behavior from above.
+  #############################################################################
+  - client-request:
+      # Delay to exceed Cache-Control but not CDN-Cache-Control.
+      delay: 2s
+
+      method: GET
+      url: /targeted/test1
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, targeted-test1-request2]
+
+    # Should not reach the origin.
+    server-response:
+      status: 404
+      reason: Not Found
+
+    # Expect the cached 200 response.
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Cache-Control, { value: "max-age=1", as: equal } ]
+        - [ CDN-Cache-Control, { value: "max-age=30", as: equal } ]
+
+  - client-request:
+      method: GET
+      url: /targeted/test2
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, targeted-test2-request2]
+
+    # Should not reach the origin.
+    server-response:
+      status: 404
+      reason: Not Found
+
+    # Expect the cached 200 response since ATS-Cache-Control takes precedence
+    # over CDN-Cache-Control and Cache-Control.
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Cache-Control, { value: "no-store", as: equal } ]
+        - [ CDN-Cache-Control, { value: "no-store", as: equal } ]
+        - [ ATS-Cache-Control, { value: "max-age=30", as: equal } ]
+
+  - client-request:
+      method: GET
+      url: /targeted/test3
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, targeted-test3-request2]
+
+    # Since CDN-Cache-Control is no-store, the request should reach the origin.
+    server-response:
+      status: 404
+      reason: Not Found
+
+    proxy-response:
+      status: 404
+      headers:
+        fields:
+        - [ Cache-Control, { as: absent } ]
+        - [ CDN-Cache-Control, { as: absent } ]
+
+  - client-request:
+      method: GET
+      url: /targeted/test4
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, targeted-test4-request2]
+
+    # Should not reach the origin.
+    server-response:
+      status: 404
+      reason: Not Found
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Cache-Control, { value: "max-age=30", as: equal } ]
+
+  # Verify that ACME-Cache-Control: max-age=30 allowed caching.
+  - client-request:
+      method: GET
+      url: /acme/test1
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, acme.com]
+        - [uuid, acme-test1-request2]
+
+    # The origin should not receive the request since ATS will reply out of cache.
+    server-response:
+      status: 404
+      reason: Not Found
+
+    # Expect the cached 200 response.
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Cache-Control, { value: "no-store", as: equal } ]
+        - [ CDN-Cache-Control, { value: "no-store", as: equal } ]
+        - [ ATS-Cache-Control, { value: "no-store", as: equal } ]
+        - [ ACME-Cache-Control, { value: "max-age=30", as: equal } ]
+
+  # On the other hand, verify that ACME-Cache-Control: no-store prevents caching.
+  - client-request:
+      method: GET
+      url: /acme/test2
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, acme.com]
+        - [uuid, acme-test2-request2]
+
+    server-response:
+      status: 404
+      reason: Not Found
+
+    # Expect the 404 from the origin server, not the cached 200 response.
+    proxy-response:
+      status: 404
+      headers:
+        fields:
+        - [ Cache-Control, { as: absent } ]
+        - [ CDN-Cache-Control, { as: absent } ]
+        - [ ATS-Cache-Control, { as: absent } ]
+        - [ ACME-Cache-Control, { as: absent } ]

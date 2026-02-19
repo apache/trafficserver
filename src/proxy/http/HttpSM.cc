@@ -1639,7 +1639,17 @@ HttpSM::handle_api_return()
   case HttpTransact::StateMachineAction_t::API_READ_REQUEST_HDR:
   case HttpTransact::StateMachineAction_t::REQUEST_BUFFER_READ_COMPLETE:
   case HttpTransact::StateMachineAction_t::API_OS_DNS:
+    call_transact_and_set_next_state(nullptr);
+    return;
   case HttpTransact::StateMachineAction_t::API_READ_RESPONSE_HDR:
+    // Plugins may mutate response cache-control headers in this hook. Re-cook
+    // targeted cache-control after hooks so downstream cache decisions see the
+    // final header state with targeted precedence.
+    if (t_state.hdr_info.server_response.m_mime) {
+      t_state.hdr_info.server_response.m_mime->recompute_cooked_stuff(
+        nullptr, t_state.txn_conf->targeted_cache_control_headers.get_headers(),
+        t_state.txn_conf->targeted_cache_control_headers.get_count());
+    }
     call_transact_and_set_next_state(nullptr);
     return;
   case HttpTransact::StateMachineAction_t::API_TUNNEL_START:
@@ -2100,13 +2110,17 @@ HttpSM::state_read_server_response_header(int event, void *data)
   }
     // fallthrough
 
-  case ParseResult::DONE:
-
+  case ParseResult::DONE: {
     if (!t_state.hdr_info.server_response.check_hdr_implements()) {
       t_state.http_return_code = HTTPStatus::BAD_GATEWAY;
       call_transact_and_set_next_state(HttpTransact::BadRequest);
       break;
     }
+
+    // Recompute cooked cache control with targeted headers.
+    t_state.hdr_info.server_response.m_mime->recompute_cooked_stuff(nullptr,
+                                                                    t_state.txn_conf->targeted_cache_control_headers.get_headers(),
+                                                                    t_state.txn_conf->targeted_cache_control_headers.get_count());
 
     SMDbg(dbg_ctl_http_seq, "Done parsing server response header");
 
@@ -2138,6 +2152,7 @@ HttpSM::state_read_server_response_header(int event, void *data)
       server_entry->read_vio->disable(); // Disable the read until we finish the tunnel
     }
     break;
+  }
   case ParseResult::CONT:
     ink_assert(server_entry->eos == false);
     server_entry->read_vio->reenable();

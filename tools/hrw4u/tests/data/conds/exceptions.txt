@@ -3,3 +3,5 @@
 #
 # Implicit = comparisons
 implicit-cmp.input: u4wrh
+# Double negation !(x != y) cancels to x == y, reverse can't reconstruct the original form
+double-negation.input: hrw4u

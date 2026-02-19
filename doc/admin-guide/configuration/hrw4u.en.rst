@@ -80,15 +80,56 @@ follows to produce the help output:
 
    hrw4u --help
 
-Doing a compile is simply:
+Basic Usage
+^^^^^^^^^^^
+
+Compile a single file to stdout:
 
 .. code-block:: none
 
    hrw4u some_file.hrw4u
 
-in Addition to ``hrw4u``, you also have the reverse tool, converting existing ``header_rewrite``
-configurations to ``hrw4u``. This tool is named ``u4wrh``. For people using IDEs, the package also
-provides an LSP for this language, named ``hrw4u-lsp``.
+Compile from stdin:
+
+.. code-block:: none
+
+   cat some_file.hrw4u | hrw4u
+
+Compile multiple files to stdout (separated by ``# ---``):
+
+.. code-block:: none
+
+   hrw4u file1.hrw4u file2.hrw4u file3.hrw4u
+
+Bulk Compilation
+^^^^^^^^^^^^^^^^
+
+For bulk compilation, use the ``input:output`` format to compile multiple files
+to their respective output files in a single command:
+
+.. code-block:: none
+
+   hrw4u file1.hrw4u:file1.conf file2.hrw4u:file2.conf file3.hrw4u:file3.conf
+
+This is particularly useful for build systems or when processing many configuration
+files at once. All files are processed in a single invocation, improving performance
+for large batches of files.
+
+Reverse Tool (u4wrh)
+^^^^^^^^^^^^^^^^^^^^
+
+In addition to ``hrw4u``, you also have the reverse tool, converting existing ``header_rewrite``
+configurations to ``hrw4u``. This tool is named ``u4wrh`` and supports the same usage patterns:
+
+.. code-block:: none
+
+   # Convert single file to stdout
+   u4wrh existing_config.conf
+
+   # Bulk conversion
+   u4wrh file1.conf:file1.hrw4u file2.conf:file2.hrw4u
+
+For people using IDEs, the package also provides an LSP for this language, named ``hrw4u-lsp``.
 
 Syntax Differences
 ==================
@@ -388,6 +429,7 @@ Operator             HRW4U Syntax              Description
 ~                    foo ~ /pattern/           Regular expression match
 !~                   foo !~ /pattern/          Regular expression non-match
 in [...]             foo in ["a", "b"]         Membership in a list of values
+!in [...]            foo !in ["a", "b"]        Negated membership in a list of values
 ==================== ========================= ============================================
 
 Modifiers
@@ -567,6 +609,30 @@ Query string when the Origin server times out or the connection is refused::
    READ_RESPONSE {
        if outbound.status in [502, 504] {
            set-redirect(302, "http://different_origin.example.com/{inbound.url.path}?{inbound.url.query}");
+       }
+   }
+
+Flag Unrecognized ASNs
+----------------------
+
+This rule flags requests whose origin ASN is not in a known allowlist,
+using the negated membership operator ``!in``::
+
+   REMAP {
+       if geo.ASN !in ["64496", "64511"] {
+           inbound.req.X-Known-ASN = "false";
+       }
+   }
+
+Restrict to Internal Networks
+-----------------------------
+
+This rule rejects requests that do not originate from known internal
+IP ranges, using ``!in`` with an IP range::
+
+   REMAP {
+       if inbound.ip !in {192.168.0.0/16, 10.0.0.0/8} {
+           http.status = 403;
        }
    }
 

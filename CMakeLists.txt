@@ -632,10 +632,16 @@ if(ENABLE_DOCS)
 endif()
 
 if(ENABLE_AUTEST)
+  # Default the sandbox to /tmp to keep paths short. Unix domain socket paths
+  # are limited to 108 characters and deep build directories (e.g. in home
+  # directories) can exceed this limit, causing confusing test failures. A hash
+  # of CMAKE_BINARY_DIR provides per-build isolation while keeping the path
+  # deterministic across runs.
+  string(MD5 _build_dir_hash "${CMAKE_BINARY_DIR}")
+  string(SUBSTRING "${_build_dir_hash}" 0 8 _build_dir_hash)
   set(AUTEST_SANDBOX
-      ${CMAKE_BINARY_DIR}/_sandbox
-      CACHE STRING "Location for autest output (default
-  CMAKE_BINARY_DIR/_sandbox)"
+      "/tmp/sb_${_build_dir_hash}"
+      CACHE STRING "Location for autest output (default /tmp/sb_<hash>)"
   )
   set(AUTEST_OPTIONS
       ""
