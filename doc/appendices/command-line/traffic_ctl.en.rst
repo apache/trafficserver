@@ -211,8 +211,212 @@ Display the current value of a configuration record.
    configuration after any configuration file modification. If no configuration files have been
    modified since the previous configuration load, this command is a no-op.
 
+   Every reload is assigned a **token** — a unique identifier for the reload operation. The token
+   can be used to query the reload's status later via :option:`traffic_ctl config status`. If no
+   token is provided via ``--token``, the server generates one automatically using a timestamp
+   (e.g. ``rldtk-1739808000000``).
+
    The timestamp of the last reconfiguration event (in seconds since epoch) is published in the
-   `proxy.process.proxy.reconfigure_time` metric.
+   ``proxy.process.proxy.reconfigure_time`` metric.
+
+   **Behavior without options:**
+
+   When called without ``--monitor`` or ``--show-details``, the command sends the reload request
+   and immediately prints the assigned token along with suggested next-step commands:
+
+   .. code-block:: bash
+
+      $ traffic_ctl config reload
+      ✔ Reload scheduled [rldtk-1739808000000]
+
+        Monitor : traffic_ctl config reload -t rldtk-1739808000000 -m
+        Details : traffic_ctl config reload -t rldtk-1739808000000 -s -l
+
+   **When a reload is already in progress:**
+
+   Only one reload can be active at a time. If a reload is already running, the command does
+   **not** start a new one. Instead, it reports the in-progress reload's token and provides
+   options to monitor it or force a new one:
+
+   .. code-block:: bash
+
+      $ traffic_ctl config reload
+      ⟳ Reload in progress [rldtk-1739808000000]
+
+        Monitor : traffic_ctl config reload -t rldtk-1739808000000 -m
+        Details : traffic_ctl config status -t rldtk-1739808000000
+        Force   : traffic_ctl config reload --force  (may conflict with the running reload)
+
+   With ``--monitor``, it automatically switches to monitoring the in-progress reload instead of
+   failing. With ``--show-details``, it displays the current status of the in-progress reload.
+
+   **When a token already exists:**
+
+   If the token provided via ``--token`` was already used by a previous reload (even a completed
+   one), the command refuses to start a new reload to prevent ambiguity. Choose a different token
+   or omit ``--token`` to let the server generate a unique one:
+
+   .. code-block:: bash
+
+      $ traffic_ctl config reload -t my-deploy
+      ✗ Token 'my-deploy' already in use
+
+        Status : traffic_ctl config status -t my-deploy
+        Retry  : traffic_ctl config reload
+
+   Supports the following options:
+
+   .. option:: --token, -t <token>
+
+      Assign a custom token to this reload. Tokens must be unique across the reload history — if
+      a reload (active or completed) already has this token, the command is rejected. When omitted,
+      the server generates a unique token automatically.
+
+      Custom tokens are useful for tagging reloads with deployment identifiers, ticket numbers,
+      or other meaningful labels that make it easier to query status later.
+
+      .. code-block:: bash
+
+         $ traffic_ctl config reload -t deploy-v2.1
+         ✔ Reload scheduled [deploy-v2.1]
+
+   .. option:: --monitor, -m
+
+      Start the reload and monitor its progress with a live progress bar until completion. The
+      progress bar updates in real-time showing the number of completed handlers, overall status,
+      and elapsed time.
+
+      Polls the server at regular intervals controlled by ``--refresh-int`` (default: every 0.5
+      seconds). Before the first poll, waits briefly (see ``--initial-wait``) to allow the server
+      time to dispatch work to all handlers.
+
+      If a reload is already in progress, ``--monitor`` automatically attaches to that reload and
+      monitors it instead of failing.
+
+      If both ``--monitor`` and ``--show-details`` are specified, ``--monitor`` is ignored and
+      ``--show-details`` takes precedence.
+
+      .. code-block:: bash
+
+         $ traffic_ctl config reload -t deploy-v2.1 -m
+         ✔ Reload scheduled [deploy-v2.1]
+         ✔ [deploy-v2.1] ████████████████████ 11/11  success  (245ms)
+
+      Failed reload:
+
+      .. code-block:: bash
+
+         $ traffic_ctl config reload -t hotfix-cert -m
+         ✔ Reload scheduled [hotfix-cert]
+         ✗ [hotfix-cert] ██████████████░░░░░░ 9/11  fail  (310ms)
+
+           Details : traffic_ctl config status -t hotfix-cert
+
+   .. option:: --show-details, -s
+
+      Start the reload and display a detailed status report. The command sends the reload request,
+      waits for the configured initial wait (see ``--initial-wait``, default: 2 seconds) to allow
+      handlers to start, then fetches and prints the full task tree with per-handler status and
+      durations.
+
+      If a reload is already in progress, shows the status of that reload immediately.
+
+      Combine with ``--include-logs`` to also show per-handler log messages.
+
+      .. code-block:: bash
+
+         $ traffic_ctl config reload -s -l
+         ✔ Reload scheduled [rldtk-1739808000000]. Waiting for details...
+
+         ✔ Reload [success] — rldtk-1739808000000
+           Started : 2025 Feb 17 12:00:00.123
+           Duration: 245ms
+
+           Tasks:
+            ✔ ip_allow.yaml ·························· 18ms
+            ✔ logging.yaml ··························· 120ms
+            ...
+
+   .. option:: --include-logs, -l
+
+      Include per-handler log messages in the output. Only meaningful together with
+      ``--show-details``. Log messages are set by handlers via ``ctx.log()`` and
+      ``ctx.fail()`` during the reload.
+
+   .. option:: --data, -d <source>
+
+      Supply inline YAML configuration content for the reload. The content is passed directly to
+      config handlers at runtime and is **not persisted to disk** — a server restart will revert
+      to the file-based configuration. A warning is printed after a successful inline reload to
+      remind the operator.
+
+      Accepts the following formats:
+
+      - ``@file.yaml`` — read content from a file
+      - ``@-`` — read content from stdin
+      - ``"yaml: content"`` — inline YAML string
+      - Multiple ``-d`` arguments can be provided — their content is merged, with later values
+        overriding earlier ones for the same key
+
+      The YAML content uses **registry keys** (e.g. ``ip_allow``, ``sni``) as top-level keys.
+      Each key maps to the full configuration content that the handler normally reads from its
+      config file. A single file can target multiple handlers:
+
+      .. code-block:: yaml
+
+         # reload_rules.yaml
+         # Each top-level key is a registry key.
+         # The value is the config content (inner data, not the file's top-level wrapper).
+         ip_allow:
+           - apply: in
+             ip_addrs: 0.0.0.0/0
+             action: allow
+         sni:
+           - fqdn: "*.example.com"
+             verify_client: NONE
+
+      .. code-block:: bash
+
+         # Reload from file
+         $ traffic_ctl config reload -d @reload_rules.yaml -t update-rules -m
+
+         # Reload from stdin
+         $ cat rules.yaml | traffic_ctl config reload -d @- -m
+
+      When used with ``-d``, only the handlers for the keys present in the YAML content are
+      invoked — other config handlers are not triggered.
+
+      .. note::
+
+         Inline YAML reload requires the target config handler to support
+         ``ConfigSource::FileAndRpc``. Handlers that only support ``ConfigSource::FileOnly``
+         will return an error for the corresponding key. The JSONRPC response will contain
+         per-key error details.
+
+   .. option:: --force, -F
+
+      Force a new reload even if one is already in progress. Without this flag, the server rejects
+      a new reload when one is active.
+
+      .. warning::
+
+         ``--force`` does **not** stop or cancel the running reload. It starts a second reload
+         alongside the first one. Handlers from both reloads may execute concurrently on separate
+         ``ET_TASK`` threads. This can lead to unpredictable behavior if handlers are not designed
+         for concurrent execution. Use this flag only for debugging or recovery situations.
+
+   .. option:: --refresh-int, -r <seconds>
+
+      Set the polling interval in seconds used with ``--monitor``. Accepts fractional values
+      (e.g. ``0.5`` for 500ms). Controls how often ``traffic_ctl`` queries the server for
+      updated reload status. Default: ``0.5``.
+
+   .. option:: --initial-wait, -w <seconds>
+
+      Initial wait in seconds before the first status poll. After scheduling a reload, the
+      server needs a brief moment to dispatch work to all handlers. This delay avoids polling
+      before any handler has started, which would show an empty or incomplete task tree.
+      Accepts fractional values (e.g. ``1.5``). Default: ``2``.
 
 .. program:: traffic_ctl config
 .. option:: set RECORD VALUE
@@ -351,11 +555,112 @@ Display the current value of a configuration record.
 .. program:: traffic_ctl config
 .. option:: status
 
-   :ref:`admin_lookup_records`
+   :ref:`get_reload_config_status`
 
-   Display detailed status about the Traffic Server configuration system. This includes version
-   information, whether the internal configuration store is current and whether any daemon processes
-   should be restarted.
+   Display the status of configuration reloads. This is a read-only command — it does not trigger
+   a reload, it only queries the server for information about past or in-progress reloads.
+
+   **Behavior without options:**
+
+   When called without ``--token`` or ``--count``, shows the most recent reload:
+
+   .. code-block:: bash
+
+      $ traffic_ctl config status
+      ✔ Reload [success] — rldtk-1739808000000
+        Started : 2025 Feb 17 12:00:00.123
+        Finished: 2025 Feb 17 12:00:00.368
+        Duration: 245ms
+
+        ✔ 11 success  ◌ 0 in-progress  ✗ 0 failed  (11 total)
+
+        Tasks:
+         ✔ logging.yaml ··························· 120ms
+         ✔ ip_allow.yaml ·························· 18ms
+         ...
+
+   **When no reloads have occurred:**
+
+   If the server has not performed any reloads since startup, the command reports that no reload
+   tasks were found.
+
+   **Querying a specific reload:**
+
+   Use ``--token`` to look up a specific reload by its token. If the token does not exist in
+   the history, an error is returned:
+
+   .. code-block:: bash
+
+      $ traffic_ctl config status -t nonexistent
+      ✗ Token 'nonexistent' not found
+
+   **Failed reload report:**
+
+   When a reload has failed handlers, the output shows which handlers succeeded and which failed,
+   along with durations for each:
+
+   .. code-block:: bash
+
+      $ traffic_ctl config status -t hotfix-cert
+      ✗ Reload [fail] — hotfix-cert
+        Started : 2025 Feb 17 14:30:10.500
+        Finished: 2025 Feb 17 14:30:10.810
+        Duration: 310ms
+
+        ✔ 9 success  ◌ 0 in-progress  ✗ 2 failed  (11 total)
+
+        Tasks:
+         ✔ ip_allow.yaml ·························· 18ms
+         ✗ logging.yaml ·························· 120ms  ✗ FAIL
+         ✗ ssl_client_coordinator ················· 85ms  ✗ FAIL
+         ├─ ✔ sni.yaml ··························· 20ms
+         └─ ✗ ssl_multicert.config ··············· 65ms  ✗ FAIL
+         ...
+
+   Supports the following options:
+
+   .. option:: --token, -t <token>
+
+      Show the status of a specific reload identified by its token. The token was either assigned
+      by the server (e.g. ``rldtk-<timestamp>``) or provided by the operator via
+      ``traffic_ctl config reload --token``.
+
+      Returns an error if the token is not found in the reload history.
+
+   .. option:: --count, -c <N|all>
+
+      Show the last ``N`` reload records from the history. Use ``all`` to display every reload
+      the server has recorded (up to the internal history limit).
+
+      When ``--count`` is provided, ``--token`` is ignored.
+
+      .. code-block:: bash
+
+         # Show full history
+         $ traffic_ctl config status -c all
+
+         # Show last 5 reloads
+         $ traffic_ctl config status -c 5
+
+   **JSON output:**
+
+   All ``config status`` commands support the global ``--format json`` option to output the raw
+   JSONRPC response as JSON instead of the human-readable format. This is useful for automation,
+   CI pipelines, monitoring tools, or any system that consumes structured output directly:
+
+   .. code-block:: bash
+
+      $ traffic_ctl config status -t deploy-v2.1 --format json
+      {
+        "tasks": [
+          {
+            "config_token": "deploy-v2.1",
+            "status": "success",
+            "description": "Main reload task - 2025 Feb 17 12:00:00",
+            "sub_tasks": [ ...]
+          }
+        ]
+      }
 
 .. program:: traffic_ctl config
 .. option:: registry
