@@ -178,6 +178,18 @@ def ATSReplayTest(obj, replay_file: str):
         rc = server_config['return_code']
         server.ReturnCode = Any(*rc) if isinstance(rc, list) else rc
 
+    # Configure server log validation if specified.
+    server_log_validation = server_config.get('log_validation', {})
+    if server_log_validation:
+        for contains_entry in server_log_validation.get('contains', []):
+            expression = contains_entry['expression']
+            description = contains_entry.get('description', f'Verify server output contains: {expression}')
+            server.Streams.All += Testers.ContainsExpression(expression, description)
+        for excludes_entry in server_log_validation.get('excludes', []):
+            expression = excludes_entry['expression']
+            description = excludes_entry.get('description', f'Verify server output excludes: {expression}')
+            server.Streams.All += Testers.ExcludesExpression(expression, description)
+
     # ATS configuration.
     if not 'ats' in autest_config:
         raise ValueError(f"Replay file {replay_file} does not contain 'autest.ats' section")
@@ -200,6 +212,18 @@ def ATSReplayTest(obj, replay_file: str):
     if 'return_code' in client_config:
         rc = client_config['return_code']
         client.ReturnCode = Any(*rc) if isinstance(rc, list) else rc
+
+    # Configure client log validation if specified.
+    client_log_validation = client_config.get('log_validation', {})
+    if client_log_validation:
+        for contains_entry in client_log_validation.get('contains', []):
+            expression = contains_entry['expression']
+            description = contains_entry.get('description', f'Verify client output contains: {expression}')
+            client.Streams.All += Testers.ContainsExpression(expression, description)
+        for excludes_entry in client_log_validation.get('excludes', []):
+            expression = excludes_entry['expression']
+            description = excludes_entry.get('description', f'Verify client output excludes: {expression}')
+            client.Streams.All += Testers.ExcludesExpression(expression, description)
 
     if dns:
         ts.StartBefore(dns)
