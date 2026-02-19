@@ -57,35 +57,6 @@ class MilestoneFieldsTest:
         ' hit_proc=%<{TS_MILESTONE_UA_BEGIN_WRITE-TS_MILESTONE_CACHE_OPEN_READ_END}msdms>'
         ' hit_xfer=%<{TS_MILESTONE_SM_FINISH-TS_MILESTONE_UA_BEGIN_WRITE}msdms>')
 
-    MISS_FIELDS = [
-        'ms',
-        'c_ttfb',
-        'c_tls',
-        'c_hdr',
-        'c_proc',
-        'cache',
-        'dns',
-        'o_tcp',
-        'o_wait',
-        'o_hdr',
-        'o_proc',
-        'o_body',
-        'c_xfer',
-        'hit_proc',
-        'hit_xfer',
-    ]
-
-    HIT_FIELDS = [
-        'ms',
-        'c_ttfb',
-        'c_tls',
-        'c_hdr',
-        'c_proc',
-        'cache',
-        'hit_proc',
-        'hit_xfer',
-    ]
-
     def __init__(self):
         self._server = Test.MakeOriginServer("server")
         self._nameserver = Test.MakeDNServer("dns", default='127.0.0.1')
