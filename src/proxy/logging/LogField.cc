@@ -363,7 +363,6 @@ LogField::LogField(const char *field, Container container)
   case ESSH:
   case ECSSH:
   case SCFG:
-  case MSTSMS:
     m_unmarshal_func = &(LogAccess::unmarshal_str);
     break;
 
@@ -557,9 +556,6 @@ LogField::marshal(LogAccess *lad, char *buf)
 
   case MSDMS:
     return lad->marshal_milestone_diff(m_milestone1, m_milestone2, buf);
-
-  case MSTSMS:
-    return lad->marshal_milestones_csv(buf);
 
   default:
     return 0;
