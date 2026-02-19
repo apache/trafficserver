@@ -1691,6 +1691,7 @@ HttpSM::handle_api_return()
     break;
   }
   case HttpTransact::StateMachineAction_t::SERVER_READ: {
+    milestones.mark(TS_MILESTONE_UA_BEGIN_WRITE);
     if (unlikely(t_state.did_upgrade_succeed)) {
       // We've successfully handled the upgrade, let's now setup
       // a blind tunnel.
@@ -1727,6 +1728,7 @@ HttpSM::handle_api_return()
     break;
   }
   case HttpTransact::StateMachineAction_t::SERVE_FROM_CACHE: {
+    milestones.mark(TS_MILESTONE_UA_BEGIN_WRITE);
     HttpTunnelProducer *p = setup_cache_read_transfer();
     tunnel.tunnel_run(p);
     break;
