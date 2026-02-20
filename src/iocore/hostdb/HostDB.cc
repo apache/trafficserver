@@ -1324,7 +1324,9 @@ HostDBRecord::select_best_http(ts_time now, ts_seconds fail_window, sockaddr con
       }
     }
   } else {
-    best_alive = &info[0];
+    if (info[0].select(now, fail_window)) {
+      best_alive = &info[0];
+    }
   }
 
   return best_alive;
