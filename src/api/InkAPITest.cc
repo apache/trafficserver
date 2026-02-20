@@ -892,7 +892,14 @@ synserver_delete(SocketServer *s)
 static int
 synserver_vc_refuse(TSCont contp, TSEvent event, void *data)
 {
-  TSAssert((event == TS_EVENT_NET_ACCEPT) || (event == TS_EVENT_NET_ACCEPT_FAILED));
+  if (event != TS_EVENT_NET_ACCEPT && event != TS_EVENT_NET_ACCEPT_FAILED) {
+    int err = -static_cast<int>(reinterpret_cast<intptr_t>(data));
+    if (err > 0 && err < 256) {
+      ink_abort("synserver_vc_refuse: unexpected event %d, accept errno: %s (%d)", event, strerror(err), err);
+    } else {
+      ink_abort("synserver_vc_refuse: unexpected event %d, data: %p", event, data);
+    }
+  }
 
   SocketServer *s = static_cast<SocketServer *>(TSContDataGet(contp));
   TSAssert(s->magic == MAGIC_ALIVE);
@@ -913,7 +920,14 @@ synserver_vc_refuse(TSCont contp, TSEvent event, void *data)
 static int
 synserver_vc_accept(TSCont contp, TSEvent event, void *data)
 {
-  TSAssert((event == TS_EVENT_NET_ACCEPT) || (event == TS_EVENT_NET_ACCEPT_FAILED));
+  if (event != TS_EVENT_NET_ACCEPT && event != TS_EVENT_NET_ACCEPT_FAILED) {
+    int err = -static_cast<int>(reinterpret_cast<intptr_t>(data));
+    if (err > 0 && err < 256) {
+      ink_abort("synserver_vc_accept: unexpected event %d, accept errno: %s (%d)", event, strerror(err), err);
+    } else {
+      ink_abort("synserver_vc_accept: unexpected event %d, data: %p", event, data);
+    }
+  }
 
   SocketServer *s = static_cast<SocketServer *>(TSContDataGet(contp));
   TSAssert(s->magic == MAGIC_ALIVE);
