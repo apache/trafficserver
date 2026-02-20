@@ -54,7 +54,7 @@
 #include <openssl/conf.h>
 #include <openssl/dh.h>
 #include <openssl/ec.h>
-#if __has_include(<openssl/engine.h>)
+#if HAVE_ENGINE_LOAD_DYNAMIC
 #include <openssl/engine.h>
 #endif
 #include <openssl/err.h>
