@@ -3224,3 +3224,47 @@ TSReturnCode TSVConnPPInfoGet(TSVConn vconn, uint16_t key, const char **value, i
 
 */
 TSReturnCode TSVConnPPInfoIntGet(TSVConn vconn, uint16_t key, TSMgmtInt *value);
+
+/**
+   Registers a custom log field, or modifies an existing log field with a new definition.
+
+   @param name a human friendly name
+   @param symbol a symbol to use on the config file
+   @param type a type of the new log field
+   @param marshal_cb a callback function to marshal log  value
+   @param unmarshal_cb a callback function to unmarshal log value
+   @param replace a flag to allow replacing an existing log field
+
+   @return @c TS_SCCESS if the registration successes, TS_ERROR otherwise
+*/
+TSReturnCode TSLogFieldRegister(std::string_view name, std::string_view symbol, TSLogType type, TSLogMarshalCallback marshal_cb,
+                                TSLogUnmarshalCallback unmarshal_cb, bool replace = false);
+/**
+   Helper function to marshal a string
+*/
+int TSLogStringMarshal(char *buf, std::string_view str);
+
+/**
+   Helper function to marshal an integer
+*/
+int TSLogIntMarshal(char *buf, int64_t value);
+
+/**
+   Helper function to marshal an address
+*/
+int TSLogAddrMarshal(char *buf, sockaddr *addr);
+
+/**
+   Helper function to unmarshal a string
+*/
+std::tuple<int, int> TSLogStringUnmarshal(char **buf, char *dest, int len);
+
+/**
+   Helper function to unmarshal an integer
+*/
+std::tuple<int, int> TSLogIntUnmarshal(char **buf, char *dest, int len);
+
+/**
+   Helper function to unmarshal an address
+*/
+std::tuple<int, int> TSLogAddrUnmarshal(char **buf, char *dest, int len);

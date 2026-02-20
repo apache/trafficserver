@@ -26,6 +26,7 @@
 #include <unordered_map>
 #include <string_view>
 #include <string>
+#include <charconv>
 
 #include "iocore/net/NetVConnection.h"
 #include "iocore/net/NetHandler.h"
@@ -9016,4 +9017,144 @@ void
 TSConnectionLimitExemptListClear()
 {
   ConnectionTracker::clear_client_exempt_list();
+}
+
+TSReturnCode
+TSLogFieldRegister(std::string_view name, std::string_view symbol, TSLogType type, TSLogMarshalCallback marshal_cb,
+                   TSLogUnmarshalCallback unmarshal_cb, bool replace)
+{
+  if (auto ite = Log::field_symbol_hash.find(symbol.data()); ite != Log::field_symbol_hash.end()) {
+    if (replace) {
+      // Symbol is registered and the plugin wants to replace it.
+      // Need to unregister the existing entry first.
+      Log::global_field_list.remove(ite->second);
+      Log::field_symbol_hash.erase(ite);
+    } else {
+      // Symbol conflict.
+      return TS_ERROR;
+    }
+  }
+
+  LogField *field = new LogField(name.data(), symbol.data(), static_cast<LogField::Type>(type),
+                                 reinterpret_cast<LogField::CustomMarshalFunc>(marshal_cb), unmarshal_cb);
+  Log::global_field_list.add(field, false);
+  Log::field_symbol_hash.emplace(symbol.data(), field);
+
+  return TS_SUCCESS;
+}
+
+int
+TSLogStringMarshal(char *buf, std::string_view str)
+{
+  if (buf) {
+    ink_strlcpy(buf, str.data(), str.length() + 1);
+  }
+  return str.length() + 1;
+}
+
+std::tuple<int, int>
+TSLogStringUnmarshal(char **buf, char *dest, int len)
+{
+  // We cannot use LogAccess::unmarshal_str, etc. here because those internal
+  // functions take care of log buffer alignment. This function needs to be
+  // implemented as if it's a piece of code in plugin code, which is unaware
+  // of the alignment.
+  if (int l = strlen(*buf); l < len) {
+    memcpy(dest, *buf, l);
+    return {l, l};
+  } else {
+    return {-1, -1};
+  }
+}
+
+int
+TSLogIntMarshal(char *buf, int64_t value)
+{
+  if (buf) {
+    *(reinterpret_cast<int64_t *>(buf)) = value;
+  }
+  return sizeof(int64_t);
+}
+
+std::tuple<int, int>
+TSLogIntUnmarshal(char **buf, char *dest, int len)
+{
+  int64_t val     = *(reinterpret_cast<int64_t *>(*buf));
+  auto [end, err] = std::to_chars(dest, dest + len, val);
+  if (err == std::errc()) {
+    *end = '\0';
+    return {sizeof(uint64_t), end - dest};
+  }
+
+  return {-1, -1};
+}
+
+int
+TSLogAddrMarshal(char *buf, sockaddr *addr)
+{
+  LogFieldIpStorage data;
+  int               len = sizeof(data._ip);
+
+  if (nullptr == addr) {
+    data._ip._family = AF_UNSPEC;
+  } else if (ats_is_ip4(addr)) {
+    if (buf) {
+      data._ip4._family = AF_INET;
+      data._ip4._addr   = ats_ip4_addr_cast(addr);
+    }
+    len = sizeof(data._ip4);
+  } else if (ats_is_ip6(addr)) {
+    if (buf) {
+      data._ip6._family = AF_INET6;
+      data._ip6._addr   = ats_ip6_addr_cast(addr);
+    }
+    len = sizeof(data._ip6);
+  } else if (ats_is_unix(addr)) {
+    if (buf) {
+      data._un._family = AF_UNIX;
+      strncpy(data._un._path, ats_unix_cast(addr)->sun_path, TS_UNIX_SIZE);
+    }
+    len = sizeof(data._un);
+  } else {
+    data._ip._family = AF_UNSPEC;
+  }
+
+  if (buf) {
+    memcpy(buf, &data, len);
+  }
+  return len;
+}
+
+std::tuple<int, int>
+TSLogAddrUnmarshal(char **buf, char *dest, int len)
+{
+  IpEndpoint endpoint;
+  int        read_len = sizeof(LogFieldIp);
+
+  LogFieldIp *raw = reinterpret_cast<LogFieldIp *>(*buf);
+  if (AF_INET == raw->_family) {
+    LogFieldIp4 *ip4 = static_cast<LogFieldIp4 *>(raw);
+    ats_ip4_set(&endpoint, ip4->_addr);
+    read_len = sizeof(*ip4);
+  } else if (AF_INET6 == raw->_family) {
+    LogFieldIp6 *ip6 = static_cast<LogFieldIp6 *>(raw);
+    ats_ip6_set(&endpoint, ip6->_addr);
+    read_len = sizeof(*ip6);
+  } else if (AF_UNIX == raw->_family) {
+    LogFieldUn *un = static_cast<LogFieldUn *>(raw);
+    ats_unix_set(&endpoint, un->_path, TS_UNIX_SIZE);
+    read_len = sizeof(*un);
+  } else {
+    ats_ip_invalidate(&endpoint);
+  }
+
+  if (!ats_is_ip(&endpoint) && !ats_is_unix(&endpoint)) {
+    dest[0] = '0';
+    dest[1] = '\0';
+    return {-1, 1};
+  } else if (ats_ip_ntop(&endpoint, dest, len)) {
+    return {read_len, static_cast<int>(::strlen(dest))};
+  }
+
+  return {-1, -1};
 }

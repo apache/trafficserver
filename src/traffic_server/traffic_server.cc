@@ -2228,6 +2228,16 @@ main(int /* argc ATS_UNUSED */, const char **argv)
       pluginInitCheck.notify_one();
     }
 
+    // Give plugins a chance to customize log fields
+    APIHook *hook = g_lifecycle_hooks->get(TS_LIFECYCLE_LOG_INITIALIZED_HOOK);
+    while (hook) {
+      hook->invoke(TS_EVENT_LIFECYCLE_LOG_INITIALIZED, nullptr);
+      hook = hook->next();
+    }
+
+    // Log config needs to be loaded after the custom field registration
+    Log::load_config();
+
     if (IpAllow::has_no_rules()) {
       Error("No ip_allow.yaml entries found.  All requests will be denied!");
     }

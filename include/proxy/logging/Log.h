@@ -155,6 +155,7 @@ public:
   // main interface
   static void init(int configFlags = 0);
   static void init_fields();
+  static void load_config();
 
   static bool
   transaction_logging_enabled()

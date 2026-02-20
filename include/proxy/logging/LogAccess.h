@@ -305,6 +305,10 @@ public:
   int  marshal_milestone_fmt_ms(TSMilestonesType ms, char *buf);
   int  marshal_milestone_diff(TSMilestonesType ms1, TSMilestonesType ms2, char *buf);
   void set_http_header_field(LogField::Container container, char *field, char *buf, int len);
+
+  // Plugin
+  int marshal_custom_field(char *buf, LogField::CustomMarshalFunc plugin_marshal_func);
+
   //
   // unmarshalling routines
   //
