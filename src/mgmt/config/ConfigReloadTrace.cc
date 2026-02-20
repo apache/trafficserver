@@ -124,6 +124,12 @@ void
 ConfigReloadTask::mark_as_bad_state(std::string_view reason)
 {
   std::unique_lock<std::shared_mutex> lock(_mutex);
+  // Once a task reaches SUCCESS, FAIL, or TIMEOUT, reject further transitions.
+  if (is_terminal(_info.state)) {
+    Warning("ConfigReloadTask '%s': ignoring mark_as_bad_state from %.*s — already terminal.", _info.description.c_str(),
+            static_cast<int>(state_to_string(_info.state).size()), state_to_string(_info.state).data());
+    return;
+  }
   _info.state = State::TIMEOUT;
   _atomic_last_updated_ms.store(now_ms(), std::memory_order_release);
   if (!reason.empty()) {

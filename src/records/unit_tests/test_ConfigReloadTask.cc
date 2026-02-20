@@ -95,19 +95,40 @@ TEST_CASE("ConfigReloadTask state transitions", "[config][reload][state]")
     REQUIRE(logs.back().find("Test timeout") != std::string::npos);
   }
 
-  SECTION("Terminal states cannot be changed")
+  SECTION("Terminal states cannot be changed via mark_as_bad_state")
   {
     auto task = std::make_shared<ConfigReloadTask>("test-token-2", "test task 2", false, nullptr);
 
-    // Set to SUCCESS
+    // Set to SUCCESS (terminal state)
     task->set_completed();
     REQUIRE(task->get_state() == ConfigReloadTask::State::SUCCESS);
 
-    // Try to mark as timeout - should not change (already terminal)
+    // Try to mark as timeout — terminal guard rejects the transition
     task->mark_as_bad_state("Should not apply");
+    REQUIRE(task->get_state() == ConfigReloadTask::State::SUCCESS);
 
-    // Note: Current implementation allows this - may need to add guard
-    // This test documents current behavior
+    // Verify the rejected reason was NOT added to logs
+    auto logs = task->get_logs();
+    for (const auto &log : logs) {
+      REQUIRE(log.find("Should not apply") == std::string::npos);
+    }
+  }
+
+  SECTION("Terminal states cannot be changed via set_state_and_notify")
+  {
+    auto task = std::make_shared<ConfigReloadTask>("test-token-3", "test task 3", false, nullptr);
+
+    // Set to FAIL (terminal state)
+    task->set_failed();
+    REQUIRE(task->get_state() == ConfigReloadTask::State::FAIL);
+
+    // Try to transition to SUCCESS — rejected
+    task->set_completed();
+    REQUIRE(task->get_state() == ConfigReloadTask::State::FAIL);
+
+    // Try to transition to IN_PROGRESS — rejected
+    task->set_in_progress();
+    REQUIRE(task->get_state() == ConfigReloadTask::State::FAIL);
   }
 }
 

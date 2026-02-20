@@ -219,7 +219,7 @@ public:
     _info.description = description;
   }
 
-  [[nodiscard]] std::string_view
+  [[nodiscard]] std::string
   get_description() const
   {
     std::shared_lock<std::shared_mutex> lock(_mutex);
@@ -233,7 +233,7 @@ public:
     _info.filename = filename;
   }
 
-  [[nodiscard]] std::string_view
+  [[nodiscard]] std::string
   get_filename() const
   {
     std::shared_lock<std::shared_mutex> lock(_mutex);
