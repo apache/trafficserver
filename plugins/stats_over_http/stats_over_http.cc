@@ -39,6 +39,9 @@
 #include <string_view>
 #include <sys/stat.h>
 #include <ts/ts.h>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
 #include <unistd.h>
 #include <zlib.h>
 
@@ -92,6 +95,30 @@ const int BROTLI_LGW               = 16;
 static bool integer_counters = false;
 static bool wrap_counters    = false;
 
+struct prometheus_v2_metric {
+  std::string name;
+  std::string labels;
+
+  bool
+  operator==(const prometheus_v2_metric &other) const
+  {
+    return name == other.name && labels == other.labels;
+  }
+};
+
+namespace std
+{
+template <> struct hash<prometheus_v2_metric> {
+  size_t
+  operator()(const prometheus_v2_metric &m) const
+  {
+    size_t h1 = hash<string>()(m.name);
+    size_t h2 = hash<string>()(m.labels);
+    return h1 ^ (h2 + 0x9e3779b9 + (h1 << 6) + (h1 >> 2));
+  }
+};
+} // namespace std
+
 struct config_t {
   unsigned int     recordTypes;
   std::string      stats_path;
@@ -103,7 +130,7 @@ struct config_holder_t {
   config_t       *config;
 };
 
-enum class output_format_t { JSON_OUTPUT, CSV_OUTPUT, PROMETHEUS_OUTPUT };
+enum class output_format_t { JSON_OUTPUT, CSV_OUTPUT, PROMETHEUS_OUTPUT, PROMETHEUS_V2_OUTPUT };
 enum class encoding_format_t { NONE, DEFLATE, GZIP, BR };
 
 int    configReloadRequests = 0;
@@ -147,11 +174,12 @@ struct stats_state {
   TSIOBuffer       resp_buffer = nullptr;
   TSIOBufferReader resp_reader = nullptr;
 
-  int               output_bytes  = 0;
-  int               body_written  = 0;
-  output_format_t   output_format = output_format_t::JSON_OUTPUT;
-  encoding_format_t encoding      = encoding_format_t::NONE;
-  z_stream          zstrm;
+  int64_t                              output_bytes  = 0;
+  int                                  body_written  = 0;
+  output_format_t                      output_format = output_format_t::JSON_OUTPUT;
+  encoding_format_t                    encoding      = encoding_format_t::NONE;
+  z_stream                             zstrm;
+  std::unordered_map<std::string, int> prometheus_v2_emitted;
 #if HAVE_BROTLI_ENCODE_H
   b_stream bstrm;
 #endif
@@ -168,6 +196,9 @@ struct stats_state {
 static char *
 nstr(const char *s)
 {
+  if (!s) {
+    return nullptr;
+  }
   char *mys = (char *)TSmalloc(strlen(s) + 1);
   strcpy(mys, s);
   return mys;
@@ -246,7 +277,9 @@ stats_cleanup(TSCont contp, stats_state *my_state)
     my_state->resp_buffer = nullptr;
   }
 
-  TSVConnClose(my_state->net_vc);
+  if (my_state->net_vc) {
+    TSVConnClose(my_state->net_vc);
+  }
   delete my_state;
   TSContDestroy(contp);
 }
@@ -260,10 +293,13 @@ stats_process_accept(TSCont contp, stats_state *my_state)
   my_state->read_vio    = TSVConnRead(my_state->net_vc, contp, my_state->req_buffer, INT64_MAX);
 }
 
-static int
+static int64_t
 stats_add_data_to_resp_buffer(const char *s, stats_state *my_state)
 {
-  int s_len = strlen(s);
+  if (!s) {
+    return 0;
+  }
+  int64_t s_len = strlen(s);
 
   TSIOBufferWrite(my_state->resp_buffer, s, s_len);
 
@@ -293,6 +329,15 @@ static const char RESP_HEADER_PROMETHEUS_DEFLATE[] =
   "no-cache\r\n\r\n";
 static const char RESP_HEADER_PROMETHEUS_BR[] = "HTTP/1.0 200 OK\r\nContent-Type: text/plain; version=0.0.4; "
                                                 "charset=utf-8\r\nContent-Encoding: br\r\nCache-Control: no-cache\r\n\r\n";
+static const char RESP_HEADER_PROMETHEUS_V2[] =
+  "HTTP/1.0 200 OK\r\nContent-Type: text/plain; version=2.0.0; charset=utf-8\r\nCache-Control: no-cache\r\n\r\n";
+static const char RESP_HEADER_PROMETHEUS_V2_GZIP[] = "HTTP/1.0 200 OK\r\nContent-Type: text/plain; version=2.0.0; "
+                                                     "charset=utf-8\r\nContent-Encoding: gzip\r\nCache-Control: no-cache\r\n\r\n";
+static const char RESP_HEADER_PROMETHEUS_V2_DEFLATE[] =
+  "HTTP/1.0 200 OK\r\nContent-Type: text/plain; version=2.0.0; charset=utf-8\r\nContent-Encoding: deflate\r\nCache-Control: "
+  "no-cache\r\n\r\n";
+static const char RESP_HEADER_PROMETHEUS_V2_BR[] = "HTTP/1.0 200 OK\r\nContent-Type: text/plain; version=2.0.0; "
+                                                   "charset=utf-8\r\nContent-Encoding: br\r\nCache-Control: no-cache\r\n\r\n";
 
 static int
 stats_add_resp_header(stats_state *my_state)
@@ -329,6 +374,17 @@ stats_add_resp_header(stats_state *my_state)
       return stats_add_data_to_resp_buffer(RESP_HEADER_PROMETHEUS_BR, my_state);
     } else {
       return stats_add_data_to_resp_buffer(RESP_HEADER_PROMETHEUS, my_state);
+    }
+    break;
+  case output_format_t::PROMETHEUS_V2_OUTPUT:
+    if (my_state->encoding == encoding_format_t::GZIP) {
+      return stats_add_data_to_resp_buffer(RESP_HEADER_PROMETHEUS_V2_GZIP, my_state);
+    } else if (my_state->encoding == encoding_format_t::DEFLATE) {
+      return stats_add_data_to_resp_buffer(RESP_HEADER_PROMETHEUS_V2_DEFLATE, my_state);
+    } else if (my_state->encoding == encoding_format_t::BR) {
+      return stats_add_data_to_resp_buffer(RESP_HEADER_PROMETHEUS_V2_BR, my_state);
+    } else {
+      return stats_add_data_to_resp_buffer(RESP_HEADER_PROMETHEUS_V2, my_state);
     }
     break;
   }
@@ -509,32 +565,295 @@ static
   return sanitized_name;
 }
 
+/** Parse a Prometheus v2 metric name and return the base name and labels.
+ *
+ * @param[in] name The metric name to parse.
+ * @return A prometheus_v2_metric struct containing the base name and labels.
+ */
+static
+// Remove this check when we drop support for pre-13 GCC versions.
+#if defined(__cpp_lib_constexpr_string) && __cpp_lib_constexpr_string >= 201907L
+// Clang <= 16 doesn't fully support constexpr std::string.
+#if !defined(__clang__) || __clang_major__ > 16
+  constexpr
+#endif
+#endif
+  prometheus_v2_metric
+  parse_metric_v2(std::string_view name)
+{
+  swoc::TextView name_view{name};
+  std::string    labels;
+  std::string    base_name;
+
+  auto escape_label = [](std::string_view val) {
+    size_t escaped_len = 0;
+    for (char c : val) {
+      if (c == '"' || c == '\\' || c == '\n') {
+        escaped_len += 2;
+      } else {
+        escaped_len += 1;
+      }
+    }
+
+    std::string escaped;
+    if (escaped_len > 0) {
+      escaped.reserve(escaped_len);
+      for (char c : val) {
+        if (c == '"' || c == '\\') {
+          escaped += '\\';
+          escaped += c;
+        } else if (c == '\n') {
+          escaped += "\\n";
+        } else {
+          escaped += c;
+        }
+      }
+    }
+    return escaped;
+  };
+
+  auto add_label = [&](std::string_view key, std::string_view val) {
+    if (!labels.empty()) {
+      labels += ", ";
+    }
+    labels += key;
+    labels += "=\"";
+    labels += escape_label(val);
+    labels += "\"";
+  };
+
+  constexpr std::string_view methods[]    = {"get",   "post",    "head", "put",   "delete",          "options",
+                                             "trace", "connect", "push", "purge", "extension_method"};
+  constexpr std::string_view directions[] = {"incoming", "outgoing"};
+  constexpr std::string_view results[]    = {"hit", "miss", "error", "errors", "success", "failure"};
+  constexpr std::string_view categories[] = {"volume", "thread", "interface", "net", "host", "port"};
+
+  auto contains = [](const std::string_view *arr, size_t size, std::string_view token) {
+    for (size_t i = 0; i < size; ++i) {
+      if (arr[i] == token) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  while (!name_view.empty()) {
+    // take_prefix_at is not constexpr in some versions of swoc, so we do it manually if needed
+    // or just use it and see. swoc::TextView find_first_of is not constexpr.
+    size_t         sep = name_view.find_first_of("._[]");
+    swoc::TextView token;
+    if (sep == swoc::TextView::npos) {
+      token = name_view;
+      name_view.clear();
+    } else {
+      token = name_view.prefix(sep);
+      name_view.remove_prefix(sep + 1);
+    }
+
+    if (token.empty()) {
+      continue;
+    }
+
+    bool token_handled = false;
+
+    // Status codes (200, 4xx, etc.)
+    if (token.length() == 3 && (token[0] >= '0' && token[0] <= '9') && ((token[1] >= '0' && token[1] <= '9') || token[1] == 'x') &&
+        ((token[2] >= '0' && token[2] <= '9') || token[2] == 'x')) {
+      add_label("status", token);
+      token_handled = true;
+    }
+    // Direction (incoming / outgoing)
+    else if (contains(directions, sizeof(directions) / sizeof(directions[0]), token)) {
+      add_label("direction", token);
+      token_handled = true;
+    }
+    // Methods
+    else if (contains(methods, sizeof(methods) / sizeof(methods[0]), token)) {
+      add_label("method", token);
+      token_handled = true;
+    }
+    // Generic Categories + Index (volume, 0, etc.)
+    else if (contains(categories, sizeof(categories) / sizeof(categories[0]), token)) {
+      swoc::TextView next   = name_view;
+      size_t         id_sep = next.find_first_of("._[]");
+      swoc::TextView id;
+      if (id_sep == swoc::TextView::npos) {
+        id = next;
+        next.clear();
+      } else {
+        id = next.prefix(id_sep);
+        next.remove_prefix(id_sep + 1);
+      }
+
+      bool is_id = !id.empty();
+      for (char c : id) {
+        if (!(c >= '0' && c <= '9') && c != 'x') {
+          is_id = false;
+          break;
+        }
+      }
+      if (is_id) {
+        add_label(token, id);
+        if (!base_name.empty()) {
+          base_name += ".";
+        }
+        base_name     += token;
+        name_view      = next;
+        token_handled  = true;
+      }
+    }
+    // Results (hit, miss)
+    else if (contains(results, sizeof(results) / sizeof(results[0]), token)) {
+      // 'hit' and 'miss' are almost always labels.
+      if (token == "hit" || token == "miss" || !name_view.empty()) {
+        add_label("result", token);
+        token_handled = true;
+      }
+    }
+    // Buckets (e.g., 10ms)
+    else {
+      constexpr std::string_view units[] = {"ms", "us", "s"};
+      for (const auto &unit : units) {
+        size_t unit_len = unit.length();
+        if (token.length() > unit_len && token.substr(token.length() - unit_len) == unit) {
+          bool all_digits = true;
+          for (size_t j = 0; j < token.length() - unit_len; ++j) {
+            if (!(token[j] >= '0' && token[j] <= '9')) {
+              all_digits = false;
+              break;
+            }
+          }
+          if (all_digits && token.length() > unit_len) {
+            add_label("le", token);
+            token_handled = true;
+            break;
+          }
+        }
+      }
+    }
+
+    if (!token_handled) {
+      if (!base_name.empty()) {
+        base_name += ".";
+      }
+      base_name += token;
+    }
+  }
+
+  return {base_name, labels};
+}
+
+static void
+prometheus_v2_out_stat(TSRecordType /* rec_type ATS_UNUSED */, void *edata, int /* registered ATS_UNUSED */, const char *name,
+                       TSRecordDataType data_type, TSRecordData *datum)
+{
+  stats_state *my_state = static_cast<stats_state *>(edata);
+
+  if (data_type == TS_RECORDDATATYPE_STRING) {
+    return; // Prometheus does not support string values.
+  }
+
+  auto        v2             = parse_metric_v2(name);
+  std::string sanitized_name = sanitize_metric_name_for_prometheus(v2.name);
+
+  if (sanitized_name.empty()) {
+    return;
+  }
+
+  // Only emit HELP and TYPE once per base name.
+  // Note: Prometheus requires all metrics with the same name to have the same type.
+  // If Traffic Server metrics with different types (e.g., COUNTER and INT) are collapsed
+  // into the same base name, the first one encountered will determine the reported TYPE.
+  auto it = my_state->prometheus_v2_emitted.find(sanitized_name);
+  if (it == my_state->prometheus_v2_emitted.end()) {
+    APPEND("# HELP ");
+    APPEND(sanitized_name.c_str());
+    APPEND(" ");
+    APPEND(name);
+    APPEND("\n");
+
+    const char *type_str = (data_type == TS_RECORDDATATYPE_COUNTER) ? "counter" : "gauge";
+    APPEND("# TYPE ");
+    APPEND(sanitized_name.c_str());
+    APPEND(" ");
+    APPEND(type_str);
+    APPEND("\n");
+
+    my_state->prometheus_v2_emitted[sanitized_name] = data_type;
+  } else {
+    // Validate type consistency (at least between counter and gauge).
+    bool prev_is_counter = (it->second == TS_RECORDDATATYPE_COUNTER);
+    bool curr_is_counter = (data_type == TS_RECORDDATATYPE_COUNTER);
+    if (prev_is_counter != curr_is_counter) {
+      Dbg(dbg_ctl, "Inconsistent types for base metric %s: previously %s, now %s. Labels: %s", sanitized_name.c_str(),
+          prev_is_counter ? "counter" : "gauge", curr_is_counter ? "counter" : "gauge", v2.labels.c_str());
+    }
+  }
+
+  APPEND(sanitized_name.c_str());
+  if (!v2.labels.empty()) {
+    APPEND("{");
+    APPEND(v2.labels.c_str());
+    APPEND("}");
+  }
+  APPEND(" ");
+
+  char val_buffer[128];
+  int  len = 0;
+  if (data_type == TS_RECORDDATATYPE_COUNTER) {
+    len = snprintf(val_buffer, sizeof(val_buffer), "%" PRIu64 "\n", wrap_unsigned_counter(datum->rec_counter));
+  } else if (data_type == TS_RECORDDATATYPE_INT) {
+    len = snprintf(val_buffer, sizeof(val_buffer), "%" PRIu64 "\n", wrap_unsigned_counter(datum->rec_int));
+  } else if (data_type == TS_RECORDDATATYPE_FLOAT) {
+    len = snprintf(val_buffer, sizeof(val_buffer), "%g\n", datum->rec_float);
+  }
+
+  if (len > 0 && len < (int)sizeof(val_buffer)) {
+    APPEND(val_buffer);
+  }
+}
+
 static void
 prometheus_out_stat(TSRecordType /* rec_type ATS_UNUSED */, void *edata, int /* registered ATS_UNUSED */, const char *name,
                     TSRecordDataType data_type, TSRecordData *datum)
 {
   stats_state *my_state       = static_cast<stats_state *>(edata);
   std::string  sanitized_name = sanitize_metric_name_for_prometheus(name);
-  char         type_buffer[256];
-  char         help_buffer[256];
 
-  snprintf(help_buffer, sizeof(help_buffer), "# HELP %s %s\n", sanitized_name.c_str(), name);
+  if (sanitized_name.empty()) {
+    return;
+  }
+
   switch (data_type) {
   case TS_RECORDDATATYPE_COUNTER:
-    APPEND(help_buffer);
-    snprintf(type_buffer, sizeof(type_buffer), "# TYPE %s counter\n", sanitized_name.c_str());
-    APPEND(type_buffer);
+    APPEND("# HELP ");
+    APPEND(sanitized_name.c_str());
+    APPEND(" ");
+    APPEND(name);
+    APPEND("\n");
+    APPEND("# TYPE ");
+    APPEND(sanitized_name.c_str());
+    APPEND(" counter\n");
     APPEND_STAT_PROMETHEUS_NUMERIC(sanitized_name.c_str(), "%" PRIu64, wrap_unsigned_counter(datum->rec_counter));
     break;
   case TS_RECORDDATATYPE_INT:
-    APPEND(help_buffer);
-    snprintf(type_buffer, sizeof(type_buffer), "# TYPE %s gauge\n", sanitized_name.c_str());
-    APPEND(type_buffer);
+    APPEND("# HELP ");
+    APPEND(sanitized_name.c_str());
+    APPEND(" ");
+    APPEND(name);
+    APPEND("\n");
+    APPEND("# TYPE ");
+    APPEND(sanitized_name.c_str());
+    APPEND(" gauge\n");
     APPEND_STAT_PROMETHEUS_NUMERIC(sanitized_name.c_str(), "%" PRIu64, wrap_unsigned_counter(datum->rec_int));
     break;
   case TS_RECORDDATATYPE_FLOAT:
-    APPEND(help_buffer);
-    APPEND_STAT_PROMETHEUS_NUMERIC(sanitized_name.c_str(), "%f", datum->rec_float);
+    APPEND("# HELP ");
+    APPEND(sanitized_name.c_str());
+    APPEND(" ");
+    APPEND(name);
+    APPEND("\n");
+    APPEND_STAT_PROMETHEUS_NUMERIC(sanitized_name.c_str(), "%g", datum->rec_float);
     break;
   case TS_RECORDDATATYPE_STRING:
     Dbg(dbg_ctl, "Prometheus does not support string values, skipping: %s", sanitized_name.c_str());
@@ -645,6 +964,13 @@ prometheus_out_stats(stats_state *my_state)
 }
 
 static void
+prometheus_v2_out_stats(stats_state *my_state)
+{
+  TSRecordDump((TSRecordType)(TS_RECORDTYPE_PLUGIN | TS_RECORDTYPE_NODE | TS_RECORDTYPE_PROCESS), prometheus_v2_out_stat, my_state);
+  APPEND_STAT_PROMETHEUS_NUMERIC("current_time_epoch_ms", "%" PRIu64, ms_since_epoch());
+}
+
+static void
 stats_process_write(TSCont contp, TSEvent event, stats_state *my_state)
 {
   if (event == TS_EVENT_VCONN_WRITE_READY) {
@@ -659,6 +985,9 @@ stats_process_write(TSCont contp, TSEvent event, stats_state *my_state)
         break;
       case output_format_t::PROMETHEUS_OUTPUT:
         prometheus_out_stats(my_state);
+        break;
+      case output_format_t::PROMETHEUS_V2_OUTPUT:
+        prometheus_v2_out_stats(my_state);
         break;
       }
 
@@ -753,6 +1082,8 @@ stats_origin(TSCont contp, TSEvent /* event ATS_UNUSED */, void *edata)
       format_per_path = output_format_t::CSV_OUTPUT;
     } else if (request_path_suffix == "/prometheus") {
       format_per_path = output_format_t::PROMETHEUS_OUTPUT;
+    } else if (request_path_suffix == "/prometheus_v2") {
+      format_per_path = output_format_t::PROMETHEUS_V2_OUTPUT;
     } else {
       Dbg(dbg_ctl, "Unknown suffix for stats path: %.*s", static_cast<int>(request_path_suffix.length()),
           request_path_suffix.data());
@@ -777,7 +1108,8 @@ stats_origin(TSCont contp, TSEvent /* event ATS_UNUSED */, void *edata)
   icontp   = TSContCreate(stats_dostuff, TSMutexCreate());
 
   if (path_had_explicit_format) {
-    Dbg(dbg_ctl, "Path had explicit format, ignoring any Accept header: %s", request_path_suffix.data());
+    Dbg(dbg_ctl, "Path had explicit format, ignoring any Accept header: %.*s", static_cast<int>(request_path_suffix.length()),
+        request_path_suffix.data());
     my_state->output_format = format_per_path;
   } else {
     // Check for an Accept header to determine response type.
@@ -795,6 +1127,9 @@ stats_origin(TSCont contp, TSEvent /* event ATS_UNUSED */, void *edata)
       } else if (!strncasecmp(str, "text/plain; version=0.0.4", len)) {
         Dbg(dbg_ctl, "Saw text/plain; version=0.0.4 in accept header, sending Prometheus output.");
         my_state->output_format = output_format_t::PROMETHEUS_OUTPUT;
+      } else if (!strncasecmp(str, "text/plain; version=2.0.0", len)) {
+        Dbg(dbg_ctl, "Saw text/plain; version=2.0.0 in accept header, sending Prometheus v2 output.");
+        my_state->output_format = output_format_t::PROMETHEUS_V2_OUTPUT;
       } else {
         Dbg(dbg_ctl, "Saw %.*s in accept header, defaulting to JSON output.", len, str);
         my_state->output_format = output_format_t::JSON_OUTPUT;
@@ -1141,6 +1476,42 @@ config_handler(TSCont cont, TSEvent /* event ATS_UNUSED */, void * /* edata ATS_
 // Clang <= 16 doesn't fully support constexpr std::string.
 #if !defined(__clang__) || __clang_major__ > 16
 constexpr void
+test_parse_metric_v2()
+{
+  // Basic method extraction
+  static_assert(parse_metric_v2("proxy.process.http.get_requests") ==
+                prometheus_v2_metric{"proxy.process.http.requests", "method=\"get\""});
+
+  // Status code extraction
+  static_assert(parse_metric_v2("proxy.process.http.200_responses") ==
+                prometheus_v2_metric{"proxy.process.http.responses", "status=\"200\""});
+
+  // Result extraction
+  static_assert(parse_metric_v2("proxy.process.http.cache_hit_fresh") ==
+                prometheus_v2_metric{"proxy.process.http.cache_fresh", "result=\"hit\""});
+
+  // Category + Index extraction (volume_0)
+  static_assert(parse_metric_v2("proxy.process.cache.volume_0.lookup.success") ==
+                prometheus_v2_metric{"proxy.process.cache.volume.lookup.success", "volume=\"0\""});
+
+  // Time buckets (le labels)
+  // Ensure "ms" without a number is NOT a bucket
+  static_assert(parse_metric_v2("proxy.process.http.avg_close_ms") == prometheus_v2_metric{"proxy.process.http.avg_close.ms", ""});
+
+  // Time bucket with a number
+  static_assert(parse_metric_v2("proxy.process.http.time_10ms") == prometheus_v2_metric{"proxy.process.http.time", "le=\"10ms\""});
+
+  // Multiple labels (method + status)
+  // proxy.process.http.get.200_responses -> proxy.process.http.responses{method="get", status="200"}
+  static_assert(parse_metric_v2("proxy.process.http.get.200_responses") ==
+                prometheus_v2_metric{"proxy.process.http.responses", "method=\"get\", status=\"200\""});
+
+  // Metric with brackets
+  static_assert(parse_metric_v2("proxy.process.http.connection_errors[500]") ==
+                prometheus_v2_metric{"proxy.process.http.connection_errors", "status=\"500\""});
+}
+
+constexpr void
 test_sanitize_metric_name_for_prometheus()
 {
   // Various unchanged names.
@@ -1210,6 +1581,8 @@ test_sanitize_metric_name_for_prometheus()
   static_assert(sanitize_metric_name_for_prometheus("123foo---bar") == "_123foo___bar");
   static_assert(sanitize_metric_name_for_prometheus("foo [[[bar]]]") == "foo____bar___");
   static_assert(sanitize_metric_name_for_prometheus("foo@#$%bar") == "foo____bar");
+
+  test_parse_metric_v2();
 }
 #endif // !defined(__clang__) || __clang_major__ > 16
 #endif // defined(__cpp_lib_constexpr_string) && __cpp_lib_constexpr_string >= 201907L
