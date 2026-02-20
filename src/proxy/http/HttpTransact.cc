@@ -2591,11 +2591,21 @@ HttpTransact::HandleCacheOpenReadHitFreshness(State *s)
     }
   }
 
+  // If we're serving stale due to write lock failure, override cache_lookup_result to HIT_STALE
+  // so plugins see the accurate status. what_is_document_freshness returns FRESH to bypass
+  // revalidation, but the content is actually stale.
+  if (s->serving_stale_due_to_write_lock) {
+    s->cache_lookup_result = HttpTransact::CacheLookupResult_t::HIT_STALE;
+  }
+
   ink_assert(s->cache_lookup_result != HttpTransact::CacheLookupResult_t::MISS);
   if (s->cache_lookup_result == HttpTransact::CacheLookupResult_t::HIT_STALE) {
     SET_VIA_STRING(VIA_DETAIL_CACHE_LOOKUP, VIA_DETAIL_MISS_EXPIRED);
     SET_VIA_STRING(VIA_CACHE_RESULT, VIA_IN_CACHE_STALE);
   }
+
+  // Clear the deferred flag if set (for READ_RETRY cases that found stale content)
+  s->cache_lookup_complete_deferred = false;
 
   TRANSACT_RETURN(StateMachineAction_t::API_CACHE_LOOKUP_COMPLETE, HttpTransact::HandleCacheOpenReadHit);
 }
@@ -2787,7 +2797,9 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
   //    proxy.config.http.cache.ignore_server_no_cache is set to 0 (i.e don't ignore no cache -- the default setting)
   //
   // But, we only do this if we're not in an API updating the cached object (see TSHttpTxnUpdateCachedObject)
-  if ((((s->cache_lookup_result == CacheLookupResult_t::HIT_STALE) ||
+  // Also skip revalidation if we're serving stale due to write lock failure - we've already decided
+  // to serve the stale content to avoid contention, so don't try to revalidate.
+  if ((((s->cache_lookup_result == CacheLookupResult_t::HIT_STALE && !s->serving_stale_due_to_write_lock) ||
         ((obj->response_get()->get_cooked_cc_mask() & MIME_COOKED_MASK_CC_NO_CACHE) && !s->cache_control.ignore_server_no_cache)) &&
        (s->api_update_cached_object != HttpTransact::UpdateCachedObject_t::CONTINUE))) {
     needs_revalidate = true;
@@ -2942,14 +2954,27 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
 
   HttpCacheSM &cache_sm = s->state_machine->get_cache_sm();
   TxnDbg(dbg_ctl_http_trans, "CacheOpenRead --- HIT-FRESH read while write %d", cache_sm.is_readwhilewrite_inprogress());
-  if (cache_sm.is_readwhilewrite_inprogress())
+  if (cache_sm.is_readwhilewrite_inprogress()) {
     SET_VIA_STRING(VIA_CACHE_RESULT, VIA_IN_CACHE_RWW_HIT);
+  }
+
+  // If serving stale due to write lock failure (actions 2, 3, or 6), adjust VIA to reflect stale serving.
+  // This ensures correct statistics attribution (cache_hit_stale_served instead of cache_hit_fresh).
+  // Note: VIA_SERVER_RESULT is left as default (space) since the origin server was never contacted.
+  if (s->serving_stale_due_to_write_lock) {
+    TxnDbg(dbg_ctl_http_trans, "Serving stale due to write lock failure, adjusting VIA for statistics");
+    SET_VIA_STRING(VIA_DETAIL_CACHE_LOOKUP, VIA_DETAIL_MISS_EXPIRED);
+    SET_VIA_STRING(VIA_CACHE_RESULT, VIA_IN_CACHE_STALE);
+  }
 
   if (s->cache_lookup_result == CacheLookupResult_t::HIT_WARNING) {
     build_response_from_cache(s, HTTPWarningCode::HERUISTIC_EXPIRATION);
-  } else if (s->cache_lookup_result == CacheLookupResult_t::HIT_STALE) {
+  } else if (s->cache_lookup_result == CacheLookupResult_t::HIT_STALE && !s->serving_stale_due_to_write_lock) {
     ink_assert(server_up == false);
     build_response_from_cache(s, HTTPWarningCode::REVALIDATION_FAILED);
+  } else if (s->serving_stale_due_to_write_lock) {
+    // Serving stale due to write lock failure - no Warning header (deprecated per RFC 9111)
+    build_response_from_cache(s, HTTPWarningCode::NONE);
   } else {
     build_response_from_cache(s, HTTPWarningCode::NONE);
   }
@@ -3166,7 +3191,9 @@ HttpTransact::handle_cache_write_lock(State *s)
       //  Write failed and read retry triggered
       //  Clean up server_request and re-initiate
       //  Cache Lookup
-      ink_assert(s->cache_open_write_fail_action == static_cast<MgmtByte>(CacheOpenWriteFailAction_t::READ_RETRY));
+      ink_assert(s->cache_open_write_fail_action == static_cast<MgmtByte>(CacheOpenWriteFailAction_t::READ_RETRY) ||
+                 s->cache_open_write_fail_action ==
+                   static_cast<MgmtByte>(CacheOpenWriteFailAction_t::READ_RETRY_STALE_ON_REVALIDATE));
       s->cache_info.write_status = CacheWriteStatus_t::LOCK_MISS;
       StateMachineAction_t next;
       next           = StateMachineAction_t::CACHE_LOOKUP;
@@ -3207,21 +3234,102 @@ HttpTransact::handle_cache_write_lock(State *s)
   }
 
   if (s->cache_info.write_lock_state == CacheWriteLock_t::READ_RETRY) {
-    TxnDbg(dbg_ctl_http_error, "calling hdr_info.server_request.destroy");
-    s->hdr_info.server_request.destroy();
-    HandleCacheOpenReadHitFreshness(s);
-  } else {
-    StateMachineAction_t next;
-    next = how_to_open_connection(s);
-    if (next == StateMachineAction_t::ORIGIN_SERVER_OPEN || next == StateMachineAction_t::ORIGIN_SERVER_RAW_OPEN) {
-      s->next_action = next;
-      TRANSACT_RETURN(next, nullptr);
+    // For READ_RETRY with cached object, evaluate actual freshness to decide the path.
+    // If the initial lookup was a MISS, cache_lookup_complete_deferred is true and we
+    // need to fire the hook here with the final result. If the initial lookup was a
+    // HIT_STALE (revalidation case), the hook already fired and deferred is false.
+    CacheHTTPInfo *obj = s->cache_info.object_read;
+    if (obj != nullptr) {
+      // Restore request/response times from cached object for freshness calculations and Age header.
+      // Similar to HandleCacheOpenReadHitFreshness, handle clock skew by capping times.
+      s->request_sent_time      = obj->request_sent_time_get();
+      s->response_received_time = obj->response_received_time_get();
+      s->request_sent_time      = std::min(s->client_request_time, s->request_sent_time);
+      s->response_received_time = std::min(s->client_request_time, s->response_received_time);
+
+      // Evaluate actual document freshness. Pass true to skip the STALE_ON_REVALIDATE
+      // short-circuit so we get the real freshness, not the "return FRESH to bypass revalidation" result.
+      Freshness_t freshness = what_is_document_freshness(s, &s->hdr_info.client_request, obj->response_get(), true);
+
+      if (freshness == Freshness_t::FRESH || freshness == Freshness_t::WARNING) {
+        // Object is fresh - serve it from cache for both action 5 and 6.
+        // This is the main benefit of request collapsing: we found a valid cached object.
+        // Clear stale-related state in case it was set during initial stale short-circuit.
+        s->serving_stale_due_to_write_lock = false;
+        s->cache_info.stale_fallback       = nullptr;
+
+        // Destroy server_request since we're serving from cache.
+        TxnDbg(dbg_ctl_http_trans, "READ_RETRY: found fresh object, serving from cache");
+        s->hdr_info.server_request.destroy();
+        s->cache_lookup_result =
+          (freshness == Freshness_t::FRESH) ? CacheLookupResult_t::HIT_FRESH : CacheLookupResult_t::HIT_WARNING;
+
+        if (s->cache_lookup_complete_deferred) {
+          s->cache_lookup_complete_deferred = false;
+          TRANSACT_RETURN(StateMachineAction_t::API_CACHE_LOOKUP_COMPLETE, HandleCacheOpenReadHit);
+        }
+        HandleCacheOpenReadHit(s);
+      } else {
+        // Object is stale. Save it as potential fallback, then trigger actual cache retry.
+        // HandleCacheOpenReadMiss will serve stale fallback (action 6) or go to origin (action 5).
+        if (is_stale_cache_response_returnable(s)) {
+          s->cache_info.stale_fallback = s->cache_info.object_read;
+        }
+        TxnDbg(dbg_ctl_http_trans, "READ_RETRY: object stale, triggering actual cache retry");
+        s->cache_info.object_read  = nullptr;
+        s->cache_info.write_status = CacheWriteStatus_t::LOCK_MISS;
+        s->hdr_info.server_request.destroy();
+        TRANSACT_RETURN(StateMachineAction_t::CACHE_LOOKUP, nullptr);
+      }
     } else {
-      // hehe!
-      s->next_action = next;
-      ink_assert(s->next_action == StateMachineAction_t::DNS_LOOKUP);
-      return;
+      HandleCacheOpenReadMiss(s);
     }
+  } else {
+    handle_cache_write_lock_go_to_origin(s);
+  }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Name       : handle_cache_write_lock_go_to_origin
+// Description: Helper to proceed to origin server from handle_cache_write_lock.
+//              Called when write lock succeeded or failed without READ_RETRY.
+//
+///////////////////////////////////////////////////////////////////////////////
+void
+HttpTransact::handle_cache_write_lock_go_to_origin(State *s)
+{
+  TxnDbg(dbg_ctl_http_trans, "handle_cache_write_lock_go_to_origin - proceeding to origin");
+
+  // If the CACHE_LOOKUP_COMPLETE hook was deferred (for action 5/6), fire it now.
+  // We're going to origin without READ_RETRY, so MISS is the final result.
+  if (s->cache_lookup_complete_deferred) {
+    TxnDbg(dbg_ctl_http_trans, "Firing deferred CACHE_LOOKUP_COMPLETE with MISS before origin");
+    s->cache_lookup_complete_deferred = false;
+    s->cache_lookup_result            = CacheLookupResult_t::MISS;
+    TRANSACT_RETURN(StateMachineAction_t::API_CACHE_LOOKUP_COMPLETE, handle_cache_write_lock_go_to_origin_continue);
+  }
+
+  handle_cache_write_lock_go_to_origin_continue(s);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Name       : handle_cache_write_lock_go_to_origin_continue
+// Description: Continuation of handle_cache_write_lock_go_to_origin after
+//              the deferred CACHE_LOOKUP_COMPLETE hook fires.
+//
+///////////////////////////////////////////////////////////////////////////////
+void
+HttpTransact::handle_cache_write_lock_go_to_origin_continue(State *s)
+{
+  StateMachineAction_t next;
+  next = how_to_open_connection(s);
+  if (next == StateMachineAction_t::ORIGIN_SERVER_OPEN || next == StateMachineAction_t::ORIGIN_SERVER_RAW_OPEN) {
+    s->next_action = next;
+    TRANSACT_RETURN(next, nullptr);
+  } else {
+    s->next_action = next;
+    ink_assert(s->next_action == StateMachineAction_t::DNS_LOOKUP);
+    return;
   }
 }
 
@@ -3271,20 +3379,69 @@ HttpTransact::HandleCacheOpenReadMiss(State *s)
   } else if (s->api_server_response_no_store) { // plugin may have decided not to cache the response
     s->cache_info.action = CacheAction_t::NO_ACTION;
   } else if (s->cache_info.write_lock_state == CacheWriteLock_t::READ_RETRY) {
-    // We've looped back around due to failing to read during READ_RETRY mode.
-    // Don't attempt another cache write - just proxy to origin without caching.
+    // READ_RETRY cache read failed (no fresh object found).
+    // Check if we have a stale fallback (saved from action 6 revalidation case).
+    bool is_action_6 =
+      (s->cache_open_write_fail_action & static_cast<MgmtByte>(CacheOpenWriteFailAction_t::STALE_ON_REVALIDATE)) != 0;
+
+    if (is_action_6 && s->cache_info.stale_fallback != nullptr) {
+      // Action 6: Serve stale fallback after retries exhausted.
+      TxnDbg(dbg_ctl_http_trans, "READ_RETRY: retries exhausted, serving stale (action 6)");
+      s->cache_info.object_read          = s->cache_info.stale_fallback;
+      s->cache_info.stale_fallback       = nullptr;
+      s->serving_stale_due_to_write_lock = true;
+      s->cache_lookup_result             = CacheLookupResult_t::HIT_STALE;
+
+      if (s->cache_lookup_complete_deferred) {
+        s->cache_lookup_complete_deferred = false;
+        TRANSACT_RETURN(StateMachineAction_t::API_CACHE_LOOKUP_COMPLETE, HandleCacheOpenReadHit);
+      }
+      HandleCacheOpenReadHit(s);
+      return;
+    }
+    // Action 5 or no stale fallback: proceed to origin without caching.
     TxnDbg(dbg_ctl_http_trans, "READ_RETRY cache read failed, bypassing cache");
-    s->cache_info.action = CacheAction_t::NO_ACTION;
+    s->cache_info.stale_fallback = nullptr; // Clear unused fallback
+    s->cache_info.action         = CacheAction_t::NO_ACTION;
   } else {
     HttpTransact::set_cache_prepare_write_action_for_new_request(s);
   }
 
-  ///////////////////////////////////////////////////////////////
-  // a normal miss would try to fetch the document from the    //
-  // origin server, unless the origin server isn't resolvable, //
-  // but if "CacheControl: only-if-cached" is set, then we are //
-  // supposed to send a 504 (GATEWAY TIMEOUT) response.        //
-  ///////////////////////////////////////////////////////////////
+  // If the CACHE_LOOKUP_COMPLETE hook was deferred, decide whether to fire it now.
+  // Only fire when we're at a terminal state for cache lookup:
+  // - NO_ACTION: Not attempting write lock, MISS is the final result
+  // - READ_RETRY: Already retried and still missed, MISS is the final result
+  //
+  // Don't fire yet if action == PREPARE_TO_WRITE and write_lock_state != READ_RETRY,
+  // because we're about to attempt the write lock and may find content on retry.
+  // In that case, the hook will fire later:
+  // - If READ_RETRY finds HIT: handle_cache_write_lock fires CACHE_LOOKUP_COMPLETE with HIT
+  // - If READ_RETRY finds MISS: We come back here with write_lock_state == READ_RETRY
+  if (s->cache_lookup_complete_deferred) {
+    if (s->cache_info.action == CacheAction_t::NO_ACTION || s->cache_info.write_lock_state == CacheWriteLock_t::READ_RETRY) {
+      TxnDbg(dbg_ctl_http_trans, "Firing deferred CACHE_LOOKUP_COMPLETE with MISS (action=%d, write_lock_state=%d)",
+             static_cast<int>(s->cache_info.action), static_cast<int>(s->cache_info.write_lock_state));
+      s->cache_lookup_complete_deferred = false;
+      s->cache_lookup_result            = CacheLookupResult_t::MISS;
+      TRANSACT_RETURN(StateMachineAction_t::API_CACHE_LOOKUP_COMPLETE, HandleCacheOpenReadMissGoToOrigin);
+    }
+    TxnDbg(dbg_ctl_http_trans, "Deferring CACHE_LOOKUP_COMPLETE hook - waiting for write lock attempt");
+  }
+
+  // Proceed to origin server (handles DNS lookup, parent proxy, etc.)
+  HandleCacheOpenReadMissGoToOrigin(s);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Name       : HandleCacheOpenReadMissGoToOrigin
+// Description: Contains the "go to origin" logic for cache miss cases.
+//              Handles DNS lookup, parent proxy selection, and request building.
+//
+///////////////////////////////////////////////////////////////////////////////
+void
+HttpTransact::HandleCacheOpenReadMissGoToOrigin(State *s)
+{
+  TxnDbg(dbg_ctl_http_trans, "HandleCacheOpenReadMissGoToOrigin - proceeding to origin");
 
   HTTPHdr *h = &s->hdr_info.client_request;
 
@@ -3327,8 +3484,6 @@ HttpTransact::HandleCacheOpenReadMiss(State *s)
     build_error_response(s, HTTPStatus::GATEWAY_TIMEOUT, "Not Cached", "cache#not_in_cache");
     s->next_action = StateMachineAction_t::SEND_ERROR_CACHE_NOOP;
   }
-
-  return;
 }
 
 void
@@ -7287,7 +7442,8 @@ HttpTransact::calculate_document_freshness_limit(State *s, HTTPHdr *response, ti
 //
 //////////////////////////////////////////////////////////////////////////////
 HttpTransact::Freshness_t
-HttpTransact::what_is_document_freshness(State *s, HTTPHdr *client_request, HTTPHdr *cached_obj_response)
+HttpTransact::what_is_document_freshness(State *s, HTTPHdr *client_request, HTTPHdr *cached_obj_response,
+                                         bool evaluate_actual_freshness)
 {
   bool       heuristic, do_revalidate = false;
   int        age_limit;
@@ -7296,9 +7452,19 @@ HttpTransact::what_is_document_freshness(State *s, HTTPHdr *client_request, HTTP
   uint32_t   cc_mask, cooked_cc_mask;
   uint32_t   os_specifies_revalidate;
 
-  if (s->cache_open_write_fail_action & static_cast<MgmtByte>(CacheOpenWriteFailAction_t::STALE_ON_REVALIDATE)) {
+  // This check works for STALE_ON_REVALIDATE(0x2), ERROR_ON_MISS_STALE_ON_REVALIDATE(0x3), and
+  // READ_RETRY_STALE_ON_REVALIDATE(0x6).
+  // We return FRESH (not STALE) intentionally to bypass the revalidation code path in
+  // HandleCacheOpenReadHit. Returning STALE would trigger origin server contact for revalidation,
+  // but for write lock failure scenarios we want to serve the stale content directly without
+  // revalidation. The serving_stale_due_to_write_lock flag tracks that we're actually serving
+  // stale content, so VIA strings and statistics can be correctly attributed.
+  // When evaluate_actual_freshness is true, skip this short-circuit to get the real freshness.
+  if (!evaluate_actual_freshness &&
+      (s->cache_open_write_fail_action & static_cast<MgmtByte>(CacheOpenWriteFailAction_t::STALE_ON_REVALIDATE))) {
     if (is_stale_cache_response_returnable(s)) {
-      TxnDbg(dbg_ctl_http_match, "cache_serve_stale_on_write_lock_fail, return FRESH");
+      TxnDbg(dbg_ctl_http_match, "cache_serve_stale_on_write_lock_fail, return FRESH to bypass revalidation");
+      s->serving_stale_due_to_write_lock = true;
       return (Freshness_t::FRESH);
     }
   }

@@ -2552,9 +2552,11 @@ HttpSM::state_cache_open_write(int event, void *data)
   case CACHE_EVENT_OPEN_READ:
     if (!t_state.cache_info.object_read) {
       t_state.cache_open_write_fail_action = t_state.txn_conf->cache_open_write_fail_action;
-      // Note that CACHE_LOOKUP_COMPLETE may be invoked more than once
-      // if CacheOpenWriteFailAction_t::READ_RETRY is configured
-      ink_assert(t_state.cache_open_write_fail_action == static_cast<MgmtByte>(CacheOpenWriteFailAction_t::READ_RETRY));
+      // READ_RETRY mode: write lock failed, no stale object available.
+      // CACHE_LOOKUP_COMPLETE will fire from HandleCacheOpenReadMiss with MISS result.
+      ink_assert(t_state.cache_open_write_fail_action == static_cast<MgmtByte>(CacheOpenWriteFailAction_t::READ_RETRY) ||
+                 t_state.cache_open_write_fail_action ==
+                   static_cast<MgmtByte>(CacheOpenWriteFailAction_t::READ_RETRY_STALE_ON_REVALIDATE));
       t_state.cache_lookup_result         = HttpTransact::CacheLookupResult_t::NONE;
       t_state.cache_info.write_lock_state = HttpTransact::CacheWriteLock_t::READ_RETRY;
       break;
@@ -2573,8 +2575,9 @@ HttpSM::state_cache_open_write(int event, void *data)
     t_state.source = HttpTransact::Source_t::CACHE;
     // clear up CacheLookupResult_t::MISS, let Freshness function decide
     // hit status
-    t_state.cache_lookup_result         = HttpTransact::CacheLookupResult_t::NONE;
-    t_state.cache_info.write_lock_state = HttpTransact::CacheWriteLock_t::READ_RETRY;
+    t_state.cache_open_write_fail_action = t_state.txn_conf->cache_open_write_fail_action;
+    t_state.cache_lookup_result          = HttpTransact::CacheLookupResult_t::NONE;
+    t_state.cache_info.write_lock_state  = HttpTransact::CacheWriteLock_t::READ_RETRY;
     break;
 
   case HTTP_TUNNEL_EVENT_DONE:
@@ -2678,7 +2681,21 @@ HttpSM::state_cache_open_read(int event, void *data)
 
     ink_assert(t_state.transact_return_point == nullptr);
     t_state.transact_return_point = HttpTransact::HandleCacheOpenRead;
-    setup_cache_lookup_complete_api();
+
+    // For READ_RETRY actions (5 and 6), skip the CACHE_LOOKUP_COMPLETE hook now.
+    // The hook will fire later with the final result: HIT if stale content is found
+    // during retry, or MISS if nothing is found (from HandleCacheOpenReadMiss).
+    // This ensures plugins see only the final cache lookup result, avoiding issues
+    // like stats double-counting and duplicate hook registrations.
+    if (t_state.txn_conf->cache_open_write_fail_action == static_cast<MgmtByte>(CacheOpenWriteFailAction_t::READ_RETRY) ||
+        t_state.txn_conf->cache_open_write_fail_action ==
+          static_cast<MgmtByte>(CacheOpenWriteFailAction_t::READ_RETRY_STALE_ON_REVALIDATE)) {
+      SMDbg(dbg_ctl_http, "READ_RETRY configured, deferring CACHE_LOOKUP_COMPLETE hook");
+      t_state.cache_lookup_complete_deferred = true;
+      call_transact_and_set_next_state(nullptr);
+    } else {
+      setup_cache_lookup_complete_api();
+    }
     break;
 
   default:
