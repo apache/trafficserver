@@ -453,6 +453,8 @@ private:
 };
 
 using SubOpQueue = std::vector<std::unique_ptr<subop>>;
+using HeaderPair = std::pair<std::string, std::string>;
+using HeaderList = std::vector<HeaderPair>;
 
 //----------------------------------------------------------------------------
 class op
@@ -515,6 +517,18 @@ public:
   }
 
   void
+  addSendtoHeader(std::string_view const name, std::string_view const value)
+  {
+    sendto_headers.emplace_back(name, value);
+  }
+
+  HeaderList const &
+  getSendtoHeaders() const
+  {
+    return sendto_headers;
+  }
+
+  void
   printOp() const
   {
     Dbg(dbg_ctl, "++++operation++++");
@@ -530,11 +544,17 @@ public:
     if (disable_pristine_host_hdr) {
       Dbg(dbg_ctl, "disable_pristine_host_hdr: true");
     }
+    if (!sendto_headers.empty()) {
+      Dbg(dbg_ctl, "set_sendto_headers:");
+      for (auto const &header : sendto_headers) {
+        Dbg(dbg_ctl, "  %s: %s", header.first.c_str(), header.second.c_str());
+      }
+    }
   }
 
   bool
   process(CookieJar &jar, std::string &dest, TSHttpStatus &retstat, TSRemapRequestInfo *rri, UrlComponents &req_url,
-          bool &used_sendto) const
+          bool &used_sendto, std::vector<std::string> &regex_match_strings, int &regex_ccount) const
   {
     if (sendto == "") {
       return false; // guessing every operation must have a
@@ -686,10 +706,19 @@ public:
 
       // OPERATION::regex matching
       if (subop_type == REGEXP) {
-        RegexMatches matches;
-        int          ret = subop->regexMatch(string_to_match.c_str(), string_to_match.length(), matches);
+        RegexMatches regex_matches;
+        int          ret = subop->regexMatch(string_to_match.c_str(), string_to_match.length(), regex_matches);
 
         if (ret >= 0) {
+          regex_ccount = subop->getRegexCcount(); // Store for later use in header substitution
+
+          regex_match_strings.clear();
+          regex_match_strings.reserve(regex_ccount + 1);
+          for (int i = 0; i <= regex_ccount; i++) {
+            auto const &match = regex_matches[i];
+            regex_match_strings.emplace_back(match.data(), match.size());
+          }
+
           std::string::size_type pos  = sendto.find('$');
           std::string::size_type ppos = 0;
 
@@ -717,9 +746,9 @@ public:
             if (isdigit(sendto[pos + 1])) {
               int ix = sendto[pos + 1] - '0';
 
-              if (ix <= subop->getRegexCcount()) { // Just skip an illegal regex group
+              if (ix <= regex_ccount) { // Just skip an illegal regex group
                 dest             += sendto.substr(ppos, pos - ppos);
-                auto regex_match  = matches[ix];
+                auto regex_match  = regex_matches[ix];
                 dest.append(regex_match.data(), regex_match.size());
                 ppos = pos + 2;
               } else {
@@ -812,6 +841,7 @@ private:
   TSHttpStatus status                    = TS_HTTP_STATUS_NONE;
   TSHttpStatus else_status               = TS_HTTP_STATUS_NONE;
   bool         disable_pristine_host_hdr = false;
+  HeaderList   sendto_headers{};
 };
 
 using StringPair = std::pair<std::string, std::string>;
@@ -852,6 +882,19 @@ build_op(op &o, OpMap const &q)
 
     if (key == "disable_pristine_host_hdr") {
       o.setDisablePristineHostHdr(val == "true" || val == "1" || val == "yes");
+    }
+
+    if (key == "__set_sendto_header__") {
+      // Parse "header_name: header_value" format. We set this below in the TSRemapNewInstance function.
+      size_t const colon_pos = val.find(": ");
+      if (colon_pos != std::string::npos) {
+        std::string_view const header_name  = std::string_view(val).substr(0, colon_pos);
+        std::string_view const header_value = std::string_view(val).substr(colon_pos + 2);
+        o.addSendtoHeader(header_name, header_value);
+      } else {
+        Dbg(dbg_ctl, "ERROR: invalid set_sendto_header format: %s", val.c_str());
+        goto error;
+      }
     }
 
     if (key == "operation") {
@@ -933,16 +976,47 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
       for (YAML::const_iterator it2 = it->second.begin(); it2 != it->second.end(); ++it2) {
         const YAML::Node first  = it2->first;
         const YAML::Node second = it2->second;
+        const string    &key    = first.as<std::string>();
 
-        if (second.IsScalar() == false) {
-          const string reason = "All op nodes must be of type scalar";
-          TSError("Invalid YAML Configuration format for cookie_remap: %s, reason: %s", filename.c_str(), reason.c_str());
-          return TS_ERROR;
+        // Special handling for set_sendto_headers which is a sequence of maps
+        if (key == "set_sendto_headers") {
+          if (!second.IsSequence()) {
+            const string reason = "set_sendto_headers must be a sequence";
+            TSError("Invalid YAML Configuration format for cookie_remap: %s, reason: %s", filename.c_str(), reason.c_str());
+            return TS_ERROR;
+          }
+
+          for (const auto &header_node : second) {
+            if (!header_node.IsMap()) {
+              const string reason = "Each set_sendto_headers item must be a map";
+              TSError("Invalid YAML Configuration format for cookie_remap: %s, reason: %s", filename.c_str(), reason.c_str());
+              return TS_ERROR;
+            }
+
+            // Each header should be a single-key map
+            if (header_node.size() != 1) {
+              const string reason = "Each set_sendto_headers item must be a single key-value pair";
+              TSError("Invalid YAML Configuration format for cookie_remap: %s, reason: %s", filename.c_str(), reason.c_str());
+              return TS_ERROR;
+            }
+
+            for (const auto &kv : header_node) {
+              const string &header_name  = kv.first.as<std::string>();
+              const string &header_value = kv.second.as<std::string>();
+              // Store with special prefix to identify in build_op
+              op_data.emplace_back("__set_sendto_header__", header_name + ": " + header_value);
+            }
+          }
+        } else {
+          if (second.IsScalar() == false) {
+            TSError("Invalid YAML Configuration format for cookie_remap: %s, non-scalar value for key: %s (type=%d)",
+                    filename.c_str(), key.c_str(), second.Type());
+            return TS_ERROR;
+          }
+
+          const string &value = second.as<std::string>();
+          op_data.emplace_back(key, value);
         }
-
-        const string &key   = first.as<std::string>();
-        const string &value = second.as<std::string>();
-        op_data.emplace_back(key, value);
       }
 
       if (op_data.size()) {
@@ -1206,8 +1280,10 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 
   for (auto &op : *ops) {
     Dbg(dbg_ctl, ">>> processing new operation");
-    bool used_sendto = false;
-    if (op->process(jar, rewrite_to, status, rri, req_url, used_sendto)) {
+    bool                     used_sendto = false;
+    std::vector<std::string> regex_match_strings;
+    int                      regex_ccount = 0;
+    if (op->process(jar, rewrite_to, status, rri, req_url, used_sendto, regex_match_strings, regex_ccount)) {
       cr_substitutions(rewrite_to, req_url);
 
       size_t pos = 7;                             // 7 because we want to ignore the // in
@@ -1268,12 +1344,101 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
         TSError("can't parse substituted URL string");
         goto error;
       } else {
+        bool host_header_was_set = false;
+
+        // Set custom headers if configured and we took the sendto path.
+        if (!op->getSendtoHeaders().empty() && used_sendto) {
+          for (auto const &header_pair : op->getSendtoHeaders()) {
+            std::string header_name  = header_pair.first;
+            std::string header_value = header_pair.second;
+
+            // Apply regex substitution to header value if we have regex matches ($1, $2, etc.)
+            if (regex_ccount > 0 && !regex_match_strings.empty() && header_value.find('$') != std::string::npos) {
+              std::string::size_type pos  = 0;
+              std::string::size_type ppos = 0;
+              std::string            substituted_value;
+              substituted_value.reserve(header_value.size() * 2);
+
+              while (pos < header_value.length()) {
+                pos = header_value.find('$', ppos);
+                if (pos == std::string::npos) {
+                  break;
+                }
+                // Check if there's a digit after the $
+                if (pos + 1 < header_value.length() && isdigit(header_value[pos + 1])) {
+                  int const ix = header_value[pos + 1] - '0';
+                  if (ix <= regex_ccount && ix < static_cast<int>(regex_match_strings.size())) {
+                    // Append everything before the $
+                    substituted_value += header_value.substr(ppos, pos - ppos);
+                    // Append the regex match string
+                    substituted_value += regex_match_strings[ix];
+                    // Move past the $N
+                    ppos = pos + 2;
+                  }
+                }
+                pos++;
+              }
+              // Append any remaining text
+              if (ppos < header_value.length()) {
+                substituted_value += header_value.substr(ppos);
+              }
+              header_value = substituted_value;
+            }
+
+            // Apply cr_substitutions for variables like $path, $cr_req_url, etc.
+            cr_substitutions(header_value, req_url);
+
+            Dbg(dbg_ctl, "Setting header: %s to value: %s", header_name.c_str(), header_value.c_str());
+
+            // Find or create the header
+            TSMLoc field_loc = TSMimeHdrFieldFind(rri->requestBufp, rri->requestHdrp, header_name.c_str(), header_name.length());
+
+            if (field_loc == TS_NULL_MLOC) {
+              // Header doesn't exist, create it
+              if (TS_SUCCESS == TSMimeHdrFieldCreateNamed(rri->requestBufp, rri->requestHdrp, header_name.c_str(),
+                                                          header_name.length(), &field_loc)) {
+                if (TS_SUCCESS == TSMimeHdrFieldValueStringSet(rri->requestBufp, rri->requestHdrp, field_loc, -1,
+                                                               header_value.c_str(), header_value.length())) {
+                  TSMimeHdrFieldAppend(rri->requestBufp, rri->requestHdrp, field_loc);
+                  Dbg(dbg_ctl, "Created and set header: %s", header_name.c_str());
+                }
+                TSHandleMLocRelease(rri->requestBufp, rri->requestHdrp, field_loc);
+              }
+            } else {
+              // Header exists, update it
+              TSMLoc tmp   = TS_NULL_MLOC;
+              bool   first = true;
+
+              while (field_loc != TS_NULL_MLOC) {
+                tmp = TSMimeHdrFieldNextDup(rri->requestBufp, rri->requestHdrp, field_loc);
+                if (first) {
+                  first = false;
+                  if (TS_SUCCESS == TSMimeHdrFieldValueStringSet(rri->requestBufp, rri->requestHdrp, field_loc, -1,
+                                                                 header_value.c_str(), header_value.length())) {
+                    Dbg(dbg_ctl, "Updated header: %s", header_name.c_str());
+                  }
+                } else {
+                  // Remove duplicate headers
+                  TSMimeHdrFieldDestroy(rri->requestBufp, rri->requestHdrp, field_loc);
+                }
+                TSHandleMLocRelease(rri->requestBufp, rri->requestHdrp, field_loc);
+                field_loc = tmp;
+              }
+            }
+
+            // Check if we're setting the Host header (case-insensitive)
+            if (strcasecmp(header_name.c_str(), "Host") == 0) {
+              host_header_was_set = true;
+            }
+          }
+        }
+
         // Disable pristine host header if configured to do so and we took the
         // sendto path. This allows the Host header to be updated to match the
         // remapped destination. The else path (i.e., the non-sendto one)
         // always preserves the pristine host header configuration, whether
         // enabled or disabled.
-        if (op->getDisablePristineHostHdr() && used_sendto) {
+        if (used_sendto && (op->getDisablePristineHostHdr() || host_header_was_set)) {
           Dbg(dbg_ctl, "Disabling pristine_host_hdr for this transaction (sendto path)");
           TSHttpTxnConfigIntSet(txnp, TS_CONFIG_URL_REMAP_PRISTINE_HOST_HDR, 0);
         }

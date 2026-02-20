@@ -1,0 +1,177 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+sessions:
+  # Test 1: Simple Host header setting with exists operation
+  - transactions:
+      - client-request:
+          method: GET
+          url: /app/test
+          version: '1.1'
+          headers:
+            fields:
+              - [Host, example.com]
+              - [Cookie, SessionID=abc123]
+              - [uuid, test1-simple-host]
+
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Content-Length, '0']
+
+        proxy-request:
+          headers:
+            fields:
+              - [Host, {value: backend.com, as: prefix}]
+              - [X-Custom-Header, {value: custom-value, as: equal}]
+
+  # Test 2: Using regex capture groups - premium tier
+  - transactions:
+      - client-request:
+          method: GET
+          url: /api/data
+          version: '1.1'
+          headers:
+            fields:
+              - [Host, example.com]
+              - [Cookie, UserTier=premium]
+              - [uuid, test2-regex-premium]
+
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Content-Length, '0']
+
+        proxy-request:
+          headers:
+            fields:
+              - [Host, {value: premium.service.com, as: prefix}]
+              - [X-User-Tier, {value: premium, as: equal}]
+
+  # Test 3: Using regex capture groups - standard tier
+  - transactions:
+      - client-request:
+          method: GET
+          url: /api/data
+          version: '1.1'
+          headers:
+            fields:
+              - [Host, example.com]
+              - [Cookie, UserTier=standard]
+              - [uuid, test3-regex-standard]
+
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Content-Length, '0']
+
+        proxy-request:
+          headers:
+            fields:
+              - [Host, {value: standard.service.com, as: prefix}]
+              - [X-User-Tier, {value: standard, as: equal}]
+
+  # Test 4: Using path variables
+  - transactions:
+      - client-request:
+          method: GET
+          url: /debug/path/to/resource
+          version: '1.1'
+          headers:
+            fields:
+              - [Host, example.com]
+              - [Cookie, Debug=true]
+              - [uuid, test4-path-vars]
+
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Content-Length, '0']
+
+        proxy-request:
+          headers:
+            fields:
+              - [X-Original-Path, {value: debug/path/to/resource, as: equal}]
+              - [X-Debug-Mode, {value: enabled, as: equal}]
+
+  # Test 5: Multiple headers without Host (should preserve pristine host)
+  - transactions:
+      - client-request:
+          method: GET
+          url: /test/endpoint
+          version: '1.1'
+          headers:
+            fields:
+              - [Host, example.com]
+              - [Cookie, NoHost=yes]
+              - [uuid, test5-no-host]
+
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Content-Length, '0']
+
+        proxy-request:
+          headers:
+            fields:
+              - [Host, {value: example.com, as: equal}]
+              - [X-Custom-1, {value: value1, as: equal}]
+              - [X-Custom-2, {value: value2, as: equal}]
+
+  # Test 6: No matching cookie - verify headers are NOT set on non-sendto path.
+  - transactions:
+      - client-request:
+          method: GET
+          url: /nomatch/endpoint
+          version: '1.1'
+          headers:
+            fields:
+              - [Host, example.com]
+              - [Cookie, UnknownCookie=value]
+              - [uuid, test6-no-match]
+
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Content-Length, '0']
+
+        proxy-request:
+          headers:
+            fields:
+              - [Host, {value: example.com, as: equal}]
+              # Verify that set_sendto_headers are NOT present on non-sendto path
+              - [X-Custom-Header, {as: absent}]
+              - [X-User-Tier, {as: absent}]
+              - [X-Original-Path, {as: absent}]
+              - [X-Debug-Mode, {as: absent}]
+              - [X-Custom-1, {as: absent}]
+              - [X-Custom-2, {as: absent}]
+
