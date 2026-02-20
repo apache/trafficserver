@@ -893,6 +893,7 @@ static int
 synserver_vc_refuse(TSCont contp, TSEvent event, void *data)
 {
   if (event != TS_EVENT_NET_ACCEPT && event != TS_EVENT_NET_ACCEPT_FAILED) {
+    // net_accept() passes negated errno as data on EVENT_ERROR; Linux MAX_ERRNO is 4095
     intptr_t data_val = reinterpret_cast<intptr_t>(data);
     if (data_val < 0 && data_val >= -4095) {
       int err = static_cast<int>(-data_val);
@@ -922,6 +923,7 @@ static int
 synserver_vc_accept(TSCont contp, TSEvent event, void *data)
 {
   if (event != TS_EVENT_NET_ACCEPT && event != TS_EVENT_NET_ACCEPT_FAILED) {
+    // net_accept() passes negated errno as data on EVENT_ERROR; Linux MAX_ERRNO is 4095
     intptr_t data_val = reinterpret_cast<intptr_t>(data);
     if (data_val < 0 && data_val >= -4095) {
       int err = static_cast<int>(-data_val);
