@@ -15,7 +15,7 @@
 #
 #######################
 
-add_library(configmanager STATIC FileManager.cc AddConfigFilesHere.cc ConfigReloadExecutor.cc ConfigRegistry.cc)
+add_library(configmanager STATIC FileManager.cc ConfigReloadExecutor.cc ConfigRegistry.cc)
 add_library(ts::configmanager ALIAS configmanager)
 
 target_link_libraries(
