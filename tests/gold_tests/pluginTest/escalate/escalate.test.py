@@ -206,6 +206,10 @@ class EscalateNonGetMethodsTest:
         self._server_origin.Streams.All += Testers.ContainsExpression(
             'uuid: POST_success', "Verify the origin server received the successful POST request.")
         self._server_origin.Streams.All += Testers.ContainsExpression(
+            'uuid: POST_fail_escalated', "Verify the origin server received the POST request that will be escalated.")
+        self._server_origin.Streams.All += Testers.ContainsExpression(
+            'uuid: POST_small_fail', "Verify the origin server received the small POST request that will be escalated.")
+        self._server_origin.Streams.All += Testers.ContainsExpression(
             'uuid: HEAD_fail_escalated', "Verify the origin server received the HEAD request that will be escalated.")
 
         # The down origin request should NOT be received by this server
@@ -217,6 +221,11 @@ class EscalateNonGetMethodsTest:
             'uuid: GET_failed', "Verify the failover server received the failed GET request.")
         self._server_failover.Streams.All += Testers.ContainsExpression(
             'uuid: GET_down_origin', "Verify the failover server received the down origin GET request.")
+        # With --escalate-non-get-methods, the POST request should now be escalated
+        self._server_failover.Streams.All += Testers.ContainsExpression(
+            'uuid: POST_fail_escalated', "Verify the failover server received the POST that is now escalated.")
+        self._server_failover.Streams.All += Testers.ContainsExpression(
+            'uuid: POST_small_fail', "Verify the failover server received the small POST that is now escalated.")
         # With --escalate-non-get-methods, the HEAD request should now be escalated
         self._server_failover.Streams.All += Testers.ContainsExpression(
             'uuid: HEAD_fail_escalated', "Verify the failover server received the HEAD that is now escalated.")
@@ -231,11 +240,12 @@ class EscalateNonGetMethodsTest:
         self._ts.Disk.records_config.update(
             {
                 'proxy.config.diags.debug.enabled': 1,
-                'proxy.config.diags.debug.tags': 'http|escalate',
+                'proxy.config.diags.debug.tags': 'http|escalate|http_redirect',
                 'proxy.config.dns.nameservers': f'127.0.0.1:{self._dns.Variables.Port}',
                 'proxy.config.dns.resolv_conf': 'NULL',
                 'proxy.config.http.redirect.actions': 'self:follow',
                 'proxy.config.http.number_of_redirections': 4,
+                'proxy.config.http.post_copy_size': 400000,
             })
 
         # Set up a dead port for the down origin scenario
@@ -266,6 +276,10 @@ class EscalateNonGetMethodsTest:
         client.Streams.All += Testers.ContainsExpression('x-response: third', 'Verify third GET response received (escalated).')
         client.Streams.All += Testers.ContainsExpression('x-response: fourth', 'Verify fourth GET response received (escalated).')
         client.Streams.All += Testers.ContainsExpression('x-response: post_success', 'Verify successful POST response received.')
+        client.Streams.All += Testers.ContainsExpression(
+            'x-response: post_fail_escalated', 'Verify escalated POST response received.')
+        client.Streams.All += Testers.ContainsExpression(
+            'x-response: post_small_fail', 'Verify escalated small POST response received.')
         client.Streams.All += Testers.ContainsExpression(
             'x-response: head_fail_escalated', 'Verify escalated HEAD response received.')
 
