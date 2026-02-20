@@ -31,6 +31,7 @@
 #include "tscore/Diags.h"
 #include "tscore/Filenames.h"
 #include "tscore/Layout.h"
+#include "mgmt/config/ConfigRegistry.h"
 
 #if HAVE_STRUCT_STAT_ST_MTIMESPEC_TV_NSEC
 #define TS_ARCHIVE_STAT_MTIME(t) ((t).st_mtime * 1000000000 + (t).st_mtimespec.tv_nsec)
@@ -50,25 +51,12 @@ process_config_update(std::string const &fileName, std::string const &configName
   Dbg(dbg_ctl, "Config update requested for '%s'. [%s]", fileName.empty() ? "Unknown" : fileName.c_str(),
       configName.empty() ? "No config record associated" : configName.c_str());
   swoc::Errata ret;
-  // TODO: make sure records holds the name after change, if not we should change it.
+  // records.yaml reload is now handled by its ConfigRegistry handler
+  // (registered in register_config_files() in traffic_server.cc).
+  // Delegate to ConfigRegistry::execute_reload("records") so the reload
+  // is traced and status-reported like every other config.
   if (fileName == ts::filename::RECORDS) {
-    auto ctx = config::make_config_reload_context("Reloading records.yaml file.", fileName);
-    ctx.in_progress();
-    if (auto zret = RecReadYamlConfigFile(); zret) {
-      RecConfigWarnIfUnregistered(ctx);
-    } else {
-      // Make sure we report all messages from the Errata
-      for (auto &&m : zret) {
-        ctx.log(m.text());
-      }
-      ret.note("Error reading {}", fileName).note(zret);
-      if (zret.severity() >= ERRATA_ERROR) {
-        ctx.fail("Failed to reload records.yaml");
-        return ret;
-      }
-    }
-
-    ctx.complete();
+    config::ConfigRegistry::Get_Instance().execute_reload("records");
   } else if (!configName.empty()) { // Could be the case we have a child file to reload with no related config record.
     RecT rec_type;
     if (auto r = RecGetRecordType(configName.c_str(), &rec_type); r == REC_ERR_OKAY && rec_type == RECT_CONFIG) {
