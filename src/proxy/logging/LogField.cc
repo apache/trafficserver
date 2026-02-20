@@ -61,7 +61,6 @@ const char *container_names[] = {
   "record",
   "ms",
   "msdms",
-  "mstsms",
 };
 
 const char *aggregate_names[] = {
