@@ -54,7 +54,9 @@
 #include <openssl/conf.h>
 #include <openssl/dh.h>
 #include <openssl/ec.h>
+#if __has_include(<openssl/engine.h>)
 #include <openssl/engine.h>
+#endif
 #include <openssl/err.h>
 #include <openssl/evp.h>
 #include <openssl/objects.h>
