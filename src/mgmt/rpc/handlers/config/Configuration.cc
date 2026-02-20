@@ -297,7 +297,6 @@ reload_config(std::string_view const & /* id ATS_UNUSED */, YAML::Node const &pa
     // - Direct entries (key == parent_key): content passed as-is (existing behavior).
     // - Dependency keys (key != parent_key): content merged under original keys,
     //   so the handler can check yaml["sni"], yaml["ssl_multicert"], etc.
-    std::unordered_map<std::string, YAML::Node>                                      grouped_content;
     std::unordered_map<std::string, std::vector<std::pair<std::string, YAML::Node>>> by_parent;
 
     for (auto &vc : valid_configs) {
