@@ -50,6 +50,25 @@ TLSSNISupport::getInstance(SSL *ssl)
   return static_cast<TLSSNISupport *>(SSL_get_ex_data(ssl, _ex_data_index));
 }
 
+ClientHelloContainer
+TLSSNISupport::ClientHello::get_client_hello_container()
+{
+  return this->_chc;
+}
+
+// In TLSSNISupport.h
+ClientHelloContainer
+TLSSNISupport::get_client_hello_container() const
+{
+  return this->_chc;
+}
+
+void
+TLSSNISupport::set_client_hello_container(ClientHelloContainer container)
+{
+  this->_chc = container;
+}
+
 void
 TLSSNISupport::bind(SSL *ssl, TLSSNISupport *snis)
 {
