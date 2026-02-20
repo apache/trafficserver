@@ -42,11 +42,14 @@ autest:
       proxy.config.diags.debug.tags: 'http|cache'
       proxy.config.http.cache.http: 1
       proxy.config.http.cache.required_headers: 0
-      proxy.config.http.cache.targeted_cache_control_headers: 'ATS-Cache-Control,CDN-Cache-Control'
 
     remap_config:
       - from: "http://example.com/"
         to: "http://backend.example.com:{SERVER_HTTP_PORT}/"
+        plugins:
+          - name: "conf_remap.so"
+            args:
+              - "proxy.config.http.cache.targeted_cache_control_headers=ATS-Cache-Control,CDN-Cache-Control"
 
       - from: "http://acme.com/"
         to: "http://backend.acme.com:{SERVER_HTTP_PORT}/"
@@ -55,9 +58,41 @@ autest:
             args:
               - "proxy.config.http.cache.targeted_cache_control_headers=ACME-Cache-Control"
 
+      - from: "http://default.com/"
+        to: "http://backend.default.com:{SERVER_HTTP_PORT}/"
+
 
 sessions:
 - transactions:
+  #############################################################################
+  # Test 0: default config checks CDN-Cache-Control by default.
+  #############################################################################
+  - client-request:
+      method: GET
+      url: /default/test1
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, default.com]
+        - [uuid, default-test1-request1]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Type, text/plain]
+        - [Content-Length, "14"]
+        - [Cache-Control, "no-store"]
+        - [CDN-Cache-Control, "max-age=30"] # Should be used by default.
+        - [Connection, close]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Cache-Control, { value: "no-store", as: equal } ]
+        - [ CDN-Cache-Control, { value: "max-age=30", as: equal } ]
 
   #############################################################################
   # Test 1: CDN-Cache-Control with higher max-age overrides Cache-Control
@@ -249,6 +284,28 @@ sessions:
   #############################################################################
   # Now verify the correct cache behavior from above.
   #############################################################################
+  - client-request:
+      method: GET
+      url: /default/test1
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, default.com]
+        - [uuid, default-test1-request2]
+
+    # Should not reach the origin.
+    server-response:
+      status: 404
+      reason: Not Found
+
+    # Expect the cached 200 response due to default CDN-Cache-Control handling.
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Cache-Control, { value: "no-store", as: equal } ]
+        - [ CDN-Cache-Control, { value: "max-age=30", as: equal } ]
+
   - client-request:
       # Delay to exceed Cache-Control but not CDN-Cache-Control.
       delay: 2s
