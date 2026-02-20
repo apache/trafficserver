@@ -288,3 +288,21 @@ target_link_libraries(
 )
 
 add_catch2_test(NAME test_RemapRules COMMAND $<TARGET_FILE:test_RemapRules>)
+
+### test_RemapRulesYaml ########################################################################
+add_executable(test_RemapRulesYaml "${PROJECT_SOURCE_DIR}/src/iocore/cache/unit_tests/stub.cc" test_RemapRulesYaml.cc)
+
+target_link_libraries(
+  test_RemapRulesYaml
+  PRIVATE Catch2::Catch2WithMain
+          ts::http
+          ts::hdrs # transitive
+          logging # transitive
+          ts::http_remap # transitive
+          ts::proxy
+          inkdns # transitive
+          ts::inknet
+          ts::jsonrpc_protocol
+)
+
+add_catch2_test(NAME test_RemapRulesYaml COMMAND $<TARGET_FILE:test_RemapRulesYaml>)

@@ -145,9 +145,16 @@ public:
     _hitCount++;
   }
 
+  std::vector<std::string> &
+  getPluginParamsStorage()
+  {
+    return _plugin_params_storage;
+  }
+
 private:
   std::vector<RemapPluginInst *> _plugin_inst_list;
   int                            _rank = 0;
+  std::vector<std::string>       _plugin_params_storage;
 };
 
 /**

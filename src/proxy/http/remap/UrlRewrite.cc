@@ -23,6 +23,7 @@
  */
 
 #include "proxy/http/remap/UrlRewrite.h"
+#include "proxy/http/remap/RemapYamlConfig.h"
 #include "iocore/eventsystem/ConfigProcessor.h"
 #include "proxy/ReverseProxy.h"
 #include "tscore/Layout.h"
@@ -79,10 +80,19 @@ UrlRewrite::load()
 {
   ats_scoped_str config_file_path;
 
-  config_file_path = RecConfigReadConfigPath("proxy.config.url_remap.filename", ts::filename::REMAP);
-  if (!config_file_path) {
-    Warning("%s Unable to locate %s. No remappings in effect", modulePrefix, ts::filename::REMAP);
-    return false;
+  // Try remap.yaml first
+  config_file_path  = RecConfigReadConfigPath("proxy.config.url_remap_yaml.filename", ts::filename::REMAP_YAML);
+  this->_remap_yaml = true;
+
+  if (!config_file_path || !swoc::file::exists(swoc::file::path(config_file_path))) {
+    Dbg(dbg_ctl_url_rewrite, "%s doesn't exist yaml, fall back to remap.config", ts::filename::REMAP_YAML);
+    // Fall back to remap.config if remap.yaml not found
+    this->_remap_yaml = false;
+    config_file_path  = RecConfigReadConfigPath("proxy.config.url_remap.filename", ts::filename::REMAP);
+    if (!config_file_path) {
+      Warning("%s Unable to locate %s. No remappings in effect", modulePrefix, ts::filename::REMAP);
+      return false;
+    }
   }
 
   this->ts_name = nullptr;
@@ -136,6 +146,7 @@ UrlRewrite::load()
     int n_rules = this->rule_count(); // Minimum # of rules to be considered a valid configuration.
     int required_rules;
     required_rules = RecGetRecordInt("proxy.config.url_remap.min_rules_required").value_or(0);
+    Dbg(dbg_ctl_url_rewrite, "n_rules: %d, required_rules: %d", n_rules, required_rules);
     if (n_rules >= required_rules) {
       _valid = true;
       if (dbg_ctl_url_rewrite.on()) {
@@ -835,7 +846,14 @@ UrlRewrite::BuildTable(const char *path)
   temporary_redirects.hash_lookup.reset(new URLTable);
   forward_mappings_with_recv_port.hash_lookup.reset(new URLTable);
 
-  if (!remap_parse_config(path, this)) {
+  bool parse_success;
+  if (is_remap_yaml()) {
+    parse_success = remap_parse_yaml(path, this);
+  } else {
+    parse_success = remap_parse_config(path, this);
+  }
+
+  if (!parse_success) {
     return TS_ERROR;
   }
 
@@ -1091,4 +1109,36 @@ UrlRewrite::_destroyList(RegexMappingList &mappings)
     delete list_iter;
   }
   mappings.clear();
+}
+
+/**
+ * Convert a YAML rule type string to a mapping_type enum.
+ */
+mapping_type
+get_mapping_type(const char *type_str, BUILD_TABLE_INFO *bti)
+{
+  // Check to see whether is a reverse or forward mapping
+  if (!strcasecmp("reverse_map", type_str)) {
+    Dbg(dbg_ctl_url_rewrite, "[BuildTable] - mapping_type::REVERSE_MAP");
+    return mapping_type::REVERSE_MAP;
+  } else if (!strcasecmp("map", type_str)) {
+    Dbg(dbg_ctl_url_rewrite, "[BuildTable] - %s",
+        ((bti->remap_optflg & REMAP_OPTFLG_MAP_WITH_REFERER) == 0) ? "mapping_type::FORWARD_MAP" :
+                                                                     "mapping_type::FORWARD_MAP_REFERER");
+    return ((bti->remap_optflg & REMAP_OPTFLG_MAP_WITH_REFERER) == 0) ? mapping_type::FORWARD_MAP :
+                                                                        mapping_type::FORWARD_MAP_REFERER;
+  } else if (!strcasecmp("redirect", type_str)) {
+    Dbg(dbg_ctl_url_rewrite, "[BuildTable] - mapping_type::PERMANENT_REDIRECT");
+    return mapping_type::PERMANENT_REDIRECT;
+  } else if (!strcasecmp("redirect_temporary", type_str)) {
+    Dbg(dbg_ctl_url_rewrite, "[BuildTable] - mapping_type::TEMPORARY_REDIRECT");
+    return mapping_type::TEMPORARY_REDIRECT;
+  } else if (!strcasecmp("map_with_referer", type_str)) {
+    Dbg(dbg_ctl_url_rewrite, "[BuildTable] - mapping_type::FORWARD_MAP_REFERER");
+    return mapping_type::FORWARD_MAP_REFERER;
+  } else if (!strcasecmp("map_with_recv_port", type_str)) {
+    Dbg(dbg_ctl_url_rewrite, "[BuildTable] - mapping_type::FORWARD_MAP_WITH_RECV_PORT");
+    return mapping_type::FORWARD_MAP_WITH_RECV_PORT;
+  }
+  return mapping_type::NONE;
 }
