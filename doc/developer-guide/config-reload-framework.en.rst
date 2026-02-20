@@ -64,7 +64,8 @@ Register a file-based configuration handler.
        const std::string &filename_record,            // record holding the filename, or "" if fixed
        ConfigReloadHandler handler,                   // reload callback
        ConfigSource source,                           // content source (FileOnly, FileAndRpc)
-       std::initializer_list<const char *> triggers   // records that trigger reload (optional)
+       std::initializer_list<const char *> triggers = {},  // records that trigger reload (optional)
+       bool is_required = false                        // whether the file must exist on disk
    );
 
 This is the primary registration method. It:
@@ -113,6 +114,39 @@ dependencies.
        {"proxy.config.ssl.client.cert.path",
         "proxy.config.ssl.client.cert.filename",
         "proxy.config.ssl.server.session_ticket.enable"});
+
+
+register_static_file
+--------------------
+
+Register a non-reloadable config file for inventory purposes. Static files have no reload handler
+and no trigger records. This allows the registry to serve as the single source of truth for all
+known configuration files, so that RPC endpoints (e.g. ``filemanager.get_files_registry``) can
+expose this information.
+
+.. code-block:: cpp
+
+   void ConfigRegistry::register_static_file(
+       const std::string &key,                        // unique registry key (e.g. "storage")
+       const std::string &default_filename,           // default filename (e.g. "storage.config")
+       const std::string &filename_record = {},       // record holding the filename (optional)
+       bool is_required = false                        // whether the file must exist on disk
+   );
+
+Internally this delegates to ``register_config()`` with a ``nullptr`` handler, no trigger records,
+and ``ConfigSource::FileOnly``. The file is registered with ``FileManager`` for mtime tracking
+but no reload callback is wired.
+
+**Example — startup-only files:**
+
+.. code-block:: cpp
+
+   auto &reg = config::ConfigRegistry::Get_Instance();
+   reg.register_static_file("storage", ts::filename::STORAGE, {}, true);
+   reg.register_static_file("socks", ts::filename::SOCKS, "proxy.config.socks.socks_config_file");
+   reg.register_static_file("volume", ts::filename::VOLUME);
+   reg.register_static_file("plugin", ts::filename::PLUGIN);
+   reg.register_static_file("jsonrpc", ts::filename::JSONRPC, "proxy.config.jsonrpc.filename");
 
 
 attach
@@ -585,9 +619,11 @@ Naming Conventions
 What NOT to Register
 ====================
 
-Not every config file needs a reload handler. Startup-only configs that are never reloaded at
-runtime (e.g. ``storage.config``, ``volume.config``, ``plugin.config``) do not currently need
-reload handlers registered with ``ConfigRegistry``.
+Not every config file needs a **reload handler**. Startup-only configs that are never reloaded at
+runtime (e.g. ``storage.config``, ``volume.config``, ``plugin.config``) should be registered via
+``register_static_file()`` — this gives them visibility in the registry and RPC endpoints, but
+does not wire any reload handler or trigger records. Do not use ``register_config()`` for files
+that have no runtime reload support.
 
 
 Logging Best Practices
