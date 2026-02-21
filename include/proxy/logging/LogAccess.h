@@ -318,6 +318,7 @@ public:
   int marshal_milestone_fmt_time(TSMilestonesType ms, char *buf);
   int marshal_milestone_fmt_ms(TSMilestonesType ms, char *buf);
   int marshal_milestone_diff(TSMilestonesType ms1, TSMilestonesType ms2, char *buf);
+  int marshal_milestones_csv(char *buf);
 
   bool has_http_header_field(LogField::Container container, const char *field) const;
   void set_http_header_field(LogField::Container container, char *field, char *buf, int len);
