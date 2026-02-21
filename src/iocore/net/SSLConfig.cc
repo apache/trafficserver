@@ -43,6 +43,7 @@
 #include "tscore/Layout.h"
 #include "records/RecHttp.h"
 #include "records/RecCore.h"
+#include "mgmt/config/ConfigRegistry.h"
 
 #include <openssl/pem.h>
 #include <array>
@@ -84,8 +85,6 @@ char *SSLConfigParams::engine_conf_file        = nullptr;
 
 namespace
 {
-std::unique_ptr<ConfigUpdateHandler<SSLTicketKeyConfig>> sslTicketKey;
-
 DbgCtl dbg_ctl_ssl_load{"ssl_load"};
 DbgCtl dbg_ctl_ssl_config_updateCTX{"ssl_config_updateCTX"};
 DbgCtl dbg_ctl_ssl_client_ctx{"ssl_client_ctx"};
@@ -713,7 +712,7 @@ SSLConfig::startup()
 }
 
 void
-SSLConfig::reconfigure()
+SSLConfig::reconfigure(ConfigContext ctx)
 {
   Dbg(dbg_ctl_ssl_load, "Reload SSLConfig");
   SSLConfigParams *params;
@@ -724,6 +723,7 @@ SSLConfig::reconfigure()
   params->initialize(); // re-read configuration
   // Make the new config available for use.
   commit_config_id();
+  ctx.complete("SSLConfig reloaded");
 }
 
 SSLConfigParams *
@@ -764,7 +764,7 @@ SSLCertificateConfig::startup()
 }
 
 bool
-SSLCertificateConfig::reconfigure()
+SSLCertificateConfig::reconfigure(ConfigContext ctx)
 {
   bool                     retStatus = true;
   SSLConfig::scoped_config params;
@@ -801,8 +801,10 @@ SSLCertificateConfig::reconfigure()
 
   if (retStatus) {
     Note("(ssl) %s finished loading%s", params->configFilePath, ts::bw_dbg.c_str());
+    ctx.complete("SSLCertificateConfig loaded {}", ts::bw_dbg.c_str());
   } else {
     Error("(ssl) %s failed to load%s", params->configFilePath, ts::bw_dbg.c_str());
+    ctx.fail("SSLCertificateConfig failed to load {}", ts::bw_dbg.c_str());
   }
 
   return retStatus;
@@ -903,9 +905,18 @@ SSLTicketParams::LoadTicketData(char *ticket_data, int ticket_data_len)
 void
 SSLTicketKeyConfig::startup()
 {
-  sslTicketKey.reset(new ConfigUpdateHandler<SSLTicketKeyConfig>());
+  config::ConfigRegistry::Get_Instance().register_record_config("ssl_ticket_key",       // key
+                                                                [](ConfigContext ctx) { // handler callback
+                                                                  // eventually ctx should passed throuough to the reconfigure fn to
+                                                                  // the loaders to it can show more details.
+                                                                  if (SSLTicketKeyConfig::reconfigure(ctx)) {
+                                                                    ctx.complete("SSL ticket key reloaded");
+                                                                  } else {
+                                                                    ctx.fail("Failed to reload SSL ticket key");
+                                                                  }
+                                                                },
+                                                                {"proxy.config.ssl.server.ticket_key.filename"});
 
-  sslTicketKey->attach("proxy.config.ssl.server.ticket_key.filename");
   SSLConfig::scoped_config params;
   if (!reconfigure() && params->configExitOnLoadError) {
     Fatal("Failed to load SSL ticket key file");
@@ -913,7 +924,7 @@ SSLTicketKeyConfig::startup()
 }
 
 bool
-SSLTicketKeyConfig::reconfigure()
+SSLTicketKeyConfig::reconfigure([[maybe_unused]] ConfigContext ctx)
 {
   SSLTicketParams *ticketKey = new SSLTicketParams();
 

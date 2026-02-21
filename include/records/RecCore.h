@@ -29,6 +29,7 @@
 #include "tscore/Diags.h"
 
 #include "records/RecDefs.h"
+#include "mgmt/config/ConfigContext.h"
 #include "swoc/MemSpan.h"
 
 struct RecRecord;
@@ -244,7 +245,9 @@ RecErrT RecGetRecordPersistenceType(const char *name, RecPersistT *persist_type,
 RecErrT RecGetRecordSource(const char *name, RecSourceT *source, bool lock = true);
 
 /// Generate a warning if any configuration name/value is not registered.
-void RecConfigWarnIfUnregistered();
+// void RecConfigWarnIfUnregistered();
+/// Generate a warning if any configuration name/value is not registered.
+void RecConfigWarnIfUnregistered(ConfigContext ctx = {});
 
 //------------------------------------------------------------------------
 // Set RecRecord attributes

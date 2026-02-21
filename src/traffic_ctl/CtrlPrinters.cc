@@ -85,6 +85,11 @@ BasePrinter::write_output(shared::rpc::JSONRPCResponse const &response)
 void
 BasePrinter::write_output(std::string_view output) const
 {
+  if (is_json_format()) {
+    // if json format, no other output is expected to avoid mixing formats.
+    // Specially if you consume the json output with a tool.
+    return;
+  }
   std::cout << output << '\n';
 }
 
@@ -99,7 +104,7 @@ BasePrinter::write_output_json(YAML::Node const &node) const
   YAML::Emitter out;
   out << YAML::DoubleQuoted << YAML::Flow;
   out << node;
-  write_output(std::string_view{out.c_str()});
+  std::cout << out.c_str() << '\n';
 }
 //------------------------------------------------------------------------------------------------------------------------------------
 void
@@ -174,7 +179,285 @@ DiffConfigPrinter::write_output(YAML::Node const &result)
 void
 ConfigReloadPrinter::write_output([[maybe_unused]] YAML::Node const &result)
 {
+  // no op, ctrl command will handle the output directly.
+  // BasePrinter will handle the error and the json output if needed.
 }
+namespace
+{
+void
+group_files(const ConfigReloadResponse::ReloadInfo &info, std::vector<const ConfigReloadResponse::ReloadInfo *> &files)
+{
+  if (!info.meta.is_main_task) {
+    files.push_back(&info);
+  }
+  for (const auto &sub : info.sub_tasks) {
+    group_files(sub, files);
+  }
+}
+
+// Calculate duration in milliseconds from ms-since-epoch timestamps
+inline int
+duration_ms(int64_t start_ms, int64_t end_ms)
+{
+  return (end_ms >= start_ms) ? static_cast<int>(end_ms - start_ms) : -1;
+}
+
+// Format millisecond timestamp as human-readable date with milliseconds
+// Output format: "YYYY Mon DD HH:MM:SS.mmm"
+std::string
+format_time_ms(int64_t ms_timestamp)
+{
+  if (ms_timestamp <= 0) {
+    return "-";
+  }
+  std::time_t seconds = ms_timestamp / 1000;
+  int         millis  = ms_timestamp % 1000;
+
+  std::string buf;
+  swoc::bwprint(buf, "{}.{:03d}", swoc::bwf::Date(seconds), millis);
+  return buf;
+}
+
+// Build a UTF-8 progress bar.  @a width = number of visual characters.
+std::string
+build_progress_bar(int done, int total, int width = 20)
+{
+  int         filled = total > 0 ? (done * width / total) : 0;
+  std::string bar;
+  bar.reserve(width * 3);
+  for (int i = 0; i < width; ++i) {
+    bar += (i < filled) ? "\xe2\x96\x88" : "\xe2\x96\x91"; // █ or ░
+  }
+  return bar;
+}
+
+// Human-readable duration string from milliseconds.
+std::string
+format_duration(int ms)
+{
+  if (ms < 0) {
+    return "-";
+  }
+  if (ms < 1000) {
+    return std::to_string(ms) + "ms";
+  }
+  if (ms < 60000) {
+    return std::to_string(ms / 1000) + "." + std::to_string((ms % 1000) / 100) + "s";
+  }
+  return std::to_string(ms / 60000) + "m " + std::to_string((ms % 60000) / 1000) + "s";
+}
+
+// Map task status string to a single-character icon for compact display.
+const char *
+status_icon(const std::string &status)
+{
+  if (status == "success") {
+    return "\xe2\x9c\x94"; // ✔
+  }
+  if (status == "fail") {
+    return "\xe2\x9c\x97"; // ✗
+  }
+  if (status == "in_progress" || status == "created") {
+    return "\xe2\x97\x8c"; // ◌
+  }
+  if (status == "timeout") {
+    return "\xe2\x9f\xb3"; // ⟳
+  }
+  return "?";
+}
+
+// Approximate visual width of a UTF-8 string (each code point counts as 1 column).
+int
+visual_width(const std::string &s)
+{
+  int w = 0;
+  for (size_t i = 0; i < s.size();) {
+    auto c = static_cast<unsigned char>(s[i]);
+    if (c < 0x80) {
+      ++i;
+    } else if (c < 0xE0) {
+      i += 2;
+    } else if (c < 0xF0) {
+      i += 3;
+    } else {
+      i += 4;
+    }
+    ++w;
+  }
+  return w;
+}
+
+// Build a dot-leader string: " ···· " of the given visual width (min 2).
+std::string
+dot_fill(int width)
+{
+  if (width < 2) {
+    width = 2;
+  }
+  std::string out(" ");
+  for (int i = 1; i < width - 1; ++i) {
+    out += "\xc2\xb7"; // · (middle dot U+00B7)
+  }
+  out += ' ';
+  return out;
+}
+
+// Recursively print a task and its children using tree-drawing characters.
+// @param prefix        characters printed before this task's icon (tree connectors from parent)
+// @param child_prefix  base prefix for this task's log lines and its children's connectors
+// @param content_width visual columns available for icon+name+dots+duration (shrinks per nesting)
+void
+print_task_tree(const ConfigReloadResponse::ReloadInfo &f, bool full_report, const std::string &prefix,
+                const std::string &child_prefix, int content_width = 55)
+{
+  std::string fname;
+  if (f.filename.empty() || f.filename == "<none>") {
+    fname = f.description;
+  } else {
+    fname = f.filename;
+  }
+
+  int dur_ms = duration_ms(f.meta.created_time_ms, f.meta.last_updated_time_ms);
+
+  // Build label and right-aligned duration
+  std::string label   = std::string(status_icon(f.status)) + " " + fname;
+  std::string dur_str = format_duration(dur_ms);
+
+  // Right-pad duration to fixed width so values align
+  constexpr int DUR_COL = 6;
+  while (static_cast<int>(dur_str.size()) < DUR_COL) {
+    dur_str = " " + dur_str;
+  }
+
+  // Dot fill between label and duration
+  int label_vw = visual_width(label);
+  int gap      = content_width - label_vw - DUR_COL;
+
+  std::cout << prefix << label << dot_fill(gap) << dur_str;
+
+  // Annotate non-success terminal states so failures stand out
+  if (f.status == "fail") {
+    std::cout << "  \xe2\x9c\x97 FAIL";
+  } else if (f.status == "timeout") {
+    std::cout << "  \xe2\x9f\xb3 TIMEOUT";
+  }
+  std::cout << "\n";
+
+  bool has_children = !f.sub_tasks.empty();
+
+  // Log lines: indented under the task, with tree continuation line if children follow.
+  if (full_report && !f.logs.empty()) {
+    std::string log_pfx = has_children ? (child_prefix + "\xe2\x94\x82  ") : (child_prefix + "   ");
+    for (const auto &log : f.logs) {
+      std::cout << log_pfx << log << '\n';
+    }
+  }
+
+  // Children: draw tree connectors.  Each nesting level eats 3 visual columns.
+  for (size_t i = 0; i < f.sub_tasks.size(); ++i) {
+    bool        is_last          = (i == f.sub_tasks.size() - 1);
+    std::string sub_prefix       = child_prefix + (is_last ? "\xe2\x94\x94\xe2\x94\x80 " : "\xe2\x94\x9c\xe2\x94\x80 ");
+    std::string sub_child_prefix = child_prefix + (is_last ? "   " : "\xe2\x94\x82  ");
+    print_task_tree(f.sub_tasks[i], full_report, sub_prefix, sub_child_prefix, content_width - 3);
+  }
+}
+
+} // namespace
+void
+ConfigReloadPrinter::write_progress_line(const ConfigReloadResponse::ReloadInfo &info)
+{
+  if (this->is_json_format()) {
+    return;
+  }
+
+  int done{0}, total{0};
+
+  auto count_tasks = [&](auto &&self, const ConfigReloadResponse::ReloadInfo &ri) -> void {
+    if (ri.sub_tasks.empty()) {
+      if (ri.status == "success" || ri.status == "fail") {
+        done++;
+      }
+      total++;
+    }
+    for (const auto &sub : ri.sub_tasks) {
+      self(self, sub);
+    }
+  };
+  count_tasks(count_tasks, info);
+
+  bool terminal = (info.status == "success" || info.status == "fail" || info.status == "timeout");
+
+  int dur_ms = duration_ms(info.meta.created_time_ms, info.meta.last_updated_time_ms);
+
+  std::string bar = build_progress_bar(done, total);
+
+  // \r + ANSI clear-to-EOL overwrites the previous line in place.
+  std::cout << "\r\033[K" << status_icon(info.status) << " [" << info.config_token << "] " << bar << " " << done << "/" << total
+            << "  " << info.status;
+  if (terminal) {
+    std::cout << "  (" << format_duration(dur_ms) << ")";
+  }
+  std::cout << std::flush;
+}
+
+void
+ConfigReloadPrinter::print_reload_report(const ConfigReloadResponse::ReloadInfo &info, bool full_report)
+{
+  if (this->is_json_format()) {
+    return;
+  }
+
+  int overall_duration = duration_ms(info.meta.created_time_ms, info.meta.last_updated_time_ms);
+
+  int total{0}, completed{0}, failed{0}, created{0}, in_progress{0};
+
+  auto calculate_summary = [&](auto &&self, const ConfigReloadResponse::ReloadInfo &ri) -> void {
+    if (ri.sub_tasks.empty()) {
+      if (ri.status == "success") {
+        completed++;
+      } else if (ri.status == "fail") {
+        failed++;
+      } else if (ri.status == "created") {
+        created++;
+      } else if (ri.status == "in_progress") {
+        in_progress++;
+      }
+      total++;
+    }
+    if (!ri.sub_tasks.empty()) {
+      for (const auto &sub : ri.sub_tasks) {
+        self(self, sub);
+      }
+    }
+  };
+
+  std::vector<const ConfigReloadResponse::ReloadInfo *> files;
+  group_files(info, files);
+  calculate_summary(calculate_summary, info);
+
+  std::string start_time_str = format_time_ms(info.meta.created_time_ms);
+  std::string end_time_str   = format_time_ms(info.meta.last_updated_time_ms);
+
+  // ── Header ──
+  std::cout << status_icon(info.status) << " Reload [" << info.status << "] \xe2\x80\x94 " << info.config_token << "\n";
+  std::cout << "  Started : " << start_time_str << '\n';
+  std::cout << "  Finished: " << end_time_str << '\n';
+  std::cout << "  Duration: " << format_duration(overall_duration) << "\n\n";
+
+  // ── Summary ──
+  std::cout << "  \xe2\x9c\x94 " << completed << " success  \xe2\x97\x8c " << in_progress << " in-progress  \xe2\x9c\x97 " << failed
+            << " failed  (" << total << " total)\n";
+
+  // ── Task tree ──
+  if (!files.empty()) {
+    std::cout << "\n  Tasks:\n";
+  }
+  const std::string base_prefix("   ");
+  for (const auto &sub : info.sub_tasks) {
+    print_task_tree(sub, full_report, base_prefix, base_prefix);
+  }
+}
+
 //------------------------------------------------------------------------------------------------------------------------------------
 void
 ConfigShowFileRegistryPrinter::write_output(YAML::Node const &result)

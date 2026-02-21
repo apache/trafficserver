@@ -58,7 +58,9 @@ nameserver = Test.MakeDNServer("dns", default='127.0.0.1')
 tm.Disk.records_config.update(
     {
         'proxy.config.dns.nameservers': f"127.0.0.1:{nameserver.Variables.Port}",
-        'proxy.config.dns.resolv_conf': 'NULL'
+        'proxy.config.dns.resolv_conf': 'NULL',
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'remap|config|file|rpc',
     })
 
 tr = Test.AddTestRun("verify load")
@@ -114,3 +116,7 @@ tr.AddVerifierClientProcess("client_3", replay_file_3, http_ports=[tm.Variables.
 
 tr = Test.AddTestRun("post update golf")
 tr.AddVerifierClientProcess("client_4", replay_file_4, http_ports=[tm.Variables.port])
+
+tr = Test.AddTestRun("remap_config reload, test")
+tr.Processes.Default.Env = tm.Env
+tr.Processes.Default.Command = 'sleep 2; traffic_ctl rpc invoke get_reload_config_status -f json | jq'

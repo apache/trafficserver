@@ -227,15 +227,6 @@ CacheHostTable::Match(std::string_view rdata, CacheHostResult *result) const
   hostMatch->Match(rdata, result);
 }
 
-int
-CacheHostTable::config_callback(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */,
-                                RecData /* data ATS_UNUSED */, void *cookie)
-{
-  ReplaceablePtr<CacheHostTable> *ppt = static_cast<ReplaceablePtr<CacheHostTable> *>(cookie);
-  eventProcessor.schedule_imm(new CacheHostTableConfig(ppt), ET_TASK);
-  return 0;
-}
-
 int fstat_wrapper(int fd, struct stat *s);
 
 // int ControlMatcher::BuildTable() {

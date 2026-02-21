@@ -201,9 +201,19 @@ target_compile_definitions(
 target_include_directories(test_NextHopStrategyFactory PRIVATE ${PROJECT_SOURCE_DIR}/tests/include)
 
 target_link_libraries(
-  test_NextHopStrategyFactory PRIVATE Catch2::Catch2WithMain ts::hdrs ts::inkutils tscore libswoc::libswoc
-                                      yaml-cpp::yaml-cpp
+  test_NextHopStrategyFactory
+  PRIVATE Catch2::Catch2WithMain
+          ts::hdrs
+          ts::inkutils
+          tscore
+          libswoc::libswoc
+          yaml-cpp::yaml-cpp
+          configmanager
 )
+
+if(NOT APPLE)
+  target_link_options(test_NextHopStrategyFactory PRIVATE -Wl,--allow-multiple-definition)
+endif()
 
 add_catch2_test(NAME test_NextHopStrategyFactory COMMAND $<TARGET_FILE:test_NextHopStrategyFactory>)
 
@@ -234,7 +244,12 @@ target_link_libraries(
           tscore
           libswoc::libswoc
           yaml-cpp::yaml-cpp
+          configmanager
 )
+
+if(NOT APPLE)
+  target_link_options(test_NextHopRoundRobin PRIVATE -Wl,--allow-multiple-definition)
+endif()
 
 add_catch2_test(NAME test_NextHopRoundRobin COMMAND $<TARGET_FILE:test_NextHopRoundRobin>)
 
@@ -267,7 +282,12 @@ target_link_libraries(
           ts::inkutils
           libswoc::libswoc
           yaml-cpp::yaml-cpp
+          configmanager
 )
+
+if(NOT APPLE)
+  target_link_options(test_NextHopConsistentHash PRIVATE -Wl,--allow-multiple-definition)
+endif()
 
 add_catch2_test(NAME test_NextHopConsistentHash COMMAND $<TARGET_FILE:test_NextHopConsistentHash>)
 
