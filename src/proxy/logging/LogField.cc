@@ -388,7 +388,7 @@ LogField::LogField(const char *field, Container container)
     if (0 != rv) {
       Note("Invalid milestone range in LogField ctor: %s", m_name);
     }
-    m_unmarshal_func = &(LogAccess::unmarshal_int_to_str);
+    m_unmarshal_func = &(LogAccess::unmarshal_milestone_diff);
     m_type           = LogField::sINT;
     break;
   }

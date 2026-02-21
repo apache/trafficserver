@@ -628,6 +628,43 @@ LogAccess::unmarshal_int_to_str(char **buf, char *dest, int len)
 }
 
 /*-------------------------------------------------------------------------
+  LogAccess::unmarshal_milestone_diff
+
+  Unmarshal a milestone difference value.  Returns "-" when the
+  marshalled value is -1 (the "missing" sentinel from difference_msec,
+  meaning one or both milestones were unset).  Other negative values
+  (reversed milestone order) are preserved as numeric output for
+  debugging.
+  -------------------------------------------------------------------------*/
+
+int
+LogAccess::unmarshal_milestone_diff(char **buf, char *dest, int len)
+{
+  ink_assert(buf != nullptr);
+  ink_assert(*buf != nullptr);
+  ink_assert(dest != nullptr);
+
+  int64_t val = unmarshal_int(buf);
+  if (val == -1) {
+    if (len >= 1) {
+      dest[0] = '-';
+      return 1;
+    }
+    DBG_UNMARSHAL_DEST_OVERRUN
+    return -1;
+  }
+
+  char val_buf[128];
+  int  val_len = unmarshal_itoa(val, val_buf + 127);
+  if (val_len < len) {
+    memcpy(dest, val_buf + 128 - val_len, val_len);
+    return val_len;
+  }
+  DBG_UNMARSHAL_DEST_OVERRUN
+  return -1;
+}
+
+/*-------------------------------------------------------------------------
   LogAccess::unmarshal_int_to_str_hex
 
   Return the string representation (hexadecimal) of the integer pointed at by buf.
