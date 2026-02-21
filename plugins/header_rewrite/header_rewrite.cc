@@ -38,6 +38,10 @@
 #include "conditions_geo.h"
 #include "operators.h"
 
+#ifdef ENABLE_HRW4U_NATIVE
+#include "hrw4u.h"
+#endif
+
 // Debugs
 namespace header_rewrite_ns
 {
@@ -66,66 +70,20 @@ initHRWLibraries(const std::string &dbPath)
 // Forward declaration for the main continuation.
 static int cont_rewrite_headers(TSCont, TSEvent, void *);
 
-// Simple wrapper around a configuration file / set. This is useful such that
-// we can reuse most of the code for both global and per-remap rule sets.
-class RulesConfig
+#include "rules_config.h"
+
+RulesConfig::RulesConfig(int timezone, int inboundIpSource) : _timezone(timezone), _inboundIpSource(inboundIpSource)
 {
-public:
-  RulesConfig(int timezone, int inboundIpSource) : _timezone(timezone), _inboundIpSource(inboundIpSource)
-  {
-    Dbg(dbg_ctl, "RulesConfig CTOR");
-    _cont = TSContCreate(cont_rewrite_headers, nullptr);
-    TSContDataSet(_cont, static_cast<void *>(this));
-  }
+  Dbg(dbg_ctl, "RulesConfig CTOR");
+  _cont = TSContCreate(cont_rewrite_headers, nullptr);
+  TSContDataSet(_cont, static_cast<void *>(this));
+}
 
-  ~RulesConfig()
-  {
-    Dbg(dbg_ctl, "RulesConfig DTOR");
-    TSContDestroy(_cont);
-  }
-
-  [[nodiscard]] TSCont
-  continuation() const
-  {
-    return _cont;
-  }
-
-  [[nodiscard]] ResourceIDs
-  resid(int hook) const
-  {
-    return _resids[hook];
-  }
-
-  [[nodiscard]] RuleSet *
-  rule(int hook) const
-  {
-    return _rules[hook].get();
-  }
-
-  [[nodiscard]] int
-  timezone() const
-  {
-    return _timezone;
-  }
-
-  [[nodiscard]] int
-  inboundIpSource() const
-  {
-    return _inboundIpSource;
-  }
-
-  bool parse_config(const std::string &fname, TSHttpHookID default_hook, char *from_url = nullptr, char *to_url = nullptr);
-
-private:
-  void add_rule(std::unique_ptr<RuleSet> rule);
-
-  TSCont                                                      _cont;
-  std::array<std::unique_ptr<RuleSet>, TS_HTTP_LAST_HOOK + 1> _rules{};
-  std::array<ResourceIDs, TS_HTTP_LAST_HOOK + 1>              _resids{};
-
-  int _timezone        = 0;
-  int _inboundIpSource = 0;
-};
+RulesConfig::~RulesConfig()
+{
+  Dbg(dbg_ctl, "RulesConfig DTOR");
+  TSContDestroy(_cont);
+}
 
 void
 RulesConfig::add_rule(std::unique_ptr<RuleSet> rule)
@@ -185,7 +143,7 @@ validate_rule_completion(RuleSet *rule, const std::string &fname, int lineno)
 // anyways (or reload for remap.config), so not really in the critical path.
 //
 bool
-RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook, char *from_url, char *to_url)
+RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook, char *from_url, char *to_url, bool force_hrw4u)
 {
   std::unique_ptr<RuleSet>     rule(nullptr);
   std::string                  filename;
@@ -208,18 +166,72 @@ RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook, c
     filename = fname;
   }
 
-  auto reader = openConfig(filename);
-  if (!reader || !reader->stream) {
+  if (force_hrw4u || filename.ends_with(".hrw4u")) {
+#ifdef ENABLE_HRW4U_NATIVE
+    hrw4u_integration::HRW4UConfig config;
+
+    Dbg(pi_dbg_ctl, "Detected hrw4u file: %s", filename.c_str());
+
+    config.default_hook = default_hook;
+    config.from_url     = from_url;
+    config.to_url       = to_url;
+    config.filename     = filename;
+
+    auto result = hrw4u_integration::parse_hrw4u_file(filename, config);
+
+    if (!result) {
+      TSError("[%s] hrw4u parse failed: %s", PLUGIN_NAME, result.error_message.c_str());
+      return false;
+    }
+
+    Dbg(pi_dbg_ctl, "hrw4u parse returned %zu rulesets", result.rulesets.size());
+
+    // Add parsed rulesets with their associated hooks
+    for (size_t i = 0; i < result.rulesets.size(); ++i) {
+      if (result.rulesets[i]) {
+        TSHttpHookID hook = (i < result.hooks.size()) ? result.hooks[i] : default_hook;
+
+        result.rulesets[i]->set_hook(hook);
+
+        const char *hook_name = (hook == TS_REMAP_PSEUDO_HOOK) ? "REMAP_PSEUDO_HOOK" : TSHttpHookNameLookup(hook);
+
+        Dbg(pi_dbg_ctl, "New RuleSet in %%{%s} at %s", hook_name, filename.c_str());
+        add_rule(std::move(result.rulesets[i]));
+      } else {
+        Dbg(pi_dbg_ctl, "hrw4u: Skipping null ruleset at index %zu", i);
+      }
+    }
+
+    // Collect all resource IDs that we need
+    for (size_t i = TS_HTTP_READ_REQUEST_HDR_HOOK; i <= TS_HTTP_LAST_HOOK; ++i) {
+      if (_rules[i]) {
+        _resids[i] = _rules[i]->get_all_resource_ids();
+        Dbg(pi_dbg_ctl, "hrw4u: Hook %s has rules with resids=%d", TSHttpHookNameLookup(static_cast<TSHttpHookID>(i)),
+            static_cast<int>(_resids[i]));
+      }
+    }
+
+    Dbg(pi_dbg_ctl, "Successfully parsed hrw4u file: %s", filename.c_str());
+    return true;
+#else
+    TSError("[%s] .hrw4u files require ANTLR4 support (ENABLE_HRW4U_NATIVE): %s", PLUGIN_NAME, filename.c_str());
+    return false;
+#endif
+  }
+
+  std::ifstream config_file(filename);
+
+  if (!config_file.is_open()) {
     TSError("[%s] unable to open %s", PLUGIN_NAME, filename.c_str());
     return false;
   }
 
   Dbg(dbg_ctl, "Parsing started on file: %s", filename.c_str());
 
-  while (!reader->stream->eof()) {
+  while (!config_file.eof()) {
     std::string line;
 
-    getline(*reader->stream, line);
+    getline(config_file, line);
     ++lineno;
     Dbg(dbg_ctl, "Reading line: %d: %s", lineno, line.c_str());
 
@@ -402,15 +414,6 @@ RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook, c
     }
   }
 
-  if (reader->pipebuf) {
-    reader->pipebuf->close();
-    if (reader->pipebuf->exit_status() != 0) {
-      TSError("[%s] hrw4u preprocessor exited with non-zero status (%d): %s", PLUGIN_NAME, reader->pipebuf->exit_status(),
-              fname.c_str());
-      return false;
-    }
-  }
-
   if (!group_stack.empty()) {
     TSError("[%s] missing final %%{GROUP:END} condition in file: %s, lineno: %d", PLUGIN_NAME, fname.c_str(), lineno);
     return false;
@@ -465,8 +468,8 @@ setPluginControlValues(TSHttpTxn txnp, RulesConfig *conf)
 static int
 cont_rewrite_headers(TSCont contp, TSEvent event, void *edata)
 {
-  auto         txnp = static_cast<TSHttpTxn>(edata);
   TSHttpHookID hook = TS_HTTP_LAST_HOOK;
+  auto         txnp = static_cast<TSHttpTxn>(edata);
   auto        *conf = static_cast<RulesConfig *>(TSContDataGet(contp));
 
   switch (event) {

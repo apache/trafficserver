@@ -107,6 +107,12 @@ public:
     return _ids;
   }
 
+  void
+  require_resources(const ResourceIDs ids)
+  {
+    _ids = static_cast<ResourceIDs>(_ids | ids);
+  }
+
   bool
   last() const
   {
@@ -114,6 +120,12 @@ public:
   }
 
   OperModifiers exec(const Resources &res) const;
+
+  const OperatorIf *
+  get_operator_if() const
+  {
+    return &_op_if;
+  }
 
   // Linked list of RuleSets
   std::unique_ptr<RuleSet> next;
