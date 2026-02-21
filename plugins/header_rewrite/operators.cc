@@ -1642,44 +1642,47 @@ void
 OperatorSetNextHopStrategy::initialize(Parser &p)
 {
   Operator::initialize(p);
+  _stratname = p.get_arg();
 
-  _value.set_value(p.get_arg(), this);
-  Dbg(pi_dbg_ctl, "OperatorSetNextHopStrategy::initialie: %s", _value.get_value().c_str());
+  if (_stratname.empty() || "null" == _stratname) {
+    Dbg(pi_dbg_ctl, "OperatorSetNextHopStrategy() 'clear'");
+  } else {
+    _strategy = TSRemapNextHopStrategyFind(_stratname.c_str());
+    if (nullptr == _strategy) {
+      TSError("[%s] Failed to get strategy '%s'", PLUGIN_NAME, _stratname.c_str());
+      _apply = false;
+    } else {
+      Dbg(pi_dbg_ctl, "OperatorSetNextHopStrategy() '%s'", _stratname.c_str());
+    }
+  }
 }
 
 void
 OperatorSetNextHopStrategy::initialize_hooks()
 {
-  add_allowed_hook(TS_HTTP_READ_REQUEST_HDR_HOOK);
   add_allowed_hook(TS_REMAP_PSEUDO_HOOK);
 }
 
 bool
 OperatorSetNextHopStrategy::exec(const Resources &res) const
 {
-  if (!res.state.txnp) {
-    TSError("[%s] OperatorSetNextHopStrategy() failed. Transaction is null", PLUGIN_NAME);
-  }
-
-  auto const txnp = res.state.txnp;
-
-  std::string value;
-  _value.append_value(value, res);
-
-  // Setting an empty strategy clears it for either parent.config or remap to
-  if ("null" == value || value.empty()) {
-    Dbg(pi_dbg_ctl, "Clearing strategy");
-    TSHttpTxnNextHopStrategySet(txnp, nullptr);
+  if (!_apply) {
+    Dbg(pi_dbg_ctl, "OperatorSetNextHopStrategy::exec: do nothing");
     return true;
   }
-
-  void const *const stratptr = TSHttpTxnNextHopNamedStrategyGet(txnp, value.c_str());
-  if (nullptr == stratptr) {
-    TSWarning("[%s] Failed to get strategy '%s'", PLUGIN_NAME, value.c_str());
-  } else {
-    Dbg(pi_dbg_ctl, "   Setting strategy '%s'", value.c_str());
-    TSHttpTxnNextHopStrategySet(txnp, stratptr);
+  auto const txnp = res.state.txnp;
+  if (!txnp) {
+    TSError("[%s] OperatorSetNextHopStrategy() failed. Transaction is null", PLUGIN_NAME);
+    return false;
   }
+
+  if (nullptr == _strategy) {
+    Dbg(pi_dbg_ctl, "OperatorSetNextHopStrategy::exec: Clearing strategy");
+  } else {
+    Dbg(pi_dbg_ctl, "OperatorSetNextHopStrategy::exec: Setting strategy to '%s'", _stratname.c_str());
+  }
+
+  TSHttpTxnNextHopStrategySet(txnp, _strategy);
 
   return true;
 }
