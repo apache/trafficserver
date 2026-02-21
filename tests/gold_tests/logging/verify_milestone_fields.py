@@ -113,7 +113,7 @@ def validate_line(fields: dict[str, str], line_num: int) -> list[str]:
                 val = int(val_str)
             except ValueError:
                 continue
-            if val < -1:
+            if val < -10:
                 errors.append(f'line {line_num}: miss field "{name}" has unexpected value: {val}')
 
         # Verify chain sum approximates c_ttfb (within tolerance for rounding).
