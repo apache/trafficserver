@@ -27,6 +27,11 @@
 #include "records/RecCore.h"
 #include "tscore/ink_cap.h"
 
+// Avoid including private header files
+struct CacheHostRecord;
+extern void             destroyCacheHostRecord(CacheHostRecord *rec);
+extern CacheHostRecord *createCacheHostRecord(const char *volume_str, char *errbuf, size_t errbufsize);
+
 namespace
 {
 DbgCtl dbg_ctl_url_rewrite{"url_rewrite"};
@@ -84,9 +89,37 @@ url_mapping::~url_mapping()
     delete afr;
   }
 
+  // Destroy any volume hosting records
+  destroyCacheHostRecord(volume_host_rec.load(std::memory_order_acquire));
+
   // Destroy the URLs
   fromURL.destroy();
   toURL.destroy();
+}
+
+bool
+url_mapping::initVolumeHostRec(char *errbuf, size_t errbufsize)
+{
+  if (_volume_str.empty() || volume_host_rec.load(std::memory_order_acquire) != nullptr) {
+    return true;
+  }
+
+  CacheHostRecord *new_rec = createCacheHostRecord(_volume_str.c_str(), errbuf, errbufsize);
+
+  if (!new_rec) {
+    return false;
+  }
+
+  CacheHostRecord *expected = nullptr;
+
+  if (volume_host_rec.compare_exchange_strong(expected, new_rec, std::memory_order_acq_rel)) {
+    Dbg(dbg_ctl_url_rewrite, "Initialized volume_host_rec for @volume=%s", _volume_str.c_str());
+    return true;
+  } else {
+    // Another thread beat us to it, destroy our copy
+    destroyCacheHostRecord(new_rec);
+    return true;
+  }
 }
 
 void
