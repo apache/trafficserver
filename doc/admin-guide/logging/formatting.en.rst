@@ -756,6 +756,7 @@ Timestamps and Durations
 .. _crat:
 .. _ms:
 .. _msdms:
+.. _mstsms:
 .. _stms:
 .. _stmsh:
 .. _stmsf:
@@ -775,54 +776,56 @@ Other fields in this category provide variously formatted timestamps of
 particular events within the current transaction (e.g. the time at which a
 client request was received by |TS|).
 
-===== ======================= =================================================
-Field Source                  Description
-===== ======================= =================================================
-cqtd  Client Request          Client request timestamp. Specifies the date of
-                              the client request in the format ``YYYY-MM-DD``
-                              (four digit year, two digit month, two digit day
-                              - with leading zeros as necessary for the latter
-                              two).
-cqtn  Client Request          Client request timestamp in the Netscape
-                              timestamp format.
-cqtq  Client Request          The time at which the client request was received
-                              expressed as fractional (floating point) seconds
-                              since midnight January 1, 1970 UTC (epoch), with
-                              millisecond resolution.
-cqts  Client Request          Same as cqtq_, but as an integer without
-                              sub-second resolution.
-cqth  Client Request          Same as cqts_, but represented in hexadecimal.
-cqtt  Client Request          Client request timestamp in the 24-hour format
-                              ``hh:mm:ss`` (two digit hour, minutes, and
-                              seconds - with leading zeros as necessary).
-crat  Origin Response         Retry-After time in seconds if specified in the
-                              origin server response.
-ms    Proxy                   Timestamp in milliseconds of a specific milestone
-                              for this request. See note below about specifying
-                              which milestone to use.
-msdms Proxy                   Difference in milliseconds between the timestamps
-                              of two milestones. See note below about
-                              specifying which milestones to use.
-stms  Proxy-Origin Connection Time (in milliseconds) spent accessing the origin
-                              server. Measured from the time the connection
-                              between proxy and origin is established to the
-                              time it was closed.
-stmsh Proxy-Origin Connection Same as stms_, but represented in hexadecimal.
-stmsf Proxy-Origin Connection Same as stms_, but in fractional (floating point)
-                              seconds.
-sts   Proxy-Origin Connection Same as stms_, but in integer seconds (no
-                              sub-second precision).
-ttms  Client-Proxy Connection Time in milliseconds spent by |TS| processing the
-                              entire client request. Measured from the time the
-                              connection between the client and |TS| proxy was
-                              established until the last byte of the proxy
-                              response was delivered to the client.
-ttmsh Client-Proxy Connection Same as ttms_, but represented in hexadecimal.
-ttmsf Client-Proxy Connection Same as ttms_, but in fraction (floating point)
-                              seconds.
-tts   Client Request          Same as ttms_, but in integer seconds (no
-                              sub-second precision).
-===== ======================= =================================================
+====== ======================= =================================================
+Field  Source                  Description
+====== ======================= =================================================
+cqtd   Client Request          Client request timestamp. Specifies the date of
+                               the client request in the format ``YYYY-MM-DD``
+                               (four digit year, two digit month, two digit day
+                               - with leading zeros as necessary for the latter
+                               two).
+cqtn   Client Request          Client request timestamp in the Netscape
+                               timestamp format.
+cqtq   Client Request          The time at which the client request was received
+                               expressed as fractional (floating point) seconds
+                               since midnight January 1, 1970 UTC (epoch), with
+                               millisecond resolution.
+cqts   Client Request          Same as cqtq_, but as an integer without
+                               sub-second resolution.
+cqth   Client Request          Same as cqts_, but represented in hexadecimal.
+cqtt   Client Request          Client request timestamp in the 24-hour format
+                               ``hh:mm:ss`` (two digit hour, minutes, and
+                               seconds - with leading zeros as necessary).
+crat   Origin Response         Retry-After time in seconds if specified in the
+                               origin server response.
+ms     Proxy                   Timestamp in milliseconds of a specific milestone
+                               for this request. See note below about specifying
+                               which milestone to use.
+msdms  Proxy                   Difference in milliseconds between the timestamps
+                               of two milestones. See note below about
+                               specifying which milestones to use.
+mstsms Proxy                   Slow log report in milliseconds as CSV.
+                               See note below about what timestamps are used.
+stms   Proxy-Origin Connection Time (in milliseconds) spent accessing the origin
+                               server. Measured from the time the connection
+                               between proxy and origin is established to the
+                               time it was closed.
+stmsh  Proxy-Origin Connection Same as stms_, but represented in hexadecimal.
+stmsf  Proxy-Origin Connection Same as stms_, but in fractional (floating point)
+                               seconds.
+sts    Proxy-Origin Connection Same as stms_, but in integer seconds (no
+                               sub-second precision).
+ttms   Client-Proxy Connection Time in milliseconds spent by |TS| processing the
+                               entire client request. Measured from the time the
+                               connection between the client and |TS| proxy was
+                               established until the last byte of the proxy
+                               response was delivered to the client.
+ttmsh  Client-Proxy Connection Same as ttms_, but represented in hexadecimal.
+ttmsf  Client-Proxy Connection Same as ttms_, but in fraction (floating point)
+                               seconds.
+tts    Client Request          Same as ttms_, but in integer seconds (no
+                               sub-second precision).
+====== ======================= =================================================
 
 .. note::
 
@@ -836,6 +839,32 @@ tts   Client Request          Same as ttms_, but in integer seconds (no
 
     For more information on transaction milestones in |TS|, refer to the
     documentation on :func:`TSHttpTxnMilestoneGet`.
+
+.. note::
+
+   A full milestone report can be generated as a CSV string that matches
+   the example slow log. Fields are:
+
+      1. tls_handshake
+      2. ua_begin
+      3. ua_first_read
+      4. ua_read_header_done
+      5. cache_open_read_begin
+      6. cache_open_read_end
+      7. cache_open_write_begin
+      8. cache_open_write_end
+      9. dns_lookup_begin
+      10. dns_lookup_end
+      11. server_connect
+      12. server_connect_end
+      13. server_first_read
+      14. server_read_header_done
+      15. server_close
+      16. ua_write
+      17. ua_close
+      18. sm_finish
+      19. plugin_active
+      20. plugin_total
 
 .. _admin-logging-fields-urls:
 

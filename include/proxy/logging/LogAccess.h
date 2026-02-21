@@ -296,14 +296,16 @@ public:
   //
   // milestones access
   //
-  int  marshal_milestone(TSMilestonesType ms, char *buf);
-  int  marshal_milestone_fmt_sec(TSMilestonesType ms, char *buf);
-  int  marshal_milestone_fmt_squid(TSMilestonesType ms, char *buf);
-  int  marshal_milestone_fmt_netscape(TSMilestonesType ms, char *buf);
-  int  marshal_milestone_fmt_date(TSMilestonesType ms, char *buf);
-  int  marshal_milestone_fmt_time(TSMilestonesType ms, char *buf);
-  int  marshal_milestone_fmt_ms(TSMilestonesType ms, char *buf);
-  int  marshal_milestone_diff(TSMilestonesType ms1, TSMilestonesType ms2, char *buf);
+  int marshal_milestone(TSMilestonesType ms, char *buf);
+  int marshal_milestone_fmt_sec(TSMilestonesType ms, char *buf);
+  int marshal_milestone_fmt_squid(TSMilestonesType ms, char *buf);
+  int marshal_milestone_fmt_netscape(TSMilestonesType ms, char *buf);
+  int marshal_milestone_fmt_date(TSMilestonesType ms, char *buf);
+  int marshal_milestone_fmt_time(TSMilestonesType ms, char *buf);
+  int marshal_milestone_fmt_ms(TSMilestonesType ms, char *buf);
+  int marshal_milestone_diff(TSMilestonesType ms1, TSMilestonesType ms2, char *buf);
+  int marshal_milestones_csv(char *buf);
+
   void set_http_header_field(LogField::Container container, char *field, char *buf, int len);
   //
   // unmarshalling routines
