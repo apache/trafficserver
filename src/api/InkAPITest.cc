@@ -892,7 +892,16 @@ synserver_delete(SocketServer *s)
 static int
 synserver_vc_refuse(TSCont contp, TSEvent event, void *data)
 {
-  TSAssert((event == TS_EVENT_NET_ACCEPT) || (event == TS_EVENT_NET_ACCEPT_FAILED));
+  if (event != TS_EVENT_NET_ACCEPT && event != TS_EVENT_NET_ACCEPT_FAILED) {
+    // net_accept() passes negated errno as data on EVENT_ERROR; Linux MAX_ERRNO is 4095
+    intptr_t data_val = reinterpret_cast<intptr_t>(data);
+    if (data_val < 0 && data_val >= -4095) {
+      int err = static_cast<int>(-data_val);
+      ink_abort("synserver_vc_refuse: unexpected event %d, accept errno: %s (%d)", event, strerror(err), err);
+    } else {
+      ink_abort("synserver_vc_refuse: unexpected event %d, data: %p", event, data);
+    }
+  }
 
   SocketServer *s = static_cast<SocketServer *>(TSContDataGet(contp));
   TSAssert(s->magic == MAGIC_ALIVE);
@@ -913,7 +922,16 @@ synserver_vc_refuse(TSCont contp, TSEvent event, void *data)
 static int
 synserver_vc_accept(TSCont contp, TSEvent event, void *data)
 {
-  TSAssert((event == TS_EVENT_NET_ACCEPT) || (event == TS_EVENT_NET_ACCEPT_FAILED));
+  if (event != TS_EVENT_NET_ACCEPT && event != TS_EVENT_NET_ACCEPT_FAILED) {
+    // net_accept() passes negated errno as data on EVENT_ERROR; Linux MAX_ERRNO is 4095
+    intptr_t data_val = reinterpret_cast<intptr_t>(data);
+    if (data_val < 0 && data_val >= -4095) {
+      int err = static_cast<int>(-data_val);
+      ink_abort("synserver_vc_accept: unexpected event %d, accept errno: %s (%d)", event, strerror(err), err);
+    } else {
+      ink_abort("synserver_vc_accept: unexpected event %d, data: %p", event, data);
+    }
+  }
 
   SocketServer *s = static_cast<SocketServer *>(TSContDataGet(contp));
   TSAssert(s->magic == MAGIC_ALIVE);
