@@ -85,6 +85,12 @@ public:
     return _mods;
   }
 
+  void
+  set_mods(CondModifiers mods)
+  {
+    _mods = mods;
+  }
+
   // Setters
   virtual void
   set_qualifier(const std::string &q)
