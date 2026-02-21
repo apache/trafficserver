@@ -144,6 +144,7 @@ public:
   int marshal_client_req_protocol_version(char *);   // STR
   int marshal_server_req_protocol_version(char *);   // STR
   int marshal_client_req_squid_len(char *);          // INT
+  int marshal_client_req_squid_len_tls(char *);      // INT
   int marshal_client_req_header_len(char *);         // INT
   int marshal_client_req_content_len(char *);        // INT
   int marshal_client_req_tcp_reused(char *);         // INT
@@ -162,6 +163,9 @@ public:
   int marshal_client_req_uuid(char *);               // STR
   int marshal_client_rx_error_code(char *);          // STR
   int marshal_client_tx_error_code(char *);          // STR
+  int marshal_client_tls_handshake_bytes_rx(char *); // INT
+  int marshal_client_tls_handshake_bytes_tx(char *); // INT
+  int marshal_client_tls_handshake_bytes(char *);    // INT
   int marshal_client_req_all_header_fields(char *);  // STR
 
   //
@@ -170,6 +174,7 @@ public:
   int marshal_proxy_resp_content_type(char *);      // STR
   int marshal_proxy_resp_reason_phrase(char *);     // STR
   int marshal_proxy_resp_squid_len(char *);         // INT
+  int marshal_proxy_resp_squid_len_tls(char *);     // INT
   int marshal_proxy_resp_content_len(char *);       // INT
   int marshal_proxy_resp_status_code(char *);       // INT
   int marshal_status_plugin_entry(char *);          // STR
