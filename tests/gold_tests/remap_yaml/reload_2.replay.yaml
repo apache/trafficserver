@@ -1,6 +1,3 @@
-#! /usr/bin/env bash
-# vim: sw=4:ts=4:softtabstop=4:ai:et
-
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -17,24 +14,26 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-readonly SCRIPT_DIR
+#
+# This replay file assumes that caching is enabled and
+# proxy.config.http.cache.ignore_client_cc_max_age is set to 0 so that we can
+# test max-age in the client requests.
+#
 
-fail()
-{
-    echo $1
-    exit 1
-}
+meta:
+  version: "1.0"
 
-cd "$SCRIPT_DIR"
+sessions:
+- transactions:
+  - all: { headers: { fields: [[ uuid, success ]]}}
+    client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /index.html
+      headers:
+        fields:
+        - [ Host, charlie.ex ]
 
-./prepare_proxy_verifier.sh || fail "Failed to install Proxy Verifier."
-export PYTHONPATH=$(pwd):$PYTHONPATH
-export PYTHONPATH=$(pwd)/gold_tests/remap:$(pwd)/gold_tests/remap_yaml:$PYTHONPATH
-./test-env-check.sh || fail "Failed Python environment checks."
-hash nc 2>/dev/null || fail "Netcat is not installed."
-# this is for rhel or centos systems
-echo "Environment config finished. Running AuTest..."
-exec uv run env \
-    HTTP_PROXY= HTTPS_PROXY= NO_PROXY= http_proxy= https_proxy= no_proxy= \
-    autest -D gold_tests "$@"
+    proxy-response:
+      status: 200

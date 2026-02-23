@@ -71,13 +71,18 @@ init_reverse_proxy()
   rewrite_table  = new UrlRewrite();
 
   Note("%s loading ...", ts::filename::REMAP);
-  if (!rewrite_table->load()) {
-    Emergency("%s failed to load", ts::filename::REMAP);
+  Note("%s loading ...", ts::filename::REMAP_YAML);
+  bool status  = rewrite_table->load();
+  bool is_yaml = (rewrite_table->is_remap_yaml());
+
+  if (!status) {
+    Emergency("%s failed to load", is_yaml ? ts::filename::REMAP_YAML : ts::filename::REMAP);
   } else {
-    Note("%s finished loading", ts::filename::REMAP);
+    Note("%s finished loading", is_yaml ? ts::filename::REMAP_YAML : ts::filename::REMAP);
   }
 
   RecRegisterConfigUpdateCb("proxy.config.url_remap.filename", url_rewrite_CB, (void *)FILE_CHANGED);
+  RecRegisterConfigUpdateCb("proxy.config.url_remap_yaml.filename", url_rewrite_CB, (void *)FILE_CHANGED);
   RecRegisterConfigUpdateCb("proxy.config.proxy_name", url_rewrite_CB, (void *)TSNAME_CHANGED);
   RecRegisterConfigUpdateCb("proxy.config.reverse_proxy.enabled", url_rewrite_CB, (void *)REVERSE_CHANGED);
   RecRegisterConfigUpdateCb("proxy.config.http.referer_default_redirect", url_rewrite_CB, (void *)HTTP_DEFAULT_REDIRECT_CHANGED);
@@ -139,9 +144,15 @@ reloadUrlRewrite()
   UrlRewrite *newTable, *oldTable;
 
   Note("%s loading ...", ts::filename::REMAP);
+  Note("%s loading ...", ts::filename::REMAP_YAML);
   Dbg(dbg_ctl_url_rewrite, "%s updated, reloading...", ts::filename::REMAP);
+  Dbg(dbg_ctl_url_rewrite, "%s updated, reloading...", ts::filename::REMAP_YAML);
   newTable = new UrlRewrite();
-  if (newTable->load()) {
+
+  bool status  = newTable->load();
+  bool is_yaml = (newTable->is_remap_yaml());
+
+  if (status) {
     static const char *msg_format = "%s finished loading";
 
     // Hold at least one lease, until we reload the configuration
@@ -155,15 +166,15 @@ reloadUrlRewrite()
     // Release the old one
     oldTable->release();
 
-    Dbg(dbg_ctl_url_rewrite, msg_format, ts::filename::REMAP);
-    Note(msg_format, ts::filename::REMAP);
+    Dbg(dbg_ctl_url_rewrite, msg_format, is_yaml ? ts::filename::REMAP_YAML : ts::filename::REMAP);
+    Note(msg_format, is_yaml ? ts::filename::REMAP_YAML : ts::filename::REMAP);
     return true;
   } else {
     static const char *msg_format = "%s failed to load";
 
     delete newTable;
-    Dbg(dbg_ctl_url_rewrite, msg_format, ts::filename::REMAP);
-    Error(msg_format, ts::filename::REMAP);
+    Dbg(dbg_ctl_url_rewrite, msg_format, is_yaml ? ts::filename::REMAP_YAML : ts::filename::REMAP);
+    Error(msg_format, is_yaml ? ts::filename::REMAP_YAML : ts::filename::REMAP);
     return false;
   }
 }

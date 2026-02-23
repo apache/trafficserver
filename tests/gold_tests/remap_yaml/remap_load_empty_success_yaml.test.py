@@ -1,6 +1,6 @@
-#! /usr/bin/env bash
-# vim: sw=4:ts=4:softtabstop=4:ai:et
-
+'''
+Verify correct behavior of regex_map in remap.yaml.
+'''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -17,24 +17,17 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-readonly SCRIPT_DIR
+Test.Summary = '''
+Test minimum rules on load - succeed on empty file.
+'''
 
-fail()
-{
-    echo $1
-    exit 1
-}
+ts = Test.MakeATSProcess("ts")
+ts.Disk.remap_yaml.AddLine(f"")  # empty file
+ts.Disk.records_config.update({f'proxy.config.url_remap.min_rules_required': 0})
 
-cd "$SCRIPT_DIR"
-
-./prepare_proxy_verifier.sh || fail "Failed to install Proxy Verifier."
-export PYTHONPATH=$(pwd):$PYTHONPATH
-export PYTHONPATH=$(pwd)/gold_tests/remap:$(pwd)/gold_tests/remap_yaml:$PYTHONPATH
-./test-env-check.sh || fail "Failed Python environment checks."
-hash nc 2>/dev/null || fail "Netcat is not installed."
-# this is for rhel or centos systems
-echo "Environment config finished. Running AuTest..."
-exec uv run env \
-    HTTP_PROXY= HTTPS_PROXY= NO_PROXY= http_proxy= https_proxy= no_proxy= \
-    autest -D gold_tests "$@"
+tr = Test.AddTestRun("startup")
+p = tr.Processes.Default
+p.Command = "sh -c echo"
+p.ReturnCode = 0
+p.StartBefore(Test.Processes.ts)
+tr.StillRunningAfter = ts
