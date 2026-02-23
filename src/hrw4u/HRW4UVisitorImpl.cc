@@ -1220,7 +1220,7 @@ HRW4UVisitorImpl::process_comparison(hrw4uParser::ComparisonContext *ctx, bool n
   std::string op_text    = ctx->children[1]->getText();
   bool        is_negated = negated;
 
-  if (op_text == "!=" || op_text == "!~") {
+  if (op_text == "!=" || op_text == "!~" || op_text == "!") {
     is_negated = !is_negated;
   }
 
