@@ -154,6 +154,6 @@ namespace config
 ConfigContext
 make_config_reload_context(std::string_view description, std::string_view filename)
 {
-  return ReloadCoordinator::Get_Instance().create_config_context(description, filename);
+  return ReloadCoordinator::Get_Instance().create_config_context({}, description, filename);
 }
 } // namespace config

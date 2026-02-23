@@ -43,6 +43,7 @@ template <> struct convert<ConfigReloadTask::Info> {
     node["config_token"]         = info.token;
     node["status"]               = std::string(ConfigReloadTask::state_to_string(info.state));
     node["description"]          = info.description;
+    node["config_key"]           = info.config_key;
     node["filename"]             = info.filename;
     auto meta                    = YAML::Node(YAML::NodeType::Map);
     meta["created_time_ms"]      = info.created_time_ms;

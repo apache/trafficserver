@@ -49,8 +49,7 @@ struct ReloadWorkContinuation : public Continuation {
     Dbg(dbg_ctl_config, "Executing config reload work");
 
     if (current_task) {
-      Dbg(dbg_ctl_config, "Reload task token: %.*s", static_cast<int>(current_task->get_token().size()),
-          current_task->get_token().data());
+      Dbg(dbg_ctl_config, "Reload task token: %s", current_task->get_token().c_str());
     }
 
     // This will tell each changed file to reread itself. If some module is waiting

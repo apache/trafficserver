@@ -24,6 +24,8 @@
 #include "mgmt/config/ConfigReloadTrace.h"
 #include "mgmt/config/ConfigContext.h"
 #include "records/RecCore.h"
+
+#include <algorithm>
 #include "tsutil/Metrics.h"
 #include "tsutil/ts_time_parser.h"
 
@@ -97,9 +99,16 @@ void
 ConfigReloadTask::add_sub_task(ConfigReloadTaskPtr sub_task)
 {
   std::unique_lock<std::shared_mutex> lock(_mutex);
-  Dbg(dbg_ctl_config, "Adding subtask %.*s to task %s", static_cast<int>(sub_task->get_description().size()),
-      sub_task->get_description().data(), _info.description.c_str());
+  Dbg(dbg_ctl_config, "Adding subtask %s to task %s", sub_task->get_description().c_str(), _info.description.c_str());
   _info.sub_tasks.push_back(sub_task);
+}
+
+bool
+ConfigReloadTask::has_subtask_for_key(std::string_view key) const
+{
+  std::shared_lock<std::shared_mutex> lock(_mutex);
+  return std::any_of(_info.sub_tasks.begin(), _info.sub_tasks.end(),
+                     [&key](const auto &t) { return t->_info.config_key == key; }); // config_key is immutable once in sub_tasks
 }
 
 void
@@ -120,6 +129,7 @@ ConfigReloadTask::set_failed()
   this->set_state_and_notify(State::FAIL);
 }
 
+/// @note Main-task only. Does not call notify_parent() — do not call on subtasks.
 void
 ConfigReloadTask::mark_as_bad_state(std::string_view reason)
 {
@@ -292,17 +302,15 @@ ConfigReloadTask::start_progress_checker()
 int
 ConfigReloadProgress::check_progress(int /* etype */, void * /* data */)
 {
-  Dbg(dbg_ctl_config, "Checking progress for reload task %.*s - descr: %.*s",
-      _reload ? static_cast<int>(_reload->get_token().size()) : 4, _reload ? _reload->get_token().data() : "null",
-      _reload ? static_cast<int>(_reload->get_description().size()) : 4, _reload ? _reload->get_description().data() : "null");
+  Dbg(dbg_ctl_config, "Checking progress for reload task %s - descr: %s", _reload ? _reload->get_token().c_str() : "null",
+      _reload ? _reload->get_description().c_str() : "null");
   if (_reload == nullptr) {
     return EVENT_DONE;
   }
 
   auto const current_state = _reload->get_state();
   if (ConfigReloadTask::is_terminal(current_state)) {
-    Dbg(dbg_ctl_config, "Reload task %.*s is in %.*s state, stopping progress check.",
-        static_cast<int>(_reload->get_token().size()), _reload->get_token().data(),
+    Dbg(dbg_ctl_config, "Reload task %s is in %.*s state, stopping progress check.", _reload->get_token().c_str(),
         static_cast<int>(ConfigReloadTask::state_to_string(current_state).size()),
         ConfigReloadTask::state_to_string(current_state).data());
     return EVENT_DONE;
@@ -314,8 +322,8 @@ ConfigReloadProgress::check_progress(int /* etype */, void * /* data */)
 
   // Check if timeout is disabled (0ms means disabled)
   if (max_running_time.count() == 0) {
-    Dbg(dbg_ctl_config, "Timeout disabled - task %.*s will run indefinitely until completion or manual cancellation",
-        static_cast<int>(_reload->get_token().size()), _reload->get_token().data());
+    Dbg(dbg_ctl_config, "Timeout disabled - task %s will run indefinitely until completion or manual cancellation",
+        _reload->get_token().c_str());
     // Still reschedule to detect completion, but don't timeout
     eventProcessor.schedule_in(this, HRTIME_MSECONDS(_every.count()), ET_TASK);
     return EVENT_CONT;

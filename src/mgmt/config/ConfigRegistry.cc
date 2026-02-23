@@ -112,11 +112,21 @@ public:
     } else if (!entry->has_handler()) {
       Warning("Config '%s' has no handler", _config_key.c_str());
     } else {
-      // File reload: create context, invoke handler directly
-      auto ctx = ReloadCoordinator::Get_Instance().create_config_context(_config_key, entry->resolve_filename());
-      ctx.in_progress();
-      entry->handler(ctx);
-      Dbg(dbg_ctl, "Config '%s' file reload completed", _config_key.c_str());
+      auto ctx = ReloadCoordinator::Get_Instance().create_config_context(_config_key, _config_key, entry->resolve_filename());
+      if (!ctx) {
+        if (ReloadCoordinator::Get_Instance().is_reload_in_progress()) {
+          // True duplicate — same config key already handled in this reload cycle
+          Dbg(dbg_ctl, "Config '%s' reload skipped (duplicate in this reload cycle)", _config_key.c_str());
+        } else {
+          // Standalone record change (no active reload) — run handler directly
+          Dbg(dbg_ctl, "Config '%s' standalone record-triggered reload (no active reload task)", _config_key.c_str());
+          entry->handler(ctx);
+        }
+      } else {
+        ctx.in_progress();
+        entry->handler(ctx);
+        Dbg(dbg_ctl, "Config '%s' file reload completed", _config_key.c_str());
+      }
     }
 
     delete this;
@@ -128,10 +138,24 @@ private:
 };
 
 ///
-// Callback invoked by the Records system when a trigger record changes.
-// Only fires for records registered with ConfigRegistry (via trigger_records
-// in register_config()/register_record_config(), or via add_file_dependency()).
-//
+/// Callback invoked by the Records system when a trigger record changes.
+/// Only fires for records registered with ConfigRegistry (via trigger_records
+/// in register_config()/register_record_config(), or via add_file_dependency()).
+///
+/// Record-triggered reload: fan-in deduplication
+/// ──────────────────────────────────────────────
+/// When a config key has N trigger records (e.g., ssl_client_coordinator has 11),
+/// setup_triggers() registers an independent on_record_change callback for each.
+/// The Records system (RecExecConfigUpdateCbs) fires all record
+/// callbacks synchronously in one pass — N records produce N calls here, each
+/// scheduling its own RecordTriggeredReloadContinuation on ET_TASK.
+///
+/// All N continuations carry the same config_key and would invoke the same handler.
+/// The handler doesn't know which specific record triggered it — trigger records are
+/// an OR-set meaning "any of these changed → reconfigure this subsystem."
+///
+/// If different records need different handlers, register them under separate config keys.
+///
 int
 on_record_change(const char *name, RecDataT /* data_type */, RecData /* data */, void *cookie)
 {
@@ -426,7 +450,7 @@ ConfigRegistry::execute_reload(const std::string &key)
   // For rpc reload: use key as description, no filename (source: rpc)
   // For file reload: use key as description, filename indicates source: file
   std::string filename = passed_config.IsDefined() ? "" : entry_copy.resolve_filename();
-  auto        ctx      = ReloadCoordinator::Get_Instance().create_config_context(entry_copy.key, filename);
+  auto        ctx      = ReloadCoordinator::Get_Instance().create_config_context(entry_copy.key, entry_copy.key, filename);
   ctx.in_progress();
 
   if (passed_config.IsDefined()) {

@@ -100,6 +100,14 @@ public:
   ConfigContext(ConfigContext const &);
   ConfigContext &operator=(ConfigContext const &);
 
+  /// Check if this context wraps a live task.
+  /// Returns false for default-constructed or dedup-rejected contexts.
+  explicit
+  operator bool() const
+  {
+    return !_task.expired();
+  }
+
   void in_progress(std::string_view text = "");
   template <typename... Args>
   void

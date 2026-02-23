@@ -183,6 +183,7 @@ public:
     State                            state{State::CREATED};
     std::string                      token;
     std::string                      description;
+    std::string                      config_key;       ///< registry key for dedup (empty for main/child tasks)
     std::string                      filename;         ///< source file, if applicable
     std::vector<ConfigReloadTaskPtr> sub_tasks;        ///< child tasks (if any)
     bool                             main_task{false}; ///< true for the top-level reload task
@@ -240,6 +241,17 @@ public:
     return _info.filename;
   }
 
+  void
+  set_config_key(std::string_view key)
+  {
+    std::unique_lock<std::shared_mutex> lock(_mutex);
+    _info.config_key = key;
+  }
+
+  /// Check if any immediate subtask has the given config_key.
+  /// Used by ReloadCoordinator to prevent duplicate subtasks within a single reload cycle.
+  [[nodiscard]] bool has_subtask_for_key(std::string_view key) const;
+
   /// Debug utility: dump task tree to an output stream.
   /// Recursively prints this task and all sub-tasks with indentation.
 
@@ -250,7 +262,8 @@ public:
     return !_info.sub_tasks.empty();
   }
 
-  /// Get created time in seconds (for Date formatting and metrics)
+  /// Get created time in seconds (for Date formatting and metrics).
+  /// No lock needed — created_time_ms is immutable after construction.
   [[nodiscard]] std::time_t
   get_created_time() const
   {
@@ -258,7 +271,8 @@ public:
       std::chrono::duration_cast<std::chrono::seconds>(std::chrono::milliseconds{_info.created_time_ms}).count());
   }
 
-  /// Get created time in milliseconds since epoch
+  /// Get created time in milliseconds since epoch.
+  /// No lock needed — created_time_ms is immutable after construction.
   [[nodiscard]] int64_t
   get_created_time_ms() const
   {
@@ -282,7 +296,7 @@ public:
     return _info.logs;
   }
 
-  [[nodiscard]] std::string_view
+  [[nodiscard]] std::string
   get_token() const
   {
     std::shared_lock<std::shared_mutex> lock(_mutex);

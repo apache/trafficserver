@@ -62,21 +62,16 @@ public:
     return _current_task;
   }
 
-  [[nodiscard]] ConfigContext
-  create_config_context(std::string_view description = "", std::string_view filename = "")
-  {
-    std::unique_lock lock(_mutex);
-    if (!_current_task) {
-      // No active reload — return empty context
-      return ConfigContext{};
-    }
-    auto task =
-      std::make_shared<ConfigReloadTask>(_current_task->get_token(), description, false /*not a main reload job*/, _current_task);
-    _current_task->add_sub_task(task);
-
-    ConfigContext ctx{task, description, filename};
-    return ctx;
-  }
+  /// Create a sub-task context for the given config key.
+  ///
+  /// Deduplication: if a subtask with the same @a config_key already exists on the
+  /// current main task, returns an empty ConfigContext (operator bool() == false).
+  /// This prevents the same handler from running multiple times in a single reload
+  /// cycle when multiple trigger records map to the same config key.
+  ///
+  /// @see ConfigRegistry::setup_triggers() — N trigger records produce N callbacks.
+  [[nodiscard]] ConfigContext create_config_context(std::string_view config_key, std::string_view description = "",
+                                                    std::string_view filename = "");
 
   [[nodiscard]] bool is_reload_in_progress() const;
 
