@@ -273,7 +273,7 @@ RestrictCapabilities()
   cap_t caps_orig = cap_get_proc();
 
   // Capabilities we need.
-  cap_value_t      perm_list[]    = {CAP_NET_ADMIN, CAP_NET_BIND_SERVICE, CAP_IPC_LOCK, CAP_DAC_OVERRIDE, CAP_FOWNER};
+  cap_value_t      perm_list[]    = {CAP_NET_ADMIN, CAP_NET_BIND_SERVICE, CAP_IPC_LOCK, CAP_DAC_OVERRIDE, CAP_FOWNER, CAP_CHOWN};
   static int const PERM_CAP_COUNT = sizeof(perm_list) / sizeof(*perm_list);
   cap_value_t      eff_list[]     = {CAP_NET_ADMIN, CAP_NET_BIND_SERVICE, CAP_IPC_LOCK};
   static int const EFF_CAP_COUNT  = sizeof(eff_list) / sizeof(*eff_list);
