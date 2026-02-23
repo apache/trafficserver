@@ -658,6 +658,11 @@ AM_PROG_AS
 
 AX_COMPILER_VENDOR
 
+AC_MSG_CHECKING([for C compiler version])
+# Capture the output of the compiler version command
+ac_cv_c_compiler_version=`${CC} --version 2>&1 | grep "Apple clang version" | head -n 1 | awk '{print $4}' | cut -d'.' -f1`
+AC_MSG_RESULT([$ac_cv_c_compiler_version])
+
 AX_CC_FOR_BUILD
 
 CFLAGS="${_ts_saved_CFLAGS}"
@@ -848,6 +853,9 @@ AS_IF([test "x${has_optimizer_flags}" = "xno"],
         ]
 )
 
+AS_IF([test "x$ac_cv_c_compiler_version" = "x17"], [NO_WARN_CAST_FUNCTION_TYPE_MISMATCH="-Wno-cast-function-type-mismatch"], [NO_WARN_CAST_FUNCTION_TYPE_MISMATCH=""])
+AC_SUBST([NO_WARN_CAST_FUNCTION_TYPE_MISMATCH])
+
 case $host_os_def in
   linux)
     AS_IF([test "x$ax_cv_c_compiler_vendor" = "xintel"], [
@@ -885,7 +893,7 @@ case $host_os_def in
 
   darwin)
     AS_IF([test "x$ax_cv_c_compiler_vendor" = "xclang"], [
-      common_opt="-pipe -Wall -Wno-deprecated-declarations -Qunused-arguments -Wextra -Wno-ignored-qualifiers -Wno-unused-parameter"
+      common_opt="-pipe -Wall -Wno-deprecated-declarations -Qunused-arguments -Wextra -Wno-ignored-qualifiers -Wno-unused-parameter -Wno-vla-extension $NO_WARN_CAST_FUNCTION_TYPE_MISMATCH"
       debug_opt="-g $common_opt"
       release_opt="-g $common_opt $optimizing_flags -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
