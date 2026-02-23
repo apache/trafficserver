@@ -6591,8 +6591,16 @@ HttpSM::perform_cache_write_action()
     if (transform_info.entry == nullptr || t_state.api_info.cache_untransformed == true) {
       cache_sm.close_read();
       t_state.cache_info.write_status = HttpTransact::CacheWriteStatus_t::IN_PROGRESS;
-      setup_cache_write_transfer(&cache_sm, server_entry->vc, &t_state.cache_info.object_store, client_response_hdr_bytes,
-                                 "cache write");
+
+      // Decide how many header bytes the cache-write consumer should skip.
+      // When a transform is present, setup_server_transfer_to_transform()
+      // creates the tunnel buffer with hdr_size=0, so the buffer contains
+      // only body data - no response headers to skip.  When no transform is
+      // present, setup_server_transfer() writes the response header into the
+      // buffer, so skip_bytes must equal client_response_hdr_bytes.
+      int64_t cache_write_skip = (transform_info.entry == nullptr) ? client_response_hdr_bytes : 0;
+
+      setup_cache_write_transfer(&cache_sm, server_entry->vc, &t_state.cache_info.object_store, cache_write_skip, "cache write");
     } else {
       // We are not caching the untransformed.  We might want to
       //  use the cache writevc to cache the transformed copy
