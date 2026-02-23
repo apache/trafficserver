@@ -1,0 +1,187 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+#
+# This replay file tests cache_open_write_fail_action = 6 (READ_RETRY_STALE_ON_REVALIDATE)
+#
+# This is a smoke test that verifies:
+# 1. Action 6 is accepted by the configuration system
+# 2. Basic caching works correctly with action 6 enabled
+# 3. The system does not crash
+#
+# The stale fallback behavior (serving stale on read retry exhaustion) is
+# difficult to reliably test due to timing sensitivity. This test focuses
+# on verifying the feature is functional without causing instability.
+#
+
+meta:
+  version: "1.0"
+
+autest:
+  description: 'Test cache_open_write_fail_action = 6 (READ_RETRY with stale fallback) smoke test'
+  dns:
+    name: 'dns-read-retry-stale'
+
+  server:
+    name: 'origin-read-retry-stale'
+
+  client:
+    name: 'client-read-retry-stale'
+
+  ats:
+    name: 'ts-read-retry-stale'
+    process_config:
+      enable_cache: true
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http_cache'
+      # Enable READ_RETRY_STALE_ON_REVALIDATE mode (action 6)
+      proxy.config.http.cache.open_write_fail_action: 6
+      # Configure retry parameters
+      proxy.config.http.cache.max_open_write_retries: 1
+      proxy.config.http.cache.max_open_write_retry_timeout: 0
+      proxy.config.http.cache.max_open_read_retries: 3
+      proxy.config.http.cache.open_read_retry_time: 100
+      proxy.config.cache.enable_read_while_writer: 1
+      # Allow serving stale content
+      proxy.config.http.cache.max_stale_age: 300
+
+    remap_config:
+      - from: "http://example.com/"
+        to: "http://backend.example.com:{SERVER_HTTP_PORT}/"
+
+    log_validation:
+      traffic_out:
+        # Should NOT contain crash indicators
+        excludes:
+          - expression: "FATAL|ALERT|Emergency|ink_release_assert|ink_abort"
+            description: "Verify ATS does not crash with READ_RETRY_STALE mode enabled"
+
+sessions:
+  #############################################################################
+  # First session: Cache a normal object
+  #############################################################################
+  - transactions:
+      - client-request:
+          method: "GET"
+          version: "1.1"
+          url: /test-object
+          headers:
+            fields:
+              - [uuid, cache-prime]
+              - [Host, example.com]
+
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Content-Length, 100]
+              - [Cache-Control, "max-age=300"]
+              - [X-Response, cached-content]
+
+        proxy-response:
+          status: 200
+          headers:
+            fields:
+              - [X-Response, {value: 'cached-content', as: equal}]
+
+  #############################################################################
+  # Second session: Verify cache hit (action 6 doesn't break basic caching)
+  #############################################################################
+  - transactions:
+      - client-request:
+          delay: 500ms
+          method: "GET"
+          version: "1.1"
+          url: /test-object
+          headers:
+            fields:
+              - [uuid, cache-hit]
+              - [Host, example.com]
+
+        # Should NOT reach origin (cache hit)
+        server-response:
+          status: 500
+          reason: Should Not Reach
+          headers:
+            fields:
+              - [Content-Length, 100]
+              - [X-Response, should-not-reach]
+
+        # Should serve from cache
+        proxy-response:
+          status: 200
+          headers:
+            fields:
+              - [X-Response, {value: 'cached-content', as: equal}]
+
+  #############################################################################
+  # Third session: Test a different uncached object
+  #############################################################################
+  - transactions:
+      - client-request:
+          method: "GET"
+          version: "1.1"
+          url: /another-object
+          headers:
+            fields:
+              - [uuid, another-cache]
+              - [Host, example.com]
+
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Content-Length, 50]
+              - [Cache-Control, "max-age=300"]
+              - [X-Response, another-content]
+
+        proxy-response:
+          status: 200
+          headers:
+            fields:
+              - [X-Response, {value: 'another-content', as: equal}]
+
+  #############################################################################
+  # Fourth session: Verify second object cached
+  #############################################################################
+  - transactions:
+      - client-request:
+          delay: 500ms
+          method: "GET"
+          version: "1.1"
+          url: /another-object
+          headers:
+            fields:
+              - [uuid, another-hit]
+              - [Host, example.com]
+
+        server-response:
+          status: 500
+          reason: Should Not Reach
+          headers:
+            fields:
+              - [Content-Length, 100]
+              - [X-Response, should-not-reach]
+
+        proxy-response:
+          status: 200
+          headers:
+            fields:
+              - [X-Response, {value: 'another-content', as: equal}]
