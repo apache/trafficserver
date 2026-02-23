@@ -411,6 +411,7 @@ enum class CacheOpenWriteFailAction_t {
   ERROR_ON_MISS_STALE_ON_REVALIDATE = 0x03,
   ERROR_ON_MISS_OR_REVALIDATE       = 0x04,
   READ_RETRY                        = 0x05,
+  READ_RETRY_STALE_ON_REVALIDATE    = 0x06,
   TOTAL_TYPES
 };
 

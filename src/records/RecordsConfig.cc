@@ -610,13 +610,15 @@ static constexpr RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.http.cache.max_open_write_retry_timeout", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
-  //       #  open_write_fail_action has 3 options:
+  //       #  open_write_fail_action options:
   //       #
   //       #  0 - default. disable cache and goto origin
   //       #  1 - return error if cache miss
   //       #  2 - serve stale until proxy.config.http.cache.max_stale_age, then goto origin, if revalidate
   //       #  3 - return error if cache miss or serve stale until proxy.config.http.cache.max_stale_age, then goto origin, if revalidate
   //       #  4 - return error if cache miss or if revalidate
+  //       #  5 - retry cache read (read-while-writer) on write lock failure, goto origin if retries exhausted
+  //       #  6 - retry cache read on write lock failure, if retries exhausted serve stale if allowed, otherwise goto origin
   {RECT_CONFIG, "proxy.config.http.cache.open_write_fail_action", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
   //       #  when_to_revalidate has 4 options:
