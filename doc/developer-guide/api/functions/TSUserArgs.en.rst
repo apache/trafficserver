@@ -61,7 +61,8 @@ plugin can reserve a slot of a particular type by calling :func:`TSUserArgIndexR
    The type for which the plugin intend to reserve a slot. See :code:`TSUserArgType` above.
 
 :arg:`name`
-   An identifying name for the plugin that reserved the index. Required.
+   An unique and identifying name for the reserved slot index. A plugin registering
+   multiple slots (not recommended!) must make sure the identifier is unique.
 
 :arg:`description`
    An optional description of the use of the arg. This can be :code:`nullptr`.

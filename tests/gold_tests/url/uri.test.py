@@ -32,4 +32,4 @@ ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variable
 tr = Test.AddTestRun("Verify correct URI parsing behavior.")
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(ts)
-tr.AddVerifierClientProcess("client", replay_file, http_ports=[ts.Variables.port], other_args='--thread-limit 1')
+tr.AddVerifierClientProcess("client", replay_file, http_ports=[ts.Variables.port])

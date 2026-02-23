@@ -619,7 +619,7 @@ IOBufferReader::reset()
 //      inline functions definitions
 //
 ////////////////////////////////////////////////////////////////
-extern ClassAllocator<MIOBuffer> ioAllocator;
+extern ClassAllocator<MIOBuffer, false> ioAllocator;
 
 TS_INLINE
 MIOBuffer::MIOBuffer(int64_t default_size_index)
@@ -942,6 +942,10 @@ MIOBuffer::set(void *b, int64_t len)
 TS_INLINE void
 MIOBuffer::append_xmalloced(void *b, int64_t len)
 {
+  if (len == 0) {
+    return;
+  }
+
   IOBufferBlock *x = new_IOBufferBlock_internal(_location);
   x->set_internal(b, len, BUFFER_SIZE_INDEX_FOR_XMALLOC_SIZE(len));
   append_block_internal(x);

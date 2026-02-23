@@ -39,7 +39,7 @@ Value::~Value()
 }
 
 void
-Value::set_value(const std::string &val)
+Value::set_value(const std::string &val, Statement *owner)
 {
   _value = val;
 
@@ -56,8 +56,9 @@ Value::set_value(const std::string &val)
         if ((tcond_val = condition_factory(cond_token))) {
           Parser parser;
 
-          if (parser.parse_line(_value)) {
+          if (parser.parse_line(cond_token)) {
             tcond_val->initialize(parser);
+            require_resources(tcond_val->get_resource_ids());
           } else {
             // TODO: should we produce error here?
             Dbg(dbg_ctl, "Error parsing value '%s'", _value.c_str());
@@ -70,6 +71,11 @@ Value::set_value(const std::string &val)
       if (tcond_val) {
         _cond_vals.push_back(tcond_val);
       }
+    }
+
+    // If we have an owner (e.g. an Operator) hoist up the resource requirements
+    if (owner) {
+      owner->require_resources(get_resource_ids());
     }
   } else {
     _int_value   = strtol(_value.c_str(), nullptr, 10);

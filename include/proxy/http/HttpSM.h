@@ -186,7 +186,7 @@ class HttpSM : public Continuation, public PluginUserArgs<TS_USER_ARGS_TXN>
 
 public:
   HttpSM();
-  void         cleanup();
+  ~HttpSM() override;
   virtual void destroy();
 
   static HttpSM   *allocate();

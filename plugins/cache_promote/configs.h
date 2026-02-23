@@ -38,7 +38,14 @@ public:
 
   bool factory(int argc, char *argv[]);
 
+  bool
+  is_disabled_on_redirect()
+  {
+    return _disable_on_redirect;
+  }
+
 private:
   PromotionPolicy *_policy = nullptr;
   PolicyManager   *_manager;
+  bool             _disable_on_redirect = false;
 };

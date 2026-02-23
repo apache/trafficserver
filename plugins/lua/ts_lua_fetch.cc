@@ -298,6 +298,9 @@ ts_lua_fetch_one_item(lua_State *L, const char *url, size_t url_len, ts_lua_fetc
         case 'c':
           flags &= (~TS_FETCH_FLAGS_DECHUNK);
           break;
+        case 's':
+          flags |= (TS_FETCH_FLAGS_SKIP_REMAP);
+          break;
 
         default:
           break;

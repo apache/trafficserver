@@ -97,7 +97,10 @@ namespace
 {
 // Whether we should implement url_CryptoHash_get() using url_CryptoHash_get_fast(). Note that
 // url_CryptoHash_get_fast() does NOT produce the same result as url_CryptoHash_get_general().
-int url_hash_method = 0;
+constexpr int url_hash_method = 0;
+
+// Buffer size for url_CryptoHash_get() and url_CryptoHash_get_92().
+constexpr size_t BUFSIZE = 4096;
 
 DbgCtl dbg_ctl_http{"http"};
 DbgCtl dbg_ctl_url_cachekey{"url_cachekey"};
@@ -1716,8 +1719,6 @@ memcpy_tolower(char *d, const char *s, int n)
   }
 }
 
-#define BUFSIZE 4096
-
 // fast path for CryptoHash, HTTP, no user/password/params/query,
 // no buffer overflow, no unescaping needed
 
@@ -1864,7 +1865,7 @@ url_CryptoHash_get(const URLImpl *url, CryptoHash *hash, bool ignore_query, cach
   URLHashContext ctx;
   if ((url_hash_method != 0) && (url->m_url_type == URL_TYPE_HTTP) &&
       ((url->m_len_user + url->m_len_password + (ignore_query ? 0 : url->m_len_query)) == 0) &&
-      (3 + 1 + 1 + 1 + 1 + 1 + 2 + url->m_len_scheme + url->m_len_host + url->m_len_path < BUFSIZE) &&
+      (10u + url->m_len_scheme + url->m_len_host + url->m_len_path < BUFSIZE) &&
       (memchr(url->m_ptr_host, '%', url->m_len_host) == nullptr) && (memchr(url->m_ptr_path, '%', url->m_len_path) == nullptr)) {
     url_CryptoHash_get_fast(url, ctx, hash, generation);
 #ifdef DEBUG
@@ -1981,7 +1982,7 @@ url_CryptoHash_get_92(const URLImpl *url, CryptoHash *hash, bool ignore_query, c
   URLHashContext ctx;
   if ((url_hash_method != 0) && (url->m_url_type == URL_TYPE_HTTP) &&
       ((url->m_len_user + url->m_len_password + url->m_len_params + (ignore_query ? 0 : url->m_len_query)) == 0) &&
-      (3 + 1 + 1 + 1 + 1 + 1 + 2 + url->m_len_scheme + url->m_len_host + url->m_len_path < BUFSIZE) &&
+      (10u + url->m_len_scheme + url->m_len_host + url->m_len_path < BUFSIZE) &&
       (memchr(url->m_ptr_host, '%', url->m_len_host) == nullptr) && (memchr(url->m_ptr_path, '%', url->m_len_path) == nullptr)) {
     url_CryptoHash_get_fast(url, ctx, hash, generation);
 #ifdef DEBUG
@@ -1993,8 +1994,6 @@ url_CryptoHash_get_92(const URLImpl *url, CryptoHash *hash, bool ignore_query, c
     url_CryptoHash_get_general_92(url, ctx, *hash, ignore_query, generation);
   }
 }
-
-#undef BUFSIZE
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/

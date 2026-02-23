@@ -265,6 +265,8 @@ public:
   uint8_t       m_family = AF_INET;           ///< IP address family.
   /// True if proxy protocol is required on incoming requests.
   bool m_proxy_protocol = false;
+  /// True if the port should use the proxy protocol src address as the connection remote address
+  bool m_proxy_protocol_client_src = false;
   /// True if inbound connects (from client) are transparent.
   bool m_inbound_transparent_p = false;
   /// True if outbound connections (to origin servers) are transparent.
@@ -415,25 +417,26 @@ public:
   static const char *const DEFAULT_VALUE;
 
   // Keywords (lower case versions, but compares should be case insensitive)
-  static const char *const OPT_FD_PREFIX;               ///< Prefix for file descriptor value.
-  static const char *const OPT_OUTBOUND_IP_PREFIX;      ///< Prefix for inbound IP address.
-  static const char *const OPT_INBOUND_IP_PREFIX;       ///< Prefix for outbound IP address.
-  static const char *const OPT_IPV6;                    ///< IPv6.
-  static const char *const OPT_IPV4;                    ///< IPv4
-  static const char *const OPT_TRANSPARENT_INBOUND;     ///< Inbound transparent.
-  static const char *const OPT_TRANSPARENT_OUTBOUND;    ///< Outbound transparent.
-  static const char *const OPT_TRANSPARENT_FULL;        ///< Full transparency.
-  static const char *const OPT_TRANSPARENT_PASSTHROUGH; ///< Pass-through non-HTTP.
-  static const char *const OPT_ALLOW_PLAIN;             ///< Backup to plain HTTP.
-  static const char *const OPT_SSL;                     ///< SSL (experimental)
-  static const char *const OPT_QUIC;                    ///< QUIC (experimental)
-  static const char *const OPT_PROXY_PROTO;             ///< Proxy Protocol
-  static const char *const OPT_PLUGIN;                  ///< Protocol Plugin handle (experimental)
-  static const char *const OPT_BLIND_TUNNEL;            ///< Blind tunnel.
-  static const char *const OPT_COMPRESSED;              ///< Compressed.
-  static const char *const OPT_HOST_RES_PREFIX;         ///< Set DNS family preference.
-  static const char *const OPT_PROTO_PREFIX;            ///< Transport layer protocols.
-  static const char *const OPT_MPTCP;                   ///< MPTCP.
+  static const char *const OPT_FD_PREFIX;                 ///< Prefix for file descriptor value.
+  static const char *const OPT_OUTBOUND_IP_PREFIX;        ///< Prefix for inbound IP address.
+  static const char *const OPT_INBOUND_IP_PREFIX;         ///< Prefix for outbound IP address.
+  static const char *const OPT_IPV6;                      ///< IPv6.
+  static const char *const OPT_IPV4;                      ///< IPv4
+  static const char *const OPT_TRANSPARENT_INBOUND;       ///< Inbound transparent.
+  static const char *const OPT_TRANSPARENT_OUTBOUND;      ///< Outbound transparent.
+  static const char *const OPT_TRANSPARENT_FULL;          ///< Full transparency.
+  static const char *const OPT_TRANSPARENT_PASSTHROUGH;   ///< Pass-through non-HTTP.
+  static const char *const OPT_ALLOW_PLAIN;               ///< Backup to plain HTTP.
+  static const char *const OPT_SSL;                       ///< SSL (experimental)
+  static const char *const OPT_QUIC;                      ///< QUIC (experimental)
+  static const char *const OPT_PROXY_PROTO;               ///< Proxy Protocol
+  static const char *const OPT_PLUGIN;                    ///< Protocol Plugin handle (experimental)
+  static const char *const OPT_BLIND_TUNNEL;              ///< Blind tunnel.
+  static const char *const OPT_COMPRESSED;                ///< Compressed.
+  static const char *const OPT_HOST_RES_PREFIX;           ///< Set DNS family preference.
+  static const char *const OPT_PROTO_PREFIX;              ///< Transport layer protocols.
+  static const char *const OPT_MPTCP;                     ///< MPTCP.
+  static const char *const OPT_PROXY_PROTO_CLIENT_SRC_IP; ///< The Proxy protocol SRC IP address is used as the client's IP address
 
   static std::vector<self> &m_global; ///< Global ("default") data.
 

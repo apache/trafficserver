@@ -32,6 +32,7 @@
 #include "resources.h"
 #include "regex_helper.h"
 #include "lulu.h"
+#include "tsutil/Regex.h"
 
 // Possible operators that we support (at least partially)
 enum MatcherOps {
@@ -192,13 +193,10 @@ private:
   test_reg(const std::string &t, const Resources &res) const
   {
     Dbg(pi_dbg_ctl, "Test regular expression %s : %s (NOCASE = %d)", _data.c_str(), t.c_str(), static_cast<int>(_nocase));
-    int count = _reHelper.regexMatch(t.c_str(), t.length(), const_cast<Resources &>(res).ovector);
+    int count = res.match(_reHelper, t);
 
     if (count > 0) {
       Dbg(pi_dbg_ctl, "Successfully found regular expression match");
-      const_cast<Resources &>(res).ovector_ptr   = t.c_str();
-      const_cast<Resources &>(res).ovector_count = count;
-
       return true;
     }
 

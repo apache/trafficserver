@@ -85,21 +85,21 @@ int     cache_config_persist_bad_disks             = false;
 
 // Globals
 
-CacheStatsBlock                    cache_rsb;
-Cache                             *theCache                     = nullptr;
-CacheDisk                        **gdisks                       = nullptr;
-int                                gndisks                      = 0;
-Cache                             *caches[NUM_CACHE_FRAG_TYPES] = {nullptr};
-CacheSync                         *cacheDirSync                 = nullptr;
-Store                              theCacheStore;
-StripeSM                         **gstripes  = nullptr;
-std::atomic<int>                   gnstripes = 0;
-ClassAllocator<CacheVC>            cacheVConnectionAllocator("cacheVConnection");
-ClassAllocator<CacheEvacuateDocVC> cacheEvacuateDocVConnectionAllocator("cacheEvacuateDocVC");
-ClassAllocator<EvacuationBlock>    evacuationBlockAllocator("evacuationBlock");
-ClassAllocator<CacheRemoveCont>    cacheRemoveContAllocator("cacheRemoveCont");
-ClassAllocator<EvacuationKey>      evacuationKeyAllocator("evacuationKey");
-std::unordered_set<std::string>    known_bad_disks;
+CacheStatsBlock                           cache_rsb;
+Cache                                    *theCache                     = nullptr;
+CacheDisk                               **gdisks                       = nullptr;
+int                                       gndisks                      = 0;
+Cache                                    *caches[NUM_CACHE_FRAG_TYPES] = {nullptr};
+CacheSync                                *cacheDirSync                 = nullptr;
+Store                                     theCacheStore;
+StripeSM                                **gstripes  = nullptr;
+std::atomic<int>                          gnstripes = 0;
+ClassAllocator<CacheVC, false>            cacheVConnectionAllocator("cacheVConnection");
+ClassAllocator<CacheEvacuateDocVC, false> cacheEvacuateDocVConnectionAllocator("cacheEvacuateDocVC");
+ClassAllocator<EvacuationBlock, false>    evacuationBlockAllocator("evacuationBlock");
+ClassAllocator<CacheRemoveCont, false>    cacheRemoveContAllocator("cacheRemoveCont");
+ClassAllocator<EvacuationKey, false>      evacuationKeyAllocator("evacuationKey");
+std::unordered_set<std::string>           known_bad_disks;
 
 namespace
 {

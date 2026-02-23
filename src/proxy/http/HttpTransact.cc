@@ -1927,7 +1927,7 @@ HttpTransact::OSDNSLookup(State *s)
       SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
       if (!s->dns_info.record || s->dns_info.record->is_failed()) {
         // Set to internal server error so later logging will pick up SQUID_LOG_ERR_DNS_FAIL
-        build_error_response(s, HTTP_STATUS_INTERNAL_SERVER_ERROR, "Cannot find server.", "connect#dns_failed");
+        build_error_response(s, HTTP_STATUS_INTERNAL_SERVER_ERROR, "Cannot find server.", Dns_error_body);
         log_msg = "looking up";
       } else {
         build_error_response(s, HTTP_STATUS_INTERNAL_SERVER_ERROR, "No valid server.", "connect#all_down");
@@ -3749,6 +3749,20 @@ HttpTransact::handle_response_from_server(State *s)
   case CONNECTION_CLOSED:
   case BAD_INCOMING_RESPONSE:
 
+    // Ensure cause_of_death_errno is set for all error states if not already set.
+    // This prevents the assertion failure in retry_server_connection_not_open.
+    if (s->cause_of_death_errno == -UNKNOWN_INTERNAL_ERROR) {
+      if (s->current.state == PARSE_ERROR || s->current.state == BAD_INCOMING_RESPONSE) {
+        s->set_connect_fail(EBADMSG);
+      } else if (s->current.state == CONNECTION_CLOSED) {
+        s->set_connect_fail(EPIPE);
+      } else {
+        // Generic fallback for OPEN_RAW_ERROR, CONNECTION_ERROR,
+        // STATE_UNDEFINED, and any other unexpected error states.
+        s->set_connect_fail(EIO);
+      }
+    }
+
     if (is_server_negative_cached(s)) {
       max_connect_retries = s->txn_conf->connect_attempts_max_retries_down_server - 1;
     } else {
@@ -4342,6 +4356,9 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
         base_response->set_expires(exp_time);
 
         SET_VIA_STRING(VIA_CACHE_FILL_ACTION, VIA_CACHE_UPDATED);
+        SET_VIA_STRING(VIA_CACHE_RESULT, VIA_IN_CACHE_STALE);
+        // change VIA_SERVER_RESULT to ERROR because this status hit the negative_revalidating_list
+        SET_VIA_STRING(VIA_SERVER_RESULT, VIA_SERVER_ERROR);
         Metrics::Counter::increment(http_rsb.cache_updates);
 
         // unset Cache-control: "need-revalidate-once" (if it's set)
@@ -5727,11 +5744,7 @@ HttpTransact::initialize_state_variables_from_request(State *s, HTTPHdr *obsolet
   memset(&s->request_data.dest_ip, 0, sizeof(s->request_data.dest_ip));
   if (vc) {
     s->request_data.incoming_port = vc->get_local_port();
-    s->pp_info.version            = vc->get_proxy_protocol_version();
-    if (s->pp_info.version != ProxyProtocolVersion::UNDEFINED) {
-      ats_ip_copy(s->pp_info.src_addr, vc->get_proxy_protocol_src_addr());
-      ats_ip_copy(s->pp_info.dst_addr, vc->get_proxy_protocol_dst_addr());
-    }
+    s->pp_info                    = vc->get_proxy_protocol_info();
   }
   s->request_data.xact_start                      = s->client_request_time;
   s->request_data.api_info                        = &s->api_info;

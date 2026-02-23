@@ -125,6 +125,8 @@ public:
   int marshal_client_host_ip(char *);                // STR
   int marshal_host_interface_ip(char *);             // STR
   int marshal_client_host_port(char *);              // INT
+  int marshal_remote_host_ip(char *);                // STR
+  int marshal_remote_host_port(char *);              // STR
   int marshal_client_auth_user_name(char *);         // STR
   int marshal_client_req_timestamp_sec(char *);      // INT
   int marshal_client_req_timestamp_ms(char *);       // INT
@@ -330,12 +332,24 @@ public:
 
   static int unmarshal_record(char **buf, char *dest, int len);
 
-  //
-  // our own strlen function that pads strings to even int64_t boundaries
-  // so that there are no alignment problems with the int values.
-  //
-  static int round_strlen(int len);
-  static int strlen(const char *str);
+  /** Find the padded length of a given value for alignment purposes.
+   * @param[in] len The length from which to calculate the padded length.
+   * @return The padded length on an even int64_t boundary.
+   */
+  static int padded_length(int len);
+
+  /** strlen wrapped in @a padded_length for calculaing padded string lengths.
+   *
+   * This is our own version of strlen which takes into account nullptr input
+   * for DEFAULT_STR and adds space for the null terminator. After accounting
+   * for these, it passes the result to @a padded_length to ensure space for
+   * alignment.  This function is useful, for example, when calculating the
+   * length for @a marshal_str.
+   *
+   * @param[in] str The string from which to calculate the padded length.
+   * @return The padded length for the string on an even int64_t boundary.
+   */
+  static int padded_strlen(const char *str);
 
 public:
   static void marshal_int(char *dest, int64_t source);
@@ -385,25 +399,25 @@ private:
 };
 
 inline int
-LogAccess::round_strlen(int len)
+LogAccess::padded_length(int len)
 {
   return INK_ALIGN_DEFAULT(len);
 }
 
 /*-------------------------------------------------------------------------
-  LogAccess::strlen
+  LogAccess::padded_strlen
 
   Take trailing null and alignment padding into account.  This makes sure
   that strings in the LogBuffer are laid out properly.
   -------------------------------------------------------------------------*/
 
 inline int
-LogAccess::strlen(const char *str)
+LogAccess::padded_strlen(const char *str)
 {
   if (str == nullptr || str[0] == 0) {
-    return round_strlen(sizeof(DEFAULT_STR));
+    return padded_length(sizeof(DEFAULT_STR));
   } else {
-    return (int)(round_strlen(((int)::strlen(str) + 1))); // actual bytes for string
+    return (int)(padded_length(((int)::strlen(str) + 1))); // actual bytes for string
   }
 }
 

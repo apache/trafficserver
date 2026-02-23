@@ -51,7 +51,8 @@ tr = Test.AddTestRun()
 tr.TimeOut = 5
 tr.MakeCurlCommand(
     '-H "host: example.com" -H "transfer-encoding: gzip" -d "stuff" http://127.0.0.1:{0}/case1  --verbose'.format(
-        ts.Variables.port))
+        ts.Variables.port),
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(ts)
@@ -65,7 +66,8 @@ tr = Test.AddTestRun()
 tr.TimeOut = 5
 tr.MakeCurlCommand(
     '-H "host: example.com" -H "transfer-encoding: gzip" -H "transfer-encoding: chunked" -d "stuff" http://127.0.0.1:{0}/case1  --verbose'
-    .format(ts.Variables.port))
+    .format(ts.Variables.port),
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ContainsExpression("501 Field not implemented", "Should fail")
 tr.Processes.Default.Streams.All = Testers.ExcludesExpression("200 OK", "Should not succeed")
@@ -100,11 +102,7 @@ class HTTP10Test:
     def runChunkedTraffic(self):
         tr = Test.AddTestRun()
         tr.AddVerifierClientProcess(
-            "client1",
-            self.chunkedReplayFile,
-            http_ports=[self.ts.Variables.port],
-            https_ports=[self.ts.Variables.ssl_port],
-            other_args='--thread-limit 1')
+            "client1", self.chunkedReplayFile, http_ports=[self.ts.Variables.port], https_ports=[self.ts.Variables.ssl_port])
         tr.Processes.Default.StartBefore(self.server)
         tr.Processes.Default.StartBefore(self.ts)
         tr.StillRunningAfter = self.server
@@ -160,11 +158,7 @@ class MalformedChunkHeaderTest:
     def runChunkedTraffic(self):
         tr = Test.AddTestRun()
         tr.AddVerifierClientProcess(
-            "client2",
-            self.chunkedReplayFile,
-            http_ports=[self.ts.Variables.port],
-            https_ports=[self.ts.Variables.ssl_port],
-            other_args='--thread-limit 1')
+            "client2", self.chunkedReplayFile, http_ports=[self.ts.Variables.port], https_ports=[self.ts.Variables.ssl_port])
         tr.Processes.Default.StartBefore(self.server)
         tr.Processes.Default.StartBefore(self.ts)
         tr.StillRunningAfter = self.server

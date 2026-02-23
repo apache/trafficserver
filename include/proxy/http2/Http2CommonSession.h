@@ -60,7 +60,11 @@ enum class Http2SsnMilestone {
   LAST_ENTRY,
 };
 
+#if TS_USE_MALLOC_ALLOCATOR
+size_t const HTTP2_HEADER_BUFFER_SIZE_INDEX = BUFFER_SIZE_INDEX_FOR_XMALLOC_SIZE(4096);
+#else
 size_t const HTTP2_HEADER_BUFFER_SIZE_INDEX = BUFFER_SIZE_INDEX_4K;
+#endif
 
 /**
    @startuml

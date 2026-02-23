@@ -21,6 +21,7 @@
   limitations under the License.
  */
 
+#include "iocore/hostdb/HostDBProcessor.h"
 #include "swoc/swoc_file.h"
 #include "tscore/Regression.h"
 #include "tsutil/ts_bw_format.h"
@@ -71,7 +72,7 @@ static swoc::file::path hostdb_hostfile_path;
 int                     hostdb_disable_reverse_lookup = 0;
 int                     hostdb_max_iobuf_index        = BUFFER_SIZE_INDEX_32K;
 
-ClassAllocator<HostDBContinuation> hostDBContAllocator("hostDBContAllocator");
+ClassAllocator<HostDBContinuation, false> hostDBContAllocator("hostDBContAllocator");
 
 namespace
 {
@@ -829,20 +830,17 @@ HostDBContinuation::lookup_done(TextView query_name, ts_seconds answer_ttl, SRVH
   if (query_name.empty()) {
     if (hash.is_byname()) {
       Dbg(dbg_ctl_hostdb, "lookup_done() failed for '%.*s'", int(hash.host_name.size()), hash.host_name.data());
+      record->record_type = HostDBType::ADDR;
     } else if (hash.is_srv()) {
       Dbg(dbg_ctl_dns_srv, "SRV failed for '%.*s'", int(hash.host_name.size()), hash.host_name.data());
+      record->record_type = HostDBType::SRV;
     } else {
       ip_text_buffer b;
       Dbg(dbg_ctl_hostdb, "failed for %s", hash.ip.toString(b, sizeof b));
+      record->record_type = HostDBType::HOST;
     }
     record->ip_timestamp        = hostdb_current_timestamp;
     record->ip_timeout_interval = ts_seconds(std::clamp(hostdb_ip_fail_timeout_interval, 1u, HOST_DB_MAX_TTL));
-
-    if (hash.is_srv()) {
-      record->record_type = HostDBType::SRV;
-    } else if (!hash.is_byname()) {
-      record->record_type = HostDBType::HOST;
-    }
 
     record->set_failed();
 
@@ -874,6 +872,7 @@ HostDBContinuation::lookup_done(TextView query_name, ts_seconds answer_ttl, SRVH
 
     if (hash.is_byname()) {
       Dbg_bw(dbg_ctl_hostdb, "done {} TTL {}", hash.host_name, answer_ttl);
+      record->record_type = HostDBType::ADDR;
     } else if (hash.is_srv()) {
       ink_assert(srv && srv->hosts.size() && srv->hosts.size() <= hostdb_round_robin_max_count);
 

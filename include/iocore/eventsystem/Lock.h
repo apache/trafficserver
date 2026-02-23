@@ -247,7 +247,7 @@ public:
 };
 
 // The ClassAllocator for ProxyMutexes
-extern ClassAllocator<ProxyMutex> mutexAllocator;
+extern ClassAllocator<ProxyMutex, false> mutexAllocator;
 
 inline bool
 Mutex_trylock(

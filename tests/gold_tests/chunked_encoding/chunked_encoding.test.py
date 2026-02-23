@@ -99,29 +99,39 @@ Test.Setup.Copy(os.path.join(Test.Variables.AtsBuildGoldTestsDir, 'chunked_encod
 # HTTP1.1 GET: www.example.com
 tr = Test.AddTestRun()
 tr.TimeOut = 5
-tr.MakeCurlCommand('--http1.1 --proxy 127.0.0.1:{0} http://www.example.com  --verbose'.format(ts.Variables.port))
+if Condition.CurlUsingUnixDomainSocket():
+    tr.MakeCurlCommand('--http1.1 -H "Host: www.example.com" "http://127.0.0.1:{0}" --verbose'.format(ts.Variables.port), ts=ts)
+else:
+    tr.MakeCurlCommand('--http1.1 --proxy 127.0.0.1:{0} http://www.example.com --verbose'.format(ts.Variables.port), ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(server2)
 tr.Processes.Default.StartBefore(server3)
 # Delay on readiness of our ssl ports
 tr.Processes.Default.StartBefore(Test.Processes.ts)
-tr.Processes.Default.Streams.stderr = "gold/chunked_GET_200.gold"
+if Condition.CurlUsingUnixDomainSocket():
+    tr.Processes.Default.Streams.stderr = "gold/chunked_GET_200_uds.gold"
+else:
+    tr.Processes.Default.Streams.stderr = "gold/chunked_GET_200.gold"
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
 
-# HTTP2 POST: www.example.com Host, chunked body
-tr = Test.AddTestRun()
-tr.TimeOut = 5
-tr.MakeCurlCommand(
-    '--http2 -k https://127.0.0.1:{0} --verbose -H "Host: www.anotherexample.com" -d "Knock knock"'.format(ts.Variables.ssl_port))
-tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.Streams.stderr = "gold/h2_chunked_POST_200.gold"
+if not Condition.CurlUsingUnixDomainSocket():
+    # HTTP2 POST: www.example.com Host, chunked body
+    tr = Test.AddTestRun()
+    tr.TimeOut = 5
+    tr.MakeCurlCommand(
+        '--http2 -k https://127.0.0.1:{0} --verbose -H "Host: www.anotherexample.com" -d "Knock knock"'.format(
+            ts.Variables.ssl_port),
+        ts=ts)
+    tr.Processes.Default.ReturnCode = 0
+    tr.Processes.Default.Streams.stderr = "gold/h2_chunked_POST_200.gold"
 
 # HTTP1.1 POST: www.yetanotherexample.com Host, explicit size
 tr = Test.AddTestRun()
 tr.TimeOut = 5
-tr.MakeCurlCommand('http://127.0.0.1:{0} -H "Host: www.yetanotherexample.com" --verbose -d "knock knock"'.format(ts.Variables.port))
+tr.MakeCurlCommand(
+    'http://127.0.0.1:{0} -H "Host: www.yetanotherexample.com" --verbose -d "knock knock"'.format(ts.Variables.port), ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = "gold/chunked_POST_200.gold"
 tr.StillRunningAfter = server
@@ -131,7 +141,8 @@ tr = Test.AddTestRun()
 tr.TimeOut = 5
 tr.MakeCurlCommand(
     'http://127.0.0.1:{0} -H "Host: www.yetanotherexample.com" --verbose -H "Transfer-Encoding: chunked" -d "Knock knock"'.format(
-        ts.Variables.port))
+        ts.Variables.port),
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = "gold/chunked_POST_200.gold"
 tr.StillRunningAfter = server

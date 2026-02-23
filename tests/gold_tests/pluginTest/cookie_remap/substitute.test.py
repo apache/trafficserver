@@ -83,7 +83,8 @@ tr.MakeCurlCommand(
 -H"Cookie: fpbeta=abcd" \
 -H "Proxy-Connection: keep-alive" \
 --verbose \
-'''.format(ts.Variables.port))
+'''.format(ts.Variables.port),
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 tr.Processes.Default.StartBefore(Test.Processes.ts)
@@ -97,7 +98,8 @@ tr.MakeCurlCommand(
 -H"Cookie: oxalpha=3333" \
 -H "Proxy-Connection: keep-alive" \
 --verbose \
-'''.format(ts.Variables.port))
+'''.format(ts.Variables.port),
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
@@ -109,7 +111,8 @@ tr.MakeCurlCommand(
 -H"Cookie: acgamma=dfndfdfd" \
 -H "Proxy-Connection: keep-alive" \
 --verbose \
-'''.format(ts.Variables.port))
+'''.format(ts.Variables.port),
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
@@ -120,7 +123,8 @@ tr.MakeCurlCommand(
 "http://www.example.com/magic/foobar" \
 -H "Proxy-Connection: keep-alive" \
 --verbose \
-'''.format(ts.Variables.port))
+'''.format(ts.Variables.port),
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server

@@ -19,6 +19,7 @@
 Test.Summary = '''
 Test interaction of H2 and chunked encoding
 '''
+Test.SkipIf(Condition.CurlUsingUnixDomainSocket())
 
 Test.SkipUnless(
     Condition.HasProgram("nghttp", "Nghttp need to be installed on system for this test to work"),
@@ -83,7 +84,8 @@ tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server2)
 tr.MakeCurlCommand(
     '--http2 -k https://127.0.0.1:{}/post-full --verbose -H "Transfer-encoding: chunked" -d "Knock knock"'.format(
-        ts.Variables.ssl_port))
+        ts.Variables.ssl_port),
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ContainsExpression("HTTP/2 200", "Request should succeed")
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("< content-length:", "Response should include content length")
@@ -98,7 +100,8 @@ tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server3)
 tr.MakeCurlCommand(
     '--http2 -k https://127.0.0.1:{}/post-chunked --verbose -H "Transfer-encoding: chunked" -d "Knock knock"'.format(
-        ts.Variables.ssl_port))
+        ts.Variables.ssl_port),
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ContainsExpression("HTTP/2 200", "Request should succeed")
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("< content-length:", "Response should not include content length")

@@ -727,6 +727,7 @@ HTTP Engine
    ip-resolve   Value           IP address resolution style.
    proto        Value           List of supported session protocols.
    pp                           Enable Proxy Protocol.
+   pp-clnt                      Use the Proxy Protocol SRC IP as the client IP.
    ssl                          SSL terminated.
    quic                         QUIC terminated.
    tr-full                      Fully transparent (inbound and outbound)
@@ -780,7 +781,7 @@ proto
 
 pp
    Enables Proxy Protocol on the port.  If Proxy Protocol is enabled on the
-   port, all incoming requests must be prefaced with the PROXY header.  See
+   port, |TS| tries to parse the header first, and it falls back to the regular connection handling based on other keywords. See
    :ref:`Proxy Protocol <proxy-protocol>` for more details on how to configure
    this option properly.
 

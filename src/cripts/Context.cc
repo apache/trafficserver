@@ -69,6 +69,7 @@ Context::Factory(TSHttpTxn txn_ptr, TSHttpSsn ssn_ptr, TSRemapRequestInfo *rri_p
 void
 Context::Release()
 {
+  reset(); // Clear mloc handles before freeing
   THREAD_FREE(this, criptContextAllocator, this_thread());
 }
 

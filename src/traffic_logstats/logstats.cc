@@ -1369,19 +1369,19 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false, bool aggregate
         switch (*reinterpret_cast<int *>(read_from)) {
         case GET_AS_INT:
           method     = METHOD_GET;
-          read_from += LogAccess::round_strlen(3 + 1);
+          read_from += LogAccess::padded_length(3 + 1);
           break;
         case PUT_AS_INT:
           method     = METHOD_PUT;
-          read_from += LogAccess::round_strlen(3 + 1);
+          read_from += LogAccess::padded_length(3 + 1);
           break;
         case HEAD_AS_INT:
           method     = METHOD_HEAD;
-          read_from += LogAccess::round_strlen(4 + 1);
+          read_from += LogAccess::padded_length(4 + 1);
           break;
         case POST_AS_INT:
           method     = METHOD_POST;
-          read_from += LogAccess::round_strlen(4 + 1);
+          read_from += LogAccess::padded_length(4 + 1);
           break;
         default:
           tok_len = strlen(read_from);
@@ -1404,7 +1404,7 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false, bool aggregate
               flag = 1;
             }
           }
-          read_from += LogAccess::round_strlen(tok_len + 1);
+          read_from += LogAccess::padded_length(tok_len + 1);
           break;
         }
         break;
@@ -1454,7 +1454,7 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false, bool aggregate
           }
           tok_len = strlen(read_from);
         }
-        read_from += LogAccess::round_strlen(tok_len + 1);
+        read_from += LogAccess::padded_length(tok_len + 1);
         if (!aggregate_per_userid) {
           update_stats(o_stats, method, scheme, http_code, size, result, hier, elapsed, ipv6);
         }
@@ -1471,9 +1471,9 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false, bool aggregate
         }
 
         if ('-' == *read_from) {
-          read_from += LogAccess::round_strlen(1 + 1);
+          read_from += LogAccess::padded_length(1 + 1);
         } else {
-          read_from += LogAccess::strlen(read_from);
+          read_from += LogAccess::padded_strlen(read_from);
         }
         break;
 
@@ -1531,9 +1531,9 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false, bool aggregate
       case P_STATE_PEER:
         state = P_STATE_TYPE;
         if ('-' == *read_from) {
-          read_from += LogAccess::round_strlen(1 + 1);
+          read_from += LogAccess::padded_length(1 + 1);
         } else {
-          read_from += LogAccess::strlen(read_from);
+          read_from += LogAccess::padded_strlen(read_from);
         }
         break;
 
@@ -1746,7 +1746,7 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false, bool aggregate
             update_counter(o_stats->content.other, size);
           }
         }
-        read_from += LogAccess::round_strlen(tok_len + 1);
+        read_from += LogAccess::padded_length(tok_len + 1);
         flag       = 0; // We exited this state without errors
         break;
 

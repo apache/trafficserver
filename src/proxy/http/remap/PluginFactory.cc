@@ -104,16 +104,10 @@ PluginFactory::~PluginFactory()
   _instList.apply([](RemapPluginInst *pluginInst) -> void { delete pluginInst; });
   _instList.clear();
 
-  if (!TSSystemState::is_event_system_shut_down()) {
-    uint32_t elevate_access = 0;
-
-    REC_ReadConfigInteger(elevate_access, "proxy.config.plugin.load_elevated");
-    ElevateAccess access(elevate_access ? ElevateAccess::FILE_PRIVILEGE : 0);
-
-    fs::remove_all(_runtimeDir, _ec);
-  } else {
-    fs::remove_all(_runtimeDir, _ec); // Try anyways
-  }
+  // Don't delete _runtimeDir here - plugin DSOs may still be loaded in memory via dlopen handles.
+  // Deleting the .so files breaks debugging/symbol resolution. Obsolete .so files are cleaned up
+  // when the old plugin is unloaded (refcount drops to 0), leaving empty directories that are
+  // removed by cleanup() on next startup.
 
   PluginDbg(_dbg_ctl(), "destroyed plugin factory %s", getUuid());
   delete _uuid;

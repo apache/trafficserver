@@ -54,11 +54,11 @@ using swoc::TextView;
 static DFA *day_names_dfa   = nullptr;
 static DFA *month_names_dfa = nullptr;
 
-static const char *day_names[] = {
+static constexpr const char *day_names[] = {
   "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat",
 };
 
-static const char *month_names[] = {
+static constexpr const char *month_names[] = {
   "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 };
 
@@ -2684,8 +2684,8 @@ mime_hdr_describe(HdrHeapObjImpl *raw, bool recurse)
 void
 mime_field_block_describe(HdrHeapObjImpl *raw, bool /* recurse ATS_UNUSED */)
 {
-  unsigned int       i;
-  static const char *readiness_names[] = {"EMPTY", "DETACHED", "LIVE", "DELETED"};
+  unsigned int                 i;
+  static constexpr const char *readiness_names[] = {"EMPTY", "DETACHED", "LIVE", "DELETED"};
 
   MIMEFieldBlockImpl *obj = (MIMEFieldBlockImpl *)raw;
 
@@ -2935,7 +2935,7 @@ mime_format_int64(char *buf, int64_t val, size_t buf_len)
 void
 mime_days_since_epoch_to_mdy_slowcase(time_t days_since_jan_1_1970, int *m_return, int *d_return, int *y_return)
 {
-  static const int DAYS_OFFSET = 25508;
+  static constexpr int DAYS_OFFSET = 25508;
 
   static const char months[] = {
     2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,
@@ -2951,7 +2951,7 @@ mime_days_since_epoch_to_mdy_slowcase(time_t days_since_jan_1_1970, int *m_retur
     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  1,  1,
     1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1};
 
-  static const int days[12] = {305, 336, -1, 30, 60, 91, 121, 152, 183, 213, 244, 274};
+  static constexpr int days[12] = {305, 336, -1, 30, 60, 91, 121, 152, 183, 213, 244, 274};
 
   time_t mday, year, month, d, dp;
 
@@ -3023,12 +3023,12 @@ int
 mime_format_date(char *buffer, time_t value)
 {
   // must be 3 characters!
-  static const char *daystrs[] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
+  static constexpr const char *daystrs[] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
 
   // must be 3 characters!
-  static const char *monthstrs[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+  static constexpr const char *monthstrs[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
 
-  static const char *digitstrs[] = {
+  static constexpr const char *digitstrs[] = {
     "00", "01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19",
     "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33", "34", "35", "36", "37", "38", "39",
     "40", "41", "42", "43", "44", "45", "46", "47", "48", "49", "50", "51", "52", "53", "54", "55", "56", "57", "58", "59",
@@ -3420,8 +3420,8 @@ mime_parse_rfc822_date_fastcase(const char *buf, int length, struct tm *tp)
 time_t
 mime_parse_date(const char *buf, const char *end)
 {
-  static const int DAYS_OFFSET = 25508;
-  static const int days[12]    = {305, 336, -1, 30, 60, 91, 121, 152, 183, 213, 244, 274};
+  static constexpr int DAYS_OFFSET = 25508;
+  static constexpr int days[12]    = {305, 336, -1, 30, 60, 91, 121, 152, 183, 213, 244, 274};
 
   struct tm tp;
   time_t    t;

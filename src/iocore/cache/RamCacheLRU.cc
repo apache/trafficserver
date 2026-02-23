@@ -89,7 +89,7 @@ RamCacheLRU::size() const
   return s;
 }
 
-ClassAllocator<RamCacheLRUEntry> ramCacheLRUEntryAllocator("RamCacheLRUEntry");
+ClassAllocator<RamCacheLRUEntry, false> ramCacheLRUEntryAllocator("RamCacheLRUEntry");
 
 static const int bucket_sizes[] = {8191,    16381,   32749,    65521,    131071,   262139,    524287,    1048573,   2097143,
                                    4194301, 8388593, 16777213, 33554393, 67108859, 134217689, 268435399, 536870909, 1073741827};

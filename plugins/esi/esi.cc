@@ -822,8 +822,8 @@ transformData(TSCont contp)
     CONT_DATA_DBG(cont_data, "[%s] trying to process doc", __FUNCTION__);
     string                   out_data;
     string                   cdata;
-    int                      overall_len;
-    EsiProcessor::ReturnCode retval = cont_data->esi_proc->flush(out_data, overall_len);
+    int                      overall_len = 0;
+    EsiProcessor::ReturnCode retval      = cont_data->esi_proc->flush(out_data, overall_len);
 
     if ((cont_data->curr_state == ContData::FETCHING_DATA) && cont_data->data_fetcher->isFetchComplete()) {
       CONT_DATA_DBG(cont_data, "[%s] data ready; last process() will have finished the entire processing", __FUNCTION__);

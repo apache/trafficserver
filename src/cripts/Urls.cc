@@ -196,7 +196,7 @@ Url::Path::Reset()
   Component::Reset();
 
   _segments.clear();
-  _storage  = "";
+  _storage.clear();
   _size     = 0;
   _modified = false;
 }
@@ -228,6 +228,7 @@ Url::Path::_parser()
 Url::Query::Parameter &
 Url::Query::Parameter::operator=(const cripts::string_view str)
 {
+  CAssert(!_owner->_standalone);
   _ensure_initialized(_owner->_owner);
   CAssert(!_owner->_owner->ReadOnly()); // This can not be a read-only URL
   auto iter = _owner->_hashed.find(_name);
@@ -246,7 +247,9 @@ Url::Query::Parameter::operator=(const cripts::string_view str)
 cripts::string_view
 Url::Query::GetSV()
 {
-  _ensure_initialized(_owner);
+  if (!_standalone) {
+    _ensure_initialized(_owner);
+  }
   if (_ordered.size() > 0) {
     _storage.clear();
     _storage.reserve(_size);
@@ -290,6 +293,7 @@ Url::Query::GetSV()
 Url::Query
 Url::Query::operator=(cripts::string_view query)
 {
+  CAssert(!_standalone);
   _ensure_initialized(_owner);
   CAssert(!_owner->ReadOnly()); // This can not be a read-only URL
   TSUrlHttpQuerySet(_owner->_bufp, _owner->_urlp, query.data(), query.size());
@@ -317,8 +321,10 @@ Url::Query::operator+=(cripts::string_view add)
 Url::Query::Parameter
 Url::Query::operator[](cripts::string_view param)
 {
-  // Make sure the hash and vector are populated
-  _ensure_initialized(_owner);
+  // Make sure the hash and vector are populated, but only if we have an owner
+  if (!_standalone) {
+    _ensure_initialized(_owner);
+  }
   _parser();
 
   Parameter ret;
@@ -395,7 +401,7 @@ Url::Query::Reset()
 
   _ordered.clear();
   _hashed.clear();
-  _storage  = "";
+  _storage.clear();
   _size     = 0;
   _modified = false;
 }
@@ -460,11 +466,11 @@ Pristine::URL::_initialize()
 void
 Client::URL::_initialize()
 {
-  if (_context->rri) {
+  if (_context->rriValid()) {
+    super_type::_initialize();
     _bufp    = _context->rri->requestBufp;
     _hdr_loc = _context->rri->requestHdrp;
     _urlp    = _context->rri->requestUrl;
-    super_type::_initialize();
   } else {
     Client::Request &req = Client::Request::_get(_context); // Repurpose / create the shared request object
 
@@ -499,10 +505,14 @@ Client::URL::_update()
 void
 Remap::From::URL::_initialize()
 {
-  super_type::_initialize();
-  _bufp    = _context->rri->requestBufp;
-  _hdr_loc = _context->rri->requestHdrp;
-  _urlp    = _context->rri->mapFromUrl;
+  if (_context->rriValid()) {
+    super_type::_initialize();
+    _bufp    = _context->rri->requestBufp;
+    _hdr_loc = _context->rri->requestHdrp;
+    _urlp    = _context->rri->mapFromUrl;
+  } else {
+    _context->state.error.Fail();
+  }
 }
 
 Remap::From::URL &
@@ -515,11 +525,14 @@ Remap::From::URL::_get(cripts::Context *context)
 void
 Remap::To::URL::_initialize()
 {
-  super_type::_initialize();
-
-  _bufp    = _context->rri->requestBufp;
-  _hdr_loc = _context->rri->requestHdrp;
-  _urlp    = _context->rri->mapToUrl;
+  if (_context->rriValid()) {
+    super_type::_initialize();
+    _bufp    = _context->rri->requestBufp;
+    _hdr_loc = _context->rri->requestHdrp;
+    _urlp    = _context->rri->mapToUrl;
+  } else {
+    _context->state.error.Fail();
+  }
 }
 
 Remap::To::URL &

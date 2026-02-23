@@ -38,6 +38,7 @@
 #include "tscore/ink_inet.h"
 #include "tscore/ink_platform.h"
 #include "tscore/ink_sock.h"
+#include <sys/socket.h>
 
 #if TS_USE_HWLOC
 #include <hwloc.h>
@@ -229,7 +230,7 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
     goto Lerror;
   }
   REC_ReadConfigInteger(listen_per_thread, "proxy.config.exec_thread.listen");
-  if (listen_per_thread == 1) {
+  if (listen_per_thread == 1 && opt.ip_family != AF_UNIX) {
     if (sock.enable_option(SOL_SOCKET, SO_REUSEPORT) < 0) {
       goto Lerror;
     }
@@ -290,7 +291,11 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
   }
 
   if (opt.f_proxy_protocol) {
-    Dbg(dbg_ctl_proxyprotocol, "Proxy Protocol enabled.");
+    if (opt.f_proxy_protocol_client_src) {
+      Dbg(dbg_ctl_proxyprotocol, "Proxy Protocol enabled(Using src IP as remote IP).");
+    } else {
+      Dbg(dbg_ctl_proxyprotocol, "Proxy Protocol enabled.");
+    }
   }
 
 #if defined(TCP_MAXSEG)

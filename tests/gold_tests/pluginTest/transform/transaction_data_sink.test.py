@@ -79,11 +79,7 @@ class TransactionDataSyncTest:
         tr.Processes.Default.StartBefore(self.nameserver)
         tr.Processes.Default.StartBefore(self.ts)
         tr.AddVerifierClientProcess(
-            "client",
-            self.replay_file,
-            http_ports=[self.ts.Variables.port],
-            https_ports=[self.ts.Variables.ssl_port],
-            other_args='--thread-limit 1')
+            "client", self.replay_file, http_ports=[self.ts.Variables.port], https_ports=[self.ts.Variables.ssl_port])
 
 
 TransactionDataSyncTest().run()

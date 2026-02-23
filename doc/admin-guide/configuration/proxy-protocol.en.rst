@@ -56,6 +56,9 @@ By default, |TS| uses client's IP address that is from the peer when it applies 
 enable PROXY protocol and want to apply ACL against the IP address delivered by PROXY protocol, you need to have ``PROXY`` in
 :ts:cv:`proxy.config.acl.subjects`.
 
+If you specify the server_ports flag `pp-clnt` then the client IP address used for the
+transaction will be the one provided by proxy protocol.
+
 1. HTTP Forwarded Header
 
 The client IP address in the PROXY protocol header is passed to the origin server via an HTTP `Forwarded:

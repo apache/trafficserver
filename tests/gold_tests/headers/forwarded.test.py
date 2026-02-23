@@ -22,6 +22,7 @@ import os
 Test.Summary = '''
 Test FORWARDED header.
 '''
+Test.SkipIf(Condition.CurlUsingUnixDomainSocket())
 
 Test.SkipUnless(
     Condition.HasCurlFeature('http2'),
@@ -150,14 +151,14 @@ tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Po
 # Delay on readiness of our ssl ports
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 #
-tr.MakeCurlCommand('--verbose --ipv4 --http1.1 --proxy localhost:{} http://www.no-oride.com'.format(ts.Variables.port))
+tr.MakeCurlCommand('--verbose --ipv4 --http1.1 --proxy localhost:{} http://www.no-oride.com'.format(ts.Variables.port), ts=ts)
 tr.Processes.Default.ReturnCode = 0
 
 
 def TestHttp1_1(host):
 
     tr = Test.AddTestRun()
-    tr.MakeCurlCommand('--verbose --ipv4 --http1.1 --proxy localhost:{} http://{}'.format(ts.Variables.port, host))
+    tr.MakeCurlCommand('--verbose --ipv4 --http1.1 --proxy localhost:{} http://{}'.format(ts.Variables.port, host), ts=ts)
     tr.Processes.Default.ReturnCode = 0
 
 
@@ -200,7 +201,7 @@ tr = Test.AddTestRun()
 # Delay on readiness of our ssl ports
 tr.Processes.Default.StartBefore(Test.Processes.ts2)
 #
-tr.MakeCurlCommand('--verbose --ipv4 --http1.1 --proxy localhost:{} http://www.no-oride.com'.format(ts2.Variables.port))
+tr.MakeCurlCommand('--verbose --ipv4 --http1.1 --proxy localhost:{} http://www.no-oride.com'.format(ts2.Variables.port), ts=ts2)
 tr.Processes.Default.ReturnCode = 0
 
 # Call traffic_ctrl to set insert_forwarded
@@ -216,41 +217,45 @@ tr.Processes.Default.ReturnCode = 0
 tr = Test.AddTestRun()
 # Delay to give traffic_ctl config change time to take effect.
 tr.DelayStart = 15
-tr.MakeCurlCommand('--verbose --ipv4 --http1.1 --proxy localhost:{} http://www.no-oride.com'.format(ts2.Variables.port))
+tr.MakeCurlCommand('--verbose --ipv4 --http1.1 --proxy localhost:{} http://www.no-oride.com'.format(ts2.Variables.port), ts=ts2)
 tr.Processes.Default.ReturnCode = 0
 
 # HTTP 1.0
 tr = Test.AddTestRun()
-tr.MakeCurlCommand('--verbose --ipv4 --http1.0 --proxy localhost:{} http://www.no-oride.com'.format(ts2.Variables.port))
+tr.MakeCurlCommand('--verbose --ipv4 --http1.0 --proxy localhost:{} http://www.no-oride.com'.format(ts2.Variables.port), ts=ts2)
 tr.Processes.Default.ReturnCode = 0
 
 # HTTP 1.0 -- Forwarded headers already present
 tr = Test.AddTestRun()
 tr.MakeCurlCommand(
     "--verbose -H 'forwarded:for=0.6.6.6' -H 'forwarded:for=_argh' --ipv4 --http1.0" +
-    " --proxy localhost:{} http://www.no-oride.com".format(ts2.Variables.port))
+    " --proxy localhost:{} http://www.no-oride.com".format(ts2.Variables.port),
+    ts=ts2)
 tr.Processes.Default.ReturnCode = 0
 
 # HTTP 2
 tr = Test.AddTestRun()
 tr.MakeCurlCommand(
     '--verbose --ipv4 --http2 --insecure --header "Host: www.no-oride.com"' +
-    ' https://localhost:{}'.format(ts2.Variables.ssl_port))
+    ' https://localhost:{}'.format(ts2.Variables.ssl_port),
+    ts=ts2)
 tr.Processes.Default.ReturnCode = 0
 
 # TLS
 tr = Test.AddTestRun()
 tr.MakeCurlCommand(
-    '--verbose --ipv4 --http1.1 --insecure --header "Host: www.no-oride.com" https://localhost:{}'.format(ts2.Variables.ssl_port))
+    '--verbose --ipv4 --http1.1 --insecure --header "Host: www.no-oride.com" https://localhost:{}'.format(ts2.Variables.ssl_port),
+    ts=ts2)
 tr.Processes.Default.ReturnCode = 0
 
 # IPv6
 
 tr = Test.AddTestRun()
-tr.MakeCurlCommand('--verbose --ipv6 --http1.1 --proxy localhost:{} http://www.no-oride.com'.format(ts2.Variables.portv6))
+tr.MakeCurlCommand('--verbose --ipv6 --http1.1 --proxy localhost:{} http://www.no-oride.com'.format(ts2.Variables.portv6), ts=ts2)
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
 tr.MakeCurlCommand(
-    '--verbose --ipv6 --http1.1 --insecure --header "Host: www.no-oride.com" https://localhost:{}'.format(ts2.Variables.ssl_portv6))
+    '--verbose --ipv6 --http1.1 --insecure --header "Host: www.no-oride.com" https://localhost:{}'.format(ts2.Variables.ssl_portv6),
+    ts=ts2)
 tr.Processes.Default.ReturnCode = 0

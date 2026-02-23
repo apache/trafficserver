@@ -24,7 +24,7 @@
 #include "ts/apidefs.h"
 #include "ts/InkAPIPrivateIOCore.h"
 
-ClassAllocator<INKVConnInternal> INKVConnAllocator("INKVConnAllocator");
+ClassAllocator<INKVConnInternal, false> INKVConnAllocator("INKVConnAllocator");
 
 INKVConnInternal::INKVConnInternal() : INKContInternal(), m_read_vio(), m_write_vio(), m_output_vc(nullptr)
 {

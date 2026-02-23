@@ -17,6 +17,8 @@ Test the negative revalidating feature.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import os
+
 Test.Summary = '''
 Test the negative revalidating feature.
 '''
@@ -25,13 +27,16 @@ Test the negative revalidating feature.
 class NegativeRevalidatingTest:
     _test_num: int = 0
 
-    def __init__(self, name: str, records_config: dict, replay_file: str):
+    def __init__(self, name: str, records_config: dict, replay_file: str, gold_access_log=""):
         self._tr = Test.AddTestRun(name)
         self._replay_file = replay_file
 
         self.__setupOriginServer()
         self.__setupTS(records_config)
         self.__setupClient()
+
+        if gold_access_log:
+            self.__testAccessLog(gold_access_log)
 
         NegativeRevalidatingTest._test_num += 1
 
@@ -46,6 +51,20 @@ class NegativeRevalidatingTest:
         self._ts = Test.MakeATSProcess(f"ts-{NegativeRevalidatingTest._test_num}")
         self._ts.Disk.records_config.update(records_config)
         self._ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(self._server.Variables.http_port))
+        self._ts.Disk.logging_yaml.AddLines(
+            '''
+logging:
+    formats:
+        - name: access
+          format: '%<{uuid}cqh> %<crc> %<pssc> %<sssc>'
+    logs:
+        - filename: access
+          format: access
+          mode: ascii
+'''.split("\n"))
+
+    def __testAccessLog(self, gold_access_log):
+        Test.Disk.File(os.path.join(self._ts.Variables.LOGDIR, 'access.log'), exists=True, content=gold_access_log)
 
     def run(self):
         self._tr.Processes.Default.StartBefore(self._ts)
@@ -81,7 +100,8 @@ NegativeRevalidatingTest(
         # 'proxy.config.http.negative_revalidating_enabled': 1,
         'proxy.config.http.cache.max_stale_age': 6
     },
-    "replay/negative-revalidating-enabled.replay.yaml").run()
+    "replay/negative-revalidating-enabled.replay.yaml",
+    "gold/negative-revalidating-enabled-access.gold").run()
 
 #
 # Verify negative_revalidating list behavior.

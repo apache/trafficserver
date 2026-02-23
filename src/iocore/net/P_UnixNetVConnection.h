@@ -261,7 +261,7 @@ private:
   std::shared_ptr<ConnectionTracker::Group> conn_track_group;
 };
 
-extern ClassAllocator<UnixNetVConnection> netVCAllocator;
+extern ClassAllocator<UnixNetVConnection, false> netVCAllocator;
 
 using NetVConnHandler = int (UnixNetVConnection::*)(int, void *);
 

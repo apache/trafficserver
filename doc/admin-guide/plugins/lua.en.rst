@@ -3666,11 +3666,13 @@ We can set the optional table with several members:
 
 ``cliaddr`` holds the request client address in ip:port form. The default cliaddr is '127.0.0.1:33333'
 
-Issuing a post request:
+``option`` holds request options. 'c' is to not dechunk chunked content, 's' is to skip remap config and go direct.
+
+Issuing a direct post request:
 
 ::
 
-    res = ts.fetch('http://xx.com/foo', {method = 'POST', body = 'hello world'})
+    res = ts.fetch('http://xx.com/foo', {method = 'POST', body = 'hello world', option = 's' })
 
 :ref:`TOP <admin-plugins-ts-lua>`
 

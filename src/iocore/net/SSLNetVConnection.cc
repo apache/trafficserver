@@ -23,6 +23,7 @@
 
 #include "BIO_fastopen.h"
 #include "P_UnixNet.h"
+#include "P_UnixNetVConnection.h"
 #include "SSLStats.h"
 #include "P_Net.h"
 #include "P_SSLUtils.h"
@@ -36,6 +37,7 @@
 #include "iocore/net/ProxyProtocol.h"
 #include "iocore/net/SSLDiags.h"
 #include "iocore/net/SSLSNIConfig.h"
+#include "iocore/net/SSLTypes.h"
 #include "iocore/net/TLSALPNSupport.h"
 #include "tscore/ink_config.h"
 #include "tscore/Layout.h"
@@ -72,7 +74,7 @@ using namespace std::literals;
 #define SSL_WAIT_FOR_ASYNC         12
 #define SSL_RESTART                13
 
-ClassAllocator<SSLNetVConnection> sslNetVCAllocator("sslNetVCAllocator");
+ClassAllocator<SSLNetVConnection, false> sslNetVCAllocator("sslNetVCAllocator");
 
 namespace
 {
@@ -354,10 +356,8 @@ SSLNetVConnection::read_raw_data()
       if (pp_ipmap->count() > 0) {
         Dbg(dbg_ctl_proxyprotocol, "proxy protocol has a configured allowlist of trusted IPs - checking");
 
-        // At this point, using get_remote_addr() will return the ip of the
-        // proxy source IP, not the Proxy Protocol client ip. Since we are
-        // checking the ip of the actual source of this connection, this is
-        // what we want now.
+        // Using get_remote_addr() will return the ip of the
+        // proxy source IP, not the Proxy Protocol client ip.
         if (!pp_ipmap->contains(swoc::IPAddr(get_remote_addr()))) {
           Dbg(dbg_ctl_proxyprotocol, "Source IP is NOT in the configured allowlist of trusted IPs - closing connection");
           r = -ENOTCONN; // Need a quick close/exit here to refuse the connection!!!!!!!!!
@@ -895,6 +895,51 @@ SSLNetVConnection::do_io_close(int lerrno)
   }
   // Go on and do the unix socket cleanups
   super::do_io_close(lerrno);
+}
+
+void
+SSLNetVConnection::do_io_shutdown(ShutdownHowTo_t howto)
+{
+  if (get_tunnel_type() == SNIRoutingType::BLIND) {
+    // we don't have TLS layer control of blind tunnel
+    UnixNetVConnection::do_io_shutdown(howto);
+    return;
+  }
+
+  switch (howto) {
+  case IO_SHUTDOWN_READ:
+    // No need to call SSL API
+    //   SSL_shutdown() sends the close_notify alert to the peer and it only closes the write direction.
+    //   The read direction will be closed by the peer.
+    read.enabled = 0;
+    read.vio.buffer.clear();
+    read.vio.nbytes  = 0;
+    read.vio.cont    = nullptr;
+    f.shutdown      |= NetEvent::SHUTDOWN_READ;
+    break;
+  case IO_SHUTDOWN_WRITE:
+    SSL_shutdown(ssl);
+    write.enabled = 0;
+    write.vio.buffer.clear();
+    write.vio.nbytes  = 0;
+    write.vio.cont    = nullptr;
+    f.shutdown       |= NetEvent::SHUTDOWN_WRITE;
+    break;
+  case IO_SHUTDOWN_READWRITE:
+    SSL_shutdown(ssl);
+    read.enabled  = 0;
+    write.enabled = 0;
+    read.vio.buffer.clear();
+    read.vio.nbytes = 0;
+    write.vio.buffer.clear();
+    write.vio.nbytes = 0;
+    read.vio.cont    = nullptr;
+    write.vio.cont   = nullptr;
+    f.shutdown       = NetEvent::SHUTDOWN_READ | NetEvent::SHUTDOWN_WRITE;
+    break;
+  default:
+    ink_assert(!"not reached");
+  }
 }
 
 void

@@ -114,16 +114,24 @@ class conf_remap_yaml_load_test:
             self._ts.Disk.remap_config.AddLine(
                 f'map http://www.testexample.com/ http://127.0.0.1:{self._server.Variables.Port} @plugin=conf_remap.so @pparam={self._remap_filename}'
             )
-
-        tr.MakeCurlCommand(
-            '--proxy 127.0.0.1:{0} "http://www.testexample.com/test" -H "Host: www.testexample.com" --verbose'.format(
-                self._ts.Variables.port))
+        if Condition.CurlUsingUnixDomainSocket():
+            tr.MakeCurlCommand(
+                '-H "Host: www.testexample.com" "http://127.0.0.1:{0}/test" --verbose'.format(self._ts.Variables.port), ts=self._ts)
+        else:
+            tr.MakeCurlCommand(
+                '--proxy 127.0.0.1:{0} "http://www.testexample.com/test" -H "Host: www.testexample.com" --verbose'.format(
+                    self._ts.Variables.port),
+                ts=self._ts)
         conf_remap_yaml_load_test.client_counter += 1
 
 
+gold_file = "gold/200OK_test.gold"
+if Condition.CurlUsingUnixDomainSocket():
+    gold_file = "gold/200OK_test_uds.gold"
+
 test0 = conf_remap_yaml_load_test(
     "Test success",
-    gold_file="gold/200OK_test.gold",
+    gold_file=gold_file,
     remap_filename="testexample_remap.yaml",
     remap_content='''
     records:
@@ -158,7 +166,7 @@ test2.run(
 # We let the conf_remap parse two fields, only one is valid, we expect ATS to start and the invalid fields ignored.
 test3 = conf_remap_yaml_load_test(
     "Test success",
-    gold_file="gold/200OK_test.gold",
+    gold_file=gold_file,
     remap_filename="testexample2_remap.yaml",
     remap_content='''
     records:
@@ -173,7 +181,7 @@ test3.run(diags_fail_exp="'proxy.config.plugin.dynamic_reload_mode' is not a con
 # Check null values
 test4 = conf_remap_yaml_load_test(
     "Test success - with NULL variable",
-    gold_file="gold/200OK_test.gold",
+    gold_file=gold_file,
     remap_filename="testexample_remap.yaml",
     remap_content='''
     records:

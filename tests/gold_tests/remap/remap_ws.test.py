@@ -53,23 +53,29 @@ ts.Disk.remap_config.AddLines(
 
 ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
 
-# wss mapping
-tr = Test.AddTestRun()
-tr.Processes.Default.StartBefore(server)
-tr.Processes.Default.StartBefore(Test.Processes.ts, ready=1)
-tr.MakeCurlCommand(
-    '--max-time 2 -v -s -q -H "Connection: Upgrade" -H "Upgrade: websocket" -H "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==" -H "Sec-WebSocket-Version: 13" --http1.1 --resolve www.example.com:{0}:127.0.0.1 -k https://www.example.com:{0}/chat'
-    .format(ts.Variables.ssl_port))
-tr.Processes.Default.ReturnCode = 28
-tr.Processes.Default.Streams.stderr = "gold/remap-ws-upgrade.gold"
-tr.StillRunningAfter = server
-tr.StillRunningAfter = ts
+if not Condition.CurlUsingUnixDomainSocket():
+    # wss mapping
+    tr = Test.AddTestRun()
+    tr.Processes.Default.StartBefore(server)
+    tr.Processes.Default.StartBefore(Test.Processes.ts, ready=1)
+    tr.MakeCurlCommand(
+        '--max-time 2 -v -s -q -H "Connection: Upgrade" -H "Upgrade: websocket" -H "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==" -H "Sec-WebSocket-Version: 13" --http1.1 --resolve www.example.com:{0}:127.0.0.1 -k https://www.example.com:{0}/chat'
+        .format(ts.Variables.ssl_port),
+        ts=ts)
+    tr.Processes.Default.ReturnCode = 28
+    tr.Processes.Default.Streams.stderr = "gold/remap-ws-upgrade.gold"
+    tr.StillRunningAfter = server
+    tr.StillRunningAfter = ts
 
 # ws mapping
 tr = Test.AddTestRun()
+if Condition.CurlUsingUnixDomainSocket():
+    tr.Processes.Default.StartBefore(server)
+    tr.Processes.Default.StartBefore(Test.Processes.ts, ready=1)
 tr.MakeCurlCommand(
     '--max-time 2 -v -s -q -H "Connection: Upgrade" -H "Upgrade: websocket" -H "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==" -H "Sec-WebSocket-Version: 13" --http1.1 --resolve www.example.com:{0}:127.0.0.1 -k http://www.example.com:{0}/chat'
-    .format(ts.Variables.port))
+    .format(ts.Variables.port),
+    ts=ts)
 tr.Processes.Default.ReturnCode = 28
 tr.Processes.Default.Streams.stderr = "gold/remap-ws-upgrade.gold"
 tr.StillRunningAfter = server
@@ -79,7 +85,8 @@ tr.StillRunningAfter = ts
 tr = Test.AddTestRun()
 tr.MakeCurlCommand(
     '--max-time 2 -v -s -q -H "Connection: Upgrade" -H "Upgrade: websocket" --http1.1 --resolve www.example.com:{0}:127.0.0.1 -k http://www.example.com:{0}/chat'
-    .format(ts.Variables.port))
+    .format(ts.Variables.port),
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = "gold/remap-ws-upgrade-400.gold"
 tr.StillRunningAfter = server

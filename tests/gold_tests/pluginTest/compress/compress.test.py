@@ -133,7 +133,7 @@ for i in range(3):
     waitForServer = False
     tr.Processes.Default.ReturnCode = 0
     out_path = get_out_path()
-    tr.MakeCurlCommand(curl(ts, i, 'gzip, deflate, sdch, br', out_path))
+    tr.MakeCurlCommand(curl(ts, i, 'gzip, deflate, sdch, br', out_path), ts=ts)
     tr = Test.AddTestRun(f'verify gzip, deflate, sdch, br: {i}')
     tr.ReturnCode = 0
     if i == 0:
@@ -146,7 +146,7 @@ for i in range(3):
     tr = Test.AddTestRun(f'gzip: {i}')
     tr.Processes.Default.ReturnCode = 0
     out_path = get_out_path()
-    tr.MakeCurlCommand(curl(ts, i, "gzip", out_path))
+    tr.MakeCurlCommand(curl(ts, i, "gzip", out_path), ts=ts)
     tr = Test.AddTestRun(f'verify gzip: {i}')
     tr.ReturnCode = 0
     tr.Processes.Default.Command = get_verify_command(out_path, "gunzip -k")
@@ -154,7 +154,7 @@ for i in range(3):
     tr = Test.AddTestRun(f'br: {i}')
     tr.Processes.Default.ReturnCode = 0
     out_path = get_out_path()
-    tr.MakeCurlCommand(curl(ts, i, "br", out_path))
+    tr.MakeCurlCommand(curl(ts, i, "br", out_path), ts=ts)
     tr = Test.AddTestRun(f'verify br: {i}')
     tr.ReturnCode = 0
     if i == 1:
@@ -165,7 +165,7 @@ for i in range(3):
     tr = Test.AddTestRun(f'deflate: {i}')
     tr.Processes.Default.ReturnCode = 0
     out_path = get_out_path()
-    tr.MakeCurlCommand(curl(ts, i, "deflate", out_path))
+    tr.MakeCurlCommand(curl(ts, i, "deflate", out_path), ts=ts)
     tr = Test.AddTestRun(f'verify deflate: {i}')
     tr.ReturnCode = 0
     tr.Processes.Default.Command = f"diff {out_path} {orig_path}"
@@ -175,7 +175,7 @@ for i in range(3):
 tr = Test.AddTestRun()
 tr.Processes.Default.ReturnCode = 0
 out_path = get_out_path()
-tr.MakeCurlCommand(curl(ts, 0, "gzip;q=0.666", out_path))
+tr.MakeCurlCommand(curl(ts, 0, "gzip;q=0.666", out_path), ts=ts)
 tr = Test.AddTestRun(f'verify gzip;q=0.666')
 tr.ReturnCode = 0
 tr.Processes.Default.Command = get_verify_command(out_path, "gunzip -k")
@@ -183,7 +183,7 @@ tr.Processes.Default.Command = get_verify_command(out_path, "gunzip -k")
 tr = Test.AddTestRun()
 tr.Processes.Default.ReturnCode = 0
 out_path = get_out_path()
-tr.MakeCurlCommand(curl(ts, 0, "gzip;q=0.666x", out_path))
+tr.MakeCurlCommand(curl(ts, 0, "gzip;q=0.666x", out_path), ts=ts)
 tr = Test.AddTestRun(f'verify gzip;q=0.666x')
 tr.ReturnCode = 0
 tr.Processes.Default.Command = get_verify_command(out_path, "gunzip -k")
@@ -191,7 +191,7 @@ tr.Processes.Default.Command = get_verify_command(out_path, "gunzip -k")
 tr = Test.AddTestRun()
 tr.Processes.Default.ReturnCode = 0
 out_path = get_out_path()
-tr.MakeCurlCommand(curl(ts, 0, "gzip;q=#0.666", out_path))
+tr.MakeCurlCommand(curl(ts, 0, "gzip;q=#0.666", out_path), ts=ts)
 tr = Test.AddTestRun(f'verify gzip;q=#0.666')
 tr.ReturnCode = 0
 tr.Processes.Default.Command = get_verify_command(out_path, "gunzip -k")
@@ -199,7 +199,7 @@ tr.Processes.Default.Command = get_verify_command(out_path, "gunzip -k")
 tr = Test.AddTestRun()
 tr.Processes.Default.ReturnCode = 0
 out_path = get_out_path()
-tr.MakeCurlCommand(curl(ts, 0, "gzip; Q = 0.666", out_path))
+tr.MakeCurlCommand(curl(ts, 0, "gzip; Q = 0.666", out_path), ts=ts)
 tr = Test.AddTestRun(f'verify gzip; Q = 0.666')
 tr.ReturnCode = 0
 tr.Processes.Default.Command = get_verify_command(out_path, "gunzip -k")
@@ -207,7 +207,7 @@ tr.Processes.Default.Command = get_verify_command(out_path, "gunzip -k")
 tr = Test.AddTestRun()
 tr.Processes.Default.ReturnCode = 0
 out_path = get_out_path()
-tr.MakeCurlCommand(curl(ts, 0, "gzip;q=0.0", out_path))
+tr.MakeCurlCommand(curl(ts, 0, "gzip;q=0.0", out_path), ts=ts)
 tr = Test.AddTestRun(f'verify gzip;q=0.0')
 tr.ReturnCode = 0
 tr.Processes.Default.Command = f"diff {out_path} {orig_path}"
@@ -215,7 +215,7 @@ tr.Processes.Default.Command = f"diff {out_path} {orig_path}"
 tr = Test.AddTestRun()
 tr.Processes.Default.ReturnCode = 0
 out_path = get_out_path()
-tr.MakeCurlCommand(curl(ts, 0, "gzip;q=-0.1", out_path))
+tr.MakeCurlCommand(curl(ts, 0, "gzip;q=-0.1", out_path), ts=ts)
 tr = Test.AddTestRun(f'verify gzip;q=-0.1')
 tr.ReturnCode = 0
 tr.Processes.Default.Command = get_verify_command(out_path, "gunzip -k")
@@ -223,7 +223,7 @@ tr.Processes.Default.Command = get_verify_command(out_path, "gunzip -k")
 tr = Test.AddTestRun()
 tr.Processes.Default.ReturnCode = 0
 out_path = get_out_path()
-tr.MakeCurlCommand(curl(ts, 0, "aaa, gzip;q=0.666, bbb", out_path))
+tr.MakeCurlCommand(curl(ts, 0, "aaa, gzip;q=0.666, bbb", out_path), ts=ts)
 tr = Test.AddTestRun(f'verify aaa, gzip;q=0.666, bbb')
 tr.ReturnCode = 0
 tr.Processes.Default.Command = get_verify_command(out_path, "gunzip -k")
@@ -231,7 +231,7 @@ tr.Processes.Default.Command = get_verify_command(out_path, "gunzip -k")
 tr = Test.AddTestRun()
 tr.Processes.Default.ReturnCode = 0
 out_path = get_out_path()
-tr.MakeCurlCommand(curl(ts, 0, " br ; q=0.666, bbb", out_path))
+tr.MakeCurlCommand(curl(ts, 0, " br ; q=0.666, bbb", out_path), ts=ts)
 tr = Test.AddTestRun(f'verify br ; q=0.666, bbb')
 tr.ReturnCode = 0
 tr.Processes.Default.Command = get_verify_command(out_path, "brotli -d")
@@ -239,7 +239,7 @@ tr.Processes.Default.Command = get_verify_command(out_path, "brotli -d")
 tr = Test.AddTestRun()
 tr.Processes.Default.ReturnCode = 0
 out_path = get_out_path()
-tr.MakeCurlCommand(curl(ts, 0, "aaa, gzip;q=0.666 , ", out_path))
+tr.MakeCurlCommand(curl(ts, 0, "aaa, gzip;q=0.666 , ", out_path), ts=ts)
 tr = Test.AddTestRun(f'verify aaa, gzip;q=0.666 , ')
 tr.ReturnCode = 0
 tr.Processes.Default.Command = get_verify_command(out_path, "gunzip -k")
@@ -248,10 +248,35 @@ tr.Processes.Default.Command = get_verify_command(out_path, "gunzip -k")
 tr = Test.AddTestRun()
 tr.Processes.Default.ReturnCode = 0
 out_path = get_out_path()
-tr.MakeCurlCommand(curl_post(ts, 3, "gzip", out_path))
+tr.MakeCurlCommand(curl_post(ts, 3, "gzip", out_path), ts=ts)
 tr = Test.AddTestRun(f'verify gzip post')
 tr.ReturnCode = 0
 tr.Processes.Default.Command = get_verify_command(out_path, "gunzip -k")
+
+# Test Vary header: compressible content without Accept-Encoding should get Vary: Accept-Encoding
+tr = Test.AddTestRun('vary header test: no accept-encoding')
+tr.Processes.Default.ReturnCode = 0
+out_path = get_out_path()
+tr.MakeCurlCommand(
+    f"-o {out_path} --verbose --proxy http://127.0.0.1:{ts.Variables.port}"
+    f" --header 'X-Ats-Compress-Test: vary-no-accept-encoding'"
+    f" 'http://ae-0/obj0'"
+    " 2>> compress_vary.log",
+    ts=ts)
+
+# Test Vary header: compressible content with unsupported Accept-Encoding should get Vary: Accept-Encoding
+tr = Test.AddTestRun('vary header test: unsupported accept-encoding')
+tr.Processes.Default.ReturnCode = 0
+out_path = get_out_path()
+tr.MakeCurlCommand(curl(ts, 0, "compress, identity", out_path).replace("compress_long.log", "compress_vary.log"), ts=ts)
+
+# Verify Vary header is present in both cases
+tr = Test.AddTestRun('verify vary headers')
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Command = (
+    r"tr -d '\r' < compress_vary.log | grep -i 'vary:.*accept-encoding' | sort > compress_vary_short.log")
+f = tr.Disk.File("compress_vary_short.log")
+f.Content = "compress_vary.gold"
 
 # compress_long.log contains all the output from the curl commands.  The tr removes the carriage returns for easier
 # readability.  Curl seems to have a bug, where it will neglect to output an end of line before outputting an HTTP

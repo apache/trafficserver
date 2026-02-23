@@ -56,3 +56,12 @@ tr.Processes.Default.Command = f'python3 convert2yaml.py -f override_map.config 
 tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
     "We cannot continue with 'proxy.config.ssl.client.verify.server' at line '3' as an existing YAML map will be overridden.",
     "Error should be present")
+
+file_suffix = file_suffix + 1
+
+tr = Test.AddTestRun("Test config file without trailing newline")
+tr.Setup.Copy(os.path.join(Test.Variables.RepoDir, "tools/records/convert2yaml.py"))
+tr.Setup.Copy('legacy_config/no_newline.config')
+tr.Processes.Default.Command = f'python3 convert2yaml.py -f no_newline.config --output generated{file_suffix}.yaml --yaml --mute'
+f = tr.Disk.File(f"generated{file_suffix}.yaml")
+f.Content = "gold/no_newline.yaml"

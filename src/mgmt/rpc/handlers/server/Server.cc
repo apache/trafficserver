@@ -19,6 +19,7 @@
 */
 
 #include "../../../../iocore/cache/P_CacheDir.h"
+#include "iocore/eventsystem/EventProcessor.h"
 #include "mgmt/rpc/handlers/server/Server.h"
 #include "mgmt/rpc/handlers/common/ErrorUtils.h"
 #include "mgmt/rpc/handlers/common/Utils.h"
@@ -140,6 +141,19 @@ get_server_status(std::string_view const & /* params ATS_UNUSED */, YAML::Node c
     data["is_ssl_handshaking_stopped"] = bts(TSSystemState::is_ssl_handshaking_stopped());
     data["is_draining"]                = bts(TSSystemState::is_draining());
     data["is_event_system_shut_down"]  = bts(TSSystemState::is_event_system_shut_down());
+
+    YAML::Node threads;
+    for (const auto &tgs : eventProcessor.thread_group) {
+      if (!tgs._name.empty()) {
+        YAML::Node grp;
+        grp["name"]    = tgs._name;
+        grp["count"]   = YAML::Node(tgs._count).Scalar();
+        grp["started"] = bts(tgs._started.load());
+        threads.push_back(grp);
+      }
+    }
+
+    data["thread_groups"] = threads;
 
     resp.result()["data"] = data;
 

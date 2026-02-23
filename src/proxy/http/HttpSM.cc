@@ -69,9 +69,9 @@
 
 using namespace std::literals;
 
-#define DEFAULT_RESPONSE_BUFFER_SIZE_INDEX 6 // 8K
-#define DEFAULT_REQUEST_BUFFER_SIZE_INDEX  6 // 8K
-#define MIN_CONFIG_BUFFER_SIZE_INDEX       5 // 4K
+static constexpr int DEFAULT_RESPONSE_BUFFER_SIZE_INDEX = 6; // 8K
+static constexpr int DEFAULT_REQUEST_BUFFER_SIZE_INDEX  = 6; // 8K
+static constexpr int MIN_CONFIG_BUFFER_SIZE_INDEX       = 5; // 4K
 
 #define hsm_release_assert(EX)              \
   {                                         \
@@ -122,11 +122,11 @@ static DbgCtl dbg_ctl_ssl_early_data{"ssl_early_data"};
 static DbgCtl dbg_ctl_ssl_sni{"ssl_sni"};
 static DbgCtl dbg_ctl_url_rewrite{"url_rewrite"};
 
-static const int sub_header_size = sizeof("Content-type: ") - 1 + 2 + sizeof("Content-range: bytes ") - 1 + 4;
-static const int boundary_size   = 2 + sizeof("RANGE_SEPARATOR") - 1 + 2;
+static constexpr int sub_header_size = sizeof("Content-type: ") - 1 + 2 + sizeof("Content-range: bytes ") - 1 + 4;
+static constexpr int boundary_size   = 2 + sizeof("RANGE_SEPARATOR") - 1 + 2;
 
-static const char *str_100_continue_response = "HTTP/1.1 100 Continue\r\n\r\n";
-static const int   len_100_continue_response = strlen(str_100_continue_response);
+static const char   *str_100_continue_response = "HTTP/1.1 100 Continue\r\n\r\n";
+static constexpr int len_100_continue_response = sizeof("HTTP/1.1 100 Continue\r\n\r\n") - 1;
 
 // Handy alias for short (single line) message generation.
 using lbw = swoc::LocalBufferWriter<256>;
@@ -250,11 +250,8 @@ HttpSM::get_server_connect_timeout()
 
 HttpSM::HttpSM() : Continuation(nullptr), vc_table(this) {}
 
-void
-HttpSM::cleanup()
+HttpSM::~HttpSM()
 {
-  t_state.destroy();
-  api_hooks.clear();
   http_parser_clear(&http_parser);
 
   HttpConfig::release(t_state.http_config_param);
@@ -279,7 +276,6 @@ HttpSM::cleanup()
 void
 HttpSM::destroy()
 {
-  cleanup();
   THREAD_FREE(this, httpSMAllocator, this_thread());
 }
 
@@ -424,6 +420,7 @@ HttpSM::attach_client_session(ProxyTransaction *txn)
 
   ats_ip_copy(&t_state.client_info.src_addr, netvc->get_remote_addr());
   ats_ip_copy(&t_state.client_info.dst_addr, netvc->get_local_addr());
+  ats_ip_copy(&t_state.effective_client_addr, netvc->get_effective_remote_addr());
   t_state.client_info.is_transparent = netvc->get_is_transparent();
   t_state.client_info.port_attribute = static_cast<HttpProxyPort::TransportType>(netvc->attributes);
 
@@ -868,13 +865,17 @@ HttpSM::state_watch_for_client_abort(int event, void *data)
    * client.
    */
   case VC_EVENT_EOS: {
-    // We got an early EOS. If the tunnal has cache writer, don't kill it for background fill.
+    // We got an early EOS.
     if (!terminate_sm) { // Not done already
       NetVConnection *netvc = _ua.get_txn()->get_netvc();
       if (_ua.get_txn()->allow_half_open() || tunnel.has_consumer_besides_client()) {
         if (netvc) {
           netvc->do_io_shutdown(IO_SHUTDOWN_READ);
         }
+      } else if (t_state.txn_conf->cache_http &&
+                 (server_entry != nullptr && server_entry->vc_read_handler == &HttpSM::state_read_server_response_header)) {
+        // if HttpSM is waiting response header from origin server, keep it for a while to run background fetch
+        _ua.get_txn()->do_io_shutdown(IO_SHUTDOWN_READWRITE);
       } else {
         _ua.get_txn()->do_io_close();
         vc_table.cleanup_entry(_ua.get_entry());
@@ -1121,6 +1122,13 @@ HttpSM::state_raw_http_server_open(int event, void *data)
   case VC_EVENT_ERROR:
   case VC_EVENT_EOS:
   case NET_EVENT_OPEN_FAILED:
+    if (t_state.cause_of_death_errno == -UNKNOWN_INTERNAL_ERROR) {
+      if (event == VC_EVENT_EOS) {
+        t_state.set_connect_fail(EPIPE);
+      } else {
+        t_state.set_connect_fail(EIO);
+      }
+    }
     t_state.current.state = HttpTransact::OPEN_RAW_ERROR;
     // use this value just to get around other values
     t_state.hdr_info.response_error = HttpTransact::STATUS_CODE_SERVER_ERROR;
@@ -1925,13 +1933,15 @@ HttpSM::state_read_server_response_header(int event, void *data)
   switch (event) {
   case VC_EVENT_EOS:
     server_entry->eos = true;
+    // If we have received any bytes for this transaction do not retry
+    if (server_response_hdr_bytes > 0) {
+      t_state.current.retry_attempts.maximize(t_state.configured_connect_attempts_max_retries());
+    }
+    break;
 
-  // Fall through
   case VC_EVENT_READ_READY:
   case VC_EVENT_READ_COMPLETE:
     // More data to parse
-    // Got some data, won't retry origin connection on error
-    t_state.current.retry_attempts.maximize(t_state.configured_connect_attempts_max_retries());
     break;
 
   case VC_EVENT_ERROR:
@@ -2019,9 +2029,7 @@ HttpSM::state_read_server_response_header(int event, void *data)
     if (allow_error == false) {
       SMDbg(dbg_ctl_http_seq, "Error parsing server response header");
       t_state.current.state = HttpTransact::PARSE_ERROR;
-      // We set this to 0 because otherwise HttpTransact::retry_server_connection_not_open
-      // will raise an assertion if the value is the default UNKNOWN_INTERNAL_ERROR.
-      t_state.cause_of_death_errno = 0;
+      t_state.set_connect_fail(EBADMSG);
 
       // If the server closed prematurely on us, use the
       //   server setup error routine since it will forward
@@ -3399,9 +3407,9 @@ HttpSM::tunnel_handler_100_continue_ua(int event, HttpTunnelConsumer *c)
     _ua.get_entry()->in_tunnel = false;
     c->write_success           = true;
 
-    // remove the buffer reader from the consumer's vc
+    // Disable any write operation in case there are timeout events.
     if (c->vc != nullptr) {
-      c->vc->do_io_write();
+      c->vc->do_io_write(nullptr, 0, nullptr);
     }
   }
 
@@ -5152,6 +5160,9 @@ HttpSM::send_origin_throttled_response()
   if (t_state.dns_info.looking_up != ResolveInfo::PARENT_PROXY) {
     t_state.current.retry_attempts.maximize(t_state.configured_connect_attempts_max_retries());
   }
+  if (t_state.cause_of_death_errno == -UNKNOWN_INTERNAL_ERROR) {
+    t_state.set_connect_fail(EUSERS); // Too many users.
+  }
   t_state.current.state = HttpTransact::OUTBOUND_CONGESTION;
   call_transact_and_set_next_state(HttpTransact::HandleResponse);
 }
@@ -5565,6 +5576,9 @@ HttpSM::do_http_server_open(bool raw, bool only_direct)
       httpSessionManager.purge_keepalives();
       // Eventually may want to have a queue as the origin_max_connection does to allow for a combination
       // of retries and errors.  But at this point, we are just going to allow the error case.
+      if (t_state.cause_of_death_errno == -UNKNOWN_INTERNAL_ERROR) {
+        t_state.set_connect_fail(ENFILE); // Too many open files in system.
+      }
       t_state.current.state = HttpTransact::CONNECTION_ERROR;
       call_transact_and_set_next_state(HttpTransact::HandleResponse);
       return;
@@ -6287,9 +6301,10 @@ close_connection:
 void
 HttpSM::do_setup_client_request_body_tunnel(HttpVC_t to_vc_type)
 {
-  if (t_state.hdr_info.request_content_length == 0) {
-    // No tunnel is needed to transfer 0 bytes. Simply return without setting up
-    // a tunnel nor any of the other related logic around request bodies.
+  if (!_ua.get_txn()->has_request_body(t_state.hdr_info.request_content_length,
+                                       t_state.client_info.transfer_encoding == HttpTransact::CHUNKED_ENCODING)) {
+    // No tunnel is needed to transfer 0 bytes or when no request body is present.
+    // Simply return without setting up a tunnel nor any of the other related logic around request bodies.
     return;
   }
   bool chunked = t_state.client_info.transfer_encoding == HttpTransact::CHUNKED_ENCODING ||

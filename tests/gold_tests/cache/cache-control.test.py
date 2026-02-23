@@ -71,13 +71,18 @@ ts.Disk.records_config.update(
 
 ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variables.Port))
 
+ipv4flag = ""
+if not Condition.CurlUsingUnixDomainSocket():
+    ipv4flag = "--ipv4"
+
 # Test 1 - 200 response and cache fill
 tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.MakeCurlCommand(
-    '-s -D - -v --ipv4 --http1.1 -H "x-debug: x-cache,via" -H "Host: www.example.com" http://localhost:{port}/max_age_10sec'.format(
-        port=ts.Variables.port))
+    '-s -D - -v {ipv4} --http1.1 -H "x-debug: x-cache,via" -H "Host: www.example.com" http://localhost:{port}/max_age_10sec'.format(
+        port=ts.Variables.port, ipv4=ipv4flag),
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/cache_and_req_body-miss.gold"
 tr.StillRunningAfter = ts
@@ -198,10 +203,7 @@ class RequestCacheControlDefaultTest:
     def runTraffic(self):
         tr = Test.AddTestRun("Verify the proper handling of cache-control directives in requests in default configuration")
         tr.AddVerifierClientProcess(
-            "request-cache-control-default-client",
-            self.requestCacheControlReplayFile,
-            http_ports=[self.ts.Variables.port],
-            other_args='--thread-limit 1')
+            "request-cache-control-default-client", self.requestCacheControlReplayFile, http_ports=[self.ts.Variables.port])
         tr.Processes.Default.StartBefore(self.server)
         tr.Processes.Default.StartBefore(self.ts)
         tr.StillRunningAfter = self.server
@@ -251,10 +253,7 @@ class RequestCacheControlHonorClientTest:
             "Verify the proper handling of cache-control directives in requests when ATS is configured to honor client's request to bypass the cache"
         )
         tr.AddVerifierClientProcess(
-            "request-cache-control-honor-client-client",
-            self.requestCacheControlReplayFile,
-            http_ports=[self.ts.Variables.port],
-            other_args='--thread-limit 1')
+            "request-cache-control-honor-client-client", self.requestCacheControlReplayFile, http_ports=[self.ts.Variables.port])
         tr.Processes.Default.StartBefore(self.server)
         tr.Processes.Default.StartBefore(self.ts)
         tr.StillRunningAfter = self.server
@@ -299,10 +298,7 @@ class ResponseCacheControlDefaultTest:
     def runTraffic(self):
         tr = Test.AddTestRun("Verify the proper handling of cache-control directives in responses in default configuration")
         tr.AddVerifierClientProcess(
-            "response-cache-control-client-default",
-            self.responseCacheControlReplayFile,
-            http_ports=[self.ts.Variables.port],
-            other_args='--thread-limit 1')
+            "response-cache-control-client-default", self.responseCacheControlReplayFile, http_ports=[self.ts.Variables.port])
         tr.Processes.Default.StartBefore(self.server)
         tr.Processes.Default.StartBefore(self.ts)
         tr.StillRunningAfter = self.server
@@ -351,10 +347,7 @@ class ResponseCacheControlIgnoredTest:
             "Verify the proper handling of cache-control directives in responses when ATS is configured to ignore server's request to bypass the cache"
         )
         tr.AddVerifierClientProcess(
-            "response-cache-control-client-ignored",
-            self.responseCacheControlReplayFile,
-            http_ports=[self.ts.Variables.port],
-            other_args='--thread-limit 1')
+            "response-cache-control-client-ignored", self.responseCacheControlReplayFile, http_ports=[self.ts.Variables.port])
         tr.Processes.Default.StartBefore(self.server)
         tr.Processes.Default.StartBefore(self.ts)
         tr.StillRunningAfter = self.server

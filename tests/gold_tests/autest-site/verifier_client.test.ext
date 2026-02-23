@@ -34,6 +34,7 @@ def _configure_client(
         ca_cert='',
         verbose=True,
         other_args='',
+        run_parallel=False,
         context=None):
     """
     Configure the process for running the verifier-client.
@@ -70,7 +71,7 @@ def _configure_client(
         # Create a copy of the replay directory in the run directory.
         run_replay_path = os.path.join(client_dir, os.path.basename(replay_path))
         process.Setup.Copy(replay_path, run_replay_path, CopyLogic.SoftFiles)
-        command += " {} ".format(run_replay_path)
+        command += f" {run_replay_path} "
 
     if not http_ports:
         http_ports = [8080]
@@ -103,12 +104,12 @@ def _configure_client(
             ssl_cert = os.path.join(obj.Variables["AtsTestToolsDir"], "proxy-verifier", "ssl", "client.pem")
 
             if not os.path.isfile(ssl_cert):
-                raise ValueError("Tried to use '{}' for --client-cert, but it is not "
-                                 "a valid file.".format(ssl_cert))
+                raise ValueError(f"Tried to use '{ssl_cert}' for --client-cert, but it is not "
+                                 "a valid file.")
         if ssl_cert:
             run_ssl_cert = os.path.join(client_dir, os.path.basename(ssl_cert))
             process.Setup.Copy(ssl_cert, run_ssl_cert, CopyLogic.SoftFiles)
-            command += ' --client-cert "{}" '.format(run_ssl_cert)
+            command += f' --client-cert "{run_ssl_cert}" '
 
             tls_secrets_log_filename = "tls_secrets.txt"
             tls_secrets_log_path = os.path.join(client_dir, tls_secrets_log_filename)
@@ -119,21 +120,26 @@ def _configure_client(
             ca_cert = os.path.join(obj.Variables["AtsTestToolsDir"], "proxy-verifier", "ssl", "ca.pem")
 
             if not os.path.isfile(ca_cert):
-                raise ValueError("Tried to use '{}' for --ca-certs, but it is not "
-                                 "a valid file.".format(ca_cert))
+                raise ValueError(f"Tried to use '{ca_cert}' for --ca-certs, but it is not "
+                                 "a valid file.")
         if ca_cert:
             run_ca_cert = os.path.join(client_dir, os.path.basename(ca_cert))
             process.Setup.Copy(ca_cert, run_ca_cert, CopyLogic.SoftFiles)
-            command += ' --ca-certs "{}" '.format(run_ca_cert)
+            command += f' --ca-certs "{run_ca_cert}" '
 
     if verbose:
         command += ' --verbose diag '
 
     if other_args:
-        command += " {}".format(other_args)
+        command += f" {other_args}"
 
     if keys is not None:
-        command += " --keys {}".format(keys)
+        command += f" --keys {keys}"
+
+    # Generally we prefer the deterministic behavior of a single thread where
+    # each connection is processed sequentially.
+    if not run_parallel and 'thread-limit' not in command:
+        command += " --thread-limit 1"
 
     process.Command = command
     process.ReturnCode = 0
@@ -154,6 +160,7 @@ def AddVerifierClientProcess(
         ca_cert='',
         verbose=True,
         other_args='',
+        run_parallel=False,
         context=None):
     """
     Set the Default process of the test run to a verifier-client Process.
@@ -184,6 +191,8 @@ def AddVerifierClientProcess(
 
         other_args: (str) Any other arbitrary options to pass to verifier-client.
 
+        run_parallel: (bool) Whether to run the verifier-client in parallel.
+
         context: Any dictionary-like object with keys that match the placeholders
                  in the replay file.
                  Template strings support $-based substitutions in the replay file.
@@ -203,7 +212,8 @@ def AddVerifierClientProcess(
 
     p = run.Processes.Default
     _configure_client(
-        run, p, name, replay_path, http_ports, https_ports, http3_ports, keys, ssl_cert, ca_cert, verbose, other_args, context)
+        run, p, name, replay_path, http_ports, https_ports, http3_ports, keys, ssl_cert, ca_cert, verbose, other_args, run_parallel,
+        context)
     return p
 
 

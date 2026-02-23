@@ -38,7 +38,7 @@
 #define STATE_FROM_VIO(_x) ((NetState *)(((char *)(_x)) - STATE_VIO_OFFSET))
 
 // Global
-ClassAllocator<UnixNetVConnection> netVCAllocator("netVCAllocator");
+ClassAllocator<UnixNetVConnection, false> netVCAllocator("netVCAllocator");
 
 namespace
 {
@@ -638,6 +638,11 @@ UnixNetVConnection::net_write_io(NetHandler *nh)
   Metrics::Counter::increment(net_rsb.calls_to_writetonet);
   NetState     *s = &this->write;
   Continuation *c = this->write.vio.cont;
+
+  if (c == nullptr) {
+    // If Continuation to callback is nullptr, we can do nothing
+    return;
+  }
 
   MUTEX_TRY_LOCK(lock, s->vio.mutex, thread);
 

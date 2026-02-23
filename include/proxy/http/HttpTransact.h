@@ -25,6 +25,7 @@
 
 #include <cstddef>
 
+#include "iocore/net/ProxyProtocol.h"
 #include "tsutil/DbgCtl.h"
 #include "tscore/ink_assert.h"
 #include "tscore/ink_platform.h"
@@ -748,6 +749,9 @@ public:
     ConnectionAttributes        client_info;
     ConnectionAttributes        parent_info;
     ConnectionAttributes        server_info;
+    // This is a copy of the effective client IP address (see pp-clnt) to
+    // ensure this is available for logging
+    IpEndpoint effective_client_addr;
 
     Source_t            source               = SOURCE_NONE;
     Source_t            pre_transform_source = SOURCE_NONE;
@@ -887,6 +891,8 @@ public:
       //      memset((void *)&host_db_info, 0, sizeof(host_db_info));
     }
 
+    ~State() { destroy(); }
+
     void
     destroy()
     {
@@ -895,8 +901,10 @@ public:
       free_internal_msg_buffer();
       ats_free(internal_msg_buffer_type);
 
-      ParentConfig::release(parent_params);
-      parent_params = nullptr;
+      if (parent_params != nullptr) {
+        ParentConfig::release(parent_params);
+        parent_params = nullptr;
+      }
 
       hdr_info.client_request.destroy();
       hdr_info.client_response.destroy();
@@ -915,12 +923,12 @@ public:
       url_map.clear();
       arena.reset();
       unmapped_url.clear();
-      dns_info.~ResolveInfo();
       outbound_conn_track_state.clear();
 
       delete[] ranges;
       ranges      = nullptr;
       range_setup = RANGE_NONE;
+
       return;
     }
 
