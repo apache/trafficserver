@@ -46,11 +46,11 @@ header_rewrite_header_rewrite_la_SOURCES = \
 	header_rewrite/value.cc \
 	header_rewrite/value.h
 
-if HAS_MAXMINDDB
+if USE_HRW_MAXMINDDB
 header_rewrite_header_rewrite_la_SOURCES += header_rewrite/conditions_geo_maxmind.cc
 endif
 
-if HAS_GEOIP
+if USE_HRW_GEOIP
 header_rewrite_header_rewrite_la_SOURCES += header_rewrite/conditions_geo_geoip.cc
 endif
 
@@ -61,11 +61,11 @@ header_rewrite_parser_la_SOURCES = \
 header_rewrite_header_rewrite_la_LIBADD = \
 	header_rewrite/parser.la
 
-if HAS_GEOIP
+if USE_HRW_GEOIP
 header_rewrite_header_rewrite_la_LIBADD += $(GEOIP_LIBS)
 endif
 
-if HAS_MAXMINDDB
+if USE_HRW_MAXMINDDB
 header_rewrite_header_rewrite_la_LIBADD += $(MAXMINDDB_LIBS)
 endif
 
@@ -74,10 +74,10 @@ header_rewrite_header_rewrite_test_SOURCES = \
 	header_rewrite/header_rewrite_test.cc
 header_rewrite_header_rewrite_test_LDADD = \
 	header_rewrite/parser.la
-if HAS_GEOIP
+if USE_HRW_GEOIP
 header_rewrite_header_rewrite_test_LDADD += $(GEOIP_LIBS)
 endif
 
-if HAS_MAXMINDDB
+if USE_HRW_MAXMINDDB
 header_rewrite_header_rewrite_test_LDADD += $(MAXMINDDB_LIBS)
 endif

@@ -1806,21 +1806,28 @@ AS_IF([test "x$geo_provider" = "xauto"], [
 ],[
   case "x$geo_provider" in
     xgeoip)
+      AS_IF([test "x$has_geoip" != "x1"],
+        [AC_MSG_FAILURE([--with-hrw-geo-provider=geoip specified but GeoIP library not found])])
       use_hrw_geoip=1
       AC_MSG_RESULT([forced to GeoIP])
       ;;
     xmaxminddb)
+      AS_IF([test "x$has_maxminddb" != "x1"],
+        [AC_MSG_FAILURE([--with-hrw-geo-provider=maxminddb specified but MaxMindDB library not found])])
       use_hrw_maxminddb=1
       AC_MSG_RESULT([forced to MaxMindDB])
       ;;
     *)
       AC_MSG_RESULT([failed])
-      AC_MSG_FAILURE([unknown geo interface $geo_provider])
+      AC_MSG_FAILURE([unknown geo interface '$geo_provider': valid values are 'geoip' or 'maxminddb'])
   esac
 ])
 
 AC_SUBST(use_hrw_geoip)
 AC_SUBST(use_hrw_maxminddb)
+
+AM_CONDITIONAL([USE_HRW_GEOIP], [test "x${use_hrw_geoip}" = "x1"])
+AM_CONDITIONAL([USE_HRW_MAXMINDDB], [test "x${use_hrw_maxminddb}" = "x1"])
 
 # Checking if opentelemetry OTLP is available
 AC_LANG_PUSH([C++])
