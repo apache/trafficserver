@@ -57,7 +57,6 @@ class HRWInverseVisitor(u4wrhVisitor, BaseHRWVisitor):
         self._if_depth = 0  # Track nesting depth of if blocks
         self._in_elif_mode = False
         self._just_closed_nested = False
-        self._expecting_if_cond = False
         self._deferred_comments: list[str] = []
 
     @lru_cache(maxsize=128)
@@ -84,23 +83,12 @@ class HRWInverseVisitor(u4wrhVisitor, BaseHRWVisitor):
         self._in_elif_mode = False
         self._in_group = False
         self._group_terms.clear()
-        self._expecting_if_cond = False
 
     def _flush_deferred_comments(self) -> None:
         """Emit comments that were deferred while inside a rule's if-block."""
         for comment in self._deferred_comments:
             self.output.append(comment)
         self._deferred_comments.clear()
-
-    def _close_if_chain_for_new_rule(self) -> None:
-        """Close if-else chain when a new rule starts without elif/else."""
-        expecting_nested_if = self._expecting_if_cond
-        self._expecting_if_cond = False
-
-        if (self._if_depth > 0 and not self._in_elif_mode and not self._pending_terms and not self._in_group and
-                not expecting_nested_if):
-            self.debug("new rule detected - closing if chain")
-            self._start_new_section(SectionType.REMAP)
 
     def _start_new_section(self, section_type: SectionType) -> None:
         """Start a new section, handling continuation of existing sections."""
