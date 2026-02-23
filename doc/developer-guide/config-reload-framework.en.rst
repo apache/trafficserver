@@ -29,11 +29,23 @@ every handler must follow.
 Overview
 ========
 
+When a reload is requested (via :program:`traffic_ctl config reload` or the
+:ref:`admin_config_reload` JSONRPC API), the server does not block the caller. Instead, it:
+
+1. **Assigns a token** to the reload — either auto-generated (e.g. ``rldtk-<timestamp>``) or
+   user-supplied via ``-t``.
+2. **Schedules the reload** on background threads (``ET_TASK``). Each registered config handler
+   runs, reports its status (``in_progress`` → ``success`` or ``fail``), and results are
+   aggregated into a task tree.
+3. **Returns the token** immediately so the caller can track progress via
+   :option:`traffic_ctl config status` or :ref:`get_reload_config_status`.
+
+The **token** is the unique identifier for a reload operation — it is the handle used to monitor
+progress, query final status, and retrieve per-handler logs.
+
 ``ConfigRegistry`` is a centralized singleton that manages all configuration files, their reload
-handlers, trigger records, and file dependencies. When a reload is requested (via
-:program:`traffic_ctl` or the JSONRPC API — see :ref:`admin_config_reload` and
-:ref:`get_reload_config_status`), it coordinates execution, tracks progress per handler,
-and records the result in a queryable history.
+handlers, trigger records, and file dependencies. It coordinates execution, tracks progress per
+handler, and records the result in a queryable history.
 
 Key capabilities:
 
@@ -114,6 +126,14 @@ dependencies.
        {"proxy.config.ssl.client.cert.path",
         "proxy.config.ssl.client.cert.filename",
         "proxy.config.ssl.server.session_ticket.enable"});
+
+.. note::
+
+   When a config key has multiple trigger records, a change to **any** of them invokes the
+   handler **once** per reload cycle — not once per record. The framework deduplicates
+   internally: the first trigger creates a subtask for the config key; subsequent triggers
+   for the same key in the same cycle are skipped. Handlers do not need to guard against
+   duplicate invocations.
 
 
 register_static_file

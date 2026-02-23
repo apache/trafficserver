@@ -211,10 +211,23 @@ Display the current value of a configuration record.
    configuration after any configuration file modification. If no configuration files have been
    modified since the previous configuration load, this command is a no-op.
 
+   The reload is **asynchronous**: the command sends a JSONRPC request to |TS| and returns
+   immediately — it does not block until every config handler finishes. The actual reload work
+   runs on background threads (``ET_TASK``), where each registered config handler loads its
+   configuration and reports success or failure.
+
    Every reload is assigned a **token** — a unique identifier for the reload operation. The token
-   can be used to query the reload's status later via :option:`traffic_ctl config status`. If no
-   token is provided via ``--token``, the server generates one automatically using a timestamp
-   (e.g. ``rldtk-1739808000000``).
+   is the handle you use to track, monitor, or query the reload after it starts. If no token is
+   provided via ``--token``, the server generates one automatically using a timestamp (e.g.
+   ``rldtk-1739808000000``). You can supply a custom token via ``--token`` (e.g.
+   ``-t deploy-v2.1``) to tag reloads with meaningful labels for CI pipelines, deploy scripts, or
+   post-mortem analysis.
+
+   Use the token to:
+
+   - **Monitor** a reload in real-time: ``traffic_ctl config reload -t <token> -m``
+   - **Query** the final status: ``traffic_ctl config status -t <token>``
+   - **Get detailed logs**: ``traffic_ctl config status -t <token> -l``
 
    The timestamp of the last reconfiguration event (in seconds since epoch) is published in the
    ``proxy.process.proxy.reconfigure_time`` metric.

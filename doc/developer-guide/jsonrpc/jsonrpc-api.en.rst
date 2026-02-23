@@ -922,7 +922,12 @@ admin_config_reload
 Description
 ~~~~~~~~~~~
 
-Initiate a configuration reload. This method supports two modes:
+Initiate a configuration reload. This method returns immediately — the actual reload runs
+asynchronously on background threads (``ET_TASK``). The response contains a **token** that the
+caller uses to track the reload's progress and query its final status via
+:ref:`get_reload_config_status`.
+
+This method supports two modes:
 
 - **File-based reload** (default) — re-reads all registered configuration files from disk and invokes
   their handlers for any files whose modification time has changed.
@@ -1135,6 +1140,7 @@ Field                   Type          Description
 ``config_token``        |str|         The reload token.
 ``status``              |str|         Overall status: ``success``, ``fail``, ``in_progress``, ``timeout``.
 ``description``         |str|         Human-readable description.
+``config_key``          |str|         Registry key used for deduplication (empty for main tasks).
 ``filename``            |str|         Associated filename (empty for the main task).
 ``meta``                ``object``    Metadata: ``created_time_ms``, ``last_updated_time_ms``, ``main_task``.
 ``log``                 ``array``     Log messages from the handler.
@@ -1175,6 +1181,7 @@ Response:
                "config_token": "deploy-v2.1",
                "status": "success",
                "description": "Main reload task - 2025 Feb 17 12:00:00",
+               "config_key": "",
                "filename": "",
                "meta": {
                   "created_time_ms": "1739808000123",
@@ -1187,6 +1194,7 @@ Response:
                      "config_token": "deploy-v2.1",
                      "status": "success",
                      "description": "ip_allow",
+                     "config_key": "ip_allow",
                      "filename": "/opt/ats/etc/trafficserver/ip_allow.yaml",
                      "meta": {
                         "created_time_ms": "1739808000200",
