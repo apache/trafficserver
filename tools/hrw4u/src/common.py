@@ -226,8 +226,14 @@ def generate_output(
 
 
 def run_main(
-        description: str, lexer_class: type[LexerProtocol], parser_class: type[ParserProtocol],
-        visitor_class: type[VisitorProtocol], error_prefix: str, output_flag_name: str, output_flag_help: str) -> None:
+        description: str,
+        lexer_class: type[LexerProtocol],
+        parser_class: type[ParserProtocol],
+        visitor_class: type[VisitorProtocol],
+        error_prefix: str,
+        output_flag_name: str,
+        output_flag_help: str,
+        extra_args: list[tuple[tuple, dict]] | None = None) -> None:
     """
     Generic main function for hrw4u and u4wrh scripts with bulk compilation support.
 
@@ -239,6 +245,7 @@ def run_main(
         error_prefix: Error prefix for error messages
         output_flag_name: Name of output flag (e.g., "hrw", "hrw4u")
         output_flag_help: Help text for output flag
+        extra_args: Optional list of (args, kwargs) tuples passed to parser.add_argument()
     """
     parser = argparse.ArgumentParser(
         description=description,
@@ -256,6 +263,9 @@ def run_main(
     parser.add_argument("--debug", action="store_true", help="Enable debug output")
     parser.add_argument(
         "--stop-on-error", action="store_true", help="Stop processing on first error (default: collect and report multiple errors)")
+
+    for arg_args, arg_kwargs in (extra_args or []):
+        parser.add_argument(*arg_args, **arg_kwargs)
 
     args = parser.parse_args()
 
