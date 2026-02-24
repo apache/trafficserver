@@ -120,6 +120,12 @@ Types
 
       Invoked with the event :enumerator:`TS_EVENT_LIFECYCLE_SHUTDOWN` and ``nullptr`` data.
 
+   .. cpp:enumerator:: TS_LIFECYCLE_LOG_INITIALIZED_HOOK
+
+      Called after |TS| logging system is initialized but before logging configuration is loaded.
+
+      Invoked with the event :enumerator:`TS_EVENT_LIFECYCLE_LOG_INITIALIZED` and ``nullptr`` data.
+
 .. struct:: TSPluginMsg
 
    The data for the plugin message event :enumerator:`TS_EVENT_LIFECYCLE_MSG`.

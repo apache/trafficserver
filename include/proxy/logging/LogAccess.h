@@ -323,6 +323,10 @@ public:
 
   bool has_http_header_field(LogField::Container container, const char *field) const;
   void set_http_header_field(LogField::Container container, char *field, char *buf, int len);
+
+  // Plugin
+  int marshal_custom_field(char *buf, LogField::CustomMarshalFunc plugin_marshal_func);
+
   //
   // unmarshalling routines
   //

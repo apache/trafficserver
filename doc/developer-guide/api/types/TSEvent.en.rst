@@ -198,6 +198,10 @@ Enumeration Members
 
    The |TS| process has is shutting down.
 
+.. enumerator:: TS_EVENT_LIFECYCLE_LOG_INITIALIZED
+
+   The logging system is initialized.
+
 .. enumerator:: TS_EVENT_INTERNAL_60200
 
 .. enumerator:: TS_EVENT_INTERNAL_60201
