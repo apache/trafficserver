@@ -338,10 +338,11 @@ ConfigCommand::track_config_reload_progress(std::string const &token, std::chron
     if (current_task.status == "success" || current_task.status == "fail" || current_task.status == "timeout") {
       std::cout << "\n";
       if (current_task.status != "success") {
+        App_Exit_Status_Code = CTRL_EX_ERROR;
         std::string hint;
         _printer->write_output(swoc::bwprint(hint, "\n  Details : traffic_ctl config status -t {}", current_task.config_token));
       }
-      break;
+      return;
     }
     std::this_thread::sleep_for(refresh_interval);
 
@@ -351,8 +352,14 @@ ConfigCommand::track_config_reload_progress(std::string const &token, std::chron
     resp = invoke_rpc(request);
     if (resp.is_error()) {
       _printer->write_output(resp);
-      break;
+      App_Exit_Status_Code = CTRL_EX_ERROR;
+      return;
     }
+  }
+
+  // Signal received (e.g. Ctrl+C) — assume reload still in progress.
+  if (Signal_Flagged.load()) {
+    App_Exit_Status_Code = CTRL_EX_TEMPFAIL;
   }
 }
 
@@ -516,6 +523,7 @@ ConfigCommand::config_reload()
 
     ConfigReloadResponse resp = config_reload(token, force, configs);
     if (contains_error(resp.error, ConfigError::RELOAD_IN_PROGRESS)) {
+      App_Exit_Status_Code = CTRL_EX_TEMPFAIL;
       if (resp.tasks.size() > 0) {
         const auto &task = resp.tasks[0];
         _printer->write_output(swoc::bwprint(text, "\xe2\x9f\xb3 Reload in progress [{}]", task.config_token));
@@ -523,7 +531,8 @@ ConfigCommand::config_reload()
       }
       return;
     } else if (contains_error(resp.error, ConfigError::TOKEN_ALREADY_EXISTS)) {
-      token_exist = true;
+      App_Exit_Status_Code = CTRL_EX_ERROR;
+      token_exist          = true;
     } else if (resp.error.size()) {
       display_errors(_printer.get(), resp.error);
       App_Exit_Status_Code = CTRL_EX_ERROR;
@@ -559,6 +568,7 @@ ConfigCommand::config_reload()
         _printer->write_output(swoc::bwprint(text, "\xe2\x9f\xb3 Reload in progress [{}]", resp.tasks[0].config_token));
       }
     } else if (contains_error(resp.error, ConfigError::TOKEN_ALREADY_EXISTS)) {
+      App_Exit_Status_Code = CTRL_EX_ERROR;
       _printer->write_output(swoc::bwprint(text, "\xe2\x9c\x97 Token '{}' already in use\n", token));
       _printer->write_output(swoc::bwprint(text, "  Status : traffic_ctl config status -t {}", token));
       _printer->write_output("  Retry  : traffic_ctl config reload");
@@ -579,6 +589,7 @@ ConfigCommand::config_reload()
   } else {
     ConfigReloadResponse resp = config_reload(token, force, configs);
     if (contains_error(resp.error, ConfigError::RELOAD_IN_PROGRESS)) {
+      App_Exit_Status_Code = CTRL_EX_TEMPFAIL;
       if (!resp.tasks.empty()) {
         std::string tk = resp.tasks[0].config_token;
         _printer->write_output(swoc::bwprint(text, "\xe2\x9f\xb3 Reload in progress [{}]\n", tk));
@@ -587,6 +598,7 @@ ConfigCommand::config_reload()
         _printer->write_output("  Force   : traffic_ctl config reload --force  (may conflict with the running reload)");
       }
     } else if (contains_error(resp.error, ConfigError::TOKEN_ALREADY_EXISTS)) {
+      App_Exit_Status_Code = CTRL_EX_ERROR;
       _printer->write_output(swoc::bwprint(text, "\xe2\x9c\x97 Token '{}' already in use\n", token));
       _printer->write_output(swoc::bwprint(text, "  Status : traffic_ctl config status -t {}", token));
       _printer->write_output("  Retry  : traffic_ctl config reload");

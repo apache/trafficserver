@@ -431,6 +431,37 @@ Display the current value of a configuration record.
       before any handler has started, which would show an empty or incomplete task tree.
       Accepts fractional values (e.g. ``1.5``). Default: ``2``.
 
+   **Exit codes for config reload:**
+
+   The ``config reload`` command sets the process exit code to reflect the outcome of the
+   reload operation:
+
+   ``0``
+      Success. The reload was scheduled (without ``--monitor``) or completed successfully
+      (with ``--monitor``).
+
+   ``2``
+      Error. The reload reached a terminal failure state (``fail`` or ``timeout``), or an
+      RPC communication error occurred.
+
+   ``75``
+      Temporary failure (``EX_TEMPFAIL`` from ``sysexits.h``). A reload is already in
+      progress and the command could not start a new one, or monitoring was interrupted
+      (e.g. Ctrl+C) before the reload reached a terminal state. The caller is invited to
+      retry or monitor the operation later.
+
+   Example usage in scripts:
+
+   .. code-block:: bash
+
+      traffic_ctl config reload -m
+      rc=$?
+      case $rc in
+        0)  echo "Reload completed successfully" ;;
+        2)  echo "Reload failed" ;;
+        75) echo "Reload still in progress, retry later" ;;
+      esac
+
 .. program:: traffic_ctl config
 .. option:: set RECORD VALUE
 
@@ -1243,6 +1274,26 @@ Autest
 Runroot needs to be configured in order to let `traffic_ctl` know where to find the socket. This is done by default
 and there is no change you have to do to interact with it, but make sure that you are not overriding the `dump_runroot=False`
 when creating the ATS Process, otherwise the `runroot.yaml` will not be set.
+
+Exit Codes
+==========
+
+:program:`traffic_ctl` uses the following exit codes:
+
+``0``
+   Success. The requested operation completed successfully.
+
+``2``
+   Error. The operation failed. This may be returned when:
+
+   - The RPC communication with :program:`traffic_server` failed (e.g. socket not found or connection refused).
+   - The server response contains an error (e.g. invalid record name, malformed request).
+
+``3``
+   Unimplemented. The requested command is not yet implemented.
+
+``75``
+   Temporary failure (aligned with ``EX_TEMPFAIL`` from ``sysexits.h``). The caller is invited to retry later.
 
 See also
 ========
