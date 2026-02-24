@@ -50,11 +50,11 @@ Synopsis
 
 .. type:: int (*TSLogMarshalCallback)(TSHttpTxn, char *);
 
-   Callback sginature for functions to marshal log fields.
+   Callback signature for functions to marshal log fields.
 
 .. type:: std::tuple<int, int> (*TSLogUnmarshalCallback)(char **, char *, int);
 
-   Callback sginature for functions to unmarshal log fields.
+   Callback signature for functions to unmarshal log fields.
 
 .. function:: int TSLogStringMarshal(char *buf, std::string_view str);
 .. function:: int TSLogIntMarshal(char *buf, int64_t value);
