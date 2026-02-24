@@ -29,25 +29,20 @@ Synopsis
     #include <ts/ts.h>
 
 .. function:: TSClientHello TSVConnClientHelloGet(TSVConn sslp)
-.. function:: void TSClientHelloDestroy(TSClientHello ch)
 .. function:: TSReturnCode TSClientHelloExtensionGet(TSClientHello ch, unsigned int type, const unsigned char **out, size_t *outlen)
 
 Description
 ===========
 
 :func:`TSVConnClientHelloGet` retrieves ClientHello message data from the TLS
-virtual connection :arg:`sslp`. Returns ``nullptr`` if :arg:`sslp` is invalid
-or not a TLS connection.
+virtual connection :arg:`sslp`. Returns a :type:`TSClientHello` always. The availability
+of the returned object must be checked before use.
 
 .. important::
 
    This function should only be called from the ``TS_EVENT_SSL_CLIENT_HELLO`` hook.
    The returned :type:`TSClientHello` is only valid during the SSL ClientHello event processing.
    Using this function from other hooks may result in accessing invalid or stale data.
-
-The caller must call :func:`TSClientHelloDestroy` to free the returned object.
-
-:func:`TSClientHelloDestroy` frees the :type:`TSClientHello` object :arg:`ch`.
 
 :func:`TSClientHelloExtensionGet` retrieves extension data for the specified
 :arg:`type` (e.g., ``0x10`` for ALPN). Returns :enumerator:`TS_SUCCESS` if

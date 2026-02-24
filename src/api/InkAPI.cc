@@ -31,6 +31,7 @@
 #include "iocore/net/NetVConnection.h"
 #include "iocore/net/NetHandler.h"
 #include "iocore/net/UDPNet.h"
+#include "tscore/ink_config.h"
 #include "tscore/ink_platform.h"
 #include "tscore/ink_base64.h"
 #include "tscore/Encoding.h"
@@ -67,6 +68,7 @@
 #include "iocore/net/SSLAPIHooks.h"
 #include "iocore/net/SSLDiags.h"
 #include "iocore/net/TLSBasicSupport.h"
+#include "iocore/net/TLSSNISupport.h"
 #include "iocore/eventsystem/ConfigProcessor.h"
 #include "proxy/Plugin.h"
 #include "proxy/logging/LogObject.h"
@@ -7929,99 +7931,24 @@ TSVConnClientHelloGet(TSVConn sslp)
   }
 
   if (auto snis = netvc->get_service<TLSSNISupport>(); snis) {
-    auto ch = std::make_unique<tsapi_ssl_client_hello>();
-
-#ifdef OPENSSL_IS_BORINGSSL
-    // Get the BoringSSL client hello container
-    ClientHelloContainer client_hello = snis->get_client_hello_container();
+    TLSSNISupport::ClientHello *client_hello = snis->get_client_hello();
     if (client_hello == nullptr) {
       return nullptr;
     }
 
-    // Populate from BoringSSL SSL_CLIENT_HELLO structure
-    ch->version           = client_hello->version;
-    ch->cipher_suites     = client_hello->cipher_suites;
-    ch->cipher_suites_len = client_hello->cipher_suites_len;
-    ch->extensions        = client_hello->extensions;
-    ch->extensions_len    = client_hello->extensions_len;
-    ch->ssl_ptr           = const_cast<SSL_CLIENT_HELLO *>(client_hello);
-#else
-    // Get the OpenSSL SSL* object
-    auto tbs = netvc->get_service<TLSBasicSupport>();
-    if (!tbs) {
-      return nullptr;
-    }
-    SSL *ssl = tbs->get_tls_handle();
-    if (ssl == nullptr) {
-      return nullptr;
-    }
-
-    // Get legacy version (OpenSSL doesn't expose the direct version field from client hello)
-    ch->version = SSL_client_hello_get0_legacy_version(ssl);
-
-    // Get cipher suites
-    const unsigned char *cipher_buf     = nullptr;
-    size_t               cipher_buf_len = SSL_client_hello_get0_ciphers(ssl, &cipher_buf);
-    ch->cipher_suites                   = cipher_buf;
-    ch->cipher_suites_len               = cipher_buf_len;
-
-    // For OpenSSL, we can't get direct access to the raw extensions buffer
-    // Instead, get the list of extension IDs
-    int   *ext_ids = nullptr;
-    size_t ext_count;
-    if (SSL_client_hello_get1_extensions_present(ssl, &ext_ids, &ext_count) == 1) {
-      ch->extension_ids     = ext_ids;
-      ch->extension_ids_len = ext_count;
-    }
-    ch->ssl_ptr = ssl;
-#endif
-
-    // Wrap the POD structure in the wrapper class and return
-    return new TSClientHelloImpl(std::move(ch));
+    // Wrap the raw object in the accessor and return
+    return TSClientHello(client_hello);
   }
 
   return nullptr;
 }
 
-void
-TSClientHelloDestroy(TSClientHello ch)
-{
-#ifndef OPENSSL_IS_BORINGSSL
-  // For OpenSSL, we need to free the extension IDs array that was allocated
-  // by SSL_client_hello_get1_extensions_present
-  if (ch->get_extension_ids() != nullptr) {
-    OPENSSL_free(const_cast<int *>(ch->get_extension_ids()));
-  }
-#endif
-  delete ch;
-}
-
 TSReturnCode
 TSClientHelloExtensionGet(TSClientHello ch, unsigned int type, const unsigned char **out, size_t *outlen)
 {
-  if (ch == nullptr || out == nullptr || outlen == nullptr) {
-    return TS_ERROR;
-  }
-
-#ifdef OPENSSL_IS_BORINGSSL
-  const SSL_CLIENT_HELLO *client_hello = static_cast<const SSL_CLIENT_HELLO *>(ch->get_ssl_ptr());
-  if (client_hello == nullptr) {
-    return TS_ERROR;
-  }
-
-  if (SSL_early_callback_ctx_extension_get(client_hello, type, out, outlen) == 1) {
+  if (static_cast<TLSSNISupport::ClientHello *>(ch._get_internal())->getExtension(type, out, outlen) == 1) {
     return TS_SUCCESS;
   }
-#else
-  SSL *ssl = static_cast<SSL *>(ch->get_ssl_ptr());
-  if (ssl == nullptr) {
-    return TS_ERROR;
-  }
-
-  if (SSL_client_hello_get0_ext(ssl, type, out, outlen) == 1) {
-    return TS_SUCCESS;
-  }
-#endif
 
   return TS_ERROR;
 }
@@ -9263,4 +9190,73 @@ TSLogAddrUnmarshal(char **buf, char *dest, int len)
   }
 
   return {-1, -1};
+}
+
+bool
+TSClientHello::is_available() const
+{
+  return static_cast<bool>(*this);
+}
+
+uint16_t
+TSClientHello::get_version() const
+{
+  return static_cast<TLSSNISupport::ClientHello *>(_client_hello)->getVersion();
+}
+
+const uint8_t *
+TSClientHello::get_cipher_suites() const
+{
+  return reinterpret_cast<const uint8_t *>(static_cast<TLSSNISupport::ClientHello *>(_client_hello)->getCipherSuites().data());
+}
+
+size_t
+TSClientHello::get_cipher_suites_len() const
+{
+  return static_cast<TLSSNISupport::ClientHello *>(_client_hello)->getCipherSuites().length();
+}
+
+TSClientHello::TSExtensionTypeList::Iterator::Iterator(const void *ite)
+{
+  static_assert(sizeof(_real_iterator) >= sizeof(TLSSNISupport::ClientHello::ExtensionIdIterator));
+
+  ink_assert(_real_iterator);
+  ink_assert(ite);
+  memcpy(_real_iterator, ite, sizeof(TLSSNISupport::ClientHello::ExtensionIdIterator));
+}
+
+TSClientHello::TSExtensionTypeList::Iterator
+TSClientHello::TSExtensionTypeList::begin()
+{
+  ink_assert(_ch);
+  auto ch  = static_cast<TLSSNISupport::ClientHello *>(_ch);
+  auto ite = ch->begin();
+  // The temporal pointer is for the memcpy in the constructor. It's only used in the constructor.
+  return TSClientHello::TSExtensionTypeList::Iterator(&ite);
+}
+
+TSClientHello::TSExtensionTypeList::Iterator
+TSClientHello::TSExtensionTypeList::end()
+{
+  auto ite = static_cast<TLSSNISupport::ClientHello *>(_ch)->end();
+  // The temporal pointer is for the memcpy in the constructor. It's only used in the constructor.
+  return TSClientHello::TSExtensionTypeList::Iterator(&ite);
+}
+
+TSClientHello::TSExtensionTypeList::Iterator &
+TSClientHello::TSExtensionTypeList::Iterator::operator++()
+{
+  ++(*reinterpret_cast<TLSSNISupport::ClientHello::ExtensionIdIterator *>(_real_iterator));
+  return *this;
+}
+
+bool
+TSClientHello::TSExtensionTypeList::Iterator::operator==(const TSClientHello::TSExtensionTypeList::Iterator &b) const
+{
+  return memcmp(_real_iterator, b._real_iterator, sizeof(_real_iterator)) == 0;
+}
+int
+TSClientHello::TSExtensionTypeList::Iterator::operator*() const
+{
+  return *(*reinterpret_cast<const TLSSNISupport::ClientHello::ExtensionIdIterator *>(_real_iterator));
 }

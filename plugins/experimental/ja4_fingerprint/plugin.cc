@@ -202,15 +202,13 @@ handle_client_hello(TSCont /* cont ATS_UNUSED */, TSEvent event, void *edata)
 
   TSClientHello ch = TSVConnClientHelloGet(ssl_vc);
 
-  if (nullptr == ch) {
+  if (!ch) {
     Dbg(dbg_ctl, "Could not get TSClientHello object.");
   } else {
     auto data{std::make_unique<JA4_data>()};
     data->fingerprint = get_fingerprint(ch);
     get_IP(TSNetVConnRemoteAddrGet(ssl_vc), data->IP_addr);
     log_fingerprint(data.get());
-    // Clean up the TSClientHello structure
-    TSClientHelloDestroy(ch);
     // The VCONN_CLOSE handler is now responsible for freeing the resource.
     TSUserArgSet(ssl_vc, *get_user_arg_index(), static_cast<void *>(data.release()));
   }
@@ -284,7 +282,7 @@ get_version(TSClientHello ch)
     return max_version;
   } else {
     Dbg(dbg_ctl, "No supported_versions extension... using legacy version.");
-    return ch->get_version();
+    return ch.get_version();
   }
 }
 
@@ -308,8 +306,8 @@ get_first_ALPN(TSClientHello ch)
 void
 add_ciphers(JA4::TLSClientHelloSummary &summary, TSClientHello ch)
 {
-  const uint8_t *buf    = ch->get_cipher_suites();
-  size_t         buflen = ch->get_cipher_suites_len();
+  const uint8_t *buf    = ch.get_cipher_suites();
+  size_t         buflen = ch.get_cipher_suites_len();
 
   if (buflen > 0) {
     for (std::size_t i = 0; i + 1 < buflen; i += 2) {
@@ -323,7 +321,7 @@ add_ciphers(JA4::TLSClientHelloSummary &summary, TSClientHello ch)
 void
 add_extensions(JA4::TLSClientHelloSummary &summary, TSClientHello ch)
 {
-  for (auto ext_type : ch->get_extension_types()) {
+  for (auto ext_type : ch.get_extension_types()) {
     summary.add_extension(ext_type);
   }
 }

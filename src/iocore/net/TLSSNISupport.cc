@@ -50,23 +50,11 @@ TLSSNISupport::getInstance(SSL *ssl)
   return static_cast<TLSSNISupport *>(SSL_get_ex_data(ssl, _ex_data_index));
 }
 
-ClientHelloContainer
-TLSSNISupport::ClientHello::get_client_hello_container()
-{
-  return this->_chc;
-}
-
 // In TLSSNISupport.h
-ClientHelloContainer
-TLSSNISupport::get_client_hello_container() const
+TLSSNISupport::ClientHello *
+TLSSNISupport::get_client_hello() const
 {
-  return this->_chc;
-}
-
-void
-TLSSNISupport::set_client_hello_container(ClientHelloContainer container)
-{
-  this->_chc = container;
+  return this->_ch;
 }
 
 void
@@ -114,6 +102,9 @@ TLSSNISupport::perform_sni_action(SSL &ssl)
 void
 TLSSNISupport::on_client_hello(ClientHello &client_hello)
 {
+  // Save local copy for later use;
+  _ch = &client_hello;
+
   const char          *servername = nullptr;
   const unsigned char *p;
   size_t               remaining, len;
@@ -220,5 +211,106 @@ TLSSNISupport::ClientHello::getExtension(int type, const uint8_t **out, size_t *
   return SSL_client_hello_get0_ext(this->_chc, type, out, outlen);
 #elif HAVE_SSL_CTX_SET_SELECT_CERTIFICATE_CB
   return SSL_early_callback_ctx_extension_get(this->_chc, type, out, outlen);
+#endif
+}
+
+uint16_t
+TLSSNISupport::ClientHello::getVersion()
+{
+#if HAVE_SSL_CTX_SET_CLIENT_HELLO_CB
+  // Get legacy version (OpenSSL doesn't expose the direct version field from client hello)
+  return SSL_client_hello_get0_legacy_version(_chc);
+#elif HAVE_SSL_CTX_SET_SELECT_CERTIFICATE_CB
+  return _chc->version;
+#endif
+}
+
+std::string_view
+TLSSNISupport::ClientHello::getCipherSuites()
+{
+#if HAVE_SSL_CTX_SET_CLIENT_HELLO_CB
+  const unsigned char *cipher_buf     = nullptr;
+  size_t               cipher_buf_len = SSL_client_hello_get0_ciphers(_chc, &cipher_buf);
+  return {reinterpret_cast<const char *>(cipher_buf), cipher_buf_len};
+#elif HAVE_SSL_CTX_SET_SELECT_CERTIFICATE_CB
+  return {reinterpret_cast<const char *>(_chc->cipher_suites), _chc->cipher_suites_len};
+#endif
+}
+
+TLSSNISupport::ClientHello::ExtensionIdIterator
+TLSSNISupport::ClientHello::begin()
+{
+  ink_assert(_chc);
+#if HAVE_SSL_CTX_SET_CLIENT_HELLO_CB
+  if (_ext_ids == nullptr) {
+    SSL_client_hello_get1_extensions_present(_chc, &_ext_ids, &_ext_len);
+  }
+  return ExtensionIdIterator(_ext_ids, _ext_len, 0);
+#elif HAVE_SSL_CTX_SET_SELECT_CERTIFICATE_CB
+  return ExtensionIdIterator(_chc->extensions, _chc->extensions_len, 0);
+#endif
+}
+
+TLSSNISupport::ClientHello::ExtensionIdIterator
+TLSSNISupport::ClientHello::end()
+{
+  ink_assert(_chc);
+#if HAVE_SSL_CTX_SET_CLIENT_HELLO_CB
+  if (_ext_ids == nullptr) {
+    SSL_client_hello_get1_extensions_present(_chc, &_ext_ids, &_ext_len);
+  }
+  return ExtensionIdIterator(_ext_ids, _ext_len, _ext_len);
+#elif HAVE_SSL_CTX_SET_SELECT_CERTIFICATE_CB
+  return ExtensionIdIterator(_chc->extensions, _chc->extensions_len, _chc->extensions_len);
+#endif
+}
+
+TLSSNISupport::ClientHello::~ClientHello()
+{
+#if HAVE_SSL_CTX_SET_CLIENT_HELLO_CB
+  if (_ext_ids) {
+    OPENSSL_free(_ext_ids);
+  }
+#elif HAVE_SSL_CTX_SET_SELECT_CERTIFICATE_CB
+  // Nothing to do
+#endif
+}
+
+TLSSNISupport::ClientHello::ExtensionIdIterator::~ExtensionIdIterator()
+{
+  _extensions = nullptr;
+  _ext_len    = 0;
+  _offset     = 0;
+}
+
+TLSSNISupport::ClientHello::ExtensionIdIterator &
+TLSSNISupport::ClientHello::ExtensionIdIterator::operator++()
+{
+#if HAVE_SSL_CTX_SET_CLIENT_HELLO_CB
+  _offset++;
+#elif HAVE_SSL_CTX_SET_SELECT_CERTIFICATE_CB
+  uint16_t ext_len  = (_extensions[_offset + 2] << 8) + _extensions[_offset + 3];
+  _offset          += 2 + 2 + ext_len;
+  ink_assert(_offset <= _ext_len);
+#endif
+  return *this;
+}
+
+bool
+TLSSNISupport::ClientHello::ExtensionIdIterator::operator==(const ExtensionIdIterator &b) const
+{
+  return _extensions == b._extensions && _offset == b._offset;
+}
+
+int
+TLSSNISupport::ClientHello::ExtensionIdIterator::operator*() const
+{
+  if (_offset == _ext_len) {
+    throw std::out_of_range{"Invalid offset"};
+  }
+#if HAVE_SSL_CTX_SET_CLIENT_HELLO_CB
+  return _extensions[_offset];
+#elif HAVE_SSL_CTX_SET_SELECT_CERTIFICATE_CB
+  return (_extensions[_offset] << 8) + _extensions[_offset + 1];
 #endif
 }

@@ -23,6 +23,7 @@
  */
 #pragma once
 
+#include "tscore/ink_config.h"
 #include "tscore/ink_memory.h"
 #include "SSLTypes.h"
 
@@ -40,14 +41,51 @@ public:
   {
   public:
     ClientHello(ClientHelloContainer chc) : _chc(chc) {}
+    ~ClientHello();
+
+    class ExtensionIdIterator
+    {
+    public:
+#if HAVE_SSL_CTX_SET_CLIENT_HELLO_CB
+      ExtensionIdIterator(int *ids, size_t len, size_t offset) : _extensions(ids), _ext_len(len), _offset(offset) {}
+#elif HAVE_SSL_CTX_SET_SELECT_CERTIFICATE_CB
+      ExtensionIdIterator(const uint8_t *extensions, size_t len, size_t offset)
+        : _extensions(extensions), _ext_len(len), _offset(offset)
+      {
+      }
+#endif
+      ~ExtensionIdIterator();
+
+      ExtensionIdIterator &operator++();
+      bool                 operator==(const ExtensionIdIterator &b) const;
+      int                  operator*() const;
+
+    private:
+#if HAVE_SSL_CTX_SET_CLIENT_HELLO_CB
+      int *_extensions;
+#elif HAVE_SSL_CTX_SET_SELECT_CERTIFICATE_CB
+      const uint8_t *_extensions;
+#endif
+      size_t _ext_len;
+      size_t _offset;
+    };
+
+    uint16_t            getVersion();
+    std::string_view    getCipherSuites();
+    ExtensionIdIterator begin();
+    ExtensionIdIterator end();
+
     /**
      * @return 1 if successful
      */
-    int                  getExtension(int type, const uint8_t **out, size_t *outlen);
-    ClientHelloContainer get_client_hello_container();
+    int getExtension(int type, const uint8_t **out, size_t *outlen);
 
   private:
     ClientHelloContainer _chc;
+#if HAVE_SSL_CTX_SET_CLIENT_HELLO_CB
+    int   *_ext_ids = nullptr;
+    size_t _ext_len;
+#endif
   };
 
   virtual ~TLSSNISupport() = default;
@@ -56,9 +94,9 @@ public:
   static TLSSNISupport *getInstance(SSL *ssl);
   static void           bind(SSL *ssl, TLSSNISupport *snis);
   static void           unbind(SSL *ssl);
-  int                   perform_sni_action(SSL &ssl);
-  ClientHelloContainer  get_client_hello_container() const;
-  void                  set_client_hello_container(ClientHelloContainer container);
+
+  int          perform_sni_action(SSL &ssl);
+  ClientHello *get_client_hello() const;
   // Callback functions for OpenSSL libraries
 
   /** Process a CLIENT_HELLO from a client.
@@ -116,6 +154,6 @@ private:
   // Null-terminated string, or nullptr if there is no SNI server name.
   std::unique_ptr<char[]> _sni_server_name;
 
-  void                 _set_sni_server_name_buffer(std::string_view name);
-  ClientHelloContainer _chc = nullptr;
+  void         _set_sni_server_name_buffer(std::string_view name);
+  ClientHello *_ch;
 };

@@ -1050,124 +1050,70 @@ struct TSHttp2Priority {
    * or -1 if the stream has no dependency. */
   int32_t stream_dependency;
 };
-/**
- * A structure for SSL Client Hello data
- */
-struct tsapi_ssl_client_hello {
-  uint16_t       version{0};
-  const uint8_t *cipher_suites{nullptr};
-  size_t         cipher_suites_len{0};
-  const uint8_t *extensions{nullptr};
-  size_t         extensions_len{0};
-  int           *extension_ids{nullptr};
-  size_t         extension_ids_len{0};
-  void          *ssl_ptr{nullptr};
-};
 
 // Wrapper class that provides controlled access to client hello data
-class TSClientHelloImpl
+class TSClientHello
 {
 public:
-  // Type alias for extension type list
-  using TSExtensionTypeList = std::vector<uint16_t>;
-
-  TSClientHelloImpl(std::unique_ptr<tsapi_ssl_client_hello> ch) : _ssl_client_hello(std::move(ch)) {}
-
-  ~TSClientHelloImpl() = default;
-
-  uint16_t
-  get_version() const
+  class TSExtensionTypeList
   {
-    return _ssl_client_hello->version;
+  public:
+    TSExtensionTypeList(void *ch) : _ch(ch) {}
+
+    class Iterator
+    {
+    public:
+      Iterator(const void *ite);
+      Iterator &operator++();
+      bool      operator==(const Iterator &b) const;
+      int       operator*() const;
+
+    private:
+      char _real_iterator[24];
+    };
+
+    Iterator begin();
+    Iterator end();
+
+  private:
+    void *_ch;
+  };
+
+  TSClientHello(void *ch) : _client_hello(ch) {}
+
+  ~TSClientHello() = default;
+
+  explicit
+  operator bool() const
+  {
+    return _client_hello != nullptr;
   }
 
-  const uint8_t *
-  get_cipher_suites() const
-  {
-    return _ssl_client_hello->cipher_suites;
-  }
+  bool is_available() const;
 
-  size_t
-  get_cipher_suites_len() const
-  {
-    return _ssl_client_hello->cipher_suites_len;
-  }
+  uint16_t get_version() const;
 
-  const uint8_t *
-  get_extensions() const
-  {
-    return _ssl_client_hello->extensions;
-  }
+  const uint8_t *get_cipher_suites() const;
 
-  size_t
-  get_extensions_len() const
-  {
-    return _ssl_client_hello->extensions_len;
-  }
-
-  const int *
-  get_extension_ids() const
-  {
-    return _ssl_client_hello->extension_ids;
-  }
-
-  size_t
-  get_extension_ids_len() const
-  {
-    return _ssl_client_hello->extension_ids_len;
-  }
-
-  void *
-  get_ssl_ptr() const
-  {
-    return _ssl_client_hello->ssl_ptr;
-  }
+  size_t get_cipher_suites_len() const;
 
   // Returns an iterable container of extension type IDs
   // This abstracts the difference between BoringSSL (extensions buffer) and OpenSSL (extension_ids array)
   TSExtensionTypeList
   get_extension_types() const
   {
-    TSExtensionTypeList result;
-
-    // For BoringSSL, parse the extensions buffer
-    if (_ssl_client_hello->extensions != nullptr) {
-      const uint8_t *ext       = _ssl_client_hello->extensions;
-      size_t         remaining = _ssl_client_hello->extensions_len;
-
-      while (remaining >= 4) {
-        uint16_t ext_type       = (ext[0] << 8) | ext[1];
-        uint16_t ext_len        = (ext[2] << 8) | ext[3];
-        size_t   total_ext_size = 4 + ext_len;
-
-        result.push_back(ext_type);
-
-        if (total_ext_size > remaining) {
-          break;
-        }
-        ext       += total_ext_size;
-        remaining -= total_ext_size;
-      }
-    }
-    // For OpenSSL, use the extension IDs array
-    else if (_ssl_client_hello->extension_ids != nullptr) {
-      for (size_t i = 0; i < _ssl_client_hello->extension_ids_len; i++) {
-        result.push_back(static_cast<uint16_t>(_ssl_client_hello->extension_ids[i]));
-      }
-    }
-
-    return result;
+    return TSExtensionTypeList(_client_hello);
   }
 
   // Internal accessor for API implementation
-  tsapi_ssl_client_hello *
+  void *
   _get_internal() const
   {
-    return _ssl_client_hello.get();
+    return _client_hello;
   }
 
 private:
-  std::unique_ptr<tsapi_ssl_client_hello> _ssl_client_hello;
+  void *_client_hello;
 };
 
 using TSFile = struct tsapi_file *;
@@ -1205,7 +1151,6 @@ using TSHostLookupResult = struct tsapi_hostlookupresult *;
 using TSAIOCallback      = struct tsapi_aiocallback *;
 using TSAcceptor         = struct tsapi_net_accept *;
 using TSRemapPluginInfo  = struct tsapi_remap_plugin_info *;
-using TSClientHello      = TSClientHelloImpl *;
 
 using TSFetchSM = struct tsapi_fetchsm *;
 

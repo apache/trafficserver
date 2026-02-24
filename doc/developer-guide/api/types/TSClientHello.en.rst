@@ -42,14 +42,19 @@ Description
 a client during the TLS handshake. It provides access to the client's TLS
 version, cipher suites, and extensions.
 
-Objects of this type are obtained via :func:`TSVConnClientHelloGet` and must
-be freed using :func:`TSClientHelloDestroy`. The implementation abstracts
-differences between OpenSSL and BoringSSL to provide a consistent interface.
+The implementation abstracts differences between OpenSSL and BoringSSL to
+provide a consistent interface.
 
 Accessor Methods
 ================
 
 The following methods are available to access ClientHello data:
+
+.. function:: bool is_available() const
+
+   Returns whether the object contains valid values. As long as
+   :func:`TSVConnClientHelloGet` is called for a TLS connection, the return
+   value should be `true`.
 
 .. function:: uint16_t get_version() const
 

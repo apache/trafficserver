@@ -1351,32 +1351,12 @@ const char *TSVConnSslSniGet(TSVConn sslp, int *length);
     structure. For OpenSSL, cipher suites and extension IDs are extracted using
     SSL_client_hello_get0_* functions.
 
-    Memory Management: The caller must call TSClientHelloDestroy() to free the
-    returned object when it is no longer needed. Failure to do so will result
-    in memory leaks, especially for OpenSSL which allocates memory for the
-    extension IDs array.
-
     @param sslp The SSL virtual connection handle. Must not be nullptr.
-    @return Pointer to TSClientHello object containing Client Hello data, or
-            nullptr if the client hello is not available or if an error occurs.
+    @return A TSClientHello object containing Client Hello data.
 
-    @see TSClientHelloDestroy
     @see TSClientHelloExtensionGet
  */
 TSClientHello TSVConnClientHelloGet(TSVConn sslp);
-/**
-    Destroys a Client Hello object and frees associated memory.
-
-    This function must be called to properly free a TSClientHello object
-    obtained from TSVConnClientHelloGet(). It handles SSL library-specific
-    cleanup, including freeing the extension IDs array allocated by OpenSSL's
-    SSL_client_hello_get1_extensions_present() function.
-
-    @param ch The Client Hello object to destroy.
-
-    @see TSVConnClientHelloGet
- */
-void TSClientHelloDestroy(TSClientHello ch);
 
 /**
     Retrieve a specific TLS extension from the Client Hello.
@@ -1387,11 +1367,10 @@ void TSClientHelloDestroy(TSClientHello ch);
     OpenSSL without requiring conditional compilation in the plugin.
 
     The returned buffer is still owned by the underlying SSL context and must
-    not be freed by the caller. The buffer is valid only as long as the
-    TSClientHello object has not been destroyed.
+    not be freed by the caller. The buffer is valid only in the condition where
+    you can get a TSClientHello object from an SSL virtual connection.
 
     @param ch The Client Hello object obtained from TSVConnClientHelloGet().
-              Must not be nullptr.
     @param type The TLS extension type to retrieve.
     @param out Pointer to receive the extension data buffer. Must not be nullptr.
     @param outlen Pointer to receive the length of the extension data in bytes.
@@ -1402,7 +1381,6 @@ void TSClientHelloDestroy(TSClientHello ch);
             or if an error occurred during lookup.
 
     @see TSVConnClientHelloGet
-    @see TSClientHelloDestroy
  */
 TSReturnCode TSClientHelloExtensionGet(TSClientHello ch, unsigned int type, const unsigned char **out, size_t *outlen);
 
