@@ -26,6 +26,7 @@
 #include <string_view>
 #include <string>
 #include <variant>
+#include <tuple>
 
 #include "tscore/ink_inet.h"
 #include "tscore/ink_platform.h"
@@ -84,6 +85,8 @@ public:
   using UnmarshalFuncWithSlice = int (*)(char **, char *, int, LogSlice *, LogEscapeType);
   using UnmarshalFuncWithMap   = int (*)(char **, char *, int, const Ptr<LogFieldAliasMap> &);
   using SetFunc                = void (LogAccess::*)(char *, int);
+  using CustomMarshalFunc      = int (*)(void *, char *);
+  using CustomUnmarshalFunc    = std::tuple<int, int> (*)(char **, char *, int);
 
   using VarUnmarshalFuncSliceOnly = std::variant<UnmarshalFunc, UnmarshalFuncWithSlice>;
   using VarUnmarshalFunc          = std::variant<decltype(nullptr), UnmarshalFunc, UnmarshalFuncWithSlice, UnmarshalFuncWithMap>;
@@ -131,6 +134,8 @@ public:
 
   LogField(const char *name, const char *symbol, Type type, MarshalFunc marshal, UnmarshalFuncWithMap unmarshal,
            const Ptr<LogFieldAliasMap> &map, SetFunc _setFunc = nullptr);
+
+  LogField(const char *name, const char *symbol, Type type, CustomMarshalFunc custom_marshal, CustomUnmarshalFunc custom_unmarshal);
 
   LogField(const char *field, Container container);
   LogField(const LogField &rhs);
@@ -207,6 +212,8 @@ private:
   SetFunc               m_set_func;
   TSMilestonesType      milestone_from_m_name();
   int                   milestones_from_m_name(TSMilestonesType *m1, TSMilestonesType *m2);
+  CustomMarshalFunc     m_custom_marshal_func   = nullptr;
+  CustomUnmarshalFunc   m_custom_unmarshal_func = nullptr;
 
 public:
   LINK(LogField, link);
@@ -234,6 +241,7 @@ public:
 
   void      clear();
   void      add(LogField *field, bool copy = true);
+  void      remove(LogField *field);
   LogField *find_by_name(const char *name) const;
   LogField *find_by_symbol(const char *symbol) const;
   unsigned  marshal_len(LogAccess *lad);

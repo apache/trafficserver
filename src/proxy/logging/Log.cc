@@ -1148,13 +1148,6 @@ Log::init(int flags)
   }
 
   init_fields();
-  if (!(config_flags & LOGCAT)) {
-    RecRegisterConfigUpdateCb("proxy.config.log.logging_enabled", &Log::handle_logging_mode_change, nullptr);
-
-    Dbg(dbg_ctl_log_config, "Log::init(): logging_mode = %d init status = %d", logging_mode, init_status);
-    config->init();
-    init_when_enabled();
-  }
 }
 
 void
@@ -1176,6 +1169,18 @@ Log::init_when_enabled()
   Note("logging initialized[%d], logging_mode = %d", init_status, logging_mode);
   if (dbg_ctl_log_config.on()) {
     config->display();
+  }
+}
+
+void
+Log::load_config()
+{
+  if (!(config_flags & LOGCAT)) {
+    RecRegisterConfigUpdateCb("proxy.config.log.logging_enabled", &Log::handle_logging_mode_change, nullptr);
+
+    Dbg(dbg_ctl_log_config, "Log::init(): logging_mode = %d init status = %d", logging_mode, init_status);
+    config->init();
+    init_when_enabled();
   }
 }
 

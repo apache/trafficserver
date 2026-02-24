@@ -474,6 +474,13 @@ LogAccess::marshal_ip(char *dest, sockaddr const *ip)
   return INK_ALIGN_DEFAULT(len);
 }
 
+int
+LogAccess::marshal_custom_field(char *buf, LogField::CustomMarshalFunc plugin_marshal_func)
+{
+  int len = plugin_marshal_func(m_http_sm, buf);
+  return LogAccess::padded_length(len);
+}
+
 inline int
 LogAccess::unmarshal_with_map(int64_t code, char *dest, int len, const Ptr<LogFieldAliasMap> &map, const char *msg)
 {

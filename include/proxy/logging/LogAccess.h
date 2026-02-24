@@ -307,6 +307,10 @@ public:
   int marshal_milestones_csv(char *buf);
 
   void set_http_header_field(LogField::Container container, char *field, char *buf, int len);
+
+  // Plugin
+  int marshal_custom_field(char *buf, LogField::CustomMarshalFunc plugin_marshal_func);
+
   //
   // unmarshalling routines
   //
