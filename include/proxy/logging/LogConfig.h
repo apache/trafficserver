@@ -34,6 +34,7 @@
 #include "proxy/logging/RolledLogDeleter.h"
 #include "swoc/MemSpan.h"
 #include "tsutil/Metrics.h"
+#include "mgmt/config/ReloadCoordinator.h"
 
 using ts::Metrics;
 
@@ -103,10 +104,13 @@ public:
   void display(FILE *fd = stdout);
   void setup_log_objects();
 
-  static int reconfigure(const char *name, RecDataT data_type, RecData data, void *cookie);
+  // static int reconfigure(const char *name, RecDataT data_type, RecData data, void *cookie);
+  static void reconfigure(ConfigContext ctx = {}); // ConfigRegistry reload handler
 
   static void register_config_callbacks();
   static void register_stat_callbacks();
+
+  ConfigContext reload_ctx; ///< Tracks reload status;
 
   bool space_to_write(int64_t bytes_to_write) const;
 

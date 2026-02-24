@@ -151,7 +151,7 @@ class QUICConfig
 {
 public:
   static void              startup();
-  static void              reconfigure();
+  static void              reconfigure(ConfigContext ctx = {});
   static QUICConfigParams *acquire();
   static void              release(QUICConfigParams *params);
 

@@ -173,7 +173,7 @@ private:
 
 struct SSLConfig {
   static void             startup();
-  static void             reconfigure();
+  static void             reconfigure(ConfigContext ctx = {});
   static SSLConfigParams *acquire();
   static SSLConfigParams *load_acquire();
   static void             release(SSLConfigParams *params);
@@ -195,7 +195,7 @@ private:
 
 struct SSLCertificateConfig {
   static bool           startup();
-  static bool           reconfigure();
+  static bool           reconfigure(ConfigContext ctx = {});
   static SSLCertLookup *acquire();
   static void           release(SSLCertLookup *params);
 
@@ -218,7 +218,7 @@ struct SSLTicketParams : public ConfigInfo {
 
 struct SSLTicketKeyConfig {
   static void startup();
-  static bool reconfigure();
+  static bool reconfigure(ConfigContext ctx = {});
   static bool reconfigure_data(char *ticket_data, int ticket_data_len);
 
   static SSLTicketParams *

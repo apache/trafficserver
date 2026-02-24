@@ -34,6 +34,7 @@
 #include "jsonrpc/CtrlRPCRequests.h"
 #include "jsonrpc/ctrl_yaml_codecs.h"
 
+#include "mgmt/config/ConfigReloadErrors.h"
 #include "TrafficCtlStatus.h"
 namespace
 {
@@ -59,6 +60,22 @@ yaml_to_record_name(std::string_view path)
     return std::string{RECORD_PREFIX} + std::string{path.substr(YAML_PREFIX.size())};
   }
   return std::string{path};
+}
+
+void
+display_errors(BasePrinter *printer, std::vector<ConfigReloadResponse::Error> const &errors)
+{
+  std::string text;
+  if (auto iter = std::begin(errors); iter != std::end(errors)) {
+    auto print_error = [&](auto &&e) { printer->write_output(swoc::bwprint(text, "Message: {}, Code: {}", e.message, e.code)); };
+    printer->write_output("------------ Errors ----------");
+    print_error(*iter);
+    ++iter;
+    for (; iter != std::end(errors); ++iter) {
+      printer->write_output("--");
+      print_error(*iter);
+    }
+  }
 }
 } // namespace
 
@@ -161,7 +178,7 @@ ConfigCommand::ConfigCommand(ts::Arguments *args) : RecordCommand(args)
     _printer      = std::make_unique<ConfigSetPrinter>(printOpts);
     _invoked_func = [&]() { config_reset(); };
   } else if (args->get(STATUS_STR)) {
-    _printer      = std::make_unique<ConfigStatusPrinter>(printOpts);
+    _printer      = std::make_unique<ConfigReloadPrinter>(printOpts);
     _invoked_func = [&]() { config_status(); };
   } else if (args->get(RELOAD_STR)) {
     _printer      = std::make_unique<ConfigReloadPrinter>(printOpts);
@@ -238,9 +255,30 @@ ConfigCommand::config_diff()
 void
 ConfigCommand::config_status()
 {
-  ConfigStatusRequest          request;
-  shared::rpc::JSONRPCResponse response = invoke_rpc(request);
-  _printer->write_output(response);
+  std::string token = get_parsed_arguments()->get("token").value();
+  std::string count = get_parsed_arguments()->get("count").value();
+
+  if (!count.empty() && !token.empty()) {
+    // can't use both.
+    if (!_printer->is_json_format()) {
+      _printer->write_output("You can't use both --token and --count options together. Ignoring --count");
+    }
+    count = ""; // server will ignore this if token is set anyways.
+  }
+
+  auto resp = fetch_config_reload(token, count);
+
+  if (resp.error.size()) {
+    display_errors(_printer.get(), resp.error);
+    App_Exit_Status_Code = CTRL_EX_ERROR;
+    return;
+  }
+
+  if (resp.tasks.size() > 0) {
+    for (const auto &task : resp.tasks) {
+      _printer->as<ConfigReloadPrinter>()->print_reload_report(task, true);
+    }
+  }
 }
 
 void
@@ -253,6 +291,117 @@ ConfigCommand::config_set()
   shared::rpc::JSONRPCResponse response = invoke_rpc(request);
 
   _printer->write_output(response);
+}
+
+ConfigReloadResponse
+ConfigCommand::fetch_config_reload(std::string const &token, std::string const &count)
+{
+  // traffic_ctl config status [--token <token>] [--count <n>]
+
+  FetchConfigReloadStatusRequest request{
+    FetchConfigReloadStatusRequest::Params{token, count}
+  };
+
+  auto response = invoke_rpc(request); // server will handle if token is empty or not.
+
+  _printer->write_output(response); // in case of errors.
+  return response.result.as<ConfigReloadResponse>();
+}
+
+void
+ConfigCommand::track_config_reload_progress(std::string const &token, std::chrono::milliseconds refresh_interval)
+{
+  FetchConfigReloadStatusRequest request{
+    FetchConfigReloadStatusRequest::Params{token, "1" /* last reload if any*/}
+  };
+  auto resp = invoke_rpc(request);
+
+  if (resp.is_error()) {
+    _printer->write_output(resp);
+    return;
+  }
+
+  while (!Signal_Flagged.load()) {
+    auto decoded_response = resp.result.as<ConfigReloadResponse>();
+
+    _printer->write_output(resp);
+    if (decoded_response.tasks.empty()) {
+      _printer->write_output(resp);
+      App_Exit_Status_Code = CTRL_EX_ERROR;
+      return;
+    }
+
+    ConfigReloadResponse::ReloadInfo current_task = decoded_response.tasks[0];
+    _printer->as<ConfigReloadPrinter>()->write_progress_line(current_task);
+
+    // Check if reload has reached a terminal state
+    if (current_task.status == "success" || current_task.status == "fail" || current_task.status == "timeout") {
+      std::cout << "\n";
+      if (current_task.status != "success") {
+        App_Exit_Status_Code = CTRL_EX_ERROR;
+        std::string hint;
+        _printer->write_output(swoc::bwprint(hint, "\n  Details : traffic_ctl config status -t {}", current_task.config_token));
+      }
+      return;
+    }
+    std::this_thread::sleep_for(refresh_interval);
+
+    request = FetchConfigReloadStatusRequest{
+      FetchConfigReloadStatusRequest::Params{token, "1" /* last reload if any*/}
+    };
+    resp = invoke_rpc(request);
+    if (resp.is_error()) {
+      _printer->write_output(resp);
+      App_Exit_Status_Code = CTRL_EX_ERROR;
+      return;
+    }
+  }
+
+  // Signal received (e.g. Ctrl+C) — assume reload still in progress.
+  if (Signal_Flagged.load()) {
+    App_Exit_Status_Code = CTRL_EX_TEMPFAIL;
+  }
+}
+
+std::string
+ConfigCommand::read_data_input(std::string const &data_arg)
+{
+  if (data_arg.empty()) {
+    return {};
+  }
+
+  // @- means stdin
+  if (data_arg == "@-") {
+    std::istreambuf_iterator<char> begin(std::cin), end;
+    return std::string(begin, end);
+  }
+
+  // @filename means read from file
+  if (data_arg[0] == '@') {
+    std::string   filename = data_arg.substr(1);
+    std::ifstream file(filename);
+    if (!file) {
+      _printer->write_output("Error: Cannot open file '" + filename + "'");
+      App_Exit_Status_Code = CTRL_EX_ERROR;
+      return {};
+    }
+    std::istreambuf_iterator<char> begin(file), end;
+    return std::string(begin, end);
+  }
+
+  // Otherwise, treat as inline YAML string
+  return data_arg;
+}
+
+ConfigReloadResponse
+ConfigCommand::config_reload(std::string const &token, bool force, YAML::Node const &configs)
+{
+  auto resp = invoke_rpc(ConfigReloadRequest{
+    ConfigReloadRequest::Params{token, force, configs}
+  });
+  // base class method will handle error and json output if needed.
+  _printer->write_output(resp);
+  return resp.result.as<ConfigReloadResponse>();
 }
 
 void
@@ -301,8 +450,182 @@ ConfigCommand::config_reset()
 void
 ConfigCommand::config_reload()
 {
-  _printer->write_output(invoke_rpc(ConfigReloadRequest{}));
+  std::string token     = get_parsed_arguments()->get("token").value();
+  bool        force     = get_parsed_arguments()->get("force") ? true : false;
+  auto        data_args = get_parsed_arguments()->get("data");
+
+  bool show_details = get_parsed_arguments()->get("show-details") ? true : false;
+  bool monitor      = get_parsed_arguments()->get("monitor") ? true : false;
+
+  float refresh_secs      = std::stof(get_parsed_arguments()->get("refresh-int").value());
+  float initial_wait_secs = std::stof(get_parsed_arguments()->get("initial-wait").value());
+
+  if (monitor && show_details) {
+    // ignore monitor if details is set.
+    monitor = false;
+  }
+
+  // Warn about --force behavior
+  if (force) {
+    _printer->write_output("Warning: --force does not stop running handlers.");
+    _printer->write_output("         If a reload is actively processing, handlers may run in parallel.");
+    _printer->write_output("");
+  }
+
+  // Parse inline config data if provided (supports multiple -d arguments)
+  YAML::Node configs;
+  for (auto const &data_arg : data_args) {
+    if (data_arg.empty()) {
+      continue;
+    }
+
+    std::string data_content = read_data_input(data_arg);
+    if (data_content.empty() && App_Exit_Status_Code == CTRL_EX_ERROR) {
+      return; // Error already reported by read_data_input
+    }
+
+    try {
+      YAML::Node parsed = YAML::Load(data_content);
+      if (!parsed.IsMap()) {
+        _printer->write_output("Error: Data must be a YAML map with config keys (e.g., ip_allow, sni)");
+        App_Exit_Status_Code = CTRL_EX_ERROR;
+        return;
+      }
+      // Merge parsed content into configs (later files override earlier ones)
+      for (auto const &kv : parsed) {
+        configs[kv.first.as<std::string>()] = kv.second;
+      }
+    } catch (YAML::Exception const &ex) {
+      _printer->write_output(std::string("Error: Invalid YAML data in '") + data_arg + "': " + ex.what());
+      App_Exit_Status_Code = CTRL_EX_ERROR;
+      return;
+    }
+  }
+
+  using ConfigError = config::reload::errors::ConfigReloadError;
+
+  auto contains_error = [](std::vector<ConfigReloadResponse::Error> const &errors, ConfigError error) -> bool {
+    const int code = static_cast<int>(error);
+    for (auto const &n : errors) {
+      if (n.code == code) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  std::string text;
+  bool        token_exist{false};
+  bool        in_progress{false};
+
+  if (show_details) {
+    bool include_logs = get_parsed_arguments()->get("include-logs") ? true : false;
+
+    ConfigReloadResponse resp = config_reload(token, force, configs);
+    if (contains_error(resp.error, ConfigError::RELOAD_IN_PROGRESS)) {
+      App_Exit_Status_Code = CTRL_EX_TEMPFAIL;
+      if (resp.tasks.size() > 0) {
+        const auto &task = resp.tasks[0];
+        _printer->write_output(swoc::bwprint(text, "\xe2\x9f\xb3 Reload in progress [{}]", task.config_token));
+        _printer->as<ConfigReloadPrinter>()->print_reload_report(task, include_logs);
+      }
+      return;
+    } else if (contains_error(resp.error, ConfigError::TOKEN_ALREADY_EXISTS)) {
+      App_Exit_Status_Code = CTRL_EX_ERROR;
+      token_exist          = true;
+    } else if (resp.error.size()) {
+      display_errors(_printer.get(), resp.error);
+      App_Exit_Status_Code = CTRL_EX_ERROR;
+      return;
+    }
+
+    if (token_exist) {
+      _printer->write_output(swoc::bwprint(text, "\xe2\x9c\x97 Token '{}' already in use", token));
+    } else {
+      _printer->write_output(swoc::bwprint(text, "\xe2\x9c\x94 Reload scheduled [{}]. Waiting for details...", resp.config_token));
+      std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<int>(initial_wait_secs * 1000)));
+    }
+
+    resp = fetch_config_reload(token);
+    if (resp.error.size()) {
+      display_errors(_printer.get(), resp.error);
+      App_Exit_Status_Code = CTRL_EX_ERROR;
+      return;
+    }
+
+    if (resp.tasks.size() > 0) {
+      const auto &task = resp.tasks[0];
+      // _printer->as<ConfigReloadPrinter>()->print_basic_ri_line(task, true, true, 0);
+      _printer->as<ConfigReloadPrinter>()->print_reload_report(task, include_logs);
+    }
+  } else if (monitor) {
+    _printer->disable_json_format(); // monitor output is not json.
+    ConfigReloadResponse resp = config_reload(token, force, configs);
+
+    if (contains_error(resp.error, ConfigError::RELOAD_IN_PROGRESS)) {
+      in_progress = true;
+      if (!resp.tasks.empty()) {
+        _printer->write_output(swoc::bwprint(text, "\xe2\x9f\xb3 Reload in progress [{}]", resp.tasks[0].config_token));
+      }
+    } else if (contains_error(resp.error, ConfigError::TOKEN_ALREADY_EXISTS)) {
+      App_Exit_Status_Code = CTRL_EX_ERROR;
+      _printer->write_output(swoc::bwprint(text, "\xe2\x9c\x97 Token '{}' already in use\n", token));
+      _printer->write_output(swoc::bwprint(text, "  Status : traffic_ctl config status -t {}", token));
+      _printer->write_output("  Retry  : traffic_ctl config reload");
+      return;
+    } else if (resp.error.size()) {
+      display_errors(_printer.get(), resp.error);
+      App_Exit_Status_Code = CTRL_EX_ERROR;
+      return;
+    } else {
+      _printer->write_output(swoc::bwprint(text, "\xe2\x9c\x94 Reload scheduled [{}]", resp.config_token));
+    }
+
+    if (!in_progress) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<int>(initial_wait_secs * 1000))); // wait before first poll
+    } // else no need to wait, we can start fetching right away.
+
+    track_config_reload_progress(resp.config_token, std::chrono::milliseconds(static_cast<int>(refresh_secs * 1000)));
+  } else {
+    ConfigReloadResponse resp = config_reload(token, force, configs);
+    if (contains_error(resp.error, ConfigError::RELOAD_IN_PROGRESS)) {
+      App_Exit_Status_Code = CTRL_EX_TEMPFAIL;
+      if (!resp.tasks.empty()) {
+        std::string tk = resp.tasks[0].config_token;
+        _printer->write_output(swoc::bwprint(text, "\xe2\x9f\xb3 Reload in progress [{}]\n", tk));
+        _printer->write_output(swoc::bwprint(text, "  Monitor : traffic_ctl config reload -t {} -m", tk));
+        _printer->write_output(swoc::bwprint(text, "  Details : traffic_ctl config status -t {}", tk));
+        _printer->write_output("  Force   : traffic_ctl config reload --force  (may conflict with the running reload)");
+      }
+    } else if (contains_error(resp.error, ConfigError::TOKEN_ALREADY_EXISTS)) {
+      App_Exit_Status_Code = CTRL_EX_ERROR;
+      _printer->write_output(swoc::bwprint(text, "\xe2\x9c\x97 Token '{}' already in use\n", token));
+      _printer->write_output(swoc::bwprint(text, "  Status : traffic_ctl config status -t {}", token));
+      _printer->write_output("  Retry  : traffic_ctl config reload");
+    } else if (resp.error.size()) {
+      display_errors(_printer.get(), resp.error);
+      App_Exit_Status_Code = CTRL_EX_ERROR;
+      return;
+    } else {
+      _printer->write_output(swoc::bwprint(text, "\xe2\x9c\x94 Reload scheduled [{}]\n", resp.config_token));
+      _printer->write_output(swoc::bwprint(text, "  Monitor : traffic_ctl config reload -t {} -m", resp.config_token));
+      _printer->write_output(swoc::bwprint(text, "  Details : traffic_ctl config reload -t {} -s -l", resp.config_token));
+    }
+
+    if (resp.tasks.size() > 0) {
+      const auto &task = resp.tasks[0];
+      _printer->as<ConfigReloadPrinter>()->print_reload_report(task);
+    }
+  }
+
+  // Show warning for inline config (not persisted to disk)
+  if (configs.size() > 0 && App_Exit_Status_Code != CTRL_EX_ERROR) {
+    _printer->write_output("");
+    _printer->write_output("Note: Inline configuration is NOT persisted to disk.");
+    _printer->write_output("      Server restart will revert to file-based configuration.");
+  }
 }
+
 void
 ConfigCommand::config_show_file_registry()
 {
@@ -390,7 +713,7 @@ MetricCommand::metric_monitor()
   };
 
   std::unordered_map<std::string, ctx> summary;
-
+  _printer->disable_json_format(); // monitor is not json.
   while (!Signal_Flagged.load()) {
     // Request will hold all metrics in a single message.
     shared::rpc::JSONRPCResponse const &resp = record_fetch(arg, shared::rpc::NOT_REGEX, RecordQueryType::METRIC);
@@ -585,6 +908,7 @@ DirectRPCCommand::from_file_request()
 {
   // TODO: remove all the output messages from here if possible
   auto filenames = get_parsed_arguments()->get(FILE_STR);
+
   for (auto &&filename : filenames) {
     std::string text;
     // run some basic validation on the passed files, they should
@@ -600,7 +924,7 @@ DirectRPCCommand::from_file_request()
       std::string const &response = invoke_rpc(content);
       if (_printer->is_json_format()) {
         // as we have the raw json in here, we cna just directly print it
-        _printer->write_output(response);
+        _printer->write_debug(response);
       } else {
         _printer->write_output(swoc::bwprint(text, "\n[ {} ]\n --> \n{}\n", filename, content));
         _printer->write_output(swoc::bwprint(text, "<--\n{}\n", response));

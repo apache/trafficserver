@@ -90,7 +90,8 @@ main([[maybe_unused]] int argc, const char **argv)
     .add_option("--run-root", "", "using TS_RUNROOT as sandbox", "TS_RUNROOT", 1)
     .add_option("--format", "-f", "Use a specific output format {json|rpc}", "", 1, "", "format")
     .add_option("--read-timeout-ms", "", "Read timeout for RPC (in milliseconds)", "", 1, "10000", "read-timeout")
-    .add_option("--read-attempts", "", "Read attempts for RPC", "", 1, "100", "read-attempts");
+    .add_option("--read-attempts", "", "Read attempts for RPC", "", 1, "100", "read-attempts")
+    .add_option("--watch", "-w", "Execute a program periodically. Watch interval(in seconds) can be passed.", "", 1, "-1", "watch");
 
   auto &config_command     = parser.add_command("config", "Manipulate configuration records").require_commands();
   auto &metric_command     = parser.add_command("metric", "Manipulate performance metrics").require_commands();
@@ -122,9 +123,55 @@ main([[maybe_unused]] int argc, const char **argv)
     .add_example_usage("traffic_ctl config match [OPTIONS] REGEX [REGEX ...]")
     .add_option("--records", "", "Emit output in YAML format")
     .add_option("--default", "", "Include the default value");
-  config_command.add_command("reload", "Request a configuration reload", Command_Execute)
-    .add_example_usage("traffic_ctl config reload");
-  config_command.add_command("status", "Check the configuration status", Command_Execute)
+
+  //
+  // Start a new reload. If used without any extra options, it will start a new reload
+  // or show the details of the current reload if one is in progress.
+  // A new token will be assigned by the server if no token is provided.
+  config_command.add_command("reload", "Request a configuration reload", [&]() { command->execute(); })
+    .add_example_usage("traffic_ctl config reload")
+    //
+    // Start a new reload with a specific token. If no token is provided, the server will assign one.
+    // If a reload is already in progress, it will try to show the details of the current reload.
+    // If token already exists, you must use another token, or let the server assign one.
+    .add_option("--token", "-t", "Configuration token to reload.", "", 1, "")
+    //
+    // Start a new reload and monitor its progress until completion.
+    // Polls the server at regular intervals (see --refresh-int).
+    // If a reload is already in progress, monitors that one instead.
+    .add_option("--monitor", "-m", "Monitor reload progress until completion")
+    //
+    // Start a new reload. if one in progress it will show de details of the current reload.
+    // if no reload in progress, it will start a new one and it will show the details of it.
+    // This cannot be used with --monitor, if both are set, --show-details will be ignored.
+    .add_option("--show-details", "-s", "Show detailed information of the reload.")
+    .add_option("--include-logs", "-l", "include logs in the details. only work together with --show-details")
+
+    //
+    // Refresh interval in seconds used with --monitor.
+    // Controls how often to poll the server for reload status.
+    .add_option("--refresh-int", "-r", "Refresh interval in seconds (used with --monitor). Accepts fractional values (e.g. 0.5)",
+                "", 1, "0.5")
+    //
+    // The server will not let you start two reload at the same time. This option will force a new reload
+    // even if there is one in progress. Use with caution as this may have unexpected results.
+    // This is mostly for debugging and testing purposes. note: Should we keep it here?
+    .add_option("--force", "-F", "Force reload even if there are unsaved changes")
+    //
+    // Pass inline config data for reload. Like curl's -d flag:
+    //   -d @file.yaml              - read config from file
+    //   -d @file1.yaml @file2.yaml - read multiple files
+    //   -d @-                      - read config from stdin
+    //   -d "yaml: content"         - inline yaml string
+    .add_option("--data", "-d", "Inline config data (@file, @- for stdin, or yaml string)", "", MORE_THAN_ZERO_ARG_N, "")
+    .add_option(
+      "--initial-wait", "-w",
+      "Initial wait before first poll, giving the server time to schedule all handlers (seconds). Accepts fractional values", "", 1,
+      "2");
+
+  config_command.add_command("status", "Check the configuration status", [&]() { command->execute(); })
+    .add_option("--token", "-t", "Configuration token to check status.", "", 1, "")
+    .add_option("--count", "-c", "Number of status records to return. Use numeric or 'all' to get the full history", "", 1, "")
     .add_example_usage("traffic_ctl config status");
   config_command.add_command("set", "Set a configuration value", "", 2, Command_Execute)
     .add_option("--cold", "-c",

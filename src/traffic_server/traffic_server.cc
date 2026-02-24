@@ -91,6 +91,8 @@ extern "C" int plock(int);
 #include "iocore/eventsystem/RecProcess.h"
 #include "proxy/Transform.h"
 #include "iocore/eventsystem/ConfigProcessor.h"
+#include "mgmt/config/ConfigRegistry.h"
+#include "mgmt/config/ConfigContext.h"
 #include "proxy/http/HttpProxyServerMain.h"
 #include "proxy/http/HttpBodyFactory.h"
 #include "proxy/ProxySession.h"
@@ -137,8 +139,6 @@ extern "C" int plock(int);
 extern void load_config_file_callback(const char *parent_file, const char *remap_file);
 
 extern HttpBodyFactory *body_factory;
-
-extern void initializeRegistry();
 
 extern void Initialize_Errata_Settings();
 
@@ -264,7 +264,7 @@ DbgCtl dbg_ctl_diags{"diags"};
 DbgCtl dbg_ctl_hugepages{"hugepages"};
 DbgCtl dbg_ctl_rpc_init{"rpc.init"};
 DbgCtl dbg_ctl_statsproc{"statsproc"};
-
+DbgCtl dbg_ctl_conf_reload{"confreload"};
 struct AutoStopCont : public Continuation {
   int
   mainEvent(int /* event */, Event * /* e */)
@@ -727,10 +727,59 @@ initialize_records()
   ts::Metrics::StaticString::createString("proxy.process.version.server.build_person", version.build_person());
 }
 
+// register_config_files
+//
+// Registration point for records.yaml and static (non-reloadable) config files.
+//
+// Most reloadable config files (ip_allow, sni, logging, etc.) register
+// themselves via ConfigRegistry::register_config() in their own modules
+// (IPAllow.cc, SSLClientCoordinator.cc, LogConfig.cc, etc.).
+//
+// records.yaml is special:
+//   - It is first read at startup inside RecCoreInit() (src/records/RecCore.cc),
+//     which is called through RecProcessInit() → initialize_records() well before
+//     this function.
+//   - On reload (file change detected by FileManager), process_config_update() in
+//     FileManager.cc delegates to ConfigRegistry::execute_reload("records"), which
+//     invokes the handler below.
+//   - The handler calls RecReadYamlConfigFile() (src/records/P_RecCore.cc), the same
+//     function used at startup, to re-parse the file.
+//
+// Static/non-reloadable files (storage.config, socks.config, volume.config,
+// plugin.config, jsonrpc.yaml) are registered via register_static_file() for
+// inventory purposes (filemanager.get_files_registry RPC endpoint and future work).
+//
 void
-initialize_file_manager()
+register_config_files()
 {
-  initializeRegistry();
+  using namespace config;
+  auto &reg = ConfigRegistry::Get_Instance();
+
+  // records.yaml — reloadable.
+  // First read happens at startup in RecCoreInit() (src/records/RecCore.cc:244).
+  // This handler is only invoked on runtime reload via ConfigRegistry::execute_reload("records").
+  reg.register_config(
+    "records", ts::filename::RECORDS, ts::filename::RECORDS,
+    [](ConfigContext ctx) {
+      if (auto zret = RecReadYamlConfigFile(); zret) {
+        RecConfigWarnIfUnregistered(ctx);
+      } else {
+        ctx.log("{}", zret);
+        if (zret.severity() >= ERRATA_ERROR) {
+          ctx.fail("Failed to reload records.yaml");
+          return;
+        }
+      }
+      ctx.complete();
+    },
+    ConfigSource::FileOnly);
+
+  // Static (non-reloadable) files only.
+  reg.register_static_file("storage", ts::filename::STORAGE, {}, true);
+  reg.register_static_file("socks", ts::filename::SOCKS, "proxy.config.socks.socks_config_file");
+  reg.register_static_file("volume", ts::filename::VOLUME);
+  reg.register_static_file("plugin", ts::filename::PLUGIN);
+  reg.register_static_file("jsonrpc", ts::filename::JSONRPC, "proxy.config.jsonrpc.filename");
 }
 
 std::tuple<bool, std::string>
@@ -1864,8 +1913,8 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   // Records init
   initialize_records();
 
-  // Initialize file manager for TS.
-  initialize_file_manager();
+  // Register  non reloadable config files and records.yaml.
+  register_config_files();
 
   // Set the core limit for the process
   init_core_size();
@@ -2238,7 +2287,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 #if TS_USE_QUIC == 1
     quic_NetProcessor.start(-1, stacksize);
 #endif
-    FileManager::instance().registerConfigPluginCallbacks(global_config_cbs);
+    FileManager::instance().registerConfigPluginCallbacks([&]() { global_config_cbs->invoke(); });
     cacheProcessor.afterInitCallbackSet(&CB_After_Cache_Init);
     cacheProcessor.start();
 

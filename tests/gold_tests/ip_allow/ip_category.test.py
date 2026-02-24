@@ -228,7 +228,7 @@ ssl_multicert:
         ts.Disk.records_config.update(
             {
                 'proxy.config.diags.debug.enabled': 1,
-                'proxy.config.diags.debug.tags': 'http|ip_allow',
+                'proxy.config.diags.debug.tags': 'http|ip_allow|config.reload',
                 'proxy.config.cache.ip_categories.filename': Test_ip_category._categories_filename,
                 'proxy.config.http.push_method_enabled': 1,
                 'proxy.config.ssl.server.cert.path': ts.Variables.SSLDir,

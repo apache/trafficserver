@@ -451,7 +451,7 @@ QUICConfig::startup()
 }
 
 void
-QUICConfig::reconfigure()
+QUICConfig::reconfigure(ConfigContext ctx)
 {
   QUICConfigParams *params;
   params = new QUICConfigParams;
@@ -460,6 +460,7 @@ QUICConfig::reconfigure()
   _config_id = configProcessor.set(_config_id, params);
 
   QUICConnectionId::SCID_LEN = params->scid_len();
+  ctx.complete("QUICConfig reloaded");
 }
 
 QUICConfigParams *
