@@ -93,6 +93,9 @@ rcv_data_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
 
   Http2StreamDebug(cstate.session, id, "Received DATA frame");
 
+  // Update connection window size, before any stream specific handling
+  cstate.decrement_server_rwnd(payload_length);
+
   if (cstate.get_zombie_event()) {
     Warning("Data frame for zombied session %" PRId64, cstate.session->get_connection_id());
   }
@@ -162,7 +165,8 @@ rcv_data_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
   }
 
   // Check whether Window Size is acceptable
-  if (!cstate.server_rwnd_is_shrinking && cstate.server_rwnd() < payload_length) {
+  // compare to 0 because we already decreased the connection rwnd with payload_length
+  if (!cstate.server_rwnd_is_shrinking && cstate.server_rwnd() < 0) {
     return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_FLOW_CONTROL_ERROR,
                       "recv data cstate.server_rwnd < payload_length");
   }
@@ -171,8 +175,7 @@ rcv_data_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
                       "recv data stream->server_rwnd < payload_length");
   }
 
-  // Update Window size
-  cstate.decrement_server_rwnd(payload_length);
+  // Update stream window size
   stream->decrement_server_rwnd(payload_length);
 
   if (is_debug_tag_set("http2_con")) {
