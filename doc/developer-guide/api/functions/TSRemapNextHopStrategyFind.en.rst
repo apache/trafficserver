@@ -18,8 +18,8 @@
 
 .. default-domain:: cpp
 
-TSHttpTxnNextHopNamedStrategyGet
-********************************
+TSRemapNextHopStrategyFind
+**************************
 
 Synopsis
 ========
@@ -28,7 +28,7 @@ Synopsis
 
     #include <ts/ts.h>
 
-.. function:: void const* TSHttpTxnNextHopNamedStrategyGet(TSHttpTxn txnp, const char *name)
+.. function:: TSStrategy TSRemapNextHopStrategyFind(const char *name)
 
 Description
 ===========
@@ -36,8 +36,8 @@ Description
 Gets a pointer to the specified :arg:`name` NextHopSelectionStrategy.
 This may be nullptr indicating that no strategy exists with the given name.
 
-This function uses the transaction :arg:`txnp` to get access to the
-NextHopStrategyFactory associated with the current configuration.
+This function may ONLY be called during TSRemapNewInstance.
+The resulting strategy pointer is valid for all subsequent transactions.
 
 .. note::
 
@@ -49,4 +49,4 @@ NextHopStrategyFactory associated with the current configuration.
 See Also
 ========
 
-:func:`TSHttpTxnNextHopStrategySet`
+:func:`TSRemapNextHopStrategySet`
