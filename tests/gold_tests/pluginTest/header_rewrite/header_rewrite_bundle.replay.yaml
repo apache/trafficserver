@@ -1130,7 +1130,7 @@ sessions:
       status: 200
 
 # ==========================================================================
-# Tests 31-62: Complex GROUP logic tests (rules/complex_logics.conf)
+# Tests 31-56: Complex GROUP logic tests (rules/complex_logics.conf)
 # ==========================================================================
 
 # Test 31: GROUP [OR] - only A header present (should match via group)

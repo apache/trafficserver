@@ -70,12 +70,16 @@ Resources::gather(const ResourceIDs ids, TSHttpHookID hook)
 
   case TS_HTTP_SEND_REQUEST_HDR_HOOK:
     Dbg(pi_dbg_ctl, "Processing TS_HTTP_SEND_REQUEST_HDR_HOOK");
-    // Read request headers to server
     if (ids & RSRC_SERVER_REQUEST_HEADERS) {
-      Dbg(pi_dbg_ctl, "\tAdding TXN server request header buffers");
-      if (TSHttpTxnServerReqGet(state.txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
-        Dbg(pi_dbg_ctl, "could not gather bufp/hdr_loc for request");
-        return;
+      if (server_bufp && server_hdr_loc) {
+        bufp    = server_bufp;
+        hdr_loc = server_hdr_loc;
+      } else {
+        Dbg(pi_dbg_ctl, "\tAdding TXN server request header buffers");
+        if (TSHttpTxnServerReqGet(state.txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
+          Dbg(pi_dbg_ctl, "could not gather bufp/hdr_loc for request");
+          return;
+        }
       }
     }
     break;

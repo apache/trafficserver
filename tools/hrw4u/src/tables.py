@@ -142,7 +142,6 @@ FALLBACK_TAG_MAP: dict[str, tuple[str, bool]] = {
     "INBOUND:SERVER-CERT": ("inbound.conn.server-cert.", False),
     "INBOUND:SERVER-CERT:SAN": ("inbound.conn.server-cert.SAN.", False),
     "NEXT-HOP": ("nexthop.", False),
-    "NEXT-HOP:QUERY": ("outbound.url.query.", False),
     "OUTBOUND:CLIENT-CERT": ("outbound.conn.client-cert.", False),
     "OUTBOUND:CLIENT-CERT:SAN": ("outbound.conn.client-cert.SAN.", False),
     "OUTBOUND:SERVER-CERT": ("outbound.conn.server-cert.", False),

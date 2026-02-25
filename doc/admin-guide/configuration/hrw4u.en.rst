@@ -259,7 +259,6 @@ cond %{IP:OUTBOUND} ="..."        outbound.server == "..."           ATS's outbo
 cond %{LAST-CAPTURE:<#>} ="..."   capture.<#> == "..."               Last capture group from regex match (range: `0-9`)
 cond %{METHOD} =GET               inbound.method == "GET"            HTTP method match
 cond %{NEXT-HOP:<C>} ="bar"       nexthop.<C> == "bar"               Next-hop destination, ``<C>`` is ``host``, ``port``, or ``strategy``
-cond %{NEXT-HOP:QUERY:<P>} =bar   outbound.url.query.<P> == "bar"    Extract specific query parameter ``P`` from next-hop URL
 cond %{NOW:<U>} ="..."            now.<U> == "..."                   Current date/time in format,  <:ref:`U<admin-plugins-header-rewrite-geo>`> selects time unit
 cond %{OUTBOUND:CLIENT-CERT:<X>}  outbound.client-cert.<X>           Access the mTLS / client certificate details, on the outbound (upstream) connection
 cond %{OUTbOUND:SERVER-CERT:<X>}  outbound.client-cert.<X>           Access the server (handshake) certificate details, on the outbound connection
