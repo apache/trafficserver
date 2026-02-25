@@ -32,6 +32,8 @@ if(BUILD_TESTING)
   #
   # Update the above comment about the version to update.
   add_subdirectory(Catch2)
+  include(CTest)
+  include(Catch)
 
   # Disable -Werror=parentheses for Catch2 to avoid issues with older compilers (GCC <=11)
   # that complain about the use of parentheses in macro expansions. We see errors like this:
@@ -48,10 +50,22 @@ if(BUILD_TESTING)
   # done in one TEST_CASE expected to carry over into the next TEST_CASE. This
   # macro allows us to add common command line arguments to all tests. For now,
   # we ensure declaration order execution via --order decl.
+  # macro(add_catch2_test)
+  #   set(oneValueArgs NAME ENVIRONMENT)
+  #   cmake_parse_arguments(CATCH2_TEST "" ${oneValueArgs} "" ${ARGN})
+  #   catch_discover_tests(${CATCH2_TEST_NAME} PROPERTIES ENVIRONMENT ${CATCH2_TEST_ENVIRONMENT})
+  # endmacro()
   macro(add_catch2_test)
-    cmake_parse_arguments(CATCH2_TEST "" "NAME" "COMMAND" ${ARGN})
-    add_test(NAME ${CATCH2_TEST_NAME} COMMAND ${CATCH2_TEST_COMMAND} --order decl)
+    cmake_parse_arguments(CATCH2_TEST "" "NAME" "ENVIRONMENT" ${ARGN})
+
+    set(_catch_properties)
+    if(CATCH2_TEST_ENVIRONMENT)
+      list(APPEND _catch_properties ENVIRONMENT "${CATCH2_TEST_ENVIRONMENT}")
+    endif()
+
+    catch_discover_tests(${CATCH2_TEST_NAME} DISCOVERY_MODE PRE_TEST PROPERTIES ${_catch_properties})
   endmacro()
+
 endif()
 
 if(NOT TARGET yaml-cpp::yaml-cpp)

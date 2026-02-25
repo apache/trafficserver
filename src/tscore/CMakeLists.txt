@@ -184,7 +184,7 @@ if(BUILD_TESTING)
     target_link_libraries(test_tscore PRIVATE hwloc::hwloc)
   endif()
 
-  add_catch2_test(NAME test_tscore COMMAND $<TARGET_FILE:test_tscore>)
+  add_catch2_test(NAME test_tscore)
 endif()
 
 clang_tidy_check(tscore)

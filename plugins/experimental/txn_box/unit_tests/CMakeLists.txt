@@ -29,4 +29,4 @@ target_link_libraries(
 # After fighting with CMake over the include paths, it's just not worth it to be correct.
 # target_link_libraries should make this work but it doesn't. I can't figure out why.
 target_include_directories(test_txn_box PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../plugin/include)
-add_catch2_test(NAME test_txn_box COMMAND test_txn_box)
+add_catch2_test(NAME test_txn_box)

@@ -20,4 +20,4 @@ add_executable(test_stale_response test_DirectiveParser.cc test_BodyData.cc ${PR
 target_include_directories(test_stale_response PRIVATE "${PROJECT_SOURCE_DIR}")
 target_link_libraries(test_stale_response PRIVATE ts::tsutil libswoc::libswoc Catch2::Catch2WithMain)
 
-add_catch2_test(NAME test_stale_response COMMAND test_stale_response)
+add_catch2_test(NAME test_stale_response)

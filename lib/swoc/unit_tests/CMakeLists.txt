@@ -47,4 +47,4 @@ if(CMAKE_COMPILER_IS_GNUCXX)
   endif()
 endif()
 
-add_catch2_test(NAME test_libswoc COMMAND test_libswoc)
+add_catch2_test(NAME test_libswoc)

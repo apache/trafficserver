@@ -70,7 +70,7 @@ target_link_libraries(
           ts::hdrs
           ts::tscore
 )
-add_catch2_test(NAME test_http3 COMMAND test_http3)
+add_catch2_test(NAME test_http3)
 
 add_executable(test_qpack test/main_qpack.cc test/test_QPACK.cc QPACK.cc)
 target_link_libraries(
@@ -83,6 +83,6 @@ target_link_libraries(
           ts::hdrs
           ts::tscore
 )
-add_catch2_test(NAME test_qpack COMMAND test_qpack)
+add_catch2_test(NAME test_qpack)
 
 clang_tidy_check(http3)
