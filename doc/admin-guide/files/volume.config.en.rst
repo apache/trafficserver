@@ -112,8 +112,10 @@ using the normal proportional allocation based on disk space.
 **Important notes:**
 
 * If the sum of all ``ram_cache_size`` allocations exceeds the global RAM cache size,
-  a warning is logged and the private allocations are disabled, falling back to
-  the standard shared allocation.
+  Traffic Server will fail to start with a fatal error. Increase
+  :ts:cv:`proxy.config.cache.ram_cache.size` or reduce the per-volume allocations.
+* If ``ramcache=false`` is set alongside ``ram_cache_size``, the ``ram_cache_size``
+  is ignored (with a warning) since the RAM cache is disabled for that volume.
 * This setting only takes effect when :ts:cv:`proxy.config.cache.ram_cache.size`
   is set to a positive value (not ``-1`` for automatic sizing).
 

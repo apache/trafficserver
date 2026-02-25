@@ -1450,6 +1450,11 @@ CacheProcessor::cacheInitialized()
         CacheVol *cp = cp_list.head;
 
         for (; cp; cp = cp->link.next) {
+          if (cp->ram_cache_size > 0 && !cp->ramcache_enabled) {
+            Warning("Volume %d has ram_cache_size=%" PRId64 " but ramcache=false, ignoring ram_cache_size", cp->vol_number,
+                    cp->ram_cache_size);
+            cp->ram_cache_size = -1;
+          }
           if (cp->ram_cache_size > 0) {
             total_private_ram += cp->ram_cache_size;
             Dbg(dbg_ctl_cache_init, "Volume %d has private RAM allocation: %" PRId64 " bytes (%" PRId64 " MB)", cp->vol_number,
@@ -1475,16 +1480,9 @@ CacheProcessor::cacheInitialized()
         int64_t shared_pool = cache_config_ram_cache_size - total_private_ram;
 
         if (shared_pool < 0) {
-          Warning("Total private RAM cache allocations (%" PRId64 " bytes) exceed global ram_cache.size (%" PRId64 " bytes). "
-                  "Using global limit. Consider increasing proxy.config.cache.ram_cache.size.",
-                  total_private_ram, cache_config_ram_cache_size);
-          shared_pool = cache_config_ram_cache_size; // Fall back to using the global pool for all
-
-          CacheVol *cp = cp_list.head;
-
-          for (; cp; cp = cp->link.next) {
-            cp->ram_cache_size = 0;
-          }
+          Fatal("Total private RAM cache allocations (%" PRId64 " bytes) exceed global ram_cache.size (%" PRId64 " bytes). "
+                "Increase proxy.config.cache.ram_cache.size or reduce per-volume ram_cache_size allocations.",
+                total_private_ram, cache_config_ram_cache_size);
         } else if (total_private_ram > 0) {
           Dbg(dbg_ctl_cache_init, "Shared RAM cache pool (after private allocations): %" PRId64 " bytes (%" PRId64 " MB)",
               shared_pool, shared_pool / (1024 * 1024));
