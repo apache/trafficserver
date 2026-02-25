@@ -76,8 +76,10 @@ TLSBasicSupport::clear()
   this->_tls_handshake_bytes_out  = 0;
 }
 
+// Returns true only on the first call that reads from the BIOs, so callers
+// can distinguish fresh values (for metrics) from cached ones.
 bool
-TLSBasicSupport::get_tls_handshake_bytes(uint64_t &bytes_in, uint64_t &bytes_out)
+TLSBasicSupport::get_tls_handshake_bytes(uint64_t &bytes_in, uint64_t &bytes_out) const
 {
   if (_tls_handshake_bytes_in > 0 || _tls_handshake_bytes_out > 0) {
     bytes_in  = _tls_handshake_bytes_in;

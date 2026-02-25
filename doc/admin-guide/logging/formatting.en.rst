@@ -455,7 +455,7 @@ cqql  Client Request         Client request header and content length combined,
                              in bytes.
 cqqtl Client Request         Same as cqql_, but for the first transaction on a
                              TLS connection, also includes TLS handshake bytes
-                             received from the client. Note that this metrics
+                             received from the client. Note that this metric
                              may not always be 100% accurate.
 csscl Cached Origin Response Content body length from cached origin response.
 csshl Cached Origin Response Header length from cached origin response.
