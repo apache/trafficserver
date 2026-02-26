@@ -69,26 +69,6 @@ The following methods are available to access ClientHello data:
 
    Returns the length of the cipher suites buffer in bytes.
 
-.. function:: const uint8_t* get_extensions() const
-
-   Returns a pointer to the extensions buffer (BoringSSL format). The length is
-   available via :func:`get_extensions_len()`. May return ``nullptr`` if using
-   OpenSSL.
-
-.. function:: size_t get_extensions_len() const
-
-   Returns the length of the extensions buffer in bytes.
-
-.. function:: const int* get_extension_ids() const
-
-   Returns a pointer to the extension IDs array (OpenSSL format). The length is
-   available via :func:`get_extension_ids_len()`. May return ``nullptr`` if using
-   BoringSSL.
-
-.. function:: size_t get_extension_ids_len() const
-
-   Returns the number of extension IDs in the array.
-
 .. function:: TSClientHello::TSExtensionTypeList get_extension_types() const
 
    Returns an iterable container of extension type IDs present in the ClientHello.
@@ -96,7 +76,7 @@ The following methods are available to access ClientHello data:
    buffer) and OpenSSL (which uses an extension_ids array), providing a consistent
    interface regardless of the SSL library in use.
 
-.. function:: void* get_ssl_ptr() const
+.. function:: void* _get_internal() const
 
    Returns the underlying SSL pointer. This is an internal accessor for advanced use
    cases.

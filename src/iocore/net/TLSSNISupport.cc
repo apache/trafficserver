@@ -276,13 +276,6 @@ TLSSNISupport::ClientHello::~ClientHello()
 #endif
 }
 
-TLSSNISupport::ClientHello::ExtensionIdIterator::~ExtensionIdIterator()
-{
-  _extensions = nullptr;
-  _ext_len    = 0;
-  _offset     = 0;
-}
-
 TLSSNISupport::ClientHello::ExtensionIdIterator &
 TLSSNISupport::ClientHello::ExtensionIdIterator::operator++()
 {
@@ -305,9 +298,7 @@ TLSSNISupport::ClientHello::ExtensionIdIterator::operator==(const ExtensionIdIte
 int
 TLSSNISupport::ClientHello::ExtensionIdIterator::operator*() const
 {
-  if (_offset == _ext_len) {
-    throw std::out_of_range{"Invalid offset"};
-  }
+  ink_assert(_offset < _ext_len);
 #if HAVE_SSL_CTX_SET_CLIENT_HELLO_CB
   return _extensions[_offset];
 #elif HAVE_SSL_CTX_SET_SELECT_CERTIFICATE_CB

@@ -54,7 +54,7 @@ public:
       {
       }
 #endif
-      ~ExtensionIdIterator();
+      ~ExtensionIdIterator() = default;
 
       ExtensionIdIterator &operator++();
       bool                 operator==(const ExtensionIdIterator &b) const;
@@ -155,5 +155,5 @@ private:
   std::unique_ptr<char[]> _sni_server_name;
 
   void         _set_sni_server_name_buffer(std::string_view name);
-  ClientHello *_ch;
+  ClientHello *_ch = nullptr;
 };
