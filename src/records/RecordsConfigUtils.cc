@@ -49,9 +49,14 @@ initialize_record(const RecordElement *record, void *)
   access = record->access;
 
   if (REC_TYPE_IS_CONFIG(type)) {
-    const char *value  = RecConfigOverrideFromEnvironment(record->name, record->value);
-    RecData     data   = {0};
-    RecSourceT  source = value == record->value ? REC_SOURCE_DEFAULT : REC_SOURCE_ENV;
+    auto [value, override_source] = RecConfigOverrideFromEnvironment(record->name, record->value);
+    RecData    data               = {0};
+    RecSourceT source             = (override_source == RecConfigOverrideSource::NONE) ? REC_SOURCE_DEFAULT : REC_SOURCE_ENV;
+
+    if (override_source != RecConfigOverrideSource::NONE) {
+      RecDebug(DL_Debug, "'%s' overridden with '%s' by %s", record->name, value.c_str(),
+               override_source == RecConfigOverrideSource::ENV ? "environment variable" : "runroot");
+    }
 
     // If you specify a consistency check, you have to specify a regex expression. We abort here
     // so that this breaks QA completely.
@@ -59,7 +64,11 @@ initialize_record(const RecordElement *record, void *)
       ink_fatal("%s has a consistency check but no regular expression", record->name);
     }
 
-    RecDataSetFromString(record->value_type, &data, value);
+    // When the built-in default is nullptr and no override was applied, preserve
+    // nullptr so optional records (e.g. keylog_file, groups_list) stay unset.
+    const char *value_ptr =
+      (override_source == RecConfigOverrideSource::NONE && record->value == nullptr) ? nullptr : value.c_str();
+    RecDataSetFromString(record->value_type, &data, value_ptr);
     RecErrT reg_status{REC_ERR_FAIL};
     switch (record->value_type) {
     case RECD_INT:

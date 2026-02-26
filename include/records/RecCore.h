@@ -25,6 +25,8 @@
 
 #include <functional>
 #include <optional>
+#include <string>
+#include <utility>
 
 #include "tscore/Diags.h"
 
@@ -69,9 +71,17 @@ std::string RecConfigReadConfigPath(const char *file_variable, const char *defau
 // Return a copy of the persistent stats file. This is $RUNTIMEDIR/records.snap.
 std::string RecConfigReadPersistentStatsPath();
 
-// Test whether the named configuration value is overridden by an environment variable. Return either
-// the overridden value, or the original value. Caller MUST NOT free the result.
-const char *RecConfigOverrideFromEnvironment(const char *name, const char *value);
+/// Indicates why RecConfigOverrideFromEnvironment() chose its returned value.
+enum class RecConfigOverrideSource {
+  NONE,    ///< No override — the original value was kept.
+  ENV,     ///< Overridden by a PROXY_CONFIG_* environment variable.
+  RUNROOT, ///< Overridden with the resolved Layout path because runroot manages this record.
+};
+
+// Test whether the named configuration value is overridden by an environment
+// variable or by the runroot mechanism.  Returns the resolved value together
+// with the source that produced it.
+std::pair<std::string, RecConfigOverrideSource> RecConfigOverrideFromEnvironment(const char *name, const char *value);
 
 //-------------------------------------------------------------------------
 // Stat Registration
