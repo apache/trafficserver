@@ -71,6 +71,7 @@ init_reverse_proxy()
   reconfig_mutex = new_ProxyMutex();
   rewrite_table  = new UrlRewrite();
 
+  rewrite_table->acquire();
   Note("%s loading ...", ts::filename::REMAP);
   if (!rewrite_table->load()) {
     Emergency("%s failed to load", ts::filename::REMAP);
@@ -82,9 +83,6 @@ init_reverse_proxy()
   RecRegisterConfigUpdateCb("proxy.config.proxy_name", url_rewrite_CB, (void *)TSNAME_CHANGED);
   RecRegisterConfigUpdateCb("proxy.config.reverse_proxy.enabled", url_rewrite_CB, (void *)REVERSE_CHANGED);
   RecRegisterConfigUpdateCb("proxy.config.http.referer_default_redirect", url_rewrite_CB, (void *)HTTP_DEFAULT_REDIRECT_CHANGED);
-
-  // Hold at least one lease, until we reload the configuration
-  rewrite_table->acquire();
 
   return 0;
 }
@@ -203,7 +201,8 @@ init_store_volume_host_records(UrlRewrite::MappingsStore &store)
   }
 }
 
-// This is called after the cache is initialized, since we may need the volume_host_records
+// This is called after the cache is initialized, since we may need the volume_host_records.
+// Must only be called during startup before any remap reload can occur.
 void
 init_remap_volume_host_records()
 {
@@ -213,6 +212,8 @@ init_remap_volume_host_records()
     return;
   }
 
+  table->acquire();
+
   Dbg(dbg_ctl_url_rewrite, "Initializing volume_host_rec for all remap rules after cache init");
 
   // Initialize for all mapping stores
@@ -221,6 +222,8 @@ init_remap_volume_host_records()
   init_store_volume_host_records(table->permanent_redirects);
   init_store_volume_host_records(table->temporary_redirects);
   init_store_volume_host_records(table->forward_mappings_with_recv_port);
+
+  table->release();
 }
 
 int

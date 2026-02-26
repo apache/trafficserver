@@ -21,4 +21,4 @@ Test proxy.config.cache.default_volumes configuration:
 - Verify that hosting.config takes priority over default_volumes
 '''
 
-Test.ATSReplayTest(replay_file="cache_volume_defaults.replay.yaml",)
+Test.ATSReplayTest(replay_file="cache_volume_defaults.replay.yaml")

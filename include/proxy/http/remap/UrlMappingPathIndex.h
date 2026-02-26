@@ -40,12 +40,13 @@ public:
   void         Print() const;
   std::string  PrintUrlMappingPathIndex() const;
 
-  // Apply a function to each url_mapping in this index
+  // Apply a function to each url_mapping in this index.
+  // Note: Trie only exposes const_iterator, so const_cast is required.
   template <typename Func>
   void
-  foreach_mapping(Func &&f) const
+  foreach_mapping(Func &&f)
   {
-    for (const auto &trie_pair : m_tries) {
+    for (auto &trie_pair : m_tries) {
       for (auto const &mapping : *trie_pair.second) {
         f(const_cast<url_mapping &>(mapping));
       }

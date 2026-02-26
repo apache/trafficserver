@@ -100,7 +100,8 @@ ClassAllocator<EvacuationBlock, false>    evacuationBlockAllocator("evacuationBl
 ClassAllocator<CacheRemoveCont, false>    cacheRemoveContAllocator("cacheRemoveCont");
 ClassAllocator<EvacuationKey, false>      evacuationKeyAllocator("evacuationKey");
 std::unordered_set<std::string>           known_bad_disks;
-CacheHostRecord                          *default_volumes_host_rec = nullptr;
+// Process-lifetime singleton: allocated during cache init and intentionally never freed.
+CacheHostRecord *default_volumes_host_rec = nullptr;
 
 namespace
 {
