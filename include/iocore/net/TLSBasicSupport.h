@@ -51,6 +51,8 @@ public:
   std::string_view get_tls_group() const;
   ink_hrtime       get_tls_handshake_begin_time() const;
   ink_hrtime       get_tls_handshake_end_time() const;
+  bool             get_tls_handshake_bytes(uint64_t &bytes_in, uint64_t &bytes_out) const;
+
   /**
    * Returns a certificate that need to be verified.
    *
@@ -101,6 +103,9 @@ private:
 
   X509_STORE_CTX *_cert_to_verify = nullptr;
 
-  ink_hrtime _tls_handshake_begin_time = 0;
-  ink_hrtime _tls_handshake_end_time   = 0;
+  ink_hrtime       _tls_handshake_begin_time     = 0;
+  ink_hrtime       _tls_handshake_end_time       = 0;
+  mutable bool     _tls_handshake_bytes_measured = false;
+  mutable uint64_t _tls_handshake_bytes_in       = 0;
+  mutable uint64_t _tls_handshake_bytes_out      = 0;
 };

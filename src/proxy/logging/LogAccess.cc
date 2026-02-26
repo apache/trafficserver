@@ -2207,6 +2207,37 @@ LogAccess::marshal_client_req_squid_len(char *buf)
 }
 
 /*-------------------------------------------------------------------------
+  Client request squid length plus TLS handshake bytes received for TLS connections.
+  For TLS 1.3 early data (0-RTT), we subtract the early data length from the
+  handshake bytes to avoid double-counting since the early data bytes are
+  already included in client_request_body_bytes.
+  -------------------------------------------------------------------------*/
+int
+LogAccess::marshal_client_req_squid_len_tls(char *buf)
+{
+  if (buf) {
+    int64_t val = 0;
+
+    if (m_client_request) {
+      val = m_client_request->length_get() + m_http_sm->client_request_body_bytes;
+    }
+
+    if (!m_http_sm->get_user_agent().get_client_tcp_reused()) {
+      uint64_t handshake_rx   = m_http_sm->get_user_agent().get_client_tls_handshake_bytes_rx();
+      size_t   early_data_len = m_http_sm->get_user_agent().get_client_tls_early_data_len();
+
+      if (early_data_len > 0) {
+        handshake_rx -= std::min(handshake_rx, static_cast<uint64_t>(early_data_len));
+      }
+
+      val += handshake_rx;
+    }
+    marshal_int(buf, val);
+  }
+  return INK_MIN_ALIGN;
+}
+
+/*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
 int
@@ -2431,6 +2462,44 @@ LogAccess::marshal_client_security_alpn(char *buf)
 }
 
 /*-------------------------------------------------------------------------
+  TLS Handshake Bytes - Bytes received from client during TLS handshake
+  -------------------------------------------------------------------------*/
+int
+LogAccess::marshal_client_tls_handshake_bytes_rx(char *buf)
+{
+  if (buf) {
+    marshal_int(buf, static_cast<int64_t>(m_http_sm->get_user_agent().get_client_tls_handshake_bytes_rx()));
+  }
+  return INK_MIN_ALIGN;
+}
+
+/*-------------------------------------------------------------------------
+  TLS Handshake Bytes - Bytes sent to client during TLS handshake
+  -------------------------------------------------------------------------*/
+int
+LogAccess::marshal_client_tls_handshake_bytes_tx(char *buf)
+{
+  if (buf) {
+    marshal_int(buf, static_cast<int64_t>(m_http_sm->get_user_agent().get_client_tls_handshake_bytes_tx()));
+  }
+  return INK_MIN_ALIGN;
+}
+
+/*-------------------------------------------------------------------------
+  TLS Handshake Bytes - Total bytes (rx + tx) during TLS handshake
+  -------------------------------------------------------------------------*/
+int
+LogAccess::marshal_client_tls_handshake_bytes(char *buf)
+{
+  if (buf) {
+    uint64_t total = m_http_sm->get_user_agent().get_client_tls_handshake_bytes_rx() +
+                     m_http_sm->get_user_agent().get_client_tls_handshake_bytes_tx();
+    marshal_int(buf, static_cast<int64_t>(total));
+  }
+  return INK_MIN_ALIGN;
+}
+
+/*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
 int
@@ -2465,6 +2534,23 @@ LogAccess::marshal_proxy_resp_squid_len(char *buf)
 {
   if (buf) {
     int64_t val = m_http_sm->client_response_hdr_bytes + m_http_sm->client_response_body_bytes;
+    marshal_int(buf, val);
+  }
+  return INK_MIN_ALIGN;
+}
+
+/*-------------------------------------------------------------------------
+  Squid length plus TLS handshake bytes sent for TLS connections.
+  -------------------------------------------------------------------------*/
+int
+LogAccess::marshal_proxy_resp_squid_len_tls(char *buf)
+{
+  if (buf) {
+    int64_t val = m_http_sm->client_response_hdr_bytes + m_http_sm->client_response_body_bytes;
+
+    if (!m_http_sm->get_user_agent().get_client_tcp_reused()) {
+      val += m_http_sm->get_user_agent().get_client_tls_handshake_bytes_tx();
+    }
     marshal_int(buf, val);
   }
   return INK_MIN_ALIGN;
