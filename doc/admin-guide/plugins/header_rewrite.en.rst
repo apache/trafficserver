@@ -1172,22 +1172,6 @@ When invoked, sets the client side MARK value for the current
 transaction.  The ``<value>`` should be specified as a decimal integer.
 Requires at least Linux 2.6.25.
 
-set-debug
-~~~~~~~~~
-::
-
-  set-debug
-
-When invoked, this operator enables the internal transaction debugging flag
-(via :func:`TSHttpTxnDebugSet`), which causes debug messages to be printed to
-the appropriate logs even when the debug tag has not been enabled. For
-additional information on |TS| debugging statements, refer to
-:ref:`developer-debug-tags` in the developer's documentation.
-
-.. note::
-    This operator is deprecated, use the `set-http-cntl`_ operator instead,
-    with the ``TXN_DEBUG`` control.
-
 set-destination
 ~~~~~~~~~~~~~~~
 ::
@@ -1346,7 +1330,6 @@ INTERCEPT_RETRY  Allow intercepts to be retried (default: ``off``)
 RESP_CACHEABLE   Force the response to be cacheable (default: ``off``)
 REQ_CACHEABLE    Force the request to be cacheable (default: ``off``)
 SERVER_NO_STORE  Don't allow the response to be written to cache (default: ``off``)
-TXN_DEBUG        Enable transaction debugging (default: ``off``)
 SKIP_REMAP       Don't require a remap match for the transaction (default: ``off``)
 ================ ====================================================================
 
@@ -1789,16 +1772,6 @@ origin server::
    cond %{SEND_REQUEST_HDR_HOOK}
      rm-header Cache-Control
      rm-header Pragma
-
-Enable Debugging Per-Request
-----------------------------
-
-Turns on |TS| debugging statements for a transaction, but only when a special
-header is present in the client request::
-
-   cond %{READ_REQUEST_HDR_HOOK}
-   cond %{CLIENT-HEADER:X-Debug} =supersekret
-      set-http-cntl TXN_DEBUG on
 
 Remove Internal Headers
 -----------------------
