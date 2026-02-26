@@ -21,4 +21,4 @@ Comprehensive test suite for cache volume features:
 - Integration between both features
 '''
 
-Test.ATSReplayTest(replay_file="cache_volume_features.replay.yaml",)
+Test.ATSReplayTest(replay_file="cache_volume_features.replay.yaml")

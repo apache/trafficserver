@@ -881,16 +881,12 @@ createCacheHostRecord(const char *volume_str, char *errbuf, size_t errbufsize)
 
   CacheHostRecord *host_rec = new CacheHostRecord();
 
-  if (!host_rec) {
-    snprintf(errbuf, errbufsize, "Memory allocation failed");
-    return nullptr;
-  }
-
   // Build a minimal matcher_line structure with just the volume= directive
+  char         volume_key[] = "volume";
   matcher_line ml;
   memset(&ml, 0, sizeof(ml));
 
-  ml.line[0][0] = const_cast<char *>("volume");
+  ml.line[0][0] = volume_key;
   ml.line[1][0] = const_cast<char *>(volume_str);
   ml.num_el     = 1;
   ml.dest_entry = -1;
