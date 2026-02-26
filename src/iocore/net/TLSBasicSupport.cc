@@ -70,10 +70,11 @@ TLSBasicSupport::unbind(SSL *ssl)
 void
 TLSBasicSupport::clear()
 {
-  this->_tls_handshake_begin_time = 0;
-  this->_tls_handshake_end_time   = 0;
-  this->_tls_handshake_bytes_in   = 0;
-  this->_tls_handshake_bytes_out  = 0;
+  this->_tls_handshake_begin_time     = 0;
+  this->_tls_handshake_end_time       = 0;
+  this->_tls_handshake_bytes_measured = false;
+  this->_tls_handshake_bytes_in       = 0;
+  this->_tls_handshake_bytes_out      = 0;
 }
 
 // Returns true only on the first call that reads from the BIOs, so callers
@@ -81,7 +82,7 @@ TLSBasicSupport::clear()
 bool
 TLSBasicSupport::get_tls_handshake_bytes(uint64_t &bytes_in, uint64_t &bytes_out) const
 {
-  if (_tls_handshake_bytes_in > 0 || _tls_handshake_bytes_out > 0) {
+  if (_tls_handshake_bytes_measured) {
     bytes_in  = _tls_handshake_bytes_in;
     bytes_out = _tls_handshake_bytes_out;
     return false;
@@ -102,6 +103,7 @@ TLSBasicSupport::get_tls_handshake_bytes(uint64_t &bytes_in, uint64_t &bytes_out
 
   bytes_in = _tls_handshake_bytes_in = bio_in;
   bytes_out = _tls_handshake_bytes_out = bio_out;
+  _tls_handshake_bytes_measured        = true;
 
   return true;
 }

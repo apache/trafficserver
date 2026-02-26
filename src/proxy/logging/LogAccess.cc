@@ -2226,8 +2226,8 @@ LogAccess::marshal_client_req_squid_len_tls(char *buf)
       uint64_t handshake_rx   = m_http_sm->get_user_agent().get_client_tls_handshake_bytes_rx();
       size_t   early_data_len = m_http_sm->get_user_agent().get_client_tls_early_data_len();
 
-      if (early_data_len > 0 && handshake_rx > early_data_len) {
-        handshake_rx -= early_data_len;
+      if (early_data_len > 0) {
+        handshake_rx -= std::min(handshake_rx, static_cast<uint64_t>(early_data_len));
       }
 
       val += handshake_rx;
@@ -2468,7 +2468,7 @@ int
 LogAccess::marshal_client_tls_handshake_bytes_rx(char *buf)
 {
   if (buf) {
-    marshal_int(buf, m_http_sm->get_user_agent().get_client_tls_handshake_bytes_rx());
+    marshal_int(buf, static_cast<int64_t>(m_http_sm->get_user_agent().get_client_tls_handshake_bytes_rx()));
   }
   return INK_MIN_ALIGN;
 }
@@ -2480,7 +2480,7 @@ int
 LogAccess::marshal_client_tls_handshake_bytes_tx(char *buf)
 {
   if (buf) {
-    marshal_int(buf, m_http_sm->get_user_agent().get_client_tls_handshake_bytes_tx());
+    marshal_int(buf, static_cast<int64_t>(m_http_sm->get_user_agent().get_client_tls_handshake_bytes_tx()));
   }
   return INK_MIN_ALIGN;
 }

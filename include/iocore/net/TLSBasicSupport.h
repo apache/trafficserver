@@ -103,8 +103,9 @@ private:
 
   X509_STORE_CTX *_cert_to_verify = nullptr;
 
-  ink_hrtime       _tls_handshake_begin_time = 0;
-  ink_hrtime       _tls_handshake_end_time   = 0;
-  mutable uint64_t _tls_handshake_bytes_in   = 0;
-  mutable uint64_t _tls_handshake_bytes_out  = 0;
+  ink_hrtime       _tls_handshake_begin_time     = 0;
+  ink_hrtime       _tls_handshake_end_time       = 0;
+  mutable bool     _tls_handshake_bytes_measured = false;
+  mutable uint64_t _tls_handshake_bytes_in       = 0;
+  mutable uint64_t _tls_handshake_bytes_out      = 0;
 };
