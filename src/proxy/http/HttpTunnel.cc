@@ -1020,11 +1020,14 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
 
     // (note that since we are not dechunking POST, this is the chunked size if chunked)
     if (p->buffer_start->read_avail() > HttpConfig::m_master.post_copy_size) {
-      Warning("http_redirect, [HttpTunnel::producer_handler] post exceeds buffer limit, buffer_avail=%" PRId64 " limit=%" PRId64 "",
+      Warning("http_redirect, [HttpTunnel::producer_run] post exceeds buffer limit, buffer_avail=%" PRId64 " limit=%" PRId64 "",
               p->buffer_start->read_avail(), HttpConfig::m_master.post_copy_size);
       sm->disable_redirect();
       if (p->vc_type == HttpTunnelType_t::BUFFER_READ) {
-        producer_handler(VC_EVENT_ERROR, p);
+        // Set flag so HttpSM can send 413 response after tunnel completes cleanly
+        sm->request_body_too_large = true;
+        // Use PRECOMPLETE to trigger SUCCESS path in tunnel_handler_post_ua
+        producer_handler(HTTP_TUNNEL_EVENT_PRECOMPLETE, p);
         return;
       }
     } else {
@@ -1309,7 +1312,10 @@ HttpTunnel::producer_handler(int event, HttpTunnelProducer *p)
               sm->postbuf_buffer_avail(), sm->postbuf_reader_avail(), HttpConfig::m_master.post_copy_size);
       sm->disable_redirect();
       if (p->vc_type == HttpTunnelType_t::BUFFER_READ) {
-        event = VC_EVENT_ERROR;
+        // Set flag so HttpSM can send 413 response after tunnel completes cleanly
+        sm->request_body_too_large = true;
+        // Use PRECOMPLETE to trigger SUCCESS path in tunnel_handler_post_ua
+        event = HTTP_TUNNEL_EVENT_PRECOMPLETE;
       }
     } else {
       if (!p->is_handling_chunked_content()) {
