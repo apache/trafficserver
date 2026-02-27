@@ -2072,11 +2072,14 @@ HttpSM::state_read_server_response_header(int event, void *data)
     if (tunnel.is_tunnel_alive()) {
       // Record bytes already written to the server before aborting the tunnel.
       // tunnel_handler_post_server() won't be called after abort, so we must
-      // capture this here to prevent the connection from being pooled later.
+      // capture this here for stats/logging purposes.
       HttpTunnelConsumer *server_consumer = tunnel.get_consumer(server_txn);
       if (server_consumer && server_request_body_bytes == 0) {
         server_request_body_bytes = server_consumer->bytes_written;
       }
+      // Mark the body transfer as incomplete so the origin connection is not
+      // pooled. The origin may have unconsumed body data in the TCP stream.
+      server_request_body_incomplete = true;
       tunnel.abort_tunnel();
       // Make sure client connection is closed when we are done in case there is cruft left over
       t_state.client_info.keep_alive = HTTPKeepAlive::NO_KEEPALIVE;
@@ -3183,13 +3186,13 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer *p)
 
   bool close_connection = false;
 
-  // Don't pool the connection if a request body was sent to the origin.
+  // Don't pool the connection if the request body transfer was incomplete.
   // The origin may not have consumed all of it before sending this response,
   // leaving unconsumed body data in the TCP stream that would corrupt the
   // next request on this connection.
   if (t_state.current.server->keep_alive == HTTPKeepAlive::KEEPALIVE && server_entry->eos == false &&
       plugin_tunnel_type == HttpPluginTunnel_t::NONE && t_state.txn_conf->keep_alive_enabled_out == 1 &&
-      server_request_body_bytes == 0) {
+      !server_request_body_incomplete) {
     close_connection = false;
   } else {
     if (t_state.current.server->keep_alive != HTTPKeepAlive::KEEPALIVE) {
@@ -6047,7 +6050,7 @@ HttpSM::release_server_session(bool serve_from_cache)
       (t_state.hdr_info.server_response.status_get() == HTTPStatus::NOT_MODIFIED ||
        (t_state.hdr_info.server_request.method_get_wksidx() == HTTP_WKSIDX_HEAD &&
         t_state.www_auth_content != HttpTransact::CacheAuth_t::NONE)) &&
-      plugin_tunnel_type == HttpPluginTunnel_t::NONE && (!server_entry || !server_entry->eos) && server_request_body_bytes == 0) {
+      plugin_tunnel_type == HttpPluginTunnel_t::NONE && (!server_entry || !server_entry->eos) && !server_request_body_incomplete) {
     if (t_state.www_auth_content == HttpTransact::CacheAuth_t::NONE || serve_from_cache == false) {
       // Must explicitly set the keep_alive_no_activity time before doing the release
       server_txn->set_inactivity_timeout(HRTIME_SECONDS(t_state.txn_conf->keep_alive_no_activity_timeout_out));
