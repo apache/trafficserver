@@ -281,21 +281,26 @@ Cache::Group::WriteToDisk()
 {
   std::unique_lock unique_lock(_mutex);
 
-  _last_sync = cripts::Time::Clock::now();
+  auto now        = cripts::Time::Clock::now();
+  bool any_dirty  = false;
+  bool all_synced = true;
+
   for (size_t ix = 0; ix < _slots.size(); ++ix) {
-    bool need_sync = false;
-
     if (_slots[ix].last_write > _slots[ix].last_sync) {
-      _slots[ix].last_sync = _last_sync;
-      need_sync            = true;
-    }
-
-    if (need_sync) {
-      syncMap(ix);
+      any_dirty            = true;
+      _slots[ix].last_sync = now;
+      if (syncMap(ix)) {
+        _last_sync = now;
+      } else {
+        _slots[ix].last_sync = _slots[ix].last_write; // revert so next call retries
+        all_synced           = false;
+      }
     }
   }
 
-  clearLog();
+  if (any_dirty && all_synced) {
+    clearLog();
+  }
 }
 
 //
@@ -318,7 +323,7 @@ Cache::Group::appendLog(const Cache::Group::_Entry &entry)
   _txn_log.flush();
 }
 
-void
+bool
 Cache::Group::syncMap(size_t index)
 {
   constexpr size_t                   BUFFER_SIZE = 64 * 1024;
@@ -331,7 +336,7 @@ Cache::Group::syncMap(size_t index)
 
   if (!tmp_file) {
     TSWarning("cripts::Cache::Group: Failed to open temp file for sync: %s.", tmp_path.c_str());
-    return;
+    return false;
   }
 
   // Helper lambda to append data to the write buffer
@@ -373,13 +378,16 @@ Cache::Group::syncMap(size_t index)
   if (write_failed || !tmp_file) {
     TSWarning("cripts::Cache::Group: Failed to write to temp file `%s'.", tmp_path.c_str());
     std::filesystem::remove(tmp_path);
-    return;
+    return false;
   }
 
   if (std::rename(tmp_path.c_str(), slot.path.c_str()) != 0) {
     TSWarning("cripts::Cache::Group: Failed to rename temp file `%s' to `%s'.", tmp_path.c_str(), slot.path.c_str());
     std::filesystem::remove(tmp_path);
+    return false;
   }
+
+  return true;
 }
 
 void

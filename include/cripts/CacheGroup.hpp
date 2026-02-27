@@ -147,7 +147,7 @@ private:
 
   void appendLog(const _Entry &entry);
   void clearLog();
-  void syncMap(size_t index);
+  bool syncMap(size_t index);
 
 public:
   class Manager
