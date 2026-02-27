@@ -35,7 +35,6 @@ extern const char *dictionary;
 
 namespace Gzip
 {
-const int ZLIB_COMPRESSION_LEVEL = 6;
 voidpf
 gzip_alloc(voidpf /* opaque ATS_UNUSED */, uInt items, uInt size)
 {
@@ -51,11 +50,6 @@ gzip_free(voidpf /* opaque ATS_UNUSED */, voidpf address)
 void
 data_alloc(Data *data)
 {
-  int window_bits = WINDOW_BITS_GZIP;
-  if (data->compression_type & COMPRESSION_TYPE_DEFLATE) {
-    window_bits = WINDOW_BITS_DEFLATE;
-  }
-
   data->zstrm.next_in   = Z_NULL;
   data->zstrm.avail_in  = 0;
   data->zstrm.total_in  = 0;
@@ -66,19 +60,36 @@ data_alloc(Data *data)
   data->zstrm.zfree     = Gzip::gzip_free;
   data->zstrm.opaque    = (voidpf) nullptr;
   data->zstrm.data_type = Z_ASCII;
+}
 
-  int err = deflateInit2(&data->zstrm, ZLIB_COMPRESSION_LEVEL, Z_DEFLATED, window_bits, ZLIB_MEMLEVEL, Z_DEFAULT_STRATEGY);
+bool
+transform_init(Data *data)
+{
+  int window_bits = WINDOW_BITS_GZIP;
+  if (data->compression_type & COMPRESSION_TYPE_DEFLATE) {
+    window_bits = WINDOW_BITS_DEFLATE;
+  }
+
+  int compression_level = data->hc->zlib_compression_level();
+  debug("gzip compression context initialized with level %d", compression_level);
+
+  int err = deflateInit2(&data->zstrm, compression_level, Z_DEFLATED, window_bits, ZLIB_MEMLEVEL, Z_DEFAULT_STRATEGY);
 
   if (err != Z_OK) {
-    fatal("gzip-transform: ERROR: deflateInit (%d)!", err);
+    error("gzip-transform: deflateInit2 failed (%d)", err);
+    return false;
   }
 
   if (Compress::dictionary) {
     err = deflateSetDictionary(&data->zstrm, reinterpret_cast<const Bytef *>(Compress::dictionary), strlen(Compress::dictionary));
     if (err != Z_OK) {
-      fatal("gzip-transform: ERROR: deflateSetDictionary (%d)!", err);
+      error("gzip-transform: deflateSetDictionary failed (%d)", err);
+      deflateEnd(&data->zstrm);
+      return false;
     }
   }
+
+  return true;
 }
 
 void
