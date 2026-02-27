@@ -23,11 +23,12 @@ pkg_check_modules(PCRE2 REQUIRED IMPORTED_TARGET libpcre2-8)
 
 # The source files, globbed so we can drop in local / custom Bundles and extensions.
 file(GLOB CPP_FILES ${PROJECT_SOURCE_DIR}/src/cripts/*.cc ${PROJECT_SOURCE_DIR}/src/cripts/*/*.cc)
-file(GLOB TEST_CPP_FILES ${PROJECT_SOURCE_DIR}/src/cripts/tests/*.cc)
+file(GLOB TEST_CPP_FILES ${PROJECT_SOURCE_DIR}/src/cripts/tests/*.cc ${PROJECT_SOURCE_DIR}/src/cripts/unit_tests/*.cc)
 list(REMOVE_ITEM CPP_FILES ${TEST_CPP_FILES})
 
 set(CRIPTS_PUBLIC_HEADERS
     ${PROJECT_SOURCE_DIR}/include/cripts/Bundle.hpp
+    ${PROJECT_SOURCE_DIR}/include/cripts/CacheGroup.hpp
     ${PROJECT_SOURCE_DIR}/include/cripts/Certs.hpp
     ${PROJECT_SOURCE_DIR}/include/cripts/Configs.hpp
     ${PROJECT_SOURCE_DIR}/include/cripts/ConfigsBase.hpp
@@ -92,3 +93,10 @@ add_custom_target(
 )
 
 clang_tidy_check(cripts)
+
+if(BUILD_TESTING)
+  add_executable(test_cripts unit_tests/test_CacheGroup.cc CacheGroup.cc unit_tests/stub.cc)
+  target_include_directories(test_cripts PRIVATE ${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/src)
+  target_link_libraries(test_cripts PRIVATE libswoc::libswoc fmt::fmt Catch2::Catch2WithMain)
+  add_test(NAME test_cripts COMMAND test_cripts)
+endif()
