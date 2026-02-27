@@ -1685,9 +1685,20 @@ HttpSM::handle_api_return()
 
   switch (t_state.next_action) {
   case HttpTransact::StateMachineAction_t::TRANSFORM_READ: {
-    HttpTunnelProducer *p = setup_transfer_from_transform();
-    perform_transform_cache_write_action();
-    tunnel.tunnel_run(p);
+    if (t_state.internal_msg_buffer) {
+      // A plugin replaced the response body via TSHttpTxnErrorBodySet().
+      // Use internal transfer instead of the transform tunnel.
+      SMDbg(dbg_ctl_http, "plugin set internal body, bypassing transform for internal transfer");
+      if (server_txn != nullptr) {
+        do_drain_server_response_body();
+        release_server_session();
+      }
+      setup_internal_transfer(&HttpSM::tunnel_handler);
+    } else {
+      HttpTunnelProducer *p = setup_transfer_from_transform();
+      perform_transform_cache_write_action();
+      tunnel.tunnel_run(p);
+    }
     break;
   }
   case HttpTransact::StateMachineAction_t::SERVER_READ: {
@@ -1720,6 +1731,15 @@ HttpSM::handle_api_return()
       }
 
       setup_blind_tunnel(true, initial_data);
+    } else if (t_state.internal_msg_buffer) {
+      // A plugin replaced the origin response body via TSHttpTxnErrorBodySet().
+      // Drain the origin body if possible, then use internal transfer.
+      SMDbg(dbg_ctl_http, "plugin set internal body, using internal transfer instead of server tunnel");
+      if (server_txn != nullptr) {
+        do_drain_server_response_body();
+        release_server_session();
+      }
+      setup_internal_transfer(&HttpSM::tunnel_handler);
     } else {
       HttpTunnelProducer *p = setup_server_transfer();
       perform_cache_write_action();
@@ -6365,6 +6385,57 @@ close_connection:
   _ua.get_txn()->set_close_connection(response);
 }
 
+//
+// void HttpSM::do_drain_server_response_body()
+//
+//  Attempt to synchronously drain the origin server response body
+//  so the connection can be returned to the pool. If the body cannot
+//  be drained (chunked, unknown length, or not fully received),
+//  mark the server connection as no-keepalive so it will be closed.
+//
+void
+HttpSM::do_drain_server_response_body()
+{
+  if (t_state.current.server == nullptr || server_txn == nullptr) {
+    return;
+  }
+
+  int64_t content_length = t_state.hdr_info.response_content_length;
+
+  if (content_length == HTTP_UNDEFINED_CL) {
+    // Chunked or unknown length -- can't drain synchronously
+    SMDbg(dbg_ctl_http, "server response body drain: chunked/unknown length, closing connection");
+    t_state.current.server->keep_alive = HTTPKeepAlive::NO_KEEPALIVE;
+    return;
+  }
+
+  if (content_length == 0) {
+    // No body to drain
+    SMDbg(dbg_ctl_http, "server response body drain: zero length, connection reusable");
+    return;
+  }
+
+  int64_t avail = server_txn->get_remote_reader()->read_avail();
+
+  if (avail >= content_length) {
+    // Entire body is in the buffer -- consume it so the connection can be reused
+    server_txn->get_remote_reader()->consume(content_length);
+    SMDbg(dbg_ctl_http, "server response body drain: consumed %" PRId64 " bytes", content_length);
+
+    // Verify origin didn't send more than Content-Length (protocol violation).
+    // Same check as server_transfer_init().
+    if (server_txn->get_remote_reader()->read_avail() > 0) {
+      SMDbg(dbg_ctl_http, "server response body drain: extra data after Content-Length, closing connection");
+      t_state.current.server->keep_alive = HTTPKeepAlive::NO_KEEPALIVE;
+    }
+  } else {
+    // Body not fully received -- close the connection
+    SMDbg(dbg_ctl_http, "server response body drain: only %" PRId64 " of %" PRId64 " bytes available, closing connection", avail,
+          content_length);
+    t_state.current.server->keep_alive = HTTPKeepAlive::NO_KEEPALIVE;
+  }
+}
+
 void
 HttpSM::do_setup_client_request_body_tunnel(HttpVC_t to_vc_type)
 {
@@ -8521,6 +8592,10 @@ HttpSM::redirect_request(const char *arg_redirect_url, const int arg_redirect_le
     // XXX - doing a destroy() for now, we can do a fileds_clear() if we have performance issue
     t_state.hdr_info.client_response.destroy();
   }
+  // Clear any error body from a previous failed connection attempt (e.g., from
+  // build_error_response) so that how_to_open_connection() does not mistake it
+  // for a plugin-set synthetic body and short-circuit the retry.
+  t_state.free_internal_msg_buffer();
 
   int         scheme          = t_state.next_hop_scheme;
   int         scheme_len      = hdrtoken_index_to_length(scheme);
