@@ -2085,6 +2085,16 @@ HttpSM::state_read_server_response_header(int event, void *data)
       t_state.client_info.keep_alive = HTTPKeepAlive::NO_KEEPALIVE;
       // Similarly the server connection should also be closed
       t_state.current.server->keep_alive = HTTPKeepAlive::NO_KEEPALIVE;
+    } else if (!server_request_body_incomplete && server_request_body_bytes > 0 &&
+               t_state.hdr_info.client_request.m_100_continue_sent) {
+      // When ATS proactively sent 100 Continue to the client
+      // (send_100_continue_response), the body tunnel was set up before the
+      // origin confirmed it would accept the body. The tunnel may have
+      // completed before the origin responded, but the origin might not have
+      // consumed the body data. Prevent connection pooling to avoid the next
+      // request on this connection seeing leftover body bytes as corruption.
+      server_request_body_incomplete     = true;
+      t_state.current.server->keep_alive = HTTPKeepAlive::NO_KEEPALIVE;
     }
   }
 
