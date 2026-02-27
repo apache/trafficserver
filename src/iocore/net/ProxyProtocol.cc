@@ -625,6 +625,12 @@ ProxyProtocol::get_tlv_ssl_cipher() const
   return this->_get_tlv_ssl_subtype(PP2_SUBTYPE_SSL_CIPHER);
 }
 
+std::optional<std::string_view>
+ProxyProtocol::get_tlv_ssl_group() const
+{
+  return this->_get_tlv_ssl_subtype(PP2_SUBTYPE_SSL_GROUP);
+}
+
 int
 ProxyProtocol::set_additional_data(std::string_view data)
 {
