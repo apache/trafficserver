@@ -797,6 +797,13 @@ ParentRecord::Init(matcher_line *line_info)
         ignore_self_detect = false;
       }
       used = true;
+    } else if (strcasecmp(label, "host_override") == 0) {
+      if (strcasecmp(val, "true") == 0) {
+        host_override = true;
+      } else {
+        host_override = false;
+      }
+      used = true;
     } else if (strcasecmp(label, "hash_algorithm") == 0) {
       consistent_hash_algorithm = parseHashAlgorithm(val);
       used                      = true;

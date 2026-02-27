@@ -324,6 +324,14 @@ The following list shows the possible actions and their allowed values.
 
   -  ``false`` - The default.  Do not ignore the host status.
 
+.. _parent-config-format-host_override:
+
+``host_override``
+    One of the following values:
+
+    -  ``true`` - Sets the host header of the request using the selected parent, including the SNI name to be used for any upstream TLS connection.  Useful when a parent is another CDN that requires a correct SNI name.
+    -  ``false`` - The default.  Does not change the host header.
+
 .. _parent-config-format-hash-algorithm:
 
 ``hash_algorithm``
