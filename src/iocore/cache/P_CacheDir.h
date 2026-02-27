@@ -29,6 +29,7 @@
 #include "iocore/aio/AIO.h"
 #include "tscore/Version.h"
 #include "tscore/hugepages.h"
+#include "tsutil/Bravo.h"
 
 #include <cstdint>
 #include <ctime>
@@ -226,16 +227,28 @@ struct OpenDirEntry {
   }
 };
 
-struct OpenDir : public Continuation {
-  Queue<CacheVC, Link_CacheVC_opendir_link> delayed_readers;
-  DLL<OpenDirEntry>                         bucket[OPEN_DIR_BUCKETS];
+/**
+  Owned by StripeSM. All access to this OpenDir requires lock guard of StripeSM::_shared_mutex.
+ */
+class OpenDir : public Continuation
+{
+public:
+  OpenDir(StripeSM *s);
 
-  int           open_write(CacheVC *c, int allow_if_writers, int max_writers);
-  int           close_write(CacheVC *c);
+  // writer
+  int open_write(CacheVC *c, int allow_if_writers, int max_writers);
+  int close_write(CacheVC *c);
+  // reader
   OpenDirEntry *open_read(const CryptoHash *key) const;
-  int           signal_readers(int event, Event *e);
 
-  OpenDir();
+  // event handler
+  int signal_readers(int event, Event *e);
+
+private:
+  Queue<CacheVC, Link_CacheVC_opendir_link> _delayed_readers;
+  DLL<OpenDirEntry>                         _bucket[OPEN_DIR_BUCKETS];
+
+  StripeSM *_stripe;
 };
 
 struct CacheSync : public Continuation {
