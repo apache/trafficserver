@@ -1334,6 +1334,56 @@ int TSVConnIsSsl(TSVConn sslp);
 int         TSVConnProvidedSslCert(TSVConn sslp);
 const char *TSVConnSslSniGet(TSVConn sslp, int *length);
 
+/**
+    Retrieve TLS Client Hello information from an SSL virtual connection.
+
+    This function extracts TLS Client Hello data from a TLS handshake.
+    The returned object provides access to version, cipher suites, and extensions
+    in a way that is portable across both BoringSSL and OpenSSL implementations.
+
+    IMPORTANT: This function must be called during the TS_SSL_CLIENT_HELLO_HOOK.
+    The underlying SSL context may not be available at other hooks, particularly
+    for BoringSSL where the SSL_CLIENT_HELLO structure is only valid during
+    specific callback functions. Calling this function outside of the client
+    hello hook may result in nullptr being returned.
+
+    For BoringSSL, the Client Hello data is copied from the SSL_CLIENT_HELLO
+    structure. For OpenSSL, cipher suites and extension IDs are extracted using
+    SSL_client_hello_get0_* functions.
+
+    @param sslp The SSL virtual connection handle. Must not be nullptr.
+    @return A TSClientHello object containing Client Hello data.
+
+    @see TSClientHelloExtensionGet
+ */
+TSClientHello TSVConnClientHelloGet(TSVConn sslp);
+
+/**
+    Retrieve a specific TLS extension from the Client Hello.
+
+    This function looks up a TLS extension by its type (e.g., 0x10 for ALPN,
+    0x00 for SNI) and returns a pointer to its data. The lookup is performed
+    using SSL library-specific functions that work with both BoringSSL and
+    OpenSSL without requiring conditional compilation in the plugin.
+
+    The returned buffer is still owned by the underlying SSL context and must
+    not be freed by the caller. The buffer is valid only in the condition where
+    you can get a TSClientHello object from an SSL virtual connection.
+
+    @param ch The Client Hello object obtained from TSVConnClientHelloGet().
+    @param type The TLS extension type to retrieve.
+    @param out Pointer to receive the extension data buffer. Must not be nullptr.
+    @param outlen Pointer to receive the length of the extension data in bytes.
+                  Must not be nullptr.
+
+    @return TS_SUCCESS if the extension was found and retrieved successfully.
+            TS_ERROR if the extension is not present, or if any parameter is nullptr,
+            or if an error occurred during lookup.
+
+    @see TSVConnClientHelloGet
+ */
+TSReturnCode TSClientHelloExtensionGet(TSClientHello ch, unsigned int type, const unsigned char **out, size_t *outlen);
+
 TSSslSession TSSslSessionGet(const TSSslSessionID *session_id);
 int          TSSslSessionGetBuffer(const TSSslSessionID *session_id, char *buffer, int *len_ptr);
 TSReturnCode TSSslSessionInsert(const TSSslSessionID *session_id, TSSslSession add_session, TSSslConnection ssl_conn);

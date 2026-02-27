@@ -43,6 +43,8 @@
  */
 
 #include <cstdint>
+#include <memory>
+#include <vector>
 #include <netinet/in.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -1048,6 +1050,72 @@ struct TSHttp2Priority {
    * or -1 if the stream has no dependency. */
   int32_t stream_dependency;
 };
+
+// Wrapper class that provides controlled access to client hello data
+class TSClientHello
+{
+public:
+  class TSExtensionTypeList
+  {
+  public:
+    TSExtensionTypeList(void *ch) : _ch(ch) {}
+
+    class Iterator
+    {
+    public:
+      Iterator(const void *ite);
+      Iterator &operator++();
+      bool      operator==(const Iterator &b) const;
+      int       operator*() const;
+
+    private:
+      char _real_iterator[24];
+    };
+
+    Iterator begin();
+    Iterator end();
+
+  private:
+    void *_ch;
+  };
+
+  TSClientHello(void *ch) : _client_hello(ch) {}
+
+  ~TSClientHello() = default;
+
+  explicit
+  operator bool() const
+  {
+    return _client_hello != nullptr;
+  }
+
+  bool is_available() const;
+
+  uint16_t get_version() const;
+
+  const uint8_t *get_cipher_suites() const;
+
+  size_t get_cipher_suites_len() const;
+
+  // Returns an iterable container of extension type IDs
+  // This abstracts the difference between BoringSSL (extensions buffer) and OpenSSL (extension_ids array)
+  TSExtensionTypeList
+  get_extension_types() const
+  {
+    return TSExtensionTypeList(_client_hello);
+  }
+
+  // Internal accessor for API implementation
+  void *
+  _get_internal() const
+  {
+    return _client_hello;
+  }
+
+private:
+  void *_client_hello;
+};
+static_assert(std::is_trivially_copyable_v<TSClientHello> == true);
 
 using TSFile = struct tsapi_file *;
 
