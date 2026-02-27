@@ -1,0 +1,12 @@
+``
+> GET /_stats/prometheus_v2``HTTP/1.1
+``
+< HTTP/1.1 200 OK
+< Content-Type: text/plain; version=2.0.0; charset=utf-8
+< Cache-Control: no-cache
+< Date:``
+< Age:``
+< Transfer-Encoding: chunked
+< Connection:``
+``
+
