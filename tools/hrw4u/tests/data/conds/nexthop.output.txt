@@ -1,0 +1,9 @@
+cond %{SEND_REQUEST_HDR_HOOK} [AND]
+cond %{NEXT-HOP:HOST} ="parent.example.com"
+    set-header X-Via-Parent "yes"
+
+cond %{SEND_RESPONSE_HDR_HOOK} [AND]
+cond %{SERVER-HEADER:X-Via-Parent} ="yes"
+    set-header X-Next-Host "%{NEXT-HOP:HOST}"
+    set-header X-Next-Port "%{NEXT-HOP:PORT}"
+    set-header X-Next-Strategy "%{NEXT-HOP:STRATEGY}"

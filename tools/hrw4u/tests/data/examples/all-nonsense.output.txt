@@ -146,14 +146,14 @@ cond %{GROUP:END}
 
 
 cond %{SEND_REQUEST_HDR_HOOK} [AND]
-# Use NEXT-HOP information to adjust Host header
+# Use server URL information to adjust Host header
 cond %{GROUP}
-    cond %{NEXT-HOP:HOST} ="www.firstparent.com"
+    cond %{SERVER-URL:HOST} ="www.firstparent.com"
 cond %{GROUP:END}
     set-header Host "vhost.firstparent.com"
 elif
     cond %{GROUP}
-        cond %{NEXT-HOP:HOST} ="www.secondparent.com"
+        cond %{SERVER-URL:HOST} ="www.secondparent.com"
     cond %{GROUP:END}
         set-header Host "vhost.secondparent.com"
 # Demonstrate HTTP control read and write
@@ -210,7 +210,7 @@ elif
 cond %{SEND_RESPONSE_HDR_HOOK} [AND]
     set-header Cache-Control "public, max-age=60"
     set-header X-Now "%{NOW:YEAR}-%{NOW:MONTH}-%{NOW:DAY}T%{NOW:HOUR}:%{NOW:MINUTE}"
-    set-header X-Ports "in=%{CLIENT-URL:PORT};out=%{NEXT-HOP:PORT}"
+    set-header X-Ports "in=%{CLIENT-URL:PORT};out=%{SERVER-URL:PORT}"
     set-header X-IPs "client=%{IP:CLIENT};server=%{IP:SERVER}"
     set-header X-ID "%{ID:UNIQUE}"
     set-header ATS-Geo-Country "%{GEO:COUNTRY}"
