@@ -132,11 +132,19 @@ is successful.
 
    .. enumerator:: TS_MILESTONE_TLS_HANDSHAKE_START
 
-      Timestamp when the server starts the TLS handshake. 0 if no handshake is performed (connection reuse).
+      Timestamp when the client starts the TLS handshake with the proxy. 0 if no handshake is performed (connection reuse).
 
    .. enumerator:: TS_MILESTONE_TLS_HANDSHAKE_END
 
-      Timestamp when the server completes the TLS handshake. 0 if no handshake is performed (connection reuse).
+      Timestamp when the client completes the TLS handshake with the proxy. 0 if no handshake is performed (connection reuse).
+
+   .. enumerator:: TS_MILESTONE_SERVER_TLS_HANDSHAKE_START
+
+      Timestamp when the proxy starts the TLS handshake with the origin server. 0 if no handshake is performed (connection reuse or non-TLS origin).
+
+   .. enumerator:: TS_MILESTONE_SERVER_TLS_HANDSHAKE_END
+
+      Timestamp when the proxy completes the TLS handshake with the origin server. 0 if no handshake is performed (connection reuse or non-TLS origin).
 
    .. enumerator:: TS_MILESTONE_LAST_ENTRY
 

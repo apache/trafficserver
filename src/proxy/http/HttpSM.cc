@@ -1893,9 +1893,20 @@ HttpSM::state_http_server_open(int event, void *data)
   case CONNECT_EVENT_RETRY:
     do_http_server_open();
     break;
-  case CONNECT_EVENT_TXN:
+  case CONNECT_EVENT_TXN: {
+    // Multiplexed connection path (e.g. HTTP/2): ConnectingEntry created the session
+    // and dispatched this event. Get the netvc from the PoolableSession.
     SMDbg(dbg_ctl_http, "Connection handshake complete via CONNECT_EVENT_TXN");
-    if (this->create_server_txn(static_cast<PoolableSession *>(data))) {
+    PoolableSession *session = static_cast<PoolableSession *>(data);
+    ink_assert(session != nullptr);
+    // Capture server TLS handshake timing from the session's netvc
+    if (auto *netvc = session->get_netvc()) {
+      if (auto tbs = netvc->get_service<TLSBasicSupport>()) {
+        milestones[TS_MILESTONE_SERVER_TLS_HANDSHAKE_START] = tbs->get_tls_handshake_begin_time();
+        milestones[TS_MILESTONE_SERVER_TLS_HANDSHAKE_END]   = tbs->get_tls_handshake_end_time();
+      }
+    }
+    if (this->create_server_txn(session)) {
       t_state.current.server->clear_connect_fail();
       handle_http_server_open();
     } else { // Failed to create transaction.  Maybe too many active transactions already
@@ -1903,11 +1914,18 @@ HttpSM::state_http_server_open(int event, void *data)
       do_http_server_open(false);
     }
     return 0;
+  }
   case VC_EVENT_READ_COMPLETE:
   case VC_EVENT_WRITE_READY:
   case VC_EVENT_WRITE_COMPLETE:
-    // Update the time out to the regular connection timeout.
+    // Direct connection path (e.g. HTTP/1): HttpSM owns the netvc directly
+    // and creates the session itself.
     SMDbg(dbg_ctl_http_ss, "Connection handshake complete");
+    // Capture server TLS handshake timing if this is a TLS connection
+    if (auto tbs = _netvc->get_service<TLSBasicSupport>()) {
+      milestones[TS_MILESTONE_SERVER_TLS_HANDSHAKE_START] = tbs->get_tls_handshake_begin_time();
+      milestones[TS_MILESTONE_SERVER_TLS_HANDSHAKE_END]   = tbs->get_tls_handshake_end_time();
+    }
     this->create_server_txn(this->create_server_session(*_netvc, _netvc_read_buffer, _netvc_reader));
     t_state.current.server->clear_connect_fail();
     handle_http_server_open();
@@ -7789,12 +7807,21 @@ HttpSM::update_stats()
 
   // print slow requests if the threshold is set (> 0) and if we are over the time threshold
   if (t_state.txn_conf->slow_log_threshold != 0 && ink_hrtime_from_msec(t_state.txn_conf->slow_log_threshold) < total_time) {
+    // Use the unmapped (pre-remap) URL so the slow log shows the incoming client URL.
+    // unmapped_url may not be valid if the transaction ended before reaching the remap
+    // stage (e.g. client timeout during header read, malformed request). In that case
+    // fall back to client_request URL which hasn't been remapped yet either.
     char url_string[256] = "";
-    int  offset          = 0;
-    int  skip            = 0;
-
-    t_state.hdr_info.client_request.url_print(url_string, sizeof(url_string) - 1, &offset, &skip);
-    url_string[offset] = 0; // NULL terminate the string
+    int  url_length      = 0;
+    if (t_state.unmapped_url.valid()) {
+      t_state.unmapped_url.string_get_buf(url_string, sizeof(url_string) - 1, &url_length);
+    } else {
+      int offset = 0;
+      int skip   = 0;
+      t_state.hdr_info.client_request.url_print(url_string, sizeof(url_string) - 1, &offset, &skip);
+      url_length = offset;
+    }
+    url_string[url_length] = 0; // NULL terminate the string
 
     // unique id
     char unique_id_string[128] = "";
@@ -7833,7 +7860,7 @@ HttpSM::update_stats()
           "fd: %d "
           "client state: %d "
           "server state: %d "
-          "tls_handshake: %.3f "
+          "ua_tls_handshake: %.3f "
           "ua_begin: %.3f "
           "ua_first_read: %.3f "
           "ua_read_header_done: %.3f "
@@ -7845,6 +7872,7 @@ HttpSM::update_stats()
           "dns_lookup_end: %.3f "
           "server_connect: %.3f "
           "server_connect_end: %.3f "
+          "server_tls_handshake: %.3f "
           "server_first_read: %.3f "
           "server_read_header_done: %.3f "
           "server_close: %.3f "
@@ -7868,6 +7896,7 @@ HttpSM::update_stats()
           milestones.difference_sec(TS_MILESTONE_SM_START, TS_MILESTONE_DNS_LOOKUP_END),
           milestones.difference_sec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_CONNECT),
           milestones.difference_sec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_CONNECT_END),
+          milestones.difference_sec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_TLS_HANDSHAKE_END),
           milestones.difference_sec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_FIRST_READ),
           milestones.difference_sec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_READ_HEADER_DONE),
           milestones.difference_sec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_CLOSE),
