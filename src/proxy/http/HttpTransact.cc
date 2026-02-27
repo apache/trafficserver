@@ -3722,7 +3722,7 @@ HttpTransact::handle_response_from_parent(State *s)
   switch (s->current.state) {
   case CONNECTION_ALIVE:
     TxnDbg(dbg_ctl_http_trans, "[hrfp] connection alive");
-    s->current.server->connect_result = 0;
+    s->set_success();
     SET_VIA_STRING(VIA_DETAIL_PP_CONNECT, VIA_DETAIL_PP_SUCCESS);
     if (s->parent_result.retry) {
       markParentUp(s);
@@ -3877,13 +3877,13 @@ HttpTransact::handle_response_from_server(State *s)
   case CONNECTION_ALIVE:
     TxnDbg(dbg_ctl_http_trans, "[hrfs] connection alive");
     SET_VIA_STRING(VIA_DETAIL_SERVER_CONNECT, VIA_DETAIL_SERVER_SUCCESS);
-    s->current.server->clear_connect_fail();
+    s->set_success();
     handle_forward_server_connection_open(s);
     break;
   case OUTBOUND_CONGESTION:
     TxnDbg(dbg_ctl_http_trans, "Error. congestion control -- congested.");
     SET_VIA_STRING(VIA_DETAIL_SERVER_CONNECT, VIA_DETAIL_SERVER_FAILURE);
-    s->set_connect_fail(EUSERS); // too many users
+    s->set_fail(EUSERS); // too many users
     handle_server_connection_not_open(s);
     break;
   case OPEN_RAW_ERROR:
@@ -3898,13 +3898,13 @@ HttpTransact::handle_response_from_server(State *s)
     // This prevents the assertion failure in retry_server_connection_not_open.
     if (s->cause_of_death_errno == -UNKNOWN_INTERNAL_ERROR) {
       if (s->current.state == PARSE_ERROR || s->current.state == BAD_INCOMING_RESPONSE) {
-        s->set_connect_fail(EBADMSG);
+        s->set_fail(EBADMSG);
       } else if (s->current.state == CONNECTION_CLOSED) {
-        s->set_connect_fail(EPIPE);
+        s->set_fail(EPIPE);
       } else {
         // Generic fallback for OPEN_RAW_ERROR, CONNECTION_ERROR,
         // STATE_UNDEFINED, and any other unexpected error states.
-        s->set_connect_fail(EIO);
+        s->set_fail(EIO);
       }
     }
 
@@ -3964,7 +3964,7 @@ HttpTransact::handle_response_from_server(State *s)
   case ACTIVE_TIMEOUT:
     TxnDbg(dbg_ctl_http_trans, "[hrfs] connection not alive");
     SET_VIA_STRING(VIA_DETAIL_SERVER_CONNECT, VIA_DETAIL_SERVER_FAILURE);
-    s->set_connect_fail(ETIMEDOUT);
+    s->set_fail(ETIMEDOUT);
     handle_server_connection_not_open(s);
     break;
   default:

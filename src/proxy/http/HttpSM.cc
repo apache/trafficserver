@@ -1152,7 +1152,7 @@ HttpSM::state_raw_http_server_open(int event, void *data)
 
     netvc->set_inactivity_timeout(get_server_inactivity_timeout());
     netvc->set_active_timeout(get_server_active_timeout());
-    t_state.current.server->clear_connect_fail();
+    t_state.set_success();
 
     if (get_tunnel_type() != SNIRoutingType::NONE) {
       tunnel.mark_tls_tunnel_active();
@@ -1165,9 +1165,9 @@ HttpSM::state_raw_http_server_open(int event, void *data)
   case NET_EVENT_OPEN_FAILED:
     if (t_state.cause_of_death_errno == -UNKNOWN_INTERNAL_ERROR) {
       if (event == VC_EVENT_EOS) {
-        t_state.set_connect_fail(EPIPE);
+        t_state.set_fail(EPIPE);
       } else {
-        t_state.set_connect_fail(EIO);
+        t_state.set_fail(EIO);
       }
     }
     t_state.current.state = HttpTransact::OPEN_RAW_ERROR;
@@ -1874,10 +1874,6 @@ HttpSM::state_http_server_open(int event, void *data)
       // The buffer we create will be handed over to the eventually created server session
       _netvc->do_io_write(this, 1, _netvc_reader);
       _netvc->set_inactivity_timeout(this->get_server_connect_timeout());
-
-      // Pre-emptively set a server connect failure that will be cleared once a WRITE_READY is received from origin or
-      // bytes are received back
-      t_state.set_connect_fail(EIO);
     } else { // in the case of an intercept plugin don't to the connect timeout change
       SMDbg(dbg_ctl_http_connect, "not setting handler for connection handshake");
       this->create_server_txn(this->create_server_session(*_netvc, _netvc_read_buffer, _netvc_reader));
@@ -1896,7 +1892,6 @@ HttpSM::state_http_server_open(int event, void *data)
   case CONNECT_EVENT_TXN:
     SMDbg(dbg_ctl_http, "Connection handshake complete via CONNECT_EVENT_TXN");
     if (this->create_server_txn(static_cast<PoolableSession *>(data))) {
-      t_state.current.server->clear_connect_fail();
       handle_http_server_open();
     } else { // Failed to create transaction.  Maybe too many active transactions already
       // Try again (probably need a bounding counter here)
@@ -1909,12 +1904,11 @@ HttpSM::state_http_server_open(int event, void *data)
     // Update the time out to the regular connection timeout.
     SMDbg(dbg_ctl_http_ss, "Connection handshake complete");
     this->create_server_txn(this->create_server_session(*_netvc, _netvc_read_buffer, _netvc_reader));
-    t_state.current.server->clear_connect_fail();
     handle_http_server_open();
     return 0;
   case VC_EVENT_INACTIVITY_TIMEOUT:
   case VC_EVENT_ACTIVE_TIMEOUT:
-    t_state.set_connect_fail(ETIMEDOUT);
+    t_state.set_fail(ETIMEDOUT);
   /* fallthrough */
   case VC_EVENT_ERROR:
   case VC_EVENT_EOS:
@@ -1923,7 +1917,7 @@ HttpSM::state_http_server_open(int event, void *data)
     t_state.outbound_conn_track_state.clear();
     if (_netvc != nullptr) {
       if (event == VC_EVENT_ERROR || event == NET_EVENT_OPEN_FAILED) {
-        t_state.set_connect_fail(_netvc->lerrno);
+        t_state.set_fail(_netvc->lerrno);
       }
       this->server_connection_provided_cert = _netvc->provided_cert();
       _netvc->do_io_write(nullptr, 0, nullptr);
@@ -2096,7 +2090,7 @@ HttpSM::state_read_server_response_header(int event, void *data)
     if (allow_error == false) {
       SMDbg(dbg_ctl_http_seq, "Error parsing server response header");
       t_state.current.state = HttpTransact::PARSE_ERROR;
-      t_state.set_connect_fail(EBADMSG);
+      t_state.set_fail(EBADMSG);
 
       // If the server closed prematurely on us, use the
       //   server setup error routine since it will forward
@@ -2326,9 +2320,6 @@ HttpSM::add_to_existing_request()
     // Check that entry matches sni, hostname, and cert.
     if (proposed_hostname == ip_iter->second->hostname && proposed_sni == ip_iter->second->sni &&
         proposed_cert == ip_iter->second->cert_name && ip_iter->second->connect_sms.size() < 50) {
-      // Pre-emptively set a server connect failure that will be cleared once a
-      // WRITE_READY is received from origin or bytes are received back.
-      this->t_state.set_connect_fail(EIO);
       ip_iter->second->connect_sms.insert(this);
       Dbg(dbg_ctl_http_connect, "Add entry to connection queue. size=%zd", ip_iter->second->connect_sms.size());
       retval = true;
@@ -4013,19 +4004,19 @@ HttpSM::tunnel_handler_post_server(int event, HttpTunnelConsumer *c)
     switch (event) {
     case VC_EVENT_INACTIVITY_TIMEOUT:
       t_state.current.state = HttpTransact::INACTIVE_TIMEOUT;
-      t_state.set_connect_fail(ETIMEDOUT);
+      t_state.set_fail(ETIMEDOUT);
       break;
     case VC_EVENT_ACTIVE_TIMEOUT:
       t_state.current.state = HttpTransact::ACTIVE_TIMEOUT;
-      t_state.set_connect_fail(ETIMEDOUT);
+      t_state.set_fail(ETIMEDOUT);
       break;
     case VC_EVENT_EOS:
       t_state.current.state = HttpTransact::CONNECTION_CLOSED;
-      t_state.set_connect_fail(EPIPE);
+      t_state.set_fail(EPIPE);
       break;
     case VC_EVENT_ERROR:
       t_state.current.state = HttpTransact::CONNECTION_CLOSED;
-      t_state.set_connect_fail(server_txn->get_netvc()->lerrno);
+      t_state.set_fail(server_txn->get_netvc()->lerrno);
       break;
     default:
       break;
@@ -5231,7 +5222,7 @@ HttpSM::send_origin_throttled_response()
     t_state.current.retry_attempts.maximize(t_state.configured_connect_attempts_max_retries());
   }
   if (t_state.cause_of_death_errno == -UNKNOWN_INTERNAL_ERROR) {
-    t_state.set_connect_fail(EUSERS); // Too many users.
+    t_state.set_fail(EUSERS); // Too many users.
   }
   t_state.current.state = HttpTransact::OUTBOUND_CONGESTION;
   call_transact_and_set_next_state(HttpTransact::HandleResponse);
@@ -5644,7 +5635,7 @@ HttpSM::do_http_server_open(bool raw, bool only_direct)
       // Eventually may want to have a queue as the origin_max_connection does to allow for a combination
       // of retries and errors.  But at this point, we are just going to allow the error case.
       if (t_state.cause_of_death_errno == -UNKNOWN_INTERNAL_ERROR) {
-        t_state.set_connect_fail(ENFILE); // Too many open files in system.
+        t_state.set_fail(ENFILE); // Too many open files in system.
       }
       t_state.current.state = HttpTransact::CONNECTION_ERROR;
       call_transact_and_set_next_state(HttpTransact::HandleResponse);
@@ -5791,7 +5782,6 @@ HttpSM::do_http_server_open(bool raw, bool only_direct)
       new_entry->sni                 = this->get_outbound_sni();
       new_entry->cert_name           = this->get_outbound_cert();
       new_entry->is_no_plugin_tunnel = plugin_tunnel_type == HttpPluginTunnel_t::NONE;
-      this->t_state.set_connect_fail(EIO);
       new_entry->connect_sms.insert(this);
       ethread->connecting_pool->m_ip_pool.insert(std::make_pair(new_entry->ipaddr, new_entry));
     }
@@ -6119,7 +6109,7 @@ HttpSM::handle_post_failure()
   tunnel.reset();
   // Server is down
   if (t_state.current.state == HttpTransact::STATE_UNDEFINED || t_state.current.state == HttpTransact::CONNECTION_ALIVE) {
-    t_state.set_connect_fail(server_txn->get_netvc()->lerrno);
+    t_state.set_fail(server_txn->get_netvc()->lerrno);
     t_state.current.state = HttpTransact::CONNECTION_CLOSED;
   }
   call_transact_and_set_next_state(HttpTransact::HandleResponse);
@@ -6134,6 +6124,8 @@ HttpSM::handle_post_failure()
 void
 HttpSM::handle_http_server_open()
 {
+  t_state.set_success();
+
   // [bwyatt] applying per-transaction OS netVC options here
   //          IFF they differ from the netVC's current options.
   //          This should keep this from being redundant on a
@@ -6241,14 +6233,14 @@ HttpSM::handle_server_setup_error(int event, void *data)
   switch (event) {
   case VC_EVENT_EOS:
     t_state.current.state = HttpTransact::CONNECTION_CLOSED;
-    t_state.set_connect_fail(EPIPE);
+    t_state.set_fail(EPIPE);
     break;
   case VC_EVENT_ERROR:
     t_state.current.state = HttpTransact::CONNECTION_ERROR;
-    t_state.set_connect_fail(server_txn->get_netvc()->lerrno);
+    t_state.set_fail(server_txn->get_netvc()->lerrno);
     break;
   case VC_EVENT_ACTIVE_TIMEOUT:
-    t_state.set_connect_fail(ETIMEDOUT);
+    t_state.set_fail(ETIMEDOUT);
     t_state.current.state = HttpTransact::ACTIVE_TIMEOUT;
     break;
 
@@ -6258,7 +6250,7 @@ HttpSM::handle_server_setup_error(int event, void *data)
     //   server failed
     // In case of TIMEOUT, the iocore sends back
     // server_entry->read_vio instead of the write_vio
-    t_state.set_connect_fail(ETIMEDOUT);
+    t_state.set_fail(ETIMEDOUT);
     if (server_entry->write_vio && server_entry->write_vio->nbytes > 0 && server_entry->write_vio->ndone == 0) {
       t_state.current.state = HttpTransact::CONNECTION_ERROR;
     } else {
@@ -8303,9 +8295,6 @@ HttpSM::set_next_state()
   }
 
   case HttpTransact::StateMachineAction_t::ORIGIN_SERVER_RAW_OPEN: {
-    // Pre-emptively set a server connect failure that will be cleared once a WRITE_READY is received from origin or
-    // bytes are received back
-    t_state.set_connect_fail(EIO);
     HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_raw_http_server_open);
 
     ink_assert(server_entry == nullptr);
