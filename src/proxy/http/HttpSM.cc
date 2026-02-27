@@ -4671,11 +4671,17 @@ HttpSM::track_connect_fail() const
   bool retval = false;
   if (t_state.current.server->had_connect_fail()) {
     // What does our policy say?
-    if (t_state.txn_conf->connect_down_policy == 2) { // Any connection error through TLS handshake
+    if (t_state.txn_conf->connect_down_policy == 2 ||
+        t_state.txn_conf->connect_down_policy == 3) { // Any connection error through TLS handshake
       retval = true;
     } else if (t_state.txn_conf->connect_down_policy == 1) { // Any connection error through TCP
       retval = t_state.current.server->connect_result != -ENET_SSL_CONNECT_FAILED;
     }
+  }
+  // Policy 3 additionally marks the server down on transaction inactive timeout,
+  // even when had_connect_fail() is false (connect_result was cleared at CONNECTION_ALIVE).
+  if (!retval && t_state.txn_conf->connect_down_policy == 3) {
+    retval = (t_state.current.state == HttpTransact::INACTIVE_TIMEOUT);
   }
   return retval;
 }
