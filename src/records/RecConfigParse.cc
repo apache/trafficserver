@@ -123,7 +123,7 @@ RecConfigOverrideFromEnvironment(const char *name, const char *value)
   if (envval) {
     return envval;
   } else if (RecConfigOverrideFromRunroot(name)) {
-    return nullptr;
+    return value;
   }
 
   return value;
