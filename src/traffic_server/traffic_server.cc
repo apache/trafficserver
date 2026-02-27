@@ -831,6 +831,10 @@ CB_After_Cache_Init()
   start = ink_atomic_swap(&delay_listen_for_cache, -1);
   emit_fully_initialized_message();
 
+  // Initialize volume_host_rec for any remap rules with @volume= directives
+  // that were deferred during startup because cache wasn't ready yet
+  init_remap_volume_host_records();
+
   if (1 == start) {
     // The delay_listen_for_cache value was 1, therefore the main function
     // delayed the call to start_HttpProxyServer until we got here. We must

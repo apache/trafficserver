@@ -38,6 +38,7 @@ namespace
 DbgCtl dbg_ctl_cache_hosting{"cache_hosting"};
 DbgCtl dbg_ctl_matcher{"matcher"};
 
+constexpr static int MAX_VOLUME_IDX = 255;
 } // end anonymous namespace
 
 /*************************************************************
@@ -652,6 +653,8 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
     bool        ramcache_enabled = true;
     int         avg_obj_size     = -1; // Defaults
     int         fragment_size    = -1;
+    int64_t     ram_cache_size   = -1; // -1 means use shared allocation
+    int64_t     ram_cache_cutoff = -1; // -1 means use global cutoff
 
     while (true) {
       // skip all blank spaces at beginning of line
@@ -696,7 +699,7 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
           break;
         }
 
-        if (volume_number < 1 || volume_number > 255) {
+        if (volume_number < 1 || volume_number > MAX_VOLUME_IDX) {
           err = "Bad Volume Number";
           break;
         }
@@ -740,17 +743,33 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
           in_percent = 0;
         }
       } else if (strcasecmp(tmp, "avg_obj_size") == 0) { // match avg_obj_size
-        tmp          += 13;
-        avg_obj_size  = atoi(tmp);
+        tmp += 13;
+        if (!ParseRules::is_digit(*tmp)) {
+          err = "Invalid avg_obj_size value (must start with a number, e.g., 64K)";
+          break;
+        }
+        avg_obj_size = static_cast<int>(ink_atoi64(tmp));
 
-        while (ParseRules::is_digit(*tmp)) {
+        if (avg_obj_size < 0) {
+          err = "Invalid avg_obj_size value (must be >= 0)";
+          break;
+        }
+        while (*tmp && (ParseRules::is_digit(*tmp) || strchr("kmgtKMGT", *tmp))) {
           tmp++;
         }
       } else if (strcasecmp(tmp, "fragment_size") == 0) { // match fragment_size
-        tmp           += 14;
-        fragment_size  = atoi(tmp);
+        tmp += 14;
+        if (!ParseRules::is_digit(*tmp)) {
+          err = "Invalid fragment_size value (must start with a number, e.g., 1M)";
+          break;
+        }
+        fragment_size = static_cast<int>(ink_atoi64(tmp));
 
-        while (ParseRules::is_digit(*tmp)) {
+        if (fragment_size < 0) {
+          err = "Invalid fragment_size value (must be >= 0)";
+          break;
+        }
+        while (*tmp && (ParseRules::is_digit(*tmp) || strchr("kmgtKMGT", *tmp))) {
           tmp++;
         }
       } else if (strcasecmp(tmp, "ramcache") == 0) { // match ramcache
@@ -765,11 +784,42 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
           err = "Unexpected end of line";
           break;
         }
+      } else if (strcasecmp(tmp, "ram_cache_size") == 0) { // match ram_cache_size
+        tmp += 15;
+        if (!ParseRules::is_digit(*tmp)) {
+          err = "Invalid ram_cache_size value (must start with a number, e.g., 10G)";
+          break;
+        }
+        ram_cache_size = ink_atoi64(tmp);
+
+        if (ram_cache_size < 0) {
+          err = "Invalid ram_cache_size value (must be >= 0)";
+          break;
+        }
+        // Note: ram_cache_size=0 disables RAM cache for this volume, same as ramcache=false
+        while (*tmp && (ParseRules::is_digit(*tmp) || strchr("kmgtKMGT", *tmp))) {
+          tmp++;
+        }
+      } else if (strcasecmp(tmp, "ram_cache_cutoff") == 0) { // match ram_cache_cutoff
+        tmp += 17;
+        if (!ParseRules::is_digit(*tmp)) {
+          err = "Invalid ram_cache_cutoff value (must start with a number, e.g., 5M)";
+          break;
+        }
+        ram_cache_cutoff = ink_atoi64(tmp);
+
+        if (ram_cache_cutoff < 0) {
+          err = "Invalid ram_cache_cutoff value (must be >= 0)";
+          break;
+        }
+        while (*tmp && (ParseRules::is_digit(*tmp) || strchr("kmgtKMGT", *tmp))) {
+          tmp++;
+        }
       }
 
       // ends here
       if (end < line_end) {
-        tmp++;
+        tmp = line_end;
       }
     }
 
@@ -791,6 +841,8 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
       configp->size             = size;
       configp->avg_obj_size     = avg_obj_size;
       configp->fragment_size    = fragment_size;
+      configp->ram_cache_size   = ram_cache_size;
+      configp->ram_cache_cutoff = ram_cache_cutoff;
       configp->cachep           = nullptr;
       configp->ramcache_enabled = ramcache_enabled;
       cp_queue.enqueue(configp);
@@ -808,4 +860,50 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
   }
 
   return;
+}
+
+// Wrapper function for deleting CacheHostRecord from outside the cache module.
+void
+destroyCacheHostRecord(CacheHostRecord *rec)
+{
+  delete rec;
+}
+
+// Build a CacheHostRecord for @volume= directive with comma-separated volumes
+// This reuses CacheHostRecord::Init() by constructing a minimal matcher_line
+CacheHostRecord *
+createCacheHostRecord(const char *volume_str, char *errbuf, size_t errbufsize)
+{
+  if (!volume_str || !*volume_str) {
+    snprintf(errbuf, errbufsize, "Empty volume specification");
+    return nullptr;
+  }
+
+  CacheHostRecord *host_rec = new CacheHostRecord();
+
+  // Build a minimal matcher_line structure with just the volume= directive
+  char         volume_key[] = "volume";
+  matcher_line ml;
+  memset(&ml, 0, sizeof(ml));
+
+  ml.line[0][0] = volume_key;
+  ml.line[1][0] = const_cast<char *>(volume_str);
+  ml.num_el     = 1;
+  ml.dest_entry = -1;
+  ml.line_num   = 0;
+  ml.type       = MATCH_NONE;
+  ml.next       = nullptr;
+
+  int result = host_rec->Init(&ml, CacheType::HTTP);
+
+  if (result != 0) {
+    delete host_rec;
+    snprintf(errbuf, errbufsize, "Failed to initialize volume record (check volume.config)");
+    return nullptr;
+  }
+
+  Dbg(dbg_ctl_cache_hosting, "Created remap volume record with %d volumes, %d stripes", host_rec->num_cachevols,
+      host_rec->num_vols);
+
+  return host_rec;
 }

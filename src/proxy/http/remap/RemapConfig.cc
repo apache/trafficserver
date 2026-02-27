@@ -36,6 +36,9 @@
 #include "tscore/Filenames.h"
 #include "proxy/IPAllow.h"
 #include "proxy/http/remap/PluginFactory.h"
+#include "iocore/cache/Cache.h"
+
+extern CacheHostRecord *createCacheHostRecord(const char *volume_str, char *errbuf, size_t errbufsize);
 
 using namespace std::literals;
 
@@ -48,6 +51,7 @@ namespace
 DbgCtl dbg_ctl_url_rewrite{"url_rewrite"};
 DbgCtl dbg_ctl_remap_plugin{"remap_plugin"};
 DbgCtl dbg_ctl_url_rewrite_regex{"url_rewrite_regex"};
+
 } // end anonymous namespace
 
 /**
@@ -829,6 +833,14 @@ remap_check_option(const char *const *argv, int argc, unsigned long findmode, in
           *argptr = &argv[i][9];
         }
         ret_flags |= REMAP_OPTFLG_STRATEGY;
+      } else if (!strncasecmp(argv[i], "volume=", 7)) {
+        if ((findmode & REMAP_OPTFLG_VOLUME) != 0) {
+          idx = i;
+        }
+        if (argptr) {
+          *argptr = &argv[i][7];
+        }
+        ret_flags |= REMAP_OPTFLG_VOLUME;
       } else {
         Warning("ignoring invalid remap option '%s'", argv[i]);
       }
@@ -1197,9 +1209,52 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
     if ((bti->remap_optflg & REMAP_OPTFLG_MAP_ID) != 0) {
       int idx = 0;
       int ret = remap_check_option(bti->argv, bti->argc, REMAP_OPTFLG_MAP_ID, &idx);
+
       if (ret & REMAP_OPTFLG_MAP_ID) {
-        char *c             = strchr(bti->argv[idx], static_cast<int>('='));
+        char *c = strchr(bti->argv[idx], static_cast<int>('='));
+
         new_mapping->map_id = static_cast<unsigned int>(atoi(++c));
+      }
+    }
+
+    // Parse @volume= option with comma-separated syntax (@volume=3,4)
+    for (int i = 0; i < bti->argc; i++) {
+      if (!strncasecmp(bti->argv[i], "volume=", 7)) {
+        const char *volume_str = &bti->argv[i][7];
+
+        if (!volume_str || !*volume_str) {
+          snprintf(errStrBuf, sizeof(errStrBuf), "Empty @volume= directive at line %d", cln + 1);
+          errStr = errStrBuf;
+          goto MAP_ERROR;
+        }
+
+        for (const char *p = volume_str; *p; p++) {
+          if (*p != ',' && (*p < '0' || *p > '9')) {
+            snprintf(errStrBuf, sizeof(errStrBuf), "Invalid character '%c' in @volume=%s at line %d", *p, volume_str, cln + 1);
+            errStr = errStrBuf;
+            goto MAP_ERROR;
+          }
+        }
+
+        // Check if cache is ready (will be true during config reload, possibly false during initial startup)
+        if (CacheProcessor::IsCacheEnabled() == CacheInitState::INITIALIZED) {
+          char             volume_errbuf[256];
+          CacheHostRecord *rec = createCacheHostRecord(volume_str, volume_errbuf, sizeof(volume_errbuf));
+
+          if (!rec) {
+            snprintf(errStrBuf, sizeof(errStrBuf), "Failed to build volume record for @volume=%s at line %d: %s", volume_str,
+                     cln + 1, volume_errbuf);
+            errStr = errStrBuf;
+            goto MAP_ERROR;
+          }
+          new_mapping->volume_host_rec.store(rec, std::memory_order_release);
+          Dbg(dbg_ctl_url_rewrite, "[BuildTable] Cache volume directive built: @volume=%s", volume_str);
+        } else {
+          // Store the volume string for lazy initialization after cache is ready
+          new_mapping->setVolume(volume_str);
+          Dbg(dbg_ctl_url_rewrite, "[BuildTable] Cache volume directive stored (deferred): @volume=%s", volume_str);
+        }
+        break;
       }
     }
 

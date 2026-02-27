@@ -62,7 +62,9 @@ struct CacheHostRecord {
   CacheHostRecord() {}
 };
 
-void build_vol_hash_table(CacheHostRecord *cp);
+void             build_vol_hash_table(CacheHostRecord *cp);
+CacheHostRecord *createCacheHostRecord(const char *volume_str, char *errbuf, size_t errbufsize);
+void             destroyCacheHostRecord(CacheHostRecord *rec);
 
 struct CacheHostResult {
   CacheHostRecord *record = nullptr;
@@ -229,18 +231,42 @@ public:
   void Match(std::string_view rdata, CacheHostResult *result) const;
   void Print() const;
 
+  // Getters for Cache::key_to_stripe access
+  const CacheHostRecord *
+  getGenHostRec() const
+  {
+    return &gen_host_rec;
+  }
+
   int
-  getEntryCount() const
+  getNumEntries() const
   {
     return m_numEntries;
   }
+
+  int
+  getGenHostRecCacheVols() const
+  {
+    return gen_host_rec.num_cachevols;
+  }
+
   CacheHostMatcher *
   getHostMatcher() const
   {
     return hostMatch.get();
   }
 
-  static int config_callback(const char *, RecDataT, RecData, void *);
+  CacheType
+  getType() const
+  {
+    return type;
+  }
+
+  Cache *
+  getCache() const
+  {
+    return cache;
+  }
 
   void
   register_config_callback(ReplaceablePtr<CacheHostTable> *p)
@@ -248,12 +274,13 @@ public:
     RecRegisterConfigUpdateCb("proxy.config.cache.hosting_filename", CacheHostTable::config_callback, (void *)p);
   }
 
-  CacheType       type         = CacheType::HTTP;
-  Cache          *cache        = nullptr;
-  int             m_numEntries = 0;
-  CacheHostRecord gen_host_rec;
-
 private:
+  static int config_callback(const char *, RecDataT, RecData, void *);
+
+  CacheType                         type         = CacheType::HTTP;
+  Cache                            *cache        = nullptr;
+  int                               m_numEntries = 0;
+  CacheHostRecord                   gen_host_rec;
   std::unique_ptr<CacheHostMatcher> hostMatch    = nullptr;
   const matcher_tags                config_tags  = {"hostname", "domain", nullptr, nullptr, nullptr, nullptr, false};
   const char                       *matcher_name = "unknown"; // Used for Debug/Warning/Error messages
@@ -276,8 +303,8 @@ struct CacheHostTableConfig : public Continuation {
     Cache    *cache = nullptr;
     {
       ReplaceablePtr<CacheHostTable>::ScopedReader hosttable(ppt);
-      type  = hosttable->type;
-      cache = hosttable->cache;
+      type  = hosttable->getType();
+      cache = hosttable->getCache();
     }
     ppt->reset(new CacheHostTable(cache, type));
     delete this;
@@ -298,6 +325,8 @@ struct ConfigVol {
   int       percent;
   int       avg_obj_size;
   int       fragment_size;
+  int64_t   ram_cache_size;   // Per-volume RAM cache size (-1 = use shared allocation)
+  int64_t   ram_cache_cutoff; // Per-volume RAM cache cutoff (-1 = use global cutoff)
   CacheVol *cachep;
   LINK(ConfigVol, link);
 };

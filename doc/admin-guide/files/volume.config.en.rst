@@ -73,20 +73,67 @@ Optional directory entry sizing
 
 You can also add an option ``avg_obj_size=<size>`` to the volume configuration
 line. This overrides the global :ts:cv:`proxy.config.cache.min_average_object_size`
-configuration for this volume. This is useful if you have a volume that is dedicated
-for say very small objects, and you need a lot of directory entries to store them.
+configuration for this volume. The size supports multipliers (K, M, G, T) for
+convenience (e.g., ``avg_obj_size=64K`` or ``avg_obj_size=1M``). This is useful
+if you have a volume that is dedicated for say very small objects, and you need
+a lot of directory entries to store them.
 
 Optional fragment size setting
 ------------------------------
 
 You can also add an option ``fragment_size=<size>`` to the volume configuration
 line. This overrides the global :ts:cv:`proxy.config.cache.target_fragment_size`
-configuration for this volume. This allows for a smaller, or larger, fragment size
-for a particular volume. This may be useful together with ``avg_obj_size`` as well,
-since a larger fragment size could reduce the number of directory entries needed
-for a large object.
+configuration for this volume. The size supports multipliers (K, M, G, T) for
+convenience (e.g., ``fragment_size=512K`` or ``fragment_size=2M``). This allows
+for a smaller, or larger, fragment size for a particular volume. This may be
+useful together with ``avg_obj_size`` as well, since a larger fragment size could
+reduce the number of directory entries needed for a large object.
 
-Note that this setting has a maximmum value of 4MB.
+Note that this setting has a maximum value of 4MB.
+
+Optional RAM cache size allocation
+-----------------------------------
+
+You can add an option ``ram_cache_size=<size>`` to the volume configuration line
+to allocate a dedicated RAM cache pool for this volume. The size supports
+multipliers (K, M, G, T) for convenience (e.g., ``ram_cache_size=512M`` or
+``ram_cache_size=2G``). Setting ``ram_cache_size=0`` disables the RAM cache
+for this volume, which is equivalent to ``ramcache=false``.
+
+When ``ram_cache_size`` is specified for a volume, that amount is **automatically
+subtracted** from the global :ts:cv:`proxy.config.cache.ram_cache.size` setting,
+and the remainder is shared among volumes without private allocations. This ensures
+total RAM cache usage never exceeds the configured global limit.
+
+For example, if the global RAM cache size is 4GB and you allocate 1GB to volume 1
+and 512MB to volume 2, the remaining 2.5GB will be distributed among other volumes
+using the normal proportional allocation based on disk space.
+
+**Important notes:**
+
+* If the sum of all ``ram_cache_size`` allocations exceeds the global RAM cache size,
+  Traffic Server will fail to start with a fatal error. Increase
+  :ts:cv:`proxy.config.cache.ram_cache.size` or reduce the per-volume allocations.
+* If ``ramcache=false`` is set alongside ``ram_cache_size``, the ``ram_cache_size``
+  is ignored (with a warning) since the RAM cache is disabled for that volume.
+* This setting only takes effect when :ts:cv:`proxy.config.cache.ram_cache.size`
+  is set to a positive value (not ``-1`` for automatic sizing).
+
+Optional RAM cache cutoff override
+-----------------------------------
+
+You can add an option ``ram_cache_cutoff=<size>`` to the volume configuration line
+to override the global :ts:cv:`proxy.config.cache.ram_cache_cutoff` setting for
+this specific volume. The size supports multipliers (K, M, G, T) for convenience
+(e.g., ``ram_cache_cutoff=64K`` or ``ram_cache_cutoff=1M``).
+
+This cutoff determines the maximum object size that will be stored in the RAM cache.
+Objects larger than this size will only be stored on disk. Setting different cutoffs
+per volume allows you to:
+
+* Use larger cutoffs for volumes serving frequently accessed large objects
+* Use smaller cutoffs for volumes with many small objects to maximize RAM cache hits
+* Disable RAM caching entirely for certain objects by setting a very low cutoff
 
 Exclusive spans and volume sizes
 ================================
@@ -126,5 +173,24 @@ ramcache has been disabled.::
     volume=1 scheme=http size=20%
     volume=2 scheme=http size=20%
     volume=3 scheme=http size=20%
-    volume=4 scheme=http size=20% avg_obj_size=4096
-    volume=5 scheme=http size=20% ramcache=false fragment_size=524288
+    volume=4 scheme=http size=20% avg_obj_size=4K
+    volume=5 scheme=http size=20% ramcache=false fragment_size=512K
+
+The following example shows advanced RAM cache configuration with dedicated
+allocations and custom cutoffs::
+
+    # Volume 1: General content with 2GB dedicated RAM cache
+    volume=1 scheme=http size=40% ram_cache_size=2G
+
+    # Volume 2: Small API responses with custom cutoff and 512MB RAM cache
+    volume=2 scheme=http size=20% ram_cache_size=512M ram_cache_cutoff=64K
+
+    # Volume 3: Large media with higher cutoff for thumbnails
+    volume=3 scheme=http size=40% ram_cache_cutoff=1M
+
+In this example, assuming a global ``proxy.config.cache.ram_cache.size`` of 4GB:
+
+* Volume 1 gets a dedicated 2GB RAM cache allocation
+* Volume 2 gets a dedicated 512MB RAM cache allocation and only caches objects up to 64KB
+* Volume 3 shares from the remaining 1.5GB pool (4GB - 2GB - 512MB) and caches objects up to 1MB
+* The automatic subtraction ensures total RAM usage stays within the 4GB limit
