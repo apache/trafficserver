@@ -341,13 +341,42 @@ class InverseSymbolResolver(SymbolResolverBase):
 
         if set_text.startswith('(') and set_text.endswith(')'):
             content = set_text[1:-1]
-            content = ', '.join(item.strip() for item in content.split(','))
+            items = self._split_set_items(content)
+            content = ', '.join(item.strip() for item in items)
             return '[' + content + ']'
         elif set_text.startswith('[') and set_text.endswith(']'):
             content = set_text[1:-1]
-            content = ', '.join(item.strip() for item in content.split(','))
+            items = self._split_set_items(content)
+            content = ', '.join(item.strip() for item in items)
             return '[' + content + ']'
         return set_text
+
+    def _split_set_items(self, content: str) -> list[str]:
+        """Split set items on commas, respecting quoted strings."""
+        items = []
+        current = []
+        in_quotes = False
+        quote_char = None
+
+        for char in content:
+            if char in '"\'':
+                if not in_quotes:
+                    in_quotes = True
+                    quote_char = char
+                elif char == quote_char:
+                    in_quotes = False
+                    quote_char = None
+                current.append(char)
+            elif char == ',' and not in_quotes:
+                items.append(''.join(current))
+                current = []
+            else:
+                current.append(char)
+
+        if current:
+            items.append(''.join(current))
+
+        return items
 
     def format_iprange(self, iprange_text: str) -> str:
         """Format IP range with proper spacing."""

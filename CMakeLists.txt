@@ -737,6 +737,9 @@ file(REMOVE "${PROJECT_SOURCE_DIR}/include/tscore/ink_config.h")
 file(REMOVE "${PROJECT_SOURCE_DIR}/include/ts/apidefs.h")
 file(REMOVE "${PROJECT_SOURCE_DIR}/include/ink_autoconf.h")
 
+# HRW4U C++ parser library (optional, requires ANTLR4)
+add_subdirectory(src/hrw4u)
+
 configure_file(configs/storage.config.default.in configs/storage.config.default)
 configure_file(configs/records.yaml.default.in configs/records.yaml.default)
 configure_file(include/tscore/ink_config.h.cmake.in include/tscore/ink_config.h)
@@ -767,6 +770,7 @@ add_subdirectory(src/traffic_via)
 if(ENABLE_CRIPTS)
   add_subdirectory(src/cripts)
 endif()
+
 if(ENABLE_AUTEST)
   add_subdirectory(tests)
 endif()
@@ -805,6 +809,9 @@ if(ENABLE_BENCHMARKS)
   message(STATUS "Building benchmarks in tools/benchmark")
   add_subdirectory(tools/benchmark)
 endif()
+
+# Add hrw_confcmp comparison tool (requires ANTLR4)
+add_subdirectory(tools/hrw_confcmp)
 
 add_custom_target(
   clang-format-install

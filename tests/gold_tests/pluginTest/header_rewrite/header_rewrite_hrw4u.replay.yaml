@@ -1,0 +1,1021 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+# Configuration section for autest integration
+autest:
+  description: 'Test header_rewrite with hrw4u configuration format'
+
+  dns:
+    name: 'dns'
+
+  server:
+    name: 'server'
+
+  client:
+    name: 'client'
+    process_config:
+      other_args: '--thread-limit 1'
+
+  ats:
+    name: 'ts'
+
+    copy_to_config_dir:
+      - 'rules'
+
+    records_config:
+      proxy.config.http.insert_response_via_str: 0
+      proxy.config.http.auth_server_session_private: 1
+      proxy.config.http.server_session_sharing.pool: 'global'
+      proxy.config.http.server_session_sharing.match: 'both'
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'header_rewrite'
+
+    remap_config:
+      - from: "http://no_path.com/"
+        to: "http://no_path.com?name=brian/"
+        plugins:
+          - name: "header_rewrite.so"
+            args:
+              - "rules/set_redirect.hrw4u"
+
+      - from: "http://www.example.com/from_1/"
+        to: "http://backend.ex:{SERVER_HTTP_PORT}/to_1/"
+        plugins:
+          - name: "header_rewrite.so"
+            args:
+              - "rules/rule_client.hrw4u"
+
+      - from: "http://www.example.com/from_2/"
+        to: "http://backend.ex:{SERVER_HTTP_PORT}/to_2/"
+        plugins:
+          - name: "header_rewrite.so"
+            args:
+              - "rules/rule_cond_method.hrw4u"
+
+      - from: "http://www.example.com/from_3/"
+        to: "http://backend.ex:{SERVER_HTTP_PORT}/to_3/"
+        plugins:
+          - name: "header_rewrite.so"
+            args:
+              - "rules/rule_l_value.hrw4u"
+
+      - from: "http://www.example.com/from_4/"
+        to: "http://backend.ex:{SERVER_HTTP_PORT}/to_4/"
+        plugins:
+          - name: "header_rewrite.so"
+            args:
+              - "rules/rule_set_header_after_ssn_txn_count.hrw4u"
+
+      - from: "http://www.example.com/from_5/"
+        to: "http://backend.ex:{SERVER_HTTP_PORT}/to_5/"
+        plugins:
+          - name: "header_rewrite.so"
+            args:
+              - "rules/rule_add_cache_result_header.hrw4u"
+
+      - from: "http://www.example.com/from_6/"
+        to: "http://backend.ex:{SERVER_HTTP_PORT}/to_6/"
+        plugins:
+          - name: "header_rewrite.so"
+            args:
+              - "rules/rule_effective_address.hrw4u"
+
+      - from: "http://www.example.com/from_7/"
+        to: "http://backend.ex:{SERVER_HTTP_PORT}/to_7/"
+        plugins:
+          - name: "header_rewrite.so"
+            args:
+              - "rules/rule.hrw4u"
+
+      - from: "http://www.example.com/from_8/"
+        to: "http://backend.ex:{SERVER_HTTP_PORT}/to_8/"
+        plugins:
+          - name: "header_rewrite.so"
+            args:
+              - "rules/implicit_hook.hrw4u"
+
+      - from: "http://www.example.com/from_9/"
+        to: "http://backend.ex:{SERVER_HTTP_PORT}/to_9/"
+        plugins:
+          - name: "header_rewrite.so"
+            args:
+              - "rules/regex_tests.hrw4u"
+
+      - from: "http://www.example.com/from_10/"
+        to: "http://backend.ex:{SERVER_HTTP_PORT}/to_10/"
+        plugins:
+          - name: "header_rewrite.so"
+            args:
+              - "rules/rule_empty_body.hrw4u"
+
+      - from: "http://www.example.com/from_11/"
+        to: "http://backend.ex:{SERVER_HTTP_PORT}/to_11/"
+        plugins:
+          - name: "header_rewrite.so"
+            args:
+              - "rules/rule_set_body_status.hrw4u"
+
+      - from: "http://www.example.com/from_12/"
+        to: "http://backend.ex:{SERVER_HTTP_PORT}/to_12/"
+        plugins:
+          - name: "header_rewrite.so"
+            args:
+              - "rules/nested_ifs.hrw4u"
+
+
+
+# Proxy verifier sessions
+sessions:
+  # Test 1: Setup cache hit for tests later
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_5/
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ uuid, 1 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+        - [ Cache-Control, "max-age=5,public" ]
+      content:
+        size: 6
+        data: "CACHED"
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Cache-Result, { value: "miss", as: equal } ]
+
+  # Test 2: TO-URL redirect test
+- transactions:
+  - client-request:
+      method: "HEAD"
+      version: "1.1"
+      url: /
+      headers:
+        fields:
+        - [ Host, no_path.com ]
+        - [ uuid, 2 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 301
+      reason: Redirect
+      headers:
+        fields:
+        - [ Location, { value: "http://no_path.com?name=brian/", as: equal } ]
+
+    # Test 3: CLIENT-URL test
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_1/hello?=foo=bar
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ uuid, 3 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 304
+      reason: "Not Modified"
+      headers:
+        fields:
+        - [ Cache-Control, { value: "no-store", as: equal } ]
+        - [ X-Pre-Else, { value: "Yes", as: equal } ]
+        - [ X-Testing, { value: "No", as: equal } ]
+        - [ X-Extension, { as: absent } ]
+
+    # Test 4: sets matching
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_1/hrw-sets.png
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ X-Testing, "foo,bar" ]
+        - [ uuid, 4 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Extension, { value: "Yes", as: equal } ]
+        - [ X-Testing, { value: "Yes", as: equal } ]
+        - [ X-Pre-Else, { as: absent } ]
+
+    # Test 5: elif condition
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_1/hrw-sets.png
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ X-Testing, "elif" ]
+        - [ uuid, 5 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Extension, { value: "Yes", as: equal } ]
+        - [ X-Testing, { value: "elif", as: equal } ]
+        - [ X-Pre-Else, { as: absent } ]
+
+    # Test 6: cond method GET
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_2/
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ uuid, 6 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Via, { as: present } ]
+
+    # Test 7: cond method DELETE
+- transactions:
+  - client-request:
+      method: "DELETE"
+      version: "1.1"
+      url: /from_2/
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ uuid, 7 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Via, { as: present } ]
+
+    # Test 8: End [L] #5423
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_3/
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ uuid, 8 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-First, { value: "First", as: equal } ]
+        - [ X-Last, { value: "Last", as: equal } ]
+        - [ X-Not-Here, { as: absent } ]
+
+  # Test 9: SSN-TXN-COUNT condition - multiple transactions in same session
+- transactions:
+  # First transaction
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_4/hello
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ Connection, keep-alive ]
+        - [ Content-Length, "0" ]
+        - [ uuid, 9 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Server, microserver ]
+        - [ Content-Length, "0" ]
+
+    proxy-response:
+      status: 200
+
+  # Second transaction
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_4/hello
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ Connection, keep-alive ]
+        - [ Content-Length, "0" ]
+        - [ uuid, 10 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Server, microserver ]
+        - [ Content-Length, "0" ]
+
+    proxy-response:
+      status: 200
+
+  # Third transaction
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_4/hello
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ Connection, keep-alive ]
+        - [ Content-Length, "0" ]
+        - [ uuid, 11 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Server, microserver ]
+        - [ Content-Length, "0" ]
+
+    proxy-response:
+      status: 200
+
+  # Fourth transaction
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_4/hello
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ Connection, keep-alive ]
+        - [ Content-Length, "0" ]
+        - [ uuid, 12 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Server, microserver ]
+        - [ Content-Length, "0" ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Connection, { value: "close", as: equal } ]
+
+  # Fifth transaction (with Connection: close)
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_4/world
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ Connection, close ]
+        - [ Content-Length, "0" ]
+        - [ uuid, 13 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Server, microserver ]
+        - [ Connection, close ]
+        - [ Content-Length, "0" ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Connection, { value: "close", as: equal } ]
+
+# Test 10: Cache condition test - multiple requests
+# Note: This test involves sleep delays and cache state changes
+- transactions:
+  # First request - cache hit-fresh
+  - client-request:
+      # Make sure I/O for writing the cache is complete.
+      delay: 100ms
+
+      method: "GET"
+      version: "1.1"
+      url: /from_5/
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ uuid, 14 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+        - [ Cache-Control, "max-age=5,public" ]
+      content:
+        size: 6
+        data: "CACHED"
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Cache-Result, { value: "hit-fresh", as: equal } ]
+
+  # Note: sleep 8 seconds here - subsequent requests will show stale behavior
+  # Second request - after cache expires (hit-stale)
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_5/
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ uuid, 15 ]
+      delay: 8s
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+        - [ Cache-Control, "max-age=5,public" ]
+      content:
+        size: 6
+        data: "CACHED"
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Cache-Result, { value: "hit-stale", as: equal } ]
+
+  # Third request - should hit fresh cache
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_5/
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ uuid, 16 ]
+
+    # The server-response should not be served.
+    server-response:
+      status: 500
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Cache-Result, { value: "hit-fresh", as: equal } ]
+
+# Test 11: Effective address test
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_6/
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ Real-IP, "1.2.3.4" ]
+        - [ uuid, 17 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Effective-IP, { value: "1.2.3.4", as: equal } ]
+
+# Test 12: Status change test (200 to 303)
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_7/
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ uuid, 18 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 303
+
+# Test 13: Implicit hook test - no X-Fie header
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_8/
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ uuid, 19 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response-Foo, { value: "No", as: equal } ]
+
+# Test 14: Implicit hook test - X-Fie: Fie
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_8/
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ X-Fie, "Fie" ]
+        - [ uuid, 20 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response-Foo, { value: "Yes", as: equal } ]
+
+# Test 15: Implicit hook test - X-Client-Foo: fOoBar
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_8/
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ X-Client-Foo, "fOoBar" ]
+        - [ uuid, 21 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response-Foo, { value: "Prefix", as: equal } ]
+
+# Test 16: Regex test - no additional headers
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_9/
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ uuid, 22 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Match-2, { value: yes, as: equal } ]
+        - [ X-Match, { as: absent } ]
+
+# Test 17: Regex test - X-Test1: Foobar
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_9/
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ X-Test1, "Foobar" ]
+        - [ uuid, 23 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Match, { value: yes, as: equal } ]
+        - [ X-Match-2, { value: yes, as: equal } ]
+
+# Test 18: Regex test - X-Test1: none
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_9/
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ X-Test1, "none" ]
+        - [ uuid, 24 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Match-2, { value: yes, as: equal } ]
+        - [ X-Match, { as: absent } ]
+
+# Test 19: Regex test - query parameter capture
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_9/?uid=123
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ uuid, 25 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Match-3, { value: "123", as: equal } ]
+        - [ X-Match-2, { as: absent } ]
+
+# Test 20: set-body with empty string
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_10/
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ uuid, 26 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+      content:
+        size: 31
+        data: "ATS should not serve this body"
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Cache-Control, { value: "no-store", as: equal } ]
+        - [ Content-Length, { value: "0", as: equal } ]
+      content:
+        size: 0
+
+# Test 21: set-body with STATUS variable
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_11/
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ uuid, 27 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+      content:
+        size: 31
+        data: "ATS should not serve this body"
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Cache-Control, { value: "no-store", as: equal } ]
+        - [ Content-Length, { value: "3", as: equal } ]
+      content:
+        data: "200"
+
+# Test 22: Nested if/elif/else - X-Foo=foo + X-Bar=bar path
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_12/
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ X-Foo, "foo" ]
+        - [ X-Bar, "bar" ]
+        - [ uuid, 28 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-When-200-Before, { value: "Yes", as: equal } ]
+        - [ X-Foo, { value: "Yes", as: equal } ]
+        - [ X-Foo-And-Bar, { value: "Yes", as: equal } ]
+        - [ X-Foo-And-Fie, { as: absent } ]
+        - [ X-Fie-Anywhere, { as: absent } ]
+        - [ X-When-200-After, { value: "Yes", as: equal } ]
+
+# Test 23: Nested if/elif/else - X-Foo=foo + X-Fie=fie path
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_12/
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ X-Foo, "foo" ]
+        - [ X-Fie, "fie" ]
+        - [ uuid, 29 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-When-200-Before, { value: "Yes", as: equal } ]
+        - [ X-Foo, { value: "Yes", as: equal } ]
+        - [ X-Foo-And-Bar, { as: absent } ]
+        - [ X-Foo-And-Fie, { value: "Yes", as: equal } ]
+        - [ X-Fie-Anywhere, { value: "Yes", as: equal } ]
+        - [ X-When-200-After, { value: "Yes", as: equal } ]
+
+# Test 24: Nested if/elif/else - X-Foo=maybe path
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_12/
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ X-Foo, "maybe" ]
+        - [ uuid, 30 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-When-200-Before, { value: "Yes", as: equal } ]
+        - [ X-Foo, { value: "Maybe", as: equal } ]
+        - [ X-Foo-And-Bar, { as: absent } ]
+        - [ X-Foo-And-Fie, { as: absent } ]
+        - [ X-Fie-Anywhere, { as: absent } ]
+        - [ X-When-200-After, { value: "Yes", as: equal } ]
+
+# Test 25: Nested if/elif/else - X-Foo=definitely path
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_12/
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ X-Foo, "definitely" ]
+        - [ uuid, 31 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-When-200-Before, { value: "Yes", as: equal } ]
+        - [ X-Foo, { value: "Definitely", as: equal } ]
+        - [ X-Foo-And-Bar, { as: absent } ]
+        - [ X-Foo-And-Fie, { as: absent } ]
+        - [ X-Fie-Anywhere, { as: absent } ]
+        - [ X-When-200-After, { value: "Yes", as: equal } ]
+
+# Test 26: Nested if/elif/else - else path (no X-Foo)
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_12/
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ uuid, 32 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-When-200-Before, { value: "Yes", as: equal } ]
+        - [ X-Foo, { value: "Nothing", as: equal } ]
+        - [ X-Foo-And-Bar, { as: absent } ]
+        - [ X-Foo-And-Fie, { as: absent } ]
+        - [ X-Fie-Anywhere, { as: absent } ]
+        - [ X-When-200-After, { value: "Yes", as: equal } ]
+
+# Test 27: Nested if/elif/else - else path with X-Fie
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_12/
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ X-Fie, "fie" ]
+        - [ uuid, 33 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-When-200-Before, { value: "Yes", as: equal } ]
+        - [ X-Foo, { value: "Nothing", as: equal } ]
+        - [ X-Foo-And-Bar, { as: absent } ]
+        - [ X-Foo-And-Fie, { as: absent } ]
+        - [ X-Fie-Anywhere, { value: "Yes", as: equal } ]
+        - [ X-When-200-After, { value: "Yes", as: equal } ]

@@ -1,0 +1,1 @@
+(program (programItem (section REMAP { (sectionBody (statement (functionCall set-cc-alg ( (argumentList (value "cubic")) )) ;)) })) <EOF>)

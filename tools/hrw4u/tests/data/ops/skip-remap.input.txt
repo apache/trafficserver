@@ -1,4 +1,4 @@
-REMAP {
+PRE_REMAP {
     if inbound.req.path ~ /foo/ {
         skip-remap(true);
     }

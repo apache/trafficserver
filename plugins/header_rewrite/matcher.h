@@ -26,6 +26,7 @@
 #include <stdexcept>
 #include <type_traits>
 #include <variant>
+#include <vector>
 #include <set>
 
 #include "swoc/swoc_ip.h"
@@ -93,6 +94,57 @@ has_modifier(const CondModifiers flags, const CondModifiers bit)
 {
   using U = std::underlying_type_t<CondModifiers>;
   return static_cast<U>(flags) & static_cast<U>(bit);
+}
+
+// Convert CondModifiers bitmask to human-readable string (e.g., "OR,NOT,NOCASE")
+inline std::string
+cond_modifiers_to_string(CondModifiers mods)
+{
+  std::vector<std::string> names;
+  unsigned                 bits = static_cast<unsigned>(mods);
+
+  if (bits & static_cast<unsigned>(CondModifiers::OR)) {
+    names.push_back("OR");
+  }
+  if (bits & static_cast<unsigned>(CondModifiers::AND)) {
+    names.push_back("AND");
+  }
+  if (bits & static_cast<unsigned>(CondModifiers::NOT)) {
+    names.push_back("NOT");
+  }
+  if (bits & static_cast<unsigned>(CondModifiers::MOD_NOCASE)) {
+    names.push_back("NOCASE");
+  }
+  if (bits & static_cast<unsigned>(CondModifiers::MOD_L)) {
+    names.push_back("LAST");
+  }
+  if (bits & static_cast<unsigned>(CondModifiers::MOD_EXT)) {
+    names.push_back("EXT");
+  }
+  if (bits & static_cast<unsigned>(CondModifiers::MOD_PRE)) {
+    names.push_back("PRE");
+  }
+  if (bits & static_cast<unsigned>(CondModifiers::MOD_SUF)) {
+    names.push_back("SUF");
+  }
+  if (bits & static_cast<unsigned>(CondModifiers::MOD_MID)) {
+    names.push_back("MID");
+  }
+
+  if (names.empty()) {
+    return "none";
+  }
+
+  std::string result;
+
+  for (size_t i = 0; i < names.size(); ++i) {
+    if (i > 0) {
+      result += ",";
+    }
+    result += names[i];
+  }
+
+  return result;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

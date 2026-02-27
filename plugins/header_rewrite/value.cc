@@ -26,7 +26,7 @@
 #include "value.h"
 
 #include "condition.h"
-#include "factory.h"
+#include "objtypes.h"
 #include "parser.h"
 #include "conditions.h"
 
@@ -48,18 +48,26 @@ Value::set_value(const std::string &val, Statement *owner)
       Condition *tcond_val = nullptr;
 
       if (token.substr(0, 2) == "%{") {
+        // The cond_token format is "COND:qualifier" or "COND:qualifier arg"
         std::string cond_token = token.substr(2, token.size() - 3);
+        std::string cond_name;
+        std::string cond_arg;
+        auto        space_pos = cond_token.find(' ');
 
-        if ((tcond_val = condition_factory(cond_token))) {
-          Parser parser;
+        if (space_pos != std::string::npos) {
+          cond_name = cond_token.substr(0, space_pos);
+          cond_arg  = cond_token.substr(space_pos + 1);
+        } else {
+          cond_name = cond_token;
+        }
 
-          if (parser.parse_line(cond_token)) {
-            tcond_val->initialize(parser);
-            require_resources(tcond_val->get_resource_ids());
-          } else {
-            // TODO: should we produce error here?
-            Dbg(dbg_ctl, "Error parsing value '%s'", _value.c_str());
-          }
+        auto spec = hrw::parse_condition_string(cond_name, cond_arg);
+
+        tcond_val = hrw::create_condition(spec);
+        if (tcond_val) {
+          require_resources(tcond_val->get_resource_ids());
+        } else {
+          Dbg(dbg_ctl, "Error creating condition for value '%s'", _value.c_str());
         }
       } else {
         tcond_val = new ConditionStringLiteral(token);
