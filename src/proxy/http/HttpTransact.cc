@@ -8043,6 +8043,12 @@ HttpTransact::build_response(State *s, HTTPHdr *base_response, HTTPHdr *outgoing
     HttpTransactHeaders::build_base_response(outgoing_response, status_code, reason_phrase, strlen(reason_phrase), s->current.now);
   } else {
     if ((status_code == HTTPStatus::NONE) || (status_code == base_response->status_get())) {
+      // Preemptively clean up the response in case a prior 1xx informational
+      // response was forwarded to the client. Otherwise, copy_header_fields
+      // will fail an assertion that the new header is not yet valid.
+      if (outgoing_response->valid()) {
+        outgoing_response->destroy();
+      }
       HttpTransactHeaders::copy_header_fields(base_response, outgoing_response, s->txn_conf->fwd_proxy_auth_to_parent);
 
       if (s->txn_conf->insert_age_in_response) {
