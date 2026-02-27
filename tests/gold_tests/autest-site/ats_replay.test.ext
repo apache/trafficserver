@@ -182,6 +182,8 @@ def ATSReplayTest(obj, replay_file: str):
             dns = tr.MakeDNServer(name, **process_config)
         else:
             dns = tr.MakeDNServer(name, default='127.0.0.1')
+        if 'records' in dns_config:
+            dns.addRecords(dns_config['records'])
 
     # Proxy Verifier Server configuration.
     if not 'server' in autest_config:
