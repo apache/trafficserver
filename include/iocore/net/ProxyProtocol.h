@@ -54,6 +54,7 @@ constexpr uint8_t PP2_SUBTYPE_SSL_CN      = 0x22;
 constexpr uint8_t PP2_SUBTYPE_SSL_CIPHER  = 0x23;
 constexpr uint8_t PP2_SUBTYPE_SSL_SIG_ALG = 0x24;
 constexpr uint8_t PP2_SUBTYPE_SSL_KEY_ALG = 0x25;
+constexpr uint8_t PP2_SUBTYPE_SSL_GROUP   = 0x26;
 constexpr uint8_t PP2_TYPE_NETNS          = 0x30;
 
 class ProxyProtocol
@@ -88,6 +89,7 @@ public:
   std::optional<std::string_view> get_tlv(const uint8_t tlvCode) const;
   std::optional<std::string_view> get_tlv_ssl_version() const;
   std::optional<std::string_view> get_tlv_ssl_cipher() const;
+  std::optional<std::string_view> get_tlv_ssl_group() const;
 
   ProxyProtocolVersion                          version   = ProxyProtocolVersion::UNDEFINED;
   uint16_t                                      ip_family = AF_UNSPEC;
