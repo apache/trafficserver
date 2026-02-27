@@ -670,7 +670,7 @@ Log::init_fields()
 
   Ptr<LogFieldAliasTable> cache_code_map = make_ptr(new LogFieldAliasTable);
   cache_code_map->init(
-    53, SquidLogCode::EMPTY, "UNDEFINED", SquidLogCode::TCP_HIT, "TCP_HIT", SquidLogCode::TCP_DISK_HIT, "TCP_DISK_HIT",
+    54, SquidLogCode::EMPTY, "UNDEFINED", SquidLogCode::TCP_HIT, "TCP_HIT", SquidLogCode::TCP_DISK_HIT, "TCP_DISK_HIT",
     SquidLogCode::TCP_MEM_HIT, "TCP_MEM_HIT", SquidLogCode::TCP_MISS, "TCP_MISS", SquidLogCode::TCP_EXPIRED_MISS,
     "TCP_EXPIRED_MISS", SquidLogCode::TCP_REFRESH_HIT, "TCP_REFRESH_HIT", SquidLogCode::TCP_REF_FAIL_HIT, "TCP_REFRESH_FAIL_HIT",
     SquidLogCode::TCP_REFRESH_MISS, "TCP_REFRESH_MISS", SquidLogCode::TCP_CLIENT_REFRESH, "TCP_CLIENT_REFRESH_MISS",
@@ -691,7 +691,8 @@ Log::init_fields()
     SquidLogCode::ERR_NO_RELAY, "ERR_NO_RELAY", SquidLogCode::ERR_DISK_IO, "ERR_DISK_IO", SquidLogCode::ERR_ZERO_SIZE_OBJECT,
     "ERR_ZERO_SIZE_OBJECT", SquidLogCode::ERR_PROXY_DENIED, "ERR_PROXY_DENIED", SquidLogCode::ERR_WEBFETCH_DETECTED,
     "ERR_WEBFETCH_DETECTED", SquidLogCode::ERR_FUTURE_1, "ERR_FUTURE_1", SquidLogCode::ERR_LOOP_DETECTED, "ERR_LOOP_DETECTED",
-    SquidLogCode::ERR_UNKNOWN, "ERR_UNKNOWN", SquidLogCode::TCP_CF_HIT, "TCP_CF_HIT");
+    SquidLogCode::ERR_TUN_ACTIVE_TIMEOUT, "ERR_TUN_ACTIVE_TIMEOUT", SquidLogCode::ERR_UNKNOWN, "ERR_UNKNOWN",
+    SquidLogCode::TCP_CF_HIT, "TCP_CF_HIT");
 
   Ptr<LogFieldAliasTable> cache_subcode_map = make_ptr(new LogFieldAliasTable);
   cache_subcode_map->init(2, SquidSubcode::EMPTY, "NONE", SquidSubcode::NUM_REDIRECTIONS_EXCEEDED, "NUM_REDIRECTIONS_EXCEEDED");
