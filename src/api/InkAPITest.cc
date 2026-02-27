@@ -893,8 +893,12 @@ static int
 synserver_vc_refuse(TSCont contp, TSEvent event, void *data)
 {
   if (event != TS_EVENT_NET_ACCEPT && event != TS_EVENT_NET_ACCEPT_FAILED) {
-    // net_accept() passes negated errno as data on EVENT_ERROR; Linux MAX_ERRNO is 4095
     intptr_t data_val = reinterpret_cast<intptr_t>(data);
+    // Listening socket closed by synserver_stop while accept was pending.
+    if (event == TS_EVENT_ERROR && data_val == -EBADF) {
+      Warning("synserver_vc_refuse: accept got EBADF, listener likely shut down");
+      return TS_EVENT_IMMEDIATE;
+    }
     if (data_val < 0 && data_val >= -4095) {
       int err = static_cast<int>(-data_val);
       ink_abort("synserver_vc_refuse: unexpected event %d, accept errno: %s (%d)", event, strerror(err), err);
@@ -923,8 +927,12 @@ static int
 synserver_vc_accept(TSCont contp, TSEvent event, void *data)
 {
   if (event != TS_EVENT_NET_ACCEPT && event != TS_EVENT_NET_ACCEPT_FAILED) {
-    // net_accept() passes negated errno as data on EVENT_ERROR; Linux MAX_ERRNO is 4095
     intptr_t data_val = reinterpret_cast<intptr_t>(data);
+    // Listening socket closed by synserver_stop while accept was pending.
+    if (event == TS_EVENT_ERROR && data_val == -EBADF) {
+      Warning("synserver_vc_accept: accept got EBADF, listener likely shut down");
+      return TS_EVENT_IMMEDIATE;
+    }
     if (data_val < 0 && data_val >= -4095) {
       int err = static_cast<int>(-data_val);
       ink_abort("synserver_vc_accept: unexpected event %d, accept errno: %s (%d)", event, strerror(err), err);
