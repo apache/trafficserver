@@ -4681,7 +4681,7 @@ HttpSM::track_connect_fail() const
   // Policy 3 additionally marks the server down on transaction inactive timeout,
   // even when had_connect_fail() is false (connect_result was cleared at CONNECTION_ALIVE).
   if (!retval && t_state.txn_conf->connect_down_policy == 3) {
-    retval = (t_state.current.state == HttpTransact::INACTIVE_TIMEOUT);
+    retval = (t_state.current.server->state == HttpTransact::INACTIVE_TIMEOUT);
   }
   return retval;
 }
