@@ -21,11 +21,13 @@
 #include <string>
 #include <vector>
 #include <chrono>
+#include <filesystem>
 #include <mutex>
 #include <shared_mutex>
 #include <fstream>
 #include <memory>
 #include <cstdint>
+#include <system_error>
 
 #include "cripts/Context.hpp"
 #include "cripts/Time.hpp"
@@ -50,10 +52,10 @@ private:
 
   // Header structure for on-disk map files (after VERSION field)
   struct _MapHeader {
-    time_t created_ts;
-    time_t last_write_ts;
-    time_t last_sync_ts;
-    size_t count;
+    int64_t  created_ts;
+    int64_t  last_write_ts;
+    int64_t  last_sync_ts;
+    uint64_t count;
   };
 
   using _MapType = std::unordered_map<uint64_t, _Entry>;

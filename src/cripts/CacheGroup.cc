@@ -17,6 +17,10 @@
 */
 
 #include <algorithm>
+#include <array>
+#include <cstddef>
+#include <cstdio>
+#include <cstring>
 #include <filesystem>
 #include <unordered_set>
 
@@ -43,9 +47,10 @@ _cripts_cache_group_sync(TSCont cont, TSEvent /* event */, void * /* edata */)
   std::lock_guard lock(mgr->_mutex);
   auto           &groups = mgr->_groups;
 
-  const size_t max_to_process = (groups.size() + (_SYNC_GROUP_EVERY - 1)) / _SYNC_GROUP_EVERY;
-  size_t       processed      = 0;
-  auto         now            = cripts::Time::Clock::now();
+  constexpr size_t runs_per_window = _SYNC_GROUP_EVERY / _CONT_SYNC_INTERVAL;
+  const size_t     max_to_process  = (groups.size() + (runs_per_window - 1)) / runs_per_window;
+  size_t           processed       = 0;
+  auto             now             = cripts::Time::Clock::now();
 
   for (auto it = groups.begin(); it != groups.end() && processed < max_to_process;) {
     if (auto group = it->second.lock()) {
@@ -377,13 +382,15 @@ Cache::Group::syncMap(size_t index)
 
   if (write_failed || !tmp_file) {
     TSWarning("cripts::Cache::Group: Failed to write to temp file `%s'.", tmp_path.c_str());
-    std::filesystem::remove(tmp_path);
+    std::error_code ec;
+    std::filesystem::remove(tmp_path, ec);
     return false;
   }
 
   if (std::rename(tmp_path.c_str(), slot.path.c_str()) != 0) {
     TSWarning("cripts::Cache::Group: Failed to rename temp file `%s' to `%s'.", tmp_path.c_str(), slot.path.c_str());
-    std::filesystem::remove(tmp_path);
+    std::error_code ec;
+    std::filesystem::remove(tmp_path, ec);
     return false;
   }
 
