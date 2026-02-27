@@ -345,14 +345,23 @@ Http2ConnectionState::rcv_headers_frame(const Http2Frame &frame)
       stream     = this->create_stream(stream_id, error);
       new_stream = true;
       if (!stream) {
-        // Terminate the connection with COMPRESSION_ERROR because we don't decompress the field block in this HEADERS frame.
-        // TODO: try to decompress to keep HPACK Dynamic Table in sync.
+        // Per RFC 9113, we must decode the header block even when refusing the stream to keep
+        // the HPACK dynamic table in sync. Create a temporary unregistered stream for decoding.
         if (error.cls == Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM) {
-          return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_COMPRESSION_ERROR,
-                            error.msg);
+          uint32_t const initial_local_stream_window = this->acknowledged_local_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE);
+          stream = THREAD_ALLOC_INIT(http2StreamAllocator, this_ethread(), this->session->get_proxy_session(), stream_id,
+                                     this->peer_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE), initial_local_stream_window,
+                                     !STREAM_IS_REGISTERED);
+          if (!stream) {
+            // Failed to create even a temporary stream, this is a serious error.
+            return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_INTERNAL_ERROR,
+                              "failed to create temporary stream for header decoding");
+          }
+          free_stream_after_decoding  = true;
+          reset_header_after_decoding = true;
+        } else {
+          return error;
         }
-
-        return error;
       }
     }
   }
@@ -483,6 +492,9 @@ Http2ConnectionState::rcv_headers_frame(const Http2Frame &frame)
     if (reset_header_after_decoding) {
       stream->reset_receive_headers();
       if (free_stream_after_decoding) {
+        // Send RST_STREAM to inform the client that the stream was refused.
+        // This typically happens when max_concurrent_streams is exceeded.
+        this->send_rst_stream_frame(stream_id, Http2ErrorCode::HTTP2_ERROR_REFUSED_STREAM);
         THREAD_FREE(stream, http2StreamAllocator, this_ethread());
       }
       return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
@@ -692,6 +704,11 @@ Http2ConnectionState::rcv_rst_stream_frame(const Http2Frame &frame)
     Http2StreamDebug(this->session, stream_id, "Parsed RST_STREAM frame: Error Code: %u", rst_stream.error_code);
     stream->set_rx_error_code({ProxyErrorClass::TXN, static_cast<uint32_t>(rst_stream.error_code)});
     stream->initiating_close();
+    // Delete the stream immediately to free up the stream count before the next frame is processed.
+    // This prevents the race condition where HEADERS frames are incorrectly refused due to the
+    // stream count not being decremented yet. The destructor will handle the case where the stream
+    // has already been removed from the stream list.
+    this->delete_stream(stream);
   }
 
   return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
