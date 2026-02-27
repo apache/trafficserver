@@ -1,0 +1,15 @@
+cond %{SEND_RESPONSE_HDR_HOOK} [AND]
+cond %{CLIENT-URL:PATH} /\/alpha\//
+    if
+        cond %{CLIENT-HEADER:X-Branch} ="alpha" [AND]
+        cond %{GROUP}
+            cond %{CLIENT-HEADER:X-Sub-A} ="" [OR,NOT]
+            cond %{CLIENT-HEADER:X-Sub-B} ="" [NOT]
+        cond %{GROUP:END}
+            set-header X-Result "alpha"
+        elif
+            cond %{CLIENT-HEADER:X-Branch} ="beta"
+                set-header X-Result "beta"
+        else
+            set-header X-Result "other"
+    endif

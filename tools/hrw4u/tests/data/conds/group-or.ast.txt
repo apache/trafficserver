@@ -1,0 +1,1 @@
+(program (programItem (section SEND_RESPONSE { (sectionBody (conditional (ifStatement if (condition (expression (term (factor ( (expression (expression (term (factor inbound.req.X-Foo))) || (term (factor inbound.req.X-Bar))) ))))) (block { (blockItem (statement inbound.resp.X-Result = (value "matched") ;)) })))) })) <EOF>)

@@ -283,7 +283,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                     else:
                         self.visit(body)
             elif is_conditional or not in_statement_block:
-                if idx > 0:
+                if first_hook_emitted:
                     self._flush_condition()
                     self.output.append("")
 
@@ -603,14 +603,25 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
             match ctx:
                 case _ if ctx.getChildCount() == 2 and ctx.getChild(0).getText() == "!":
                     self._dbg("`NOT' detected")
-                    self._cond_state.not_ = True
-                    self.emit_factor(ctx.getChild(1), last=last)
+                    child = ctx.getChild(1)
+                    if child.LPAREN():
+                        self._dbg("GROUP-START (negated)")
+                        self.emit_condition("cond %{GROUP}", final=True)
+                        with self.cond_indented():
+                            self.emit_expression(child.expression(), nested=False, last=True, grouped=False)
+                        self._cond_state.last = last
+                        self._cond_state.not_ = True
+                        self.emit_condition("cond %{GROUP:END}")
+                    else:
+                        self._cond_state.not_ = True
+                        self.emit_factor(child, last=last)
 
                 case _ if ctx.LPAREN():
                     self._dbg("GROUP-START")
                     self.emit_condition("cond %{GROUP}", final=True)
                     with self.cond_indented():
-                        self.emit_expression(ctx.expression(), nested=False, last=True, grouped=True)
+                        # grouped=False: GROUP is already open; no second wrap for OR.
+                        self.emit_expression(ctx.expression(), nested=False, last=True, grouped=False)
                     self._cond_state.last = last
                     self.emit_condition("cond %{GROUP:END}")
 

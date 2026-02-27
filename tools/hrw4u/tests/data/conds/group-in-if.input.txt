@@ -1,0 +1,11 @@
+SEND_RESPONSE {
+    if inbound.url.path ~ /\/alpha\// {
+        if inbound.req.X-Branch == "alpha" && (inbound.req.X-Sub-A || inbound.req.X-Sub-B) {
+            inbound.resp.X-Result = "alpha";
+        } elif inbound.req.X-Branch == "beta" {
+            inbound.resp.X-Result = "beta";
+        } else {
+            inbound.resp.X-Result = "other";
+        }
+    }
+}

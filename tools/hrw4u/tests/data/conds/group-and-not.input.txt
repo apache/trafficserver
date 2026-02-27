@@ -1,0 +1,5 @@
+SEND_RESPONSE {
+    if !(inbound.req.X-Foo && inbound.req.X-Bar) {
+        inbound.resp.X-Result = "matched";
+    }
+}
