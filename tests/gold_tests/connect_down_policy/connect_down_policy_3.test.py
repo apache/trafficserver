@@ -91,11 +91,12 @@ class ConnectDownPolicy3Test:
             self._ts.Disk.error_log.Content = Testers.ContainsExpression(
                 "marking down", f"policy={self._policy}: origin should be marked down after inactive timeout")
         else:
-            # For policy=2 the host should not be marked down, so error.log should
-            # not exist. Verify by checking traffic.out has no mark-down message.
-            tr = Test.AddTestRun(f"policy={self._policy}: verify no mark-down")
-            tr.Processes.Default.Command = "true"
-            self._ts.Disk.traffic_out.Content = Testers.ExcludesExpression(
+            # Pre-create error.log so ExcludesExpression can read it even if ATS
+            # never writes to it (policy=2 should not mark the host down).
+            error_log_path = os.path.join(self._ts.Variables.LOGDIR, 'error.log')
+            tr = Test.AddTestRun(f"policy={self._policy}: verify no mark-down in error.log")
+            tr.Processes.Default.Command = f"touch {error_log_path}"
+            self._ts.Disk.error_log.Content = Testers.ExcludesExpression(
                 "marking down", f"policy={self._policy}: origin should NOT be marked down after inactive timeout")
 
     def run(self):
