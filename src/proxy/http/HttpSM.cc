@@ -4672,7 +4672,7 @@ HttpSM::track_connect_fail() const
   if (t_state.current.server->had_connect_fail()) {
     // What does our policy say?
     if (t_state.txn_conf->connect_down_policy == 2 ||
-        t_state.txn_conf->connect_down_policy == 3) { // Any connection error through TLS handshake
+        t_state.txn_conf->connect_down_policy == 3) { // Policy 2: any connection error during TCP or TLS handshake; Policy 3: same plus inactive timeout below
       retval = true;
     } else if (t_state.txn_conf->connect_down_policy == 1) { // Any connection error through TCP
       retval = t_state.current.server->connect_result != -ENET_SSL_CONNECT_FAILED;
