@@ -1833,9 +1833,13 @@ Origin Server Connect Attempts
 .. ts:cv:: CONFIG proxy.config.http.connect.down.policy INT 2
    :overridable:
 
-   Controls what origin server connection failures contribute to marking a server down. When set to 2, any connection failure during the TCP and TLS
-   handshakes will contribute to marking the server down. When set to 1, only TCP handshake failures will contribute to marking a server down.
-   When set to 0, no connection failures will be used towards marking a server down.
+   Controls what origin server connection failures contribute to marking a server down.
+   When set to ``2``, any connection failure during the TCP and TLS handshakes will
+   contribute to marking the server down. When set to ``1``, only TCP handshake failures
+   will contribute to marking a server down. When set to ``0``, no connection failures
+   will be used towards marking a server down. When set to ``3``, all failures covered
+   by ``2`` plus transaction inactive timeouts (server goes silent after connection is
+   established) will contribute to marking a server down.
 
 .. ts:cv:: CONFIG proxy.config.http.server_max_connections INT 0
    :reloadable:
