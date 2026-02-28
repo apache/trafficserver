@@ -43,8 +43,8 @@ class ConnectDownPolicy3Test:
       2. The origin delays its response beyond INACTIVITY_TIMEOUT.
       3. ATS fires VC_EVENT_INACTIVITY_TIMEOUT, calling track_connect_fail().
       4. Under policy=3 track_connect_fail() returns true → mark_host_failure().
-      5. With connect_attempts_rr_retries=1, one failure is enough to mark the
-         host down, which writes a "marking down" entry to error.log.
+      5. With connect_attempts_rr_retries=0, increment_fail_count marks the host
+         down immediately (fcount >= 0), writing a "marking down" entry to error.log.
     """
 
     def __init__(self, policy, expect_mark_down):
@@ -65,10 +65,12 @@ class ConnectDownPolicy3Test:
                 'proxy.config.diags.debug.tags': 'hostdb|http',
                 # Use policy under test.
                 'proxy.config.http.connect.down.policy': self._policy,
-                # No retries so the timeout triggers mark-down immediately.
+                # No connection retries — the single timeout failure is sufficient.
                 'proxy.config.http.connect_attempts_max_retries': 0,
-                # One failure is enough to mark the host down and write to error.log.
-                'proxy.config.http.connect_attempts_rr_retries': 1,
+                # Set rr_retries=0 so it does not exceed max_retries (which would
+                # emit a Warning). With max_retries=0, increment_fail_count marks
+                # the host down on the first failure (fcount >= 0 is always true).
+                'proxy.config.http.connect_attempts_rr_retries': 0,
                 # Short server-side inactivity timeout so the test runs quickly.
                 'proxy.config.http.transaction_no_activity_timeout_out': INACTIVITY_TIMEOUT,
                 # Keep the host marked down long enough to verify.
