@@ -1788,7 +1788,7 @@ AC_CHECK_HEADERS([maxminddb.h], [
 AM_CONDITIONAL([HAS_MAXMINDDB], [test "x${has_maxminddb}" = "x1" ])
 
 AC_ARG_WITH([hrw-geo-provider],
-  [AS_HELP_STRING([--with-hrw-geo-provider=geoip|maxminddb],[geo provider to use with header_rewrite [default=auto] ])],
+  [AS_HELP_STRING([--with-hrw-geo-provider=geoip|maxminddb|none],[geo provider to use with header_rewrite [default=auto]; use 'none' or --without-hrw-geo-provider to disable geo support])],
   [geo_provider=$withval],
   [geo_provider="auto"]
 )
@@ -1806,21 +1806,31 @@ AS_IF([test "x$geo_provider" = "xauto"], [
 ],[
   case "x$geo_provider" in
     xgeoip)
+      AS_IF([test "x$has_geoip" != "x1"],
+        [AC_MSG_FAILURE([--with-hrw-geo-provider=geoip specified but GeoIP library not found])])
       use_hrw_geoip=1
       AC_MSG_RESULT([forced to GeoIP])
       ;;
     xmaxminddb)
+      AS_IF([test "x$has_maxminddb" != "x1"],
+        [AC_MSG_FAILURE([--with-hrw-geo-provider=maxminddb specified but MaxMindDB library not found])])
       use_hrw_maxminddb=1
       AC_MSG_RESULT([forced to MaxMindDB])
       ;;
+    xno|xnone)
+      AC_MSG_NOTICE([geo support for header_rewrite disabled])
+      ;;
     *)
       AC_MSG_RESULT([failed])
-      AC_MSG_FAILURE([unknown geo interface $geo_provider])
+      AC_MSG_FAILURE([unknown geo interface '$geo_provider': valid values are 'geoip', 'maxminddb', or 'none'])
   esac
 ])
 
 AC_SUBST(use_hrw_geoip)
 AC_SUBST(use_hrw_maxminddb)
+
+AM_CONDITIONAL([USE_HRW_GEOIP], [test "x${use_hrw_geoip}" = "x1"])
+AM_CONDITIONAL([USE_HRW_MAXMINDDB], [test "x${use_hrw_maxminddb}" = "x1"])
 
 # Checking if opentelemetry OTLP is available
 AC_LANG_PUSH([C++])
