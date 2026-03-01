@@ -1,0 +1,3 @@
+procedure test::add-debug-header($tag) {
+    inbound.req.X-Debug = "$tag";
+}

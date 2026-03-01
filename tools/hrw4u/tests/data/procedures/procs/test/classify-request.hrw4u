@@ -1,0 +1,10 @@
+procedure test::classify-request($label) {
+    if inbound.req.X-Priority == "high" {
+        inbound.req.X-Class = "urgent";
+    } elif inbound.req.X-Priority == "medium" {
+        inbound.req.X-Class = "normal";
+    } else {
+        inbound.req.X-Class = "low";
+    }
+    inbound.req.X-Classified-By = "$label";
+}

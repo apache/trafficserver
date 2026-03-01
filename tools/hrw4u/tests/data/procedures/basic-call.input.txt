@@ -1,0 +1,5 @@
+use test::add-debug-header
+
+REMAP {
+    test::add-debug-header("my-tag");
+}

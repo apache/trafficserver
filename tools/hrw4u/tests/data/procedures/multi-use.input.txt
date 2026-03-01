@@ -1,0 +1,7 @@
+use test::add-debug-header
+use test::set-origin
+
+REMAP {
+    test::add-debug-header("foo");
+    test::set-origin("bar.com");
+}

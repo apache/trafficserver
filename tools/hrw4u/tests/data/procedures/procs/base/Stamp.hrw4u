@@ -1,0 +1,3 @@
+procedure base::stamp() {
+    inbound.req.X-Stamp = "base";
+}

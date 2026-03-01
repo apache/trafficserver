@@ -1,0 +1,1 @@
+(program (programItem (useDirective use test::set-origin)) (programItem (section REMAP { (sectionBody (statement (functionCall test::set-origin ( (argumentList (value "example.com")) )) ;)) })) <EOF>)

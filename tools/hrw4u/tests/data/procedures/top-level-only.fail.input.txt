@@ -1,0 +1,5 @@
+REMAP {
+    inbound.req.X-Foo = "bar";
+}
+
+use test::add-debug-header

@@ -1,0 +1,11 @@
+procedure local::stamp() {
+    inbound.req.X-Stamp = "yes";
+}
+
+REMAP {
+    local::stamp();
+}
+
+SEND_REQUEST {
+    local::stamp();
+}

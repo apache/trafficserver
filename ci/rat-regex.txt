@@ -24,6 +24,7 @@
 .*\.config$
 .*\.yaml$
 .*\.gold$
+.*\.hrw4u$
 ^\.gitignore$
 ^\.gitmodules$
 ^\.perltidyrc$
