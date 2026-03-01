@@ -1788,7 +1788,7 @@ AC_CHECK_HEADERS([maxminddb.h], [
 AM_CONDITIONAL([HAS_MAXMINDDB], [test "x${has_maxminddb}" = "x1" ])
 
 AC_ARG_WITH([hrw-geo-provider],
-  [AS_HELP_STRING([--with-hrw-geo-provider=geoip|maxminddb],[geo provider to use with header_rewrite [default=auto] ])],
+  [AS_HELP_STRING([--with-hrw-geo-provider=geoip|maxminddb|none],[geo provider to use with header_rewrite [default=auto]; use 'none' or --without-hrw-geo-provider to disable geo support])],
   [geo_provider=$withval],
   [geo_provider="auto"]
 )
@@ -1817,9 +1817,12 @@ AS_IF([test "x$geo_provider" = "xauto"], [
       use_hrw_maxminddb=1
       AC_MSG_RESULT([forced to MaxMindDB])
       ;;
+    xno|xnone)
+      AC_MSG_NOTICE([geo support for header_rewrite disabled])
+      ;;
     *)
       AC_MSG_RESULT([failed])
-      AC_MSG_FAILURE([unknown geo interface '$geo_provider': valid values are 'geoip' or 'maxminddb'])
+      AC_MSG_FAILURE([unknown geo interface '$geo_provider': valid values are 'geoip', 'maxminddb', or 'none'])
   esac
 ])
 
