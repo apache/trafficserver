@@ -155,33 +155,65 @@ TEST_CASE("Case sensitive short options", "[parse]")
   cs_parser.add_global_usage("test_prog [--SWITCH]");
 
   // Add a command with two options that differ only in case: -t and -T
-  ts::ArgParser::Command &cmd = cs_parser.add_command("reload", "reload config");
-  cmd.add_option("--token", "-t", "reload token", "", 1, "");
-  cmd.add_option("--timeout", "-T", "reload timeout", "", 1, "30s");
+  ts::ArgParser::Command &cmd = cs_parser.add_command("process", "process data");
+  cmd.add_option("--tag", "-t", "a label", "", 1, "");
+  cmd.add_option("--threshold", "-T", "a numeric value", "", 1, "100");
 
   ts::Arguments parsed;
 
-  // Use lowercase -t: should set "token" only
-  const char *argv1[] = {"test_prog", "reload", "-t", "my_token", nullptr};
+  // Use lowercase -t: should set "tag" only
+  const char *argv1[] = {"test_prog", "process", "-t", "my_tag", nullptr};
   parsed              = cs_parser.parse(argv1);
-  REQUIRE(parsed.get("token") == true);
-  REQUIRE(parsed.get("token").value() == "my_token");
-  // timeout should still have its default
-  REQUIRE(parsed.get("timeout").value() == "30s");
+  REQUIRE(parsed.get("tag") == true);
+  REQUIRE(parsed.get("tag").value() == "my_tag");
+  // threshold should still have its default
+  REQUIRE(parsed.get("threshold").value() == "100");
 
-  // Use uppercase -T: should set "timeout" only
-  const char *argv2[] = {"test_prog", "reload", "-T", "60s", nullptr};
+  // Use uppercase -T: should set "threshold" only
+  const char *argv2[] = {"test_prog", "process", "-T", "200", nullptr};
   parsed              = cs_parser.parse(argv2);
-  REQUIRE(parsed.get("timeout") == true);
-  REQUIRE(parsed.get("timeout").value() == "60s");
-  // token should be empty (no default)
-  REQUIRE(parsed.get("token").value() == "");
+  REQUIRE(parsed.get("threshold") == true);
+  REQUIRE(parsed.get("threshold").value() == "200");
+  // tag should be empty (no default)
+  REQUIRE(parsed.get("tag").value() == "");
 
   // Use both -t and -T together
-  const char *argv3[] = {"test_prog", "reload", "-t", "abc123", "-T", "2m", nullptr};
+  const char *argv3[] = {"test_prog", "process", "-t", "foo", "-T", "500", nullptr};
   parsed              = cs_parser.parse(argv3);
-  REQUIRE(parsed.get("token") == true);
-  REQUIRE(parsed.get("token").value() == "abc123");
-  REQUIRE(parsed.get("timeout") == true);
-  REQUIRE(parsed.get("timeout").value() == "2m");
+  REQUIRE(parsed.get("tag") == true);
+  REQUIRE(parsed.get("tag").value() == "foo");
+  REQUIRE(parsed.get("threshold") == true);
+  REQUIRE(parsed.get("threshold").value() == "500");
+}
+
+TEST_CASE("with_required does not trigger on default values", "[parse]")
+{
+  ts::ArgParser parser;
+  parser.add_global_usage("test_prog [OPTIONS]");
+
+  ts::ArgParser::Command &cmd = parser.add_command("scan", "scan targets");
+  cmd.add_option("--tag", "-t", "a label", "", 1, "");
+  cmd.add_option("--verbose", "-v", "enable verbose output");
+  cmd.add_option("--threshold", "-T", "a numeric value", "", 1, "100").with_required("--verbose");
+
+  // -t alone should NOT trigger --threshold's dependency on --verbose.
+  // The default value "100" for --threshold must not count as "explicitly used".
+  const char   *argv1[] = {"test_prog", "scan", "-t", "my_tag", nullptr};
+  ts::Arguments parsed  = parser.parse(argv1);
+  REQUIRE(parsed.get("tag").value() == "my_tag");
+  // threshold default should still be applied after validation
+  REQUIRE(parsed.get("threshold").value() == "100");
+
+  // -T with -v should work fine
+  const char *argv2[] = {"test_prog", "scan", "-T", "200", "-v", nullptr};
+  parsed              = parser.parse(argv2);
+  REQUIRE(parsed.get("threshold").value() == "200");
+  REQUIRE(parsed.get("verbose") == true);
+
+  // -t and -T together with -v should work
+  const char *argv3[] = {"test_prog", "scan", "-t", "foo", "-T", "300", "-v", nullptr};
+  parsed              = parser.parse(argv3);
+  REQUIRE(parsed.get("tag").value() == "foo");
+  REQUIRE(parsed.get("threshold").value() == "300");
+  REQUIRE(parsed.get("verbose") == true);
 }
