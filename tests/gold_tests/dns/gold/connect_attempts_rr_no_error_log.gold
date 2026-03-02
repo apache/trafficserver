@@ -1,6 +1,6 @@
-`` CONNECT: attempt fail [CONNECTION_ERROR] to 0.0.0.1:`` for host='example.com' connection_result=EIO [5] error=SUCCESS [0] retry_attempts=0 url='http://backend.example.com:``/path/'
-`` CONNECT : EIO [5] connecting to 0.0.0.1:`` for host='example.com' url='http://backend.example.com:``/path/' fail_count='1' marking down
-`` CONNECT: attempt fail [CONNECTION_ERROR] to 0.0.0.2:`` for host='example.com' connection_result=EIO [5] error=SUCCESS [0] retry_attempts=0 url='http://backend.example.com:``/path/'
-`` CONNECT : EIO [5] connecting to 0.0.0.2:`` for host='example.com' url='http://backend.example.com:``/path/' fail_count='1' marking down
+`` CONNECT: attempt fail [CONNECTION_ERROR] to 0.0.0.1:`` for host='example.com' `` retry_attempts=0 url='http://backend.example.com:``/path/'
+`` CONNECT : `` connecting to 0.0.0.1:`` for host='example.com' url='http://backend.example.com:``/path/' fail_count='1' marking down
+`` CONNECT: attempt fail [CONNECTION_ERROR] to 0.0.0.2:`` for host='example.com' `` retry_attempts=0 url='http://backend.example.com:``/path/'
+`` CONNECT : `` connecting to 0.0.0.2:`` for host='example.com' url='http://backend.example.com:``/path/' fail_count='1' marking down
 `` DNS Error: no valid server http://backend.example.com:``/path/
 ``
