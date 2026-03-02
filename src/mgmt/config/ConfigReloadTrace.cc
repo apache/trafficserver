@@ -98,9 +98,19 @@ ConfigReloadTask::log(std::string const &text)
 void
 ConfigReloadTask::add_sub_task(ConfigReloadTaskPtr sub_task)
 {
-  std::unique_lock<std::shared_mutex> lock(_mutex);
-  Dbg(dbg_ctl_config, "Adding subtask %s to task %s", sub_task->get_description().c_str(), _info.description.c_str());
-  _info.sub_tasks.push_back(sub_task);
+  {
+    std::unique_lock<std::shared_mutex> lock(_mutex);
+    Dbg(dbg_ctl_config, "Adding subtask %s to task %s", sub_task->get_description().c_str(), _info.description.c_str());
+    _info.sub_tasks.push_back(sub_task);
+  }
+  // Re-aggregate only if the parent prematurely reached SUCCESS. Record-triggered
+  // handlers register asynchronously (via config_update_cont, ~3s timer), so a
+  // new CREATED subtask can arrive after all previously known subtasks completed.
+  // Guarding on SUCCESS avoids redundant work when the parent is still IN_PROGRESS
+  // and avoids overwriting a TIMEOUT set by the progress checker.
+  if (get_state() == State::SUCCESS) {
+    aggregate_status();
+  }
 }
 
 bool
@@ -109,6 +119,15 @@ ConfigReloadTask::has_subtask_for_key(std::string_view key) const
   std::shared_lock<std::shared_mutex> lock(_mutex);
   return std::any_of(_info.sub_tasks.begin(), _info.sub_tasks.end(),
                      [&key](const auto &t) { return t->_info.config_key == key; }); // config_key is immutable once in sub_tasks
+}
+
+ConfigReloadTaskPtr
+ConfigReloadTask::find_subtask_by_key(std::string_view key) const
+{
+  std::shared_lock<std::shared_mutex> lock(_mutex);
+  auto                                it =
+    std::find_if(_info.sub_tasks.begin(), _info.sub_tasks.end(), [&key](const auto &t) { return t->_info.config_key == key; });
+  return it != _info.sub_tasks.end() ? *it : nullptr;
 }
 
 void
@@ -169,9 +188,11 @@ ConfigReloadTask::set_state_and_notify(State state)
     }
     // Once a task reaches a terminal state, reject further transitions.
     if (is_terminal(_info.state)) {
-      Warning("ConfigReloadTask '%s': ignoring transition from %.*s to %.*s — already terminal.", _info.description.c_str(),
-              static_cast<int>(state_to_string(_info.state).size()), state_to_string(_info.state).data(),
-              static_cast<int>(state_to_string(state).size()), state_to_string(state).data());
+      auto const cur_str = state_to_string(_info.state);
+      auto const new_str = state_to_string(state);
+      Dbg(dbg_ctl_config, "ConfigReloadTask '%s': ignoring transition from %.*s to %.*s — already terminal.",
+          _info.description.c_str(), static_cast<int>(cur_str.size()), cur_str.data(), static_cast<int>(new_str.size()),
+          new_str.data());
       return;
     }
     Dbg(dbg_ctl_config, "State changed to %.*s for task %s", static_cast<int>(state_to_string(state).size()),
@@ -310,11 +331,23 @@ ConfigReloadProgress::check_progress(int /* etype */, void * /* data */)
 
   auto const current_state = _reload->get_state();
   if (ConfigReloadTask::is_terminal(current_state)) {
-    Dbg(dbg_ctl_config, "Reload task %s is in %.*s state, stopping progress check.", _reload->get_token().c_str(),
-        static_cast<int>(ConfigReloadTask::state_to_string(current_state).size()),
-        ConfigReloadTask::state_to_string(current_state).data());
-    return EVENT_DONE;
+    auto const state_str = ConfigReloadTask::state_to_string(current_state);
+    if (_awaiting_terminal_confirmation) {
+      // Confirmed terminal — safe to stop.
+      Dbg(dbg_ctl_config, "Reload task %s confirmed %.*s after grace period, stopping progress check.",
+          _reload->get_token().c_str(), static_cast<int>(state_str.size()), state_str.data());
+      return EVENT_DONE;
+    }
+    // First observation of terminal state — reschedule once more to confirm
+    // it isn't pulled back to IN_PROGRESS by a late reserve_subtask().
+    _awaiting_terminal_confirmation = true;
+    Dbg(dbg_ctl_config, "Reload task %s reached %.*s, scheduling confirmation in %lldms.", _reload->get_token().c_str(),
+        static_cast<int>(state_str.size()), state_str.data(), static_cast<long long>(TERMINAL_CONFIRMATION_DELAY.count()));
+    eventProcessor.schedule_in(this, HRTIME_MSECONDS(TERMINAL_CONFIRMATION_DELAY.count()), ET_TASK);
+    return EVENT_CONT;
   }
+  // State was pulled back from terminal (e.g., SUCCESS -> IN_PROGRESS) — reset and continue.
+  _awaiting_terminal_confirmation = false;
 
   // Get configured timeout (read dynamically to allow runtime changes)
   // Returns 0ms if disabled (timeout string is "0" or empty)

@@ -253,3 +253,9 @@ void RecConfigWarnIfUnregistered(ConfigContext ctx = {});
 // Set RecRecord attributes
 //------------------------------------------------------------------------
 RecErrT RecSetSyncRequired(const char *name, bool lock = true);
+
+/// Flush pending record config-update callbacks (those marked sync-required).
+/// This forces immediate execution of RecConfigUpdateCb callbacks for dirty records,
+/// rather than waiting for the next config_update_cont timer tick (~3s).
+/// After this call the sync-required flag on those records is cleared.
+void RecFlushConfigUpdateCbs();

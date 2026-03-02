@@ -29,6 +29,8 @@
 #include "iocore/eventsystem/Tasks.h"
 #include "iocore/eventsystem/EventProcessor.h"
 
+#include "records/RecCore.h"
+
 #include "tscore/Diags.h"
 
 namespace
@@ -60,6 +62,16 @@ struct ReloadWorkContinuation : public Continuation {
       Dbg(dbg_ctl_config, "rereadConfig failed");
       failed = true;
     }
+
+    // Force-flush pending record callbacks. rereadConfig() marks records as
+    // sync-required via RecSetSyncRequired(), but the actual on_record_change
+    // callbacks normally wait for the next config_update_cont tick (~3s).
+    // Flushing here fires those callbacks immediately so record-triggered
+    // handlers can reserve their subtasks before handleEvent() returns.
+    // RecExecConfigUpdateCbs clears the sync-required flag so the next
+    // config_update_cont tick is a no-op for these records.
+    RecFlushConfigUpdateCbs();
+    Dbg(dbg_ctl_config, "Flushed pending record update callbacks");
 
     Dbg(dbg_ctl_config, "Invoking plugin callbacks");
     // If any callback was registered (TSMgmtUpdateRegister) for config notifications,

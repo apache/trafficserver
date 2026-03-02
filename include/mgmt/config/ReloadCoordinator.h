@@ -99,6 +99,12 @@ public:
   ///
   bool mark_task_as_stale(std::string_view token = "", std::string_view reason = "Superseded by new reload");
 
+  /// Pre-register a CREATED subtask for the given config key on the current main task.
+  /// Called by on_record_change() during the synchronous RecExecConfigUpdateCbs flush
+  /// to reserve a placeholder before the handler continuation is scheduled on ET_TASK.
+  /// If no reload is active or the subtask already exists, this is a no-op.
+  void reserve_subtask(std::string_view config_key);
+
 private:
   static constexpr size_t MAX_HISTORY_SIZE = 100; ///< Maximum number of reload tasks to keep in history. TODO: maybe configurable?
 

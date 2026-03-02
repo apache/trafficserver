@@ -100,6 +100,37 @@ ReloadCoordinator::generate_token_name(const char *prefix) const
   return std::string(prefix) + std::to_string(time);
 }
 
+void
+ReloadCoordinator::reserve_subtask(std::string_view config_key)
+{
+  std::unique_lock lock(_mutex);
+  if (!_current_task) {
+    return;
+  }
+
+  // Block only hard-terminal states (FAIL, TIMEOUT).  SUCCESS is intentionally
+  // allowed: records.yaml is always the first file processed by rereadConfig(),
+  // so the main task reaches SUCCESS (from the "records" subtask) before any
+  // other file-based or record-triggered reservation runs.  Adding a CREATED
+  // subtask to a SUCCESS parent causes add_sub_task() → aggregate_status() to
+  // pull the parent back to IN_PROGRESS.
+  auto state = _current_task->get_state();
+  if (state == ConfigReloadTask::State::FAIL || state == ConfigReloadTask::State::TIMEOUT) {
+    return;
+  }
+
+  // Already reserved or handled — nothing to do.
+  if (_current_task->has_subtask_for_key(config_key)) {
+    return;
+  }
+
+  auto task = std::make_shared<ConfigReloadTask>(_current_task->get_token(), config_key, false, _current_task);
+  task->set_config_key(config_key);
+  _current_task->add_sub_task(task);
+
+  Dbg(dbg_ctl, "Reserved subtask for config '%.*s'", static_cast<int>(config_key.size()), config_key.data());
+}
+
 ConfigContext
 ReloadCoordinator::create_config_context(std::string_view config_key, std::string_view description, std::string_view filename)
 {
@@ -109,20 +140,29 @@ ReloadCoordinator::create_config_context(std::string_view config_key, std::strin
     return ConfigContext{};
   }
 
-  // Dedup: reject if a subtask for this config key already exists.
+  // Check for an existing subtask with this config key.
   //
-  // This handles the N-to-1(handler) issue of duplicate subtasks from trigger records. When a config key has N triggers,
-  // setup_triggers() registers N independent on_record_change callbacks. The Records system's
-  // fires all dirty-record callbacks in one pass, producing N continuations
-  // that all carry the same config_key. Only the first one should create a subtask and run
-  // the handler; the rest are duplicates.
-  if (!config_key.empty() && !ConfigReloadTask::is_terminal(_current_task->get_state()) &&
-      _current_task->has_subtask_for_key(config_key)) {
-    Dbg(dbg_ctl, "Duplicate reload for config '%.*s' — subtask already exists, skipping", static_cast<int>(config_key.size()),
-        config_key.data());
-    return ConfigContext{};
+  // Two cases:
+  //   1. Reserved (CREATED) — pre-registered by reserve_subtask() in on_record_change.
+  //      Return a ConfigContext wrapping it so the handler can activate and complete it.
+  //   2. Already active/done — true duplicate from N trigger records mapping to one config key.
+  //      Return empty to skip.
+  if (!config_key.empty() && !ConfigReloadTask::is_terminal(_current_task->get_state())) {
+    auto existing = _current_task->find_subtask_by_key(config_key);
+    if (existing) {
+      if (existing->get_state() == ConfigReloadTask::State::CREATED) {
+        // Activate the reserved subtask
+        Dbg(dbg_ctl, "Activating reserved subtask for config '%.*s'", static_cast<int>(config_key.size()), config_key.data());
+        return ConfigContext{existing, description, filename};
+      }
+      // Already handled — true duplicate
+      Dbg(dbg_ctl, "Duplicate reload for config '%.*s' — subtask already exists, skipping", static_cast<int>(config_key.size()),
+          config_key.data());
+      return ConfigContext{};
+    }
   }
 
+  // No existing subtask — create a new one
   auto task =
     std::make_shared<ConfigReloadTask>(_current_task->get_token(), description, false /*not a main reload job*/, _current_task);
   task->set_config_key(config_key);
@@ -215,8 +255,9 @@ ReloadCoordinator::mark_task_as_stale(std::string_view token, std::string_view r
 
   auto state = task_to_mark->get_state();
   if (ConfigReloadTask::is_terminal(state)) {
+    auto const state_str = ConfigReloadTask::state_to_string(state);
     Dbg(dbg_ctl, "Task %s already in terminal state (%.*s), cannot mark stale", task_to_mark->get_token().c_str(),
-        static_cast<int>(ConfigReloadTask::state_to_string(state).size()), ConfigReloadTask::state_to_string(state).data());
+        static_cast<int>(state_str.size()), state_str.data());
     return false;
   }
 

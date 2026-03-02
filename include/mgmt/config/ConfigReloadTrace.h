@@ -103,8 +103,13 @@ struct ConfigReloadProgress : public Continuation {
   }
 
 private:
-  ConfigReloadTaskPtr       _reload{nullptr};
-  std::chrono::milliseconds _every{std::chrono::seconds{2}}; ///< Set from config in constructor
+  /// Grace period before accepting a terminal state as final. A late reserve_subtask()
+  /// can pull the parent back from SUCCESS to IN_PROGRESS; this delay lets the checker
+  /// detect that transition instead of stopping prematurely.
+  static constexpr std::chrono::milliseconds TERMINAL_CONFIRMATION_DELAY{5000};
+  ConfigReloadTaskPtr                        _reload{nullptr};
+  std::chrono::milliseconds                  _every{std::chrono::seconds{2}};        ///< Set from config in constructor
+  bool                                       _awaiting_terminal_confirmation{false}; ///< true after first terminal observation
 };
 
 ///
@@ -251,6 +256,9 @@ public:
   /// Check if any immediate subtask has the given config_key.
   /// Used by ReloadCoordinator to prevent duplicate subtasks within a single reload cycle.
   [[nodiscard]] bool has_subtask_for_key(std::string_view key) const;
+
+  /// Find a subtask by its config_key. Returns nullptr if not found.
+  [[nodiscard]] ConfigReloadTaskPtr find_subtask_by_key(std::string_view key) const;
 
   /// Debug utility: dump task tree to an output stream.
   /// Recursively prints this task and all sub-tasks with indentation.

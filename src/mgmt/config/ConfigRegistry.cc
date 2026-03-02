@@ -163,6 +163,12 @@ on_record_change(const char *name, RecDataT /* data_type */, RecData /* data */,
 
   Dbg(dbg_ctl, "Record '%s' changed, scheduling reload for config '%s'", name, ctx->config_key.c_str());
 
+  // Pre-register a CREATED subtask so the main task knows work is pending.
+  // Without this, aggregate_status() can reach SUCCESS before the continuation
+  // runs and creates the subtask. The continuation will activate the reserved
+  // subtask instead of creating a new one.
+  ReloadCoordinator::Get_Instance().reserve_subtask(ctx->config_key);
+
   // Schedule file reload on ET_TASK thread (always file-based, no rpc-supplied content)
   eventProcessor.schedule_imm(new RecordTriggeredReloadContinuation(ctx->mutex, ctx->config_key), ET_TASK);
 

@@ -544,3 +544,9 @@ RecSetSyncRequired(const char *name, bool lock)
 
   return err;
 }
+
+void
+RecFlushConfigUpdateCbs()
+{
+  RecExecConfigUpdateCbs(REC_PROCESS_UPDATE_REQUIRED);
+}

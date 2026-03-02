@@ -372,6 +372,20 @@ Parent tasks derive their status from their children:
 This aggregation is recursive. A parent's ``complete()`` call sets its own status, but if any child
 later fails, the parent status will be downgraded accordingly.
 
+.. note::
+
+   During a file-based reload, subtasks are discovered in two phases: file-based handlers
+   complete synchronously inside ``rereadConfig()``, while record-triggered handlers are activated
+   by record callbacks. To ensure all subtasks are registered before the reload executor returns,
+   ``RecFlushConfigUpdateCbs()`` is called immediately after ``rereadConfig()``. This synchronously
+   fires all pending record callbacks, and each ``on_record_change()`` calls ``reserve_subtask()``
+   to pre-register a ``CREATED`` subtask on the main task. The total task count is therefore stable
+   from the first status poll.
+
+   As a safety net, ``add_sub_task()`` also calls ``aggregate_status()`` when the parent has
+   already reached ``SUCCESS``, reverting it to ``IN_PROGRESS``. This handles edge cases where a
+   subtask is registered after all previously known work has completed.
+
 
 ConfigSource
 ============

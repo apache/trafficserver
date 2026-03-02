@@ -325,6 +325,14 @@ Display the current value of a configuration record.
 
            Details : traffic_ctl config status -t hotfix-cert
 
+      .. note::
+
+         During a reload, all subtasks are pre-registered shortly after file processing
+         completes. However, the first file (typically ``records.yaml``) may briefly show as
+         ``1/1 success`` before record-triggered handlers are reserved by the flush. The
+         ``--initial-wait`` option (default: 2s) delays the first poll to reduce the chance
+         of observing this transient state.
+
    .. option:: --show-details, -s
 
       Start the reload and display a detailed status report. The command sends the reload request,
