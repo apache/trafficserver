@@ -50,7 +50,7 @@ DbgCtl dbg_ctl_url_rewrite{"url_rewrite"};
 } // end anonymous namespace
 
 // Global Ptrs
-UrlRewrite                       *rewrite_table       = nullptr;
+std::atomic<UrlRewrite *>         rewrite_table       = nullptr;
 thread_local PluginThreadContext *pluginThreadContext = nullptr;
 
 // Tokens for the Callback function
@@ -67,13 +67,13 @@ thread_local PluginThreadContext *pluginThreadContext = nullptr;
 int
 init_reverse_proxy()
 {
-  ink_assert(rewrite_table == nullptr);
+  ink_assert(rewrite_table.load() == nullptr);
   reconfig_mutex = new_ProxyMutex();
-  rewrite_table  = new UrlRewrite();
+  rewrite_table.store(new UrlRewrite());
 
-  rewrite_table->acquire();
+  rewrite_table.load()->acquire();
   Note("%s loading ...", ts::filename::REMAP);
-  if (!rewrite_table->load()) {
+  if (!rewrite_table.load()->load()) {
     Emergency("%s failed to load", ts::filename::REMAP);
   } else {
     Note("%s finished loading", ts::filename::REMAP);
@@ -147,7 +147,7 @@ reloadUrlRewrite()
     newTable->acquire();
 
     // Swap configurations
-    oldTable = ink_atomic_swap(&rewrite_table, newTable);
+    oldTable = rewrite_table.exchange(newTable);
 
     ink_assert(oldTable != nullptr);
 
@@ -206,7 +206,7 @@ init_store_volume_host_records(UrlRewrite::MappingsStore &store)
 void
 init_remap_volume_host_records()
 {
-  UrlRewrite *table = rewrite_table;
+  UrlRewrite *table = rewrite_table.load(std::memory_order_acquire);
 
   if (!table) {
     return;
@@ -233,7 +233,7 @@ url_rewrite_CB(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNU
 
   switch (my_token) {
   case REVERSE_CHANGED:
-    rewrite_table->SetReverseFlag(data.rec_int);
+    rewrite_table.load()->SetReverseFlag(data.rec_int);
     break;
 
   case TSNAME_CHANGED:

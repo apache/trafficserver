@@ -1228,11 +1228,30 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
           goto MAP_ERROR;
         }
 
-        for (const char *p = volume_str; *p; p++) {
-          if (*p != ',' && (*p < '0' || *p > '9')) {
-            snprintf(errStrBuf, sizeof(errStrBuf), "Invalid character '%c' in @volume=%s at line %d", *p, volume_str, cln + 1);
+        {
+          swoc::TextView vol_list{volume_str};
+
+          if (vol_list.back() == ',') {
+            snprintf(errStrBuf, sizeof(errStrBuf), "Invalid @volume=%s at line %d (trailing comma)", volume_str, cln + 1);
             errStr = errStrBuf;
             goto MAP_ERROR;
+          }
+          while (!vol_list.empty()) {
+            swoc::TextView span;
+            swoc::TextView token{vol_list.take_prefix_at(',')};
+            auto           n = swoc::svtoi(token, &span);
+
+            if (span.size() != token.size() || token.empty()) {
+              snprintf(errStrBuf, sizeof(errStrBuf), "Invalid @volume=%s at line %d (expected comma-separated numbers 1-255)",
+                       volume_str, cln + 1);
+              errStr = errStrBuf;
+              goto MAP_ERROR;
+            } else if (n < 1 || n > 255) {
+              snprintf(errStrBuf, sizeof(errStrBuf), "Volume number %jd out of range (1-255) in @volume=%s at line %d", n,
+                       volume_str, cln + 1);
+              errStr = errStrBuf;
+              goto MAP_ERROR;
+            }
           }
         }
 

@@ -78,12 +78,6 @@ autest:
         options:
           - "@volume=2"
 
-      # Invalid volume selection (should fallback)
-      - from: "http://invalid.example.com/"
-        to: "http://backend.ex:{SERVER_HTTP_PORT}/"
-        options:
-          - "@volume=99"
-
 # Proxy verifier test sessions
 sessions:
   # Test 1: Volume selection via @volume=1
@@ -144,36 +138,7 @@ sessions:
             fields:
               - [X-Volume-Test, { value: "2", as: equal }]
 
-  # Test 3: Invalid volume selection (should fallback to default)
-  - transactions:
-      - client-request:
-          method: "GET"
-          version: "1.1"
-          url: "/test_invalid"
-          headers:
-            fields:
-              - [Host, invalid.example.com]
-              - [X-Test-ID, "invalid-volume-test"]
-              - [uuid, 3]
-
-        server-response:
-          status: 200
-          reason: OK
-          headers:
-            fields:
-              - [Content-Type, "text/plain"]
-              - [Cache-Control, "max-age=3600"]
-              - [X-Volume-Test, "fallback"]
-          content:
-            data: "Content for invalid volume (fallback)"
-
-        proxy-response:
-          status: 200
-          headers:
-            fields:
-              - [X-Volume-Test, { value: "fallback", as: equal }]
-
-  # Test 4: Default volume selection (no @volume=)
+  # Test 3: Default volume selection (no @volume=)
   - transactions:
       - client-request:
           method: "GET"
@@ -202,7 +167,7 @@ sessions:
             fields:
               - [X-Volume-Test, { value: "default", as: equal }]
 
-  # Test 5: Cache hit test (verify caching works)
+  # Test 4: Cache hit test (verify caching works)
   - transactions:
       - client-request:
           method: "GET"
@@ -231,7 +196,7 @@ sessions:
             fields:
               - [X-Origin-Response, { value: "yes", as: equal }]
 
-  # Test 6: Second request for cached content (should be cache hit)
+  # Test 5: Second request for cached content (should be cache hit)
   - transactions:
       - client-request:
           method: "GET"

@@ -20,5 +20,6 @@ Comprehensive test suite for cache volume features:
 - @volume= directive in remap.config for volume selection
 - Integration between both features
 '''
+# TODO: hosting.config + @volume= priority interaction test requires ats_replay.test.ext to support volume_config/hosting_config.
 
 Test.ATSReplayTest(replay_file="cache_volume_features.replay.yaml")

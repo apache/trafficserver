@@ -754,7 +754,7 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
           err = "Invalid avg_obj_size value (must be >= 0)";
           break;
         }
-        while (*tmp && (ParseRules::is_digit(*tmp) || strchr("kmgtKMGT", *tmp))) {
+        while (*tmp && (ParseRules::is_digit(*tmp) || strchr("KMGT", *tmp))) {
           tmp++;
         }
       } else if (strcasecmp(tmp, "fragment_size") == 0) { // match fragment_size
@@ -769,7 +769,7 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
           err = "Invalid fragment_size value (must be >= 0)";
           break;
         }
-        while (*tmp && (ParseRules::is_digit(*tmp) || strchr("kmgtKMGT", *tmp))) {
+        while (*tmp && (ParseRules::is_digit(*tmp) || strchr("KMGT", *tmp))) {
           tmp++;
         }
       } else if (strcasecmp(tmp, "ramcache") == 0) { // match ramcache
@@ -797,7 +797,7 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
           break;
         }
         // Note: ram_cache_size=0 disables RAM cache for this volume, same as ramcache=false
-        while (*tmp && (ParseRules::is_digit(*tmp) || strchr("kmgtKMGT", *tmp))) {
+        while (*tmp && (ParseRules::is_digit(*tmp) || strchr("KMGT", *tmp))) {
           tmp++;
         }
       } else if (strcasecmp(tmp, "ram_cache_cutoff") == 0) { // match ram_cache_cutoff
@@ -812,7 +812,7 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
           err = "Invalid ram_cache_cutoff value (must be >= 0)";
           break;
         }
-        while (*tmp && (ParseRules::is_digit(*tmp) || strchr("kmgtKMGT", *tmp))) {
+        while (*tmp && (ParseRules::is_digit(*tmp) || strchr("KMGT", *tmp))) {
           tmp++;
         }
       }
