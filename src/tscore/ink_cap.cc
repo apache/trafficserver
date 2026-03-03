@@ -436,7 +436,7 @@ void
 ElevateAccess::acquirePrivilege(unsigned priv_mask)
 {
   unsigned    cap_count = 0;
-  cap_value_t cap_list[3];
+  cap_value_t cap_list[4];
   cap_t       new_cap_state;
 
   Dbg(dbg_ctl_privileges, "[acquirePrivilege] level= %x", level);
@@ -460,6 +460,11 @@ ElevateAccess::acquirePrivilege(unsigned priv_mask)
 
   if (priv_mask & ElevateAccess::OWNER_PRIVILEGE) {
     cap_list[cap_count] = CAP_FOWNER;
+    ++cap_count;
+  }
+
+  if (priv_mask & ElevateAccess::CHOWN_PRIVILEGE) {
+    cap_list[cap_count] = CAP_CHOWN;
     ++cap_count;
   }
 
