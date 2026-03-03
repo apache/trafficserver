@@ -1882,12 +1882,15 @@ HttpSM::state_http_server_open(int event, void *data)
     do_http_server_open();
     break;
   case CONNECT_EVENT_TXN: {
-    // Multiplexed connection path (e.g. HTTP/2): ConnectingEntry created the session
-    // and dispatched this event. Get the netvc from the PoolableSession.
+    // Multiplexed connection path (H2/H3): ConnectingEntry owns the connection and
+    // dispatches this event with the PoolableSession once the handshake completes.
+    // The HttpSM has no access to the netvc during the handshake, so we copy the
+    // timestamps that were recorded in real-time by sslClientHandShakeEvent().
+    // See also VC_EVENT_WRITE_COMPLETE below for the direct (H1) path -- these
+    // two paths are mutually exclusive.
     SMDbg(dbg_ctl_http, "Connection handshake complete via CONNECT_EVENT_TXN");
     PoolableSession *session = static_cast<PoolableSession *>(data);
     ink_assert(session != nullptr);
-    // Capture server TLS handshake timing from the session's netvc
     if (auto *netvc = session->get_netvc()) {
       if (auto tbs = netvc->get_service<TLSBasicSupport>()) {
         milestones[TS_MILESTONE_SERVER_TLS_HANDSHAKE_START] = tbs->get_tls_handshake_begin_time();
@@ -1906,10 +1909,11 @@ HttpSM::state_http_server_open(int event, void *data)
   case VC_EVENT_READ_COMPLETE:
   case VC_EVENT_WRITE_READY:
   case VC_EVENT_WRITE_COMPLETE:
-    // Direct connection path (e.g. HTTP/1): HttpSM owns the netvc directly
-    // and creates the session itself.
+    // Direct connection path (H1): HttpSM owns the netvc directly.
+    // Same milestone copy as CONNECT_EVENT_TXN above -- these two paths are
+    // mutually exclusive. Timestamps were recorded in real-time by
+    // sslClientHandShakeEvent(); we copy them into milestones here.
     SMDbg(dbg_ctl_http_ss, "Connection handshake complete");
-    // Capture server TLS handshake timing if this is a TLS connection
     if (auto tbs = _netvc->get_service<TLSBasicSupport>()) {
       milestones[TS_MILESTONE_SERVER_TLS_HANDSHAKE_START] = tbs->get_tls_handshake_begin_time();
       milestones[TS_MILESTONE_SERVER_TLS_HANDSHAKE_END]   = tbs->get_tls_handshake_end_time();
