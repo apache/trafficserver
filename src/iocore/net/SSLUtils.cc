@@ -308,6 +308,7 @@ ssl_client_hello_callback(const SSL_CLIENT_HELLO *client_hello)
 
   TLSSNISupport *snis = TLSSNISupport::getInstance(s);
   if (snis) {
+    snis->set_client_hello_container(ch.get_client_hello_container());
     snis->on_client_hello(ch);
     int ret = snis->perform_sni_action(*s);
     if (ret != SSL_TLSEXT_ERR_OK) {
