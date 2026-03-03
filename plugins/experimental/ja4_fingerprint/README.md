@@ -21,7 +21,7 @@ The technical specification of the algorithm is available [here](https://github.
 
 These changes were made to simplify the plugin as much as possible. The missing features are useful and may be implemented in the future.
 
-Ja4 now supports boringssl
+This plugin works with BoringSSL as well.
 
 ## Logging and Debugging
 

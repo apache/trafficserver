@@ -1345,11 +1345,7 @@ const char *TSVConnSslSniGet(TSVConn sslp, int *length);
     The underlying SSL context may not be available at other hooks, particularly
     for BoringSSL where the SSL_CLIENT_HELLO structure is only valid during
     specific callback functions. Calling this function outside of the client
-    hello hook may result in nullptr being returned.
-
-    For BoringSSL, the Client Hello data is copied from the SSL_CLIENT_HELLO
-    structure. For OpenSSL, cipher suites and extension IDs are extracted using
-    SSL_client_hello_get0_* functions.
+    hello hook may result in unavailable object being returned.
 
     @param sslp The SSL virtual connection handle. Must not be nullptr.
     @return A TSClientHello object containing Client Hello data.

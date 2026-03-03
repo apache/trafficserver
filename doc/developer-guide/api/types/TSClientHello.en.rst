@@ -78,5 +78,6 @@ The following methods are available to access ClientHello data:
 
 .. function:: void* _get_internal() const
 
-   Returns the underlying SSL pointer. This is an internal accessor for advanced use
-   cases.
+   Returns a pointer to internal implementation data. This is an internal accessor for advanced use
+   cases. This accessor is not part of the stable public API, and plugins must not cast or rely
+   on the returned pointer type.

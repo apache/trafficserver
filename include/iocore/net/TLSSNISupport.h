@@ -66,8 +66,8 @@ public:
 #elif HAVE_SSL_CTX_SET_SELECT_CERTIFICATE_CB
       const uint8_t *_extensions;
 #endif
-      size_t _ext_len;
-      size_t _offset;
+      size_t _ext_len = 0;
+      size_t _offset  = 0;
     };
 
     uint16_t            getVersion();
