@@ -1,6 +1,5 @@
 # Boolean and integer state you can flip/use across sections
 
-
 cond %{REMAP_PSEUDO_HOOK} [AND]
 # Plugin controls
     set-http-cntl TXN_DEBUG true
@@ -30,19 +29,15 @@ cond %{READ_REQUEST_PRE_REMAP_HOOK} [AND]
 cond %{GROUP}
     cond %{METHOD} ="GET" [AND,NOCASE]
     cond %{GROUP}
-        cond %{GROUP}
-            cond %{CLIENT-URL:PATH} ("mp3","m3u","m3u8") [OR,NOCASE,EXT]
-            cond %{CLIENT-URL:HOST} /(?i)^api\./
-        cond %{GROUP:END} [AND]
+        cond %{CLIENT-URL:PATH} ("mp3","m3u","m3u8") [OR,NOCASE,EXT]
+        cond %{CLIENT-URL:HOST} /(?i)^api\./
     cond %{GROUP:END}
 cond %{GROUP:END}
     set-header X-Prefilter "static-or-api"
 elif
     cond %{GROUP}
-        cond %{GROUP}
-            cond %{ACCESS:/var/developertesting} [OR]
-            cond %{INTERNAL-TRANSACTION}
-        cond %{GROUP:END} [AND]
+        cond %{ACCESS:/var/developertesting} [OR]
+        cond %{INTERNAL-TRANSACTION}
     cond %{GROUP:END}
         set-header X-Prefilter "dev-or-internal"
 elif
@@ -56,10 +51,8 @@ else
 
 cond %{READ_REQUEST_PRE_REMAP_HOOK} [AND]
 cond %{GROUP}
-    cond %{GROUP}
-        cond %{CIDR:16,48} ="10.0.0.0" [OR]
-        cond %{CIDR:8,8} ="fd00::"
-    cond %{GROUP:END} [AND]
+    cond %{CIDR:16,48} ="10.0.0.0" [OR]
+    cond %{CIDR:8,8} ="fd00::"
 cond %{GROUP:END}
     set-header X-Network "private"
 
@@ -102,7 +95,6 @@ cond %{GROUP:END}
     no-op [L]
 # like [L]
 
-
 cond %{READ_REQUEST_HDR_HOOK} [AND]
 # Header presence / equality and capture groups
 cond %{GROUP}
@@ -144,7 +136,6 @@ cond %{GROUP:END}
     set-state-int16 0 6553
 # assign int16
 
-
 cond %{SEND_REQUEST_HDR_HOOK} [AND]
 # Use NEXT-HOP information to adjust Host header
 cond %{GROUP}
@@ -166,7 +157,6 @@ cond %{GROUP:END}
 
 cond %{REMAP_PSEUDO_HOOK} [AND]
 cond %{CLIENT-HEADER:X-Bar} ="fie" [MID]
-
 
 cond %{READ_RESPONSE_HDR_HOOK} [AND]
 # Cache lookup status checks

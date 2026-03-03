@@ -1,0 +1,7 @@
+cond %{SEND_RESPONSE_HDR_HOOK} [AND]
+cond %{CLIENT-HEADER:X-Outer} ="" [AND,NOT]
+cond %{GROUP}
+    cond %{CLIENT-HEADER:X-Inner-A} ="" [OR,NOT]
+    cond %{CLIENT-HEADER:X-Inner-B} ="" [NOT]
+cond %{GROUP:END}
+    set-header X-Result "matched"
