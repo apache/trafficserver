@@ -1751,6 +1751,27 @@ LogAccess::marshal_proxy_protocol_tls_version(char *buf)
   return len;
 }
 
+int
+LogAccess::marshal_proxy_protocol_tls_group(char *buf)
+{
+  int len = INK_MIN_ALIGN;
+
+  if (m_http_sm) {
+    if (auto group = m_http_sm->t_state.pp_info.get_tlv_ssl_group(); group) {
+      len = padded_length(group->size() + 1);
+      if (buf) {
+        marshal_mem(buf, group->data(), group->size(), len);
+      }
+    } else {
+      if (buf) {
+        // This prints the default value ("-")
+        marshal_mem(buf, nullptr, 0, len);
+      }
+    }
+  }
+  return len;
+}
+
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 int

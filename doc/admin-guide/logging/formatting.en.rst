@@ -536,6 +536,8 @@ pptc  Proxy Protocol The TLS cipher from Proxy Protocol context from the LB
       TLS Cipher     to the |TS|
 pptv  Proxy Protocol The TLS version from Proxy Protocol context from the LB
       TLS version    to the |TS|
+pptg  Proxy Protocol The TLS group from Proxy Protocol context from the LB
+      TLS group      to the |TS|
 ===== ============== ==========================================================
 
 .. note::

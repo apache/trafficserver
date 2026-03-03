@@ -272,6 +272,7 @@ public:
   int marshal_proxy_protocol_authority(char *);                    // STR
   int marshal_proxy_protocol_tls_cipher(char *);                   // STR
   int marshal_proxy_protocol_tls_version(char *);                  // STR
+  int marshal_proxy_protocol_tls_group(char *);                    // STR
 
   // named fields from within a http header
   //
