@@ -1347,7 +1347,7 @@ const char *TSVConnSslSniGet(TSVConn sslp, int *length);
     specific callback functions. Calling this function outside of the client
     hello hook may result in unavailable object being returned.
 
-    @param sslp The SSL virtual connection handle. Must not be nullptr.
+    @param[in] sslp The SSL virtual connection handle. Must not be nullptr.
     @return A TSClientHello object containing Client Hello data.
 
     @see TSClientHelloExtensionGet
@@ -1366,10 +1366,10 @@ TSClientHello TSVConnClientHelloGet(TSVConn sslp);
     not be freed by the caller. The buffer is valid only in the condition where
     you can get a TSClientHello object from an SSL virtual connection.
 
-    @param ch The Client Hello object obtained from TSVConnClientHelloGet().
-    @param type The TLS extension type to retrieve.
-    @param out Pointer to receive the extension data buffer. Must not be nullptr.
-    @param outlen Pointer to receive the length of the extension data in bytes.
+    @param[in]  ch The Client Hello object obtained from TSVConnClientHelloGet().
+    @param[in]  type The TLS extension type to retrieve.
+    @param[out] out Pointer to receive the extension data buffer. Must not be nullptr.
+    @param[out] outlen Pointer to receive the length of the extension data in bytes.
                   Must not be nullptr.
 
     @return TS_SUCCESS if the extension was found and retrieved successfully.
