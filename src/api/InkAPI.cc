@@ -31,6 +31,7 @@
 #include "iocore/net/NetVConnection.h"
 #include "iocore/net/NetHandler.h"
 #include "iocore/net/UDPNet.h"
+#include "tscore/ink_config.h"
 #include "tscore/ink_platform.h"
 #include "tscore/ink_base64.h"
 #include "tscore/Encoding.h"
@@ -67,6 +68,7 @@
 #include "iocore/net/SSLAPIHooks.h"
 #include "iocore/net/SSLDiags.h"
 #include "iocore/net/TLSBasicSupport.h"
+#include "iocore/net/TLSSNISupport.h"
 #include "iocore/eventsystem/ConfigProcessor.h"
 #include "proxy/Plugin.h"
 #include "proxy/logging/LogObject.h"
@@ -7920,6 +7922,37 @@ TSVConnSslSniGet(TSVConn sslp, int *length)
   return server_name;
 }
 
+TSClientHello
+TSVConnClientHelloGet(TSVConn sslp)
+{
+  NetVConnection *netvc = reinterpret_cast<NetVConnection *>(sslp);
+  if (netvc == nullptr) {
+    return nullptr;
+  }
+
+  if (auto snis = netvc->get_service<TLSSNISupport>(); snis) {
+    TLSSNISupport::ClientHello *client_hello = snis->get_client_hello();
+    if (client_hello == nullptr) {
+      return nullptr;
+    }
+
+    // Wrap the raw object in the accessor and return
+    return TSClientHello(client_hello);
+  }
+
+  return nullptr;
+}
+
+TSReturnCode
+TSClientHelloExtensionGet(TSClientHello ch, unsigned int type, const unsigned char **out, size_t *outlen)
+{
+  if (static_cast<TLSSNISupport::ClientHello *>(ch._get_internal())->getExtension(type, out, outlen) == 1) {
+    return TS_SUCCESS;
+  }
+
+  return TS_ERROR;
+}
+
 TSSslVerifyCTX
 TSVConnSslVerifyCTXGet(TSVConn sslp)
 {
@@ -9157,4 +9190,73 @@ TSLogAddrUnmarshal(char **buf, char *dest, int len)
   }
 
   return {-1, -1};
+}
+
+bool
+TSClientHello::is_available() const
+{
+  return static_cast<bool>(*this);
+}
+
+uint16_t
+TSClientHello::get_version() const
+{
+  return static_cast<TLSSNISupport::ClientHello *>(_client_hello)->getVersion();
+}
+
+const uint8_t *
+TSClientHello::get_cipher_suites() const
+{
+  return reinterpret_cast<const uint8_t *>(static_cast<TLSSNISupport::ClientHello *>(_client_hello)->getCipherSuites().data());
+}
+
+size_t
+TSClientHello::get_cipher_suites_len() const
+{
+  return static_cast<TLSSNISupport::ClientHello *>(_client_hello)->getCipherSuites().length();
+}
+
+TSClientHello::TSExtensionTypeList::Iterator::Iterator(const void *ite)
+{
+  static_assert(sizeof(_real_iterator) >= sizeof(TLSSNISupport::ClientHello::ExtensionIdIterator));
+
+  ink_assert(_real_iterator);
+  ink_assert(ite);
+  memcpy(_real_iterator, ite, sizeof(TLSSNISupport::ClientHello::ExtensionIdIterator));
+}
+
+TSClientHello::TSExtensionTypeList::Iterator
+TSClientHello::TSExtensionTypeList::begin()
+{
+  ink_assert(_ch);
+  auto ch  = static_cast<TLSSNISupport::ClientHello *>(_ch);
+  auto ite = ch->begin();
+  // The temporal pointer is for the memcpy in the constructor. It's only used in the constructor.
+  return TSClientHello::TSExtensionTypeList::Iterator(&ite);
+}
+
+TSClientHello::TSExtensionTypeList::Iterator
+TSClientHello::TSExtensionTypeList::end()
+{
+  auto ite = static_cast<TLSSNISupport::ClientHello *>(_ch)->end();
+  // The temporal pointer is for the memcpy in the constructor. It's only used in the constructor.
+  return TSClientHello::TSExtensionTypeList::Iterator(&ite);
+}
+
+TSClientHello::TSExtensionTypeList::Iterator &
+TSClientHello::TSExtensionTypeList::Iterator::operator++()
+{
+  ++(*reinterpret_cast<TLSSNISupport::ClientHello::ExtensionIdIterator *>(_real_iterator));
+  return *this;
+}
+
+bool
+TSClientHello::TSExtensionTypeList::Iterator::operator==(const TSClientHello::TSExtensionTypeList::Iterator &b) const
+{
+  return memcmp(_real_iterator, b._real_iterator, sizeof(_real_iterator)) == 0;
+}
+int
+TSClientHello::TSExtensionTypeList::Iterator::operator*() const
+{
+  return *(*reinterpret_cast<const TLSSNISupport::ClientHello::ExtensionIdIterator *>(_real_iterator));
 }

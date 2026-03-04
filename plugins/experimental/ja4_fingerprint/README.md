@@ -21,6 +21,8 @@ The technical specification of the algorithm is available [here](https://github.
 
 These changes were made to simplify the plugin as much as possible. The missing features are useful and may be implemented in the future.
 
+This plugin works with BoringSSL as well.
+
 ## Logging and Debugging
 
 To get debug information in the traffic log, enable the debug tag `ja4_fingerprint`.
