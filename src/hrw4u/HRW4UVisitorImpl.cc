@@ -1038,6 +1038,14 @@ HRW4UVisitorImpl::process_factor(hrw4uParser::FactorContext *ctx, bool last, boo
   }
 
   if (ctx->LPAREN()) {
+    if (!last) {
+      if (followed_by_or) {
+        _cond_state.or_modifier = true;
+      } else {
+        _cond_state.add_modifier("AND");
+      }
+    }
+    _cond_state.not_modifier = negated;
     ParserContext pctx_group = build_parser_context("%{GROUP}");
     void         *group      = create_condition(pctx_group);
 

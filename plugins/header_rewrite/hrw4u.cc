@@ -257,8 +257,6 @@ namespace
 
       if (group) {
         group->add_condition(cond);
-
-        op_if->require_resources(cond->get_resource_ids());
         return true;
       }
 
@@ -306,7 +304,6 @@ namespace
       }
 
       cur_sec->ops.oper_mods = static_cast<OperModifiers>(cur_sec->ops.oper_mods | cur_sec->ops.oper->get_oper_modifiers());
-      op_if->require_resources(operator_->get_resource_ids());
 
       return true;
     }
