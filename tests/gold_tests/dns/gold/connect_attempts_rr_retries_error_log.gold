@@ -1,7 +1,8 @@
-`` CONNECT: attempt fail [CONNECTION_ERROR] to 0.0.0.1:`` for host='example.com' `` retry_attempts=0 url='http://backend.example.com:``/path/'
-`` CONNECT: attempt fail [CONNECTION_ERROR] to 0.0.0.1:`` for host='example.com' `` retry_attempts=0 url='http://backend.example.com:``/path/'
+`` CONNECT: attempt fail [CONNECTION_ERROR] to 0.0.0.1:`` for host='example.com' sm_id=0 connection_result=`` error=`` retry_attempts=0 url='http://backend.example.com:``/path/'
+`` CONNECT: attempt fail [CONNECTION_ERROR] to 0.0.0.1:`` for host='example.com' sm_id=1 connection_result=`` error=`` retry_attempts=0 url='http://backend.example.com:``/path/'
 `` CONNECT : `` connecting to 0.0.0.1:`` for host='example.com' url='http://backend.example.com:``/path/' fail_count='2' marking down
-`` CONNECT: attempt fail [CONNECTION_ERROR] to 0.0.0.2:`` for host='example.com' `` retry_attempts=0 url='http://backend.example.com:``/path/'
-`` CONNECT: attempt fail [CONNECTION_ERROR] to 0.0.0.2:`` for host='example.com' `` retry_attempts=0 url='http://backend.example.com:``/path/'
+`` CONNECT: attempt fail [CONNECTION_ERROR] to 0.0.0.2:`` for host='example.com' sm_id=2 connection_result=`` error=`` retry_attempts=0 url='http://backend.example.com:``/path/'
+`` CONNECT: attempt fail [CONNECTION_ERROR] to 0.0.0.2:`` for host='example.com' sm_id=3 connection_result=`` error=`` retry_attempts=0 url='http://backend.example.com:``/path/'
 `` CONNECT : `` connecting to 0.0.0.2:`` for host='example.com' url='http://backend.example.com:``/path/' fail_count='2' marking down
 `` DNS Error: no valid server http://backend.example.com:``/path/
+``

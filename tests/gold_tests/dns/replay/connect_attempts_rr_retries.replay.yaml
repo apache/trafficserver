@@ -47,7 +47,7 @@ autest:
       proxy.config.http.connect_attempts_max_retries: 0
       proxy.config.http.connect_attempts_max_retries_down_server: 0
       proxy.config.http.connect_attempts_timeout: 1
-      proxy.config.http.down_server.cache_time: 5
+      proxy.config.http.down_server.cache_time: 10
 
     remap_config:
       - from: "http://example.com/"
