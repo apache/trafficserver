@@ -14,10 +14,6 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-#
-# This replay file assumes that caching is enabled.
-#
-
 meta:
   version: "1.0"
 
@@ -95,7 +91,7 @@ sessions:
     proxy-response:
       status: 502
 
-  # request expected hit down_server cache and immidiately get 500
+  # The request is expected to hit the down_server cache and immediately receive a 500 response.
   - client-request:
       method: GET
       url: /path/

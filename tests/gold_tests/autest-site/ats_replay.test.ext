@@ -291,7 +291,7 @@ def ATSReplayTest(obj, replay_file: str):
             check_tr.StillRunningAfter = ts
 
     # wait for error log
-    if log_validation != None and log_validation['error_log'] != None:
+    if log_validation and log_validation.get('error_log'):
         wait_for_log = obj.AddTestRun('Wait for logs of ' + ats_config.get('name', 'ts'))
         wait_for_log.Processes.Default.Command = (
             os.path.join(obj.Variables.AtsTestToolsDir, 'condwait') + ' 60 1 -f ' + os.path.join(ts.Variables.LOGDIR, 'error.log'))
