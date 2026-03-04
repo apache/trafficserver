@@ -118,6 +118,14 @@ Http2ConnectionState::rcv_data_frame(const Http2Frame &frame)
                       "recv data bad frame client id");
   }
 
+  // After sending a GOAWAY frame, the sender can discard frames for streams initiated by the receiver with
+  // identifiers higher than the identified last stream. However, DATA frames MUST be counted toward
+  // the connection flow-control window. (Details in [RFC 9113] 6.8.)
+  if (this->goaway_sent && id > this->last_stream_id_tx) {
+    return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, Http2ErrorCode::HTTP2_ERROR_REFUSED_STREAM,
+                      "recv data with id higher than last stream id");
+  }
+
   Http2Stream *stream = this->find_stream(id);
   if (stream == nullptr) {
     if (this->is_valid_streamid(id)) {
@@ -330,15 +338,25 @@ Http2ConnectionState::rcv_headers_frame(const Http2Frame &frame)
                       "recv headers bad client id");
   }
 
+  // After sending a GOAWAY frame, the sender can discard frames for streams initiated by the receiver with
+  // identifiers higher than the identified last stream. However, HEADERS, PUSH_PROMISE, and CONTINUATION
+  // frames MUST be minimally processed to ensure that the state maintained for field section compression is
+  // consistent (Details in [RFC 9113] 6.8.)
+  if (this->goaway_sent && stream_id > this->last_stream_id_tx) {
+    reset_header_after_decoding = true;
+  }
+
   if (!stream) {
     if (reset_header_after_decoding) {
       free_stream_after_decoding                 = true;
       uint32_t const initial_local_stream_window = this->acknowledged_local_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE);
       ink_assert(dynamic_cast<Http2CommonSession *>(this->session->get_proxy_session()));
-      ink_assert(this->session->is_outbound() == true);
-      stream = THREAD_ALLOC_INIT(http2StreamAllocator, this_ethread(), this->session->get_proxy_session(), stream_id,
-                                 this->peer_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE), initial_local_stream_window,
-                                 !STREAM_IS_REGISTERED);
+      stream        = THREAD_ALLOC_INIT(http2StreamAllocator, this_ethread(), this->session->get_proxy_session(), stream_id,
+                                        this->peer_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE), initial_local_stream_window,
+                                        !STREAM_IS_REGISTERED);
+      stream->mutex = new_ProxyMutex();
+      SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
+      this->stream_list.enqueue(stream);
     } else {
       // Create new stream
       Http2Error error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
@@ -369,6 +387,9 @@ Http2ConnectionState::rcv_headers_frame(const Http2Frame &frame)
       return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
     }
   }
+
+  stream->reset_header_after_decoding = reset_header_after_decoding;
+  stream->free_stream_after_decoding  = free_stream_after_decoding;
 
   Http2HeadersParameter params;
   uint32_t              header_block_fragment_offset = 0;
@@ -477,13 +498,19 @@ Http2ConnectionState::rcv_headers_frame(const Http2Frame &frame)
     Http2ErrorCode result = stream->decode_header_blocks(*this->local_hpack_handle,
                                                          this->acknowledged_local_settings.get(HTTP2_SETTINGS_HEADER_TABLE_SIZE));
 
-    // If this was an outbound connection and the state was already closed, just clear the
-    // headers after processing.  We just processed the heaer blocks to keep the dynamic table in
+    // We just processed the heaer blocks to keep the dynamic table in
     // sync with peer to avoid future HPACK compression errors
     if (reset_header_after_decoding) {
       stream->reset_receive_headers();
+      SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
+      this->stream_list.remove(stream);
       if (free_stream_after_decoding) {
-        THREAD_FREE(stream, http2StreamAllocator, this_ethread());
+        stream->initiating_close();
+      }
+
+      if (this->goaway_sent && stream_id > this->last_stream_id_tx) {
+        return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, Http2ErrorCode::HTTP2_ERROR_REFUSED_STREAM,
+                          "recv headers with id higher than last stream id");
       }
       return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
     }
@@ -1100,6 +1127,27 @@ Http2ConnectionState::rcv_continuation_frame(const Http2Frame &frame)
     Http2ErrorCode result = stream->decode_header_blocks(*this->local_hpack_handle,
                                                          this->acknowledged_local_settings.get(HTTP2_SETTINGS_HEADER_TABLE_SIZE));
 
+    // We just processed the heaer blocks to keep the dynamic table in
+    // sync with peer to avoid future HPACK compression errors
+    if (stream->reset_header_after_decoding) {
+      stream->reset_receive_headers();
+      SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
+      this->stream_list.remove(stream);
+      if (stream->free_stream_after_decoding) {
+        stream->initiating_close();
+      }
+
+      // After sending a GOAWAY frame, the sender can discard frames for streams initiated by the receiver with
+      // identifiers higher than the identified last stream. However, HEADERS, PUSH_PROMISE, and CONTINUATION
+      // frames MUST be minimally processed to ensure that the state maintained for field section compression is
+      // consistent (Details in [RFC 9113] 6.8.)
+      if (this->goaway_sent && stream_id > this->last_stream_id_tx) {
+        return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, Http2ErrorCode::HTTP2_ERROR_REFUSED_STREAM,
+                          "recv continuation with id higher than last stream id");
+      }
+      return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
+    }
+
     if (result != Http2ErrorCode::HTTP2_ERROR_NO_ERROR) {
       if (result == Http2ErrorCode::HTTP2_ERROR_COMPRESSION_ERROR) {
         return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_COMPRESSION_ERROR,
@@ -1437,12 +1485,13 @@ Http2ConnectionState::rcv_frame(const Http2Frame *frame)
 {
   REMEMBER(NO_EVENT, this->recursion);
   const Http2StreamId stream_id = frame->header().streamid;
+  const auto          type      = frame->header().type;
   Http2Error          error;
 
   // [RFC 7540] 5.5. Extending HTTP/2
   //   Implementations MUST discard frames that have unknown or unsupported types.
-  if (frame->header().type >= HTTP2_FRAME_TYPE_MAX) {
-    Http2StreamDebug(session, stream_id, "Discard a frame which has unknown type, type=%x", frame->header().type);
+  if (type >= HTTP2_FRAME_TYPE_MAX) {
+    Http2StreamDebug(session, stream_id, "Discard a frame which has unknown type, type=%x", type);
     return;
   }
 
@@ -1457,15 +1506,28 @@ Http2ConnectionState::rcv_frame(const Http2Frame *frame)
   // GOAWAY:        NO
   // WINDOW_UPDATE: YES
   // CONTINUATION:  YES (safe http methods only, same as HEADERS frame).
-  if (frame->is_from_early_data() &&
-      (frame->header().type == HTTP2_FRAME_TYPE_DATA || frame->header().type == HTTP2_FRAME_TYPE_RST_STREAM ||
-       frame->header().type == HTTP2_FRAME_TYPE_PUSH_PROMISE || frame->header().type == HTTP2_FRAME_TYPE_GOAWAY)) {
-    Http2StreamDebug(session, stream_id, "Discard a frame which is received from early data and has type=%x", frame->header().type);
+  if (frame->is_from_early_data() && (type == HTTP2_FRAME_TYPE_DATA || type == HTTP2_FRAME_TYPE_RST_STREAM ||
+                                      type == HTTP2_FRAME_TYPE_PUSH_PROMISE || type == HTTP2_FRAME_TYPE_GOAWAY)) {
+    Http2StreamDebug(session, stream_id, "Discard a frame which is received from early data and has type=%x", type);
     return;
   }
 
-  if (this->_frame_handlers[frame->header().type]) {
-    error = (this->*_frame_handlers[frame->header().type])(*frame);
+  // After sending a GOAWAY frame, the sender can discard frames for streams initiated by the receiver with
+  // identifiers higher than the identified last stream. However, HEADERS, PUSH_PROMISE, and CONTINUATION
+  // frames MUST be minimally processed to ensure that the state maintained for field section compression is
+  // consistent; similarly, DATA frames MUST be counted toward the connection flow-control window.
+  // (Details in [RFC 9113] 6.8.)
+  if (this->goaway_sent && stream_id > this->last_stream_id_tx) {
+    const auto is_discardable = (type != HTTP2_FRAME_TYPE_HEADERS && type != HTTP2_FRAME_TYPE_PUSH_PROMISE &&
+                                 type != HTTP2_FRAME_TYPE_CONTINUATION && type != HTTP2_FRAME_TYPE_DATA);
+    if (is_discardable) {
+      Http2StreamDebug(session, stream_id, "Discard a frame which is received after sending a GOAWAY and has type=%x", type);
+      return;
+    }
+  }
+
+  if (this->_frame_handlers[type]) {
+    error = (this->*_frame_handlers[type])(*frame);
   } else {
     error = Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_INTERNAL_ERROR, "no handler");
   }
@@ -2744,7 +2806,9 @@ Http2ConnectionState::send_goaway_frame(Http2StreamId id, Http2ErrorCode ec)
     Metrics::Counter::increment(http2_rsb.connection_errors_count);
   }
 
-  this->tx_error_code = {ProxyErrorClass::SSN, static_cast<uint32_t>(ec)};
+  this->tx_error_code     = {ProxyErrorClass::SSN, static_cast<uint32_t>(ec)};
+  this->last_stream_id_tx = id;
+  this->goaway_sent       = true;
 
   Http2Goaway goaway;
   goaway.last_streamid = id;

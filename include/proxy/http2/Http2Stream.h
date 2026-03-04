@@ -184,6 +184,9 @@ public:
   bool parsing_header_done       = false;
   bool is_first_transaction_flag = false;
 
+  bool reset_header_after_decoding = false;
+  bool free_stream_after_decoding  = false;
+
   HTTPHdr                    _send_header;
   IOBufferReader            *_send_reader  = nullptr;
   Http2DependencyTree::Node *priority_node = nullptr;

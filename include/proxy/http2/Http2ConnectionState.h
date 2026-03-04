@@ -140,6 +140,7 @@ public:
   Http2StreamId get_latest_stream_id_in() const;
   Http2StreamId get_latest_stream_id_out() const;
   int           get_stream_requests() const;
+  bool          get_goaway_sent() const;
   void          increment_stream_requests();
   bool          is_peer_concurrent_stream_ub() const;
   bool          is_peer_concurrent_stream_lb() const;
@@ -280,6 +281,10 @@ private:
   Http2StreamId      latest_streamid_in  = 0;
   Http2StreamId      latest_streamid_out = 0;
   std::atomic<int>   stream_requests     = 0;
+
+  // The last stream identifier in the GOAWAY frame
+  Http2StreamId last_stream_id_tx = 0;
+  bool          goaway_sent       = false;
 
   // Counter for current active streams which are started by the client.
   std::atomic<uint32_t> peer_streams_count_in = 0;
@@ -440,6 +445,12 @@ inline int
 Http2ConnectionState::get_stream_requests() const
 {
   return stream_requests;
+}
+
+inline bool
+Http2ConnectionState::get_goaway_sent() const
+{
+  return goaway_sent;
 }
 
 inline void
