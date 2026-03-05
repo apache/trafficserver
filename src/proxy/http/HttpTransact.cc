@@ -786,6 +786,19 @@ how_to_open_connection(HttpTransact::State *s)
 {
   ink_assert((s->pending_work == nullptr) || (s->current.request_to == ResolveInfo::PARENT_PROXY));
 
+  // If a plugin has already set a response body (e.g., set-body at remap),
+  // skip the origin connection and serve the synthetic response directly.
+  if (s->internal_msg_buffer) {
+    HTTPStatus  status = (s->http_return_code != HTTPStatus::NONE) ? s->http_return_code : HTTPStatus::OK;
+    const char *reason = http_hdr_reason_lookup(status);
+    if (s->hdr_info.client_response.valid()) {
+      s->hdr_info.client_response.fields_clear();
+    }
+    HttpTransact::build_response(s, &s->hdr_info.client_response, s->client_info.http_version, status, reason ? reason : "OK");
+    s->source = HttpTransact::Source_t::INTERNAL;
+    return HttpTransact::StateMachineAction_t::INTERNAL_CACHE_NOOP;
+  }
+
   // Originally we returned which type of server to open
   // Now, however, we may want to issue a cache
   // operation first in order to lock the cache
@@ -1220,8 +1233,19 @@ done:
     Metrics::Counter::increment(http_rsb.invalid_client_requests);
     TRANSACT_RETURN(StateMachineAction_t::SEND_ERROR_CACHE_NOOP, nullptr);
   } else {
-    s->hdr_info.client_response.destroy(); // release the underlying memory.
-    s->hdr_info.client_response.clear();   // clear the pointers.
+    // This else branch handles two cases:
+    // 1. Remap succeeded (reverse_proxy == true) - normal request processing
+    // 2. Remap failed but plugin tunnel exists - plugin overrides error
+    //
+    // For case 2, clear the stale error response that build_error_response()
+    // created during remap failure, because the plugin tunnel will provide
+    // its own response. For case 1, preserve any plugin-set internal_msg_buffer
+    // (e.g., from set-body at remap) so how_to_open_connection() can short-circuit.
+    if (s->state_machine->plugin_tunnel_type != HttpPluginTunnel_t::NONE) {
+      s->hdr_info.client_response.destroy(); // release the underlying memory.
+      s->hdr_info.client_response.clear();   // clear the pointers.
+      s->free_internal_msg_buffer();         // clear error body so plugin tunnel is not bypassed.
+    }
     TxnDbg(dbg_ctl_http_trans, "END HttpTransact::EndRemapRequest");
 
     if (s->is_upgrade_request && s->post_remap_upgrade_return_point) {
