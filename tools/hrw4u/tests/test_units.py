@@ -286,14 +286,6 @@ class TestHumanizeErrorMessage:
 class TestParseErrorMessages:
     """Verify that ANTLR parse errors use human-friendly token names."""
 
-    def _collect_errors(self, text: str) -> list[str]:
-        collector = ErrorCollector(max_errors=10)
-        try:
-            create_parse_tree(text, "<test>", hrw4uLexer, hrw4uParser, "test", collect_errors=True, max_errors=10)
-        except Exception:
-            pass
-        return [str(e) for e in collector.errors]
-
     def _first_error(self, text: str) -> str:
         _, _, collector = create_parse_tree(text, "<test>", hrw4uLexer, hrw4uParser, "test", collect_errors=True, max_errors=10)
         assert collector and collector.has_errors(), f"Expected parse errors for: {text!r}"

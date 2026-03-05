@@ -237,8 +237,13 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         if val_ctx.paramRef():
             name = val_ctx.paramRef().IDENT().getText()
             if name not in self._proc_bindings:
+                try:
+                    source_line = val_ctx.start.getInputStream().strdata.splitlines()[val_ctx.start.line - 1]
+                except Exception:
+                    source_line = ""
                 raise Hrw4uSyntaxError(
-                    self.filename, val_ctx.start.line, val_ctx.start.column, f"'${name}' used outside procedure context", "")
+                    self.filename, val_ctx.start.line, val_ctx.start.column, f"'${name}' used outside procedure context",
+                    source_line)
             return self._proc_bindings[name]
         return val_ctx.getText()
 
@@ -547,7 +552,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
     def _flatten_conditional(self, cond_ctx, indent: str, source_text: str, bindings: dict[str, str]) -> list[str]:
         """Flatten a conditional block, expanding proc calls within its branches."""
         lines: list[str] = []
-        inner_indent = indent + "    "
+        inner_indent = indent + (" " * SystemDefaults.INDENT_SPACES)
 
         if_ctx = cond_ctx.ifStatement()
         cond_text = self._get_source_text(if_ctx.condition(), source_text)
@@ -573,7 +578,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         if not source_text:
             source_text = ctx.start.source[1].getText(0, ctx.start.source[1].size - 1)
         self._source_text = source_text
-        indent = " " * 4
+        indent = " " * SystemDefaults.INDENT_SPACES
 
         # Phase 1: Load all procedures (use directives + local procedure declarations)
         for item in ctx.programItem():
@@ -640,6 +645,14 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                 self.filename, ctx.start.line, ctx.start.column, f"procedure '{name}' already declared in {existing.source_file}",
                 "")
         params = self._collect_proc_params(ctx.paramList()) if ctx.paramList() else []
+        seen_default = False
+        for p in params:
+            if p.default_ctx is None and seen_default:
+                raise Hrw4uSyntaxError(
+                    self.filename, ctx.start.line, ctx.start.column,
+                    f"procedure '{name}': required parameter '${p.name}' must not follow an optional parameter", "")
+            if p.default_ctx is not None:
+                seen_default = True
         self._proc_registry[name] = ProcSig(name, params, ctx.block(), self.filename, self._source_text)
 
     def visitProgram(self, ctx) -> list[str]:
