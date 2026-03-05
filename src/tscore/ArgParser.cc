@@ -725,7 +725,14 @@ ArgParser::Command::append_option_data(Arguments &ret, AP_StrVec &args, int inde
       help_message(std::to_string(_option_list.at(it.first).arg_num) + " arguments expected by " + it.first);
     }
   }
-  // put in the default value of options
+}
+
+// Apply default values for options not explicitly set by the user.
+// This must be called AFTER validate_dependencies() so that default values
+// (e.g. --timeout "0") don't falsely trigger dependency checks.
+void
+ArgParser::Command::apply_option_defaults(Arguments &ret) const
+{
   for (const auto &it : _option_list) {
     if (!it.second.default_value.empty() && ret.get(it.second.key).empty()) {
       std::istringstream ss(it.second.default_value);
@@ -771,6 +778,11 @@ ArgParser::Command::parse(Arguments &ret, AP_StrVec &args)
 
     // Validate option dependencies
     validate_dependencies(ret);
+
+    // Apply default values after validation so that defaults don't
+    // trigger dependency checks (e.g. --timeout with default "0"
+    // should not require --monitor when not explicitly used).
+    apply_option_defaults(ret);
   }
 
   if (command_called) {
