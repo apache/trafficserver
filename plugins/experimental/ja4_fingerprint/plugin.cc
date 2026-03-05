@@ -81,15 +81,17 @@ constexpr unsigned int EXT_SUPPORTED_VERSIONS{0x2b};
 DbgCtl dbg_ctl{PLUGIN_NAME};
 
 int global_preserve_enabled{0};
+int global_nologging_enabled{0};
 
 } // end anonymous namespace
 
 static bool
-read_config_option(int argc, char const *argv[], int &preserve)
+read_config_option(int argc, char const *argv[], int &preserve, int &no_logging)
 {
   const struct option longopts[] = {
-    {"preserve", no_argument, &preserve, 1},
-    {nullptr,    0,           nullptr,   0}
+    {"preserve",  no_argument, &preserve,   1},
+    {"nologging", no_argument, &no_logging, 1},
+    {nullptr,     0,           nullptr,     0}
   };
 
   optind = 0;
@@ -108,6 +110,7 @@ read_config_option(int argc, char const *argv[], int &preserve)
   }
 
   Dbg(dbg_ctl, "JA4 preserve is %s", (preserve == 1) ? "enabled" : "disabled");
+  Dbg(dbg_ctl, "JA4 nologging is %s", (no_logging == 1) ? "enabled" : "disabled");
   return true;
 }
 
@@ -148,16 +151,18 @@ TSPluginInit(int argc, char const **argv)
     TSError("[%s] Failed to register.", PLUGIN_NAME);
     return;
   }
-  if (!read_config_option(argc, argv, global_preserve_enabled)) {
+  if (!read_config_option(argc, argv, global_preserve_enabled, global_nologging_enabled)) {
     TSError("[%s] Failed to parse options.", PLUGIN_NAME);
     return;
   }
   reserve_user_arg();
-  if (!create_log_file()) {
-    TSError("[%s] Failed to create log.", PLUGIN_NAME);
-    return;
-  } else {
-    Dbg(dbg_ctl, "Created log file.");
+  if (!global_nologging_enabled) {
+    if (!create_log_file()) {
+      TSError("[%s] Failed to create log.", PLUGIN_NAME);
+      return;
+    } else {
+      Dbg(dbg_ctl, "Created log file.");
+    }
   }
   register_hooks();
 }
@@ -207,8 +212,11 @@ handle_client_hello(TSCont /* cont ATS_UNUSED */, TSEvent event, void *edata)
   } else {
     auto data{std::make_unique<JA4_data>()};
     data->fingerprint = get_fingerprint(ch);
+    Dbg(dbg_ctl, "JA4 fingerprint: %s", data->fingerprint.c_str());
     get_IP(TSNetVConnRemoteAddrGet(ssl_vc), data->IP_addr);
-    log_fingerprint(data.get());
+    if (!global_nologging_enabled) {
+      log_fingerprint(data.get());
+    }
     // The VCONN_CLOSE handler is now responsible for freeing the resource.
     TSUserArgSet(ssl_vc, *get_user_arg_index(), static_cast<void *>(data.release()));
   }
@@ -259,7 +267,6 @@ get_IP(sockaddr const *s_sockaddr, char res[INET6_ADDRSTRLEN])
 void
 log_fingerprint(JA4_data const *data)
 {
-  Dbg(dbg_ctl, "JA4 fingerprint: %s", data->fingerprint.c_str());
   if (TS_ERROR == TSTextLogObjectWrite(*get_log_handle(), "Client IP: %s\tJA4: %s", data->IP_addr, data->fingerprint.c_str())) {
     Dbg(dbg_ctl, "Failed to write to log!");
   }

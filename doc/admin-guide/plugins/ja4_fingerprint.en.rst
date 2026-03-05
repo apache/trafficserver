@@ -78,13 +78,22 @@ Key Differences from JA3
 Plugin Configuration
 ====================
 
-The plugin operates as a global plugin and has no configuration options.
+The plugin operates as a global plugin.
 
 To enable the plugin, add the following line to :file:`plugin.config`::
 
     ja4_fingerprint.so
 
-No additional parameters are required or supported.
+
+.. option:: --preserve
+
+This option controls whether the plugin preserves any existing JA4 header. If the option is specified the plugin keep the header
+intact. If the option is not speficied, the plugins appends a generated fingerprint to the existing header value.
+
+.. option:: --nologging
+
+This option disables log output.
+
 
 Plugin Behavior
 ===============
@@ -110,7 +119,7 @@ Log Output
 ==========
 
 The plugin writes to ``ja4_fingerprint.log`` in the Traffic Server log
-directory (typically ``/var/log/trafficserver/``).
+directory (typically ``/var/log/trafficserver/``) if the feature is not disabled.
 
 **Log Format**::
 
@@ -175,7 +184,6 @@ Limitations
 ===========
 
 * The plugin only operates in global mode (no per-remap configuration)
-* Logging cannot be disabled
 * Raw (unhashed) cipher and extension lists are not logged
 * Non-TLS connections do not generate fingerprints
 
