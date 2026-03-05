@@ -996,6 +996,7 @@ public:
   static void OriginDown(State *s);
   static void PostActiveTimeoutResponse(State *s);
   static void PostInactiveTimeoutResponse(State *s);
+  static void PostBodyTooLarge(State *s);
   static void DecideCacheLookup(State *s);
   static void LookupSkipOpenServer(State *s);
 
