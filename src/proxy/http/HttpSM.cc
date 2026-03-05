@@ -4139,6 +4139,10 @@ HttpSM::tunnel_handler_ssl_producer(int event, HttpTunnelProducer *p)
   case VC_EVENT_ERROR:
   case VC_EVENT_INACTIVITY_TIMEOUT:
   case VC_EVENT_ACTIVE_TIMEOUT:
+    // Set squid code for tunnel active timeout
+    if (event == VC_EVENT_ACTIVE_TIMEOUT) {
+      t_state.squid_codes.log_code = SquidLogCode::ERR_TUN_ACTIVE_TIMEOUT;
+    }
     // The other side of the connection is either already dead
     //   or rendered inoperative by the error on the connection
     //   Note: use tunnel close vc so the tunnel knows we are
@@ -4193,6 +4197,10 @@ HttpSM::tunnel_handler_ssl_consumer(int event, HttpTunnelConsumer *c)
   case VC_EVENT_EOS:
   case VC_EVENT_INACTIVITY_TIMEOUT:
   case VC_EVENT_ACTIVE_TIMEOUT:
+    // Set squid code for tunnel active timeout
+    if (event == VC_EVENT_ACTIVE_TIMEOUT) {
+      t_state.squid_codes.log_code = SquidLogCode::ERR_TUN_ACTIVE_TIMEOUT;
+    }
     // we need to mark the producer dead
     // otherwise it can stay alive forever.
     if (c->producer->alive) {
