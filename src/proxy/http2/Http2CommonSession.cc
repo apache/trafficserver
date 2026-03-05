@@ -362,25 +362,30 @@ Http2CommonSession::do_process_frame_read(int /* event ATS_UNUSED */, VIO *vio, 
 
   while (this->_read_buffer_reader->read_avail() >= static_cast<int64_t>(HTTP2_FRAME_HEADER_LEN)) {
     // Cancel reading if there was an error or connection is closed
-    if (connection_state.tx_error_code.code != static_cast<uint32_t>(Http2ErrorCode::HTTP2_ERROR_NO_ERROR) ||
-        connection_state.is_state_closed()) {
+    const auto has_fatal_error_code =
+      (connection_state.tx_error_code.code != static_cast<uint32_t>(Http2ErrorCode::HTTP2_ERROR_NO_ERROR) &&
+       connection_state.tx_error_code.code != static_cast<uint32_t>(Http2ErrorCode::HTTP2_ERROR_ENHANCE_YOUR_CALM));
+    if (has_fatal_error_code || connection_state.is_state_closed()) {
       Http2SsnDebug("reading a frame has been canceled (%u)", connection_state.tx_error_code.code);
-      break;
+      return 0;
     }
 
-    Http2ErrorCode err = Http2ErrorCode::HTTP2_ERROR_NO_ERROR;
-    if (this->connection_state.get_stream_error_rate() > std::min(1.0, Http2::stream_error_rate_threshold * 2.0)) {
+    if (this->connection_state.get_stream_error_rate() > std::min(1.0, Http2::stream_error_rate_threshold * 2.0) &&
+        !this->connection_state.get_goaway_sent()) {
       ip_port_text_buffer ipb;
       const char         *peer_ip = ats_ip_ntop(this->get_proxy_session()->get_remote_addr(), ipb, sizeof(ipb));
       SiteThrottledWarning("HTTP/2 session error peer_ip=%s session_id=%" PRId64
                            " closing a connection, because its stream error rate (%f) exceeded the threshold (%f)",
                            peer_ip, this->get_connection_id(), this->connection_state.get_stream_error_rate(),
                            Http2::stream_error_rate_threshold);
-      err = Http2ErrorCode::HTTP2_ERROR_ENHANCE_YOUR_CALM;
+      this->connection_state.send_goaway_frame(this->connection_state.get_latest_stream_id_in(),
+                                               Http2ErrorCode::HTTP2_ERROR_ENHANCE_YOUR_CALM);
+      this->set_half_close_local_flag(true);
     }
 
     // Return if there was an error
-    if (err > Http2ErrorCode::HTTP2_ERROR_NO_ERROR || do_start_frame_read(err) < 0) {
+    auto err = Http2ErrorCode::HTTP2_ERROR_NO_ERROR;
+    if (do_start_frame_read(err) < 0) {
       // send an error if specified.  Otherwise, just go away
       this->connection_state.restart_receiving(nullptr);
       if (err > Http2ErrorCode::HTTP2_ERROR_NO_ERROR) {
