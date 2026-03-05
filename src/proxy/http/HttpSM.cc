@@ -7740,11 +7740,14 @@ HttpSM::kill_this()
 void
 HttpSM::update_stats()
 {
-  ATS_PROBE1(milestone_sm_finish, sm_id);
+  const HTTPStatus status_code =
+    t_state.hdr_info.client_response.valid() ? t_state.hdr_info.client_response.status_get() : HTTPStatus::NONE;
+
+  ATS_PROBE2(milestone_sm_finish, sm_id, static_cast<int>(status_code));
   milestones[TS_MILESTONE_SM_FINISH] = ink_get_hrtime();
 
   if (is_action_tag_set("bad_length_state_dump")) {
-    if (t_state.hdr_info.client_response.valid() && t_state.hdr_info.client_response.status_get() == HTTPStatus::OK) {
+    if (status_code == HTTPStatus::OK) {
       int64_t p_resp_cl = t_state.hdr_info.client_response.get_content_length();
       int64_t resp_size = client_response_body_bytes;
       if (!((p_resp_cl == -1 || p_resp_cl == resp_size || resp_size == 0))) {
@@ -7823,11 +7826,7 @@ HttpSM::update_stats()
         fd = -1;
       }
     }
-    // get the status code, lame that we have to check to see if it is valid or we will assert in the method call
-    int status = 0;
-    if (t_state.hdr_info.client_response.valid()) {
-      status = static_cast<int>(t_state.hdr_info.client_response.status_get());
-    }
+    int  status = static_cast<int>(status_code);
     char client_ip[INET6_ADDRSTRLEN];
     ats_ip_ntop(&t_state.client_info.src_addr, client_ip, sizeof(client_ip));
     Error("[%" PRId64 "] Slow Request: "
