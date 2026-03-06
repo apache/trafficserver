@@ -250,7 +250,7 @@ RecConfigFileParse(const char *path, RecConfigEntryCallback handler)
       auto [value_str, override_source] = RecConfigOverrideFromEnvironment(name_str, data_str);
       if (override_source != RecConfigOverrideSource::NONE) {
         RecDebug(DL_Debug, "'%s' overridden with '%s' by %s", name_str, value_str.c_str(),
-                 override_source == RecConfigOverrideSource::ENV ? "environment variable" : "runroot");
+                 RecConfigOverrideSourceName(override_source));
       }
       handler(rec_type, data_type, name_str, value_str.c_str(),
               override_source == RecConfigOverrideSource::NONE ? REC_SOURCE_EXPLICIT : REC_SOURCE_ENV);

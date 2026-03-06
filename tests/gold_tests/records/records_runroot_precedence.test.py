@@ -47,6 +47,15 @@ ts.Disk.records_config.append_to_document(
       plugin_dir: wrong_plugin
 ''')
 
+# Test 3 setup: env var that must win over both runroot and records.yaml.
+ts.Env['PROXY_CONFIG_DIAGS_DEBUG_TAGS'] = 'env_wins'
+ts.Disk.records_config.update('''
+    diags:
+      debug:
+        enabled: 0
+        tags: config_value
+    ''')
+
 # Build the ATS command:
 #   - Unset the 4 path env vars (the test framework always sets them,
 #     which masks the runroot code path).
@@ -146,18 +155,7 @@ tr.Processes.Default.Streams.stdout += Testers.ExcludesExpression(
 
 # ---------------------------------------------------------------------------
 # Test 3: Verify env vars still take highest precedence over runroot.
-#
-# Set PROXY_CONFIG_DIAGS_DEBUG_TAGS via env and a different value in
-# records.yaml.  The env value must win regardless of runroot.
 # ---------------------------------------------------------------------------
-ts.Env['PROXY_CONFIG_DIAGS_DEBUG_TAGS'] = 'env_wins'
-ts.Disk.records_config.update('''
-    diags:
-      debug:
-        enabled: 0
-        tags: config_value
-    ''')
-
 tr = Test.AddTestRun("Verify env var overrides both runroot and records.yaml")
 tr.Processes.Default.Command = 'traffic_ctl config get proxy.config.diags.debug.tags'
 tr.Processes.Default.Env = ts.Env

@@ -161,7 +161,7 @@ SetRecordFromYAMLNode(CfgNode const &field, swoc::Errata &errata)
 
   if (override_source != RecConfigOverrideSource::NONE) {
     errata.note(ERRATA_DEBUG, "'{}' overridden with '{}' by {}", record_name, value_str,
-                override_source == RecConfigOverrideSource::ENV ? "environment variable" : "runroot");
+                RecConfigOverrideSourceName(override_source));
   }
 
   if (!check_expr.empty() && RecordValidityCheck(value_str.c_str(), check_type, check_expr.c_str()) == false) {

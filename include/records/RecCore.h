@@ -78,9 +78,24 @@ enum class RecConfigOverrideSource {
   RUNROOT, ///< Overridden with the resolved Layout path because runroot manages this record.
 };
 
-// Test whether the named configuration value is overridden by an environment
-// variable or by the runroot mechanism.  Returns the resolved value together
-// with the source that produced it.
+/// Human-readable label for the override source (for logging).
+constexpr const char *
+RecConfigOverrideSourceName(RecConfigOverrideSource src)
+{
+  switch (src) {
+  case RecConfigOverrideSource::ENV:
+    return "environment variable";
+  case RecConfigOverrideSource::RUNROOT:
+    return "runroot";
+  default:
+    return "none";
+  }
+}
+
+// Test whether the named configuration value is overridden by the execution
+// environment — either a PROXY_CONFIG_* environment variable or the runroot
+// mechanism.  Returns the resolved value together with the source that
+// produced it.
 std::pair<std::string, RecConfigOverrideSource> RecConfigOverrideFromEnvironment(const char *name, const char *value);
 
 //-------------------------------------------------------------------------

@@ -55,7 +55,7 @@ initialize_record(const RecordElement *record, void *)
 
     if (override_source != RecConfigOverrideSource::NONE) {
       RecDebug(DL_Debug, "'%s' overridden with '%s' by %s", record->name, value.c_str(),
-               override_source == RecConfigOverrideSource::ENV ? "environment variable" : "runroot");
+               RecConfigOverrideSourceName(override_source));
     }
 
     // If you specify a consistency check, you have to specify a regex expression. We abort here
