@@ -64,8 +64,9 @@ It can be enabled globally for |TS| by adding the following to your
 
 With no further options, this will enable the following default behavior:
 
-*  Enable caching of both compressed and uncompressed versions of origin
-   responses as :term:`alternates <alternate>`.
+*  Enable caching of compressed responses. Uncompressed and compressed versions
+   are maintained as separate :term:`alternates <alternate>` via
+   ``Vary: Accept-Encoding``.
 
 *  Compress objects with `text/*` content types for every origin.
 
@@ -98,10 +99,13 @@ Per site configuration for remap plugin should be ignored.
 cache
 -----
 
-When set to ``true``, causes |TS| to cache both the compressed and uncompressed
-versions of the content as :term:`alternates <alternate>`. When set to
-``false``, |TS| will cache only the compressed or decompressed variant returned
-by the origin. Enabled by default.
+When set to ``true``, |TS| caches the compressed (transformed) response when
+the client sends ``Accept-Encoding``. When set to ``false``, |TS| caches only
+the uncompressed (untransformed) response and compresses on-the-fly from cache
+for subsequent requests. In both cases, the plugin adds
+``Vary: Accept-Encoding`` to compressible responses, which causes |TS| to
+maintain separate :term:`alternates <alternate>` for compressed and uncompressed
+variants as different clients make requests. Enabled by default.
 
 range-request
 -------------
