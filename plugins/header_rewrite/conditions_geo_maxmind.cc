@@ -75,30 +75,16 @@ MMConditionGeo::get_geo_string(const sockaddr *addr) const
     return ret;
   }
 
-  MMDB_entry_data_list_s *entry_data_list = nullptr;
   if (!result.found_entry) {
     Dbg(pi_dbg_ctl, "No entry for this IP was found");
     return ret;
   }
 
-  int status = MMDB_get_entry_data_list(&result.entry, &entry_data_list);
-  if (MMDB_SUCCESS != status) {
-    Dbg(pi_dbg_ctl, "Error looking up entry data: %s", MMDB_strerror(status));
-    return ret;
-  }
-
-  if (entry_data_list == nullptr) {
-    Dbg(pi_dbg_ctl, "No data found");
-    return ret;
-  }
-
   MMDB_entry_data_s entry_data;
+  int               status;
 
   switch (_geo_qual) {
   case GEO_QUAL_COUNTRY:
-    status = MMDB_get_value(&result.entry, &entry_data, "country", "names", "en", NULL);
-    break;
-  case GEO_QUAL_COUNTRY_ISO:
     status = MMDB_get_value(&result.entry, &entry_data, "country", "iso_code", NULL);
     break;
   case GEO_QUAL_ASN_NAME:
@@ -106,21 +92,17 @@ MMConditionGeo::get_geo_string(const sockaddr *addr) const
     break;
   default:
     Dbg(pi_dbg_ctl, "Unsupported field %d", _geo_qual);
-    MMDB_free_entry_data_list(entry_data_list);
     return ret;
   }
 
   if (MMDB_SUCCESS != status) {
     Dbg(pi_dbg_ctl, "Error looking up geo string field: %s", MMDB_strerror(status));
-    MMDB_free_entry_data_list(entry_data_list);
     return ret;
   }
 
   if (entry_data.has_data && entry_data.type == MMDB_DATA_TYPE_UTF8_STRING) {
     ret = std::string(entry_data.utf8_string, entry_data.data_size);
   }
-
-  MMDB_free_entry_data_list(entry_data_list);
 
   return ret;
 }
@@ -143,24 +125,13 @@ MMConditionGeo::get_geo_int(const sockaddr *addr) const
     return ret;
   }
 
-  MMDB_entry_data_list_s *entry_data_list = nullptr;
   if (!result.found_entry) {
     Dbg(pi_dbg_ctl, "No entry for this IP was found");
     return ret;
   }
 
-  int status = MMDB_get_entry_data_list(&result.entry, &entry_data_list);
-  if (MMDB_SUCCESS != status) {
-    Dbg(pi_dbg_ctl, "Error looking up entry data: %s", MMDB_strerror(status));
-    return ret;
-  }
-
-  if (entry_data_list == nullptr) {
-    Dbg(pi_dbg_ctl, "No data found");
-    return ret;
-  }
-
   MMDB_entry_data_s entry_data;
+  int               status;
 
   switch (_geo_qual) {
   case GEO_QUAL_ASN:
@@ -168,21 +139,17 @@ MMConditionGeo::get_geo_int(const sockaddr *addr) const
     break;
   default:
     Dbg(pi_dbg_ctl, "Unsupported field %d", _geo_qual);
-    MMDB_free_entry_data_list(entry_data_list);
     return ret;
   }
 
   if (MMDB_SUCCESS != status) {
     Dbg(pi_dbg_ctl, "Error looking up geo int field: %s", MMDB_strerror(status));
-    MMDB_free_entry_data_list(entry_data_list);
     return ret;
   }
 
   if (entry_data.has_data && entry_data.type == MMDB_DATA_TYPE_UINT32) {
     ret = entry_data.uint32;
   }
-
-  MMDB_free_entry_data_list(entry_data_list);
 
   return ret;
 }
