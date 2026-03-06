@@ -353,7 +353,6 @@ Header Rewrite    HRW4U Syntax                 Description
 ================= ============================ ================================
 no-op             no-op();                     Explicit no-op statement
 no-op [L]         break;                       Exit current section early (last rule)
-set-debug         set-debug()                  Enables ATS txn debug
 skip-remap        skip-remap()                 Skip remap processing (open proxy)
 ================= ============================ ================================
 
@@ -548,18 +547,6 @@ origin server::
    SEND_REQUEST {
       outbound.req.Cache-Control = "";
       outbound.req.Pragma = "";
-   }
-
-Enable Debugging Per-Request
-----------------------------
-
-Turns on |TS| debugging statements for a transaction, but only when a special
-header is present in the client request::
-
-   READ_REQUEST {
-      if inbound.req.X-Debug == "supersekret" {
-          set-debug();
-      }
    }
 
 Remove Internal Headers
