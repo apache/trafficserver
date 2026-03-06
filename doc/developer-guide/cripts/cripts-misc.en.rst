@@ -415,6 +415,8 @@ Debug logging uses the same format string syntax as ``fmt::format()`` in ``libfm
     The default debug tag for Cripts is the name of the Cript itself, either
     the Cript source file, or the compiled plugin name.
 
+.. _cripts-misc-cache-groups:
+
 Cache Groups
 ============
 
@@ -422,7 +424,7 @@ As a way to manage association between cache entries, Cripts provides an infrast
 for cache groups. A cache group is a set of cache entries that are logically
 associated with each other via custom identifiers.
 
-Example implementation of the Cache Groups RFC
+Example implementation of the Cache Groups RFC:
 
 .. code-block:: cpp
 

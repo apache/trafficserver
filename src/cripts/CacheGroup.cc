@@ -257,7 +257,7 @@ Cache::Group::LoadFromDisk()
         TSWarning("cripts::Cache::Group: Failed to read entry %zu from map file: %s. Stopping entry load.", i, slot.path.c_str());
         break;
       }
-      if (loaded_hashes.find(entry.hash) == loaded_hashes.end()) {
+      if (!loaded_hashes.contains(entry.hash)) {
         slot.map->insert_or_assign(entry.hash, entry);
         loaded_hashes.insert(entry.hash);
       }
@@ -284,7 +284,7 @@ Cache::Group::LoadFromDisk()
 void
 Cache::Group::WriteToDisk()
 {
-  std::unique_lock unique_lock(_mutex);
+  std::unique_lock lock(_mutex);
 
   auto now        = cripts::Time::Clock::now();
   bool any_dirty  = false;
@@ -292,12 +292,13 @@ Cache::Group::WriteToDisk()
 
   for (size_t ix = 0; ix < _slots.size(); ++ix) {
     if (_slots[ix].last_write > _slots[ix].last_sync) {
+      auto old_sync        = _slots[ix].last_sync;
       any_dirty            = true;
       _slots[ix].last_sync = now;
       if (syncMap(ix)) {
         _last_sync = now;
       } else {
-        _slots[ix].last_sync = _slots[ix].last_write; // revert so next call retries
+        _slots[ix].last_sync = old_sync; // revert so next call retries
         all_synced           = false;
       }
     }
@@ -307,11 +308,6 @@ Cache::Group::WriteToDisk()
     clearLog();
   }
 }
-
-//
-// Here comes the private member methods, these must never be called without
-// already holding an exclusive lock on the mutex.
-//
 
 void
 Cache::Group::appendLog(const Cache::Group::_Entry &entry)
@@ -344,7 +340,6 @@ Cache::Group::syncMap(size_t index)
     return false;
   }
 
-  // Helper lambda to append data to the write buffer
   auto _appendToBuffer = [&](const void *data, size_t size) {
     if (write_failed) {
       return;
@@ -369,7 +364,6 @@ Cache::Group::syncMap(size_t index)
   _appendToBuffer(&VERSION, sizeof(VERSION));
   _appendToBuffer(&header, sizeof(header));
 
-  // Write entries
   for (const auto &[_, entry] : *slot.map) {
     _appendToBuffer(&entry, sizeof(entry));
   }
