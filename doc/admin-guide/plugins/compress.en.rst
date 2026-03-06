@@ -99,13 +99,21 @@ Per site configuration for remap plugin should be ignored.
 cache
 -----
 
-When set to ``true``, |TS| caches the compressed (transformed) response when
-the client sends ``Accept-Encoding``. When set to ``false``, |TS| caches only
-the uncompressed (untransformed) response and compresses on-the-fly from cache
-for subsequent requests. In both cases, the plugin adds
-``Vary: Accept-Encoding`` to compressible responses, which causes |TS| to
-maintain separate :term:`alternates <alternate>` for compressed and uncompressed
-variants as different clients make requests. Enabled by default.
+Controls which version of the response is stored in cache when the compress
+transform runs (i.e., when the client sends ``Accept-Encoding``).
+
+When set to ``true``, the compressed (transformed) response is cached. When set
+to ``false``, the uncompressed (untransformed) response is cached and
+compression is performed on-the-fly for subsequent cache hits.
+
+.. note::
+
+   The plugin always adds ``Vary: Accept-Encoding`` to compressible responses.
+   This causes |TS| to store compressed and uncompressed responses as separate
+   :term:`alternates <alternate>`, so both variants will be cached after clients
+   of each type have made a request — regardless of this setting.
+
+Enabled by default.
 
 range-request
 -------------
