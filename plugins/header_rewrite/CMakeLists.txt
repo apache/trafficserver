@@ -60,6 +60,7 @@ if(BUILD_TESTING)
   target_link_libraries(test_header_rewrite PRIVATE header_rewrite_parser ts::inkevent ts::tscore)
 
   if(maxminddb_FOUND)
+    target_compile_definitions(test_header_rewrite PRIVATE TS_USE_HRW_MAXMINDDB=1)
     target_link_libraries(test_header_rewrite PRIVATE maxminddb::maxminddb)
   endif()
 
