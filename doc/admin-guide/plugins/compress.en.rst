@@ -109,9 +109,12 @@ compression is performed on-the-fly for subsequent cache hits.
 .. note::
 
    The plugin always adds ``Vary: Accept-Encoding`` to compressible responses.
-   This causes |TS| to store compressed and uncompressed responses as separate
-   :term:`alternates <alternate>`, so both variants will be cached after clients
-   of each type have made a request — regardless of this setting.
+   This causes |TS| to use separate cache :term:`alternates <alternate>` (keys)
+   for requests with different ``Accept-Encoding`` values. Which body
+   representation is actually stored in cache still depends on the ``cache``
+   option: with ``cache true`` the compressed response is cached, while with
+   ``cache false`` only the uncompressed response is cached and compression is
+   performed on-the-fly for clients that send ``Accept-Encoding``.
 
 Enabled by default.
 
