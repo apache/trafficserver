@@ -36,6 +36,7 @@ removed in the next major release of ATS.
 * Removed Features
   * HostDB no longer supports persistent storage for DNS resolution
   * Removed support for the MMH crypto hash function
+  * Removed the built-in stats and cache inspector pages that were previously accessible via the |TS| HTTP interface
 
   * Traffic Manager is no longer part of |TS|. Administrative tools now interact with |TS| directly by using the :ref:`jsonrpc-node`.
 
