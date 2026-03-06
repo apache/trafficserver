@@ -32,9 +32,6 @@
 
 namespace Brotli
 {
-const int BROTLI_COMPRESSION_LEVEL = 6;
-const int BROTLI_LGW               = 16;
-
 static bool
 compress_operation(Data *data, const char *upstream_buffer, int64_t upstream_length, BrotliEncoderOperation op)
 {
@@ -77,13 +74,7 @@ compress_operation(Data *data, const char *upstream_buffer, int64_t upstream_len
 void
 data_alloc(Data *data)
 {
-  debug("brotli compression. Create Brotli Encoder Instance.");
-  data->bstrm.br = BrotliEncoderCreateInstance(nullptr, nullptr, nullptr);
-  if (!data->bstrm.br) {
-    fatal("Brotli Encoder Instance Failed");
-  }
-  BrotliEncoderSetParameter(data->bstrm.br, BROTLI_PARAM_QUALITY, BROTLI_COMPRESSION_LEVEL);
-  BrotliEncoderSetParameter(data->bstrm.br, BROTLI_PARAM_LGWIN, BROTLI_LGW);
+  data->bstrm.br        = nullptr;
   data->bstrm.next_in   = nullptr;
   data->bstrm.avail_in  = 0;
   data->bstrm.total_in  = 0;
@@ -92,10 +83,44 @@ data_alloc(Data *data)
   data->bstrm.total_out = 0;
 }
 
+bool
+transform_init(Data *data)
+{
+  debug("brotli compression: creating Brotli Encoder Instance");
+  data->bstrm.br = BrotliEncoderCreateInstance(nullptr, nullptr, nullptr);
+  if (!data->bstrm.br) {
+    error("brotli-transform: failed to create Brotli Encoder Instance");
+    return false;
+  }
+
+  int compression_level = data->hc->brotli_compression_level();
+  int lgwin             = data->hc->brotli_lgw_size();
+
+  if (!BrotliEncoderSetParameter(data->bstrm.br, BROTLI_PARAM_QUALITY, compression_level)) {
+    error("brotli-transform: failed to set compression level %d", compression_level);
+    BrotliEncoderDestroyInstance(data->bstrm.br);
+    data->bstrm.br = nullptr;
+    return false;
+  }
+
+  if (!BrotliEncoderSetParameter(data->bstrm.br, BROTLI_PARAM_LGWIN, lgwin)) {
+    error("brotli-transform: failed to set window size %d", lgwin);
+    BrotliEncoderDestroyInstance(data->bstrm.br);
+    data->bstrm.br = nullptr;
+    return false;
+  }
+
+  debug("brotli compression context initialized with level %d, lgwin %d", compression_level, lgwin);
+  return true;
+}
+
 void
 data_destroy(Data *data)
 {
-  BrotliEncoderDestroyInstance(data->bstrm.br);
+  if (data->bstrm.br) {
+    BrotliEncoderDestroyInstance(data->bstrm.br);
+    data->bstrm.br = nullptr;
+  }
 }
 
 void
