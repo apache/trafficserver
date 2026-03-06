@@ -191,7 +191,7 @@ int
 HttpConfigCont::handle_event(int /* event ATS_UNUSED */, void * /* edata ATS_UNUSED */)
 {
   if (ink_atomic_increment(&http_config_changes, -1) == 1) {
-    HttpConfig::reconfigure();
+    HttpConfig::reconfigure(); // TODO: who's calling?
   }
   return 0;
 }

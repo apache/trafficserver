@@ -27,6 +27,7 @@
 #include "tscore/MatcherUtils.h"
 #include "tscore/HostLookup.h"
 #include "tsutil/Bravo.h"
+#include "tscore/Filenames.h"
 
 #include <memory>
 
@@ -240,14 +241,6 @@ public:
     return hostMatch.get();
   }
 
-  static int config_callback(const char *, RecDataT, RecData, void *);
-
-  void
-  register_config_callback(ReplaceablePtr<CacheHostTable> *p)
-  {
-    RecRegisterConfigUpdateCb("proxy.config.cache.hosting_filename", CacheHostTable::config_callback, (void *)p);
-  }
-
   CacheType       type         = CacheType::HTTP;
   Cache          *cache        = nullptr;
   int             m_numEntries = 0;
@@ -257,35 +250,6 @@ private:
   std::unique_ptr<CacheHostMatcher> hostMatch    = nullptr;
   const matcher_tags                config_tags  = {"hostname", "domain", nullptr, nullptr, nullptr, nullptr, false};
   const char                       *matcher_name = "unknown"; // Used for Debug/Warning/Error messages
-};
-
-struct CacheHostTableConfig;
-using CacheHostTabHandler = int (CacheHostTableConfig::*)(int, void *);
-struct CacheHostTableConfig : public Continuation {
-  CacheHostTableConfig(ReplaceablePtr<CacheHostTable> *appt) : Continuation(nullptr), ppt(appt)
-  {
-    SET_HANDLER(&CacheHostTableConfig::mainEvent);
-  }
-
-  ~CacheHostTableConfig() {}
-
-  int
-  mainEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
-  {
-    CacheType type  = CacheType::HTTP;
-    Cache    *cache = nullptr;
-    {
-      ReplaceablePtr<CacheHostTable>::ScopedReader hosttable(ppt);
-      type  = hosttable->type;
-      cache = hosttable->cache;
-    }
-    ppt->reset(new CacheHostTable(cache, type));
-    delete this;
-    return EVENT_DONE;
-  }
-
-private:
-  ReplaceablePtr<CacheHostTable> *ppt;
 };
 
 /* list of volumes in the volume.config file */
