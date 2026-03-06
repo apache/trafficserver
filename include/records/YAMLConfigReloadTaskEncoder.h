@@ -52,7 +52,7 @@ template <> struct convert<ConfigReloadTask::Info> {
 
     node["meta"] = meta;
 
-    node["log"] = YAML::Node(YAML::NodeType::Sequence);
+    node["logs"] = YAML::Node(YAML::NodeType::Sequence);
     // if no logs, it will be empty sequence.
     for (const auto &log : info.logs) {
       node["logs"].push_back(log);

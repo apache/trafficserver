@@ -10,7 +10,7 @@ Verifies that ALL registered config handlers complete properly by:
 
 Registered configs at time of writing:
   Files: ip_allow.yaml, parent.config, cache.config, hosting.config,
-         splitdns.config, logging.yaml, sni.yaml, ssl_multicert.config
+         splitdns.config, logging.yaml, sni.yaml, ssl_multicert.yaml
   Record-only: ssl_ticket_key (proxy.config.ssl.server.ticket_key.filename)
 
 The key assertion is that diags.log does NOT contain:
@@ -70,7 +70,7 @@ ts.Disk.sni_yaml.AddLines([
     '  verify_client: NONE',
 ])
 # parent.config, cache.config, hosting.config, splitdns.config,
-# ssl_multicert.config are fine empty — handlers accept empty/comment-only files.
+# ssl_multicert.yaml are fine empty — handlers accept empty/comment-only files.
 
 # All registered config files whose mtime we'll bump to trigger reload.
 files_to_touch = [
@@ -81,7 +81,7 @@ files_to_touch = [
     ts.Disk.splitdns_config,
     ts.Disk.logging_yaml,
     ts.Disk.sni_yaml,
-    ts.Disk.ssl_multicert_config,
+    ts.Disk.ssl_multicert_yaml,
 ]
 touch_cmd = "touch " + " ".join([f.AbsRunTimePath for f in files_to_touch])
 # Modify records.yaml via traffic_ctl --cold to trigger a real records reload.

@@ -45,9 +45,13 @@ ts.Disk.records_config.update(
 # Add valid SSL certs for baseline
 ts.addDefaultSSLFiles()
 
-ts.Disk.ssl_multicert_config.AddLines([
-    'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key',
-])
+ts.Disk.ssl_multicert_yaml.AddLines(
+    [
+        'ssl_multicert:',
+        '  - dest_ip: "*"',
+        '    ssl_cert_name: server.pem',
+        '    ssl_key_name: server.key',
+    ])
 
 # Override default diags check — this test intentionally triggers SSL errors
 ts.Disk.diags_log.Content = Testers.ContainsExpression("ERROR", "Expected errors from invalid SSL cert injection")
@@ -153,14 +157,19 @@ tr.StillRunningAfter = ts
 tr = Test.AddTestRun("Configure invalid SSL cert path")
 tr.DelayStart = 2
 
-# Add a bad cert reference to ssl_multicert.config
+# Add a bad cert reference to ssl_multicert.yaml
 # This should cause the SSL subtask to fail
-sslcertpath = ts.Disk.ssl_multicert_config.AbsPath
-tr.Disk.File(sslcertpath, id="ssl_multicert_config", typename="ats:config")
-tr.Disk.ssl_multicert_config.AddLines(
+sslcertpath = ts.Disk.ssl_multicert_yaml.AbsPath
+tr.Disk.File(sslcertpath, id="ssl_multicert_yaml", typename="ats:config")
+tr.Disk.ssl_multicert_yaml.AddLines(
     [
-        'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key',
-        'dest_ip=1.2.3.4 ssl_cert_name=/nonexistent/bad.pem ssl_key_name=/nonexistent/bad.key',
+        'ssl_multicert:',
+        '  - dest_ip: "*"',
+        '    ssl_cert_name: server.pem',
+        '    ssl_key_name: server.key',
+        '  - dest_ip: 1.2.3.4',
+        '    ssl_cert_name: /nonexistent/bad.pem',
+        '    ssl_key_name: /nonexistent/bad.key',
     ])
 
 tr.AddJsonRPCClientRequest(ts, Request.admin_config_reload(force=True))
@@ -325,12 +334,16 @@ tr.StillRunningAfter = ts
 tr = Test.AddTestRun("Force reload to reset")
 tr.DelayStart = 2
 
-# Reset ssl_multicert.config to valid state
-sslcertpath = ts.Disk.ssl_multicert_config.AbsPath
-tr.Disk.File(sslcertpath, id="ssl_multicert_config", typename="ats:config")
-tr.Disk.ssl_multicert_config.AddLines([
-    'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key',
-])
+# Reset ssl_multicert.yaml to valid state
+sslcertpath = ts.Disk.ssl_multicert_yaml.AbsPath
+tr.Disk.File(sslcertpath, id="ssl_multicert_yaml", typename="ats:config")
+tr.Disk.ssl_multicert_yaml.AddLines(
+    [
+        'ssl_multicert:',
+        '  - dest_ip: "*"',
+        '    ssl_cert_name: server.pem',
+        '    ssl_key_name: server.key',
+    ])
 
 tr.AddJsonRPCClientRequest(ts, Request.admin_config_reload(force=True))
 

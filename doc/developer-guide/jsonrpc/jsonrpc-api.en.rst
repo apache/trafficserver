@@ -1188,7 +1188,7 @@ Response:
                   "last_updated_time_ms": "1739808000368",
                   "main_task": "true"
                },
-               "log": [],
+               "logs": [],
                "sub_tasks": [
                   {
                      "config_token": "deploy-v2.1",
@@ -1201,7 +1201,6 @@ Response:
                         "last_updated_time_ms": "1739808000218",
                         "main_task": "false"
                      },
-                     "log": [],
                      "logs": ["Finished loading"],
                      "sub_tasks": []
                   }
