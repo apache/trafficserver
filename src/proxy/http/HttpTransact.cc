@@ -3995,9 +3995,9 @@ HttpTransact::error_log_connection_failure(State *s, ServerState_t conn_state)
       host_name = s->unmapped_url.host_get();
     }
     swoc::bwprint(error_bw_buffer,
-                  "CONNECT: attempt fail [{}] to {} for host='{}' "
+                  "CONNECT: attempt fail [{}] to {} for host='{}' sm_id={} "
                   "connection_result={::s} error={::s} retry_attempts={} url='{}'",
-                  HttpDebugNames::get_server_state_name(conn_state), s->current.server->dst_addr, host_name,
+                  HttpDebugNames::get_server_state_name(conn_state), s->current.server->dst_addr, host_name, s->state_machine_id(),
                   swoc::bwf::Errno(s->current.server->connect_result), swoc::bwf::Errno(s->cause_of_death_errno),
                   s->current.retry_attempts.get(), swoc::bwf::FirstOf(url_str, "<none>"));
     Log::error("%s", error_bw_buffer.c_str());
