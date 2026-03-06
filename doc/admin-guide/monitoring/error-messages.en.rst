@@ -113,9 +113,9 @@ enables customization by values present in the transaction for which the error o
 Template Set Metadata
 ---------------------
 
-Each template set directory may contain a ``.body_factory_info`` file that provides metadata
-about the error pages in that directory. This file controls the ``Content-Type``,
-``Content-Language``, and character set of the HTTP response headers sent with error pages.
+Each template set directory must contain a ``.body_factory_info`` file for the template set to be
+loaded. This file controls the ``Content-Type``, ``Content-Language``, and character set of the
+HTTP response headers sent with error pages.
 
 The following directives are supported:
 
@@ -144,8 +144,8 @@ To describe Korean error pages encoded in the ``iso-2022-kr`` character set::
    Content-Language: kr
    Content-Charset: iso-2022-kr
 
-If the file is empty, contains only comments, or is absent, the defaults are used: English
-``text/html`` in the ``utf-8`` character set.
+If the file is empty or contains only comments, the defaults are used: English ``text/html`` in
+the ``utf-8`` character set. If the file is absent, the entire template set directory is skipped.
 
 The following table lists the hard-coded Traffic Server HTTP messages,
 with corresponding HTTP response codes and customizable files.

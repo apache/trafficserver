@@ -74,10 +74,10 @@ HttpBodyFactory::fabricate_with_old_api(const char *type, HttpTransact::State *c
                                         size_t content_language_buf_size, char *content_type_out_buf, size_t content_type_buf_size,
                                         int format_size, const char *format)
 {
-  char       *buffer      = nullptr;
-  const char *lang_ptr    = nullptr;
-  const char *charset_ptr = nullptr;
-  const char *type_ptr    = nullptr;
+  char       *buffer           = nullptr;
+  const char *lang_ptr         = nullptr;
+  const char *charset_ptr      = nullptr;
+  const char *content_type_ptr = nullptr;
   char        url[1024];
   const char *set                      = nullptr;
   bool        found_requested_template = false;
@@ -147,7 +147,7 @@ HttpBodyFactory::fabricate_with_old_api(const char *type, HttpTransact::State *c
   /////////////////////////////////////////////////////////
   if (buffer == nullptr) {
     buffer = fabricate(&acpt_language_list, &acpt_charset_list, type, context, resulting_buffer_length, &lang_ptr, &charset_ptr,
-                       &type_ptr, &set);
+                       &content_type_ptr, &set);
     found_requested_template = (buffer != nullptr);
   }
   /////////////////////////////////////////////////////////////
@@ -160,7 +160,7 @@ HttpBodyFactory::fabricate_with_old_api(const char *type, HttpTransact::State *c
       return nullptr;
     }
     buffer = fabricate(&acpt_language_list, &acpt_charset_list, "default", context, resulting_buffer_length, &lang_ptr,
-                       &charset_ptr, &type_ptr, &set);
+                       &charset_ptr, &content_type_ptr, &set);
   }
 
   ///////////////////////////////////
@@ -182,7 +182,7 @@ HttpBodyFactory::fabricate_with_old_api(const char *type, HttpTransact::State *c
   if (buffer) { // got an instantiated template
     if (!plain_flag) {
       snprintf(content_language_out_buf, content_language_buf_size, "%s", lang_ptr);
-      const char *mime_type = type_ptr ? type_ptr : "text/html";
+      const char *mime_type = content_type_ptr ? content_type_ptr : "text/html";
       snprintf(content_type_out_buf, content_type_buf_size, "%s; charset=%s", mime_type, charset_ptr);
     }
 
