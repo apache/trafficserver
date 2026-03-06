@@ -51,6 +51,7 @@ MMConditionGeo::initLibrary(const std::string &path)
   if (MMDB_SUCCESS != status) {
     Dbg(pi_dbg_ctl, "Cannot open %s - %s", path.c_str(), MMDB_strerror(status));
     delete gMaxMindDB;
+    gMaxMindDB = nullptr;
     return;
   }
   Dbg(pi_dbg_ctl, "Loaded %s", path.c_str());
@@ -91,32 +92,35 @@ MMConditionGeo::get_geo_string(const sockaddr *addr) const
     return ret;
   }
 
-  const char *field_name;
+  MMDB_entry_data_s entry_data;
+
   switch (_geo_qual) {
   case GEO_QUAL_COUNTRY:
-    field_name = "country_code";
+    status = MMDB_get_value(&result.entry, &entry_data, "country", "names", "en", NULL);
+    break;
+  case GEO_QUAL_COUNTRY_ISO:
+    status = MMDB_get_value(&result.entry, &entry_data, "country", "iso_code", NULL);
     break;
   case GEO_QUAL_ASN_NAME:
-    field_name = "autonomous_system_organization";
+    status = MMDB_get_value(&result.entry, &entry_data, "autonomous_system_organization", NULL);
     break;
   default:
     Dbg(pi_dbg_ctl, "Unsupported field %d", _geo_qual);
-    return ret;
-    break;
-  }
-
-  MMDB_entry_data_s entry_data;
-
-  status = MMDB_get_value(&result.entry, &entry_data, field_name, NULL);
-  if (MMDB_SUCCESS != status) {
-    Dbg(pi_dbg_ctl, "ERROR on get value asn value: %s", MMDB_strerror(status));
-    return ret;
-  }
-  ret = std::string(entry_data.utf8_string, entry_data.data_size);
-
-  if (nullptr != entry_data_list) {
     MMDB_free_entry_data_list(entry_data_list);
+    return ret;
   }
+
+  if (MMDB_SUCCESS != status) {
+    Dbg(pi_dbg_ctl, "Error looking up geo string field: %s", MMDB_strerror(status));
+    MMDB_free_entry_data_list(entry_data_list);
+    return ret;
+  }
+
+  if (entry_data.has_data && entry_data.type == MMDB_DATA_TYPE_UTF8_STRING) {
+    ret = std::string(entry_data.utf8_string, entry_data.data_size);
+  }
+
+  MMDB_free_entry_data_list(entry_data_list);
 
   return ret;
 }
@@ -156,29 +160,29 @@ MMConditionGeo::get_geo_int(const sockaddr *addr) const
     return ret;
   }
 
-  const char *field_name;
+  MMDB_entry_data_s entry_data;
+
   switch (_geo_qual) {
   case GEO_QUAL_ASN:
-    field_name = "autonomous_system_number";
+    status = MMDB_get_value(&result.entry, &entry_data, "autonomous_system_number", NULL);
     break;
   default:
     Dbg(pi_dbg_ctl, "Unsupported field %d", _geo_qual);
-    return ret;
-    break;
-  }
-
-  MMDB_entry_data_s entry_data;
-
-  status = MMDB_get_value(&result.entry, &entry_data, field_name, NULL);
-  if (MMDB_SUCCESS != status) {
-    Dbg(pi_dbg_ctl, "ERROR on get value asn value: %s", MMDB_strerror(status));
-    return ret;
-  }
-  ret = entry_data.uint32;
-
-  if (nullptr != entry_data_list) {
     MMDB_free_entry_data_list(entry_data_list);
+    return ret;
   }
+
+  if (MMDB_SUCCESS != status) {
+    Dbg(pi_dbg_ctl, "Error looking up geo int field: %s", MMDB_strerror(status));
+    MMDB_free_entry_data_list(entry_data_list);
+    return ret;
+  }
+
+  if (entry_data.has_data && entry_data.type == MMDB_DATA_TYPE_UINT32) {
+    ret = entry_data.uint32;
+  }
+
+  MMDB_free_entry_data_list(entry_data_list);
 
   return ret;
 }
