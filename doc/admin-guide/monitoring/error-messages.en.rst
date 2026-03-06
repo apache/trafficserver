@@ -113,7 +113,7 @@ enables customization by values present in the transaction for which the error o
 Template Set Metadata
 ---------------------
 
-Each template set directory may contain a :file:`.body_factory_info` file that provides metadata
+Each template set directory may contain a ``.body_factory_info`` file that provides metadata
 about the error pages in that directory. This file controls the ``Content-Type``,
 ``Content-Language``, and character set of the HTTP response headers sent with error pages.
 
