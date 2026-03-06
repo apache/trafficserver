@@ -77,6 +77,7 @@ HttpBodyFactory::fabricate_with_old_api(const char *type, HttpTransact::State *c
   char       *buffer      = nullptr;
   const char *lang_ptr    = nullptr;
   const char *charset_ptr = nullptr;
+  const char *type_ptr    = nullptr;
   char        url[1024];
   const char *set                      = nullptr;
   bool        found_requested_template = false;
@@ -145,8 +146,8 @@ HttpBodyFactory::fabricate_with_old_api(const char *type, HttpTransact::State *c
   // try to fabricate the desired type of error response //
   /////////////////////////////////////////////////////////
   if (buffer == nullptr) {
-    buffer =
-      fabricate(&acpt_language_list, &acpt_charset_list, type, context, resulting_buffer_length, &lang_ptr, &charset_ptr, &set);
+    buffer = fabricate(&acpt_language_list, &acpt_charset_list, type, context, resulting_buffer_length, &lang_ptr, &charset_ptr,
+                       &type_ptr, &set);
     found_requested_template = (buffer != nullptr);
   }
   /////////////////////////////////////////////////////////////
@@ -159,7 +160,7 @@ HttpBodyFactory::fabricate_with_old_api(const char *type, HttpTransact::State *c
       return nullptr;
     }
     buffer = fabricate(&acpt_language_list, &acpt_charset_list, "default", context, resulting_buffer_length, &lang_ptr,
-                       &charset_ptr, &set);
+                       &charset_ptr, &type_ptr, &set);
   }
 
   ///////////////////////////////////
@@ -181,7 +182,8 @@ HttpBodyFactory::fabricate_with_old_api(const char *type, HttpTransact::State *c
   if (buffer) { // got an instantiated template
     if (!plain_flag) {
       snprintf(content_language_out_buf, content_language_buf_size, "%s", lang_ptr);
-      snprintf(content_type_out_buf, content_type_buf_size, "text/html; charset=%s", charset_ptr);
+      const char *mime_type = type_ptr ? type_ptr : "text/html";
+      snprintf(content_type_out_buf, content_type_buf_size, "%s; charset=%s", mime_type, charset_ptr);
     }
 
     if (enable_logging) {
@@ -213,8 +215,9 @@ HttpBodyFactory::dump_template_tables(FILE *fp)
     for (const auto &it1 : *table_of_sets.get()) {
       HttpBodySet *body_set = static_cast<HttpBodySet *>(it1.second);
       if (body_set) {
-        fprintf(fp, "set %s: name '%s', lang '%s', charset '%s'\n", it1.first.c_str(), body_set->set_name,
-                body_set->content_language, body_set->content_charset);
+        fprintf(fp, "set %s: name '%s', lang '%s', charset '%s', type '%s'\n", it1.first.c_str(), body_set->set_name,
+                body_set->content_language, body_set->content_charset,
+                body_set->content_type ? body_set->content_type : "text/html");
 
         ///////////////////////////////////////////
         // loop over body-types->body hash table //
@@ -374,7 +377,7 @@ HttpBodyFactory::~HttpBodyFactory()
 char *
 HttpBodyFactory::fabricate(StrList *acpt_language_list, StrList *acpt_charset_list, const char *type, HttpTransact::State *context,
                            int64_t *buffer_length_return, const char **content_language_return, const char **content_charset_return,
-                           const char **set_return)
+                           const char **content_type_return, const char **set_return)
 {
   char       *buffer;
   const char *pType = context->txn_conf->body_factory_template_base;
@@ -386,6 +389,7 @@ HttpBodyFactory::fabricate(StrList *acpt_language_list, StrList *acpt_charset_li
   }
   *content_language_return = nullptr;
   *content_charset_return  = nullptr;
+  *content_type_return     = nullptr;
 
   Dbg(dbg_ctl_body_factory, "calling fabricate(type '%s')", type);
   *buffer_length_return = 0;
@@ -442,6 +446,7 @@ HttpBodyFactory::fabricate(StrList *acpt_language_list, StrList *acpt_charset_li
 
   *content_language_return = body_set->content_language;
   *content_charset_return  = body_set->content_charset;
+  *content_type_return     = body_set->content_type;
 
   // build the custom error page
   buffer = t->build_instantiated_buffer(context, buffer_length_return);
@@ -523,8 +528,9 @@ HttpBodyFactory::determine_set_by_language(std::unique_ptr<BodySetTable> &table_
 
       is_the_default_set = (strcmp(set_name, "default") == 0);
 
-      Dbg(dbg_ctl_body_factory_determine_set, "  --- SET: %-8s (Content-Language '%s', Content-Charset '%s')", set_name,
-          body_set->content_language, body_set->content_charset);
+      Dbg(dbg_ctl_body_factory_determine_set, "  --- SET: %-8s (Content-Language '%s', Content-Charset '%s', Content-Type '%s')",
+          set_name, body_set->content_language, body_set->content_charset,
+          body_set->content_type ? body_set->content_type : "text/html");
 
       // if no Accept-Language hdr at all, treat as a wildcard that
       // slightly prefers "default".
@@ -894,6 +900,7 @@ HttpBodySet::HttpBodySet()
   set_name         = nullptr;
   content_language = nullptr;
   content_charset  = nullptr;
+  content_type     = nullptr;
 
   table_of_pages = nullptr;
 }
@@ -903,6 +910,7 @@ HttpBodySet::~HttpBodySet()
   ats_free(set_name);
   ats_free(content_language);
   ats_free(content_charset);
+  ats_free(content_type);
   table_of_pages.reset(nullptr);
 }
 
@@ -991,16 +999,15 @@ HttpBodySet::init(char *set, char *dir)
     memcpy(value, value_s, value_e - value_s);
     value[value_e - value_s] = '\0';
 
-    //////////////////////////////////////////////////
-    // so far, we only support 2 pieces of metadata //
-    //////////////////////////////////////////////////
-
     if (strcasecmp(name, "Content-Language") == 0) {
       ats_free(this->content_language);
       this->content_language = ats_strdup(value);
     } else if (strcasecmp(name, "Content-Charset") == 0) {
       ats_free(this->content_charset);
       this->content_charset = ats_strdup(value);
+    } else if (strcasecmp(name, "Content-Type") == 0) {
+      ats_free(this->content_type);
+      this->content_type = ats_strdup(value);
     }
   }
 

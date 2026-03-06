@@ -3,14 +3,21 @@
 # The .body_factory_info file contains descriptive information
 # about the error pages in this directory.
 #
-# Currently, .body_factory_info contains information which
-# indicates the character set and natural language of the error
-# pages in this directory.  For example, to describe Korean
-# web pages encoded in the iso-2022-kr character set, you might
-# add these lines to .body_factory_info file:
+# Supported directives:
+#
+#   Content-Language  Natural language of the error pages (default: en)
+#   Content-Charset   Character encoding (default: utf-8)
+#   Content-Type      MIME type for the response (default: text/html)
+#
+# For example, to describe Korean web pages encoded in the
+# iso-2022-kr character set, you might add these lines:
 #
 #	Content-Language: kr
 #	Content-Charset: iso-2022-kr
 #
-# If this file is empty, or only contains comments, the default is
-# assumed: English text in the standard utf-8 character set.
+# To serve plain text error pages instead of HTML:
+#
+#	Content-Type: text/plain
+#
+# If this file is empty, or only contains comments, the defaults are
+# assumed: English text/html in the utf-8 character set.
