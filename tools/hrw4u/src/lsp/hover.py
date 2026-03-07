@@ -19,8 +19,7 @@
 
 from __future__ import annotations
 
-import re
-from typing import Any, Dict
+from typing import Any
 
 from . import documentation as doc
 from hrw4u.tables import OPERATOR_MAP, CONDITION_MAP, FUNCTION_MAP, STATEMENT_FUNCTION_MAP, LSPPatternMatcher
@@ -32,13 +31,13 @@ class HoverInfoProvider:
     """Centralized provider for hover information generation."""
 
     @staticmethod
-    def create_hover_info(markdown_content: str) -> Dict[str, Any]:
+    def create_hover_info(markdown_content: str) -> dict[str, Any]:
         """Create a standardized hover info dictionary."""
         return {"contents": {"kind": "markdown", "value": markdown_content}}
 
     @staticmethod
     def create_field_interpolation_hover(
-            expression: str, field_display: str, field_desc: str, context: str, maps_to: str, usage: str = None) -> Dict[str, Any]:
+            expression: str, field_display: str, field_desc: str, context: str, maps_to: str, usage: str = None) -> dict[str, Any]:
         """Create hover info for field interpolations with a standard format."""
         usage_text = usage or "Used in string value interpolation."
 
@@ -57,7 +56,7 @@ class HoverInfoProvider:
                            field_desc: str,
                            context: str,
                            maps_to: str,
-                           usage: str = None) -> Dict[str, Any]:
+                           usage: str = None) -> dict[str, Any]:
         """Create hover info for field expressions with a standard format."""
         usage_text = usage or "Used in expression evaluation."
 
@@ -75,7 +74,7 @@ class CertificateHoverProvider:
     """Specialized hover provider for certificate expressions."""
 
     @staticmethod
-    def parse_certificate_expression(expression: str, is_interpolation: bool = False) -> Dict[str, Any] | None:
+    def parse_certificate_expression(expression: str, is_interpolation: bool = False) -> dict[str, Any] | None:
         """Parse certificate expressions using table-driven approach."""
         parsed_data = doc.CertificatePattern.parse_certificate_expression(expression, is_interpolation)
 
@@ -90,7 +89,7 @@ class InterpolationHoverProvider:
     """Specialized hover provider for string interpolation expressions."""
 
     @staticmethod
-    def get_interpolated_expression_info(expression: str) -> Dict[str, Any] | None:
+    def get_interpolated_expression_info(expression: str) -> dict[str, Any] | None:
         """Get hover info for interpolated expressions."""
         # Try table-driven pattern matching first
         if match := LSPPatternMatcher.match_any_pattern(expression):
@@ -118,7 +117,7 @@ class InterpolationHoverProvider:
         return None
 
     @staticmethod
-    def _handle_pattern_match(match, expression: str, is_interpolation: bool = False) -> Dict[str, Any] | None:
+    def _handle_pattern_match(match, expression: str, is_interpolation: bool = False) -> dict[str, Any] | None:
         """Handle a matched pattern and generate appropriate hover info."""
         if match.context_type == 'Certificate':
             return CertificateHoverProvider.parse_certificate_expression(expression, is_interpolation=is_interpolation)
@@ -141,7 +140,7 @@ class DottedExpressionHoverProvider:
     """Specialized hover provider for dotted expressions like outbound.req.X-Field."""
 
     @staticmethod
-    def parse_dotted_expression(full_expression: str, character_pos: int, expr_start: int) -> Dict[str, Any] | None:
+    def parse_dotted_expression(full_expression: str, character_pos: int, expr_start: int) -> dict[str, Any] | None:
         """Parse dotted expressions and provide appropriate hover info."""
         cursor_pos = character_pos - expr_start
 
@@ -210,7 +209,7 @@ class DottedExpressionHoverProvider:
         return None
 
     @staticmethod
-    def _handle_pattern_match(match, full_expression: str, cursor_pos: int, expr_start: int) -> Dict[str, Any] | None:
+    def _handle_pattern_match(match, full_expression: str, cursor_pos: int, expr_start: int) -> dict[str, Any] | None:
         """Handle a matched pattern for dotted expressions."""
         pattern_len = len(match.pattern)
 
@@ -257,7 +256,7 @@ class DottedExpressionHoverProvider:
         return None
 
     @staticmethod
-    def _handle_header_suffix(match, full_expression: str) -> Dict[str, Any] | None:
+    def _handle_header_suffix(match, full_expression: str) -> dict[str, Any] | None:
         """Handle header field suffix."""
         header_name = match.suffix
         if header_name:
@@ -279,7 +278,7 @@ class DottedExpressionHoverProvider:
         return None
 
     @staticmethod
-    def _handle_cookie_suffix(match, full_expression: str) -> Dict[str, Any] | None:
+    def _handle_cookie_suffix(match, full_expression: str) -> dict[str, Any] | None:
         """Handle cookie field suffix."""
         cookie_name = match.suffix
         if cookie_name:
@@ -296,7 +295,7 @@ class DottedExpressionHoverProvider:
         return None
 
     @staticmethod
-    def _handle_connection_suffix(match, full_expression: str) -> Dict[str, Any] | None:
+    def _handle_connection_suffix(match, full_expression: str) -> dict[str, Any] | None:
         """Handle connection field suffix."""
         parts = full_expression.split('.')
         if len(parts) == 3:
@@ -316,7 +315,7 @@ class DottedExpressionHoverProvider:
         return None
 
     @staticmethod
-    def _handle_field_suffix(match, full_expression: str) -> Dict[str, Any] | None:
+    def _handle_field_suffix(match, full_expression: str) -> dict[str, Any] | None:
         """Handle field suffix for now., id., geo. patterns."""
         field_dict = getattr(doc, match.field_dict_key)
         suffix_key = match.suffix.upper()
@@ -361,7 +360,7 @@ class OperatorHoverProvider:
         return prefixes
 
     @staticmethod
-    def get_operator_hover_info(operator: str) -> Dict[str, Any]:
+    def get_operator_hover_info(operator: str) -> dict[str, Any]:
         """Get hover info for operators."""
         # Handle method field with comprehensive documentation
         if operator == "inbound.method":
@@ -389,89 +388,12 @@ class OperatorHoverProvider:
 
         # Special handling for inbound/outbound header contexts
         if operator in doc.LSP_SUB_NAMESPACE_DOCUMENTATION:
-            sub_namespace_doc = doc.LSP_SUB_NAMESPACE_DOCUMENTATION[operator]
-            sections = [
-                f"**{operator}** - {sub_namespace_doc.name}", "", f"**Context:** {sub_namespace_doc.context}", "",
-                f"**Description:** {sub_namespace_doc.description}", "",
-                f"**Available items:** {', '.join(sub_namespace_doc.available_items)}", "", f"**Usage:** {sub_namespace_doc.usage}"
-            ]
-            if sub_namespace_doc.examples:
-                sections.extend(["", "**Examples:**"])
-                for example in sub_namespace_doc.examples:
-                    sections.append(f"```hrw4u\n{example}\n```")
-            return HoverInfoProvider.create_hover_info("\n".join(sections))
+            return OperatorHoverProvider._format_namespace_doc(operator, doc.LSP_SUB_NAMESPACE_DOCUMENTATION[operator])
 
-        # Check exact matches first
-        if operator in OPERATOR_MAP:
-            params = OPERATOR_MAP[operator]
-            commands = params.target if params else None
-            if isinstance(commands, str):
-                cmd_str = commands
-            elif commands:
-                cmd_str = ' / '.join(commands)
-            else:
-                cmd_str = "unknown"
-            sections = params.sections if params else None
-
-            section_info = ""
-            if sections:
-                section_names = [s.value for s in sections]
-                section_info = f"\n\n**Restricted in sections:** {', '.join(section_names)}"
-
-            return HoverInfoProvider.create_hover_info(
-                f"**{operator}** - HRW4U Operator\n\n" + f"**Maps to:** `{cmd_str}`{section_info}")
-
-        # Check prefix matches
-        for key, params in OPERATOR_MAP.items():
-            if key.endswith('.') and operator.startswith(key):
-                commands = params.target if params else None
-                if isinstance(commands, str):
-                    cmd_str = commands
-                elif commands:
-                    cmd_str = ' / '.join(commands)
-                else:
-                    cmd_str = "unknown"
-                suffix = operator[len(key):]
-                sections = params.sections if params else None
-
-                section_info = ""
-                if sections:
-                    section_names = [s.value for s in sections]
-                    section_info = f"\n\n**Restricted in sections:** {', '.join(section_names)}"
-
-                return HoverInfoProvider.create_hover_info(
-                    f"**{operator}** - HRW4U Operator\n\n" + f"**Base:** `{key}`\n" + f"**Suffix:** `{suffix}`\n" +
-                    f"**Maps to:** `{cmd_str}`{section_info}")
-
-        # Check condition map
-        if operator in CONDITION_MAP:
-            params = CONDITION_MAP[operator]
-            tag = params.target if params else None
-            sections = params.sections if params else None
-
-            section_info = ""
-            if sections:
-                section_names = [s.value for s in sections]
-                section_info = f"\n\n**Restricted in sections:** {', '.join(section_names)}"
-
-            return HoverInfoProvider.create_hover_info(
-                f"**{operator}** - HRW4U Condition\n\n" + f"**Maps to:** `{tag}`{section_info}")
-
-        # Check condition prefix matches
-        for key, params in CONDITION_MAP.items():
-            if key.endswith('.') and operator.startswith(key):
-                tag = params.target if params else None
-                suffix = operator[len(key):]
-                sections = params.sections if params else None
-
-                section_info = ""
-                if sections:
-                    section_names = [s.value for s in sections]
-                    section_info = f"\n\n**Restricted in sections:** {', '.join(section_names)}"
-
-                return HoverInfoProvider.create_hover_info(
-                    f"**{operator}** - HRW4U Condition\n\n" + f"**Base:** `{key}`\n" + f"**Suffix:** `{suffix}`\n" +
-                    f"**Maps to:** `{tag}`{section_info}")
+        for table, kind in ((OPERATOR_MAP, "Operator"), (CONDITION_MAP, "Condition")):
+            result = OperatorHoverProvider._lookup_map(operator, table, kind)
+            if result:
+                return result
 
         # Handle namespace prefixes with comprehensive documentation as fallback
         namespace_info = OperatorHoverProvider._get_namespace_hover_info(operator)
@@ -492,60 +414,76 @@ class OperatorHoverProvider:
         return None
 
     @staticmethod
-    def _get_namespace_hover_info(operator: str) -> Dict[str, Any] | None:
-        """Get comprehensive hover info for namespace prefixes using centralized documentation."""
-        # Strip trailing dot for namespace lookup (handles cases like "inbound." -> "inbound")
-        namespace_key = operator.rstrip('.')
+    def _format_target(params) -> str:
+        target = params.target if params else None
 
-        # First check for sub-namespace patterns (e.g., "inbound.conn", "outbound.req")
-        if namespace_key in doc.LSP_SUB_NAMESPACE_DOCUMENTATION:
-            sub_namespace_doc = doc.LSP_SUB_NAMESPACE_DOCUMENTATION[namespace_key]
+        if isinstance(target, str):
+            return target
+        if target:
+            return ' / '.join(target)
+        return "unknown"
 
-            # Build the hover content from the sub-namespace documentation
-            sections = [
-                f"**{namespace_key}** - {sub_namespace_doc.name}", "", f"**Context:** {sub_namespace_doc.context}", "",
-                f"**Description:** {sub_namespace_doc.description}", "",
-                f"**Available items:** {', '.join(sub_namespace_doc.available_items)}", "", f"**Usage:** {sub_namespace_doc.usage}"
-            ]
+    @staticmethod
+    def _format_section_info(params) -> str:
+        sections = params.sections if params else None
 
-            if sub_namespace_doc.examples:
-                sections.extend(["", "**Examples:**"])
-                for example in sub_namespace_doc.examples:
-                    sections.append(f"```hrw4u\n{example}\n```")
+        if not sections:
+            return ""
+        return f"\n\n**Restricted in sections:** {', '.join(s.value for s in sections)}"
 
-            return HoverInfoProvider.create_hover_info("\n".join(sections))
+    @classmethod
+    def _lookup_map(cls, operator: str, table: dict, kind: str) -> dict[str, Any] | None:
+        """Look up operator in a map by exact match, then prefix match."""
+        if operator in table:
+            params = table[operator]
+            cmd_str = cls._format_target(params)
+            section_info = cls._format_section_info(params)
+            return HoverInfoProvider.create_hover_info(f"**{operator}** - HRW4U {kind}\n\n**Maps to:** `{cmd_str}`{section_info}")
 
-        # For single-part namespace documentation, show it unless it's a known condition that should
-        # take precedence (like standalone "now" in conditional contexts)
-        # This allows namespace documentation for "geo", "id", etc. while preserving condition behavior
-        pass  # No additional filtering - let the fallback logic in get_operator_hover_info handle it
+        for key, params in table.items():
+            if key.endswith('.') and operator.startswith(key):
+                cmd_str = cls._format_target(params)
+                suffix = operator[len(key):]
+                section_info = cls._format_section_info(params)
+                return HoverInfoProvider.create_hover_info(
+                    f"**{operator}** - HRW4U {kind}\n\n"
+                    f"**Base:** `{key}`\n**Suffix:** `{suffix}`\n"
+                    f"**Maps to:** `{cmd_str}`{section_info}")
 
-        # Fall back to single-part namespace documentation
-        if namespace_key not in doc.LSP_NAMESPACE_DOCUMENTATION:
-            return None
+        return None
 
-        namespace_doc = doc.LSP_NAMESPACE_DOCUMENTATION[namespace_key]
-
-        # Build the hover content from the centralized documentation
+    @staticmethod
+    def _format_namespace_doc(key: str, ns_doc) -> dict[str, Any]:
         sections = [
-            f"**{namespace_key}** - {namespace_doc.name}", "", f"**Context:** {namespace_doc.context}", "",
-            f"**Description:** {namespace_doc.description}", "", f"**Available items:** {', '.join(namespace_doc.available_items)}",
-            "", f"**Usage:** {namespace_doc.usage}"
+            f"**{key}** - {ns_doc.name}", "", f"**Context:** {ns_doc.context}", "", f"**Description:** {ns_doc.description}", "",
+            f"**Available items:** {', '.join(ns_doc.available_items)}", "", f"**Usage:** {ns_doc.usage}"
         ]
 
-        if namespace_doc.examples:
+        if ns_doc.examples:
             sections.extend(["", "**Examples:**"])
-            for example in namespace_doc.examples:
+            for example in ns_doc.examples:
                 sections.append(f"```hrw4u\n{example}\n```")
 
         return HoverInfoProvider.create_hover_info("\n".join(sections))
+
+    @staticmethod
+    def _get_namespace_hover_info(operator: str) -> dict[str, Any] | None:
+        namespace_key = operator.rstrip('.')
+
+        if namespace_key in doc.LSP_SUB_NAMESPACE_DOCUMENTATION:
+            return OperatorHoverProvider._format_namespace_doc(namespace_key, doc.LSP_SUB_NAMESPACE_DOCUMENTATION[namespace_key])
+
+        if namespace_key in doc.LSP_NAMESPACE_DOCUMENTATION:
+            return OperatorHoverProvider._format_namespace_doc(namespace_key, doc.LSP_NAMESPACE_DOCUMENTATION[namespace_key])
+
+        return None
 
 
 class RegexHoverProvider:
     """Specialized hover provider for regular expression patterns."""
 
     @staticmethod
-    def get_regex_hover_info(line: str, character: int) -> Dict[str, Any] | None:
+    def get_regex_hover_info(line: str, character: int) -> dict[str, Any] | None:
         """Get hover info for regex patterns with brief LSP-appropriate documentation."""
         regex_data = doc.RegexPattern.detect_regex_pattern(line, character)
         if regex_data:
@@ -558,7 +496,7 @@ class FunctionHoverProvider:
     """Specialized hover provider for functions."""
 
     @staticmethod
-    def get_function_hover_info(function_name: str) -> Dict[str, Any]:
+    def get_function_hover_info(function_name: str) -> dict[str, Any]:
         """Get hover info for functions with comprehensive documentation."""
         # Check comprehensive documentation first
         if function_name in doc.LSP_FUNCTION_DOCUMENTATION:
@@ -617,7 +555,7 @@ class VariableHoverProvider:
     """Specialized hover provider for variables and variable types."""
 
     @staticmethod
-    def get_variable_type_hover_info(var_type: str) -> Dict[str, Any]:
+    def get_variable_type_hover_info(var_type: str) -> dict[str, Any]:
         """Get hover info for variable types."""
         try:
             vt = VarType.from_str(var_type.lower())
@@ -628,8 +566,8 @@ class VariableHoverProvider:
             return HoverInfoProvider.create_hover_info(f"**{var_type}** - Unknown Variable Type")
 
     @staticmethod
-    def get_variable_hover_info(variable_declarations: Dict[str, Dict[str, Any]], uri: str,
-                                variable_name: str) -> Dict[str, Any] | None:
+    def get_variable_hover_info(variable_declarations: Dict[str, dict[str, Any]], uri: str,
+                                variable_name: str) -> dict[str, Any] | None:
         """Get hover info for declared variables."""
         variables = variable_declarations.get(uri, {})
         if variable_name in variables:
@@ -648,7 +586,7 @@ class SectionHoverProvider:
     """Specialized hover provider for sections."""
 
     @staticmethod
-    def get_section_hover_info(section_name: str) -> Dict[str, Any]:
+    def get_section_hover_info(section_name: str) -> dict[str, Any]:
         """Get hover info for section names."""
         # Don't treat regex patterns as section names!
         if section_name.startswith('/') or section_name.startswith('~') or '(' in section_name or ')' in section_name:
@@ -674,7 +612,7 @@ class ModifierHoverProvider:
     """Specialized hover provider for condition modifiers used with 'with' keyword."""
 
     @staticmethod
-    def get_modifier_hover_info(line: str, character: int) -> Dict[str, Any] | None:
+    def get_modifier_hover_info(line: str, character: int) -> dict[str, Any] | None:
         """Get hover info for condition modifiers in 'with' clauses."""
         modifier_data = doc.ModifierPattern.detect_modifier_list(line, character)
         if modifier_data:

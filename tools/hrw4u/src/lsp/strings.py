@@ -20,24 +20,24 @@
 from __future__ import annotations
 
 import re
-from typing import Any, Dict
+from typing import Any
 
 from .documentation import LSP_STRING_LITERAL_INFO
 from .hover import HoverInfoProvider, InterpolationHoverProvider
-from .types import (CompletionContext, LSPPosition, VariableDeclaration, DiagnosticRange, LSPDiagnostic)
+from .types import (CompletionContext, VariableDeclaration)
 
 
 class StringLiteralHandler:
     """Handles string literal processing and hover information."""
 
     @staticmethod
-    def _create_string_literal_hover() -> Dict[str, Any]:
+    def _create_string_literal_hover() -> dict[str, Any]:
         """Create standardized string literal hover info."""
         return HoverInfoProvider.create_hover_info(
             f"**{LSP_STRING_LITERAL_INFO['name']}** - HRW4U String Literal\n\n{LSP_STRING_LITERAL_INFO['description']}")
 
     @staticmethod
-    def check_string_literal(line: str, character: int) -> Dict[str, Any] | None:
+    def check_string_literal(line: str, character: int) -> dict[str, Any] | None:
         """Check if the cursor is inside a string literal and parse interpolated expressions."""
         in_single_quote = False
         in_double_quote = False
@@ -83,7 +83,7 @@ class InterpolationHandler:
     """Handles string interpolation expression processing."""
 
     @staticmethod
-    def check_interpolated_expression(string_content: str, cursor_pos: int) -> Dict[str, Any] | None:
+    def check_interpolated_expression(string_content: str, cursor_pos: int) -> dict[str, Any] | None:
         """Check if the cursor is over an interpolated expression like {geo.country}."""
         # Find all interpolated expressions {expression}
         for match in re.finditer(r'\{([^}]+)\}', string_content):
@@ -171,7 +171,7 @@ class ExpressionParser:
     """Parses various types of expressions for hover information."""
 
     @staticmethod
-    def parse_dotted_expression(line: str, character: int) -> Dict[str, Any] | None:
+    def parse_dotted_expression(line: str, character: int) -> dict[str, Any] | None:
         """Parse dotted expressions like outbound.req.X-Fie or inbound.req.@X-foo."""
         from .hover import DottedExpressionHoverProvider
 
@@ -245,61 +245,3 @@ class DocumentAnalyzer:
                         continue
 
         return variable_declarations
-
-    @staticmethod
-    def validate_section_names(text: str) -> list[LSPDiagnostic]:
-        """Pre-validate section names in the document with optimization."""
-        from hrw4u.states import SectionType
-        from functools import lru_cache
-
-        @lru_cache(maxsize=128)
-        def cached_section_validation(section_name: str) -> bool:
-            """Cache section name validation."""
-            valid_sections = {section.value for section in SectionType}
-            return section_name in valid_sections
-
-        diagnostics = []
-        lines = text.split('\n')
-
-        # Pre-compute valid sections once
-        valid_sections_list = sorted([section.value for section in SectionType])
-        valid_sections_str = ', '.join(valid_sections_list)
-
-        for line_num, line in enumerate(lines):
-            stripped = line.strip()
-            if not stripped or stripped.startswith(('//', '#')):
-                continue
-
-            # Look for section declarations (IDENT followed by {)
-            if '{' in stripped and not stripped.startswith('{'):
-                parts = stripped.split('{', 1)
-                potential_section = parts[0].strip()
-
-                # Skip if contains spaces or '=' (not a valid section declaration)
-                if ' ' in potential_section or '=' in potential_section:
-                    continue
-                if potential_section.startswith('}'):
-                    continue
-
-                # Skip if it's a known language keyword
-                from hrw4u.types import LanguageKeyword
-
-                language_keywords = {kw.keyword for kw in LanguageKeyword}
-                if potential_section.lower() in language_keywords:
-                    continue
-
-                # Use cached validation
-                if potential_section and not cached_section_validation(potential_section):
-                    start_pos = line.find(potential_section)
-                    end_pos = start_pos + len(potential_section)
-
-                    diagnostics.append(
-                        LSPDiagnostic(
-                            range=DiagnosticRange(
-                                start=LSPPosition(line=line_num, character=start_pos),
-                                end=LSPPosition(line=line_num, character=end_pos)),
-                            severity=1,
-                            message=f"Invalid section name: '{potential_section}'. Valid sections are: {valid_sections_str}",
-                            source="hrw4u-section-validator"))
-
-        return diagnostics

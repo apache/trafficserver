@@ -1,0 +1,1 @@
+(program (programItem (useDirective use test::TagAndOrigin)) (programItem (section REMAP { (sectionBody (statement (functionCall test::add-tag ( (argumentList (value "v2")) )) ;)) (sectionBody (statement (functionCall test::add-origin ( (argumentList (value "origin.example.com")) )) ;)) })) <EOF>)

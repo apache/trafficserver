@@ -1,0 +1,11 @@
+procedure local::mixed() {
+    if inbound.req.X-Env == "prod" {
+        inbound.req.X-Prod = "yes";
+    }
+
+    inbound.req.X-Always = "set";
+}
+
+REMAP {
+    local::mixed();
+}

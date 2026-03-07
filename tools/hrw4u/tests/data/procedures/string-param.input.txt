@@ -1,0 +1,5 @@
+use test::set-origin
+
+REMAP {
+    test::set-origin("example.com");
+}

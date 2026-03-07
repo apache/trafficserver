@@ -1,0 +1,5 @@
+use circular::A
+
+procedure circular::B() {
+    inbound.req.X-B = "b";
+}

@@ -17,11 +17,51 @@
 
 from __future__ import annotations
 
+import re
+from typing import Final
+
 from antlr4.error.ErrorListener import ErrorListener
+
+_TOKEN_NAMES: Final[dict[str, str]] = {
+    'QUALIFIED_IDENT': "qualified name (e.g. 'Namespace::Name')",
+    'IDENT': 'identifier',
+    'LPAREN': "'('",
+    'RPAREN': "')'",
+    'LBRACE': "'{'",
+    'RBRACE': "'}'",
+    'LBRACKET': "'['",
+    'RBRACKET': "']'",
+    'SEMICOLON': "';'",
+    'COLON': "':'",
+    'COMMA': "','",
+    'EQUAL': "'='",
+    'EQUALS': "'=='",
+    'PLUSEQUAL': "'+='",
+    'NEQ': "'!='",
+    'DOLLAR': "'$'",
+    'STRING': 'string literal',
+    'NUMBER': 'number',
+    'REGEX': 'regex pattern',
+    'IPV4_LITERAL': 'IPv4 address',
+    'IPV6_LITERAL': 'IPv6 address',
+    'COMMENT': 'comment',
+    'AND': "'&&'",
+    'OR': "'||'",
+    'TILDE': "'~'",
+    'NOT_TILDE': "'!~'",
+    'GT': "'>'",
+    'LT': "'<'",
+    'AT': "'@'",
+}
+
+_TOKEN_PATTERN: Final = re.compile(r'\b(' + '|'.join(re.escape(k) for k in sorted(_TOKEN_NAMES, key=len, reverse=True)) + r')\b')
+
+
+def humanize_error_message(msg: str) -> str:
+    return _TOKEN_PATTERN.sub(lambda m: _TOKEN_NAMES[m.group(1)], msg)
 
 
 class ThrowingErrorListener(ErrorListener):
-    """ANTLR error listener that throws exceptions on syntax errors."""
 
     def __init__(self, filename: str = "<input>") -> None:
         super().__init__()
@@ -42,11 +82,10 @@ class ThrowingErrorListener(ErrorListener):
         except Exception:
             pass
 
-        raise Hrw4uSyntaxError(self.filename, line, column, msg, code_line)
+        raise Hrw4uSyntaxError(self.filename, line, column, humanize_error_message(msg), code_line)
 
 
 class Hrw4uSyntaxError(Exception):
-    """Formatted syntax error with source context and Python 3.11+ exception notes."""
 
     def __init__(self, filename: str, line: int, column: int, message: str, source_line: str) -> None:
         super().__init__(self._format_error(filename, line, column, message, source_line))
@@ -56,11 +95,9 @@ class Hrw4uSyntaxError(Exception):
         self.source_line = source_line
 
     def add_context_note(self, context: str) -> None:
-        """Add contextual information using Python 3.11+ exception notes."""
         self.add_note(f"Context: {context}")
 
     def add_resolution_hint(self, hint: str) -> None:
-        """Add resolution hint using Python 3.11+ exception notes."""
         self.add_note(f"Hint: {hint}")
 
     def _format_error(self, filename: str, line: int, col: int, message: str, source_line: str) -> str:
@@ -84,7 +121,6 @@ class SymbolResolutionError(Exception):
 
 
 def hrw4u_error(filename: str, ctx: object, exc: Exception) -> Hrw4uSyntaxError:
-    """Convert exceptions to formatted syntax errors with source context."""
     if isinstance(exc, Hrw4uSyntaxError):
         return exc
 
@@ -107,23 +143,20 @@ def hrw4u_error(filename: str, ctx: object, exc: Exception) -> Hrw4uSyntaxError:
 
 
 class ErrorCollector:
-    """Collects multiple syntax errors for comprehensive error reporting."""
 
-    def __init__(self) -> None:
-        """Initialize an empty error collector."""
+    def __init__(self, max_errors: int = 5) -> None:
         self.errors: list[Hrw4uSyntaxError] = []
+        self.max_errors = max_errors
 
     def add_error(self, error: Hrw4uSyntaxError) -> None:
-        """
-        Add a syntax error to the collection.
-        """
         self.errors.append(error)
 
     def has_errors(self) -> bool:
-        """
-        Check if any errors have been collected.
-        """
         return bool(self.errors)
+
+    @property
+    def at_limit(self) -> bool:
+        return len(self.errors) >= self.max_errors
 
     def get_error_summary(self) -> str:
         if not self.errors:
@@ -137,11 +170,13 @@ class ErrorCollector:
             if hasattr(error, '__notes__') and error.__notes__:
                 lines.extend(error.__notes__)
 
+        if self.at_limit:
+            lines.append(f"(stopped after {self.max_errors} errors)")
+
         return "\n".join(lines)
 
 
 class CollectingErrorListener(ErrorListener):
-    """ANTLR error listener that collects syntax errors for tolerant parsing."""
 
     def __init__(self, filename: str = "<input>", error_collector: ErrorCollector | None = None) -> None:
         super().__init__()
@@ -162,5 +197,8 @@ class CollectingErrorListener(ErrorListener):
         except Exception:
             pass
 
-        error = Hrw4uSyntaxError(self.filename, line, column, msg, code_line)
+        error = Hrw4uSyntaxError(self.filename, line, column, humanize_error_message(msg), code_line)
         self.error_collector.add_error(error)
+
+        if self.error_collector.at_limit:
+            raise error

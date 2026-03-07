@@ -14,15 +14,11 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-"""
-Unit tests for internal methods and helper functions.
 
-This module tests individual methods and components that might not be
-fully exercised by the integration tests, providing focused testing
-for internal implementation details.
-"""
-
-from hrw4u.errors import ErrorCollector, Hrw4uSyntaxError, SymbolResolutionError
+from hrw4u.errors import ErrorCollector, Hrw4uSyntaxError, SymbolResolutionError, humanize_error_message
+from hrw4u.common import create_parse_tree
+from hrw4u.hrw4uLexer import hrw4uLexer
+from hrw4u.hrw4uParser import hrw4uParser
 from hrw4u.visitor import HRW4UVisitor
 from hrw4u.validation import Validator
 import pytest
@@ -31,47 +27,38 @@ import os
 
 
 class TestHRW4UVisitorUnits:
-    """Unit tests for HRW4U internal methods."""
 
     def setup_method(self):
-        """Set up test fixtures."""
-        self.visitor = HRW4UVisitor(None, None, None)
+        self.visitor = HRW4UVisitor()
 
     def test_parse_function_args_empty(self):
-        """Test _parse_function_args with empty input."""
         assert self.visitor._parse_function_args('') == []
         assert self.visitor._parse_function_args('   ') == []
 
     def test_parse_function_args_simple(self):
-        """Test _parse_function_args with simple arguments."""
         assert self.visitor._parse_function_args('arg1') == ['arg1']
         assert self.visitor._parse_function_args('arg1, arg2') == ['arg1', 'arg2']
         assert self.visitor._parse_function_args('arg1, arg2, arg3') == ['arg1', 'arg2', 'arg3']
 
     def test_parse_function_args_quoted_commas(self):
-        """Test _parse_function_args with quotes containing commas."""
         assert self.visitor._parse_function_args('"arg1, with comma", arg2') == ['"arg1, with comma"', 'arg2']
         assert self.visitor._parse_function_args('arg1, "arg2, with comma"') == ['arg1', '"arg2, with comma"']
         assert self.visitor._parse_function_args('"first, comma", "second, comma"') == ['"first, comma"', '"second, comma"']
 
     def test_parse_function_args_single_quotes(self):
-        """Test _parse_function_args with single quotes containing commas."""
         assert self.visitor._parse_function_args("'arg1, with comma', arg2") == ["'arg1, with comma'", 'arg2']
         assert self.visitor._parse_function_args("arg1, 'arg2, with comma'") == ['arg1', "'arg2, with comma'"]
 
     def test_parse_function_args_nested_functions(self):
-        """Test _parse_function_args with nested function calls."""
         assert self.visitor._parse_function_args('func(a,b), arg2') == ['func(a,b)', 'arg2']
         assert self.visitor._parse_function_args('arg1, func(a,b)') == ['arg1', 'func(a,b)']
         assert self.visitor._parse_function_args('func1(a,b), func2(c,d)') == ['func1(a,b)', 'func2(c,d)']
 
     def test_parse_function_args_deeply_nested(self):
-        """Test _parse_function_args with deeply nested parentheses."""
         assert self.visitor._parse_function_args('func(nested(a,b),c), arg2') == ['func(nested(a,b),c)', 'arg2']
         assert self.visitor._parse_function_args('outer(inner(deep(x,y),z),w), final') == ['outer(inner(deep(x,y),z),w)', 'final']
 
     def test_parse_function_args_mixed_complex(self):
-        """Test _parse_function_args with complex mixed cases."""
         complex_arg = 'func("arg1, with comma", nested_func(a,b), "arg3")'
         assert self.visitor._parse_function_args(complex_arg) == [complex_arg]
         assert self.visitor._parse_function_args('"quoted, arg", func(a,b), normal_arg') == [
@@ -79,33 +66,27 @@ class TestHRW4UVisitorUnits:
         ]
 
     def test_parse_function_args_whitespace_handling(self):
-        """Test _parse_function_args with various whitespace patterns."""
         assert self.visitor._parse_function_args(' arg1 , arg2 ') == ['arg1', 'arg2']
         assert self.visitor._parse_function_args('func( a , b ), arg2') == ['func( a , b )', 'arg2']
         assert self.visitor._parse_function_args('\targ1\t,\targ2\t') == ['arg1', 'arg2']
 
     def test_parse_function_args_escaped_quotes(self):
-        """Test _parse_function_args with escaped quotes (basic test)."""
-        # Note: The current implementation doesn't handle escaped quotes perfectly,
+        # The current implementation doesn't handle escaped quotes perfectly,
         # but this documents the current behavior
         result = self.visitor._parse_function_args('"arg with \\" quote", arg2')
 
     def test_parse_function_args_edge_cases(self):
-        """Test _parse_function_args with edge cases."""
         assert self.visitor._parse_function_args('func(a,b, arg2') == ['func(a,b, arg2']
         assert self.visitor._parse_function_args('arg1,, arg2') == ['arg1', '', 'arg2']
         assert self.visitor._parse_function_args(',,,') == ['', '', '']
 
 
 class TestErrorCollectorUnits:
-    """Unit tests for ErrorCollector internal methods."""
 
     def setup_method(self):
-        """Set up test fixtures."""
         self.error_collector = ErrorCollector()
 
     def test_error_collector_basic(self):
-        """Test basic ErrorCollector functionality."""
         assert not self.error_collector.has_errors()
 
         test_error = Hrw4uSyntaxError("test.hrw4u", 1, 0, "Test error", "test line")
@@ -117,7 +98,6 @@ class TestErrorCollectorUnits:
         assert "Found 1 error:" in error_summary
 
     def test_error_collector_multiple_errors(self):
-        """Test ErrorCollector with multiple errors."""
         error1 = Hrw4uSyntaxError("test1.hrw4u", 1, 0, "Error 1", "line 1")
         error2 = Hrw4uSyntaxError("test2.hrw4u", 2, 5, "Error 2", "line 2")
         error3 = Hrw4uSyntaxError("test3.hrw4u", 3, 10, "Error 3", "line 3")
@@ -136,10 +116,8 @@ class TestErrorCollectorUnits:
 
 
 class TestValidationUnits:
-    """Unit tests for validation functions."""
 
     def test_http_header_name_valid_standard(self):
-        """Test http_header_name with valid standard RFC 7230 header names."""
         validator = Validator.http_header_name()
 
         valid_names = [
@@ -147,27 +125,25 @@ class TestValidationUnits:
             "X-Custom-Header",
             "User-Agent",
             "Accept-Encoding",
-            "X_Custom_Header",  # Underscores allowed
-            "X~Custom~Header",  # Tildes allowed
-            "X^Custom^Header",  # Carets allowed
-            "X|Custom|Header",  # Pipes allowed
-            "X!Custom!Header",  # Exclamation marks allowed
-            "X#Custom#Header",  # Hash marks allowed
-            "X$Custom$Header",  # Dollar signs allowed
-            "X%Custom%Header",  # Percent signs allowed
-            "X&Custom&Header",  # Ampersands allowed
-            "X'Custom'Header",  # Single quotes allowed
-            "X*Custom*Header",  # Asterisks allowed
-            "X+Custom+Header",  # Plus signs allowed
-            "X`Custom`Header",  # Backticks allowed
+            "X_Custom_Header",
+            "X~Custom~Header",
+            "X^Custom^Header",
+            "X|Custom|Header",
+            "X!Custom!Header",
+            "X#Custom#Header",
+            "X$Custom$Header",
+            "X%Custom%Header",
+            "X&Custom&Header",
+            "X'Custom'Header",
+            "X*Custom*Header",
+            "X+Custom+Header",
+            "X`Custom`Header",
         ]
 
         for name in valid_names:
-            # Should not raise an exception
             validator(name)
 
     def test_http_header_name_valid_ats_internal(self):
-        """Test http_header_name with valid ATS internal headers (@ prefix)."""
         validator = Validator.http_header_name()
 
         valid_ats_names = [
@@ -178,38 +154,36 @@ class TestValidationUnits:
         ]
 
         for name in valid_ats_names:
-            # Should not raise an exception
             validator(name)
 
     def test_http_header_name_invalid(self):
-        """Test http_header_name with invalid header names."""
         validator = Validator.http_header_name()
 
         invalid_names = [
-            "",  # Empty name
-            "@",  # Just @ alone
-            "Content Type",  # Space not allowed
-            "Content\tType",  # Tab not allowed
-            "Content\nType",  # Newline not allowed
-            "Content(Type)",  # Parentheses not allowed
-            "Content[Type]",  # Brackets not allowed
-            "Content{Type}",  # Braces not allowed
-            "Content<Type>",  # Angle brackets not allowed
-            "Content@Type",  # @ not allowed in middle
-            "Content,Type",  # Comma not allowed
-            "Content;Type",  # Semicolon not allowed
-            "Content:Type",  # Colon not allowed
-            "Content=Type",  # Equals not allowed
-            "Content?Type",  # Question mark not allowed
-            "Content/Type",  # Forward slash not allowed
-            "Content\\Type",  # Backslash not allowed
-            "Content\"Type\"",  # Quotes not allowed
-            "@Content@Type",  # @ not allowed after first position
-            "X-@Header",  # @ not allowed after first position
-            "headers.X-Match",  # Dots not allowed (hrw4u restriction)
-            "X.Custom.Header",  # Dots not allowed (hrw4u restriction)
-            "@Custom.Header",  # Dots not allowed even in ATS headers
-            "header.X-Foo",  # Dots not allowed (the specific case mentioned)
+            "",
+            "@",
+            "Content Type",
+            "Content\tType",
+            "Content\nType",
+            "Content(Type)",
+            "Content[Type]",
+            "Content{Type}",
+            "Content<Type>",
+            "Content@Type",
+            "Content,Type",
+            "Content;Type",
+            "Content:Type",
+            "Content=Type",
+            "Content?Type",
+            "Content/Type",
+            "Content\\Type",
+            "Content\"Type\"",
+            "@Content@Type",
+            "X-@Header",
+            "headers.X-Match",
+            "X.Custom.Header",
+            "@Custom.Header",
+            "header.X-Foo",
         ]
 
         for name in invalid_names:
@@ -217,43 +191,40 @@ class TestValidationUnits:
                 validator(name)
 
     def test_http_token_valid(self):
-        """Test http_token with valid tokens."""
         validator = Validator.http_token()
 
         valid_tokens = [
             "Content-Type",
             "simple_token",
             "Token123",
-            "!#$%&'*+-.^_`|~",  # All allowed special chars
+            "!#$%&'*+-.^_`|~",
             "Mixed123.Token-Name_Test",
         ]
 
         for token in valid_tokens:
-            # Should not raise an exception
             validator(token)
 
     def test_http_token_invalid(self):
-        """Test http_token with invalid tokens."""
         validator = Validator.http_token()
 
         invalid_tokens = [
-            "",  # Empty
-            "token with space",  # Space not allowed
-            "token\ttab",  # Tab not allowed
-            "token\nnewline",  # Newline not allowed
-            "token(paren)",  # Parentheses not allowed
-            "token[bracket]",  # Brackets not allowed
-            "token{brace}",  # Braces not allowed
-            "token<angle>",  # Angle brackets not allowed
-            "token@at",  # @ not allowed in http_token
-            "token,comma",  # Comma not allowed
-            "token;semicolon",  # Semicolon not allowed
-            "token:colon",  # Colon not allowed
-            "token=equals",  # Equals not allowed
-            "token?question",  # Question mark not allowed
-            "token/slash",  # Forward slash not allowed
-            "token\\backslash",  # Backslash not allowed
-            "token\"quote\"",  # Quotes not allowed
+            "",
+            "token with space",
+            "token\ttab",
+            "token\nnewline",
+            "token(paren)",
+            "token[bracket]",
+            "token{brace}",
+            "token<angle>",
+            "token@at",
+            "token,comma",
+            "token;semicolon",
+            "token:colon",
+            "token=equals",
+            "token?question",
+            "token/slash",
+            "token\\backslash",
+            "token\"quote\"",
         ]
 
         for token in invalid_tokens:
@@ -261,19 +232,15 @@ class TestValidationUnits:
                 validator(token)
 
     def test_regex_validator_factory(self):
-        """Test the unified regex_validator factory method."""
         import re
 
-        # Create a custom validator for testing
-        test_pattern = re.compile(r'^[A-Z]+$')  # Only uppercase letters
+        test_pattern = re.compile(r'^[A-Z]+$')
         validator = Validator.regex_validator(test_pattern, "Must be uppercase letters only")
 
-        # Valid cases
         validator("ABC")
         validator("HELLO")
         validator("TEST")
 
-        # Invalid cases
         with pytest.raises(SymbolResolutionError, match="Must be uppercase letters only"):
             validator("abc")
 
@@ -282,6 +249,67 @@ class TestValidationUnits:
 
         with pytest.raises(SymbolResolutionError, match="Must be uppercase letters only"):
             validator("TEST123")
+
+
+class TestHumanizeErrorMessage:
+
+    def test_replaces_qualified_ident(self):
+        msg = "mismatched input 'Apple' expecting QUALIFIED_IDENT"
+        result = humanize_error_message(msg)
+        assert "QUALIFIED_IDENT" not in result
+        assert "qualified name" in result
+
+    def test_replaces_punctuation_tokens(self):
+        msg = "mismatched input '{' expecting LPAREN"
+        result = humanize_error_message(msg)
+        assert "LPAREN" not in result
+        assert "'('" in result
+
+    def test_replaces_multiple_tokens(self):
+        msg = "expecting {IDENT, QUALIFIED_IDENT, SEMICOLON}"
+        result = humanize_error_message(msg)
+        assert "IDENT" not in result
+        assert "QUALIFIED_IDENT" not in result
+        assert "SEMICOLON" not in result
+
+    def test_preserves_normal_text(self):
+        msg = "unknown procedure 'test::foo': not loaded via 'use'"
+        result = humanize_error_message(msg)
+        assert result == msg
+
+    def test_no_partial_word_replacement(self):
+        msg = "some IDENTIFIER_LIKE text"
+        result = humanize_error_message(msg)
+        assert result == msg
+
+
+class TestParseErrorMessages:
+    """Verify that ANTLR parse errors use human-friendly token names."""
+
+    def _first_error(self, text: str) -> str:
+        _, _, collector = create_parse_tree(text, "<test>", hrw4uLexer, hrw4uParser, "test", collect_errors=True, max_errors=10)
+        assert collector and collector.has_errors(), f"Expected parse errors for: {text!r}"
+        return str(collector.errors[0])
+
+    def test_single_colon_in_procedure(self):
+        error = self._first_error("procedure Apple:Roles() { }")
+        assert "QUALIFIED_IDENT" not in error
+        assert "qualified name" in error
+
+    def test_missing_lparen(self):
+        error = self._first_error("procedure ns::foo { }")
+        assert "LPAREN" not in error
+        assert "'('" in error
+
+    def test_unqualified_procedure_name(self):
+        error = self._first_error("procedure nocolon() { }")
+        assert "QUALIFIED_IDENT" not in error
+        assert "qualified name" in error
+
+    def test_bad_use_directive(self):
+        error = self._first_error("use Foo")
+        assert "QUALIFIED_IDENT" not in error
+        assert "qualified name" in error
 
 
 if __name__ == "__main__":

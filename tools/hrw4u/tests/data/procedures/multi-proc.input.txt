@@ -1,0 +1,6 @@
+use test::TagAndOrigin
+
+REMAP {
+    test::add-tag("v2");
+    test::add-origin("origin.example.com");
+}

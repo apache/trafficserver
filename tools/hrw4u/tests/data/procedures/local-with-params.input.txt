@@ -1,0 +1,7 @@
+procedure local::tag($name) {
+    inbound.req.X-Tag = "$name";
+}
+
+REMAP {
+    local::tag("hello");
+}
