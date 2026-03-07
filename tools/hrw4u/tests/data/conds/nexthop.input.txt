@@ -1,0 +1,13 @@
+SEND_REQUEST {
+    if nexthop.host == "parent.example.com" {
+        outbound.req.X-Via-Parent = "yes";
+    }
+}
+
+SEND_RESPONSE {
+    if outbound.req.X-Via-Parent == "yes" {
+        inbound.resp.X-Next-Host = "{nexthop.host}";
+        inbound.resp.X-Next-Port = "{nexthop.port}";
+        inbound.resp.X-Next-Strategy = "{nexthop.strategy}";
+    }
+}
