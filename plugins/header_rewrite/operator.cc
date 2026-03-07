@@ -54,6 +54,31 @@ Operator::initialize(Parser &p)
 }
 
 void
+Operator::initialize(const hrw::OperatorSpec &spec)
+{
+  initialize_hooks();
+
+  if (need_txn_slot()) {
+    _txn_slot = acquire_txn_slot();
+  }
+  if (need_txn_private_slot()) {
+    _txn_private_slot = acquire_txn_private_slot();
+  }
+
+  if (spec.mod_last) {
+    _mods = static_cast<OperModifiers>(_mods | OPER_LAST);
+  }
+
+  if (spec.mod_qsa) {
+    _mods = static_cast<OperModifiers>(_mods | OPER_QSA);
+  }
+
+  if (spec.mod_inv) {
+    _mods = static_cast<OperModifiers>(_mods | OPER_INV);
+  }
+}
+
+void
 OperatorHeaders::initialize(Parser &p)
 {
   Operator::initialize(p);
