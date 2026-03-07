@@ -32,6 +32,8 @@
 
 #pragma once
 
+#include <atomic>
+
 #include "records/RecProcess.h"
 
 #include "tscore/ink_defs.h"
@@ -45,7 +47,7 @@
 class url_mapping;
 struct host_hdr_info;
 
-extern UrlRewrite *rewrite_table;
+extern std::atomic<UrlRewrite *> rewrite_table;
 
 // API Functions
 int init_reverse_proxy();
@@ -57,4 +59,5 @@ bool         response_url_remap(HTTPHdr *response_header, UrlRewrite *table);
 bool reloadUrlRewrite();
 bool urlRewriteVerify();
 
-int url_rewrite_CB(const char *name, RecDataT data_type, RecData data, void *cookie);
+void init_remap_volume_host_records();
+int  url_rewrite_CB(const char *name, RecDataT data_type, RecData data, void *cookie);

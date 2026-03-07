@@ -102,6 +102,7 @@ using ink_time_t = time_t;
 
 struct HttpConfigParams;
 class HttpSM;
+struct CacheHostRecord;
 
 #include "iocore/net/ConnectionTracker.h"
 #include "tscore/InkErrno.h"
@@ -494,6 +495,8 @@ public:
     URL             *parent_selection_url = nullptr;
     URL              parent_selection_url_storage;
 
+    const CacheHostRecord *volume_host_rec = nullptr;
+
     _CacheLookupInfo() {}
   };
 
@@ -715,8 +718,9 @@ public:
 
     MgmtByte cache_open_write_fail_action = 0;
 
-    HttpConfigParams           *http_config_param = nullptr;
-    CacheLookupInfo             cache_info;
+    HttpConfigParams *http_config_param = nullptr;
+    CacheLookupInfo   cache_info;
+
     ResolveInfo                 dns_info;
     RedirectInfo                redirect_info;
     ConnectionTracker::TxnState outbound_conn_track_state;
