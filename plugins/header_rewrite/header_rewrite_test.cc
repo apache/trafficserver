@@ -24,8 +24,14 @@
 #include <cstdarg>
 #include <iostream>
 #include <ostream>
+#include <sys/stat.h>
 
 #include "parser.h"
+
+#if TS_USE_HRW_MAXMINDDB
+#include <maxminddb.h>
+#include <arpa/inet.h>
+#endif
 
 namespace header_rewrite_ns
 {
@@ -538,12 +544,120 @@ test_tokenizer()
   return errors;
 }
 
+#if TS_USE_HRW_MAXMINDDB
+static bool
+file_exists(const char *path)
+{
+  struct stat st;
+  return stat(path, &st) == 0;
+}
+
+static const char *
+find_country_mmdb()
+{
+  static const char *paths[] = {
+    "/usr/share/GeoIP/GeoLite2-Country.mmdb", "/usr/local/share/GeoIP/GeoLite2-Country.mmdb",
+    "/var/lib/GeoIP/GeoLite2-Country.mmdb",   "/opt/geoip/GeoLite2-Country.mmdb",
+    "/usr/share/GeoIP/GeoIP2-Country.mmdb",   "/usr/share/GeoIP/dbip-country-lite.mmdb",
+  };
+  for (auto *p : paths) {
+    if (file_exists(p)) {
+      return p;
+    }
+  }
+  if (const char *env = getenv("MMDB_COUNTRY_PATH")) {
+    if (file_exists(env)) {
+      return env;
+    }
+  }
+  return nullptr;
+}
+
+int
+test_maxmind_geo()
+{
+  const char *db_path = find_country_mmdb();
+  if (db_path == nullptr) {
+    std::cout << "SKIP: No MaxMind country mmdb found (set MMDB_COUNTRY_PATH to override)" << std::endl;
+    return 0;
+  }
+
+  std::cout << "Testing MaxMind geo lookups with: " << db_path << std::endl;
+
+  int    errors = 0;
+  MMDB_s mmdb;
+  int    status = MMDB_open(db_path, MMDB_MODE_MMAP, &mmdb);
+  if (MMDB_SUCCESS != status) {
+    std::cerr << "Cannot open " << db_path << ": " << MMDB_strerror(status) << std::endl;
+    return 1;
+  }
+
+  int                  gai_error, mmdb_error;
+  MMDB_lookup_result_s result = MMDB_lookup_string(&mmdb, "8.8.8.8", &gai_error, &mmdb_error);
+
+  if (MMDB_SUCCESS != mmdb_error || !result.found_entry) {
+    std::cerr << "Cannot look up 8.8.8.8 in " << db_path << std::endl;
+    MMDB_close(&mmdb);
+    return 1;
+  }
+
+  MMDB_entry_data_s entry_data;
+
+  // Verify "country" -> "iso_code" path (used by GEO_QUAL_COUNTRY)
+  status = MMDB_get_value(&result.entry, &entry_data, "country", "iso_code", NULL);
+  if (MMDB_SUCCESS != status || !entry_data.has_data || entry_data.type != MMDB_DATA_TYPE_UTF8_STRING) {
+    std::cerr << "FAIL: country/iso_code lookup failed for 8.8.8.8" << std::endl;
+    ++errors;
+  } else {
+    std::string iso(entry_data.utf8_string, entry_data.data_size);
+    if (iso != "US") {
+      std::cerr << "FAIL: expected country iso_code 'US' for 8.8.8.8, got '" << iso << "'" << std::endl;
+      ++errors;
+    } else {
+      std::cout << "  PASS: country/iso_code = " << iso << std::endl;
+    }
+  }
+
+  // Verify "country" -> "names" -> "en" path exists (not used by header_rewrite but validates structure)
+  status = MMDB_get_value(&result.entry, &entry_data, "country", "names", "en", NULL);
+  if (MMDB_SUCCESS != status || !entry_data.has_data || entry_data.type != MMDB_DATA_TYPE_UTF8_STRING) {
+    std::cerr << "FAIL: country/names/en lookup failed for 8.8.8.8" << std::endl;
+    ++errors;
+  } else {
+    std::string name(entry_data.utf8_string, entry_data.data_size);
+    std::cout << "  PASS: country/names/en = " << name << std::endl;
+  }
+
+  // Verify loopback returns no entry
+  result = MMDB_lookup_string(&mmdb, "127.0.0.1", &gai_error, &mmdb_error);
+  if (MMDB_SUCCESS == mmdb_error && result.found_entry) {
+    std::cerr << "FAIL: expected no entry for 127.0.0.1" << std::endl;
+    ++errors;
+  } else {
+    std::cout << "  PASS: 127.0.0.1 correctly returns no entry" << std::endl;
+  }
+
+  MMDB_close(&mmdb);
+
+  if (errors == 0) {
+    std::cout << "MaxMind geo tests passed" << std::endl;
+  }
+  return errors;
+}
+#endif
+
 int
 main()
 {
   if (test_parsing() || test_processing() || test_tokenizer()) {
     return 1;
   }
+
+#if TS_USE_HRW_MAXMINDDB
+  if (test_maxmind_geo()) {
+    return 1;
+  }
+#endif
 
   return 0;
 }
