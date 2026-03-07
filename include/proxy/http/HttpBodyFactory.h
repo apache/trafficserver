@@ -121,6 +121,7 @@ public:
   char                          *set_name;
   char                          *content_language;
   char                          *content_charset;
+  char                          *content_type;
   std::unique_ptr<TemplateTable> table_of_pages;
 };
 
@@ -215,7 +216,7 @@ public:
 private:
   char *fabricate(StrList *acpt_language_list, StrList *acpt_charset_list, const char *type, HttpTransact::State *context,
                   int64_t *resulting_buffer_length, const char **content_language_return, const char **content_charset_return,
-                  const char **set_return = nullptr);
+                  const char **content_type_return, const char **set_return = nullptr);
 
   const char       *determine_set_by_language(StrList *acpt_language_list, StrList *acpt_charset_list);
   const char       *determine_set_by_host(HttpTransact::State *context);

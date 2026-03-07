@@ -7077,7 +7077,7 @@ HttpSM::setup_internal_transfer(HttpSMHandler handler_arg)
       }
       ats_free(t_state.internal_msg_buffer_type);
       t_state.internal_msg_buffer_type = nullptr;
-    } else {
+    } else if (!t_state.hdr_info.client_response.presence(MIME_PRESENCE_CONTENT_TYPE)) {
       t_state.hdr_info.client_response.value_set(static_cast<std::string_view>(MIME_FIELD_CONTENT_TYPE), "text/html"sv);
     }
   } else {
