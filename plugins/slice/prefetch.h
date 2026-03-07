@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include <map>
+#include <string>
 
 #include "ts/ts.h"
 #include "Data.h"
@@ -33,15 +33,18 @@
  * @brief Represents a single background fetch.
  */
 struct BgBlockFetch {
-  static bool schedule(Data *const data, int blocknum);
+  static bool schedule(Data *const data, int blocknum, std::string_view url);
 
-  explicit BgBlockFetch(int blocknum) : m_blocknum(blocknum) {}
+  BgBlockFetch() = default;
 
   bool       fetch(Data *const data);
   static int handler(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */);
+  void       clear();
 
   /* This is for the actual background fetch / NetVC */
-  Stage  m_stream;
-  int    m_blocknum;
-  TSCont m_cont = nullptr;
+  Stage       m_stream;
+  int         m_blocknum{0};
+  TSCont      m_cont{nullptr};
+  Config     *m_config{nullptr};
+  std::string m_key;
 };
