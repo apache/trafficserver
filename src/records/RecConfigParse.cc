@@ -84,24 +84,20 @@ RecFileImport_Xmalloc(const char *file, char **file_buf, int *file_size)
 }
 
 //-------------------------------------------------------------------------
-// RecConfigOverrideFromRunroot
+// Records whose paths are managed by runroot.  When runroot is active the
+// value from records.yaml is replaced with the resolved Layout path.
 //-------------------------------------------------------------------------
-bool
-RecConfigOverrideFromRunroot(const char *name)
-{
-  if (!get_runroot().empty()) {
-    if (!strcmp(name, "proxy.config.bin_path") || !strcmp(name, "proxy.config.local_state_dir") ||
-        !strcmp(name, "proxy.config.log.logfile_dir") || !strcmp(name, "proxy.config.plugin.plugin_dir")) {
-      return true;
-    }
-  }
-  return false;
-}
+static constexpr std::pair<std::string_view, std::string Layout::*> runroot_records[] = {
+  {"proxy.config.bin_path",          &Layout::bindir    },
+  {"proxy.config.local_state_dir",   &Layout::runtimedir},
+  {"proxy.config.log.logfile_dir",   &Layout::logdir    },
+  {"proxy.config.plugin.plugin_dir", &Layout::libexecdir},
+};
 
 //-------------------------------------------------------------------------
 // RecConfigOverrideFromEnvironment
 //-------------------------------------------------------------------------
-const char *
+std::pair<std::string, RecConfigOverrideSource>
 RecConfigOverrideFromEnvironment(const char *name, const char *value)
 {
   ats_scoped_str envname(ats_strdup(name));
@@ -121,12 +117,18 @@ RecConfigOverrideFromEnvironment(const char *name, const char *value)
 
   envval = getenv(envname.get());
   if (envval) {
-    return envval;
-  } else if (RecConfigOverrideFromRunroot(name)) {
-    return nullptr;
+    return {envval, RecConfigOverrideSource::ENV};
   }
 
-  return value;
+  if (!get_runroot().empty()) {
+    for (auto const &[rec_name, member] : runroot_records) {
+      if (rec_name == name) {
+        return {Layout::get()->*member, RecConfigOverrideSource::RUNROOT};
+      }
+    }
+  }
+
+  return {value ? value : "", RecConfigOverrideSource::NONE};
 }
 
 //-------------------------------------------------------------------------
@@ -141,10 +143,9 @@ RecConfigFileParse(const char *path, RecConfigEntryCallback handler)
   const char *line;
   int         line_num;
 
-  char       *rec_type_str, *name_str, *data_type_str, *data_str;
-  const char *value_str;
-  RecT        rec_type;
-  RecDataT    data_type;
+  char    *rec_type_str, *name_str, *data_type_str, *data_str;
+  RecT     rec_type;
+  RecDataT data_type;
 
   Tokenizer      line_tok("\r\n");
   tok_iter_state line_tok_state;
@@ -245,8 +246,15 @@ RecConfigFileParse(const char *path, RecConfigEntryCallback handler)
     }
 
     // OK, we parsed the record, send it to the handler ...
-    value_str = RecConfigOverrideFromEnvironment(name_str, data_str);
-    handler(rec_type, data_type, name_str, value_str, value_str == data_str ? REC_SOURCE_EXPLICIT : REC_SOURCE_ENV);
+    {
+      auto [value_str, override_source] = RecConfigOverrideFromEnvironment(name_str, data_str);
+      if (override_source != RecConfigOverrideSource::NONE) {
+        RecDebug(DL_Debug, "'%s' overridden with '%s' by %s", name_str, value_str.c_str(),
+                 RecConfigOverrideSourceName(override_source));
+      }
+      handler(rec_type, data_type, name_str, value_str.c_str(),
+              override_source == RecConfigOverrideSource::NONE ? REC_SOURCE_EXPLICIT : REC_SOURCE_ENV);
+    }
 
     // update our g_rec_config_contents_xxx
     g_rec_config_contents_ht.emplace(name_str);
