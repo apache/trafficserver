@@ -500,6 +500,12 @@ Log::init_fields()
   global_field_list.add(field, false);
   field_symbol_hash.emplace("cqql", field);
 
+  // Client request squid length plus TLS handshake bytes received for TLS connections
+  field = new LogField("client_req_squid_len_tls", "cqqtl", LogField::sINT, &LogAccess::marshal_client_req_squid_len_tls,
+                       &LogAccess::unmarshal_int_to_str);
+  global_field_list.add(field, false);
+  field_symbol_hash.emplace("cqqtl", field);
+
   field = new LogField("cache_lookup_url_canonical", "cluc", LogField::STRING, &LogAccess::marshal_cache_lookup_url_canon,
                        &LogAccess::unmarshal_str);
   global_field_list.add(field, false);
@@ -589,6 +595,24 @@ Log::init_fields()
   global_field_list.add(field, false);
   field_symbol_hash.emplace("cqssa", field);
 
+  // TLS handshake bytes - bytes received from client during TLS handshake
+  field = new LogField("client_tls_handshake_bytes_rx", "cthbr", LogField::sINT, &LogAccess::marshal_client_tls_handshake_bytes_rx,
+                       &LogAccess::unmarshal_int_to_str);
+  global_field_list.add(field, false);
+  field_symbol_hash.emplace("cthbr", field);
+
+  // TLS handshake bytes - bytes sent to client during TLS handshake
+  field = new LogField("client_tls_handshake_bytes_tx", "cthbt", LogField::sINT, &LogAccess::marshal_client_tls_handshake_bytes_tx,
+                       &LogAccess::unmarshal_int_to_str);
+  global_field_list.add(field, false);
+  field_symbol_hash.emplace("cthbt", field);
+
+  // TLS handshake bytes - total (rx + tx) during TLS handshake
+  field = new LogField("client_tls_handshake_bytes", "cthb", LogField::sINT, &LogAccess::marshal_client_tls_handshake_bytes,
+                       &LogAccess::unmarshal_int_to_str);
+  global_field_list.add(field, false);
+  field_symbol_hash.emplace("cthb", field);
+
   Ptr<LogFieldAliasTable> finish_status_map = make_ptr(new LogFieldAliasTable);
   finish_status_map->init(N_LOG_FINISH_CODE_TYPES, LOG_FINISH_FIN, "FIN", LOG_FINISH_INTR, "INTR", LOG_FINISH_TIMEOUT, "TIMEOUT");
 
@@ -637,6 +661,12 @@ Log::init_fields()
                        &LogAccess::unmarshal_int_to_str);
   global_field_list.add(field, false);
   field_symbol_hash.emplace("psql", field);
+
+  // Squid length plus TLS handshake bytes sent for TLS connections
+  field = new LogField("proxy_resp_squid_len_tls", "psqtl", LogField::sINT, &LogAccess::marshal_proxy_resp_squid_len_tls,
+                       &LogAccess::unmarshal_int_to_str);
+  global_field_list.add(field, false);
+  field_symbol_hash.emplace("psqtl", field);
 
   field = new LogField("proxy_resp_content_len", "pscl", LogField::sINT, &LogAccess::marshal_proxy_resp_content_len,
                        &LogAccess::unmarshal_int_to_str);
