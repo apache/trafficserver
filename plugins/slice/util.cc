@@ -52,8 +52,14 @@ schedule_prefetch(Data *const data)
     return;
   }
 
-  int                    urllen = 0;
-  char *const            urlstr = TSUrlStringGet(data->m_urlbuf, data->m_urlloc, &urllen);
+  int         urllen = 0;
+  char *const urlstr = TSUrlStringGet(data->m_urlbuf, data->m_urlloc, &urllen);
+
+  if (urlstr == nullptr || urllen <= 0) {
+    TSfree(urlstr);
+    return;
+  }
+
   std::string_view const url(urlstr, urllen);
   int                    nextblocknum = data->m_blocknum + 1;
 

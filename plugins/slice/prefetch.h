@@ -24,6 +24,7 @@
 #pragma once
 
 #include <string>
+#include <string_view>
 
 #include "ts/ts.h"
 #include "Data.h"

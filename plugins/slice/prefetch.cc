@@ -74,6 +74,8 @@ Config::prefetchRelease(BgBlockFetch *bg)
 void
 Config::prefetchCleanup()
 {
+  std::lock_guard<std::mutex> const guard(m_prefetch_mutex);
+
   for (auto *bg : m_prefetch_freelist) {
     delete bg;
   }
