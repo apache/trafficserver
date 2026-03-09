@@ -64,8 +64,9 @@ It can be enabled globally for |TS| by adding the following to your
 
 With no further options, this will enable the following default behavior:
 
-*  Enable caching of both compressed and uncompressed versions of origin
-   responses as :term:`alternates <alternate>`.
+*  Enable caching of compressed responses. Uncompressed and compressed versions
+   are maintained as separate :term:`alternates <alternate>` via
+   ``Vary: Accept-Encoding``.
 
 *  Compress objects with `text/*` content types for every origin.
 
@@ -98,10 +99,24 @@ Per site configuration for remap plugin should be ignored.
 cache
 -----
 
-When set to ``true``, causes |TS| to cache both the compressed and uncompressed
-versions of the content as :term:`alternates <alternate>`. When set to
-``false``, |TS| will cache only the compressed or decompressed variant returned
-by the origin. Enabled by default.
+Controls which version of the response is stored in cache when the compress
+transform runs (i.e., when the client sends ``Accept-Encoding``).
+
+When set to ``true``, the compressed (transformed) response is cached. When set
+to ``false``, the uncompressed (untransformed) response is cached and
+compression is performed on-the-fly for subsequent cache hits.
+
+.. note::
+
+   The plugin always adds ``Vary: Accept-Encoding`` to compressible responses.
+   This causes |TS| to use separate cache :term:`alternates <alternate>` (keys)
+   for requests with different ``Accept-Encoding`` values. Which body
+   representation is actually stored in cache still depends on the ``cache``
+   option: with ``cache true`` the compressed response is cached, while with
+   ``cache false`` only the uncompressed response is cached and compression is
+   performed on-the-fly for clients that send ``Accept-Encoding``.
+
+Enabled by default.
 
 range-request
 -------------
