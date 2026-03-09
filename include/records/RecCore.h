@@ -78,7 +78,7 @@ enum class RecConfigOverrideSource {
   RUNROOT, ///< Overridden with the resolved Layout path because runroot manages this record.
 };
 
-/// Human-readable label for the override source (for logging).
+/// Label for the override source (for logging).
 constexpr const char *
 RecConfigOverrideSourceName(RecConfigOverrideSource src)
 {
@@ -87,8 +87,10 @@ RecConfigOverrideSourceName(RecConfigOverrideSource src)
     return "environment variable";
   case RecConfigOverrideSource::RUNROOT:
     return "runroot";
-  default:
+  case RecConfigOverrideSource::NONE:
     return "none";
+  default:
+    return "unknown";
   }
 }
 
