@@ -2518,15 +2518,16 @@ Cache Control
          ``Cache-Control: max-age``.
    ===== ======================================================================
 
-.. ts:cv:: CONFIG proxy.config.http.cache.targeted_cache_control_headers STRING ""
+.. ts:cv:: CONFIG proxy.config.http.cache.targeted_cache_control_headers STRING "CDN-Cache-Control"
    :reloadable:
    :overridable:
 
-   Comma-separated list of targeted cache control header names to check in priority
-   order before falling back to the standard ``Cache-Control`` header. This implements
-   `RFC 9213 <https://httpwg.org/specs/rfc9213.html>`_ Targeted HTTP Cache Control.
-   When empty (the default), targeted cache control is disabled and only the standard
-   ``Cache-Control`` header is used.
+   Comma-separated list of targeted cache control header names to check in
+   priority order before falling back to the standard ``Cache-Control``
+   header. This implements `RFC 9213 <https://httpwg.org/specs/rfc9213.html>`_
+   Targeted HTTP Cache Control. The default value is ``CDN-Cache-Control``.
+   Set this to an empty string to disable targeted cache control and use only
+   the standard ``Cache-Control`` header.
 
    Example values:
 

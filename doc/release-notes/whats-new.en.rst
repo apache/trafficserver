@@ -108,6 +108,9 @@ Configuration
 
 * Added :ts:cv:`proxy.config.http.negative_revalidating_list` to configure the
   list of status codes that apply to the negative revalidating feature
+* :ts:cv:`proxy.config.http.cache.targeted_cache_control_headers` now defaults
+  to ``CDN-Cache-Control``. Set it to an empty string to disable targeted cache
+  control.
 * The ``ssl_multicert.config`` file has been replaced with :file:`ssl_multicert.yaml`.
   Use ``traffic_ctl config convert ssl_multicert`` to convert existing configuration files.
 
@@ -224,5 +227,4 @@ HTTP UI Removed
 
 The stats and cache inspector pages were unmaintained and removed in this
 release.
-
 

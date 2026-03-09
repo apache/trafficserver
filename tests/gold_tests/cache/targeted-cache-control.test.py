@@ -18,8 +18,8 @@
 
 Test.Summary = '''
 Test targeted cache control headers per RFC 9213.
-Verifies that CDN-Cache-Control and other targeted headers can override
-standard Cache-Control when properly configured.
+Verifies that CDN-Cache-Control is applied by default, and that remap-level
+targeted header overrides still work.
 '''
 
 Test.ATSReplayTest(replay_file="replay/targeted-cache-control.replay.yaml")
