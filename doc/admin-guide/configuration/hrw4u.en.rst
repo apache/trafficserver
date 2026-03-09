@@ -529,10 +529,58 @@ Groups
      ...
    }
 
+Control Flow
+------------
+
+HRW4U conditionals use ``if``, ``elif``, and ``else`` blocks. Each branch
+takes a condition expression followed by a ``{ ... }`` body of statements:
+
+.. code-block:: none
+
+   if condition {
+     statement;
+   } elif other-condition {
+     statement;
+   } else {
+     statement;
+   }
+
+``elif`` and ``else`` are optional and can be chained. Branches can be nested
+to arbitrary depth:
+
+.. code-block:: none
+
+   REMAP {
+     if inbound.status > 399 {
+       if inbound.status < 500 {
+         if inbound.status == 404 {
+           inbound.resp.X-Error = "not-found";
+         } elif inbound.status == 403 {
+           inbound.resp.X-Error = "forbidden";
+         }
+       } else {
+         inbound.resp.X-Error = "server-error";
+       }
+     }
+   }
+
+The ``break;`` statement exits the current section immediately, skipping any
+remaining statements and branches:
+
+.. code-block:: none
+
+   REMAP {
+     if inbound.req.X-Internal != "1" {
+       break;
+     }
+     # Only reached for internal requests
+     inbound.req.X-Debug = "on";
+   }
+
 Condition operators
 -------------------
 
-HRW4U supports the following condition operators, which are used in `if (...)` expressions:
+HRW4U supports the following condition operators, which are used in ``if`` expressions:
 
 ==================== ========================= ============================================
 Operator             HRW4U Syntax              Description
@@ -588,6 +636,137 @@ Run with `--debug all` to trace:
 - Lexer, parser, visitor behavior
 - Condition evaluations
 - State and output emission
+
+Sandbox Policy Enforcement
+==========================
+
+Organizations deploying HRW4U across teams can restrict which language features
+are permitted using a sandbox configuration file. When a denied feature is used,
+the compiler emits a clear error with a configurable message explaining the
+restriction.
+
+Pass the sandbox file with ``--sandbox``:
+
+.. code-block:: none
+
+   hrw4u --sandbox /etc/trafficserver/hrw4u-sandbox.yaml rules.hrw4u
+
+The sandbox file is YAML with a single top-level ``sandbox`` key. A JSON
+Schema for editor validation and autocomplete is provided at
+``tools/hrw4u/schema/sandbox.schema.json``.
+
+.. code-block:: yaml
+
+   sandbox:
+     message: |      # optional: shown once after all denial errors
+       ...
+     deny:
+       sections:    [ ... ]   # section names, e.g. TXN_START
+       functions:   [ ... ]   # function names, e.g. run-plugin
+       conditions:  [ ... ]   # condition keys, e.g. geo.
+       operators:   [ ... ]   # operator keys, e.g. inbound.conn.dscp
+       language:    [ ... ]   # break, variables, in, else, elif
+
+All deny lists are optional. An empty or missing sandbox file permits everything.
+
+Denied Sections
+---------------
+
+The ``sections`` list accepts any of the HRW4U section names listed in the
+`Sections`_ table, plus ``VARS`` to deny the variable declaration block.
+A denied section causes the entire block to be rejected; the body is not
+validated.
+
+Functions
+---------
+
+The ``functions`` list accepts any of the statement-function names used in
+HRW4U source. The complete set of deniable functions is:
+
+====================== =============================================
+Function               Description
+====================== =============================================
+``add-header``         Add a header (``+=`` operator equivalent)
+``counter``            Increment an ATS statistics counter
+``keep_query``         Keep only specified query parameters
+``no-op``              Explicit no-op statement
+``remove_query``       Remove specified query parameters
+``run-plugin``         Invoke an external remap plugin
+``set-body-from``      Set response body from a URL
+``set-config``         Override an ATS configuration variable
+``set-debug``          Enable per-transaction ATS debug logging
+``set-plugin-cntl``    Set a plugin control flag
+``set-redirect``       Issue an HTTP redirect response
+``skip-remap``         Skip remap processing (open proxy)
+====================== =============================================
+
+Conditions and Operators
+------------------------
+
+The ``conditions`` and ``operators`` lists use the same dot-notation keys shown
+in the `Conditions`_ and `Operators`_ tables above (e.g. ``inbound.req.``,
+``geo.``, ``outbound.conn.``).
+
+Entries ending with ``.`` use **prefix matching** — ``geo.`` denies all
+``geo.*`` lookups (``geo.city``, ``geo.ASN``, etc.). Entries without a trailing
+``.`` are matched exactly.
+
+Language Constructs
+-------------------
+
+The ``language`` list accepts a fixed set of constructs:
+
+================ ===================================================
+Construct        What it denies
+================ ===================================================
+``break``        The ``break;`` statement (early section exit)
+``variables``    The entire ``VARS`` section and all variable usage
+``else``         The ``else { ... }`` branch of conditionals
+``elif``         The ``elif ... { ... }`` branch of conditionals
+``in``           The ``in [...]`` and ``!in [...]`` set membership operators
+================ ===================================================
+
+Error Output
+------------
+
+When a denied feature is used the error output looks like:
+
+.. code-block:: none
+
+   rules.hrw4u:3:4: error: 'set-debug' is denied by sandbox policy (function)
+
+   This feature is restricted by CDN-SRE policy.
+   Contact cdn-sre@example.com for exceptions.
+
+The sandbox message is shown once at the end of the error summary, regardless
+of how many denial errors were found.
+
+Example Configuration
+---------------------
+
+A typical policy for a CDN team where remap plugin authors should not have
+access to low-level or dangerous features:
+
+.. code-block:: yaml
+
+   sandbox:
+     message: |
+       This feature is not permitted by CDN-SRE policy.
+       To request an exception, file a ticket at https://help.example.com/cdn
+
+     deny:
+       # Disallow hooks that run outside the normal remap context
+       sections:
+         - TXN_START
+         - TXN_CLOSE
+         - PRE_REMAP
+
+       # Disallow functions that affect ATS internals or load arbitrary code
+       functions:
+         - run-plugin
+         - set-debug
+         - set-config
+         - skip-remap
 
 Examples
 ========

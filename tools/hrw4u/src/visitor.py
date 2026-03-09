@@ -37,6 +37,7 @@ from hrw4u.common import RegexPatterns, SystemDefaults
 from hrw4u.visitor_base import BaseHRWVisitor
 from hrw4u.validation import Validator
 from hrw4u.procedures import resolve_use_path
+from hrw4u.sandbox import SandboxConfig
 
 _regex_validator = Validator.regex_pattern()
 
@@ -73,14 +74,16 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
             debug: bool = SystemDefaults.DEFAULT_DEBUG,
             error_collector=None,
             preserve_comments: bool = True,
-            proc_search_paths: list[Path] | None = None) -> None:
+            proc_search_paths: list[Path] | None = None,
+            sandbox: SandboxConfig | None = None) -> None:
         super().__init__(filename, debug, error_collector)
 
         self._cond_state = CondState()
         self._queued: QueuedItem | None = None
         self.preserve_comments = preserve_comments
+        self._sandbox = sandbox or SandboxConfig.empty()
 
-        self.symbol_resolver = SymbolResolver(debug, dbg=self._dbg)
+        self.symbol_resolver = SymbolResolver(debug, sandbox=self._sandbox, dbg=self._dbg)
 
         self._proc_registry: dict[str, ProcSig] = {}
         self._proc_loaded: set[str] = set()
@@ -88,6 +91,19 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         self._proc_call_stack: list[str] = []
         self._proc_search_paths: list[Path] = list(proc_search_paths) if proc_search_paths else []
         self._source_text: str = ""
+
+    def _sandbox_check(self, ctx, check_fn) -> bool:
+        """Run a sandbox check, trapping any denial error into the error collector.
+
+        Returns True if the check passed, False if denied (error was collected).
+        """
+        try:
+            check_fn()
+            return True
+        except Exception as exc:
+            with self.trap(ctx):
+                raise exc
+            return False
 
     @lru_cache(maxsize=256)
     def _cached_symbol_resolution(self, symbol_text: str, section_name: str) -> tuple[str, bool]:
@@ -713,6 +729,8 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
             raise SymbolResolutionError("section", "Missing section name")
 
         section_name = ctx.name.text
+        self._sandbox.check_section(section_name)
+
         try:
             self.current_section = SectionType(section_name)
         except ValueError:
@@ -789,6 +807,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
             else:
                 raise error
         with self.debug_context("visitVarSection"):
+            self._sandbox.check_language("variables")
             self.visit(ctx.variables())
 
     def visitCommentLine(self, ctx) -> None:
@@ -803,6 +822,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         with self.debug_context("visitStatement"), self.trap(ctx):
             match ctx:
                 case _ if ctx.BREAK():
+                    self._sandbox.check_language("break")
                     self._dbg("BREAK")
                     self.emit_statement("no-op [L]")
                     return
@@ -913,11 +933,15 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
 
     def visitElseClause(self, ctx) -> None:
         with self.debug_context("visitElseClause"):
+            if not self._sandbox_check(ctx, lambda: self._sandbox.check_language("else")):
+                return
             self.emit_condition("else", final=True)
             self.visit(ctx.block())
 
     def visitElifClause(self, ctx) -> None:
         with self.debug_context("visitElifClause"):
+            if not self._sandbox_check(ctx, lambda: self._sandbox.check_language("elif")):
+                return
             self.emit_condition("elif", final=True)
             with self.stmt_indented(), self.cond_indented():
                 self.visit(ctx.condition())
@@ -979,6 +1003,8 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                     cond_txt = f"{lhs} {ctx.iprange().getText()}"
 
                 case _ if ctx.set_():
+                    if not self._sandbox_check(ctx, lambda: self._sandbox.check_language("in")):
+                        return
                     inner = ctx.set_().getText()[1:-1]
                     cond_txt = f"{lhs} ({inner})"
 
@@ -995,6 +1021,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         for token in ctx.modifierList().mods:
             try:
                 mod = token.text.upper()
+                self._sandbox.check_modifier(mod)
                 self._cond_state.add_modifier(mod)
             except Exception as exc:
                 with self.trap(ctx):
@@ -1034,6 +1061,8 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
     def emit_expression(self, ctx, *, nested: bool = False, last: bool = False, grouped: bool = False) -> None:
         with self.debug_context("emit_expression"):
             if ctx.OR():
+                if not self._sandbox_check(ctx, lambda: self._sandbox.check_modifier("OR")):
+                    return
                 self.debug("`OR' detected")
                 if grouped:
                     self.debug("GROUP-START")
@@ -1051,6 +1080,8 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
     def emit_term(self, ctx, *, last: bool = False) -> None:
         with self.debug_context("emit_term"):
             if ctx.AND():
+                if not self._sandbox_check(ctx, lambda: self._sandbox.check_modifier("AND")):
+                    return
                 self.debug("`AND' detected")
                 self.emit_term(ctx.term(), last=False)
                 self._end_lhs_then_emit_rhs(False, lambda: self.emit_factor(ctx.factor(), last=last))

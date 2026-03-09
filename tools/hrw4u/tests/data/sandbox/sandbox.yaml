@@ -1,0 +1,12 @@
+sandbox:
+  message: "Feature denied by sandbox policy. Contact platform team."
+
+  deny:
+    sections:
+      - TXN_START
+      - TXN_CLOSE
+      - PRE_REMAP
+    functions:
+      - set-debug
+    language:
+      - break

@@ -147,9 +147,15 @@ class ErrorCollector:
     def __init__(self, max_errors: int = 5) -> None:
         self.errors: list[Hrw4uSyntaxError] = []
         self.max_errors = max_errors
+        self._sandbox_message: str | None = None
 
     def add_error(self, error: Hrw4uSyntaxError) -> None:
         self.errors.append(error)
+
+    def set_sandbox_message(self, message: str) -> None:
+        """Record the sandbox policy message to display once at the end."""
+        if message and self._sandbox_message is None:
+            self._sandbox_message = message
 
     def has_errors(self) -> bool:
         return bool(self.errors)
@@ -172,6 +178,10 @@ class ErrorCollector:
 
         if self.at_limit:
             lines.append(f"(stopped after {self.max_errors} errors)")
+
+        if self._sandbox_message:
+            lines.append("")
+            lines.append(self._sandbox_message)
 
         return "\n".join(lines)
 

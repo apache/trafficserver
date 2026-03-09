@@ -1,4 +1,5 @@
 #
+ #
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -22,14 +23,16 @@ from hrw4u.debugging import Dbg
 from hrw4u.states import SectionType
 from hrw4u.common import SystemDefaults
 from hrw4u.errors import SymbolResolutionError
+from hrw4u.sandbox import SandboxConfig
 import hrw4u.tables as tables
 import hrw4u.types as types
 
 
 class SymbolResolverBase:
 
-    def __init__(self, debug: bool = SystemDefaults.DEFAULT_DEBUG, dbg: Dbg | None = None) -> None:
+    def __init__(self, debug: bool = SystemDefaults.DEFAULT_DEBUG, sandbox: SandboxConfig | None = None, dbg: Dbg | None = None) -> None:
         self._dbg = dbg if dbg is not None else Dbg(debug)
+        self._sandbox = sandbox or SandboxConfig.empty()
         # Clear caches when debug status changes to ensure consistency
         if hasattr(self, '_condition_cache'):
             self._condition_cache.cache_clear()
