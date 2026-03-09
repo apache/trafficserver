@@ -18,8 +18,8 @@
 
 .. default-domain:: cpp
 
-TSRemapNextHopNameGet
-***********************
+TSRemapNextHopStrategySet
+*************************
 
 Synopsis
 ========

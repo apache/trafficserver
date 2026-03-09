@@ -116,7 +116,7 @@ public:
   bool              ip_allow_check_enabled_p = false;
   acl_filter_rule  *filter                   = nullptr; // acl filtering (linked list of rules)
   LINK(url_mapping, link);                              // For use with the main Queue linked list holding all the mapping
-  NextHopSelectionStrategy      *strategy = nullptr;
+  NextHopSelectionStrategy      *strategy        = nullptr;
   NextHopStrategyFactory        *strategyFactory = nullptr;
   std::string                    remapKey;
   std::atomic<uint64_t>          _hitCount       = 0; // counter can overflow
@@ -144,7 +144,6 @@ public:
   {
     return _volume_str;
   }
-  std::atomic<uint64_t>     _hitCount = 0; // counter can overflow
 
   int
   getRank() const
