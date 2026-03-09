@@ -31,6 +31,7 @@
 #if TS_USE_HRW_MAXMINDDB
 #include <maxminddb.h>
 #include <arpa/inet.h>
+#include <netdb.h>
 #endif
 
 namespace header_rewrite_ns
@@ -592,11 +593,20 @@ test_maxmind_geo()
     return 1;
   }
 
+  // MMDB_lookup_string() returns two independent error codes:
+  //   gai_error  - getaddrinfo() failure (string-to-IP conversion)
+  //   mmdb_error - MMDB lookup failure (database query)
+  // Check both to avoid masking failures.
   int                  gai_error, mmdb_error;
   MMDB_lookup_result_s result = MMDB_lookup_string(&mmdb, "8.8.8.8", &gai_error, &mmdb_error);
 
+  if (gai_error != 0) {
+    std::cerr << "getaddrinfo failed for 8.8.8.8: " << gai_strerror(gai_error) << std::endl;
+    MMDB_close(&mmdb);
+    return 1;
+  }
   if (MMDB_SUCCESS != mmdb_error || !result.found_entry) {
-    std::cerr << "Cannot look up 8.8.8.8 in " << db_path << std::endl;
+    std::cerr << "Cannot look up 8.8.8.8 in " << db_path << ": " << MMDB_strerror(mmdb_error) << std::endl;
     MMDB_close(&mmdb);
     return 1;
   }
@@ -630,7 +640,10 @@ test_maxmind_geo()
 
   // Verify loopback returns no entry
   result = MMDB_lookup_string(&mmdb, "127.0.0.1", &gai_error, &mmdb_error);
-  if (MMDB_SUCCESS == mmdb_error && result.found_entry) {
+  if (gai_error != 0) {
+    std::cerr << "FAIL: getaddrinfo failed for 127.0.0.1: " << gai_strerror(gai_error) << std::endl;
+    ++errors;
+  } else if (MMDB_SUCCESS == mmdb_error && result.found_entry) {
     std::cerr << "FAIL: expected no entry for 127.0.0.1" << std::endl;
     ++errors;
   } else {
