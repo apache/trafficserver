@@ -593,6 +593,19 @@ check_cxx_source_compiles(
   }"
   HAVE_CRYPTO_EX_DUP_TYPE1
 )
+check_cxx_source_compiles(
+  "#include <openssl/asn1.h>
+  namespace bssl {
+    DECLARE_ASN1_ITEM(GENERAL_NAME)
+  };
+  int main() {
+    if (&bssl::GENERAL_NAME_it == reinterpret_cast<void *>(0x01)) {
+      return 1;
+    }
+    return 0;
+  }"
+  HAVE_GENERAL_NAME_IN_BSSL_NAMESPACE
+)
 
 set(CMAKE_EXTRA_INCLUDE_FILES netinet/in.h netinet/tcp.h)
 check_type_size("struct tcp_info" STRUCT_TCP_INFO)
