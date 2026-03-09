@@ -55,7 +55,13 @@ extern ClassAllocator<FetchSM, false> FetchSMAllocator;
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-function"
 #ifndef GENERAL_NAME_it
+#if HAVE_GENERAL_NAME_IN_BSSL_NAMESPACE
+namespace bssl {
+#endif
 DECLARE_ASN1_ITEM(GENERAL_NAME)
+#if HAVE_GENERAL_NAME_IN_BSSL_NAMESPACE
+}
+#endif
 #endif
 // RFC 6960
 using TS_OCSP_CERTID = struct ocsp_cert_id {
@@ -97,7 +103,11 @@ using TS_OCSP_REQINFO = struct ocsp_req_info_st {
 DECLARE_ASN1_FUNCTIONS(TS_OCSP_REQINFO)
 ASN1_SEQUENCE(TS_OCSP_REQINFO) = {
         ASN1_EXP_OPT(TS_OCSP_REQINFO, version, ASN1_INTEGER, 0),
+#if HAVE_GENERAL_NAME_IN_BSSL_NAMESPACE
+        ASN1_EXP_OPT(TS_OCSP_REQINFO, requestorName, bssl::GENERAL_NAME, 1),
+#else
         ASN1_EXP_OPT(TS_OCSP_REQINFO, requestorName, GENERAL_NAME, 1),
+#endif
         ASN1_SEQUENCE_OF(TS_OCSP_REQINFO, requestList, TS_OCSP_ONEREQ),
         ASN1_EXP_SEQUENCE_OF_OPT(TS_OCSP_REQINFO, requestExtensions, X509_EXTENSION, 2)
 } ASN1_SEQUENCE_END(TS_OCSP_REQINFO)
