@@ -1410,6 +1410,10 @@ ssl_callback_ocsp_stapling(SSL *ssl, void *)
     return SSL_TLSEXT_ERR_NOACK;
   } else {
     unsigned char *p = static_cast<unsigned char *>(OPENSSL_malloc(cinf->resp_derlen));
+    if (p == nullptr) {
+      ink_mutex_release(&cinf->stapling_mutex);
+      return SSL_TLSEXT_ERR_NOACK;
+    }
     memcpy(p, cinf->resp_der, cinf->resp_derlen);
     ink_mutex_release(&cinf->stapling_mutex);
     SSL_set_tlsext_status_ocsp_resp(ssl, p, cinf->resp_derlen);
