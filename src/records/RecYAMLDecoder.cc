@@ -156,11 +156,12 @@ SetRecordFromYAMLNode(CfgNode const &field, swoc::Errata &errata)
   std::string field_value = field.value_node.as<std::string>(); // in case of a string, the library will give us the literal
                                                                 // 'null' which is exactly what we want.
 
-  std::string value_str = RecConfigOverrideFromEnvironment(record_name.c_str(), field_value.c_str());
-  RecSourceT  source    = (field_value == value_str ? REC_SOURCE_EXPLICIT : REC_SOURCE_ENV);
+  auto [value_str, override_source] = RecConfigOverrideFromEnvironment(record_name.c_str(), field_value.c_str());
+  RecSourceT source                 = (override_source == RecConfigOverrideSource::NONE) ? REC_SOURCE_EXPLICIT : REC_SOURCE_ENV;
 
-  if (source == REC_SOURCE_ENV) {
-    errata.note(ERRATA_DEBUG, "'{}' was override with '{}' using an env variable", record_name, value_str);
+  if (override_source != RecConfigOverrideSource::NONE) {
+    errata.note(ERRATA_DEBUG, "'{}' overridden with '{}' by {}", record_name, value_str,
+                RecConfigOverrideSourceName(override_source));
   }
 
   if (!check_expr.empty() && RecordValidityCheck(value_str.c_str(), check_type, check_expr.c_str()) == false) {
