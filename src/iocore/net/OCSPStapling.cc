@@ -1406,7 +1406,7 @@ ssl_callback_ocsp_stapling(SSL *ssl, void *)
   time_t current_time = time(nullptr);
   if ((cinf->resp_derlen == 0 || cinf->is_expire) || (cinf->expire_time < current_time && !cinf->is_prefetched)) {
     ink_mutex_release(&cinf->stapling_mutex);
-    Dbg(dbg_ctl_ssl_ocsp, "ssl_callback_ocsp_stapling: failed to get certificate status for %s", cinf->certname);
+    Error("ssl_callback_ocsp_stapling: failed to get certificate status for %s", cinf->certname);
     return SSL_TLSEXT_ERR_NOACK;
   } else {
     unsigned char *p = static_cast<unsigned char *>(OPENSSL_malloc(cinf->resp_derlen));
