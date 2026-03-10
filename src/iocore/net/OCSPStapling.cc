@@ -1412,6 +1412,7 @@ ssl_callback_ocsp_stapling(SSL *ssl, void *)
     unsigned char *p = static_cast<unsigned char *>(OPENSSL_malloc(cinf->resp_derlen));
     if (p == nullptr) {
       ink_mutex_release(&cinf->stapling_mutex);
+      Dbg(dbg_ctl_ssl_ocsp, "ssl_callback_ocsp_stapling: failed to allocate memory for %s", cinf->certname);
       return SSL_TLSEXT_ERR_NOACK;
     }
     memcpy(p, cinf->resp_der, cinf->resp_derlen);
