@@ -334,6 +334,14 @@ Authority Information Access field of the signed certificate. For example::
                 OCSP - URI:http://ocsp.digicert.com
                 CA Issuers - URI:http://cacerts.digicert.com/DigiCertSHA2SecureServerCA.crt
 
+Before ATS 10, OCSP fetches were handled by OpenSSL. Starting in ATS 10,
+|TS| performs the OCSP fetch itself through FetchSM, so the OCSP responder URL
+must also be reachable through :file:`remap.config`. For example, if the
+certificate points to ``http://ocsp.digicert.com/`` as its OCSP responder, add
+the following mapping::
+
+    map http://ocsp.digicert.com/ http://ocsp.digicert.com/
+
 |TS| can also use prefetched OCSP stapling responses if ssl_ocsp_name parameter
 is used in :file:`ssl_multicert.config`. Take into account that when using prefetched
 OCSP stapling responses, |TS| will not refresh them and it should be done
@@ -395,4 +403,3 @@ To configure Split DNS:
          enabled: 1
 
 #. Run the command :option:`traffic_ctl config reload` to apply the configuration changes.
-
