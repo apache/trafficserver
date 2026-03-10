@@ -37,7 +37,7 @@ from hrw4u.common import RegexPatterns, SystemDefaults
 from hrw4u.visitor_base import BaseHRWVisitor
 from hrw4u.validation import Validator
 from hrw4u.procedures import resolve_use_path
-from hrw4u.sandbox import SandboxConfig
+from hrw4u.sandbox import SandboxConfig, SandboxDenialError
 
 _regex_validator = Validator.regex_pattern()
 
@@ -100,9 +100,9 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         try:
             check_fn()
             return True
-        except Exception as exc:
+        except SandboxDenialError:
             with self.trap(ctx):
-                raise exc
+                raise
             return False
 
     @lru_cache(maxsize=256)
@@ -807,7 +807,8 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
             else:
                 raise error
         with self.debug_context("visitVarSection"):
-            self._sandbox.check_language("variables")
+            if not self._sandbox_check(ctx, lambda: self._sandbox.check_language("variables")):
+                return
             self.visit(ctx.variables())
 
     def visitCommentLine(self, ctx) -> None:

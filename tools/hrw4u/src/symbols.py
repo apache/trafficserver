@@ -142,6 +142,7 @@ class SymbolResolver(SymbolResolverBase):
     def resolve_condition(self, name: str, section: SectionType | None = None) -> tuple[str, bool]:
         with self.debug_context("resolve_condition", name, section):
             if symbol := self.symbol_for(name):
+                self._sandbox.check_language("variables")
                 return symbol.as_cond(), False
 
             self._sandbox.check_condition(name)

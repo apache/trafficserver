@@ -5,6 +5,7 @@
   "description": "Policy deny-list for the hrw4u compiler (--sandbox FILE).",
   "type": "object",
   "additionalProperties": false,
+  "required": ["sandbox"],
   "properties": {
     "sandbox": {
       "type": "object",
