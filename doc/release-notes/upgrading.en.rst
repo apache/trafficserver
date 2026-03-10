@@ -182,6 +182,16 @@ The following :file:`records.yaml` changes have been made:
   allocating iobuffers and cache volumes from hugepages if configured in the
   system.
 - The records.yaml entry ``proxy.config.plugin.compiler_path`` has been added to specify an optional compiler tool path for compiling plugins.
+- If OCSP stapling is enabled, ATS 10 and later fetch OCSP responses through
+  FetchSM instead of OpenSSL. Add the OCSP responder URL from the certificate
+  to :file:`remap.config`. For example, a certificate that uses
+  ``http://ocsp.digicert.com/`` needs the following mapping:
+
+  .. code-block:: none
+
+     map http://ocsp.digicert.com/ http://ocsp.digicert.com/
+
+  See :ref:`admin-ocsp-stapling` for more details.
 
 The following changes have been made to the :file:`sni.yaml` file:
 
