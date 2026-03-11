@@ -564,13 +564,93 @@ for rec in data.get("result", {{}}).get("recordList", []):
     print(f"{{name}}={{value}}={{dtype}}")
 '''
 
-# Default JSONRPC socket path (configurable via --socket-path or TRAFFICSERVER_JSONRPC_SOCKET env var)
-DEFAULT_JSONRPC_SOCKET_PATH = os.environ.get(
-    "TRAFFICSERVER_JSONRPC_SOCKET",
-    "/usr/local/var/trafficserver/jsonrpc20.sock",
-)
+# Default JSONRPC socket path (configurable via --socket or TRAFFICSERVER_JSONRPC_SOCKET env var)
+DEFAULT_JSONRPC_SOCKET_PATH = os.environ.get("TRAFFICSERVER_JSONRPC_SOCKET", None)
 
 LOCAL_HOSTNAMES = {'localhost', '127.0.0.1', 'local', '::1'}
+
+# Discovery script: finds the JSONRPC socket on the target host by locating
+# traffic_ctl (via PATH or common prefixes) and querying the runtime directory.
+DISCOVER_SOCKET_SCRIPT = r'''
+import subprocess, os, sys
+
+COMMON_PREFIXES = [
+    "/usr/local",
+    "/opt/ats",
+    "/opt/trafficserver",
+    "/usr",
+    "/opt/ts",
+]
+
+def find_traffic_ctl():
+    """Find traffic_ctl binary."""
+    # Check PATH first
+    for d in os.environ.get("PATH", "").split(":"):
+        candidate = os.path.join(d, "traffic_ctl")
+        if os.path.isfile(candidate) and os.access(candidate, os.X_OK):
+            return candidate
+    # Check common install prefixes
+    for prefix in COMMON_PREFIXES:
+        candidate = os.path.join(prefix, "bin", "traffic_ctl")
+        if os.path.isfile(candidate) and os.access(candidate, os.X_OK):
+            return candidate
+    return None
+
+def get_socket_via_traffic_ctl(tc):
+    """Ask traffic_ctl for the runtime dir and build the socket path."""
+    try:
+        r = subprocess.run([tc, "config", "get", "proxy.config.local_state_dir"],
+                           capture_output=True, text=True, timeout=5)
+        if r.returncode == 0:
+            parts = r.stdout.strip().split()
+            state_dir = parts[1] if len(parts) >= 2 else parts[0]
+            # Could be relative to prefix — check if absolute
+            if not os.path.isabs(state_dir):
+                prefix = os.path.dirname(os.path.dirname(tc))
+                state_dir = os.path.join(prefix, state_dir)
+            sock = os.path.join(state_dir, "jsonrpc20.sock")
+            if os.path.exists(sock):
+                print(sock)
+                return True
+    except Exception:
+        pass
+    return False
+
+def check_common_paths():
+    """Check common socket locations."""
+    for prefix in COMMON_PREFIXES:
+        sock = os.path.join(prefix, "var", "trafficserver", "jsonrpc20.sock")
+        if os.path.exists(sock):
+            print(sock)
+            return True
+    return False
+
+tc = find_traffic_ctl()
+if tc:
+    if get_socket_via_traffic_ctl(tc):
+        sys.exit(0)
+if check_common_paths():
+    sys.exit(0)
+# Not found
+sys.exit(1)
+'''
+
+
+def discover_socket_path(hostname: str, is_local: bool) -> Optional[str]:
+    """Auto-discover the JSONRPC socket path on the target host."""
+    try:
+        if is_local:
+            result = subprocess.run(["python3", "-c", DISCOVER_SOCKET_SCRIPT], capture_output=True, text=True, timeout=10)
+        else:
+            script_b64 = base64.b64encode(DISCOVER_SOCKET_SCRIPT.encode()).decode()
+            remote_cmd = f"echo '{script_b64}' | base64 -d | python3"
+            result = subprocess.run(["ssh", hostname, remote_cmd], capture_output=True, text=True, timeout=10)
+
+        if result.returncode == 0 and result.stdout.strip():
+            return result.stdout.strip()
+    except (subprocess.TimeoutExpired, OSError):
+        pass
+    return None
 
 
 def _validate_hostname(hostname: str) -> str:
@@ -586,14 +666,14 @@ class JSONRPCBatchCollector:
     Connects directly for localhost, uses SSH for remote hosts.
     """
 
-    def __init__(self, hostname: str, metric_keys: list, socket_path: str = DEFAULT_JSONRPC_SOCKET_PATH):
+    def __init__(self, hostname: str, metric_keys: list, socket_path: Optional[str] = None):
         self.is_local = hostname.lower() in LOCAL_HOSTNAMES
         if self.is_local:
             self.hostname = 'localhost'
         else:
             self.hostname = _validate_hostname(hostname)
         self.metric_keys = metric_keys
-        self.socket_path = socket_path
+        self.socket_path = socket_path  # May be None until discover() is called
 
         escaped_keys = [k.replace('.', r'\.') for k in metric_keys]
         self.pattern = '|'.join(f"^{k}$" for k in escaped_keys)
@@ -616,6 +696,8 @@ class JSONRPCBatchCollector:
 
     def _test_local(self) -> Tuple[bool, str]:
         """Test local JSONRPC socket connectivity."""
+        if self.socket_path is None:
+            return False, "No socket path discovered"
         if not os.path.exists(self.socket_path):
             return False, f"Socket not found: {self.socket_path}"
         try:
@@ -650,6 +732,10 @@ class JSONRPCBatchCollector:
 
     def _collect_local(self) -> dict:
         """Connect directly to the local JSONRPC Unix socket."""
+        if self.socket_path is None:
+            self.last_error = "No socket path (use --socket or set TRAFFICSERVER_JSONRPC_SOCKET)"
+            self.consecutive_errors += 1
+            return self.last_values
         try:
             s = socket_module.socket(socket_module.AF_UNIX, socket_module.SOCK_STREAM)
             s.settimeout(5)
@@ -705,6 +791,10 @@ class JSONRPCBatchCollector:
 
     def _collect_remote(self) -> dict:
         """Collect via SSH to remote host."""
+        if self.socket_path is None:
+            self.last_error = "No socket path (use --socket or set TRAFFICSERVER_JSONRPC_SOCKET)"
+            self.consecutive_errors += 1
+            return self.last_values
         script = JSONRPC_SCRIPT.format(socket_path=self.socket_path, pattern=self.pattern)
 
         script_b64 = base64.b64encode(script.encode()).decode()
@@ -1501,9 +1591,7 @@ Examples:
 
     # ATS paths
     parser.add_argument(
-        '--socket',
-        default=DEFAULT_JSONRPC_SOCKET_PATH,
-        help='Path to JSONRPC Unix socket (default: $TRAFFICSERVER_JSONRPC_SOCKET)')
+        '--socket', default=DEFAULT_JSONRPC_SOCKET_PATH, help='Path to JSONRPC Unix socket (auto-discovered if not set)')
 
     # Debug options
     parser.add_argument(
@@ -1556,16 +1644,33 @@ Examples:
     else:
         print(f"Monitoring: {grapher.host_names[0]}")
 
+    # Auto-discover socket path for hosts that don't have one explicitly set
+    for i, collector in enumerate(grapher.combined_collectors):
+        if collector.socket_path is not None:
+            continue
+        host_label = grapher.host_names[i]
+        print(f"\nDiscovering JSONRPC socket on {host_label}...", end=" ", flush=True)
+        path = discover_socket_path(collector.hostname, collector.is_local)
+        if path:
+            print(f"found: {path}")
+            collector.socket_path = path
+        else:
+            print("not found (use --socket to specify)")
+
     # Test connectivity to all hosts before starting
     print("\nTesting connections...")
     all_ok = True
     for i, collector in enumerate(grapher.combined_collectors):
         host_label = grapher.host_names[i]
         mode = "local socket" if collector.is_local else "SSH"
+        if collector.socket_path is None:
+            print(f"  {host_label} ({mode}): SKIPPED - no socket path")
+            all_ok = False
+            continue
         print(f"  {host_label} ({mode}): ", end="", flush=True)
         ok, msg = collector.test_connection()
         if ok:
-            print(f"OK")
+            print(f"OK ({collector.socket_path})")
         else:
             print(f"FAILED - {msg}")
             all_ok = False
