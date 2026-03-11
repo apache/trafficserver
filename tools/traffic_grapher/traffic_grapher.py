@@ -1119,7 +1119,7 @@ class ATSGrapher:
             batch_results.append(results)
             host_times.append(collect_time)
 
-            if batch_collector.last_error and batch_collector.consecutive_errors <= 3:
+            if batch_collector.last_error and batch_collector.consecutive_errors <= 3 and not self.gui_mode:
                 print(f"[{host_label}] {batch_collector.last_error}", file=sys.stderr)
 
             if self.log_stats:
@@ -1648,49 +1648,61 @@ Examples:
         tz_name=tz_name,
         socket_path=args.socket)
 
-    print(f"Traffic Grapher - {len(pages)} pages, {args.interval}s refresh, {history}s history")
-    if len(args.hosts) > 1:
-        print(f"Comparing: {' vs '.join(grapher.host_names)}")
-    else:
-        print(f"Monitoring: {grapher.host_names[0]}")
+    # In GUI mode, suppress terminal output -- errors show on the dashboard
+    verbose = not args.gui
+
+    if verbose:
+        print(f"Traffic Grapher - {len(pages)} pages, {args.interval}s refresh, {history}s history")
+        if len(args.hosts) > 1:
+            print(f"Comparing: {' vs '.join(grapher.host_names)}")
+        else:
+            print(f"Monitoring: {grapher.host_names[0]}")
 
     # Auto-discover socket path for hosts that don't have one explicitly set
     for i, collector in enumerate(grapher.combined_collectors):
         if collector.socket_path is not None:
             continue
         host_label = grapher.host_names[i]
-        print(f"\nDiscovering JSONRPC socket on {host_label}...", end=" ", flush=True)
+        if verbose:
+            print(f"\nDiscovering JSONRPC socket on {host_label}...", end=" ", flush=True)
         path = discover_socket_path(collector.hostname, collector.is_local)
         if path:
-            print(f"found: {path}")
+            if verbose:
+                print(f"found: {path}")
             collector.socket_path = path
         else:
-            print("not found (use --socket to specify)")
+            if verbose:
+                print("not found (use --socket to specify)")
 
     # Test connectivity to all hosts before starting
-    print("\nTesting connections...")
+    if verbose:
+        print("\nTesting connections...")
     all_ok = True
     for i, collector in enumerate(grapher.combined_collectors):
         host_label = grapher.host_names[i]
         mode = "local socket" if collector.is_local else "SSH"
         if collector.socket_path is None:
-            print(f"  {host_label} ({mode}): SKIPPED - no socket path")
+            if verbose:
+                print(f"  {host_label} ({mode}): SKIPPED - no socket path")
             all_ok = False
             continue
-        print(f"  {host_label} ({mode}): ", end="", flush=True)
+        if verbose:
+            print(f"  {host_label} ({mode}): ", end="", flush=True)
         ok, msg = collector.test_connection()
         if ok:
-            print(f"OK ({collector.socket_path})")
+            if verbose:
+                print(f"OK ({collector.socket_path})")
         else:
-            print(f"FAILED - {msg}")
+            if verbose:
+                print(f"FAILED - {msg}")
             all_ok = False
 
-    if not all_ok:
+    if not all_ok and verbose:
         print("\nWARNING: Some hosts failed connectivity test.")
         print("The grapher will start anyway - errors will be shown on the dashboard.")
         print("Press Ctrl+C to cancel, or wait 3 seconds to continue...")
         time.sleep(3)
-    else:
+    elif verbose:
         print("\nAll hosts connected. Starting in 1 second...")
         time.sleep(1)
 
