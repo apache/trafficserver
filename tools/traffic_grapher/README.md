@@ -37,12 +37,15 @@ your terminal using imgcat.
 - Python 3.9+
 - [uv](https://docs.astral.sh/uv/) (recommended) or pip
 - iTerm2 (or compatible terminal for inline images)
-- SSH access to remote ATS hosts
+- SSH access to remote ATS hosts (not needed for localhost)
 
 ## Quick Start
 
 ```bash
-# With uv (handles dependencies automatically)
+# Monitor ATS on the local machine (connects directly to JSONRPC socket)
+uv run traffic_grapher.py localhost
+
+# Monitor a remote host (connects via SSH)
 uv run traffic_grapher.py ats-server1.example.com
 
 # Multiple hosts for comparison
@@ -68,8 +71,11 @@ traffic-grapher ats-server1.example.com
 
 ### ATS Paths
 
-The tool needs to know where the JSONRPC socket is on the remote host.
-Configure via CLI flag or environment variable:
+For localhost, the tool connects directly to the JSONRPC Unix socket.
+For remote hosts, it sends a Python script via SSH that connects to
+the socket on the remote machine.
+
+Configure the socket path via CLI flag or environment variable:
 
 | Option | Env Var | Default |
 |--------|---------|---------|

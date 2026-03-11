@@ -37,9 +37,11 @@ import base64
 import fcntl
 import gc
 import io
+import json
 import os
 import re
 import shutil
+import socket as socket_module
 import struct
 import subprocess
 import sys
@@ -568,6 +570,8 @@ DEFAULT_JSONRPC_SOCKET_PATH = os.environ.get(
     "/usr/local/var/trafficserver/jsonrpc20.sock",
 )
 
+LOCAL_HOSTNAMES = {'localhost', '127.0.0.1', 'local', '::1'}
+
 
 def _validate_hostname(hostname: str) -> str:
     """Validate hostname to prevent command injection."""
@@ -579,31 +583,130 @@ def _validate_hostname(hostname: str) -> str:
 class JSONRPCBatchCollector:
     """
     Batch metric collector using JSONRPC Unix socket.
-    Collects all metrics for a host in a single SSH call.
+    Connects directly for localhost, uses SSH for remote hosts.
     """
 
     def __init__(self, hostname: str, metric_keys: list, socket_path: str = DEFAULT_JSONRPC_SOCKET_PATH):
-        self.hostname = _validate_hostname(hostname)
+        self.is_local = hostname.lower() in LOCAL_HOSTNAMES
+        if self.is_local:
+            self.hostname = 'localhost'
+        else:
+            self.hostname = _validate_hostname(hostname)
         self.metric_keys = metric_keys
         self.socket_path = socket_path
 
-        # Build regex pattern matching all metric keys
-        # Escape dots and join with |
         escaped_keys = [k.replace('.', r'\.') for k in metric_keys]
         self.pattern = '|'.join(f"^{k}$" for k in escaped_keys)
 
-        # Cached results from last collection
-        self.last_values: dict = {}  # key -> (value, data_type)
+        self.last_values: dict = {}
+        self.last_error: Optional[str] = None
+        self.consecutive_errors: int = 0
 
     def collect(self) -> dict:
-        """
-        Collect all metrics in one SSH call.
-        Returns dict of {metric_key: (value, data_type)}.
-        """
+        """Collect all metrics. Uses local socket or SSH depending on host."""
+        if self.is_local:
+            return self._collect_local()
+        return self._collect_remote()
+
+    def test_connection(self) -> Tuple[bool, str]:
+        """Test connectivity and return (success, message)."""
+        if self.is_local:
+            return self._test_local()
+        return self._test_remote()
+
+    def _test_local(self) -> Tuple[bool, str]:
+        """Test local JSONRPC socket connectivity."""
+        if not os.path.exists(self.socket_path):
+            return False, f"Socket not found: {self.socket_path}"
+        try:
+            s = socket_module.socket(socket_module.AF_UNIX, socket_module.SOCK_STREAM)
+            s.settimeout(3)
+            s.connect(self.socket_path)
+            s.close()
+            return True, "OK"
+        except PermissionError:
+            return False, f"Permission denied: {self.socket_path}"
+        except ConnectionRefusedError:
+            return False, f"Connection refused: {self.socket_path} (is ATS running?)"
+        except OSError as e:
+            return False, f"Socket error: {e}"
+
+    def _test_remote(self) -> Tuple[bool, str]:
+        """Test SSH connectivity to remote host."""
+        try:
+            result = subprocess.run(
+                ["ssh", "-o", "ConnectTimeout=5", "-o", "BatchMode=yes", self.hostname, "echo ok"],
+                capture_output=True,
+                text=True,
+                timeout=10)
+            if result.returncode != 0:
+                stderr = result.stderr.strip()
+                return False, f"SSH failed: {stderr or 'unknown error'}"
+            return True, "OK"
+        except subprocess.TimeoutExpired:
+            return False, "SSH timed out"
+        except OSError as e:
+            return False, f"SSH error: {e}"
+
+    def _collect_local(self) -> dict:
+        """Connect directly to the local JSONRPC Unix socket."""
+        try:
+            s = socket_module.socket(socket_module.AF_UNIX, socket_module.SOCK_STREAM)
+            s.settimeout(5)
+            s.connect(self.socket_path)
+
+            request = {"jsonrpc": "2.0", "method": "admin_lookup_records", "params": [{"record_name_regex": self.pattern}], "id": 1}
+            s.sendall(json.dumps(request).encode() + b"\n")
+
+            chunks = []
+            while True:
+                chunk = s.recv(1048576)
+                if not chunk:
+                    break
+                chunks.append(chunk)
+                try:
+                    json.loads(b''.join(chunks))
+                    break
+                except json.JSONDecodeError:
+                    continue
+
+            s.close()
+            response_data = json.loads(b''.join(chunks).decode())
+
+            values = {}
+            for rec in response_data.get("result", {}).get("recordList", []):
+                r = rec.get("record", {})
+                name = r.get("record_name", "")
+                raw_val = r.get("current_value", "")
+                dtype = r.get("data_type", "")
+                try:
+                    values[name] = (float(raw_val), dtype)
+                except (ValueError, TypeError):
+                    continue
+
+            self.last_values = values
+            self.last_error = None
+            self.consecutive_errors = 0
+            return values
+
+        except FileNotFoundError:
+            self.last_error = f"Socket not found: {self.socket_path}"
+        except PermissionError:
+            self.last_error = f"Permission denied: {self.socket_path}"
+        except ConnectionRefusedError:
+            self.last_error = f"Connection refused (is ATS running?)"
+        except json.JSONDecodeError as e:
+            self.last_error = f"Invalid JSON response: {e}"
+        except OSError as e:
+            self.last_error = f"Socket error: {e}"
+
+        self.consecutive_errors += 1
+        return self.last_values
+
+    def _collect_remote(self) -> dict:
+        """Collect via SSH to remote host."""
         script = JSONRPC_SCRIPT.format(socket_path=self.socket_path, pattern=self.pattern)
 
-        # Encode script as base64 to avoid quoting issues.
-        # Use subprocess with list args (no shell=True) to prevent command injection.
         script_b64 = base64.b64encode(script.encode()).decode()
         remote_cmd = f"echo '{script_b64}' | base64 -d | python3"
 
@@ -611,9 +714,11 @@ class JSONRPCBatchCollector:
             result = subprocess.run(["ssh", self.hostname, remote_cmd], capture_output=True, text=True, timeout=10)
 
             if result.returncode != 0:
+                stderr = result.stderr.strip()
+                self.last_error = f"SSH error: {stderr[:200]}" if stderr else f"SSH exited with code {result.returncode}"
+                self.consecutive_errors += 1
                 return self.last_values
 
-            # Parse output: key=value=dtype per line
             values = {}
             for line in result.stdout.strip().split('\n'):
                 if '=' in line:
@@ -627,10 +732,26 @@ class JSONRPCBatchCollector:
                         dtype = parts[2] if len(parts) > 2 else "INT"
                         values[key] = (value, dtype)
 
+            if not values and result.stdout.strip():
+                self.last_error = f"No metrics parsed from output ({len(result.stdout)} bytes)"
+                self.consecutive_errors += 1
+            elif not values:
+                self.last_error = "Empty response from remote host"
+                self.consecutive_errors += 1
+            else:
+                self.last_error = None
+                self.consecutive_errors = 0
+
             self.last_values = values
             return values
 
-        except (subprocess.TimeoutExpired, OSError):
+        except subprocess.TimeoutExpired:
+            self.last_error = "SSH timed out (10s)"
+            self.consecutive_errors += 1
+            return self.last_values
+        except OSError as e:
+            self.last_error = f"SSH error: {e}"
+            self.consecutive_errors += 1
             return self.last_values
 
 
@@ -908,6 +1029,9 @@ class ATSGrapher:
             batch_results.append(results)
             host_times.append(collect_time)
 
+            if batch_collector.last_error and batch_collector.consecutive_errors <= 3:
+                print(f"[{host_label}] {batch_collector.last_error}", file=sys.stderr)
+
             if self.log_stats:
                 log_lines.append(f"    Got {len(results)} metrics\n")
 
@@ -1173,9 +1297,19 @@ class ATSGrapher:
             title += f" ({self.host_names[0]})"
         fig.suptitle(title, color=self.TEXT_COLOR, fontsize=18, fontweight='bold')
 
-        # Status bar
-        status = f"[←/→ or h/l pages, q quit] | {self.interval}s refresh | {self.history_seconds}s history"
-        fig.text(0.5, 0.01, status, ha='center', fontsize=13, color='#808080')
+        # Status bar - show errors if any hosts are failing
+        error_parts = []
+        for host_idx, collector in enumerate(self.combined_collectors):
+            if collector.last_error:
+                host_label = self.host_names[host_idx]
+                error_parts.append(f"{host_label}: {collector.last_error}")
+
+        if error_parts:
+            error_text = " | ".join(error_parts)
+            fig.text(0.5, 0.01, f"ERROR: {error_text}", ha='center', fontsize=13, color='#FF4040', fontweight='bold')
+        else:
+            status = f"[←/→ or h/l pages, q quit] | {self.interval}s refresh | {self.history_seconds}s history"
+            fig.text(0.5, 0.01, status, ha='center', fontsize=13, color='#808080')
 
         plt.tight_layout()
         plt.subplots_adjust(top=0.92, bottom=0.06, left=0.06, right=0.98, hspace=0.35, wspace=0.22)
@@ -1421,8 +1555,29 @@ Examples:
         print(f"Comparing: {' vs '.join(grapher.host_names)}")
     else:
         print(f"Monitoring: {grapher.host_names[0]}")
-    print("Starting in 2 seconds... (press Ctrl+C to cancel)")
-    time.sleep(2)
+
+    # Test connectivity to all hosts before starting
+    print("\nTesting connections...")
+    all_ok = True
+    for i, collector in enumerate(grapher.combined_collectors):
+        host_label = grapher.host_names[i]
+        mode = "local socket" if collector.is_local else "SSH"
+        print(f"  {host_label} ({mode}): ", end="", flush=True)
+        ok, msg = collector.test_connection()
+        if ok:
+            print(f"OK")
+        else:
+            print(f"FAILED - {msg}")
+            all_ok = False
+
+    if not all_ok:
+        print("\nWARNING: Some hosts failed connectivity test.")
+        print("The grapher will start anyway - errors will be shown on the dashboard.")
+        print("Press Ctrl+C to cancel, or wait 3 seconds to continue...")
+        time.sleep(3)
+    else:
+        print("\nAll hosts connected. Starting in 1 second...")
+        time.sleep(1)
 
     # Clear scrollback buffer at startup to free any previous accumulated images
     clear_scrollback()
