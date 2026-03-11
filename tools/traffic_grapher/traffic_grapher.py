@@ -60,7 +60,6 @@ except ImportError:
 import matplotlib
 # Check for --gui in sys.argv early to set backend before importing pyplot
 if '--gui' in sys.argv:
-    # Use MacOSX on macOS, fall back to TkAgg on other platforms
     import platform
     if platform.system() == 'Darwin':
         matplotlib.use('MacOSX')
@@ -1505,7 +1504,6 @@ class ATSGrapher:
 
         self.collect_all_pages()
 
-        matplotlib.rcParams['toolbar'] = 'None'
         fig = self.render_page()
 
         # Keyboard navigation for page switching
