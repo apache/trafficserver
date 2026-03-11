@@ -1579,6 +1579,18 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
     Metrics::Counter::increment(ssl_rsb.total_success_handshake_count_out);
 
     sslHandshakeStatus = SSLHandshakeStatus::SSL_HANDSHAKE_DONE;
+
+    // Record TLS handshake end time for outbound (origin) connections.
+    // Despite the name, sslClientHandShakeEvent() handles the *outbound* side
+    // where ATS acts as the TLS client connecting to the origin server.
+    // (The inbound/client-facing side is handled by sslServerHandShakeEvent(),
+    // where ATS acts as the TLS server.)
+    // The begin time is set when the handshake starts; we record the end time
+    // here so HttpSM can later copy both into milestones for logging.
+    if (this->get_tls_handshake_begin_time()) {
+      this->_record_tls_handshake_end_time();
+    }
+
     return EVENT_DONE;
 
   case SSL_ERROR_WANT_WRITE:
