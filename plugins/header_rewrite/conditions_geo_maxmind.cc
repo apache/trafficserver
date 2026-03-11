@@ -51,7 +51,7 @@ MMConditionGeo::initLibrary(const std::string &path)
   if (MMDB_SUCCESS != status) {
     Dbg(pi_dbg_ctl, "Cannot open %s - %s", path.c_str(), MMDB_strerror(status));
     delete gMaxMindDB;
-    gMaxMindDB = nullptr; // allow retry on next call instead of dangling pointer
+    gMaxMindDB = nullptr; // avoid leaving a dangling global pointer after delete
     return;
   }
   Dbg(pi_dbg_ctl, "Loaded %s", path.c_str());
