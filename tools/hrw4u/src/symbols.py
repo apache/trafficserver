@@ -30,7 +30,8 @@ from hrw4u.sandbox import SandboxConfig
 
 class SymbolResolver(SymbolResolverBase):
 
-    def __init__(self, debug: bool = SystemDefaults.DEFAULT_DEBUG, sandbox: SandboxConfig | None = None, dbg: Dbg | None = None) -> None:
+    def __init__(
+            self, debug: bool = SystemDefaults.DEFAULT_DEBUG, sandbox: SandboxConfig | None = None, dbg: Dbg | None = None) -> None:
         super().__init__(debug, sandbox=sandbox, dbg=dbg)
         self._symbols: dict[str, types.Symbol] = {}
         self._var_counter = {vt: 0 for vt in types.VarType}

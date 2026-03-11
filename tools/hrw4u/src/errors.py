@@ -18,6 +18,7 @@
 from __future__ import annotations
 
 import re
+from dataclasses import dataclass
 from typing import Final
 
 from antlr4.error.ErrorListener import ErrorListener
@@ -150,19 +151,37 @@ def format_diagnostic(filename: str, ctx: object, severity: str, message: str) -
     return _format_diagnostic(filename, line, col, severity, message, source_line)
 
 
+@dataclass(frozen=True, slots=True)
+class Warning:
+    """Structured warning with source location for use by both CLI and LSP."""
+    filename: str
+    line: int
+    column: int
+    message: str
+    source_line: str
+
+    def format(self) -> str:
+        return _format_diagnostic(self.filename, self.line, self.column, "warning", self.message, self.source_line)
+
+    @classmethod
+    def from_ctx(cls, filename: str, ctx: object, message: str) -> Warning:
+        line, col, source_line = _extract_source_context(ctx)
+        return cls(filename=filename, line=line, column=col, message=message, source_line=source_line)
+
+
 class ErrorCollector:
     """Collects multiple syntax errors and warnings for comprehensive reporting."""
 
     def __init__(self, max_errors: int = 5) -> None:
         self.errors: list[Hrw4uSyntaxError] = []
         self.max_errors = max_errors
-        self.warnings: list[str] = []
+        self.warnings: list[Warning] = []
         self._sandbox_message: str | None = None
 
     def add_error(self, error: Hrw4uSyntaxError) -> None:
         self.errors.append(error)
 
-    def add_warning(self, warning: str) -> None:
+    def add_warning(self, warning: Warning) -> None:
         self.warnings.append(warning)
 
     def set_sandbox_message(self, message: str) -> None:
@@ -200,7 +219,7 @@ class ErrorCollector:
                 lines.append("")
             count = len(self.warnings)
             lines.append(f"{count} warning{'s' if count > 1 else ''}:")
-            lines.extend(self.warnings)
+            lines.extend(w.format() for w in self.warnings)
 
         if self.at_limit:
             lines.append(f"(stopped after {self.max_errors} errors)")

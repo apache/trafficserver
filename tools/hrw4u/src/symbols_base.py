@@ -1,5 +1,5 @@
 #
- #
+#
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -30,7 +30,8 @@ import hrw4u.types as types
 
 class SymbolResolverBase:
 
-    def __init__(self, debug: bool = SystemDefaults.DEFAULT_DEBUG, sandbox: SandboxConfig | None = None, dbg: Dbg | None = None) -> None:
+    def __init__(
+            self, debug: bool = SystemDefaults.DEFAULT_DEBUG, sandbox: SandboxConfig | None = None, dbg: Dbg | None = None) -> None:
         self._dbg = dbg if dbg is not None else Dbg(debug)
         self._sandbox = sandbox or SandboxConfig.empty()
         self._sandbox_warnings: list[str] = []

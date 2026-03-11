@@ -31,7 +31,7 @@ from hrw4u.hrw4uVisitor import hrw4uVisitor
 from hrw4u.hrw4uParser import hrw4uParser
 from hrw4u.hrw4uLexer import hrw4uLexer
 from hrw4u.symbols import SymbolResolver, SymbolResolutionError
-from hrw4u.errors import hrw4u_error, Hrw4uSyntaxError, ThrowingErrorListener, format_diagnostic
+from hrw4u.errors import hrw4u_error, Hrw4uSyntaxError, ThrowingErrorListener
 from hrw4u.states import CondState, SectionType
 from hrw4u.common import RegexPatterns, SystemDefaults
 from hrw4u.visitor_base import BaseHRWVisitor
@@ -106,13 +106,6 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
             with self.trap(ctx):
                 raise
             return False
-
-    def _add_sandbox_warning(self, ctx, message: str) -> None:
-        """Format and collect a sandbox warning with source context."""
-        if self.error_collector:
-            self.error_collector.add_warning(format_diagnostic(self.filename, ctx, "warning", message))
-            if self._sandbox.message:
-                self.error_collector.set_sandbox_message(self._sandbox.message)
 
     def _drain_resolver_warnings(self, ctx) -> None:
         """Drain any warnings accumulated in the symbol resolver."""

@@ -203,6 +203,7 @@ def generate_output(
         visitor_class: type[VisitorProtocol],
         filename: str,
         args: Any,
+        error_collector: ErrorCollector | None = None,
         extra_kwargs: dict[str, Any] | None = None) -> None:
     """Generate and print output based on mode with optional error collection."""
     if args.ast:
@@ -239,12 +240,10 @@ def generate_output(
                 else:
                     fatal(str(e))
 
-    if error_collector and error_collector.has_errors():
+    if error_collector and (error_collector.has_errors() or error_collector.has_warnings()):
         print(error_collector.get_error_summary(), file=sys.stderr)
-        if not args.ast and tree is None:
+        if error_collector.has_errors() and not args.ast and tree is None:
             sys.exit(1)
-    elif error_collector and error_collector.has_warnings():
-        print(error_collector.get_error_summary(), file=sys.stderr)
 
 
 def run_main(

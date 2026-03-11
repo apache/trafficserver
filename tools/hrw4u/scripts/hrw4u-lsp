@@ -22,7 +22,6 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import re
 import sys
 import urllib.parse
 from pathlib import Path
@@ -123,8 +122,10 @@ class DocumentManager:
 
             if tree is not None:
                 visitor = HRW4UVisitor(
-                    filename=filename, error_collector=error_collector,
-                    proc_search_paths=self.proc_search_paths or None, sandbox=self.sandbox)
+                    filename=filename,
+                    error_collector=error_collector,
+                    proc_search_paths=self.proc_search_paths or None,
+                    sandbox=self.sandbox)
                 try:
                     visitor.visit(tree)
                     self.proc_registries[uri] = dict(visitor._proc_registry)
@@ -224,20 +225,24 @@ class DocumentManager:
 
             # Emit sandbox warnings as LSP severity=2 (Warning) diagnostics
             if error_collector and error_collector.has_warnings():
-                for warning_str in error_collector.warnings:
-                    first_line = warning_str.split('\n')[0]
-                    m = re.match(r'^.*?:(\d+):(\d+):\s+warning:\s+(.*)', first_line)
-                    if m:
-                        line_num = max(0, int(m.group(1)) - 1)
-                        col_num = max(0, int(m.group(2)))
-                        message = m.group(3)
-                        diagnostics.append({
-                            "range": {
-                                "start": {"line": line_num, "character": col_num},
-                                "end": {"line": line_num, "character": col_num + 1}
-                            },
+                for w in error_collector.warnings:
+                    line_num = max(0, w.line - 1)
+                    col_num = max(0, w.column)
+                    diagnostics.append(
+                        {
+                            "range":
+                                {
+                                    "start": {
+                                        "line": line_num,
+                                        "character": col_num
+                                    },
+                                    "end": {
+                                        "line": line_num,
+                                        "character": col_num + 1
+                                    }
+                                },
                             "severity": 2,
-                            "message": message,
+                            "message": w.message,
                             "source": "hrw4u-sandbox"
                         })
 
