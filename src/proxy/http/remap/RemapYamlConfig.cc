@@ -434,32 +434,32 @@ parse_yaml_plugins(const YAML::Node &node, url_mapping *url_mapping, BUILD_TABLE
   std::string plugin_name = node["name"].as<std::string>();
   Dbg(dbg_ctl_remap_yaml, "Loading plugin: %s", plugin_name.c_str());
 
-  auto &param_storage = url_mapping->getPluginParamsStorage();
+  std::vector<std::string> plugin_params;
 
   /* Prepare remap plugin parameters from the config */
   if ((err = url_mapping->fromURL.string_get(nullptr)) == nullptr) {
     return swoc::Errata("Can't load fromURL from URL class");
   }
-  param_storage.emplace_back(err);
+  plugin_params.emplace_back(err);
   ats_free(err);
 
   if ((err = url_mapping->toURL.string_get(nullptr)) == nullptr) {
     return swoc::Errata("Can't load toURL from URL class");
   }
-  param_storage.emplace_back(err);
+  plugin_params.emplace_back(err);
   ats_free(err);
 
   // Add plugin parameters
   if (node["params"] && node["params"].IsSequence()) {
     for (const auto &param : node["params"]) {
-      param_storage.push_back(param.as<std::string>());
-      Dbg(dbg_ctl_remap_yaml, "  Plugin param: %s", param_storage.back().c_str());
+      plugin_params.push_back(param.as<std::string>());
+      Dbg(dbg_ctl_remap_yaml, "  Plugin param: %s", plugin_params.back().c_str());
     }
   }
 
   std::vector<char *> pargv;
-  for (auto &param : param_storage) {
-    pargv.push_back(const_cast<char *>(param.c_str()));
+  for (auto &param : plugin_params) {
+    pargv.push_back(param.data());
   }
 
   RemapPluginInst *pi = nullptr;
