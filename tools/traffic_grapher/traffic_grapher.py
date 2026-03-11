@@ -1507,19 +1507,6 @@ class ATSGrapher:
 
         fig = self.render_page()
 
-        # Maximize the window on startup
-        try:
-            manager = plt.get_current_fig_manager()
-            backend = matplotlib.get_backend().lower()
-            if 'macosx' in backend:
-                manager.full_screen_toggle()
-            elif 'tk' in backend:
-                manager.window.state('zoomed')
-            elif 'qt' in backend:
-                manager.window.showMaximized()
-        except Exception:
-            pass
-
         # Calculate number of frames if run_for specified
         if self.run_for:
             num_frames = int(self.run_for / self.interval)
