@@ -1253,7 +1253,7 @@ class ATSGrapher:
 
         if fig is None:
             if self.gui_mode:
-                fig, axes = plt.subplots(2, 2, figsize=(16, 10))
+                fig, axes = plt.subplots(2, 2, figsize=(14, 8))
             else:
                 fig_width, fig_height = get_figure_size_for_terminal()
                 fig, axes = plt.subplots(2, 2, figsize=(fig_width, fig_height))
