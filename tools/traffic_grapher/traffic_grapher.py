@@ -1585,6 +1585,7 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
+  %(prog)s                                                 # monitor localhost
   %(prog)s ats-server1.example.com
   %(prog)s ats-server{1..3}.example.com                    # bash expansion
   %(prog)s --interval 2 --history 120 ats-server{1..4}.example.com
@@ -1592,7 +1593,7 @@ Examples:
 """)
 
     parser.add_argument(
-        'hosts', nargs='+', metavar='HOSTNAME', help='Hostnames to monitor (1-4 hosts, e.g., ats-server1.example.com)')
+        'hosts', nargs='*', default=['localhost'], metavar='HOSTNAME', help='Hostnames to monitor (default: localhost, max 4)')
     parser.add_argument('--interval', type=float, default=1.0, help='Refresh interval in seconds (default: 1.0)')
     parser.add_argument('--history', type=int, default=60, help='History window in seconds (default: 60)')
     parser.add_argument('--gui', action='store_true', help='Use matplotlib GUI window instead of imgcat')
