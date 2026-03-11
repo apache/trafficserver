@@ -42,11 +42,13 @@ __all__: Final[list[str]] = [
     "collect_failing_inputs",
     "collect_sandbox_deny_test_files",
     "collect_sandbox_allow_test_files",
+    "collect_sandbox_warn_test_files",
     "run_output_test",
     "run_ast_test",
     "run_failing_test",
     "run_sandbox_deny_test",
     "run_sandbox_allow_test",
+    "run_sandbox_warn_test",
     "run_reverse_test",
     "run_bulk_test",
     "run_procedure_output_test",
@@ -157,8 +159,40 @@ def collect_sandbox_deny_test_files(group: str) -> Iterator[pytest.param]:
 
 
 def collect_sandbox_allow_test_files(group: str) -> Iterator[pytest.param]:
-    """Collect sandbox allow test files: (input, output, sandbox_config)."""
-    yield from _collect_sandbox_test_files(group, ".output.txt")
+    """Collect sandbox allow test files: (input, output, sandbox_config).
+
+    Skips warned-* files which are handled by collect_sandbox_warn_test_files.
+    """
+    for param in _collect_sandbox_test_files(group, ".output.txt"):
+        input_file = param.values[0]
+        if not input_file.name.startswith("warned-"):
+            yield param
+
+
+def collect_sandbox_warn_test_files(group: str) -> Iterator[pytest.param]:
+    """Collect sandbox warning test files: (input, warning, output, sandbox_config).
+
+    Warning tests have both a .warning.txt (expected warning phrases) and a
+    .output.txt (expected compiled output), since compilation should succeed.
+    """
+    base_dir = Path("tests/data") / group
+    shared_sandbox = base_dir / "sandbox.yaml"
+
+    for input_file in sorted(base_dir.glob("warned-*.input.txt")):
+        base = input_file.with_suffix("").with_suffix("")
+        warning_file = base.with_suffix(".warning.txt")
+        output_file = base.with_suffix(".output.txt")
+
+        if not warning_file.exists() or not output_file.exists():
+            continue
+
+        per_test_sandbox = base.with_suffix(".sandbox.yaml")
+        sandbox_file = per_test_sandbox if per_test_sandbox.exists() else shared_sandbox
+
+        if not sandbox_file.exists():
+            continue
+
+        yield pytest.param(input_file, warning_file, output_file, sandbox_file, id=base.name)
 
 
 def run_output_test(input_file: Path, output_file: Path) -> None:
@@ -291,6 +325,37 @@ def run_sandbox_allow_test(input_file: Path, output_file: Path, sandbox_file: Pa
     assert not error_collector.has_errors(), (
         f"Expected no errors but sandbox denied something in {input_file}:\n"
         f"{error_collector.get_error_summary()}")
+
+    expected_output = output_file.read_text().strip()
+    assert actual_output == expected_output, f"Output mismatch in {input_file}"
+
+
+def run_sandbox_warn_test(input_file: Path, warning_file: Path, output_file: Path, sandbox_file: Path) -> None:
+    """Run a sandbox warning test: compilation succeeds, warnings are emitted, output matches."""
+    text = input_file.read_text()
+    parser, tree = parse_input_text(text)
+
+    sandbox = SandboxConfig.load(sandbox_file)
+    error_collector = ErrorCollector()
+    visitor = HRW4UVisitor(filename=str(input_file), error_collector=error_collector, sandbox=sandbox)
+    actual_output = "\n".join(visitor.visit(tree) or []).strip()
+
+    assert not error_collector.has_errors(), (
+        f"Expected no errors but got errors in {input_file}:\n"
+        f"{error_collector.get_error_summary()}")
+
+    assert error_collector.has_warnings(), f"Expected warnings but none were emitted for {input_file}"
+
+    actual_summary = error_collector.get_error_summary()
+    expected_warnings = warning_file.read_text().strip()
+
+    for line in expected_warnings.splitlines():
+        line = line.strip()
+        if line:
+            assert line in actual_summary, (
+                f"Expected warning phrase not found for {input_file}:\n"
+                f"  Missing: {line!r}\n"
+                f"Actual summary:\n{actual_summary}")
 
     expected_output = output_file.read_text().strip()
     assert actual_output == expected_output, f"Output mismatch in {input_file}"

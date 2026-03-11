@@ -34,3 +34,10 @@ def test_sandbox_denials(input_file: Path, error_file: Path, sandbox_file: Path)
 def test_sandbox_allowed(input_file: Path, output_file: Path, sandbox_file: Path) -> None:
     """Test that features not in the deny list compile normally under a sandbox."""
     utils.run_sandbox_allow_test(input_file, output_file, sandbox_file)
+
+
+@pytest.mark.sandbox
+@pytest.mark.parametrize("input_file,warning_file,output_file,sandbox_file", utils.collect_sandbox_warn_test_files("sandbox"))
+def test_sandbox_warnings(input_file: Path, warning_file: Path, output_file: Path, sandbox_file: Path) -> None:
+    """Test that sandbox-warned features produce warnings but compile successfully."""
+    utils.run_sandbox_warn_test(input_file, warning_file, output_file, sandbox_file)

@@ -243,6 +243,8 @@ def generate_output(
         print(error_collector.get_error_summary(), file=sys.stderr)
         if not args.ast and tree is None:
             sys.exit(1)
+    elif error_collector and error_collector.has_warnings():
+        print(error_collector.get_error_summary(), file=sys.stderr)
 
 
 def run_main(

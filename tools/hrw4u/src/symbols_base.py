@@ -33,6 +33,7 @@ class SymbolResolverBase:
     def __init__(self, debug: bool = SystemDefaults.DEFAULT_DEBUG, sandbox: SandboxConfig | None = None, dbg: Dbg | None = None) -> None:
         self._dbg = dbg if dbg is not None else Dbg(debug)
         self._sandbox = sandbox or SandboxConfig.empty()
+        self._sandbox_warnings: list[str] = []
         # Clear caches when debug status changes to ensure consistency
         if hasattr(self, '_condition_cache'):
             self._condition_cache.cache_clear()
@@ -43,6 +44,15 @@ class SymbolResolverBase:
     @cached_property
     def _condition_map(self) -> dict[str, types.MapParams]:
         return tables.CONDITION_MAP
+
+    def _collect_warning(self, warning: str | None) -> None:
+        if warning:
+            self._sandbox_warnings.append(warning)
+
+    def drain_warnings(self) -> list[str]:
+        warnings = self._sandbox_warnings[:]
+        self._sandbox_warnings.clear()
+        return warnings
 
     @cached_property
     def _operator_map(self) -> dict[str, types.MapParams]:

@@ -641,9 +641,9 @@ Sandbox Policy Enforcement
 ==========================
 
 Organizations deploying HRW4U across teams can restrict which language features
-are permitted using a sandbox configuration file. When a denied feature is used,
-the compiler emits a clear error with a configurable message explaining the
-restriction.
+are permitted using a sandbox configuration file. Features can be **denied**
+(compilation fails with an error) or **warned** (compilation succeeds but a
+warning is emitted). Both modes support the same feature categories.
 
 Pass the sandbox file with ``--sandbox``:
 
@@ -658,7 +658,7 @@ Schema for editor validation and autocomplete is provided at
 .. code-block:: yaml
 
    sandbox:
-     message: |      # optional: shown once after all denial errors
+     message: |      # optional: shown once after all errors/warnings
        ...
      deny:
        sections:    [ ... ]   # section names, e.g. TXN_START
@@ -666,8 +666,12 @@ Schema for editor validation and autocomplete is provided at
        conditions:  [ ... ]   # condition keys, e.g. geo.
        operators:   [ ... ]   # operator keys, e.g. inbound.conn.dscp
        language:    [ ... ]   # break, variables, in, else, elif
+     warn:
+       functions:   [ ... ]   # same categories as deny
+       conditions:  [ ... ]
 
-All deny lists are optional. An empty or missing sandbox file permits everything.
+All lists are optional. An empty or missing sandbox file permits everything.
+A feature may not appear in both ``deny`` and ``warn``.
 
 Denied Sections
 ---------------
@@ -709,7 +713,25 @@ in the `Conditions`_ and `Operators`_ tables above (e.g. ``inbound.req.``,
 
 Entries ending with ``.`` use **prefix matching** — ``geo.`` denies all
 ``geo.*`` lookups (``geo.city``, ``geo.ASN``, etc.). Entries without a trailing
-``.`` are matched exactly.
+``.`` are matched exactly, which allows fine-grained control over sub-values:
+
+.. code-block:: yaml
+
+   sandbox:
+     deny:
+       operators:
+         - http.cntl.SKIP_REMAP        # deny just this sub-value
+       conditions:
+         - geo.ASN                      # deny ASN lookups specifically
+     warn:
+       operators:
+         - http.cntl.                   # warn on all other http.cntl.* usage
+       conditions:
+         - geo.                         # warn on remaining geo.* lookups
+
+Prefix entries and exact entries can be combined across ``deny`` and ``warn``
+to create graduated policies — deny the dangerous sub-values while warning on
+the rest.
 
 Language Constructs
 -------------------
@@ -717,7 +739,7 @@ Language Constructs
 The ``language`` list accepts a fixed set of constructs:
 
 ================ ===================================================
-Construct        What it denies
+Construct        What it controls
 ================ ===================================================
 ``break``        The ``break;`` statement (early section exit)
 ``variables``    The entire ``VARS`` section and all variable usage
@@ -726,8 +748,8 @@ Construct        What it denies
 ``in``           The ``in [...]`` and ``!in [...]`` set membership operators
 ================ ===================================================
 
-Error Output
-------------
+Output
+------
 
 When a denied feature is used the error output looks like:
 
@@ -738,14 +760,25 @@ When a denied feature is used the error output looks like:
    This feature is restricted by CDN-SRE policy.
    Contact cdn-sre@example.com for exceptions.
 
-The sandbox message is shown once at the end of the error summary, regardless
-of how many denial errors were found.
+When a warned feature is used the compiler emits a warning but succeeds:
+
+.. code-block:: none
+
+   rules.hrw4u:5:4: warning: 'set-config' is warned by sandbox policy (function)
+
+   This feature is restricted by CDN-SRE policy.
+   Contact cdn-sre@example.com for exceptions.
+
+The sandbox message is shown once at the end of the output, regardless of how
+many denial errors or warnings were found. Warnings alone do not cause a
+non-zero exit code.
 
 Example Configuration
 ---------------------
 
 A typical policy for a CDN team where remap plugin authors should not have
-access to low-level or dangerous features:
+access to low-level or dangerous features, with transitional warnings for
+features being phased out:
 
 .. code-block:: yaml
 
@@ -764,9 +797,21 @@ access to low-level or dangerous features:
        # Disallow functions that affect ATS internals or load arbitrary code
        functions:
          - run-plugin
+         - skip-remap
+
+       # Deny a specific dangerous sub-value
+       operators:
+         - http.cntl.SKIP_REMAP
+
+     warn:
+       # These functions will be denied in a future release
+       functions:
          - set-debug
          - set-config
-         - skip-remap
+
+       # Warn on all remaining http.cntl usage
+       operators:
+         - http.cntl.
 
 Examples
 ========

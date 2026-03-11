@@ -31,7 +31,7 @@ from hrw4u.hrw4uVisitor import hrw4uVisitor
 from hrw4u.hrw4uParser import hrw4uParser
 from hrw4u.hrw4uLexer import hrw4uLexer
 from hrw4u.symbols import SymbolResolver, SymbolResolutionError
-from hrw4u.errors import hrw4u_error, Hrw4uSyntaxError, ThrowingErrorListener
+from hrw4u.errors import hrw4u_error, Hrw4uSyntaxError, ThrowingErrorListener, format_diagnostic
 from hrw4u.states import CondState, SectionType
 from hrw4u.common import RegexPatterns, SystemDefaults
 from hrw4u.visitor_base import BaseHRWVisitor
@@ -95,15 +95,29 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
     def _sandbox_check(self, ctx, check_fn) -> bool:
         """Run a sandbox check, trapping any denial error into the error collector.
 
-        Returns True if the check passed, False if denied (error was collected).
+        Returns True if the check passed (or warned), False if denied.
         """
         try:
-            check_fn()
+            warning = check_fn()
+            if warning:
+                self._add_sandbox_warning(ctx, warning)
             return True
         except SandboxDenialError:
             with self.trap(ctx):
                 raise
             return False
+
+    def _add_sandbox_warning(self, ctx, message: str) -> None:
+        """Format and collect a sandbox warning with source context."""
+        if self.error_collector:
+            self.error_collector.add_warning(format_diagnostic(self.filename, ctx, "warning", message))
+            if self._sandbox.message:
+                self.error_collector.set_sandbox_message(self._sandbox.message)
+
+    def _drain_resolver_warnings(self, ctx) -> None:
+        """Drain any warnings accumulated in the symbol resolver."""
+        for warning in self.symbol_resolver.drain_warnings():
+            self._add_sandbox_warning(ctx, warning)
 
     @lru_cache(maxsize=256)
     def _cached_symbol_resolution(self, symbol_text: str, section_name: str) -> tuple[str, bool]:
@@ -201,11 +215,13 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                     arg_str = m.group("args").strip()
                     args = self._parse_function_args(arg_str) if arg_str else []
                     replacement = self.symbol_resolver.resolve_function(func_name, args, strip_quotes=False)
+                    self._drain_resolver_warnings(ctx)
                     self.debug(f"substitute: {{{func_name}({arg_str})}} -> {replacement}")
                     return replacement
                 if m.group("var"):
                     var_name = m.group("var").strip()
                     replacement, _ = self.symbol_resolver.resolve_condition(var_name, self.current_section)
+                    self._drain_resolver_warnings(ctx)
                     self.debug(f"substitute: {{{var_name}}} -> {replacement}")
                     return replacement
                 raise SymbolResolutionError(m.group(0), "Unrecognized substitution format")
@@ -729,7 +745,9 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
             raise SymbolResolutionError("section", "Missing section name")
 
         section_name = ctx.name.text
-        self._sandbox.check_section(section_name)
+        warning = self._sandbox.check_section(section_name)
+        if warning:
+            self._add_sandbox_warning(ctx, warning)
 
         try:
             self.current_section = SectionType(section_name)
@@ -823,7 +841,9 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         with self.debug_context("visitStatement"), self.trap(ctx):
             match ctx:
                 case _ if ctx.BREAK():
-                    self._sandbox.check_language("break")
+                    warning = self._sandbox.check_language("break")
+                    if warning:
+                        self._add_sandbox_warning(ctx, warning)
                     self._dbg("BREAK")
                     self.emit_statement("no-op [L]")
                     return
@@ -842,6 +862,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                         self._substitute_strings(arg, ctx) if arg.startswith('"') and arg.endswith('"') else arg for arg in args
                     ]
                     symbol = self.symbol_resolver.resolve_statement_func(func, subst_args, self.current_section)
+                    self._drain_resolver_warnings(ctx)
                     self.emit_statement(symbol)
                     return
 
@@ -854,6 +875,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                         rhs = self._substitute_strings(rhs, ctx)
                     self._dbg(f"assignment: {lhs} = {rhs}")
                     out = self.symbol_resolver.resolve_assignment(lhs, rhs, self.current_section)
+                    self._drain_resolver_warnings(ctx)
                     self.emit_statement(out)
                     return
 
@@ -866,6 +888,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                         rhs = self._substitute_strings(rhs, ctx)
                     self._dbg(f"add assignment: {lhs} += {rhs}")
                     out = self.symbol_resolver.resolve_add_assignment(lhs, rhs, self.current_section)
+                    self._drain_resolver_warnings(ctx)
                     self.emit_statement(out)
                     return
 
@@ -966,6 +989,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                 if comp.ident:
                     ident_name = comp.ident.text
                     lhs, _ = self._resolve_identifier_with_validation(ident_name)
+                    self._drain_resolver_warnings(ctx)
                 else:
                     lhs = self.visitFunctionCall(comp.functionCall())
             if not lhs:
@@ -1022,7 +1046,9 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         for token in ctx.modifierList().mods:
             try:
                 mod = token.text.upper()
-                self._sandbox.check_modifier(mod)
+                warning = self._sandbox.check_modifier(mod)
+                if warning:
+                    self._add_sandbox_warning(ctx, warning)
                 self._cond_state.add_modifier(mod)
             except Exception as exc:
                 with self.trap(ctx):
@@ -1033,7 +1059,9 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         with self.trap(ctx):
             func, raw_args = self._parse_function_call(ctx)
             self._dbg(f"function: {func}({', '.join(raw_args)})")
-            return self.symbol_resolver.resolve_function(func, raw_args, strip_quotes=True)
+            result = self.symbol_resolver.resolve_function(func, raw_args, strip_quotes=True)
+            self._drain_resolver_warnings(ctx)
+            return result
         return "ERROR"
 
     def emit_condition(self, text: str, *, final: bool = False) -> None:
@@ -1136,6 +1164,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                 case _ if ctx.ident:
                     name = ctx.ident.text
                     symbol, default_expr = self._resolve_identifier_with_validation(name)
+                    self._drain_resolver_warnings(ctx)
 
                     if default_expr:
                         cond_txt = f"{symbol} =\"\""
