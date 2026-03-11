@@ -1505,16 +1505,8 @@ class ATSGrapher:
 
         self.collect_all_pages()
 
+        matplotlib.rcParams['toolbar'] = 'None'
         fig = self.render_page()
-
-        # Hide the default matplotlib toolbar
-        try:
-            fig.canvas.manager.toolbar.pack_forget()
-        except Exception:
-            try:
-                fig.canvas.toolbar.setVisible(False)
-            except Exception:
-                pass
 
         # Keyboard navigation for page switching
         def on_key(event):
