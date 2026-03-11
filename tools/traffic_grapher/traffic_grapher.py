@@ -547,7 +547,7 @@ sock.connect("{socket_path}")
 request = {{
     "jsonrpc": "2.0",
     "method": "admin_lookup_records",
-    "params": [{{"record_name_regex": "{pattern}"}}],
+    "params": [{{"record_name_regex": r"{pattern}"}}],
     "id": 1
 }}
 sock.sendall(json.dumps(request).encode() + b"\\n")
