@@ -670,7 +670,9 @@ Schema for editor validation and autocomplete is provided at
        functions:   [ ... ]   # same categories as deny
        conditions:  [ ... ]
 
-All lists are optional. An empty or missing sandbox file permits everything.
+All lists are optional. If ``--sandbox`` is omitted, all features are permitted.
+When a sandbox file is provided it must contain a top-level ``sandbox:`` key;
+an empty policy can be expressed as ``sandbox: {}``.
 A feature may not appear in both ``deny`` and ``warn``.
 
 Denied Sections

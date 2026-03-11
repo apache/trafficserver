@@ -825,6 +825,8 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
             else:
                 raise error
         with self.debug_context("visitVarSection"):
+            if not self._sandbox_check(ctx, lambda: self._sandbox.check_section("VARS")):
+                return
             if not self._sandbox_check(ctx, lambda: self._sandbox.check_language("variables")):
                 return
             self.visit(ctx.variables())

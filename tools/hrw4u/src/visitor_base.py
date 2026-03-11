@@ -23,7 +23,7 @@ from typing import Any
 from hrw4u.debugging import Dbg
 from hrw4u.states import SectionType
 from hrw4u.common import SystemDefaults
-from hrw4u.errors import hrw4u_error
+from hrw4u.errors import hrw4u_error, format_diagnostic
 from hrw4u.sandbox import SandboxConfig, SandboxDenialError
 
 
@@ -262,7 +262,11 @@ class BaseHRWVisitor:
                             raise Exception(f"Unknown modifier: {flag_text}")
                     sandbox = self._sandbox
                     if sandbox is not None:
-                        sandbox.check_modifier(flag_text)
+                        warning = sandbox.check_modifier(flag_text)
+                        if warning and ctx and self.error_collector:
+                            self.error_collector.add_warning(format_diagnostic(self.filename, ctx, "warning", warning))
+                            if sandbox.message:
+                                self.error_collector.set_sandbox_message(sandbox.message)
                 continue
 
             for kind in ("IDENT", "NUMBER", "STRING", "PERCENT_BLOCK", "COMPLEX_STRING"):

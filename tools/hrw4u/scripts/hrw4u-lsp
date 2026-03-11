@@ -22,6 +22,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import sys
 import urllib.parse
 from pathlib import Path
@@ -219,6 +220,25 @@ class DocumentManager:
                             "severity": severity,
                             "message": error_str,
                             "source": "hrw4u"
+                        })
+
+            # Emit sandbox warnings as LSP severity=2 (Warning) diagnostics
+            if error_collector and error_collector.has_warnings():
+                for warning_str in error_collector.warnings:
+                    first_line = warning_str.split('\n')[0]
+                    m = re.match(r'^.*?:(\d+):(\d+):\s+warning:\s+(.*)', first_line)
+                    if m:
+                        line_num = max(0, int(m.group(1)) - 1)
+                        col_num = max(0, int(m.group(2)))
+                        message = m.group(3)
+                        diagnostics.append({
+                            "range": {
+                                "start": {"line": line_num, "character": col_num},
+                                "end": {"line": line_num, "character": col_num + 1}
+                            },
+                            "severity": 2,
+                            "message": message,
+                            "source": "hrw4u-sandbox"
                         })
 
             # Add parser errors only if they don't overlap with semantic errors
@@ -727,7 +747,7 @@ def main() -> None:
     """Main entry point for the LSP server."""
     parser = argparse.ArgumentParser(description="HRW4U Language Server")
     parser.add_argument("--sandbox", metavar="FILE", type=Path, help="Path to sandbox YAML configuration file")
-    args = parser.parse_args()
+    args, _unknown = parser.parse_known_args()
 
     server = HRW4ULanguageServer()
     if args.sandbox:
