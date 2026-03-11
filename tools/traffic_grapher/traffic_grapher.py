@@ -1249,16 +1249,18 @@ class ATSGrapher:
         page = self.pages[self.current_page]
         current_elapsed = time.time() - self.start_time
 
-        # Set up dark theme - dynamic figure size to fill terminal
         plt.style.use('dark_background')
-        fig_width, fig_height = get_figure_size_for_terminal()
 
         if fig is None:
-            # Create new figure
-            fig, axes = plt.subplots(2, 2, figsize=(fig_width, fig_height))
+            if self.gui_mode:
+                fig, axes = plt.subplots(2, 2, figsize=(16, 10))
+            else:
+                fig_width, fig_height = get_figure_size_for_terminal()
+                fig, axes = plt.subplots(2, 2, figsize=(fig_width, fig_height))
         else:
-            # Reuse existing figure, create new axes
-            fig.set_size_inches(fig_width, fig_height)
+            if not self.gui_mode:
+                fig_width, fig_height = get_figure_size_for_terminal()
+                fig.set_size_inches(fig_width, fig_height)
             axes = fig.subplots(2, 2)
 
         fig.patch.set_facecolor(self.FIG_BG_COLOR)  # Pure black outside graphs
@@ -1501,11 +1503,22 @@ class ATSGrapher:
         """Run the grapher in GUI mode with matplotlib window."""
         from matplotlib.animation import FuncAnimation
 
-        # Collect initial data for all pages
         self.collect_all_pages()
 
-        # Create initial figure
         fig = self.render_page()
+
+        # Maximize the window on startup
+        try:
+            manager = plt.get_current_fig_manager()
+            backend = matplotlib.get_backend().lower()
+            if 'macosx' in backend:
+                manager.full_screen_toggle()
+            elif 'tk' in backend:
+                manager.window.state('zoomed')
+            elif 'qt' in backend:
+                manager.window.showMaximized()
+        except Exception:
+            pass
 
         # Calculate number of frames if run_for specified
         if self.run_for:
