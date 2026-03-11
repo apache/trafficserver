@@ -65,6 +65,7 @@ if '--gui' in sys.argv:
         matplotlib.use('MacOSX')
     else:
         matplotlib.use('TkAgg')
+    matplotlib.rcParams['toolbar'] = 'None'
 else:
     matplotlib.use('Agg')
 import matplotlib.pyplot as plt
