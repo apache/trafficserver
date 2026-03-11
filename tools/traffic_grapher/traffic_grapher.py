@@ -1507,18 +1507,36 @@ class ATSGrapher:
 
         fig = self.render_page()
 
-        # Calculate number of frames if run_for specified
+        # Hide the default matplotlib toolbar
+        try:
+            fig.canvas.manager.toolbar.pack_forget()
+        except Exception:
+            try:
+                fig.canvas.toolbar.setVisible(False)
+            except Exception:
+                pass
+
+        # Keyboard navigation for page switching
+        def on_key(event):
+            if event.key in ('left', 'h'):
+                self.current_page = (self.current_page - 1) % len(self.pages)
+            elif event.key in ('right', 'l'):
+                self.current_page = (self.current_page + 1) % len(self.pages)
+            elif event.key == 'q':
+                plt.close(fig)
+
+        fig.canvas.mpl_connect('key_press_event', on_key)
+
         if self.run_for:
             num_frames = int(self.run_for / self.interval)
             repeat = False
         else:
-            num_frames = None  # Infinite
+            num_frames = None
             repeat = True
 
         def update(frame):
             self.collect_all_pages()
-            fig.clf()  # Clear the existing figure, don't create new one
-            # Re-render onto the same figure
+            fig.clf()
             self.render_page(fig=fig)
             fig.canvas.draw_idle()
             return []
