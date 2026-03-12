@@ -3136,7 +3136,8 @@ HttpSM::tunnel_handler(int event, void * /* data ATS_UNUSED */)
     return 0;
   }
 
-  ink_assert(event == HTTP_TUNNEL_EVENT_DONE || event == VC_EVENT_INACTIVITY_TIMEOUT);
+  ink_assert(event == HTTP_TUNNEL_EVENT_DONE || event == VC_EVENT_INACTIVITY_TIMEOUT || event == VC_EVENT_ACTIVE_TIMEOUT ||
+             event == VC_EVENT_ERROR || event == VC_EVENT_EOS);
   // The tunnel calls this when it is done
   terminate_sm = true;
 
