@@ -23,7 +23,6 @@
 
 #include <unistd.h>
 #include <arpa/inet.h>
-#include <atomic>
 
 #include "ts/ts.h"
 
@@ -33,8 +32,30 @@
 
 MMDB_s *gMaxMindDB = nullptr;
 
-enum class MmdbSchema : int { UNKNOWN = 0, NESTED = 1, FLAT = 2 };
-std::atomic<MmdbSchema> gMmdbSchema{MmdbSchema::UNKNOWN};
+enum class MmdbSchema { NESTED, FLAT };
+static MmdbSchema gMmdbSchema = MmdbSchema::NESTED;
+
+// Detect whether the MMDB uses nested (GeoLite2) or flat (vendor) field layout
+// by probing for the nested country path on a lookup result.
+static MmdbSchema
+detect_schema(MMDB_entry_s *entry)
+{
+  MMDB_entry_data_s probe;
+  int               status = MMDB_get_value(entry, &probe, "country", "iso_code", NULL);
+
+  if (MMDB_SUCCESS == status && probe.has_data && probe.type == MMDB_DATA_TYPE_UTF8_STRING) {
+    return MmdbSchema::NESTED;
+  }
+
+  status = MMDB_get_value(entry, &probe, "country_code", NULL);
+  if (MMDB_SUCCESS == status && probe.has_data && probe.type == MMDB_DATA_TYPE_UTF8_STRING) {
+    return MmdbSchema::FLAT;
+  }
+
+  return MmdbSchema::NESTED;
+}
+
+static const char *probe_ips[] = {"8.8.8.8", "1.1.1.1", "128.0.0.1"};
 
 void
 MMConditionGeo::initLibrary(const std::string &path)
@@ -55,34 +76,23 @@ MMConditionGeo::initLibrary(const std::string &path)
   if (MMDB_SUCCESS != status) {
     Dbg(pi_dbg_ctl, "Cannot open %s - %s", path.c_str(), MMDB_strerror(status));
     delete gMaxMindDB;
-    gMaxMindDB = nullptr; // avoid leaving a dangling global pointer after delete
+    gMaxMindDB = nullptr;
     return;
   }
-  Dbg(pi_dbg_ctl, "Loaded %s", path.c_str());
-}
 
-// Detect whether the MMDB uses nested (GeoLite2) or flat (vendor) field layout
-// by probing for the nested country path on a real lookup result.  Called once
-// on the first successful lookup; result is cached in gMmdbSchema.
-static MmdbSchema
-detect_schema(MMDB_entry_s *entry)
-{
-  MMDB_entry_data_s probe;
-  int               status = MMDB_get_value(entry, &probe, "country", "iso_code", NULL);
-
-  if (MMDB_SUCCESS == status && probe.has_data && probe.type == MMDB_DATA_TYPE_UTF8_STRING) {
-    Dbg(pi_dbg_ctl, "Detected nested MMDB schema (country/iso_code)");
-    return MmdbSchema::NESTED;
+  // Probe the database schema at load time so we know which field paths to
+  // use for country lookups.  Try a few well-known IPs until one hits.
+  for (auto *ip : probe_ips) {
+    int                  gai_error, mmdb_error;
+    MMDB_lookup_result_s result = MMDB_lookup_string(gMaxMindDB, ip, &gai_error, &mmdb_error);
+    if (gai_error == 0 && MMDB_SUCCESS == mmdb_error && result.found_entry) {
+      gMmdbSchema = detect_schema(&result.entry);
+      Dbg(pi_dbg_ctl, "Loaded %s (schema: %s)", path.c_str(), gMmdbSchema == MmdbSchema::FLAT ? "flat" : "nested");
+      return;
+    }
   }
 
-  status = MMDB_get_value(entry, &probe, "country_code", NULL);
-  if (MMDB_SUCCESS == status && probe.has_data && probe.type == MMDB_DATA_TYPE_UTF8_STRING) {
-    Dbg(pi_dbg_ctl, "Detected flat MMDB schema (country_code)");
-    return MmdbSchema::FLAT;
-  }
-
-  Dbg(pi_dbg_ctl, "Could not detect MMDB schema; defaulting to nested");
-  return MmdbSchema::NESTED;
+  Dbg(pi_dbg_ctl, "Loaded %s (schema: defaulting to nested, no probe IPs matched)", path.c_str());
 }
 
 std::string
@@ -108,19 +118,12 @@ MMConditionGeo::get_geo_string(const sockaddr *addr) const
     return ret;
   }
 
-  // Lazy schema detection on first successful lookup
-  MmdbSchema schema = gMmdbSchema.load(std::memory_order_relaxed);
-  if (schema == MmdbSchema::UNKNOWN) {
-    schema = detect_schema(&result.entry);
-    gMmdbSchema.store(schema, std::memory_order_relaxed);
-  }
-
   MMDB_entry_data_s entry_data;
   int               status;
 
   switch (_geo_qual) {
   case GEO_QUAL_COUNTRY:
-    if (schema == MmdbSchema::FLAT) {
+    if (gMmdbSchema == MmdbSchema::FLAT) {
       status = MMDB_get_value(&result.entry, &entry_data, "country_code", NULL);
     } else {
       status = MMDB_get_value(&result.entry, &entry_data, "country", "iso_code", NULL);
