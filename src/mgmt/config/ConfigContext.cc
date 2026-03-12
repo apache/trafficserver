@@ -129,7 +129,7 @@ ConfigContext::add_dependent_ctx(std::string_view description)
   if (auto p = _task.lock()) {
     auto child = p->add_child(description);
     // child task will get the full content of the parent task
-    // TODO: eventyually we can have a "key" passed so child module
+    // TODO: eventually we can have a "key" passed so child module
     // only gets their node of interest.
     child._supplied_yaml = _supplied_yaml;
     return child;

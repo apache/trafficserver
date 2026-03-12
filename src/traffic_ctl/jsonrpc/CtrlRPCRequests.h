@@ -81,7 +81,7 @@ struct ConfigReloadResponse {
   };
   std::vector<Error> error; ///< Error list, if any.
 
-  // when requestiong existing tasks.
+  // when requesting existing tasks.
   std::vector<ReloadInfo> tasks;
 
   std::string              created_time;

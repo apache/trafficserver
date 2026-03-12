@@ -125,6 +125,7 @@ IpAllow::reconfigure(ConfigContext ctx)
 {
   self_type  *new_table;
   std::string text;
+  std::string errata_text;
   Note("%s loading ...", ts::filename::IP_ALLOW);
   ctx.in_progress();
 
@@ -132,17 +133,19 @@ IpAllow::reconfigure(ConfigContext ctx)
   // IP rules need categories, so load them first (if they exist).
   if (auto errata = new_table->BuildCategories(); !errata.is_ok()) {
     swoc::bwprint(text, "{} failed to load", new_table->ip_categories_config_file);
-    Error("%s\n%s", text.c_str(), swoc::bwprint(text, "{}", errata).c_str());
+    swoc::bwprint(errata_text, "{}", errata);
+    Error("%s\n%s", text.c_str(), errata_text.c_str());
     ctx.fail(errata, "{} failed to load", new_table->ip_categories_config_file);
     delete new_table;
     return;
   }
   if (auto errata = new_table->BuildTable(); !errata.is_ok()) {
     swoc::bwprint(text, "{} failed to load", ts::filename::IP_ALLOW);
+    swoc::bwprint(errata_text, "{}", errata);
     if (errata.severity() <= ERRATA_ERROR) {
-      Error("%s\n%s", text.c_str(), swoc::bwprint(text, "{}", errata).c_str());
+      Error("%s\n%s", text.c_str(), errata_text.c_str());
     } else {
-      Fatal("%s\n%s", text.c_str(), swoc::bwprint(text, "{}", errata).c_str());
+      Fatal("%s\n%s", text.c_str(), errata_text.c_str());
     }
     ctx.fail(errata, "{} failed to load", ts::filename::IP_ALLOW);
     delete new_table;

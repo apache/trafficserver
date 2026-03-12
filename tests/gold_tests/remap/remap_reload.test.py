@@ -116,7 +116,3 @@ tr.AddVerifierClientProcess("client_3", replay_file_3, http_ports=[tm.Variables.
 
 tr = Test.AddTestRun("post update golf")
 tr.AddVerifierClientProcess("client_4", replay_file_4, http_ports=[tm.Variables.port])
-
-tr = Test.AddTestRun("remap_config reload, test")
-tr.Processes.Default.Env = tm.Env
-tr.Processes.Default.Command = 'sleep 2; traffic_ctl rpc invoke get_reload_config_status -f json | jq'

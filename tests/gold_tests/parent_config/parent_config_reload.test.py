@@ -79,7 +79,7 @@ p.ReturnCode = Any(0, -2)
 p.Ready = When.FileContains(ts.Disk.diags_log.Name, "parent.config finished loading", 3)
 p.Timeout = 20
 tr.Processes.Default.StartBefore(p)
-## TODO: we should have an extension like When.ReloadCompleted(token, success) to validate this inetasd of parsing
+## TODO: we should have an extension like When.ReloadCompleted(token, success) to validate this instead of parsing
 ##       diags.
 tr.Processes.Default.Command = 'echo "waiting for parent.config reload after record change"'
 tr.TimeOut = 25

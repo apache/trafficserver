@@ -103,7 +103,7 @@ traffic_ctl.config().reload().token(token).validate_with_text(
 
 # Modify ip_allow.yaml and validate the reload status.
 
-tr = Test.AddTestRun("rouch file to trigger ip_allow reload")
+tr = Test.AddTestRun("touch file to trigger ip_allow reload")
 tr.Processes.Default.Command = f"touch {os.path.join(traffic_ctl._ts.Variables.CONFIGDIR, 'ip_allow.yaml')}  && sleep 1"
 tr.Processes.Default.ReturnCode = 0
 

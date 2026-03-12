@@ -800,8 +800,8 @@ SSLTicketKeyConfig::startup()
 {
   config::ConfigRegistry::Get_Instance().register_record_config("ssl_ticket_key",       // key
                                                                 [](ConfigContext ctx) { // handler callback
-                                                                  // eventually ctx should passed throuough to the reconfigure fn to
-                                                                  // the loaders to it can show more details.
+                                                                  // eventually ctx should be passed through to the reconfigure fn
+                                                                  // and the loaders so it can show more details.
                                                                   if (SSLTicketKeyConfig::reconfigure(ctx)) {
                                                                     ctx.complete("SSL ticket key reloaded");
                                                                   } else {
