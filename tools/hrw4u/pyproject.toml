@@ -49,6 +49,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest>=7.0,<8.0",
+    "pytest-cov>=4.1.0",
     "pyinstaller>=5.0,<7.0",
     "build>=0.8,<2.0",
 ]
@@ -86,4 +87,39 @@ dev = [
     "build>=1.4.0",
     "pyinstaller>=6.18.0",
     "pytest>=7.4.4",
+    "pytest-cov>=4.1.0",
 ]
+
+[tool.coverage.run]
+source = [
+    "hrw4u",
+    "u4wrh",
+]
+omit = [
+    # ANTLR-generated files (not meaningful to cover)
+    "*/hrw4uLexer.py",
+    "*/hrw4uParser.py",
+    "*/hrw4uVisitor.py",
+    "*/u4wrhLexer.py",
+    "*/u4wrhParser.py",
+    "*/u4wrhVisitor.py",
+    # Unused/experimental modules
+    "*/kg_visitor.py",
+    # Fuzzy-matching suggestion engine (rapidfuzz dependency, hard to test meaningfully)
+    "*/suggestions.py",
+    # Package boilerplate
+    "*/__init__.py",
+    "*/__main__.py",
+]
+
+[tool.coverage.report]
+show_missing = true
+skip_empty = true
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__ == .__main__.",
+    "if TYPE_CHECKING:",
+]
+
+[tool.coverage.html]
+directory = "htmlcov"

@@ -104,7 +104,7 @@ INIT_HRW4U=$(PKG_DIR_HRW4U)/__init__.py
 INIT_U4WRH=$(PKG_DIR_U4WRH)/__init__.py
 INIT_LSP=$(PKG_DIR_LSP)/__init__.py
 
-.PHONY: all gen gen-fwd gen-inv copy-src test clean build package env setup-deps activate update
+.PHONY: all gen gen-fwd gen-inv copy-src test clean build package env setup-deps activate update coverage coverage-open
 
 all: gen
 
@@ -169,6 +169,14 @@ $(PKG_DIR_LSP)/%: src/%
 test:
 	uv run pytest --tb=short tests
 
+coverage:
+	uv run pytest --cov --cov-report=term-missing --cov-report=html tests
+	@echo ""
+	@echo "HTML report: open htmlcov/index.html"
+
+coverage-open: coverage
+	uv run python -m webbrowser "file://$(shell pwd)/htmlcov/index.html"
+
 # Build standalone binaries (optional)
 build: gen
 	uv run pyinstaller --onedir --name hrw4u --strip $(SCRIPT_HRW4U)
@@ -182,7 +190,7 @@ package: gen
 	uv run python -m build --wheel --outdir $(DIST_DIR)
 
 clean:
-	rm -rf build dist __pycache__ *.spec *.egg-info .venv
+	rm -rf build dist __pycache__ *.spec *.egg-info .venv htmlcov .coverage
 	find tests -name '__pycache__' -type d -exec rm -r {} +
 
 setup-deps:

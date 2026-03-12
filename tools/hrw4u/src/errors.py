@@ -113,12 +113,6 @@ class Hrw4uSyntaxError(Exception):
         self.column = column
         self.source_line = source_line
 
-    def add_context_note(self, context: str) -> None:
-        self.add_note(f"Context: {context}")
-
-    def add_resolution_hint(self, hint: str) -> None:
-        self.add_note(f"Hint: {hint}")
-
 
 class SymbolResolutionError(Exception):
 

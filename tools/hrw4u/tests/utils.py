@@ -195,10 +195,10 @@ def collect_sandbox_warn_test_files(group: str) -> Iterator[pytest.param]:
         yield pytest.param(input_file, warning_file, output_file, sandbox_file, id=base.name)
 
 
-def run_output_test(input_file: Path, output_file: Path) -> None:
+def run_output_test(input_file: Path, output_file: Path, debug: bool = False) -> None:
     input_text = input_file.read_text()
     parser, tree = parse_input_text(input_text)
-    visitor = HRW4UVisitor()
+    visitor = HRW4UVisitor(debug=debug)
     actual_output = "\n".join(visitor.visit(tree)).strip()
     expected_output = output_file.read_text().strip()
     assert actual_output == expected_output, f"Output mismatch in {input_file}"
@@ -361,13 +361,13 @@ def run_sandbox_warn_test(input_file: Path, warning_file: Path, output_file: Pat
     assert actual_output == expected_output, f"Output mismatch in {input_file}"
 
 
-def run_reverse_test(input_file: Path, output_file: Path) -> None:
+def run_reverse_test(input_file: Path, output_file: Path, debug: bool = False) -> None:
     output_text = output_file.read_text()
     lexer = u4wrhLexer(InputStream(output_text))
     stream = CommonTokenStream(lexer)
     parser = u4wrhParser(stream)
     tree = parser.program()
-    visitor = HRWInverseVisitor(filename=str(output_file))
+    visitor = HRWInverseVisitor(filename=str(output_file), debug=debug)
     actual_hrw4u = "\n".join(visitor.visit(tree)).strip()
     expected_hrw4u = input_file.read_text().strip()
     assert actual_hrw4u == expected_hrw4u, f"Reverse conversion mismatch for {output_file}"
