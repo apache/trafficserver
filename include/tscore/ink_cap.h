@@ -81,8 +81,7 @@ public:
     FILE_PRIVILEGE     = 0x1u, ///< Access filesystem objects with privilege
     TRACE_PRIVILEGE    = 0x2u, ///< Trace other processes with privilege
     LOW_PORT_PRIVILEGE = 0x4u, ///< Bind to privilege ports.
-    OWNER_PRIVILEGE    = 0x8u, ///< Bypass permission checks on operations that normally require
-                               ///  filesystem UID & process UID to match
+    OWNER_PRIVILEGE    = 0x8u, ///< Owner-only operations on unowned files (CAP_FOWNER)
     CHOWN_PRIVILEGE    = 0x10u ///< Change file ownership
   };
 
