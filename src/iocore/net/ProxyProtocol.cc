@@ -22,6 +22,7 @@
  */
 
 #include "iocore/net/ProxyProtocol.h"
+#include "tscore/Diags.h"
 #include "tscore/ink_assert.h"
 #include "tscore/ink_string.h"
 #include "tscore/ink_inet.h"
@@ -237,7 +238,7 @@ proxy_protocol_v2_parse(ProxyProtocol *pp_info, const swoc::TextView &msg)
   uint16_t       tlv_len   = 0;
 
   if (msg.size() < total_len) {
-    Dbg(dbg_ctl_proxyprotocol_v2, "The amount of available data is smaller than the expected size");
+    Error("The size of PP header received (%zu) is smaller than the expected size (%zu)", msg.size(), total_len);
     return 0;
   }
 
@@ -452,6 +453,18 @@ proxy_protocol_v2_build(uint8_t *buf, size_t max_buf_len, const ProxyProtocol &p
 }
 
 } // namespace
+
+bool
+proxy_protocol_detect(swoc::TextView tv)
+{
+  if (tv.size() >= PPv1_CONNECTION_HEADER_LEN_MIN && tv.starts_with(PPv1_CONNECTION_PREFACE)) {
+    return true;
+  } else if (tv.size() >= PPv2_CONNECTION_HEADER_LEN && tv.starts_with(PPv2_CONNECTION_PREFACE)) {
+    return true;
+  } else {
+    return false;
+  }
+}
 
 /**
    PROXY Protocol Parser

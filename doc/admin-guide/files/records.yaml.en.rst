@@ -5234,6 +5234,18 @@ UDP Configuration
    Enables (``1``) or disables (``0``) UDP GRO. When enabled, |TS| will try to use it
    when reading the UDP socket.
 
+
+PROXY protocol Configuration
+=============================
+
+.. ts:cv:: CONFIG proxy.config.proxy_protocol.max_header_size INT 109
+
+   Sets the maximum size of PROXY protocol header to receive.
+   The default size is enough for PROXY protocol version 1. The size needs to be increased
+   if the version 2 is used with many TLV fields. Although you can set a numbere up to 65535,
+   setting a large number can affect performance.
+
+
 Plug-in Configuration
 =====================
 

@@ -32,6 +32,7 @@
 
 #include "iocore/net/NetVConnection.h"
 #include "iocore/eventsystem/IOBuffer.h"
+#include "records/RecCore.h"
 #include "tsutil/DbgCtl.h"
 #include <swoc/TextView.h>
 
@@ -53,9 +54,17 @@ DbgCtl dbg_ctl_ssl{"ssl"};
 bool
 NetVConnection::has_proxy_protocol(IOBufferReader *reader)
 {
-  char           buf[PPv1_CONNECTION_HEADER_LEN_MAX + 1];
   swoc::TextView tv;
-  tv.assign(buf, reader->memcpy(buf, sizeof(buf), 0));
+
+  char preface[PPv2_CONNECTION_HEADER_LEN];
+  tv.assign(preface, reader->memcpy(preface, sizeof(preface), 0));
+  if (!proxy_protocol_detect(tv)) {
+    return false;
+  }
+
+  int  bufsize = RecGetRecordInt("proxy.config.proxy_protocol.max_header_size").value_or(PPv1_CONNECTION_HEADER_LEN_MAX + 1);
+  char buf[bufsize];
+  tv.assign(buf, reader->memcpy(buf, bufsize, 0));
 
   size_t len = proxy_protocol_parse(&this->pp_info, tv);
 

@@ -1550,7 +1550,14 @@ static constexpr RecordElement RecordsConfig[] =
   //# Thread watchdog
   //#
   //###########
-  {RECT_CONFIG, "proxy.config.exec_thread.watchdog.timeout_ms", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-10000]", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.exec_thread.watchdog.timeout_ms", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-10000]", RECA_NULL},
+
+  //###########
+  //#
+  //# PROXY protocol
+  //#
+  //###########
+  {RECT_CONFIG, "proxy.config.proxy_protocol.max_header_size", RECD_INT, "109", RECU_RESTART_TS, RR_NULL, RECC_INT, "[109-65535]", RECA_NULL},
 };
 // clang-format on
 
