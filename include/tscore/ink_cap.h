@@ -83,7 +83,7 @@ public:
     LOW_PORT_PRIVILEGE = 0x4u, ///< Bind to privilege ports.
     OWNER_PRIVILEGE    = 0x8u, ///< Bypass permission checks on operations that normally require
                                ///  filesystem UID & process UID to match
-    CHOWN_PRIVILEGE = 0x10u    ///< Change file ownership
+    CHOWN_PRIVILEGE    = 0x10u ///< Change file ownership
   };
 
   ElevateAccess(unsigned level = FILE_PRIVILEGE);

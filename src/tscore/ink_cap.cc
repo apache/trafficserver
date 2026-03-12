@@ -468,7 +468,7 @@ ElevateAccess::acquirePrivilege(unsigned priv_mask)
     ++cap_count;
   }
 
-  ink_release_assert(cap_count <= sizeof(cap_list));
+  ink_release_assert(cap_count <= sizeof(cap_list) / sizeof(cap_list[0]));
 
   if (cap_count > 0) {
     this->cap_state = cap_get_proc(); // save current capabilities
