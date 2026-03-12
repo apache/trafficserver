@@ -852,8 +852,10 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
       } else {
         ink_release_assert(!"Unexpected non-HTTP cache volume");
       }
-      Dbg(dbg_ctl_cache_hosting, "added volume=%d, scheme=%d, size=%d percent=%d, ramcache enabled=%d", volume_number,
-          static_cast<int>(scheme), size, in_percent, ramcache_enabled);
+      Dbg(dbg_ctl_cache_hosting,
+          "added volume=%d, scheme=%d, size=%d percent=%d, ramcache enabled=%d, "
+          "ram_cache_size=%" PRId64 ", ram_cache_cutoff=%" PRId64,
+          volume_number, static_cast<int>(scheme), size, in_percent, ramcache_enabled, ram_cache_size, ram_cache_cutoff);
     }
 
     tmp = bufTok.iterNext(&i_state);
