@@ -498,14 +498,16 @@ Http2ConnectionState::rcv_headers_frame(const Http2Frame &frame)
     Http2ErrorCode result = stream->decode_header_blocks(*this->local_hpack_handle,
                                                          this->acknowledged_local_settings.get(HTTP2_SETTINGS_HEADER_TABLE_SIZE));
 
-    // We just processed the heaer blocks to keep the dynamic table in
+    // We just processed the header blocks to keep the dynamic table in
     // sync with peer to avoid future HPACK compression errors
     if (reset_header_after_decoding) {
       stream->reset_receive_headers();
       SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
       this->stream_list.remove(stream);
       if (free_stream_after_decoding) {
-        stream->initiating_close();
+        // Suppress RST_STREAM(NO_ERROR): rcv_frame() will send RST_STREAM(REFUSED_STREAM)
+        // for this stream, so sending NO_ERROR here would produce duplicate frames.
+        stream->initiating_close(/* suppress_rst= */ true);
       }
 
       if (this->goaway_sent && stream_id > this->last_stream_id_tx) {
@@ -1127,14 +1129,16 @@ Http2ConnectionState::rcv_continuation_frame(const Http2Frame &frame)
     Http2ErrorCode result = stream->decode_header_blocks(*this->local_hpack_handle,
                                                          this->acknowledged_local_settings.get(HTTP2_SETTINGS_HEADER_TABLE_SIZE));
 
-    // We just processed the heaer blocks to keep the dynamic table in
+    // We just processed the header blocks to keep the dynamic table in
     // sync with peer to avoid future HPACK compression errors
     if (stream->reset_header_after_decoding) {
       stream->reset_receive_headers();
       SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
       this->stream_list.remove(stream);
       if (stream->free_stream_after_decoding) {
-        stream->initiating_close();
+        // Suppress RST_STREAM(NO_ERROR): rcv_frame() will send RST_STREAM(REFUSED_STREAM)
+        // for this stream, so sending NO_ERROR here would produce duplicate frames.
+        stream->initiating_close(/* suppress_rst= */ true);
       }
 
       // After sending a GOAWAY frame, the sender can discard frames for streams initiated by the receiver with

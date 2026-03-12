@@ -628,7 +628,7 @@ Http2Stream::terminate_if_possible()
 
 // Initiated from the Http2 side
 void
-Http2Stream::initiating_close()
+Http2Stream::initiating_close(bool suppress_rst)
 {
   if (!closed) {
     SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
@@ -636,7 +636,8 @@ Http2Stream::initiating_close()
     Http2StreamDebug("initiating_close client_window=%zd session_window=%zd", _peer_rwnd,
                      this->get_connection_state().get_peer_rwnd());
 
-    if (!this->is_outbound_connection() && this->is_state_writeable()) { // Let the other end know we are going away
+    if (!suppress_rst && !this->is_outbound_connection() &&
+        this->is_state_writeable()) { // Let the other end know we are going away
       this->get_connection_state().send_rst_stream_frame(_id, Http2ErrorCode::HTTP2_ERROR_NO_ERROR);
     }
 
