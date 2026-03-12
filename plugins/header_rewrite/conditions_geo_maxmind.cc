@@ -23,6 +23,7 @@
 
 #include <unistd.h>
 #include <arpa/inet.h>
+#include <atomic>
 
 #include "ts/ts.h"
 
@@ -31,6 +32,9 @@
 #include <maxminddb.h>
 
 MMDB_s *gMaxMindDB = nullptr;
+
+enum class MmdbSchema : int { UNKNOWN = 0, NESTED = 1, FLAT = 2 };
+std::atomic<MmdbSchema> gMmdbSchema{MmdbSchema::UNKNOWN};
 
 void
 MMConditionGeo::initLibrary(const std::string &path)
@@ -57,6 +61,30 @@ MMConditionGeo::initLibrary(const std::string &path)
   Dbg(pi_dbg_ctl, "Loaded %s", path.c_str());
 }
 
+// Detect whether the MMDB uses nested (GeoLite2) or flat (vendor) field layout
+// by probing for the nested country path on a real lookup result.  Called once
+// on the first successful lookup; result is cached in gMmdbSchema.
+static MmdbSchema
+detect_schema(MMDB_entry_s *entry)
+{
+  MMDB_entry_data_s probe;
+  int               status = MMDB_get_value(entry, &probe, "country", "iso_code", NULL);
+
+  if (MMDB_SUCCESS == status && probe.has_data && probe.type == MMDB_DATA_TYPE_UTF8_STRING) {
+    Dbg(pi_dbg_ctl, "Detected nested MMDB schema (country/iso_code)");
+    return MmdbSchema::NESTED;
+  }
+
+  status = MMDB_get_value(entry, &probe, "country_code", NULL);
+  if (MMDB_SUCCESS == status && probe.has_data && probe.type == MMDB_DATA_TYPE_UTF8_STRING) {
+    Dbg(pi_dbg_ctl, "Detected flat MMDB schema (country_code)");
+    return MmdbSchema::FLAT;
+  }
+
+  Dbg(pi_dbg_ctl, "Could not detect MMDB schema; defaulting to nested");
+  return MmdbSchema::NESTED;
+}
+
 std::string
 MMConditionGeo::get_geo_string(const sockaddr *addr) const
 {
@@ -80,16 +108,23 @@ MMConditionGeo::get_geo_string(const sockaddr *addr) const
     return ret;
   }
 
+  // Lazy schema detection on first successful lookup
+  MmdbSchema schema = gMmdbSchema.load(std::memory_order_relaxed);
+  if (schema == MmdbSchema::UNKNOWN) {
+    schema = detect_schema(&result.entry);
+    gMmdbSchema.store(schema, std::memory_order_relaxed);
+  }
+
   MMDB_entry_data_s entry_data;
   int               status;
 
-  // GeoLite2/GeoIP2/DBIP databases use nested field paths, not flat names.
-  // Use MMDB_get_value() directly on the entry -- no need for the more
-  // expensive MMDB_get_entry_data_list() allocation.
   switch (_geo_qual) {
   case GEO_QUAL_COUNTRY:
-    // "country" -> "iso_code" returns e.g. "US", "KR" (matches old GeoIP backend behavior)
-    status = MMDB_get_value(&result.entry, &entry_data, "country", "iso_code", NULL);
+    if (schema == MmdbSchema::FLAT) {
+      status = MMDB_get_value(&result.entry, &entry_data, "country_code", NULL);
+    } else {
+      status = MMDB_get_value(&result.entry, &entry_data, "country", "iso_code", NULL);
+    }
     break;
   case GEO_QUAL_ASN_NAME:
     status = MMDB_get_value(&result.entry, &entry_data, "autonomous_system_organization", NULL);
@@ -104,8 +139,6 @@ MMConditionGeo::get_geo_string(const sockaddr *addr) const
     return ret;
   }
 
-  // Validate before access -- entry_data may be uninitialized if the field
-  // exists but has an unexpected type in a third-party database.
   if (entry_data.has_data && entry_data.type == MMDB_DATA_TYPE_UTF8_STRING) {
     ret = std::string(entry_data.utf8_string, entry_data.data_size);
   }

@@ -546,6 +546,7 @@ test_tokenizer()
 }
 
 #if TS_USE_HRW_MAXMINDDB
+
 static bool
 file_exists(const char *path)
 {
@@ -553,108 +554,177 @@ file_exists(const char *path)
   return stat(path, &st) == 0;
 }
 
-static const char *
-find_country_mmdb()
+static int
+open_test_mmdb(MMDB_s &mmdb, const char *path)
 {
-  static const char *paths[] = {
-    "/usr/share/GeoIP/GeoLite2-Country.mmdb", "/usr/local/share/GeoIP/GeoLite2-Country.mmdb",
-    "/var/lib/GeoIP/GeoLite2-Country.mmdb",   "/opt/geoip/GeoLite2-Country.mmdb",
-    "/usr/share/GeoIP/GeoIP2-Country.mmdb",   "/usr/share/GeoIP/dbip-country-lite.mmdb",
-  };
-  for (auto *p : paths) {
-    if (file_exists(p)) {
-      return p;
-    }
+  int status = MMDB_open(path, MMDB_MODE_MMAP, &mmdb);
+  if (MMDB_SUCCESS != status) {
+    std::cerr << "Cannot open " << path << ": " << MMDB_strerror(status) << std::endl;
+    return 1;
   }
-  if (const char *env = getenv("MMDB_COUNTRY_PATH")) {
-    if (file_exists(env)) {
-      return env;
-    }
+  return 0;
+}
+
+static std::string
+lookup_country(MMDB_s &mmdb, const char *ip)
+{
+  int                  gai_error, mmdb_error;
+  MMDB_lookup_result_s result = MMDB_lookup_string(&mmdb, ip, &gai_error, &mmdb_error);
+
+  if (gai_error != 0 || MMDB_SUCCESS != mmdb_error || !result.found_entry) {
+    return "(lookup_failed)";
   }
-  return nullptr;
+
+  MMDB_entry_data_s entry_data;
+
+  // Try nested path first (GeoLite2 style)
+  int status = MMDB_get_value(&result.entry, &entry_data, "country", "iso_code", NULL);
+  if (MMDB_SUCCESS == status && entry_data.has_data && entry_data.type == MMDB_DATA_TYPE_UTF8_STRING) {
+    return std::string(entry_data.utf8_string, entry_data.data_size);
+  }
+
+  // Try flat path (vendor style)
+  status = MMDB_get_value(&result.entry, &entry_data, "country_code", NULL);
+  if (MMDB_SUCCESS == status && entry_data.has_data && entry_data.type == MMDB_DATA_TYPE_UTF8_STRING) {
+    return std::string(entry_data.utf8_string, entry_data.data_size);
+  }
+
+  return "(not_found)";
+}
+
+static uint32_t
+lookup_asn(MMDB_s &mmdb, const char *ip)
+{
+  int                  gai_error, mmdb_error;
+  MMDB_lookup_result_s result = MMDB_lookup_string(&mmdb, ip, &gai_error, &mmdb_error);
+
+  if (gai_error != 0 || MMDB_SUCCESS != mmdb_error || !result.found_entry) {
+    return 0;
+  }
+
+  MMDB_entry_data_s entry_data;
+  int               status = MMDB_get_value(&result.entry, &entry_data, "autonomous_system_number", NULL);
+  if (MMDB_SUCCESS == status && entry_data.has_data && entry_data.type == MMDB_DATA_TYPE_UINT32) {
+    return entry_data.uint32;
+  }
+  return 0;
+}
+
+// Test that we can read country codes from a flat-schema MMDB (vendor databases
+// where country_code is a top-level string field).
+int
+test_flat_schema()
+{
+  const char *path = getenv("MMDB_TEST_FLAT");
+  if (path == nullptr || !file_exists(path)) {
+    std::cout << "SKIP: flat-schema test mmdb not found (set MMDB_TEST_FLAT)" << std::endl;
+    return 0;
+  }
+
+  std::cout << "Testing flat-schema MMDB: " << path << std::endl;
+  int    errors = 0;
+  MMDB_s mmdb;
+  if (open_test_mmdb(mmdb, path) != 0) {
+    return 1;
+  }
+
+  std::string country = lookup_country(mmdb, "8.8.8.8");
+  if (country != "US") {
+    std::cerr << "FAIL: flat schema 8.8.8.8 expected 'US', got '" << country << "'" << std::endl;
+    ++errors;
+  } else {
+    std::cout << "  PASS: flat 8.8.8.8 country = " << country << std::endl;
+  }
+
+  country = lookup_country(mmdb, "1.2.3.4");
+  if (country != "KR") {
+    std::cerr << "FAIL: flat schema 1.2.3.4 expected 'KR', got '" << country << "'" << std::endl;
+    ++errors;
+  } else {
+    std::cout << "  PASS: flat 1.2.3.4 country = " << country << std::endl;
+  }
+
+  uint32_t asn = lookup_asn(mmdb, "8.8.8.8");
+  if (asn != 15169) {
+    std::cerr << "FAIL: flat schema 8.8.8.8 expected ASN 15169, got " << asn << std::endl;
+    ++errors;
+  } else {
+    std::cout << "  PASS: flat 8.8.8.8 ASN = " << asn << std::endl;
+  }
+
+  // Loopback should not be found
+  country = lookup_country(mmdb, "127.0.0.1");
+  if (country != "(lookup_failed)") {
+    std::cerr << "FAIL: flat schema 127.0.0.1 expected no entry, got '" << country << "'" << std::endl;
+    ++errors;
+  } else {
+    std::cout << "  PASS: flat 127.0.0.1 correctly not found" << std::endl;
+  }
+
+  MMDB_close(&mmdb);
+  return errors;
+}
+
+// Test that we can read country codes from a nested-schema MMDB (GeoLite2/GeoIP2/DBIP
+// where country is country -> iso_code).
+int
+test_nested_schema()
+{
+  const char *path = getenv("MMDB_TEST_NESTED");
+  if (path == nullptr || !file_exists(path)) {
+    std::cout << "SKIP: nested-schema test mmdb not found (set MMDB_TEST_NESTED)" << std::endl;
+    return 0;
+  }
+
+  std::cout << "Testing nested-schema MMDB: " << path << std::endl;
+  int    errors = 0;
+  MMDB_s mmdb;
+  if (open_test_mmdb(mmdb, path) != 0) {
+    return 1;
+  }
+
+  std::string country = lookup_country(mmdb, "8.8.8.8");
+  if (country != "US") {
+    std::cerr << "FAIL: nested schema 8.8.8.8 expected 'US', got '" << country << "'" << std::endl;
+    ++errors;
+  } else {
+    std::cout << "  PASS: nested 8.8.8.8 country = " << country << std::endl;
+  }
+
+  country = lookup_country(mmdb, "1.2.3.4");
+  if (country != "KR") {
+    std::cerr << "FAIL: nested schema 1.2.3.4 expected 'KR', got '" << country << "'" << std::endl;
+    ++errors;
+  } else {
+    std::cout << "  PASS: nested 1.2.3.4 country = " << country << std::endl;
+  }
+
+  uint32_t asn = lookup_asn(mmdb, "8.8.8.8");
+  if (asn != 15169) {
+    std::cerr << "FAIL: nested schema 8.8.8.8 expected ASN 15169, got " << asn << std::endl;
+    ++errors;
+  } else {
+    std::cout << "  PASS: nested 8.8.8.8 ASN = " << asn << std::endl;
+  }
+
+  country = lookup_country(mmdb, "127.0.0.1");
+  if (country != "(lookup_failed)") {
+    std::cerr << "FAIL: nested schema 127.0.0.1 expected no entry, got '" << country << "'" << std::endl;
+    ++errors;
+  } else {
+    std::cout << "  PASS: nested 127.0.0.1 correctly not found" << std::endl;
+  }
+
+  MMDB_close(&mmdb);
+  return errors;
 }
 
 int
 test_maxmind_geo()
 {
-  const char *db_path = find_country_mmdb();
-  if (db_path == nullptr) {
-    std::cout << "SKIP: No MaxMind country mmdb found (set MMDB_COUNTRY_PATH to override)" << std::endl;
-    return 0;
-  }
-
-  std::cout << "Testing MaxMind geo lookups with: " << db_path << std::endl;
-
-  int    errors = 0;
-  MMDB_s mmdb;
-  int    status = MMDB_open(db_path, MMDB_MODE_MMAP, &mmdb);
-  if (MMDB_SUCCESS != status) {
-    std::cerr << "Cannot open " << db_path << ": " << MMDB_strerror(status) << std::endl;
-    return 1;
-  }
-
-  // MMDB_lookup_string() returns two independent error codes:
-  //   gai_error  - getaddrinfo() failure (string-to-IP conversion)
-  //   mmdb_error - MMDB lookup failure (database query)
-  // Check both to avoid masking failures.
-  int                  gai_error, mmdb_error;
-  MMDB_lookup_result_s result = MMDB_lookup_string(&mmdb, "8.8.8.8", &gai_error, &mmdb_error);
-
-  if (gai_error != 0) {
-    std::cerr << "getaddrinfo failed for 8.8.8.8: " << gai_strerror(gai_error) << std::endl;
-    MMDB_close(&mmdb);
-    return 1;
-  }
-  if (MMDB_SUCCESS != mmdb_error || !result.found_entry) {
-    std::cerr << "Cannot look up 8.8.8.8 in " << db_path << ": " << MMDB_strerror(mmdb_error) << std::endl;
-    MMDB_close(&mmdb);
-    return 1;
-  }
-
-  MMDB_entry_data_s entry_data;
-
-  // Verify "country" -> "iso_code" path (used by GEO_QUAL_COUNTRY)
-  status = MMDB_get_value(&result.entry, &entry_data, "country", "iso_code", NULL);
-  if (MMDB_SUCCESS != status || !entry_data.has_data || entry_data.type != MMDB_DATA_TYPE_UTF8_STRING) {
-    std::cerr << "FAIL: country/iso_code lookup failed for 8.8.8.8" << std::endl;
-    ++errors;
-  } else {
-    std::string iso(entry_data.utf8_string, entry_data.data_size);
-    if (iso != "US") {
-      std::cerr << "FAIL: expected country iso_code 'US' for 8.8.8.8, got '" << iso << "'" << std::endl;
-      ++errors;
-    } else {
-      std::cout << "  PASS: country/iso_code = " << iso << std::endl;
-    }
-  }
-
-  // Verify "country" -> "names" -> "en" path exists (not used by header_rewrite but validates structure)
-  status = MMDB_get_value(&result.entry, &entry_data, "country", "names", "en", NULL);
-  if (MMDB_SUCCESS != status || !entry_data.has_data || entry_data.type != MMDB_DATA_TYPE_UTF8_STRING) {
-    std::cerr << "FAIL: country/names/en lookup failed for 8.8.8.8" << std::endl;
-    ++errors;
-  } else {
-    std::string name(entry_data.utf8_string, entry_data.data_size);
-    std::cout << "  PASS: country/names/en = " << name << std::endl;
-  }
-
-  // Verify loopback returns no entry
-  result = MMDB_lookup_string(&mmdb, "127.0.0.1", &gai_error, &mmdb_error);
-  if (gai_error != 0) {
-    std::cerr << "FAIL: getaddrinfo failed for 127.0.0.1: " << gai_strerror(gai_error) << std::endl;
-    ++errors;
-  } else if (MMDB_SUCCESS == mmdb_error && result.found_entry) {
-    std::cerr << "FAIL: expected no entry for 127.0.0.1" << std::endl;
-    ++errors;
-  } else {
-    std::cout << "  PASS: 127.0.0.1 correctly returns no entry" << std::endl;
-  }
-
-  MMDB_close(&mmdb);
-
-  if (errors == 0) {
-    std::cout << "MaxMind geo tests passed" << std::endl;
-  }
+  int errors  = 0;
+  errors     += test_flat_schema();
+  errors     += test_nested_schema();
   return errors;
 }
 #endif
