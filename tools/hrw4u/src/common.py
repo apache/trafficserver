@@ -109,26 +109,6 @@ def fatal(message: str) -> NoReturn:
     sys.exit(1)
 
 
-def create_base_parser(description: str) -> tuple[argparse.ArgumentParser, argparse._MutuallyExclusiveGroup]:
-    """Create base argument parser with common options."""
-    parser = argparse.ArgumentParser(description=description, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument(
-        "input_file",
-        help="The input file to parse (default: stdin)",
-        nargs="?",
-        type=argparse.FileType("r", encoding="utf-8"),
-        default=sys.stdin)
-
-    output_group = parser.add_mutually_exclusive_group()
-    output_group.add_argument("--ast", action="store_true", help="Produce the ANTLR parse tree only")
-
-    parser.add_argument("--debug", action="store_true", help="Enable debug output")
-    parser.add_argument(
-        "--stop-on-error", action="store_true", help="Stop processing on first error (default: collect and report multiple errors)")
-
-    return parser, output_group
-
-
 def process_input(input_file: TextIO) -> tuple[str, str]:
     """Read input content and determine filename."""
     content = input_file.read()
@@ -209,8 +189,22 @@ def generate_output(
     else:
         if tree is not None:
             preserve_comments = not getattr(args, 'no_comments', False)
-            visitor = visitor_class(
-                filename=filename, debug=args.debug, error_collector=error_collector, preserve_comments=preserve_comments)
+            merge_sections = not getattr(args, 'no_merge_sections', False)
+
+            # Build visitor kwargs based on what the visitor class supports
+            visitor_kwargs = {
+                'filename': filename,
+                'debug': args.debug,
+                'error_collector': error_collector,
+                'preserve_comments': preserve_comments
+            }
+
+            # Only add merge_sections if the visitor supports it (u4wrh)
+            import inspect
+            if 'merge_sections' in inspect.signature(visitor_class.__init__).parameters:
+                visitor_kwargs['merge_sections'] = merge_sections
+
+            visitor = visitor_class(**visitor_kwargs)
             try:
                 result = visitor.visit(tree)
                 if result:
@@ -232,8 +226,14 @@ def generate_output(
 
 
 def run_main(
-        description: str, lexer_class: type[LexerProtocol], parser_class: type[ParserProtocol],
-        visitor_class: type[VisitorProtocol], error_prefix: str, output_flag_name: str, output_flag_help: str) -> None:
+        description: str,
+        lexer_class: type[LexerProtocol],
+        parser_class: type[ParserProtocol],
+        visitor_class: type[VisitorProtocol],
+        error_prefix: str,
+        output_flag_name: str,
+        output_flag_help: str,
+        extra_args: list[tuple[tuple, dict]] | None = None) -> None:
     """
     Generic main function for hrw4u and u4wrh scripts with bulk compilation support.
 
@@ -245,6 +245,7 @@ def run_main(
         error_prefix: Error prefix for error messages
         output_flag_name: Name of output flag (e.g., "hrw", "hrw4u")
         output_flag_help: Help text for output flag
+        extra_args: Optional list of (args, kwargs) tuples passed to parser.add_argument()
     """
     parser = argparse.ArgumentParser(
         description=description,
@@ -262,6 +263,9 @@ def run_main(
     parser.add_argument("--debug", action="store_true", help="Enable debug output")
     parser.add_argument(
         "--stop-on-error", action="store_true", help="Stop processing on first error (default: collect and report multiple errors)")
+
+    for arg_args, arg_kwargs in (extra_args or []):
+        parser.add_argument(*arg_args, **arg_kwargs)
 
     args = parser.parse_args()
 

@@ -34,7 +34,14 @@ def main() -> None:
         visitor_class=HRWInverseVisitor,
         error_prefix="u4wrh",
         output_flag_name="hrw4u",
-        output_flag_help="Produce reconstructed hrw4u output (default)")
+        output_flag_help="Produce reconstructed hrw4u output (default)",
+        extra_args=[
+            (
+                ("--no-merge-sections",), {
+                    "action": "store_true",
+                    "help": "Keep same-named hook sections separate instead of merging them"
+                }),
+        ])
 
 
 if __name__ == "__main__":
