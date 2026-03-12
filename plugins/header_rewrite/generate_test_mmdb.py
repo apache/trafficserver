@@ -26,7 +26,7 @@ Two schemas exist in the wild:
 This script generates one MMDB file for each schema so the C++ test
 can verify that auto-detection works for both.
 
-Requires: pip install mmdb-writer
+Requires: pip install mmdb-writer netaddr
 """
 
 import os
@@ -36,8 +36,8 @@ try:
     from mmdb_writer import MMDBWriter, MmdbU32
     import netaddr
 except ImportError:
-    print("SKIP: mmdb-writer or netaddr not installed (pip install mmdb-writer)", file=sys.stderr)
-    sys.exit(0)
+    print("SKIP: mmdb-writer or netaddr not installed (pip install mmdb-writer netaddr)", file=sys.stderr)
+    sys.exit(1)
 
 
 def net(cidr):

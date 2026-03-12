@@ -22,6 +22,7 @@
 
 #include <cstdio>
 #include <cstdarg>
+#include <cstdlib>
 #include <iostream>
 #include <ostream>
 #include <sys/stat.h>
@@ -30,8 +31,6 @@
 
 #if TS_USE_HRW_MAXMINDDB
 #include <maxminddb.h>
-#include <arpa/inet.h>
-#include <netdb.h>
 #endif
 
 namespace header_rewrite_ns
