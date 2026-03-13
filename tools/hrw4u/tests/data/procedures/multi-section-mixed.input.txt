@@ -1,0 +1,15 @@
+procedure local::guarded-tag($tag) {
+    if inbound.req.X-Env == "prod" {
+        inbound.req.X-Prod = "$tag";
+    }
+
+    inbound.req.X-Tag = "$tag";
+}
+
+REMAP {
+    local::guarded-tag("remap-val");
+}
+
+SEND_RESPONSE {
+    local::guarded-tag("resp-val");
+}

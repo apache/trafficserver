@@ -1,0 +1,6 @@
+REMAP {
+    if inbound.req.X-Env == "prod" {
+        inbound.req.X-Prod = "yes";
+    }
+    inbound.req.X-Always = "set";
+}

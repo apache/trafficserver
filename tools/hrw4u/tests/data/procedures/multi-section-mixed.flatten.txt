@@ -1,0 +1,13 @@
+REMAP {
+    if inbound.req.X-Env == "prod" {
+        inbound.req.X-Prod = "remap-val";
+    }
+    inbound.req.X-Tag = "remap-val";
+}
+
+SEND_RESPONSE {
+    if inbound.req.X-Env == "prod" {
+        inbound.req.X-Prod = "resp-val";
+    }
+    inbound.req.X-Tag = "resp-val";
+}

@@ -1,0 +1,1 @@
+(program (programItem (useDirective use reexport::debug)) (programItem (section REMAP { (sectionBody (statement (functionCall test::add-debug-header ( (argumentList (value "via-reexport")) )) ;)) })) <EOF>)

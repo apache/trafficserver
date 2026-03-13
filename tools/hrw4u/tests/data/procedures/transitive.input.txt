@@ -1,0 +1,5 @@
+use caller::Wrap
+
+REMAP {
+    caller::wrap("hello");
+}

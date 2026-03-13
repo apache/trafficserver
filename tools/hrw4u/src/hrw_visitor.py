@@ -51,7 +51,7 @@ class HRWInverseVisitor(u4wrhVisitor, BaseHRWVisitor):
         self._in_group: bool = False
         self._group_terms: list[tuple[str, CondState]] = []
 
-        self.symbol_resolver = InverseSymbolResolver()
+        self.symbol_resolver = InverseSymbolResolver(dbg=self._dbg)
 
         self._section_opened = False
         self._if_depth = 0  # Track nesting depth of if blocks
@@ -132,7 +132,7 @@ class HRWInverseVisitor(u4wrhVisitor, BaseHRWVisitor):
                 if state.not_:
                     processed_term = self.symbol_resolver.negate_expression(term)
                 else:
-                    processed_term = self._normalize_empty_string_condition(term, state)
+                    processed_term = self._normalize_empty_string_condition(term)
 
                 processed_term = self._apply_with_modifiers(processed_term, state)
                 self.debug(f"processed term {idx}: {processed_term}")

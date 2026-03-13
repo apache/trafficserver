@@ -1,0 +1,7 @@
+procedure local::stamp() {
+    inbound.req.X-Stamp = "tagged";
+}
+
+REMAP {
+    local::stamp();
+}

@@ -21,6 +21,7 @@ from functools import cached_property
 import re
 
 from hrw4u.errors import SymbolResolutionError
+from hrw4u.debugging import Dbg
 from hrw4u.validation import Validator
 import hrw4u.types as types
 import hrw4u.tables as tables
@@ -31,8 +32,8 @@ from hrw4u.symbols_base import SymbolResolverBase
 class InverseSymbolResolver(SymbolResolverBase):
     """Reverse mapping utilities for hrw4u output generation."""
 
-    def __init__(self) -> None:
-        super().__init__(debug=False)  # Default to no debug for inverse resolver
+    def __init__(self, dbg: Dbg | None = None) -> None:
+        super().__init__(debug=False, dbg=dbg)
         self._state_vars: dict[tuple[types.VarType, int], str] = {}
 
     @cached_property

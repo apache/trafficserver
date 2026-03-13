@@ -1,0 +1,5 @@
+use circular::A
+
+REMAP {
+    circular::A();
+}

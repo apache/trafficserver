@@ -1,0 +1,1 @@
+'procedure' declarations must appear before any section blocks

@@ -23,54 +23,22 @@ import json
 import os
 import sys
 import urllib.parse
-from functools import lru_cache
+from pathlib import Path
 from typing import Any
-
-from antlr4.error.ErrorListener import ErrorListener
 
 from hrw4u.hrw4uLexer import hrw4uLexer
 from hrw4u.hrw4uParser import hrw4uParser
-from hrw4u.visitor import HRW4UVisitor
+from hrw4u.visitor import HRW4UVisitor, ProcSig
 from hrw4u.common import create_parse_tree
-from hrw4u.tables import FUNCTION_MAP, STATEMENT_FUNCTION_MAP
-from hrw4u.states import SectionType
 from hrw4u.types import VarType, LanguageKeyword
+from hrw4u.procedures import resolve_use_path
 
-from hrw4u_lsp.lsp.strings import (
-    StringLiteralHandler, ContextAnalyzer, ExpressionParser, DocumentAnalyzer, CompletionContext, LSPDiagnostic,
-    VariableDeclaration)
+from hrw4u_lsp.lsp.strings import (StringLiteralHandler, ContextAnalyzer, ExpressionParser, DocumentAnalyzer)
+from hrw4u_lsp.lsp.types import LSPDiagnostic, CompletionContext, VariableDeclaration
 from hrw4u_lsp.lsp.hover import (
     HoverInfoProvider, FunctionHoverProvider, VariableHoverProvider, SectionHoverProvider, RegexHoverProvider,
     ModifierHoverProvider, OperatorHoverProvider)
 from hrw4u_lsp.lsp.completions import CompletionProvider
-from hrw4u_lsp.lsp.documentation import LSP_FUNCTION_DOCUMENTATION
-
-
-class LSPErrorListener(ErrorListener):
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.errors: list[dict[str, Any]] = []
-
-    def syntaxError(self, _, offendingSymbol, line, column, msg, e) -> None:
-        self.errors.append(
-            {
-                "range":
-                    {
-                        "start": {
-                            "line": line - 1,
-                            "character": column
-                        },
-                        "end":
-                            {
-                                "line": line - 1,
-                                "character": column + (len(str(offendingSymbol.text)) if offendingSymbol.text else 1)
-                            }
-                    },
-                "severity": 1,
-                "message": msg,
-                "source": "hrw4u-parser"
-            })
 
 
 class DocumentManager:
@@ -80,21 +48,20 @@ class DocumentManager:
         self.documents: dict[str, str] = {}
         self.diagnostics: dict[str, list[LSPDiagnostic]] = {}
         self.variable_declarations: dict[str, dict[str, VariableDeclaration]] = {}
+        self.proc_registries: dict[str, dict[str, ProcSig]] = {}
         self._completion_provider = CompletionProvider()
         self._uri_path_cache: dict[str, str] = {}
+        self.proc_search_paths: list[Path] = []
 
     def _add_operator_completions(self, completions: list, base_prefix: str, current_section, context: CompletionContext) -> None:
-        """Add operator and condition completions."""
         operator_completions = self._completion_provider.get_operator_completions(
             base_prefix, current_section, context["replacement_range"])
         completions.extend(operator_completions)
 
-    def _add_function_completions(self, completions: list, function_map: dict, function_type: str) -> None:
-        """Add function completions using centralized provider."""
+    def _add_function_completions(self, completions: list) -> None:
         completions.extend(self._completion_provider.get_function_completions())
 
     def _add_keyword_completions(self, completions: list) -> None:
-        """Add keyword completions using centralized provider."""
         completions.extend(self._completion_provider.get_keyword_completions())
 
     def open_document(self, uri: str, text: str) -> None:
@@ -115,6 +82,7 @@ class DocumentManager:
             del self.diagnostics[uri]
         if uri in self.variable_declarations:
             del self.variable_declarations[uri]
+        self.proc_registries.pop(uri, None)
 
     def _uri_to_path(self, uri: str) -> str:
         """Convert a URI to a file path with caching."""
@@ -129,13 +97,16 @@ class DocumentManager:
         self._uri_path_cache[uri] = path
         return path
 
+    @staticmethod
+    def _path_to_uri(file_path: str | Path) -> str:
+        return "file://" + urllib.parse.quote(str(file_path), safe="/:@")
+
     def _analyze_document(self, uri: str) -> None:
         """Analyze document and collect diagnostics."""
         text = self.documents.get(uri, "")
         diagnostics = []
 
         self.variable_declarations[uri] = DocumentAnalyzer.parse_variable_declarations(text)
-        diagnostics.extend(DocumentAnalyzer.validate_section_names(text))
 
         try:
             filename = self._uri_to_path(uri)
@@ -147,9 +118,11 @@ class DocumentManager:
                 parser_errors = list(parser._syntax_errors)
 
             if tree is not None:
-                visitor = HRW4UVisitor(filename=filename, error_collector=error_collector)
+                visitor = HRW4UVisitor(
+                    filename=filename, error_collector=error_collector, proc_search_paths=self.proc_search_paths or None)
                 try:
                     visitor.visit(tree)
+                    self.proc_registries[uri] = dict(visitor._proc_registry)
                 except Exception as e:
                     diagnostics.append(
                         {
@@ -271,15 +244,7 @@ class DocumentManager:
                     "source": "hrw4u-parser"
                 })
 
-        # Convert generic diagnostics to typed diagnostics where possible
-        typed_diagnostics: list[LSPDiagnostic] = []
-        for diag in diagnostics:
-            if isinstance(diag, dict):
-                # For backward compatibility with generic dict diagnostics
-                typed_diagnostics.append(diag)  # type: ignore
-            else:
-                typed_diagnostics.append(diag)
-        self.diagnostics[uri] = typed_diagnostics
+        self.diagnostics[uri] = diagnostics
 
     def get_diagnostics(self, uri: str) -> list[LSPDiagnostic]:
         return self.diagnostics.get(uri, [])
@@ -304,8 +269,7 @@ class DocumentManager:
             self._add_operator_completions(completions, base_prefix, current_section, context)
 
         elif context["is_function_context"]:
-            self._add_function_completions(completions, FUNCTION_MAP, "Function")
-            self._add_function_completions(completions, STATEMENT_FUNCTION_MAP, "Statement")
+            self._add_function_completions(completions)
 
         # Variable type completions (in VARS context)
         if context["current_section"] and context["current_section"].value == "VARS":
@@ -315,6 +279,53 @@ class DocumentManager:
             self._add_keyword_completions(completions)
 
         return completions
+
+    def _format_proc_signature(self, sig: ProcSig) -> str:
+        parts = []
+        for p in sig.params:
+            if p.default_ctx is not None:
+                default_text = p.default_ctx.getText()
+                parts.append(f"${p.name} = {default_text}")
+            else:
+                parts.append(f"${p.name}")
+        params = ", ".join(parts)
+        return f"**procedure {sig.qualified_name}**({params})\n\nSource: `{sig.source_file}`"
+
+    def _get_procedure_hover(self, uri: str, current_line: str, line: int, character: int) -> dict[str, Any] | None:
+        stripped = current_line.strip()
+        registry = self.proc_registries.get(uri, {})
+
+        # `use Namespace::Name` directive
+        if stripped.startswith("use "):
+            spec = stripped[4:].strip()
+            if '::' not in spec:
+                return None
+            if not self.proc_search_paths:
+                return HoverInfoProvider.create_hover_info(f"**use {spec}**\n\nNo procedures path configured")
+            resolved = resolve_use_path(spec, self.proc_search_paths)
+            if resolved:
+                return HoverInfoProvider.create_hover_info(f"**use {spec}** → `{resolved}`")
+            return HoverInfoProvider.create_hover_info(f"**use {spec}**\n\nFile not found in procedures path")
+
+        # `procedure Namespace::Name(...)` declaration
+        if stripped.startswith("procedure "):
+            rest = stripped[10:].strip()
+            paren = rest.find('(')
+            name = rest[:paren].strip() if paren != -1 else rest.split()[0] if rest else ""
+            if name and '::' in name:
+                sig = registry.get(name)
+                if sig:
+                    return HoverInfoProvider.create_hover_info(self._format_proc_signature(sig))
+                return HoverInfoProvider.create_hover_info(f"**procedure {name}**")
+
+        # Qualified name at cursor (Namespace::Name call or reference)
+        word = self._extract_qualified_name(current_line, character)
+        if word:
+            sig = registry.get(word)
+            if sig:
+                return HoverInfoProvider.create_hover_info(self._format_proc_signature(sig))
+
+        return None
 
     def get_hover_info(self, uri: str, line: int, character: int) -> dict[str, Any] | None:
         """Get hover information for the symbol at the given position."""
@@ -331,6 +342,10 @@ class DocumentManager:
         comment_start = current_line.find('#')
         if comment_start != -1 and character >= comment_start:
             return None
+
+        proc_hover = self._get_procedure_hover(uri, current_line, line, character)
+        if proc_hover:
+            return proc_hover
 
         string_info = StringLiteralHandler.check_string_literal(current_line, character)
         if string_info:
@@ -396,6 +411,84 @@ class DocumentManager:
 
         return None
 
+    def _extract_qualified_name(self, current_line: str, character: int) -> str | None:
+        start = character
+        end = character
+
+        while start > 0 and (current_line[start - 1].isalnum() or current_line[start - 1] in ':_-'):
+            start -= 1
+        while end < len(current_line) and (current_line[end].isalnum() or current_line[end] in ':_-'):
+            end += 1
+
+        word = current_line[start:end]
+        return word if '::' in word else None
+
+    def get_definition(self, uri: str, line: int, character: int) -> dict[str, Any] | None:
+        text = self.documents.get(uri, "")
+        lines = text.split('\n')
+
+        if line >= len(lines):
+            return None
+
+        current_line = lines[line]
+        if character >= len(current_line):
+            return None
+
+        stripped = current_line.strip()
+        registry = self.proc_registries.get(uri, {})
+
+        # `use Namespace::Name` → open the resolved file
+        if stripped.startswith("use "):
+            spec = stripped[4:].strip()
+            if '::' not in spec or not self.proc_search_paths:
+                return None
+            resolved = resolve_use_path(spec, self.proc_search_paths)
+            if resolved:
+                return {
+                    "uri": self._path_to_uri(resolved),
+                    "range": {
+                        "start": {
+                            "line": 0,
+                            "character": 0
+                        },
+                        "end": {
+                            "line": 0,
+                            "character": 0
+                        }
+                    }
+                }
+            return None
+
+        # `procedure` declaration or qualified name call → jump to definition
+        name = None
+        if stripped.startswith("procedure "):
+            rest = stripped[10:].strip()
+            paren = rest.find('(')
+            name = rest[:paren].strip() if paren != -1 else rest.split()[0] if rest else ""
+        else:
+            name = self._extract_qualified_name(current_line, character)
+
+        if name:
+            sig = registry.get(name)
+            if sig:
+                def_line = getattr(sig.body_ctx, 'start', None)
+                target_line = (def_line.line - 1) if def_line else 0
+                return {
+                    "uri": self._path_to_uri(sig.source_file),
+                    "range": {
+                        "start": {
+                            "line": target_line,
+                            "character": 0
+                        },
+                        "end": {
+                            "line": target_line,
+                            "character": 0
+                        }
+                    }
+                }
+
+        return None
+
 
 class HRW4ULanguageServer:
     """Main LSP server implementation."""
@@ -457,6 +550,8 @@ class HRW4ULanguageServer:
             self._handle_completion(message)
         elif method == "textDocument/hover":
             self._handle_hover(message)
+        elif method == "textDocument/definition":
+            self._handle_definition(message)
         elif method == "textDocument/codeAction":
             self._handle_code_action(message)
         elif method == "shutdown":
@@ -465,6 +560,13 @@ class HRW4ULanguageServer:
             self.running = False
 
     def _handle_initialize(self, message: dict[str, Any]) -> None:
+        params = message.get("params", {})
+        init_options = params.get("initializationOptions", {})
+        if init_options:
+            procedures_path = init_options.get("proceduresPath", "")
+            if procedures_path:
+                self.document_manager.proc_search_paths = [Path(p) for p in procedures_path.split(os.pathsep) if p]
+
         response = {
             "jsonrpc": "2.0",
             "id": message["id"],
@@ -477,6 +579,7 @@ class HRW4ULanguageServer:
                                 "triggerCharacters": ["."]
                             },
                             "hoverProvider": True,
+                            "definitionProvider": True,
                             "codeActionProvider": True
                         }
                 }
@@ -534,6 +637,16 @@ class HRW4ULanguageServer:
         hover_info = self.document_manager.get_hover_info(uri, line, character)
 
         response = {"jsonrpc": "2.0", "id": message["id"], "result": hover_info}
+        self._send_message(response)
+
+    def _handle_definition(self, message: dict[str, Any]) -> None:
+        params = message["params"]
+        uri = params["textDocument"]["uri"]
+        position = params["position"]
+
+        location = self.document_manager.get_definition(uri, position["line"], position["character"])
+
+        response = {"jsonrpc": "2.0", "id": message["id"], "result": location}
         self._send_message(response)
 
     def _handle_code_action(self, message: dict[str, Any]) -> None:

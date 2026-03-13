@@ -32,20 +32,7 @@ from u4wrh.u4wrhLexer import u4wrhLexer
 from u4wrh.u4wrhParser import u4wrhParser
 from u4wrh.hrw_visitor import HRWInverseVisitor
 
-# Try to import structured error type, fall back to generic Exception if not available
-try:
-    from src.errors import Hrw4uSyntaxError
-except ImportError:
-    # Fallback: define a minimal interface for structured error detection
-    class Hrw4uSyntaxError(Exception):
-
-        def __init__(self, filename: str, line: int, column: int, message: str, source_line: str = ""):
-            super().__init__(message)
-            self.filename = filename
-            self.line = line
-            self.column = column
-            self.source_line = source_line
-
+from hrw4u.errors import Hrw4uSyntaxError
 
 __all__: Final[list[str]] = [
     "collect_output_test_files",
@@ -56,11 +43,15 @@ __all__: Final[list[str]] = [
     "run_failing_test",
     "run_reverse_test",
     "run_bulk_test",
+    "run_procedure_output_test",
+    "run_procedure_flatten_test",
+    "run_procedure_failing_test",
+    "run_procedure_flatten_roundtrip_test",
+    "collect_flatten_test_files",
 ]
 
 
 def parse_input_text(text: str) -> tuple[hrw4uParser, hrw4uParser.ProgramContext]:
-    """Parse hrw4u input text and return parser and AST."""
     lexer = hrw4uLexer(InputStream(text))
     stream = CommonTokenStream(lexer)
     parser = hrw4uParser(stream)
@@ -69,7 +60,6 @@ def parse_input_text(text: str) -> tuple[hrw4uParser, hrw4uParser.ProgramContext
 
 
 def _read_exceptions(base_dir: Path) -> dict[str, str]:
-    """Read exceptions.txt file and return test -> direction mapping."""
     exceptions_file = base_dir / "exceptions.txt"
     exceptions = {}
 
@@ -89,14 +79,10 @@ def _read_exceptions(base_dir: Path) -> dict[str, str]:
 
 
 def collect_output_test_files(group: str, direction: str = "hrw4u") -> Iterator[pytest.param]:
-    """
-    Collect test files for output validation tests.
-    """
     base_dir = Path("tests/data") / group
     exceptions = _read_exceptions(base_dir)
 
     for input_file in base_dir.glob("*.input.txt"):
-        # Skip failure test cases here; those are handled separately
         if ".fail." in input_file.name:
             continue
 
@@ -104,7 +90,6 @@ def collect_output_test_files(group: str, direction: str = "hrw4u") -> Iterator[
         output_file = base.with_suffix('.output.txt')
         test_id = base.name
 
-        # Check if this test has direction restrictions
         if test_id in exceptions:
             test_direction = exceptions[test_id]
             if direction != "both" and direction != test_direction:
@@ -114,12 +99,6 @@ def collect_output_test_files(group: str, direction: str = "hrw4u") -> Iterator[
 
 
 def collect_ast_test_files(group: str) -> Iterator[pytest.param]:
-    """
-    Collect test files for AST validation tests.
-
-    AST tests always run in hrw4u direction only since they validate
-    the parse tree structure of the input format.
-    """
     base_dir = Path("tests/data") / group
 
     for input_file in base_dir.glob("*.input.txt"):
@@ -135,9 +114,6 @@ def collect_ast_test_files(group: str) -> Iterator[pytest.param]:
 
 
 def collect_failing_inputs(group: str) -> Iterator[pytest.param]:
-    """
-    Collect test files for failure validation tests.
-    """
     base_dir = Path("tests/data") / group
     for input_file in base_dir.glob("*.fail.input.txt"):
         test_id = input_file.stem
@@ -145,7 +121,6 @@ def collect_failing_inputs(group: str) -> Iterator[pytest.param]:
 
 
 def run_output_test(input_file: Path, output_file: Path) -> None:
-    """Run output validation test comparing generated output with expected."""
     input_text = input_file.read_text()
     parser, tree = parse_input_text(input_text)
     visitor = HRW4UVisitor()
@@ -155,7 +130,6 @@ def run_output_test(input_file: Path, output_file: Path) -> None:
 
 
 def run_ast_test(input_file: Path, ast_file: Path) -> None:
-    """Run AST validation test comparing generated AST with expected."""
     input_text = input_file.read_text()
     parser, tree = parse_input_text(input_text)
     actual_ast = tree.toStringTree(recog=parser).strip()
@@ -164,7 +138,6 @@ def run_ast_test(input_file: Path, ast_file: Path) -> None:
 
 
 def run_failing_test(input_file: Path) -> None:
-    """Run failure validation test ensuring input produces expected error with structured validation."""
     text = input_file.read_text()
     parser, tree = parse_input_text(text)
     visitor = HRW4UVisitor(filename=str(input_file))
@@ -182,14 +155,11 @@ def run_failing_test(input_file: Path) -> None:
     actual_exception = exc_info.value
     actual_error_str = str(actual_exception).strip()
 
-    # Parse expected error for structured validation
     expected_fields = _parse_error_file(expected_error_content)
 
     if expected_fields and isinstance(actual_exception, Hrw4uSyntaxError):
-        # Assert structured fields when available
         _assert_structured_error_fields(actual_exception, expected_fields, input_file)
     else:
-        # Fallback to substring matching for legacy files or non-structured exceptions
         assert expected_error_content in actual_error_str, (
             f"Error mismatch for {input_file}\n"
             f"Expected error (partial match):\n{expected_error_content}\n\n"
@@ -197,19 +167,11 @@ def run_failing_test(input_file: Path) -> None:
 
 
 def _parse_error_file(error_content: str) -> dict[str, str | int] | None:
-    """
-    Parse structured error file content to extract filename, line, column, and message.
-
-    Expected format: filename:line:column: error: message
-    Returns None if parsing fails (fallback to substring matching).
-    """
     lines = error_content.strip().split('\n')
     if not lines:
         return None
 
     first_line = lines[0].strip()
-
-    # Regex to parse: filename:line:column: error: message
     error_pattern = re.compile(r'^(.+):(\d+):(\d+):\s*error:\s*(.+)$')
     match = error_pattern.match(first_line)
 
@@ -226,9 +188,6 @@ def _parse_error_file(error_content: str) -> dict[str, str | int] | None:
 
 def _assert_structured_error_fields(
         actual_exception: Hrw4uSyntaxError, expected_fields: dict[str, str | int], input_file: Path) -> None:
-    """Assert that structured exception fields match expected values."""
-
-    # Assert filename (normalize paths for comparison)
     expected_filename = str(Path(expected_fields['filename']).resolve())
     actual_filename = str(Path(actual_exception.filename).resolve())
     assert actual_filename == expected_filename, (
@@ -236,19 +195,16 @@ def _assert_structured_error_fields(
         f"Expected: {expected_filename}\n"
         f"Actual: {actual_filename}")
 
-    # Assert line number
     assert actual_exception.line == expected_fields['line'], (
         f"Line number mismatch for {input_file}\n"
         f"Expected: {expected_fields['line']}\n"
         f"Actual: {actual_exception.line}")
 
-    # Assert column number
     assert actual_exception.column == expected_fields['column'], (
         f"Column number mismatch for {input_file}\n"
         f"Expected: {expected_fields['column']}\n"
         f"Actual: {actual_exception.column}")
 
-    # Assert error message (allow partial match for flexibility)
     expected_message = expected_fields['message']
     actual_full_error = str(actual_exception)
     assert expected_message in actual_full_error, (
@@ -258,7 +214,6 @@ def _assert_structured_error_fields(
 
 
 def run_reverse_test(input_file: Path, output_file: Path) -> None:
-    """Run u4wrh on output.txt and compare with input.txt (round-trip test)."""
     output_text = output_file.read_text()
     lexer = u4wrhLexer(InputStream(output_text))
     stream = CommonTokenStream(lexer)
@@ -271,63 +226,49 @@ def run_reverse_test(input_file: Path, output_file: Path) -> None:
 
 
 def create_output_test(group: str):
-    """Create a parametrized output test function for a specific group."""
     import pytest
 
     @pytest.mark.parametrize("input_file,output_file", collect_output_test_files(group, "hrw4u"))
     def test_output_matches(input_file: Path, output_file: Path) -> None:
-        f"""Test that hrw4u output matches expected output for {group} test cases."""
         run_output_test(input_file, output_file)
 
     return test_output_matches
 
 
 def create_ast_test(group: str):
-    """Create a parametrized AST test function for a specific group."""
     import pytest
 
     @pytest.mark.ast
     @pytest.mark.parametrize("input_file,ast_file", collect_ast_test_files(group))
     def test_ast_matches(input_file: Path, ast_file: Path) -> None:
-        f"""Test that AST structure matches expected AST for {group} test cases."""
         run_ast_test(input_file, ast_file)
 
     return test_ast_matches
 
 
 def create_invalid_test(group: str):
-    """Create a parametrized invalid input test function for a specific group."""
     import pytest
 
     @pytest.mark.invalid
     @pytest.mark.parametrize("input_file", collect_failing_inputs(group))
     def test_invalid_inputs_fail(input_file: Path) -> None:
-        f"""Test that invalid {group} inputs produce expected errors."""
         run_failing_test(input_file)
 
     return test_invalid_inputs_fail
 
 
 def create_reverse_test(group: str):
-    """Create a parametrized reverse test function for a specific group."""
     import pytest
 
     @pytest.mark.reverse
     @pytest.mark.parametrize("input_file,output_file", collect_output_test_files(group, "u4wrh"))
     def test_reverse_conversion(input_file: Path, output_file: Path) -> None:
-        f"""Test that u4wrh reverse conversion produces original hrw4u for {group} test cases."""
         run_reverse_test(input_file, output_file)
 
     return test_reverse_conversion
 
 
 def run_bulk_test(group: str) -> None:
-    """
-    Run bulk compilation test for a specific test group.
-
-    Collects all .input.txt files in the group, runs hrw4u with bulk
-    input:output pairs, and compares each output with expected .output.txt.
-    """
     base_dir = Path("tests/data") / group
     exceptions = _read_exceptions(base_dir)
 
@@ -385,3 +326,80 @@ def run_bulk_test(group: str) -> None:
                 f"Bulk output mismatch for {input_file.name}\n"
                 f"Expected:\n{expected_output}\n\n"
                 f"Actual:\n{actual_output}")
+
+
+def _procs_dir(input_file: Path) -> Path:
+    return input_file.parent / 'procs'
+
+
+def collect_flatten_test_files(group: str) -> Iterator[pytest.param]:
+    base_dir = Path("tests/data") / group
+
+    for input_file in base_dir.glob("*.input.txt"):
+        if ".fail." in input_file.name:
+            continue
+
+        base = input_file.with_suffix('')
+        flatten_file = base.with_suffix('.flatten.txt')
+        test_id = base.name
+
+        if flatten_file.exists():
+            yield pytest.param(input_file, flatten_file, id=test_id)
+
+
+def run_procedure_output_test(input_file: Path, output_file: Path) -> None:
+    procs_dir = _procs_dir(input_file)
+    input_text = input_file.read_text()
+    parser, tree = parse_input_text(input_text)
+    visitor = HRW4UVisitor(filename=str(input_file), proc_search_paths=[procs_dir])
+    actual_output = "\n".join(visitor.visit(tree)).strip()
+    expected_output = output_file.read_text().strip()
+    assert actual_output == expected_output, f"Output mismatch in {input_file}"
+
+
+def run_procedure_flatten_test(input_file: Path, flatten_file: Path) -> None:
+    procs_dir = _procs_dir(input_file)
+    input_text = input_file.read_text()
+    parser, tree = parse_input_text(input_text)
+    visitor = HRW4UVisitor(filename=str(input_file), proc_search_paths=[procs_dir])
+    actual_output = "\n".join(visitor.flatten(tree, input_text)).strip()
+    expected_output = flatten_file.read_text().strip()
+    assert actual_output == expected_output, f"Flatten mismatch in {input_file}"
+
+
+def run_procedure_flatten_roundtrip_test(input_file: Path, output_file: Path) -> None:
+    """Verify that flattened output compiles to the same header_rewrite as the original."""
+    procs_dir = _procs_dir(input_file)
+    input_text = input_file.read_text()
+    parser, tree = parse_input_text(input_text)
+    visitor = HRW4UVisitor(filename=str(input_file), proc_search_paths=[procs_dir])
+    flattened = "\n".join(visitor.flatten(tree, input_text))
+
+    # Compile the flattened output (no procedures needed — it's self-contained)
+    parser2, tree2 = parse_input_text(flattened)
+    visitor2 = HRW4UVisitor(filename=str(input_file))
+    actual_output = "\n".join(visitor2.visit(tree2)).strip()
+    expected_output = output_file.read_text().strip()
+    assert actual_output == expected_output, (
+        f"Flatten roundtrip mismatch in {input_file}\n"
+        f"Flattened hrw4u compiles to different output than original")
+
+
+def run_procedure_failing_test(input_file: Path) -> None:
+    procs_dir = _procs_dir(input_file)
+    text = input_file.read_text()
+
+    error_file = input_file.with_name(input_file.name.replace(".fail.input.txt", ".fail.error.txt"))
+    if not error_file.exists():
+        raise RuntimeError(f"Missing expected error file: {error_file}")
+
+    expected_error = error_file.read_text().strip()
+
+    with pytest.raises(Exception) as exc_info:
+        parser, tree = parse_input_text(text)
+        HRW4UVisitor(filename=str(input_file), proc_search_paths=[procs_dir]).visit(tree)
+
+    assert expected_error in str(exc_info.value), (
+        f"Error mismatch for {input_file}\n"
+        f"Expected (substring): {expected_error!r}\n"
+        f"Actual: {str(exc_info.value)!r}")

@@ -1,0 +1,7 @@
+use test::add-debug-header
+
+REMAP {
+    if inbound.req.X-Test == "yes" {
+        test::add-debug-header("matched");
+    }
+}

@@ -1,0 +1,10 @@
+use test::add-debug-header
+
+procedure local::mine() {
+    inbound.req.X-Mine = "local";
+}
+
+REMAP {
+    test::add-debug-header("ext");
+    local::mine();
+}

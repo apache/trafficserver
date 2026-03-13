@@ -1,0 +1,3 @@
+cond %{REMAP_PSEUDO_HOOK} [AND]
+    set-header X-Tag "v2"
+    set-header X-Origin "origin.example.com"

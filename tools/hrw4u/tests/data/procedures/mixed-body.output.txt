@@ -1,0 +1,6 @@
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{CLIENT-HEADER:X-Foo} ="bar"
+    set-header X-Bar "yes"
+
+cond %{REMAP_PSEUDO_HOOK} [AND]
+    set-header X-Baloo "hello"

@@ -1,0 +1,5 @@
+use test::set-cache
+
+REMAP {
+    test::set-cache();
+}

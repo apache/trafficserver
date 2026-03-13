@@ -1,0 +1,7 @@
+REMAP {
+    inbound.req.X-Foo = "bar";
+}
+
+procedure local::late() {
+    inbound.req.X-Late = "yes";
+}

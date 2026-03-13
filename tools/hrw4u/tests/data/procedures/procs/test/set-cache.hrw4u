@@ -1,0 +1,3 @@
+procedure test::set-cache($ttl=300) {
+    inbound.req.X-Cache-TTL = $ttl;
+}

@@ -28,8 +28,8 @@ import hrw4u.types as types
 
 class SymbolResolverBase:
 
-    def __init__(self, debug: bool = SystemDefaults.DEFAULT_DEBUG) -> None:
-        self._dbg = Dbg(debug)
+    def __init__(self, debug: bool = SystemDefaults.DEFAULT_DEBUG, dbg: Dbg | None = None) -> None:
+        self._dbg = dbg if dbg is not None else Dbg(debug)
         # Clear caches when debug status changes to ensure consistency
         if hasattr(self, '_condition_cache'):
             self._condition_cache.cache_clear()

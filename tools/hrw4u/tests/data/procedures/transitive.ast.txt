@@ -1,0 +1,1 @@
+(program (programItem (useDirective use caller::Wrap)) (programItem (section REMAP { (sectionBody (statement (functionCall caller::wrap ( (argumentList (value "hello")) )) ;)) })) <EOF>)

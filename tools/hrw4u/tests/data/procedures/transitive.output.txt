@@ -1,0 +1,3 @@
+cond %{REMAP_PSEUDO_HOOK} [AND]
+    set-header X-Stamp "base"
+    set-header X-Tag "hello"

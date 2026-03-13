@@ -1,0 +1,6 @@
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{CLIENT-HEADER:X-Env} ="prod"
+    set-header X-Prod "yes"
+
+cond %{REMAP_PSEUDO_HOOK} [AND]
+    set-header X-Always "set"

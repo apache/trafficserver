@@ -1,0 +1,3 @@
+REMAP {
+    test::add-debug-header("foo");
+}

@@ -1,0 +1,11 @@
+procedure local::dup() {
+    inbound.req.X-A = "1";
+}
+
+procedure local::dup() {
+    inbound.req.X-B = "2";
+}
+
+REMAP {
+    local::dup();
+}

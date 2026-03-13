@@ -1,0 +1,5 @@
+cond %{REMAP_PSEUDO_HOOK} [AND]
+    set-header X-Stamp "yes"
+
+cond %{SEND_REQUEST_HDR_HOOK} [AND]
+    set-header X-Stamp "yes"

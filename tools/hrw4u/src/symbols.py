@@ -22,14 +22,15 @@ from hrw4u.errors import SymbolResolutionError
 import hrw4u.types as types
 from hrw4u.states import SectionType
 from hrw4u.common import SystemDefaults
+from hrw4u.debugging import Dbg
 from hrw4u.symbols_base import SymbolResolverBase
 from hrw4u.suggestions import SuggestionEngine
 
 
 class SymbolResolver(SymbolResolverBase):
 
-    def __init__(self, debug: bool = SystemDefaults.DEFAULT_DEBUG) -> None:
-        super().__init__(debug)
+    def __init__(self, debug: bool = SystemDefaults.DEFAULT_DEBUG, dbg: Dbg | None = None) -> None:
+        super().__init__(debug, dbg=dbg)
         self._symbols: dict[str, types.Symbol] = {}
         self._var_counter = {vt: 0 for vt in types.VarType}
         self._suggestion_engine = SuggestionEngine()

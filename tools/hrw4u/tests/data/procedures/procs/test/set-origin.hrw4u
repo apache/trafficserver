@@ -1,0 +1,3 @@
+procedure test::set-origin($host) {
+    inbound.req.X-Origin = "$host";
+}
