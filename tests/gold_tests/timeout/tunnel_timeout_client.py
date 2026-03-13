@@ -34,59 +34,50 @@ def main():
     target_port = int(sys.argv[4])
     sleep_seconds = int(sys.argv[5])
 
-    # Connect to the proxy
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.settimeout(10)
-
-    try:
-        sock.connect((proxy_host, proxy_port))
-        print(f"Connected to proxy {proxy_host}:{proxy_port}")
-
-        # Send CONNECT request
-        connect_request = f"CONNECT {target_host}:{target_port} HTTP/1.1\r\nHost: {target_host}:{target_port}\r\n\r\n"
-        sock.sendall(connect_request.encode())
-        print(f"Sent CONNECT request for {target_host}:{target_port}")
-
-        # Read the response
-        response = b""
-        while b"\r\n\r\n" not in response:
-            data = sock.recv(1024)
-            if not data:
-                break
-            response += data
-
-        response_str = response.decode()
-        print(f"Received response: {response_str.strip()}")
-
-        if "200" not in response_str:
-            print(f"CONNECT failed: {response_str}")
-            sock.close()
-            sys.exit(1)
-
-        print(f"Tunnel established, sleeping for {sleep_seconds} seconds to trigger active timeout...")
-
-        # Now hold the connection idle until the active timeout fires
-        # Use a longer socket timeout so we can detect when ATS closes the connection
-        sock.settimeout(sleep_seconds + 5)
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.settimeout(10)
 
         try:
-            # Wait for data or connection close
-            data = sock.recv(1024)
-            if not data:
-                print("Connection closed by server (timeout)")
-            else:
-                print(f"Received data: {data}")
-        except socket.timeout:
-            print("Socket timeout waiting for server")
-        except Exception as e:
-            print(f"Exception: {e}")
+            sock.connect((proxy_host, proxy_port))
+            print(f"Connected to proxy {proxy_host}:{proxy_port}")
 
-    except socket.timeout:
-        print("Socket timeout during connect/handshake")
-    except Exception as e:
-        print(f"Error: {e}")
-    finally:
-        sock.close()
+            connect_request = f"CONNECT {target_host}:{target_port} HTTP/1.1\r\nHost: {target_host}:{target_port}\r\n\r\n"
+            sock.sendall(connect_request.encode())
+            print(f"Sent CONNECT request for {target_host}:{target_port}")
+
+            response = b""
+            while b"\r\n\r\n" not in response:
+                data = sock.recv(1024)
+                if not data:
+                    break
+                response += data
+
+            response_str = response.decode()
+            print(f"Received response: {response_str.strip()}")
+
+            if "200" not in response_str:
+                print(f"CONNECT failed: {response_str}")
+                sys.exit(1)
+
+            print(f"Tunnel established, sleeping for {sleep_seconds} seconds to trigger active timeout...")
+
+            sock.settimeout(sleep_seconds + 5)
+
+            try:
+                data = sock.recv(1024)
+                if not data:
+                    print("Connection closed by server (timeout)")
+                else:
+                    print(f"Received data: {data}")
+            except socket.timeout:
+                print("Socket timeout waiting for server")
+            except Exception as e:
+                print(f"Exception: {e}")
+
+        except socket.timeout:
+            print("Socket timeout during connect/handshake")
+        except Exception as e:
+            print(f"Error: {e}")
 
     print("Done")
 

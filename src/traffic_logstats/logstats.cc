@@ -449,6 +449,7 @@ public:
       case SquidLogCode::ERR_INVALID_REQ:
       case SquidLogCode::ERR_UNKNOWN:
       case SquidLogCode::ERR_READ_TIMEOUT:
+      case SquidLogCode::ERR_TUN_ACTIVE_TIMEOUT:
         ++(l->errors);
         break;
       default:
@@ -526,6 +527,7 @@ public:
       case SquidLogCode::ERR_INVALID_REQ:
       case SquidLogCode::ERR_UNKNOWN:
       case SquidLogCode::ERR_READ_TIMEOUT:
+      case SquidLogCode::ERR_TUN_ACTIVE_TIMEOUT:
         l->errors = 1;
         break;
       default:
