@@ -29,6 +29,7 @@
 #include "tscore/Diags.h"
 
 #include "records/RecDefs.h"
+#include "mgmt/config/ConfigContext.h"
 #include "swoc/MemSpan.h"
 
 struct RecRecord;
@@ -244,9 +245,17 @@ RecErrT RecGetRecordPersistenceType(const char *name, RecPersistT *persist_type,
 RecErrT RecGetRecordSource(const char *name, RecSourceT *source, bool lock = true);
 
 /// Generate a warning if any configuration name/value is not registered.
-void RecConfigWarnIfUnregistered();
+// void RecConfigWarnIfUnregistered();
+/// Generate a warning if any configuration name/value is not registered.
+void RecConfigWarnIfUnregistered(ConfigContext ctx = {});
 
 //------------------------------------------------------------------------
 // Set RecRecord attributes
 //------------------------------------------------------------------------
 RecErrT RecSetSyncRequired(const char *name, bool lock = true);
+
+/// Flush pending record config-update callbacks (those marked sync-required).
+/// This forces immediate execution of RecConfigUpdateCb callbacks for dirty records,
+/// rather than waiting for the next config_update_cont timer tick (~3s).
+/// After this call the sync-required flag on those records is cleared.
+void RecFlushConfigUpdateCbs();

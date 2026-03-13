@@ -261,6 +261,12 @@ static constexpr RecordElement RecordsConfig[] =
   //##############################################################################
   {RECT_CONFIG, "proxy.config.admin.user_id", RECD_STRING, TS_PKGSYSUSER, RECU_NULL, RR_REQUIRED, RECC_NULL, nullptr, RECA_READ_ONLY}
   ,
+  //# Config reload timeout - supports duration strings: "30s", "5min", "1h", "0" (disabled)
+  {RECT_CONFIG, "proxy.config.admin.reload.timeout", RECD_STRING, "1h", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  ,
+  //# Config reload check interval - how often to check task progress (min: 1s)
+  {RECT_CONFIG, "proxy.config.admin.reload.check_interval", RECD_STRING, "2s", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  ,
   //##############################################################################
   //#
   //# UDP configuration stuff: hidden variables

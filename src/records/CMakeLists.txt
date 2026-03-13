@@ -30,21 +30,25 @@ add_library(
   RecordsConfig.cc
   RecordsConfigUtils.cc
   RecRawStats.cc
+  # Reload infrastructure
+  ${CMAKE_SOURCE_DIR}/src/mgmt/config/ReloadCoordinator.cc
+  ${CMAKE_SOURCE_DIR}/src/mgmt/config/ConfigReloadTrace.cc
+  ${CMAKE_SOURCE_DIR}/src/mgmt/config/ConfigContext.cc
 )
 add_library(ts::records ALIAS records)
 
 target_link_libraries(
   records
-  PUBLIC ts::tscore yaml-cpp::yaml-cpp
+  PUBLIC ts::tscore yaml-cpp::yaml-cpp ts::inkevent
   PRIVATE ts::tsutil
 )
 
 if(BUILD_TESTING)
   add_executable(
     test_records unit_tests/unit_test_main.cc unit_tests/test_RecHttp.cc unit_tests/test_RecUtils.cc
-                 unit_tests/test_RecRegister.cc
+                 unit_tests/test_RecRegister.cc unit_tests/test_ConfigReloadTask.cc unit_tests/test_ConfigRegistry.cc
   )
-  target_link_libraries(test_records PRIVATE records Catch2::Catch2 ts::tscore libswoc::libswoc ts::inkevent)
+  target_link_libraries(test_records PRIVATE records configmanager inkevent Catch2::Catch2 ts::tscore libswoc::libswoc)
   add_catch2_test(NAME test_records COMMAND test_records)
 endif()
 

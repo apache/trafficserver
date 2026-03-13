@@ -38,7 +38,7 @@ QUICCertConfig::startup()
 }
 
 void
-QUICCertConfig::reconfigure()
+QUICCertConfig::reconfigure(ConfigContext ctx)
 {
   bool                     retStatus = true;
   SSLConfig::scoped_config params;
@@ -66,8 +66,10 @@ QUICCertConfig::reconfigure()
 
   if (retStatus) {
     Note("(quic) %s finished loading%s", params->configFilePath, ts::bw_dbg.c_str());
+    ctx.complete("QUICCertConfig loaded");
   } else {
     Error("(quic) %s failed to load%s", params->configFilePath, ts::bw_dbg.c_str());
+    ctx.fail("QUICCertConfig failed to load");
   }
 }
 
