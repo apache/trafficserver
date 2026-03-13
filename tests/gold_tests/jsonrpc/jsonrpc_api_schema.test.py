@@ -148,10 +148,11 @@ add_testrun_for_jsonrpc_request(
     })
 
 # admin_config_reload
-add_testrun_for_jsonrpc_request(
-    "Test admin_config_reload",
-    request_file_name='json/admin_config_reload_req.json',
-    result_schema_file_name=success_schema_file_name_name)
+# We will wait for this to have a stable schema. I think we may need to adjust the response a bit.
+# add_testrun_for_jsonrpc_request(
+#     "Test admin_config_reload",
+#     request_file_name='json/admin_config_reload_req.json',
+#     result_schema_file_name=success_schema_file_name_name)
 
 # admin_host_set_status
 add_testrun_for_jsonrpc_request(

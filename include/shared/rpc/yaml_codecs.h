@@ -33,7 +33,7 @@ namespace helper
 // traffic_ctl display something.
 template <typename T>
 inline auto
-try_extract(YAML::Node const &node, const char *name, bool throwOnFail = false)
+try_extract(YAML::Node const &node, const char *name, bool throwOnFail = false, T def = T{}) -> T
 {
   try {
     if (auto n = node[name]) {
@@ -44,8 +44,9 @@ try_extract(YAML::Node const &node, const char *name, bool throwOnFail = false)
       throw ex;
     }
   }
-  return T{};
+  return def;
 }
+
 } // namespace helper
 /**
  * YAML namespace. All json rpc request codecs can be placed here. It will read all the definitions from "requests.h"

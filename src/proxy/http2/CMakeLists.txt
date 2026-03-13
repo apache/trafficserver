@@ -49,7 +49,7 @@ if(BUILD_TESTING)
     unit_tests/test_Http2Frame.cc
     unit_tests/test_HpackIndexingTable.cc
   )
-  target_link_libraries(test_http2 PRIVATE Catch2::Catch2WithMain records tscore hdrs inkevent)
+  target_link_libraries(test_http2 PRIVATE Catch2::Catch2WithMain records tscore hdrs inkevent configmanager)
   add_catch2_test(NAME test_http2 COMMAND test_http2)
 
   add_executable(test_Http2DependencyTree unit_tests/test_Http2DependencyTree.cc)
@@ -57,7 +57,7 @@ if(BUILD_TESTING)
   add_catch2_test(NAME test_Http2DependencyTree COMMAND test_Http2DependencyTree)
 
   add_executable(test_HPACK test_HPACK.cc HPACK.cc)
-  target_link_libraries(test_HPACK PRIVATE tscore hdrs inkevent)
+  target_link_libraries(test_HPACK PRIVATE tscore hdrs inkevent configmanager)
   add_test(NAME test_HPACK COMMAND test_HPACK -i ${CMAKE_CURRENT_SOURCE_DIR}/hpack-tests -o ./results)
 endif()
 
