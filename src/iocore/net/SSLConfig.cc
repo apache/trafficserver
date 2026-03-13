@@ -48,6 +48,7 @@
 #include <array>
 #include <cstring>
 #include <cmath>
+#include <thread>
 #include <unordered_map>
 
 int                SSLConfig::config_index                                = 0;
@@ -216,6 +217,7 @@ SSLConfigParams::reset()
   ssl_session_cache_timeout            = 0;
   ssl_session_cache_auto_clear         = 1;
   configExitOnLoadError                = 1;
+  configLoadConcurrency                = 1;
   clientCertExitOnLoadError            = 0;
 }
 
@@ -523,6 +525,10 @@ SSLConfigParams::initialize()
 
   configFilePath        = ats_stringdup(RecConfigReadConfigPath("proxy.config.ssl.server.multicert.filename"));
   configExitOnLoadError = RecGetRecordInt("proxy.config.ssl.server.multicert.exit_on_load_fail").value_or(0);
+  configLoadConcurrency = RecGetRecordInt("proxy.config.ssl.server.multicert.concurrency").value_or(1);
+  if (configLoadConcurrency == 0) {
+    configLoadConcurrency = std::thread::hardware_concurrency();
+  }
 
   {
     auto rec_str{RecGetRecordStringAlloc("proxy.config.ssl.server.private_key.path")};
@@ -778,7 +784,7 @@ SSLCertificateConfig::reconfigure()
     ink_hrtime_sleep(HRTIME_SECONDS(secs));
   }
 
-  auto errata = SSLMultiCertConfigLoader(params).load(lookup);
+  auto errata = SSLMultiCertConfigLoader(params).load(lookup, configid == 0);
   if (!lookup->is_valid || (errata.has_severity() && errata.severity() >= ERRATA_ERROR)) {
     retStatus = false;
   }

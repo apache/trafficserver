@@ -109,3 +109,52 @@ ts2.Ready = 0  # Need this to be 0 because we are testing shutdown, this is to m
 ts2.Disk.traffic_out.Content = Testers.ExcludesExpression(
     'Traffic Server is fully initialized', 'process should fail when invalid certificate specified')
 ts2.Disk.diags_log.Content = Testers.IncludesExpression('EMERGENCY: failed to load SSL certificate file', 'check diags.log"')
+
+##########################################################################
+# Ensure parallel cert loading works correctly with multiple certs
+
+ts3 = Test.MakeATSProcess("ts3", enable_tls=True)
+server3 = Test.MakeOriginServer("server4")
+server3.addResponse("sessionlog.json", request_header, response_header)
+
+ts3.Disk.records_config.update(
+    {
+        'proxy.config.ssl.server.cert.path': f'{ts3.Variables.SSLDir}',
+        'proxy.config.ssl.server.private_key.path': f'{ts3.Variables.SSLDir}',
+        'proxy.config.ssl.server.multicert.concurrency': 4,
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'ssl_load',
+    })
+
+ts3.addDefaultSSLFiles()
+
+ts3.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{server3.Variables.Port}')
+
+# Add enough cert lines to exercise multiple threads (need > 1 for parallel path,
+# and ideally >= concurrency to actually use all threads)
+ts3.Disk.ssl_multicert_config.AddLines(
+    [
+        'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key',
+        'ssl_cert_name=server.pem ssl_key_name=server.key',
+        'ssl_cert_name=server.pem ssl_key_name=server.key',
+        'ssl_cert_name=server.pem ssl_key_name=server.key',
+        'ssl_cert_name=server.pem ssl_key_name=server.key',
+    ])
+
+tr5 = Test.AddTestRun("Verify parallel cert loading works")
+tr5.Processes.Default.StartBefore(ts3)
+tr5.Processes.Default.StartBefore(server3)
+tr5.StillRunningAfter = ts3
+tr5.StillRunningAfter = server3
+tr5.MakeCurlCommand(
+    f"-q -s -v -k --resolve '{sni_domain}:{ts3.Variables.ssl_port}:127.0.0.1' https://{sni_domain}:{ts3.Variables.ssl_port}",
+    ts=ts3)
+tr5.Processes.Default.ReturnCode = 0
+tr5.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Check response")
+tr5.Processes.Default.Streams.stderr = Testers.IncludesExpression(f"CN={sni_domain}", "Check response")
+
+# Verify the parallel loading code path was actually exercised.
+# With 5 identical cert lines, 4 will fail to insert as duplicates.
+# This confirms all lines were processed (regardless of thread count).
+ts3.Disk.diags_log.Content = Testers.ContainsExpression(
+    'Failed to insert SSL_CTX for certificate', 'duplicate cert insertions confirm all lines were processed')

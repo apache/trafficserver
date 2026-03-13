@@ -72,6 +72,7 @@
 #include <string>
 #include <unistd.h>
 #include <termios.h>
+#include <thread>
 #include <vector>
 
 using namespace std::literals;
@@ -1664,15 +1665,23 @@ SSLMultiCertConfigLoader::_store_ssl_ctx(SSLCertLookup *lookup, const shared_SSL
   SSLMultiCertConfigLoader::CertLoadData         data;
 
   if (!this->_prep_ssl_ctx(sslMultCertSettings, data, common_names, unique_names)) {
-    lookup->is_valid = false;
+    {
+      std::lock_guard<std::mutex> lock(_loader_mutex);
+      lookup->is_valid = false;
+    }
     return false;
   }
 
   std::vector<SSLLoadingContext> ctxs = this->init_server_ssl_ctx(data, sslMultCertSettings.get());
+
+  // Serialize all mutations to the shared SSLCertLookup.
+  // The expensive work above (_prep_ssl_ctx + init_server_ssl_ctx) runs
+  // without the lock, allowing parallel cert loading across threads.
+  std::lock_guard<std::mutex> lock(_loader_mutex);
+
   for (const auto &loadingctx : ctxs) {
-    if (!sslMultCertSettings ||
-        !this->_store_single_ssl_ctx(lookup, sslMultCertSettings, shared_SSL_CTX{loadingctx.ctx, SSL_CTX_free}, loadingctx.ctx_type,
-                                     common_names)) {
+    shared_SSL_CTX ctx(loadingctx.ctx, SSL_CTX_free);
+    if (!sslMultCertSettings || !this->_store_single_ssl_ctx(lookup, sslMultCertSettings, ctx, loadingctx.ctx_type, common_names)) {
       if (!common_names.empty()) {
         std::string names;
         for (auto const &name : data.cert_names_list) {
@@ -1704,8 +1713,8 @@ SSLMultiCertConfigLoader::_store_ssl_ctx(SSLCertLookup *lookup, const shared_SSL
 
     std::vector<SSLLoadingContext> ctxs = this->init_server_ssl_ctx(single_data, sslMultCertSettings.get());
     for (const auto &loadingctx : ctxs) {
-      if (!this->_store_single_ssl_ctx(lookup, sslMultCertSettings, shared_SSL_CTX{loadingctx.ctx, SSL_CTX_free},
-                                       loadingctx.ctx_type, iter->second)) {
+      shared_SSL_CTX unique_ctx(loadingctx.ctx, SSL_CTX_free);
+      if (!this->_store_single_ssl_ctx(lookup, sslMultCertSettings, unique_ctx, loadingctx.ctx_type, iter->second)) {
         retval = false;
       } else {
         lookup->register_cert_secrets(data.cert_names_list, iter->second);
@@ -1918,17 +1927,50 @@ ssl_extract_certificate(const matcher_line *line_info, SSLMultiCertConfigParams 
   return true;
 }
 
+void
+SSLMultiCertConfigLoader::_load_lines(SSLCertLookup *lookup, SSLConfigLines::const_iterator begin,
+                                      SSLConfigLines::const_iterator end, swoc::Errata &errata)
+{
+  const matcher_tags     sslCertTags = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, false};
+  const SSLConfigParams *params      = this->_params;
+
+  // Each thread needs its own ElevateAccess since POSIX capabilities
+  // are per-thread and don't propagate to spawned threads.
+  uint32_t elevate_setting = 0;
+  elevate_setting          = RecGetRecordInt("proxy.config.ssl.cert.load_elevated").value_or(0);
+  ElevateAccess elevate_access(elevate_setting ? ElevateAccess::FILE_PRIVILEGE : 0);
+
+  for (auto it = begin; it != end; ++it) {
+    auto &[line, line_num] = *it;
+
+    shared_SSLMultiCertConfigParams sslMultiCertSettings = std::make_shared<SSLMultiCertConfigParams>();
+    matcher_line                    line_info;
+    const char                     *errPtr;
+
+    errPtr = parseConfigLine(line, &line_info, &sslCertTags);
+    Dbg(dbg_ctl_ssl_load, "currently parsing %s at line %d from config file: %s", line, line_num, params->configFilePath);
+    if (errPtr != nullptr) {
+      Warning("%s: discarding %s entry at line %d: %s", __func__, params->configFilePath, line_num, errPtr);
+    } else {
+      if (ssl_extract_certificate(&line_info, sslMultiCertSettings.get())) {
+        if (sslMultiCertSettings->cert || sslMultiCertSettings->opt != SSLCertContextOption::OPT_TUNNEL) {
+          if (!this->_store_ssl_ctx(lookup, sslMultiCertSettings)) {
+            std::lock_guard<std::mutex> lock(_loader_mutex);
+            errata.note(ERRATA_ERROR, "Failed to load certificate on line {}", line_num);
+          }
+        } else {
+          std::lock_guard<std::mutex> lock(_loader_mutex);
+          errata.note(ERRATA_WARN, "No ssl_cert_name specified and no tunnel action set on line {}", line_num);
+        }
+      }
+    }
+  }
+}
+
 swoc::Errata
-SSLMultiCertConfigLoader::load(SSLCertLookup *lookup)
+SSLMultiCertConfigLoader::load(SSLCertLookup *lookup, bool firstLoad)
 {
   const SSLConfigParams *params = this->_params;
-
-  char        *tok_state = nullptr;
-  char        *line      = nullptr;
-  unsigned     line_num  = 0;
-  matcher_line line_info;
-
-  const matcher_tags sslCertTags = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, false};
 
   Note("(%s) %s loading ...", this->_debug_tag(), ts::filename::SSL_MULTICERT);
 
@@ -1945,6 +1987,12 @@ SSLMultiCertConfigLoader::load(SSLCertLookup *lookup)
     }
   }
 
+  // Collect all non-empty, non-comment lines for processing
+  char          *tok_state = nullptr;
+  char          *line      = nullptr;
+  unsigned       line_num  = 0;
+  SSLConfigLines config_lines;
+
   // Optionally elevate/allow file access to read root-only
   // certificates. The destructor will drop privilege for us.
   uint32_t elevate_setting = 0;
@@ -1952,7 +2000,6 @@ SSLMultiCertConfigLoader::load(SSLCertLookup *lookup)
   ElevateAccess elevate_access(elevate_setting ? ElevateAccess::FILE_PRIVILEGE : 0);
 
   line = tokLine(content.data(), &tok_state);
-  swoc::Errata errata(ERRATA_NOTE);
   while (line != nullptr) {
     line_num++;
 
@@ -1962,28 +2009,49 @@ SSLMultiCertConfigLoader::load(SSLCertLookup *lookup)
     }
 
     if (*line != '\0' && *line != '#') {
-      shared_SSLMultiCertConfigParams sslMultiCertSettings = std::make_shared<SSLMultiCertConfigParams>();
-      const char                     *errPtr;
+      config_lines.emplace_back(line, line_num);
+    }
+    line = tokLine(nullptr, &tok_state);
+  }
 
-      errPtr = parseConfigLine(line, &line_info, &sslCertTags);
-      Dbg(dbg_ctl_ssl_load, "currently parsing %s at line %d from config file: %s", line, line_num, params->configFilePath);
-      if (errPtr != nullptr) {
-        Warning("%s: discarding %s entry at line %d: %s", __func__, params->configFilePath, line_num, errPtr);
-      } else {
-        if (ssl_extract_certificate(&line_info, sslMultiCertSettings.get())) {
-          // There must be a certificate specified unless the tunnel action is set
-          if (sslMultiCertSettings->cert || sslMultiCertSettings->opt != SSLCertContextOption::OPT_TUNNEL) {
-            if (!this->_store_ssl_ctx(lookup, sslMultiCertSettings)) {
-              errata.note(ERRATA_ERROR, "Failed to load certificate on line {}", line_num);
-            }
-          } else {
-            errata.note(ERRATA_WARN, "No ssl_cert_name specified and no tunnel action set on line {}", line_num);
-          }
-        }
-      }
+  swoc::Errata errata(ERRATA_NOTE);
+
+  if (params->configLoadConcurrency > 1 && config_lines.size() > 1) {
+    // On first load (no traffic yet), allow more threads for faster startup
+    int num_threads = params->configLoadConcurrency;
+    if (firstLoad) {
+      num_threads = std::max(static_cast<int>(std::thread::hardware_concurrency()), num_threads);
     }
 
-    line = tokLine(nullptr, &tok_state);
+    // Don't spawn more threads than lines
+    num_threads = std::min(num_threads, static_cast<int>(config_lines.size()));
+
+    std::size_t                    bucket_size = config_lines.size() / num_threads;
+    std::size_t                    remainder   = config_lines.size() % num_threads;
+    SSLConfigLines::const_iterator current     = config_lines.cbegin();
+    std::vector<std::thread>       threads;
+
+    Note("(%s) loading %zu certs with %d threads", this->_debug_tag(), config_lines.size(), num_threads);
+
+    for (int t = 0; t < num_threads; ++t) {
+      // Distribute remainder lines across the first threads
+      std::size_t                    this_bucket = bucket_size + (static_cast<std::size_t>(t) < remainder ? 1 : 0);
+      SSLConfigLines::const_iterator end         = current + this_bucket;
+
+      threads.emplace_back(&SSLMultiCertConfigLoader::_load_lines, this, lookup, current, end, std::ref(errata));
+      current = end;
+    }
+
+    for (auto &th : threads) {
+      th.join();
+    }
+
+    Note("(%s) loaded %zu certs in %d threads", this->_debug_tag(), config_lines.size(), num_threads);
+  } else {
+    // Single-threaded path (concurrency == 1 or only 1 line)
+    this->_load_lines(lookup, config_lines.cbegin(), config_lines.cend(), errata);
+
+    Note("(%s) loaded %zu certs (single-threaded)", this->_debug_tag(), config_lines.size());
   }
 
   // We *must* have a default context even if it can't possibly work. The default context is used to

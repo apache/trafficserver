@@ -45,7 +45,7 @@ QUICCertConfig::reconfigure()
   SSLCertLookup           *lookup = new SSLCertLookup();
 
   QUICMultiCertConfigLoader loader(params);
-  auto                      errata = loader.load(lookup);
+  auto                      errata = loader.load(lookup, _config_id == 0);
   if (!lookup->is_valid || (errata.has_severity() && errata.severity() >= ERRATA_ERROR)) {
     retStatus = false;
   }
