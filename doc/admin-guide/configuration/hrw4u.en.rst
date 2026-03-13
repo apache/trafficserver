@@ -416,6 +416,101 @@ or when integrating with existing header_rewrite rules that reference specific s
 addition, a remap configuration can use ``@PPARAM`` to set one of these slot variables explicitly
 as part of the configuration.
 
+Procedures
+----------
+
+Procedures allow you to define reusable blocks of rules that can be called from
+multiple sections or files. A procedure is a named, parameterized block of
+conditions and operators that expands inline at the call site.
+
+Defining Procedures
+^^^^^^^^^^^^^^^^^^^
+
+Procedures are declared with the ``procedure`` keyword and must use a qualified
+name with the ``::`` namespace separator::
+
+    procedure local::add-debug-header($tag) {
+        inbound.req.X-Debug = "$tag";
+    }
+
+The namespace prefix (``local::`` in this example) groups related procedures.
+Parameters are prefixed with ``$`` and substituted at the call site.
+
+Procedures may be defined in the same file as the sections that use them, or in
+separate ``.hrw4u`` files loaded with the ``use`` directive. Procedure declarations
+must appear before any section blocks.
+
+Using Procedures
+^^^^^^^^^^^^^^^^
+
+Call a procedure from any section by its qualified name::
+
+    procedure local::set-cache-headers($ttl) {
+        outbound.resp.Cache-Control = "max-age=$ttl";
+        outbound.resp.X-Cache-TTL = "$ttl";
+    }
+
+    READ_RESPONSE {
+        local::set-cache-headers("3600");
+    }
+
+    SEND_RESPONSE {
+        local::set-cache-headers("0");
+    }
+
+The procedure body is expanded inline — each section gets its own copy with
+the correct hook context.
+
+Procedure Files and ``use``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+For larger projects, procedures can be organized into separate files and loaded
+with the ``use`` directive. The ``use`` spec maps to a file path: ``use Acme::Common``
+loads ``Acme/Common.hrw4u`` from the procedures search path.
+
+The ``--procedures-path`` flag specifies where to search::
+
+    hrw4u --procedures-path /etc/trafficserver/procedures rules.hrw4u
+
+Given this file structure::
+
+    /etc/trafficserver/procedures/
+    └── Acme/
+        └── Common.hrw4u
+
+Where ``Acme/Common.hrw4u`` contains::
+
+    procedure Acme::add-security-headers() {
+        outbound.resp.X-Frame-Options = "DENY";
+        outbound.resp.X-Content-Type-Options = "nosniff";
+    }
+
+Then in ``rules.hrw4u``::
+
+    use Acme::Common
+
+    READ_RESPONSE {
+        Acme::add-security-headers();
+    }
+
+The ``use`` directive enforces namespace consistency: all procedures in a file
+loaded via ``use Acme::Common`` must use the ``Acme::`` namespace prefix.
+
+Parameters and Defaults
+^^^^^^^^^^^^^^^^^^^^^^^
+
+Procedures support positional parameters with optional defaults::
+
+    procedure local::tag-request($env, $version = "v1") {
+        inbound.req.X-Env = "$env";
+        inbound.req.X-Version = "$version";
+    }
+
+    REMAP {
+        local::tag-request("prod");
+        # $version defaults to "v1"
+    }
+
 Groups
 ------
 

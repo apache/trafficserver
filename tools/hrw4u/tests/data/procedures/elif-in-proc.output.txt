@@ -1,0 +1,24 @@
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{CLIENT-HEADER:X-Priority} ="high"
+    set-header X-Class "urgent"
+elif
+    cond %{CLIENT-HEADER:X-Priority} ="medium"
+        set-header X-Class "normal"
+else
+    set-header X-Class "low"
+
+cond %{REMAP_PSEUDO_HOOK} [AND]
+    set-header X-Classified-By "remap-classifier"
+
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{CLIENT-HEADER:X-Special} ="yes"
+    if
+        cond %{CLIENT-HEADER:X-Priority} ="high"
+            set-header X-Class "urgent"
+        elif
+            cond %{CLIENT-HEADER:X-Priority} ="medium"
+                set-header X-Class "normal"
+        else
+            set-header X-Class "low"
+    endif
+    set-header X-Classified-By "special"

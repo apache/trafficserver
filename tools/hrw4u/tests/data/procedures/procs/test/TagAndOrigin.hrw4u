@@ -1,0 +1,7 @@
+procedure test::add-tag($tag) {
+    inbound.req.X-Tag = "$tag";
+}
+
+procedure test::add-origin($host) {
+    inbound.req.X-Origin = "$host";
+}

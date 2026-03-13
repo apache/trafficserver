@@ -26,12 +26,10 @@ from hrw4u.hrw4uLexer import hrw4uLexer
 from hrw4u.hrw4uParser import hrw4uParser
 from hrw4u.visitor import HRW4UVisitor
 
-KNOWN_MARKS = {"hooks", "conds", "ops", "vars", "examples", "invalid"}
+KNOWN_MARKS = {"hooks", "conds", "ops", "vars", "examples", "invalid", "procedures"}
 
 
 def load_exceptions(test_dir: Path) -> dict[str, str]:
-    """Load exceptions from exceptions.txt in the test directory.
-    Returns a dict mapping test filename to direction (hrw4u or u4wrh)."""
     exceptions_file = test_dir / "exceptions.txt"
     exceptions = {}
 
@@ -52,7 +50,14 @@ def load_exceptions(test_dir: Path) -> dict[str, str]:
     return exceptions
 
 
-def parse_tree(input_text: str) -> tuple[hrw4uParser, any]:
+def _proc_search_paths(input_path: Path) -> list[Path] | None:
+    procs_dir = input_path.parent / 'procs'
+    if procs_dir.is_dir():
+        return [procs_dir]
+    return None
+
+
+def parse_tree(input_text: str) -> tuple[hrw4uParser, hrw4uParser.ProgramContext]:
     stream = InputStream(input_text)
     lexer = hrw4uLexer(stream)
     tokens = CommonTokenStream(lexer)
@@ -90,7 +95,7 @@ def process_file(
     if input_path.name.endswith(".fail.input.txt"):
         try:
             parser, tree = parse_tree(input_text)
-            visitor = HRW4UVisitor(filename=str(input_path))
+            visitor = HRW4UVisitor(filename=str(input_path), proc_search_paths=_proc_search_paths(input_path))
             visitor.visit(tree)
             print(f"Unexpected success: {input_path}")
             return False
@@ -107,7 +112,8 @@ def process_file(
         try:
             parser, tree = parse_tree(input_text)
             ast_text = tree.toStringTree(recog=parser).strip()
-            output_text = "\n".join(HRW4UVisitor(filename=str(input_path)).visit(tree)).strip()
+            output_text = "\n".join(
+                HRW4UVisitor(filename=str(input_path), proc_search_paths=_proc_search_paths(input_path)).visit(tree)).strip()
 
             if update_ast:
                 ast_path.write_text(ast_text + "\n")

@@ -51,7 +51,8 @@ UTILS_FILES=src/symbols_base.py \
 SRC_FILES_HRW4U=src/visitor.py \
 	src/symbols.py \
 	src/suggestions.py \
-	src/kg_visitor.py
+	src/kg_visitor.py \
+	src/procedures.py
 
 ALL_HRW4U_FILES=$(SHARED_FILES) $(UTILS_FILES) $(SRC_FILES_HRW4U)
 

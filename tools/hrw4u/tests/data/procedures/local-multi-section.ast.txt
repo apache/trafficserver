@@ -1,0 +1,1 @@
+(program (programItem (procedureDecl procedure local::stamp ( ) (block { (blockItem (statement inbound.req.X-Stamp = (value "yes") ;)) }))) (programItem (section REMAP { (sectionBody (statement (functionCall local::stamp ( )) ;)) })) (programItem (section SEND_REQUEST { (sectionBody (statement (functionCall local::stamp ( )) ;)) })) <EOF>)

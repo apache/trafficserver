@@ -1,0 +1,1 @@
+procedure 'test::add-debug-header': expected 1 arg(s), got 2
