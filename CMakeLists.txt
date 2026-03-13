@@ -232,6 +232,10 @@ set(TS_USE_DIAGS
     CACHE STRING "Use diags (default 1)"
 )
 option(ENABLE_CRIPTS "Build and install the Cripts library and headers  (default OFF)")
+set(XDEBUG_HEADER
+    "X-Debug"
+    CACHE STRING "Header name for xdebug plugin WKS registration (default X-Debug)"
+)
 
 set(TS_USE_FAST_SDK ${ENABLE_FAST_SDK})
 

@@ -595,6 +595,7 @@ extern c_str_view MIME_FIELD_SEC_WEBSOCKET_KEY;
 extern c_str_view MIME_FIELD_SEC_WEBSOCKET_VERSION;
 extern c_str_view MIME_FIELD_HTTP2_SETTINGS;
 extern c_str_view MIME_FIELD_EARLY_DATA;
+extern c_str_view MIME_FIELD_XDEBUG;
 
 extern c_str_view MIME_VALUE_BYTES;
 extern c_str_view MIME_VALUE_CHUNKED;
@@ -701,6 +702,7 @@ extern int MIME_WKSIDX_SEC_WEBSOCKET_KEY;
 extern int MIME_WKSIDX_SEC_WEBSOCKET_VERSION;
 extern int MIME_WKSIDX_HTTP2_SETTINGS;
 extern int MIME_WKSIDX_EARLY_DATA;
+extern int MIME_WKSIDX_XDEBUG;
 
 /***********************************************************************
  *                                                                     *

@@ -22,6 +22,7 @@
  */
 
 #include "tscore/ink_platform.h"
+#include "tscore/ink_config.h"
 #include "tscore/HashFNV.h"
 #include "tscore/Diags.h"
 #include "tscore/ink_memory.h"
@@ -128,7 +129,10 @@ const char *const _hdrtoken_strs[] = {
   "zstd",
 
   // RFC-9213 Targeted Cache Control
-  "CDN-Cache-Control"};
+  "CDN-Cache-Control",
+
+  // xdebug plugin header (cmake-configurable via XDEBUG_HEADER)
+  TS_XDEBUG_HEADER_NAME};
 
 HdrTokenTypeBinding _hdrtoken_strs_type_initializers[] = {
   {"file",                 HdrTokenType::SCHEME        },
@@ -271,6 +275,7 @@ HdrTokenFieldInfo _hdrtoken_strs_field_initializers[] = {
   {"Sec-WebSocket-Key",         MIME_SLOTID_NONE,                MIME_PRESENCE_NONE,                HdrTokenInfoFlags::NONE                                                                },
   {"Sec-WebSocket-Version",     MIME_SLOTID_NONE,                MIME_PRESENCE_NONE,                HdrTokenInfoFlags::NONE                                                                },
   {"CDN-Cache-Control",         MIME_SLOTID_NONE,                MIME_PRESENCE_NONE,                (HdrTokenInfoFlags::COMMAS | HdrTokenInfoFlags::MULTVALS)                              },
+  {TS_XDEBUG_HEADER_NAME,       MIME_SLOTID_NONE,                MIME_PRESENCE_NONE,                HdrTokenInfoFlags::NONE                                                                },
   {nullptr,                     0,                               0,                                 HdrTokenInfoFlags::NONE                                                                },
 };
 

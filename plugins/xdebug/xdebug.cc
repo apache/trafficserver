@@ -34,6 +34,7 @@
 #include <ts/ts.h>
 #include "tscore/ink_defs.h"
 #include "tsutil/PostScript.h"
+#include "proxy/hdrs/HdrToken.h"
 #include "swoc/TextView.h"
 #include "tscpp/api/Cleanup.h"
 
@@ -962,6 +963,14 @@ TSPluginInit(int argc, const char *argv[])
     xDebugHeader.str = TSstrdup("X-Debug"); // We malloc this, for consistency for future plugin unload events
   }
   xDebugHeader.len = strlen(xDebugHeader.str);
+
+  // If the header name is registered as a WKS, swap in the heap pointer so
+  // TSMimeHdrFieldFind takes the O(1) WKS integer-compare path instead of
+  // the O(n) strcasecmp field-list walk.
+  if (const char *wks = hdrtoken_string_to_wks(xDebugHeader.str, xDebugHeader.len); wks != nullptr) {
+    TSfree(const_cast<char *>(xDebugHeader.str));
+    xDebugHeader.str = wks;
+  }
 
   // Make xDebugHeader available to other plugins, as a C-style string.
   //

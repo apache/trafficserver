@@ -23,6 +23,7 @@
 
 #include "tscore/ink_defs.h"
 #include "tscore/ink_platform.h"
+#include "tscore/ink_config.h"
 #include "tscore/ink_memory.h"
 #include <cassert>
 #include <cctype>
@@ -202,6 +203,7 @@ c_str_view MIME_FIELD_SEC_WEBSOCKET_KEY;
 c_str_view MIME_FIELD_SEC_WEBSOCKET_VERSION;
 c_str_view MIME_FIELD_HTTP2_SETTINGS;
 c_str_view MIME_FIELD_EARLY_DATA;
+c_str_view MIME_FIELD_XDEBUG;
 
 c_str_view MIME_VALUE_BYTES;
 c_str_view MIME_VALUE_CHUNKED;
@@ -321,6 +323,7 @@ int MIME_WKSIDX_SEC_WEBSOCKET_KEY;
 int MIME_WKSIDX_SEC_WEBSOCKET_VERSION;
 int MIME_WKSIDX_HTTP2_SETTINGS;
 int MIME_WKSIDX_EARLY_DATA;
+int MIME_WKSIDX_XDEBUG;
 
 namespace
 {
@@ -721,6 +724,7 @@ mime_init()
     MIME_FIELD_SEC_WEBSOCKET_VERSION     = hdrtoken_string_to_wks_sv("Sec-WebSocket-Version");
     MIME_FIELD_HTTP2_SETTINGS            = hdrtoken_string_to_wks_sv("HTTP2-Settings");
     MIME_FIELD_EARLY_DATA                = hdrtoken_string_to_wks_sv("Early-Data");
+    MIME_FIELD_XDEBUG                    = hdrtoken_string_to_wks_sv(TS_XDEBUG_HEADER_NAME);
 
     MIME_WKSIDX_ACCEPT                    = hdrtoken_wks_to_index(MIME_FIELD_ACCEPT.c_str());
     MIME_WKSIDX_ACCEPT_CHARSET            = hdrtoken_wks_to_index(MIME_FIELD_ACCEPT_CHARSET.c_str());
@@ -800,6 +804,7 @@ mime_init()
     MIME_WKSIDX_SEC_WEBSOCKET_VERSION     = hdrtoken_wks_to_index(MIME_FIELD_SEC_WEBSOCKET_VERSION.c_str());
     MIME_WKSIDX_HTTP2_SETTINGS            = hdrtoken_wks_to_index(MIME_FIELD_HTTP2_SETTINGS.c_str());
     MIME_WKSIDX_EARLY_DATA                = hdrtoken_wks_to_index(MIME_FIELD_EARLY_DATA.c_str());
+    MIME_WKSIDX_XDEBUG                    = hdrtoken_wks_to_index(MIME_FIELD_XDEBUG.c_str());
 
     MIME_VALUE_BYTES                = hdrtoken_string_to_wks_sv("bytes");
     MIME_VALUE_CHUNKED              = hdrtoken_string_to_wks_sv("chunked");
