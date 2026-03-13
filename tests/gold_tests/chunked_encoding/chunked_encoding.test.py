@@ -255,3 +255,6 @@ class TestChunkedTrailers:
 
 TestChunkedTrailers(configure_drop_trailers=True)
 TestChunkedTrailers(configure_drop_trailers=False)
+
+# Large chunked response from origin server
+Test.ATSReplayTest(replay_file="replays/large_chunked.replay.yaml")
