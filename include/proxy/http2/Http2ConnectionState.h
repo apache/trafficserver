@@ -140,6 +140,7 @@ public:
   Http2StreamId get_latest_stream_id_in() const;
   Http2StreamId get_latest_stream_id_out() const;
   int           get_stream_requests() const;
+  Http2StreamId get_last_stream_id_tx() const;
   bool          get_goaway_sent() const;
   void          increment_stream_requests();
   bool          is_peer_concurrent_stream_ub() const;
@@ -451,6 +452,12 @@ inline bool
 Http2ConnectionState::get_goaway_sent() const
 {
   return goaway_sent;
+}
+
+inline Http2StreamId
+Http2ConnectionState::get_last_stream_id_tx() const
+{
+  return last_stream_id_tx;
 }
 
 inline void

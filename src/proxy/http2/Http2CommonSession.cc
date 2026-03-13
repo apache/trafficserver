@@ -371,7 +371,7 @@ Http2CommonSession::do_process_frame_read(int /* event ATS_UNUSED */, VIO *vio, 
     }
 
     if (this->connection_state.get_stream_error_rate() > std::min(1.0, Http2::stream_error_rate_threshold * 2.0) &&
-        !this->connection_state.get_goaway_sent()) {
+        (!this->connection_state.get_goaway_sent() || this->connection_state.get_last_stream_id_tx() == INT32_MAX)) {
       ip_port_text_buffer ipb;
       const char         *peer_ip = ats_ip_ntop(this->get_proxy_session()->get_remote_addr(), ipb, sizeof(ipb));
       SiteThrottledWarning("HTTP/2 session error peer_ip=%s session_id=%" PRId64
