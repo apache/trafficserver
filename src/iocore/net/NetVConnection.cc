@@ -32,7 +32,6 @@
 
 #include "iocore/net/NetVConnection.h"
 #include "iocore/eventsystem/IOBuffer.h"
-#include "records/RecCore.h"
 #include "tsutil/DbgCtl.h"
 #include <swoc/TextView.h>
 
