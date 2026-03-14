@@ -5242,7 +5242,7 @@ PROXY protocol Configuration
 
    Sets the maximum size of PROXY protocol header to receive.
    The default size is enough for PROXY protocol version 1. The size needs to be increased
-   if the version 2 is used with many TLV fields. Although you can set a numbere up to 65535,
+   if the version 2 is used with many TLV fields. Although you can set a number up to 65535,
    setting a large number can affect performance.
 
 

@@ -963,6 +963,7 @@ HttpConfig::startup()
 
   HttpEstablishStaticConfigLongLong(c.http_request_line_max_size, "proxy.config.http.request_line_max_size");
   HttpEstablishStaticConfigLongLong(c.http_hdr_field_max_size, "proxy.config.http.header_field_max_size");
+  HttpEstablishStaticConfigLongLong(c.pp_hdr_max_size, "proxy.config.proxy_protocol.max_header_size");
 
   HttpEstablishStaticConfigByte(c.disable_ssl_parenting, "proxy.config.http.parent_proxy.disable_connect_tunneling");
   HttpEstablishStaticConfigByte(c.oride.forward_connect_method, "proxy.config.http.forward_connect_method");
@@ -1275,6 +1276,7 @@ HttpConfig::reconfigure()
 
   params->http_request_line_max_size = m_master.http_request_line_max_size;
   params->http_hdr_field_max_size    = m_master.http_hdr_field_max_size;
+  params->pp_hdr_max_size            = m_master.pp_hdr_max_size;
 
   if (params->oride.connection_tracker_config.server_max > 0 &&
       params->oride.connection_tracker_config.server_max < params->oride.connection_tracker_config.server_min) {
