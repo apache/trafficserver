@@ -1557,7 +1557,7 @@ static constexpr RecordElement RecordsConfig[] =
   //# PROXY protocol
   //#
   //###########
-  {RECT_CONFIG, "proxy.config.proxy_protocol.max_header_size", RECD_INT, "109", RECU_RESTART_TS, RR_NULL, RECC_INT, "[109-65535]", RECA_NULL},
+  {RECT_CONFIG, "proxy.config.proxy_protocol.max_header_size", RECD_INT, "109", RECU_DYNAMIC, RR_NULL, RECC_INT, "[109-65535]", RECA_NULL},
 };
 // clang-format on
 
