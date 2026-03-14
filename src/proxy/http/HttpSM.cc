@@ -332,7 +332,7 @@ HttpSM::init(bool from_early_data)
 
   t_state.http_config_param = HttpConfig::acquire();
   // Acquire a lease on the global remap / rewrite table (stupid global name ...)
-  m_remap = rewrite_table->acquire();
+  m_remap = rewrite_table.load()->acquire();
 
   // Simply point to the global config for the time being, no need to copy this
   // entire struct if nothing is going to change it.

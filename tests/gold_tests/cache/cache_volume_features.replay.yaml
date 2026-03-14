@@ -1,0 +1,141 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+# This test proves that multi-parameter volume.config lines are parsed
+# correctly.  The generated volume.config lines are:
+#
+#   volume=1 scheme=http size=50% ram_cache_size=32M ram_cache_cutoff=8K
+#   volume=2 scheme=http size=50%
+#
+# All 5 key=value pairs on line 1 must be parsed from the single line.
+# If the inner loop's "tmp = line_end" advancement were broken (as claimed
+# in a PR review), only "volume=1" would be parsed, scheme and size would
+# be missing, and the volume would be rejected -- disabling the cache.
+autest:
+  description: "Test cache volume features: per-volume RAM cache and @volume= directive"
+
+  dns:
+    name: "dns"
+
+  server:
+    name: "server"
+
+  client:
+    name: "client"
+
+  ats:
+    name: "ts"
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: "cache|cache_hosting|ram_cache"
+      proxy.config.cache.ram_cache.size: 128M
+      proxy.config.cache.ram_cache_cutoff: 4K
+      proxy.config.http.insert_response_via_str: 0
+      proxy.config.cache.enable_read_while_writer: 0
+
+    volume_config:
+      # Volume 1 with all new parameters — 5 key=value pairs on one line
+      - volume: 1
+        scheme: "http"
+        size: "50%"
+        ram_cache_size: "32M"
+        ram_cache_cutoff: "8K"
+      # Volume 2 — simple line, no extra params
+      - volume: 2
+        scheme: "http"
+        size: "50%"
+
+    log_validation:
+      traffic_out:
+        excludes:
+          # No volume.config lines should be discarded
+          - expression: "discarding.*entry at line"
+            description: "No volume.config entries should be discarded"
+
+    remap_config:
+      - from: "http://volume1.example.com/"
+        to: "http://backend.ex:{SERVER_HTTP_PORT}/"
+        options:
+          - "@volume=1"
+      - from: "http://volume2.example.com/"
+        to: "http://backend.ex:{SERVER_HTTP_PORT}/"
+        options:
+          - "@volume=2"
+
+# All transactions in a single session for sequential execution.
+sessions:
+- transactions:
+
+  # Test 1: Request through volume 1 with per-volume RAM cache settings
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: "/test1"
+      headers:
+        fields:
+          - [Host, volume1.example.com]
+          - [X-Test-ID, "volume1-ramcache-test"]
+          - [uuid, 1]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+          - [Content-Type, "text/plain"]
+          - [Cache-Control, "max-age=3600"]
+          - [X-Volume-Test, "1"]
+      content:
+        data: "Content for volume 1 with custom RAM cache"
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+          - [X-Volume-Test, { value: "1", as: equal }]
+
+  # Test 2: Request through volume 2 (simple volume, no extra params)
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: "/test2"
+      headers:
+        fields:
+          - [Host, volume2.example.com]
+          - [X-Test-ID, "volume2-test"]
+          - [uuid, 2]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+          - [Content-Type, "text/plain"]
+          - [Cache-Control, "max-age=3600"]
+          - [X-Volume-Test, "2"]
+      content:
+        data: "Content for volume 2"
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+          - [X-Volume-Test, { value: "2", as: equal }]
+

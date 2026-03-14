@@ -1,0 +1,144 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+# Test that proxy.config.cache.default_volumes and @volume= work correctly.
+# Uses a single volume at 100% so it fits in the 256MB min_cfg storage
+# (128MB stripe rounding requires at least 128MB per volume).
+autest:
+  description: "Test proxy.config.cache.default_volumes configuration"
+
+  dns:
+    name: "dns"
+
+  server:
+    name: "server"
+
+  client:
+    name: "client"
+
+  ats:
+    name: "ts"
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: "cache|cache_hosting|cache_init"
+      proxy.config.http.insert_response_via_str: 0
+      proxy.config.cache.enable_read_while_writer: 0
+      # Set default volumes to volume 1
+      proxy.config.cache.default_volumes: "1"
+
+    volume_config:
+      # Single volume — multi-param line proves parsing works
+      - volume: 1
+        scheme: "http"
+        size: "100%"
+
+    remap_config:
+      # Default volume selection (uses default_volumes -> volume 1)
+      - from: "http://default.example.com/"
+        to: "http://backend.ex:{SERVER_HTTP_PORT}/"
+
+      # Explicit @volume=1 selection
+      - from: "http://volume1.example.com/"
+        to: "http://backend.ex:{SERVER_HTTP_PORT}/"
+        options:
+          - "@volume=1"
+
+# All transactions in a single session for sequential execution.
+sessions:
+- transactions:
+
+  # Test 1: Request using default_volumes
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: "/default_test"
+      headers:
+        fields:
+          - [Host, default.example.com]
+          - [X-Test-ID, "default-volumes-test"]
+          - [uuid, default-miss]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+          - [Content-Type, "text/plain"]
+          - [Cache-Control, "max-age=3600"]
+          - [X-Default-Volumes-Test, "success"]
+      content:
+        data: "Content using default_volumes"
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+          - [X-Default-Volumes-Test, { value: "success", as: equal }]
+
+  # Test 2: Request with explicit @volume=1
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: "/volume1_test"
+      headers:
+        fields:
+          - [Host, volume1.example.com]
+          - [X-Test-ID, "volume1-override-test"]
+          - [uuid, volume1-miss]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+          - [Content-Type, "text/plain"]
+          - [Cache-Control, "max-age=3600"]
+          - [X-Volume-Override, "volume1"]
+      content:
+        data: "Content explicitly on volume 1"
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+          - [X-Volume-Override, { value: "volume1", as: equal }]
+
+  # Test 3: Cache hit - verify content cached via default_volumes is served
+  - client-request:
+      delay: 100ms
+      method: "GET"
+      version: "1.1"
+      url: "/default_test"
+      headers:
+        fields:
+          - [Host, default.example.com]
+          - [X-Test-ID, "cache-hit-verify"]
+          - [uuid, default-hit]
+
+    # Server should not be contacted for a cache hit
+    server-response:
+      status: 404
+      reason: "Should not reach server"
+
+    proxy-response:
+      status: 200
+      content:
+        data: "Content using default_volumes"
+        verify: { as: equal }

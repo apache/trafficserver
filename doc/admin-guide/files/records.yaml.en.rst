@@ -2677,6 +2677,34 @@ Cache Control
    used in determining the number of :term:`directory buckets <directory bucket>`
    to allocate for the in-memory cache directory.
 
+.. ts:cv:: CONFIG proxy.config.cache.default_volumes STRING ""
+
+   Specifies a comma-separated list of cache volume numbers to use as the default
+   for cache stripe selection when no more specific volume configuration applies.
+   For example, ``"1,2"`` would use volumes 1 and 2 as the default.
+
+   The volume selection priority order is:
+
+   1. ``@volume=`` directive in :file:`remap.config` (highest priority)
+   2. Hostname matching in :file:`hosting.config`
+   3. ``proxy.config.cache.default_volumes`` (if non-empty)
+   4. All available cache volumes (lowest priority)
+
+   An empty string (the default) disables this feature, causing |TS| to fall
+   back directly to using all available volumes when no other configuration
+   matches.
+
+   This is useful for scenarios where you want to restrict default caching to
+   specific volumes without configuring hostname patterns in :file:`hosting.config`.
+   For example, you might want to reserve certain volumes for specific remap rules
+   while having a different set of default volumes for all other traffic.
+
+.. topic:: Example
+
+   Assign volumes 1 and 2 as defaults for general traffic ::
+
+      CONFIG proxy.config.cache.default_volumes STRING "1,2"
+
 .. ts:cv:: CONFIG proxy.config.cache.permit.pinning INT 0
    :reloadable:
 
@@ -2817,12 +2845,22 @@ RAM Cache
    Alternatively, it can be set to a fixed value such as
    **20GB** (21474836480)
 
+   This global setting can be overridden on a per-volume basis using the
+   ``ram_cache_size`` parameter in :file:`volume.config`. Per-volume
+   allocations are subtracted from the total RAM cache size before
+   distributing the remainder among volumes without explicit settings.
+
 .. ts:cv:: CONFIG proxy.config.cache.ram_cache_cutoff INT 4194304
 
    Objects greater than this size will not be kept in the RAM cache.
    This should be set high enough to keep objects accessed frequently
    in memory in order to improve performance.
    **4MB** (4194304)
+
+   This global setting can be overridden on a per-volume basis using the
+   ``ram_cache_cutoff`` parameter in :file:`volume.config`. When set,
+   the per-volume cutoff takes precedence over this global setting for
+   that specific volume.
 
 .. ts:cv:: CONFIG proxy.config.cache.ram_cache.algorithm INT 1
 
