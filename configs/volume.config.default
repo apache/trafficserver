@@ -29,6 +29,37 @@
 #  disk (assuming each disk has enough free space available).
 #
 # To create one volume of size 10% of the total cache space and
-# another 1 Gig  volume,
+# another 1 Gig volume,
 #  volume=1 scheme=http size=10%
 #  volume=2 scheme=http size=1024
+#
+# Additional optional parameters:
+#
+#  ramcache=true/false
+#    Enable or disable RAM cache for this volume (default: true)
+#
+#  ram_cache_size=<size>
+#    Allocate a dedicated RAM cache pool for this volume (e.g., 512M, 2G)
+#    This amount is automatically subtracted from the global ram_cache.size
+#    setting, with the remainder shared among other volumes.
+#
+#  ram_cache_cutoff=<size>
+#    Override the global ram_cache_cutoff for this volume (e.g., 64K, 1M)
+#    Objects larger than this will not be stored in RAM cache.
+#
+#  avg_obj_size=<size>
+#    Override the global min_average_object_size for this volume
+#
+#  fragment_size=<size>
+#    Override the global target_fragment_size for this volume (max: 4MB)
+#
+# Advanced RAM cache configuration examples:
+#
+# Example 1: Volume with dedicated 2GB RAM cache
+#  volume=1 scheme=http size=40% ram_cache_size=2G
+#
+# Example 2: Small objects with custom cutoff and dedicated RAM
+#  volume=2 scheme=http size=20% ram_cache_size=512M ram_cache_cutoff=64K
+#
+# Example 3: Large media with higher cutoff (shares remaining RAM pool)
+#  volume=3 scheme=http size=40% ram_cache_cutoff=1M

@@ -53,6 +53,15 @@ def configure_ats(obj: 'TestRun', server: 'Process', ats_config: dict, dns: Opti
     if logging_yaml != None:
         ts.Disk.logging_yaml.AddLines(yaml.dump(logging_yaml).split('\n'))
 
+    # Configure volume.config if specified.
+    volume_config = ats_config.get('volume_config', [])
+    for vol in volume_config:
+        parts = [f"volume={vol['volume']}", f"scheme={vol['scheme']}", f"size={vol['size']}"]
+        for opt_key in ('ramcache', 'ram_cache_size', 'ram_cache_cutoff', 'avg_obj_size', 'fragment_size'):
+            if opt_key in vol:
+                parts.append(f"{opt_key}={vol[opt_key]}")
+        ts.Disk.volume_config.AddLine(' '.join(parts))
+
     remap_config = ats_config.get('remap_config', [])
     for remap_entry in remap_config:
         if isinstance(remap_entry, str):
@@ -63,11 +72,14 @@ def configure_ats(obj: 'TestRun', server: 'Process', ats_config: dict, dns: Opti
             to_url = to_url.replace('{SERVER_HTTP_PORT}', str(server.Variables.http_port))
             to_url = to_url.replace('{SERVER_HTTPS_PORT}', str(server.Variables.https_port))
             plugins = remap_entry.get('plugins', [])
+            options = remap_entry.get('options', [])
             line = f'map {from_url} {to_url}'
             for plugin in plugins:
                 line += f' @plugin={plugin["name"]}'
                 for arg in plugin["args"]:
                     line += f' @pparam={arg}'
+            for option in options:
+                line += f' {option}'
             ts.Disk.remap_config.AddLine(line)
     if dns:
         ts.Disk.records_config.update(
