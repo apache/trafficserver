@@ -38,6 +38,7 @@ from hrw4u.visitor_base import BaseHRWVisitor
 from hrw4u.validation import Validator
 from hrw4u.procedures import resolve_use_path
 from hrw4u.sandbox import SandboxConfig, SandboxDenialError
+import hrw4u.types as types
 
 _regex_validator = Validator.regex_pattern()
 
@@ -91,6 +92,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         self._proc_call_stack: list[str] = []
         self._proc_search_paths: list[Path] = list(proc_search_paths) if proc_search_paths else []
         self._source_text: str = ""
+        self._current_var_scope: types.VarScope = types.VarScope.TXN
 
     def _sandbox_check(self, ctx, check_fn) -> bool:
         """Run a sandbox check, trapping any denial error into the error collector.
@@ -725,6 +727,8 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         with self.debug_context("visitSection"):
             if ctx.varSection():
                 return self.visitVarSection(ctx.varSection())
+            if ctx.sessionVarSection():
+                return self.visitSessionVarSection(ctx.sessionVarSection())
 
             hook = None
             with self.trap(ctx):
@@ -822,6 +826,23 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                 return
             if not self._sandbox_check(ctx, lambda: self._sandbox.check_language("variables")):
                 return
+            self._current_var_scope = types.VarScope.TXN
+            self.visit(ctx.variables())
+
+    def visitSessionVarSection(self, ctx) -> None:
+        if self.current_section is not None:
+            error = hrw4u_error(self.filename, ctx, "Session variable section must be first in a section")
+            if self.error_collector:
+                self.error_collector.add_error(error)
+                return
+            else:
+                raise error
+        with self.debug_context("visitSessionVarSection"):
+            if not self._sandbox_check(ctx, lambda: self._sandbox.check_section("VARS")):
+                return
+            if not self._sandbox_check(ctx, lambda: self._sandbox.check_language("variables")):
+                return
+            self._current_var_scope = types.VarScope.SESSION
             self.visit(ctx.variables())
 
     def visitCommentLine(self, ctx) -> None:
@@ -924,7 +945,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                 if '.' in name or ':' in name:
                     raise SymbolResolutionError("variable", f"Variable name '{name}' cannot contain '.' or ':' characters")
 
-                symbol = self.symbol_resolver.declare_variable(name, type_name, explicit_slot)
+                symbol = self.symbol_resolver.declare_variable(name, type_name, explicit_slot, self._current_var_scope)
                 slot_info = f" @{explicit_slot}" if explicit_slot is not None else ""
                 self._dbg(f"bind `{name}' to {symbol}{slot_info}")
             except Exception as e:

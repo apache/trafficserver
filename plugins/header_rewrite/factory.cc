@@ -87,6 +87,12 @@ operator_factory(const std::string &op)
     o = new OperatorSetStateInt8();
   } else if (op == "set-state-int16") {
     o = new OperatorSetStateInt16();
+  } else if (op == "set-session-flag") {
+    o = new OperatorSetStateFlag(TS_USER_ARGS_SSN);
+  } else if (op == "set-session-int8") {
+    o = new OperatorSetStateInt8(TS_USER_ARGS_SSN);
+  } else if (op == "set-session-int16") {
+    o = new OperatorSetStateInt16(TS_USER_ARGS_SSN);
   } else if (op == "set-effective-address") {
     o = new OperatorSetEffectiveAddress();
   } else if (op == "set-next-hop-strategy") {
@@ -191,6 +197,12 @@ condition_factory(const std::string &cond)
     c = new ConditionStateInt8();
   } else if (c_name == "STATE-INT16") {
     c = new ConditionStateInt16();
+  } else if (c_name == "SESSION-FLAG") {
+    c = new ConditionStateFlag(TS_USER_ARGS_SSN);
+  } else if (c_name == "SESSION-INT8") {
+    c = new ConditionStateInt8(TS_USER_ARGS_SSN);
+  } else if (c_name == "SESSION-INT16") {
+    c = new ConditionStateInt16(TS_USER_ARGS_SSN);
   } else if (c_name == "LAST-CAPTURE") {
     c = new ConditionLastCapture();
   } else {

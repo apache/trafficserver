@@ -21,6 +21,7 @@ grammar hrw4u;
 // Lexer Rules
 // -----------------------------
 VARS          : 'VARS';
+SESSION_VARS  : 'SESSION_VARS';
 IF            : 'if';
 ELIF          : 'elif';
 ELSE          : 'else';
@@ -131,11 +132,16 @@ paramRef
 
 section
     : varSection
+    | sessionVarSection
     | name=IDENT LBRACE sectionBody+ RBRACE
     ;
 
 varSection
     : VARS LBRACE variables RBRACE
+    ;
+
+sessionVarSection
+    : SESSION_VARS LBRACE variables RBRACE
     ;
 
 sectionBody
