@@ -5239,6 +5239,7 @@ PROXY protocol Configuration
 =============================
 
 .. ts:cv:: CONFIG proxy.config.proxy_protocol.max_header_size INT 109
+   :reloadable:
 
    Sets the maximum size of PROXY protocol header to receive.
    The default size is enough for PROXY protocol version 1. The size needs to be increased
