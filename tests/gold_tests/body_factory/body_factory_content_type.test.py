@@ -81,7 +81,7 @@ class BodyFactoryContentTypeTest:
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.TimeOut = 5
         tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-            'Content-Type: text/html; charset=utf-8', 'Default body factory should produce text/html with charset')
+            'Content-Type: text/html', 'Default body factory should produce text/html')
         tr.Processes.Default.Streams.stdout += Testers.ContainsExpression('HTTP/1.1 404', 'Unmapped request should get 404')
         tr.StillRunningAfter = self._ts_default
 

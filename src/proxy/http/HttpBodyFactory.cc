@@ -182,8 +182,15 @@ HttpBodyFactory::fabricate_with_old_api(const char *type, HttpTransact::State *c
   if (buffer) { // got an instantiated template
     if (!plain_flag) {
       snprintf(content_language_out_buf, content_language_buf_size, "%s", lang_ptr);
-      const char *mime_type = content_type_ptr ? content_type_ptr : "text/html";
-      snprintf(content_type_out_buf, content_type_buf_size, "%s; charset=%s", mime_type, charset_ptr);
+      if (content_type_ptr) {
+        // Custom Content-Type from .body_factory_info: include charset parameter
+        snprintf(content_type_out_buf, content_type_buf_size, "%s; charset=%s", content_type_ptr, charset_ptr);
+      } else {
+        // Default: just "text/html" -- charset is intentionally omitted to
+        // preserve backward-compatible Content-Type header behavior.
+        // setup_internal_transfer() won't overwrite since it's already set.
+        snprintf(content_type_out_buf, content_type_buf_size, "text/html");
+      }
     }
 
     if (enable_logging) {
