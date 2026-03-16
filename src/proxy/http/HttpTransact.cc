@@ -3403,6 +3403,12 @@ HttpTransact::HandleCacheOpenReadMiss(State *s)
     TxnDbg(dbg_ctl_http_trans, "READ_RETRY cache read failed, bypassing cache");
     s->cache_info.stale_fallback = nullptr; // Clear unused fallback
     s->cache_info.action         = CacheAction_t::NO_ACTION;
+  } else if (s->cache_info.write_lock_state == CacheWriteLock_t::SUCCESS && s->cache_info.action == CacheAction_t::WRITE) {
+    // Origin retry paths such as TSHttpTxnServerAddrSet() can loop back through
+    // HandleCacheOpenReadMiss after we already own the cache write lock. This
+    // is still the same request, so keep the existing write lock instead of
+    // re-preparing a write as if this were a redirect or a new cache miss.
+    TxnDbg(dbg_ctl_http_trans, "Reusing existing cache write lock while retrying origin selection");
   } else {
     HttpTransact::set_cache_prepare_write_action_for_new_request(s);
   }
