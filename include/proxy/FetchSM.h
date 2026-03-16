@@ -165,7 +165,7 @@ private:
   HTTPParser           http_parser;
   HTTPHdr              client_response_hdr;
   ChunkedHandler       chunked_handler;
-  TSFetchEvent         callback_events{};
+  TSFetchEvent         callback_events{}; // TODO: ATS 11 - add default member initializers to TSFetchEvent in apidefs.h (C API)
   TSFetchWakeUpOptions callback_options    = NO_CALLBACK;
   bool                 req_finished        = false;
   bool                 header_done         = false;
