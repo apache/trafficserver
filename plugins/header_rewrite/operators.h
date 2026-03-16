@@ -456,8 +456,8 @@ protected:
   bool exec(const Resources &res) const override;
 
 private:
-  bool           _flag = false;
-  TSHttpCntlType _cntl_qual;
+  bool           _flag      = false;
+  TSHttpCntlType _cntl_qual = TS_HTTP_CNTL_LOGGING_MODE;
 };
 
 class OperatorSetPluginCntl : public Operator
@@ -487,8 +487,8 @@ protected:
   }
 
 private:
-  PluginCtrl _name;
-  int        _value;
+  PluginCtrl _name  = PluginCtrl::TIMEZONE;
+  int        _value = 0;
 };
 
 class RemapPluginInst; // Opaque to the HRW operator, but needed in the implementation.
