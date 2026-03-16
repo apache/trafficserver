@@ -658,7 +658,7 @@ public:
     bool             handled = false;
     TSResponseAction action;
 
-    _ResponseAction() {}
+    _ResponseAction() : action{} {}
   };
 
   struct State {
