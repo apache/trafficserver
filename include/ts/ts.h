@@ -1334,6 +1334,57 @@ int TSVConnIsSsl(TSVConn sslp);
 int         TSVConnProvidedSslCert(TSVConn sslp);
 const char *TSVConnSslSniGet(TSVConn sslp, int *length);
 
+/**
+    Retrieve TLS Client Hello information from an SSL virtual connection.
+
+    This function extracts TLS Client Hello data from a TLS handshake.
+    The returned object provides access to version, cipher suites, and extensions
+    in a way that is portable across both BoringSSL and OpenSSL implementations.
+
+    IMPORTANT: This function must be called during the TS_SSL_CLIENT_HELLO_HOOK.
+    The underlying SSL context may not be available at other hooks, particularly
+    for BoringSSL where the SSL_CLIENT_HELLO structure is only valid during
+    specific callback functions. Calling this function outside of the client
+    hello hook may result in unavailable object being returned.
+
+    @param[in] sslp The SSL virtual connection handle. Must not be nullptr.
+    @return A TSClientHello object containing Client Hello data.
+
+    @see TSClientHelloExtensionGet
+ */
+TSClientHello TSVConnClientHelloGet(TSVConn sslp);
+
+/**
+    Retrieve a specific TLS extension from the Client Hello.
+
+    This function looks up a TLS extension by its type (e.g., 0x10 for ALPN,
+    0x00 for SNI) and returns a pointer to its data. The lookup is performed
+    using SSL library-specific functions that work with both BoringSSL and
+    OpenSSL without requiring conditional compilation in the plugin.
+
+    The returned buffer is still owned by the underlying SSL context and must
+    not be freed by the caller. The buffer is valid only in the condition where
+    you can get a TSClientHello object from an SSL virtual connection.
+
+    @param[in]  ch The Client Hello object obtained from TSVConnClientHelloGet().
+    @param[in]  type The TLS extension type to retrieve.
+    @param[out] out Pointer to receive the extension data buffer. Must not be nullptr.
+    @param[out] outlen Pointer to receive the length of the extension data in bytes.
+                  Must not be nullptr.
+
+    @return TS_SUCCESS if the extension was found and retrieved successfully.
+            TS_ERROR if the extension is not present, or if any parameter is nullptr,
+            or if an error occurred during lookup.
+
+    @see TSVConnClientHelloGet
+ */
+TSReturnCode TSClientHelloExtensionGet(TSClientHello ch, unsigned int type, const unsigned char **out, size_t *outlen);
+
+TSSslSession TSSslSessionGet(const TSSslSessionID *session_id);
+int          TSSslSessionGetBuffer(const TSSslSessionID *session_id, char *buffer, int *len_ptr);
+TSReturnCode TSSslSessionInsert(const TSSslSessionID *session_id, TSSslSession add_session, TSSslConnection ssl_conn);
+TSReturnCode TSSslSessionRemove(const TSSslSessionID *session_id);
+
 /* --------------------------------------------------------------------------
    HTTP transactions */
 void      TSHttpTxnHookAdd(TSHttpTxn txnp, TSHttpHookID id, TSCont contp);
@@ -3219,3 +3270,47 @@ TSReturnCode TSVConnPPInfoGet(TSVConn vconn, uint16_t key, const char **value, i
 
 */
 TSReturnCode TSVConnPPInfoIntGet(TSVConn vconn, uint16_t key, TSMgmtInt *value);
+
+/**
+   Registers a custom log field, or modifies an existing log field with a new definition.
+
+   @param name a human friendly name
+   @param symbol a symbol to use on the config file
+   @param type a type of the new log field
+   @param marshal_cb a callback function to marshal log  value
+   @param unmarshal_cb a callback function to unmarshal log value
+   @param replace a flag to allow replacing an existing log field
+
+   @return @c TS_SCCESS if the registration successes, TS_ERROR otherwise
+*/
+TSReturnCode TSLogFieldRegister(std::string_view name, std::string_view symbol, TSLogType type, TSLogMarshalCallback marshal_cb,
+                                TSLogUnmarshalCallback unmarshal_cb, bool replace = false);
+/**
+   Helper function to marshal a string
+*/
+int TSLogStringMarshal(char *buf, std::string_view str);
+
+/**
+   Helper function to marshal an integer
+*/
+int TSLogIntMarshal(char *buf, int64_t value);
+
+/**
+   Helper function to marshal an address
+*/
+int TSLogAddrMarshal(char *buf, sockaddr *addr);
+
+/**
+   Helper function to unmarshal a string
+*/
+std::tuple<int, int> TSLogStringUnmarshal(char **buf, char *dest, int len);
+
+/**
+   Helper function to unmarshal an integer
+*/
+std::tuple<int, int> TSLogIntUnmarshal(char **buf, char *dest, int len);
+
+/**
+   Helper function to unmarshal an address
+*/
+std::tuple<int, int> TSLogAddrUnmarshal(char **buf, char *dest, int len);

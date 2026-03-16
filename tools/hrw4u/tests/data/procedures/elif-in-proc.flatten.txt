@@ -1,0 +1,20 @@
+REMAP {
+    if inbound.req.X-Priority == "high" {
+        inbound.req.X-Class = "urgent";
+    } elif inbound.req.X-Priority == "medium" {
+        inbound.req.X-Class = "normal";
+    } else {
+        inbound.req.X-Class = "low";
+    }
+    inbound.req.X-Classified-By = "remap-classifier";
+    if inbound.req.X-Special == "yes" {
+        if inbound.req.X-Priority == "high" {
+            inbound.req.X-Class = "urgent";
+        } elif inbound.req.X-Priority == "medium" {
+            inbound.req.X-Class = "normal";
+        } else {
+            inbound.req.X-Class = "low";
+        }
+        inbound.req.X-Classified-By = "special";
+    }
+}

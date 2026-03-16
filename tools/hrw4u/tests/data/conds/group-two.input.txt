@@ -1,0 +1,5 @@
+SEND_RESPONSE {
+    if (inbound.req.X-Left-A && inbound.req.X-Left-B) || (inbound.req.X-Right-A && inbound.req.X-Right-B) {
+        inbound.resp.X-Result = "matched";
+    }
+}

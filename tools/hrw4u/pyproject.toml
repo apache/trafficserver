@@ -20,7 +20,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "hrw4u"
-version = "1.4.1"
+version = "1.5.0"
 description = "HRW4U CLI tool for Apache Traffic Server header rewrite rules"
 authors = [
     {name = "Leif Hedstrom", email = "leif@apache.org"}
@@ -42,6 +42,7 @@ classifiers = [
 ]
 dependencies = [
     "antlr4-python3-runtime>=4.9,<5.0",
+    "pyyaml>=6.0,<7.0",
     "rapidfuzz>=3.0,<4.0",
 ]
 
@@ -76,6 +77,8 @@ markers = [
     "examples: marks tests for all header_rewrite docs examples",
     "reverse: marks tests for reverse conversion (header_rewrite -> hrw4u)",
     "ast: marks tests for AST validation",
+    "procedures: marks tests for procedure expansion",
+    "sandbox: marks tests for sandbox policy enforcement",
 ]
 
 [dependency-groups]

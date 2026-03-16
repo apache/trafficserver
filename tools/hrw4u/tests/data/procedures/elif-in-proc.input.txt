@@ -1,0 +1,8 @@
+use test::classify-request
+
+REMAP {
+    test::classify-request("remap-classifier");
+    if inbound.req.X-Special == "yes" {
+        test::classify-request("special");
+    }
+}

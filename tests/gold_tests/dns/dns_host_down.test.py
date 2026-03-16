@@ -55,24 +55,13 @@ class DownCachedOriginServerTest:
                 'proxy.config.hostdb.host_file.path': os.path.join(Test.TestDirectory, "hosts_file"),
             })
 
-    # Even when the origin server is down, SM will return a hit-fresh domain from HostDB.
-    # After request has failed, SM should mark the IP as down
     def _test_host_mark_down(self):
         tr = Test.AddTestRun()
 
         tr.Processes.Default.StartBefore(self._server)
         tr.Processes.Default.StartBefore(self._ts)
 
-        tr.AddVerifierClientProcess(
-            "client-1", DownCachedOriginServerTest.replay_file, http_ports=[self._ts.Variables.port], other_args='--keys 1')
-
-    # After host has been marked down from previous test, HostDB should not return
-    # the host as available and DNS lookup should fail.
-    def _test_host_unreachable(self):
-        tr = Test.AddTestRun()
-
-        tr.AddVerifierClientProcess(
-            "client-2", DownCachedOriginServerTest.replay_file, http_ports=[self._ts.Variables.port], other_args='--keys 2')
+        tr.AddVerifierClientProcess("client-1", DownCachedOriginServerTest.replay_file, http_ports=[self._ts.Variables.port])
 
     # Verify error log marking host down exists
     def _test_error_log(self):
@@ -86,7 +75,6 @@ class DownCachedOriginServerTest:
 
     def run(self):
         self._test_host_mark_down()
-        self._test_host_unreachable()
         self._test_error_log()
 
 

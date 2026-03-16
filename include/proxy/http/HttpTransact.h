@@ -102,6 +102,7 @@ using ink_time_t = time_t;
 
 struct HttpConfigParams;
 class HttpSM;
+struct CacheHostRecord;
 
 #include "iocore/net/ConnectionTracker.h"
 #include "tscore/InkErrno.h"
@@ -487,11 +488,14 @@ public:
     HTTPInfo         transform_store;
     CacheDirectives  directives;
     HTTPInfo        *object_read          = nullptr;
+    HTTPInfo        *stale_fallback       = nullptr; // Saved stale object for action 6 fallback during retry
     CacheWriteLock_t write_lock_state     = CacheWriteLock_t::INIT;
     int              lookup_count         = 0;
     SquidHitMissCode hit_miss_code        = SQUID_MISS_NONE;
     URL             *parent_selection_url = nullptr;
     URL              parent_selection_url_storage;
+
+    const CacheHostRecord *volume_host_rec = nullptr;
 
     _CacheLookupInfo() {}
   };
@@ -703,10 +707,20 @@ public:
     ///   configuration.
     bool is_cacheable_due_to_negative_caching_configuration = false;
 
+    /// Set when stale content is served due to cache write lock failure.
+    /// Used to correctly attribute statistics and VIA strings.
+    bool serving_stale_due_to_write_lock = false;
+
+    /// Set when CACHE_LOOKUP_COMPLETE hook is deferred for action 5/6.
+    /// The hook will fire later with the final result once we know if
+    /// stale content will be served or if we're going to origin.
+    bool cache_lookup_complete_deferred = false;
+
     MgmtByte cache_open_write_fail_action = 0;
 
-    HttpConfigParams           *http_config_param = nullptr;
-    CacheLookupInfo             cache_info;
+    HttpConfigParams *http_config_param = nullptr;
+    CacheLookupInfo   cache_info;
+
     ResolveInfo                 dns_info;
     RedirectInfo                redirect_info;
     ConnectionTracker::TxnState outbound_conn_track_state;
@@ -998,9 +1012,12 @@ public:
   static void HandleCacheOpenReadHitFreshness(State *s);
   static void HandleCacheOpenReadHit(State *s);
   static void HandleCacheOpenReadMiss(State *s);
+  static void HandleCacheOpenReadMissGoToOrigin(State *s);
   static void set_cache_prepare_write_action_for_new_request(State *s);
   static void build_response_from_cache(State *s, HTTPWarningCode warning_code);
   static void handle_cache_write_lock(State *s);
+  static void handle_cache_write_lock_go_to_origin(State *s);
+  static void handle_cache_write_lock_go_to_origin_continue(State *s);
   static void HandleResponse(State *s);
   static void HandleUpdateCachedObject(State *s);
   static void HandleUpdateCachedObjectContinue(State *s);
@@ -1093,7 +1110,8 @@ public:
   static void             handle_response_keep_alive_headers(State *s, HTTPVersion ver, HTTPHdr *heads);
   static int              get_max_age(HTTPHdr *response);
   static int              calculate_document_freshness_limit(State *s, HTTPHdr *response, time_t response_date, bool *heuristic);
-  static Freshness_t      what_is_document_freshness(State *s, HTTPHdr *client_request, HTTPHdr *cached_obj_response);
+  static Freshness_t      what_is_document_freshness(State *s, HTTPHdr *client_request, HTTPHdr *cached_obj_response,
+                                                     bool evaluate_actual_freshness = false);
   static Authentication_t AuthenticationNeeded(const OverridableHttpConfigParams *p, HTTPHdr *client_request,
                                                HTTPHdr *obj_response);
   static void             handle_parent_down(State *s);

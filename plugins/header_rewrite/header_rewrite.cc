@@ -329,8 +329,9 @@ RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook, c
               if (group_stack.empty()) {
                 throw std::runtime_error("unmatched %{GROUP}");
               } else {
-                delete cond; // We don't care about the closing group condition, it's a no-op
-                ngrp  = group;
+                ngrp = group;
+                ngrp->set_mods(cond->mods());
+                delete cond;
                 group = group_stack.top();
                 group_stack.pop();
                 group->add_condition(ngrp); // Add the previous group to the current group's conditions

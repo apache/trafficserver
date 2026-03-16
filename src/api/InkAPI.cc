@@ -26,10 +26,12 @@
 #include <unordered_map>
 #include <string_view>
 #include <string>
+#include <charconv>
 
 #include "iocore/net/NetVConnection.h"
 #include "iocore/net/NetHandler.h"
 #include "iocore/net/UDPNet.h"
+#include "tscore/ink_config.h"
 #include "tscore/ink_platform.h"
 #include "tscore/ink_base64.h"
 #include "tscore/Encoding.h"
@@ -66,6 +68,7 @@
 #include "iocore/net/SSLAPIHooks.h"
 #include "iocore/net/SSLDiags.h"
 #include "iocore/net/TLSBasicSupport.h"
+#include "iocore/net/TLSSNISupport.h"
 #include "iocore/eventsystem/ConfigProcessor.h"
 #include "proxy/Plugin.h"
 #include "proxy/logging/LogObject.h"
@@ -7917,6 +7920,37 @@ TSVConnSslSniGet(TSVConn sslp, int *length)
   return server_name;
 }
 
+TSClientHello
+TSVConnClientHelloGet(TSVConn sslp)
+{
+  NetVConnection *netvc = reinterpret_cast<NetVConnection *>(sslp);
+  if (netvc == nullptr) {
+    return nullptr;
+  }
+
+  if (auto snis = netvc->get_service<TLSSNISupport>(); snis) {
+    TLSSNISupport::ClientHello *client_hello = snis->get_client_hello();
+    if (client_hello == nullptr) {
+      return nullptr;
+    }
+
+    // Wrap the raw object in the accessor and return
+    return TSClientHello(client_hello);
+  }
+
+  return nullptr;
+}
+
+TSReturnCode
+TSClientHelloExtensionGet(TSClientHello ch, unsigned int type, const unsigned char **out, size_t *outlen)
+{
+  if (static_cast<TLSSNISupport::ClientHello *>(ch._get_internal())->getExtension(type, out, outlen) == 1) {
+    return TS_SUCCESS;
+  }
+
+  return TS_ERROR;
+}
+
 TSSslVerifyCTX
 TSVConnSslVerifyCTXGet(TSVConn sslp)
 {
@@ -8959,4 +8993,213 @@ void
 TSConnectionLimitExemptListClear()
 {
   ConnectionTracker::clear_client_exempt_list();
+}
+
+TSReturnCode
+TSLogFieldRegister(std::string_view name, std::string_view symbol, TSLogType type, TSLogMarshalCallback marshal_cb,
+                   TSLogUnmarshalCallback unmarshal_cb, bool replace)
+{
+  if (auto ite = Log::field_symbol_hash.find(symbol.data()); ite != Log::field_symbol_hash.end()) {
+    if (replace) {
+      // Symbol is registered and the plugin wants to replace it.
+      // Need to unregister the existing entry first.
+      Log::global_field_list.remove(ite->second);
+      Log::field_symbol_hash.erase(ite);
+    } else {
+      // Symbol conflict.
+      return TS_ERROR;
+    }
+  }
+
+  LogField *field = new LogField(name.data(), symbol.data(), static_cast<LogField::Type>(type),
+                                 reinterpret_cast<LogField::CustomMarshalFunc>(marshal_cb), unmarshal_cb);
+  Log::global_field_list.add(field, false);
+  Log::field_symbol_hash.emplace(symbol.data(), field);
+
+  return TS_SUCCESS;
+}
+
+int
+TSLogStringMarshal(char *buf, std::string_view str)
+{
+  if (buf) {
+    ink_strlcpy(buf, str.data(), str.length() + 1);
+  }
+  return str.length() + 1;
+}
+
+std::tuple<int, int>
+TSLogStringUnmarshal(char **buf, char *dest, int len)
+{
+  // We cannot use LogAccess::unmarshal_str, etc. here because those internal
+  // functions take care of log buffer alignment. This function needs to be
+  // implemented as if it's a piece of code in plugin code, which is unaware
+  // of the alignment.
+  if (int l = strlen(*buf); l < len) {
+    memcpy(dest, *buf, l);
+    return {l, l};
+  } else {
+    return {-1, -1};
+  }
+}
+
+int
+TSLogIntMarshal(char *buf, int64_t value)
+{
+  if (buf) {
+    *(reinterpret_cast<int64_t *>(buf)) = value;
+  }
+  return sizeof(int64_t);
+}
+
+std::tuple<int, int>
+TSLogIntUnmarshal(char **buf, char *dest, int len)
+{
+  int64_t val     = *(reinterpret_cast<int64_t *>(*buf));
+  auto [end, err] = std::to_chars(dest, dest + len, val);
+  if (err == std::errc()) {
+    *end = '\0';
+    return {sizeof(uint64_t), end - dest};
+  }
+
+  return {-1, -1};
+}
+
+int
+TSLogAddrMarshal(char *buf, sockaddr *addr)
+{
+  LogFieldIpStorage data;
+  int               len = sizeof(data._ip);
+
+  if (nullptr == addr) {
+    data._ip._family = AF_UNSPEC;
+  } else if (ats_is_ip4(addr)) {
+    if (buf) {
+      data._ip4._family = AF_INET;
+      data._ip4._addr   = ats_ip4_addr_cast(addr);
+    }
+    len = sizeof(data._ip4);
+  } else if (ats_is_ip6(addr)) {
+    if (buf) {
+      data._ip6._family = AF_INET6;
+      data._ip6._addr   = ats_ip6_addr_cast(addr);
+    }
+    len = sizeof(data._ip6);
+  } else if (ats_is_unix(addr)) {
+    if (buf) {
+      data._un._family = AF_UNIX;
+      strncpy(data._un._path, ats_unix_cast(addr)->sun_path, TS_UNIX_SIZE);
+    }
+    len = sizeof(data._un);
+  } else {
+    data._ip._family = AF_UNSPEC;
+  }
+
+  if (buf) {
+    memcpy(buf, &data, len);
+  }
+  return len;
+}
+
+std::tuple<int, int>
+TSLogAddrUnmarshal(char **buf, char *dest, int len)
+{
+  IpEndpoint endpoint;
+  int        read_len = sizeof(LogFieldIp);
+
+  LogFieldIp *raw = reinterpret_cast<LogFieldIp *>(*buf);
+  if (AF_INET == raw->_family) {
+    LogFieldIp4 *ip4 = static_cast<LogFieldIp4 *>(raw);
+    ats_ip4_set(&endpoint, ip4->_addr);
+    read_len = sizeof(*ip4);
+  } else if (AF_INET6 == raw->_family) {
+    LogFieldIp6 *ip6 = static_cast<LogFieldIp6 *>(raw);
+    ats_ip6_set(&endpoint, ip6->_addr);
+    read_len = sizeof(*ip6);
+  } else if (AF_UNIX == raw->_family) {
+    LogFieldUn *un = static_cast<LogFieldUn *>(raw);
+    ats_unix_set(&endpoint, un->_path, TS_UNIX_SIZE);
+    read_len = sizeof(*un);
+  } else {
+    ats_ip_invalidate(&endpoint);
+  }
+
+  if (!ats_is_ip(&endpoint) && !ats_is_unix(&endpoint)) {
+    dest[0] = '0';
+    dest[1] = '\0';
+    return {-1, 1};
+  } else if (ats_ip_ntop(&endpoint, dest, len)) {
+    return {read_len, static_cast<int>(::strlen(dest))};
+  }
+
+  return {-1, -1};
+}
+
+bool
+TSClientHello::is_available() const
+{
+  return static_cast<bool>(*this);
+}
+
+uint16_t
+TSClientHello::get_version() const
+{
+  return static_cast<TLSSNISupport::ClientHello *>(_client_hello)->getVersion();
+}
+
+const uint8_t *
+TSClientHello::get_cipher_suites() const
+{
+  return reinterpret_cast<const uint8_t *>(static_cast<TLSSNISupport::ClientHello *>(_client_hello)->getCipherSuites().data());
+}
+
+size_t
+TSClientHello::get_cipher_suites_len() const
+{
+  return static_cast<TLSSNISupport::ClientHello *>(_client_hello)->getCipherSuites().length();
+}
+
+TSClientHello::TSExtensionTypeList::Iterator::Iterator(const void *ite)
+{
+  static_assert(sizeof(_real_iterator) >= sizeof(TLSSNISupport::ClientHello::ExtensionIdIterator));
+
+  ink_assert(_real_iterator);
+  ink_assert(ite);
+  memcpy(_real_iterator, ite, sizeof(TLSSNISupport::ClientHello::ExtensionIdIterator));
+}
+
+TSClientHello::TSExtensionTypeList::Iterator
+TSClientHello::TSExtensionTypeList::begin()
+{
+  ink_assert(_ch);
+  auto ch  = static_cast<TLSSNISupport::ClientHello *>(_ch);
+  auto ite = ch->begin();
+  // The temporal pointer is for the memcpy in the constructor. It's only used in the constructor.
+  return TSClientHello::TSExtensionTypeList::Iterator(&ite);
+}
+
+TSClientHello::TSExtensionTypeList::Iterator
+TSClientHello::TSExtensionTypeList::end()
+{
+  auto ite = static_cast<TLSSNISupport::ClientHello *>(_ch)->end();
+  // The temporal pointer is for the memcpy in the constructor. It's only used in the constructor.
+  return TSClientHello::TSExtensionTypeList::Iterator(&ite);
+}
+
+TSClientHello::TSExtensionTypeList::Iterator &
+TSClientHello::TSExtensionTypeList::Iterator::operator++()
+{
+  ++(*reinterpret_cast<TLSSNISupport::ClientHello::ExtensionIdIterator *>(_real_iterator));
+  return *this;
+}
+
+bool
+TSClientHello::TSExtensionTypeList::Iterator::operator==(const TSClientHello::TSExtensionTypeList::Iterator &b) const
+{
+  return memcmp(_real_iterator, b._real_iterator, sizeof(_real_iterator)) == 0;
+}
+int
+TSClientHello::TSExtensionTypeList::Iterator::operator*() const
+{
+  return *(*reinterpret_cast<const TLSSNISupport::ClientHello::ExtensionIdIterator *>(_real_iterator));
 }

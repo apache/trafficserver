@@ -19,10 +19,40 @@
 
 from __future__ import annotations
 
+import argparse
+import os
+from pathlib import Path
+from typing import Any
+
 from hrw4u.hrw4uLexer import hrw4uLexer
 from hrw4u.hrw4uParser import hrw4uParser
 from hrw4u.visitor import HRW4UVisitor
 from hrw4u.common import run_main
+from hrw4u.sandbox import SandboxConfig
+
+
+def _add_args(parser: argparse.ArgumentParser, output_group: argparse._MutuallyExclusiveGroup) -> None:
+    output_group.add_argument(
+        "--output",
+        choices=["hrw", "hrw4u"],
+        default="hrw",
+        help="Output format: hrw (header_rewrite, default) or hrw4u (expand procedures inline)")
+    parser.add_argument(
+        "--procedures-path",
+        metavar="DIR[:DIR...]",
+        dest="procedures_path",
+        default="",
+        help="Colon-separated list of directories to search for procedure files")
+    parser.add_argument("--sandbox", metavar="FILE", type=Path, help="Path to sandbox YAML configuration file")
+
+
+def _visitor_kwargs(args: argparse.Namespace) -> dict[str, Any]:
+    kwargs: dict[str, Any] = {}
+    if args.procedures_path:
+        kwargs['proc_search_paths'] = [Path(p) for p in args.procedures_path.split(os.pathsep) if p]
+    if args.sandbox:
+        kwargs['sandbox'] = SandboxConfig.load(args.sandbox)
+    return kwargs
 
 
 def main() -> None:
@@ -34,7 +64,9 @@ def main() -> None:
         visitor_class=HRW4UVisitor,
         error_prefix="hrw4u",
         output_flag_name="hrw",
-        output_flag_help="Produce the HRW output (default)")
+        output_flag_help="Produce the HRW output (default)",
+        add_args=_add_args,
+        visitor_kwargs=_visitor_kwargs)
 
 
 if __name__ == "__main__":

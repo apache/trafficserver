@@ -51,12 +51,13 @@ class HRWInverseVisitor(u4wrhVisitor, BaseHRWVisitor):
         self._in_group: bool = False
         self._group_terms: list[tuple[str, CondState]] = []
 
-        self.symbol_resolver = InverseSymbolResolver()
+        self.symbol_resolver = InverseSymbolResolver(dbg=self._dbg)
 
         self._section_opened = False
         self._if_depth = 0  # Track nesting depth of if blocks
         self._in_elif_mode = False
         self._just_closed_nested = False
+        self._deferred_comments: list[str] = []
 
     @lru_cache(maxsize=128)
     def _cached_percent_parsing(self, pct_text: str) -> tuple[str, str | None]:
@@ -83,6 +84,12 @@ class HRWInverseVisitor(u4wrhVisitor, BaseHRWVisitor):
         self._in_group = False
         self._group_terms.clear()
 
+    def _flush_deferred_comments(self) -> None:
+        """Emit comments that were deferred while inside a rule's if-block."""
+        for comment in self._deferred_comments:
+            self.output.append(comment)
+        self._deferred_comments.clear()
+
     def _start_new_section(self, section_type: SectionType) -> None:
         """Start a new section, handling continuation of existing sections."""
         with self.debug_context(f"start_section {section_type.value}"):
@@ -93,6 +100,7 @@ class HRWInverseVisitor(u4wrhVisitor, BaseHRWVisitor):
                     self.emit("}")
                     self._if_depth -= 1
                 self._reset_condition_state()
+                self._flush_deferred_comments()
                 if self.output and self.output[-1] != "":
                     self.output.append("")
                 return
@@ -104,6 +112,8 @@ class HRWInverseVisitor(u4wrhVisitor, BaseHRWVisitor):
 
             if had_section and self.output and self.output[-1] != "":
                 self.output.append("")
+
+            self._flush_deferred_comments()
 
             self._section_label = section_type
             self.emit(f"{section_type.value} {{")
@@ -122,7 +132,7 @@ class HRWInverseVisitor(u4wrhVisitor, BaseHRWVisitor):
                 if state.not_:
                     processed_term = self.symbol_resolver.negate_expression(term)
                 else:
-                    processed_term = self._normalize_empty_string_condition(term, state)
+                    processed_term = self._normalize_empty_string_condition(term)
 
                 processed_term = self._apply_with_modifiers(processed_term, state)
                 self.debug(f"processed term {idx}: {processed_term}")
@@ -152,6 +162,7 @@ class HRWInverseVisitor(u4wrhVisitor, BaseHRWVisitor):
             for line in ctx.line():
                 self.visit(line)
             self._close_if_and_section()
+            self._flush_deferred_comments()
 
             var_declarations = self.symbol_resolver.get_var_declarations()
             if var_declarations:
@@ -167,7 +178,9 @@ class HRWInverseVisitor(u4wrhVisitor, BaseHRWVisitor):
         with self.debug_context("visitCommentLine"):
             comment_text = ctx.COMMENT().getText()
             self._flush_pending_condition()
-            if self._section_opened:
+            if self._if_depth > 0:
+                self._deferred_comments.append(comment_text)
+            elif self._section_opened:
                 self.emit(comment_text)
             else:
                 self.output.append(comment_text)

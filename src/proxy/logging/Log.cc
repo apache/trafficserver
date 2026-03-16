@@ -853,6 +853,10 @@ Log::init_fields()
   global_field_list.add(field, false);
   field_symbol_hash.emplace("sshv", field);
 
+  field = new LogField("milestones_csv", "mstsms", LogField::STRING, &LogAccess::marshal_milestones_csv, &LogAccess::unmarshal_str);
+  global_field_list.add(field, false);
+  field_symbol_hash.emplace("mstsms", field);
+
   field = new LogField("server_resp_time", "stms", LogField::sINT, &LogAccess::marshal_server_resp_time_ms,
                        &LogAccess::unmarshal_int_to_str);
   global_field_list.add(field, false);
@@ -1039,6 +1043,11 @@ Log::init_fields()
   global_field_list.add(field, false);
   field_symbol_hash.emplace("pptv", field);
 
+  field = new LogField("proxy_protocol_tls_group", "pptg", LogField::STRING, &LogAccess::marshal_proxy_protocol_tls_group,
+                       &LogAccess::unmarshal_str);
+  global_field_list.add(field, false);
+  field_symbol_hash.emplace("pptg", field);
+
   field = new LogField("version_build_number", "vbn", LogField::STRING, &LogAccess::marshal_version_build_number,
                        &LogAccess::unmarshal_str);
   global_field_list.add(field, false);
@@ -1139,13 +1148,6 @@ Log::init(int flags)
   }
 
   init_fields();
-  if (!(config_flags & LOGCAT)) {
-    RecRegisterConfigUpdateCb("proxy.config.log.logging_enabled", &Log::handle_logging_mode_change, nullptr);
-
-    Dbg(dbg_ctl_log_config, "Log::init(): logging_mode = %d init status = %d", logging_mode, init_status);
-    config->init();
-    init_when_enabled();
-  }
 }
 
 void
@@ -1167,6 +1169,18 @@ Log::init_when_enabled()
   Note("logging initialized[%d], logging_mode = %d", init_status, logging_mode);
   if (dbg_ctl_log_config.on()) {
     config->display();
+  }
+}
+
+void
+Log::load_config()
+{
+  if (!(config_flags & LOGCAT)) {
+    RecRegisterConfigUpdateCb("proxy.config.log.logging_enabled", &Log::handle_logging_mode_change, nullptr);
+
+    Dbg(dbg_ctl_log_config, "Log::init(): logging_mode = %d init status = %d", logging_mode, init_status);
+    config->init();
+    init_when_enabled();
   }
 }
 

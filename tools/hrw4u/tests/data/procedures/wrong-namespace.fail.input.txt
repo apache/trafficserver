@@ -1,0 +1,5 @@
+use test::wrong-namespace
+
+REMAP {
+    wrong::namespace();
+}

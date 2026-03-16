@@ -1,0 +1,10 @@
+# Sandbox test exceptions
+# Format: test_name: direction
+#
+# Sandbox deny tests run WITH a sandbox config via the test suite;
+# testcase.py runs without one. Mark deny tests that would produce
+# symbol errors without a sandbox as u4wrh so testcase.py skips them.
+#
+# per-test-sandbox uses TXN_START, which rejects inbound.req.X-Foo
+# without a sandbox (section denial fires first in the real test).
+per-test-sandbox.input: u4wrh

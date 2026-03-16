@@ -545,9 +545,9 @@ check_symbol_exists(SSL_get_all_async_fds openssl/ssl.h TS_USE_TLS_ASYNC)
 check_symbol_exists(OSSL_PARAM_construct_end "openssl/params.h" HAVE_OSSL_PARAM_CONSTRUCT_END)
 check_symbol_exists(TLS1_3_VERSION "openssl/ssl.h" TS_USE_TLS13)
 check_symbol_exists(MD5_Init "openssl/md5.h" HAVE_MD5_INIT)
-check_symbol_exists(ENGINE_load_dynamic "include/openssl/engine.h" HAVE_ENGINE_LOAD_DYNAMIC)
-check_symbol_exists(ENGINE_get_default_RSA "include/openssl/engine.h" HAVE_ENGINE_GET_DEFAULT_RSA)
-check_symbol_exists(ENGINE_load_private_key "include/openssl/engine.h" HAVE_ENGINE_LOAD_PRIVATE_KEY)
+check_symbol_exists(ENGINE_load_dynamic "openssl/engine.h" HAVE_ENGINE_LOAD_DYNAMIC)
+check_symbol_exists(ENGINE_get_default_RSA "openssl/engine.h" HAVE_ENGINE_GET_DEFAULT_RSA)
+check_symbol_exists(ENGINE_load_private_key "openssl/engine.h" HAVE_ENGINE_LOAD_PRIVATE_KEY)
 check_symbol_exists(sysctlbyname "sys/sysctl.h" HAVE_SYSCTLBYNAME)
 
 if(SSLLIB_IS_OPENSSL3)
@@ -592,6 +592,19 @@ check_cxx_source_compiles(
   return 0;
   }"
   HAVE_CRYPTO_EX_DUP_TYPE1
+)
+check_cxx_source_compiles(
+  "#include <openssl/asn1.h>
+  namespace bssl {
+    DECLARE_ASN1_ITEM(GENERAL_NAME)
+  };
+  int main() {
+    if (&bssl::GENERAL_NAME_it == reinterpret_cast<void *>(0x01)) {
+      return 1;
+    }
+    return 0;
+  }"
+  HAVE_GENERAL_NAME_IN_BSSL_NAMESPACE
 )
 
 set(CMAKE_EXTRA_INCLUDE_FILES netinet/in.h netinet/tcp.h)

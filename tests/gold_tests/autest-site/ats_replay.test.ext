@@ -53,6 +53,15 @@ def configure_ats(obj: 'TestRun', server: 'Process', ats_config: dict, dns: Opti
     if logging_yaml != None:
         ts.Disk.logging_yaml.AddLines(yaml.dump(logging_yaml).split('\n'))
 
+    # Configure volume.config if specified.
+    volume_config = ats_config.get('volume_config', [])
+    for vol in volume_config:
+        parts = [f"volume={vol['volume']}", f"scheme={vol['scheme']}", f"size={vol['size']}"]
+        for opt_key in ('ramcache', 'ram_cache_size', 'ram_cache_cutoff', 'avg_obj_size', 'fragment_size'):
+            if opt_key in vol:
+                parts.append(f"{opt_key}={vol[opt_key]}")
+        ts.Disk.volume_config.AddLine(' '.join(parts))
+
     remap_config = ats_config.get('remap_config', [])
     for remap_entry in remap_config:
         if isinstance(remap_entry, str):
@@ -63,11 +72,14 @@ def configure_ats(obj: 'TestRun', server: 'Process', ats_config: dict, dns: Opti
             to_url = to_url.replace('{SERVER_HTTP_PORT}', str(server.Variables.http_port))
             to_url = to_url.replace('{SERVER_HTTPS_PORT}', str(server.Variables.https_port))
             plugins = remap_entry.get('plugins', [])
+            options = remap_entry.get('options', [])
             line = f'map {from_url} {to_url}'
             for plugin in plugins:
                 line += f' @plugin={plugin["name"]}'
                 for arg in plugin["args"]:
                     line += f' @pparam={arg}'
+            for option in options:
+                line += f' {option}'
             ts.Disk.remap_config.AddLine(line)
     if dns:
         ts.Disk.records_config.update(
@@ -118,6 +130,21 @@ def configure_ats(obj: 'TestRun', server: 'Process', ats_config: dict, dns: Opti
         if 'gold_file' in diags_log:
             gold_file = diags_log['gold_file']
             ts.Disk.diags_log.Content += gold_file
+
+        # error_log validation.
+        error_log = log_validation.get('error_log', {})
+        for contains_entry in error_log.get('contains', []):
+            expression = contains_entry['expression']
+            description = contains_entry.get('description', f'Verify error_log contains: {expression}')
+            ts.Disk.error_log.Content += Testers.ContainsExpression(expression, description)
+        for excludes_entry in error_log.get('excludes', []):
+            expression = excludes_entry['expression']
+            description = excludes_entry.get('description', f'Verify error_log excludes: {expression}')
+            ts.Disk.error_log.Content += Testers.ExcludesExpression(expression, description)
+        # Gold file validation for error_log.
+        if 'gold_file' in error_log:
+            gold_file = error_log['gold_file']
+            ts.Disk.error_log.Content += gold_file
 
         # access_log validation.
         access_log = log_validation.get('access_log', {})
@@ -182,6 +209,8 @@ def ATSReplayTest(obj, replay_file: str):
             dns = tr.MakeDNServer(name, **process_config)
         else:
             dns = tr.MakeDNServer(name, default='127.0.0.1')
+        if 'records' in dns_config:
+            dns.addRecords(dns_config['records'])
 
     # Proxy Verifier Server configuration.
     if not 'server' in autest_config:
@@ -215,6 +244,7 @@ def ATSReplayTest(obj, replay_file: str):
     ats_config = autest_config['ats']
     enable_tls = ats_config.get('enable_tls', False)
     metric_checks = ats_config.get('metric_checks', [])
+    log_validation = ats_config.get('log_validation', None)
 
     ats_owner = obj if _requires_persistent_ats(ats_config) else tr
     ts = configure_ats(ats_owner, server=server, ats_config=ats_config, dns=dns)
@@ -271,6 +301,13 @@ def ATSReplayTest(obj, replay_file: str):
             check_tr.Processes.Default.Streams.All = Testers.ContainsExpression(
                 f'^{re.escape(metric_name)}\\s+{expected_value}$', f'{metric_name} should be {expected_value}')
             check_tr.StillRunningAfter = ts
+
+    # wait for error log
+    if log_validation and log_validation.get('error_log'):
+        wait_for_log = obj.AddTestRun('Wait for logs of ' + ats_config.get('name', 'ts'))
+        wait_for_log.Processes.Default.Command = (
+            os.path.join(obj.Variables.AtsTestToolsDir, 'condwait') + ' 60 1 -f ' + os.path.join(ts.Variables.LOGDIR, 'error.log'))
+        wait_for_log.Processes.Default.ReturnCode = 0
 
     return tr
 

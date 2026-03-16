@@ -39,6 +39,7 @@
 #include "proxy/http/remap/RemapProcessor.h"
 #include "proxy/http/remap/UrlRewrite.h"
 #include "proxy/http/remap/UrlMapping.h"
+#include "proxy/http/remap/UrlMappingPathIndex.h"
 
 namespace
 {
@@ -49,7 +50,7 @@ DbgCtl dbg_ctl_url_rewrite{"url_rewrite"};
 } // end anonymous namespace
 
 // Global Ptrs
-UrlRewrite                       *rewrite_table       = nullptr;
+std::atomic<UrlRewrite *>         rewrite_table       = nullptr;
 thread_local PluginThreadContext *pluginThreadContext = nullptr;
 
 // Tokens for the Callback function
@@ -66,9 +67,9 @@ thread_local PluginThreadContext *pluginThreadContext = nullptr;
 int
 init_reverse_proxy()
 {
-  ink_assert(rewrite_table == nullptr);
+  ink_assert(rewrite_table.load() == nullptr);
   reconfig_mutex = new_ProxyMutex();
-  rewrite_table  = new UrlRewrite();
+  rewrite_table.store(new UrlRewrite());
 
   // Register with ConfigRegistry BEFORE load() so that remap.config is in
   // FileManager's bindings when .include directives call configFileChild()
@@ -81,17 +82,15 @@ init_reverse_proxy()
                                                          {"proxy.config.url_remap.filename",               // trigger records
                                                           "proxy.config.proxy_name", "proxy.config.http.referer_default_redirect"});
 
+  rewrite_table.load()->acquire();
   Note("%s loading ...", ts::filename::REMAP);
-  if (!rewrite_table->load()) {
+  if (!rewrite_table.load()->load()) {
     Emergency("%s failed to load", ts::filename::REMAP);
   } else {
     Note("%s finished loading", ts::filename::REMAP);
   }
 
   RecRegisterConfigUpdateCb("proxy.config.reverse_proxy.enabled", url_rewrite_CB, (void *)REVERSE_CHANGED);
-
-  // Hold at least one lease, until we reload the configuration
-  rewrite_table->acquire();
 
   return 0;
 }
@@ -146,7 +145,7 @@ reloadUrlRewrite(ConfigContext ctx)
     newTable->acquire();
 
     // Swap configurations
-    oldTable = ink_atomic_swap(&rewrite_table, newTable);
+    oldTable = rewrite_table.exchange(newTable);
 
     ink_assert(oldTable != nullptr);
 
@@ -168,10 +167,69 @@ reloadUrlRewrite(ConfigContext ctx)
   }
 }
 
+/**
+ * Helper function to initialize volume_host_rec for a single url_mapping.
+ * This is a no-op if the mapping has no volume string or is already initialized.
+ */
+static void
+init_mapping_volume_host_rec(url_mapping &mapping)
+{
+  char errbuf[256];
+
+  if (!mapping.initVolumeHostRec(errbuf, sizeof(errbuf))) {
+    Error("Failed to initialize volume record for @volume=%s: %s", mapping.getVolume().c_str(), errbuf);
+  }
+}
+
+static void
+init_store_volume_host_records(UrlRewrite::MappingsStore &store)
+{
+  if (store.hash_lookup) {
+    for (auto &entry : *store.hash_lookup) {
+      UrlMappingPathIndex *path_index = entry.second;
+
+      if (path_index) {
+        path_index->foreach_mapping(init_mapping_volume_host_rec);
+      }
+    }
+  }
+
+  for (UrlRewrite::RegexMapping *reg_map = store.regex_list.head; reg_map; reg_map = reg_map->link.next) {
+    if (reg_map->url_map) {
+      init_mapping_volume_host_rec(*reg_map->url_map);
+    }
+  }
+}
+
+// This is called after the cache is initialized, since we may need the volume_host_records.
+// Must only be called during startup before any remap reload can occur.
+void
+init_remap_volume_host_records()
+{
+  UrlRewrite *table = rewrite_table.load(std::memory_order_acquire);
+
+  if (!table) {
+    return;
+  }
+
+  table->acquire();
+
+  Dbg(dbg_ctl_url_rewrite, "Initializing volume_host_rec for all remap rules after cache init");
+
+  // Initialize for all mapping stores
+  init_store_volume_host_records(table->forward_mappings);
+  init_store_volume_host_records(table->reverse_mappings);
+  init_store_volume_host_records(table->permanent_redirects);
+  init_store_volume_host_records(table->temporary_redirects);
+  init_store_volume_host_records(table->forward_mappings_with_recv_port);
+
+  table->release();
+}
+
 int
 url_rewrite_CB(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */, RecData data,
                void * /* cookie ATS_UNUSED */)
 {
-  rewrite_table->SetReverseFlag(data.rec_int);
+  rewrite_table.load()->SetReverseFlag(data.rec_int);
   return 0;
 }

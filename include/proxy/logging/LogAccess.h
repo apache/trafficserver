@@ -271,6 +271,7 @@ public:
   int marshal_proxy_protocol_authority(char *);                    // STR
   int marshal_proxy_protocol_tls_cipher(char *);                   // STR
   int marshal_proxy_protocol_tls_version(char *);                  // STR
+  int marshal_proxy_protocol_tls_group(char *);                    // STR
 
   // named fields from within a http header
   //
@@ -295,15 +296,21 @@ public:
   //
   // milestones access
   //
-  int  marshal_milestone(TSMilestonesType ms, char *buf);
-  int  marshal_milestone_fmt_sec(TSMilestonesType ms, char *buf);
-  int  marshal_milestone_fmt_squid(TSMilestonesType ms, char *buf);
-  int  marshal_milestone_fmt_netscape(TSMilestonesType ms, char *buf);
-  int  marshal_milestone_fmt_date(TSMilestonesType ms, char *buf);
-  int  marshal_milestone_fmt_time(TSMilestonesType ms, char *buf);
-  int  marshal_milestone_fmt_ms(TSMilestonesType ms, char *buf);
-  int  marshal_milestone_diff(TSMilestonesType ms1, TSMilestonesType ms2, char *buf);
+  int marshal_milestone(TSMilestonesType ms, char *buf);
+  int marshal_milestone_fmt_sec(TSMilestonesType ms, char *buf);
+  int marshal_milestone_fmt_squid(TSMilestonesType ms, char *buf);
+  int marshal_milestone_fmt_netscape(TSMilestonesType ms, char *buf);
+  int marshal_milestone_fmt_date(TSMilestonesType ms, char *buf);
+  int marshal_milestone_fmt_time(TSMilestonesType ms, char *buf);
+  int marshal_milestone_fmt_ms(TSMilestonesType ms, char *buf);
+  int marshal_milestone_diff(TSMilestonesType ms1, TSMilestonesType ms2, char *buf);
+  int marshal_milestones_csv(char *buf);
+
   void set_http_header_field(LogField::Container container, char *field, char *buf, int len);
+
+  // Plugin
+  int marshal_custom_field(char *buf, LogField::CustomMarshalFunc plugin_marshal_func);
+
   //
   // unmarshalling routines
   //
@@ -315,6 +322,7 @@ public:
   static int     unmarshal_itox(int64_t val, char *dest, int field_width = 0, char leading_char = ' ');
   static int     unmarshal_int_to_str(char **buf, char *dest, int len);
   static int     unmarshal_int_to_str_hex(char **buf, char *dest, int len);
+  static int     unmarshal_milestone_diff(char **buf, char *dest, int len);
   static int     unmarshal_str(char **buf, char *dest, int len, LogSlice *slice, LogEscapeType escape_type);
   static int     unmarshal_ttmsf(char **buf, char *dest, int len);
   static int     unmarshal_int_to_date_str(char **buf, char *dest, int len);

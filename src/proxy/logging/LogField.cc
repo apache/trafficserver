@@ -191,30 +191,36 @@ struct milestone {
 };
 
 static const milestone milestones[] = {
-  {"TS_MILESTONE_UA_BEGIN",                TS_MILESTONE_UA_BEGIN               },
-  {"TS_MILESTONE_UA_FIRST_READ",           TS_MILESTONE_UA_FIRST_READ          },
-  {"TS_MILESTONE_UA_READ_HEADER_DONE",     TS_MILESTONE_UA_READ_HEADER_DONE    },
-  {"TS_MILESTONE_UA_BEGIN_WRITE",          TS_MILESTONE_UA_BEGIN_WRITE         },
-  {"TS_MILESTONE_UA_CLOSE",                TS_MILESTONE_UA_CLOSE               },
-  {"TS_MILESTONE_SERVER_FIRST_CONNECT",    TS_MILESTONE_SERVER_FIRST_CONNECT   },
-  {"TS_MILESTONE_SERVER_CONNECT",          TS_MILESTONE_SERVER_CONNECT         },
-  {"TS_MILESTONE_SERVER_CONNECT_END",      TS_MILESTONE_SERVER_CONNECT_END     },
-  {"TS_MILESTONE_SERVER_BEGIN_WRITE",      TS_MILESTONE_SERVER_BEGIN_WRITE     },
-  {"TS_MILESTONE_SERVER_FIRST_READ",       TS_MILESTONE_SERVER_FIRST_READ      },
-  {"TS_MILESTONE_SERVER_READ_HEADER_DONE", TS_MILESTONE_SERVER_READ_HEADER_DONE},
-  {"TS_MILESTONE_SERVER_CLOSE",            TS_MILESTONE_SERVER_CLOSE           },
-  {"TS_MILESTONE_CACHE_OPEN_READ_BEGIN",   TS_MILESTONE_CACHE_OPEN_READ_BEGIN  },
-  {"TS_MILESTONE_CACHE_OPEN_READ_END",     TS_MILESTONE_CACHE_OPEN_READ_END    },
-  {"TS_MILESTONE_CACHE_OPEN_WRITE_BEGIN",  TS_MILESTONE_CACHE_OPEN_WRITE_BEGIN },
-  {"TS_MILESTONE_CACHE_OPEN_WRITE_END",    TS_MILESTONE_CACHE_OPEN_WRITE_END   },
-  {"TS_MILESTONE_DNS_LOOKUP_BEGIN",        TS_MILESTONE_DNS_LOOKUP_BEGIN       },
-  {"TS_MILESTONE_DNS_LOOKUP_END",          TS_MILESTONE_DNS_LOOKUP_END         },
-  {"TS_MILESTONE_SM_START",                TS_MILESTONE_SM_START               },
-  {"TS_MILESTONE_SM_FINISH",               TS_MILESTONE_SM_FINISH              },
-  {"TS_MILESTONE_PLUGIN_ACTIVE",           TS_MILESTONE_PLUGIN_ACTIVE          },
-  {"TS_MILESTONE_PLUGIN_TOTAL",            TS_MILESTONE_PLUGIN_TOTAL           },
-  {"TS_MILESTONE_TLS_HANDSHAKE_START",     TS_MILESTONE_TLS_HANDSHAKE_START    },
-  {"TS_MILESTONE_TLS_HANDSHAKE_END",       TS_MILESTONE_TLS_HANDSHAKE_END      },
+  {"TS_MILESTONE_UA_BEGIN",                   TS_MILESTONE_UA_BEGIN                  },
+  {"TS_MILESTONE_UA_FIRST_READ",              TS_MILESTONE_UA_FIRST_READ             },
+  {"TS_MILESTONE_UA_READ_HEADER_DONE",        TS_MILESTONE_UA_READ_HEADER_DONE       },
+  {"TS_MILESTONE_UA_BEGIN_WRITE",             TS_MILESTONE_UA_BEGIN_WRITE            },
+  {"TS_MILESTONE_UA_CLOSE",                   TS_MILESTONE_UA_CLOSE                  },
+  {"TS_MILESTONE_SERVER_FIRST_CONNECT",       TS_MILESTONE_SERVER_FIRST_CONNECT      },
+  {"TS_MILESTONE_SERVER_CONNECT",             TS_MILESTONE_SERVER_CONNECT            },
+  {"TS_MILESTONE_SERVER_CONNECT_END",         TS_MILESTONE_SERVER_CONNECT_END        },
+  {"TS_MILESTONE_SERVER_BEGIN_WRITE",         TS_MILESTONE_SERVER_BEGIN_WRITE        },
+  {"TS_MILESTONE_SERVER_FIRST_READ",          TS_MILESTONE_SERVER_FIRST_READ         },
+  {"TS_MILESTONE_SERVER_READ_HEADER_DONE",    TS_MILESTONE_SERVER_READ_HEADER_DONE   },
+  {"TS_MILESTONE_SERVER_CLOSE",               TS_MILESTONE_SERVER_CLOSE              },
+  {"TS_MILESTONE_CACHE_OPEN_READ_BEGIN",      TS_MILESTONE_CACHE_OPEN_READ_BEGIN     },
+  {"TS_MILESTONE_CACHE_OPEN_READ_END",        TS_MILESTONE_CACHE_OPEN_READ_END       },
+  {"TS_MILESTONE_CACHE_OPEN_WRITE_BEGIN",     TS_MILESTONE_CACHE_OPEN_WRITE_BEGIN    },
+  {"TS_MILESTONE_CACHE_OPEN_WRITE_END",       TS_MILESTONE_CACHE_OPEN_WRITE_END      },
+  {"TS_MILESTONE_DNS_LOOKUP_BEGIN",           TS_MILESTONE_DNS_LOOKUP_BEGIN          },
+  {"TS_MILESTONE_DNS_LOOKUP_END",             TS_MILESTONE_DNS_LOOKUP_END            },
+  {"TS_MILESTONE_SM_START",                   TS_MILESTONE_SM_START                  },
+  {"TS_MILESTONE_SM_FINISH",                  TS_MILESTONE_SM_FINISH                 },
+  {"TS_MILESTONE_PLUGIN_ACTIVE",              TS_MILESTONE_PLUGIN_ACTIVE             },
+  {"TS_MILESTONE_PLUGIN_TOTAL",               TS_MILESTONE_PLUGIN_TOTAL              },
+  {"TS_MILESTONE_TLS_HANDSHAKE_START",
+   TS_MILESTONE_TLS_HANDSHAKE_START                                                  }, // RENAME in ATS 11 - this is the client-side TLS handshake
+  {"TS_MILESTONE_TLS_HANDSHAKE_END",          TS_MILESTONE_TLS_HANDSHAKE_END         }, // RENAME in ATS 11 - this is the client-side TLS handshake
+  {"TS_MILESTONE_SERVER_TLS_HANDSHAKE_START", TS_MILESTONE_SERVER_TLS_HANDSHAKE_START},
+  {"TS_MILESTONE_SERVER_TLS_HANDSHAKE_END",   TS_MILESTONE_SERVER_TLS_HANDSHAKE_END  },
+  // TODO: Add these in ATS 11, remove TLS_HANDSHAKE_* above
+  // {"TS_MILESTONE_UA_TLS_HANDSHAKE_START",    TS_MILESTONE_UA_TLS_HANDSHAKE_START     },
+  // {"TS_MILESTONE_UA_TLS_HANDSHAKE_END",      TS_MILESTONE_UA_TLS_HANDSHAKE_END       },
 };
 
 void
@@ -282,6 +288,33 @@ LogField::LogField(const char *name, const char *symbol, Type type, MarshalFunc 
   ink_assert(m_type >= 0 && m_type < N_TYPES);
   ink_assert(m_marshal_func != (MarshalFunc) nullptr);
   ink_assert(m_alias_map);
+
+  m_time_field = (strcmp(m_symbol, "cqts") == 0 || strcmp(m_symbol, "cqth") == 0 || strcmp(m_symbol, "cqtq") == 0 ||
+                  strcmp(m_symbol, "cqtn") == 0 || strcmp(m_symbol, "cqtd") == 0 || strcmp(m_symbol, "cqtt") == 0);
+}
+
+LogField::LogField(const char *name, const char *symbol, Type type, CustomMarshalFunc custom_marshal,
+                   CustomUnmarshalFunc custom_unmarshal)
+  : m_name(ats_strdup(name)),
+    m_symbol(ats_strdup(symbol)),
+    m_type(type),
+    m_container(NO_CONTAINER),
+    m_marshal_func(nullptr),
+    m_unmarshal_func(VarUnmarshalFunc(nullptr)),
+    m_agg_op(NO_AGGREGATE),
+    m_agg_cnt(0),
+    m_agg_val(0),
+    m_milestone1(TS_MILESTONE_LAST_ENTRY),
+    m_milestone2(TS_MILESTONE_LAST_ENTRY),
+    m_time_field(false),
+    m_alias_map(nullptr),
+    m_set_func(nullptr),
+    m_custom_marshal_func(custom_marshal),
+    m_custom_unmarshal_func(custom_unmarshal)
+{
+  ink_assert(m_name != nullptr);
+  ink_assert(m_symbol != nullptr);
+  ink_assert(m_type >= 0 && m_type < N_TYPES);
 
   m_time_field = (strcmp(m_symbol, "cqts") == 0 || strcmp(m_symbol, "cqth") == 0 || strcmp(m_symbol, "cqtq") == 0 ||
                   strcmp(m_symbol, "cqtn") == 0 || strcmp(m_symbol, "cqtd") == 0 || strcmp(m_symbol, "cqtt") == 0);
@@ -388,7 +421,7 @@ LogField::LogField(const char *field, Container container)
     if (0 != rv) {
       Note("Invalid milestone range in LogField ctor: %s", m_name);
     }
-    m_unmarshal_func = &(LogAccess::unmarshal_int_to_str);
+    m_unmarshal_func = &(LogAccess::unmarshal_milestone_diff);
     m_type           = LogField::sINT;
     break;
   }
@@ -413,7 +446,9 @@ LogField::LogField(const LogField &rhs)
     m_milestone2(rhs.m_milestone2),
     m_time_field(rhs.m_time_field),
     m_alias_map(rhs.m_alias_map),
-    m_set_func(rhs.m_set_func)
+    m_set_func(rhs.m_set_func),
+    m_custom_marshal_func(rhs.m_custom_marshal_func),
+    m_custom_unmarshal_func(rhs.m_custom_unmarshal_func)
 {
   ink_assert(m_name != nullptr);
   ink_assert(m_symbol != nullptr);
@@ -441,7 +476,11 @@ unsigned
 LogField::marshal_len(LogAccess *lad)
 {
   if (m_container == NO_CONTAINER) {
-    return (lad->*m_marshal_func)(nullptr);
+    if (m_custom_marshal_func == nullptr) {
+      return (lad->*m_marshal_func)(nullptr);
+    } else {
+      return lad->marshal_custom_field(nullptr, m_custom_marshal_func);
+    }
   }
 
   switch (m_container) {
@@ -523,7 +562,11 @@ unsigned
 LogField::marshal(LogAccess *lad, char *buf)
 {
   if (m_container == NO_CONTAINER) {
-    return (lad->*m_marshal_func)(buf);
+    if (m_custom_marshal_func == nullptr) {
+      return (lad->*m_marshal_func)(buf);
+    } else {
+      return lad->marshal_custom_field(buf, m_custom_marshal_func);
+    }
   }
 
   switch (m_container) {
@@ -615,6 +658,11 @@ LogField::unmarshal(char **buf, char *dest, int len, LogEscapeType escape_type)
                      [&](UnmarshalFuncWithMap f) -> unsigned { return (*f)(buf, dest, len, m_alias_map); },
                      [&](UnmarshalFunc f) -> unsigned { return (*f)(buf, dest, len); },
                      [&](decltype(nullptr)) -> unsigned {
+                       if (m_custom_unmarshal_func) {
+                         auto [read_len, written_len]  = m_custom_unmarshal_func(buf, dest, len);
+                         *buf                         += LogAccess::padded_length(read_len);
+                         return written_len;
+                       }
                        ink_assert(false);
                        return 0;
                      }},
@@ -781,6 +829,19 @@ LogFieldList::add(LogField *field, bool copy)
   if (field->type() == LogField::sINT) {
     m_marshal_len += INK_MIN_ALIGN;
   }
+}
+
+void
+LogFieldList::remove(LogField *field)
+{
+  ink_assert(field != nullptr);
+
+  if (field->type() == LogField::sINT) {
+    m_marshal_len -= INK_MIN_ALIGN;
+  }
+  m_field_list.remove(field);
+
+  delete field;
 }
 
 LogField *

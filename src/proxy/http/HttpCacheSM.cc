@@ -43,6 +43,14 @@
 namespace
 {
 DbgCtl dbg_ctl_http_cache{"http_cache"};
+
+// Helper to check if cache_open_write_fail_action has READ_RETRY behavior
+inline bool
+is_read_retry_action(MgmtByte action)
+{
+  return action == static_cast<MgmtByte>(CacheOpenWriteFailAction_t::READ_RETRY) ||
+         action == static_cast<MgmtByte>(CacheOpenWriteFailAction_t::READ_RETRY_STALE_ON_REVALIDATE);
+}
 } // end anonymous namespace
 
 ////
@@ -215,12 +223,11 @@ HttpCacheSM::state_cache_open_write(int event, void *data)
     break;
 
   case CACHE_EVENT_OPEN_WRITE_FAILED: {
-    if (master_sm->t_state.txn_conf->cache_open_write_fail_action ==
-        static_cast<MgmtByte>(CacheOpenWriteFailAction_t::READ_RETRY)) {
+    if (is_read_retry_action(master_sm->t_state.txn_conf->cache_open_write_fail_action)) {
       // fall back to open_read_tries
-      // Note that when CacheOpenWriteFailAction_t::READ_RETRY is configured, max_cache_open_write_retries
+      // Note that when READ_RETRY actions are configured, max_cache_open_write_retries
       // is automatically ignored. Make sure to not disable max_cache_open_read_retries
-      // with CacheOpenWriteFailAction_t::READ_RETRY as this results in proxy'ing to origin
+      // with READ_RETRY actions as this results in proxy'ing to origin
       // without write retries in both a cache miss or a cache refresh scenario.
 
       if (write_retry_done()) {
@@ -264,8 +271,7 @@ HttpCacheSM::state_cache_open_write(int event, void *data)
       _read_retry_event = nullptr;
     }
 
-    if (master_sm->t_state.txn_conf->cache_open_write_fail_action ==
-        static_cast<MgmtByte>(CacheOpenWriteFailAction_t::READ_RETRY)) {
+    if (is_read_retry_action(master_sm->t_state.txn_conf->cache_open_write_fail_action)) {
       Dbg(dbg_ctl_http_cache,
           "[%" PRId64 "] [state_cache_open_write] cache open write failure %d. "
           "falling back to read retry...",
@@ -317,12 +323,20 @@ HttpCacheSM::_schedule_read_retry()
 Action *
 HttpCacheSM::do_cache_open_read(const HttpCacheKey &key)
 {
+  Action *action_handle = nullptr;
+
   open_read_tries++;
   ink_assert(pending_action == nullptr);
 
   // Initialising read-while-write-inprogress flag
   this->readwhilewrite_inprogress = false;
-  Action *action_handle           = cacheProcessor.open_read(this, &key, this->read_request_hdr, &http_params);
+
+  if (master_sm && master_sm->t_state.cache_info.volume_host_rec) {
+    action_handle = cacheProcessor.open_read(this, &key, this->read_request_hdr, &http_params, CACHE_FRAG_TYPE_HTTP,
+                                             master_sm->t_state.cache_info.volume_host_rec);
+  } else {
+    action_handle = cacheProcessor.open_read(this, &key, this->read_request_hdr, &http_params);
+  }
 
   if (action_handle != ACTION_RESULT_DONE) {
     pending_action           = action_handle;
@@ -416,9 +430,15 @@ HttpCacheSM::open_write(const HttpCacheKey *key, URL *url, HTTPHdr *request, Cac
     return ACTION_RESULT_DONE;
   }
 
-  // INKqa11166
   CacheHTTPInfo *info          = allow_multiple ? reinterpret_cast<CacheHTTPInfo *>(CACHE_ALLOW_MULTIPLE_WRITES) : old_info;
-  Action        *action_handle = cacheProcessor.open_write(this, key, info, pin_in_cache);
+  Action        *action_handle = nullptr;
+
+  if (master_sm && master_sm->t_state.cache_info.volume_host_rec) {
+    action_handle =
+      cacheProcessor.open_write(this, key, info, pin_in_cache, CACHE_FRAG_TYPE_HTTP, master_sm->t_state.cache_info.volume_host_rec);
+  } else {
+    action_handle = cacheProcessor.open_write(this, key, info, pin_in_cache);
+  }
 
   if (action_handle != ACTION_RESULT_DONE) {
     pending_action           = action_handle;

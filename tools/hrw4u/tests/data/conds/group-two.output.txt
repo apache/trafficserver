@@ -1,0 +1,10 @@
+cond %{SEND_RESPONSE_HDR_HOOK} [AND]
+cond %{GROUP}
+    cond %{CLIENT-HEADER:X-Left-A} ="" [AND,NOT]
+    cond %{CLIENT-HEADER:X-Left-B} ="" [NOT]
+cond %{GROUP:END} [OR]
+cond %{GROUP}
+    cond %{CLIENT-HEADER:X-Right-A} ="" [AND,NOT]
+    cond %{CLIENT-HEADER:X-Right-B} ="" [NOT]
+cond %{GROUP:END}
+    set-header X-Result "matched"

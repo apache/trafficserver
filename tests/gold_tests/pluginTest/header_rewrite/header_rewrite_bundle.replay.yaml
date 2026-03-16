@@ -155,6 +155,13 @@ autest:
             args:
               - "rules/run_plugin.conf"
 
+      - from: "http://www.example.com/from_15/"
+        to: "http://backend.ex:{SERVER_HTTP_PORT}/to_15/"
+        plugins:
+          - name: "header_rewrite.so"
+            args:
+              - "rules/complex_logics.conf"
+
     log_validation:
       traffic_out:
         excludes:
@@ -1114,3 +1121,665 @@ sessions:
 
     proxy-response:
       status: 200
+
+# ==========================================================================
+# Tests 31-52: Complex GROUP logic tests (rules/complex_logics.conf)
+# ==========================================================================
+
+# Test 31: GROUP [OR] - only A header present (should match via group)
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_15/logic/group-or
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ X-Group-A, "yes" ]
+        - [ uuid, 37 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Group-Or-Result, { value: "matched", as: equal } ]
+
+# Test 32: GROUP [OR] - only B header present (should match via OR)
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_15/logic/group-or
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ X-Group-B, "yes" ]
+        - [ uuid, 38 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Group-Or-Result, { value: "matched", as: equal } ]
+
+# Test 33: GROUP [OR] - neither header present (should not match)
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_15/logic/group-or
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ uuid, 39 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Group-Or-Result, { as: absent } ]
+
+# Test 34: GROUP [AND] - both headers present (should match)
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_15/logic/group-and
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ X-And-A, "yes" ]
+        - [ X-And-B, "yes" ]
+        - [ uuid, 40 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Group-And-Result, { value: "matched", as: equal } ]
+
+# Test 35: GROUP [AND] - only A present (should not match)
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_15/logic/group-and
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ X-And-A, "yes" ]
+        - [ uuid, 41 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Group-And-Result, { as: absent } ]
+
+# Test 36: GROUP [NOT] - neither header present -> group=(false) -> NOT(false)=true
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_15/logic/group-not
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ uuid, 42 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Group-Not-Result, { value: "matched", as: equal } ]
+
+# Test 37: GROUP [NOT] - both headers present -> group=(true) -> NOT(true)=false
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_15/logic/group-not
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ X-Not-A, "yes" ]
+        - [ X-Not-B, "yes" ]
+        - [ uuid, 43 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Group-Not-Result, { as: absent } ]
+
+# Test 38: Nested GROUP - outer + inner-A present (should match)
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_15/logic/nested-group
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ X-Outer-A, "yes" ]
+        - [ X-Inner-A, "yes" ]
+        - [ uuid, 44 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Nested-Group-Result, { value: "matched", as: equal } ]
+
+# Test 39: Nested GROUP - outer + inner-B present (should match via inner OR)
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_15/logic/nested-group
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ X-Outer-A, "yes" ]
+        - [ X-Inner-B, "yes" ]
+        - [ uuid, 45 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Nested-Group-Result, { value: "matched", as: equal } ]
+
+# Test 40: Nested GROUP - no outer header (should not match)
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_15/logic/nested-group
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ X-Inner-A, "yes" ]
+        - [ uuid, 46 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Nested-Group-Result, { as: absent } ]
+
+# Test 41: Two GROUPs with OR - left group matches
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_15/logic/two-groups
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ X-Left-A, "yes" ]
+        - [ X-Left-B, "yes" ]
+        - [ uuid, 47 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Two-Groups-Result, { value: "matched", as: equal } ]
+
+# Test 42: Two GROUPs with OR - right group matches
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_15/logic/two-groups
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ X-Right-A, "yes" ]
+        - [ X-Right-B, "yes" ]
+        - [ uuid, 48 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Two-Groups-Result, { value: "matched", as: equal } ]
+
+# Test 43: Two GROUPs with OR - neither group matches (partial left)
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_15/logic/two-groups
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ X-Left-A, "yes" ]
+        - [ X-Right-B, "yes" ]
+        - [ uuid, 49 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Two-Groups-Result, { as: absent } ]
+
+# Test 44: GROUP inside if - alpha branch with X-Sub-A (should match)
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_15/logic/if-group
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ X-Branch, "alpha" ]
+        - [ X-Sub-A, "yes" ]
+        - [ uuid, 50 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-If-Group-Result, { value: "alpha", as: equal } ]
+
+# Test 45: GROUP inside if - alpha branch without sub headers (falls to else)
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_15/logic/if-group
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ X-Branch, "alpha" ]
+        - [ uuid, 51 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-If-Group-Result, { value: "other", as: equal } ]
+
+# Test 46: GROUP inside if - beta branch
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_15/logic/if-group
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ X-Branch, "beta" ]
+        - [ uuid, 52 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-If-Group-Result, { value: "beta", as: equal } ]
+
+# Test 47: Nested if with GROUP OR - outer yes, case-A present
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_15/logic/nested-if-group
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ X-Outer, "yes" ]
+        - [ X-Case-A, "yes" ]
+        - [ uuid, 53 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Nested-If-Result, { value: "inner-match", as: equal } ]
+
+# Test 48: Nested if with GROUP OR - outer yes, neither case header
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_15/logic/nested-if-group
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ X-Outer, "yes" ]
+        - [ uuid, 54 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Nested-If-Result, { value: "inner-miss", as: equal } ]
+
+# Test 49: Nested if with GROUP OR - outer miss
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_15/logic/nested-if-group
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ X-Outer, "no" ]
+        - [ uuid, 55 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Nested-If-Result, { value: "outer-miss", as: equal } ]
+
+# Test 50: Complex (A OR B) AND (C OR D) - P+R present (should match)
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_15/logic/complex-and-or
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ X-P, "yes" ]
+        - [ X-R, "yes" ]
+        - [ uuid, 56 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Complex-Result, { value: "matched", as: equal } ]
+
+# Test 51: Complex (A OR B) AND (C OR D) - Q+S present (should match)
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_15/logic/complex-and-or
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ X-Q, "yes" ]
+        - [ X-S, "yes" ]
+        - [ uuid, 57 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Complex-Result, { value: "matched", as: equal } ]
+
+# Test 52: Complex (A OR B) AND (C OR D) - only P present (first group
+# matches but second doesn't, should not match)
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_15/logic/complex-and-or
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ X-P, "yes" ]
+        - [ uuid, 58 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Complex-Result, { as: absent } ]
+
+# Test 53: IP:CLIENT in GROUP with [OR] - IP matches (client is 127.0.0.1)
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_15/logic/ip-group-or
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ uuid, 59 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Ip-Group-Or-Result, { value: "matched", as: equal } ]
+
+# Test 54: IP:CLIENT in GROUP with [OR] - header X-Outer matches too
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_15/logic/ip-group-or
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ X-Outer, "true" ]
+        - [ uuid, 60 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Ip-Group-Or-Result, { value: "matched", as: equal } ]
+
+# Test 55: GROUP as first condition after hook - X-First-A present, should match
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_15/logic/group-first
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ X-First-A, "yes" ]
+        - [ uuid, 61 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Group-First-Result, { value: "matched", as: equal } ]
+
+# Test 56: GROUP as first condition after hook - no X-First-A, should not match
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_15/logic/group-first
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ uuid, 62 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Group-First-Result, { as: absent } ]

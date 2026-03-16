@@ -303,15 +303,16 @@ TEST_CASE("PROXY Protocol v2 Parser", "[ProxyProtocol][ProxyProtocolv2]")
       0x55, 0x49, 0x54, 0x0A,                         ///<
       0x21,                                           ///< version & command
       0x11,                                           ///< protocol & family
-      0x00, 0x2B,                                     ///< len
+      0x00, 0x32,                                     ///< len
       0xC0, 0x00, 0x02, 0x01,                         ///< src_addr
       0xC6, 0x33, 0x64, 0x01,                         ///< dst_addr
       0xC3, 0x50,                                     ///< src_port
       0x01, 0xBB,                                     ///< dst_port
       0x01, 0x00, 0x02, 0x68, 0x32,                   /// PP2_TYPE_ALPN (h2)
       0x02, 0x00, 0x03, 0x61, 0x62, 0x63,             /// PP2_TYPE_AUTHORITY (abc)
-      0x20, 0x00, 0x11, 0x01, 0x00, 0x00, 0x00, 0x00, /// PP2_TYPE_SSL (client=0x01, verify=0)
+      0x20, 0x00, 0x18, 0x01, 0x00, 0x00, 0x00, 0x00, /// PP2_TYPE_SSL (client=0x01, verify=0)
       0x23, 0x00, 0x03, 0x58, 0x59, 0x5A,             /// PP2_SUBTYPE_SSL_CIPHER (XYZ)
+      0x26, 0x00, 0x04, 0x58, 0x31, 0x32, 0x33,       /// PP2_SUBTYPE_SSL_GROUP(X123)
       0x21, 0x00, 0x03, 0x54, 0x4C, 0x53,             /// PP2_SUBTYPE_SSL_VERSION (TLS)
     };
 
@@ -332,6 +333,7 @@ TEST_CASE("PROXY Protocol v2 Parser", "[ProxyProtocol][ProxyProtocolv2]")
     CHECK(pp_info.tlv[PP2_TYPE_AUTHORITY] == "abc");
 
     CHECK(pp_info.get_tlv_ssl_cipher() == "XYZ");
+    CHECK(pp_info.get_tlv_ssl_group() == "X123");
     CHECK(pp_info.get_tlv_ssl_version() == "TLS");
   }
 

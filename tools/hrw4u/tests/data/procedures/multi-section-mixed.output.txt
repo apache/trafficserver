@@ -1,0 +1,13 @@
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{CLIENT-HEADER:X-Env} ="prod"
+    set-header X-Prod "remap-val"
+
+cond %{REMAP_PSEUDO_HOOK} [AND]
+    set-header X-Tag "remap-val"
+
+cond %{SEND_RESPONSE_HDR_HOOK} [AND]
+cond %{CLIENT-HEADER:X-Env} ="prod"
+    set-header X-Prod "resp-val"
+
+cond %{SEND_RESPONSE_HDR_HOOK} [AND]
+    set-header X-Tag "resp-val"

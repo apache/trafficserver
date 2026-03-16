@@ -1,0 +1,5 @@
+use test::mixed-body
+
+REMAP {
+    test::mixed-body();
+}

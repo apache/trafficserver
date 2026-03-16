@@ -1,0 +1,6 @@
+use base::Stamp
+
+procedure caller::wrap($tag) {
+    base::stamp();
+    inbound.req.X-Tag = "$tag";
+}

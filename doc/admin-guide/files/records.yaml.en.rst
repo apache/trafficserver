@@ -1833,9 +1833,13 @@ Origin Server Connect Attempts
 .. ts:cv:: CONFIG proxy.config.http.connect.down.policy INT 2
    :overridable:
 
-   Controls what origin server connection failures contribute to marking a server down. When set to 2, any connection failure during the TCP and TLS
-   handshakes will contribute to marking the server down. When set to 1, only TCP handshake failures will contribute to marking a server down.
-   When set to 0, no connection failures will be used towards marking a server down.
+   Controls what origin server connection failures contribute to marking a server down.
+   When set to ``2``, any connection failure during the TCP and TLS handshakes will
+   contribute to marking the server down. When set to ``1``, only TCP handshake failures
+   will contribute to marking a server down. When set to ``0``, no connection failures
+   will be used towards marking a server down. When set to ``3``, all failures covered
+   by ``2`` plus transaction inactive timeouts (server goes silent after connection is
+   established) will contribute to marking a server down.
 
 .. ts:cv:: CONFIG proxy.config.http.server_max_connections INT 0
    :reloadable:
@@ -2678,6 +2682,34 @@ Cache Control
    used in determining the number of :term:`directory buckets <directory bucket>`
    to allocate for the in-memory cache directory.
 
+.. ts:cv:: CONFIG proxy.config.cache.default_volumes STRING ""
+
+   Specifies a comma-separated list of cache volume numbers to use as the default
+   for cache stripe selection when no more specific volume configuration applies.
+   For example, ``"1,2"`` would use volumes 1 and 2 as the default.
+
+   The volume selection priority order is:
+
+   1. ``@volume=`` directive in :file:`remap.config` (highest priority)
+   2. Hostname matching in :file:`hosting.config`
+   3. ``proxy.config.cache.default_volumes`` (if non-empty)
+   4. All available cache volumes (lowest priority)
+
+   An empty string (the default) disables this feature, causing |TS| to fall
+   back directly to using all available volumes when no other configuration
+   matches.
+
+   This is useful for scenarios where you want to restrict default caching to
+   specific volumes without configuring hostname patterns in :file:`hosting.config`.
+   For example, you might want to reserve certain volumes for specific remap rules
+   while having a different set of default volumes for all other traffic.
+
+.. topic:: Example
+
+   Assign volumes 1 and 2 as defaults for general traffic ::
+
+      CONFIG proxy.config.cache.default_volumes STRING "1,2"
+
 .. ts:cv:: CONFIG proxy.config.cache.permit.pinning INT 0
    :reloadable:
 
@@ -2818,12 +2850,22 @@ RAM Cache
    Alternatively, it can be set to a fixed value such as
    **20GB** (21474836480)
 
+   This global setting can be overridden on a per-volume basis using the
+   ``ram_cache_size`` parameter in :file:`volume.config`. Per-volume
+   allocations are subtracted from the total RAM cache size before
+   distributing the remainder among volumes without explicit settings.
+
 .. ts:cv:: CONFIG proxy.config.cache.ram_cache_cutoff INT 4194304
 
    Objects greater than this size will not be kept in the RAM cache.
    This should be set high enough to keep objects accessed frequently
    in memory in order to improve performance.
    **4MB** (4194304)
+
+   This global setting can be overridden on a per-volume basis using the
+   ``ram_cache_cutoff`` parameter in :file:`volume.config`. When set,
+   the per-volume cutoff takes precedence over this global setting for
+   that specific volume.
 
 .. ts:cv:: CONFIG proxy.config.cache.ram_cache.algorithm INT 1
 
@@ -2918,7 +2960,7 @@ Dynamic Content & Content Negotiation
     The number of times to attempt a cache open write upon failure to get a write lock.
 
     This config is ignored when :ts:cv:`proxy.config.http.cache.open_write_fail_action` is
-    set to ``5`` or :ts:cv:`proxy.config.http.cache.max_open_write_retry_timeout` is set to gt ``0``.
+    set to ``5`` or ``6``, or when :ts:cv:`proxy.config.http.cache.max_open_write_retry_timeout` is set to gt ``0``.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.max_open_write_retry_timeout INT 0
    :reloadable:
@@ -2927,7 +2969,7 @@ Dynamic Content & Content Negotiation
     A timeout for attempting a cache open write upon failure to get a write lock.
 
     This config is ignored when :ts:cv:`proxy.config.http.cache.open_write_fail_action` is
-    set to ``5``.
+    set to ``5`` or ``6``.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.open_write_fail_action INT 0
    :reloadable:
@@ -2955,8 +2997,14 @@ Dynamic Content & Content Negotiation
          with :ts:cv:`proxy.config.cache.enable_read_while_writer` configuration
          allows to collapse concurrent requests without a need for any plugin.
          Make sure to configure the :ref:`admin-config-read-while-writer` feature
-         correctly. Note that this option may result in CACHE_LOOKUP_COMPLETE HOOK
-         being called back more than once.
+         correctly. With this option, CACHE_LOOKUP_COMPLETE HOOK is deferred for
+         read retries so that plugins see only the final cache lookup result.
+   ``6`` Retry Cache Read on a Cache Write Lock failure (same as ``5``), but if
+         read retries are exhausted and a stale cached object exists, serve the
+         stale content if allowed. This combines the request collapsing behavior
+         of ``5`` with the stale-serving fallback of ``2``. If stale is not
+         returnable (e.g., due to ``Cache-Control: must-revalidate``), go to
+         origin server.
    ===== ======================================================================
 
 Customizable User Response Pages

@@ -1,0 +1,6 @@
+REMAP {
+    if inbound.req.X-Foo == "bar" {
+        inbound.req.X-Bar = "yes";
+    }
+    inbound.req.X-Baloo = "hello";
+}

@@ -1,0 +1,4 @@
+REMAP {
+    inbound.req.X-Foo = "test";
+    break;
+}

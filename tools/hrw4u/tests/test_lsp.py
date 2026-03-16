@@ -333,9 +333,33 @@ class LSPClient:
         if self.stderr_thread and self.stderr_thread.is_alive():
             self.stderr_thread.join(timeout=1.0)
 
+    def wait_for_diagnostics(self, uri: str, timeout: float = 3.0) -> list[dict[str, Any]]:
+        """Wait for a publishDiagnostics notification for the given URI."""
+        start_time = time.time()
+        stashed: list[dict[str, Any]] = []
+
+        while time.time() - start_time < timeout:
+            try:
+                msg = self.response_queue.get(timeout=0.1)
+                if msg.get("method") == "textDocument/publishDiagnostics":
+                    if msg.get("params", {}).get("uri") == uri:
+                        # Put stashed messages back
+                        for m in stashed:
+                            self.response_queue.put(m)
+                        return msg["params"].get("diagnostics", [])
+                    else:
+                        stashed.append(msg)
+                else:
+                    stashed.append(msg)
+            except queue.Empty:
+                continue
+
+        for m in stashed:
+            self.response_queue.put(m)
+        return []
+
 
 def _create_test_document(client, content: str, test_name: str) -> str:
-    """Helper to create and open a test document."""
     uri = f"file:///test_{test_name}.hrw4u"
     client.open_document(uri, content)
     return uri
@@ -638,3 +662,61 @@ def test_unknown_namespace_fallback(shared_lsp_client) -> None:
 
     content = response["result"]["contents"]["value"]
     assert "HRW4U symbol" in content
+
+
+# ---------------------------------------------------------------------------
+# Sandbox LSP tests
+# ---------------------------------------------------------------------------
+
+SANDBOX_YAML = Path(__file__).parent / "data" / "sandbox" / "sandbox.yaml"
+
+
+@pytest.fixture(scope="module")
+def sandbox_lsp_client():
+    """LSP client started with --sandbox flag."""
+    lsp_script = Path(__file__).parent.parent / "scripts" / "hrw4u-lsp"
+    if not lsp_script.exists():
+        pytest.skip("hrw4u-lsp script not found - run 'make' first")
+    if not SANDBOX_YAML.exists():
+        pytest.skip("sandbox.yaml not found")
+
+    client = LSPClient([str(lsp_script), "--sandbox", str(SANDBOX_YAML)])
+    client.start_server()
+    yield client
+    client.stop_server()
+
+
+@pytest.mark.sandbox
+def test_sandbox_denied_function_produces_diagnostic(sandbox_lsp_client) -> None:
+    """set-debug denied by sandbox should appear as a diagnostic error."""
+    content = 'REMAP {\n    set-debug();\n}\n'
+    uri = "file:///test_sandbox_denied_function.hrw4u"
+    sandbox_lsp_client.open_document(uri, content)
+    diagnostics = sandbox_lsp_client.wait_for_diagnostics(uri)
+
+    assert any("denied by sandbox policy" in d.get("message", "") for d in diagnostics), \
+        f"Expected sandbox denial diagnostic, got: {diagnostics}"
+
+
+@pytest.mark.sandbox
+def test_sandbox_denied_section_produces_diagnostic(sandbox_lsp_client) -> None:
+    """PRE_REMAP denied by sandbox should appear as a diagnostic error."""
+    content = 'PRE_REMAP {\n    inbound.req.X-Foo = "test";\n}\n'
+    uri = "file:///test_sandbox_denied_section.hrw4u"
+    sandbox_lsp_client.open_document(uri, content)
+    diagnostics = sandbox_lsp_client.wait_for_diagnostics(uri)
+
+    assert any("denied by sandbox policy" in d.get("message", "") for d in diagnostics), \
+        f"Expected sandbox denial diagnostic, got: {diagnostics}"
+
+
+@pytest.mark.sandbox
+def test_sandbox_allowed_content_has_no_denial(sandbox_lsp_client) -> None:
+    """Content using no denied features should produce no sandbox diagnostics."""
+    content = 'REMAP {\n    inbound.req.X-Foo = "allowed";\n}\n'
+    uri = "file:///test_sandbox_allowed.hrw4u"
+    sandbox_lsp_client.open_document(uri, content)
+    diagnostics = sandbox_lsp_client.wait_for_diagnostics(uri)
+
+    sandbox_errors = [d for d in diagnostics if "denied by sandbox policy" in d.get("message", "")]
+    assert not sandbox_errors, f"Expected no sandbox denials, got: {sandbox_errors}"

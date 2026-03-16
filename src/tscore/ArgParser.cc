@@ -731,7 +731,7 @@ ArgParser::Command::append_option_data(Arguments &ret, AP_StrVec &args, int inde
 // This must be called AFTER validate_dependencies() so that default values
 // (e.g. --timeout "0") don't falsely trigger dependency checks.
 void
-ArgParser::Command::apply_option_defaults(Arguments &ret)
+ArgParser::Command::apply_option_defaults(Arguments &ret) const
 {
   for (const auto &it : _option_list) {
     if (!it.second.default_value.empty() && ret.get(it.second.key).empty()) {

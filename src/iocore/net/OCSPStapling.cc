@@ -55,7 +55,13 @@ extern ClassAllocator<FetchSM, false> FetchSMAllocator;
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-function"
 #ifndef GENERAL_NAME_it
+#if HAVE_GENERAL_NAME_IN_BSSL_NAMESPACE
+namespace bssl {
+#endif
 DECLARE_ASN1_ITEM(GENERAL_NAME)
+#if HAVE_GENERAL_NAME_IN_BSSL_NAMESPACE
+}
+#endif
 #endif
 // RFC 6960
 using TS_OCSP_CERTID = struct ocsp_cert_id {
@@ -97,7 +103,11 @@ using TS_OCSP_REQINFO = struct ocsp_req_info_st {
 DECLARE_ASN1_FUNCTIONS(TS_OCSP_REQINFO)
 ASN1_SEQUENCE(TS_OCSP_REQINFO) = {
         ASN1_EXP_OPT(TS_OCSP_REQINFO, version, ASN1_INTEGER, 0),
+#if HAVE_GENERAL_NAME_IN_BSSL_NAMESPACE
+        ASN1_EXP_OPT(TS_OCSP_REQINFO, requestorName, bssl::GENERAL_NAME, 1),
+#else
         ASN1_EXP_OPT(TS_OCSP_REQINFO, requestorName, GENERAL_NAME, 1),
+#endif
         ASN1_SEQUENCE_OF(TS_OCSP_REQINFO, requestList, TS_OCSP_ONEREQ),
         ASN1_EXP_SEQUENCE_OF_OPT(TS_OCSP_REQINFO, requestExtensions, X509_EXTENSION, 2)
 } ASN1_SEQUENCE_END(TS_OCSP_REQINFO)
@@ -1396,10 +1406,15 @@ ssl_callback_ocsp_stapling(SSL *ssl, void *)
   time_t current_time = time(nullptr);
   if ((cinf->resp_derlen == 0 || cinf->is_expire) || (cinf->expire_time < current_time && !cinf->is_prefetched)) {
     ink_mutex_release(&cinf->stapling_mutex);
-    Dbg(dbg_ctl_ssl_ocsp, "ssl_callback_ocsp_stapling: failed to get certificate status for %s", cinf->certname);
+    Error("ssl_callback_ocsp_stapling: failed to get certificate status for %s", cinf->certname);
     return SSL_TLSEXT_ERR_NOACK;
   } else {
     unsigned char *p = static_cast<unsigned char *>(OPENSSL_malloc(cinf->resp_derlen));
+    if (p == nullptr) {
+      ink_mutex_release(&cinf->stapling_mutex);
+      Dbg(dbg_ctl_ssl_ocsp, "ssl_callback_ocsp_stapling: failed to allocate memory for %s", cinf->certname);
+      return SSL_TLSEXT_ERR_NOACK;
+    }
     memcpy(p, cinf->resp_der, cinf->resp_derlen);
     ink_mutex_release(&cinf->stapling_mutex);
     SSL_set_tlsext_status_ocsp_resp(ssl, p, cinf->resp_derlen);

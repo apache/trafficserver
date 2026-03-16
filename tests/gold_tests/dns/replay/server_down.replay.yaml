@@ -36,6 +36,7 @@ sessions:
       status: 200
 
     # Returns 502 since server connection is unreachable
+    # This transaction should mark the IP as down
     proxy-response:
       status: 502
 
@@ -55,5 +56,7 @@ sessions:
     server-response:
       status: 200
 
+    # After host has been marked down from previous test, HostDB should not return
+    # the host as available and HostDB lookup should fail.
     proxy-response:
-      status: 502
+      status: 500
