@@ -140,7 +140,7 @@ logging:
 
     def _waitForCacheIO(self):
         tr = Test.AddTestRun('Wait for cache write to complete')
-        tr.Processes.Default.Command = 'sleep 2'
+        tr.Processes.Default.Command = 'sleep 1'
         tr.Processes.Default.ReturnCode = 0
         tr.StillRunningAfter = self._server
         tr.StillRunningAfter = self._ts
