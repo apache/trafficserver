@@ -656,9 +656,7 @@ public:
 
   using ResponseAction = struct _ResponseAction {
     bool             handled = false;
-    TSResponseAction action;
-
-    _ResponseAction() : action{} {}
+    TSResponseAction action  = {};
   };
 
   struct State {
