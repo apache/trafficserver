@@ -51,8 +51,9 @@ UTILS_FILES=src/symbols_base.py \
 SRC_FILES_HRW4U=src/visitor.py \
 	src/symbols.py \
 	src/suggestions.py \
-	src/kg_visitor.py \
-	src/procedures.py
+	src/procedures.py \
+	src/sandbox.py \
+	src/kg_visitor.py
 
 ALL_HRW4U_FILES=$(SHARED_FILES) $(UTILS_FILES) $(SRC_FILES_HRW4U)
 
@@ -170,10 +171,10 @@ test:
 
 # Build standalone binaries (optional)
 build: gen
-	uv run pyinstaller --onefile --name hrw4u --strip $(SCRIPT_HRW4U)
-	uv run pyinstaller --onefile --name u4wrh --strip $(SCRIPT_U4WRH)
-	uv run pyinstaller --onefile --name hrw4u-lsp --strip $(SCRIPT_LSP)
-	uv run pyinstaller --onefile --name hrw4u-kg --strip $(SCRIPT_KG)
+	uv run pyinstaller --onedir --name hrw4u --strip $(SCRIPT_HRW4U)
+	uv run pyinstaller --onedir --name u4wrh --strip $(SCRIPT_U4WRH)
+	uv run pyinstaller --onedir --name hrw4u-lsp --strip $(SCRIPT_LSP)
+	uv run pyinstaller --onedir --name hrw4u-kg --strip $(SCRIPT_KG)
 
 # Wheel packaging (adjust pyproject to include both packages if desired)
 package: gen

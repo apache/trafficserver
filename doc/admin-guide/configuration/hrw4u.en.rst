@@ -529,10 +529,58 @@ Groups
      ...
    }
 
+Control Flow
+------------
+
+HRW4U conditionals use ``if``, ``elif``, and ``else`` blocks. Each branch
+takes a condition expression followed by a ``{ ... }`` body of statements:
+
+.. code-block:: none
+
+   if condition {
+     statement;
+   } elif other-condition {
+     statement;
+   } else {
+     statement;
+   }
+
+``elif`` and ``else`` are optional and can be chained. Branches can be nested
+to arbitrary depth:
+
+.. code-block:: none
+
+   REMAP {
+     if inbound.status > 399 {
+       if inbound.status < 500 {
+         if inbound.status == 404 {
+           inbound.resp.X-Error = "not-found";
+         } elif inbound.status == 403 {
+           inbound.resp.X-Error = "forbidden";
+         }
+       } else {
+         inbound.resp.X-Error = "server-error";
+       }
+     }
+   }
+
+The ``break;`` statement exits the current section immediately, skipping any
+remaining statements and branches:
+
+.. code-block:: none
+
+   REMAP {
+     if inbound.req.X-Internal != "1" {
+       break;
+     }
+     # Only reached for internal requests
+     inbound.req.X-Debug = "on";
+   }
+
 Condition operators
 -------------------
 
-HRW4U supports the following condition operators, which are used in `if (...)` expressions:
+HRW4U supports the following condition operators, which are used in ``if`` expressions:
 
 ==================== ========================= ============================================
 Operator             HRW4U Syntax              Description
@@ -588,6 +636,184 @@ Run with `--debug all` to trace:
 - Lexer, parser, visitor behavior
 - Condition evaluations
 - State and output emission
+
+Sandbox Policy Enforcement
+==========================
+
+Organizations deploying HRW4U across teams can restrict which language features
+are permitted using a sandbox configuration file. Features can be **denied**
+(compilation fails with an error) or **warned** (compilation succeeds but a
+warning is emitted). Both modes support the same feature categories.
+
+Pass the sandbox file with ``--sandbox``:
+
+.. code-block:: none
+
+   hrw4u --sandbox /etc/trafficserver/hrw4u-sandbox.yaml rules.hrw4u
+
+The sandbox file is YAML with a single top-level ``sandbox`` key. A JSON
+Schema for editor validation and autocomplete is provided at
+``tools/hrw4u/schema/sandbox.schema.json``.
+
+.. code-block:: yaml
+
+   sandbox:
+     message: |      # optional: shown once after all errors/warnings
+       ...
+     deny:
+       sections:    [ ... ]   # section names, e.g. TXN_START
+       functions:   [ ... ]   # function names, e.g. run-plugin
+       conditions:  [ ... ]   # condition keys, e.g. geo.
+       operators:   [ ... ]   # operator keys, e.g. inbound.conn.dscp
+       language:    [ ... ]   # break, variables, in, else, elif
+     warn:
+       functions:   [ ... ]   # same categories as deny
+       conditions:  [ ... ]
+
+All lists are optional. If ``--sandbox`` is omitted, all features are permitted.
+When a sandbox file is provided it must contain a top-level ``sandbox:`` key;
+an empty policy can be expressed as ``sandbox: {}``.
+A feature may not appear in both ``deny`` and ``warn``.
+
+Denied Sections
+---------------
+
+The ``sections`` list accepts any of the HRW4U section names listed in the
+`Sections`_ table, plus ``VARS`` to deny the variable declaration block.
+A denied section causes the entire block to be rejected; the body is not
+validated.
+
+Functions
+---------
+
+The ``functions`` list accepts any of the statement-function names used in
+HRW4U source. The complete set of deniable functions is:
+
+====================== =============================================
+Function               Description
+====================== =============================================
+``add-header``         Add a header (``+=`` operator equivalent)
+``counter``            Increment an ATS statistics counter
+``keep_query``         Keep only specified query parameters
+``no-op``              Explicit no-op statement
+``remove_query``       Remove specified query parameters
+``run-plugin``         Invoke an external remap plugin
+``set-body-from``      Set response body from a URL
+``set-config``         Override an ATS configuration variable
+``set-debug``          Enable per-transaction ATS debug logging
+``set-plugin-cntl``    Set a plugin control flag
+``set-redirect``       Issue an HTTP redirect response
+``skip-remap``         Skip remap processing (open proxy)
+====================== =============================================
+
+Conditions and Operators
+------------------------
+
+The ``conditions`` and ``operators`` lists use the same dot-notation keys shown
+in the `Conditions`_ and `Operators`_ tables above (e.g. ``inbound.req.``,
+``geo.``, ``outbound.conn.``).
+
+Entries ending with ``.`` use **prefix matching** — ``geo.`` denies all
+``geo.*`` lookups (``geo.city``, ``geo.ASN``, etc.). Entries without a trailing
+``.`` are matched exactly, which allows fine-grained control over sub-values:
+
+.. code-block:: yaml
+
+   sandbox:
+     deny:
+       operators:
+         - http.cntl.SKIP_REMAP        # deny just this sub-value
+       conditions:
+         - geo.ASN                      # deny ASN lookups specifically
+     warn:
+       operators:
+         - http.cntl.                   # warn on all other http.cntl.* usage
+       conditions:
+         - geo.                         # warn on remaining geo.* lookups
+
+Prefix entries and exact entries can be combined across ``deny`` and ``warn``
+to create graduated policies — deny the dangerous sub-values while warning on
+the rest.
+
+Language Constructs
+-------------------
+
+The ``language`` list accepts a fixed set of constructs:
+
+================ ===================================================
+Construct        What it controls
+================ ===================================================
+``break``        The ``break;`` statement (early section exit)
+``variables``    The entire ``VARS`` section and all variable usage
+``else``         The ``else { ... }`` branch of conditionals
+``elif``         The ``elif ... { ... }`` branch of conditionals
+``in``           The ``in [...]`` and ``!in [...]`` set membership operators
+================ ===================================================
+
+Output
+------
+
+When a denied feature is used the error output looks like:
+
+.. code-block:: none
+
+   rules.hrw4u:3:4: error: 'set-debug' is denied by sandbox policy (function)
+
+   This feature is restricted by CDN-SRE policy.
+   Contact cdn-sre@example.com for exceptions.
+
+When a warned feature is used the compiler emits a warning but succeeds:
+
+.. code-block:: none
+
+   rules.hrw4u:5:4: warning: 'set-config' is warned by sandbox policy (function)
+
+   This feature is restricted by CDN-SRE policy.
+   Contact cdn-sre@example.com for exceptions.
+
+The sandbox message is shown once at the end of the output, regardless of how
+many denial errors or warnings were found. Warnings alone do not cause a
+non-zero exit code.
+
+Example Configuration
+---------------------
+
+A typical policy for a CDN team where remap plugin authors should not have
+access to low-level or dangerous features, with transitional warnings for
+features being phased out:
+
+.. code-block:: yaml
+
+   sandbox:
+     message: |
+       This feature is not permitted by CDN-SRE policy.
+       To request an exception, file a ticket at https://help.example.com/cdn
+
+     deny:
+       # Disallow hooks that run outside the normal remap context
+       sections:
+         - TXN_START
+         - TXN_CLOSE
+         - PRE_REMAP
+
+       # Disallow functions that affect ATS internals or load arbitrary code
+       functions:
+         - run-plugin
+         - skip-remap
+
+       # Deny a specific dangerous sub-value
+       operators:
+         - http.cntl.SKIP_REMAP
+
+     warn:
+       # These functions will be denied in a future release
+       functions:
+         - set-debug
+         - set-config
+
+       # Warn on all remaining http.cntl usage
+       operators:
+         - http.cntl.
 
 Examples
 ========

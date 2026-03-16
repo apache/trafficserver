@@ -19,6 +19,7 @@
 
 from __future__ import annotations
 
+import argparse
 import json
 import os
 import sys
@@ -29,6 +30,7 @@ from typing import Any
 from hrw4u.hrw4uLexer import hrw4uLexer
 from hrw4u.hrw4uParser import hrw4uParser
 from hrw4u.visitor import HRW4UVisitor, ProcSig
+from hrw4u.sandbox import SandboxConfig
 from hrw4u.common import create_parse_tree
 from hrw4u.types import VarType, LanguageKeyword
 from hrw4u.procedures import resolve_use_path
@@ -52,6 +54,7 @@ class DocumentManager:
         self._completion_provider = CompletionProvider()
         self._uri_path_cache: dict[str, str] = {}
         self.proc_search_paths: list[Path] = []
+        self.sandbox: SandboxConfig | None = None
 
     def _add_operator_completions(self, completions: list, base_prefix: str, current_section, context: CompletionContext) -> None:
         operator_completions = self._completion_provider.get_operator_completions(
@@ -119,7 +122,10 @@ class DocumentManager:
 
             if tree is not None:
                 visitor = HRW4UVisitor(
-                    filename=filename, error_collector=error_collector, proc_search_paths=self.proc_search_paths or None)
+                    filename=filename,
+                    error_collector=error_collector,
+                    proc_search_paths=self.proc_search_paths or None,
+                    sandbox=self.sandbox)
                 try:
                     visitor.visit(tree)
                     self.proc_registries[uri] = dict(visitor._proc_registry)
@@ -215,6 +221,29 @@ class DocumentManager:
                             "severity": severity,
                             "message": error_str,
                             "source": "hrw4u"
+                        })
+
+            # Emit sandbox warnings as LSP severity=2 (Warning) diagnostics
+            if error_collector and error_collector.has_warnings():
+                for w in error_collector.warnings:
+                    line_num = max(0, w.line - 1)
+                    col_num = max(0, w.column)
+                    diagnostics.append(
+                        {
+                            "range":
+                                {
+                                    "start": {
+                                        "line": line_num,
+                                        "character": col_num
+                                    },
+                                    "end": {
+                                        "line": line_num,
+                                        "character": col_num + 1
+                                    }
+                                },
+                            "severity": 2,
+                            "message": w.message,
+                            "source": "hrw4u-sandbox"
                         })
 
             # Add parser errors only if they don't overlap with semantic errors
@@ -566,7 +595,12 @@ class HRW4ULanguageServer:
             procedures_path = init_options.get("proceduresPath", "")
             if procedures_path:
                 self.document_manager.proc_search_paths = [Path(p) for p in procedures_path.split(os.pathsep) if p]
-
+            sandbox_path = init_options.get("sandboxPath", "")
+            if sandbox_path:
+                try:
+                    self.document_manager.sandbox = SandboxConfig.load(Path(sandbox_path))
+                except Exception as e:
+                    print(f"hrw4u-lsp: warning: could not load sandbox config: {e}", file=sys.stderr)
         response = {
             "jsonrpc": "2.0",
             "id": message["id"],
@@ -716,7 +750,16 @@ class HRW4ULanguageServer:
 
 def main() -> None:
     """Main entry point for the LSP server."""
+    parser = argparse.ArgumentParser(description="HRW4U Language Server")
+    parser.add_argument("--sandbox", metavar="FILE", type=Path, help="Path to sandbox YAML configuration file")
+    args, _unknown = parser.parse_known_args()
+
     server = HRW4ULanguageServer()
+    if args.sandbox:
+        try:
+            server.document_manager.sandbox = SandboxConfig.load(args.sandbox)
+        except Exception as e:
+            print(f"hrw4u-lsp: warning: could not load sandbox config: {e}", file=sys.stderr)
     server.start()
 
 

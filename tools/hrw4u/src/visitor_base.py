@@ -23,7 +23,8 @@ from typing import Any
 from hrw4u.debugging import Dbg
 from hrw4u.states import SectionType
 from hrw4u.common import SystemDefaults
-from hrw4u.errors import hrw4u_error
+from hrw4u.errors import hrw4u_error, Warning
+from hrw4u.sandbox import SandboxConfig, SandboxDenialError
 
 
 @dataclass(slots=True)
@@ -46,6 +47,7 @@ class BaseHRWVisitor:
         self.filename = filename
         self.error_collector = error_collector
         self.output: list[str] = []
+        self._sandbox = SandboxConfig.empty()
 
         self._state = VisitorState()
         self._dbg = Dbg(debug)
@@ -158,6 +160,13 @@ class BaseHRWVisitor:
 
         return DebugContext(self, method_name, args)
 
+    def _add_sandbox_warning(self, ctx, message: str) -> None:
+        """Format and collect a sandbox warning with source context."""
+        if self.error_collector:
+            self.error_collector.add_warning(Warning.from_ctx(self.filename, ctx, message))
+            if self._sandbox.message:
+                self.error_collector.set_sandbox_message(self._sandbox.message)
+
     def trap(self, ctx, *, note: str | None = None):
 
         class _Trap:
@@ -175,6 +184,8 @@ class BaseHRWVisitor:
 
                 if self.error_collector:
                     self.error_collector.add_error(error)
+                    if isinstance(exc, SandboxDenialError) and exc.sandbox_message:
+                        self.error_collector.set_sandbox_message(exc.sandbox_message)
                     return True
                 else:
                     raise error from exc
@@ -256,6 +267,11 @@ class BaseHRWVisitor:
                                 raise Exception(f"Unknown modifier: {flag_text}")
                         else:
                             raise Exception(f"Unknown modifier: {flag_text}")
+                    sandbox = self._sandbox
+                    if sandbox is not None:
+                        warning = sandbox.check_modifier(flag_text)
+                        if warning and ctx:
+                            self._add_sandbox_warning(ctx, warning)
                 continue
 
             for kind in ("IDENT", "NUMBER", "STRING", "PERCENT_BLOCK", "COMPLEX_STRING"):

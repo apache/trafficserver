@@ -1,0 +1,3 @@
+TXN_START {
+    inbound.req.X-Foo = "test";
+}

@@ -18,6 +18,7 @@
 from __future__ import annotations
 
 import re
+from dataclasses import dataclass
 from typing import Final
 
 from antlr4.error.ErrorListener import ErrorListener
@@ -61,6 +62,24 @@ def humanize_error_message(msg: str) -> str:
     return _TOKEN_PATTERN.sub(lambda m: _TOKEN_NAMES[m.group(1)], msg)
 
 
+def _format_diagnostic(filename: str, line: int, col: int, severity: str, message: str, source_line: str) -> str:
+    header = f"{filename}:{line}:{col}: {severity}: {message}"
+
+    lineno = f"{line:4d}"
+    code_line = f"{lineno} | {source_line}"
+    pointer_line = f"{' ' * 4} | {' ' * col}^"
+    return f"{header}\n{code_line}\n{pointer_line}"
+
+
+def _extract_source_context(ctx: object) -> tuple[int, int, str]:
+    try:
+        input_stream = ctx.start.getInputStream()
+        source_line = input_stream.strdata.splitlines()[ctx.start.line - 1]
+        return ctx.start.line, ctx.start.column, source_line
+    except Exception:
+        return 0, 0, ""
+
+
 class ThrowingErrorListener(ErrorListener):
 
     def __init__(self, filename: str = "<input>") -> None:
@@ -88,7 +107,7 @@ class ThrowingErrorListener(ErrorListener):
 class Hrw4uSyntaxError(Exception):
 
     def __init__(self, filename: str, line: int, column: int, message: str, source_line: str) -> None:
-        super().__init__(self._format_error(filename, line, column, message, source_line))
+        super().__init__(_format_diagnostic(filename, line, column, "error", message, source_line))
         self.filename = filename
         self.line = line
         self.column = column
@@ -99,14 +118,6 @@ class Hrw4uSyntaxError(Exception):
 
     def add_resolution_hint(self, hint: str) -> None:
         self.add_note(f"Hint: {hint}")
-
-    def _format_error(self, filename: str, line: int, col: int, message: str, source_line: str) -> str:
-        error = f"{filename}:{line}:{col}: error: {message}"
-
-        lineno = f"{line:4d}"
-        code_line = f"{lineno} | {source_line}"
-        pointer_line = f"{' ' * 4} | {' ' * col}^"
-        return f"{error}\n{code_line}\n{pointer_line}"
 
 
 class SymbolResolutionError(Exception):
@@ -124,16 +135,8 @@ def hrw4u_error(filename: str, ctx: object, exc: Exception) -> Hrw4uSyntaxError:
     if isinstance(exc, Hrw4uSyntaxError):
         return exc
 
-    if ctx is None:
-        error = Hrw4uSyntaxError(filename, 0, 0, str(exc), "")
-    else:
-        try:
-            input_stream = ctx.start.getInputStream()
-            source_line = input_stream.strdata.splitlines()[ctx.start.line - 1]
-        except Exception:
-            source_line = ""
-
-        error = Hrw4uSyntaxError(filename, ctx.start.line, ctx.start.column, str(exc), source_line)
+    line, col, source_line = _extract_source_context(ctx) if ctx else (0, 0, "")
+    error = Hrw4uSyntaxError(filename, line, col, str(exc), source_line)
 
     if hasattr(exc, '__notes__') and exc.__notes__:
         for note in exc.__notes__:
@@ -142,14 +145,49 @@ def hrw4u_error(filename: str, ctx: object, exc: Exception) -> Hrw4uSyntaxError:
     return error
 
 
+def format_diagnostic(filename: str, ctx: object, severity: str, message: str) -> str:
+    """Format a diagnostic message (error/warning) with source context from a parser ctx."""
+    line, col, source_line = _extract_source_context(ctx)
+    return _format_diagnostic(filename, line, col, severity, message, source_line)
+
+
+@dataclass(frozen=True, slots=True)
+class Warning:
+    """Structured warning with source location for use by both CLI and LSP."""
+    filename: str
+    line: int
+    column: int
+    message: str
+    source_line: str
+
+    def format(self) -> str:
+        return _format_diagnostic(self.filename, self.line, self.column, "warning", self.message, self.source_line)
+
+    @classmethod
+    def from_ctx(cls, filename: str, ctx: object, message: str) -> Warning:
+        line, col, source_line = _extract_source_context(ctx)
+        return cls(filename=filename, line=line, column=col, message=message, source_line=source_line)
+
+
 class ErrorCollector:
+    """Collects multiple syntax errors and warnings for comprehensive reporting."""
 
     def __init__(self, max_errors: int = 5) -> None:
         self.errors: list[Hrw4uSyntaxError] = []
         self.max_errors = max_errors
+        self.warnings: list[Warning] = []
+        self._sandbox_message: str | None = None
 
     def add_error(self, error: Hrw4uSyntaxError) -> None:
         self.errors.append(error)
+
+    def add_warning(self, warning: Warning) -> None:
+        self.warnings.append(warning)
+
+    def set_sandbox_message(self, message: str) -> None:
+        """Record the sandbox policy message to display once at the end."""
+        if message and self._sandbox_message is None:
+            self._sandbox_message = message
 
     def has_errors(self) -> bool:
         return bool(self.errors)
@@ -158,20 +196,37 @@ class ErrorCollector:
     def at_limit(self) -> bool:
         return len(self.errors) >= self.max_errors
 
+    def has_warnings(self) -> bool:
+        return bool(self.warnings)
+
     def get_error_summary(self) -> str:
-        if not self.errors:
+        if not self.errors and not self.warnings:
             return "No errors found."
 
-        count = len(self.errors)
-        lines = [f"Found {count} error{'s' if count > 1 else ''}:"]
+        lines: list[str] = []
 
-        for error in self.errors:
-            lines.append(str(error))
-            if hasattr(error, '__notes__') and error.__notes__:
-                lines.extend(error.__notes__)
+        if self.errors:
+            count = len(self.errors)
+            lines.append(f"Found {count} error{'s' if count > 1 else ''}:")
+
+            for error in self.errors:
+                lines.append(str(error))
+                if hasattr(error, '__notes__') and error.__notes__:
+                    lines.extend(error.__notes__)
+
+        if self.warnings:
+            if self.errors:
+                lines.append("")
+            count = len(self.warnings)
+            lines.append(f"{count} warning{'s' if count > 1 else ''}:")
+            lines.extend(w.format() for w in self.warnings)
 
         if self.at_limit:
             lines.append(f"(stopped after {self.max_errors} errors)")
+
+        if self._sandbox_message:
+            lines.append("")
+            lines.append(self._sandbox_message)
 
         return "\n".join(lines)
 

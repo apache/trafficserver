@@ -1,0 +1,7 @@
+REMAP {
+    if inbound.req.X-Foo == "a" {
+        inbound.req.X-Result = "a";
+    } elif inbound.req.X-Foo == "b" {
+        inbound.req.X-Result = "b";
+    }
+}

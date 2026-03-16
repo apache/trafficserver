@@ -1,0 +1,136 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://trafficserver.apache.org/schemas/hrw4u-sandbox.schema.json",
+  "title": "HRW4U Sandbox Configuration",
+  "description": "Policy deny-list and warn-list for the hrw4u compiler (--sandbox FILE).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["sandbox"],
+  "properties": {
+    "sandbox": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "message": {
+          "type": "string",
+          "description": "Free-form text appended once after all denial errors and warnings. Use this to explain the policy and provide a contact or ticket link."
+        },
+        "deny": {
+          "$ref": "#/$defs/categoryBlock",
+          "description": "Features listed here are denied: compilation fails with an error."
+        },
+        "warn": {
+          "$ref": "#/$defs/categoryBlock",
+          "description": "Features listed here produce warnings but compilation succeeds."
+        }
+      }
+    }
+  },
+  "$defs": {
+    "categoryBlock": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "sections": {
+          "type": "array",
+          "description": "HRW4U section names. A denied section rejects the entire block; a warned section emits a warning.",
+          "items": {
+            "type": "string",
+            "enum": [
+              "TXN_START",
+              "PRE_REMAP",
+              "REMAP",
+              "READ_REQUEST",
+              "SEND_REQUEST",
+              "READ_RESPONSE",
+              "SEND_RESPONSE",
+              "TXN_CLOSE",
+              "VARS"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "functions": {
+          "type": "array",
+          "description": "Statement function names.",
+          "items": {
+            "type": "string",
+            "enum": [
+              "add-header",
+              "counter",
+              "keep_query",
+              "no-op",
+              "remove_query",
+              "run-plugin",
+              "set-body-from",
+              "set-config",
+              "set-debug",
+              "set-plugin-cntl",
+              "set-redirect",
+              "skip-remap"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "conditions": {
+          "type": "array",
+          "description": "Condition keys. Entries ending with '.' use prefix matching (e.g. 'geo.' matches all geo.* lookups).",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true,
+          "examples": [
+            ["geo.", "tcp.info", "inbound.conn.", "outbound.conn."]
+          ]
+        },
+        "operators": {
+          "type": "array",
+          "description": "Operator (assignment target) keys. Entries ending with '.' use prefix matching.",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true,
+          "examples": [
+            ["inbound.conn.dscp", "inbound.conn.mark", "outbound.conn.dscp", "outbound.conn.mark"]
+          ]
+        },
+        "language": {
+          "type": "array",
+          "description": "Language constructs.",
+          "items": {
+            "type": "string",
+            "enum": [
+              "break",
+              "variables",
+              "in",
+              "else",
+              "elif"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "modifiers": {
+          "type": "array",
+          "description": "Condition and operator modifiers.",
+          "items": {
+            "type": "string",
+            "enum": [
+              "AND",
+              "OR",
+              "NOT",
+              "NOCASE",
+              "PRE",
+              "SUF",
+              "EXT",
+              "MID",
+              "I",
+              "L",
+              "QSA"
+            ]
+          },
+          "uniqueItems": true
+        }
+      }
+    }
+  }
+}

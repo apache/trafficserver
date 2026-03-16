@@ -42,6 +42,7 @@ classifiers = [
 ]
 dependencies = [
     "antlr4-python3-runtime>=4.9,<5.0",
+    "pyyaml>=6.0,<7.0",
     "rapidfuzz>=3.0,<4.0",
 ]
 
@@ -77,6 +78,7 @@ markers = [
     "reverse: marks tests for reverse conversion (header_rewrite -> hrw4u)",
     "ast: marks tests for AST validation",
     "procedures: marks tests for procedure expansion",
+    "sandbox: marks tests for sandbox policy enforcement",
 ]
 
 [dependency-groups]
