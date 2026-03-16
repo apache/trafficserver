@@ -32,6 +32,31 @@
 
 MMDB_s *gMaxMindDB = nullptr;
 
+enum class MmdbSchema { NESTED, FLAT };
+static MmdbSchema gMmdbSchema = MmdbSchema::NESTED;
+
+// Detect whether the MMDB uses nested (GeoLite2) or flat (vendor) field layout
+// by probing for the nested country path on a lookup result.
+static MmdbSchema
+detect_schema(MMDB_entry_s *entry)
+{
+  MMDB_entry_data_s probe;
+  int               status = MMDB_get_value(entry, &probe, "country", "iso_code", NULL);
+
+  if (MMDB_SUCCESS == status && probe.has_data && probe.type == MMDB_DATA_TYPE_UTF8_STRING) {
+    return MmdbSchema::NESTED;
+  }
+
+  status = MMDB_get_value(entry, &probe, "country_code", NULL);
+  if (MMDB_SUCCESS == status && probe.has_data && probe.type == MMDB_DATA_TYPE_UTF8_STRING) {
+    return MmdbSchema::FLAT;
+  }
+
+  return MmdbSchema::NESTED;
+}
+
+static const char *probe_ips[] = {"8.8.8.8", "1.1.1.1", "128.0.0.1"};
+
 void
 MMConditionGeo::initLibrary(const std::string &path)
 {
@@ -51,9 +76,23 @@ MMConditionGeo::initLibrary(const std::string &path)
   if (MMDB_SUCCESS != status) {
     Dbg(pi_dbg_ctl, "Cannot open %s - %s", path.c_str(), MMDB_strerror(status));
     delete gMaxMindDB;
+    gMaxMindDB = nullptr;
     return;
   }
-  Dbg(pi_dbg_ctl, "Loaded %s", path.c_str());
+
+  // Probe the database schema at load time so we know which field paths to
+  // use for country lookups.  Try a few well-known IPs until one hits.
+  for (auto *ip : probe_ips) {
+    int                  gai_error, mmdb_error;
+    MMDB_lookup_result_s result = MMDB_lookup_string(gMaxMindDB, ip, &gai_error, &mmdb_error);
+    if (gai_error == 0 && MMDB_SUCCESS == mmdb_error && result.found_entry) {
+      gMmdbSchema = detect_schema(&result.entry);
+      Dbg(pi_dbg_ctl, "Loaded %s (schema: %s)", path.c_str(), gMmdbSchema == MmdbSchema::FLAT ? "flat" : "nested");
+      return;
+    }
+  }
+
+  Dbg(pi_dbg_ctl, "Loaded %s (schema: defaulting to nested, no probe IPs matched)", path.c_str());
 }
 
 std::string
@@ -74,48 +113,37 @@ MMConditionGeo::get_geo_string(const sockaddr *addr) const
     return ret;
   }
 
-  MMDB_entry_data_list_s *entry_data_list = nullptr;
   if (!result.found_entry) {
     Dbg(pi_dbg_ctl, "No entry for this IP was found");
     return ret;
   }
 
-  int status = MMDB_get_entry_data_list(&result.entry, &entry_data_list);
-  if (MMDB_SUCCESS != status) {
-    Dbg(pi_dbg_ctl, "Error looking up entry data: %s", MMDB_strerror(status));
-    return ret;
-  }
+  MMDB_entry_data_s entry_data;
+  int               status;
 
-  if (entry_data_list == nullptr) {
-    Dbg(pi_dbg_ctl, "No data found");
-    return ret;
-  }
-
-  const char *field_name;
   switch (_geo_qual) {
   case GEO_QUAL_COUNTRY:
-    field_name = "country_code";
+    if (gMmdbSchema == MmdbSchema::FLAT) {
+      status = MMDB_get_value(&result.entry, &entry_data, "country_code", NULL);
+    } else {
+      status = MMDB_get_value(&result.entry, &entry_data, "country", "iso_code", NULL);
+    }
     break;
   case GEO_QUAL_ASN_NAME:
-    field_name = "autonomous_system_organization";
+    status = MMDB_get_value(&result.entry, &entry_data, "autonomous_system_organization", NULL);
     break;
   default:
     Dbg(pi_dbg_ctl, "Unsupported field %d", _geo_qual);
     return ret;
-    break;
   }
 
-  MMDB_entry_data_s entry_data;
-
-  status = MMDB_get_value(&result.entry, &entry_data, field_name, NULL);
   if (MMDB_SUCCESS != status) {
-    Dbg(pi_dbg_ctl, "ERROR on get value asn value: %s", MMDB_strerror(status));
+    Dbg(pi_dbg_ctl, "Error looking up geo string field: %s", MMDB_strerror(status));
     return ret;
   }
-  ret = std::string(entry_data.utf8_string, entry_data.data_size);
 
-  if (nullptr != entry_data_list) {
-    MMDB_free_entry_data_list(entry_data_list);
+  if (entry_data.has_data && entry_data.type == MMDB_DATA_TYPE_UTF8_STRING) {
+    ret = std::string(entry_data.utf8_string, entry_data.data_size);
   }
 
   return ret;
@@ -139,45 +167,31 @@ MMConditionGeo::get_geo_int(const sockaddr *addr) const
     return ret;
   }
 
-  MMDB_entry_data_list_s *entry_data_list = nullptr;
   if (!result.found_entry) {
     Dbg(pi_dbg_ctl, "No entry for this IP was found");
     return ret;
   }
 
-  int status = MMDB_get_entry_data_list(&result.entry, &entry_data_list);
-  if (MMDB_SUCCESS != status) {
-    Dbg(pi_dbg_ctl, "Error looking up entry data: %s", MMDB_strerror(status));
-    return ret;
-  }
+  MMDB_entry_data_s entry_data;
+  int               status;
 
-  if (entry_data_list == nullptr) {
-    Dbg(pi_dbg_ctl, "No data found");
-    return ret;
-  }
-
-  const char *field_name;
   switch (_geo_qual) {
   case GEO_QUAL_ASN:
-    field_name = "autonomous_system_number";
+    // GeoLite2-ASN / DBIP-ASN store this as a top-level uint32 field
+    status = MMDB_get_value(&result.entry, &entry_data, "autonomous_system_number", NULL);
     break;
   default:
     Dbg(pi_dbg_ctl, "Unsupported field %d", _geo_qual);
     return ret;
-    break;
   }
 
-  MMDB_entry_data_s entry_data;
-
-  status = MMDB_get_value(&result.entry, &entry_data, field_name, NULL);
   if (MMDB_SUCCESS != status) {
-    Dbg(pi_dbg_ctl, "ERROR on get value asn value: %s", MMDB_strerror(status));
+    Dbg(pi_dbg_ctl, "Error looking up geo int field: %s", MMDB_strerror(status));
     return ret;
   }
-  ret = entry_data.uint32;
 
-  if (nullptr != entry_data_list) {
-    MMDB_free_entry_data_list(entry_data_list);
+  if (entry_data.has_data && entry_data.type == MMDB_DATA_TYPE_UINT32) {
+    ret = entry_data.uint32;
   }
 
   return ret;
