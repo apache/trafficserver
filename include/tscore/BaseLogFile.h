@@ -102,7 +102,7 @@ private:
   void _build_name(const char *filename);
 
 public:
-  BaseMetaInfo(const char *filename) : _flags(0)
+  BaseMetaInfo(const char *filename) : _creation_time(0), _log_object_signature(0), _flags(0)
   {
     _build_name(filename);
     _read_from_file();
