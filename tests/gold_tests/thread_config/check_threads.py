@@ -54,8 +54,10 @@ def _count_threads_once(ts_path, etnet_threads, accept_threads, task_threads, ai
 
         try:
             threads = p.threads()
-        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
-            return 1, 'Could not inspect ATS process threads.'
+        except psutil.AccessDenied:
+            return 12, 'Could not inspect ATS process threads.'
+        except (psutil.NoSuchProcess, psutil.ZombieProcess):
+            return 1, 'ATS process disappeared before thread inspection completed.'
 
         for t in threads:
             try:
