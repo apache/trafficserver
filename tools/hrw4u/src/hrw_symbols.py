@@ -181,7 +181,7 @@ class InverseSymbolResolver(SymbolResolverBase):
                 if tag == "HEADER":
                     return f"{self.get_prefix_for_context('header_condition', section)}{suffix}", False
                 else:
-                    return f"{lhs_prefix}{suffix}", False
+                    return f"{lhs_prefix}{suffix.replace(':', '.')}", False
         return None
 
     def _should_lowercase_suffix(self, tag_match: str, lhs_prefix: str) -> bool:
