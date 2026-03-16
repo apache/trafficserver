@@ -60,7 +60,43 @@ if(BUILD_TESTING)
   target_link_libraries(test_header_rewrite PRIVATE header_rewrite_parser ts::inkevent ts::tscore)
 
   if(maxminddb_FOUND)
+    target_compile_definitions(test_header_rewrite PRIVATE TS_USE_HRW_MAXMINDDB=1)
     target_link_libraries(test_header_rewrite PRIVATE maxminddb::maxminddb)
+
+    find_package(
+      Python3
+      COMPONENTS Interpreter
+      QUIET
+    )
+    if(Python3_FOUND)
+      execute_process(
+        COMMAND "${Python3_EXECUTABLE}" -c "import mmdb_writer; import netaddr"
+        RESULT_VARIABLE _mmdb_python_result
+        OUTPUT_QUIET ERROR_QUIET
+      )
+      if(_mmdb_python_result EQUAL 0)
+        set(_mmdb_test_dir "${CMAKE_CURRENT_BINARY_DIR}/test_mmdb")
+        add_custom_command(
+          OUTPUT "${_mmdb_test_dir}/test_flat_geo.mmdb" "${_mmdb_test_dir}/test_nested_geo.mmdb"
+          COMMAND ${CMAKE_COMMAND} -E make_directory "${_mmdb_test_dir}"
+          COMMAND ${Python3_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/generate_test_mmdb.py" "${_mmdb_test_dir}"
+          DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/generate_test_mmdb.py"
+          COMMENT "Generating test MMDB files for header_rewrite"
+        )
+        add_custom_target(
+          generate_test_mmdb DEPENDS "${_mmdb_test_dir}/test_flat_geo.mmdb" "${_mmdb_test_dir}/test_nested_geo.mmdb"
+        )
+        add_dependencies(test_header_rewrite generate_test_mmdb)
+        set_tests_properties(
+          test_header_rewrite
+          PROPERTIES
+            ENVIRONMENT
+            "MMDB_TEST_FLAT=${_mmdb_test_dir}/test_flat_geo.mmdb;MMDB_TEST_NESTED=${_mmdb_test_dir}/test_nested_geo.mmdb"
+        )
+      else()
+        message(STATUS "Python modules 'mmdb-writer'/'netaddr' not found; skipping test MMDB generation")
+      endif()
+    endif()
   endif()
 
   # This test has linker issue when cripts is enabled, so its commented for now
