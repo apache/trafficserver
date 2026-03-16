@@ -37,6 +37,7 @@ from hrw4u.common import RegexPatterns, SystemDefaults
 from hrw4u.visitor_base import BaseHRWVisitor
 from hrw4u.validation import Validator
 from hrw4u.procedures import resolve_use_path
+from hrw4u.sandbox import SandboxConfig, SandboxDenialError
 
 _regex_validator = Validator.regex_pattern()
 
@@ -73,14 +74,16 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
             debug: bool = SystemDefaults.DEFAULT_DEBUG,
             error_collector=None,
             preserve_comments: bool = True,
-            proc_search_paths: list[Path] | None = None) -> None:
+            proc_search_paths: list[Path] | None = None,
+            sandbox: SandboxConfig | None = None) -> None:
         super().__init__(filename, debug, error_collector)
 
         self._cond_state = CondState()
         self._queued: QueuedItem | None = None
         self.preserve_comments = preserve_comments
+        self._sandbox = sandbox or SandboxConfig.empty()
 
-        self.symbol_resolver = SymbolResolver(debug, dbg=self._dbg)
+        self.symbol_resolver = SymbolResolver(debug, sandbox=self._sandbox, dbg=self._dbg)
 
         self._proc_registry: dict[str, ProcSig] = {}
         self._proc_loaded: set[str] = set()
@@ -88,6 +91,26 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         self._proc_call_stack: list[str] = []
         self._proc_search_paths: list[Path] = list(proc_search_paths) if proc_search_paths else []
         self._source_text: str = ""
+
+    def _sandbox_check(self, ctx, check_fn) -> bool:
+        """Run a sandbox check, trapping any denial error into the error collector.
+
+        Returns True if the check passed (or warned), False if denied.
+        """
+        try:
+            warning = check_fn()
+            if warning:
+                self._add_sandbox_warning(ctx, warning)
+            return True
+        except SandboxDenialError:
+            with self.trap(ctx):
+                raise
+            return False
+
+    def _drain_resolver_warnings(self, ctx) -> None:
+        """Drain any warnings accumulated in the symbol resolver."""
+        for warning in self.symbol_resolver.drain_warnings():
+            self._add_sandbox_warning(ctx, warning)
 
     @lru_cache(maxsize=256)
     def _cached_symbol_resolution(self, symbol_text: str, section_name: str) -> tuple[str, bool]:
@@ -185,11 +208,13 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                     arg_str = m.group("args").strip()
                     args = self._parse_function_args(arg_str) if arg_str else []
                     replacement = self.symbol_resolver.resolve_function(func_name, args, strip_quotes=False)
+                    self._drain_resolver_warnings(ctx)
                     self.debug(f"substitute: {{{func_name}({arg_str})}} -> {replacement}")
                     return replacement
                 if m.group("var"):
                     var_name = m.group("var").strip()
                     replacement, _ = self.symbol_resolver.resolve_condition(var_name, self.current_section)
+                    self._drain_resolver_warnings(ctx)
                     self.debug(f"substitute: {{{var_name}}} -> {replacement}")
                     return replacement
                 raise SymbolResolutionError(m.group(0), "Unrecognized substitution format")
@@ -713,6 +738,10 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
             raise SymbolResolutionError("section", "Missing section name")
 
         section_name = ctx.name.text
+        warning = self._sandbox.check_section(section_name)
+        if warning:
+            self._add_sandbox_warning(ctx, warning)
+
         try:
             self.current_section = SectionType(section_name)
         except ValueError:
@@ -789,6 +818,10 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
             else:
                 raise error
         with self.debug_context("visitVarSection"):
+            if not self._sandbox_check(ctx, lambda: self._sandbox.check_section("VARS")):
+                return
+            if not self._sandbox_check(ctx, lambda: self._sandbox.check_language("variables")):
+                return
             self.visit(ctx.variables())
 
     def visitCommentLine(self, ctx) -> None:
@@ -803,6 +836,9 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         with self.debug_context("visitStatement"), self.trap(ctx):
             match ctx:
                 case _ if ctx.BREAK():
+                    warning = self._sandbox.check_language("break")
+                    if warning:
+                        self._add_sandbox_warning(ctx, warning)
                     self._dbg("BREAK")
                     self.emit_statement("no-op [L]")
                     return
@@ -821,6 +857,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                         self._substitute_strings(arg, ctx) if arg.startswith('"') and arg.endswith('"') else arg for arg in args
                     ]
                     symbol = self.symbol_resolver.resolve_statement_func(func, subst_args, self.current_section)
+                    self._drain_resolver_warnings(ctx)
                     self.emit_statement(symbol)
                     return
 
@@ -833,6 +870,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                         rhs = self._substitute_strings(rhs, ctx)
                     self._dbg(f"assignment: {lhs} = {rhs}")
                     out = self.symbol_resolver.resolve_assignment(lhs, rhs, self.current_section)
+                    self._drain_resolver_warnings(ctx)
                     self.emit_statement(out)
                     return
 
@@ -845,6 +883,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                         rhs = self._substitute_strings(rhs, ctx)
                     self._dbg(f"add assignment: {lhs} += {rhs}")
                     out = self.symbol_resolver.resolve_add_assignment(lhs, rhs, self.current_section)
+                    self._drain_resolver_warnings(ctx)
                     self.emit_statement(out)
                     return
 
@@ -913,11 +952,15 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
 
     def visitElseClause(self, ctx) -> None:
         with self.debug_context("visitElseClause"):
+            if not self._sandbox_check(ctx, lambda: self._sandbox.check_language("else")):
+                return
             self.emit_condition("else", final=True)
             self.visit(ctx.block())
 
     def visitElifClause(self, ctx) -> None:
         with self.debug_context("visitElifClause"):
+            if not self._sandbox_check(ctx, lambda: self._sandbox.check_language("elif")):
+                return
             self.emit_condition("elif", final=True)
             with self.stmt_indented(), self.cond_indented():
                 self.visit(ctx.condition())
@@ -941,6 +984,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                 if comp.ident:
                     ident_name = comp.ident.text
                     lhs, _ = self._resolve_identifier_with_validation(ident_name)
+                    self._drain_resolver_warnings(ctx)
                 else:
                     lhs = self.visitFunctionCall(comp.functionCall())
             if not lhs:
@@ -979,6 +1023,8 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                     cond_txt = f"{lhs} {ctx.iprange().getText()}"
 
                 case _ if ctx.set_():
+                    if not self._sandbox_check(ctx, lambda: self._sandbox.check_language("in")):
+                        return
                     inner = ctx.set_().getText()[1:-1]
                     cond_txt = f"{lhs} ({inner})"
 
@@ -995,6 +1041,9 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         for token in ctx.modifierList().mods:
             try:
                 mod = token.text.upper()
+                warning = self._sandbox.check_modifier(mod)
+                if warning:
+                    self._add_sandbox_warning(ctx, warning)
                 self._cond_state.add_modifier(mod)
             except Exception as exc:
                 with self.trap(ctx):
@@ -1005,7 +1054,9 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         with self.trap(ctx):
             func, raw_args = self._parse_function_call(ctx)
             self._dbg(f"function: {func}({', '.join(raw_args)})")
-            return self.symbol_resolver.resolve_function(func, raw_args, strip_quotes=True)
+            result = self.symbol_resolver.resolve_function(func, raw_args, strip_quotes=True)
+            self._drain_resolver_warnings(ctx)
+            return result
         return "ERROR"
 
     def emit_condition(self, text: str, *, final: bool = False) -> None:
@@ -1034,6 +1085,8 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
     def emit_expression(self, ctx, *, nested: bool = False, last: bool = False, grouped: bool = False) -> None:
         with self.debug_context("emit_expression"):
             if ctx.OR():
+                if not self._sandbox_check(ctx, lambda: self._sandbox.check_modifier("OR")):
+                    return
                 self.debug("`OR' detected")
                 if grouped:
                     self.debug("GROUP-START")
@@ -1051,6 +1104,8 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
     def emit_term(self, ctx, *, last: bool = False) -> None:
         with self.debug_context("emit_term"):
             if ctx.AND():
+                if not self._sandbox_check(ctx, lambda: self._sandbox.check_modifier("AND")):
+                    return
                 self.debug("`AND' detected")
                 self.emit_term(ctx.term(), last=False)
                 self._end_lhs_then_emit_rhs(False, lambda: self.emit_factor(ctx.factor(), last=last))
@@ -1104,6 +1159,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                 case _ if ctx.ident:
                     name = ctx.ident.text
                     symbol, default_expr = self._resolve_identifier_with_validation(name)
+                    self._drain_resolver_warnings(ctx)
 
                     if default_expr:
                         cond_txt = f"{symbol} =\"\""

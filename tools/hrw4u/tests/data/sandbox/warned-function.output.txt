@@ -1,0 +1,2 @@
+cond %{REMAP_PSEUDO_HOOK} [AND]
+    set-config "proxy.config.http.insert_age_in_response" "0"

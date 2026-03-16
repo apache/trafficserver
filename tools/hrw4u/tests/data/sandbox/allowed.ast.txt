@@ -1,0 +1,1 @@
+(program (programItem (section REMAP { (sectionBody (statement inbound.req.X-Foo = (value "allowed") ;)) })) <EOF>)

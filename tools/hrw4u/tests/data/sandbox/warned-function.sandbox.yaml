@@ -1,0 +1,6 @@
+sandbox:
+  message: "This feature will be denied in a future release. Contact platform team."
+
+  warn:
+    functions:
+      - set-config

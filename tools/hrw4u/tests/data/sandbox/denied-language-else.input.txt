@@ -1,0 +1,7 @@
+REMAP {
+    if inbound.req.X-Foo == "a" {
+        inbound.req.X-Result = "yes";
+    } else {
+        inbound.req.X-Result = "no";
+    }
+}

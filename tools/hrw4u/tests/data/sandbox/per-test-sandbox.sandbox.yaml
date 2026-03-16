@@ -1,0 +1,4 @@
+sandbox:
+  deny:
+    sections:
+      - TXN_START

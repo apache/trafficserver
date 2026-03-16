@@ -1,0 +1,1 @@
+(program (programItem (section REMAP { (sectionBody (statement (functionCall set-config ( (argumentList (value "proxy.config.http.insert_age_in_response") , (value "0")) )) ;)) })) <EOF>)

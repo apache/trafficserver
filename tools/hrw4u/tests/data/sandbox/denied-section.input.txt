@@ -1,0 +1,3 @@
+PRE_REMAP {
+    inbound.req.X-Foo = "test";
+}

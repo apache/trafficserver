@@ -1,0 +1,4 @@
+Found 2 errors:
+'set-debug' is denied by sandbox policy (function)
+'break' is denied by sandbox policy (language)
+Feature denied by sandbox policy. Contact platform team.

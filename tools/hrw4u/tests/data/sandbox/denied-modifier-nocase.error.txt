@@ -1,0 +1,1 @@
+'NOCASE' is denied by sandbox policy (modifier)

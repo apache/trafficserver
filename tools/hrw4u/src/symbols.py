@@ -25,12 +25,14 @@ from hrw4u.common import SystemDefaults
 from hrw4u.debugging import Dbg
 from hrw4u.symbols_base import SymbolResolverBase
 from hrw4u.suggestions import SuggestionEngine
+from hrw4u.sandbox import SandboxConfig
 
 
 class SymbolResolver(SymbolResolverBase):
 
-    def __init__(self, debug: bool = SystemDefaults.DEFAULT_DEBUG, dbg: Dbg | None = None) -> None:
-        super().__init__(debug, dbg=dbg)
+    def __init__(
+            self, debug: bool = SystemDefaults.DEFAULT_DEBUG, sandbox: SandboxConfig | None = None, dbg: Dbg | None = None) -> None:
+        super().__init__(debug, sandbox=sandbox, dbg=dbg)
         self._symbols: dict[str, types.Symbol] = {}
         self._var_counter = {vt: 0 for vt in types.VarType}
         self._suggestion_engine = SuggestionEngine()
@@ -75,6 +77,8 @@ class SymbolResolver(SymbolResolverBase):
 
     def resolve_assignment(self, name: str, value: str, section: SectionType | None = None) -> str:
         with self.debug_context("resolve_assignment", name, value, section):
+            self._collect_warning(self._sandbox.check_operator(name))
+
             for op_key, params in self._operator_map.items():
                 if op_key.endswith("."):
                     if name.startswith(op_key):
@@ -119,6 +123,8 @@ class SymbolResolver(SymbolResolverBase):
     def resolve_add_assignment(self, name: str, value: str, section: SectionType | None = None) -> str:
         """Resolve += assignment, if it is supported for the given operator."""
         with self.debug_context("resolve_add_assignment", name, value, section):
+            self._collect_warning(self._sandbox.check_operator(name))
+
             for op_key, params in self._operator_map.items():
                 if op_key.endswith(".") and name.startswith(op_key) and params and params.add:
                     self.validate_section_access(name, section, params.sections)
@@ -137,7 +143,10 @@ class SymbolResolver(SymbolResolverBase):
     def resolve_condition(self, name: str, section: SectionType | None = None) -> tuple[str, bool]:
         with self.debug_context("resolve_condition", name, section):
             if symbol := self.symbol_for(name):
+                self._collect_warning(self._sandbox.check_language("variables"))
                 return symbol.as_cond(), False
+
+            self._collect_warning(self._sandbox.check_condition(name))
 
             if params := self._lookup_condition_cached(name):
                 tag = params.target if params else None
@@ -193,6 +202,8 @@ class SymbolResolver(SymbolResolverBase):
 
     def resolve_statement_func(self, func_name: str, args: list[str], section: SectionType | None = None) -> str:
         with self.debug_context("resolve_statement_func", func_name, args, section):
+            self._collect_warning(self._sandbox.check_function(func_name))
+
             if params := self._lookup_statement_function_cached(func_name):
                 allowed_sections = params.sections if params else None
                 self.validate_section_access(func_name, section, allowed_sections)

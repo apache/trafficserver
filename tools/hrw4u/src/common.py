@@ -1,4 +1,5 @@
 #
+#
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -203,7 +204,7 @@ def generate_output(
         filename: str,
         args: Any,
         error_collector: ErrorCollector | None = None,
-        visitor_kwargs: Callable[[Any], dict[str, Any]] | None = None) -> None:
+        extra_kwargs: dict[str, Any] | None = None) -> None:
     """Generate and print output based on mode with optional error collection."""
     if args.ast:
         if tree is not None:
@@ -213,13 +214,15 @@ def generate_output(
     else:
         if tree is not None:
             preserve_comments = not getattr(args, 'no_comments', False)
-            extra_kwargs = visitor_kwargs(args) if visitor_kwargs else {}
-            visitor = visitor_class(
-                filename=filename,
-                debug=args.debug,
-                error_collector=error_collector,
-                preserve_comments=preserve_comments,
-                **extra_kwargs)
+            kwargs: dict[str, Any] = {
+                "filename": filename,
+                "debug": args.debug,
+                "error_collector": error_collector,
+                "preserve_comments": preserve_comments
+            }
+            if extra_kwargs:
+                kwargs.update(extra_kwargs)
+            visitor = visitor_class(**kwargs)
             try:
                 if getattr(args, 'output', None) == 'hrw4u':
                     result = visitor.flatten(tree)
@@ -237,9 +240,9 @@ def generate_output(
                 else:
                     fatal(str(e))
 
-    if error_collector and error_collector.has_errors():
+    if error_collector and (error_collector.has_errors() or error_collector.has_warnings()):
         print(error_collector.get_error_summary(), file=sys.stderr)
-        if not args.ast and tree is None:
+        if error_collector.has_errors() and not args.ast and tree is None:
             sys.exit(1)
 
 
@@ -253,7 +256,7 @@ def run_main(
         output_flag_help: str,
         add_args: Callable[[argparse.ArgumentParser, argparse._MutuallyExclusiveGroup], None] | None = None,
         pre_process: Callable[[str, str, Any], str] | None = None,
-        visitor_kwargs: Callable[[Any], dict[str, Any]] | None = None) -> None:
+        visitor_kwargs: Callable[[argparse.Namespace], dict[str, Any]] | None = None) -> None:
     """
     Generic main function for hrw4u and u4wrh scripts with bulk compilation support.
 
@@ -267,6 +270,7 @@ def run_main(
         output_flag_help: Help text for output flag
         add_args: Optional callback to add extra arguments to the parser and output group
         pre_process: Optional callback(content, filename, args) -> content run before parsing
+        visitor_kwargs: Optional callback(args) -> dict of extra kwargs for the visitor
     """
     parser = argparse.ArgumentParser(
         description=description,
@@ -296,6 +300,14 @@ def run_main(
 
     args = parser.parse_args()
 
+    if not hasattr(args, output_flag_name):
+        setattr(args, output_flag_name, False)
+
+    if not (args.ast or getattr(args, output_flag_name)):
+        setattr(args, output_flag_name, True)
+
+    extra_kwargs = visitor_kwargs(args) if visitor_kwargs else None
+
     if not args.files:
         content, filename = process_input(sys.stdin)
         if pre_process is not None:
@@ -306,7 +318,7 @@ def run_main(
                 sys.exit(1)
         tree, parser_obj, error_collector = create_parse_tree(
             content, filename, lexer_class, parser_class, error_prefix, not args.stop_on_error, args.max_errors)
-        generate_output(tree, parser_obj, visitor_class, filename, args, error_collector, visitor_kwargs)
+        generate_output(tree, parser_obj, visitor_class, filename, args, error_collector, extra_kwargs)
         return
 
     if any(':' in f for f in args.files):
@@ -344,7 +356,7 @@ def run_main(
                     original_stdout = sys.stdout
                     try:
                         sys.stdout = output_file
-                        generate_output(tree, parser_obj, visitor_class, filename, args, error_collector, visitor_kwargs)
+                        generate_output(tree, parser_obj, visitor_class, filename, args, error_collector, extra_kwargs)
                     finally:
                         sys.stdout = original_stdout
             except Exception as e:
@@ -375,4 +387,4 @@ def run_main(
             tree, parser_obj, error_collector = create_parse_tree(
                 content, filename, lexer_class, parser_class, error_prefix, not args.stop_on_error, args.max_errors)
 
-            generate_output(tree, parser_obj, visitor_class, filename, args, error_collector, visitor_kwargs)
+            generate_output(tree, parser_obj, visitor_class, filename, args, error_collector, extra_kwargs)

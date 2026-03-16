@@ -1,0 +1,2 @@
+'set-config' is warned by sandbox policy (function)
+This feature will be denied in a future release. Contact platform team.
