@@ -89,7 +89,7 @@ struct HTTPStatsConfig {
   bool integer_counters = false;
   bool wrap_counters    = false;
 
-  TSCont cont = nullptr;
+  TSCont cont{nullptr};
 };
 
 struct HTTPStatsRequest;

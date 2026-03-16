@@ -184,7 +184,7 @@ public:
 
   IpAllow::ACL acl; ///< IpAllow based method ACL.
 
-  HttpSessionAccept::Options const *accept_options = nullptr; ///< connection info
+  HttpSessionAccept::Options const *accept_options{nullptr}; ///< connection info
 
 protected:
   // Hook dispatching state
