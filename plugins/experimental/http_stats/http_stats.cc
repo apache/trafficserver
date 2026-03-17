@@ -81,7 +81,12 @@ struct HTTPStatsFormatter {
 struct HTTPStatsConfig {
   explicit HTTPStatsConfig() {}
 
-  ~HTTPStatsConfig() { TSContDestroy(cont); }
+  ~HTTPStatsConfig()
+  {
+    if (cont) {
+      TSContDestroy(cont);
+    }
+  }
   std::string mimeType;
 
   int  maxAge           = 0;
