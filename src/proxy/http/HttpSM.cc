@@ -2072,7 +2072,8 @@ HttpSM::state_read_server_response_header(int event, void *data)
 
     t_state.current.state         = HttpTransact::CONNECTION_ALIVE;
     t_state.transact_return_point = HttpTransact::HandleResponse;
-    t_state.api_next_action       = HttpTransact::SM_ACTION_API_READ_RESPONSE_HDR;
+    HttpTransact::strip_at_headers(t_state.hdr_info.server_response);
+    t_state.api_next_action = HttpTransact::SM_ACTION_API_READ_RESPONSE_HDR;
 
     // if exceeded limit deallocate postdata buffers and disable redirection
     if (!(enable_redirection && (redirection_tries < t_state.txn_conf->number_of_redirections))) {
@@ -2851,7 +2852,8 @@ HttpSM::tunnel_handler_post(int event, void *data)
     if (milestones[TS_MILESTONE_SERVER_READ_HEADER_DONE] != 0) {
       t_state.current.state         = HttpTransact::CONNECTION_ALIVE;
       t_state.transact_return_point = HttpTransact::HandleResponse;
-      t_state.api_next_action       = HttpTransact::SM_ACTION_API_READ_RESPONSE_HDR;
+      HttpTransact::strip_at_headers(t_state.hdr_info.server_response);
+      t_state.api_next_action = HttpTransact::SM_ACTION_API_READ_RESPONSE_HDR;
       do_api_callout();
     }
     break;

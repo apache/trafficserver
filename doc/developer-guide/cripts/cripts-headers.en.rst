@@ -68,6 +68,13 @@ A header can also be removed by using the ``Erase`` method, which is a little mo
 
   req.Erase("X-Foo");
 
+Header names beginning with ``@`` are reserved for internal Traffic Server
+metadata. They remain in ATS's in-memory header objects, but they are not
+sent on the wire. This makes them useful for trusted in-process
+coordination and logging annotations such as ``@TCPInfo``. Treat them as
+an internal namespace, not as externally supplied protocol fields. For
+the general plugin-facing rules, see :ref:`developer-plugins-http-headers-mime-headers`.
+
 .. note:: There is also a Cripts Bundle for headers, see :ref:`Bundles <cripts-bundles-headers>`.
 
 .. _cripts-headers-iterators:

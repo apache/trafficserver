@@ -79,6 +79,25 @@ DbgCtl dbg_ctl_url_rewrite{"url_rewrite"};
 DbgCtl dbg_ctl_ip_allow{"ip_allow"};
 } // namespace
 
+/**
+ * Remove internal @ headers from a parsed header before plugin hooks run.
+ *
+ * @param[in,out] header The header to sanitize in place.
+ */
+void
+HttpTransact::strip_at_headers(HTTPHdr &header)
+{
+  for (auto field = header.begin(); field != header.end();) {
+    auto current = field++;
+    auto name    = current->name_get();
+
+    if (!name.empty() && name[0] == '@') {
+      header.field_delete(&*current, false);
+    }
+  }
+}
+
+//////////////////////////////////////////////////////////////////////////
 // Support ip_resolve override.
 const MgmtConverter HttpTransact::HOST_RES_CONV{[](const void *data) -> std::string_view {
                                                   const HostResData *host_res_data = static_cast<const HostResData *>(data);
@@ -1479,6 +1498,8 @@ HttpTransact::ModifyRequest(State *s)
       request.mark_target_dirty();
     }
   }
+
+  strip_at_headers(request);
 
   TxnDbg(dbg_ctl_http_trans, "END HttpTransact::ModifyRequest");
 

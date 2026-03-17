@@ -1,0 +1,98 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+autest:
+  description: "Verify client-supplied @ headers are stripped before plugin hooks run"
+
+  at_headers:
+    request_probe: &request_probe "@Client-Test"
+    response_probe: &response_probe "@Origin-Test"
+    request_added: &request_added "@Plugin-Request"
+    response_added: &response_added "@Plugin-Response"
+
+  server:
+    name: "server"
+
+  client:
+    name: "client"
+
+  ats:
+    name: "ts"
+
+    process_config:
+      enable_cache: false
+
+    plugin_config:
+      - name: "at_header_probe.so"
+        args:
+          - *request_probe
+          - *response_probe
+          - *request_added
+          - *response_added
+
+    copy_custom_plugin:
+      - "plugins/.libs/at_header_probe.so"
+
+    remap_config:
+      - "map / http://127.0.0.1:{SERVER_HTTP_PORT}/"
+
+    log_validation:
+      diags_log:
+        excludes:
+          - expression: "saw unexpected request header"
+            description: "Plugins should not see client-supplied @ headers."
+          - expression: "saw unexpected response header"
+            description: "Plugins should not see origin-supplied @ headers."
+
+sessions:
+  - transactions:
+      - client-request:
+          method: "GET"
+          url: "/"
+          version: "1.1"
+          headers:
+            fields:
+              - [Host, example.com]
+              - [*request_probe, spoofed-value]
+              - [X-Normal, keep-me]
+              - [uuid, at-header-client]
+
+        proxy-request:
+          method: "GET"
+          url: "/"
+          headers:
+            fields:
+              - [*request_probe, {as: absent}]
+              - [*request_added, {as: absent}]
+              - [X-Normal, {value: keep-me, as: equal}]
+
+        server-response:
+          status: 200
+          reason: "OK"
+          headers:
+            fields:
+              - [*response_probe, spoofed-response]
+              - [Content-Length, "0"]
+
+        proxy-response:
+          status: 200
+          headers:
+            fields:
+              - [*response_probe, {as: absent}]
+              - [*response_added, {as: absent}]

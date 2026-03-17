@@ -19,7 +19,55 @@ Implement general-purpose ATS test extensions using proxy verifier replay files.
 
 from typing import Optional
 import os
+import re
 import yaml
+
+_PATH_VARIABLE_RE = re.compile(r'\{([A-Za-z_][A-Za-z0-9_]*)\}')
+
+
+def _resolve_test_artifact_path(obj, path: str) -> str:
+    '''Resolve a test artifact path for copy_custom_plugin.
+
+    Resolution order after variable expansion:
+    1. Absolute paths.
+    2. Paths relative to the current test directory.
+    3. Paths relative to the current test's build-tree mirror under
+       Variables.AtsBuildGoldTestsDir.
+    4. Paths relative to Variables.AtsBuildGoldTestsDir.
+    '''
+
+    # Expand any specified obj.Variables into the path.
+    resolved_path = _PATH_VARIABLE_RE.sub(lambda match: str(getattr(obj.Variables, match.group(1), match.group(0))), path)
+    if os.path.isabs(resolved_path):
+        return resolved_path
+
+    test_relative_path = os.path.join(obj.TestDirectory, resolved_path)
+    if os.path.exists(test_relative_path):
+        return test_relative_path
+
+    gold_tests_source_dir = os.path.join(obj.Variables.RepoDir, 'tests', 'gold_tests')
+    if os.path.commonpath([gold_tests_source_dir, obj.TestDirectory]) == gold_tests_source_dir:
+        test_relpath = os.path.relpath(obj.TestDirectory, gold_tests_source_dir)
+        build_relative_path = os.path.join(obj.Variables.AtsBuildGoldTestsDir, test_relpath, resolved_path)
+        if os.path.exists(build_relative_path):
+            return build_relative_path
+
+    # Otherwise, resolve relative to Variables.AtsBuildGoldTestsDir.
+    return os.path.join(obj.Variables.AtsBuildGoldTestsDir, resolved_path)
+
+
+def _format_plugin_config_entry(plugin_entry) -> str:
+    '''Format a plugin.config entry from a string or structured config.'''
+    if isinstance(plugin_entry, str):
+        return plugin_entry
+
+    if isinstance(plugin_entry, dict):
+        line = plugin_entry['name']
+        for arg in plugin_entry.get('args', []):
+            line += f' {arg}'
+        return line
+
+    raise TypeError(f'Unsupported plugin_config entry type: {type(plugin_entry)}')
 
 
 def configure_ats(obj: 'TestRun', server: 'Process', ats_config: dict, dns: Optional['Process'] = None, enable_tls: bool = False):
@@ -51,7 +99,11 @@ def configure_ats(obj: 'TestRun', server: 'Process', ats_config: dict, dns: Opti
     # Configure plugin_config if specified.
     plugin_config = ats_config.get('plugin_config', [])
     for plugin_line in plugin_config:
-        ts.Disk.plugin_config.AddLine(plugin_line)
+        ts.Disk.plugin_config.AddLine(_format_plugin_config_entry(plugin_line))
+
+    # Stage custom plugin artifacts into the ATS sandbox plugin directory.
+    for plugin_path in ats_config.get('copy_custom_plugin', []):
+        ts.Setup.Copy(_resolve_test_artifact_path(obj, plugin_path), ts.Env['PROXY_CONFIG_PLUGIN_PLUGIN_DIR'])
 
     # Configure parent_config if specified.
     parent_config = ats_config.get('parent_config', [])

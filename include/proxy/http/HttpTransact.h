@@ -1008,6 +1008,7 @@ public:
 
   }; // End of State struct.
 
+  static void strip_at_headers(HTTPHdr &header);
   static void HandleBlindTunnel(State *s);
   static void StartRemapRequest(State *s);
   static void EndRemapRequest(State *s);

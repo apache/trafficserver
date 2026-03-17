@@ -87,6 +87,26 @@ does not coalesce duplicate fields. Correctly-behaving plugins should
 check for the presence of duplicate fields and iterate over the
 duplicate fields by using ``TSMimeHdrFieldNextDup``.
 
+Internal ``@`` Headers
+======================
+
+Traffic Server reserves header names that begin with ``@`` for internal
+use. These headers are stored in the in-memory MIME / HTTP header
+structures, but they are not serialized on the wire when Traffic Server
+prints a request or response. Core code and plugins use this namespace
+for internal metadata, control flags, and logging or debug annotations
+such as ``@Ats-Internal``, ``@Content-Type``, ``@ICAP-Status``, and
+``@TCPInfo``.
+
+Plugins may create and read these headers when they need transaction
+local state inside Traffic Server, but they should treat them as an
+internal-only namespace rather than part of the external HTTP protocol.
+In particular, client supplied request headers and origin supplied
+response headers whose names begin with ``@`` are stripped before
+``TS_HTTP_READ_REQUEST_HDR_HOOK`` and ``TS_HTTP_READ_RESPONSE_HDR_HOOK``
+run, so plugins should not rely on untrusted peers to provide ``@``
+headers.
+
 To facilitate fast comparisons and reduce storage size, Traffic Server
 defines several pre-allocated field names. These field names correspond
 to the field names in HTTP and NNTP headers.
