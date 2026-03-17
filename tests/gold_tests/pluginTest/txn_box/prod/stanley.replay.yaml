@@ -48,8 +48,6 @@ sessions:
         fields:
         - [ Host, "nowhere.com" ]
         - [ ycal-host, "calendar.yahoo.com" ]
-    proxy-request:
-      <<: *base-req
     server-response:
       <<: *base-rsp
     proxy-response:
@@ -66,8 +64,6 @@ sessions:
         fields:
         - [ Host, "notepad.mail.yahoo.com" ]
         - [ ycal-host, "bop.yahoo.com" ]
-    proxy-request:
-      <<: *base-req
     server-response:
       <<: *base-rsp
     proxy-response:
@@ -75,4 +71,3 @@ sessions:
       headers:
         fields:
         - [ Location, { value: "view=notepad", as: "contains" } ]
-
