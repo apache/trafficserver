@@ -5,3 +5,5 @@
 implicit-cmp.input: u4wrh
 # Double negation !(x != y) emits GROUP/GROUP:END [NOT] pairs; reverse can't reconstruct the original form
 double-negation.input: hrw4u
+# Old format without explicit hook defaults to REMAP; hrw4u always emits explicit sections
+no-hook.input: u4wrh

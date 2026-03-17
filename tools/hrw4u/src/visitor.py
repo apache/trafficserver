@@ -830,7 +830,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         with self.debug_context("visitCommentLine"):
             comment_text = ctx.COMMENT().getText()
             self.debug(f"preserving comment: {comment_text}")
-            self.output.append(comment_text)
+            self.emit_line(comment_text, self.stmt_indent)
 
     def visitStatement(self, ctx) -> None:
         with self.debug_context("visitStatement"), self.trap(ctx):

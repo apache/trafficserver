@@ -93,7 +93,7 @@ cond %{GROUP}
 cond %{GROUP:END}
     skip-remap TRUE
     no-op [L]
-# like [L]
+    # like [L]
 
 cond %{READ_REQUEST_HDR_HOOK} [AND]
 # Header presence / equality and capture groups
@@ -132,9 +132,9 @@ cond %{GROUP}
 cond %{GROUP:END}
     counter "write_methods_seen"
     set-state-int8 0 42
-# assign int8
+    # assign int8
     set-state-int16 0 6553
-# assign int16
+    # assign int16
 
 cond %{SEND_REQUEST_HDR_HOOK} [AND]
 # Use server URL information to adjust Host header
@@ -174,7 +174,7 @@ elif
         cond %{CACHE} ("miss","skipped")
     cond %{GROUP:END}
         set-header X-Cache "%{CACHE}"
-# echo the value
+        # echo the value
 # Status transforms + reason
 
 cond %{READ_RESPONSE_HDR_HOOK} [AND]

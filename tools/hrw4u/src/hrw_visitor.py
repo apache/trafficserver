@@ -57,7 +57,8 @@ class HRWInverseVisitor(u4wrhVisitor, BaseHRWVisitor):
         self._if_depth = 0  # Track nesting depth of if blocks
         self._in_elif_mode = False
         self._just_closed_nested = False
-        self._deferred_comments: list[str] = []
+
+        self._pre_section_if_start: int | None = None
 
     @lru_cache(maxsize=128)
     def _cached_percent_parsing(self, pct_text: str) -> tuple[str, str | None]:
@@ -84,12 +85,6 @@ class HRWInverseVisitor(u4wrhVisitor, BaseHRWVisitor):
         self._in_group = False
         self._group_terms.clear()
 
-    def _flush_deferred_comments(self) -> None:
-        """Emit comments that were deferred while inside a rule's if-block."""
-        for comment in self._deferred_comments:
-            self.output.append(comment)
-        self._deferred_comments.clear()
-
     def _start_new_section(self, section_type: SectionType) -> None:
         """Start a new section, handling continuation of existing sections."""
         with self.debug_context(f"start_section {section_type.value}"):
@@ -100,20 +95,16 @@ class HRWInverseVisitor(u4wrhVisitor, BaseHRWVisitor):
                     self.emit("}")
                     self._if_depth -= 1
                 self._reset_condition_state()
-                self._flush_deferred_comments()
                 if self.output and self.output[-1] != "":
                     self.output.append("")
                 return
 
-            prev = bool(self.output)
             had_section = self._section_opened
             self._close_if_and_section()
             self._reset_condition_state()
 
             if had_section and self.output and self.output[-1] != "":
                 self.output.append("")
-
-            self._flush_deferred_comments()
 
             self._section_label = section_type
             self.emit(f"{section_type.value} {{")
@@ -162,7 +153,6 @@ class HRWInverseVisitor(u4wrhVisitor, BaseHRWVisitor):
             for line in ctx.line():
                 self.visit(line)
             self._close_if_and_section()
-            self._flush_deferred_comments()
 
             var_declarations = self.symbol_resolver.get_var_declarations()
             if var_declarations:
@@ -178,9 +168,7 @@ class HRWInverseVisitor(u4wrhVisitor, BaseHRWVisitor):
         with self.debug_context("visitCommentLine"):
             comment_text = ctx.COMMENT().getText()
             self._flush_pending_condition()
-            if self._if_depth > 0:
-                self._deferred_comments.append(comment_text)
-            elif self._section_opened:
+            if self._if_depth > 0 or self._section_opened:
                 self.emit(comment_text)
             else:
                 self.output.append(comment_text)
@@ -407,9 +395,26 @@ class HRWInverseVisitor(u4wrhVisitor, BaseHRWVisitor):
     def _ensure_section_open(self, section_label: SectionType) -> None:
         """Ensure a section is open for statements."""
         if not self._section_opened:
+            relocated_lines = None
+            relocated_if_depth = 0
+            if self._if_depth > 0 and self._pre_section_if_start is not None:
+                relocated_lines = self.output[self._pre_section_if_start:]
+                relocated_if_depth = self._if_depth
+                self.output = self.output[:self._pre_section_if_start]
+                self.stmt_indent -= self._if_depth
+                self._if_depth = 0
+                self._pre_section_if_start = None
+
             self.emit(f"{section_label.value} {{")
             self._section_opened = True
             self.increase_indent()
+
+            if relocated_lines:
+                indent_prefix = " " * SystemDefaults.INDENT_SPACES
+                for line in relocated_lines:
+                    self.output.append(indent_prefix + line if line.strip() else line)
+                self._if_depth = relocated_if_depth
+                self.stmt_indent += relocated_if_depth
 
     def _start_elif_mode(self) -> None:
         """Handle elif line transitions."""
@@ -432,6 +437,9 @@ class HRWInverseVisitor(u4wrhVisitor, BaseHRWVisitor):
 
     def _start_if_block(self, condition_expr: str) -> None:
         """Start a new if block."""
+        if not self._section_opened and self._pre_section_if_start is None:
+            self._pre_section_if_start = len(self.output)
+
         if self._in_elif_mode:
             self.emit(f"}} elif {condition_expr} {{")
             self._in_elif_mode = False
