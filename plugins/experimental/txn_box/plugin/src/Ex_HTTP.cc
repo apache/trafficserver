@@ -354,7 +354,7 @@ public:
 Feature
 Ex_proxy_req_scheme::extract(Context &ctx, Spec const &)
 {
-  FeatureView zret;
+  FeatureView zret{};
   zret._direct_p = true;
   if (auto hdr{ctx.proxy_req_hdr()}; hdr.is_valid()) {
     if (ts::URL url{hdr.url()}; url.is_valid()) {
@@ -964,7 +964,7 @@ Ex_ua_req_url_port::validate(Config &, Spec &, const swoc::TextView &)
 Feature
 Ex_ua_req_url_port::extract(Context &ctx, Spec const &)
 {
-  FeatureView zret;
+  FeatureView zret{};
   zret._direct_p = true;
   if (auto hdr{ctx.ua_req_hdr()}; hdr.is_valid()) {
     if (ts::URL url{hdr.url()}; url.is_valid()) {
@@ -993,7 +993,7 @@ Ex_proxy_req_url_port::validate(Config &, Spec &, const swoc::TextView &)
 Feature
 Ex_proxy_req_url_port::extract(Context &ctx, Spec const &)
 {
-  FeatureView zret;
+  FeatureView zret{};
   zret._direct_p = true;
   if (auto hdr{ctx.proxy_req_hdr()}; hdr.is_valid()) {
     if (ts::URL url{hdr.url()}; url.is_valid()) {
