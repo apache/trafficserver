@@ -88,10 +88,13 @@ dns.addRecords(records={"bar.com.": ["127.0.0.1"]})
 dns.addRecords(records={"parent.": ["127.0.0.1"]})
 dns.addRecords(records={"strategy.": ["127.0.0.1"]})
 
-ts.Disk.remap_config.AddLines([
-    "map http://parent https://parent",
-    "map http://strategy https://strategy @strategy=strat",
-])
+ts.Disk.remap_config.AddLines(
+    [
+        "map http://parent https://parent",
+        "map http://strategy https://strategy @strategy=strat",
+        "map http://parent_prist https://parent @plugin=conf_remap.so @pparam=proxy.config.url_remap.pristine_host_hdr=1",
+        "map http://strategy_prist https://strategy @strategy=strat @plugin=conf_remap.so @pparam=proxy.config.url_remap.pristine_host_hdr=1",
+    ])
 
 ts.Disk.parent_config.AddLine(
     'dest_domain=. port=443 parent="foo.com:{0}|1;bar.com:{1}|1" parent_retry=simple_retry parent_is_proxy=false go_direct=false simple_server_retry_responses="404" host_override=true'
@@ -154,6 +157,18 @@ ps.Streams.stdout = Testers.ContainsExpression("path bar ok", "Expected 200 resp
 
 tr = Test.AddTestRun("request with failover, strategies.yaml")
 tr.MakeCurlCommand(curl_args + "http://strategy/path", ts=ts)
+tr.StillRunningAfter = ts
+ps = tr.Processes.Default
+ps.Streams.stdout = Testers.ContainsExpression("path bar ok", "Expected 200 response from bar.com")
+
+tr = Test.AddTestRun("request with failover, parent.config pristine_host_hdr")
+tr.MakeCurlCommand(curl_args + "http://parent_prist/path", ts=ts)
+tr.StillRunningAfter = ts
+ps = tr.Processes.Default
+ps.Streams.stdout = Testers.ContainsExpression("path bar ok", "Expected 200 response from bar.com")
+
+tr = Test.AddTestRun("request with failover, strategies.yaml")
+tr.MakeCurlCommand(curl_args + "http://strategy_prist/path", ts=ts)
 tr.StillRunningAfter = ts
 ps = tr.Processes.Default
 ps.Streams.stdout = Testers.ContainsExpression("path bar ok", "Expected 200 response from bar.com")
