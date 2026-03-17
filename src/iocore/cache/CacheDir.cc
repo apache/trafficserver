@@ -28,12 +28,15 @@
 #include "PreservationTable.h"
 #include "Stripe.h"
 
+#include "iocore/eventsystem/Event.h"
 #include "tscore/hugepages.h"
 #include "tscore/Random.h"
 #include "ts/ats_probe.h"
 #include "iocore/eventsystem/Tasks.h"
 
 #include <unordered_map>
+#include "tsutil/Bravo.h"
+#include <mutex>
 
 #ifdef LOOP_CHECK_MODE
 #define DIR_LOOP_THRESHOLD 1000
@@ -66,7 +69,7 @@ ClassAllocator<OpenDirEntry, false> openDirEntryAllocator("openDirEntry");
 
 // OpenDir
 
-OpenDir::OpenDir()
+OpenDir::OpenDir(StripeSM *s) : Continuation(new_ProxyMutex()), _stripe(s)
 {
   SET_HANDLER(&OpenDir::signal_readers);
 }
@@ -81,10 +84,9 @@ OpenDir::OpenDir()
 int
 OpenDir::open_write(CacheVC *cont, int allow_if_writers, int max_writers)
 {
-  ink_assert(cont->stripe->mutex->thread_holding == this_ethread());
   unsigned int h = cont->first_key.slice32(0);
   int          b = h % OPEN_DIR_BUCKETS;
-  for (OpenDirEntry *d = bucket[b].head; d; d = d->link.next) {
+  for (OpenDirEntry *d = _bucket[b].head; d; d = d->link.next) {
     if (!(d->writers.head->first_key == cont->first_key)) {
       continue;
     }
@@ -110,48 +112,63 @@ OpenDir::open_write(CacheVC *cont, int allow_if_writers, int max_writers)
   dir_clear(&od->first_dir);
   cont->od           = od;
   cont->write_vector = &od->vector;
-  bucket[b].push(od);
+  _bucket[b].push(od);
   return 1;
 }
 
+/**
+  This event handler is called in two cases:
+
+  1. Direct call from OpenDir::close_write - writer lock is already acquired
+  2. Self retry through event system - need to acquire writer lock
+ */
 int
-OpenDir::signal_readers(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
+OpenDir::signal_readers(int event, Event * /* ATS UNUSED */)
 {
-  Queue<CacheVC, Link_CacheVC_opendir_link> newly_delayed_readers;
-  EThread                                  *t = mutex->thread_holding;
-  CacheVC                                  *c = nullptr;
-  while ((c = delayed_readers.dequeue())) {
-    CACHE_TRY_LOCK(lock, c->mutex, t);
-    if (lock.is_locked()) {
-      c->f.open_read_timeout = 0;
-      c->handleEvent(EVENT_IMMEDIATE, nullptr);
-      continue;
+  auto write_op = [&] {
+    Queue<CacheVC, Link_CacheVC_opendir_link> newly_delayed_readers;
+    EThread                                  *t = mutex->thread_holding;
+    CacheVC                                  *c = nullptr;
+    while ((c = _delayed_readers.dequeue())) {
+      CACHE_TRY_LOCK(lock, c->mutex, t);
+      if (lock.is_locked()) {
+        c->f.open_read_timeout = 0;
+        c->handleEvent(EVENT_IMMEDIATE, nullptr);
+        continue;
+      }
+      newly_delayed_readers.push(c);
     }
-    newly_delayed_readers.push(c);
-  }
-  if (newly_delayed_readers.head) {
-    delayed_readers = newly_delayed_readers;
-    EThread *t1     = newly_delayed_readers.head->mutex->thread_holding;
-    if (!t1) {
-      t1 = mutex->thread_holding;
+    if (newly_delayed_readers.head) {
+      _delayed_readers = newly_delayed_readers;
+      EThread *t1      = newly_delayed_readers.head->mutex->thread_holding;
+      if (!t1) {
+        t1 = mutex->thread_holding;
+      }
+      t1->schedule_in(this, HRTIME_MSECONDS(cache_config_mutex_retry_delay), CACHE_EVENT_OPEN_DIR_RETRY);
     }
-    t1->schedule_in(this, HRTIME_MSECONDS(cache_config_mutex_retry_delay));
+  };
+
+  if (event == CACHE_EVENT_OPEN_DIR_RETRY) {
+    // self-retry comes from event system
+    _stripe->write_op<void>(write_op);
+  } else {
+    write_op();
   }
-  return 0;
+
+  return EVENT_DONE;
 }
 
 int
 OpenDir::close_write(CacheVC *cont)
 {
-  ink_assert(cont->stripe->mutex->thread_holding == this_ethread());
   cont->od->writers.remove(cont);
   cont->od->num_writers--;
   if (!cont->od->writers.head) {
     unsigned int h = cont->first_key.slice32(0);
     int          b = h % OPEN_DIR_BUCKETS;
-    bucket[b].remove(cont->od);
-    delayed_readers.append(cont->od->readers);
-    signal_readers(0, nullptr);
+    _bucket[b].remove(cont->od);
+    _delayed_readers.append(cont->od->readers);
+    signal_readers(EVENT_CALL, nullptr);
     cont->od->vector.clear();
     THREAD_FREE(cont->od, openDirEntryAllocator, cont->mutex->thread_holding);
   }
@@ -164,7 +181,7 @@ OpenDir::open_read(const CryptoHash *key) const
 {
   unsigned int h = key->slice32(0);
   int          b = h % OPEN_DIR_BUCKETS;
-  for (OpenDirEntry *d = bucket[b].head; d; d = d->link.next) {
+  for (OpenDirEntry *d = _bucket[b].head; d; d = d->link.next) {
     if (d->writers.head->first_key == *key) {
       return d;
     }
