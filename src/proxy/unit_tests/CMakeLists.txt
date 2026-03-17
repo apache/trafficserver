@@ -25,4 +25,4 @@ if(NOT APPLE)
   target_link_options(test_proxy PRIVATE -Wl,--allow-multiple-definition)
 endif()
 
-add_catch2_test(NAME test_proxy COMMAND $<TARGET_FILE:test_proxy>)
+add_catch2_test(NAME test_proxy)
