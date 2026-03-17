@@ -457,7 +457,7 @@ protected:
 
 private:
   bool           _flag{false};
-  TSHttpCntlType _cntl_qual{TS_HTTP_CNTL_LOGGING_MODE};
+  TSHttpCntlType _cntl_qual{TS_HTTP_CNTL_LOGGING_MODE}; // always overwritten by initialize()
 };
 
 class OperatorSetPluginCntl : public Operator
@@ -487,7 +487,7 @@ protected:
   }
 
 private:
-  PluginCtrl _name{PluginCtrl::TIMEZONE};
+  PluginCtrl _name{PluginCtrl::TIMEZONE}; // always overwritten by initialize()
   int        _value{0};
 };
 

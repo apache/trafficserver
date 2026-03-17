@@ -53,8 +53,8 @@ class TLSClientHelloSummary
 public:
   using difference_type = std::iterator_traits<std::vector<std::uint16_t>::iterator>::difference_type;
 
-  Protocol      protocol{Protocol::TLS};
-  std::uint16_t TLS_version{0}; // 0 is not the default, this is only to not have it un-initialized.
+  Protocol      protocol{Protocol::TLS}; // always overwritten by caller
+  std::uint16_t TLS_version{0};          // 0 is not the default, this is only to not have it un-initialized.
   std::string   ALPN;
 
   std::vector<std::uint16_t> const &get_ciphers() const;
