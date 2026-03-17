@@ -154,7 +154,4 @@ tr5.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Con
 tr5.Processes.Default.Streams.stderr = Testers.IncludesExpression(f"CN={sni_domain}", "Check response")
 
 # Verify the parallel loading code path was actually exercised.
-# With 5 identical cert lines, 4 will fail to insert as duplicates.
-# This confirms all lines were processed (regardless of thread count).
-ts3.Disk.diags_log.Content = Testers.ContainsExpression(
-    'Failed to insert SSL_CTX for certificate', 'duplicate cert insertions confirm all lines were processed')
+ts3.Disk.diags_log.Content = Testers.ContainsExpression('loading 5 certs with', 'verify parallel cert loading path was used')

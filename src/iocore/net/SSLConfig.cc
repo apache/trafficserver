@@ -527,7 +527,7 @@ SSLConfigParams::initialize()
   configExitOnLoadError = RecGetRecordInt("proxy.config.ssl.server.multicert.exit_on_load_fail").value_or(0);
   configLoadConcurrency = RecGetRecordInt("proxy.config.ssl.server.multicert.concurrency").value_or(1);
   if (configLoadConcurrency == 0) {
-    configLoadConcurrency = std::thread::hardware_concurrency();
+    configLoadConcurrency = std::max(1u, std::thread::hardware_concurrency());
   }
 
   {
