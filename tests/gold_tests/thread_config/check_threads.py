@@ -20,26 +20,45 @@
 import psutil
 import argparse
 import sys
+import time
 
 
 def count_threads(ts_path, etnet_threads, accept_threads, task_threads, aio_threads):
 
     for p in psutil.process_iter(['name', 'cwd', 'threads']):
 
+        # Use cached info from process_iter attrs to avoid race conditions
+        # where the process exits between iteration and inspection.
+        try:
+            proc_name = p.info.get('name', '')
+            proc_cwd = p.info.get('cwd', '')
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            continue
+
         # Find the pid corresponding to the ats process we started in autest.
         # It needs to match the process name and the binary path.
         # If autest can expose the pid of the process this is not needed anymore.
-        if p.name() == '[TS_MAIN]' and p.cwd() == ts_path:
+        if proc_name == '[TS_MAIN]' and proc_cwd == ts_path:
 
             etnet_check = set()
             accept_check = set()
             task_check = set()
             aio_check = set()
 
-            for t in p.threads():
+            try:
+                threads = p.threads()
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
+                sys.stderr.write(f'Process {p.pid} disappeared while reading threads.\n')
+                return 1
 
-                # Get the name of the thread.
-                thread_name = psutil.Process(t.id).name()
+            for t in threads:
+
+                # Get the name of the thread. The thread may have exited
+                # between p.threads() and this call, so handle that.
+                try:
+                    thread_name = psutil.Process(t.id).name()
+                except (psutil.NoSuchProcess, psutil.AccessDenied):
+                    continue
 
                 if thread_name.startswith('[ET_NET'):
 
@@ -103,7 +122,20 @@ def count_threads(ts_path, etnet_threads, accept_threads, task_threads, aio_thre
             else:
                 return 0
 
-    # Return 1 if no pid is found to match the ats process.
+    # No matching process found. Print diagnostic info to help debug CI failures.
+    ts_main_procs = []
+    for p in psutil.process_iter(['name', 'cwd']):
+        try:
+            if p.info.get('name') == '[TS_MAIN]':
+                ts_main_procs.append(f'  pid={p.pid} cwd={p.info.get("cwd")}')
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            pass
+
+    sys.stderr.write(f'No [TS_MAIN] process found with cwd={ts_path}.\n')
+    if ts_main_procs:
+        sys.stderr.write('Found [TS_MAIN] processes:\n' + '\n'.join(ts_main_procs) + '\n')
+    else:
+        sys.stderr.write('No [TS_MAIN] processes found at all.\n')
     return 1
 
 
@@ -118,7 +150,18 @@ def main():
         '-t', '--task-threads', type=int, dest='task_threads', help='expected number of TASK threads', required=True)
     parser.add_argument('-c', '--aio-threads', type=int, dest='aio_threads', help='expected number of AIO threads', required=True)
     args = parser.parse_args()
-    exit(count_threads(args.ts_path, args.etnet_threads, args.accept_threads, args.task_threads, args.aio_threads))
+
+    max_attempts = 3
+    result = 1
+    for attempt in range(max_attempts):
+        result = count_threads(args.ts_path, args.etnet_threads, args.accept_threads, args.task_threads, args.aio_threads)
+        if result != 1:  # Only retry when process not found (exit code 1).
+            break
+        if attempt < max_attempts - 1:
+            sys.stderr.write(f'Attempt {attempt + 1}/{max_attempts}: process not found, retrying in 2s...\n')
+            time.sleep(2)
+
+    exit(result)
 
 
 if __name__ == '__main__':
