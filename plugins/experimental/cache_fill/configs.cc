@@ -161,7 +161,7 @@ BgFetchConfig::readConfig(const char *config_file)
           if (cfg_value[0] == '<') {
             op = BgFetchRule::size_cmp_type::LESS_THAN_OR_EQUAL;
           } else if (cfg_value[0] == '>') {
-            op = BgFetchRule::size_cmp_type::LESS_THAN_OR_EQUAL;
+            op = BgFetchRule::size_cmp_type::GREATER_THAN_OR_EQUAL;
           } else {
             TSError("[%s] invalid Content-Length condition %.*s, skipping config value", PLUGIN_NAME, int(cfg_value.size()),
                     cfg_value.data());
