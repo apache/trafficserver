@@ -167,6 +167,7 @@ public:
   int                             max_unavailable_server_retries     = 1;
   int                             secondary_mode                     = 1;
   bool                            ignore_self_detect                 = false;
+  bool                            host_override                      = false;
   ParentHashAlgorithm             consistent_hash_algorithm          = ParentHashAlgorithm::SIPHASH24;
   uint64_t                        consistent_hash_seed0              = 0;
   uint64_t                        consistent_hash_seed1              = 0;
@@ -240,6 +241,20 @@ struct ParentResult {
   retry_type() const
   {
     return is_api_result() ? ParentRetry_t::NONE : rec->parent_retry;
+  }
+
+  bool
+  host_override() const
+  {
+    if (is_api_result()) {
+      return false;
+    }
+
+    if (!is_some()) {
+      return false;
+    }
+
+    return rec->host_override;
   }
 
   unsigned
