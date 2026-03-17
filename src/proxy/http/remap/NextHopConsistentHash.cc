@@ -547,8 +547,4 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, void * /* ih ATS_UNUSED */, t
     NH_Dbg(NH_DBG_CTL, "[%" PRIu64 "] result.result: %s set hostname null port 0 retry false", sm_id,
            ParentResultStr[static_cast<int>(result.result)]);
   }
-
-  setHostHeader(txnp, result.hostname);
-
-  return;
 }
