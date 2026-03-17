@@ -1,0 +1,170 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+# Configuration section for autest integration
+autest:
+  description: 'Large chunked response from origin server'
+
+  dns:
+    name: 'dns-chunked-origin'
+
+  server:
+    name: 'server-chunked-origin'
+
+  client:
+    name: 'client-chunked-origin'
+
+  ats:
+    name: 'ts-chunked-large'
+    process_config:
+      enable_tls: true
+      enable_cache: true
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http'
+      proxy.config.http.response_via_str: 2
+
+    remap_config:
+      - from: "http://www.example.com/"
+        to: "http://backend.example.com:{SERVER_HTTP_PORT}/"
+      - from: "https://www.example.com/"
+        to: "http://backend.example.com:{SERVER_HTTP_PORT}/"
+
+sessions:
+
+# HTTP/1.0 - dechunk
+
+- transactions:
+  - client-request:
+      method: GET
+      url: /stream/1.0/
+      version: '1.0'
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ uuid, http-1.0-chunk ]
+
+    server-response:
+      status: 200
+      version: '1.1'
+      headers:
+        fields:
+        - [ Content-Type, text/plain ]
+        - [ Transfer-Encoding, chunked ]
+        - [ Cache-Control, "public, max-age=3600" ]
+      content:
+        size: 131072
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+          - [ Transfer-Encoding, { as: absent } ]
+      content:
+        size: 131072
+
+# HTTP/1.1 - pass-through for user agent & dechunk for cache write
+
+- transactions:
+  - client-request:
+      method: GET
+      url: /stream/1.1/
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ uuid, http-1.1-chunk-0 ]
+
+    server-response:
+      status: 200
+      version: '1.1'
+      headers:
+        fields:
+        - [ Content-Type, text/plain ]
+        - [ Transfer-Encoding, chunked ]
+        - [ Cache-Control, "public, max-age=3600" ]
+      content:
+        size: 131072
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+          - [ Transfer-Encoding, { value: chunked, as: equal } ]
+      content:
+        size: {value: 131072, as: equal}
+
+  # Expect: hit dechunked contents in the cache
+  - client-request:
+      method: GET
+      url: /stream/1.1/
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ uuid, http-1.1-chunk-1 ]
+
+    server-response:
+      status: 503
+      version: '1.1'
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+          - [ Content-Length, { value: 131072, as: equal} ]
+          - [ Transfer-Encoding, { as: absent } ]
+      content:
+        size: {value: 131072, as: equal}
+
+# HTTP/2 - dechunk
+
+- protocol:
+  - name: http
+    version: 2
+  transactions:
+  - client-request:
+      headers:
+        fields:
+        - [ ":method", "GET" ]
+        - [ ":scheme", https ]
+        - [ ":authority", www.example.com ]
+        - [ ":path", /stream/2/ ]
+        - [ uuid, http-2-chunk ]
+
+    server-response:
+      status: 200
+      version: 1.1
+      headers:
+        fields:
+        - [ Content-Type, text/plain ]
+        - [ Transfer-Encoding, chunked ]
+        - [ Cache-Control, "public, max-age=3600" ]
+      content:
+        size: 131072
+
+    proxy-response:
+      headers:
+        fields:
+        - [ ":status", {value: '200', as: equal } ]
+        - [ transfer-encoding, { as: absent } ]
+        - [ content-length, { as: absent } ]
+      content:
+        size: {value: 131072, as: equal}

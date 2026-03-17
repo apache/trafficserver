@@ -35,8 +35,36 @@ def configure_ats(obj: 'TestRun', server: 'Process', ats_config: dict, dns: Opti
     name = ats_config.get('name', 'ts')
     process_config = ats_config.get('process_config', {})
     ts = obj.MakeATSProcess(name, **process_config)
+
+    # Configure records_config if specified.
     records_config = ats_config.get('records_config', {})
     ts.Disk.records_config.update(records_config)
+
+    # TLS configs
+    enable_tls = process_config.get('enable_tls', False)
+    if enable_tls:
+        # Configure ssl_multicert.config if specified.
+        ssl_multicert_config = ats_config.get('ssl_multicert_config', [])
+
+        # setup default cert and key ssl_multicert_config is empty
+        if ssl_multicert_config == []:
+            ts.addDefaultSSLFiles()
+
+            ts.Disk.records_config.update(
+                {
+                    'proxy.config.ssl.server.cert.path': ts.Variables.SSLDir,
+                    'proxy.config.ssl.server.private_key.path': ts.Variables.SSLDir,
+                })
+
+            ssl_multicert_config = ["dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key"]
+
+        for line in ssl_multicert_config:
+            ts.Disk.ssl_multicert_config.AddLine(line)
+
+        # Configure sni.yaml if specified.
+        sni_yaml = ats_config.get('sni_yaml')
+        if sni_yaml != None:
+            ts.Disk.sni_yaml.AddLines(yaml.dump(sni_yaml).split('\n'))
 
     # Configure plugin_config if specified.
     plugin_config = ats_config.get('plugin_config', [])
@@ -242,7 +270,8 @@ def ATSReplayTest(obj, replay_file: str):
     if not 'ats' in autest_config:
         raise ValueError(f"Replay file {replay_file} does not contain 'autest.ats' section")
     ats_config = autest_config['ats']
-    enable_tls = ats_config.get('enable_tls', False)
+    process_config = ats_config.get('process_config', {})
+    enable_tls = process_config.get('enable_tls', False)
     metric_checks = ats_config.get('metric_checks', [])
     log_validation = ats_config.get('log_validation', None)
 
