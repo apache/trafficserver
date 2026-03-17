@@ -556,6 +556,11 @@ ParentRecord::ProcessParents(char *val, bool isPrimary)
       errPtr = "Parent string is empty";
       goto MERROR;
     }
+    if (tmp3 && strlen(tmp3) > MAXDNAME) {
+      errPtr = "Parent hash_string is too long";
+      goto MERROR;
+    }
+
     // Update the pRecords
     if (isPrimary) {
       memcpy(this->parents[i].hostname, current, tmp - current);
