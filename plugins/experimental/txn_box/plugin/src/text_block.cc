@@ -121,7 +121,7 @@ protected:
   std::optional<TextView>      _text;                                         ///< Default literal text (optional)
   feature_type_for<DURATION>   _duration;                                     ///< Time between update checks.
   std::atomic<Clock::duration> _last_check = Clock::now().time_since_epoch(); ///< Absolute time of the last alert.
-  Clock::time_point            _last_modified;                                ///< Last modified time of the file.
+  Clock::time_point            _last_modified{};                              ///< Last modified time of the file.
   std::shared_ptr<std::string> _content;                                      ///< Content of the file.
   int                          _line_no = 0;                                  ///< For debugging name conflicts.
   std::shared_mutex            _content_mutex;                                ///< Lock for access @a content.
