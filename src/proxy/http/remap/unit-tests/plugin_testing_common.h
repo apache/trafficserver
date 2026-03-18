@@ -65,7 +65,7 @@ public:
   }
 
   /* Input fields used to set the test behavior of the plugin call-backs */
-  bool  fail{false};       /* tell the plugin call-back to fail for testing purposuses */
+  bool  fail{false};       /* tell the plugin call-back to fail for testing purposes */
   void *input_ih{nullptr}; /* the value to be returned by the plugin instance init function */
 
   /* Output fields showing what happend during the test */
