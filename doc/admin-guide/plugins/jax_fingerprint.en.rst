@@ -121,8 +121,8 @@ specified by `--log-filename` option.
 
 **Example**::
 
-    [Jan 29 10:15:23.456] Client IP: 192.168.1.100    JA4: t13d1516h2_8daaf6152771_b186095e22b6
-    [Jan 29 10:15:24.123] Client IP: 10.0.0.50        JA4: t13d1715h2_8daaf6152771_02713d6af862
+    [Jan 29 10:15:23.456] Client: 192.168.1.100    JA4: t13d1516h2_8daaf6152771_b186095e22b6
+    [Jan 29 10:15:24.123] Client: 10.0.0.50        JA4: t13d1715h2_8daaf6152771_02713d6af862
 
 
 Using HTTP Headers in Origin Requests
