@@ -89,24 +89,24 @@ Global plugin setup
 -------------------
 
 Global plugin setup is the best if you:
-- Need a fingerprint on every request
+ * Need a fingerprint on every request
 
 Remap plugin setup
 ------------------
 
 Remap plugin setup is the best if you:
-- Need a fingerprint only on specific paths, or
-- Cannot use Global plugin setup
+ * Need a fingerprint only on specific paths, or
+ * Cannot use Global plugin setup
 
-Note: For JA3 and JA4, fingerprints are always generated at the beginning of connections. Using remap plugin setup only reduces the
+.. note:: For JA3 and JA4, fingerprints are always generated at the beginning of connections. Using remap plugin setup only reduces the
 overhead of adding HTTP headers and loggingg.
 
 Hybrid setup
 ------------
 
 Hybrid setup is the best if you:
-- Need a fingerprint only for specific server names (in TLS SNI extension), and
-- Need a fingerprint only on specific paths
+ * Need a fingerprint only for specific server names (in TLS SNI extension), and
+ * Need a fingerprint only on specific paths
 
 
 Log Output
