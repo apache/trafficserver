@@ -981,10 +981,13 @@ sync_cache_dir_on_shutdown()
   threads.reserve(drive_stripe_map.size());
   for (auto &[disk, indices] : drive_stripe_map) {
     Dbg(dbg_ctl_cache_dir_sync, "Disk %s: syncing %zu stripe(s)", disk->path, indices.size());
-    threads.emplace_back([&indices]() {
-      EThread *t = reinterpret_cast<EThread *>(0xdeadbeef);
+    auto stripe_indices = indices;
+    threads.emplace_back([stripe_indices]() {
+      // Use a thread_local variable to give each OS thread a unique EThread* sentinel instead of 0xdeadbeef.
+      thread_local char thread_sentinel;
+      EThread          *t = reinterpret_cast<EThread *>(&thread_sentinel);
 
-      for (int idx : indices) {
+      for (int idx : stripe_indices) {
         gstripes[idx]->shutdown(t);
       }
     });
