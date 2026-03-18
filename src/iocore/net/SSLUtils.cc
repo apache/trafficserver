@@ -2016,7 +2016,7 @@ SSLMultiCertConfigLoader::load(SSLCertLookup *lookup, bool firstLoad)
 
   swoc::Errata errata(ERRATA_NOTE);
 
-  if (params->configLoadConcurrency > 1 && config_lines.size() > 1) {
+  if ((params->configLoadConcurrency > 1 || firstLoad) && config_lines.size() > 1) {
     // On first load (no traffic yet), allow more threads for faster startup
     int num_threads = params->configLoadConcurrency;
     if (firstLoad) {

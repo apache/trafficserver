@@ -22,7 +22,7 @@ sni_domain = 'example.com'
 
 ts = Test.MakeATSProcess("ts", enable_tls=True)
 server = Test.MakeOriginServer("server")
-server2 = Test.MakeOriginServer("server3")
+server2 = Test.MakeOriginServer("server2")
 request_header = {"headers": f"GET / HTTP/1.1\r\nHost: {sni_domain}\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 
 response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
@@ -114,7 +114,7 @@ ts2.Disk.diags_log.Content = Testers.IncludesExpression('EMERGENCY: failed to lo
 # Ensure parallel cert loading works correctly with multiple certs
 
 ts3 = Test.MakeATSProcess("ts3", enable_tls=True)
-server3 = Test.MakeOriginServer("server4")
+server3 = Test.MakeOriginServer("server3")
 server3.addResponse("sessionlog.json", request_header, response_header)
 
 ts3.Disk.records_config.update(
