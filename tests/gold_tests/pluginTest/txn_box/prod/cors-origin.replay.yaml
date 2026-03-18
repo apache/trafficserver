@@ -67,8 +67,6 @@ sessions:
       headers:
         fields:
         - [ Host, api.ex ]
-    proxy-request:
-      <<: *base-req
     server-response:
       <<: *base-rsp
     proxy-response:
@@ -83,8 +81,6 @@ sessions:
         fields:
         - [ Host, api.ex ]
         - [ Origin, "https://echo.ex" ]
-    proxy-request:
-        <<: *base-req
     server-response:
       <<: *base-rsp
     proxy-response:
@@ -107,4 +103,3 @@ sessions:
       headers:
         fields:
         - [ "CORS", { value: "https://delta.ex", as: equal }]
-

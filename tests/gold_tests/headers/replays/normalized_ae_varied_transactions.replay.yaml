@@ -1046,11 +1046,6 @@ sessions:
         - [ Accept-Encoding, "zstd, br, compress, gzip" ]
       delay: 100ms
 
-    proxy-request:
-      headers:
-        fields:
-        - [Accept-Encoding, { value: zstd, as: equal }]
-
     server-response:
       <<: *404_response
 
@@ -1073,11 +1068,6 @@ sessions:
         - [ uuid, 48 ]
         - [ Accept-Encoding, "br, compress, gzip" ]
       delay: 100ms
-
-    proxy-request:
-      headers:
-        fields:
-        - [Accept-Encoding, { value: br, as: equal }]
 
     server-response:
       <<: *404_response
@@ -1102,11 +1092,6 @@ sessions:
         - [ Accept-Encoding, "compress, zstd" ]
       delay: 100ms
 
-    proxy-request:
-      headers:
-        fields:
-        - [Accept-Encoding, { value: zstd, as: equal }]
-
     server-response:
       <<: *404_response
 
@@ -1129,11 +1114,6 @@ sessions:
         - [ uuid, 410 ]
         - [ Accept-Encoding, "compress, gzip" ]
       delay: 100ms
-
-    proxy-request:
-      headers:
-        fields:
-        - [Accept-Encoding, { value: gzip, as: equal }]
 
     server-response:
       <<: *404_response
@@ -1474,11 +1454,6 @@ sessions:
         - [ Accept-Encoding, "compress, zstd" ]
       delay: 100ms
 
-    proxy-request:
-      headers:
-        fields:
-        - [Accept-Encoding, { value: zstd, as: equal }]
-
     server-response:
       <<: *404_response
 
@@ -1501,11 +1476,6 @@ sessions:
         - [ uuid, 511 ]
         - [ Accept-Encoding, "compress, br" ]
       delay: 100ms
-
-    proxy-request:
-      headers:
-        fields:
-        - [Accept-Encoding, { value: br, as: equal }]
 
     server-response:
       <<: *404_response
@@ -1530,11 +1500,6 @@ sessions:
         - [ Accept-Encoding, "compress, gzip" ]
       delay: 100ms
 
-    proxy-request:
-      headers:
-        fields:
-        - [Accept-Encoding, { value: gzip, as: equal }]
-
     server-response:
       <<: *404_response
 
@@ -1557,11 +1522,6 @@ sessions:
         - [ uuid, 513 ]
         - [ Accept-Encoding, "zstd;q=1.1" ]
       delay: 100ms
-
-    proxy-request:
-      headers:
-        fields:
-        - [Accept-Encoding, { value: zstd, as: equal }]
 
     server-response:
       <<: *404_response
@@ -1586,11 +1546,6 @@ sessions:
         - [ Accept-Encoding, "br;q=1.1" ]
       delay: 100ms
 
-    proxy-request:
-      headers:
-        fields:
-        - [Accept-Encoding, { value: br, as: equal }]
-
     server-response:
       <<: *404_response
 
@@ -1613,11 +1568,6 @@ sessions:
         - [ Accept-Encoding, "zstd, br;q=0.8" ]
       delay: 100ms
 
-    proxy-request:
-      headers:
-        fields:
-        - [Accept-Encoding, { value: "zstd, br", as: equal }]
-
     server-response:
       <<: *404_response
 
@@ -1639,11 +1589,6 @@ sessions:
         - [ uuid, 516 ]
         - [ Accept-Encoding, "zstd, gzip;q=0.8" ]
       delay: 100ms
-
-    proxy-request:
-      headers:
-        fields:
-        - [Accept-Encoding, { value: "zstd, gzip", as: equal }]
 
     server-response:
       <<: *404_response

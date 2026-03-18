@@ -341,8 +341,6 @@ sessions:
       headers:
         fields:
         - [ Host, unmapped.ex ]
-    proxy-request:
-      <<: *base-req
     server-response:
       <<: *base-rsp
     proxy-response:
@@ -356,8 +354,6 @@ sessions:
       headers:
         fields:
         - [ Host, unmapped.ex ]
-    proxy-request:
-      <<: *base-req
     server-response:
       <<: *base-rsp
     proxy-response:
@@ -371,8 +367,6 @@ sessions:
       headers:
         fields:
         - [ Host, unmapped.ex ]
-    proxy-request:
-      <<: *base-req
     server-response:
       <<: *base-rsp
     proxy-response:
@@ -386,8 +380,6 @@ sessions:
       headers:
         fields:
         - [ Host, base.ex ]
-    proxy-request:
-      <<: *base-req
     server-response:
       status: 404
       reason: "Missing"
