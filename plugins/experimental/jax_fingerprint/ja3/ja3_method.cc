@@ -83,7 +83,10 @@ get_fingerprint(TSClientHello ch)
   }
   if (len > 0) {
     int extension_ids[len];
-    std::copy(ext_types.begin(), ext_types.end(), extension_ids);
+    first = ext_types.begin();
+    for (size_t i = 0; i < len; ++i, ++first) {
+      extension_ids[i] = *first;
+    }
     raw.append(ja3::encode_integer_buffer(extension_ids, len));
   }
   raw.push_back(',');
