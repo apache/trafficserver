@@ -3296,9 +3296,18 @@ HostDB
    periodically checked for a more recent modification date in which case it is
    reloaded. The interval is set with :ts:cv:`proxy.config.hostdb.host_file.interval`.
 
-   While not technically reloadable, the value is read every time the file is
-   to be checked so that if changed the new value will be used on the next
-   check and the file will be treated as modified.
+   This setting is not immediately reloadable. |TS| reads
+   :ts:cv:`proxy.config.hostdb.host_file.path` each time it performs the
+   periodic host file check controlled by
+   :ts:cv:`proxy.config.hostdb.host_file.interval` (default: ``86400``
+   seconds). If the path value has changed, the new path is used on that next
+   check and the file is treated as modified.
+
+   .. tip::
+
+      For more immediate pickup of path changes, temporarily reduce
+      :ts:cv:`proxy.config.hostdb.host_file.interval`, then restore it to the
+      normal value after verification.
 
 .. ts:cv:: CONFIG proxy.config.hostdb.host_file.interval INT 86400
    :units: seconds
