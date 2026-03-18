@@ -1232,6 +1232,8 @@ OperatorSetPluginCntl::initialize(Parser &p)
     } else {
       TSError("[%s] Unknown value for INBOUND_IP_SOURCE control: %s", PLUGIN_NAME, value.c_str());
     }
+  } else {
+    TSError("[%s] Unknown plugin control name: %s", PLUGIN_NAME, name.c_str());
   }
 }
 
