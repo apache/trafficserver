@@ -34,7 +34,7 @@ class InverseSymbolResolver(SymbolResolverBase):
 
     def __init__(self, dbg: Dbg | None = None) -> None:
         super().__init__(debug=False, dbg=dbg)
-        self._state_vars: dict[tuple[types.VarType, int], str] = {}
+        self._state_vars: dict[tuple[types.VarType, int, types.VarScope], str] = {}
 
     @cached_property
     def _rev_conditions_exact(self) -> dict[str, str]:

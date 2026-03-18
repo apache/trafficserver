@@ -76,23 +76,27 @@ Statement::initialize_hooks()
 int
 Statement::acquire_state_slot(TSUserArgType type)
 {
-  static int txn_slot_index = []() -> int {
-    int index = -1;
-    if (TS_ERROR == TSUserArgIndexReserve(TS_USER_ARGS_TXN, PLUGIN_NAME, "HRW txn variables", &index)) {
-      TSError("[%s] failed to reserve txn user arg index", PLUGIN_NAME);
-    }
-    return index;
-  }();
+  if (type == TS_USER_ARGS_SSN) {
+    static int ssn_slot_index = []() -> int {
+      int index = -1;
+      if (TS_ERROR == TSUserArgIndexReserve(TS_USER_ARGS_SSN, PLUGIN_NAME, "HRW ssn variables", &index)) {
+        TSError("[%s] failed to reserve ssn user arg index", PLUGIN_NAME);
+      }
+      return index;
+    }();
 
-  static int ssn_slot_index = []() -> int {
-    int index = -1;
-    if (TS_ERROR == TSUserArgIndexReserve(TS_USER_ARGS_SSN, PLUGIN_NAME, "HRW ssn variables", &index)) {
-      TSError("[%s] failed to reserve ssn user arg index", PLUGIN_NAME);
-    }
-    return index;
-  }();
+    return ssn_slot_index;
+  } else {
+    static int txn_slot_index = []() -> int {
+      int index = -1;
+      if (TS_ERROR == TSUserArgIndexReserve(TS_USER_ARGS_TXN, PLUGIN_NAME, "HRW txn variables", &index)) {
+        TSError("[%s] failed to reserve txn user arg index", PLUGIN_NAME);
+      }
+      return index;
+    }();
 
-  return (type == TS_USER_ARGS_SSN) ? ssn_slot_index : txn_slot_index;
+    return txn_slot_index;
+  }
 }
 
 int
