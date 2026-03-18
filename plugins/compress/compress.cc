@@ -337,10 +337,31 @@ compress_transform_init(TSCont contp, Data *data)
     data->downstream_vio    = TSVConnWrite(downstream_conn, contp, data->downstream_reader, INT64_MAX);
   }
 
+  // Initialize algorithm-specific compression encoders with configured levels
+  if ((data->compression_type & (COMPRESSION_TYPE_GZIP | COMPRESSION_TYPE_DEFLATE)) &&
+      (data->compression_algorithms & (ALGORITHM_GZIP | ALGORITHM_DEFLATE))) {
+    if (!Gzip::transform_init(data)) {
+      error("Failed to configure gzip/deflate compression context");
+      TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
+      return;
+    }
+  }
+
+#if HAVE_BROTLI_ENCODE_H
+  if (data->compression_type & COMPRESSION_TYPE_BROTLI && (data->compression_algorithms & ALGORITHM_BROTLI)) {
+    if (!Brotli::transform_init(data)) {
+      error("Failed to configure brotli compression context");
+      TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
+      return;
+    }
+  }
+#endif
+
 #if HAVE_ZSTD_H
   if (data->compression_type & COMPRESSION_TYPE_ZSTD && (data->compression_algorithms & ALGORITHM_ZSTD)) {
     if (!Zstd::transform_init(data)) {
       error("Failed to configure Zstandard compression context");
+      TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
       return;
     }
   }
