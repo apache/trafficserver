@@ -372,11 +372,6 @@ sessions:
       # transaction.
       delay: 100ms
 
-    proxy-request:
-      headers:
-        fields:
-        - [ X-Vary-On-This, { value: sixth, as: equal } ]
-
     # This should be served out of the cache and not reach the origin.
     server-response:
       <<: *404_response

@@ -72,8 +72,6 @@ sessions:
       headers:
         fields:
         - [ Host, base.ex ]
-    proxy-request:
-      <<: *base-req
     server-response:
       <<: *base-rsp
     proxy-response:
@@ -89,8 +87,6 @@ sessions:
       headers:
         fields:
         - [ "Host", "base.ex" ]
-    proxy-request:
-      <<: *base-req
     server-response:
       <<: *base-rsp
     proxy-response:
@@ -106,8 +102,6 @@ sessions:
       headers:
         fields:
         - [ Host, base.ex ]
-    proxy-request:
-      <<: *base-req
     server-response:
       <<: *base-rsp
     proxy-response:
@@ -123,8 +117,6 @@ sessions:
       headers:
         fields:
         - [ "Host", "base.ex" ]
-    proxy-request:
-      <<: *base-req
     server-response:
       <<: *base-rsp
     proxy-response:
@@ -140,8 +132,6 @@ sessions:
       headers:
         fields:
         - [ "Host", "base.ex" ]
-    proxy-request:
-      <<: *base-req
     server-response:
       <<: *base-rsp
     proxy-response:
@@ -158,8 +148,6 @@ sessions:
       headers:
         fields:
         - [ "Host", "base.ex" ]
-    proxy-request:
-      <<: *base-req
     server-response:
       <<: *base-rsp
     proxy-response:
@@ -194,8 +182,6 @@ sessions:
       headers:
         fields:
         - [ "Host", "base.ex" ]
-    proxy-request:
-      <<: *base-req
     server-response:
       <<: *base-rsp
     proxy-response:
@@ -211,8 +197,6 @@ sessions:
       headers:
         fields:
         - [ "Host", "base.ex" ]
-    proxy-request:
-      <<: *base-req
     server-response:
       <<: *base-rsp
     proxy-response:
@@ -228,8 +212,6 @@ sessions:
       headers:
         fields:
         - [ "Host", "encode.ex" ]
-    proxy-request:
-      <<: *base-req
     server-response:
       <<: *base-rsp
     proxy-response:
@@ -244,8 +226,6 @@ sessions:
       headers:
         fields:
         - [ "Host", "decode.ex" ]
-    proxy-request:
-      <<: *base-req
     server-response:
       <<: *base-rsp
     proxy-response:

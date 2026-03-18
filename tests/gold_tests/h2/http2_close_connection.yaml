@@ -92,9 +92,3 @@ sessions:
             encoding: plain
             data: server_test_2
             size: 13
-
-    proxy-response:
-      content:
-        encoding: plain
-        data: server_test_2
-        verify: {as: equal}

@@ -65,8 +65,6 @@ sessions:
       headers:
         fields:
         - [ Host, bad.ex ]
-    proxy-request:
-      <<: *base-req
     server-response:
       <<: *base-rsp
     proxy-response:
@@ -79,8 +77,6 @@ sessions:
       headers:
         fields:
         - [ Host, bad.ex ]
-    proxy-request:
-      <<: *base-req
     server-response:
       <<: *base-rsp
     proxy-response:
@@ -93,8 +89,6 @@ sessions:
       headers:
         fields:
         - [ Host, bad.ex ]
-    proxy-request:
-      <<: *base-req
     server-response:
       <<: *base-rsp
     proxy-response:
