@@ -98,7 +98,13 @@ ts.Disk.records_config.update(
         'proxy.config.url_remap.pristine_host_hdr': 1,
     })
 
-ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+ts.Disk.ssl_multicert_yaml.AddLines(
+    """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: server.pem
+    ssl_key_name: server.key
+""".split("\n"))
 
 ts.Disk.remap_config.AddLine('map /case1 https://127.0.0.1:{0}/'.format(server.Variables.SSL_Port))
 ts.Disk.remap_config.AddLine('map /case2 https://127.0.0.1:{0}/'.format(server2.Variables.SSL_Port))
@@ -191,7 +197,7 @@ tr2reload.Processes.Default.ReturnCode = 0
 # Should succeed
 tr3bar = Test.AddTestRun("Make request with other bar cert to first server")
 # Wait for the reload to complete
-tr3bar.Processes.Default.StartBefore(server3, ready=When.FileContains(ts.Disk.diags_log.Name, 'sni.yaml finished loading', 3))
+tr3bar.Processes.Default.StartBefore(server3, ready=When.FileContains(ts.Disk.diags_log.Name, 'sni.yaml finished loading', 2))
 tr3bar.StillRunningAfter = ts
 tr3bar.StillRunningAfter = server
 tr3bar.StillRunningAfter = server2

@@ -32,6 +32,7 @@
 #include "SSLDynlock.h" // IWYU pragma: keep - for ssl_dyn_*
 
 #include "iocore/net/SSLMultiCertConfigLoader.h"
+#include "config/ssl_multicert.h"
 #include "iocore/net/SSLAPIHooks.h"
 #include "iocore/net/SSLDiags.h"
 #include "iocore/net/TLSSessionResumptionSupport.h"
@@ -76,19 +77,7 @@
 
 using namespace std::literals;
 
-// ssl_multicert.config field names:
-static constexpr std::string_view SSL_IP_TAG("dest_ip"sv);
-static constexpr std::string_view SSL_CERT_TAG("ssl_cert_name"sv);
-static constexpr std::string_view SSL_PRIVATE_KEY_TAG("ssl_key_name"sv);
-static constexpr std::string_view SSL_OCSP_RESPONSE_TAG("ssl_ocsp_name"sv);
-static constexpr std::string_view SSL_CA_TAG("ssl_ca_name"sv);
-static constexpr std::string_view SSL_ACTION_TAG("action"sv);
-static constexpr std::string_view SSL_ACTION_TUNNEL_TAG("tunnel"sv);
-static constexpr std::string_view SSL_SESSION_TICKET_ENABLED("ssl_ticket_enabled"sv);
-static constexpr std::string_view SSL_SESSION_TICKET_NUMBER("ssl_ticket_number"sv);
-static constexpr std::string_view SSL_KEY_DIALOG("ssl_key_dialog"sv);
-static constexpr std::string_view SSL_SERVERNAME("dest_fqdn"sv);
-static constexpr char             SSL_CERT_SEPARATE_DELIM = ',';
+static constexpr char SSL_CERT_SEPARATE_DELIM = ',';
 
 #ifndef evp_md_func
 #ifdef OPENSSL_NO_SHA256
@@ -97,8 +86,6 @@ static constexpr char             SSL_CERT_SEPARATE_DELIM = ',';
 #define evp_md_func EVP_sha256()
 #endif
 #endif
-
-SSLSessionCache *session_cache; // declared extern in P_SSLConfig.h
 
 static int ssl_vc_index = -1;
 
@@ -182,92 +169,6 @@ SSL_CTX_add_extra_chain_cert_file(SSL_CTX *ctx, const char *chainfile)
 {
   scoped_BIO bio(BIO_new_file(chainfile, "r"));
   return SSL_CTX_add_extra_chain_cert_bio(ctx, bio.get());
-}
-
-static SSL_SESSION *
-#if defined(LIBRESSL_VERSION_NUMBER)
-ssl_get_cached_session(SSL *ssl, unsigned char *id, int len, int *copy)
-#else
-ssl_get_cached_session(SSL *ssl, const unsigned char *id, int len, int *copy)
-#endif
-{
-  TLSSessionResumptionSupport *srs = TLSSessionResumptionSupport::getInstance(ssl);
-
-  ink_assert(srs);
-  if (srs) {
-    return srs->getSession(ssl, id, len, copy);
-  }
-
-  return nullptr;
-}
-
-static int
-ssl_new_cached_session(SSL *ssl, SSL_SESSION *sess)
-{
-#ifdef TLS1_3_VERSION
-  if (SSL_SESSION_get_protocol_version(sess) == TLS1_3_VERSION) {
-    return 0;
-  }
-#endif
-
-  unsigned int         len = 0;
-  const unsigned char *id  = SSL_SESSION_get_id(sess, &len);
-
-  SSLSessionID sid(id, len);
-
-  if (diags()->on()) {
-    static DbgCtl dbg_ctl("ssl_session_cache.insert");
-    if (dbg_ctl.tag_on()) {
-      char printable_buf[(len * 2) + 1];
-
-      sid.toString(printable_buf, sizeof(printable_buf));
-      DbgPrint(dbg_ctl, "ssl_new_cached_session session '%s' and context %p", printable_buf, SSL_get_SSL_CTX(ssl));
-    }
-  }
-
-  Metrics::Counter::increment(ssl_rsb.session_cache_new_session);
-  session_cache->insertSession(sid, sess, ssl);
-
-  // Call hook after new session is created
-  APIHook *hook = SSLAPIHooks::instance()->get(TSSslHookInternalID(TS_SSL_SESSION_HOOK));
-  while (hook) {
-    hook->invoke(TS_EVENT_SSL_SESSION_NEW, &sid);
-    hook = hook->m_link.next;
-  }
-
-  return 0;
-}
-
-static void
-ssl_rm_cached_session(SSL_CTX * /* ctx ATS_UNUSED */, SSL_SESSION *sess)
-{
-#ifdef TLS1_3_VERSION
-  if (SSL_SESSION_get_protocol_version(sess) == TLS1_3_VERSION) {
-    return;
-  }
-#endif
-
-  unsigned int         len = 0;
-  const unsigned char *id  = SSL_SESSION_get_id(sess, &len);
-  SSLSessionID         sid(id, len);
-
-  // Call hook before session is removed
-  APIHook *hook = SSLAPIHooks::instance()->get(TSSslHookInternalID(TS_SSL_SESSION_HOOK));
-  while (hook) {
-    hook->invoke(TS_EVENT_SSL_SESSION_REMOVE, &sid);
-    hook = hook->m_link.next;
-  }
-
-  if (diags()->on()) {
-    static DbgCtl dbg_ctl("ssl_session_cache.remove");
-    if (dbg_ctl.tag_on()) {
-      char printable_buf[(len * 2) + 1];
-      sid.toString(printable_buf, sizeof(printable_buf));
-      DbgPrint(dbg_ctl, "ssl_rm_cached_session cached session '%s'", printable_buf);
-    }
-  }
-
-  session_cache->removeSession(sid);
 }
 
 // Callback function for verifying client certificate
@@ -404,12 +305,15 @@ ssl_cert_callback(SSL *ssl, [[maybe_unused]] void *arg)
     }
 
     // Reset the ticket callback if needed
-    SSL_CTX *ctx = SSL_get_SSL_CTX(ssl);
+    SSL_CTX                        *ctx                  = SSL_get_SSL_CTX(ssl);
+    shared_SSLMultiCertConfigParams sslMultiCertSettings = std::make_shared<SSLMultiCertConfigParams>();
+    if (sslMultiCertSettings->session_ticket_enabled != 0) {
 #ifdef HAVE_SSL_CTX_SET_TLSEXT_TICKET_KEY_EVP_CB
-    SSL_CTX_set_tlsext_ticket_key_evp_cb(ctx, ssl_callback_session_ticket);
+      SSL_CTX_set_tlsext_ticket_key_evp_cb(ctx, ssl_callback_session_ticket);
 #else
-    SSL_CTX_set_tlsext_ticket_key_cb(ctx, ssl_callback_session_ticket);
+      SSL_CTX_set_tlsext_ticket_key_cb(ctx, ssl_callback_session_ticket);
 #endif
+    }
   }
 #endif
 
@@ -602,9 +506,9 @@ ssl_context_enable_tickets(SSL_CTX *ctx, const char *ticket_key_path)
     Metrics::Counter::increment(ssl_rsb.total_ticket_keys_renewed);
   }
 
-// Setting the callback can only fail if OpenSSL does not recognize the
-// SSL_CTRL_SET_TLSEXT_TICKET_KEY_CB constant. we set the callback first
-// so that we don't leave a ticket_key pointer attached if it fails.
+  // Setting the callback can only fail if OpenSSL does not recognize the
+  // SSL_CTRL_SET_TLSEXT_TICKET_KEY_CB constant. we set the callback first
+  // so that we don't leave a ticket_key pointer attached if it fails.
 #ifdef HAVE_SSL_CTX_SET_TLSEXT_TICKET_KEY_EVP_CB
   if (SSL_CTX_set_tlsext_ticket_key_evp_cb(ctx, ssl_callback_session_ticket) == 0) {
 #else
@@ -1244,9 +1148,7 @@ SSLMultiCertConfigLoader::init_server_ssl_ctx(CertLoadData const &data, const SS
       SSL_CTX_set_max_proto_version(ctx, ver);
     }
 
-    if (!this->_setup_session_cache(ctx)) {
-      goto fail;
-    }
+    SSL_CTX_set_session_cache_mode(ctx, SSL_SESS_CACHE_OFF | SSL_SESS_CACHE_NO_INTERNAL);
 
 #ifdef SSL_MODE_RELEASE_BUFFERS
     Dbg(dbg_ctl_ssl_load, "enabling SSL_MODE_RELEASE_BUFFERS");
@@ -1349,46 +1251,8 @@ fail:
 }
 
 bool
-SSLMultiCertConfigLoader::_setup_session_cache(SSL_CTX *ctx)
+SSLMultiCertConfigLoader::_setup_session_cache(SSL_CTX * /* ctx ATS_UNUSED */)
 {
-  const SSLConfigParams *params = this->_params;
-
-  Dbg(dbg_ctl_ssl_session_cache,
-      "ssl context=%p: using session cache options, enabled=%d, size=%d, num_buckets=%d, "
-      "skip_on_contention=%d, timeout=%d, auto_clear=%d",
-      ctx, params->ssl_session_cache, params->ssl_session_cache_size, params->ssl_session_cache_num_buckets,
-      params->ssl_session_cache_skip_on_contention, params->ssl_session_cache_timeout, params->ssl_session_cache_auto_clear);
-
-  if (params->ssl_session_cache_timeout) {
-    SSL_CTX_set_timeout(ctx, params->ssl_session_cache_timeout);
-  }
-
-  int additional_cache_flags  = 0;
-  additional_cache_flags     |= (params->ssl_session_cache_auto_clear == 0) ? SSL_SESS_CACHE_NO_AUTO_CLEAR : 0;
-
-  switch (params->ssl_session_cache) {
-  case SSLConfigParams::SSL_SESSION_CACHE_MODE_OFF:
-    Dbg(dbg_ctl_ssl_session_cache, "disabling SSL session cache");
-
-    SSL_CTX_set_session_cache_mode(ctx, SSL_SESS_CACHE_OFF | SSL_SESS_CACHE_NO_INTERNAL);
-    break;
-  case SSLConfigParams::SSL_SESSION_CACHE_MODE_SERVER_OPENSSL_IMPL:
-    Dbg(dbg_ctl_ssl_session_cache, "enabling SSL session cache with OpenSSL implementation");
-
-    SSL_CTX_set_session_cache_mode(ctx, SSL_SESS_CACHE_SERVER | additional_cache_flags);
-    SSL_CTX_sess_set_cache_size(ctx, params->ssl_session_cache_size);
-    break;
-  case SSLConfigParams::SSL_SESSION_CACHE_MODE_SERVER_ATS_IMPL: {
-    Dbg(dbg_ctl_ssl_session_cache, "enabling SSL session cache with ATS implementation");
-    /* Add all the OpenSSL callbacks */
-    SSL_CTX_sess_set_new_cb(ctx, ssl_new_cached_session);
-    SSL_CTX_sess_set_remove_cb(ctx, ssl_rm_cached_session);
-    SSL_CTX_sess_set_get_cb(ctx, ssl_get_cached_session);
-
-    SSL_CTX_set_session_cache_mode(ctx, SSL_SESS_CACHE_SERVER | SSL_SESS_CACHE_NO_INTERNAL | additional_cache_flags);
-    break;
-  }
-  }
   return true;
 }
 
@@ -1410,7 +1274,7 @@ SSLMultiCertConfigLoader::_setup_dialog(SSL_CTX *ctx, const SSLMultiCertConfigPa
     } else if (strcmp(sslMultCertSettings->dialog, "builtin") == 0) {
       passwd_cb = ssl_private_key_passphrase_callback_builtin;
     } else { // unknown config
-      SSLError("unknown %s configuration value '%s'", SSL_KEY_DIALOG.data(), (const char *)sslMultCertSettings->dialog);
+      SSLError("unknown ssl_key_dialog configuration value '%s'", (const char *)sslMultCertSettings->dialog);
       return false;
     }
     SSL_CTX_set_default_passwd_cb(ctx, passwd_cb);
@@ -1426,7 +1290,7 @@ SSLMultiCertConfigLoader::_set_verify_path(SSL_CTX *ctx, const SSLMultiCertConfi
   // serverCACertFilename if that is not nullptr.  Otherwise, it uses the hashed
   // symlinks in serverCACertPath.
   //
-  // if ssl_ca_name is NOT configured for this cert in ssl_multicert.config
+  // if ssl_ca_name is NOT configured for this cert in ssl_multicert.yaml
   //     AND
   // if proxy.config.ssl.CA.cert.filename and proxy.config.ssl.CA.cert.path
   //     are configured
@@ -1846,104 +1710,12 @@ SSLMultiCertConfigLoader::_store_single_ssl_ctx(SSLCertLookup *lookup, const sha
   return ctx.get();
 }
 
-static bool
-ssl_extract_certificate(const matcher_line *line_info, SSLMultiCertConfigParams *sslMultCertSettings)
-{
-  for (int i = 0; i < MATCHER_MAX_TOKENS; ++i) {
-    const char *label;
-    const char *value;
-
-    label = line_info->line[0][i];
-    value = line_info->line[1][i];
-
-    if (label == nullptr) {
-      continue;
-    }
-    Dbg(dbg_ctl_ssl_load, "Extracting certificate label: %s, value: %s", label, value);
-
-    if (strcasecmp(label, SSL_IP_TAG) == 0) {
-      sslMultCertSettings->addr = ats_strdup(value);
-    }
-
-    if (strcasecmp(label, SSL_CERT_TAG) == 0) {
-      sslMultCertSettings->cert = ats_strdup(value);
-    }
-
-    if (strcasecmp(label, SSL_CA_TAG) == 0) {
-      sslMultCertSettings->ca = ats_strdup(value);
-    }
-
-    if (strcasecmp(label, SSL_PRIVATE_KEY_TAG) == 0) {
-      sslMultCertSettings->key = ats_strdup(value);
-    }
-
-    if (strcasecmp(label, SSL_OCSP_RESPONSE_TAG) == 0) {
-      sslMultCertSettings->ocsp_response = ats_strdup(value);
-    }
-
-    if (strcasecmp(label, SSL_SESSION_TICKET_ENABLED) == 0) {
-      sslMultCertSettings->session_ticket_enabled = atoi(value);
-    }
-
-    if (strcasecmp(label, SSL_SESSION_TICKET_NUMBER) == 0) {
-      sslMultCertSettings->session_ticket_number = atoi(value);
-    }
-
-    if (strcasecmp(label, SSL_KEY_DIALOG) == 0) {
-      sslMultCertSettings->dialog = ats_strdup(value);
-    }
-
-    if (strcasecmp(label, SSL_SERVERNAME) == 0) {
-      sslMultCertSettings->servername = ats_strdup(value);
-    }
-
-    if (strcasecmp(label, SSL_ACTION_TAG) == 0) {
-      if (strcasecmp(SSL_ACTION_TUNNEL_TAG, value) == 0) {
-        sslMultCertSettings->opt = SSLCertContextOption::OPT_TUNNEL;
-      } else {
-        Error("Unrecognized action for %s", SSL_ACTION_TAG.data());
-        return false;
-      }
-    }
-  }
-  // TS-4679:  It is ok to be missing the cert.  At least if the action is set to tunnel
-  if (sslMultCertSettings->cert) {
-    SimpleTokenizer cert_tok(sslMultCertSettings->cert, SSL_CERT_SEPARATE_DELIM);
-    const char     *first_cert = cert_tok.getNext();
-    if (first_cert) {
-      sslMultCertSettings->first_cert = ats_strdup(first_cert);
-    }
-  }
-
-  return true;
-}
-
 swoc::Errata
 SSLMultiCertConfigLoader::load(SSLCertLookup *lookup)
 {
   const SSLConfigParams *params = this->_params;
 
-  char        *tok_state = nullptr;
-  char        *line      = nullptr;
-  unsigned     line_num  = 0;
-  matcher_line line_info;
-
-  const matcher_tags sslCertTags = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, false};
-
   Note("(%s) %s loading ...", this->_debug_tag(), ts::filename::SSL_MULTICERT);
-
-  std::error_code ec;
-  std::string     content{swoc::file::load(swoc::file::path{params->configFilePath}, ec)};
-  if (ec) {
-    switch (ec.value()) {
-    case ENOENT:
-      // missing config file is an acceptable runtime state
-      return swoc::Errata(ERRATA_WARN, "Cannot open SSL certificate configuration \"{}\" - {}", params->configFilePath, ec);
-    default:
-      return swoc::Errata(ERRATA_ERROR, "Failed to read SSL certificate configuration from \"{}\" - {}", params->configFilePath,
-                          ec);
-    }
-  }
 
   // Optionally elevate/allow file access to read root-only
   // certificates. The destructor will drop privilege for us.
@@ -1951,39 +1723,63 @@ SSLMultiCertConfigLoader::load(SSLCertLookup *lookup)
   elevate_setting          = RecGetRecordInt("proxy.config.ssl.cert.load_elevated").value_or(0);
   ElevateAccess elevate_access(elevate_setting ? ElevateAccess::FILE_PRIVILEGE : 0);
 
-  line = tokLine(content.data(), &tok_state);
+  // Guard against nullptr configFilePath which can happen if records aren't initialized.
+  if (params->configFilePath == nullptr) {
+    return swoc::Errata(ERRATA_WARN, "No SSL certificate configuration file path configured");
+  }
+
+  config::SSLMultiCertParser                       parser;
+  config::ConfigResult<config::SSLMultiCertConfig> parse_result = parser.parse(params->configFilePath);
+  if (!parse_result.ok()) {
+    return std::move(parse_result.errata);
+  }
+
   swoc::Errata errata(ERRATA_NOTE);
-  while (line != nullptr) {
-    line_num++;
+  int          item_num = 0;
 
-    // Skip all blank spaces at beginning of line.
-    while (*line && isspace(*line)) {
-      line++;
+  for (const auto &item : parse_result.value) {
+    item_num++;
+    shared_SSLMultiCertConfigParams sslMultiCertSettings = std::make_shared<SSLMultiCertConfigParams>();
+
+    if (!item.ssl_cert_name.empty()) {
+      sslMultiCertSettings->cert = ats_strdup(item.ssl_cert_name.c_str());
+    }
+    if (!item.dest_ip.empty()) {
+      sslMultiCertSettings->addr = ats_strdup(item.dest_ip.c_str());
+    }
+    if (!item.ssl_key_name.empty()) {
+      sslMultiCertSettings->key = ats_strdup(item.ssl_key_name.c_str());
+    }
+    if (!item.ssl_ca_name.empty()) {
+      sslMultiCertSettings->ca = ats_strdup(item.ssl_ca_name.c_str());
+    }
+    if (!item.ssl_ocsp_name.empty()) {
+      sslMultiCertSettings->ocsp_response = ats_strdup(item.ssl_ocsp_name.c_str());
+    }
+    if (!item.ssl_key_dialog.empty()) {
+      sslMultiCertSettings->dialog = ats_strdup(item.ssl_key_dialog.c_str());
+    }
+    if (!item.dest_fqdn.empty()) {
+      sslMultiCertSettings->servername = ats_strdup(item.dest_fqdn.c_str());
+    }
+    if (item.ssl_ticket_enabled.has_value()) {
+      sslMultiCertSettings->session_ticket_enabled = item.ssl_ticket_enabled.value();
+    }
+    if (item.ssl_ticket_number.has_value()) {
+      sslMultiCertSettings->session_ticket_number = item.ssl_ticket_number.value();
+    }
+    if (item.action == "tunnel") {
+      sslMultiCertSettings->opt = SSLCertContextOption::OPT_TUNNEL;
     }
 
-    if (*line != '\0' && *line != '#') {
-      shared_SSLMultiCertConfigParams sslMultiCertSettings = std::make_shared<SSLMultiCertConfigParams>();
-      const char                     *errPtr;
-
-      errPtr = parseConfigLine(line, &line_info, &sslCertTags);
-      Dbg(dbg_ctl_ssl_load, "currently parsing %s at line %d from config file: %s", line, line_num, params->configFilePath);
-      if (errPtr != nullptr) {
-        Warning("%s: discarding %s entry at line %d: %s", __func__, params->configFilePath, line_num, errPtr);
-      } else {
-        if (ssl_extract_certificate(&line_info, sslMultiCertSettings.get())) {
-          // There must be a certificate specified unless the tunnel action is set
-          if (sslMultiCertSettings->cert || sslMultiCertSettings->opt != SSLCertContextOption::OPT_TUNNEL) {
-            if (!this->_store_ssl_ctx(lookup, sslMultiCertSettings)) {
-              errata.note(ERRATA_ERROR, "Failed to load certificate on line {}", line_num);
-            }
-          } else {
-            errata.note(ERRATA_WARN, "No ssl_cert_name specified and no tunnel action set on line {}", line_num);
-          }
-        }
+    // There must be a certificate specified unless the tunnel action is set.
+    if (sslMultiCertSettings->cert || sslMultiCertSettings->opt == SSLCertContextOption::OPT_TUNNEL) {
+      if (!this->_store_ssl_ctx(lookup, sslMultiCertSettings)) {
+        errata.note(ERRATA_ERROR, "Failed to load certificate at item {}", item_num);
       }
+    } else {
+      errata.note(ERRATA_WARN, "No ssl_cert_name specified and no tunnel action set at item {}", item_num);
     }
-
-    line = tokLine(nullptr, &tok_state);
   }
 
   // We *must* have a default context even if it can't possibly work. The default context is used to

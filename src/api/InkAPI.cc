@@ -139,8 +139,6 @@ extern ClassAllocator<FetchSM, false> FetchSMAllocator;
 /* From proxy/http/HttpProxyServerMain.c: */
 extern bool ssl_register_protocol(const char *, Continuation *);
 
-extern SSLSessionCache *session_cache; // declared extern in P_SSLConfig.h
-
 // External converters.
 extern MgmtConverter const &HttpDownServerCacheTimeConv;
 
@@ -8463,61 +8461,6 @@ TSVConnPPInfoIntGet(TSVConn vconn, uint16_t key, TSMgmtInt *value)
   }
 
   return TS_SUCCESS;
-}
-
-TSSslSession
-TSSslSessionGet(const TSSslSessionID *session_id)
-{
-  SSL_SESSION *session = nullptr;
-  if (session_id && session_cache) {
-    session_cache->getSession(reinterpret_cast<const SSLSessionID &>(*session_id), &session, nullptr);
-  }
-  return reinterpret_cast<TSSslSession>(session);
-}
-
-int
-TSSslSessionGetBuffer(const TSSslSessionID *session_id, char *buffer, int *len_ptr)
-{
-  int true_len = 0;
-  // Don't get if there is no session id or the cache is not yet set up
-  if (session_id && session_cache && len_ptr) {
-    true_len = session_cache->getSessionBuffer(reinterpret_cast<const SSLSessionID &>(*session_id), buffer, *len_ptr);
-  }
-  return true_len;
-}
-
-TSReturnCode
-TSSslSessionInsert(const TSSslSessionID *session_id, TSSslSession add_session, TSSslConnection ssl_conn)
-{
-  // Don't insert if there is no session id or the cache is not yet set up
-  if (session_id && session_cache) {
-    if (dbg_ctl_ssl_session_cache_insert.on()) {
-      const SSLSessionID *sid = reinterpret_cast<const SSLSessionID *>(session_id);
-      char                buf[sid->len * 2 + 1];
-      sid->toString(buf, sizeof(buf));
-      DbgPrint(dbg_ctl_ssl_session_cache_insert, "TSSslSessionInsert: Inserting session '%s' ", buf);
-    }
-    SSL_SESSION *session = reinterpret_cast<SSL_SESSION *>(add_session);
-    SSL         *ssl     = reinterpret_cast<SSL *>(ssl_conn);
-    session_cache->insertSession(reinterpret_cast<const SSLSessionID &>(*session_id), session, ssl);
-    // insertSession returns void, assume all went well
-    return TS_SUCCESS;
-  } else {
-    return TS_ERROR;
-  }
-}
-
-TSReturnCode
-TSSslSessionRemove(const TSSslSessionID *session_id)
-{
-  // Don't remove if there is no session id or the cache is not yet set up
-  if (session_id && session_cache) {
-    session_cache->removeSession(reinterpret_cast<const SSLSessionID &>(*session_id));
-    // removeSession returns void, assume all went well
-    return TS_SUCCESS;
-  } else {
-    return TS_ERROR;
-  }
 }
 
 // APIs for managing and using UUIDs.

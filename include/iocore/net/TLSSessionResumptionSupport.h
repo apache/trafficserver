@@ -77,19 +77,6 @@ public:
   // ---------------------------------------------------------------------------
   // TLS Session Resumption Support Via Server Session Caching
   // ---------------------------------------------------------------------------
-
-  /** Retrieves a cached SSL session from the session cache.
-   *
-   * This function is used to retrieve a cached SSL session from the session cache.
-   *
-   * @param[in]  ssl         The SSL connection object.
-   * @param[in]  id          The session ID to lookup.
-   * @param[in]  len         The length of the session ID.
-   * @param[out] copy        Pointer to an integer indicating if the session ID should be copied.
-   * @return                A pointer to the cached SSL session, or nullptr if not found.
-   */
-  SSL_SESSION *getSession(SSL *ssl, const unsigned char *id, int len, int *copy);
-
   /**
    * @brief Retrieves a cached SSL session from the origin session cache.
    *

@@ -50,7 +50,13 @@ class CriptsBasicTest:
         self.ts = Test.MakeATSProcess("ts_in", enable_tls=True, enable_cache=False, enable_cripts=True)
 
         self.ts.addDefaultSSLFiles()
-        self.ts.Disk.ssl_multicert_config.AddLine("dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key")
+        self.ts.Disk.ssl_multicert_yaml.AddLines(
+            """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: server.pem
+    ssl_key_name: server.key
+""".split("\n"))
 
         self.ts.Setup.Copy('files/basic.cript', self.ts.Variables.CONFIGDIR)
 

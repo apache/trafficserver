@@ -25,14 +25,13 @@
 #include <vector>
 #include <algorithm>
 
-#include "api/InkAPIInternal.h" // TODO: this brings a lot of dependencies, double check this.
-
 #include "tscore/ink_platform.h"
 #include "tscore/ink_file.h"
 #include "../../records/P_RecCore.h"
 #include "tscore/Diags.h"
 #include "tscore/Filenames.h"
 #include "tscore/Layout.h"
+#include "mgmt/config/ConfigRegistry.h"
 
 #if HAVE_STRUCT_STAT_ST_MTIMESPEC_TV_NSEC
 #define TS_ARCHIVE_STAT_MTIME(t) ((t).st_mtime * 1000000000 + (t).st_mtimespec.tv_nsec)
@@ -52,13 +51,12 @@ process_config_update(std::string const &fileName, std::string const &configName
   Dbg(dbg_ctl, "Config update requested for '%s'. [%s]", fileName.empty() ? "Unknown" : fileName.c_str(),
       configName.empty() ? "No config record associated" : configName.c_str());
   swoc::Errata ret;
-  // TODO: make sure records holds the name after change, if not we should change it.
+  // records.yaml reload is now handled by its ConfigRegistry handler
+  // (registered in register_config_files() in traffic_server.cc).
+  // Delegate to ConfigRegistry::execute_reload("records") so the reload
+  // is traced and status-reported like every other config.
   if (fileName == ts::filename::RECORDS) {
-    if (auto zret = RecReadYamlConfigFile(); zret) {
-      RecConfigWarnIfUnregistered();
-    } else {
-      ret.note("Error reading {}", fileName).note(zret);
-    }
+    config::ConfigRegistry::Get_Instance().execute_reload("records");
   } else if (!configName.empty()) { // Could be the case we have a child file to reload with no related config record.
     RecT rec_type;
     if (auto r = RecGetRecordType(configName.c_str(), &rec_type); r == REC_ERR_OKAY && rec_type == RECT_CONFIG) {
@@ -72,13 +70,13 @@ process_config_update(std::string const &fileName, std::string const &configName
 }
 
 // JSONRPC endpoint defs.
-const std::string CONFIG_REGISTRY_KEY_STR{"config_registry"};
-const std::string FILE_PATH_KEY_STR{"file_path"};
-const std::string RECORD_NAME_KEY_STR{"config_record_name"};
-const std::string PARENT_CONFIG_KEY_STR{"parent_config"};
-const std::string ROOT_ACCESS_NEEDED_KEY_STR{"root_access_needed"};
-const std::string IS_REQUIRED_KEY_STR{"is_required"};
-const std::string NA_STR{"N/A"};
+constexpr const char *CONFIG_REGISTRY_KEY_STR{"config_registry"};
+constexpr const char *FILE_PATH_KEY_STR{"file_path"};
+constexpr const char *RECORD_NAME_KEY_STR{"config_record_name"};
+constexpr const char *PARENT_CONFIG_KEY_STR{"parent_config"};
+constexpr const char *ROOT_ACCESS_NEEDED_KEY_STR{"root_access_needed"};
+constexpr const char *IS_REQUIRED_KEY_STR{"is_required"};
+constexpr const char *NA_STR{"N/A"};
 
 } // namespace
 
@@ -153,21 +151,18 @@ FileManager::fileChanged(std::string const &fileName, std::string const &configN
   return ret;
 }
 
-// TODO: To do the following here, we have to pull up a lot of dependencies we don't really
-// need, #include "InkAPIInternal.h" brings plenty of them. Double check this approach. RPC will
-// also be able to pass messages to plugins, once that's designed it can also cover this.
 void
-FileManager::registerConfigPluginCallbacks(ConfigUpdateCbTable *cblist)
+FileManager::registerConfigPluginCallbacks(std::function<void()> cb)
 {
-  _pluginCallbackList = cblist;
+  _pluginCallback = std::move(cb);
 }
 
 void
 FileManager::invokeConfigPluginCallbacks()
 {
   Dbg(dbg_ctl, "invoke plugin callbacks");
-  if (_pluginCallbackList) {
-    _pluginCallbackList->invoke();
+  if (_pluginCallback) {
+    _pluginCallback();
   }
 }
 
@@ -194,7 +189,8 @@ FileManager::rereadConfig()
     // ToDo: rb->isVersions() was always true before, because numberBackups was always >= 1. So ROLLBACK_CHECK_ONLY could not
     // happen at all...
     if (rb->checkForUserUpdate(FileManager::ROLLBACK_CHECK_AND_UPDATE)) {
-      Dbg(dbg_ctl, "File %s changed.", it.first.c_str());
+      Dbg(dbg_ctl, "File %s changed. Has a parent=%s, ", it.first.c_str(),
+          rb->getParentConfig() ? rb->getParentConfig()->getFileName() : "none");
       if (auto const &r = fileChanged(rb->getFileName(), rb->getConfigName()); !r) {
         ret.note(r);
       }

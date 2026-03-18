@@ -2522,15 +2522,16 @@ Cache Control
          ``Cache-Control: max-age``.
    ===== ======================================================================
 
-.. ts:cv:: CONFIG proxy.config.http.cache.targeted_cache_control_headers STRING ""
+.. ts:cv:: CONFIG proxy.config.http.cache.targeted_cache_control_headers STRING "CDN-Cache-Control"
    :reloadable:
    :overridable:
 
-   Comma-separated list of targeted cache control header names to check in priority
-   order before falling back to the standard ``Cache-Control`` header. This implements
-   `RFC 9213 <https://httpwg.org/specs/rfc9213.html>`_ Targeted HTTP Cache Control.
-   When empty (the default), targeted cache control is disabled and only the standard
-   ``Cache-Control`` header is used.
+   Comma-separated list of targeted cache control header names to check in
+   priority order before falling back to the standard ``Cache-Control``
+   header. This implements `RFC 9213 <https://httpwg.org/specs/rfc9213.html>`_
+   Targeted HTTP Cache Control. The default value is ``CDN-Cache-Control``.
+   Set this to an empty string to disable targeted cache control and use only
+   the standard ``Cache-Control`` header.
 
    Example values:
 
@@ -4063,24 +4064,24 @@ SSL Termination
    ===== ======================================================================
 
 
-.. ts:cv:: CONFIG proxy.config.ssl.server.multicert.filename STRING ssl_multicert.config
+.. ts:cv:: CONFIG proxy.config.ssl.server.multicert.filename STRING ssl_multicert.yaml
    :deprecated:
 
-   The location of the :file:`ssl_multicert.config` file, relative
+   The location of the :file:`ssl_multicert.yaml` file, relative
    to the |TS| configuration directory. In the following
    example, if the |TS| configuration directory is
    `/etc/trafficserver`, the |TS| SSL configuration file
    and the corresponding certificates are located in
    `/etc/trafficserver/ssl`::
 
-      CONFIG proxy.config.ssl.server.multicert.filename STRING ssl/ssl_multicert.config
+      CONFIG proxy.config.ssl.server.multicert.filename STRING ssl/ssl_multicert.yaml
       CONFIG proxy.config.ssl.server.cert.path STRING etc/trafficserver/ssl
       CONFIG proxy.config.ssl.server.private_key.path STRING etc/trafficserver/ssl
 
 .. ts:cv:: CONFIG proxy.config.ssl.server.multicert.exit_on_load_fail INT 1
 
    By default (``1``), |TS| will not start unless all the SSL certificates listed in the
-   :file:`ssl_multicert.config` file successfully load.  If false (``0``), SSL certificate
+   :file:`ssl_multicert.yaml` file successfully load.  If false (``0``), SSL certificate
    load failures will not prevent |TS| from starting.
 
 .. ts:cv:: CONFIG proxy.config.ssl.server.cert.path STRING /config
@@ -4089,21 +4090,21 @@ SSL Termination
    and validation new SSL sessions. If this is a relative path,
    it is appended to the |TS| installation PREFIX. All
    certificates and certificate chains listed in
-   :file:`ssl_multicert.config` will be loaded relative to this path.
+   :file:`ssl_multicert.yaml` will be loaded relative to this path.
 
 .. ts:cv:: CONFIG proxy.config.ssl.server.private_key.path STRING NULL
 
    The location of the SSL certificate private keys. Change this
    variable only if the private key is not located in the SSL
    certificate file. All private keys listed in
-   :file:`ssl_multicert.config` will be loaded relative to this
+   :file:`ssl_multicert.yaml` will be loaded relative to this
    path.
 
 .. ts:cv:: CONFIG proxy.config.ssl.server.cert_chain.filename STRING NULL
 
    The name of a file containing a global certificate chain that
    should be used with every server certificate. This file is only
-   used if there are certificates defined in :file:`ssl_multicert.config`.
+   used if there are certificates defined in :file:`ssl_multicert.yaml`.
    Unless this is an absolute path, it is loaded relative to the
    path specified by :ts:cv:`proxy.config.ssl.server.cert.path`.
 
@@ -4171,81 +4172,17 @@ SSL Termination
   Setting a value less than or equal to ``0`` effectively disables
   SSL session cache for the origin server.
 
-.. ts:cv:: CONFIG proxy.config.ssl.session_cache.mode INT 2
-
-   Sets the SSL session cache mode:
-
-   ===== ======================================================================
-   Value Description
-   ===== ======================================================================
-   ``0`` Disables the session cache entirely.
-   ``1`` Enables the session cache using OpenSSL's implementation.
-   ``2`` Default. Enables the session cache using |TS|'s implementation. This
-         implementation should perform much better than the OpenSSL
-         implementation.
-   ===== ======================================================================
-
-.. ts:cv:: CONFIG proxy.config.ssl.session_cache.enabled INT 2
-
-   .. deprecated:: 10.1.0
-      Use :ts:cv:`proxy.config.ssl.session_cache.mode` instead.
-
-   This configuration exists for historical reasons and is deprecated in favor of
-   :ts:cv:`proxy.config.ssl.session_cache.mode`. It accepts the same values and
-   has identical behavior, so see that documentation for details.
-
-.. ts:cv:: CONFIG proxy.config.ssl.session_cache.timeout INT 0
-
-  This configuration specifies the lifetime of SSL session cache
-  entries in seconds. If it is ``0``, then the SSL library will use
-  a default value, typically 300 seconds. Note: This option has no affect
-  when using the |TS| session cache (option ``2`` in
-  ``proxy.config.ssl.session_cache.mode``)
-
-   See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
-
-.. ts:cv:: CONFIG proxy.config.ssl.session_cache.auto_clear INT 1
-
-  This will set the OpenSSL auto clear flag. Auto clear is enabled by
-  default with ``1`` it can be disabled by changing this setting to ``0``.
-
-.. ts:cv:: CONFIG proxy.config.ssl.session_cache.size INT 102400
-
-  This configuration specifies the maximum number of entries
-  the SSL session cache may contain.
-
-.. ts:cv:: CONFIG proxy.config.ssl.session_cache.num_buckets INT 256
-
-  This configuration specifies the number of buckets to use with the
-  |TS| SSL session cache implementation. The TS implementation
-  is a fixed size hash map where each bucket is protected by a mutex.
-
-.. ts:cv:: CONFIG proxy.config.ssl.session_cache.skip_cache_on_bucket_contention INT 0
-
-   This configuration specifies the behavior of the |TS| SSL session
-   cache implementation during lock contention on each bucket:
-
-   ===== ======================================================================
-   Value Description
-   ===== ======================================================================
-   ``0`` Default. Don't skip session caching when bucket lock is contented.
-   ``1`` Disable the SSL session cache for a connection during lock contention.
-   ===== ======================================================================
-
 .. ts:cv:: CONFIG proxy.config.ssl.server.session_ticket.enable INT 1
 
   Set to 1 to enable Traffic Server to process TLS tickets for TLS session resumption.
 
 .. ts:cv:: CONFIG proxy.config.ssl.server.session_ticket.number INT 2
 
-  This configuration control the number of TLSv1.3 session tickets that are issued.
-  Take into account that setting the value to 0 will disable session caching for TLSv1.3
+  This configuration controls the number of TLSv1.3 session tickets that are issued.
+  Setting the value to 0 will disable session ticket-based session resumption for TLSv1.3
   connections.
 
-  Lowering this setting to ``1`` can be interesting when ``proxy.config.ssl.session_cache.mode`` is enabled because
-  otherwise for every new TLSv1.3 connection two session IDs will be inserted in the session cache.
-  On the other hand, if ``proxy.config.ssl.session_cache.mode``  is disabled, using the default value is recommended.
-  In those scenarios, increasing the number of tickets could be potentially beneficial for clients performing
+  Increasing the number of tickets could be potentially beneficial for clients performing
   multiple requests over concurrent TLS connections as per RFC 8446 clients SHOULDN'T reuse TLS Tickets.
 
   For more information see https://www.openssl.org/docs/man1.1.1/man3/SSL_CTX_set_num_tickets.html
@@ -4676,7 +4613,7 @@ OCSP Stapling Configuration
    The directory path of the prefetched OCSP stapling responses. Change this
    variable only if you intend to use and administratively maintain
    prefetched OCSP stapling responses. All stapling responses listed in
-   :file:`ssl_multicert.config` will be loaded relative to this
+   :file:`ssl_multicert.yaml` will be loaded relative to this
    path.
 
 HTTP/2 Configuration

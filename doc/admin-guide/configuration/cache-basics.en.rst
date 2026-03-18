@@ -247,17 +247,17 @@ For example, an origin server might send::
     Cache-Control: max-age=60
     CDN-Cache-Control: max-age=3600
 
-When targeted cache control is enabled (via
-:ts:cv:`proxy.config.http.cache.targeted_cache_control_headers`), Traffic
-Server will use the ``CDN-Cache-Control`` directives instead of the standard
-``Cache-Control`` directives for caching decisions. The browser receiving the
-response will see both headers and use the standard ``Cache-Control``, allowing
-the object to be cached for 60 seconds in the browser but 3600 seconds in the CDN.
+By default, Traffic Server checks ``CDN-Cache-Control`` first (via
+:ts:cv:`proxy.config.http.cache.targeted_cache_control_headers`) and uses
+those directives instead of the standard ``Cache-Control`` directives for
+caching decisions. The browser receiving the response will see both headers and
+use the standard ``Cache-Control``, allowing the object to be cached for
+60 seconds in the browser but 3600 seconds in the CDN.
 
 Configuration
 ~~~~~~~~~~~~~
 
-To enable targeted cache control, set
+To customize targeted cache control, set
 :ts:cv:`proxy.config.http.cache.targeted_cache_control_headers` to a
 comma-separated list of header names to check in priority order::
 
@@ -267,6 +267,10 @@ comma-separated list of header names to check in priority order::
 Or with multiple targeted headers in priority order::
 
     proxy.config.http.cache.targeted_cache_control_headers: ATS-Cache-Control,CDN-Cache-Control
+
+To disable targeted cache control entirely, set the value to an empty string::
+
+    proxy.config.http.cache.targeted_cache_control_headers: ""
 
 This configuration is overridable per-remap, allowing different rules for
 different origins::

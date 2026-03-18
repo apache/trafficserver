@@ -67,7 +67,13 @@ class Test_sni_check:
         self._ts = ts
         # Configure TLS for Traffic Server.
         self._ts.addDefaultSSLFiles()
-        self._ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+        self._ts.Disk.ssl_multicert_yaml.AddLines(
+            """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: server.pem
+    ssl_key_name: server.key
+""".split("\n"))
         self._ts.Disk.records_config.update(
             {
                 'proxy.config.diags.debug.enabled': 1,

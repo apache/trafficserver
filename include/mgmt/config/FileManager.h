@@ -36,8 +36,6 @@
 
 #include <mgmt/rpc/jsonrpc/JsonRPC.h>
 
-class ConfigUpdateCbTable;
-
 class FileManager
 {
 public:
@@ -142,7 +140,7 @@ public:
   bool         isConfigStale();
   void         configFileChild(const char *parent, const char *child);
 
-  void registerConfigPluginCallbacks(ConfigUpdateCbTable *cblist);
+  void registerConfigPluginCallbacks(std::function<void()> cb);
   void invokeConfigPluginCallbacks();
 
   static FileManager &
@@ -155,8 +153,8 @@ public:
 private:
   FileManager();
 
-  ink_mutex            accessLock; // Protects bindings hashtable
-  ConfigUpdateCbTable *_pluginCallbackList{nullptr};
+  ink_mutex             accessLock; // Protects bindings hashtable
+  std::function<void()> _pluginCallback;
 
   std::mutex _callbacksMutex;
   std::mutex _accessMutex;
@@ -169,5 +167,3 @@ private:
   /// JSONRPC endpoint
   swoc::Rv<YAML::Node> get_files_registry_rpc_endpoint(std::string_view const &id, YAML::Node const &params);
 };
-
-void initializeRegistry(); // implemented in AddConfigFilesHere.cc

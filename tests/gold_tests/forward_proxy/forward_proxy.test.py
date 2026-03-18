@@ -59,7 +59,13 @@ class ForwardProxyTest:
         self.ts = Test.MakeATSProcess(proc_name, enable_tls=True, enable_cache=False)
         ForwardProxyTest._ts_counter += 1
         self.ts.addDefaultSSLFiles()
-        self.ts.Disk.ssl_multicert_config.AddLine("dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key")
+        self.ts.Disk.ssl_multicert_yaml.AddLines(
+            """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: server.pem
+    ssl_key_name: server.key
+""".split("\n"))
         self.ts.Disk.remap_config.AddLine(f"map / http://127.0.0.1:{self.server.Variables.http_port}/")
 
         self.ts.Disk.records_config.update(

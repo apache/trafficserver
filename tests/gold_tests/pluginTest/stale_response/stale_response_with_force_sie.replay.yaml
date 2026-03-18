@@ -43,7 +43,7 @@ sessions:
         - [ Content-Length, 100 ]
         - [ Connection, keep-alive ]
         # Configure a small stale-if-error.
-        - [ Cache-Control, max-age=1 stale-if-error=1 ]
+        - [ Cache-Control, "max-age=1, stale-if-error=1" ]
         - [ X-Response, first-response ]
 
     proxy-response:

@@ -18,8 +18,8 @@
 .. include:: ../../../common.defs
 .. default-domain:: cpp
 
-TSSslSession
-************
+TSSslTicketKeyUpdate
+********************
 
 Synopsis
 ========
@@ -28,47 +28,20 @@ Synopsis
 
     #include <ts/ts.h>
 
-.. function:: TSSslSession TSSslSessionGet(const TSSslSessionID * sessionid)
-.. function:: int TSSslSessionGetBuffer(const TSSslSessionID * sessionid, char * buffer, int * len_ptr)
-.. function:: TSReturnCode TSSslSessionInsert(const TSSslSessionID * sessionid, TSSslSession addSession, TSSslConnection ssl_conn)
-.. function:: TSReturnCode TSSslSessionRemove(const TSSslSessionID * sessionid)
-.. function:: void TSSslTicketKeyUpdate(char * ticketData, int ticketDataLength)
+.. function:: TSReturnCode TSSslTicketKeyUpdate(char * ticketData, int ticketDataLength)
 
 Description
 ===========
 
-These functions work with the internal ATS session cache.  These functions are only useful if the ATS internal
-session cache is enabled by setting :ts:cv:`proxy.config.ssl.session_cache.mode` has been set to 2.
+.. note::
 
-These functions tend to be used with the :enumerator:`TS_SSL_SESSION_HOOK`.
+   The session ID-based session cache and its associated APIs (``TSSslSessionGet``, ``TSSslSessionGetBuffer``,
+   ``TSSslSessionInsert``, ``TSSslSessionRemove``) were removed in ATS 11.x.
+   TLS session resumption is now only supported via session tickets.
 
-The functions work with the :type:`TSSslSessionID` object to identify sessions to retrieve, insert, or delete.
+:func:`TSSslTicketKeyUpdate` updates the running ATS process to use a new set of Session Ticket Encryption keys.
+This behaves the same way as updating the session ticket encrypt key file with new data and reloading the
+current ATS process. However, this API does not require writing session ticket encryption keys to disk.
 
-The functions also work with the :type:`TSSslSession` object which can be cast to a pointer to the OpenSSL SSL_SESSION object.
-
-These functions perform the appropriate locking on the session cache to avoid errors.
-
-The :func:`TSSslSessionGet` and :func:`TSSslSessionGetBuffer` functions retrieve the :type:`TSSslSession` object that is identified by the
-:type:`TSSslSessionID` object.  If there is no matching session object, :func:`TSSslSessionGet` returns nullptr and :func:`TSSslSessionGetBuffer`
-returns 0.
-
-:func:`TSSslSessionGetBuffer` returns the session information serialized in a buffer that can be shared between processes.
-When the function is called len_ptr should point to the amount of space
-available in the buffer parameter.  The function returns the amount of data really needed to encode the session.  len_ptr is
-updated with the amount of data actually stored in the buffer.
-:func:`TSSslSessionGetBuffer` will not overrun the provided buffer, but the caller should ensure that the data's size was not larger
-than the buffer by comparing the returned value with the value of len_ptr. If the returned value is larger than the buffer size,
-then the session data did not fit in the buffer and the session data stored in the buffer output variable should not be used.
-
-
-:func:`TSSslSessionInsert` inserts the session specified by the addSession parameter into the ATS session cache under the sessionid key.
-If there is already an entry in the cache for the session id key, it is first removed before the new entry is added.
-
-:func:`TSSslSessionRemove` removes the session entry from the session cache that is keyed by sessionid.
-
-:func:`TSSslTicketKeyUpdate` updates the running ATS process to use a new set of Session Ticket Encryption keys.  This behaves the same way as
-updating the session ticket encrypt key file with new data and reloading the current ATS process.  However, this API does not
-require writing session ticket encryption keys to disk.
-
-If both the ticket key files and :func:`TSSslTicketKeyUpdate` are used to update session ticket encryption keys, ATS will use the
-most recent update regardless if whether it was made by file and configuration reload or API.
+If both the ticket key files and :func:`TSSslTicketKeyUpdate` are used to update session ticket encryption keys,
+ATS will use the most recent update regardless of whether it was made by file and configuration reload or API.

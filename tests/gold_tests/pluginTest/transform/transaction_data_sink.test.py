@@ -51,7 +51,13 @@ class TransactionDataSyncTest:
             })
         self.ts.addDefaultSSLFiles()
         self.ts.Disk.remap_config.AddLine(f'map / http://localhost:{self.server.Variables.http_port}/')
-        self.ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+        self.ts.Disk.ssl_multicert_yaml.AddLines(
+            """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: server.pem
+    ssl_key_name: server.key
+""".split("\n"))
         self.ts.Disk.plugin_config.AddLine('txn_data_sink.so')
 
         # All of the bodies that contained "not_dumped" were not configured to

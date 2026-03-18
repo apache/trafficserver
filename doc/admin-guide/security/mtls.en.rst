@@ -161,6 +161,6 @@ From there you can verify via your origins that the updated certificates are bei
 
     traffic_ctl config reload
 
-If the contents of the certificate files change but the names of the files do not, you may need to touch ssl_multicert.config
+If the contents of the certificate files change but the names of the files do not, you may need to touch ssl_multicert.yaml
 (for server certs) and sni.yaml  (for client certs).
 

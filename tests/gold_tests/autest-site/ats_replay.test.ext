@@ -43,11 +43,11 @@ def configure_ats(obj: 'TestRun', server: 'Process', ats_config: dict, dns: Opti
     # TLS configs
     enable_tls = process_config.get('enable_tls', False)
     if enable_tls:
-        # Configure ssl_multicert.config if specified.
-        ssl_multicert_config = ats_config.get('ssl_multicert_config', [])
+        # Configure ssl_multicert.yaml if specified.
+        ssl_multicert_yaml = ats_config.get('ssl_multicert_yaml', [])
 
-        # setup default cert and key ssl_multicert_config is empty
-        if ssl_multicert_config == []:
+        # setup default cert and key if ssl_multicert_yaml is empty
+        if ssl_multicert_yaml == []:
             ts.addDefaultSSLFiles()
 
             ts.Disk.records_config.update(
@@ -56,10 +56,15 @@ def configure_ats(obj: 'TestRun', server: 'Process', ats_config: dict, dns: Opti
                     'proxy.config.ssl.server.private_key.path': ts.Variables.SSLDir,
                 })
 
-            ssl_multicert_config = ["dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key"]
+            ssl_multicert_yaml = [
+                "ssl_multicert:",
+                "  - ssl_cert_name: server.pem",
+                "    ssl_key_name: server.key",
+                '    dest_ip: "*"',
+            ]
 
-        for line in ssl_multicert_config:
-            ts.Disk.ssl_multicert_config.AddLine(line)
+        for line in ssl_multicert_yaml:
+            ts.Disk.ssl_multicert_yaml.AddLine(line)
 
         # Configure sni.yaml if specified.
         sni_yaml = ats_config.get('sni_yaml')

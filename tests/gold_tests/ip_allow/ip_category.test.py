@@ -218,11 +218,17 @@ class Test_ip_category:
         Test_ip_category._ts = ts
 
         ts.addDefaultSSLFiles()
-        ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+        ts.Disk.ssl_multicert_yaml.AddLines(
+            """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: server.pem
+    ssl_key_name: server.key
+""".split("\n"))
         ts.Disk.records_config.update(
             {
                 'proxy.config.diags.debug.enabled': 1,
-                'proxy.config.diags.debug.tags': 'http|ip_allow',
+                'proxy.config.diags.debug.tags': 'http|ip_allow|config.reload',
                 'proxy.config.cache.ip_categories.filename': Test_ip_category._categories_filename,
                 'proxy.config.http.push_method_enabled': 1,
                 'proxy.config.ssl.server.cert.path': ts.Variables.SSLDir,

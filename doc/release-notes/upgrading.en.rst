@@ -173,7 +173,6 @@ The following :file:`records.yaml` changes have been made:
 - The records.yaml entry ``proxy.config.exec_thread.autoconfig`` has been renamed to :ts:cv:`proxy.config.exec_thread.autoconfig.enabled`.
 - The records.yaml entry ``proxy.config.tunnel.prewarm`` has been renamed to :ts:cv:`proxy.config.tunnel.prewarm.enabled`.
 - The records.yaml entry ``proxy.config.ssl.origin_session_cache`` has been renamed to :ts:cv:`proxy.config.ssl.origin_session_cache.enabled`.
-- The records.yaml entry ``proxy.config.ssl.session_cache`` has been renamed to :ts:cv:`proxy.config.ssl.session_cache.mode`.
 - The records.yaml entry ``proxy.config.ssl.TLSv1_3`` has been renamed to :ts:cv:`proxy.config.ssl.TLSv1_3.enabled`.
 - The records.yaml entry ``proxy.config.ssl.client.TLSv1_3`` has been renamed to :ts:cv:`proxy.config.ssl.client.TLSv1_3.enabled`.
 - The records.yaml entry :ts:cv:`proxy.config.allocator.iobuf_chunk_sizes` has been added
@@ -182,6 +181,18 @@ The following :file:`records.yaml` changes have been made:
   allocating iobuffers and cache volumes from hugepages if configured in the
   system.
 - The records.yaml entry ``proxy.config.plugin.compiler_path`` has been added to specify an optional compiler tool path for compiling plugins.
+
+The ``ssl_multicert.config`` file has been replaced with
+:file:`ssl_multicert.yaml`. The new file uses YAML format with a top-level
+``ssl_multicert`` key containing a sequence of certificate entries. Use
+``traffic_ctl config convert ssl_multicert`` to convert existing
+configuration files:
+
+.. code-block:: bash
+
+    traffic_ctl config convert ssl_multicert ssl_multicert.config ssl_multicert.yaml
+
+See :file:`ssl_multicert.yaml` for the new format documentation.
 
 The following changes have been made to the :file:`sni.yaml` file:
 
