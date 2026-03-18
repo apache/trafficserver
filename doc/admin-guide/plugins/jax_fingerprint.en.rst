@@ -98,8 +98,7 @@ Remap plugin setup is the best if you:
  * Need a fingerprint only on specific paths, or
  * Cannot use Global plugin setup
 
-.. note:: For JA3 and JA4, fingerprints are always generated at the beginning of connections. Using remap plugin setup only reduces the
-overhead of adding HTTP headers and loggingg.
+.. note:: For JA3 and JA4, fingerprints are always generated at the beginning of connections. Using remap plugin setup only reduces the overhead of adding HTTP headers and loggingg.
 
 Hybrid setup
 ------------
