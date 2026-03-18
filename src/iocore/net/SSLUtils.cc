@@ -1529,11 +1529,20 @@ SSLMultiCertConfigLoader::_store_ssl_ctx(SSLCertLookup *lookup, const shared_SSL
   SSLMultiCertConfigLoader::CertLoadData         data;
 
   if (!this->_prep_ssl_ctx(sslMultCertSettings, data, common_names, unique_names)) {
-    lookup->is_valid = false;
+    {
+      std::lock_guard<std::mutex> lock(_loader_mutex);
+      lookup->is_valid = false;
+    }
     return false;
   }
 
   std::vector<SSLLoadingContext> ctxs = this->init_server_ssl_ctx(data, sslMultCertSettings.get());
+
+  // Serialize all mutations to the shared SSLCertLookup.
+  // The expensive work above (_prep_ssl_ctx + init_server_ssl_ctx) runs
+  // without the lock, allowing parallel cert loading across threads.
+  std::lock_guard<std::mutex> lock(_loader_mutex);
+
   for (const auto &loadingctx : ctxs) {
     if (!sslMultCertSettings ||
         !this->_store_single_ssl_ctx(lookup, sslMultCertSettings, shared_SSL_CTX{loadingctx.ctx, SSL_CTX_free}, loadingctx.ctx_type,
@@ -1737,13 +1746,16 @@ SSLMultiCertConfigLoader::load(SSLCertLookup *lookup, bool firstLoad)
 
   swoc::Errata errata(ERRATA_NOTE);
 
-  if ((params->configLoadConcurrency > 1 || firstLoad) && parse_result.value.size() > 1) {
-    int num_threads = params->configLoadConcurrency;
-    if (firstLoad) {
-      num_threads = std::max(static_cast<int>(std::thread::hardware_concurrency()), num_threads);
-    }
-    num_threads = std::min(num_threads, static_cast<int>(parse_result.value.size()));
+  int num_threads = params->configLoadConcurrency;
+  if (num_threads == 0 || firstLoad) {
+    num_threads = std::thread::hardware_concurrency();
+  }
+  if (num_threads < 1) {
+    num_threads = 1;
+  }
+  num_threads = std::min(num_threads, static_cast<int>(parse_result.value.size()));
 
+  if (num_threads > 1 && parse_result.value.size() > 1) {
     std::size_t bucket_size = parse_result.value.size() / num_threads;
     std::size_t remainder   = parse_result.value.size() % num_threads;
     auto        current     = parse_result.value.cbegin();
