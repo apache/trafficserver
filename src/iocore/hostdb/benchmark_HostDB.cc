@@ -149,7 +149,7 @@ struct StartDNS : Continuation {
   HostList::iterator it;
   ResultList         results;
   Clock::time_point  start_time;
-  bool               is_callback;
+  bool               is_callback{false};
 
   StartDNS(const std::vector<std::string> &hlist, int id, latch &l)
     : Continuation(new_ProxyMutex()), hostlist(hlist), id(id), done_latch(l)

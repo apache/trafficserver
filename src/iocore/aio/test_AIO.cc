@@ -93,23 +93,19 @@ int    seq_write_size         = 0;
 int    rand_read_size         = 0;
 
 struct AIO_Device : public Continuation {
-  char                        *path;
-  int                          fd;
-  int                          id;
-  char                        *buf;
-  ink_hrtime                   time_start, time_end;
-  int                          seq_reads;
-  int                          seq_writes;
-  int                          rand_reads;
-  int                          hotset_idx;
-  int                          mode;
+  char                        *path{nullptr};
+  int                          fd{-1};
+  int                          id{0};
+  char                        *buf{nullptr};
+  ink_hrtime                   time_start{0};
+  ink_hrtime                   time_end{0};
+  int                          seq_reads{0};
+  int                          seq_writes{0};
+  int                          rand_reads{0};
+  int                          hotset_idx{0};
+  int                          mode{0};
   std::unique_ptr<AIOCallback> io;
-  AIO_Device(ProxyMutex *m) : Continuation(m), io{new_AIOCallback()}
-  {
-    hotset_idx = 0;
-    time_start = 0;
-    SET_HANDLER(&AIO_Device::do_hotset);
-  }
+  AIO_Device(ProxyMutex *m) : Continuation(m), io{new_AIOCallback()} { SET_HANDLER(&AIO_Device::do_hotset); }
   int
   select_mode(double p)
   {
