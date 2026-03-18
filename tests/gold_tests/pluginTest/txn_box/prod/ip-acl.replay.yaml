@@ -84,8 +84,6 @@ sessions:
         fields:
         - [ Host, base.ex ]
         - [ addr, "192.168.2.3" ]
-    proxy-request:
-      <<: *base-req
     server-response:
       <<: *base-rsp
     proxy-response:
@@ -122,4 +120,3 @@ sessions:
       <<: *base-rsp
     proxy-response:
       status: 200
-
