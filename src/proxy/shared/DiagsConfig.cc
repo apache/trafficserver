@@ -41,9 +41,9 @@
 void
 DiagsConfig::reconfigure_diags()
 {
-  int              i;
+  int              i = 0;
   DiagsConfigState c{};
-  bool             found, all_found;
+  bool             found = false, all_found = false;
 
   static struct {
     const char *config_name;

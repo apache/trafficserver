@@ -127,8 +127,8 @@ static const ConfigEnumPair<TSServerSessionSharingMatchType> SessionSharingMatch
 bool
 HttpConfig::load_server_session_sharing_match(std::string_view key, MgmtByte &mask)
 {
-  MgmtByte value;
-  mask = 0;
+  MgmtByte value = 0;
+  mask           = 0;
   // Parse through and build up mask
   size_t start  = 0;
   size_t offset = 0;
