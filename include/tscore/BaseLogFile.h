@@ -91,18 +91,18 @@ public:
   };
 
 private:
-  char    *_filename;             // the name of the meta file
-  time_t   _creation_time;        // file creation time
-  uint64_t _log_object_signature; // log object signature
-  int      _flags;                // metainfo status flags
-  char     _buffer[BUF_SIZE];     // read/write buffer
+  char    *_filename{nullptr};       // the name of the meta file
+  time_t   _creation_time{0};        // file creation time
+  uint64_t _log_object_signature{0}; // log object signature
+  int      _flags{0};                // metainfo status flags
+  char     _buffer[BUF_SIZE];        // read/write buffer
 
   void _read_from_file();
   void _write_to_file();
   void _build_name(const char *filename);
 
 public:
-  BaseMetaInfo(const char *filename) : _flags(0)
+  BaseMetaInfo(const char *filename)
   {
     _build_name(filename);
     _read_from_file();
