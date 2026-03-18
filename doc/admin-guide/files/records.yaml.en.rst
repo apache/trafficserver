@@ -4084,6 +4084,13 @@ SSL Termination
    :file:`ssl_multicert.yaml` file successfully load.  If false (``0``), SSL certificate
    load failures will not prevent |TS| from starting.
 
+.. ts:cv:: CONFIG proxy.config.ssl.server.multicert.concurrency INT 1
+
+   Controls how many threads are used to load SSL certificates from :file:`ssl_multicert.yaml`
+   during configuration reloads.  On first startup, |TS| always uses all available CPU cores
+   regardless of this setting.  Set to ``0`` to automatically use the number of hardware
+   threads.  Default ``1`` (single-threaded reloads).
+
 .. ts:cv:: CONFIG proxy.config.ssl.server.cert.path STRING /config
 
    The location of the SSL certificates and chains used for accepting

@@ -22,7 +22,7 @@ sni_domain = 'example.com'
 
 ts = Test.MakeATSProcess("ts", enable_tls=True)
 server = Test.MakeOriginServer("server")
-server2 = Test.MakeOriginServer("server3")
+server2 = Test.MakeOriginServer("server2")
 request_header = {"headers": f"GET / HTTP/1.1\r\nHost: {sni_domain}\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 
 response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
@@ -123,3 +123,45 @@ ts2.Ready = 0  # Need this to be 0 because we are testing shutdown, this is to m
 ts2.Disk.traffic_out.Content = Testers.ExcludesExpression(
     'Traffic Server is fully initialized', 'process should fail when invalid certificate specified')
 ts2.Disk.diags_log.Content = Testers.IncludesExpression('EMERGENCY: failed to load SSL certificate file', 'check diags.log"')
+
+##########################################################################
+# Verify parallel cert loading with configurable concurrency
+
+ts3 = Test.MakeATSProcess("ts3", enable_tls=True)
+server3 = Test.MakeOriginServer("server3")
+server3.addResponse("sessionlog.json", request_header, response_header)
+
+ts3.Disk.records_config.update(
+    {
+        'proxy.config.ssl.server.cert.path': f'{ts3.Variables.SSLDir}',
+        'proxy.config.ssl.server.private_key.path': f'{ts3.Variables.SSLDir}',
+        'proxy.config.ssl.server.multicert.concurrency': 4,
+    })
+
+ts3.addDefaultSSLFiles()
+
+ts3.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{server3.Variables.Port}')
+
+# Need at least 2 certs for multi-threading to kick in
+ts3.Disk.ssl_multicert_yaml.AddLines(
+    """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: server.pem
+    ssl_key_name: server.key
+  - ssl_cert_name: server.pem
+    ssl_key_name: server.key
+""".split("\n"))
+
+tr5 = Test.AddTestRun("Verify parallel cert loading")
+tr5.Processes.Default.StartBefore(ts3)
+tr5.Processes.Default.StartBefore(server3)
+tr5.StillRunningAfter = ts3
+tr5.StillRunningAfter = server3
+tr5.MakeCurlCommand(
+    f"-q -s -v -k --resolve '{sni_domain}:{ts3.Variables.ssl_port}:127.0.0.1' https://{sni_domain}:{ts3.Variables.ssl_port}",
+    ts=ts3)
+tr5.Processes.Default.ReturnCode = 0
+tr5.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Check response")
+tr5.Processes.Default.Streams.stderr = Testers.IncludesExpression(f"CN={sni_domain}", "Check response")
+ts3.Disk.diags_log.Content = Testers.IncludesExpression('loading 2 certs with', 'verify parallel loading was used')
