@@ -21,6 +21,10 @@ volume.config
 
 .. configfile:: volume.config
 
+.. important::
+
+   Deprecated in favor of :file:`storage.yaml`.
+
 The :file:`volume.config` file enables you to manage your cache space more
 efficiently and restrict disk usage by creating cache volumes of
 different sizes. By distributing the cache across multiple volumes,
