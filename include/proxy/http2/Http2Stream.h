@@ -83,7 +83,7 @@ public:
 
   Http2ErrorCode decode_header_blocks(HpackHandle &hpack_handle, uint32_t maximum_table_size);
   void           send_headers(Http2ConnectionState &cstate);
-  void           initiating_close();
+  void           initiating_close(bool suppress_rst = false);
   bool           is_outbound_connection() const;
   bool           is_tunneling() const;
   void           terminate_if_possible();
@@ -183,6 +183,9 @@ public:
 
   bool parsing_header_done       = false;
   bool is_first_transaction_flag = false;
+
+  bool reset_header_after_decoding = false;
+  bool free_stream_after_decoding  = false;
 
   HTTPHdr                    _send_header;
   IOBufferReader            *_send_reader  = nullptr;
