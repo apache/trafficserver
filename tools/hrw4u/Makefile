@@ -166,10 +166,10 @@ $(PKG_DIR_LSP)/%: src/%
 	@mkdir -p $(dir $@)
 	cp $< $@
 
-test:
+test: gen
 	uv run pytest --tb=short tests
 
-coverage:
+coverage: gen
 	uv run pytest --cov --cov-report=term-missing --cov-report=html tests
 	@echo ""
 	@echo "HTML report: open htmlcov/index.html"
