@@ -44,6 +44,7 @@
 #include <memory>
 #include <string>
 #include <string_view>
+#include <version>
 
 DbgCtl dbg_ctl{PLUGIN_NAME};
 
@@ -187,7 +188,11 @@ handle_client_hello(void *edata, PluginConfig &config)
     int         servername_len;
     servername = TSVConnSslSniGet(vconn, &servername_len);
     if (servername != nullptr && servername_len > 0) {
+#ifdef __cpp_lib_generic_unordered_lookup
       if (!config.servernames.contains(std::string_view(servername, servername_len))) {
+#else
+      if (!config.servernames.contains({servername, servername_len})) {
+#endif
         Dbg(dbg_ctl, "Server name %.*s is not in the server name set", servername_len, servername);
         return TS_SUCCESS;
       }
