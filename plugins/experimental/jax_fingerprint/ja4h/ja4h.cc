@@ -22,7 +22,7 @@
  */
 
 #include "ja4h.h"
-#include <openssl/sha2.h>
+#include <openssl/sha.h>
 
 Extractor::Extractor(TSHttpTxn txnp) : _txn(txnp)
 {
