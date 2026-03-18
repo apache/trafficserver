@@ -3291,23 +3291,19 @@ HostDB
    Set the file path for an external host file.
 
    If this is set (non-empty) then the file is presumed to be a hosts file in
-   the standard .
-   It is read and the entries there added to the HostDB. The file is
-   periodically checked for a more recent modification date in which case it is
-   reloaded. The interval is set with :ts:cv:`proxy.config.hostdb.host_file.interval`.
+   the standard format. It is read and the entries there are added to HostDB.
 
-   This setting is not immediately reloadable. |TS| reads
-   :ts:cv:`proxy.config.hostdb.host_file.path` each time it performs the
-   periodic host file check controlled by
-   :ts:cv:`proxy.config.hostdb.host_file.interval` (default: ``86400``
-   seconds). If the path value has changed, the new path is used on that next
-   check and the file is treated as modified.
+   This setting is not immediately reloadable. |TS| checks
+   :ts:cv:`proxy.config.hostdb.host_file.path` during the periodic host file
+   check controlled by :ts:cv:`proxy.config.hostdb.host_file.interval`
+   (default: ``86400`` seconds). If the path value has changed, |TS| uses the
+   new path on that next check and treats the file as modified.
 
    .. tip::
 
-      For more immediate pickup of path changes, temporarily reduce
-      :ts:cv:`proxy.config.hostdb.host_file.interval`, then restore it to the
-      normal value after verification.
+      For faster pickup during testing, temporarily reduce
+      :ts:cv:`proxy.config.hostdb.host_file.interval`, then restore it after
+      verification.
 
 .. ts:cv:: CONFIG proxy.config.hostdb.host_file.interval INT 86400
    :units: seconds
