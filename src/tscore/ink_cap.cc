@@ -273,7 +273,7 @@ RestrictCapabilities()
   cap_t caps_orig = cap_get_proc();
 
   // Capabilities we need.
-  cap_value_t      perm_list[]    = {CAP_NET_ADMIN, CAP_NET_BIND_SERVICE, CAP_IPC_LOCK, CAP_DAC_OVERRIDE, CAP_FOWNER};
+  cap_value_t      perm_list[]    = {CAP_NET_ADMIN, CAP_NET_BIND_SERVICE, CAP_IPC_LOCK, CAP_DAC_OVERRIDE, CAP_FOWNER, CAP_CHOWN};
   static int const PERM_CAP_COUNT = sizeof(perm_list) / sizeof(*perm_list);
   cap_value_t      eff_list[]     = {CAP_NET_ADMIN, CAP_NET_BIND_SERVICE, CAP_IPC_LOCK};
   static int const EFF_CAP_COUNT  = sizeof(eff_list) / sizeof(*eff_list);
@@ -436,7 +436,7 @@ void
 ElevateAccess::acquirePrivilege(unsigned priv_mask)
 {
   unsigned    cap_count = 0;
-  cap_value_t cap_list[3];
+  cap_value_t cap_list[4];
   cap_t       new_cap_state;
 
   Dbg(dbg_ctl_privileges, "[acquirePrivilege] level= %x", level);
@@ -463,7 +463,12 @@ ElevateAccess::acquirePrivilege(unsigned priv_mask)
     ++cap_count;
   }
 
-  ink_release_assert(cap_count <= sizeof(cap_list));
+  if (priv_mask & ElevateAccess::CHOWN_PRIVILEGE) {
+    cap_list[cap_count] = CAP_CHOWN;
+    ++cap_count;
+  }
+
+  ink_release_assert(cap_count <= sizeof(cap_list) / sizeof(cap_list[0]));
 
   if (cap_count > 0) {
     this->cap_state = cap_get_proc(); // save current capabilities
