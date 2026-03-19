@@ -25,7 +25,7 @@ JAx Fingerprint Plugin
 Description
 ===========
 
-The JAx Fingerprint plugin generates TLS client fingerprints based on the JA4 or JA3 algorithm designed by John Althouse.
+The JAx Fingerprint plugin generates client fingerprints based on the JA4+ or JA3 algorithms designed by John Althouse.
 
 Fingerprints can be used for:
 
