@@ -221,7 +221,6 @@ handle_read_request_hdr(void *edata, PluginConfig &config)
   TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
   if (txnp == nullptr) {
     Dbg(dbg_ctl, "Failed to get txn object.");
-    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     return TS_SUCCESS;
   }
 
@@ -261,9 +260,6 @@ handle_read_request_hdr(void *edata, PluginConfig &config)
 
   modify_headers(ctx, txnp, config);
 
-  if (config.method.type == Method::Type::CONNECTION_BASED) {
-    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
-  }
   return TS_SUCCESS;
 }
 
@@ -304,6 +300,7 @@ main_handler(TSCont cont, TSEvent event, void *edata)
     break;
   case TS_EVENT_HTTP_READ_REQUEST_HDR:
     ret = handle_read_request_hdr(edata, *config);
+    TSHttpTxnReenable(static_cast<TSHttpTxn>(edata), TS_EVENT_HTTP_CONTINUE);
     break;
   case TS_EVENT_HTTP_TXN_CLOSE:
     ret = handle_http_txn_close(edata, *config);
@@ -440,5 +437,8 @@ void
 TSRemapDeleteInstance(void *ih)
 {
   auto config = static_cast<PluginConfig *>(ih);
+  if (config->handler) {
+    TSContDestroy(config->handler);
+  }
   delete config;
 }
