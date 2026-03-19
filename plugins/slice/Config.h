@@ -25,6 +25,10 @@
 
 #include <string>
 #include <mutex>
+#include <unordered_set>
+#include <vector>
+
+struct BgBlockFetch;
 
 // Data Structures and Classes
 struct Config {
@@ -79,6 +83,10 @@ struct Config {
   // Did we cache this internally as a small object?
   bool isKnownLargeObj(std::string_view url);
 
+  // Prefetch dedup and freelist
+  std::pair<bool, BgBlockFetch *> prefetchAcquire(const std::string &key);
+  void                            prefetchRelease(BgBlockFetch *bg);
+
   // Metadata cache stats
   std::string stat_prefix{};
   int         stat_TP{0}, stat_TN{0}, stat_FP{0}, stat_FN{0}, stat_no_cl{0}, stat_bad_cl{0}, stat_no_url{0};
@@ -89,4 +97,9 @@ private:
   std::mutex                     m_mutex;
   std::optional<ObjectSizeCache> m_oscache;
   void                           setCacheSize(size_t entries);
+
+  std::mutex                      m_prefetch_mutex;
+  std::unordered_set<std::string> m_prefetch_active;
+  std::vector<BgBlockFetch *>     m_prefetch_freelist;
+  void                            prefetchCleanup();
 };

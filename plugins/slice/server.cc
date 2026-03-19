@@ -603,6 +603,8 @@ handle_server_resp(TSCont contp, TSEvent event, Data *const data)
         data->m_blockskip = data->m_req_range.skipBytesForBlock(data->m_config->m_blockbytes, data->m_blocknum);
       } break;
       }
+
+      schedule_prefetch(data);
     }
 
     transfer_content_bytes(data);
