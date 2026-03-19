@@ -68,8 +68,8 @@ struct SSLConfigParams : public ConfigInfo {
   int   configExitOnLoadError;
   int   clientCertLevel;
   int   verify_depth;
-  int   ssl_origin_session_cache;
-  int   ssl_origin_session_cache_size;
+  int   ssl_origin_session_cache{0};
+  int   ssl_origin_session_cache_size{0};
 
   char                   *clientCertPath;
   char                   *clientCertPathOnly;
@@ -80,7 +80,6 @@ struct SSLConfigParams : public ConfigInfo {
   int                     clientCertExitOnLoadError;
   YamlSNIConfig::Policy   verifyServerPolicy;
   YamlSNIConfig::Property verifyServerProperties;
-  bool                    tls_server_connection;
   int                     client_verify_depth;
   long                    ssl_ctx_options;
   long                    ssl_client_ctx_options;
