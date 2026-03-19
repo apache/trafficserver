@@ -18,11 +18,11 @@
 name = "ats-autest"
 version = "0.1.0"
 description = "AuTest dependencies for Apache Traffic Server testing"
-requires-python = ">=3.6"
+requires-python = ">=3.11"
 
 dependencies = [
     # Keep init.cli.ext updated with this required autest version.
-    "autest==1.10.4",
+    "autest==1.10.6",
 
     # This should install TRLib, MicroServer, MicroDNS, Traffic-Replay.
     "traffic-replay",
@@ -61,6 +61,5 @@ dependencies = [
 dev = [
     "pyflakes",
 ]
-
 
 
