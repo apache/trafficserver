@@ -65,9 +65,10 @@ Fingerprinting method (e.g. JA4, JA3, etc.) to use.
 This option specifies what to do if requests from clients have the header names that are specified
 by `--header` and/or `via-header`. Available setting values are "overwrite", "keep" and "append".
 
-.. option:: --servernames <servername ...>
+.. option:: --servernames <servername1,servername2,...>
 
 This option specifies server name(s) for which the plugin generates fingerprints.
+The value must be provided as a single comma separated value (no space) of server names.
 
 .. option:: --header <header_name>
 

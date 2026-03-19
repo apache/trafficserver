@@ -42,5 +42,4 @@ private:
   TSHttpTxn _txn;
   TSMBuffer _request = nullptr;
   TSMLoc    _req_hdr = nullptr;
-  ;
 };
