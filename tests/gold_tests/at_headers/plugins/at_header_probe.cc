@@ -17,22 +17,28 @@
  */
 
 #include <ts/ts.h>
+#include <ts/remap.h>
 
 #include <cstring>
 #include <string>
 
 namespace
 {
-constexpr char PLUGIN_NAME[]           = "at_header_probe";
-constexpr char REQUEST_ADDED_VALUE[]   = "request-added";
-constexpr char RESPONSE_ADDED_VALUE[]  = "response-added";
-constexpr char REQUEST_ERROR_PREFIX[]  = "saw unexpected request header";
-constexpr char RESPONSE_ERROR_PREFIX[] = "saw unexpected response header";
+constexpr char PLUGIN_NAME[]                = "at_header_probe";
+constexpr char REQUEST_ADDED_VALUE[]        = "request-added";
+constexpr char RESPONSE_ADDED_VALUE[]       = "response-added";
+constexpr char REQUEST_ERROR_PREFIX[]       = "saw unexpected request header";
+constexpr char RESPONSE_ERROR_PREFIX[]      = "saw unexpected response header";
+constexpr char REMAP_REQUEST_ERROR_PREFIX[] = "saw unexpected remap request header";
 
 std::string request_probe_header;
 std::string response_probe_header;
 std::string request_added_header;
 std::string response_added_header;
+
+struct RemapConfig {
+  std::string request_probe_header;
+};
 
 bool
 set_header(TSMBuffer bufp, TSMLoc hdr_loc, std::string const &name, char const *value)
@@ -167,4 +173,48 @@ TSPluginInit(int argc, char const *argv[])
   TSHttpHookAdd(TS_HTTP_SEND_REQUEST_HDR_HOOK, contp);
   TSHttpHookAdd(TS_HTTP_READ_RESPONSE_HDR_HOOK, contp);
   TSHttpHookAdd(TS_HTTP_SEND_RESPONSE_HDR_HOOK, contp);
+}
+
+TSReturnCode
+TSRemapInit(TSRemapInterface * /* api_info ATS_UNUSED */, char * /* errbuf ATS_UNUSED */, int /* errbuf_size ATS_UNUSED */)
+{
+  return TS_SUCCESS;
+}
+
+TSReturnCode
+TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_size)
+{
+  if (argc != 3) {
+    TSstrlcpy(errbuf, "expected from, to, and request-probe header arguments", errbuf_size);
+    return TS_ERROR;
+  }
+
+  auto *config                 = new RemapConfig;
+  config->request_probe_header = argv[2];
+  *ih                          = config;
+
+  return TS_SUCCESS;
+}
+
+void
+TSRemapDeleteInstance(void *ih)
+{
+  delete static_cast<RemapConfig *>(ih);
+}
+
+TSRemapStatus
+TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo * /* rri ATS_UNUSED */)
+{
+  auto const *config   = static_cast<RemapConfig *>(ih);
+  TSMBuffer   req_bufp = nullptr;
+  TSMLoc      req_hdr  = TS_NULL_MLOC;
+
+  if (TSHttpTxnClientReqGet(txnp, &req_bufp, &req_hdr) == TS_SUCCESS) {
+    if (has_header(req_bufp, req_hdr, config->request_probe_header)) {
+      log_unexpected(REMAP_REQUEST_ERROR_PREFIX, config->request_probe_header);
+    }
+    TSHandleMLocRelease(req_bufp, TS_NULL_MLOC, req_hdr);
+  }
+
+  return TSREMAP_NO_REMAP;
 }

@@ -1008,7 +1008,12 @@ public:
 
   }; // End of State struct.
 
-  static void strip_at_headers(HTTPHdr &header);
+  enum class AtHeaderSource {
+    CLIENT_REQUEST,
+    ORIGIN_RESPONSE,
+  };
+
+  static void strip_at_headers(HTTPHdr &header, AtHeaderSource source, std::int64_t sm_id);
   static void HandleBlindTunnel(State *s);
   static void StartRemapRequest(State *s);
   static void EndRemapRequest(State *s);

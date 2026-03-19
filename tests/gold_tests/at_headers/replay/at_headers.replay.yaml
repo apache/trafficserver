@@ -18,13 +18,16 @@ meta:
   version: "1.0"
 
 autest:
-  description: "Verify client-supplied @ headers are stripped before plugin hooks run"
+  description: "Verify client-supplied @ headers are stripped before global plugin and remap hooks run"
 
   at_headers:
-    request_probe: &request_probe "@Client-Test"
+    global_path: &global_path "/global"
+    remap_path: &remap_path "/remap"
+    global_request_probe: &global_request_probe "@Client-Test"
     response_probe: &response_probe "@Origin-Test"
     request_added: &request_added "@Plugin-Request"
     response_added: &response_added "@Plugin-Response"
+    remap_request_probe: &remap_request_probe "@Client-Remap-Test"
 
   server:
     name: "server"
@@ -37,11 +40,13 @@ autest:
 
     process_config:
       enable_cache: false
+      # There will be errors concerning the external @ heaers.
+      disable_log_checks: true
 
     plugin_config:
       - name: "at_header_probe.so"
         args:
-          - *request_probe
+          - *global_request_probe
           - *response_probe
           - *request_added
           - *response_added
@@ -50,35 +55,58 @@ autest:
       - "plugins/.libs/at_header_probe.so"
 
     remap_config:
-      - "map / http://127.0.0.1:{SERVER_HTTP_PORT}/"
+      - "map /global http://127.0.0.1:{SERVER_HTTP_PORT}/global"
+      - from: "/remap"
+        to: "http://127.0.0.1:{SERVER_HTTP_PORT}/remap"
+        plugins:
+          - name: "at_header_probe.so"
+            args:
+              - *remap_request_probe
+
+    metric_checks:
+      - metric: "proxy.process.http.client_request_at_headers_stripped"
+        value: 2
+      - metric: "proxy.process.http.origin_response_at_headers_stripped"
+        value: 2
 
     log_validation:
       diags_log:
+        contains:
+          - expression: "stripped internal @ header from client request: @client-test"
+            description: "Client-side @ header removals should be logged."
+          - expression: "stripped internal @ header from origin response: @origin-test"
+            description: "Origin-side @ header removals should be logged."
+          - expression: "stripped internal @ header from client request: @client-remap-test"
+            description: "Client-side @ header removals should be logged before remap plugins run."
         excludes:
           - expression: "saw unexpected request header"
             description: "Plugins should not see client-supplied @ headers."
           - expression: "saw unexpected response header"
             description: "Plugins should not see origin-supplied @ headers."
+          - expression: "saw unexpected remap request header"
+            description: "Remap plugins should not see client-supplied @ headers."
+          - expression: "FATAL:"
+            description: "ATS should not log fatal errors while stripping @ headers."
 
 sessions:
   - transactions:
       - client-request:
           method: "GET"
-          url: "/"
+          url: *global_path
           version: "1.1"
           headers:
             fields:
               - [Host, example.com]
-              - [*request_probe, spoofed-value]
+              - [*global_request_probe, spoofed-value]
               - [X-Normal, keep-me]
-              - [uuid, at-header-client]
+              - [uuid, at-header-global-client]
 
         proxy-request:
           method: "GET"
-          url: "/"
+          url: *global_path
           headers:
             fields:
-              - [*request_probe, {as: absent}]
+              - [*global_request_probe, {as: absent}]
               - [*request_added, {as: absent}]
               - [X-Normal, {value: keep-me, as: equal}]
 
@@ -88,6 +116,41 @@ sessions:
           headers:
             fields:
               - [*response_probe, spoofed-response]
+              - [Content-Length, "0"]
+
+        proxy-response:
+          status: 200
+          headers:
+            fields:
+              - [*response_probe, {as: absent}]
+              - [*response_added, {as: absent}]
+
+      - client-request:
+          method: "GET"
+          url: *remap_path
+          version: "1.1"
+          headers:
+            fields:
+              - [Host, example.com]
+              - [*remap_request_probe, spoofed-value]
+              - [X-Normal, keep-me]
+              - [uuid, at-header-remap-client]
+
+        proxy-request:
+          method: "GET"
+          url: *remap_path
+          headers:
+            fields:
+              - [*remap_request_probe, {as: absent}]
+              - [*request_added, {as: absent}]
+              - [X-Normal, {value: keep-me, as: equal}]
+
+        server-response:
+          status: 200
+          reason: "OK"
+          headers:
+            fields:
+              - [*response_probe, spoofed-remap-response]
               - [Content-Length, "0"]
 
         proxy-response:

@@ -15,7 +15,7 @@
 #  limitations under the License.
 
 Test.Summary = '''
-Verify that client-sent @ headers are stripped before plugin hooks run.
+Verify that @ headers are stripped before global plugin and remap hooks run.
 '''
 
 Test.ATSReplayTest(replay_file="replay/at_headers.replay.yaml")

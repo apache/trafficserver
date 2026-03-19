@@ -77,21 +77,59 @@ DbgCtl dbg_ctl_http_trans_websocket_upgrade_post_remap{"http_trans_websocket_upg
 DbgCtl dbg_ctl_parent_down{"parent_down"};
 DbgCtl dbg_ctl_url_rewrite{"url_rewrite"};
 DbgCtl dbg_ctl_ip_allow{"ip_allow"};
+
+std::string_view
+get_at_header_source_name(HttpTransact::AtHeaderSource source)
+{
+  using AtHeaderSource = HttpTransact::AtHeaderSource;
+
+  switch (source) {
+  case AtHeaderSource::CLIENT_REQUEST:
+    return "client request";
+  case AtHeaderSource::ORIGIN_RESPONSE:
+    return "origin response";
+  }
+
+  return "unknown source";
+}
+
+Metrics::Counter::AtomicType *
+get_at_header_source_metric(HttpTransact::AtHeaderSource source)
+{
+  using AtHeaderSource = HttpTransact::AtHeaderSource;
+
+  switch (source) {
+  case AtHeaderSource::CLIENT_REQUEST:
+    return http_rsb.client_request_at_headers_stripped;
+  case AtHeaderSource::ORIGIN_RESPONSE:
+    return http_rsb.origin_response_at_headers_stripped;
+  }
+
+  return nullptr;
+}
 } // namespace
 
 /**
  * Remove internal @ headers from a parsed header before plugin hooks run.
  *
  * @param[in,out] header The header to sanitize in place.
+ * @param[in] source The source of the header being sanitized.
+ * @param[in] sm_id The state machine identifier for diagnostic logging.
  */
 void
-HttpTransact::strip_at_headers(HTTPHdr &header)
+HttpTransact::strip_at_headers(HTTPHdr &header, AtHeaderSource source, std::int64_t sm_id)
 {
+  auto const metric      = get_at_header_source_metric(source);
+  auto const source_name = get_at_header_source_name(source);
+
   for (auto field = header.begin(); field != header.end();) {
     auto current = field++;
     auto name    = current->name_get();
 
     if (!name.empty() && name[0] == '@') {
+      Metrics::Counter::increment(metric);
+      Error("[%" PRId64 "] stripped internal @ header from %.*s: %.*s", sm_id, static_cast<int>(source_name.size()),
+            source_name.data(), static_cast<int>(name.size()), name.data());
       header.field_delete(&*current, false);
     }
   }
@@ -1499,7 +1537,7 @@ HttpTransact::ModifyRequest(State *s)
     }
   }
 
-  strip_at_headers(request);
+  strip_at_headers(request, AtHeaderSource::CLIENT_REQUEST, s->state_machine_id());
 
   TxnDbg(dbg_ctl_http_trans, "END HttpTransact::ModifyRequest");
 
