@@ -48,7 +48,8 @@ To use the plugin as a remap plugin, append the following line to a remap rule o
 
     @plugin=jax_fingerprint.so @pparam=--standalone
 
-To use the plugin as both global and remap plugin (hybrid setup), have the both without `--standalone` option.
+To use the plugin in a hybrid setup (both global and remap plugin), configure it in both :file:`plugin.config` and
+:file:`remap.config` without `--standalone` option.
 
 
 .. option:: --standalone
@@ -112,8 +113,8 @@ Hybrid setup is the best if you:
 Log Output
 ==========
 
-The plugin output a log file in the Traffic Server log directory (typically ``/var/log/trafficserver/``) if a log filename is
-specified by `--log-filename` option.
+The plugin outputs a log file in the Traffic Server log directory (typically ``/var/log/trafficserver/``) if a log filename is
+specified by ``--log-filename`` option.
 
 **Log Format**::
 

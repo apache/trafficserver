@@ -44,3 +44,9 @@ log_fingerprint(const JAxContext *ctx, TSTextLogObject &log_handle)
     Dbg(dbg_ctl, "Failed to write to log!");
   }
 }
+
+void
+flush_log_file(TSTextLogObject &log_handle)
+{
+  TSTextLogObjectDestroy(log_handle);
+}

@@ -23,6 +23,8 @@
 
 #include "ja4h.h"
 #include <openssl/sha.h>
+#include <algorithm>
+#include <cctype>
 
 Extractor::Extractor(TSHttpTxn txnp) : _txn(txnp)
 {
@@ -115,13 +117,13 @@ Extractor::get_headers_hash(unsigned char out[32])
     if (field_name_len == TS_MIME_LEN_COOKIE) {
       auto field_name_sv = std::string_view(field_name, static_cast<size_t>(field_name_len));
       if (std::equal(field_name_sv.begin(), field_name_sv.end(), std::string_view("cookie").begin(),
-                     [](char c1, char c2) { return c1 == std::tolower(c2); })) {
+                     [](char c1, char c2) { return std::tolower(c1) == c2; })) {
         do_hash = false;
       };
     } else if (field_name_len == TS_MIME_LEN_REFERER) {
       auto field_name_sv = std::string_view(field_name, static_cast<size_t>(field_name_len));
       if (std::equal(field_name_sv.begin(), field_name_sv.end(), std::string_view("referer").begin(),
-                     [](char c1, char c2) { return c1 == std::tolower(c2); })) {
+                     [](char c1, char c2) { return std::tolower(c1) == c2; })) {
         do_hash = false;
       }
     }

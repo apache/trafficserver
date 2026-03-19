@@ -23,7 +23,7 @@
 #include "config.h"
 #include "userarg.h"
 
-void
+int
 reserve_user_arg(PluginConfig &config)
 {
   char name[strlen(PLUGIN_NAME) + strlen(config.method.name) + 1];
@@ -37,8 +37,9 @@ reserve_user_arg(PluginConfig &config)
   } else {
     type = TS_USER_ARGS_TXN;
   }
-  TSUserArgIndexReserve(type, name, "used to pass JAx context between hooks", &config.user_arg_index);
+  int ret = TSUserArgIndexReserve(type, name, "used to pass JAx context between hooks", &config.user_arg_index);
   Dbg(dbg_ctl, "user_arg_name: %s, user_arg_index: %d", name, config.user_arg_index);
+  return ret;
 }
 
 void

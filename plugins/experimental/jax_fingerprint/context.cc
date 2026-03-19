@@ -40,6 +40,7 @@ JAxContext::JAxContext(const char *method_name, sockaddr const *s_sockaddr) : _m
   case AF_UNIX:
     strncpy(_addr, reinterpret_cast<const sockaddr_un *>(s_sockaddr)->sun_path, sizeof(_addr) - 1);
     _addr[sizeof(_addr) - 1] = '\0';
+    break;
   default:
     break;
   }

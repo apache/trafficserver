@@ -92,14 +92,14 @@ get_fingerprint(TSClientHello ch)
   raw.push_back(',');
 
   // Get elliptic curves
-  if (TS_SUCCESS == TSClientHelloExtensionGet(ch, 0x0a, &buf, &len)) {
+  if (TS_SUCCESS == TSClientHelloExtensionGet(ch, 0x0a, &buf, &len) && len >= 2) {
     // Skip first 2 bytes since we already have length
     raw.append(ja3::encode_word_buffer(buf + 2, len - 2));
   }
   raw.push_back(',');
 
   // Get elliptic curve point formats
-  if (TS_SUCCESS == TSClientHelloExtensionGet(ch, 0x0b, &buf, &len)) {
+  if (TS_SUCCESS == TSClientHelloExtensionGet(ch, 0x0b, &buf, &len) && len >= 2) {
     // Skip first byte since we already have length
     raw.append(ja3::encode_byte_buffer(buf + 1, len - 1));
   }

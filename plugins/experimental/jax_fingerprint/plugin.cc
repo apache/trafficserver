@@ -198,6 +198,10 @@ handle_client_hello(void *edata, PluginConfig &config)
         TSVConnReenable(vconn);
         return TS_SUCCESS;
       }
+    } else {
+      Dbg(dbg_ctl, "No SNI present but server name filtering is configured; skipping fingerprint generation");
+      TSVConnReenable(vconn);
+      return TS_SUCCESS;
     }
   }
 
@@ -347,7 +351,10 @@ TSPluginInit(int argc, char const **argv)
     }
   }
 
-  reserve_user_arg(*config);
+  if (reserve_user_arg(*config) == TS_ERROR) {
+    TSError("[%s] Failed to reserve user arg index.", PLUGIN_NAME);
+    return;
+  }
 
   TSCont cont = TSContCreate(main_handler, nullptr);
   TSContDataSet(cont, config);
@@ -397,7 +404,10 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
     }
   }
 
-  reserve_user_arg(*config);
+  if (reserve_user_arg(*config) == TS_ERROR) {
+    TSError("[%s] Failed to reserve user arg index.", PLUGIN_NAME);
+    return TS_ERROR;
+  }
 
   // Create continuation
   if (config->standalone) {
@@ -439,6 +449,9 @@ TSRemapDeleteInstance(void *ih)
   auto config = static_cast<PluginConfig *>(ih);
   if (config->handler) {
     TSContDestroy(config->handler);
+  }
+  if (config->log_handle) {
+    flush_log_file(config->log_handle);
   }
   delete config;
 }
