@@ -46,6 +46,7 @@
 #include "mgmt/config/ConfigRegistry.h"
 
 #include <openssl/pem.h>
+#include <algorithm>
 #include <array>
 #include <cstring>
 #include <cmath>
@@ -435,7 +436,7 @@ SSLConfigParams::initialize()
   configExitOnLoadError = RecGetRecordInt("proxy.config.ssl.server.multicert.exit_on_load_fail").value_or(0);
   configLoadConcurrency = RecGetRecordInt("proxy.config.ssl.server.multicert.concurrency").value_or(1);
   if (configLoadConcurrency == 0) {
-    configLoadConcurrency = std::max(1u, std::thread::hardware_concurrency());
+    configLoadConcurrency = std::clamp(static_cast<int>(std::thread::hardware_concurrency()), 1, 256);
   }
 
   {

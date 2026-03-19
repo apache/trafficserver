@@ -92,7 +92,7 @@ private:
                      std::set<std::string> &common_names, std::unordered_map<int, std::set<std::string>> &unique_names);
 
   void _load_items(SSLCertLookup *lookup, config::SSLMultiCertConfig::const_iterator begin,
-                   config::SSLMultiCertConfig::const_iterator end, swoc::Errata &errata);
+                   config::SSLMultiCertConfig::const_iterator end, int base_index, swoc::Errata &errata);
 
   std::mutex _loader_mutex;
 

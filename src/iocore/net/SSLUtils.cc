@@ -69,6 +69,7 @@
 #include <openssl/ts.h>
 #endif
 
+#include <algorithm>
 #include <thread>
 #include <utility>
 #include <string>
@@ -1746,9 +1747,11 @@ SSLMultiCertConfigLoader::load(SSLCertLookup *lookup, bool firstLoad)
 
   swoc::Errata errata(ERRATA_NOTE);
 
+  static constexpr int MAX_LOAD_THREADS = 256;
+
   int num_threads = params->configLoadConcurrency;
   if (num_threads == 0 || firstLoad) {
-    num_threads = std::thread::hardware_concurrency();
+    num_threads = std::min(static_cast<int>(std::thread::hardware_concurrency()), MAX_LOAD_THREADS);
   }
   if (num_threads < 1) {
     num_threads = 1;
@@ -1766,7 +1769,8 @@ SSLMultiCertConfigLoader::load(SSLCertLookup *lookup, bool firstLoad)
     for (int t = 0; t < num_threads; ++t) {
       std::size_t this_bucket = bucket_size + (static_cast<std::size_t>(t) < remainder ? 1 : 0);
       auto        end         = current + this_bucket;
-      threads.emplace_back(&SSLMultiCertConfigLoader::_load_items, this, lookup, current, end, std::ref(errata));
+      int         base_index  = static_cast<int>(std::distance(parse_result.value.cbegin(), current));
+      threads.emplace_back(&SSLMultiCertConfigLoader::_load_items, this, lookup, current, end, base_index, std::ref(errata));
       current = end;
     }
 
@@ -1776,7 +1780,7 @@ SSLMultiCertConfigLoader::load(SSLCertLookup *lookup, bool firstLoad)
 
     Note("(%s) loaded %zu certs in %d threads", this->_debug_tag(), parse_result.value.size(), num_threads);
   } else {
-    _load_items(lookup, parse_result.value.cbegin(), parse_result.value.cend(), errata);
+    _load_items(lookup, parse_result.value.cbegin(), parse_result.value.cend(), 0, errata);
     Note("(%s) loaded %zu certs (single-threaded)", this->_debug_tag(), parse_result.value.size());
   }
 
@@ -1796,14 +1800,14 @@ SSLMultiCertConfigLoader::load(SSLCertLookup *lookup, bool firstLoad)
 
 void
 SSLMultiCertConfigLoader::_load_items(SSLCertLookup *lookup, config::SSLMultiCertConfig::const_iterator begin,
-                                      config::SSLMultiCertConfig::const_iterator end, swoc::Errata &errata)
+                                      config::SSLMultiCertConfig::const_iterator end, int base_index, swoc::Errata &errata)
 {
   // Each thread needs its own elevated privileges since POSIX capabilities are per-thread
   uint32_t elevate_setting = 0;
   elevate_setting          = RecGetRecordInt("proxy.config.ssl.cert.load_elevated").value_or(0);
   ElevateAccess elevate_access(elevate_setting ? ElevateAccess::FILE_PRIVILEGE : 0);
 
-  int item_num = 0;
+  int item_num = base_index;
   for (auto it = begin; it != end; ++it) {
     item_num++;
     const auto &item = *it;
