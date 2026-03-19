@@ -381,6 +381,16 @@ FileManager::ConfigManager::checkForUserUpdate(FileManager::RollBackCheckType ho
   ink_mutex_acquire(&fileAccessLock);
 
   if (this->statFile(&fileInfo) < 0) {
+    // File doesn't exist. If it previously existed (fileLastModified > 0),
+    // treat the deletion as a change so the reload handler can fall back
+    // to an alternative config file (e.g. remap.yaml -> remap.config).
+    if (fileLastModified > 0) {
+      if (how == FileManager::ROLLBACK_CHECK_AND_UPDATE) {
+        fileLastModified = 0;
+      }
+      ink_mutex_release(&fileAccessLock);
+      return true;
+    }
     ink_mutex_release(&fileAccessLock);
     return false;
   }

@@ -8,7 +8,7 @@
 #
 
 export LD_LIBRARY_PATH=${CMAKE_INSTALL_PREFIX}/lib
-export PYTHONPATH=${CMAKE_CURRENT_SOURCE_DIR}/gold_tests/remap:${CMAKE_CURRENT_SOURCE_DIR}/gold_tests/lib:$PYTHONPATH
+export PYTHONPATH=${CMAKE_CURRENT_SOURCE_DIR}/gold_tests/remap:${CMAKE_CURRENT_SOURCE_DIR}/gold_tests/remap_yaml:${CMAKE_CURRENT_SOURCE_DIR}/gold_tests/lib:$PYTHONPATH
 
 # Move test directories that require features not supported by the current curl
 # build. This must happen before the parallel runner dispatches because it

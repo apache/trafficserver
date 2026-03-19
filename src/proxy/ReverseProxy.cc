@@ -71,7 +71,7 @@ init_reverse_proxy()
   reconfig_mutex = new_ProxyMutex();
   rewrite_table.store(new UrlRewrite());
 
-  // Register with ConfigRegistry BEFORE load() so that remap.config is in
+  // Register with ConfigRegistry BEFORE load() so that remap.config and remap.yaml are in
   // FileManager's bindings when .include directives call configFileChild()
   // to register child files (e.g. test.inc).
   config::ConfigRegistry::Get_Instance().register_config("remap",                           // registry key
@@ -82,12 +82,24 @@ init_reverse_proxy()
                                                          {"proxy.config.url_remap.filename",               // trigger records
                                                           "proxy.config.proxy_name", "proxy.config.http.referer_default_redirect"});
 
+  config::ConfigRegistry::Get_Instance().register_config("remap_yaml",                           // registry key
+                                                         ts::filename::REMAP_YAML,               // default filename
+                                                         "proxy.config.url_remap_yaml.filename", // record holding the filename
+                                                         [](ConfigContext ctx) { reloadUrlRewrite(ctx); }, // reload handler
+                                                         config::ConfigSource::FileOnly,                   // file-based only
+                                                         {"proxy.config.url_remap_yaml.filename",          // trigger records
+                                                          "proxy.config.proxy_name", "proxy.config.http.referer_default_redirect"});
+
   rewrite_table.load()->acquire();
+  Note("%s loading (checking first) ...", ts::filename::REMAP_YAML);
   Note("%s loading ...", ts::filename::REMAP);
-  if (!rewrite_table.load()->load()) {
-    Emergency("%s failed to load", ts::filename::REMAP);
+  bool status  = rewrite_table.load()->load();
+  bool is_yaml = (rewrite_table.load()->is_remap_yaml());
+
+  if (!status) {
+    Emergency("%s failed to load", is_yaml ? ts::filename::REMAP_YAML : ts::filename::REMAP);
   } else {
-    Note("%s finished loading", ts::filename::REMAP);
+    Note("%s finished loading", is_yaml ? ts::filename::REMAP_YAML : ts::filename::REMAP);
   }
 
   RecRegisterConfigUpdateCb("proxy.config.reverse_proxy.enabled", url_rewrite_CB, (void *)REVERSE_CHANGED);
@@ -123,7 +135,7 @@ urlRewriteVerify()
 }
 
 /**
-  Called when the remap.config file changes. Since it called infrequently,
+  Called when the remap.config or remap.yaml file changes. Since it called infrequently,
   we do the load of new file as blocking I/O and lock acquire is also
   blocking.
 
@@ -135,11 +147,17 @@ reloadUrlRewrite(ConfigContext ctx)
   msg_buffer.reserve(1024);
   UrlRewrite *newTable, *oldTable;
 
+  Note("%s loading (checking first) ...", ts::filename::REMAP_YAML);
   Note("%s loading ...", ts::filename::REMAP);
+  Dbg(dbg_ctl_url_rewrite, "%s updated, reloading...", ts::filename::REMAP_YAML);
   Dbg(dbg_ctl_url_rewrite, "%s updated, reloading...", ts::filename::REMAP);
   newTable = new UrlRewrite();
-  if (newTable->load()) {
-    swoc::bwprint(msg_buffer, "{} finished loading", ts::filename::REMAP);
+
+  bool status  = newTable->load();
+  bool is_yaml = (newTable->is_remap_yaml());
+
+  if (status) {
+    swoc::bwprint(msg_buffer, "{} finished loading", is_yaml ? ts::filename::REMAP_YAML : ts::filename::REMAP);
 
     // Hold at least one lease, until we reload the configuration
     newTable->acquire();
@@ -157,7 +175,7 @@ reloadUrlRewrite(ConfigContext ctx)
     ctx.complete(msg_buffer);
     return true;
   } else {
-    swoc::bwprint(msg_buffer, "{} failed to load", ts::filename::REMAP);
+    swoc::bwprint(msg_buffer, "{} failed to load", is_yaml ? ts::filename::REMAP_YAML : ts::filename::REMAP);
 
     delete newTable;
     Dbg(dbg_ctl_url_rewrite, "%s", msg_buffer.c_str());
