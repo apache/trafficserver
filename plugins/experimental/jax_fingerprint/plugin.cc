@@ -191,7 +191,7 @@ handle_client_hello(void *edata, PluginConfig &config)
 #ifdef __cpp_lib_generic_unordered_lookup
       if (!config.servernames.contains(std::string_view(servername, servername_len))) {
 #else
-      if (!config.servernames.contains({servername, servername_len})) {
+      if (!config.servernames.contains({servername, static_cast<size_t>(servername_len)})) {
 #endif
         Dbg(dbg_ctl, "Server name %.*s is not in the server name set", servername_len, servername);
         return TS_SUCCESS;
