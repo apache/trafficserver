@@ -29,3 +29,4 @@ void append_via_header(TSHttpTxn txnp, const std::string &via_header);
 void set_header(TSHttpTxn txnp, const std::string &header, const std::string &fingerprint);
 void set_via_header(TSHttpTxn txnp, const std::string &via_header);
 void remove_header(TSHttpTxn txnp, const std::string &header);
+bool has_header(TSHttpTxn txnp, const std::string &header);

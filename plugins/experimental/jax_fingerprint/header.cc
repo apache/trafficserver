@@ -139,3 +139,22 @@ remove_header(TSHttpTxn txnp, const std::string &header)
   }
   TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
 }
+
+bool
+has_header(TSHttpTxn txnp, const std::string &header)
+{
+  TSMBuffer bufp;
+  TSMLoc    hdr_loc;
+  if (TS_SUCCESS != TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc)) {
+    Dbg(dbg_ctl, "Failed to get headers.");
+    return false;
+  }
+
+  TSMLoc target = TSMimeHdrFieldFind(bufp, hdr_loc, header.c_str(), header.length());
+  if (target == TS_NULL_MLOC) {
+    return false;
+  } else {
+    TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
+    return true;
+  }
+}
