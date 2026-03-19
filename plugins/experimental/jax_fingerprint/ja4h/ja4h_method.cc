@@ -48,14 +48,20 @@ get_fingerprint(TSHttpTxn txnp)
   Extractor ex(txnp);
   // JA4H_a
   std::string_view method = ex.get_method();
-  fingerprint[0]          = std::tolower(method[0]);
-  fingerprint[1]          = std::tolower(method[1]);
-  int version             = ex.get_version();
-  fingerprint[2]          = 0x30 | (version >> 16);
-  fingerprint[3]          = 0x30 | (version & 0xFFFF);
-  fingerprint[4]          = ex.has_cookie_field() ? 'c' : 'n';
-  fingerprint[5]          = ex.has_referer_field() ? 'c' : 'n';
-  int field_count         = ex.get_field_count();
+  if (method.length() >= 2) {
+    fingerprint[0] = std::tolower(method[0]);
+    fingerprint[1] = std::tolower(method[1]);
+  } else {
+    // This case seems to be undefined on the spec
+    fingerprint[0] = 'x';
+    fingerprint[1] = 'x';
+  }
+  int version     = ex.get_version();
+  fingerprint[2]  = 0x30 | (version >> 16);
+  fingerprint[3]  = 0x30 | (version & 0xFFFF);
+  fingerprint[4]  = ex.has_cookie_field() ? 'c' : 'n';
+  fingerprint[5]  = ex.has_referer_field() ? 'c' : 'n';
+  int field_count = ex.get_field_count();
   if (field_count < 100) {
     fingerprint[6] = 0x30 | (field_count / 10);
     fingerprint[7] = 0x30 | (field_count % 10);
@@ -71,10 +77,10 @@ get_fingerprint(TSHttpTxn txnp)
     fingerprint[11] = '0';
   } else {
     for (int i = 0, j = 0; i < 4; ++i) {
-      while (accept_lang[j] < 'A' && accept_lang[j] != ';') {
+      while (static_cast<size_t>(j) < accept_lang.size() && accept_lang[j] < 'A' && accept_lang[j] != ';') {
         ++j;
       }
-      if (accept_lang[j] == ';') {
+      if (static_cast<size_t>(j) == accept_lang.size() || accept_lang[j] == ';') {
         fingerprint[8 + i] = '0';
       } else {
         fingerprint[8 + i] = std::tolower(accept_lang[j]);

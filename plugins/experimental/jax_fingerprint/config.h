@@ -62,4 +62,5 @@ struct PluginConfig {
   TSCont        handler         = nullptr; // For remap plugin
   bool          standalone      = false;
   std::unordered_set<std::string, StringHash, std::equal_to<>> servernames;
+  TSTextLogObject                                              log_handle = nullptr;
 };

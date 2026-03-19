@@ -34,6 +34,7 @@
 #include <ts/apidefs.h>
 #include <ts/ts.h>
 #include <ts/remap.h>
+#include <ts/remap_version.h>
 
 #include <getopt.h>
 
@@ -255,7 +256,7 @@ handle_read_request_hdr(void *edata, PluginConfig &config)
   }
 
   if (!config.log_filename.empty()) {
-    log_fingerprint(ctx);
+    log_fingerprint(ctx, config.log_handle);
   }
 
   modify_headers(ctx, txnp, config);
@@ -341,7 +342,7 @@ TSPluginInit(int argc, char const **argv)
   }
 
   if (!config->log_filename.empty()) {
-    if (!create_log_file(config->log_filename)) {
+    if (!create_log_file(config->log_filename, config->log_handle)) {
       TSError("[%s] Failed to create log.", PLUGIN_NAME);
       return;
     } else {
@@ -387,6 +388,16 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
     delete config;
     Dbg(dbg_ctl, "Bad arguments");
     return TS_ERROR;
+  }
+
+  // Create a log file
+  if (!config->log_filename.empty()) {
+    if (!create_log_file(config->log_filename, config->log_handle)) {
+      TSError("[%s] Failed to create log.", PLUGIN_NAME);
+      return TS_ERROR;
+    } else {
+      Dbg(dbg_ctl, "Created log file.");
+    }
   }
 
   reserve_user_arg(*config);

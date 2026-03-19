@@ -54,7 +54,7 @@ Extractor::get_version()
 {
   if (TSHttpTxnClientProtocolStackContains(this->_txn, "h2")) {
     return 2 << 16;
-  } else if (TSHttpTxnClientProtocolStackContains(this->_txn, "h2")) {
+  } else if (TSHttpTxnClientProtocolStackContains(this->_txn, "h3")) {
     return 3 << 16;
   } else {
     return TSHttpHdrVersionGet(this->_request, this->_req_hdr);
@@ -65,7 +65,9 @@ bool
 Extractor::has_cookie_field()
 {
   TSMLoc mloc = TSMimeHdrFieldFind(this->_request, this->_req_hdr, TS_MIME_FIELD_COOKIE, TS_MIME_LEN_COOKIE);
-  TSHandleMLocRelease(this->_request, this->_req_hdr, mloc);
+  if (mloc) {
+    TSHandleMLocRelease(this->_request, this->_req_hdr, mloc);
+  }
   return mloc != TS_NULL_MLOC;
 }
 
@@ -73,7 +75,9 @@ bool
 Extractor::has_referer_field()
 {
   TSMLoc mloc = TSMimeHdrFieldFind(this->_request, this->_req_hdr, TS_MIME_FIELD_REFERER, TS_MIME_LEN_REFERER);
-  TSHandleMLocRelease(this->_request, this->_req_hdr, mloc);
+  if (mloc) {
+    TSHandleMLocRelease(this->_request, this->_req_hdr, mloc);
+  }
   return mloc != TS_NULL_MLOC;
 }
 
@@ -107,21 +111,24 @@ Extractor::get_headers_hash(unsigned char out[32])
   while (field_loc != TS_NULL_MLOC) {
     int   field_name_len;
     char *field_name = const_cast<char *>(TSMimeHdrFieldNameGet(this->_request, this->_req_hdr, field_loc, &field_name_len));
+    bool  do_hash    = true;
     if (field_name_len == TS_MIME_LEN_COOKIE) {
       auto field_name_sv = std::string_view(field_name, static_cast<size_t>(field_name_len));
       if (std::equal(field_name_sv.begin(), field_name_sv.end(), std::string_view("cookie").begin(),
                      [](char c1, char c2) { return c1 == std::tolower(c2); })) {
-        continue;
+        do_hash = false;
       };
     } else if (field_name_len == TS_MIME_LEN_REFERER) {
       auto field_name_sv = std::string_view(field_name, static_cast<size_t>(field_name_len));
       if (std::equal(field_name_sv.begin(), field_name_sv.end(), std::string_view("referer").begin(),
                      [](char c1, char c2) { return c1 == std::tolower(c2); })) {
-        continue;
+        do_hash = false;
       }
     }
 
-    SHA256_Update(&sha256ctx, field_name, field_name_len);
+    if (do_hash) {
+      SHA256_Update(&sha256ctx, field_name, field_name_len);
+    }
 
     TSMLoc next_field_loc = TSMimeHdrFieldNext(this->_request, this->_req_hdr, field_loc);
     TSHandleMLocRelease(this->_request, this->_req_hdr, field_loc);
