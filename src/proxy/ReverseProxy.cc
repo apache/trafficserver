@@ -30,6 +30,7 @@
 #include "tscore/ink_platform.h"
 #include "tscore/Filenames.h"
 #include <dlfcn.h>
+#include "iocore/cache/Cache.h"
 #include "iocore/eventsystem/ConfigProcessor.h"
 #include "proxy/ReverseProxy.h"
 #include "tscore/MatcherUtils.h"
@@ -61,6 +62,8 @@ thread_local PluginThreadContext *pluginThreadContext = nullptr;
 #define URL_REMAP_MODE_CHANGED        8
 #define HTTP_DEFAULT_REDIRECT_CHANGED 9
 
+static void init_table_volume_host_records(UrlRewrite &table);
+
 //
 // Begin API Functions
 //
@@ -68,17 +71,23 @@ int
 init_reverse_proxy()
 {
   ink_assert(rewrite_table.load() == nullptr);
-  reconfig_mutex = new_ProxyMutex();
-  rewrite_table.store(new UrlRewrite());
-
-  rewrite_table.load()->acquire();
+  reconfig_mutex      = new_ProxyMutex();
+  auto *initial_table = new UrlRewrite();
+  initial_table->acquire();
   Note("%s loading ...", ts::filename::REMAP);
-  if (!rewrite_table.load()->load()) {
+  if (!initial_table->load()) {
     Emergency("%s failed to load", ts::filename::REMAP);
   } else {
     Note("%s finished loading", ts::filename::REMAP);
   }
 
+  if (initial_table->is_valid() && CacheProcessor::IsCacheEnabled() == CacheInitState::INITIALIZED) {
+    // Initialize deferred @volume= mappings before publishing so startup-only
+    // remap walks cannot race a reload.
+    init_table_volume_host_records(*initial_table);
+  }
+
+  rewrite_table.store(initial_table, std::memory_order_release);
   RecRegisterConfigUpdateCb("proxy.config.url_remap.filename", url_rewrite_CB, (void *)FILE_CHANGED);
   RecRegisterConfigUpdateCb("proxy.config.proxy_name", url_rewrite_CB, (void *)TSNAME_CHANGED);
   RecRegisterConfigUpdateCb("proxy.config.reverse_proxy.enabled", url_rewrite_CB, (void *)REVERSE_CHANGED);
@@ -201,11 +210,27 @@ init_store_volume_host_records(UrlRewrite::MappingsStore &store)
   }
 }
 
+static void
+init_table_volume_host_records(UrlRewrite &table)
+{
+  Dbg(dbg_ctl_url_rewrite, "Initializing volume_host_rec for all remap rules after cache init");
+
+  init_store_volume_host_records(table.forward_mappings);
+  init_store_volume_host_records(table.reverse_mappings);
+  init_store_volume_host_records(table.permanent_redirects);
+  init_store_volume_host_records(table.temporary_redirects);
+  init_store_volume_host_records(table.forward_mappings_with_recv_port);
+}
+
 // This is called after the cache is initialized, since we may need the volume_host_records.
 // Must only be called during startup before any remap reload can occur.
 void
 init_remap_volume_host_records()
 {
+  if (CacheProcessor::IsCacheEnabled() != CacheInitState::INITIALIZED) {
+    return;
+  }
+
   UrlRewrite *table = rewrite_table.load(std::memory_order_acquire);
 
   if (!table) {
@@ -214,14 +239,9 @@ init_remap_volume_host_records()
 
   table->acquire();
 
-  Dbg(dbg_ctl_url_rewrite, "Initializing volume_host_rec for all remap rules after cache init");
-
-  // Initialize for all mapping stores
-  init_store_volume_host_records(table->forward_mappings);
-  init_store_volume_host_records(table->reverse_mappings);
-  init_store_volume_host_records(table->permanent_redirects);
-  init_store_volume_host_records(table->temporary_redirects);
-  init_store_volume_host_records(table->forward_mappings_with_recv_port);
+  if (table->is_valid()) {
+    init_table_volume_host_records(*table);
+  }
 
   table->release();
 }
