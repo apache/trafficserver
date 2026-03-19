@@ -39,7 +39,7 @@ enum class PluginType : int {
   REMAP,
 };
 
-// This hash function enables looking up the set by a string_view without making a temporal string object.
+// This hash function enables looking up the set by a string_view without making a temporary string object.
 struct StringHash {
   // Enable heterogeneous lookup
   using is_transparent = void;
