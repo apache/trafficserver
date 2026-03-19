@@ -1750,11 +1750,8 @@ SSLMultiCertConfigLoader::load(SSLCertLookup *lookup, bool firstLoad)
   static constexpr int MAX_LOAD_THREADS = 256;
 
   int num_threads = params->configLoadConcurrency;
-  if (num_threads == 0 || firstLoad) {
-    num_threads = std::min(static_cast<int>(std::thread::hardware_concurrency()), MAX_LOAD_THREADS);
-  }
-  if (num_threads < 1) {
-    num_threads = 1;
+  if (firstLoad) {
+    num_threads = std::clamp(static_cast<int>(std::thread::hardware_concurrency()), 1, MAX_LOAD_THREADS);
   }
   num_threads = std::min(num_threads, static_cast<int>(parse_result.value.size()));
 
