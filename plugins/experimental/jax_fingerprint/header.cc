@@ -152,8 +152,10 @@ has_header(TSHttpTxn txnp, const std::string &header)
 
   TSMLoc target = TSMimeHdrFieldFind(bufp, hdr_loc, header.c_str(), header.length());
   if (target == TS_NULL_MLOC) {
+    TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     return false;
   } else {
+    TSHandleMLocRelease(bufp, hdr_loc, target);
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     return true;
   }

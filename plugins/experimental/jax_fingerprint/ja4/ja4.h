@@ -164,7 +164,7 @@ make_JA4_fingerprint(TLSClientHelloSummary const &TLS_summary, UnaryOp hasher)
  * well lubricated. They are ignored in all parts of JA4 because of their
  * random nature.
  *
- * @return Returns true if the value is a GREASE value, fales otherwise.
+ * @return Returns true if the value is a GREASE value, false otherwise.
  */
 bool is_GREASE(std::uint16_t value);
 

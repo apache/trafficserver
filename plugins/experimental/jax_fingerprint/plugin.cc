@@ -237,14 +237,12 @@ handle_read_request_hdr(void *edata, PluginConfig &config)
   TSHttpSsn ssnp = TSHttpTxnSsnGet(txnp);
   if (ssnp == nullptr) {
     Dbg(dbg_ctl, "Failed to get ssn object.");
-    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     return TS_SUCCESS;
   }
 
   TSVConn vconn = TSHttpSsnClientVConnGet(ssnp);
   if (vconn == nullptr) {
     Dbg(dbg_ctl, "Failed to get vconn object.");
-    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     return TS_SUCCESS;
   }
 
