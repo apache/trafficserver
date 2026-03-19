@@ -237,7 +237,7 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
 :doc:`JA4 Fingerprint <ja4_fingerprint.en>`
    Calculates JA4 Fingerprints for incoming TLS traffic.
 
-:doc:`JAx Fingerprint <ja4_fingerprint.en>`
+:doc:`JAx Fingerprint <jax_fingerprint.en>`
    Calculates JAx Fingerprints.
 
 :doc:`MaxMind ACL <maxmind_acl.en>`

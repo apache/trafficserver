@@ -37,5 +37,5 @@ if(BUILD_TESTING)
   add_executable(test_jax ja3/test_ja3.cc ja3/ja3_utils.cc ja4/test_ja4.cc ja4/ja4.cc ja4/tls_client_hello_summary.cc)
   target_link_libraries(test_jax PRIVATE Catch2::Catch2WithMain)
 
-  add_catch2_test(NAME test_jax COMMAND test_ja4)
+  add_catch2_test(NAME test_jax COMMAND test_jax)
 endif()
