@@ -194,6 +194,7 @@ handle_client_hello(void *edata, PluginConfig &config)
       if (!config.servernames.contains({servername, static_cast<size_t>(servername_len)})) {
 #endif
         Dbg(dbg_ctl, "Server name %.*s is not in the server name set", servername_len, servername);
+        TSVConnReenable(vconn);
         return TS_SUCCESS;
       }
     }
@@ -366,9 +367,10 @@ TSPluginInit(int argc, char const **argv)
 }
 
 TSReturnCode
-TSRemapInit(TSRemapInterface * /* api_info ATS_UNUSED */, char * /* errbuf ATS_UNUSED */, int /* errbuf_size ATS_UNUSED */)
+TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 {
   Dbg(dbg_ctl, "JAx Remap Plugin initializing..");
+  CHECK_REMAP_API_COMPATIBILITY(api_info, errbuf, errbuf_size);
 
   return TS_SUCCESS;
 }
