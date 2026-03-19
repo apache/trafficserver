@@ -26,7 +26,7 @@
 void
 reserve_user_arg(PluginConfig &config)
 {
-  char name[sizeof(PLUGIN_NAME) + strlen(config.method.name) + 1];
+  char name[strlen(PLUGIN_NAME) + strlen(config.method.name) + 1];
   name[0] = '\0';
   strcat(name, PLUGIN_NAME);
   strcat(name, config.method.name);
@@ -44,7 +44,7 @@ reserve_user_arg(PluginConfig &config)
 void
 fill_user_arg_index(PluginConfig &config)
 {
-  char name[sizeof(PLUGIN_NAME) + strlen(config.method.name) + 1];
+  char name[strlen(PLUGIN_NAME) + strlen(config.method.name) + 1];
   name[0] = '\0';
   strcat(name, PLUGIN_NAME);
   strcat(name, config.method.name);
