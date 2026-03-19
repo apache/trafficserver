@@ -20,11 +20,9 @@ meta:
 sessions:
 
 - protocol:
-  - name: tls
-    sni: https.server.com
-  - name: tcp
-  - name: ip
-
+    stack: https
+    tls:
+      sni: https.server.com
   transactions:
 
   - client-request:
@@ -62,13 +60,9 @@ sessions:
         - [ X-Response, { value: 'https-response', as: equal } ]
 
 - protocol:
-  - name: http
-    version: 2
-  - name: tls
-    sni: http2.server.com
-  - name: tcp
-  - name: ip
-
+    stack: http2
+    tls:
+      sni: http2.server.com
   transactions:
 
   - client-request:

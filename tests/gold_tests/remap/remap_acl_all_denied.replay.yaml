@@ -30,8 +30,7 @@ meta:
 
 sessions:
 - protocol:
-  - name: http
-    version: 1
+    stack: http
   transactions:
 
   - client-request:

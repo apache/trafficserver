@@ -137,8 +137,7 @@ sessions:
 # HTTP/2 - dechunk
 
 - protocol:
-  - name: http
-    version: 2
+    stack: http2
   transactions:
   - client-request:
       headers:
