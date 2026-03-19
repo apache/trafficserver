@@ -24,6 +24,8 @@
 
 #include "ts/ts.h"
 
+#include <string>
+
 void append_header(TSHttpTxn txnp, const std::string &header, const std::string &fingerprint);
 void append_via_header(TSHttpTxn txnp, const std::string &via_header);
 void set_header(TSHttpTxn txnp, const std::string &header, const std::string &fingerprint);

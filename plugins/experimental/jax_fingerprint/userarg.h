@@ -23,6 +23,7 @@
 #pragma once
 
 #include "context.h"
+#include "config.h"
 
 #include "ts/ts.h"
 
