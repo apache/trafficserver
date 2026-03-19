@@ -108,13 +108,15 @@ Extractor::get_headers_hash(unsigned char out[32])
     int   field_name_len;
     char *field_name = const_cast<char *>(TSMimeHdrFieldNameGet(this->_request, this->_req_hdr, field_loc, &field_name_len));
     if (field_name_len == TS_MIME_LEN_COOKIE) {
-      if (std::ranges::equal(std::string_view{field_name, static_cast<size_t>(field_name_len)}, "cookie",
-                             [](char c1, char c2) { return c1 == std::tolower(c2); })) {
+      auto field_name_sv = std::string_view(field_name, static_cast<size_t>(field_name_len));
+      if (std::equal(field_name_sv.begin(), field_name_sv.end(), std::string_view("cookie").begin(),
+                     [](char c1, char c2) { return c1 == std::tolower(c2); })) {
         continue;
       };
     } else if (field_name_len == TS_MIME_LEN_REFERER) {
-      if (std::ranges::equal(std::string_view{field_name, static_cast<size_t>(field_name_len)}, "referer",
-                             [](char c1, char c2) { return c1 == std::tolower(c2); })) {
+      auto field_name_sv = std::string_view(field_name, static_cast<size_t>(field_name_len));
+      if (std::equal(field_name_sv.begin(), field_name_sv.end(), std::string_view("referer").begin(),
+                     [](char c1, char c2) { return c1 == std::tolower(c2); })) {
         continue;
       }
     }
