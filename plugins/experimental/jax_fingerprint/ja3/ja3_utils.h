@@ -22,6 +22,8 @@
 
  */
 
+#pragma once
+
 #include <string>
 
 namespace ja3

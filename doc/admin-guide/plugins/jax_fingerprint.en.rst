@@ -38,7 +38,7 @@ Fingerprints can be used for:
 Plugin Configuration
 ====================
 
-You can use the plugin as a global pugin, a remap plugin, or both.
+You can use the plugin as a global plugin, a remap plugin, or both.
 
 To use the plugin as a global plugin, add the following line to :file:`plugin.config`::
 
@@ -46,7 +46,7 @@ To use the plugin as a global plugin, add the following line to :file:`plugin.co
 
 To use the plugin as a remap plugin, append the following line to a remap rule on :file:`remap.config`::
 
-    @plugin=jax_fingerprint.so @pparam --standalone
+    @plugin=jax_fingerprint.so @pparam=--standalone
 
 To use the plugin as both global and remap plugin (hybrid setup), have the both without `--standalone` option.
 
@@ -56,14 +56,14 @@ To use the plugin as both global and remap plugin (hybrid setup), have the both 
 This option enables you to use the plugin as either a global plugin, or a remap plugin. In other
 words, the option needs to be specified if you do not use the hybrid setup.
 
-.. option:: --method <JA4|JA3>
+.. option:: --method <JA4|JA4H|JA3>
 
 Fingerprinting method (e.g. JA4, JA3, etc.) to use.
 
 .. option:: --mode <overwrite|keep|append>
 
 This option specifies what to do if requests from clients have the header names that are specified
-by `--header` and/or `via-header`. Available setting values are "overwrite", "keep" and "append".
+by `--header` and/or `--via-header`. Available setting values are "overwrite", "keep" and "append".
 
 .. option:: --servernames <servername1,servername2,...>
 
@@ -99,7 +99,7 @@ Remap plugin setup is the best if you:
  * Need a fingerprint only on specific paths, or
  * Cannot use Global plugin setup
 
-.. note:: For JA3 and JA4, fingerprints are always generated at the beginning of connections. Using remap plugin setup only reduces the overhead of adding HTTP headers and loggingg.
+.. note:: For JA3 and JA4, fingerprints are always generated at the beginning of connections. Using remap plugin setup only reduces the overhead of adding HTTP headers and logging.
 
 Hybrid setup
 ------------
