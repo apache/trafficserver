@@ -30,6 +30,7 @@
 #include "tscore/ink_platform.h"
 #include "tscore/Filenames.h"
 #include <dlfcn.h>
+#include "iocore/cache/Cache.h"
 #include "proxy/ReverseProxy.h"
 #include "mgmt/config/ConfigRegistry.h"
 #include "tscore/MatcherUtils.h"
@@ -61,6 +62,8 @@ thread_local PluginThreadContext *pluginThreadContext = nullptr;
 #define URL_REMAP_MODE_CHANGED        8
 #define HTTP_DEFAULT_REDIRECT_CHANGED 9
 
+static void init_table_volume_host_records(UrlRewrite &table);
+
 //
 // Begin API Functions
 //
@@ -68,33 +71,32 @@ int
 init_reverse_proxy()
 {
   ink_assert(rewrite_table.load() == nullptr);
-  reconfig_mutex = new_ProxyMutex();
-  rewrite_table.store(new UrlRewrite());
+  reconfig_mutex      = new_ProxyMutex();
+  auto *initial_table = new UrlRewrite();
+  auto &config_reg    = config::ConfigRegistry::Get_Instance();
 
   // Register with ConfigRegistry BEFORE load() so that remap.config and remap.yaml are in
   // FileManager's bindings when .include directives call configFileChild()
   // to register child files (e.g. test.inc).
-  config::ConfigRegistry::Get_Instance().register_config("remap",                           // registry key
-                                                         ts::filename::REMAP,               // default filename
-                                                         "proxy.config.url_remap.filename", // record holding the filename
-                                                         [](ConfigContext ctx) { reloadUrlRewrite(ctx); }, // reload handler
-                                                         config::ConfigSource::FileOnly,                   // file-based only
-                                                         {"proxy.config.url_remap.filename",               // trigger records
-                                                          "proxy.config.proxy_name", "proxy.config.http.referer_default_redirect"});
+  config_reg.register_config(
+    "remap",                                          // registry key
+    ts::filename::REMAP,                              // default filename
+    "proxy.config.url_remap.filename",                // record holding the filename
+    [](ConfigContext ctx) { reloadUrlRewrite(ctx); }, // reload handler
+    config::ConfigSource::FileOnly);                  // file-based only
 
-  config::ConfigRegistry::Get_Instance().register_config("remap_yaml",                           // registry key
-                                                         ts::filename::REMAP_YAML,               // default filename
-                                                         "proxy.config.url_remap_yaml.filename", // record holding the filename
-                                                         [](ConfigContext ctx) { reloadUrlRewrite(ctx); }, // reload handler
-                                                         config::ConfigSource::FileOnly,                   // file-based only
-                                                         {"proxy.config.url_remap_yaml.filename",          // trigger records
-                                                          "proxy.config.proxy_name", "proxy.config.http.referer_default_redirect"});
+  config_reg.register_config(
+    "remap_yaml",                                     // registry key
+    ts::filename::REMAP_YAML,                         // default filename
+    "proxy.config.url_remap_yaml.filename",           // record holding the filename
+    [](ConfigContext ctx) { reloadUrlRewrite(ctx); }, // reload handler
+    config::ConfigSource::FileOnly);                  // file-based only
 
-  rewrite_table.load()->acquire();
+  initial_table->acquire();
   Note("%s loading (checking first) ...", ts::filename::REMAP_YAML);
   Note("%s loading ...", ts::filename::REMAP);
-  bool status  = rewrite_table.load()->load();
-  bool is_yaml = (rewrite_table.load()->is_remap_yaml());
+  bool status  = initial_table->load();
+  bool is_yaml = initial_table->is_remap_yaml();
 
   if (!status) {
     Emergency("%s failed to load", is_yaml ? ts::filename::REMAP_YAML : ts::filename::REMAP);
@@ -102,6 +104,19 @@ init_reverse_proxy()
     Note("%s finished loading", is_yaml ? ts::filename::REMAP_YAML : ts::filename::REMAP);
   }
 
+  if (initial_table->is_valid() && CacheProcessor::IsCacheEnabled() == CacheInitState::INITIALIZED) {
+    // Initialize deferred @volume= mappings before publishing so startup-only
+    // remap walks cannot race a reload.
+    init_table_volume_host_records(*initial_table);
+  }
+
+  rewrite_table.store(initial_table, std::memory_order_release);
+  ink_assert(0 == config_reg.attach("remap", "proxy.config.url_remap.filename"));
+  ink_assert(0 == config_reg.attach("remap", "proxy.config.proxy_name"));
+  ink_assert(0 == config_reg.attach("remap", "proxy.config.http.referer_default_redirect"));
+  ink_assert(0 == config_reg.attach("remap_yaml", "proxy.config.url_remap_yaml.filename"));
+  ink_assert(0 == config_reg.attach("remap_yaml", "proxy.config.proxy_name"));
+  ink_assert(0 == config_reg.attach("remap_yaml", "proxy.config.http.referer_default_redirect"));
   RecRegisterConfigUpdateCb("proxy.config.reverse_proxy.enabled", url_rewrite_CB, (void *)REVERSE_CHANGED);
 
   return 0;
@@ -219,11 +234,27 @@ init_store_volume_host_records(UrlRewrite::MappingsStore &store)
   }
 }
 
+static void
+init_table_volume_host_records(UrlRewrite &table)
+{
+  Dbg(dbg_ctl_url_rewrite, "Initializing volume_host_rec for all remap rules after cache init");
+
+  init_store_volume_host_records(table.forward_mappings);
+  init_store_volume_host_records(table.reverse_mappings);
+  init_store_volume_host_records(table.permanent_redirects);
+  init_store_volume_host_records(table.temporary_redirects);
+  init_store_volume_host_records(table.forward_mappings_with_recv_port);
+}
+
 // This is called after the cache is initialized, since we may need the volume_host_records.
 // Must only be called during startup before any remap reload can occur.
 void
 init_remap_volume_host_records()
 {
+  if (CacheProcessor::IsCacheEnabled() != CacheInitState::INITIALIZED) {
+    return;
+  }
+
   UrlRewrite *table = rewrite_table.load(std::memory_order_acquire);
 
   if (!table) {
@@ -232,14 +263,9 @@ init_remap_volume_host_records()
 
   table->acquire();
 
-  Dbg(dbg_ctl_url_rewrite, "Initializing volume_host_rec for all remap rules after cache init");
-
-  // Initialize for all mapping stores
-  init_store_volume_host_records(table->forward_mappings);
-  init_store_volume_host_records(table->reverse_mappings);
-  init_store_volume_host_records(table->permanent_redirects);
-  init_store_volume_host_records(table->temporary_redirects);
-  init_store_volume_host_records(table->forward_mappings_with_recv_port);
+  if (table->is_valid()) {
+    init_table_volume_host_records(*table);
+  }
 
   table->release();
 }
