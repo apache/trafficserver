@@ -382,6 +382,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
 
   // Parse parameters
   if (!read_config_option(argc - 1, const_cast<const char **>(argv + 1), *config)) {
+    delete config;
     Dbg(dbg_ctl, "Bad arguments");
     return TS_ERROR;
   }
