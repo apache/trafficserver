@@ -21,9 +21,9 @@ from hrw4u.hrw4uLexer import hrw4uLexer
 from hrw4u.hrw4uParser import hrw4uParser
 from hrw4u.visitor import HRW4UVisitor
 from hrw4u.validation import Validator
+from hrw4u.types import MapParams
+from hrw4u.states import SectionType
 import pytest
-import sys
-import os
 
 
 class TestHRW4UVisitorUnits:
@@ -310,6 +310,68 @@ class TestParseErrorMessages:
         error = self._first_error("use Foo")
         assert "QUALIFIED_IDENT" not in error
         assert "qualified name" in error
+
+
+class TestMapParamsUnits:
+    """Unit tests for MapParams dunder methods."""
+
+    def test_repr_empty(self):
+        mp = MapParams()
+        assert repr(mp) == "MapParams()"
+
+    def test_repr_with_flags(self):
+        mp = MapParams(upper=True, add=True)
+        r = repr(mp)
+        assert "upper=True" in r
+        assert "add=True" in r
+
+    def test_repr_with_sections(self):
+        mp = MapParams(sections={SectionType.REMAP})
+        assert "sections=" in repr(mp)
+
+    def test_repr_with_validate(self):
+        mp = MapParams(validate=lambda x: None)
+        assert "validate=<validator>" in repr(mp)
+
+    def test_repr_with_target(self):
+        mp = MapParams(target="set-header")
+        assert "target=..." in repr(mp)
+
+    def test_hash_basic(self):
+        mp1 = MapParams(upper=True)
+        mp2 = MapParams(upper=True)
+        assert hash(mp1) == hash(mp2)
+
+    def test_hash_with_sections(self):
+        mp = MapParams(sections={SectionType.REMAP})
+        assert isinstance(hash(mp), int)
+
+    def test_hash_with_rev_dict(self):
+        mp = MapParams(rev={"a": "b"})
+        assert isinstance(hash(mp), int)
+
+    def test_hash_with_validate(self):
+        mp = MapParams(validate=lambda x: None)
+        assert isinstance(hash(mp), int)
+
+    def test_eq_same(self):
+        mp1 = MapParams(upper=True)
+        mp2 = MapParams(upper=True)
+        assert mp1 == mp2
+
+    def test_eq_different(self):
+        mp1 = MapParams(upper=True)
+        mp2 = MapParams(upper=False)
+        assert mp1 != mp2
+
+    def test_eq_non_mapparams(self):
+        mp = MapParams()
+        assert mp != "not a MapParams"
+
+    def test_getattr_rejects_private(self):
+        mp = MapParams()
+        with pytest.raises(AttributeError):
+            _ = mp._private
 
 
 if __name__ == "__main__":

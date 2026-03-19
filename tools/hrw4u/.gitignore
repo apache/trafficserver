@@ -2,3 +2,5 @@ build/
 dist/
 uv.lock
 *.spec
+htmlcov/
+.coverage

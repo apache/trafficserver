@@ -19,7 +19,6 @@ from __future__ import annotations
 import re
 from typing import Callable
 from hrw4u.errors import SymbolResolutionError
-from hrw4u import states
 import hrw4u.types as types
 from hrw4u.common import RegexPatterns
 
@@ -69,12 +68,6 @@ class ValidatorChain:
 
     def http_header_name(self) -> 'ValidatorChain':
         return self._add(self._wrap_args(Validator.http_header_name()))
-
-    def simple_token(self) -> 'ValidatorChain':
-        return self._add(self._wrap_args(Validator.simple_token()))
-
-    def regex_literal(self) -> 'ValidatorChain':
-        return self._add(self._wrap_args(Validator.regex_literal()))
 
     def nbit_int(self, nbits: int) -> 'ValidatorChain':
         return self._add(self._wrap_args(Validator.nbit_int(nbits)))
@@ -165,16 +158,6 @@ class Validator:
         return validator
 
     @staticmethod
-    def simple_token() -> Callable[[str], None]:
-        """Validate simple tokens (letters, digits, underscore, dash)."""
-        return Validator.regex_validator(Validator._SIMPLE_TOKEN_RE, "Must be a simple token (letters, digits, underscore, dash)")
-
-    @staticmethod
-    def regex_literal() -> Callable[[str], None]:
-        """Validate regex literals in /pattern/ format."""
-        return Validator.regex_validator(Validator._REGEX_LITERAL_RE, "Must be a valid regex literal in /pattern/ format")
-
-    @staticmethod
     def http_token() -> Callable[[str], None]:
         """Validate HTTP tokens according to RFC 7230."""
         return Validator.regex_validator(Validator._HTTP_TOKEN_RE, "HTTP token/header not valid, illegal characters or format.")
@@ -244,15 +227,6 @@ class Validator:
     @staticmethod
     def quote_if_needed(value: str) -> str:
         return f'"{value}"' if Validator.needs_quotes(value) else value
-
-    @staticmethod
-    def logic_modifier() -> Callable[[str], None]:
-
-        def validator(value: str) -> None:
-            if value.upper() not in states.ALL_MODIFIERS:
-                raise SymbolResolutionError(value, f"Invalid logic modifier: {value}")
-
-        return validator
 
     @staticmethod
     def percent_block() -> Callable[[str], None]:

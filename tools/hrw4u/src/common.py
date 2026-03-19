@@ -74,7 +74,7 @@ class HeaderOperations:
     DESTINATION_OPERATIONS: Final = (MagicStrings.RM_DESTINATION.value, MagicStrings.SET_DESTINATION.value)
 
 
-class LexerProtocol(Protocol):
+class LexerProtocol(Protocol):  # pragma: no cover
     """Protocol for ANTLR lexers."""
 
     def removeErrorListeners(self) -> None:
@@ -84,7 +84,7 @@ class LexerProtocol(Protocol):
         ...
 
 
-class ParserProtocol(Protocol):
+class ParserProtocol(Protocol):  # pragma: no cover
     """Protocol for ANTLR parsers."""
 
     def removeErrorListeners(self) -> None:
@@ -99,7 +99,7 @@ class ParserProtocol(Protocol):
     errorHandler: BailErrorStrategy | DefaultErrorStrategy
 
 
-class VisitorProtocol(Protocol):
+class VisitorProtocol(Protocol):  # pragma: no cover
     """Protocol for ANTLR visitors."""
 
     def visit(self, tree: Any) -> list[str]:
@@ -115,12 +115,7 @@ def fatal(message: str) -> NoReturn:
 def create_base_parser(description: str) -> tuple[argparse.ArgumentParser, argparse._MutuallyExclusiveGroup]:
     """Create base argument parser with common options."""
     parser = argparse.ArgumentParser(description=description, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument(
-        "input_file",
-        help="The input file to parse (default: stdin)",
-        nargs="?",
-        type=argparse.FileType("r", encoding="utf-8"),
-        default=sys.stdin)
+    parser.add_argument("input_file", help="Optional input file path (default: reads from stdin)", nargs="?", default=None)
 
     output_group = parser.add_mutually_exclusive_group()
     output_group.add_argument("--ast", action="store_true", help="Produce the ANTLR parse tree only")
