@@ -26,17 +26,19 @@
 
 #include <string>
 
-static TSTextLogObject log_handle = nullptr;
-
 bool
-create_log_file(const std::string &filename)
+create_log_file(const std::string &filename, TSTextLogObject &log_handle)
 {
   return (TS_SUCCESS == TSTextLogObjectCreate(filename.c_str(), TS_LOG_MODE_ADD_TIMESTAMP, &log_handle));
 }
 
 void
-log_fingerprint(const JAxContext *ctx)
+log_fingerprint(const JAxContext *ctx, TSTextLogObject &log_handle)
 {
+  if (log_handle == nullptr) {
+    Dbg(dbg_ctl, "Log handle is not initialized.");
+    return;
+  }
   if (TS_ERROR == TSTextLogObjectWrite(log_handle, "Client: %s\t%s: %s", ctx->get_addr(), ctx->get_method_name(),
                                        ctx->get_fingerprint().c_str())) {
     Dbg(dbg_ctl, "Failed to write to log!");

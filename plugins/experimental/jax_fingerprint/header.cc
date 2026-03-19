@@ -137,4 +137,5 @@ remove_header(TSHttpTxn txnp, const std::string &header)
       target = tmp;
     }
   }
+  TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
 }

@@ -22,7 +22,8 @@
 
 #pragma once
 
+#include "ts/ts.h"
 #include "context.h"
 
-bool create_log_file(const std::string &filename);
-void log_fingerprint(const JAxContext *ctx);
+bool create_log_file(const std::string &filename, TSTextLogObject &log_handle);
+void log_fingerprint(const JAxContext *ctx, TSTextLogObject &log_handle);
