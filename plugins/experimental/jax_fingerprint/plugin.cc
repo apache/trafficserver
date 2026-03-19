@@ -151,6 +151,7 @@ modify_headers(JAxContext *ctx, TSHttpTxn txnp, PluginConfig &config)
       if (!config.via_header_name.empty() && !has_header(txnp, config.via_header_name)) {
         set_via_header(txnp, config.via_header_name);
       }
+      break;
     case Mode::OVERWRITE:
       if (!config.header_name.empty()) {
         set_header(txnp, config.header_name, ctx->get_fingerprint());
