@@ -30,15 +30,6 @@
 using std::string;
 using namespace EsiLib;
 
-EsiGunzip::EsiGunzip() : _downstream_length(0), _total_data_length(0)
-{
-  _init    = false;
-  _success = true;
-  // zlib _zstrm variables are initialized when they are required in stream_decode
-  // coverity[uninit_member]
-  // coverity[uninit_ctor]
-}
-
 bool
 EsiGunzip::stream_finish()
 {

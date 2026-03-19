@@ -148,7 +148,7 @@ private:
   HdrStrHeap(uint32_t total_size) : _total_size{total_size} {}
 
   uint32_t const _total_size;
-  uint32_t       _avail_size;
+  uint32_t       _avail_size{0};
 };
 
 inline bool

@@ -31,7 +31,7 @@
 class EsiGzip
 {
 public:
-  EsiGzip();
+  EsiGzip() = default;
 
   ~EsiGzip();
 
@@ -65,12 +65,12 @@ public:
 
 private:
   /** The cumulative total number of bytes for the compressed stream. */
-  int64_t _downstream_length;
+  int64_t _downstream_length{0};
 
   /** The cumulative total number of uncompressed bytes that have been
    * compressed.
    */
-  int64_t  _total_data_length;
-  z_stream _zstrm;
-  uLong    _crc;
+  int64_t  _total_data_length{0};
+  z_stream _zstrm{};
+  uLong    _crc{0};
 };

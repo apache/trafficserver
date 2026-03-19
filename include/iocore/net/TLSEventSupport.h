@@ -78,7 +78,7 @@ protected:
 
 private:
   static int _ex_data_index;
-  SSL       *_ssl;
+  SSL       *_ssl{nullptr};
 
   bool _first_handshake_hooks_pre          = true;
   bool _first_handshake_hooks_outbound_pre = true;

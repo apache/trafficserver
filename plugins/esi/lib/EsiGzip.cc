@@ -30,13 +30,6 @@
 using std::string;
 using namespace EsiLib;
 
-EsiGzip::EsiGzip() : _downstream_length(0), _total_data_length(0), _crc(0)
-{
-  // Zlib _zstrm variables are initialized when they are required in runDeflateLoop
-  // coverity[uninit_member]
-  // coverity[uninit_ctor]
-}
-
 template <typename T>
 inline void
 append(string &out, T data)
