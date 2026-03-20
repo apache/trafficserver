@@ -58,7 +58,6 @@ struct ink_aiocb {
   off_t  aio_offset = 0;       /* file offset */
 
   int aio_lio_opcode = 0; /* listio operation */
-  int aio_state      = 0; /* state flag for List I/O */
 };
 
 bool ink_aio_thread_num_set(int thread_num);

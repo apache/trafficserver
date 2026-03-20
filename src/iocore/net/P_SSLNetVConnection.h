@@ -254,9 +254,6 @@ public:
   SSLNetVConnection(const SSLNetVConnection &)            = delete;
   SSLNetVConnection &operator=(const SSLNetVConnection &) = delete;
 
-  bool          protocol_mask_set = false;
-  unsigned long protocol_mask     = 0;
-
   bool
   peer_provided_cert() const override
   {
