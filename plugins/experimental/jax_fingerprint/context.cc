@@ -44,6 +44,12 @@ JAxContext::JAxContext(const char *method_name, sockaddr const *s_sockaddr) : _m
   default:
     break;
   }
+  Dbg(dbg_ctl, "New context for %s (%p) has been created", this->_method_name, this);
+}
+
+JAxContext::~JAxContext()
+{
+  Dbg(dbg_ctl, "Context for %s (%p) has been deleted", this->_method_name, this);
 }
 
 const std::string &

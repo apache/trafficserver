@@ -127,11 +127,17 @@ read_config_option(int argc, char const *argv[], PluginConfig &config)
     }
   }
 
+  if (strcmp(config.method.name, "uninitialized") == 0) {
+    TSError("[%s] Method must be specified", PLUGIN_NAME);
+    return false;
+  }
+
   Dbg(dbg_ctl, "JAx method is %s", config.method.name);
   Dbg(dbg_ctl, "JAx mode is %d", static_cast<int>(config.mode));
   Dbg(dbg_ctl, "JAx header is %s", !config.header_name.empty() ? config.header_name.c_str() : "DISABLED");
   Dbg(dbg_ctl, "JAx via-header is %s", !config.via_header_name.empty() ? config.via_header_name.c_str() : "DISABLED");
   Dbg(dbg_ctl, "JAx log file is %s", !config.log_filename.empty() ? config.log_filename.c_str() : "DISABLED");
+  Dbg(dbg_ctl, "JAx standalone mode  is %s", config.standalone ? "ENABLED" : "DISABLED");
   for (auto &&servername : config.servernames) {
     Dbg(dbg_ctl, "%s", servername.c_str());
   }
@@ -254,6 +260,11 @@ handle_read_request_hdr(void *edata, PluginConfig &config)
   }
   JAxContext *ctx = get_user_arg(container, config);
   if (nullptr == ctx) {
+    if (container == vconn) {
+      // JAxContext should be created on client hello hook
+      Dbg(dbg_ctl, "No context. Skipping.");
+      return TS_SUCCESS;
+    }
     ctx = new JAxContext(config.method.name, TSNetVConnRemoteAddrGet(vconn));
     set_user_arg(container, config, ctx);
   }
@@ -415,6 +426,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
 
   // Create continuation
   if (config->standalone) {
+    Dbg(dbg_ctl, "Standalone mode. Adding hooks.");
     config->handler = TSContCreate(main_handler, nullptr);
     if (config->method.on_client_hello) {
       TSHttpHookAdd(TS_SSL_CLIENT_HELLO_HOOK, config->handler);

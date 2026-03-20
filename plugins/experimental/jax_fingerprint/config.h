@@ -52,6 +52,9 @@ struct StringHash {
 };
 
 struct PluginConfig {
+  PluginConfig() { Dbg(dbg_ctl, "New config (%p) has been created", this); }
+  ~PluginConfig() { Dbg(dbg_ctl, "Config for (%p) has been deleted", this); }
+
   PluginType    plugin_type     = PluginType::GLOBAL;
   Mode          mode            = Mode::OVERWRITE;
   struct Method method          = {"uninitialized", Method::Type::CONNECTION_BASED, nullptr, nullptr};

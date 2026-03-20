@@ -59,17 +59,19 @@ words, the option needs to be specified if you do not use the hybrid setup.
 
 .. option:: --method <JA4|JA4H|JA3>
 
-Fingerprinting method (e.g. JA4, JA3, etc.) to use.
+Fingerprinting method (e.g. JA4, JA3, etc.) to use. This option must be speficied.
 
 .. option:: --mode <overwrite|keep|append>
 
 This option specifies what to do if requests from clients have the header names that are specified
 by `--header` and/or `--via-header`. Available setting values are "overwrite", "keep" and "append".
+The default mode is "overwrite".
 
 .. option:: --servernames <servername1,servername2,...>
 
 This option specifies server name(s) for which the plugin generates fingerprints.
 The value must be provided as a single comma separated value (no space) of server names.
+If the option is not specified, the plugin generates fingerprints for any server names.
 
 .. option:: --header <header_name>
 

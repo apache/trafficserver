@@ -33,6 +33,7 @@ class JAxContext
 {
 public:
   JAxContext(const char *name, sockaddr const *s_sockaddr);
+  ~JAxContext();
 
   const std::string &get_fingerprint() const;
   void               set_fingerprint(const std::string &fingerprint);
