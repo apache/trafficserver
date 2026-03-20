@@ -593,19 +593,28 @@ check_cxx_source_compiles(
   }"
   HAVE_CRYPTO_EX_DUP_TYPE1
 )
-check_cxx_source_compiles(
-  "#include <openssl/asn1.h>
-  namespace bssl {
-    DECLARE_ASN1_ITEM(GENERAL_NAME)
-  };
-  int main() {
-    if (&bssl::GENERAL_NAME_it == reinterpret_cast<void *>(0x01)) {
-      return 1;
-    }
-    return 0;
-  }"
-  HAVE_GENERAL_NAME_IN_BSSL_NAMESPACE
-)
+if(SSLLIB_IS_BORINGSSL OR SSLLIB_IS_AWSLC)
+  check_cxx_source_compiles(
+    "#include <openssl/asn1.h>
+    namespace bssl {
+      DECLARE_ASN1_ITEM(GENERAL_NAME)
+    };
+    int main() {
+      if (&bssl::GENERAL_NAME_it == reinterpret_cast<void *>(0x01)) {
+        return 1;
+      }
+      return 0;
+    }"
+    HAVE_GENERAL_NAME_IN_BSSL_NAMESPACE
+  )
+else()
+  # This probe is only meaningful for BoringSSL-family libraries. Force it off
+  # for OpenSSL so a stale cache or macro shape change can't enable bssl:: code.
+  set(HAVE_GENERAL_NAME_IN_BSSL_NAMESPACE
+      FALSE
+      CACHE INTERNAL "GENERAL_NAME lives in the bssl namespace" FORCE
+  )
+endif()
 
 set(CMAKE_EXTRA_INCLUDE_FILES netinet/in.h netinet/tcp.h)
 check_type_size("struct tcp_info" STRUCT_TCP_INFO)
