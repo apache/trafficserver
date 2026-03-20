@@ -54,7 +54,6 @@ private:
   MIOBuffer      *_netvc_read_buffer = nullptr;
   IOBufferReader *_netvc_reader      = nullptr;
   Action         *_pending_action    = nullptr;
-  NetVCOptions    opt;
 };
 
 struct IpHelper {

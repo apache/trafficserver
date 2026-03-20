@@ -58,7 +58,6 @@ struct ink_aiocb {
   off_t  aio_offset = 0;       /* file offset */
 
   int aio_lio_opcode = 0; /* listio operation */
-  int aio_state      = 0; /* state flag for List I/O */
 };
 
 bool ink_aio_thread_num_set(int thread_num);
@@ -80,9 +79,8 @@ struct AIOCallback : public Continuation {
   EThread     *thread = AIO_CALLBACK_THREAD_ANY;
   AIOCallback *then   = nullptr;
   // set on return from aio_read/aio_write
-  int64_t    aio_result = 0;
-  AIO_Reqs  *aio_req    = nullptr;
-  ink_hrtime sleep_time = 0;
+  int64_t   aio_result = 0;
+  AIO_Reqs *aio_req    = nullptr;
   SLINK(AIOCallback, alink); /* for AIO_Reqs::aio_temp_list */
 #if TS_USE_LINUX_IO_URING
   iovec        iov     = {}; // this is to support older kernels that only support readv/writev

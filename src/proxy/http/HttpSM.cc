@@ -5918,8 +5918,7 @@ HttpSM::do_api_callout_internal()
   }
 
   hook_state.init(cur_hook_id, http_global_hooks, _ua.get_txn() ? _ua.get_txn()->feature_hooks() : nullptr, &api_hooks);
-  cur_hook  = nullptr;
-  cur_hooks = 0;
+  cur_hook = nullptr;
   return state_api_callout(0, nullptr);
 }
 
