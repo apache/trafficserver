@@ -182,6 +182,10 @@ ssl_ticket_number                        Inbound   Specifies an override to the 
                                                    :ts:cv:`proxy.config.ssl.server.session_ticket.number`
                                                    :file:`records.yaml` configuration. This controls how many TLSv1.3
                                                    session tickets are issued for matching inbound TLS connections.
+                                                   BoringSSL does not support setting the ticket number on a
+                                                   per-SNI basis, so this configuration does not apply when ATS is
+                                                   linked against BoringSSL. The configured ticket count from the
+                                                   selected SSL context remains in effect.
 
 host_sni_policy                          Inbound   One of the values :code:`DISABLED`, :code:`PERMISSIVE`, or :code:`ENFORCED`.
 

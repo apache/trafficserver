@@ -168,6 +168,12 @@ YamlSNIConfig::Item::populate_sni_actions(action_vector_t &actions)
     actions.push_back(std::make_unique<ServerSessionTicketEnabled>(ssl_ticket_enabled.value()));
   }
   if (ssl_ticket_number.has_value()) {
+#if defined(OPENSSL_IS_BORINGSSL)
+    const char *servername = fqdn.empty() ? "*" : fqdn.c_str();
+    Warning(
+      "sni.yaml: BoringSSL does not support setting the session ticket number, so ssl_ticket_number does not apply for fqdn '%s'",
+      servername);
+#endif
     actions.push_back(std::make_unique<ServerSessionTicketNumber>(ssl_ticket_number.value()));
   }
   if (http2_buffer_water_mark.has_value()) {

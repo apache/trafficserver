@@ -4190,6 +4190,11 @@ SSL Termination
   Increasing the number of tickets could be potentially beneficial for clients performing
   multiple requests over concurrent TLS connections as per RFC 8446 clients SHOULDN'T reuse TLS Tickets.
 
+  This setting is applied at the SSL context level. BoringSSL does not support setting the
+  ticket number on a per-SNI basis, so the :file:`sni.yaml` :code:`ssl_ticket_number`
+  configuration does not apply when ATS is linked against BoringSSL and this context-level
+  value remains in effect.
+
   For more information see https://www.openssl.org/docs/man1.1.1/man3/SSL_CTX_set_num_tickets.html
 
 .. ts:cv:: CONFIG proxy.config.ssl.hsts_max_age INT -1
