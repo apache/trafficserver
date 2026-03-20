@@ -3,17 +3,12 @@ meta:
 
 sessions:
   - protocol:
-      - name: http
-        version: '2'
-      - name: tls
+      stack: http2
+      tls:
         version: TLSv1.3
         sni: data.brian.example.com
         proxy-verify-mode: 0
         proxy-provided-cert: true
-      - name: tcp
-      - name: ip
-        version: '4'
-
     transactions:
       #
       # Test 1: Zero length response.
@@ -35,17 +30,12 @@ sessions:
 
         proxy-request:
           protocol:
-            - name: http
-              version: '2'
-            - name: tls
+            stack: http2
+            tls:
               version: TLSv1.2
               sni: data.brian.example.com
               proxy-verify-mode: 1
               proxy-provided-cert: false
-            - name: tcp
-            - name: ip
-              version: '4'
-
           version: '2'
           scheme: https
           method: GET
@@ -105,17 +95,12 @@ sessions:
 
         proxy-request:
           protocol:
-            - name: http
-              version: '2'
-            - name: tls
+            stack: http2
+            tls:
               version: TLSv1.2
               sni: data.brian.example.com
               proxy-verify-mode: 1
               proxy-provided-cert: false
-            - name: tcp
-            - name: ip
-              version: '4'
-
           version: '2'
           scheme: https
           method: GET
@@ -153,17 +138,12 @@ sessions:
             size: 16
 
   - protocol:
-      - name: http
-        version: '2'
-      - name: tls
+      stack: http2
+      tls:
         version: TLSv1.3
         sni: data.brian.example.com
         proxy-verify-mode: 0
         proxy-provided-cert: true
-      - name: tcp
-      - name: ip
-        version: '4'
-
     transactions:
       #
       # Test 3: 8 byte post with a 404 response.
@@ -186,17 +166,12 @@ sessions:
 
         proxy-request:
           protocol:
-            - name: http
-              version: '2'
-            - name: tls
+            stack: http2
+            tls:
               version: TLSv1.2
               sni: data.brian.example.com
               proxy-verify-mode: 1
               proxy-provided-cert: false
-            - name: tcp
-            - name: ip
-              version: '4'
-
           version: '2'
           scheme: https
           method: POST
@@ -266,17 +241,12 @@ sessions:
 
         proxy-request:
           protocol:
-            - name: http
-              version: '2'
-            - name: tls
+            stack: http2
+            tls:
               version: TLSv1.2
               sni: data.brian.example.com
               proxy-verify-mode: 1
               proxy-provided-cert: false
-            - name: tcp
-            - name: ip
-              version: '4'
-
           version: '2'
           scheme: https
           method: POST
@@ -333,17 +303,12 @@ sessions:
 
         proxy-request:
           protocol:
-            - name: http
-              version: '2'
-            - name: tls
+            stack: http2
+            tls:
               version: TLSv1.2
               sni: data.brian.example.com
               proxy-verify-mode: 1
               proxy-provided-cert: false
-            - name: tcp
-            - name: ip
-              version: '4'
-
           version: '2'
           scheme: https
           method: POST
@@ -410,17 +375,12 @@ sessions:
 
         proxy-request:
           protocol:
-            - name: http
-              version: '2'
-            - name: tls
+            stack: http2
+            tls:
               version: TLSv1.2
               sni: data.brian.example.com
               proxy-verify-mode: 1
               proxy-provided-cert: false
-            - name: tcp
-            - name: ip
-              version: '4'
-
           version: '2'
           scheme: https
           method: POST
@@ -477,17 +437,12 @@ sessions:
 
         proxy-request:
           protocol:
-            - name: http
-              version: '2'
-            - name: tls
+            stack: http2
+            tls:
               version: TLSv1.2
               sni: data.brian.example.com
               proxy-verify-mode: 1
               proxy-provided-cert: false
-            - name: tcp
-            - name: ip
-              version: '4'
-
           version: '2'
           scheme: https
           method: POST

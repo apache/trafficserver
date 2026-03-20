@@ -25,12 +25,9 @@ meta:
 
 sessions:
 - protocol:
-  - name: http
-    version: 2
-  - name: tls
-    sni: test_sni
-  - name: tcp
-  - name: ip
+    stack: http2
+    tls:
+      sni: test_sni
   transactions:
   # Stream 1
   - client-request:

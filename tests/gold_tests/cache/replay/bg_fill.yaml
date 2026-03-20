@@ -25,13 +25,9 @@ meta:
   version: '1.0'
 sessions:
 - protocol:
-  - name: http
-    version: 2
-  - name: tls
-    sni: test_sni
-  - name: tcp
-  - name: ip
-    version: 4
+    stack: http2
+    tls:
+      sni: test_sni
   transactions:
   - client-request:
       frames:
@@ -65,13 +61,9 @@ sessions:
             size: 11
 
 - protocol:
-  - name: http
-    version: 2
-  - name: tls
-    sni: test_sni
-  - name: tcp
-  - name: ip
-    version: 4
+    stack: http2
+    tls:
+      sni: test_sni
   transactions:
   - client-request:
       delay: 3s

@@ -18,7 +18,10 @@ meta:
   version: "1.0"
 
 sessions:
-  - protocol: [{ name: tls, sni: www.tls.com }, { name: tcp }, { name: ip }]
+  - protocol:
+      stack: https
+      tls:
+        sni: www.tls.com
 
     transactions:
       - client-request:

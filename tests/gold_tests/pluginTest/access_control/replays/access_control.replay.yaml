@@ -15,7 +15,10 @@
 #  limitations under the License.
 
 sessions:
-- protocol: [{ name: tls, sni: test }]
+- protocol:
+    stack: https
+    tls:
+      sni: test
 
   transactions:
   # 1: Regular request

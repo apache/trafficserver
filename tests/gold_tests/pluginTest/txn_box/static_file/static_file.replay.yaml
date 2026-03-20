@@ -141,7 +141,8 @@ meta:
         - [ Content-Length, 56 ]
 
 sessions:
-- protocol: [ { name: ip, version : 4 } ]
+- protocol:
+    stack: http
   transactions:
   - all: { headers: { fields: [[ uuid, 1 ]]}}
     client-request:
@@ -221,7 +222,8 @@ sessions:
     proxy-response:
       status: 200
 
-- protocol: [ { name: ip, version : 4 } ]
+- protocol:
+    stack: http
   transactions:
   - all: { headers: { fields: [[ uuid, 4 ]]}}
     client-request:
