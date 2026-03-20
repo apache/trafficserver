@@ -169,5 +169,5 @@ ja4h_method::on_request(JAxContext *ctx, TSHttpTxn txnp)
 
   generate_ja4h_fingerprint(fingerprint, datasource);
 
-  ctx->set_fingerprint({fingerprint, JA4H_FINGERPRINT_LENGTH});
+  ctx->set_fingerprint({fingerprint, FINGERPRINT_LENGTH});
 }
