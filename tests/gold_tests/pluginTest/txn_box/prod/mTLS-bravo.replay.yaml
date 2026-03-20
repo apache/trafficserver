@@ -3,9 +3,9 @@ meta:
 
 sessions:
 - protocol:
-  - name: tls
-    sni: "bravo"
-
+    stack: https
+    tls:
+      sni: "bravo"
   transactions:
   - client-request:
       method: "GET"

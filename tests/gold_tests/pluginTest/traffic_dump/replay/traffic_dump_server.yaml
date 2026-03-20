@@ -176,9 +176,10 @@ sessions:
 
     <<: *200_ok_response
 
-- protocol: [ {name: tls, sni: www.tls.com },
-              {name: tcp },
-              {name: ip} ]
+- protocol:
+    stack: https
+    tls:
+      sni: www.tls.com
 
   transactions:
   - client-request:
@@ -193,10 +194,10 @@ sessions:
 
     <<: *200_ok_response
 
-- protocol: [ {name: http, version: 2},
-              {name: tls, sni: www.tls.com},
-              {name: tcp},
-              {name: ip} ]
+- protocol:
+    stack: http2
+    tls:
+      sni: www.tls.com
 
   transactions:
   - client-request:
@@ -221,9 +222,10 @@ sessions:
 
     <<: *200_ok_response
 
-- protocol: [ {name: tls, sni: www.client_only_tls.com},
-              {name: tcp},
-              {name: ip} ]
+- protocol:
+    stack: https
+    tls:
+      sni: www.client_only_tls.com
 
   transactions:
   - client-request:
