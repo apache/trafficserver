@@ -33,11 +33,9 @@ meta:
 sessions:
 
 - protocol:
-  - name: tls
-    sni: test_sni
-  - name: tcp
-  - name: ip
-
+    stack: https
+    tls:
+      sni: test_sni
   transactions:
 
   - client-request:
@@ -75,11 +73,9 @@ sessions:
         - [ X-Response, {value: 'first-response', as: equal } ]
 
 - protocol:
-  - name: tls
-    sni: test_sni
-  - name: tcp
-  - name: ip
-
+    stack: https
+    tls:
+      sni: test_sni
   transactions:
 
   - client-request:
@@ -117,11 +113,9 @@ sessions:
         - [ X-Response, {value: 'second-response', as: equal } ]
 
 - protocol:
-  - name: tls
-    sni: test_sni
-  - name: tcp
-  - name: ip
-
+    stack: https
+    tls:
+      sni: test_sni
   transactions:
 
   - client-request:
@@ -160,14 +154,12 @@ sessions:
 
 
 - protocol:
-  - name: tls
-    sni: test_sni
-  - name: tcp
-  - name: ip
-
-  # Make sure this is the last attempted transaction by giving the above
-  # three transactions, all executed in parallel, a one second head start.
-  # This connection should be aborted.
+    # Make sure this is the last attempted transaction by giving the above
+    # three transactions, all executed in parallel, a one second head start.
+    # This connection should be aborted.
+    stack: https
+    tls:
+      sni: test_sni
   delay: 1s
 
   transactions:
@@ -198,11 +190,9 @@ sessions:
 # Note that this will delay after the previous 1s delay, so this is really
 # a delay of 3s.
 - protocol:
-  - name: tls
-    sni: test_sni
-  - name: tcp
-  - name: ip
-
+    stack: https
+    tls:
+      sni: test_sni
   delay: 2s
 
   transactions:

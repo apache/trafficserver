@@ -19,10 +19,9 @@ meta:
 
 sessions:
 - protocol:
-  - name: http
-    version: 3
-  - name: tls
-    sni: test_sni
+    stack: http3
+    tls:
+      sni: test_sni
   transactions:
 
   - client-request:

@@ -85,9 +85,8 @@ sessions:
 #
 # An HTTPS GET request.
 #
-- protocol: [ {name: tls},
-              {name: tcp},
-              {name: ip} ]
+- protocol:
+    stack: https
 
   transactions:
   - client-request:
@@ -111,9 +110,8 @@ sessions:
 #
 # An HTTPS POST request.
 #
-- protocol: [ {name: tls},
-              {name: tcp},
-              {name: ip} ]
+- protocol:
+    stack: https
 
   transactions:
   - client-request:
@@ -138,10 +136,8 @@ sessions:
 #
 # An HTTP/2 GET request.
 #
-- protocol: [ {name: http, version: 2},
-              {name: tls},
-              {name: tcp},
-              {name: ip} ]
+- protocol:
+    stack: http2
 
   transactions:
 
@@ -166,10 +162,8 @@ sessions:
 #
 # An HTTP/2 POST request.
 #
-- protocol: [ {name: http, version: 2},
-              {name: tls},
-              {name: tcp},
-              {name: ip} ]
+- protocol:
+    stack: http2
 
   transactions:
 

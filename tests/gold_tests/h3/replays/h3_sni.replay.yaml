@@ -19,10 +19,9 @@ meta:
 
 sessions:
 - protocol:
-  - name: http
-    version: 3
-  - name: tls
-    sni: test_sni
+    stack: http3
+    tls:
+      sni: test_sni
   transactions:
 
   - client-request:
@@ -46,10 +45,8 @@ sessions:
       status: 200
 
 - protocol:
-  - name: http
-    version: 3
-  # Note that the SNI is not specified for this connection.
-  - name: tls
+    # Note that the SNI is not specified for this connection.
+    stack: http3
   transactions:
   - client-request:
       version: "3"
