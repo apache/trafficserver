@@ -26,116 +26,93 @@
 #include <algorithm>
 #include <cctype>
 
-Extractor::Extractor(TSHttpTxn txnp) : _txn(txnp)
+static void
+generate_ja4h_a(char *out, Datasource &datasource)
 {
-  TSHttpTxnClientReqGet(txnp, &(this->_request), &(this->_req_hdr));
-}
-
-Extractor::~Extractor()
-{
-  if (this->_request != nullptr) {
-    TSHandleMLocRelease(this->_request, TS_NULL_MLOC, this->_req_hdr);
-  }
-}
-
-std::string_view
-Extractor::get_method()
-{
-  if (this->_request == nullptr) {
-    return "";
-  }
-
-  int         method_len;
-  const char *method = TSHttpHdrMethodGet(this->_request, this->_req_hdr, &method_len);
-
-  return {method, static_cast<size_t>(method_len)};
-}
-
-int
-Extractor::get_version()
-{
-  if (TSHttpTxnClientProtocolStackContains(this->_txn, "h2")) {
-    return 2 << 16;
-  } else if (TSHttpTxnClientProtocolStackContains(this->_txn, "h3")) {
-    return 3 << 16;
+  std::string_view method = datasource.get_method();
+  if (method.length() >= 2) {
+    out[0] = std::tolower(method[0]);
+    out[1] = std::tolower(method[1]);
   } else {
-    return TSHttpHdrVersionGet(this->_request, this->_req_hdr);
+    // This case seems to be undefined on the spec
+    out[0] = 'x';
+    out[1] = 'x';
+  }
+  int version     = datasource.get_version();
+  out[2]          = 0x30 | (version >> 16);
+  out[3]          = 0x30 | (version & 0xFFFF);
+  out[4]          = datasource.has_cookie_field() ? 'c' : 'n';
+  out[5]          = datasource.has_referer_field() ? 'r' : 'n';
+  int field_count = datasource.get_field_count();
+  if (field_count < 100) {
+    out[6] = 0x30 | (field_count / 10);
+    out[7] = 0x30 | (field_count % 10);
+  } else {
+    out[6] = '9';
+    out[7] = '9';
+  }
+  std::string_view accept_lang = datasource.get_accept_language();
+  if (accept_lang.empty()) {
+    out[8]  = '0';
+    out[9]  = '0';
+    out[10] = '0';
+    out[11] = '0';
+  } else {
+    for (int i = 0, j = 0; i < 4; ++i) {
+      while (static_cast<size_t>(j) < accept_lang.size() && accept_lang[j] < 'A' && accept_lang[j] != ';') {
+        ++j;
+      }
+      if (static_cast<size_t>(j) == accept_lang.size() || accept_lang[j] == ';') {
+        out[8 + i] = '0';
+      } else {
+        out[8 + i] = std::tolower(accept_lang[j]);
+        ++j;
+      }
+    }
   }
 }
 
-bool
-Extractor::has_cookie_field()
+static void
+generate_ja4h_b(char *out, Datasource &datasource)
 {
-  TSMLoc mloc = TSMimeHdrFieldFind(this->_request, this->_req_hdr, TS_MIME_FIELD_COOKIE, TS_MIME_LEN_COOKIE);
-  if (mloc) {
-    TSHandleMLocRelease(this->_request, this->_req_hdr, mloc);
+  unsigned char hash[32];
+
+  datasource.get_headers_hash(hash);
+
+  for (int i = 0; i < 6; ++i) {
+    unsigned int h = hash[i] >> 4;
+    unsigned int l = hash[i] & 0x0F;
+    out[i * 2]     = h <= 9 ? ('0' + h) : ('a' + h - 10);
+    out[i * 2 + 1] = l <= 9 ? ('0' + l) : ('a' + l - 10);
   }
-  return mloc != TS_NULL_MLOC;
 }
 
-bool
-Extractor::has_referer_field()
+static void
+generate_ja4h_c(char *out, Datasource & /* datasource ATS_UNUSED */)
 {
-  TSMLoc mloc = TSMimeHdrFieldFind(this->_request, this->_req_hdr, TS_MIME_FIELD_REFERER, TS_MIME_LEN_REFERER);
-  if (mloc) {
-    TSHandleMLocRelease(this->_request, this->_req_hdr, mloc);
+  // Not implemented
+  for (int i = 0; i < 12; ++i) {
+    out[i] = '0';
   }
-  return mloc != TS_NULL_MLOC;
 }
 
-int
-Extractor::get_field_count()
+static void
+generate_ja4h_d(char *out, Datasource & /* datasource ATS_UNUSED */)
 {
-  return TSMimeHdrFieldsCount(this->_request, this->_req_hdr);
-}
-
-std::string_view
-Extractor::get_accept_language()
-{
-  TSMLoc mloc = TSMimeHdrFieldFind(this->_request, this->_req_hdr, TS_MIME_FIELD_ACCEPT_LANGUAGE, TS_MIME_LEN_ACCEPT_LANGUAGE);
-  if (mloc == TS_NULL_MLOC) {
-    return {};
+  // Not implemented
+  for (int i = 0; i < 12; ++i) {
+    out[i] = '0';
   }
-  int         value_len;
-  const char *value = TSMimeHdrFieldValueStringGet(this->_request, this->_req_hdr, mloc, 0, &value_len);
-  TSHandleMLocRelease(this->_request, this->_req_hdr, mloc);
-  return {value, static_cast<size_t>(value_len)};
 }
 
 void
-Extractor::get_headers_hash(unsigned char out[32])
+generate_ja4h_fingerprint(char *out, Datasource &datasource)
 {
-  SHA256_CTX sha256ctx;
-  SHA256_Init(&sha256ctx);
-
-  TSMLoc field_loc = TSMimeHdrFieldGet(this->_request, this->_req_hdr, 0);
-
-  while (field_loc != TS_NULL_MLOC) {
-    int   field_name_len;
-    char *field_name = const_cast<char *>(TSMimeHdrFieldNameGet(this->_request, this->_req_hdr, field_loc, &field_name_len));
-    bool  do_hash    = true;
-    if (field_name_len == TS_MIME_LEN_COOKIE) {
-      auto field_name_sv = std::string_view(field_name, static_cast<size_t>(field_name_len));
-      if (std::equal(field_name_sv.begin(), field_name_sv.end(), std::string_view("cookie").begin(),
-                     [](char c1, char c2) { return std::tolower(c1) == c2; })) {
-        do_hash = false;
-      };
-    } else if (field_name_len == TS_MIME_LEN_REFERER) {
-      auto field_name_sv = std::string_view(field_name, static_cast<size_t>(field_name_len));
-      if (std::equal(field_name_sv.begin(), field_name_sv.end(), std::string_view("referer").begin(),
-                     [](char c1, char c2) { return std::tolower(c1) == c2; })) {
-        do_hash = false;
-      }
-    }
-
-    if (do_hash) {
-      SHA256_Update(&sha256ctx, field_name, field_name_len);
-    }
-
-    TSMLoc next_field_loc = TSMimeHdrFieldNext(this->_request, this->_req_hdr, field_loc);
-    TSHandleMLocRelease(this->_request, this->_req_hdr, field_loc);
-    field_loc = next_field_loc;
-  }
-
-  SHA256_Final(out, &sha256ctx);
+  generate_ja4h_a(&(out[PART_A_POSITION]), datasource);
+  out[DELIMITER_1_POSITION] = DELIMITER;
+  generate_ja4h_b(&(out[PART_B_POSITION]), datasource);
+  out[DELIMITER_2_POSITION] = DELIMITER;
+  generate_ja4h_c(&(out[PART_C_POSITION]), datasource);
+  out[DELIMITER_3_POSITION] = DELIMITER;
+  generate_ja4h_d(&(out[PART_D_POSITION]), datasource);
 }

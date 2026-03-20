@@ -29,13 +29,24 @@ add_atsplugin(
   ja4/tls_client_hello_summary.cc
   ja4h/ja4h_method.cc
   ja4h/ja4h.cc
+  ja4h/datasource.cc
 )
 target_link_libraries(jax_fingerprint PRIVATE OpenSSL::Crypto OpenSSL::SSL)
 verify_global_plugin(jax_fingerprint)
 
 if(BUILD_TESTING)
-  add_executable(test_jax ja3/test_ja3.cc ja3/ja3_utils.cc ja4/test_ja4.cc ja4/ja4.cc ja4/tls_client_hello_summary.cc)
-  target_link_libraries(test_jax PRIVATE Catch2::Catch2WithMain)
+  add_executable(
+    test_jax
+    ja3/test_ja3.cc
+    ja3/ja3_utils.cc
+    ja4/test_ja4.cc
+    ja4/ja4.cc
+    ja4/tls_client_hello_summary.cc
+    ja4h/test_ja4h.cc
+    ja4h/ja4h.cc
+    ja4h/datasource.cc
+  )
+  target_link_libraries(test_jax PRIVATE Catch2::Catch2WithMain OpenSSL::SSL)
 
   add_catch2_test(NAME test_jax COMMAND test_jax)
 endif()

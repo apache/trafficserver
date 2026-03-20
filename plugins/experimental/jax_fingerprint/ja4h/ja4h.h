@@ -22,24 +22,20 @@
 
 #pragma once
 
-#include "ts/ts.h"
-#include <string_view>
+#include "datasource.h"
 
-class Extractor
-{
-public:
-  Extractor(TSHttpTxn txnp);
-  ~Extractor();
-  std::string_view get_method();
-  int              get_version();
-  bool             has_cookie_field();
-  bool             has_referer_field();
-  int              get_field_count();
-  std::string_view get_accept_language();
-  void             get_headers_hash(unsigned char out[32]);
+constexpr int    FINGERPRINT_LENGTH   = 51;
+constexpr size_t PART_A_POSITION      = 0;
+constexpr size_t PART_B_POSITION      = 13;
+constexpr size_t PART_C_POSITION      = 26;
+constexpr size_t PART_D_POSITION      = 39;
+constexpr size_t PART_A_LENGTH        = 12;
+constexpr size_t PART_B_LENGTH        = 12;
+constexpr size_t PART_C_LENGTH        = 12;
+constexpr size_t PART_D_LENGTH        = 12;
+constexpr char   DELIMITER            = '-';
+constexpr size_t DELIMITER_1_POSITION = 12;
+constexpr size_t DELIMITER_2_POSITION = 25;
+constexpr size_t DELIMITER_3_POSITION = 38;
 
-private:
-  TSHttpTxn _txn;
-  TSMBuffer _request = nullptr;
-  TSMLoc    _req_hdr = nullptr;
-};
+void generate_ja4h_fingerprint(char *out, Datasource &datasource);
