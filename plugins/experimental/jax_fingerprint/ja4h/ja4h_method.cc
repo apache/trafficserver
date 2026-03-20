@@ -25,6 +25,9 @@
 #include "../context.h"
 #include "ja4h_method.h"
 #include "ja4h.h"
+#include "datasource.h"
+
+#include "openssl/sha.h"
 
 namespace ja4h_method
 {
@@ -37,91 +40,134 @@ struct Method method = {
   on_request,
 };
 
-} // namespace ja4h_method
-
-constexpr int JA4H_FINGERPRINT_LENGTH = 51;
-
-static std::string
-get_fingerprint(TSHttpTxn txnp)
+class TxnDatasource : public Datasource
 {
-  char      fingerprint[JA4H_FINGERPRINT_LENGTH];
-  Extractor ex(txnp);
-  // JA4H_a
-  std::string_view method = ex.get_method();
-  if (method.length() >= 2) {
-    fingerprint[0] = std::tolower(method[0]);
-    fingerprint[1] = std::tolower(method[1]);
-  } else {
-    // This case seems to be undefined on the spec
-    fingerprint[0] = 'x';
-    fingerprint[1] = 'x';
-  }
-  int version     = ex.get_version();
-  fingerprint[2]  = 0x30 | (version >> 16);
-  fingerprint[3]  = 0x30 | (version & 0xFFFF);
-  fingerprint[4]  = ex.has_cookie_field() ? 'c' : 'n';
-  fingerprint[5]  = ex.has_referer_field() ? 'c' : 'n';
-  int field_count = ex.get_field_count();
-  if (field_count < 100) {
-    fingerprint[6] = 0x30 | (field_count / 10);
-    fingerprint[7] = 0x30 | (field_count % 10);
-  } else {
-    fingerprint[6] = '9';
-    fingerprint[7] = '9';
-  }
-  std::string_view accept_lang = ex.get_accept_language();
-  if (accept_lang.empty()) {
-    fingerprint[8]  = '0';
-    fingerprint[9]  = '0';
-    fingerprint[10] = '0';
-    fingerprint[11] = '0';
-  } else {
-    for (int i = 0, j = 0; i < 4; ++i) {
-      while (static_cast<size_t>(j) < accept_lang.size() && accept_lang[j] < 'A' && accept_lang[j] != ';') {
-        ++j;
-      }
-      if (static_cast<size_t>(j) == accept_lang.size() || accept_lang[j] == ';') {
-        fingerprint[8 + i] = '0';
-      } else {
-        fingerprint[8 + i] = std::tolower(accept_lang[j]);
-        ++j;
-      }
-    }
-  }
+public:
+  TxnDatasource(TSHttpTxn txnp);
+  ~TxnDatasource();
+  std::string_view get_method() override;
+  int              get_version() override;
+  bool             has_cookie_field() override;
+  bool             has_referer_field() override;
+  int              get_field_count() override;
+  std::string_view get_accept_language() override;
+  void             get_headers_hash(unsigned char out[32]) override;
 
-  fingerprint[12] = '_';
+private:
+  TSHttpTxn _txn;
+  TSMBuffer _request = nullptr;
+  TSMLoc    _req_hdr = nullptr;
+};
 
-  // JA4H_b
-  unsigned char hash[32];
-  ex.get_headers_hash(hash);
-  for (int i = 0; i < 6; ++i) {
-    unsigned int h                = hash[i] >> 4;
-    unsigned int l                = hash[i] & 0x0F;
-    fingerprint[13 + (i * 2)]     = h <= 9 ? (0x30 + h) : (0x60 + h - 10);
-    fingerprint[13 + (i * 2) + 1] = l <= 9 ? (0x30 + l) : (0x60 + l - 10);
-  }
-
-  fingerprint[25] = '_';
-
-  // JA4H_c
-  // Not implemented
-  for (int i = 0; i < 12; ++i) {
-    fingerprint[26 + i] = '0';
-  }
-
-  fingerprint[38] = '_';
-
-  // JA4H_d
-  // Not implemented
-  for (int i = 0; i < 12; ++i) {
-    fingerprint[39 + i] = '0';
-  }
-
-  return {fingerprint, JA4H_FINGERPRINT_LENGTH};
+TxnDatasource::TxnDatasource(TSHttpTxn txnp) : _txn(txnp)
+{
+  TSHttpTxnClientReqGet(txnp, &(this->_request), &(this->_req_hdr));
 }
+
+TxnDatasource::~TxnDatasource()
+{
+  if (this->_request != nullptr) {
+    TSHandleMLocRelease(this->_request, TS_NULL_MLOC, this->_req_hdr);
+  }
+}
+
+std::string_view
+TxnDatasource::get_method()
+{
+  if (this->_request == nullptr) {
+    return "";
+  }
+
+  int         method_len;
+  const char *method = TSHttpHdrMethodGet(this->_request, this->_req_hdr, &method_len);
+
+  return {method, static_cast<size_t>(method_len)};
+}
+
+int
+TxnDatasource::get_version()
+{
+  if (TSHttpTxnClientProtocolStackContains(this->_txn, "h2")) {
+    return 2 << 16;
+  } else if (TSHttpTxnClientProtocolStackContains(this->_txn, "h3")) {
+    return 3 << 16;
+  } else {
+    return TSHttpHdrVersionGet(this->_request, this->_req_hdr);
+  }
+}
+
+bool
+TxnDatasource::has_cookie_field()
+{
+  TSMLoc mloc = TSMimeHdrFieldFind(this->_request, this->_req_hdr, TS_MIME_FIELD_COOKIE, TS_MIME_LEN_COOKIE);
+  if (mloc) {
+    TSHandleMLocRelease(this->_request, this->_req_hdr, mloc);
+  }
+  return mloc != TS_NULL_MLOC;
+}
+
+bool
+TxnDatasource::has_referer_field()
+{
+  TSMLoc mloc = TSMimeHdrFieldFind(this->_request, this->_req_hdr, TS_MIME_FIELD_REFERER, TS_MIME_LEN_REFERER);
+  if (mloc) {
+    TSHandleMLocRelease(this->_request, this->_req_hdr, mloc);
+  }
+  return mloc != TS_NULL_MLOC;
+}
+
+int
+TxnDatasource::get_field_count()
+{
+  return TSMimeHdrFieldsCount(this->_request, this->_req_hdr);
+}
+
+std::string_view
+TxnDatasource::get_accept_language()
+{
+  TSMLoc mloc = TSMimeHdrFieldFind(this->_request, this->_req_hdr, TS_MIME_FIELD_ACCEPT_LANGUAGE, TS_MIME_LEN_ACCEPT_LANGUAGE);
+  if (mloc == TS_NULL_MLOC) {
+    return {};
+  }
+  int         value_len;
+  const char *value = TSMimeHdrFieldValueStringGet(this->_request, this->_req_hdr, mloc, 0, &value_len);
+  TSHandleMLocRelease(this->_request, this->_req_hdr, mloc);
+  return {value, static_cast<size_t>(value_len)};
+}
+
+void
+TxnDatasource::get_headers_hash(unsigned char out[32])
+{
+  SHA256_CTX sha256ctx;
+  SHA256_Init(&sha256ctx);
+
+  TSMLoc field_loc = TSMimeHdrFieldGet(this->_request, this->_req_hdr, 0);
+
+  while (field_loc != TS_NULL_MLOC) {
+    int   field_name_len;
+    char *field_name = const_cast<char *>(TSMimeHdrFieldNameGet(this->_request, this->_req_hdr, field_loc, &field_name_len));
+
+    if (this->_should_include_field({field_name, static_cast<size_t>(field_name_len)})) {
+      SHA256_Update(&sha256ctx, field_name, field_name_len);
+    }
+
+    TSMLoc next_field_loc = TSMimeHdrFieldNext(this->_request, this->_req_hdr, field_loc);
+    TSHandleMLocRelease(this->_request, this->_req_hdr, field_loc);
+    field_loc = next_field_loc;
+  }
+
+  SHA256_Final(out, &sha256ctx);
+}
+
+} // namespace ja4h_method
 
 void
 ja4h_method::on_request(JAxContext *ctx, TSHttpTxn txnp)
 {
-  ctx->set_fingerprint(get_fingerprint(txnp));
+  char          fingerprint[FINGERPRINT_LENGTH];
+  TxnDatasource datasource{txnp};
+
+  generate_ja4h_fingerprint(fingerprint, datasource);
+
+  ctx->set_fingerprint({fingerprint, JA4H_FINGERPRINT_LENGTH});
 }
