@@ -172,6 +172,17 @@ server_groups_list                       Inbound   Specifies an override to the 
                                                    `OpenSSL SSL_CTX_set_groups_list <https://docs.openssl.org/3.5/man3/SSL_CTX_set1_curves/>`_
                                                    documentation.
 
+ssl_ticket_enabled                       Inbound   Specifies an override to the global
+                                                   :ts:cv:`proxy.config.ssl.server.session_ticket.enable`
+                                                   :file:`records.yaml` configuration. Set this to :code:`1` to enable
+                                                   session tickets or :code:`0` to disable them for matching inbound TLS
+                                                   connections.
+
+ssl_ticket_number                        Inbound   Specifies an override to the global
+                                                   :ts:cv:`proxy.config.ssl.server.session_ticket.number`
+                                                   :file:`records.yaml` configuration. This controls how many TLSv1.3
+                                                   session tickets are issued for matching inbound TLS connections.
+
 host_sni_policy                          Inbound   One of the values :code:`DISABLED`, :code:`PERMISSIVE`, or :code:`ENFORCED`.
 
                                                    If not specified, the value of :ts:cv:`proxy.config.http.host_sni_policy` is used.

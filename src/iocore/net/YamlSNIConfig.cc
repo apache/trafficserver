@@ -164,6 +164,12 @@ YamlSNIConfig::Item::populate_sni_actions(action_vector_t &actions)
   if (!server_groups_list.empty()) {
     actions.push_back(std::make_unique<ServerGroupsList>(server_groups_list));
   }
+  if (ssl_ticket_enabled.has_value()) {
+    actions.push_back(std::make_unique<ServerSessionTicketEnabled>(ssl_ticket_enabled.value()));
+  }
+  if (ssl_ticket_number.has_value()) {
+    actions.push_back(std::make_unique<ServerSessionTicketNumber>(ssl_ticket_number.value()));
+  }
   if (http2_buffer_water_mark.has_value()) {
     actions.push_back(std::make_unique<HTTP2BufferWaterMark>(http2_buffer_water_mark.value()));
   }
@@ -230,6 +236,8 @@ std::set<std::string> valid_sni_config_keys = {TS_fqdn,
                                                TS_server_TLSv1_3_cipher_suites,
 #endif
                                                TS_server_groups_list,
+                                               TS_ssl_ticket_enabled,
+                                               TS_ssl_ticket_number,
                                                TS_http2,
                                                TS_http2_buffer_water_mark,
                                                TS_http2_initial_window_size_in,
@@ -464,6 +472,12 @@ template <> struct convert<YamlSNIConfig::Item> {
     }
     if (node[TS_server_groups_list]) {
       item.server_groups_list = node[TS_server_groups_list].as<std::string>();
+    }
+    if (node[TS_ssl_ticket_enabled]) {
+      item.ssl_ticket_enabled = node[TS_ssl_ticket_enabled].as<int>();
+    }
+    if (node[TS_ssl_ticket_number]) {
+      item.ssl_ticket_number = node[TS_ssl_ticket_number].as<int>();
     }
     if (node[TS_ip_allow]) {
       item.ip_allow = node[TS_ip_allow].as<std::string>();

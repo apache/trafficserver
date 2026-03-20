@@ -28,6 +28,10 @@
 #                               The location of the certificate file is relative to proxy.config.ssl.server.cert.path directory.
 #    client_key               - sets the file containing the client private key that corresponds to the certificate for the outbound connection.
 #    client_sni_policy        - policy of SNI on outbound connection.
+#    ssl_ticket_enabled       - enables or disables session tickets for matched inbound TLS connections; parameters = 1 or 0.
+#                               This overrides proxy.config.ssl.server.session_ticket.enable.
+#    ssl_ticket_number        - sets the number of TLSv1.3 session tickets issued for matched inbound TLS connections;
+#                               parameters = INTEGER. This overrides proxy.config.ssl.server.session_ticket.number.
 #    http2                    - adds or removes HTTP/2 (H2) from the protocol list advertised by ATS; parameter required = None, parameters = on or off
 #    tunnel_route             - sets the e2e tunnel route
 #    forward_route            - destination as an FQDN and port, separated by a colon :.
