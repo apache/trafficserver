@@ -922,6 +922,10 @@ HttpSM::state_watch_for_client_abort(int event, void *data)
         vc_table.cleanup_entry(_ua.get_entry());
         _ua.set_entry(nullptr);
         tunnel.kill_tunnel();
+        // Drop any queued multiplexed origin connect immediately so a
+        // completed handshake cannot revive this transaction after the
+        // client has already aborted.
+        this->cancel_pending_server_connection();
         terminate_sm = true; // Just die already, the requester is gone
         set_ua_abort(HttpTransact::ABORTED, event);
       }
@@ -955,6 +959,7 @@ HttpSM::state_watch_for_client_abort(int event, void *data)
     ATS_PROBE1(milestone_ua_close, sm_id);
     milestones[TS_MILESTONE_UA_CLOSE] = ink_get_hrtime();
     set_ua_abort(HttpTransact::ABORTED, event);
+    this->cancel_pending_server_connection();
 
     terminate_sm = true;
     break;
