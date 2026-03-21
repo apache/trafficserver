@@ -74,20 +74,41 @@ Statement::initialize_hooks()
 }
 
 int
+Statement::acquire_state_slot(TSUserArgType type)
+{
+  if (type == TS_USER_ARGS_SSN) {
+    static int ssn_slot_index = []() -> int {
+      int index = -1;
+      if (TS_ERROR == TSUserArgIndexReserve(TS_USER_ARGS_SSN, PLUGIN_NAME, "HRW ssn variables", &index)) {
+        TSError("[%s] failed to reserve ssn user arg index", PLUGIN_NAME);
+      }
+      return index;
+    }();
+
+    return ssn_slot_index;
+  } else {
+    static int txn_slot_index = []() -> int {
+      int index = -1;
+      if (TS_ERROR == TSUserArgIndexReserve(TS_USER_ARGS_TXN, PLUGIN_NAME, "HRW txn variables", &index)) {
+        TSError("[%s] failed to reserve txn user arg index", PLUGIN_NAME);
+      }
+      return index;
+    }();
+
+    return txn_slot_index;
+  }
+}
+
+int
 Statement::acquire_txn_slot()
 {
-  // Only call the index reservation once per plugin load
-  static int txn_slot_index = []() -> int {
-    int index = -1;
+  return acquire_state_slot(TS_USER_ARGS_TXN);
+}
 
-    if (TS_ERROR == TSUserArgIndexReserve(TS_USER_ARGS_TXN, PLUGIN_NAME, "HRW txn variables", &index)) {
-      TSError("[%s] failed to reserve user arg index", PLUGIN_NAME);
-      return -1; // Fallback value
-    }
-    return index;
-  }();
-
-  return txn_slot_index;
+int
+Statement::acquire_ssn_slot()
+{
+  return acquire_state_slot(TS_USER_ARGS_SSN);
 }
 
 int

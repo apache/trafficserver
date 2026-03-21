@@ -1,0 +1,9 @@
+SESSION_VARS {
+    ssn_bool_0: bool;
+}
+
+REMAP {
+    if ssn_bool_0 {
+        inbound.req.X-suspicious = "true";
+    }
+}

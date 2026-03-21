@@ -1409,7 +1409,7 @@ OperatorSetStateFlag::initialize(Parser &p)
   _flag_ix = strtol(p.get_arg().c_str(), nullptr, 10);
 
   if (_flag_ix < 0 || _flag_ix >= NUM_STATE_FLAGS) {
-    TSError("[%s] state flag with index %d is out of range", PLUGIN_NAME, _flag_ix);
+    TSError("[%s] %s flag with index %d is out of range", PLUGIN_NAME, _scope_label(_scope), _flag_ix);
     return;
   }
 
@@ -1443,16 +1443,16 @@ OperatorSetStateFlag::initialize_hooks()
 bool
 OperatorSetStateFlag::exec(const Resources &res) const
 {
-  if (!res.state.txnp) {
-    TSError("[%s] OperatorSetStateFlag() failed. Transaction is null", PLUGIN_NAME);
+  if (!_check_state_handle(_scope, res)) {
+    TSError("[%s] OperatorSetStateFlag() failed. %s handle is null", PLUGIN_NAME, _scope_label(_scope));
     return false;
   }
 
-  Dbg(pi_dbg_ctl, "   Setting state flag %d to %d", _flag_ix, _flag);
+  Dbg(pi_dbg_ctl, "   Setting %s flag %d to %d", _scope_label(_scope), _flag_ix, _flag);
 
-  auto data = reinterpret_cast<uint64_t>(TSUserArgGet(res.state.txnp, _txn_slot));
+  auto data = _get_state_data(_scope, res);
 
-  TSUserArgSet(res.state.txnp, _txn_slot, reinterpret_cast<void *>(_flag ? data | _mask : data & _mask));
+  _set_state_data(_scope, res, _flag ? data | _mask : data & _mask);
 
   return true;
 }
@@ -1465,7 +1465,7 @@ OperatorSetStateInt8::initialize(Parser &p)
   _byte_ix = strtol(p.get_arg().c_str(), nullptr, 10);
 
   if (_byte_ix < 0 || _byte_ix >= NUM_STATE_INT8S) {
-    TSError("[%s] state int8 with index %d is out of range", PLUGIN_NAME, _byte_ix);
+    TSError("[%s] %s int8 with index %d is out of range", PLUGIN_NAME, _scope_label(_scope), _byte_ix);
     return;
   }
 
@@ -1474,7 +1474,7 @@ OperatorSetStateInt8::initialize(Parser &p)
     int v = _value.get_int_value();
 
     if (v < 0 || v > 255) {
-      TSError("[%s] state int8 value %d is out of range", PLUGIN_NAME, v);
+      TSError("[%s] %s int8 value %d is out of range", PLUGIN_NAME, _scope_label(_scope), v);
       return;
     }
   }
@@ -1497,12 +1497,12 @@ OperatorSetStateInt8::initialize_hooks()
 bool
 OperatorSetStateInt8::exec(const Resources &res) const
 {
-  if (!res.state.txnp) {
-    TSError("[%s] OperatorSetStateInt8() failed. Transaction is null", PLUGIN_NAME);
+  if (!_check_state_handle(_scope, res)) {
+    TSError("[%s] OperatorSetStateInt8() failed. %s handle is null", PLUGIN_NAME, _scope_label(_scope));
     return false;
   }
 
-  auto ptr = reinterpret_cast<uint64_t>(TSUserArgGet(res.state.txnp, _txn_slot));
+  auto ptr = _get_state_data(_scope, res);
   int  val = 0;
 
   if (_value.has_conds()) { // If there are conditions, we need to evaluate them, which gives us a string
@@ -1511,7 +1511,7 @@ OperatorSetStateInt8::exec(const Resources &res) const
     _value.append_value(v, res);
     val = strtol(v.c_str(), nullptr, 10);
     if (val < 0 || val > 255) {
-      TSWarning("[%s] state int8 value %d is out of range", PLUGIN_NAME, val);
+      TSWarning("[%s] %s int8 value %d is out of range", PLUGIN_NAME, _scope_label(_scope), val);
       return false;
     }
   } else {
@@ -1519,10 +1519,10 @@ OperatorSetStateInt8::exec(const Resources &res) const
     val = _value.get_int_value();
   }
 
-  Dbg(pi_dbg_ctl, "   Setting state int8 %d to %d", _byte_ix, val);
+  Dbg(pi_dbg_ctl, "   Setting %s int8 %d to %d", _scope_label(_scope), _byte_ix, val);
   ptr &= ~STATE_INT8_MASKS[_byte_ix]; // Clear any old value
   ptr |= (static_cast<uint64_t>(val) << (NUM_STATE_FLAGS + _byte_ix * 8));
-  TSUserArgSet(res.state.txnp, _txn_slot, reinterpret_cast<void *>(ptr));
+  _set_state_data(_scope, res, ptr);
 
   return true;
 }
@@ -1535,7 +1535,7 @@ OperatorSetStateInt16::initialize(Parser &p)
   int ix = strtol(p.get_arg().c_str(), nullptr, 10);
 
   if (ix != 0) {
-    TSError("[%s] state int16 with index %d is out of range", PLUGIN_NAME, ix);
+    TSError("[%s] %s int16 with index %d is out of range", PLUGIN_NAME, _scope_label(_scope), ix);
     return;
   }
 
@@ -1544,7 +1544,7 @@ OperatorSetStateInt16::initialize(Parser &p)
     int v = _value.get_int_value();
 
     if (v < 0 || v > 65535) {
-      TSError("[%s] state int16 value %d is out of range", PLUGIN_NAME, v);
+      TSError("[%s] %s int16 value %d is out of range", PLUGIN_NAME, _scope_label(_scope), v);
       return;
     }
   }
@@ -1567,12 +1567,12 @@ OperatorSetStateInt16::initialize_hooks()
 bool
 OperatorSetStateInt16::exec(const Resources &res) const
 {
-  if (!res.state.txnp) {
-    TSError("[%s] OperatorSetStateInt16() failed. Transaction is null", PLUGIN_NAME);
+  if (!_check_state_handle(_scope, res)) {
+    TSError("[%s] OperatorSetStateInt16() failed. %s handle is null", PLUGIN_NAME, _scope_label(_scope));
     return false;
   }
 
-  auto ptr = reinterpret_cast<uint64_t>(TSUserArgGet(res.state.txnp, _txn_slot));
+  auto ptr = _get_state_data(_scope, res);
   int  val = 0;
 
   if (_value.has_conds()) { // If there are conditions, we need to evaluate them, which gives us a string
@@ -1581,7 +1581,7 @@ OperatorSetStateInt16::exec(const Resources &res) const
     _value.append_value(v, res);
     val = strtol(v.c_str(), nullptr, 10);
     if (val < 0 || val > 65535) {
-      TSWarning("[%s] state int8 value %d is out of range", PLUGIN_NAME, val);
+      TSWarning("[%s] %s int16 value %d is out of range", PLUGIN_NAME, _scope_label(_scope), val);
       return false;
     }
   } else {
@@ -1589,10 +1589,10 @@ OperatorSetStateInt16::exec(const Resources &res) const
     val = _value.get_int_value();
   }
 
-  Dbg(pi_dbg_ctl, "   Setting state int16 to %d", val);
+  Dbg(pi_dbg_ctl, "   Setting %s int16 to %d", _scope_label(_scope), val);
   ptr &= ~STATE_INT16_MASK; // Clear any old value
   ptr |= (static_cast<uint64_t>(val) << 48);
-  TSUserArgSet(res.state.txnp, _txn_slot, reinterpret_cast<void *>(ptr));
+  _set_state_data(_scope, res, ptr);
 
   return true;
 }

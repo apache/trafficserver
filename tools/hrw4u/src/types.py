@@ -121,15 +121,33 @@ class SuffixGroup(Enum):
                     f"Must be one of: {', '.join(sorted(self.value))}")
 
 
-class VarType(Enum):
-    BOOL = ("bool", "FLAG", "set-state-flag", 16, "Boolean variable type - stores true/false values")
-    INT8 = ("int8", "INT8", "set-state-int8", 4, "8-bit integer variable type - stores values from 0 to 255")
-    INT16 = ("int16", "INT16", "set-state-int16", 1, "16-bit integer variable type - stores values from 0 to 65535")
+class VarScope(Enum):
+    TXN = ("STATE", "set-state", "Transaction-scoped variable")
+    SESSION = ("SESSION", "set-session", "Session-scoped variable")
 
-    def __init__(self, name: str, cond_tag: str, op_tag: str, limit: int, description: str) -> None:
+    def __init__(self, cond_prefix: str, op_prefix: str, description: str) -> None:
+        self._cond_prefix = cond_prefix
+        self._op_prefix = op_prefix
+        self._description = description
+
+    @property
+    def cond_prefix(self) -> str:
+        return self._cond_prefix
+
+    @property
+    def op_prefix(self) -> str:
+        return self._op_prefix
+
+
+class VarType(Enum):
+    BOOL = ("bool", "FLAG", "flag", 16, "Boolean variable type - stores true/false values")
+    INT8 = ("int8", "INT8", "int8", 4, "8-bit integer variable type - stores values from 0 to 255")
+    INT16 = ("int16", "INT16", "int16", 1, "16-bit integer variable type - stores values from 0 to 65535")
+
+    def __init__(self, name: str, cond_tag: str, op_suffix: str, limit: int, description: str) -> None:
         self._name = name
         self._cond_tag = cond_tag
-        self._op_tag = op_tag
+        self._op_suffix = op_suffix
         self._limit = limit
         self._description = description
 
@@ -138,8 +156,8 @@ class VarType(Enum):
         return self._cond_tag
 
     @property
-    def op_tag(self) -> str:
-        return self._op_tag
+    def op_suffix(self) -> str:
+        return self._op_suffix
 
     @property
     def limit(self) -> int:
@@ -165,12 +183,13 @@ class VarType(Enum):
 class Symbol:
     var_type: VarType
     slot: int
+    scope: VarScope = VarScope.TXN
 
     def as_cond(self) -> str:
-        return f"%{{STATE-{self.var_type.cond_tag}:{self.slot}}}"
+        return f"%{{{self.scope.cond_prefix}-{self.var_type.cond_tag}:{self.slot}}}"
 
     def as_operator(self, value: str) -> str:
-        return f"{self.var_type.op_tag} {self.slot} {value}"
+        return f"{self.scope.op_prefix}-{self.var_type.op_suffix} {self.slot} {value}"
 
 
 class MapParams:
