@@ -26,14 +26,17 @@ add_atsplugin(
   ja3/ja3_utils.cc
   ja4/ja4_method.cc
   ja4/ja4.cc
+  ja4/datasource.cc
   ja4/tls_client_hello_summary.cc
   ja4h/ja4h_method.cc
   ja4h/ja4h.cc
   ja4h/datasource.cc
+  ja4_common/utils.cc
 )
 target_link_libraries(jax_fingerprint PRIVATE OpenSSL::Crypto OpenSSL::SSL)
-verify_global_plugin(jax_fingerprint)
 target_include_directories(jax_fingerprint BEFORE PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+verify_global_plugin(jax_fingerprint)
+verify_remap_plugin(jax_fingerprint)
 
 if(BUILD_TESTING)
   add_executable(
@@ -42,10 +45,11 @@ if(BUILD_TESTING)
     ja3/ja3_utils.cc
     ja4/test_ja4.cc
     ja4/ja4.cc
-    ja4/tls_client_hello_summary.cc
+    ja4/datasource.cc
     ja4h/test_ja4h.cc
     ja4h/ja4h.cc
     ja4h/datasource.cc
+    ja4_common/utils.cc
   )
   target_link_libraries(test_jax PRIVATE Catch2::Catch2WithMain OpenSSL::Crypto OpenSSL::SSL)
   target_include_directories(test_jax BEFORE PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

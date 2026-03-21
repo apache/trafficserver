@@ -22,115 +22,21 @@
 
 #pragma once
 
-#include <cstdint>
-#include <iterator>
-#include <string>
-#include <vector>
+#include "datasource.h"
 
 namespace JA4
 {
 
-constexpr char PORTION_DELIMITER{'_'};
-
-enum class Protocol {
-  DTLS = 'd',
-  QUIC = 'q',
-  TLS  = 't',
-};
-
-enum class SNI {
-  to_domain = 'd',
-  to_IP     = 'i',
-};
-
-/**
- * Represents the data sent in a TLS Client Hello needed for JA4 fingerprints.
- */
-class TLSClientHelloSummary
-{
-public:
-  using difference_type = std::iterator_traits<std::vector<std::uint16_t>::iterator>::difference_type;
-
-  Protocol      protocol;
-  std::uint16_t TLS_version{0}; // 0 is not the default, this is only to not have it un-initialized.
-  std::string   ALPN;
-
-  std::vector<std::uint16_t> const &get_ciphers() const;
-  void                              add_cipher(std::uint16_t cipher);
-
-  std::vector<std::uint16_t> const &get_extensions() const;
-  void                              add_extension(std::uint16_t extension);
-
-  /**
-   * Get the number of ciphers excluding GREASE values.
-   *
-   * @return Returns the count of non-GREASE ciphers.
-   */
-  difference_type get_cipher_count() const;
-
-  /**
-   * Get the number of extensions excluding GREASE values.
-   *
-   * @return Returns the count of non-GREASE extensions.
-   */
-  difference_type get_extension_count() const;
-
-  /** Get the SNI type, domain or IP.
-   *
-   * @return Returns SNI::to_domain or SNI::to_IP.
-   */
-  SNI get_SNI_type() const;
-
-private:
-  std::vector<std::uint16_t> _ciphers;
-  std::vector<std::uint16_t> _extensions;
-  int                        _extension_count_including_sni_and_alpn{0};
-  SNI                        _SNI_type{SNI::to_IP};
-};
-
-/**
- * Calculate the a portion of the JA4 fingerprint for the given client hello.
- *
- * The a portion of the fingerprint encodes the protocol, TLS version, SNI
- * type, number of cipher suites, number of extensions, and first ALPN value.
- *
- * For more information see:
- * https://github.com/FoxIO-LLC/ja4/blob/main/technical_details/JA4.md.
- *
- * @param TLS_summary The TLS client hello.
- * @return Returns a string containing the a portion of the JA4 fingerprint.
- */
-std::string make_JA4_a_raw(TLSClientHelloSummary const &TLS_summary);
-
-/**
- * Calculate the b portion of the JA4 fingerprint for the given client hello.
- *
- * The b portion of the fingerprint is a comma-delimited list of lowercase hex
- * numbers representing the cipher suites in sorted order. GREASE values are
- * ignored.
- *
- * For more information see:
- * https://github.com/FoxIO-LLC/ja4/blob/main/technical_details/JA4.md.
- *
- * @param TLS_summary The TLS client hello.
- * @return Returns a string containing the b portion of the JA4 fingerprint.
- */
-std::string make_JA4_b_raw(TLSClientHelloSummary const &TLS_summary);
-
-/**
- * Calculate the c portion of the JA4 fingerprint for the given client hello.
- *
- * The b portion of the fingerprint is a comma-delimited list of lowercase hex
- * numbers representing the extensions in sorted order. GREASE values and the
- * SNI and ALPN extensions are ignored.
- *
- * For more information see:
- * https://github.com/FoxIO-LLC/ja4/blob/main/technical_details/JA4.md.
- *
- * @param TLS_summary The TLS client hello.
- * @return Returns a string containing the c portion of the JA4 fingerprint.
- */
-std::string make_JA4_c_raw(TLSClientHelloSummary const &TLS_summary);
+constexpr int    FINGERPRINT_LENGTH = 36;
+constexpr size_t PART_A_POSITION    = 0;
+constexpr size_t PART_B_POSITION    = 11;
+constexpr size_t PART_C_POSITION    = 24;
+constexpr size_t PART_A_LENGTH      = 10;
+constexpr size_t PART_B_LENGTH      = 12;
+constexpr size_t PART_C_LENGTH      = 12;
+constexpr char   PORTION_DELIMITER{'_'};
+constexpr size_t DELIMITER_1_POSITION = 10;
+constexpr size_t DELIMITER_2_POSITION = 23;
 
 /**
  * Calculate the JA4 fingerprint for the given TLS client hello.
@@ -144,28 +50,6 @@ std::string make_JA4_c_raw(TLSClientHelloSummary const &TLS_summary);
  * JA4 fingerprint, this should be a sha256 hash.
  * @return Returns a string containing the JA4 fingerprint.
  */
-template <typename UnaryOp>
-std::string
-make_JA4_fingerprint(TLSClientHelloSummary const &TLS_summary, UnaryOp hasher)
-{
-  std::string result;
-  result.append(make_JA4_a_raw(TLS_summary));
-  result.push_back(JA4::PORTION_DELIMITER);
-  result.append(hasher(make_JA4_b_raw(TLS_summary)).substr(0, 12));
-  result.push_back(JA4::PORTION_DELIMITER);
-  result.append(hasher(make_JA4_c_raw(TLS_summary)).substr(0, 12));
-  return result;
-}
-
-/**
- * Check whether @a value is a GREASE value.
- *
- * These are reserved extensions randomly advertised to keep implementations
- * well lubricated. They are ignored in all parts of JA4 because of their
- * random nature.
- *
- * @return Returns true if the value is a GREASE value, false otherwise.
- */
-bool is_GREASE(std::uint16_t value);
+std::string_view make_JA4_fingerprint(char *out, Datasource &datasource);
 
 } // end namespace JA4

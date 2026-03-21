@@ -17,44 +17,9 @@
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
+
  */
 
-#include "ts/ts.h"
+#pragma once
 
-#include <plugin.h>
-#include <context.h>
-#include "ja4_method.h"
-#include "ja4.h"
-#include "datasource.h"
-#include "tls_client_hello_summary.h"
-
-namespace ja4_method
-{
-
-void on_client_hello(JAxContext *, TSVConn);
-
-struct Method method = {
-  "JA4",
-  Method::Type::CONNECTION_BASED,
-  on_client_hello,
-  nullptr,
-};
-
-} // namespace ja4_method
-
-void
-ja4_method::on_client_hello(JAxContext *ctx, TSVConn vconn)
-{
-  char          fingerprint[JA4::FINGERPRINT_LENGTH];
-  TSClientHello ch = TSVConnClientHelloGet(vconn);
-
-  if (!ch) {
-    Dbg(dbg_ctl, "Could not get TSClientHello object.");
-  } else {
-    TLSClientHelloSummary datasource{JA4::Datasource::Protocol::TLS, ch};
-
-    JA4::make_JA4_fingerprint(fingerprint, datasource);
-
-    ctx->set_fingerprint({fingerprint, JA4::FINGERPRINT_LENGTH});
-  }
-}
+void hash_stringify(char *out, const unsigned char *hash);

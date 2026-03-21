@@ -23,55 +23,207 @@
  */
 
 #include "ja4.h"
+#include "datasource.h"
 
 #include <catch2/catch_test_macros.hpp>
+#include <openssl/sha.h>
 
 #include <algorithm>
 #include <cctype>
+#include <cstring>
 #include <string>
 #include <string_view>
 #include <unordered_map>
 
-static std::string call_JA4(JA4::TLSClientHelloSummary const &TLS_summary);
-static std::string inc(std::string_view sv);
+namespace
+{
+
+class MockDatasource : public JA4::Datasource
+{
+public:
+  std::string_view
+  get_first_alpn() override
+  {
+    return this->_first_alpn;
+  }
+
+  void
+  get_cipher_suites_hash(unsigned char out[32]) override
+  {
+    if (this->_ciphers.empty()) {
+      memset(out, 0, 32);
+      return;
+    }
+    auto sorted = this->_ciphers;
+    std::sort(sorted.begin(), sorted.end());
+    SHA256_CTX ctx;
+    SHA256_Init(&ctx);
+    for (size_t i = 0; i < sorted.size(); ++i) {
+      char  buf[5];
+      char *p = buf;
+      if (i != 0) {
+        *p  = ',';
+        p  += 1;
+      }
+      uint16_t c   = sorted[i];
+      uint8_t  h1  = (c & 0xF000) >> 12;
+      uint8_t  l1  = (c & 0x0F00) >> 8;
+      uint8_t  h2  = (c & 0x00F0) >> 4;
+      uint8_t  l2  = c & 0x000F;
+      p[0]         = h1 <= 9 ? ('0' + h1) : ('a' + h1 - 10);
+      p[1]         = l1 <= 9 ? ('0' + l1) : ('a' + l1 - 10);
+      p[2]         = h2 <= 9 ? ('0' + h2) : ('a' + h2 - 10);
+      p[3]         = l2 <= 9 ? ('0' + l2) : ('a' + l2 - 10);
+      p           += 4;
+      SHA256_Update(&ctx, buf, p - buf);
+    }
+    SHA256_Final(out, &ctx);
+  }
+
+  void
+  get_extension_hash(unsigned char out[32]) override
+  {
+    if (this->_extensions.empty()) {
+      memset(out, 0, 32);
+      return;
+    }
+    auto sorted = this->_extensions;
+    std::sort(sorted.begin(), sorted.end());
+    SHA256_CTX ctx;
+    SHA256_Init(&ctx);
+    for (size_t i = 0; i < sorted.size(); ++i) {
+      char  buf[5];
+      char *p = buf;
+      if (i != 0) {
+        *p  = ',';
+        p  += 1;
+      }
+      uint16_t e   = sorted[i];
+      uint8_t  h1  = (e & 0xF000) >> 12;
+      uint8_t  l1  = (e & 0x0F00) >> 8;
+      uint8_t  h2  = (e & 0x00F0) >> 4;
+      uint8_t  l2  = e & 0x000F;
+      p[0]         = h1 <= 9 ? ('0' + h1) : ('a' + h1 - 10);
+      p[1]         = l1 <= 9 ? ('0' + l1) : ('a' + l1 - 10);
+      p[2]         = h2 <= 9 ? ('0' + h2) : ('a' + h2 - 10);
+      p[3]         = l2 <= 9 ? ('0' + l2) : ('a' + l2 - 10);
+      p           += 4;
+      SHA256_Update(&ctx, buf, p - buf);
+    }
+    SHA256_Final(out, &ctx);
+  }
+
+  void
+  set_protocol(JA4::Datasource::Protocol protocol)
+  {
+    this->_protocol = protocol;
+  }
+  void
+  set_version(int version)
+  {
+    this->_version = version;
+  }
+  void
+  set_first_alpn(std::string first_alpn)
+  {
+    this->_first_alpn = first_alpn;
+  }
+  void
+  add_cipher(std::uint16_t cipher)
+  {
+    if (_is_GREASE(cipher)) {
+      return;
+    }
+
+    ++this->_n_ciphers;
+    this->_ciphers.push_back(cipher);
+  }
+
+  void
+  add_extension(uint16_t extension)
+  {
+    if (EXT_SNI == extension) {
+      this->_SNI_type = SNI::to_domain;
+      this->_has_SNI  = true;
+      return;
+    }
+    if (EXT_ALPN == extension) {
+      this->_has_ALPN = true;
+      return;
+    }
+    if (_is_GREASE(extension)) {
+      return;
+    }
+
+    ++this->_n_extensions;
+    this->_extensions.push_back(extension);
+  }
+
+private:
+  std::string _first_alpn;
+
+  std::vector<std::uint16_t> _ciphers;
+  std::vector<std::uint16_t> _extensions;
+  SNI                        _SNI_type{SNI::to_IP};
+};
+
+std::string_view
+SHA256_12(std::string_view in)
+{
+  uint8_t hash[32];
+  SHA256(reinterpret_cast<const uint8_t *>(in.data()), in.size(), hash);
+
+  static char out[12];
+  for (int i = 0; i < 6; ++i) {
+    uint8_t h      = hash[i] >> 4;
+    uint8_t l      = hash[i] & 0x0F;
+    out[i * 2]     = h <= 9 ? '0' + h : 'a' + h - 10;
+    out[i * 2 + 1] = l <= 9 ? '0' + l : 'a' + l - 10;
+  }
+  return {out, sizeof(out)};
+}
+
+} // namespace
+
+static std::string call_JA4(JA4::Datasource &datasource);
 
 TEST_CASE("JA4")
 {
-  JA4::TLSClientHelloSummary TLS_summary{};
+  MockDatasource datasource{};
 
   SECTION("Given the protocol is TCP, "
           "when we create a JA4 fingerprint, "
           "then the first character thereof should be 't'.")
   {
-    TLS_summary.protocol = JA4::Protocol::TLS;
+    datasource.set_protocol(JA4::Datasource::Protocol::TLS);
 
-    CHECK("t" == call_JA4(TLS_summary).substr(0, 1));
+    CHECK("t" == call_JA4(datasource).substr(0, 1));
   }
 
   SECTION("Given the protocol is QUIC, "
           "when we create a JA4 fingerprint, "
           "then the first character thereof should be 'q'.")
   {
-    TLS_summary.protocol = JA4::Protocol::QUIC;
-    CHECK(call_JA4(TLS_summary).starts_with('q'));
+    datasource.set_protocol(JA4::Datasource::Protocol::QUIC);
+    CHECK(call_JA4(datasource).starts_with('q'));
   }
 
   SECTION("Given the protocol is DTLS, "
           "when we create a JA4 fingerprint, "
           "then the first character thereof should be 'd'.")
   {
-    TLS_summary.protocol = JA4::Protocol::DTLS;
-    CHECK(call_JA4(TLS_summary).starts_with('d'));
+    datasource.set_protocol(JA4::Datasource::Protocol::DTLS);
+    CHECK(call_JA4(datasource).starts_with('d'));
   }
 
   SECTION("Given the TLS version is unknown, "
           "when we create a JA4 fingerprint, "
           "then indices [1,2] thereof should contain \"00\".")
   {
-    TLS_summary.TLS_version = 0x123;
-    CHECK("00" == call_JA4(TLS_summary).substr(1, 2));
-    TLS_summary.TLS_version = 0x234;
-    CHECK("00" == call_JA4(TLS_summary).substr(1, 2));
+    datasource.set_version(0x123);
+    CHECK("00" == call_JA4(datasource).substr(1, 2));
+    datasource.set_version(0x234);
+    CHECK("00" == call_JA4(datasource).substr(1, 2));
   }
 
   SECTION("Given the TLS version is known, "
@@ -92,8 +244,8 @@ TEST_CASE("JA4")
     };
     for (auto const &[version, expected] : values) {
       CAPTURE(version, expected);
-      TLS_summary.TLS_version = version;
-      CHECK(expected == call_JA4(TLS_summary).substr(1, 2));
+      datasource.set_version(version);
+      CHECK(expected == call_JA4(datasource).substr(1, 2));
     }
   }
 
@@ -101,24 +253,24 @@ TEST_CASE("JA4")
           "when we create a JA4 fingerprint, "
           "then index 3 thereof should contain 'd'.")
   {
-    TLS_summary.add_extension(0x0);
-    CHECK("d" == call_JA4(TLS_summary).substr(3, 1));
+    datasource.add_extension(0x0);
+    CHECK("d" == call_JA4(datasource).substr(3, 1));
   }
 
   SECTION("Given the SNI extension is not present, "
           "when we create a JA4 fingerprint, "
           "then index 3 thereof should contain 'i'.")
   {
-    TLS_summary.add_extension(0x31);
-    CHECK("i" == call_JA4(TLS_summary).substr(3, 1));
+    datasource.add_extension(0x31);
+    CHECK("i" == call_JA4(datasource).substr(3, 1));
   }
 
   SECTION("Given there is one cipher, "
           "when we create a JA4 fingerprint, "
           "then indices [4,5] thereof should contain \"01\".")
   {
-    TLS_summary.add_cipher(1);
-    CHECK("01" == call_JA4(TLS_summary).substr(4, 2));
+    datasource.add_cipher(1);
+    CHECK("01" == call_JA4(datasource).substr(4, 2));
   }
 
   SECTION("Given there are 9 ciphers, "
@@ -126,9 +278,9 @@ TEST_CASE("JA4")
           "then indices [4,5] thereof should contain \"09\".")
   {
     for (int i{0}; i < 9; ++i) {
-      TLS_summary.add_cipher(i);
+      datasource.add_cipher(i);
     }
-    CHECK("09" == call_JA4(TLS_summary).substr(4, 2));
+    CHECK("09" == call_JA4(datasource).substr(4, 2));
   }
 
   SECTION("Given there are 10 ciphers, "
@@ -136,9 +288,9 @@ TEST_CASE("JA4")
           "then indices [4,5] thereof should contain \"10\".")
   {
     for (int i{0}; i < 10; ++i) {
-      TLS_summary.add_cipher(i);
+      datasource.add_cipher(i);
     }
-    CHECK("10" == call_JA4(TLS_summary).substr(4, 2));
+    CHECK("10" == call_JA4(datasource).substr(4, 2));
   }
 
   SECTION("Given there are more than 99 ciphers, "
@@ -146,25 +298,25 @@ TEST_CASE("JA4")
           "then indices [4,5] thereof should contain \"99\".")
   {
     for (int i{0}; i < 100; ++i) {
-      TLS_summary.add_cipher(i);
+      datasource.add_cipher(i);
     }
-    CHECK("99" == call_JA4(TLS_summary).substr(4, 2));
+    CHECK("99" == call_JA4(datasource).substr(4, 2));
   }
 
   SECTION("Given the ciphers include a GREASE value, "
           "when we create a JA4 fingerprint, "
           "then that value should not be included in the count.")
   {
-    TLS_summary.add_cipher(0x0a0a);
-    TLS_summary.add_cipher(72);
-    CHECK("01" == call_JA4(TLS_summary).substr(4, 2));
+    datasource.add_cipher(0x0a0a);
+    datasource.add_cipher(72);
+    CHECK("01" == call_JA4(datasource).substr(4, 2));
   }
 
   SECTION("Given there are no extensions, "
           "when we create a JA4 fingerprint, "
           "then indices [6,7] thereof should contain \"00\".")
   {
-    CHECK("00" == call_JA4(TLS_summary).substr(6, 2));
+    CHECK("00" == call_JA4(datasource).substr(6, 2));
   }
 
   SECTION("Given there are 9 extensions, "
@@ -172,9 +324,9 @@ TEST_CASE("JA4")
           "then indices [6,7] thereof should contain \"09\".")
   {
     for (int i{0}; i < 9; ++i) {
-      TLS_summary.add_extension(i);
+      datasource.add_extension(i);
     }
-    CHECK("09" == call_JA4(TLS_summary).substr(6, 2));
+    CHECK("09" == call_JA4(datasource).substr(6, 2));
   }
 
   SECTION("Given there are 99 extensions, "
@@ -182,9 +334,9 @@ TEST_CASE("JA4")
           "then indices [6,7] thereof should contain \"99\".")
   {
     for (int i{0}; i < 99; ++i) {
-      TLS_summary.add_extension(i);
+      datasource.add_extension(i);
     }
-    CHECK("99" == call_JA4(TLS_summary).substr(6, 2));
+    CHECK("99" == call_JA4(datasource).substr(6, 2));
   }
 
   SECTION("Given there are more than 99 extensions, "
@@ -192,18 +344,18 @@ TEST_CASE("JA4")
           "then indices [6,7] thereof should contain \"99\".")
   {
     for (int i{0}; i < 100; ++i) {
-      TLS_summary.add_extension(i);
+      datasource.add_extension(i);
     }
-    CHECK("99" == call_JA4(TLS_summary).substr(6, 2));
+    CHECK("99" == call_JA4(datasource).substr(6, 2));
   }
 
   SECTION("Given the extensions include a GREASE value, "
           "when we create a JA4 fingerprint, "
           "then that value should not be included in the count.")
   {
-    TLS_summary.add_extension(2);
-    TLS_summary.add_extension(0x0a0a);
-    CHECK("01" == call_JA4(TLS_summary).substr(6, 2));
+    datasource.add_extension(2);
+    datasource.add_extension(0x0a0a);
+    CHECK("01" == call_JA4(datasource).substr(6, 2));
   }
 
   // These may be covered by the earlier tests as well, but this documents the
@@ -211,17 +363,17 @@ TEST_CASE("JA4")
   SECTION("When we create a JA4 fingerprint, "
           "then the SNI and ALPN extensions should be included in the count.")
   {
-    TLS_summary.add_extension(0x0);
-    TLS_summary.add_extension(0x10);
-    CHECK("02" == call_JA4(TLS_summary).substr(6, 2));
+    datasource.add_extension(0x0);
+    datasource.add_extension(0x10);
+    CHECK("02" == call_JA4(datasource).substr(6, 2));
   }
 
   SECTION("Given the ALPN value is empty, "
           "when we create a JA4 fingerprint, "
           "then indices [8,9] thereof should contain \"00\".")
   {
-    TLS_summary.ALPN = "";
-    CHECK("00" == call_JA4(TLS_summary).substr(8, 2));
+    datasource.set_first_alpn("");
+    CHECK("00" == call_JA4(datasource).substr(8, 2));
   }
 
   // This should never happen in practice because all registered ALPN values
@@ -231,37 +383,38 @@ TEST_CASE("JA4")
           "when we create a JA4 fingerprint, "
           "then indices [8,9] thereof should contain \"aa\".")
   {
-    TLS_summary.ALPN = 'a';
-    CHECK("aa" == call_JA4(TLS_summary).substr(8, 2));
+    datasource.set_first_alpn("a");
+    CHECK("aa" == call_JA4(datasource).substr(8, 2));
   }
 
   SECTION("Given the ALPN value is \"h3\", "
           "when we create a JA4 fingerprint, "
           "then indices [8,9] thereof should contain \"h3\".")
   {
-    TLS_summary.ALPN = "h3";
-    CHECK("h3" == call_JA4(TLS_summary).substr(8, 2));
+    datasource.set_first_alpn("h3");
+    CHECK("h3" == call_JA4(datasource).substr(8, 2));
   }
 
   SECTION("Given the ALPN value is \"imap\", "
           "when we create a JA4 fingerprint, "
           "then indices [8,9] thereof should contain \"ip\".")
   {
-    TLS_summary.ALPN = "imap";
-    CHECK("ip" == call_JA4(TLS_summary).substr(8, 2));
+    datasource.set_first_alpn("imap");
+    CHECK("ip" == call_JA4(datasource).substr(8, 2));
   }
 
   SECTION("When we create a JA4 fingeprint, "
           "then index 10 thereof should contain '_'.")
   {
-    CHECK("_" == call_JA4(TLS_summary).substr(10, 1));
+    CHECK("_" == call_JA4(datasource).substr(10, 1));
   }
 
   SECTION("When we create a JA4 fingerprint, "
           "then the b section should be passed through the hash function.")
   {
-    TLS_summary.add_cipher(10);
-    CHECK("111b" == JA4::make_JA4_fingerprint(TLS_summary, [](std::string_view sv) { return inc(sv); }).substr(11, 4));
+    char buf[36];
+    datasource.add_cipher(10);
+    CHECK(SHA256_12("000a") == JA4::make_JA4_fingerprint(buf, datasource).substr(11, 12));
   }
 
   // As per the spec, we expect 4-character, comma-delimited hex values.
@@ -269,79 +422,58 @@ TEST_CASE("JA4")
           "when we create a JA4 fingerprint, "
           "then the hash should be invoked with \"0002,000c,0011\".")
   {
-    TLS_summary.add_cipher(2);
-    TLS_summary.add_cipher(12);
-    TLS_summary.add_cipher(17);
-    bool verified{false};
-    // INFO doesn't work from inside the lambda body. :/
-    JA4::make_JA4_fingerprint(TLS_summary, [&verified](std::string_view sv) {
-      if ("0002,000c,0011" == sv) {
-        verified = true;
-      }
-      return sv;
-    });
-    CHECK(verified);
+    datasource.add_cipher(2);
+    datasource.add_cipher(12);
+    datasource.add_cipher(17);
+    char buf[36];
+    CHECK(SHA256_12("0002,000c,0011") == JA4::make_JA4_fingerprint(buf, datasource).substr(11, 12));
   }
 
   SECTION("When we create a JA4 fingerprint, "
           "then the cipher values should be sorted before hashing.")
   {
-    TLS_summary.add_cipher(17);
-    TLS_summary.add_cipher(2);
-    TLS_summary.add_cipher(12);
-    bool verified{false};
-    // INFO doesn't work from inside the lambda body. :/
-    JA4::make_JA4_fingerprint(TLS_summary, [&verified](std::string_view sv) {
-      if ("0002,000c,0011" == sv) {
-        verified = true;
-      }
-      return sv;
-    });
-    CHECK(verified);
+    datasource.add_cipher(17);
+    datasource.add_cipher(2);
+    datasource.add_cipher(12);
+    char buf[36];
+    CHECK(SHA256_12("0002,000c,0011") == JA4::make_JA4_fingerprint(buf, datasource).substr(11, 12));
   }
 
   SECTION("When we create a JA4 fingerprint, "
           "then GREASE values in the cipher list should be ignored.")
   {
-    TLS_summary.add_cipher(0x0a0a);
-    TLS_summary.add_cipher(2);
-    bool verified{false};
-    // INFO doesn't work from inside the lambda body. :/
-    JA4::make_JA4_fingerprint(TLS_summary, [&verified](std::string_view sv) {
-      if ("0002" == sv) {
-        verified = true;
-      }
-      return sv;
-    });
-    CHECK(verified);
+    datasource.add_cipher(0x0a0a);
+    datasource.add_cipher(2);
+    char buf[36];
+    CHECK(SHA256_12("0002") == JA4::make_JA4_fingerprint(buf, datasource).substr(11, 12));
   }
 
   // All the tests from now on have enough ciphers to ensure a long enough
   // hash using our default hash (the id function) so that the length of the
   // JA4 fingerprint will be valid.
-  TLS_summary.add_cipher(1);
-  TLS_summary.add_cipher(2);
-  TLS_summary.add_cipher(3);
+  datasource.add_cipher(1);
+  datasource.add_cipher(2);
+  datasource.add_cipher(3);
 
   SECTION("When we create a JA4 fingerprint, "
           "then we should truncate the section b hash to 12 characters.")
   {
-    CHECK("001,0002,000_" == JA4::make_JA4_fingerprint(TLS_summary, [](std::string_view sv) {
-                               return sv.empty() ? sv : sv.substr(1);
-                             }).substr(11, 13));
+    char buf[36];
+    CHECK(SHA256_12("0001,0002,0003") == JA4::make_JA4_fingerprint(buf, datasource).substr(11, 12));
   }
 
   SECTION("When we create a JA4 fingeprint, "
           "then index 10 thereof should contain '_'.")
   {
-    CHECK("_" == call_JA4(TLS_summary).substr(23, 1));
+    CHECK("_" == call_JA4(datasource).substr(23, 1));
   }
 
   SECTION("When we create a JA4 fingerprint, "
           "then the c section should be passed through the hash function.")
   {
-    TLS_summary.add_extension(10);
-    CHECK("111b" == JA4::make_JA4_fingerprint(TLS_summary, [](std::string_view sv) { return inc(sv); }).substr(24, 4));
+    datasource.add_extension(10);
+    char buf[36];
+    CHECK(SHA256_12("000a") == JA4::make_JA4_fingerprint(buf, datasource).substr(24, 12));
   }
 
   // As per the spec, we expect 4-character, comma-delimited hex values.
@@ -349,77 +481,51 @@ TEST_CASE("JA4")
           "when we create a JA4 fingerprint, "
           "then the hash should be invoked with \"0002,000c,0011\".")
   {
-    TLS_summary.add_extension(2);
-    TLS_summary.add_extension(12);
-    TLS_summary.add_extension(17);
+    datasource.add_extension(2);
+    datasource.add_extension(12);
+    datasource.add_extension(17);
 
-    bool verified{false};
-    // INFO doesn't work from inside the lambda body. :/
-    JA4::make_JA4_fingerprint(TLS_summary, [&verified](std::string_view sv) {
-      if ("0002,000c,0011" == sv) {
-        verified = true;
-      }
-      return sv;
-    });
-    CHECK(verified);
+    char buf[36];
+    CHECK(SHA256_12("0002,000c,0011") == JA4::make_JA4_fingerprint(buf, datasource).substr(24, 12));
   }
 
   SECTION("When we create a JA4 fingerprint, "
           "then the extension values should be sorted before hashing.")
   {
-    TLS_summary.add_extension(17);
-    TLS_summary.add_extension(2);
-    TLS_summary.add_extension(12);
-    bool verified{false};
-    // INFO doesn't work from inside the lambda body. :/
-    JA4::make_JA4_fingerprint(TLS_summary, [&verified](std::string_view sv) {
-      if ("0002,000c,0011" == sv) {
-        verified = true;
-      }
-      return sv;
-    });
-    CHECK(verified);
+    datasource.add_extension(17);
+    datasource.add_extension(2);
+    datasource.add_extension(12);
+
+    char buf[36];
+    CHECK(SHA256_12("0002,000c,0011") == JA4::make_JA4_fingerprint(buf, datasource).substr(24, 12));
   }
 
   SECTION("When we create a JA4 fingerprint, "
           "then we ignore GREASE, SNI, ALPN, and SNI values in the extensions.")
   {
-    TLS_summary.add_extension(0x0a0a);
-    TLS_summary.add_extension(0x0);
-    TLS_summary.add_extension(0x10);
-    TLS_summary.add_extension(5);
-    bool verified{false};
-    // INFO doesn't work from inside the lambda body. :/
-    JA4::make_JA4_fingerprint(TLS_summary, [&verified](std::string_view sv) {
-      if ("0005" == sv) {
-        verified = true;
-      }
-      return sv;
-    });
-    CHECK(verified);
+    datasource.add_extension(0x0a0a);
+    datasource.add_extension(0x0);
+    datasource.add_extension(0x10);
+    datasource.add_extension(5);
+
+    char buf[36];
+    CHECK(SHA256_12("0005") == JA4::make_JA4_fingerprint(buf, datasource).substr(24, 12));
   }
 
   SECTION("When we create a JA4 fingerprint, "
           "then we total length of the fingerprint should be 36 characters.")
   {
-    TLS_summary.add_extension(1);
-    TLS_summary.add_extension(2);
-    TLS_summary.add_extension(3);
-    CHECK(36 == call_JA4(TLS_summary).size());
+    datasource.add_extension(1);
+    datasource.add_extension(2);
+    datasource.add_extension(3);
+    CHECK(36 == call_JA4(datasource).size());
   }
 }
 
 std::string
-call_JA4(JA4::TLSClientHelloSummary const &TLS_summary)
+call_JA4(JA4::Datasource &datasource)
 {
-  return JA4::make_JA4_fingerprint(TLS_summary, [](std::string_view sv) { return sv; });
-}
-
-std::string
-inc(std::string_view sv)
-{
-  std::string result;
-  result.resize(sv.size());
-  std::transform(sv.begin(), sv.end(), result.begin(), [](char c) { return c + 1; });
-  return result;
+  char buf[36];
+  JA4::make_JA4_fingerprint(buf, datasource);
+  return {buf, 36};
 }

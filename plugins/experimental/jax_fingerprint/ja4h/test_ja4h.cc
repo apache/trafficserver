@@ -25,7 +25,11 @@
 #include <openssl/sha.h>
 #include <catch2/catch_test_macros.hpp>
 
+#include <string>
 #include <map>
+
+namespace
+{
 
 class MockDatasource : public Datasource
 {
@@ -73,7 +77,7 @@ public:
     SHA256_CTX sha256ctx;
     SHA256_Init(&sha256ctx);
 
-    for (auto &&ite : this->_fields) {
+    for (auto ite : this->_fields) {
       if (this->_should_include_field({ite.first.c_str(), ite.first.size()})) {
         SHA256_Update(&sha256ctx, ite.first.c_str(), ite.first.size());
       }
@@ -101,7 +105,7 @@ public:
 private:
   std::string                        _method;
   int                                _version;
-  std::map<std::string, std::string> _fields;
+  std::map<std::string, std::string> _fields{};
 };
 
 std::string_view
@@ -120,13 +124,15 @@ SHA256_12(std::string_view in)
   return {out, sizeof(out)};
 }
 
+} // namespace
+
 TEST_CASE("JA4H")
 {
-  MockDatasource datasource;
-  char           fingerprint[FINGERPRINT_LENGTH];
+  char fingerprint[FINGERPRINT_LENGTH];
 
   SECTION("HTTP/1.0 GET with Host")
   {
+    MockDatasource datasource;
     datasource.set_method("GET");
     datasource.set_version(1 << 16 | 0);
     datasource.set_fields({
@@ -147,6 +153,7 @@ TEST_CASE("JA4H")
 
   SECTION("HTTP/1.1 POST with Accept-Language and Referer")
   {
+    MockDatasource datasource;
     datasource.set_method("POST");
     datasource.set_version(1 << 16 | 1);
     datasource.set_fields({
