@@ -165,6 +165,7 @@ TLSSNISupport::set_sni_server_name(SSL *ssl, char const *name)
 void
 TLSSNISupport::_clear()
 {
+  hints_from_sni = {};
   _sni_server_name.reset();
 }
 

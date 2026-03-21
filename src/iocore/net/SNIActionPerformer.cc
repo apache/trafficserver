@@ -476,6 +476,40 @@ ServerMaxEarlyData::SNIAction([[maybe_unused]] SSL &ssl, const Context & /* ctx 
 }
 
 int
+ServerSessionTicketEnabled::SNIAction(SSL &ssl, const Context & /* ctx ATS_UNUSED */) const
+{
+#if TS_HAS_TLS_SESSION_TICKET
+  if (auto snis = TLSSNISupport::getInstance(&ssl)) {
+    const char *servername = snis->get_sni_server_name();
+    Dbg(dbg_ctl_ssl_sni, "Setting session ticket support from sni.yaml to %d for fqdn [%s]", session_ticket_enabled, servername);
+    snis->hints_from_sni.ssl_ticket_enabled = session_ticket_enabled;
+  }
+
+  // Apply the ticket enable/disable flag immediately so the current handshake
+  // sees the per-SNI override before TLS session ticket processing kicks in.
+  if (session_ticket_enabled != 0) {
+    SSL_clear_options(&ssl, SSL_OP_NO_TICKET);
+  } else {
+    SSL_set_options(&ssl, SSL_OP_NO_TICKET);
+  }
+#endif
+  return SSL_TLSEXT_ERR_OK;
+}
+
+int
+ServerSessionTicketNumber::SNIAction(SSL &ssl, const Context & /* ctx ATS_UNUSED */) const
+{
+#if TS_HAS_TLS_SESSION_TICKET
+  if (auto snis = TLSSNISupport::getInstance(&ssl)) {
+    const char *servername = snis->get_sni_server_name();
+    Dbg(dbg_ctl_ssl_sni, "Setting session ticket count from sni.yaml to %d for fqdn [%s]", session_ticket_number, servername);
+    snis->hints_from_sni.ssl_ticket_number = session_ticket_number;
+  }
+#endif
+  return SSL_TLSEXT_ERR_OK;
+}
+
+int
 ServerCipherSuite::SNIAction(SSL &ssl, const Context & /* ctx ATS_UNUSED */) const
 {
   if (server_cipher_suite.empty()) {

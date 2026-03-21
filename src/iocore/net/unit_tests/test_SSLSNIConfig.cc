@@ -107,6 +107,13 @@ TEST_CASE("Test SSLSNIConfig")
     REQUIRE(actions.first->size() == 3);
   }
 
+  SECTION("The config matches an SNI for tickets.com")
+  {
+    auto const &actions{params.get("tickets.com", 443)};
+    REQUIRE(actions.first);
+    REQUIRE(actions.first->size() == 4); ///< ticket enabled + ticket number + early data + fqdn
+  }
+
   SECTION("Matching order")
   {
     auto const &actions{params.get("foo.bar.com", 443)};

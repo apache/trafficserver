@@ -140,6 +140,8 @@ public:
     std::optional<int32_t>          http2_max_priority_frames_per_minute;
     std::optional<int32_t>          http2_max_rst_stream_frames_per_minute;
     std::optional<int32_t>          http2_max_continuation_frames_per_minute;
+    std::optional<int32_t>          ssl_ticket_enabled;
+    std::optional<int32_t>          ssl_ticket_number;
     std::optional<std::string_view> outbound_sni_policy;
   } hints_from_sni;
 

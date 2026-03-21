@@ -97,6 +97,12 @@ static DbgCtl dbg_ctl_ssl_session_cache{"ssl.session_cache"};
 static DbgCtl dbg_ctl_ssl_error{"ssl.error"};
 static DbgCtl dbg_ctl_ssl_verify{"ssl_verify"};
 
+#if TS_HAS_TLS_SESSION_TICKET
+static bool ssl_context_enable_ticket_callback(SSL_CTX *ctx);
+static bool ssl_apply_sni_session_ticket_properties(SSL *ssl);
+static bool ssl_set_session_ticket_number(SSL *ssl, size_t num_tickets);
+#endif
+
 /* Using pthread thread ID and mutex functions directly, instead of
  * ATS this_ethread / ProxyMutex, so that other linked libraries
  * may use pthreads and openssl without confusing us here. (TS-2271).
@@ -304,15 +310,8 @@ ssl_cert_callback(SSL *ssl, [[maybe_unused]] void *arg)
       setClientCertCACerts(ssl, sslnetvc->get_ca_cert_file(), sslnetvc->get_ca_cert_dir());
     }
 
-    // Reset the ticket callback if needed
-    SSL_CTX                        *ctx                  = SSL_get_SSL_CTX(ssl);
-    shared_SSLMultiCertConfigParams sslMultiCertSettings = std::make_shared<SSLMultiCertConfigParams>();
-    if (sslMultiCertSettings->session_ticket_enabled != 0) {
-#ifdef HAVE_SSL_CTX_SET_TLSEXT_TICKET_KEY_EVP_CB
-      SSL_CTX_set_tlsext_ticket_key_evp_cb(ctx, ssl_callback_session_ticket);
-#else
-      SSL_CTX_set_tlsext_ticket_key_cb(ctx, ssl_callback_session_ticket);
-#endif
+    if (!ssl_apply_sni_session_ticket_properties(ssl)) {
+      retval = 0;
     }
   }
 #endif
@@ -493,6 +492,77 @@ ssl_context_enable_dhe(const char *dhparams_file, SSL_CTX *ctx)
   return ctx;
 }
 
+#if TS_HAS_TLS_SESSION_TICKET
+static bool
+ssl_context_enable_ticket_callback(SSL_CTX *ctx)
+{
+#ifdef HAVE_SSL_CTX_SET_TLSEXT_TICKET_KEY_EVP_CB
+  if (SSL_CTX_set_tlsext_ticket_key_evp_cb(ctx, ssl_callback_session_ticket) == 0) {
+#else
+  if (SSL_CTX_set_tlsext_ticket_key_cb(ctx, ssl_callback_session_ticket) == 0) {
+#endif
+    Error("failed to set session ticket callback");
+    return false;
+  }
+  return true;
+}
+
+static bool
+ssl_set_session_ticket_number(SSL *ssl, size_t num_tickets)
+{
+#if defined(OPENSSL_IS_BORINGSSL)
+  // BoringSSL only exposes SSL_CTX_set_num_tickets(), so the per-connection
+  // sni.yaml override is not available here.
+  (void)ssl;
+  (void)num_tickets;
+  return true;
+#else
+  return SSL_set_num_tickets(ssl, num_tickets) == 1;
+#endif
+}
+
+static bool
+ssl_apply_sni_session_ticket_properties(SSL *ssl)
+{
+  auto snis = TLSSNISupport::getInstance(ssl);
+  if (snis == nullptr) {
+    return true;
+  }
+
+  auto const &hints = snis->hints_from_sni;
+  if (!hints.ssl_ticket_enabled.has_value() && !hints.ssl_ticket_number.has_value()) {
+    return true;
+  }
+
+  std::optional<size_t> num_tickets;
+
+  if (hints.ssl_ticket_enabled.has_value()) {
+    if (hints.ssl_ticket_enabled.value() != 0) {
+      SSL_clear_options(ssl, SSL_OP_NO_TICKET);
+      Dbg(dbg_ctl_ssl_load, "Enabled session tickets due to sni.yaml override");
+    } else {
+      SSL_set_options(ssl, SSL_OP_NO_TICKET);
+      num_tickets = 0;
+      Dbg(dbg_ctl_ssl_load, "Disabled session tickets due to sni.yaml override");
+    }
+  }
+
+  if ((!hints.ssl_ticket_enabled.has_value() || hints.ssl_ticket_enabled.value() != 0) && hints.ssl_ticket_number.has_value()) {
+    num_tickets = hints.ssl_ticket_number.value() > 0 ? static_cast<size_t>(hints.ssl_ticket_number.value()) : 0;
+  }
+
+  if (num_tickets.has_value()) {
+    if (!ssl_set_session_ticket_number(ssl, num_tickets.value())) {
+      Error("failed to set session ticket number from sni.yaml");
+      return false;
+    }
+    Dbg(dbg_ctl_ssl_load, "Set session ticket number from sni.yaml to %zu", num_tickets.value());
+  }
+
+  return true;
+}
+#endif
+
 static ssl_ticket_key_block *
 ssl_context_enable_tickets(SSL_CTX *ctx, const char *ticket_key_path)
 {
@@ -509,12 +579,7 @@ ssl_context_enable_tickets(SSL_CTX *ctx, const char *ticket_key_path)
   // Setting the callback can only fail if OpenSSL does not recognize the
   // SSL_CTRL_SET_TLSEXT_TICKET_KEY_CB constant. we set the callback first
   // so that we don't leave a ticket_key pointer attached if it fails.
-#ifdef HAVE_SSL_CTX_SET_TLSEXT_TICKET_KEY_EVP_CB
-  if (SSL_CTX_set_tlsext_ticket_key_evp_cb(ctx, ssl_callback_session_ticket) == 0) {
-#else
-  if (SSL_CTX_set_tlsext_ticket_key_cb(ctx, ssl_callback_session_ticket) == 0) {
-#endif
-    Error("failed to set session ticket callback");
+  if (!ssl_context_enable_ticket_callback(ctx)) {
     ticket_block_free(keyblock);
     return nullptr;
   }
@@ -1178,6 +1243,12 @@ SSLMultiCertConfigLoader::init_server_ssl_ctx(CertLoadData const &data, const SS
         goto fail;
       }
     }
+
+#if TS_HAS_TLS_SESSION_TICKET
+    if (!ssl_context_enable_ticket_callback(ctx)) {
+      goto fail;
+    }
+#endif
 
     if (!this->_setup_client_cert_verification(ctx)) {
       goto fail;
