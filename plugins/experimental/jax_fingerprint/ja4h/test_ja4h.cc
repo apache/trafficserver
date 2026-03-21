@@ -61,7 +61,11 @@ public:
   std::string_view
   get_accept_language() override
   {
-    return this->_fields.find("Accept-Language")->second;
+    if (auto ite = this->_fields.find("Accept-Language"); ite != this->_fields.end()) {
+      return ite->second;
+    } else {
+      return {};
+    }
   }
   void
   get_headers_hash(unsigned char out[32]) override
