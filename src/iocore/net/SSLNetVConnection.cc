@@ -976,10 +976,9 @@ SSLNetVConnection::clear()
   sslLastWriteTime            = 0;
   sslTotalBytesSent           = 0;
   sslClientRenegotiationAbort = false;
+  hookOpRequested             = SslVConnOp::SSL_HOOK_OP_DEFAULT;
 
-  hookOpRequested = SslVConnOp::SSL_HOOK_OP_DEFAULT;
   free_handshake_buffers();
-
   super::clear();
 }
 void
