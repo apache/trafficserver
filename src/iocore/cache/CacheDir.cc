@@ -33,6 +33,7 @@
 #include "ts/ats_probe.h"
 #include "iocore/eventsystem/Tasks.h"
 
+#include <thread>
 #include <unordered_map>
 
 #ifdef LOOP_CHECK_MODE
@@ -958,20 +959,45 @@ Directory::entries_used()
 }
 
 /*
- * this function flushes the cache meta data to disk when
+ * This function flushes the cache meta data to disk when
  * the cache is shutdown. Must *NOT* be used during regular
- * operation.
+ * operation. Stripes are synced in parallel, one thread per
+ * physical disk.
  */
 
 void
 sync_cache_dir_on_shutdown()
 {
-  Dbg(dbg_ctl_cache_dir_sync, "sync started");
-  EThread *t = reinterpret_cast<EThread *>(0xdeadbeef);
+  Dbg(dbg_ctl_cache_dir_sync, "shutdown sync started");
+
+  std::unordered_map<CacheDisk *, std::vector<int>> drive_stripe_map;
+
   for (int i = 0; i < gnstripes; i++) {
-    gstripes[i]->shutdown(t);
+    drive_stripe_map[gstripes[i]->disk].push_back(i);
   }
-  Dbg(dbg_ctl_cache_dir_sync, "sync done");
+
+  std::vector<std::thread> threads;
+
+  threads.reserve(drive_stripe_map.size());
+  for (auto &[disk, indices] : drive_stripe_map) {
+    Dbg(dbg_ctl_cache_dir_sync, "Disk %s: syncing %zu stripe(s)", disk->path, indices.size());
+    auto stripe_indices = indices;
+    threads.emplace_back([stripe_indices]() {
+      // Use a thread_local variable to give each OS thread a unique EThread* sentinel instead of 0xdeadbeef.
+      thread_local char thread_sentinel;
+      EThread          *t = reinterpret_cast<EThread *>(&thread_sentinel);
+
+      for (int idx : stripe_indices) {
+        gstripes[idx]->shutdown(t);
+      }
+    });
+  }
+
+  for (auto &thr : threads) {
+    thr.join();
+  }
+
+  Dbg(dbg_ctl_cache_dir_sync, "shutdown sync done");
 }
 
 int
