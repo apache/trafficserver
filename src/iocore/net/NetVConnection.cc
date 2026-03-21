@@ -51,11 +51,19 @@ DbgCtl dbg_ctl_ssl{"ssl"};
    If the buffer has PROXY Protocol, it will be consumed by this function.
  */
 bool
-NetVConnection::has_proxy_protocol(IOBufferReader *reader)
+NetVConnection::has_proxy_protocol(IOBufferReader *reader, int max_header_size)
 {
-  char           buf[PPv1_CONNECTION_HEADER_LEN_MAX + 1];
   swoc::TextView tv;
-  tv.assign(buf, reader->memcpy(buf, sizeof(buf), 0));
+
+  char preface[PPv2_CONNECTION_HEADER_LEN];
+  tv.assign(preface, reader->memcpy(preface, sizeof(preface), 0));
+  if (!proxy_protocol_detect(tv)) {
+    return false;
+  }
+
+  int  bufsize = max_header_size;
+  char buf[bufsize];
+  tv.assign(buf, reader->memcpy(buf, bufsize, 0));
 
   size_t len = proxy_protocol_parse(&this->pp_info, tv);
 

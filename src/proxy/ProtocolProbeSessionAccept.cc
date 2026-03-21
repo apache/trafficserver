@@ -127,8 +127,10 @@ struct ProtocolProbeTrampoline : public Continuation, public ProtocolProbeSessio
             "ioCompletionEvent: proxy protocol DOES NOT have a configured allowlist of trusted IPs but proxy protocol is "
             "ernabled on this port - processing all connections");
       }
-
-      if (netvc->has_proxy_protocol(reader)) {
+      HttpConfigParams *param           = HttpConfig::acquire();
+      int               max_header_size = param->pp_hdr_max_size;
+      HttpConfig::release(param);
+      if (netvc->has_proxy_protocol(reader, max_header_size)) {
         Dbg(dbg_ctl_proxyprotocol, "ioCompletionEvent: http has proxy protocol header");
       } else {
         Dbg(dbg_ctl_proxyprotocol, "ioCompletionEvent: proxy protocol was enabled, but Proxy Protocol header was not present");

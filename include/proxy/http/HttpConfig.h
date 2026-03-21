@@ -888,6 +888,7 @@ public:
 
   MgmtInt http_request_line_max_size = 65535;
   MgmtInt http_hdr_field_max_size    = 131070;
+  MgmtInt pp_hdr_max_size            = 109;
 
   MgmtByte http_host_sni_policy         = 0;
   MgmtByte scheme_proto_mismatch_policy = 2;

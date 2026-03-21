@@ -505,7 +505,7 @@ public:
   void                 set_proxy_protocol_info(const ProxyProtocol &src);
   const ProxyProtocol &get_proxy_protocol_info() const;
 
-  bool has_proxy_protocol(IOBufferReader *);
+  bool has_proxy_protocol(IOBufferReader *, int max_header_size);
   bool has_proxy_protocol(char *, int64_t *);
 
   template <typename S> S *get_service() const;
