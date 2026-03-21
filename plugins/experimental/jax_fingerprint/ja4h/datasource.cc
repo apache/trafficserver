@@ -21,6 +21,8 @@
 
 #include "datasource.h"
 
+#include <cctype>
+
 bool
 Datasource::_should_include_field(std::string_view name)
 {
