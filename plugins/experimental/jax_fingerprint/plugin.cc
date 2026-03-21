@@ -235,11 +235,6 @@ int
 handle_read_request_hdr(void *edata, PluginConfig &config)
 {
   TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
-  if (txnp == nullptr) {
-    Dbg(dbg_ctl, "Failed to get txn object.");
-    return TS_SUCCESS;
-  }
-
   TSHttpSsn ssnp = TSHttpTxnSsnGet(txnp);
   if (ssnp == nullptr) {
     Dbg(dbg_ctl, "Failed to get ssn object.");
@@ -312,6 +307,15 @@ main_handler(TSCont cont, TSEvent event, void *edata)
   int ret;
 
   auto config = static_cast<PluginConfig *>(TSContDataGet(cont));
+  if (config == nullptr) {
+    // Null config means this continuation is no longer needed.
+    if (event == TS_EVENT_SSL_CLIENT_HELLO || event == TS_EVENT_VCONN_CLOSE) {
+      TSVConnReenable(static_cast<TSVConn>(edata));
+    } else {
+      TSHttpTxnReenable(static_cast<TSHttpTxn>(edata), TS_EVENT_HTTP_CONTINUE);
+    }
+    return TS_SUCCESS;
+  }
 
   switch (event) {
   case TS_EVENT_SSL_CLIENT_HELLO:
@@ -464,7 +468,10 @@ TSRemapDeleteInstance(void *ih)
 {
   auto config = static_cast<PluginConfig *>(ih);
   if (config->handler) {
-    TSContDestroy(config->handler);
+    // Destroying the continuation here causes a crash after remap.config reload
+    // Instead of destroying, make it NOP.
+    // TSContDestroy(config->handler);
+    TSContDataSet(config->handler, nullptr);
   }
   if (config->log_handle) {
     flush_log_file(config->log_handle);
