@@ -483,10 +483,9 @@ private:
    */
   void setup_client_request_plugin_agents(HttpTunnelProducer *p, int num_header_bytes = 0);
 
-  HttpTransact::StateMachineAction_t last_action     = HttpTransact::StateMachineAction_t::UNDEFINED;
-  int (HttpSM::*m_last_state)(int event, void *data) = nullptr;
-  virtual void set_next_state();
-  void         call_transact_and_set_next_state(TransactEntryFunc_t f);
+  HttpTransact::StateMachineAction_t last_action = HttpTransact::StateMachineAction_t::UNDEFINED;
+  virtual void                       set_next_state();
+  void                               call_transact_and_set_next_state(TransactEntryFunc_t f);
 
   bool    is_http_server_eos_truncation(HttpTunnelProducer *);
   bool    is_bg_fill_necessary(HttpTunnelConsumer *c);
@@ -564,11 +563,7 @@ private:
   APIHook const *cur_hook    = nullptr;
   HttpHookState  hook_state;
 
-  // Continuation time keeper
-  int64_t prev_hook_start_time = 0;
-
   int            reentrancy_count = 0;
-  int            cur_hooks        = 0;
   HttpApiState_t callout_state    = HttpApiState_t::NO_CALLOUT;
 
   // api_hooks must not be changed directly

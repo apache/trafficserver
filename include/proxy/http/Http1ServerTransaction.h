@@ -44,10 +44,4 @@ public:
   void transaction_done() override;
 
   void force_close();
-
-  ////////////////////
-  // Variables
-
-protected:
-  bool outbound_transparent{false};
 };

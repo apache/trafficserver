@@ -284,7 +284,7 @@ public:
 class LogBufferIterator
 {
 public:
-  LogBufferIterator(LogBufferHeader *header, bool in_network_order = false);
+  LogBufferIterator(LogBufferHeader *header);
   ~LogBufferIterator();
 
   LogEntryHeader *next();
@@ -295,7 +295,6 @@ public:
   LogBufferIterator &operator=(const LogBufferIterator &) = delete;
 
 private:
-  bool     m_in_network_order;
   char    *m_next;
   unsigned m_iter_entry_count;
   unsigned m_buffer_entry_count;
@@ -311,8 +310,8 @@ private:
   within a given LogBuffer.
   -------------------------------------------------------------------------*/
 
-inline LogBufferIterator::LogBufferIterator(LogBufferHeader *header, bool in_network_order)
-  : m_in_network_order(in_network_order), m_next(nullptr), m_iter_entry_count(0), m_buffer_entry_count(0)
+inline LogBufferIterator::LogBufferIterator(LogBufferHeader *header)
+  : m_next(nullptr), m_iter_entry_count(0), m_buffer_entry_count(0)
 {
   ink_assert(header);
 
