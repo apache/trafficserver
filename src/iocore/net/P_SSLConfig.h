@@ -66,6 +66,7 @@ struct SSLConfigParams : public ConfigInfo {
   char *cipherSuite;
   char *client_cipherSuite;
   int   configExitOnLoadError;
+  int   configLoadConcurrency;
   int   clientCertLevel;
   int   verify_depth;
   int   ssl_origin_session_cache{0};
