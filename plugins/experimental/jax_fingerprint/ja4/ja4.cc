@@ -113,7 +113,7 @@ convert_count_to_two_digit_string(std::size_t count)
   return result;
 }
 
-std::string
+static std::string
 convert_ALPN_to_two_char_string(std::string_view ALPN)
 {
   std::string result;
@@ -158,7 +158,7 @@ JA4::make_JA4_c_raw(TLSClientHelloSummary const &TLS_summary)
   return result;
 }
 
-void
+static void
 remove_trailing_character(std::string &s)
 {
   if (!s.empty()) {
@@ -166,7 +166,7 @@ remove_trailing_character(std::string &s)
   }
 }
 
-std::string
+static std::string
 hexify(std::uint16_t n)
 {
   char result[U16_HEX_BUF_SIZE + 1]{};

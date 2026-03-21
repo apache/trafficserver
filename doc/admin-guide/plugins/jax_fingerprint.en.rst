@@ -49,7 +49,7 @@ To use the plugin as a remap plugin, append the following line to a remap rule o
     @plugin=jax_fingerprint.so @pparam=--standalone
 
 To use the plugin in a hybrid setup (both global and remap plugin), configure it in both :file:`plugin.config` and
-:file:`remap.config` without `--standalone` option.
+:file:`remap.config` without ``--standalone`` option.
 
 
 .. option:: --standalone
@@ -59,7 +59,7 @@ words, the option needs to be specified if you do not use the hybrid setup.
 
 .. option:: --method <JA4|JA4H|JA3>
 
-Fingerprinting method (e.g. JA4, JA3, etc.) to use. This option must be speficied.
+Fingerprinting method (e.g. JA4, JA3, etc.) to use. This option must be specified.
 
 .. option:: --mode <overwrite|keep|append>
 
