@@ -1,0 +1,111 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+# Used by: global JA3 overwrite test.
+#
+# The jax_fingerprint plugin is loaded globally with --method JA3
+# --standalone --mode overwrite.  TLS/HTTPS requests should have the
+# JA3 fingerprint header (x-jax) and via header (x-jax-via) set by ATS.
+
+meta:
+  version: "1.0"
+
+sessions:
+
+# Session 1: TLS/HTTPS request without pre-existing x-jax – plugin adds it.
+- protocol:
+  - name: tls
+    sni: jax.server.test
+  - name: tcp
+  - name: ip
+
+  transactions:
+
+  - client-request:
+      method: GET
+      url: /resource
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, jax.server.test ]
+        - [ Content-Length, 0 ]
+        - [ uuid, global-ja3-request ]
+
+    # Global plugin (overwrite) must add both headers.
+    proxy-request:
+      headers:
+        fields:
+        - [ x-jax, { as: present } ]
+        - [ x-jax-via, { value: 'test.proxy.test', as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 2 ]
+        - [ X-Response, global-ja3-response ]
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response, { value: 'global-ja3-response', as: equal } ]
+
+# Session 2: TLS/HTTPS request with pre-existing x-jax – overwrite mode
+# replaces the upstream fingerprint with the one computed by ATS.
+- protocol:
+  - name: tls
+    sni: jax.server.test
+  - name: tcp
+  - name: ip
+
+  transactions:
+
+  - client-request:
+      method: GET
+      url: /resource-with-header
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, jax.server.test ]
+        - [ Content-Length, 0 ]
+        - [ uuid, global-ja3-overwrite ]
+        - [ x-jax, upstream-fingerprint ]
+        - [ x-jax-via, upstream-via ]
+
+    # Overwrite mode: upstream values are replaced by the plugin.
+    proxy-request:
+      headers:
+        fields:
+        - [ x-jax, { as: present } ]
+        - [ x-jax-via, { value: 'test.proxy.test', as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 2 ]
+        - [ X-Response, global-ja3-overwrite-response ]
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response, { value: 'global-ja3-overwrite-response', as: equal } ]

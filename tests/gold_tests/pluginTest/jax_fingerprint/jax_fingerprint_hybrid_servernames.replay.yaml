@@ -1,0 +1,124 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+# Used by: hybrid JA4 servernames test.
+#
+# The global plugin (no --standalone) is loaded with --method JA4
+# --servernames jax.server.test.  It registers SSL_CLIENT_HELLO_HOOK
+# and, for connections whose SNI is in the allowlist, stores a JAxContext
+# on the vconn user-arg slot.  For connections whose SNI is NOT in the
+# allowlist it calls TSVConnReenable and returns immediately -- no context
+# is ever created.
+#
+# Both remap rules carry the remap plugin (no --standalone).  TSRemapDoRemap
+# calls handle_read_request_hdr which looks for a JAxContext on the vconn:
+#   - jax.server.test (SNI in allowlist)     : context present → headers added
+#   - jax-filtered.server.test (SNI absent)  : context absent  → headers absent
+#
+# This is the most common production pattern: a single global instance
+# captures TLS client hellos while per-route remap plugins control which
+# responses actually get fingerprint headers.
+
+meta:
+  version: "1.0"
+
+sessions:
+
+# Session 1: SNI matches the allowlist – global plugin creates context,
+# remap plugin reads it and sets fingerprint headers.
+- protocol:
+  - name: tls
+    sni: jax.server.test
+  - name: tcp
+  - name: ip
+
+  transactions:
+
+  - client-request:
+      method: GET
+      url: /resource
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, jax.server.test ]
+        - [ Content-Length, 0 ]
+        - [ uuid, hybrid-servernames-in-filter ]
+
+    # SNI is in the allowlist – remap plugin must have set both headers.
+    proxy-request:
+      headers:
+        fields:
+        - [ x-jax, { as: present } ]
+        - [ x-jax-via, { value: 'test.proxy.test', as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 10 ]
+        - [ X-Response, hybrid-sni-allowed-response ]
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response, { value: 'hybrid-sni-allowed-response', as: equal } ]
+
+# Session 2: SNI does NOT match the allowlist – global plugin skips the
+# connection (no context on vconn).  Even though the remap rule carries the
+# plugin, handle_read_request_hdr finds no context and returns without
+# touching any headers.
+- protocol:
+  - name: tls
+    sni: jax-filtered.server.test
+  - name: tcp
+  - name: ip
+
+  transactions:
+
+  - client-request:
+      method: GET
+      url: /resource
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, jax-filtered.server.test ]
+        - [ Content-Length, 0 ]
+        - [ uuid, hybrid-servernames-filtered ]
+
+    # SNI is not in the allowlist – neither header must appear.
+    proxy-request:
+      headers:
+        fields:
+        - [ x-jax, { as: absent } ]
+        - [ x-jax-via, { as: absent } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 12 ]
+        - [ X-Response, hybrid-sni-filtered-response ]
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response, { value: 'hybrid-sni-filtered-response', as: equal } ]
