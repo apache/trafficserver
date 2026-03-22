@@ -39,6 +39,7 @@
 #include <sys/time.h>
 #include <sys/select.h>
 #include <cerrno>
+#include <csignal>
 
 char req_buf[10000];
 char post_buf[1000];
@@ -156,6 +157,10 @@ main(int argc, char *argv[])
   ttfb_delay           = atoi(argv[3]);
   const char *pem_file = argv[4];
 
+  // Ignore SIGPIPE which can be raised when a client disconnects during
+  // the handshake delay, killing the process unexpectedly.
+  signal(SIGPIPE, SIG_IGN);
+
   fprintf(stderr, "Listen on %d connect delay=%d ttfb delay=%d\n", listen_port, connect_delay, ttfb_delay);
 
   int                listenfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -199,8 +204,10 @@ main(int argc, char *argv[])
   for (;;) {
     sfd = accept(listenfd, (struct sockaddr *)nullptr, nullptr);
     if (sfd <= 0) {
-      // Failure
-      printf("Listen failure\n");
+      if (errno == EINTR) {
+        continue;
+      }
+      printf("Listen failure errno=%d\n", errno);
       exit(1);
     }
 
