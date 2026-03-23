@@ -167,9 +167,11 @@ void
 UnixNetProcessor::stop_accept()
 {
   SCOPED_MUTEX_LOCK(lock, naVecMutex, this_ethread());
-  for (auto &na : naVec) {
+  for (auto *na : naVec) {
     na->stop_accept();
+    delete na;
   }
+  naVec.clear();
 }
 
 Action *
