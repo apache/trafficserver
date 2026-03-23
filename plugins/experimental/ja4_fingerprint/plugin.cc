@@ -444,7 +444,7 @@ handle_vconn_close(TSCont /* cont ATS_UNUSED */, TSEvent event, void *edata)
     return TS_SUCCESS;
   }
   TSVConn const ssl_vc{static_cast<TSVConn>(edata)};
-  delete static_cast<std::string *>(TSUserArgGet(ssl_vc, *get_user_arg_index()));
+  delete static_cast<JA4_data *>(TSUserArgGet(ssl_vc, *get_user_arg_index()));
   TSUserArgSet(ssl_vc, *get_user_arg_index(), nullptr);
   TSVConnReenable(ssl_vc);
   return TS_SUCCESS;
