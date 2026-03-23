@@ -96,6 +96,7 @@ update_object_size(TSHttpTxn txnp, int64_t size, Config &config)
   if (urlstr != nullptr) {
     if (size <= 0) {
       DEBUG_LOG("Ignoring invalid content length for %.*s: %" PRId64, urllen, urlstr, size);
+      TSfree(urlstr);
       return;
     }
 
