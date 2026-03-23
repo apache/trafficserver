@@ -46,7 +46,7 @@ if(BUILD_TESTING)
     ja4h/ja4h.cc
     ja4h/datasource.cc
   )
-  target_link_libraries(test_jax PRIVATE Catch2::Catch2WithMain OpenSSL::SSL)
+  target_link_libraries(test_jax PRIVATE Catch2::Catch2WithMain OpenSSL::Crypto OpenSSL::SSL)
 
   add_catch2_test(NAME test_jax COMMAND test_jax)
 endif()

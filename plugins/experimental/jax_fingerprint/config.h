@@ -23,6 +23,7 @@
 #pragma once
 
 #include "ts/ts.h"
+#include "plugin.h"
 #include "method.h"
 
 #include <string>
