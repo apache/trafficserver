@@ -287,6 +287,32 @@ hc_thread(void *data ATS_UNUSED)
   return nullptr; /* Yeah, that never happens */
 }
 
+/* Free all HCFileInfo nodes and their associated allocations */
+static void
+free_config(HCFileInfo *head)
+{
+  while (head) {
+    HCFileInfo *next = head->_next;
+
+    TSfree(const_cast<char *>(head->ok));
+    TSfree(const_cast<char *>(head->miss));
+    TSfree(head->data.load());
+    TSfree(head);
+    head = next;
+  }
+}
+
+/* Shutdown handler to clean up the global config */
+static int
+hc_shutdown_handler(TSCont /* contp ATS_UNUSED */, TSEvent event, void * /* edata ATS_UNUSED */)
+{
+  if (event == TS_EVENT_LIFECYCLE_SHUTDOWN) {
+    free_config(g_config);
+    g_config = nullptr;
+  }
+  return 0;
+}
+
 /* Config file parsing */
 static const char HEADER_TEMPLATE[] = "HTTP/1.1 %d %s\r\nContent-Type: %s\r\nCache-Control: no-cache\r\n";
 
@@ -621,6 +647,9 @@ TSPluginInit(int argc, const char *argv[])
     TSError("[healthchecks] Failure in thread creation");
     return;
   }
+
+  /* Register shutdown handler to free config memory */
+  TSLifecycleHookAdd(TS_LIFECYCLE_SHUTDOWN_HOOK, TSContCreate(hc_shutdown_handler, nullptr));
 
   /* Create a continuation with a mutex as there is a shared global structure
      containing the headers to add */
