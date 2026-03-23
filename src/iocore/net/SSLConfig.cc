@@ -454,6 +454,7 @@ SSLConfigParams::initialize()
   SSLConfigParams::origin_session_cache_size = ssl_origin_session_cache_size;
 
   if (ssl_origin_session_cache == 1 && ssl_origin_session_cache_size > 0) {
+    delete origin_sess_cache;
     origin_sess_cache = new SSLOriginSessionCache();
   }
 
@@ -472,6 +473,7 @@ SSLConfigParams::initialize()
     set_paths_helper(ssl_ocsp_response_path, nullptr, &ssl_ocsp_response_path_only, nullptr);
   }
   if (auto rec_str{RecGetRecordStringAlloc("proxy.config.http.request_via_str")}; rec_str) {
+    ats_free(ssl_ocsp_user_agent);
     ssl_ocsp_user_agent = ats_stringdup(rec_str);
   }
 
@@ -861,6 +863,11 @@ SSLTicketParams::cleanup()
 void
 cleanup_bio(BIO *&biop)
 {
+  // BIO_new_mem_buf sets BIO_FLAGS_MEM_RDONLY which prevents BIO_free from
+  // cleaning up internal BUF_MEM structures. Clear this flag so BIO_free
+  // properly releases them. BIO_NOCLOSE ensures the external data buffer
+  // (owned by the caller's std::string) is not freed.
+  BIO_clear_flags(biop, BIO_FLAGS_MEM_RDONLY);
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-value"
   BIO_set_close(biop, BIO_NOCLOSE);
