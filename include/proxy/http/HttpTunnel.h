@@ -132,7 +132,7 @@ struct ChunkedHandler {
   //@{
   /// The maximum chunk size.
   /// This is the preferred size as well, used whenever possible.
-  int64_t max_chunk_size;
+  int64_t max_chunk_size{DEFAULT_MAX_CHUNK_SIZE};
   /// Caching members to avoid using printf on every chunk.
   /// It holds the header for a maximal sized chunk which will cover
   /// almost all output chunks.

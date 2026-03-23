@@ -84,7 +84,7 @@ public:
     ClientHelloContainer _chc;
 #if HAVE_SSL_CTX_SET_CLIENT_HELLO_CB
     int   *_ext_ids = nullptr;
-    size_t _ext_len;
+    size_t _ext_len{0};
 #endif
   };
 

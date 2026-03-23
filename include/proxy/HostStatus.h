@@ -99,17 +99,17 @@ struct HostStatuses {
 
 // host status POD
 struct HostStatRec {
-  TSHostStatus status;
-  unsigned int reasons;
+  TSHostStatus status{TSHostStatus::TS_HOST_STATUS_INIT};
+  unsigned int reasons{0};
   // time the host was marked down for a given reason.
-  time_t active_marked_down;
-  time_t local_marked_down;
-  time_t manual_marked_down;
-  time_t self_detect_marked_down;
+  time_t active_marked_down{0};
+  time_t local_marked_down{0};
+  time_t manual_marked_down{0};
+  time_t self_detect_marked_down{0};
   // number of seconds that the host should be marked down for a given reason.
-  unsigned int active_down_time;
-  unsigned int local_down_time;
-  unsigned int manual_down_time;
+  unsigned int active_down_time{0};
+  unsigned int local_down_time{0};
+  unsigned int manual_down_time{0};
 
   HostStatRec();
   HostStatRec(std::string str);
