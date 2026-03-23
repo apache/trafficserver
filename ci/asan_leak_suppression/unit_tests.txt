@@ -1,10 +1,4 @@
-# leaks in test_X509HostnameValidator
-leak:libcrypto.so.1.1
-# for OpenSSL 1.0.2:
-leak:CRYPTO_malloc
-leak:CRYPTO_realloc
-leak:ConsCell
-# PR#10295
-leak:pcre_jit_stack_alloc
-# PR#10541
+# marshal_hdr in test_http_hdr_print_and_copy_aux is intentionally
+# not destroyed because it holds a reference to a stack-allocated
+# TestRefCountObj whose free() override calls exit(1).
 leak:test_http_hdr_print_and_copy_aux
