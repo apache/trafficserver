@@ -41,17 +41,17 @@ enum class HttpVC_t {
 };
 
 struct HttpVCTableEntry {
-  VConnection  *vc;
-  MIOBuffer    *read_buffer;
-  MIOBuffer    *write_buffer;
-  VIO          *read_vio;
-  VIO          *write_vio;
-  HttpSMHandler vc_read_handler;
-  HttpSMHandler vc_write_handler;
-  HttpVC_t      vc_type;
-  HttpSM       *sm;
-  bool          eos;
-  bool          in_tunnel;
+  VConnection  *vc{nullptr};
+  MIOBuffer    *read_buffer{nullptr};
+  MIOBuffer    *write_buffer{nullptr};
+  VIO          *read_vio{nullptr};
+  VIO          *write_vio{nullptr};
+  HttpSMHandler vc_read_handler{};
+  HttpSMHandler vc_write_handler{};
+  HttpVC_t      vc_type{HttpVC_t::UNKNOWN};
+  HttpSM       *sm{nullptr};
+  bool          eos{false};
+  bool          in_tunnel{false};
 };
 
 struct HttpVCTable {
