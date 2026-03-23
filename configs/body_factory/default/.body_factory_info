@@ -12,7 +12,7 @@
 # For example, to describe Korean web pages encoded in the
 # iso-2022-kr character set, you might add these lines:
 #
-#	Content-Language: kr
+#	Content-Language: ko-KR
 #	Content-Charset: iso-2022-kr
 #
 # To serve plain text error pages instead of HTML:

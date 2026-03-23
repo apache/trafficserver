@@ -141,7 +141,7 @@ This would produce the response header ``Content-Type: text/plain; charset=utf-8
 
 To describe Korean error pages encoded in the ``iso-2022-kr`` character set::
 
-   Content-Language: kr
+   Content-Language: ko-KR
    Content-Charset: iso-2022-kr
 
 If the file is empty or contains only comments, the defaults are used: English ``text/html`` in

@@ -81,7 +81,7 @@ class BodyFactoryContentTypeTest:
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.TimeOut = 5
         tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-            'Content-Type: text/html', 'Default body factory should produce text/html')
+            '(?i)Content-Type:\\s*text/html(?:\\s|\\r|$)', 'Default body factory should produce text/html')
         tr.Processes.Default.Streams.stdout += Testers.ContainsExpression('HTTP/1.1 404', 'Unmapped request should get 404')
         tr.StillRunningAfter = self._ts_default
 
@@ -96,7 +96,8 @@ class BodyFactoryContentTypeTest:
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.TimeOut = 5
         tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-            'Content-Type: text/plain; charset=utf-8', 'Custom body factory should produce text/plain with charset')
+            '(?i)Content-Type:\\s*text/plain\\s*;\\s*charset=utf-8(?:\\s|\\r|$)',
+            'Custom body factory should produce text/plain with charset')
         tr.Processes.Default.Streams.stdout += Testers.ContainsExpression('HTTP/1.1 404', 'Unmapped request should get 404')
         tr.StillRunningAfter = self._ts_custom
 
