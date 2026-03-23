@@ -95,7 +95,8 @@ class JaxFingerprintTest:
         self._configure_server(tr)
         self._configure_trafficserver()
         self._configure_client(tr)
-        self._await_log()
+        Test.AddAwaitFileContainsTestRun(
+            f'Await jax_fingerprint.log for: {self._name}', self._ts.Disk.jax_log.AbsPath, self._method)
 
     # ------------------------------------------------------------------
     # Helpers
@@ -271,16 +272,6 @@ class JaxFingerprintTest:
         p.StartBefore(self._server)
         p.StartBefore(self._ts)
         tr.StillRunningAfter = self._ts
-
-    def _await_log(self) -> None:
-        '''Wait for at least one fingerprint entry to appear in the log.'''
-        tr = Test.AddTestRun(f'Await jax_fingerprint.log for: {self._name}')
-        log_path = self._ts.Disk.jax_log.AbsPath
-        waiter = tr.Processes.Process('waiter', 'sleep 30')
-        waiter.Ready = When.FileContains(log_path, self._method)
-        p = tr.Processes.Default
-        p.Command = f'echo await {log_path}'
-        p.StartBefore(waiter)
 
 
 # ======================================================================
