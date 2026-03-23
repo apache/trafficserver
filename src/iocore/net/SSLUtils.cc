@@ -69,6 +69,8 @@
 #include <openssl/ts.h>
 #endif
 
+#include <algorithm>
+#include <thread>
 #include <utility>
 #include <string>
 #include <unistd.h>
@@ -1599,11 +1601,20 @@ SSLMultiCertConfigLoader::_store_ssl_ctx(SSLCertLookup *lookup, const shared_SSL
   SSLMultiCertConfigLoader::CertLoadData         data;
 
   if (!this->_prep_ssl_ctx(sslMultCertSettings, data, common_names, unique_names)) {
-    lookup->is_valid = false;
+    {
+      std::lock_guard<std::mutex> lock(_loader_mutex);
+      lookup->is_valid = false;
+    }
     return false;
   }
 
   std::vector<SSLLoadingContext> ctxs = this->init_server_ssl_ctx(data, sslMultCertSettings.get());
+
+  // Serialize all mutations to the shared SSLCertLookup.
+  // The expensive work above (_prep_ssl_ctx + init_server_ssl_ctx) runs
+  // without the lock, allowing parallel cert loading across threads.
+  std::lock_guard<std::mutex> lock(_loader_mutex);
+
   for (const auto &loadingctx : ctxs) {
     if (!sslMultCertSettings ||
         !this->_store_single_ssl_ctx(lookup, sslMultCertSettings, shared_SSL_CTX{loadingctx.ctx, SSL_CTX_free}, loadingctx.ctx_type,
@@ -1782,7 +1793,7 @@ SSLMultiCertConfigLoader::_store_single_ssl_ctx(SSLCertLookup *lookup, const sha
 }
 
 swoc::Errata
-SSLMultiCertConfigLoader::load(SSLCertLookup *lookup)
+SSLMultiCertConfigLoader::load(SSLCertLookup *lookup, bool firstLoad)
 {
   const SSLConfigParams *params = this->_params;
 
@@ -1806,10 +1817,69 @@ SSLMultiCertConfigLoader::load(SSLCertLookup *lookup)
   }
 
   swoc::Errata errata(ERRATA_NOTE);
-  int          item_num = 0;
 
-  for (const auto &item : parse_result.value) {
+  static constexpr int MAX_LOAD_THREADS = 256;
+
+  int num_threads = params->configLoadConcurrency;
+  if (firstLoad) {
+    num_threads = std::clamp(static_cast<int>(std::thread::hardware_concurrency()), 1, MAX_LOAD_THREADS);
+  }
+  num_threads = std::min(num_threads, static_cast<int>(parse_result.value.size()));
+
+  if (num_threads > 1 && parse_result.value.size() > 1) {
+    std::size_t bucket_size = parse_result.value.size() / num_threads;
+    std::size_t remainder   = parse_result.value.size() % num_threads;
+    auto        current     = parse_result.value.cbegin();
+
+    std::vector<std::thread> threads;
+    Note("(%s) loading %zu certs with %d threads", this->_debug_tag(), parse_result.value.size(), num_threads);
+
+    for (int t = 0; t < num_threads; ++t) {
+      std::size_t this_bucket = bucket_size + (static_cast<std::size_t>(t) < remainder ? 1 : 0);
+      auto        end         = current + this_bucket;
+      int         base_index  = static_cast<int>(std::distance(parse_result.value.cbegin(), current));
+      threads.emplace_back(&SSLMultiCertConfigLoader::_load_items, this, lookup, current, end, base_index, std::ref(errata));
+      current = end;
+    }
+
+    for (auto &th : threads) {
+      th.join();
+    }
+
+    Note("(%s) loaded %zu certs in %d threads", this->_debug_tag(), parse_result.value.size(), num_threads);
+  } else {
+    _load_items(lookup, parse_result.value.cbegin(), parse_result.value.cend(), 0, errata);
+    Note("(%s) loaded %zu certs (single-threaded)", this->_debug_tag(), parse_result.value.size());
+  }
+
+  // We *must* have a default context even if it can't possibly work. The default context is used to
+  // bootstrap the SSL handshake so that we can subsequently do the SNI lookup to switch to the real
+  // context.
+  if (lookup->ssl_default == nullptr) {
+    shared_SSLMultiCertConfigParams sslMultiCertSettings(new SSLMultiCertConfigParams);
+    sslMultiCertSettings->addr = ats_strdup("*");
+    if (!this->_store_ssl_ctx(lookup, sslMultiCertSettings)) {
+      errata.note(ERRATA_ERROR, "failed set default context");
+    }
+  }
+
+  return errata;
+}
+
+void
+SSLMultiCertConfigLoader::_load_items(SSLCertLookup *lookup, config::SSLMultiCertConfig::const_iterator begin,
+                                      config::SSLMultiCertConfig::const_iterator end, int base_index, swoc::Errata &errata)
+{
+  // Each thread needs its own elevated privileges since POSIX capabilities are per-thread
+  uint32_t elevate_setting = 0;
+  elevate_setting          = RecGetRecordInt("proxy.config.ssl.cert.load_elevated").value_or(0);
+  ElevateAccess elevate_access(elevate_setting ? ElevateAccess::FILE_PRIVILEGE : 0);
+
+  int item_num = base_index;
+  for (auto it = begin; it != end; ++it) {
     item_num++;
+    const auto &item = *it;
+
     shared_SSLMultiCertConfigParams sslMultiCertSettings = std::make_shared<SSLMultiCertConfigParams>();
 
     if (!item.ssl_cert_name.empty()) {
@@ -1846,25 +1916,14 @@ SSLMultiCertConfigLoader::load(SSLCertLookup *lookup)
     // There must be a certificate specified unless the tunnel action is set.
     if (sslMultiCertSettings->cert || sslMultiCertSettings->opt == SSLCertContextOption::OPT_TUNNEL) {
       if (!this->_store_ssl_ctx(lookup, sslMultiCertSettings)) {
+        std::lock_guard<std::mutex> lock(_loader_mutex);
         errata.note(ERRATA_ERROR, "Failed to load certificate at item {}", item_num);
       }
     } else {
+      std::lock_guard<std::mutex> lock(_loader_mutex);
       errata.note(ERRATA_WARN, "No ssl_cert_name specified and no tunnel action set at item {}", item_num);
     }
   }
-
-  // We *must* have a default context even if it can't possibly work. The default context is used to
-  // bootstrap the SSL handshake so that we can subsequently do the SNI lookup to switch to the real
-  // context.
-  if (lookup->ssl_default == nullptr) {
-    shared_SSLMultiCertConfigParams sslMultiCertSettings(new SSLMultiCertConfigParams);
-    sslMultiCertSettings->addr = ats_strdup("*");
-    if (!this->_store_ssl_ctx(lookup, sslMultiCertSettings)) {
-      errata.note(ERRATA_ERROR, "failed set default context");
-    }
-  }
-
-  return errata;
 }
 
 // Release SSL_CTX and the associated data. This works for both
