@@ -28,13 +28,17 @@
  ***************************************************************************/
 #include "tscore/ink_config.h"
 
+#include <cctype>
 #include <cstdio>
 #include <cstring>
 #include <cstdlib>
+#include <string>
+#include <utility>
 
 #include "tscore/SimpleTokenizer.h"
 #include "tscore/CryptoHash.h"
 
+#include "LogHeaderFallback.h"
 #include "proxy/logging/LogUtils.h"
 #include "proxy/logging/LogFile.h"
 #include "proxy/logging/LogField.h"
@@ -433,6 +437,8 @@ LogFormat::parse_symbol_string(const char *symbol_string, LogFieldList *field_li
   symbol  = strtok_r(sym_str, ",", &saveptr);
 
   while (symbol != nullptr) {
+    std::string original_symbol(symbol);
+
     //
     // See if there is an aggregate operator, which will contain "()"
     //
@@ -474,6 +480,19 @@ LogFormat::parse_symbol_string(const char *symbol_string, LogFieldList *field_li
         Note("Invalid aggregate field specification: no trailing "
              "')' in %s",
              symbol);
+      }
+    } else if (LogHeaderFallback::has_fallback(symbol)) {
+      Dbg(dbg_ctl_log_format, "Header fallback symbol: %s", symbol);
+      std::string parse_error;
+      auto        parsed = LogHeaderFallback::parse(symbol, parse_error);
+      if (parsed.has_value()) {
+        f = new LogField(original_symbol.c_str(), std::move(parsed->header_fields), std::move(parsed->fallback_default));
+        field_list->add(f, false);
+        field_count++;
+        Dbg(dbg_ctl_log_format, "Header fallback field %s added", original_symbol.c_str());
+      } else {
+        Note("%s", parse_error.c_str());
+        field_list->addBadSymbol(original_symbol);
       }
     }
     //
@@ -529,7 +548,7 @@ LogFormat::parse_symbol_string(const char *symbol_string, LogFieldList *field_li
         Note("The log format symbol %s was not found in the "
              "list of known symbols.",
              symbol);
-        field_list->addBadSymbol(symbol);
+        field_list->addBadSymbol(original_symbol);
       }
     }
 

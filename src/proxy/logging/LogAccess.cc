@@ -481,6 +481,54 @@ LogAccess::marshal_custom_field(char *buf, LogField::CustomMarshalFunc plugin_ma
   return LogAccess::padded_length(len);
 }
 
+HTTPHdr *
+LogAccess::header_for_container(LogField::Container container) const
+{
+  switch (container) {
+  case LogField::CQH:
+  case LogField::ECQH:
+    return m_client_request;
+
+  case LogField::PSH:
+  case LogField::EPSH:
+    return m_proxy_response;
+
+  case LogField::PQH:
+  case LogField::EPQH:
+    return m_proxy_request;
+
+  case LogField::SSH:
+  case LogField::ESSH:
+    return m_server_response;
+
+  case LogField::CSSH:
+  case LogField::ECSSH:
+    return m_cache_response;
+
+  default:
+    return nullptr;
+  }
+}
+
+bool
+LogAccess::has_http_header_field(LogField::Container container, const char *field) const
+{
+  if (HTTPHdr const *header = header_for_container(container); header != nullptr) {
+    if (header->field_find(std::string_view{field}) != nullptr) {
+      return true;
+    }
+  }
+
+  if (container == LogField::SSH && strcmp(field, "Transfer-Encoding") == 0) {
+    const std::string &stored_te = m_http_sm->t_state.hdr_info.server_response_transfer_encoding;
+    if (!stored_te.empty()) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 inline int
 LogAccess::unmarshal_with_map(int64_t code, char *dest, int len, const Ptr<LogFieldAliasMap> &map, const char *msg)
 {
@@ -3282,33 +3330,7 @@ LogAccess::marshal_http_header_field(LogField::Container container, char *field,
   int      padded_len  = INK_MIN_ALIGN;
   int      actual_len  = 0;
   bool     valid_field = false;
-  HTTPHdr *header;
-
-  switch (container) {
-  case LogField::CQH:
-    header = m_client_request;
-    break;
-
-  case LogField::PSH:
-    header = m_proxy_response;
-    break;
-
-  case LogField::PQH:
-    header = m_proxy_request;
-    break;
-
-  case LogField::SSH:
-    header = m_server_response;
-    break;
-
-  case LogField::CSSH:
-    header = m_cache_response;
-    break;
-
-  default:
-    header = nullptr;
-    break;
-  }
+  HTTPHdr *header      = header_for_container(container);
 
   if (header) {
     MIMEField *fld = header->field_find(std::string_view{field});
@@ -3413,33 +3435,7 @@ LogAccess::marshal_http_header_field_escapify(LogField::Container container, cha
   int      padded_len = INK_MIN_ALIGN;
   int      actual_len = 0, new_len = 0;
   bool     valid_field = false;
-  HTTPHdr *header;
-
-  switch (container) {
-  case LogField::ECQH:
-    header = m_client_request;
-    break;
-
-  case LogField::EPSH:
-    header = m_proxy_response;
-    break;
-
-  case LogField::EPQH:
-    header = m_proxy_request;
-    break;
-
-  case LogField::ESSH:
-    header = m_server_response;
-    break;
-
-  case LogField::ECSSH:
-    header = m_cache_response;
-    break;
-
-  default:
-    header = nullptr;
-    break;
-  }
+  HTTPHdr *header      = header_for_container(container);
 
   if (header) {
     MIMEField *fld = header->field_find(std::string_view{field});

@@ -314,8 +314,36 @@ prior to the log field's name, as so::
     Format = '%<{User-agent}cqh>'
 
 The above would insert the User Agent string from the client request headers
-into your log entry (or a blank string if no such header was present, or it did
-not contain a value).
+into your log entry (or ``-`` if no such header was present).
+
+Header fields can also be chained with a fallback operator, ``??``, when you want
+the log to use the first header that exists among n headers. For example::
+
+    Format = '%<{x-primary-id}cqh??{x-secondary-id}cqh??{x-tertiary-id}cqh>'
+
+|TS| evaluates the candidates from left to right and logs the first header that
+exists. If none of the headers exist, |TS| logs ``-`` by default. A header that
+exists but has an empty value is considered present, so |TS| logs the empty
+value instead of falling back. So in the example above, the value of
+x-primary-id of the client request is logged if it exists, otherwise the value
+of x-secondary-id is logged if it exists, otherwise ``-`` is logged if neither
+of the headers is present.
+
+You can provide an explicit quoted default literal as the final term in the
+chain to use instead of the default ``-`` literal::
+
+    Format = '%<{x-primary-id}cqh??{x-secondary-id}cqh??"missing-id">'
+
+If none of the headers exist, |TS| logs the default literal instead,
+``missing-id`` in this case. The default literal must be quoted and must be the
+last term in the chain.
+
+Note that this fallback chain feature is only supported for header field
+expressions (``cqh``, ``pqh``, etc., see the following table).
+
+Slices apply to each candidate in the fallback chain individually::
+
+    Format = '%<{x-primary-id}cqh[0:8]??{x-secondary-id}cqh[0:16]>'
 
 ===== ====================== ==================================================
 Field Source                 Description

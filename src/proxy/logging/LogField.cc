@@ -28,6 +28,8 @@
  representation of a logging field.
  ***************************************************************************/
 #include "tscore/ink_platform.h"
+#include <cstring>
+#include <utility>
 #include "swoc/swoc_meta.h"
 #include "swoc/TextView.h"
 #include "swoc/string_view_util.h"
@@ -431,6 +433,30 @@ LogField::LogField(const char *field, Container container)
   }
 }
 
+LogField::LogField(const char *symbol, std::vector<HeaderField> header_fields, std::optional<std::string> fallback_default)
+  : m_name(ats_strdup(symbol)),
+    m_symbol(ats_strdup(symbol)),
+    m_type(LogField::STRING),
+    m_container(NO_CONTAINER),
+    m_marshal_func(nullptr),
+    m_unmarshal_func(&(LogAccess::unmarshal_str)),
+    m_agg_op(NO_AGGREGATE),
+    m_agg_cnt(0),
+    m_agg_val(0),
+    m_milestone1(TS_MILESTONE_LAST_ENTRY),
+    m_milestone2(TS_MILESTONE_LAST_ENTRY),
+    m_time_field(false),
+    m_alias_map(nullptr),
+    m_set_func(nullptr),
+    m_header_fields(std::move(header_fields)),
+    m_header_fallback_default(std::move(fallback_default))
+{
+  ink_assert(m_name != nullptr);
+  ink_assert(m_symbol != nullptr);
+  ink_assert(m_type >= 0 && m_type < N_TYPES);
+  ink_assert(!m_header_fields.empty());
+}
+
 // Copy ctor
 LogField::LogField(const LogField &rhs)
   : m_name(ats_strdup(rhs.m_name)),
@@ -448,7 +474,9 @@ LogField::LogField(const LogField &rhs)
     m_alias_map(rhs.m_alias_map),
     m_set_func(rhs.m_set_func),
     m_custom_marshal_func(rhs.m_custom_marshal_func),
-    m_custom_unmarshal_func(rhs.m_custom_unmarshal_func)
+    m_custom_unmarshal_func(rhs.m_custom_unmarshal_func),
+    m_header_fields(rhs.m_header_fields),
+    m_header_fallback_default(rhs.m_header_fallback_default)
 {
   ink_assert(m_name != nullptr);
   ink_assert(m_symbol != nullptr);
@@ -475,6 +503,17 @@ LogField::~LogField()
 unsigned
 LogField::marshal_len(LogAccess *lad)
 {
+  if (is_header_field_fallback()) {
+    int selected = select_header_field(lad);
+    int bytes    = INK_MIN_ALIGN;
+    if (selected >= 0) {
+      bytes += marshal_header_field(lad, m_header_fields[selected], nullptr);
+    } else {
+      bytes += marshal_header_fallback_default(nullptr);
+    }
+    return bytes;
+  }
+
   if (m_container == NO_CONTAINER) {
     if (m_custom_marshal_func == nullptr) {
       return (lad->*m_marshal_func)(nullptr);
@@ -542,6 +581,10 @@ LogField::isContainerUpdateFieldSupported(Container container)
 void
 LogField::updateField(LogAccess *lad, char *buf, int len)
 {
+  if (is_header_field_fallback()) {
+    return;
+  }
+
   if (m_container == NO_CONTAINER) {
     return (lad->*m_set_func)(buf, len);
   } else {
@@ -561,6 +604,23 @@ LogField::updateField(LogAccess *lad, char *buf, int len)
 unsigned
 LogField::marshal(LogAccess *lad, char *buf)
 {
+  if (is_header_field_fallback()) {
+    int   selected  = select_header_field(lad);
+    int   bytes     = INK_MIN_ALIGN;
+    char *value_buf = buf ? buf + INK_MIN_ALIGN : nullptr;
+
+    if (buf) {
+      LogAccess::marshal_int(buf, selected);
+    }
+
+    if (selected >= 0) {
+      bytes += marshal_header_field(lad, m_header_fields[selected], value_buf);
+    } else {
+      bytes += marshal_header_fallback_default(value_buf);
+    }
+    return bytes;
+  }
+
   if (m_container == NO_CONTAINER) {
     if (m_custom_marshal_func == nullptr) {
       return (lad->*m_marshal_func)(buf);
@@ -653,6 +713,17 @@ LogField::marshal_agg(char *buf)
 unsigned
 LogField::unmarshal(char **buf, char *dest, int len, LogEscapeType escape_type)
 {
+  if (is_header_field_fallback()) {
+    int64_t   selected = LogAccess::unmarshal_int(buf);
+    LogSlice *slice    = nullptr;
+
+    if (selected >= 0 && selected < static_cast<int64_t>(m_header_fields.size()) && m_header_fields[selected].slice.m_enable) {
+      slice = &m_header_fields[selected].slice;
+    }
+
+    return LogAccess::unmarshal_str(buf, dest, len, slice, escape_type);
+  }
+
   return std::visit(
     swoc::meta::vary{[&](UnmarshalFuncWithSlice f) -> unsigned { return (*f)(buf, dest, len, &m_slice, escape_type); },
                      [&](UnmarshalFuncWithMap f) -> unsigned { return (*f)(buf, dest, len, m_alias_map); },
@@ -676,6 +747,11 @@ void
 LogField::display(FILE *fd)
 {
   static const char *names[LogField::N_TYPES] = {"sINT", "dINT", "STR", "IP"};
+
+  if (is_header_field_fallback()) {
+    fprintf(fd, "    %30s %10s %5s\n", m_name, "fallback", names[m_type]);
+    return;
+  }
 
   fprintf(fd, "    %30s %10s %5s\n", m_name, m_symbol, names[m_type]);
 }
@@ -784,10 +860,106 @@ LogField::fieldlist_contains_aggregates(const char *fieldlist)
   return false;
 }
 
+bool
+LogField::isHeaderContainer(Container container)
+{
+  switch (container) {
+  case CQH:
+  case PSH:
+  case PQH:
+  case SSH:
+  case CSSH:
+  case ECQH:
+  case EPSH:
+  case EPQH:
+  case ESSH:
+  case ECSSH:
+    return true;
+  default:
+    return false;
+  }
+}
+
 void
 LogField::set_http_header_field(LogAccess *lad, LogField::Container container, char *field, char *buf, int len)
 {
   return lad->set_http_header_field(container, field, buf, len);
+}
+
+bool
+LogField::is_header_field_fallback() const
+{
+  return !m_header_fields.empty();
+}
+
+int
+LogField::select_header_field(LogAccess *lad) const
+{
+  for (unsigned i = 0; i < m_header_fields.size(); ++i) {
+    if (lad->has_http_header_field(m_header_fields[i].container, m_header_fields[i].name.c_str())) {
+      return i;
+    }
+  }
+
+  return -1;
+}
+
+unsigned
+LogField::marshal_header_field(LogAccess *lad, const HeaderField &field, char *buf) const
+{
+  switch (field.container) {
+  case CQH:
+  case PSH:
+  case PQH:
+  case SSH:
+  case CSSH:
+    return lad->marshal_http_header_field(field.container, const_cast<char *>(field.name.c_str()), buf);
+
+  case ECQH:
+  case EPSH:
+  case EPQH:
+  case ESSH:
+  case ECSSH:
+    return lad->marshal_http_header_field_escapify(field.container, const_cast<char *>(field.name.c_str()), buf);
+
+  default:
+    Note("Invalid container type in header fallback field: %d", field.container);
+    if (buf) {
+      int padded_len = LogAccess::padded_strlen(nullptr);
+      LogAccess::marshal_str(buf, nullptr, padded_len);
+      return padded_len;
+    }
+    return LogAccess::padded_strlen(nullptr);
+  }
+}
+
+unsigned
+LogField::marshal_header_fallback_default(char *buf) const
+{
+  if (!m_header_fallback_default.has_value()) {
+    int padded_len = LogAccess::padded_strlen(nullptr);
+    if (buf) {
+      LogAccess::marshal_str(buf, nullptr, padded_len);
+    }
+    return padded_len;
+  }
+
+  std::string const &fallback_default = *m_header_fallback_default;
+  int                running_len      = static_cast<int>(fallback_default.size()) + 1;
+  int                padded_len       = LogAccess::padded_length(running_len);
+  if (buf) {
+    std::memcpy(buf, fallback_default.data(), fallback_default.size());
+    buf[fallback_default.size()] = '\0';
+
+#ifdef DEBUG
+    while (running_len < padded_len) {
+      buf[running_len] = '$';
+      ++running_len;
+    }
+#endif
+  }
+
+  return padded_len;
 }
 
 /*-------------------------------------------------------------------------

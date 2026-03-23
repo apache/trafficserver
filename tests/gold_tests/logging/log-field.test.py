@@ -73,7 +73,7 @@ ts.Disk.logging_yaml.AddLines(
 logging:
   formats:
     - name: custom
-      format: 'Transfer-Encoding:%<{Transfer-Encoding}ssh> Content-Type:%<{Content-Type}essh>'
+      format: 'Transfer-Encoding:%<{Transfer-Encoding}ssh> Content-Type:%<{Content-Type}essh> Request-ID:%<{X-Primary-Id}cqh??{X-Secondary-Id}cqh> Request-ID-Default:%<{X-Primary-Id}cqh??{X-Secondary-Id}cqh??"missing-id">'
   logs:
     - filename: field-test
       format: custom
@@ -95,11 +95,17 @@ tr.Processes.Default.StartBefore(nameserver)
 # Delay on readiness of our ssl ports
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 
-tr.MakeCurlCommand('--verbose --header "Host: test-1" http://localhost:{0}/test-1'.format(ts.Variables.port), ts=ts)
+tr.MakeCurlCommand(
+    '--verbose --header "Host: test-1" --header "X-Primary-Id: primary-1" --header "X-Secondary-Id: secondary-1" http://localhost:{0}/test-1'
+    .format(ts.Variables.port),
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
-tr.MakeCurlCommand('--verbose --header "Host: test-2" http://localhost:{0}/test-2'.format(ts.Variables.port), ts=ts)
+tr.MakeCurlCommand(
+    '--verbose --header "Host: test-2" --header "X-Secondary-Id: secondary-2" http://localhost:{0}/test-2'.format(
+        ts.Variables.port),
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
