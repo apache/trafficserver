@@ -6564,7 +6564,8 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
   }
 
   if ((response_code == HTTPStatus::OK) || (response_code == HTTPStatus::NOT_MODIFIED) ||
-      (response_code == HTTPStatus::NON_AUTHORITATIVE_INFORMATION) || (response_code == HTTPStatus::MOVED_PERMANENTLY) ||
+      (response_code == HTTPStatus::NON_AUTHORITATIVE_INFORMATION) || (response_code == HTTPStatus::NO_CONTENT) ||
+      (response_code == HTTPStatus::MOVED_PERMANENTLY) || (response_code == HTTPStatus::PERMANENT_REDIRECT) ||
       (response_code == HTTPStatus::MULTIPLE_CHOICES) || (response_code == HTTPStatus::GONE)) {
     TxnDbg(dbg_ctl_http_trans, "YES response code seems fine");
     return true;
