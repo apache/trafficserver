@@ -397,6 +397,8 @@ PluginVC::do_io_shutdown(ShutdownHowTo_t howto)
   ink_assert(!closed);
   ink_assert(magic == PluginVCMagic_t::ALIVE);
 
+  SCOPED_MUTEX_LOCK(lock, mutex, this_ethread());
+
   switch (howto) {
   case IO_SHUTDOWN_READ:
     read_state.shutdown = true;
