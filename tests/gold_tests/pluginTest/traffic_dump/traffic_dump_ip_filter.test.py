@@ -28,7 +28,7 @@ Test.SkipUnless(Condition.PluginExists('traffic_dump.so'),)
 
 # Configure the origin server.
 replay_file = "replay/traffic_dump.yaml"
-server = Test.MakeVerifierServerProcess("server", replay_file)
+server = Test.MakeVerifierServerProcess("server", "replay/traffic_dump_ip_filter_server.yaml")
 
 
 def get_common_ats_process(name, plugin_command, replay_exists):

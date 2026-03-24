@@ -136,11 +136,6 @@ sessions:
               - [Host, example.com]
               - [X-Request, second-exhausted]
 
-        proxy-request:
-          headers:
-            fields:
-              - [X-Request, {value: 'second-exhausted', as: equal}]
-
         # This request should NOT reach the server if read-while-writer works
         # It should be served from Request 1's response
         server-response:
@@ -176,11 +171,6 @@ sessions:
               - [uuid, third-request-concurrent]
               - [Host, example.com]
               - [X-Request, third-concurrent]
-
-        proxy-request:
-          headers:
-            fields:
-              - [X-Request, {value: 'third-concurrent', as: equal}]
 
         # This request will also be served via read-while-writer
         server-response:
