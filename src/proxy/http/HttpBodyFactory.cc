@@ -183,13 +183,7 @@ HttpBodyFactory::fabricate_with_old_api(const char *type, HttpTransact::State *c
     if (!plain_flag) {
       snprintf(content_language_out_buf, content_language_buf_size, "%s", lang_ptr);
       if (content_type_ptr) {
-        // If the configured Content-Type already includes a charset parameter,
-        // keep it as-is. Otherwise append the charset from Content-Charset.
-        if (strcasestr(content_type_ptr, "charset=") != nullptr) {
-          snprintf(content_type_out_buf, content_type_buf_size, "%s", content_type_ptr);
-        } else {
-          snprintf(content_type_out_buf, content_type_buf_size, "%s; charset=%s", content_type_ptr, charset_ptr);
-        }
+        snprintf(content_type_out_buf, content_type_buf_size, "%s", content_type_ptr);
       } else {
         // Default: just "text/html" -- charset is intentionally omitted to
         // preserve backward-compatible Content-Type header behavior.
