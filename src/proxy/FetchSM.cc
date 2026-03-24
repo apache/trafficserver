@@ -61,6 +61,7 @@ FetchSM::cleanUp()
   }
 
   if (http_vc) {
+    http_vc->do_io_shutdown(IO_SHUTDOWN_READWRITE);
     http_vc->do_io_close();
   }
   free_MIOBuffer(req_buffer);
