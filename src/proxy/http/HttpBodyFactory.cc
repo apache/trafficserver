@@ -185,10 +185,7 @@ HttpBodyFactory::fabricate_with_old_api(const char *type, HttpTransact::State *c
       if (content_type_ptr) {
         snprintf(content_type_out_buf, content_type_buf_size, "%s", content_type_ptr);
       } else {
-        // Default: just "text/html" -- charset is intentionally omitted to
-        // preserve backward-compatible Content-Type header behavior.
-        // setup_internal_transfer() won't overwrite since it's already set.
-        snprintf(content_type_out_buf, content_type_buf_size, "text/html");
+        snprintf(content_type_out_buf, content_type_buf_size, "text/html; charset=%s", charset_ptr);
       }
     }
 

@@ -30,7 +30,7 @@ class BodyFactoryContentTypeTest:
     body factory error responses instead of the hardcoded text/html default.
 
     Two scenarios:
-    1. Default: no Content-Type directive -> text/html
+    1. Default: no Content-Type directive -> text/html; charset=utf-8
     2. Custom: Content-Type: text/plain -> text/plain
     """
 
@@ -81,7 +81,8 @@ class BodyFactoryContentTypeTest:
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.TimeOut = 5
         tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-            '(?i)Content-Type:\\s*text/html(?:\\s|\\r|$)', 'Default body factory should produce text/html')
+            '(?i)Content-Type:\\s*text/html\\s*;\\s*charset=utf-8(?:\\s|\\r|$)',
+            'Default body factory should produce text/html with charset')
         tr.Processes.Default.Streams.stdout += Testers.ContainsExpression('HTTP/1.1 404', 'Unmapped request should get 404')
         tr.StillRunningAfter = self._ts_default
 
