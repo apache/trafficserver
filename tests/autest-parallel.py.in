@@ -295,17 +295,17 @@ def parse_autest_output(output: str) -> dict:
                 result['skipped'] = int(line.split(':')[-1].strip())
             except ValueError:
                 pass
-        elif 'Warning:' in line:
+        elif re.match(r'warnings?:', line, re.IGNORECASE):
             try:
                 result['warnings'] = int(line.split(':')[-1].strip())
             except ValueError:
                 pass
-        elif 'Exception:' in line:
+        elif re.match(r'exceptions?:', line, re.IGNORECASE):
             try:
                 result['exceptions'] = int(line.split(':')[-1].strip())
             except ValueError:
                 pass
-        elif 'Unknown:' in line:
+        elif re.match(r'unknowns?:', line, re.IGNORECASE):
             try:
                 result['unknown'] = int(line.split(':')[-1].strip())
             except ValueError:
@@ -365,6 +365,60 @@ def extract_failure_output(output: str, failed_tests: List[str]) -> Dict[str, st
             details[name] = block
 
     return details
+
+
+def extract_worker_diagnostics(output: str) -> str:
+    """
+    Extract the most relevant worker diagnostics for exception/setup failures.
+
+    When autest reports an exception without attributing it to a specific
+    failed test, the best fallback is the worker's captured output. This
+    helper prefers traceback/error sections but falls back to the full worker
+    output if no obvious diagnostic block is found.
+    """
+    clean = strip_ansi(output).strip()
+    if not clean:
+        return ""
+
+    lines = clean.split('\n')
+    ranges: List[Tuple[int, int]] = []
+
+    def is_marker(line: str) -> bool:
+        lower = line.lower()
+        return (
+            'traceback (most recent call last):' in lower or 'error:' in lower or 'timeout' in lower or
+            'interrupted' in lower
+        )
+
+    for i, line in enumerate(lines):
+        if not is_marker(line):
+            continue
+        start = max(0, i - 5)
+        end = i + 1
+        while end < len(lines):
+            candidate = lines[end].strip()
+            if not candidate and end > i + 1:
+                break
+            end += 1
+        ranges.append((start, min(end, len(lines))))
+
+    if not ranges:
+        return clean
+
+    merged_ranges: List[Tuple[int, int]] = []
+    for start, end in ranges:
+        if merged_ranges and start <= merged_ranges[-1][1]:
+            merged_ranges[-1] = (merged_ranges[-1][0], max(merged_ranges[-1][1], end))
+        else:
+            merged_ranges.append((start, end))
+
+    blocks = []
+    for start, end in merged_ranges:
+        block = '\n'.join(lines[start:end]).rstrip()
+        if block:
+            blocks.append(block)
+
+    return '\n\n...\n\n'.join(blocks) if blocks else clean
 
 
 def run_single_test(test: str, script_dir: Path, sandbox: Path, ats_bin: str, build_root: str, extra_args: List[str],
@@ -670,6 +724,20 @@ def print_summary(results: List[TestResult], total_duration: float, expected_tim
             for test_name in sorted(details):
                 print(f"\n--- {test_name} ---")
                 print(details[test_name])
+        print("-" * 70)
+
+    worker_diagnostics = [
+        r for r in results
+        if r.output and (r.exceptions > 0 or (r.return_code != 0 and not r.failed_tests))
+    ]
+    if worker_diagnostics:
+        print("-" * 70)
+        print("WORKER DIAGNOSTICS:")
+        print("-" * 70)
+        for r in worker_diagnostics:
+            label = "Serial" if r.is_serial else f"Worker {r.worker_id}"
+            print(f"\n--- {label} (return code {r.return_code}) ---")
+            print(extract_worker_diagnostics(r.output))
         print("-" * 70)
 
     # Check for timing discrepancies
