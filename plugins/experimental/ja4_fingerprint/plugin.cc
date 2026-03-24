@@ -358,9 +358,9 @@ handle_read_request_hdr(TSCont cont, TSEvent event, void *edata)
     return TS_SUCCESS;
   }
 
-  std::string *fingerprint{static_cast<std::string *>(TSUserArgGet(vconn, *get_user_arg_index()))};
-  if (fingerprint) {
-    append_JA4_headers(cont, txnp, fingerprint);
+  JA4_data *data{static_cast<JA4_data *>(TSUserArgGet(vconn, *get_user_arg_index()))};
+  if (data) {
+    append_JA4_headers(cont, txnp, &data->fingerprint);
   } else {
     Dbg(dbg_ctl, "No JA4 fingerprint attached to vconn!");
   }
