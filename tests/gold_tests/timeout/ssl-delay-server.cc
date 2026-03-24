@@ -203,7 +203,7 @@ main(int argc, char *argv[])
 
   for (;;) {
     sfd = accept(listenfd, (struct sockaddr *)nullptr, nullptr);
-    if (sfd <= 0) {
+    if (sfd < 0) {
       if (errno == EINTR) {
         continue;
       }
