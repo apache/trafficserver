@@ -33,7 +33,7 @@ class MilestoneFieldsTest:
     cache result code.  A validation script then parses the log and checks:
 
     - Every expected key=value pair is present on each line
-    - All values are integers (>= 0 or -1 for unset milestones)
+    - All values are integers, with "-" for unset milestones
     - Cache miss line: ms > 0, origin-phase fields present
     - Cache hit line: hit_proc >= 0 and hit_xfer >= 0
     - No epoch-length garbage values (> 1_000_000_000)
@@ -155,9 +155,12 @@ logging:
         tr.StillRunningAfter = self._ts
 
     def _waitForLog(self):
-        tr = Test.AddTestRun('Wait for log file to be written')
-        tr.Processes.Default.Command = (os.path.join(Test.Variables.AtsTestToolsDir, 'condwait') + f' 60 1 -f {self._log_path}')
-        tr.Processes.Default.ReturnCode = 0
+        tr = Test.AddAwaitFileContainsTestRun(
+            'Wait for milestone log lines to be written',
+            self._log_path,
+            r'^crc=.* hit_xfer=',
+            desired_count=2,
+        )
         tr.StillRunningAfter = self._server
         tr.StillRunningAfter = self._ts
 
