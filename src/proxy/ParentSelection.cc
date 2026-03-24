@@ -32,6 +32,7 @@
 #include "tscore/Regression.h"
 #include "tscore/Tokenizer.h"
 
+#include <string>
 #include <string_view>
 
 using namespace std::literals;
@@ -557,7 +558,7 @@ ParentRecord::ProcessParents(char *val, bool isPrimary)
       goto MERROR;
     }
     if (tmp3 && strlen(tmp3) > MAXDNAME) {
-      errPtr = "Parent hash_string is too long";
+      errPtr = "Parent hash string is too long";
       goto MERROR;
     }
 
@@ -1952,6 +1953,37 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   br(request, "i.am.mouse.com");
   FP;
   RE(verify(result, ParentResultType::SPECIFIED, "minnie", 80), 213);
+
+  // Test 214
+  // Overlong hash_string (MAXDNAME chars) should be rejected by ProcessParents.
+  // The entry is discarded so findParent returns DIRECT.
+  {
+    tbl[0] = '\0';
+    ST(214);
+    std::string long_hash(MAXDNAME, 'a');
+    std::string cfg = "dest_domain=. parent=host:80&" + long_hash + " round_robin=consistent_hash go_direct=true\n";
+    ink_strlcpy(tbl, cfg.c_str(), sizeof(tbl));
+    REBUILD;
+    REINIT;
+    br(request, "overlong.hash.net");
+    FP;
+    RE(verify(result, ParentResultType::DIRECT, nullptr, 0), 214);
+  }
+
+  // Test 215
+  // Max-length hash_string that fits (MAXDNAME-1 chars) should be accepted.
+  {
+    tbl[0] = '\0';
+    ST(215);
+    std::string max_hash(MAXDNAME - 1, 'b');
+    std::string cfg = "dest_domain=. parent=host:80&" + max_hash + " round_robin=consistent_hash go_direct=false\n";
+    ink_strlcpy(tbl, cfg.c_str(), sizeof(tbl));
+    REBUILD;
+    REINIT;
+    br(request, "maxlen.hash.net");
+    FP;
+    RE(verify(result, ParentResultType::SPECIFIED, "host", 80), 215);
+  }
 
   delete request;
   delete result;
