@@ -3,7 +3,7 @@ Date: ``
 Connection: close
 Server: ATS/``
 Cache-Control: no-store
-Content-Type: text/plain
+Content-Type: text/html
 Content-Language: en
 X-Remap: from=Not-Found, to=Not-Found
 X-Original-Content-Type: text/html

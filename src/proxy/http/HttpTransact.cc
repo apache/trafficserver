@@ -8359,6 +8359,8 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
   if (len > 0) {
     s->hdr_info.client_response.value_set(static_cast<std::string_view>(MIME_FIELD_CONTENT_TYPE), body_type);
     s->hdr_info.client_response.value_set(static_cast<std::string_view>(MIME_FIELD_CONTENT_LANGUAGE), body_language);
+    ats_free(s->internal_msg_buffer_type);
+    s->internal_msg_buffer_type = ats_strdup(body_type);
   } else {
     s->hdr_info.client_response.field_delete(static_cast<std::string_view>(MIME_FIELD_CONTENT_TYPE));
     s->hdr_info.client_response.field_delete(static_cast<std::string_view>(MIME_FIELD_CONTENT_LANGUAGE));
