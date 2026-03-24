@@ -30,7 +30,8 @@ meta:
         - [ Content-Length, 96 ]
 
 sessions:
-- protocol: [ { name: ip, version : 4} ] # plain text sessions
+- protocol: # plain text sessions
+    stack: http
   transactions:
   - all: { headers: { fields: [[ uuid, 101 ]]}}
     client-request:
@@ -66,7 +67,8 @@ sessions:
     proxy-response:
       status: 200
 
-- protocol: [ { name: "ip", version : 4} , { name: "tls" }] # TLS sessions
+- protocol: # TLS sessions
+    stack: https
   transactions:
   - all: { headers: { fields: [[ uuid, 1 ]] }}
     client-request:

@@ -62,7 +62,8 @@ meta:
 sessions:
 
 # Plain text
-- protocol: [ { name: ip, version : 4} ]
+- protocol:
+    stack: http
   transactions:
   - all: { headers: { fields: [[ uuid, 101 ]]}}
     client-request:

@@ -21,7 +21,8 @@ meta:
         - [ Content-Length, 96 ]
 
 sessions:
-- protocol: [ { name: tls } , { name: ip, version: 4 } ]
+- protocol:
+    stack: https
   transactions:
   - client-request:
       <<: *base_request

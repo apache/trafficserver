@@ -38,10 +38,10 @@ sessions:
 #
 # Test 1: Create a session using an SNI of "bob".
 #
-- protocol: [ {name: http, version: 2},
-              {name: tls, sni: bob.com},
-              {name: tcp },
-              {name: ip} ]
+- protocol:
+    stack: http2
+    tls:
+      sni: bob.com
 
   transactions:
 
@@ -63,10 +63,10 @@ sessions:
 #
 # Test 2: Create a session using an SNI of "dave.com".
 #
-- protocol: [ {name: http, version: 2},
-              {name: tls, sni: dave.com},
-              {name: tcp },
-              {name: ip} ]
+- protocol:
+    stack: http2
+    tls:
+      sni: dave.com
 
   transactions:
 
@@ -88,10 +88,8 @@ sessions:
 #
 # Test 3: Create a session using no SNI.
 #
-- protocol: [ {name: http, version: 2},
-              {name: tls},
-              {name: tcp },
-              {name: ip} ]
+- protocol:
+    stack: http2
 
   transactions:
 

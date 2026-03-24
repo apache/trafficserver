@@ -16,7 +16,8 @@ meta:
       method: "GET"
 
 sessions:
-- protocol: [ { name: ip, version : 4} ]
+- protocol:
+    stack: http
   transactions:
 
   - client-request:
