@@ -36,13 +36,16 @@ def _count_threads_once(ts_path, etnet_threads, accept_threads, task_threads, ai
             # Find the pid corresponding to the ats process we started in autest.
             # It needs to match the process name and the binary path.
             # If autest can expose the pid of the process this is not needed anymore.
+            # Match by CWD or command line containing ts_path, since under
+            # ASAN the CWD may differ from the expected path.
             process_name = p.name()
             process_cwd = p.cwd()
             process_exe = p.exe()
-            if process_cwd != ts_path:
-                continue
-            if process_name != '[TS_MAIN]' and process_name != 'traffic_server' and os.path.basename(
-                    process_exe) != 'traffic_server':
+            is_ts = process_name == '[TS_MAIN]' or process_name == 'traffic_server' or os.path.basename(
+                process_exe) == 'traffic_server'
+            match_by_cwd = process_cwd == ts_path
+            match_by_cmdline = any(ts_path in arg for arg in (p.cmdline() or []))
+            if not is_ts or not (match_by_cwd or match_by_cmdline):
                 continue
         except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
             continue
