@@ -130,9 +130,9 @@ rotate_diags_log = tr1.Processes.Process("rotate_diags_log", "mv {} {}".format(d
 # Configure the signaling of SIGUSR2 to traffic_server.
 tr1.Processes.Default.Command = diags_test.get_sigusr2_signal_command()
 tr1.Processes.Default.Return = 0
-# Configure process order: ts starts first, then rotate moves diags.log,
-# then Default sends SIGUSR2. No Ready condition needed on Default since the
-# StartBefore chain already ensures ts is fully started before rotate runs.
+tr1.Processes.Default.Ready = When.FileExists(diags_test.diags_log)
+
+# Configure process order.
 tr1.Processes.Default.StartBefore(rotate_diags_log)
 rotate_diags_log.StartBefore(diags_test.ts)
 tr1.StillRunningAfter = diags_test.ts
