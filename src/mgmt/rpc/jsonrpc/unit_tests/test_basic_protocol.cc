@@ -71,7 +71,7 @@ test_callback_ok_or_error(std::string_view const & /* id ATS_UNUSED */, YAML::No
   if (YAML::Node n = params["return_error"]) {
     auto yesOrNo = n.as<std::string>();
     if (yesOrNo == "yes") {
-      resp.errata().assign(ERR1).note(err);
+      resp.errata().note(ERRATA_WARN, err);
     } else {
       resp.result()["ran"] = "ok";
     }
@@ -140,7 +140,7 @@ TEST_CASE("Register/call method - respond with errors (data field)", "[method][e
         R"({"jsonrpc": "2.0", "method": "test_callback_ok_or_error", "params": {"return_error": "yes"}, "id": "14"})");
       REQUIRE(json);
       const std::string_view expected =
-        R"({"jsonrpc": "2.0", "error": {"code": 9, "message": "Error during execution", "data": [{"code": 9999, "message": "Just an error message to add more meaning to the failure"}]}, "id": "14"})";
+        R"({"jsonrpc": "2.0", "error": {"code": 9, "message": "Error during execution", "data": [{"code": 4, "message": "Just an error message to add more meaning to the failure"}]}, "id": "14"})";
       REQUIRE(*json == expected);
     }
   }
@@ -184,7 +184,7 @@ TEST_CASE("Basic test, batch calls", "[methods][notifications]")
 
       REQUIRE(resp1);
       const std::string_view expected =
-        R"([{"jsonrpc": "2.0", "result": {"ran": "ok"}, "id": "13"}, {"jsonrpc": "2.0", "error": {"code": 9, "message": "Error during execution", "data": [{"code": 9999, "message": "Just an error message to add more meaning to the failure"}]}, "id": "14"}])";
+        R"([{"jsonrpc": "2.0", "result": {"ran": "ok"}, "id": "13"}, {"jsonrpc": "2.0", "error": {"code": 9, "message": "Error during execution", "data": [{"code": 4, "message": "Just an error message to add more meaning to the failure"}]}, "id": "14"}])";
       REQUIRE(*resp1 == expected);
     }
   }
