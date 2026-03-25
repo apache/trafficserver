@@ -54,7 +54,7 @@ public:
   bool     is_cancelled() const override;
 
 private:
-  QUICStreamAdapter *_adapter;
+  QUICStreamAdapter *_adapter{nullptr};
 };
 
 class QUICTransferProgressProviderVIO : public QUICTransferProgressProvider
