@@ -24,6 +24,9 @@
 #include <iostream>
 #include <csignal>
 
+#include "shared/rpc/RPCRequests.h"
+#include "swoc/Errata.h"
+#include "swoc/string_view_util.h"
 #include "tscore/Layout.h"
 #include "tscore/runroot.h"
 #include "tscore/ArgParser.h"
@@ -33,9 +36,41 @@
 #include "CtrlCommands.h"
 #include "FileConfigCommand.h"
 #include "TrafficCtlStatus.h"
+#include "tsutil/ts_errata.h"
 
 // Define the global variable
-int App_Exit_Status_Code = CTRL_EX_OK; // Initialize it to a default value
+int                         App_Exit_Status_Code = CTRL_EX_OK; // Initialize it to a default value
+swoc::Errata::severity_type App_Exit_Level_Error = ERRATA_ERROR;
+
+/// Determine the exit code from a JSONRPC error response by examining
+/// the severity of each errata entry.  Returns @c CTRL_EX_OK when the
+/// most severe entry is below @c App_Exit_Level_Error, otherwise
+/// returns @c CTRL_EX_ERROR.
+int
+appExitCodeFromResponse(const shared::rpc::JSONRPCResponse &response)
+{
+  if (!response.is_error()) {
+    return CTRL_EX_OK;
+  }
+
+  auto                        err         = response.error.as<shared::rpc::JSONRPCError>();
+  swoc::Errata::severity_type most_severe = static_cast<swoc::Errata::severity_type>(ERRATA_DIAG);
+
+  for (auto const &[code, msg] : err.data) {
+    swoc::Errata::severity_type sev(code);
+
+    if (sev > most_severe) {
+      most_severe = sev;
+    }
+  }
+
+  if (most_severe < App_Exit_Level_Error) {
+    return CTRL_EX_OK;
+  }
+
+  return CTRL_EX_ERROR;
+}
+
 namespace
 {
 void
@@ -88,7 +123,10 @@ main([[maybe_unused]] int argc, const char **argv)
     .add_option("--run-root", "", "using TS_RUNROOT as sandbox", "TS_RUNROOT", 1)
     .add_option("--format", "-f", "Use a specific output format {json|rpc}", "", 1, "", "format")
     .add_option("--read-timeout-ms", "", "Read timeout for RPC (in milliseconds)", "", 1, "10000", "read-timeout")
-    .add_option("--read-attempts", "", "Read attempts for RPC", "", 1, "100", "read-attempts");
+    .add_option("--read-attempts", "", "Read attempts for RPC", "", 1, "100", "read-attempts")
+    .add_option("--error-level", "-e",
+                "Minimum severity to treat as error for exit status {diag|debug|status|note|warn|error|fatal|alert|emergency}", "",
+                1, "error", "error-level");
 
   auto &config_command     = parser.add_command("config", "Manipulate configuration records").require_commands();
   auto &metric_command     = parser.add_command("metric", "Manipulate performance metrics").require_commands();
@@ -259,6 +297,21 @@ main([[maybe_unused]] int argc, const char **argv)
     signal_register_handler(SIGINT, handle_signal);
 
     auto args = parser.parse(argv);
+
+    // Set the error level threshold from the CLI option.
+    auto error_level_str = args.get("error-level").value();
+    bool found           = false;
+    for (size_t i = 0; i < Severity_Names.size(); ++i) {
+      if (strcasecmp(Severity_Names[i], error_level_str) == 0) {
+        App_Exit_Level_Error = swoc::Errata::severity_type(i);
+        found                = true;
+        break;
+      }
+    }
+    if (!found) {
+      throw std::runtime_error(std::string("Unknown error level: ") + std::string(error_level_str));
+    }
+
     argparser_runroot_handler(args.get("run-root").value(), argv[0]);
     Layout::create();
 

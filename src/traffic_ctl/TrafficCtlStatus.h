@@ -20,9 +20,15 @@ limitations under the License.
 */
 #pragma once
 
+#include "shared/rpc/RPCRequests.h"
+#include "swoc/Errata.h"
+
 constexpr int CTRL_EX_OK = 0;
 // EXIT_FAILURE can also be used.
 constexpr int CTRL_EX_ERROR         = 2;
 constexpr int CTRL_EX_UNIMPLEMENTED = 3;
 
-extern int App_Exit_Status_Code; //!< Global variable to store the exit status code of the application.
+extern int                         App_Exit_Status_Code; //!< Global variable to store the exit status code of the application.
+extern swoc::Errata::severity_type App_Exit_Level_Error; //!< Minimum severity to treat as error for exit status.
+
+int appExitCodeFromResponse(const shared::rpc::JSONRPCResponse &);
