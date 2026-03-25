@@ -193,8 +193,10 @@ class yamlcpp_json_encoder
       json << YAML::Key << "data";
       json << YAML::BeginSeq;
       for (auto const &err : errata) {
+        int severity = err.severity(ERRATA_DIAG);
         json << YAML::BeginMap;
-        json << YAML::Key << "code" << YAML::Value << errata.code().value();
+        // using "code" as the key here because this is decoded into a `JSONRPCError`
+        json << YAML::Key << "code" << YAML::Value << severity;
         json << YAML::Key << "message" << YAML::Value << std::string{err.text().data(), err.text().size()};
         json << YAML::EndMap;
       }
