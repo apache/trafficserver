@@ -54,6 +54,9 @@ TIMING_FIELDS = [f for f in ALL_FIELDS if f != 'crc']
 MISS_CHAIN = ['c_hdr', 'c_proc', 'cache', 'dns', 'o_tcp', 'o_wait', 'o_hdr', 'o_proc']
 
 EPOCH_THRESHOLD = 1_000_000_000
+# Each msdms field is truncated independently to integer milliseconds.
+# Allow one truncated millisecond per component in the miss chain.
+CHAIN_TOLERANCE = len(MISS_CHAIN)
 
 
 def parse_line(line: str) -> dict[str, str]:
@@ -116,7 +119,8 @@ def validate_line(fields: dict[str, str], line_num: int) -> list[str]:
             if val < -10:
                 errors.append(f'line {line_num}: miss field "{name}" has unexpected value: {val}')
 
-        # Verify chain sum approximates c_ttfb (within tolerance for rounding).
+        # Verify the signed chain sum approximates c_ttfb within a tolerance
+        # for per-field millisecond truncation.
         chain_vals = []
         for name in MISS_CHAIN:
             val_str = fields.get(name)
@@ -124,8 +128,7 @@ def validate_line(fields: dict[str, str], line_num: int) -> list[str]:
                 chain_vals.append(0)
                 continue
             try:
-                v = int(val_str)
-                chain_vals.append(v if v >= 0 else 0)
+                chain_vals.append(int(val_str))
             except ValueError:
                 chain_vals.append(0)
 
@@ -134,8 +137,7 @@ def validate_line(fields: dict[str, str], line_num: int) -> list[str]:
         if c_ttfb_str and c_ttfb_str != '-':
             try:
                 c_ttfb_val = int(c_ttfb_str)
-                # Allow 2ms tolerance for rounding across multiple sub-millisecond fields.
-                if c_ttfb_val >= 0 and abs(chain_sum - c_ttfb_val) > 2:
+                if c_ttfb_val >= 0 and abs(chain_sum - c_ttfb_val) > CHAIN_TOLERANCE:
                     errors.append(
                         f'line {line_num}: chain sum ({chain_sum}) != c_ttfb ({c_ttfb_val}), '
                         f'diff={abs(chain_sum - c_ttfb_val)}ms')
