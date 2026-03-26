@@ -198,19 +198,13 @@ OperatorSetStatus::initialize_hooks()
 bool
 OperatorSetStatus::exec(const Resources &res) const
 {
-  switch (get_hook()) {
-  case TS_HTTP_READ_RESPONSE_HDR_HOOK:
-  case TS_HTTP_SEND_RESPONSE_HDR_HOOK:
-    if (res.bufp && res.hdr_loc) {
-      TSHttpHdrStatusSet(res.bufp, res.hdr_loc, static_cast<TSHttpStatus>(_status.get_int_value()), res.state.txnp, PLUGIN_NAME);
-      if (_reason && _reason_len > 0) {
-        TSHttpHdrReasonSet(res.bufp, res.hdr_loc, _reason, _reason_len);
-      }
+  if (res.bufp && res.hdr_loc && TSHttpHdrTypeGet(res.bufp, res.hdr_loc) == TS_HTTP_TYPE_RESPONSE) {
+    TSHttpHdrStatusSet(res.bufp, res.hdr_loc, static_cast<TSHttpStatus>(_status.get_int_value()), res.state.txnp, PLUGIN_NAME);
+    if (_reason && _reason_len > 0) {
+      TSHttpHdrReasonSet(res.bufp, res.hdr_loc, _reason, _reason_len);
     }
-    break;
-  default:
+  } else {
     TSHttpTxnStatusSet(res.state.txnp, static_cast<TSHttpStatus>(_status.get_int_value()), PLUGIN_NAME);
-    break;
   }
 
   Dbg(pi_dbg_ctl, "OperatorSetStatus::exec() invoked with status=%d", _status.get_int_value());
@@ -601,7 +595,7 @@ OperatorSetRedirect::exec(const Resources &res) const
       const_cast<Resources &>(res).changed_url = true;
       res._rri->redirect                       = 1;
     } else {
-      Dbg(pi_dbg_ctl, "OperatorSetRedirect::exec() hook=%d", int(get_hook()));
+      Dbg(pi_dbg_ctl, "OperatorSetRedirect::exec() redirect to %s", value.c_str());
       // Set the new status code and reason.
       TSHttpStatus status = static_cast<TSHttpStatus>(_status.get_int_value());
       TSHttpHdrStatusSet(res.bufp, res.hdr_loc, status, res.state.txnp, PLUGIN_NAME);
