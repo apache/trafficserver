@@ -86,7 +86,7 @@ public:
   void cancel() override;
 
 private:
-  AsyncTimerState *state_;
+  AsyncTimerState *state_{nullptr};
 };
 
 } // namespace atscppapi
