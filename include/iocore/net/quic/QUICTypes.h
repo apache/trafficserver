@@ -214,7 +214,7 @@ public:
   QUICStreamError(const QUICStream *s, const QUICAppErrorCode error_code, const char *error_msg = nullptr)
     : QUICError(QUICErrorClass::APPLICATION, static_cast<uint16_t>(error_code), error_msg), stream(s){};
 
-  const QUICStream *stream;
+  const QUICStream *stream{nullptr};
 };
 
 using QUICErrorUPtr           = std::unique_ptr<QUICError>;
@@ -575,20 +575,20 @@ struct QUICSentPacketInfo {
 
   private:
     QUICFrameId         _id = 0;
-    QUICFrameGenerator *_generator;
+    QUICFrameGenerator *_generator{nullptr};
   };
 
   // Recovery A.1.1.  Sent Packet Fields
-  QUICPacketNumber packet_number;
-  bool             ack_eliciting;
-  bool             in_flight;
-  size_t           sent_bytes;
-  ink_hrtime       time_sent;
+  QUICPacketNumber packet_number{0};
+  bool             ack_eliciting{false};
+  bool             in_flight{false};
+  size_t           sent_bytes{0};
+  ink_hrtime       time_sent{0};
 
   // Additional fields
-  QUICPacketType         type;
+  QUICPacketType         type{QUICPacketType::UNINITIALIZED};
   std::vector<FrameInfo> frames;
-  QUICPacketNumberSpace  pn_space;
+  QUICPacketNumberSpace  pn_space{QUICPacketNumberSpace::INITIAL};
   // End of additional fields
 };
 
