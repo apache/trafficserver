@@ -2468,3 +2468,233 @@ TEST_CASE("HdrTestHostCacheInvalidation", "[proxy][hdrtest]")
     req_hdr.destroy();
   }
 }
+
+TEST_CASE("HdrHostHeaderParserAcceptsValidValues", "[proxy][hdrtest]")
+{
+  struct TestCase {
+    std::string_view value;
+    std::string_view expected_host;
+    int              expected_port;
+    bool             expected_has_port;
+  };
+
+  static const std::vector<TestCase> test_cases = {
+    {"example.com",          "example.com",      0,     false},
+    {"example.com:80",       "example.com",      80,    true },
+    {"localhost:65535",      "localhost",        65535, true },
+    {"127.0.0.1",            "127.0.0.1",        0,     false},
+    {"127.0.0.1:8080",       "127.0.0.1",        8080,  true },
+    {"[::1]",                "[::1]",            0,     false},
+    {"[::1]:443",            "[::1]",            443,   true },
+    {"[::1]:00080",          "[::1]",            80,    true },
+    {"[2001:db8::1]:8443",   "[2001:db8::1]",    8443,  true },
+    {"[fe80::1%25eth0]:444", "[fe80::1%25eth0]", 444,   true },
+    {" example.com:81 ",     "example.com",      81,    true },
+    {" [::1]:444 ",          "[::1]",            444,   true },
+  };
+
+  auto test_case = GENERATE(from_range(test_cases));
+  CAPTURE(test_case.value, test_case.expected_host, test_case.expected_port, test_case.expected_has_port);
+
+  std::string_view host;
+  int              port     = -1;
+  bool             has_port = true;
+
+  bool const valid = http_parse_host_header(test_case.value, host, port, has_port);
+
+  REQUIRE(valid);
+  CHECK(host == test_case.expected_host);
+  CHECK(port == test_case.expected_port);
+  CHECK(has_port == test_case.expected_has_port);
+}
+
+TEST_CASE("HdrHostHeaderParserRejectsInvalidValues", "[proxy][hdrtest]")
+{
+  static const std::vector<std::string_view> test_cases = {
+    ""sv,
+    "   "sv,
+    ":8080"sv,
+    "example.com:"sv,
+    "example.com:-1"sv,
+    "example.com:0"sv,
+    "example.com:65536"sv,
+    "example.com:999999"sv,
+    "example.com:http"sv,
+    "example.com:80x"sv,
+    "example.com:80:90"sv,
+    "127.0.0.1:-1"sv,
+    "127.0.0.1:80:90"sv,
+    "::1"sv,
+    "::1:443"sv,
+    "[::1"sv,
+    "[::1]:"sv,
+    "[::1]:-1"sv,
+    "[::1]:0"sv,
+    "[::1]:65536"sv,
+    "[::1]:80:90"sv,
+    "[::1]extra"sv,
+  };
+
+  auto test_case = GENERATE(from_range(test_cases));
+  CAPTURE(test_case);
+
+  std::string_view host;
+  int              port     = -1;
+  bool             has_port = true;
+
+  bool const valid = http_parse_host_header(test_case, host, port, has_port);
+
+  CHECK_FALSE(valid);
+}
+
+TEST_CASE("HdrValidatesHostHeaderOnRequestParse", "[proxy][hdrtest]")
+{
+  struct TestCase {
+    std::string_view host_header;
+    ParseResult      expected_result;
+    std::string_view expected_host;
+    int              expected_port;
+    bool             expected_port_in_header;
+  };
+
+  static const std::vector<TestCase> test_cases = {
+    {"example.com",         ParseResult::DONE,  "example.com",   0,    false},
+    {"example.com:8080",    ParseResult::DONE,  "example.com",   8080, true },
+    {"localhost",           ParseResult::DONE,  "localhost",     0,    false},
+    {"127.0.0.1",           ParseResult::DONE,  "127.0.0.1",     0,    false},
+    {"127.0.0.1:81",        ParseResult::DONE,  "127.0.0.1",     81,   true },
+    {"[::1]",               ParseResult::DONE,  "[::1]",         0,    false},
+    {"[::1]:443",           ParseResult::DONE,  "[::1]",         443,  true },
+    {"[2001:db8::1]:8443",  ParseResult::DONE,  "[2001:db8::1]", 8443, true },
+    {"test:8080:9090:1234", ParseResult::ERROR, ""sv,            0,    false},
+    {"example.com:",        ParseResult::ERROR, ""sv,            0,    false},
+    {"example.com:-1",      ParseResult::ERROR, ""sv,            0,    false},
+    {"example.com:65536",   ParseResult::ERROR, ""sv,            0,    false},
+    {"example.com:http",    ParseResult::ERROR, ""sv,            0,    false},
+    {"127.0.0.1:-1",        ParseResult::ERROR, ""sv,            0,    false},
+    {"127.0.0.1:80:90",     ParseResult::ERROR, ""sv,            0,    false},
+    {"::1",                 ParseResult::ERROR, ""sv,            0,    false},
+    {"[::1]:-1",            ParseResult::ERROR, ""sv,            0,    false},
+    {"[::1]:80:90",         ParseResult::ERROR, ""sv,            0,    false},
+    {"[::1]extra",          ParseResult::ERROR, ""sv,            0,    false},
+    {"[::1",                ParseResult::ERROR, ""sv,            0,    false},
+    {":8080",               ParseResult::ERROR, ""sv,            0,    false},
+    {"",                    ParseResult::ERROR, ""sv,            0,    false},
+  };
+
+  auto test_case = GENERATE(from_range(test_cases));
+  CAPTURE(test_case.host_header, test_case.expected_result, test_case.expected_host, test_case.expected_port,
+          test_case.expected_port_in_header);
+
+  hdrtoken_init();
+  url_init();
+  mime_init();
+  http_init();
+
+  auto parse_request = [](std::string_view host_header, HTTPHdr &req_hdr, HTTPParser &parser) {
+    std::string request = "GET / HTTP/1.1\r\nHost: " + std::string(host_header) + "\r\n\r\n";
+    const char *start   = request.data();
+    const char *end     = start + request.size();
+    ParseResult err;
+
+    do {
+      err = req_hdr.parse_req(&parser, &start, end, true);
+    } while (err == ParseResult::CONT);
+
+    return err;
+  };
+
+  HTTPHdr    req_hdr;
+  HTTPParser parser;
+
+  http_parser_init(&parser);
+  req_hdr.create(HTTPType::REQUEST);
+
+  ParseResult const err = parse_request(test_case.host_header, req_hdr, parser);
+  REQUIRE(err == test_case.expected_result);
+
+  if (err == ParseResult::DONE) {
+    CHECK(req_hdr.host_get() == test_case.expected_host);
+    CHECK(req_hdr.port_get() == test_case.expected_port);
+    CHECK(req_hdr.is_port_in_header() == test_case.expected_port_in_header);
+  }
+
+  http_parser_clear(&parser);
+  req_hdr.destroy();
+}
+
+TEST_CASE("HdrPromotesOnlyValidHostHeaderMutations", "[proxy][hdrtest]")
+{
+  struct TestCase {
+    std::string_view host_header;
+    std::string_view expected_host;
+    int              expected_port;
+    bool             expected_port_in_header;
+    bool             expected_valid;
+  };
+
+  static const std::vector<TestCase> test_cases = {
+    {"rewritten.example.com",     "rewritten.example.com", 0,    false, true },
+    {"rewritten.example.com:443", "rewritten.example.com", 443,  true,  true },
+    {"127.0.0.1:81",              "127.0.0.1",             81,   true,  true },
+    {"[::1]",                     "[::1]",                 0,    false, true },
+    {"[2001:db8::1]:8443",        "[2001:db8::1]",         8443, true,  true },
+    {"test:8080:9090:1234",       ""sv,                    0,    false, false},
+    {"example.com:",              ""sv,                    0,    false, false},
+    {"example.com:-1",            ""sv,                    0,    false, false},
+    {"127.0.0.1:-1",              ""sv,                    0,    false, false},
+    {"::1",                       ""sv,                    0,    false, false},
+    {"[::1]:-1",                  ""sv,                    0,    false, false},
+    {"[::1]:80:90",               ""sv,                    0,    false, false},
+    {"[::1]extra",                ""sv,                    0,    false, false},
+    {":8080",                     ""sv,                    0,    false, false},
+  };
+
+  auto test_case = GENERATE(from_range(test_cases));
+  CAPTURE(test_case.host_header, test_case.expected_host, test_case.expected_port, test_case.expected_port_in_header,
+          test_case.expected_valid);
+
+  hdrtoken_init();
+  url_init();
+  mime_init();
+  http_init();
+
+  static constexpr std::string_view request = "GET / HTTP/1.1\r\n"
+                                              "Host: original.example.com:8080\r\n"
+                                              "\r\n";
+
+  HTTPHdr     req_hdr;
+  HTTPParser  parser;
+  const char *start = request.data();
+  const char *end   = start + request.size();
+
+  http_parser_init(&parser);
+  req_hdr.create(HTTPType::REQUEST);
+
+  ParseResult err;
+  do {
+    err = req_hdr.parse_req(&parser, &start, end, true);
+  } while (err == ParseResult::CONT);
+
+  REQUIRE(err == ParseResult::DONE);
+
+  MIMEField *host_field = req_hdr.field_find("Host"sv);
+  REQUIRE(host_field != nullptr);
+  host_field->value_set(req_hdr.m_heap, req_hdr.m_mime, test_case.host_header);
+
+  CHECK(req_hdr.host_get() == test_case.expected_host);
+  CHECK(req_hdr.port_get() == test_case.expected_port);
+  CHECK(req_hdr.is_port_in_header() == test_case.expected_port_in_header);
+
+  req_hdr.set_url_target_from_host_field(req_hdr.url_get());
+  CHECK(req_hdr.url_get()->host_get() == test_case.expected_host);
+  CHECK(req_hdr.url_get()->port_get_raw() == test_case.expected_port);
+
+  if (!test_case.expected_valid) {
+    CHECK(req_hdr.host_get().empty());
+    CHECK(req_hdr.url_get()->host_get().empty());
+  }
+
+  http_parser_clear(&parser);
+  req_hdr.destroy();
+}
