@@ -314,7 +314,57 @@ sessions:
         - [ X-Testing, { value: "elif", as: equal } ]
         - [ X-Pre-Else, { as: absent } ]
 
-    # Test 6: cond method GET
+    # Test 6: quoted set matching - second item "bar" should match
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_1/hrw-sets.png
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ X-Quoted-Set, "bar" ]
+        - [ uuid, quoted-set-match ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Quoted-Set, { value: "Yes", as: equal } ]
+
+    # Test 7: quoted set matching - non-member should not match
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_1/hrw-sets.png
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ X-Quoted-Set, "baz" ]
+        - [ uuid, quoted-set-nomatch ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Quoted-Set, { value: "No", as: equal } ]
+
+    # Test 8: cond method GET
 - transactions:
   - client-request:
       method: "GET"
@@ -338,7 +388,7 @@ sessions:
         fields:
         - [ Via, { as: present } ]
 
-    # Test 7: cond method DELETE
+    # Test 9: cond method DELETE
 - transactions:
   - client-request:
       method: "DELETE"
@@ -362,7 +412,7 @@ sessions:
         fields:
         - [ Via, { as: present } ]
 
-    # Test 8: End [L] #5423
+    # Test 10: End [L] #5423
 - transactions:
   - client-request:
       method: "GET"
