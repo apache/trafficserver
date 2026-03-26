@@ -66,7 +66,7 @@ RuleSet::make_condition(Parser &p, const char *filename, int lineno)
 
   Dbg(pi_dbg_ctl, "    Creating condition: %%{%s} with arg: %s", p.get_op().c_str(), p.get_arg().c_str());
   c->initialize(p);
-  if (!c->set_hook(_hook)) {
+  if (!c->is_hook_valid(_hook)) {
     delete c;
     TSError("[%s] in %s:%d: can't use this condition in hook=%s: %%{%s} with arg: %s", PLUGIN_NAME, filename, lineno,
             TSHttpHookNameLookup(_hook), p.get_op().c_str(), p.get_arg().c_str());
@@ -93,7 +93,7 @@ RuleSet::add_operator(Parser &p, const char *filename, int lineno)
   if (nullptr != op) {
     Dbg(pi_dbg_ctl, "    Adding operator: %s(%s)=\"%s\"", p.get_op().c_str(), p.get_arg().c_str(), p.get_value().c_str());
     op->initialize(p);
-    if (!op->set_hook(_hook)) {
+    if (!op->is_hook_valid(_hook)) {
       delete op;
       Dbg(pi_dbg_ctl, "in %s:%d: can't use this operator in hook=%s:  %s(%s)", filename, lineno, TSHttpHookNameLookup(_hook),
           p.get_op().c_str(), p.get_arg().c_str());
