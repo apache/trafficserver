@@ -1091,7 +1091,7 @@ inline void
 HTTPHdr::status_set(HTTPStatus status)
 {
   ink_assert(valid());
-  ink_assert(m_http->m_polarity == HTTP_TYPE_RESPONSE);
+  ink_release_assert(m_http->m_polarity == HTTP_TYPE_RESPONSE);
 
   http_hdr_status_set(m_http, status);
 }
@@ -1115,7 +1115,7 @@ inline void
 HTTPHdr::reason_set(const char *value, int length)
 {
   ink_assert(valid());
-  ink_assert(m_http->m_polarity == HTTP_TYPE_RESPONSE);
+  ink_release_assert(m_http->m_polarity == HTTP_TYPE_RESPONSE);
 
   http_hdr_reason_set(m_heap, m_http, value, length, true);
 }
