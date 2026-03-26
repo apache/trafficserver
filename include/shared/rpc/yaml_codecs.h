@@ -64,7 +64,7 @@ template <> struct convert<shared::rpc::JSONRPCError> {
     error.message = helper::try_extract<std::string>(node, "message");
     if (auto data = node["data"]) {
       for (auto &&err : data) {
-        error.data.emplace_back(helper::try_extract<int32_t>(err, "code"), helper::try_extract<std::string>(err, "message"));
+        error.data.emplace_back(helper::try_extract<int32_t>(err, "severity"), helper::try_extract<std::string>(err, "message"));
       }
     }
     return true;
