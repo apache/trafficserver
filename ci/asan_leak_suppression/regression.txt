@@ -1,5 +1,7 @@
 leak:RegressionTest_PARENTSELECTION
 leak:ParentConfig::reconfigure
+leak:RegressionTest_SDK_API_TSHttpConnectIntercept
+leak:RegressionTest_SDK_API_TSHttpConnectServerIntercept
 leak:ReRegressionSM::clone
 leak:RegressionTest_ram_cache
 leak:RegressionTest_HttpTransact_is_request_valid
