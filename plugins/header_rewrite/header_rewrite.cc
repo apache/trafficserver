@@ -705,17 +705,17 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
     }
   }
 
-  if (!geoDBpath.empty() && !geoDBpath.starts_with('/')) {
-    geoDBpath = std::string(TSConfigDirGet()) + '/' + geoDBpath;
-  }
-
   if (!geoDBpath.empty()) {
+    if (!geoDBpath.starts_with('/')) {
+      geoDBpath = std::string(TSConfigDirGet()) + '/' + geoDBpath;
+    }
     Dbg(pi_dbg_ctl, "Remap geo db %s", geoDBpath.c_str());
-  }
 
-  // Always initialize the plugin factory, even if no geo DB is specified. This
-  // is needed for run-plugin to work with relative paths.
-  std::call_once(initHRWLibs, [&geoDBpath]() { initHRWLibraries(geoDBpath); });
+    // This MUST be called only if the geoDBpath is set.  If called without a geoDBPath (i.e. outside of this if) then
+    // NO hrw remap rule can load a mmdb file.
+    // The call_once applies to every remap instance as its a plugin global
+    std::call_once(initHRWLibs, [&geoDBpath]() { initHRWLibraries(geoDBpath); });
+  }
 
   auto *conf = new RulesConfig(timezone, inboundIpSource);
 
