@@ -240,9 +240,10 @@ IpAllow::IpAllow(const char *ip_allow_config_var, const char *ip_categories_conf
     std::string_view::size_type s, e;
     for (s = 0, e = 0; s < subjects_sv.size() && e != subjects_sv.npos; s = e + 1) {
       e                           = subjects_sv.find(",", s);
-      std::string_view subject_sv = subjects_sv.substr(s, e);
+      std::string_view subject_sv = subjects_sv.substr(s, e == subjects_sv.npos ? subjects_sv.npos : e - s);
       if (i >= MAX_SUBJECTS) {
         Error("Too many ACL subjects were provided");
+        break;
       }
       if (subject_sv == "PEER") {
         subjects[i] = Subject::PEER;

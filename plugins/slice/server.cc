@@ -26,6 +26,7 @@
 #include "ts/apidefs.h"
 #include "util.h"
 
+#include <algorithm>
 #include <cinttypes>
 
 namespace
@@ -463,14 +464,19 @@ handleNextServerHeader(Data *const data)
       data->m_blockstate = BlockState::PendingRef;
 
       // interior headers for new identifier reference
+      etaglen         = std::min(etaglen, static_cast<int>(sizeof(data->m_etag) - 1));
       data->m_etaglen = etaglen;
       if (0 < etaglen) {
-        strncpy(data->m_etag, etag, etaglen);
+        memcpy(data->m_etag, etag, etaglen);
       }
+      data->m_etag[etaglen] = '\0';
+
+      lastmodifiedlen         = std::min(lastmodifiedlen, static_cast<int>(sizeof(data->m_lastmodified) - 1));
       data->m_lastmodifiedlen = lastmodifiedlen;
       if (0 < lastmodifiedlen) {
-        strncpy(data->m_lastmodified, lastmodified, lastmodifiedlen);
+        memcpy(data->m_lastmodified, lastmodified, lastmodifiedlen);
       }
+      data->m_lastmodified[lastmodifiedlen] = '\0';
 
       // potentially new content length
       data->m_contentlen = blockcr.m_length;
