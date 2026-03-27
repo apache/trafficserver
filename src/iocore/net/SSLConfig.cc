@@ -453,8 +453,7 @@ SSLConfigParams::initialize()
   SSLConfigParams::origin_session_cache      = ssl_origin_session_cache;
   SSLConfigParams::origin_session_cache_size = ssl_origin_session_cache_size;
 
-  if (ssl_origin_session_cache == 1 && ssl_origin_session_cache_size > 0) {
-    delete origin_sess_cache;
+  if (ssl_origin_session_cache == 1 && ssl_origin_session_cache_size > 0 && origin_sess_cache == nullptr) {
     origin_sess_cache = new SSLOriginSessionCache();
   }
 
