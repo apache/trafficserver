@@ -41,7 +41,6 @@
 // Debugs
 namespace header_rewrite_ns
 {
-std::once_flag initGeoLibs;
 std::once_flag initPlugin;
 PluginFactory  plugin_factory;
 } // namespace header_rewrite_ns
@@ -52,19 +51,21 @@ initPluginFactory()
   header_rewrite_ns::plugin_factory.setRuntimeDir(RecConfigReadRuntimeDir()).addSearchDir(RecConfigReadPluginDir());
 }
 
-static void
+static void *
 initGeoLibraries(const std::string &dbPath)
 {
   if (dbPath.empty()) {
-    return;
+    return nullptr;
   }
 
   Dbg(pi_dbg_ctl, "Loading geo db %s", dbPath.c_str());
 
 #if TS_USE_HRW_GEOIP
-  GeoIPConditionGeo::initLibrary(dbPath);
+  return GeoIPConditionGeo::initLibrary(dbPath);
 #elif TS_USE_HRW_MAXMINDDB
-  MMConditionGeo::initLibrary(dbPath);
+  return MMConditionGeo::initLibrary(dbPath);
+#else
+  return nullptr;
 #endif
 }
 
@@ -76,7 +77,8 @@ static int cont_rewrite_headers(TSCont, TSEvent, void *);
 class RulesConfig
 {
 public:
-  RulesConfig(int timezone, int inboundIpSource) : _timezone(timezone), _inboundIpSource(inboundIpSource)
+  RulesConfig(int timezone, int inboundIpSource, void *geo_handle = nullptr)
+    : _timezone(timezone), _inboundIpSource(inboundIpSource), _geo_handle(geo_handle)
   {
     Dbg(dbg_ctl, "RulesConfig CTOR");
     _cont = TSContCreate(cont_rewrite_headers, nullptr);
@@ -119,6 +121,12 @@ public:
     return _inboundIpSource;
   }
 
+  [[nodiscard]] void *
+  geo_handle() const
+  {
+    return _geo_handle;
+  }
+
   bool parse_config(const std::string &fname, TSHttpHookID default_hook, char *from_url = nullptr, char *to_url = nullptr);
 
 private:
@@ -130,6 +138,8 @@ private:
 
   int _timezone        = 0;
   int _inboundIpSource = 0;
+
+  void *_geo_handle = nullptr;
 };
 
 void
@@ -509,6 +519,8 @@ cont_rewrite_headers(TSCont contp, TSEvent event, void *edata)
     RuleSet  *rule = conf->rule(hook);
     Resources res(txnp, contp);
 
+    res.geo_handle = conf->geo_handle();
+
     // Get the resources necessary to process this event
     res.gather(conf->resid(hook), hook);
 
@@ -602,12 +614,12 @@ TSPluginInit(int argc, const char *argv[])
 
   Dbg(pi_dbg_ctl, "Global geo db %s", geoDBpath.c_str());
 
-  std::call_once(initGeoLibs, [&geoDBpath]() { initGeoLibraries(geoDBpath); });
+  void *geo_handle = initGeoLibraries(geoDBpath);
   std::call_once(initPlugin, initPluginFactory);
 
   // Parse the global config file(s). All rules are just appended
   // to the "global" Rules configuration.
-  auto *conf       = new RulesConfig(timezone, inboundIpSource);
+  auto *conf       = new RulesConfig(timezone, inboundIpSource, geo_handle);
   bool  got_config = false;
 
   for (int i = optind; i < argc; ++i) {
@@ -711,21 +723,19 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
     }
   }
 
+  void *geo_handle = nullptr;
+
   if (!geoDBpath.empty()) {
     if (!geoDBpath.starts_with('/')) {
       geoDBpath = std::string(TSConfigDirGet()) + '/' + geoDBpath;
     }
     Dbg(pi_dbg_ctl, "Remap geo db %s", geoDBpath.c_str());
-
-    // This MUST be called only if the geoDBpath is set.  If called without a geoDBPath (i.e. outside of this if) then
-    // NO hrw remap rule can load a mmdb file.
-    // The call_once applies to every remap instance as its a plugin global
-    std::call_once(initGeoLibs, [&geoDBpath]() { initGeoLibraries(geoDBpath); });
+    geo_handle = initGeoLibraries(geoDBpath);
   }
 
   std::call_once(initPlugin, initPluginFactory);
 
-  auto *conf = new RulesConfig(timezone, inboundIpSource);
+  auto *conf = new RulesConfig(timezone, inboundIpSource, geo_handle);
 
   for (int i = optind; i < argc; ++i) {
     Dbg(pi_dbg_ctl, "Loading remap configuration file %s", argv[i]);
@@ -780,6 +790,8 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
   // we can't (shouldn't) schedule this as a TXN hook.
   RuleSet  *rule = conf->rule(TS_REMAP_PSEUDO_HOOK);
   Resources res(rh, rri);
+
+  res.geo_handle = conf->geo_handle();
 
   if (rule) {
     res.gather(conf->resid(TS_REMAP_PSEUDO_HOOK), TS_REMAP_PSEUDO_HOOK);
