@@ -38,7 +38,9 @@ if found_microserver_version < needed_microserver_version:
         "Please update MicroServer:\n  rm -rf .venv && uv sync\n",
         show_stack=False)
 
-Settings.path_argument(["--ats-bin"], required=True, help="A user provided directory to ATS bin")
+# --ats-bin is needed for running the tests, but if the user passes
+# `autest list` to list the tests, it is not required for that.
+Settings.path_argument(["--ats-bin"], required=False, help="A user provided directory to ATS bin")
 
 Settings.path_argument(["--build-root"], required=False, help="The location of the build root for out of source builds")
 
