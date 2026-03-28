@@ -128,8 +128,9 @@ test_run.Processes.Default.Streams.stdout = "gold/httpbin_3_stdout.gold"
 test_run.Processes.Default.Streams.stderr = Testers.GoldFile("gold/httpbin_3_stderr.gold", case_insensitive=True)
 test_run.StillRunningAfter = httpbin
 
-# Wait for log file to appear, then wait one extra second to make sure TS is done writing it.
-test_run = Test.AddTestRun()
-test_run.Processes.Default.Command = (
-    os.path.join(Test.Variables.AtsTestToolsDir, 'condwait') + ' 60 1 -f ' + os.path.join(ts.Variables.LOGDIR, 'access.log'))
-test_run.Processes.Default.ReturnCode = 0
+# Wait for the POST transaction to be logged.
+Test.AddAwaitFileContainsTestRun(
+    'Await POST access log entry.',
+    os.path.join(ts.Variables.LOGDIR, 'access.log'),
+    r'POST .*?/post',
+)

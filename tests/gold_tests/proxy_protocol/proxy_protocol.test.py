@@ -94,13 +94,12 @@ logging:
         """
         Test.Disk.File(os.path.join(self.ts.Variables.LOGDIR, 'access.log'), exists=True, content=f"gold/access-{self.name}.gold")
 
-        # Wait for log file to appear, then wait one extra second to make sure
-        # TS is done writing it.
-        tr = Test.AddTestRun()
-        tr.Processes.Default.Command = (
-            os.path.join(Test.Variables.AtsTestToolsDir, 'condwait') + ' 60 1 -f ' +
-            os.path.join(self.ts.Variables.LOGDIR, 'access.log'))
-        tr.Processes.Default.ReturnCode = 0
+        Test.AddAwaitFileContainsTestRun(
+            f'Await PROXY protocol access log lines. {self.name}',
+            os.path.join(self.ts.Variables.LOGDIR, 'access.log'),
+            r'^127\.0\.0\.1 0 127\.0\.0\.1$',
+            2,
+        )
 
     def run(self):
         self.runTraffic()

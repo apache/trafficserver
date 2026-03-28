@@ -84,11 +84,13 @@ tr.Processes.Default.StartBefore(nameserver)
 tr.Processes.Default.StartBefore(ts)
 tr.AddVerifierClientProcess("client-1", replay_file, http_ports=[ts.Variables.port])
 
-# Wait for log file to appear, then wait one extra second to make sure TS is done writing it.
-test_run = Test.AddTestRun()
-test_run.Processes.Default.Command = (
-    os.path.join(Test.Variables.AtsTestToolsDir, 'condwait') + ' 60 1 -f ' + os.path.join(ts.Variables.LOGDIR, 'filter-test.log'))
-test_run.Processes.Default.ReturnCode = 0
+# Wait for all expected log lines to be written.
+Test.AddAwaitFileContainsTestRun(
+    'Await filtered log lines.',
+    os.path.join(ts.Variables.LOGDIR, 'filter-test.log'),
+    r'^http://example\.com/test-',
+    5,
+)
 
 # We already waited for the above, so we don't have to wait for this one.
 test_run = Test.AddTestRun()
