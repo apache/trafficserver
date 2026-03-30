@@ -36,7 +36,7 @@ cache:
     },
     {
         "case": 1,
-        "description": "four equally devided volumes",
+        "description": "four equally divided volumes",
         "storage":
             '''
 cache:
@@ -77,7 +77,7 @@ hostname=* volume=1
     },
     {
         "case": 3,
-        "description": "two equally devided volumes without size option",
+        "description": "two equally divided volumes without size option",
         "storage":
             '''
 cache:

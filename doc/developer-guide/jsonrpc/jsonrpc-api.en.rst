@@ -1592,7 +1592,7 @@ Parameters
 ~~~~~~~~~~
 
 A list of |str| names for the specific storage we want to interact with. The storage identification used in the param list should match
-exactly a path  specified in :file:`storage.config`.
+exactly a path  specified in :file:`storage.yaml`.
 
 Result
 ~~~~~~
@@ -1603,7 +1603,7 @@ cachedisk
 Field                   Type          Description
 ======================= ============= =============================================================================================
 ``path``                |str|         Storage identification.  The storage is identified by :arg:`path` which must match exactly a
-                                       path specified in :file:`storage.config`.
+                                       path specified in :file:`storage.yaml`.
 ``status``              |str|         Disk status. ``online`` or ``offline``
 ``error_count``         |str|         Number of errors on the particular disk.
 ======================= ============= =============================================================================================
@@ -1664,7 +1664,7 @@ Description
 ~~~~~~~~~~~
 
 Mark a cache storage device as ``offline``. The storage is identified by :arg:`path` which must match exactly a path specified in
-:file:`storage.config`. This removes the storage from the cache and redirects requests that would have used this storage to
+:file:`storage.yaml`. This removes the storage from the cache and redirects requests that would have used this storage to
 other storage. This has exactly the same effect as a disk failure for that storage. This does not persist across restarts of the
 :program:`traffic_server` process.
 
@@ -1672,7 +1672,7 @@ Parameters
 ~~~~~~~~~~
 
 A list of |str| names for the specific storage we want to interact with. The storage identification used in the param list should match
-exactly a path  specified in :file:`storage.config`.
+exactly a path  specified in :file:`storage.yaml`.
 
 Result
 ~~~~~~
@@ -1684,7 +1684,7 @@ A list of |object| which the following fields:
 Field                       Type          Description
 =========================== ============= =============================================================================================
 ``path``                    |str|         Storage identification.  The storage is identified by :arg:`path` which must match exactly a
-                                          path specified in :file:`storage.config`.
+                                          path specified in :file:`storage.yaml`.
 ``has_online_storage_left`` |str|         A flag indicating if there is any online storage left after this operation.
 =========================== ============= =============================================================================================
 
@@ -1902,7 +1902,7 @@ Field                   Type          Description
 ``parent_config``       |str|         Parent's configuration file name. e.g. If a top level remap.config includes additional mapping files,
                                       then the top level file will be set in this field.
 ``root_access_needed``  |str|         Elevated access needed.
-``is_required``         |str|         If it's required by |TS|. This specifies if |TS| treat this file as required to start the system(e.g. storage.config)
+``is_required``         |str|         If it's required by |TS|. This specifies if |TS| treat this file as required to start the system(e.g. storage.yaml)
 ======================= ============= ===========================================
 
 
@@ -1938,7 +1938,7 @@ Response:
                "is_required":"false"
             },
             {
-               "file_path":"/home/xyz/ats/etc/trafficserver/storage.config",
+               "file_path":"/home/xyz/ats/etc/trafficserver/storage.yaml",
                "config_record_name":"",
                "parent_config":"N/A",
                "root_access_needed":"false",

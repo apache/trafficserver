@@ -361,12 +361,18 @@ Adjust Cache Parameters
 The default |TS| configuration will provide a 256 MB disk cache, located in
 ``var/trafficserver/`` underneath your install prefix. You may wish to adjust
 either or both of the size and location of this cache. This is done with the
-:file:`storage.config` configuration file. In our example, |AW| has dedicated
+:file:`storage.yaml` configuration file. In our example, |AW| has dedicated
 a large storage pool on their cache server which is mounted at ``/cache``. To
 use this, and to disable the default cache storage setting, the following will
-be the sole entry in :file:`storage.config`::
+be the sole entry in :file:`storage.yaml`:
 
-    /cache/trafficserver 500G
+.. code-block:: yaml
+
+    cache:
+      spans:
+        - name: cache
+          path: /cache/trafficserver
+          size: 500G
 
 .. note:: Changes to the cache configuration require a restart of |TS|.
 
@@ -405,9 +411,15 @@ entries:
     map http://static.acme.com/ http://origin-static.acme.com/
     map https://static.acme.com/ https://origin-static.acme.com/
 
-:file:`storage.config`::
+:file:`storage.yaml`:
 
-    /cache/trafficserver 500G
+.. code-block:: yaml
+
+    cache:
+      spans:
+        - name: cache
+          path: /cache/trafficserver
+          size: 500G
 
 :file:`ssl_multicert.yaml`:
 

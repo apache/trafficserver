@@ -148,7 +148,7 @@ expose this information.
 
    void ConfigRegistry::register_static_file(
        const std::string &key,                        // unique registry key (e.g. "storage")
-       const std::string &default_filename,           // default filename (e.g. "storage.config")
+       const std::string &default_filename,           // default filename (e.g. "storage.yaml")
        const std::string &filename_record = {},       // record holding the filename (optional)
        bool is_required = false                        // whether the file must exist on disk
    );
@@ -653,7 +653,7 @@ What NOT to Register
 ====================
 
 Not every config file needs a **reload handler**. Startup-only configs that are never reloaded at
-runtime (e.g. ``storage.config``, ``volume.config``, ``plugin.config``) should be registered via
+runtime (e.g. ``storage.yaml``, ``plugin.config``) should be registered via
 ``register_static_file()`` — this gives them visibility in the registry and RPC endpoints, but
 does not wire any reload handler or trigger records. Do not use ``register_config()`` for files
 that have no runtime reload support.

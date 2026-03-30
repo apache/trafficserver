@@ -30,6 +30,8 @@
 #include "tscore/Filenames.h"
 
 #include <memory>
+#include <string>
+#include <vector>
 
 #define CACHE_MEM_FREE_TIMEOUT HRTIME_SECONDS(1)
 
@@ -323,6 +325,7 @@ struct ConfigVolumes {
   {
     // Reset the source object to prevent double deletion
     other.num_volumes = 0;
+    other.cp_queue.clear();
   }
 
   // Move assignment operator
@@ -337,6 +340,7 @@ struct ConfigVolumes {
       cp_queue    = std::move(other.cp_queue);
       // Reset the source object to prevent double deletion
       other.num_volumes = 0;
+      other.cp_queue.clear();
     }
     return *this;
   }

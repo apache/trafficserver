@@ -94,9 +94,9 @@ Features
 * Added option for :ts:cv:`proxy.config.http.auth_server_session_private` to only mark the connection private if ``Proxy-Authorization`` or ``Www-Authenticate`` headers are present
 * It is now an ``ERROR`` if a remap ACL has more than one ``@action`` parameter.
   This was an error in ATS 10.0.x
-* Add a ``fragment-size`` option in volume.config to control the fragment size
+* Add a ``fragment_size`` option in storage.yaml to control the fragment size
   of the volume.
-* Add an optional ``avg_obj_size`` to ``volume.config`` to control the directory
+* Add an optional ``avg_obj_size`` to ``storage.yaml`` to control the directory
   entry sizing.
 * The ``proxy.config.http.cache.post_method`` is now an overridable config.
 * Defer deleting the copied plugin shared object file to startup to make it

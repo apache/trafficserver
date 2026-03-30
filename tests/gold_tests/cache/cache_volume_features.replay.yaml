@@ -59,7 +59,7 @@ autest:
       cache:
         spans:
           - name: "disk-1"
-            path: "var/trafficserver"
+            path: "storage"
             size: "256M"
         volumes:
           # Volume 1 with all new parameters

@@ -25,11 +25,13 @@
 
 #include "tscore/Diags.h"
 
-#include <string_view>
 #include <yaml-cpp/yaml.h>
 
+#include <algorithm>
+#include <cctype>
 #include <set>
 #include <string>
+#include <string_view>
 
 namespace
 {
@@ -71,19 +73,17 @@ parse_volume_scheme(ConfigVol &volume, const std::string &scheme)
 
 /**
   Convert given @s into ConfigVol::Size.
-  @s can be parcent (%), human readable unit (K/M/G/T) or absolute number.
+  @s can be percent (%), human readable unit (K/M/G/T) or absolute number of bytes.
+  The absolute number unit is converted to "Mega Bytes" for later process of block calcuration.
  */
 bool
 parse_size(ConfigVol::Size &size, const std::string &s)
 {
-  // must start with digit
-  if (!std::isdigit(s[0])) {
+  if (s.empty() || !std::isdigit(s[0])) {
     return false;
   }
 
-  // s.ends_with('%')
-  if (s[s.length() - 1] == '%') {
-    // parcent
+  if (s.back() == '%') {
     int value = std::stoi(s.substr(0, s.length() - 1));
     if (value > 100) {
       return false;
@@ -93,7 +93,7 @@ parse_size(ConfigVol::Size &size, const std::string &s)
   } else {
     // Human-readable size
     size.in_percent     = false;
-    size.absolute_value = ink_atoi64(s.c_str());
+    size.absolute_value = ink_atoi64(s.c_str()) / 1024 / 1024;
   }
 
   return true;
@@ -143,7 +143,7 @@ template <> struct convert<SpanConfigParams> {
     if (node["size"]) {
       // Human-readable size
       std::string size = node["size"].as<std::string>();
-      if (!std::isdigit(size[0])) {
+      if (size.empty() || !std::isdigit(size[0])) {
         throw ParserException(node.Mark(), "Invalid size value (must start with a number, e.g., 100G)");
       }
       span.size = ink_atoi64(size.c_str());
@@ -169,9 +169,15 @@ template <> struct convert<ConfigVolumes> {
       return false;
     }
 
-    int total_percent = 0;
+    int           total_percent = 0;
+    std::set<int> seen_ids;
     for (const auto &it : node) {
       ConfigVol volume = it.as<ConfigVol>();
+
+      if (seen_ids.count(volume.number)) {
+        throw ParserException(it.Mark(), "duplicate volume id: " + std::to_string(volume.number));
+      }
+      seen_ids.insert(volume.number);
 
       if (volume.size.in_percent) {
         total_percent += volume.size.percent;
@@ -200,7 +206,7 @@ template <> struct convert<ConfigVol> {
       throw ParserException(node.Mark(), "missing 'id' argument in cache.volumes[]");
     }
     volume.number = node["id"].as<int>();
-    if (volume.number > MAX_VOLUME_IDX) {
+    if (volume.number < 1 || volume.number > MAX_VOLUME_IDX) {
       throw ParserException(node.Mark(), "Bad Volume Number");
     }
 
@@ -229,7 +235,7 @@ template <> struct convert<ConfigVol> {
     if (node["ram_cache_size"]) {
       // Human-readable size
       std::string size = node["ram_cache_size"].as<std::string>();
-      if (!std::isdigit(size[0])) {
+      if (size.empty() || !std::isdigit(size[0])) {
         throw ParserException(node.Mark(), "Invalid ram_cache_size value (must start with a number, e.g., 10G)");
       }
       volume.ram_cache_size = ink_atoi64(size.c_str());
@@ -238,7 +244,7 @@ template <> struct convert<ConfigVol> {
     if (node["ram_cache_cutoff"]) {
       // Human-readable size
       std::string size = node["ram_cache_cutoff"].as<std::string>();
-      if (!std::isdigit(size[0])) {
+      if (size.empty() || !std::isdigit(size[0])) {
         throw ParserException(node.Mark(), "Invalid ram_cache_cutoff value (must start with a number, e.g., 5M)");
       }
       volume.ram_cache_cutoff = ink_atoi64(size.c_str());
@@ -247,7 +253,7 @@ template <> struct convert<ConfigVol> {
     if (node["avg_obj_size"]) {
       // Human-readable size
       std::string size = node["avg_obj_size"].as<std::string>();
-      if (!std::isdigit(size[0])) {
+      if (size.empty() || !std::isdigit(size[0])) {
         throw ParserException(node.Mark(), "Invalid avg_obj_size value (must start with a number, e.g., 64K)");
       }
       volume.avg_obj_size = static_cast<int>(ink_atoi64(size.c_str()));
@@ -256,7 +262,7 @@ template <> struct convert<ConfigVol> {
     if (node["fragment_size"]) {
       // Human-readable size
       std::string size = node["fragment_size"].as<std::string>();
-      if (!std::isdigit(size[0])) {
+      if (size.empty() || !std::isdigit(size[0])) {
         throw ParserException(node.Mark(), "Invalid fragment_size value (must start with a number, e.g., 1M)");
       }
       volume.fragment_size = static_cast<int>(ink_atoi64(size.c_str()));

@@ -975,7 +975,7 @@ traffic_ctl storage
    :ref:`admin_storage_set_device_offline`
 
    Mark a cache storage device as offline. The storage is identified by :arg:`PATH` which must match
-   exactly a path specified in :file:`storage.config`. This removes the storage from the cache and
+   exactly a path specified in :file:`storage.yaml`. This removes the storage from the cache and
    redirects requests that would have used this storage to other storage. This has exactly the same
    effect as a disk failure for that storage. This does not persist across restarts of the
    :program:`traffic_server` process.
@@ -1317,6 +1317,6 @@ See also
 ========
 
 :manpage:`records.yaml(5)`,
-:manpage:`storage.config(5)`,
+:manpage:`storage.yaml(5)`,
 :ref:`admin-jsonrpc-configuration`,
 :ref:`jsonrpc-protocol`

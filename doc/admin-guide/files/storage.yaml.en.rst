@@ -74,34 +74,49 @@ For :code:`spans` the keys are
 
 For :code:`volumes` the keys are
 
-+---------------+-------------+---------------------------------------------------------------------------------------------------------+
-| Key           | Type        | Meaning                                                                                                 |
-+===============+=============+=========================================================================================================+
-| id            | integer     | Id of the volume. Range is [1-255]. This id can be referred                                             |
-|               |             | from :file:`hosting.config`                                                                             |
-+---------------+-------------+---------------------------------------------------------------------------------------------------------+
-| size          | bytes       | Target size of the entire volume. This can be an absolute                                               |
-|               | _or_        | number of bytes or a percentage.                                                                        |
-|               | percentage  |                                                                                                         |
-+---------------+-------------+---------------------------------------------------------------------------------------------------------+
-| scheme        | enumeration | Protocol scheme, defaults to "http". Preserved for future                                               |
-|               | string      | use.                                                                                                    |
-+---------------+-------------+---------------------------------------------------------------------------------------------------------+
-| ram_cache     | boolean     | Control of ram caching for this volume. Default is ``true``. This may be desirable if you are using     |
-|               |             | something like ramdisks, to avoid wasting RAM and CPU time on double caching objects.                   |
-+---------------+-------------+---------------------------------------------------------------------------------------------------------+
-| avg_obj_size  | integer     | Overrides the global :ts:cv:`proxy.config.cache.min_average_object_size` configuration for this volume. |
-|               |             | This is useful if you have a volume that is dedicated for say very small objects, and you need a lot of |
-|               |             | directory entries to store them.                                                                        |
-+---------------+-------------+---------------------------------------------------------------------------------------------------------+
-| fragment_size | integer     | Overrides the global :ts:cv:`proxy.config.cache.target_fragment_size` configuration for this volume.    |
-|               |             | This allows for a smaller, or larger, fragment size for a particular volume. This may be useful         |
-|               |             | together with ``avg_obj_size`` as well, since a larger fragment size could reduce the number of         |
-|               |             | directory entries needed for a large object. Note that this setting has a maximmum value of 4MB.        |
-+---------------+-------------+---------------------------------------------------------------------------------------------------------+
-| spans         | list        | Spans that provide storage for this volume. Defaults to                                                 |
-|               |             | all spans.                                                                                              |
-+---------------+-------------+---------------------------------------------------------------------------------------------------------+
++------------------+-------------+---------------------------------------------------------------------------------------------------------+
+| Key              | Type        | Meaning                                                                                                 |
++==================+=============+=========================================================================================================+
+| id               | integer     | Id of the volume. Range is [1-255]. This id can be referred                                             |
+|                  |             | from :file:`hosting.config`. Each volume must have a distinct id; volume number 0 is reserved           |
+|                  |             | for internal use.                                                                                       |
++------------------+-------------+---------------------------------------------------------------------------------------------------------+
+| size             | bytes       | Target size of the entire volume. This can be an absolute                                               |
+|                  | _or_        | number of bytes or a percentage.                                                                        |
+|                  | percentage  |                                                                                                         |
++------------------+-------------+---------------------------------------------------------------------------------------------------------+
+| scheme           | enumeration | Protocol scheme, defaults to "http". Preserved for future                                               |
+|                  | string      | use.                                                                                                    |
++------------------+-------------+---------------------------------------------------------------------------------------------------------+
+| ram_cache        | boolean     | Control of ram caching for this volume. Default is ``true``. This may be desirable if you are using     |
+|                  |             | something like ramdisks, to avoid wasting RAM and CPU time on double caching objects.                   |
++------------------+-------------+---------------------------------------------------------------------------------------------------------+
+| ram_cache_size   | bytes       | Allocate a dedicated RAM cache pool for this volume.                                                    |
+|                  |             | The specified amount is automatically subtracted from the global RAM cache pool; the remainder is       |
+|                  |             | shared among volumes without a private allocation. Setting to ``0`` disables the RAM cache for this     |
+|                  |             | volume (equivalent to ``ram_cache: false``). If the sum of all per-volume allocations exceeds the       |
+|                  |             | global limit, Traffic Server will fail to start with a fatal error. If ``ram_cache: false`` is also     |
+|                  |             | set, this value is ignored with a warning. Only takes effect when the global size is a positive value   |
+|                  |             | (not ``-1`` for automatic sizing).                                                                      |
++------------------+-------------+---------------------------------------------------------------------------------------------------------+
+| ram_cache_cutoff | bytes       | Overrides the global :ts:cv:`proxy.config.cache.ram_cache_cutoff` configuration for this volume.        |
+|                  |             | Objects larger than this size will not be placed in the RAM cache for this volume. Use a larger         |
+|                  |             | cutoff for volumes serving frequently accessed large objects, a smaller cutoff for volumes with many    |
+|                  |             | small objects to maximize RAM cache hits, or a very low cutoff to effectively disable RAM caching for   |
+|                  |             | large objects on that volume.                                                                           |
++------------------+-------------+---------------------------------------------------------------------------------------------------------+
+| avg_obj_size     | integer     | Overrides the global :ts:cv:`proxy.config.cache.min_average_object_size` configuration for this volume. |
+|                  |             | This is useful if you have a volume that is dedicated for say very small objects, and you need a lot of |
+|                  |             | directory entries to store them.                                                                        |
++------------------+-------------+---------------------------------------------------------------------------------------------------------+
+| fragment_size    | integer     | Overrides the global :ts:cv:`proxy.config.cache.target_fragment_size` configuration for this volume.    |
+|                  |             | This allows for a smaller, or larger, fragment size for a particular volume. This may be useful         |
+|                  |             | together with ``avg_obj_size`` as well, since a larger fragment size could reduce the number of         |
+|                  |             | directory entries needed for a large object. Note that this setting has a maximmum value of 4MB.        |
++------------------+-------------+---------------------------------------------------------------------------------------------------------+
+| spans            | list        | Spans that provide storage for this volume. Defaults to                                                 |
+|                  |             | all spans.                                                                                              |
++------------------+-------------+---------------------------------------------------------------------------------------------------------+
 
 For :code:`volumes:spans` the keys are
 
@@ -190,7 +205,16 @@ Backwards Compatibility
 -----------------------
 
 In previous versions of |TS| it was possible to have "exclusive" spans which were used by only one volume. This is
-now done by specifying the span in the volume and using a size of "100%". E.g. old configuration like ::
+now done by specifying the span in the volume and using a size of "100%".
+
+.. important::
+
+   In the old volume.config, absolute sizes were specified in **megabytes** (e.g., ``size=512``
+   meant 512 MB). In :file:`storage.yaml`, sizes are specified in **bytes** with optional human-readable
+   suffixes (e.g., ``size: 512M`` or ``size: 536870912``). A bare number without a suffix is interpreted
+   as bytes, not megabytes.
+
+E.g. old configuration like ::
 
    /dev/disk2 volume=3 # storage.config
    volume=3 scheme=http size=512 # volume.config
@@ -207,7 +231,7 @@ The corresponding configuration would be
        - id: 3
          spans:
            - use: disk.2
-             size: 512
+             size: 512M
 
 Because volume sizes that are percentages are computed on span storage not already explicitly allocated, this will
 leave none of "disk.2" for such allocation and therefore "disk.2" will be used only by volume "1". Note this
@@ -512,3 +536,26 @@ OTOH, the ram spans ("ram.1" and "ram.2") will be divided evenly among volume 1 
         - id: 4
         - id: 5
         - id: 6
+
+The following example shows advanced RAM cache configuration with dedicated allocations and custom
+cutoffs. Assuming a global :ts:cv:`proxy.config.cache.ram_cache.size` of 4GB, volume 1 receives a
+dedicated 2GB RAM cache pool, volume 2 gets 512MB and only caches objects up to 64KB, and volume 3
+shares the remaining 1.5GB (4GB - 2GB - 512MB) and caches objects up to 1MB.
+
+.. code-block:: yaml
+
+   cache:
+     spans:
+       - name: disk
+         path: "/dev/sdb"
+     volumes:
+       - id: 1
+         size: 40%
+         ram_cache_size: 2G
+       - id: 2
+         size: 20%
+         ram_cache_size: 512M
+         ram_cache_cutoff: 64K
+       - id: 3
+         size: 40%
+         ram_cache_cutoff: 1M

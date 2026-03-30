@@ -887,7 +887,8 @@ cplist_reconfigure()
         for (ConfigVol *config_vol = config_volumes.cp_queue.head; config_vol; config_vol = config_vol->link.next) {
           for (auto &vol_span_config : config_vol->spans) {
             // Convert relative exclusive span size into absolute size
-            if (strncmp(gdisks[i]->span_name, vol_span_config.use.c_str(), vol_span_config.use.size()) == 0 &&
+            if (strlen(gdisks[i]->span_name) == vol_span_config.use.size() &&
+                strncmp(gdisks[i]->span_name, vol_span_config.use.c_str(), vol_span_config.use.size()) == 0 &&
                 vol_span_config.size.in_percent) {
               int64_t space_in_blks =
                 (gdisks[i]->num_usable_blocks / blocks_per_vol) * blocks_per_vol * vol_span_config.size.percent / 100;

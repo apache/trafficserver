@@ -70,10 +70,10 @@ Process Warnings
    too many errors. The disk might be corrupt and might have to be
    replaced.
 
-``No cache disks specified in storage.config file: cache disabled``
-   The Traffic Server :file:`storage.config` file does not list any cache
+``No cache disks specified in storage.yaml file: cache disabled``
+   The Traffic Server :file:`storage.yaml` file does not list any cache
    disks; Traffic Server is running in proxy-only mode. You must add
-   the disks you want to use for the cache to :file:`storage.config`.
+   the disks you want to use for the cache to :file:`storage.yaml`.
 
 .. _body-factory:
 

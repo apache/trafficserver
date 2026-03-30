@@ -2851,7 +2851,7 @@ RAM Cache
    **20GB** (21474836480)
 
    This global setting can be overridden on a per-volume basis using the
-   ``ram_cache_size`` parameter in :file:`volume.config`. Per-volume
+   ``ram_cache_size`` parameter in :file:`storage.yaml`. Per-volume
    allocations are subtracted from the total RAM cache size before
    distributing the remainder among volumes without explicit settings.
 
@@ -2863,7 +2863,7 @@ RAM Cache
    **4MB** (4194304)
 
    This global setting can be overridden on a per-volume basis using the
-   ``ram_cache_cutoff`` parameter in :file:`volume.config`. When set,
+   ``ram_cache_cutoff`` parameter in :file:`storage.yaml`. When set,
    the per-volume cutoff takes precedence over this global setting for
    that specific volume.
 
@@ -5701,11 +5701,11 @@ Sockets
    ``2`` Do not accept inbound connections until cache initialization has
          finished and been sufficiently successful that cache is enabled. This
          means at least one cache span is usable. If there are no spans in
-         :file:`storage.config` or none of the spans can be successfully parsed
+         :file:`storage.yaml` or none of the spans can be successfully parsed
          and initialized then |TS| will shut down.
    ``3`` Do not accept inbound connections until cache initialization has
          finished and been completely successful. This requires at least one
-         cache span in :file:`storage.config` and that every span specified is
+         cache span in :file:`storage.yaml` and that every span specified is
          valid and successfully initialized. Any error will cause |TS| to shut
          down.
    ===== ======================================================================

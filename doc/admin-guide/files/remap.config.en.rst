@@ -478,7 +478,7 @@ Where ``<volume_list>`` can be either:
 - Multiple comma-separated volume numbers: ``@volume=3,4,5``
 
 Volume numbers must be between 1 and 255 (volume 0 is reserved and not usable).
-All specified volumes must be defined in :file:`volume.config`.
+All specified volumes must be defined in :file:`storage.yaml`.
 
 Examples
 --------

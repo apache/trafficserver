@@ -31,6 +31,8 @@
 #include "tscore/Filenames.h"
 #include "tsutil/DbgCtl.h"
 
+#include <unordered_map>
+
 namespace
 {
 
@@ -623,11 +625,7 @@ createCacheHostRecord(const char *volume_str, char *errbuf, size_t errbufsize)
 bool
 ConfigVol::Size::is_empty() const
 {
-  if (absolute_value == 0 && in_percent == false && percent == 0) {
-    return true;
-  }
-
-  return false;
+  return absolute_value == 0 && !in_percent && percent == 0;
 }
 
 /**
@@ -641,8 +639,8 @@ ConfigVolumes::complement()
     int remaining_size = 100; ///< in percentage
   };
 
-  SizeTracker                                       volume_tracker;
-  std::unordered_map<std::string_view, SizeTracker> span_size_map;
+  SizeTracker                                  volume_tracker;
+  std::unordered_map<std::string, SizeTracker> span_size_map;
 
   // Find missing size and remaining size in percentage
   for (ConfigVol *conf = cp_queue.head; conf != nullptr; conf = cp_queue.next(conf)) {
