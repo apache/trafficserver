@@ -336,10 +336,18 @@ save_state()
 {
   saved_cp_list     = cp_list;
   saved_cp_list_len = cp_list_len;
-  memcpy(&saved_config_volumes, &config_volumes, sizeof(ConfigVolumes));
+
+  // Properly save ConfigVolumes by moving the queue contents
+  saved_config_volumes.num_volumes = config_volumes.num_volumes;
+  saved_config_volumes.cp_queue    = config_volumes.cp_queue;
+
   saved_gnstripes = gnstripes;
   memset(static_cast<void *>(&cp_list), 0, sizeof(Queue<CacheVol>));
-  memset(static_cast<void *>(&config_volumes), 0, sizeof(ConfigVolumes));
+
+  // Clear config_volumes properly without calling destructor on moved data
+  config_volumes.num_volumes = 0;
+  config_volumes.cp_queue.clear();
+
   gnstripes = 0;
 }
 
@@ -348,7 +356,15 @@ restore_state()
 {
   cp_list     = saved_cp_list;
   cp_list_len = saved_cp_list_len;
-  memcpy(&config_volumes, &saved_config_volumes, sizeof(ConfigVolumes));
+
+  // Properly restore ConfigVolumes by moving the queue contents back
+  config_volumes.num_volumes = saved_config_volumes.num_volumes;
+  config_volumes.cp_queue    = saved_config_volumes.cp_queue;
+
+  // Clear the saved state to avoid double ownership
+  saved_config_volumes.num_volumes = 0;
+  saved_config_volumes.cp_queue.clear();
+
   gnstripes = saved_gnstripes;
 }
 } // end anonymous namespace

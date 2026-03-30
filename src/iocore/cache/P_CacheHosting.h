@@ -315,6 +315,36 @@ struct ConfigVol {
 };
 
 struct ConfigVolumes {
+  ConfigVolumes() = default;
+  ~ConfigVolumes() { clear_all(); }
+
+  // Move constructor
+  ConfigVolumes(ConfigVolumes &&other) noexcept : num_volumes(other.num_volumes), cp_queue(std::move(other.cp_queue))
+  {
+    // Reset the source object to prevent double deletion
+    other.num_volumes = 0;
+  }
+
+  // Move assignment operator
+  ConfigVolumes &
+  operator=(ConfigVolumes &&other) noexcept
+  {
+    if (this != &other) {
+      // Clear current contents
+      clear_all();
+      // Move from other
+      num_volumes = other.num_volumes;
+      cp_queue    = std::move(other.cp_queue);
+      // Reset the source object to prevent double deletion
+      other.num_volumes = 0;
+    }
+    return *this;
+  }
+
+  // Delete copy constructor and copy assignment to prevent accidental copying
+  ConfigVolumes(const ConfigVolumes &)            = delete;
+  ConfigVolumes &operator=(const ConfigVolumes &) = delete;
+
   int              num_volumes = 0;
   Queue<ConfigVol> cp_queue{};
 
@@ -324,7 +354,8 @@ struct ConfigVolumes {
   {
     // remove all the volumes from the queue
     for (int i = 0; i < num_volumes; i++) {
-      cp_queue.pop();
+      ConfigVol *v = cp_queue.pop();
+      delete v;
     }
     // reset count variables
     num_volumes = 0;

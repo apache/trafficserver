@@ -30,8 +30,8 @@
 struct SpanConfigParams {
   std::string name;
   std::string path;
-  std::string hash_seed; ///< optional
-  int64_t     size = 0;  ///< optional for raw device
+  std::string hash_seed{}; ///< optional
+  int64_t     size = 0;    ///< optional for raw device
 };
 
 using SpanConfig = std::vector<SpanConfigParams>;
