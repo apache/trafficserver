@@ -376,4 +376,16 @@ stop_HttpProxyServer()
 {
   sslNetProcessor.stop_accept();
   netProcessor.stop_accept();
+
+  for (auto &acceptor : HttpProxyAcceptors) {
+    delete acceptor._accept;
+    acceptor._accept = nullptr;
+  }
+  HttpProxyAcceptors.clear();
+
+  delete plugin_http_accept;
+  plugin_http_accept = nullptr;
+
+  delete plugin_http_transparent_accept;
+  plugin_http_transparent_accept = nullptr;
 }

@@ -83,6 +83,7 @@ struct AIOCallback : public Continuation {
   int64_t    aio_result = 0;
   AIO_Reqs  *aio_req    = nullptr;
   ink_hrtime sleep_time = 0;
+  bool       from_api   = false;
   SLINK(AIOCallback, alink); /* for AIO_Reqs::aio_temp_list */
 #if TS_USE_LINUX_IO_URING
   iovec        iov     = {}; // this is to support older kernels that only support readv/writev
