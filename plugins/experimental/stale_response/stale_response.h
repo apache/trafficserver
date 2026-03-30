@@ -23,6 +23,8 @@
 
 #pragma once
 
+#include <cstdlib>
+
 #include "ts/apidefs.h"
 #include "ts_wrap.h"
 #include "ts/ts.h"
@@ -62,6 +64,9 @@ struct ConfigInfo {
     }
     if (this->body_data_mutex) {
       TSMutexDestroy(this->body_data_mutex);
+    }
+    if (this->log_info.filename != PLUGIN_TAG) {
+      free(const_cast<char *>(this->log_info.filename));
     }
   }
   UintBodyMap *body_data = nullptr;

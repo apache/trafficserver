@@ -154,6 +154,8 @@ class S3Config;
 class ConfigCache
 {
 public:
+  ~ConfigCache();
+
   S3Config *get(const char *fname);
 
 private:
@@ -600,6 +602,13 @@ private:
   int       _conf_reload_count   = 0;
   int       _invalid_file_count  = 0;
 };
+
+ConfigCache::~ConfigCache()
+{
+  for (auto &[key, data] : _cache) {
+    delete data.config.load();
+  }
+}
 
 bool
 S3Config::parse_config(const std::string &config_fname)

@@ -163,6 +163,7 @@ CB_context_dump(TSCont, TSEvent, void *edata)
       for (int i = 0; i < count; i += 2) {
         dump_context(results[i], results[i + 1]);
       }
+      free(results);
     }
   }
   TSTextLogObjectFlush(context_dump_log);
