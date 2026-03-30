@@ -816,6 +816,11 @@ CacheProcessor::diskInitialized()
     theCache->open(clear, fix);
     return;
   }
+  if (config_volumes.num_volumes != 0) {
+    theCache         = new Cache();
+    theCache->scheme = CacheType::HTTP;
+    theCache->open(clear, fix);
+  }
 }
 
 int
