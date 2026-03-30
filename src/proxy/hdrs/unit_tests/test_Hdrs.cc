@@ -183,6 +183,13 @@ test_http_hdr_copy_over_aux(int testnum, const char *request, const char *respon
   HTTPHdr copy1;
   HTTPHdr copy2;
 
+  ts::PostScript cleanup([&]() -> void {
+    req_hdr.destroy();
+    resp_hdr.destroy();
+    copy1.destroy();
+    copy2.destroy();
+  });
+
   HTTPParser  parser;
   const char *start;
   const char *end;
@@ -207,7 +214,6 @@ test_http_hdr_copy_over_aux(int testnum, const char *request, const char *respon
 
   if (err == ParseResult::ERROR) {
     std::printf("FAILED: (test #%d) parse error parsing request hdr\n", testnum);
-    req_hdr.destroy();
     return (0);
   }
   http_parser_clear(&parser);
@@ -230,8 +236,6 @@ test_http_hdr_copy_over_aux(int testnum, const char *request, const char *respon
 
   if (err == ParseResult::ERROR) {
     printf("FAILED: (test #%d) parse error parsing response hdr\n", testnum);
-    req_hdr.destroy();
-    resp_hdr.destroy();
     return (0);
   }
 
@@ -263,16 +267,8 @@ test_http_hdr_copy_over_aux(int testnum, const char *request, const char *respon
 
   copy2.copy(&req_hdr);
   comp_str = comp_http_hdr(&req_hdr, &copy2);
-  if (comp_str) {
-    goto done;
-  }
 
 done:
-  req_hdr.destroy();
-  resp_hdr.destroy();
-  copy1.destroy();
-  copy2.destroy();
-
   if (comp_str) {
     printf("FAILED: (test #%d) copy & compare: %s\n", testnum, comp_str);
     printf("REQ:\n[%.*s]\n", static_cast<int>(strlen(request)), request);
@@ -382,9 +378,15 @@ test_http_hdr_print_and_copy_aux(int testnum, const char *request, const char *r
 {
   ParseResult err;
   HTTPHdr     hdr;
+  HTTPHdr     new_hdr;
   HTTPParser  parser;
   const char *start;
   const char *end;
+
+  ts::PostScript cleanup([&]() -> void {
+    hdr.destroy();
+    new_hdr.destroy();
+  });
 
   char prt_buf[2048];
   int  prt_bufsize = sizeof(prt_buf);
@@ -415,12 +417,11 @@ test_http_hdr_print_and_copy_aux(int testnum, const char *request, const char *r
 
   if (err == ParseResult::ERROR) {
     std::printf("FAILED: (test #%d) parse error parsing request hdr\n", testnum);
-    hdr.destroy();
     return (0);
   }
 
   /*** (2) copy the request header ***/
-  HTTPHdr         new_hdr, marshal_hdr;
+  HTTPHdr         marshal_hdr;
   TestRefCountObj ref;
 
   // Pretend to pin this object with a refcount.
@@ -442,9 +443,6 @@ test_http_hdr_print_and_copy_aux(int testnum, const char *request, const char *r
 
   if ((prt_ret != 1) || (cpy_ret != 1)) {
     std::printf("FAILED: (test #%d) couldn't print req hdr or copy --- prt_ret=%d, cpy_ret=%d\n", testnum, prt_ret, cpy_ret);
-    hdr.destroy();
-    new_hdr.destroy();
-
     return (0);
   }
 
@@ -456,9 +454,6 @@ test_http_hdr_print_and_copy_aux(int testnum, const char *request, const char *r
     std::printf("TARGET  :\n[%.*s]\n", static_cast<int>(strlen(request_tgt)), request_tgt);
     std::printf("PRT_BUFF:\n[%.*s]\n", prt_bufindex, prt_buf);
     std::printf("CPY_BUFF:\n[%.*s]\n", cpy_bufindex, cpy_buf);
-    hdr.destroy();
-    new_hdr.destroy();
-
     return (0);
   }
 
@@ -469,9 +464,6 @@ test_http_hdr_print_and_copy_aux(int testnum, const char *request, const char *r
     std::printf("TARGET  :\n[%.*s]\n", static_cast<int>(strlen(request_tgt)), request_tgt);
     std::printf("PRT_BUFF:\n[%.*s]\n", prt_bufindex, prt_buf);
     std::printf("CPY_BUFF:\n[%.*s]\n", cpy_bufindex, cpy_buf);
-    hdr.destroy();
-    new_hdr.destroy();
-
     return (0);
   }
 
@@ -496,7 +488,6 @@ test_http_hdr_print_and_copy_aux(int testnum, const char *request, const char *r
 
   if (err == ParseResult::ERROR) {
     std::printf("FAILED: (test #%d) parse error parsing response hdr\n", testnum);
-    hdr.destroy();
     return (0);
   }
 
@@ -515,8 +506,6 @@ test_http_hdr_print_and_copy_aux(int testnum, const char *request, const char *r
 
   if ((prt_ret != 1) || (cpy_ret != 1)) {
     std::printf("FAILED: (test #%d) couldn't print rsp hdr or copy --- prt_ret=%d, cpy_ret=%d\n", testnum, prt_ret, cpy_ret);
-    hdr.destroy();
-    new_hdr.destroy();
     return (0);
   }
 
@@ -527,8 +516,6 @@ test_http_hdr_print_and_copy_aux(int testnum, const char *request, const char *r
     std::printf("TARGET  :\n[%.*s]\n", static_cast<int>(strlen(response_tgt)), response_tgt);
     std::printf("PRT_BUFF:\n[%.*s]\n", prt_bufindex, prt_buf);
     std::printf("CPY_BUFF:\n[%.*s]\n", cpy_bufindex, cpy_buf);
-    hdr.destroy();
-    new_hdr.destroy();
     return (0);
   }
 
@@ -539,13 +526,8 @@ test_http_hdr_print_and_copy_aux(int testnum, const char *request, const char *r
     std::printf("TARGET  :\n[%.*s]\n", static_cast<int>(strlen(response_tgt)), response_tgt);
     std::printf("PRT_BUFF:\n[%.*s]\n", prt_bufindex, prt_buf);
     std::printf("CPY_BUFF:\n[%.*s]\n", cpy_bufindex, cpy_buf);
-    hdr.destroy();
-    new_hdr.destroy();
     return (0);
   }
-
-  hdr.destroy();
-  new_hdr.destroy();
 
   if (test_http_hdr_copy_over_aux(testnum, request, response) == 0) {
     return 0;
