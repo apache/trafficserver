@@ -1,0 +1,5 @@
+Changes with Apache Traffic Server 9.2.13
+  #12834 - Make 9.2.x buildable on macOS 26
+  #12909 - Updating make/configure for hdrrwr lib includes
+  #13038 - 9.2.x: Fix prev_is_cr flag handling in chunked encoding parser
+  #13039 - 9.2.x: HttpSM - make sure we have a valid buffer to write on.
