@@ -49,6 +49,4 @@ struct ink_aiocb {
   off_t  aio_offset; /* file offset */
 
   int aio_lio_opcode; /* listio operation */
-  int aio_state;      /* state flag for List I/O */
-  int aio__pad[1];    /* extension padding */
 };

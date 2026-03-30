@@ -123,7 +123,6 @@ OpenDir::signal_readers(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   while ((c = delayed_readers.dequeue())) {
     CACHE_TRY_LOCK(lock, c->mutex, t);
     if (lock.is_locked()) {
-      c->f.open_read_timeout = 0;
       c->handleEvent(EVENT_IMMEDIATE, nullptr);
       continue;
     }
