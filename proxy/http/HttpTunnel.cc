@@ -179,7 +179,7 @@ ChunkedHandler::read_size()
             done  = true;
             break;
           } else {
-            if ((prev_is_cr = ParseRules::is_cr(*tmp)) == true) {
+            if (ParseRules::is_cr(*tmp)) {
               ++num_cr;
             }
             state = CHUNK_READ_SIZE_CRLF; // now look for CRLF
@@ -201,7 +201,7 @@ ChunkedHandler::read_size()
           done                 = true;
           num_cr               = 0;
           break;
-        } else if ((prev_is_cr = ParseRules::is_cr(*tmp)) == true) {
+        } else if (ParseRules::is_cr(*tmp)) {
           if (num_cr != 0) {
             state = CHUNK_READ_ERROR;
             done  = true;
@@ -224,7 +224,7 @@ ChunkedHandler::read_size()
           num_digits  = 0;
           num_cr      = 0;
           state       = CHUNK_READ_SIZE;
-        } else if ((prev_is_cr = ParseRules::is_cr(*tmp)) == true) {
+        } else if (ParseRules::is_cr(*tmp)) {
           if (num_cr != 0) {
             Debug("http_chunk", "Found multiple CRs before chunk size");
             state = CHUNK_READ_ERROR;
@@ -237,9 +237,15 @@ ChunkedHandler::read_size()
           done  = true;
         }
       }
+      prev_is_cr = ParseRules::is_cr(*tmp);
       tmp++;
       data_size--;
     }
+
+    if (data_size > 0) {
+      prev_is_cr = ParseRules::is_cr(*tmp);
+    }
+
     if (drop_chunked_trailers) {
       chunked_buffer->write(chunked_reader, bytes_used);
       chunked_size += bytes_used;
