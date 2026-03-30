@@ -3061,7 +3061,6 @@ HttpSM::tunnel_handler_100_continue(int event, void *data)
     //  does not free the memory from the header
     t_state.hdr_info.client_response.destroy();
     tunnel.deallocate_buffers();
-    this->postbuf_clear();
     tunnel.reset();
 
     if (server_entry->eos) {
@@ -6403,8 +6402,8 @@ HttpSM::do_setup_client_request_body_tunnel(HttpVC_t to_vc_type)
   // YTS Team, yamsat Plugin
   // if redirect_in_process and redirection is enabled add static producer
 
-  if (is_buffering_request_body ||
-      (t_state.redirect_info.redirect_in_process && enable_redirection && this->_postbuf.postdata_copy_buffer_start != nullptr)) {
+  if ((is_buffering_request_body && this->_postbuf.is_valid()) || // Make sure  we have a valid buffer in case is buffering.
+      (t_state.redirect_info.redirect_in_process && enable_redirection && this->_postbuf.is_valid())) {
     post_redirect = true;
     // copy the post data into a new producer buffer for static producer
     MIOBuffer      *postdata_producer_buffer = new_empty_MIOBuffer(t_state.http_config_param->max_payload_iobuf_index);
