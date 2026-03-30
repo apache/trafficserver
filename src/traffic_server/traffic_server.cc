@@ -54,6 +54,7 @@
 #include <syslog.h>
 #include <algorithm>
 #include <atomic>
+#include <filesystem>
 #include <list>
 #include <string>
 
@@ -1757,6 +1758,70 @@ change_uid_gid(const char *user)
 #endif
 }
 
+#if !TS_USE_POSIX_CAP
+/**
+ * Recursively chown a directory and all its contents to the given uid/gid.
+ */
+void
+chown_dir_recursive(const char *dir, uid_t uid, gid_t gid)
+{
+  if (chown(dir, uid, gid) != 0) {
+    Warning("chown_dir_recursive: failed to chown '%s': %s", dir, strerror(errno));
+  }
+
+  std::error_code ec;
+
+  for (const auto &entry : std::filesystem::recursive_directory_iterator(dir, ec)) {
+    if (chown(entry.path().c_str(), uid, gid) != 0) {
+      Warning("chown_dir_recursive: failed to chown '%s': %s", entry.path().c_str(), strerror(errno));
+    }
+  }
+
+  if (ec) {
+    Warning("chown_dir_recursive: error iterating '%s': %s", dir, ec.message().c_str());
+  }
+}
+
+/**
+ * On systems without POSIX capabilities, privilege is dropped late — after
+ * initialization has already created files and directories as root. This
+ * causes runtime operations (plugin reloads, log rotation) to fail because
+ * the now-unprivileged process can't write to root-owned paths. Fix this by
+ * chowning affected directories to the target user before dropping privileges.
+ */
+void
+chown_owned_dirs(const char *user)
+{
+  struct passwd *pwd;
+  struct passwd  pbuf;
+  char           buf[4096];
+
+  if (*user == '#') {
+    uid_t uid = static_cast<uid_t>(atoi(&user[1]));
+    if (getpwuid_r(uid, &pbuf, buf, sizeof(buf), &pwd) != 0 || pwd == nullptr) {
+      Warning("chown_owned_dirs: cannot resolve uid %d", uid);
+      return;
+    }
+  } else {
+    if (getpwnam_r(user, &pbuf, buf, sizeof(buf), &pwd) != 0 || pwd == nullptr) {
+      Warning("chown_owned_dirs: cannot resolve user '%s'", user);
+      return;
+    }
+  }
+
+  std::string rundir(RecConfigReadRuntimeDir());
+  std::string logdir(RecConfigReadLogDir());
+
+  if (!rundir.empty()) {
+    chown_dir_recursive(rundir.c_str(), pwd->pw_uid, pwd->pw_gid);
+  }
+
+  if (!logdir.empty()) {
+    chown_dir_recursive(logdir.c_str(), pwd->pw_uid, pwd->pw_gid);
+  }
+}
+#endif
+
 /*
  * Binds stdout and stderr to files specified by the parameters
  *
@@ -2400,6 +2465,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 
 #if !TS_USE_POSIX_CAP
   if (admin_user_p) {
+    chown_owned_dirs(user);
     change_uid_gid(user);
   }
 #endif
