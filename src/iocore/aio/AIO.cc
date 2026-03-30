@@ -99,6 +99,9 @@ AIOCallback::io_complete(int event, void *data)
   if (!action.cancelled && action.continuation) {
     action.continuation->handleEvent(AIO_EVENT_DONE, this);
   }
+  if (from_api) {
+    delete this;
+  }
   return EVENT_DONE;
 }
 
