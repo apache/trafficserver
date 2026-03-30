@@ -114,8 +114,6 @@ def check_lines(path):
 
 logpath = os.path.join(ts.Variables.LOGDIR, 'field-mstsms.log')
 
-# Wait for log file to appear, then wait one extra second to make sure TS is done writing it.
-tr = Test.AddTestRun()
-tr.Processes.Default.Command = (os.path.join(Test.Variables.AtsTestToolsDir, 'condwait') + ' 60 1 -f ' + logpath)
-#tr.Processes.Default.ReturnCode = 0
+# Wait for all expected log lines to be written.
+tr = Test.AddAwaitFileContainsTestRun('Await mstsms log lines.', logpath, r'^mstsms:', 3)
 tr.Streams.All.Content = Testers.Lambda(lambda info, tester: check_lines(logpath))

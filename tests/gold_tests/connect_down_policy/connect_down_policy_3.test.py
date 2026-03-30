@@ -85,11 +85,11 @@ class ConnectDownPolicy3Test:
 
     def _test_mark_down(self):
         if self._expect_mark_down:
-            # Wait for error.log to appear then verify it contains the mark-down entry.
-            tr = Test.AddTestRun(f"policy={self._policy}: check error.log for mark-down")
-            tr.Processes.Default.Command = (
-                os.path.join(Test.Variables.AtsTestToolsDir, 'condwait') + ' 60 1 -f ' +
-                os.path.join(self._ts.Variables.LOGDIR, 'error.log'))
+            tr = Test.AddAwaitFileContainsTestRun(
+                f"policy={self._policy}: check error.log for mark-down",
+                os.path.join(self._ts.Variables.LOGDIR, 'error.log'),
+                "marking down",
+            )
             self._ts.Disk.error_log.Content = Testers.ContainsExpression(
                 "marking down", f"policy={self._policy}: origin should be marked down after inactive timeout")
         else:

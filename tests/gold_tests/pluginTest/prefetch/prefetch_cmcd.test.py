@@ -273,8 +273,6 @@ tr = Test.AddTestRun()
 tr.MakeCurlCommand(f"--verbose --proxy 127.0.0.1:{ts0.Variables.port} \'http://ts0/{crr_name}\' -H \'{crr_header}\'", ts=ts0)
 tr.Processes.Default.ReturnCode = 0
 
-condwaitpath = os.path.join(Test.Variables.AtsTestToolsDir, 'condwait')
-
 ts0log = os.path.join(ts0.Variables.LOGDIR, 'transaction.log')
 Test.AddAwaitFileContainsTestRun('Await ts transactions to finish logging.', ts0log, 'crr.txt')
 

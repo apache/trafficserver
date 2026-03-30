@@ -106,8 +106,10 @@ tr = Test.AddTestRun()
 tr.MakeCurlCommand('--verbose --header "Host: test-3" http://localhost:{0}/test-3'.format(ts.Variables.port), ts=ts)
 tr.Processes.Default.ReturnCode = 0
 
-# Wait for log file to appear, then wait one extra second to make sure TS is done writing it.
-test_run = Test.AddTestRun()
-test_run.Processes.Default.Command = (
-    os.path.join(Test.Variables.AtsTestToolsDir, 'condwait') + ' 60 1 -f ' + os.path.join(ts.Variables.LOGDIR, 'field-test.log'))
-test_run.Processes.Default.ReturnCode = 0
+# Wait for all expected log lines to be written.
+Test.AddAwaitFileContainsTestRun(
+    'Await field-test log lines.',
+    os.path.join(ts.Variables.LOGDIR, 'field-test.log'),
+    r'^Transfer-Encoding:',
+    3,
+)
