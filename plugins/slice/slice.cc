@@ -28,6 +28,7 @@
 #include "ts/ts.h"
 
 #include <charconv>
+#include <memory>
 #include <netinet/in.h>
 #include <array>
 #include <string_view>
@@ -50,14 +51,13 @@ TSCont global_read_resp_hdr_contp;
 static bool
 should_skip_this_obj(TSHttpTxn txnp, Config *const config)
 {
-  int         len    = 0;
-  char *const urlstr = TSHttpTxnEffectiveUrlStringGet(txnp, &len);
+  int                                      len = 0;
+  std::unique_ptr<char, decltype(&TSfree)> urlstr(TSHttpTxnEffectiveUrlStringGet(txnp, &len), TSfree);
 
-  bool const known_large = config->isKnownLargeObj({urlstr, static_cast<size_t>(len)});
-  TSfree(urlstr);
+  bool const known_large = config->isKnownLargeObj({urlstr.get(), static_cast<size_t>(len)});
 
   if (!known_large) {
-    DEBUG_LOG("Not a known large object, not slicing: %.*s", len, urlstr);
+    DEBUG_LOG("Not a known large object, not slicing: %.*s", len, urlstr.get());
     return true;
   }
 
