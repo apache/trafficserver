@@ -119,6 +119,26 @@ sessions:
       status: 200
 
 
+- transactions:
+  - client-request:
+      method: "POST"
+      version: "1.1"
+      url: /malformed/chunk/header3
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ Transfer-Encoding, chunked ]
+        - [ uuid, 8 ]
+      content:
+        transfer: plain
+        encoding: uri
+        # chunk-size is set to 1, but no chunk-data is present.
+        data: 1%0D%0A%0D%0A0%0D%0A%0D%0A
+
+    # The connection will be dropped and this response will not go out.
+    server-response:
+      status: 200
+
   #
   # Now repeat the above two malformed chunk header tests, but on the server
   # side.
