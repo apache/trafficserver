@@ -94,14 +94,14 @@ logging:
         self.__checkProcessAfter(tr)
 
     def __testAccessLog(self):
-        """Wait for log file to appear, then wait one extra second to make sure TS is done writing it."""
+        """Wait for the access log entry to be written."""
         Test.Disk.File(os.path.join(self.ts.Variables.LOGDIR, 'access.log'), exists=True, content='gold/connect_access.gold')
 
-        tr = Test.AddTestRun()
-        tr.Processes.Default.Command = (
-            os.path.join(Test.Variables.AtsTestToolsDir, 'condwait') + ' 60 1 -f ' +
-            os.path.join(self.ts.Variables.LOGDIR, 'access.log'))
-        tr.Processes.Default.ReturnCode = 0
+        Test.AddAwaitFileContainsTestRun(
+            'Await CONNECT access log entry.',
+            os.path.join(self.ts.Variables.LOGDIR, 'access.log'),
+            'CONNECT',
+        )
 
     def run(self):
         self.__testCase0()

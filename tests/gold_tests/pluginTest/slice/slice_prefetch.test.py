@@ -174,8 +174,10 @@ tr.StillRunningAfter = ts
 
 # 6 Test - All requests (client & slice internal) logs to see background fetches
 cache_file = os.path.join(ts.Variables.LOGDIR, 'cache.log')
-# Wait for log file to appear, then wait one extra second to make sure TS is done writing it.
-test_run = Test.AddTestRun("Checking debug logs for background fetches")
-test_run.Processes.Default.Command = (os.path.join(Test.Variables.AtsTestToolsDir, 'condwait') + ' 60 1 -f ' + cache_file)
+# Wait for the final cache log line to be written.
+test_run = Test.AddAwaitFileContainsTestRun(
+    "Checking debug logs for background fetches",
+    cache_file,
+    r'\*/18 hit-fresh, none$',
+)
 ts.Disk.File(cache_file).Content = "gold/slice_prefetch.gold"
-test_run.Processes.Default.ReturnCode = 0

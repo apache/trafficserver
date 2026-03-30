@@ -100,16 +100,17 @@ class LogFilenamesTest:
 
     def __configure_await_TestRun(self, log_path):
         ''' Configure a TestRun that awaits upon the provided log_path to
-        exist.
+        contain the sentinel log entry.
 
         Args:
             log_path (str): The log file upon which we will wait.
         '''
         description = self.__description
-        tr = Test.AddTestRun(f'Awaiting log files to be written for: {description}')
-        condwait_path = os.path.join(Test.Variables.AtsTestToolsDir, 'condwait')
-        tr.Processes.Default.Command = f'{condwait_path} 60 1 -f {log_path}'
-        tr.Processes.Default.ReturnCode = 0
+        Test.AddAwaitFileContainsTestRun(
+            f'Awaiting log files to be written for: {description}',
+            log_path,
+            r'^http://127\.0\.0\.1:\d+/: 502$',
+        )
 
     def __configure_traffic_TestRun(self, description):
         ''' Configure a TestRun to run the expected transactions.

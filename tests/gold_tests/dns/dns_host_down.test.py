@@ -65,11 +65,11 @@ class DownCachedOriginServerTest:
 
     # Verify error log marking host down exists
     def _test_error_log(self):
-        tr = Test.AddTestRun()
-        tr.Processes.Default.Command = (
-            os.path.join(Test.Variables.AtsTestToolsDir, 'condwait') + ' 60 1 -f ' +
-            os.path.join(self._ts.Variables.LOGDIR, 'error.log'))
-
+        tr = Test.AddAwaitFileContainsTestRun(
+            'Await error.log mark-down entry.',
+            os.path.join(self._ts.Variables.LOGDIR, 'error.log'),
+            "/dns/mark/down' fail_count='1' marking down",
+        )
         self._ts.Disk.error_log.Content = Testers.ContainsExpression(
             "/dns/mark/down' fail_count='1' marking down", "host should be marked down")
 
