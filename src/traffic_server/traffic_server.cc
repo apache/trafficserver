@@ -1761,18 +1761,19 @@ change_uid_gid(const char *user)
 #if !TS_USE_POSIX_CAP
 /**
  * Recursively chown a directory and all its contents to the given uid/gid.
+ * Uses lchown() to avoid following symlinks.
  */
-void
+static void
 chown_dir_recursive(const char *dir, uid_t uid, gid_t gid)
 {
-  if (chown(dir, uid, gid) != 0) {
+  if (lchown(dir, uid, gid) != 0) {
     Warning("chown_dir_recursive: failed to chown '%s': %s", dir, strerror(errno));
   }
 
   std::error_code ec;
 
   for (const auto &entry : std::filesystem::recursive_directory_iterator(dir, ec)) {
-    if (chown(entry.path().c_str(), uid, gid) != 0) {
+    if (lchown(entry.path().c_str(), uid, gid) != 0) {
       Warning("chown_dir_recursive: failed to chown '%s': %s", entry.path().c_str(), strerror(errno));
     }
   }
@@ -1789,17 +1790,29 @@ chown_dir_recursive(const char *dir, uid_t uid, gid_t gid)
  * the now-unprivileged process can't write to root-owned paths. Fix this by
  * chowning affected directories to the target user before dropping privileges.
  */
-void
+static void
 chown_owned_dirs(const char *user)
 {
+  if (getuid() != 0 && geteuid() != 0) {
+    return;
+  }
+
   struct passwd *pwd;
   struct passwd  pbuf;
-  char           buf[4096];
+  unsigned       pw_bufsize = 4096;
+#if defined(_SC_GETPW_R_SIZE_MAX)
+  long pw_size = sysconf(_SC_GETPW_R_SIZE_MAX);
+
+  if (pw_size > 0) {
+    pw_bufsize = static_cast<unsigned>(pw_size);
+  }
+#endif
+  char buf[pw_bufsize];
 
   if (*user == '#') {
     uid_t uid = static_cast<uid_t>(atoi(&user[1]));
     if (getpwuid_r(uid, &pbuf, buf, sizeof(buf), &pwd) != 0 || pwd == nullptr) {
-      Warning("chown_owned_dirs: cannot resolve uid %d", uid);
+      Warning("chown_owned_dirs: cannot resolve uid %ld", static_cast<long>(uid));
       return;
     }
   } else {
