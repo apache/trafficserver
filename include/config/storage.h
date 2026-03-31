@@ -159,6 +159,22 @@ public:
 };
 
 /**
+ * Merge a legacy storage.config result with a legacy volume.config result.
+ *
+ * The spans come from @a storage (the storage.config parse result).
+ * If @a volumes contains any volume entries (the volume.config parse result),
+ * they replace the minimal volume entries produced by storage.config
+ * "volume=N" annotations, while preserving the span-ref associations that
+ * those annotations recorded.  If @a volumes is empty, the partial volume
+ * entries from @a storage are kept as-is.
+ *
+ * @param[in] storage  Result of StorageParser::parse_legacy_storage_content().
+ * @param[in] volumes  Result of VolumeParser::parse_content() (may be empty).
+ * @return Merged StorageConfig ready for marshalling.
+ */
+StorageConfig merge_legacy_storage_configs(StorageConfig const &storage, StorageConfig const &volumes);
+
+/**
  * Marshaller for storage configuration.
  *
  * Serializes configuration to YAML or JSON format.

@@ -388,6 +388,292 @@ TEST_CASE("StorageParser::parse_legacy_storage_content parses basic lines", "[st
   CHECK(result.value.spans[1].size == 1073741824LL);
 }
 
+TEST_CASE("StorageParser: single span exclusively assigned to one volume", "[storage][legacy][storage_config][volume]")
+{
+  static constexpr char CONTENT[] = "/dev/sda volume=1\n";
+
+  StorageParser parser;
+  auto          result = parser.parse_legacy_storage_content(CONTENT);
+
+  REQUIRE(result.ok());
+  REQUIRE(result.value.spans.size() == 1);
+  REQUIRE(result.value.volumes.size() == 1);
+  CHECK(result.value.volumes[0].id == 1);
+  REQUIRE(result.value.volumes[0].spans.size() == 1);
+  CHECK(result.value.volumes[0].spans[0].use == "/dev/sda");
+}
+
+TEST_CASE("StorageParser: multiple spans exclusively assigned to different volumes", "[storage][legacy][storage_config][volume]")
+{
+  static constexpr char CONTENT[] = "/dev/sda volume=1\n"
+                                    "/dev/sdb volume=2\n"
+                                    "/dev/sdc volume=1\n"; // second span for volume 1
+
+  StorageParser parser;
+  auto          result = parser.parse_legacy_storage_content(CONTENT);
+
+  REQUIRE(result.ok());
+  REQUIRE(result.value.spans.size() == 3);
+  REQUIRE(result.value.volumes.size() == 2);
+
+  // volumes are in map order (id=1 before id=2)
+  auto const &vol1 = result.value.volumes[0];
+  REQUIRE(vol1.id == 1);
+  REQUIRE(vol1.spans.size() == 2);
+  CHECK(vol1.spans[0].use == "/dev/sda");
+  CHECK(vol1.spans[1].use == "/dev/sdc");
+
+  auto const &vol2 = result.value.volumes[1];
+  REQUIRE(vol2.id == 2);
+  REQUIRE(vol2.spans.size() == 1);
+  CHECK(vol2.spans[0].use == "/dev/sdb");
+}
+
+TEST_CASE("StorageParser: unassigned spans produce no volume entries", "[storage][legacy][storage_config][volume]")
+{
+  // No volume= annotations anywhere - no volumes should be created.
+  static constexpr char CONTENT[] = "/dev/sda\n"
+                                    "/dev/sdb 10737418240\n";
+
+  StorageParser parser;
+  auto          result = parser.parse_legacy_storage_content(CONTENT);
+
+  REQUIRE(result.ok());
+  CHECK(result.value.spans.size() == 2);
+  CHECK(result.value.volumes.empty());
+}
+
+TEST_CASE("StorageParser: mix of assigned and unassigned spans", "[storage][legacy][storage_config][volume]")
+{
+  // /dev/sda and /dev/sdc are not assigned to any volume.
+  // /dev/sdb is exclusively assigned to volume 3.
+  static constexpr char CONTENT[] = "/dev/sda\n"
+                                    "/dev/sdb volume=3\n"
+                                    "/dev/sdc\n";
+
+  StorageParser parser;
+  auto          result = parser.parse_legacy_storage_content(CONTENT);
+
+  REQUIRE(result.ok());
+  REQUIRE(result.value.spans.size() == 3);
+  REQUIRE(result.value.volumes.size() == 1);
+  CHECK(result.value.volumes[0].id == 3);
+  REQUIRE(result.value.volumes[0].spans.size() == 1);
+  CHECK(result.value.volumes[0].spans[0].use == "/dev/sdb");
+}
+
+TEST_CASE("StorageParser: volume=N with size and id= on the same line", "[storage][legacy][storage_config][volume]")
+{
+  static constexpr char CONTENT[] = "/dev/sda 5368709120 id=myseed volume=2\n";
+
+  StorageParser parser;
+  auto          result = parser.parse_legacy_storage_content(CONTENT);
+
+  REQUIRE(result.ok());
+  REQUIRE(result.value.spans.size() == 1);
+  CHECK(result.value.spans[0].size == 5368709120LL);
+  CHECK(result.value.spans[0].hash_seed == "myseed");
+  REQUIRE(result.value.volumes.size() == 1);
+  CHECK(result.value.volumes[0].id == 2);
+  CHECK(result.value.volumes[0].spans[0].use == "/dev/sda");
+}
+
+TEST_CASE("StorageParser: volume= id and volume= annotations in any order", "[storage][legacy][storage_config][volume]")
+{
+  // volume= before id= - order on the line should not matter.
+  static constexpr char CONTENT[] = "/dev/sda volume=5 id=seed1\n";
+
+  StorageParser parser;
+  auto          result = parser.parse_legacy_storage_content(CONTENT);
+
+  REQUIRE(result.ok());
+  REQUIRE(result.value.spans.size() == 1);
+  CHECK(result.value.spans[0].hash_seed == "seed1");
+  REQUIRE(result.value.volumes.size() == 1);
+  CHECK(result.value.volumes[0].id == 5);
+}
+
+// ============================================================================
+// merge_legacy_storage_configs
+// ============================================================================
+
+TEST_CASE("merge_legacy_storage_configs: volume=N spans get size/scheme from volume.config", "[storage][legacy][merge]")
+{
+  // storage.config: two spans, each exclusively assigned to a volume.
+  static constexpr char STORAGE[] = "/dev/sda volume=1\n"
+                                    "/dev/sdb volume=2\n";
+
+  // volume.config: two volumes with explicit size and scheme.
+  static constexpr char VOLUMES[] = "volume=1 scheme=http size=60%\n"
+                                    "volume=2 scheme=http size=40%\n";
+
+  StorageParser storage_parser;
+  auto          storage_result = storage_parser.parse_legacy_storage_content(STORAGE);
+  REQUIRE(storage_result.ok());
+
+  VolumeParser volume_parser;
+  auto         volume_result = volume_parser.parse_content(VOLUMES);
+  REQUIRE(volume_result.ok());
+
+  StorageConfig merged = merge_legacy_storage_configs(storage_result.value, volume_result.value);
+
+  REQUIRE(merged.spans.size() == 2);
+  REQUIRE(merged.volumes.size() == 2);
+
+  // Volume 1: size from volume.config, span ref from storage.config.
+  auto const &vol1 = merged.volumes[0];
+  CHECK(vol1.id == 1);
+  CHECK(vol1.size.in_percent);
+  CHECK(vol1.size.percent == 60);
+  REQUIRE(vol1.spans.size() == 1);
+  CHECK(vol1.spans[0].use == "/dev/sda");
+
+  // Volume 2: size from volume.config, span ref from storage.config.
+  auto const &vol2 = merged.volumes[1];
+  CHECK(vol2.id == 2);
+  CHECK(vol2.size.in_percent);
+  CHECK(vol2.size.percent == 40);
+  REQUIRE(vol2.spans.size() == 1);
+  CHECK(vol2.spans[0].use == "/dev/sdb");
+}
+
+TEST_CASE("merge_legacy_storage_configs: multiple spans assigned to the same volume", "[storage][legacy][merge]")
+{
+  // /dev/sda and /dev/sdc both go to volume 1.
+  static constexpr char STORAGE[] = "/dev/sda volume=1\n"
+                                    "/dev/sdb volume=2\n"
+                                    "/dev/sdc volume=1\n";
+
+  static constexpr char VOLUMES[] = "volume=1 scheme=http size=60%\n"
+                                    "volume=2 scheme=http size=40%\n";
+
+  StorageParser storage_parser;
+  auto          storage_result = storage_parser.parse_legacy_storage_content(STORAGE);
+  REQUIRE(storage_result.ok());
+
+  VolumeParser volume_parser;
+  auto         volume_result = volume_parser.parse_content(VOLUMES);
+  REQUIRE(volume_result.ok());
+
+  StorageConfig merged = merge_legacy_storage_configs(storage_result.value, volume_result.value);
+
+  REQUIRE(merged.volumes.size() == 2);
+
+  auto const &vol1 = merged.volumes[0];
+  CHECK(vol1.id == 1);
+  REQUIRE(vol1.spans.size() == 2);
+  CHECK(vol1.spans[0].use == "/dev/sda");
+  CHECK(vol1.spans[1].use == "/dev/sdc");
+
+  auto const &vol2 = merged.volumes[1];
+  CHECK(vol2.id == 2);
+  REQUIRE(vol2.spans.size() == 1);
+  CHECK(vol2.spans[0].use == "/dev/sdb");
+}
+
+TEST_CASE("merge_legacy_storage_configs: unassigned spans are not attached to any volume", "[storage][legacy][merge]")
+{
+  // /dev/sdb has no volume= annotation.
+  static constexpr char STORAGE[] = "/dev/sda volume=1\n"
+                                    "/dev/sdb\n";
+
+  static constexpr char VOLUMES[] = "volume=1 scheme=http size=100%\n";
+
+  StorageParser storage_parser;
+  auto          storage_result = storage_parser.parse_legacy_storage_content(STORAGE);
+  REQUIRE(storage_result.ok());
+
+  VolumeParser volume_parser;
+  auto         volume_result = volume_parser.parse_content(VOLUMES);
+  REQUIRE(volume_result.ok());
+
+  StorageConfig merged = merge_legacy_storage_configs(storage_result.value, volume_result.value);
+
+  REQUIRE(merged.spans.size() == 2);
+  REQUIRE(merged.volumes.size() == 1);
+
+  auto const &vol1 = merged.volumes[0];
+  CHECK(vol1.id == 1);
+  REQUIRE(vol1.spans.size() == 1);
+  CHECK(vol1.spans[0].use == "/dev/sda");
+}
+
+TEST_CASE("merge_legacy_storage_configs: volume.config volume without matching storage.config annotation has no span refs",
+          "[storage][legacy][merge]")
+{
+  // storage.config has no volume= lines; volume.config defines a volume.
+  // The merged volume should have the size/scheme but empty spans.
+  static constexpr char STORAGE[] = "/dev/sda\n"
+                                    "/dev/sdb\n";
+
+  static constexpr char VOLUMES[] = "volume=1 scheme=http size=50%\n";
+
+  StorageParser storage_parser;
+  auto          storage_result = storage_parser.parse_legacy_storage_content(STORAGE);
+  REQUIRE(storage_result.ok());
+
+  VolumeParser volume_parser;
+  auto         volume_result = volume_parser.parse_content(VOLUMES);
+  REQUIRE(volume_result.ok());
+
+  StorageConfig merged = merge_legacy_storage_configs(storage_result.value, volume_result.value);
+
+  REQUIRE(merged.spans.size() == 2);
+  REQUIRE(merged.volumes.size() == 1);
+  CHECK(merged.volumes[0].id == 1);
+  CHECK(merged.volumes[0].size.percent == 50);
+  CHECK(merged.volumes[0].spans.empty());
+}
+
+TEST_CASE("merge_legacy_storage_configs: empty volume.config preserves storage.config partial volumes", "[storage][legacy][merge]")
+{
+  // When volume.config is absent (empty), keep the partial volumes from storage.config.
+  static constexpr char STORAGE[] = "/dev/sda volume=1\n";
+
+  StorageParser storage_parser;
+  auto          storage_result = storage_parser.parse_legacy_storage_content(STORAGE);
+  REQUIRE(storage_result.ok());
+
+  StorageConfig empty_volumes;
+  StorageConfig merged = merge_legacy_storage_configs(storage_result.value, empty_volumes);
+
+  REQUIRE(merged.volumes.size() == 1);
+  CHECK(merged.volumes[0].id == 1);
+  REQUIRE(merged.volumes[0].spans.size() == 1);
+  CHECK(merged.volumes[0].spans[0].use == "/dev/sda");
+}
+
+TEST_CASE("merge_legacy_storage_configs: volume attributes from volume.config are preserved", "[storage][legacy][merge]")
+{
+  static constexpr char STORAGE[] = "/dev/sda volume=3\n";
+
+  static constexpr char VOLUMES[] = "volume=3 scheme=http size=512 "
+                                    "avg_obj_size=8192 fragment_size=524288 ramcache=false "
+                                    "ram_cache_size=1073741824 ram_cache_cutoff=262144\n";
+
+  StorageParser storage_parser;
+  auto          storage_result = storage_parser.parse_legacy_storage_content(STORAGE);
+  REQUIRE(storage_result.ok());
+
+  VolumeParser volume_parser;
+  auto         volume_result = volume_parser.parse_content(VOLUMES);
+  REQUIRE(volume_result.ok());
+
+  StorageConfig merged = merge_legacy_storage_configs(storage_result.value, volume_result.value);
+
+  REQUIRE(merged.volumes.size() == 1);
+  auto const &vol = merged.volumes[0];
+  CHECK(vol.id == 3);
+  CHECK(vol.size.absolute_value == 512);
+  CHECK_FALSE(vol.ram_cache);
+  CHECK(vol.avg_obj_size == 8192);
+  CHECK(vol.fragment_size == 524288);
+  CHECK(vol.ram_cache_size == 1073741824LL);
+  CHECK(vol.ram_cache_cutoff == 262144LL);
+  REQUIRE(vol.spans.size() == 1);
+  CHECK(vol.spans[0].use == "/dev/sda");
+}
+
 // ============================================================================
 // Legacy volume.config parser
 // ============================================================================

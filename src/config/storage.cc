@@ -725,6 +725,33 @@ VolumeParser::parse_content(std::string_view content)
   return parse_legacy_volume_config(content);
 }
 
+StorageConfig
+merge_legacy_storage_configs(StorageConfig const &storage, StorageConfig const &volumes)
+{
+  StorageConfig merged = storage;
+
+  if (volumes.volumes.empty()) {
+    return merged;
+  }
+
+  // Build a lookup of volume id -> span refs gathered from storage.config.
+  std::map<int, std::vector<StorageVolumeEntry::SpanRef>> span_ref_map;
+  for (auto const &vol : merged.volumes) {
+    span_ref_map[vol.id] = vol.spans;
+  }
+
+  merged.volumes.clear();
+  for (auto vol : volumes.volumes) {
+    auto it = span_ref_map.find(vol.id);
+    if (it != span_ref_map.end()) {
+      vol.spans = it->second;
+    }
+    merged.volumes.push_back(std::move(vol));
+  }
+
+  return merged;
+}
+
 std::string
 StorageMarshaller::to_yaml(StorageConfig const &config)
 {

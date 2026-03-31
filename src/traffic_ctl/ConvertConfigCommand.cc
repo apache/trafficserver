@@ -23,6 +23,7 @@
 
 #include "ConvertConfigCommand.h"
 #include "config/ssl_multicert.h"
+#include "config/storage.h"
 
 #include <fstream>
 #include <iostream>
@@ -40,6 +41,15 @@ ConvertConfigCommand::ConvertConfigCommand(ts::Arguments *args) : CtrlCommand(ar
     _input_file   = convert_args[0];
     _output_file  = convert_args[1];
     _invoked_func = [this]() { convert_ssl_multicert(); };
+  } else if (args->get("storage")) {
+    auto const &convert_args = args->get("storage");
+    if (convert_args.size() < 3) {
+      throw std::invalid_argument("storage requires <storage.config> <volume.config> <output_file>");
+    }
+    _input_file         = convert_args[0];
+    _volume_config_file = convert_args[1];
+    _output_file        = convert_args[2];
+    _invoked_func       = [this]() { convert_storage(); };
   } else {
     throw std::invalid_argument("Unsupported config type for conversion");
   }
@@ -76,5 +86,69 @@ ConvertConfigCommand::convert_ssl_multicert()
     out << yaml_output << '\n';
     out.close();
     _printer->write_output("Converted " + _input_file + " -> " + _output_file);
+  }
+}
+
+void
+ConvertConfigCommand::convert_storage()
+{
+  // Parse legacy storage.config.
+  config::StorageParser                       storage_parser;
+  config::ConfigResult<config::StorageConfig> storage_result = storage_parser.parse(_input_file);
+
+  if (!storage_result.ok()) {
+    std::string error_msg = "Failed to parse storage config '" + _input_file + "'";
+    if (!storage_result.errata.empty()) {
+      error_msg += ": ";
+      error_msg += std::string(storage_result.errata.front().text());
+    }
+    _printer->write_output(error_msg);
+    return;
+  }
+
+  // Parse legacy volume.config.
+  config::VolumeParser                        volume_parser;
+  config::ConfigResult<config::StorageConfig> volume_result = volume_parser.parse(_volume_config_file);
+
+  // A missing volume.config is treated as "no volumes configured" rather than
+  // a hard error, since the file was optional in the legacy setup.
+  if (!volume_result.ok()) {
+    bool is_missing = false;
+    for (auto const &ann : volume_result.errata) {
+      if (std::string(ann.text()).find("Cannot open") != std::string::npos) {
+        is_missing = true;
+        break;
+      }
+    }
+    if (!is_missing) {
+      std::string error_msg = "Failed to parse volume config '" + _volume_config_file + "'";
+      if (!volume_result.errata.empty()) {
+        error_msg += ": ";
+        error_msg += std::string(volume_result.errata.front().text());
+      }
+      _printer->write_output(error_msg);
+      return;
+    }
+  }
+
+  // Merge: volumes from volume.config replace the minimal volumes produced by
+  // storage.config span annotations.  Span refs recorded by the storage.config
+  // parser (volume=N lines) are preserved in the merged result.
+  config::StorageConfig const merged = config::merge_legacy_storage_configs(storage_result.value, volume_result.value);
+
+  config::StorageMarshaller marshaller;
+  std::string const         yaml_output = marshaller.to_yaml(merged);
+
+  if (_output_file == "-") {
+    std::cout << yaml_output << '\n';
+  } else {
+    std::ofstream out(_output_file);
+    if (!out) {
+      _printer->write_output("Failed to open output file '" + _output_file + "' for writing");
+      return;
+    }
+    out << yaml_output << '\n';
+    out.close();
+    _printer->write_output("Converted " + _input_file + " + " + _volume_config_file + " -> " + _output_file);
   }
 }

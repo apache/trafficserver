@@ -1,0 +1,10 @@
+cache:
+  spans:
+    - name: /dev/sda
+      path: /dev/sda
+    - name: /dev/sdb
+      path: /dev/sdb
+      size: 5368709120
+    - name: /var/cache/disk
+      path: /var/cache/disk
+      hash_seed: my_hash_seed
