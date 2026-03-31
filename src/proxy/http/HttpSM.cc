@@ -423,7 +423,8 @@ HttpSM::attach_client_session(ProxyTransaction *txn)
   if (!netvc) {
     return;
   }
-  ATS_PROBE2(http_attach_client_session, sm_id, netvc->get_socket());
+  ATS_PROBE4(http_attach_client_session, sm_id, netvc->get_socket(), txn->get_transaction_id(),
+             dynamic_cast<UnixNetVConnection *>(netvc) ? dynamic_cast<UnixNetVConnection *>(netvc)->id : 0);
   _ua.set_txn(txn, milestones);
 
   // Collect log & stats information. We've already verified that the netvc is !nullptr above,
