@@ -83,6 +83,14 @@ autest:
             args:
               - "rules/rule_set_body_origin_send_resp.conf"
 
+      # Test 5: set-body at SEND_RESPONSE_HDR with chunked origin response
+      - from: "http://www.example.com/set_body_chunked_origin/"
+        to: "http://backend.ex:{SERVER_HTTP_PORT}/origin_chunked/"
+        plugins:
+          - name: "header_rewrite.so"
+            args:
+              - "rules/rule_set_body_origin_send_resp.conf"
+
 sessions:
 
 # Test 1: Origin returns 403 with sensitive body, set-body at SEND_RESPONSE_HDR replaces it
@@ -198,6 +206,38 @@ sessions:
         - [ Content-Type, "text/plain" ]
       content:
         size: 0
+
+    proxy-response:
+      status: 403
+      headers:
+        fields:
+        - [ Content-Length, { value: "9", as: equal } ]
+      content:
+        size: 9
+        data: "Sanitized"
+
+# Test 5: Origin returns 403 with chunked body, set-body replaces it (connection not reused)
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /set_body_chunked_origin/
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ uuid, 5 ]
+
+    server-response:
+      status: 403
+      reason: Forbidden
+      headers:
+        fields:
+        - [ Transfer-Encoding, chunked ]
+        - [ Content-Type, "text/plain" ]
+      content:
+        encoding: chunked
+        size: 42
+        data: "Sensitive chunked body with secret details"
 
     proxy-response:
       status: 403

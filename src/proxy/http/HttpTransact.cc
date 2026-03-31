@@ -845,7 +845,9 @@ how_to_open_connection(HttpTransact::State *s)
 
   // If a plugin has already set a response body (e.g., set-body at remap),
   // skip the origin connection and serve the synthetic response directly.
-  if (s->internal_msg_buffer) {
+  // Exclude the case where a plugin set the server request body via
+  // TSHttpTxnServerRequestBodySet(), which reuses the same buffer field.
+  if (s->internal_msg_buffer && !s->api_server_request_body_set) {
     HTTPStatus  status = (s->http_return_code != HTTPStatus::NONE) ? s->http_return_code : HTTPStatus::OK;
     const char *reason = http_hdr_reason_lookup(status);
     if (s->hdr_info.client_response.valid()) {

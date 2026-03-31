@@ -1169,6 +1169,22 @@ origin body from the server connection buffer so the connection can be reused. I
 origin body is too large to be fully buffered or uses chunked encoding, the server
 connection will be closed instead.
 
+.. note::
+
+   When replacing an origin response body, the origin's response headers are
+   preserved. If the origin headers contain sensitive information (e.g.
+   ``Server``, ``X-Amz-Request-Id``, or other internal identifiers), use
+   ``rm-header`` to strip them::
+
+      cond %{READ_RESPONSE_HDR_HOOK} [AND]
+      cond %{STATUS} =403
+          set-body "Access Denied"
+          rm-header Server
+          rm-header X-Amz-Request-Id
+
+   If a response transform plugin is also active on the same transaction,
+   ``set-body`` takes precedence and the transform is bypassed.
+
 Example: block a request at remap time without contacting the origin::
 
    cond %{REMAP_PSEUDO_HOOK} [AND]
@@ -1197,7 +1213,17 @@ When the origin response body is fully buffered and has a known ``Content-Length
 ATS will drain the origin body to allow connection reuse. Otherwise, the origin
 connection is closed.
 
-If the fetch fails or times out, the original origin response is sent unmodified.
+If the fetch fails or times out, the original origin response (including its body)
+is sent unmodified. This means ``set-body-from`` does **not** guarantee the origin
+body will be hidden from the client -- only successful fetches result in body
+replacement. Use ``set-body`` instead if the replacement text is static and must
+always be applied regardless of external dependencies.
+
+.. note::
+
+   Like ``set-body``, the origin's response headers are preserved when
+   ``set-body-from`` replaces the body. Use ``rm-header`` to strip any
+   sensitive origin headers.
 
 An example config would look like::
 
