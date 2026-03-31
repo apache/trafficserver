@@ -1164,21 +1164,25 @@ This operator can be used to replace the response body in three scenarios:
    headers and replace the body, or ``SEND_RESPONSE_HDR_HOOK`` to replace the body
    just before sending to the client.
 
-When replacing an origin response body (scenario 3), ATS will attempt to drain the
-origin body from the server connection buffer so the connection can be reused. If the
-origin body is too large to be fully buffered or uses chunked encoding, the server
-connection will be closed instead.
+When replacing an origin response body (scenario 3), ATS will drain the origin body
+from the server connection buffer to allow a clean connection shutdown. If the origin
+body is too large to be fully buffered or uses chunked encoding, the server connection
+will be closed immediately.
 
 .. note::
 
-   When replacing an origin response body, the origin's response headers are
-   preserved. If the origin headers contain sensitive information (e.g.
-   ``Server``, ``X-Amz-Request-Id``, or other internal identifiers), use
-   ``rm-header`` to strip them::
+   When replacing an origin response body, the origin's status code and most
+   response headers are preserved. However, ``Content-Length`` is recomputed to
+   match the replacement body size, ``Transfer-Encoding`` is removed, and
+   ``Content-Type`` is overwritten to ``text/html`` (since ``set-body`` does
+   not accept a mimetype parameter). Use ``set-header Content-Type`` to
+   restore the desired content type, and ``rm-header`` to strip any sensitive
+   origin headers::
 
       cond %{READ_RESPONSE_HDR_HOOK} [AND]
       cond %{STATUS} =403
           set-body "Access Denied"
+          set-header Content-Type "text/plain"
           rm-header Server
           rm-header X-Amz-Request-Id
 
@@ -1206,24 +1210,27 @@ set-body-from
 
 Will call ``<URL>`` (see URL in `URL Parts`_) to retrieve a response body from a
 secondary URL and use it to replace the origin's response body. The origin's response
-status code and headers are preserved, and the fetched content replaces only the body.
+status code and most headers are preserved, and the fetched content replaces only the
+body. As with ``set-body``, ``Content-Length`` is recomputed, ``Transfer-Encoding``
+is removed, and ``Content-Type`` is overwritten to ``text/html``.
 
 This operator can be used at ``READ_RESPONSE_HDR_HOOK`` or ``SEND_RESPONSE_HDR_HOOK``.
 When the origin response body is fully buffered and has a known ``Content-Length``,
-ATS will drain the origin body to allow connection reuse. Otherwise, the origin
-connection is closed.
+ATS will drain the origin body to allow a clean connection shutdown. Otherwise, the
+origin connection is closed.
 
-If the fetch fails or times out, the original origin response (including its body)
-is sent unmodified. This means ``set-body-from`` does **not** guarantee the origin
-body will be hidden from the client -- only successful fetches result in body
-replacement. Use ``set-body`` instead if the replacement text is static and must
-always be applied regardless of external dependencies.
+In most cases, if the fetch fails or times out, the original origin response
+(including its body) is sent unmodified. However, certain fetch connection failures
+can cause ATS to generate an internal error page that ``set-body-from`` treats as a
+successful fetch, and that content will replace the origin body. This means
+``set-body-from`` does **not** guarantee the origin body will be hidden from the
+client. Use ``set-body`` instead if the replacement text is static and must always be
+applied regardless of external dependencies.
 
 .. note::
 
-   Like ``set-body``, the origin's response headers are preserved when
-   ``set-body-from`` replaces the body. Use ``rm-header`` to strip any
-   sensitive origin headers.
+   Use ``set-header Content-Type`` to restore the desired content type, and
+   ``rm-header`` to strip any sensitive origin headers.
 
 An example config would look like::
 

@@ -1685,7 +1685,7 @@ HttpSM::handle_api_return()
 
   switch (t_state.next_action) {
   case HttpTransact::StateMachineAction_t::TRANSFORM_READ: {
-    if (t_state.internal_msg_buffer) {
+    if (t_state.internal_msg_buffer && !t_state.api_server_request_body_set) {
       // A plugin replaced the response body via TSHttpTxnErrorBodySet().
       // Use internal transfer instead of the transform tunnel.
       SMDbg(dbg_ctl_http, "plugin set internal body, bypassing transform for internal transfer");
@@ -1731,7 +1731,7 @@ HttpSM::handle_api_return()
       }
 
       setup_blind_tunnel(true, initial_data);
-    } else if (t_state.internal_msg_buffer) {
+    } else if (t_state.internal_msg_buffer && !t_state.api_server_request_body_set) {
       // A plugin replaced the origin response body via TSHttpTxnErrorBodySet().
       // Drain the origin body if possible, then use internal transfer.
       SMDbg(dbg_ctl_http, "plugin set internal body, using internal transfer instead of server tunnel");
