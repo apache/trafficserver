@@ -837,17 +837,29 @@ shutdownHookHandler(TSCont contp, TSEvent /* event ATS_UNUSED */, void * /* edat
 
     TSMutexLock(main_ctx->mutexp);
 
-    lua_State *const l = main_ctx->lua;
+    lua_State *const L = main_ctx->lua;
 
-    lua_getglobal(l, TS_LUA_FUNCTION_G_SHUT_DOWN);
-    if (lua_type(l, -1) == LUA_TFUNCTION) {
-      if (lua_pcall(l, 0, 0, 0) != 0) {
-        TSError("[ts_lua][%s] lua_pcall failed: %s", __FUNCTION__, lua_tostring(l, -1));
-        lua_pop(l, 1);
+    // Restore the conf-specific global table so lua_getglobal resolves
+    // functions from the loaded script, matching ts_lua_reload_module.
+    lua_pushlightuserdata(L, conf);
+    lua_rawget(L, LUA_REGISTRYINDEX);
+    lua_replace(L, LUA_GLOBALSINDEX);
+
+    lua_getglobal(L, TS_LUA_FUNCTION_G_SHUT_DOWN);
+
+    if (lua_type(L, -1) == LUA_TFUNCTION) {
+      if (lua_pcall(L, 0, 0, 0) != 0) {
+        TSError("[ts_lua][%s] lua_pcall failed: %s", __FUNCTION__, lua_tostring(L, -1));
+        lua_pop(L, 1);
       }
     } else {
-      lua_pop(l, 1);
+      lua_pop(L, 1);
     }
+
+    // Restore LUA_GLOBALSINDEX to an empty table, matching the resting state
+    // established by ts_lua_add_module and ts_lua_reload_module.
+    lua_newtable(L);
+    lua_replace(L, LUA_GLOBALSINDEX);
 
     TSMutexUnlock(main_ctx->mutexp);
   }
