@@ -1833,7 +1833,7 @@ chown_owned_dirs(const char *user)
     chown_dir_recursive(logdir.c_str(), pwd->pw_uid, pwd->pw_gid);
   }
 }
-#endif
+#endif // !TS_USE_POSIX_CAP
 
 /*
  * Binds stdout and stderr to files specified by the parameters
