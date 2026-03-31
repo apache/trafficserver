@@ -113,14 +113,7 @@ ConvertConfigCommand::convert_storage()
   // A missing volume.config is treated as "no volumes configured" rather than
   // a hard error, since the file was optional in the legacy setup.
   if (!volume_result.ok()) {
-    bool is_missing = false;
-    for (auto const &ann : volume_result.errata) {
-      if (std::string(ann.text()).find("Cannot open") != std::string::npos) {
-        is_missing = true;
-        break;
-      }
-    }
-    if (!is_missing) {
+    if (!volume_result.file_not_found) {
       std::string error_msg = "Failed to parse volume config '" + _volume_config_file + "'";
       if (!volume_result.errata.empty()) {
         error_msg += ": ";

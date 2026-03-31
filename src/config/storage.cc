@@ -711,7 +711,10 @@ VolumeParser::parse(std::string const &filename)
   std::string     content = swoc::file::load(filename, ec);
   if (ec) {
     if (ec.value() == ENOENT) {
-      return {{}, swoc::Errata(ERRATA_ERROR_SEV, "Cannot open volume configuration \"{}\" - {}", filename, ec)};
+      ConfigResult<StorageConfig> r;
+      r.file_not_found = true;
+      r.errata.note(ERRATA_ERROR_SEV, "Cannot open volume configuration \"{}\" - {}", filename, ec);
+      return r;
     }
     return {{}, swoc::Errata(ERRATA_ERROR_SEV, "Failed to read volume configuration from \"{}\" - {}", filename, ec)};
   }
@@ -856,7 +859,7 @@ StorageMarshaller::to_json(StorageConfig const &config)
         out << YAML::Key << KEY_SIZE << YAML::Value;
         emit_size(out, vol.size);
       }
-      out << YAML::Key << KEY_RAM_CACHE << YAML::Value << (vol.ram_cache ? "true" : "false");
+      out << YAML::Key << KEY_RAM_CACHE << YAML::Value << vol.ram_cache;
       if (vol.ram_cache_size >= 0) {
         out << YAML::Key << KEY_RAM_CACHE_SIZE << YAML::Value << std::to_string(vol.ram_cache_size);
       }

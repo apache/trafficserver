@@ -281,6 +281,11 @@ CacheProcessor::start_internal(int flags)
         cache_disk->span_name = ats_strdup(span->name);
 
         // Find exclusive span
+        // A span is exclusive when ConfigVolumes::complement() has assigned 100% of it to a
+        // single volume (either because the legacy storage.config used "volume=N" on that span,
+        // or because the storage.yaml volumes[].spans[] entry carries size=100%).  Exclusive
+        // spans are tracked via forced_volume_num so the allocator can skip them from the
+        // shared pool calculation.
         for (ConfigVol *vol_config = config_volumes.cp_queue.head; vol_config; vol_config = vol_config->link.next) {
           for (auto &span_config : vol_config->spans) {
             if (strcmp(span->name, span_config.use.c_str()) == 0 && span_config.size.in_percent &&
