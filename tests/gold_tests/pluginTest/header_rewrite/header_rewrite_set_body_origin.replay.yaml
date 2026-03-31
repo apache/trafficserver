@@ -109,10 +109,10 @@ sessions:
       reason: Forbidden
       headers:
         fields:
-        - [ Content-Length, "39" ]
+        - [ Content-Length, "40" ]
         - [ Content-Type, "text/plain" ]
       content:
-        size: 39
+        size: 40
         data: "Sensitive account info: secret-key-12345"
 
     proxy-response:
@@ -140,10 +140,10 @@ sessions:
       reason: Forbidden
       headers:
         fields:
-        - [ Content-Length, "39" ]
+        - [ Content-Length, "40" ]
         - [ Content-Type, "text/plain" ]
       content:
-        size: 39
+        size: 40
         data: "Sensitive account info: secret-key-12345"
 
     proxy-response:
@@ -235,9 +235,7 @@ sessions:
         - [ Transfer-Encoding, chunked ]
         - [ Content-Type, "text/plain" ]
       content:
-        encoding: chunked
-        size: 42
-        data: "Sensitive chunked body with secret details"
+        size: 100
 
     proxy-response:
       status: 403
