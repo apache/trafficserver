@@ -125,15 +125,15 @@ each lua script:
 - **'do_global_send_response'**
 - **'do_global_cache_lookup_complete'**
 - **'do_global_read_cache'**
-- **'do_global_shut_down'**
+- **'do_global_shutdown'**
 
-The ``do_global_shut_down`` function is invoked once per Lua state when |ATS| is
+The ``do_global_shutdown`` function is invoked once per Lua state when |ATS| is
 shutting down. It can be used to perform cleanup tasks such as flushing state or
 releasing resources. It takes no arguments and its return value is ignored.
 
 Example::
 
-    function do_global_shut_down()
+    function do_global_shutdown()
         ts.debug('ATS shutting down, cleaning up resources')
     end
 

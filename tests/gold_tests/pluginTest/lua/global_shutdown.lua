@@ -18,6 +18,6 @@ function do_global_read_request()
   ts.debug('do_global_read_request called')
 end
 
-function do_global_shut_down()
-  ts.debug('do_global_shut_down called')
+function do_global_shutdown()
+  ts.debug('do_global_shutdown called')
 end
