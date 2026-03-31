@@ -23,8 +23,8 @@
 
 #include "P_CacheHosting.h"
 
+#include "config/storage.h"
 #include "iocore/cache/Store.h"
-#include "iocore/cache/YamlStorageConfig.h"
 #include "records/RecCore.h"
 #include "tscore/Diags.h"
 #include "tscore/ink_memory.h"
@@ -218,22 +218,57 @@ Span::~Span()
 Result
 Store::read_config()
 {
-  SpanConfig     storage_config;
   ats_scoped_str storage_path(RecConfigReadConfigPath(nullptr, ts::filename::STORAGE));
 
   Note("%s loading ...", ts::filename::STORAGE);
 
-  if (!YamlStorageConfig::load(storage_config, config_volumes, storage_path.get())) {
-    return Result::failure("failed to load %s", ts::filename::STORAGE);
+  config::StorageParser parser;
+  auto                  parse_result = parser.parse(storage_path.get());
+  if (!parse_result.ok()) {
+    std::string msg;
+    for (auto const &annotation : parse_result.errata) {
+      if (!msg.empty()) {
+        msg += "; ";
+      }
+      msg += std::string(annotation.text());
+    }
+    return Result::failure("failed to load %s: %s", ts::filename::STORAGE, msg.c_str());
   }
 
-  this->n_spans_in_config = storage_config.size();
+  // Convert StorageVolumeEntry -> ConfigVol and populate config_volumes.
+  for (auto const &vv : parse_result.value.volumes) {
+    auto *vol                = new ConfigVol();
+    vol->number              = vv.id;
+    vol->scheme              = (vv.scheme == "http") ? CacheType::HTTP : CacheType::NONE;
+    vol->ramcache_enabled    = vv.ram_cache;
+    vol->size.in_percent     = vv.size.in_percent;
+    vol->size.percent        = vv.size.percent;
+    vol->size.absolute_value = vv.size.absolute_value;
+    vol->ram_cache_size      = vv.ram_cache_size;
+    vol->ram_cache_cutoff    = vv.ram_cache_cutoff;
+    vol->avg_obj_size        = vv.avg_obj_size;
+    vol->fragment_size       = vv.fragment_size;
+    for (auto const &sr : vv.spans) {
+      ConfigVol::Span span;
+      span.use                 = sr.use;
+      span.size.in_percent     = sr.size.in_percent;
+      span.size.percent        = sr.size.percent;
+      span.size.absolute_value = sr.size.absolute_value;
+      vol->spans.push_back(std::move(span));
+    }
+    config_volumes.cp_queue.enqueue(vol);
+    config_volumes.num_volumes++;
+  }
+  config_volumes.complement();
+
+  auto const &storage_spans = parse_result.value.spans;
+  this->n_spans_in_config   = storage_spans.size();
 
   int   n_dsstore = 0;
   Span *prev      = nullptr;
   Span *head      = nullptr;
 
-  for (const auto &it : storage_config) {
+  for (const auto &it : storage_spans) {
     Span *span = new Span();
 
     Dbg(dbg_ctl_cache_init, "Span name=\"%s\" path=\"%s\" size=%" PRId64 " hash_seed=%s", it.name.c_str(), it.path.c_str(), it.size,

@@ -36,7 +36,6 @@ add_library(
   Store.cc
   Stripe.cc
   StripeSM.cc
-  YamlStorageConfig.cc
 )
 add_library(ts::inkcache ALIAS inkcache)
 
@@ -50,7 +49,7 @@ target_include_directories(inkcache PRIVATE ${CMAKE_SOURCE_DIR}/lib)
 target_link_libraries(
   inkcache
   PUBLIC ts::aio ts::hdrs ts::inkevent ts::tscore
-  PRIVATE ts::tsapibackend fastlz ZLIB::ZLIB
+  PRIVATE ts::config ts::tsapibackend fastlz ZLIB::ZLIB
 )
 
 if(HAVE_LZMA_H)
@@ -96,7 +95,7 @@ if(BUILD_TESTING)
   # Unit Tests without unit_tests/main.cc
   add_executable(test_ConfigVolumes unit_tests/test_ConfigVolumes.cc)
   target_include_directories(test_ConfigVolumes PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
-  target_link_libraries(test_ConfigVolumes ts::inkcache Catch2::Catch2WithMain)
+  target_link_libraries(test_ConfigVolumes ts::inkcache ts::config Catch2::Catch2WithMain)
   add_test(NAME test_ConfigVolumes COMMAND test_ConfigVolumes)
 endif()
 

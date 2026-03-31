@@ -25,7 +25,74 @@
 
 #include "P_CacheHosting.h"
 
-#include "iocore/cache/YamlStorageConfig.h"
+#include "config/storage.h"
+
+namespace
+{
+
+/**
+ * Helper: parse a bare 'volumes:' YAML snippet into ConfigVolumes.
+ *
+ * The test YAML only contains a top-level 'volumes:' key. Wrap it in the
+ * 'cache:' envelope that StorageParser expects, then convert the resulting
+ * StorageVolumeEntry list into ConfigVol objects.
+ */
+bool
+load_volumes(ConfigVolumes &v_config, std::string const &yaml)
+{
+  // Wrap the bare 'volumes:' snippet in a 'cache:' block.
+  std::string wrapped = "cache:\n";
+
+  // Indent every line by 2 spaces under 'cache:'.
+  std::string            indented;
+  std::string::size_type pos = 0;
+  indented.reserve(yaml.size() + 64);
+  while (pos < yaml.size()) {
+    auto next  = yaml.find('\n', pos);
+    indented  += "  ";
+    if (next == std::string::npos) {
+      indented += yaml.substr(pos);
+      break;
+    }
+    indented += yaml.substr(pos, next - pos + 1);
+    pos       = next + 1;
+  }
+  wrapped += indented;
+
+  config::StorageParser parser;
+  auto                  result = parser.parse_content(wrapped);
+  if (!result.ok()) {
+    return false;
+  }
+
+  for (auto const &vv : result.value.volumes) {
+    auto *vol                = new ConfigVol();
+    vol->number              = vv.id;
+    vol->scheme              = (vv.scheme == "http") ? CacheType::HTTP : CacheType::NONE;
+    vol->ramcache_enabled    = vv.ram_cache;
+    vol->size.in_percent     = vv.size.in_percent;
+    vol->size.percent        = vv.size.percent;
+    vol->size.absolute_value = vv.size.absolute_value;
+    vol->ram_cache_size      = vv.ram_cache_size;
+    vol->ram_cache_cutoff    = vv.ram_cache_cutoff;
+    vol->avg_obj_size        = vv.avg_obj_size;
+    vol->fragment_size       = vv.fragment_size;
+    for (auto const &sr : vv.spans) {
+      ConfigVol::Span span;
+      span.use                 = sr.use;
+      span.size.in_percent     = sr.size.in_percent;
+      span.size.percent        = sr.size.percent;
+      span.size.absolute_value = sr.size.absolute_value;
+      vol->spans.push_back(std::move(span));
+    }
+    v_config.cp_queue.enqueue(vol);
+    v_config.num_volumes++;
+  }
+  v_config.complement();
+  return true;
+}
+
+} // namespace
 
 /**
   Unit Test to complement omitted size.
@@ -42,7 +109,7 @@ TEST_CASE("ConfigVolumes::complement")
         - id: 2
     )EOF";
 
-    YamlStorageConfig::load_volumes(config, in);
+    load_volumes(config, in);
 
     // Expected
     // volumes:
@@ -67,7 +134,7 @@ TEST_CASE("ConfigVolumes::complement")
       - id: 2
     )EOF";
 
-    YamlStorageConfig::load_volumes(config, in);
+    load_volumes(config, in);
 
     // Expected
     // volumes:
@@ -93,7 +160,7 @@ TEST_CASE("ConfigVolumes::complement")
             - use: "span-1"
     )EOF";
 
-    YamlStorageConfig::load_volumes(config, in);
+    load_volumes(config, in);
 
     // Expected
     // volumes:
@@ -123,7 +190,7 @@ TEST_CASE("ConfigVolumes::complement")
             - use: span-1
     )EOF";
 
-    YamlStorageConfig::load_volumes(config, in);
+    load_volumes(config, in);
 
     // Expected
     // volumes:
@@ -162,7 +229,7 @@ TEST_CASE("ConfigVolumes::complement")
             - use: span-1
     )EOF";
 
-    YamlStorageConfig::load_volumes(config, in);
+    load_volumes(config, in);
 
     // Expected
     // volumes:
@@ -216,7 +283,7 @@ TEST_CASE("ConfigVolumes::complement")
             - use: span-2
     )EOF";
 
-    YamlStorageConfig::load_volumes(config, in);
+    load_volumes(config, in);
 
     // Expected
     // volumes:
@@ -269,7 +336,7 @@ TEST_CASE("ConfigVolumes::complement")
         - id: 2
     )EOF";
 
-    YamlStorageConfig::load_volumes(config, in);
+    load_volumes(config, in);
 
     // Expected
     // volumes:
