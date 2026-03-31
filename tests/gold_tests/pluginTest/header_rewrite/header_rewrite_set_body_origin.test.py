@@ -20,7 +20,7 @@ Test header_rewrite set-body replacing origin server response bodies.
 Test.Summary = '''
 Test that set-body can replace origin server response bodies, not just
 ATS-generated responses. Covers SEND_RESPONSE_HDR and READ_RESPONSE_HDR hooks,
-various status codes, and empty origin bodies.
+various status codes, empty origin bodies, and chunked origin responses.
 '''
 
 Test.ATSReplayTest(replay_file="header_rewrite_set_body_origin.replay.yaml")
