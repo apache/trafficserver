@@ -1,5 +1,5 @@
 '''
-Test do_global_shut_down lua global plugin hook.
+Test do_global_shutdown lua global plugin hook.
 '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -18,7 +18,7 @@ Test do_global_shut_down lua global plugin hook.
 #  limitations under the License.
 
 Test.Summary = '''
-Test do_global_shut_down lua global plugin hook
+Test do_global_shutdown lua global plugin hook
 '''
 
 Test.SkipUnless(Condition.PluginExists('tslua.so'),)
@@ -60,6 +60,6 @@ ts.Disk.traffic_out.Content = Testers.ContainsExpression(
     r'do_global_read_request called', 'do_global_read_request should be called for HTTP requests')
 
 # After all test runs complete AuTest stops ATS, which fires TS_LIFECYCLE_SHUTDOWN_HOOK.
-# The shutdown handler calls do_global_shut_down once per Lua state (2 states configured).
+# The shutdown handler calls do_global_shutdown once per Lua state (2 states configured).
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
     r'do_global_shutdown called', 'do_global_shutdown should be called on ATS shutdown')
