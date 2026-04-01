@@ -86,14 +86,10 @@ def configure_ats(obj: 'TestRun', server: 'Process', ats_config: dict, dns: Opti
     if logging_yaml != None:
         ts.Disk.logging_yaml.AddLines(yaml.dump(logging_yaml).split('\n'))
 
-    # Configure volume.config if specified.
-    volume_config = ats_config.get('volume_config', [])
-    for vol in volume_config:
-        parts = [f"volume={vol['volume']}", f"scheme={vol['scheme']}", f"size={vol['size']}"]
-        for opt_key in ('ramcache', 'ram_cache_size', 'ram_cache_cutoff', 'avg_obj_size', 'fragment_size'):
-            if opt_key in vol:
-                parts.append(f"{opt_key}={vol[opt_key]}")
-        ts.Disk.volume_config.AddLine(' '.join(parts))
+    # Configure storage.yaml if specified.
+    storage_yaml = ats_config.get('storage_yaml')
+    if storage_yaml is not None:
+        ts.Disk.storage_yaml.AddLines(yaml.dump(storage_yaml).split('\n'))
 
     remap_config = ats_config.get('remap_config', [])
     for remap_entry in remap_config:

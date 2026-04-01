@@ -17,16 +17,21 @@
 meta:
   version: "1.0"
 
-# This test proves that multi-parameter volume.config lines are parsed
-# correctly.  The generated volume.config lines are:
+# This test proves that multi-parameter storage.yaml volume entries are parsed
+# correctly. The generated storage.yaml contains:
 #
-#   volume=1 scheme=http size=50% ram_cache_size=32M ram_cache_cutoff=8K
-#   volume=2 scheme=http size=50%
+#   cache:
+#     volumes:
+#       - id: 1
+#         scheme: http
+#         size: 50%
+#         ram_cache_size: 32M
+#         ram_cache_cutoff: 8K
+#       - id: 2
+#         scheme: http
+#         size: 50%
 #
-# All 5 key=value pairs on line 1 must be parsed from the single line.
-# If the inner loop's "tmp = line_end" advancement were broken (as claimed
-# in a PR review), only "volume=1" would be parsed, scheme and size would
-# be missing, and the volume would be rejected -- disabling the cache.
+# All volume parameters must be parsed correctly from the YAML format.
 autest:
   description: "Test cache volume features: per-volume RAM cache and @volume= directive"
 
@@ -50,24 +55,30 @@ autest:
       proxy.config.http.insert_response_via_str: 0
       proxy.config.cache.enable_read_while_writer: 0
 
-    volume_config:
-      # Volume 1 with all new parameters — 5 key=value pairs on one line
-      - volume: 1
-        scheme: "http"
-        size: "50%"
-        ram_cache_size: "32M"
-        ram_cache_cutoff: "8K"
-      # Volume 2 — simple line, no extra params
-      - volume: 2
-        scheme: "http"
-        size: "50%"
+    storage_yaml:
+      cache:
+        spans:
+          - name: "disk-1"
+            path: "storage"
+            size: "256M"
+        volumes:
+          # Volume 1 with all new parameters
+          - id: 1
+            scheme: "http"
+            size: "50%"
+            ram_cache_size: "32M"
+            ram_cache_cutoff: "8K"
+          # Volume 2 — simple volume, no extra params
+          - id: 2
+            scheme: "http"
+            size: "50%"
 
     log_validation:
       traffic_out:
         excludes:
-          # No volume.config lines should be discarded
+          # No storage.yaml volume entries should be discarded
           - expression: "discarding.*entry at line"
-            description: "No volume.config entries should be discarded"
+            description: "No storage.yaml volume entries should be discarded"
 
     remap_config:
       - from: "http://volume1.example.com/"

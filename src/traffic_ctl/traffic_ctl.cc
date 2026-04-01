@@ -215,6 +215,10 @@ main([[maybe_unused]] int argc, const char **argv)
     .add_example_usage("traffic_ctl config convert ssl_multicert <input_file> <output_file>")
     .add_example_usage("traffic_ctl config convert ssl_multicert ssl_multicert.config ssl_multicert.yaml")
     .add_example_usage("traffic_ctl config convert ssl_multicert ssl_multicert.config -  # output to stdout");
+  convert_command.add_command("storage", "Convert storage.config + volume.config to storage.yaml", "", 3, Command_Execute)
+    .add_example_usage("traffic_ctl config convert storage <storage.config> <volume.config> <output_file>")
+    .add_example_usage("traffic_ctl config convert storage storage.config volume.config storage.yaml")
+    .add_example_usage("traffic_ctl config convert storage storage.config volume.config -  # output to stdout");
 
   // host commands
   host_command.add_command("status", "Get one or more host statuses", "", MORE_THAN_ZERO_ARG_N, Command_Execute)

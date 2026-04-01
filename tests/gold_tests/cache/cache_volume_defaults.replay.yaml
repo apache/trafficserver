@@ -43,11 +43,16 @@ autest:
       # Set default volumes to volume 1
       proxy.config.cache.default_volumes: "1"
 
-    volume_config:
-      # Single volume — multi-param line proves parsing works
-      - volume: 1
-        scheme: "http"
-        size: "100%"
+    storage_yaml:
+      cache:
+        spans:
+          - name: "disk-1"
+            path: "storage"
+            size: "256M"
+        volumes:
+          - id: 1
+            scheme: "http"
+            size: "100%"
 
     remap_config:
       # Default volume selection (uses default_volumes -> volume 1)

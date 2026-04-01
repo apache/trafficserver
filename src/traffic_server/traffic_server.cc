@@ -778,7 +778,6 @@ register_config_files()
   // Static (non-reloadable) files only.
   reg.register_static_file("storage", ts::filename::STORAGE, {}, true);
   reg.register_static_file("socks", ts::filename::SOCKS, "proxy.config.socks.socks_config_file");
-  reg.register_static_file("volume", ts::filename::VOLUME);
   reg.register_static_file("plugin", ts::filename::PLUGIN);
   reg.register_static_file("jsonrpc", ts::filename::JSONRPC, "proxy.config.jsonrpc.filename");
 }

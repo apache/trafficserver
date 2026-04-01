@@ -199,8 +199,6 @@ CacheProcessor::start_internal(int flags)
   gndisks = 0;
   ink_aio_set_err_callback(new AIO_failure_handler());
 
-  config_volumes.read_config_file();
-
   /*
    create CacheDisk objects for each span in the configuration file and store in gdisks
    */
@@ -279,7 +277,28 @@ CacheProcessor::start_internal(int flags)
         if (check) {
           cache_disk->read_only_p = true;
         }
-        cache_disk->forced_volume_num = span->forced_volume_num;
+
+        cache_disk->span_name = ats_strdup(span->name);
+
+        // Find exclusive span
+        // A span is exclusive when ConfigVolumes::complement() has assigned 100% of it to a
+        // single volume (either because the legacy storage.config used "volume=N" on that span,
+        // or because the storage.yaml volumes[].spans[] entry carries size=100%).  Exclusive
+        // spans are tracked via forced_volume_num so the allocator can skip them from the
+        // shared pool calculation.
+        for (ConfigVol *vol_config = config_volumes.cp_queue.head; vol_config; vol_config = vol_config->link.next) {
+          for (auto &span_config : vol_config->spans) {
+            if (strcmp(span->name, span_config.use.c_str()) == 0 && span_config.size.in_percent &&
+                span_config.size.percent == 100) {
+              cache_disk->forced_volume_num = vol_config->number;
+              Dbg(dbg_ctl_cache_init, "cache disk span_name=%s forced volume num=%d", cache_disk->span_name.get(),
+                  vol_config->number);
+
+              break;
+            }
+          }
+        }
+
         if (span->hash_base_string) {
           cache_disk->hash_base_string = ats_strdup(span->hash_base_string);
         }
@@ -802,7 +821,7 @@ CacheProcessor::diskInitialized()
     theCache->open(clear, fix);
     return;
   }
-  if (config_volumes.num_http_volumes != 0) {
+  if (config_volumes.num_volumes != 0) {
     theCache         = new Cache();
     theCache->scheme = CacheType::HTTP;
     theCache->open(clear, fix);
@@ -812,11 +831,6 @@ CacheProcessor::diskInitialized()
 int
 cplist_reconfigure()
 {
-  int64_t    size;
-  int        volume_number;
-  off_t      size_in_blocks;
-  ConfigVol *config_vol;
-
   gnstripes = 0;
   if (config_volumes.num_volumes == 0) {
     /* only the http cache */
@@ -873,13 +887,32 @@ cplist_reconfigure()
       // in such a way forced volumes will not impact volume percentage calculations.
       if (-1 == gdisks[i]->forced_volume_num) {
         tot_space_in_blks += (gdisks[i]->num_usable_blocks / blocks_per_vol) * blocks_per_vol;
+      } else {
+        // exclusive span
+        for (ConfigVol *config_vol = config_volumes.cp_queue.head; config_vol; config_vol = config_vol->link.next) {
+          for (auto &vol_span_config : config_vol->spans) {
+            // Convert relative exclusive span size into absolute size
+            if (strlen(gdisks[i]->span_name) == vol_span_config.use.size() &&
+                strncmp(gdisks[i]->span_name, vol_span_config.use.c_str(), vol_span_config.use.size()) == 0 &&
+                vol_span_config.size.in_percent) {
+              int64_t space_in_blks =
+                (gdisks[i]->num_usable_blocks / blocks_per_vol) * blocks_per_vol * vol_span_config.size.percent / 100;
+
+              space_in_blks = space_in_blks >> (20 - STORE_BLOCK_SHIFT);
+              // round down to 128 megabyte multiple
+              space_in_blks                       = (space_in_blks >> 7) << 7;
+              vol_span_config.size.absolute_value = space_in_blks;
+            }
+          }
+        }
       }
     }
 
+    // Convert relative volume size into absolute size
     double percent_remaining = 100.00;
-    for (config_vol = config_volumes.cp_queue.head; config_vol; config_vol = config_vol->link.next) {
-      if (config_vol->in_percent) {
-        if (config_vol->percent > percent_remaining) {
+    for (ConfigVol *config_vol = config_volumes.cp_queue.head; config_vol; config_vol = config_vol->link.next) {
+      if (config_vol->size.in_percent) {
+        if (config_vol->size.percent > percent_remaining) {
           Warning("total volume sizes added up to more than 100%%!");
           Warning("no volumes created");
           return -1;
@@ -898,7 +931,7 @@ cplist_reconfigure()
         int64_t space_in_blks = 0;
         if (0 == tot_forced_space_in_blks) {
           // Calculate the space as percentage of total space in blocks.
-          space_in_blks = static_cast<int64_t>(((config_vol->percent / percent_remaining)) * tot_space_in_blks);
+          space_in_blks = static_cast<int64_t>(((config_vol->size.percent / percent_remaining)) * tot_space_in_blks);
         } else {
           // Forced volumes take all disk space, so no percentage calculations here.
           space_in_blks = tot_forced_space_in_blks;
@@ -906,34 +939,56 @@ cplist_reconfigure()
 
         space_in_blks = space_in_blks >> (20 - STORE_BLOCK_SHIFT);
         /* round down to 128 megabyte multiple */
-        space_in_blks    = (space_in_blks >> 7) << 7;
-        config_vol->size = space_in_blks;
+        space_in_blks                   = (space_in_blks >> 7) << 7;
+        config_vol->size.absolute_value = space_in_blks;
 
         if (0 == tot_forced_space_in_blks) {
           tot_space_in_blks -= space_in_blks << (20 - STORE_BLOCK_SHIFT);
-          percent_remaining -= (config_vol->size < 128) ? 0 : config_vol->percent;
+          percent_remaining -= (config_vol->size.absolute_value < 128) ? 0 : config_vol->size.percent;
         }
       }
-      if (config_vol->size < 128) {
+
+      if (!config_vol->size.is_empty() && config_vol->size.absolute_value < 128) {
         Warning("the size of volume %d (%" PRId64 ") is less than the minimum required volume size %d", config_vol->number,
-                static_cast<int64_t>(config_vol->size), 128);
+                static_cast<int64_t>(config_vol->size.absolute_value), 128);
         Warning("volume %d is not created", config_vol->number);
       }
-      Dbg(dbg_ctl_cache_hosting, "Volume: %d Size: %" PRId64 " Ramcache: %d", config_vol->number,
-          static_cast<int64_t>(config_vol->size), config_vol->ramcache_enabled);
+
+      if (dbg_ctl_cache_hosting.on()) {
+        Dbg(dbg_ctl_cache_hosting, "volume: %d ramcache: %d", config_vol->number, config_vol->ramcache_enabled);
+
+        if (config_vol->size.absolute_value) {
+          Dbg(dbg_ctl_cache_hosting, "  size: %" PRId64, config_vol->size.absolute_value);
+        } else {
+          for (const auto &config_span : config_vol->spans) {
+            Dbg(dbg_ctl_cache_hosting, "  using span: %s size: %" PRId64, config_span.use.c_str(), config_span.size.absolute_value);
+          }
+        }
+      }
     }
     cplist_update();
 
     /* go through volume config and grow and create volumes */
-    for (config_vol = config_volumes.cp_queue.head; config_vol; config_vol = config_vol->link.next) {
-      size = config_vol->size;
+    for (ConfigVol *config_vol = config_volumes.cp_queue.head; config_vol; config_vol = config_vol->link.next) {
+      Dbg(dbg_ctl_cache_init, "volume id=%d", config_vol->number);
+
+      int64_t size = 0;
+
+      if (!config_vol->size.is_empty()) {
+        size = config_vol->size.absolute_value;
+      } else {
+        for (const auto &config_span : config_vol->spans) {
+          size += config_span.size.absolute_value;
+        }
+      }
+
       if (size < 128) {
         continue;
       }
 
-      volume_number = config_vol->number;
+      int volume_number = config_vol->number;
 
-      size_in_blocks = (static_cast<off_t>(size) * 1024 * 1024) / STORE_BLOCK_SIZE;
+      off_t size_in_blocks = (static_cast<off_t>(size) * 1024 * 1024) / STORE_BLOCK_SIZE;
 
       if (config_vol->cachep && config_vol->cachep->num_vols > 0) {
         gnstripes += config_vol->cachep->num_vols;

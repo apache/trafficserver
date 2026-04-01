@@ -400,7 +400,7 @@ Data Structures
 
 .. class:: CacheVol
 
-   A :term:`cache volume` as described in :file:`volume.config`. This class represents a single volume. :class:`CacheVol` comprises of stripes spread across Spans(disks)
+   A :term:`cache volume` as described in :file:`storage.yaml`. This class represents a single volume. :class:`CacheVol` comprises of stripes spread across Spans(disks)
 
    .. member:: int volume_number
 
@@ -453,11 +453,11 @@ Data Structures
 
     .. member:: int num_volumes
 
-       Total number of volumes specified in volume.config
+       Total number of volumes specified in storage.yaml
 
     .. member:: int num_http_volumes
 
-       Total number of volumes specified in volume.config for HTTP scheme
+       Total number of volumes specified in storage.yaml for HTTP scheme
 
     .. member:: Queue<ConfigVol> cp_queue
 

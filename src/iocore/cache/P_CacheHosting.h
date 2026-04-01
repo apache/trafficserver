@@ -30,6 +30,8 @@
 #include "tscore/Filenames.h"
 
 #include <memory>
+#include <string>
+#include <vector>
 
 #define CACHE_MEM_FREE_TIMEOUT HRTIME_SECONDS(1)
 
@@ -281,38 +283,85 @@ private:
   const char                       *matcher_name = "unknown"; // Used for Debug/Warning/Error messages
 };
 
-/* list of volumes in the volume.config file */
+/**
+  List of volumes in the storage.yaml
+ */
 struct ConfigVol {
-  int       number;
-  CacheType scheme;
-  off_t     size;
-  bool      in_percent;
-  bool      ramcache_enabled;
-  int       percent;
-  int       avg_obj_size;
-  int       fragment_size;
-  int64_t   ram_cache_size;   // Per-volume RAM cache size (-1 = use shared allocation)
-  int64_t   ram_cache_cutoff; // Per-volume RAM cache cutoff (-1 = use global cutoff)
-  CacheVol *cachep;
+  struct Size {
+    int64_t absolute_value = 0;
+    bool    in_percent     = false;
+    int     percent        = 0;
+
+    bool is_empty() const;
+  };
+
+  struct Span {
+    std::string use{};
+    Size        size{};
+  };
+  using Spans = std::vector<Span>;
+
+  int       number           = 0;
+  CacheType scheme           = CacheType::NONE;
+  bool      ramcache_enabled = true;
+  Size      size{};
+  Spans     spans{};
+
+  int     avg_obj_size     = -1;
+  int     fragment_size    = -1;
+  int64_t ram_cache_size   = -1; // Per-volume RAM cache size (-1 = use shared allocation)
+  int64_t ram_cache_cutoff = -1; // Per-volume RAM cache cutoff (-1 = use global cutoff)
+
+  CacheVol *cachep = nullptr;
   LINK(ConfigVol, link);
 };
 
 struct ConfigVolumes {
-  int              num_volumes;
-  int              num_http_volumes;
-  Queue<ConfigVol> cp_queue;
-  void             read_config_file();
-  void             BuildListFromString(char *config_file_path, char *file_buf);
+  ConfigVolumes() = default;
+  ~ConfigVolumes() { clear_all(); }
 
+  // Move constructor
+  ConfigVolumes(ConfigVolumes &&other) noexcept : num_volumes(other.num_volumes), cp_queue(std::move(other.cp_queue))
+  {
+    // Reset the source object to prevent double deletion
+    other.num_volumes = 0;
+    other.cp_queue.clear();
+  }
+
+  // Move assignment operator
+  ConfigVolumes &
+  operator=(ConfigVolumes &&other) noexcept
+  {
+    if (this != &other) {
+      // Clear current contents
+      clear_all();
+      // Move from other
+      num_volumes = other.num_volumes;
+      cp_queue    = std::move(other.cp_queue);
+      // Reset the source object to prevent double deletion
+      other.num_volumes = 0;
+      other.cp_queue.clear();
+    }
+    return *this;
+  }
+
+  // Delete copy constructor and copy assignment to prevent accidental copying
+  ConfigVolumes(const ConfigVolumes &)            = delete;
+  ConfigVolumes &operator=(const ConfigVolumes &) = delete;
+
+  int              num_volumes = 0;
+  Queue<ConfigVol> cp_queue{};
+
+  void complement();
   void
   clear_all()
   {
     // remove all the volumes from the queue
     for (int i = 0; i < num_volumes; i++) {
-      cp_queue.pop();
+      ConfigVol *v = cp_queue.pop();
+      delete v;
     }
     // reset count variables
-    num_volumes      = 0;
-    num_http_volumes = 0;
+    num_volumes = 0;
   }
 };

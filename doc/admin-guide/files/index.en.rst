@@ -37,9 +37,8 @@ Configuration Files
    splitdns.config.en
    ssl_multicert.yaml.en
    sni.yaml.en
-   storage.config.en
+   storage.yaml.en
    strategies.yaml.en
-   volume.config.en
    jsonrpc.yaml.en
 
 :doc:`cache.config.en`
@@ -83,14 +82,11 @@ Configuration Files
 :doc:`sni.yaml.en`
    Configures SNI based Layer 4 routing.
 
-:doc:`storage.config.en`
-   Configures all storage devices and paths to be used for the |TS| cache.
+:doc:`storage.yaml.en`
+   Configures all storage devices and paths to be used for the |TS| cache and defines cache space usage by individual protocols.
 
 :doc:`strategies.yaml.en`
    Configures NextHop strategies used with `remap.config` and replaces parent.config.
-
-:doc:`volume.config.en`
-    Defines cache space usage by individual protocols.
 
 :doc:`jsonrpc.yaml.en`
     Defines some of the configurable arguments of the jsonrpc endpoint.

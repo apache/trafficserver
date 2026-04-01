@@ -143,8 +143,8 @@ Disabling the RAM Cache
 -----------------------
 
 It is possible to disable the RAM cache. If you have configured your
-storage using the :file:`volume.config` you can add an optional directive
-of ``ramcache=false`` to whichever volumes you wish to have it disabled on.
+storage using the :file:`storage.yaml` you can add an optional directive
+of ``ram_cache: false`` to whichever volumes you wish to have it disabled on.
 This may be desirable for volumes composed of storage like RAM disks where
 you may want to avoid double RAM caching.
 
@@ -166,7 +166,7 @@ existing disks, or to add new disks to a Traffic Server node:
 
 #. Add hardware, if necessary.
 
-#. Edit :file:`storage.config` to increase the amount of disk space allocated
+#. Edit :file:`storage.yaml` to increase the amount of disk space allocated
    to the cache on existing disks or describe the new hardware you are adding.
 
 #. Restart Traffic Server.
@@ -181,12 +181,12 @@ existing disk, or to remove disks from a Traffic Server node:
 
 #. Remove hardware, if necessary.
 
-#. Edit :file:`storage.config` to reduce the amount of disk space allocated
+#. Edit :file:`storage.yaml` to reduce the amount of disk space allocated
    to the cache on existing disks or delete the reference to the hardware you're removing.
 
 #. Restart Traffic Server.
 
-.. important:: In :file:`storage.config`, a formatted or raw disk must be at least 128 MB.
+.. important:: In :file:`storage.yaml`, a formatted or raw disk must be at least 128 MB.
 
 .. _partitioning-the-cache:
 
