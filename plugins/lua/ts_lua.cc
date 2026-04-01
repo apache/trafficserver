@@ -849,7 +849,8 @@ shutdownHookHandler(TSCont contp, TSEvent /* event ATS_UNUSED */, void * /* edat
 
     if (lua_type(L, -1) == LUA_TFUNCTION) {
       if (lua_pcall(L, 0, 0, 0) != 0) {
-        TSError("[ts_lua][%s] lua_pcall failed: %s", __FUNCTION__, lua_tostring(L, -1));
+        TSError("[ts_lua][%s] lua_pcall failed for script '%s' state %d: %s", __FUNCTION__, conf->script, index,
+                lua_tostring(L, -1));
         lua_pop(L, 1);
       }
     } else {
