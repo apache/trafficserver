@@ -298,6 +298,10 @@ private:
     Reader-Writer lock to cover OpenDir access.
     For now, only OpenDir access is covered, but when we clarify other functions as reader or writer, we can use this shared_mutex
     for them to reduce current heavy lock contention of StripeSM::mutex.
+
+    Lock ordering: stripe mutex must be acquired before _shared_mutex when both are needed
+    (e.g. open_write_lock holds stripe mutex then calls open_write which acquires _shared_mutex).
+    Never acquire stripe mutex while holding _shared_mutex.
    */
   mutable ts::bravo::recursive_shared_mutex _shared_mutex;
   mutable PreservationTable                 _preserved_dirs;
@@ -349,9 +353,7 @@ StripeSM::cancel_trigger()
 inline Ptr<OpenDirEntry>
 StripeSM::open_read(const CryptoHash *key) const
 {
-  ts::bravo::shared_lock lock(_shared_mutex);
-
-  return _open_dir.open_read(key);
+  return read_op<Ptr<OpenDirEntry>>([&]() { return _open_dir.open_read(key); });
 }
 
 inline int

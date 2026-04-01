@@ -393,7 +393,7 @@ template <typename T = shared_mutex_impl<>, size_t SLOT_SIZE = 256> class recurs
   static constexpr size_t NO_OWNER = SLOT_SIZE;
 
 public:
-  recursive_shared_mutex_impl()  = default;
+  recursive_shared_mutex_impl() { debug_assert(SLOT_SIZE >= DenseThreadId::num_possible_values()); }
   ~recursive_shared_mutex_impl() = default;
 
   // No copying or moving
@@ -448,7 +448,7 @@ public:
   unlock()
   {
     if (--_exclusive_count == 0) {
-      _exclusive_owner.store(NO_OWNER, std::memory_order_relaxed);
+      _exclusive_owner.store(NO_OWNER, std::memory_order_release);
       _mutex.unlock();
     }
   }
@@ -514,10 +514,11 @@ public:
   }
 
   void
-  unlock_shared(const Token /* token */)
+  unlock_shared(const Token token)
   {
     size_t       tid   = DenseThreadId::self();
     ThreadState &state = _thread_states[tid];
+    debug_assert(token == state.cached_token);
     if (--state.shared_count == 0) {
       // Only unlock underlying mutex if we're not holding exclusive lock
       if (_exclusive_owner.load(std::memory_order_relaxed) != tid) {
@@ -529,16 +530,16 @@ public:
 
   // Extensions to check
   bool
-  has_unique_lock()
+  has_unique_lock() const
   {
     return _exclusive_owner.load(std::memory_order_relaxed) == DenseThreadId::self();
   }
 
   bool
-  has_shared_lock()
+  has_shared_lock() const
   {
-    size_t       tid   = DenseThreadId::self();
-    ThreadState &state = _thread_states[tid];
+    size_t             tid   = DenseThreadId::self();
+    const ThreadState &state = _thread_states[tid];
 
     if (state.shared_count > 0) {
       return true;

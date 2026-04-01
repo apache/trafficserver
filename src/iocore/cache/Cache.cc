@@ -596,15 +596,14 @@ Cache::open_read(Continuation *cont, const CacheKey *key, CacheHTTPHdr *request,
   }
   ink_assert(caches[type] == this);
 
-  StripeSM         *stripe = key_to_stripe(key, hostname, volume_host_rec);
-  Dir               result, *last_collision = nullptr;
-  ProxyMutex       *mutex = cont->mutex.get();
-  Ptr<OpenDirEntry> od;
-  CacheVC          *c = nullptr;
+  StripeSM   *stripe = key_to_stripe(key, hostname, volume_host_rec);
+  Dir         result, *last_collision = nullptr;
+  ProxyMutex *mutex = cont->mutex.get();
+  CacheVC    *c     = nullptr;
 
   // Read-While-Writer
   // This OpenDirEntry lookup doesn't need stripe mutex lock because OpenDir has own reader-writer lock
-  od = stripe->open_read(key);
+  Ptr<OpenDirEntry> od = stripe->open_read(key);
   if (od != nullptr) {
     c     = new_CacheVC_for_read(cont, key, request, params, stripe);
     c->od = od;

@@ -127,13 +127,14 @@ OpenDir::open_write(CacheVC *cont, int allow_if_writers, int max_writers)
 
   1. Direct call from OpenDir::close_write - writer lock is already acquired
   2. Self retry through event system - need to acquire writer lock
+
  */
 int
 OpenDir::signal_readers(int event, Event * /* ATS UNUSED */)
 {
   auto write_op = [&] {
     Queue<CacheVC, Link_CacheVC_opendir_link> newly_delayed_readers;
-    EThread                                  *t = mutex->thread_holding;
+    EThread                                  *t = this_ethread();
     CacheVC                                  *c = nullptr;
     while ((c = _delayed_readers.dequeue())) {
       CACHE_TRY_LOCK(lock, c->mutex, t);
@@ -148,7 +149,7 @@ OpenDir::signal_readers(int event, Event * /* ATS UNUSED */)
       _delayed_readers = newly_delayed_readers;
       EThread *t1      = newly_delayed_readers.head->mutex->thread_holding;
       if (!t1) {
-        t1 = mutex->thread_holding;
+        t1 = t;
       }
       t1->schedule_in(this, HRTIME_MSECONDS(cache_config_mutex_retry_delay), CACHE_EVENT_OPEN_DIR_RETRY);
     }
@@ -158,6 +159,7 @@ OpenDir::signal_readers(int event, Event * /* ATS UNUSED */)
     // self-retry comes from event system
     _stripe->write_op<void>(write_op);
   } else {
+    // direct call
     write_op();
   }
 
