@@ -1108,7 +1108,7 @@ TSPluginInit(int argc, const char *argv[])
   lua_getglobal(sl, TS_LUA_FUNCTION_G_SHUT_DOWN);
   if (lua_type(sl, -1) == LUA_TFUNCTION) {
     TSMutex shutdown_mutex = TSMutexCreate();
-    TSCont shutdown_contp  = TSContCreate(shutdownHookHandler, shutdown_mutex);
+    TSCont  shutdown_contp = TSContCreate(shutdownHookHandler, shutdown_mutex);
     if (!shutdown_contp) {
       TSError("[ts_lua][%s] could not create shutdown continuation", __FUNCTION__);
       if (shutdown_mutex) {
