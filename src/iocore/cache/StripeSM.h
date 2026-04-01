@@ -153,10 +153,10 @@ public:
   int recover_data();
 
   // OpenDir API
-  int           open_write(CacheVC *cont, int allow_if_writers, int max_writers);
-  int           open_write_lock(CacheVC *cont, int allow_if_writers, int max_writers);
-  int           close_write(CacheVC *cont);
-  OpenDirEntry *open_read(const CryptoHash *key) const;
+  int               open_write(CacheVC *cont, int allow_if_writers, int max_writers);
+  int               open_write_lock(CacheVC *cont, int allow_if_writers, int max_writers);
+  int               close_write(CacheVC *cont);
+  Ptr<OpenDirEntry> open_read(const CryptoHash *key) const;
 
   // PreservationTable API
   int begin_read(CacheVC *cont) const;
@@ -346,7 +346,7 @@ StripeSM::cancel_trigger()
   }
 }
 
-inline OpenDirEntry *
+inline Ptr<OpenDirEntry>
 StripeSM::open_read(const CryptoHash *key) const
 {
   ts::bravo::shared_lock lock(_shared_mutex);

@@ -67,6 +67,12 @@ DbgCtl dbg_ctl_dir_lookaside{"dir_lookaside"};
 
 ClassAllocator<OpenDirEntry, false> openDirEntryAllocator("openDirEntry");
 
+void
+OpenDirEntry::free()
+{
+  THREAD_FREE(this, openDirEntryAllocator, this_ethread());
+}
+
 // OpenDir
 
 OpenDir::OpenDir(StripeSM *s) : Continuation(new_ProxyMutex()), _stripe(s)
@@ -166,27 +172,26 @@ OpenDir::close_write(CacheVC *cont)
   if (!cont->od->writers.head) {
     unsigned int h = cont->first_key.slice32(0);
     int          b = h % OPEN_DIR_BUCKETS;
-    _bucket[b].remove(cont->od);
+    _bucket[b].remove(cont->od.get());
     _delayed_readers.append(cont->od->readers);
     signal_readers(EVENT_CALL, nullptr);
     cont->od->vector.clear();
-    THREAD_FREE(cont->od, openDirEntryAllocator, cont->mutex->thread_holding);
   }
   cont->od = nullptr;
   return 0;
 }
 
-OpenDirEntry *
+Ptr<OpenDirEntry>
 OpenDir::open_read(const CryptoHash *key) const
 {
   unsigned int h = key->slice32(0);
   int          b = h % OPEN_DIR_BUCKETS;
   for (OpenDirEntry *d = _bucket[b].head; d; d = d->link.next) {
     if (d->writers.head->first_key == *key) {
-      return d;
+      return Ptr<OpenDirEntry>(d);
     }
   }
-  return nullptr;
+  return Ptr<OpenDirEntry>();
 }
 
 //

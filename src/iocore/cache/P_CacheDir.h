@@ -27,6 +27,7 @@
 #include "iocore/cache/CacheDefs.h"
 #include "iocore/eventsystem/Continuation.h"
 #include "iocore/aio/AIO.h"
+#include "tscore/Ptr.h"
 #include "tscore/Version.h"
 #include "tscore/hugepages.h"
 #include "tsutil/Bravo.h"
@@ -201,7 +202,7 @@ struct Dir {
 // is deleted/inserted into the vector just before writing the vector disk
 // (CacheVC::updateVector).
 LINK_FORWARD_DECLARATION(CacheVC, opendir_link) // forward declaration
-struct OpenDirEntry {
+struct OpenDirEntry : public RefCountObj {
   DLL<CacheVC, Link_CacheVC_opendir_link> writers; // list of all the current writers
   DLL<CacheVC, Link_CacheVC_opendir_link> readers; // list of all the current readers - not used
   CacheHTTPInfoVector                     vector;  // Vector for the http document. Each writer
@@ -219,6 +220,8 @@ struct OpenDirEntry {
   bool     writing_vec;                            // somebody is currently writing the vector
 
   LINK(OpenDirEntry, link);
+
+  void free() override;
 
   bool
   has_multiple_writers()
@@ -239,7 +242,7 @@ public:
   int open_write(CacheVC *c, int allow_if_writers, int max_writers);
   int close_write(CacheVC *c);
   // reader
-  OpenDirEntry *open_read(const CryptoHash *key) const;
+  Ptr<OpenDirEntry> open_read(const CryptoHash *key) const;
 
   // event handler
   int signal_readers(int event, Event *e);

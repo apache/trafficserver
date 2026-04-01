@@ -100,7 +100,7 @@ CacheEvacuateDocVC::evacuateDocDone(int /* event ATS_UNUSED */, Event * /* e ATS
            doc->hlen, dir_offset(&this->overwrite_dir));
 
       if (dir_compare_tag(&this->overwrite_dir, &doc->first_key)) {
-        OpenDirEntry *cod;
+        Ptr<OpenDirEntry> cod;
         DDbg(dbg_ctl_cache_evac, "evacuating vector: %X %" PRId64, doc->first_key.slice32(0), dir_offset(&this->overwrite_dir));
         if ((cod = this->stripe->open_read(&doc->first_key))) {
           // writer  exists
