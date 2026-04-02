@@ -1,0 +1,15 @@
+VARS {
+    bool_0: bool;
+}
+
+SESSION_VARS {
+    ssn_bool_0: bool;
+    ssn_int8_0: int8;
+}
+
+REMAP {
+    if bool_0 {
+        ssn_bool_0 = true;
+        ssn_int8_0 = 3;
+    }
+}

@@ -169,6 +169,13 @@ autest:
             args:
               - "rules/rule_server_conditions.conf"
 
+      - from: "http://www.example.com/from_17/"
+        to: "http://backend.ex:{SERVER_HTTP_PORT}/to_17/"
+        plugins:
+          - name: "header_rewrite.so"
+            args:
+              - "rules/rule_session_vars.conf"
+
     log_validation:
       traffic_out:
         excludes:
@@ -1817,3 +1824,59 @@ sessions:
         - [ X-Marker-Found, { value: "Yes", as: equal } ]
         - [ X-Server-Host-Header, { value: "backend.ex", as: contains } ]
         - [ X-Path-Match, { value: "Yes", as: equal } ]
+
+# Test 64: SESSION-FLAG persists across keep-alive transactions.
+# The first request sees the flag unset; set-session-flag marks it true.
+# The second request on the same keep-alive session sees the flag set.
+- transactions:
+  # First transaction - flag is unset, header absent; flag is then set.
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_17/
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ Connection, keep-alive ]
+        - [ Content-Length, "0" ]
+        - [ uuid, 65 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Server, microserver ]
+        - [ Content-Length, "0" ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Session-Seen, { as: absent } ]
+
+  # Second transaction - flag set by previous request; header must appear.
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_17/
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ Connection, keep-alive ]
+        - [ Content-Length, "0" ]
+        - [ uuid, 66 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Server, microserver ]
+        - [ Content-Length, "0" ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Session-Seen, { value: "yes", as: equal } ]

@@ -1,0 +1,9 @@
+SESSION_VARS {
+    ssn_int8_0: int8;
+}
+
+REMAP {
+    if ssn_int8_0 > 5 {
+        inbound.req.X-throttle = "true";
+    }
+}

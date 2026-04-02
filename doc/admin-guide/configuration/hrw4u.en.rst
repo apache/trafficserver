@@ -405,7 +405,9 @@ TXN_CLOSE_HOOK                  TXN_CLOSE                End of transaction
 =============================== ======================== ================================
 
 A special section `VARS` is used to declare variables. There is no equivalent in
-`header_rewrite`, where you managed the variables manually.
+`header_rewrite`, where you managed the variables manually. Similarly,
+`SESSION_VARS` declares session-scoped variables that persist across all
+transactions on the same client connection (session).
 
 Variables and State Slots
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -416,6 +418,10 @@ Each variable type has a limited number of slots available:
 - ``int8`` - 4 slots (0-3)
 - ``int16`` - 1 slot (0)
 
+These limits apply independently to both ``VARS`` (transaction-scoped) and
+``SESSION_VARS`` (session-scoped) sections. For example, you can have 16 bool
+transaction variables *and* 16 bool session variables.
+
 By default, slots are assigned automatically in declaration order. You can explicitly assign
 a slot number using the ``@`` syntax::
 
@@ -425,6 +431,16 @@ a slot number using the ``@`` syntax::
         config: bool @12;       # Explicitly use slot 12
         counter: int8 @2;       # Explicitly use int8 slot 2
     }
+
+    SESSION_VARS {
+        is_suspicious: bool;    # Session-scoped, persists across requests
+        penalty_level: int8;    # Session-scoped 8-bit integer
+    }
+
+Transaction variables (``VARS``) are reset for each new HTTP transaction, while
+session variables (``SESSION_VARS``) persist for the lifetime of the client
+connection. Session variables are useful for tracking state across keep-alive
+requests, such as marking a connection as suspicious after the first bad request.
 
 Explicit slot assignment is useful when you need predictable slot numbers across configurations
 or when integrating with existing header_rewrite rules that reference specific slot numbers. In

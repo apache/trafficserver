@@ -547,7 +547,7 @@ private:
 class OperatorSetStateFlag : public Operator
 {
 public:
-  OperatorSetStateFlag()
+  explicit OperatorSetStateFlag(TSUserArgType scope = TS_USER_ARGS_TXN) : _scope(scope)
   {
     static_assert(sizeof(void *) == 8, "State Variables requires a 64-bit system.");
     Dbg(dbg_ctl, "Calling CTOR for OperatorSetStateFlag");
@@ -566,19 +566,26 @@ protected:
   bool
   need_txn_slot() const override
   {
-    return true;
+    return _scope == TS_USER_ARGS_TXN;
+  }
+
+  bool
+  need_ssn_slot() const override
+  {
+    return _scope == TS_USER_ARGS_SSN;
   }
 
 private:
-  int      _flag_ix = -1;
-  int      _flag    = false;
-  uint64_t _mask    = 0;
+  TSUserArgType _scope   = TS_USER_ARGS_TXN;
+  int           _flag_ix = -1;
+  int           _flag    = false;
+  uint64_t      _mask    = 0;
 };
 
 class OperatorSetStateInt8 : public Operator
 {
 public:
-  OperatorSetStateInt8()
+  explicit OperatorSetStateInt8(TSUserArgType scope = TS_USER_ARGS_TXN) : _scope(scope)
   {
     static_assert(sizeof(void *) == 8, "State Variables requires a 64-bit system.");
     Dbg(dbg_ctl, "Calling CTOR for OperatorSetStateInt8");
@@ -597,18 +604,25 @@ protected:
   bool
   need_txn_slot() const override
   {
-    return true;
+    return _scope == TS_USER_ARGS_TXN;
+  }
+
+  bool
+  need_ssn_slot() const override
+  {
+    return _scope == TS_USER_ARGS_SSN;
   }
 
 private:
-  int   _byte_ix = -1;
-  Value _value;
+  TSUserArgType _scope   = TS_USER_ARGS_TXN;
+  int           _byte_ix = -1;
+  Value         _value;
 };
 
 class OperatorSetStateInt16 : public Operator
 {
 public:
-  OperatorSetStateInt16()
+  explicit OperatorSetStateInt16(TSUserArgType scope = TS_USER_ARGS_TXN) : _scope(scope)
   {
     static_assert(sizeof(void *) == 8, "State Variables requires a 64-bit system.");
     Dbg(dbg_ctl, "Calling CTOR for OperatorSetStateInt16");
@@ -627,11 +641,18 @@ protected:
   bool
   need_txn_slot() const override
   {
-    return true;
+    return _scope == TS_USER_ARGS_TXN;
+  }
+
+  bool
+  need_ssn_slot() const override
+  {
+    return _scope == TS_USER_ARGS_SSN;
   }
 
 private:
-  Value _value;
+  TSUserArgType _scope = TS_USER_ARGS_TXN;
+  Value         _value;
 };
 
 class OperatorSetEffectiveAddress : public Operator
