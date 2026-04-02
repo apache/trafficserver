@@ -1088,7 +1088,7 @@ inline void
 HTTPHdr::status_set(HTTPStatus status)
 {
   ink_assert(valid());
-  ink_assert(m_http->m_polarity == HTTPType::RESPONSE);
+  ink_release_assert(m_http->m_polarity == HTTPType::RESPONSE);
 
   http_hdr_status_set(m_http, status);
 }
@@ -1112,7 +1112,7 @@ inline void
 HTTPHdr::reason_set(std::string_view value)
 {
   ink_assert(valid());
-  ink_assert(m_http->m_polarity == HTTPType::RESPONSE);
+  ink_release_assert(m_http->m_polarity == HTTPType::RESPONSE);
 
   http_hdr_reason_set(m_heap, m_http, value, true);
 }
