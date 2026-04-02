@@ -61,6 +61,9 @@ sessions:
   - all: { headers: { fields: [[ uuid, 22 ]]}}
     <<: *request_404_item
 
+    proxy-request:
+      expect: absent
+
     # 404 responses should be cached when negative caching is enabled, so this
     # should not get to the server.  But if it does, return a 200 so the test
     # knows that something went wrong.

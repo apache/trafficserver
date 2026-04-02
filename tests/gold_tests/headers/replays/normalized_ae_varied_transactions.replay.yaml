@@ -274,6 +274,9 @@ sessions:
         - [ uuid, 12 ]
       delay: 100ms
 
+    proxy-request:
+      expect: absent
+
     server-response:
       <<: *404_response
 
@@ -297,6 +300,9 @@ sessions:
         - [ Accept-Encoding, deflate ]
       delay: 100ms
 
+    proxy-request:
+      expect: absent
+
     server-response:
       <<: *404_response
 
@@ -319,6 +325,9 @@ sessions:
         - [ uuid, 14 ]
         - [ Accept-Encoding, "br, compress" ]
       delay: 100ms
+
+    proxy-request:
+      expect: absent
 
     server-response:
       <<: *404_response
@@ -378,6 +387,9 @@ sessions:
         - [ Accept-Encoding, "br, compress, gzip" ]
       delay: 100ms
 
+    proxy-request:
+      expect: absent
+
     server-response:
       <<: *404_response
 
@@ -434,6 +446,9 @@ sessions:
         - [ uuid, 22 ]
       delay: 100ms
 
+    proxy-request:
+      expect: absent
+
     server-response:
       <<: *404_response
 
@@ -456,6 +471,9 @@ sessions:
         - [ uuid, 23 ]
         - [ Accept-Encoding, deflate ]
       delay: 100ms
+
+    proxy-request:
+      expect: absent
 
     server-response:
       <<: *404_response
@@ -550,6 +568,9 @@ sessions:
         - [ Accept-Encoding, "br, compress, gzip" ]
       delay: 100ms
 
+    proxy-request:
+      expect: absent
+
     server-response:
       <<: *404_response
 
@@ -572,6 +593,9 @@ sessions:
         - [ uuid, 27 ]
         - [ Accept-Encoding, "compress, gzip" ]
       delay: 100ms
+
+    proxy-request:
+      expect: absent
 
     server-response:
       <<: *404_response
@@ -629,6 +653,9 @@ sessions:
         - [ uuid, 32 ]
       delay: 100ms
 
+    proxy-request:
+      expect: absent
+
     server-response:
       <<: *404_response
 
@@ -651,6 +678,9 @@ sessions:
         - [ uuid, 33 ]
         - [ Accept-Encoding, deflate ]
       delay: 100ms
+
+    proxy-request:
+      expect: absent
 
     server-response:
       <<: *404_response
@@ -779,6 +809,9 @@ sessions:
         - [ Accept-Encoding, "compress, gzip" ]
       delay: 100ms
 
+    proxy-request:
+      expect: absent
+
     server-response:
       <<: *404_response
 
@@ -802,6 +835,9 @@ sessions:
         - [ Accept-Encoding, "br;q=1.1" ]
       delay: 100ms
 
+    proxy-request:
+      expect: absent
+
     server-response:
       <<: *404_response
 
@@ -823,6 +859,9 @@ sessions:
         - [ uuid, 39 ]
         - [ Accept-Encoding, "br, gzip;q=0.8" ]
       delay: 100ms
+
+    proxy-request:
+      expect: absent
 
     server-response:
       <<: *404_response
@@ -880,6 +919,9 @@ sessions:
         - [ uuid, 42 ]
       delay: 100ms
 
+    proxy-request:
+      expect: absent
+
     server-response:
       <<: *404_response
 
@@ -902,6 +944,9 @@ sessions:
         - [ uuid, 43 ]
         - [ Accept-Encoding, deflate ]
       delay: 100ms
+
+    proxy-request:
+      expect: absent
 
     server-response:
       <<: *404_response
@@ -1046,6 +1091,9 @@ sessions:
         - [ Accept-Encoding, "zstd, br, compress, gzip" ]
       delay: 100ms
 
+    proxy-request:
+      expect: absent
+
     server-response:
       <<: *404_response
 
@@ -1068,6 +1116,9 @@ sessions:
         - [ uuid, 48 ]
         - [ Accept-Encoding, "br, compress, gzip" ]
       delay: 100ms
+
+    proxy-request:
+      expect: absent
 
     server-response:
       <<: *404_response
@@ -1092,6 +1143,9 @@ sessions:
         - [ Accept-Encoding, "compress, zstd" ]
       delay: 100ms
 
+    proxy-request:
+      expect: absent
+
     server-response:
       <<: *404_response
 
@@ -1114,6 +1168,9 @@ sessions:
         - [ uuid, 410 ]
         - [ Accept-Encoding, "compress, gzip" ]
       delay: 100ms
+
+    proxy-request:
+      expect: absent
 
     server-response:
       <<: *404_response
@@ -1171,6 +1228,9 @@ sessions:
         - [ uuid, 52 ]
       delay: 100ms
 
+    proxy-request:
+      expect: absent
+
     server-response:
       <<: *404_response
 
@@ -1193,6 +1253,9 @@ sessions:
         - [ uuid, 53 ]
         - [ Accept-Encoding, deflate ]
       delay: 100ms
+
+    proxy-request:
+      expect: absent
 
     server-response:
       <<: *404_response
@@ -1454,6 +1517,9 @@ sessions:
         - [ Accept-Encoding, "compress, zstd" ]
       delay: 100ms
 
+    proxy-request:
+      expect: absent
+
     server-response:
       <<: *404_response
 
@@ -1476,6 +1542,9 @@ sessions:
         - [ uuid, 511 ]
         - [ Accept-Encoding, "compress, br" ]
       delay: 100ms
+
+    proxy-request:
+      expect: absent
 
     server-response:
       <<: *404_response
@@ -1500,6 +1569,9 @@ sessions:
         - [ Accept-Encoding, "compress, gzip" ]
       delay: 100ms
 
+    proxy-request:
+      expect: absent
+
     server-response:
       <<: *404_response
 
@@ -1522,6 +1594,9 @@ sessions:
         - [ uuid, 513 ]
         - [ Accept-Encoding, "zstd;q=1.1" ]
       delay: 100ms
+
+    proxy-request:
+      expect: absent
 
     server-response:
       <<: *404_response
@@ -1546,6 +1621,9 @@ sessions:
         - [ Accept-Encoding, "br;q=1.1" ]
       delay: 100ms
 
+    proxy-request:
+      expect: absent
+
     server-response:
       <<: *404_response
 
@@ -1568,6 +1646,9 @@ sessions:
         - [ Accept-Encoding, "zstd, br;q=0.8" ]
       delay: 100ms
 
+    proxy-request:
+      expect: absent
+
     server-response:
       <<: *404_response
 
@@ -1589,6 +1670,9 @@ sessions:
         - [ uuid, 516 ]
         - [ Accept-Encoding, "zstd, gzip;q=0.8" ]
       delay: 100ms
+
+    proxy-request:
+      expect: absent
 
     server-response:
       <<: *404_response

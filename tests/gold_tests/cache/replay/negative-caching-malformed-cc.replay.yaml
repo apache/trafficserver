@@ -207,6 +207,9 @@ sessions:
         - [ Host, example.com ]
         - [ uuid, proper_cc_verify ]
 
+    proxy-request:
+      expect: absent
+
     # The server should not receive this request because it should be served from cache.
     server-response:
       status: 200

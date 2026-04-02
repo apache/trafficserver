@@ -97,6 +97,9 @@ sessions:
         - [ Content-Length, 48 ]
         - [ uuid, 12 ]
 
+    proxy-request:
+      expect: absent
+
     # This should not go through to the server since the previous POST response
     # should have been cached. Return a non-200 response to
     # verify it is served from cache.

@@ -137,6 +137,9 @@ sessions:
           - [X-Test-ID, "cache-hit-verify"]
           - [uuid, default-hit]
 
+    proxy-request:
+      expect: absent
+
     # Server should not be contacted for a cache hit
     server-response:
       status: 404

@@ -293,6 +293,9 @@ sessions:
         - [Host, default.com]
         - [uuid, default-test1-request2]
 
+    proxy-request:
+      expect: absent
+
     # Should not reach the origin.
     server-response:
       status: 404
@@ -318,6 +321,9 @@ sessions:
         - [Host, example.com]
         - [uuid, targeted-test1-request2]
 
+    proxy-request:
+      expect: absent
+
     # Should not reach the origin.
     server-response:
       status: 404
@@ -339,6 +345,9 @@ sessions:
         fields:
         - [Host, example.com]
         - [uuid, targeted-test2-request2]
+
+    proxy-request:
+      expect: absent
 
     # Should not reach the origin.
     server-response:
@@ -385,6 +394,9 @@ sessions:
         - [Host, example.com]
         - [uuid, targeted-test4-request2]
 
+    proxy-request:
+      expect: absent
+
     # Should not reach the origin.
     server-response:
       status: 404
@@ -405,6 +417,9 @@ sessions:
         fields:
         - [Host, acme.com]
         - [uuid, acme-test1-request2]
+
+    proxy-request:
+      expect: absent
 
     # The origin should not receive the request since ATS will reply out of cache.
     server-response:

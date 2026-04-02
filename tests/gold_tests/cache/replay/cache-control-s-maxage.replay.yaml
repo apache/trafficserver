@@ -137,6 +137,9 @@ sessions:
   - all: { headers: { fields: [[ uuid, 2 ]]}}
     <<: *request_for_positive_s_maxage
 
+    proxy-request:
+      expect: absent
+
     # This should not go through to the server. Return a non-200 response to
     # verify it is served from cache.
     server-response:

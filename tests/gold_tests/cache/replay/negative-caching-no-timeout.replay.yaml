@@ -43,6 +43,9 @@ sessions:
       # transaction.
       delay: 100ms
 
+    proxy-request:
+      expect: absent
+
     # This should not go to the server. Verify we get the cached 404 response
     # instead of this new 403 response.
     server-response:
