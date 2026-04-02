@@ -674,8 +674,8 @@ if(ENABLE_AUTEST)
   # the autest command. The original AUTEST_OPTIONS string is used in the
   # autest.sh script.
   separate_arguments(AUTEST_OPTIONS_LIST UNIX_COMMAND "${AUTEST_OPTIONS}")
-  set(PROXY_VERIFIER_VERSION "v3.0.0")
-  set(PROXY_VERIFIER_HASH "SHA1=e11b5867a56c5ffd496b18c901f1273e9c120a47")
+  set(PROXY_VERIFIER_VERSION "v3.1.2")
+  set(PROXY_VERIFIER_HASH "SHA1=0a60c646cbc9326abb2fbc397cb9efa8c08a807a")
   include(proxy-verifier)
 endif()
 
