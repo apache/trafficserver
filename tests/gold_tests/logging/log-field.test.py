@@ -73,7 +73,7 @@ ts.Disk.logging_yaml.AddLines(
 logging:
   formats:
     - name: custom
-      format: 'Transfer-Encoding:%<{Transfer-Encoding}ssh> Content-Type:%<{Content-Type}essh> Request-ID:%<{X-Primary-Id}cqh??{X-Secondary-Id}cqh> Request-ID-Default:%<{X-Primary-Id}cqh??{X-Secondary-Id}cqh??"missing-id">'
+      format: 'Transfer-Encoding:%<{Transfer-Encoding}ssh> Content-Type:%<{Content-Type}essh> Request-ID:%<{X-Primary-Id}cqh??{X-Secondary-Id}cqh> Request-ID-Default:%<{X-Primary-Id}cqh??{X-Secondary-Id}cqh??"missing-id"> Request-ID-Or-IP:%<{X-Primary-Id}cqh??{X-Secondary-Id}cqh??chi> Remote-IP:%<{X-Remote-Ip}cqh??chi> Path-Fallback:%<{X-Path-Fallback}cqh??cqup[0:7]>'
   logs:
     - filename: field-test
       format: custom
@@ -96,20 +96,20 @@ tr.Processes.Default.StartBefore(nameserver)
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 
 tr.MakeCurlCommand(
-    '--verbose --header "Host: test-1" --header "X-Primary-Id: primary-1" --header "X-Secondary-Id: secondary-1" http://localhost:{0}/test-1'
+    '--verbose --ipv4 --header "Host: test-1" --header "X-Primary-Id: primary-1" --header "X-Secondary-Id: secondary-1" --header "X-Remote-Ip: 203.0.113.10" http://127.0.0.1:{0}/test-1'
     .format(ts.Variables.port),
     ts=ts)
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
 tr.MakeCurlCommand(
-    '--verbose --header "Host: test-2" --header "X-Secondary-Id: secondary-2" http://localhost:{0}/test-2'.format(
+    '--verbose --ipv4 --header "Host: test-2" --header "X-Secondary-Id: secondary-2" http://127.0.0.1:{0}/test-2'.format(
         ts.Variables.port),
     ts=ts)
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
-tr.MakeCurlCommand('--verbose --header "Host: test-3" http://localhost:{0}/test-3'.format(ts.Variables.port), ts=ts)
+tr.MakeCurlCommand('--verbose --ipv4 --header "Host: test-3" http://127.0.0.1:{0}/test-3'.format(ts.Variables.port), ts=ts)
 tr.Processes.Default.ReturnCode = 0
 
 # Wait for all expected log lines to be written.

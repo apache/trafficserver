@@ -329,21 +329,39 @@ x-primary-id of the client request is logged if it exists, otherwise the value
 of x-secondary-id is logged if it exists, otherwise ``-`` is logged if neither
 of the headers is present.
 
-You can provide an explicit quoted default literal as the final term in the
-chain to use instead of the default ``-`` literal::
+The final log field in the chain can be a non-header log field whose value
+specifies the final fallback in the chain. This symbol is used only after all
+the previous header candidates in the chain are missing. For example::
+
+    Format = '%<{x-remote-ip}cqh??chi>'
+
+In this case, the value of the x-remote-ip HTTP header field is logged if that
+client request header exists. Otherwise, |TS| logs the value of ``chi``, the IP
+address of the client host.
+
+The final non-HTTP header log field must be the last term in the chain, so
+forms like ``%<chi??{x-id}cqh>`` are invalid.
+
+Alternatively, you can provide an explicit quoted default literal as the final
+term in the chain to use instead of the default ``-`` literal::
 
     Format = '%<{x-primary-id}cqh??{x-secondary-id}cqh??"missing-id">'
 
 If none of the headers exist, |TS| logs the default literal instead,
 ``missing-id`` in this case. The default literal must be quoted and must be the
-last term in the chain.
+last term in the chain. Also, final non-header log fields and final default
+string literals cannot be used together. Thus forms like
+'%<{x-remote-ip}cqh??chi??"missing-id">' are invalid.
 
-Note that this fallback chain feature is only supported for header field
-expressions (``cqh``, ``pqh``, etc., see the following table).
 
 Slices apply to each candidate in the fallback chain individually::
 
     Format = '%<{x-primary-id}cqh[0:8]??{x-secondary-id}cqh[0:16]>'
+
+This is also true of non-header log fields. That is, if the final log field
+supports slicing, its own slice is preserved as usual::
+
+    Format = '%<{x-remote-ip}cqh??pqup[0:8]>'
 
 ===== ====================== ==================================================
 Field Source                 Description

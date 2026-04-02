@@ -1,6 +1,6 @@
 /** @file
 
-  Private helper declarations for parsing header fallback log fields.
+  Private helper declarations for parsing log field fallback expressions.
 
   @section license License
 
@@ -30,28 +30,31 @@
 
 #include "proxy/logging/LogField.h"
 
-namespace LogHeaderFallback
+namespace LogFieldFallback
 {
-/** Parsed representation of a header fallback chain. */
+/** Parsed representation of a log field fallback chain. */
 struct ParseResult {
   /// Header candidates evaluated from left to right.
   std::vector<LogField::HeaderField> header_fields;
+  /// Optional final plain field symbol used when no header candidate is present.
+  std::optional<std::string> fallback_symbol;
   /// Optional quoted default literal used when no header candidate is present.
   std::optional<std::string> fallback_default;
 };
 
-/** Determine whether a symbol uses header fallback syntax.
+/** Determine whether a symbol uses log field fallback syntax.
  *
  * @param[in] symbol Log field symbol text from a custom format.
  * @return @c true if @a symbol contains an unquoted fallback separator.
  */
 bool has_fallback(std::string_view symbol);
 
-/** Parse a header fallback symbol into header candidates and an optional default.
+/** Parse a log field fallback symbol into header candidates and an optional
+ * final plain symbol or default literal.
  *
  * @param[in] symbol Log field symbol text from a custom format.
  * @param[out] error Receives a human-readable parse error on failure.
  * @return Parsed fallback state on success, @c std::nullopt on failure.
  */
 std::optional<ParseResult> parse(std::string_view symbol, std::string &error);
-} // namespace LogHeaderFallback
+} // namespace LogFieldFallback

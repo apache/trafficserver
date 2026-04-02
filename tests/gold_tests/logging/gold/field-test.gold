@@ -1,3 +1,3 @@
-Transfer-Encoding:Chunked Content-Type:application/json,%20application/json Request-ID:primary-1 Request-ID-Default:primary-1
-Transfer-Encoding:- Content-Type:application/jason,%20application/json Request-ID:secondary-2 Request-ID-Default:secondary-2
-Transfer-Encoding:- Content-Type:application/json Request-ID:- Request-ID-Default:missing-id
+Transfer-Encoding:Chunked Content-Type:application/json,%20application/json Request-ID:primary-1 Request-ID-Default:primary-1 Request-ID-Or-IP:primary-1 Remote-IP:203.0.113.10 Path-Fallback:test-1
+Transfer-Encoding:- Content-Type:application/jason,%20application/json Request-ID:secondary-2 Request-ID-Default:secondary-2 Request-ID-Or-IP:secondary-2 Remote-IP:127.0.0.1 Path-Fallback:test-2
+Transfer-Encoding:- Content-Type:application/json Request-ID:- Request-ID-Default:missing-id Request-ID-Or-IP:127.0.0.1 Remote-IP:127.0.0.1 Path-Fallback:test-3

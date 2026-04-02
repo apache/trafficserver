@@ -32,13 +32,14 @@
 #include <cstdio>
 #include <cstring>
 #include <cstdlib>
+#include <memory>
 #include <string>
 #include <utility>
 
 #include "tscore/SimpleTokenizer.h"
 #include "tscore/CryptoHash.h"
 
-#include "LogHeaderFallback.h"
+#include "LogFieldFallback.h"
 #include "proxy/logging/LogUtils.h"
 #include "proxy/logging/LogFile.h"
 #include "proxy/logging/LogField.h"
@@ -58,6 +59,25 @@ namespace
 DbgCtl dbg_ctl_log_format{"log-format"};
 DbgCtl dbg_ctl_log_agg{"log-agg"};
 DbgCtl dbg_ctl_log_slice{"log-slice"};
+
+LogField *
+make_regular_field_from_symbol(char *symbol)
+{
+  LogSlice  slice(symbol);
+  LogField *field = Log::global_field_list.find_by_symbol(symbol);
+
+  if (field == nullptr) {
+    return nullptr;
+  }
+
+  auto *copy = new LogField(*field);
+  if (slice.m_enable) {
+    copy->m_slice = slice;
+    Dbg(dbg_ctl_log_slice, "symbol = %s, [%d:%d]", symbol, copy->m_slice.m_start, copy->m_slice.m_end);
+  }
+
+  return copy;
+}
 
 } // end anonymous namespace
 /*-------------------------------------------------------------------------
@@ -481,15 +501,36 @@ LogFormat::parse_symbol_string(const char *symbol_string, LogFieldList *field_li
              "')' in %s",
              symbol);
       }
-    } else if (LogHeaderFallback::has_fallback(symbol)) {
-      Dbg(dbg_ctl_log_format, "Header fallback symbol: %s", symbol);
+    } else if (LogFieldFallback::has_fallback(symbol)) {
+      Dbg(dbg_ctl_log_format, "Field fallback symbol: %s", symbol);
       std::string parse_error;
-      auto        parsed = LogHeaderFallback::parse(symbol, parse_error);
+      auto        parsed = LogFieldFallback::parse(symbol, parse_error);
       if (parsed.has_value()) {
-        f = new LogField(original_symbol.c_str(), std::move(parsed->header_fields), std::move(parsed->fallback_default));
-        field_list->add(f, false);
-        field_count++;
-        Dbg(dbg_ctl_log_format, "Header fallback field %s added", original_symbol.c_str());
+        std::unique_ptr<LogField> fallback_field;
+        bool                      valid_fallback = true;
+
+        if (parsed->fallback_symbol.has_value()) {
+          std::string fallback_symbol = *parsed->fallback_symbol;
+          LogField   *resolved_field  = make_regular_field_from_symbol(fallback_symbol.data());
+
+          if (resolved_field == nullptr) {
+            Note("The fallback field symbol %s was not found in the "
+                 "list of known symbols.",
+                 fallback_symbol.c_str());
+            field_list->addBadSymbol(original_symbol);
+            valid_fallback = false;
+          } else {
+            fallback_field.reset(resolved_field);
+          }
+        }
+
+        if (valid_fallback) {
+          f = new LogField(original_symbol.c_str(), std::move(parsed->header_fields), std::move(fallback_field),
+                           std::move(parsed->fallback_default));
+          field_list->add(f, false);
+          field_count++;
+          Dbg(dbg_ctl_log_format, "Field fallback field %s added", original_symbol.c_str());
+        }
       } else {
         Note("%s", parse_error.c_str());
         field_list->addBadSymbol(original_symbol);
@@ -532,16 +573,10 @@ LogFormat::parse_symbol_string(const char *symbol_string, LogFieldList *field_li
     // treat this like a regular field symbol
     //
     else {
-      LogSlice slice(symbol);
       Dbg(dbg_ctl_log_format, "Regular field symbol: %s", symbol);
-      f = Log::global_field_list.find_by_symbol(symbol);
+      f = make_regular_field_from_symbol(symbol);
       if (f != nullptr) {
-        LogField *cpy = new LogField(*f);
-        if (slice.m_enable) {
-          cpy->m_slice = slice;
-          Dbg(dbg_ctl_log_slice, "symbol = %s, [%d:%d]", symbol, cpy->m_slice.m_start, cpy->m_slice.m_end);
-        }
-        field_list->add(cpy, false);
+        field_list->add(f, false);
         field_count++;
         Dbg(dbg_ctl_log_format, "Regular field %s added", symbol);
       } else {

@@ -1,6 +1,6 @@
 /** @file
 
-  Helpers for parsing header fallback log fields.
+  Helpers for parsing log field fallback expressions.
 
   @section license License
 
@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "LogHeaderFallback.h"
+#include "LogFieldFallback.h"
 
 #include <cctype>
 #include <string>
@@ -32,7 +32,7 @@
 
 namespace
 {
-constexpr std::string_view HEADER_FALLBACK_SEPARATOR{"??"};
+constexpr std::string_view FIELD_FALLBACK_SEPARATOR{"??"};
 
 /** Find the next fallback separator outside of quoted default literals.
  *
@@ -43,14 +43,14 @@ constexpr std::string_view HEADER_FALLBACK_SEPARATOR{"??"};
  * @return Pointer to the first separator occurrence, or @c nullptr if none.
  */
 constexpr char const *
-find_header_fallback_separator(std::string_view text)
+find_field_fallback_separator(std::string_view text)
 {
   char quote  = '\0';
   bool escape = false;
 
   // The following logic assumes a 2 character separator. If that changes,
   // adjust the logic accordingly.
-  static_assert(HEADER_FALLBACK_SEPARATOR.size() == 2, "HEADER_FALLBACK_SEPARATOR must be exactly two characters long");
+  static_assert(FIELD_FALLBACK_SEPARATOR.size() == 2, "FIELD_FALLBACK_SEPARATOR must be exactly two characters long");
 
   for (auto const *spot = text.data(), *limit = text.data() + text.size(); spot < limit; ++spot) {
     char c = *spot;
@@ -71,7 +71,7 @@ find_header_fallback_separator(std::string_view text)
       continue;
     }
 
-    if (*spot == HEADER_FALLBACK_SEPARATOR[0] && (spot + 1) < limit && *(spot + 1) == HEADER_FALLBACK_SEPARATOR[1]) {
+    if (*spot == FIELD_FALLBACK_SEPARATOR[0] && (spot + 1) < limit && *(spot + 1) == FIELD_FALLBACK_SEPARATOR[1]) {
       return spot;
     }
   }
@@ -80,26 +80,26 @@ find_header_fallback_separator(std::string_view text)
 }
 
 constexpr bool
-test_find_header_fallback_separator()
+test_find_field_fallback_separator()
 {
-  static_assert(find_header_fallback_separator("") == nullptr);
+  static_assert(find_field_fallback_separator("") == nullptr);
   constexpr char const *text1 = "{field}??default";
-  static_assert(find_header_fallback_separator(text1) == text1 + 7);
+  static_assert(find_field_fallback_separator(text1) == text1 + 7);
   constexpr char const *text2 = "??default";
-  static_assert(find_header_fallback_separator(text2) == text2);
+  static_assert(find_field_fallback_separator(text2) == text2);
   constexpr char const *text3 = "{field}??def??ault";
-  static_assert(find_header_fallback_separator(text3) == text3 + 7);
+  static_assert(find_field_fallback_separator(text3) == text3 + 7);
   constexpr char const *text4 = "{field}??\"def??ault\"";
-  static_assert(find_header_fallback_separator(text4) == text4 + 7);
+  static_assert(find_field_fallback_separator(text4) == text4 + 7);
   return true;
 }
 
-static_assert(test_find_header_fallback_separator(), "find_header_fallback_separator failed its tests");
+static_assert(test_find_field_fallback_separator(), "find_field_fallback_separator failed its tests");
 
 void
 set_parse_error(std::string &error, std::string_view symbol, std::string_view detail)
 {
-  error.assign("Invalid header fallback field specification: ");
+  error.assign("Invalid log field fallback specification: ");
   error.append(detail.data(), detail.size());
   error.append(" in ");
   error.append(symbol.data(), symbol.size());
@@ -154,7 +154,30 @@ parse_header_fallback_candidate(swoc::TextView term, LogField::HeaderField &fiel
 }
 
 bool
-parse_header_fallback_default(swoc::TextView term, std::string &default_value, std::string_view original_symbol, std::string &error)
+parse_field_fallback_symbol(swoc::TextView term, std::string &field_symbol, std::string_view original_symbol, std::string &error)
+{
+  term.trim_if(isspace);
+  if (term.empty()) {
+    set_parse_error(error, original_symbol, "empty candidate");
+    return false;
+  }
+
+  if (term.find('(') != swoc::TextView::npos || term.find(')') != swoc::TextView::npos) {
+    set_parse_error(error, original_symbol, "aggregate expressions are not supported in fallback chains");
+    return false;
+  }
+
+  if (term.find('{') != swoc::TextView::npos || term.find('}') != swoc::TextView::npos) {
+    set_parse_error(error, original_symbol, std::string{term} + " is not a supported fallback term");
+    return false;
+  }
+
+  field_symbol.assign(term.data(), term.size());
+  return true;
+}
+
+bool
+parse_field_fallback_default(swoc::TextView term, std::string &default_value, std::string_view original_symbol, std::string &error)
 {
   term.trim_if(isspace);
   if (term.empty()) {
@@ -206,12 +229,12 @@ parse_header_fallback_default(swoc::TextView term, std::string &default_value, s
 }
 } // namespace
 
-namespace LogHeaderFallback
+namespace LogFieldFallback
 {
 bool
 has_fallback(std::string_view symbol)
 {
-  return find_header_fallback_separator(symbol) != nullptr;
+  return find_field_fallback_separator(symbol) != nullptr;
 }
 
 std::optional<ParseResult>
@@ -226,9 +249,9 @@ parse(std::string_view symbol, std::string &error)
     swoc::TextView term;
     bool           has_more_terms = false;
 
-    if (auto const *separator = find_header_fallback_separator(remaining); separator != nullptr) {
+    if (auto const *separator = find_field_fallback_separator(remaining); separator != nullptr) {
       term = swoc::TextView{remaining.data(), static_cast<size_t>(separator - remaining.data())};
-      remaining.remove_prefix((separator - remaining.data()) + HEADER_FALLBACK_SEPARATOR.size());
+      remaining.remove_prefix((separator - remaining.data()) + FIELD_FALLBACK_SEPARATOR.size());
       has_more_terms = true;
     } else {
       term      = remaining;
@@ -248,21 +271,36 @@ parse(std::string_view symbol, std::string &error)
       }
 
       std::string fallback_default;
-      if (!parse_header_fallback_default(term, fallback_default, symbol, error)) {
+      if (!parse_field_fallback_default(term, fallback_default, symbol, error)) {
         return std::nullopt;
       }
       result.fallback_default = std::move(fallback_default);
       break;
     }
 
-    LogField::HeaderField field;
-    if (!parse_header_fallback_candidate(term, field, symbol, error)) {
-      return std::nullopt;
-    }
+    if (term.starts_with('{')) {
+      LogField::HeaderField field;
+      if (!parse_header_fallback_candidate(term, field, symbol, error)) {
+        return std::nullopt;
+      }
 
-    result.header_fields.push_back(std::move(field));
+      result.header_fields.push_back(std::move(field));
 
-    if (!has_more_terms) {
+      if (!has_more_terms) {
+        break;
+      }
+    } else {
+      if (has_more_terms) {
+        set_parse_error(error, symbol, "plain field symbols must be the final term");
+        return std::nullopt;
+      }
+
+      std::string fallback_symbol;
+      if (!parse_field_fallback_symbol(term, fallback_symbol, symbol, error)) {
+        return std::nullopt;
+      }
+
+      result.fallback_symbol = std::move(fallback_symbol);
       break;
     }
   }
@@ -274,4 +312,4 @@ parse(std::string_view symbol, std::string &error)
 
   return result;
 }
-} // namespace LogHeaderFallback
+} // namespace LogFieldFallback

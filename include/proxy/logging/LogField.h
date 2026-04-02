@@ -23,6 +23,7 @@
 
 #pragma once
 
+#include <memory>
 #include <optional>
 #include <string_view>
 #include <string>
@@ -146,7 +147,8 @@ public:
   LogField(const char *name, const char *symbol, Type type, CustomMarshalFunc custom_marshal, CustomUnmarshalFunc custom_unmarshal);
 
   LogField(const char *field, Container container);
-  LogField(const char *symbol, std::vector<HeaderField> header_fields, std::optional<std::string> fallback_default = std::nullopt);
+  LogField(const char *symbol, std::vector<HeaderField> header_fields, std::unique_ptr<LogField> fallback_field = nullptr,
+           std::optional<std::string> fallback_default = std::nullopt);
   LogField(const LogField &rhs);
   ~LogField();
 
@@ -224,12 +226,16 @@ private:
   int                        milestones_from_m_name(TSMilestonesType *m1, TSMilestonesType *m2);
   CustomMarshalFunc          m_custom_marshal_func   = nullptr;
   CustomUnmarshalFunc        m_custom_unmarshal_func = nullptr;
-  std::vector<HeaderField>   m_header_fields;
-  std::optional<std::string> m_header_fallback_default;
-  bool                       is_header_field_fallback() const;
-  int                        select_header_field(LogAccess *lad) const;
-  unsigned                   marshal_header_field(LogAccess *lad, const HeaderField &field, char *buf) const;
-  unsigned                   marshal_header_fallback_default(char *buf) const;
+  std::vector<HeaderField>   m_fallback_header_fields;
+  std::unique_ptr<LogField>  m_fallback_field;
+  std::optional<std::string> m_fallback_default;
+  bool                       is_field_fallback() const;
+  int                        select_fallback_selector(LogAccess *lad) const;
+  unsigned                   marshal_fallback_header_field(LogAccess *lad, const HeaderField &field, char *buf) const;
+  unsigned                   marshal_fallback_default(char *buf) const;
+
+  static constexpr int FALLBACK_DEFAULT_SELECTOR = -1;
+  static constexpr int FALLBACK_FIELD_SELECTOR   = -2;
 
 public:
   LINK(LogField, link);
