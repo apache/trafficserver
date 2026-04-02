@@ -1,0 +1,3 @@
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{SESSION-FLAG:0}
+    set-header X-suspicious "true"

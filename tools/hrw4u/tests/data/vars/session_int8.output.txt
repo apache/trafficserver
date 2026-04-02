@@ -1,0 +1,3 @@
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{SESSION-INT8:0} >5
+    set-header X-throttle "true"

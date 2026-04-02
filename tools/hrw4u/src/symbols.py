@@ -46,7 +46,8 @@ class SymbolResolver(SymbolResolverBase):
             return params.target, params.validate
         raise SymbolResolutionError(name, "Unknown operator or invalid standalone use")
 
-    def declare_variable(self, name: str, type_name: str, explicit_slot: int | None = None) -> str:
+    def declare_variable(
+            self, name: str, type_name: str, explicit_slot: int | None = None, scope: types.VarScope = types.VarScope.TXN) -> str:
         try:
             var_type = types.VarType.from_str(type_name)
         except ValueError as e:
@@ -54,24 +55,24 @@ class SymbolResolver(SymbolResolverBase):
             error.add_note(f"Available types: {', '.join([vt.name for vt in types.VarType])}")
             raise error
 
-        # Determine slot number
+        # Determine slot number (separate slot pools per scope)
         if explicit_slot is not None:
             if explicit_slot < 0 or explicit_slot >= var_type.limit:
                 raise SymbolResolutionError(
                     name, f"Slot @{explicit_slot} out of range for type '{type_name}' (valid: 0-{var_type.limit-1})")
             for var_name, sym in self._symbols.items():
-                if sym.var_type == var_type and sym.slot == explicit_slot:
+                if sym.var_type == var_type and sym.scope == scope and sym.slot == explicit_slot:
                     raise SymbolResolutionError(name, f"Slot @{explicit_slot} already used by variable '{var_name}'")
 
             slot = explicit_slot
         else:
-            used_slots = {sym.slot for sym in self._symbols.values() if sym.var_type == var_type}
+            used_slots = {sym.slot for sym in self._symbols.values() if sym.var_type == var_type and sym.scope == scope}
             slot = next((i for i in range(var_type.limit) if i not in used_slots), None)
 
             if slot is None:
                 raise SymbolResolutionError(name, f"No available slots for type '{type_name}' (max {var_type.limit})")
 
-        symbol = types.Symbol(var_type, slot)
+        symbol = types.Symbol(var_type, slot, scope)
         self._symbols[name] = symbol
         return symbol.as_cond()
 

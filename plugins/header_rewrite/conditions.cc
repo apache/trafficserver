@@ -1654,9 +1654,9 @@ ConditionStateFlag::set_qualifier(const std::string &q)
 
   _flag_ix = strtol(q.c_str(), nullptr, 10);
   if (_flag_ix < 0 || _flag_ix >= NUM_STATE_FLAGS) {
-    TSError("[%s] STATE-FLAG index out of range: %s", PLUGIN_NAME, q.c_str());
+    TSError("[%s] %s-FLAG index out of range: %s", PLUGIN_NAME, _scope_label(_scope), q.c_str());
   } else {
-    Dbg(pi_dbg_ctl, "\tParsing %%{STATE-FLAG:%s}", q.c_str());
+    Dbg(pi_dbg_ctl, "\tParsing %%{%s-FLAG:%s}", _scope_label(_scope), q.c_str());
     _mask = 1ULL << _flag_ix;
   }
 }
@@ -1665,15 +1665,15 @@ void
 ConditionStateFlag::append_value(std::string &s, const Resources &res)
 {
   s += eval(res) ? "TRUE" : "FALSE";
-  Dbg(pi_dbg_ctl, "Evaluating STATE-FLAG(%d)", _flag_ix);
+  Dbg(pi_dbg_ctl, "Evaluating %s-FLAG(%d)", _scope_label(_scope), _flag_ix);
 }
 
 bool
 ConditionStateFlag::eval(const Resources &res)
 {
-  auto data = reinterpret_cast<uint64_t>(TSUserArgGet(res.state.txnp, _txn_slot));
+  auto data = _get_state_data(_scope, res);
 
-  Dbg(pi_dbg_ctl, "Evaluating STATE-FLAG()");
+  Dbg(pi_dbg_ctl, "Evaluating %s-FLAG()", _scope_label(_scope));
 
   return (data & _mask) == _mask;
 }
@@ -1696,9 +1696,9 @@ ConditionStateInt8::set_qualifier(const std::string &q)
 
   _byte_ix = strtol(q.c_str(), nullptr, 10);
   if (_byte_ix < 0 || _byte_ix >= NUM_STATE_INT8S) {
-    TSError("[%s] STATE-INT8 index out of range: %s", PLUGIN_NAME, q.c_str());
+    TSError("[%s] %s-INT8 index out of range: %s", PLUGIN_NAME, _scope_label(_scope), q.c_str());
   } else {
-    Dbg(pi_dbg_ctl, "\tParsing %%{STATE-INT8:%s}", q.c_str());
+    Dbg(pi_dbg_ctl, "\tParsing %%{%s-INT8:%s}", _scope_label(_scope), q.c_str());
   }
 }
 
@@ -1709,7 +1709,7 @@ ConditionStateInt8::append_value(std::string &s, const Resources &res)
 
   s += std::to_string(data);
 
-  Dbg(pi_dbg_ctl, "Appending STATE-INT8(%d) to evaluation value -> %s", data, s.c_str());
+  Dbg(pi_dbg_ctl, "Appending %s-INT8(%d) to evaluation value -> %s", _scope_label(_scope), data, s.c_str());
 }
 
 bool
@@ -1717,7 +1717,7 @@ ConditionStateInt8::eval(const Resources &res)
 {
   uint8_t data = _get_data(res);
 
-  Dbg(pi_dbg_ctl, "Evaluating STATE-INT8()");
+  Dbg(pi_dbg_ctl, "Evaluating %s-INT8()", _scope_label(_scope));
 
   return static_cast<const MatcherType *>(_matcher.get())->test(data, res);
 }
@@ -1742,9 +1742,9 @@ ConditionStateInt16::set_qualifier(const std::string &q)
     long ix = strtol(q.c_str(), nullptr, 10);
 
     if (ix != 0) {
-      TSError("[%s] STATE-INT16 index out of range: %s", PLUGIN_NAME, q.c_str());
+      TSError("[%s] %s-INT16 index out of range: %s", PLUGIN_NAME, _scope_label(_scope), q.c_str());
     } else {
-      Dbg(pi_dbg_ctl, "\tParsing %%{STATE-INT16:%s}", q.c_str());
+      Dbg(pi_dbg_ctl, "\tParsing %%{%s-INT16:%s}", _scope_label(_scope), q.c_str());
     }
   }
 }
@@ -1755,7 +1755,7 @@ ConditionStateInt16::append_value(std::string &s, const Resources &res)
   uint16_t data = _get_data(res);
 
   s += std::to_string(data);
-  Dbg(pi_dbg_ctl, "Appending STATE-INT16(%d) to evaluation value -> %s", data, s.c_str());
+  Dbg(pi_dbg_ctl, "Appending %s-INT16(%d) to evaluation value -> %s", _scope_label(_scope), data, s.c_str());
 }
 
 bool
@@ -1763,7 +1763,7 @@ ConditionStateInt16::eval(const Resources &res)
 {
   uint16_t data = _get_data(res);
 
-  Dbg(pi_dbg_ctl, "Evaluating STATE-INT8()");
+  Dbg(pi_dbg_ctl, "Evaluating %s-INT16()", _scope_label(_scope));
 
   return static_cast<const MatcherType *>(_matcher.get())->test(data, res);
 }

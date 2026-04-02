@@ -154,10 +154,16 @@ class HRWInverseVisitor(u4wrhVisitor, BaseHRWVisitor):
                 self.visit(line)
             self._close_if_and_section()
 
-            var_declarations = self.symbol_resolver.get_var_declarations()
-            if var_declarations:
-                vars_output = '\n'.join(["VARS {", *[self.format_with_indent(decl, 1) for decl in var_declarations], "}", ""])
-                self.output = vars_output.split('\n') + self.output
+            txn_decls, ssn_decls = self.symbol_resolver.get_var_declarations()
+            preamble = []
+
+            if txn_decls:
+                preamble += ["VARS {"] + [self.format_with_indent(d, 1) for d in txn_decls] + ["}", ""]
+            if ssn_decls:
+                preamble += ["SESSION_VARS {"] + [self.format_with_indent(d, 1) for d in ssn_decls] + ["}", ""]
+
+            if preamble:
+                self.output = preamble + self.output
 
             return self.output
 

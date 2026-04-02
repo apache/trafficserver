@@ -212,8 +212,9 @@ class DocumentAnalyzer:
             if not stripped or stripped.startswith('//') or stripped.startswith('#'):
                 continue
 
-            # Check for VARS section start
-            if stripped == 'VARS {' or stripped.startswith('VARS {'):
+            # Check for VARS or SESSION_VARS section start
+            if stripped == 'VARS {' or stripped.startswith('VARS {') or \
+               stripped == 'SESSION_VARS {' or stripped.startswith('SESSION_VARS {'):
                 in_vars_section = True
                 brace_count = 1
                 continue

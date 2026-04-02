@@ -366,14 +366,14 @@ class TestInverseSymbolResolver:
 
     def test_get_var_declarations_empty(self):
         r = self._resolver()
-        assert r.get_var_declarations() == []
+        assert r.get_var_declarations() == ([], [])
 
     def test_get_var_declarations_after_state_tag(self):
         r = self._resolver()
         r._handle_state_tag("STATE-FLAG", "0")
-        decls = r.get_var_declarations()
-        assert len(decls) == 1
-        assert "bool" in decls[0]
+        txn_decls, ssn_decls = r.get_var_declarations()
+        assert len(txn_decls) == 1
+        assert "bool" in txn_decls[0]
 
     def test_percent_to_ident_invalid(self):
         r = self._resolver()

@@ -862,6 +862,41 @@ There's only one such integer, and its value is returned from this condition.
 As such, the index, ``0``, is optional here. The initialized value of this
 state variable is ``0``.
 
+SESSION-FLAG
+~~~~~~~~~~~~
+::
+
+      cond %{SESSION-FLAG:<n>}
+
+This condition allows you to check the state of a session-scoped flag. The
+``<n>`` is the number of the flag, from 0 to 15. Unlike ``STATE-FLAG`` which
+is scoped to the current transaction, session flags persist across all
+transactions on the same client connection (session). The default value of all
+flags are ``false``.
+
+SESSION-INT8
+~~~~~~~~~~~~
+::
+
+      cond %{SESSION-INT8:<n>}
+
+This condition allows you to check the state of a session-scoped 8-bit unsigned
+integer. The ``<n>`` is the number of the integer, from 0 to 3. The current
+value is returned, and all 4 integers are initialized to 0. Session integers
+persist across all transactions on the same client connection.
+
+SESSION-INT16
+~~~~~~~~~~~~~
+::
+
+      cond %{SESSION-INT16:<0>}
+
+This condition allows you to check the state of a session-scoped 16-bit unsigned
+integer. There's only one such integer, and its value is returned from this
+condition. As such, the index, ``0``, is optional here. The initialized value
+is ``0``. Session integers persist across all transactions on the same client
+connection.
+
 STATUS
 ~~~~~~
 ::
@@ -1303,6 +1338,42 @@ This operator allows you to set the state of a 16-bit unsigned integer.
 The ``<value>`` is an unsigned 16-bit integer as well, 0-65535. It can also
 be a condition, in which case thevalue of the condition is used. The index,
 0, is always required eventhough there is only one 16-bit integer state variable.
+
+set-session-flag
+~~~~~~~~~~~~~~~~
+::
+
+  set-session-flag <n> <value>
+
+This operator allows you to set the state of a session-scoped flag. The ``<n>``
+is the number of the flag, from 0 to 15. The ``<value>`` is either ``true`` or
+``false``, turning the flag on or off. Unlike ``set-state-flag``, session flags
+persist across all transactions on the same client connection.
+
+set-session-int8
+~~~~~~~~~~~~~~~~
+::
+
+   set-session-int8 <n> <value>
+
+This operator allows you to set the state of a session-scoped 8-bit unsigned
+integer. The ``<n>`` is the number of the integer, from 0 to 3. The ``<value>``
+is an unsigned 8-bit integer, 0-255. It can also be a condition, in which case
+the value of the condition is used. Session integers persist across all
+transactions on the same client connection.
+
+set-session-int16
+~~~~~~~~~~~~~~~~~
+::
+
+   set-session-int16 0 <value>
+
+This operator allows you to set the state of a session-scoped 16-bit unsigned
+integer. The ``<value>`` is an unsigned 16-bit integer, 0-65535. It can also
+be a condition, in which case the value of the condition is used. The index,
+0, is always required even though there is only one 16-bit session integer
+state variable. Session integers persist across all transactions on the same
+client connection.
 
 set-status
 ~~~~~~~~~~
