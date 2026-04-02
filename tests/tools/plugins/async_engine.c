@@ -173,11 +173,12 @@ async_destroy(ENGINE *e ATS_UNUSED)
 static void
 wait_cleanup(ASYNC_WAIT_CTX *ctx ATS_UNUSED, const void *key ATS_UNUSED, OSSL_ASYNC_FD readfd, void *pvwritefd)
 {
-  OSSL_ASYNC_FD *pwritefd = (OSSL_ASYNC_FD *)pvwritefd;
+  OSSL_ASYNC_FD *pwritefd  = (OSSL_ASYNC_FD *)pvwritefd;
+  OSSL_ASYNC_FD  writefd_v = *pwritefd;
   close(readfd);
-  close(*((OSSL_ASYNC_FD *)pwritefd));
+  close(writefd_v);
   OPENSSL_free(pwritefd);
-  fprintf(stderr, "Cleanup %d and %d\n", readfd, *pwritefd);
+  fprintf(stderr, "Cleanup %d and %d\n", readfd, writefd_v);
 }
 
 #define DUMMY_CHAR 'X'
