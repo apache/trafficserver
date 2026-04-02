@@ -143,9 +143,11 @@ TEST_CASE("ConfigVolumes::complement")
     //   - id: 2
     //     size: 34%
     ConfigVol *v1 = config.cp_queue.head;
+    REQUIRE(v1 != nullptr);
     CHECK(v1->size.percent == 66);
 
     ConfigVol *v2 = config.cp_queue.next(v1);
+    REQUIRE(v2 != nullptr);
     CHECK(v2->size.percent == 34);
   }
 
@@ -170,6 +172,7 @@ TEST_CASE("ConfigVolumes::complement")
     //         size: 100%
     ConfigVol *v1 = config.cp_queue.head;
 
+    REQUIRE(v1 != nullptr);
     CHECK(v1->size.is_empty());
     REQUIRE(v1->spans.size() == 1);
     CHECK(v1->spans[0].size.in_percent);
@@ -247,16 +250,19 @@ TEST_CASE("ConfigVolumes::complement")
     //         size: 70%
     ConfigVol *v1 = config.cp_queue.head;
 
+    REQUIRE(v1 != nullptr);
     CHECK(v1->size.is_empty());
     CHECK(v1->spans[0].size.percent == 10);
 
     ConfigVol *v2 = config.cp_queue.next(v1);
 
+    REQUIRE(v2 != nullptr);
     CHECK(v2->size.is_empty());
     CHECK(v2->spans[0].size.percent == 20);
 
     ConfigVol *v3 = config.cp_queue.next(v2);
 
+    REQUIRE(v3 != nullptr);
     CHECK(v3->size.is_empty());
     CHECK(v3->spans[0].size.percent == 70);
   }
@@ -307,6 +313,7 @@ TEST_CASE("ConfigVolumes::complement")
     //             size: 17%
     ConfigVol *v1 = config.cp_queue.head;
 
+    REQUIRE(v1 != nullptr);
     CHECK(v1->size.is_empty());
     REQUIRE(v1->spans.size() == 2);
 
@@ -348,6 +355,7 @@ TEST_CASE("ConfigVolumes::complement")
     //     size: 100%
     ConfigVol *v1 = config.cp_queue.head;
 
+    REQUIRE(v1 != nullptr);
     CHECK(v1->size.is_empty());
     REQUIRE(v1->spans.size() == 1);
     CHECK(v1->spans[0].size.in_percent);
@@ -355,6 +363,7 @@ TEST_CASE("ConfigVolumes::complement")
 
     ConfigVol *v2 = config.cp_queue.next(v1);
 
+    REQUIRE(v2 != nullptr);
     CHECK(v2->size.in_percent);
     CHECK(v2->size.percent == 100);
   }

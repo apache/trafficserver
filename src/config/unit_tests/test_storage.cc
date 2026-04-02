@@ -786,14 +786,14 @@ TEST_CASE("StorageMarshaller produces valid YAML", "[storage][marshaller][yaml]"
   span1.name = "span-1";
   span1.path = "/var/cache/span1";
   span1.size = 10LL * 1024 * 1024 * 1024;
-  config.spans.push_back(span1);
+  config.spans.push_back(std::move(span1));
 
   StorageVolumeEntry vol1;
   vol1.id              = 1;
   vol1.scheme          = "http";
   vol1.size.in_percent = true;
   vol1.size.percent    = 100;
-  config.volumes.push_back(vol1);
+  config.volumes.push_back(std::move(vol1));
 
   StorageMarshaller marshaller;
   std::string       yaml = marshaller.to_yaml(config);
@@ -826,11 +826,11 @@ TEST_CASE("StorageMarshaller produces valid JSON", "[storage][marshaller][json]"
   StorageSpanEntry span1;
   span1.name = "span-1";
   span1.path = "/var/cache/span1";
-  config.spans.push_back(span1);
+  config.spans.push_back(std::move(span1));
 
   StorageVolumeEntry vol1;
   vol1.id = 1;
-  config.volumes.push_back(vol1);
+  config.volumes.push_back(std::move(vol1));
 
   StorageMarshaller marshaller;
   std::string       json = marshaller.to_json(config);

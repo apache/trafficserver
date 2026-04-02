@@ -255,11 +255,11 @@ parse_legacy_storage_config(std::string_view content)
     span.name      = path_tok;
     span.path      = path_tok;
     span.size      = size;
-    span.hash_seed = hash_seed;
+    span.hash_seed = std::move(hash_seed);
     result.spans.push_back(std::move(span));
 
     if (volume_num > 0) {
-      vol_span_map[volume_num].push_back(path_tok);
+      vol_span_map[volume_num].push_back(std::move(path_tok));
     }
   }
 
@@ -276,7 +276,7 @@ parse_legacy_storage_config(std::string_view content)
     result.volumes.push_back(std::move(vol));
   }
 
-  return {result, std::move(errata)};
+  return {std::move(result), std::move(errata)};
 }
 
 /**
@@ -435,7 +435,7 @@ parse_legacy_volume_config(std::string_view content)
     result.volumes.push_back(std::move(vol));
   }
 
-  return {result, std::move(errata)};
+  return {std::move(result), std::move(errata)};
 }
 
 } // namespace
@@ -511,8 +511,8 @@ template <> struct convert<config::StorageVolumeEntry> {
       throw ParserException(node.Mark(), "missing 'id' argument in cache.volumes[]");
     }
     vol.id = node[KEY_ID].as<int>();
-    if (vol.id < 1 || vol.id > MAX_VOLUME_IDX) {
-      throw ParserException(node.Mark(), "volume id out of range [1, 255]: " + std::to_string(vol.id));
+    if (vol.id < 1 || MAX_VOLUME_IDX < vol.id) {
+      throw ParserException(node.Mark(), "volume id out of range [1, 255]: " + node[KEY_ID].as<std::string>());
     }
 
     if (node[KEY_SCHEME]) {
@@ -520,7 +520,7 @@ template <> struct convert<config::StorageVolumeEntry> {
       if (s != "http") {
         throw ParserException(node.Mark(), "unsupported scheme '" + s + "' in cache.volumes[]");
       }
-      vol.scheme = s;
+      vol.scheme = std::move(s);
     }
 
     if (node[KEY_SIZE]) {
@@ -692,10 +692,10 @@ StorageParser::parse_content(std::string_view content)
     }
 
   } catch (std::exception const &ex) {
-    return {result, swoc::Errata(ERRATA_ERROR_SEV, "YAML parse error: {}", ex.what())};
+    return {std::move(result), swoc::Errata(ERRATA_ERROR_SEV, "YAML parse error: {}", ex.what())};
   }
 
-  return {result, std::move(errata)};
+  return {std::move(result), std::move(errata)};
 }
 
 ConfigResult<StorageConfig>
