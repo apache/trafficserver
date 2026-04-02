@@ -27,25 +27,6 @@
 
 class UrlRewrite;
 
-#define BUILD_TABLE_MAX_ARGS 2048
-
-// Remap inline options
-#define REMAP_OPTFLG_MAP_WITH_REFERER 0x0001u     /* "map_with_referer" option */
-#define REMAP_OPTFLG_PLUGIN           0x0002u     /* "plugin=" option (per remap plugin) */
-#define REMAP_OPTFLG_PPARAM           0x0004u     /* "pparam=" option (per remap plugin option) */
-#define REMAP_OPTFLG_METHOD           0x0008u     /* "method=" option (used for ACL filtering) */
-#define REMAP_OPTFLG_SRC_IP           0x0010u     /* "src_ip=" option (used for ACL filtering) */
-#define REMAP_OPTFLG_SRC_IP_CATEGORY  0x0020u     /* "src_ip_category=" option (used for ACL filtering) */
-#define REMAP_OPTFLG_ACTION           0x0040u     /* "action=" option (used for ACL filtering) */
-#define REMAP_OPTFLG_INTERNAL         0x0080u     /* only allow internal requests to hit this remap */
-#define REMAP_OPTFLG_IN_IP            0x0100u     /* "in_ip=" option (used for ACL filtering)*/
-#define REMAP_OPTFLG_STRATEGY         0x0200u     /* "strategy=" the name of the nexthop selection strategy */
-#define REMAP_OPTFLG_VOLUME           0x0400u     /* "volume=" cache volume override */
-#define REMAP_OPTFLG_MAP_ID           0x0800u     /* associate a map ID with this rule */
-#define REMAP_OPTFLG_INVERT           0x80000000u /* "invert" the rule (for src_ip and src_ip_category at least) */
-#define REMAP_OPTFLG_ALL_FILTERS \
-  (REMAP_OPTFLG_METHOD | REMAP_OPTFLG_SRC_IP | REMAP_OPTFLG_SRC_IP_CATEGORY | REMAP_OPTFLG_ACTION | REMAP_OPTFLG_INTERNAL)
-
 enum class ACLBehaviorPolicy {
   ACL_BEHAVIOR_LEGACY = 0,
   ACL_BEHAVIOR_MODERN,
@@ -54,12 +35,6 @@ enum class ACLBehaviorPolicy {
 struct BUILD_TABLE_INFO {
   BUILD_TABLE_INFO();
   ~BUILD_TABLE_INFO();
-
-  unsigned long remap_optflg = 0;
-  int           paramc       = 0;
-  int           argc         = 0;
-  char         *paramv[BUILD_TABLE_MAX_ARGS];
-  char         *argv[BUILD_TABLE_MAX_ARGS];
 
   ACLBehaviorPolicy behavior_policy{ACLBehaviorPolicy::ACL_BEHAVIOR_LEGACY}; // Default 0.
   bool              ip_allow_check_enabled_p = true;
@@ -78,17 +53,6 @@ struct BUILD_TABLE_INFO {
   BUILD_TABLE_INFO(const BUILD_TABLE_INFO &)            = delete; // disabled
   BUILD_TABLE_INFO &operator=(const BUILD_TABLE_INFO &) = delete; // disabled
 };
-
-const char *remap_parse_directive(BUILD_TABLE_INFO *bti, char *errbuf, size_t errbufsize);
-bool        remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti);
-
-const char *remap_validate_filter_args(acl_filter_rule **rule_pp, const char *const *argv, int argc, char *errStrBuf,
-                                       size_t errStrBufSize, ACLBehaviorPolicy behavior_policy);
-
-unsigned long remap_check_option(const char *const *argv, int argc, unsigned long findmode = 0, int *_ret_idx = nullptr,
-                                 const char **argptr = nullptr);
-
-bool remap_parse_config(const char *path, UrlRewrite *rewrite);
 
 using load_remap_file_func = void (*)(const char *, const char *);
 
