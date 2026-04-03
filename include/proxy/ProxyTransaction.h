@@ -146,6 +146,19 @@ public:
 
   void mark_as_tunnel_endpoint() override;
 
+  /** Emit a best-effort access log entry for a request that failed before
+   *  HttpSM creation.
+   *
+   * Call this when a malformed request is rejected at the protocol layer
+   * (e.g. during HTTP/2 or HTTP/3 header decoding) and no HttpSM was
+   * created.  The method populates a PreTransactionLogData from the
+   * session and the partially decoded request, then invokes Log::access.
+   *
+   * @param[in] request The decoded (possibly partial) request header.
+   * @param[in] protocol_str Protocol string for the log entry (e.g. "http/2").
+   */
+  void log_pre_transaction_access(HTTPHdr const *request, const char *protocol_str);
+
   /// Variables
   //
   HttpSessionAccept::Options upstream_outbound_options; // overwritable copy of options

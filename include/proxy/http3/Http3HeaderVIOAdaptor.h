@@ -27,10 +27,12 @@
 #include "proxy/hdrs/VersionConverter.h"
 #include "proxy/http3/Http3FrameHandler.h"
 
+class HQTransaction;
+
 class Http3HeaderVIOAdaptor : public Continuation, public Http3FrameHandler
 {
 public:
-  Http3HeaderVIOAdaptor(VIO *sink, HTTPType http_type, QPACK *qpack, uint64_t stream_id);
+  Http3HeaderVIOAdaptor(VIO *sink, HTTPType http_type, QPACK *qpack, uint64_t stream_id, HQTransaction *txn = nullptr);
   ~Http3HeaderVIOAdaptor();
 
   // Http3FrameHandler
@@ -41,10 +43,11 @@ public:
   int  event_handler(int event, Event *data);
 
 private:
-  VIO     *_sink_vio    = nullptr;
-  QPACK   *_qpack       = nullptr;
-  uint64_t _stream_id   = 0;
-  bool     _is_complete = false;
+  VIO           *_sink_vio    = nullptr;
+  QPACK         *_qpack       = nullptr;
+  uint64_t       _stream_id   = 0;
+  bool           _is_complete = false;
+  HQTransaction *_txn         = nullptr;
 
   HTTPHdr          _header; ///< HTTP header buffer for decoding
   VersionConverter _hvc;

@@ -430,7 +430,7 @@ Http3Transaction::Http3Transaction(Http3Session *session, QUICStreamVCAdapter::I
   } else {
     http_type = HTTPType::REQUEST;
   }
-  this->_header_handler = new Http3HeaderVIOAdaptor(&this->_read_vio, http_type, session->remote_qpack(), stream_id);
+  this->_header_handler = new Http3HeaderVIOAdaptor(&this->_read_vio, http_type, session->remote_qpack(), stream_id, this);
   this->_data_handler   = new Http3StreamDataVIOAdaptor(&this->_read_vio);
 
   this->_frame_dispatcher.add_handler(session->get_received_frame_counter());

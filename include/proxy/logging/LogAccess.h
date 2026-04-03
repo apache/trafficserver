@@ -25,12 +25,15 @@
 #pragma once
 
 #include "tscore/ink_align.h"
+#include "proxy/Milestones.h"
+#include "proxy/hdrs/HTTP.h"
 #include "proxy/logging/LogField.h"
 
-class HTTPHdr;
-class HttpSM;
+class TransactionLogData;
 class IpClass;
 union IpEndpoint;
+
+#include <string>
 
 /*-------------------------------------------------------------------------
   LogAccess
@@ -114,7 +117,16 @@ class LogAccess
 {
 public:
   LogAccess() = delete;
-  explicit LogAccess(HttpSM *sm);
+
+  /** Construct from a TransactionLogData instance.
+   *
+   * The caller retains ownership of @a data, which must outlive the
+   * synchronous Log::access() call that marshals this entry.
+   *
+   * @param[in] data Populated TransactionLogData (CompletedTransactionLogData
+   *                 or PreTransactionLogData).
+   */
+  explicit LogAccess(TransactionLogData &data);
 
   ~LogAccess() {}
   void init();
@@ -377,7 +389,7 @@ public:
   LogAccess &operator=(LogAccess &rhs) = delete; // or assignment
 
 private:
-  HttpSM *m_http_sm = nullptr;
+  TransactionLogData *m_data = nullptr;
 
   Arena m_arena;
 

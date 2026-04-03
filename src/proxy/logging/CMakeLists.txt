@@ -37,7 +37,7 @@ add_library(ts::logging ALIAS logging)
 
 target_include_directories(logging PRIVATE ${SWOC_INCLUDE_DIR})
 
-target_link_libraries(logging PUBLIC ts::inkevent ts::inkutils ts::http ts::hdrs ts::tscore yaml-cpp::yaml-cpp)
+target_link_libraries(logging PUBLIC ts::inkevent ts::inkutils ts::hdrs ts::tscore ts::configmanager yaml-cpp::yaml-cpp)
 
 if(BUILD_TESTING)
   add_executable(test_LogFieldFallback unit-tests/test_LogFieldFallback.cc)
@@ -54,6 +54,10 @@ if(BUILD_TESTING)
   target_compile_definitions(test_RolledLogDeleter PRIVATE TEST_LOG_UTILS)
   target_link_libraries(test_RolledLogDeleter tscore ts::inkevent records Catch2::Catch2WithMain)
   add_catch2_test(NAME test_RolledLogDeleter COMMAND test_RolledLogDeleter)
+
+  add_executable(test_LogAccess unit-tests/test_LogAccess.cc)
+  target_link_libraries(test_LogAccess ts::logging ts::configmanager ts::inkevent records Catch2::Catch2WithMain)
+  add_catch2_test(NAME test_LogAccess COMMAND test_LogAccess)
 endif()
 
 clang_tidy_check(logging)
