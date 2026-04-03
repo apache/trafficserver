@@ -23,6 +23,7 @@
 #pragma once
 
 #include <string>
+#include <string_view>
 #include <ctime>
 #include <vector>
 
@@ -141,8 +142,27 @@ public:
   }
 
   // noncopyable
-  Statement(const Statement &)      = delete;
-  void operator=(const Statement &) = delete;
+  Statement(const Statement &)                          = delete;
+  void                     operator=(const Statement &) = delete;
+  virtual std::string_view type_name() const            = 0;
+
+  // Returns a human-readable representation of this statement
+  virtual std::string
+  debug_string() const
+  {
+    return std::string(type_name());
+  }
+
+  // Comparison interface - compares this statement with another
+  virtual bool
+  equals(const Statement *other) const
+  {
+    if (!other || type_name() != other->type_name()) {
+      return false;
+    }
+
+    return _hook == other->_hook && _rsrc == other->_rsrc;
+  }
 
   // Which hook are we adding this statement to?
   bool set_hook(TSHttpHookID hook);
@@ -163,6 +183,12 @@ public:
   void append(Statement *stmt);
 
   ResourceIDs get_resource_ids() const;
+
+  Statement *
+  next() const
+  {
+    return _next;
+  }
 
   virtual void
   initialize(Parser &)

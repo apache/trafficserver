@@ -30,6 +30,7 @@
 #include "statement.h"
 #include "matcher.h"
 #include "parser.h"
+#include "types.h"
 
 ///////////////////////////////////////////////////////////////////////////////
 // Base class for all Conditions (this is also the interface)
@@ -44,6 +45,43 @@ public:
   // noncopyable
   Condition(const Condition &)      = delete;
   void operator=(const Condition &) = delete;
+
+  bool equals(const Statement *other) const override;
+
+  std::string
+  debug_string() const override
+  {
+    std::string result = std::string(type_name());
+    if (!_qualifier.empty()) {
+      result += " " + _qualifier;
+    }
+    if (_matcher) {
+      const char *op_str = "?";
+
+      switch (_cond_op) {
+      case MATCH_EQUAL:
+        op_str = "=";
+        break;
+      case MATCH_LESS_THEN:
+        op_str = "<";
+        break;
+      case MATCH_GREATER_THEN:
+        op_str = ">";
+        break;
+      case MATCH_REGULAR_EXPRESSION:
+        op_str = "~";
+        break;
+      case MATCH_IP_RANGES:
+        op_str = "ip_range";
+        break;
+      default:
+        break;
+      }
+      result += " ";
+      result += op_str;
+    }
+    return result;
+  }
 
   // Inline this, it's critical for speed (and only used twice)
   bool
@@ -120,6 +158,7 @@ public:
 
   // Virtual methods, has to be implemented by each conditional;
   void         initialize(Parser &p) override;
+  virtual void initialize(const hrw::ConditionSpec &spec);
   virtual void append_value(std::string &s, const Resources &res) = 0;
 
 protected:
