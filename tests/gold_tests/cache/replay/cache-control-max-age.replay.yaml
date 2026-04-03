@@ -141,6 +141,9 @@ sessions:
   - all: { headers: { fields: [[ uuid, 2 ]]}}
     <<: *request_for_positive_max_age
 
+    proxy-request:
+      expect: absent
+
     # This should not go through to the server. Return a non-200 response to
     # verify it is served from cache.
     server-response:
@@ -297,6 +300,9 @@ sessions:
       # Add a delay so ATS has time to finish any caching IO for the previous
       # transaction.
       delay: 100ms
+
+    proxy-request:
+      expect: absent
 
     # This should be replied to out of the cache, therefore this 400 response
     # should not make it to the client.

@@ -207,6 +207,9 @@ sessions:
               - [Host, example.com]
               - [X-Request, fourth-verify]
 
+        proxy-request:
+          expect: absent
+
         # Server should NOT receive this request (should be cache hit)
         server-response:
           status: 400

@@ -14,6 +14,8 @@ sessions:
         fields:
         - [ Host, "base.ex" ]
         - [ UUID , "bravo clean" ]
+    proxy-request:
+      expect: absent
     proxy-response:
       status: 200
 
@@ -25,6 +27,8 @@ sessions:
         - [ Host, "base.ex" ]
         - [ UUID , "bravo auth" ]
         - [ Authorization , "alpha" ]
+    proxy-request:
+      expect: absent
     proxy-response:
       status: 200
 
@@ -35,5 +39,7 @@ sessions:
         fields:
         - [ Host, "base.ex" ]
         - [ UUID , "bravo propfind" ]
+    proxy-request:
+      expect: absent
     proxy-response:
       status: 418

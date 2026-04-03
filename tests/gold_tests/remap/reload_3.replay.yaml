@@ -35,5 +35,8 @@ sessions:
         fields:
         - [ Host, charlie.ex ]
 
+    proxy-request:
+      expect: absent
+
     proxy-response:
       status: 404

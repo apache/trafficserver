@@ -75,6 +75,9 @@ sessions:
         - [ Content-Length, 0 ]
         - [ x-debug, x-cache ]
 
+    proxy-request:
+      expect: absent
+
     # should no request to origin server
     server-response:
       status: 503
