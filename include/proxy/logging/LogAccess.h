@@ -306,6 +306,7 @@ public:
   int marshal_milestone_diff(TSMilestonesType ms1, TSMilestonesType ms2, char *buf);
   int marshal_milestones_csv(char *buf);
 
+  bool has_http_header_field(LogField::Container container, const char *field) const;
   void set_http_header_field(LogField::Container container, char *field, char *buf, int len);
 
   // Plugin
@@ -405,8 +406,9 @@ private:
   char       *m_cache_lookup_url_canon_str        = nullptr;
   int         m_cache_lookup_url_canon_len        = 0;
 
-  void validate_unmapped_url();
-  void validate_unmapped_url_path();
+  HTTPHdr *header_for_container(LogField::Container container) const;
+  void     validate_unmapped_url();
+  void     validate_unmapped_url_path();
 
   void validate_lookup_url();
 };

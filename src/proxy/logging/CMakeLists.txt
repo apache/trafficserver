@@ -26,6 +26,7 @@ add_library(
   LogFile.cc
   LogFilter.cc
   LogFormat.cc
+  LogFieldFallback.cc
   LogObject.cc
   LogUtils.cc
   RolledLogDeleter.cc
@@ -39,6 +40,11 @@ target_include_directories(logging PRIVATE ${SWOC_INCLUDE_DIR})
 target_link_libraries(logging PUBLIC ts::inkevent ts::inkutils ts::http ts::hdrs ts::tscore yaml-cpp::yaml-cpp)
 
 if(BUILD_TESTING)
+  add_executable(test_LogFieldFallback unit-tests/test_LogFieldFallback.cc)
+  target_include_directories(test_LogFieldFallback PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+  target_link_libraries(test_LogFieldFallback PRIVATE ts::logging Catch2::Catch2WithMain)
+  add_catch2_test(NAME test_LogFieldFallback COMMAND test_LogFieldFallback)
+
   add_executable(test_LogUtils LogUtils.cc unit-tests/test_LogUtils.cc)
   target_compile_definitions(test_LogUtils PRIVATE TEST_LOG_UTILS)
   target_link_libraries(test_LogUtils tscore ts::inkevent records Catch2::Catch2WithMain)

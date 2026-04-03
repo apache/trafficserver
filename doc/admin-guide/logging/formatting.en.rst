@@ -314,8 +314,54 @@ prior to the log field's name, as so::
     Format = '%<{User-agent}cqh>'
 
 The above would insert the User Agent string from the client request headers
-into your log entry (or a blank string if no such header was present, or it did
-not contain a value).
+into your log entry (or ``-`` if no such header was present).
+
+Header fields can also be chained with a fallback operator, ``??``, when you want
+the log to use the first header that exists among n headers. For example::
+
+    Format = '%<{x-primary-id}cqh??{x-secondary-id}cqh??{x-tertiary-id}cqh>'
+
+|TS| evaluates the candidates from left to right and logs the first header that
+exists. If none of the headers exist, |TS| logs ``-`` by default. A header that
+exists but has an empty value is considered present, so |TS| logs the empty
+value instead of falling back. So in the example above, the value of
+x-primary-id of the client request is logged if it exists, otherwise the value
+of x-secondary-id is logged if it exists, otherwise ``-`` is logged if neither
+of the headers is present.
+
+The final log field in the chain can be a non-header log field whose value
+specifies the final fallback in the chain. This symbol is used only after all
+the previous header candidates in the chain are missing. For example::
+
+    Format = '%<{x-remote-ip}cqh??chi>'
+
+In this case, the value of the x-remote-ip HTTP header field is logged if that
+client request header exists. Otherwise, |TS| logs the value of ``chi``, the IP
+address of the client host.
+
+The final non-HTTP header log field must be the last term in the chain, so
+forms like ``%<chi??{x-id}cqh>`` are invalid.
+
+Alternatively, you can provide an explicit quoted default literal as the final
+term in the chain to use instead of the default ``-`` literal::
+
+    Format = '%<{x-primary-id}cqh??{x-secondary-id}cqh??"missing-id">'
+
+If none of the headers exist, |TS| logs the default literal instead,
+``missing-id`` in this case. The default literal must be quoted and must be the
+last term in the chain. Also, final non-header log fields and final default
+string literals cannot be used together. Thus forms like
+'%<{x-remote-ip}cqh??chi??"missing-id">' are invalid.
+
+
+Slices apply to each candidate in the fallback chain individually::
+
+    Format = '%<{x-primary-id}cqh[0:8]??{x-secondary-id}cqh[0:16]>'
+
+This is also true of non-header log fields. That is, if the final log field
+supports slicing, its own slice is preserved as usual::
+
+    Format = '%<{x-remote-ip}cqh??pqup[0:8]>'
 
 ===== ====================== ==================================================
 Field Source                 Description
