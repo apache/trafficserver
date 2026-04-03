@@ -62,6 +62,9 @@ extern "C" {
 // TLS hooks can only be global
 #define TS_LUA_FUNCTION_G_VCONN_START "do_global_vconn_start"
 
+// Lifecycle hooks
+#define TS_LUA_FUNCTION_G_SHUT_DOWN "do_global_shutdown"
+
 #define TS_LUA_DEBUG_TAG "ts_lua"
 
 #define TS_LUA_EVENT_COROUTINE_CONT 20000

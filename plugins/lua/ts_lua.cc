@@ -827,6 +827,47 @@ globalHookHandler(TSCont contp, TSEvent event ATS_UNUSED, void *edata)
   return 0;
 }
 
+static int
+shutdownHookHandler(TSCont contp, TSEvent /* event ATS_UNUSED */, void * /* edata ATS_UNUSED */)
+{
+  ts_lua_instance_conf *const conf = (ts_lua_instance_conf *)TSContDataGet(contp);
+
+  for (int index = 0; index < conf->states; ++index) {
+    ts_lua_main_ctx *const main_ctx = &ts_lua_g_main_ctx_array[index];
+
+    TSMutexLock(main_ctx->mutexp);
+
+    lua_State *const L = main_ctx->lua;
+
+    // Restore the conf-specific global table so lua_getglobal resolves
+    // functions from the loaded script, matching ts_lua_reload_module.
+    lua_pushlightuserdata(L, conf);
+    lua_rawget(L, LUA_REGISTRYINDEX);
+    lua_replace(L, LUA_GLOBALSINDEX);
+
+    lua_getglobal(L, TS_LUA_FUNCTION_G_SHUT_DOWN);
+
+    if (lua_type(L, -1) == LUA_TFUNCTION) {
+      if (lua_pcall(L, 0, 0, 0) != 0) {
+        TSError("[ts_lua][%s] lua_pcall failed for script '%s' state %d: %s", __FUNCTION__, conf->script, index,
+                lua_tostring(L, -1));
+        lua_pop(L, 1);
+      }
+    } else {
+      lua_pop(L, 1);
+    }
+
+    // Restore LUA_GLOBALSINDEX to an empty table, matching the resting state
+    // established by ts_lua_add_module and ts_lua_reload_module.
+    lua_newtable(L);
+    lua_replace(L, LUA_GLOBALSINDEX);
+
+    TSMutexUnlock(main_ctx->mutexp);
+  }
+
+  return 0;
+}
+
 void
 TSPluginInit(int argc, const char *argv[])
 {
@@ -1046,7 +1087,7 @@ TSPluginInit(int argc, const char *argv[])
   }
   TSContDataSet(vconn_contp, conf);
 
-  // adding hook based on whther the lua global vconn function exists
+  // adding hook based on whether the lua global vconn function exists
   ts_lua_vconn_ctx *vconn_ctx = ts_lua_create_vconn_ctx(main_ctx, conf);
   lua_State        *vl        = vconn_ctx->lua;
 
@@ -1058,6 +1099,30 @@ TSPluginInit(int argc, const char *argv[])
   lua_pop(vl, 1);
 
   ts_lua_destroy_vconn_ctx(vconn_ctx);
+
+  // adding shutdown hook if the lua global shutdown function exists
+  ts_lua_main_ctx *shutdown_main_ctx = &ts_lua_g_main_ctx_array[0];
+  ts_lua_http_ctx *shutdown_http_ctx = ts_lua_create_http_ctx(shutdown_main_ctx, conf);
+  lua_State       *sl                = shutdown_http_ctx->cinfo.routine.lua;
+
+  lua_getglobal(sl, TS_LUA_FUNCTION_G_SHUT_DOWN);
+  if (lua_type(sl, -1) == LUA_TFUNCTION) {
+    TSMutex shutdown_mutex = TSMutexCreate();
+    TSCont  shutdown_contp = TSContCreate(shutdownHookHandler, shutdown_mutex);
+    if (!shutdown_contp) {
+      TSError("[ts_lua][%s] could not create shutdown continuation", __FUNCTION__);
+      if (shutdown_mutex) {
+        TSMutexDestroy(shutdown_mutex);
+      }
+    } else {
+      TSContDataSet(shutdown_contp, conf);
+      TSLifecycleHookAdd(TS_LIFECYCLE_SHUTDOWN_HOOK, shutdown_contp);
+      Dbg(dbg_ctl, "shutdown_hook added");
+    }
+  }
+  lua_pop(sl, 1);
+
+  ts_lua_destroy_http_ctx(shutdown_http_ctx);
 
   // support for reload as global plugin
   if (reload) {
