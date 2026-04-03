@@ -33,6 +33,8 @@
 #include "proxy/http2/Http2DebugNames.h"
 #include "proxy/http/HttpDebugNames.h"
 #include "proxy/http/HttpSM.h"
+#include "proxy/logging/Log.h"
+#include "proxy/logging/LogAccess.h"
 
 #include "iocore/net/TLSSNISupport.h"
 
@@ -75,6 +77,132 @@ const int buffer_size_index[HTTP2_FRAME_TYPE_MAX] = {
   -1,                    // HTTP2_FRAME_TYPE_WINDOW_UPDATE
   BUFFER_SIZE_INDEX_16K, // HTTP2_FRAME_TYPE_CONTINUATION
 };
+
+/** Fetch a header field value from a decoded HTTP/2 request.
+ *
+ * @param[in] hdr The decoded request header block to inspect.
+ * @param[in] name The field name to look up.
+ * @return The field value, or an empty view if the field is absent.
+ */
+std::string_view
+get_header_field_value(HTTPHdr const &hdr, std::string_view name)
+{
+  if (auto const *field = hdr.field_find(name); field != nullptr) {
+    return field->value_get();
+  }
+
+  return {};
+}
+
+/** Build a best-effort request target for access logging.
+ *
+ * @param[in] method The decoded request method or :method pseudo-header.
+ * @param[in] scheme The decoded :scheme pseudo-header, if present.
+ * @param[in] authority The decoded :authority pseudo-header, if present.
+ * @param[in] path The decoded :path pseudo-header, if present.
+ * @return A synthesized request target suitable for transaction logging.
+ */
+std::string
+synthesize_client_request_target(std::string_view method, std::string_view scheme, std::string_view authority,
+                                 std::string_view path)
+{
+  if (method == static_cast<std::string_view>(HTTP_METHOD_CONNECT)) {
+    if (!authority.empty()) {
+      return std::string(authority);
+    }
+    if (!path.empty()) {
+      return std::string(path);
+    }
+    return {};
+  }
+
+  if (!scheme.empty() && !authority.empty()) {
+    std::string url;
+    url.reserve(scheme.size() + authority.size() + path.size() + 4);
+    url.append(scheme);
+    url.append("://");
+    url.append(authority);
+    if (!path.empty()) {
+      url.append(path);
+    } else {
+      url.push_back('/');
+    }
+    return url;
+  }
+
+  if (!path.empty()) {
+    return std::string(path);
+  }
+
+  if (!authority.empty()) {
+    return std::string(authority);
+  }
+
+  return {};
+}
+
+/** Emit a best-effort access log entry for a malformed decoded request.
+ *
+ * This is used when the request is rejected before stream processing reaches
+ * the point of creating an @c HttpSM.
+ *
+ * @param[in] stream The stream whose decoded request headers were rejected.
+ * @return None.
+ */
+void
+log_malformed_request_access(Http2Stream *stream)
+{
+  if (stream == nullptr || stream->get_sm() != nullptr || stream->trailing_header_is_possible() ||
+      stream->is_outbound_connection()) {
+    return;
+  }
+
+  auto const *request = stream->get_receive_header();
+  if (request == nullptr || !request->valid() || request->type_get() != HTTPType::REQUEST) {
+    return;
+  }
+
+  auto *proxy_session = stream->get_proxy_ssn();
+  if (proxy_session == nullptr) {
+    return;
+  }
+
+  LogAccess::PreTransactionLogData data;
+  data.client_request.create(HTTPType::REQUEST, request->version_get());
+  data.client_request.copy(request);
+  data.has_client_request       = true;
+  data.client_connection_is_ssl = proxy_session->ssl() != nullptr;
+
+  auto const method    = get_header_field_value(*request, PSEUDO_HEADER_METHOD);
+  auto const scheme    = get_header_field_value(*request, PSEUDO_HEADER_SCHEME);
+  auto const authority = get_header_field_value(*request, PSEUDO_HEADER_AUTHORITY);
+  auto const path      = get_header_field_value(*request, PSEUDO_HEADER_PATH);
+
+  if (!method.empty()) {
+    data.method.assign(method.data(), method.size());
+  } else {
+    auto const method_value = const_cast<HTTPHdr *>(request)->method_get();
+    data.method.assign(method_value.data(), method_value.size());
+  }
+
+  data.scheme.assign(scheme.data(), scheme.size());
+  data.authority.assign(authority.data(), authority.size());
+  data.path.assign(path.data(), path.size());
+  data.url = synthesize_client_request_target(data.method, data.scheme, data.authority, data.path);
+
+  ats_ip_copy(reinterpret_cast<sockaddr *>(&data.client_addr), proxy_session->get_remote_addr());
+  ats_ip_copy(reinterpret_cast<sockaddr *>(&data.local_addr), proxy_session->get_local_addr());
+
+  ink_hrtime const now                              = ink_get_hrtime();
+  data.milestones[TS_MILESTONE_SM_START]            = now;
+  data.milestones[TS_MILESTONE_UA_BEGIN]            = now;
+  data.milestones[TS_MILESTONE_UA_FIRST_READ]       = now;
+  data.milestones[TS_MILESTONE_UA_READ_HEADER_DONE] = now;
+  data.milestones[TS_MILESTONE_SM_FINISH]           = now;
+
+  LogAccess access(data);
+  Log::access(&access);
+}
 
 inline unsigned
 read_rcv_buffer(char *buf, size_t bufsize, unsigned &nbytes, const Http2Frame &frame)
@@ -496,6 +624,7 @@ Http2ConnectionState::rcv_headers_frame(const Http2Frame &frame)
         return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_ENHANCE_YOUR_CALM,
                           "recv headers enhance your calm");
       } else {
+        log_malformed_request_access(stream);
         return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR,
                           "recv headers malformed request");
       }
@@ -1108,6 +1237,7 @@ Http2ConnectionState::rcv_continuation_frame(const Http2Frame &frame)
         return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_ENHANCE_YOUR_CALM,
                           "continuation enhance your calm");
       } else {
+        log_malformed_request_access(stream);
         return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR,
                           "continuation malformed request");
       }

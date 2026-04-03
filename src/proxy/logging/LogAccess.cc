@@ -67,16 +67,74 @@ DbgCtl dbg_ctl_log_unmarshal_data{"log-unmarshal-data"}; // Error in txn data wh
 
 LogAccess::LogAccess(HttpSM *sm) : m_http_sm(sm)
 {
-  ink_assert(m_http_sm != nullptr);
+  ink_assert(has_http_sm());
 }
 
-/*-------------------------------------------------------------------------
-  LogAccess::init
-  -------------------------------------------------------------------------*/
+LogAccess::LogAccess(PreTransactionLogData const &data) : m_pre_transaction_log_data(&data) {}
+
+bool
+LogAccess::has_http_sm() const
+{
+  return m_http_sm != nullptr;
+}
+
+bool
+LogAccess::is_pre_transaction_logging() const
+{
+  return m_pre_transaction_log_data != nullptr;
+}
+
+LogAccess::PreTransactionLogData const *
+LogAccess::get_pre_transaction_log_data() const
+{
+  return m_pre_transaction_log_data;
+}
+
+TransactionMilestones const &
+LogAccess::get_milestones() const
+{
+  if (has_http_sm()) {
+    return m_http_sm->milestones;
+  }
+
+  ink_assert(is_pre_transaction_logging());
+  return m_pre_transaction_log_data->milestones;
+}
 
 void
 LogAccess::init()
 {
+  if (is_pre_transaction_logging()) {
+    auto const *pre = this->get_pre_transaction_log_data();
+    ink_assert(pre != nullptr);
+
+    if (pre->has_client_request && pre->client_request.valid()) {
+      m_client_request = const_cast<HTTPHdr *>(&m_pre_transaction_log_data->client_request);
+    }
+
+    if (!pre->url.empty()) {
+      m_client_req_url_len = pre->url.size();
+      m_client_req_url_str = m_arena.str_alloc(m_client_req_url_len + 1);
+      memcpy(m_client_req_url_str, pre->url.data(), m_client_req_url_len);
+      m_client_req_url_str[m_client_req_url_len] = '\0';
+
+      m_client_req_url_canon_str =
+        Encoding::escapify_url(&m_arena, m_client_req_url_str, m_client_req_url_len, &m_client_req_url_canon_len);
+    }
+
+    if (!pre->path.empty()) {
+      m_client_req_url_path_len = pre->path.size();
+      char *path_copy           = m_arena.str_alloc(m_client_req_url_path_len + 1);
+      memcpy(path_copy, pre->path.data(), m_client_req_url_path_len);
+      path_copy[m_client_req_url_path_len] = '\0';
+      m_client_req_url_path_str            = path_copy;
+    }
+
+    return;
+  }
+
+  ink_assert(has_http_sm());
+
   HttpTransact::HeaderInfo *hdr = &(m_http_sm->t_state.hdr_info);
 
   if (hdr->client_request.valid()) {
@@ -1460,7 +1518,7 @@ int
 LogAccess::marshal_plugin_identity_id(char *buf)
 {
   if (buf) {
-    marshal_int(buf, m_http_sm->plugin_id);
+    marshal_int(buf, has_http_sm() ? m_http_sm->plugin_id : 0);
   }
   return INK_MIN_ALIGN;
 }
@@ -1469,7 +1527,7 @@ int
 LogAccess::marshal_plugin_identity_tag(char *buf)
 {
   int         len = INK_MIN_ALIGN;
-  const char *tag = m_http_sm->plugin_tag;
+  const char *tag = has_http_sm() ? m_http_sm->plugin_tag : nullptr;
 
   if (!tag) {
     tag = "*";
@@ -1487,25 +1545,40 @@ LogAccess::marshal_plugin_identity_tag(char *buf)
 int
 LogAccess::marshal_client_host_ip(char *buf)
 {
-  return marshal_ip(buf, &m_http_sm->t_state.effective_client_addr.sa);
+  if (has_http_sm()) {
+    return marshal_ip(buf, &m_http_sm->t_state.effective_client_addr.sa);
+  }
+
+  auto const *pre = this->get_pre_transaction_log_data();
+  return marshal_ip(buf, pre != nullptr ? reinterpret_cast<sockaddr const *>(&pre->client_addr) : nullptr);
 }
 
 int
 LogAccess::marshal_remote_host_ip(char *buf)
 {
-  return marshal_ip(buf, &m_http_sm->t_state.client_info.src_addr.sa);
+  if (has_http_sm()) {
+    return marshal_ip(buf, &m_http_sm->t_state.client_info.src_addr.sa);
+  }
+
+  auto const *pre = this->get_pre_transaction_log_data();
+  return marshal_ip(buf, pre != nullptr ? reinterpret_cast<sockaddr const *>(&pre->client_addr) : nullptr);
 }
 
 int
 LogAccess::marshal_host_interface_ip(char *buf)
 {
-  return marshal_ip(buf, &m_http_sm->t_state.client_info.dst_addr.sa);
+  if (has_http_sm()) {
+    return marshal_ip(buf, &m_http_sm->t_state.client_info.dst_addr.sa);
+  }
+
+  auto const *pre = this->get_pre_transaction_log_data();
+  return marshal_ip(buf, pre != nullptr ? reinterpret_cast<sockaddr const *>(&pre->local_addr) : nullptr);
 }
 
 int
 LogAccess::marshal_client_host_ip_verified(char *buf)
 {
-  if (m_http_sm) {
+  if (has_http_sm()) {
     auto txn = m_http_sm->get_ua_txn();
     if (txn) {
       sockaddr const *addr = txn->get_verified_client_addr();
@@ -1514,6 +1587,11 @@ LogAccess::marshal_client_host_ip_verified(char *buf)
       }
     }
   }
+
+  if (auto const *pre = this->get_pre_transaction_log_data(); pre != nullptr && pre->has_verified_client_addr) {
+    return marshal_ip(buf, reinterpret_cast<sockaddr const *>(&pre->verified_client_addr));
+  }
+
   return marshal_client_host_ip(buf);
 }
 
@@ -1548,7 +1626,7 @@ LogAccess::marshal_client_sni_server_name(char *buf)
   //
   std::string_view server_name = "";
 
-  if (m_http_sm) {
+  if (has_http_sm()) {
     auto txn = m_http_sm->get_ua_txn();
     if (txn) {
       auto ssn = txn->get_proxy_ssn();
@@ -1576,7 +1654,7 @@ int
 LogAccess::marshal_client_provided_cert(char *buf)
 {
   int provided_cert = 0;
-  if (m_http_sm) {
+  if (has_http_sm()) {
     auto txn = m_http_sm->get_ua_txn();
     if (txn) {
       auto ssn = txn->get_proxy_ssn();
@@ -1600,7 +1678,7 @@ int
 LogAccess::marshal_proxy_provided_cert(char *buf)
 {
   int provided_cert = 0;
-  if (m_http_sm) {
+  if (has_http_sm()) {
     provided_cert = m_http_sm->server_connection_provided_cert;
   }
   if (buf) {
@@ -1645,7 +1723,7 @@ LogAccess::marshal_proxy_protocol_version(char *buf)
   const char *version_str = nullptr;
   int         len         = INK_MIN_ALIGN;
 
-  if (m_http_sm) {
+  if (has_http_sm()) {
     ProxyProtocolVersion ver = m_http_sm->t_state.pp_info.version;
     switch (ver) {
     case ProxyProtocolVersion::V1:
@@ -1674,7 +1752,7 @@ int
 LogAccess::marshal_proxy_protocol_src_ip(char *buf)
 {
   sockaddr const *ip = nullptr;
-  if (m_http_sm && m_http_sm->t_state.pp_info.version != ProxyProtocolVersion::UNDEFINED) {
+  if (has_http_sm() && m_http_sm->t_state.pp_info.version != ProxyProtocolVersion::UNDEFINED) {
     ip = &m_http_sm->t_state.pp_info.src_addr.sa;
   }
   return marshal_ip(buf, ip);
@@ -1686,7 +1764,7 @@ int
 LogAccess::marshal_proxy_protocol_dst_ip(char *buf)
 {
   sockaddr const *ip = nullptr;
-  if (m_http_sm && m_http_sm->t_state.pp_info.version != ProxyProtocolVersion::UNDEFINED) {
+  if (has_http_sm() && m_http_sm->t_state.pp_info.version != ProxyProtocolVersion::UNDEFINED) {
     ip = &m_http_sm->t_state.pp_info.dst_addr.sa;
   }
   return marshal_ip(buf, ip);
@@ -1697,7 +1775,7 @@ LogAccess::marshal_proxy_protocol_authority(char *buf)
 {
   int len = INK_MIN_ALIGN;
 
-  if (m_http_sm) {
+  if (has_http_sm()) {
     if (auto authority = m_http_sm->t_state.pp_info.get_tlv(PP2_TYPE_AUTHORITY)) {
       len = padded_length(authority->size() + 1);
       if (buf) {
@@ -1714,7 +1792,7 @@ LogAccess::marshal_proxy_protocol_tls_cipher(char *buf)
 {
   int len = INK_MIN_ALIGN;
 
-  if (m_http_sm) {
+  if (has_http_sm()) {
     if (auto cipher = m_http_sm->t_state.pp_info.get_tlv_ssl_cipher(); cipher) {
       len = padded_length(cipher->size() + 1);
       if (buf) {
@@ -1735,7 +1813,7 @@ LogAccess::marshal_proxy_protocol_tls_version(char *buf)
 {
   int len = INK_MIN_ALIGN;
 
-  if (m_http_sm) {
+  if (has_http_sm()) {
     if (auto version = m_http_sm->t_state.pp_info.get_tlv_ssl_version(); version) {
       len = padded_length(version->size() + 1);
       if (buf) {
@@ -1756,7 +1834,7 @@ LogAccess::marshal_proxy_protocol_tls_group(char *buf)
 {
   int len = INK_MIN_ALIGN;
 
-  if (m_http_sm) {
+  if (has_http_sm()) {
     if (auto group = m_http_sm->t_state.pp_info.get_tlv_ssl_group(); group) {
       len = padded_length(group->size() + 1);
       if (buf) {
@@ -1777,12 +1855,19 @@ LogAccess::marshal_proxy_protocol_tls_group(char *buf)
 int
 LogAccess::marshal_client_host_port(char *buf)
 {
-  if (m_http_sm) {
-    auto txn = m_http_sm->get_ua_txn();
-    if (txn) {
-      uint16_t port = txn->get_client_port();
-      marshal_int(buf, port);
+  if (buf) {
+    uint16_t port = 0;
+
+    if (has_http_sm()) {
+      auto txn = m_http_sm->get_ua_txn();
+      if (txn) {
+        port = txn->get_client_port();
+      }
+    } else if (auto const *pre = this->get_pre_transaction_log_data(); pre != nullptr) {
+      port = ats_ip_port_host_order(reinterpret_cast<sockaddr const *>(&pre->client_addr));
     }
+
+    marshal_int(buf, port);
   }
   return INK_MIN_ALIGN;
 }
@@ -1791,7 +1876,12 @@ int
 LogAccess::marshal_remote_host_port(char *buf)
 {
   if (buf) {
-    uint16_t port = m_http_sm->t_state.client_info.src_addr.host_order_port();
+    uint16_t port = 0;
+    if (has_http_sm()) {
+      port = m_http_sm->t_state.client_info.src_addr.host_order_port();
+    } else if (auto const *pre = this->get_pre_transaction_log_data(); pre != nullptr) {
+      port = ats_ip_port_host_order(reinterpret_cast<sockaddr const *>(&pre->client_addr));
+    }
     marshal_int(buf, port);
   }
   return INK_MIN_ALIGN;
@@ -1828,6 +1918,11 @@ LogAccess::marshal_client_auth_user_name(char *buf)
 void
 LogAccess::validate_unmapped_url()
 {
+  if (!has_http_sm()) {
+    m_client_req_unmapped_url_canon_str = INVALID_STR;
+    return;
+  }
+
   if (m_client_req_unmapped_url_canon_str == nullptr) {
     // prevent multiple validations
     m_client_req_unmapped_url_canon_str = INVALID_STR;
@@ -1890,6 +1985,11 @@ LogAccess::validate_unmapped_url_path()
 void
 LogAccess::validate_lookup_url()
 {
+  if (!has_http_sm()) {
+    m_cache_lookup_url_canon_str = INVALID_STR;
+    return;
+  }
+
   if (m_cache_lookup_url_canon_str == nullptr) {
     // prevent multiple validations
     m_cache_lookup_url_canon_str = INVALID_STR;
@@ -1954,15 +2054,21 @@ LogAccess::marshal_client_req_http_method(char *buf)
 
   if (m_client_request) {
     str = m_client_request->method_get();
+  }
 
-    // calculate the padded length only if the actual length
-    // is not zero. We don't want the padded length to be zero
-    // because marshal_mem should write the DEFAULT_STR to the
-    // buffer if str is nil, and we need room for this.
-    //
-    if (!str.empty()) {
-      plen = padded_length(static_cast<int>(str.length()) + 1); // +1 for trailing 0
+  if (str.empty()) {
+    if (auto const *pre = m_pre_transaction_log_data; pre != nullptr) {
+      str = pre->method;
     }
+  }
+
+  // calculate the padded length only if the actual length
+  // is not zero. We don't want the padded length to be zero
+  // because marshal_mem should write the DEFAULT_STR to the
+  // buffer if str is nil, and we need room for this.
+  //
+  if (!str.empty()) {
+    plen = padded_length(static_cast<int>(str.length()) + 1); // +1 for trailing 0
   }
 
   if (buf) {
@@ -2075,10 +2181,29 @@ LogAccess::marshal_client_req_url_path(char *buf)
 int
 LogAccess::marshal_client_req_url_scheme(char *buf)
 {
-  int         scheme = m_http_sm->t_state.orig_scheme;
+  int         scheme = -1;
   const char *str    = nullptr;
-  int         alen;
-  int         plen = INK_MIN_ALIGN;
+  int         alen   = 0;
+  int         plen   = INK_MIN_ALIGN;
+
+  if (!has_http_sm()) {
+    if (auto const *pre = this->get_pre_transaction_log_data(); pre != nullptr && !pre->scheme.empty()) {
+      str  = pre->scheme.c_str();
+      alen = pre->scheme.size();
+    } else {
+      str  = DEFAULT_STR;
+      alen = DEFAULT_STR_LEN;
+    }
+    plen = padded_length(alen + 1);
+
+    if (buf) {
+      marshal_mem(buf, str, alen, plen);
+    }
+
+    return plen;
+  }
+
+  scheme = m_http_sm->t_state.orig_scheme;
 
   // If the transaction aborts very early, the scheme may not be set, or so ASAN reports.
   if (scheme >= 0) {
@@ -2124,8 +2249,15 @@ LogAccess::marshal_client_req_http_version(char *buf)
 int
 LogAccess::marshal_client_req_protocol_version(char *buf)
 {
-  const char *protocol_str = m_http_sm->get_user_agent().get_client_protocol();
-  int         len          = LogAccess::padded_strlen(protocol_str);
+  const char *protocol_str = DEFAULT_STR;
+
+  if (has_http_sm()) {
+    protocol_str = m_http_sm->get_user_agent().get_client_protocol();
+  } else if (auto const *pre = this->get_pre_transaction_log_data(); pre != nullptr && !pre->client_protocol.empty()) {
+    protocol_str = pre->client_protocol.c_str();
+  }
+
+  int len = LogAccess::padded_strlen(protocol_str);
 
   // Set major & minor versions when protocol_str is not "http/2".
   if (::strlen(protocol_str) == 4 && strncmp("http", protocol_str, 4) == 0) {
@@ -2156,7 +2288,7 @@ LogAccess::marshal_client_req_protocol_version(char *buf)
 int
 LogAccess::marshal_server_req_protocol_version(char *buf)
 {
-  const char *protocol_str = m_http_sm->server_protocol;
+  const char *protocol_str = has_http_sm() ? m_http_sm->server_protocol : DEFAULT_STR;
   int         len          = LogAccess::padded_strlen(protocol_str);
 
   // Set major & minor versions when protocol_str is not "http/2".
@@ -2207,7 +2339,11 @@ LogAccess::marshal_client_req_content_len(char *buf)
   if (buf) {
     int64_t len = 0;
     if (m_client_request) {
-      len = m_http_sm->client_request_body_bytes;
+      if (has_http_sm()) {
+        len = m_http_sm->client_request_body_bytes;
+      } else if (auto const *pre = this->get_pre_transaction_log_data(); pre != nullptr) {
+        len = pre->client_request_body_bytes;
+      }
     }
     marshal_int(buf, len);
   }
@@ -2220,7 +2356,12 @@ LogAccess::marshal_client_req_squid_len(char *buf)
   if (buf) {
     int64_t val = 0;
     if (m_client_request) {
-      val = m_client_request->length_get() + m_http_sm->client_request_body_bytes;
+      val = m_client_request->length_get();
+      if (has_http_sm()) {
+        val += m_http_sm->client_request_body_bytes;
+      } else if (auto const *pre = this->get_pre_transaction_log_data(); pre != nullptr) {
+        val += pre->client_request_body_bytes;
+      }
     }
     marshal_int(buf, val);
   }
@@ -2234,7 +2375,13 @@ int
 LogAccess::marshal_client_req_tcp_reused(char *buf)
 {
   if (buf) {
-    marshal_int(buf, m_http_sm->get_user_agent().get_client_tcp_reused() ? 1 : 0);
+    int64_t val = 0;
+    if (has_http_sm()) {
+      val = m_http_sm->get_user_agent().get_client_tcp_reused() ? 1 : 0;
+    } else if (auto const *pre = this->get_pre_transaction_log_data(); pre != nullptr) {
+      val = pre->client_tcp_reused ? 1 : 0;
+    }
+    marshal_int(buf, val);
   }
   return INK_MIN_ALIGN;
 }
@@ -2243,7 +2390,13 @@ int
 LogAccess::marshal_client_req_is_ssl(char *buf)
 {
   if (buf) {
-    marshal_int(buf, m_http_sm->get_user_agent().get_client_connection_is_ssl() ? 1 : 0);
+    int64_t val = 0;
+    if (has_http_sm()) {
+      val = m_http_sm->get_user_agent().get_client_connection_is_ssl() ? 1 : 0;
+    } else if (auto const *pre = this->get_pre_transaction_log_data(); pre != nullptr) {
+      val = pre->client_connection_is_ssl ? 1 : 0;
+    }
+    marshal_int(buf, val);
   }
   return INK_MIN_ALIGN;
 }
@@ -2252,7 +2405,13 @@ int
 LogAccess::marshal_client_req_ssl_reused(char *buf)
 {
   if (buf) {
-    marshal_int(buf, m_http_sm->get_user_agent().get_client_ssl_reused() ? 1 : 0);
+    int64_t val = 0;
+    if (has_http_sm()) {
+      val = m_http_sm->get_user_agent().get_client_ssl_reused() ? 1 : 0;
+    } else if (auto const *pre = this->get_pre_transaction_log_data(); pre != nullptr) {
+      val = pre->client_ssl_reused ? 1 : 0;
+    }
+    marshal_int(buf, val);
   }
   return INK_MIN_ALIGN;
 }
@@ -2261,7 +2420,13 @@ int
 LogAccess::marshal_client_req_is_internal(char *buf)
 {
   if (buf) {
-    marshal_int(buf, m_http_sm->is_internal ? 1 : 0);
+    int64_t val = 0;
+    if (has_http_sm()) {
+      val = m_http_sm->is_internal ? 1 : 0;
+    } else if (auto const *pre = this->get_pre_transaction_log_data(); pre != nullptr) {
+      val = pre->is_internal ? 1 : 0;
+    }
+    marshal_int(buf, val);
   }
   return INK_MIN_ALIGN;
 }
@@ -2272,9 +2437,8 @@ LogAccess::marshal_client_req_mptcp_state(char *buf)
   if (buf) {
     int val = -1;
 
-    if (m_http_sm->mptcp_state.has_value()) {
+    if (has_http_sm() && m_http_sm->mptcp_state.has_value()) {
       val = m_http_sm->mptcp_state.value() ? 1 : 0;
-    } else {
     }
     marshal_int(buf, val);
   }
@@ -2288,15 +2452,17 @@ int
 LogAccess::marshal_client_finish_status_code(char *buf)
 {
   if (buf) {
-    int                        code           = LOG_FINISH_FIN;
-    HttpTransact::AbortState_t cl_abort_state = m_http_sm->t_state.client_info.abort;
-    if (cl_abort_state == HttpTransact::ABORTED) {
-      // Check to see if the abort is due to a timeout
-      if (m_http_sm->t_state.client_info.state == HttpTransact::ACTIVE_TIMEOUT ||
-          m_http_sm->t_state.client_info.state == HttpTransact::INACTIVE_TIMEOUT) {
-        code = LOG_FINISH_TIMEOUT;
-      } else {
-        code = LOG_FINISH_INTR;
+    int code = LOG_FINISH_FIN;
+    if (has_http_sm()) {
+      HttpTransact::AbortState_t cl_abort_state = m_http_sm->t_state.client_info.abort;
+      if (cl_abort_state == HttpTransact::ABORTED) {
+        // Check to see if the abort is due to a timeout
+        if (m_http_sm->t_state.client_info.state == HttpTransact::ACTIVE_TIMEOUT ||
+            m_http_sm->t_state.client_info.state == HttpTransact::INACTIVE_TIMEOUT) {
+          code = LOG_FINISH_TIMEOUT;
+        } else {
+          code = LOG_FINISH_INTR;
+        }
       }
     }
     marshal_int(buf, code);
@@ -2311,7 +2477,7 @@ int
 LogAccess::marshal_client_req_id(char *buf)
 {
   if (buf) {
-    marshal_int(buf, m_http_sm->sm_id);
+    marshal_int(buf, has_http_sm() ? m_http_sm->sm_id : 0);
   }
   return INK_MIN_ALIGN;
 }
@@ -2323,8 +2489,9 @@ int
 LogAccess::marshal_client_req_uuid(char *buf)
 {
   char        str[TS_CRUUID_STRING_LEN + 1];
-  const char *uuid = Machine::instance()->process_uuid.getString();
-  int         len  = snprintf(str, sizeof(str), "%s-%" PRId64 "", uuid, m_http_sm->sm_id);
+  const char *uuid   = Machine::instance()->process_uuid.getString();
+  int64_t     req_id = has_http_sm() ? m_http_sm->sm_id : 0;
+  int         len    = snprintf(str, sizeof(str), "%s-%" PRId64 "", uuid, req_id);
 
   ink_assert(len <= TS_CRUUID_STRING_LEN);
   len = padded_length(len + 1);
@@ -2346,7 +2513,11 @@ int
 LogAccess::marshal_client_rx_error_code(char *buf)
 {
   char error_code[MAX_PROXY_ERROR_CODE_SIZE] = {0};
-  m_http_sm->t_state.client_info.rx_error_code.str(error_code, sizeof(error_code));
+  if (has_http_sm()) {
+    m_http_sm->t_state.client_info.rx_error_code.str(error_code, sizeof(error_code));
+  } else {
+    error_code[0] = '-';
+  }
   int round_len = LogAccess::padded_strlen(error_code);
 
   if (buf) {
@@ -2360,7 +2531,11 @@ int
 LogAccess::marshal_client_tx_error_code(char *buf)
 {
   char error_code[MAX_PROXY_ERROR_CODE_SIZE] = {0};
-  m_http_sm->t_state.client_info.tx_error_code.str(error_code, sizeof(error_code));
+  if (has_http_sm()) {
+    m_http_sm->t_state.client_info.tx_error_code.str(error_code, sizeof(error_code));
+  } else {
+    error_code[0] = '-';
+  }
   int round_len = LogAccess::padded_strlen(error_code);
 
   if (buf) {
@@ -2375,7 +2550,7 @@ LogAccess::marshal_client_tx_error_code(char *buf)
 int
 LogAccess::marshal_client_security_protocol(char *buf)
 {
-  const char *proto     = m_http_sm->get_user_agent().get_client_sec_protocol();
+  const char *proto     = has_http_sm() ? m_http_sm->get_user_agent().get_client_sec_protocol() : DEFAULT_STR;
   int         round_len = LogAccess::padded_strlen(proto);
 
   if (buf) {
@@ -2388,7 +2563,7 @@ LogAccess::marshal_client_security_protocol(char *buf)
 int
 LogAccess::marshal_client_security_cipher_suite(char *buf)
 {
-  const char *cipher    = m_http_sm->get_user_agent().get_client_cipher_suite();
+  const char *cipher    = has_http_sm() ? m_http_sm->get_user_agent().get_client_cipher_suite() : DEFAULT_STR;
   int         round_len = LogAccess::padded_strlen(cipher);
 
   if (buf) {
@@ -2401,7 +2576,7 @@ LogAccess::marshal_client_security_cipher_suite(char *buf)
 int
 LogAccess::marshal_client_security_curve(char *buf)
 {
-  const char *curve     = m_http_sm->get_user_agent().get_client_curve();
+  const char *curve     = has_http_sm() ? m_http_sm->get_user_agent().get_client_curve() : DEFAULT_STR;
   int         round_len = LogAccess::padded_strlen(curve);
 
   if (buf) {
@@ -2414,7 +2589,7 @@ LogAccess::marshal_client_security_curve(char *buf)
 int
 LogAccess::marshal_client_security_group(char *buf)
 {
-  const char *group     = m_http_sm->get_user_agent().get_client_security_group();
+  const char *group     = has_http_sm() ? m_http_sm->get_user_agent().get_client_security_group() : DEFAULT_STR;
   int         round_len = LogAccess::padded_strlen(group);
 
   if (buf) {
@@ -2428,7 +2603,8 @@ int
 LogAccess::marshal_client_security_alpn(char *buf)
 {
   const char *alpn = "-";
-  if (const int alpn_id = m_http_sm->get_user_agent().get_client_alpn_id(); alpn_id != SessionProtocolNameRegistry::INVALID) {
+  if (has_http_sm() && m_http_sm->get_user_agent().get_client_alpn_id() != SessionProtocolNameRegistry::INVALID) {
+    const int      alpn_id         = m_http_sm->get_user_agent().get_client_alpn_id();
     swoc::TextView client_sec_alpn = globalSessionProtocolNameRegistry.nameFor(alpn_id);
     alpn                           = client_sec_alpn.data();
   }
@@ -2476,7 +2652,10 @@ int
 LogAccess::marshal_proxy_resp_squid_len(char *buf)
 {
   if (buf) {
-    int64_t val = m_http_sm->client_response_hdr_bytes + m_http_sm->client_response_body_bytes;
+    int64_t val = 0;
+    if (has_http_sm()) {
+      val = m_http_sm->client_response_hdr_bytes + m_http_sm->client_response_body_bytes;
+    }
     marshal_int(buf, val);
   }
   return INK_MIN_ALIGN;
@@ -2489,7 +2668,7 @@ int
 LogAccess::marshal_proxy_resp_content_len(char *buf)
 {
   if (buf) {
-    int64_t val = m_http_sm->client_response_body_bytes;
+    int64_t val = has_http_sm() ? m_http_sm->client_response_body_bytes : 0;
     marshal_int(buf, val);
   }
   return INK_MIN_ALIGN;
@@ -2532,7 +2711,7 @@ LogAccess::marshal_status_plugin_entry(char *buf)
   char const *str = nullptr;
   int         len = INK_MIN_ALIGN;
 
-  if (m_http_sm) {
+  if (has_http_sm()) {
     std::string const &tag = m_http_sm->t_state.http_return_code_setter_name;
     if (!tag.empty()) {
       str = tag.c_str();
@@ -2553,7 +2732,7 @@ int
 LogAccess::marshal_proxy_resp_header_len(char *buf)
 {
   if (buf) {
-    int64_t val = m_http_sm->client_response_hdr_bytes;
+    int64_t val = has_http_sm() ? m_http_sm->client_response_hdr_bytes : 0;
     marshal_int(buf, val);
   }
   return INK_MIN_ALIGN;
@@ -2567,7 +2746,7 @@ LogAccess::marshal_proxy_finish_status_code(char *buf)
      to FIN */
   if (buf) {
     int code = LOG_FINISH_FIN;
-    if (m_http_sm->t_state.current.server) {
+    if (has_http_sm() && m_http_sm->t_state.current.server) {
       switch (m_http_sm->t_state.current.server->state) {
       case HttpTransact::ACTIVE_TIMEOUT:
       case HttpTransact::INACTIVE_TIMEOUT:
@@ -2596,7 +2775,10 @@ int
 LogAccess::marshal_proxy_host_port(char *buf)
 {
   if (buf) {
-    uint16_t port = m_http_sm->t_state.request_data.incoming_port;
+    uint16_t port = 0;
+    if (has_http_sm()) {
+      port = m_http_sm->t_state.request_data.incoming_port;
+    }
     marshal_int(buf, port);
   }
   return INK_MIN_ALIGN;
@@ -2609,7 +2791,12 @@ int
 LogAccess::marshal_cache_result_code(char *buf)
 {
   if (buf) {
-    SquidLogCode code = m_http_sm->t_state.squid_codes.log_code;
+    SquidLogCode code = SquidLogCode::EMPTY;
+    if (has_http_sm()) {
+      code = m_http_sm->t_state.squid_codes.log_code;
+    } else if (auto const *pre = this->get_pre_transaction_log_data(); pre != nullptr) {
+      code = pre->log_code;
+    }
     marshal_int(buf, static_cast<int64_t>(code));
   }
   return INK_MIN_ALIGN;
@@ -2622,7 +2809,12 @@ int
 LogAccess::marshal_cache_result_subcode(char *buf)
 {
   if (buf) {
-    SquidSubcode code = m_http_sm->t_state.squid_codes.subcode;
+    SquidSubcode code = SquidSubcode::EMPTY;
+    if (has_http_sm()) {
+      code = m_http_sm->t_state.squid_codes.subcode;
+    } else if (auto const *pre = this->get_pre_transaction_log_data(); pre != nullptr) {
+      code = pre->subcode;
+    }
     marshal_int(buf, static_cast<int64_t>(code));
   }
   return INK_MIN_ALIGN;
@@ -2635,7 +2827,12 @@ int
 LogAccess::marshal_cache_hit_miss(char *buf)
 {
   if (buf) {
-    SquidHitMissCode code = m_http_sm->t_state.squid_codes.hit_miss_code;
+    SquidHitMissCode code = SQUID_MISS_NONE;
+    if (has_http_sm()) {
+      code = m_http_sm->t_state.squid_codes.hit_miss_code;
+    } else if (auto const *pre = this->get_pre_transaction_log_data(); pre != nullptr) {
+      code = pre->hit_miss_code;
+    }
     marshal_int(buf, static_cast<int64_t>(code));
   }
   return INK_MIN_ALIGN;
@@ -2665,7 +2862,7 @@ LogAccess::marshal_proxy_req_content_len(char *buf)
 {
   if (buf) {
     int64_t val = 0;
-    if (m_proxy_request) {
+    if (m_proxy_request && has_http_sm()) {
       val = m_http_sm->server_request_body_bytes;
     }
     marshal_int(buf, val);
@@ -2678,7 +2875,7 @@ LogAccess::marshal_proxy_req_squid_len(char *buf)
 {
   if (buf) {
     int64_t val = 0;
-    if (m_proxy_request) {
+    if (m_proxy_request && has_http_sm()) {
       val = m_proxy_request->length_get() + m_http_sm->server_request_body_bytes;
     }
     marshal_int(buf, val);
@@ -2690,6 +2887,9 @@ LogAccess::marshal_proxy_req_squid_len(char *buf)
 int
 LogAccess::marshal_proxy_req_server_ip(char *buf)
 {
+  if (!has_http_sm()) {
+    return marshal_ip(buf, nullptr);
+  }
   return marshal_ip(buf, m_http_sm->t_state.current.server != nullptr ? &m_http_sm->t_state.current.server->src_addr.sa : nullptr);
 }
 
@@ -2697,8 +2897,10 @@ int
 LogAccess::marshal_proxy_req_server_port(char *buf)
 {
   if (buf) {
-    uint16_t port =
-      m_http_sm->t_state.current.server != nullptr ? m_http_sm->t_state.current.server->src_addr.host_order_port() : 0;
+    uint16_t port = 0;
+    if (has_http_sm()) {
+      port = m_http_sm->t_state.current.server != nullptr ? m_http_sm->t_state.current.server->src_addr.host_order_port() : 0;
+    }
     marshal_int(buf, port);
   }
   return INK_MIN_ALIGN;
@@ -2707,6 +2909,9 @@ LogAccess::marshal_proxy_req_server_port(char *buf)
 int
 LogAccess::marshal_next_hop_ip(char *buf)
 {
+  if (!has_http_sm()) {
+    return marshal_ip(buf, nullptr);
+  }
   return marshal_ip(buf, m_http_sm->t_state.current.server != nullptr ? &m_http_sm->t_state.current.server->dst_addr.sa : nullptr);
 }
 
@@ -2714,8 +2919,10 @@ int
 LogAccess::marshal_next_hop_port(char *buf)
 {
   if (buf) {
-    uint16_t port =
-      m_http_sm->t_state.current.server != nullptr ? m_http_sm->t_state.current.server->dst_addr.host_order_port() : 0;
+    uint16_t port = 0;
+    if (has_http_sm()) {
+      port = m_http_sm->t_state.current.server != nullptr ? m_http_sm->t_state.current.server->dst_addr.host_order_port() : 0;
+    }
     marshal_int(buf, port);
   }
   return INK_MIN_ALIGN;
@@ -2728,8 +2935,7 @@ int
 LogAccess::marshal_proxy_req_is_ssl(char *buf)
 {
   if (buf) {
-    int64_t is_ssl;
-    is_ssl = m_http_sm->server_connection_is_ssl;
+    int64_t is_ssl = has_http_sm() ? m_http_sm->server_connection_is_ssl : 0;
     marshal_int(buf, is_ssl);
   }
   return INK_MIN_ALIGN;
@@ -2739,7 +2945,7 @@ int
 LogAccess::marshal_proxy_req_ssl_reused(char *buf)
 {
   if (buf) {
-    marshal_int(buf, m_http_sm->server_ssl_reused ? 1 : 0);
+    marshal_int(buf, has_http_sm() && m_http_sm->server_ssl_reused ? 1 : 0);
   }
   return INK_MIN_ALIGN;
 }
@@ -2751,7 +2957,12 @@ int
 LogAccess::marshal_proxy_hierarchy_route(char *buf)
 {
   if (buf) {
-    SquidHierarchyCode code = m_http_sm->t_state.squid_codes.hier_code;
+    SquidHierarchyCode code = SquidHierarchyCode::EMPTY;
+    if (has_http_sm()) {
+      code = m_http_sm->t_state.squid_codes.hier_code;
+    } else if (auto const *pre = this->get_pre_transaction_log_data(); pre != nullptr) {
+      code = pre->hier_code;
+    }
     marshal_int(buf, static_cast<int64_t>(code));
   }
   return INK_MIN_ALIGN;
@@ -2764,6 +2975,10 @@ LogAccess::marshal_proxy_hierarchy_route(char *buf)
 int
 LogAccess::marshal_server_host_ip(char *buf)
 {
+  if (!has_http_sm()) {
+    return marshal_ip(buf, nullptr);
+  }
+
   sockaddr const *ip = nullptr;
   ip                 = &m_http_sm->t_state.server_info.dst_addr.sa;
   if (!ats_is_ip(ip)) {
@@ -2788,7 +3003,7 @@ LogAccess::marshal_server_host_name(char *buf)
   char *str = nullptr;
   int   len = INK_MIN_ALIGN;
 
-  if (m_http_sm->t_state.current.server) {
+  if (has_http_sm() && m_http_sm->t_state.current.server) {
     str = m_http_sm->t_state.current.server->name;
     len = LogAccess::padded_strlen(str);
   }
@@ -2825,7 +3040,7 @@ LogAccess::marshal_server_resp_content_len(char *buf)
 {
   if (buf) {
     int64_t val = 0;
-    if (m_server_response) {
+    if (m_server_response && has_http_sm()) {
       val = m_http_sm->server_response_body_bytes;
     }
     marshal_int(buf, val);
@@ -2854,7 +3069,7 @@ LogAccess::marshal_server_resp_squid_len(char *buf)
 {
   if (buf) {
     int64_t val = 0;
-    if (m_server_response) {
+    if (m_server_response && has_http_sm()) {
       val = m_server_response->length_get() + m_http_sm->server_response_body_bytes;
     }
     marshal_int(buf, val);
@@ -2884,7 +3099,11 @@ int
 LogAccess::marshal_server_resp_time_ms(char *buf)
 {
   if (buf) {
-    marshal_int(buf, m_http_sm->milestones.difference_msec(TS_MILESTONE_SERVER_CONNECT, TS_MILESTONE_SERVER_CLOSE));
+    int64_t val = -1;
+    if (has_http_sm()) {
+      val = m_http_sm->milestones.difference_msec(TS_MILESTONE_SERVER_CONNECT, TS_MILESTONE_SERVER_CLOSE);
+    }
+    marshal_int(buf, val);
   }
   return INK_MIN_ALIGN;
 }
@@ -2893,8 +3112,11 @@ int
 LogAccess::marshal_server_resp_time_s(char *buf)
 {
   if (buf) {
-    marshal_int(buf,
-                static_cast<int64_t>(m_http_sm->milestones.difference_sec(TS_MILESTONE_SERVER_CONNECT, TS_MILESTONE_SERVER_CLOSE)));
+    int64_t val = -1;
+    if (has_http_sm()) {
+      val = static_cast<int64_t>(m_http_sm->milestones.difference_sec(TS_MILESTONE_SERVER_CONNECT, TS_MILESTONE_SERVER_CLOSE));
+    }
+    marshal_int(buf, val);
   }
   return INK_MIN_ALIGN;
 }
@@ -2906,8 +3128,12 @@ int
 LogAccess::marshal_server_transact_count(char *buf)
 {
   if (buf) {
-    int64_t count;
-    count = m_http_sm->server_transact_count;
+    int64_t count = 0;
+    if (has_http_sm()) {
+      count = m_http_sm->server_transact_count;
+    } else if (auto const *pre = this->get_pre_transaction_log_data(); pre != nullptr) {
+      count = pre->server_transact_count;
+    }
     marshal_int(buf, count);
   }
   return INK_MIN_ALIGN;
@@ -2920,7 +3146,7 @@ int
 LogAccess::marshal_server_simple_retry_count(char *buf)
 {
   if (buf) {
-    const int64_t attempts = m_http_sm->t_state.current.simple_retry_attempts;
+    const int64_t attempts = has_http_sm() ? m_http_sm->t_state.current.simple_retry_attempts : 0;
     marshal_int(buf, attempts);
   }
   return INK_MIN_ALIGN;
@@ -2933,7 +3159,7 @@ int
 LogAccess::marshal_server_unavailable_retry_count(char *buf)
 {
   if (buf) {
-    const int64_t attempts = m_http_sm->t_state.current.unavailable_server_retry_attempts;
+    const int64_t attempts = has_http_sm() ? m_http_sm->t_state.current.unavailable_server_retry_attempts : 0;
     marshal_int(buf, attempts);
   }
   return INK_MIN_ALIGN;
@@ -2946,7 +3172,7 @@ int
 LogAccess::marshal_server_connect_attempts(char *buf)
 {
   if (buf) {
-    int64_t attempts = m_http_sm->t_state.current.retry_attempts.saved();
+    int64_t attempts = has_http_sm() ? m_http_sm->t_state.current.retry_attempts.saved() : 0;
     marshal_int(buf, attempts);
   }
   return INK_MIN_ALIGN;
@@ -2978,7 +3204,7 @@ LogAccess::marshal_cache_resp_content_len(char *buf)
 {
   if (buf) {
     int64_t val = 0;
-    if (m_cache_response) {
+    if (m_cache_response && has_http_sm()) {
       val = m_http_sm->cache_response_body_bytes;
     }
     marshal_int(buf, val);
@@ -2991,7 +3217,7 @@ LogAccess::marshal_cache_resp_squid_len(char *buf)
 {
   if (buf) {
     int64_t val = 0;
-    if (m_cache_response) {
+    if (m_cache_response && has_http_sm()) {
       val = m_cache_response->length_get() + m_http_sm->cache_response_body_bytes;
     }
     marshal_int(buf, val);
@@ -3007,7 +3233,7 @@ LogAccess::marshal_cache_resp_header_len(char *buf)
 {
   if (buf) {
     int64_t val = 0;
-    if (m_cache_response) {
+    if (m_cache_response && has_http_sm()) {
       val = m_http_sm->cache_response_hdr_bytes;
     }
     marshal_int(buf, val);
@@ -3035,7 +3261,7 @@ int
 LogAccess::marshal_client_retry_after_time(char *buf)
 {
   if (buf) {
-    int64_t crat = m_http_sm->t_state.congestion_control_crat;
+    int64_t crat = has_http_sm() ? m_http_sm->t_state.congestion_control_crat : 0;
     marshal_int(buf, crat);
   }
   return INK_MIN_ALIGN;
@@ -3078,7 +3304,7 @@ int
 LogAccess::marshal_cache_write_code(char *buf)
 {
   if (buf) {
-    int code = convert_cache_write_code(m_http_sm->t_state.cache_info.write_status);
+    int code = has_http_sm() ? convert_cache_write_code(m_http_sm->t_state.cache_info.write_status) : LOG_CACHE_WRITE_NONE;
     marshal_int(buf, code);
   }
 
@@ -3089,7 +3315,8 @@ int
 LogAccess::marshal_cache_write_transform_code(char *buf)
 {
   if (buf) {
-    int code = convert_cache_write_code(m_http_sm->t_state.cache_info.transform_write_status);
+    int code =
+      has_http_sm() ? convert_cache_write_code(m_http_sm->t_state.cache_info.transform_write_status) : LOG_CACHE_WRITE_NONE;
     marshal_int(buf, code);
   }
 
@@ -3103,7 +3330,7 @@ int
 LogAccess::marshal_transfer_time_ms(char *buf)
 {
   if (buf) {
-    marshal_int(buf, m_http_sm->milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SM_FINISH));
+    marshal_int(buf, this->get_milestones().difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SM_FINISH));
   }
   return INK_MIN_ALIGN;
 }
@@ -3112,7 +3339,7 @@ int
 LogAccess::marshal_transfer_time_s(char *buf)
 {
   if (buf) {
-    marshal_int(buf, static_cast<int64_t>(m_http_sm->milestones.difference_sec(TS_MILESTONE_SM_START, TS_MILESTONE_SM_FINISH)));
+    marshal_int(buf, static_cast<int64_t>(this->get_milestones().difference_sec(TS_MILESTONE_SM_START, TS_MILESTONE_SM_FINISH)));
   }
   return INK_MIN_ALIGN;
 }
@@ -3140,9 +3367,9 @@ LogAccess::marshal_file_size(char *buf)
       }
     } else {
       // This is semi-broken when we serveq zero length objects. See TS-2213
-      if (m_http_sm->server_response_body_bytes > 0) {
+      if (has_http_sm() && m_http_sm->server_response_body_bytes > 0) {
         marshal_int(buf, m_http_sm->server_response_body_bytes);
-      } else if (m_http_sm->cache_response_body_bytes > 0) {
+      } else if (has_http_sm() && m_http_sm->cache_response_body_bytes > 0) {
         marshal_int(buf, m_http_sm->cache_response_body_bytes);
       }
     }
@@ -3160,7 +3387,7 @@ LogAccess::marshal_client_http_connection_id(char *buf)
 {
   if (buf) {
     int64_t id = 0;
-    if (m_http_sm) {
+    if (has_http_sm()) {
       id = m_http_sm->client_connection_id();
     }
     marshal_int(buf, id);
@@ -3176,7 +3403,7 @@ LogAccess::marshal_client_http_transaction_id(char *buf)
 {
   if (buf) {
     int64_t id = 0;
-    if (m_http_sm) {
+    if (has_http_sm()) {
       id = m_http_sm->client_transaction_id();
     }
     marshal_int(buf, id);
@@ -3192,7 +3419,7 @@ LogAccess::marshal_client_http_transaction_priority_weight(char *buf)
 {
   if (buf) {
     int64_t id = 0;
-    if (m_http_sm) {
+    if (has_http_sm()) {
       id = m_http_sm->client_transaction_priority_weight();
     }
     marshal_int(buf, id);
@@ -3208,7 +3435,7 @@ LogAccess::marshal_client_http_transaction_priority_dependence(char *buf)
 {
   if (buf) {
     int64_t id = 0;
-    if (m_http_sm) {
+    if (has_http_sm()) {
       id = m_http_sm->client_transaction_priority_dependence();
     }
     marshal_int(buf, id);
@@ -3224,7 +3451,7 @@ LogAccess::marshal_cache_read_retries(char *buf)
 {
   if (buf) {
     int64_t id = 0;
-    if (m_http_sm) {
+    if (has_http_sm()) {
       id = m_http_sm->get_cache_sm().get_open_read_tries();
     }
     marshal_int(buf, id);
@@ -3240,7 +3467,7 @@ LogAccess::marshal_cache_write_retries(char *buf)
 {
   if (buf) {
     int64_t id = 0;
-    if (m_http_sm) {
+    if (has_http_sm()) {
       id = m_http_sm->get_cache_sm().get_open_write_tries();
     }
     marshal_int(buf, id);
@@ -3253,7 +3480,7 @@ LogAccess::marshal_cache_collapsed_connection_success(char *buf)
 {
   if (buf) {
     int64_t id = 0; // default - no collapse attempt
-    if (m_http_sm) {
+    if (has_http_sm()) {
       SquidLogCode code = m_http_sm->t_state.squid_codes.log_code;
 
       // We attempted an open write, but ended up with some sort of HIT which means we must have gone back to the read state
@@ -3370,7 +3597,7 @@ LogAccess::marshal_http_header_field(LogField::Container container, char *field,
 
   // The Transfer-Encoding:chunked value may have been removed from the header
   // during processing, but we store it for logging purposes.
-  if (valid_field == false && container == LogField::SSH && strcmp(field, "Transfer-Encoding") == 0) {
+  if (valid_field == false && has_http_sm() && container == LogField::SSH && strcmp(field, "Transfer-Encoding") == 0) {
     const std::string &stored_te = m_http_sm->t_state.hdr_info.server_response_transfer_encoding;
     if (!stored_te.empty()) {
       valid_field = true;
@@ -3515,7 +3742,7 @@ int
 LogAccess::marshal_milestone(TSMilestonesType ms, char *buf)
 {
   if (buf) {
-    int64_t val = ink_hrtime_to_msec(m_http_sm->milestones[ms]);
+    int64_t val = ink_hrtime_to_msec(this->get_milestones()[ms]);
     marshal_int(buf, val);
   }
   return INK_MIN_ALIGN;
@@ -3525,7 +3752,7 @@ int
 LogAccess::marshal_milestone_fmt_sec(TSMilestonesType type, char *buf)
 {
   if (buf) {
-    ink_hrtime tsec = ink_hrtime_to_sec(m_http_sm->milestones[type]);
+    ink_hrtime tsec = ink_hrtime_to_sec(this->get_milestones()[type]);
     marshal_int(buf, tsec);
   }
   return INK_MIN_ALIGN;
@@ -3535,7 +3762,7 @@ int
 LogAccess::marshal_milestone_fmt_ms(TSMilestonesType type, char *buf)
 {
   if (buf) {
-    ink_hrtime tmsec = ink_hrtime_to_msec(m_http_sm->milestones[type]);
+    ink_hrtime tmsec = ink_hrtime_to_msec(this->get_milestones()[type]);
     marshal_int(buf, tmsec);
   }
   return INK_MIN_ALIGN;
@@ -3545,7 +3772,7 @@ int
 LogAccess::marshal_milestone_diff(TSMilestonesType ms1, TSMilestonesType ms2, char *buf)
 {
   if (buf) {
-    int64_t val = m_http_sm->milestones.difference_msec(ms2, ms1);
+    int64_t val = this->get_milestones().difference_msec(ms2, ms1);
     marshal_int(buf, val);
   }
   return INK_MIN_ALIGN;
@@ -3556,28 +3783,29 @@ LogAccess::marshal_milestones_csv(char *buf)
 {
   Dbg(dbg_ctl_log_unmarshal_data, "marshal_milestones_csv");
 
+  auto const                  &milestones = this->get_milestones();
   swoc::LocalBufferWriter<256> bw;
 
-  bw.print("{}", m_http_sm->milestones.difference_msec(TS_MILESTONE_TLS_HANDSHAKE_START, TS_MILESTONE_TLS_HANDSHAKE_END));
-  bw.print(",{}", m_http_sm->milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_UA_BEGIN));
-  bw.print(",{}", m_http_sm->milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_UA_FIRST_READ));
-  bw.print(",{}", m_http_sm->milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_UA_READ_HEADER_DONE));
-  bw.print(",{}", m_http_sm->milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_CACHE_OPEN_READ_BEGIN));
-  bw.print(",{}", m_http_sm->milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_CACHE_OPEN_READ_END));
-  bw.print(",{}", m_http_sm->milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_CACHE_OPEN_WRITE_BEGIN));
-  bw.print(",{}", m_http_sm->milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_CACHE_OPEN_WRITE_END));
-  bw.print(",{}", m_http_sm->milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_DNS_LOOKUP_BEGIN));
-  bw.print(",{}", m_http_sm->milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_DNS_LOOKUP_END));
-  bw.print(",{}", m_http_sm->milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_CONNECT));
-  bw.print(",{}", m_http_sm->milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_CONNECT_END));
-  bw.print(",{}", m_http_sm->milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_FIRST_READ));
-  bw.print(",{}", m_http_sm->milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_READ_HEADER_DONE));
-  bw.print(",{}", m_http_sm->milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_CLOSE));
-  bw.print(",{}", m_http_sm->milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_UA_BEGIN_WRITE));
-  bw.print(",{}", m_http_sm->milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_UA_CLOSE));
-  bw.print(",{}", m_http_sm->milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SM_FINISH));
-  bw.print(",{}", m_http_sm->milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_PLUGIN_ACTIVE));
-  bw.print(",{}", m_http_sm->milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_PLUGIN_TOTAL));
+  bw.print("{}", milestones.difference_msec(TS_MILESTONE_TLS_HANDSHAKE_START, TS_MILESTONE_TLS_HANDSHAKE_END));
+  bw.print(",{}", milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_UA_BEGIN));
+  bw.print(",{}", milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_UA_FIRST_READ));
+  bw.print(",{}", milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_UA_READ_HEADER_DONE));
+  bw.print(",{}", milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_CACHE_OPEN_READ_BEGIN));
+  bw.print(",{}", milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_CACHE_OPEN_READ_END));
+  bw.print(",{}", milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_CACHE_OPEN_WRITE_BEGIN));
+  bw.print(",{}", milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_CACHE_OPEN_WRITE_END));
+  bw.print(",{}", milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_DNS_LOOKUP_BEGIN));
+  bw.print(",{}", milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_DNS_LOOKUP_END));
+  bw.print(",{}", milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_CONNECT));
+  bw.print(",{}", milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_CONNECT_END));
+  bw.print(",{}", milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_FIRST_READ));
+  bw.print(",{}", milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_READ_HEADER_DONE));
+  bw.print(",{}", milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_CLOSE));
+  bw.print(",{}", milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_UA_BEGIN_WRITE));
+  bw.print(",{}", milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_UA_CLOSE));
+  bw.print(",{}", milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SM_FINISH));
+  bw.print(",{}", milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_PLUGIN_ACTIVE));
+  bw.print(",{}", milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_PLUGIN_TOTAL));
   bw.print("\0");
 
   auto const view = bw.view();

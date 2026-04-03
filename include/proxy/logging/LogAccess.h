@@ -25,12 +25,15 @@
 #pragma once
 
 #include "tscore/ink_align.h"
+#include "proxy/Milestones.h"
+#include "proxy/hdrs/HTTP.h"
 #include "proxy/logging/LogField.h"
 
-class HTTPHdr;
 class HttpSM;
 class IpClass;
 union IpEndpoint;
+
+#include <string>
 
 /*-------------------------------------------------------------------------
   LogAccess
@@ -113,8 +116,56 @@ enum LogCacheWriteCodeType {
 class LogAccess
 {
 public:
+  /** Data used to access-log requests that fail before transaction creation.
+   *
+   * Malformed HTTP/2 request headers can be rejected while the connection is
+   * still decoding and validating the stream, before the request progresses
+   * far enough to create an @c HttpSM. This payload carries the copied request
+   * and session metadata needed to emit a best-effort transaction log entry
+   * for those failures.
+   */
+  struct PreTransactionLogData {
+    TransactionMilestones milestones;
+    HTTPHdr               client_request;
+
+    std::string method;
+    std::string scheme;
+    std::string authority;
+    std::string path;
+    std::string url;
+    std::string client_protocol = "http/2";
+
+    sockaddr_storage client_addr          = {};
+    sockaddr_storage local_addr           = {};
+    sockaddr_storage verified_client_addr = {};
+
+    int64_t            client_request_body_bytes = 0;
+    int64_t            server_transact_count     = 0;
+    SquidLogCode       log_code                  = SquidLogCode::ERR_INVALID_REQ;
+    SquidSubcode       subcode                   = SquidSubcode::EMPTY;
+    SquidHitMissCode   hit_miss_code             = SQUID_MISS_NONE;
+    SquidHierarchyCode hier_code                 = SquidHierarchyCode::NONE;
+
+    bool has_client_request       = false;
+    bool has_verified_client_addr = false;
+    bool client_tcp_reused        = false;
+    bool client_connection_is_ssl = false;
+    bool client_ssl_reused        = false;
+    bool is_internal              = false;
+
+    ~PreTransactionLogData()
+    {
+      if (client_request.valid()) {
+        client_request.destroy();
+      }
+    }
+  };
+
   LogAccess() = delete;
   explicit LogAccess(HttpSM *sm);
+  // The caller retains ownership of @a data, which must outlive init() and
+  // the synchronous Log::access() call that marshals this entry.
+  explicit LogAccess(PreTransactionLogData const &data);
 
   ~LogAccess() {}
   void init();
@@ -376,7 +427,29 @@ public:
   LogAccess &operator=(LogAccess &rhs) = delete; // or assignment
 
 private:
-  HttpSM *m_http_sm = nullptr;
+  /** Check whether this accessor is backed by a live @c HttpSM.
+   * @return @c true if normal transaction logging state is available.
+   */
+  bool has_http_sm() const;
+
+  /** Check whether this accessor is logging before @c HttpSM creation.
+   *
+   * This mode is used when a request did not progress far enough to create an
+   * @c HttpSM, but ATS still wants to emit a best-effort access log entry.
+   *
+   * @return @c true if this instance is backed by pre-transaction log data.
+   */
+  bool is_pre_transaction_logging() const;
+
+  PreTransactionLogData const *get_pre_transaction_log_data() const;
+  TransactionMilestones const &get_milestones() const;
+
+  // Invariant: after init(), exactly one of these members is non-nullptr.
+  // Normal transaction logging uses m_http_sm, while pre-transaction logging
+  // uses m_pre_transaction_log_data for requests rejected before HttpSM
+  // creation.
+  HttpSM                      *m_http_sm                  = nullptr;
+  PreTransactionLogData const *m_pre_transaction_log_data = nullptr;
 
   Arena m_arena;
 
