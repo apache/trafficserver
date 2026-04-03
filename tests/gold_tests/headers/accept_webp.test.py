@@ -1,5 +1,5 @@
 '''
-Test how we handle image/webp
+Test how ATS handles image/webp alternates.
 '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -18,71 +18,9 @@ Test how we handle image/webp
 #  limitations under the License.
 
 Test.Summary = '''
-Checking that we don't serve image/webp to clients that do not support it
+Check that ATS does not reuse a cached image/webp alternate for clients that do not advertise image/webp
 '''
-Test.SkipIf(Condition.CurlUsingUnixDomainSocket())
 
 Test.ContinueOnFail = True
 
-# Define default ATS
-ts = Test.MakeATSProcess("ts")
-server = Test.MakeOriginServer("server")
-
-testName = "accept_webp"
-request_header = {
-    "headers":
-        "GET / HTTP/1.1\r\nHost: www.example.com\r\nAccept: image/webp,image/png,image/svg+xml,image/*;q=0.8,video/*;q=0.8,*/*;q=0.5\r\n\r\n",
-    "timestamp": "1469733493.993",
-    "body": ""
-}
-response_header = {
-    "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Type: image/webp\r\nCache-Control: max-age=300\r\n",
-    "timestamp": "1469733493.993",
-    "body": "xxx"
-}
-server.addResponse("sessionlog.json", request_header, response_header)
-
-# ATS Configuration
-ts.Disk.records_config.update(
-    {
-        'proxy.config.diags.debug.enabled': 1,
-        'proxy.config.diags.debug.tags': 'http_match',
-        'proxy.config.http.cache.ignore_accept_mismatch': 0,
-        'proxy.config.http.insert_response_via_str': 3,
-        'proxy.config.http.cache.http': 1,
-        'proxy.config.http.wait_for_cache': 1,
-    })
-
-ts.Disk.remap_config.AddLine('map http://www.example.com http://127.0.0.1:{0}'.format(server.Variables.Port))
-
-# Test 1 - Request with image/webp support from the origin
-tr = Test.AddTestRun()
-tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
-tr.Processes.Default.StartBefore(Test.Processes.ts)
-tr.MakeCurlCommand(
-    '-s -D - -v --ipv4 --http1.1 -H "Accept: image/webp,image/png,image/svg+xml,image/*;q=0.8,video/*;q=0.8,*/*;q=0.5" -H "Host: www.example.com" http://localhost:{0}/'
-    .format(ts.Variables.port),
-    ts=ts)
-tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.Streams.stderr = "gold/accept_webp.gold"
-tr.StillRunningAfter = ts
-
-# Test 2 - Request with image/webp support from cache
-tr = Test.AddTestRun()
-tr.MakeCurlCommand(
-    '-s -D - -v --ipv4 --http1.1 -H "Accept: image/webp,image/png,image/svg+xml,image/*;q=0.8,video/*;q=0.8,*/*;q=0.5" -H "Host: www.example.com" http://localhost:{0}/'
-    .format(ts.Variables.port),
-    ts=ts)
-tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.Streams.stderr = "gold/accept_webp_cache.gold"
-tr.StillRunningAfter = ts
-
-# Test 3 - Request without image/webp support going to the origin - NOTE: the origin can't change the content-type :(
-tr = Test.AddTestRun()
-tr.MakeCurlCommand(
-    '-s -D - -v --ipv4 --http1.1 -H "Accept: image/png,image/svg+xml,image/*;q=0.8,video/*;q=0.8,*/*;q=0.5" -H "Host: www.example.com" http://localhost:{0}/'
-    .format(ts.Variables.port),
-    ts=ts)
-tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.Streams.stderr = "gold/accept_webp_jpeg.gold"
-tr.StillRunningAfter = ts
+Test.ATSReplayTest(replay_file="replays/accept_webp.replay.yaml")

@@ -26,6 +26,71 @@ meta:
           fields:
           - [ Content-Length, 0 ]
 
+autest:
+  description: 'Verify cache matching with normalized Accept-Encoding and Vary'
+
+  server:
+    name: 'normalized-ae-server'
+
+  client:
+    name: 'normalized-ae-client'
+
+  ats:
+    name: 'ts'
+    process_config:
+      enable_cache: true
+
+    plugin_config:
+      - 'xdebug.so --enable=x-cache'
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http'
+      proxy.config.http.response_via_str: 3
+      proxy.config.cache.limits.http.max_alts: 6
+      proxy.config.http.cache.ignore_accept_mismatch: 2
+      proxy.config.http.cache.ignore_accept_language_mismatch: 2
+      proxy.config.http.cache.ignore_accept_encoding_mismatch: 2
+      proxy.config.http.cache.ignore_accept_charset_mismatch: 2
+
+    remap_config:
+      - from: "http://www.ae-0.com/"
+        to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"
+        plugins:
+          - name: "conf_remap.so"
+            args:
+              - "proxy.config.http.normalize_ae=0"
+      - from: "http://www.ae-1.com/"
+        to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"
+        plugins:
+          - name: "conf_remap.so"
+            args:
+              - "proxy.config.http.normalize_ae=1"
+      - from: "http://www.ae-2.com/"
+        to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"
+        plugins:
+          - name: "conf_remap.so"
+            args:
+              - "proxy.config.http.normalize_ae=2"
+      - from: "http://www.ae-3.com/"
+        to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"
+        plugins:
+          - name: "conf_remap.so"
+            args:
+              - "proxy.config.http.normalize_ae=3"
+      - from: "http://www.ae-4.com/"
+        to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"
+        plugins:
+          - name: "conf_remap.so"
+            args:
+              - "proxy.config.http.normalize_ae=4"
+      - from: "http://www.ae-5.com/"
+        to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"
+        plugins:
+          - name: "conf_remap.so"
+            args:
+              - "proxy.config.http.normalize_ae=5"
+
 sessions:
 - transactions:
 

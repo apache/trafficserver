@@ -17,6 +17,32 @@
 meta:
   version: "1.0"
 
+autest:
+  description: 'Verify cached duplicate headers are preserved across stale revalidation'
+
+  server:
+    name: 'cached-header-server'
+
+  client:
+    name: 'cached-header-client'
+
+  ats:
+    name: 'ts'
+    process_config:
+      enable_cache: true
+
+    plugin_config:
+      - 'xdebug.so --enable=x-cache,x-cache-key,via'
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http'
+      proxy.config.http.response_via_str: 3
+
+    remap_config:
+      - from: "/"
+        to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"
+
 # Note 1:
 # When testing duplicate headers here, replay files cannot
 # handle two seperate values. So make sure that duplicate headers
