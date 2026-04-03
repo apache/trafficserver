@@ -666,24 +666,12 @@ UrlRewrite::Remap_redirect(HTTPHdr *request_header, URL *redirect_url)
   if (host.empty() && reverse_proxy != 0) { // Server request.  Use the host header to figure out where
                                             // it goes.  Host header parsing is same as in ::Remap
     auto host_hdr{request_header->value_get(static_cast<std::string_view>(MIME_FIELD_HOST))};
+    int  parsed_port = 0;
+    bool has_port    = false;
 
-    const char *tmp = static_cast<const char *>(memchr(host_hdr.data(), ':', host_hdr.length()));
-
-    int host_len;
-    if (tmp == nullptr) {
-      host_len = static_cast<int>(host_hdr.length());
-    } else {
-      host_len     = tmp - host_hdr.data();
-      request_port = ink_atoi(tmp + 1, static_cast<int>(host_hdr.length()) - host_len);
-
-      // If atoi fails, try the default for the
-      //   protocol
-      if (request_port == 0) {
-        request_port = request_url->port_get();
-      }
+    if (http_parse_host_header(host_hdr, host, parsed_port, has_port)) {
+      request_port = has_port ? parsed_port : request_url->port_get();
     }
-
-    host = {host_hdr.data(), static_cast<std::string_view::size_type>(host_len)};
   }
   // Temporary Redirects have precedence over Permanent Redirects
   // the rationale behind this is that network administrators might

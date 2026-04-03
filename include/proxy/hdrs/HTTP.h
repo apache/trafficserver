@@ -421,7 +421,15 @@ ParseResult http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl
                                   bool must_copy_strings, bool eof, int strict_uri_parsing, size_t max_request_line_size,
                                   size_t max_hdr_field_size);
 ParseResult validate_hdr_request_target(int method_wks_idx, URLImpl *url);
+
+// This calls http_parse_host_header internally to parse the Host field value
+// when present, so it enforces the same syntax rules and also validates the
+// port number when specified.
 ParseResult validate_hdr_host(HTTPHdrImpl *hh);
+
+// This parses and validates the Host field value.
+bool http_parse_host_header(std::string_view value, std::string_view &host, int &port, bool &has_port);
+
 ParseResult validate_hdr_content_length(HdrHeap *heap, HTTPHdrImpl *hh);
 ParseResult http_parser_parse_resp(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const char **start, const char *end,
                                    bool must_copy_strings, bool eof);
