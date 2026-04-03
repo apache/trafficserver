@@ -21,6 +21,7 @@
   limitations under the License.
  */
 
+#include <algorithm>
 #include <iostream>
 #include <csignal>
 
@@ -35,9 +36,10 @@
 #include "FileConfigCommand.h"
 #include "SSLMultiCertCommand.h"
 #include "TrafficCtlStatus.h"
+#include "tsutil/ts_errata.h"
 
-// Define the global variable
-int App_Exit_Status_Code = CTRL_EX_OK; // Initialize it to a default value
+int                         App_Exit_Status_Code = CTRL_EX_OK;
+swoc::Errata::severity_type App_Exit_Level_Error = ERRATA_ERROR;
 namespace
 {
 void
@@ -91,7 +93,10 @@ main([[maybe_unused]] int argc, const char **argv)
     .add_option("--format", "-f", "Use a specific output format {json|rpc}", "", 1, "", "format")
     .add_option("--read-timeout-ms", "", "Read timeout for RPC (in milliseconds)", "", 1, "10000", "read-timeout")
     .add_option("--read-attempts", "", "Read attempts for RPC", "", 1, "100", "read-attempts")
-    .add_option("--watch", "-w", "Execute a program periodically. Watch interval(in seconds) can be passed.", "", 1, "-1", "watch");
+    .add_option("--watch", "-w", "Execute a program periodically. Watch interval(in seconds) can be passed.", "", 1, "-1", "watch")
+    .add_option("--error-level", "-e",
+                "Minimum severity to treat as error for exit status {diag|debug|status|note|warn|error|fatal|alert|emergency}", "",
+                1, "error", "error-level");
 
   auto &config_command     = parser.add_command("config", "Manipulate configuration records").require_commands();
   auto &metric_command     = parser.add_command("metric", "Manipulate performance metrics").require_commands();
@@ -342,6 +347,15 @@ main([[maybe_unused]] int argc, const char **argv)
     signal_register_handler(SIGINT, handle_signal);
 
     auto args = parser.parse(argv);
+
+    auto error_level_str = args.get("error-level").value();
+    auto it =
+      std::find_if(Severity_Names.begin(), Severity_Names.end(), [&](auto name) { return strcasecmp(name, error_level_str) == 0; });
+    if (it == Severity_Names.end()) {
+      throw std::runtime_error(std::string("Unknown error level: ") + std::string(error_level_str));
+    }
+    App_Exit_Level_Error = swoc::Errata::severity_type(std::distance(Severity_Names.begin(), it));
+
     argparser_runroot_handler(args.get("run-root").value(), argv[0]);
     Layout::create();
 
