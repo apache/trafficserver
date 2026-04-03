@@ -21,9 +21,72 @@ Decompiles existing `header_rewrite` rules back into HRW4U source code.
 
 ## Requirements
 
+### Python Tools (hrw4u, u4wrh)
 - **Python 3.11+** (uses modern type annotations and performance features)
 - **ANTLR4** for grammar parsing
 - **uv** (for Python environment management)
+
+### C++ Native Parser (src/hrw4u)
+
+ATS includes a C++ ANTLR4-based parser that lets the `header_rewrite` plugin
+load `.hrw4u` files directly. Building it requires:
+
+- **ANTLR4 C++ runtime** (headers and shared library)
+- **ANTLR4 tool** (`antlr4` command, same major.minor version as the runtime)
+
+#### macOS (Homebrew)
+```bash
+brew install antlr4-cpp-runtime antlr4
+```
+
+#### Fedora/RHEL
+```bash
+dnf install antlr4-cpp-runtime-devel antlr4
+```
+
+#### Ubuntu/Debian (from source recommended)
+
+The distro packages often have version mismatches between the tool and runtime,
+and the shared library may be built with a different C++ ABI. Building from
+source is recommended:
+
+```bash
+# Download ANTLR4 C++ runtime source (match JAR version)
+# https://github.com/antlr/antlr4/releases
+
+cd antlr4-cpp-runtime-<version>
+cmake -B build \
+  -DCMAKE_INSTALL_PREFIX=/opt/antlr4 \
+  -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+  -DANTLR4_INSTALL=ON
+cmake --build build -j$(nproc)
+cmake --install build
+```
+
+If you are building ATS with a non-default compiler toolchain, build the
+ANTLR4 runtime with the same compilers to avoid ABI mismatches:
+
+```bash
+cmake -B build \
+  -DCMAKE_C_COMPILER=/opt/llvm/bin/clang \
+  -DCMAKE_CXX_COMPILER=/opt/llvm/bin/clang++ \
+  -DCMAKE_CXX_FLAGS="-stdlib=libc++" \
+  -DCMAKE_INSTALL_PREFIX=/opt/antlr4 \
+  -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+  -DANTLR4_INSTALL=ON
+cmake --build build -j$(nproc)
+cmake --install build
+```
+
+Then pass the install prefix when configuring ATS:
+```bash
+cmake -B build -DCMAKE_PREFIX_PATH=/opt/antlr4 ...
+```
+
+If the `antlr4` tool is not on `PATH`, set it explicitly:
+```bash
+cmake -B build -DANTLR4_EXECUTABLE=/opt/antlr4/bin/antlr4 ...
+```
 
 ## Development Setup
 

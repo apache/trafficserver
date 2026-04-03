@@ -80,6 +80,7 @@ markers = [
     "ast: marks tests for AST validation",
     "procedures: marks tests for procedure expansion",
     "sandbox: marks tests for sandbox policy enforcement",
+    "autest: marks tests that validate autest rule files",
 ]
 
 [dependency-groups]
