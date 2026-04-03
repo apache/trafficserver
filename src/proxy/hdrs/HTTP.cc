@@ -1143,6 +1143,82 @@ validate_hdr_request_target(int method_wk_idx, URLImpl *url)
   return ret;
 }
 
+bool
+http_parse_host_header(std::string_view value, std::string_view &host, int &port, bool &has_port)
+{
+  swoc::TextView text{value};
+
+  host     = {};
+  port     = 0;
+  has_port = false;
+
+  text.ltrim_if(&ParseRules::is_ws);
+  text.rtrim_if(&ParseRules::is_ws);
+  if (text.empty()) {
+    return false;
+  }
+
+  if ('[' == *text) {
+    // IPv6.
+    auto const close = text.find(']');
+    if (close == swoc::TextView::npos) {
+      // No closing ']', invalid host.
+      return false;
+    }
+
+    host = {text.data(), close + 1};
+    text.remove_prefix(close + 1);
+    if (!text.empty()) {
+      if (':' != text.front()) {
+        // If there are more characters, the next one must be a colon for the port.
+        return false;
+      }
+      text.remove_prefix(1);
+      if (text.empty()) {
+        // Port is indicated but not provided.
+        return false;
+      }
+      has_port = true;
+    }
+  } else {
+    // IPv4 or hostname.
+    auto const first_colon = text.find(':');
+    if (first_colon == swoc::TextView::npos) {
+      host = text;
+    } else {
+      if (text.find(':', first_colon + 1) != swoc::TextView::npos || first_colon == 0) {
+        // Only one colon is allowed, and it can't be the first character (empty host).
+        return false;
+      }
+
+      host = {text.data(), first_colon};
+      text.remove_prefix(first_colon + 1);
+      if (text.empty()) {
+        return false;
+      }
+      has_port = true;
+    }
+  }
+
+  if (!validate_host_name(host)) {
+    return false;
+  }
+
+  if (has_port) {
+    if (text.size() > 5 || !std::all_of(text.begin(), text.end(), &ParseRules::is_digit)) {
+      // Too many characters for a port, or non-digit characters in the port.
+      return false;
+    }
+
+    port = ink_atoi(text.data(), static_cast<int>(text.size()));
+    if (port <= 0 || port > 65535) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 ParseResult
 validate_hdr_host(HTTPHdrImpl *hh)
 {
@@ -1151,26 +1227,14 @@ validate_hdr_host(HTTPHdrImpl *hh)
   if (host_field) {
     if (host_field->has_dups()) {
       ret = ParseResult::ERROR; // can't have more than 1 host field.
+    } else if (auto host{host_field->value_get()}; host.empty()) {
+      ret = ParseResult::ERROR;
     } else {
-      auto             host{host_field->value_get()};
-      std::string_view addr, port, rest;
-      if (0 == ats_ip_parse(host, &addr, &port, &rest)) {
-        if (!port.empty()) {
-          if (port.size() > 5) {
-            return ParseResult::ERROR;
-          }
-          int port_i = ink_atoi(port.data(), port.size());
-          if (port_i >= 65536 || port_i <= 0) {
-            return ParseResult::ERROR;
-          }
-        }
-        if (!validate_host_name(addr)) {
-          return ParseResult::ERROR;
-        }
-        if (ParseResult::DONE == ret && !std::all_of(rest.begin(), rest.end(), &ParseRules::is_ws)) {
-          return ParseResult::ERROR;
-        }
-      } else {
+      std::string_view parsed_host;
+      int              port     = 0;
+      bool             has_port = false;
+
+      if (!http_parse_host_header(host, parsed_host, port, has_port)) {
         ret = ParseResult::ERROR;
       }
     }
@@ -1649,21 +1713,17 @@ HTTPHdr::_fill_target_cache() const
     m_host_mime      = nullptr;
     m_host_length    = static_cast<int>(host.length());
   } else {
-    std::string_view port;
-    std::tie(m_host_mime, host, port) = const_cast<HTTPHdr *>(this)->get_host_port_values();
-    m_host_length                     = static_cast<int>(host.length());
+    m_host_mime   = const_cast<HTTPHdr *>(this)->field_find(static_cast<std::string_view>(MIME_FIELD_HOST));
+    m_host_length = 0;
+    m_port        = 0;
 
-    if (m_host_mime != nullptr) {
-      m_port = 0;
-      if (!port.empty()) {
-        for (auto c : port) {
-          if (isdigit(c)) {
-            m_port = m_port * 10 + c - '0';
-          }
-        }
-      }
-      m_port_in_header = (0 != m_port);
-      m_port           = url_canonicalize_port(url->m_url_impl->m_url_type, m_port);
+    if (m_host_mime != nullptr && http_parse_host_header(m_host_mime->value_get(), host, m_port, m_port_in_header)) {
+      m_host_length = static_cast<int>(host.length());
+      m_port        = url_canonicalize_port(url->m_url_impl->m_url_type, m_port);
+    } else {
+      m_host_mime      = nullptr;
+      m_port           = 0;
+      m_port_in_header = false;
     }
   }
 
