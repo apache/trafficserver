@@ -1,0 +1,106 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+  blocks:
+    - origin_response_should_not_be_used: &origin_response_should_not_be_used
+        server-response:
+          status: 500
+          reason: "Internal Server Error"
+          headers:
+            fields:
+              - [Content-Length, 0]
+
+autest:
+  description: 'Verify HSTS is added on mapped HTTPS traffic but not accelerator 404 responses'
+
+  server:
+    name: 'hsts-server'
+
+  client:
+    name: 'hsts-client'
+
+  ats:
+    name: 'ts-hsts'
+    process_config:
+      enable_tls: true
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'ssl'
+      proxy.config.ssl.hsts_max_age: 300
+
+    remap_config:
+      - from: "https://www.example.com/"
+        to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"
+
+sessions:
+  - protocol:
+      stack: https
+      tls:
+        sni: www.example.com
+    transactions:
+      - client-request:
+          method: GET
+          version: "1.1"
+          url: /
+          headers:
+            fields:
+              - [Host, www.example.com]
+              - [uuid, hsts-200]
+
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Connection, close]
+              - [Content-Length, 0]
+
+        proxy-response:
+          status: 200
+          headers:
+            fields:
+              - [Strict-Transport-Security, { value: max-age=300, as: equal }]
+
+  - protocol:
+      stack: https
+      tls:
+        sni: bad_host
+    transactions:
+      - client-request:
+          method: GET
+          version: "1.1"
+          url: /
+          headers:
+            fields:
+              - [Host, bad_host]
+              - [uuid, hsts-404]
+
+        <<: *origin_response_should_not_be_used
+
+        proxy-response:
+          status: 404
+          headers:
+            fields:
+              - [Strict-Transport-Security, { as: absent }]
+              - [Content-Type, { value: text/html, as: contains }]
+          content:
+            verify:
+              value: "Not Found on Accelerator"
+              as: contains

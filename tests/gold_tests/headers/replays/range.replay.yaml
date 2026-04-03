@@ -1,0 +1,332 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+  blocks:
+    - full_object_response: &full_object_response
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Server, microserver]
+              - [Connection, close]
+              - [Cache-Control, max-age=300]
+              - [Last-Modified, "Thu, 10 Feb 2022 00:00:00 GMT"]
+              - [ETag, range]
+              - [Content-Length, 11]
+          content:
+            encoding: plain
+            data: "0123456789\n"
+
+    - short_object_response: &short_object_response
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Server, microserver]
+              - [Connection, close]
+              - [Cache-Control, max-age=1]
+              - [Last-Modified, "Thu, 10 Feb 2022 00:00:00 GMT"]
+              - [ETag, range]
+              - [Content-Length, 11]
+          content:
+            encoding: plain
+            data: "0123456789\n"
+
+    - origin_response_should_not_be_used: &origin_response_should_not_be_used
+        server-response:
+          status: 500
+          reason: "Internal Server Error"
+          headers:
+            fields:
+              - [Content-Length, 16]
+          content:
+            encoding: plain
+            data: "origin-should-not"
+
+autest:
+  description: 'Verify range request handling for hits, misses, and stale cache revalidation'
+
+  server:
+    name: 'range-server'
+
+  client:
+    name: 'range-client'
+
+  ats:
+    name: 'ts-range'
+    process_config:
+      enable_cache: true
+
+    records_config:
+      proxy.config.http.cache.http: 1
+      proxy.config.http.cache.range.write: 1
+      proxy.config.http.response_via_str: 3
+      proxy.config.http.wait_for_cache: 1
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http'
+
+    remap_config:
+      - from: "http://127.0.0.1/"
+        to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"
+
+sessions:
+  - transactions:
+      - client-request:
+          method: GET
+          version: "1.1"
+          url: /
+          headers:
+            fields:
+              - [Host, 127.0.0.1]
+              - [Range, bytes=1-5]
+              - [If-Range, '"should-not-match"']
+              - [uuid, miss-ifrange]
+
+        <<: *full_object_response
+
+        proxy-response:
+          status: 200
+          headers:
+            fields:
+              - [ETag, { value: range, as: equal }]
+              - [Content-Length, { value: 11, as: equal }]
+          content:
+            verify:
+              value: "0123456789\n"
+              as: equal
+
+      - client-request:
+          method: GET
+          version: "1.1"
+          url: /
+          headers:
+            fields:
+              - [Host, 127.0.0.1]
+              - [Range, bytes=1-5]
+              - [uuid, hit-range]
+
+        <<: *origin_response_should_not_be_used
+
+        proxy-response:
+          status: 206
+          headers:
+            fields:
+              - [ETag, { value: range, as: equal }]
+              - [Content-Length, { value: 5, as: equal }]
+              - [Content-Range, { value: "bytes 1-5/11", as: equal }]
+          content:
+            verify:
+              value: "12345"
+              as: equal
+
+      - client-request:
+          method: GET
+          version: "1.1"
+          url: /
+          headers:
+            fields:
+              - [Host, 127.0.0.1]
+              - [Range, bytes=1-5]
+              - [If-Range, '"range"']
+              - [uuid, hit-ifrange-etag]
+
+        <<: *origin_response_should_not_be_used
+
+        proxy-response:
+          status: 206
+          headers:
+            fields:
+              - [Content-Range, { value: "bytes 1-5/11", as: equal }]
+          content:
+            verify:
+              value: "12345"
+              as: equal
+
+      - client-request:
+          method: GET
+          version: "1.1"
+          url: /
+          headers:
+            fields:
+              - [Host, 127.0.0.1]
+              - [Range, bytes=1-5]
+              - [If-Range, "Thu, 10 Feb 2022 00:00:00 GMT"]
+              - [uuid, hit-ifrange-date]
+
+        <<: *origin_response_should_not_be_used
+
+        proxy-response:
+          status: 206
+          headers:
+            fields:
+              - [Content-Range, { value: "bytes 1-5/11", as: equal }]
+          content:
+            verify:
+              value: "12345"
+              as: equal
+
+      - client-request:
+          method: GET
+          version: "1.1"
+          url: /
+          headers:
+            fields:
+              - [Host, 127.0.0.1]
+              - [Range, bytes=1-5]
+              - [If-Range, "Thu, 10 Feb 2022 01:00:00 GMT"]
+              - [uuid, miss-ifrange-newer-date]
+
+        <<: *origin_response_should_not_be_used
+
+        proxy-response:
+          status: 200
+          content:
+            verify:
+              value: "0123456789\n"
+              as: equal
+
+      - client-request:
+          method: GET
+          version: "1.1"
+          url: /
+          headers:
+            fields:
+              - [Host, 127.0.0.1]
+              - [Range, bytes=100-105]
+              - [uuid, invalid-range]
+
+        <<: *origin_response_should_not_be_used
+
+        proxy-response:
+          status: 416
+
+      - client-request:
+          method: GET
+          version: "1.1"
+          url: /
+          headers:
+            fields:
+              - [Host, 127.0.0.1]
+              - [Range, bytes=1-5]
+              - [If-Range, '"should-not-match"']
+              - [uuid, hit-ifrange-bad-etag]
+
+        <<: *origin_response_should_not_be_used
+
+        proxy-response:
+          status: 200
+          content:
+            verify:
+              value: "0123456789\n"
+              as: equal
+
+      - client-request:
+          method: GET
+          version: "1.1"
+          url: /
+          headers:
+            fields:
+              - [Host, 127.0.0.1]
+              - [Range, bytes=1-5]
+              - [If-Range, 'W/"range"']
+              - [uuid, hit-ifrange-weak-etag]
+
+        <<: *origin_response_should_not_be_used
+
+        proxy-response:
+          status: 200
+          content:
+            verify:
+              value: "0123456789\n"
+              as: equal
+
+      - client-request:
+          method: GET
+          version: "1.1"
+          url: /
+          headers:
+            fields:
+              - [Host, 127.0.0.1]
+              - [Range, bytes=1-5]
+              - [If-Range, "Wed, 09 Feb 2022 23:00:00 GMT"]
+              - [uuid, hit-ifrange-older-date]
+
+        <<: *origin_response_should_not_be_used
+
+        proxy-response:
+          status: 200
+          content:
+            verify:
+              value: "0123456789\n"
+              as: equal
+
+      - client-request:
+          method: GET
+          version: "1.1"
+          url: /short
+          headers:
+            fields:
+              - [Host, 127.0.0.1]
+              - [uuid, fill-short]
+
+        <<: *short_object_response
+
+        proxy-response:
+          status: 200
+          headers:
+            fields:
+              - [Cache-Control, { value: max-age=1, as: equal }]
+          content:
+            verify:
+              value: "0123456789\n"
+              as: equal
+
+      - client-request:
+          delay: 2s
+          method: GET
+          version: "1.1"
+          url: /short
+          headers:
+            fields:
+              - [Host, 127.0.0.1]
+              - [Range, bytes=1-5]
+              - [If-Range, '"range"']
+              - [uuid, revalidate-short]
+
+        server-response:
+          status: 304
+          reason: Not Modified
+          headers:
+            fields:
+              - [Cache-Control, max-age=1]
+              - [ETag, range]
+
+        proxy-response:
+          status: 206
+          headers:
+            fields:
+              - [Cache-Control, { value: max-age=1, as: equal }]
+              - [ETag, { value: range, as: equal }]
+              - [Content-Range, { value: "bytes 1-5/11", as: equal }]
+          content:
+            verify:
+              value: "12345"
+              as: equal
