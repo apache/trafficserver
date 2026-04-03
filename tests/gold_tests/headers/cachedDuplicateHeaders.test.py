@@ -1,5 +1,5 @@
 '''
-Test cached responses and requests with bodies
+Test cached duplicate headers during revalidation.
 '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -18,43 +18,9 @@ Test cached responses and requests with bodies
 #  limitations under the License.
 
 Test.Summary = '''
-Test revalidating cached objects
+Test cached duplicate headers during revalidation
 '''
-testName = "RevalidateCacheObject"
+
 Test.ContinueOnFail = True
 
-
-class CachedHeaderValidationTest:
-    replay_file = "replays/cache-test.replay.yaml"
-
-    def __init__(self):
-        self.setupOriginServer()
-        self.setupTS()
-
-    def setupOriginServer(self):
-        self.server = Test.MakeVerifierServerProcess("cached-header-verifier-server", self.replay_file)
-
-    def setupTS(self):
-        self.ts = Test.MakeATSProcess("ts", enable_tls=True)
-        self.ts.Disk.plugin_config.AddLine('xdebug.so --enable=x-cache,x-cache-key,via')
-        self.ts.Disk.records_config.update(
-            {
-                'proxy.config.diags.debug.enabled': 1,
-                'proxy.config.diags.debug.tags': 'http',
-                'proxy.config.http.response_via_str': 3,
-            })
-        self.ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(self.server.Variables.http_port))
-
-    def runTraffic(self):
-        tr = Test.AddTestRun()
-        tr.AddVerifierClientProcess("cached-header-verifier-client", self.replay_file, http_ports=[self.ts.Variables.port])
-        tr.Processes.Default.StartBefore(self.server)
-        tr.Processes.Default.StartBefore(self.ts)
-        tr.StillRunningAfter = self.ts
-        tr.StillRunningAfter = self.server
-
-    def run(self):
-        self.runTraffic()
-
-
-CachedHeaderValidationTest().run()
+Test.ATSReplayTest(replay_file="replays/cache-test.replay.yaml")
