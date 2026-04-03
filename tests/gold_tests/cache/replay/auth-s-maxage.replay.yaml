@@ -94,6 +94,9 @@ sessions:
               - [Host, example.com]
               - [Authorization, "Basic ZGVtbzphdHNAc3Ryb25ncHc="]
 
+        proxy-request:
+          expect: absent
+
         # The server should NOT be reached because the cached response
         # with s-maxage should be served. Return 400 to verify caching.
         server-response:
@@ -140,6 +143,9 @@ sessions:
               - [uuid, public-with-auth]
               - [Host, example.com]
               - [Authorization, "Basic ZGVtbzphdHNAc3Ryb25ncHc="]
+
+        proxy-request:
+          expect: absent
 
         # The server should NOT be reached because the cached response
         # with public should be served. Return 400 to verify caching.
@@ -201,4 +207,3 @@ sessions:
         # response.
         proxy-response:
           status: 404
-

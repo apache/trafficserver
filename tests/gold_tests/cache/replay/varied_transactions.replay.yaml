@@ -306,6 +306,9 @@ sessions:
       # transaction.
       delay: 100ms
 
+    proxy-request:
+      expect: absent
+
     server-response:
       <<: *404_response
 
@@ -371,6 +374,9 @@ sessions:
       # Add a delay so ATS has time to finish any caching IO for the previous
       # transaction.
       delay: 100ms
+
+    proxy-request:
+      expect: absent
 
     # This should be served out of the cache and not reach the origin.
     server-response:

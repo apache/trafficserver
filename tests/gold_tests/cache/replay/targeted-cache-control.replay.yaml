@@ -250,6 +250,31 @@ sessions:
   # Now verify the correct cache behavior from above.
   #############################################################################
   - client-request:
+      method: GET
+      url: /default/test1
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, default.com]
+        - [uuid, default-test1-request2]
+
+    proxy-request:
+      expect: absent
+
+    # Should not reach the origin.
+    server-response:
+      status: 404
+      reason: Not Found
+
+    # Expect the cached 200 response due to default CDN-Cache-Control handling.
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Cache-Control, { value: "no-store", as: equal } ]
+        - [ CDN-Cache-Control, { value: "max-age=30", as: equal } ]
+
+  - client-request:
       # Delay to exceed Cache-Control but not CDN-Cache-Control.
       delay: 2s
 
@@ -260,6 +285,9 @@ sessions:
         fields:
         - [Host, example.com]
         - [uuid, targeted-test1-request2]
+
+    proxy-request:
+      expect: absent
 
     # Should not reach the origin.
     server-response:
@@ -282,6 +310,9 @@ sessions:
         fields:
         - [Host, example.com]
         - [uuid, targeted-test2-request2]
+
+    proxy-request:
+      expect: absent
 
     # Should not reach the origin.
     server-response:
@@ -328,6 +359,9 @@ sessions:
         - [Host, example.com]
         - [uuid, targeted-test4-request2]
 
+    proxy-request:
+      expect: absent
+
     # Should not reach the origin.
     server-response:
       status: 404
@@ -348,6 +382,9 @@ sessions:
         fields:
         - [Host, acme.com]
         - [uuid, acme-test1-request2]
+
+    proxy-request:
+      expect: absent
 
     # The origin should not receive the request since ATS will reply out of cache.
     server-response:

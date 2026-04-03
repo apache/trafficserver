@@ -528,6 +528,9 @@ sessions:
         - [ Host, www.example.com ]
         - [ uuid, 14 ]
 
+    proxy-request:
+      expect: absent
+
     server-response:
       status: 200
       reason: OK
@@ -583,6 +586,9 @@ sessions:
         fields:
         - [ Host, www.example.com ]
         - [ uuid, 16 ]
+
+    proxy-request:
+      expect: absent
 
     # The server-response should not be served.
     server-response:

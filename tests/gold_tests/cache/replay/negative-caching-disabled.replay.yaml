@@ -129,6 +129,9 @@ sessions:
   - all: { headers: { fields: [[ uuid, 2 ]]}}
     <<: *request_for_path_200
 
+    proxy-request:
+      expect: absent
+
     # This should not go through to the server. Return a non-200 response to
     # verify it is served from cache.
     server-response:
@@ -230,6 +233,9 @@ sessions:
 
   - all: { headers: { fields: [[ uuid, 8 ]]}}
     <<: *request_for_404_with_cc
+
+    proxy-request:
+      expect: absent
 
     # This should be served out of cache, therefore the origin server should
     # not see this.

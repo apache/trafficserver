@@ -29,5 +29,8 @@ sessions:
         - [ X-Request, request ]
         - [ uuid, 1 ]
 
+    proxy-request:
+      expect: absent
+
     proxy-response:
       status: 500

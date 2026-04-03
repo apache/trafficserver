@@ -31,6 +31,9 @@ sessions:
         - [ Host, fqdn1 ]
         - [ uuid, 1 ]
 
+    proxy-request:
+      expect: absent
+
     proxy-response:
       status: 200
       headers:
@@ -54,6 +57,9 @@ sessions:
         - [ Host, fqdn1 ]
         - [ uuid, 2 ]
 
+    proxy-request:
+      expect: absent
+
     proxy-response:
       status: 404
       headers:
@@ -74,6 +80,9 @@ sessions:
         fields:
         - [ Host, fqdn2 ]
         - [ uuid, 3 ]
+
+    proxy-request:
+      expect: absent
 
     proxy-response:
       status: 200
@@ -98,6 +107,9 @@ sessions:
         - [ Host, fqdn3 ]
         - [ uuid, 4 ]
 
+    proxy-request:
+      expect: absent
+
     proxy-response:
       status: 200
       headers:
@@ -121,6 +133,9 @@ sessions:
         - [ Host, fqdn4 ]
         - [ uuid, 5 ]
 
+    proxy-request:
+      expect: absent
+
     proxy-response:
       status: 412
       headers:
@@ -135,6 +150,9 @@ sessions:
         fields:
         - [ Host, fqdn5 ]
         - [ uuid, 6 ]
+
+    proxy-request:
+      expect: absent
 
     proxy-response:
       status: 200
@@ -158,6 +176,9 @@ sessions:
         - [ Host, fqdn6 ]
         - [ uuid, 7 ]
 
+    proxy-request:
+      expect: absent
+
     proxy-response:
       status: 200
       headers:
@@ -175,6 +196,9 @@ sessions:
         fields:
         - [ Host, fqdn7 ]
         - [ uuid, 8 ]
+
+    proxy-request:
+      expect: absent
 
     proxy-response:
       status: 200
@@ -199,6 +223,9 @@ sessions:
         - [ Host, fqdn8 ]
         - [ uuid, 8 ]
 
+    proxy-request:
+      expect: absent
+
     proxy-response:
       status: 200
       headers:
@@ -221,6 +248,9 @@ sessions:
         fields:
         - [ Host, fqdn9 ]
         - [ uuid, 9 ]
+
+    proxy-request:
+      expect: absent
 
     proxy-response:
       status: 200

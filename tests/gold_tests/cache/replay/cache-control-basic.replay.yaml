@@ -102,6 +102,9 @@ sessions:
         - [x-debug, "x-cache,x-cache-key,via"]
         - [uuid, cache-hit]
 
+    proxy-request:
+      expect: absent
+
     # Server should not receive this request (it's cached)
     server-response:
       status: 404
@@ -202,6 +205,9 @@ sessions:
         - [x-debug, "x-cache,x-cache-key,via"]
         - [uuid, only-if-cached]
 
+    proxy-request:
+      expect: absent
+
     # Server should not be contacted for only-if-cached requests
     server-response:
       status: 200
@@ -215,4 +221,3 @@ sessions:
         fields:
         - [X-Cache, { value: "miss", as: equal }]
         - [Cache-Control, { value: "no-store", as: equal }]
-

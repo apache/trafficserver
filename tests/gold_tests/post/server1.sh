@@ -17,25 +17,20 @@
 # A very simple cleartext server for one HTTP transaction.  Does no validation of the Request message.
 # Sends a fixed response message
 
+response() {
+    # Wait for end of Request message.
+    #
+    while ((1 == 1)); do
+        if [[ -f $outfile ]]; then
+            if tr '\r\n' '=!' <$outfile | grep '=!=!' >/dev/null; then
+                break
+            fi
+        fi
+        sleep 1
+    done
 
-response ()
-{
-  # Wait for end of Request message.
-  #
-  while (( 1 == 1 ))
-  do
-    if [[ -f $outfile ]] ; then
-      if tr '\r\n' '=!' < $outfile | grep '=!=!' > /dev/null
-      then
-        break;
-      fi
-    fi
-    sleep 1
-  done
-
-
-  printf "HTTP/1.1 420 Be Calm\r\nContent-Length: 0\r\n\r\n"
+    printf "HTTP/1.1 420 Be Calm\r\nContent-Length: 0\r\n\r\n"
 
 }
 outfile=$2
-response | nc -l $1 > "$outfile"
+response | nc -l $1 >"$outfile"

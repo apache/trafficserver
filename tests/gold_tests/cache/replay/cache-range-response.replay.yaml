@@ -82,6 +82,8 @@ sessions:
               - [ Host, example.com ]
               - [ uuid, 2 ]
               - [ Range, bytes=0-5 ]
+        proxy-request:
+          expect: absent
         server-response:
           status: 500
           reason: OK
@@ -103,6 +105,8 @@ sessions:
             fields:
               - [ Host, example.com ]
               - [ uuid, 3 ]
+        proxy-request:
+          expect: absent
         server-response:
           status: 500
           reason: OK
