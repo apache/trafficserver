@@ -25,10 +25,12 @@ from antlr4 import CommonTokenStream, InputStream
 from u4wrh.u4wrhLexer import u4wrhLexer
 from u4wrh.u4wrhParser import u4wrhParser
 from u4wrh.hrw_visitor import HRWInverseVisitor
+from hrw4u.errors import ErrorCollector
 
 from conftest import collect_autest_pairs
 
 
+@pytest.mark.autest
 @pytest.mark.parametrize("conf_file,hrw4u_file", collect_autest_pairs())
 def test_conf_to_hrw4u(conf_file: Path, hrw4u_file: Path) -> None:
     """Test that conf -> hrw4u output matches the .hrw4u file."""
@@ -38,11 +40,12 @@ def test_conf_to_hrw4u(conf_file: Path, hrw4u_file: Path) -> None:
     parser = u4wrhParser(stream)
     tree = parser.program()
 
-    visitor = HRWInverseVisitor(filename=str(conf_file), merge_sections=False)
+    ec = ErrorCollector(max_errors=10)
+    visitor = HRWInverseVisitor(filename=str(conf_file), merge_sections=False, error_collector=ec)
     result = visitor.visit(tree)
 
+    assert not ec.has_errors(), f"u4wrh errors in {conf_file.name}:\n{ec.get_error_summary()}"
     assert result is not None, f"u4wrh produced no output for {conf_file.name}"
-    assert len(result) > 0, f"u4wrh produced empty output for {conf_file.name}"
 
     expected = hrw4u_file.read_text().strip()
     actual = '\n'.join(result).strip()

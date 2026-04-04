@@ -97,7 +97,7 @@ class HRWInverseVisitor(u4wrhVisitor, BaseHRWVisitor):
         if (self._if_depth > 0 and not self._in_elif_mode and not self._pending_terms and not expecting_nested_if and
                 not self._in_group):
             self.debug("new rule detected - closing if chain")
-            self._start_new_section(SectionType.REMAP)
+            self._start_new_section(self._section_label)
 
     def _start_new_section(self, section_type: SectionType) -> None:
         """Start a new section, handling continuation of existing sections."""
