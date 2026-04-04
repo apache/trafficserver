@@ -40,16 +40,80 @@
 #include "swoc/bwf_ex.h"
 #include "swoc/swoc_file.h"
 
+#include "config/remap.h"
+#include "iocore/cache/Cache.h"
 #include "proxy/http/remap/UrlRewrite.h"
 #include "proxy/http/remap/UrlMapping.h"
 #include "proxy/http/remap/RemapConfig.h"
 #include "proxy/http/remap/AclFiltering.h"
 #include "records/RecCore.h"
 
+extern CacheHostRecord *createCacheHostRecord(const char *volume_str, char *errbuf, size_t errbufsize);
+
 namespace
 {
 DbgCtl dbg_ctl_remap_yaml{"remap_yaml"};
 DbgCtl dbg_ctl_url_rewrite{"url_rewrite"};
+
+swoc::Errata
+parse_yaml_volume(const YAML::Node &node, url_mapping *url_mapping)
+{
+  if (!url_mapping) {
+    return swoc::Errata("invalid url_mapping for volume");
+  }
+
+  std::string volume_str;
+
+  auto append_volume = [&](int volume) -> swoc::Errata {
+    if (volume < 1 || volume > 255) {
+      return swoc::Errata("volume number {} out of range (1-255)", volume);
+    }
+    if (!volume_str.empty()) {
+      volume_str.append(",");
+    }
+    volume_str.append(std::to_string(volume));
+    return {};
+  };
+
+  if (node.IsScalar()) {
+    try {
+      return append_volume(node.as<int>());
+    } catch (std::exception const &) {
+      return swoc::Errata("invalid volume value '{}'", node.Scalar());
+    }
+  }
+
+  if (node.IsSequence()) {
+    for (auto const &item : node) {
+      if (!item.IsScalar()) {
+        return swoc::Errata("volume sequence entries must be scalars");
+      }
+      try {
+        auto errata = append_volume(item.as<int>());
+        if (!errata.is_ok()) {
+          return errata;
+        }
+      } catch (std::exception const &) {
+        return swoc::Errata("invalid volume value '{}'", item.Scalar());
+      }
+    }
+  } else {
+    return swoc::Errata("volume must be a scalar or sequence");
+  }
+
+  if (CacheProcessor::IsCacheEnabled() == CacheInitState::INITIALIZED) {
+    char             volume_errbuf[256];
+    CacheHostRecord *rec = createCacheHostRecord(volume_str.c_str(), volume_errbuf, sizeof(volume_errbuf));
+    if (!rec) {
+      return swoc::Errata("failed to build volume record for volume={}: {}", volume_str, volume_errbuf);
+    }
+    url_mapping->volume_host_rec.store(rec, std::memory_order_release);
+  } else {
+    url_mapping->setVolume(volume_str.c_str());
+  }
+
+  return {};
+}
 } // end anonymous namespace
 
 swoc::Errata
@@ -753,7 +817,7 @@ parse_yaml_remap_rule(const YAML::Node &node, BUILD_TABLE_INFO *bti)
   type_id_str          = is_cur_mapping_regex ? (type_str.c_str() + 6) : type_str.c_str();
 
   // Check to see whether is a reverse or forward mapping
-  maptype = get_mapping_type(type_id_str, bti);
+  maptype = get_mapping_type(type_id_str);
   if (maptype == mapping_type::NONE) {
     return swoc::Errata("unknown mapping type: {}", type_str);
   }
@@ -770,9 +834,25 @@ parse_yaml_remap_rule(const YAML::Node &node, BUILD_TABLE_INFO *bti)
   // update sticky flag
   bti->accept_check_p = bti->accept_check_p && bti->ip_allow_check_enabled_p;
 
+  if (node["unique"]) {
+    new_mapping->unique = node["unique"].as<bool>();
+  }
+
   new_mapping->map_id = 0;
   if (node["mapid"]) {
     new_mapping->map_id = node["mapid"].as<unsigned int>();
+  }
+
+  if (node["tag"]) {
+    new_mapping->tag = ats_strdup(node["tag"].as<std::string>().c_str());
+  }
+
+  if (node["volume"]) {
+    errata = parse_yaml_volume(node["volume"], new_mapping.get());
+    if (!errata.is_ok()) {
+      swoc::bwprint(errStr, "invalid volume: {}", errata);
+      goto MAP_ERROR;
+    }
   }
 
   // Parse from URL
@@ -967,7 +1047,21 @@ remap_parse_yaml_bti(const char *path, BUILD_TABLE_INFO *bti)
   try {
     Dbg(dbg_ctl_remap_yaml, "Parsing YAML config file: %s", path);
 
-    YAML::Node config = YAML::LoadFile(path);
+    config::RemapParser parser;
+    auto                parse_result = parser.parse(path);
+    YAML::Node          config       = parse_result.value;
+
+    if (parse_result.file_not_found) {
+      Dbg(dbg_ctl_remap_yaml, "Missing YAML config file");
+      return true;
+    }
+
+    if (!parse_result.ok()) {
+      std::string const error_text =
+        parse_result.errata.empty() ? "unknown error" : std::string(parse_result.errata.front().text());
+      Error("Failed to parse YAML config file %s: %s", path, error_text.c_str());
+      return false;
+    }
 
     if (config.IsNull()) {
       Dbg(dbg_ctl_remap_yaml, "Empty YAML config file");

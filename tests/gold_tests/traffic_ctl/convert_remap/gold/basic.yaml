@@ -1,0 +1,41 @@
+remap:
+  - define_filter:
+      deny_write:
+        method:
+          - PUT
+          - DELETE
+        action: deny
+        src_ip: 10.0.0.0/8
+  - activate_filter: deny_write
+  - type: map
+    unique: true
+    from:
+      url: http://example.com
+    to:
+      url: http://origin.example.com
+    tag: edge-tag
+    strategy: my_strategy
+    mapid: 42
+    volume:
+      - 3
+      - 4
+    acl_filter:
+      method: GET
+      src_ip: 192.0.2.10
+      src_ip_invert: 198.51.100.0/24
+      internal: true
+    plugins:
+      - name: conf_remap.so
+        params:
+          - proxy.config.foo=1
+  - type: map_with_referer
+    from:
+      url: http://refer.example.com
+    to:
+      url: http://origin.example.com
+    redirect:
+      url: http://deny.example.com
+      regex:
+        - (.*[.])?allowed[.]com
+        - ~evil[.]example
+  - include: remap-extra.yaml

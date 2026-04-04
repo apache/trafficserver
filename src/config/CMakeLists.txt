@@ -17,10 +17,10 @@
 
 set(CONFIG_PUBLIC_HEADERS
     ${PROJECT_SOURCE_DIR}/include/config/config_result.h ${PROJECT_SOURCE_DIR}/include/config/ssl_multicert.h
-    ${PROJECT_SOURCE_DIR}/include/config/storage.h
+    ${PROJECT_SOURCE_DIR}/include/config/storage.h ${PROJECT_SOURCE_DIR}/include/config/remap.h
 )
 
-add_library(tsconfig ssl_multicert.cc storage.cc)
+add_library(tsconfig ssl_multicert.cc storage.cc remap.cc)
 
 add_library(ts::config ALIAS tsconfig)
 
@@ -48,7 +48,7 @@ endif()
 clang_tidy_check(tsconfig)
 
 if(BUILD_TESTING)
-  add_executable(test_tsconfig unit_tests/test_ssl_multicert.cc unit_tests/test_storage.cc)
+  add_executable(test_tsconfig unit_tests/test_ssl_multicert.cc unit_tests/test_storage.cc unit_tests/test_remap.cc)
 
   target_link_libraries(test_tsconfig PRIVATE tsconfig ts::tscore Catch2::Catch2WithMain)
 
