@@ -138,6 +138,12 @@ public:
     return &_send_header;
   }
 
+  HTTPHdr const *
+  get_receive_header() const
+  {
+    return &_receive_header;
+  }
+
   void update_read_length(int count);
   void set_read_done();
 

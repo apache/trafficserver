@@ -54,6 +54,10 @@ if(BUILD_TESTING)
   target_compile_definitions(test_RolledLogDeleter PRIVATE TEST_LOG_UTILS)
   target_link_libraries(test_RolledLogDeleter tscore ts::inkevent records Catch2::Catch2WithMain)
   add_catch2_test(NAME test_RolledLogDeleter COMMAND test_RolledLogDeleter)
+
+  add_executable(test_LogAccess unit-tests/test_LogAccess.cc)
+  target_link_libraries(test_LogAccess ts::logging ts::http ts::inkevent records Catch2::Catch2WithMain)
+  add_catch2_test(NAME test_LogAccess COMMAND test_LogAccess)
 endif()
 
 clang_tidy_check(logging)
