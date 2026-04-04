@@ -100,6 +100,11 @@ produce_features(bool json)
 #else
   print_feature("TS_HAS_ZSTD", 0, json);
 #endif
+#if HAVE_SSL_CTX_ADD_CERT_COMPRESSION_ALG || HAVE_SSL_CTX_SET1_CERT_COMP_PREFERENCE
+  print_feature("TS_HAS_CERT_COMPRESSION", 1, json);
+#else
+  print_feature("TS_HAS_CERT_COMPRESSION", 0, json);
+#endif
 #ifdef F_GETPIPE_SZ
   print_feature("TS_HAS_PIPE_BUFFER_SIZE_CONFIG", 1, json);
 #else
