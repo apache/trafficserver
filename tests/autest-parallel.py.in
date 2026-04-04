@@ -45,6 +45,7 @@ from typing import Dict, List, Optional, Tuple
 DEFAULT_SERIAL_TESTS_FILE = Path("${CMAKE_CURRENT_SOURCE_DIR}") / "serial_tests.txt"
 # Default estimate for unknown tests (seconds)
 DEFAULT_TEST_TIME = 15.0
+KNOWN_TEST_SUFFIXES = ('.test.yaml', '.test.yml', '.test.py', '.test')
 
 
 @dataclass
@@ -66,30 +67,77 @@ class TestResult:
     is_serial: bool = False
 
 
-def discover_tests(test_dir: Path, filter_patterns: Optional[List[str]] = None) -> List[str]:
+def normalize_test_name(test_name: str) -> str:
+    """Normalize a test path or file name to the autest test name."""
+    name = Path(test_name).name
+    for suffix in KNOWN_TEST_SUFFIXES:
+        if name.endswith(suffix):
+            return name[:-len(suffix)]
+    return Path(name).stem.replace('.test', '')
+
+
+def parse_autest_list_output(output: str) -> List[str]:
+    """Extract the discovered test names from `autest list --json` output."""
+    clean_output = strip_ansi(output)
+    match = re.search(r'(\[[\s\S]*\])', clean_output)
+    if match is None:
+        raise ValueError(f"Could not find JSON in autest list output:\n{clean_output}")
+
+    entries = json.loads(match.group(1))
+    return sorted(entry['name'] for entry in entries if 'name' in entry)
+
+
+def discover_tests(
+        test_dir: Path,
+        filter_patterns: Optional[List[str]] = None,
+        script_dir: Optional[Path] = None,
+        ats_bin: Optional[str] = None,
+        build_root: Optional[str] = None,
+        extra_args: Optional[List[str]] = None) -> List[str]:
     """
-    Discover all .test.py files in the test directory.
+    Discover tests via `autest list --json`.
 
     Args:
         test_dir: Path to gold_tests directory
         filter_patterns: Optional list of glob patterns to filter tests
+        script_dir: Directory in which to invoke autest
+        ats_bin: Optional ATS bin directory to pass through to autest list
+        build_root: Optional build root to pass through to autest list
+        extra_args: Additional autest CLI arguments to pass through
 
     Returns:
-        List of test names (without .test.py extension)
+        List of discovered test names
     """
-    tests = []
-    for test_file in test_dir.rglob("*.test.py"):
-        # Extract test name (filename without .test.py)
-        test_name = test_file.stem.replace('.test', '')
+    cmd = [
+        'uv',
+        'run',
+        'autest',
+        'list',
+        '--directory',
+        str(test_dir),
+        '--json',
+    ]
 
-        # Apply filters if provided
-        if filter_patterns:
-            if any(fnmatch.fnmatch(test_name, pattern) for pattern in filter_patterns):
-                tests.append(test_name)
-        else:
-            tests.append(test_name)
+    if ats_bin:
+        cmd.extend(['--ats-bin', ats_bin])
+    if build_root:
+        cmd.extend(['--build-root', build_root])
+    if filter_patterns:
+        cmd.append('--filters')
+        cmd.extend(filter_patterns)
+    if extra_args:
+        cmd.extend(extra_args)
 
-    return sorted(tests)
+    proc = subprocess.run(
+        cmd,
+        cwd=script_dir,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+
+    output = proc.stdout + proc.stderr
+    return parse_autest_list_output(output)
 
 
 def load_serial_tests(serial_file: Path) -> set:
@@ -97,9 +145,9 @@ def load_serial_tests(serial_file: Path) -> set:
     Load list of tests that must run serially from a file.
 
     The file format is one test name per line, with # for comments.
-    Test names can be full paths like ``subdir/test_name.test.py``.
-    The .test.py extension is stripped, and only the basename (stem) is
-    used for matching against discovered test names.
+    Test names can be full paths like ``subdir/test_name.test.py`` or
+    ``subdir/test_name.test.yaml``. Known test suffixes are stripped before
+    matching against discovered test names.
 
     Returns:
         Set of test base names that must run serially
@@ -115,12 +163,7 @@ def load_serial_tests(serial_file: Path) -> set:
                 # Skip empty lines and comments
                 if not line or line.startswith('#'):
                     continue
-                # Remove .test.py extension if present
-                if line.endswith('.test.py'):
-                    line = line[:-8]  # Remove .test.py
-                # Extract just the test name from path
-                test_name = Path(line).stem.replace('.test', '')
-                serial_tests.add(test_name)
+                serial_tests.add(normalize_test_name(line))
     except IOError:
         pass  # File is optional; missing file means no serial tests
 
@@ -801,7 +844,7 @@ Examples:
     %(prog)s -j 2 --filter "cache-*" --filter "tls-*" --ats-bin /opt/ats/bin --sandbox /tmp/autest
 
     # List tests without running
-    %(prog)s --list --ats-bin /opt/ats/bin
+    %(prog)s --list
 
     # Collect timing data (runs tests one at a time for accurate timing)
     %(prog)s -j 4 --collect-timings --ats-bin /opt/ats/bin --sandbox /tmp/autest
@@ -873,7 +916,7 @@ Examples:
         print(f"Loaded {len(serial_tests)} serial tests from {args.serial_tests_file}")
 
     # Discover tests
-    all_tests = discover_tests(test_dir, args.filters)
+    all_tests = discover_tests(test_dir, args.filters, script_dir, args.ats_bin, build_root, args.extra_args)
 
     if not all_tests:
         print("No tests found matching the specified filters.", file=sys.stderr)
