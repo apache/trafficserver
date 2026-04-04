@@ -25,6 +25,8 @@
 
 #include "operator.h"
 #include "condition.h"
+#include "hrw4u/ObjTypes.h"
 
+Operator  *operator_factory(hrw::OperatorType op_type);
 Operator  *operator_factory(const std::string &op);
 Condition *condition_factory(const std::string &cond);
