@@ -236,9 +236,9 @@ struct CacheVC : public CacheVConnection {
   Ptr<IOBufferBlock>  blocks; // data available to write
   Ptr<IOBufferBlock>  writer_buf;
 
-  OpenDirEntry *od = nullptr;
-  AIOCallback   io;
-  int           alternate_index = CACHE_ALT_INDEX_DEFAULT; // preferred position in vector
+  Ptr<OpenDirEntry> od;
+  AIOCallback       io;
+  int               alternate_index = CACHE_ALT_INDEX_DEFAULT; // preferred position in vector
   LINK(CacheVC, opendir_link);
   // end Region B
 
