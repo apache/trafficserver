@@ -25,25 +25,33 @@ SEND_RESPONSE {
         # ---- Test: GROUP with [AND] on GROUP:END (explicit) ----
         # hrw4u: if (inbound.req.X-And-A) && inbound.req.X-And-B
     }
+}
 
+SEND_RESPONSE {
     if inbound.url.path ~ /\/logic\/group-and$/ && (inbound.req.X-And-A) && inbound.req.X-And-B {
         inbound.resp.X-Group-And-Result = "matched";
         # ---- Test: GROUP with [NOT] on GROUP:END ----
         # hrw4u: if !(inbound.req.X-Not-A && inbound.req.X-Not-B)
     }
+}
 
+SEND_RESPONSE {
     if inbound.url.path ~ /\/logic\/group-not$/ && !(inbound.req.X-Not-A && inbound.req.X-Not-B) {
         inbound.resp.X-Group-Not-Result = "matched";
         # ---- Test: Nested GROUPs with mixed OR/AND ----
         # hrw4u: if inbound.req.X-Outer-A && (inbound.req.X-Inner-A || inbound.req.X-Inner-B)
     }
+}
 
+SEND_RESPONSE {
     if inbound.url.path ~ /\/logic\/nested-group$/ && inbound.req.X-Outer-A && (inbound.req.X-Inner-A || inbound.req.X-Inner-B) {
         inbound.resp.X-Nested-Group-Result = "matched";
         # ---- Test: Two GROUPs with OR between them ----
         # hrw4u: if (inbound.req.X-Left-A && inbound.req.X-Left-B) || (inbound.req.X-Right-A && inbound.req.X-Right-B)
     }
+}
 
+SEND_RESPONSE {
     if inbound.url.path ~ /\/logic\/two-groups$/ && (inbound.req.X-Left-A && inbound.req.X-Left-B) || (inbound.req.X-Right-A && inbound.req.X-Right-B) {
         inbound.resp.X-Two-Groups-Result = "matched";
         # ---- Test: GROUP inside if/elif/else ----
@@ -55,7 +63,9 @@ SEND_RESPONSE {
         #   else
         #     -> "other"
     }
+}
 
+SEND_RESPONSE {
     if inbound.url.path ~ /\/logic\/if-group$/ {
         if inbound.req.X-Branch == "alpha" && (inbound.req.X-Sub-A || inbound.req.X-Sub-B) {
             inbound.resp.X-If-Group-Result = "alpha";
@@ -74,7 +84,9 @@ SEND_RESPONSE {
         #   else
         #     -> "outer-miss"
     }
+}
 
+SEND_RESPONSE {
     if inbound.url.path ~ /\/logic\/nested-if-group$/ {
         if inbound.req.X-Outer == "yes" {
             if (inbound.req.X-Case-A || inbound.req.X-Case-B) {
@@ -88,19 +100,25 @@ SEND_RESPONSE {
         # ---- Test: Complex expression: (A OR B) AND (C OR D) ----
         # hrw4u: if (inbound.req.X-P || inbound.req.X-Q) && (inbound.req.X-R || inbound.req.X-S)
     }
+}
 
+SEND_RESPONSE {
     if inbound.url.path ~ /\/logic\/complex-and-or$/ && (inbound.req.X-P || inbound.req.X-Q) && (inbound.req.X-R || inbound.req.X-S) {
         inbound.resp.X-Complex-Result = "matched";
         # ---- Test: IP:CLIENT in GROUP with [OR]
         # hrw4u: if (inbound.ip in {127.0.0.0/8}) || inbound.req.X-Outer == "true"
     }
+}
 
+SEND_RESPONSE {
     if inbound.url.path ~ /\/logic\/ip-group-or$/ && (inbound.ip in {127.0.0.0/8}) || inbound.req.X-Outer == "true" {
         inbound.resp.X-Ip-Group-Or-Result = "matched";
         # ---- Test: GROUP as first condition after hook ----
         # hrw4u: if (inbound.url.path ~ /\/logic\/group-first$/) && inbound.req.X-First-A
     }
+}
 
+SEND_RESPONSE {
     if (inbound.url.path ~ /\/logic\/group-first$/) && inbound.req.X-First-A {
         inbound.resp.X-Group-First-Result = "matched";
     }

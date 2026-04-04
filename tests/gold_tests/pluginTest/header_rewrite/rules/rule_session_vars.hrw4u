@@ -26,6 +26,8 @@ SEND_RESPONSE {
     if ssn_bool_0 == TRUE {
         inbound.resp.X-Session-Seen = "yes";
     }
+}
 
+SEND_RESPONSE {
     ssn_bool_0 = true;
 }
