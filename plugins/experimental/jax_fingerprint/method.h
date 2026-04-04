@@ -32,6 +32,7 @@ using ClientHelloHandler = void (*)(JAxContext *, TSVConn);
 
 /** @brief Handler invoked on HTTP request read for request-based fingerprinting. */
 using RequestReadHandler = void (*)(JAxContext *, TSHttpTxn);
+using VConnCloseHandler  = void (*)(TSVConn);
 
 /**
  * @brief Describes a fingerprinting method (e.g. JA3, JA4, JA4H).
@@ -65,4 +66,5 @@ struct Method {
 
   /** Callback for REQUEST_BASED methods (may be nullptr). */
   RequestReadHandler on_request;
+  VConnCloseHandler  on_vconn_close;
 };

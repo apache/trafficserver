@@ -2,7 +2,8 @@
 Verify the behavior of the jax_fingerprint plugin.
 
 Covers all supported run modes (overwrite, keep, append), setup types
-(global, remap, hybrid), fingerprint methods (JA3, JA4, JA4H), and both
+(global, remap, hybrid), fingerprint methods (JA3, JA3_RAW, JA3_RAW_GREASE,
+JAWS, JAWS_V2, JA4, JA4H), and both
 HTTP/1.1 and HTTP/2 client connections.
 
 Global setup:   plugin in plugin.config, applies to every request.
@@ -34,6 +35,19 @@ Test.Summary = __doc__
 Test.SkipUnless(Condition.PluginExists('jax_fingerprint.so'))
 
 
+def configure_storage_yaml(ts: 'ATSProcess') -> None:
+    '''Seed storage.yaml for ATS builds that prefer YAML cache span config.'''
+    storage_yaml = os.path.join(ts.Variables.CONFIGDIR, 'storage.yaml')
+    ts.Disk.File(storage_yaml, id='storage_yaml', typename='ats:config')
+    ts.Disk.storage_yaml.AddLines([
+        'cache:',
+        '  spans:',
+        '    - name: disk-1',
+        '      path: storage',
+        '      size: 256M',
+    ])
+
+
 class JaxFingerprintTest:
     '''Verify the behavior of the jax_fingerprint plugin.'''
 
@@ -47,7 +61,8 @@ class JaxFingerprintTest:
         '''Configure test processes for the jax_fingerprint plugin.
 
         :param name: Descriptive name for this test run.
-        :param method: Fingerprint method: 'JA3', 'JA4', or 'JA4H'.
+        :param method: Fingerprint method: 'JA3', 'JA3_RAW',
+            'JA3_RAW_GREASE', 'JAWS', 'JAWS_V2', 'JA4', or 'JA4H'.
         :param setup: Plugin setup type: 'global', 'remap', or 'hybrid'.
         :param mode: Header write mode: 'overwrite', 'keep', or 'append'.
         :param http2: If True, the client connects to ATS over HTTP/2 (h2
@@ -62,8 +77,9 @@ class JaxFingerprintTest:
             setup.
 
         Method notes:
-          - JA3 / JA4 are CONNECTION_BASED (triggered on TLS client hello)
-            and require TLS between the client and ATS.
+          - JA3 / JA3_RAW / JA3_RAW_GREASE / JAWS / JAWS_V2 / JA4 are
+            CONNECTION_BASED (triggered on TLS client hello) and require
+            TLS between the client and ATS.
           - JA4H is REQUEST_BASED (triggered on HTTP request read) and
             works over plain HTTP, HTTPS, and HTTP/2.
 
@@ -77,8 +93,8 @@ class JaxFingerprintTest:
           - hybrid:  global plugin (no --standalone) captures the TLS client
             hello and stores context on the vconn; a remap plugin (no
             --standalone) reads that shared context and sets headers only
-            on matched routes.  Both instances share the same user-arg slot
-            because TSUserArgIndexReserve is idempotent for identical names.
+            on matched routes.  Both instances share the same method-scoped
+            context registry inside the plugin.
         '''
         self._name = name
         self._method = method
@@ -87,7 +103,7 @@ class JaxFingerprintTest:
         self._http2 = http2
         self._servernames = servernames
         # HTTP/2 always runs over TLS (h2 requires TLS).
-        self._needs_tls = method in ('JA3', 'JA4') or http2
+        self._needs_tls = method in ('JA3', 'JA3_RAW', 'JA3_RAW_GREASE', 'JAWS', 'JAWS_V2', 'JA4') or http2
         self._replay_file = self._choose_replay_file()
 
         tr = Test.AddTestRun(name)
@@ -182,13 +198,8 @@ class JaxFingerprintTest:
         JaxFingerprintTest._ts_counter += 1
 
         self._ts.addDefaultSSLFiles()
-        self._ts.Disk.ssl_multicert_yaml.AddLines(
-            """
-ssl_multicert:
-  - dest_ip: "*"
-    ssl_cert_name: server.pem
-    ssl_key_name: server.key
-""".split("\n"))
+        configure_storage_yaml(self._ts)
+        self._ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
 
         if self._needs_tls:
             server_port = self._server.Variables.https_port
@@ -202,6 +213,10 @@ ssl_multicert:
                 'proxy.config.ssl.server.cert.path': self._ts.Variables.SSLDir,
                 'proxy.config.ssl.server.private_key.path': self._ts.Variables.SSLDir,
                 'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
+                'proxy.config.http.server_ports':
+                    (
+                        'ipv4:{0} ipv4:{1}:proto=http2;http:ssl ipv6:{0} ipv6:{1}:proto=http2;http:ssl'.format(
+                            self._ts.Variables.port, self._ts.Variables.ssl_port)),
                 'proxy.config.dns.nameservers': f"127.0.0.1:{self._dns.Variables.Port}",
                 'proxy.config.dns.resolv_conf': 'NULL',
                 'proxy.config.proxy_name': 'test.proxy.test',
@@ -337,3 +352,68 @@ JaxFingerprintTest('Global JA4 servernames', 'JA4', 'global', servernames='jax.s
 # Remap plugin sets headers on both routes, but only the SNI-allowed
 # connection has a vconn context, so only that request gets headers.
 JaxFingerprintTest('Hybrid JA4 servernames', 'JA4', 'hybrid', servernames='jax.server.test')
+
+
+def add_ja3_family_side_by_side_test() -> None:
+    '''Verify the full JA3 family can run side by side with independent headers and modes.'''
+    tr = Test.AddTestRun('Global JA3 family side by side')
+
+    dns = tr.MakeDNServer('dns_ja3_family', default='127.0.0.1')
+    server = tr.AddVerifierServerProcess('server_ja3_family', 'jax_fingerprint_ja3_family.replay.yaml')
+
+    ts = Test.MakeATSProcess('ts_ja3_family', enable_cache=False, enable_tls=True)
+    ts.addDefaultSSLFiles()
+    configure_storage_yaml(ts)
+    ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+
+    ts.Disk.records_config.update(
+        {
+            'proxy.config.ssl.server.cert.path': ts.Variables.SSLDir,
+            'proxy.config.ssl.server.private_key.path': ts.Variables.SSLDir,
+            'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
+            'proxy.config.http.server_ports':
+                (
+                    'ipv4:{0} ipv4:{1}:proto=http2;http:ssl ipv6:{0} ipv6:{1}:proto=http2;http:ssl'.format(
+                        ts.Variables.port, ts.Variables.ssl_port)),
+            'proxy.config.dns.nameservers': f"127.0.0.1:{dns.Variables.Port}",
+            'proxy.config.dns.resolv_conf': 'NULL',
+            'proxy.config.proxy_name': 'test.proxy.test',
+            'proxy.config.diags.debug.enabled': 1,
+            'proxy.config.diags.debug.tags': 'jax_fingerprint|http',
+        })
+
+    log_path = os.path.join(ts.Variables.LOGDIR, 'jax_fingerprint_multi.log')
+    ts.Disk.File(log_path, id='jax_family_log')
+    for method in ('JA3', 'JA3_RAW', 'JA3_RAW_GREASE', 'JAWS', 'JAWS_V2'):
+        ts.Disk.jax_family_log.Content += Testers.ContainsExpression(
+            rf'.*{method}:.*', f'Verify the shared log contains a {method} fingerprint.', reflags=re.MULTILINE)
+
+    plugin_lines = [
+        'jax_fingerprint.so --standalone --method JA3 --header x-ja3-sig --via-header x-ja3-sig-via '
+        '--log-filename jax_fingerprint_multi',
+        'jax_fingerprint.so --standalone --method JA3_RAW --header x-ja3-raw --via-header x-ja3-raw-via '
+        '--log-filename jax_fingerprint_multi',
+        'jax_fingerprint.so --standalone --method JA3_RAW_GREASE --header x-ja3-raw-grease '
+        '--via-header x-ja3-raw-grease-via --mode append --log-filename jax_fingerprint_multi',
+        'jax_fingerprint.so --standalone --method JAWS --header x-jaws --via-header x-jaws-via '
+        '--mode keep --log-filename jax_fingerprint_multi',
+        'jax_fingerprint.so --standalone --method JAWS_V2 --header x-jaws-v2 --via-header x-jaws-v2-via '
+        '--log-filename jax_fingerprint_multi',
+    ]
+    for line in plugin_lines:
+        ts.Disk.plugin_config.AddLine(line)
+
+    ts.Disk.remap_config.AddLine(f'map https://jax.server.test https://jax.backend.test:{server.Variables.https_port}')
+
+    client = tr.AddVerifierClientProcess(
+        'client_ja3_family',
+        'jax_fingerprint_ja3_family.replay.yaml',
+        http_ports=[ts.Variables.port],
+        https_ports=[ts.Variables.ssl_port])
+    client.StartBefore(dns)
+    client.StartBefore(server)
+    client.StartBefore(ts)
+    tr.StillRunningAfter = ts
+
+
+add_ja3_family_side_by_side_test()

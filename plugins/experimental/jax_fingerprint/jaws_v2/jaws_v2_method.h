@@ -1,5 +1,7 @@
 /** @file
 
+  JAWS v2 method for jax_fingerprint.
+
   @section license License
 
   Licensed to the Apache Software Foundation (ASF) under one
@@ -20,32 +22,12 @@
 
  */
 
-#include "ja3_fingerprints.h"
-#include "ja3_method.h"
-#include "ja3_summary.h"
+#pragma once
 
-namespace ja3_method
+#include "method.h"
+
+namespace jaws_v2_method
 {
-
-void on_client_hello(JAxContext *, TSVConn);
-void on_vconn_close(TSVConn);
-
-struct Method method = {
-  "JA3", Method::Type::CONNECTION_BASED, on_client_hello, nullptr, on_vconn_close,
-};
-
-} // namespace ja3_method
-
-void
-ja3_method::on_client_hello(JAxContext *ctx, TSVConn vconn)
-{
-  if (auto const *summary = ja3::get_or_create_client_hello_summary(vconn); summary != nullptr) {
-    ctx->set_fingerprint(ja3::make_ja3_hash(*summary));
-  }
-}
-
-void
-ja3_method::on_vconn_close(TSVConn vconn)
-{
-  ja3::clear_cached_client_hello_summary(vconn);
-}
+/** Method descriptor that emits the JAWS v2 fingerprint in jax. */
+extern struct Method method;
+} // namespace jaws_v2_method

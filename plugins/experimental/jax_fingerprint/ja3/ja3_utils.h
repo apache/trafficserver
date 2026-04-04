@@ -34,9 +34,9 @@ namespace ja3
  * The values will be converted to their decimal string representations and
  * joined with the '-' character.
  *
- * @param buf The buffer to encode. This should be an SSL buffer of 8bit
+ * @param[in] buf The buffer to encode. This should be an SSL buffer of 8bit
  *  values.
- * @param len The length of the buffer. If the length is zero, buf will
+ * @param[in] len The length of the buffer. If the length is zero, buf will
  *  not be dereferenced.
  * @return The string-encoded ja3 representation of the buffer.
  */
@@ -48,9 +48,9 @@ std::string encode_byte_buffer(unsigned char const *buf, int const len);
  * joined with the '-' character. Any GREASE values in the buffer will be
  * ignored.
  *
- * @param buf The buffer to encode. This should be a big-endian SSL buffer
+ * @param[in] buf The buffer to encode. This should be a big-endian SSL buffer
  *  of 16bit values.
- * @param len The length of the buffer. If the length is zero, buf will not
+ * @param[in] len The length of the buffer. If the length is zero, buf will not
  *  be dereferenced.
  * @return The string-encoded ja3 representation of the buffer.
  */
@@ -62,9 +62,9 @@ std::string encode_word_buffer(unsigned char const *buf, int const len);
  * joined with the '-' character. Any GREASE values in the buffer will be
  * ignored.
  *
- * @param buf The buffer to encode. The buffer underlying the span should be
+ * @param[in] buf The buffer to encode. The buffer underlying the span should be
  *  an SSL buffer of ints.
- * @param len The length (number of values) in the buffer. If the length is
+ * @param[in] len The length (number of values) in the buffer. If the length is
  *  zero, buf will not be dereferenced.
  * @return The string-encoded ja3 representation of the buffer.
  */

@@ -27,6 +27,7 @@
 namespace ja3_method
 {
 
+/** Method descriptor that registers the JA3 hash implementation with jax. */
 extern struct Method method;
 
-}
+} // namespace ja3_method

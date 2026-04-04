@@ -1,5 +1,7 @@
 /** @file
 
+  JAWS v2 encoder for parsed TLS ClientHello summaries.
+
   @section license License
 
   Licensed to the Apache Software Foundation (ASF) under one
@@ -20,32 +22,24 @@
 
  */
 
-#include "ja3_fingerprints.h"
-#include "ja3_method.h"
-#include "ja3_summary.h"
+#pragma once
 
-namespace ja3_method
+#include "ja3/ja3_model.h"
+
+#include <string>
+
+namespace ja3::jaws_v2
 {
-
-void on_client_hello(JAxContext *, TSVConn);
-void on_vconn_close(TSVConn);
-
-struct Method method = {
-  "JA3", Method::Type::CONNECTION_BASED, on_client_hello, nullptr, on_vconn_close,
-};
-
-} // namespace ja3_method
-
-void
-ja3_method::on_client_hello(JAxContext *ctx, TSVConn vconn)
-{
-  if (auto const *summary = ja3::get_or_create_client_hello_summary(vconn); summary != nullptr) {
-    ctx->set_fingerprint(ja3::make_ja3_hash(*summary));
-  }
-}
-
-void
-ja3_method::on_vconn_close(TSVConn vconn)
-{
-  ja3::clear_cached_client_hello_summary(vconn);
-}
+/**
+ * Encode a parsed TLS ClientHello summary as a JAWS v2 fingerprint.
+ *
+ * This encoder uses the effective TLS version, the v2 anchor arrays, the EC
+ * point format section, and optional per-section GREASE tagging.
+ *
+ * @param[in] summary Parsed TLS ClientHello summary to encode.
+ * @param[in] track_grease When @c true, append the ``g`` suffix for sections
+ * that observed GREASE values.
+ * @return JAWS v2 fingerprint text with the ``j2:`` prefix.
+ */
+std::string fingerprint(ClientHelloSummary const &summary, bool track_grease = true);
+} // namespace ja3::jaws_v2

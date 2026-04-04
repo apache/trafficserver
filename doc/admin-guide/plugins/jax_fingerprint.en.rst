@@ -57,9 +57,30 @@ To use the plugin in a hybrid setup (both global and remap plugin), configure it
 This option enables you to use the plugin as either a global plugin, or a remap plugin. In other
 words, the option needs to be specified if you do not use the hybrid setup.
 
-.. option:: --method <JA4|JA4H|JA3>
+.. option:: --method <JA4|JA4H|JA3|JA3_RAW|JA3_RAW_GREASE|JAWS|JAWS_V2>
 
 Fingerprinting method (e.g. JA4, JA3, etc.) to use. This option must be specified.
+
+Supported methods:
+
+* ``JA4``: TLS client fingerprint
+* ``JA4H``: HTTP request fingerprint
+* ``JA3``: MD5 of the GREASE-stripped JA3 raw string
+* ``JA3_RAW``: GREASE-stripped JA3 raw string
+* ``JA3_RAW_GREASE``: GREASE-preserved JA3 raw string
+* ``JAWS``: frozen JAWS v1 score derived from ``JA3_RAW``
+* ``JAWS_V2``: JAWS v2 fingerprint derived directly from the TLS ClientHello
+
+.. note::
+
+   ``JA3``, ``JA3_RAW``, and ``JAWS`` preserve historical JA3 behavior and continue to use the TLS legacy version field.
+   ``JAWS_V2`` inspects ``supported_versions`` and reports the effective TLS version when it is available.
+
+In this document, ``JA3 family`` is local plugin shorthand for the JA3-derived
+TLS fingerprint methods: ``JA3``, ``JA3_RAW``, ``JA3_RAW_GREASE``, ``JAWS``,
+and ``JAWS_V2``. It is not a formal term from the JA3 or JAWS specifications.
+``JAWS`` is included because it is derived from JA3 raw data, and ``JAWS_V2``
+is grouped with the same TLS ClientHello method set in this plugin.
 
 .. option:: --mode <overwrite|keep|append>
 
@@ -140,6 +161,15 @@ This allows the origin to:
 
 The fingerprint-via header allows origin servers to track which Traffic Server proxy handled the request when multiple proxies are deployed.
 
+When deploying the full JA3 family of methods side by side, a conventional
+lowercase header layout is:
+
+* ``x-ja3-sig``
+* ``x-ja3-raw``
+* ``x-ja3-raw-grease``
+* ``x-jaws``
+* ``x-jaws-v2``
+
 
 Debugging
 =========
@@ -180,3 +210,17 @@ This configuration adds x-my-ja4 header if a connection is established for eithe
 **remap.config**::
 
     map / http://origin.example/ @plugin=jax_fingerprint.so @pparam=--method=JA4 @pparam=--header=x-my-ja4
+
+Emit the full JA3 family of methods with independent headers
+------------------------------------------------------------
+
+This configuration keeps the plugin generic by loading it multiple times with different methods and headers. The example
+uses lowercase header names, including ``x-ja3-raw-grease``.
+
+**plugin.config**::
+
+    jax_fingerprint.so --standalone --method JA3 --header x-ja3-sig --via-header x-ja3-sig-via
+    jax_fingerprint.so --standalone --method JA3_RAW --header x-ja3-raw --via-header x-ja3-raw-via
+    jax_fingerprint.so --standalone --method JA3_RAW_GREASE --header x-ja3-raw-grease --via-header x-ja3-raw-grease-via
+    jax_fingerprint.so --standalone --method JAWS --header x-jaws --via-header x-jaws-via
+    jax_fingerprint.so --standalone --method JAWS_V2 --header x-jaws-v2 --via-header x-jaws-v2-via

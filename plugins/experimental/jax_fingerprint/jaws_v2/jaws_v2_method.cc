@@ -1,5 +1,7 @@
 /** @file
 
+  JAWS v2 method for jax_fingerprint.
+
   @section license License
 
   Licensed to the Apache Software Foundation (ASF) under one
@@ -20,32 +22,33 @@
 
  */
 
-#include "ja3_fingerprints.h"
-#include "ja3_method.h"
-#include "ja3_summary.h"
+#include "context.h"
+#include "ja3/ja3_summary.h"
+#include "jaws_v2.h"
+#include "jaws_v2_method.h"
 
-namespace ja3_method
+namespace jaws_v2_method
 {
 
-void on_client_hello(JAxContext *, TSVConn);
-void on_vconn_close(TSVConn);
+void on_client_hello(JAxContext *ctx, TSVConn vconn);
+void on_vconn_close(TSVConn vconn);
 
 struct Method method = {
-  "JA3", Method::Type::CONNECTION_BASED, on_client_hello, nullptr, on_vconn_close,
+  "JAWS_V2", Method::Type::CONNECTION_BASED, on_client_hello, nullptr, on_vconn_close,
 };
 
-} // namespace ja3_method
+} // namespace jaws_v2_method
 
 void
-ja3_method::on_client_hello(JAxContext *ctx, TSVConn vconn)
+jaws_v2_method::on_client_hello(JAxContext *ctx, TSVConn vconn)
 {
   if (auto const *summary = ja3::get_or_create_client_hello_summary(vconn); summary != nullptr) {
-    ctx->set_fingerprint(ja3::make_ja3_hash(*summary));
+    ctx->set_fingerprint(ja3::jaws_v2::fingerprint(*summary));
   }
 }
 
 void
-ja3_method::on_vconn_close(TSVConn vconn)
+jaws_v2_method::on_vconn_close(TSVConn vconn)
 {
   ja3::clear_cached_client_hello_summary(vconn);
 }

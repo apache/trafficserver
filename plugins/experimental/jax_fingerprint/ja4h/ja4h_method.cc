@@ -34,10 +34,7 @@ namespace ja4h_method
 void on_request(JAxContext *, TSHttpTxn);
 
 struct Method method = {
-  "JA4H",
-  Method::Type::REQUEST_BASED,
-  nullptr,
-  on_request,
+  "JA4H", Method::Type::REQUEST_BASED, nullptr, on_request, nullptr,
 };
 
 class TxnDatasource : public Datasource

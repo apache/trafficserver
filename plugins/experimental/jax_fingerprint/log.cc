@@ -24,12 +24,40 @@
 
 #include "ts/ts.h"
 
+#include <mutex>
 #include <string>
+#include <unordered_map>
+
+namespace
+{
+struct SharedLogEntry {
+  TSTextLogObject handle   = nullptr;
+  size_t          refcount = 0;
+};
+
+std::mutex                                      shared_log_mutex;
+std::unordered_map<std::string, SharedLogEntry> shared_logs;
+} // namespace
 
 bool
 create_log_file(const std::string &filename, TSTextLogObject &log_handle)
 {
-  return (TS_SUCCESS == TSTextLogObjectCreate(filename.c_str(), TS_LOG_MODE_ADD_TIMESTAMP, &log_handle));
+  std::lock_guard lock(shared_log_mutex);
+
+  if (auto spot = shared_logs.find(filename); spot != shared_logs.end()) {
+    ++spot->second.refcount;
+    log_handle = spot->second.handle;
+    return true;
+  }
+
+  TSTextLogObject handle = nullptr;
+  if (TS_SUCCESS != TSTextLogObjectCreate(filename.c_str(), TS_LOG_MODE_ADD_TIMESTAMP, &handle)) {
+    return false;
+  }
+
+  shared_logs.emplace(filename, SharedLogEntry{handle, 1});
+  log_handle = handle;
+  return true;
 }
 
 void
@@ -46,7 +74,24 @@ log_fingerprint(const JAxContext *ctx, TSTextLogObject &log_handle)
 }
 
 void
-flush_log_file(TSTextLogObject &log_handle)
+flush_log_file(const std::string &filename, TSTextLogObject &log_handle)
 {
-  TSTextLogObjectDestroy(log_handle);
+  TSTextLogObject handle_to_destroy = nullptr;
+  {
+    std::lock_guard lock(shared_log_mutex);
+    auto            spot = shared_logs.find(filename);
+    if (spot != shared_logs.end()) {
+      if (--spot->second.refcount == 0) {
+        handle_to_destroy = spot->second.handle;
+        shared_logs.erase(spot);
+      }
+    } else {
+      handle_to_destroy = log_handle;
+    }
+  }
+
+  if (handle_to_destroy != nullptr) {
+    TSTextLogObjectDestroy(handle_to_destroy);
+  }
+  log_handle = nullptr;
 }

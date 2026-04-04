@@ -30,6 +30,10 @@
 #include "ja4/ja4_method.h"
 #include "ja4h/ja4h_method.h"
 #include "ja3/ja3_method.h"
+#include "ja3/ja3_raw_method.h"
+#include "ja3/ja3_raw_grease_method.h"
+#include "jaws/jaws_method.h"
+#include "jaws_v2/jaws_v2_method.h"
 
 #include <ts/apidefs.h>
 #include <ts/ts.h>
@@ -59,7 +63,7 @@ read_config_option(int argc, char const *argv[], PluginConfig &config)
 {
   const struct option longopts[] = {
     {"standalone",   no_argument,       nullptr, 's'},
-    {"method",       required_argument, nullptr, 'M'}, // JA4, JA4H, or JA3
+    {"method",       required_argument, nullptr, 'M'}, // JA4, JA4H, JA3, JA3_RAW, JA3_RAW_GREASE, JAWS, or JAWS_V2
     {"mode",         required_argument, nullptr, 'm'}, // overwrite, keep, or append
     {"header",       required_argument, nullptr, 'h'},
     {"via-header",   required_argument, nullptr, 'v'},
@@ -82,6 +86,14 @@ read_config_option(int argc, char const *argv[], PluginConfig &config)
         config.method = ja4h_method::method;
       } else if (strcmp("JA3", optarg) == 0) {
         config.method = ja3_method::method;
+      } else if (strcmp("JA3_RAW", optarg) == 0) {
+        config.method = ja3_raw_method::method;
+      } else if (strcmp("JA3_RAW_GREASE", optarg) == 0) {
+        config.method = ja3_raw_grease_method::method;
+      } else if (strcmp("JAWS", optarg) == 0) {
+        config.method = jaws_method::method;
+      } else if (strcmp("JAWS_V2", optarg) == 0) {
+        config.method = jaws_v2_method::method;
       } else {
         Dbg(dbg_ctl, "Unexpected method: %s", optarg);
         return false;
@@ -296,6 +308,9 @@ handle_vconn_close(void *edata, PluginConfig &config)
 
   delete get_user_arg(vconn, config);
   set_user_arg(vconn, config, nullptr);
+  if (config.method.on_vconn_close) {
+    config.method.on_vconn_close(vconn);
+  }
 
   TSVConnReenable(vconn);
   return TS_SUCCESS;
@@ -474,7 +489,7 @@ TSRemapDeleteInstance(void *ih)
     TSContDataSet(config->handler, nullptr);
   }
   if (config->log_handle) {
-    flush_log_file(config->log_handle);
+    flush_log_file(config->log_filename, config->log_handle);
   }
   delete config;
 }

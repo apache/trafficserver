@@ -1,0 +1,131 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+# Used by: global JA3 family side-by-side test.
+#
+# The plugin is loaded five times globally using distinct methods and
+# headers so operators can emit the full JA3 family at once:
+#   - JA3 -> x-ja3-sig
+#   - JA3_RAW -> x-ja3-raw
+#   - JA3_RAW_GREASE -> x-ja3-raw-grease
+#   - JAWS -> x-jaws
+#   - JAWS_V2 -> x-jaws-v2
+#
+# The second session verifies that per-header modes remain independent:
+#   - JAWS runs in keep mode and preserves upstream x-jaws values.
+#   - JA3_RAW_GREASE runs in append mode and appends to its via header.
+
+meta:
+  version: "1.0"
+
+sessions:
+
+- protocol:
+  - name: tls
+    sni: jax.server.test
+  - name: tcp
+  - name: ip
+
+  transactions:
+
+  - client-request:
+      method: GET
+      url: /ja3-family
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, jax.server.test ]
+        - [ Content-Length, 0 ]
+        - [ uuid, ja3-family-first ]
+
+    proxy-request:
+      headers:
+        fields:
+        - [ x-ja3-sig, { as: present } ]
+        - [ x-ja3-sig-via, { value: 'test.proxy.test', as: equal } ]
+        - [ x-ja3-raw, { value: '771,', as: contains } ]
+        - [ x-ja3-raw-via, { value: 'test.proxy.test', as: equal } ]
+        - [ x-ja3-raw-grease, { as: present } ]
+        - [ x-ja3-raw-grease-via, { value: 'test.proxy.test', as: equal } ]
+        - [ x-jaws, { as: present } ]
+        - [ x-jaws-via, { value: 'test.proxy.test', as: equal } ]
+        - [ x-jaws-v2, { value: 'j2:', as: contains } ]
+        - [ x-jaws-v2-via, { value: 'test.proxy.test', as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 2 ]
+        - [ X-Response, ja3-family-first-response ]
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response, { value: 'ja3-family-first-response', as: equal } ]
+
+- protocol:
+  - name: tls
+    sni: jax.server.test
+  - name: tcp
+  - name: ip
+
+  transactions:
+
+  - client-request:
+      method: GET
+      url: /ja3-family-existing
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, jax.server.test ]
+        - [ Content-Length, 0 ]
+        - [ uuid, ja3-family-second ]
+        - [ x-jaws, upstream-jaws ]
+        - [ x-jaws-via, upstream-jaws-via ]
+        - [ x-ja3-raw-grease-via, upstream-raw-grease-via ]
+
+    proxy-request:
+      headers:
+        fields:
+        - [ x-ja3-sig, { as: present } ]
+        - [ x-ja3-sig-via, { value: 'test.proxy.test', as: equal } ]
+        - [ x-ja3-raw, { value: '771,', as: contains } ]
+        - [ x-ja3-raw-via, { value: 'test.proxy.test', as: equal } ]
+        - [ x-ja3-raw-grease, { as: present } ]
+        - [ x-ja3-raw-grease-via, { value: 'upstream-raw-grease-via, test.proxy.test', as: equal } ]
+        - [ x-jaws, { value: 'upstream-jaws', as: equal } ]
+        - [ x-jaws-via, { value: 'upstream-jaws-via', as: equal } ]
+        - [ x-jaws-v2, { value: 'j2:', as: contains } ]
+        - [ x-jaws-v2-via, { value: 'test.proxy.test', as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 2 ]
+        - [ X-Response, ja3-family-second-response ]
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response, { value: 'ja3-family-second-response', as: equal } ]

@@ -23,7 +23,15 @@ add_atsplugin(
   header.cc
   log.cc
   ja3/ja3_method.cc
+  ja3/ja3_raw_method.cc
+  ja3/ja3_raw_grease_method.cc
+  ja3/ja3_summary.cc
+  ja3/ja3_fingerprints.cc
   ja3/ja3_utils.cc
+  jaws/jaws_method.cc
+  jaws/jaws.cc
+  jaws_v2/jaws_v2_method.cc
+  jaws_v2/jaws_v2.cc
   ja4/ja4_method.cc
   ja4/ja4.cc
   ja4/tls_client_hello_summary.cc
@@ -31,7 +39,7 @@ add_atsplugin(
   ja4h/ja4h.cc
   ja4h/datasource.cc
 )
-target_link_libraries(jax_fingerprint PRIVATE OpenSSL::Crypto OpenSSL::SSL)
+target_link_libraries(jax_fingerprint PRIVATE OpenSSL::Crypto OpenSSL::SSL libswoc::libswoc)
 verify_global_plugin(jax_fingerprint)
 target_include_directories(jax_fingerprint BEFORE PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -39,7 +47,12 @@ if(BUILD_TESTING)
   add_executable(
     test_jax
     ja3/test_ja3.cc
+    ja3/ja3_fingerprints.cc
     ja3/ja3_utils.cc
+    jaws/test_jaws.cc
+    jaws/jaws.cc
+    jaws_v2/test_jaws_v2.cc
+    jaws_v2/jaws_v2.cc
     ja4/test_ja4.cc
     ja4/ja4.cc
     ja4/tls_client_hello_summary.cc
@@ -47,7 +60,7 @@ if(BUILD_TESTING)
     ja4h/ja4h.cc
     ja4h/datasource.cc
   )
-  target_link_libraries(test_jax PRIVATE Catch2::Catch2WithMain OpenSSL::Crypto OpenSSL::SSL)
+  target_link_libraries(test_jax PRIVATE Catch2::Catch2WithMain OpenSSL::Crypto OpenSSL::SSL libswoc::libswoc)
   target_include_directories(test_jax BEFORE PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
   add_catch2_test(NAME test_jax COMMAND test_jax)

@@ -58,7 +58,7 @@ struct PluginConfig {
 
   PluginType    plugin_type     = PluginType::GLOBAL;
   Mode          mode            = Mode::OVERWRITE;
-  struct Method method          = {"uninitialized", Method::Type::CONNECTION_BASED, nullptr, nullptr};
+  struct Method method          = {"uninitialized", Method::Type::CONNECTION_BASED, nullptr, nullptr, nullptr};
   std::string   header_name     = "";
   std::string   via_header_name = "";
   std::string   log_filename    = "";

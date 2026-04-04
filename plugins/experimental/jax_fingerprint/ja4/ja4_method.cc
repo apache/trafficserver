@@ -38,10 +38,7 @@ namespace ja4_method
 void on_client_hello(JAxContext *, TSVConn);
 
 struct Method method = {
-  "JA4",
-  Method::Type::CONNECTION_BASED,
-  on_client_hello,
-  nullptr,
+  "JA4", Method::Type::CONNECTION_BASED, on_client_hello, nullptr, nullptr,
 };
 
 } // namespace ja4_method

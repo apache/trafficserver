@@ -25,6 +25,8 @@
 #include "ts/ts.h"
 #include "context.h"
 
+#include <string>
+
 bool create_log_file(const std::string &filename, TSTextLogObject &log_handle);
 void log_fingerprint(const JAxContext *ctx, TSTextLogObject &log_handle);
-void flush_log_file(TSTextLogObject &log_handle);
+void flush_log_file(const std::string &filename, TSTextLogObject &log_handle);
