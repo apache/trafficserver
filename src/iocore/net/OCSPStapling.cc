@@ -35,6 +35,7 @@
 #include "P_SSLConfig.h"
 #include "P_SSLUtils.h"
 #include "SSLStats.h"
+#include "TLSCertCompression.h"
 #include "proxy/FetchSM.h"
 
 // Macros for ASN1 and the code in TS_OCSP_* functions were borrowed from OpenSSL 3.1.0 (a92271e03a8d0dee507b6f1e7f49512568b2c7ad),
@@ -1335,9 +1336,11 @@ ocsp_update()
                 if (stapling_refresh_response(cinf, &resp)) {
                   Dbg(dbg_ctl_ssl_ocsp, "Successfully refreshed OCSP for %s certificate. url=%s", cinf->certname, cinf->uri);
                   Metrics::Counter::increment(ssl_rsb.ocsp_refreshed_cert);
+                  cert_compress_invalidate_or_recompress(ctx.get());
                 } else {
                   Error("Failed to refresh OCSP for %s certificate. url=%s", cinf->certname, cinf->uri);
                   Metrics::Counter::increment(ssl_rsb.ocsp_refresh_cert_failure);
+                  cert_compress_invalidate_or_recompress(ctx.get());
                 }
               } else {
                 ink_mutex_release(&cinf->stapling_mutex);

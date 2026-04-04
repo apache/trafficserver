@@ -502,6 +502,7 @@ SSLConfigParams::initialize(ConfigContext ctx)
   if (auto rec_str{RecGetRecordStringAlloc("proxy.config.ssl.server.cert_compression.algorithms")}; rec_str) {
     server_cert_compression_algorithms = ats_stringdup(rec_str);
   }
+  server_cert_compression_cache = RecGetRecordInt("proxy.config.ssl.server.cert_compression.cache").value_or(1);
   if (auto rec_str{RecGetRecordStringAlloc("proxy.config.ssl.client.cert_compression.algorithms")}; rec_str) {
     client_cert_compression_algorithms = ats_stringdup(rec_str);
   }

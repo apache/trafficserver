@@ -97,8 +97,105 @@ find_algorithm(std::string const &name)
 } // end anonymous namespace
 #endif
 
+#if HAVE_SSL_CTX_ADD_CERT_COMPRESSION_ALG
+static int cert_compress_cache_index = -1;
+
+static void
+cert_compress_cache_free_cb(void * /* parent */, void *ptr, CRYPTO_EX_DATA * /* ad */, int /* idx */, long /* argl */,
+                            void * /* argp */)
+{
+  auto *cache = static_cast<CertCompressionCache *>(ptr);
+  if (cache) {
+    for (auto &slot : cache->slots) {
+      delete slot.live.load(std::memory_order_acquire);
+      delete slot.retired.load(std::memory_order_acquire);
+    }
+    delete cache;
+  }
+}
+
+void
+cert_compress_cache_init()
+{
+  if (cert_compress_cache_index != -1) {
+    return;
+  }
+  cert_compress_cache_index = SSL_CTX_get_ex_new_index(0, nullptr, nullptr, nullptr, cert_compress_cache_free_cb);
+}
+
+CertCompressionCache *
+cert_compress_cache_get(SSL_CTX *ctx)
+{
+  if (cert_compress_cache_index < 0) {
+    return nullptr;
+  }
+  return static_cast<CertCompressionCache *>(SSL_CTX_get_ex_data(ctx, cert_compress_cache_index));
+}
+
+static void
+cert_compress_cache_attach(SSL_CTX *ctx)
+{
+  if (cert_compress_cache_index < 0) {
+    return;
+  }
+  auto *cache = new CertCompressionCache();
+  SSL_CTX_set_ex_data(ctx, cert_compress_cache_index, cache);
+}
+
+void
+cert_compress_cache_try_publish(CertCompressionCache::Slot &slot, CertCompressionCache::Entry const *fresh)
+{
+  CertCompressionCache::Entry const *expected = nullptr;
+  if (!slot.live.compare_exchange_strong(expected, fresh, std::memory_order_acq_rel)) {
+    delete fresh;
+  }
+}
+
+void
+cert_compress_cache_invalidate(SSL_CTX *ctx)
+{
+  auto *cache = cert_compress_cache_get(ctx);
+  if (!cache) {
+    return;
+  }
+  for (auto &slot : cache->slots) {
+    auto const *prev    = slot.live.exchange(nullptr, std::memory_order_acq_rel);
+    auto const *to_free = slot.retired.exchange(prev, std::memory_order_acq_rel);
+    delete to_free;
+  }
+  Dbg(dbg_ctl_ssl_cert_compress, "Cache invalidated for SSL_CTX %p", ctx);
+}
+#endif
+
+#if HAVE_SSL_CTX_SET1_CERT_COMP_PREFERENCE
+void
+cert_compress_compress_certs(SSL_CTX *ctx)
+{
+  for (unsigned int i = 0; i < countof(supported_algs); ++i) {
+    if (supported_algs[i].name == nullptr) {
+      continue;
+    }
+    if (SSL_CTX_compress_certs(ctx, supported_algs[i].number)) {
+      Dbg(dbg_ctl_ssl_cert_compress, "Pre-compressed certs for alg %s on SSL_CTX %p", supported_algs[i].name, ctx);
+    }
+  }
+}
+#endif
+
+void
+cert_compress_invalidate_or_recompress(SSL_CTX *ctx)
+{
+#if HAVE_SSL_CTX_ADD_CERT_COMPRESSION_ALG
+  cert_compress_cache_invalidate(ctx);
+#elif HAVE_SSL_CTX_SET1_CERT_COMP_PREFERENCE
+  cert_compress_compress_certs(ctx);
+#else
+  (void)ctx;
+#endif
+}
+
 int
-register_certificate_compression_preference(SSL_CTX *ctx, const std::vector<std::string> &specified_algs)
+register_certificate_compression_preference(SSL_CTX *ctx, const std::vector<std::string> &specified_algs, bool cache)
 {
   ink_assert(ctx != nullptr);
   if (specified_algs.empty()) {
@@ -121,6 +218,11 @@ register_certificate_compression_preference(SSL_CTX *ctx, const std::vector<std:
     }
     Dbg(dbg_ctl_ssl_cert_compress, "Enabled %s", info->name);
   }
+
+  if (cache) {
+    cert_compress_cache_attach(ctx);
+  }
+
   return 1;
 #elif HAVE_SSL_CTX_SET1_CERT_COMP_PREFERENCE
   if (specified_algs.size() > N_ALGORITHMS) {
@@ -139,7 +241,11 @@ register_certificate_compression_preference(SSL_CTX *ctx, const std::vector<std:
     algs[n++] = info->number;
     Dbg(dbg_ctl_ssl_cert_compress, "Enabled %s", info->name);
   }
-  return SSL_CTX_set1_cert_comp_preference(ctx, algs, n);
+  int ret = SSL_CTX_set1_cert_comp_preference(ctx, algs, n);
+  if (ret == 1) {
+    cert_compress_compress_certs(ctx);
+  }
+  return ret;
 #else
   // If Certificate Compression is unsupported there's nothing to do.
   // No need to raise an error since handshake would be done successfully without compression.
