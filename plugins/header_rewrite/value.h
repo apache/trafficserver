@@ -48,6 +48,24 @@ public:
   Value(const Value &)          = delete;
   void operator=(const Value &) = delete;
 
+  std::string_view
+  type_name() const override
+  {
+    return "Value";
+  }
+
+  bool
+  equals(const Statement *other) const override
+  {
+    if (!Statement::equals(other)) {
+      return false;
+    }
+
+    auto *val = static_cast<const Value *>(other);
+
+    return _value == val->_value;
+  }
+
   void set_value(const std::string &val, Statement *owner = nullptr);
 
   void

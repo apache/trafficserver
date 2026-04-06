@@ -118,17 +118,23 @@ createRequestString(const std::string_view &value, char (&req_buf)[MAX_SIZE], in
 
 // OperatorConfig
 void
-OperatorSetConfig::initialize(Parser &p)
+OperatorSetConfig::do_initialize(const std::string &arg, const std::string &value)
 {
-  Operator::initialize(p);
-  _config = p.get_arg();
+  _config = arg;
 
   if (TS_SUCCESS == TSHttpTxnConfigFind(_config.c_str(), _config.size(), &_key, &_type)) {
-    _value.set_value(p.get_value(), this);
+    _value.set_value(value, this);
   } else {
     _key = TS_CONFIG_NULL;
     TSError("[%s] no such records config: %s", PLUGIN_NAME, _config.c_str());
   }
+}
+
+void
+OperatorSetConfig::initialize(Parser &p)
+{
+  Operator::initialize(p);
+  do_initialize(p.get_arg(), p.get_value());
 }
 
 bool
@@ -167,11 +173,9 @@ OperatorSetConfig::exec(const Resources &res) const
 
 // OperatorSetStatus
 void
-OperatorSetStatus::initialize(Parser &p)
+OperatorSetStatus::do_initialize(const std::string &arg)
 {
-  Operator::initialize(p);
-
-  _status.set_value(p.get_arg(), this);
+  _status.set_value(arg, this);
 
   if (nullptr == (_reason = TSHttpHdrReasonLookup(static_cast<TSHttpStatus>(_status.get_int_value())))) {
     TSError("[%s] unknown status %d", PLUGIN_NAME, _status.get_int_value());
@@ -183,6 +187,13 @@ OperatorSetStatus::initialize(Parser &p)
   require_resources(RSRC_SERVER_RESPONSE_HEADERS);
   require_resources(RSRC_CLIENT_RESPONSE_HEADERS);
   require_resources(RSRC_RESPONSE_STATUS);
+}
+
+void
+OperatorSetStatus::initialize(Parser &p)
+{
+  Operator::initialize(p);
+  do_initialize(p.get_arg());
 }
 
 void
@@ -220,13 +231,18 @@ OperatorSetStatus::exec(const Resources &res) const
 
 // OperatorSetStatusReason
 void
+OperatorSetStatusReason::do_initialize(const std::string &arg)
+{
+  _reason.set_value(arg, this);
+  require_resources(RSRC_CLIENT_RESPONSE_HEADERS);
+  require_resources(RSRC_SERVER_RESPONSE_HEADERS);
+}
+
+void
 OperatorSetStatusReason::initialize(Parser &p)
 {
   Operator::initialize(p);
-
-  _reason.set_value(p.get_arg(), this);
-  require_resources(RSRC_CLIENT_RESPONSE_HEADERS);
-  require_resources(RSRC_SERVER_RESPONSE_HEADERS);
+  do_initialize(p.get_arg());
 }
 
 void
@@ -253,14 +269,19 @@ OperatorSetStatusReason::exec(const Resources &res) const
 
 // OperatorSetDestination
 void
+OperatorSetDestination::do_initialize(const std::string &arg, const std::string &value)
+{
+  _url_qual = parse_url_qualifier(arg);
+  _value.set_value(value, this);
+  require_resources(RSRC_CLIENT_REQUEST_HEADERS);
+  require_resources(RSRC_SERVER_REQUEST_HEADERS);
+}
+
+void
 OperatorSetDestination::initialize(Parser &p)
 {
   Operator::initialize(p);
-
-  _url_qual = parse_url_qualifier(p.get_arg());
-  _value.set_value(p.get_value(), this);
-  require_resources(RSRC_CLIENT_REQUEST_HEADERS);
-  require_resources(RSRC_SERVER_REQUEST_HEADERS);
+  do_initialize(p.get_arg(), p.get_value());
 }
 
 bool
@@ -393,12 +414,10 @@ _tokenize(swoc::TextView text, char delimiter)
 }
 
 void
-OperatorRMDestination::initialize(Parser &p)
+OperatorRMDestination::do_initialize(const std::string &arg, const std::string &value)
 {
-  Operator::initialize(p);
-
-  _url_qual = parse_url_qualifier(p.get_arg());
-  _stop     = p.get_value();
+  _url_qual = parse_url_qualifier(arg);
+  _stop     = value;
 
   if (!_stop.empty()) {
     if (get_oper_modifiers() & OPER_INV) {
@@ -409,6 +428,13 @@ OperatorRMDestination::initialize(Parser &p)
 
   require_resources(RSRC_CLIENT_REQUEST_HEADERS);
   require_resources(RSRC_SERVER_REQUEST_HEADERS);
+}
+
+void
+OperatorRMDestination::initialize(Parser &p)
+{
+  Operator::initialize(p);
+  do_initialize(p.get_arg(), p.get_value());
 }
 
 bool
@@ -483,13 +509,12 @@ OperatorRMDestination::exec(const Resources &res) const
 
 // OperatorSetRedirect
 void
-OperatorSetRedirect::initialize(Parser &p)
+OperatorSetRedirect::do_initialize(const std::string &arg, const std::string &value)
 {
-  Operator::initialize(p);
-
-  _status.set_value(p.get_arg(), this);
-  _location.set_value(p.get_value(), this);
+  _status.set_value(arg, this);
+  _location.set_value(value, this);
   auto status = _status.get_int_value();
+
   if (status < 300 || status > 399 || status == TS_HTTP_STATUS_NOT_MODIFIED) {
     TSError("[%s] unsupported redirect status %d", PLUGIN_NAME, status);
   }
@@ -498,6 +523,13 @@ OperatorSetRedirect::initialize(Parser &p)
   require_resources(RSRC_CLIENT_RESPONSE_HEADERS);
   require_resources(RSRC_CLIENT_REQUEST_HEADERS);
   require_resources(RSRC_RESPONSE_STATUS);
+}
+
+void
+OperatorSetRedirect::initialize(Parser &p)
+{
+  Operator::initialize(p);
+  do_initialize(p.get_arg(), p.get_value());
 }
 
 void
@@ -615,24 +647,29 @@ OperatorSetRedirect::exec(const Resources &res) const
 
 // OperatorSetTimeoutOut
 void
-OperatorSetTimeoutOut::initialize(Parser &p)
+OperatorSetTimeoutOut::do_initialize(const std::string &arg, const std::string &value)
 {
-  Operator::initialize(p);
-
-  if (p.get_arg() == "active") {
+  if (arg == "active") {
     _type = TO_OUT_ACTIVE;
-  } else if (p.get_arg() == "inactive") {
+  } else if (arg == "inactive") {
     _type = TO_OUT_INACTIVE;
-  } else if (p.get_arg() == "connect") {
+  } else if (arg == "connect") {
     _type = TO_OUT_CONNECT;
-  } else if (p.get_arg() == "dns") {
+  } else if (arg == "dns") {
     _type = TO_OUT_DNS;
   } else {
     _type = TO_OUT_UNDEFINED;
-    TSError("[%s] unsupported timeout qualifier: %s", PLUGIN_NAME, p.get_arg().c_str());
+    TSError("[%s] unsupported timeout qualifier: %s", PLUGIN_NAME, arg.c_str());
   }
 
-  _timeout.set_value(p.get_value(), this);
+  _timeout.set_value(value, this);
+}
+
+void
+OperatorSetTimeoutOut::initialize(Parser &p)
+{
+  Operator::initialize(p);
+  do_initialize(p.get_arg(), p.get_value());
 }
 
 bool
@@ -668,13 +705,18 @@ OperatorSetTimeoutOut::exec(const Resources &res) const
 // OperatorSkipRemap
 // Deprecated: Remove for v10.0.0
 void
+OperatorSkipRemap::do_initialize(const std::string &arg)
+{
+  if (arg == "1" || arg == "true" || arg == "TRUE") {
+    _skip_remap = true;
+  }
+}
+
+void
 OperatorSkipRemap::initialize(Parser &p)
 {
   Operator::initialize(p);
-
-  if (p.get_arg() == "1" || p.get_arg() == "true" || p.get_arg() == "TRUE") {
-    _skip_remap = true;
-  }
+  do_initialize(p.get_arg());
 }
 
 bool
@@ -707,11 +749,16 @@ OperatorRMHeader::exec(const Resources &res) const
 
 // OperatorAddHeader
 void
+OperatorAddHeader::do_initialize(const std::string &value)
+{
+  _value.set_value(value, this);
+}
+
+void
 OperatorAddHeader::initialize(Parser &p)
 {
   OperatorHeaders::initialize(p);
-
-  _value.set_value(p.get_value(), this);
+  do_initialize(p.get_value());
 }
 
 bool
@@ -744,11 +791,16 @@ OperatorAddHeader::exec(const Resources &res) const
 
 // OperatorSetHeader
 void
+OperatorSetHeader::do_initialize(const std::string &value)
+{
+  _value.set_value(value, this);
+}
+
+void
 OperatorSetHeader::initialize(Parser &p)
 {
   OperatorHeaders::initialize(p);
-
-  _value.set_value(p.get_value(), this);
+  do_initialize(p.get_value());
 }
 
 bool
@@ -802,11 +854,16 @@ OperatorSetHeader::exec(const Resources &res) const
 
 // OperatorSetBody
 void
+OperatorSetBody::do_initialize(const std::string &arg)
+{
+  _value.set_value(arg, this);
+}
+
+void
 OperatorSetBody::initialize(Parser &p)
 {
   Operator::initialize(p);
-  // we want the arg since body only takes one value
-  _value.set_value(p.get_arg(), this);
+  do_initialize(p.get_arg());
 }
 
 void
@@ -832,19 +889,15 @@ OperatorSetBody::exec(const Resources &res) const
 
 // OperatorCounter
 void
-OperatorCounter::initialize(Parser &p)
+OperatorCounter::do_initialize(const std::string &arg)
 {
-  Operator::initialize(p);
+  _counter_name = arg;
 
-  _counter_name = p.get_arg();
-
-  // Sanity
   if (_counter_name.length() == 0) {
     TSError("[%s] counter name is empty", PLUGIN_NAME);
     return;
   }
 
-  // Check if counter already created by another rule
   if (TSStatFindName(_counter_name.c_str(), &_counter) == TS_ERROR) {
     _counter = TSStatCreate(_counter_name.c_str(), TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_COUNT);
     if (_counter == TS_ERROR) {
@@ -855,6 +908,13 @@ OperatorCounter::initialize(Parser &p)
   } else {
     Dbg(pi_dbg_ctl, "OperatorCounter::initialize(%s) reusing id: %d", _counter_name.c_str(), _counter);
   }
+}
+
+void
+OperatorCounter::initialize(Parser &p)
+{
+  Operator::initialize(p);
+  do_initialize(p.get_arg());
 }
 
 bool
@@ -905,10 +965,16 @@ OperatorRMCookie::exec(const Resources &res) const
 
 // OperatorAddCookie
 void
+OperatorAddCookie::do_initialize(const std::string &value)
+{
+  _value.set_value(value, this);
+}
+
+void
 OperatorAddCookie::initialize(Parser &p)
 {
   OperatorCookies::initialize(p);
-  _value.set_value(p.get_value(), this);
+  do_initialize(p.get_value());
 }
 
 bool
@@ -951,10 +1017,16 @@ OperatorAddCookie::exec(const Resources &res) const
 
 // OperatorSetCookie
 void
+OperatorSetCookie::do_initialize(const std::string &value)
+{
+  _value.set_value(value, this);
+}
+
+void
 OperatorSetCookie::initialize(Parser &p)
 {
   OperatorCookies::initialize(p);
-  _value.set_value(p.get_value(), this);
+  do_initialize(p.get_value());
 }
 
 bool
@@ -1088,11 +1160,16 @@ CookieHelper::cookieModifyHelper(const char *cookies, const size_t cookies_len, 
 
 // OperatorSetConnDSCP
 void
+OperatorSetConnDSCP::do_initialize(const std::string &arg)
+{
+  _ds_value.set_value(arg, this);
+}
+
+void
 OperatorSetConnDSCP::initialize(Parser &p)
 {
   Operator::initialize(p);
-
-  _ds_value.set_value(p.get_arg(), this);
+  do_initialize(p.get_arg());
 }
 
 void
@@ -1115,11 +1192,16 @@ OperatorSetConnDSCP::exec(const Resources &res) const
 
 // OperatorSetConnMark
 void
+OperatorSetConnMark::do_initialize(const std::string &arg)
+{
+  _ds_value.set_value(arg, this);
+}
+
+void
 OperatorSetConnMark::initialize(Parser &p)
 {
   Operator::initialize(p);
-
-  _ds_value.set_value(p.get_arg(), this);
+  do_initialize(p.get_arg());
 }
 
 void
@@ -1143,9 +1225,15 @@ OperatorSetConnMark::exec(const Resources &res) const
 // OperatorSetDebug
 // Deprecated: Remove for v10.0.0
 void
+OperatorSetDebug::do_initialize()
+{
+}
+
+void
 OperatorSetDebug::initialize(Parser &p)
 {
   Operator::initialize(p);
+  do_initialize();
 }
 
 void
@@ -1164,18 +1252,23 @@ OperatorSetDebug::exec(const Resources &res) const
 }
 
 void
-OperatorSetHttpCntl::initialize(Parser &p)
+OperatorSetHttpCntl::do_initialize(const std::string &arg, const std::string &value)
 {
-  Operator::initialize(p);
-  _cntl_qual = parse_http_cntl_qualifier(p.get_arg());
+  _cntl_qual = parse_http_cntl_qualifier(arg);
 
-  std::string flag = p.get_value(); // Make a copy of the value
+  std::string flag = value;
 
   std::transform(flag.begin(), flag.end(), flag.begin(), ::tolower);
-
   if (flag == "1" || flag == "true" || flag == "on" || flag == "enable") {
     _flag = true;
   }
+}
+
+void
+OperatorSetHttpCntl::initialize(Parser &p)
+{
+  Operator::initialize(p);
+  do_initialize(p.get_arg(), p.get_value());
 }
 
 void
@@ -1206,22 +1299,18 @@ OperatorSetHttpCntl::exec(const Resources &res) const
 }
 
 void
-OperatorSetPluginCntl::initialize(Parser &p)
+OperatorSetPluginCntl::do_initialize(const std::string &arg, const std::string &value)
 {
-  Operator::initialize(p);
-  const std::string &name  = p.get_arg();
-  const std::string &value = p.get_value();
-
-  if (name == "TIMEZONE") {
+  if (arg == "TIMEZONE") {
     _name = PluginCtrl::TIMEZONE;
     if (value == "LOCAL") {
       _value = TIMEZONE_LOCAL;
     } else if (value == "GMT") {
       _value = TIMEZONE_GMT;
     } else {
-      TSError("[%s] Unknown value for TIMZEONE control: %s", PLUGIN_NAME, value.c_str());
+      TSError("[%s] Unknown value for TIMEZONE control: %s", PLUGIN_NAME, value.c_str());
     }
-  } else if (name == "INBOUND_IP_SOURCE") {
+  } else if (arg == "INBOUND_IP_SOURCE") {
     _name = PluginCtrl::INBOUND_IP_SOURCE;
     if (value == "PEER") {
       _value = IP_SRC_PEER;
@@ -1233,8 +1322,15 @@ OperatorSetPluginCntl::initialize(Parser &p)
       TSError("[%s] Unknown value for INBOUND_IP_SOURCE control: %s", PLUGIN_NAME, value.c_str());
     }
   } else {
-    TSError("[%s] Unknown plugin control name: %s", PLUGIN_NAME, name.c_str());
+    TSError("[%s] Unknown plugin control name: %s", PLUGIN_NAME, arg.c_str());
   }
+}
+
+void
+OperatorSetPluginCntl::initialize(Parser &p)
+{
+  Operator::initialize(p);
+  do_initialize(p.get_arg(), p.get_value());
 }
 
 // This operator should be allowed everywhere
@@ -1297,8 +1393,8 @@ OperatorRunPlugin::initialize(Parser &p)
   int    argc = tokens.size() + 2;
   char **argv = new char *[argc];
 
-  argv[0] = p.from_url();
-  argv[1] = p.to_url();
+  argv[0] = const_cast<char *>(p.from_url());
+  argv[1] = const_cast<char *>(p.to_url());
 
   for (size_t i = 0; i < tokens.size(); ++i) {
     argv[i + 2] = const_cast<char *>(tokens[i].c_str());
@@ -1345,13 +1441,18 @@ OperatorRunPlugin::exec(const Resources &res) const
 
 // OperatorSetBody
 void
+OperatorSetBodyFrom::do_initialize(const std::string &arg)
+{
+  _value.set_value(arg, this);
+  require_resources(RSRC_SERVER_RESPONSE_HEADERS);
+  require_resources(RSRC_RESPONSE_STATUS);
+}
+
+void
 OperatorSetBodyFrom::initialize(Parser &p)
 {
   Operator::initialize(p);
-  // we want the arg since body only takes one value
-  _value.set_value(p.get_arg(), this);
-  require_resources(RSRC_SERVER_RESPONSE_HEADERS);
-  require_resources(RSRC_RESPONSE_STATUS);
+  do_initialize(p.get_arg());
 }
 
 void
@@ -1402,21 +1503,18 @@ OperatorSetBodyFrom::exec(const Resources &res) const
 }
 
 void
-OperatorSetStateFlag::initialize(Parser &p)
+OperatorSetStateFlag::do_initialize(int flag_ix, const std::string &value)
 {
-  Operator::initialize(p);
-
-  _flag_ix = strtol(p.get_arg().c_str(), nullptr, 10);
+  _flag_ix = flag_ix;
 
   if (_flag_ix < 0 || _flag_ix >= NUM_STATE_FLAGS) {
     TSError("[%s] %s flag with index %d is out of range", PLUGIN_NAME, _scope_label(_scope), _flag_ix);
     return;
   }
 
-  std::string flag = p.get_value(); // Make a copy of the value
+  std::string flag = value;
 
   std::transform(flag.begin(), flag.end(), flag.begin(), ::tolower);
-
   if (flag == "1" || flag == "true" || flag == "on" || flag == "enable") {
     _mask = 1ULL << _flag_ix;
     _flag = true;
@@ -1424,6 +1522,13 @@ OperatorSetStateFlag::initialize(Parser &p)
     _mask = ~(1ULL << _flag_ix);
     _flag = false;
   }
+}
+
+void
+OperatorSetStateFlag::initialize(Parser &p)
+{
+  Operator::initialize(p);
+  do_initialize(strtol(p.get_arg().c_str(), nullptr, 10), p.get_value());
 }
 
 // This operator should be allowed everywhere
@@ -1458,18 +1563,16 @@ OperatorSetStateFlag::exec(const Resources &res) const
 }
 
 void
-OperatorSetStateInt8::initialize(Parser &p)
+OperatorSetStateInt8::do_initialize(int byte_ix, const std::string &value)
 {
-  Operator::initialize(p);
-
-  _byte_ix = strtol(p.get_arg().c_str(), nullptr, 10);
+  _byte_ix = byte_ix;
 
   if (_byte_ix < 0 || _byte_ix >= NUM_STATE_INT8S) {
     TSError("[%s] %s int8 with index %d is out of range", PLUGIN_NAME, _scope_label(_scope), _byte_ix);
     return;
   }
 
-  _value.set_value(p.get_value(), this);
+  _value.set_value(value, this);
   if (!_value.has_conds()) {
     int v = _value.get_int_value();
 
@@ -1478,6 +1581,13 @@ OperatorSetStateInt8::initialize(Parser &p)
       return;
     }
   }
+}
+
+void
+OperatorSetStateInt8::initialize(Parser &p)
+{
+  Operator::initialize(p);
+  do_initialize(strtol(p.get_arg().c_str(), nullptr, 10), p.get_value());
 }
 
 // This operator should be allowed everywhere
@@ -1528,18 +1638,14 @@ OperatorSetStateInt8::exec(const Resources &res) const
 }
 
 void
-OperatorSetStateInt16::initialize(Parser &p)
+OperatorSetStateInt16::do_initialize(int ix, const std::string &value)
 {
-  Operator::initialize(p);
-
-  int ix = strtol(p.get_arg().c_str(), nullptr, 10);
-
   if (ix != 0) {
     TSError("[%s] %s int16 with index %d is out of range", PLUGIN_NAME, _scope_label(_scope), ix);
     return;
   }
 
-  _value.set_value(p.get_value(), this);
+  _value.set_value(value, this);
   if (!_value.has_conds()) {
     int v = _value.get_int_value();
 
@@ -1548,6 +1654,13 @@ OperatorSetStateInt16::initialize(Parser &p)
       return;
     }
   }
+}
+
+void
+OperatorSetStateInt16::initialize(Parser &p)
+{
+  Operator::initialize(p);
+  do_initialize(strtol(p.get_arg().c_str(), nullptr, 10), p.get_value());
 }
 
 // This operator should be allowed everywhere
@@ -1598,11 +1711,16 @@ OperatorSetStateInt16::exec(const Resources &res) const
 }
 
 void
+OperatorSetEffectiveAddress::do_initialize(const std::string &arg)
+{
+  _value.set_value(arg, this);
+}
+
+void
 OperatorSetEffectiveAddress::initialize(Parser &p)
 {
   Operator::initialize(p);
-
-  _value.set_value(p.get_arg(), this);
+  do_initialize(p.get_arg());
 }
 
 void
@@ -1641,12 +1759,17 @@ OperatorSetEffectiveAddress::exec(const Resources &res) const
 
 // OperatorSetNextHopStrategy
 void
+OperatorSetNextHopStrategy::do_initialize(const std::string &arg)
+{
+  _value.set_value(arg, this);
+  Dbg(pi_dbg_ctl, "OperatorSetNextHopStrategy::initialize: %s", _value.get_value().c_str());
+}
+
+void
 OperatorSetNextHopStrategy::initialize(Parser &p)
 {
   Operator::initialize(p);
-
-  _value.set_value(p.get_arg(), this);
-  Dbg(pi_dbg_ctl, "OperatorSetNextHopStrategy::initialie: %s", _value.get_value().c_str());
+  do_initialize(p.get_arg());
 }
 
 void
@@ -1808,10 +1931,16 @@ OperatorIf::exec_section(const CondOpSection *section, const Resources &res) con
 
 // OperatorSetCongestionCtrl
 void
+OperatorSetCCAlgorithm::do_initialize(const std::string &arg)
+{
+  _cc_alg.set_value(arg);
+}
+
+void
 OperatorSetCCAlgorithm::initialize(Parser &p)
 {
   Operator::initialize(p);
-  _cc_alg.set_value(p.get_arg());
+  do_initialize(p.get_arg());
 }
 
 void
@@ -1847,4 +1976,199 @@ OperatorSetCCAlgorithm::exec(const Resources &res) const
   TSWarning("[%s] [OperatorSetCCAlgorithm] TCP_CONGESTION socket option is not supported on this platform", PLUGIN_NAME);
 #endif
   return true;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// OperatorSpec-based initialize() implementations
+//
+
+void
+OperatorSetConfig::initialize(const hrw::OperatorSpec &spec)
+{
+  Operator::initialize(spec);
+  do_initialize(spec.arg, spec.value);
+}
+
+void
+OperatorSetStatus::initialize(const hrw::OperatorSpec &spec)
+{
+  Operator::initialize(spec);
+  do_initialize(spec.arg);
+}
+
+void
+OperatorSetStatusReason::initialize(const hrw::OperatorSpec &spec)
+{
+  Operator::initialize(spec);
+  do_initialize(spec.arg);
+}
+
+void
+OperatorSetDestination::initialize(const hrw::OperatorSpec &spec)
+{
+  Operator::initialize(spec);
+  do_initialize(spec.arg, spec.value);
+}
+
+void
+OperatorRMDestination::initialize(const hrw::OperatorSpec &spec)
+{
+  Operator::initialize(spec);
+  do_initialize(spec.arg, spec.value);
+}
+
+void
+OperatorSetRedirect::initialize(const hrw::OperatorSpec &spec)
+{
+  Operator::initialize(spec);
+  do_initialize(spec.arg, spec.value);
+}
+
+void
+OperatorSetTimeoutOut::initialize(const hrw::OperatorSpec &spec)
+{
+  Operator::initialize(spec);
+  do_initialize(spec.arg, spec.value);
+}
+
+void
+OperatorSkipRemap::initialize(const hrw::OperatorSpec &spec)
+{
+  Operator::initialize(spec);
+  do_initialize(spec.arg);
+}
+
+void
+OperatorAddHeader::initialize(const hrw::OperatorSpec &spec)
+{
+  OperatorHeaders::initialize(spec);
+  do_initialize(spec.value);
+}
+
+void
+OperatorSetHeader::initialize(const hrw::OperatorSpec &spec)
+{
+  OperatorHeaders::initialize(spec);
+  do_initialize(spec.value);
+}
+
+void
+OperatorCounter::initialize(const hrw::OperatorSpec &spec)
+{
+  Operator::initialize(spec);
+  do_initialize(spec.arg);
+}
+
+void
+OperatorAddCookie::initialize(const hrw::OperatorSpec &spec)
+{
+  OperatorCookies::initialize(spec);
+  do_initialize(spec.value);
+}
+
+void
+OperatorSetCookie::initialize(const hrw::OperatorSpec &spec)
+{
+  OperatorCookies::initialize(spec);
+  do_initialize(spec.value);
+}
+
+void
+OperatorSetConnDSCP::initialize(const hrw::OperatorSpec &spec)
+{
+  Operator::initialize(spec);
+  do_initialize(spec.arg);
+}
+
+void
+OperatorSetConnMark::initialize(const hrw::OperatorSpec &spec)
+{
+  Operator::initialize(spec);
+  do_initialize(spec.arg);
+}
+
+void
+OperatorSetDebug::initialize(const hrw::OperatorSpec &spec)
+{
+  Operator::initialize(spec);
+  do_initialize();
+}
+
+void
+OperatorSetBody::initialize(const hrw::OperatorSpec &spec)
+{
+  Operator::initialize(spec);
+  do_initialize(spec.arg);
+}
+
+void
+OperatorSetHttpCntl::initialize(const hrw::OperatorSpec &spec)
+{
+  Operator::initialize(spec);
+  do_initialize(spec.arg, spec.value);
+}
+
+void
+OperatorSetPluginCntl::initialize(const hrw::OperatorSpec &spec)
+{
+  Operator::initialize(spec);
+  do_initialize(spec.arg, spec.value);
+}
+
+void
+OperatorSetBodyFrom::initialize(const hrw::OperatorSpec &spec)
+{
+  Operator::initialize(spec);
+  do_initialize(spec.arg);
+}
+
+void
+OperatorSetStateFlag::initialize(const hrw::OperatorSpec &spec)
+{
+  if (spec.session_scope) {
+    _scope = TS_USER_ARGS_SSN;
+  }
+  Operator::initialize(spec);
+  do_initialize((spec.slot >= 0) ? spec.slot : strtol(spec.arg.c_str(), nullptr, 10), spec.value);
+}
+
+void
+OperatorSetStateInt8::initialize(const hrw::OperatorSpec &spec)
+{
+  if (spec.session_scope) {
+    _scope = TS_USER_ARGS_SSN;
+  }
+  Operator::initialize(spec);
+  do_initialize((spec.slot >= 0) ? spec.slot : strtol(spec.arg.c_str(), nullptr, 10), spec.value);
+}
+
+void
+OperatorSetStateInt16::initialize(const hrw::OperatorSpec &spec)
+{
+  if (spec.session_scope) {
+    _scope = TS_USER_ARGS_SSN;
+  }
+  Operator::initialize(spec);
+  do_initialize((spec.slot >= 0) ? spec.slot : strtol(spec.arg.c_str(), nullptr, 10), spec.value);
+}
+
+void
+OperatorSetEffectiveAddress::initialize(const hrw::OperatorSpec &spec)
+{
+  Operator::initialize(spec);
+  do_initialize(spec.arg);
+}
+
+void
+OperatorSetNextHopStrategy::initialize(const hrw::OperatorSpec &spec)
+{
+  Operator::initialize(spec);
+  do_initialize(spec.arg);
+}
+
+void
+OperatorSetCCAlgorithm::initialize(const hrw::OperatorSpec &spec)
+{
+  Operator::initialize(spec);
+  do_initialize(spec.arg);
 }
