@@ -157,13 +157,7 @@ void
 Condition::initialize(const hrw::ConditionSpec &spec)
 {
   initialize_hooks();
-
-  if (need_txn_slot()) {
-    _txn_slot = acquire_txn_slot();
-  }
-  if (need_txn_private_slot()) {
-    _txn_private_slot = acquire_txn_private_slot();
-  }
+  allocate_slots();
 
   if (spec.mod_or) {
     _mods |= CondModifiers::OR;

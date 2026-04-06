@@ -128,10 +128,14 @@ public:
   void operator=(const OperatorHeaders &)  = delete;
 
   void initialize(Parser &p) override;
+  void initialize(const hrw::OperatorSpec &spec) override;
 
 protected:
   std::string _header;
   const char *_header_wks = nullptr;
+
+private:
+  void do_initialize(const std::string &arg);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -148,7 +152,11 @@ public:
   void operator=(const OperatorCookies &)  = delete;
 
   void initialize(Parser &p) override;
+  void initialize(const hrw::OperatorSpec &spec) override;
 
 protected:
   std::string _cookie;
+
+private:
+  void do_initialize(const std::string &arg);
 };

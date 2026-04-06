@@ -190,22 +190,26 @@ public:
     return _next;
   }
 
+  void
+  allocate_slots()
+  {
+    if (need_txn_slot()) {
+      _txn_slot = acquire_txn_slot();
+    }
+    if (need_txn_private_slot()) {
+      _txn_private_slot = acquire_txn_private_slot();
+    }
+    if (need_ssn_slot()) {
+      _ssn_slot = acquire_ssn_slot();
+    }
+  }
+
   virtual void
   initialize(Parser &)
   {
     TSReleaseAssert(_initialized == false);
     initialize_hooks();
-
-    if (need_txn_slot()) {
-      _txn_slot = acquire_txn_slot();
-    }
-    if (need_ssn_slot()) {
-      _ssn_slot = acquire_ssn_slot();
-    }
-    if (need_txn_private_slot()) {
-      _txn_private_slot = acquire_txn_private_slot();
-    }
-
+    allocate_slots();
     _initialized = true;
   }
 
