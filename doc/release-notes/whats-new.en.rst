@@ -20,6 +20,254 @@
 .. _whats_new:
 
 
+What's New in ATS v10.2
+=======================
+
+Header Rewrite & HRW4U
+----------------------
+
+* HRW4U: A new DSL for ``header_rewrite`` configuration that provides a more
+  conventional and readable syntax. Includes a compiler that translates HRW4U
+  into native header_rewrite rules, and ``u4wrh``, an inverse tool that
+  converts existing header_rewrite rules back to HRW4U syntax.
+* header_rewrite: Add partial string matching modifiers: ``[PRE]``, ``[SUF]``,
+  ``[MID]``, ``[EXT]``
+* header_rewrite: Add ``SETS`` for matching against a set of values, with
+  support for quoted strings containing commas
+* header_rewrite: Add ``elif`` support in ``if-elif-else`` conditionals
+* header_rewrite: Add support for nested ``if`` conditionals
+* header_rewrite: Add ``set-effective-address`` operator to set the client's
+  effective (verified) address
+* header_rewrite: Add ``set-cc-alg`` operator to set the congestion control
+  algorithm per remap
+* header_rewrite: Add ``SERVER-HEADER`` and ``SERVER-URL`` conditions
+* header_rewrite: Add indexed query parameter conditions
+* header_rewrite: Add optional ``--timezone`` and ``--inbound-ip-source``
+  plugin load switches
+
+Plugins
+-------
+
+* New plugin: ``filter_body`` for request/response body content inspection
+  with configurable pattern matching and actions (log, block, add_header)
+* New plugin: ``real-ip`` with ``TSHttpTxnVerifiedAddrSet/Get`` API for
+  verified client IP address management
+* compress: Full Zstandard (zstd) compression support with new
+  ``proxy.config.http.normalize_ae`` modes 4 and 5
+* compress: Add ``content_type_ignore_parameters`` option to match
+  Content-Type patterns ignoring charset parameters
+* compress: Add option to not compress partial objects
+* escalate: Add ``x-escalate-redirect`` header indicator when escalation
+  occurs (disable via ``--no-redirect-header``)
+* escalate: Add ``--escalate-non-get-methods`` to enable escalation of
+  non-GET requests
+* xdebug: Add ``probe-full-json`` feature for complete JSON diagnostic
+  output
+* ESI: Add ``--allowed-response-codes`` for response code filtering
+* stats_over_http: Add ``HINT`` and ``TYPE`` Prometheus annotations with
+  metric type information
+* lua: Add support for Unix socket incoming connections
+* lua: Add proxy protocol information access API
+* lua: Add verified address get/set API
+* lua: Add certificate information retrieval (subject, issuer, serial,
+  SANs, etc.)
+* lua: Add connection exempt list API support
+* cookie_remap: Add ``disable_pristine_host_hdr`` configuration parameter
+* ja3_fingerprint/ja4_fingerprint: Add ``x-ja3-via`` and ``x-ja4-via``
+  headers for multi-proxy fingerprint attribution
+* slice/cache_range_requests: Avoid subsequent IMS requests by using
+  identifier-based freshness checking
+* origin_server_auth: Exclude hop-by-hop headers from AWS v4 signature
+  calculation
+* ``prscs``: New log field for proxy response status code setter, identifying
+  which component (plugin, ip_allow, etc.) set the response status
+
+Cripts
+------
+
+* Add Cache Groups concepts for cache routing
+* Add Geo APIs to the ``cripts::IP`` object for geographic lookups
+* Refactor cache key / URL APIs with cleaner abstractions
+* Add ``connection_exempt_list.cript`` for per-client connection max
+  exempt list management
+* Build system support for pre-compiled cripts via ``add_cript`` in
+  CMakeLists.txt
+
+Cache
+-----
+
+* Implement RFC 9213 Targeted HTTP Cache Control (e.g.,
+  ``CDN-Cache-Control``) via configurable
+  :ts:cv:`proxy.config.http.cache.targeted_cache_control_headers`
+* Cache volumes: Add RAM cache settings and ``@volume=`` remap option in
+  ``volume.config``
+* Add parallel directory entry sync options for faster cache sync with
+  configurable parallelism
+* Add fail action 6: fallback to serving stale content when retry attempts
+  are exhausted
+* 9.2/10.x cache key compatibility mode for seamless upgrades without
+  cache invalidation
+
+TLS/SSL
+-------
+
+* Add per-curve/group TLS handshake time metrics
+* Add server-side TLS handshake milestones
+  (``TS_MILESTONE_SERVER_TLS_HANDSHAKE_START/END``)
+* Add ``cqssrt`` log field for TLS resumption type (none, session cache,
+  or ticket)
+* Dynamic TLS group discovery via ``SSL_CTX_get0_implemented_groups``
+  including KEM groups (X25519MLKEM768, SecP256r1MLKEM768)
+* Parallel SSL certificate loading support
+* sni.yaml: Add session ticket override support
+
+Metrics
+-------
+
+* Add ``per_server.connection`` metrics (total, active, blocked connections)
+  with configurable match rules and metric prefix
+* Add ``proxy.process.cache.stripe.lock_contention`` and
+  ``proxy.process.cache.writer.lock_contention`` metrics
+* Add ``proxy.process.http.000_responses`` metric for responses where no
+  valid status code was sent
+* Add ``proxy.process.http.429_responses`` metric for rate-limiting
+  monitoring
+* ``proxy.process.http.incoming_requests`` now counted at transaction start
+  to include all requests including early errors and redirects
+* RAM cache stats updates: counters for all memory cache types and
+  aggregation buffer hits
+
+Logging
+-------
+
+* SnowflakeID: Add organizationally unique 64-bit identifiers for
+  connections, with ``psfid`` log field
+* Add ``chiv`` log field from real-ip plugin for verified client IP
+* Add ``mstsms`` log field for all milestone timing as a single CSV field
+* Add support for ``PP2_SUBTYPE_SSL_CIPHER`` and ``PP2_SUBTYPE_SSL_VERSION``
+  proxy protocol fields in logging
+* Add backtrace information to crash logs with 10-second collection timeout
+* Fix ``msdms`` log fields to emit ``-`` instead of ``-1`` for unset
+  milestones
+* Fix ``UA_BEGIN_WRITE`` milestone to be set unconditionally
+* Fix ``difference_msec()`` epoch leak when start milestone is unset
+* Fix Transfer-Encoding:chunked log field preservation
+* Fix log field type for ``cqpv`` and ``sqpv``
+* Rename slow log field ``tls_handshake`` to ``ua_tls_handshake`` and add
+  ``server_tls_handshake`` field
+
+Configuration
+-------------
+
+* :ts:cv:`proxy.config.http.negative_caching_list` and
+  :ts:cv:`proxy.config.http.negative_revalidating_list` are now overridable
+  per-remap via ``conf_remap``
+* Add retry connect with exponential backoff via
+  ``proxy.config.http.connect_attempts_retry_backoff_base``
+* Add IP address source setting for ACL with proxy protocol
+* Add ``proxy.config.http.per_client.connection.exempt_list`` to exempt
+  specific IP addresses from per-client connection limits
+* Automatic caching of parsed STRING config values for overridable configs,
+  improving performance when plugins call ``TSHttpTxnConfigStringSet()``
+
+Tools
+-----
+
+* traffic_ctl: Add ``hostdb status`` command to dump HostDB records and
+  health state, with hostname filtering
+* traffic_ctl: Add ``config reset`` command to reset configuration records
+  to defaults
+* traffic_ctl: Add ``--append`` option for ``server debug`` to append debug
+  tags instead of replacing them
+* traffic_grapher: New real-time metrics visualization tool with multi-host
+  comparison, keyboard navigation, and iTerm2 inline image support
+* ArgParser: Add mutually exclusive option groups and option dependencies
+* Migrate from Pipenv to uv for autest Python environment management
+
+TS API
+------
+
+* Add ``TSHttpTxnVerifiedAddrSet/Get`` for verified client IP address
+  management (used by the new real-ip plugin)
+* Add ``TSHttpTxnNextHopStrategySet/Get`` and related APIs for Next Hop
+  Strategy rebind during a transaction
+* Add ``TSConnectionLimitExemptListSet/Add/Clear`` APIs for per-client
+  connection exempt list management
+
+Parent Selection
+----------------
+
+* Configurable hash algorithm (SipHash-2-4/SipHash-1-3), seeds, and
+  replica count for consistent hash parent selection, available globally
+  in ``records.yaml``, per-rule in ``parent.config``, and per-strategy in
+  ``strategies.yaml``
+* Add ``host_override`` in ``parent.config`` for SNI name handling when
+  using another CDN as parent
+
+HTTP Protocol
+-------------
+
+* Remap: Add ``http+unix`` scheme support for Unix Domain Socket matching
+* Warn on shadow remap rules when an existing rule shadows an inserted one
+* Return 400 on chunk parse errors
+* Reject malformed Host header ports
+
+Performance
+-----------
+
+* HuffmanCodec with LiteSpeed implementation for HTTP/2, addressing huffman
+  decode performance hot spots
+* Reduce ``ink_get_hrtime`` calls in the event loop with configurable update
+  frequency
+* Optimize ``ts::Random`` by reusing distribution objects (~7% improvement)
+* remap_acl autest speedup via config reload (7 min to 2 min)
+* Speed up day/month header parsing (~10x faster via integer packing)
+
+Infrastructure
+--------------
+
+* Complete PCRE to PCRE2 migration across all plugins and core code
+* USDT tracepoints: connection fd tracking (origin pool, session
+  attachment, readiness polling), HTTP result codes in
+  ``milestone_sm_finish``, cache directory insert/delete
+* Catch2 updated to v3.9.1 with library model and FetchContent
+* ATSReplayTest: new autest extension for writing tests via replay.yaml
+  files
+
+Notable Bug Fixes
+-----------------
+
+* Fix NetAcceptAction::cancel() use-after-free race condition between
+  cancel and acceptEvent threads
+* Fix DbgCtl use-after-free shutdown crash via leaky singleton pattern
+* Fix DenseThreadId static destruction order fiasco causing crashes on
+  CentOS
+* Fix LoadedPlugins::remove crash during static destruction when
+  EThreads are already gone
+* Fix HttpSM::tunnel_handler crash on unhandled VC events
+  (VC_EVENT_ACTIVE_TIMEOUT, VC_EVENT_ERROR, VC_EVENT_EOS)
+* Fix possible crashes on OCSP request timeout from null pointer
+  dereference
+* Fix cache retry assertion on TSHttpTxnServerAddrSet when re-entering
+  cache miss path
+* Fix origins unintentionally marked as down when using server session
+  reuse
+* Fix negative_caching_lifetime being overridden by ttl-in-cache for
+  negative responses
+* Fix s-maxage not respected with Authorization headers per RFC 7234
+* Fix malformed Cache-Control directives (semicolons instead of commas)
+  now properly ignored per RFC 7234
+* Fix 100 Continue with transform skip_bytes issue causing assertion
+  failure when compress plugin is active
+* Fix cache directory corruption in parallel dir sync where stripe index
+  advanced during multi-step AIO writes
+* Fix request buffering with post_copy_size=0 causing POST failures
+* Fix 1xx race in build_response where 103 Early Hints tunnel completion
+  overlapped with final response
+* Fix HTTPHdr host cache invalidation when Host header is modified via
+  MIME layer, preventing SNI warnings with garbage characters
+
+
 What's New in ATS v10.1
 =======================
 
