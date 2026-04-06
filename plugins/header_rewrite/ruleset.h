@@ -15,10 +15,6 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
-//////////////////////////////////////////////////////////////////////////////////////////////
-//
-// Implement the classes for the various types of hash keys we support.
-//
 #pragma once
 
 #include <string>
@@ -107,6 +103,12 @@ public:
     return _ids;
   }
 
+  void
+  require_resources(const ResourceIDs ids)
+  {
+    _ids = static_cast<ResourceIDs>(_ids | ids);
+  }
+
   bool
   last() const
   {
@@ -114,6 +116,12 @@ public:
   }
 
   OperModifiers exec(const Resources &res) const;
+
+  const OperatorIf *
+  get_operator_if() const
+  {
+    return &_op_if;
+  }
 
   // Linked list of RuleSets
   std::unique_ptr<RuleSet> next;

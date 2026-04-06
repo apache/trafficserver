@@ -69,6 +69,9 @@ ConditionStatus::initialize_hooks()
 {
   add_allowed_hook(TS_HTTP_READ_RESPONSE_HDR_HOOK);
   add_allowed_hook(TS_HTTP_SEND_RESPONSE_HDR_HOOK);
+  require_resources(RSRC_SERVER_RESPONSE_HEADERS);
+  require_resources(RSRC_CLIENT_RESPONSE_HEADERS);
+  require_resources(RSRC_RESPONSE_STATUS);
 }
 
 bool
@@ -203,6 +206,16 @@ ConditionAccess::eval(const Resources & /* res ATS_UNUSED */)
 
 // ConditionHeader: request or response header
 void
+ConditionHeader::initialize_hooks()
+{
+  Condition::initialize_hooks();
+  require_resources(RSRC_CLIENT_REQUEST_HEADERS);
+  require_resources(RSRC_CLIENT_RESPONSE_HEADERS);
+  require_resources(RSRC_SERVER_REQUEST_HEADERS);
+  require_resources(RSRC_SERVER_RESPONSE_HEADERS);
+}
+
+void
 ConditionHeader::initialize(Parser &p)
 {
   Condition::initialize(p);
@@ -210,11 +223,6 @@ ConditionHeader::initialize(Parser &p)
 
   match->set(p.get_arg(), mods());
   _matcher = std::move(match);
-
-  require_resources(RSRC_CLIENT_REQUEST_HEADERS);
-  require_resources(RSRC_CLIENT_RESPONSE_HEADERS);
-  require_resources(RSRC_SERVER_REQUEST_HEADERS);
-  require_resources(RSRC_SERVER_RESPONSE_HEADERS);
 }
 
 void
@@ -449,13 +457,6 @@ ConditionDBM::initialize(Parser &p)
 
   if (pos != std::string::npos) {
     _file = _qualifier.substr(0, pos);
-    //_dbm = mdbm_open(_file.c_str(), O_RDONLY, 0, 0, 0);
-    // if (NULL != _dbm) {
-    //   Dbg(pi_dbg_ctl, "Opened DBM file %s", _file.c_str());
-    //   _key.set_value(_qualifier.substr(pos + 1));
-    // } else {
-    //   TSError("[%s] Failed to open DBM file: %s", PLUGIN_NAME, _file.c_str());
-    // }
   } else {
     TSError("[%s] Malformed DBM condition", PLUGIN_NAME);
   }
@@ -464,28 +465,6 @@ ConditionDBM::initialize(Parser &p)
 void
 ConditionDBM::append_value(std::string & /* s ATS_UNUSED */, const Resources & /* res ATS_UNUSED */)
 {
-  // std::string key;
-
-  // if (!_dbm) {
-  //   return;
-  // }
-
-  // _key.append_value(key, res);
-  // if (key.size() > 0) {
-  //   datum k, v;
-
-  //   Dbg(pi_dbg_ctl, "Looking up DBM(\"%s\")", key.c_str());
-  //   k.dptr = const_cast<char*>(key.c_str());
-  //   k.dsize = key.size();
-
-  //   TSMutexLock(_mutex);
-  //   //v = mdbm_fetch(_dbm, k);
-  //   TSMutexUnlock(_mutex);
-  //   if (v.dsize > 0) {
-  //     Dbg(pi_dbg_ctl, "Appending DBM(%.*s) to evaluation value -> %.*s", k.dsize, k.dptr, v.dsize, v.dptr);
-  //     s.append(v.dptr, v.dsize);
-  //   }
-  // }
 }
 
 bool
