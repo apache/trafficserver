@@ -39,6 +39,7 @@ def _visitor_kwargs(args: argparse.Namespace) -> dict[str, object]:
     return kwargs
 
 
+
 def main() -> None:
     """Main entry point for the u4wrh script."""
     run_main(
