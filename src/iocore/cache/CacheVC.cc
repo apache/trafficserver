@@ -69,6 +69,7 @@
 
 namespace
 {
+DbgCtl dbg_ctl_cache_ram{"cache_ram"};
 DbgCtl dbg_ctl_cache_bc{"cache_bc"};
 DbgCtl dbg_ctl_cache_disk_error{"cache_disk_error"};
 DbgCtl dbg_ctl_cache_read{"cache_read"};
@@ -449,27 +450,56 @@ Ldone:
 
 int
 CacheVC::handleRead(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
-
 {
   cancel_trigger();
 
   f.doc_from_ram_cache = false;
 
   ink_assert(stripe->mutex->thread_holding == this_ethread());
+
+  // 1. check RAM cache
   if (load_from_ram_cache()) {
-    goto LramHit;
-  } else if (load_from_last_open_read_call()) {
-    goto LmemHit;
-  } else if (load_from_aggregation_buffer()) {
+    Dbg(dbg_ctl_cache_ram, "RAM cache hit");
     f.doc_from_ram_cache = true;
     io.aio_result        = io.aiocb.aio_nbytes;
+
+    Doc *doc = reinterpret_cast<Doc *>(buf->data());
+    if (cache_config_ram_cache_compress && doc->doc_type == CACHE_FRAG_TYPE_HTTP && doc->hlen) {
+      SET_HANDLER(&CacheVC::handleReadDone);
+      return EVENT_RETURN;
+    }
+
+    POP_HANDLER;
+    return EVENT_RETURN;
+  }
+
+  // 2. check last open read cache
+  if (load_from_last_open_read_call()) {
+    Dbg(dbg_ctl_cache_ram, "last open read hit");
+    f.doc_from_ram_cache = true;
+    io.aio_result        = io.aiocb.aio_nbytes;
+
+    POP_HANDLER;
+    return EVENT_RETURN;
+  }
+
+  // 3. check aggregation buffer
+  if (load_from_aggregation_buffer()) {
+    Dbg(dbg_ctl_cache_ram, "aggregation buffer hit");
+    f.doc_from_ram_cache = true;
+    io.aio_result        = io.aiocb.aio_nbytes;
+
     SET_HANDLER(&CacheVC::handleReadDone);
     return EVENT_RETURN;
   }
 
+  // 4. read from Disk (AIO) due to all memory cache miss
+  Dbg(dbg_ctl_cache_ram, "all memory cache miss");
+
   ts::Metrics::Counter::increment(cache_rsb.all_mem_misses);
   ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.all_mem_misses);
 
+  // enqueue AIO read
   io.aiocb.aio_fildes = stripe->fd;
   io.aiocb.aio_offset = stripe->vol_offset(&dir);
   if (static_cast<off_t>(io.aiocb.aio_offset + io.aiocb.aio_nbytes) > static_cast<off_t>(stripe->skip + stripe->len)) {
@@ -480,30 +510,14 @@ CacheVC::handleRead(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   io.action        = this;
   io.thread        = mutex->thread_holding->tt == DEDICATED ? AIO_CALLBACK_THREAD_ANY : mutex->thread_holding;
   SET_HANDLER(&CacheVC::handleReadDone);
-  ink_assert(ink_aio_read(&io) >= 0);
 
-// ToDo: Why are these for debug only ??
-#if DEBUG
+  int res = ink_aio_read(&io);
+  ink_assert(res >= 0);
+
   ts::Metrics::Counter::increment(cache_rsb.pread_count);
   ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.pread_count);
-#endif
 
   return EVENT_CONT;
-
-LramHit: {
-  f.doc_from_ram_cache = true;
-  io.aio_result        = io.aiocb.aio_nbytes;
-  Doc *doc             = reinterpret_cast<Doc *>(buf->data());
-  if (cache_config_ram_cache_compress && doc->doc_type == CACHE_FRAG_TYPE_HTTP && doc->hlen) {
-    SET_HANDLER(&CacheVC::handleReadDone);
-    return EVENT_RETURN;
-  }
-}
-LmemHit:
-  f.doc_from_ram_cache = true;
-  io.aio_result        = io.aiocb.aio_nbytes;
-  POP_HANDLER;
-  return EVENT_RETURN; // allow the caller to release the volume lock
 }
 
 bool
