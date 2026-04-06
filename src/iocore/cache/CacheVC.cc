@@ -332,6 +332,20 @@ unmarshal_helper(Doc *doc, Ptr<IOBufferData> &buf, int &okay)
   }
 }
 
+bool
+CacheVC::_ram_cache_cutoff_check(const Doc *doc) const
+{
+  int64_t effective_cutoff =
+    (stripe->cache_vol->ram_cache_cutoff > 0) ? stripe->cache_vol->ram_cache_cutoff : cache_config_ram_cache_cutoff;
+  // doc_len == 0 for the first fragment (it is set from the vector)
+  //                The decision on the first fragment is based on
+  //                doc->total_len
+  // After that, the decision is based of doc_len (doc_len != 0)
+  // (effective_cutoff == 0) : no cutoffs
+  return ((!doc_len && static_cast<int64_t>(doc->total_len) < effective_cutoff) ||
+          (doc_len && static_cast<int64_t>(doc_len) < effective_cutoff) || !effective_cutoff);
+}
+
 // [amc] I think this is where all disk reads from cache funnel through here.
 int
 CacheVC::handleReadDone(int event, Event * /* e ATS_UNUSED */)
@@ -412,19 +426,7 @@ CacheVC::handleReadDone(int event, Event * /* e ATS_UNUSED */)
       }
       // Put the request in the ram cache only if its a open_read or lookup
       if (vio.op == VIO::READ && okay) {
-        bool cutoff_check;
-        // Determine effective cutoff: use per-volume override if set, otherwise use global
-        int64_t effective_cutoff =
-          (stripe->cache_vol->ram_cache_cutoff > 0) ? stripe->cache_vol->ram_cache_cutoff : cache_config_ram_cache_cutoff;
-        // cutoff_check :
-        // doc_len == 0 for the first fragment (it is set from the vector)
-        //                The decision on the first fragment is based on
-        //                doc->total_len
-        // After that, the decision is based of doc_len (doc_len != 0)
-        // (effective_cutoff == 0) : no cutoffs
-        cutoff_check = ((!doc_len && static_cast<int64_t>(doc->total_len) < effective_cutoff) ||
-                        (doc_len && static_cast<int64_t>(doc_len) < effective_cutoff) || !effective_cutoff);
-        if (cutoff_check && !f.doc_from_ram_cache) {
+        if (_ram_cache_cutoff_check(doc) && !f.doc_from_ram_cache) {
           uint64_t o = dir_offset(&dir);
           stripe->ram_cache->put(read_key, buf.get(), doc->len, http_copy_hdr, o);
         }
@@ -478,6 +480,14 @@ CacheVC::handleRead(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     Dbg(dbg_ctl_cache_ram, "last open read hit");
     f.doc_from_ram_cache = true;
     io.aio_result        = io.aiocb.aio_nbytes;
+
+    // Try to promote this object to the RAM cache
+    Doc *doc = reinterpret_cast<Doc *>(buf->data());
+    if (_ram_cache_cutoff_check(doc)) {
+      bool     http_copy_hdr = cache_config_ram_cache_compress && doc->hlen;
+      uint64_t o             = dir_offset(&dir);
+      stripe->ram_cache->put(read_key, buf.get(), doc->len, http_copy_hdr, o);
+    }
 
     POP_HANDLER;
     return EVENT_RETURN;
