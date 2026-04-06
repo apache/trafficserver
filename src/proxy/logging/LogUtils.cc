@@ -533,7 +533,7 @@ unmarshalMimeHdr(char **buf, char *dest, int destLength)
 
     if ((pairSeparatorFallback > pairEndFallback) and ((pairSeparatorFallback + FULL_ELLIPSES.size()) < size_t(destLength))) {
       // In the report, we can show the existence of the last partial tag/value pair, and maybe part of the value.  If we only
-      // show part of the value, we want to end it with an elipsis, to make it clear it's not complete.
+      // show part of the value, we want to end it with an ellipsis, to make it clear it's not complete.
 
       bw.discard(FULL_ELLIPSES.size());
       bw.write(FULL_ELLIPSES);

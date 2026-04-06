@@ -145,7 +145,7 @@ NextHopRoundRobin::findNextHop(TSHttpTxn txnp, void * /* ih ATS_UNUSED */, time_
                sm_id, cur_host->hostname.c_str(), (intmax_t)cur_host->failedAt, cur_host->failCount.load(), fail_threshold);
         parentUp = true;
       }
-    } else { // if not available, check to see if it can be retried.  If so, set the retry flag and temporairly mark it as
+    } else { // if not available, check to see if it can be retried.  If so, set the retry flag and temporarily mark it as
              // available.
       _now == 0 ? _now = time(nullptr) : _now = now;
       if (((result->wrap_around) || (cur_host->failedAt + retry_time) < _now) && host_stat == TS_HOST_STATUS_UP) {

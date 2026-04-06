@@ -892,7 +892,7 @@ TextLogObject::write(const char *format, ...)
 
   This routine will take a format string and va_list and write it as a
   single entry (line) in the text file.  If timestamps are on, then the
-  entry will be preceeded by a timestamp.
+  entry will be preceded by a timestamp.
 
   Returns ReturnCodeFlags.
   -------------------------------------------------------------------------*/

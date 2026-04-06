@@ -48,7 +48,7 @@ SCENARIO("Testing NextHopConsistentHash class, using policy 'consistent_hash'", 
 
   GIVEN("Loading the consistent-hash-tests.yaml config for 'consistent_hash' tests.")
   {
-    // load the configuration strtegies.
+    // load the configuration strategies.
     NextHopStrategyFactory          nhf(TS_SRC_DIR "/consistent-hash-tests.yaml");
     NextHopSelectionStrategy *const strategy = nhf.strategyInstance("consistent-hash-1");
 

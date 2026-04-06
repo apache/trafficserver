@@ -1179,7 +1179,7 @@ PreWarmManager::_register_stats(const PreWarm::ParsedSNIConf &parsed_conf)
       } else {
         ++stats_counter;
         counters[j] = metric;
-        Dbg(dbg_ctl_v_prewarm_init, "conter stat id=%d name=%s", Metrics::Counter::lookup(name), name);
+        Dbg(dbg_ctl_v_prewarm_init, "counter stat id=%d name=%s", Metrics::Counter::lookup(name), name);
       }
     }
 

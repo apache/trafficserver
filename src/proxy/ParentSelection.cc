@@ -856,7 +856,7 @@ ParentRecord::Init(matcher_line *line_info)
     delete simple_server_retry_responses;
     simple_server_retry_responses = nullptr;
   } else if (simple_server_retry_responses == nullptr && parent_retry != ParentRetry_t::NONE) {
-    // initialize simple server respones codes to the default value if simple_retry is enabled.
+    // initialize simple server responses codes to the default value if simple_retry is enabled.
     Warning("%s initializing SimpleRetryResponseCodes on line %d to 404 default.", modulePrefix, line_num);
     simple_server_retry_responses = new SimpleRetryResponseCodes(nullptr);
   }

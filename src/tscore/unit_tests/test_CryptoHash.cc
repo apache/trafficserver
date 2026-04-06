@@ -28,7 +28,7 @@
 #include "tscore/CryptoHash.h"
 #include <catch2/catch_test_macros.hpp>
 
-TEST_CASE("CrypoHash", "[libts][CrypoHash]")
+TEST_CASE("CryptoHash", "[libts][CryptoHash]")
 {
   CryptoHash        hash;
   ts::CryptoContext ctx;

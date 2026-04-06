@@ -1539,7 +1539,7 @@ UDPQueue::SendUDPPacket(UDPPacket *p)
       }
     } else {
 #endif
-      // Send segments seprately if UDP_SEGMENT is not supported
+      // Send segments separately if UDP_SEGMENT is not supported
       int offset = 0;
       while (offset < p->p.chain.get()->size()) {
         iov[0].iov_base = p->p.chain.get()->start() + offset;

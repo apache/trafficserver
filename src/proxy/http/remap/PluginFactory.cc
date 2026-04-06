@@ -305,7 +305,7 @@ PluginFactory::cleanup()
 /**
  * @brief Find a plugin by path from our linked plugin list by using plugin effective (canonical) path
  *
- * @param path effective (caninical) path
+ * @param path effective (canonical) path
  * @return plugin found or nullptr if not found
  */
 PluginDso *

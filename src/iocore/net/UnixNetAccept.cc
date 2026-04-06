@@ -186,7 +186,7 @@ Ldone:
   }
 
   // if we stop looping as a result of hitting the accept limit,
-  // resechedule accepting to the end of the thread event queue
+  // reschedule accepting to the end of the thread event queue
   // for the goal of fairness between accepting and other work
   Dbg(dbg_ctl_iocore_net_accepts, "exited accept loop - count: %d, limit: %d", count, additional_accepts);
   if (count >= additional_accepts) {
@@ -274,7 +274,7 @@ NetAccept::accept_per_thread(int /* event ATS_UNUSED */, void * /* ep ATS_UNUSED
     }
 
     if (do_listen()) {
-      Fatal("[NetAccept::accept_per_thread]:error listenting on ports");
+      Fatal("[NetAccept::accept_per_thread]:error listening on ports");
       return -1;
     }
   }

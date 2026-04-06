@@ -224,7 +224,7 @@ Http2CommonSession::state_read_connection_preface(int event, void *edata)
 
     // XXX start the write VIO ...
 
-    // If we have unconsumed data, start tranferring frames now.
+    // If we have unconsumed data, start transferring frames now.
     if (this->_read_buffer_reader->is_read_avail_more_than(0)) {
       return this->get_proxy_session()->handleEvent(VC_EVENT_READ_READY, vio);
     }

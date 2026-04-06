@@ -1029,7 +1029,7 @@ HdrHeap::attach_str_heap(char const *h_start, int h_len, RefCountObj *h_ref_obj,
   return true;
 }
 
-// void HdrHeap::inhertit_string_heaps(const HdrHeap* inherit_from)
+// void HdrHeap::inherit_string_heaps(const HdrHeap* inherit_from)
 //
 //    Inherits all of inherit_from's string heaps as read-only
 //     string heaps

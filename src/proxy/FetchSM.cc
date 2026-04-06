@@ -1,6 +1,6 @@
 /** @file
 
-  Implements callin functions for plugins
+  Implements calling functions for plugins
 
   @section license License
 

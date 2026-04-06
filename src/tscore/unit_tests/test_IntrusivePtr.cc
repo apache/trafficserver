@@ -89,7 +89,7 @@ TEST_CASE("IntrusivePtr", "[libts][IntrusivePtr]")
   REQUIRE(!p3 == false);
 
   // This is a compile check to make sure IntrusivePtr can be used with private inheritance
-  // of ts::InstrusivePtrCounter if IntrusivePtr is declared a friend.
+  // of ts::IntrusivePtrCounter if IntrusivePtr is declared a friend.
   ts::IntrusivePtr<Obscure> op{new Obscure};
   op->_text.assign("Text");
 }

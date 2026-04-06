@@ -1297,7 +1297,7 @@ HttpTransact::handle_upgrade_request(State *s)
   HTTPHdr &request = s->hdr_info.client_request;
   s->method        = request.method_get_wksidx();
 
-  // Quickest way to determine that this is defintely not an upgrade.
+  // Quickest way to determine that this is definitely not an upgrade.
   /* RFC 6455 The method of the request MUST be GET, and the HTTP version MUST
         be at least 1.1. */
   if (!s->hdr_info.client_request.presence(MIME_PRESENCE_UPGRADE) ||
@@ -4447,7 +4447,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
           // No need to worry about If-Range headers because the request isn't conditional
           if (s->hdr_info.client_request.presence(MIME_PRESENCE_RANGE)) {
             s->state_machine->do_range_setup_if_necessary();
-            // Check client request range header if we cached a stealed content with cacheable=false
+            // Check client request range header if we cached a stolen content with cacheable=false
           }
           s->cache_info.action = CacheAction_t::SERVE_AND_DELETE;
           s->next_action       = StateMachineAction_t::SERVE_FROM_CACHE;

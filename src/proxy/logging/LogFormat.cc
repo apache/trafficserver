@@ -363,7 +363,7 @@ LogFormat::format_from_specification(char *spec, char **file_name, char **file_h
   format_name = token;
 
   //
-  // Next should be the printf-stlye format symbol string
+  // Next should be the printf-style format symbol string
   //
   token = tok.getNext();
   if (token == nullptr) {

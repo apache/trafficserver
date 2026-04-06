@@ -984,7 +984,7 @@ RangeTransform::transform_to_range()
         // keep this part for future support of out-of-order Range
         // if this is NOT a sequential Range compared to the previous one -
         // start of current Range is larger than the end of last Range, do
-        // not need to go back to the start of the IOBuffereReader.
+        // not need to go back to the start of the IOBufferReader.
         // Otherwise, reset the IOBufferReader.
         // if ( *start > prev_end )
         *done_byte = prev_end;
