@@ -35,6 +35,18 @@ class Parser;
 ///////////////////////////////////////////////////////////////////////////////
 // Operator declarations.
 //
+// Implementation pattern for operators:
+//
+// Every operator that overrides initialize() must provide:
+//   1. void do_initialize(...) — private helper with the actual logic
+//   2. void initialize(Parser &p) override — old format wrapper
+//   3. void initialize(const hrw::OperatorSpec &spec) override — hrw4u wrapper
+//
+// Both initialize() methods extract args from their source and delegate
+// to do_initialize(). This avoids duplicating logic across format paths.
+// When the old config format is removed, delete the Parser overrides and
+// rename do_initialize() to initialize().
+
 class OperatorSetConfig : public Operator
 {
 public:
@@ -61,6 +73,7 @@ public:
   }
 
   void initialize(Parser &p) override;
+  void initialize(const hrw::OperatorSpec &spec) override;
 
 protected:
   bool exec(const Resources &res) const override;
@@ -71,6 +84,8 @@ private:
 
   std::string _config;
   Value       _value;
+
+  void do_initialize(const std::string &arg, const std::string &value);
 };
 
 class OperatorSetStatus : public Operator
@@ -100,6 +115,7 @@ public:
   }
 
   void initialize(Parser &p) override;
+  void initialize(const hrw::OperatorSpec &spec) override;
 
 protected:
   void initialize_hooks() override;
@@ -109,6 +125,8 @@ private:
   Value       _status;
   const char *_reason     = nullptr;
   int         _reason_len = 0;
+
+  void do_initialize(const std::string &arg);
 };
 
 class OperatorSetStatusReason : public Operator
@@ -137,6 +155,7 @@ public:
   }
 
   void initialize(Parser &p) override;
+  void initialize(const hrw::OperatorSpec &spec) override;
 
 protected:
   void initialize_hooks() override;
@@ -144,6 +163,8 @@ protected:
 
 private:
   Value _reason;
+
+  void do_initialize(const std::string &arg);
 };
 
 class OperatorSetDestination : public Operator
@@ -178,6 +199,7 @@ public:
   }
 
   void initialize(Parser &p) override;
+  void initialize(const hrw::OperatorSpec &spec) override;
 
 protected:
   bool exec(const Resources &res) const override;
@@ -185,6 +207,8 @@ protected:
 private:
   UrlQualifiers _url_qual = URL_QUAL_NONE;
   Value         _value;
+
+  void do_initialize(const std::string &arg, const std::string &value);
 };
 
 // All the header operators share a base class
@@ -204,6 +228,7 @@ public:
   }
 
   void initialize(Parser &p) override;
+  void initialize(const hrw::OperatorSpec &spec) override;
 
 protected:
   bool exec(const Resources &res) const override;
@@ -213,6 +238,8 @@ private:
   bool                          _keep     = false;
   std::string                   _stop     = "";
   std::vector<std::string_view> _stop_list;
+
+  void do_initialize(const std::string &arg, const std::string &value);
 };
 
 class OperatorSetRedirect : public Operator
@@ -247,6 +274,7 @@ public:
   }
 
   void initialize(Parser &p) override;
+  void initialize(const hrw::OperatorSpec &spec) override;
 
   TSHttpStatus
   get_status() const
@@ -268,6 +296,8 @@ protected:
 private:
   Value _status;
   Value _location;
+
+  void do_initialize(const std::string &arg, const std::string &value);
 };
 
 class OperatorNoOp : public Operator
@@ -319,6 +349,7 @@ public:
   }
 
   void initialize(Parser &p) override;
+  void initialize(const hrw::OperatorSpec &spec) override;
 
 protected:
   bool exec(const Resources &res) const override;
@@ -334,6 +365,8 @@ private:
 
   TimeoutOutType _type = TO_OUT_UNDEFINED;
   Value          _timeout;
+
+  void do_initialize(const std::string &arg, const std::string &value);
 };
 
 class OperatorSkipRemap : public Operator
@@ -352,12 +385,15 @@ public:
   }
 
   void initialize(Parser &p) override;
+  void initialize(const hrw::OperatorSpec &spec) override;
 
 protected:
   bool exec(const Resources &res) const override;
 
 private:
   bool _skip_remap = false;
+
+  void do_initialize(const std::string &arg);
 };
 
 // All the header operators share a base class
@@ -412,12 +448,15 @@ public:
   }
 
   void initialize(Parser &p) override;
+  void initialize(const hrw::OperatorSpec &spec) override;
 
 protected:
   bool exec(const Resources &res) const override;
 
 private:
   Value _value;
+
+  void do_initialize(const std::string &value);
 };
 
 class OperatorSetHeader : public OperatorHeaders
@@ -452,12 +491,15 @@ public:
   }
 
   void initialize(Parser &p) override;
+  void initialize(const hrw::OperatorSpec &spec) override;
 
 protected:
   bool exec(const Resources &res) const override;
 
 private:
   Value _value;
+
+  void do_initialize(const std::string &value);
 };
 
 class OperatorCounter : public Operator
@@ -476,6 +518,7 @@ public:
   }
 
   void initialize(Parser &p) override;
+  void initialize(const hrw::OperatorSpec &spec) override;
 
 protected:
   bool exec(const Resources &res) const override;
@@ -483,6 +526,8 @@ protected:
 private:
   std::string _counter_name;
   int         _counter = TS_ERROR;
+
+  void do_initialize(const std::string &arg);
 };
 
 class OperatorRMCookie : public OperatorCookies
@@ -536,12 +581,15 @@ public:
   }
 
   void initialize(Parser &p) override;
+  void initialize(const hrw::OperatorSpec &spec) override;
 
 protected:
   bool exec(const Resources &res) const override;
 
 private:
   Value _value;
+
+  void do_initialize(const std::string &value);
 };
 
 class OperatorSetCookie : public OperatorCookies
@@ -576,12 +624,15 @@ public:
   }
 
   void initialize(Parser &p) override;
+  void initialize(const hrw::OperatorSpec &spec) override;
 
 protected:
   bool exec(const Resources &res) const override;
 
 private:
   Value _value;
+
+  void do_initialize(const std::string &value);
 };
 
 namespace CookieHelper
@@ -622,6 +673,7 @@ public:
   }
 
   void initialize(Parser &p) override;
+  void initialize(const hrw::OperatorSpec &spec) override;
 
 protected:
   void initialize_hooks() override;
@@ -629,6 +681,8 @@ protected:
 
 private:
   Value _ds_value;
+
+  void do_initialize(const std::string &arg);
 };
 
 class OperatorSetConnMark : public Operator
@@ -657,6 +711,7 @@ public:
   }
 
   void initialize(Parser &p) override;
+  void initialize(const hrw::OperatorSpec &spec) override;
 
 protected:
   void initialize_hooks() override;
@@ -664,6 +719,8 @@ protected:
 
 private:
   Value _ds_value;
+
+  void do_initialize(const std::string &arg);
 };
 
 class OperatorSetDebug : public Operator
@@ -682,10 +739,14 @@ public:
   }
 
   void initialize(Parser &p) override;
+  void initialize(const hrw::OperatorSpec &spec) override;
 
 protected:
   void initialize_hooks() override;
   bool exec(const Resources &res) const override;
+
+private:
+  void do_initialize();
 };
 
 class OperatorSetBody : public Operator
@@ -714,6 +775,7 @@ public:
   }
 
   void initialize(Parser &p) override;
+  void initialize(const hrw::OperatorSpec &spec) override;
 
 protected:
   void initialize_hooks() override;
@@ -721,6 +783,8 @@ protected:
 
 private:
   Value _value;
+
+  void do_initialize(const std::string &arg);
 };
 
 class OperatorSetHttpCntl : public Operator
@@ -739,6 +803,7 @@ public:
   }
 
   void initialize(Parser &p) override;
+  void initialize(const hrw::OperatorSpec &spec) override;
 
 protected:
   void initialize_hooks() override;
@@ -747,6 +812,8 @@ protected:
 private:
   bool           _flag{false};
   TSHttpCntlType _cntl_qual{TS_HTTP_CNTL_LOGGING_MODE}; // always overwritten by initialize()
+
+  void do_initialize(const std::string &arg, const std::string &value);
 };
 
 class OperatorSetPluginCntl : public Operator
@@ -765,6 +832,7 @@ public:
   }
 
   void initialize(Parser &p) override;
+  void initialize(const hrw::OperatorSpec &spec) override;
 
   enum class PluginCtrl {
     TIMEZONE,
@@ -784,6 +852,8 @@ protected:
 private:
   PluginCtrl _name{PluginCtrl::TIMEZONE}; // always overwritten by initialize()
   int        _value{0};
+
+  void do_initialize(const std::string &arg, const std::string &value);
 };
 
 class RemapPluginInst; // Opaque to the HRW operator, but needed in the implementation.
@@ -850,6 +920,7 @@ public:
   }
 
   void initialize(Parser &p) override;
+  void initialize(const hrw::OperatorSpec &spec) override;
 
   enum { TS_EVENT_FETCHSM_SUCCESS = 70000, TS_EVENT_FETCHSM_FAILURE = 70001, TS_EVENT_FETCHSM_TIMEOUT = 70002 };
 
@@ -859,6 +930,8 @@ protected:
 
 private:
   Value _value;
+
+  void do_initialize(const std::string &arg);
 };
 
 class OperatorSetStateFlag : public Operator
@@ -881,6 +954,7 @@ public:
   }
 
   void initialize(Parser &p) override;
+  void initialize(const hrw::OperatorSpec &spec) override;
 
 protected:
   void initialize_hooks() override;
@@ -903,6 +977,8 @@ private:
   int           _flag_ix = -1;
   int           _flag    = false;
   uint64_t      _mask    = 0;
+
+  void do_initialize(int flag_ix, const std::string &value);
 };
 
 class OperatorSetStateInt8 : public Operator
@@ -935,6 +1011,7 @@ public:
   }
 
   void initialize(Parser &p) override;
+  void initialize(const hrw::OperatorSpec &spec) override;
 
 protected:
   void initialize_hooks() override;
@@ -956,6 +1033,8 @@ private:
   TSUserArgType _scope   = TS_USER_ARGS_TXN;
   int           _byte_ix = -1;
   Value         _value;
+
+  void do_initialize(int byte_ix, const std::string &value);
 };
 
 class OperatorSetStateInt16 : public Operator
@@ -978,6 +1057,7 @@ public:
   }
 
   void initialize(Parser &p) override;
+  void initialize(const hrw::OperatorSpec &spec) override;
 
 protected:
   void initialize_hooks() override;
@@ -998,6 +1078,8 @@ protected:
 private:
   TSUserArgType _scope = TS_USER_ARGS_TXN;
   Value         _value;
+
+  void do_initialize(int ix, const std::string &value);
 };
 
 class OperatorSetEffectiveAddress : public Operator
@@ -1026,6 +1108,7 @@ public:
   }
 
   void initialize(Parser &p) override;
+  void initialize(const hrw::OperatorSpec &spec) override;
 
 protected:
   void initialize_hooks() override;
@@ -1039,6 +1122,8 @@ protected:
 
 private:
   Value _value;
+
+  void do_initialize(const std::string &arg);
 };
 
 class OperatorSetNextHopStrategy : public Operator
@@ -1067,6 +1152,7 @@ public:
   }
 
   void initialize(Parser &p) override;
+  void initialize(const hrw::OperatorSpec &spec) override;
 
 protected:
   void initialize_hooks() override;
@@ -1074,6 +1160,8 @@ protected:
 
 private:
   Value _value;
+
+  void do_initialize(const std::string &arg);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1187,6 +1275,7 @@ public:
   }
 
   void initialize(Parser &p) override;
+  void initialize(const hrw::OperatorSpec &spec) override;
 
 protected:
   void initialize_hooks() override;
@@ -1194,4 +1283,6 @@ protected:
 
 private:
   Value _cc_alg;
+
+  void do_initialize(const std::string &arg);
 };

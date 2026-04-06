@@ -35,6 +35,17 @@
 ///////////////////////////////////////////////////////////////////////////////
 // Condition declarations.
 //
+// Implementation pattern for conditions:
+//
+// Every condition that overrides initialize() must provide:
+//   1. void do_initialize(...) — private helper with the actual logic
+//   2. void initialize(Parser &p) override — old format wrapper
+//   3. void initialize(const hrw::ConditionSpec &spec) override — hrw4u wrapper
+//
+// Both initialize() methods extract args from their source and delegate
+// to do_initialize(). This avoids duplicating logic across format paths.
+// When the old config format is removed, delete the Parser overrides and
+// rename do_initialize() to initialize().
 
 // Always true
 class ConditionTrue : public Condition
@@ -119,11 +130,15 @@ public:
   }
 
   void initialize(Parser &p) override;
+  void initialize(const hrw::ConditionSpec &spec) override;
   void append_value(std::string &s, const Resources &res) override;
 
 protected:
   bool eval(const Resources &res) override;
   void initialize_hooks() override; // Return status only valid in certain hooks
+
+private:
+  void do_initialize(const std::string &arg);
 };
 
 // Check the HTTP method
@@ -147,10 +162,14 @@ public:
   }
 
   void initialize(Parser &p) override;
+  void initialize(const hrw::ConditionSpec &spec) override;
   void append_value(std::string &s, const Resources &res) override;
 
 protected:
   bool eval(const Resources &res) override;
+
+private:
+  void do_initialize(const std::string &arg);
 };
 
 // Random 0 to (N-1)
@@ -174,12 +193,14 @@ public:
   }
 
   void initialize(Parser &p) override;
+  void initialize(const hrw::ConditionSpec &spec) override;
   void append_value(std::string &s, const Resources &res) override;
 
 protected:
   bool eval(const Resources &res) override;
 
 private:
+  void         do_initialize(const std::string &arg);
   unsigned int _seed = 0;
   unsigned int _max  = 0;
 };
@@ -201,12 +222,14 @@ public:
   }
 
   void initialize(Parser &p) override;
+  void initialize(const hrw::ConditionSpec &spec) override;
   void append_value(std::string &s, const Resources &res) override;
 
 protected:
   bool eval(const Resources &res) override;
 
 private:
+  void   do_initialize();
   time_t _next = 0;
   bool   _last = false;
 };
@@ -232,12 +255,14 @@ public:
   }
 
   void initialize(Parser &p) override;
+  void initialize(const hrw::ConditionSpec &spec) override;
   void append_value(std::string &s, const Resources &res) override;
 
 protected:
   bool eval(const Resources &res) override;
 
 private:
+  void do_initialize(const std::string &arg);
   // Nginx-style cookie parsing:
   //   nginx/src/http/ngx_http_parse.c:ngx_http_parse_multi_header_lines()
   inline int
@@ -326,6 +351,7 @@ public:
   }
 
   void initialize(Parser &p) override;
+  void initialize(const hrw::ConditionSpec &spec) override;
   void append_value(std::string &s, const Resources &res) override;
 
 protected:
@@ -333,6 +359,7 @@ protected:
   bool eval(const Resources &res) override;
 
 private:
+  void       do_initialize(const std::string &arg);
   HeaderType _type;
 };
 
@@ -371,6 +398,7 @@ public:
   }
 
   void initialize(Parser &p) override;
+  void initialize(const hrw::ConditionSpec &spec) override;
   void set_qualifier(const std::string &q) override;
   void append_value(std::string &s, const Resources &res) override;
 
@@ -378,6 +406,7 @@ protected:
   bool eval(const Resources &res) override;
 
 private:
+  void          do_initialize(const std::string &arg);
   UrlQualifiers _url_qual = URL_QUAL_NONE;
   UrlType       _type;
   std::string   _query_param; // Optional: specific query parameter name for QUERY sub-key
@@ -404,12 +433,14 @@ public:
   }
 
   void initialize(Parser &p) override;
+  void initialize(const hrw::ConditionSpec &spec) override;
   void append_value(std::string &s, const Resources &res) override;
 
 protected:
   bool eval(const Resources &res) override;
 
 private:
+  void        do_initialize(const std::string &arg);
   std::string _file;
 };
 
@@ -456,6 +487,7 @@ public:
   }
 
   void initialize(Parser &p) override;
+  void initialize(const hrw::ConditionSpec &spec) override;
   void set_qualifier(const std::string &q) override;
   void append_value(std::string &s, const Resources &res) override;
 
@@ -469,6 +501,7 @@ protected:
   bool eval(const Resources &res) override;
 
 private:
+  void         do_initialize(const std::string &arg);
   IpQualifiers _ip_qual = IP_QUAL_CLIENT;
 };
 
@@ -493,10 +526,14 @@ public:
   }
 
   void initialize(Parser &p) override;
+  void initialize(const hrw::ConditionSpec &spec) override;
   void append_value(std::string &s, const Resources &res) override;
 
 protected:
   bool eval(const Resources &res) override;
+
+private:
+  void do_initialize(const std::string &arg);
 };
 
 // now: Keeping track of current time / day / hour etc.
@@ -520,6 +557,7 @@ public:
   }
 
   void initialize(Parser &p) override;
+  void initialize(const hrw::ConditionSpec &spec) override;
   void set_qualifier(const std::string &q) override;
   void append_value(std::string &s, const Resources &res) override;
 
@@ -533,6 +571,7 @@ protected:
   }
 
 private:
+  void          do_initialize(const std::string &arg);
   int64_t       get_now_qualified(NowQualifiers qual, const Resources &res) const;
   NowQualifiers _now_qual = NOW_QUAL_EPOCH;
 };
@@ -557,6 +596,7 @@ public:
   }
 
   void initialize(Parser &p) override;
+  void initialize(const hrw::ConditionSpec &spec) override;
   void set_qualifier(const std::string &q) override;
   void append_value(std::string &s, const Resources &res) override;
 
@@ -574,6 +614,7 @@ public:
   }
 
 private:
+  void                do_initialize(const std::string &arg);
   virtual int64_t     get_geo_int(const sockaddr *addr) const;
   virtual std::string get_geo_string(const sockaddr *addr) const;
 
@@ -609,6 +650,7 @@ public:
   }
 
   void initialize(Parser &p) override;
+  void initialize(const hrw::ConditionSpec &spec) override;
   void set_qualifier(const std::string &q) override;
   void append_value(std::string &s, const Resources &res) override;
 
@@ -616,6 +658,7 @@ protected:
   bool eval(const Resources &res) override;
 
 private:
+  void         do_initialize(const std::string &arg);
   IdQualifiers _id_qual = ID_QUAL_UNIQUE;
 };
 
@@ -643,6 +686,7 @@ public:
   }
 
   void initialize(Parser &p) override;
+  void initialize(const hrw::ConditionSpec &spec) override;
   void set_qualifier(const std::string &q) override;
   void append_value(std::string &s, const Resources &res) override;
 
@@ -656,6 +700,7 @@ protected:
   bool eval(const Resources &res) override;
 
 private:
+  void           do_initialize(const std::string &arg);
   void           _create_masks();
   int            _v4_cidr = 24;
   int            _v6_cidr = 48;
@@ -684,6 +729,7 @@ public:
   }
 
   void initialize(Parser &p) override;
+  void initialize(const hrw::ConditionSpec &spec) override;
   void set_qualifier(const std::string &q) override;
   void append_value(std::string &s, const Resources &res) override;
 
@@ -699,6 +745,7 @@ protected:
   bool eval(const Resources &res) override;
 
 private:
+  void                     do_initialize(const std::string &arg);
   NetworkSessionQualifiers _net_qual = NET_QUAL_STACK;
 #if TS_HAS_CRIPTS
   bool _mtls_cert = false;
@@ -755,10 +802,14 @@ public:
   }
 
   void initialize(Parser &p) override;
+  void initialize(const hrw::ConditionSpec &spec) override;
   void append_value(std::string &s, const Resources &res) override;
 
 protected:
   bool eval(const Resources &res) override;
+
+private:
+  void do_initialize(const std::string &arg);
 };
 
 // Tcp Info
@@ -782,11 +833,15 @@ public:
   }
 
   void initialize(Parser &p) override;
+  void initialize(const hrw::ConditionSpec &spec) override;
   void append_value(std::string &s, const Resources &res) override;
 
 protected:
   bool eval(const Resources &res) override;
   void initialize_hooks() override; // Return status only valid in certain hooks
+
+private:
+  void do_initialize(const std::string &arg);
 };
 
 // Cache Lookup Results
@@ -810,10 +865,14 @@ public:
   }
 
   void initialize(Parser &p) override;
+  void initialize(const hrw::ConditionSpec &spec) override;
   void append_value(std::string &s, const Resources &res) override;
 
 protected:
   bool eval(const Resources &res) override;
+
+private:
+  void do_initialize(const std::string &arg);
 };
 
 // Next Hop
@@ -839,6 +898,7 @@ public:
   }
 
   void initialize(Parser &p) override;
+  void initialize(const hrw::ConditionSpec &spec) override;
   void set_qualifier(const std::string &q) override;
   void append_value(std::string &s, const Resources &res) override;
 
@@ -846,6 +906,7 @@ protected:
   bool eval(const Resources &res) override;
 
 private:
+  void              do_initialize(const std::string &arg);
   NextHopQualifiers _next_hop_qual = NEXT_HOP_NONE;
 };
 
@@ -1031,6 +1092,7 @@ public:
   }
 
   void initialize(Parser &p) override;
+  void initialize(const hrw::ConditionSpec &spec) override;
   void set_qualifier(const std::string &q) override;
   void append_value(std::string &s, const Resources &res) override;
 
@@ -1050,6 +1112,7 @@ protected:
   }
 
 private:
+  void do_initialize(const std::string &arg);
   uint8_t
   _get_data(const Resources &res) const
   {
@@ -1089,6 +1152,7 @@ public:
   }
 
   void initialize(Parser &p) override;
+  void initialize(const hrw::ConditionSpec &spec) override;
   void set_qualifier(const std::string &q) override;
   void append_value(std::string &s, const Resources &res) override;
 
@@ -1108,6 +1172,7 @@ protected:
   }
 
 private:
+  void do_initialize(const std::string &arg);
   uint16_t
   _get_data(const Resources &res) const
   {

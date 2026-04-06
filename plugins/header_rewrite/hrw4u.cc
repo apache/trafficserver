@@ -24,6 +24,7 @@
 #include "ts/ts.h"
 
 #include "factory.h"
+#include "objtypes.h"
 #include "ruleset.h"
 #include "conditions.h"
 #include "operators.h"
@@ -119,32 +120,41 @@ namespace
         cond_spec = cond_spec.substr(2, cond_spec.size() - 3);
       }
 
-      Condition *cond = condition_factory(cond_spec);
-
-      if (!cond) {
-        TSError("[header_rewrite:hrw4u] Failed to create condition: %s", cond_spec.c_str());
-        return nullptr;
-      }
-
       Dbg(pi_dbg_ctl, "    Creating condition: %%{%s} with arg: %s", cond_spec.c_str(), ctx.arg.c_str());
 
-      Parser p;
+      hrw::ConditionSpec spec = hrw::parse_condition_string(cond_spec, ctx.arg);
 
-      p.set_op(cond_spec);
-      p.set_arg(ctx.arg);
       for (const auto &mod : ctx.mods) {
-        p.add_mod(mod);
+        if (mod == "NOT") {
+          spec.mod_not = true;
+        } else if (mod == "OR") {
+          spec.mod_or = true;
+        } else if (mod == "AND") {
+          spec.mod_and = true;
+        } else if (mod == "NOCASE") {
+          spec.mod_nocase = true;
+        } else if (mod == "L") {
+          spec.mod_last = true;
+        } else if (mod == "EXT") {
+          spec.mod_ext = true;
+        } else if (mod == "PRE") {
+          spec.mod_pre = true;
+        } else if (mod == "MID") {
+          spec.mod_mid = true;
+        }
       }
 
       try {
-        cond->initialize(p);
+        Condition *cond = hrw::create_condition(spec);
+
+        if (!cond) {
+          TSError("[header_rewrite:hrw4u] Failed to create condition: %s", cond_spec.c_str());
+        }
+        return cond;
       } catch (const std::exception &e) {
         TSError("[header_rewrite:hrw4u] Failed to initialize condition %s: %s", cond_spec.c_str(), e.what());
-        delete cond;
         return nullptr;
       }
-
-      return cond;
     }
 
     static void *
@@ -161,21 +171,48 @@ namespace
       Dbg(pi_dbg_ctl, "    Adding operator: %s, arg=\"%s\", val=\"%s\"", std::string(hrw::operator_type_name(ctx.op_type)).c_str(),
           ctx.arg.c_str(), ctx.val.c_str());
 
-      Parser p(ctx.from_url, ctx.to_url);
+      // OperatorRunPlugin needs from_url/to_url which OperatorSpec doesn't carry
+      if (ctx.op_type == hrw::OperatorType::RUN_PLUGIN) {
+        Parser p(ctx.from_url, ctx.to_url);
 
-      p.set_op("");
-      p.set_arg(ctx.arg);
-      p.set_val(ctx.val);
+        p.set_op("");
+        p.set_arg(ctx.arg);
+        p.set_val(ctx.val);
+        for (const auto &mod : ctx.mods) {
+          p.add_mod(mod);
+        }
+
+        try {
+          op->initialize(p);
+        } catch (const std::exception &e) {
+          TSError("[header_rewrite:hrw4u] Failed to initialize operator type %d: %s", static_cast<int>(ctx.op_type), e.what());
+          delete op;
+          return nullptr;
+        }
+        return op;
+      }
+
+      hrw::OperatorSpec spec;
+
+      spec.type  = ctx.op_type;
+      spec.arg   = ctx.arg;
+      spec.value = ctx.val;
+
       for (const auto &mod : ctx.mods) {
-        p.add_mod(mod);
+        if (mod == "L" || mod == "LAST") {
+          spec.mod_last = true;
+        } else if (mod == "QSA") {
+          spec.mod_qsa = true;
+        } else if (mod == "I" || mod == "INV") {
+          spec.mod_inv = true;
+        }
       }
 
       try {
-        op->initialize(p);
+        op->initialize(spec);
       } catch (const std::exception &e) {
         TSError("[header_rewrite:hrw4u] Failed to initialize operator type %d: %s", static_cast<int>(ctx.op_type), e.what());
         delete op;
-
         return nullptr;
       }
 
