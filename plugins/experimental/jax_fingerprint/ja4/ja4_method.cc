@@ -81,8 +81,8 @@ get_first_ALPN(TSClientHello ch)
   std::string          result{""};
   if (TS_SUCCESS == TSClientHelloExtensionGet(ch, EXT_ALPN, &buf, &buflen)) {
     // The first two bytes are a 16bit encoding of the total length.
-    unsigned char first_ALPN_length{buf[2]};
     TSAssert(buflen > 4);
+    unsigned char first_ALPN_length{buf[2]};
     TSAssert(0 != first_ALPN_length);
     result.assign(&buf[3], (&buf[3]) + first_ALPN_length);
   }
