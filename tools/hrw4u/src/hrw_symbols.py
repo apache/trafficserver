@@ -232,7 +232,7 @@ class InverseSymbolResolver(SymbolResolverBase):
         return repl
 
     def _handle_set_rm_operation(
-            self, cmd: str, toks: list[str], prefix: str, qualifier: str, context: str, section: SectionType | None = None) -> str:
+            self, cmd: str, toks: list[str], prefix: str, qualifier: str, section: SectionType | None = None) -> str:
         if cmd.startswith("rm-"):
             return f'{prefix}{qualifier} = ""'
         if len(toks) < 3:
@@ -261,7 +261,7 @@ class InverseSymbolResolver(SymbolResolverBase):
             prefix = self.get_prefix_for_context(context_type, section)
 
             processed_qualifier = qualifier_processor(qualifier)
-            return self._handle_set_rm_operation(cmd, toks, prefix, processed_qualifier, op_context, section)
+            return self._handle_set_rm_operation(cmd, toks, prefix, processed_qualifier, section)
 
         if lhs_key.endswith("."):
             if len(toks) < 2:
