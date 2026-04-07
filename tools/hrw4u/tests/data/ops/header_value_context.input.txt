@@ -1,0 +1,14 @@
+SEND_REQUEST {
+    outbound.req.X-Auth = "{outbound.req.X-Token}";
+    outbound.req.X-Info = "val={outbound.req.X-Detail}";
+}
+
+READ_RESPONSE {
+    outbound.resp.X-Auth = "{outbound.resp.X-Token}";
+    outbound.resp.X-Info = "val={outbound.resp.X-Detail}";
+}
+
+SEND_RESPONSE {
+    inbound.resp.X-Auth = "{inbound.resp.X-Token}";
+    inbound.resp.X-Info = "val={inbound.resp.X-Detail}";
+}
