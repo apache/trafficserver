@@ -23,6 +23,7 @@
 #include <fstream>
 #include <unordered_map>
 #include <chrono>
+#include <iomanip>
 #include <thread>
 #include <csignal>
 #include <unistd.h>
@@ -880,6 +881,8 @@ PluginCommand::PluginCommand(ts::Arguments *args) : CtrlCommand(args)
 {
   if (get_parsed_arguments()->get(MSG_STR)) {
     _invoked_func = [&]() { plugin_msg(); };
+  } else if (get_parsed_arguments()->get(LIST_STR)) {
+    _invoked_func = [&]() { plugin_list(); };
   }
   _printer = std::make_unique<GenericPrinter>(parse_print_opts(args));
 }
@@ -897,6 +900,52 @@ PluginCommand::plugin_msg()
   BasicPluginMessageRequest request{params};
   auto                      response = invoke_rpc(request);
   _printer->write_output(response);
+}
+
+void
+PluginCommand::plugin_list()
+{
+  GetPluginListRequest request;
+  auto                 response = invoke_rpc(request);
+
+  if (response.is_error()) {
+    _printer->write_output(response);
+    return;
+  }
+
+  auto info = response.result.as<PluginListResponse>();
+
+  std::cout << "source: " << info.source << '\n';
+
+  bool has_load_order = false;
+  for (const auto &p : info.plugins) {
+    if (p.load_order >= 0) {
+      has_load_order = true;
+      break;
+    }
+  }
+
+  if (has_load_order) {
+    std::cout << "  #  plugin                          load_order   status\n";
+  } else {
+    std::cout << "  #  plugin                          status\n";
+  }
+
+  for (const auto &p : info.plugins) {
+    std::cout << " " << std::right << std::setw(2) << p.index << "  " << std::left << std::setw(30) << p.path;
+
+    if (has_load_order) {
+      char order_buf[12];
+      if (p.load_order >= 0) {
+        snprintf(order_buf, sizeof(order_buf), "%d", p.load_order);
+      } else {
+        snprintf(order_buf, sizeof(order_buf), "--");
+      }
+      std::cout << "  " << std::left << std::setw(11) << order_buf;
+    }
+
+    std::cout << "  " << p.status << '\n';
+  }
 }
 //------------------------------------------------------------------------------------------------------------------------------------
 DirectRPCCommand::DirectRPCCommand(ts::Arguments *args) : CtrlCommand(args)

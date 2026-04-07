@@ -1,0 +1,17 @@
+plugins:
+  - path: stats_over_http.so
+    params:
+      - _stats
+  - path: cache_promote.so
+    enabled: false
+    params:
+      - --policy=lru
+      - --buckets=100
+  - path: header_rewrite.so
+    params:
+      - /etc/trafficserver/rewrite.conf
+  - path: slice.so
+    enabled: false
+    params:
+      - --blockbytes=1048576
+  - path: xdebug.so

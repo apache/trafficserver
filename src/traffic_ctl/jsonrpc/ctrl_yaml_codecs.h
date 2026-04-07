@@ -182,6 +182,31 @@ template <> struct convert<HostDBGetStatusRequest::Params> {
   }
 };
 //------------------------------------------------------------------------------------------------------------------------------------
+template <> struct convert<PluginListResponse> {
+  static bool
+  decode(Node const &node, PluginListResponse &out)
+  {
+    if (auto data = node["data"]; data) {
+      out.source = helper::try_extract<std::string>(data, "source");
+      for (const auto &p : data["plugins"]) {
+        PluginListResponse::PluginInfo info;
+
+        info.path    = helper::try_extract<std::string>(p, "path");
+        info.enabled = helper::try_extract<bool>(p, "enabled");
+        info.status  = helper::try_extract<std::string>(p, "status");
+        if (p["index"]) {
+          info.index = p["index"].as<int>();
+        }
+        if (p["load_order"]) {
+          info.load_order = p["load_order"].as<int>();
+        }
+        out.plugins.emplace_back(std::move(info));
+      }
+    }
+    return true;
+  }
+};
+//------------------------------------------------------------------------------------------------------------------------------------
 template <> struct convert<BasicPluginMessageRequest::Params> {
   static Node
   encode(BasicPluginMessageRequest::Params const &params)

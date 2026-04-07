@@ -219,6 +219,11 @@ main([[maybe_unused]] int argc, const char **argv)
     .add_example_usage("traffic_ctl config convert storage <storage.config> <volume.config> <output_file>")
     .add_example_usage("traffic_ctl config convert storage storage.config volume.config storage.yaml")
     .add_example_usage("traffic_ctl config convert storage storage.config volume.config -  # output to stdout");
+  convert_command.add_command("plugin_config", "Convert plugin.config to plugin.yaml", "", 2, Command_Execute)
+    .add_example_usage("traffic_ctl config convert plugin_config <input_file> <output_file>")
+    .add_example_usage("traffic_ctl config convert plugin_config plugin.config plugin.yaml")
+    .add_example_usage("traffic_ctl config convert plugin_config plugin.config -  # output to stdout")
+    .add_option("--skip-disabled", "", "Omit commented-out (disabled) plugins from the output");
 
   // host commands
   host_command.add_command("status", "Get one or more host statuses", "", MORE_THAN_ZERO_ARG_N, Command_Execute)
@@ -256,6 +261,8 @@ main([[maybe_unused]] int argc, const char **argv)
   plugin_command
     .add_command("msg", "Send message to plugins - a TAG and the message DATA(optional)", "", MORE_THAN_ONE_ARG_N, Command_Execute)
     .add_example_usage("traffic_ctl plugin msg TAG DATA");
+  plugin_command.add_command("list", "Show globally loaded plugins and their status", "", 0, Command_Execute)
+    .add_example_usage("traffic_ctl plugin list");
 
   // server commands
   server_command.add_command("backtrace", "Show a full stack trace of the traffic_server process",

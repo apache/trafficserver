@@ -23,6 +23,31 @@ plugin.config
 
 .. configfile:: plugin.config
 
+.. warning::
+
+   **Use** :file:`plugin.yaml` **instead.** The :file:`plugin.config` format is
+   maintained for backward compatibility but :file:`plugin.yaml` is the
+   recommended way to configure global plugins. It supports disabling plugins
+   without deleting lines, explicit load ordering, and inline configuration.
+
+   If :file:`plugin.yaml` exists in the configuration directory, |TS| will load
+   plugins from it and ignore :file:`plugin.config` entirely.
+
+   See :doc:`plugin.yaml.en` for the full reference.
+
+   **Migrating:** use ``traffic_ctl`` to convert an existing file automatically:
+
+   .. code-block:: bash
+
+      # Preview the converted output on stdout
+      traffic_ctl config convert plugin_config plugin.config -
+
+      # Write directly to plugin.yaml
+      traffic_ctl config convert plugin_config plugin.config plugin.yaml
+
+   Commented-out lines in :file:`plugin.config` are converted to
+   ``enabled: false`` entries.  Pass ``--skip-disabled`` to drop them instead.
+
 Description
 ===========
 
@@ -71,6 +96,7 @@ Examples
 See Also
 ========
 
+:doc:`plugin.yaml.en`,
 :manpage:`TSAPI(3ts)`,
 :manpage:`TSPluginInit(3ts)`,
 :manpage:`remap.config(5)`

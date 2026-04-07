@@ -193,6 +193,28 @@ struct HostDBGetStatusRequest : shared::rpc::ClientRequest {
   }
 };
 //------------------------------------------------------------------------------------------------------------------------------------
+struct GetPluginListRequest : shared::rpc::ClientRequest {
+  using super = shared::rpc::ClientRequest;
+  std::string
+  get_method() const override
+  {
+    return "admin_plugin_get_list";
+  }
+};
+
+struct PluginListResponse {
+  struct PluginInfo {
+    std::string path;
+    bool        enabled{false};
+    std::string status;
+    int         index{0};
+    int         load_order{-1};
+  };
+  std::string             source;
+  std::vector<PluginInfo> plugins;
+};
+
+//------------------------------------------------------------------------------------------------------------------------------------
 struct BasicPluginMessageRequest : shared::rpc::ClientRequest {
   using super = BasicPluginMessageRequest;
   struct Params {
