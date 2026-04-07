@@ -8410,8 +8410,9 @@ HttpSM::redirect_request(const char *arg_redirect_url, const int arg_redirect_le
     tmpOrigHost = const_cast<char *>(t_state.hdr_info.server_request.value_get(MIME_FIELD_HOST, MIME_LEN_HOST, &origHost_len));
 
     if (tmpOrigHost) {
-      memcpy(origHost, tmpOrigHost, origHost_len);
-      origHost[std::min(origHost_len, MAXDNAME - 1)] = '\0';
+      auto hostLen = std::min(origHost_len, MAXDNAME - 1);
+      memcpy(origHost, tmpOrigHost, hostLen);
+      origHost[hostLen] = '\0';
     } else {
       valid_origHost = false;
     }
