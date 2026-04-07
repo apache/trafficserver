@@ -173,6 +173,8 @@ public:
   static int va_error(const char *format, va_list ap);
   static int error(const char *format, ...) TS_PRINTFLIKE(1, 2);
 
+  static void flush_all_objects();
+
   // public data members
   static LogObject *error_log;
   /** The latest fully initialized LogConfig.

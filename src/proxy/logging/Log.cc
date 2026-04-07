@@ -1325,6 +1325,14 @@ Log::va_error(const char *format, va_list ap)
   return ret_val;
 }
 
+void
+Log::flush_all_objects()
+{
+  if (config) {
+    config->log_object_manager.flush_all_objects();
+  }
+}
+
 /*-------------------------------------------------------------------------
   Log::preproc_thread_main
 
@@ -1343,9 +1351,6 @@ Log::preproc_thread_main(void *args)
   Log::preproc_notify[idx].lock();
 
   while (true) {
-    if (TSSystemState::is_event_system_shut_down()) {
-      return nullptr;
-    }
     LogConfig *current = static_cast<LogConfig *>(configProcessor.get(log_configid));
 
     if (likely(current)) {
@@ -1358,6 +1363,13 @@ Log::preproc_thread_main(void *args)
           current->refcount());
 
       configProcessor.release(log_configid, current);
+    }
+
+    // Drain any remaining buffers before exiting on shutdown.
+    if (TSSystemState::is_event_system_shut_down()) {
+      // Signal flush thread to drain data we just pushed.
+      Log::flush_notify->signal();
+      return nullptr;
     }
 
     // wait for more work; a spurious wake-up is ok since we'll just
@@ -1384,9 +1396,6 @@ Log::flush_thread_main(void * /* args ATS_UNUSED */)
   Log::flush_notify->lock();
 
   while (true) {
-    if (TSSystemState::is_event_system_shut_down()) {
-      return nullptr;
-    }
     fdata = static_cast<LogFlushData *>(ink_atomiclist_popall(flush_data_list));
 
     // invert the list
@@ -1478,6 +1487,10 @@ Log::flush_thread_main(void * /* args ATS_UNUSED */)
     // check the queue and find there is nothing to do, then wait
     // again.
     //
+    if (TSSystemState::is_event_system_shut_down()) {
+      return nullptr;
+    }
+
     Log::flush_notify->wait();
   }
 

@@ -287,7 +287,15 @@ struct AutoStopCont : public Continuation {
       jsonrpcServer->stop_thread();
     }
 
+    // Push buffered log entries into the preproc queue before shutdown.
+    Log::flush_all_objects();
+
     TSSystemState::shut_down_event_system();
+
+    // Wake preproc threads to drain remaining log buffers before exit.
+    for (int i = 0; i < Log::preproc_threads; i++) {
+      Log::preproc_notify[i].signal();
+    }
     delete this;
     return EVENT_CONT;
   }
