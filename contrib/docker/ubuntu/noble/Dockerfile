@@ -33,7 +33,7 @@ RUN apt update \
     libev-dev \
     libevent-dev \
     zlib1g-dev \
-    cargo \
+    rustup \
     wget \
     git \
     libtool \
@@ -60,6 +60,8 @@ RUN apt update \
  # needed to appease nghttp2 but unused
     libssl-dev \
  && apt clean --yes
+
+RUN rustup default stable
 
 RUN mkdir -p ${BASE} && chmod a+rX ${BASE}
 
