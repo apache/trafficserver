@@ -72,6 +72,9 @@ port\.h
 ^systemtap$
 ^swoc$
 ^tests/gold_tests/autest-site/min_cfg$
+^http_load\.c$
+^timers\.c$
+^timers\.h$
 ^clang-tidy.conf$
 ^build.*$
 ^cmake-build.*$
