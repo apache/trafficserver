@@ -22,8 +22,8 @@
 
 #include "ts/ts.h"
 
-#include "../plugin.h"
-#include "../context.h"
+#include <plugin.h>
+#include <context.h>
 #include "ja3_method.h"
 #include "ja3_utils.h"
 

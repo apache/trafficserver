@@ -21,8 +21,8 @@
 
 #include "ts/ts.h"
 
-#include "../plugin.h"
-#include "../context.h"
+#include <plugin.h>
+#include <context.h>
 #include "ja4_method.h"
 #include "ja4.h"
 

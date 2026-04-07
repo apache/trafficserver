@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "../method.h"
+#include <method.h>
 
 namespace ja3_method
 {
