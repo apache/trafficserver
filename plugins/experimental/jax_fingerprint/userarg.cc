@@ -26,10 +26,8 @@
 int
 reserve_user_arg(PluginConfig &config)
 {
-  char name[strlen(PLUGIN_NAME) + strlen(config.method.name) + 1];
-  name[0] = '\0';
-  strcat(name, PLUGIN_NAME);
-  strcat(name, config.method.name);
+  std::string name  = PLUGIN_NAME;
+  name             += config.method.name;
 
   TSUserArgType type;
   if (config.method.type == Method::Type::CONNECTION_BASED) {
@@ -37,26 +35,9 @@ reserve_user_arg(PluginConfig &config)
   } else {
     type = TS_USER_ARGS_TXN;
   }
-  int ret = TSUserArgIndexReserve(type, name, "used to pass JAx context between hooks", &config.user_arg_index);
-  Dbg(dbg_ctl, "user_arg_name: %s, user_arg_index: %d", name, config.user_arg_index);
+  int ret = TSUserArgIndexReserve(type, name.c_str(), "used to pass JAx context between hooks", &config.user_arg_index);
+  Dbg(dbg_ctl, "user_arg_name: %s, user_arg_index: %d", name.c_str(), config.user_arg_index);
   return ret;
-}
-
-void
-fill_user_arg_index(PluginConfig &config)
-{
-  char name[strlen(PLUGIN_NAME) + strlen(config.method.name) + 1];
-  name[0] = '\0';
-  strcat(name, PLUGIN_NAME);
-  strcat(name, config.method.name);
-
-  TSUserArgType type;
-  if (config.method.type == Method::Type::CONNECTION_BASED) {
-    type = TS_USER_ARGS_VCONN;
-  } else {
-    type = TS_USER_ARGS_TXN;
-  }
-  TSUserArgIndexNameLookup(type, name, &config.user_arg_index, nullptr);
 }
 
 void

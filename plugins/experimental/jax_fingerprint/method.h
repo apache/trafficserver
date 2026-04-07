@@ -25,18 +25,44 @@
 #include "ts/ts.h"
 
 #include "context.h"
+#include <string_view>
 
+/** @brief Handler invoked on TLS ClientHello for connection-based fingerprinting. */
 using ClientHelloHandler = void (*)(JAxContext *, TSVConn);
+
+/** @brief Handler invoked on HTTP request read for request-based fingerprinting. */
 using RequestReadHandler = void (*)(JAxContext *, TSHttpTxn);
 
+/**
+ * @brief Describes a fingerprinting method (e.g. JA3, JA4, JA4H).
+ *
+ * Each method has a type that determines when it runs:
+ *  - @c CONNECTION_BASED methods fire on the TLS ClientHello via @c on_client_hello.
+ *  - @c REQUEST_BASED methods fire on the HTTP request via @c on_request.
+ *
+ * Concrete method instances are defined in per-method directories
+ * (ja3/, ja4/, ja4h/) and selected by the plugin configuration.
+ */
 struct Method {
   enum class Type {
+    /** Fingerprint derived from TLS ClientHello. */
     CONNECTION_BASED,
+    /** Fingerprint derived from the HTTP request. */
     REQUEST_BASED,
   };
 
-  const char        *name;
-  Type               type;
+  /**
+   * Human-readable method name (e.g. "ja3").
+   * Must reference a null-terminated string.
+   */
+  std::string_view name;
+
+  /** When this method runs. */
+  Type type;
+
+  /** Callback for CONNECTION_BASED methods (may be nullptr). */
   ClientHelloHandler on_client_hello;
+
+  /** Callback for REQUEST_BASED methods (may be nullptr). */
   RequestReadHandler on_request;
 };

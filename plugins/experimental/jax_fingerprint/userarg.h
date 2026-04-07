@@ -28,6 +28,5 @@
 #include "ts/ts.h"
 
 int         reserve_user_arg(PluginConfig &config);
-void        fill_user_arg_index(PluginConfig &config);
 void        set_user_arg(void *container, PluginConfig &config, JAxContext *ctx);
 JAxContext *get_user_arg(void *container, PluginConfig &config);

@@ -127,12 +127,12 @@ read_config_option(int argc, char const *argv[], PluginConfig &config)
     }
   }
 
-  if (strcmp(config.method.name, "uninitialized") == 0) {
+  if (config.method.name == "uninitialized") {
     TSError("[%s] Method must be specified", PLUGIN_NAME);
     return false;
   }
 
-  Dbg(dbg_ctl, "JAx method is %s", config.method.name);
+  Dbg(dbg_ctl, "JAx method is %s", config.method.name.data());
   Dbg(dbg_ctl, "JAx mode is %d", static_cast<int>(config.mode));
   Dbg(dbg_ctl, "JAx header is %s", !config.header_name.empty() ? config.header_name.c_str() : "DISABLED");
   Dbg(dbg_ctl, "JAx via-header is %s", !config.via_header_name.empty() ? config.via_header_name.c_str() : "DISABLED");
@@ -218,7 +218,7 @@ handle_client_hello(void *edata, PluginConfig &config)
   }
 
   if (nullptr == ctx) {
-    ctx = new JAxContext(config.method.name, TSNetVConnRemoteAddrGet(vconn));
+    ctx = new JAxContext(config.method.name.data(), TSNetVConnRemoteAddrGet(vconn));
     set_user_arg(vconn, config, ctx);
   }
 
@@ -260,7 +260,7 @@ handle_read_request_hdr(void *edata, PluginConfig &config)
       Dbg(dbg_ctl, "No context. Skipping.");
       return TS_SUCCESS;
     }
-    ctx = new JAxContext(config.method.name, TSNetVConnRemoteAddrGet(vconn));
+    ctx = new JAxContext(config.method.name.data(), TSNetVConnRemoteAddrGet(vconn));
     set_user_arg(container, config, ctx);
   }
 
