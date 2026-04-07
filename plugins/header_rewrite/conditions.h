@@ -31,11 +31,21 @@
 #include "matcher.h"
 #include "value.h"
 #include "lulu.h"
-// #include <mdbm.h>
 
 ///////////////////////////////////////////////////////////////////////////////
 // Condition declarations.
 //
+// Implementation pattern for conditions:
+//
+// Every condition that overrides initialize() must provide:
+//   1. void do_initialize(...) — private helper with the actual logic
+//   2. void initialize(Parser &p) override — old format wrapper
+//   3. void initialize(const hrw::ConditionSpec &spec) override — hrw4u wrapper
+//
+// Both initialize() methods extract args from their source and delegate
+// to do_initialize(). This avoids duplicating logic across format paths.
+// When the old config format is removed, delete the Parser overrides and
+// rename do_initialize() to initialize().
 
 // Always true
 class ConditionTrue : public Condition
@@ -46,6 +56,12 @@ public:
   // noncopyable
   ConditionTrue(const ConditionTrue &)  = delete;
   void operator=(const ConditionTrue &) = delete;
+
+  std::string_view
+  type_name() const override
+  {
+    return "ConditionTrue";
+  }
 
   void
   append_value(std::string &s, const Resources & /* res ATS_UNUSED */) override
@@ -71,6 +87,12 @@ public:
   // noncopyable
   ConditionFalse(const ConditionFalse &) = delete;
   void operator=(const ConditionFalse &) = delete;
+
+  std::string_view
+  type_name() const override
+  {
+    return "ConditionFalse";
+  }
 
   void
   append_value(std::string &s, const Resources & /* res ATS_UNUSED */) override
@@ -101,12 +123,22 @@ public:
   ConditionStatus(const SelfType &) = delete;
   void operator=(const SelfType &)  = delete;
 
+  std::string_view
+  type_name() const override
+  {
+    return "ConditionStatus";
+  }
+
   void initialize(Parser &p) override;
+  void initialize(const hrw::ConditionSpec &spec) override;
   void append_value(std::string &s, const Resources &res) override;
 
 protected:
   bool eval(const Resources &res) override;
   void initialize_hooks() override; // Return status only valid in certain hooks
+
+private:
+  void do_initialize(const std::string &arg);
 };
 
 // Check the HTTP method
@@ -123,11 +155,21 @@ public:
   ConditionMethod(const SelfType &) = delete;
   void operator=(const SelfType &)  = delete;
 
+  std::string_view
+  type_name() const override
+  {
+    return "ConditionMethod";
+  }
+
   void initialize(Parser &p) override;
+  void initialize(const hrw::ConditionSpec &spec) override;
   void append_value(std::string &s, const Resources &res) override;
 
 protected:
   bool eval(const Resources &res) override;
+
+private:
+  void do_initialize(const std::string &arg);
 };
 
 // Random 0 to (N-1)
@@ -144,13 +186,21 @@ public:
   ConditionRandom(const SelfType &) = delete;
   void operator=(const SelfType &)  = delete;
 
+  std::string_view
+  type_name() const override
+  {
+    return "ConditionRandom";
+  }
+
   void initialize(Parser &p) override;
+  void initialize(const hrw::ConditionSpec &spec) override;
   void append_value(std::string &s, const Resources &res) override;
 
 protected:
   bool eval(const Resources &res) override;
 
 private:
+  void         do_initialize(const std::string &arg);
   unsigned int _seed = 0;
   unsigned int _max  = 0;
 };
@@ -165,13 +215,21 @@ public:
   ConditionAccess(const ConditionAccess &) = delete;
   void operator=(const ConditionAccess &)  = delete;
 
+  std::string_view
+  type_name() const override
+  {
+    return "ConditionAccess";
+  }
+
   void initialize(Parser &p) override;
+  void initialize(const hrw::ConditionSpec &spec) override;
   void append_value(std::string &s, const Resources &res) override;
 
 protected:
   bool eval(const Resources &res) override;
 
 private:
+  void   do_initialize();
   time_t _next = 0;
   bool   _last = false;
 };
@@ -190,13 +248,21 @@ public:
   ConditionCookie(const SelfType &) = delete;
   void operator=(const SelfType &)  = delete;
 
+  std::string_view
+  type_name() const override
+  {
+    return "ConditionCookie";
+  }
+
   void initialize(Parser &p) override;
+  void initialize(const hrw::ConditionSpec &spec) override;
   void append_value(std::string &s, const Resources &res) override;
 
 protected:
   bool eval(const Resources &res) override;
 
 private:
+  void do_initialize(const std::string &arg);
   // Nginx-style cookie parsing:
   //   nginx/src/http/ngx_http_parse.c:ngx_http_parse_multi_header_lines()
   inline int
@@ -266,13 +332,34 @@ public:
   ConditionHeader(const SelfType &) = delete;
   void operator=(const SelfType &)  = delete;
 
+  std::string_view
+  type_name() const override
+  {
+    return "ConditionHeader";
+  }
+
+  bool
+  equals(const Statement *other) const override
+  {
+    if (!Condition::equals(other)) {
+      return false;
+    }
+
+    auto *cond = static_cast<const ConditionHeader *>(other);
+
+    return _type == cond->_type;
+  }
+
   void initialize(Parser &p) override;
+  void initialize(const hrw::ConditionSpec &spec) override;
   void append_value(std::string &s, const Resources &res) override;
 
 protected:
+  void initialize_hooks() override;
   bool eval(const Resources &res) override;
 
 private:
+  void       do_initialize(const std::string &arg);
   HeaderType _type;
 };
 
@@ -292,7 +379,26 @@ public:
   ConditionUrl(const SelfType &)   = delete;
   void operator=(const SelfType &) = delete;
 
+  std::string_view
+  type_name() const override
+  {
+    return "ConditionUrl";
+  }
+
+  bool
+  equals(const Statement *other) const override
+  {
+    if (!Condition::equals(other)) {
+      return false;
+    }
+
+    auto *cond = static_cast<const ConditionUrl *>(other);
+
+    return _url_qual == cond->_url_qual && _type == cond->_type;
+  }
+
   void initialize(Parser &p) override;
+  void initialize(const hrw::ConditionSpec &spec) override;
   void set_qualifier(const std::string &q) override;
   void append_value(std::string &s, const Resources &res) override;
 
@@ -300,6 +406,7 @@ protected:
   bool eval(const Resources &res) override;
 
 private:
+  void          do_initialize(const std::string &arg);
   UrlQualifiers _url_qual = URL_QUAL_NONE;
   UrlType       _type;
   std::string   _query_param; // Optional: specific query parameter name for QUERY sub-key
@@ -313,37 +420,28 @@ class ConditionDBM : public Condition
   using SelfType    = ConditionDBM;
 
 public:
-  ConditionDBM()
-    : //_dbm(NULL),
-      _file(""),
-      _mutex(TSMutexCreate())
-  {
-    Dbg(dbg_ctl, "Calling CTOR for ConditionDBM");
-  }
-
-  ~ConditionDBM() override
-  {
-    // if (_dbm) {
-    //   mdbm_close(_dbm);
-    //   _dbm = NULL;
-    // }
-  }
+  ConditionDBM() { Dbg(dbg_ctl, "Calling CTOR for ConditionDBM"); }
 
   // noncopyable
   ConditionDBM(const SelfType &)   = delete;
   void operator=(const SelfType &) = delete;
 
+  std::string_view
+  type_name() const override
+  {
+    return "ConditionDBM";
+  }
+
   void initialize(Parser &p) override;
+  void initialize(const hrw::ConditionSpec &spec) override;
   void append_value(std::string &s, const Resources &res) override;
 
 protected:
   bool eval(const Resources &res) override;
 
 private:
-  // MDBM* _dbm;
+  void        do_initialize(const std::string &arg);
   std::string _file;
-  Value       _key;
-  TSMutex     _mutex;
 };
 
 class ConditionInternalTxn : public Condition
@@ -353,6 +451,12 @@ class ConditionInternalTxn : public Condition
   using SelfType    = ConditionInternalTxn;
 
 public:
+  std::string_view
+  type_name() const override
+  {
+    return "ConditionInternalTxn";
+  }
+
   void
   append_value(std::string & /* s ATS_UNUSED */, const Resources & /* res ATS_UNUSED */) override
   {
@@ -376,7 +480,14 @@ public:
   ConditionIp(const SelfType &)    = delete;
   void operator=(const SelfType &) = delete;
 
+  std::string_view
+  type_name() const override
+  {
+    return "ConditionIp";
+  }
+
   void initialize(Parser &p) override;
+  void initialize(const hrw::ConditionSpec &spec) override;
   void set_qualifier(const std::string &q) override;
   void append_value(std::string &s, const Resources &res) override;
 
@@ -390,6 +501,7 @@ protected:
   bool eval(const Resources &res) override;
 
 private:
+  void         do_initialize(const std::string &arg);
   IpQualifiers _ip_qual = IP_QUAL_CLIENT;
 };
 
@@ -407,11 +519,21 @@ public:
   ConditionTransactCount(const SelfType &) = delete;
   void operator=(const SelfType &)         = delete;
 
+  std::string_view
+  type_name() const override
+  {
+    return "ConditionTransactCount";
+  }
+
   void initialize(Parser &p) override;
+  void initialize(const hrw::ConditionSpec &spec) override;
   void append_value(std::string &s, const Resources &res) override;
 
 protected:
   bool eval(const Resources &res) override;
+
+private:
+  void do_initialize(const std::string &arg);
 };
 
 // now: Keeping track of current time / day / hour etc.
@@ -428,7 +550,14 @@ public:
   ConditionNow(const SelfType &)   = delete;
   void operator=(const SelfType &) = delete;
 
+  std::string_view
+  type_name() const override
+  {
+    return "ConditionNow";
+  }
+
   void initialize(Parser &p) override;
+  void initialize(const hrw::ConditionSpec &spec) override;
   void set_qualifier(const std::string &q) override;
   void append_value(std::string &s, const Resources &res) override;
 
@@ -442,6 +571,7 @@ protected:
   }
 
 private:
+  void          do_initialize(const std::string &arg);
   int64_t       get_now_qualified(NowQualifiers qual, const Resources &res) const;
   NowQualifiers _now_qual = NOW_QUAL_EPOCH;
 };
@@ -459,7 +589,14 @@ public:
   ConditionGeo(const SelfType &)   = delete;
   void operator=(const SelfType &) = delete;
 
+  std::string_view
+  type_name() const override
+  {
+    return "ConditionGeo";
+  }
+
   void initialize(Parser &p) override;
+  void initialize(const hrw::ConditionSpec &spec) override;
   void set_qualifier(const std::string &q) override;
   void append_value(std::string &s, const Resources &res) override;
 
@@ -477,6 +614,7 @@ public:
   }
 
 private:
+  void                do_initialize(const std::string &arg);
   virtual int64_t     get_geo_int(const sockaddr *addr) const;
   virtual std::string get_geo_string(const sockaddr *addr) const;
 
@@ -505,7 +643,14 @@ public:
   ConditionId(const SelfType &)    = delete;
   void operator=(const SelfType &) = delete;
 
+  std::string_view
+  type_name() const override
+  {
+    return "ConditionId";
+  }
+
   void initialize(Parser &p) override;
+  void initialize(const hrw::ConditionSpec &spec) override;
   void set_qualifier(const std::string &q) override;
   void append_value(std::string &s, const Resources &res) override;
 
@@ -513,6 +658,7 @@ protected:
   bool eval(const Resources &res) override;
 
 private:
+  void         do_initialize(const std::string &arg);
   IdQualifiers _id_qual = ID_QUAL_UNIQUE;
 };
 
@@ -533,7 +679,14 @@ public:
   ConditionCidr(SelfType &)       = delete;
   SelfType &operator=(SelfType &) = delete;
 
+  std::string_view
+  type_name() const override
+  {
+    return "ConditionCidr";
+  }
+
   void initialize(Parser &p) override;
+  void initialize(const hrw::ConditionSpec &spec) override;
   void set_qualifier(const std::string &q) override;
   void append_value(std::string &s, const Resources &res) override;
 
@@ -547,6 +700,7 @@ protected:
   bool eval(const Resources &res) override;
 
 private:
+  void           do_initialize(const std::string &arg);
   void           _create_masks();
   int            _v4_cidr = 24;
   int            _v6_cidr = 48;
@@ -568,7 +722,14 @@ public:
   ConditionInbound(SelfType &)    = delete;
   SelfType &operator=(SelfType &) = delete;
 
+  std::string_view
+  type_name() const override
+  {
+    return "ConditionInbound";
+  }
+
   void initialize(Parser &p) override;
+  void initialize(const hrw::ConditionSpec &spec) override;
   void set_qualifier(const std::string &q) override;
   void append_value(std::string &s, const Resources &res) override;
 
@@ -584,6 +745,7 @@ protected:
   bool eval(const Resources &res) override;
 
 private:
+  void                     do_initialize(const std::string &arg);
   NetworkSessionQualifiers _net_qual = NET_QUAL_STACK;
 #if TS_HAS_CRIPTS
   bool _mtls_cert = false;
@@ -603,6 +765,12 @@ public:
   // noncopyable
   ConditionStringLiteral(const SelfType &) = delete;
   void operator=(const SelfType &)         = delete;
+
+  std::string_view
+  type_name() const override
+  {
+    return "ConditionStringLiteral";
+  }
 
   void append_value(std::string &s, const Resources & /* res ATS_UNUSED */) override;
 
@@ -627,11 +795,21 @@ public:
   ConditionSessionTransactCount(const SelfType &) = delete;
   void operator=(const SelfType &)                = delete;
 
+  std::string_view
+  type_name() const override
+  {
+    return "ConditionSessionTransactCount";
+  }
+
   void initialize(Parser &p) override;
+  void initialize(const hrw::ConditionSpec &spec) override;
   void append_value(std::string &s, const Resources &res) override;
 
 protected:
   bool eval(const Resources &res) override;
+
+private:
+  void do_initialize(const std::string &arg);
 };
 
 // Tcp Info
@@ -648,12 +826,22 @@ public:
   ConditionTcpInfo(const SelfType &) = delete;
   void operator=(const SelfType &)   = delete;
 
+  std::string_view
+  type_name() const override
+  {
+    return "ConditionTcpInfo";
+  }
+
   void initialize(Parser &p) override;
+  void initialize(const hrw::ConditionSpec &spec) override;
   void append_value(std::string &s, const Resources &res) override;
 
 protected:
   bool eval(const Resources &res) override;
   void initialize_hooks() override; // Return status only valid in certain hooks
+
+private:
+  void do_initialize(const std::string &arg);
 };
 
 // Cache Lookup Results
@@ -670,11 +858,21 @@ public:
   ConditionCache(const SelfType &) = delete;
   void operator=(const SelfType &) = delete;
 
+  std::string_view
+  type_name() const override
+  {
+    return "ConditionCache";
+  }
+
   void initialize(Parser &p) override;
+  void initialize(const hrw::ConditionSpec &spec) override;
   void append_value(std::string &s, const Resources &res) override;
 
 protected:
   bool eval(const Resources &res) override;
+
+private:
+  void do_initialize(const std::string &arg);
 };
 
 // Next Hop
@@ -693,7 +891,14 @@ public:
   ConditionNextHop(const SelfType &) = delete;
   void operator=(const SelfType &)   = delete;
 
+  std::string_view
+  type_name() const override
+  {
+    return "ConditionNextHop";
+  }
+
   void initialize(Parser &p) override;
+  void initialize(const hrw::ConditionSpec &spec) override;
   void set_qualifier(const std::string &q) override;
   void append_value(std::string &s, const Resources &res) override;
 
@@ -701,6 +906,7 @@ protected:
   bool eval(const Resources &res) override;
 
 private:
+  void              do_initialize(const std::string &arg);
   NextHopQualifiers _next_hop_qual = NEXT_HOP_NONE;
 };
 
@@ -715,6 +921,12 @@ public:
   // noncopyable
   ConditionHttpCntl(const SelfType &) = delete;
   void operator=(const SelfType &)    = delete;
+
+  std::string_view
+  type_name() const override
+  {
+    return "ConditionHttpCntl";
+  }
 
   void set_qualifier(const std::string &q) override;
   void append_value(std::string &s, const Resources &res) override;
@@ -733,10 +945,12 @@ class ConditionGroup : public Condition
 public:
   ConditionGroup() { Dbg(dbg_ctl, "Calling CTOR for ConditionGroup"); }
 
-  ~ConditionGroup() override
+  ~ConditionGroup() override { Dbg(dbg_ctl, "Calling DTOR for ConditionGroup"); }
+
+  std::string_view
+  type_name() const override
   {
-    Dbg(dbg_ctl, "Calling DTOR for ConditionGroup");
-    delete _cond;
+    return "ConditionGroup";
   }
 
   void
@@ -772,7 +986,7 @@ public:
     if (_cond) {
       _cond->append(cond);
     } else {
-      _cond = cond;
+      _cond.reset(cond);
     }
   }
 
@@ -795,9 +1009,15 @@ public:
     return _cond != nullptr;
   }
 
+  Condition *
+  get_conditions() const
+  {
+    return _cond.get();
+  }
+
 private:
-  Condition *_cond = nullptr; // First pre-condition (linked list)
-  bool       _end  = false;
+  std::unique_ptr<Condition> _cond; // First pre-condition (linked list)
+  bool                       _end = false;
 };
 
 // State/Session Flags (parameterized by scope)
@@ -816,6 +1036,12 @@ public:
   // noncopyable
   ConditionStateFlag(const SelfType &) = delete;
   void operator=(const SelfType &)     = delete;
+
+  std::string_view
+  type_name() const override
+  {
+    return "ConditionStateFlag";
+  }
 
   void set_qualifier(const std::string &q) override;
   void append_value(std::string &s, const Resources &res) override;
@@ -859,7 +1085,14 @@ public:
   ConditionStateInt8(const SelfType &) = delete;
   void operator=(const SelfType &)     = delete;
 
+  std::string_view
+  type_name() const override
+  {
+    return "ConditionStateInt8";
+  }
+
   void initialize(Parser &p) override;
+  void initialize(const hrw::ConditionSpec &spec) override;
   void set_qualifier(const std::string &q) override;
   void append_value(std::string &s, const Resources &res) override;
 
@@ -879,6 +1112,7 @@ protected:
   }
 
 private:
+  void do_initialize(const std::string &arg);
   uint8_t
   _get_data(const Resources &res) const
   {
@@ -911,7 +1145,14 @@ public:
   ConditionStateInt16(const SelfType &) = delete;
   void operator=(const SelfType &)      = delete;
 
+  std::string_view
+  type_name() const override
+  {
+    return "ConditionStateInt16";
+  }
+
   void initialize(Parser &p) override;
+  void initialize(const hrw::ConditionSpec &spec) override;
   void set_qualifier(const std::string &q) override;
   void append_value(std::string &s, const Resources &res) override;
 
@@ -931,6 +1172,7 @@ protected:
   }
 
 private:
+  void do_initialize(const std::string &arg);
   uint16_t
   _get_data(const Resources &res) const
   {
@@ -955,6 +1197,12 @@ public:
   // noncopyable
   ConditionLastCapture(const SelfType &) = delete;
   void operator=(const SelfType &)       = delete;
+
+  std::string_view
+  type_name() const override
+  {
+    return "ConditionLastCapture";
+  }
 
   void set_qualifier(const std::string &q) override;
   void append_value(std::string &s, const Resources &res) override;

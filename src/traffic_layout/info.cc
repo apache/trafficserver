@@ -131,7 +131,8 @@ produce_features(bool json)
   print_feature("TS_MAX_NUMBER_EVENT_THREADS", TS_MAX_NUMBER_EVENT_THREADS, json);
   print_feature("TS_MAX_HOST_NAME_LEN", TS_MAX_HOST_NAME_LEN, json);
   print_feature("TS_PKGSYSUSER", TS_PKGSYSUSER, json);
-  print_feature("TS_PKGSYSGROUP", TS_PKGSYSGROUP, json, true);
+  print_feature("TS_PKGSYSGROUP", TS_PKGSYSGROUP, json);
+  print_feature("TS_HAS_CPP_HRW4U", TS_HAS_CPP_HRW4U, json, true);
   if (json) {
     printf("}\n");
   }

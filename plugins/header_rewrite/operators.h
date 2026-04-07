@@ -15,10 +15,6 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
-//////////////////////////////////////////////////////////////////////////////////////////////
-//
-// Implement the classes for the various types of hash keys we support.
-//
 #pragma once
 
 #include <string>
@@ -39,6 +35,18 @@ class Parser;
 ///////////////////////////////////////////////////////////////////////////////
 // Operator declarations.
 //
+// Implementation pattern for operators:
+//
+// Every operator that overrides initialize() must provide:
+//   1. void do_initialize(...) — private helper with the actual logic
+//   2. void initialize(Parser &p) override — old format wrapper
+//   3. void initialize(const hrw::OperatorSpec &spec) override — hrw4u wrapper
+//
+// Both initialize() methods extract args from their source and delegate
+// to do_initialize(). This avoids duplicating logic across format paths.
+// When the old config format is removed, delete the Parser overrides and
+// rename do_initialize() to initialize().
+
 class OperatorSetConfig : public Operator
 {
 public:
@@ -48,7 +56,24 @@ public:
   OperatorSetConfig(const OperatorSetConfig &) = delete;
   void operator=(const OperatorSetConfig &)    = delete;
 
+  std::string_view
+  type_name() const override
+  {
+    return "OperatorSetConfig";
+  }
+
+  bool
+  equals(const Statement *other) const override
+  {
+    if (!Operator::equals(other)) {
+      return false;
+    }
+    auto *op = static_cast<const OperatorSetConfig *>(other);
+    return _key == op->_key && _type == op->_type && _config == op->_config && _value.equals(&op->_value);
+  }
+
   void initialize(Parser &p) override;
+  void initialize(const hrw::OperatorSpec &spec) override;
 
 protected:
   bool exec(const Resources &res) const override;
@@ -59,6 +84,8 @@ private:
 
   std::string _config;
   Value       _value;
+
+  void do_initialize(const std::string &arg, const std::string &value);
 };
 
 class OperatorSetStatus : public Operator
@@ -70,7 +97,25 @@ public:
   OperatorSetStatus(const OperatorSetStatus &) = delete;
   void operator=(const OperatorSetStatus &)    = delete;
 
+  std::string_view
+  type_name() const override
+  {
+    return "OperatorSetStatus";
+  }
+
+  bool
+  equals(const Statement *other) const override
+  {
+    if (!Operator::equals(other)) {
+      return false;
+    }
+    auto *op = static_cast<const OperatorSetStatus *>(other);
+    return _status.equals(&op->_status) && _reason_len == op->_reason_len &&
+           (!_reason || !op->_reason || strncmp(_reason, op->_reason, _reason_len) == 0);
+  }
+
   void initialize(Parser &p) override;
+  void initialize(const hrw::OperatorSpec &spec) override;
 
 protected:
   void initialize_hooks() override;
@@ -80,6 +125,8 @@ private:
   Value       _status;
   const char *_reason     = nullptr;
   int         _reason_len = 0;
+
+  void do_initialize(const std::string &arg);
 };
 
 class OperatorSetStatusReason : public Operator
@@ -91,7 +138,24 @@ public:
   OperatorSetStatusReason(const OperatorSetStatusReason &) = delete;
   void operator=(const OperatorSetStatusReason &)          = delete;
 
+  std::string_view
+  type_name() const override
+  {
+    return "OperatorSetStatusReason";
+  }
+
+  bool
+  equals(const Statement *other) const override
+  {
+    if (!Operator::equals(other)) {
+      return false;
+    }
+    auto *op = static_cast<const OperatorSetStatusReason *>(other);
+    return _reason.equals(&op->_reason);
+  }
+
   void initialize(Parser &p) override;
+  void initialize(const hrw::OperatorSpec &spec) override;
 
 protected:
   void initialize_hooks() override;
@@ -99,6 +163,8 @@ protected:
 
 private:
   Value _reason;
+
+  void do_initialize(const std::string &arg);
 };
 
 class OperatorSetDestination : public Operator
@@ -110,7 +176,30 @@ public:
   OperatorSetDestination(const OperatorSetDestination &) = delete;
   void operator=(const OperatorSetDestination &)         = delete;
 
+  std::string_view
+  type_name() const override
+  {
+    return "OperatorSetDestination";
+  }
+
+  bool
+  equals(const Statement *other) const override
+  {
+    if (!Operator::equals(other)) {
+      return false;
+    }
+    auto *op = static_cast<const OperatorSetDestination *>(other);
+    return _url_qual == op->_url_qual && _value.equals(&op->_value);
+  }
+
+  std::string
+  debug_string() const override
+  {
+    return std::string(type_name()) + " " + _value.get_value();
+  }
+
   void initialize(Parser &p) override;
+  void initialize(const hrw::OperatorSpec &spec) override;
 
 protected:
   bool exec(const Resources &res) const override;
@@ -118,6 +207,8 @@ protected:
 private:
   UrlQualifiers _url_qual = URL_QUAL_NONE;
   Value         _value;
+
+  void do_initialize(const std::string &arg, const std::string &value);
 };
 
 // All the header operators share a base class
@@ -130,7 +221,14 @@ public:
   OperatorRMDestination(const OperatorRMDestination &) = delete;
   void operator=(const OperatorRMDestination &)        = delete;
 
+  std::string_view
+  type_name() const override
+  {
+    return "OperatorRMDestination";
+  }
+
   void initialize(Parser &p) override;
+  void initialize(const hrw::OperatorSpec &spec) override;
 
 protected:
   bool exec(const Resources &res) const override;
@@ -140,6 +238,8 @@ private:
   bool                          _keep     = false;
   std::string                   _stop     = "";
   std::vector<std::string_view> _stop_list;
+
+  void do_initialize(const std::string &arg, const std::string &value);
 };
 
 class OperatorSetRedirect : public Operator
@@ -151,7 +251,30 @@ public:
   OperatorSetRedirect(const OperatorSetRedirect &) = delete;
   void operator=(const OperatorSetRedirect &)      = delete;
 
+  std::string_view
+  type_name() const override
+  {
+    return "OperatorSetRedirect";
+  }
+
+  bool
+  equals(const Statement *other) const override
+  {
+    if (!Operator::equals(other)) {
+      return false;
+    }
+    auto *op = static_cast<const OperatorSetRedirect *>(other);
+    return _status.equals(&op->_status) && _location.equals(&op->_location);
+  }
+
+  std::string
+  debug_string() const override
+  {
+    return std::string(type_name()) + " " + std::to_string(_status.get_int_value()) + " " + _location.get_value();
+  }
+
   void initialize(Parser &p) override;
+  void initialize(const hrw::OperatorSpec &spec) override;
 
   TSHttpStatus
   get_status() const
@@ -173,6 +296,8 @@ protected:
 private:
   Value _status;
   Value _location;
+
+  void do_initialize(const std::string &arg, const std::string &value);
 };
 
 class OperatorNoOp : public Operator
@@ -183,6 +308,12 @@ public:
   // noncopyable
   OperatorNoOp(const OperatorNoOp &)   = delete;
   void operator=(const OperatorNoOp &) = delete;
+
+  std::string_view
+  type_name() const override
+  {
+    return "OperatorNoOp";
+  }
 
 protected:
   bool
@@ -201,7 +332,24 @@ public:
   OperatorSetTimeoutOut(const OperatorSetTimeoutOut &) = delete;
   void operator=(const OperatorSetTimeoutOut &)        = delete;
 
+  std::string_view
+  type_name() const override
+  {
+    return "OperatorSetTimeoutOut";
+  }
+
+  bool
+  equals(const Statement *other) const override
+  {
+    if (!Operator::equals(other)) {
+      return false;
+    }
+    auto *op = static_cast<const OperatorSetTimeoutOut *>(other);
+    return _type == op->_type && _timeout.equals(&op->_timeout);
+  }
+
   void initialize(Parser &p) override;
+  void initialize(const hrw::OperatorSpec &spec) override;
 
 protected:
   bool exec(const Resources &res) const override;
@@ -217,6 +365,8 @@ private:
 
   TimeoutOutType _type = TO_OUT_UNDEFINED;
   Value          _timeout;
+
+  void do_initialize(const std::string &arg, const std::string &value);
 };
 
 class OperatorSkipRemap : public Operator
@@ -228,13 +378,22 @@ public:
   OperatorSkipRemap(const OperatorSkipRemap &) = delete;
   void operator=(const OperatorSkipRemap &)    = delete;
 
+  std::string_view
+  type_name() const override
+  {
+    return "OperatorSkipRemap";
+  }
+
   void initialize(Parser &p) override;
+  void initialize(const hrw::OperatorSpec &spec) override;
 
 protected:
   bool exec(const Resources &res) const override;
 
 private:
   bool _skip_remap = false;
+
+  void do_initialize(const std::string &arg);
 };
 
 // All the header operators share a base class
@@ -246,6 +405,12 @@ public:
   // noncopyable
   OperatorRMHeader(const OperatorRMHeader &) = delete;
   void operator=(const OperatorRMHeader &)   = delete;
+
+  std::string_view
+  type_name() const override
+  {
+    return "OperatorRMHeader";
+  }
 
 protected:
   bool exec(const Resources &res) const override;
@@ -260,13 +425,38 @@ public:
   OperatorAddHeader(const OperatorAddHeader &) = delete;
   void operator=(const OperatorAddHeader &)    = delete;
 
+  std::string_view
+  type_name() const override
+  {
+    return "OperatorAddHeader";
+  }
+
+  bool
+  equals(const Statement *other) const override
+  {
+    if (!Operator::equals(other)) {
+      return false;
+    }
+    auto *op = static_cast<const OperatorAddHeader *>(other);
+    return _header == op->_header && _value.equals(&op->_value);
+  }
+
+  std::string
+  debug_string() const override
+  {
+    return std::string(type_name()) + " " + _header + "=\"" + _value.get_value() + "\"";
+  }
+
   void initialize(Parser &p) override;
+  void initialize(const hrw::OperatorSpec &spec) override;
 
 protected:
   bool exec(const Resources &res) const override;
 
 private:
   Value _value;
+
+  void do_initialize(const std::string &value);
 };
 
 class OperatorSetHeader : public OperatorHeaders
@@ -278,13 +468,38 @@ public:
   OperatorSetHeader(const OperatorSetHeader &) = delete;
   void operator=(const OperatorSetHeader &)    = delete;
 
+  std::string_view
+  type_name() const override
+  {
+    return "OperatorSetHeader";
+  }
+
+  bool
+  equals(const Statement *other) const override
+  {
+    if (!Operator::equals(other)) {
+      return false;
+    }
+    auto *op = static_cast<const OperatorSetHeader *>(other);
+    return _header == op->_header && _value.equals(&op->_value);
+  }
+
+  std::string
+  debug_string() const override
+  {
+    return std::string(type_name()) + " " + _header + "=\"" + _value.get_value() + "\"";
+  }
+
   void initialize(Parser &p) override;
+  void initialize(const hrw::OperatorSpec &spec) override;
 
 protected:
   bool exec(const Resources &res) const override;
 
 private:
   Value _value;
+
+  void do_initialize(const std::string &value);
 };
 
 class OperatorCounter : public Operator
@@ -296,7 +511,14 @@ public:
   OperatorCounter(const OperatorCounter &) = delete;
   void operator=(const OperatorCounter &)  = delete;
 
+  std::string_view
+  type_name() const override
+  {
+    return "OperatorCounter";
+  }
+
   void initialize(Parser &p) override;
+  void initialize(const hrw::OperatorSpec &spec) override;
 
 protected:
   bool exec(const Resources &res) const override;
@@ -304,6 +526,8 @@ protected:
 private:
   std::string _counter_name;
   int         _counter = TS_ERROR;
+
+  void do_initialize(const std::string &arg);
 };
 
 class OperatorRMCookie : public OperatorCookies
@@ -314,6 +538,12 @@ public:
   // noncopyable
   OperatorRMCookie(const OperatorRMCookie &) = delete;
   void operator=(const OperatorRMCookie &)   = delete;
+
+  std::string_view
+  type_name() const override
+  {
+    return "OperatorRMCookie";
+  }
 
 protected:
   bool exec(const Resources &res) const override;
@@ -328,13 +558,38 @@ public:
   OperatorAddCookie(const OperatorAddCookie &) = delete;
   void operator=(const OperatorAddCookie &)    = delete;
 
+  std::string_view
+  type_name() const override
+  {
+    return "OperatorAddCookie";
+  }
+
+  bool
+  equals(const Statement *other) const override
+  {
+    if (!Operator::equals(other)) {
+      return false;
+    }
+    auto *op = static_cast<const OperatorAddCookie *>(other);
+    return _cookie == op->_cookie && _value.equals(&op->_value);
+  }
+
+  std::string
+  debug_string() const override
+  {
+    return std::string(type_name()) + " " + _cookie + "=\"" + _value.get_value() + "\"";
+  }
+
   void initialize(Parser &p) override;
+  void initialize(const hrw::OperatorSpec &spec) override;
 
 protected:
   bool exec(const Resources &res) const override;
 
 private:
   Value _value;
+
+  void do_initialize(const std::string &value);
 };
 
 class OperatorSetCookie : public OperatorCookies
@@ -346,13 +601,38 @@ public:
   OperatorSetCookie(const OperatorSetCookie &) = delete;
   void operator=(const OperatorSetCookie &)    = delete;
 
+  std::string_view
+  type_name() const override
+  {
+    return "OperatorSetCookie";
+  }
+
+  bool
+  equals(const Statement *other) const override
+  {
+    if (!Operator::equals(other)) {
+      return false;
+    }
+    auto *op = static_cast<const OperatorSetCookie *>(other);
+    return _cookie == op->_cookie && _value.equals(&op->_value);
+  }
+
+  std::string
+  debug_string() const override
+  {
+    return std::string(type_name()) + " " + _cookie + "=\"" + _value.get_value() + "\"";
+  }
+
   void initialize(Parser &p) override;
+  void initialize(const hrw::OperatorSpec &spec) override;
 
 protected:
   bool exec(const Resources &res) const override;
 
 private:
   Value _value;
+
+  void do_initialize(const std::string &value);
 };
 
 namespace CookieHelper
@@ -376,7 +656,24 @@ public:
   OperatorSetConnDSCP(const OperatorSetConnDSCP &) = delete;
   void operator=(const OperatorSetConnDSCP &)      = delete;
 
+  std::string_view
+  type_name() const override
+  {
+    return "OperatorSetConnDSCP";
+  }
+
+  bool
+  equals(const Statement *other) const override
+  {
+    if (!Operator::equals(other)) {
+      return false;
+    }
+    auto *op = static_cast<const OperatorSetConnDSCP *>(other);
+    return _ds_value.equals(&op->_ds_value);
+  }
+
   void initialize(Parser &p) override;
+  void initialize(const hrw::OperatorSpec &spec) override;
 
 protected:
   void initialize_hooks() override;
@@ -384,6 +681,8 @@ protected:
 
 private:
   Value _ds_value;
+
+  void do_initialize(const std::string &arg);
 };
 
 class OperatorSetConnMark : public Operator
@@ -395,7 +694,24 @@ public:
   OperatorSetConnMark(const OperatorSetConnMark &) = delete;
   void operator=(const OperatorSetConnMark &)      = delete;
 
+  std::string_view
+  type_name() const override
+  {
+    return "OperatorSetConnMark";
+  }
+
+  bool
+  equals(const Statement *other) const override
+  {
+    if (!Operator::equals(other)) {
+      return false;
+    }
+    auto *op = static_cast<const OperatorSetConnMark *>(other);
+    return _ds_value.equals(&op->_ds_value);
+  }
+
   void initialize(Parser &p) override;
+  void initialize(const hrw::OperatorSpec &spec) override;
 
 protected:
   void initialize_hooks() override;
@@ -403,6 +719,8 @@ protected:
 
 private:
   Value _ds_value;
+
+  void do_initialize(const std::string &arg);
 };
 
 class OperatorSetDebug : public Operator
@@ -414,11 +732,21 @@ public:
   OperatorSetDebug(const OperatorSetDebug &) = delete;
   void operator=(const OperatorSetDebug &)   = delete;
 
+  std::string_view
+  type_name() const override
+  {
+    return "OperatorSetDebug";
+  }
+
   void initialize(Parser &p) override;
+  void initialize(const hrw::OperatorSpec &spec) override;
 
 protected:
   void initialize_hooks() override;
   bool exec(const Resources &res) const override;
+
+private:
+  void do_initialize();
 };
 
 class OperatorSetBody : public Operator
@@ -430,7 +758,24 @@ public:
   OperatorSetBody(const OperatorSetBody &) = delete;
   void operator=(const OperatorSetBody &)  = delete;
 
+  std::string_view
+  type_name() const override
+  {
+    return "OperatorSetBody";
+  }
+
+  bool
+  equals(const Statement *other) const override
+  {
+    if (!Operator::equals(other)) {
+      return false;
+    }
+    auto *op = static_cast<const OperatorSetBody *>(other);
+    return _value.equals(&op->_value);
+  }
+
   void initialize(Parser &p) override;
+  void initialize(const hrw::OperatorSpec &spec) override;
 
 protected:
   void initialize_hooks() override;
@@ -438,6 +783,8 @@ protected:
 
 private:
   Value _value;
+
+  void do_initialize(const std::string &arg);
 };
 
 class OperatorSetHttpCntl : public Operator
@@ -449,7 +796,14 @@ public:
   OperatorSetHttpCntl(const OperatorSetHttpCntl &) = delete;
   void operator=(const OperatorSetHttpCntl &)      = delete;
 
+  std::string_view
+  type_name() const override
+  {
+    return "OperatorSetHttpCntl";
+  }
+
   void initialize(Parser &p) override;
+  void initialize(const hrw::OperatorSpec &spec) override;
 
 protected:
   void initialize_hooks() override;
@@ -458,6 +812,8 @@ protected:
 private:
   bool           _flag{false};
   TSHttpCntlType _cntl_qual{TS_HTTP_CNTL_LOGGING_MODE}; // always overwritten by initialize()
+
+  void do_initialize(const std::string &arg, const std::string &value);
 };
 
 class OperatorSetPluginCntl : public Operator
@@ -469,7 +825,14 @@ public:
   OperatorSetPluginCntl(const OperatorSetPluginCntl &) = delete;
   void operator=(const OperatorSetPluginCntl &)        = delete;
 
+  std::string_view
+  type_name() const override
+  {
+    return "OperatorSetPluginCntl";
+  }
+
   void initialize(Parser &p) override;
+  void initialize(const hrw::OperatorSpec &spec) override;
 
   enum class PluginCtrl {
     TIMEZONE,
@@ -489,6 +852,8 @@ protected:
 private:
   PluginCtrl _name{PluginCtrl::TIMEZONE}; // always overwritten by initialize()
   int        _value{0};
+
+  void do_initialize(const std::string &arg, const std::string &value);
 };
 
 class RemapPluginInst; // Opaque to the HRW operator, but needed in the implementation.
@@ -513,6 +878,12 @@ public:
   OperatorRunPlugin(const OperatorRunPlugin &) = delete;
   void operator=(const OperatorRunPlugin &)    = delete;
 
+  std::string_view
+  type_name() const override
+  {
+    return "OperatorRunPlugin";
+  }
+
   void initialize(Parser &p) override;
 
 protected:
@@ -532,7 +903,24 @@ public:
   OperatorSetBodyFrom(const OperatorSetBodyFrom &) = delete;
   void operator=(const OperatorSetBodyFrom &)      = delete;
 
+  std::string_view
+  type_name() const override
+  {
+    return "OperatorSetBodyFrom";
+  }
+
+  bool
+  equals(const Statement *other) const override
+  {
+    if (!Operator::equals(other)) {
+      return false;
+    }
+    auto *op = static_cast<const OperatorSetBodyFrom *>(other);
+    return _value.equals(&op->_value);
+  }
+
   void initialize(Parser &p) override;
+  void initialize(const hrw::OperatorSpec &spec) override;
 
   enum { TS_EVENT_FETCHSM_SUCCESS = 70000, TS_EVENT_FETCHSM_FAILURE = 70001, TS_EVENT_FETCHSM_TIMEOUT = 70002 };
 
@@ -542,6 +930,8 @@ protected:
 
 private:
   Value _value;
+
+  void do_initialize(const std::string &arg);
 };
 
 class OperatorSetStateFlag : public Operator
@@ -557,7 +947,14 @@ public:
   OperatorSetStateFlag(const OperatorSetStateFlag &) = delete;
   void operator=(const OperatorSetStateFlag &)       = delete;
 
+  std::string_view
+  type_name() const override
+  {
+    return "OperatorSetStateFlag";
+  }
+
   void initialize(Parser &p) override;
+  void initialize(const hrw::OperatorSpec &spec) override;
 
 protected:
   void initialize_hooks() override;
@@ -580,6 +977,8 @@ private:
   int           _flag_ix = -1;
   int           _flag    = false;
   uint64_t      _mask    = 0;
+
+  void do_initialize(int flag_ix, const std::string &value);
 };
 
 class OperatorSetStateInt8 : public Operator
@@ -595,7 +994,24 @@ public:
   OperatorSetStateInt8(const OperatorSetStateInt8 &) = delete;
   void operator=(const OperatorSetStateInt8 &)       = delete;
 
+  std::string_view
+  type_name() const override
+  {
+    return "OperatorSetStateInt8";
+  }
+
+  bool
+  equals(const Statement *other) const override
+  {
+    if (!Operator::equals(other)) {
+      return false;
+    }
+    auto *op = static_cast<const OperatorSetStateInt8 *>(other);
+    return _byte_ix == op->_byte_ix && _value.equals(&op->_value);
+  }
+
   void initialize(Parser &p) override;
+  void initialize(const hrw::OperatorSpec &spec) override;
 
 protected:
   void initialize_hooks() override;
@@ -617,6 +1033,8 @@ private:
   TSUserArgType _scope   = TS_USER_ARGS_TXN;
   int           _byte_ix = -1;
   Value         _value;
+
+  void do_initialize(int byte_ix, const std::string &value);
 };
 
 class OperatorSetStateInt16 : public Operator
@@ -632,7 +1050,14 @@ public:
   OperatorSetStateInt16(const OperatorSetStateInt16 &) = delete;
   void operator=(const OperatorSetStateInt16 &)        = delete;
 
+  std::string_view
+  type_name() const override
+  {
+    return "OperatorSetStateInt16";
+  }
+
   void initialize(Parser &p) override;
+  void initialize(const hrw::OperatorSpec &spec) override;
 
 protected:
   void initialize_hooks() override;
@@ -653,6 +1078,8 @@ protected:
 private:
   TSUserArgType _scope = TS_USER_ARGS_TXN;
   Value         _value;
+
+  void do_initialize(int ix, const std::string &value);
 };
 
 class OperatorSetEffectiveAddress : public Operator
@@ -664,7 +1091,24 @@ public:
   OperatorSetEffectiveAddress(const OperatorSetEffectiveAddress &) = delete;
   void operator=(const OperatorSetEffectiveAddress &)              = delete;
 
+  std::string_view
+  type_name() const override
+  {
+    return "OperatorSetEffectiveAddress";
+  }
+
+  bool
+  equals(const Statement *other) const override
+  {
+    if (!Operator::equals(other)) {
+      return false;
+    }
+    auto *op = static_cast<const OperatorSetEffectiveAddress *>(other);
+    return _value.equals(&op->_value);
+  }
+
   void initialize(Parser &p) override;
+  void initialize(const hrw::OperatorSpec &spec) override;
 
 protected:
   void initialize_hooks() override;
@@ -678,6 +1122,8 @@ protected:
 
 private:
   Value _value;
+
+  void do_initialize(const std::string &arg);
 };
 
 class OperatorSetNextHopStrategy : public Operator
@@ -689,7 +1135,24 @@ public:
   OperatorSetNextHopStrategy(const OperatorSetNextHopStrategy &) = delete;
   void operator=(const OperatorSetNextHopStrategy &)             = delete;
 
+  std::string_view
+  type_name() const override
+  {
+    return "OperatorSetNextHopStrategy";
+  }
+
+  bool
+  equals(const Statement *other) const override
+  {
+    if (!Operator::equals(other)) {
+      return false;
+    }
+    auto *op = static_cast<const OperatorSetNextHopStrategy *>(other);
+    return _value.equals(&op->_value);
+  }
+
   void initialize(Parser &p) override;
+  void initialize(const hrw::OperatorSpec &spec) override;
 
 protected:
   void initialize_hooks() override;
@@ -697,6 +1160,8 @@ protected:
 
 private:
   Value _value;
+
+  void do_initialize(const std::string &arg);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -731,6 +1196,12 @@ public:
   OperatorIf(const OperatorIf &)     = delete;
   void operator=(const OperatorIf &) = delete;
 
+  std::string_view
+  type_name() const override
+  {
+    return "OperatorIf";
+  }
+
   ConditionGroup *new_section(Parser::CondClause clause);
   bool            add_operator(Parser &p, const char *filename, int lineno);
   Condition      *make_condition(Parser &p, const char *filename, int lineno);
@@ -752,6 +1223,12 @@ public:
   cur_section() const
   {
     return _cur_section;
+  }
+
+  const CondOpSection *
+  get_sections() const
+  {
+    return &_sections;
   }
 
   OperModifiers exec_and_return_mods(const Resources &res) const;
@@ -781,7 +1258,24 @@ public:
   OperatorSetCCAlgorithm(const OperatorSetCCAlgorithm &) = delete;
   void operator=(const OperatorSetCCAlgorithm &)         = delete;
 
+  std::string_view
+  type_name() const override
+  {
+    return "OperatorSetCCAlgorithm";
+  }
+
+  bool
+  equals(const Statement *other) const override
+  {
+    if (!Operator::equals(other)) {
+      return false;
+    }
+    auto *op = static_cast<const OperatorSetCCAlgorithm *>(other);
+    return _cc_alg.equals(&op->_cc_alg);
+  }
+
   void initialize(Parser &p) override;
+  void initialize(const hrw::OperatorSpec &spec) override;
 
 protected:
   void initialize_hooks() override;
@@ -789,4 +1283,6 @@ protected:
 
 private:
   Value _cc_alg;
+
+  void do_initialize(const std::string &arg);
 };

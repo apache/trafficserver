@@ -19,10 +19,25 @@
 
 from __future__ import annotations
 
+import argparse
+
 from hrw4u.common import run_main
 from u4wrh.hrw_visitor import HRWInverseVisitor
 from u4wrh.u4wrhLexer import u4wrhLexer
 from u4wrh.u4wrhParser import u4wrhParser
+
+
+def _add_args(parser: argparse.ArgumentParser, _output_group: argparse._MutuallyExclusiveGroup) -> None:
+    parser.add_argument(
+        "--no-merge-sections", action="store_true", help="Keep same-named hook sections separate instead of merging them")
+
+
+def _visitor_kwargs(args: argparse.Namespace) -> dict[str, object]:
+    kwargs: dict[str, object] = {}
+    if args.no_merge_sections:
+        kwargs['merge_sections'] = False
+    return kwargs
+
 
 
 def main() -> None:
@@ -34,7 +49,9 @@ def main() -> None:
         visitor_class=HRWInverseVisitor,
         error_prefix="u4wrh",
         output_flag_name="hrw4u",
-        output_flag_help="Produce reconstructed hrw4u output (default)")
+        output_flag_help="Produce reconstructed hrw4u output (default)",
+        add_args=_add_args,
+        visitor_kwargs=_visitor_kwargs)
 
 
 if __name__ == "__main__":
