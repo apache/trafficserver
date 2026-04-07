@@ -71,6 +71,30 @@ configuration entry remains in the file for easy re-enabling.
 with ``$`` designate |TS| configuration variables and will be expanded
 to their current value before the plugin is loaded.
 
+``config``
+----------
+
+**Optional.** Inline configuration content specified as a YAML scalar.
+The text is written to a temporary file at startup and the path is
+passed to the plugin as an argument, so existing plugins work without
+modification.
+
+.. tip::
+
+   Use a literal block scalar (``|``) to preserve exact text including
+   newlines and quoting -- this is important for plugins like
+   ``txn_box.so`` that assign special meaning to YAML quoting.
+
+.. note::
+
+   Structured YAML (mappings or sequences) is rejected because
+   re-serializing through a YAML emitter strips quoting semantics that
+   some plugins depend on.  For example, ``txn_box.so`` distinguishes
+   ``"literal"`` (a quoted string) from ``extractor-name`` (an unquoted
+   reference), and that distinction would be lost after a round-trip
+   through ``YAML::Emitter``.  Supporting structured YAML may be
+   revisited in the future.
+
 ``load_order``
 --------------
 
@@ -139,6 +163,8 @@ legacy :file:`plugin.config` format:
    plugin without removing or commenting out the line.
 *  **Explicit load ordering** — use ``load_order`` to control loading
    priority independent of file position.
+*  **Inline configuration** — embed a plugin's config content directly
+   via the ``config`` field instead of maintaining a separate file.
 *  **Variable expansion** — ``$record`` references in ``params`` are
    expanded to their current value at load time (same as
    :file:`plugin.config`).
@@ -206,6 +232,70 @@ Despite the YAML sequence order, the actual load order is:
 
    Use gaps between ``load_order`` values (e.g. 100, 200, 300) so new
    plugins can be inserted later without renumbering.
+
+Inline Configuration
+--------------------
+
+The ``config`` field lets you embed a plugin's configuration directly in
+:file:`plugin.yaml` instead of maintaining a separate file. At startup, |TS|
+writes the content to a temporary file in the configuration directory and passes
+the path of that file to the plugin as an argument — exactly the same way a
+``params`` entry pointing to an external file would work. The plugin reads the
+file as usual; it has no knowledge the content was inlined.
+
+Use the YAML literal block scalar (``|``) to provide the content:
+
+.. code-block:: yaml
+
+   plugins:
+     - path: header_rewrite.so
+       config: |
+         cond %{SEND_RESPONSE_HDR_HOOK}
+            set-header X-Debug "true"
+
+The text after ``|`` is preserved exactly (including newlines and
+indentation). It is written to a temporary file named after the plugin
+(e.g. ``<config_dir>/.header_rewrite_inline_1.conf``). Temporary files
+from a previous run are removed automatically at startup.
+
+This works equally well for plugins that read YAML configuration files.
+The block scalar preserves quoting and formatting that some YAML-consuming
+plugins rely on:
+
+.. code-block:: yaml
+
+   plugins:
+     - path: txn_box.so
+       config: |
+         txn_box:
+           when: proxy-rsp
+           do:
+             - proxy-rsp-field<X-TxnBox>: "inline-config-active"
+
+.. note::
+
+   The ``config`` field and ``params`` can be used together. When both are
+   present, the temporary file path is inserted before the ``params`` entries
+   in the argument vector:
+
+   .. code-block:: yaml
+
+      plugins:
+        - path: header_rewrite.so
+          config: |
+            cond %{SEND_RESPONSE_HDR_HOOK}
+              set-header X-Source "inline"
+          params:
+            - --verbose
+
+   The plugin receives ``argv = ["header_rewrite.so",
+   "<config_dir>/.header_rewrite_inline_1.conf", "--verbose"]``.
+
+   The inline file path is always a bare positional argument at ``argv[1]``.
+   This works for plugins that take a config file as their first argument
+   (e.g., ``header_rewrite.so``, ``txn_box.so``).  Plugins that require a
+   flag before the filename (e.g., ``--config <file>``) should use ``params``
+   pointing to a separate file instead of ``config``.
 
 Configuration Variable Expansion
 ---------------------------------

@@ -1,5 +1,5 @@
 '''
-Test plugin.yaml loading with enabled/disabled plugins.
+Test plugin.yaml loading with inline config and enabled/disabled plugins.
 '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -18,8 +18,8 @@ Test plugin.yaml loading with enabled/disabled plugins.
 #  limitations under the License.
 
 Test.Summary = '''
-Test that plugin.yaml is loaded instead of plugin.config, and that
-enabled: false skips a plugin.
+Test that plugin.yaml is loaded instead of plugin.config, that inline config
+works with header_rewrite.so, and that enabled: false skips a plugin.
 '''
 
 Test.ContinueOnFail = True
@@ -36,43 +36,53 @@ ts.Disk.records_config.update(
     {
         'proxy.config.url_remap.remap_required': 0,
         'proxy.config.diags.debug.enabled': 1,
-        'proxy.config.diags.debug.tags': 'xdebug|plugin',
+        'proxy.config.diags.debug.tags': 'header_rewrite|plugin',
     })
 
 ts.Disk.remap_config.AddLine("map http://example.com http://127.0.0.1:{0}".format(server.Variables.Port))
 
 # Write plugin.yaml into the config directory. ATS will prefer this over
-# plugin.config.  xdebug.so is enabled with params; header_rewrite.so is
-# disabled.
+# plugin.config.  Uses inline config (scalar literal) with header_rewrite.so
+# to set a custom response header.  xdebug.so is listed but disabled.
 ts.Disk.MakeConfigFile("plugin.yaml").update(
     {
         "plugins":
             [
                 {
-                    "path": "xdebug.so",
-                    "params": ["--enable=x-cache"],
+                    "path": "header_rewrite.so",
+                    "config": "cond %{SEND_RESPONSE_HDR_HOOK}\n  set-header X-Plugin-YAML \"loaded-from-inline\"\n",
                 },
                 {
-                    "path": "header_rewrite.so",
+                    "path": "xdebug.so",
                     "enabled": False,
+                    "params": ["--enable=x-cache"],
                 },
             ]
     })
 
-# Test 1: Verify xdebug loaded via plugin.yaml works — the X-Cache
-# response header should appear when requested.
-tr = Test.AddTestRun("Verify xdebug loaded from plugin.yaml")
+# Test 1: Verify header_rewrite loaded via plugin.yaml sets the response header.
+tr = Test.AddTestRun("Verify inline config sets response header")
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 tr.Processes.Default.StartBefore(ts)
-tr.MakeCurlCommand(
-    '-s -D- -o /dev/null -H "Host: example.com" -H "X-Debug: x-cache" http://127.0.0.1:{0}/test'.format(ts.Variables.port), ts=ts)
+tr.MakeCurlCommand('-s -D- -o /dev/null -H "Host: example.com" http://127.0.0.1:{0}/test'.format(ts.Variables.port), ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
-    "X-Cache:", "Response should contain X-Cache header from xdebug loaded via plugin.yaml")
+    "X-Plugin-YAML: loaded-from-inline", "Response should contain X-Plugin-YAML header set by inline config")
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
 
-# Test 2: Verify the diags.log shows plugin.yaml was used and a plugin was skipped.
+# Test 2: Verify xdebug is NOT loaded (enabled: false). Send the X-Debug
+# header and confirm the X-Cache header is absent from the response.
+tr = Test.AddTestRun("Verify disabled plugin is not loaded")
+tr.MakeCurlCommand(
+    '-s -D- -o /dev/null -H "Host: example.com" -H "X-Debug: x-cache" http://127.0.0.1:{0}/test'.format(ts.Variables.port), ts=ts)
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression(
+    "X-Cache:", "Response should NOT contain X-Cache header since xdebug is disabled")
+tr.StillRunningAfter = server
+tr.StillRunningAfter = ts
+
+# Test 3: Verify the diags.log shows plugin.yaml was used.
 tr = Test.AddTestRun("Verify plugin.yaml loading logged")
 tr.Processes.Default.Command = "echo check diags.log"
 tr.Processes.Default.ReturnCode = 0

@@ -40,6 +40,7 @@ struct PluginYAMLEntry {
   bool                     enabled{true};
   int                      load_order{-1};
   std::vector<std::string> params;
+  std::string              config_literal;
 };
 
 using PluginYAMLEntries = std::vector<PluginYAMLEntry>;
@@ -83,6 +84,7 @@ bool plugin_yaml_init(bool validateOnly = false);
 bool plugin_dso_load(const char *path, void *&handle, void *&init, std::string &error);
 
 /// Parse plugin.yaml and return sorted entries.
+/// Exposed (non-static) for unit testing.
 config::ConfigResult<PluginYAMLEntries> parse_plugin_yaml(const char *yaml_path);
 
 /** Abstract interface class for plugin based continuations.

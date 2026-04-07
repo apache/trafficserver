@@ -733,6 +733,47 @@ Display the current value of a configuration record.
    if needs root access and if the file is required in |TS|.
 
 .. program:: traffic_ctl config
+.. option:: convert <type> <args...>
+
+   Convert a legacy configuration file to its YAML equivalent. The conversion
+   runs locally — no running :program:`traffic_server` is required.
+
+   Supported types:
+
+   ``ssl_multicert``
+      Convert ``ssl_multicert.config`` to :file:`ssl_multicert.yaml`.
+
+      .. code-block:: bash
+
+         traffic_ctl config convert ssl_multicert ssl_multicert.config ssl_multicert.yaml
+
+   ``storage``
+      Convert ``storage.config`` and ``volume.config`` to
+      :file:`storage.yaml`.
+
+      .. code-block:: bash
+
+         traffic_ctl config convert storage storage.config volume.config storage.yaml
+
+   ``plugin_config``
+      Convert :file:`plugin.config` to :file:`plugin.yaml`.
+      Commented-out lines are converted to ``enabled: false`` entries by
+      default. Pass ``--skip-disabled`` to omit them entirely.
+
+      .. code-block:: bash
+
+         # Write to a file
+         traffic_ctl config convert plugin_config plugin.config plugin.yaml
+
+         # Preview on stdout
+         traffic_ctl config convert plugin_config plugin.config -
+
+         # Drop commented-out entries
+         traffic_ctl config convert plugin_config plugin.config plugin.yaml --skip-disabled
+
+   For all types, use ``-`` as the output file to write to stdout.
+
+.. program:: traffic_ctl config
 .. option:: ssl-multicert show [--yaml | --json]
 
    Display the current ``ssl_multicert.yaml`` configuration. By default, output is in YAML format.
@@ -993,6 +1034,36 @@ traffic_ctl plugin
 -------------------
 
 .. program:: traffic_ctl plugin
+.. option:: list
+
+   Display the globally loaded plugins and their status.  The output includes
+   the configuration source, each plugin's sequence index, path,
+   ``load_order`` (when any plugin has one), and status.
+
+   Example (with ``load_order``):
+
+   .. code-block:: bash
+
+      $ traffic_ctl plugin list
+      source: plugin.yaml
+        #  plugin                          load_order   status
+        1  certifier.so                    100          loaded
+        2  header_rewrite.so               --           loaded
+        3  debug_plugin.so                 --           disabled
+
+   Example (without ``load_order``):
+
+   .. code-block:: bash
+
+      $ traffic_ctl plugin list
+      source: plugin.yaml
+        #  plugin                          status
+        1  stats_over_http.so              loaded
+        2  header_rewrite.so               loaded
+
+   This command requires a running :program:`traffic_server` instance — it
+   communicates via JSONRPC.
+
 .. option:: msg TAG DATA
 
    :ref:`admin_plugin_send_basic_msg`

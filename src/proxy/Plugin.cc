@@ -23,6 +23,7 @@
 
 #include <cstdio>
 #include <algorithm>
+#include <filesystem>
 #include <optional>
 #include "tscore/ink_platform.h"
 #include "tscore/ink_file.h"
@@ -229,8 +230,8 @@ single_plugin_init(int argc, char *argv[], bool validateOnly)
   return true;
 }
 
-char *
-plugin_expand(char *arg)
+static char *
+plugin_expand(char *arg, const char *source)
 {
   RecDataT data_type;
   char    *str = nullptr;
@@ -290,7 +291,7 @@ plugin_expand(char *arg)
   }
 
 not_found:
-  Warning("%s: unable to find parameter %s", ts::filename::PLUGIN, arg);
+  Warning("%s: unable to find parameter %s", source, arg);
   return nullptr;
 }
 
@@ -372,7 +373,7 @@ plugin_init(bool validateOnly)
     }
 
     for (i = 0; i < argc; i++) {
-      vars[i] = plugin_expand(argv[i]);
+      vars[i] = plugin_expand(argv[i], ts::filename::PLUGIN);
       if (vars[i]) {
         argv[i] = vars[i];
       }
@@ -451,6 +452,14 @@ parse_plugin_yaml(const char *yaml_path)
         entry.params.emplace_back(p.as<std::string>());
       }
     }
+    if (auto n = node["config"]; n) {
+      if (n.IsScalar()) {
+        entry.config_literal = n.as<std::string>();
+      } else {
+        result.errata.note("plugin '{}': 'config' must be a scalar (use literal block '|' for multi-line content)", entry.path);
+        return result;
+      }
+    }
 
     indexed.push_back({seq_idx++, std::move(entry)});
   }
@@ -473,12 +482,54 @@ parse_plugin_yaml(const char *yaml_path)
   return result;
 }
 
-/// Build the argv for a single plugin: [path, params..., $record expansions].
+/// Write inline config content to a temp file, returning the path on success.
+static std::optional<std::string>
+write_inline_config(const PluginYAMLEntry &entry, int index)
+{
+  char tmp_path[PATH_NAME_MAX];
+
+  std::string_view stem{entry.path};
+  if (auto pos = stem.rfind('/'); pos != std::string_view::npos) {
+    stem = stem.substr(pos + 1);
+  }
+  if (auto pos = stem.rfind('.'); pos != std::string_view::npos) {
+    stem = stem.substr(0, pos);
+  }
+
+  snprintf(tmp_path, sizeof(tmp_path), "%s/.%.*s_inline_%d.conf", RecConfigReadConfigDir().c_str(), static_cast<int>(stem.size()),
+           stem.data(), index);
+
+  int fd = open(tmp_path, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+  if (fd < 0) {
+    Error("%s: failed to create temp config for %s: %s", ts::filename::PLUGIN_YAML, entry.path.c_str(), strerror(errno));
+    return std::nullopt;
+  }
+
+  auto n = write(fd, entry.config_literal.data(), entry.config_literal.size());
+  close(fd);
+
+  if (n < 0 || static_cast<size_t>(n) != entry.config_literal.size()) {
+    Error("%s: failed to write inline config for %s", ts::filename::PLUGIN_YAML, entry.path.c_str());
+    return std::nullopt;
+  }
+
+  return std::string(tmp_path);
+}
+
+/// Build the argv for a single plugin: [path, inline_config_path?, params..., $record expansions].
 static std::optional<std::vector<std::string>>
-build_plugin_args(const PluginYAMLEntry &entry)
+build_plugin_args(const PluginYAMLEntry &entry, int index)
 {
   std::vector<std::string> args;
   args.emplace_back(entry.path);
+
+  if (!entry.config_literal.empty()) {
+    if (auto path = write_inline_config(entry, index); path) {
+      args.emplace_back(std::move(*path));
+    } else {
+      return std::nullopt;
+    }
+  }
 
   for (const auto &p : entry.params) {
     args.emplace_back(p);
@@ -505,6 +556,27 @@ log_plugin_load_summary(int loaded, int disabled)
   }
 }
 
+static void
+cleanup_inline_configs()
+{
+  std::string     config_dir = RecConfigReadConfigDir();
+  std::error_code ec;
+
+  try {
+    for (const auto &entry : std::filesystem::directory_iterator(config_dir, ec)) {
+      if (!entry.is_regular_file()) {
+        continue;
+      }
+      auto name = entry.path().filename().string();
+      if (name.front() == '.' && name.find("_inline_") != std::string::npos && name.ends_with(".conf")) {
+        std::filesystem::remove(entry.path(), ec);
+      }
+    }
+  } catch (const std::exception &e) {
+    Error("%s: error cleaning up inline config files: %s", ts::filename::PLUGIN_YAML, e.what());
+  }
+}
+
 bool
 plugin_yaml_init(bool validateOnly)
 {
@@ -512,8 +584,16 @@ plugin_yaml_init(bool validateOnly)
 
   ats_scoped_str yaml_path;
 
+  if (!validateOnly) {
+    cleanup_inline_configs();
+  }
+
   yaml_path = RecConfigReadConfigPath(nullptr, ts::filename::PLUGIN_YAML);
   if (access(yaml_path, R_OK) != 0) {
+    if (errno != ENOENT) {
+      Error("%s: %s", ts::filename::PLUGIN_YAML, strerror(errno));
+      return false;
+    }
     return plugin_init(validateOnly);
   }
 
@@ -543,16 +623,21 @@ plugin_yaml_init(bool validateOnly)
       continue;
     }
 
-    auto args = build_plugin_args(entry);
+    auto args = build_plugin_args(entry, index);
     if (!args) {
       return false;
+    }
+
+    if (args->size() > MAX_PLUGIN_ARGS) {
+      Warning("%s: plugin '%s' has %zu args, exceeds typical max (%d)", ts::filename::PLUGIN_YAML, entry.path.c_str(), args->size(),
+              MAX_PLUGIN_ARGS);
     }
 
     std::vector<char *> argv_ptrs;
     std::vector<char *> expanded;
 
     for (auto &a : *args) {
-      char *var = plugin_expand(a.data());
+      char *var = plugin_expand(a.data(), ts::filename::PLUGIN_YAML);
       expanded.emplace_back(var);
       argv_ptrs.emplace_back(var ? var : a.data());
     }

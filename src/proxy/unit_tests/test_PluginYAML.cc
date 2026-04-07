@@ -68,6 +68,7 @@ plugins:
   CHECK(result.value[0].enabled == true);
   CHECK(result.value[0].load_order == -1);
   CHECK(result.value[0].params.empty());
+  CHECK(result.value[0].config_literal.empty());
 }
 
 TEST_CASE("parse_plugin_yaml - all fields populated", "[plugin_yaml]")
@@ -172,6 +173,58 @@ plugins:
   CHECK(result.value[0].path == "b.so");
   CHECK(result.value[1].path == "a.so");
   CHECK(result.value[2].path == "c.so");
+}
+
+TEST_CASE("parse_plugin_yaml - inline config literal (scalar)", "[plugin_yaml]")
+{
+  TempYAML yaml(R"(
+plugins:
+  - path: header_rewrite.so
+    config: |
+      cond %{SEND_RESPONSE_HDR_HOOK}
+         set-header X-Debug "true"
+)");
+
+  auto result = parse_plugin_yaml(yaml.path());
+
+  REQUIRE(result.ok());
+  REQUIRE(result.value.size() == 1);
+  CHECK(result.value[0].path == "header_rewrite.so");
+  CHECK(result.value[0].config_literal.find("set-header X-Debug") != std::string::npos);
+}
+
+TEST_CASE("parse_plugin_yaml - inline config rejects structured YAML mapping", "[plugin_yaml]")
+{
+  TempYAML yaml(R"(
+plugins:
+  - path: txn_box.so
+    config:
+      when: proxy-req
+      do:
+        - set-header:
+            name: X-Forwarded-For
+            value: inbound-addr-remote
+)");
+
+  auto result = parse_plugin_yaml(yaml.path());
+
+  REQUIRE_FALSE(result.ok());
+}
+
+TEST_CASE("parse_plugin_yaml - inline config rejects structured YAML sequence", "[plugin_yaml]")
+{
+  TempYAML yaml(R"(
+plugins:
+  - path: custom.so
+    config:
+      - rule1
+      - rule2
+      - rule3
+)");
+
+  auto result = parse_plugin_yaml(yaml.path());
+
+  REQUIRE_FALSE(result.ok());
 }
 
 TEST_CASE("parse_plugin_yaml - missing path field", "[plugin_yaml]")

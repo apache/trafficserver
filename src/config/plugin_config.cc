@@ -31,7 +31,8 @@
 namespace
 {
 
-constexpr char KEY_PLUGINS[] = "plugins";
+constexpr char                   KEY_PLUGINS[] = "plugins";
+constexpr swoc::Errata::Severity INFO_SEVERITY{0};
 
 std::vector<std::string>
 tokenize_plugin_line(std::string_view line)
@@ -117,8 +118,10 @@ PluginConfigParser::parse_legacy(std::string_view content)
   ConfigResult<PluginConfigData> result;
   std::istringstream             stream{std::string{content}};
   std::string                    line;
+  int                            line_no = 0;
 
   while (std::getline(stream, line)) {
+    ++line_no;
     std::string_view sv{line};
 
     std::size_t start = 0;
@@ -151,8 +154,8 @@ PluginConfigParser::parse_legacy(std::string_view content)
       continue;
     }
 
-    // Heuristic: a plugin line must have a .so path as first token
     if (tokens[0].find(".so") == std::string::npos) {
+      result.errata.note(INFO_SEVERITY, "skipping line {}: '{}' does not look like a plugin path (no .so)", line_no, tokens[0]);
       continue;
     }
 
