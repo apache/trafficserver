@@ -309,7 +309,7 @@ InterceptPlugin::handleEvent(int abstract_event, void *edata)
     LOG_ERROR("Error while reading request!");
     // fallthrough
 
-  case TS_EVENT_VCONN_READ_COMPLETE: // falls through intentional
+  case TS_EVENT_VCONN_READ_COMPLETE:
   case TS_EVENT_VCONN_WRITE_COMPLETE:
   case TS_EVENT_VCONN_EOS:
   case TS_EVENT_ERROR:             // erroring out, nothing more to do
