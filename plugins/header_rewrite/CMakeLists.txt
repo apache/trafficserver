@@ -63,11 +63,15 @@ if(BUILD_TESTING)
     target_link_libraries(test_header_rewrite PRIVATE maxminddb::maxminddb)
   endif()
 
-  # This test has linker issue when cripts is enabled, so its commented for now
-  #  add_executable(test_matcher matcher_tests.cc matcher.cc lulu.cc regex_helper.cc resources.cc)
-  #  add_catch2_test(NAME test_matcher COMMAND $<TARGET_FILE:test_matcher>)
+  # add_executable(test_matcher matcher_tests.cc matcher.cc lulu.cc regex_helper.cc)
+  # add_catch2_test(NAME test_matcher COMMAND $<TARGET_FILE:test_matcher>)
   #
-  #  target_link_libraries(test_matcher PRIVATE Catch2::Catch2WithMain ts::tscore libswoc::libswoc PkgConfig::PCRE2)
+  # target_link_libraries(test_matcher PRIVATE Catch2::Catch2WithMain ts::tscore libswoc::libswoc PkgConfig::PCRE2)
+  #
+  # if(ENABLE_CRIPTS)
+  #   target_link_libraries(test_matcher PRIVATE ts::cripts)
+  #   target_compile_definitions(test_matcher PRIVATE TS_HAS_CRIPTS=1)
+  # endif()
 
 endif()
 verify_global_plugin(header_rewrite)

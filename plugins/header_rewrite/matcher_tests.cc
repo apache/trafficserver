@@ -83,6 +83,17 @@ TSHttpTxnServerRespGet(TSHttpTxn, TSMBuffer *, TSMLoc *)
   return TS_SUCCESS;
 }
 
+TSHttpSsn
+TSHttpTxnSsnGet(TSHttpTxn)
+{
+  return nullptr;
+}
+
+void
+Resources::destroy()
+{
+}
+
 ClassAllocator<ProxyMutex, false> mutexAllocator("mutexAllocator");
 
 TEST_CASE("Matcher", "[plugins][header_rewrite]")
@@ -105,4 +116,17 @@ TEST_CASE("MatcherSet", "[plugins][header_rewrite]")
 
   foo.set("foo, bar, baz", CondModifiers::MOD_NOCASE);
   REQUIRE(foo.test("FOO", res) == true);
+}
+
+TEST_CASE("MatcherSetQuoted", "[plugins][header_rewrite]")
+{
+  Matchers<std::string> foo(MATCH_SET);
+  TSHttpTxn             txn = nullptr;
+  TSCont                c   = nullptr;
+  Resources             res(txn, c);
+
+  foo.set("\"foo\",\"bar\"", CondModifiers::MOD_NOCASE);
+  REQUIRE(foo.test("FOO", res) == true);
+  REQUIRE(foo.test("BAR", res) == true);
+  REQUIRE(foo.test("BAZ", res) == false);
 }
