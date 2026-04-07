@@ -121,7 +121,7 @@ TEST_CASE("HttpTransact", "[http]")
       CHECK(field->has_dups() == false);
     }
 
-    SECTION("Have comon headers")
+    SECTION("Have common headers")
     {
       HTTPHdr        hdr1;
       HTTPHdr        hdr2;

@@ -1771,7 +1771,7 @@ url_CryptoHash_get_general(const URLImpl *url, CryptoContext &ctx, CryptoHash &h
   strs[10] = nullptr;
   strs[11] = "?";
 
-  // Special case for the query paramters, allowing us to ignore them if requested
+  // Special case for the query parameters, allowing us to ignore them if requested
   if (!ignore_query) {
     strs[12] = url->m_ptr_query;
     ends[12] = strs[12] + url->m_len_query;

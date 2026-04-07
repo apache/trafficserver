@@ -109,7 +109,7 @@ TEST_CASE("XPACK_String", "[xpack]")
 
   SECTION("Encoding")
   {
-    // FIXME Current encoder support only huffman conding.
+    // FIXME Current encoder support only huffman coding.
     for (unsigned int i = 2; i < sizeof(string_test_case) / sizeof(string_test_case[0]); i++) {
       uint8_t buf[BUFSIZE_FOR_REGRESSION_TEST] = {0};
       int64_t len = xpack_encode_string(buf, buf + BUFSIZE_FOR_REGRESSION_TEST, string_test_case[i].raw_string,

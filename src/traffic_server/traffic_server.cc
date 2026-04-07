@@ -519,7 +519,7 @@ private:
   Metrics::Gauge::AtomicType *memory_rss;
 };
 
-/** Gate the emission of the "Traffic Server is fuly initialized" log message.
+/** Gate the emission of the "Traffic Server is fully initialized" log message.
  *
  * This message is intended to be helpful to users who want to know that
  * Traffic Server is not just running but has become fully initialized and is
@@ -2015,7 +2015,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   metrics[id].store(time(nullptr));
   id = Metrics::Gauge::create("proxy.process.proxy.start_time");
   metrics[id].store(time(nullptr));
-  // These all gets initialied to 0
+  // These all gets initialized to 0
   Metrics::Gauge::create("proxy.process.proxy.reconfigure_required");
   Metrics::Gauge::create("proxy.process.proxy.restart_required");
   Metrics::Gauge::create("proxy.process.proxy.draining");

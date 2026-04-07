@@ -588,7 +588,7 @@ Http3Transaction::_process_read_vio()
   auto     error = this->_frame_dispatcher.on_read_ready(this->_info.adapter.stream().id(), Http3StreamType::UNKNOWN,
                                                          *this->_info.read_vio->get_reader(), nread);
   if (error && error->cls != Http3ErrorClass::UNDEFINED) {
-    Http3TransDebug("Error occured while processing read vio: %hu, %s", error->get_code(), error->msg);
+    Http3TransDebug("Error occurred while processing read vio: %hu, %s", error->get_code(), error->msg);
     return 0;
   }
   this->_info.read_vio->ndone += nread;
@@ -882,7 +882,7 @@ Http09Transaction::_process_write_vio()
     // NOTE: When Chunked Transfer Coding is supported, check ChunkedState of ChunkedHandler
     // is ChunkedState::READ_DONE and set FIN flag
     if (this->_write_vio.ntodo() == 0) {
-      // The size of respons to client
+      // The size of response to client
       this->_info.write_vio->done();
     }
 

@@ -155,7 +155,7 @@ ParentRoundRobin::selectParent(bool first_call, ParentResult *result, RequestDat
     if ((parents[cur_index].failedAt.load() == 0) || (parents[cur_index].failCount.load() < static_cast<int>(fail_threshold))) {
       if (host_stat == TS_HOST_STATUS_UP) {
         Dbg(dbg_ctl_parent_select, "FailThreshold = %d", fail_threshold);
-        Dbg(dbg_ctl_parent_select, "Selecting a parent due to little failCount (faileAt: %u failCount: %d)",
+        Dbg(dbg_ctl_parent_select, "Selecting a parent due to little failCount (failedAt: %u failCount: %d)",
             (unsigned)parents[cur_index].failedAt.load(), parents[cur_index].failCount.load());
         parentUp = true;
       }

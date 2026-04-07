@@ -469,7 +469,7 @@ mime_hdr_set_accelerators_and_presence_bits(MIMEHdrImpl *mh, MIMEField *field)
   if (slot_id != MIME_SLOTID_NONE) {
     if (mh->m_first_fblock.contains(field)) {
       slot_num = (field - &(mh->m_first_fblock.m_field_slots[0]));
-      // constains() assure that the field is in the block, and the calculated
+      // contains() assure that the field is in the block, and the calculated
       // slot_num will be between 0 and 15, which seem valid.
       // However, strangely, this function regards slot number 14 and 15 as
       // unknown for some reason that is not clear. It might be a bug.

@@ -51,7 +51,7 @@ namespace
 {
 DbgCtl dbg_ctl_log_escape{"log-escape"};
 DbgCtl dbg_ctl_log_resolve{"log-resolve"};
-DbgCtl dbg_ctl_log_unmarshal_orun{"log-unmarshal-orun"}; // Overrrun of unmarshaling destination buffer.
+DbgCtl dbg_ctl_log_unmarshal_orun{"log-unmarshal-orun"}; // Overrun of unmarshaling destination buffer.
 DbgCtl dbg_ctl_log_unmarshal_data{"log-unmarshal-data"}; // Error in txn data when unmarshalling.
 
 } // end anonymous namespace
@@ -1224,7 +1224,7 @@ LogAccess::unmarshal_ip_to_str(char **buf, char *dest, int len)
   LogAccess::unmarshal_ip_to_hex
 
   Retrieve the int pointed at by the buffer and treat as an IP
-  address.  Convert to a string in byte oriented hexadeciaml and
+  address.  Convert to a string in byte oriented hexadecimal and
   return the string.  Advance the buffer pointer.
   -------------------------------------------------------------------------*/
 

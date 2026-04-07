@@ -129,7 +129,7 @@ LogSlice::toStrOffset(int strlen, int *offset)
 {
   int i, j, len;
 
-  // letf index
+  // left index
   if (m_start >= 0) {
     i = m_start;
   } else {
@@ -777,7 +777,7 @@ LogField::display(FILE *fd)
   LogField::operator==
 
   This operator does only care of the name and m_symbol, may need
-  do check on others layter.
+  do check on others later.
   -------------------------------------------------------------------------*/
 bool
 LogField::operator==(LogField &rhs)

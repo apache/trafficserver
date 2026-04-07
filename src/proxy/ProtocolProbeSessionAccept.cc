@@ -125,7 +125,7 @@ struct ProtocolProbeTrampoline : public Continuation, public ProtocolProbeSessio
       } else {
         Dbg(dbg_ctl_proxyprotocol,
             "ioCompletionEvent: proxy protocol DOES NOT have a configured allowlist of trusted IPs but proxy protocol is "
-            "ernabled on this port - processing all connections");
+            "enabled on this port - processing all connections");
       }
       HttpConfigParams *param           = HttpConfig::acquire();
       int               max_header_size = param->pp_hdr_max_size;

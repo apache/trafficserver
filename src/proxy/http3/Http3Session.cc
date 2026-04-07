@@ -39,7 +39,7 @@ HQSession::HQSession(NetVConnection *vc) : ProxySession(vc)
 
 HQSession::~HQSession()
 {
-  // Transactions should be deleted first before HQSesson gets deleted.
+  // Transactions should be deleted first before HQSession gets deleted.
   ink_assert(this->_transaction_list.head == nullptr);
 }
 

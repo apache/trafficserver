@@ -641,7 +641,7 @@ UrlRewrite::PerformACLFiltering(HttpTransact::State *s, const url_mapping *const
 
 /**
    Determines if a redirect is to occur and if so, figures out what the
-   redirect is. This was plaguiarized from UrlRewrite::Remap. redirect_url
+   redirect is. This was plagiarized from UrlRewrite::Remap. redirect_url
    ought to point to the new, mapped URL when the function exits.
 */
 mapping_type

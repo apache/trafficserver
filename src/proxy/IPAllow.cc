@@ -601,7 +601,7 @@ IpAllow::BuildCategories()
     return {};
   }
 
-  Note("%s loading categores file %s ...", ts::filename::IP_ALLOW, ip_categories_config_file.c_str());
+  Note("%s loading categories file %s ...", ts::filename::IP_ALLOW, ip_categories_config_file.c_str());
   std::string  content{swoc::file::load(ip_categories_config_file, ec)};
   swoc::Errata errata;
   if (ec.value() == 0) {
@@ -618,7 +618,7 @@ IpAllow::BuildCategories()
   } else {
     return swoc::Errata(ERRATA_ERROR, "{} Failed to load {}", this, ec);
   }
-  Note("%s done loading categores file %s ...", ts::filename::IP_ALLOW, ip_categories_config_file.c_str());
+  Note("%s done loading categories file %s ...", ts::filename::IP_ALLOW, ip_categories_config_file.c_str());
   return {};
 }
 
