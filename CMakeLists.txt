@@ -915,8 +915,7 @@ endif()
 add_custom_target(
   rat
   COMMENT "Running Apache RAT"
-  COMMAND java -jar ${CMAKE_SOURCE_DIR}/ci/apache-rat-0.13-SNAPSHOT.jar -E ${CMAKE_SOURCE_DIR}/ci/rat-regex.txt -d
-          ${CMAKE_SOURCE_DIR}
+  COMMAND bash ${CMAKE_SOURCE_DIR}/ci/run-rat.sh ${CMAKE_SOURCE_DIR}
 )
 
 # Create an empty directories for ATS runtime
