@@ -121,9 +121,15 @@ TLSClientHelloSummary::get_first_alpn()
 
   if (TS_SUCCESS == TSClientHelloExtensionGet(this->_ch, EXT_ALPN, &buf, &buflen)) {
     // The first two bytes are a 16bit encoding of the total length.
-    unsigned char first_ALPN_length{buf[2]};
-    TSAssert(buflen > 4);
-    TSAssert(0 != first_ALPN_length);
+    if (buflen < 4) {
+      return {};
+    }
+
+    unsigned char first_ALPN_length = buf[2];
+    if (first_ALPN_length == 0 || first_ALPN_length > (buflen - 3)) {
+      return {};
+    }
+
     return {reinterpret_cast<const char *>(&(buf[3])), first_ALPN_length};
   } else {
     return {};
