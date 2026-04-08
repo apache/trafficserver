@@ -106,7 +106,7 @@ generate_ja4h_d(char *out, Datasource & /* datasource ATS_UNUSED */)
 }
 
 void
-generate_ja4h_fingerprint(char *out, Datasource &datasource)
+ja4h::generate_fingerprint(char *out, Datasource &datasource)
 {
   generate_ja4h_a(&(out[PART_A_POSITION]), datasource);
   out[DELIMITER_1_POSITION] = DELIMITER;

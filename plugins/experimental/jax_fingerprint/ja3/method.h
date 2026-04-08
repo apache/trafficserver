@@ -24,7 +24,7 @@
 
 #include <method.h>
 
-namespace ja3_method
+namespace ja3
 {
 
 extern struct Method method;

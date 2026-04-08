@@ -24,7 +24,7 @@
 
 #include <method.h>
 
-namespace ja4h_method
+namespace ja4h
 {
 
 extern struct Method method;

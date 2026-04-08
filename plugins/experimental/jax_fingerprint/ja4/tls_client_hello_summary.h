@@ -28,10 +28,10 @@
 /**
  * Represents the data sent in a TLS Client Hello needed for JA4 fingerprints.
  */
-class TLSClientHelloSummary : public JA4::Datasource
+class TLSClientHelloSummary : public ja4::Datasource
 {
 public:
-  TLSClientHelloSummary(JA4::Datasource::Protocol protocol, TSClientHello ch);
+  TLSClientHelloSummary(ja4::Datasource::Protocol protocol, TSClientHello ch);
 
   std::string_view get_first_alpn() override;
   void             get_cipher_suites_hash(unsigned char out[32]) override;

@@ -38,7 +38,7 @@
 namespace
 {
 
-class MockDatasource : public JA4::Datasource
+class MockDatasource : public ja4::Datasource
 {
 public:
   std::string_view
@@ -114,7 +114,7 @@ public:
   }
 
   void
-  set_protocol(JA4::Datasource::Protocol protocol)
+  set_protocol(ja4::Datasource::Protocol protocol)
   {
     this->_protocol = protocol;
   }
@@ -185,7 +185,7 @@ SHA256_12(std::string_view in)
 
 } // namespace
 
-static std::string call_JA4(JA4::Datasource &datasource);
+static std::string call_JA4(ja4::Datasource &datasource);
 
 TEST_CASE("JA4")
 {
@@ -195,7 +195,7 @@ TEST_CASE("JA4")
           "when we create a JA4 fingerprint, "
           "then the first character thereof should be 't'.")
   {
-    datasource.set_protocol(JA4::Datasource::Protocol::TLS);
+    datasource.set_protocol(ja4::Datasource::Protocol::TLS);
 
     CHECK("t" == call_JA4(datasource).substr(0, 1));
   }
@@ -204,7 +204,7 @@ TEST_CASE("JA4")
           "when we create a JA4 fingerprint, "
           "then the first character thereof should be 'q'.")
   {
-    datasource.set_protocol(JA4::Datasource::Protocol::QUIC);
+    datasource.set_protocol(ja4::Datasource::Protocol::QUIC);
     CHECK(call_JA4(datasource).starts_with('q'));
   }
 
@@ -212,7 +212,7 @@ TEST_CASE("JA4")
           "when we create a JA4 fingerprint, "
           "then the first character thereof should be 'd'.")
   {
-    datasource.set_protocol(JA4::Datasource::Protocol::DTLS);
+    datasource.set_protocol(ja4::Datasource::Protocol::DTLS);
     CHECK(call_JA4(datasource).starts_with('d'));
   }
 
@@ -414,7 +414,7 @@ TEST_CASE("JA4")
   {
     char buf[36];
     datasource.add_cipher(10);
-    CHECK(SHA256_12("000a") == JA4::make_JA4_fingerprint(buf, datasource).substr(11, 12));
+    CHECK(SHA256_12("000a") == ja4::generate_fingerprint(buf, datasource).substr(11, 12));
   }
 
   // As per the spec, we expect 4-character, comma-delimited hex values.
@@ -426,7 +426,7 @@ TEST_CASE("JA4")
     datasource.add_cipher(12);
     datasource.add_cipher(17);
     char buf[36];
-    CHECK(SHA256_12("0002,000c,0011") == JA4::make_JA4_fingerprint(buf, datasource).substr(11, 12));
+    CHECK(SHA256_12("0002,000c,0011") == ja4::generate_fingerprint(buf, datasource).substr(11, 12));
   }
 
   SECTION("When we create a JA4 fingerprint, "
@@ -436,7 +436,7 @@ TEST_CASE("JA4")
     datasource.add_cipher(2);
     datasource.add_cipher(12);
     char buf[36];
-    CHECK(SHA256_12("0002,000c,0011") == JA4::make_JA4_fingerprint(buf, datasource).substr(11, 12));
+    CHECK(SHA256_12("0002,000c,0011") == ja4::generate_fingerprint(buf, datasource).substr(11, 12));
   }
 
   SECTION("When we create a JA4 fingerprint, "
@@ -445,7 +445,7 @@ TEST_CASE("JA4")
     datasource.add_cipher(0x0a0a);
     datasource.add_cipher(2);
     char buf[36];
-    CHECK(SHA256_12("0002") == JA4::make_JA4_fingerprint(buf, datasource).substr(11, 12));
+    CHECK(SHA256_12("0002") == ja4::generate_fingerprint(buf, datasource).substr(11, 12));
   }
 
   // All the tests from now on have enough ciphers to ensure a long enough
@@ -459,7 +459,7 @@ TEST_CASE("JA4")
           "then we should truncate the section b hash to 12 characters.")
   {
     char buf[36];
-    CHECK(SHA256_12("0001,0002,0003") == JA4::make_JA4_fingerprint(buf, datasource).substr(11, 12));
+    CHECK(SHA256_12("0001,0002,0003") == ja4::generate_fingerprint(buf, datasource).substr(11, 12));
   }
 
   SECTION("When we create a JA4 fingeprint, "
@@ -473,7 +473,7 @@ TEST_CASE("JA4")
   {
     datasource.add_extension(10);
     char buf[36];
-    CHECK(SHA256_12("000a") == JA4::make_JA4_fingerprint(buf, datasource).substr(24, 12));
+    CHECK(SHA256_12("000a") == ja4::generate_fingerprint(buf, datasource).substr(24, 12));
   }
 
   // As per the spec, we expect 4-character, comma-delimited hex values.
@@ -486,7 +486,7 @@ TEST_CASE("JA4")
     datasource.add_extension(17);
 
     char buf[36];
-    CHECK(SHA256_12("0002,000c,0011") == JA4::make_JA4_fingerprint(buf, datasource).substr(24, 12));
+    CHECK(SHA256_12("0002,000c,0011") == ja4::generate_fingerprint(buf, datasource).substr(24, 12));
   }
 
   SECTION("When we create a JA4 fingerprint, "
@@ -497,7 +497,7 @@ TEST_CASE("JA4")
     datasource.add_extension(12);
 
     char buf[36];
-    CHECK(SHA256_12("0002,000c,0011") == JA4::make_JA4_fingerprint(buf, datasource).substr(24, 12));
+    CHECK(SHA256_12("0002,000c,0011") == ja4::generate_fingerprint(buf, datasource).substr(24, 12));
   }
 
   SECTION("When we create a JA4 fingerprint, "
@@ -509,7 +509,7 @@ TEST_CASE("JA4")
     datasource.add_extension(5);
 
     char buf[36];
-    CHECK(SHA256_12("0005") == JA4::make_JA4_fingerprint(buf, datasource).substr(24, 12));
+    CHECK(SHA256_12("0005") == ja4::generate_fingerprint(buf, datasource).substr(24, 12));
   }
 
   SECTION("When we create a JA4 fingerprint, "
@@ -523,9 +523,9 @@ TEST_CASE("JA4")
 }
 
 std::string
-call_JA4(JA4::Datasource &datasource)
+call_JA4(ja4::Datasource &datasource)
 {
   char buf[36];
-  JA4::make_JA4_fingerprint(buf, datasource);
+  ja4::generate_fingerprint(buf, datasource);
   return {buf, 36};
 }

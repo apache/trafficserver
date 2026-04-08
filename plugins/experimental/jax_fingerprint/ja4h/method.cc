@@ -30,16 +30,8 @@
 
 #include "openssl/sha.h"
 
-namespace ja4h_method
+namespace
 {
-void on_request(JAxContext *, TSHttpTxn);
-
-struct Method method = {
-  "JA4H",
-  Method::Type::REQUEST_BASED,
-  nullptr,
-  on_request,
-};
 
 class TxnDatasource : public Datasource
 {
@@ -160,15 +152,26 @@ TxnDatasource::get_headers_hash(unsigned char out[32])
   SHA256_Final(out, &sha256ctx);
 }
 
-} // namespace ja4h_method
+} // namespace
 
+namespace ja4h
+{
 void
-ja4h_method::on_request(JAxContext *ctx, TSHttpTxn txnp)
+on_request(JAxContext *ctx, TSHttpTxn txnp)
 {
   char          fingerprint[FINGERPRINT_LENGTH];
   TxnDatasource datasource{txnp};
 
-  generate_ja4h_fingerprint(fingerprint, datasource);
+  generate_fingerprint(fingerprint, datasource);
 
   ctx->set_fingerprint({fingerprint, FINGERPRINT_LENGTH});
 }
+
+struct Method method = {
+  "JA4H",
+  Method::Type::REQUEST_BASED,
+  nullptr,
+  on_request,
+};
+
+} // namespace ja4h

@@ -24,7 +24,7 @@
 
 #include "datasource.h"
 
-namespace JA4
+namespace ja4
 {
 
 constexpr int    FINGERPRINT_LENGTH = 36;
@@ -50,6 +50,6 @@ constexpr size_t DELIMITER_2_POSITION = 23;
  * JA4 fingerprint, this should be a sha256 hash.
  * @return Returns a string containing the JA4 fingerprint.
  */
-std::string_view make_JA4_fingerprint(char *out, Datasource &datasource);
+std::string_view generate_fingerprint(char *out, Datasource &datasource);
 
-} // end namespace JA4
+} // end namespace ja4

@@ -28,7 +28,7 @@ constexpr uint16_t EXT_SNI{0x0};
 constexpr uint16_t EXT_ALPN{0x10};
 constexpr uint16_t EXT_SUPPORTED_VERSIONS{0x2b};
 
-namespace JA4
+namespace ja4
 {
 
 class Datasource
@@ -68,4 +68,4 @@ protected:
   int      _n_extensions = 0;
 };
 
-} // namespace JA4
+} // namespace ja4

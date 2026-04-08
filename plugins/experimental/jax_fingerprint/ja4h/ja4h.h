@@ -24,6 +24,9 @@
 
 #include "datasource.h"
 
+namespace ja4h
+{
+
 constexpr int    FINGERPRINT_LENGTH   = 51;
 constexpr size_t PART_A_POSITION      = 0;
 constexpr size_t PART_B_POSITION      = 13;
@@ -38,4 +41,6 @@ constexpr size_t DELIMITER_1_POSITION = 12;
 constexpr size_t DELIMITER_2_POSITION = 25;
 constexpr size_t DELIMITER_3_POSITION = 38;
 
-void generate_ja4h_fingerprint(char *out, Datasource &datasource);
+void generate_fingerprint(char *out, Datasource &datasource);
+
+} // end namespace ja4h

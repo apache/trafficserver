@@ -77,11 +77,11 @@ read_config_option(int argc, char const *argv[], PluginConfig &config)
       break;
     case 'M':
       if (strcmp("JA4", optarg) == 0) {
-        config.method = ja4_method::method;
+        config.method = ja4::method;
       } else if (strcmp("JA4H", optarg) == 0) {
-        config.method = ja4h_method::method;
+        config.method = ja4h::method;
       } else if (strcmp("JA3", optarg) == 0) {
-        config.method = ja3_method::method;
+        config.method = ja3::method;
       } else {
         Dbg(dbg_ctl, "Unexpected method: %s", optarg);
         return false;

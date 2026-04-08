@@ -36,9 +36,9 @@
 #include <string>
 #include <string_view>
 
-static void convert_protocol_to_char(char *out, JA4::Datasource::Protocol protocol);
+static void convert_protocol_to_char(char *out, ja4::Datasource::Protocol protocol);
 static void convert_TLS_version_to_string(char *out, std::uint16_t TLS_version);
-static void convert_SNI_to_char(char *out, JA4::Datasource::SNI SNI_type);
+static void convert_SNI_to_char(char *out, ja4::Datasource::SNI SNI_type);
 static void convert_count_to_two_digit_string(char *out, std::size_t count);
 static void convert_ALPN_to_two_char_string(char *out, std::string_view ALPN);
 
@@ -55,7 +55,7 @@ static void convert_ALPN_to_two_char_string(char *out, std::string_view ALPN);
  * @return Returns a string containing the a portion of the JA4 fingerprint.
  */
 static void
-make_JA4_a(char *out, JA4::Datasource &datasource)
+make_JA4_a(char *out, ja4::Datasource &datasource)
 {
   convert_protocol_to_char(out, datasource.get_protocol());
   out += 1;
@@ -76,7 +76,7 @@ make_JA4_a(char *out, JA4::Datasource &datasource)
 }
 
 static void
-convert_protocol_to_char(char *out, JA4::Datasource::Protocol protocol)
+convert_protocol_to_char(char *out, ja4::Datasource::Protocol protocol)
 {
   out[0] = static_cast<char>(protocol);
 }
@@ -133,7 +133,7 @@ convert_TLS_version_to_string(char *out, std::uint16_t version)
 }
 
 static void
-convert_SNI_to_char(char *out, JA4::Datasource::SNI type)
+convert_SNI_to_char(char *out, ja4::Datasource::SNI type)
 {
   out[0] = static_cast<char>(type);
 }
@@ -176,7 +176,7 @@ convert_ALPN_to_two_char_string(char *out, std::string_view alpn)
  * @return Returns a string containing the b portion of the JA4 fingerprint.
  */
 static void
-make_JA4_b(char *out, JA4::Datasource &datasource)
+make_JA4_b(char *out, ja4::Datasource &datasource)
 {
   unsigned char hash[32];
 
@@ -198,7 +198,7 @@ make_JA4_b(char *out, JA4::Datasource &datasource)
  * @return Returns a string containing the c portion of the JA4 fingerprint.
  */
 static void
-make_JA4_c(char *out, JA4::Datasource &datasource)
+make_JA4_c(char *out, ja4::Datasource &datasource)
 {
   unsigned char hash[32];
 
@@ -207,13 +207,13 @@ make_JA4_c(char *out, JA4::Datasource &datasource)
 }
 
 std::string_view
-JA4::make_JA4_fingerprint(char *out, JA4::Datasource &datasource)
+ja4::generate_fingerprint(char *out, ja4::Datasource &datasource)
 {
-  make_JA4_a(&(out[JA4::PART_A_POSITION]), datasource);
-  out[JA4::DELIMITER_1_POSITION] = JA4::PORTION_DELIMITER;
-  make_JA4_b(&(out[JA4::PART_B_POSITION]), datasource);
-  out[JA4::DELIMITER_2_POSITION] = JA4::PORTION_DELIMITER;
-  make_JA4_c(&(out[JA4::PART_C_POSITION]), datasource);
+  make_JA4_a(&(out[ja4::PART_A_POSITION]), datasource);
+  out[ja4::DELIMITER_1_POSITION] = ja4::PORTION_DELIMITER;
+  make_JA4_b(&(out[ja4::PART_B_POSITION]), datasource);
+  out[ja4::DELIMITER_2_POSITION] = ja4::PORTION_DELIMITER;
+  make_JA4_c(&(out[ja4::PART_C_POSITION]), datasource);
 
   return {out, FINGERPRINT_LENGTH};
 }

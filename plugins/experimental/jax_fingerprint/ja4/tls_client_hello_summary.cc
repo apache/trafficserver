@@ -31,7 +31,7 @@
 #include <openssl/sha.h>
 #include <cstdint>
 
-TLSClientHelloSummary::TLSClientHelloSummary(JA4::Datasource::Protocol protocol, TSClientHello ch) : _ch(ch)
+TLSClientHelloSummary::TLSClientHelloSummary(ja4::Datasource::Protocol protocol, TSClientHello ch) : _ch(ch)
 {
   const uint8_t *buf;
   size_t         buflen;
