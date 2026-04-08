@@ -15,7 +15,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Generate a changelog from merged PRs in a GitHub milestone.
 
 Usage:
@@ -97,7 +96,8 @@ def changelog_via_gh(owner: str, repo: str, milestone: str, verbose: bool, doc: 
         print(f"Page {page}", file=sys.stderr)
         result = subprocess.run(
             [
-                "gh", "api",
+                "gh",
+                "api",
                 f"/repos/{owner}/{repo}/issues?milestone={milestone_id}&state=closed&page={page}&per_page=100",
             ],
             capture_output=True,
@@ -159,7 +159,11 @@ def changelog_via_gh(owner: str, repo: str, milestone: str, verbose: bool, doc: 
 
 
 def changelog_via_api(
-    owner: str, repo: str, milestone: str, token: str | None, verbose: bool,
+    owner: str,
+    repo: str,
+    milestone: str,
+    token: str | None,
+    verbose: bool,
     doc: bool,
 ) -> list[dict]:
     """Use httpx to call the GitHub REST API directly."""
@@ -234,9 +238,7 @@ def changelog_via_api(
     return changelog
 
 
-def _lookup_milestone(
-    client: httpx.Client, owner: str, repo: str, title: str
-) -> int | None:
+def _lookup_milestone(client: httpx.Client, owner: str, repo: str, title: str) -> int | None:
     resp = client.get(f"/repos/{owner}/{repo}/milestones")
     _check_rate_limit(resp)
     resp.raise_for_status()
@@ -267,15 +269,11 @@ def _check_rate_limit(resp: httpx.Response) -> None:
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Generate changelog from merged PRs in a GitHub milestone."
-    )
+    parser = argparse.ArgumentParser(description="Generate changelog from merged PRs in a GitHub milestone.")
     parser.add_argument("-o", "--owner", required=True, help="Repository owner")
     parser.add_argument("-r", "--repo", required=True, help="Repository name")
     parser.add_argument("-m", "--milestone", required=True, help="Milestone title")
-    parser.add_argument(
-        "-a", "--auth", default=None, help="GitHub auth token (or set GH_TOKEN env var)"
-    )
+    parser.add_argument("-a", "--auth", default=None, help="GitHub auth token (or set GH_TOKEN env var)")
     parser.add_argument("-v", "--verbose", action="store_true", help="Verbose output")
     parser.add_argument(
         "--doc",
@@ -322,7 +320,12 @@ def main():
         changelog = changelog_via_gh(args.owner, args.repo, args.milestone, args.verbose, args.doc)
     else:
         changelog = changelog_via_api(
-            args.owner, args.repo, args.milestone, token, args.verbose, args.doc,
+            args.owner,
+            args.repo,
+            args.milestone,
+            token,
+            args.verbose,
+            args.doc,
         )
 
     if changelog:
