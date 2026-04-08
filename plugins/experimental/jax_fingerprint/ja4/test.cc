@@ -403,7 +403,7 @@ TEST_CASE("JA4")
     CHECK("ip" == call_JA4(datasource).substr(8, 2));
   }
 
-  SECTION("When we create a JA4 fingeprint, "
+  SECTION("When we create a JA4 fingerprint, "
           "then index 10 thereof should contain '_'.")
   {
     CHECK("_" == call_JA4(datasource).substr(10, 1));
@@ -462,7 +462,7 @@ TEST_CASE("JA4")
     CHECK(SHA256_12("0001,0002,0003") == ja4::generate_fingerprint(buf, datasource).substr(11, 12));
   }
 
-  SECTION("When we create a JA4 fingeprint, "
+  SECTION("When we create a JA4 fingerprint, "
           "then index 10 thereof should contain '_'.")
   {
     CHECK("_" == call_JA4(datasource).substr(23, 1));
