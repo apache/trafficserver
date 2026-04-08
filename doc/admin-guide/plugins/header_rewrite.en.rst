@@ -1177,8 +1177,65 @@ set-body
 
   set-body <text>
 
-Sets the body to ``<text>``. Can also be used to delete a body with ``""``. This is only useful when overriding the origin status, i.e.
-intercepting/pre-empting a request so that you can override the body from the body-factory with your own.
+Sets the response body to ``<text>``. Can also be used to delete a body with ``""``.
+
+This operator can be used to replace the response body in three scenarios:
+
+1. **Synthetic responses (no origin connection)**: When used at ``REMAP_PSEUDO_HOOK``
+   (before the origin connection is established), ``set-body`` will skip the origin
+   connection entirely and serve a synthetic response directly. Use ``set-status`` to
+   control the response status code (defaults to 200 OK if not specified). This is
+   useful for blocking requests, serving synthetic pages, or returning canned responses
+   without touching the origin.
+
+2. **ATS-generated responses**: When overriding the origin status at remap time (e.g.
+   with ``set-status``), you can use ``set-body`` at ``SEND_RESPONSE_HDR_HOOK`` to
+   override the body from the body-factory with your own.
+
+3. **Origin server responses**: When the origin returns a response with a body,
+   ``set-body`` can replace the origin body with the specified text. This is useful
+   for sanitizing error responses (e.g. replacing a 403 body that contains sensitive
+   information). Use ``READ_RESPONSE_HDR_HOOK`` to inspect the origin response
+   headers and replace the body, or ``SEND_RESPONSE_HDR_HOOK`` to replace the body
+   just before sending to the client.
+
+When replacing an origin response body (scenario 3), ATS will drain the origin body
+from the server connection buffer to allow a clean connection shutdown. If the origin
+body is too large to be fully buffered or uses chunked encoding, the server connection
+will be closed immediately.
+
+.. note::
+
+   When replacing an origin response body, the origin's status code and most
+   response headers are preserved. However, ``Content-Length`` is recomputed to
+   match the replacement body size, ``Transfer-Encoding`` is removed, and
+   ``Content-Type`` is overwritten to ``text/html`` (since ``set-body`` does
+   not accept a mimetype parameter). Use ``set-header Content-Type`` to
+   restore the desired content type, and ``rm-header`` to strip any sensitive
+   origin headers::
+
+      cond %{READ_RESPONSE_HDR_HOOK} [AND]
+      cond %{STATUS} =403
+          set-body "Access Denied"
+          set-header Content-Type "text/plain"
+          rm-header Server
+          rm-header X-Amz-Request-Id
+
+   If a response transform plugin is also active on the same transaction,
+   ``set-body`` takes precedence and the transform is bypassed.
+
+Example: block a request at remap time without contacting the origin::
+
+   cond %{REMAP_PSEUDO_HOOK} [AND]
+   cond %{CLIENT-URL:PATH} /blocked
+       set-status 403
+       set-body "Access Denied"
+
+Example: sanitize a 403 response from the origin::
+
+   cond %{READ_RESPONSE_HDR_HOOK} [AND]
+   cond %{STATUS} =403
+       set-body "Access Denied"
 
 set-body-from
 ~~~~~~~~~~~~~
@@ -1186,26 +1243,43 @@ set-body-from
 
   set-body-from <URL>
 
-Will call ``<URL>`` (see URL in `URL Parts`_) to retrieve a custom error response
-and set the body with the result. Triggering this rule on an OK transaction will
-send a 500 status code to the client with the desired response. If this is triggered
-on any error status code, that original status code will be sent to the client.
+Will call ``<URL>`` (see URL in `URL Parts`_) to retrieve a response body from a
+secondary URL and use it to replace the origin's response body. The origin's response
+status code and most headers are preserved, and the fetched content replaces only the
+body. As with ``set-body``, ``Content-Length`` is recomputed, ``Transfer-Encoding``
+is removed, and ``Content-Type`` is overwritten to ``text/html``.
+
+This operator can be used at ``READ_RESPONSE_HDR_HOOK`` or ``SEND_RESPONSE_HDR_HOOK``.
+When the origin response body is fully buffered and has a known ``Content-Length``,
+ATS will drain the origin body to allow a clean connection shutdown. Otherwise, the
+origin connection is closed.
+
+In most cases, if the fetch fails or times out, the original origin response
+(including its body) is sent unmodified. However, certain fetch connection failures
+can cause ATS to generate an internal error page that ``set-body-from`` treats as a
+successful fetch, and that content will replace the origin body. This means
+``set-body-from`` does **not** guarantee the origin body will be hidden from the
+client. Use ``set-body`` instead if the replacement text is static and must always be
+applied regardless of external dependencies.
 
 .. note::
-    This config should only be set using READ_RESPONSE_HDR_HOOK
+
+   Use ``set-header Content-Type`` to restore the desired content type, and
+   ``rm-header`` to strip any sensitive origin headers.
 
 An example config would look like::
 
-   cond %{READ_RESPONSE_HDR_HOOK}
-      set-body-from http://www.example.com/second
+   cond %{READ_RESPONSE_HDR_HOOK} [AND]
+   cond %{STATUS} =403
+      set-body-from http://www.example.com/custom-error-page
 
-Where ``http://www.example.com/second`` is the destination to retrieve the custom response from.
-This can be enabled per-mapping or globally.
-Ensure there is a remap rule for the second endpoint as well!
+Where ``http://www.example.com/custom-error-page`` is the destination to retrieve the
+custom response body from. This can be enabled per-mapping or globally.
+Ensure there is a remap rule for the secondary endpoint as well!
 An example remap config would look like::
 
    map /first http://www.example.com/first @plugin=header_rewrite.so @pparam=cond1.conf
-   map /second http://www.example.com/second
+   map /custom-error-page http://www.example.com/custom-error-page
 
 set-config
 ~~~~~~~~~~
