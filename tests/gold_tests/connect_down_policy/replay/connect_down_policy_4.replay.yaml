@@ -26,19 +26,19 @@ autest:
   description: 'Verify connect down policy 4 - origin closes connection without sending a response'
 
   dns:
-    name: 'dns-dp-4'
+    name: 'dns-policy-4'
     records:
       backend1.example.com: ["127.0.0.1"]
       backend2.example.com: ["127.0.0.1"]
 
   server:
-    name: 'server-dp-4'
+    name: 'server-policy-4'
 
   client:
-    name: 'client-dp-4'
+    name: 'client-policy-4'
 
   ats:
-    name: 'ts-dp-4'
+    name: 'ts-policy-4'
     process_config:
       enable_cache: false
 
@@ -93,6 +93,9 @@ sessions:
     proxy-request:
       expect: absent
 
+    server-response:
+      status: 200
+
     proxy-response:
       status: 500
 
@@ -124,6 +127,9 @@ sessions:
 
     proxy-request:
       expect: absent
+
+    server-response:
+      status: 200
 
     proxy-response:
       status: 500
