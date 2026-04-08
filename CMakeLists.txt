@@ -915,7 +915,8 @@ endif()
 add_custom_target(
   rat
   COMMENT "Running Apache RAT"
-  COMMAND java -jar ${CMAKE_SOURCE_DIR}/ci/apache-rat-0.13-SNAPSHOT.jar -E ${CMAKE_SOURCE_DIR}/ci/rat-regex.txt -d
+  COMMAND java -jar ${CMAKE_SOURCE_DIR}/ci/apache-rat-0.17.jar --input-exclude-file
+          ${CMAKE_SOURCE_DIR}/ci/rat-exclude.txt --input-include-file ${CMAKE_SOURCE_DIR}/ci/rat-include.txt --
           ${CMAKE_SOURCE_DIR}
 )
 
