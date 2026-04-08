@@ -22,6 +22,7 @@
 #include <string>
 #include <variant>
 #include "tsutil/ts_bw_format.h"
+#include "tsutil/ts_errata.h"
 #include <yaml-cpp/yaml.h>
 #include <tscore/ink_uuid.h>
 
@@ -68,9 +69,13 @@ struct JSONRPCResponse {
 struct JSONRPCError {
   int32_t     code;    //!< High level error code.
   std::string message; //!< High level message
-  // the following data is defined by TS, it will be a key/value pair.
-  std::vector<std::pair<int32_t, std::string>> data;
-  friend std::ostream                         &operator<<(std::ostream &os, const JSONRPCError &err);
+  struct DataEntry {
+    int32_t     code;
+    int32_t     severity{0}; //!< Per-annotation severity, defaults to DIAG (0).
+    std::string message;
+  };
+  std::vector<DataEntry> data;
+  friend std::ostream   &operator<<(std::ostream &os, const JSONRPCError &err);
 };
 
 /**
@@ -206,9 +211,16 @@ inline std::ostream &
 operator<<(std::ostream &os, const JSONRPCError &err)
 {
   os << "Server Error found:\n";
-  os << "[" << err.code << "] " << err.message << '\n';
-  for (auto &&[code, message] : err.data) {
-    os << "- [" << code << "] " << message << '\n';
+  os << "[" << err.code << "] " << err.message;
+  if (!err.data.empty()) {
+    os << " [code: " << err.data[0].code << "]";
+  }
+  os << '\n';
+
+  for (auto const &entry : err.data) {
+    auto           sev  = static_cast<size_t>(entry.severity);
+    swoc::TextView name = sev < Severity_Names.size() ? Severity_Names[sev] : "Unknown";
+    os << "- " << name << ": " << entry.message << '\n';
   }
 
   return os;

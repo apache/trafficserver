@@ -21,6 +21,7 @@
 #include <catch2/catch_test_macros.hpp> /* catch unit-test framework */
 
 #include <tsutil/ts_bw_format.h>
+#include <tsutil/ts_errata.h>
 
 #include "mgmt/rpc/jsonrpc/JsonRPCManager.h"
 #include "mgmt/rpc/jsonrpc/JsonRPC.h"
@@ -76,6 +77,14 @@ test_callback_ok_or_error(std::string_view const & /* id ATS_UNUSED */, YAML::No
       resp.result()["ran"] = "ok";
     }
   }
+  return resp;
+}
+
+inline swoc::Rv<YAML::Node>
+test_callback_with_severity(std::string_view const & /* id ATS_UNUSED */, YAML::Node const & /* params ATS_UNUSED */)
+{
+  swoc::Rv<YAML::Node> resp;
+  resp.errata().assign(ERR1).note(ERRATA_WARN, "this is a warning").note("this has no severity");
   return resp;
 }
 
@@ -140,7 +149,7 @@ TEST_CASE("Register/call method - respond with errors (data field)", "[method][e
         R"({"jsonrpc": "2.0", "method": "test_callback_ok_or_error", "params": {"return_error": "yes"}, "id": "14"})");
       REQUIRE(json);
       const std::string_view expected =
-        R"({"jsonrpc": "2.0", "error": {"code": 9, "message": "Error during execution", "data": [{"code": 9999, "message": "Just an error message to add more meaning to the failure"}]}, "id": "14"})";
+        R"({"jsonrpc": "2.0", "error": {"code": 9, "message": "Error during execution", "data": [{"code": 9999, "severity": 0, "message": "Just an error message to add more meaning to the failure"}]}, "id": "14"})";
       REQUIRE(*json == expected);
     }
   }
@@ -184,7 +193,7 @@ TEST_CASE("Basic test, batch calls", "[methods][notifications]")
 
       REQUIRE(resp1);
       const std::string_view expected =
-        R"([{"jsonrpc": "2.0", "result": {"ran": "ok"}, "id": "13"}, {"jsonrpc": "2.0", "error": {"code": 9, "message": "Error during execution", "data": [{"code": 9999, "message": "Just an error message to add more meaning to the failure"}]}, "id": "14"}])";
+        R"([{"jsonrpc": "2.0", "result": {"ran": "ok"}, "id": "13"}, {"jsonrpc": "2.0", "error": {"code": 9, "message": "Error during execution", "data": [{"code": 9999, "severity": 0, "message": "Just an error message to add more meaning to the failure"}]}, "id": "14"}])";
       REQUIRE(*resp1 == expected);
     }
   }
@@ -606,5 +615,21 @@ TEST_CASE("Call method with invalid ID", "[invalid_id]")
       R"([{"jsonrpc": "2.0", "error": {"code": 11, "message": "Use of an empty string as id is discouraged"}}, )"
       R"({"jsonrpc": "2.0", "error": {"code": 7, "message": "Invalid id type"}}])";
     REQUIRE(*resp == expected);
+  }
+}
+
+TEST_CASE("Severity field in error data entries", "[severity]")
+{
+  JsonRpcUnitTest rpc;
+
+  SECTION("Annotation with severity emits it, annotation without defaults to DIAG (0)")
+  {
+    REQUIRE(rpc.add_method_handler("test_callback_with_severity", &test_callback_with_severity));
+
+    const auto json = rpc.handle_call(R"({"jsonrpc": "2.0", "method": "test_callback_with_severity", "params": {}, "id": "50"})");
+    REQUIRE(json);
+    const std::string_view expected =
+      R"({"jsonrpc": "2.0", "error": {"code": 9, "message": "Error during execution", "data": [{"code": 9999, "severity": 4, "message": "this is a warning"}, {"code": 9999, "severity": 0, "message": "this has no severity"}]}, "id": "50"})";
+    REQUIRE(*json == expected);
   }
 }

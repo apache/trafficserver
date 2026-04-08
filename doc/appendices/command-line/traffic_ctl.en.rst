@@ -114,6 +114,48 @@ Options
 
    Path to the runroot file.
 
+.. option:: -e, --error-level <level>
+
+   Set the minimum severity that causes a non-zero exit code. When the server returns an error
+   response with annotated data entries, ``traffic_ctl`` inspects the ``severity`` of each
+   annotation and compares the highest severity against this threshold. If the highest severity
+   is **at or above** the threshold, the process exits with code ``2``; otherwise it exits ``0``.
+
+   Accepted values (case-insensitive): ``diag``, ``debug``, ``status``, ``note``, ``warn``,
+   ``error``, ``fatal``, ``alert``, ``emergency``.
+
+   Default: ``error``.
+
+   This option only affects error responses that contain annotated data entries (i.e., entries
+   in the ``data`` array with a ``severity`` field).
+
+   .. note::
+
+      Protocol-level JSONRPC errors (e.g., ``-32601 Method not found``, ``-32600 Invalid
+      Request``) and application errors with no ``data`` entries **always exit** ``2`` regardless
+      of ``--error-level``. These errors indicate a communication or dispatch failure — not an
+      application-level condition — and are therefore unconditionally treated as hard errors.
+
+   Examples:
+
+   .. code-block:: bash
+
+      # Default: annotations without explicit severity default to DIAG.
+      # DIAG < ERROR, so exit 0.
+      $ traffic_ctl server drain   # "already draining" is DIAG
+      $ echo $?
+      0
+
+      # Treat any annotation (including DIAG) as an error
+      $ traffic_ctl --error-level=diag server drain
+      $ echo $?
+      2
+
+      # Only fail on fatal or above
+      $ traffic_ctl --error-level=fatal server drain
+      $ echo $?
+      0
+
 Subcommands
 ===========
 
@@ -1299,13 +1341,18 @@ Exit Codes
 :program:`traffic_ctl` uses the following exit codes:
 
 ``0``
-   Success. The requested operation completed successfully.
+   Success. The requested operation completed successfully, or the server returned an error
+   whose annotations all have severity below the ``--error-level`` threshold (default: ``error``).
 
 ``2``
    Error. The operation failed. This may be returned when:
 
    - The RPC communication with :program:`traffic_server` failed (e.g. socket not found or connection refused).
-   - The server response contains an error (e.g. invalid record name, malformed request).
+   - The server response is a protocol-level JSONRPC error (e.g. ``-32601 Method not found``) or
+     an application error with no ``data`` entries. These **always** exit ``2`` regardless of
+     ``--error-level``.
+   - The server response contains data annotations whose highest severity is at or above the
+     ``--error-level`` threshold.
 
 ``3``
    Unimplemented. The requested command is not yet implemented.
