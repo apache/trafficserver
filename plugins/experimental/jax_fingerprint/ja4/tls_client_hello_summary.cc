@@ -30,6 +30,7 @@
 
 #include <openssl/sha.h>
 #include <cstdint>
+#include <algorithm>
 
 TLSClientHelloSummary::TLSClientHelloSummary(ja4::Datasource::Protocol protocol, TSClientHello ch) : _ch(ch)
 {
