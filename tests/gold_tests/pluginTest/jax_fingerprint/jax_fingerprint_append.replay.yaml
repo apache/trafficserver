@@ -1,0 +1,114 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+# Used by: global JA4H append mode test.
+#
+# The jax_fingerprint plugin is loaded globally with --method JA4H
+# --standalone --mode append.
+#
+# append mode behaviour (from header.cc):
+#   - If the header field is absent: create it with the new value.
+#   - If the header field is already present: insert the new value as an
+#     additional value in the last duplicate field.  HTTP clients and
+#     intermediaries represent this as a comma-separated list,
+#     e.g. "upstream-via, test.proxy.test".
+
+meta:
+  version: "1.0"
+
+sessions:
+
+# Session 1: no pre-existing x-jax-via – plugin creates it.
+- protocol:
+  - name: http
+    version: 1
+  - name: tcp
+  - name: ip
+
+  transactions:
+
+  - client-request:
+      method: GET
+      url: /resource-no-via
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, jax.server.test ]
+        - [ Content-Length, 0 ]
+        - [ uuid, append-no-existing-via ]
+
+    # No existing via header – plugin sets it to the proxy name.
+    proxy-request:
+      headers:
+        fields:
+        - [ x-jax, { as: present } ]
+        - [ x-jax-via, { value: 'test.proxy.test', as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 2 ]
+        - [ Connection, close ]
+      content:
+        encoding: plain
+        data: "OK"
+
+    proxy-response:
+      status: 200
+
+# Session 2: pre-existing x-jax-via – append mode adds proxy name to it.
+- protocol:
+  - name: http
+    version: 1
+  - name: tcp
+  - name: ip
+
+  transactions:
+
+  - client-request:
+      method: GET
+      url: /resource-with-via
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, jax.server.test ]
+        - [ Content-Length, 0 ]
+        - [ uuid, append-existing-via ]
+        - [ x-jax-via, upstream-via ]
+
+    # append mode: proxy name is inserted as an additional value, yielding
+    # the comma-separated form "upstream-via, test.proxy.test".
+    proxy-request:
+      headers:
+        fields:
+        - [ x-jax, { as: present } ]
+        - [ x-jax-via, { value: 'upstream-via, test.proxy.test', as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 2 ]
+        - [ Connection, close ]
+      content:
+        encoding: plain
+        data: "OK"
+
+    proxy-response:
+      status: 200

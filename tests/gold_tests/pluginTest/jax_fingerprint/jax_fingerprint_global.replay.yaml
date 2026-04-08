@@ -1,0 +1,111 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+# Used by: global JA4H overwrite test.
+#
+# The jax_fingerprint plugin is loaded globally with --method JA4H
+# --standalone --mode overwrite.  Every request should have the
+# fingerprint header (x-jax) and via header (x-jax-via) written by ATS
+# regardless of any pre-existing values.
+
+meta:
+  version: "1.0"
+
+sessions:
+
+# Session 1: no pre-existing x-jax header – plugin adds it.
+- protocol:
+  - name: http
+    version: 1
+  - name: tcp
+  - name: ip
+
+  transactions:
+
+  - client-request:
+      method: GET
+      url: /resource
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, jax.server.test ]
+        - [ Content-Length, 0 ]
+        - [ uuid, global-ja4h-request ]
+
+    # Global plugin (overwrite) must add both headers.
+    proxy-request:
+      headers:
+        fields:
+        - [ x-jax, { as: present } ]
+        - [ x-jax-via, { value: 'test.proxy.test', as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 2 ]
+        - [ Connection, close ]
+      content:
+        encoding: plain
+        data: "OK"
+
+    proxy-response:
+      status: 200
+
+# Session 2: pre-existing x-jax header – overwrite mode replaces it.
+- protocol:
+  - name: http
+    version: 1
+  - name: tcp
+  - name: ip
+
+  transactions:
+
+  - client-request:
+      method: GET
+      url: /resource-with-header
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, jax.server.test ]
+        - [ Content-Length, 0 ]
+        - [ uuid, global-ja4h-overwrite ]
+        - [ x-jax, upstream-fingerprint ]
+        - [ x-jax-via, upstream-via ]
+
+    # In overwrite mode the plugin replaces the upstream values.
+    # x-jax contains the freshly computed fingerprint (dynamic value,
+    # so we only assert presence); x-jax-via is set to the proxy name.
+    proxy-request:
+      headers:
+        fields:
+        - [ x-jax, { as: present } ]
+        - [ x-jax-via, { value: 'test.proxy.test', as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 2 ]
+        - [ Connection, close ]
+      content:
+        encoding: plain
+        data: "OK"
+
+    proxy-response:
+      status: 200
