@@ -42,7 +42,7 @@ TLSClientHelloSummary::TLSClientHelloSummary(ja4::Datasource::Protocol protocol,
 
   // Version
   if (TS_SUCCESS == TSClientHelloExtensionGet(this->_ch, EXT_SUPPORTED_VERSIONS, &buf, &buflen)) {
-    if (buflen == 0 || buflen < buf[0] + 1) {
+    if (buflen == 0 || buflen < static_cast<unsigned int>(buf[0] + 1)) {
       Dbg(dbg_ctl, "Malformed supported_versions extension (truncated vector)... using legacy version.");
       this->_version = this->_ch.get_version();
     } else {
