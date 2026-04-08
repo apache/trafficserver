@@ -318,6 +318,9 @@ struct CacheVC : public CacheVConnection {
   // this is how much we need to back up the buffer to get the start of the overlapping object.
   off_t scan_fix_buffer_offset;
   // end region C
+
+private:
+  bool _ram_cache_cutoff_check(const Doc *doc) const;
 };
 
 LINK_DEFINITION(CacheVC, opendir_link)
