@@ -22,6 +22,8 @@
 
 #pragma once
 
+#include <array>
+#include <memory>
 #include "ts/ts.h"
 #include "datasource.h"
 

@@ -23,6 +23,7 @@
 #pragma once
 
 #include <string_view>
+#include <cstdint>
 
 constexpr uint16_t EXT_SNI{0x0};
 constexpr uint16_t EXT_ALPN{0x10};
