@@ -95,6 +95,7 @@ enum CacheEventType {
   CACHE_EVENT_SCAN_OPERATION_BLOCKED = CACHE_EVENT_EVENTS_START + 23,
   CACHE_EVENT_SCAN_OPERATION_FAILED  = CACHE_EVENT_EVENTS_START + 24,
   CACHE_EVENT_SCAN_DONE              = CACHE_EVENT_EVENTS_START + 25,
+  CACHE_EVENT_OPEN_DIR_RETRY         = CACHE_EVENT_EVENTS_START + 26,
   //////////////////////////
   // Internal error codes //
   //////////////////////////
