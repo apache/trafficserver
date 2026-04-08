@@ -27,9 +27,9 @@
 #include "header.h"
 #include "log.h"
 
-#include "ja4/ja4_method.h"
-#include "ja4h/ja4h_method.h"
-#include "ja3/ja3_method.h"
+#include "ja4/method.h"
+#include "ja4h/method.h"
+#include "ja3/method.h"
 
 #include <ts/apidefs.h>
 #include <ts/ts.h>

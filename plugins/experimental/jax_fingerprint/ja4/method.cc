@@ -23,7 +23,7 @@
 
 #include <plugin.h>
 #include <context.h>
-#include "ja4_method.h"
+#include "method.h"
 #include "ja4.h"
 #include "datasource.h"
 #include "tls_client_hello_summary.h"

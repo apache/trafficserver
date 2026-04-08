@@ -24,8 +24,8 @@
 
 #include <plugin.h>
 #include <context.h>
-#include "ja3_method.h"
-#include "ja3_utils.h"
+#include "method.h"
+#include "utils.h"
 
 #include <openssl/ssl.h>
 #include <openssl/md5.h>
