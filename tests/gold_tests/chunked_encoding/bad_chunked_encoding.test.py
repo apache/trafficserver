@@ -140,6 +140,8 @@ class MalformedChunkHeaderTest:
             "chunked body of 3 bytes for key 2 with chunk stream", "Verify that writing the second response failed.")
         self.server.Streams.stdout += Testers.ContainsExpression(
             "Unexpected chunked content for key 3: too small", "Verify that writing the third response failed.")
+        self.server.Streams.stdout += Testers.ContainsExpression(
+            "Unexpected chunked content for key 8: too small", "Verify that writing the sixth response failed.")
 
         # ATS should close the connection before any body gets through. "abcwxyz"
         # is the body sent by the client for each of these chunked cases.
