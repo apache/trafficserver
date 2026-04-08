@@ -78,7 +78,7 @@ TLSClientHelloSummary::TLSClientHelloSummary(ja4::Datasource::Protocol protocol,
     if (this->_is_GREASE(cipher)) {
       continue;
     }
-    this->_ciphers[++this->_n_ciphers] = cipher;
+    this->_ciphers[this->_n_ciphers++] = cipher;
   }
   std::sort(this->_ciphers, this->_ciphers + this->_n_ciphers);
 
@@ -108,7 +108,7 @@ TLSClientHelloSummary::TLSClientHelloSummary(ja4::Datasource::Protocol protocol,
     if (this->_is_GREASE(type)) {
       continue;
     }
-    this->_extensions[++this->_n_extensions] = type;
+    this->_extensions[this->_n_extensions++] = type;
   }
   std::sort(this->_extensions, this->_extensions + this->_n_extensions);
 }
