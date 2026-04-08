@@ -41,13 +41,12 @@ TLSClientHelloSummary::TLSClientHelloSummary(ja4::Datasource::Protocol protocol,
 
   // Version
   if (TS_SUCCESS == TSClientHelloExtensionGet(this->_ch, EXT_SUPPORTED_VERSIONS, &buf, &buflen)) {
-    uint16_t max_version{0};
-    size_t   versions_len = buf[0];
-
-    if (buflen < versions_len + 1) {
+    if (buflen == 0 || buflen < buf[0] + 1) {
       Dbg(dbg_ctl, "Malformed supported_versions extension (truncated vector)... using legacy version.");
       this->_version = this->_ch.get_version();
     } else {
+      uint16_t max_version  = 0;
+      size_t   versions_len = buf[0];
       for (size_t i = 1; (i + 1) < (versions_len + 1); i += 2) {
         uint16_t version = (buf[i] << 8) | buf[i + 1];
         if (!this->_is_GREASE(version) && version > max_version) {
