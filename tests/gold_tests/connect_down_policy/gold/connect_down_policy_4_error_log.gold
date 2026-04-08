@@ -1,0 +1,6 @@
+`` Server closed connection while reading response header. (origin backend1.example.com:``/path/)
+`` CONNECT : SUCCESS [0] connecting to 127.0.0.1:`` for host='one.example.com' url='http://backend1.example.com:``/path/' fail_count='1' marking down
+`` DNS Error: no valid server http://backend1.example.com:``/path/
+`` Server closed connection while reading response header. (origin backend2.example.com:``/path/)
+`` CONNECT : SUCCESS [0] connecting to 127.0.0.1:`` for host='two.example.com' url='http://backend2.example.com:``/path/' fail_count='1' marking down
+`` DNS Error: no valid server http://backend2.example.com:``/path/

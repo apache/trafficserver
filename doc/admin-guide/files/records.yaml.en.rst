@@ -1834,12 +1834,24 @@ Origin Server Connect Attempts
    :overridable:
 
    Controls what origin server connection failures contribute to marking a server down.
-   When set to ``2``, any connection failure during the TCP and TLS handshakes will
-   contribute to marking the server down. When set to ``1``, only TCP handshake failures
-   will contribute to marking a server down. When set to ``0``, no connection failures
-   will be used towards marking a server down. When set to ``3``, all failures covered
-   by ``2`` plus transaction inactive timeouts (server goes silent after connection is
-   established) will contribute to marking a server down.
+
+   +-------+-----------------------------------------------------------------------+
+   | Value | Behavior                                                              |
+   +=======+=======================================================================+
+   | ``0`` | No connection failures contribute to marking a server down.           |
+   +-------+-----------------------------------------------------------------------+
+   | ``1`` | TCP handshake failures (excluding TLS handshake failures) contribute  |
+   |       | to marking a server down.                                             |
+   +-------+-----------------------------------------------------------------------+
+   | ``2`` | Any connection failure during the TCP or TLS handshake contributes to |
+   |       | marking a server down.                                                |
+   +-------+-----------------------------------------------------------------------+
+   | ``3`` | All failures covered by ``2``, plus transaction inactive timeouts     |
+   |       | (server goes silent after the connection is established).             |
+   +-------+-----------------------------------------------------------------------+
+   | ``4`` | All failures covered by ``3``, plus cases where the origin closes the |
+   |       | connection before sending any response bytes.                         |
+   +-------+-----------------------------------------------------------------------+
 
 .. ts:cv:: CONFIG proxy.config.http.server_max_connections INT 0
    :reloadable:
