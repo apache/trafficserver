@@ -192,7 +192,7 @@ TEST_CASE("JA4")
 {
   MockDatasource datasource{};
 
-  SECTION("Given the protocol is TCP, "
+  SECTION("Given the protocol is TLSP, "
           "when we create a JA4 fingerprint, "
           "then the first character thereof should be 't'.")
   {
