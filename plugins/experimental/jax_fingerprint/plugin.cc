@@ -432,6 +432,12 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
     return TS_ERROR;
   }
 
+  if (!config->log_symbol.empty()) {
+    TSError("[%s] --log-field is not supported in remap.config. Use it in plugin.config instead.", PLUGIN_NAME);
+    delete config;
+    return TS_ERROR;
+  }
+
   // Create a log file
   if (!config->log_filename.empty()) {
     if (!create_log_file(config->log_filename, config->log_handle)) {
