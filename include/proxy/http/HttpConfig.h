@@ -933,6 +933,12 @@ public:
     std::variant<std::monostate, HostResData, HttpStatusCodeList, HttpForwarded::OptionBitSet, MgmtByte,
                  TargetedCacheControlHeaders>
       parsed{};
+
+    ParsedValue()                               = default;
+    ParsedValue(const ParsedValue &)            = delete;
+    ParsedValue &operator=(const ParsedValue &) = delete;
+    ParsedValue(ParsedValue &&)                 = delete;
+    ParsedValue &operator=(ParsedValue &&)      = delete;
   };
 
   /** Return the parsed value for the configuration.
@@ -958,7 +964,7 @@ private:
   static ParsedConfigCache &instance();
 
   const ParsedValue &lookup_impl(TSOverridableConfigKey key, std::string_view value);
-  ParsedValue        parse(TSOverridableConfigKey key, std::string_view value);
+  void               parse_into(ParsedValue &result, TSOverridableConfigKey key, std::string_view value);
 
   // Custom hash for the cache key.
   struct CacheKeyHash {
