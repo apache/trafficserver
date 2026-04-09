@@ -3,5 +3,7 @@
 
 # QSA (Query String Append) is a reverse-only test
 qsa.input: u4wrh
+# HEADER value context is reverse-only (forward uses explicit SERVER-HEADER)
+header_value_context.input: u4wrh
 # HTTP-CNTL valid bools can not reverse back to the original input
 http_cntl_valid_bools.input: hrw4u

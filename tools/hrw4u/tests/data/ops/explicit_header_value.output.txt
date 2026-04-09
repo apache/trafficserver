@@ -1,0 +1,11 @@
+cond %{SEND_REQUEST_HDR_HOOK} [AND]
+    set-header X-From-Client "%{CLIENT-HEADER:X-Source}"
+    set-header X-From-Server "%{SERVER-HEADER:X-Source}"
+
+cond %{READ_RESPONSE_HDR_HOOK} [AND]
+    set-header X-From-Client "%{CLIENT-HEADER:X-Source}"
+    set-header X-From-Server "%{SERVER-HEADER:X-Source}"
+
+cond %{SEND_RESPONSE_HDR_HOOK} [AND]
+    set-header X-From-Client "%{CLIENT-HEADER:X-Source}"
+    set-header X-From-Server "%{SERVER-HEADER:X-Source}"

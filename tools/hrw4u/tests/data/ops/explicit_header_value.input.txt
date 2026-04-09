@@ -1,0 +1,14 @@
+SEND_REQUEST {
+    outbound.req.X-From-Client = "{inbound.req.X-Source}";
+    outbound.req.X-From-Server = "{outbound.req.X-Source}";
+}
+
+READ_RESPONSE {
+    outbound.resp.X-From-Client = "{inbound.req.X-Source}";
+    outbound.resp.X-From-Server = "{outbound.req.X-Source}";
+}
+
+SEND_RESPONSE {
+    inbound.resp.X-From-Client = "{inbound.req.X-Source}";
+    inbound.resp.X-From-Server = "{outbound.req.X-Source}";
+}
