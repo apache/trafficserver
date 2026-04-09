@@ -35,6 +35,9 @@ void data_alloc(Data *data);
 // Destroy brotli compression context
 void data_destroy(Data *data);
 
+// Configure the context with compression level. Returns true when ready.
+bool transform_init(Data *data);
+
 // Compress one chunk of data
 void transform_one(Data *data, const char *upstream_buffer, int64_t upstream_length);
 
