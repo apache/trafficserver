@@ -337,3 +337,132 @@ JaxFingerprintTest('Global JA4 servernames', 'JA4', 'global', servernames='jax.s
 # Remap plugin sets headers on both routes, but only the SNI-allowed
 # connection has a vconn context, so only that request gets headers.
 JaxFingerprintTest('Hybrid JA4 servernames', 'JA4', 'hybrid', servernames='jax.server.test')
+
+# ======================================================================
+# All Methods Test - Verify shared context map works with multiple methods
+# ======================================================================
+
+
+class AllMethodsTest:
+    '''Test multiple fingerprint methods loaded simultaneously.
+
+    When multiple jax_fingerprint instances are loaded, they share user arg
+    slots via a ContextMap. This test verifies that JA3/JA4 and JA4H can
+    coexist and produce fingerprints while sharing that context machinery
+    across their respective vconn and txn storage.
+    '''
+
+    _dns_counter: int = 0
+    _server_counter: int = 0
+    _ts_counter: int = 0
+    _client_counter: int = 0
+
+    def __init__(self, name: str) -> None:
+        '''Configure test with multiple methods loaded.'''
+        self._name = name
+        self._replay_file = 'jax_fingerprint_all_methods.replay.yaml'
+
+        tr = Test.AddTestRun(name)
+        self._configure_dns(tr)
+        self._configure_server(tr)
+        self._configure_trafficserver()
+        self._configure_client(tr)
+
+    def _configure_dns(self, tr: 'TestRun') -> None:
+        '''Configure a nameserver for the test.'''
+        name = f'dns_all{AllMethodsTest._dns_counter}'
+        self._dns = tr.MakeDNServer(name, default='127.0.0.1')
+        AllMethodsTest._dns_counter += 1
+
+    def _configure_server(self, tr: 'TestRun') -> None:
+        '''Configure the origin (verifier) server.'''
+        name = f'server_all{AllMethodsTest._server_counter}'
+        self._server = tr.AddVerifierServerProcess(name, self._replay_file)
+        AllMethodsTest._server_counter += 1
+
+        # Verify all headers were forwarded to the origin.
+        for header in ['x-ja3', 'x-ja4', 'x-ja4h']:
+            self._server.Streams.All += Testers.ContainsExpression(
+                rf'{header}:', f'Verify {header} header was forwarded.', reflags=re.IGNORECASE)
+
+    def _configure_trafficserver(self) -> None:
+        '''Configure Traffic Server with multiple methods.'''
+        name = f'ts_all{AllMethodsTest._ts_counter}'
+        self._ts = Test.MakeATSProcess(name, enable_cache=False, enable_tls=True)
+        AllMethodsTest._ts_counter += 1
+
+        self._ts.addDefaultSSLFiles()
+        self._ts.Disk.ssl_multicert_yaml.AddLines(
+            """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: server.pem
+    ssl_key_name: server.key
+""".split("\n"))
+
+        server_port = self._server.Variables.https_port
+
+        self._ts.Disk.records_config.update(
+            {
+                'proxy.config.ssl.server.cert.path': self._ts.Variables.SSLDir,
+                'proxy.config.ssl.server.private_key.path': self._ts.Variables.SSLDir,
+                'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
+                'proxy.config.dns.nameservers': f"127.0.0.1:{self._dns.Variables.Port}",
+                'proxy.config.dns.resolv_conf': 'NULL',
+                'proxy.config.proxy_name': 'test.proxy.test',
+                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.tags': 'jax_fingerprint',
+            })
+
+        # Each of the following pairs makes sure that the expression exists
+        # exactly once.
+        self._ts.Disk.traffic_out.Content += Testers.ContainsExpression(
+            r'Reserved shared user_arg slot: type=vconn, index=\d+', 'Verify a shared vconn user arg slot was reserved.')
+        self._ts.Disk.traffic_out.Content += Testers.ExcludesExpression(
+            r'Reserved shared user_arg slot: type=vconn, index=\d+.*Reserved shared user_arg slot: type=vconn, index=\d+',
+            'Verify the shared vconn user arg slot was reserved only once.',
+            reflags=re.MULTILINE | re.DOTALL)
+
+        self._ts.Disk.traffic_out.Content += Testers.ContainsExpression(
+            r'Reserved shared user_arg slot: type=txn, index=\d+', 'Verify a shared txn user arg slot was reserved.')
+        self._ts.Disk.traffic_out.Content += Testers.ExcludesExpression(
+            r'Reserved shared user_arg slot: type=txn, index=\d+.*Reserved shared user_arg slot: type=txn, index=\d+',
+            'Verify the shared txn user arg slot was reserved only once.',
+            reflags=re.MULTILINE | re.DOTALL)
+
+        # Ensure that JA3 and JA4 share the same vconn user arg slot.
+        self._ts.Disk.traffic_out.Content += Testers.ContainsExpression(
+            r'Using shared user_arg: type=vconn, method=JA3, index=(\d+).*Using shared user_arg: type=vconn, method=JA4, index=\1',
+            'Verify JA3 and JA4 share the same vconn user arg slot.',
+            reflags=re.MULTILINE | re.DOTALL)
+        # Note that JA4H is on txn not vconn as JA3 and JA4 above.
+        self._ts.Disk.traffic_out.Content += Testers.ContainsExpression(
+            r'Using shared user_arg: type=txn, method=JA4H, index=\d+', 'Verify JA4H uses the shared txn user arg slot.')
+
+        # Load multiple methods - all share the same user arg slot via ContextMap.
+        self._ts.Disk.plugin_config.AddLines(
+            [
+                'jax_fingerprint.so --method JA3 --header x-ja3 --standalone',
+                'jax_fingerprint.so --method JA4 --header x-ja4 --standalone',
+                'jax_fingerprint.so --method JA4H --header x-ja4h --standalone',
+            ])
+
+        self._ts.Disk.remap_config.AddLine(f'map https://jax.server.test https://jax.backend.test:{server_port}')
+
+    def _configure_client(self, tr: 'TestRun') -> None:
+        '''Configure the verifier client.'''
+        name = f'client_all{AllMethodsTest._client_counter}'
+        p = tr.AddVerifierClientProcess(
+            name, self._replay_file, http_ports=[self._ts.Variables.port], https_ports=[self._ts.Variables.ssl_port])
+        AllMethodsTest._client_counter += 1
+
+        p.StartBefore(self._dns)
+        p.StartBefore(self._server)
+        p.StartBefore(self._ts)
+        tr.StillRunningAfter = self._ts
+
+
+# --- All Methods Test --------------------------------------------------------
+
+# Multiple methods loaded simultaneously, verifying shared context map works.
+AllMethodsTest('Multiple methods loaded simultaneously')

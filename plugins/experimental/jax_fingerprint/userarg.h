@@ -30,3 +30,4 @@
 int         reserve_user_arg(PluginConfig &config);
 void        set_user_arg(void *container, PluginConfig &config, JAxContext *ctx);
 JAxContext *get_user_arg(void *container, PluginConfig &config);
+void        cleanup_user_arg(void *container, PluginConfig &config);
