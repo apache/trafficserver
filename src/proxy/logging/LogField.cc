@@ -521,7 +521,7 @@ LogField::marshal_len(LogAccess *lad)
   }
 
   if (m_container == NO_CONTAINER) {
-    if (m_custom_marshal_func == nullptr) {
+    if (!m_custom_marshal_func) {
       return (lad->*m_marshal_func)(nullptr);
     } else {
       return lad->marshal_custom_field(nullptr, m_custom_marshal_func);
@@ -630,7 +630,7 @@ LogField::marshal(LogAccess *lad, char *buf)
   }
 
   if (m_container == NO_CONTAINER) {
-    if (m_custom_marshal_func == nullptr) {
+    if (!m_custom_marshal_func) {
       return (lad->*m_marshal_func)(buf);
     } else {
       return lad->marshal_custom_field(buf, m_custom_marshal_func);

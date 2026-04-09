@@ -43,6 +43,7 @@
  */
 
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <vector>
 #include <netinet/in.h>
@@ -1161,7 +1162,7 @@ using TSFetchSM = struct tsapi_fetchsm *;
 using TSThreadFunc           = void *(*)(void *data);
 using TSEventFunc            = int (*)(TSCont contp, TSEvent event, void *edata);
 using TSConfigDestroyFunc    = void (*)(void *data);
-using TSLogMarshalCallback   = int (*)(TSHttpTxn, char *);
+using TSLogMarshalCallback   = std::function<int(TSHttpTxn, char *)>;
 using TSLogUnmarshalCallback = std::tuple<int, int> (*)(char **, char *, int);
 
 struct TSFetchEvent {

@@ -475,7 +475,7 @@ LogAccess::marshal_ip(char *dest, sockaddr const *ip)
 }
 
 int
-LogAccess::marshal_custom_field(char *buf, LogField::CustomMarshalFunc plugin_marshal_func)
+LogAccess::marshal_custom_field(char *buf, const LogField::CustomMarshalFunc &plugin_marshal_func)
 {
   int len = plugin_marshal_func(m_http_sm, buf);
   return LogAccess::padded_length(len);
