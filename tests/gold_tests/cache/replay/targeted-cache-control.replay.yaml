@@ -55,6 +55,9 @@ autest:
             args:
               - "proxy.config.http.cache.targeted_cache_control_headers=ACME-Cache-Control"
 
+      - from: "http://default.com/"
+        to: "http://backend.default.com:{SERVER_HTTP_PORT}/"
+
 
 sessions:
 - transactions:
@@ -247,6 +250,36 @@ sessions:
         - [ ACME-Cache-Control, { value: "no-store", as: equal } ]
 
   #############################################################################
+  # Test 7: No targeted headers configured - CDN-Cache-Control should be ignored
+  #############################################################################
+  - client-request:
+      method: GET
+      url: /default/test1
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, default.com]
+        - [uuid, default-test1-request1]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Type, text/plain]
+        - [Content-Length, "14"]
+        - [Cache-Control, "no-store"]
+        - [CDN-Cache-Control, "max-age=30"]
+        - [Connection, close]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Cache-Control, { value: "no-store", as: equal } ]
+        - [ CDN-Cache-Control, { value: "max-age=30", as: equal } ]
+
+  #############################################################################
   # Now verify the correct cache behavior from above.
   #############################################################################
   - client-request:
@@ -258,21 +291,18 @@ sessions:
         - [Host, default.com]
         - [uuid, default-test1-request2]
 
-    proxy-request:
-      expect: absent
-
-    # Should not reach the origin.
     server-response:
       status: 404
       reason: Not Found
 
-    # Expect the cached 200 response due to default CDN-Cache-Control handling.
+    # Cache-Control: no-store should have prevented caching since no targeted
+    # headers are configured for this remap rule.
     proxy-response:
-      status: 200
+      status: 404
       headers:
         fields:
-        - [ Cache-Control, { value: "no-store", as: equal } ]
-        - [ CDN-Cache-Control, { value: "max-age=30", as: equal } ]
+        - [ Cache-Control, { as: absent } ]
+        - [ CDN-Cache-Control, { as: absent } ]
 
   - client-request:
       # Delay to exceed Cache-Control but not CDN-Cache-Control.
