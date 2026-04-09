@@ -14,15 +14,11 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import os
-
 Test.Summary = '''
 Test traffic_ctl config reload with remap.config .include directive
 '''
 
 Test.ContinueOnFail = False
-
-Test.Setup.Copy("wait_reload.sh")
 
 # Define ATS and configure
 ts = Test.MakeATSProcess("ts", enable_cache=False)
@@ -53,16 +49,7 @@ tr.Processes.Default.Command = (
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = ts
 
-tr = Test.AddTestRun("Reload config")
-tr.StillRunningAfter = ts
-tr.Processes.Default.Command = f'traffic_ctl config reload'
-# Need to copy over the environment so traffic_ctl knows where to find the unix domain socket
-tr.Processes.Default.Env = ts.Env
-tr.Processes.Default.ReturnCode = 0
-
-tr = Test.AddTestRun("Wait for config reload")
-tr.Processes.Default.Command = './wait_reload.sh ' + os.path.join(ts.Variables.LOGDIR, 'diags.log')
-tr.Processes.Default.ReturnCode = 0
+tr = Test.AddConfigReload(ts, expect_tasks=["remap.config"], description="Reload remap.config")
 tr.StillRunningAfter = ts
 
 tr = Test.AddTestRun("Get response from generator")

@@ -686,8 +686,14 @@ After registering a new handler:
 5. Use :option:`traffic_ctl config status` ``--format json`` to inspect the raw
    :ref:`get_reload_config_status` response for automation testing.
 
-**Autests** — the project includes autest helpers for config reload testing. Use
-``AddJsonRPCClientRequest`` with ``Request.admin_config_reload()`` to trigger reloads, and
+**Autests** — the project includes autest helpers for config reload testing.
+
+For **end-to-end tests** that trigger a reload via ``traffic_ctl`` and validate the result, use
+the :ref:`autest-config-reload` extension (``Test.AddConfigReload()``).
+This is the recommended approach for most reload tests.
+
+For **JSONRPC-level tests** that need fine-grained control over request and response payloads,
+use ``AddJsonRPCClientRequest`` with ``Request.admin_config_reload()`` to trigger reloads, and
 ``Testers.CustomJSONRPCResponse`` to validate responses programmatically. See the existing tests
 for examples:
 

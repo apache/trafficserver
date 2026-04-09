@@ -80,15 +80,10 @@ p.Setup.Lambda(
             f"map http://bravo.ex http://bravo.ex:{pv_port}",
         ]))
 
-tr = Test.AddTestRun("remap_config reload, fails")
-tr.Processes.Default.Env = tm.Env
-tr.Processes.Default.Command = 'sleep 2; traffic_ctl config reload'
+tr = Test.AddConfigReload(tm, expect="fail", expect_tasks=["remap.config"], delay_start=2, description="remap_config reload, fails")
 
 tr = Test.AddTestRun("after first reload")
-await_config_reload = tr.Processes.Process('config_reload_failed', 'sleep 30')
-await_config_reload.Ready = When.FileContains(tm.Disk.diags_log.Name, "configuration is invalid")
 tr.AddVerifierClientProcess("client_2", replay_file_2, http_ports=[tm.Variables.port])
-tr.Processes.Default.StartBefore(await_config_reload)
 
 tr = Test.AddTestRun("Change remap.config to have more than three lines")
 p = tr.Processes.Default
@@ -104,14 +99,10 @@ p.Setup.Lambda(
             f"map http://india.ex http://india.ex:{pv_port}",
         ]))
 
-tr = Test.AddTestRun("remap_config reload, succeeds")
-tr.Processes.Default.Env = tm.Env
-tr.Processes.Default.Command = 'sleep 2; traffic_ctl config reload'
+tr = Test.AddConfigReload(
+    tm, expect="success", expect_tasks=["remap.config"], delay_start=2, description="remap_config reload, succeeds")
 
 tr = Test.AddTestRun("post update charlie")
-await_config_reload = tr.Processes.Process('config_reload_succeeded', 'sleep 30')
-await_config_reload.Ready = When.FileContains(tm.Disk.diags_log.Name, "remap.config finished loading", 2)
-tr.Processes.Default.StartBefore(await_config_reload)
 tr.AddVerifierClientProcess("client_3", replay_file_3, http_ports=[tm.Variables.port])
 
 tr = Test.AddTestRun("post update golf")

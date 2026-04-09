@@ -37,8 +37,8 @@ SSLClientCoordinator::reconfigure(ConfigContext reconf_ctx)
   // The SSLConfig owns the client cert context storage and the SNIConfig will load
   // into it.
   SSLConfig::reconfigure(reconf_ctx.add_dependent_ctx("SSLConfig"));
-  SNIConfig::reconfigure(reconf_ctx.add_dependent_ctx("SNIConfig"));
-  SSLCertificateConfig::reconfigure(reconf_ctx.add_dependent_ctx("SSLCertificateConfig"));
+  SNIConfig::reconfigure(reconf_ctx.add_dependent_ctx("SNIConfig", ts::filename::SNI));
+  SSLCertificateConfig::reconfigure(reconf_ctx.add_dependent_ctx("SSLCertificateConfig", ts::filename::SSL_MULTICERT));
 #if TS_USE_QUIC == 1
   QUICCertConfig::reconfigure(reconf_ctx.add_dependent_ctx("QUICCertConfig"));
 #endif

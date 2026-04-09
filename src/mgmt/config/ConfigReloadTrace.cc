@@ -78,13 +78,13 @@ ConfigReloadProgress::get_configured_check_interval()
 }
 
 ConfigContext
-ConfigReloadTask::add_child(std::string_view description)
+ConfigReloadTask::add_child(std::string_view description, std::string_view filename)
 {
   std::unique_lock<std::shared_mutex> lock(_mutex);
   // Read token directly - can't call get_token() as it would deadlock (tries to acquire shared_lock on same mutex)
   auto trace = std::make_shared<ConfigReloadTask>(_info.token, description, false, shared_from_this());
   _info.sub_tasks.push_back(trace);
-  return ConfigContext{trace, description};
+  return ConfigContext{trace, description, filename};
 }
 
 ConfigReloadTask &

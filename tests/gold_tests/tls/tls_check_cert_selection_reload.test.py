@@ -99,17 +99,11 @@ tr.Processes.Default.Command = 'touch {0}/signed-bar.pem'.format(ts.Variables.SS
 # Need to copy over the environment so traffic_ctl knows where to find the unix domain socket
 tr.Processes.Default.ReturnCode = 0
 
-tr = Test.AddTestRun("Reload config")
-tr.StillRunningAfter = ts
+tr = Test.AddConfigReload(ts, expect_tasks=["ssl_multicert.yaml"], description="Reload config")
 tr.StillRunningAfter = server
-tr.Processes.Default.Command = 'traffic_ctl config reload'
-# Need to copy over the environment so traffic_ctl knows where to find the unix domain socket
-tr.Processes.Default.Env = ts.Env
-tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun("Try with signer 1 again")
-# Wait for the reload to complete
-tr.Processes.Default.StartBefore(server3, ready=When.FileContains(ts.Disk.diags_log.Name, 'ssl_multicert.yaml finished loading', 2))
+tr.Processes.Default.StartBefore(server3)
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 tr.MakeCurlCommand(
