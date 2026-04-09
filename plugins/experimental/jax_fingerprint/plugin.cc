@@ -372,7 +372,7 @@ TSPluginInit(int argc, char const **argv)
     name             += config->method.name;
     TSLogFieldRegister(
       name.c_str(), config->log_symbol, TS_LOG_TYPE_STRING,
-      [&config](TSHttpTxn txnp, char *buf) -> int {
+      [config](TSHttpTxn txnp, char *buf) -> int {
         void *container;
         if (config->method.type == Method::Type::CONNECTION_BASED) {
           container = TSHttpSsnClientVConnGet(TSHttpTxnSsnGet(txnp));

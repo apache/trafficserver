@@ -43,7 +43,14 @@ class JaxFingerprintTest:
     _client_counter: int = 0
 
     def __init__(
-            self, name: str, method: str, setup: str, mode: str = 'overwrite', http2: bool = False, servernames: str = '') -> None:
+            self,
+            name: str,
+            method: str,
+            setup: str,
+            mode: str = 'overwrite',
+            http2: bool = False,
+            servernames: str = '',
+            log_field: str = '') -> None:
         '''Configure test processes for the jax_fingerprint plugin.
 
         :param name: Descriptive name for this test run.
@@ -60,6 +67,10 @@ class JaxFingerprintTest:
             no context is created, and handle_read_request_hdr is a no-op.
             Only meaningful for CONNECTION_BASED methods (JA3/JA4) in global
             setup.
+        :param log_field: Symbol name for --log-field option.  When set,
+            configures logging.yaml with a custom format using the symbol
+            and verifies the fingerprint appears in the ATS access log.
+            Only supported with global setup.
 
         Method notes:
           - JA3 / JA4 are CONNECTION_BASED (triggered on TLS client hello)
@@ -86,6 +97,7 @@ class JaxFingerprintTest:
         self._mode = mode
         self._http2 = http2
         self._servernames = servernames
+        self._log_field = log_field
         # HTTP/2 always runs over TLS (h2 requires TLS).
         self._needs_tls = method in ('JA3', 'JA4') or http2
         self._replay_file = self._choose_replay_file()
@@ -97,6 +109,12 @@ class JaxFingerprintTest:
         self._configure_client(tr)
         Test.AddAwaitFileContainsTestRun(
             f'Await jax_fingerprint.log for: {self._name}', self._ts.Disk.jax_log.AbsPath, self._method)
+
+        if self._log_field:
+            log_field_path = os.path.join(self._ts.Variables.LOGDIR, 'jax_log_field.log')
+            # Verify the log contains a fingerprint (not just a dash placeholder).
+            Test.AddAwaitFileContainsTestRun(
+                f'Await jax_log_field.log for: {self._name}', log_field_path, f'{self._method}: [a-z0-9]')
 
     # ------------------------------------------------------------------
     # Helpers
@@ -228,6 +246,8 @@ ssl_multicert:
                 global_args += f' --mode {self._mode}'
             if self._servernames:
                 global_args += f' --servernames {self._servernames}'
+            if self._log_field:
+                global_args += f' --log-field {self._log_field}'
             self._ts.Disk.plugin_config.AddLine(f'jax_fingerprint.so {global_args}')
             self._ts.Disk.remap_config.AddLine(f'map {scheme}://jax.server.test {backend}')
             if self._servernames:
@@ -266,6 +286,18 @@ ssl_multicert:
                 # Route with remap plugin: reads shared vconn context, sets headers.
                 self._ts.Disk.remap_config.AddLine(
                     f'map https://jax.server.test https://jax.backend.test:{server_port} {remap_line}')
+
+        if self._log_field:
+            self._ts.Disk.logging_yaml.AddLines(
+                f'''
+logging:
+  formats:
+    - name: jax_custom
+      format: '{self._method}: %<{self._log_field}>'
+  logs:
+    - filename: jax_log_field
+      format: jax_custom
+'''.split("\n"))
 
     def _configure_client(self, tr: 'TestRun') -> None:
         '''Configure the verifier client.'''
@@ -338,10 +370,16 @@ JaxFingerprintTest('Global JA4 servernames', 'JA4', 'global', servernames='jax.s
 # connection has a vconn context, so only that request gets headers.
 JaxFingerprintTest('Hybrid JA4 servernames', 'JA4', 'hybrid', servernames='jax.server.test')
 
+# --- Custom log field (--log-field) -----------------------------------------
+
+# Register a custom log field via --log-field and verify the fingerprint
+# appears in the ATS access log configured in logging.yaml.
+JaxFingerprintTest('Global JA4H log-field', 'JA4H', 'global', log_field='jaxja4h')
+JaxFingerprintTest('Global JA4 log-field', 'JA4', 'global', log_field='jaxja4')
+
 # ======================================================================
 # All Methods Test - Verify shared context map works with multiple methods
 # ======================================================================
-
 
 class AllMethodsTest:
     '''Test multiple fingerprint methods loaded simultaneously.
