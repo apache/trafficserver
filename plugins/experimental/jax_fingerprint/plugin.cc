@@ -49,11 +49,6 @@
 
 DbgCtl dbg_ctl{PLUGIN_NAME};
 
-namespace
-{
-
-} // end anonymous namespace
-
 static bool
 read_config_option(int argc, char const *argv[], PluginConfig &config)
 {
