@@ -231,13 +231,14 @@ class InverseSymbolResolver(SymbolResolverBase):
 
         return repl
 
-    def _handle_set_rm_operation(self, cmd: str, toks: list[str], prefix: str, qualifier: str, context: str) -> str:
+    def _handle_set_rm_operation(
+            self, cmd: str, toks: list[str], prefix: str, qualifier: str, section: SectionType | None = None) -> str:
         if cmd.startswith("rm-"):
             return f'{prefix}{qualifier} = ""'
         if len(toks) < 3:
             raise SymbolResolutionError(" ".join(toks), f"Missing value for {cmd}")
         value = " ".join(toks[2:])
-        value = self._rewrite_inline_percents(value, None)
+        value = self._rewrite_inline_percents(value, section)
         return f"{prefix}{qualifier} = {value}"
 
     def _handle_operator_command(
@@ -260,7 +261,7 @@ class InverseSymbolResolver(SymbolResolverBase):
             prefix = self.get_prefix_for_context(context_type, section)
 
             processed_qualifier = qualifier_processor(qualifier)
-            return self._handle_set_rm_operation(cmd, toks, prefix, processed_qualifier, op_context)
+            return self._handle_set_rm_operation(cmd, toks, prefix, processed_qualifier, section)
 
         if lhs_key.endswith("."):
             if len(toks) < 2:

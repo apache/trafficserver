@@ -1,0 +1,11 @@
+cond %{SEND_REQUEST_HDR_HOOK} [AND]
+    set-header X-Auth %{HEADER:X-Token}
+    set-header X-Info "val=%{HEADER:X-Detail}"
+
+cond %{READ_RESPONSE_HDR_HOOK} [AND]
+    set-header X-Auth %{HEADER:X-Token}
+    set-header X-Info "val=%{HEADER:X-Detail}"
+
+cond %{SEND_RESPONSE_HDR_HOOK} [AND]
+    set-header X-Auth %{HEADER:X-Token}
+    set-header X-Info "val=%{HEADER:X-Detail}"
