@@ -250,7 +250,7 @@ sessions:
         - [ ACME-Cache-Control, { value: "no-store", as: equal } ]
 
   #############################################################################
-  # Test 7: No targeted headers configured - CDN-Cache-Control should be ignored
+  # Test 7: Global targeted headers apply without conf_remap override
   #############################################################################
   - client-request:
       method: GET
@@ -291,18 +291,22 @@ sessions:
         - [Host, default.com]
         - [uuid, default-test1-request2]
 
+    proxy-request:
+      expect: absent
+
+    # Should not reach the origin.
     server-response:
       status: 404
       reason: Not Found
 
-    # Cache-Control: no-store should have prevented caching since no targeted
-    # headers are configured for this remap rule.
+    # Expect the cached 200 response because the global config sets
+    # CDN-Cache-Control as a targeted header, overriding Cache-Control: no-store.
     proxy-response:
-      status: 404
+      status: 200
       headers:
         fields:
-        - [ Cache-Control, { as: absent } ]
-        - [ CDN-Cache-Control, { as: absent } ]
+        - [ Cache-Control, { value: "no-store", as: equal } ]
+        - [ CDN-Cache-Control, { value: "max-age=30", as: equal } ]
 
   - client-request:
       # Delay to exceed Cache-Control but not CDN-Cache-Control.
