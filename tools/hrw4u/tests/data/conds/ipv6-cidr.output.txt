@@ -1,0 +1,11 @@
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{IP:CLIENT} {128.0.0.0/1,10.0.0.0/8,172.16.0.0/16,192.168.1.0/24,10.0.0.0/31,10.0.0.1/32}
+    set-header X-V4 "matched"
+
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{IP:CLIENT} {8000::/1,2001:db8::/8,fe80::/16,2620:149::/31,2620:149::/32,2620:149:a00::/33,2001:db8:abcd::/64,::1/128}
+    set-header X-V6 "matched"
+
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{IP:CLIENT} {10.0.0.0/8,2620:149::/32} [NOT]
+    set-status 403
