@@ -50,17 +50,7 @@ tr.Processes.Default.Command = f"sleep 3 && touch {os.path.join(config_dir, 'par
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = ts
 
-tr = Test.AddTestRun("Reload after parent.config touch")
-p = tr.Processes.Process("reload-1")
-p.Command = 'traffic_ctl config reload; sleep 30'
-p.Env = ts.Env
-p.ReturnCode = Any(0, -2)
-# Wait for the 2nd "finished loading" (1st is startup)
-p.Ready = When.FileContains(ts.Disk.diags_log.Name, "parent.config finished loading", 2)
-p.Timeout = 20
-tr.Processes.Default.StartBefore(p)
-tr.Processes.Default.Command = 'echo "waiting for parent.config reload after file touch"'
-tr.TimeOut = 25
+tr = Test.AddConfigReload(ts, expect_tasks=["parent.config"], description="Reload after parent.config touch")
 tr.StillRunningAfter = ts
 
 # ================================================================

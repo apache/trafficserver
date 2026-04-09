@@ -1,0 +1,228 @@
+'''
+AuTest extension for config reload operations.
+
+Provides Test.AddConfigReload() to replace the legacy pattern of
+fire-and-forget `traffic_ctl config reload` followed by log grepping via
+When.FileContains("finished loading", N).
+
+Test.AddConfigReload(ts, ...)
+    Triggers a reload via `traffic_ctl config reload -m` (monitor mode),
+    which blocks until the reload reaches a terminal state (default timeout
+    30s), then optionally validates the task tree via the
+    get_reload_config_status JSONRPC endpoint.
+
+Note: standalone record-triggered reloads (via traffic_ctl config set, with
+no explicit config reload) do not create tasks in the reload framework and
+cannot be verified with this extension.
+'''
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+import os
+import jsonrpc
+
+_reload_counter = 0
+
+_EXPECT_EXIT_CODES = {
+    "success": 0,
+    "fail": 2,
+    "timeout": 75,
+}
+
+
+def _next_token():
+    global _reload_counter
+    _reload_counter += 1
+    return f"autest-reload-{_reload_counter}"
+
+
+def _shell_quote(s):
+    """Single-quote a string for shell, escaping embedded single quotes."""
+    return "'" + s.replace("'", "'\\''") + "'"
+
+
+def _task_matches(info, name):
+    """Check if a task matches the given name by description, filename, or basename."""
+    for field in ("description", "filename"):
+        val = info.get(field)
+        if not val or val == "<none>":
+            continue
+        if val == name or os.path.basename(val) == name:
+            return True
+    return False
+
+
+def _collect_task_names(info, names=None):
+    """Recursively collect human-friendly task identifiers from the task tree."""
+    if names is None:
+        names = set()
+    if isinstance(info, dict):
+        for field in ("description", "filename"):
+            val = info.get(field)
+            if val and val != "<none>":
+                basename = os.path.basename(val)
+                names.add(basename if basename != val else val)
+        for sub in info.get("sub_tasks", []):
+            _collect_task_names(sub, names)
+    return names
+
+
+def _find_task(info, name):
+    """Find a task by description or filename (supports basename matching)."""
+    if isinstance(info, dict):
+        if _task_matches(info, name):
+            return info
+        for sub in info.get("sub_tasks", []):
+            found = _find_task(sub, name)
+            if found:
+                return found
+    return None
+
+
+def _make_task_validator(expect_tasks, expect_absent_tasks):
+    """Build a CustomJSONRPCResponse callback for task validation."""
+
+    def validator(resp):
+        if resp.is_error():
+            return (False, f"RPC error: {resp.error_as_str()}")
+
+        result = resp.__dict__.get("result", {})
+        tasks_list = result.get("tasks", [])
+        if not tasks_list:
+            if expect_tasks:
+                return (False, "No reload tasks in response")
+            if expect_absent_tasks:
+                return (True, "No tasks present, absence confirmed")
+            return (True, "No tasks expected, none found")
+
+        info = tasks_list[0]
+        all_names = _collect_task_names(info)
+
+        if expect_tasks:
+            items = expect_tasks.items() if isinstance(expect_tasks, dict) else [(t, None) for t in expect_tasks]
+            for task_name, task_status in items:
+                if task_name not in all_names:
+                    return (False, f"Task '{task_name}' not found in reload. Found: {sorted(all_names)}")
+                if task_status is not None:
+                    task = _find_task(info, task_name)
+                    actual = task.get("status", "unknown") if task else "unknown"
+                    if actual != task_status:
+                        return (False, f"Task '{task_name}' status is '{actual}', expected '{task_status}'")
+
+        if expect_absent_tasks:
+            for task_name in expect_absent_tasks:
+                if task_name in all_names:
+                    return (False, f"Task '{task_name}' should NOT be present but was found in: {sorted(all_names)}")
+
+        return (True, "All task assertions passed")
+
+    return validator
+
+
+def AddConfigReload(
+    self,
+    ts,
+    expect="success",
+    token=None,
+    data=None,
+    force=False,
+    timeout="30s",
+    initial_wait=1.0,
+    refresh_int=0.5,
+    expect_tasks=None,
+    expect_absent_tasks=None,
+    delay_start=None,
+    description=None,
+):
+    """Trigger a config reload, block until completion, and validate the result.
+
+    Creates one or two TestRuns:
+      1. Runs `traffic_ctl config reload -m` to trigger and monitor the reload.
+         Asserts the exit code based on the `expect` parameter.
+      2. (Optional) If expect_tasks or expect_absent_tasks is set, queries the
+         get_reload_config_status JSONRPC endpoint and validates the task tree
+         using CustomJSONRPCResponse.
+
+    Args:
+        ts: ATS process object.
+        expect: "success" (exit 0), "fail" (exit 2), "timeout" (exit 75),
+            or "any" (exit 0 or 2).
+        token: Custom reload token. Auto-generated if None.
+        data: Inline YAML string or @file path for --data flag.
+        force: If True, adds --force.
+        timeout: Timeout duration string for --timeout (e.g. "30s", "1m").
+            Set to None to disable.
+        initial_wait: Seconds before first poll (--initial-wait).
+        refresh_int: Seconds between polls (--refresh-int).
+        expect_tasks: List of task names expected in the reload, or a dict
+            mapping task names to expected statuses (e.g. {"sni.yaml": "fail"}).
+        expect_absent_tasks: List of task names that must NOT appear in the reload.
+        delay_start: Seconds to wait before starting the reload TestRun.
+            Useful when the previous step writes a config file and CI may
+            run fast enough that the filesystem timestamp hasn't changed.
+        description: Custom TestRun description.
+
+    Returns:
+        The reload TestRun object (first test run).
+    """
+    if expect not in _EXPECT_EXIT_CODES and expect != "any":
+        raise ValueError(f"expect must be one of {list(_EXPECT_EXIT_CODES) + ['any']}, got '{expect}'")
+
+    if token is None:
+        token = _next_token()
+
+    if description is None:
+        description = f"Reload config [{token}]"
+        if expect != "success":
+            description += f" (expect {expect})"
+
+    tr = self.AddTestRun(description)
+    if delay_start is not None:
+        tr.DelayStart = delay_start
+    tr.Processes.Default.Env = ts.Env
+    tr.StillRunningAfter = ts
+
+    cmd = f"traffic_ctl config reload -m -t {token}"
+    cmd += f" -w {initial_wait} -r {refresh_int}"
+
+    if timeout is not None:
+        cmd += f" -T {timeout}"
+    if force:
+        cmd += " --force"
+    if data is not None:
+        if data.startswith("@"):
+            cmd += f" --data {data}"
+        else:
+            cmd += f" --data {_shell_quote(data)}"
+
+    tr.Processes.Default.Command = cmd
+
+    if expect == "any":
+        tr.Processes.Default.ReturnCode = Any(0, 2)
+    else:
+        tr.Processes.Default.ReturnCode = _EXPECT_EXIT_CODES[expect]
+
+    if expect_tasks or expect_absent_tasks:
+        vtr = self.AddTestRun(f"Verify [{token}] tasks")
+        vtr.AddJsonRPCClientRequest(ts, jsonrpc.Request.get_reload_config_status(token=token))
+        vtr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(
+            _make_task_validator(expect_tasks, expect_absent_tasks))
+        vtr.StillRunningAfter = ts
+
+    return tr
+
+
+ExtendTest(AddConfigReload, name="AddConfigReload")

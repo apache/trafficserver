@@ -20,7 +20,7 @@ Test reloading sni.yaml behaves as expected
 
 sni_domain = 'example.com'
 
-ts = Test.MakeATSProcess("ts", enable_tls=True)
+ts = Test.MakeATSProcess("ts", enable_tls=True, disable_log_checks=True)
 server = Test.MakeOriginServer("server")
 server2 = Test.MakeOriginServer("server3")
 request_header = {"headers": f"GET / HTTP/1.1\r\nHost: {sni_domain}\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
@@ -84,8 +84,6 @@ tr.MakeCurlCommand(
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Verify curl could successfully connect")
 tr.Processes.Default.Streams.stderr = Testers.IncludesExpression(f"CN={sni_domain}", f"Verify curl used the {sni_domain} SNI")
-ts.Disk.diags_log.Content = Testers.IncludesExpression(
-    "SSL negotiation finished successfully", "Verify that the TLS handshake was successful")
 
 # This config reload should fail because it references non-existent TLS key files
 trupd = Test.AddTestRun("Update config file")
@@ -108,20 +106,13 @@ trupd.Processes.Default.Command = 'echo Updated configs'
 trupd.Processes.Default.Env = ts.Env
 trupd.Processes.Default.ReturnCode = 0
 
-tr2reload = Test.AddTestRun("Reload config")
-tr2reload.StillRunningAfter = ts
+tr2reload = Test.AddConfigReload(ts, expect="fail", expect_tasks=["sni.yaml"], description="Reload config")
 tr2reload.StillRunningAfter = server
-tr2reload.Processes.Default.Command = 'traffic_ctl config reload'
-tr2reload.Processes.Default.Env = ts.Env
-tr2reload.Processes.Default.ReturnCode = 0
-ts.Disk.diags_log.Content = Testers.ContainsExpression(
-    'sni.yaml failed to load', 'reload should result in failure to load sni.yaml')
 
 tr3 = Test.AddTestRun(f"Make request again for {sni_domain} that should still work")
-# Wait for the reload to complete
 tr3.Setup.Copy("ssl/signed-bar.pem")
 tr3.Setup.Copy("ssl/signed-bar.key")
-tr3.Processes.Default.StartBefore(server2, ready=When.FileContains(ts.Disk.diags_log.Name, "signed-notexist.pem", 1))
+tr3.Processes.Default.StartBefore(server2)
 tr3.StillRunningAfter = ts
 tr3.StillRunningAfter = server
 tr3.MakeCurlCommand(
