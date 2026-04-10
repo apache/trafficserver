@@ -381,6 +381,7 @@ JaxFingerprintTest('Global JA4 log-field', 'JA4', 'global', log_field='jaxja4')
 # All Methods Test - Verify shared context map works with multiple methods
 # ======================================================================
 
+
 class AllMethodsTest:
     '''Test multiple fingerprint methods loaded simultaneously.
 
