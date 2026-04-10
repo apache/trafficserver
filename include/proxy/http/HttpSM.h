@@ -512,6 +512,7 @@ public:
   int     server_connection_provided_cert = 0;
   int64_t client_request_body_bytes       = 0;
   int64_t server_request_body_bytes       = 0;
+  bool    server_request_body_incomplete  = false;
   int64_t server_response_body_bytes      = 0;
   int64_t client_response_body_bytes      = 0;
   int64_t cache_response_body_bytes       = 0;
