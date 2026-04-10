@@ -55,6 +55,9 @@ autest:
             args:
               - "proxy.config.http.cache.targeted_cache_control_headers=ACME-Cache-Control"
 
+      - from: "http://default.com/"
+        to: "http://backend.default.com:{SERVER_HTTP_PORT}/"
+
 
 sessions:
 - transactions:
@@ -247,6 +250,36 @@ sessions:
         - [ ACME-Cache-Control, { value: "no-store", as: equal } ]
 
   #############################################################################
+  # Test 7: Global targeted headers apply without conf_remap override
+  #############################################################################
+  - client-request:
+      method: GET
+      url: /default/test1
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, default.com]
+        - [uuid, default-test1-request1]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Type, text/plain]
+        - [Content-Length, "14"]
+        - [Cache-Control, "no-store"]
+        - [CDN-Cache-Control, "max-age=30"]
+        - [Connection, close]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Cache-Control, { value: "no-store", as: equal } ]
+        - [ CDN-Cache-Control, { value: "max-age=30", as: equal } ]
+
+  #############################################################################
   # Now verify the correct cache behavior from above.
   #############################################################################
   - client-request:
@@ -266,7 +299,8 @@ sessions:
       status: 404
       reason: Not Found
 
-    # Expect the cached 200 response due to default CDN-Cache-Control handling.
+    # Expect the cached 200 response because the global config sets
+    # CDN-Cache-Control as a targeted header, overriding Cache-Control: no-store.
     proxy-response:
       status: 200
       headers:
