@@ -24,8 +24,8 @@
 
 #include <plugin.h>
 #include <context.h>
-#include "ja3_method.h"
-#include "ja3_utils.h"
+#include "method.h"
+#include "utils.h"
 
 #include <openssl/ssl.h>
 #include <openssl/md5.h>
@@ -33,28 +33,12 @@
 
 #include <algorithm>
 
-namespace ja3_method
-{
-
-void on_client_hello(JAxContext *, TSVConn);
-
-struct Method method = {
-  "JA3",
-  Method::Type::CONNECTION_BASED,
-  on_client_hello,
-  nullptr,
-};
-
-} // namespace ja3_method
-
 namespace
 {
 constexpr int ja3_hash_included_byte_count{16};
 static_assert(ja3_hash_included_byte_count <= MD5_DIGEST_LENGTH);
 
 constexpr int ja3_hash_hex_string_with_null_terminator_length{2 * ja3_hash_included_byte_count + 1};
-
-} // end anonymous namespace
 
 static std::string
 get_fingerprint(TSClientHello ch)
@@ -115,8 +99,13 @@ get_fingerprint(TSClientHello ch)
   return {fingerprint};
 }
 
+} // end anonymous namespace
+
+namespace ja3
+{
+
 void
-ja3_method::on_client_hello(JAxContext *ctx, TSVConn vconn)
+on_client_hello(JAxContext *ctx, TSVConn vconn)
 {
   TSClientHello ch = TSVConnClientHelloGet(vconn);
 
@@ -126,3 +115,12 @@ ja3_method::on_client_hello(JAxContext *ctx, TSVConn vconn)
     ctx->set_fingerprint(get_fingerprint(ch));
   }
 }
+
+struct Method method = {
+  "JA3",
+  Method::Type::CONNECTION_BASED,
+  on_client_hello,
+  nullptr,
+};
+
+} // namespace ja3

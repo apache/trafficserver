@@ -22,91 +22,184 @@
 
  */
 
+#include "ts/ts.h"
+#include <plugin.h>
 #include "ja4.h"
 
-#include <algorithm>
-#include <array>
+#include "tls_client_hello_summary.h"
+
+#include <openssl/sha.h>
 #include <cstdint>
-#include <functional>
-#include <vector>
+#include <algorithm>
 
-namespace
+TLSClientHelloSummary::TLSClientHelloSummary(ja4::Datasource::Protocol protocol, TSClientHello ch) : _ch(ch)
 {
+  const uint8_t *buf;
+  size_t         buflen;
 
-constexpr std::array<std::uint16_t, 16> GREASE_values{0x0a0a, 0x1a1a, 0x2a2a, 0x3a3a, 0x4a4a, 0x5a5a, 0x6a6a, 0x7a7a,
-                                                      0x8a8a, 0x9a9a, 0xaaaa, 0xbaba, 0xcaca, 0xdada, 0xeaea, 0xfafa};
-constexpr std::uint16_t                 extension_SNI{0x0};
-constexpr std::uint16_t                 extension_ALPN{0x10};
+  // Protocol
+  this->_protocol = protocol;
 
-} // end anonymous namespace
+  // Version
+  if (TS_SUCCESS == TSClientHelloExtensionGet(this->_ch, EXT_SUPPORTED_VERSIONS, &buf, &buflen)) {
+    if (buflen == 0 || buflen < static_cast<unsigned int>(buf[0] + 1)) {
+      Dbg(dbg_ctl, "Malformed supported_versions extension (truncated vector)... using legacy version.");
+      this->_version = this->_ch.get_version();
+    } else {
+      uint16_t max_version  = 0;
+      size_t   versions_len = buf[0];
+      for (size_t i = 1; (i + 1) < (versions_len + 1); i += 2) {
+        uint16_t version = (buf[i] << 8) | buf[i + 1];
+        if (!this->_is_GREASE(version) && version > max_version) {
+          max_version = version;
+        }
+      }
+      this->_version = max_version;
+    }
+  } else {
+    Dbg(dbg_ctl, "No supported_versions extension... using legacy version.");
+    this->_version = this->_ch.get_version();
+  }
 
-static bool is_ignored_non_GREASE_extension(std::uint16_t extension);
+  // Ciphers
+  buf    = this->_ch.get_cipher_suites();
+  buflen = this->_ch.get_cipher_suites_len();
 
-std::vector<std::uint16_t> const &
-JA4::TLSClientHelloSummary::get_ciphers() const
+  if (buflen / 2 <= MAX_CIPHERS_FOR_FAST_PATH) {
+    // Fast path
+    this->_ciphers = this->_fast_cipher_storage.data();
+  } else {
+    // Slow path
+    this->_slow_cipher_storage = std::make_unique<uint16_t[]>(buflen / 2);
+    this->_ciphers             = this->_slow_cipher_storage.get();
+  }
+  for (size_t i = 0; i + 1 < buflen; i += 2) {
+    uint16_t cipher = (static_cast<uint16_t>(buf[i]) << 8) + buf[i + 1];
+    if (this->_is_GREASE(cipher)) {
+      continue;
+    }
+    this->_ciphers[this->_n_ciphers++] = cipher;
+  }
+  std::sort(this->_ciphers, this->_ciphers + this->_n_ciphers);
+
+  // Extensions
+  auto count = 0;
+  for (auto &&type : this->_ch.get_extension_types()) {
+    (void)type;
+    ++count;
+  }
+  if (count <= MAX_EXTENSIONS_FOR_FAST_PATH) {
+    // Fast path
+    this->_extensions = this->_fast_extension_storage.data();
+  } else {
+    // Slow path
+    this->_slow_extension_storage = std::make_unique<uint16_t[]>(count);
+    this->_extensions             = this->_slow_extension_storage.get();
+  }
+  for (auto &&type : this->_ch.get_extension_types()) {
+    if (type == EXT_SNI) {
+      this->_has_SNI = true;
+      continue;
+    }
+    if (type == EXT_ALPN) {
+      this->_has_ALPN = true;
+      continue;
+    }
+    if (this->_is_GREASE(type)) {
+      continue;
+    }
+    this->_extensions[this->_n_extensions++] = type;
+  }
+  std::sort(this->_extensions, this->_extensions + this->_n_extensions);
+}
+
+std::string_view
+TLSClientHelloSummary::get_first_alpn()
 {
-  return this->_ciphers;
+  unsigned char const *buf{};
+  std::size_t          buflen{};
+
+  if (TS_SUCCESS == TSClientHelloExtensionGet(this->_ch, EXT_ALPN, &buf, &buflen)) {
+    // The first two bytes are a 16bit encoding of the total length.
+    if (buflen < 4) {
+      return {};
+    }
+
+    unsigned char first_ALPN_length = buf[2];
+    if (first_ALPN_length == 0 || first_ALPN_length > (buflen - 3)) {
+      return {};
+    }
+
+    return {reinterpret_cast<const char *>(&(buf[3])), first_ALPN_length};
+  } else {
+    return {};
+  }
 }
 
 void
-JA4::TLSClientHelloSummary::add_cipher(std::uint16_t cipher)
+TLSClientHelloSummary::get_cipher_suites_hash(unsigned char out[32])
 {
-  if (is_GREASE(cipher)) {
+  if (this->_n_ciphers == 0) {
+    memset(out, 0, 32);
     return;
   }
 
-  this->_ciphers.push_back(cipher);
-}
+  SHA256_CTX sha256ctx;
+  SHA256_Init(&sha256ctx);
 
-std::vector<std::uint16_t> const &
-JA4::TLSClientHelloSummary::get_extensions() const
-{
-  return this->_extensions;
+  for (int i = 0; i < this->_n_ciphers; ++i) {
+    char  buf[5];
+    char *p = buf;
+    if (i != 0) {
+      *p  = ',';
+      p  += 1;
+    }
+    uint16_t &cipher  = this->_ciphers[i];
+    uint8_t   h1      = (cipher & 0xF000) >> 12;
+    uint8_t   l1      = (cipher & 0x0F00) >> 8;
+    uint8_t   h2      = (cipher & 0x00F0) >> 4;
+    uint8_t   l2      = cipher & 0x000F;
+    p[0]              = h1 <= 9 ? ('0' + h1) : ('a' + h1 - 10);
+    p[1]              = l1 <= 9 ? ('0' + l1) : ('a' + l1 - 10);
+    p[2]              = h2 <= 9 ? ('0' + h2) : ('a' + h2 - 10);
+    p[3]              = l2 <= 9 ? ('0' + l2) : ('a' + l2 - 10);
+    p                += 4;
+    SHA256_Update(&sha256ctx, buf, p - buf);
+  }
+
+  SHA256_Final(out, &sha256ctx);
 }
 
 void
-JA4::TLSClientHelloSummary::add_extension(std::uint16_t extension)
+TLSClientHelloSummary::get_extension_hash(unsigned char out[32])
 {
-  if (is_GREASE(extension)) {
+  if (this->_n_extensions == 0) {
+    memset(out, 0, 32);
     return;
   }
 
-  if (extension_SNI == extension) {
-    this->_SNI_type = SNI::to_domain;
+  SHA256_CTX sha256ctx;
+  SHA256_Init(&sha256ctx);
+
+  for (int i = 0; i < this->_n_extensions; ++i) {
+    char  buf[5];
+    char *p = buf;
+    if (i != 0) {
+      *p  = ',';
+      p  += 1;
+    }
+    uint16_t &extension  = this->_extensions[i];
+    uint8_t   h1         = (extension & 0xF000) >> 12;
+    uint8_t   l1         = (extension & 0x0F00) >> 8;
+    uint8_t   h2         = (extension & 0x00F0) >> 4;
+    uint8_t   l2         = extension & 0x000F;
+    p[0]                 = h1 <= 9 ? ('0' + h1) : ('a' + h1 - 10);
+    p[1]                 = l1 <= 9 ? ('0' + l1) : ('a' + l1 - 10);
+    p[2]                 = h2 <= 9 ? ('0' + h2) : ('a' + h2 - 10);
+    p[3]                 = l2 <= 9 ? ('0' + l2) : ('a' + l2 - 10);
+    p                   += 4;
+    SHA256_Update(&sha256ctx, buf, p - buf);
   }
 
-  ++this->_extension_count_including_sni_and_alpn;
-  if (!is_ignored_non_GREASE_extension(extension)) {
-    this->_extensions.push_back(extension);
-  }
-}
-
-JA4::TLSClientHelloSummary::difference_type
-JA4::TLSClientHelloSummary::get_cipher_count() const
-{
-  return this->_ciphers.size();
-}
-
-JA4::TLSClientHelloSummary::difference_type
-JA4::TLSClientHelloSummary::get_extension_count() const
-{
-  return this->_extension_count_including_sni_and_alpn;
-}
-
-bool
-is_ignored_non_GREASE_extension(std::uint16_t extension)
-{
-  return (extension_SNI == extension) || (extension_ALPN == extension);
-}
-
-JA4::SNI
-JA4::TLSClientHelloSummary::get_SNI_type() const
-{
-  return this->_SNI_type;
-}
-
-bool
-JA4::is_GREASE(std::uint16_t value)
-{
-  return std::binary_search(GREASE_values.begin(), GREASE_values.end(), value);
+  SHA256_Final(out, &sha256ctx);
 }

@@ -25,7 +25,11 @@
 #include <openssl/sha.h>
 #include <catch2/catch_test_macros.hpp>
 
+#include <string>
 #include <map>
+
+namespace
+{
 
 class MockDatasource : public Datasource
 {
@@ -73,7 +77,7 @@ public:
     SHA256_CTX sha256ctx;
     SHA256_Init(&sha256ctx);
 
-    for (auto &&ite : this->_fields) {
+    for (auto ite : this->_fields) {
       if (this->_should_include_field({ite.first.c_str(), ite.first.size()})) {
         SHA256_Update(&sha256ctx, ite.first.c_str(), ite.first.size());
       }
@@ -101,7 +105,7 @@ public:
 private:
   std::string                        _method;
   int                                _version;
-  std::map<std::string, std::string> _fields;
+  std::map<std::string, std::string> _fields{};
 };
 
 std::string_view
@@ -120,33 +124,36 @@ SHA256_12(std::string_view in)
   return {out, sizeof(out)};
 }
 
+} // namespace
+
 TEST_CASE("JA4H")
 {
-  MockDatasource datasource;
-  char           fingerprint[FINGERPRINT_LENGTH];
+  char fingerprint[ja4h::FINGERPRINT_LENGTH];
 
   SECTION("HTTP/1.0 GET with Host")
   {
+    MockDatasource datasource;
     datasource.set_method("GET");
     datasource.set_version(1 << 16 | 0);
     datasource.set_fields({
       {"Host", "abc.example"},
     });
 
-    generate_ja4h_fingerprint(fingerprint, datasource);
+    ja4h::generate_fingerprint(fingerprint, datasource);
 
     std::string_view fingerprint_sv{fingerprint, sizeof(fingerprint)};
-    CHECK(fingerprint_sv.substr(PART_A_POSITION, PART_A_LENGTH) == "ge10nn010000");
-    CHECK(fingerprint_sv[DELIMITER_1_POSITION] == DELIMITER);
-    CHECK(fingerprint_sv.substr(PART_B_POSITION, PART_B_LENGTH) == SHA256_12("Host"));
-    CHECK(fingerprint_sv[DELIMITER_2_POSITION] == DELIMITER);
-    CHECK(fingerprint_sv.substr(PART_C_POSITION, PART_C_LENGTH) == "000000000000");
-    CHECK(fingerprint_sv[DELIMITER_3_POSITION] == DELIMITER);
-    CHECK(fingerprint_sv.substr(PART_D_POSITION, PART_D_LENGTH) == "000000000000");
+    CHECK(fingerprint_sv.substr(ja4h::PART_A_POSITION, ja4h::PART_A_LENGTH) == "ge10nn010000");
+    CHECK(fingerprint_sv[ja4h::DELIMITER_1_POSITION] == ja4h::DELIMITER);
+    CHECK(fingerprint_sv.substr(ja4h::PART_B_POSITION, ja4h::PART_B_LENGTH) == SHA256_12("Host"));
+    CHECK(fingerprint_sv[ja4h::DELIMITER_2_POSITION] == ja4h::DELIMITER);
+    CHECK(fingerprint_sv.substr(ja4h::PART_C_POSITION, ja4h::PART_C_LENGTH) == "000000000000");
+    CHECK(fingerprint_sv[ja4h::DELIMITER_3_POSITION] == ja4h::DELIMITER);
+    CHECK(fingerprint_sv.substr(ja4h::PART_D_POSITION, ja4h::PART_D_LENGTH) == "000000000000");
   }
 
   SECTION("HTTP/1.1 POST with Accept-Language and Referer")
   {
+    MockDatasource datasource;
     datasource.set_method("POST");
     datasource.set_version(1 << 16 | 1);
     datasource.set_fields({
@@ -154,15 +161,15 @@ TEST_CASE("JA4H")
       {"Referer",         "https://xyz.example/foo"},
     });
 
-    generate_ja4h_fingerprint(fingerprint, datasource);
+    ja4h::generate_fingerprint(fingerprint, datasource);
 
     std::string_view fingerprint_sv{fingerprint, sizeof(fingerprint)};
-    CHECK(fingerprint_sv.substr(PART_A_POSITION, PART_A_LENGTH) == "po11nr02en00");
-    CHECK(fingerprint_sv[DELIMITER_1_POSITION] == DELIMITER);
-    CHECK(fingerprint_sv.substr(PART_B_POSITION, PART_B_LENGTH) == SHA256_12("Accept-Language"));
-    CHECK(fingerprint_sv[DELIMITER_2_POSITION] == DELIMITER);
-    CHECK(fingerprint_sv.substr(PART_C_POSITION, PART_C_LENGTH) == "000000000000");
-    CHECK(fingerprint_sv[DELIMITER_3_POSITION] == DELIMITER);
-    CHECK(fingerprint_sv.substr(PART_D_POSITION, PART_D_LENGTH) == "000000000000");
+    CHECK(fingerprint_sv.substr(ja4h::PART_A_POSITION, ja4h::PART_A_LENGTH) == "po11nr02en00");
+    CHECK(fingerprint_sv[ja4h::DELIMITER_1_POSITION] == ja4h::DELIMITER);
+    CHECK(fingerprint_sv.substr(ja4h::PART_B_POSITION, ja4h::PART_B_LENGTH) == SHA256_12("Accept-Language"));
+    CHECK(fingerprint_sv[ja4h::DELIMITER_2_POSITION] == ja4h::DELIMITER);
+    CHECK(fingerprint_sv.substr(ja4h::PART_C_POSITION, ja4h::PART_C_LENGTH) == "000000000000");
+    CHECK(fingerprint_sv[ja4h::DELIMITER_3_POSITION] == ja4h::DELIMITER);
+    CHECK(fingerprint_sv.substr(ja4h::PART_D_POSITION, ja4h::PART_D_LENGTH) == "000000000000");
   }
 }

@@ -1,4 +1,5 @@
 /** @file
+ *
 
   @section license License
 
@@ -20,13 +21,17 @@
 
  */
 
-#pragma once
+#include "utils.h"
 
-#include <method.h>
+constexpr int TRUNCATED_HASH_STRING_LENGTH = 6;
 
-namespace ja4h_method
+void
+hash_stringify(char *out, const unsigned char *hash)
 {
-
-extern struct Method method;
-
+  for (int i = 0; i < TRUNCATED_HASH_STRING_LENGTH; ++i) {
+    unsigned int h = hash[i] >> 4;
+    unsigned int l = hash[i] & 0x0F;
+    out[i * 2]     = h <= 9 ? ('0' + h) : ('a' + h - 10);
+    out[i * 2 + 1] = l <= 9 ? ('0' + l) : ('a' + l - 10);
+  }
 }

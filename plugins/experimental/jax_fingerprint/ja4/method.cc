@@ -17,30 +17,42 @@
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
-
  */
 
-#pragma once
+#include "ts/ts.h"
 
+#include <plugin.h>
+#include <context.h>
+#include "method.h"
+#include "ja4.h"
 #include "datasource.h"
+#include "tls_client_hello_summary.h"
 
-namespace ja4h
+namespace ja4
 {
 
-constexpr int    FINGERPRINT_LENGTH   = 51;
-constexpr size_t PART_A_POSITION      = 0;
-constexpr size_t PART_B_POSITION      = 13;
-constexpr size_t PART_C_POSITION      = 26;
-constexpr size_t PART_D_POSITION      = 39;
-constexpr size_t PART_A_LENGTH        = 12;
-constexpr size_t PART_B_LENGTH        = 12;
-constexpr size_t PART_C_LENGTH        = 12;
-constexpr size_t PART_D_LENGTH        = 12;
-constexpr char   DELIMITER            = '-';
-constexpr size_t DELIMITER_1_POSITION = 12;
-constexpr size_t DELIMITER_2_POSITION = 25;
-constexpr size_t DELIMITER_3_POSITION = 38;
+void
+on_client_hello(JAxContext *ctx, TSVConn vconn)
+{
+  char          fingerprint[ja4::FINGERPRINT_LENGTH];
+  TSClientHello ch = TSVConnClientHelloGet(vconn);
 
-void generate_fingerprint(char *out, Datasource &datasource);
+  if (!ch) {
+    Dbg(dbg_ctl, "Could not get TSClientHello object.");
+  } else {
+    TLSClientHelloSummary datasource{ja4::Datasource::Protocol::TLS, ch};
 
-} // end namespace ja4h
+    generate_fingerprint(fingerprint, datasource);
+
+    ctx->set_fingerprint({fingerprint, ja4::FINGERPRINT_LENGTH});
+  }
+}
+
+struct Method method = {
+  "JA4",
+  Method::Type::CONNECTION_BASED,
+  on_client_hello,
+  nullptr,
+};
+
+} // namespace ja4

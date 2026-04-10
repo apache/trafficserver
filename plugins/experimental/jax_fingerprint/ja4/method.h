@@ -22,25 +22,11 @@
 
 #pragma once
 
-#include "datasource.h"
+#include <method.h>
 
-namespace ja4h
+namespace ja4
 {
 
-constexpr int    FINGERPRINT_LENGTH   = 51;
-constexpr size_t PART_A_POSITION      = 0;
-constexpr size_t PART_B_POSITION      = 13;
-constexpr size_t PART_C_POSITION      = 26;
-constexpr size_t PART_D_POSITION      = 39;
-constexpr size_t PART_A_LENGTH        = 12;
-constexpr size_t PART_B_LENGTH        = 12;
-constexpr size_t PART_C_LENGTH        = 12;
-constexpr size_t PART_D_LENGTH        = 12;
-constexpr char   DELIMITER            = '-';
-constexpr size_t DELIMITER_1_POSITION = 12;
-constexpr size_t DELIMITER_2_POSITION = 25;
-constexpr size_t DELIMITER_3_POSITION = 38;
+extern struct Method method;
 
-void generate_fingerprint(char *out, Datasource &datasource);
-
-} // end namespace ja4h
+}

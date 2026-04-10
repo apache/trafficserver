@@ -22,11 +22,4 @@
 
 #pragma once
 
-#include <method.h>
-
-namespace ja3_method
-{
-
-extern struct Method method;
-
-}
+void hash_stringify(char *out, const unsigned char *hash);
