@@ -786,15 +786,14 @@ ParsedConfigCache::lookup_impl(TSOverridableConfigKey key, std::string_view valu
   }
 
   // Parse and insert.
-  auto [inserted_it, success] = _cache.emplace(cache_key, parse(key, value));
+  auto [inserted_it, success] = _cache.try_emplace(cache_key);
+  parse_into(inserted_it->second, key, value);
   return inserted_it->second;
 }
 
-ParsedConfigCache::ParsedValue
-ParsedConfigCache::parse(TSOverridableConfigKey key, std::string_view value)
+void
+ParsedConfigCache::parse_into(ParsedValue &result, TSOverridableConfigKey key, std::string_view value)
 {
-  ParsedValue result{};
-
   // Store the string value - the parsed structures may reference this.
   result.conf_value_storage = std::string(value);
 
@@ -843,8 +842,6 @@ ParsedConfigCache::parse(TSOverridableConfigKey key, std::string_view value)
     // No special parsing needed for this config.
     break;
   }
-
-  return result;
 }
 
 /** Template for creating conversions and initialization for @c std::chrono based configuration variables.
