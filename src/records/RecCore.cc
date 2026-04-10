@@ -28,6 +28,7 @@
 #include "records/RecDefs.h"
 #include "swoc/swoc_file.h"
 
+#include "ts/apidefs.h"
 #include "tscore/ink_platform.h"
 #include "tscore/ink_memory.h"
 #include "tscore/ink_string.h"
@@ -940,6 +941,12 @@ RecDumpRecords(RecT rec_type, RecDumpEntryCb callback, void *edata)
     callback(RECT_PLUGIN, edata, true, name.data(),
              type == Metrics::MetricType::COUNTER ? TS_RECORDDATATYPE_COUNTER : TS_RECORDDATATYPE_INT, &datum);
   }
+
+  ts::Metrics::StaticString::instance().for_each([&](const std::string &name, const std::string &value) {
+    datum.rec_string = const_cast<char *>(value.c_str());
+
+    callback(RECT_PLUGIN, edata, true, name.data(), TS_RECORDDATATYPE_STRING, &datum);
+  });
 }
 
 void
