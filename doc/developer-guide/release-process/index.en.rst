@@ -67,8 +67,8 @@ Build
 
 #. Generate or update the CHANGELOG for the next release.  ::
 
-      ./tools/git/changelog.pl -o apache -r trafficserver -m X.Y.Z >
-      CHANGELOG-X.Y.Z
+      uv run --project tools/changelog python tools/changelog/changelog.py \
+        -o apache -r trafficserver -m X.Y.Z --use-gh > CHANGELOG-X.Y.Z
 
 #. Commit this file to the repository and push it to the release branch.
 
