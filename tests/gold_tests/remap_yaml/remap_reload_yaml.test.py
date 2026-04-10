@@ -39,8 +39,7 @@ replay_file_2 = "reload_2.replay.yaml"
 replay_file_3 = "reload_3.replay.yaml"
 replay_file_4 = "reload_4.replay.yaml"
 
-tm = Test.MakeATSProcess("ts")
-tm.Disk.diags_log.Content = Testers.ContainsExpression("remap.yaml failed to load", "Remap should fail to load")
+tm = Test.MakeATSProcess("ts", disable_log_checks=True)
 remap_cfg_path = os.path.join(tm.Variables.CONFIGDIR, 'remap.yaml')
 
 pv = Test.MakeVerifierServerProcess("pv", "reload_server.replay.yaml")
@@ -106,15 +105,10 @@ remap:
       url: http://bravo.ex:{pv_port}
     '''.split("\n")))
 
-tr = Test.AddTestRun("remap_yaml reload, fails")
-tr.Processes.Default.Env = tm.Env
-tr.Processes.Default.Command = 'sleep 2; traffic_ctl config reload'
+tr = Test.AddConfigReload(tm, expect="fail", expect_tasks=["remap.yaml"], delay_start=2, description="remap_yaml reload, fails")
 
 tr = Test.AddTestRun("after first reload")
-await_config_reload = tr.Processes.Process('config_reload_failed', 'sleep 30')
-await_config_reload.Ready = When.FileContains(tm.Disk.diags_log.Name, "configuration is invalid")
 tr.AddVerifierClientProcess("client_2", replay_file_2, http_ports=[tm.Variables.port])
-tr.Processes.Default.StartBefore(await_config_reload)
 
 tr = Test.AddTestRun("Change remap.yaml to have more than three remap rules")
 p = tr.Processes.Default
@@ -151,14 +145,10 @@ remap:
       url: http://india.ex:{pv_port}
     '''.split("\n")))
 
-tr = Test.AddTestRun("remap_yaml reload, succeeds")
-tr.Processes.Default.Env = tm.Env
-tr.Processes.Default.Command = 'sleep 2; traffic_ctl config reload'
+tr = Test.AddConfigReload(
+    tm, expect="success", expect_tasks=["remap.yaml"], delay_start=2, description="remap_yaml reload, succeeds")
 
 tr = Test.AddTestRun("post update charlie")
-await_config_reload = tr.Processes.Process('config_reload_succeeded', 'sleep 30')
-await_config_reload.Ready = When.FileContains(tm.Disk.diags_log.Name, "remap.yaml finished loading", 2)
-tr.Processes.Default.StartBefore(await_config_reload)
 tr.AddVerifierClientProcess("client_3", replay_file_3, http_ports=[tm.Variables.port])
 
 tr = Test.AddTestRun("post update golf")

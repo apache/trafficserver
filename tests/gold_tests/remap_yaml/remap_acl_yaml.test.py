@@ -161,27 +161,8 @@ class Test_remap_acl:
                 lambda: update_config_file(
                     remap_yaml_path, '\n'.join(remap_yaml_lines), ip_allow_path, '\n'.join(self._ip_allow_lines)))
 
-            #
-            # Kick off the ATS config reload.
-            #
-            tr = Test.AddTestRun("Reload the ATS configuration")
-            p = tr.Processes.Default
-            p.Command = 'traffic_ctl config reload'
-            p.Env = ts.Env
-            tr.StillRunningAfter = ts
-
-            #
-            # Await the config reload to finish.
-            #
-            tr = Test.AddTestRun("Await config reload")
-            p = tr.Processes.Default
-            p.Command = 'echo awaiting config reload'
-            p.Env = ts.Env
             Test_remap_acl._ts_reload_counter += 1
-            count = Test_remap_acl._ts_reload_counter
-            await_config_reload = tr.Processes.Process(f'config_reload_succeeded_{count}', 'sleep 30')
-            await_config_reload.Ready = When.FileContains(ts.Disk.diags_log.Name, "remap.yaml finished loading", count)
-            p.StartBefore(await_config_reload)
+            Test.AddConfigReload(ts, expect_tasks=["remap.yaml"], description="Reload the ATS configuration")
 
         else:
             record_config = {

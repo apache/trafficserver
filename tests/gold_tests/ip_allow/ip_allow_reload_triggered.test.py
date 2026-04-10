@@ -112,16 +112,7 @@ tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 
 reload_counter += 1
-tr = Test.AddTestRun("Reload after ip_allow.yaml touch")
-p = tr.Processes.Process(f"reload-{reload_counter}")
-p.Command = 'traffic_ctl config reload; sleep 30'
-p.Env = ts.Env
-p.ReturnCode = Any(0, -2)
-p.Ready = When.FileContains(ts.Disk.diags_log.Name, "ip_allow.yaml finished loading", 1 + reload_counter)
-p.Timeout = 20
-tr.Processes.Default.StartBefore(p)
-tr.Processes.Default.Command = 'echo "waiting for ip_allow reload after ip_allow.yaml touch"'
-tr.TimeOut = 25
+tr = Test.AddConfigReload(ts, expect_tasks=["ip_allow.yaml"], description="Reload after ip_allow.yaml touch")
 tr.StillRunningAfter = ts
 
 # ================================================================
@@ -136,16 +127,7 @@ tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = ts
 
 reload_counter += 1
-tr = Test.AddTestRun("Reload after ip_categories touch")
-p = tr.Processes.Process(f"reload-{reload_counter}")
-p.Command = 'traffic_ctl config reload; sleep 30'
-p.Env = ts.Env
-p.ReturnCode = Any(0, -2)
-p.Ready = When.FileContains(ts.Disk.diags_log.Name, "ip_allow.yaml finished loading", 1 + reload_counter)
-p.Timeout = 20
-tr.Processes.Default.StartBefore(p)
-tr.Processes.Default.Command = 'echo "waiting for ip_allow reload after ip_categories touch"'
-tr.TimeOut = 25
+tr = Test.AddConfigReload(ts, expect_tasks=["ip_allow.yaml"], description="Reload after ip_categories touch")
 tr.StillRunningAfter = ts
 
 # ================================================================
@@ -156,23 +138,12 @@ tr.StillRunningAfter = ts
 #         instead of ip_categories.yaml when the record was "").
 # ================================================================
 
-tr = Test.AddTestRun("Touch hosting.config and reload (should NOT trigger ip_allow)")
-tr.Processes.Default.Command = (
-    f"touch {os.path.join(config_dir, 'hosting.config')} && "
-    f"sleep 1 && "
-    f"traffic_ctl config reload && "
-    f"sleep 5")
-tr.Processes.Default.Env = ts.Env
-tr.Processes.Default.ReturnCode = Any(0, -2)
-tr.Processes.Default.Timeout = 15
-tr.StillRunningAfter = ts
-
-tr = Test.AddTestRun("Verify ip_allow loaded exactly 3 times (no false trigger)")
-tr.DelayStart = 3
-tr.Processes.Default.Command = (f"grep -c 'ip_allow.yaml finished loading' {ts.Disk.diags_log.Name} "
-                                f"| grep -qx 3")
+tr = Test.AddTestRun("Touch hosting.config before reload")
+tr.Processes.Default.Command = f"touch {os.path.join(config_dir, 'hosting.config')}"
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = ts
+
+tr = Test.AddConfigReload(ts, expect_absent_tasks=["ip_allow.yaml"], description="Reload (should NOT trigger ip_allow)")
 
 # ================================================================
 # Test 4: Functional — change ip_categories content, verify behavior
@@ -198,16 +169,7 @@ tr.StillRunningAfter = ts
 
 # 4c: Reload and wait for ip_allow to pick up the change
 reload_counter += 1
-tr = Test.AddTestRun("Reload after ip_categories content change")
-p = tr.Processes.Process(f"reload-{reload_counter}")
-p.Command = 'traffic_ctl config reload; sleep 30'
-p.Env = ts.Env
-p.ReturnCode = Any(0, -2)
-p.Ready = When.FileContains(ts.Disk.diags_log.Name, "ip_allow.yaml finished loading", 1 + reload_counter)
-p.Timeout = 20
-tr.Processes.Default.StartBefore(p)
-tr.Processes.Default.Command = 'echo "waiting for reload after ip_categories content change"'
-tr.TimeOut = 25
+tr = Test.AddConfigReload(ts, expect_tasks=["ip_allow.yaml"], description="Reload after ip_categories content change")
 tr.StillRunningAfter = ts
 
 # 4d: GET should now be denied (falls to catch-all: only HEAD allowed)

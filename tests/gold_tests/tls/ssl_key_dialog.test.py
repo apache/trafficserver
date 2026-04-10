@@ -84,22 +84,8 @@ tr2.Processes.Default.Command = 'echo Updated configs'
 tr2.Processes.Default.Env = ts.Env
 tr2.Processes.Default.ReturnCode = 0
 
-tr2reload = Test.AddTestRun("Reload config")
-tr2reload.StillRunningAfter = ts
+tr2reload = Test.AddConfigReload(ts, expect_tasks=["ssl_multicert.yaml"], description="Reload config")
 tr2reload.StillRunningAfter = server
-tr2reload.Processes.Default.Command = 'traffic_ctl config reload'
-# Need to copy over the environment so traffic_ctl knows where to find the unix domain socket
-tr2reload.Processes.Default.Env = ts.Env
-tr2reload.Processes.Default.ReturnCode = 0
-
-tr2reload = Test.AddTestRun("Await config reload")
-p = tr2reload.Processes.Default
-p.Command = 'echo awaiting config reload'
-p.Env = ts.Env
-p.ReturnCode = 0
-await_config_reload = tr.Processes.Process(f'config_reload_succeeded', 'sleep 30')
-await_config_reload.Ready = When.FileContains(ts.Disk.diags_log.Name, "ssl_multicert.yaml finished loading", 2)
-p.StartBefore(await_config_reload)
 
 tr3 = Test.AddTestRun("use a key with passphrase")
 tr3.Setup.Copy("ssl/signer.pem")

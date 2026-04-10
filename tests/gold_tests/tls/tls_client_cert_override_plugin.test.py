@@ -180,18 +180,12 @@ trupdate.Processes.Default.Command = 'traffic_ctl config set proxy.config.ssl.cl
 trupdate.Processes.Default.Env = ts.Env
 trupdate.Processes.Default.ReturnCode = 0
 
-tr2reload = Test.AddTestRun("Reload config")
-tr2reload.StillRunningAfter = ts
+tr2reload = Test.AddConfigReload(ts, expect_tasks=["sni.yaml"], description="Reload config")
 tr2reload.StillRunningAfter = server
 tr2reload.StillRunningAfter = server2
-tr2reload.Processes.Default.Command = 'traffic_ctl config reload'
-# Need to copy over the environment so traffic_ctl knows where to find the unix domain socket
-tr2reload.Processes.Default.Env = ts.Env
-tr2reload.Processes.Default.ReturnCode = 0
 
 tr3bar = Test.AddTestRun("Make request with other foo.  badcase1 should now work")
-# Wait for the reload to complete
-tr3bar.Processes.Default.StartBefore(server3, ready=When.FileContains(ts.Disk.diags_log.Name, 'sni.yaml finished loading', 3))
+tr3bar.Processes.Default.StartBefore(server3)
 tr3bar.StillRunningAfter = ts
 tr3bar.StillRunningAfter = server
 tr3bar.StillRunningAfter = server2

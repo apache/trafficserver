@@ -124,10 +124,10 @@ ConfigContext::get_description() const
 }
 
 ConfigContext
-ConfigContext::add_dependent_ctx(std::string_view description)
+ConfigContext::add_dependent_ctx(std::string_view description, std::string_view filename)
 {
   if (auto p = _task.lock()) {
-    auto child = p->add_child(description);
+    auto child = p->add_child(description, filename);
     // child task will get the full content of the parent task
     // TODO: eventually we can have a "key" passed so child module
     // only gets their node of interest.

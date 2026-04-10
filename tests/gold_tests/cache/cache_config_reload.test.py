@@ -49,12 +49,8 @@ tr.Processes.Default.Command = f"touch {os.path.join(config_dir, 'cache.config')
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = ts
 
-tr = Test.AddTestRun("Reload after cache.config touch")
-tr.Processes.Default.Env = ts.Env
-tr.Processes.Default.Command = 'traffic_ctl config reload --show-details --token reload_cache_test'
-tr.Processes.Default.ReturnCode = Any(0, 2)
-tr.StillRunningAfter = ts
-tr.Processes.Default.Streams.stdout = Testers.ContainsExpression("cache.config", "Reload output should reference cache.config")
+tr = Test.AddConfigReload(
+    ts, expect="any", expect_tasks=["cache.config"], token="reload_cache_test", description="Reload after cache.config touch")
 
 # --- Test 2: Touch hosting.config and reload ---
 
@@ -64,9 +60,5 @@ tr.Processes.Default.Command = f"touch {os.path.join(config_dir, 'hosting.config
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = ts
 
-tr = Test.AddTestRun("Reload after hosting.config touch")
-tr.Processes.Default.Env = ts.Env
-tr.Processes.Default.Command = 'traffic_ctl config reload --show-details --token reload_hosting_test'
-tr.Processes.Default.ReturnCode = Any(0, 2)
-tr.StillRunningAfter = ts
-tr.Processes.Default.Streams.stdout = Testers.ContainsExpression("hosting.config", "Reload output should reference hosting.config")
+tr = Test.AddConfigReload(
+    ts, expect="any", expect_tasks=["hosting.config"], token="reload_hosting_test", description="Reload after hosting.config touch")

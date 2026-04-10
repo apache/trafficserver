@@ -222,21 +222,19 @@ ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh", "expected cache hit response")
 tr.StillRunningAfter = ts
 
-# 12 Stage - Reload of same time updated rules file
-tr = Test.AddTestRun("Reload same config")
-ps = tr.Processes.Default
+# 12 Stage - Touch the rules file to trigger reload detection
+tr = Test.AddTestRun("Touch regex_revalidate config")
+tr.Processes.Default.Command = f'touch {regex_revalidate_conf_path}'
+tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
-ps.Command = f'touch {regex_revalidate_conf_path} ; traffic_ctl config reload'
-ps.Env = ts.Env
-ps.ReturnCode = 0
-ps.TimeOut = 5
-tr.TimeOut = 5
+
+tr = Test.AddConfigReload(ts, description="Reload same config")
+tr.StillRunningAfter = server
 
 # 13 Request, Cache hit expected
 tr = Test.AddTestRun("Cache hit path1")
 ps = tr.Processes.Default
-tr.DelayStart = 5
 tr.MakeCurlCommand(curl_and_args + ' http://ats/path1', ts=ts)
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh", "expected cache hit response")

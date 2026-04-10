@@ -211,7 +211,7 @@ public:
 
   /// Create a child sub-task and return a ConfigContext wrapping it.
   /// The child inherits the parent's token and if passed, the supplied YAML content.
-  [[nodiscard]] ConfigContext add_child(std::string_view description = "");
+  [[nodiscard]] ConfigContext add_child(std::string_view description = "", std::string_view filename = "");
 
   self_type &log(std::string const &text);
   void       set_completed();
