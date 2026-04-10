@@ -835,12 +835,7 @@ UrlRewrite::BuildTable(const char *path)
   temporary_redirects.hash_lookup.reset(new URLTable);
   forward_mappings_with_recv_port.hash_lookup.reset(new URLTable);
 
-  bool parse_success;
-  if (is_remap_yaml()) {
-    parse_success = remap_parse_yaml(path, this);
-  } else {
-    parse_success = remap_parse_config(path, this);
-  }
+  bool parse_success = remap_parse_yaml(path, this);
 
   if (!parse_success) {
     return TS_ERROR;
@@ -1104,18 +1099,15 @@ UrlRewrite::_destroyList(RegexMappingList &mappings)
  * Convert a YAML rule type string to a mapping_type enum.
  */
 mapping_type
-get_mapping_type(const char *type_str, BUILD_TABLE_INFO *bti)
+get_mapping_type(const char *type_str)
 {
   // Check to see whether is a reverse or forward mapping
   if (!strcasecmp("reverse_map", type_str)) {
     Dbg(dbg_ctl_url_rewrite, "[BuildTable] - mapping_type::REVERSE_MAP");
     return mapping_type::REVERSE_MAP;
   } else if (!strcasecmp("map", type_str)) {
-    Dbg(dbg_ctl_url_rewrite, "[BuildTable] - %s",
-        ((bti->remap_optflg & REMAP_OPTFLG_MAP_WITH_REFERER) == 0) ? "mapping_type::FORWARD_MAP" :
-                                                                     "mapping_type::FORWARD_MAP_REFERER");
-    return ((bti->remap_optflg & REMAP_OPTFLG_MAP_WITH_REFERER) == 0) ? mapping_type::FORWARD_MAP :
-                                                                        mapping_type::FORWARD_MAP_REFERER;
+    Dbg(dbg_ctl_url_rewrite, "[BuildTable] - mapping_type::FORWARD_MAP");
+    return mapping_type::FORWARD_MAP;
   } else if (!strcasecmp("redirect", type_str)) {
     Dbg(dbg_ctl_url_rewrite, "[BuildTable] - mapping_type::PERMANENT_REDIRECT");
     return mapping_type::PERMANENT_REDIRECT;

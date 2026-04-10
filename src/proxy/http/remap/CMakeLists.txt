@@ -39,7 +39,7 @@ add_library(ts::http_remap ALIAS http_remap)
 target_link_libraries(
   http_remap
   PUBLIC ts::proxy ts::tscore
-  PRIVATE ts::inkevent ts::inkutils yaml-cpp::yaml-cpp
+  PRIVATE ts::config ts::inkevent ts::inkutils yaml-cpp::yaml-cpp
 )
 
 if(BUILD_TESTING)

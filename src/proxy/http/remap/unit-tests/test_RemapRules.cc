@@ -29,6 +29,7 @@
 
 #include "proxy/hdrs/HdrHeap.h"
 #include "proxy/http/remap/RemapConfig.h"
+#include "proxy/http/remap/RemapYamlConfig.h"
 #include "proxy/http/remap/UrlMapping.h"
 #include "proxy/http/remap/UrlRewrite.h"
 #include "records/RecordsConfig.h"
@@ -101,7 +102,7 @@ SCENARIO("Parsing ACL named filters", "[proxy][remap]")
       auto        cpath  = write_test_remap(config, "test2");
       THEN("The remap parse fails with an error")
       {
-        REQUIRE(remap_parse_config_bti(cpath.c_str(), &bti) == false);
+        REQUIRE(remap_parse_yaml_bti(cpath.c_str(), &bti) == false);
       }
     }
 
@@ -114,7 +115,7 @@ SCENARIO("Parsing ACL named filters", "[proxy][remap]")
       auto        cpath  = write_test_remap(config, "test2");
       THEN("The rule uses the last action specified")
       {
-        REQUIRE(remap_parse_config_bti(cpath.c_str(), &bti) == true);
+        REQUIRE(remap_parse_yaml_bti(cpath.c_str(), &bti) == true);
         REQUIRE((bti.rules_list != nullptr && bti.rules_list->next == nullptr));
         REQUIRE((bti.rules_list != nullptr && bti.rules_list->allow_flag == true));
       }

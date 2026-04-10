@@ -219,6 +219,10 @@ main([[maybe_unused]] int argc, const char **argv)
     .add_example_usage("traffic_ctl config convert storage <storage.config> <volume.config> <output_file>")
     .add_example_usage("traffic_ctl config convert storage storage.config volume.config storage.yaml")
     .add_example_usage("traffic_ctl config convert storage storage.config volume.config -  # output to stdout");
+  convert_command.add_command("remap", "Convert remap.config to remap.yaml", "", 2, Command_Execute)
+    .add_example_usage("traffic_ctl config convert remap <input_file> <output_file>")
+    .add_example_usage("traffic_ctl config convert remap remap.config remap.yaml")
+    .add_example_usage("traffic_ctl config convert remap remap.config -  # output to stdout");
 
   // host commands
   host_command.add_command("status", "Get one or more host statuses", "", MORE_THAN_ZERO_ARG_N, Command_Execute)
