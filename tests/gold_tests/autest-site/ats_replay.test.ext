@@ -22,6 +22,8 @@ import os
 import re
 import yaml
 
+ATS_REPLAY_TEST_EXTENSIONS = ['.test.yaml', '.test.yml']
+
 
 def configure_ats(obj: 'TestRun', server: 'Process', ats_config: dict, dns: Optional['Process'] = None):
     '''Configure ATS per the configuration in the replay file.
@@ -201,24 +203,43 @@ def _requires_persistent_ats(ats_config: dict) -> bool:
     return bool(ats_config.get('metric_checks'))
 
 
-def ATSReplayTest(obj, replay_file: str):
-    '''Create a TestRun that configures ATS and runs HTTP traffic using the replay file.
+def _is_list_action(obj) -> bool:
+    return obj.Variables.Autest.Action == 'list'
 
-    :param obj: The Test object to add the test run to.
-    :param replay_file: Replay file specifying the test configuration and test traffic.
-    :returns: The TestRun object.
-    '''
 
-    replay_path = replay_file if os.path.isabs(replay_file) else os.path.join(obj.TestDirectory, replay_file)
+def _get_replay_path(obj, replay_file: str) -> str:
+    return replay_file if os.path.isabs(replay_file) else os.path.join(obj.TestDirectory, replay_file)
+
+
+def _load_replay_config(obj, replay_file: str):
+    replay_path = _get_replay_path(obj, replay_file)
     with open(replay_path, 'r') as f:
         replay_config = yaml.safe_load(f)
+
+    if not isinstance(replay_config, dict):
+        raise ValueError(f"Replay file {replay_file} does not contain a YAML mapping")
 
     # The user must specify the 'autest' node.
     if not 'autest' in replay_config:
         raise ValueError(f"Replay file {replay_file} does not contain 'autest' section")
     autest_config = replay_config['autest']
 
-    tr = obj.AddTestRun(autest_config['description'])
+    if not isinstance(autest_config, dict):
+        raise ValueError(f"Replay file {replay_file} does not contain a mapping in 'autest' section")
+
+    return replay_config, autest_config
+
+
+def _get_replay_summary(autest_config: dict):
+    return autest_config.get('summary', autest_config.get('description'))
+
+
+def _build_ats_replay_test(obj, replay_file: str, autest_config: dict):
+    description = autest_config.get('description', _get_replay_summary(autest_config))
+    if description is None:
+        raise ValueError(f"Replay file {replay_file} does not contain 'autest.description' or 'autest.summary'")
+
+    tr = obj.AddTestRun(description)
 
     # Copy the specified files and directories down.
     tr.Setup.Copy(replay_file, tr.RunDirectory)
@@ -342,4 +363,33 @@ def ATSReplayTest(obj, replay_file: str):
     return tr
 
 
+def _load_ats_replay(obj, replay_file: str):
+    replay_config, autest_config = _load_replay_config(obj, replay_file)
+
+    summary = _get_replay_summary(autest_config)
+    if summary and not obj.Summary:
+        obj.Summary = summary
+
+    if _is_list_action(obj):
+        return None
+
+    return _build_ats_replay_test(obj, replay_file, autest_config)
+
+
+def _load_ats_replay_test_file(obj):
+    return _load_ats_replay(obj, obj.TestFile)
+
+
+def ATSReplayTest(obj, replay_file: str):
+    '''Create a TestRun that configures ATS and runs HTTP traffic using the replay file.
+
+    :param obj: The Test object to add the test run to.
+    :param replay_file: Replay file specifying the test configuration and test traffic.
+    :returns: The TestRun object.
+    '''
+
+    return _load_ats_replay(obj, replay_file)
+
+
 ExtendTest(ATSReplayTest, name="ATSReplayTest")
+RegisterTestFormat(_load_ats_replay_test_file, "ATSReplayYAMLTest", ext=ATS_REPLAY_TEST_EXTENSIONS)

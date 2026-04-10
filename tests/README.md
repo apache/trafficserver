@@ -34,8 +34,9 @@ To run autest again, or to run individual tests, the cmake build generates a hel
 
 To run a single test, you can use the `--filter` flag to name
 which test to run. The tests are in files whose names are the test name
-, and are suffixed with `.test.py`. Thus, the `something_descriptive`
-test will be specified in a file named `something_descriptive.test.py`.
+, and are typically suffixed with `.test.py` or `.test.yaml`. Thus, the
+`something_descriptive` test will be specified in a file named
+`something_descriptive.test.py` or `something_descriptive.test.yaml`.
 The corresponding `autest.sh` command is:
 
     $ ./autest.sh --filter=something_descriptive
