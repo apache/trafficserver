@@ -777,7 +777,8 @@ stats_origin(TSCont contp, TSEvent /* event ATS_UNUSED */, void *edata)
   icontp   = TSContCreate(stats_dostuff, TSMutexCreate());
 
   if (path_had_explicit_format) {
-    Dbg(dbg_ctl, "Path had explicit format, ignoring any Accept header: %s", request_path_suffix.data());
+    Dbg(dbg_ctl, "Path had explicit format, ignoring any Accept header: %.*s", static_cast<int>(request_path_suffix.size()),
+        request_path_suffix.data());
     my_state->output_format = format_per_path;
   } else {
     // Check for an Accept header to determine response type.
