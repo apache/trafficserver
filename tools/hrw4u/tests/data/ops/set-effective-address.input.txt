@@ -1,0 +1,3 @@
+REMAP {
+    set-effective-address("{inbound.req.Real-IP}");
+}

@@ -16,7 +16,6 @@
 #  limitations under the License.
 
 from __future__ import annotations
-from typing import Callable
 from functools import cached_property
 import re
 
@@ -70,11 +69,6 @@ class InverseSymbolResolver(SymbolResolverBase):
         if reverse_map := tables.REVERSE_RESOLUTION_MAP.get('FUNCTIONS'):
             return reverse_map
         return {params.target: fn_name for fn_name, params in self._function_map.items()}
-
-    @cached_property
-    def _rev_sections(self) -> dict[str, str]:
-        """Cached reverse section mapping."""
-        return {s.hook_name: s.value for s in SectionType}
 
     def _section_label_for_tag(self, tag: str) -> str | None:
         try:
@@ -142,14 +136,6 @@ class InverseSymbolResolver(SymbolResolverBase):
                 return mapping["inbound_result"]
         elif tag == "IP":
             return None
-
-        for key, params in self._condition_map.items():
-            mapped_tag = params.target
-            tag_part = mapped_tag.replace("%{", "").replace("}", "").split(":")[0]
-            restricted = params.sections if params else None
-            if tag_part == tag:
-                if not restricted or not section or section not in restricted:
-                    pass
 
         return None
 
@@ -345,13 +331,42 @@ class InverseSymbolResolver(SymbolResolverBase):
 
         if set_text.startswith('(') and set_text.endswith(')'):
             content = set_text[1:-1]
-            content = ', '.join(item.strip() for item in content.split(','))
+            items = self._split_set_items(content)
+            content = ', '.join(item.strip() for item in items)
             return '[' + content + ']'
         elif set_text.startswith('[') and set_text.endswith(']'):
             content = set_text[1:-1]
-            content = ', '.join(item.strip() for item in content.split(','))
+            items = self._split_set_items(content)
+            content = ', '.join(item.strip() for item in items)
             return '[' + content + ']'
         return set_text
+
+    def _split_set_items(self, content: str) -> list[str]:
+        """Split set items on commas, respecting quoted strings."""
+        items = []
+        current = []
+        in_quotes = False
+        quote_char = None
+
+        for char in content:
+            if char in '"\'':
+                if not in_quotes:
+                    in_quotes = True
+                    quote_char = char
+                elif char == quote_char:
+                    in_quotes = False
+                    quote_char = None
+                current.append(char)
+            elif char == ',' and not in_quotes:
+                items.append(''.join(current))
+                current = []
+            else:
+                current.append(char)
+
+        if current:
+            items.append(''.join(current))
+
+        return items
 
     def format_iprange(self, iprange_text: str) -> str:
         """Format IP range with proper spacing."""
