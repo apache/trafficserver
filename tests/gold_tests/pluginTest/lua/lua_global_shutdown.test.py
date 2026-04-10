@@ -61,5 +61,4 @@ ts.Disk.traffic_out.Content = Testers.ContainsExpression(
 
 # After all test runs complete AuTest stops ATS, which fires TS_LIFECYCLE_SHUTDOWN_HOOK.
 # The shutdown handler calls __shutdown__ once per Lua state (2 states configured).
-ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    r'__shutdown__ called', '__shutdown__ should be called on ATS shutdown')
+ts.Disk.traffic_out.Content += Testers.ContainsExpression(r'__shutdown__ called', '__shutdown__ should be called on ATS shutdown')
