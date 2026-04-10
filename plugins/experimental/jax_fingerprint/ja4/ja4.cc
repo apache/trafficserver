@@ -22,7 +22,7 @@
  */
 
 #include "ja4.h"
-#include <ja4_common/utils.h>
+#include <common/utils.h>
 
 #include <openssl/sha.h>
 

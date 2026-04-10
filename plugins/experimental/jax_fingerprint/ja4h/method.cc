@@ -23,7 +23,7 @@
 
 #include <plugin.h>
 #include <context.h>
-#include <ja4_common/utils.h>
+#include <common/utils.h>
 #include "method.h"
 #include "ja4h.h"
 #include "datasource.h"

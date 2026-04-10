@@ -31,7 +31,7 @@ add_atsplugin(
   ja4h/method.cc
   ja4h/ja4h.cc
   ja4h/datasource.cc
-  ja4_common/utils.cc
+  common/utils.cc
 )
 target_link_libraries(jax_fingerprint PRIVATE OpenSSL::Crypto OpenSSL::SSL)
 target_include_directories(jax_fingerprint BEFORE PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
@@ -49,7 +49,7 @@ if(BUILD_TESTING)
     ja4h/test.cc
     ja4h/ja4h.cc
     ja4h/datasource.cc
-    ja4_common/utils.cc
+    common/utils.cc
   )
   target_link_libraries(test_jax PRIVATE Catch2::Catch2WithMain OpenSSL::Crypto OpenSSL::SSL)
   target_include_directories(test_jax BEFORE PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
