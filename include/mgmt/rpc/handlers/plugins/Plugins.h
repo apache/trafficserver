@@ -25,4 +25,5 @@
 namespace rpc::handlers::plugins
 {
 swoc::Rv<YAML::Node> plugin_send_basic_msg(std::string_view const &id, YAML::Node const &params);
+swoc::Rv<YAML::Node> get_plugin_list(std::string_view const &id, YAML::Node const &params);
 } // namespace rpc::handlers::plugins

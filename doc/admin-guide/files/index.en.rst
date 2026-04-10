@@ -31,6 +31,7 @@ Configuration Files
    logging.yaml.en
    parent.config.en
    plugin.config.en
+   plugin.yaml.en
    records.yaml.en
    remap.config.en
    remap.yaml.en
@@ -62,6 +63,10 @@ Configuration Files
 :doc:`plugin.config.en`
    Control runtime loadable plugins available to |TS|, as well as their
    configurations.
+
+:doc:`plugin.yaml.en`
+   YAML-based alternative to :doc:`plugin.config.en` with support for
+   disabling plugins, explicit load ordering, and inline configuration.
 
 :doc:`records.yaml.en`
    Contains many configuration variables affecting |TS| operation.

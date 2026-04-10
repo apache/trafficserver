@@ -56,6 +56,8 @@ register_admin_jsonrpc_handlers()
   using namespace rpc::handlers::plugins;
   rpc::add_method_handler("admin_plugin_send_basic_msg", &plugin_send_basic_msg, &core_ats_rpc_service_provider_handle,
                           {{rpc::RESTRICTED_API}});
+  rpc::add_method_handler("admin_plugin_get_list", &get_plugin_list, &core_ats_rpc_service_provider_handle,
+                          {{rpc::NON_RESTRICTED_API}});
 
   // server
   using namespace rpc::handlers::server;

@@ -76,6 +76,14 @@ TS API
 Features
 --------
 
+* Add :file:`plugin.yaml`, a YAML-based replacement for :file:`plugin.config`.
+  New features include disabling plugins without deleting lines
+  (``enabled: false``), explicit ``load_order``, inline ``config`` content, and
+  startup logging. See :doc:`../admin-guide/files/plugin.yaml.en`.
+* traffic_ctl: Add ``plugin list`` to show loaded plugins and their status via
+  JSONRPC.
+* traffic_ctl: Add ``config convert plugin_config`` to migrate
+  :file:`plugin.config` to :file:`plugin.yaml`.
 * Add the ``cqssg`` log field for TLS group name logging
 * traffic_ctl: Add a new :ref:`server <traffic-control-command-server-status>` command to show some basic internal
   information

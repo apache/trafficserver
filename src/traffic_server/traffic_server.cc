@@ -1017,11 +1017,11 @@ cmd_verify(char * /* cmd ATS_UNUSED */)
   }
 
   api_init();
-  if (!plugin_init(true)) {
+  if (!plugin_yaml_init(true)) {
     exitStatus |= (1 << 2);
-    fprintf(stderr, "ERROR: Failed to load %s, exitStatus %d\n\n", ts::filename::PLUGIN, exitStatus);
+    fprintf(stderr, "ERROR: Failed to load plugins, exitStatus %d\n\n", exitStatus);
   } else {
-    fprintf(stderr, "INFO: Successfully loaded %s\n\n", ts::filename::PLUGIN);
+    fprintf(stderr, "INFO: Successfully loaded plugins\n\n");
   }
 
   if (!urlRewriteVerify()) {
@@ -2357,7 +2357,9 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 
     // Init plugins as soon as logging is ready.
     api_init();
-    (void)plugin_init(); // plugin.config
+    if (!plugin_yaml_init()) {
+      Warning("plugin initialization failed");
+    }
 
     {
       std::unique_lock<std::mutex> lock(pluginInitMutex);

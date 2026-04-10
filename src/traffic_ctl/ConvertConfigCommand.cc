@@ -24,6 +24,7 @@
 #include "ConvertConfigCommand.h"
 #include "config/ssl_multicert.h"
 #include "config/storage.h"
+#include "config/plugin_config.h"
 
 #include <fstream>
 #include <iostream>
@@ -50,6 +51,15 @@ ConvertConfigCommand::ConvertConfigCommand(ts::Arguments *args) : CtrlCommand(ar
     _volume_config_file = convert_args[1];
     _output_file        = convert_args[2];
     _invoked_func       = [this]() { convert_storage(); };
+  } else if (args->get("plugin_config")) {
+    auto const &convert_args = args->get("plugin_config");
+    if (convert_args.size() < 2) {
+      throw std::invalid_argument("plugin_config requires <input_file> <output_file>");
+    }
+    _input_file    = convert_args[0];
+    _output_file   = convert_args[1];
+    _skip_disabled = args->get("skip-disabled");
+    _invoked_func  = [this]() { convert_plugin_config(); };
   } else {
     throw std::invalid_argument("Unsupported config type for conversion");
   }
@@ -143,5 +153,42 @@ ConvertConfigCommand::convert_storage()
     out << yaml_output << '\n';
     out.close();
     _printer->write_output("Converted " + _input_file + " + " + _volume_config_file + " -> " + _output_file);
+  }
+}
+
+void
+ConvertConfigCommand::convert_plugin_config()
+{
+  config::PluginConfigParser                     parser;
+  config::ConfigResult<config::PluginConfigData> result = parser.parse(_input_file);
+
+  if (!result.ok()) {
+    std::string error_msg = "Failed to parse input file '" + _input_file + "'";
+    if (!result.errata.empty()) {
+      error_msg += ": ";
+      error_msg += std::string(result.errata.front().text());
+    }
+    _printer->write_output(error_msg);
+    return;
+  }
+
+  if (_skip_disabled) {
+    std::erase_if(result.value, [](const config::PluginConfigEntry &e) { return !e.enabled; });
+  }
+
+  config::PluginConfigMarshaller marshaller;
+  std::string const              serialized = marshaller.to_yaml(result.value);
+
+  if (_output_file == "-") {
+    std::cout << serialized << '\n';
+  } else {
+    std::ofstream out(_output_file);
+    if (!out) {
+      _printer->write_output("Failed to open output file '" + _output_file + "' for writing");
+      return;
+    }
+    out << serialized << '\n';
+    out.close();
+    _printer->write_output("Converted " + _input_file + " -> " + _output_file);
   }
 }

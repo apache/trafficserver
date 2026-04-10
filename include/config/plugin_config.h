@@ -1,6 +1,6 @@
 /** @file
 
-  Configuration format conversion command for traffic_ctl.
+  Plugin configuration parsing and marshalling.
 
   @section license License
 
@@ -23,35 +23,35 @@
 
 #pragma once
 
-#include "CtrlCommands.h"
+#include <string>
+#include <vector>
 
-/**
- * Command handler for configuration format conversion.
- *
- * Converts configuration files from legacy formats to YAML.
- * Supports: ssl_multicert, storage, plugin_config
- */
-class ConvertConfigCommand : public CtrlCommand
+#include "config/config_result.h"
+
+namespace config
+{
+
+struct PluginConfigEntry {
+  std::string              path;
+  std::vector<std::string> args;
+  bool                     enabled{true};
+};
+
+using PluginConfigData = std::vector<PluginConfigEntry>;
+
+class PluginConfigParser
 {
 public:
-  /**
-   * Construct the command from parsed arguments.
-   *
-   * @param[in] args Parsed command line arguments.
-   */
-  ConvertConfigCommand(ts::Arguments *args);
+  ConfigResult<PluginConfigData> parse(std::string const &filename);
 
 private:
-  void convert_ssl_multicert();
-  void convert_storage();
-  void convert_plugin_config();
-
-  std::string _input_file;
-  std::string _output_file;
-
-  // For storage conversion only: optional volume.config path.
-  std::string _volume_config_file;
-
-  // For plugin_config conversion: drop disabled entries from output.
-  bool _skip_disabled{false};
+  ConfigResult<PluginConfigData> parse_legacy(std::string_view content);
 };
+
+class PluginConfigMarshaller
+{
+public:
+  std::string to_yaml(PluginConfigData const &config);
+};
+
+} // namespace config

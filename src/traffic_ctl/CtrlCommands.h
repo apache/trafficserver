@@ -207,7 +207,9 @@ public:
 
 private:
   static inline const std::string MSG_STR{"msg"};
+  static inline const std::string LIST_STR{"list"};
   void                            plugin_msg();
+  void                            plugin_list();
 };
 // -----------------------------------------------------------------------------------------------------------------------------------
 class DirectRPCCommand : public CtrlCommand

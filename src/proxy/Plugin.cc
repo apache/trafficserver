@@ -22,6 +22,9 @@
  */
 
 #include <cstdio>
+#include <algorithm>
+#include <filesystem>
+#include <optional>
 #include "tscore/ink_platform.h"
 #include "tscore/ink_file.h"
 #include "tscore/ParseRules.h"
@@ -30,6 +33,7 @@
 #include "proxy/Plugin.h"
 #include "tscore/ink_cap.h"
 #include "tscore/Filenames.h"
+#include <yaml-cpp/yaml.h>
 
 #define MAX_PLUGIN_ARGS 64
 
@@ -77,7 +81,26 @@ parsePluginConfig()
 
 static const char *plugin_dir = ".";
 
+static void
+plugin_dir_init()
+{
+  static bool once = true;
+
+  if (once) {
+    plugin_dir = ats_stringdup(RecConfigReadPluginDir());
+    once       = false;
+  }
+}
+
 using init_func_t = void (*)(int, char **);
+
+static PluginLoadSummary s_plugin_load_summary;
+
+const PluginLoadSummary &
+get_plugin_load_summary()
+{
+  return s_plugin_load_summary;
+}
 
 // Plugin registration vars
 //
@@ -134,7 +157,7 @@ plugin_dso_load(const char *path, void *&handle, void *&init, std::string &error
   return true;
 }
 
-static bool
+bool
 single_plugin_init(int argc, char *argv[], bool validateOnly)
 {
   char        path[PATH_NAME_MAX];
@@ -198,7 +221,7 @@ single_plugin_init(int argc, char *argv[], bool validateOnly)
   if (plugin_reg_current->plugin_registered) {
     plugin_reg_list.push(plugin_reg_current);
   } else {
-    Fatal("plugin not registered by calling TSPluginRegister");
+    Fatal("plugin '%s' not registered by calling TSPluginRegister", path);
     return false; // this line won't get called since Fatal brings down ATS
   }
 
@@ -208,7 +231,7 @@ single_plugin_init(int argc, char *argv[], bool validateOnly)
 }
 
 static char *
-plugin_expand(char *arg)
+plugin_expand(char *arg, const char *source)
 {
   RecDataT data_type;
   char    *str = nullptr;
@@ -268,7 +291,7 @@ plugin_expand(char *arg)
   }
 
 not_found:
-  Warning("%s: unable to find parameter %s", ts::filename::PLUGIN, arg);
+  Warning("%s: unable to find parameter %s", source, arg);
   return nullptr;
 }
 
@@ -282,13 +305,13 @@ plugin_init(bool validateOnly)
   int            argc;
   int            fd;
   int            i;
-  bool           retVal    = true;
-  static bool    INIT_ONCE = true;
+  bool           retVal     = true;
+  int            load_index = 0;
 
-  if (INIT_ONCE) {
-    plugin_dir = ats_stringdup(RecConfigReadPluginDir());
-    INIT_ONCE  = false;
-  }
+  plugin_dir_init();
+
+  s_plugin_load_summary.source = ts::filename::PLUGIN;
+  s_plugin_load_summary.entries.clear();
 
   Note("%s loading ...", ts::filename::PLUGIN);
   path = RecConfigReadConfigPath(nullptr, ts::filename::PLUGIN);
@@ -350,7 +373,7 @@ plugin_init(bool validateOnly)
     }
 
     for (i = 0; i < argc; i++) {
-      vars[i] = plugin_expand(argv[i]);
+      vars[i] = plugin_expand(argv[i], ts::filename::PLUGIN);
       if (vars[i]) {
         argv[i] = vars[i];
       }
@@ -361,7 +384,13 @@ plugin_init(bool validateOnly)
     } else {
       argv[MAX_PLUGIN_ARGS - 1] = nullptr;
     }
+
+    ++load_index;
+    std::string plugin_name = (argc > 0) ? argv[0] : "unknown";
+
     retVal = single_plugin_init(argc, argv, validateOnly);
+
+    s_plugin_load_summary.entries.push_back({plugin_name, -1, true, retVal, load_index});
 
     for (i = 0; i < argc; i++) {
       ats_free(vars[i]);
@@ -373,6 +402,270 @@ plugin_init(bool validateOnly)
     Note("%s finished loading", ts::filename::PLUGIN);
   } else {
     Error("%s failed to load", ts::filename::PLUGIN);
+  }
+  return retVal;
+}
+
+config::ConfigResult<PluginYAMLEntries>
+parse_plugin_yaml(const char *yaml_path)
+{
+  config::ConfigResult<PluginYAMLEntries> result;
+  YAML::Node                              root;
+
+  try {
+    root = YAML::LoadFile(yaml_path);
+  } catch (const YAML::Exception &e) {
+    result.errata.note("failed to parse: {}", e.what());
+    return result;
+  }
+
+  if (!root["plugins"] || !root["plugins"].IsSequence()) {
+    result.errata.note("missing or invalid 'plugins' sequence");
+    return result;
+  }
+
+  struct IndexedEntry {
+    int             seq_idx;
+    PluginYAMLEntry entry;
+  };
+
+  std::vector<IndexedEntry> indexed;
+  int                       seq_idx = 0;
+
+  for (const auto &node : root["plugins"]) {
+    PluginYAMLEntry entry;
+
+    if (!node["path"]) {
+      result.errata.note("plugin entry #{} missing required 'path' field", seq_idx + 1);
+      return result;
+    }
+    entry.path = node["path"].as<std::string>();
+
+    if (auto n = node["enabled"]; n) {
+      entry.enabled = n.as<bool>();
+    }
+    if (auto n = node["load_order"]; n) {
+      entry.load_order = n.as<int>();
+    }
+    if (auto n = node["params"]; n && n.IsSequence()) {
+      for (const auto &p : n) {
+        entry.params.emplace_back(p.as<std::string>());
+      }
+    }
+    if (auto n = node["config"]; n) {
+      if (n.IsScalar()) {
+        entry.config_literal = n.as<std::string>();
+      } else {
+        result.errata.note("plugin '{}': 'config' must be a scalar (use literal block '|' for multi-line content)", entry.path);
+        return result;
+      }
+    }
+
+    indexed.push_back({seq_idx++, std::move(entry)});
+  }
+
+  std::stable_sort(indexed.begin(), indexed.end(), [](const IndexedEntry &a, const IndexedEntry &b) {
+    const bool a_has = a.entry.load_order >= 0;
+    const bool b_has = b.entry.load_order >= 0;
+
+    if (a_has && b_has) {
+      return a.entry.load_order < b.entry.load_order;
+    }
+    return a_has && !b_has;
+  });
+
+  result.value.reserve(indexed.size());
+  for (auto &[_, entry] : indexed) {
+    result.value.emplace_back(std::move(entry));
+  }
+
+  return result;
+}
+
+/// Write inline config content to a temp file, returning the path on success.
+static std::optional<std::string>
+write_inline_config(const PluginYAMLEntry &entry, int index)
+{
+  char tmp_path[PATH_NAME_MAX];
+
+  std::string_view stem{entry.path};
+  if (auto pos = stem.rfind('/'); pos != std::string_view::npos) {
+    stem = stem.substr(pos + 1);
+  }
+  if (auto pos = stem.rfind('.'); pos != std::string_view::npos) {
+    stem = stem.substr(0, pos);
+  }
+
+  snprintf(tmp_path, sizeof(tmp_path), "%s/.%.*s_inline_%d.conf", RecConfigReadConfigDir().c_str(), static_cast<int>(stem.size()),
+           stem.data(), index);
+
+  int fd = open(tmp_path, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+  if (fd < 0) {
+    Error("%s: failed to create temp config for %s: %s", ts::filename::PLUGIN_YAML, entry.path.c_str(), strerror(errno));
+    return std::nullopt;
+  }
+
+  auto n = write(fd, entry.config_literal.data(), entry.config_literal.size());
+  close(fd);
+
+  if (n < 0 || static_cast<size_t>(n) != entry.config_literal.size()) {
+    Error("%s: failed to write inline config for %s", ts::filename::PLUGIN_YAML, entry.path.c_str());
+    return std::nullopt;
+  }
+
+  return std::string(tmp_path);
+}
+
+/// Build the argv for a single plugin: [path, inline_config_path?, params..., $record expansions].
+static std::optional<std::vector<std::string>>
+build_plugin_args(const PluginYAMLEntry &entry, int index)
+{
+  std::vector<std::string> args;
+  args.emplace_back(entry.path);
+
+  if (!entry.config_literal.empty()) {
+    if (auto path = write_inline_config(entry, index); path) {
+      args.emplace_back(std::move(*path));
+    } else {
+      return std::nullopt;
+    }
+  }
+
+  for (const auto &p : entry.params) {
+    args.emplace_back(p);
+  }
+
+  return args;
+}
+
+static void
+log_plugin_load_summary(int loaded, int disabled)
+{
+  Note("%s: %d plugins loaded, %d disabled", ts::filename::PLUGIN_YAML, loaded, disabled);
+
+  for (const auto &e : s_plugin_load_summary.entries) {
+    if (e.enabled) {
+      if (e.load_order >= 0) {
+        Note("  #%d %-30s load_order: %-5d loaded", e.index, e.path.c_str(), e.load_order);
+      } else {
+        Note("  #%d %-30s                 loaded", e.index, e.path.c_str());
+      }
+    } else {
+      Note("  -- %-30s                 disabled", e.path.c_str());
+    }
+  }
+}
+
+static void
+cleanup_inline_configs()
+{
+  std::string     config_dir = RecConfigReadConfigDir();
+  std::error_code ec;
+
+  try {
+    for (const auto &entry : std::filesystem::directory_iterator(config_dir, ec)) {
+      if (!entry.is_regular_file()) {
+        continue;
+      }
+      auto name = entry.path().filename().string();
+      if (name.front() == '.' && name.find("_inline_") != std::string::npos && name.ends_with(".conf")) {
+        std::filesystem::remove(entry.path(), ec);
+      }
+    }
+  } catch (const std::exception &e) {
+    Error("%s: error cleaning up inline config files: %s", ts::filename::PLUGIN_YAML, e.what());
+  }
+}
+
+bool
+plugin_yaml_init(bool validateOnly)
+{
+  plugin_dir_init();
+
+  ats_scoped_str yaml_path;
+
+  if (!validateOnly) {
+    cleanup_inline_configs();
+  }
+
+  yaml_path = RecConfigReadConfigPath(nullptr, ts::filename::PLUGIN_YAML);
+  if (access(yaml_path, R_OK) != 0) {
+    if (errno != ENOENT) {
+      Error("%s: %s", ts::filename::PLUGIN_YAML, strerror(errno));
+      return false;
+    }
+    return plugin_init(validateOnly);
+  }
+
+  Note("%s loading ...", ts::filename::PLUGIN_YAML);
+
+  auto result = parse_plugin_yaml(yaml_path.get());
+  if (!result.ok()) {
+    Error("%s: %s", ts::filename::PLUGIN_YAML, std::string(result.errata.front().text()).c_str());
+    return false;
+  }
+
+  s_plugin_load_summary.source = ts::filename::PLUGIN_YAML;
+  s_plugin_load_summary.entries.clear();
+
+  bool retVal   = true;
+  int  index    = 0;
+  int  loaded   = 0;
+  int  disabled = 0;
+
+  for (const auto &entry : result.value) {
+    ++index;
+
+    if (!entry.enabled) {
+      Note("plugin #%d skipped: %s (enabled: false)", index, entry.path.c_str());
+      s_plugin_load_summary.entries.push_back({entry.path, entry.load_order, false, false, index});
+      ++disabled;
+      continue;
+    }
+
+    auto args = build_plugin_args(entry, index);
+    if (!args) {
+      return false;
+    }
+
+    if (args->size() > MAX_PLUGIN_ARGS) {
+      Warning("%s: plugin '%s' has %zu args, exceeds typical max (%d)", ts::filename::PLUGIN_YAML, entry.path.c_str(), args->size(),
+              MAX_PLUGIN_ARGS);
+    }
+
+    std::vector<char *> argv_ptrs;
+    std::vector<char *> expanded;
+
+    for (auto &a : *args) {
+      char *var = plugin_expand(a.data(), ts::filename::PLUGIN_YAML);
+      expanded.emplace_back(var);
+      argv_ptrs.emplace_back(var ? var : a.data());
+    }
+    argv_ptrs.emplace_back(nullptr);
+
+    if (entry.load_order >= 0) {
+      Note("plugin #%d loading: %s (load_order: %d)", index, entry.path.c_str(), entry.load_order);
+    } else {
+      Note("plugin #%d loading: %s", index, entry.path.c_str());
+    }
+
+    retVal = single_plugin_init(static_cast<int>(args->size()), argv_ptrs.data(), validateOnly);
+    s_plugin_load_summary.entries.push_back({entry.path, entry.load_order, true, retVal, index});
+    ++loaded;
+
+    for (auto *v : expanded) {
+      ats_free(v);
+    }
+
+    if (!retVal) {
+      break;
+    }
+  }
+
+  if (retVal) {
+    log_plugin_load_summary(loaded, disabled);
+  } else {
+    Error("%s failed to load", ts::filename::PLUGIN_YAML);
   }
   return retVal;
 }
