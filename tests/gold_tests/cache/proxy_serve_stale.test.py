@@ -22,3 +22,6 @@ Test.ContinueOnFail = True
 
 # Verify that stale content is served when the parent is down.
 Test.ATSReplayTest(replay_file="replay/proxy_serve_stale.replay.yaml")
+
+# Verify that stale content is served when the origin server is down.
+Test.ATSReplayTest(replay_file="replay/proxy_serve_stale_origin_down.replay.yaml")

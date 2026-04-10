@@ -2902,23 +2902,10 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
 
     find_server_and_update_current_info(s);
 
-    // We do not want to try to revalidate documents if we think
-    //  the server is down due to the something report problem
-    //
-    // Note: we only want to skip origin servers because 1)
-    //  parent proxies have their own negative caching
-    //  scheme & 2) If we skip down parents, every page
-    //  we serve is potentially stale
-    //
-    if (s->current.request_to == ResolveInfo::ORIGIN_SERVER && is_server_negative_cached(s) && response_returnable == true &&
-        is_stale_cache_response_returnable(s) == true) {
-      server_up = false;
-      update_current_info(&s->current, nullptr, ResolveInfo::UNDEFINED_LOOKUP, true);
-      TxnDbg(dbg_ctl_http_trans, "CacheOpenReadHit - server_down, returning stale document");
-    }
-    // a parent lookup could come back as ParentResultType::FAIL if in parent.config, go_direct == false and
+    // For origin servers (ResolveInfo::ORIGIN_SERVER): OSDNSLookup handles serving stale when all origin servers are down.
+    // For parent proxies: a parent lookup could come back as ParentResultType::FAIL if in parent.config, go_direct == false and
     // there are no available parents (all down).
-    else if (s->current.request_to == ResolveInfo::HOST_NONE && s->parent_result.result == ParentResultType::FAIL) {
+    if (s->current.request_to == ResolveInfo::HOST_NONE && s->parent_result.result == ParentResultType::FAIL) {
       if (response_returnable == true && is_stale_cache_response_returnable(s) == true) {
         server_up = false;
         update_current_info(&s->current, nullptr, ResolveInfo::UNDEFINED_LOOKUP, true);
