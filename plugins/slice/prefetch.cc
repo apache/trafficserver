@@ -25,16 +25,61 @@
 #include "prefetch.h"
 
 bool
-BgBlockFetch::schedule(Data *const data, int blocknum)
+BgBlockFetch::schedule(Data *const data, int blocknum, std::string_view url)
 {
-  bool          ret = false;
-  BgBlockFetch *bg  = new BgBlockFetch(blocknum);
+  std::string key     = std::string(url) + ':' + std::to_string(blocknum);
+  auto [acquired, bg] = data->m_config->prefetchAcquire(key);
+
+  if (!acquired) {
+    DEBUG_LOG("Prefetch already in flight for block %d, skipping", blocknum);
+    return false;
+  }
+
+  // Nothing on the freelist, so make a new object
+  if (!bg) {
+    bg = new BgBlockFetch();
+  }
+
+  bg->m_blocknum = blocknum;
+  bg->m_config   = data->m_config;
+  bg->m_key      = std::move(key);
+
   if (bg->fetch(data)) {
-    ret = true;
+    return true;
   } else {
+    bg->m_config->prefetchRelease(bg);
+    return false;
+  }
+}
+
+void
+BgBlockFetch::clear()
+{
+  m_blocknum = 0;
+  m_cont     = nullptr;
+  m_config   = nullptr;
+  m_key.clear();
+}
+
+void
+Config::prefetchRelease(BgBlockFetch *bg)
+{
+  std::lock_guard<std::mutex> const guard(m_prefetch_mutex);
+
+  m_prefetch_active.erase(bg->m_key);
+  bg->clear();
+  m_prefetch_freelist.push_back(bg);
+}
+
+void
+Config::prefetchCleanup()
+{
+  std::lock_guard<std::mutex> const guard(m_prefetch_mutex);
+
+  for (auto *bg : m_prefetch_freelist) {
     delete bg;
   }
-  return ret;
+  m_prefetch_freelist.clear();
 }
 
 /**
@@ -132,15 +177,15 @@ BgBlockFetch::handler(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */
   case TS_EVENT_ERROR:
     bg->m_stream.abort();
     TSContDataSet(contp, nullptr);
-    delete bg;
     TSContDestroy(contp);
+    bg->m_config->prefetchRelease(bg);
     break;
   case TS_EVENT_VCONN_READ_COMPLETE:
   case TS_EVENT_VCONN_EOS:
     bg->m_stream.close();
     TSContDataSet(contp, nullptr);
-    delete bg;
     TSContDestroy(contp);
+    bg->m_config->prefetchRelease(bg);
     break;
   default:
     DEBUG_LOG("Unhandled bg fetch event:%s (%d)", TSHttpEventNameLookup(event), event);
