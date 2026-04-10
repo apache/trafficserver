@@ -1,0 +1,67 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+# Used by: All methods test.
+#
+# The jax_fingerprint plugin is loaded multiple times with different methods.
+# All fingerprint headers should be present and non-empty.
+
+meta:
+  version: "1.0"
+
+sessions:
+
+# Session 1: TLS/HTTPS request - all methods should produce fingerprints.
+- protocol:
+  - name: tls
+    sni: jax.server.test
+  - name: tcp
+  - name: ip
+
+  transactions:
+
+  - client-request:
+      method: GET
+      url: /all-methods-test
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, jax.server.test ]
+        - [ Content-Length, 0 ]
+        - [ uuid, all-methods-request ]
+
+    # All fingerprint headers must be present (not empty).
+    proxy-request:
+      headers:
+        fields:
+        - [ x-ja3, { as: present } ]
+        - [ x-ja4, { as: present } ]
+        - [ x-ja4h, { as: present } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 2 ]
+        - [ X-Response, all-methods-response ]
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response, { value: 'all-methods-response', as: equal } ]

@@ -277,8 +277,7 @@ handle_http_txn_close(void *edata, PluginConfig &config)
 {
   TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
 
-  delete get_user_arg(txnp, config);
-  set_user_arg(txnp, config, nullptr);
+  cleanup_user_arg(txnp, config);
 
   TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
   return TS_SUCCESS;
@@ -289,8 +288,7 @@ handle_vconn_close(void *edata, PluginConfig &config)
 {
   TSVConn vconn = static_cast<TSVConn>(edata);
 
-  delete get_user_arg(vconn, config);
-  set_user_arg(vconn, config, nullptr);
+  cleanup_user_arg(vconn, config);
 
   TSVConnReenable(vconn);
   return TS_SUCCESS;
