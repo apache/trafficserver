@@ -23,6 +23,7 @@
 
 #pragma once
 
+#include <functional>
 #include <memory>
 #include <optional>
 #include <string_view>
@@ -88,7 +89,7 @@ public:
   using UnmarshalFuncWithSlice = int (*)(char **, char *, int, LogSlice *, LogEscapeType);
   using UnmarshalFuncWithMap   = int (*)(char **, char *, int, const Ptr<LogFieldAliasMap> &);
   using SetFunc                = void (LogAccess::*)(char *, int);
-  using CustomMarshalFunc      = int (*)(void *, char *);
+  using CustomMarshalFunc      = std::function<int(void *, char *)>;
   using CustomUnmarshalFunc    = std::tuple<int, int> (*)(char **, char *, int);
 
   using VarUnmarshalFuncSliceOnly = std::variant<UnmarshalFunc, UnmarshalFuncWithSlice>;
@@ -224,7 +225,7 @@ private:
   SetFunc                    m_set_func;
   TSMilestonesType           milestone_from_m_name();
   int                        milestones_from_m_name(TSMilestonesType *m1, TSMilestonesType *m2);
-  CustomMarshalFunc          m_custom_marshal_func   = nullptr;
+  CustomMarshalFunc          m_custom_marshal_func;
   CustomUnmarshalFunc        m_custom_unmarshal_func = nullptr;
   std::vector<HeaderField>   m_fallback_header_fields;
   std::unique_ptr<LogField>  m_fallback_field;
