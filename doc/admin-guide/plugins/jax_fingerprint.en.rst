@@ -85,6 +85,17 @@ This option specifies the name of the header field where the plugin stores the g
 
 This option specifies the filename for the plugin log file. If not specified, log output will be suppressed.
 
+.. option:: --log-field <symbol>
+
+This option registers a custom log field with the given symbol name that can be used in
+:file:`logging.yaml` log formats. The log field outputs the generated fingerprint value for each
+transaction. If not specified, no custom log field is registered.
+
+For example, if you specify ``--log-field jaxja4``, you can use ``%<jaxja4>`` in your log format
+string in :file:`logging.yaml`.
+
+.. note:: This option is only supported when the plugin is loaded as a global plugin in :file:`plugin.config`. Log fields are global and must be registered before log formats are parsed at startup. If you use a remap-only setup, you must also load the plugin globally with ``--log-field`` to register the log field.
+
 
 Plugin Behavior
 ===============

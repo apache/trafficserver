@@ -23,6 +23,7 @@
 
 #pragma once
 
+#include <functional>
 #include <memory>
 #include <optional>
 #include <string_view>
@@ -88,7 +89,7 @@ public:
   using UnmarshalFuncWithSlice = int (*)(char **, char *, int, LogSlice *, LogEscapeType);
   using UnmarshalFuncWithMap   = int (*)(char **, char *, int, const Ptr<LogFieldAliasMap> &);
   using SetFunc                = void (LogAccess::*)(char *, int);
-  using CustomMarshalFunc      = int (*)(void *, char *);
+  using CustomMarshalFunc      = std::function<int(void *, char *)>;
   using CustomUnmarshalFunc    = std::tuple<int, int> (*)(char **, char *, int);
 
   using VarUnmarshalFuncSliceOnly = std::variant<UnmarshalFunc, UnmarshalFuncWithSlice>;
@@ -208,25 +209,24 @@ public:
   static bool      isContainerUpdateFieldSupported(Container container);
 
 private:
-  char                 *m_name;
-  char                 *m_symbol;
-  Type                  m_type;
-  Container             m_container;
-  MarshalFunc           m_marshal_func;   // place data into buffer
-  VarUnmarshalFunc      m_unmarshal_func; // create a string of the data
-  Aggregate             m_agg_op;
-  int64_t               m_agg_cnt;
-  int64_t               m_agg_val;
-  TSMilestonesType      m_milestone1; ///< Used for MS and MSDMS as the first (or only) milestone.
-  TSMilestonesType      m_milestone2; ///< Second milestone for MSDMS
-  bool                  m_time_field;
-  Ptr<LogFieldAliasMap> m_alias_map; // map sINT <--> string
-  SetFunc               m_set_func;
-  TSMilestonesType      milestone_from_m_name();
-  int                   milestones_from_m_name(TSMilestonesType *m1, TSMilestonesType *m2);
-  CustomMarshalFunc     m_custom_marshal_func   = nullptr;
-  CustomUnmarshalFunc   m_custom_unmarshal_func = nullptr;
-
+  char                      *m_name;
+  char                      *m_symbol;
+  Type                       m_type;
+  Container                  m_container;
+  MarshalFunc                m_marshal_func;   // place data into buffer
+  VarUnmarshalFunc           m_unmarshal_func; // create a string of the data
+  Aggregate                  m_agg_op;
+  int64_t                    m_agg_cnt;
+  int64_t                    m_agg_val;
+  TSMilestonesType           m_milestone1; ///< Used for MS and MSDMS as the first (or only) milestone.
+  TSMilestonesType           m_milestone2; ///< Second milestone for MSDMS
+  bool                       m_time_field;
+  Ptr<LogFieldAliasMap>      m_alias_map; // map sINT <--> string
+  SetFunc                    m_set_func;
+  TSMilestonesType           milestone_from_m_name();
+  int                        milestones_from_m_name(TSMilestonesType *m1, TSMilestonesType *m2);
+  CustomMarshalFunc          m_custom_marshal_func;
+  CustomUnmarshalFunc        m_custom_unmarshal_func = nullptr;
   std::vector<HeaderField>   m_fallback_header_fields;
   std::unique_ptr<LogField>  m_fallback_field;
   std::optional<std::string> m_fallback_default;

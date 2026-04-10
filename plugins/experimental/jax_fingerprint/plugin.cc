@@ -59,6 +59,7 @@ read_config_option(int argc, char const *argv[], PluginConfig &config)
     {"header",       required_argument, nullptr, 'h'},
     {"via-header",   required_argument, nullptr, 'v'},
     {"log-filename", required_argument, nullptr, 'f'},
+    {"log-field",    required_argument, nullptr, 'l'},
     {"servernames",  required_argument, nullptr, 'S'},
     {nullptr,        0,                 nullptr, 0  }
   };
@@ -112,6 +113,9 @@ read_config_option(int argc, char const *argv[], PluginConfig &config)
         config.servernames.emplace(input.substr(0, pos));
         input.remove_prefix(pos == std::string_view::npos ? input.size() : pos + 1);
       }
+      break;
+    case 'l':
+      config.log_symbol = {optarg, strlen(optarg)};
       break;
     case 0:
     case -1:
@@ -363,6 +367,28 @@ TSPluginInit(int argc, char const **argv)
     }
   }
 
+  if (!config->log_symbol.empty()) {
+    std::string name  = "jax_fingerprint-";
+    name             += config->method.name;
+    TSLogFieldRegister(
+      name.c_str(), config->log_symbol, TS_LOG_TYPE_STRING,
+      [config](TSHttpTxn txnp, char *buf) -> int {
+        void *container;
+        if (config->method.type == Method::Type::CONNECTION_BASED) {
+          container = TSHttpSsnClientVConnGet(TSHttpTxnSsnGet(txnp));
+        } else {
+          container = txnp;
+        }
+        JAxContext *ctx = get_user_arg(container, *config);
+        if (ctx) {
+          return TSLogStringMarshal(buf, ctx->get_fingerprint());
+        } else {
+          return TSLogStringMarshal(buf, "-");
+        }
+      },
+      TSLogIntUnmarshal);
+  }
+
   if (reserve_user_arg(*config) == TS_ERROR) {
     TSError("[%s] Failed to reserve user arg index.", PLUGIN_NAME);
     return;
@@ -403,6 +429,12 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
   if (!read_config_option(argc - 1, const_cast<const char **>(argv + 1), *config)) {
     delete config;
     Dbg(dbg_ctl, "Bad arguments");
+    return TS_ERROR;
+  }
+
+  if (!config->log_symbol.empty()) {
+    TSError("[%s] --log-field is not supported in remap.config. Use it in plugin.config instead.", PLUGIN_NAME);
+    delete config;
     return TS_ERROR;
   }
 
