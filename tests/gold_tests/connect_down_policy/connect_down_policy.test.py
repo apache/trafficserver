@@ -111,3 +111,6 @@ ConnectDownPolicy3Test(policy=3, expect_mark_down=True).run()
 
 # Policy 2: inactive timeout should NOT mark the origin down.
 ConnectDownPolicy3Test(policy=2, expect_mark_down=False).run()
+
+# Policy 4: origin closes connection without sending any response.
+Test.ATSReplayTest(replay_file="replay/connect_down_policy_4.replay.yaml")

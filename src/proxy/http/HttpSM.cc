@@ -4667,22 +4667,39 @@ HttpSM::do_hostdb_reverse_lookup()
 bool
 HttpSM::track_connect_fail() const
 {
-  bool retval = false;
-  if (t_state.current.server->had_connect_fail()) {
-    // What does our policy say?
-    if (t_state.txn_conf->connect_down_policy == 2 ||
-        t_state.txn_conf->connect_down_policy == 3) { // Any connection error through TLS handshake
-      retval = true;
-    } else if (t_state.txn_conf->connect_down_policy == 1) { // Any connection error through TCP
-      retval = t_state.current.server->connect_result != -ENET_SSL_CONNECT_FAILED;
+  int const policy = t_state.txn_conf->connect_down_policy;
+
+  // Policy 1: any TCP-level connect error (excluding TLS handshake failures).
+  if (policy == 1 && t_state.current.server->had_connect_fail()) {
+    return t_state.current.server->connect_result != -ENET_SSL_CONNECT_FAILED;
+  }
+
+  // Policy 2+: any connect error including TLS handshake failures.
+  if (policy >= 2 && t_state.current.server->had_connect_fail()) {
+    return true;
+  }
+
+  // Policy 3+: inactive timeout (connect_result was cleared at CONNECTION_ALIVE).
+  if (policy >= 3 && t_state.current.server->state == HttpTransact::INACTIVE_TIMEOUT) {
+    return true;
+  }
+
+  // Policy 4+: origin closed a fresh connection before sending any response bytes.
+  // Excludes two cases:
+  // - Reused keep-alive connection: there is a known race between ATS reusing and the origin closing it.
+  // - Multiplexed origins (HTTP/2): stream-level failure does not indicate a connection failure.
+  if (policy >= 4) {
+    bool multiplexed = false;
+    auto ssn         = server_txn->get_proxy_ssn();
+    if (ssn != nullptr) {
+      multiplexed = static_cast<PoolableSession *>(ssn)->is_multiplexing();
+    }
+    if (!multiplexed && server_txn->is_first_transaction() && server_response_hdr_bytes == 0) {
+      return true;
     }
   }
-  // Policy 3 additionally marks the server down on transaction inactive timeout,
-  // even when had_connect_fail() is false (connect_result was cleared at CONNECTION_ALIVE).
-  if (!retval && t_state.txn_conf->connect_down_policy == 3) {
-    retval = (t_state.current.server->state == HttpTransact::INACTIVE_TIMEOUT);
-  }
-  return retval;
+
+  return false;
 }
 
 void

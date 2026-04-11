@@ -1,0 +1,166 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+#
+# This replay file assumes that caching is enabled and
+# proxy.config.http.cache.ignore_client_cc_max_age is set to 0 so that we can
+# test max-age in the client requests.
+#
+
+meta:
+  version: "1.0"
+
+autest:
+  description: 'Verify that stale content is served when the origin server is down'
+
+  dns:
+    name: 'dns-serve-stale-origin-down'
+    records:
+      backend.example.com: ["127.0.0.1"]
+
+
+  server:
+    name: 'server-serve-stale-origin-down'
+
+  client:
+    name: 'client-serve-stale-origin-down'
+
+  ats:
+    name: 'ts-serve-stale-origin-down'
+    process_config:
+      enable_cache: true
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'cache|http|dns|hostdb'
+      proxy.config.http.cache.max_stale_age: 10
+      proxy.config.http.connect.down.policy: 4
+      proxy.config.http.connect_attempts_timeout: 1
+      proxy.config.http.connect_attempts_rr_retries: 0
+      proxy.config.http.connect_attempts_max_retries: 1
+      proxy.config.http.connect_attempts_max_retries_down_server: 0
+      proxy.config.http.down_server.cache_time: 5
+
+    remap_config:
+      - from: "http://example.com/"
+        to: "http://backend.example.com:{SERVER_HTTP_PORT}/"
+
+    plugin_config:
+      - 'xdebug.so --enable=x-cache,x-cache-key,via'
+
+sessions:
+- transactions:
+  # 1. Cache object
+  #   cache-key: /path/a/
+  #   cache: miss
+  #   origin server: up
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /path/a/
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ x-debug, "x-cache,x-cache-key,via" ]
+        - [ uuid, a-1 ]
+
+    server-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Length, 16]
+        - [ Cache-Control, "public, max-age=1"]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Cache, { value: miss, as: equal } ]
+
+  # 2. Make the origin server down
+  #   cache-key: /path/b/
+  #   cache: miss
+  #   origin server: down
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /path/b/
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ x-debug, "x-cache,x-cache-key,via" ]
+        - [ uuid, b-1 ]
+
+    server-response:
+      on_connect: reset
+
+    proxy-response:
+      status: 502
+      headers:
+        fields:
+        - [ X-Cache, { value: miss, as: equal } ]
+
+  # 3. Serve stale while down_serve.cache_time
+  #   cache-key: /path/a/
+  #   cache: stale
+  #   origin server: down (cached)
+  - client-request:
+      delay: 2s
+      method: "GET"
+      version: "1.1"
+      url: /path/a/
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ x-debug, "x-cache,x-cache-key,via" ]
+        - [ uuid, a-2 ]
+
+    proxy-request:
+      expect: absent
+
+    server-response:
+      on_connect: reset
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Cache, { value: hit-stale, as: equal } ]
+
+  # 4. Revalidate stale contents
+  #   cache-key: /path/a/
+  #   cache: stale
+  #   origin server: up
+  - client-request:
+      delay: 5s
+      method: "GET"
+      version: "1.1"
+      url: /path/a/
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ x-debug, "x-cache,x-cache-key,via" ]
+        - [ uuid, a-99 ]
+
+    server-response:
+      status: 304
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Cache, { value: hit-stale, as: equal } ]
+
