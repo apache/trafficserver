@@ -43,7 +43,8 @@
   @section example Example usage of the API
 
   @code
-  LogAccess entry(this);
+  // Populate a LogData (e.g. TransactionLogData or PreTransactionLogData), then:
+  LogAccess entry(data);
   int ret = Log::access(&entry);
   @endcode
 

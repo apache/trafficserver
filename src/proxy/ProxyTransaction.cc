@@ -23,6 +23,9 @@
 
 #include "proxy/http/HttpSM.h"
 #include "proxy/Plugin.h"
+#include "proxy/PreTransactionLogData.h"
+#include "proxy/logging/LogAccess.h"
+#include "proxy/logging/Log.h"
 
 namespace
 {
@@ -289,4 +292,125 @@ ProxyTransaction::mark_as_tunnel_endpoint()
   auto nvc = get_netvc();
   ink_assert(nvc != nullptr);
   nvc->mark_as_tunnel_endpoint();
+}
+
+namespace
+{
+/** Build a best-effort request target for access logging. */
+std::string
+synthesize_request_target(std::string_view method, std::string_view scheme, std::string_view authority, std::string_view path)
+{
+  if (method == static_cast<std::string_view>(HTTP_METHOD_CONNECT)) {
+    if (!authority.empty()) {
+      return std::string(authority);
+    }
+    if (!path.empty()) {
+      return std::string(path);
+    }
+    return {};
+  }
+
+  if (!scheme.empty() && !authority.empty()) {
+    std::string url;
+    url.reserve(scheme.size() + authority.size() + path.size() + 4);
+    url.append(scheme);
+    url.append("://");
+    url.append(authority);
+    if (!path.empty()) {
+      url.append(path);
+    } else {
+      url.push_back('/');
+    }
+    return url;
+  }
+
+  if (!path.empty()) {
+    return std::string(path);
+  }
+
+  return authority.empty() ? std::string{} : std::string(authority);
+}
+
+std::string_view
+get_pseudo_header_value(HTTPHdr const &hdr, std::string_view name)
+{
+  if (auto const *field = hdr.field_find(name); field != nullptr) {
+    return field->value_get();
+  }
+  return {};
+}
+} // end anonymous namespace
+
+void
+ProxyTransaction::log_pre_transaction_access(HTTPHdr const *request, const char *protocol_str)
+{
+  if (get_sm() != nullptr) {
+    return;
+  }
+
+  if (request == nullptr || !request->valid() || request->type_get() != HTTPType::REQUEST) {
+    return;
+  }
+
+  ProxySession *ssn = get_proxy_ssn();
+  if (ssn == nullptr) {
+    return;
+  }
+
+  PreTransactionLogData data;
+
+  data.owned_client_request.create(HTTPType::REQUEST, request->version_get());
+  data.owned_client_request.copy(request);
+  data.m_client_connection_is_ssl = ssn->ssl() != nullptr;
+
+  auto const method_sv    = get_pseudo_header_value(*request, PSEUDO_HEADER_METHOD);
+  auto const scheme_sv    = get_pseudo_header_value(*request, PSEUDO_HEADER_SCHEME);
+  auto const authority_sv = get_pseudo_header_value(*request, PSEUDO_HEADER_AUTHORITY);
+  auto const path_sv      = get_pseudo_header_value(*request, PSEUDO_HEADER_PATH);
+
+  if (!method_sv.empty()) {
+    data.owned_method.assign(method_sv.data(), method_sv.size());
+  } else {
+    auto const mget = const_cast<HTTPHdr *>(request)->method_get();
+    if (!mget.empty()) {
+      data.owned_method.assign(mget.data(), mget.size());
+    }
+  }
+
+  if (!scheme_sv.empty()) {
+    data.owned_scheme.assign(scheme_sv.data(), scheme_sv.size());
+  }
+  if (!authority_sv.empty()) {
+    data.owned_authority.assign(authority_sv.data(), authority_sv.size());
+  }
+  if (!path_sv.empty()) {
+    data.owned_path.assign(path_sv.data(), path_sv.size());
+  }
+  data.owned_url = synthesize_request_target(data.owned_method, data.owned_scheme, data.owned_authority, data.owned_path);
+
+  if (protocol_str) {
+    data.owned_client_protocol_str = protocol_str;
+  }
+
+  ats_ip_copy(&data.owned_client_addr.sa, ssn->get_remote_addr());
+  ats_ip_copy(&data.owned_client_src_addr.sa, ssn->get_remote_addr());
+  ats_ip_copy(&data.owned_client_dst_addr.sa, ssn->get_local_addr());
+  data.m_client_port = ats_ip_port_host_order(ssn->get_remote_addr());
+
+  data.m_connection_id  = ssn->connection_id();
+  data.m_transaction_id = get_transaction_id();
+
+  data.m_log_code      = SquidLogCode::ERR_INVALID_REQ;
+  data.m_hit_miss_code = SQUID_MISS_NONE;
+  data.m_hier_code     = SquidHierarchyCode::NONE;
+
+  ink_hrtime const now                                    = ink_get_hrtime();
+  data.owned_milestones[TS_MILESTONE_SM_START]            = now;
+  data.owned_milestones[TS_MILESTONE_UA_BEGIN]            = now;
+  data.owned_milestones[TS_MILESTONE_UA_FIRST_READ]       = now;
+  data.owned_milestones[TS_MILESTONE_UA_READ_HEADER_DONE] = now;
+  data.owned_milestones[TS_MILESTONE_SM_FINISH]           = now;
+
+  LogAccess access(data);
+  Log::access(&access);
 }

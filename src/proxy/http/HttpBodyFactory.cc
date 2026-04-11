@@ -40,6 +40,7 @@
 #include "proxy/hdrs/URL.h"
 #include "proxy/logging/Log.h"
 #include "proxy/logging/LogAccess.h"
+#include "proxy/http/CompletedTransactionLogData.h"
 #include "proxy/hdrs/HttpCompat.h"
 #include "tscore/Layout.h"
 
@@ -1157,7 +1158,8 @@ HttpBodyTemplate::build_instantiated_buffer(HttpTransact::State *context, int64_
 
   Dbg(dbg_ctl_body_factory_instantiation, "    before instantiation: [%s]", template_buffer);
 
-  LogAccess la(context->state_machine);
+  CompletedTransactionLogData log_data(context->state_machine);
+  LogAccess                   la(log_data);
 
   buffer = resolve_logfield_string(&la, template_buffer);
 

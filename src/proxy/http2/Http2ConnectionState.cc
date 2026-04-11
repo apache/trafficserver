@@ -496,6 +496,9 @@ Http2ConnectionState::rcv_headers_frame(const Http2Frame &frame)
         return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_ENHANCE_YOUR_CALM,
                           "recv headers enhance your calm");
       } else {
+        if (!stream->trailing_header_is_possible() && !stream->is_outbound_connection()) {
+          stream->log_pre_transaction_access(stream->get_receive_header(), "http/2");
+        }
         return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR,
                           "recv headers malformed request");
       }
@@ -1108,6 +1111,9 @@ Http2ConnectionState::rcv_continuation_frame(const Http2Frame &frame)
         return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_ENHANCE_YOUR_CALM,
                           "continuation enhance your calm");
       } else {
+        if (!stream->trailing_header_is_possible() && !stream->is_outbound_connection()) {
+          stream->log_pre_transaction_access(stream->get_receive_header(), "http/2");
+        }
         return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR,
                           "continuation malformed request");
       }
