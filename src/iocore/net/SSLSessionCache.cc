@@ -339,7 +339,13 @@ SSLSessionBucket::~SSLSessionBucket() {}
 
 SSLOriginSessionCache::SSLOriginSessionCache() {}
 
-SSLOriginSessionCache::~SSLOriginSessionCache() {}
+SSLOriginSessionCache::~SSLOriginSessionCache()
+{
+  while (auto *node = orig_sess_que.pop()) {
+    delete node;
+  }
+  orig_sess_map.clear();
+}
 
 void
 SSLOriginSessionCache::insert_session(const std::string &lookup_key, SSL_SESSION *sess, SSL *ssl)
