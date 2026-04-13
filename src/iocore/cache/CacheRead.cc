@@ -249,8 +249,8 @@ CacheVC::openReadFromWriter(int event, Event *e)
       return openReadStartHead(event, e);
     }
   }
-  OpenDirEntry *cod = od;
-  od                = nullptr;
+  Ptr<OpenDirEntry> cod = od;
+  od                    = nullptr;
   // someone is currently writing the document
   if (write_vc->closed < 0) {
     MUTEX_RELEASE(lock);
@@ -1149,7 +1149,7 @@ CacheVC::openReadStartHead(int event, Event *e)
     // don't want to go through this BS of reading from a writer if
     // its a lookup. In this case lookup will fail while the document is
     // being written to the cache.
-    OpenDirEntry *cod = stripe->open_read(&key);
+    Ptr<OpenDirEntry> cod = stripe->open_read(&key);
     if (cod && !f.read_from_writer_called) {
       if (f.lookup) {
         err = ECACHE_DOC_BUSY;

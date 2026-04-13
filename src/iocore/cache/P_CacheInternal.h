@@ -382,7 +382,7 @@ CacheVC::do_write_lock_call()
 inline bool
 CacheVC::writer_done()
 {
-  OpenDirEntry *cod = od;
+  Ptr<OpenDirEntry> cod = od;
   if (!cod) {
     cod = stripe->open_read(&first_key);
   }
