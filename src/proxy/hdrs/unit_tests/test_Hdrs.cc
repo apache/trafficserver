@@ -183,6 +183,13 @@ test_http_hdr_copy_over_aux(int testnum, const char *request, const char *respon
   HTTPHdr copy1;
   HTTPHdr copy2;
 
+  ts::PostScript cleanup([&]() -> void {
+    req_hdr.destroy();
+    resp_hdr.destroy();
+    copy1.destroy();
+    copy2.destroy();
+  });
+
   HTTPParser  parser;
   const char *start;
   const char *end;
@@ -236,15 +243,11 @@ test_http_hdr_copy_over_aux(int testnum, const char *request, const char *respon
   copy1.create(HTTPType::REQUEST);
   copy1.copy(&req_hdr);
   comp_str = comp_http_hdr(&req_hdr, &copy1);
-  if (comp_str) {
-    goto done;
-  }
 
-  copy2.create(HTTPType::RESPONSE);
-  copy2.copy(&resp_hdr);
-  comp_str = comp_http_hdr(&resp_hdr, &copy2);
-  if (comp_str) {
-    goto done;
+  if (!comp_str) {
+    copy2.create(HTTPType::RESPONSE);
+    copy2.copy(&resp_hdr);
+    comp_str = comp_http_hdr(&resp_hdr, &copy2);
   }
 
   // The APIs for copying headers uses memcpy() which can be unsafe for
@@ -252,32 +255,24 @@ test_http_hdr_copy_over_aux(int testnum, const char *request, const char *respon
   // created in the first place honestly, since nothing else does this.
 
   /*** (4) Gender bending copying ***/
-  copy1.copy(&resp_hdr);
-  comp_str = comp_http_hdr(&resp_hdr, &copy1);
-  if (comp_str) {
-    goto done;
+  if (!comp_str) {
+    copy1.copy(&resp_hdr);
+    comp_str = comp_http_hdr(&resp_hdr, &copy1);
   }
 
-  copy2.copy(&req_hdr);
-  comp_str = comp_http_hdr(&req_hdr, &copy2);
-  if (comp_str) {
-    goto done;
+  if (!comp_str) {
+    copy2.copy(&req_hdr);
+    comp_str = comp_http_hdr(&req_hdr, &copy2);
   }
-
-done:
-  req_hdr.destroy();
-  resp_hdr.destroy();
-  copy1.destroy();
-  copy2.destroy();
 
   if (comp_str) {
     printf("FAILED: (test #%d) copy & compare: %s\n", testnum, comp_str);
     printf("REQ:\n[%.*s]\n", static_cast<int>(strlen(request)), request);
     printf("RESP  :\n[%.*s]\n", static_cast<int>(strlen(response)), response);
     return (0);
-  } else {
-    return (1);
   }
+
+  return (1);
 }
 
 int
@@ -379,9 +374,15 @@ test_http_hdr_print_and_copy_aux(int testnum, const char *request, const char *r
 {
   ParseResult err;
   HTTPHdr     hdr;
+  HTTPHdr     new_hdr;
   HTTPParser  parser;
   const char *start;
   const char *end;
+
+  ts::PostScript cleanup([&]() -> void {
+    hdr.destroy();
+    new_hdr.destroy();
+  });
 
   char prt_buf[2048];
   int  prt_bufsize = sizeof(prt_buf);
@@ -416,7 +417,7 @@ test_http_hdr_print_and_copy_aux(int testnum, const char *request, const char *r
   }
 
   /*** (2) copy the request header ***/
-  HTTPHdr         new_hdr, marshal_hdr;
+  HTTPHdr         marshal_hdr;
   TestRefCountObj ref;
 
   // Pretend to pin this object with a refcount.
@@ -523,9 +524,6 @@ test_http_hdr_print_and_copy_aux(int testnum, const char *request, const char *r
     std::printf("CPY_BUFF:\n[%.*s]\n", cpy_bufindex, cpy_buf);
     return (0);
   }
-
-  hdr.destroy();
-  new_hdr.destroy();
 
   if (test_http_hdr_copy_over_aux(testnum, request, response) == 0) {
     return 0;
