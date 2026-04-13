@@ -29,7 +29,7 @@
  * Command handler for configuration format conversion.
  *
  * Converts configuration files from legacy formats to YAML.
- * Supports: ssl_multicert, storage
+ * Supports: ssl_multicert, storage, remap
  */
 class ConvertConfigCommand : public CtrlCommand
 {
@@ -42,6 +42,7 @@ public:
   ConvertConfigCommand(ts::Arguments *args);
 
 private:
+  void convert_remap();
   void convert_ssl_multicert();
   void convert_storage();
 

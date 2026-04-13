@@ -22,6 +22,7 @@
 */
 
 #include "ConvertConfigCommand.h"
+#include "config/remap.h"
 #include "config/ssl_multicert.h"
 #include "config/storage.h"
 
@@ -50,8 +51,54 @@ ConvertConfigCommand::ConvertConfigCommand(ts::Arguments *args) : CtrlCommand(ar
     _volume_config_file = convert_args[1];
     _output_file        = convert_args[2];
     _invoked_func       = [this]() { convert_storage(); };
+  } else if (args->get("remap")) {
+    auto const &convert_args = args->get("remap");
+    if (convert_args.size() < 2) {
+      throw std::invalid_argument("remap requires <input_file> <output_file>");
+    }
+    _input_file   = convert_args[0];
+    _output_file  = convert_args[1];
+    _invoked_func = [this]() { convert_remap(); };
   } else {
     throw std::invalid_argument("Unsupported config type for conversion");
+  }
+}
+
+void
+ConvertConfigCommand::convert_remap()
+{
+  config::RemapParser                       parser;
+  config::ConfigResult<config::RemapConfig> result = parser.parse(_input_file);
+
+  if (result.file_not_found) {
+    _printer->write_output("Failed to parse input file '" + _input_file + "': file not found");
+    return;
+  }
+
+  if (!result.ok()) {
+    std::string error_msg = "Failed to parse input file '" + _input_file + "'";
+    if (!result.errata.empty()) {
+      error_msg += ": ";
+      error_msg += std::string(result.errata.front().text());
+    }
+    _printer->write_output(error_msg);
+    return;
+  }
+
+  config::RemapMarshaller marshaller;
+  std::string const       yaml_output = marshaller.to_yaml(result.value);
+
+  if (_output_file == "-") {
+    std::cout << yaml_output << '\n';
+  } else {
+    std::ofstream out(_output_file);
+    if (!out) {
+      _printer->write_output("Failed to open output file '" + _output_file + "' for writing");
+      return;
+    }
+    out << yaml_output << '\n';
+    out.close();
+    _printer->write_output("Converted " + _input_file + " -> " + _output_file);
   }
 }
 

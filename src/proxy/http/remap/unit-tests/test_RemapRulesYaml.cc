@@ -259,4 +259,43 @@ SCENARIO("Parsing UrlRewrite", "[proxy][remap]")
       REQUIRE(urlrw->forwardMappingWithRecvPortLookup(&url.url, 0, host, strlen(host), urlmap) == false);
     }
   }
+  GIVEN("YAML remap rules with unique, tag, and volume metadata")
+  {
+    std::unique_ptr<UrlRewrite> urlrw = std::make_unique<UrlRewrite>();
+    urlrw->set_remap_yaml(true);
+
+    std::string config = R"RMCFG(
+      remap:
+        - type: map
+          unique: true
+          tag: edge-tag
+          volume:
+            - 3
+            - 4
+          from:
+            url: http://meta.example.com
+          to:
+            url: http://127.0.0.1:8080
+  )RMCFG";
+
+    auto           cpath = write_test_remap(config, "yaml-metadata");
+    ts::PostScript file_cleanup([&]() -> void { std::filesystem::remove(cpath.c_str()); });
+    int            rc = urlrw->BuildTable(cpath.c_str());
+    EasyURL        url("http://meta.example.com");
+    const char    *host = "meta.example.com";
+
+    THEN("the metadata is applied to the loaded rule")
+    {
+      REQUIRE(rc == TS_SUCCESS);
+      REQUIRE(urlrw->rule_count() == 1);
+
+      UrlMappingContainer urlmap;
+      REQUIRE(urlrw->forwardMappingLookup(&url.url, 80, host, strlen(host), urlmap));
+      REQUIRE(urlmap.getMapping() != nullptr);
+      CHECK(urlmap.getMapping()->unique);
+      REQUIRE(urlmap.getMapping()->tag != nullptr);
+      CHECK(std::string{urlmap.getMapping()->tag} == "edge-tag");
+      CHECK(urlmap.getMapping()->getVolume() == "3,4");
+    }
+  }
 }
