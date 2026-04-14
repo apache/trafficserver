@@ -34,7 +34,13 @@ server.addResponse("sessionlog.json", request_header, response_header)
 
 ts.addDefaultSSLFiles()
 
-ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+ts.Disk.ssl_multicert_yaml.AddLines(
+    f"""
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name= {ts.Variables.SSLDir}/server.pem
+    ssl_key_name={ts.Variables.SSLDir}/server.key
+""".split('\n'))
 
 ts.Disk.records_config.update(
     {
