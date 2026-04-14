@@ -70,13 +70,24 @@ HttpCacheAction::cancel(Continuation *c)
 // HttpCacheSM
 //
 /**
-  Reset captive_action and counters for another cache operations.
-  - e.g. following redirect starts over from cache lookup
+  Reset state for another cache operation (e.g., following a redirect).
+
+  This closes any existing cache read VC, cancels pending retry events,
+  and resets the captive action. Without this cleanup, a stale cache_read_vc
+  from a previous successful read could remain set when the new cache
+  operation completes, causing an assertion failure if redirect_in_process
+  has been cleared by that time.
  */
 void
 HttpCacheSM::reset()
 {
   captive_action.reset();
+  close_read();
+
+  if (_read_retry_event != nullptr) {
+    _read_retry_event->cancel();
+    _read_retry_event = nullptr;
+  }
 }
 
 void
