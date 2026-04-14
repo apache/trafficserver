@@ -99,12 +99,6 @@ ssl_multicert:
     ssl_cert_name: server.pem
     ssl_key_name: server.key
 """.split('\n'))
-        self._ts.Disk.File(
-            os.path.join(self._ts.Variables.CONFIGDIR, 'ssl_multicert.config'),
-            id='ssl_multicert_config',
-            typename='ats:config',
-        )
-        self._ts.Disk.ssl_multicert_config.AddLine('ssl_cert_name=server.pem ssl_key_name=server.key dest_ip=*')
 
         self._ts.Disk.records_config.update(
             {
