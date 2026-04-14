@@ -23,6 +23,7 @@
 
 // We base on the common client types.
 #include "shared/rpc/RPCRequests.h"
+#include "tsutil/ts_diag_levels.h"
 
 #include <yaml-cpp/yaml.h>
 
@@ -61,13 +62,18 @@ struct ConfigReloadRequest : shared::rpc::ClientRequest {
 // Full list of reload tasks, could be nested.
 struct ConfigReloadResponse {
   // Existing reload task info, could be nested.
+  struct LogEntry {
+    DiagsLevel  level{DL_Undefined}; ///< DL_Undefined for state-change messages
+    std::string text;
+  };
+
   struct ReloadInfo {
-    std::string              config_token;
-    std::string              status;
-    std::string              description;
-    std::string              filename;
-    std::vector<std::string> logs;
-    std::vector<ReloadInfo>  sub_tasks;
+    std::string             config_token;
+    std::string             status;
+    std::string             description;
+    std::string             filename;
+    std::vector<LogEntry>   logs;
+    std::vector<ReloadInfo> sub_tasks;
     struct Meta { // internal info.
       int64_t created_time_ms{0};
       int64_t last_updated_time_ms{0};

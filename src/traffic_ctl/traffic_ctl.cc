@@ -177,6 +177,7 @@ main([[maybe_unused]] int argc, const char **argv)
   config_command.add_command("status", "Check the configuration status", [&]() { command->execute(); })
     .add_option("--token", "-t", "Configuration token to check status.", "", 1, "")
     .add_option("--count", "-c", "Number of status records to return. Use numeric or 'all' to get the full history", "", 1, "")
+    .add_option("--min-level", "", "Minimum severity level for log entries: debug, note, warning, error", "", 1, "")
     .add_example_usage("traffic_ctl config status");
   config_command.add_command("set", "Set a configuration value", "", 2, Command_Execute)
     .add_option("--cold", "-c",

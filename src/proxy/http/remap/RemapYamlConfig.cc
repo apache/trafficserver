@@ -23,6 +23,8 @@
 
 #include "proxy/http/remap/RemapYamlConfig.h"
 
+#include "mgmt/config/ConfigContextDiags.h"
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <dirent.h>
@@ -962,7 +964,7 @@ MAP_ERROR:
 }
 
 bool
-remap_parse_yaml_bti(const char *path, BUILD_TABLE_INFO *bti)
+remap_parse_yaml_bti(const char *path, BUILD_TABLE_INFO *bti, ConfigContext ctx)
 {
   try {
     Dbg(dbg_ctl_remap_yaml, "Parsing YAML config file: %s", path);
@@ -978,7 +980,7 @@ remap_parse_yaml_bti(const char *path, BUILD_TABLE_INFO *bti)
 
     ACLBehaviorPolicy behavior_policy = ACLBehaviorPolicy::ACL_BEHAVIOR_LEGACY;
     if (!UrlRewrite::get_acl_behavior_policy(behavior_policy)) {
-      Warning("Failed to get ACL matching policy.");
+      CfgLoadLog(ctx, DL_Warning, "Failed to get ACL matching policy.");
       return false;
     }
     bti->behavior_policy = behavior_policy;
@@ -988,14 +990,14 @@ remap_parse_yaml_bti(const char *path, BUILD_TABLE_INFO *bti)
       for (const auto &filter_def : config["acl_filters"]) {
         auto errata = parse_yaml_define_directive(filter_def, bti);
         if (!errata.is_ok()) {
-          Error("Failed to parse acl_filters section");
+          CfgLoadLog(ctx, DL_Error, "Failed to parse acl_filters section");
           return false;
         }
       }
     }
 
     if (config["remap"].IsNull() || !config["remap"].IsSequence()) {
-      Error("Expected toplevel 'remap' key to be a sequence");
+      CfgLoadLog(ctx, DL_Error, "Expected toplevel 'remap' key to be a sequence");
       return false;
     }
 
@@ -1006,7 +1008,7 @@ remap_parse_yaml_bti(const char *path, BUILD_TABLE_INFO *bti)
 
       auto errata = parse_yaml_remap_rule(rule, bti);
       if (!errata.is_ok()) {
-        Error("Failed to parse remap rule");
+        CfgLoadLog(ctx, DL_Error, "Failed to parse remap rule");
         return false;
       }
     }
@@ -1017,15 +1019,15 @@ remap_parse_yaml_bti(const char *path, BUILD_TABLE_INFO *bti)
     return true;
 
   } catch (YAML::Exception &ex) {
-    Error("YAML parsing error in %s: %s", path, ex.what());
+    CfgLoadLog(ctx, DL_Error, "YAML parsing error in %s: %s", path, ex.what());
   } catch (std::exception &ex) {
-    Error("Exception parsing YAML config %s: %s", path, ex.what());
+    CfgLoadLog(ctx, DL_Error, "Exception parsing YAML config %s: %s", path, ex.what());
   }
   return false;
 }
 
 bool
-remap_parse_yaml(const char *path, UrlRewrite *rewrite)
+remap_parse_yaml(const char *path, UrlRewrite *rewrite, ConfigContext ctx)
 {
   BUILD_TABLE_INFO bti;
 
@@ -1034,7 +1036,7 @@ remap_parse_yaml(const char *path, UrlRewrite *rewrite)
   rewrite->pluginFactory.indicatePreReload();
 
   bti.rewrite = rewrite;
-  bool status = remap_parse_yaml_bti(path, &bti);
+  bool status = remap_parse_yaml_bti(path, &bti, ctx);
 
   /* Now after we parsed the configuration and (re)loaded plugins and plugin instances
    * accordingly notify all plugins that we are done */

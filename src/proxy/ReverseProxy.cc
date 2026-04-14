@@ -32,6 +32,7 @@
 #include <dlfcn.h>
 #include "iocore/cache/Cache.h"
 #include "proxy/ReverseProxy.h"
+#include "mgmt/config/ConfigContextDiags.h"
 #include "mgmt/config/ConfigRegistry.h"
 #include "tscore/MatcherUtils.h"
 #include "tscore/Tokenizer.h"
@@ -158,44 +159,27 @@ urlRewriteVerify()
 bool
 reloadUrlRewrite(ConfigContext ctx)
 {
-  std::string msg_buffer;
-  msg_buffer.reserve(1024);
-  UrlRewrite *newTable, *oldTable;
-
-  Note("%s loading (checking first) ...", ts::filename::REMAP_YAML);
-  Note("%s loading ...", ts::filename::REMAP);
-  Dbg(dbg_ctl_url_rewrite, "%s updated, reloading...", ts::filename::REMAP_YAML);
+  CfgLoadInProgress(ctx, "%s loading ...", ts::filename::REMAP);
   Dbg(dbg_ctl_url_rewrite, "%s updated, reloading...", ts::filename::REMAP);
-  newTable = new UrlRewrite();
 
-  bool status  = newTable->load();
-  bool is_yaml = (newTable->is_remap_yaml());
+  UrlRewrite *newTable = new UrlRewrite();
+
+  bool        status   = newTable->load(ctx);
+  bool        is_yaml  = newTable->is_remap_yaml();
+  const char *filename = is_yaml ? ts::filename::REMAP_YAML : ts::filename::REMAP;
 
   if (status) {
-    swoc::bwprint(msg_buffer, "{} finished loading", is_yaml ? ts::filename::REMAP_YAML : ts::filename::REMAP);
-
-    // Hold at least one lease, until we reload the configuration
     newTable->acquire();
 
-    // Swap configurations
-    oldTable = rewrite_table.exchange(newTable);
-
+    UrlRewrite *oldTable = rewrite_table.exchange(newTable);
     ink_assert(oldTable != nullptr);
-
-    // Release the old one
     oldTable->release();
 
-    Dbg(dbg_ctl_url_rewrite, "%s", msg_buffer.c_str());
-    Note("%s", msg_buffer.c_str());
-    ctx.complete(msg_buffer);
+    CfgLoadComplete(ctx, "%s finished loading", filename);
     return true;
   } else {
-    swoc::bwprint(msg_buffer, "{} failed to load", is_yaml ? ts::filename::REMAP_YAML : ts::filename::REMAP);
-
     delete newTable;
-    Dbg(dbg_ctl_url_rewrite, "%s", msg_buffer.c_str());
-    Error("%s", msg_buffer.c_str());
-    ctx.fail(msg_buffer);
+    CfgLoadFail(ctx, DL_Error, "%s failed to load", filename);
     return false;
   }
 }

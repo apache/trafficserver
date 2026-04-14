@@ -663,13 +663,234 @@ Logging Best Practices
 ======================
 
 - Use ``ctx.log()`` for operational messages that appear in
-  ``traffic_ctl config status -l`` and :ref:`get_reload_config_status` responses.
+  ``traffic_ctl config status`` and :ref:`get_reload_config_status` responses.
 - Use ``ctx.fail(errata, summary)`` when you have a ``swoc::Errata`` with detailed error context.
 - Use ``ctx.fail(reason)`` for simple error strings.
 - Keep log messages concise — they are stored in memory and included in JSONRPC responses.
 
 See the :ref:`get_reload_config_status` response examples for how log messages appear in the
 task tree output.
+
+
+.. _config-reload-unified-macros:
+
+Unified Diagnostic Macros (``CfgLoad*``)
+=========================================
+
+Config handlers often need the same message in two places: the ATS diagnostic log
+(``diags.log`` / ``error.log``) **and** the reload task log (visible via
+:option:`traffic_ctl config status`). The ``CfgLoad*`` macros in
+``mgmt/config/ConfigContextDiags.h`` format the message once and dispatch to both destinations.
+
+Include the header in any source file that uses these macros:
+
+.. code-block:: cpp
+
+   #include "mgmt/config/ConfigContextDiags.h"
+
+Quick Reference
+---------------
+
+.. list-table::
+   :header-rows: 1
+   :widths: 15 15 40
+
+   * - Want in diags?
+     - Want in task log?
+     - Use
+   * - Note
+     - yes
+     - ``CfgLoadInProgress`` / ``CfgLoadComplete``
+   * - Error / Warning
+     - yes
+     - ``CfgLoadFail(ctx, DL_xxx, ...)``
+   * - Error + Errata
+     - yes + fail
+     - ``CfgLoadFailWithErrata(ctx, ...)``
+   * - Note / Warning
+     - yes (no state change)
+     - ``CfgLoadLog(ctx, DL_xxx, ...)``
+   * - Dbg (conditional on tag)
+     - yes
+     - ``CfgLoadDbg(ctx, ctl, ...)``
+   * - no
+     - yes
+     - ``ctx.log(...)``
+   * - no
+     - yes + state
+     - ``ctx.complete()`` / ``ctx.fail()``
+   * - yes
+     - no
+     - ``Note()`` / ``Warning()`` / ``Error()`` / ``Dbg()`` directly
+
+Macro Details
+-------------
+
+``CfgLoadInProgress(ctx, fmt, ...)``
+   Emits a ``Note()`` to ``diags.log`` and calls ``ctx.in_progress(msg)``. Use at the start
+   of a config load/reload:
+
+   .. code-block:: cpp
+
+      CfgLoadInProgress(ctx, "%s loading ...", filename);
+
+``CfgLoadComplete(ctx, fmt, ...)``
+   Emits a ``Note()`` to ``diags.log`` and calls ``ctx.complete(msg)``. Use when a config
+   operation finishes successfully:
+
+   .. code-block:: cpp
+
+      CfgLoadComplete(ctx, "%s finished loading", filename);
+
+``CfgLoadFail(ctx, level, fmt, ...)``
+   Emits at the given ``DiagsLevel`` (typically ``DL_Error`` or ``DL_Warning``) to both
+   ``diags.log`` and the task log, then marks the task as FAIL (state-only, no additional
+   log entry):
+
+   .. code-block:: cpp
+
+      CfgLoadFail(ctx, DL_Error, "%s failed to load", filename);
+      CfgLoadFail(ctx, DL_Warning, "No NAMEDs provided for %s", filename);
+
+``CfgLoadFailWithErrata(ctx, level, errata, fmt, ...)``
+   Like ``CfgLoadFail`` but also appends ``swoc::Errata`` annotations to the task log.
+   Combines ``CfgLoadFail`` + ``ctx.fail(errata)`` in one call — see
+   :ref:`config-reload-errata-handling` below.
+
+``CfgLoadLog(ctx, level, fmt, ...)``
+   Emits at the given ``DiagsLevel`` and calls ``ctx.log(level, msg)`` **without changing
+   task state**. Use for intermediate informational messages:
+
+   .. code-block:: cpp
+
+      CfgLoadLog(ctx, DL_Warning, "ControlMatcher - Cannot open config file: %s", path);
+      CfgLoadLog(ctx, DL_Note, "loaded %d categories from %s", count, filename);
+
+``CfgLoadDbg(ctx, dbg_ctl, fmt, ...)``
+   Emits via ``Dbg()`` (conditional on the tag being enabled) and always adds to the task log
+   at ``DL_Debug``. Use for debug-level messages that should also appear in reload status:
+
+   .. code-block:: cpp
+
+      CfgLoadDbg(ctx, dbg_ctl_ssl, "Reload SNI file");
+
+.. _config-reload-errata-handling:
+
+Errata Handling
+---------------
+
+For failures with ``swoc::Errata`` detail, use ``CfgLoadFailWithErrata`` to combine
+the diags summary, errata detail, and state change in a single call:
+
+.. code-block:: cpp
+
+   CfgLoadFailWithErrata(ctx, DL_Error, errata, "%s failed to load", filename);
+
+This logs the formatted message to ``diags.log`` at the given severity, appends it to
+the task log, then calls ``ctx.fail(errata)`` which stores each errata annotation
+(with its own severity) in the task log and marks the task as FAIL.
+
+For errors that should not change state, pair ``CfgLoadLog`` with ``ctx.log(errata)``:
+
+.. code-block:: cpp
+
+   CfgLoadLog(ctx, DL_Error, "Cannot open %s", path);
+   ctx.log(errata);  // errata detail -> task log only
+
+When NOT to Use Macros
+-----------------------
+
+- **Task-log-only messages** — use ``ctx.log()`` directly when the message is only useful in
+  ``traffic_ctl`` output and should not appear in ``diags.log``.
+- **State-only transitions** — use ``ctx.in_progress()`` / ``ctx.complete()`` / ``ctx.fail()``
+  directly when there is no message to emit to ``diags.log``.
+- **Fatal errors** — ``Fatal()`` terminates the process; reload status is irrelevant.
+  Call ``Fatal()`` directly.
+
+
+Severity-Aware Task Logs
+=========================
+
+Each task log entry carries a ``DiagsLevel`` severity. State-transition methods carry implicit
+severity: ``in_progress(text)`` and ``complete(text)`` store ``DL_Note``, ``fail(text)`` stores
+``DL_Error``. The ``CfgLoad*`` macros and ``ctx.log(level, text)`` store the caller-specified
+level. Only the one-argument ``ctx.log(text)`` (no level) stores ``DL_Undefined`` — these
+entries are always shown regardless of ``--min-level`` filtering.
+
+In :option:`traffic_ctl config status` output, entries with a defined severity are prefixed
+with a tag:
+
+.. code-block:: text
+
+   ✗ ssl_client_coordinator ·······················    2ms  ✗ FAIL
+   │  [Note]  SSL configs reloaded
+   ├─ ✔ SSLConfig ·································    1ms
+   │     [Note]  SSLConfig loading ...
+   │     [Dbg]   Reload SSLConfig
+   │     [Note]  SSLConfig reloaded
+   ├─ ✗ SNIConfig ·································    1ms  ✗ FAIL
+   │     [Note]  sni.yaml loading ...
+   │     [Err]   sni.yaml failed to load
+   └─ ✔ SSLCertificateConfig ······················    0ms
+         [Note]  (ssl) ssl_multicert.yaml loading ...
+         [Warn]  Cannot open SSL certificate configuration "ssl_multicert.yaml" - No such file or directory
+         [Note]  (ssl) ssl_multicert.yaml finished loading
+
+The ``--min-level`` option on :option:`traffic_ctl config status` filters log entries
+by severity — see :option:`traffic_ctl config status` for details.
+
+The severity is also available in JSON output (``--format json``) as an integer ``level``
+field on each log entry, where the value maps to the ``DiagsLevel`` enum (e.g. ``1`` = Debug,
+``3`` = Note, ``4`` = Warning, ``5`` = Error).
+
+
+.. _config-reload-diags-log:
+
+Reload Summary in ``diags.log``
+================================
+
+After a reload reaches a terminal state (confirmed after a 5-second grace period), a summary
+line is logged to ``diags.log``:
+
+**Success:**
+
+.. code-block:: text
+
+   NOTE: Config reload [my-token] completed successfully: 3 tasks succeeded (3 total)
+
+**Failure:**
+
+.. code-block:: text
+
+   WARNING: Config reload [my-token] finished with failures: 1 succeeded, 1 failed (3 total) — run: traffic_ctl config status -t my-token
+
+When the ``config.reload`` debug tag is enabled, a detailed dump of all subtasks and their
+log entries is written to ``traffic.out`` / ``diags.log``:
+
+.. code-block:: text
+
+   DIAG: (config.reload)   [fail] ssl_client_coordinator
+   DIAG: (config.reload)     [Note] SSL configs reloaded
+   DIAG: (config.reload)     [success] SSLConfig
+   DIAG: (config.reload)       [Note] SSLConfig loading ...
+   DIAG: (config.reload)       [Dbg] Reload SSLConfig
+   DIAG: (config.reload)       [Note] SSLConfig reloaded
+   DIAG: (config.reload)     [fail] SNIConfig
+   DIAG: (config.reload)       [Note] sni.yaml loading ...
+   DIAG: (config.reload)       [Err] sni.yaml failed to load
+   DIAG: (config.reload)   [success] ssl_ticket_key
+   DIAG: (config.reload)     [Note] SSL ticket key loading ...
+   DIAG: (config.reload)     [Note] SSL ticket key reloaded
+
+Enable this tag for troubleshooting:
+
+.. code-block:: yaml
+
+   records:
+     diags:
+       debug:
+         enabled: 1
+         tags: config.reload
 
 
 Testing
@@ -683,7 +904,10 @@ After registering a new handler:
 3. Run :option:`traffic_ctl config status` to verify the handler appears in the task tree with
    the correct status.
 4. Introduce a parse error in the config file and reload — verify the handler reports ``FAIL``.
-5. Use :option:`traffic_ctl config status` ``--format json`` to inspect the raw
+5. Check that severity tags (``[Dbg]``, ``[Err]``, etc.) appear correctly in
+   :option:`traffic_ctl config status` output and that ``--min-level`` filtering works.
+6. Enable the ``config.reload`` debug tag and verify the detailed dump appears in ``diags.log``.
+7. Use :option:`traffic_ctl config status` ``--format json`` to inspect the raw
    :ref:`get_reload_config_status` response for automation testing.
 
 **Autests** — the project includes autest helpers for config reload testing. Use

@@ -63,7 +63,7 @@ ConfigContext::in_progress(std::string_view text)
   if (auto p = _task.lock()) {
     p->set_in_progress();
     if (!text.empty()) {
-      p->log(std::string{text});
+      p->log(DL_Note, std::string{text});
     }
   }
 }
@@ -77,12 +77,30 @@ ConfigContext::log(std::string_view text)
 }
 
 void
+ConfigContext::log(DiagsLevel level, std::string_view text)
+{
+  if (auto p = _task.lock()) {
+    p->log(level, std::string{text});
+  }
+}
+
+void
+ConfigContext::log(swoc::Errata const &errata)
+{
+  if (auto p = _task.lock()) {
+    for (auto const &annotation : errata) {
+      p->log(static_cast<DiagsLevel>(static_cast<int>(annotation.severity())), std::string{annotation.text()});
+    }
+  }
+}
+
+void
 ConfigContext::complete(std::string_view text)
 {
   if (auto p = _task.lock()) {
     p->set_completed();
     if (!text.empty()) {
-      p->log(std::string{text});
+      p->log(DL_Note, std::string{text});
     }
   }
 }
@@ -93,7 +111,7 @@ ConfigContext::fail(std::string_view reason)
   if (auto p = _task.lock()) {
     p->set_failed();
     if (!reason.empty()) {
-      p->log(std::string{reason});
+      p->log(DL_Error, std::string{reason});
     }
   }
 }
@@ -105,11 +123,11 @@ ConfigContext::fail(swoc::Errata const &errata, std::string_view summary)
     p->set_failed();
     // Log the summary first
     if (!summary.empty()) {
-      p->log(std::string{summary});
+      p->log(DL_Error, std::string{summary});
     }
     // Log each error from the errata
     for (auto const &err : errata) {
-      p->log(std::string{err.text()});
+      p->log(static_cast<DiagsLevel>(static_cast<int>(err.severity())), std::string{err.text()});
     }
   }
 }

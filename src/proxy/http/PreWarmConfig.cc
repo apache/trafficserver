@@ -58,7 +58,7 @@ PreWarmConfig::reconfigure(ConfigContext ctx)
   _config_id                  = configProcessor.set(_config_id, params);
 
   prewarmManager.reconfigure();
-  ctx.complete("PreWarm config published.");
+  ctx.complete("PreWarm config published");
 }
 
 PreWarmConfigParams *

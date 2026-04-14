@@ -43,6 +43,7 @@
 #include "tscore/Layout.h"
 #include "records/RecHttp.h"
 #include "records/RecCore.h"
+#include "mgmt/config/ConfigContextDiags.h"
 #include "mgmt/config/ConfigRegistry.h"
 
 #include <openssl/pem.h>
@@ -251,7 +252,7 @@ SSLConfigParams::SetServerPolicy(const char *verify_server)
 }
 
 void
-SSLConfigParams::initialize()
+SSLConfigParams::initialize(ConfigContext ctx)
 {
   cleanup();
 
@@ -552,7 +553,7 @@ SSLConfigParams::initialize()
   ssl_ktls_enabled = RecGetRecordInt("proxy.config.ssl.ktls.enabled").value_or(0);
 #ifndef SSL_OP_ENABLE_KTLS
   if (ssl_ktls_enabled) {
-    Error("kTLS configured but not supported by OpenSSL library");
+    CfgLoadLog(ctx, DL_Error, "kTLS configured but not supported by OpenSSL library");
   }
 #endif
 
@@ -571,7 +572,7 @@ SSLConfigParams::initialize()
   if (this->clientCertExitOnLoadError) {
     Emergency("Can't initialize the SSL client, HTTPS in remap rules will not function");
   } else {
-    SSLError("Can't initialize the SSL client, HTTPS in remap rules will not function");
+    CfgLoadFail(ctx, DL_Error, "Can't initialize the SSL client, HTTPS in remap rules will not function");
   }
 }
 
@@ -614,13 +615,15 @@ SSLConfig::startup()
 void
 SSLConfig::reconfigure(ConfigContext ctx)
 {
-  Dbg(dbg_ctl_ssl_load, "Reload SSLConfig");
-  SSLConfigParams *params;
-  params = new SSLConfigParams;
+  CfgLoadLog(ctx, DL_Note, "SSLConfig loading ...");
+  CfgLoadDbg(ctx, dbg_ctl_ssl_load, "Reload SSLConfig");
+
+  SSLConfigParams *params = new SSLConfigParams;
   // start loading the next config
-  int loading_config_index        = get_loading_config_index();
+  int loading_config_index = get_loading_config_index();
+
   configids[loading_config_index] = configProcessor.set(configids[loading_config_index], params);
-  params->initialize(); // re-read configuration
+  params->initialize(ctx); // re-read configuration
   // Make the new config available for use.
   commit_config_id();
   ctx.complete("SSLConfig reloaded");
@@ -670,6 +673,8 @@ SSLCertificateConfig::reconfigure(ConfigContext ctx)
   SSLConfig::scoped_config params;
   SSLCertLookup           *lookup = new SSLCertLookup();
 
+  CfgLoadLog(ctx, DL_Note, "(ssl) %s loading ...", params->configFilePath);
+
   // Test SSL certificate loading startup. With large numbers of certificates, reloading can take time, so delay
   // twice the healthcheck period to simulate a loading a large certificate set.
   if (is_action_tag_set("test.multicert.delay")) {
@@ -692,19 +697,13 @@ SSLCertificateConfig::reconfigure(ConfigContext ctx)
   }
 
   if (!errata.empty()) {
-    errata.assign_annotation_glue_text("\n  ");
-    errata.assign_severity_glue_text(" -> \n  ");
-    bwprint(ts::bw_dbg, "\n{}", errata);
-  } else {
-    ts::bw_dbg = "";
+    ctx.log(errata);
   }
 
   if (retStatus) {
-    Note("(ssl) %s finished loading%s", params->configFilePath, ts::bw_dbg.c_str());
-    ctx.complete("SSLCertificateConfig loaded {}", ts::bw_dbg.c_str());
+    CfgLoadComplete(ctx, "(ssl) %s finished loading", params->configFilePath);
   } else {
-    Error("(ssl) %s failed to load%s", params->configFilePath, ts::bw_dbg.c_str());
-    ctx.fail("SSLCertificateConfig failed to load {}", ts::bw_dbg.c_str());
+    CfgLoadFail(ctx, DL_Error, "(ssl) %s failed to load", params->configFilePath);
   }
 
   return retStatus;
@@ -726,7 +725,7 @@ SSLCertificateConfig::release(SSLCertLookup *lookup)
 }
 
 bool
-SSLTicketParams::LoadTicket(bool &nochange)
+SSLTicketParams::LoadTicket(bool &nochange, ConfigContext ctx)
 {
   cleanup();
   nochange = true;
@@ -772,13 +771,13 @@ SSLTicketParams::LoadTicket(bool &nochange)
     return true;
   }
   if (!keyblock) {
-    Error("Could not load ticket key from %s", ticket_key_filename);
+    CfgLoadFail(ctx, DL_Error, "Could not load ticket key from %s", ticket_key_filename);
     return false;
   }
   default_global_keyblock = keyblock;
   load_time               = time(nullptr);
 
-  Dbg(dbg_ctl_ssl_load, "ticket key reloaded from %s", ticket_key_filename);
+  CfgLoadDbg(ctx, dbg_ctl_ssl_load, "ticket key reloaded from %s", ticket_key_filename);
 #endif
   return true;
 }
@@ -807,8 +806,7 @@ SSLTicketKeyConfig::startup()
 {
   config::ConfigRegistry::Get_Instance().register_record_config("ssl_ticket_key",       // key
                                                                 [](ConfigContext ctx) { // handler callback
-                                                                  // eventually ctx should be passed through to the reconfigure fn
-                                                                  // and the loaders so it can show more details.
+                                                                  CfgLoadLog(ctx, DL_Note, "SSL ticket key loading ...");
                                                                   if (SSLTicketKeyConfig::reconfigure(ctx)) {
                                                                     ctx.complete("SSL ticket key reloaded");
                                                                   } else {
@@ -824,13 +822,13 @@ SSLTicketKeyConfig::startup()
 }
 
 bool
-SSLTicketKeyConfig::reconfigure([[maybe_unused]] ConfigContext ctx)
+SSLTicketKeyConfig::reconfigure(ConfigContext ctx)
 {
   SSLTicketParams *ticketKey = new SSLTicketParams();
 
   if (ticketKey) {
     bool nochange = false;
-    if (!ticketKey->LoadTicket(nochange)) {
+    if (!ticketKey->LoadTicket(nochange, ctx)) {
       delete ticketKey;
       return false;
     }

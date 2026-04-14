@@ -256,8 +256,9 @@ ConfigCommand::config_diff()
 void
 ConfigCommand::config_status()
 {
-  std::string token = get_parsed_arguments()->get("token").value();
-  std::string count = get_parsed_arguments()->get("count").value();
+  std::string token     = get_parsed_arguments()->get("token").value();
+  std::string count     = get_parsed_arguments()->get("count").value();
+  std::string min_level = get_parsed_arguments()->get("min-level").value();
 
   if (!count.empty() && !token.empty()) {
     // can't use both.
@@ -265,6 +266,22 @@ ConfigCommand::config_status()
       _printer->write_output("You can't use both --token and --count options together. Ignoring --count");
     }
     count = ""; // server will ignore this if token is set anyways.
+  }
+
+  if (!min_level.empty()) {
+    static const std::unordered_map<std::string_view, DiagsLevel> level_map = {
+      {"debug",   DL_Debug  },
+      {"note",    DL_Note   },
+      {"warning", DL_Warning},
+      {"error",   DL_Error  },
+    };
+    if (auto it = level_map.find(min_level); it != level_map.end()) {
+      _printer->as<ConfigReloadPrinter>()->set_min_level(it->second);
+    } else {
+      _printer->write_output("Invalid --min-level value. Use: debug, note, warning, error");
+      App_Exit_Status_Code = CTRL_EX_ERROR;
+      return;
+    }
   }
 
   auto resp = fetch_config_reload(token, count);

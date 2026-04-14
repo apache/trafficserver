@@ -92,7 +92,7 @@ TEST_CASE("ConfigReloadTask state transitions", "[config][reload][state]")
     // Verify logs contain the reason
     auto logs = task->get_logs();
     REQUIRE(!logs.empty());
-    REQUIRE(logs.back().find("Test timeout") != std::string::npos);
+    REQUIRE(logs.back().text.find("Test timeout") != std::string::npos);
   }
 
   SECTION("Terminal states cannot be changed via mark_as_bad_state")
@@ -109,8 +109,8 @@ TEST_CASE("ConfigReloadTask state transitions", "[config][reload][state]")
 
     // Verify the rejected reason was NOT added to logs
     auto logs = task->get_logs();
-    for (const auto &log : logs) {
-      REQUIRE(log.find("Should not apply") == std::string::npos);
+    for (const auto &entry : logs) {
+      REQUIRE(entry.text.find("Should not apply") == std::string::npos);
     }
   }
 

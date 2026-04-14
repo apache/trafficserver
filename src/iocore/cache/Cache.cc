@@ -31,6 +31,7 @@
 #include "Stripe.h"
 #include "StripeSM.h"
 #include "iocore/cache/Cache.h"
+#include "mgmt/config/ConfigContextDiags.h"
 #include "mgmt/config/ConfigRegistry.h"
 #include "tscore/Filenames.h"
 #include "tscore/InkErrno.h"
@@ -244,8 +245,8 @@ Cache::open_done()
           type  = ht->getType();
           cache = ht->getCache();
         }
-        ppt->reset(new CacheHostTable(cache, type));
-        ctx.complete("Finished loading");
+        ppt->reset(new CacheHostTable(cache, type, ctx));
+        CfgLoadComplete(ctx, "%s finished loading", ts::filename::HOSTING);
       },
       config::ConfigSource::FileOnly,           // no RPC content source. Legacy for now.
       {"proxy.config.cache.hosting_filename"}); // trigger records
