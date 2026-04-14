@@ -4268,9 +4268,6 @@ SSL Termination
    ``1`` Enables the use of Kernel TLS..
    ===== ======================================================================
 
-Certificate Compression
-^^^^^^^^^^^^^^^^^^^^^^^
-
 .. ts:cv:: CONFIG proxy.config.ssl.server.cert_compression.algorithms STRING
    :reloadable:
 
