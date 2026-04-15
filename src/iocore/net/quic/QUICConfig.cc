@@ -58,7 +58,7 @@ quic_new_ssl_ctx()
    ALPN and SNI should be set to SSL object with NETVC_OPTIONS
  **/
 static shared_SSL_CTX
-quic_init_client_ssl_ctx(const QUICConfigParams *params, ConfigContext ctx)
+quic_init_client_ssl_ctx(const QUICConfigParams *params, [[maybe_unused]] ConfigContext ctx)
 {
   std::unique_ptr<SSL_CTX, decltype(&SSL_CTX_free)> ssl_ctx(nullptr, &SSL_CTX_free);
   ssl_ctx.reset(quic_new_ssl_ctx());
