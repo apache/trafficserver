@@ -23,6 +23,7 @@
 
 #pragma once
 
+#include <openssl/ssl.h>
 #include <openssl/bytestring.h>
 
 int compression_func_zstd(SSL *ssl, CBB *out, const uint8_t *in, size_t in_len);
