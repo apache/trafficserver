@@ -33,7 +33,7 @@ DbgCtl dbg_ctl_ssl_cert_compress{"ssl_cert_compress"};
 
 constexpr unsigned int N_ALGORITHMS = 3;
 
-#if HAVE_SSL_CTX_ADD_CERT_COMPRESSION_ALG || HAVE_SSL_CTX_SET1_CERT_COMP_PREFERENCE
+#if HAVE_SSL_CTX_ADD_CERT_COMPRESSION_ALG
 #include "TLSCertCompression_zlib.h"
 
 #if HAVE_BROTLI_ENCODE_H
