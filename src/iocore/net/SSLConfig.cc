@@ -573,7 +573,7 @@ SSLConfigParams::initialize(ConfigContext ctx)
     Emergency("Can't initialize the SSL client, HTTPS in remap rules will not function");
   } else {
     SSLError("Can't initialize the SSL client, HTTPS in remap rules will not function");
-    CfgLoadFail(ctx, "Can't initialize the SSL client, HTTPS in remap rules will not function");
+    CfgLoadLog(ctx, DL_Warning, "Can't initialize the SSL client, HTTPS in remap rules will not function");
   }
 }
 
