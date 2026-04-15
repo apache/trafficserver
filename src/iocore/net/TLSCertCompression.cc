@@ -78,7 +78,9 @@ int
 register_certificate_compression_preference(SSL_CTX *ctx, std::vector<std::string> specified_algs)
 {
   ink_assert(ctx != nullptr);
-  ink_assert(specified_algs.size() <= N_ALGORITHMS);
+  if (specified_algs.size() > N_ALGORITHMS) {
+    return 0;
+  }
 
   if (specified_algs.empty()) {
     return 1;

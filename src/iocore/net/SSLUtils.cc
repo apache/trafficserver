@@ -458,7 +458,12 @@ SSLMultiCertConfigLoader::_enable_cert_compression(SSL_CTX *ctx)
     }
   }
 
-  return register_certificate_compression_preference(ctx, algs) == 1;
+  if (register_certificate_compression_preference(ctx, algs) == 1) {
+    return true;
+  } else {
+    SSLError("Failed to enable certificate compression");
+    return false;
+  }
 }
 
 bool
