@@ -43,6 +43,7 @@ constexpr unsigned int N_ALGORITHMS = 3;
 #if HAVE_ZSTD_H
 #include "TLSCertCompression_zstd.h"
 #endif
+#endif
 
 struct alg_info {
   const char *name;
@@ -72,7 +73,6 @@ struct alg_info {
   },
 #endif
 };
-#endif
 
 int
 register_certificate_compression_preference(SSL_CTX *ctx, std::vector<std::string> specified_algs)
