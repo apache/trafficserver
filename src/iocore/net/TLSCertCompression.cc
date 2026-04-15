@@ -107,7 +107,7 @@ register_certificate_compression_preference(SSL_CTX *ctx, std::vector<std::strin
   int algs[N_ALGORITHMS];
   int n = 0;
 
-  for (int i = 0; i < specified_algs.size(); ++i) {
+  for (unsigned int i = 0; i < specified_algs.size(); ++i) {
     for (unsigned int j = 0; j < countof(supported_algs); ++j) {
       if (strcmp(specified_algs[i].c_str(), supported_algs[j].name) == 0) {
         algs[n++] = supported_algs[j].number;
