@@ -120,7 +120,7 @@ endif()
 # Link cert compression libraries after OpenSSL so that OpenSSL include
 # directories appear first in the search order, preventing broad system
 # include paths (e.g. from Homebrew's zstd) from shadowing them.
-if(HAVE_SSL_CTX_ADD_CERT_COMPRESSION_ALG OR HAVE_SSL_CTX_SET1_CERT_COMP_PREFERENCE)
+if(HAVE_SSL_CTX_ADD_CERT_COMPRESSION_ALG)
   target_sources(inknet PRIVATE TLSCertCompression_zlib.cc)
   if(HAVE_BROTLI_ENCODE_H)
     target_sources(inknet PRIVATE TLSCertCompression_brotli.cc)
