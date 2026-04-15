@@ -31,8 +31,7 @@
  * Common function to set certificate compression preference
  *
  * @param ctx SSL_CTX
- * @param algs An array that contains compression algorithm names ("zlib", "brotli", or "zstd")
- * @param count The count of algorithm names in algs
+ * @param algs A vector that contains compression algorithm names ("zlib", "brotli", or "zstd")
  * @return 1 on success
  */
 int register_certificate_compression_preference(SSL_CTX *ctx, std::vector<std::string> algs);
