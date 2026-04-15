@@ -34,7 +34,11 @@ compression_func_brotli(SSL * /* ssl */, CBB *out, const uint8_t *in, size_t in_
 
   uint8_t      *buf;
   unsigned long buf_len = BrotliEncoderMaxCompressedSize(in_len);
-  CBB_reserve(out, &buf, buf_len);
+
+  if (CBB_reserve(out, &buf, buf_len) != 1) {
+    Metrics::Counter::increment(ssl_rsb.cert_compress_zlib_failure);
+    return 0;
+  }
 
   if (BrotliEncoderCompress(BROTLI_DEFAULT_QUALITY, BROTLI_DEFAULT_WINDOW, BROTLI_DEFAULT_MODE, in_len, in, &buf_len, buf) ==
       BROTLI_TRUE) {

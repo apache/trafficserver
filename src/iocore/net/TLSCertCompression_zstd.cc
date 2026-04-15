@@ -39,7 +39,10 @@ compression_func_zstd(SSL * /* ssl */, CBB *out, const uint8_t *in, size_t in_le
     return 0;
   }
 
-  CBB_reserve(out, &buf, buf_len);
+  if (CBB_reserve(out, &buf, buf_len) != 1) {
+    Metrics::Counter::increment(ssl_rsb.cert_compress_zlib_failure);
+    return 0;
+  }
 
   // For better performance ZSTD_compressCCtx, which reuses a context object, should be used.
   // One context object need to be made for each thread.

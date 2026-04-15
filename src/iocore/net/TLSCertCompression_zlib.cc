@@ -33,7 +33,11 @@ compression_func_zlib(SSL * /* ssl */, CBB *out, const uint8_t *in, size_t in_le
 
   uint8_t      *buf;
   unsigned long buf_len = compressBound(in_len);
-  CBB_reserve(out, &buf, buf_len);
+
+  if (CBB_reserve(out, &buf, buf_len) != 1) {
+    Metrics::Counter::increment(ssl_rsb.cert_compress_zlib_failure);
+    return 0;
+  }
 
   if (compress(buf, &buf_len, in, in_len) == Z_OK) {
     CBB_did_write(out, buf_len);
