@@ -17,9 +17,10 @@
   This is the common case for operational messages in config handlers:
 
   @code
-    CfgLoadInProgress(ctx, "%s loading ...", filename);
+    CfgLoadInProgress(ctx, "%s loading ...", filename);  // subtasks
+    CfgLoadLog(ctx, DL_Note, "%s loading ...", filename); // top-level handlers
     CfgLoadComplete(ctx, "%s finished loading", filename);
-    CfgLoadFail(ctx, DL_Error, "%s failed to load", filename);
+    CfgLoadFail(ctx, "%s failed to load", filename);
   @endcode
 
   Use ctx methods directly when you only want the reload task log (no diags):
@@ -46,10 +47,11 @@
 
   | Want diags? | Want task log? | Use                               |
   |-------------|----------------|-----------------------------------|
-  | Note        | yes            | CfgLoadInProgress / Complete    |
-  | Error/Warn  | yes            | CfgLoadFail(ctx, DL_xxx, ...)   |
-  | Err + Errata| yes + fail     | CfgLoadFailWithErrata(...)      |
-  | Note/Warn   | yes (no state) | CfgLoadLog(ctx, DL_xxx, ...)    |
+  | Note        | yes + in_progress| CfgLoadInProgress(ctx, ...)     |
+  | Note        | yes + complete  | CfgLoadComplete(ctx, ...)       |
+  | Error       | yes + fail      | CfgLoadFail(ctx, ...)           |
+  | Err + Errata| yes + fail      | CfgLoadFailWithErrata(...)      |
+  | Note/Warn   | yes (no state)  | CfgLoadLog(ctx, DL_xxx, ...)    |
   | Dbg(tag)    | yes            | CfgLoadDbg(ctx, ctl, ...)       |
   | no          | yes            | ctx.log(...)                      |
   | no          | yes + state    | ctx.complete() / ctx.fail()       |
@@ -61,7 +63,7 @@
   combine the diags summary, errata detail, and state change in one call:
 
   @code
-    CfgLoadFailWithErrata(ctx, DL_Error, errata, "%s failed to load", filename);
+    CfgLoadFailWithErrata(ctx, errata, "%s failed to load", filename);
   @endcode
 
   This logs the formatted message to diags and the task log at the given
@@ -98,7 +100,9 @@
 #include "tscore/Diags.h"
 
 /// Log a Note and mark the context as IN_PROGRESS.
-/// Use at the start of a config load/reload operation.
+/// The framework sets IN_PROGRESS on handler tasks automatically, so
+/// CfgLoadLog(ctx, DL_Note, ...) is preferred for top-level "loading..."
+/// messages. Use this macro for subtasks created via add_dependent_ctx().
 ///
 ///   CfgLoadInProgress(ctx, "%s loading ...", ts::filename::IP_ALLOW);
 ///
@@ -123,32 +127,33 @@
     (CTX).complete(_cfgctx_buf);                                    \
   } while (false)
 
-/// Log at the given DiagsLevel and mark the context as FAIL.
-/// Use when a config load/reload operation fails.
+/// Log an Error and mark the context as FAIL.
+/// Use when a config load/reload operation fails.  Fail always implies
+/// DL_Error — if the condition is merely degraded (not fatal to the load),
+/// use CfgLoadLog(ctx, DL_Warning, ...) + CfgLoadComplete() instead.
 ///
-///   CfgLoadFail(ctx, DL_Error, "%s failed to load", ts::filename::IP_ALLOW);
-///   CfgLoadFail(ctx, DL_Warning, "No NAMEDs provided for %s", ts::filename::SPLITDNS);
+///   CfgLoadFail(ctx, "%s failed to load", ts::filename::IP_ALLOW);
 ///
-#define CfgLoadFail(CTX, LEVEL, FMT, ...)                           \
+#define CfgLoadFail(CTX, FMT, ...)                                  \
   do {                                                              \
     char _cfgctx_buf[1024];                                         \
     snprintf(_cfgctx_buf, sizeof(_cfgctx_buf), FMT, ##__VA_ARGS__); \
-    DiagsError(LEVEL, "%s", _cfgctx_buf);                           \
-    (CTX).log(LEVEL, _cfgctx_buf);                                  \
+    DiagsError(DL_Error, "%s", _cfgctx_buf);                        \
+    (CTX).log(DL_Error, _cfgctx_buf);                               \
     (CTX).fail();                                                   \
   } while (false)
 
-/// Log at the given DiagsLevel, append errata detail to the task log, and mark
-/// the context as FAIL.  Combines CfgLoadFail + ctx.fail(errata) in one call.
+/// Log an Error, append errata detail to the task log, and mark the context
+/// as FAIL.  Combines CfgLoadFail + ctx.fail(errata) in one call.
 ///
-///   CfgLoadFailWithErrata(ctx, DL_Error, errata, "%s failed to load", filename);
+///   CfgLoadFailWithErrata(ctx, errata, "%s failed to load", filename);
 ///
-#define CfgLoadFailWithErrata(CTX, LEVEL, ERRATA, FMT, ...)         \
+#define CfgLoadFailWithErrata(CTX, ERRATA, FMT, ...)                \
   do {                                                              \
     char _cfgctx_buf[1024];                                         \
     snprintf(_cfgctx_buf, sizeof(_cfgctx_buf), FMT, ##__VA_ARGS__); \
-    DiagsError(LEVEL, "%s", _cfgctx_buf);                           \
-    (CTX).log(LEVEL, _cfgctx_buf);                                  \
+    DiagsError(DL_Error, "%s", _cfgctx_buf);                        \
+    (CTX).log(DL_Error, _cfgctx_buf);                               \
     (CTX).fail(ERRATA);                                             \
   } while (false)
 

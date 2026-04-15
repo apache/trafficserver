@@ -46,7 +46,7 @@ YamlLogConfig::parse(const char *cfgFilename)
   try {
     result = loadLogConfig(cfgFilename);
   } catch (std::exception &ex) {
-    CfgLoadFail(cfg->reload_ctx, DL_Error, "%s", ex.what());
+    CfgLoadLog(cfg->reload_ctx, DL_Error, "%s", ex.what());
     result = false;
   }
   return result;
@@ -62,14 +62,14 @@ YamlLogConfig::loadLogConfig(const char *cfgFilename)
   }
 
   if (!config.IsMap()) {
-    CfgLoadFail(cfg->reload_ctx, DL_Error, "malformed %s file; expected a map", cfgFilename);
+    CfgLoadLog(cfg->reload_ctx, DL_Error, "malformed %s file; expected a map", cfgFilename);
     return false;
   }
 
   if (config["logging"]) {
     config = config["logging"];
   } else {
-    CfgLoadFail(cfg->reload_ctx, DL_Error, "malformed %s file; expected a toplevel 'logging' node", cfgFilename);
+    CfgLoadLog(cfg->reload_ctx, DL_Error, "malformed %s file; expected a toplevel 'logging' node", cfgFilename);
     return false;
   }
 

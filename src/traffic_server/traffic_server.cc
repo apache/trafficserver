@@ -767,7 +767,7 @@ register_config_files()
       } else {
         ctx.log("{}", zret);
         if (zret.severity() >= ERRATA_ERROR) {
-          CfgLoadFail(ctx, DL_Error, "Failed to reload %s", ts::filename::RECORDS);
+          CfgLoadFail(ctx, "Failed to reload %s", ts::filename::RECORDS);
           return;
         }
       }

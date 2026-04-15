@@ -288,7 +288,7 @@ SNIConfigParams::initialize(std::string const &sni_filename, ConfigContext ctx)
     if (TSSystemState::is_initializing()) {
       Emergency("%s failed to load: %s", sni_filename.c_str(), errMsg.str().c_str());
     } else {
-      CfgLoadFail(ctx, DL_Error, "%s failed to load: %s", sni_filename.c_str(), errMsg.str().c_str());
+      CfgLoadFail(ctx, "%s failed to load: %s", sni_filename.c_str(), errMsg.str().c_str());
     }
     return false;
   }
@@ -322,18 +322,18 @@ SNIConfig::reconfigure(ConfigContext ctx)
 {
   SNIConfigParams *params = new SNIConfigParams;
 
-  bool retStatus = params->initialize(ctx);
+  std::string sni_filename = RecConfigReadConfigPath("proxy.config.ssl.servername.filename");
+  bool        retStatus    = params->initialize(sni_filename, ctx);
+
   if (retStatus) {
     _configid = configProcessor.set(_configid, params);
     if (SNIConfig::on_reconfigure) {
       SNIConfig::on_reconfigure();
     }
-    std::string sni_filename = RecConfigReadConfigPath("proxy.config.ssl.servername.filename");
     CfgLoadComplete(ctx, "%s finished loading", sni_filename.c_str());
   } else {
     delete params;
-    std::string sni_filename = RecConfigReadConfigPath("proxy.config.ssl.servername.filename");
-    CfgLoadFail(ctx, DL_Error, "%s failed to load", sni_filename.c_str());
+    CfgLoadFail(ctx, "%s failed to load", sni_filename.c_str());
   }
 
   return retStatus ? 1 : 0;

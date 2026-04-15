@@ -354,6 +354,8 @@ print_task_tree(const ConfigReloadResponse::ReloadInfo &f, bool full_report, con
       }
       std::cout << log_pfx;
       if (entry.level != DL_Undefined) {
+        // Indexed by DiagsLevel enum. In practice only [Dbg], [Note], [Warn], [Err] appear
+        // in task logs — Fatal/Alert/Emergency terminate the process before any task completes.
         static constexpr const char *severity_tags[] = {
           "[Diag]  ", "[Dbg]   ", "[Stat]  ", "[Note]  ", "[Warn]  ", "[Err]   ", "[Fatal] ", "[Alert] ", "[Emrg]  ",
         };

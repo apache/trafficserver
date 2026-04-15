@@ -775,7 +775,8 @@ LogConfig::evaluate_config()
   ats_scoped_str path(RecConfigReadConfigPath("proxy.config.log.config.filename", ts::filename::LOGGING));
   struct stat    sbuf;
   if (stat(path.get(), &sbuf) == -1 && errno == ENOENT) {
-    CfgLoadFail(reload_ctx, DL_Warning, "logging configuration '%s' doesn't exist", path.get());
+    // File doesn't exist — not a failure; ATS uses default logging.
+    CfgLoadComplete(reload_ctx, "logging configuration '%s' doesn't exist, using defaults", path.get());
     return false;
   }
 
@@ -786,7 +787,7 @@ LogConfig::evaluate_config()
   if (zret) {
     CfgLoadComplete(reload_ctx, "%s finished loading", path.get());
   } else {
-    CfgLoadFail(reload_ctx, DL_Error, "%s failed to load", path.get());
+    CfgLoadFail(reload_ctx, "%s failed to load", path.get());
   }
 
   return zret;

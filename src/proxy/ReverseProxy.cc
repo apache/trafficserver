@@ -159,27 +159,43 @@ urlRewriteVerify()
 bool
 reloadUrlRewrite(ConfigContext ctx)
 {
-  CfgLoadInProgress(ctx, "%s loading ...", ts::filename::REMAP);
+  std::string msg_buffer;
+
+  msg_buffer.reserve(1024);
+  UrlRewrite *newTable, *oldTable;
+
+  CfgLoadLog(ctx, DL_Note, "%s loading (checking first) ...", ts::filename::REMAP_YAML);
+  CfgLoadLog(ctx, DL_Note, "%s loading ...", ts::filename::REMAP);
+  Dbg(dbg_ctl_url_rewrite, "%s updated, reloading...", ts::filename::REMAP_YAML);
   Dbg(dbg_ctl_url_rewrite, "%s updated, reloading...", ts::filename::REMAP);
+  newTable = new UrlRewrite();
 
-  UrlRewrite *newTable = new UrlRewrite();
-
-  bool        status   = newTable->load(ctx);
-  bool        is_yaml  = newTable->is_remap_yaml();
-  const char *filename = is_yaml ? ts::filename::REMAP_YAML : ts::filename::REMAP;
+  bool status  = newTable->load(ctx);
+  bool is_yaml = (newTable->is_remap_yaml());
 
   if (status) {
+    swoc::bwprint(msg_buffer, "{} finished loading", is_yaml ? ts::filename::REMAP_YAML : ts::filename::REMAP);
+
+    // Hold at least one lease, until we reload the configuration
     newTable->acquire();
 
-    UrlRewrite *oldTable = rewrite_table.exchange(newTable);
+    // Swap configurations
+    oldTable = rewrite_table.exchange(newTable);
+
     ink_assert(oldTable != nullptr);
+
+    // Release the old one
     oldTable->release();
 
-    CfgLoadComplete(ctx, "%s finished loading", filename);
+    Dbg(dbg_ctl_url_rewrite, "%s", msg_buffer.c_str());
+    CfgLoadComplete(ctx, "%s finished loading", is_yaml ? ts::filename::REMAP_YAML : ts::filename::REMAP);
     return true;
   } else {
+    swoc::bwprint(msg_buffer, "{} failed to load", is_yaml ? ts::filename::REMAP_YAML : ts::filename::REMAP);
+
     delete newTable;
-    CfgLoadFail(ctx, DL_Error, "%s failed to load", filename);
+    Dbg(dbg_ctl_url_rewrite, "%s", msg_buffer.c_str());
+    CfgLoadFail(ctx, "%s failed to load", is_yaml ? ts::filename::REMAP_YAML : ts::filename::REMAP);
     return false;
   }
 }

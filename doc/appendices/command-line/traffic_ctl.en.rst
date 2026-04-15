@@ -678,7 +678,6 @@ Display the current value of a configuration record.
          │  [Note]  SSL configs reloaded
          ├─ ✔ SSLConfig ·························· 10ms
          │     [Note]  SSLConfig loading ...
-         │     [Dbg]   Reload SSLConfig
          │     [Note]  SSLConfig reloaded
          ├─ ✗ SNIConfig ·························· 12ms  ✗ FAIL
          │     [Note]  sni.yaml loading ...
@@ -739,7 +738,6 @@ Display the current value of a configuration record.
          │  [Note]  SSL configs reloaded
          ├─ ✔ SSLConfig ·································    1ms
          │     [Note]  SSLConfig loading ...
-         │     [Dbg]   Reload SSLConfig
          │     [Note]  SSLConfig reloaded
          ├─ ✗ SNIConfig ·································    1ms  ✗ FAIL
          │     [Note]  sni.yaml loading ...

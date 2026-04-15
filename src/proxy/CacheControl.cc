@@ -126,7 +126,7 @@ initCacheControl()
 void
 reloadCacheControl(ConfigContext ctx)
 {
-  CfgLoadInProgress(ctx, "%s loading ...", ts::filename::CACHE);
+  CfgLoadLog(ctx, DL_Note, "%s loading ...", ts::filename::CACHE);
   Dbg(dbg_ctl_cache_control, "%s updated, reloading", ts::filename::CACHE);
 
   eventProcessor.schedule_in(new CC_FreerContinuation(CacheControlTable), CACHE_CONTROL_TIMEOUT, ET_CALL);

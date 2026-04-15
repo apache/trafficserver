@@ -124,14 +124,13 @@ IpAllow::startup()
 void
 IpAllow::reconfigure(ConfigContext ctx)
 {
-  CfgLoadInProgress(ctx, "%s loading ...", ts::filename::IP_ALLOW);
+  CfgLoadLog(ctx, DL_Note, "%s loading ...", ts::filename::IP_ALLOW);
 
   auto *new_table = new self_type("proxy.config.cache.ip_allow.filename", "proxy.config.cache.ip_categories.filename");
 
   // IP rules need categories, so load them first (if they exist).
   if (auto errata = new_table->BuildCategories(); !errata.is_ok()) {
-    CfgLoadFail(ctx, DL_Error, "%s failed to load", new_table->ip_categories_config_file.c_str());
-    ctx.fail(errata);
+    CfgLoadFailWithErrata(ctx, errata, "%s failed to load", new_table->ip_categories_config_file.c_str());
     delete new_table;
     return;
   }
@@ -139,8 +138,7 @@ IpAllow::reconfigure(ConfigContext ctx)
     if (errata.severity() > ERRATA_ERROR) {
       Fatal("%s failed to load", ts::filename::IP_ALLOW);
     }
-    CfgLoadFail(ctx, DL_Error, "%s failed to load", ts::filename::IP_ALLOW);
-    ctx.fail(errata);
+    CfgLoadFailWithErrata(ctx, errata, "%s failed to load", ts::filename::IP_ALLOW);
     delete new_table;
     return;
   }

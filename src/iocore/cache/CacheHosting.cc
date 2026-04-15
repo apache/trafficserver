@@ -239,7 +239,7 @@ int fstat_wrapper(int fd, struct stat *s);
 int
 CacheHostTable::BuildTableFromString(const char *config_file_path, char *file_buf, ConfigContext ctx)
 {
-  CfgLoadInProgress(ctx, "%s loading ...", ts::filename::HOSTING);
+  CfgLoadLog(ctx, DL_Note, "%s loading ...", ts::filename::HOSTING);
 
   // Table build locals
   Tokenizer      bufTok("\n");
@@ -398,7 +398,7 @@ CacheHostTable::BuildTable(const char *config_file_path, ConfigContext ctx)
       CfgLoadLog(ctx, DL_Warning, "Cannot open the config file: %s - %s", config_file_path, strerror(ec.value()));
       break;
     default:
-      CfgLoadFail(ctx, DL_Error, "%s failed to load: %s", config_file_path, strerror(ec.value()));
+      CfgLoadFail(ctx, "%s failed to load: %s", config_file_path, strerror(ec.value()));
       gen_host_rec.Init(type);
       return 0;
     }

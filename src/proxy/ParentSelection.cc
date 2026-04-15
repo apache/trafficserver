@@ -304,7 +304,7 @@ ParentConfig::startup()
 void
 ParentConfig::reconfigure(ConfigContext ctx)
 {
-  CfgLoadInProgress(ctx, "%s loading ...", ts::filename::PARENT);
+  CfgLoadLog(ctx, DL_Note, "%s loading ...", ts::filename::PARENT);
 
   // Allocate parent table
   P_table *pTable =

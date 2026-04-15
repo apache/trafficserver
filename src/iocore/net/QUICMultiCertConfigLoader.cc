@@ -45,6 +45,8 @@ QUICCertConfig::reconfigure(ConfigContext ctx)
   SSLConfig::scoped_config params;
   SSLCertLookup           *lookup = new SSLCertLookup();
 
+  CfgLoadInProgress(ctx, "(quic) %s loading ...", params->configFilePath);
+
   QUICMultiCertConfigLoader loader(params);
   auto                      errata = loader.load(lookup, _config_id == 0);
   if (!lookup->is_valid || (errata.has_severity() && errata.severity() >= ERRATA_ERROR)) {
@@ -64,7 +66,7 @@ QUICCertConfig::reconfigure(ConfigContext ctx)
   if (retStatus) {
     CfgLoadComplete(ctx, "(quic) %s finished loading", params->configFilePath);
   } else {
-    CfgLoadFail(ctx, DL_Error, "(quic) %s failed to load", params->configFilePath);
+    CfgLoadFail(ctx, "(quic) %s failed to load", params->configFilePath);
   }
 }
 

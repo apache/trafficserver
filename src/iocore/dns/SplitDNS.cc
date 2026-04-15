@@ -137,7 +137,7 @@ SplitDNSConfig::reconfigure(ConfigContext ctx)
     return;
   }
 
-  CfgLoadInProgress(ctx, "%s loading ...", ts::filename::SPLITDNS);
+  CfgLoadLog(ctx, DL_Note, "%s loading ...", ts::filename::SPLITDNS);
 
   SplitDNS *params = new SplitDNS;
 
@@ -149,7 +149,7 @@ SplitDNSConfig::reconfigure(ConfigContext ctx)
   if (nullptr == params->m_DNSSrvrTable || (0 == params->m_DNSSrvrTable->getEntryCount())) {
     gsplit_dns_enabled = 0;
     delete params;
-    CfgLoadFail(ctx, DL_Warning, "Failed to load %s - No NAMEDs provided! Disabling SplitDNS", ts::filename::SPLITDNS);
+    CfgLoadFail(ctx, "Failed to load %s - No NAMEDs provided! Disabling SplitDNS", ts::filename::SPLITDNS);
     return;
   }
   params->m_numEle = params->m_DNSSrvrTable->getEntryCount();

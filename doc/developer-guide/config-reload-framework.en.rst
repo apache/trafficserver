@@ -699,17 +699,20 @@ Quick Reference
      - Want in task log?
      - Use
    * - Note
-     - yes
-     - ``CfgLoadInProgress`` / ``CfgLoadComplete``
-   * - Error / Warning
-     - yes
-     - ``CfgLoadFail(ctx, DL_xxx, ...)``
+     - yes + in_progress
+     - ``CfgLoadInProgress(ctx, ...)`` (subtasks)
+   * - Note
+     - yes + complete
+     - ``CfgLoadComplete(ctx, ...)``
+   * - Error
+     - yes + fail
+     - ``CfgLoadFail(ctx, ...)``
    * - Error + Errata
      - yes + fail
-     - ``CfgLoadFailWithErrata(ctx, ...)``
+     - ``CfgLoadFailWithErrata(ctx, errata, ...)``
    * - Note / Warning
      - yes (no state change)
-     - ``CfgLoadLog(ctx, DL_xxx, ...)``
+     - ``CfgLoadLog(ctx, DL_Note|DL_Warning, ...)``
    * - Dbg (conditional on tag)
      - yes
      - ``CfgLoadDbg(ctx, ctl, ...)``
@@ -727,8 +730,9 @@ Macro Details
 -------------
 
 ``CfgLoadInProgress(ctx, fmt, ...)``
-   Emits a ``Note()`` to ``diags.log`` and calls ``ctx.in_progress(msg)``. Use at the start
-   of a config load/reload:
+   Emits a ``Note()`` to ``diags.log`` and calls ``ctx.in_progress(msg)``. The framework
+   sets ``IN_PROGRESS`` on handler tasks automatically, so this macro is primarily useful
+   for subtasks created via ``add_dependent_ctx()``:
 
    .. code-block:: cpp
 
@@ -742,17 +746,16 @@ Macro Details
 
       CfgLoadComplete(ctx, "%s finished loading", filename);
 
-``CfgLoadFail(ctx, level, fmt, ...)``
-   Emits at the given ``DiagsLevel`` (typically ``DL_Error`` or ``DL_Warning``) to both
-   ``diags.log`` and the task log, then marks the task as FAIL (state-only, no additional
-   log entry):
+``CfgLoadFail(ctx, fmt, ...)``
+   Emits an ``Error()`` to ``diags.log`` and the task log, then marks the task as FAIL.
+   Fail always implies ``DL_Error`` — if the condition is merely degraded (not fatal to
+   the load), use ``CfgLoadLog(ctx, DL_Warning, ...)`` + ``CfgLoadComplete()`` instead:
 
    .. code-block:: cpp
 
-      CfgLoadFail(ctx, DL_Error, "%s failed to load", filename);
-      CfgLoadFail(ctx, DL_Warning, "No NAMEDs provided for %s", filename);
+      CfgLoadFail(ctx, "%s failed to load", filename);
 
-``CfgLoadFailWithErrata(ctx, level, errata, fmt, ...)``
+``CfgLoadFailWithErrata(ctx, errata, fmt, ...)``
    Like ``CfgLoadFail`` but also appends ``swoc::Errata`` annotations to the task log.
    Combines ``CfgLoadFail`` + ``ctx.fail(errata)`` in one call — see
    :ref:`config-reload-errata-handling` below.
@@ -784,9 +787,9 @@ the diags summary, errata detail, and state change in a single call:
 
 .. code-block:: cpp
 
-   CfgLoadFailWithErrata(ctx, DL_Error, errata, "%s failed to load", filename);
+   CfgLoadFailWithErrata(ctx, errata, "%s failed to load", filename);
 
-This logs the formatted message to ``diags.log`` at the given severity, appends it to
+This logs the formatted message to ``diags.log`` at ``DL_Error``, appends it to
 the task log, then calls ``ctx.fail(errata)`` which stores each errata annotation
 (with its own severity) in the task log and marks the task as FAIL.
 
@@ -826,7 +829,6 @@ with a tag:
    │  [Note]  SSL configs reloaded
    ├─ ✔ SSLConfig ·································    1ms
    │     [Note]  SSLConfig loading ...
-   │     [Dbg]   Reload SSLConfig
    │     [Note]  SSLConfig reloaded
    ├─ ✗ SNIConfig ·································    1ms  ✗ FAIL
    │     [Note]  sni.yaml loading ...
@@ -873,7 +875,6 @@ log entries is written to ``traffic.out`` / ``diags.log``:
    DIAG: (config.reload)     [Note] SSL configs reloaded
    DIAG: (config.reload)     [success] SSLConfig
    DIAG: (config.reload)       [Note] SSLConfig loading ...
-   DIAG: (config.reload)       [Dbg] Reload SSLConfig
    DIAG: (config.reload)       [Note] SSLConfig reloaded
    DIAG: (config.reload)     [fail] SNIConfig
    DIAG: (config.reload)       [Note] sni.yaml loading ...

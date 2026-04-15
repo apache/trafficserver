@@ -130,7 +130,7 @@ UrlRewrite::load(ConfigContext ctx)
     fs::file_status status       = fs::status(compilerPath, ec);
 
     if (ec || !swoc::file::is_regular_file(status)) {
-      CfgLoadFail(ctx, DL_Error, "Configured plugin compiler path '%s' is not a regular file", buf);
+      CfgLoadFail(ctx, "Configured plugin compiler path '%s' is not a regular file", buf);
       return false;
     } else {
       // This also adds the configuration directory (etc/trafficserver) to find Cripts etc.

@@ -906,7 +906,7 @@ ControlMatcher<Data, MatchResult>::BuildTable(ConfigContext ctx)
       CfgLoadLog(ctx, DL_Warning, "ControlMatcher - Cannot open config file: %s - %s", config_file_path, strerror(ec.value()));
       break;
     default:
-      CfgLoadFail(ctx, DL_Error, "ControlMatcher - %s failed to load: %s", config_file_path, strerror(ec.value()));
+      CfgLoadFail(ctx, "ControlMatcher - %s failed to load: %s", config_file_path, strerror(ec.value()));
       return 1;
     }
   }

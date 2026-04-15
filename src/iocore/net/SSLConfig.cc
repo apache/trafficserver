@@ -572,7 +572,8 @@ SSLConfigParams::initialize(ConfigContext ctx)
   if (this->clientCertExitOnLoadError) {
     Emergency("Can't initialize the SSL client, HTTPS in remap rules will not function");
   } else {
-    CfgLoadFail(ctx, DL_Error, "Can't initialize the SSL client, HTTPS in remap rules will not function");
+    SSLError("Can't initialize the SSL client, HTTPS in remap rules will not function");
+    CfgLoadFail(ctx, "Can't initialize the SSL client, HTTPS in remap rules will not function");
   }
 }
 
@@ -615,8 +616,7 @@ SSLConfig::startup()
 void
 SSLConfig::reconfigure(ConfigContext ctx)
 {
-  CfgLoadLog(ctx, DL_Note, "SSLConfig loading ...");
-  CfgLoadDbg(ctx, dbg_ctl_ssl_load, "Reload SSLConfig");
+  CfgLoadInProgress(ctx, "SSLConfig loading ...");
 
   SSLConfigParams *params = new SSLConfigParams;
   // start loading the next config
@@ -673,7 +673,7 @@ SSLCertificateConfig::reconfigure(ConfigContext ctx)
   SSLConfig::scoped_config params;
   SSLCertLookup           *lookup = new SSLCertLookup();
 
-  CfgLoadLog(ctx, DL_Note, "(ssl) %s loading ...", params->configFilePath);
+  CfgLoadInProgress(ctx, "(ssl) %s loading ...", params->configFilePath);
 
   // Test SSL certificate loading startup. With large numbers of certificates, reloading can take time, so delay
   // twice the healthcheck period to simulate a loading a large certificate set.
@@ -703,7 +703,7 @@ SSLCertificateConfig::reconfigure(ConfigContext ctx)
   if (retStatus) {
     CfgLoadComplete(ctx, "(ssl) %s finished loading", params->configFilePath);
   } else {
-    CfgLoadFail(ctx, DL_Error, "(ssl) %s failed to load", params->configFilePath);
+    CfgLoadFail(ctx, "(ssl) %s failed to load", params->configFilePath);
   }
 
   return retStatus;
@@ -771,7 +771,7 @@ SSLTicketParams::LoadTicket(bool &nochange, ConfigContext ctx)
     return true;
   }
   if (!keyblock) {
-    CfgLoadFail(ctx, DL_Error, "Could not load ticket key from %s", ticket_key_filename);
+    CfgLoadFail(ctx, "Could not load ticket key from %s", ticket_key_filename);
     return false;
   }
   default_global_keyblock = keyblock;
