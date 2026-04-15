@@ -45,17 +45,31 @@ constexpr unsigned int N_ALGORITHMS = 3;
 #endif
 
 struct alg_info {
-  const char                   *name;
-  int32_t                       number;
+  const char *name;
+  int32_t     number;
+#if HAVE_SSL_CTX_ADD_CERT_COMPRESSION_ALG
   ssl_cert_compression_func_t   compress_func;
   ssl_cert_decompression_func_t decompress_func;
+#endif
 } supported_algs[] = {
-  {"zlib",   1, compression_func_zlib,   decompression_func_zlib  },
+  {"zlib",   1,
+#if HAVE_SSL_CTX_ADD_CERT_COMPRESSION_ALG
+   compression_func_zlib,   decompression_func_zlib
+#endif
+  },
 #if HAVE_BROTLI_ENCODE_H
-  {"brotli", 2, compression_func_brotli, decompression_func_brotli},
+  {"brotli", 2,
+#if HAVE_SSL_CTX_ADD_CERT_COMPRESSION_ALG
+   compression_func_brotli, decompression_func_brotli
+#endif
+  },
 #endif
 #if HAVE_ZSTD_H
-  {"zstd",   3, compression_func_zstd,   decompression_func_zstd  },
+  {"zstd",   3,
+#if HAVE_SSL_CTX_ADD_CERT_COMPRESSION_ALG
+   compression_func_zstd,   decompression_func_zstd
+#endif
+  },
 #endif
 };
 #endif
