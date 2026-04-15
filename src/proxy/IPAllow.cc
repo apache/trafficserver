@@ -136,7 +136,9 @@ IpAllow::reconfigure(ConfigContext ctx)
   }
   if (auto errata = new_table->BuildTable(); !errata.is_ok()) {
     if (errata.severity() > ERRATA_ERROR) {
-      Fatal("%s failed to load", ts::filename::IP_ALLOW);
+      std::string errata_text;
+      swoc::bwprint(errata_text, "{}", errata);
+      Fatal("%s failed to load\n%s", ts::filename::IP_ALLOW, errata_text.c_str());
     }
     CfgLoadFailWithErrata(ctx, errata, "%s failed to load", ts::filename::IP_ALLOW);
     delete new_table;
