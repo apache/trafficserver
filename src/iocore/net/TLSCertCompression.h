@@ -24,6 +24,8 @@
 #pragma once
 
 #include <openssl/ssl.h>
+#include <vector>
+#include <string>
 
 /**
  * Common function to set certificate compression preference
