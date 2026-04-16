@@ -45,4 +45,5 @@ if(BUILD_TESTING)
   )
   add_catch2_test(NAME test_hostdb_RefCountCache COMMAND $<TARGET_FILE:test_RefCountCache>)
 
+  add_subdirectory(unit_tests)
 endif()

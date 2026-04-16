@@ -1317,14 +1317,14 @@ HostDBRecord::select_best_http(ts_time now, ts_seconds fail_window, sockaddr con
       // Starting at the current target, search for a valid one.
       for (unsigned short i = 0; i < rr_count; i++) {
         auto target = &info[this->rr_idx(i)];
-        if (target->select(now, fail_window)) {
+        if (!target->is_down(now, fail_window)) {
           best_alive = target;
           break;
         }
       }
     }
   } else {
-    if (info[0].select(now, fail_window)) {
+    if (!info[0].is_down(now, fail_window)) {
       best_alive = &info[0];
     }
   }
@@ -1647,7 +1647,7 @@ HostDBRecord::select_next_rr(ts_time now, ts_seconds fail_window)
   auto rr_info = this->rr_info();
   for (unsigned idx = 0, limit = rr_info.count(); idx < limit; ++idx) {
     auto &target = rr_info[this->next_rr()];
-    if (target.select(now, fail_window)) {
+    if (!target.is_down(now, fail_window)) {
       return &target;
     }
   }
@@ -1711,7 +1711,7 @@ ResolveInfo::select_next_rr()
   if (active) {
     if (auto rr_info{this->record->rr_info()}; rr_info.count() > 1) {
       unsigned limit = active - rr_info.data(), idx = (limit + 1) % rr_info.count();
-      while ((idx = (idx + 1) % rr_info.count()) != limit && !rr_info[idx].is_alive()) {}
+      while ((idx = (idx + 1) % rr_info.count()) != limit && !rr_info[idx].is_up()) {}
       active = &rr_info[idx];
       return idx != limit; // if the active record was actually changed.
     }
