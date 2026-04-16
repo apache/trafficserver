@@ -59,8 +59,8 @@ fragment IPV4_CIDR     : [1-9]
                        | '3'[0-2]
                        ;
 
-fragment IPV6_CIDR     : '3'[3-9]
-                       | [4-9][0-9]
+fragment IPV6_CIDR     : [1-9]
+                       | [1-9][0-9]
                        | '1'[0-1][0-9]
                        | '12'[0-8]
                        ;
