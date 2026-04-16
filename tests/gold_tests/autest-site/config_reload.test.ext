@@ -195,7 +195,7 @@ def AddConfigReload(
     tr.Processes.Default.Env = ts.Env
     tr.StillRunningAfter = ts
 
-    cmd = f"traffic_ctl config reload -m -t {token}"
+    cmd = f"traffic_ctl config reload -m -t {_shell_quote(token)}"
     cmd += f" -w {initial_wait} -r {refresh_int}"
 
     if timeout is not None:
@@ -203,10 +203,7 @@ def AddConfigReload(
     if force:
         cmd += " --force"
     if data is not None:
-        if data.startswith("@"):
-            cmd += f" --data {data}"
-        else:
-            cmd += f" --data {_shell_quote(data)}"
+        cmd += f" --data {_shell_quote(data)}"
 
     tr.Processes.Default.Command = cmd
 
