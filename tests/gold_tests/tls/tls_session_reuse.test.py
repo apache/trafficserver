@@ -103,12 +103,12 @@ def check_session(output_path, tls_ver, reuse_count):
 
 tr1 = Test.AddTestRun("TLSv1.2 Session Resumption Enabled")
 tr1.Command = \
-    'echo -e "GET / HTTP/1.1\r\n" | openssl s_client -connect 127.0.0.1:{0} -sess_out {1} -tls1_2 && ' \
-    'echo -e "GET / HTTP/1.1\r\n" | openssl s_client -connect 127.0.0.1:{0} -sess_in  {1} -tls1_2 && ' \
-    'echo -e "GET / HTTP/1.1\r\n" | openssl s_client -connect 127.0.0.1:{0} -sess_in  {1} -tls1_2 && ' \
-    'echo -e "GET / HTTP/1.1\r\n" | openssl s_client -connect 127.0.0.1:{0} -sess_in  {1} -tls1_2 && ' \
-    'echo -e "GET / HTTP/1.1\r\n" | openssl s_client -connect 127.0.0.1:{0} -sess_in  {1} -tls1_2 && ' \
-    'echo -e "GET / HTTP/1.1\r\n" | openssl s_client -connect 127.0.0.1:{0} -sess_in  {1} -tls1_2' \
+    'printf "GET / HTTP/1.1\r\n" | openssl s_client -connect 127.0.0.1:{0} -sess_out {1} -tls1_2 && ' \
+    'printf "GET / HTTP/1.1\r\n" | openssl s_client -connect 127.0.0.1:{0} -sess_in  {1} -tls1_2 && ' \
+    'printf "GET / HTTP/1.1\r\n" | openssl s_client -connect 127.0.0.1:{0} -sess_in  {1} -tls1_2 && ' \
+    'printf "GET / HTTP/1.1\r\n" | openssl s_client -connect 127.0.0.1:{0} -sess_in  {1} -tls1_2 && ' \
+    'printf "GET / HTTP/1.1\r\n" | openssl s_client -connect 127.0.0.1:{0} -sess_in  {1} -tls1_2 && ' \
+    'printf "GET / HTTP/1.1\r\n" | openssl s_client -connect 127.0.0.1:{0} -sess_in  {1} -tls1_2' \
     .format(ts1.Variables.ssl_port, os.path.join(Test.RunDirectory, 'sess1.dat'))
 tr1.ReturnCode = 0
 tr1.Processes.Default.StartBefore(server)
@@ -120,12 +120,12 @@ tr1.StillRunningAfter += ts1
 
 tr2 = Test.AddTestRun("TLSv1.3 Session Resumption Enabled")
 tr2.Command = \
-    'echo -e "GET / HTTP/1.1\r\n" | openssl s_client -connect 127.0.0.1:{0} -sess_out {1} -tls1_2 && ' \
-    'echo -e "GET / HTTP/1.1\r\n" | openssl s_client -connect 127.0.0.1:{0} -sess_in  {1} -tls1_2 && ' \
-    'echo -e "GET / HTTP/1.1\r\n" | openssl s_client -connect 127.0.0.1:{0} -sess_in  {1} -tls1_2 && ' \
-    'echo -e "GET / HTTP/1.1\r\n" | openssl s_client -connect 127.0.0.1:{0} -sess_in  {1} -tls1_2 && ' \
-    'echo -e "GET / HTTP/1.1\r\n" | openssl s_client -connect 127.0.0.1:{0} -sess_in  {1} -tls1_2 && ' \
-    'echo -e "GET / HTTP/1.1\r\n" | openssl s_client -connect 127.0.0.1:{0} -sess_in  {1} -tls1_2' \
+    'printf "GET / HTTP/1.1\r\n" | openssl s_client -connect 127.0.0.1:{0} -sess_out {1} -tls1_2 && ' \
+    'printf "GET / HTTP/1.1\r\n" | openssl s_client -connect 127.0.0.1:{0} -sess_in  {1} -tls1_2 && ' \
+    'printf "GET / HTTP/1.1\r\n" | openssl s_client -connect 127.0.0.1:{0} -sess_in  {1} -tls1_2 && ' \
+    'printf "GET / HTTP/1.1\r\n" | openssl s_client -connect 127.0.0.1:{0} -sess_in  {1} -tls1_2 && ' \
+    'printf "GET / HTTP/1.1\r\n" | openssl s_client -connect 127.0.0.1:{0} -sess_in  {1} -tls1_2 && ' \
+    'printf "GET / HTTP/1.1\r\n" | openssl s_client -connect 127.0.0.1:{0} -sess_in  {1} -tls1_2' \
     .format(ts1.Variables.ssl_port, os.path.join(Test.RunDirectory, 'sess2.dat'))
 tr2.ReturnCode = 0
 tr2.Processes.Default.Streams.All.Content = Testers.Lambda(
@@ -134,12 +134,12 @@ tr2.StillRunningAfter += server
 
 tr3 = Test.AddTestRun("TLSv1.2 Session Resumption Disabled")
 tr3.Command = \
-    'echo -e "GET / HTTP/1.1\r\n" | openssl s_client -connect 127.0.0.1:{0} -sess_out {1} -tls1_2 && ' \
-    'echo -e "GET / HTTP/1.1\r\n" | openssl s_client -connect 127.0.0.1:{0} -sess_in  {1} -tls1_2 && ' \
-    'echo -e "GET / HTTP/1.1\r\n" | openssl s_client -connect 127.0.0.1:{0} -sess_in  {1} -tls1_2 && ' \
-    'echo -e "GET / HTTP/1.1\r\n" | openssl s_client -connect 127.0.0.1:{0} -sess_in  {1} -tls1_2 && ' \
-    'echo -e "GET / HTTP/1.1\r\n" | openssl s_client -connect 127.0.0.1:{0} -sess_in  {1} -tls1_2 && ' \
-    'echo -e "GET / HTTP/1.1\r\n" | openssl s_client -connect 127.0.0.1:{0} -sess_in  {1} -tls1_2' \
+    'printf "GET / HTTP/1.1\r\n" | openssl s_client -connect 127.0.0.1:{0} -sess_out {1} -tls1_2 && ' \
+    'printf "GET / HTTP/1.1\r\n" | openssl s_client -connect 127.0.0.1:{0} -sess_in  {1} -tls1_2 && ' \
+    'printf "GET / HTTP/1.1\r\n" | openssl s_client -connect 127.0.0.1:{0} -sess_in  {1} -tls1_2 && ' \
+    'printf "GET / HTTP/1.1\r\n" | openssl s_client -connect 127.0.0.1:{0} -sess_in  {1} -tls1_2 && ' \
+    'printf "GET / HTTP/1.1\r\n" | openssl s_client -connect 127.0.0.1:{0} -sess_in  {1} -tls1_2 && ' \
+    'printf "GET / HTTP/1.1\r\n" | openssl s_client -connect 127.0.0.1:{0} -sess_in  {1} -tls1_2' \
     .format(ts2.Variables.ssl_port, os.path.join(Test.RunDirectory, 'sess3.dat'))
 tr3.Processes.Default.StartBefore(ts2)
 tr3.Processes.Default.Streams.All = Testers.ExcludesExpression('Reused', '')
@@ -149,12 +149,12 @@ tr3.StillRunningAfter += ts2
 
 tr4 = Test.AddTestRun("TLSv1.3 Session Resumption Disabled")
 tr4.Command = \
-    'echo -e "GET / HTTP/1.1\r\n" | openssl s_client -connect 127.0.0.1:{0} -sess_out {1} -tls1_3 && ' \
-    'echo -e "GET / HTTP/1.1\r\n" | openssl s_client -connect 127.0.0.1:{0} -sess_in  {1} -tls1_3 && ' \
-    'echo -e "GET / HTTP/1.1\r\n" | openssl s_client -connect 127.0.0.1:{0} -sess_in  {1} -tls1_3 && ' \
-    'echo -e "GET / HTTP/1.1\r\n" | openssl s_client -connect 127.0.0.1:{0} -sess_in  {1} -tls1_3 && ' \
-    'echo -e "GET / HTTP/1.1\r\n" | openssl s_client -connect 127.0.0.1:{0} -sess_in  {1} -tls1_3 && ' \
-    'echo -e "GET / HTTP/1.1\r\n" | openssl s_client -connect 127.0.0.1:{0} -sess_in  {1} -tls1_3' \
+    'printf "GET / HTTP/1.1\r\n" | openssl s_client -connect 127.0.0.1:{0} -sess_out {1} -tls1_3 && ' \
+    'printf "GET / HTTP/1.1\r\n" | openssl s_client -connect 127.0.0.1:{0} -sess_in  {1} -tls1_3 && ' \
+    'printf "GET / HTTP/1.1\r\n" | openssl s_client -connect 127.0.0.1:{0} -sess_in  {1} -tls1_3 && ' \
+    'printf "GET / HTTP/1.1\r\n" | openssl s_client -connect 127.0.0.1:{0} -sess_in  {1} -tls1_3 && ' \
+    'printf "GET / HTTP/1.1\r\n" | openssl s_client -connect 127.0.0.1:{0} -sess_in  {1} -tls1_3 && ' \
+    'printf "GET / HTTP/1.1\r\n" | openssl s_client -connect 127.0.0.1:{0} -sess_in  {1} -tls1_3' \
     .format(ts2.Variables.ssl_port, os.path.join(Test.RunDirectory, 'sess4.dat'))
 tr4.Processes.Default.Streams.All = Testers.ExcludesExpression('Reused', '')
 tr4.Processes.Default.Streams.All += Testers.ContainsExpression('TLSv1.3', '')
