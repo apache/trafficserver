@@ -215,10 +215,21 @@ ssl_multicert:
             f'openssl s_client -connect 127.0.0.1:{self.ts_on.Variables.ssl_port} -servername tickets-on.com -tls1_3 -msg -ign_eof')
         tr.ReturnCode = 0
         self.start_processes_if_needed(tr, start_server=True, start_ts_on=True)
+
+        # BoringSSL only exposes SSL_CTX_set_num_tickets() (context-level),
+        # not SSL_set_num_tickets() (per-connection), so the per-SNI
+        # ssl_ticket_number override cannot change the ticket count. The
+        # CTX-level value for ts_on is 0, so expect 0 tickets.
+        if Condition.IsBoringSSL():
+            expected_count = 0
+            description = 'Check that tickets-on.com receives no TLSv1.3 tickets (BoringSSL ignores per-SNI ticket count)'
+        else:
+            expected_count = 3
+            description = 'Check that tickets-on.com receives three TLSv1.3 tickets'
+
         tr.Processes.Default.Streams.All.Content = Testers.Lambda(
             lambda info, tester: TlsSniTicketTest.check_regex_count(
-                tr.Processes.Default.Streams.All.AbsPath, r'NewSessionTicket', 3,
-                'Check that tickets-on.com receives three TLSv1.3 tickets'))
+                tr.Processes.Default.Streams.All.AbsPath, r'NewSessionTicket', expected_count, description))
         tr.StillRunningAfter += self.server
         tr.StillRunningAfter += self.ts_on
 
