@@ -42,10 +42,8 @@ ParentConsistentHash::ParentConsistentHash(ParentRecord *parent_record)
   selected_algorithm = parent_record->consistent_hash_algorithm;
   hash_seed0         = parent_record->consistent_hash_seed0;
   hash_seed1         = parent_record->consistent_hash_seed1;
-  ink_zero(foundParents);
-
-  hash[PRIMARY]  = createHashInstance(selected_algorithm, hash_seed0, hash_seed1);
-  chash[PRIMARY] = std::make_unique<ATSConsistentHash>(parent_record->consistent_hash_replicas);
+  hash[PRIMARY]      = createHashInstance(selected_algorithm, hash_seed0, hash_seed1);
+  chash[PRIMARY]     = std::make_unique<ATSConsistentHash>(parent_record->consistent_hash_replicas);
 
   for (i = 0; i < parent_record->num_parents; i++) {
     chash[PRIMARY]->insert(&(parent_record->parents[i]), parent_record->parents[i].weight, hash[PRIMARY].get());
