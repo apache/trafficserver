@@ -303,12 +303,12 @@ tr1.StillRunningAfter += ts5
 
 tr2 = Test.AddTestRun("TLSv1.2 Session Ticket")
 tr2.Command = \
-    'echo -e "GET / HTTP/1.1\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{0} -sess_out {5} && ' \
-    'echo -e "GET / HTTP/1.1\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{0} -sess_in {5} && ' \
-    'echo -e "GET / HTTP/1.1\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{1} -sess_in {5} && ' \
-    'echo -e "GET / HTTP/1.1\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{2} -sess_in {5} && ' \
-    'echo -e "GET / HTTP/1.1\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{3} -sess_in {5} && ' \
-    'echo -e "GET / HTTP/1.1\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{4} -sess_in {5}' \
+    'printf "GET / HTTP/1.1\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{0} -sess_out {5} && ' \
+    'printf "GET / HTTP/1.1\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{0} -sess_in {5} && ' \
+    'printf "GET / HTTP/1.1\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{1} -sess_in {5} && ' \
+    'printf "GET / HTTP/1.1\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{2} -sess_in {5} && ' \
+    'printf "GET / HTTP/1.1\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{3} -sess_in {5} && ' \
+    'printf "GET / HTTP/1.1\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{4} -sess_in {5}' \
     .format(
         ts1.Variables.ssl_port,
         ts2.Variables.ssl_port,

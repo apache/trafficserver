@@ -136,12 +136,12 @@ tr.StillRunningAfter = server
 
 tr1 = Test.AddTestRun("TLSv1.2 Session Ticket")
 tr1.Command = \
-    'echo -e "GET / HTTP/1.1\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{0} -sess_out {1} && ' \
-    'echo -e "GET / HTTP/1.1\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{0} -sess_in {1} && ' \
-    'echo -e "GET / HTTP/1.1\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{0} -sess_in {1} && ' \
-    'echo -e "GET / HTTP/1.1\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{0} -sess_in {1} && ' \
-    'echo -e "GET / HTTP/1.1\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{0} -sess_in {1} && ' \
-    'echo -e "GET / HTTP/1.1\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{0} -sess_in {1}' \
+    'printf "GET / HTTP/1.1\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{0} -sess_out {1} && ' \
+    'printf "GET / HTTP/1.1\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{0} -sess_in {1} && ' \
+    'printf "GET / HTTP/1.1\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{0} -sess_in {1} && ' \
+    'printf "GET / HTTP/1.1\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{0} -sess_in {1} && ' \
+    'printf "GET / HTTP/1.1\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{0} -sess_in {1} && ' \
+    'printf "GET / HTTP/1.1\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{0} -sess_in {1}' \
     .format(ts2.Variables.ssl_port, os.path.join(Test.RunDirectory, 'sess.dat'))
 tr1.ReturnCode = 0
 tr1.Processes.Default.StartBefore(ts2)
@@ -150,12 +150,12 @@ tr1.StillRunningAfter = server
 
 tr2 = Test.AddTestRun("Disabled Session Cache")
 tr2.Command = \
-    'echo -e "GET / HTTP/1.1\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{0} -no_ticket -sess_out {1} && ' \
-    'echo -e "GET / HTTP/1.1\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{0} -no_ticket -sess_in {1} && ' \
-    'echo -e "GET / HTTP/1.1\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{0} -no_ticket -sess_in {1} && ' \
-    'echo -e "GET / HTTP/1.1\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{0} -no_ticket -sess_in {1} && ' \
-    'echo -e "GET / HTTP/1.1\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{0} -no_ticket -sess_in {1} && ' \
-    'echo -e "GET / HTTP/1.1\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{0} -no_ticket -sess_in {1}' \
+    'printf "GET / HTTP/1.1\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{0} -no_ticket -sess_out {1} && ' \
+    'printf "GET / HTTP/1.1\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{0} -no_ticket -sess_in {1} && ' \
+    'printf "GET / HTTP/1.1\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{0} -no_ticket -sess_in {1} && ' \
+    'printf "GET / HTTP/1.1\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{0} -no_ticket -sess_in {1} && ' \
+    'printf "GET / HTTP/1.1\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{0} -no_ticket -sess_in {1} && ' \
+    'printf "GET / HTTP/1.1\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{0} -no_ticket -sess_in {1}' \
     .format(ts3.Variables.ssl_port, os.path.join(Test.RunDirectory, 'sess.dat'))
 tr2.ReturnCode = 0
 tr2.Processes.Default.StartBefore(ts3)

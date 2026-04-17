@@ -63,7 +63,7 @@ ts2.Disk.records_config.update(
 
 tr = Test.AddTestRun("Create ticket")
 tr.Setup.Copy('file.ticket')
-tr.Command = 'echo -e "GET / HTTP/1.0\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{0} -sess_out ticket.out'.format(
+tr.Command = 'printf "GET / HTTP/1.0\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{0} -sess_out ticket.out'.format(
     ts.Variables.ssl_port)
 tr.ReturnCode = 0
 tr.Processes.Default.StartBefore(server)
@@ -101,7 +101,7 @@ def checkSession(ev):
 
 tr2 = Test.AddTestRun("Test ticket")
 tr2.Setup.Copy('file.ticket')
-tr2.Command = 'echo -e "GET / HTTP/1.0\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{0} -sess_in ticket.out'.format(
+tr2.Command = 'printf "GET / HTTP/1.0\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{0} -sess_in ticket.out'.format(
     ts2.Variables.ssl_port)
 tr2.Processes.Default.StartBefore(Test.Processes.ts2)
 tr2.ReturnCode = 0

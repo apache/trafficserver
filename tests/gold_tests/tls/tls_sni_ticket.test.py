@@ -88,6 +88,8 @@ class TlsSniTicketTest:
 
         ts.Disk.records_config.update(
             {
+                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.tags': 'ssl|http',
                 'proxy.config.ssl.server.cert.path': f'{ts.Variables.SSLDir}',
                 'proxy.config.ssl.server.private_key.path': f'{ts.Variables.SSLDir}',
                 'proxy.config.exec_thread.autoconfig.scale': 1.0,
@@ -172,17 +174,17 @@ class TlsSniTicketTest:
         """
         return (
             f'session_path=`mktemp` && '
-            f'echo -e "GET / HTTP/1.1\\r\\nHost: {servername}\\r\\n\\r\\n" | '
+            f'printf "GET / HTTP/1.1\\r\\nHost: {servername}\\r\\n\\r\\n" | '
             f'openssl s_client -connect 127.0.0.1:{port} -servername {servername} -sess_out "$$session_path" -tls1_2 && '
-            f'echo -e "GET / HTTP/1.1\\r\\nHost: {servername}\\r\\n\\r\\n" | '
+            f'printf "GET / HTTP/1.1\\r\\nHost: {servername}\\r\\n\\r\\n" | '
             f'openssl s_client -connect 127.0.0.1:{port} -servername {servername} -sess_in "$$session_path" -tls1_2 && '
-            f'echo -e "GET / HTTP/1.1\\r\\nHost: {servername}\\r\\n\\r\\n" | '
+            f'printf "GET / HTTP/1.1\\r\\nHost: {servername}\\r\\n\\r\\n" | '
             f'openssl s_client -connect 127.0.0.1:{port} -servername {servername} -sess_in "$$session_path" -tls1_2 && '
-            f'echo -e "GET / HTTP/1.1\\r\\nHost: {servername}\\r\\n\\r\\n" | '
+            f'printf "GET / HTTP/1.1\\r\\nHost: {servername}\\r\\n\\r\\n" | '
             f'openssl s_client -connect 127.0.0.1:{port} -servername {servername} -sess_in "$$session_path" -tls1_2 && '
-            f'echo -e "GET / HTTP/1.1\\r\\nHost: {servername}\\r\\n\\r\\n" | '
+            f'printf "GET / HTTP/1.1\\r\\nHost: {servername}\\r\\n\\r\\n" | '
             f'openssl s_client -connect 127.0.0.1:{port} -servername {servername} -sess_in "$$session_path" -tls1_2 && '
-            f'echo -e "GET / HTTP/1.1\\r\\nHost: {servername}\\r\\n\\r\\n" | '
+            f'printf "GET / HTTP/1.1\\r\\nHost: {servername}\\r\\n\\r\\n" | '
             f'openssl s_client -connect 127.0.0.1:{port} -servername {servername} -sess_in "$$session_path" -tls1_2')
 
     def add_tls12_enabled_run(self) -> None:
@@ -206,7 +208,7 @@ class TlsSniTicketTest:
         """
         tr = Test.AddTestRun('sni.yaml sets TLSv1.3 ticket count')
         tr.Command = (
-            f'echo -e "GET / HTTP/1.1\\r\\nHost: tickets-on.com\\r\\nConnection: close\\r\\n\\r\\n" | '
+            f'printf "GET / HTTP/1.1\\r\\nHost: tickets-on.com\\r\\nConnection: close\\r\\n\\r\\n" | '
             f'openssl s_client -connect 127.0.0.1:{self.ts_on.Variables.ssl_port} -servername tickets-on.com -tls1_3 -msg -ign_eof')
         tr.ReturnCode = 0
         self.start_processes_if_needed(tr, start_server=True, start_ts_on=True)
@@ -246,7 +248,7 @@ class TlsSniTicketTest:
         """
         tr = Test.AddTestRun('sni.yaml disables TLSv1.3 ticket issuance')
         tr.Command = (
-            f'echo -e "GET / HTTP/1.1\\r\\nHost: tickets-off.com\\r\\nConnection: close\\r\\n\\r\\n" | '
+            f'printf "GET / HTTP/1.1\\r\\nHost: tickets-off.com\\r\\nConnection: close\\r\\n\\r\\n" | '
             f'openssl s_client -connect 127.0.0.1:{self.ts_off.Variables.ssl_port} -servername tickets-off.com -tls1_3 -msg -ign_eof'
         )
         self.start_processes_if_needed(tr, start_server=True, start_ts_off=True)
