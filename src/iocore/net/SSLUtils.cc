@@ -442,19 +442,9 @@ SSLMultiCertConfigLoader::_enable_cert_compression(SSL_CTX *ctx)
   std::vector<std::string> algs;
 
   if (this->_params->server_cert_compression_algorithms) {
-    std::string_view algs_sv = this->_params->server_cert_compression_algorithms;
-    size_t           pos     = 0;
-
-    while (pos < algs_sv.size()) {
-      auto comma = algs_sv.find(',', pos);
-      if (comma == std::string_view::npos) {
-        comma = algs_sv.size();
-      }
-      auto alg = algs_sv.substr(pos, comma - pos);
-      if (!alg.empty()) {
-        algs.emplace_back(alg);
-      }
-      pos = comma + 1;
+    SimpleTokenizer tok(this->_params->server_cert_compression_algorithms, ',');
+    for (const char *token = tok.getNext(); token; token = tok.getNext()) {
+      algs.emplace_back(token);
     }
   }
 

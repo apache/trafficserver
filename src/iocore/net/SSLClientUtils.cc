@@ -28,6 +28,7 @@
 #include "iocore/net/YamlSNIConfig.h"
 #include "iocore/net/SSLDiags.h"
 #include "tscore/ink_config.h"
+#include "tscore/SimpleTokenizer.h"
 #include "tscore/Filenames.h"
 #include "tscore/X509HostnameValidator.h"
 
@@ -250,19 +251,9 @@ SSLInitClientContext(const SSLConfigParams *params)
 
   if (params->client_cert_compression_algorithms) {
     std::vector<std::string> algs;
-    std::string_view         algs_sv = params->client_cert_compression_algorithms;
-    size_t                   pos     = 0;
-
-    while (pos < algs_sv.size()) {
-      auto comma = algs_sv.find(',', pos);
-      if (comma == std::string_view::npos) {
-        comma = algs_sv.size();
-      }
-      auto alg = algs_sv.substr(pos, comma - pos);
-      if (!alg.empty()) {
-        algs.emplace_back(alg);
-      }
-      pos = comma + 1;
+    SimpleTokenizer          tok(params->client_cert_compression_algorithms, ',');
+    for (const char *token = tok.getNext(); token; token = tok.getNext()) {
+      algs.emplace_back(token);
     }
     if (register_certificate_compression_preference(client_ctx, algs) != 1) {
       SSLError("invalid client certificate compression algorithm list in %s", ts::filename::RECORDS);
