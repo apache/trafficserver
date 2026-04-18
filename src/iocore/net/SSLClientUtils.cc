@@ -264,7 +264,10 @@ SSLInitClientContext(const SSLConfigParams *params)
       }
       pos = comma + 1;
     }
-    register_certificate_compression_preference(client_ctx, algs);
+    if (register_certificate_compression_preference(client_ctx, algs) != 1) {
+      SSLError("invalid client certificate compression algorithm list in %s", ts::filename::RECORDS);
+      goto fail;
+    }
   }
 
   SSL_CTX_set_verify_depth(client_ctx, params->client_verify_depth);

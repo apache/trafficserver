@@ -166,4 +166,10 @@ ssl_multicert:
         tr.StillRunningAfter = self._server
 
 
-TestCertCompression('zlib').run()
+algorithms = ['zlib']
+if Condition.HasATSFeature('TS_HAS_BROTLI'):
+    algorithms.append('brotli')
+if Condition.HasATSFeature('TS_HAS_ZSTD'):
+    algorithms.append('zstd')
+for algorithm in algorithms:
+    TestCertCompression(algorithm).run()

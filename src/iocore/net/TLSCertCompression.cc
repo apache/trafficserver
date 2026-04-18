@@ -100,6 +100,9 @@ register_certificate_compression_preference(SSL_CTX *ctx, std::vector<std::strin
         return 0;
       }
       Dbg(dbg_ctl_ssl_cert_compress, "Enabled %s", info->name);
+    } else {
+      Dbg(dbg_ctl_ssl_cert_compress, "Unrecognized algorithm: %s", alg.c_str());
+      return 0;
     }
   }
   return 1;

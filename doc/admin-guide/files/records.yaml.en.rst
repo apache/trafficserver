@@ -4299,7 +4299,8 @@ SSL Termination
    supports one of these algorithms, |TS| will accept and decompress the
    certificate.
 
-   Supported values: ``zlib``, ``brotli``, ``zstd``.
+   Supported values: ``zlib``, ``brotli``, ``zstd``. An empty value (the
+   default) disables certificate compression.
 
 Client-Related Configuration
 ----------------------------
