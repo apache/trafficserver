@@ -194,7 +194,7 @@ isCommaOrSpace(int ch)
 }
 
 void
-HostConfiguration::add_compression_algorithms(swoc::TextView line)
+HostConfiguration::add_compression_algorithms(swoc::TextView &line)
 {
   compression_algorithms_ = ALGORITHM_DEFAULT; // remove the default gzip.
   for (;;) {
@@ -228,7 +228,7 @@ HostConfiguration::add_compression_algorithms(swoc::TextView line)
 }
 
 void
-HostConfiguration::add_compressible_status_codes(swoc::TextView line)
+HostConfiguration::add_compressible_status_codes(swoc::TextView &line)
 {
   compressible_status_codes_.clear();
 
