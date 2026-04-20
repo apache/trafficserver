@@ -80,13 +80,15 @@ public:
    */
   bool load(ConfigContext ctx = {});
 
+  bool load_table(const std::string &config_file_path, YAML::Node const *remap_node);
+
   /** Build the internal url write tables.
    *
    * @param path Path to configuration file.
    * @param ctx  ConfigContext for reload status tracking.
    * @return 0 on success, non-zero error code on failure.
    */
-  int BuildTable(const char *path, ConfigContext ctx = {});
+  int BuildTable(const char *path, YAML::Node const *remap_node = nullptr, ConfigContext ctx = {});
 
   mapping_type Remap_redirect(HTTPHdr *request_header, URL *redirect_url);
   bool         ReverseMap(HTTPHdr *response_header);
