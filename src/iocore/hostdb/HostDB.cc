@@ -1706,13 +1706,19 @@ ResolveInfo::set_active(HostDBInfo *info)
 }
 
 bool
-ResolveInfo::select_next_rr()
+ResolveInfo::select_next_rr(ts_time now, ts_seconds fail_window)
 {
   if (active) {
     if (auto rr_info{this->record->rr_info()}; rr_info.count() > 1) {
-      unsigned limit = active - rr_info.data(), idx = (limit + 1) % rr_info.count();
-      while ((idx = (idx + 1) % rr_info.count()) != limit && !rr_info[idx].is_up()) {}
-      active = &rr_info[idx];
+      const unsigned limit = active - rr_info.data();
+      size_t         idx   = (limit + 1) % rr_info.count();
+      for (; idx != limit; idx = (idx + 1) % rr_info.count()) {
+        if (!rr_info[idx].is_down(now, fail_window)) {
+          active = &rr_info[idx];
+          break;
+        }
+      }
+
       return idx != limit; // if the active record was actually changed.
     }
   }

@@ -19,31 +19,33 @@ meta:
 
 # Configuration section for autest integration
 autest:
-  description: 'Verify connect attempts behavior - no retry'
+  description: 'Verify connect attempts behavior - no round-robin (single host)'
 
   dns:
-    name: 'dns-no'
-    records: {"backend.example.com": ["0.0.0.1", "0.0.0.2"]}
+    name: 'dns-single-retries'
+    records: {"backend.example.com": ["0.0.0.1"]}
 
   server:
-    name: 'server-no'
+    name: 'server-single-retries'
 
   client:
-    name: 'client-no'
+    name: 'client-single-retries'
+    process_config:
+      poll_timeout: 10000 # ms
 
   ats:
-    name: 'ts-no'
+    name: 'ts-single-retries'
     process_config:
       enable_cache: false
 
     records_config:
       proxy.config.diags.debug.enabled: 1
       proxy.config.diags.debug.tags: 'http|hostdb|dns'
-      proxy.config.http.connect_attempts_rr_retries: 0
-      proxy.config.http.connect_attempts_max_retries: 0
-      proxy.config.http.connect_attempts_max_retries_suspect_server: 0
+      proxy.config.http.connect_attempts_rr_retries: 99 # make sure this doesn't affect this case
+      proxy.config.http.connect_attempts_max_retries: 2
+      proxy.config.http.connect_attempts_max_retries_suspect_server: 1
       proxy.config.http.connect_attempts_timeout: 1
-      proxy.config.http.down_server.cache_time: 5
+      proxy.config.http.down_server.cache_time: 3
 
     remap_config:
       - from: "http://example.com/"
@@ -51,11 +53,12 @@ autest:
 
     log_validation:
       error_log:
-        gold_file: "gold/connect_attempts_rr_no_error_log.gold"
+        gold_file: "gold/connect_attempts_single_max_retries_error_log.gold"
 
 sessions:
 - transactions:
-  # try 0.0.0.1
+  # First request: ATS attempts 3 times (1 initial + 2 retries) to connect to 0.0.0.1.
+  # The server is marked as down and ATS returns 502.
   - client-request:
       method: GET
       url: /path/
@@ -73,7 +76,8 @@ sessions:
     proxy-response:
       status: 502
 
-  # try 0.0.0.2
+  # Second request: within down_server.cache_time=3s so the server is still marked down.
+  # ATS skips the connection attempt entirely and returns 500.
   - client-request:
       method: GET
       url: /path/
@@ -89,9 +93,11 @@ sessions:
       reason: OK
 
     proxy-response:
-      status: 502
+      status: 500
 
-  # This request is expected to hit the down_server cache and immediately receive a 500 response.
+  # Third request: delayed 5s so the down_server.cache_time=3s has expired.
+  # ATS attempts 2 times (1 initial + 1 retries) to connect to 0.0.0.1.
+  # The server is marked as down again and ATS returns 502.
   - client-request:
       method: GET
       url: /path/
@@ -99,31 +105,30 @@ sessions:
       headers:
         fields:
         - [Host, example.com]
-        - [uuid, 10]
+        - [uuid, 3]
+      delay: 5s
 
     # should not hit
     server-response:
       status: 200
       reason: OK
+
+    proxy-response:
+      status: 502
+
+  # Fourth request: within down_server.cache_time=3s so the server is still marked down.
+  # ATS skips the connection attempt entirely and returns 500.
+  - client-request:
+      method: GET
+      url: /path/
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, 4]
+
+    server-response:
+      status: 200
 
     proxy-response:
       status: 500
-
-  # when down_server.cache_time is expired, try connect attempts
-  - client-request:
-      method: GET
-      url: /path/
-      version: '1.1'
-      headers:
-        fields:
-        - [Host, example.com]
-        - [uuid, 20]
-      delay: 10s
-
-    # should not hit
-    server-response:
-      status: 200
-      reason: OK
-
-    proxy-response:
-      status: 502
