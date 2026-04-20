@@ -43,6 +43,7 @@
 #include "proxy/http/HttpTunnel.h"
 #include "api/InkAPIInternal.h"
 #include "proxy/ProxyTransaction.h"
+#include "proxy/VirtualHost.h"
 
 // inknet
 #include "proxy/http/PreWarmManager.h"
@@ -332,6 +333,7 @@ public:
   // This unfortunately can't go into the t_state, because of circular dependencies. We could perhaps refactor
   // this, with a lot of work, but this is easier for now.
   std::shared_ptr<UrlRewrite> m_remap;
+  VirtualHostConfig::Entry *m_virtualhost_entry = nullptr;
 
   History<HISTORY_DEFAULT_SIZE> history;
   NetVConnection *
@@ -389,6 +391,7 @@ private:
 
   // Y! ebalsa: remap handlers
   int  state_remap_request(int event, void *data);
+  void set_virtualhost_entry(std::string_view domain);
   void do_remap_request(bool);
 
   // Cache Handlers

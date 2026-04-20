@@ -72,3 +72,7 @@ swoc::Errata parse_yaml_remap_rule(const YAML::Node &node, BUILD_TABLE_INFO *bti
 bool remap_parse_yaml_bti(const char *path, BUILD_TABLE_INFO *bti, ConfigContext ctx = {});
 
 bool remap_parse_yaml(const char *path, UrlRewrite *rewrite, ConfigContext ctx = {});
+// Parse remap YAML node from inline YAML node (for virtualhost)
+bool remap_parse_yaml_bti(YAML::Node const *remap_node, BUILD_TABLE_INFO *bti, ConfigContext ctx = {});
+
+bool remap_parse_yaml(YAML::Node const *remap_node, UrlRewrite *rewrite, ConfigContext ctx = {});
