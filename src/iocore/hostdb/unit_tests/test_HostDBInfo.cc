@@ -30,7 +30,7 @@
 // Helpers
 // ---------------------------------------------------------------------------
 
-// fail_window used throughout the tests (matches down_server.cache_time default).
+// fail_window used throughout the tests
 static const ts_seconds FAIL_WINDOW{300};
 
 static const ts_time T0 = ts_clock::now(); ///< A fixed anchor in time;
@@ -39,7 +39,7 @@ static const ts_time T1 = T0 + ts_seconds(1);               ///< A time within F
 static const ts_time T2 = T0 + FAIL_WINDOW + ts_seconds(1); ///< A time past FAIL_WINDOW from T0
 
 static const ts_time T3 = T2 + ts_seconds(1);               ///< A time within FAIL_WINDOW from T2
-static const ts_time T4 = T3 + FAIL_WINDOW + ts_seconds(1); ///< A time past FAIL_WINDOW from T
+static const ts_time T4 = T2 + FAIL_WINDOW + ts_seconds(1); ///< A time past FAIL_WINDOW from T2
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------

@@ -159,12 +159,10 @@ HostDBInfo::is_suspect(ts_time now, ts_seconds fail_window) const
 bool
 HostDBInfo::mark_up()
 {
-  auto t        = _last_failure.exchange(TS_TIME_ZERO);
-  bool was_down = t != TS_TIME_ZERO;
-  if (was_down) {
-    _fail_count.store(0);
-  }
-  return was_down;
+  auto t = _last_failure.exchange(TS_TIME_ZERO);
+  _fail_count.store(0);
+
+  return t != TS_TIME_ZERO;
 }
 
 /** Mark the entry as DOWN.
@@ -227,7 +225,7 @@ HostDBInfo::increment_fail_count(ts_time now, uint8_t max_retries, ts_seconds fa
   auto fcount      = ++_fail_count;
   bool marked_down = false;
 
-  Dbg(dbg_ctl_hostdb_info, "fail_count=%d max_reties=%d", fcount, max_retries);
+  Dbg(dbg_ctl_hostdb_info, "fail_count=%d max_retries=%d", fcount, max_retries);
 
   if (fcount >= max_retries) {
     marked_down = mark_down(now, fail_window);

@@ -124,15 +124,15 @@ enum class HostDBType : uint8_t {
 
 /** Information about a single target.
  *
- * Each instance tracks the health state of one upstream address. The state is derived from @c last_failure and the caller-supplied
+ * Each instance tracks the health state of one upstream address. The state is derived from @c _last_failure and the caller-supplied
  * @a fail_window:
  *
- * | State   | Description                                                                      |
- * |---------|----------------------------------------------------------------------------------|
- * | Up      | No known failure; eligible for normal selection.                                 |
- * | Down    | Blocked; no connections permitted until @c last_failure + @a fail_window elapses |
- * | Suspect | Fail window has elapsed; connections are permitted.                              |
- * |         | On success transitions to Up (@c mark_up); on failure returns to Down.           |
+ * | State   | Description                                                                       |
+ * |---------|-----------------------------------------------------------------------------------|
+ * | Up      | No known failure; eligible for normal selection.                                  |
+ * | Down    | Blocked; no connections permitted until @c _last_failure + @a fail_window elapses |
+ * | Suspect | Fail window has elapsed; connections are permitted.                               |
+ * |         | On success transitions to Up (@c mark_up); on failure returns to Down.            |
  *
  * State transition diagram:
  *
@@ -154,7 +154,7 @@ enum class HostDBType : uint8_t {
  *  -+----------+--------------------+--------------------+----------+---->
  *              ^                    ^                    ^
  *               \                    \                    \
- *        (last_failure)   (last_failure + fail_window)    (connect success)
+ *        (_last_failure)   (_last_failure + fail_window)    (connect success)
  *
  */
 class HostDBInfo
