@@ -956,7 +956,7 @@ public:
 
       if (_dbg_ctl.on()) {
         std::string buf;
-        swoc::bwprint(buf, "Setting connect_result {::s} to {::s}", swoc::bwf::Errno(e), swoc::bwf::Errno(original_connect_result),
+        swoc::bwprint(buf, "Setting connect_result {::s} to {::s}", swoc::bwf::Errno(original_connect_result),
                       swoc::bwf::Errno(this->current.server->connect_result));
         Dbg(_dbg_ctl, "%s", buf.c_str());
       }
