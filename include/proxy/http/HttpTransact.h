@@ -47,6 +47,8 @@
 #include "proxy/ProxySession.h"
 #include "tscore/MgmtDefs.h"
 
+#include "swoc/bwf_ex.h"
+
 #include <cstdint>
 #include <cstdio>
 #include <string>
