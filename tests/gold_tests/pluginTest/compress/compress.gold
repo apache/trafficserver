@@ -174,8 +174,8 @@
 > Accept-Encoding: gzip, deflate, sdch, br, zstd
 < HTTP/1.1 200 OK
 < Content-Type: text/javascript
-< Content-Encoding: zstd
 < Vary: Accept-Encoding
+< Content-Encoding: zstd
 < Content-Length: 64
 ===
 > GET http://ae-4/obj4 HTTP/1.1
@@ -209,8 +209,8 @@
 > Accept-Encoding: zstd
 < HTTP/1.1 200 OK
 < Content-Type: text/javascript
-< Content-Encoding: zstd
 < Vary: Accept-Encoding
+< Content-Encoding: zstd
 < Content-Length: 64
 ===
 > GET http://ae-5/obj5 HTTP/1.1
@@ -218,8 +218,8 @@
 > Accept-Encoding: gzip, deflate, sdch, br, zstd
 < HTTP/1.1 200 OK
 < Content-Type: text/javascript
-< Content-Encoding: zstd
 < Vary: Accept-Encoding
+< Content-Encoding: zstd
 < Content-Length: 64
 ===
 > GET http://ae-5/obj5 HTTP/1.1
@@ -253,8 +253,8 @@
 > Accept-Encoding: zstd
 < HTTP/1.1 200 OK
 < Content-Type: text/javascript
-< Content-Encoding: zstd
 < Vary: Accept-Encoding
+< Content-Encoding: zstd
 < Content-Length: 64
 ===
 > GET http://ae-0/obj0 HTTP/1.1
