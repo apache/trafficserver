@@ -167,8 +167,8 @@ HostDBInfo::mark_up()
 
 /** Mark the entry as DOWN.
  *
- * @param now         Time of the failure.
- * @param fail_window The fail window duration (proxy.config.http.down_server.cache_time).
+ * @param[in] now         Time of the failure.
+ * @param[in] fail_window The fail window duration (proxy.config.http.down_server.cache_time).
  * @return @c true if @a this was marked down, @c false if not.
  *
  * Handles two transitions:
@@ -209,9 +209,9 @@ HostDBInfo::mark_down(ts_time now, ts_seconds fail_window)
 
 /** Increment the connection failure counter and conditionally mark the target DOWN.
  *
- * @param now         Current time, used as the failure timestamp if the target is marked DOWN.
- * @param max_retries Number of failures that triggers a transition to DOWN.
- * @param fail_window The fail window duration (proxy.config.http.down_server.cache_time).
+ * @param[in] now         Current time, used as the failure timestamp if the target is marked DOWN.
+ * @param[in] max_retries Number of failures that triggers a transition to DOWN.
+ * @param[in] fail_window The fail window duration (proxy.config.http.down_server.cache_time).
  * @return A pair { @c marked_down, @c fail_count } where @c marked_down is @c true if this call
  *         caused the target to transition to DOWN (i.e. @c fail_count just reached @a max_retries
  *         and the @c mark_down CAS succeeded), and @c fail_count is the updated counter value.
@@ -235,7 +235,7 @@ HostDBInfo::increment_fail_count(ts_time now, uint8_t max_retries, ts_seconds fa
 
 /** Migrate data after a DNS update.
  *
- * @param that Source item.
+ * @param[in] that Source item.
  *
  * This moves only specific state information, it is not a generic copy.
  */

@@ -148,6 +148,7 @@ enum class HostDBType : uint8_t {
  *
  * State transition and `fail_window` time chart:
  *
+ * @code
  *              |<-- fail_window  -->|
  *  -+----------+--------------------+--------------------+----------+----> time
  *   |    Up    |        Down        |       Suspect      |    Up    |
@@ -155,7 +156,7 @@ enum class HostDBType : uint8_t {
  *              ^                    ^                    ^
  *               \                    \                    \
  *        (_last_failure)   (_last_failure + fail_window)    (connect success)
- *
+ * @endcode
  */
 class HostDBInfo
 {
@@ -214,7 +215,6 @@ protected:
   HostDBType type = HostDBType::UNSPEC; ///< Invalid data.
 
   friend HostDBContinuation;
-  // friend HostDBRecord;
 
 private:
   std::atomic<ts_time> _last_failure{TS_TIME_ZERO}; ///< Last time a failure was recorded
@@ -297,8 +297,8 @@ public:
    * @note This may select a suspect server. The caller must attempt to connect to the selected
    * target if possible.
    *
-   * @param now Current time to use for HostDBInfo state calculations.
-   * @param fail_window Blackout time for down servers.
+   * @param[in] now Current time to use for HostDBInfo state calculations.
+   * @param[in] fail_window Blackout time for down servers.
    * @return The selected target, or @c nullptr if all targets are down.
    *
    * @note Concurrency - this is not done under lock and depends on the caller for correct use.
@@ -568,8 +568,8 @@ struct ResolveInfo {
 
   /** Mark the active target as DOWN.
    *
-   * @param now         Time of failure.
-   * @param fail_window The fail window duration (proxy.config.http.down_server.cache_time).
+   * @param[in] now         Time of failure.
+   * @param[in] fail_window The fail window duration (proxy.config.http.down_server.cache_time).
    * @return @c true if the server was marked as down, @c false if not.
    *
    */
