@@ -2759,11 +2759,47 @@ HttpSM::main_handler(int event, void *data)
     }
   }
 
+  // Is there an active background-fill tunnel?
+  // Background fill detaches the user-agent VC and lets the server/cache side
+  // finish the response body. An Http2Stream can still deliver a scheduled UA
+  // close/error callback after that detach, but the UA VIO no longer has a VC
+  // table entry. This predicate recognizes only those detached UA-side events
+  // so they do not fall through to the default tunnel handler and tear down the
+  // HttpSM before the active background-fill tunnel completes.
+  auto is_stale_bg_fill_ua_event = [&]() -> bool {
+    if (background_fill != BackgroundFill_t::STARTED || !tunnel.is_tunnel_alive() || _ua.get_txn() == nullptr) {
+      return false;
+    }
+
+    switch (event) {
+    case VC_EVENT_EOS:
+    case VC_EVENT_ERROR:
+    case VC_EVENT_INACTIVITY_TIMEOUT:
+    case VC_EVENT_ACTIVE_TIMEOUT:
+    case VC_EVENT_WRITE_READY:
+    case VC_EVENT_WRITE_COMPLETE:
+    case VC_EVENT_READ_READY:
+    case VC_EVENT_READ_COMPLETE:
+      break;
+    default:
+      return false;
+    }
+
+    if (data == nullptr) {
+      return true;
+    }
+
+    return static_cast<VIO *>(data)->vc_server == _ua.get_txn();
+  };
+
   if (vc_entry) {
     jump_point = (static_cast<VIO *>(data) == vc_entry->read_vio) ? vc_entry->vc_read_handler : vc_entry->vc_write_handler;
     ink_assert(jump_point != (HttpSMHandler) nullptr);
     ink_assert(vc_entry->vc != (VConnection *)nullptr);
     (this->*jump_point)(event, data);
+  } else if (is_stale_bg_fill_ua_event()) {
+    SMDbg(dbg_ctl_http, "ignoring stale %s event for closed user agent while background fill is active",
+          HttpDebugNames::get_event_name(event));
   } else {
     ink_assert(default_handler != (HttpSMHandler) nullptr);
     (this->*default_handler)(event, data);
@@ -7706,6 +7742,16 @@ HttpSM::kill_this()
   //   we must check it again
   if (kill_this_async_done == true) {
     pending_action = nullptr;
+
+    // This should only be a last-resort cleanup path. A background fill is
+    // normally driven to COMPLETED or ABORTED by tunnel_handler_server, but
+    // any unexpected teardown must still balance the active fill gauge before
+    // optional stats/logging run.
+    if (background_fill == BackgroundFill_t::STARTED) {
+      background_fill = BackgroundFill_t::ABORTED;
+      Metrics::Gauge::decrement(http_rsb.background_fill_current_count);
+    }
+
     if (t_state.http_config_param->enable_http_stats) {
       update_stats();
     }
