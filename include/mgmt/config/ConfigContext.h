@@ -177,12 +177,24 @@ public:
   /// @return copy of the supplied YAML node (cheap — YAML::Node is internally reference-counted).
   [[nodiscard]] YAML::Node supplied_yaml() const;
 
+  /// Get reload directives extracted from the _reload key.
+  /// Directives are operational parameters that modify how the handler performs
+  /// the reload (e.g. scope to a single entry, dry-run) — distinct from config content.
+  /// The framework extracts _reload from the supplied node before passing content
+  /// to the handler, so supplied_yaml() never contains _reload.
+  /// @return copy of the directives YAML node (undefined if none were provided).
+  [[nodiscard]] YAML::Node reload_directives() const;
+
 private:
   /// Set supplied YAML node. Only ConfigRegistry should call this during reload setup.
   void set_supplied_yaml(YAML::Node node);
 
+  /// Set reload directives. Only ConfigRegistry should call this during reload setup.
+  void set_reload_directives(YAML::Node node);
+
   std::weak_ptr<ConfigReloadTask> _task;
-  YAML::Node                      _supplied_yaml; ///< for no content, this will just be empty
+  YAML::Node                      _supplied_yaml;     ///< for no content, this will just be empty
+  YAML::Node                      _reload_directives; ///< operational parameters from _reload key
 
   friend class ReloadCoordinator;
   friend class config::ConfigRegistry;
