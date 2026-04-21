@@ -285,7 +285,7 @@ reload_directives()
           "configs": {
               "myconfig": {
                   "_reload": { "id": "foo", "dry_run": "true" },
-                  "myconfig": [ ... actual content ... ]
+                  "rules": ["rule1", "rule2"]
               }
           }
       }
@@ -340,7 +340,7 @@ reload_directives()
 
       $ traffic_ctl config reload -D myconfig.id=foo
 
-   See :option:`traffic_ctl config reload --directive` for details.
+   See the ``--directive`` option in :ref:`traffic_ctl <traffic_ctl_jsonrpc>` for details.
 
    .. note::
 
