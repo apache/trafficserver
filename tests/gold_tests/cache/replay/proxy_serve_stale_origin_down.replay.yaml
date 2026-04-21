@@ -14,12 +14,6 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-#
-# This replay file assumes that caching is enabled and
-# proxy.config.http.cache.ignore_client_cc_max_age is set to 0 so that we can
-# test max-age in the client requests.
-#
-
 meta:
   version: "1.0"
 
@@ -113,7 +107,7 @@ sessions:
         fields:
         - [ X-Cache, { value: miss, as: equal } ]
 
-  # 3. Serve stale while down_serve.cache_time
+  # 3. Serve stale while proxy.config.http.down_server.cache_time
   #   cache-key: /path/a/
   #   cache: stale
   #   origin server: down (cached)
