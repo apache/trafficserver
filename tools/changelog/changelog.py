@@ -70,7 +70,7 @@ def changelog_via_gh(owner: str, repo: str, milestone: str, verbose: bool, doc: 
     """Use the gh CLI to fetch milestone PRs (avoids API rate limits)."""
     milestone_id = None
     result = subprocess.run(
-        ["gh", "api", f"/repos/{owner}/{repo}/milestones", "--paginate"],
+        ["gh", "api", f"/repos/{owner}/{repo}/milestones?state=all", "--paginate"],
         capture_output=True,
         text=True,
     )
@@ -239,12 +239,18 @@ def changelog_via_api(
 
 
 def _lookup_milestone(client: httpx.Client, owner: str, repo: str, title: str) -> int | None:
-    resp = client.get(f"/repos/{owner}/{repo}/milestones")
-    _check_rate_limit(resp)
-    resp.raise_for_status()
-    for ms in resp.json():
-        if ms["title"] == title:
-            return ms["number"]
+    page = 1
+    while True:
+        resp = client.get(f"/repos/{owner}/{repo}/milestones", params={"state": "all", "per_page": 100, "page": page})
+        _check_rate_limit(resp)
+        resp.raise_for_status()
+        data = resp.json()
+        if not data:
+            break
+        for ms in data:
+            if ms["title"] == title:
+                return ms["number"]
+        page += 1
     return None
 
 
@@ -338,11 +344,10 @@ def main():
                 "repo": args.repo,
                 "entries": changelog,
             }
-            if yaml is not None:
-                yaml.dump(output, sys.stdout, default_flow_style=False, sort_keys=False, allow_unicode=True)
-            else:
-                json.dump(output, sys.stdout, indent=2)
-                print()
+            if yaml is None:
+                print("ERROR: --format yaml requires PyYAML. Install it with: pip install pyyaml", file=sys.stderr)
+                sys.exit(1)
+            yaml.dump(output, sys.stdout, default_flow_style=False, sort_keys=False, allow_unicode=True)
         else:
             print(f"Changes with Apache Traffic Server {args.milestone}")
             for entry in changelog:
