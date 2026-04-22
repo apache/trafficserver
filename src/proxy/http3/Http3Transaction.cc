@@ -353,15 +353,17 @@ HQTransaction::_close_write_complete_event(Event *e)
 }
 
 void
-HQTransaction::_signal_event(int event, Event *edata)
+HQTransaction::_signal_event(int event, Event * /* edata ATS_UNUSED */)
 {
+  // HttpSM::main_handler expects a VIO* as the event data for VC events so it
+  // can locate the vc_table entry.
   if (this->_write_vio.cont) {
     SCOPED_MUTEX_LOCK(lock, this->_write_vio.mutex, this_ethread());
-    this->_write_vio.cont->handleEvent(event, edata);
+    this->_write_vio.cont->handleEvent(event, &this->_write_vio);
   }
   if (this->_read_vio.cont && this->_read_vio.cont != this->_write_vio.cont) {
     SCOPED_MUTEX_LOCK(lock, this->_read_vio.mutex, this_ethread());
-    this->_read_vio.cont->handleEvent(event, edata);
+    this->_read_vio.cont->handleEvent(event, &this->_read_vio);
   }
 }
 
