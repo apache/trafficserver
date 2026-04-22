@@ -389,3 +389,69 @@ Stats for Pre-warming TLS Tunnel is registered dynamically. The ``POOL`` in belo
    :type: counter
 
    Represents the total number of pre-warming retry.
+
+.. ts:stat:: global proxy.process.ssl.cert_compress.zlib integer
+   :type: counter
+
+   The number of times a server certificate was compressed with zlib during a
+   TLS handshake.
+
+.. ts:stat:: global proxy.process.ssl.cert_compress.zlib_failure integer
+   :type: counter
+
+   The number of times zlib compression of a server certificate failed.
+
+.. ts:stat:: global proxy.process.ssl.cert_decompress.zlib integer
+   :type: counter
+
+   The number of times a certificate received from an origin server was
+   decompressed with zlib.
+
+.. ts:stat:: global proxy.process.ssl.cert_decompress.zlib_failure integer
+   :type: counter
+
+   The number of times zlib decompression of a certificate failed.
+
+.. ts:stat:: global proxy.process.ssl.cert_compress.brotli integer
+   :type: counter
+
+   The number of times a server certificate was compressed with Brotli during a
+   TLS handshake.
+
+.. ts:stat:: global proxy.process.ssl.cert_compress.brotli_failure integer
+   :type: counter
+
+   The number of times Brotli compression of a server certificate failed.
+
+.. ts:stat:: global proxy.process.ssl.cert_decompress.brotli integer
+   :type: counter
+
+   The number of times a certificate received from an origin server was
+   decompressed with Brotli.
+
+.. ts:stat:: global proxy.process.ssl.cert_decompress.brotli_failure integer
+   :type: counter
+
+   The number of times Brotli decompression of a certificate failed.
+
+.. ts:stat:: global proxy.process.ssl.cert_compress.zstd integer
+   :type: counter
+
+   The number of times a server certificate was compressed with zstd during a
+   TLS handshake.
+
+.. ts:stat:: global proxy.process.ssl.cert_compress.zstd_failure integer
+   :type: counter
+
+   The number of times zstd compression of a server certificate failed.
+
+.. ts:stat:: global proxy.process.ssl.cert_decompress.zstd integer
+   :type: counter
+
+   The number of times a certificate received from an origin server was
+   decompressed with zstd.
+
+.. ts:stat:: global proxy.process.ssl.cert_decompress.zstd_failure integer
+   :type: counter
+
+   The number of times zstd decompression of a certificate failed.

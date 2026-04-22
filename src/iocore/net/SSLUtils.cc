@@ -30,6 +30,7 @@
 #include "SSLSessionCache.h"
 #include "SSLSessionTicket.h"
 #include "SSLDynlock.h" // IWYU pragma: keep - for ssl_dyn_*
+#include "TLSCertCompression.h"
 
 #include "iocore/net/SSLMultiCertConfigLoader.h"
 #include "config/ssl_multicert.h"
@@ -434,6 +435,26 @@ DH_get_2048_256()
   return (dh);
 }
 #endif
+
+bool
+SSLMultiCertConfigLoader::_enable_cert_compression(SSL_CTX *ctx)
+{
+  std::vector<std::string> algs;
+
+  if (this->_params->server_cert_compression_algorithms) {
+    SimpleTokenizer tok(this->_params->server_cert_compression_algorithms, ',');
+    for (const char *token = tok.getNext(); token; token = tok.getNext()) {
+      algs.emplace_back(token);
+    }
+  }
+
+  if (register_certificate_compression_preference(ctx, algs) == 1) {
+    return true;
+  } else {
+    SSLError("Failed to enable certificate compression");
+    return false;
+  }
+}
 
 bool
 SSLMultiCertConfigLoader::_enable_ktls([[maybe_unused]] SSL_CTX *ctx)
@@ -1269,6 +1290,10 @@ SSLMultiCertConfigLoader::init_server_ssl_ctx(CertLoadData const &data, const SS
     }
 
     if (!this->_set_curves(ctx)) {
+      goto fail;
+    }
+
+    if (!this->_enable_cert_compression(ctx)) {
       goto fail;
     }
 

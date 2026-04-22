@@ -541,6 +541,8 @@ check_symbol_exists(SSL_error_description "openssl/ssl.h" HAVE_SSL_ERROR_DESCRIP
 check_symbol_exists(SSL_CTX_set_ciphersuites "openssl/ssl.h" TS_USE_TLS_SET_CIPHERSUITES)
 check_symbol_exists(SSL_CTX_set_keylog_callback "openssl/ssl.h" TS_HAS_TLS_KEYLOGGING)
 check_symbol_exists(SSL_CTX_set_tlsext_ticket_key_cb "openssl/ssl.h" HAVE_SSL_CTX_SET_TLSEXT_TICKET_KEY_CB)
+check_symbol_exists(SSL_CTX_add_cert_compression_alg "openssl/ssl.h" HAVE_SSL_CTX_ADD_CERT_COMPRESSION_ALG)
+check_symbol_exists(SSL_CTX_set1_cert_comp_preference "openssl/ssl.h" HAVE_SSL_CTX_SET1_CERT_COMP_PREFERENCE)
 check_symbol_exists(SSL_get_all_async_fds openssl/ssl.h TS_USE_TLS_ASYNC)
 check_symbol_exists(OSSL_PARAM_construct_end "openssl/params.h" HAVE_OSSL_PARAM_CONSTRUCT_END)
 check_symbol_exists(TLS1_3_VERSION "openssl/ssl.h" TS_USE_TLS13)

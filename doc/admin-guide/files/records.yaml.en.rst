@@ -4280,6 +4280,40 @@ SSL Termination
    ``1`` Enables the use of Kernel TLS..
    ===== ======================================================================
 
+.. ts:cv:: CONFIG proxy.config.ssl.server.cert_compression.algorithms STRING
+   :reloadable:
+
+   A comma-separated list of compression algorithms that |TS| is willing to
+   use for TLS Certificate Compression
+   (`RFC 8879 <https://datatracker.ietf.org/doc/html/rfc8879>`_) when |TS|
+   acts as a TLS server (i.e. accepting connections from clients).  When a
+   connecting client advertises support for one of these algorithms, |TS| will
+   send its certificate in compressed form, reducing handshake size.
+
+   Supported values: ``zlib``, ``brotli``, ``zstd``.  The order determines the
+   server's preference.  An empty value (the default) disables certificate
+   compression.
+
+   ``brotli`` and ``zstd`` are only available when |TS| is compiled with the
+   corresponding libraries.
+
+   Example::
+
+      proxy.config.ssl.server.cert_compression.algorithms: zlib,brotli
+
+.. ts:cv:: CONFIG proxy.config.ssl.client.cert_compression.algorithms STRING
+   :reloadable:
+
+   A comma-separated list of compression algorithms that |TS| advertises for
+   TLS Certificate Compression
+   (`RFC 8879 <https://datatracker.ietf.org/doc/html/rfc8879>`_) when |TS|
+   acts as a TLS client (i.e. connecting to origin servers).  When the origin
+   supports one of these algorithms, |TS| will accept and decompress the
+   certificate.
+
+   Supported values: ``zlib``, ``brotli``, ``zstd``. An empty value (the
+   default) disables certificate compression.
+
 Client-Related Configuration
 ----------------------------
 

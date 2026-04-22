@@ -88,6 +88,9 @@ struct SSLConfigParams : public ConfigInfo {
   unsigned char alpn_protocols_array[MAX_ALPN_STRING];
   int           alpn_protocols_array_size = 0;
 
+  char *server_cert_compression_algorithms;
+  char *client_cert_compression_algorithms;
+
   char *server_tls13_cipher_suites;
   char *client_tls13_cipher_suites;
   char *server_groups_list;
