@@ -75,7 +75,7 @@ struct alg_info {
 };
 
 int
-register_certificate_compression_preference(SSL_CTX *ctx, std::vector<std::string> &specified_algs)
+register_certificate_compression_preference(SSL_CTX *ctx, const std::vector<std::string> &specified_algs)
 {
   ink_assert(ctx != nullptr);
   if (specified_algs.size() > N_ALGORITHMS) {

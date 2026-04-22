@@ -34,4 +34,4 @@
  * @param[in] algs A vector that contains compression algorithm names ("zlib", "brotli", or "zstd")
  * @return 1 on success
  */
-int register_certificate_compression_preference(SSL_CTX *ctx, std::vector<std::string> &algs);
+int register_certificate_compression_preference(SSL_CTX *ctx, const std::vector<std::string> &algs);
