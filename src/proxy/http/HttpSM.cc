@@ -4735,10 +4735,10 @@ HttpSM::do_hostdb_update_if_necessary()
   if (track_connect_fail()) {
     this->mark_host_failure(&t_state.dns_info, ts_clock::from_time_t(t_state.client_request_time));
   } else {
-    if (t_state.dns_info.mark_active_server_alive()) {
+    if (t_state.dns_info.mark_active_server_up()) {
       char addrbuf[INET6_ADDRPORTSTRLEN];
       ats_ip_nptop(&t_state.current.server->dst_addr.sa, addrbuf, sizeof(addrbuf));
-      ATS_PROBE2(mark_active_server_alive, sm_id, addrbuf);
+      ATS_PROBE2(mark_active_server_up, sm_id, addrbuf);
       if (t_state.dns_info.record->is_srv()) {
         SMDbg(dbg_ctl_http, "[%" PRId64 "] hostdb update marking SRV: %s(%s) as up", sm_id, t_state.dns_info.record->name(),
               addrbuf);
@@ -5978,7 +5978,8 @@ HttpSM::mark_host_failure(ResolveInfo *info, ts_time time_down)
     if (time_down != TS_TIME_ZERO) {
       ats_ip_nptop(&t_state.current.server->dst_addr.sa, addrbuf, sizeof(addrbuf));
       // Increment the fail_count
-      if (auto [down, fail_count] = info->active->increment_fail_count(time_down, t_state.txn_conf->connect_attempts_rr_retries);
+      if (auto [down, fail_count] = info->active->increment_fail_count(time_down, t_state.txn_conf->connect_attempts_rr_retries,
+                                                                       t_state.txn_conf->down_server_timeout);
           down) {
         char            *url_str = t_state.hdr_info.client_request.url_string_get_ref(nullptr);
         std::string_view host_name{t_state.unmapped_url.host_get()};

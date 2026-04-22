@@ -50,12 +50,10 @@ a flag, where a value of ``TS_TIME_ZERO`` indicates a live target and any other 
 down info.
 
 If an info is marked down (has a non-zero last failure time) there is a "fail window" during which
-no connections are permitted. After this time the info is considered to be a "zombie". If all infos
+no connections are permitted. After this time the info is considered to be a "suspect". If all infos
 for a record are down then a specific error message is generated (body factory tag
-"connect#all_down"). Otherwise if the selected info is a zombie, a request is permitted but the
-zombie is immediately marked down again, preventing any additional requests until either the fail
-window has passed or the single connection succeeds. A successful connection clears the last file
-time and the info becomes alive.
+"connect#all_down"). Otherwise if the selected info is a suspect, connections are permitted and the
+info will transition back to up on success or down on failure.
 
 Runtime Structure
 =================
@@ -152,8 +150,8 @@ Future
 
 There is still some work to be done in future PRs.
 
-*  The fail window and the zombie window should be separate values. It is quite reasonable to want
-   to configure a very short fail window (possibly 0) with a moderately long zombie window so that
+*  The fail window and the suspect window should be separate values. It is quite reasonable to want
+   to configure a very short fail window (possibly 0) with a moderately long suspect window so that
    probing connections can immediately start going upstream at a low rate.
 
 *  Failing an upstream should be more loosely connected to transactions. Currently there is a one
@@ -189,7 +187,7 @@ This version has several major architectural changes from the previous version.
 
 *  State information has been promoted to atomics and updates are immediate rather than scheduled.
    This also means the data in the state machine is a reference to a shared object, not a local copy.
-   The promotion was necessary to coordinate zombie connections to upstreams marked down across transactions.
+   The promotion was necessary to coordinate suspect connections to upstreams marked down across transactions.
 
 *  The "resolve key" is now a separate data object from the HTTP request. This is a subtle but
    major change. The effect is requests can be routed to different upstreams without changing
