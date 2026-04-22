@@ -24,9 +24,11 @@
 #include "P_SSLNetVConnection.h"
 #include "P_TLSKeyLogger.h"
 #include "SSLSessionCache.h"
+#include "TLSCertCompression.h"
 #include "iocore/net/YamlSNIConfig.h"
 #include "iocore/net/SSLDiags.h"
 #include "tscore/ink_config.h"
+#include "tscore/SimpleTokenizer.h"
 #include "tscore/Filenames.h"
 #include "tscore/X509HostnameValidator.h"
 
@@ -246,6 +248,18 @@ SSLInitClientContext(const SSLConfigParams *params)
     }
   }
 #endif
+
+  if (params->client_cert_compression_algorithms) {
+    std::vector<std::string> algs;
+    SimpleTokenizer          tok(params->client_cert_compression_algorithms, ',');
+    for (const char *token = tok.getNext(); token; token = tok.getNext()) {
+      algs.emplace_back(token);
+    }
+    if (register_certificate_compression_preference(client_ctx, algs) != 1) {
+      SSLError("invalid client certificate compression algorithm list in %s", ts::filename::RECORDS);
+      goto fail;
+    }
+  }
 
   SSL_CTX_set_verify_depth(client_ctx, params->client_verify_depth);
   if (SSLConfigParams::init_ssl_ctx_cb) {

@@ -61,6 +61,7 @@ add_library(
   TLSSessionResumptionSupport.cc
   TLSSNISupport.cc
   TLSTunnelSupport.cc
+  TLSCertCompression.cc
   UDPEventIO.cc
   UDPIOEvent.cc
   UnixConnection.cc
@@ -114,6 +115,21 @@ target_link_libraries(
 # Is this necessary?
 if(TS_USE_LINUX_IO_URING)
   target_link_libraries(inknet PUBLIC ts::inkuring)
+endif()
+
+# Link cert compression libraries after OpenSSL so that OpenSSL include
+# directories appear first in the search order, preventing broad system
+# include paths (e.g. from Homebrew's zstd) from shadowing them.
+if(HAVE_SSL_CTX_ADD_CERT_COMPRESSION_ALG)
+  target_sources(inknet PRIVATE TLSCertCompression_zlib.cc)
+  if(HAVE_BROTLI_ENCODE_H)
+    target_sources(inknet PRIVATE TLSCertCompression_brotli.cc)
+    target_link_libraries(inknet PRIVATE brotli::brotlienc brotli::brotlidec)
+  endif()
+  if(HAVE_ZSTD_H)
+    target_sources(inknet PRIVATE TLSCertCompression_zstd.cc)
+    target_link_libraries(inknet PRIVATE zstd::zstd)
+  endif()
 endif()
 
 if(BUILD_TESTING)
