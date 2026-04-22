@@ -199,7 +199,7 @@ def AddConfigReload(
     cmd += f" -w {initial_wait} -r {refresh_int}"
 
     if timeout is not None:
-        cmd += f" -T {timeout}"
+        cmd += f" -T {_shell_quote(timeout)}"
     if force:
         cmd += " --force"
     if data is not None:
