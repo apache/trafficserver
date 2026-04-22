@@ -15,8 +15,24 @@
 #
 ######################
 
+# test_hostdb
 add_executable(test_hostdb test_HostDBInfo.cc "${CMAKE_CURRENT_SOURCE_DIR}/../HostDBInfo.cc")
-
 target_link_libraries(test_hostdb PRIVATE Catch2::Catch2WithMain ts::tscore ts::tsutil ts::inkevent configmanager)
-
 add_catch2_test(NAME test_hostdb COMMAND $<TARGET_FILE:test_hostdb>)
+
+# test_HostFile
+add_executable(
+  test_HostFile test_HostFile.cc "${CMAKE_CURRENT_SOURCE_DIR}/../HostFile.cc"
+                "${CMAKE_CURRENT_SOURCE_DIR}/../HostDBInfo.cc"
+)
+target_include_directories(test_HostFile PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/..")
+target_link_libraries(test_HostFile PRIVATE ts::tscore ts::tsutil ts::inkevent configmanager Catch2::Catch2WithMain)
+add_catch2_test(NAME test_hostdb_HostFile COMMAND $<TARGET_FILE:test_HostFile>)
+
+# test_RefCountCache
+add_executable(test_RefCountCache test_RefCountCache.cc)
+target_include_directories(test_RefCountCache PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/..")
+target_link_libraries(
+  test_RefCountCache PRIVATE ts::tscore ts::tsutil ts::inkevent configmanager Catch2::Catch2WithMain
+)
+add_catch2_test(NAME test_hostdb_RefCountCache COMMAND $<TARGET_FILE:test_RefCountCache>)
