@@ -858,7 +858,7 @@ line is logged to ``diags.log``:
 
 .. code-block:: text
 
-   NOTE: Config reload [my-token] completed successfully: 3 tasks succeeded (3 total)
+   NOTE: Config reload [my-token] completed: 3/3 tasks succeeded
 
 **Failure:**
 

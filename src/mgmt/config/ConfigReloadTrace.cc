@@ -299,13 +299,22 @@ ConfigReloadTask::aggregate_status()
 void
 ConfigReloadTask::log_reload_summary(State final_state)
 {
-  if (!_info.main_task || !is_terminal(final_state) || _summary_logged) {
-    return;
+  // Snapshot token and sub_tasks under the lock to avoid races with RPC readers
+  // that also consult _info via get_info()/get_state() on other threads.
+  std::string                      token;
+  std::vector<ConfigReloadTaskPtr> sub_tasks_snapshot;
+  {
+    std::unique_lock<std::shared_mutex> lock(_mutex);
+    if (!_info.main_task || !is_terminal(final_state) || _summary_logged) {
+      return;
+    }
+    _summary_logged    = true;
+    token              = _info.token;
+    sub_tasks_snapshot = _info.sub_tasks;
   }
-  _summary_logged = true;
 
   int success_count{0}, fail_count{0}, total{0};
-  for (const auto &sub : _info.sub_tasks) {
+  for (const auto &sub : sub_tasks_snapshot) {
     State st = sub->get_state();
     if (st == State::SUCCESS) {
       success_count++;
@@ -316,14 +325,14 @@ ConfigReloadTask::log_reload_summary(State final_state)
   }
 
   if (final_state == State::SUCCESS) {
-    Note("Config reload [%s] completed: %d/%d tasks succeeded", _info.token.c_str(), success_count, total);
+    Note("Config reload [%s] completed: %d/%d tasks succeeded", token.c_str(), success_count, total);
   } else {
     Warning("Config reload [%s] finished with failures: %d succeeded, %d failed (%d total) "
             "— run: traffic_ctl config status -t %s",
-            _info.token.c_str(), success_count, fail_count, total, _info.token.c_str());
+            token.c_str(), success_count, fail_count, total, token.c_str());
   }
 
-  dump_subtask_tree(_info.sub_tasks, 2);
+  dump_subtask_tree(sub_tasks_snapshot, 2);
 }
 
 void

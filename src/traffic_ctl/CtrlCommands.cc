@@ -20,6 +20,8 @@
  */
 #include "CtrlCommands.h"
 
+#include <algorithm>
+#include <cctype>
 #include <fstream>
 #include <unordered_map>
 #include <chrono>
@@ -275,7 +277,12 @@ ConfigCommand::config_status()
       {"warning", DL_Warning},
       {"error",   DL_Error  },
     };
-    if (auto it = level_map.find(min_level); it != level_map.end()) {
+
+    std::string lowered{min_level};
+    std::transform(lowered.begin(), lowered.end(), lowered.begin(),
+                   [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+
+    if (auto it = level_map.find(lowered); it != level_map.end()) {
       _printer->as<ConfigReloadPrinter>()->set_min_level(it->second);
     } else {
       _printer->write_output("Invalid --min-level value. Use: debug, note, warning, error");

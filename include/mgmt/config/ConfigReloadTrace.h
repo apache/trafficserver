@@ -172,11 +172,12 @@ public:
   }
 
   /// A single log entry with optional severity.
-  /// Entries from log() carry a DiagsLevel; entries from state-change methods
-  /// (in_progress, complete, fail) use DL_Undefined (the task state itself
-  /// conveys severity).
+  /// Entries from log(level, text) carry the supplied DiagsLevel. State-change
+  /// convenience methods attach an implicit level: in_progress() and complete()
+  /// log at DL_Note, fail() logs at DL_Error. The one-argument log(text) form
+  /// stores DL_Undefined and is always displayed (never filtered by --min-level).
   struct LogEntry {
-    DiagsLevel  level{DL_Undefined}; ///< DL_Undefined for state-change messages
+    DiagsLevel  level{DL_Undefined}; ///< DL_Undefined = always shown (filter bypass)
     std::string text;
   };
 
