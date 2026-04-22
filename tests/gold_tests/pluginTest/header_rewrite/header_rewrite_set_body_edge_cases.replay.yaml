@@ -1,0 +1,168 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+# Edge case tests for set-body origin response replacement:
+# - HEAD request (body not sent, Content-Length correct)
+# - POST request with request body (response body replaced)
+# - Large origin body (exercises partial drain path)
+
+autest:
+  description: 'Test set-body edge cases: HEAD, POST, large body'
+
+  dns:
+    name: 'dns'
+
+  server:
+    name: 'server'
+
+  client:
+    name: 'client'
+    process_config:
+      other_args: '--thread-limit 1'
+
+  ats:
+    name: 'ts'
+
+    copy_to_config_dir:
+      - 'rules'
+
+    records_config:
+      proxy.config.http.insert_response_via_str: 0
+      proxy.config.http.cache.http: 0
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http|header_rewrite'
+
+    remap_config:
+      # HEAD request with set-body
+      - from: "http://www.example.com/set_body_head/"
+        to: "http://backend.ex:{SERVER_HTTP_PORT}/origin_head/"
+        plugins:
+          - name: "header_rewrite.so"
+            args:
+              - "rules/rule_set_body_origin_send_resp.conf"
+
+      # POST request with set-body
+      - from: "http://www.example.com/set_body_post/"
+        to: "http://backend.ex:{SERVER_HTTP_PORT}/origin_post/"
+        plugins:
+          - name: "header_rewrite.so"
+            args:
+              - "rules/rule_set_body_origin_send_resp.conf"
+
+      # Large origin body (64KB) with set-body
+      - from: "http://www.example.com/set_body_large/"
+        to: "http://backend.ex:{SERVER_HTTP_PORT}/origin_large/"
+        plugins:
+          - name: "header_rewrite.so"
+            args:
+              - "rules/rule_set_body_origin_read_resp.conf"
+
+sessions:
+
+# Test 1: HEAD request -- set-body should set Content-Length but not send body
+- transactions:
+  - client-request:
+      method: "HEAD"
+      version: "1.1"
+      url: /set_body_head/
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ uuid, head-1 ]
+
+    server-response:
+      status: 403
+      reason: Forbidden
+      headers:
+        fields:
+        - [ Content-Length, "40" ]
+        - [ Content-Type, "text/plain" ]
+      content:
+        size: 0
+
+    proxy-response:
+      status: 403
+
+# Test 2: POST request with body -- response body should be replaced
+- transactions:
+  - client-request:
+      method: "POST"
+      version: "1.1"
+      url: /set_body_post/
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ Content-Length, "13" ]
+        - [ Content-Type, "application/json" ]
+        - [ uuid, post-1 ]
+      content:
+        size: 13
+        data: '{"key":"val"}'
+
+    server-response:
+      status: 403
+      reason: Forbidden
+      headers:
+        fields:
+        - [ Content-Length, "40" ]
+        - [ Content-Type, "text/plain" ]
+      content:
+        size: 40
+        data: "Sensitive account info: secret-key-12345"
+
+    proxy-response:
+      status: 403
+      headers:
+        fields:
+        - [ Content-Length, { value: "9", as: equal } ]
+      content:
+        size: 9
+        data: "Sanitized"
+
+# Test 3: Large origin body (65536 bytes) -- exercises partial drain path
+# The origin body likely won't be fully in the buffer at READ_RESPONSE_HDR time,
+# so do_drain_server_response_body() should set NO_KEEPALIVE and close.
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /set_body_large/
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ uuid, large-1 ]
+
+    server-response:
+      status: 403
+      reason: Forbidden
+      headers:
+        fields:
+        - [ Content-Length, "65536" ]
+        - [ Content-Type, "text/plain" ]
+      content:
+        size: 65536
+
+    proxy-response:
+      status: 403
+      headers:
+        fields:
+        - [ Content-Length, { value: "9", as: equal } ]
+      content:
+        size: 9
+        data: "Sanitized"
