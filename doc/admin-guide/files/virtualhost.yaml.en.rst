@@ -29,7 +29,7 @@ Virtual host remap rules override global :file:`remap.yaml` rules but remain ful
 with existing configurations. If absent, ATS behaves exactly as before.
 
 Currently, this file only supports :file:`remap.yaml` overrides. Future versions will expand virtual
-host support to additional configuration types (e.g. :file:`sni.yaml`, :file:`ssl_multicert.config`,
+host support to additional configuration types (e.g. :file:`sni.yaml`, :file:`ssl_multicert.yaml`,
 :file:`parent.config`, etc)
 
 By default this is named :file:`virtualhost.yaml`. The filename can be changed by setting
