@@ -25,6 +25,7 @@
 #include "Stage.h"
 
 #include <netinet/in.h>
+#include <string>
 #include <unordered_map>
 
 struct Config;
@@ -47,8 +48,8 @@ struct Data {
 
   sockaddr_storage m_client_ip;
 
-  // transaction pointer
-  TSHttpTxn m_txnp{nullptr};
+  // cached effective URL for use during async intercept processing
+  std::string m_effective_url;
 
   // for pristine/effective url coming in
   TSMBuffer m_urlbuf{nullptr};
