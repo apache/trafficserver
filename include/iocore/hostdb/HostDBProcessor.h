@@ -123,9 +123,52 @@ enum class HostDBType : uint8_t {
 };
 
 /** Information about a single target.
+ *
+ * Each instance tracks the health state of one upstream address. The state is derived from @c _last_failure and the caller-supplied
+ * @a fail_window:
+ *
+ * | State   | Description                                                                       |
+ * |---------|-----------------------------------------------------------------------------------|
+ * | Up      | No known failure; eligible for normal selection.                                  |
+ * | Down    | Blocked; no connections permitted until @c _last_failure + @a fail_window elapses |
+ * | Suspect | Fail window has elapsed; connections are permitted.                               |
+ * |         | On success transitions to Up (@c mark_up); on failure returns to Down.            |
+ *
+ * State transition diagram:
+ *
+ * @startuml
+ * hide empty description
+ *
+ * [*] --> Up
+ * Up      --> Down    : connect failure\n(mark_down)
+ * Down    --> Suspect : fail_window elapses
+ * Suspect --> Up      : connect success\n(mark_up)
+ * Suspect --> Down    : connect failure\n(mark_down)
+ * @enduml
+ *
+ * State transition and `fail_window` time chart:
+ *
+ * @code
+ *              |<-- fail_window  -->|
+ *  -+----------+--------------------+--------------------+----------+----> time
+ *   |    Up    |        Down        |       Suspect      |    Up    |
+ *  -+----------+--------------------+--------------------+----------+---->
+ *              ^                    ^                    ^
+ *               \                    \                    \
+ *        (_last_failure)   (_last_failure + fail_window)    (connect success)
+ * @endcode
  */
-struct HostDBInfo {
+class HostDBInfo
+{
+public:
   using self_type = HostDBInfo; ///< Self reference type.
+
+  /// Health state of this target.
+  enum class State {
+    UP,
+    DOWN,
+    SUSPECT,
+  };
 
   /// Default constructor.
   HostDBInfo() = default;
@@ -134,50 +177,23 @@ struct HostDBInfo {
 
   /// Absolute time of when this target failed.
   /// A value of zero (@c TS_TIME_ZERO ) indicates no failure.
-  ts_time last_fail_time() const;
-
-  /// Target is alive - no known failure.
-  bool is_alive();
-
-  /// Target has failed and is still in the blocked time window.
-  bool is_down(ts_time now, ts_seconds fail_window);
-
-  /** Select this target.
-   *
-   * @param now Current time.
-   * @param fail_window Failure window.
-   * @return Status of the selection.
-   *
-   * If a zombie is selected the failure time is updated to make it appear down to other threads in a thread safe
-   * manner. The caller should check @c last_fail_time to see if a zombie was selected.
-   */
-  bool select(ts_time now, ts_seconds fail_window) const;
-
-  /** Mark the entry as down.
-   *
-   * @param now Time of the failure.
-   * @return @c true if @a this was marked down, @c false if not.
-   *
-   * This can return @c false if the entry is already marked down, in which case the failure time is not updated.
-   */
-  bool mark_down(ts_time now);
-
-  std::pair<bool, uint8_t> increment_fail_count(ts_time now, uint8_t max_retries);
-
-  /** Mark the target as up / alive.
-   *
-   * @return Previous alive state of the target.
-   */
-  bool mark_up();
-
+  ts_time     last_fail_time() const;
+  uint8_t     fail_count() const;
   char const *srvname() const;
 
-  /** Migrate data after a DNS update.
-   *
-   * @param that Source item.
-   *
-   * This moves only specific state information, it is not a generic copy.
-   */
+  /// Return the current health state of this target.
+  State state(ts_time now, ts_seconds fail_window) const;
+
+  // Sugars of checking state
+  bool is_up() const;
+  bool is_down(ts_time now, ts_seconds fail_window) const;
+  bool is_suspect(ts_time now, ts_seconds fail_window) const;
+
+  // State controllers
+  bool                     mark_up();
+  bool                     mark_down(ts_time now, ts_seconds fail_window);
+  std::pair<bool, uint8_t> increment_fail_count(ts_time now, uint8_t max_retries, ts_seconds fail_window);
+
   void migrate_from(self_type const &that);
 
   /// A target is either an IP address or an SRV record.
@@ -187,16 +203,8 @@ struct HostDBInfo {
     SRVInfo srv; ///< SRV record.
   } data{IpAddr{}};
 
-  /// Data that migrates after updated DNS records are processed.
-  /// @see migrate_from
-  /// @{
-  /// Last time a failure was recorded.
-  std::atomic<ts_time> last_failure{TS_TIME_ZERO};
-  /// Count of connection failures
-  std::atomic<uint8_t> fail_count{0};
   /// Expected HTTP version of the target based on earlier transactions.
   HTTPVersion http_version = HTTP_INVALID;
-  /// @}
 
   self_type &assign(IpAddr const &addr);
 
@@ -207,96 +215,11 @@ protected:
   HostDBType type = HostDBType::UNSPEC; ///< Invalid data.
 
   friend HostDBContinuation;
+
+private:
+  std::atomic<ts_time> _last_failure{TS_TIME_ZERO}; ///< Last time a failure was recorded
+  std::atomic<uint8_t> _fail_count{0};              ///< Count of connection failures
 };
-
-inline HostDBInfo &
-HostDBInfo::operator=(HostDBInfo const &that)
-{
-  if (this != &that) {
-    memcpy(static_cast<void *>(this), static_cast<const void *>(&that), sizeof(*this));
-  }
-  return *this;
-}
-
-inline ts_time
-HostDBInfo::last_fail_time() const
-{
-  return last_failure;
-}
-
-inline bool
-HostDBInfo::is_alive()
-{
-  return this->last_fail_time() == TS_TIME_ZERO;
-}
-
-/**
-  Check if this HostDBInfo is currently marked DOWN (true) or UP (false). Returns true while within the `fail_window` period after
-  `last_failure`. Once `fail_window` expires, the host is treated as UP and this function returns false.
-
-                    |<-- fail_window -->|
-    ----------------+-------------------+-----------------> time
-           UP       |       DOWN        |        UP
-    (is_down=false) |  (is_down=true)   | (is_down=false)
-                    |                   |
-                    ^                   ^
-                     \                   \
-                      last_failure        last_failure + fail_window
- */
-inline bool
-HostDBInfo::is_down(ts_time now, ts_seconds fail_window)
-{
-  auto last_fail = this->last_fail_time();
-  return (last_fail != TS_TIME_ZERO) && (now <= last_fail + fail_window);
-}
-
-inline bool
-HostDBInfo::mark_up()
-{
-  auto t        = last_failure.exchange(TS_TIME_ZERO);
-  bool was_down = t != TS_TIME_ZERO;
-  if (was_down) {
-    fail_count.store(0);
-  }
-  return was_down;
-}
-
-inline bool
-HostDBInfo::mark_down(ts_time now)
-{
-  auto t0{TS_TIME_ZERO};
-  return last_failure.compare_exchange_strong(t0, now);
-}
-
-inline std::pair<bool, uint8_t>
-HostDBInfo::increment_fail_count(ts_time now, uint8_t max_retries)
-{
-  auto fcount      = ++fail_count;
-  bool marked_down = false;
-  if (fcount >= max_retries) {
-    marked_down = mark_down(now);
-  }
-  return std::make_pair(marked_down, fcount);
-}
-
-inline bool
-HostDBInfo::select(ts_time now, ts_seconds fail_window) const
-{
-  auto t0 = this->last_fail_time();
-  if (t0 == TS_TIME_ZERO) {
-    return true; // it's alive and so is valid for selection.
-  }
-  // Return true and give it a try if enough time is elapsed since the last failure
-  return (t0 + fail_window < now);
-}
-
-inline void
-HostDBInfo::migrate_from(HostDBInfo::self_type const &that)
-{
-  this->last_failure = that.last_failure.load();
-  this->fail_count   = that.fail_count.load();
-  this->http_version = that.http_version;
-}
 
 // ----
 /** Root item for HostDB.
@@ -371,15 +294,12 @@ public:
 
   /** Pick the next round robin and update the record atomically.
    *
-   * @note This may select a zombie server and reserve it for the caller, therefore the caller must
-   * attempt to connect to the selected target if possible.
+   * @note This may select a suspect server. The caller must attempt to connect to the selected
+   * target if possible.
    *
-   * @param now Current time to use for aliveness calculations.
-   * @param fail_window Blackout time for down servers.
-   * @return Status of the updated target.
-   *
-   * If the return value is @c HostDBInfo::Status::DOWN this means all targets are down and there is
-   * no valid upstream.
+   * @param[in] now Current time to use for HostDBInfo state calculations.
+   * @param[in] fail_window Blackout time for down servers.
+   * @return The selected target, or @c nullptr if all targets are down.
    *
    * @note Concurrency - this is not done under lock and depends on the caller for correct use.
    * For strict round robin, it is a feature that every call will get a distinct index. For
@@ -434,9 +354,9 @@ public:
    * This accounts for the round robin setting. The default is to use "client affinity" in
    * which case @a hash_addr is as a hash seed to select the target.
    *
-   * This may select a zombie target, which can be detected by checking the target's last
-   * failure time. If it is not @c TS_TIME_ZERO the target is a zombie. Other transactions will
-   * be blocked from selecting that target until @a fail_window time has passed.
+   * This may select a suspect target (fail window elapsed, connections permitted again), which can
+   * be detected by checking the target's last failure time. If it is not @c TS_TIME_ZERO the target
+   * is a suspect. Multiple threads may concurrently select the same suspect target.
    *
    * In cases other than strict round robin, a base target is selected. If valid, that is returned,
    * but if not then the targets in this record are searched until a valid one is found. The result
@@ -588,7 +508,7 @@ struct ResolveInfo {
 
   /// Keep a reference to the base HostDB object, so it doesn't get GC'd.
   Ptr<HostDBRecord> record;
-  HostDBInfo       *active = nullptr; ///< Active host record.
+  HostDBInfo       *active = nullptr; ///< Active HostDBInfo
 
   /// Working address. The meaning / source of the value depends on other elements.
   /// This is the "resolved" address if @a resolved_p is @c true.
@@ -646,19 +566,20 @@ struct ResolveInfo {
    */
   bool resolve_immediate();
 
-  /** Mark the active target as down.
+  /** Mark the active target as DOWN.
    *
-   * @param now Time of failure.
+   * @param[in] now         Time of failure.
+   * @param[in] fail_window The fail window duration (proxy.config.http.down_server.cache_time).
    * @return @c true if the server was marked as down, @c false if not.
    *
    */
-  bool mark_active_server_down(ts_time now);
+  bool mark_active_server_down(ts_time now, ts_seconds fail_window);
 
-  /** Mark the active target as alive.
+  /** Mark the active target as UP.
    *
    * @return @c true if the target changed state.
    */
-  bool mark_active_server_alive();
+  bool mark_active_server_up();
 
   /// Select / resolve to the next RR entry for the record.
   bool select_next_rr();
@@ -863,15 +784,15 @@ ResolveInfo::set_active(sockaddr const *s)
 }
 
 inline bool
-ResolveInfo::mark_active_server_alive()
+ResolveInfo::mark_active_server_up()
 {
   return active->mark_up();
 }
 
 inline bool
-ResolveInfo::mark_active_server_down(ts_time now)
+ResolveInfo::mark_active_server_down(ts_time now, ts_seconds fail_window)
 {
-  return active != nullptr && active->mark_down(now);
+  return active != nullptr && active->mark_down(now, fail_window);
 }
 
 inline bool

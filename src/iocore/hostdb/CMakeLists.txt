@@ -43,4 +43,5 @@ if(BUILD_TESTING)
   target_link_libraries(test_RefCountCache PRIVATE ts::tscore ts::tsutil ts::inkevent Catch2::Catch2WithMain)
   add_catch2_test(NAME test_hostdb_RefCountCache COMMAND $<TARGET_FILE:test_RefCountCache>)
 
+  add_subdirectory(unit_tests)
 endif()

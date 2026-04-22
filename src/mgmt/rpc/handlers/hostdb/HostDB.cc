@@ -157,8 +157,8 @@ template <> struct convert<HostDBRecord> {
         info_node["ip"] = std::string(buf);
       }
 
-      info_node["health"]["last_failure"] = info.last_failure.load().time_since_epoch().count();
-      info_node["health"]["fail_count"]   = static_cast<int>(info.fail_count.load());
+      info_node["health"]["last_failure"] = info.last_fail_time().time_since_epoch().count();
+      info_node["health"]["fail_count"]   = static_cast<int>(info.fail_count());
 
       node["info"].push_back(info_node);
     }
