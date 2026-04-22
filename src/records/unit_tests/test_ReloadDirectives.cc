@@ -166,10 +166,10 @@ TEST_CASE("ConfigContext: reload_directives on default context has no keys", "[c
 {
   ConfigContext ctx;
 
-  // Default-constructed YAML::Node is Null (IsDefined()==true).
-  // The handler pattern checks specific keys, which are undefined:
-  auto directives = ctx.reload_directives();
-  REQUIRE(directives.IsNull());
+  // Members are initialized as Undefined, so operator bool() is false.
+  YAML::Node const directives = ctx.reload_directives();
+  REQUIRE_FALSE(directives.IsDefined());
+  REQUIRE_FALSE(directives);
   REQUIRE_FALSE(directives["id"].IsDefined());
 }
 
@@ -178,7 +178,8 @@ TEST_CASE("ConfigContext: supplied_yaml on default context has no content", "[co
   ConfigContext ctx;
 
   auto yaml = ctx.supplied_yaml();
-  REQUIRE(yaml.IsNull());
+  REQUIRE_FALSE(yaml.IsDefined());
+  REQUIRE_FALSE(yaml);
   REQUIRE_FALSE(yaml.IsMap());
   REQUIRE_FALSE(yaml.IsSequence());
 }

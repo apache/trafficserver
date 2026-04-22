@@ -432,12 +432,14 @@ ConfigRegistry::execute_reload(const std::string &key)
   Dbg(dbg_ctl, "Executing reload for config '%s'", key.c_str());
 
   YAML::Node passed_config;
+  bool       has_passed_config{false};
   Entry      entry_copy;
   {
     std::unique_lock lock(_mutex);
 
     if (auto pc_it = _passed_configs.find(key); pc_it != _passed_configs.end()) {
-      passed_config = pc_it->second;
+      passed_config     = pc_it->second;
+      has_passed_config = true;
       _passed_configs.erase(pc_it);
       Dbg(dbg_ctl, "Retrieved and consumed passed config for '%s'", key.c_str());
     }
@@ -455,11 +457,11 @@ ConfigRegistry::execute_reload(const std::string &key)
   // Create context with subtask tracking
   // For rpc reload: use key as description, no filename (source: rpc)
   // For file reload: use key as description, filename indicates source: file
-  std::string filename = passed_config.IsDefined() ? "" : entry_copy.resolve_filename();
+  std::string filename = has_passed_config ? "" : entry_copy.resolve_filename();
   auto        ctx      = ReloadCoordinator::Get_Instance().create_config_context(entry_copy.key, entry_copy.key, filename);
   ctx.in_progress();
 
-  if (passed_config.IsDefined()) {
+  if (has_passed_config) {
     Dbg(dbg_ctl, "Config '%s' reloading from rpc-supplied content", entry_copy.key.c_str());
 
     // Extract _reload directives before passing content to the handler.

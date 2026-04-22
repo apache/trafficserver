@@ -566,6 +566,13 @@ ConfigCommand::config_reload()
     if (dir.empty()) {
       continue;
     }
+    if (dir[0] == '-') {
+      _printer->write_output("Error: '" + dir +
+                             "' looks like a flag, not a directive. "
+                             "Place -D as the last option on the command line.");
+      App_Exit_Status_Code = CTRL_EX_ERROR;
+      return;
+    }
     std::string err;
     if (!parse_directive(dir, configs, err)) {
       _printer->write_output("Error: " + err);

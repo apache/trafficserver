@@ -454,9 +454,11 @@ Display the current value of a configuration record.
 
       .. note::
 
-         ``-D`` and ``-d`` cannot be combined in the same invocation due to argument
-         parsing constraints. Use ``-d`` with full YAML when you need both directives
-         and inline content in a single reload request.
+         ``-D`` uses variable-argument parsing and must appear as the **last option**
+         on the command line. Any flags placed after ``-D`` will be consumed as directive
+         values. ``-D`` and ``-d`` cannot be combined in the same invocation due to this
+         same constraint. Use ``-d`` with full YAML when you need both directives and
+         inline content in a single reload request.
 
       .. note::
 

@@ -271,7 +271,7 @@ supplied_yaml()
 
 reload_directives()
    Returns the YAML map extracted from the ``_reload`` key in the RPC-supplied content. If no
-   directives were provided, the returned node is undefined (``operator bool()`` returns ``false``).
+   directives were provided, the returned node is Undefined (``operator bool()`` returns ``false``).
 
    Directives are operational parameters that modify **how** the handler performs the reload —
    they are distinct from config **content**. Common uses include scoping a reload to a single
@@ -307,8 +307,8 @@ reload_directives()
           ctx.in_progress();
 
           if (auto directives = ctx.reload_directives()) {
-              if (directives["id"]) {
-                  std::string id = directives["id"].as<std::string>();
+              if (auto id_node = directives["id"]; id_node.IsDefined()) {
+                  std::string id = id_node.as<std::string>();
                   if (!reload_single_entry(id)) {
                       ctx.fail("Unknown entry: " + id);
                       return;
