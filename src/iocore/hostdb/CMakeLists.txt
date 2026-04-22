@@ -23,17 +23,5 @@ target_link_libraries(inkhostdb PUBLIC ts::inkdns ts::inkevent ts::tscore)
 clang_tidy_check(inkhostdb)
 
 if(BUILD_TESTING)
-  add_executable(benchmark_HostDB benchmark_HostDB.cc)
-  target_link_libraries(
-    benchmark_HostDB
-    PRIVATE ts::tscore
-            ts::tsutil
-            ts::inkevent
-            ts::http
-            ts::http_remap
-            ts::inkcache
-            ts::inkhostdb
-  )
-
   add_subdirectory(unit_tests)
 endif()
