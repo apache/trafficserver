@@ -1687,9 +1687,23 @@ HttpSM::handle_api_return()
 
   switch (t_state.next_action) {
   case HttpTransact::StateMachineAction_t::TRANSFORM_READ: {
-    HttpTunnelProducer *p = setup_transfer_from_transform();
-    perform_transform_cache_write_action();
-    tunnel.tunnel_run(p);
+    if (t_state.internal_msg_buffer && !t_state.api_server_request_body_set) {
+      SMDbg(dbg_ctl_http, "plugin set internal body, bypassing response transform for internal transfer");
+      transform_info.vc                    = nullptr;
+      t_state.api_info.cache_untransformed = true;
+      if (t_state.hdr_info.client_response.valid() == 0 && t_state.hdr_info.transform_response.valid()) {
+        t_state.hdr_info.client_response.create(HTTPType::RESPONSE);
+        t_state.hdr_info.client_response.copy(&t_state.hdr_info.transform_response);
+      }
+      if (server_entry != nullptr && server_entry->in_tunnel == false) {
+        release_server_session();
+      }
+      setup_internal_transfer(&HttpSM::tunnel_handler);
+    } else {
+      HttpTunnelProducer *p = setup_transfer_from_transform();
+      perform_transform_cache_write_action();
+      tunnel.tunnel_run(p);
+    }
     break;
   }
   case HttpTransact::StateMachineAction_t::SERVER_READ: {
@@ -1722,6 +1736,14 @@ HttpSM::handle_api_return()
       }
 
       setup_blind_tunnel(true, initial_data);
+    } else if (t_state.internal_msg_buffer && !t_state.api_server_request_body_set) {
+      // A plugin replaced the origin response body via TSHttpTxnErrorBodySet().
+      // Serve the synthetic body before entering the response body tunnel.
+      SMDbg(dbg_ctl_http, "plugin set internal body, using internal transfer instead of server tunnel");
+      if (server_entry != nullptr && server_entry->in_tunnel == false) {
+        release_server_session();
+      }
+      setup_internal_transfer(&HttpSM::tunnel_handler);
     } else {
       HttpTunnelProducer *p = setup_server_transfer();
       perform_cache_write_action();
@@ -8229,6 +8251,16 @@ HttpSM::set_next_state()
 
   case HttpTransact::StateMachineAction_t::SERVER_READ: {
     t_state.source = HttpTransact::Source_t::HTTP_ORIGIN_SERVER;
+
+    if (transform_info.vc && t_state.internal_msg_buffer && !t_state.api_server_request_body_set) {
+      SMDbg(dbg_ctl_http, "plugin set internal body, bypassing response transform");
+      transform_info.vc                    = nullptr;
+      t_state.api_info.cache_untransformed = true;
+      if (t_state.hdr_info.client_response.valid() == 0 && t_state.hdr_info.transform_response.valid()) {
+        t_state.hdr_info.client_response.create(HTTPType::RESPONSE);
+        t_state.hdr_info.client_response.copy(&t_state.hdr_info.transform_response);
+      }
+    }
 
     if (transform_info.vc) {
       ink_assert(t_state.hdr_info.client_response.valid() == 0);

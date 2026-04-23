@@ -4948,6 +4948,9 @@ TSHttpTxnErrorBodySet(TSHttpTxn txnp, char *buf, size_t buflength, char *mimetyp
   s->internal_msg_buffer                     = buf;
   s->internal_msg_buffer_size                = buf ? buflength : 0;
   s->internal_msg_buffer_fast_allocator_size = -1;
+  // TSHttpTxnErrorBodySet() and TSHttpTxnServerRequestBodySet() share the same buffer.
+  // Switching to an error/response body override must clear the request-body mode.
+  s->api_server_request_body_set = false;
 
   s->internal_msg_buffer_type = mimetype;
 }
