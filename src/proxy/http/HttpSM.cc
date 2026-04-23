@@ -1743,7 +1743,10 @@ HttpSM::handle_api_return()
       }
 
       setup_blind_tunnel(true, initial_data);
-    } else if (t_state.internal_msg_buffer && !t_state.api_server_request_body_set) {
+    } else if (t_state.internal_msg_buffer && !t_state.api_server_request_body_set && t_state.hdr_info.server_response.valid() &&
+               plugin_tunnel == nullptr &&
+               (api_hooks.get(TS_HTTP_READ_RESPONSE_HDR_HOOK) != nullptr ||
+                api_hooks.get(TS_HTTP_SEND_RESPONSE_HDR_HOOK) != nullptr)) {
       // A plugin replaced the origin response body via TSHttpTxnErrorBodySet().
       // Serve the synthetic body before entering the response body tunnel.
       SMDbg(dbg_ctl_http, "plugin set internal body, using internal transfer instead of server tunnel");
