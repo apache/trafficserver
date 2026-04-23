@@ -74,12 +74,19 @@ null_transform_handler(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED *
 
   if (event == TS_EVENT_ERROR) {
     TSVIO input_vio = TSVConnWriteVIOGet(contp);
-    TSContCall(TSVIOContGet(input_vio), TS_EVENT_ERROR, input_vio);
+    if (input_vio && TSVIOContGet(input_vio)) {
+      TSContCall(TSVIOContGet(input_vio), TS_EVENT_ERROR, input_vio);
+    }
     return 0;
   }
 
   if (event == TS_EVENT_VCONN_WRITE_COMPLETE) {
     TSVConnShutdown(output_conn, 0, 1);
+    return 0;
+  }
+
+  // Handle close/EOS when the transform is shut down before it was used
+  if (event == TS_EVENT_VCONN_EOS) {
     return 0;
   }
 
