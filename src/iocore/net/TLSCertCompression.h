@@ -27,6 +27,11 @@
 #include <vector>
 #include <string>
 
+// RFC 8879 uses uint24 for uncompressed_length, allowing up to ~16 MB.
+// Real certificate chains are well under 64 KB — cap allocation to
+// prevent a decompression bomb from a malicious peer.
+constexpr size_t MAX_CERT_UNCOMPRESSED_LEN = 128 * 1024;
+
 /**
  * Common function to set certificate compression preference
  *
