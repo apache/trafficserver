@@ -193,6 +193,7 @@ sessions:
 
   # Block 3a verification: cache-bypass probe for READ_RESPONSE.
   # Second response on repeated URL should still be replaced.
+  # Keep this as non-200 so null_transform does not engage.
   - client-request:
       method: "GET"
       version: "1.1"
@@ -203,8 +204,8 @@ sessions:
         - [ uuid, 4 ]
 
     server-response:
-      status: 200
-      reason: OK
+      status: 403
+      reason: Forbidden
       headers:
         fields:
         - [ Content-Length, "6" ]
@@ -214,7 +215,7 @@ sessions:
         data: "second"
 
     proxy-response:
-      status: 200
+      status: 403
       headers:
         fields:
         - [ Content-Length, { value: "9", as: equal } ]
@@ -255,6 +256,7 @@ sessions:
 
   # Block 3b verification: cache-bypass probe for SEND_RESPONSE.
   # Second response on repeated URL should still be replaced.
+  # Keep this as non-200 so null_transform does not engage.
   - client-request:
       method: "GET"
       version: "1.1"
@@ -265,8 +267,8 @@ sessions:
         - [ uuid, 6 ]
 
     server-response:
-      status: 200
-      reason: OK
+      status: 403
+      reason: Forbidden
       headers:
         fields:
         - [ Content-Length, "6" ]
@@ -276,7 +278,7 @@ sessions:
         data: "second"
 
     proxy-response:
-      status: 200
+      status: 403
       headers:
         fields:
         - [ Content-Length, { value: "9", as: equal } ]

@@ -1689,8 +1689,15 @@ HttpSM::handle_api_return()
   case HttpTransact::StateMachineAction_t::TRANSFORM_READ: {
     if (t_state.internal_msg_buffer && !t_state.api_server_request_body_set) {
       SMDbg(dbg_ctl_http, "plugin set internal body, bypassing response transform for internal transfer");
-      transform_info.vc                    = nullptr;
       t_state.api_info.cache_untransformed = true;
+      if (tunnel.is_tunnel_active()) {
+        tunnel.kill_tunnel();
+      }
+      if (transform_info.entry != nullptr) {
+        vc_table.cleanup_entry(transform_info.entry);
+        transform_info.entry = nullptr;
+      }
+      transform_info.vc = nullptr;
       if (t_state.hdr_info.client_response.valid() == 0 && t_state.hdr_info.transform_response.valid()) {
         t_state.hdr_info.client_response.create(HTTPType::RESPONSE);
         t_state.hdr_info.client_response.copy(&t_state.hdr_info.transform_response);
@@ -8254,8 +8261,12 @@ HttpSM::set_next_state()
 
     if (transform_info.vc && t_state.internal_msg_buffer && !t_state.api_server_request_body_set) {
       SMDbg(dbg_ctl_http, "plugin set internal body, bypassing response transform");
-      transform_info.vc                    = nullptr;
       t_state.api_info.cache_untransformed = true;
+      if (transform_info.entry != nullptr) {
+        vc_table.cleanup_entry(transform_info.entry);
+        transform_info.entry = nullptr;
+      }
+      transform_info.vc = nullptr;
       if (t_state.hdr_info.client_response.valid() == 0 && t_state.hdr_info.transform_response.valid()) {
         t_state.hdr_info.client_response.create(HTTPType::RESPONSE);
         t_state.hdr_info.client_response.copy(&t_state.hdr_info.transform_response);

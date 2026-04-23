@@ -1189,8 +1189,9 @@ response body tunneling starts.
    When ``set-body`` replaces an origin response body, ATS emits the replacement
    through its internal error-body path. ``Content-Type`` defaults to
    ``text/html`` unless you override it with ``set-header Content-Type``.
-   Also, ``set-body ""`` does not suppress an origin response body on this hook;
-   use a non-empty replacement value when sanitizing origin responses.
+   ``set-body ""`` clears the internal replacement body, but does not suppress an
+   origin response body on this hook; use a non-empty replacement value when
+   sanitizing origin responses.
    The gold tests cover origin replacement for both hooks with and without a
    response transform plugin. The no-transform matrix runs with HTTP cache
    disabled and includes repeated-URL cache-bypass probes.
