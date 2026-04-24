@@ -22,6 +22,7 @@
  */
 
 #include "TLSCertCompression_brotli.h"
+#include "TLSCertCompression.h"
 #include "SSLStats.h"
 #include <openssl/ssl.h>
 #include <brotli/decode.h>
@@ -55,6 +56,12 @@ compression_func_brotli(SSL * /* ssl */, CBB *out, const uint8_t *in, size_t in_
 int
 decompression_func_brotli(SSL * /* ssl */, CRYPTO_BUFFER **out, size_t uncompressed_len, const uint8_t *in, size_t in_len)
 {
+  if (uncompressed_len > MAX_CERT_UNCOMPRESSED_LEN) {
+    *out = nullptr;
+    Metrics::Counter::increment(ssl_rsb.cert_decompress_brotli_failure);
+    return 0;
+  }
+
   uint8_t *buf;
 
   *out = CRYPTO_BUFFER_alloc(&buf, uncompressed_len);

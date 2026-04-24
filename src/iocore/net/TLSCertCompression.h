@@ -27,6 +27,12 @@
 #include <vector>
 #include <string>
 
+// RFC 8879 uses uint24 for uncompressed_length, allowing up to ~16 MB.
+// Real certificate chains rarely exceed 10-30 KB even with large RSA
+// keys and multiple intermediates — 128 KB gives ample headroom while
+// preventing excessive memory allocation from a malicious peer.
+constexpr size_t MAX_CERT_UNCOMPRESSED_LEN = 128 * 1024;
+
 /**
  * Common function to set certificate compression preference
  *
