@@ -7610,12 +7610,19 @@ HttpSM::setup_client_request_plugin_agents(HttpTunnelProducer *p, int num_header
 inline void
 HttpSM::transform_cleanup(TSHttpHookID hook, HttpTransformInfo *info)
 {
+  if (info->entry == nullptr) {
+    return;
+  }
   APIHook *t_hook = api_hooks.get(hook);
   if (t_hook && info->vc == nullptr) {
     do {
-      VConnection *t_vcon = t_hook->m_cont;
-      t_vcon->do_io_close();
-      t_hook = t_hook->m_link.next;
+      APIHook *next = t_hook->m_link.next;
+      // Some transform hooks can already be detached by the time kill_this() runs.
+      // Guard against null continuations while still draining the remaining hooks.
+      if (auto *t_vcon = static_cast<VConnection *>(t_hook->m_cont); t_vcon != nullptr) {
+        t_vcon->do_io_close();
+      }
+      t_hook = next;
     } while (t_hook != nullptr);
   }
 }
@@ -7696,7 +7703,11 @@ HttpSM::kill_this()
     //   In that case, we need to manually close all the
     //   transforms to prevent memory leaks (INKqa06147)
     if (hooks_set) {
-      transform_cleanup(TS_HTTP_RESPONSE_TRANSFORM_HOOK, &transform_info);
+      bool bypassed_response_transform =
+        t_state.api_info.cache_untransformed && t_state.internal_msg_buffer && !t_state.api_server_request_body_set;
+      if (!bypassed_response_transform) {
+        transform_cleanup(TS_HTTP_RESPONSE_TRANSFORM_HOOK, &transform_info);
+      }
       transform_cleanup(TS_HTTP_REQUEST_TRANSFORM_HOOK, &post_transform_info);
       plugin_agents_cleanup();
     }
