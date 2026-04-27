@@ -58,6 +58,8 @@ ssl_multicert:
             {
                 "proxy.config.http.proxy_protocol_allowlist": "127.0.0.1",
                 "proxy.config.http.insert_forwarded": "for|by=ip|proto",
+                "proxy.config.http.insert_client_ip": 2,
+                "proxy.config.http.insert_squid_x_forwarded_for": 1,
                 "proxy.config.ssl.server.cert.path": f"{self.ts.Variables.SSLDir}",
                 "proxy.config.ssl.server.private_key.path": f"{self.ts.Variables.SSLDir}",
                 "proxy.config.diags.debug.enabled": 1,

@@ -2411,7 +2411,10 @@ HttpSM::process_hostdb_info(HostDBRecord *record)
   }
 
   if (record && !record->is_failed()) {
-    t_state.dns_info.inbound_remote_addr = &t_state.client_info.src_addr.sa;
+    // HostDB parent-selection hashes by inbound_remote_addr; using
+    // effective_client_addr keeps sharding affinity tied to the real client
+    // when :pp-clnt is in effect, and is the TCP peer otherwise.
+    t_state.dns_info.inbound_remote_addr = &t_state.effective_client_addr.sa;
     if (!use_client_addr) {
       t_state.dns_info.set_active(
         record->select_best_http(ts_clock::now(), t_state.txn_conf->down_server_timeout, t_state.dns_info.inbound_remote_addr));
@@ -5759,7 +5762,11 @@ HttpSM::do_http_server_open(bool raw, bool only_direct)
       opt.local_ip     = outbound_ip;
     } else if (_ua.get_txn()->is_outbound_transparent()) {
       opt.addr_binding = NetVCOptions::FOREIGN_ADDR;
-      opt.local_ip     = t_state.client_info.src_addr;
+      // Use effective_client_addr so that listeners with :pp-clnt bind the
+      // outbound socket to the real client IP rather than the immediate TCP
+      // peer; without :pp-clnt, effective_client_addr is the TCP peer, so
+      // existing transparent deployments are unaffected.
+      opt.local_ip = t_state.effective_client_addr;
       /* If the connection is server side transparent, we can bind to the
          port that the client chose instead of randomly assigning one at
          the proxy.  This is controlled by the 'use_client_source_port'
@@ -7869,7 +7876,9 @@ HttpSM::update_stats()
     }
     int  status = static_cast<int>(status_code);
     char client_ip[INET6_ADDRSTRLEN];
-    ats_ip_ntop(&t_state.client_info.src_addr, client_ip, sizeof(client_ip));
+    // Log the operator-visible client IP (matches %<chi>) so the slow-request
+    // line is consistent with squid logs when :pp-clnt is in effect.
+    ats_ip_ntop(&t_state.effective_client_addr, client_ip, sizeof(client_ip));
     Error("[%" PRId64 "] Slow Request: "
           "client_ip: %s:%u "
           "protocol: %s "
@@ -7902,7 +7911,7 @@ HttpSM::update_stats()
           "sm_finish: %.3f "
           "plugin_active: %.3f "
           "plugin_total: %.3f",
-          sm_id, client_ip, t_state.client_info.src_addr.host_order_port(),
+          sm_id, client_ip, t_state.effective_client_addr.host_order_port(),
           _ua.get_txn() ? _ua.get_txn()->get_protocol_string() : "-1", url_string, status, unique_id_string, redirection_tries,
           client_response_body_bytes, fd, t_state.client_info.state, t_state.server_info.state,
           milestones.difference_sec(TS_MILESTONE_TLS_HANDSHAKE_START, TS_MILESTONE_TLS_HANDSHAKE_END),
