@@ -1160,7 +1160,7 @@ _mime_hdr_field_list_search_by_string(MIMEHdrImpl *mh, std::string_view field_na
 
     too_far_field = &(fblock->m_field_slots[fblock->m_freetop]);
     while (field < too_far_field) {
-      if (field->is_live() &&
+      if (field->is_live() && field->m_len_name == field_name.length() &&
           strcasecmp(std::string_view{field->m_ptr_name, static_cast<std::string_view::size_type>(field->m_len_name)},
                      field_name) == 0) {
         return field;
