@@ -23,6 +23,9 @@
 
 #include <unistd.h>
 #include <arpa/inet.h>
+#include <map>
+#include <mutex>
+#include <string>
 
 #include "ts/ts.h"
 
@@ -30,10 +33,15 @@
 
 #include <maxminddb.h>
 
-MMDB_s *gMaxMindDB = nullptr;
-
 enum class MmdbSchema { NESTED, FLAT };
-static MmdbSchema gMmdbSchema = MmdbSchema::NESTED;
+
+struct MmdbHandle {
+  MMDB_s     db;
+  MmdbSchema schema = MmdbSchema::NESTED;
+};
+
+static std::map<std::string, MmdbHandle *> gMmdbCache;
+static std::mutex                          gMmdbCacheMutex;
 
 // Detect whether the MMDB uses nested (GeoLite2) or flat (vendor) field layout
 // by probing for the nested country path on a lookup result.
@@ -57,56 +65,63 @@ detect_schema(MMDB_entry_s *entry)
 
 static const char *probe_ips[] = {"8.8.8.8", "1.1.1.1", "128.0.0.1"};
 
-void
+void *
 MMConditionGeo::initLibrary(const std::string &path)
 {
   if (path.empty()) {
     Dbg(pi_dbg_ctl, "Empty MaxMind db path specified. Not initializing!");
-    return;
+    return nullptr;
   }
 
-  if (gMaxMindDB != nullptr) {
-    Dbg(pi_dbg_ctl, "Maxmind library already initialized");
-    return;
+  std::lock_guard<std::mutex> lock(gMmdbCacheMutex);
+
+  auto it = gMmdbCache.find(path);
+  if (it != gMmdbCache.end()) {
+    Dbg(pi_dbg_ctl, "Maxmind library already initialized for %s", path.c_str());
+    return it->second;
   }
 
-  gMaxMindDB = new MMDB_s;
+  auto *handle = new MmdbHandle;
+  int   status = MMDB_open(path.c_str(), MMDB_MODE_MMAP, &handle->db);
 
-  int status = MMDB_open(path.c_str(), MMDB_MODE_MMAP, gMaxMindDB);
   if (MMDB_SUCCESS != status) {
     Dbg(pi_dbg_ctl, "Cannot open %s - %s", path.c_str(), MMDB_strerror(status));
-    delete gMaxMindDB;
-    gMaxMindDB = nullptr;
-    return;
+    delete handle;
+    return nullptr;
   }
 
   // Probe the database schema at load time so we know which field paths to
   // use for country lookups.  Try a few well-known IPs until one hits.
   for (auto *ip : probe_ips) {
     int                  gai_error, mmdb_error;
-    MMDB_lookup_result_s result = MMDB_lookup_string(gMaxMindDB, ip, &gai_error, &mmdb_error);
+    MMDB_lookup_result_s result = MMDB_lookup_string(&handle->db, ip, &gai_error, &mmdb_error);
     if (gai_error == 0 && MMDB_SUCCESS == mmdb_error && result.found_entry) {
-      gMmdbSchema = detect_schema(&result.entry);
-      Dbg(pi_dbg_ctl, "Loaded %s (schema: %s)", path.c_str(), gMmdbSchema == MmdbSchema::FLAT ? "flat" : "nested");
-      return;
+      handle->schema = detect_schema(&result.entry);
+      Dbg(pi_dbg_ctl, "Loaded %s (schema: %s)", path.c_str(), handle->schema == MmdbSchema::FLAT ? "flat" : "nested");
+      gMmdbCache[path] = handle;
+      return handle;
     }
   }
 
   Dbg(pi_dbg_ctl, "Loaded %s (schema: defaulting to nested, no probe IPs matched)", path.c_str());
+  gMmdbCache[path] = handle;
+  return handle;
 }
 
 std::string
-MMConditionGeo::get_geo_string(const sockaddr *addr) const
+MMConditionGeo::get_geo_string(const sockaddr *addr, void *geo_handle) const
 {
   std::string ret = "(unknown)";
   int         mmdb_error;
 
-  if (gMaxMindDB == nullptr) {
+  auto *handle = static_cast<MmdbHandle *>(geo_handle);
+
+  if (handle == nullptr) {
     Dbg(pi_dbg_ctl, "MaxMind not initialized; using default value");
     return ret;
   }
 
-  MMDB_lookup_result_s result = MMDB_lookup_sockaddr(gMaxMindDB, addr, &mmdb_error);
+  MMDB_lookup_result_s result = MMDB_lookup_sockaddr(&handle->db, addr, &mmdb_error);
 
   if (MMDB_SUCCESS != mmdb_error) {
     Dbg(pi_dbg_ctl, "Error during sockaddr lookup: %s", MMDB_strerror(mmdb_error));
@@ -123,7 +138,7 @@ MMConditionGeo::get_geo_string(const sockaddr *addr) const
 
   switch (_geo_qual) {
   case GEO_QUAL_COUNTRY:
-    if (gMmdbSchema == MmdbSchema::FLAT) {
+    if (handle->schema == MmdbSchema::FLAT) {
       status = MMDB_get_value(&result.entry, &entry_data, "country_code", NULL);
     } else {
       status = MMDB_get_value(&result.entry, &entry_data, "country", "iso_code", NULL);
@@ -150,17 +165,19 @@ MMConditionGeo::get_geo_string(const sockaddr *addr) const
 }
 
 int64_t
-MMConditionGeo::get_geo_int(const sockaddr *addr) const
+MMConditionGeo::get_geo_int(const sockaddr *addr, void *geo_handle) const
 {
   int64_t ret = -1;
   int     mmdb_error;
 
-  if (gMaxMindDB == nullptr) {
+  auto *handle = static_cast<MmdbHandle *>(geo_handle);
+
+  if (handle == nullptr) {
     Dbg(pi_dbg_ctl, "MaxMind not initialized; using default value");
     return ret;
   }
 
-  MMDB_lookup_result_s result = MMDB_lookup_sockaddr(gMaxMindDB, addr, &mmdb_error);
+  MMDB_lookup_result_s result = MMDB_lookup_sockaddr(&handle->db, addr, &mmdb_error);
 
   if (MMDB_SUCCESS != mmdb_error) {
     Dbg(pi_dbg_ctl, "Error during sockaddr lookup: %s", MMDB_strerror(mmdb_error));

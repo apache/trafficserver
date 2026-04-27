@@ -831,14 +831,14 @@ ConditionNow::eval(const Resources &res)
 }
 
 std::string
-ConditionGeo::get_geo_string(const sockaddr * /* addr ATS_UNUSED */) const
+ConditionGeo::get_geo_string(const sockaddr * /* addr ATS_UNUSED */, void * /* geo_handle ATS_UNUSED */) const
 {
   TSError("[%s] No Geo library available!", PLUGIN_NAME);
   return "";
 }
 
 int64_t
-ConditionGeo::get_geo_int(const sockaddr * /* addr ATS_UNUSED */) const
+ConditionGeo::get_geo_int(const sockaddr * /* addr ATS_UNUSED */, void * /* geo_handle ATS_UNUSED */) const
 {
   TSError("[%s] No Geo library available!", PLUGIN_NAME);
   return 0;
@@ -891,9 +891,9 @@ void
 ConditionGeo::append_value(std::string &s, const Resources &res)
 {
   if (is_int_type()) {
-    s += std::to_string(get_geo_int(getClientAddr(res.state.txnp, _txn_private_slot)));
+    s += std::to_string(get_geo_int(getClientAddr(res.state.txnp, _txn_private_slot), res.geo_handle));
   } else {
-    s += get_geo_string(getClientAddr(res.state.txnp, _txn_private_slot));
+    s += get_geo_string(getClientAddr(res.state.txnp, _txn_private_slot), res.geo_handle);
   }
   Dbg(pi_dbg_ctl, "Appending GEO() to evaluation value -> %s", s.c_str());
 }
@@ -905,7 +905,7 @@ ConditionGeo::eval(const Resources &res)
 
   Dbg(pi_dbg_ctl, "Evaluating GEO()");
   if (is_int_type()) {
-    int64_t geo = get_geo_int(getClientAddr(res.state.txnp, _txn_private_slot));
+    int64_t geo = get_geo_int(getClientAddr(res.state.txnp, _txn_private_slot), res.geo_handle);
 
     ret = static_cast<const Matchers<int64_t> *>(_matcher.get())->test(geo, res);
   } else {

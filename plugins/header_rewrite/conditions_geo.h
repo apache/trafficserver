@@ -27,10 +27,10 @@ public:
   MMConditionGeo() {}
   virtual ~MMConditionGeo() {}
 
-  static void initLibrary(const std::string &path);
+  static void *initLibrary(const std::string &path);
 
-  virtual int64_t     get_geo_int(const sockaddr *addr) const override;
-  virtual std::string get_geo_string(const sockaddr *addr) const override;
+  int64_t     get_geo_int(const sockaddr *addr, void *geo_handle) const override;
+  std::string get_geo_string(const sockaddr *addr, void *geo_handle) const override;
 };
 
 class GeoIPConditionGeo : public ConditionGeo
@@ -39,8 +39,8 @@ public:
   GeoIPConditionGeo() {}
   virtual ~GeoIPConditionGeo() {}
 
-  static void initLibrary(const std::string &path);
+  static void *initLibrary(const std::string &path);
 
-  virtual int64_t     get_geo_int(const sockaddr *addr) const override;
-  virtual std::string get_geo_string(const sockaddr *addr) const override;
+  int64_t     get_geo_int(const sockaddr *addr, void *geo_handle) const override;
+  std::string get_geo_string(const sockaddr *addr, void *geo_handle) const override;
 };

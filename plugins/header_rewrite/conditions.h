@@ -477,8 +477,8 @@ public:
   }
 
 private:
-  virtual int64_t     get_geo_int(const sockaddr *addr) const;
-  virtual std::string get_geo_string(const sockaddr *addr) const;
+  virtual int64_t     get_geo_int(const sockaddr *addr, void *geo_handle) const;
+  virtual std::string get_geo_string(const sockaddr *addr, void *geo_handle) const;
 
 protected:
   bool
