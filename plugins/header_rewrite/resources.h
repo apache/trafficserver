@@ -127,6 +127,7 @@ public:
   TransactionState state; // Without cripts, txnp / ssnp goes here
 #endif
   TSHttpStatus resp_status = TS_HTTP_STATUS_NONE;
+  void        *geo_handle  = nullptr;
 
   struct LifetimeExtension {
     std::string                                        subject_storage;
