@@ -1,6 +1,6 @@
 /** @file
 
-  Base class providing the data interface for access log entries.
+  Concrete data accessor for access log entries.
 
   @section license License
 
@@ -30,569 +30,193 @@
 #include <optional>
 #include <string_view>
 
-class HTTPHdr;
+class HttpSM;
+class PreTransactionLogData;
 
-/** Abstract base for the data backing a single access log entry.
+/** Provide access-log data from either a completed HttpSM or pre-transaction storage.
  *
- * Subclasses provide data from the appropriate source via virtual getters:
- *   - CompletedTransactionLogData reads from HttpSM (defined in the http
- *     module) for transactions that completed normally.
- *   - PreTransactionLogData returns owned storage (defined in the proxy
- *     module), for requests that never create an HttpSM.
- *
- * LogAccess reads only from this interface, so the logging module has no
- * compile-time dependency on the http module.
+ * The common completed-transaction path reads directly from @c HttpSM.  The
+ * rare pre-transaction path reads from @c PreTransactionLogData, which owns
+ * copied request/session state for malformed requests rejected before HttpSM
+ * creation.
  */
 class TransactionLogData
 {
 public:
-  virtual ~TransactionLogData() = default;
+  explicit TransactionLogData(HttpSM *sm);
+  explicit TransactionLogData(PreTransactionLogData const &pre_data);
 
-  /** Return the HttpSM pointer for plugin custom marshal functions.
-   *
-   * Only TransactionLogData provides a non-null value.  Pre-transaction
-   * entries have no HttpSM, so plugins receive nullptr.
-   *
-   * @return An opaque pointer to the HttpSM, or nullptr.
-   */
-  virtual void *
-  http_sm_for_plugins() const
-  {
-    return nullptr;
-  }
+  void *http_sm_for_plugins() const;
 
   // ===== Milestones =====
-
-  virtual TransactionMilestones const *
-  get_milestones() const
-  {
-    return nullptr;
-  }
+  TransactionMilestones const *get_milestones() const;
 
   // ===== Headers =====
-
-  virtual HTTPHdr *
-  get_client_request() const
-  {
-    return nullptr;
-  }
-  virtual HTTPHdr *
-  get_proxy_response() const
-  {
-    return nullptr;
-  }
-  virtual HTTPHdr *
-  get_proxy_request() const
-  {
-    return nullptr;
-  }
-  virtual HTTPHdr *
-  get_server_response() const
-  {
-    return nullptr;
-  }
-  virtual HTTPHdr *
-  get_cache_response() const
-  {
-    return nullptr;
-  }
+  HTTPHdr *get_client_request() const;
+  HTTPHdr *get_proxy_response() const;
+  HTTPHdr *get_proxy_request() const;
+  HTTPHdr *get_server_response() const;
+  HTTPHdr *get_cache_response() const;
 
   // ===== Client request URL / path =====
-
-  virtual const char *
-  get_client_req_url_str() const
-  {
-    return nullptr;
-  }
-  virtual int
-  get_client_req_url_len() const
-  {
-    return 0;
-  }
-  virtual const char *
-  get_client_req_url_path_str() const
-  {
-    return nullptr;
-  }
-  virtual int
-  get_client_req_url_path_len() const
-  {
-    return 0;
-  }
+  const char *get_client_req_url_str() const;
+  int         get_client_req_url_len() const;
+  const char *get_client_req_url_path_str() const;
+  int         get_client_req_url_path_len() const;
 
   // ===== Proxy response content-type / reason =====
-
-  virtual char *
-  get_proxy_resp_content_type_str() const
-  {
-    return nullptr;
-  }
-  virtual int
-  get_proxy_resp_content_type_len() const
-  {
-    return 0;
-  }
-  virtual char *
-  get_proxy_resp_reason_phrase_str() const
-  {
-    return nullptr;
-  }
-  virtual int
-  get_proxy_resp_reason_phrase_len() const
-  {
-    return 0;
-  }
+  char *get_proxy_resp_content_type_str() const;
+  int   get_proxy_resp_content_type_len() const;
+  char *get_proxy_resp_reason_phrase_str() const;
+  int   get_proxy_resp_reason_phrase_len() const;
 
   // ===== Unmapped URL =====
-
-  virtual char *
-  get_unmapped_url_str() const
-  {
-    return nullptr;
-  }
-  virtual int
-  get_unmapped_url_len() const
-  {
-    return 0;
-  }
+  char *get_unmapped_url_str() const;
+  int   get_unmapped_url_len() const;
 
   // ===== Cache lookup URL =====
-
-  virtual char *
-  get_cache_lookup_url_str() const
-  {
-    return nullptr;
-  }
-  virtual int
-  get_cache_lookup_url_len() const
-  {
-    return 0;
-  }
+  char *get_cache_lookup_url_str() const;
+  int   get_cache_lookup_url_len() const;
 
   // ===== Client addressing =====
-
-  virtual sockaddr const *
-  get_client_addr() const
-  {
-    return nullptr;
-  }
-  virtual sockaddr const *
-  get_client_src_addr() const
-  {
-    return nullptr;
-  }
-  virtual sockaddr const *
-  get_client_dst_addr() const
-  {
-    return nullptr;
-  }
-  virtual sockaddr const *
-  get_verified_client_addr() const
-  {
-    return nullptr;
-  }
-  virtual uint16_t
-  get_client_port() const
-  {
-    return 0;
-  }
+  sockaddr const *get_client_addr() const;
+  sockaddr const *get_client_src_addr() const;
+  sockaddr const *get_client_dst_addr() const;
+  sockaddr const *get_verified_client_addr() const;
+  uint16_t        get_client_port() const;
 
   // ===== Server addressing =====
-
-  virtual sockaddr const *
-  get_server_src_addr() const
-  {
-    return nullptr;
-  }
-  virtual sockaddr const *
-  get_server_dst_addr() const
-  {
-    return nullptr;
-  }
-  virtual sockaddr const *
-  get_server_info_dst_addr() const
-  {
-    return nullptr;
-  }
-  virtual const char *
-  get_server_name() const
-  {
-    return nullptr;
-  }
+  sockaddr const *get_server_src_addr() const;
+  sockaddr const *get_server_dst_addr() const;
+  sockaddr const *get_server_info_dst_addr() const;
+  const char     *get_server_name() const;
 
   // ===== Squid codes =====
-
-  virtual SquidLogCode
-  get_log_code() const
-  {
-    return SquidLogCode::EMPTY;
-  }
-  virtual SquidSubcode
-  get_subcode() const
-  {
-    return SquidSubcode::EMPTY;
-  }
-  virtual SquidHitMissCode
-  get_hit_miss_code() const
-  {
-    return SQUID_MISS_NONE;
-  }
-  virtual SquidHierarchyCode
-  get_hier_code() const
-  {
-    return SquidHierarchyCode::NONE;
-  }
+  SquidLogCode       get_log_code() const;
+  SquidSubcode       get_subcode() const;
+  SquidHitMissCode   get_hit_miss_code() const;
+  SquidHierarchyCode get_hier_code() const;
 
   // ===== Byte counters =====
-
-  virtual int64_t
-  get_client_request_body_bytes() const
-  {
-    return 0;
-  }
-  virtual int64_t
-  get_client_response_hdr_bytes() const
-  {
-    return 0;
-  }
-  virtual int64_t
-  get_client_response_body_bytes() const
-  {
-    return 0;
-  }
-  virtual int64_t
-  get_server_request_body_bytes() const
-  {
-    return 0;
-  }
-  virtual int64_t
-  get_server_response_body_bytes() const
-  {
-    return 0;
-  }
-  virtual int64_t
-  get_cache_response_body_bytes() const
-  {
-    return 0;
-  }
-  virtual int64_t
-  get_cache_response_hdr_bytes() const
-  {
-    return 0;
-  }
+  int64_t get_client_request_body_bytes() const;
+  int64_t get_client_response_hdr_bytes() const;
+  int64_t get_client_response_body_bytes() const;
+  int64_t get_server_request_body_bytes() const;
+  int64_t get_server_response_body_bytes() const;
+  int64_t get_cache_response_body_bytes() const;
+  int64_t get_cache_response_hdr_bytes() const;
 
   // ===== Transaction identifiers =====
-
-  virtual int64_t
-  get_sm_id() const
-  {
-    return 0;
-  }
-  virtual int64_t
-  get_connection_id() const
-  {
-    return 0;
-  }
-  virtual int
-  get_transaction_id() const
-  {
-    return 0;
-  }
-  virtual int
-  get_transaction_priority_weight() const
-  {
-    return 0;
-  }
-  virtual int
-  get_transaction_priority_dependence() const
-  {
-    return 0;
-  }
+  int64_t get_sm_id() const;
+  int64_t get_connection_id() const;
+  int     get_transaction_id() const;
+  int     get_transaction_priority_weight() const;
+  int     get_transaction_priority_dependence() const;
 
   // ===== Plugin info =====
-
-  virtual int64_t
-  get_plugin_id() const
-  {
-    return 0;
-  }
-  virtual const char *
-  get_plugin_tag() const
-  {
-    return nullptr;
-  }
+  int64_t     get_plugin_id() const;
+  const char *get_plugin_tag() const;
 
   // ===== Protocol info =====
-
-  virtual const char *
-  get_client_protocol() const
-  {
-    return nullptr;
-  }
-  virtual const char *
-  get_server_protocol() const
-  {
-    return nullptr;
-  }
-  virtual const char *
-  get_client_sec_protocol() const
-  {
-    return nullptr;
-  }
-  virtual const char *
-  get_client_cipher_suite() const
-  {
-    return nullptr;
-  }
-  virtual const char *
-  get_client_curve() const
-  {
-    return nullptr;
-  }
-  virtual const char *
-  get_client_security_group() const
-  {
-    return nullptr;
-  }
-  virtual int
-  get_client_alpn_id() const
-  {
-    return -1;
-  }
+  const char *get_client_protocol() const;
+  const char *get_server_protocol() const;
+  const char *get_client_sec_protocol() const;
+  const char *get_client_cipher_suite() const;
+  const char *get_client_curve() const;
+  const char *get_client_security_group() const;
+  int         get_client_alpn_id() const;
 
   // ===== SNI =====
-
-  virtual const char *
-  get_sni_server_name() const
-  {
-    return nullptr;
-  }
+  const char *get_sni_server_name() const;
 
   // ===== Connection flags =====
-
-  virtual bool
-  get_client_tcp_reused() const
-  {
-    return false;
-  }
-  virtual bool
-  get_client_connection_is_ssl() const
-  {
-    return false;
-  }
-  virtual bool
-  get_client_ssl_reused() const
-  {
-    return false;
-  }
-  virtual bool
-  get_is_internal() const
-  {
-    return false;
-  }
-  virtual bool
-  get_server_connection_is_ssl() const
-  {
-    return false;
-  }
-  virtual bool
-  get_server_ssl_reused() const
-  {
-    return false;
-  }
-  virtual int
-  get_server_connection_provided_cert() const
-  {
-    return 0;
-  }
-  virtual int
-  get_client_provided_cert() const
-  {
-    return 0;
-  }
+  bool get_client_tcp_reused() const;
+  bool get_client_connection_is_ssl() const;
+  bool get_client_ssl_reused() const;
+  bool get_is_internal() const;
+  bool get_server_connection_is_ssl() const;
+  bool get_server_ssl_reused() const;
+  int  get_server_connection_provided_cert() const;
+  int  get_client_provided_cert() const;
 
   // ===== Server transaction count =====
-
-  virtual int64_t
-  get_server_transact_count() const
-  {
-    return 0;
-  }
+  int64_t get_server_transact_count() const;
 
   // ===== Finish status =====
-
-  virtual int
-  get_client_finish_status_code() const
-  {
-    return 0;
-  }
-  virtual int
-  get_proxy_finish_status_code() const
-  {
-    return 0;
-  }
+  int get_client_finish_status_code() const;
+  int get_proxy_finish_status_code() const;
 
   // ===== Error codes =====
-
-  virtual const char *
-  get_client_rx_error_code() const
-  {
-    return "-";
-  }
-  virtual const char *
-  get_client_tx_error_code() const
-  {
-    return "-";
-  }
+  const char *get_client_rx_error_code() const;
+  const char *get_client_tx_error_code() const;
 
   // ===== MPTCP =====
-
-  virtual std::optional<bool>
-  get_mptcp_state() const
-  {
-    return std::nullopt;
-  }
+  std::optional<bool> get_mptcp_state() const;
 
   // ===== Misc transaction state =====
-
-  virtual in_port_t
-  get_incoming_port() const
-  {
-    return 0;
-  }
-  virtual int
-  get_orig_scheme() const
-  {
-    return -1;
-  }
-  virtual int64_t
-  get_congestion_control_crat() const
-  {
-    return 0;
-  }
+  in_port_t get_incoming_port() const;
+  int       get_orig_scheme() const;
+  int64_t   get_congestion_control_crat() const;
 
   // ===== Cache state =====
-
-  virtual int
-  get_cache_write_code() const
-  {
-    return 0;
-  }
-  virtual int
-  get_cache_transform_write_code() const
-  {
-    return 0;
-  }
-  virtual int
-  get_cache_open_read_tries() const
-  {
-    return 0;
-  }
-  virtual int
-  get_cache_open_write_tries() const
-  {
-    return 0;
-  }
-  virtual int
-  get_max_cache_open_write_retries() const
-  {
-    return -1;
-  }
+  int get_cache_write_code() const;
+  int get_cache_transform_write_code() const;
+  int get_cache_open_read_tries() const;
+  int get_cache_open_write_tries() const;
+  int get_max_cache_open_write_retries() const;
 
   // ===== Retry attempts =====
-
-  virtual int64_t
-  get_simple_retry_attempts() const
-  {
-    return 0;
-  }
-  virtual int64_t
-  get_unavailable_retry_attempts() const
-  {
-    return 0;
-  }
-  virtual int64_t
-  get_retry_attempts_saved() const
-  {
-    return 0;
-  }
+  int64_t get_simple_retry_attempts() const;
+  int64_t get_unavailable_retry_attempts() const;
+  int64_t get_retry_attempts_saved() const;
 
   // ===== Status plugin entry name =====
-
-  virtual std::string_view
-  get_http_return_code_setter_name() const
-  {
-    return {};
-  }
+  std::string_view get_http_return_code_setter_name() const;
 
   // ===== Proxy Protocol =====
-
-  virtual int
-  get_pp_version() const
-  {
-    return 0;
-  }
-  virtual sockaddr const *
-  get_pp_src_addr() const
-  {
-    return nullptr;
-  }
-  virtual sockaddr const *
-  get_pp_dst_addr() const
-  {
-    return nullptr;
-  }
-  virtual std::string_view
-  get_pp_authority() const
-  {
-    return {};
-  }
-  virtual std::string_view
-  get_pp_tls_cipher() const
-  {
-    return {};
-  }
-  virtual std::string_view
-  get_pp_tls_version() const
-  {
-    return {};
-  }
-  virtual std::string_view
-  get_pp_tls_group() const
-  {
-    return {};
-  }
+  int              get_pp_version() const;
+  sockaddr const  *get_pp_src_addr() const;
+  sockaddr const  *get_pp_dst_addr() const;
+  std::string_view get_pp_authority() const;
+  std::string_view get_pp_tls_cipher() const;
+  std::string_view get_pp_tls_version() const;
+  std::string_view get_pp_tls_group() const;
 
   // ===== Server response Transfer-Encoding =====
-
-  virtual std::string_view
-  get_server_response_transfer_encoding() const
-  {
-    return {};
-  }
+  std::string_view get_server_response_transfer_encoding() const;
 
   // ===== Fallback fields for pre-transaction logging =====
+  std::string_view get_method() const;
+  std::string_view get_scheme() const;
+  std::string_view get_client_protocol_str() const;
 
-  virtual std::string_view
-  get_method() const
-  {
-    return {};
-  }
-  virtual std::string_view
-  get_scheme() const
-  {
-    return {};
-  }
-  virtual std::string_view
-  get_client_protocol_str() const
-  {
-    return {};
-  }
-
-  // noncopyable
   TransactionLogData(const TransactionLogData &)            = delete;
   TransactionLogData &operator=(const TransactionLogData &) = delete;
 
-protected:
-  TransactionLogData() = default;
+private:
+  HttpSM                      *m_http_sm  = nullptr;
+  PreTransactionLogData const *m_pre_data = nullptr;
+
+  // Cached values for fields that require computation or string formatting.
+  mutable char m_client_rx_error_code[10] = {'-', '\0'};
+  mutable char m_client_tx_error_code[10] = {'-', '\0'};
+  mutable bool m_error_codes_formatted    = false;
+
+  // Cached URL string pointers (computed on first access).
+  mutable const char *m_client_req_url_str      = nullptr;
+  mutable int         m_client_req_url_len      = 0;
+  mutable const char *m_client_req_url_path_str = nullptr;
+  mutable int         m_client_req_url_path_len = 0;
+  mutable bool        m_url_cached              = false;
+
+  // Cached content-type pointers (computed on first access).
+  mutable char *m_proxy_resp_content_type_str  = nullptr;
+  mutable int   m_proxy_resp_content_type_len  = 0;
+  mutable char *m_proxy_resp_reason_phrase_str = nullptr;
+  mutable int   m_proxy_resp_reason_phrase_len = 0;
+  mutable bool  m_content_type_cached          = false;
+
+  void cache_url_strings() const;
+  void cache_content_type() const;
+  void format_error_codes() const;
 };

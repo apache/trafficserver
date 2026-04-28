@@ -25,6 +25,7 @@
 #include "proxy/Plugin.h"
 #include "proxy/PreTransactionLogData.h"
 #include "proxy/logging/LogAccess.h"
+#include "proxy/logging/TransactionLogData.h"
 #include "proxy/logging/Log.h"
 
 namespace
@@ -411,6 +412,7 @@ ProxyTransaction::log_pre_transaction_access(HTTPHdr const *request, const char 
   data.owned_milestones[TS_MILESTONE_UA_READ_HEADER_DONE] = now;
   data.owned_milestones[TS_MILESTONE_SM_FINISH]           = now;
 
-  LogAccess access(data);
+  TransactionLogData log_data(data);
+  LogAccess          access(log_data);
   Log::access(&access);
 }
