@@ -60,8 +60,12 @@ enum class ConfigSource {
   FileAndRpc  ///< Handler can also process YAML content supplied via RPC
 };
 
-/// Handler signature for config reload - receives ConfigContext
-/// Handler can check ctx.supplied_yaml() for rpc-supplied content
+/// Handler signature for config reload - receives ConfigContext by value.
+/// Handler can check ctx.supplied_yaml() for rpc-supplied content.
+///
+/// Plugin handlers use the same signature: the plugin C API layer wraps the
+/// supplied context by value into its own TSCfgLoadCtx wrapper so the opaque
+/// handle outlives this call (for deferred completion).
 using ConfigReloadHandler = std::function<void(ConfigContext)>;
 
 ///
@@ -104,19 +108,17 @@ public:
     std::string              filename_record;  ///< Record containing filename (e.g., "proxy.config.cache.ip_allow.filename")
     ConfigType               type;             ///< YAML or LEGACY - we set that based on the filename extension.
     ConfigSource             source{ConfigSource::FileOnly}; ///< What content sources this handler supports
-    ConfigReloadHandler      handler;                        ///< Handler function (empty = static file/not reloadable)
+    ConfigReloadHandler      handler;                        ///< Reload handler (empty for static / non-reloadable entries)
     std::vector<std::string> trigger_records;                ///< Records that trigger reload
     bool                     is_required{false};             ///< Whether the file must exist on disk
+    bool                     is_plugin{false};               ///< Registered by a plugin (via TSCfgRegister)
+    bool                     enabled{true};                  ///< Runtime toggle - disabled entries are skipped during reload
+    /// Plugin that registered this entry (from TSPluginRegister). Empty for core entries.
+    /// Used in conflict diagnostics, reload-trace logs, and traffic_ctl status output.
+    std::string plugin_name;
 
     /// Resolve the actual filename (reads from record, falls back to default)
     std::string resolve_filename() const;
-
-    /// Whether this entry has a reload handler (false for static/non-reloadable files).
-    bool
-    has_handler() const
-    {
-      return static_cast<bool>(handler);
-    }
   };
 
   ///
@@ -143,13 +145,28 @@ public:
                        ConfigReloadHandler handler, ConfigSource source, std::initializer_list<const char *> trigger_records = {},
                        bool is_required = false);
 
+  /// @brief Register a plugin config file.
+  ///
+  /// Same as register_config() but marks the entry as plugin-originated so that
+  /// reload tracing and traffic_ctl distinguish plugin tasks from core tasks.
+  /// Called exclusively from the TSCfgRegister plugin API.
+  ///
+  /// @param plugin_name  Name of the registering plugin (from TSPluginRegister).
+  ///                     Required: must be non-empty. Stored on the Entry for
+  ///                     conflict diagnostics, log attribution, and traffic_ctl
+  ///                     status display.
+  ///
+  void register_plugin_config(const std::string &key, const std::string &plugin_name, const std::string &default_filename,
+                              const std::string &filename_record, ConfigReloadHandler handler, ConfigSource source,
+                              std::initializer_list<const char *> trigger_records = {}, bool is_required = false);
+
   /// @brief Register a record-only config handler (no file).
   ///
   /// Convenience method for modules that have no config file but need their
   /// reload handler to participate in the config tracking system (tracing,
   /// status reporting, traffic_ctl config reload).
   ///
-  /// This is NOT for arbitrary record-change callbacks — use RecRegisterConfigUpdateCb
+  /// This is NOT for arbitrary record-change callbacks - use RecRegisterConfigUpdateCb
   /// for that. This is for config modules like SSLTicketKeyConfig that are reloaded
   /// via record changes and need visibility in the reload infrastructure.
   ///
@@ -164,7 +181,7 @@ public:
 
   /// @brief Register a non-reloadable config file (startup files).
   ///
-  /// Static files are registered for informational purposes only — no reload
+  /// Static files are registered for informational purposes only - no reload
   /// handler and no trigger records. This allows the registry to serve as the
   /// single source of truth for all known configuration files, so that RPC
   /// endpoints can gather and expose this information.
@@ -189,6 +206,18 @@ public:
   /// @return 0 on success, -1 if key not found
   ///
   int attach(const std::string &key, const char *record_name);
+
+  ///
+  /// @brief Enable or disable a config entry at runtime
+  ///
+  /// When disabled, the handler is skipped during reloads. The entry
+  /// remains registered and visible in status, but marked as skipped.
+  ///
+  /// @param key     The registered config key
+  /// @param enabled true to enable, false to disable
+  /// @return 0 on success, -1 if key not found
+  ///
+  int set_enabled(const std::string &key, bool enabled);
 
   ///
   /// @brief Add a file dependency to an existing config
@@ -247,6 +276,10 @@ public:
   /// @param key The key to look up (can be a direct entry key or a dependency key)
   /// @return pair of {resolved_parent_key, entry_pointer}
   ///
+  /// The returned pointer follows the same stability contract as @c find: it
+  /// remains valid for the lifetime of the process while the registry stays
+  /// append-only.
+  ///
   std::pair<std::string, Entry const *> resolve(const std::string &key) const;
 
   ///
@@ -286,7 +319,11 @@ public:
   ///
   void execute_reload(const std::string &key);
 
-  /// look up.
+  /// Look up an entry by key.
+  ///
+  /// The returned pointer is stable for the lifetime of the process: the registry
+  /// is append-only - there is no unregister API. If one is ever added, callers
+  /// of @c find / @c resolve must be revisited.
   bool         contains(const std::string &key) const;
   Entry const *find(const std::string &key) const;
 
@@ -311,8 +348,15 @@ private:
   void setup_triggers(Entry &entry);
 
   /// Internal: wire a record callback to fire on_record_change for a config key.
-  /// Does NOT modify trigger_records — callers decide whether to store the record.
+  /// Does NOT modify trigger_records - callers decide whether to store the record.
   int wire_record_callback(const char *record_name, const std::string &config_key);
+
+  /// Internal: split the rpc-passed YAML into _reload directives and remaining
+  /// content, and apply both slices onto @p ctx (via the friend relationship
+  /// with ConfigContext). On invalid _reload (non-map), the directives are
+  /// dropped with a warning. @p passed_config is mutated (the "_reload" key
+  /// is stripped).
+  static void apply_passed_config(ConfigContext &ctx, YAML::Node &passed_config, std::string_view key);
 
   /// Hash for lookup.
   struct StringHash {

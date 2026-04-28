@@ -320,7 +320,10 @@ print_task_tree(const ConfigReloadResponse::ReloadInfo &f, bool full_report, con
   int dur_ms = duration_ms(f.meta.created_time_ms, f.meta.last_updated_time_ms);
 
   // Build label and right-aligned duration
-  std::string label   = std::string(status_icon(f.status)) + " " + fname;
+  std::string label = std::string(status_icon(f.status)) + " " + fname;
+  if (!f.meta.plugin_name.empty()) {
+    label += " [plugin: " + f.meta.plugin_name + "]";
+  }
   std::string dur_str = format_duration(dur_ms);
 
   // Right-pad duration to fixed width so values align
@@ -355,7 +358,7 @@ print_task_tree(const ConfigReloadResponse::ReloadInfo &f, bool full_report, con
       std::cout << log_pfx;
       if (entry.level != DL_Undefined) {
         // Indexed by DiagsLevel enum. In practice only [Dbg], [Note], [Warn], [Err] appear
-        // in task logs — Fatal/Alert/Emergency terminate the process before any task completes.
+        // in task logs - Fatal/Alert/Emergency terminate the process before any task completes.
         static constexpr const char *severity_tags[] = {
           "[Diag]  ", "[Dbg]   ", "[Stat]  ", "[Note]  ", "[Warn]  ", "[Err]   ", "[Fatal] ", "[Alert] ", "[Emrg]  ",
         };

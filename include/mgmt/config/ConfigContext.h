@@ -43,6 +43,10 @@ namespace config
 {
 class ConfigRegistry;
 }
+namespace detail
+{
+class RecordTriggeredReloadContinuation;
+}
 
 ///
 /// @brief Context passed to config handlers during load/reload operations.
@@ -58,7 +62,7 @@ class ConfigRegistry;
 ///       At startup there is no active reload task, so all status operations
 ///       (in_progress, complete, fail, log) are safe **no-ops**. To keep the
 ///       existing code logic for loading/reloading this design aims to avoid
-///       having two separate code paths for startup vs. reload — handlers
+///       having two separate code paths for startup vs. reload - handlers
 ///       can use the same API in both cases.
 ///
 /// Usage:
@@ -92,7 +96,7 @@ public:
 
   ~ConfigContext();
 
-  // Copy only — move is intentionally suppressed.
+  // Copy only - move is intentionally suppressed.
   // ConfigContext holds a weak_ptr (cheap to copy) and a YAML::Node (ref-counted).
   // Suppressing move ensures that std::move(ctx) silently copies, keeping the
   // original valid. This is critical for execute_reload()'s post-handler check:
@@ -166,6 +170,11 @@ public:
   /// For dependent contexts it is the label passed to add_dependent_ctx().
   [[nodiscard]] std::string get_description() const;
 
+  /// Get the reload token identifying the current reload cycle.
+  /// All tasks within the same reload share the same token.
+  /// Returns empty string for default-constructed (no-op) contexts.
+  [[nodiscard]] std::string get_reload_token() const;
+
   /// Create a dependent sub-task that tracks progress independently under this parent.
   /// Each dependent reports its own status (in_progress/complete/fail) and the parent
   /// task aggregates them. The dependent context also inherits the parent's supplied YAML node.
@@ -177,22 +186,27 @@ public:
   /// @code
   ///   if (auto yaml = ctx.supplied_yaml()) { /* use yaml node */ }
   /// @endcode
-  /// @return copy of the supplied YAML node (cheap — YAML::Node is internally reference-counted).
+  /// @return copy of the supplied YAML node (cheap - YAML::Node is internally reference-counted).
   [[nodiscard]] YAML::Node supplied_yaml() const;
 
   /// Get reload directives extracted from the _reload key.
   /// Directives are operational parameters that modify how the handler performs
-  /// the reload (e.g. scope to a single entry, dry-run) — distinct from config content.
+  /// the reload (e.g. scope to a single entry, dry-run) - distinct from config content.
   /// The framework extracts _reload from the supplied node before passing content
   /// to the handler, so supplied_yaml() never contains _reload.
   /// Returns Undefined when no directives were provided (operator bool() == false).
   /// @code
   ///   if (auto directives = ctx.reload_directives()) { /* use directives */ }
   /// @endcode
-  /// @return copy of the directives YAML node (cheap — YAML::Node is internally reference-counted).
+  /// @return copy of the directives YAML node (cheap - YAML::Node is internally reference-counted).
   [[nodiscard]] YAML::Node reload_directives() const;
 
 private:
+  /// Attach the registering plugin's name. A non-empty name marks the context's
+  /// task as plugin-originated (is_plugin = true); an empty view marks it as
+  /// core. Used for diagnostics and traffic_ctl status attribution.
+  void set_plugin_name(std::string_view name);
+
   /// Set supplied YAML node. Only ConfigRegistry should call this during reload setup.
   void set_supplied_yaml(YAML::Node node);
 
@@ -205,6 +219,7 @@ private:
 
   friend class ReloadCoordinator;
   friend class config::ConfigRegistry;
+  friend class detail::RecordTriggeredReloadContinuation;
 };
 
 namespace config

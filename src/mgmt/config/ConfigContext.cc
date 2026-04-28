@@ -141,6 +141,15 @@ ConfigContext::get_description() const
   return {};
 }
 
+std::string
+ConfigContext::get_reload_token() const
+{
+  if (auto p = _task.lock()) {
+    return p->get_token();
+  }
+  return {};
+}
+
 ConfigContext
 ConfigContext::add_dependent_ctx(std::string_view description, std::string_view filename)
 {
@@ -160,6 +169,14 @@ void
 ConfigContext::set_supplied_yaml(YAML::Node node)
 {
   _supplied_yaml = node; // YAML::Node has no move semantics; copy is cheap (ref-counted).
+}
+
+void
+ConfigContext::set_plugin_name(std::string_view name)
+{
+  if (auto p = _task.lock()) {
+    p->set_plugin_name(name);
+  }
 }
 
 YAML::Node

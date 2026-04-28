@@ -558,25 +558,16 @@ free_handler(TSCont cont, TSEvent /* event ATS_UNUSED */, void * /* edata ATS_UN
   return 0;
 }
 
-static int
-config_handler(TSCont cont, TSEvent event, void * /* edata ATS_UNUSED */)
+static bool
+do_config_reload(plugin_state_t *pstate)
 {
-  plugin_state_t *pstate;
-  invalidate_t   *i, *iptr;
-  TSCont          free_cont;
-  bool            updated;
-  TSMutex         mutex;
+  invalidate_t *i, *iptr;
+  TSCont        free_cont;
 
-  Dbg(dbg_ctl, "In config_handler");
+  i = copy_config(pstate->invalidate_list);
 
-  mutex = TSContMutexGet(cont);
-  TSMutexLock(mutex);
-
-  pstate = (plugin_state_t *)TSContDataGet(cont);
-  i      = copy_config(pstate->invalidate_list);
-
-  updated = prune_config(&i);
-  updated = load_config(pstate, &i) || updated;
+  bool updated = prune_config(&i);
+  updated      = load_config(pstate, &i) || updated;
 
   if (updated) {
     list_config(pstate, i);
@@ -587,19 +578,43 @@ config_handler(TSCont cont, TSEvent event, void * /* edata ATS_UNUSED */)
       TSContDataSet(free_cont, (void *)iptr);
       TSContScheduleOnPool(free_cont, FREE_TMOUT, TS_THREAD_POOL_TASK);
     }
-  } else {
-    Dbg(dbg_ctl, "No Changes");
-    if (i) {
-      free_invalidate_t_list(i);
-    }
+    return true;
   }
+
+  Dbg(dbg_ctl, "No Changes");
+  if (i) {
+    free_invalidate_t_list(i);
+  }
+  return false;
+}
+
+static void
+config_reload(TSCfgLoadCtx ctx, void *data)
+{
+  auto *pstate = static_cast<plugin_state_t *>(data);
+
+  Dbg(dbg_ctl, "Config reload via ConfigRegistry");
+  bool const updated = do_config_reload(pstate);
+  TSCfgLoadCtxComplete(ctx, updated ? "regex_revalidate config reloaded" : "regex_revalidate config unchanged");
+}
+
+static int
+config_handler(TSCont cont, TSEvent /* event ATS_UNUSED */, void * /* edata ATS_UNUSED */)
+{
+  plugin_state_t *pstate;
+  TSMutex         mutex;
+
+  Dbg(dbg_ctl, "In config_handler (timed reload)");
+
+  mutex = TSContMutexGet(cont);
+  TSMutexLock(mutex);
+
+  pstate = (plugin_state_t *)TSContDataGet(cont);
+  do_config_reload(pstate);
 
   TSMutexUnlock(mutex);
 
-  // Don't reschedule for TS_EVENT_MGMT_UPDATE
-  if (event == TS_EVENT_TIMEOUT) {
-    TSContScheduleOnPool(cont, CONFIG_TMOUT, TS_THREAD_POOL_TASK);
-  }
+  TSContScheduleOnPool(cont, CONFIG_TMOUT, TS_THREAD_POOL_TASK);
   return 0;
 }
 
@@ -842,12 +857,18 @@ TSPluginInit(int argc, const char *argv[])
   TSContDataSet(main_cont, (void *)pstate);
   TSHttpHookAdd(TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, main_cont);
 
-  config_cont = TSContCreate(config_handler, TSMutexCreate());
-  TSContDataSet(config_cont, (void *)pstate);
-
-  TSMgmtUpdateRegister(config_cont, PLUGIN_NAME);
+  TSCfgRegistrationInfo cfg_info{};
+  cfg_info.key         = PLUGIN_NAME;
+  cfg_info.config_path = pstate->config_path;
+  cfg_info.handler     = config_reload;
+  cfg_info.data        = pstate;
+  cfg_info.source      = TS_CFG_SOURCE_FILE_ONLY;
+  cfg_info.is_required = false;
+  TSCfgRegister(&cfg_info); // errors are logged inside TSCfgRegister
 
   if (!disable_timed_reload) {
+    config_cont = TSContCreate(config_handler, TSMutexCreate());
+    TSContDataSet(config_cont, (void *)pstate);
     TSContScheduleOnPool(config_cont, CONFIG_TMOUT, TS_THREAD_POOL_TASK);
   }
 

@@ -61,6 +61,9 @@ process_config_update(std::string const &fileName, std::string const &configName
     RecT rec_type;
     if (auto r = RecGetRecordType(configName.c_str(), &rec_type); r == REC_ERR_OKAY && rec_type == RECT_CONFIG) {
       RecSetSyncRequired(configName.c_str());
+    } else if (config::ConfigRegistry::Get_Instance().contains(configName)) {
+      Dbg(dbg_ctl, "Config '%s' is a registry key (plugin config), scheduling reload directly", configName.c_str());
+      config::ConfigRegistry::Get_Instance().schedule_reload(configName);
     } else {
       Dbg(dbg_ctl, "Couldn't set RecSetSyncRequired for %s - RecGetRecordType ret = %d", configName.c_str(), r);
     }

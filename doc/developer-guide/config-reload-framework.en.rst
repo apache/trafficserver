@@ -695,6 +695,201 @@ This means the same handler code works in both cases without branching:
    }
 
 
+.. _config-reload-plugin-api:
+
+Plugin Configuration Reload
+===========================
+
+Plugins integrate with the same registry and same task tree described
+above, through the public ``TSCfg*`` C++ API in :file:`ts/ts.h`. The
+framework treats plugin-registered configs as first-class entries: they
+appear in :option:`traffic_ctl config status`, accept inline YAML via
+JSONRPC, honor file-mtime change detection, react to attached trigger
+records, and follow the same :ref:`terminal state rule
+<config-context-terminal-state>` as core handlers.
+
+What changes for plugins is only the surface API:
+
+- ``ConfigRegistry::register_config`` becomes :func:`TSCfgRegister`,
+  which takes a :type:`TSCfgRegistrationInfo` options struct.
+- ``ConfigRegistry::attach`` becomes :func:`TSCfgAttachTrigger`.
+- ``ConfigRegistry::add_file_dependency`` becomes
+  :func:`TSCfgAddFileDependency`.
+- ``ConfigContext`` becomes the opaque ``TSCfgLoadCtx`` handle, with
+  the same in-progress / complete / fail / log / supplied-yaml /
+  reload-directives / add-subtask operations exposed as plain
+  ``TSCfgLoadCtx*`` functions.
+- :func:`TSCfgSetEnabled` allows the plugin to disable a registered
+  entry at runtime, in which case the framework short-circuits the
+  task to a ``"skipped (disabled)"`` completion.
+
+Lifecycle and preconditions
+---------------------------
+
+All ``TSCfg*`` registration calls must be made from :func:`TSPluginInit`,
+**after** :func:`TSPluginRegister` has succeeded. The framework reads the
+calling plugin's canonical name from ``TSPluginRegister`` and attaches it
+to every registered entry; plugins do not pass their name explicitly.
+Calling :func:`TSCfgRegister` outside ``TSPluginInit``, before
+``TSPluginRegister``, or with a null ``info`` returns ``TS_ERROR``.
+
+The reload framework is global-plugin only. Remap plugins
+(:func:`TSRemapInit` / :func:`TSRemapNewInstance`) cannot register
+config entries.
+
+Plugin example
+--------------
+
+A minimal global plugin that registers ``my_plugin.yaml`` and accepts
+either file-driven or RPC-driven reload:
+
+.. code-block:: cpp
+
+   #include <ts/ts.h>
+   #include <string>
+
+   namespace
+   {
+   constexpr char PLUGIN_NAME[] = "my_plugin";
+
+   struct PluginState {
+     std::string config_path;
+   };
+
+   void
+   config_reload(TSCfgLoadCtx ctx, void *data)
+   {
+     auto *state = static_cast<PluginState *>(data);
+
+     // Optionally: announce that work has started.
+     TSCfgLoadCtxInProgress(ctx, "Reloading my_plugin");
+
+     std::string_view fn = TSCfgLoadCtxGetFilename(ctx);
+     if (!parse_file(state, std::string{fn})) {
+       TSCfgLoadCtxFail(ctx, "Failed to parse my_plugin.yaml");
+       return;
+     }
+
+     TSCfgLoadCtxComplete(ctx, "Reloaded my_plugin");
+   }
+   } // anonymous namespace
+
+   void
+   TSPluginInit(int /* argc */, const char * /* argv */[])
+   {
+     TSPluginRegistrationInfo plugin{};
+     plugin.plugin_name   = PLUGIN_NAME;
+     plugin.vendor_name   = "Example Inc.";
+     plugin.support_email = "support@example.com";
+
+     if (TSPluginRegister(&plugin) != TS_SUCCESS) {
+       TSError("[%s] plugin registration failed", PLUGIN_NAME);
+       return;
+     }
+
+     static PluginState state;
+     state.config_path = std::string{TSConfigDirGet()} + "/my_plugin.yaml";
+
+     TSCfgRegistrationInfo info{};
+     info.key         = PLUGIN_NAME;
+     info.config_path = state.config_path;
+     info.handler     = config_reload;
+     info.data        = &state;
+     info.source      = TS_CFG_SOURCE_FILE_AND_RPC;
+     info.is_required = false;
+     if (TSCfgRegister(&info) != TS_SUCCESS) {
+       TSError("[%s] TSCfgRegister failed", PLUGIN_NAME);
+       return;
+     }
+
+     // Optional: trigger the handler whenever this record changes.
+     TSCfgAttachTrigger(PLUGIN_NAME, "proxy.config.my_plugin.enabled");
+   }
+
+The handler obeys the same terminal-state rule as core handlers - every
+code path must end in ``TSCfgLoadCtxComplete`` or ``TSCfgLoadCtxFail``.
+Deferred completion (return from the callback, finish from another
+thread, then call Complete or Fail there) is fully supported; see the
+deferred-handler example in :doc:`api/functions/TSCfgRegister`.
+
+Plugin name attribution in ``traffic_ctl``
+------------------------------------------
+
+Because the plugin's canonical name is attached automatically by the
+framework, :option:`traffic_ctl config status` tags every plugin-owned
+entry with ``[plugin: <name>]``. After a successful reload of the
+example plugin above:
+
+.. code-block:: text
+
+   $ traffic_ctl config reload
+   ✔ Reload scheduled [rldtk-1714061200]
+
+     Monitor : traffic_ctl config reload -t rldtk-1714061200 -m
+     Details : traffic_ctl config reload -t rldtk-1714061200 -s -l
+
+   $ traffic_ctl config status -t rldtk-1714061200
+   ✔ Reload [success] — rldtk-1714061200
+     Started : 2026 Apr 25 14:30:12.345
+     Finished: 2026 Apr 25 14:30:12.349
+     Duration: 4ms
+
+     ✔ 1 success  ◌ 0 in-progress  ✗ 0 failed  (1 total)
+
+     Tasks:
+      ✔ my_plugin [plugin: my_plugin] ················    4ms
+         [Note]  Reloading my_plugin
+         [Note]  Reloaded my_plugin
+
+When a plugin registers more than one entry under a single key (or
+several plugins each register their own entries), the ``[plugin: ...]``
+tag makes ownership unambiguous. Entries owned by core code carry no
+``[plugin: ...]`` tag.
+
+The same attribution is exposed under ``meta.plugin_name`` in the
+JSONRPC :ref:`get_reload_config_status` response, so automation can
+filter, group, or alarm on a per-plugin basis.
+
+Inline RPC reload of a plugin entry uses the registry key as the
+top-level YAML node:
+
+.. code-block:: bash
+
+   $ traffic_ctl config reload --content '{"my_plugin": {"rules": ["x", "y"]}}'
+
+The handler then calls ``TSCfgLoadCtxGetSuppliedYaml`` to read the
+content and ``TSCfgLoadCtxGetReloadDirectives`` for any operator
+directives passed via ``--directive``.
+
+Test plugins
+------------
+
+The autest suite ships small plugins that exercise the public
+``TSCfg*`` surface end-to-end. They are the recommended reference for
+how to wire registration, handler logic, and deferred completion:
+
+- ``tests/gold_tests/jsonrpc/plugins/cfg_plugin_test.cc`` - basic
+  registration and synchronous handler.
+- ``tests/gold_tests/jsonrpc/plugins/cfg_plugin_directives_test.cc`` -
+  reading inline YAML and reload directives.
+- ``tests/gold_tests/jsonrpc/plugins/cfg_plugin_deferred_test.cc`` -
+  asynchronous / deferred completion pattern.
+
+The matching autests
+(``config_reload_plugin_api.test.py`` and friends in
+``tests/gold_tests/jsonrpc/``) demonstrate driving these plugins via
+:program:`traffic_ctl` and validating both the task tree and the
+``[plugin: <name>]`` attribution.
+
+Reference
+---------
+
+:doc:`api/functions/TSCfgRegister` covers the full plugin-facing
+surface: the :type:`TSCfgRegistrationInfo` options struct, the
+registration / trigger / dependency / enable functions, and every
+``TSCfgLoadCtx*`` operation available inside the handler callback.
+
+
 Thread Model
 ============
 
@@ -949,7 +1144,9 @@ line is logged to ``diags.log``:
    WARNING: Config reload [my-token] finished with failures: 1 succeeded, 1 failed (3 total) — run: traffic_ctl config status -t my-token
 
 When the ``config.reload`` debug tag is enabled, a detailed dump of all subtasks and their
-log entries is written to ``traffic.out`` / ``diags.log``:
+log entries is written to ``traffic.out`` / ``diags.log``. The same tag covers diagnostics
+from the plugin-facing API (:func:`TSCfgRegister` and friends), so a single tag is enough to
+trace the full reload pipeline end-to-end:
 
 .. code-block:: text
 
