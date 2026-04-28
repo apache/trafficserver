@@ -123,8 +123,8 @@ public:
    * The caller retains ownership of @a data, which must outlive the
    * synchronous Log::access() call that marshals this entry.
    *
-   * @param[in] data Populated TransactionLogData (CompletedTransactionLogData
-   *                 or PreTransactionLogData).
+   * @param[in] data Populated TransactionLogData for a completed or
+   *                 pre-transaction entry.
    */
   explicit LogAccess(TransactionLogData &data);
 

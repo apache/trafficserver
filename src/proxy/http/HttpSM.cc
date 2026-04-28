@@ -45,7 +45,7 @@
 #include "proxy/http/PreWarmConfig.h"
 #include "proxy/logging/Log.h"
 #include "proxy/logging/LogAccess.h"
-#include "proxy/http/CompletedTransactionLogData.h"
+#include "proxy/logging/TransactionLogData.h"
 #include "proxy/PluginVC.h"
 #include "proxy/ReverseProxy.h"
 #include "proxy/http/remap/RemapProcessor.h"
@@ -7714,8 +7714,8 @@ HttpSM::kill_this()
     //////////////
     SMDbg(dbg_ctl_http_seq, "Logging transaction");
     if (Log::transaction_logging_enabled() && t_state.api_info.logging_enabled) {
-      CompletedTransactionLogData log_data(this);
-      LogAccess                   accessor(log_data);
+      TransactionLogData log_data(this);
+      LogAccess          accessor(log_data);
 
       int ret = Log::access(&accessor);
 
@@ -8443,8 +8443,8 @@ HttpSM::do_redirect()
     if (redirect_url != nullptr ||
         t_state.hdr_info.client_response.field_find(static_cast<std::string_view>(MIME_FIELD_LOCATION))) {
       if (Log::transaction_logging_enabled() && t_state.api_info.logging_enabled) {
-        CompletedTransactionLogData log_data(this);
-        LogAccess                   accessor(log_data);
+        TransactionLogData log_data(this);
+        LogAccess          accessor(log_data);
         if (redirect_url == nullptr) {
           if (t_state.squid_codes.log_code == SquidLogCode::TCP_HIT) {
             t_state.squid_codes.log_code = SquidLogCode::TCP_HIT_REDIRECT;

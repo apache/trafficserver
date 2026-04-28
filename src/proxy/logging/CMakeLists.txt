@@ -28,6 +28,7 @@ add_library(
   LogFormat.cc
   LogFieldFallback.cc
   LogObject.cc
+  TransactionLogData.cc
   LogUtils.cc
   RolledLogDeleter.cc
   YamlLogConfig.cc
