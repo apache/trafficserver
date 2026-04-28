@@ -229,3 +229,49 @@ sessions:
 
         proxy-response:
           status: 200
+
+  # Test 6: Incoming PROXY Protocol v2 on SSL port, with arbitrary source and
+  # destination address in PROXY message. Verifies that Client-ip and
+  # X-Forwarded-For (the legacy outbound header writers) carry the PROXY
+  # Protocol source address, in addition to the Forwarded: for= field. This
+  # exercises HttpTransact::add_client_ip_to_outgoing_request together with
+  # HttpTransactHeaders::add_forwarded_field_to_request.
+  - protocol:
+      - name: http
+        version: 1
+      - name: tls
+      - name: proxy-protocol
+        version: 2
+        src-addr: 198.51.100.1:51137
+        dst-addr: 198.51.100.2:443
+      - name: tcp
+      - name: ip
+
+    transactions:
+      - client-request:
+          method: GET
+          version: "1.1"
+          url: /get
+          headers:
+            fields:
+              - [uuid, 8]
+              - [Host, "127.0.0.1:443"]
+
+        proxy-request:
+          headers:
+            fields:
+              - [
+                  Forwarded,
+                  {
+                    value: for=198.51.100.1;by=127.0.0.1;proto=https,
+                    as: equal,
+                  },
+                ]
+              - [X-Forwarded-For, { value: 198.51.100.1, as: equal }]
+              - [Client-ip, { value: 198.51.100.1, as: equal }]
+
+        server-response:
+          status: 200
+
+        proxy-response:
+          status: 200
