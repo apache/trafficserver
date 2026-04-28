@@ -50,7 +50,7 @@ template <typename T> struct convert;
 using ConfigReloadTaskPtr = std::shared_ptr<ConfigReloadTask>;
 
 ///
-/// @brief Progress checker for reload tasks — detects stuck/hanging tasks.
+/// @brief Progress checker for reload tasks - detects stuck/hanging tasks.
 ///
 /// Created per-reload by ConfigReloadTask::start_progress_checker(), which is called
 /// only for main tasks in the IN_PROGRESS state. Each instance is bound to a single
@@ -64,7 +64,7 @@ using ConfigReloadTaskPtr = std::shared_ptr<ConfigReloadTask>;
 ///       * The task exceeds the configured timeout (marked as TIMEOUT, then stops).
 ///       * The _reload pointer is null (defensive).
 ///   - Reschedules itself (EVENT_CONT) only while the task is still non-terminal.
-///   - No idle polling — when no reload is in progress, no checker exists.
+///   - No idle polling - when no reload is in progress, no checker exists.
 ///
 /// Configurable via records:
 ///   - proxy.config.admin.reload.timeout: Duration string (default: "1h")
@@ -129,7 +129,7 @@ class ConfigReloadTask : public std::enable_shared_from_this<ConfigReloadTask>
 public:
   enum class State {
     INVALID = -1,
-    CREATED,     ///< Initial state — task exists but not started
+    CREATED,     ///< Initial state - task exists but not started
     IN_PROGRESS, ///< Work is actively happening
     SUCCESS,     ///< Terminal: completed successfully
     FAIL,        ///< Terminal: error occurred
@@ -202,6 +202,9 @@ public:
     std::string                      filename;         ///< source file, if applicable
     std::vector<ConfigReloadTaskPtr> sub_tasks;        ///< child tasks (if any)
     bool                             main_task{false}; ///< true for the top-level reload task
+    bool                             is_plugin{false}; ///< registered by a plugin (via TSConfigRegister)
+    /// Plugin name supplied at registration (only meaningful when is_plugin is true; empty for core entries).
+    std::string plugin_name;
   };
 
   using self_type    = ConfigReloadTask;
@@ -264,6 +267,17 @@ public:
     _info.config_key = key;
   }
 
+  /// Set the registering plugin's name. Also flips @c is_plugin to (!name.empty())
+  /// so callers don't need a separate boolean setter; pass an empty view for core
+  /// (non-plugin) entries.
+  void
+  set_plugin_name(std::string_view name)
+  {
+    std::unique_lock<std::shared_mutex> lock(_mutex);
+    _info.plugin_name = name;
+    _info.is_plugin   = !name.empty();
+  }
+
   /// Check if any immediate subtask has the given config_key.
   /// Used by ReloadCoordinator to prevent duplicate subtasks within a single reload cycle.
   [[nodiscard]] bool has_subtask_for_key(std::string_view key) const;
@@ -282,7 +296,7 @@ public:
   }
 
   /// Get created time in seconds (for Date formatting and metrics).
-  /// No lock needed — created_time_ms is immutable after construction.
+  /// No lock needed - created_time_ms is immutable after construction.
   [[nodiscard]] std::time_t
   get_created_time() const
   {
@@ -291,7 +305,7 @@ public:
   }
 
   /// Get created time in milliseconds since epoch.
-  /// No lock needed — created_time_ms is immutable after construction.
+  /// No lock needed - created_time_ms is immutable after construction.
   [[nodiscard]] int64_t
   get_created_time_ms() const
   {

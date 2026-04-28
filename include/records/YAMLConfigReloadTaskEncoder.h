@@ -1,6 +1,6 @@
 /** @file
 
-  YAML encoder for ConfigReloadTask::Info — serializes reload task snapshots to YAML nodes
+  YAML encoder for ConfigReloadTask::Info - serializes reload task snapshots to YAML nodes
   for JSONRPC responses.
 
   @section license License
@@ -49,6 +49,9 @@ template <> struct convert<ConfigReloadTask::Info> {
     meta["created_time_ms"]      = info.created_time_ms;
     meta["last_updated_time_ms"] = info.last_updated_time_ms;
     meta["main_task"]            = info.main_task ? "true" : "false";
+    if (!info.plugin_name.empty()) {
+      meta["plugin_name"] = info.plugin_name;
+    }
 
     node["meta"] = meta;
 

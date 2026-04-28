@@ -1591,6 +1591,130 @@ enum TSHttpCntlType {
   TS_HTTP_CNTL_SKIP_REMAPPING,
 };
 
+// Config reload registration interface.
+using TSCfgLoadCtx = struct tsapi_cfgloadctx *;
+
+/// Plugin config load callback - invoked when the config file changes or a reload is requested.
+/// The handler receives a TSCfgLoadCtx for status reporting and an opaque data pointer.
+///
+/// Contract:
+///  - The plugin MUST call exactly one of TSCfgLoadCtxComplete() /
+///    TSCfgLoadCtxFail() on @a ctx, and on every handle returned by
+///    TSCfgLoadCtxAddSubtask(). That call frees the handle.
+///  - After the completing call returns, the handle is invalid: any
+///    subsequent TSCfgLoadCtx* call on it (including Complete, Fail,
+///    InProgress, AddLog, AddSubtask, getters) is a use-after-free.
+///  - Work may be deferred to another thread/continuation: store the handle
+///    and call Complete or Fail exactly once when done. Intermediate progress
+///    or diagnostic messages should be published via TSCfgLoadCtxAddLog().
+///  - If the plugin never completes, the core reload framework still
+///    unblocks the overall reload via its progress-timeout, but the
+///    per-load handle leaks for the process lifetime.
+using TSCfgLoadCb = void (*)(TSCfgLoadCtx ctx, void *data);
+
+/// Declares what content sources a plugin config handler supports.
+enum TSCfgSourceType {
+  TS_CFG_SOURCE_FILE_ONLY,   ///< Handler only reloads from file on disk
+  TS_CFG_SOURCE_FILE_AND_RPC ///< Handler can also process YAML content supplied via RPC
+};
+
+/// Options for TSCfgRegister().
+///
+/// Passed by const-pointer so future fields can be appended without breaking
+/// source compatibility for existing plugins, provided new fields default to
+/// a sane value. Populate the fields on a default-constructed instance:
+///
+///   TSCfgRegistrationInfo info{};
+///   info.key             = "my_config";
+///   info.config_path     = "my_config.yaml";
+///   info.filename_record = "proxy.config.my_plugin.filename"; // optional
+///   info.handler         = my_reload_cb;
+///   info.data            = my_state;
+///   info.source          = TS_CFG_SOURCE_FILE_AND_RPC;
+///   info.is_required     = false;
+///   TSCfgRegister(&info);
+///
+/// The plugin name is taken automatically from the active TSPluginRegister()
+/// call and is not part of this struct.
+struct TSCfgRegistrationInfo {
+  /// Unique registry key. Also used as the YAML node name when an operator
+  /// reloads via `traffic_ctl config reload --content '{<key>: {...}}'`.
+  /// Must be unique across all registered configs (core and plugin).
+  /// Convention: use the plugin name, or a "<plugin_name>.<sub>" prefix when
+  /// a plugin owns multiple configs. Required.
+  std::string_view key;
+
+  /// Default config file path (absolute, or relative to sysconfdir).
+  /// Required.
+  std::string_view config_path;
+
+  /// Fully-qualified record name that holds the active config filename, or
+  /// `{}` (default) if the path is fixed. When set, the operator can change
+  /// the active config file at runtime by editing this record; @c config_path
+  /// is used as the fallback when the record is empty or unset. Optional.
+  std::string_view filename_record;
+
+  /// Reload callback invoked when the file changes, when an attached trigger
+  /// record changes, or when the operator issues an RPC reload. Required.
+  TSCfgLoadCb handler{nullptr};
+
+  /// Opaque pointer passed unmodified to @c handler on every invocation. The
+  /// plugin owns it - ATS does not copy or free it; must outlive the registration.
+  void *data{nullptr};
+
+  /// Whether @c handler can also process YAML content supplied via RPC.
+  TSCfgSourceType source{TS_CFG_SOURCE_FILE_ONLY};
+
+  /// True if the file must exist on disk for a reload to be considered
+  /// successful. False (default) lets the plugin tolerate a missing file.
+  bool is_required{false};
+};
+
+/// Options for TSCfgAddFileDependency().
+///
+/// Only @c key and @c config_path are required. Adding fields in future
+/// versions does not break source compatibility for existing plugins.
+///
+/// Typical use:
+///
+///   TSCfgFileDependencyInfo dep{};
+///   dep.key         = "my_plugin";
+///   dep.config_path = "my_plugin_extras.yaml";
+///   TSCfgAddFileDependency(&dep);
+///
+/// Composite plugin (RPC-routable child file):
+///
+///   TSCfgFileDependencyInfo dep{};
+///   dep.key             = "my_plugin";
+///   dep.config_path     = "my_plugin_extras.yaml";
+///   dep.filename_record = "proxy.config.my_plugin.extras_filename";
+///   dep.dep_key         = "my_plugin_extras";
+///   dep.is_required     = false;
+///   TSCfgAddFileDependency(&dep);
+struct TSCfgFileDependencyInfo {
+  /// Parent registry key as passed to TSCfgRegister(). Required.
+  std::string_view key;
+
+  /// Default companion file path (absolute, or relative to sysconfdir).
+  /// Required.
+  std::string_view config_path;
+
+  /// Fully-qualified record name that holds the filename, or `{}` if the
+  /// path is fixed. Optional.
+  std::string_view filename_record;
+
+  /// Routing key for inline YAML supplied via JSONRPC. When non-empty,
+  /// content delivered under this top-level node is routed to the parent
+  /// entry's handler, giving the plugin parity with core composite-config
+  /// patterns (see ConfigRegistry::add_file_and_node_dependency()). When
+  /// empty, the dependency is file-change-only.
+  std::string_view dep_key;
+
+  /// True if the file must exist on disk for a reload to be considered
+  /// successful. False (default) lets the plugin tolerate a missing file.
+  bool is_required{false};
+};
+
 // JSONRPC 2.0 related interface.
 using TSRPCProviderHandle = struct tsapi_rpcproviderhandle *;
 using TSYaml              = struct tsapi_yaml *;
