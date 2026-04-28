@@ -376,11 +376,15 @@ SSLNetVConnection::read_raw_data()
       if (this->has_proxy_protocol(buffer, &r)) {
         Dbg(dbg_ctl_proxyprotocol, "ssl has proxy protocol header");
         if (dbg_ctl_proxyprotocol.on()) {
+          IpEndpoint src;
+          src.sa = *(this->get_proxy_protocol_src_addr());
           IpEndpoint dst;
           dst.sa = *(this->get_proxy_protocol_dst_addr());
-          ip_port_text_buffer ipb1;
-          ats_ip_nptop(&dst, ipb1, sizeof(ipb1));
-          DbgPrint(dbg_ctl_proxyprotocol, "ssl_has_proxy_v1, dest IP received [%s]", ipb1);
+          ip_port_text_buffer src_ipb, dst_ipb;
+          ats_ip_nptop(&src, src_ipb, sizeof(src_ipb));
+          ats_ip_nptop(&dst, dst_ipb, sizeof(dst_ipb));
+          DbgPrint(dbg_ctl_proxyprotocol, "ssl proxy protocol v%d header parsed: src=[%s] dst=[%s]",
+                   static_cast<int>(this->get_proxy_protocol_version()), src_ipb, dst_ipb);
         }
       } else {
         Dbg(dbg_ctl_proxyprotocol, "proxy protocol was enabled, but Proxy Protocol header was not present");

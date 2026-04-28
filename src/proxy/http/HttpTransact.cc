@@ -5496,12 +5496,23 @@ HttpTransact::add_client_ip_to_outgoing_request(State *s, HTTPHdr *request)
   char   ip_string[INET6_ADDRSTRLEN + 1] = {'\0'};
   size_t ip_string_size                  = 0;
 
-  if (!ats_is_ip(&s->client_info.src_addr.sa)) {
+  // Prefer the PROXY-Protocol source address when one is present, so that
+  // Client-ip and X-Forwarded-For agree with Forwarded: for= regardless of
+  // whether the listener carries the :pp-clnt flag.
+  IpEndpoint src_addr = s->client_info.src_addr;
+  if (s->state_machine->get_ua_txn() && s->state_machine->get_ua_txn()->get_netvc()) {
+    const ProxyProtocol &pp = s->state_machine->get_ua_txn()->get_netvc()->get_proxy_protocol_info();
+    if (pp.version != ProxyProtocolVersion::UNDEFINED) {
+      src_addr = pp.src_addr;
+    }
+  }
+
+  if (!ats_is_ip(&src_addr.sa)) {
     return;
   }
 
   // Always prepare the IP string.
-  if (ats_ip_ntop(&s->client_info.src_addr.sa, ip_string, sizeof(ip_string)) != nullptr) {
+  if (ats_ip_ntop(&src_addr.sa, ip_string, sizeof(ip_string)) != nullptr) {
     ip_string_size += strlen(ip_string);
   } else {
     // Failure, omg

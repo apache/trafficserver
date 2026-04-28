@@ -17,6 +17,8 @@
 
 .. include:: ../../common.defs
 
+.. default-domain:: cpp
+
 .. configfile:: records.yaml
 
 records.yaml
@@ -843,6 +845,15 @@ pp
    port, |TS| tries to parse the header first, and it falls back to the regular connection handling based on other keywords. See
    :ref:`Proxy Protocol <proxy-protocol>` for more details on how to configure
    this option properly.
+
+pp-clnt
+   Use the source address from the Proxy Protocol header as the client IP
+   address for the transaction. This affects which address is reported by the
+   ``%<chi>`` log field, by the plugin client-address APIs (such as
+   :func:`TSHttpTxnClientAddrGet`), and by SNI / HTTP/2 peer ACLs and SSL
+   client-certificate validation, among other surfaces. Only meaningful in
+   combination with ``pp``. See :ref:`Proxy Protocol <proxy-protocol>` for the
+   full enumeration of behaviors gated by this flag.
 
 tr-full
    Fully transparent. This is a convenience option and is identical to specifying both ``tr-in`` and ``tr-out``.
