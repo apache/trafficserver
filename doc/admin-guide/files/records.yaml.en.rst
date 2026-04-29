@@ -3309,7 +3309,8 @@ HostDB
 
 .. ts:cv:: CONFIG proxy.config.hostdb.round_robin_max_count INT 16
 
-   The maximum count of DNS answers per round robin hostdb record. The default variable is 16.
+   The maximum count of DNS answers per round robin hostdb record. The
+   default value is ``16``. Valid range is ``1`` to ``1024``.
 
 .. ts:cv:: CONFIG proxy.config.hostdb.ttl_mode INT 0
    :reloadable:
