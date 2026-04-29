@@ -466,7 +466,7 @@ RemapRegex::compile(std::string &error, int &erroffset)
 
 // Get the lengths of the matching string(s), taking into account variable substitutions.
 // We also calculate a total length for the new string, which is the max length the
-// substituted string can have (use it to allocate a buffer before calling substitute() ).
+// substituted string can have (used for the ts::LocalBuffer).
 int
 RemapRegex::get_lengths(RegexMatches const &matches, int lengths[], TSRemapRequestInfo *rri, UrlComponents *req_url)
 {
@@ -908,8 +908,8 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   RemapRegex   *re        = ri->first;
   int           match_len = 0;
 
-  // Cap the stack allocation to 32KB
-  ts::LocalBuffer<char, 32768> match_buf(req_url.url_len + 32);
+  // Cap the stack allocation to 16KB, a typical browser upper limit
+  ts::LocalBuffer<char, 16384> match_buf(req_url.url_len + 32);
 
   if (ri->method) { // Prepend the URI path or URL with the HTTP method
     TSMBuffer   mBuf;
@@ -1025,13 +1025,13 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
       }
 
       if (new_len > 0) {
-        char *dest;
+        // Cap the stack allocation to 16KB, a typical browser upper limit
+        ts::LocalBuffer<char, 16384> dest(new_len + 8);
 
-        dest     = static_cast<char *>(alloca(new_len + 8));
-        dest_len = re->substitute(dest, matches, lengths, txnp, rri, &req_url, lowercase_substitutions);
+        dest_len = re->substitute(dest.data(), matches, lengths, txnp, rri, &req_url, lowercase_substitutions);
 
         Dbg(dbg_ctl, "New URL is estimated to be %d bytes long, or less", new_len);
-        Dbg(dbg_ctl, "New URL is %s (length %d)", dest, dest_len);
+        Dbg(dbg_ctl, "New URL is %s (length %d)", dest.data(), dest_len);
         Dbg(dbg_ctl, "    matched rule %d [%s]", re->order(), re->regex());
 
         // Check for a quick response, if the status option is set
@@ -1051,7 +1051,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 
         // Now parse the new URL, which can also be the redirect URL
         if (dest_len > 0) {
-          const char *start = dest;
+          const char *start = dest.data();
 
           // Setup the new URL
           if (TS_PARSE_ERROR == TSUrlParse(rri->requestBufp, rri->requestUrl, &start, start + dest_len)) {
