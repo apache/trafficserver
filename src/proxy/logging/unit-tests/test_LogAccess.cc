@@ -25,6 +25,7 @@
 
 #include "proxy/PreTransactionLogData.h"
 #include "proxy/logging/LogAccess.h"
+#include "proxy/logging/TransactionLogData.h"
 #include "tscore/ink_inet.h"
 
 #include <string_view>
@@ -167,7 +168,8 @@ TEST_CASE("LogAccess pre-transaction CONNECT fields", "[LogAccess]")
 {
   PreTransactionLogData data;
   populate_pre_transaction_data(data, "CONNECT", ""sv, "example.com:443", ""sv);
-  LogAccess access(data);
+  TransactionLogData log_data(data);
+  LogAccess          access(log_data);
 
   access.init();
 
@@ -187,7 +189,8 @@ TEST_CASE("LogAccess malformed CONNECT without authority falls back to path", "[
 {
   PreTransactionLogData data;
   populate_pre_transaction_data(data, "CONNECT", "https"sv, ""sv, "/"sv);
-  LogAccess access(data);
+  TransactionLogData log_data(data);
+  LogAccess          access(log_data);
 
   access.init();
 
@@ -202,7 +205,8 @@ TEST_CASE("LogAccess pre-transaction client host port is null-safe", "[LogAccess
 {
   PreTransactionLogData data;
   populate_pre_transaction_data(data, "GET", "https"sv, "example.com", "/client-port"sv);
-  LogAccess access(data);
+  TransactionLogData log_data(data);
+  LogAccess          access(log_data);
 
   access.init();
 

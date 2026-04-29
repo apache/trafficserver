@@ -27,7 +27,6 @@ add_library(
   HttpDebugNames.cc
   HttpProxyServerMain.cc
   HttpSM.cc
-  CompletedTransactionLogData.cc
   Http1ServerSession.cc
   HttpSessionManager.cc
   HttpTransact.cc
