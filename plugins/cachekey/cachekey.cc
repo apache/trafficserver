@@ -21,6 +21,7 @@
  * @brief Cache key manipulation.
  */
 
+#include <climits> /* INT_MAX */
 #include <cstring> /* strlen() */
 #include <sstream> /* istringstream */
 #include <utility>
@@ -37,7 +38,7 @@ append(String &target, unsigned n)
 static void
 appendEncoded(String &target, const char *s, size_t len)
 {
-  if (0 == len) {
+  if (0 == len || len > static_cast<size_t>(INT_MAX)) {
     return;
   }
 
