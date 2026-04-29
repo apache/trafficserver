@@ -26,6 +26,7 @@
 #include <sstream> /* istringstream */
 #include <utility>
 #include "cachekey.h"
+#include "tsutil/LocalBuffer.h"
 
 static void
 append(String &target, unsigned n)
@@ -42,8 +43,8 @@ appendEncoded(String &target, const char *s, size_t len)
     return;
   }
 
-  std::vector<char> tmp(len * 3 + 1);
-  size_t            written;
+  ts::LocalBuffer<char, 8192> tmp(len * 3 + 1);
+  size_t                      written;
 
   /* The default table does not encode the comma, so we need to use our own table here. */
   static const unsigned char map[32] = {
