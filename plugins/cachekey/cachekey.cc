@@ -41,8 +41,8 @@ appendEncoded(String &target, const char *s, size_t len)
     return;
   }
 
-  char   tmp[len * 3 + 1];
-  size_t written;
+  std::vector<char> tmp(len * 3 + 1);
+  size_t            written;
 
   /* The default table does not encode the comma, so we need to use our own table here. */
   static const unsigned char map[32] = {
@@ -67,8 +67,8 @@ appendEncoded(String &target, const char *s, size_t len)
     0x00 //               .
   };
 
-  if (TSStringPercentEncode(s, len, tmp, sizeof(tmp), &written, map) == TS_SUCCESS) {
-    target.append(tmp, written);
+  if (TSStringPercentEncode(s, len, tmp.data(), tmp.size(), &written, map) == TS_SUCCESS) {
+    target.append(tmp.data(), written);
   } else {
     /* If the encoding fails (pretty unlikely), then just append what we have.
      * This is just a best-effort encoding anyway. */
