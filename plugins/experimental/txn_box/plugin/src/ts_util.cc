@@ -36,6 +36,7 @@
 #include <swoc/ArenaWriter.h>
 #include <swoc/swoc_meta.h>
 
+#include "tscore/ink_config.h"
 #include "txn_box/ts_util.h"
 
 using swoc::BufferWriter;
@@ -57,6 +58,10 @@ DbgCtl txn_box_dbg_ctl{DEBUG_TAG};
 namespace ts
 {
 namespace swoc = ::swoc; // Import to avoid global naming weirdness.
+
+// Match core Host rewrite buffers, which reserve TS_MAX_HOST_NAME_LEN bytes and reject values that fill the buffer.
+static constexpr size_t MAX_HOST_FIELD_VALUE_SIZE = TS_MAX_HOST_NAME_LEN - 1;
+
 /* ------------------------------------------------------------------------------------ */
 
 const swoc::Lexicon<TSRecordDataType> TSRecordDataTypeNames{
@@ -503,7 +508,11 @@ ts::HttpRequest::host_set(swoc::TextView const &host)
     auto     text = field.value();
     TextView host_token, port_token;
     if (swoc::IPEndpoint::tokenize(text, &host_token, &port_token)) {
-      size_t                  n = host.size() + 1 + port_token.size();
+      size_t n = host.size() + 1 + port_token.size();
+      if (n > MAX_HOST_FIELD_VALUE_SIZE) {
+        return true;
+      }
+
       swoc::FixedBufferWriter w{static_cast<char *>(alloca(n)), n};
       if (port_token.size()) {
         w.print("{}:{}", host, port_token);
@@ -532,7 +541,11 @@ ts::HttpRequest::port_set(in_port_t port)
     auto     text = field.value();
     TextView host_token, port_token;
     if (swoc::IPEndpoint::tokenize(text, &host_token, &port_token)) {
-      size_t                  n = host_token.size() + 1 + std::numeric_limits<in_port_t>::max_digits10;
+      size_t n = host_token.size() + 1 + std::numeric_limits<in_port_t>::max_digits10;
+      if (n > MAX_HOST_FIELD_VALUE_SIZE) {
+        return true;
+      }
+
       swoc::FixedBufferWriter w{static_cast<char *>(alloca(n)), n};
       w.write(host_token);
       if (port > 0) {

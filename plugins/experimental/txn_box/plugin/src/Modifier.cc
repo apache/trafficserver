@@ -31,6 +31,10 @@ using swoc::Rv;
 using swoc::TextView;
 using namespace swoc::literals;
 
+// Filter inputs are tuple features; bound the temporary stack array by bytes because Feature size can change.
+static constexpr size_t MAX_FILTER_LIST_STACK_BYTES = 128 * 1024;
+static constexpr size_t MAX_FILTER_LIST_SIZE        = MAX_FILTER_LIST_STACK_BYTES / sizeof(Feature);
+
 Errata
 Modifier::define(swoc::TextView name, Modifier::Worker const &f)
 {
@@ -430,9 +434,14 @@ Mod_filter::operator()(Context &ctx, Feature &feature)
 {
   Feature zret{};
   if (feature.is_list()) {
-    auto                    src    = std::get<IndexFor(TUPLE)>(feature);
-    auto                    farray = static_cast<Feature *>(alloca(sizeof(Feature) * src.count()));
-    feature_type_for<TUPLE> dst{farray, src.count()};
+    auto src = std::get<IndexFor(TUPLE)>(feature);
+    if (src.count() > MAX_FILTER_LIST_SIZE) {
+      return {Feature{},
+              Errata(S_ERROR, "filter list too large ({} entries exceeds limit of {})", src.count(), MAX_FILTER_LIST_SIZE)};
+    }
+
+    auto                    farray  = static_cast<Feature *>(alloca(sizeof(Feature) * src.count()));
+    feature_type_for<TUPLE> dst     = {farray, src.count()};
     unsigned                dst_idx = 0;
     for (Feature f = feature; !is_nil(f); f = cdr(f)) {
       Feature item   = car(f);
