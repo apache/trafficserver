@@ -18,7 +18,22 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from enum import Enum
 from typing import Union
+
+
+class ValueKind(Enum):
+    STRING = "string"
+    IDENT = "ident"
+    PARAM_REF = "param_ref"
+    IP = "ip"
+    REGEX = "regex"
+
+
+@dataclass(frozen=True, kw_only=True)
+class Value:
+    raw: str
+    kind: ValueKind
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -46,13 +61,13 @@ class Target:
 class Assignment(Node):
     target: Target
     operator: str       # "=" or "+="
-    value: str | int | bool | tuple
+    value: Value | int | bool | tuple
 
 
 @dataclass(frozen=True, kw_only=True)
 class FunctionCall(Node):
     name: str
-    args: tuple[str | int | bool, ...]
+    args: tuple[Value | int | bool, ...]
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -62,9 +77,9 @@ class Break(Node):
 
 @dataclass(frozen=True, kw_only=True)
 class Comparison(Node):
-    left: str | FunctionCall
+    left: Value | FunctionCall
     operator: str       # "==", "!=", ">", "<", "~", "!~", "in", "!in"
-    right: str | int | bool | tuple
+    right: Value | int | bool | tuple
     modifiers: tuple[str, ...]
 
 
@@ -113,7 +128,7 @@ class Section(Node):
 @dataclass(frozen=True, kw_only=True)
 class ProcParam(Node):
     name: str
-    default: str | int | bool | None
+    default: Value | int | bool | None
 
 
 @dataclass(frozen=True, kw_only=True)

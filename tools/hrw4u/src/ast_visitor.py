@@ -37,6 +37,8 @@ from hrw4u.ast_nodes import (
     VarSection,
     UseDirective,
     ProcedureDecl,
+    Value,
+    ValueKind,
 )
 
 
@@ -145,20 +147,20 @@ class ASTVisitor(hrw4uVisitor):
         if ctx.number is not None:
             return int(ctx.number.text)
         if ctx.str_ is not None:
-            return ctx.str_.text[1:-1]
+            return Value(raw=ctx.str_.text[1:-1], kind=ValueKind.STRING)
         if ctx.TRUE():
             return True
         if ctx.FALSE():
             return False
         if ctx.ident is not None:
-            return ctx.ident.text
+            return Value(raw=ctx.ident.text, kind=ValueKind.IDENT)
         if ctx.ip():
-            return ctx.ip().getText()
+            return Value(raw=ctx.ip().getText(), kind=ValueKind.IP)
         if ctx.iprange():
-            return tuple(ip.getText() for ip in ctx.iprange().ip())
+            return tuple(Value(raw=ip.getText(), kind=ValueKind.IP) for ip in ctx.iprange().ip())
         if ctx.paramRef():
-            return ctx.paramRef().getText()
-        return ctx.getText()
+            return Value(raw=ctx.paramRef().IDENT().getText(), kind=ValueKind.PARAM_REF)
+        return Value(raw=ctx.getText(), kind=ValueKind.IDENT)
 
     def _visit_conditional(self, ctx):
         if_stmt = ctx.ifStatement()
@@ -236,7 +238,7 @@ class ASTVisitor(hrw4uVisitor):
         line = ctx.start.line
         comp = ctx.comparable()
         if comp.ident is not None:
-            left = comp.ident.text
+            left = Value(raw=comp.ident.text, kind=ValueKind.IDENT)
         else:
             left = self._visit_function_call(comp.functionCall())
 
@@ -271,7 +273,7 @@ class ASTVisitor(hrw4uVisitor):
 
     def _extract_comparison_rhs(self, ctx, operator):
         if operator in ("~", "!~"):
-            return ctx.regex().getText()[1:-1]
+            return Value(raw=ctx.regex().getText()[1:-1], kind=ValueKind.REGEX)
         if operator in ("in", "!in"):
             if ctx.set_():
                 return tuple(
@@ -279,7 +281,7 @@ class ASTVisitor(hrw4uVisitor):
                 )
             if ctx.iprange():
                 return tuple(
-                    ip.getText() for ip in ctx.iprange().ip()
+                    Value(raw=ip.getText(), kind=ValueKind.IP) for ip in ctx.iprange().ip()
                 )
         if ctx.value():
             return self._extract_value(ctx.value())
