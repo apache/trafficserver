@@ -44,7 +44,7 @@
 #include "tscore/ink_atomic.h"
 #include "tscore/ink_time.h"
 #include "tscore/ink_inet.h"
-
+#include "tsutil/LocalBuffer.h"
 #include "tsutil/Regex.h"
 
 static const char *PLUGIN_NAME = "regex_remap";
@@ -907,9 +907,9 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   TSRemapStatus retval    = TSREMAP_DID_REMAP;
   RemapRegex   *re        = ri->first;
   int           match_len = 0;
-  char         *match_buf;
 
-  match_buf = static_cast<char *>(alloca(req_url.url_len + 32));
+  // Cap the stack allocation to 32KB
+  ts::LocalBuffer<char, 32768> match_buf(req_url.url_len + 32);
 
   if (ri->method) { // Prepend the URI path or URL with the HTTP method
     TSMBuffer   mBuf;
@@ -923,38 +923,38 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
         if (match_len > 16) {
           match_len = 16;
         }
-        memcpy(match_buf, method, match_len);
+        memcpy(match_buf.data(), method, match_len);
       }
     }
   }
 
   if (ri->host && req_url.host && req_url.host_len > 0) {
-    memcpy(match_buf + match_len, "//", 2);
-    memcpy(match_buf + match_len + 2, req_url.host, req_url.host_len);
+    memcpy(match_buf.data() + match_len, "//", 2);
+    memcpy(match_buf.data() + match_len + 2, req_url.host, req_url.host_len);
     match_len += (req_url.host_len + 2);
   }
 
-  *(match_buf + match_len) = '/';
+  *(match_buf.data() + match_len) = '/';
   match_len++;
   if (req_url.path && req_url.path_len > 0) {
-    memcpy(match_buf + match_len, req_url.path, req_url.path_len);
+    memcpy(match_buf.data() + match_len, req_url.path, req_url.path_len);
     match_len += (req_url.path_len);
   }
 
   if (ri->query_string && req_url.query && req_url.query_len > 0) {
-    *(match_buf + match_len) = '?';
-    memcpy(match_buf + match_len + 1, req_url.query, req_url.query_len);
+    *(match_buf.data() + match_len) = '?';
+    memcpy(match_buf.data() + match_len + 1, req_url.query, req_url.query_len);
     match_len += (req_url.query_len + 1);
   }
-  match_buf[match_len] = '\0'; // NULL terminate the match string
-  Dbg(dbg_ctl, "Target match string is `%s'", match_buf);
+  match_buf.data()[match_len] = '\0'; // NULL terminate the match string
+  Dbg(dbg_ctl, "Target match string is `%s'", match_buf.data());
 
   RegexMatches matches(MATCHCOUNT);
 
   // Apply the regular expressions, in order. First one wins.
   while (re) {
     // Since we check substitutions on parse time, we don't need to reset ovector
-    auto match_result = re->match(match_buf, matches);
+    auto match_result = re->match(match_buf.data(), matches);
     if (match_result >= 0) {
       int new_len = re->get_lengths(matches, lengths, rri, &req_url);
 
