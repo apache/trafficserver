@@ -59,6 +59,10 @@ class ASTVisitor(hrw4uVisitor):
                 items.append(self._visit_procedure_decl(item.procedureDecl()))
             elif item.section() is not None:
                 items.append(self._visit_section(item.section()))
+            elif item.commentLine() is not None:
+                pass
+            else:
+                raise ValueError(f"Unhandled programItem alternative at line {item.start.line}")
         return HRW4UAST(body=tuple(items))
 
     def _visit_use_directive(self, ctx):
