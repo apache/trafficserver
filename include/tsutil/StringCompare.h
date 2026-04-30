@@ -38,7 +38,7 @@ namespace ts
   For case-sensitive comparison, use @c std::string_view::operator==.
  */
 inline bool
-iequals(const std::string_view &lhs, const std::string_view &rhs)
+iequals(std::string_view lhs, std::string_view rhs) noexcept
 {
   if (lhs.size() != rhs.size()) {
     return false;
