@@ -100,7 +100,7 @@ ServerSessionPool::validate_host_sni(HttpSM *sm, NetVConnection *netvc)
         // TS-4468: If the connection matches, make sure the SNI server
         // name (if present) matches the request hostname
         auto req_host{sm->t_state.hdr_info.server_request.host_get()};
-        retval = strncasecmp(session_sni, req_host.data(), req_host.length()) == 0;
+        retval = strlen(session_sni) == req_host.length() && strncasecmp(session_sni, req_host.data(), req_host.length()) == 0;
         Dbg(dbg_ctl_http_ss, "validate_host_sni host=%*.s, sni=%s", static_cast<int>(req_host.length()), req_host.data(),
             session_sni);
       }
