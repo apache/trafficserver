@@ -100,7 +100,7 @@ ServerSessionPool::validate_host_sni(HttpSM *sm, NetVConnection *netvc)
         // name (if present) matches the request hostname
         int         len      = 0;
         const char *req_host = sm->t_state.hdr_info.server_request.host_get(&len);
-        retval               = strncasecmp(session_sni, req_host, len) == 0;
+        retval               = strlen(session_sni) == static_cast<size_t>(len) && strncasecmp(session_sni, req_host, len) == 0;
         Dbg(dbg_ctl_http_ss, "validate_host_sni host=%*.s, sni=%s", len, req_host, session_sni);
       }
     } else {
