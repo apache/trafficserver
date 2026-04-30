@@ -4571,7 +4571,8 @@ HttpSM::check_sni_host()
         Log::error("%s", error_bw_buffer.c_str());
         this->t_state.client_connection_allowed = false;
       }
-    } else if (strncasecmp(host_name.data(), sni_value, host_len) != 0) { // Name mismatch
+    } else if (strlen(sni_value) != static_cast<size_t>(host_len) ||
+               strncasecmp(host_name.data(), sni_value, host_len) != 0) { // Name mismatch
       Warning("SNI/hostname mismatch sni=%s host=%.*s action=%s", sni_value, host_len, host_name.data(), action_value);
       SMDbg(dbg_ctl_ssl_sni, "SNI/hostname mismatch sni=%s host=%.*s action=%s", sni_value, host_len, host_name.data(),
             action_value);
