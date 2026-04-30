@@ -1607,16 +1607,16 @@ HostDBRecord::select_best_srv(char *target, InkRand *rand, ts_time now, ts_secon
   auto        rr     = this->rr_info();
   // Array of live targets, sized by @a live_n
   HostDBInfo *live[rr.count()];
-  for (auto &target : rr) {
+  for (auto &rr_target : rr) {
     // skip down targets.
-    if (target.is_down(now, fail_window)) {
+    if (rr_target.is_down(now, fail_window)) {
       continue;
     }
 
-    if (target.data.srv.srv_priority <= p) {
-      p               = target.data.srv.srv_priority;
-      weight         += target.data.srv.srv_weight;
-      live[live_n++]  = &target;
+    if (rr_target.data.srv.srv_priority <= p) {
+      p               = rr_target.data.srv.srv_priority;
+      weight         += rr_target.data.srv.srv_weight;
+      live[live_n++]  = &rr_target;
     } else {
       break;
     }
@@ -1627,7 +1627,7 @@ HostDBRecord::select_best_srv(char *target, InkRand *rand, ts_time now, ts_secon
   } else {
     uint32_t xx = rand->random() % weight;
     int      i  = 0;
-    for (i = 0; i < live_n - 1 && xx >= live[i]->data.srv.srv_weight; ++i) {
+    for (; i < live_n - 1 && xx >= live[i]->data.srv.srv_weight; ++i) {
       xx -= live[i]->data.srv.srv_weight;
     }
 
