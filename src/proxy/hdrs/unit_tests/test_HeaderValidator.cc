@@ -245,6 +245,19 @@ TEST_CASE("testIsHeaderValid", "[proxy][hdrtest]")
     // Connection-specific headers are not allowed.
     check_header(fields, hdr, !IS_VALID_HEADER);
   }
+  SECTION("Test request with Transfer-Encoding headers")
+  {
+    hdr.create(HTTP_TYPE_REQUEST, HTTP_1_1, heap);
+    Fields_type fields = {
+      {":method",           "POST"        },
+      {":scheme",           "https"       },
+      {":authority",        "www.this.com"},
+      {":path",             "/some/path"  },
+      {"Transfer-Encoding", "chunked"     },
+    };
+    // Connection-specific headers are not allowed.
+    check_header(fields, hdr, !IS_VALID_HEADER);
+  }
   // teardown
   hdr.destroy();
 }

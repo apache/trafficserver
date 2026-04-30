@@ -61,11 +61,12 @@ HeaderValidator::is_h2_h3_header_valid(const HTTPHdr &hdr, bool is_response, boo
     }
   }
 
-  // rfc7540,sec8.1.2.2 and rfc9114,sec4.2: Any message containing
+  // rfc9113,sec8.2.2 and rfc9114,sec4.2: Any message containing
   // connection-specific header fields MUST be treated as malformed.
   if (hdr.field_find(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION) != nullptr ||
       hdr.field_find(MIME_FIELD_KEEP_ALIVE, MIME_LEN_KEEP_ALIVE) != nullptr ||
       hdr.field_find(MIME_FIELD_PROXY_CONNECTION, MIME_LEN_PROXY_CONNECTION) != nullptr ||
+      hdr.field_find(MIME_FIELD_TRANSFER_ENCODING, MIME_LEN_TRANSFER_ENCODING) != nullptr ||
       hdr.field_find(MIME_FIELD_UPGRADE, MIME_LEN_UPGRADE) != nullptr) {
     return false;
   }
