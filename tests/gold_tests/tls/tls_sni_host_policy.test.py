@@ -68,6 +68,10 @@ ts.Disk.sni_yaml.AddLines(
         '  host_sni_policy: PERMISSIVE',
         '- fqdn: bOb',
         '  verify_client: STRICT',
+        '- fqdn: bob.bar.com',
+        '  verify_client: STRICT',
+        '- fqdn: dave.bob',
+        '  verify_client: STRICT',
     ])
 
 # case 1
@@ -168,6 +172,58 @@ tr.Processes.Default.Command = "curl -v --tls-max 1.2 -k --cert ./signed-foo.pem
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ExcludesExpression("Access Denied", "Check response")
 
+# case 10
+# sni=bob.bar.com and host=bob.  Do provide client cert.  SNI is longer than host but shares the
+# same prefix.  Should fail due to sni-host mismatch.
+tr = Test.AddTestRun("Connect with SNI longer than host sharing prefix")
+tr.StillRunningAfter = ts
+tr.StillRunningAfter = server
+tr.MakeCurlCommand(
+    "-v --tls-max 1.2 -k --cert ./signed-foo.pem --key ./signed-foo.key -H 'host:bob' --resolve 'bob.bar.com:{0}:127.0.0.1' https://bob.bar.com:{0}/case1"
+    .format(ts.Variables.ssl_port),
+    ts=ts)
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Streams.All = Testers.ContainsExpression("Access Denied", "Check response")
+
+# case 11
+# sni=bob and host=bob.bar.com.  Do provide client cert.  Host is longer than SNI but shares the
+# same prefix.  Should fail due to sni-host mismatch.
+tr = Test.AddTestRun("Connect with host longer than SNI sharing prefix")
+tr.StillRunningAfter = ts
+tr.StillRunningAfter = server
+tr.MakeCurlCommand(
+    "-v --tls-max 1.2 -k --cert ./signed-foo.pem --key ./signed-foo.key -H 'host:bob.bar.com' --resolve 'bob:{0}:127.0.0.1' https://bob:{0}/case1"
+    .format(ts.Variables.ssl_port),
+    ts=ts)
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Streams.All = Testers.ContainsExpression("Access Denied", "Check response")
+
+# case 12
+# sni=bob and host=dave.bob.  Do provide client cert.  Host ends with the SNI value but is a
+# different hostname.  Should fail due to sni-host mismatch.
+tr = Test.AddTestRun("Connect with host ending with SNI value")
+tr.StillRunningAfter = ts
+tr.StillRunningAfter = server
+tr.MakeCurlCommand(
+    "-v --tls-max 1.2 -k --cert ./signed-foo.pem --key ./signed-foo.key -H 'host:dave.bob' --resolve 'bob:{0}:127.0.0.1' https://bob:{0}/case1"
+    .format(ts.Variables.ssl_port),
+    ts=ts)
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Streams.All = Testers.ContainsExpression("Access Denied", "Check response")
+
+# case 13
+# sni=dave.bob and host=bob.  Do provide client cert.  SNI ends with the host value but is a
+# different hostname.  Should fail due to sni-host mismatch.
+tr = Test.AddTestRun("Connect with SNI ending with host value")
+tr.StillRunningAfter = ts
+tr.StillRunningAfter = server
+tr.MakeCurlCommand(
+    "-v --tls-max 1.2 -k --cert ./signed-foo.pem --key ./signed-foo.key -H 'host:bob' --resolve 'dave.bob:{0}:127.0.0.1' https://dave.bob:{0}/case1"
+    .format(ts.Variables.ssl_port),
+    ts=ts)
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Streams.All = Testers.ContainsExpression("Access Denied", "Check response")
+
 # Wait for the error.log to appaer.
 test_run = Test.AddTestRun()
 test_run.Processes.Default.Command = (
@@ -177,6 +233,14 @@ ts.Disk.diags_log.Content += Testers.ContainsExpression(
     "WARNING: SNI/hostname mismatch sni=dave host=bob action=terminate", "Should have warning on mismatch")
 ts.Disk.diags_log.Content += Testers.ContainsExpression(
     "WARNING: SNI/hostname mismatch sni=ellen host=Boblite action=continue", "Should have warning on mismatch")
+ts.Disk.diags_log.Content += Testers.ContainsExpression(
+    "WARNING: SNI/hostname mismatch sni=bob.bar.com host=bob action=terminate", "Should have warning on prefix mismatch")
+ts.Disk.diags_log.Content += Testers.ContainsExpression(
+    "WARNING: SNI/hostname mismatch sni=bob host=bob.bar.com action=terminate", "Should have warning on prefix mismatch")
+ts.Disk.diags_log.Content += Testers.ContainsExpression(
+    "WARNING: SNI/hostname mismatch sni=bob host=dave.bob action=terminate", "Should have warning on suffix mismatch")
+ts.Disk.diags_log.Content += Testers.ContainsExpression(
+    "WARNING: SNI/hostname mismatch sni=dave.bob host=bob action=terminate", "Should have warning on suffix mismatch")
 ts.Disk.diags_log.Content += Testers.ExcludesExpression(
     "WARNING: SNI/hostname mismatch sni=ellen host=fran", "Should not have warning on mismatch with non-policy host")
 
