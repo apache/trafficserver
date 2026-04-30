@@ -843,6 +843,12 @@ HttpTransact::BadRequest(State *s)
   case HTTP_STATUS_HTTPVER_NOT_SUPPORTED:
     status = s->http_return_code;
     reason = "Unsupported HTTP Version";
+    break;
+  case HTTP_STATUS_BAD_GATEWAY:
+    status                = s->http_return_code;
+    reason                = "Bad Gateway";
+    body_factory_template = "default";
+    break;
   default:
     break;
   }
@@ -5456,6 +5462,30 @@ HttpTransact::check_request_validity(State *s, HTTPHdr *incoming_hdr)
     return NON_EXISTANT_REQUEST_HEADER;
   }
 
+  // RFC 9112: If chunked is present in Transfer-Encoding, it must be the
+  // final encoding. Reject the request if chunked appears before other values.
+  if (incoming_hdr->presence(MIME_PRESENCE_TRANSFER_ENCODING)) {
+    MIMEField *field   = incoming_hdr->field_find(MIME_FIELD_TRANSFER_ENCODING, MIME_LEN_TRANSFER_ENCODING);
+    bool found_chunked = false;
+
+    while (field) {
+      HdrCsvIter enc_val_iter;
+      int enc_val_len;
+      const char *enc_value = enc_val_iter.get_first(field, &enc_val_len);
+
+      while (enc_value) {
+        const char *wks_value = hdrtoken_string_to_wks(enc_value, enc_val_len);
+        if (wks_value == HTTP_VALUE_CHUNKED) {
+          found_chunked = true;
+        } else if (found_chunked) {
+          return RequestError_t::BAD_HTTP_HEADER_SYNTAX;
+        }
+        enc_value = enc_val_iter.get_next(&enc_val_len);
+      }
+      field = field->m_next_dup;
+    }
+  }
+
   if (!(HttpTransactHeaders::is_request_proxy_authorized(incoming_hdr))) {
     return FAILED_PROXY_AUTHORIZATION;
   }
@@ -5582,7 +5612,10 @@ HttpTransact::set_client_request_state(State *s, HTTPHdr *incoming_hdr)
       while (enc_value) {
         const char *wks_value = hdrtoken_string_to_wks(enc_value, enc_val_len);
         if (wks_value == HTTP_VALUE_CHUNKED) {
-          s->client_info.transfer_encoding = CHUNKED_ENCODING;
+          // Only treat as chunked if it is the last Transfer-Encoding value (RFC 9112)
+          if (enc_val_iter.get_next(&enc_val_len) == nullptr) {
+            s->client_info.transfer_encoding = CHUNKED_ENCODING;
+          }
           break;
         }
         enc_value = enc_val_iter.get_next(&enc_val_len);
