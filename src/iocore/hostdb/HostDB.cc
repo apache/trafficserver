@@ -25,6 +25,7 @@
 #include "swoc/swoc_file.h"
 #include "tscore/Regression.h"
 #include "tsutil/ts_bw_format.h"
+#include "tsutil/LocalBuffer.h"
 
 #include "P_HostDB.h"
 // Gross
@@ -948,8 +949,9 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
       auto rr_info = r->rr_info();
       // Fill in record type specific data.
       if (hash.is_srv()) {
-        char *pos = rr_info.rebind<char>().end();
-        SRV  *q[valid_records];
+        char                      *pos = rr_info.rebind<char>().end();
+        ts::LocalBuffer<SRV *, 16> q_buf(valid_records);
+        SRV                      **q = q_buf.data();
         ink_assert(valid_records <= static_cast<int>(hostdb_round_robin_max_count));
         for (int i = 0; i < valid_records; ++i) {
           q[i] = &e->srv_hosts.hosts[i];
@@ -1607,7 +1609,8 @@ HostDBRecord::select_best_srv(char *target, InkRand *rand, ts_time now, ts_secon
   HostDBInfo *result = nullptr;
   auto        rr     = this->rr_info();
   // Array of live targets, sized by @a live_n
-  HostDBInfo *live[rr.count()];
+  ts::LocalBuffer<HostDBInfo *, 16> live_buf(rr.count());
+  HostDBInfo                      **live = live_buf.data();
   for (auto &rr_target : rr) {
     // skip down targets.
     if (rr_target.is_down(now, fail_window)) {
