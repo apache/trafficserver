@@ -748,7 +748,10 @@ Http2ConnectionState::rcv_settings_frame(const Http2Frame &frame)
   // error of type FRAME_SIZE_ERROR.
   if (frame.header().flags & HTTP2_FLAGS_SETTINGS_ACK) {
     if (frame.header().length == 0) {
-      this->_process_incoming_settings_ack_frame();
+      if (!this->_process_incoming_settings_ack_frame()) {
+        return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR,
+                          "recv SETTINGS ACK without outstanding SETTINGS");
+      }
       return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
     } else {
       return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_FRAME_SIZE_ERROR,
@@ -2711,12 +2714,16 @@ Http2ConnectionState::send_settings_frame(const Http2ConnectionSettings &new_set
   this->session->xmit(settings, true);
 }
 
-void
+bool
 Http2ConnectionState::_process_incoming_settings_ack_frame()
 {
   constexpr Http2StreamId stream_id = HTTP2_CONNECTION_CONTROL_STREAM;
   Http2StreamDebug(session, stream_id, "Processing SETTINGS ACK frame with a queue size of %zu",
                    this->_outstanding_settings_frames.size());
+
+  if (this->_outstanding_settings_frames.empty()) {
+    return false;
+  }
 
   // Do not update this->acknowledged_local_settings yet as
   // update_initial_local_rwnd relies upon it still pointing to the old value.
@@ -2742,6 +2749,7 @@ Http2ConnectionState::_process_incoming_settings_ack_frame()
   }
   this->acknowledged_local_settings = new_settings;
   this->_outstanding_settings_frames.pop();
+  return true;
 }
 
 void

@@ -242,12 +242,16 @@ private:
 
   unsigned _adjust_concurrent_stream();
 
-  /** Receive and process a SETTINGS frame with the ACK flag set.
+  /** Process an incoming SETTINGS ACK frame.
    *
-   * This function will process any settings updates that have now been
-   * acknowledged by the peer.
+   * Applies the settings from the front of the outstanding settings queue,
+   * updating acknowledged_local_settings and adjusting stream receive
+   * windows if INITIAL_WINDOW_SIZE changed.
+   *
+   * @return true if an outstanding SETTINGS frame was acknowledged, false
+   * if the queue was empty (i.e., the ACK was unsolicited).
    */
-  void _process_incoming_settings_ack_frame();
+  bool _process_incoming_settings_ack_frame();
 
   // Getters for stream control configurations that retrieve the inbound or
   // outbound values per the configured session.
