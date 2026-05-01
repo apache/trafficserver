@@ -33,6 +33,7 @@
 #include <cstring>
 #include <cctype>
 #include <algorithm>
+#include <charconv>
 #include <string_view>
 #include "proxy/hdrs/MIME.h"
 #include "proxy/hdrs/HdrHeap.h"
@@ -3014,130 +3015,72 @@ mime_format_date(char *buffer, time_t value)
   return buf - buffer; // not counting NUL
 }
 
+// RFC 9110 §17.5: recipients must limit processing of numeric values to prevent
+// arithmetic overflows. These parsers clamp to the max of their respective type on
+// overflow rather than returning an error. Callers that need stricter policy
+// (e.g. rejecting an overflowing Content-Length per RFC 9112 §6.3, or clamping
+// Age to 2^31 per RFC 9111 §1.2.2) apply it at their own layer.
 int32_t
 mime_parse_int(const char *buf, const char *end)
 {
-  int32_t num;
-  bool    negative;
-
   if (!buf || (buf == end)) {
     return 0;
   }
 
-  if (is_digit(*buf)) { // fast case
-    num = *buf++ - '0';
-    while ((buf != end) && is_digit(*buf)) {
-      if (num != INT_MAX) {
-        int new_num = (num * 10) + (*buf++ - '0');
-
-        num = (new_num < num ? INT_MAX : new_num); // Check for overflow
-      } else {
-        ++buf; // Skip the remaining (valid) digits since we reached MAX/MIN_INT
-      }
-    }
-
-    return num;
-  } else {
-    num      = 0;
-    negative = false;
-
-    while ((buf != end) && ParseRules::is_space(*buf)) {
-      buf += 1;
-    }
-
-    if ((buf != end) && (*buf == '-')) {
-      negative  = true;
-      buf      += 1;
-    }
-    // NOTE: we first compute the value as negative then correct the
-    // sign back to positive. This enables us to correctly parse MININT.
-    while ((buf != end) && is_digit(*buf)) {
-      if (num != INT_MIN) {
-        int new_num = (num * 10) - (*buf++ - '0');
-
-        num = (new_num > num ? INT_MIN : new_num); // Check for overflow, so to speak, see above re: negative
-      } else {
-        ++buf; // Skip the remaining (valid) digits since we reached MAX/MIN_INT
-      }
-    }
-
-    if (!negative) {
-      num = -num;
-    }
-
-    return num;
+  while ((buf != end) && ParseRules::is_space(*buf)) {
+    buf += 1;
   }
+
+  int32_t num    = 0;
+  auto [ptr, ec] = std::from_chars(buf, end, num);
+
+  if (ec == std::errc::result_out_of_range) {
+    return (*buf == '-') ? INT32_MIN : INT32_MAX;
+  }
+
+  return num;
 }
 
 uint32_t
 mime_parse_uint(const char *buf, const char *end)
 {
-  uint32_t num;
-
   if (!buf || (buf == end)) {
     return 0;
   }
 
-  if (is_digit(*buf)) // fast case
-  {
-    num = *buf++ - '0';
-    while ((buf != end) && is_digit(*buf)) {
-      num = (num * 10) + (*buf++ - '0');
-    }
-    return num;
-  } else {
-    num = 0;
-    while ((buf != end) && ParseRules::is_space(*buf)) {
-      buf += 1;
-    }
-    while ((buf != end) && is_digit(*buf)) {
-      num = (num * 10) + (*buf++ - '0');
-    }
-    return num;
+  while ((buf != end) && ParseRules::is_space(*buf)) {
+    buf += 1;
   }
+
+  uint32_t num   = 0;
+  auto [ptr, ec] = std::from_chars(buf, end, num);
+
+  if (ec == std::errc::result_out_of_range) {
+    return UINT32_MAX;
+  }
+
+  return num;
 }
 
 int64_t
 mime_parse_int64(const char *buf, const char *end)
 {
-  int64_t num;
-  bool    negative;
-
   if (!buf || (buf == end)) {
     return 0;
   }
 
-  if (is_digit(*buf)) // fast case
-  {
-    num = *buf++ - '0';
-    while ((buf != end) && is_digit(*buf)) {
-      num = (num * 10) + (*buf++ - '0');
-    }
-    return num;
-  } else {
-    num      = 0;
-    negative = false;
-
-    while ((buf != end) && ParseRules::is_space(*buf)) {
-      buf += 1;
-    }
-
-    if ((buf != end) && (*buf == '-')) {
-      negative  = true;
-      buf      += 1;
-    }
-    // NOTE: we first compute the value as negative then correct the
-    // sign back to positive. This enables us to correctly parse MININT.
-    while ((buf != end) && is_digit(*buf)) {
-      num = (num * 10) - (*buf++ - '0');
-    }
-
-    if (!negative) {
-      num = -num;
-    }
-
-    return num;
+  while ((buf != end) && ParseRules::is_space(*buf)) {
+    buf += 1;
   }
+
+  int64_t num    = 0;
+  auto [ptr, ec] = std::from_chars(buf, end, num);
+
+  if (ec == std::errc::result_out_of_range) {
+    return (*buf == '-') ? INT64_MIN : INT64_MAX;
+  }
+
+  return num;
 }
 
 /*-------------------------------------------------------------------------
@@ -3504,52 +3447,14 @@ mime_parse_integer(const char *&buf, const char *end, int *integer)
     return false;
   }
 
-  int32_t num;
-  bool    negative;
+  int32_t num    = 0;
+  auto [ptr, ec] = std::from_chars(buf, end, num);
 
-  // This code is copied verbatim from mime_parse_int ... Sigh. Maybe amc is right, and
-  // we really need to clean this up. But, as such, we should redo all these interfaces,
-  // and that's a big undertaking (and we'd want to move these strings all to string_view's).
-  if (is_digit(*buf)) { // fast case
-    num = *buf++ - '0';
-    while ((buf != end) && is_digit(*buf)) {
-      if (num != INT_MAX) {
-        int new_num = (num * 10) + (*buf++ - '0');
-
-        num = (new_num < num ? INT_MAX : new_num); // Check for overflow
-      } else {
-        ++buf; // Skip the remaining (valid) digits since we reached MAX/MIN_INT
-      }
-    }
-  } else {
-    num      = 0;
-    negative = false;
-
-    while ((buf != end) && ParseRules::is_space(*buf)) {
-      buf += 1;
-    }
-
-    if ((buf != end) && (*buf == '-')) {
-      negative  = true;
-      buf      += 1;
-    }
-    // NOTE: we first compute the value as negative then correct the
-    // sign back to positive. This enables us to correctly parse MININT.
-    while ((buf != end) && is_digit(*buf)) {
-      if (num != INT_MIN) {
-        int new_num = (num * 10) - (*buf++ - '0');
-
-        num = (new_num > num ? INT_MIN : new_num); // Check for overflow, so to speak, see above re: negative
-      } else {
-        ++buf; // Skip the remaining (valid) digits since we reached MAX/MIN_INT
-      }
-    }
-
-    if (!negative) {
-      num = -num;
-    }
+  if (ec == std::errc::result_out_of_range) {
+    num = (*buf == '-') ? INT32_MIN : INT32_MAX;
   }
 
+  buf      = ptr;
   *integer = num;
 
   return true;
