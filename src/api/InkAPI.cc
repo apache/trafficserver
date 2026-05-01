@@ -4483,26 +4483,26 @@ TSHttpTxnCacheKeyDigestGet(TSHttpTxn txnp, char *buffer, int *length)
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   sdk_assert(length != nullptr);
 
-  HttpSM           *sm   = reinterpret_cast<HttpSM *>(txnp);
-  const CryptoHash &hash = sm->get_cache_sm().get_cache_key().hash;
-  constexpr int     size = CRYPTO_HASH_SIZE;
+  HttpSM           *sm              = reinterpret_cast<HttpSM *>(txnp);
+  const CryptoHash &hash            = sm->get_cache_sm().get_cache_key().hash;
+  constexpr int     size            = CRYPTO_HASH_SIZE;
+  int               provided_length = *length;
+
+  *length = size;
 
   if (hash.is_zero()) {
     return TS_ERROR;
   }
 
   if (buffer == nullptr) {
-    *length = size;
     return TS_SUCCESS;
   }
 
-  if (*length < size) {
-    *length = size;
+  if (provided_length < size) {
     return TS_ERROR;
   }
 
   memcpy(buffer, hash.u8, size);
-  *length = size;
   return TS_SUCCESS;
 }
 

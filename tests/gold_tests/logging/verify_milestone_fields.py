@@ -28,7 +28,7 @@ Parses key=value log lines and checks:
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import re
+import base64
 import sys
 
 ALL_FIELDS = [
@@ -85,10 +85,13 @@ def validate_line(fields: dict[str, str], line_num: int) -> list[str]:
     if ckh is not None:
         if ckh == '-':
             errors.append(f'line {line_num}: ckh should not be "-" (cache lookup was performed)')
-        elif not re.fullmatch(r'[A-Za-z0-9+/]+=*', ckh):
-            errors.append(f'line {line_num}: ckh is not valid base64: {ckh!r}')
-        elif len(ckh) not in (24, 44):
-            errors.append(f'line {line_num}: ckh has unexpected length {len(ckh)} (expected 24 or 44)')
+        else:
+            try:
+                raw = base64.b64decode(ckh, validate=True)
+                if len(raw) not in (16, 32):
+                    errors.append(f'line {line_num}: ckh decoded to {len(raw)} bytes (expected 16 or 32)')
+            except Exception as e:
+                errors.append(f'line {line_num}: ckh is not valid base64: {ckh!r} ({e})')
 
     for name in TIMING_FIELDS:
         val_str = fields.get(name)
