@@ -21,10 +21,12 @@
  * @brief Cache key manipulation.
  */
 
+#include <climits> /* INT_MAX */
 #include <cstring> /* strlen() */
 #include <sstream> /* istringstream */
 #include <utility>
 #include "cachekey.h"
+#include "tsutil/LocalBuffer.h"
 
 static void
 append(String &target, unsigned n)
@@ -37,12 +39,12 @@ append(String &target, unsigned n)
 static void
 appendEncoded(String &target, const char *s, size_t len)
 {
-  if (0 == len) {
+  if (0 == len || len > static_cast<size_t>(INT_MAX)) {
     return;
   }
 
-  char   tmp[len * 3 + 1];
-  size_t written;
+  ts::LocalBuffer<char, 8192> tmp(len * 3 + 1);
+  size_t                      written;
 
   /* The default table does not encode the comma, so we need to use our own table here. */
   static const unsigned char map[32] = {
@@ -67,8 +69,8 @@ appendEncoded(String &target, const char *s, size_t len)
     0x00 //               .
   };
 
-  if (TSStringPercentEncode(s, len, tmp, sizeof(tmp), &written, map) == TS_SUCCESS) {
-    target.append(tmp, written);
+  if (TSStringPercentEncode(s, len, tmp.data(), tmp.size(), &written, map) == TS_SUCCESS) {
+    target.append(tmp.data(), written);
   } else {
     /* If the encoding fails (pretty unlikely), then just append what we have.
      * This is just a best-effort encoding anyway. */
