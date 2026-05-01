@@ -138,6 +138,44 @@ TEST_CASE("MIMEScanner_fragments", "[proxy][mimescanner_fragments]")
   REQUIRE(message == output);
 }
 
+TEST_CASE("MIMEScanner obs-fold single buffer", "[proxy][mimescanner_obsfold]")
+{
+  MIMEScanner    scanner;
+  swoc::TextView output;
+  bool           shares_input = true;
+
+  char buf[]  = "Foo: bar\r\n baz\r\n";
+  auto input  = swoc::TextView{buf};
+  auto result = scanner.get(input, output, shares_input, false, MIMEScanner::ScanType::FIELD);
+
+  REQUIRE(result == ParseResult::OK);
+  REQUIRE(output == "Foo: bar   baz\r\n"sv);
+}
+
+TEST_CASE("MIMEScanner obs-fold CR/LF split across fragments", "[proxy][mimescanner_obsfold]")
+{
+  // CR at the end of fragment 1, LF + continuation whitespace at the start
+  // of fragment 2. The unfold code must not walk backwards past the start of
+  // the second fragment's buffer.
+  MIMEScanner    scanner;
+  swoc::TextView output;
+  bool           shares_input = true;
+
+  char first[] = "Foo: bar\r";
+  auto input   = swoc::TextView{first};
+  auto result  = scanner.get(input, output, shares_input, false, MIMEScanner::ScanType::FIELD);
+  REQUIRE(result == ParseResult::CONT);
+
+  char second[] = "\n baz\r\n";
+  input         = swoc::TextView{second};
+  shares_input  = true;
+  result        = scanner.get(input, output, shares_input, false, MIMEScanner::ScanType::FIELD);
+
+  REQUIRE(result == ParseResult::OK);
+  REQUIRE(shares_input == false);
+  REQUIRE(output == "Foo: bar   baz\r\n"sv);
+}
+
 namespace
 {
 static const char *
