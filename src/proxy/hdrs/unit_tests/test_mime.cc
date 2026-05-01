@@ -22,6 +22,8 @@
  */
 
 #include <cstdio>
+#include <climits>
+#include <cstdint>
 
 #include <string_view>
 
@@ -207,6 +209,45 @@ TEST_CASE("MimeParsers", "[proxy][mimeparsers]")
   CHECK(mime_parse_int(buf, end) == val);
   REQUIRE(mime_parse_integer(buf, end, &value));
   CHECK(value == val);
+}
+
+TEST_CASE("MimeParseInt64Overflow", "[proxy][mimeparseint64]")
+{
+  static const std::vector<std::pair<const char *, int64_t>> tests = {
+    {"0",                    0        },
+    {"12345",                12345    },
+    {"-12345",               -12345   },
+    {"9223372036854775807",  INT64_MAX},
+    {"-9223372036854775808", INT64_MIN},
+    {"9223372036854775808",  INT64_MAX},
+    {"-9223372036854775809", INT64_MIN},
+    {"99999999999999999999", INT64_MAX},
+    {" 42",                  42       },
+  };
+
+  auto [buf, val] = GENERATE(from_range(tests));
+  CAPTURE(buf, val);
+
+  const char *end = buf + strlen(buf);
+  CHECK(mime_parse_int64(buf, end) == val);
+}
+
+TEST_CASE("MimeParseUintOverflow", "[proxy][mimeparseuint]")
+{
+  static const std::vector<std::pair<const char *, uint32_t>> tests = {
+    {"0",          0         },
+    {"12345",      12345     },
+    {"4294967295", UINT32_MAX},
+    {"4294967296", UINT32_MAX},
+    {"9999999999", UINT32_MAX},
+    {" 42",        42        },
+  };
+
+  auto [buf, val] = GENERATE(from_range(tests));
+  CAPTURE(buf, val);
+
+  const char *end = buf + strlen(buf);
+  CHECK(mime_parse_uint(buf, end) == val);
 }
 
 TEST_CASE("MimeDateParser", "[proxy][mimedateparser]")
