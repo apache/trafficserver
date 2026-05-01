@@ -96,7 +96,8 @@ xpack_decode_integer(uint64_t &dst, const uint8_t *buf_start, const uint8_t *buf
 // return content from String Data (Length octets) with huffman decoding if it is encoded
 //
 int64_t
-xpack_decode_string(Arena &arena, char **str, uint64_t &str_length, const uint8_t *buf_start, const uint8_t *buf_end, uint8_t n)
+xpack_decode_string(Arena &arena, char **str, uint64_t &str_length, const uint8_t *buf_start, const uint8_t *buf_end,
+                    uint64_t max_string_len, uint8_t n)
 {
   if (buf_start >= buf_end) {
     return XPACK_ERROR_COMPRESSION_ERROR;
@@ -114,6 +115,10 @@ xpack_decode_string(Arena &arena, char **str, uint64_t &str_length, const uint8_
   p += len;
 
   if (buf_end < p || static_cast<uint64_t>(buf_end - p) < encoded_string_len) {
+    return XPACK_ERROR_COMPRESSION_ERROR;
+  }
+
+  if (encoded_string_len > max_string_len) {
     return XPACK_ERROR_COMPRESSION_ERROR;
   }
 

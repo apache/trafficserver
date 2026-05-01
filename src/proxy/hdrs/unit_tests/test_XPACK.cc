@@ -29,7 +29,8 @@
 #include "proxy/hdrs/XPACK.h"
 #include "proxy/hdrs/HuffmanCodec.h"
 
-static constexpr int BUFSIZE_FOR_REGRESSION_TEST = 128;
+static constexpr int      BUFSIZE_FOR_REGRESSION_TEST = 128;
+static constexpr uint64_t MAX_FIELD_SIZE              = 32768;
 
 std::string
 get_long_string(int size)
@@ -127,11 +128,93 @@ TEST_CASE("XPACK_String", "[xpack]")
       Arena    arena;
       char    *actual     = nullptr;
       uint64_t actual_len = 0;
-      int      len        = xpack_decode_string(arena, &actual, actual_len, i.encoded_field, i.encoded_field + i.encoded_field_len);
+      int      len =
+        xpack_decode_string(arena, &actual, actual_len, i.encoded_field, i.encoded_field + i.encoded_field_len, MAX_FIELD_SIZE);
 
       REQUIRE(len == i.encoded_field_len);
       REQUIRE(actual_len == i.raw_string_len);
       REQUIRE(memcmp(actual, i.raw_string, actual_len) == 0);
+    }
+  }
+
+  SECTION("max_string_len enforcement")
+  {
+    // "custom-key" (10 bytes), non-huffman encoded: length byte 0x0a + raw string
+    uint8_t encoded[]   = "\x0a"
+                          "custom-key";
+    int     encoded_len = 11;
+
+    SECTION("exact limit allows decoding")
+    {
+      Arena    arena;
+      char    *actual     = nullptr;
+      uint64_t actual_len = 0;
+      int      len        = xpack_decode_string(arena, &actual, actual_len, encoded, encoded + encoded_len, 10);
+
+      REQUIRE(len == encoded_len);
+      REQUIRE(actual_len == 10);
+      REQUIRE(memcmp(actual, "custom-key", 10) == 0);
+    }
+
+    SECTION("limit below string length rejects")
+    {
+      Arena    arena;
+      char    *actual     = nullptr;
+      uint64_t actual_len = 0;
+      int      len        = xpack_decode_string(arena, &actual, actual_len, encoded, encoded + encoded_len, 9);
+
+      REQUIRE(len == XPACK_ERROR_COMPRESSION_ERROR);
+    }
+
+    SECTION("zero limit rejects non-empty string")
+    {
+      Arena    arena;
+      char    *actual     = nullptr;
+      uint64_t actual_len = 0;
+      int      len        = xpack_decode_string(arena, &actual, actual_len, encoded, encoded + encoded_len, 0);
+
+      REQUIRE(len == XPACK_ERROR_COMPRESSION_ERROR);
+    }
+
+    SECTION("huffman-encoded string checked against limit")
+    {
+      // "custom-key" huffman-encoded: 0x88 (huffman flag + length 8) + 8 bytes
+      uint8_t huff_encoded[]   = "\x88\x25\xa8\x49\xe9\x5b\xa9\x7d\x7f";
+      int     huff_encoded_len = 9;
+
+      SECTION("limit above encoded length allows")
+      {
+        Arena    arena;
+        char    *actual     = nullptr;
+        uint64_t actual_len = 0;
+        int      len        = xpack_decode_string(arena, &actual, actual_len, huff_encoded, huff_encoded + huff_encoded_len, 8);
+
+        REQUIRE(len == huff_encoded_len);
+        REQUIRE(actual_len == 10);
+        REQUIRE(memcmp(actual, "custom-key", 10) == 0);
+      }
+
+      SECTION("limit below encoded length rejects")
+      {
+        Arena    arena;
+        char    *actual     = nullptr;
+        uint64_t actual_len = 0;
+        int      len        = xpack_decode_string(arena, &actual, actual_len, huff_encoded, huff_encoded + huff_encoded_len, 7);
+
+        REQUIRE(len == XPACK_ERROR_COMPRESSION_ERROR);
+      }
+    }
+
+    SECTION("empty string with any limit succeeds")
+    {
+      uint8_t  empty_encoded[] = "\x0";
+      Arena    arena;
+      char    *actual     = nullptr;
+      uint64_t actual_len = 0;
+      int      len        = xpack_decode_string(arena, &actual, actual_len, empty_encoded, empty_encoded + 1, 0);
+
+      REQUIRE(len == 1);
+      REQUIRE(actual_len == 0);
     }
   }
 
