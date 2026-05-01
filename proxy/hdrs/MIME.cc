@@ -2401,11 +2401,19 @@ MIMEScanner::get(TextView &input, TextView &output, bool &output_shares_input, b
       // After a LF, the next line might be a continuation / folded line. That's indicated by a
       // starting whitespace. If that's the case, back up over the preceding CR/LF with space and
       // pretend it's the same line.
+      //
+      // NOTE: obs-fold is only detected here when the LF and the continuation whitespace are in
+      // the same get() call. If the CRLF falls exactly at the end of an input buffer, the
+      // post-loop cleanup returns OK before we see the next byte, so the fold is silently lost
+      // and the continuation becomes a separate field. Fixing this requires changing the scanner
+      // to return CONT in AFTER state, which affects all callers including TSMimeHdrParse.
       if (ParseRules::is_ws(*text)) { // folded line.
         char *unfold = const_cast<char *>(text.data() - 1);
-        *unfold--    = ' ';
-        if (ParseRules::is_cr(*unfold)) {
-          *unfold = ' ';
+        *unfold      = ' ';
+        if (unfold > input.data() && ParseRules::is_cr(*(unfold - 1))) {
+          *(unfold - 1) = ' ';
+        } else if (!m_line.empty() && ParseRules::is_cr(m_line.back())) {
+          m_line.back() = ' ';
         }
         m_state = MIME_PARSE_INSIDE; // back inside the field.
       } else {
