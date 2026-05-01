@@ -26,6 +26,7 @@
 
 #include "proxy/http3/Http3.h"
 #include "proxy/http3/Http3Types.h"
+#include "proxy/http/HttpConfig.h"
 
 //
 // HQSession
@@ -177,11 +178,19 @@ HQSession::main_event_handler(int event, void *edata)
 //
 Http3Session::Http3Session(NetVConnection *vc) : HQSession(vc)
 {
-  QUICConnection *qc = vc->get_service<QUICSupport>()->get_quic_connection();
-  this->_local_qpack =
-    new QPACK(qc, HTTP3_DEFAULT_MAX_FIELD_SECTION_SIZE, HTTP3_DEFAULT_HEADER_TABLE_SIZE, HTTP3_DEFAULT_QPACK_BLOCKED_STREAMS);
-  this->_remote_qpack =
-    new QPACK(qc, HTTP3_DEFAULT_MAX_FIELD_SECTION_SIZE, HTTP3_DEFAULT_HEADER_TABLE_SIZE, HTTP3_DEFAULT_QPACK_BLOCKED_STREAMS);
+  QUICConnection   *qc                    = vc->get_service<QUICSupport>()->get_quic_connection();
+  uint32_t          header_field_max_size = 32768;
+  HttpConfigParams *http_config           = HttpConfig::acquire();
+
+  if (http_config) {
+    header_field_max_size = http_config->http_hdr_field_max_size;
+    HttpConfig::release(http_config);
+  }
+
+  this->_local_qpack  = new QPACK(qc, HTTP3_DEFAULT_MAX_FIELD_SECTION_SIZE, HTTP3_DEFAULT_HEADER_TABLE_SIZE,
+                                  HTTP3_DEFAULT_QPACK_BLOCKED_STREAMS, header_field_max_size);
+  this->_remote_qpack = new QPACK(qc, HTTP3_DEFAULT_MAX_FIELD_SECTION_SIZE, HTTP3_DEFAULT_HEADER_TABLE_SIZE,
+                                  HTTP3_DEFAULT_QPACK_BLOCKED_STREAMS, header_field_max_size);
 }
 
 Http3Session::~Http3Session()

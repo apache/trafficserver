@@ -282,11 +282,11 @@ Http2Stream::main_event_handler(int event, void *edata)
 }
 
 Http2ErrorCode
-Http2Stream::decode_header_blocks(HpackHandle &hpack_handle, uint32_t maximum_table_size)
+Http2Stream::decode_header_blocks(HpackHandle &hpack_handle, uint32_t maximum_table_size, uint32_t header_field_max_size)
 {
-  Http2ErrorCode error =
-    http2_decode_header_blocks(&_receive_header, (const uint8_t *)header_blocks, header_blocks_length, nullptr, hpack_handle,
-                               _trailing_header_is_possible, maximum_table_size, this->is_outbound_connection());
+  Http2ErrorCode error = http2_decode_header_blocks(&_receive_header, (const uint8_t *)header_blocks, header_blocks_length, nullptr,
+                                                    hpack_handle, _trailing_header_is_possible, maximum_table_size,
+                                                    header_field_max_size, this->is_outbound_connection());
   if (error != Http2ErrorCode::HTTP2_ERROR_NO_ERROR) {
     Http2StreamDebug("Error decoding header blocks: %u", static_cast<uint32_t>(error));
   }

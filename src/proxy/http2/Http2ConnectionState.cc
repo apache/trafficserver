@@ -34,6 +34,7 @@
 #include "proxy/http2/Http2DebugNames.h"
 #include "proxy/http/HttpDebugNames.h"
 #include "proxy/http/HttpSM.h"
+#include "proxy/http/HttpConfig.h"
 
 #include "iocore/net/TLSSNISupport.h"
 
@@ -475,8 +476,8 @@ Http2ConnectionState::rcv_headers_frame(const Http2Frame &frame)
     } else {
       stream->mark_milestone(Http2StreamMilestone::START_DECODE_HEADERS);
     }
-    Http2ErrorCode result = stream->decode_header_blocks(*this->local_hpack_handle,
-                                                         this->acknowledged_local_settings.get(HTTP2_SETTINGS_HEADER_TABLE_SIZE));
+    Http2ErrorCode result = stream->decode_header_blocks(
+      *this->local_hpack_handle, this->acknowledged_local_settings.get(HTTP2_SETTINGS_HEADER_TABLE_SIZE), _header_field_max_size);
 
     // If this was an outbound connection and the state was already closed, just clear the
     // headers after processing.  We just processed the header blocks to keep the dynamic table in
@@ -1119,8 +1120,8 @@ Http2ConnectionState::rcv_continuation_frame(const Http2Frame &frame)
                         "continuation no state change");
     }
 
-    Http2ErrorCode result = stream->decode_header_blocks(*this->local_hpack_handle,
-                                                         this->acknowledged_local_settings.get(HTTP2_SETTINGS_HEADER_TABLE_SIZE));
+    Http2ErrorCode result = stream->decode_header_blocks(
+      *this->local_hpack_handle, this->acknowledged_local_settings.get(HTTP2_SETTINGS_HEADER_TABLE_SIZE), _header_field_max_size);
 
     if (result != Http2ErrorCode::HTTP2_ERROR_NO_ERROR) {
       if (result == Http2ErrorCode::HTTP2_ERROR_COMPRESSION_ERROR) {
@@ -1355,6 +1356,12 @@ Http2ConnectionState::init(Http2CommonSession *ssn)
   configured_max_rst_stream_frames_per_minute   = Http2::max_rst_stream_frames_per_minute;
   configured_max_continuation_frames_per_minute = Http2::max_continuation_frames_per_minute;
   configured_max_empty_frames_per_minute        = Http2::max_empty_frames_per_minute;
+
+  HttpConfigParams *http_config = HttpConfig::acquire();
+  if (http_config) {
+    _header_field_max_size = http_config->http_hdr_field_max_size;
+    HttpConfig::release(http_config);
+  }
 
   if (auto snis = session->get_netvc()->get_service<TLSSNISupport>(); snis) {
     if (snis->hints_from_sni.http2_max_settings_frames_per_minute.has_value()) {

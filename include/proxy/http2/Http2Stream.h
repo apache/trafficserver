@@ -81,7 +81,7 @@ public:
   bool expect_receive_trailer() const override;
   void set_expect_receive_trailer() override;
 
-  Http2ErrorCode decode_header_blocks(HpackHandle &hpack_handle, uint32_t maximum_table_size);
+  Http2ErrorCode decode_header_blocks(HpackHandle &hpack_handle, uint32_t maximum_table_size, uint32_t header_field_max_size);
   void           send_headers(Http2ConnectionState &cstate);
   void           initiating_close();
   bool           is_outbound_connection() const;

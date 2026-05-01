@@ -569,7 +569,7 @@ decode_indexed_header_field(MIMEFieldWrapper &header, const uint8_t *buf_start, 
 //
 int64_t
 decode_literal_header_field(MIMEFieldWrapper &header, const uint8_t *buf_start, const uint8_t *buf_end,
-                            HpackIndexingTable &indexing_table)
+                            HpackIndexingTable &indexing_table, uint32_t header_field_max_size)
 {
   const uint8_t *p                   = buf_start;
   bool           isIncremental       = false;
@@ -603,7 +603,7 @@ decode_literal_header_field(MIMEFieldWrapper &header, const uint8_t *buf_start, 
     char    *name_str     = nullptr;
     uint64_t name_str_len = 0;
 
-    len = xpack_decode_string(indexing_table.arena, &name_str, name_str_len, p, buf_end);
+    len = xpack_decode_string(indexing_table.arena, &name_str, name_str_len, p, buf_end, header_field_max_size);
     if (len == XPACK_ERROR_COMPRESSION_ERROR) {
       return HPACK_ERROR_COMPRESSION_ERROR;
     }
@@ -626,7 +626,7 @@ decode_literal_header_field(MIMEFieldWrapper &header, const uint8_t *buf_start, 
   char    *value_str     = nullptr;
   uint64_t value_str_len = 0;
 
-  len = xpack_decode_string(indexing_table.arena, &value_str, value_str_len, p, buf_end);
+  len = xpack_decode_string(indexing_table.arena, &value_str, value_str_len, p, buf_end, header_field_max_size);
   if (len == XPACK_ERROR_COMPRESSION_ERROR) {
     return HPACK_ERROR_COMPRESSION_ERROR;
   }
@@ -687,7 +687,7 @@ update_dynamic_table_size(const uint8_t *buf_start, const uint8_t *buf_end, Hpac
 
 int64_t
 hpack_decode_header_block(HpackIndexingTable &indexing_table, HTTPHdr *hdr, const uint8_t *in_buf, const size_t in_buf_len,
-                          uint32_t max_header_size, uint32_t maximum_table_size)
+                          uint32_t max_header_size, uint32_t maximum_table_size, uint32_t header_field_max_size)
 {
   const uint8_t       *cursor               = in_buf;
   const uint8_t *const in_buf_end           = in_buf + in_buf_len;
@@ -717,7 +717,7 @@ hpack_decode_header_block(HpackIndexingTable &indexing_table, HTTPHdr *hdr, cons
     case HpackField::INDEXED_LITERAL:
     case HpackField::NOINDEX_LITERAL:
     case HpackField::NEVERINDEX_LITERAL:
-      read_bytes = decode_literal_header_field(header, cursor, in_buf_end, indexing_table);
+      read_bytes = decode_literal_header_field(header, cursor, in_buf_end, indexing_table, header_field_max_size);
       if (read_bytes == HPACK_ERROR_COMPRESSION_ERROR) {
         return HPACK_ERROR_COMPRESSION_ERROR;
       }
