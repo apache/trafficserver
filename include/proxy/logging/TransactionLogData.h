@@ -75,8 +75,9 @@ public:
   int   get_unmapped_url_len() const;
 
   // ===== Cache lookup URL =====
-  char *get_cache_lookup_url_str() const;
-  int   get_cache_lookup_url_len() const;
+  char                 *get_cache_lookup_url_str() const;
+  int                   get_cache_lookup_url_len() const;
+  const ts::CryptoHash *get_cache_lookup_hash() const;
 
   // ===== Client addressing =====
   sockaddr const *get_client_addr() const;
