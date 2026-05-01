@@ -353,9 +353,8 @@ Http2ClientSession::is_protocol_framed() const
 uint64_t
 Http2ClientSession::get_received_frame_count(uint64_t type) const
 {
-  if (type == 999) { // TS_SSN_INFO_RECEIVED_FRAME_COUNT_H2_UNKNOWN in apidefs.h.in
-    return this->_frame_counts_in[HTTP2_FRAME_TYPE_MAX];
-  } else {
-    return this->_frame_counts_in[type];
+  if (type > HTTP2_FRAME_TYPE_MAX) {
+    type = HTTP2_FRAME_TYPE_MAX;
   }
+  return this->_frame_counts_in[type];
 }
