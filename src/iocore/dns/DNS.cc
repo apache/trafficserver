@@ -1713,8 +1713,11 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
     unsigned char *here = reinterpret_cast<unsigned char *>(buf->buf) + HFIXEDSZ;
     if (e->qtype == T_SRV) {
       for (int ctr = ntohs(h->qdcount); ctr > 0; ctr--) {
-        int strlen  = dn_skipname(here, eom);
-        here       += strlen + QFIXEDSZ;
+        int strlen = dn_skipname(here, eom);
+        if (strlen < 0 || static_cast<size_t>(eom - here) < static_cast<size_t>(strlen) + QFIXEDSZ) {
+          goto Lerror;
+        }
+        here += strlen + QFIXEDSZ;
       }
     }
     //
@@ -1729,6 +1732,10 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
         break;
       }
       cp += n;
+      if (static_cast<size_t>(eom - cp) < RRFIXEDSZ) {
+        ++error;
+        break;
+      }
       short int type;
       NS_GET16(type, cp);
       cp += NS_INT16SZ;       // NS_GET16(cls, cp);
@@ -1737,6 +1744,10 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
         buf->ttl = temp_ttl;
       }
       NS_GET16(n, cp);
+      if (n > eom - cp) {
+        ++error;
+        break;
+      }
 
       //
       // Decode cname
@@ -1806,13 +1817,26 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
         if (buf->srv_hosts.hosts.size() >= hostdb_round_robin_max_count) {
           break;
         }
-        cp                            = here; /* hack */
-        int strlen                    = dn_skipname(cp, eom);
-        cp                           += strlen;
+        cp         = here; /* hack */
+        int strlen = dn_skipname(cp, eom);
+        if (strlen < 0) {
+          ++error;
+          break;
+        }
+        cp += strlen;
+        if (static_cast<size_t>(eom - cp) < SRV_FIXEDSZ) {
+          ++error;
+          break;
+        }
         const unsigned char *srv_off  = cp;
         cp                           += SRV_FIXEDSZ;
-        cp                           += dn_skipname(cp, eom);
-        here                          = cp; /* hack */
+        int srv_namelen               = dn_skipname(cp, eom);
+        if (srv_namelen < 0) {
+          ++error;
+          break;
+        }
+        cp   += srv_namelen;
+        here  = cp; /* hack */
 
         SRV srv;
 
