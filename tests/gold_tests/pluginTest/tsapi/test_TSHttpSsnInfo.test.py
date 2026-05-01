@@ -100,6 +100,8 @@ f = tr.Disk.File(log_path)
 f.Content = "test_TSHttpSsnInfo_plugin_log.gold"
 f.Content += Testers.ContainsExpression(
     "H2 Frames Received:D1,H1,PR.,RS0,S2,PP0,P0,G1,WU0,C1,U0", "Expected numbers of frames should be received")
+f.Content += Testers.ContainsExpression(
+    "H2 OOB\\(11\\)=0,OOB\\(1000\\)=0", "OOB sub_key values should map to UNKNOWN bucket without crashing")
 # We cannot test this on H3 now because the test plugin does not work on H3 sessions
 # f.Content += Testers.ContainsExpression("H3 Frames Received:D1,H1,Ra0,CP0,S1,PP0,Rb0,G0,Rc0,Rd0,UND0,UND0,UND0,MPI0,U0",
 #                                        "Expected numbers of frames should be received")
