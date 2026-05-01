@@ -28,13 +28,16 @@
 
 #include "catch.hpp"
 
-#include "HPACK.h"
+#include "proxy/hdrs/HTTP.h"
+#include "proxy/http2/HPACK.h"
 
-static constexpr int DYNAMIC_TABLE_SIZE_FOR_REGRESSION_TEST = 256;
-static constexpr int BUFSIZE_FOR_REGRESSION_TEST            = 128;
-static constexpr int MAX_TEST_FIELD_NUM                     = 8;
-static constexpr int MAX_REQUEST_HEADER_SIZE                = 131072;
-static constexpr int MAX_TABLE_SIZE                         = 4096;
+static constexpr int      DYNAMIC_TABLE_SIZE_FOR_REGRESSION_TEST = 256;
+static constexpr int      BUFSIZE_FOR_REGRESSION_TEST            = 128;
+static constexpr int      MAX_TEST_FIELD_NUM                     = 8;
+static constexpr int      MAX_REQUEST_HEADER_SIZE                = 131072;
+static constexpr int      MAX_TABLE_SIZE                         = 4096;
+static constexpr int      MAX_FIELD_SIZE                         = 32768;
+static constexpr uint64_t OVERSIZED_HPACK_INDEX                  = (static_cast<uint64_t>(1) << 32) + 58;
 
 namespace
 {
@@ -47,6 +50,18 @@ destroy_http_hdr(HTTPHdr *hdr)
 {
   hdr->destroy();
   delete hdr;
+}
+
+int64_t
+encode_oversized_hpack_index(uint8_t *buf, size_t buf_len, uint8_t prefix, uint8_t flag)
+{
+  memset(buf, 0, buf_len);
+  buf[0] = flag;
+
+  int64_t len = xpack_encode_integer(buf, buf + buf_len, OVERSIZED_HPACK_INDEX, prefix);
+  REQUIRE(len > 0);
+
+  return len;
 }
 } // namespace
 
@@ -103,6 +118,22 @@ TEST_CASE("HPACK low level APIs", "[hpack]")
         REQUIRE(actual_value_len > 0);
         REQUIRE(memcmp(actual_value, i.raw_value, actual_value_len) == 0);
       }
+    }
+
+    SECTION("rejects oversized indexed header field index")
+    {
+      uint8_t buf[BUFSIZE_FOR_REGRESSION_TEST];
+      int64_t encoded_len = encode_oversized_hpack_index(buf, sizeof(buf), 7, 0x80);
+
+      HpackIndexingTable                            indexing_table(4096);
+      std::unique_ptr<HTTPHdr, void (*)(HTTPHdr *)> headers(new HTTPHdr, destroy_http_hdr);
+      headers->create(HTTP_TYPE_REQUEST);
+      MIMEField       *field = mime_field_create(headers->m_heap, headers->m_http->m_fields_impl);
+      MIMEFieldWrapper header(field, headers->m_heap, headers->m_http->m_fields_impl);
+
+      int64_t len = decode_indexed_header_field(header, buf, buf + encoded_len, indexing_table);
+
+      REQUIRE(len == HPACK_ERROR_COMPRESSION_ERROR);
     }
   }
 
@@ -256,6 +287,36 @@ TEST_CASE("HPACK low level APIs", "[hpack]")
           REQUIRE(actual_value_len > 0);
           REQUIRE(memcmp(actual_value, i.raw_value, actual_value_len) == 0);
         }
+      }
+    }
+
+    SECTION("rejects oversized literal header field name index")
+    {
+      const static struct {
+        uint8_t prefix;
+        uint8_t flag;
+      } oversized_literal_index_cases[] = {
+        {6, 0x40}, // INDEXED_LITERAL
+        {4, 0x00}, // NOINDEX_LITERAL
+        {4, 0x10}, // NEVERINDEX_LITERAL
+      };
+
+      for (const auto &i : oversized_literal_index_cases) {
+        uint8_t buf[BUFSIZE_FOR_REGRESSION_TEST];
+        int64_t encoded_len = encode_oversized_hpack_index(buf, sizeof(buf), i.prefix, i.flag);
+        uint8_t value[]     = {0x05, 'v', 'a', 'l', 'u', 'e'};
+        memcpy(buf + encoded_len, value, sizeof(value));
+        encoded_len += sizeof(value);
+
+        HpackIndexingTable                            indexing_table(4096);
+        std::unique_ptr<HTTPHdr, void (*)(HTTPHdr *)> headers(new HTTPHdr, destroy_http_hdr);
+        headers->create(HTTP_TYPE_REQUEST);
+        MIMEField       *field = mime_field_create(headers->m_heap, headers->m_http->m_fields_impl);
+        MIMEFieldWrapper header(field, headers->m_heap, headers->m_http->m_fields_impl);
+
+        int64_t len = decode_literal_header_field(header, buf, buf + encoded_len, indexing_table, MAX_FIELD_SIZE);
+
+        REQUIRE(len == HPACK_ERROR_COMPRESSION_ERROR);
       }
     }
   }
