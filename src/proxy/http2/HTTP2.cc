@@ -438,9 +438,10 @@ http2_encode_header_blocks(HTTPHdr *in, uint8_t *out, uint32_t out_len, uint32_t
  */
 Http2ErrorCode
 http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint32_t buf_len, uint32_t *len_read, HpackHandle &handle,
-                           bool is_trailing_header, uint32_t maximum_table_size, bool is_outbound)
+                           bool is_trailing_header, uint32_t maximum_table_size, uint32_t header_field_max_size, bool is_outbound)
 {
-  int64_t result = hpack_decode_header_block(handle, hdr, buf_start, buf_len, Http2::max_header_list_size, maximum_table_size);
+  int64_t result = hpack_decode_header_block(handle, hdr, buf_start, buf_len, Http2::max_header_list_size, maximum_table_size,
+                                             header_field_max_size);
 
   if (result < 0) {
     if (result == HPACK_ERROR_COMPRESSION_ERROR) {

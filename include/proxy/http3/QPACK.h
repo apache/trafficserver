@@ -48,7 +48,8 @@ enum {
 class QPACK : public QUICApplication
 {
 public:
-  QPACK(QUICConnection *qc, uint32_t max_field_section_size, uint16_t max_table_size, uint16_t max_blocking_streams);
+  QPACK(QUICConnection *qc, uint32_t max_field_section_size, uint16_t max_table_size, uint16_t max_blocking_streams,
+        uint32_t header_field_max_size);
   virtual ~QPACK();
 
   void on_stream_open(QUICStream &stream) override;
@@ -195,6 +196,7 @@ private:
   XpackDynamicTable                         _dynamic_table;
   std::map<uint64_t, struct EntryReference> _references;
   uint32_t                                  _max_field_section_size = 0;
+  uint32_t                                  _header_field_max_size  = 0;
   uint16_t                                  _max_table_size         = 0;
   uint16_t                                  _max_blocking_streams   = 0;
 
