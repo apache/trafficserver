@@ -1654,11 +1654,15 @@ MIMEHdr::get_age() const
 {
   int64_t age = value_get_int64(MIME_FIELD_AGE, MIME_LEN_AGE);
 
-  if (age < 0) // We should ignore negative Age: values
+  if (age < 0) {
     return 0;
+  }
 
-  if ((4 == sizeof(time_t)) && (age > INT_MAX)) // Overflow
-    return -1;
+  // RFC 9111 §1.2.2: "the greatest positive integer it can conveniently
+  // represent" — any Age >= ~68 years is effectively infinity for caching.
+  if (age >= INT32_MAX) {
+    return INT32_MAX;
+  }
 
   return age;
 }
@@ -1666,6 +1670,7 @@ MIMEHdr::get_age() const
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
+// Overflow rejected upstream in validate_hdr_content_length (RFC 9112 §6.3).
 inline int64_t
 MIMEHdr::get_content_length() const
 {
@@ -1729,6 +1734,7 @@ MIMEHdr::get_if_range_date() const
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
+// RFC 9110 §7.6.2: clamp to implementation max. Saturating mime_parse_int is sufficient.
 inline int32_t
 MIMEHdr::get_max_forwards() const
 {
