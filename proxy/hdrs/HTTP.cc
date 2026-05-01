@@ -25,6 +25,7 @@
 #include "tscore/ink_platform.h"
 #include "tscore/ink_inet.h"
 #include <cassert>
+#include <charconv>
 #include <cstdio>
 #include <cstring>
 #include <string_view>
@@ -1239,18 +1240,17 @@ validate_hdr_content_length(HdrHeap *heap, HTTPHdrImpl *hh)
     // status code and then close the connection
     std::string_view value = content_length_field->value_get();
 
-    // RFC 9110 section 8.6.
-    // Content-Length = 1*DIGIT
-    //
-    if (value.empty()) {
-      Debug("http", "Content-Length headers don't match the ABNF, returning parse error");
-      return PARSE_RESULT_ERROR;
-    }
-
-    // If the content-length value contains a non-numeric value, the header is invalid
-    if (std::find_if(value.cbegin(), value.cend(), [](std::string_view::value_type c) { return !std::isdigit(c); }) !=
-        value.cend()) {
-      Debug("http", "Content-Length value contains non-digit, returning parse error");
+    // RFC 9110 section 8.6: Content-Length = 1*DIGIT
+    // RFC 9110 section 8.6: "a recipient MUST anticipate potentially large
+    // decimal numerals and prevent parsing errors due to integer conversion
+    // overflows"
+    // RFC 9112 section 6.3: an invalid Content-Length is an unrecoverable
+    // framing error (request → 400, proxied response → 502).
+    // from_chars rejects empty, non-digit, and overflow in one pass.
+    int64_t cl;
+    auto [ptr, ec] = std::from_chars(value.data(), value.data() + value.size(), cl);
+    if (ec != std::errc{} || ptr != value.data() + value.size() || cl < 0) {
+      Dbg(dbg_ctl_http, "Content-Length value is invalid, returning parse error");
       return PARSE_RESULT_ERROR;
     }
 
