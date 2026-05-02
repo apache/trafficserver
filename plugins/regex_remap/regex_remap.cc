@@ -49,6 +49,7 @@
 #else
 #include <pcre.h>
 #endif
+#include "tsutil/LocalBuffer.h"
 
 static const char *PLUGIN_NAME = "regex_remap";
 
@@ -472,7 +473,7 @@ RemapRegex::compile(const char *&error, int &erroffset)
 
 // Get the lengths of the matching string(s), taking into account variable substitutions.
 // We also calculate a total length for the new string, which is the max length the
-// substituted string can have (use it to allocate a buffer before calling substitute() ).
+// substituted string can have (used for the ts::LocalBuffer).
 int
 RemapRegex::get_lengths(const int ovector[], int lengths[], TSRemapRequestInfo *rri, UrlComponents *req_url)
 {
@@ -925,15 +926,15 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   UrlComponents req_url;
   req_url.populate(src_url.bufp, src_url.loc);
 
-  int ovector[OVECCOUNT];
-  int lengths[OVECCOUNT / 2 + 1];
-  int dest_len;
-  TSRemapStatus retval = TSREMAP_DID_REMAP;
-  RemapRegex *re       = ri->first;
-  int match_len        = 0;
-  char *match_buf;
+  int           ovector[OVECCOUNT];
+  int           lengths[OVECCOUNT / 2 + 1];
+  int           dest_len;
+  TSRemapStatus retval    = TSREMAP_DID_REMAP;
+  RemapRegex   *re        = ri->first;
+  int           match_len = 0;
 
-  match_buf = static_cast<char *>(alloca(req_url.url_len + 32));
+  // Cap the stack allocation to 16KB, a typical browser upper limit
+  ts::LocalBuffer<char, 16384> match_buf(req_url.url_len + 32);
 
   if (ri->method) { // Prepend the URI path or URL with the HTTP method
     TSMBuffer mBuf;
@@ -947,21 +948,21 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
         if (match_len > 16) {
           match_len = 16;
         }
-        memcpy(match_buf, method, match_len);
+        memcpy(match_buf.data(), method, match_len);
       }
     }
   }
 
   if (ri->host && req_url.host && req_url.host_len > 0) {
-    memcpy(match_buf + match_len, "//", 2);
-    memcpy(match_buf + match_len + 2, req_url.host, req_url.host_len);
+    memcpy(match_buf.data() + match_len, "//", 2);
+    memcpy(match_buf.data() + match_len + 2, req_url.host, req_url.host_len);
     match_len += (req_url.host_len + 2);
   }
 
-  *(match_buf + match_len) = '/';
+  *(match_buf.data() + match_len) = '/';
   match_len++;
   if (req_url.path && req_url.path_len > 0) {
-    memcpy(match_buf + match_len, req_url.path, req_url.path_len);
+    memcpy(match_buf.data() + match_len, req_url.path, req_url.path_len);
     match_len += (req_url.path_len);
   }
 
@@ -972,17 +973,17 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   }
 
   if (ri->query_string && req_url.query && req_url.query_len > 0) {
-    *(match_buf + match_len) = '?';
-    memcpy(match_buf + match_len + 1, req_url.query, req_url.query_len);
+    *(match_buf.data() + match_len) = '?';
+    memcpy(match_buf.data() + match_len + 1, req_url.query, req_url.query_len);
     match_len += (req_url.query_len + 1);
   }
-  match_buf[match_len] = '\0'; // NULL terminate the match string
-  TSDebug(PLUGIN_NAME, "Target match string is `%s'", match_buf);
+  match_buf.data()[match_len] = '\0'; // NULL terminate the match string
+  Dbg(dbg_ctl, "Target match string is `%s'", match_buf.data());
 
   // Apply the regular expressions, in order. First one wins.
   while (re) {
     // Since we check substitutions on parse time, we don't need to reset ovector
-    auto match_result = re->match(match_buf, match_len, ovector);
+    auto match_result = re->match(match_buf.data(), match_len, ovector);
     if (match_result >= 0) {
       int new_len = re->get_lengths(ovector, lengths, rri, &req_url);
 
@@ -1038,10 +1039,10 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
       }
 
       if (new_len > 0) {
-        char *dest;
+        // Cap the stack allocation to 16KB, a typical browser upper limit
+        ts::LocalBuffer<char, 16384> dest(new_len + 8);
 
-        dest     = static_cast<char *>(alloca(new_len + 8));
-        dest_len = re->substitute(dest, match_buf, ovector, lengths, txnp, rri, &req_url, lowercase_substitutions);
+        dest_len = re->substitute(dest.data(), match_buf.data(), ovector, lengths, txnp, rri, &req_url, lowercase_substitutions);
 
         TSDebug(PLUGIN_NAME, "New URL is estimated to be %d bytes long, or less", new_len);
         TSDebug(PLUGIN_NAME, "New URL is %s (length %d)", dest, dest_len);
@@ -1064,7 +1065,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 
         // Now parse the new URL, which can also be the redirect URL
         if (dest_len > 0) {
-          const char *start = dest;
+          const char *start = dest.data();
 
           // Setup the new URL
           if (TS_PARSE_ERROR == TSUrlParse(rri->requestBufp, rri->requestUrl, &start, start + dest_len)) {
