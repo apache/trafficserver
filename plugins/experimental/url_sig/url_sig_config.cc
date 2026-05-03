@@ -47,17 +47,20 @@ load_config(std::istream &input, std::string &error)
     std::string_view key_part(line.data(), eq_pos);
     std::string_view value_part(line.data() + eq_pos + 1, line.size() - eq_pos - 1);
 
+    // Trim leading whitespace from key.
+    while (!key_part.empty() && std::isspace(key_part.front())) {
+      key_part.remove_prefix(1);
+    }
     // Trim trailing whitespace from key.
-    while (!key_part.empty() && (key_part.back() == ' ' || key_part.back() == '\t')) {
+    while (!key_part.empty() && std::isspace(key_part.back())) {
       key_part.remove_suffix(1);
     }
     // Trim leading whitespace from value.
-    while (!value_part.empty() && (value_part.front() == ' ' || value_part.front() == '\t')) {
+    while (!value_part.empty() && std::isspace(value_part.front())) {
       value_part.remove_prefix(1);
     }
     // Trim trailing whitespace/newline from value.
-    while (!value_part.empty() &&
-           (value_part.back() == ' ' || value_part.back() == '\t' || value_part.back() == '\n' || value_part.back() == '\r')) {
+    while (!value_part.empty() && std::isspace(value_part.back())) {
       value_part.remove_suffix(1);
     }
 
@@ -102,7 +105,7 @@ load_config(std::istream &input, std::string &error)
         cfg->err_status = UrlSigErrStatus::MOVED_TEMPORARILY;
         // Skip past status code and whitespace to get URL.
         std::string_view remainder(ptr, static_cast<size_t>(value_part.data() + value_part.size() - ptr));
-        while (!remainder.empty() && (remainder.front() == ' ' || remainder.front() == '\t')) {
+        while (!remainder.empty() && std::isspace(remainder.front())) {
           remainder.remove_prefix(1);
         }
         cfg->err_url = std::string(remainder);
@@ -115,16 +118,12 @@ load_config(std::istream &input, std::string &error)
       cfg->sig_anchor = std::string(value_part);
 
     } else if (key_part == "excl_regex") {
-      // excl_regex is handled by the caller setting excl_regex_match after load.
-      // Store raw pattern in sig_anchor-like fashion? No — we just note it here.
-      // The ATS adapter will compile the regex and set the callback.
-      // Store the pattern string temporarily in a way the adapter can retrieve.
-      // Actually, let's just skip it here — the adapter reads the file itself for regex.
-      // But wait, we want core to be self-contained for config...
-      // Compromise: we note the pattern but don't compile it (no regex dep in core).
-      // The caller can re-read or we store it.
-      // For now: store nothing, adapter handles regex separately by reading config.
-      // This matches original behavior where excl_regex was compiled with ATS Regex.
+      std::string re_error;
+      int         erroffset = 0;
+      if (!cfg->excl_regex.compile(std::string(value_part), re_error, erroffset, 0)) {
+        error = "excl_regex compile failed: " + re_error + " at offset " + std::to_string(erroffset);
+        return nullptr;
+      }
 
     } else if (key_part == "ignore_expiry") {
       cfg->ignore_expiry = (value_part == "true");

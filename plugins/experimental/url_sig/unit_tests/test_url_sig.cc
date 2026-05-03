@@ -420,8 +420,8 @@ TEST_CASE("validate_url - IPv6 client IP match", "[verify]")
 TEST_CASE("validate_url - excl_regex allows without signature", "[verify]")
 {
   UrlSigConfig cfg;
-  cfg.err_status       = UrlSigErrStatus::FORBIDDEN;
-  cfg.excl_regex_match = [](std::string_view url) -> bool { return url.find(".m3u8") != std::string_view::npos; };
+  cfg.err_status = UrlSigErrStatus::FORBIDDEN;
+  REQUIRE(cfg.excl_regex.compile("\\.m3u8"));
 
   std::string const url = "http://example.com/path/manifest.m3u8";
 
@@ -433,8 +433,8 @@ TEST_CASE("validate_url - excl_regex allows without signature", "[verify]")
 TEST_CASE("validate_url - excl_regex does not match", "[verify]")
 {
   UrlSigConfig cfg;
-  cfg.err_status       = UrlSigErrStatus::FORBIDDEN;
-  cfg.excl_regex_match = [](std::string_view url) -> bool { return url.find(".m3u8") != std::string_view::npos; };
+  cfg.err_status = UrlSigErrStatus::FORBIDDEN;
+  REQUIRE(cfg.excl_regex.compile("\\.m3u8"));
 
   std::string const url = "http://example.com/path/video.ts?E=123&A=1&K=0&P=1&S=abc";
 

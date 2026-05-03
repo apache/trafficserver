@@ -29,32 +29,6 @@
 namespace
 {
 
-/// Find parameter value in a delimited parameter string.
-/// @param params parameter string (query or semicolon-delimited).
-/// @param key parameter key (e.g. "E").
-/// @param delim delimiter between parameters ('&' or ';').
-/// @return value portion after "key=", empty if not found.
-std::string_view
-find_param(std::string_view const params, std::string_view const key, char const delim)
-{
-  std::string const search = std::string(key) + "=";
-  auto              pos    = params.find(search);
-
-  // Ensure it's at start or preceded by delimiter.
-  while (pos != std::string_view::npos) {
-    if (pos == 0 || params[pos - 1] == delim) {
-      auto const val_start = pos + search.size();
-      auto const val_end   = params.find(delim, val_start);
-      if (val_end == std::string_view::npos) {
-        return params.substr(val_start);
-      }
-      return params.substr(val_start, val_end - val_start);
-    }
-    pos = params.find(search, pos + 1);
-  }
-  return {};
-}
-
 /// Compute HMAC signature and return hex string.
 std::string
 compute_hmac(int const algorithm, std::string_view const key, std::string_view const data)
@@ -158,6 +132,65 @@ base64_decode(std::string_view const input)
 }
 
 } // anonymous namespace
+
+void
+SigningParams::parse(std::string_view params, char const delim)
+{
+  while (!params.empty()) {
+    // Consume one token up to the next delimiter.
+    auto const       sep = params.find(delim);
+    std::string_view token;
+    if (sep == std::string_view::npos) {
+      token  = params;
+      params = {};
+    } else {
+      token  = params.substr(0, sep);
+      params = params.substr(sep + 1);
+    }
+
+    // A signing key token is exactly: <single-letter>=<value>.
+    if (token.size() < 2 || token[1] != '=') {
+      continue;
+    }
+
+    std::string_view const value = token.substr(2);
+
+    switch (token[0]) {
+    case 'C':
+      if (client_ip.empty()) {
+        client_ip = value;
+      }
+      break;
+    case 'E':
+      if (expiration.empty()) {
+        expiration = value;
+      }
+      break;
+    case 'A':
+      if (algorithm.empty()) {
+        algorithm = value;
+      }
+      break;
+    case 'K':
+      if (key_index.empty()) {
+        key_index = value;
+      }
+      break;
+    case 'P':
+      if (parts.empty()) {
+        parts = value;
+      }
+      break;
+    case 'S':
+      if (signature.empty()) {
+        signature = value;
+      }
+      break;
+    default:
+      break;
+    }
+  }
+}
 
 std::string
 get_app_query_string(std::string_view const query)
@@ -307,11 +340,11 @@ validate_url(UrlSigConfig const &cfg, std::string_view const url, std::string_vi
   }
 
   // Check exclusion regex.
-  if (cfg.excl_regex_match) {
+  if (!cfg.excl_regex.empty()) {
     // Only check up to first '?' or '#'.
     auto const             end_pos  = url.find_first_of("?#");
     std::string_view const base_url = (end_pos != std::string_view::npos) ? url.substr(0, end_pos) : url;
-    if (cfg.excl_regex_match(base_url)) {
+    if (cfg.excl_regex.exec(base_url)) {
       result.status = UrlSigStatus::ALLOW;
       return result;
     }
@@ -355,17 +388,13 @@ validate_url(UrlSigConfig const &cfg, std::string_view const url, std::string_vi
   // For path params, skip the leading ';' when extracting parameter values.
   std::string_view const param_query = has_path_params ? query.substr(1) : query;
 
-  // Extract parameters.
-  auto const exp_val = find_param(param_query, EXP_QSTRING, delim);
-  auto const alg_val = find_param(param_query, ALG_QSTRING, delim);
-  auto const kin_val = find_param(param_query, KIN_QSTRING, delim);
-  auto const par_val = find_param(param_query, PAR_QSTRING, delim);
-  auto const sig_val = find_param(param_query, SIG_QSTRING, delim);
-  auto const cip_val = find_param(param_query, CIP_QSTRING, delim);
+  // Extract parameters with a single linear scan.
+  SigningParams params;
+  params.parse(param_query, delim);
 
   // Client IP check (optional parameter).
-  if (!cip_val.empty()) {
-    if (client_ip != cip_val) {
+  if (!params.client_ip.empty()) {
+    if (client_ip != params.client_ip) {
       result.reason = "Client IP doesn't match signature";
       return result;
     }
@@ -373,12 +402,12 @@ validate_url(UrlSigConfig const &cfg, std::string_view const url, std::string_vi
 
   // Expiration check.
   if (!cfg.ignore_expiry) {
-    if (exp_val.empty()) {
+    if (params.expiration.empty()) {
       result.reason = "Expiration query string not found";
       return result;
     }
     uint64_t expiration = 0;
-    auto [ptr, ec]      = std::from_chars(exp_val.data(), exp_val.data() + exp_val.size(), expiration);
+    auto [ptr, ec] = std::from_chars(params.expiration.data(), params.expiration.data() + params.expiration.size(), expiration);
     if (ec != std::errc{}) {
       result.reason = "Invalid expiration";
       return result;
@@ -391,13 +420,13 @@ validate_url(UrlSigConfig const &cfg, std::string_view const url, std::string_vi
   }
 
   // Algorithm.
-  if (alg_val.empty()) {
+  if (params.algorithm.empty()) {
     result.reason = "Algorithm query string not found";
     return result;
   }
   int algorithm = 0;
   {
-    auto [ptr, ec] = std::from_chars(alg_val.data(), alg_val.data() + alg_val.size(), algorithm);
+    auto [ptr, ec] = std::from_chars(params.algorithm.data(), params.algorithm.data() + params.algorithm.size(), algorithm);
     if (ec != std::errc{}) {
       result.reason = "Invalid algorithm";
       return result;
@@ -405,13 +434,13 @@ validate_url(UrlSigConfig const &cfg, std::string_view const url, std::string_vi
   }
 
   // Key index.
-  if (kin_val.empty()) {
+  if (params.key_index.empty()) {
     result.reason = "KeyIndex query string not found";
     return result;
   }
   int keyindex = -1;
   {
-    auto [ptr, ec] = std::from_chars(kin_val.data(), kin_val.data() + kin_val.size(), keyindex);
+    auto [ptr, ec] = std::from_chars(params.key_index.data(), params.key_index.data() + params.key_index.size(), keyindex);
     if (ec != std::errc{}) {
       result.reason = "Invalid key index";
       return result;
@@ -423,18 +452,18 @@ validate_url(UrlSigConfig const &cfg, std::string_view const url, std::string_vi
   }
 
   // Parts.
-  if (par_val.empty()) {
+  if (params.parts.empty()) {
     result.reason = "PartsSigned query string not found";
     return result;
   }
 
   // Signature.
-  if (sig_val.empty()) {
+  if (params.signature.empty()) {
     result.reason = "Signature query string not found";
     return result;
   }
-  if ((algorithm == USIG_HMAC_SHA1 && sig_val.size() < SHA1_SIG_SIZE) ||
-      (algorithm == USIG_HMAC_MD5 && sig_val.size() < MD5_SIG_SIZE)) {
+  if ((algorithm == USIG_HMAC_SHA1 && params.signature.size() < SHA1_SIG_SIZE) ||
+      (algorithm == USIG_HMAC_MD5 && params.signature.size() < MD5_SIG_SIZE)) {
     result.reason = "Signature query string too short";
     return result;
   }
@@ -471,12 +500,12 @@ validate_url(UrlSigConfig const &cfg, std::string_view const url, std::string_vi
   std::string signed_part;
   size_t      j = 0;
   for (size_t i = 0; i < url_parts.size(); i++) {
-    char const part_flag = (j < par_val.size()) ? par_val[j] : par_val.back();
+    char const part_flag = (j < params.parts.size()) ? params.parts[j] : params.parts.back();
     if (part_flag == '1') {
       signed_part.append(url_parts[i]);
       signed_part.push_back('/');
     }
-    if (j + 1 < par_val.size()) {
+    if (j + 1 < params.parts.size()) {
       j++;
     }
   }
@@ -508,12 +537,12 @@ validate_url(UrlSigConfig const &cfg, std::string_view const url, std::string_vi
 
   // Compare signatures.
   unsigned int const cmp_len = (algorithm == USIG_HMAC_SHA1) ? SHA1_SIG_SIZE * 2 : MD5_SIG_SIZE * 2;
-  if (sig_val.size() < cmp_len || expected_sig.size() < cmp_len) {
+  if (params.signature.size() < cmp_len || expected_sig.size() < cmp_len) {
     result.reason = "Signature check failed";
     return result;
   }
 
-  if (sig_val.substr(0, cmp_len) != std::string_view(expected_sig).substr(0, cmp_len)) {
+  if (params.signature.substr(0, cmp_len) != std::string_view(expected_sig).substr(0, cmp_len)) {
     result.reason = "Signature check failed";
     return result;
   }

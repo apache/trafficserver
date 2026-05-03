@@ -18,12 +18,13 @@
 
 #pragma once
 
-#include <functional>
 #include <istream>
 #include <memory>
 #include <string>
 #include <string_view>
 #include <vector>
+
+#include "tsutil/Regex.h"
 
 // Constants
 inline constexpr int MAX_KEY_LEN   = 256;
@@ -68,14 +69,29 @@ struct UrlSigResult {
   bool         has_path_params = false; ///< Whether signing used path params mode
 };
 
-/// Extracted signing parameters from URL.
+/// Extracted signing parameters from a URL query or path-param string.
+///
+/// All fields are views into the original parameter string; they are empty if
+/// the corresponding key was not present.  Call @c parse() to populate them in
+/// a single linear scan.
 struct SigningParams {
-  std::string_view client_ip;
-  uint64_t         expiration = 0;
-  int              algorithm  = -1;
-  int              key_index  = -1;
-  std::string_view parts;
-  std::string_view signature;
+  std::string_view client_ip;  ///< C= client IP
+  std::string_view expiration; ///< E= expiry (seconds since epoch, unparsed)
+  std::string_view algorithm;  ///< A= algorithm number, unparsed
+  std::string_view key_index;  ///< K= key index, unparsed
+  std::string_view parts;      ///< P= parts bitmask string
+  std::string_view signature;  ///< S= HMAC hex signature
+
+  /** Populate fields by a single linear scan of @a params.
+   *
+   * @param params Delimiter-separated key=value pairs (no leading delimiter).
+   * @param delim  Token separator: '&' for query strings, ';' for path params.
+   *
+   * Each signing key is a single ASCII letter (A C E K P S) followed immediately
+   * by '='.  Unknown tokens are skipped.  Only the first occurrence of each key
+   * is recorded.
+   */
+  void parse(std::string_view params, char delim);
 };
 
 /// Plugin configuration loaded from config file.
@@ -87,8 +103,7 @@ struct UrlSigConfig {
   std::string              sig_anchor;
   bool                     ignore_expiry = false;
 
-  /// Optional regex exclusion check. Returns true if URL should skip signing.
-  std::function<bool(std::string_view)> excl_regex_match;
+  Regex excl_regex; ///< Optional compiled exclusion pattern. Non-empty means check before signing.
 };
 
 /// Load configuration from an input stream.

@@ -18,7 +18,7 @@
 project(url_sig)
 
 add_atsplugin(url_sig url_sig.cc url_sig_config.cc url_sig_verify.cc)
-target_link_libraries(url_sig PRIVATE OpenSSL::SSL)
+target_link_libraries(url_sig PRIVATE OpenSSL::SSL ts::tsutil)
 verify_remap_plugin(url_sig)
 
 if(BUILD_TESTING)

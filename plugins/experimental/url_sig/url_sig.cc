@@ -28,8 +28,6 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 
-#include "tsutil/Regex.h"
-
 #include <ts/ts.h>
 #include <ts/remap.h>
 #include <ts/remap_version.h>
@@ -108,45 +106,6 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
   if (!cfg) {
     snprintf(errbuf, errbuf_size, "[TSRemapNewInstance] - %s", error.c_str());
     return TS_ERROR;
-  }
-
-  // Handle excl_regex: re-read file to find the pattern.
-  file.clear();
-  file.seekg(0);
-  std::string line;
-  while (std::getline(file, line)) {
-    if (line.empty() || line[0] == '#') {
-      continue;
-    }
-    auto eq = line.find('=');
-    if (eq == std::string::npos) {
-      continue;
-    }
-    std::string_view key(line.data(), eq);
-    // Trim trailing whitespace from key.
-    while (!key.empty() && (key.back() == ' ' || key.back() == '\t')) {
-      key.remove_suffix(1);
-    }
-    if (key == "excl_regex") {
-      std::string_view value(line.data() + eq + 1, line.size() - eq - 1);
-      // Trim whitespace.
-      while (!value.empty() && (value.front() == ' ' || value.front() == '\t')) {
-        value.remove_prefix(1);
-      }
-      while (!value.empty() && (value.back() == ' ' || value.back() == '\t' || value.back() == '\n')) {
-        value.remove_suffix(1);
-      }
-
-      auto const  regex = std::make_shared<Regex>();
-      std::string re_error;
-      int         erroffset = 0;
-      if (regex->compile(std::string(value).c_str(), re_error, erroffset, 0)) {
-        cfg->excl_regex_match = [regex](std::string_view url) -> bool { return regex->exec(url); };
-      } else {
-        Dbg(dbg_ctl, "Regex compilation failed with error (%s) at character %d", re_error.c_str(), erroffset);
-      }
-      break; // Only first excl_regex used.
-    }
   }
   file.close();
 
