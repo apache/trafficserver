@@ -119,6 +119,16 @@ class TestFunctionCalls:
 
 class TestSections:
 
+    def test_comments_in_section_body_skipped(self):
+        src = 'REMAP {\n    # a comment\n    set-debug();\n    # another comment\n}'
+        ast = _build(src)
+        assert len(ast.body[0].body) == 1
+
+    def test_comments_in_block_skipped(self):
+        src = 'REMAP {\n    if true {\n        # comment\n        set-debug();\n    }\n}'
+        ast = _build(src)
+        assert len(ast.body[0].body[0].body) == 1
+
     def test_section_type(self):
         ast = _build('REMAP {\n    set-debug();\n}')
         s = ast.body[0]
@@ -151,6 +161,13 @@ class TestSections:
 
 
 class TestVarSections:
+
+    def test_comments_in_var_section_skipped(self):
+        src = 'VARS {\n    # comment\n    x: bool;\n    # another\n    y: int;\n}\nREMAP {\n    set-debug();\n}'
+        ast = _build(src)
+        vs = ast.body[0]
+        assert isinstance(vs, VarSection)
+        assert len(vs.declarations) == 2
 
     def test_txn_scope(self):
         src = 'VARS {\n    flag: bool;\n}\nREMAP {\n    set-debug();\n}'
@@ -261,6 +278,11 @@ class TestConditionExpressions:
         cond = self._first_condition('REMAP {\n    if inbound.req.X-Foo == "bar" with NOCASE {\n        set-debug();\n    }\n}')
         assert isinstance(cond, Comparison)
         assert cond.modifiers == ("NOCASE",)
+
+    def test_modifiers_preserve_source_casing(self):
+        cond = self._first_condition('REMAP {\n    if inbound.req.X-Foo == "bar" with nocase,Pre {\n        set-debug();\n    }\n}')
+        assert isinstance(cond, Comparison)
+        assert cond.modifiers == ("nocase", "Pre")
 
     def test_function_call_comparable(self):
         cond = self._first_condition('REMAP {\n    if url(true) ~ /pat/ {\n        set-debug();\n    }\n}')
