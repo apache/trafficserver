@@ -481,8 +481,8 @@ UrlRewrite::PerformACLFiltering(HttpTransact::State *s, const url_mapping *const
       if (rp->method_restriction_enabled) {
         if (method_wksidx >= 0 && method_wksidx < HTTP_WKSIDX_METHODS_CNT) {
           method_matches = rp->standard_method_lookup[method_wksidx];
-        } else if (!rp->nonstandard_methods.empty()) {
-          method_matches = false;
+        } else if (rp->nonstandard_methods.empty()) {
+          method_matches = false; // No nonstandard methods, nothing to match against
         } else {
           auto method{s->hdr_info.client_request.method_get()};
           method_matches = rp->nonstandard_methods.count(std::string{method});
