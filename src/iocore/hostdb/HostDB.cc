@@ -1601,23 +1601,22 @@ HostDBRecord::select_best_srv(char *target, InkRand *rand, ts_time now, ts_secon
 {
   ink_assert(rr_count <= 0 || static_cast<unsigned int>(rr_count) < hostdb_round_robin_max_count);
 
-  int         i      = 0;
   int         live_n = 0;
   uint32_t    weight = 0, p = INT32_MAX;
   HostDBInfo *result = nullptr;
   auto        rr     = this->rr_info();
   // Array of live targets, sized by @a live_n
   HostDBInfo *live[rr.count()];
-  for (auto &target : rr) {
+  for (auto &rr_target : rr) {
     // skip down targets.
-    if (rr[i].is_down(now, fail_window)) {
+    if (rr_target.is_down(now, fail_window)) {
       continue;
     }
 
-    if (target.data.srv.srv_priority <= p) {
-      p               = target.data.srv.srv_priority;
-      weight         += target.data.srv.srv_weight;
-      live[live_n++]  = &target;
+    if (rr_target.data.srv.srv_priority <= p) {
+      p               = rr_target.data.srv.srv_priority;
+      weight         += rr_target.data.srv.srv_weight;
+      live[live_n++]  = &rr_target;
     } else {
       break;
     }
@@ -1627,7 +1626,8 @@ HostDBRecord::select_best_srv(char *target, InkRand *rand, ts_time now, ts_secon
     result = this->select_next_rr(now, fail_window);
   } else {
     uint32_t xx = rand->random() % weight;
-    for (i = 0; i < live_n - 1 && xx >= live[i]->data.srv.srv_weight; ++i) {
+    int      i  = 0;
+    for (; i < live_n - 1 && xx >= live[i]->data.srv.srv_weight; ++i) {
       xx -= live[i]->data.srv.srv_weight;
     }
 
