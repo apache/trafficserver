@@ -428,9 +428,9 @@ UrlRewrite::PerformACLFiltering(HttpTransact::State *s, url_mapping *map)
 
       if (rp->method_restriction_enabled) {
         if (method_wksidx >= 0 && method_wksidx < HTTP_WKSIDX_METHODS_CNT) {
-          match = rp->standard_method_lookup[method_wksidx];
-        } else if (!rp->nonstandard_methods.empty()) {
-          match = false;
+          method_matches = rp->standard_method_lookup[method_wksidx];
+        } else if (rp->nonstandard_methods.empty()) {
+          method_matches = false; // No nonstandard methods, nothing to match against
         } else {
           int method_str_len;
           const char *method_str = s->hdr_info.client_request.method_get(&method_str_len);
