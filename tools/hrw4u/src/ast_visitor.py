@@ -78,9 +78,7 @@ class ASTVisitor(hrw4uVisitor):
         name = ctx.QUALIFIED_IDENT().getText()
         params = ()
         if ctx.paramList():
-            params = tuple(
-                self._visit_proc_param(p) for p in ctx.paramList().param()
-            )
+            params = tuple(self._visit_proc_param(p) for p in ctx.paramList().param())
         body = tuple(self._visit_body(ctx.block().blockItem()))
         return ProcedureDecl(name=name, params=params, body=body, line=ctx.start.line)
 
@@ -153,9 +151,7 @@ class ASTVisitor(hrw4uVisitor):
         name = ctx.funcName.text
         args = ()
         if ctx.argumentList():
-            args = tuple(
-                self._extract_value(v) for v in ctx.argumentList().value()
-            )
+            args = tuple(self._extract_value(v) for v in ctx.argumentList().value())
         return FunctionCall(name=name, args=args, line=ctx.start.line)
 
     def _extract_value(self, ctx):
@@ -216,7 +212,10 @@ class ASTVisitor(hrw4uVisitor):
             left = self._visit_expression(ctx.expression())
             right = self._visit_term(ctx.term())
             return LogicalOp(
-                operator="||", left=left, right=right, line=ctx.start.line,
+                operator="||",
+                left=left,
+                right=right,
+                line=ctx.start.line,
             )
         return self._visit_term(ctx.term())
 
@@ -225,7 +224,10 @@ class ASTVisitor(hrw4uVisitor):
             left = self._visit_term(ctx.term())
             right = self._visit_factor(ctx.factor())
             return LogicalOp(
-                operator="&&", left=left, right=right, line=ctx.start.line,
+                operator="&&",
+                left=left,
+                right=right,
+                line=ctx.start.line,
             )
         return self._visit_factor(ctx.factor())
 
@@ -262,8 +264,11 @@ class ASTVisitor(hrw4uVisitor):
         modifiers = self._extract_modifiers(ctx)
 
         return Comparison(
-            left=left, operator=operator, right=right,
-            modifiers=modifiers, line=line,
+            left=left,
+            operator=operator,
+            right=right,
+            modifiers=modifiers,
+            line=line,
         )
 
     def _detect_comparison_operator(self, ctx):
@@ -291,20 +296,14 @@ class ASTVisitor(hrw4uVisitor):
             return RegexValue(raw=ctx.regex().getText()[1:-1])
         if operator in ("in", "!in"):
             if ctx.set_():
-                return tuple(
-                    self._extract_value(v) for v in ctx.set_().value()
-                )
+                return tuple(self._extract_value(v) for v in ctx.set_().value())
             if ctx.iprange():
-                return tuple(
-                    IPValue(raw=ip.getText()) for ip in ctx.iprange().ip()
-                )
+                return tuple(IPValue(raw=ip.getText()) for ip in ctx.iprange().ip())
         if ctx.value():
             return self._extract_value(ctx.value())
         raise ValueError(f"Unhandled comparison RHS at line {ctx.start.line}")
 
     def _extract_modifiers(self, ctx):
         if ctx.modifier():
-            return tuple(
-                tok.text for tok in ctx.modifier().modifierList().mods
-            )
+            return tuple(tok.text for tok in ctx.modifier().modifierList().mods)
         return ()

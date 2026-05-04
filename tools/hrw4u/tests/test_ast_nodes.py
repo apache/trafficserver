@@ -19,6 +19,7 @@ from hrw4u.ast_nodes import Target
 
 
 class TestTarget:
+
     def test_dotted_path(self):
         t = Target.from_dotted("inbound.req.X-Foo")
         assert t.namespace == "inbound.req"

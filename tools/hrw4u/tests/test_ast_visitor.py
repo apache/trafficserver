@@ -16,10 +16,29 @@
 #  limitations under the License.
 
 from hrw4u.ast_nodes import (
-    Target, Assignment, FunctionCall, Break, Section, HRW4UAST,
-    Comparison, IfBlock, ElifBranch, BoolLiteral, NotOp, LogicalOp, IdentCondition,
-    VarSection, VarDecl, UseDirective, ProcedureDecl, ProcParam,
-    LiteralStringValue, IdentValue, IPValue, ParamRef, RegexValue,
+    Target,
+    Assignment,
+    FunctionCall,
+    Break,
+    Section,
+    HRW4UAST,
+    Comparison,
+    IfBlock,
+    ElifBranch,
+    BoolLiteral,
+    NotOp,
+    LogicalOp,
+    IdentCondition,
+    VarSection,
+    VarDecl,
+    UseDirective,
+    ProcedureDecl,
+    ProcParam,
+    LiteralStringValue,
+    IdentValue,
+    IPValue,
+    ParamRef,
+    RegexValue,
 )
 from utils import parse_input_text
 from hrw4u.ast_visitor import ASTVisitor
@@ -31,6 +50,7 @@ def _build(source: str) -> HRW4UAST:
 
 
 class TestAssignments:
+
     def test_simple_assignment(self):
         ast = _build('REMAP {\n    inbound.req.X-Foo = "test";\n}')
         a = ast.body[0].body[0]
@@ -70,6 +90,7 @@ class TestAssignments:
 
 
 class TestFunctionCalls:
+
     def test_no_args(self):
         ast = _build('REMAP {\n    set-debug();\n}')
         fc = ast.body[0].body[0]
@@ -97,6 +118,7 @@ class TestFunctionCalls:
 
 
 class TestSections:
+
     def test_section_type(self):
         ast = _build('REMAP {\n    set-debug();\n}')
         s = ast.body[0]
@@ -129,6 +151,7 @@ class TestSections:
 
 
 class TestVarSections:
+
     def test_txn_scope(self):
         src = 'VARS {\n    flag: bool;\n}\nREMAP {\n    set-debug();\n}'
         ast = _build(src)
@@ -167,6 +190,7 @@ class TestVarSections:
 
 
 class TestProcedures:
+
     def test_basic_decl(self):
         src = 'procedure local::stamp($tag) {\n    inbound.req.X-Stamp = "$tag";\n}\nREMAP {\n    set-debug();\n}'
         ast = _build(src)
@@ -197,14 +221,13 @@ class TestProcedures:
 
 
 class TestConditionExpressions:
+
     def _first_condition(self, source: str):
         ast = _build(source)
         return ast.body[0].body[0].condition
 
     def test_equality_comparison(self):
-        cond = self._first_condition(
-            'REMAP {\n    if inbound.req.X-Foo == "bar" {\n        set-debug();\n    }\n}'
-        )
+        cond = self._first_condition('REMAP {\n    if inbound.req.X-Foo == "bar" {\n        set-debug();\n    }\n}')
         assert isinstance(cond, Comparison)
         assert cond.left == IdentValue(raw="inbound.req.X-Foo")
         assert cond.operator == "=="
@@ -212,77 +235,58 @@ class TestConditionExpressions:
         assert cond.modifiers == ()
 
     def test_regex_comparison(self):
-        cond = self._first_condition(
-            'REMAP {\n    if inbound.url.path ~ /\\.php$/ {\n        set-debug();\n    }\n}'
-        )
+        cond = self._first_condition('REMAP {\n    if inbound.url.path ~ /\\.php$/ {\n        set-debug();\n    }\n}')
         assert isinstance(cond, Comparison)
         assert cond.operator == "~"
         assert isinstance(cond.right, RegexValue)
 
     def test_in_set(self):
-        cond = self._first_condition(
-            'REMAP {\n    if inbound.url.path in ["a", "b"] {\n        set-debug();\n    }\n}'
-        )
+        cond = self._first_condition('REMAP {\n    if inbound.url.path in ["a", "b"] {\n        set-debug();\n    }\n}')
         assert isinstance(cond, Comparison)
         assert cond.operator == "in"
         assert cond.right == (LiteralStringValue(raw="a"), LiteralStringValue(raw="b"))
 
     def test_not_in_set(self):
-        cond = self._first_condition(
-            'REMAP {\n    if inbound.url.path !in ["a"] {\n        set-debug();\n    }\n}'
-        )
+        cond = self._first_condition('REMAP {\n    if inbound.url.path !in ["a"] {\n        set-debug();\n    }\n}')
         assert isinstance(cond, Comparison)
         assert cond.operator == "!in"
 
     def test_in_iprange(self):
-        cond = self._first_condition(
-            'REMAP {\n    if inbound.ip in {10.0.0.0/8} {\n        set-debug();\n    }\n}'
-        )
+        cond = self._first_condition('REMAP {\n    if inbound.ip in {10.0.0.0/8} {\n        set-debug();\n    }\n}')
         assert isinstance(cond, Comparison)
         assert cond.operator == "in"
         assert cond.right == (IPValue(raw="10.0.0.0/8"),)
 
     def test_modifiers(self):
-        cond = self._first_condition(
-            'REMAP {\n    if inbound.req.X-Foo == "bar" with NOCASE {\n        set-debug();\n    }\n}'
-        )
+        cond = self._first_condition('REMAP {\n    if inbound.req.X-Foo == "bar" with NOCASE {\n        set-debug();\n    }\n}')
         assert isinstance(cond, Comparison)
         assert cond.modifiers == ("NOCASE",)
 
     def test_function_call_comparable(self):
-        cond = self._first_condition(
-            'REMAP {\n    if url(true) ~ /pat/ {\n        set-debug();\n    }\n}'
-        )
+        cond = self._first_condition('REMAP {\n    if url(true) ~ /pat/ {\n        set-debug();\n    }\n}')
         assert isinstance(cond, Comparison)
         assert isinstance(cond.left, FunctionCall)
         assert cond.left.name == "url"
         assert cond.left.args == (True,)
 
     def test_bool_literal_true(self):
-        cond = self._first_condition(
-            'REMAP {\n    if true {\n        set-debug();\n    }\n}'
-        )
+        cond = self._first_condition('REMAP {\n    if true {\n        set-debug();\n    }\n}')
         assert isinstance(cond, BoolLiteral)
         assert cond.value is True
 
     def test_ident_condition(self):
-        cond = self._first_condition(
-            'REMAP {\n    if inbound.resp.All-Cache {\n        set-debug();\n    }\n}'
-        )
+        cond = self._first_condition('REMAP {\n    if inbound.resp.All-Cache {\n        set-debug();\n    }\n}')
         assert isinstance(cond, IdentCondition)
         assert cond.name == "inbound.resp.All-Cache"
 
     def test_not_condition(self):
-        cond = self._first_condition(
-            'REMAP {\n    if !inbound.resp.All-Cache {\n        set-debug();\n    }\n}'
-        )
+        cond = self._first_condition('REMAP {\n    if !inbound.resp.All-Cache {\n        set-debug();\n    }\n}')
         assert isinstance(cond, NotOp)
         assert isinstance(cond.operand, IdentCondition)
 
     def test_and_condition(self):
         cond = self._first_condition(
-            'REMAP {\n    if inbound.req.X-A == "a" && inbound.req.X-B == "b" {\n        set-debug();\n    }\n}'
-        )
+            'REMAP {\n    if inbound.req.X-A == "a" && inbound.req.X-B == "b" {\n        set-debug();\n    }\n}')
         assert isinstance(cond, LogicalOp)
         assert cond.operator == "&&"
         assert isinstance(cond.left, Comparison)
@@ -290,55 +294,42 @@ class TestConditionExpressions:
 
     def test_or_condition(self):
         cond = self._first_condition(
-            'REMAP {\n    if inbound.req.X-A == "a" || inbound.req.X-B == "b" {\n        set-debug();\n    }\n}'
-        )
+            'REMAP {\n    if inbound.req.X-A == "a" || inbound.req.X-B == "b" {\n        set-debug();\n    }\n}')
         assert isinstance(cond, LogicalOp)
         assert cond.operator == "||"
 
     def test_function_call_in_condition(self):
-        cond = self._first_condition(
-            'REMAP {\n    if access("/tmp/bar") {\n        set-debug();\n    }\n}'
-        )
+        cond = self._first_condition('REMAP {\n    if access("/tmp/bar") {\n        set-debug();\n    }\n}')
         assert isinstance(cond, FunctionCall)
         assert cond.name == "access"
         assert cond.args == (LiteralStringValue(raw="/tmp/bar"),)
 
     def test_not_tilde_comparison(self):
-        cond = self._first_condition(
-            'REMAP {\n    if inbound.url.path !~ /\\.jpg$/ {\n        set-debug();\n    }\n}'
-        )
+        cond = self._first_condition('REMAP {\n    if inbound.url.path !~ /\\.jpg$/ {\n        set-debug();\n    }\n}')
         assert isinstance(cond, Comparison)
         assert cond.operator == "!~"
         assert isinstance(cond.right, RegexValue)
 
     def test_greater_than_comparison(self):
-        cond = self._first_condition(
-            'REMAP {\n    if inbound.req.Content-Length > 1000 {\n        set-debug();\n    }\n}'
-        )
+        cond = self._first_condition('REMAP {\n    if inbound.req.Content-Length > 1000 {\n        set-debug();\n    }\n}')
         assert isinstance(cond, Comparison)
         assert cond.operator == ">"
         assert cond.right == 1000
 
     def test_less_than_comparison(self):
-        cond = self._first_condition(
-            'REMAP {\n    if inbound.req.Content-Length < 500 {\n        set-debug();\n    }\n}'
-        )
+        cond = self._first_condition('REMAP {\n    if inbound.req.Content-Length < 500 {\n        set-debug();\n    }\n}')
         assert isinstance(cond, Comparison)
         assert cond.operator == "<"
         assert cond.right == 500
 
     def test_neq_comparison(self):
-        cond = self._first_condition(
-            'REMAP {\n    if inbound.req.X-Foo != "bar" {\n        set-debug();\n    }\n}'
-        )
+        cond = self._first_condition('REMAP {\n    if inbound.req.X-Foo != "bar" {\n        set-debug();\n    }\n}')
         assert isinstance(cond, Comparison)
         assert cond.operator == "!="
         assert cond.right == LiteralStringValue(raw="bar")
 
     def test_parenthesized_condition(self):
-        cond = self._first_condition(
-            'REMAP {\n    if (inbound.req.X-Foo == "bar") {\n        set-debug();\n    }\n}'
-        )
+        cond = self._first_condition('REMAP {\n    if (inbound.req.X-Foo == "bar") {\n        set-debug();\n    }\n}')
         assert isinstance(cond, Comparison)
         assert cond.operator == "=="
         assert cond.right == LiteralStringValue(raw="bar")
@@ -348,8 +339,7 @@ class TestConditionExpressions:
         cond = self._first_condition(
             'REMAP {\n'
             '    if inbound.req.X-A == "a" || inbound.req.X-B == "b" && inbound.req.X-C == "c" {\n'
-            '        set-debug();\n    }\n}'
-        )
+            '        set-debug();\n    }\n}')
         assert isinstance(cond, LogicalOp)
         assert cond.operator == "||"
         assert isinstance(cond.left, Comparison)
@@ -364,8 +354,7 @@ class TestConditionExpressions:
         cond = self._first_condition(
             'REMAP {\n'
             '    if !inbound.resp.All-Cache && inbound.req.X-B == "b" {\n'
-            '        set-debug();\n    }\n}'
-        )
+            '        set-debug();\n    }\n}')
         assert isinstance(cond, LogicalOp)
         assert cond.operator == "&&"
         assert isinstance(cond.left, NotOp)
@@ -379,8 +368,7 @@ class TestConditionExpressions:
         cond = self._first_condition(
             'REMAP {\n'
             '    if !(inbound.req.X-A == "x") || inbound.req.X-B == "y" {\n'
-            '        set-debug();\n    }\n}'
-        )
+            '        set-debug();\n    }\n}')
         assert isinstance(cond, LogicalOp)
         assert cond.operator == "||"
         assert isinstance(cond.left, NotOp)
@@ -391,18 +379,14 @@ class TestConditionExpressions:
         assert cond.right.left == IdentValue(raw="inbound.req.X-B")
 
     def test_double_negation(self):
-        cond = self._first_condition(
-            'REMAP {\n    if !!inbound.resp.All-Cache {\n        set-debug();\n    }\n}'
-        )
+        cond = self._first_condition('REMAP {\n    if !!inbound.resp.All-Cache {\n        set-debug();\n    }\n}')
         assert isinstance(cond, NotOp)
         assert isinstance(cond.operand, NotOp)
         assert isinstance(cond.operand.operand, IdentCondition)
         assert cond.operand.operand.name == "inbound.resp.All-Cache"
 
     def test_not_bool_literal(self):
-        cond = self._first_condition(
-            'REMAP {\n    if !false {\n        set-debug();\n    }\n}'
-        )
+        cond = self._first_condition('REMAP {\n    if !false {\n        set-debug();\n    }\n}')
         assert isinstance(cond, NotOp)
         assert isinstance(cond.operand, BoolLiteral)
         assert cond.operand.value is False
@@ -412,8 +396,7 @@ class TestConditionExpressions:
         cond = self._first_condition(
             'REMAP {\n'
             '    if (inbound.req.X-A == "a" || inbound.req.X-B == "b") && inbound.req.X-C == "c" {\n'
-            '        set-debug();\n    }\n}'
-        )
+            '        set-debug();\n    }\n}')
         assert isinstance(cond, LogicalOp)
         assert cond.operator == "&&"
         assert isinstance(cond.left, LogicalOp)
@@ -428,8 +411,7 @@ class TestConditionExpressions:
         cond = self._first_condition(
             'REMAP {\n'
             '    if !(inbound.req.X-A == "x" || inbound.req.X-B == "y") && inbound.req.X-C == "z" {\n'
-            '        set-debug();\n    }\n}'
-        )
+            '        set-debug();\n    }\n}')
         assert isinstance(cond, LogicalOp)
         assert cond.operator == "&&"
         assert isinstance(cond.left, NotOp)
@@ -440,10 +422,9 @@ class TestConditionExpressions:
 
 
 class TestIfBlocks:
+
     def test_simple_if(self):
-        ast = _build(
-            'REMAP {\n    if true {\n        inbound.req.X = "y";\n    }\n}'
-        )
+        ast = _build('REMAP {\n    if true {\n        inbound.req.X = "y";\n    }\n}')
         ib = ast.body[0].body[0]
         assert isinstance(ib, IfBlock)
         assert len(ib.body) == 1
@@ -457,10 +438,11 @@ class TestIfBlocks:
         assert len(ib.else_body) == 1
 
     def test_if_elif_else(self):
-        src = ('SEND_RESPONSE {\n    if inbound.url.path == "foo" {\n'
-               '        inbound.resp.X = "f";\n    } elif inbound.url.path == "bar" {\n'
-               '        inbound.resp.X = "b";\n    } else {\n'
-               '        inbound.resp.X = "other";\n    }\n}')
+        src = (
+            'SEND_RESPONSE {\n    if inbound.url.path == "foo" {\n'
+            '        inbound.resp.X = "f";\n    } elif inbound.url.path == "bar" {\n'
+            '        inbound.resp.X = "b";\n    } else {\n'
+            '        inbound.resp.X = "other";\n    }\n}')
         ast = _build(src)
         ib = ast.body[0].body[0]
         assert isinstance(ib, IfBlock)
@@ -470,17 +452,19 @@ class TestIfBlocks:
         assert len(ib.else_body) == 1
 
     def test_multiple_elif(self):
-        src = ('SEND_RESPONSE {\n    if inbound.url.path == "a" {\n        set-debug();\n'
-               '    } elif inbound.url.path == "b" {\n        set-debug();\n'
-               '    } elif inbound.url.path == "c" {\n        set-debug();\n'
-               '    } else {\n        set-debug();\n    }\n}')
+        src = (
+            'SEND_RESPONSE {\n    if inbound.url.path == "a" {\n        set-debug();\n'
+            '    } elif inbound.url.path == "b" {\n        set-debug();\n'
+            '    } elif inbound.url.path == "c" {\n        set-debug();\n'
+            '    } else {\n        set-debug();\n    }\n}')
         ast = _build(src)
         ib = ast.body[0].body[0]
         assert len(ib.elif_branches) == 2
 
     def test_nested_if(self):
-        src = ('REMAP {\n    if inbound.req.X == "a" {\n'
-               '        if inbound.req.Y == "b" {\n            set-debug();\n        }\n    }\n}')
+        src = (
+            'REMAP {\n    if inbound.req.X == "a" {\n'
+            '        if inbound.req.Y == "b" {\n            set-debug();\n        }\n    }\n}')
         ast = _build(src)
         outer = ast.body[0].body[0]
         assert isinstance(outer, IfBlock)
@@ -488,9 +472,10 @@ class TestIfBlocks:
         assert isinstance(inner, IfBlock)
 
     def test_mixed_body(self):
-        src = ('REMAP {\n    inbound.req.X = "before";\n'
-               '    if true {\n        set-debug();\n    }\n'
-               '    inbound.req.Y = "after";\n}')
+        src = (
+            'REMAP {\n    inbound.req.X = "before";\n'
+            '    if true {\n        set-debug();\n    }\n'
+            '    inbound.req.Y = "after";\n}')
         ast = _build(src)
         body = ast.body[0].body
         assert len(body) == 3
@@ -501,37 +486,37 @@ class TestIfBlocks:
 
 class TestLineNumbers:
     SRC = (
-        "use test::helper\n"                                           # line 1
-        "VARS {\n"                                                     # line 2
-        "    flag: bool;\n"                                            # line 3
-        "}\n"                                                          # line 4
-        "procedure local::stamp($tag) {\n"                             # line 5
-        "    inbound.req.X-Stamp = $tag;\n"                            # line 6
-        "}\n"                                                          # line 7
-        "REMAP {\n"                                                    # line 8
-        '    inbound.req.X-Foo = "val";\n'                             # line 9
-        "    set-debug();\n"                                           # line 10
-        "    skip-remap;\n"                                            # line 11
-        '    if inbound.req.X-A == "a" {\n'                            # line 12
-        "        break;\n"                                             # line 13
-        '    } elif inbound.req.X-B == "b" {\n'                        # line 14
-        '        inbound.req.X = "elif";\n'                            # line 15
-        "    } else {\n"                                               # line 16
-        '        inbound.req.X = "else";\n'                            # line 17
-        "    }\n"                                                      # line 18
+        "use test::helper\n"  # line 1
+        "VARS {\n"  # line 2
+        "    flag: bool;\n"  # line 3
+        "}\n"  # line 4
+        "procedure local::stamp($tag) {\n"  # line 5
+        "    inbound.req.X-Stamp = $tag;\n"  # line 6
+        "}\n"  # line 7
+        "REMAP {\n"  # line 8
+        '    inbound.req.X-Foo = "val";\n'  # line 9
+        "    set-debug();\n"  # line 10
+        "    skip-remap;\n"  # line 11
+        '    if inbound.req.X-A == "a" {\n'  # line 12
+        "        break;\n"  # line 13
+        '    } elif inbound.req.X-B == "b" {\n'  # line 14
+        '        inbound.req.X = "elif";\n'  # line 15
+        "    } else {\n"  # line 16
+        '        inbound.req.X = "else";\n'  # line 17
+        "    }\n"  # line 18
         '    if inbound.req.X-C == "c" && inbound.req.X-D == "d" {\n'  # line 19
-        "        set-debug();\n"                                       # line 20
-        "    }\n"                                                      # line 21
-        "    if !inbound.resp.All-Cache {\n"                           # line 22
-        "        set-debug();\n"                                       # line 23
-        "    }\n"                                                      # line 24
-        "    if true {\n"                                              # line 25
-        "        set-debug();\n"                                       # line 26
-        "    }\n"                                                      # line 27
-        "    if inbound.resp.All-Cache {\n"                            # line 28
-        "        set-debug();\n"                                       # line 29
-        "    }\n"                                                      # line 30
-        "}\n"                                                          # line 31
+        "        set-debug();\n"  # line 20
+        "    }\n"  # line 21
+        "    if !inbound.resp.All-Cache {\n"  # line 22
+        "        set-debug();\n"  # line 23
+        "    }\n"  # line 24
+        "    if true {\n"  # line 25
+        "        set-debug();\n"  # line 26
+        "    }\n"  # line 27
+        "    if inbound.resp.All-Cache {\n"  # line 28
+        "        set-debug();\n"  # line 29
+        "    }\n"  # line 30
+        "}\n"  # line 31
     )
 
     def setup_method(self):
@@ -634,6 +619,7 @@ class TestLineNumbers:
 
 
 class TestRealConfigs:
+
     def test_nested_ifs_from_test_data(self):
         """Validates AST for tests/data/conds/nested-ifs.input.txt pattern."""
         src = '''VARS {

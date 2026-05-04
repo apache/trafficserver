@@ -73,7 +73,7 @@ class Target:
 @dataclass(frozen=True, kw_only=True)
 class Assignment(Node):
     target: Target
-    operator: str       # "=" or "+="
+    operator: str  # "=" or "+="
     value: ValueExpr
 
 
@@ -91,14 +91,14 @@ class Break(Node):
 @dataclass(frozen=True, kw_only=True)
 class Comparison(Node):
     left: IdentValue | FunctionCall
-    operator: str       # "==", "!=", ">", "<", "~", "!~", "in", "!in"
+    operator: str  # "==", "!=", ">", "<", "~", "!~", "in", "!in"
     right: ValueExpr | RegexValue | tuple[ValueExpr, ...]
     modifiers: tuple[str, ...]
 
 
 @dataclass(frozen=True, kw_only=True)
 class LogicalOp(Node):
-    operator: str       # "&&" or "||"
+    operator: str  # "&&" or "||"
     left: ConditionExpr
     right: ConditionExpr
 
