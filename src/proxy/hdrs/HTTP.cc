@@ -1525,6 +1525,9 @@ http_parse_status(const char *start, const char *end)
 
   while ((start != end) && isdigit(*start)) {
     status = (status * 10) + (*start++ - '0');
+    if (status > 999) {
+      return HTTPStatus::NONE;
+    }
   }
 
   return static_cast<HTTPStatus>(status);
