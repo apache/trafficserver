@@ -103,6 +103,10 @@ class ASTVisitor(hrw4uVisitor):
         for var_item in ctx.variables().variablesItem():
             if var_item.variableDecl() is not None:
                 decls.append(self._visit_var_decl(var_item.variableDecl()))
+            elif var_item.commentLine() is not None:
+                pass
+            else:
+                raise ValueError(f"Unhandled variablesItem alternative at line {var_item.start.line}")
         return VarSection(scope=scope, declarations=tuple(decls), line=ctx.start.line)
 
     def _visit_var_decl(self, ctx):
@@ -121,6 +125,10 @@ class ASTVisitor(hrw4uVisitor):
                 result.append(self._visit_statement(item.statement()))
             elif item.conditional() is not None:
                 result.append(self._visit_conditional(item.conditional()))
+            elif item.commentLine() is not None:
+                pass
+            else:
+                raise ValueError(f"Unhandled body item alternative at line {item.start.line}")
         return result
 
     def _visit_statement(self, ctx):
@@ -167,7 +175,7 @@ class ASTVisitor(hrw4uVisitor):
             return tuple(IPValue(raw=ip.getText()) for ip in ctx.iprange().ip())
         if ctx.paramRef():
             return ParamRef(raw=ctx.paramRef().IDENT().getText())
-        return IdentValue(raw=ctx.getText())
+        raise ValueError(f"Unhandled value alternative at line {ctx.start.line}")
 
     def _visit_conditional(self, ctx):
         if_stmt = ctx.ifStatement()
