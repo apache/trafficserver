@@ -37,8 +37,11 @@ from hrw4u.ast_nodes import (
     VarSection,
     UseDirective,
     ProcedureDecl,
-    Value,
-    ValueKind,
+    LiteralStringValue,
+    IdentValue,
+    IPValue,
+    ParamRef,
+    RegexValue,
 )
 
 
@@ -151,20 +154,20 @@ class ASTVisitor(hrw4uVisitor):
         if ctx.number is not None:
             return int(ctx.number.text)
         if ctx.str_ is not None:
-            return Value(raw=ctx.str_.text[1:-1], kind=ValueKind.STRING)
+            return LiteralStringValue(raw=ctx.str_.text[1:-1])
         if ctx.TRUE():
             return True
         if ctx.FALSE():
             return False
         if ctx.ident is not None:
-            return Value(raw=ctx.ident.text, kind=ValueKind.IDENT)
+            return IdentValue(raw=ctx.ident.text)
         if ctx.ip():
-            return Value(raw=ctx.ip().getText(), kind=ValueKind.IP)
+            return IPValue(raw=ctx.ip().getText())
         if ctx.iprange():
-            return tuple(Value(raw=ip.getText(), kind=ValueKind.IP) for ip in ctx.iprange().ip())
+            return tuple(IPValue(raw=ip.getText()) for ip in ctx.iprange().ip())
         if ctx.paramRef():
-            return Value(raw=ctx.paramRef().IDENT().getText(), kind=ValueKind.PARAM_REF)
-        return Value(raw=ctx.getText(), kind=ValueKind.IDENT)
+            return ParamRef(raw=ctx.paramRef().IDENT().getText())
+        return IdentValue(raw=ctx.getText())
 
     def _visit_conditional(self, ctx):
         if_stmt = ctx.ifStatement()
@@ -242,7 +245,7 @@ class ASTVisitor(hrw4uVisitor):
         line = ctx.start.line
         comp = ctx.comparable()
         if comp.ident is not None:
-            left = Value(raw=comp.ident.text, kind=ValueKind.IDENT)
+            left = IdentValue(raw=comp.ident.text)
         else:
             left = self._visit_function_call(comp.functionCall())
 
@@ -277,7 +280,7 @@ class ASTVisitor(hrw4uVisitor):
 
     def _extract_comparison_rhs(self, ctx, operator):
         if operator in ("~", "!~"):
-            return Value(raw=ctx.regex().getText()[1:-1], kind=ValueKind.REGEX)
+            return RegexValue(raw=ctx.regex().getText()[1:-1])
         if operator in ("in", "!in"):
             if ctx.set_():
                 return tuple(
@@ -285,7 +288,7 @@ class ASTVisitor(hrw4uVisitor):
                 )
             if ctx.iprange():
                 return tuple(
-                    Value(raw=ip.getText(), kind=ValueKind.IP) for ip in ctx.iprange().ip()
+                    IPValue(raw=ip.getText()) for ip in ctx.iprange().ip()
                 )
         if ctx.value():
             return self._extract_value(ctx.value())

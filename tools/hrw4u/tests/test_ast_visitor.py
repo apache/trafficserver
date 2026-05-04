@@ -19,7 +19,7 @@ from hrw4u.ast_nodes import (
     Target, Assignment, FunctionCall, Break, Section, HRW4UAST,
     Comparison, IfBlock, ElifBranch, BoolLiteral, NotOp, LogicalOp, IdentCondition,
     VarSection, VarDecl, UseDirective, ProcedureDecl, ProcParam,
-    Value, ValueKind,
+    LiteralStringValue, IdentValue, IPValue, ParamRef, RegexValue,
 )
 from utils import parse_input_text
 from hrw4u.ast_visitor import ASTVisitor
@@ -37,7 +37,7 @@ class TestAssignments:
         assert isinstance(a, Assignment)
         assert a.target == Target.from_dotted("inbound.req.X-Foo")
         assert a.operator == "="
-        assert a.value == Value(raw="test", kind=ValueKind.STRING)
+        assert a.value == LiteralStringValue(raw="test")
 
     def test_bool_value(self):
         ast = _build('SEND_RESPONSE {\n    http.cntl.TXN_DEBUG = true;\n}')
@@ -59,14 +59,14 @@ class TestAssignments:
         ast = _build('REMAP {\n    inbound.req.X-IP = 10.0.0.1;\n}')
         a = ast.body[0].body[0]
         assert isinstance(a, Assignment)
-        assert a.value == Value(raw="10.0.0.1", kind=ValueKind.IP)
+        assert a.value == IPValue(raw="10.0.0.1")
 
     def test_param_ref_value(self):
         src = 'procedure local::stamp($tag) {\n    inbound.req.X-Stamp = $tag;\n}\nREMAP {\n    set-debug();\n}'
         ast = _build(src)
         a = ast.body[0].body[0]
         assert isinstance(a, Assignment)
-        assert a.value == Value(raw="tag", kind=ValueKind.PARAM_REF)
+        assert a.value == ParamRef(raw="tag")
 
 
 class TestFunctionCalls:
@@ -81,7 +81,7 @@ class TestFunctionCalls:
         ast = _build('REMAP {\n    set-header("X-Foo", "bar");\n}')
         fc = ast.body[0].body[0]
         assert fc.name == "set-header"
-        assert fc.args == (Value(raw="X-Foo", kind=ValueKind.STRING), Value(raw="bar", kind=ValueKind.STRING))
+        assert fc.args == (LiteralStringValue(raw="X-Foo"), LiteralStringValue(raw="bar"))
 
     def test_standalone_operator(self):
         ast = _build('REMAP {\n    skip-remap;\n}')
@@ -206,9 +206,9 @@ class TestConditionExpressions:
             'REMAP {\n    if inbound.req.X-Foo == "bar" {\n        set-debug();\n    }\n}'
         )
         assert isinstance(cond, Comparison)
-        assert cond.left == Value(raw="inbound.req.X-Foo", kind=ValueKind.IDENT)
+        assert cond.left == IdentValue(raw="inbound.req.X-Foo")
         assert cond.operator == "=="
-        assert cond.right == Value(raw="bar", kind=ValueKind.STRING)
+        assert cond.right == LiteralStringValue(raw="bar")
         assert cond.modifiers == ()
 
     def test_regex_comparison(self):
@@ -217,8 +217,7 @@ class TestConditionExpressions:
         )
         assert isinstance(cond, Comparison)
         assert cond.operator == "~"
-        assert isinstance(cond.right, Value)
-        assert cond.right.kind == ValueKind.REGEX
+        assert isinstance(cond.right, RegexValue)
 
     def test_in_set(self):
         cond = self._first_condition(
@@ -226,7 +225,7 @@ class TestConditionExpressions:
         )
         assert isinstance(cond, Comparison)
         assert cond.operator == "in"
-        assert cond.right == (Value(raw="a", kind=ValueKind.STRING), Value(raw="b", kind=ValueKind.STRING))
+        assert cond.right == (LiteralStringValue(raw="a"), LiteralStringValue(raw="b"))
 
     def test_not_in_set(self):
         cond = self._first_condition(
@@ -241,7 +240,7 @@ class TestConditionExpressions:
         )
         assert isinstance(cond, Comparison)
         assert cond.operator == "in"
-        assert cond.right == (Value(raw="10.0.0.0/8", kind=ValueKind.IP),)
+        assert cond.right == (IPValue(raw="10.0.0.0/8"),)
 
     def test_modifiers(self):
         cond = self._first_condition(
@@ -302,7 +301,7 @@ class TestConditionExpressions:
         )
         assert isinstance(cond, FunctionCall)
         assert cond.name == "access"
-        assert cond.args == (Value(raw="/tmp/bar", kind=ValueKind.STRING),)
+        assert cond.args == (LiteralStringValue(raw="/tmp/bar"),)
 
     def test_not_tilde_comparison(self):
         cond = self._first_condition(
@@ -310,8 +309,7 @@ class TestConditionExpressions:
         )
         assert isinstance(cond, Comparison)
         assert cond.operator == "!~"
-        assert isinstance(cond.right, Value)
-        assert cond.right.kind == ValueKind.REGEX
+        assert isinstance(cond.right, RegexValue)
 
     def test_greater_than_comparison(self):
         cond = self._first_condition(
@@ -335,7 +333,7 @@ class TestConditionExpressions:
         )
         assert isinstance(cond, Comparison)
         assert cond.operator == "!="
-        assert cond.right == Value(raw="bar", kind=ValueKind.STRING)
+        assert cond.right == LiteralStringValue(raw="bar")
 
     def test_parenthesized_condition(self):
         cond = self._first_condition(
@@ -343,7 +341,7 @@ class TestConditionExpressions:
         )
         assert isinstance(cond, Comparison)
         assert cond.operator == "=="
-        assert cond.right == Value(raw="bar", kind=ValueKind.STRING)
+        assert cond.right == LiteralStringValue(raw="bar")
 
     def test_and_binds_tighter_than_or(self):
         # a || b && c  should parse as  a || (b && c)
@@ -355,11 +353,11 @@ class TestConditionExpressions:
         assert isinstance(cond, LogicalOp)
         assert cond.operator == "||"
         assert isinstance(cond.left, Comparison)
-        assert cond.left.left == Value(raw="inbound.req.X-A", kind=ValueKind.IDENT)
+        assert cond.left.left == IdentValue(raw="inbound.req.X-A")
         assert isinstance(cond.right, LogicalOp)
         assert cond.right.operator == "&&"
-        assert cond.right.left.left == Value(raw="inbound.req.X-B", kind=ValueKind.IDENT)
-        assert cond.right.right.left == Value(raw="inbound.req.X-C", kind=ValueKind.IDENT)
+        assert cond.right.left.left == IdentValue(raw="inbound.req.X-B")
+        assert cond.right.right.left == IdentValue(raw="inbound.req.X-C")
 
     def test_not_with_and(self):
         # !ident && comparison  should parse as  (!ident) && comparison
@@ -374,7 +372,7 @@ class TestConditionExpressions:
         assert isinstance(cond.left.operand, IdentCondition)
         assert cond.left.operand.name == "inbound.resp.All-Cache"
         assert isinstance(cond.right, Comparison)
-        assert cond.right.left == Value(raw="inbound.req.X-B", kind=ValueKind.IDENT)
+        assert cond.right.left == IdentValue(raw="inbound.req.X-B")
 
     def test_not_comparison_with_or(self):
         # !(a == "x") || b == "y"  should parse as  (!(a == "x")) || (b == "y")
@@ -387,10 +385,10 @@ class TestConditionExpressions:
         assert cond.operator == "||"
         assert isinstance(cond.left, NotOp)
         assert isinstance(cond.left.operand, Comparison)
-        assert cond.left.operand.left == Value(raw="inbound.req.X-A", kind=ValueKind.IDENT)
-        assert cond.left.operand.right == Value(raw="x", kind=ValueKind.STRING)
+        assert cond.left.operand.left == IdentValue(raw="inbound.req.X-A")
+        assert cond.left.operand.right == LiteralStringValue(raw="x")
         assert isinstance(cond.right, Comparison)
-        assert cond.right.left == Value(raw="inbound.req.X-B", kind=ValueKind.IDENT)
+        assert cond.right.left == IdentValue(raw="inbound.req.X-B")
 
     def test_double_negation(self):
         cond = self._first_condition(
@@ -420,10 +418,10 @@ class TestConditionExpressions:
         assert cond.operator == "&&"
         assert isinstance(cond.left, LogicalOp)
         assert cond.left.operator == "||"
-        assert cond.left.left.left == Value(raw="inbound.req.X-A", kind=ValueKind.IDENT)
-        assert cond.left.right.left == Value(raw="inbound.req.X-B", kind=ValueKind.IDENT)
+        assert cond.left.left.left == IdentValue(raw="inbound.req.X-A")
+        assert cond.left.right.left == IdentValue(raw="inbound.req.X-B")
         assert isinstance(cond.right, Comparison)
-        assert cond.right.left == Value(raw="inbound.req.X-C", kind=ValueKind.IDENT)
+        assert cond.right.left == IdentValue(raw="inbound.req.X-C")
 
     def test_nested_parens_with_not(self):
         # !(a == "x" || b == "y") && c == "z"
@@ -438,7 +436,7 @@ class TestConditionExpressions:
         assert isinstance(cond.left.operand, LogicalOp)
         assert cond.left.operand.operator == "||"
         assert isinstance(cond.right, Comparison)
-        assert cond.right.left == Value(raw="inbound.req.X-C", kind=ValueKind.IDENT)
+        assert cond.right.left == IdentValue(raw="inbound.req.X-C")
 
 
 class TestIfBlocks:
@@ -731,7 +729,7 @@ REMAP {
         cond = ast.body[0].body[0].condition
         assert isinstance(cond, Comparison)
         assert cond.operator == "in"
-        assert cond.right == (Value(raw="php", kind=ValueKind.STRING), Value(raw="php3", kind=ValueKind.STRING), Value(raw="php4", kind=ValueKind.STRING))
+        assert cond.right == (LiteralStringValue(raw="php"), LiteralStringValue(raw="php3"), LiteralStringValue(raw="php4"))
         assert cond.modifiers == ("EXT",)
 
     def test_debug_pattern_for_lint_rules(self):

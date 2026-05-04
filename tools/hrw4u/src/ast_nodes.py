@@ -18,22 +18,35 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from enum import Enum
 from typing import Union
 
 
-class ValueKind(Enum):
-    STRING = "string"
-    IDENT = "ident"
-    PARAM_REF = "param_ref"
-    IP = "ip"
-    REGEX = "regex"
+@dataclass(frozen=True, kw_only=True)
+class LiteralStringValue:
+    raw: str
 
 
 @dataclass(frozen=True, kw_only=True)
-class Value:
+class IdentValue:
     raw: str
-    kind: ValueKind
+
+
+@dataclass(frozen=True, kw_only=True)
+class IPValue:
+    raw: str
+
+
+@dataclass(frozen=True, kw_only=True)
+class ParamRef:
+    raw: str
+
+
+@dataclass(frozen=True, kw_only=True)
+class RegexValue:
+    raw: str
+
+
+ValueExpr = Union[LiteralStringValue, IdentValue, IPValue, ParamRef, int, bool, tuple[IPValue, ...]]
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -61,13 +74,13 @@ class Target:
 class Assignment(Node):
     target: Target
     operator: str       # "=" or "+="
-    value: Value | int | bool | tuple
+    value: ValueExpr
 
 
 @dataclass(frozen=True, kw_only=True)
 class FunctionCall(Node):
     name: str
-    args: tuple[Value | int | bool, ...]
+    args: tuple[ValueExpr, ...]
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -77,9 +90,9 @@ class Break(Node):
 
 @dataclass(frozen=True, kw_only=True)
 class Comparison(Node):
-    left: Value | FunctionCall
+    left: IdentValue | FunctionCall
     operator: str       # "==", "!=", ">", "<", "~", "!~", "in", "!in"
-    right: Value | int | bool | tuple
+    right: ValueExpr | RegexValue | tuple[ValueExpr, ...]
     modifiers: tuple[str, ...]
 
 
@@ -128,7 +141,7 @@ class Section(Node):
 @dataclass(frozen=True, kw_only=True)
 class ProcParam(Node):
     name: str
-    default: Value | int | bool | None
+    default: ValueExpr | None
 
 
 @dataclass(frozen=True, kw_only=True)
