@@ -81,6 +81,33 @@ display_errors(BasePrinter *printer, std::vector<ConfigReloadResponse::Error> co
     }
   }
 }
+
+/// Parse a single --directive (-D) argument "config_key.directive_key=value"
+/// and inject into configs[config_key]["_reload"][directive_key].
+/// Returns true on success, sets error_out on parse failure.
+bool
+parse_directive(std::string_view dir, YAML::Node &configs, std::string &error_out)
+{
+  auto dot = dir.find('.');
+  if (dot == std::string_view::npos || dot == 0) {
+    error_out = "Invalid directive format '" + std::string(dir) + "'. Expected: config_key.directive_key=value";
+    return false;
+  }
+
+  auto eq = dir.find('=', dot + 1);
+  if (eq == std::string_view::npos || eq == dot + 1) {
+    error_out = "Invalid directive format '" + std::string(dir) + "'. Expected: config_key.directive_key=value";
+    return false;
+  }
+
+  std::string config_key{dir.substr(0, dot)};
+  std::string directive_key{dir.substr(dot + 1, eq - dot - 1)};
+  std::string value{dir.substr(eq + 1)};
+
+  configs[config_key]["_reload"][directive_key] = value;
+  return true;
+}
+
 } // namespace
 
 BasePrinter::Options::FormatFlags
@@ -552,6 +579,27 @@ ConfigCommand::config_reload()
       }
     } catch (YAML::Exception const &ex) {
       _printer->write_output(std::string("Error: Invalid YAML data in '") + data_arg + "': " + ex.what());
+      App_Exit_Status_Code = CTRL_EX_ERROR;
+      return;
+    }
+  }
+
+  // Parse --directive (-D) arguments into configs[key]["_reload"][directive] = value
+  auto dir_args = get_parsed_arguments()->get("directive");
+  for (auto const &dir : dir_args) {
+    if (dir.empty()) {
+      continue;
+    }
+    if (dir[0] == '-') {
+      _printer->write_output("Error: '" + dir +
+                             "' looks like a flag, not a directive. "
+                             "Place -D as the last option on the command line.");
+      App_Exit_Status_Code = CTRL_EX_ERROR;
+      return;
+    }
+    std::string err;
+    if (!parse_directive(dir, configs, err)) {
+      _printer->write_output("Error: " + err);
       App_Exit_Status_Code = CTRL_EX_ERROR;
       return;
     }

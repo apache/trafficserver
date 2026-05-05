@@ -149,7 +149,8 @@ ConfigContext::add_dependent_ctx(std::string_view description)
     // child task will get the full content of the parent task
     // TODO: eventually we can have a "key" passed so child module
     // only gets their node of interest.
-    child._supplied_yaml = _supplied_yaml;
+    child._supplied_yaml     = _supplied_yaml;
+    child._reload_directives = _reload_directives;
     return child;
   }
   return {};
@@ -165,6 +166,18 @@ YAML::Node
 ConfigContext::supplied_yaml() const
 {
   return _supplied_yaml;
+}
+
+void
+ConfigContext::set_reload_directives(YAML::Node node)
+{
+  _reload_directives = node;
+}
+
+YAML::Node
+ConfigContext::reload_directives() const
+{
+  return _reload_directives;
 }
 
 namespace config

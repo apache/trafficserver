@@ -431,15 +431,17 @@ ConfigRegistry::execute_reload(const std::string &key)
 {
   Dbg(dbg_ctl, "Executing reload for config '%s'", key.c_str());
 
-  // Single lock for both lookups: passed config (from RPC) and registry entry
   YAML::Node passed_config;
+  bool       has_passed_config{false};
   Entry      entry_copy;
   {
-    std::shared_lock lock(_mutex);
+    std::unique_lock lock(_mutex);
 
     if (auto pc_it = _passed_configs.find(key); pc_it != _passed_configs.end()) {
-      passed_config = pc_it->second;
-      Dbg(dbg_ctl, "Retrieved passed config for '%s'", key.c_str());
+      passed_config     = pc_it->second;
+      has_passed_config = true;
+      _passed_configs.erase(pc_it);
+      Dbg(dbg_ctl, "Retrieved and consumed passed config for '%s'", key.c_str());
     }
 
     if (auto it = _entries.find(key); it != _entries.end()) {
@@ -455,14 +457,31 @@ ConfigRegistry::execute_reload(const std::string &key)
   // Create context with subtask tracking
   // For rpc reload: use key as description, no filename (source: rpc)
   // For file reload: use key as description, filename indicates source: file
-  std::string filename = passed_config.IsDefined() ? "" : entry_copy.resolve_filename();
+  std::string filename = has_passed_config ? "" : entry_copy.resolve_filename();
   auto        ctx      = ReloadCoordinator::Get_Instance().create_config_context(entry_copy.key, entry_copy.key, filename);
   ctx.in_progress();
 
-  if (passed_config.IsDefined()) {
-    // Passed config mode: store YAML node directly for handler to use via supplied_yaml()
+  if (has_passed_config) {
     Dbg(dbg_ctl, "Config '%s' reloading from rpc-supplied content", entry_copy.key.c_str());
-    ctx.set_supplied_yaml(passed_config);
+
+    // Extract _reload directives before passing content to the handler.
+    // This keeps supplied_yaml() clean (pure config data) and provides
+    // reload_directives() as a separate accessor for operational parameters.
+    if (passed_config.IsMap() && passed_config["_reload"]) {
+      auto directives = passed_config["_reload"];
+      if (!directives.IsMap()) {
+        Warning("Config '%s': _reload must be a YAML map, ignoring directives", entry_copy.key.c_str());
+      } else {
+        Dbg(dbg_ctl, "Config '%s' has reload directives", entry_copy.key.c_str());
+        ctx.set_reload_directives(directives);
+      }
+      passed_config.remove("_reload");
+    }
+
+    // After stripping _reload, pass remaining content (if any) as supplied_yaml
+    if (passed_config.size() > 0) {
+      ctx.set_supplied_yaml(passed_config);
+    }
   } else {
     Dbg(dbg_ctl, "Config '%s' reloading from file '%s'", entry_copy.key.c_str(), filename.c_str());
   }

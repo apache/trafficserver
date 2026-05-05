@@ -266,8 +266,90 @@ supplied_yaml()
    Returns the YAML node supplied via the RPC ``-d`` flag or ``configs`` parameter. If no inline
    content was provided, the returned node is undefined (``operator bool()`` returns ``false``).
 
+   The framework strips the reserved ``_reload`` key from the supplied YAML before delivering it
+   to the handler, so ``supplied_yaml()`` always contains pure config data.
+
+reload_directives()
+   Returns the YAML map extracted from the ``_reload`` key in the RPC-supplied content. If no
+   directives were provided, the returned node is Undefined (``operator bool()`` returns ``false``).
+
+   Directives are operational parameters that modify **how** the handler performs the reload —
+   they are distinct from config **content**. Common uses include scoping a reload to a single
+   entry, enabling a dry-run mode, or passing a version constraint.
+
+   On the wire, directives are nested under ``_reload`` inside the handler's ``configs`` node:
+
+   .. code-block:: json
+
+      {
+          "configs": {
+              "myconfig": {
+                  "_reload": { "id": "foo", "dry_run": "true" },
+                  "rules": ["rule1", "rule2"]
+              }
+          }
+      }
+
+   The framework extracts ``_reload`` before the handler runs, so:
+
+   - ``reload_directives()`` returns ``{ "id": "foo", "dry_run": "true" }``
+   - ``supplied_yaml()`` returns the remaining content (without ``_reload``)
+   - If ``_reload`` was the only key, ``supplied_yaml()`` is undefined
+
+   Directives and content can coexist. The handler decides how to combine them — the framework
+   delivers both without interpretation.
+
+   **Recommended handler pattern:**
+
+   .. code-block:: cpp
+
+      void MyConfig::reconfigure(ConfigContext ctx) {
+          ctx.in_progress();
+
+          if (auto directives = ctx.reload_directives()) {
+              if (auto id_node = directives["id"]; id_node.IsDefined()) {
+                  std::string id = id_node.as<std::string>();
+                  if (!reload_single_entry(id)) {
+                      ctx.fail("Unknown entry: " + id);
+                      return;
+                  }
+                  ctx.complete("Reloaded entry: " + id);
+                  return;
+              }
+          }
+
+          if (auto yaml = ctx.supplied_yaml()) {
+              if (!load_from_yaml(yaml)) {
+                  ctx.fail("Invalid inline content");
+                  return;
+              }
+              ctx.complete("Loaded from inline content");
+              return;
+          }
+
+          if (!load_from_file(config_filename)) {
+              ctx.fail("Failed to parse " + config_filename);
+              return;
+          }
+          ctx.complete("Loaded from file");
+      }
+
+   From :program:`traffic_ctl`, directives are passed via ``--directive`` (``-D``):
+
+   .. code-block:: bash
+
+      $ traffic_ctl config reload -D myconfig.id=foo
+
+   See the ``--directive`` option in :ref:`traffic_ctl <traffic_ctl_jsonrpc>` for details.
+
+   .. note::
+
+      Directive values are strings on the wire (the JSONRPC transport serializes all values as
+      double-quoted strings). Handlers use yaml-cpp's ``as<T>()`` to interpret them as needed.
+
 add_dependent_ctx(description)
    Create a child sub-task. The parent aggregates status from all its children.
+   Child contexts inherit both ``supplied_yaml()`` and ``reload_directives()`` from the parent.
 
 All methods support ``swoc::bwprint`` format strings:
 

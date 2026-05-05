@@ -414,6 +414,58 @@ Display the current value of a configuration record.
          will return an error for the corresponding key. The JSONRPC response will contain
          per-key error details.
 
+   .. option:: --directive, -D <config_key.directive_key=value>
+
+      Pass a reload directive to a specific config handler. Directives are operational parameters
+      that modify how the handler performs the reload — for example, scoping a reload to a single
+      entry or enabling a dry-run mode. They are distinct from config content (``-d``).
+
+      The format is ``config_key.directive_key=value``, parsed by splitting on the first ``.``
+      and the first ``=``:
+
+      - ``config_key`` — the registry key (e.g. ``ip_allow``, ``sni``)
+      - ``directive_key`` — the directive name understood by that handler
+      - ``value`` — the directive value (always passed as a string on the wire)
+
+      Multiple directives are passed as space-separated values after a single ``-D``:
+
+      .. code-block:: bash
+
+         # Single directive
+         $ traffic_ctl config reload -D myconfig.id=foo
+
+         # Multiple directives for the same handler
+         $ traffic_ctl config reload -D myconfig.id=foo myconfig.dry_run=true
+
+         # Directives for different handlers in the same reload
+         $ traffic_ctl config reload -D myconfig.id=foo sni.fqdn=example.com
+
+      On the wire, ``-D myconfig.id=foo`` translates to:
+
+      .. code-block:: json
+
+         { "configs": { "myconfig": { "_reload": { "id": "foo" } } } }
+
+      For complex or nested directive values, use ``-d`` with full YAML instead:
+
+      .. code-block:: bash
+
+         $ traffic_ctl config reload -d 'myconfig: { _reload: { id: foo, options: { strict: true } } }'
+
+      .. note::
+
+         ``-D`` uses variable-argument parsing and must appear as the **last option**
+         on the command line. Any flags placed after ``-D`` will be consumed as directive
+         values. ``-D`` and ``-d`` cannot be combined in the same invocation due to this
+         same constraint. Use ``-d`` with full YAML when you need both directives and
+         inline content in a single reload request.
+
+      .. note::
+
+         Available directives depend on the handler — consult each config's documentation for
+         supported directive keys. Directive values are strings on the wire; handlers use
+         yaml-cpp's ``as<T>()`` to interpret them as needed.
+
    .. option:: --force, -F
 
       Force a new reload even if one is already in progress. Without this flag, the server rejects

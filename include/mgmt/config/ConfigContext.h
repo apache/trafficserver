@@ -173,19 +173,35 @@ public:
   [[nodiscard]] ConfigContext add_dependent_ctx(std::string_view description = "");
 
   /// Get supplied YAML node (for RPC-based reloads).
-  /// A default-constructed YAML::Node is Undefined (operator bool() == false).
+  /// Returns Undefined when no content was provided (operator bool() == false).
   /// @code
   ///   if (auto yaml = ctx.supplied_yaml()) { /* use yaml node */ }
   /// @endcode
   /// @return copy of the supplied YAML node (cheap — YAML::Node is internally reference-counted).
   [[nodiscard]] YAML::Node supplied_yaml() const;
 
+  /// Get reload directives extracted from the _reload key.
+  /// Directives are operational parameters that modify how the handler performs
+  /// the reload (e.g. scope to a single entry, dry-run) — distinct from config content.
+  /// The framework extracts _reload from the supplied node before passing content
+  /// to the handler, so supplied_yaml() never contains _reload.
+  /// Returns Undefined when no directives were provided (operator bool() == false).
+  /// @code
+  ///   if (auto directives = ctx.reload_directives()) { /* use directives */ }
+  /// @endcode
+  /// @return copy of the directives YAML node (cheap — YAML::Node is internally reference-counted).
+  [[nodiscard]] YAML::Node reload_directives() const;
+
 private:
   /// Set supplied YAML node. Only ConfigRegistry should call this during reload setup.
   void set_supplied_yaml(YAML::Node node);
 
+  /// Set reload directives. Only ConfigRegistry should call this during reload setup.
+  void set_reload_directives(YAML::Node node);
+
   std::weak_ptr<ConfigReloadTask> _task;
-  YAML::Node                      _supplied_yaml; ///< for no content, this will just be empty
+  YAML::Node                      _supplied_yaml{YAML::NodeType::Undefined};
+  YAML::Node                      _reload_directives{YAML::NodeType::Undefined};
 
   friend class ReloadCoordinator;
   friend class config::ConfigRegistry;
