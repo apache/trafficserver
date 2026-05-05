@@ -23,9 +23,6 @@
 #include <string>
 #include <map>
 #include <numeric>
-#if __has_include(<alloca.h>)
-#include <alloca.h>
-#endif
 
 #include <openssl/ssl.h>
 
@@ -36,6 +33,8 @@
 #include <swoc/ArenaWriter.h>
 #include <swoc/swoc_meta.h>
 
+#include "tscore/ink_config.h"
+#include "tsutil/LocalBuffer.h"
 #include "txn_box/ts_util.h"
 
 using swoc::BufferWriter;
@@ -57,6 +56,9 @@ DbgCtl txn_box_dbg_ctl{DEBUG_TAG};
 namespace ts
 {
 namespace swoc = ::swoc; // Import to avoid global naming weirdness.
+
+static constexpr size_t HOST_FIELD_LOCAL_BUFFER_SIZE = TS_MAX_HOST_NAME_LEN;
+
 /* ------------------------------------------------------------------------------------ */
 
 const swoc::Lexicon<TSRecordDataType> TSRecordDataTypeNames{
@@ -503,8 +505,10 @@ ts::HttpRequest::host_set(swoc::TextView const &host)
     auto     text = field.value();
     TextView host_token, port_token;
     if (swoc::IPEndpoint::tokenize(text, &host_token, &port_token)) {
-      size_t                  n = host.size() + 1 + port_token.size();
-      swoc::FixedBufferWriter w{static_cast<char *>(alloca(n)), n};
+      size_t n = host.size() + 1 + port_token.size();
+
+      ts::LocalBuffer<char, HOST_FIELD_LOCAL_BUFFER_SIZE> buffer(n);
+      swoc::FixedBufferWriter                             w{buffer.data(), n};
       if (port_token.size()) {
         w.print("{}:{}", host, port_token);
       } else {
@@ -532,8 +536,10 @@ ts::HttpRequest::port_set(in_port_t port)
     auto     text = field.value();
     TextView host_token, port_token;
     if (swoc::IPEndpoint::tokenize(text, &host_token, &port_token)) {
-      size_t                  n = host_token.size() + 1 + std::numeric_limits<in_port_t>::max_digits10;
-      swoc::FixedBufferWriter w{static_cast<char *>(alloca(n)), n};
+      size_t n = host_token.size() + 1 + std::numeric_limits<in_port_t>::digits10 + 1;
+
+      ts::LocalBuffer<char, HOST_FIELD_LOCAL_BUFFER_SIZE> buffer(n);
+      swoc::FixedBufferWriter                             w{buffer.data(), n};
       w.write(host_token);
       if (port > 0) {
         w.write(':');

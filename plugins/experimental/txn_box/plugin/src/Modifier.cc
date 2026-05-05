@@ -25,11 +25,14 @@
 #include "txn_box/Config.h"
 #include "txn_box/Comparison.h"
 #include "txn_box/yaml_util.h"
+#include "tsutil/LocalBuffer.h"
 
 using swoc::Errata;
 using swoc::Rv;
 using swoc::TextView;
 using namespace swoc::literals;
+
+static constexpr size_t FILTER_LIST_LOCAL_BUFFER_SIZE = 32;
 
 Errata
 Modifier::define(swoc::TextView name, Modifier::Worker const &f)
@@ -430,10 +433,10 @@ Mod_filter::operator()(Context &ctx, Feature &feature)
 {
   Feature zret{};
   if (feature.is_list()) {
-    auto                    src    = std::get<IndexFor(TUPLE)>(feature);
-    auto                    farray = static_cast<Feature *>(alloca(sizeof(Feature) * src.count()));
-    feature_type_for<TUPLE> dst{farray, src.count()};
-    unsigned                dst_idx = 0;
+    auto                                                    src = std::get<IndexFor(TUPLE)>(feature);
+    ts::LocalBuffer<Feature, FILTER_LIST_LOCAL_BUFFER_SIZE> farray(src.count());
+    feature_type_for<TUPLE>                                 dst     = {farray.data(), src.count()};
+    unsigned                                                dst_idx = 0;
     for (Feature f = feature; !is_nil(f); f = cdr(f)) {
       Feature item   = car(f);
       auto    c      = _cases(ctx, item);
