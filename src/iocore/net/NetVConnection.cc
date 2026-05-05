@@ -33,10 +33,19 @@
 #include "iocore/net/NetVConnection.h"
 #include "iocore/eventsystem/IOBuffer.h"
 #include "tsutil/DbgCtl.h"
+#include "tsutil/LocalBuffer.h"
 #include <swoc/TextView.h>
+#include <algorithm>
 
 namespace
 {
+
+// 1024 bytes should be more than enough in the vast majority of
+// circumstances. proxy.config.proxy_protocol.max_header_size defaults
+// to 109 bytes. If somehow this is exceeded, LocalBuffer will allocate
+// space on the heap.
+static constexpr size_t PROXY_PROTOCOL_LOCAL_BUFFER_SIZE = 1024;
+
 DbgCtl dbg_ctl_ssl{"ssl"};
 
 } // end anonymous namespace
@@ -61,9 +70,9 @@ NetVConnection::has_proxy_protocol(IOBufferReader *reader, int max_header_size)
     return false;
   }
 
-  int  bufsize = max_header_size;
-  char buf[bufsize];
-  tv.assign(buf, reader->memcpy(buf, bufsize, 0));
+  auto const                                              bufsize = std::min<int64_t>(max_header_size, reader->read_avail());
+  ts::LocalBuffer<char, PROXY_PROTOCOL_LOCAL_BUFFER_SIZE> buf(static_cast<size_t>(bufsize));
+  tv.assign(buf.data(), reader->memcpy(buf.data(), bufsize, 0));
 
   size_t len = proxy_protocol_parse(&this->pp_info, tv);
 
