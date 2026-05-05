@@ -92,8 +92,8 @@ extern "C" int plock(int);
 #include "iocore/eventsystem/RecProcess.h"
 #include "proxy/Transform.h"
 #include "iocore/eventsystem/ConfigProcessor.h"
+#include "mgmt/config/ConfigContextDiags.h"
 #include "mgmt/config/ConfigRegistry.h"
-#include "mgmt/config/ConfigContext.h"
 #include "proxy/http/HttpProxyServerMain.h"
 #include "proxy/http/HttpBodyFactory.h"
 #include "proxy/ProxySession.h"
@@ -775,11 +775,11 @@ register_config_files()
       } else {
         ctx.log("{}", zret);
         if (zret.severity() >= ERRATA_ERROR) {
-          ctx.fail("Failed to reload records.yaml");
+          CfgLoadFail(ctx, "Failed to reload %s", ts::filename::RECORDS);
           return;
         }
       }
-      ctx.complete();
+      CfgLoadComplete(ctx, "%s finished loading", ts::filename::RECORDS);
     },
     ConfigSource::FileOnly);
 

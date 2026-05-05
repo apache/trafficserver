@@ -308,7 +308,7 @@ dot_fill(int width)
 // @param content_width visual columns available for icon+name+dots+duration (shrinks per nesting)
 void
 print_task_tree(const ConfigReloadResponse::ReloadInfo &f, bool full_report, const std::string &prefix,
-                const std::string &child_prefix, int content_width = 55)
+                const std::string &child_prefix, DiagsLevel min_level = DL_Undefined, int content_width = 55)
 {
   std::string fname;
   if (f.filename.empty() || f.filename == "<none>") {
@@ -348,8 +348,21 @@ print_task_tree(const ConfigReloadResponse::ReloadInfo &f, bool full_report, con
   // Log lines: indented under the task, with tree continuation line if children follow.
   if (full_report && !f.logs.empty()) {
     std::string log_pfx = has_children ? (child_prefix + "\xe2\x94\x82  ") : (child_prefix + "   ");
-    for (const auto &log : f.logs) {
-      std::cout << log_pfx << log << '\n';
+    for (const auto &entry : f.logs) {
+      if (min_level != DL_Undefined && entry.level != DL_Undefined && entry.level < min_level) {
+        continue;
+      }
+      std::cout << log_pfx;
+      if (entry.level != DL_Undefined) {
+        // Indexed by DiagsLevel enum. In practice only [Dbg], [Note], [Warn], [Err] appear
+        // in task logs — Fatal/Alert/Emergency terminate the process before any task completes.
+        static constexpr const char *severity_tags[] = {
+          "[Diag]  ", "[Dbg]   ", "[Stat]  ", "[Note]  ", "[Warn]  ", "[Err]   ", "[Fatal] ", "[Alert] ", "[Emrg]  ",
+        };
+        int idx = std::min(std::max(static_cast<int>(entry.level), 0), static_cast<int>(DL_Emergency));
+        std::cout << severity_tags[idx];
+      }
+      std::cout << entry.text << '\n';
     }
   }
 
@@ -358,7 +371,7 @@ print_task_tree(const ConfigReloadResponse::ReloadInfo &f, bool full_report, con
     bool        is_last          = (i == f.sub_tasks.size() - 1);
     std::string sub_prefix       = child_prefix + (is_last ? "\xe2\x94\x94\xe2\x94\x80 " : "\xe2\x94\x9c\xe2\x94\x80 ");
     std::string sub_child_prefix = child_prefix + (is_last ? "   " : "\xe2\x94\x82  ");
-    print_task_tree(f.sub_tasks[i], full_report, sub_prefix, sub_child_prefix, content_width - 3);
+    print_task_tree(f.sub_tasks[i], full_report, sub_prefix, sub_child_prefix, min_level, content_width - 3);
   }
 }
 
@@ -454,7 +467,7 @@ ConfigReloadPrinter::print_reload_report(const ConfigReloadResponse::ReloadInfo 
   }
   const std::string base_prefix("   ");
   for (const auto &sub : info.sub_tasks) {
-    print_task_tree(sub, full_report, base_prefix, base_prefix);
+    print_task_tree(sub, full_report, base_prefix, base_prefix, _min_level);
   }
 }
 

@@ -34,6 +34,7 @@
 #include "SSLSessionCache.h"
 #include "iocore/eventsystem/ConfigProcessor.h"
 #include "iocore/net/YamlSNIConfig.h"
+#include "mgmt/config/ConfigContext.h"
 
 #include <openssl/rand.h>
 #include <atomic>
@@ -155,7 +156,7 @@ struct SSLConfigParams : public ConfigInfo {
 
   void cleanupCTXTable();
 
-  void initialize();
+  void initialize(ConfigContext ctx = {});
   void cleanup();
   void reset();
   void SSLConfigInit(swoc::IPRangeSet *global);
@@ -212,7 +213,7 @@ struct SSLTicketParams : public ConfigInfo {
   ssl_ticket_key_block *default_global_keyblock = nullptr;
   time_t                load_time               = 0;
   char                 *ticket_key_filename     = nullptr;
-  bool                  LoadTicket(bool &nochange);
+  bool                  LoadTicket(bool &nochange, ConfigContext ctx = {});
   bool                  LoadTicketData(char *ticket_data, int ticket_data_len);
   void                  cleanup();
 

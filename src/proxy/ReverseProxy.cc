@@ -32,6 +32,7 @@
 #include <dlfcn.h>
 #include "iocore/cache/Cache.h"
 #include "proxy/ReverseProxy.h"
+#include "mgmt/config/ConfigContextDiags.h"
 #include "mgmt/config/ConfigRegistry.h"
 #include "tscore/MatcherUtils.h"
 #include "tscore/Tokenizer.h"
@@ -159,16 +160,17 @@ bool
 reloadUrlRewrite(ConfigContext ctx)
 {
   std::string msg_buffer;
+
   msg_buffer.reserve(1024);
   UrlRewrite *newTable, *oldTable;
 
-  Note("%s loading (checking first) ...", ts::filename::REMAP_YAML);
-  Note("%s loading ...", ts::filename::REMAP);
+  CfgLoadLog(ctx, DL_Note, "%s loading (checking first) ...", ts::filename::REMAP_YAML);
+  CfgLoadLog(ctx, DL_Note, "%s loading ...", ts::filename::REMAP);
   Dbg(dbg_ctl_url_rewrite, "%s updated, reloading...", ts::filename::REMAP_YAML);
   Dbg(dbg_ctl_url_rewrite, "%s updated, reloading...", ts::filename::REMAP);
   newTable = new UrlRewrite();
 
-  bool status  = newTable->load();
+  bool status  = newTable->load(ctx);
   bool is_yaml = (newTable->is_remap_yaml());
 
   if (status) {
@@ -186,16 +188,14 @@ reloadUrlRewrite(ConfigContext ctx)
     oldTable->release();
 
     Dbg(dbg_ctl_url_rewrite, "%s", msg_buffer.c_str());
-    Note("%s", msg_buffer.c_str());
-    ctx.complete(msg_buffer);
+    CfgLoadComplete(ctx, "%s finished loading", is_yaml ? ts::filename::REMAP_YAML : ts::filename::REMAP);
     return true;
   } else {
     swoc::bwprint(msg_buffer, "{} failed to load", is_yaml ? ts::filename::REMAP_YAML : ts::filename::REMAP);
 
     delete newTable;
     Dbg(dbg_ctl_url_rewrite, "%s", msg_buffer.c_str());
-    Error("%s", msg_buffer.c_str());
-    ctx.fail(msg_buffer);
+    CfgLoadFail(ctx, "%s failed to load", is_yaml ? ts::filename::REMAP_YAML : ts::filename::REMAP);
     return false;
   }
 }

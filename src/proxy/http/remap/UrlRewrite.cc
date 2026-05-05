@@ -25,6 +25,7 @@
 #include "proxy/http/remap/UrlRewrite.h"
 #include "proxy/http/remap/RemapYamlConfig.h"
 #include "iocore/eventsystem/ConfigProcessor.h"
+#include "mgmt/config/ConfigContextDiags.h"
 #include "proxy/ReverseProxy.h"
 #include "tscore/Layout.h"
 #include "tscore/Filenames.h"
@@ -76,7 +77,7 @@ UrlRewrite::get_acl_behavior_policy(ACLBehaviorPolicy &policy)
 }
 
 bool
-UrlRewrite::load()
+UrlRewrite::load(ConfigContext ctx)
 {
   ats_scoped_str config_file_path;
 
@@ -85,13 +86,12 @@ UrlRewrite::load()
   this->_remap_yaml = true;
 
   if (!config_file_path || !swoc::file::exists(swoc::file::path(config_file_path))) {
-    Dbg(dbg_ctl_url_rewrite, "%s failed to load, fall back to %s", ts::filename::REMAP_YAML, ts::filename::REMAP);
-    Note("%s failed to load, fall back to %s", ts::filename::REMAP_YAML, ts::filename::REMAP);
+    CfgLoadLog(ctx, DL_Note, "%s failed to load, fall back to %s", ts::filename::REMAP_YAML, ts::filename::REMAP);
     // Fall back to remap.config if remap.yaml not found
     this->_remap_yaml = false;
     config_file_path  = RecConfigReadConfigPath("proxy.config.url_remap.filename", ts::filename::REMAP);
     if (!config_file_path) {
-      Warning("%s Unable to locate %s. No remappings in effect", modulePrefix, ts::filename::REMAP);
+      CfgLoadLog(ctx, DL_Warning, "%s Unable to locate %s. No remappings in effect", modulePrefix, ts::filename::REMAP);
       return false;
     }
   }
@@ -101,7 +101,7 @@ UrlRewrite::load()
     this->ts_name = ats_stringdup(rec_str);
   }
   if (this->ts_name == nullptr) {
-    Warning("%s Unable to determine proxy name.  Incorrect redirects could be generated", modulePrefix);
+    CfgLoadLog(ctx, DL_Warning, "%s Unable to determine proxy name.  Incorrect redirects could be generated", modulePrefix);
     this->ts_name = ats_strdup("");
   }
 
@@ -110,7 +110,7 @@ UrlRewrite::load()
     this->http_default_redirect_url = ats_stringdup(rec_str);
   }
   if (this->http_default_redirect_url == nullptr) {
-    Warning("%s Unable to determine default redirect url for \"referer\" filter.", modulePrefix);
+    CfgLoadLog(ctx, DL_Warning, "%s Unable to determine default redirect url for \"referer\" filter.", modulePrefix);
     this->http_default_redirect_url = ats_strdup("http://www.apache.org");
   }
 
@@ -130,7 +130,7 @@ UrlRewrite::load()
     fs::file_status status       = fs::status(compilerPath, ec);
 
     if (ec || !swoc::file::is_regular_file(status)) {
-      Error("Configured plugin compiler path '%s' is not a regular file", buf);
+      CfgLoadFail(ctx, "Configured plugin compiler path '%s' is not a regular file", buf);
       return false;
     } else {
       // This also adds the configuration directory (etc/trafficserver) to find Cripts etc.
@@ -143,7 +143,7 @@ UrlRewrite::load()
   Dbg(dbg_ctl_url_rewrite_regex, "strategyFactory file: %s", sf.c_str());
   strategyFactory = new NextHopStrategyFactory(sf.c_str());
 
-  if (TS_SUCCESS == this->BuildTable(config_file_path)) {
+  if (TS_SUCCESS == this->BuildTable(config_file_path, ctx)) {
     int n_rules = this->rule_count(); // Minimum # of rules to be considered a valid configuration.
     int required_rules;
     required_rules = RecGetRecordInt("proxy.config.url_remap.min_rules_required").value_or(0);
@@ -154,10 +154,11 @@ UrlRewrite::load()
         Print();
       }
     } else {
-      Warning("%s %d rules defined but %d rules required, configuration is invalid.", modulePrefix, n_rules, required_rules);
+      CfgLoadLog(ctx, DL_Warning, "%s %d rules defined but %d rules required, configuration is invalid.", modulePrefix, n_rules,
+                 required_rules);
     }
   } else {
-    Warning("something failed during BuildTable() -- check your remap plugins!");
+    CfgLoadLog(ctx, DL_Warning, "something failed during BuildTable() -- check your remap plugins!");
   }
 
   // ACL Matching Policy
@@ -816,7 +817,7 @@ UrlRewrite::InsertForwardMapping(mapping_type maptype, url_mapping *mapping, con
 
 */
 int
-UrlRewrite::BuildTable(const char *path)
+UrlRewrite::BuildTable(const char *path, ConfigContext ctx)
 {
   ink_assert(forward_mappings.empty());
   ink_assert(reverse_mappings.empty());
@@ -837,9 +838,9 @@ UrlRewrite::BuildTable(const char *path)
 
   bool parse_success;
   if (is_remap_yaml()) {
-    parse_success = remap_parse_yaml(path, this);
+    parse_success = remap_parse_yaml(path, this, ctx);
   } else {
-    parse_success = remap_parse_config(path, this);
+    parse_success = remap_parse_config(path, this, ctx);
   }
 
   if (!parse_success) {

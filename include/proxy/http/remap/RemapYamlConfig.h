@@ -30,6 +30,7 @@
 #include <yaml-cpp/yaml.h>
 
 #include "swoc/Errata.h"
+#include "mgmt/config/ConfigContext.h"
 #include "proxy/http/remap/RemapConfig.h"
 #include "proxy/hdrs/URL.h"
 
@@ -68,6 +69,6 @@ swoc::Errata parse_yaml_include_directive(const std::string &include_path, BUILD
 swoc::Errata parse_yaml_remap_rule(const YAML::Node &node, BUILD_TABLE_INFO *bti);
 
 // Parse remap YAML node
-bool remap_parse_yaml_bti(const char *path, BUILD_TABLE_INFO *bti);
+bool remap_parse_yaml_bti(const char *path, BUILD_TABLE_INFO *bti, ConfigContext ctx = {});
 
-bool remap_parse_yaml(const char *path, UrlRewrite *rewrite);
+bool remap_parse_yaml(const char *path, UrlRewrite *rewrite, ConfigContext ctx = {});

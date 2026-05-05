@@ -1942,7 +1942,8 @@ SSLMultiCertConfigLoader::_load_items(SSLCertLookup *lookup, config::SSLMultiCer
     if (sslMultiCertSettings->cert || sslMultiCertSettings->opt == SSLCertContextOption::OPT_TUNNEL) {
       if (!this->_store_ssl_ctx(lookup, sslMultiCertSettings)) {
         std::lock_guard<std::mutex> lock(_loader_mutex);
-        errata.note(ERRATA_ERROR, "Failed to load certificate at item {}", item_num);
+        errata.note(ERRATA_ERROR, "Failed to load certificate '{}' at item {}",
+                    sslMultiCertSettings->cert ? sslMultiCertSettings->cert : "(unnamed)", item_num);
       }
     } else {
       std::lock_guard<std::mutex> lock(_loader_mutex);

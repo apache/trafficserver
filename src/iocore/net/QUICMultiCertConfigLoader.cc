@@ -25,6 +25,7 @@
 #include "P_SSLConfig.h"
 #include "iocore/net/QUICMultiCertConfigLoader.h"
 #include "iocore/net/quic/QUICConfig.h"
+#include "mgmt/config/ConfigContextDiags.h"
 
 int QUICCertConfig::_config_id = 0;
 
@@ -44,6 +45,8 @@ QUICCertConfig::reconfigure(ConfigContext ctx)
   SSLConfig::scoped_config params;
   SSLCertLookup           *lookup = new SSLCertLookup();
 
+  CfgLoadInProgress(ctx, "(quic) %s loading ...", params->configFilePath);
+
   QUICMultiCertConfigLoader loader(params);
   auto                      errata = loader.load(lookup, _config_id == 0);
   if (!lookup->is_valid || (errata.has_severity() && errata.severity() >= ERRATA_ERROR)) {
@@ -57,19 +60,13 @@ QUICCertConfig::reconfigure(ConfigContext ctx)
   }
 
   if (!errata.empty()) {
-    errata.assign_annotation_glue_text("\n  ");
-    errata.assign_severity_glue_text(" -> \n  ");
-    bwprint(ts::bw_dbg, "\n{}", errata);
-  } else {
-    ts::bw_dbg = "";
+    ctx.log(errata);
   }
 
   if (retStatus) {
-    Note("(quic) %s finished loading%s", params->configFilePath, ts::bw_dbg.c_str());
-    ctx.complete("QUICCertConfig loaded");
+    CfgLoadComplete(ctx, "(quic) %s finished loading", params->configFilePath);
   } else {
-    Error("(quic) %s failed to load%s", params->configFilePath, ts::bw_dbg.c_str());
-    ctx.fail("QUICCertConfig failed to load");
+    CfgLoadFail(ctx, "(quic) %s failed to load", params->configFilePath);
   }
 }
 

@@ -43,6 +43,7 @@
 #include "iocore/eventsystem/ConfigProcessor.h"
 #include "iocore/net/SNIActionItem.h"
 #include "iocore/net/YamlSNIConfig.h"
+#include "mgmt/config/ConfigContext.h"
 
 #include <functional>
 
@@ -90,8 +91,8 @@ public:
   ~SNIConfigParams() override;
 
   const NextHopProperty *get_property_config(const std::string &servername) const;
-  bool                   initialize();
-  bool                   initialize(const std::string &sni_filename);
+  bool                   initialize(ConfigContext ctx = {});
+  bool                   initialize(const std::string &sni_filename, ConfigContext ctx = {});
   /** Walk sni.yaml config and populate sni_action_list
       @return 0 for success, 1 is failure
    */

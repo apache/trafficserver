@@ -24,6 +24,7 @@
 #include "proxy/ParentConsistentHash.h"
 #include "proxy/ParentRoundRobin.h"
 #include "proxy/ControlMatcher.h"
+#include "mgmt/config/ConfigContextDiags.h"
 #include "mgmt/config/ConfigRegistry.h"
 #include "proxy/HostStatus.h"
 #include "proxy/hdrs/HTTP.h"
@@ -303,14 +304,13 @@ ParentConfig::startup()
 void
 ParentConfig::reconfigure(ConfigContext ctx)
 {
-  Note("%s loading ...", ts::filename::PARENT);
-
-  ParentConfigParams *params = nullptr;
+  CfgLoadLog(ctx, DL_Note, "%s loading ...", ts::filename::PARENT);
 
   // Allocate parent table
-  P_table *pTable = new P_table(file_var, modulePrefix, &http_dest_tags);
-
-  params = new ParentConfigParams(pTable);
+  P_table *pTable =
+    new P_table(file_var, modulePrefix, &http_dest_tags,
+                ALLOW_HOST_TABLE | ALLOW_IP_TABLE | ALLOW_REGEX_TABLE | ALLOW_HOST_REGEX_TABLE | ALLOW_URL_TABLE, ctx);
+  ParentConfigParams *params = new ParentConfigParams(pTable);
   ink_assert(params != nullptr);
 
   m_id = configProcessor.set(m_id, params);
@@ -319,8 +319,7 @@ ParentConfig::reconfigure(ConfigContext ctx)
     ParentConfig::print();
   }
 
-  Note("%s finished loading", ts::filename::PARENT);
-  ctx.complete("Finished loading");
+  CfgLoadComplete(ctx, "%s finished loading", ts::filename::PARENT);
 }
 
 void
