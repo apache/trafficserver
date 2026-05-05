@@ -20,6 +20,37 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Union
 
+__all__ = [
+    "LiteralStringValue",
+    "IdentValue",
+    "IPValue",
+    "ParamRef",
+    "RegexValue",
+    "ValueExpr",
+    "Node",
+    "Target",
+    "Assignment",
+    "FunctionCall",
+    "Break",
+    "Comparison",
+    "LogicalOp",
+    "NotOp",
+    "BoolLiteral",
+    "IdentCondition",
+    "ElifBranch",
+    "IfBlock",
+    "Section",
+    "ProcParam",
+    "VarDecl",
+    "VarSection",
+    "UseDirective",
+    "ProcedureDecl",
+    "HRW4UAST",
+    "ConditionExpr",
+    "BodyNode",
+    "TopLevelNode",
+]
+
 
 @dataclass(frozen=True, kw_only=True)
 class LiteralStringValue:
