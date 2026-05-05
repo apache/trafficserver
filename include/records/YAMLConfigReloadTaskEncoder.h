@@ -54,8 +54,11 @@ template <> struct convert<ConfigReloadTask::Info> {
 
     node["logs"] = YAML::Node(YAML::NodeType::Sequence);
     // if no logs, it will be empty sequence.
-    for (const auto &log : info.logs) {
-      node["logs"].push_back(log);
+    for (const auto &entry : info.logs) {
+      YAML::Node log_node;
+      log_node["level"] = static_cast<int>(entry.level);
+      log_node["text"]  = entry.text;
+      node["logs"].push_back(log_node);
     }
 
     node["sub_tasks"] = YAML::Node(YAML::NodeType::Sequence);

@@ -27,6 +27,7 @@
 #include <string_view>
 
 #include "proxy/IPAllow.h"
+#include "mgmt/config/ConfigContextDiags.h"
 #include "mgmt/config/ConfigRegistry.h"
 #include "records/RecCore.h"
 #include "swoc/Errata.h"
@@ -123,37 +124,28 @@ IpAllow::startup()
 void
 IpAllow::reconfigure(ConfigContext ctx)
 {
-  self_type  *new_table;
-  std::string text;
-  std::string errata_text;
-  Note("%s loading ...", ts::filename::IP_ALLOW);
-  ctx.in_progress();
+  CfgLoadLog(ctx, DL_Note, "%s loading ...", ts::filename::IP_ALLOW);
 
-  new_table = new self_type("proxy.config.cache.ip_allow.filename", "proxy.config.cache.ip_categories.filename");
+  auto *new_table = new self_type("proxy.config.cache.ip_allow.filename", "proxy.config.cache.ip_categories.filename");
+
   // IP rules need categories, so load them first (if they exist).
   if (auto errata = new_table->BuildCategories(); !errata.is_ok()) {
-    swoc::bwprint(text, "{} failed to load", new_table->ip_categories_config_file);
-    swoc::bwprint(errata_text, "{}", errata);
-    Error("%s\n%s", text.c_str(), errata_text.c_str());
-    ctx.fail(errata, "{} failed to load", new_table->ip_categories_config_file);
+    CfgLoadFailWithErrata(ctx, errata, "%s failed to load", new_table->ip_categories_config_file.c_str());
     delete new_table;
     return;
   }
   if (auto errata = new_table->BuildTable(); !errata.is_ok()) {
-    swoc::bwprint(text, "{} failed to load", ts::filename::IP_ALLOW);
-    swoc::bwprint(errata_text, "{}", errata);
-    if (errata.severity() <= ERRATA_ERROR) {
-      Error("%s\n%s", text.c_str(), errata_text.c_str());
-    } else {
-      Fatal("%s\n%s", text.c_str(), errata_text.c_str());
+    if (errata.severity() > ERRATA_ERROR) {
+      std::string errata_text;
+      swoc::bwprint(errata_text, "{}", errata);
+      Fatal("%s failed to load\n%s", ts::filename::IP_ALLOW, errata_text.c_str());
     }
-    ctx.fail(errata, "{} failed to load", ts::filename::IP_ALLOW);
+    CfgLoadFailWithErrata(ctx, errata, "%s failed to load", ts::filename::IP_ALLOW);
     delete new_table;
     return;
   }
   configid = configProcessor.set(configid, new_table);
-  Note("%s finished loading", ts::filename::IP_ALLOW);
-  ctx.complete("Finished loading");
+  CfgLoadComplete(ctx, "%s finished loading", ts::filename::IP_ALLOW);
 }
 
 IpAllow *

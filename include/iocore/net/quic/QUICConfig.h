@@ -28,6 +28,7 @@
 
 #include "iocore/eventsystem/ConfigProcessor.h"
 #include "iocore/net/SSLTypes.h"
+#include "mgmt/config/ConfigContext.h"
 
 class QUICConfigParams : public ConfigInfo
 {
@@ -35,7 +36,7 @@ public:
   QUICConfigParams(){};
   ~QUICConfigParams();
 
-  void initialize();
+  void initialize(ConfigContext ctx = {});
 
   uint32_t instance_id() const;
   uint32_t stateless_retry() const;

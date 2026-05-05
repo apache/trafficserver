@@ -103,7 +103,14 @@ template <> struct convert<ConfigReloadResponse> {
       info.description  = helper::try_extract<std::string>(from, "description", false, std::string{"<none>"});
       info.filename     = helper::try_extract<std::string>(from, "filename", false, std::string{"<none>"});
       for (auto &&log : from["logs"]) {
-        info.logs.push_back(log.as<std::string>());
+        if (log.IsMap()) {
+          ConfigReloadResponse::LogEntry entry;
+          entry.level = static_cast<DiagsLevel>(log["level"].as<int>(DL_Undefined));
+          entry.text  = log["text"].as<std::string>();
+          info.logs.push_back(entry);
+        } else {
+          info.logs.push_back({DL_Undefined, log.as<std::string>()});
+        }
       }
 
       for (auto &&sub : from["sub_tasks"]) {

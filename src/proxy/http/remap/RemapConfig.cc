@@ -24,6 +24,7 @@
 #include "proxy/http/remap/AclFiltering.h"
 #include "swoc/swoc_file.h"
 
+#include "mgmt/config/ConfigContextDiags.h"
 #include "proxy/http/remap/RemapConfig.h"
 #include "proxy/http/remap/UrlRewrite.h"
 #include "proxy/ReverseProxy.h"
@@ -1050,7 +1051,7 @@ lFail:
 }
 
 bool
-remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
+remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti, ConfigContext ctx)
 {
   char        errBuf[1024];
   char        errStrBuf[1024];
@@ -1089,7 +1090,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
     return true;
   }
   if (ec.value()) {
-    Warning("Failed to open remapping configuration file %s - %s", path, strerror(ec.value()));
+    CfgLoadLog(ctx, DL_Warning, "Failed to open remapping configuration file %s - %s", path, strerror(ec.value()));
     return false;
   }
 
@@ -1097,7 +1098,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
 
   ACLBehaviorPolicy behavior_policy = ACLBehaviorPolicy::ACL_BEHAVIOR_LEGACY;
   if (!UrlRewrite::get_acl_behavior_policy(behavior_policy)) {
-    Warning("Failed to get ACL matching policy.");
+    CfgLoadLog(ctx, DL_Warning, "Failed to get ACL matching policy.");
     return false;
   }
   bti->behavior_policy = behavior_policy;
@@ -1553,7 +1554,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
   MAP_ERROR:
 
     snprintf(errBuf, sizeof(errBuf), "%s failed to add remap rule at %s line %d: %s", modulePrefix, path, cln + 1, errStr);
-    Error("%s", errBuf);
+    CfgLoadLog(ctx, DL_Error, "%s", errBuf);
 
     delete reg_map;
     delete new_mapping;
@@ -1565,7 +1566,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
 }
 
 bool
-remap_parse_config(const char *path, UrlRewrite *rewrite)
+remap_parse_config(const char *path, UrlRewrite *rewrite, ConfigContext ctx)
 {
   BUILD_TABLE_INFO bti;
 
@@ -1574,7 +1575,7 @@ remap_parse_config(const char *path, UrlRewrite *rewrite)
   rewrite->pluginFactory.indicatePreReload();
 
   bti.rewrite = rewrite;
-  bool status = remap_parse_config_bti(path, &bti);
+  bool status = remap_parse_config_bti(path, &bti, ctx);
 
   /* Now after we parsed the configuration and (re)loaded plugins and plugin instances
    * accordingly notify all plugins that we are done */
