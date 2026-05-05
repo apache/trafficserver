@@ -29,7 +29,7 @@ class ASTVisitor(hrw4uVisitor):
     # method has an explicit return type and full control over how
     # child results are assembled into parent AST nodes.
 
-    def visitProgram(self, ctx):
+    def visitProgram(self, ctx) -> HRW4UAST:
         items = []
         for item in ctx.programItem():
             if item.useDirective() is not None:
@@ -44,13 +44,13 @@ class ASTVisitor(hrw4uVisitor):
                 raise ValueError(f"Unhandled programItem alternative at line {item.start.line}")
         return HRW4UAST(body=tuple(items))
 
-    def _visit_use_directive(self, ctx):
+    def _visit_use_directive(self, ctx) -> UseDirective:
         return UseDirective(
             spec=ctx.QUALIFIED_IDENT().getText(),
             line=ctx.start.line,
         )
 
-    def _visit_procedure_decl(self, ctx):
+    def _visit_procedure_decl(self, ctx) -> ProcedureDecl:
         name = ctx.QUALIFIED_IDENT().getText()
         params = ()
         if ctx.paramList():
@@ -58,12 +58,12 @@ class ASTVisitor(hrw4uVisitor):
         body = tuple(self._visit_body(ctx.block().blockItem()))
         return ProcedureDecl(name=name, params=params, body=body, line=ctx.start.line)
 
-    def _visit_proc_param(self, ctx):
+    def _visit_proc_param(self, ctx) -> ProcParam:
         name = ctx.IDENT().getText()
         default = self._extract_value(ctx.value()) if ctx.value() else None
         return ProcParam(name=name, default=default, line=ctx.start.line)
 
-    def _visit_section(self, ctx):
+    def _visit_section(self, ctx) -> VarSection | Section:
         if ctx.varSection() is not None:
             return self._visit_var_section(ctx.varSection(), "txn")
         if ctx.sessionVarSection() is not None:
@@ -72,7 +72,7 @@ class ASTVisitor(hrw4uVisitor):
         body = self._visit_body(ctx.sectionBody())
         return Section(type=name, body=tuple(body), line=ctx.start.line)
 
-    def _visit_var_section(self, ctx, scope):
+    def _visit_var_section(self, ctx, scope) -> VarSection:
         decls = []
         for var_item in ctx.variables().variablesItem():
             if var_item.variableDecl() is not None:
@@ -83,7 +83,7 @@ class ASTVisitor(hrw4uVisitor):
                 raise ValueError(f"Unhandled variablesItem alternative at line {var_item.start.line}")
         return VarSection(scope=scope, declarations=tuple(decls), line=ctx.start.line)
 
-    def _visit_var_decl(self, ctx):
+    def _visit_var_decl(self, ctx) -> VarDecl:
         return VarDecl(
             name=ctx.name.text,
             type_name=ctx.typeName.text,
@@ -91,7 +91,7 @@ class ASTVisitor(hrw4uVisitor):
             line=ctx.start.line,
         )
 
-    def _visit_body(self, items):
+    def _visit_body(self, items) -> list[BodyNode]:
         """Shared helper for sectionBody and blockItem lists."""
         result = []
         for item in items:
@@ -105,7 +105,7 @@ class ASTVisitor(hrw4uVisitor):
                 raise ValueError(f"Unhandled body item alternative at line {item.start.line}")
         return result
 
-    def _visit_statement(self, ctx):
+    def _visit_statement(self, ctx) -> BodyNode:
         line = ctx.start.line
         if ctx.BREAK():
             return Break(line=line)
@@ -123,14 +123,14 @@ class ASTVisitor(hrw4uVisitor):
             return FunctionCall(name=ctx.op.text, args=(), line=line)
         raise ValueError(f"Unhandled statement alternative at line {line}")
 
-    def _visit_function_call(self, ctx):
+    def _visit_function_call(self, ctx) -> FunctionCall:
         name = ctx.funcName.text
         args = ()
         if ctx.argumentList():
             args = tuple(self._extract_value(v) for v in ctx.argumentList().value())
         return FunctionCall(name=name, args=args, line=ctx.start.line)
 
-    def _extract_value(self, ctx):
+    def _extract_value(self, ctx) -> ValueExpr:
         if ctx.number is not None:
             return int(ctx.number.text)
         if ctx.str_ is not None:
@@ -149,7 +149,7 @@ class ASTVisitor(hrw4uVisitor):
             return ParamRef(raw=ctx.paramRef().IDENT().getText())
         raise ValueError(f"Unhandled value alternative at line {ctx.start.line}")
 
-    def _visit_conditional(self, ctx):
+    def _visit_conditional(self, ctx) -> IfBlock:
         if_stmt = ctx.ifStatement()
         condition = self._visit_condition(if_stmt.condition())
         block = if_stmt.block()
@@ -180,10 +180,10 @@ class ASTVisitor(hrw4uVisitor):
             line=ctx.start.line,
         )
 
-    def _visit_condition(self, ctx):
+    def _visit_condition(self, ctx) -> ConditionExpr:
         return self._visit_expression(ctx.expression())
 
-    def _visit_expression(self, ctx):
+    def _visit_expression(self, ctx) -> ConditionExpr:
         if ctx.OR():
             left = self._visit_expression(ctx.expression())
             right = self._visit_term(ctx.term())
@@ -195,7 +195,7 @@ class ASTVisitor(hrw4uVisitor):
             )
         return self._visit_term(ctx.term())
 
-    def _visit_term(self, ctx):
+    def _visit_term(self, ctx) -> ConditionExpr:
         if ctx.AND():
             left = self._visit_term(ctx.term())
             right = self._visit_factor(ctx.factor())
@@ -207,7 +207,7 @@ class ASTVisitor(hrw4uVisitor):
             )
         return self._visit_factor(ctx.factor())
 
-    def _visit_factor(self, ctx):
+    def _visit_factor(self, ctx) -> ConditionExpr:
         if ctx.getChildCount() == 2 and ctx.getChild(0).getText() == "!":
             return NotOp(
                 operand=self._visit_factor(ctx.factor()),
@@ -227,7 +227,7 @@ class ASTVisitor(hrw4uVisitor):
             return BoolLiteral(value=False, line=ctx.start.line)
         raise ValueError(f"Unhandled factor alternative at line {ctx.start.line}")
 
-    def _visit_comparison(self, ctx):
+    def _visit_comparison(self, ctx) -> Comparison:
         line = ctx.start.line
         comp = ctx.comparable()
         if comp.ident is not None:
@@ -247,7 +247,7 @@ class ASTVisitor(hrw4uVisitor):
             line=line,
         )
 
-    def _detect_comparison_operator(self, ctx):
+    def _detect_comparison_operator(self, ctx) -> str:
         if ctx.EQUALS():
             return "=="
         if ctx.NEQ():
@@ -267,7 +267,7 @@ class ASTVisitor(hrw4uVisitor):
             return "in"
         raise ValueError(f"Unhandled comparison operator at line {ctx.start.line}")
 
-    def _extract_comparison_rhs(self, ctx, operator):
+    def _extract_comparison_rhs(self, ctx, operator) -> ValueExpr | RegexValue | tuple[ValueExpr, ...]:
         if operator in ("~", "!~"):
             return RegexValue(raw=ctx.regex().getText()[1:-1])
         if operator in ("in", "!in"):
@@ -279,7 +279,7 @@ class ASTVisitor(hrw4uVisitor):
             return self._extract_value(ctx.value())
         raise ValueError(f"Unhandled comparison RHS at line {ctx.start.line}")
 
-    def _extract_modifiers(self, ctx):
+    def _extract_modifiers(self, ctx) -> tuple[str, ...]:
         if ctx.modifier():
             return tuple(tok.text for tok in ctx.modifier().modifierList().mods)
         return ()
