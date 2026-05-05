@@ -18,31 +18,7 @@
 from __future__ import annotations
 
 from hrw4u.hrw4uVisitor import hrw4uVisitor
-from hrw4u.ast_nodes import (
-    HRW4UAST,
-    Section,
-    Assignment,
-    FunctionCall,
-    Break,
-    Target,
-    IfBlock,
-    ElifBranch,
-    BoolLiteral,
-    Comparison,
-    LogicalOp,
-    NotOp,
-    IdentCondition,
-    ProcParam,
-    VarDecl,
-    VarSection,
-    UseDirective,
-    ProcedureDecl,
-    LiteralStringValue,
-    IdentValue,
-    IPValue,
-    ParamRef,
-    RegexValue,
-)
+from hrw4u.ast_nodes import *
 
 
 class ASTVisitor(hrw4uVisitor):

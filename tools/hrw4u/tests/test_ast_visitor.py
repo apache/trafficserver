@@ -15,31 +15,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from hrw4u.ast_nodes import (
-    Target,
-    Assignment,
-    FunctionCall,
-    Break,
-    Section,
-    HRW4UAST,
-    Comparison,
-    IfBlock,
-    ElifBranch,
-    BoolLiteral,
-    NotOp,
-    LogicalOp,
-    IdentCondition,
-    VarSection,
-    VarDecl,
-    UseDirective,
-    ProcedureDecl,
-    ProcParam,
-    LiteralStringValue,
-    IdentValue,
-    IPValue,
-    ParamRef,
-    RegexValue,
-)
+from hrw4u.ast_nodes import *
 from utils import parse_input_text
 from hrw4u.ast_visitor import ASTVisitor
 
