@@ -45,10 +45,7 @@ class ASTVisitor(hrw4uVisitor):
         return HRW4UAST(body=tuple(items))
 
     def _visit_use_directive(self, ctx) -> UseDirective:
-        return UseDirective(
-            spec=ctx.QUALIFIED_IDENT().getText(),
-            line=ctx.start.line,
-        )
+        return UseDirective(spec=ctx.QUALIFIED_IDENT().getText(), line=ctx.start.line)
 
     def _visit_procedure_decl(self, ctx) -> ProcedureDecl:
         name = ctx.QUALIFIED_IDENT().getText()
@@ -85,11 +82,7 @@ class ASTVisitor(hrw4uVisitor):
 
     def _visit_var_decl(self, ctx) -> VarDecl:
         return VarDecl(
-            name=ctx.name.text,
-            type_name=ctx.typeName.text,
-            slot=int(ctx.slot.text) if ctx.slot else None,
-            line=ctx.start.line,
-        )
+            name=ctx.name.text, type_name=ctx.typeName.text, slot=int(ctx.slot.text) if ctx.slot else None, line=ctx.start.line)
 
     def _visit_body(self, items) -> list[BodyNode]:
         """Shared helper for sectionBody and blockItem lists."""
@@ -160,11 +153,7 @@ class ASTVisitor(hrw4uVisitor):
             elif_cond = self._visit_condition(elif_ctx.condition())
             elif_block = elif_ctx.block()
             elif_body = tuple(self._visit_body(elif_block.blockItem())) if elif_block else ()
-            elif_branches.append(ElifBranch(
-                condition=elif_cond,
-                body=elif_body,
-                line=elif_ctx.start.line,
-            ))
+            elif_branches.append(ElifBranch(condition=elif_cond, body=elif_body, line=elif_ctx.start.line))
 
         else_body = ()
         if ctx.elseClause():
@@ -172,13 +161,7 @@ class ASTVisitor(hrw4uVisitor):
             if else_block:
                 else_body = tuple(self._visit_body(else_block.blockItem()))
 
-        return IfBlock(
-            condition=condition,
-            body=body,
-            elif_branches=tuple(elif_branches),
-            else_body=else_body,
-            line=ctx.start.line,
-        )
+        return IfBlock(condition=condition, body=body, elif_branches=tuple(elif_branches), else_body=else_body, line=ctx.start.line)
 
     def _visit_condition(self, ctx) -> ConditionExpr:
         return self._visit_expression(ctx.expression())
@@ -187,32 +170,19 @@ class ASTVisitor(hrw4uVisitor):
         if ctx.OR():
             left = self._visit_expression(ctx.expression())
             right = self._visit_term(ctx.term())
-            return LogicalOp(
-                operator="||",
-                left=left,
-                right=right,
-                line=ctx.start.line,
-            )
+            return LogicalOp(operator="||", left=left, right=right, line=ctx.start.line)
         return self._visit_term(ctx.term())
 
     def _visit_term(self, ctx) -> ConditionExpr:
         if ctx.AND():
             left = self._visit_term(ctx.term())
             right = self._visit_factor(ctx.factor())
-            return LogicalOp(
-                operator="&&",
-                left=left,
-                right=right,
-                line=ctx.start.line,
-            )
+            return LogicalOp(operator="&&", left=left, right=right, line=ctx.start.line)
         return self._visit_factor(ctx.factor())
 
     def _visit_factor(self, ctx) -> ConditionExpr:
         if ctx.getChildCount() == 2 and ctx.getChild(0).getText() == "!":
-            return NotOp(
-                operand=self._visit_factor(ctx.factor()),
-                line=ctx.start.line,
-            )
+            return NotOp(operand=self._visit_factor(ctx.factor()), line=ctx.start.line)
         if ctx.LPAREN():
             return self._visit_expression(ctx.expression())
         if ctx.functionCall():
@@ -239,13 +209,7 @@ class ASTVisitor(hrw4uVisitor):
         right = self._extract_comparison_rhs(ctx, operator)
         modifiers = self._extract_modifiers(ctx)
 
-        return Comparison(
-            left=left,
-            operator=operator,
-            right=right,
-            modifiers=modifiers,
-            line=line,
-        )
+        return Comparison(left=left, operator=operator, right=right, modifiers=modifiers, line=line)
 
     def _detect_comparison_operator(self, ctx) -> str:
         if ctx.EQUALS():
