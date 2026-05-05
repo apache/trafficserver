@@ -395,3 +395,97 @@ def validate_large_config(resp: Response):
 
 tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_large_config)
 tr.StillRunningAfter = ts
+
+# ============================================================================
+# Test 11: Reload directive for registered FileOnly config (sni)
+# Directive-only request — sni is FileOnly, so the RPC handler rejects with 6011.
+# Verifies the _reload structure is handled gracefully through the RPC stack.
+# ============================================================================
+tr = Test.AddTestRun("Reload directive for FileOnly config (sni)")
+tr.DelayStart = 2
+tr.AddJsonRPCClientRequest(ts, Request.admin_config_reload(configs={"sni": {"_reload": {"fqdn": "*.example.com"}}}))
+
+
+def validate_directive_fileonly(resp: Response):
+    '''sni is FileOnly — directive-only request rejected with 6011'''
+    result = resp.result
+    errors = result.get('errors', [])
+
+    if not errors:
+        return (False, f"Expected rejection for FileOnly config, got: {result}")
+
+    error_str = str(errors)
+    if '6011' in error_str:
+        return (True, f"Directive-only correctly rejected for FileOnly config: {errors}")
+    return (False, f"Expected error 6011, got: {errors}")
+
+
+tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_directive_fileonly)
+tr.StillRunningAfter = ts
+
+# ============================================================================
+# Test 12: Reload directive for unregistered config (virtualhost)
+# virtualhost is not registered yet — should get 6010.
+# This is the intended use case once the virtualhost handler is registered.
+# ============================================================================
+tr = Test.AddTestRun("Reload directive for unregistered config (virtualhost)")
+tr.DelayStart = 2
+tr.AddJsonRPCClientRequest(ts, Request.admin_config_reload(configs={"virtualhost": {"_reload": {"id": "myhost.example.com"}}}))
+
+
+def validate_directive_unregistered(resp: Response):
+    '''virtualhost is not registered — rejected with 6010'''
+    result = resp.result
+    errors = result.get('errors', [])
+
+    if not errors:
+        return (False, f"Expected error for unregistered config, got: {result}")
+
+    error_str = str(errors)
+    if '6010' in error_str or 'not registered' in error_str:
+        return (True, f"Directive for unregistered config rejected: {errors}")
+    return (False, f"Expected error 6010, got: {errors}")
+
+
+tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_directive_unregistered)
+tr.StillRunningAfter = ts
+
+# ============================================================================
+# Test 13: Directives mixed with content for FileOnly config (ip_allow)
+# _reload directives alongside actual config content — still rejected with 6011.
+# ============================================================================
+tr = Test.AddTestRun("Directives mixed with content for FileOnly config")
+tr.DelayStart = 2
+tr.AddJsonRPCClientRequest(
+    ts,
+    Request.admin_config_reload(
+        configs={
+            "ip_allow": {
+                "_reload": {
+                    "validate_only": "true"
+                },
+                "rules": [{
+                    "apply": "in",
+                    "ip_addrs": "0/0",
+                    "action": "allow"
+                }]
+            }
+        }))
+
+
+def validate_directive_mixed(resp: Response):
+    '''ip_allow is FileOnly — mixed directive+content rejected with 6011'''
+    result = resp.result
+    errors = result.get('errors', [])
+
+    if not errors:
+        return (False, f"Expected rejection, got: {result}")
+
+    error_str = str(errors)
+    if '6011' in error_str:
+        return (True, f"Mixed directive+content correctly rejected: {errors}")
+    return (False, f"Expected error 6011, got: {errors}")
+
+
+tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_directive_mixed)
+tr.StillRunningAfter = ts
