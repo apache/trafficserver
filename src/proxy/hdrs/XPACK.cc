@@ -78,12 +78,18 @@ xpack_decode_integer(uint64_t &dst, const uint8_t *buf_start, const uint8_t *buf
       }
 
       uint64_t added_value = *p & 0x7f;
-      if ((UINT64_MAX >> m) < added_value) {
+      if ((m >= 64) || ((UINT64_MAX >> m) < added_value)) {
         // Excessively large integer encodings - in value or octet
         // length - MUST be treated as a decoding error.
         return XPACK_ERROR_COMPRESSION_ERROR;
       }
-      dst += added_value << m;
+      uint64_t const shifted = added_value << m;
+      if (dst > (UINT64_MAX - shifted)) {
+        // Excessively large integer encodings - in value or octet
+        // length - MUST be treated as a decoding error.
+        return XPACK_ERROR_COMPRESSION_ERROR;
+      }
+      dst += shifted;
       m   += 7;
     } while (*p & 0x80);
   }

@@ -80,6 +80,24 @@ TEST_CASE("XPACK_Integer", "[xpack]")
       REQUIRE(actual == i.raw_integer);
     }
   }
+
+  SECTION("Decoding rejects integer overflow")
+  {
+    const uint8_t encoded_field[] = {0x1f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x01};
+    uint64_t      actual          = 0;
+    int64_t       len             = xpack_decode_integer(actual, encoded_field, encoded_field + sizeof(encoded_field), 5);
+
+    REQUIRE(len == XPACK_ERROR_COMPRESSION_ERROR);
+  }
+
+  SECTION("Decoding rejects overlong integer encodings")
+  {
+    const uint8_t encoded_field[] = {0x1f, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x00};
+    uint64_t      actual          = 0;
+    int64_t       len             = xpack_decode_integer(actual, encoded_field, encoded_field + sizeof(encoded_field), 5);
+
+    REQUIRE(len == XPACK_ERROR_COMPRESSION_ERROR);
+  }
 }
 
 TEST_CASE("XPACK_String", "[xpack]")
