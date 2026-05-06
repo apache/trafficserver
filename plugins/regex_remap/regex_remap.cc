@@ -49,7 +49,7 @@
 #else
 #include <pcre.h>
 #endif
-#include "tsutil/LocalBuffer.h"
+#include "tscpp/util/LocalBuffer.h"
 
 static const char *PLUGIN_NAME = "regex_remap";
 
@@ -926,12 +926,12 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   UrlComponents req_url;
   req_url.populate(src_url.bufp, src_url.loc);
 
-  int           ovector[OVECCOUNT];
-  int           lengths[OVECCOUNT / 2 + 1];
-  int           dest_len;
-  TSRemapStatus retval    = TSREMAP_DID_REMAP;
-  RemapRegex   *re        = ri->first;
-  int           match_len = 0;
+  int ovector[OVECCOUNT];
+  int lengths[OVECCOUNT / 2 + 1];
+  int dest_len;
+  TSRemapStatus retval = TSREMAP_DID_REMAP;
+  RemapRegex *re       = ri->first;
+  int match_len        = 0;
 
   // Cap the stack allocation to 16KB, a typical browser upper limit
   ts::LocalBuffer<char, 16384> match_buf(req_url.url_len + 32);
@@ -967,8 +967,8 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   }
 
   if (ri->matrix_params && req_url.matrix && req_url.matrix_len > 0) {
-    *(match_buf + match_len) = ';';
-    memcpy(match_buf + match_len + 1, req_url.matrix, req_url.matrix_len);
+    *(match_buf.data() + match_len) = ';';
+    memcpy(match_buf.data() + match_len + 1, req_url.matrix, req_url.matrix_len);
     match_len += (req_url.matrix_len + 1);
   }
 
@@ -978,7 +978,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
     match_len += (req_url.query_len + 1);
   }
   match_buf.data()[match_len] = '\0'; // NULL terminate the match string
-  Dbg(dbg_ctl, "Target match string is `%s'", match_buf.data());
+  TSDebug(PLUGIN_NAME, "Target match string is `%s'", match_buf.data());
 
   // Apply the regular expressions, in order. First one wins.
   while (re) {
@@ -1045,7 +1045,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
         dest_len = re->substitute(dest.data(), match_buf.data(), ovector, lengths, txnp, rri, &req_url, lowercase_substitutions);
 
         TSDebug(PLUGIN_NAME, "New URL is estimated to be %d bytes long, or less", new_len);
-        TSDebug(PLUGIN_NAME, "New URL is %s (length %d)", dest, dest_len);
+        TSDebug(PLUGIN_NAME, "New URL is %s (length %d)", dest.data(), dest_len);
         TSDebug(PLUGIN_NAME, "    matched rule %d [%s]", re->order(), re->regex());
 
         // Check for a quick response, if the status option is set

@@ -1250,7 +1250,7 @@ validate_hdr_content_length(HdrHeap *heap, HTTPHdrImpl *hh)
     int64_t cl;
     auto [ptr, ec] = std::from_chars(value.data(), value.data() + value.size(), cl);
     if (ec != std::errc{} || ptr != value.data() + value.size() || cl < 0) {
-      Dbg(dbg_ctl_http, "Content-Length value is invalid, returning parse error");
+      Debug("http", "Content-Length value is invalid, returning parse error");
       return PARSE_RESULT_ERROR;
     }
 

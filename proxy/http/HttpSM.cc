@@ -4215,7 +4215,8 @@ HttpSM::check_sni_host()
               Log::error("%s", error_bw_buffer.c_str());
               this->t_state.client_connection_enabled = false;
             }
-          } else if (strncasecmp(host_name, sni_value, host_len) != 0) { // Name mismatch
+          } else if (strlen(sni_value) != static_cast<size_t>(host_len) ||
+                     strncasecmp(host_name, sni_value, host_len) != 0) { // Name mismatch
             Warning("SNI/hostname mismatch sni=%s host=%.*s action=%s", sni_value, host_len, host_name, action_value);
             SMDebug("ssl_sni", "SNI/hostname mismatch sni=%s host=%.*s action=%s", sni_value, host_len, host_name, action_value);
             if (host_sni_policy == 2) {
@@ -4231,18 +4232,6 @@ HttpSM::check_sni_host()
           SMDebug("ssl_sni", "No SNI/hostname check configured for host=%.*s", host_len, host_name);
         }
       }
-    } else if (strlen(sni_value) != static_cast<size_t>(host_len) ||
-               strncasecmp(host_name, sni_value, host_len) != 0) { // Name mismatch
-      Warning("SNI/hostname mismatch sni=%s host=%.*s action=%s", sni_value, host_len, host_name, action_value);
-      SMDbg(dbg_ctl_ssl_sni, "SNI/hostname mismatch sni=%s host=%.*s action=%s", sni_value, host_len, host_name, action_value);
-      if (host_sni_policy == 2) {
-        swoc::bwprint(error_bw_buffer, "SNI/hostname mismatch: connecting to {} for host='{}' sni='{}', returning a 403",
-                      t_state.client_info.dst_addr, std::string_view{host_name, static_cast<size_t>(host_len)}, sni_value);
-        Log::error("%s", error_bw_buffer.c_str());
-        this->t_state.client_connection_allowed = false;
-      }
-    } else {
-      SMDbg(dbg_ctl_ssl_sni, "SNI/hostname successfully match sni=%s host=%.*s", sni_value, host_len, host_name);
     }
   }
 }

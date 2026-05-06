@@ -41,43 +41,42 @@
 TEST_CASE("HdrTestHttpParse", "[proxy][hdrtest]")
 {
   struct Test {
-    swoc::TextView msg;
-    int            expected_result;
-    int            expected_bytes_consumed;
+    ts::TextView msg;
+    int expected_result;
+    int expected_bytes_consumed;
   };
   static const std::vector<Test> tests = {
-    {"GET /index.html HTTP/1.0\r\n",                                              PARSE_RESULT_DONE,  26},
-    {"GET /index.html HTTP/1.0\r\n\r\n***BODY****",                               PARSE_RESULT_DONE,  28},
-    {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n\r\n***BODY****",         PARSE_RESULT_DONE,  48},
-    {"GET",                                                                       PARSE_RESULT_ERROR, 3 },
-    {"GET /index.html",                                                           PARSE_RESULT_ERROR, 15},
-    {"GET /index.html\r\n",                                                       PARSE_RESULT_ERROR, 17},
-    {"GET /index.html HTTP/1.0",                                                  PARSE_RESULT_ERROR, 24},
-    {"GET /index.html HTTP/1.0\r",                                                PARSE_RESULT_ERROR, 25},
-    {"GET /index.html HTTP/1.0\n",                                                PARSE_RESULT_DONE,  25},
-    {"GET /index.html HTTP/1.0\n\n",                                              PARSE_RESULT_DONE,  26},
-    {"GET /index.html HTTP/1.0\r\n\r\n",                                          PARSE_RESULT_DONE,  28},
-    {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar",                            PARSE_RESULT_ERROR, 44},
-    {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\n",                          PARSE_RESULT_DONE,  45},
-    {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n",                        PARSE_RESULT_DONE,  46},
-    {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n\r\n",                    PARSE_RESULT_DONE,  48},
-    {"GET /index.html HTTP/1.0\nUser-Agent: foobar\n",                            PARSE_RESULT_DONE,  44},
-    {"GET /index.html HTTP/1.0\nUser-Agent: foobar\nBoo: foo\n",                  PARSE_RESULT_DONE,  53},
-    {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n",                        PARSE_RESULT_DONE,  46},
-    {"GET /index.html HTTP/1.0\r\n",                                              PARSE_RESULT_DONE,  26},
-    {"GET /index.html hTTP/1.0\r\n",                                              PARSE_RESULT_ERROR, 26},
-    {"POST /index.html HTTP/1.0\r\nContent-Length: 0\r\n\r\n",                    PARSE_RESULT_DONE,  48},
-    {"POST /index.html HTTP/1.0\r\nContent-Length: 2147483648\r\n\r\n",           PARSE_RESULT_DONE,  57},
-    {"POST /index.html HTTP/1.0\r\nContent-Length: 9223372036854775807\r\n\r\n",  PARSE_RESULT_DONE,  66},
-    {"POST /index.html HTTP/1.0\r\nContent-Length: 9223372036854775808\r\n\r\n",  PARSE_RESULT_ERROR, 66},
+    {"GET /index.html HTTP/1.0\r\n", PARSE_RESULT_DONE, 26},
+    {"GET /index.html HTTP/1.0\r\n\r\n***BODY****", PARSE_RESULT_DONE, 28},
+    {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n\r\n***BODY****", PARSE_RESULT_DONE, 48},
+    {"GET", PARSE_RESULT_ERROR, 3},
+    {"GET /index.html", PARSE_RESULT_ERROR, 15},
+    {"GET /index.html\r\n", PARSE_RESULT_ERROR, 17},
+    {"GET /index.html HTTP/1.0", PARSE_RESULT_ERROR, 24},
+    {"GET /index.html HTTP/1.0\r", PARSE_RESULT_ERROR, 25},
+    {"GET /index.html HTTP/1.0\n", PARSE_RESULT_DONE, 25},
+    {"GET /index.html HTTP/1.0\n\n", PARSE_RESULT_DONE, 26},
+    {"GET /index.html HTTP/1.0\r\n\r\n", PARSE_RESULT_DONE, 28},
+    {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar", PARSE_RESULT_ERROR, 44},
+    {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\n", PARSE_RESULT_DONE, 45},
+    {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n", PARSE_RESULT_DONE, 46},
+    {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n\r\n", PARSE_RESULT_DONE, 48},
+    {"GET /index.html HTTP/1.0\nUser-Agent: foobar\n", PARSE_RESULT_DONE, 44},
+    {"GET /index.html HTTP/1.0\nUser-Agent: foobar\nBoo: foo\n", PARSE_RESULT_DONE, 53},
+    {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n", PARSE_RESULT_DONE, 46},
+    {"GET /index.html HTTP/1.0\r\n", PARSE_RESULT_DONE, 26},
+    {"GET /index.html hTTP/1.0\r\n", PARSE_RESULT_ERROR, 26},
+    {"POST /index.html HTTP/1.0\r\nContent-Length: 0\r\n\r\n", PARSE_RESULT_DONE, 48},
+    {"POST /index.html HTTP/1.0\r\nContent-Length: 2147483648\r\n\r\n", PARSE_RESULT_DONE, 57},
+    {"POST /index.html HTTP/1.0\r\nContent-Length: 9223372036854775807\r\n\r\n", PARSE_RESULT_DONE, 66},
+    {"POST /index.html HTTP/1.0\r\nContent-Length: 9223372036854775808\r\n\r\n", PARSE_RESULT_ERROR, 66},
     {"POST /index.html HTTP/1.0\r\nContent-Length: 99999999999999999999\r\n\r\n", PARSE_RESULT_ERROR, 67},
-    {"POST /index.html HTTP/1.0\r\nContent-Length: -1\r\n\r\n",                   PARSE_RESULT_ERROR, 49},
-    {"POST /index.html HTTP/1.0\r\nContent-Length: \r\n\r\n",                     PARSE_RESULT_ERROR, 47},
-    {"POST /index.html HTTP/1.0\r\nContent-Length:\r\n\r\n",                      PARSE_RESULT_ERROR, 46},
-    {"CONNECT foo.example HTTP/1.1\r\n",                                          PARSE_RESULT_DONE,  30},
-    {"GET foo.example HTTP/1.1\r\n",                                              PARSE_RESULT_ERROR, 26},
-    {"",                                                                          PARSE_RESULT_ERROR, 0 }
-  };
+    {"POST /index.html HTTP/1.0\r\nContent-Length: -1\r\n\r\n", PARSE_RESULT_ERROR, 49},
+    {"POST /index.html HTTP/1.0\r\nContent-Length: \r\n\r\n", PARSE_RESULT_ERROR, 47},
+    {"POST /index.html HTTP/1.0\r\nContent-Length:\r\n\r\n", PARSE_RESULT_ERROR, 46},
+    {"CONNECT foo.example HTTP/1.1\r\n", PARSE_RESULT_DONE, 30},
+    {"GET foo.example HTTP/1.1\r\n", PARSE_RESULT_ERROR, 26},
+    {"", PARSE_RESULT_ERROR, 0}};
 
   HTTPParser parser;
 
@@ -135,12 +134,12 @@ TEST_CASE("MIMEScanner_fragments", "[proxy][mimescanner_fragments]")
 
 TEST_CASE("MIMEScanner obs-fold single buffer", "[proxy][mimescanner_obsfold]")
 {
-  MIMEScanner    scanner;
-  swoc::TextView output;
-  bool           shares_input = true;
+  MIMEScanner scanner;
+  ts::TextView output;
+  bool shares_input = true;
 
   char buf[]  = "Foo: bar\r\n baz\r\n";
-  auto input  = swoc::TextView{buf};
+  auto input  = ts::TextView{buf};
   auto result = scanner.get(input, output, shares_input, false, MIMEScanner::ScanType::FIELD);
 
   REQUIRE(result == PARSE_RESULT_OK);
@@ -152,17 +151,17 @@ TEST_CASE("MIMEScanner obs-fold CR/LF split across fragments", "[proxy][mimescan
   // CR at the end of fragment 1, LF + continuation whitespace at the start
   // of fragment 2. The unfold code must not walk backwards past the start of
   // the second fragment's buffer.
-  MIMEScanner    scanner;
-  swoc::TextView output;
-  bool           shares_input = true;
+  MIMEScanner scanner;
+  ts::TextView output;
+  bool shares_input = true;
 
   char first[] = "Foo: bar\r";
-  auto input   = swoc::TextView{first};
+  auto input   = ts::TextView{first};
   auto result  = scanner.get(input, output, shares_input, false, MIMEScanner::ScanType::FIELD);
   REQUIRE(result == PARSE_RESULT_CONT);
 
   char second[] = "\n baz\r\n";
-  input         = swoc::TextView{second};
+  input         = ts::TextView{second};
   shares_input  = true;
   result        = scanner.get(input, output, shares_input, false, MIMEScanner::ScanType::FIELD);
 

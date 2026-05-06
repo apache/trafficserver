@@ -26,7 +26,7 @@
 #include <sstream> /* istringstream */
 #include <utility>
 #include "cachekey.h"
-#include "tsutil/LocalBuffer.h"
+#include "tscpp/util/LocalBuffer.h"
 
 static void
 append(String &target, unsigned n)
@@ -44,7 +44,7 @@ appendEncoded(String &target, const char *s, size_t len)
   }
 
   ts::LocalBuffer<char, 8192> tmp(len * 3 + 1);
-  size_t                      written;
+  size_t written;
 
   /* The default table does not encode the comma, so we need to use our own table here. */
   static const unsigned char map[32] = {
