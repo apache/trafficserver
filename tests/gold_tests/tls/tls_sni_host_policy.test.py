@@ -72,6 +72,8 @@ ts.Disk.sni_yaml.AddLines(
         '  verify_client: STRICT',
         '- fqdn: dave.bob',
         '  verify_client: STRICT',
+        '- fqdn: noipallow.example.com',
+        '  http2: off',
     ])
 
 # case 1
@@ -237,6 +239,20 @@ tr.MakeCurlCommand(
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ContainsExpression("Access Denied", "Check response")
 
+# case 14
+# sni=noipallow.example.com and host=other.example.com.  The SNI entry only has http2: off
+# configured (no verify_client, no ip_allow).  This should NOT trigger host_sni_policy
+# enforcement because the only action (SNI_IpAllow with empty ip_addrs) is a no-op.
+tr = Test.AddTestRun("Connect with SNI entry having no ip_allow should not enforce host_sni_policy")
+tr.StillRunningAfter = ts
+tr.StillRunningAfter = server
+tr.MakeCurlCommand(
+    "-v --tls-max 1.2 -k -H 'host:other.example.com' --resolve 'noipallow.example.com:{0}:127.0.0.1' https://noipallow.example.com:{0}/case1"
+    .format(ts.Variables.ssl_port),
+    ts=ts)
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Streams.All = Testers.ExcludesExpression("Access Denied", "No 403 for non-ip_allow SNI entry")
+
 # Wait for the error.log to appaer.
 test_run = Test.AddTestRun()
 test_run.Processes.Default.Command = (
@@ -256,6 +272,9 @@ ts.Disk.diags_log.Content += Testers.ContainsExpression(
     "WARNING: SNI/hostname mismatch sni=dave.bob host=bob action=terminate", "Should have warning on suffix mismatch")
 ts.Disk.diags_log.Content += Testers.ExcludesExpression(
     "WARNING: SNI/hostname mismatch sni=ellen host=fran", "Should not have warning on mismatch with non-policy host")
+ts.Disk.diags_log.Content += Testers.ExcludesExpression(
+    "WARNING: SNI/hostname mismatch sni=noipallow.example.com host=other.example.com",
+    "Should not have warning for SNI entry with no ip_allow")
 
 test_run.Processes.Default.ReturnCode = 0
 ts.Disk.error_log.Content += Testers.ContainsExpression(

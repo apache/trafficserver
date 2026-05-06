@@ -439,10 +439,10 @@ SNI_IpAllow::SNIAction(SSL &ssl, ActionItem::Context const & /* ctx ATS_UNUSED *
 }
 
 bool
-SNI_IpAllow::TestClientSNIAction(char const * /* servrername ATS_UNUSED */, IpEndpoint const &ep,
+SNI_IpAllow::TestClientSNIAction(char const * /* servrername ATS_UNUSED */, IpEndpoint const & /* ep ATS_UNUSED */,
                                  int & /* policy ATS_UNUSED */) const
 {
-  return ip_addrs.contains(swoc::IPAddr(ep));
+  return !ip_addrs.empty();
 }
 
 int

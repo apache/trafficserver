@@ -33,6 +33,7 @@
 #include "catch.hpp"
 
 #include <cstring>
+#include "tscore/ink_inet.h"
 
 TEST_CASE("Test SSLSNIConfig")
 {
@@ -185,4 +186,53 @@ TEST_CASE("SNIConfig reconfigure callback is invoked")
   SNIConfig::set_on_reconfigure_callback(set_result);
   SNIConfig::reconfigure();
   CHECK(result == 42);
+}
+
+static IpEndpoint
+make_endpoint(const char *ip_str)
+{
+  IpEndpoint ep;
+  ats_ip_pton(ip_str, &ep.sa);
+  return ep;
+}
+
+TEST_CASE("SNI_IpAllow TestClientSNIAction")
+{
+  SNIConfigParams params;
+  REQUIRE(params.initialize(_XSTR(LIBINKNET_UNIT_TEST_DIR) "/sni_conf_test.yaml"));
+
+  SECTION("Entry with ip_allow always triggers regardless of client IP")
+  {
+    auto const &actions{params.get("ipallow.example.com", 443)};
+    REQUIRE(actions.first);
+
+    auto blocked_ep = make_endpoint("172.16.0.1");
+    int  policy     = 2;
+    bool triggered  = false;
+    for (auto &&item : *actions.first) {
+      triggered |= item->TestClientSNIAction("ipallow.example.com", blocked_ep, policy);
+    }
+    CHECK(triggered);
+
+    auto allowed_ep = make_endpoint("192.168.1.50");
+    triggered       = false;
+    for (auto &&item : *actions.first) {
+      triggered |= item->TestClientSNIAction("ipallow.example.com", allowed_ep, policy);
+    }
+    CHECK(triggered);
+  }
+
+  SECTION("Entry without ip_allow does not trigger TestClientSNIAction for any IP")
+  {
+    auto const &actions{params.get("noipallow.example.com", 443)};
+    REQUIRE(actions.first);
+
+    auto any_ep    = make_endpoint("203.0.113.1");
+    int  policy    = 2;
+    bool triggered = false;
+    for (auto &&item : *actions.first) {
+      triggered |= item->TestClientSNIAction("noipallow.example.com", any_ep, policy);
+    }
+    CHECK_FALSE(triggered);
+  }
 }
