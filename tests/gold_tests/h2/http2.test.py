@@ -153,6 +153,22 @@ ts.Disk.records_config.update(
 ts.Setup.CopyAs('h2client.py', Test.RunDirectory)
 ts.Setup.CopyAs('h2active_timeout.py', Test.RunDirectory)
 
+settings_limit_ts = Test.MakeATSProcess("ts_settings_limit", enable_tls=True, enable_cache=False)
+settings_limit_ts.addDefaultSSLFiles()
+settings_limit_ts.Setup.CopyAs('clients/h2_max_settings_per_minute.py', Test.RunDirectory)
+settings_limit_ts.Disk.records_config.update(
+    {
+        'proxy.config.ssl.server.cert.path': f'{settings_limit_ts.Variables.SSLDir}',
+        'proxy.config.ssl.server.private_key.path': f'{settings_limit_ts.Variables.SSLDir}',
+        'proxy.config.http2.max_settings_per_frame': -1,
+        'proxy.config.http2.max_settings_per_minute': 1,
+        'proxy.config.http2.max_settings_frames_per_minute': 100,
+    })
+settings_limit_ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+settings_limit_ts.Disk.diags_log.Content = Testers.ContainsExpression(
+    "ERROR: HTTP/2 connection error.*recv settings too frequent setting changes",
+    "ATS should log the SETTINGS limit connection error.")
+
 # ----
 # Test Cases
 # ----
@@ -239,3 +255,11 @@ tr.Processes.Default.Streams.stdout = "gold/http2_9_stdout.gold"
 # Different versions of curl will have different cases for HTTP/2 field names.
 tr.Processes.Default.Streams.stderr = Testers.GoldFile("gold/http2_9_stderr.gold", case_insensitive=True)
 tr.StillRunningAfter = server
+
+# Test Case 10: max_settings_per_minute with max_settings_per_frame disabled
+tr = Test.AddTestRun("max_settings_per_minute with max_settings_per_frame disabled")
+tr.Processes.Default.Command = f'{sys.executable} h2_max_settings_per_minute.py {settings_limit_ts.Variables.ssl_port}'
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.StartBefore(settings_limit_ts)
+tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+    "Received GOAWAY with error code 11", "Received ENHANCE_YOUR_CALM GOAWAY.")
