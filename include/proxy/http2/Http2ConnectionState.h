@@ -166,14 +166,19 @@ public:
   bool                     send_push_promise_frame(Http2Stream *stream, URL &url, const MIMEField *accept_encoding);
   void                     send_rst_stream_frame(Http2StreamId id, Http2ErrorCode ec);
 
+  static constexpr bool SEND_EMPTY = true;
+
   /** Send a SETTINGS frame to the peer.
    *
    * local_settings is updated to the value of @a new_settings as a byproduct
    * of this call.
    *
    * @param[in] new_settings The settings to send to the peer.
+   * @param[in] send_empty Whether to send a SETTINGS frame if @a new_settings
+   * has no changes from the current local settings.
+   * @return The result of sending the SETTINGS frame.
    */
-  void send_settings_frame(const Http2ConnectionSettings &new_settings);
+  Http2Error send_settings_frame(const Http2ConnectionSettings &new_settings, bool send_empty);
 
   void send_ping_frame(Http2StreamId id, uint8_t flag, const uint8_t *opaque_data);
   void send_goaway_frame(Http2StreamId id, Http2ErrorCode ec);
@@ -248,10 +253,53 @@ private:
    * updating acknowledged_local_settings and adjusting stream receive
    * windows if INITIAL_WINDOW_SIZE changed.
    *
-   * @return true if an outstanding SETTINGS frame was acknowledged, false
-   * if the queue was empty (i.e., the ACK was unsolicited).
+   * @return The result of processing the SETTINGS ACK.
    */
-  bool _process_incoming_settings_ack_frame();
+  Http2Error _process_incoming_settings_ack_frame();
+
+  /** Check whether new settings differ from current local settings.
+   *
+   * This determines whether @a new_settings would require sending a non-empty
+   * SETTINGS frame, giving frame-suppression and outstanding-frame limit
+   * checks a shared definition of a settings change.
+   *
+   * @param[in] new_settings The candidate settings to compare.
+   * @return @c true if any emitted setting differs from current local
+   * settings.
+   */
+  bool _settings_have_changes(const Http2ConnectionSettings &new_settings) const;
+
+  /** Check whether a SETTINGS frame can be sent without exceeding local debt.
+   *
+   * A SETTINGS frame that would carry no settings and is not required to be
+   * sent is treated as sendable because it will be skipped.
+   *
+   * @param[in] new_settings The settings to send to the peer.
+   * @param[in] send_empty Whether to send an empty SETTINGS frame.
+   * @return The result of checking whether the SETTINGS frame can be sent.
+   */
+  Http2Error _check_outgoing_settings_frame(const Http2ConnectionSettings &new_settings, bool send_empty) const;
+
+  /** Calculate the maximum SETTINGS frames that can await peer ACKs.
+   *
+   * The limit bounds the memory used to retain local settings snapshots while
+   * still allowing the connection preface and one full concurrent-stream wave
+   * of dynamic stream window updates.
+   *
+   * @return The number of outstanding SETTINGS frames allowed on this
+   * connection.
+   */
+  size_t _get_outstanding_settings_frame_limit() const;
+
+  /** Signal a connection-level HTTP/2 error and schedule session shutdown.
+   *
+   * This sends GOAWAY once, marks the session half-closed locally so no new
+   * streams are accepted, and schedules finalization if it is not already
+   * pending.
+   *
+   * @param[in] error_code The HTTP/2 error code to send in GOAWAY.
+   */
+  void _close_connection(Http2ErrorCode error_code);
 
   // Getters for stream control configurations that retrieve the inbound or
   // outbound values per the configured session.

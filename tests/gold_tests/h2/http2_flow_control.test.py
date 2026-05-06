@@ -17,6 +17,7 @@
 #  limitations under the License.
 
 import re
+import sys
 from enum import Enum
 from typing import List, Optional
 
@@ -332,6 +333,44 @@ class Http2FlowControlTest:
         self._configure_outbound_test_run()
 
 
+class Http2DynamicWindowSettingsCapTest:
+    """Verify dynamic stream windows cap unacknowledged SETTINGS frames."""
+
+    _replay_file: str = 'replay/http2_settings_ack_stall.replay.yaml'
+
+    def run(self) -> None:
+        """Configure the test run."""
+        tr = Test.AddTestRun('Dynamic stream windows cap unacknowledged SETTINGS')
+        server = tr.AddVerifierServerProcess('server-settings-cap', self._replay_file)
+        ts = tr.MakeATSProcess('ts-settings-cap', enable_tls=True, enable_cache=False)
+
+        ts.addDefaultSSLFiles()
+        ts.Setup.CopyAs('clients/h2_settings_ack_stall.py', Test.RunDirectory)
+        ts.Disk.records_config.update(
+            {
+                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.tags': 'http2',
+                'proxy.config.ssl.server.cert.path': f'{ts.Variables.SSLDir}',
+                'proxy.config.ssl.server.private_key.path': f'{ts.Variables.SSLDir}',
+                'proxy.config.http.insert_response_via_str': 2,
+                'proxy.config.http2.active_timeout_in': 5,
+                'proxy.config.http2.flow_control.policy_in': 2,
+                'proxy.config.http2.max_concurrent_streams_in': 2,
+            })
+        ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{server.Variables.http_port}')
+        ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+
+        tr.Processes.Default.StartBefore(server)
+        tr.Processes.Default.StartBefore(ts)
+        tr.Processes.Default.Command = f'{sys.executable} h2_settings_ack_stall.py {ts.Variables.ssl_port}'
+        tr.Processes.Default.ReturnCode = 0
+        tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+            'GOAWAY error_code=4', 'ATS should close the connection with SETTINGS_TIMEOUT.')
+        ts.Disk.diags_log.Content = Testers.ContainsExpression(
+            'ERROR: HTTP/2 connection error code=0x04.*send settings too many outstanding SETTINGS frames',
+            'ATS should log the expected SETTINGS_TIMEOUT connection error.')
+
+
 #
 # Default configuration.
 #
@@ -372,4 +411,7 @@ test = Http2FlowControlTest(
     max_concurrent_streams=10,
     initial_window_size=10,
     flow_control_policy=2)
+test.run()
+
+test = Http2DynamicWindowSettingsCapTest()
 test.run()
