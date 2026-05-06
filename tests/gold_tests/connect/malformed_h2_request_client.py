@@ -118,10 +118,40 @@ def make_malformed_headers(scenario: str) -> bytes:
             ("user-agent", "Malformed/1.0"),
             ("uuid", "malformed-get-connection"),
         ]
+    elif scenario == "crlf-in-header-value":
+        headers = [
+            (":method", "GET"),
+            (":scheme", "https"),
+            (":authority", "crlf-value.example"),
+            (":path", "/crlf-value"),
+            ("x-injected", "safe\r\ninjected: evil"),
+            ("uuid", "malformed-crlf-value"),
+        ]
+    elif scenario == "cr-in-header-value":
+        headers = [
+            (":method", "GET"),
+            (":scheme", "https"),
+            (":authority", "cr-value.example"),
+            (":path", "/cr-value"),
+            ("x-injected", "before\rafter"),
+            ("uuid", "malformed-cr-value"),
+        ]
+    elif scenario == "lf-in-header-value":
+        headers = [
+            (":method", "GET"),
+            (":scheme", "https"),
+            (":authority", "lf-value.example"),
+            (":path", "/lf-value"),
+            ("x-injected", "before\nafter"),
+            ("uuid", "malformed-lf-value"),
+        ]
     else:
         raise ValueError(f"unknown scenario: {scenario}")
 
     return encoder.encode(headers)
+
+
+SCENARIOS_EXPECTING_ERROR_RESPONSE = {"crlf-in-header-value", "cr-in-header-value", "lf-in-header-value"}
 
 
 def main() -> int:
@@ -129,12 +159,21 @@ def main() -> int:
     parser.add_argument("port", type=int, help="TLS port to connect to")
     parser.add_argument(
         "scenario",
-        choices=("connect-missing-authority", "get-missing-path", "get-connection-header"),
+        choices=(
+            "connect-missing-authority",
+            "get-missing-path",
+            "get-connection-header",
+            "crlf-in-header-value",
+            "cr-in-header-value",
+            "lf-in-header-value",
+        ),
         help="Malformed request shape to send",
     )
     args = parser.parse_args()
 
     tls_socket = connect_socket(args.port)
+    decoder = hpack.Decoder()
+    expect_response = args.scenario in SCENARIOS_EXPECTING_ERROR_RESPONSE
     try:
         payload = make_malformed_headers(args.scenario)
         tls_socket.sendall(H2_PREFACE)
@@ -161,6 +200,13 @@ def main() -> int:
                 error_code = int.from_bytes(frame["payload"][4:8], "big")
                 print(f"Received GOAWAY with error code {error_code}")
                 return 0 if error_code in (0, PROTOCOL_ERROR) else 1
+
+            if frame_type == TYPE_HEADERS and frame["stream_id"] == 1 and expect_response:
+                headers = decoder.decode(frame["payload"])
+                status = dict(headers).get(":status", "")
+                status_code = int(status) if status else 0
+                print(f"Received HTTP/2 response with status {status_code}")
+                return 0 if 400 <= status_code < 500 else 1
     except socket.timeout:
         print(f"Timed out waiting for ATS to reject malformed request scenario {args.scenario}", file=sys.stderr)
         return 1

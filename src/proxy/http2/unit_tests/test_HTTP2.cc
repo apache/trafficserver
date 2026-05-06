@@ -143,6 +143,115 @@ TEST_CASE("Convert HTTPHdr", "[HTTP2]")
                                                 "\r\n"));
   }
 
+  SECTION("reject CRLF in header value")
+  {
+    const char request[] = "GET /index.html HTTP/1.1\r\n"
+                           "Host: trafficserver.apache.org\r\n"
+                           "User-Agent: foobar\r\n"
+                           "\r\n";
+
+    HTTPHdr        hdr;
+    ts::PostScript hdr_defer([&]() -> void { hdr.destroy(); });
+    hdr.create(HTTPType::REQUEST, HTTP_2_0);
+
+    const char *start = request;
+    const char *end   = request + sizeof(request) - 1;
+    hdr.parse_req(&parser, &start, end, true);
+    http2_convert_header_from_1_1_to_2(&hdr);
+
+    MIMEField *evil = hdr.field_create("x-injected");
+    hdr.field_attach(evil);
+    evil->value_set(hdr.m_heap, hdr.m_mime, std::string_view{"safe\r\ninjected: evil"});
+
+    HTTPHdr        hdr_out;
+    ts::PostScript hdr_out_defer([&]() -> void { hdr_out.destroy(); });
+    hdr_out.create(HTTPType::REQUEST);
+    hdr_out.copy(&hdr);
+
+    CHECK(http2_convert_header_from_2_to_1_1(&hdr_out) == ParseResult::ERROR);
+  }
+
+  SECTION("reject bare CR in header value")
+  {
+    const char request[] = "GET /index.html HTTP/1.1\r\n"
+                           "Host: trafficserver.apache.org\r\n"
+                           "\r\n";
+
+    HTTPHdr        hdr;
+    ts::PostScript hdr_defer([&]() -> void { hdr.destroy(); });
+    hdr.create(HTTPType::REQUEST, HTTP_2_0);
+
+    const char *start = request;
+    const char *end   = request + sizeof(request) - 1;
+    hdr.parse_req(&parser, &start, end, true);
+    http2_convert_header_from_1_1_to_2(&hdr);
+
+    MIMEField *evil = hdr.field_create("x-injected");
+    hdr.field_attach(evil);
+    evil->value_set(hdr.m_heap, hdr.m_mime, std::string_view{"before\rafter"});
+
+    HTTPHdr        hdr_out;
+    ts::PostScript hdr_out_defer([&]() -> void { hdr_out.destroy(); });
+    hdr_out.create(HTTPType::REQUEST);
+    hdr_out.copy(&hdr);
+
+    CHECK(http2_convert_header_from_2_to_1_1(&hdr_out) == ParseResult::ERROR);
+  }
+
+  SECTION("reject bare LF in header value")
+  {
+    const char request[] = "GET /index.html HTTP/1.1\r\n"
+                           "Host: trafficserver.apache.org\r\n"
+                           "\r\n";
+
+    HTTPHdr        hdr;
+    ts::PostScript hdr_defer([&]() -> void { hdr.destroy(); });
+    hdr.create(HTTPType::REQUEST, HTTP_2_0);
+
+    const char *start = request;
+    const char *end   = request + sizeof(request) - 1;
+    hdr.parse_req(&parser, &start, end, true);
+    http2_convert_header_from_1_1_to_2(&hdr);
+
+    MIMEField *evil = hdr.field_create("x-injected");
+    hdr.field_attach(evil);
+    evil->value_set(hdr.m_heap, hdr.m_mime, std::string_view{"before\nafter"});
+
+    HTTPHdr        hdr_out;
+    ts::PostScript hdr_out_defer([&]() -> void { hdr_out.destroy(); });
+    hdr_out.create(HTTPType::REQUEST);
+    hdr_out.copy(&hdr);
+
+    CHECK(http2_convert_header_from_2_to_1_1(&hdr_out) == ParseResult::ERROR);
+  }
+
+  SECTION("accept clean header value")
+  {
+    const char request[] = "GET /index.html HTTP/1.1\r\n"
+                           "Host: trafficserver.apache.org\r\n"
+                           "\r\n";
+
+    HTTPHdr        hdr;
+    ts::PostScript hdr_defer([&]() -> void { hdr.destroy(); });
+    hdr.create(HTTPType::REQUEST, HTTP_2_0);
+
+    const char *start = request;
+    const char *end   = request + sizeof(request) - 1;
+    hdr.parse_req(&parser, &start, end, true);
+    http2_convert_header_from_1_1_to_2(&hdr);
+
+    MIMEField *clean = hdr.field_create("x-clean");
+    hdr.field_attach(clean);
+    clean->value_set(hdr.m_heap, hdr.m_mime, std::string_view{"perfectly-fine-value"});
+
+    HTTPHdr        hdr_out;
+    ts::PostScript hdr_out_defer([&]() -> void { hdr_out.destroy(); });
+    hdr_out.create(HTTPType::REQUEST);
+    hdr_out.copy(&hdr);
+
+    CHECK(http2_convert_header_from_2_to_1_1(&hdr_out) == ParseResult::DONE);
+  }
+
   SECTION("response")
   {
     const char response[] = "HTTP/1.1 200 OK\r\n"
