@@ -814,7 +814,7 @@ Http2ConnectionState::rcv_settings_frame(const Http2Frame &frame)
   // Update settings count per minute
   this->increment_received_settings_count(n_settings);
   // Close this connection if its settings count received exceeds a limit
-  if (Http2::max_settings_per_frame >= 0 &&
+  if (Http2::max_settings_per_minute >= 0 &&
       this->get_received_settings_count() > static_cast<uint32_t>(Http2::max_settings_per_minute)) {
     Metrics::Counter::increment(http2_rsb.max_settings_per_minute_exceeded);
     Http2StreamDebug(this->session, stream_id, "Observed too frequent setting changes: %u settings within a last minute",
