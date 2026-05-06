@@ -16,6 +16,7 @@
 #  limitations under the License.
 from __future__ import annotations
 
+import json
 import subprocess
 import sys
 import tempfile
@@ -182,3 +183,64 @@ def test_u4wrh_bulk_mode(tmp_path: Path) -> None:
     assert out2.exists()
     assert "X-Test" in out1.read_text()
     assert "404" in out2.read_text()
+
+
+def test_cli_error_format_json_on_parse_error(tmp_path: Path) -> None:
+    """With --error-format json, stderr must be a single JSON object matching the schema."""
+    bad = tmp_path / "bad.hrw4u"
+    bad.write_text("REMAP { this is not valid syntax ( {\n")
+
+    result = run_hrw4u(["--error-format", "json", str(bad)])
+
+    assert result.returncode != 0 or result.stderr
+    payload = json.loads(result.stderr.strip().splitlines()[-1])
+    assert payload["version"] == 1
+    assert payload["summary"]["error_count"] >= 1
+    err = payload["errors"][0]
+    for field in ("filename", "line", "column", "severity", "message", "source_line", "notes"):
+        assert field in err
+
+
+def test_cli_error_format_json_on_missing_file() -> None:
+    """File-I/O errors must also be wrapped in the JSON envelope."""
+    result = run_hrw4u(["--error-format", "json", "nonexistent_file.hrw4u"])
+
+    assert result.returncode != 0
+    payload = json.loads(result.stderr.strip().splitlines()[-1])
+    assert payload["version"] == 1
+    assert payload["summary"]["error_count"] == 1
+    assert "not found" in payload["errors"][0]["message"]
+
+
+def test_cli_error_format_markdown_on_parse_error(tmp_path: Path) -> None:
+    """Markdown format must include heading, fenced code block, and location."""
+    bad = tmp_path / "bad.hrw4u"
+    bad.write_text("REMAP { this is not valid syntax ( {\n")
+
+    result = run_hrw4u(["--error-format", "markdown", str(bad)])
+
+    assert "## hrw4u:" in result.stderr
+    assert "### Error" in result.stderr
+    assert "```" in result.stderr
+
+
+def test_cli_default_error_format_is_plain(tmp_path: Path) -> None:
+    """Omitting --error-format must leave the legacy plain-text output unchanged."""
+    bad = tmp_path / "bad.hrw4u"
+    bad.write_text("REMAP { this is not valid syntax ( {\n")
+
+    result = run_hrw4u([str(bad)])
+
+    assert "Found" in result.stderr and "error" in result.stderr
+    assert "## hrw4u" not in result.stderr
+    assert not result.stderr.strip().startswith("{")
+
+
+def test_cli_help_lists_error_format_flag() -> None:
+    """--help must advertise the new flag."""
+    result = run_hrw4u(["--help"])
+
+    assert result.returncode == 0
+    assert "--error-format" in result.stdout
+    for choice in ("plain", "json", "markdown"):
+        assert choice in result.stdout
