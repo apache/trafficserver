@@ -335,14 +335,22 @@ class TestPlainTextFormatterParity:
         ec = ErrorCollector(formatter=PlainTextFormatter())
         assert ec.get_error_summary() == "No errors found."
 
-    def test_single_error_matches_legacy_shape(self):
+    def test_single_error_omits_found_preamble(self):
+        """A single error should not be prefixed with 'Found 1 error:'."""
         ec = ErrorCollector(formatter=PlainTextFormatter())
         err = Hrw4uSyntaxError("f.hrw4u", 1, 4, "oops", "foo bar")
         ec.add_error(err)
         out = ec.get_error_summary()
-        assert out.startswith("Found 1 error:\n")
-        assert "f.hrw4u:1:4: error: oops" in out
+        assert not out.startswith("Found")
+        assert out.startswith("f.hrw4u:1:4: error: oops")
         assert "   1 | foo bar" in out
+
+    def test_multiple_errors_include_found_preamble(self):
+        """Two or more errors keep the 'Found N errors:' summary line."""
+        ec = ErrorCollector(formatter=PlainTextFormatter())
+        ec.add_error(Hrw4uSyntaxError("f.hrw4u", 1, 0, "a", ""))
+        ec.add_error(Hrw4uSyntaxError("f.hrw4u", 2, 0, "b", ""))
+        assert ec.get_error_summary().startswith("Found 2 errors:\n")
 
     def test_at_limit_marker(self):
         ec = ErrorCollector(max_errors=2, formatter=PlainTextFormatter())

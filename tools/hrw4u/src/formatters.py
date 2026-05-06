@@ -66,7 +66,8 @@ class PlainTextFormatter(ErrorFormatter):
 
         if errors:
             count = len(errors)
-            lines.append(f"Found {count} error{'s' if count > 1 else ''}:")
+            if count > 1:
+                lines.append(f"Found {count} errors:")
 
             for error in errors:
                 lines.append(str(error))

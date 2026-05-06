@@ -231,7 +231,7 @@ def test_cli_default_error_format_is_plain(tmp_path: Path) -> None:
 
     result = run_hrw4u([str(bad)])
 
-    assert "Found" in result.stderr and "error" in result.stderr
+    assert ": error:" in result.stderr
     assert "## hrw4u" not in result.stderr
     assert not result.stderr.strip().startswith("{")
 
