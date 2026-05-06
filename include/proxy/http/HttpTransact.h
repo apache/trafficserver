@@ -1147,9 +1147,9 @@ using TransactEntryFunc_t = void (*)(HttpTransact::State *);
 
 /* The spec says about message body the following:
  *
- * All responses to the HEAD and CONNECT request method
- * MUST NOT include a message-body, even though the presence
- * of entity-header fields might lead one to believe they do.
+ * All responses to the HEAD request method MUST NOT include a
+ * message-body. Successful (2xx) responses to CONNECT MUST NOT
+ * include a message-body; error responses may.
  *
  * All 1xx (informational), 204 (no content), and 304 (not modified)
  * responses MUST NOT include a message-body.
@@ -1171,7 +1171,9 @@ is_response_body_precluded(HTTPStatus status_code)
 inline bool
 is_response_body_precluded(HTTPStatus status_code, int method)
 {
-  if ((method == HTTP_WKSIDX_HEAD) || (method == HTTP_WKSIDX_CONNECT) || is_response_body_precluded(status_code)) {
+  if ((method == HTTP_WKSIDX_HEAD) ||
+      (method == HTTP_WKSIDX_CONNECT && status_code >= HTTPStatus::OK && status_code < HTTPStatus::MULTIPLE_CHOICES) ||
+      is_response_body_precluded(status_code)) {
     return true;
   } else {
     return false;
