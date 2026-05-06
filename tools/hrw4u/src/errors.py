@@ -19,9 +19,12 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import Final
+from typing import Final, TYPE_CHECKING
 
 from antlr4.error.ErrorListener import ErrorListener
+
+if TYPE_CHECKING:
+    from hrw4u.formatters import ErrorFormatter
 
 _TOKEN_NAMES: Final[dict[str, str]] = {
     'QUALIFIED_IDENT': "qualified name (e.g. 'Namespace::Name')",
@@ -111,6 +114,7 @@ class Hrw4uSyntaxError(Exception):
         self.filename = filename
         self.line = line
         self.column = column
+        self.message = message
         self.source_line = source_line
 
 
@@ -166,11 +170,12 @@ class Warning:
 class ErrorCollector:
     """Collects multiple syntax errors and warnings for comprehensive reporting."""
 
-    def __init__(self, max_errors: int = 5) -> None:
+    def __init__(self, max_errors: int = 5, formatter: "ErrorFormatter | None" = None) -> None:
         self.errors: list[Hrw4uSyntaxError] = []
         self.max_errors = max_errors
         self.warnings: list[Warning] = []
         self._sandbox_message: str | None = None
+        self._formatter = formatter
 
     def add_error(self, error: Hrw4uSyntaxError) -> None:
         self.errors.append(error)
@@ -194,35 +199,17 @@ class ErrorCollector:
         return bool(self.warnings)
 
     def get_error_summary(self) -> str:
-        if not self.errors and not self.warnings:
-            return "No errors found."
-
-        lines: list[str] = []
-
-        if self.errors:
-            count = len(self.errors)
-            lines.append(f"Found {count} error{'s' if count > 1 else ''}:")
-
-            for error in self.errors:
-                lines.append(str(error))
-                if hasattr(error, '__notes__') and error.__notes__:
-                    lines.extend(error.__notes__)
-
-        if self.warnings:
-            if self.errors:
-                lines.append("")
-            count = len(self.warnings)
-            lines.append(f"{count} warning{'s' if count > 1 else ''}:")
-            lines.extend(w.format() for w in self.warnings)
-
-        if self.at_limit:
-            lines.append(f"(stopped after {self.max_errors} errors)")
-
-        if self._sandbox_message:
-            lines.append("")
-            lines.append(self._sandbox_message)
-
-        return "\n".join(lines)
+        formatter = self._formatter
+        if formatter is None:
+            from hrw4u.formatters import PlainTextFormatter
+            formatter = PlainTextFormatter()
+        return formatter.format_errors(
+            self.errors,
+            self.warnings,
+            self._sandbox_message,
+            self.at_limit,
+            self.max_errors,
+        )
 
 
 class CollectingErrorListener(ErrorListener):

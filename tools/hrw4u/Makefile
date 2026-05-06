@@ -36,6 +36,7 @@ SCRIPT_KG=scripts/hrw4u-kg
 SHARED_FILES=src/common.py \
 	src/debugging.py \
 	src/errors.py \
+	src/formatters.py \
 	src/states.py \
 	src/tables.py \
 	src/types.py \
