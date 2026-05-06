@@ -64,20 +64,20 @@ ssl_multicert:
     ssl_cert_name: server.pem
     ssl_key_name: server.key
 """.split('\n'))
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'http2',
-    'proxy.config.ssl.server.cert.path': ts.Variables.SSLDir,
-    'proxy.config.ssl.server.private_key.path': ts.Variables.SSLDir,
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'http2',
+        'proxy.config.ssl.server.cert.path': ts.Variables.SSLDir,
+        'proxy.config.ssl.server.private_key.path': ts.Variables.SSLDir,
+    })
 ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{server.Variables.Port}/')
 
 Test.Setup.CopyAs('../connect/' + MALFORMED_CLIENT, Test.RunDirectory)
 
 for i, case in enumerate(CRLF_CASES):
     tr = Test.AddTestRun(case['description'])
-    tr.Processes.Default.Command = (
-        f'{sys.executable} {MALFORMED_CLIENT} {ts.Variables.ssl_port} {case["scenario"]}')
+    tr.Processes.Default.Command = (f'{sys.executable} {MALFORMED_CLIENT} {ts.Variables.ssl_port} {case["scenario"]}')
     tr.Processes.Default.ReturnCode = 0
     if i == 0:
         tr.Processes.Default.StartBefore(server)
