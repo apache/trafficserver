@@ -119,8 +119,9 @@ set_config_records(std::string_view const & /* id ATS_UNUSED */, YAML::Node cons
 {
   swoc::Rv<YAML::Node> resp;
 
-  // we need the type and the update type for now.
-  using LookupContext = std::tuple<RecDataT, RecCheckT, const char *, RecUpdateT>;
+  // we need the type and the update type for now, plus the access tier so we
+  // can refuse writes to records the registrant marked as protected.
+  using LookupContext = std::tuple<RecDataT, RecCheckT, const char *, RecUpdateT, RecAccessT>;
 
   for (auto const &kv : params) {
     SetRecordCmdInfo info;
@@ -132,12 +133,13 @@ set_config_records(std::string_view const & /* id ATS_UNUSED */, YAML::Node cons
     }
 
     LookupContext recordCtx;
+    std::get<RecAccessT>(recordCtx) = RECA_NULL;
 
     // Get record info first. TODO: we may just want to get the full record and  then send it back  as a response.
     const auto ret = RecLookupRecord(
       info.name.c_str(),
       [](const RecRecord *record, void *data) {
-        auto &[dataType, checkType, pattern, updateType] = *static_cast<LookupContext *>(data);
+        auto &[dataType, checkType, pattern, updateType, accessType] = *static_cast<LookupContext *>(data);
         if (REC_TYPE_IS_CONFIG(record->rec_type)) {
           dataType  = record->data_type;
           checkType = record->config_meta.check_type;
@@ -145,6 +147,7 @@ set_config_records(std::string_view const & /* id ATS_UNUSED */, YAML::Node cons
             pattern = record->config_meta.check_expr;
           }
           updateType = record->config_meta.update_type;
+          accessType = record->config_meta.access_type;
         }
       },
       &recordCtx);
@@ -156,7 +159,19 @@ set_config_records(std::string_view const & /* id ATS_UNUSED */, YAML::Node cons
     }
 
     // now set the value.
-    auto const &[dataType, checkType, pattern, updateType] = recordCtx;
+    auto const &[dataType, checkType, pattern, updateType, accessType] = recordCtx;
+
+    // Honour the registrant's access tier.  RECA_READ_ONLY records may only
+    // be changed by in-process code (config file load, environment override,
+    // etc.); RECA_NO_ACCESS records are not exposed to the management plane
+    // at all.  The management RPC must refuse both, with distinct error
+    // codes so callers can branch on the code instead of parsing messages.
+    if (accessType == RECA_READ_ONLY || accessType == RECA_NO_ACCESS) {
+      auto const ec =
+        std::error_code{accessType == RECA_READ_ONLY ? err::RecordError::RECORD_READ_ONLY : err::RecordError::RECORD_NO_ACCESS};
+      resp.errata().assign(std::error_code{errors::Codes::RECORD}).note("{}", ec);
+      continue;
+    }
 
     // run the check only if we have something to check against it.
     if (pattern != nullptr && RecordValidityCheck(info.value.c_str(), checkType, pattern) == false) {
