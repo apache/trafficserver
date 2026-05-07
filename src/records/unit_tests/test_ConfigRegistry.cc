@@ -224,7 +224,7 @@ TEST_CASE("ConfigRegistry register_plugin_config stores filename_record on the e
   REQUIRE(entry != nullptr);
   CHECK(entry->key == "test_plugin_filename_record");
   CHECK(entry->plugin_name == "test_plugin");
-  CHECK(entry->is_plugin);
+  CHECK_FALSE(entry->plugin_name.empty()); // plugin_name non-empty == plugin entry
   CHECK(entry->default_filename == "default.yaml");
   CHECK(entry->filename_record == "proxy.config.test_plugin.filename");
   CHECK(entry->source == ConfigSource::FileOnly);

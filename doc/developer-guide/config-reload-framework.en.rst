@@ -712,16 +712,13 @@ What changes for plugins is only the surface API:
 
 - ``ConfigRegistry::register_config`` becomes :func:`TSCfgRegister`,
   which takes a :type:`TSCfgRegistrationInfo` options struct.
-- ``ConfigRegistry::attach`` becomes :func:`TSCfgAttachTrigger`.
+- ``ConfigRegistry::attach`` becomes :func:`TSCfgAttachReloadTrigger`.
 - ``ConfigRegistry::add_file_dependency`` becomes
   :func:`TSCfgAddFileDependency`.
 - ``ConfigContext`` becomes the opaque ``TSCfgLoadCtx`` handle, with
   the same in-progress / complete / fail / log / supplied-yaml /
   reload-directives / add-subtask operations exposed as plain
   ``TSCfgLoadCtx*`` functions.
-- :func:`TSCfgSetEnabled` allows the plugin to disable a registered
-  entry at runtime, in which case the framework short-circuits the
-  task to a ``"skipped (disabled)"`` completion.
 
 Lifecycle and preconditions
 ---------------------------
@@ -803,7 +800,7 @@ either file-driven or RPC-driven reload:
      }
 
      // Optional: trigger the handler whenever this record changes.
-     TSCfgAttachTrigger(PLUGIN_NAME, "proxy.config.my_plugin.enabled");
+     TSCfgAttachReloadTrigger(PLUGIN_NAME, "proxy.config.my_plugin.enabled");
    }
 
 The handler obeys the same terminal-state rule as core handlers - every

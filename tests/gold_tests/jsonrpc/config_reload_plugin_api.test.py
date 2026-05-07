@@ -1,9 +1,9 @@
 '''
-Test the TSCfg* plugin config API end-to-end — all 10 public functions.
+Test the TSCfg* plugin config API end-to-end.
 
 Registration APIs (called in TSPluginInit):
   1. TSCfgRegister          — plugin loads and registers
-  2. TSCfgAttachTrigger     — record change fires handler
+  2. TSCfgAttachReloadTrigger — record change fires handler
   3. TSCfgAddFileDependency — companion file change fires handler
 
 Handler APIs (called during reload):
@@ -74,7 +74,7 @@ Test.PrepareTestPlugin(
     'cfg_plugin_test.conf cfg_plugin_companion.conf')
 
 # ============================================================================
-# Test A: Plugin startup — TSCfgRegister + TSCfgAttachTrigger + TSCfgAddFileDependency
+# Test A: Plugin startup — TSCfgRegister + TSCfgAttachReloadTrigger + TSCfgAddFileDependency
 # ============================================================================
 tr = Test.AddTestRun("Plugin loads and registers all init APIs")
 tr.Processes.Default.StartBefore(ts)
@@ -86,7 +86,7 @@ tr.StillRunningAfter = ts
 # so they land in traffic.out, not diags.log.
 ts.Disk.traffic_out.Content = All(
     Testers.IncludesExpression('TSCfgRegister OK', 'TSCfgRegister should succeed'),
-    Testers.IncludesExpression('TSCfgAttachTrigger OK', 'TSCfgAttachTrigger should succeed'),
+    Testers.IncludesExpression('TSCfgAttachReloadTrigger OK', 'TSCfgAttachReloadTrigger should succeed'),
     Testers.IncludesExpression('TSCfgAddFileDependency OK', 'TSCfgAddFileDependency should succeed'),
 )
 
@@ -233,10 +233,10 @@ tr.Processes.Default.Streams.stdout = All(
 tr.StillRunningAfter = ts
 
 # ============================================================================
-# Test F: Record-trigger reload (TSCfgAttachTrigger)
+# Test F: Record-trigger reload (TSCfgAttachReloadTrigger)
 # Change proxy.config.http.insert_age_in_response to trigger handler
 # ============================================================================
-tr = Test.AddTestRun("Trigger reload via record change (TSCfgAttachTrigger)")
+tr = Test.AddTestRun("Trigger reload via record change (TSCfgAttachReloadTrigger)")
 tr.DelayStart = 2
 tr.Processes.Default.Command = "traffic_ctl config set proxy.config.http.insert_age_in_response 0"
 tr.Processes.Default.Env = ts.Env
@@ -251,66 +251,6 @@ tr.Processes.Default.ReturnCode = 0
 # The record-triggered reload should show our plugin task
 tr.Processes.Default.Streams.stdout = Testers.IncludesExpression(
     'cfg_plugin_test', 'Plugin handler should have been called by record trigger')
-tr.StillRunningAfter = ts
-
-# ============================================================================
-# Test H: TSCfgSetEnabled — disable self, verify skipped, re-enable
-# ============================================================================
-
-# Step 1: Plugin disables itself (this reload still runs the handler)
-tr = Test.AddTestRun("RPC reload: plugin disables itself")
-tr.DelayStart = 2
-tr.AddJsonRPCClientRequest(
-    ts, Request.admin_config_reload(token='rpc-disable-self', configs={'cfg_plugin_test': {
-        'disable_self': True
-    }}, force=True))
-
-
-def validate_disable_self(resp: Response):
-    result = resp.result
-    return (True, f"disable_self dispatched: token={result.get('token', '')}")
-
-
-tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_disable_self)
-tr.StillRunningAfter = ts
-
-tr = Test.AddTestRun("Verify disable_self completed")
-tr.DelayStart = 5
-tr.Processes.Default.Command = "traffic_ctl config status -t rpc-disable-self"
-tr.Processes.Default.Env = ts.Env
-tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.Streams.stdout = Testers.IncludesExpression(
-    'disabled self', 'Handler should have run and reported disabling itself')
-tr.StillRunningAfter = ts
-
-# Step 2: Now the plugin is disabled — reload should skip it
-tr = Test.AddTestRun("RPC reload while disabled: should be skipped")
-tr.DelayStart = 2
-tr.AddJsonRPCClientRequest(
-    ts,
-    Request.admin_config_reload(
-        token='rpc-while-disabled', configs={'cfg_plugin_test': {
-            'greet': 'should_not_appear'
-        }}, force=True))
-
-
-def validate_while_disabled(resp: Response):
-    result = resp.result
-    return (True, f"while-disabled dispatched: token={result.get('token', '')}")
-
-
-tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_while_disabled)
-tr.StillRunningAfter = ts
-
-tr = Test.AddTestRun("Verify skipped (disabled) in status")
-tr.DelayStart = 5
-tr.Processes.Default.Command = "traffic_ctl config status -t rpc-while-disabled"
-tr.Processes.Default.Env = ts.Env
-tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.Streams.stdout = All(
-    Testers.IncludesExpression('skipped', 'Disabled plugin should show skipped'),
-    Testers.ExcludesExpression('should_not_appear', 'Handler should NOT have run'),
-)
 tr.StillRunningAfter = ts
 
 # ============================================================================
