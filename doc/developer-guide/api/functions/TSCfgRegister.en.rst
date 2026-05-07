@@ -215,19 +215,46 @@ Registration
    already registered the same key.
 
 :func:`TSCfgAttachReloadTrigger`
-   Attaches a fully-qualified record name (e.g.
-   ``proxy.config.my_plugin.enabled``) to a previously registered key.
-   When the record value changes, the plugin's reload handler is
-   invoked, the same way it would be if the file changed on disk. May
-   be called multiple times to attach more than one trigger record to
-   the same entry.
+   Wires a record so that changing its value re-runs the reload handler
+   registered for ``key``. Internally registers a record-change
+   callback (``RecRegisterConfigUpdateCb``) and routes the event back
+   into the same reload pipeline as file changes: the plugin's
+   :type:`TSCfgLoadCb` is invoked with the resolved file path
+   available via :func:`TSCfgLoadCtxGetFilename`, exactly as it would
+   be for an on-disk file change. May be called multiple times to
+   attach more than one trigger record to the same entry.
 
-   This is **not** a general record-change subscription primitive: the
-   only callback the plugin gets is the existing config-reload
-   handler, the reload is treated as file-driven (no RPC payload), and
-   standalone record changes (i.e. ``traffic_ctl config set`` outside
-   an active reload cycle) invoke the handler with an empty context
-   that does not surface in :option:`traffic_ctl config status`.
+   **Core analog.** :cpp:func:`!ConfigRegistry::register_config()`
+   accepts a ``trigger_records`` initializer-list at registration time
+   (e.g. ``ssl_multicert`` lists ~10 record names there). The
+   post-registration form is :cpp:func:`!ConfigRegistry::attach`. This
+   function is the plugin-facing wrapper for the latter; the
+   initializer-list shape is intentionally not exposed on
+   :type:`TSCfgRegistrationInfo` so the option struct stays
+   ABI-stable.
+
+   **It triggers a reload, nothing else.** Specifically the plugin
+   cannot:
+
+   - Register a free-form record-change callback. There is no
+     ``TSRecordRegisterChangeCb`` today; the underlying primitive
+     (``RecRegisterConfigUpdateCb``) is internal-only.
+   - Receive record-change details. The handler gets no record name,
+     no old/new value, no event payload. Use ``TSMgmt*Get()`` inside
+     the handler if it needs the value.
+   - Subscribe a record without a registered config key. Calling with
+     an unknown ``key`` returns ``TS_ERROR``.
+   - Multiplex one record across two keys, or attach in any shape
+     other than (one record, one config key, per call).
+
+   The reload is always treated as file-driven (no RPC payload):
+   :func:`TSCfgLoadCtxGetSuppliedYaml` and
+   :func:`TSCfgLoadCtxGetReloadDirectives` return ``nullptr`` for
+   record-triggered invocations. Standalone record changes (i.e.
+   ``traffic_ctl config set`` outside an active reload cycle) invoke
+   the handler with an empty context that does not surface in
+   :option:`traffic_ctl config status` - same as core record-triggered
+   reloads outside a reload cycle.
 
 :func:`TSCfgAddFileDependency`
    Adds a companion file to a previously registered key. When the
@@ -292,8 +319,29 @@ State transitions:
 Inputs:
 
 :func:`TSCfgLoadCtxGetFilename`
-   Returns the resolved file path the framework intends the handler to
-   read from disk. Empty for RPC-only reloads.
+   Returns the path the framework expects this handler to read.
+   Two-step resolution:
+
+   1. If the registration's ``filename_record`` was set AND the record
+      currently has a non-empty value, that value is returned (the
+      operator can override the filename at runtime via
+      ``traffic_ctl config set <record>``).
+   2. Otherwise, returns ``config_path`` as-registered.
+
+   Most plugins don't set ``filename_record`` and could equivalently
+   use their own stashed copy of the registered path - this function
+   is the canonical way to get the filename only when
+   ``filename_record`` is in play.
+
+   **Always populated for plugin handlers**, including on RPC reloads.
+   To detect RPC content, check :func:`TSCfgLoadCtxGetSuppliedYaml` -
+   not this function.
+
+   **Core analog.** :cpp:func:`!ConfigReloadTask::get_filename`. For
+   core handlers, the value is empty on RPC reloads; the plugin
+   wrapper always populates it so plugins can use
+   :func:`TSCfgLoadCtxGetSuppliedYaml` as the canonical RPC-detection
+   signal.
 
 :func:`TSCfgLoadCtxGetReloadToken`
    Returns the reload-cycle correlation token (e.g.
