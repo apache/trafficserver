@@ -1285,18 +1285,43 @@ TSReturnCode TSMgmtConfigFileAdd(const char *parent, const char *fileName);
 TSReturnCode TSCfgRegister(const TSCfgRegistrationInfo *info);
 
 /**
-   Attach a record so its value changes trigger a reload of a previously
-   registered plugin config. When the record changes, the plugin's reload
-   handler is invoked (same as if the file changed on disk).
+   Wire a record so that changing its value re-runs the reload handler
+   registered for @c key. Internally registers a record-change callback
+   (@c RecRegisterConfigUpdateCb) and routes the event back into the same
+   reload pipeline as file changes: the plugin's @c TSCfgLoadCb is invoked
+   with the resolved file path available via @c TSCfgLoadCtxGetFilename,
+   exactly as it would be for an on-disk file change.
 
-   This is NOT a general record-change subscription primitive: the only
-   callback the plugin gets is the existing config-reload handler, the
-   reload is treated as file-driven (no RPC payload), and standalone
-   record changes (e.g. traffic_ctl config set with no config reload in
-   flight) invoke the handler with an empty context that does not surface
-   in `traffic_ctl config status`. See the developer guide for details.
+   It triggers a reload, nothing else. Specifically the plugin cannot:
+     - Register a free-form record-change callback. There is no
+       @c TSRecordRegisterChangeCb today; the underlying primitive
+       (@c RecRegisterConfigUpdateCb) is internal-only.
+     - Receive record-change details. The handler gets no record name,
+       no old/new value, no event payload. Use @c TSMgmt*Get() inside
+       the handler if it needs the value.
+     - Subscribe a record without a registered config key. Calling with
+       an unknown @a key returns @c TS_ERROR.
+     - Multiplex one record across two keys, or attach in any shape
+       other than (one record, one config key, per call).
 
-   @note Must be called from TSPluginInit() after TSCfgRegister().
+   When the record change is caused by @c "traffic_ctl config reload",
+   the handler runs as a subtask of that reload and surfaces in
+   @c "traffic_ctl config status". When the record is set standalone
+   (@c "traffic_ctl config set" outside a reload cycle), the handler
+   still runs and applies config, but no reload task is created so the
+   invocation is invisible to @c "config status" - same as core
+   record-triggered reloads outside a reload cycle.
+
+   Core analog: @c ConfigRegistry::register_config() accepts a
+   @c trigger_records initializer-list at registration time (e.g.
+   @c ssl_multicert lists ~10 record names there), and
+   @c ConfigRegistry::attach(key, record) is the post-registration form.
+   This function is the plugin-facing wrapper for the latter; the
+   initializer-list shape is intentionally not exposed on
+   @c TSCfgRegistrationInfo so the option struct stays ABI-stable.
+
+   @note Must be called from TSPluginInit() after TSCfgRegister(). The
+         record must already exist (e.g. created via TSMgmtIntCreate).
 
    @param key          The config key passed to TSCfgRegister().
    @param record_name  Fully-qualified record name (e.g., "proxy.config.my_plugin.enabled").
@@ -1402,7 +1427,26 @@ void TSCfgLoadCtxAddLog(TSCfgLoadCtx ctx, TSCfgLogLevel level, std::string_view 
 TSCfgLoadCtx TSCfgLoadCtxAddSubtask(TSCfgLoadCtx ctx, std::string_view description);
 
 /**
-   Get the resolved config file path for this load.
+   Returns the path the framework expects this handler to read.
+
+   Two-step resolution:
+     1. If the registration's @c filename_record was set AND the record
+        currently has a non-empty value, that value is returned (the
+        operator can override the filename at runtime via
+        @c "traffic_ctl config set <record>").
+     2. Otherwise, returns @c config_path as-registered.
+
+   Most plugins don't set @c filename_record and could equivalently use
+   their own stashed copy of the registered path; this function is the
+   canonical way to get the filename only when @c filename_record is in
+   play. Always populated for plugin handlers, including on RPC
+   reloads. To detect RPC content, check
+   @c TSCfgLoadCtxGetSuppliedYaml(ctx) - not this function.
+
+   Core analog: @c ConfigReloadTask::get_filename(). For core handlers,
+   the value is empty on RPC reloads; the plugin wrapper always
+   populates it so plugins can use @c SuppliedYaml as the canonical
+   RPC-detection signal.
 
    Null-safe: calling with nullptr returns an empty string_view.
 
