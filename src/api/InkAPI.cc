@@ -3406,7 +3406,7 @@ TSCfgRegister(const TSCfgRegistrationInfo *info)
 }
 
 TSReturnCode
-TSCfgAttachTrigger(std::string_view key, std::string_view record_name)
+TSCfgAttachReloadTrigger(std::string_view key, std::string_view record_name)
 {
   if (!plugin_reg_current || plugin_reg_current->plugin_name == nullptr) {
     return TS_ERROR;
@@ -3422,11 +3422,11 @@ TSCfgAttachTrigger(std::string_view key, std::string_view record_name)
   std::string record_str{record_name};
 
   if (registry.attach(key_str, record_str.c_str()) != 0) {
-    Dbg(dbg_ctl_plugin_config, "[%s] TSCfgAttachTrigger: key '%s' not found", plugin_name, key_str.c_str());
+    Dbg(dbg_ctl_plugin_config, "[%s] TSCfgAttachReloadTrigger: key '%s' not found", plugin_name, key_str.c_str());
     return TS_ERROR;
   }
 
-  Dbg(dbg_ctl_plugin_config, "[%s] TSCfgAttachTrigger: attached record '%s' to config '%s'", plugin_name, record_str.c_str(),
+  Dbg(dbg_ctl_plugin_config, "[%s] TSCfgAttachReloadTrigger: attached record '%s' to config '%s'", plugin_name, record_str.c_str(),
       key_str.c_str());
   return TS_SUCCESS;
 }
@@ -3475,35 +3475,6 @@ TSCfgAddFileDependency(const TSCfgFileDependencyInfo *info)
     Dbg(dbg_ctl_plugin_config, "[%s] TSCfgAddFileDependency: added file '%s' (dep_key '%s') to config '%s'", plugin_name,
         path_str.c_str(), dep_key_str.c_str(), key_str.c_str());
   }
-  return TS_SUCCESS;
-}
-
-TSReturnCode
-TSCfgSetEnabled(std::string_view key, int enabled)
-{
-  if (key.empty()) {
-    Error("[unknown-plugin] TSCfgSetEnabled: empty key");
-    return TS_ERROR;
-  }
-
-  auto       &registry = config::ConfigRegistry::Get_Instance();
-  std::string key_str{key};
-
-  // Resolve the owning plugin's name for log attribution. Unlike the other
-  // TSCfg* APIs, TSCfgSetEnabled may be called outside TSPluginInit, so
-  // plugin_reg_current is unreliable; pull the name from the registry entry.
-  char const *plugin_name = "unknown-plugin";
-  if (auto const *entry = registry.find(key_str); entry != nullptr && !entry->plugin_name.empty()) {
-    plugin_name = entry->plugin_name.c_str();
-  }
-
-  if (registry.set_enabled(key_str, enabled != 0) != 0) {
-    Warning("[%s] TSCfgSetEnabled: key '%s' not found", plugin_name, key_str.c_str());
-    return TS_ERROR;
-  }
-
-  Dbg(dbg_ctl_plugin_config, "[%s] TSCfgSetEnabled: config '%s' %s", plugin_name, key_str.c_str(),
-      enabled ? "enabled" : "disabled");
   return TS_SUCCESS;
 }
 
@@ -3573,14 +3544,28 @@ TSCfgLoadCtxFail(TSCfgLoadCtx ctx, std::string_view msg)
 }
 
 void
-TSCfgLoadCtxAddLog(TSCfgLoadCtx ctx, DiagsLevel level, std::string_view msg)
+TSCfgLoadCtxAddLog(TSCfgLoadCtx ctx, TSCfgLogLevel level, std::string_view msg)
 {
   if (ctx == nullptr || msg.empty()) {
     return;
   }
 
+  DiagsLevel diags_level = DL_Note;
+  switch (level) {
+  case TS_CFG_LOG_WARNING:
+    diags_level = DL_Warning;
+    break;
+  case TS_CFG_LOG_ERROR:
+    diags_level = DL_Error;
+    break;
+  case TS_CFG_LOG_NOTE:
+  default:
+    diags_level = DL_Note;
+    break;
+  }
+
   auto *pctx = reinterpret_cast<PluginConfigContext *>(ctx);
-  CfgLoadLog(pctx->ctx, level, "%.*s", static_cast<int>(msg.size()), msg.data());
+  CfgLoadLog(pctx->ctx, diags_level, "%.*s", static_cast<int>(msg.size()), msg.data());
 }
 
 TSCfgLoadCtx

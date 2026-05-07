@@ -203,8 +203,8 @@ public:
 
 private:
   /// Attach the registering plugin's name. A non-empty name marks the context's
-  /// task as plugin-originated (is_plugin = true); an empty view marks it as
-  /// core. Used for diagnostics and traffic_ctl status attribution.
+  /// task as plugin-originated; an empty view marks it as core. Used for
+  /// diagnostics and traffic_ctl status attribution.
   void set_plugin_name(std::string_view name);
 
   /// Set supplied YAML node. Only ConfigRegistry should call this during reload setup.

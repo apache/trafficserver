@@ -115,13 +115,6 @@ public:
       Warning("Config key '%s' not found in registry", _config_key.c_str());
     } else if (!entry->handler) {
       Warning("Config '%s' has no handler", _config_key.c_str());
-    } else if (!entry->enabled) {
-      Dbg(dbg_ctl, "Config '%s' skipped (disabled)", _config_key.c_str());
-      auto ctx = ReloadCoordinator::Get_Instance().create_config_context(_config_key, _config_key, entry->resolve_filename());
-      if (ctx) {
-        ctx.set_plugin_name(entry->plugin_name);
-        ctx.complete("skipped (disabled)");
-      }
     } else {
       auto ctx = ReloadCoordinator::Get_Instance().create_config_context(_config_key, _config_key, entry->resolve_filename());
       if (!ctx) {
@@ -217,7 +210,7 @@ void
 ConfigRegistry::do_register(Entry entry)
 {
   const char *type_str  = (entry.type == ConfigType::YAML) ? "YAML" : "legacy";
-  const char *owner_str = entry.is_plugin ? (entry.plugin_name.empty() ? "plugin:unknown" : entry.plugin_name.c_str()) : "core";
+  const char *owner_str = entry.plugin_name.empty() ? "core" : entry.plugin_name.c_str();
 
   Dbg(dbg_ctl, "Registering %s config '%s' [owner=%s] (default: %s, record: %s, triggers: %zu)", type_str, entry.key.c_str(),
       owner_str, entry.default_filename.c_str(), entry.filename_record.empty() ? "<none>" : entry.filename_record.c_str(),
@@ -243,11 +236,9 @@ ConfigRegistry::do_register(Entry entry)
       FileManager::instance().addFile(resolved.c_str(), config_name, false, it->second.is_required);
     }
   } else {
-    auto const &existing = it->second;
-    char const *existing_owner =
-      existing.is_plugin ? (existing.plugin_name.empty() ? "unknown-plugin" : existing.plugin_name.c_str()) : "core";
-    char const *incoming_owner =
-      entry.is_plugin ? (entry.plugin_name.empty() ? "unknown-plugin" : entry.plugin_name.c_str()) : "core";
+    auto const &existing       = it->second;
+    char const *existing_owner = existing.plugin_name.empty() ? "core" : existing.plugin_name.c_str();
+    char const *incoming_owner = entry.plugin_name.empty() ? "core" : entry.plugin_name.c_str();
     Warning("Config '%s' already registered by %s; ignoring registration from %s", it->first.c_str(), existing_owner,
             incoming_owner);
   }
@@ -289,7 +280,6 @@ ConfigRegistry::register_plugin_config(const std::string &key, const std::string
   entry.handler          = std::move(handler);
   entry.source           = source;
   entry.is_required      = is_required;
-  entry.is_plugin        = true;
   entry.type             = infer_config_type(default_filename);
 
   for (auto const *record : trigger_records) {
@@ -365,21 +355,6 @@ ConfigRegistry::attach(const std::string &key, const char *record_name)
 
   Dbg(dbg_ctl, "Attaching trigger '%s' to config '%s'", record_name, key.c_str());
   return wire_record_callback(record_name, config_key);
-}
-
-int
-ConfigRegistry::set_enabled(const std::string &key, bool enabled)
-{
-  std::unique_lock lock(_mutex);
-  auto             it = _entries.find(key);
-  if (it == _entries.end()) {
-    Warning("Cannot set enabled on unknown config: %s", key.c_str());
-    return -1;
-  }
-
-  it->second.enabled = enabled;
-  Dbg(dbg_ctl, "Config '%s' %s", key.c_str(), enabled ? "enabled" : "disabled");
-  return 0;
 }
 
 int
@@ -562,12 +537,6 @@ ConfigRegistry::execute_reload(const std::string &key)
 
   auto ctx = ReloadCoordinator::Get_Instance().create_config_context(entry_copy.key, entry_copy.key, filename);
   ctx.set_plugin_name(entry_copy.plugin_name);
-
-  if (!entry_copy.enabled) {
-    Dbg(dbg_ctl, "Config '%s' skipped (disabled)", entry_copy.key.c_str());
-    ctx.complete("skipped (disabled)");
-    return;
-  }
 
   ctx.in_progress();
 

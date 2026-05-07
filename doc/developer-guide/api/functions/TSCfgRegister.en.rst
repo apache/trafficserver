@@ -99,8 +99,12 @@ Synopsis
 
    .. var:: bool is_required
 
-      ``true`` if the file must exist on disk for a reload to be
-      considered successful. Defaults to ``false``.
+      Hint propagated to FileManager: marks the file as "required" in
+      catalog/inspection output and emits a ``Dbg`` line if the file
+      is missing at registration time. The framework does **not**
+      enforce this flag at reload-time today: the handler is still
+      invoked even when the file is missing or invalid, and the
+      plugin chooses whether to fail the reload. Defaults to ``false``.
 
 .. type:: TSCfgFileDependencyInfo
 
@@ -131,8 +135,9 @@ Synopsis
 
    .. var:: bool is_required
 
-      ``true`` if the file must exist on disk for a reload to be
-      considered successful. Defaults to ``false``.
+      Hint propagated to FileManager (catalog/inspection only); see the
+      equivalent field on :type:`TSCfgRegistrationInfo`. Defaults to
+      ``false``.
 
 .. type:: TSCfgLoadCtx
 
@@ -147,14 +152,35 @@ Synopsis
    Plugin reload callback signature. ``data`` is the opaque pointer the
    plugin supplied via :var:`TSCfgRegistrationInfo::data`.
 
+.. enum:: TSCfgLogLevel
+
+   Severity for log entries emitted via :func:`TSCfgLoadCtxAddLog`.
+
+   .. enumerator:: TS_CFG_LOG_NOTE
+
+      Informational. Default level. Maps to ``DL_Note`` internally.
+
+   .. enumerator:: TS_CFG_LOG_WARNING
+
+      Concerning; the reload may still complete. Maps to ``DL_Warning``.
+
+   .. enumerator:: TS_CFG_LOG_ERROR
+
+      Failure cause; pair with a subsequent :func:`TSCfgLoadCtxFail`.
+      Maps to ``DL_Error``.
+
+   The framework deliberately does not expose the fatal-class diagnostics
+   levels here: a reload handler should not be able to terminate the
+   process. Plugins that truly need debug-only output should use
+   ``Dbg(ctl, ...)`` instead of this API.
+
 .. function:: TSReturnCode TSCfgRegister(const TSCfgRegistrationInfo *info)
-.. function:: TSReturnCode TSCfgAttachTrigger(std::string_view key, std::string_view record_name)
+.. function:: TSReturnCode TSCfgAttachReloadTrigger(std::string_view key, std::string_view record_name)
 .. function:: TSReturnCode TSCfgAddFileDependency(const TSCfgFileDependencyInfo *info)
-.. function:: TSReturnCode TSCfgSetEnabled(std::string_view key, int enabled)
 .. function:: void TSCfgLoadCtxInProgress(TSCfgLoadCtx ctx, std::string_view msg)
 .. function:: void TSCfgLoadCtxComplete(TSCfgLoadCtx ctx, std::string_view msg)
 .. function:: void TSCfgLoadCtxFail(TSCfgLoadCtx ctx, std::string_view msg)
-.. function:: void TSCfgLoadCtxAddLog(TSCfgLoadCtx ctx, DiagsLevel level, std::string_view msg)
+.. function:: void TSCfgLoadCtxAddLog(TSCfgLoadCtx ctx, TSCfgLogLevel level, std::string_view msg)
 .. function:: TSCfgLoadCtx TSCfgLoadCtxAddSubtask(TSCfgLoadCtx ctx, std::string_view description)
 .. function:: std::string_view TSCfgLoadCtxGetFilename(TSCfgLoadCtx ctx)
 .. function:: std::string_view TSCfgLoadCtxGetReloadToken(TSCfgLoadCtx ctx)
@@ -188,13 +214,20 @@ Registration
    incomplete ``info`` struct, or if another plugin (or core) has
    already registered the same key.
 
-:func:`TSCfgAttachTrigger`
+:func:`TSCfgAttachReloadTrigger`
    Attaches a fully-qualified record name (e.g.
    ``proxy.config.my_plugin.enabled``) to a previously registered key.
-   When the record value changes, the plugin's handler is invoked, the
-   same way it would be if the file changed on disk. May be called
-   multiple times to attach more than one trigger record to the same
-   entry.
+   When the record value changes, the plugin's reload handler is
+   invoked, the same way it would be if the file changed on disk. May
+   be called multiple times to attach more than one trigger record to
+   the same entry.
+
+   This is **not** a general record-change subscription primitive: the
+   only callback the plugin gets is the existing config-reload
+   handler, the reload is treated as file-driven (no RPC payload), and
+   standalone record changes (i.e. ``traffic_ctl config set`` outside
+   an active reload cycle) invoke the handler with an empty context
+   that does not surface in :option:`traffic_ctl config status`.
 
 :func:`TSCfgAddFileDependency`
    Adds a companion file to a previously registered key. When the
@@ -202,12 +235,6 @@ Registration
    YAML under :var:`TSCfgFileDependencyInfo::dep_key` via JSONRPC, when
    set - the plugin's handler is invoked. With ``dep_key`` empty the
    dependency is file-change-only.
-
-:func:`TSCfgSetEnabled`
-   Toggles a registered config at runtime. Disabled entries are skipped
-   during reloads (their tasks are short-circuited to a
-   ``"skipped (disabled)"`` completion). Unlike the other three, this
-   function may be called at any time, not only during ``TSPluginInit``.
 
 Per-reload context (TSCfgLoadCtx)
 ---------------------------------
@@ -311,15 +338,38 @@ overall reload (see :ref:`config-context-terminal-state`). The context
 handle then leaks for the process lifetime, so reaching a terminal
 state on every code path is mandatory.
 
+Recommended pattern: parse first, apply second
+----------------------------------------------
+
+The framework does not provide a separate validation phase. The
+handler is the single point where the plugin parses the new
+configuration and applies it. To avoid leaving live state half-mutated
+on a partial parse, plugins should follow a two-step pattern inside
+the same handler:
+
+1. **Parse** the file (or supplied YAML) into a fresh, staging-side
+   structure. Validate fully. Do not touch live state during this
+   step. On parse failure, call :func:`TSCfgLoadCtxFail` and return -
+   live state remains untouched.
+
+2. **Swap** the staging structure into place atomically. This is
+   typically a pointer swap into a ``std::shared_ptr`` /
+   ``std::atomic`` slot the request path reads from. After the swap
+   succeeds, call :func:`TSCfgLoadCtxComplete`.
+
+This pattern matches what core configs already do (for example,
+``ip_allow``, ``remap.config``) and gives operators predictable
+behavior on a malformed reload: the previous configuration stays in
+effect until a fully valid one is loaded.
+
 Restrictions
 ============
 
 - Not supported for remap plugins (:func:`TSRemapInit` /
   :func:`TSRemapNewInstance`).
-- :func:`TSCfgRegister`, :func:`TSCfgAttachTrigger`, and
+- :func:`TSCfgRegister`, :func:`TSCfgAttachReloadTrigger`, and
   :func:`TSCfgAddFileDependency` must all be called from
   :func:`TSPluginInit`, after :func:`TSPluginRegister`.
-- :func:`TSCfgSetEnabled` may be called at any time after registration.
 
 Example - registration and synchronous handler
 ==============================================
@@ -387,7 +437,7 @@ Example - registration and synchronous handler
      }
 
      // Optional: attach a record so changing it fires the handler.
-     TSCfgAttachTrigger(PLUGIN_NAME, "proxy.config.my_plugin.enabled");
+     TSCfgAttachReloadTrigger(PLUGIN_NAME, "proxy.config.my_plugin.enabled");
    }
 
 Example - RPC content with directives

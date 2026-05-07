@@ -64,7 +64,8 @@ deferred_handler(TSCont contp, TSEvent /* event */, void * /* edata */)
 
   if (work->stage == 0) {
     Dbg(dbg_ctl, "Stage 0: deferred work starting after 3s wait");
-    TSCfgLoadCtxAddLog(work->ctx, DL_Note, "cfg_plugin_deferred_test: stage 0 - deferred work starting, simulating heavy work");
+    TSCfgLoadCtxAddLog(work->ctx, TS_CFG_LOG_NOTE,
+                       "cfg_plugin_deferred_test: stage 0 - deferred work starting, simulating heavy work");
     work->stage = 1;
     TSContScheduleOnPool(contp, 2000, TS_THREAD_POOL_TASK);
     return 0;
@@ -72,10 +73,10 @@ deferred_handler(TSCont contp, TSEvent /* event */, void * /* edata */)
 
   Dbg(dbg_ctl, "Stage 1: heavy work done after 2s, completing");
   if (work->should_fail) {
-    TSCfgLoadCtxAddLog(work->ctx, DL_Error, "cfg_plugin_deferred_test: stage 1 - heavy work failed");
+    TSCfgLoadCtxAddLog(work->ctx, TS_CFG_LOG_ERROR, "cfg_plugin_deferred_test: stage 1 - heavy work failed");
     TSCfgLoadCtxFail(work->ctx, "cfg_plugin_deferred_test: deferred fail after heavy work");
   } else {
-    TSCfgLoadCtxAddLog(work->ctx, DL_Note, "cfg_plugin_deferred_test: stage 1 - heavy work succeeded");
+    TSCfgLoadCtxAddLog(work->ctx, TS_CFG_LOG_NOTE, "cfg_plugin_deferred_test: stage 1 - heavy work succeeded");
     TSCfgLoadCtxComplete(work->ctx, "cfg_plugin_deferred_test: deferred complete after heavy work");
   }
 
@@ -88,7 +89,7 @@ void
 config_reload(TSCfgLoadCtx ctx, void * /* data */)
 {
   TSCfgLoadCtxInProgress(ctx, "cfg_plugin_deferred_test: deferring work, will reschedule in 3s");
-  TSCfgLoadCtxAddLog(ctx, DL_Note, "cfg_plugin_deferred_test: scheduling two-stage deferred completion (3s + 2s)");
+  TSCfgLoadCtxAddLog(ctx, TS_CFG_LOG_NOTE, "cfg_plugin_deferred_test: scheduling two-stage deferred completion (3s + 2s)");
 
   bool should_fail = false;
 

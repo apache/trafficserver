@@ -73,10 +73,10 @@ config_reload(TSCfgLoadCtx ctx, void * /* data */)
       version = (*directives)["version"].as<std::string>();
     }
 
-    TSCfgLoadCtxAddLog(ctx, DL_Note, std::string{PLUGIN_NAME ": directive_version="} + version);
+    TSCfgLoadCtxAddLog(ctx, TS_CFG_LOG_NOTE, std::string{PLUGIN_NAME ": directive_version="} + version);
     Dbg(dbg_ctl, "Directives present: version=%s", version.c_str());
   } else {
-    TSCfgLoadCtxAddLog(ctx, DL_Note, PLUGIN_NAME ": no_directives");
+    TSCfgLoadCtxAddLog(ctx, TS_CFG_LOG_NOTE, PLUGIN_NAME ": no_directives");
     Dbg(dbg_ctl, "No directives present");
   }
 
@@ -91,7 +91,7 @@ config_reload(TSCfgLoadCtx ctx, void * /* data */)
       greeting = (*node)["greeting"].as<std::string>();
     }
 
-    TSCfgLoadCtxAddLog(ctx, DL_Note, std::string{PLUGIN_NAME ": content_greeting="} + greeting);
+    TSCfgLoadCtxAddLog(ctx, TS_CFG_LOG_NOTE, std::string{PLUGIN_NAME ": content_greeting="} + greeting);
     TSCfgLoadCtxComplete(ctx, PLUGIN_NAME ": RPC reload OK");
     return;
   }
@@ -105,7 +105,7 @@ config_reload(TSCfgLoadCtx ctx, void * /* data */)
       ss << file.rdbuf();
       std::string content = ss.str();
       std::string msg     = std::string{PLUGIN_NAME ": file_mode ("} + std::to_string(content.size()) + " bytes)";
-      TSCfgLoadCtxAddLog(ctx, DL_Note, msg);
+      TSCfgLoadCtxAddLog(ctx, TS_CFG_LOG_NOTE, msg);
       TSCfgLoadCtxComplete(ctx, msg);
       return;
     }

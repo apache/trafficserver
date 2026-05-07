@@ -111,10 +111,10 @@ public:
     ConfigReloadHandler      handler;                        ///< Reload handler (empty for static / non-reloadable entries)
     std::vector<std::string> trigger_records;                ///< Records that trigger reload
     bool                     is_required{false};             ///< Whether the file must exist on disk
-    bool                     is_plugin{false};               ///< Registered by a plugin (via TSCfgRegister)
-    bool                     enabled{true};                  ///< Runtime toggle - disabled entries are skipped during reload
     /// Plugin that registered this entry (from TSPluginRegister). Empty for core entries.
-    /// Used in conflict diagnostics, reload-trace logs, and traffic_ctl status output.
+    /// Non-empty <=> the entry was registered via TSCfgRegister; used as the
+    /// canonical "is plugin?" predicate throughout the framework. Surfaces in
+    /// conflict diagnostics, reload-trace logs, and traffic_ctl status output.
     std::string plugin_name;
 
     /// Resolve the actual filename (reads from record, falls back to default)
@@ -206,18 +206,6 @@ public:
   /// @return 0 on success, -1 if key not found
   ///
   int attach(const std::string &key, const char *record_name);
-
-  ///
-  /// @brief Enable or disable a config entry at runtime
-  ///
-  /// When disabled, the handler is skipped during reloads. The entry
-  /// remains registered and visible in status, but marked as skipped.
-  ///
-  /// @param key     The registered config key
-  /// @param enabled true to enable, false to disable
-  /// @return 0 on success, -1 if key not found
-  ///
-  int set_enabled(const std::string &key, bool enabled);
 
   ///
   /// @brief Add a file dependency to an existing config

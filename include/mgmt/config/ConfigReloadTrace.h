@@ -202,8 +202,9 @@ public:
     std::string                      filename;         ///< source file, if applicable
     std::vector<ConfigReloadTaskPtr> sub_tasks;        ///< child tasks (if any)
     bool                             main_task{false}; ///< true for the top-level reload task
-    bool                             is_plugin{false}; ///< registered by a plugin (via TSConfigRegister)
-    /// Plugin name supplied at registration (only meaningful when is_plugin is true; empty for core entries).
+    /// Plugin name supplied at registration. Empty for core entries; non-empty
+    /// <=> plugin-originated (via TSCfgRegister). Used as the canonical
+    /// "is plugin?" predicate throughout the framework.
     std::string plugin_name;
   };
 
@@ -267,15 +268,14 @@ public:
     _info.config_key = key;
   }
 
-  /// Set the registering plugin's name. Also flips @c is_plugin to (!name.empty())
-  /// so callers don't need a separate boolean setter; pass an empty view for core
-  /// (non-plugin) entries.
+  /// Set the registering plugin's name. Pass an empty view for core (non-plugin)
+  /// entries; non-empty marks the task as plugin-originated throughout the
+  /// framework.
   void
   set_plugin_name(std::string_view name)
   {
     std::unique_lock<std::shared_mutex> lock(_mutex);
     _info.plugin_name = name;
-    _info.is_plugin   = !name.empty();
   }
 
   /// Check if any immediate subtask has the given config_key.

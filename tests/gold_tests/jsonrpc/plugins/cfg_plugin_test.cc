@@ -4,7 +4,7 @@
 
   Registration (TSPluginInit):
     TSCfgRegister          - registers "cfg_plugin_test" with FILE_AND_RPC source
-    TSCfgAttachTrigger     - attaches a record trigger
+    TSCfgAttachReloadTrigger - attaches a record trigger that reloads
     TSCfgAddFileDependency - adds a companion file dependency
 
   Handler (config_reload):
@@ -69,7 +69,7 @@ config_reload(TSCfgLoadCtx ctx, void *data)
   TSCfgLoadCtxInProgress(ctx, "cfg_plugin_test: processing started");
 
   // --- TSCfgLoadCtxAddLog: add an intermediate log entry ---
-  TSCfgLoadCtxAddLog(ctx, DL_Note, "cfg_plugin_test: handler entered");
+  TSCfgLoadCtxAddLog(ctx, TS_CFG_LOG_NOTE, "cfg_plugin_test: handler entered");
 
   // --- TSCfgLoadCtxGetSuppliedYaml: detect RPC vs file mode ---
   TSYaml yaml = TSCfgLoadCtxGetSuppliedYaml(ctx);
@@ -79,7 +79,7 @@ config_reload(TSCfgLoadCtx ctx, void *data)
 
     // --- fail_on_purpose: test TSCfgLoadCtxFail ---
     if ((*node)["fail_on_purpose"]) {
-      TSCfgLoadCtxAddLog(ctx, DL_Error, "cfg_plugin_test: fail requested");
+      TSCfgLoadCtxAddLog(ctx, TS_CFG_LOG_ERROR, "cfg_plugin_test: fail requested");
       TSCfgLoadCtxFail(ctx, "cfg_plugin_test: fail_on_purpose via RPC");
       return;
     }
@@ -88,7 +88,7 @@ config_reload(TSCfgLoadCtx ctx, void *data)
     if ((*node)["with_subtask"]) {
       TSCfgLoadCtx child = TSCfgLoadCtxAddSubtask(ctx, "cfg_plugin_test_subtask");
       TSCfgLoadCtxInProgress(child, "subtask working");
-      TSCfgLoadCtxAddLog(child, DL_Note, "cfg_plugin_test: subtask log entry");
+      TSCfgLoadCtxAddLog(child, TS_CFG_LOG_NOTE, "cfg_plugin_test: subtask log entry");
       TSCfgLoadCtxComplete(child, "cfg_plugin_test: subtask done");
       TSCfgLoadCtxComplete(ctx, "cfg_plugin_test: parent with subtask done");
       return;
@@ -100,20 +100,6 @@ config_reload(TSCfgLoadCtx ctx, void *data)
       TSCfgLoadCtxInProgress(child, "subtask starting");
       TSCfgLoadCtxFail(child, "cfg_plugin_test: subtask failed on purpose");
       TSCfgLoadCtxComplete(ctx, "cfg_plugin_test: parent ok but subtask failed");
-      return;
-    }
-
-    // --- disable_self: test TSCfgSetEnabled(key, 0) ---
-    if ((*node)["disable_self"]) {
-      TSCfgSetEnabled(PLUGIN_NAME, 0);
-      TSCfgLoadCtxComplete(ctx, "cfg_plugin_test: disabled self");
-      return;
-    }
-
-    // --- enable_self: test TSCfgSetEnabled(key, 1) ---
-    if ((*node)["enable_self"]) {
-      TSCfgSetEnabled(PLUGIN_NAME, 1);
-      TSCfgLoadCtxComplete(ctx, "cfg_plugin_test: re-enabled self");
       return;
     }
 
@@ -132,7 +118,7 @@ config_reload(TSCfgLoadCtx ctx, void *data)
   std::string_view filename = TSCfgLoadCtxGetFilename(ctx);
   std::string      filename_str{filename.empty() ? state->config_path : std::string{filename}};
 
-  TSCfgLoadCtxAddLog(ctx, DL_Note, "cfg_plugin_test: reading file " + filename_str);
+  TSCfgLoadCtxAddLog(ctx, TS_CFG_LOG_NOTE, "cfg_plugin_test: reading file " + filename_str);
 
   std::string   content;
   std::ifstream file(filename_str);
@@ -198,12 +184,12 @@ TSPluginInit(int argc, const char *argv[])
     return;
   }
 
-  // --- TSCfgAttachTrigger: attach a record so changing it fires our handler ---
-  ret = TSCfgAttachTrigger(PLUGIN_NAME, "proxy.config.http.insert_age_in_response");
+  // --- TSCfgAttachReloadTrigger: attach a record so changing it fires our handler ---
+  ret = TSCfgAttachReloadTrigger(PLUGIN_NAME, "proxy.config.http.insert_age_in_response");
   if (ret == TS_SUCCESS) {
-    Dbg(dbg_ctl, "TSCfgAttachTrigger OK");
+    Dbg(dbg_ctl, "TSCfgAttachReloadTrigger OK");
   } else {
-    TSError("[%s] TSCfgAttachTrigger FAILED", PLUGIN_NAME);
+    TSError("[%s] TSCfgAttachReloadTrigger FAILED", PLUGIN_NAME);
   }
 
   // --- TSCfgAddFileDependency: add companion file ---

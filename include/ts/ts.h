@@ -1285,9 +1285,16 @@ TSReturnCode TSMgmtConfigFileAdd(const char *parent, const char *fileName);
 TSReturnCode TSCfgRegister(const TSCfgRegistrationInfo *info);
 
 /**
-   Attach a trigger record to a registered plugin config. When the record
-   value changes, the plugin's config handler is invoked (same as if the
-   file changed on disk).
+   Attach a record so its value changes trigger a reload of a previously
+   registered plugin config. When the record changes, the plugin's reload
+   handler is invoked (same as if the file changed on disk).
+
+   This is NOT a general record-change subscription primitive: the only
+   callback the plugin gets is the existing config-reload handler, the
+   reload is treated as file-driven (no RPC payload), and standalone
+   record changes (e.g. traffic_ctl config set with no config reload in
+   flight) invoke the handler with an empty context that does not surface
+   in `traffic_ctl config status`. See the developer guide for details.
 
    @note Must be called from TSPluginInit() after TSCfgRegister().
 
@@ -1295,7 +1302,7 @@ TSReturnCode TSCfgRegister(const TSCfgRegistrationInfo *info);
    @param record_name  Fully-qualified record name (e.g., "proxy.config.my_plugin.enabled").
    @return TS_SUCCESS on success, TS_ERROR if key not found or record invalid.
 */
-TSReturnCode TSCfgAttachTrigger(std::string_view key, std::string_view record_name);
+TSReturnCode TSCfgAttachReloadTrigger(std::string_view key, std::string_view record_name);
 
 /**
    Add a companion file dependency to a registered plugin config. When the
@@ -1313,22 +1320,6 @@ TSReturnCode TSCfgAttachTrigger(std::string_view key, std::string_view record_na
              - the parent key has not been registered.
 */
 TSReturnCode TSCfgAddFileDependency(const TSCfgFileDependencyInfo *info);
-
-/**
-   Enable or disable a registered config entry at runtime.
-
-   When disabled, the handler is skipped during reloads. The entry
-   remains registered and visible in traffic_ctl config status, but
-   is marked as "skipped (disabled)".
-
-   Unlike TSCfgRegister/TSCfgAttachTrigger/TSCfgAddFileDependency, this
-   function can be called at any time, not only during TSPluginInit().
-
-   @param key      The config key passed to TSCfgRegister().
-   @param enabled  Non-zero to enable, zero to disable.
-   @return TS_SUCCESS on success, TS_ERROR if key not found.
-*/
-TSReturnCode TSCfgSetEnabled(std::string_view key, int enabled);
 
 /**
    Mark a load context as in-progress.
@@ -1390,10 +1381,10 @@ void TSCfgLoadCtxFail(TSCfgLoadCtx ctx, std::string_view msg);
    Null-safe: calling with a nullptr @a ctx or an empty @a msg is a no-op.
 
    @param ctx    Context handle from the TSCfgLoadCb callback, or nullptr.
-   @param level  Severity level (DL_Note, DL_Warning, DL_Error, etc.).
+   @param level  Severity level (TS_CFG_LOG_NOTE / WARNING / ERROR).
    @param msg    Human-readable message; empty is a no-op.
 */
-void TSCfgLoadCtxAddLog(TSCfgLoadCtx ctx, DiagsLevel level, std::string_view msg);
+void TSCfgLoadCtxAddLog(TSCfgLoadCtx ctx, TSCfgLogLevel level, std::string_view msg);
 
 /**
    Create a dependent subtask under this context. The subtask tracks its own

@@ -1618,6 +1618,19 @@ enum TSCfgSourceType {
   TS_CFG_SOURCE_FILE_AND_RPC ///< Handler can also process YAML content supplied via RPC
 };
 
+/// Severity for log entries emitted via TSCfgLoadCtxAddLog().
+///
+/// Three levels intentionally - the framework deliberately does not expose
+/// the fatal-class diagnostics levels (Fatal/Alert/Emergency) here: a
+/// reload handler should not be able to terminate the process. Plugins that
+/// truly need debug-only output should use Dbg(ctl, ...) instead of this
+/// API.
+enum TSCfgLogLevel {
+  TS_CFG_LOG_NOTE,    ///< Informational; default. Maps to DL_Note internally.
+  TS_CFG_LOG_WARNING, ///< Concerning; the reload may still complete. Maps to DL_Warning.
+  TS_CFG_LOG_ERROR    ///< Failure cause; pair with a subsequent TSCfgLoadCtxFail. Maps to DL_Error.
+};
+
 /// Options for TSCfgRegister().
 ///
 /// Passed by const-pointer so future fields can be appended without breaking
@@ -1665,8 +1678,13 @@ struct TSCfgRegistrationInfo {
   /// Whether @c handler can also process YAML content supplied via RPC.
   TSCfgSourceType source{TS_CFG_SOURCE_FILE_ONLY};
 
-  /// True if the file must exist on disk for a reload to be considered
-  /// successful. False (default) lets the plugin tolerate a missing file.
+  /// Hint propagated to FileManager: marks the file as "required" in
+  /// catalog/inspection output and emits a Dbg line if the file is
+  /// missing at registration time. The framework does NOT enforce this
+  /// flag at reload-time today: the handler is still invoked even when
+  /// the file is missing or invalid, and the plugin chooses whether to
+  /// fail the reload. False (default) is appropriate for most plugins.
+  /// Mirrored on TSCfgFileDependencyInfo for parity with core configs.
   bool is_required{false};
 };
 
@@ -1710,8 +1728,9 @@ struct TSCfgFileDependencyInfo {
   /// empty, the dependency is file-change-only.
   std::string_view dep_key;
 
-  /// True if the file must exist on disk for a reload to be considered
-  /// successful. False (default) lets the plugin tolerate a missing file.
+  /// Hint propagated to FileManager (catalog/inspection only). See the
+  /// note on TSCfgRegistrationInfo::is_required for details. False
+  /// (default) is appropriate for most plugins.
   bool is_required{false};
 };
 
