@@ -322,7 +322,16 @@ const XpackLookupResult
 XpackDynamicTable::lookup_relative(const char *name, size_t name_len, const char *value, size_t value_len) const
 {
   XpackLookupResult result = this->lookup(name, name_len, value, value_len);
-  result.index             = this->_entries[this->_entries_head].index - result.index;
+  if (result.match_type == XpackLookupResult::MatchType::NONE) {
+    return result;
+  }
+
+  uint32_t const head_index = this->_entries[this->_entries_head].index;
+  if (result.index > head_index) {
+    return {0, XpackLookupResult::MatchType::NONE};
+  }
+
+  result.index = head_index - result.index;
   return result;
 }
 

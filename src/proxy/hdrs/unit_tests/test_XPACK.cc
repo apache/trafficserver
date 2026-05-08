@@ -150,6 +150,10 @@ TEST_CASE("XPACK_String", "[xpack]")
     REQUIRE(dt.count() == 0);
     result = dt.lookup("", "");
     REQUIRE(result.match_type == XpackLookupResult::MatchType::NONE);
+    REQUIRE(result.index == 0);
+    result = dt.lookup_relative("", "");
+    REQUIRE(result.match_type == XpackLookupResult::MatchType::NONE);
+    REQUIRE(result.index == 0);
   }
 
   SECTION("Dynamic Table")
@@ -177,6 +181,9 @@ TEST_CASE("XPACK_String", "[xpack]")
     REQUIRE(result.match_type == XpackLookupResult::MatchType::NONE);
     result = dt.lookup(MAX_SIZE + 1, &name, &name_len, &value, &value_len);
     REQUIRE(result.match_type == XpackLookupResult::MatchType::NONE);
+    result = dt.lookup_relative("missing", "value");
+    REQUIRE(result.match_type == XpackLookupResult::MatchType::NONE);
+    REQUIRE(result.index == 0);
 
     // Insert one entry
     dt.insert_entry("name1", "value1");
@@ -192,6 +199,9 @@ TEST_CASE("XPACK_String", "[xpack]")
     REQUIRE(memcmp(value, "value1", value_len) == 0);
     result = dt.lookup(dt.largest_index() + 1, &name, &name_len, &value, &value_len);
     REQUIRE(result.match_type == XpackLookupResult::MatchType::NONE);
+    result = dt.lookup_relative("missing", "value1");
+    REQUIRE(result.match_type == XpackLookupResult::MatchType::NONE);
+    REQUIRE(result.index == 0);
 
     result = dt.lookup(MAX_SIZE - 1, &name, &name_len, &value, &value_len);
     REQUIRE(result.match_type == XpackLookupResult::MatchType::NONE);
@@ -232,6 +242,15 @@ TEST_CASE("XPACK_String", "[xpack]")
     REQUIRE(memcmp(name, "name1", name_len) == 0);
     REQUIRE(value_len == strlen("value1"));
     REQUIRE(memcmp(value, "value1", value_len) == 0);
+    result = dt.lookup_relative("name2", "value2");
+    REQUIRE(result.match_type == XpackLookupResult::MatchType::EXACT);
+    REQUIRE(result.index == 0);
+    result = dt.lookup_relative("name1", "value1");
+    REQUIRE(result.match_type == XpackLookupResult::MatchType::EXACT);
+    REQUIRE(result.index == 1);
+    result = dt.lookup_relative("missing", "value2");
+    REQUIRE(result.match_type == XpackLookupResult::MatchType::NONE);
+    REQUIRE(result.index == 0);
     result = dt.lookup(MAX_SIZE - 1, &name, &name_len, &value, &value_len);
     REQUIRE(result.match_type == XpackLookupResult::MatchType::NONE);
     result = dt.lookup(MAX_SIZE, &name, &name_len, &value, &value_len);
