@@ -19,6 +19,7 @@ FROM ubuntu:noble AS build
 ARG LLVM_VERSION=18
 ARG BASE=/opt
 ARG ATS_VERSION=10.1.0
+ARG GO_VERSION=1.26.2
 
 RUN apt update \
  && apt upgrade --yes \
@@ -39,6 +40,7 @@ RUN apt update \
     libtool \
     make \
     pkg-config \
+    libpsl-dev \
 # ATS deps
     libxml2-dev \
     libjemalloc-dev \
@@ -61,12 +63,18 @@ RUN apt update \
     libssl-dev \
  && apt clean --yes
 
+# Set up cc (and optionally c++) to use clang-18 via alternatives
+RUN update-alternatives --install /usr/bin/cc cc /usr/bin/clang-${LLVM_VERSION} 100 \
+    && update-alternatives --install /usr/bin/c++ c++ /usr/bin/clang++-${LLVM_VERSION} 100 \
+    && update-alternatives --install /usr/bin/clang clang /usr/bin/clang-${LLVM_VERSION} 100 \
+    && update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-${LLVM_VERSION} 100
+
 RUN rustup default stable
 
 RUN mkdir -p ${BASE} && chmod a+rX ${BASE}
 
 RUN if [ `uname -m` = "arm64" -o `uname -m` = "aarch64" ]; then echo "arm64" > /arch; else echo "amd64" > /arch; fi \
-  && wget -qO- https://go.dev/dl/go1.21.6.linux-$(cat /arch).tar.gz | tar -C ${BASE} -xzf -
+  && wget -qO- https://go.dev/dl/go${GO_VERSION}.linux-$(cat /arch).tar.gz | tar -C ${BASE} -xzf -
 
 ENV CC=clang-${LLVM_VERSION}
 ENV CXX=clang++-${LLVM_VERSION}
@@ -82,7 +90,6 @@ RUN git clone https://boringssl.googlesource.com/boringssl \
   -DCMAKE_INSTALL_PREFIX=${BASE}/boringssl \
   -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_CXX_FLAGS='-Wno-error=ignored-attributes -UBORINGSSL_HAVE_LIBUNWIND' \
-  -DCMAKE_C_FLAGS=${BSSL_C_FLAGS} \
   -DBUILD_SHARED_LIBS=1 \
  && cmake \
   -B build-static \
@@ -102,7 +109,7 @@ RUN git clone https://boringssl.googlesource.com/boringssl \
 
 ENV QUICHE_BASE="${BASE}/quiche"
 
-RUN git clone -b 0.22.0 --depth 1 https://github.com/cloudflare/quiche.git \
+RUN git clone -b 0.28.0 --depth 1 https://github.com/cloudflare/quiche.git \
  && cd quiche \
  && QUICHE_BSSL_PATH=${BASE}/boringssl/lib QUICHE_BSSL_LINK_KIND=dylib \
     cargo build -j$(nproc) --package quiche --release --features ffi,pkg-config-meta,qlog \
@@ -110,7 +117,7 @@ RUN git clone -b 0.22.0 --depth 1 https://github.com/cloudflare/quiche.git \
  && mkdir -p ${QUICHE_BASE}/include \
  && cp target/release/libquiche.a ${QUICHE_BASE}/lib/ \
  && cp target/release/libquiche.so ${QUICHE_BASE}/lib/ \
- && ln -s ${QUICHE_BASE}/lib/libquiche.so ${QUICHE_BASE}/lib/libquiche.so.0 \
+ && ln -sf ${QUICHE_BASE}/lib/libquiche.so ${QUICHE_BASE}/lib/libquiche.so.0 \
  && cp quiche/include/quiche.h ${QUICHE_BASE}/include/ \
  && cp target/release/quiche.pc ${QUICHE_BASE}/lib/pkgconfig \
  && cd .. \
@@ -121,12 +128,13 @@ ENV CFLAGS="-O3"
 ENV CXXFLAGS="-O3"
 ENV PKG_CONFIG_PATH="${BASE}/lib/pkgconfig:${BASE}/boringssl/lib/pkgconfig:${BASE}/quiche/lib/pkgconfig"
 
-RUN git clone --depth 1 -b v1.2.0 https://github.com/ngtcp2/nghttp3.git \
+RUN git clone --depth 1 -b v1.15.0 https://github.com/ngtcp2/nghttp3.git \
  && cd nghttp3 \
  && git submodule update --init \
  && autoreconf -if \
  && ./configure \
   --prefix=${BASE} \
+  PKG_CONFIG_PATH=${BASE}/lib/pkgconfig:${BASE}/boringssl/lib/pkgconfig \
   CFLAGS="${CFLAGS}" \
   CXXFLAGS="${CXXFLAGS}" \
   LDFLAGS="${LDFLAGS}" \
@@ -137,7 +145,7 @@ RUN git clone --depth 1 -b v1.2.0 https://github.com/ngtcp2/nghttp3.git \
  && rm -rf nghttp3
 
 
-RUN git clone --depth 1 -b v1.4.0 https://github.com/ngtcp2/ngtcp2.git \
+RUN git clone --depth 1 -b v1.22.1 https://github.com/ngtcp2/ngtcp2.git \
  && cd ngtcp2 \
  && autoreconf -if \
  && ./configure \
@@ -154,7 +162,7 @@ RUN git clone --depth 1 -b v1.4.0 https://github.com/ngtcp2/ngtcp2.git \
  && cd .. \
  && rm -rf ngtcp2
 
-RUN git clone --depth 1 -b v1.60.0 https://github.com/tatsuhiro-t/nghttp2.git \
+RUN git clone --depth 1 -b v1.69.0 https://github.com/tatsuhiro-t/nghttp2.git \
  && cd nghttp2 \
  && git submodule update --init \
  && autoreconf -if \
@@ -172,7 +180,7 @@ RUN git clone --depth 1 -b v1.60.0 https://github.com/tatsuhiro-t/nghttp2.git \
  && cd .. \
  && rm -rf nghttp2
 
-RUN git clone --depth 1 -b curl-8_7_1 https://github.com/curl/curl.git \
+RUN git clone --depth 1 -b curl-8_20_0 https://github.com/curl/curl.git \
  && cd curl \
  && autoreconf -fi \
  && ./configure \
