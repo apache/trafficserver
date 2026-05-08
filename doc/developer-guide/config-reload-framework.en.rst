@@ -17,6 +17,8 @@
 
 .. include:: ../common.defs
 
+.. default-domain:: cpp
+
 .. _config-reload-framework:
 
 Configuration Reload Framework
@@ -701,7 +703,7 @@ Plugin Configuration Reload
 ===========================
 
 Plugins integrate with the same registry and same task tree described
-above, through the public ``TSCfg*`` C++ API in :file:`ts/ts.h`. The
+above, through the public ``TSCfg*`` C++ API in ``ts/ts.h``. The
 framework treats plugin-registered configs as first-class entries: they
 appear in :option:`traffic_ctl config status`, accept inline YAML via
 JSONRPC, honor file-mtime change detection, react to attached trigger
@@ -807,7 +809,7 @@ The handler obeys the same terminal-state rule as core handlers - every
 code path must end in ``TSCfgLoadCtxComplete`` or ``TSCfgLoadCtxFail``.
 Deferred completion (return from the callback, finish from another
 thread, then call Complete or Fail there) is fully supported; see the
-deferred-handler example in :doc:`api/functions/TSCfgRegister`.
+deferred-handler example in :doc:`api/functions/TSCfgRegister.en`.
 
 Plugin name attribution in ``traffic_ctl``
 ------------------------------------------
@@ -881,7 +883,7 @@ The matching autests
 Reference
 ---------
 
-:doc:`api/functions/TSCfgRegister` covers the full plugin-facing
+:doc:`api/functions/TSCfgRegister.en` covers the full plugin-facing
 surface: the :type:`TSCfgRegistrationInfo` options struct, the
 registration / trigger / dependency / enable functions, and every
 ``TSCfgLoadCtx*`` operation available inside the handler callback.
