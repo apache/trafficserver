@@ -37,6 +37,12 @@ ATTEMPTED_VALUE = "999"
 RECA_READ_ONLY = "2"
 RECT_CONFIG_BIT = "1"  # bit value in the rec_types filter
 
+# RecordError::RECORD_READ_ONLY in src/mgmt/rpc/handlers/common/RecordsUtils.h
+# (assigned as Codes::RECORD + offset).  This is the per-tier code that the
+# JSONRPC response must surface in error.data[*].code so programmatic
+# clients can branch on the access tier without parsing the message text.
+RECORD_READ_ONLY_CODE = 2009
+
 ts = Test.MakeATSProcess("ts")
 
 
@@ -68,13 +74,15 @@ def assert_record_at_default(resp: Response):
 
 
 def assert_set_was_rejected(resp: Response):
-    """Validate the set attempt produced the not-writable error."""
+    """Validate the set attempt produced the per-tier not-writable error code."""
     if not resp.is_error():
         return (False, f"set should have failed but returned a result: {resp.result!r}")
-    err = resp.error_as_str()
-    if "Record is read-only" not in err:
-        return (False, f"unexpected error message: {err!r}")
-    return (True, "set was refused with RECORD_READ_ONLY")
+    # Validate the structured error code rather than the message text so the
+    # test stays meaningful if the error wording is ever rephrased and so
+    # that any regression to the generic Codes::RECORD (2000) is caught.
+    if not resp.contains_nested_error(code=RECORD_READ_ONLY_CODE):
+        return (False, f"expected nested error code {RECORD_READ_ONLY_CODE} (RECORD_READ_ONLY); got: {resp.error_as_str()}")
+    return (True, f"set was refused with code {RECORD_READ_ONLY_CODE} (RECORD_READ_ONLY)")
 
 
 # Step 0: confirm the record is registered as RECA_READ_ONLY and starts at

@@ -120,8 +120,11 @@ set_config_records(std::string_view const & /* id ATS_UNUSED */, YAML::Node cons
   swoc::Rv<YAML::Node> resp;
 
   // we need the type and the update type for now, plus the access tier so we
-  // can refuse writes to records the registrant marked as protected.
-  using LookupContext = std::tuple<RecDataT, RecCheckT, const char *, RecUpdateT, RecAccessT>;
+  // can refuse writes to records the registrant marked as protected, and a
+  // flag tracking whether the lookup actually returned a CONFIG record (the
+  // RPC is for config writes; metric/process/plugin records must be
+  // refused even though RecLookupRecord finds them).
+  using LookupContext = std::tuple<RecDataT, RecCheckT, const char *, RecUpdateT, RecAccessT, bool>;
 
   for (auto const &kv : params) {
     SetRecordCmdInfo info;
@@ -132,15 +135,18 @@ set_config_records(std::string_view const & /* id ATS_UNUSED */, YAML::Node cons
       continue;
     }
 
-    LookupContext recordCtx;
-    std::get<RecAccessT>(recordCtx) = RECA_NULL;
+    // Value-initialize the tuple so reads after the lookup are well defined
+    // even when the callback never assigns a field (non-CONFIG record, or
+    // an early failure inside the callback).
+    LookupContext recordCtx{};
 
     // Get record info first. TODO: we may just want to get the full record and  then send it back  as a response.
     const auto ret = RecLookupRecord(
       info.name.c_str(),
       [](const RecRecord *record, void *data) {
-        auto &[dataType, checkType, pattern, updateType, accessType] = *static_cast<LookupContext *>(data);
+        auto &[dataType, checkType, pattern, updateType, accessType, is_config] = *static_cast<LookupContext *>(data);
         if (REC_TYPE_IS_CONFIG(record->rec_type)) {
+          is_config = true;
           dataType  = record->data_type;
           checkType = record->config_meta.check_type;
           if (record->config_meta.check_expr) {
@@ -159,17 +165,27 @@ set_config_records(std::string_view const & /* id ATS_UNUSED */, YAML::Node cons
     }
 
     // now set the value.
-    auto const &[dataType, checkType, pattern, updateType, accessType] = recordCtx;
+    auto const &[dataType, checkType, pattern, updateType, accessType, is_config] = recordCtx;
+
+    // RecLookupRecord finds metrics, config records, etc.
+    // The set RPC only operates on config records;
+    // refuse anything else with a tier-specific error code so callers can
+    // distinguish "wrong record kind" from "record missing".
+    if (!is_config) {
+      auto const ec = std::error_code{err::RecordError::RECORD_NOT_CONFIG};
+      resp.errata().assign(ec).note("{}", ec);
+      continue;
+    }
 
     // Honour the registrant's access tier.  RECA_READ_ONLY records may only
     // be changed by in-process code (config file load, environment override,
     // etc.); RECA_NO_ACCESS records are not exposed to the management plane
-    // at all.  The management RPC must refuse both, with distinct error
-    // codes so callers can branch on the code instead of parsing messages.
+    // at all.  Surface the per-tier error code in the JSONRPC error.data
+    // entry so callers can branch on the code instead of parsing messages.
     if (accessType == RECA_READ_ONLY || accessType == RECA_NO_ACCESS) {
       auto const ec =
         std::error_code{accessType == RECA_READ_ONLY ? err::RecordError::RECORD_READ_ONLY : err::RecordError::RECORD_NO_ACCESS};
-      resp.errata().assign(std::error_code{errors::Codes::RECORD}).note("{}", ec);
+      resp.errata().assign(ec).note("{}", ec);
       continue;
     }
 
