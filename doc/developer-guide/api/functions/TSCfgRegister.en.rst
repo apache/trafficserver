@@ -53,10 +53,27 @@ Synopsis
 
    .. var:: std::string_view key
 
-      Unique registry key. Doubles as the YAML node name when an operator
-      reloads via ``traffic_ctl config reload --content '{<key>: {...}}'``.
-      Convention: use the plugin name, or ``<plugin>.<sub>`` when a single
-      plugin owns multiple configs. Required.
+      Unique registry key, also used as the YAML node name when an
+      operator reloads via
+      ``traffic_ctl config reload --data '{<key>: {...}}'``.
+      Must be unique across all registered configs (core and plugin).
+
+      **Convention.** Use the plugin name (``my_plugin``). Keep the key
+      alphanumeric + underscore; avoid dots, since
+      ``traffic_ctl --directive my_plugin.dry_run=true`` parses the
+      first ``.`` as the directive separator.
+
+      **Plugins with multiple files:**
+
+      - If the files share the same logical config and should reload
+        together, register once and add the rest via
+        :func:`TSCfgAddFileDependency` (single task per reload).
+      - If the files are genuinely independent and reloadable on their
+        own, register each separately with a disambiguating key
+        (e.g. ``my_plugin_main``, ``my_plugin_aux``). Each becomes its
+        own task entry in :option:`traffic_ctl config status`.
+
+      Required.
 
    .. var:: std::string_view config_path
 

@@ -1650,11 +1650,25 @@ enum TSCfgLogLevel {
 /// The plugin name is taken automatically from the active TSPluginRegister()
 /// call and is not part of this struct.
 struct TSCfgRegistrationInfo {
-  /// Unique registry key. Also used as the YAML node name when an operator
-  /// reloads via `traffic_ctl config reload --content '{<key>: {...}}'`.
+  /// Unique registry key, also used as the YAML node name when an operator
+  /// reloads via `traffic_ctl config reload --data '{<key>: {...}}'`.
   /// Must be unique across all registered configs (core and plugin).
-  /// Convention: use the plugin name, or a "<plugin_name>.<sub>" prefix when
-  /// a plugin owns multiple configs. Required.
+  ///
+  /// Convention: use the plugin name (`my_plugin`). Keep the key
+  /// alphanumeric + underscore; avoid dots, since `traffic_ctl
+  /// --directive my_plugin.dry_run=true` parses the first `.` as the
+  /// directive separator.
+  ///
+  /// If the plugin owns multiple files that share the same logical config
+  /// and should reload together, use ONE TSCfgRegister and add the rest
+  /// via TSCfgAddFileDependency (single task per reload).
+  ///
+  /// If the plugin owns multiple genuinely independent configs that
+  /// should be reloadable on their own, register each separately with a
+  /// disambiguating key (e.g. `my_plugin_main`, `my_plugin_aux`). Each
+  /// becomes its own task entry in `traffic_ctl config status`.
+  ///
+  /// Required.
   std::string_view key;
 
   /// Default config file path (absolute, or relative to sysconfdir).

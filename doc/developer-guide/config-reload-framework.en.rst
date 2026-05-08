@@ -854,7 +854,7 @@ top-level YAML node:
 
 .. code-block:: bash
 
-   $ traffic_ctl config reload --content '{"my_plugin": {"rules": ["x", "y"]}}'
+   $ traffic_ctl config reload --data '{"my_plugin": {"rules": ["x", "y"]}}'
 
 The handler then calls ``TSCfgLoadCtxGetSuppliedYaml`` to read the
 content and ``TSCfgLoadCtxGetReloadDirectives`` for any operator

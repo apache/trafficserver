@@ -1254,11 +1254,15 @@ TSReturnCode TSMgmtConfigFileAdd(const char *parent, const char *fileName);
    The @c key field plays a triple role:
      - registry lookup key (unique across all registered configs),
      - YAML node name for RPC-driven reload (`traffic_ctl config reload
-       --content '{<key>: {...}}'`),
+       --data '{<key>: {...}}'`),
      - human-readable label in diagnostics and status output.
-   By convention plugins use their own plugin name as the key (or a
-   "<plugin_name>.<sub>" prefix when a plugin owns multiple configs) to
-   avoid collisions with core entries (e.g. "ip_allow", "sni").
+   By convention plugins use their own plugin name as the key (e.g.
+   "my_plugin"). Keep the key alphanumeric + underscore; avoid dots
+   so `traffic_ctl --directive` parsing stays unambiguous. When a
+   plugin owns multiple files that should reload together, use one
+   TSCfgRegister + TSCfgAddFileDependency rather than multiple
+   registrations. Avoid collisions with core entries (e.g. "ip_allow",
+   "sni").
 
    The optional @c filename_record field lets the operator override the
    configured @c config_path at runtime via a record (e.g.
