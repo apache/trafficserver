@@ -85,6 +85,9 @@ AIOCallback::io_complete(int event, void *data)
 {
   (void)event;
   (void)data;
+  // The completion continuation can release the object that owns this callback.
+  bool const self_delete = from_api;
+
   if (aio_err_callback && !ok()) {
     AIOCallback *err_op          = new AIOCallback();
     err_op->aiocb.aio_fildes     = this->aiocb.aio_fildes;
@@ -99,7 +102,7 @@ AIOCallback::io_complete(int event, void *data)
   if (!action.cancelled && action.continuation) {
     action.continuation->handleEvent(AIO_EVENT_DONE, this);
   }
-  if (from_api) {
+  if (self_delete) {
     delete this;
   }
   return EVENT_DONE;
