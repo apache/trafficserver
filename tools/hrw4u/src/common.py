@@ -362,8 +362,7 @@ def run_main(
             except Hrw4uSyntaxError as e:
                 emit_fatal_error(args.error_format, e)
         tree, parser_obj, error_collector = create_parse_tree(
-            content, filename, lexer_class, parser_class, error_prefix, not args.stop_on_error, args.max_errors,
-            args.error_format)
+            content, filename, lexer_class, parser_class, error_prefix, not args.stop_on_error, args.max_errors, args.error_format)
         generate_output(tree, parser_obj, visitor_class, filename, args, error_collector, extra_kwargs)
         return
 

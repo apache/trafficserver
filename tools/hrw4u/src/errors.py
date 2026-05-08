@@ -203,13 +203,7 @@ class ErrorCollector:
         if formatter is None:
             from hrw4u.formatters import PlainTextFormatter
             formatter = PlainTextFormatter()
-        return formatter.format_errors(
-            self.errors,
-            self.warnings,
-            self._sandbox_message,
-            self.at_limit,
-            self.max_errors,
-        )
+        return formatter.format_errors(self.errors, self.warnings, self._sandbox_message, self.at_limit, self.max_errors)
 
 
 class CollectingErrorListener(ErrorListener):

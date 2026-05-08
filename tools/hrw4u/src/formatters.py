@@ -38,13 +38,8 @@ class ErrorFormatter(ABC):
 
     @abstractmethod
     def format_errors(
-        self,
-        errors: list["Hrw4uSyntaxError"],
-        warnings: list["Warning"],
-        sandbox_message: str | None,
-        at_limit: bool,
-        max_errors: int,
-    ) -> str:
+            self, errors: list["Hrw4uSyntaxError"], warnings: list["Warning"], sandbox_message: str | None, at_limit: bool,
+            max_errors: int) -> str:
         ...
 
 
@@ -52,13 +47,8 @@ class PlainTextFormatter(ErrorFormatter):
     """Current CLI output: human-readable diagnostics with caret pointers."""
 
     def format_errors(
-        self,
-        errors: list["Hrw4uSyntaxError"],
-        warnings: list["Warning"],
-        sandbox_message: str | None,
-        at_limit: bool,
-        max_errors: int,
-    ) -> str:
+            self, errors: list["Hrw4uSyntaxError"], warnings: list["Warning"], sandbox_message: str | None, at_limit: bool,
+            max_errors: int) -> str:
         if not errors and not warnings:
             return "No errors found."
 
@@ -100,13 +90,8 @@ class JSONFormatter(ErrorFormatter):
     """
 
     def format_errors(
-        self,
-        errors: list["Hrw4uSyntaxError"],
-        warnings: list["Warning"],
-        sandbox_message: str | None,
-        at_limit: bool,
-        max_errors: int,
-    ) -> str:
+            self, errors: list["Hrw4uSyntaxError"], warnings: list["Warning"], sandbox_message: str | None, at_limit: bool,
+            max_errors: int) -> str:
         payload = {
             "version": JSON_SCHEMA_VERSION,
             "errors": [_diag_to_dict(e, "error") for e in errors],
@@ -115,9 +100,9 @@ class JSONFormatter(ErrorFormatter):
                 "error_count": len(errors),
                 "warning_count": len(warnings),
                 "truncated": at_limit,
-                "max_errors": max_errors,
+                "max_errors": max_errors
             },
-            "sandbox_message": sandbox_message,
+            "sandbox_message": sandbox_message
         }
         return json.dumps(payload, separators=(",", ":"), ensure_ascii=False)
 
@@ -126,13 +111,8 @@ class MarkdownFormatter(ErrorFormatter):
     """Markdown report suitable for PR comments, chat, and docs."""
 
     def format_errors(
-        self,
-        errors: list["Hrw4uSyntaxError"],
-        warnings: list["Warning"],
-        sandbox_message: str | None,
-        at_limit: bool,
-        max_errors: int,
-    ) -> str:
+            self, errors: list["Hrw4uSyntaxError"], warnings: list["Warning"], sandbox_message: str | None, at_limit: bool,
+            max_errors: int) -> str:
         if not errors and not warnings:
             return "_No errors found._"
 
@@ -148,8 +128,7 @@ class MarkdownFormatter(ErrorFormatter):
                     column=error.column,
                     message=_extract_plain_message(error),
                     source_line=error.source_line,
-                    notes=list(getattr(error, '__notes__', None) or []),
-                ))
+                    notes=list(getattr(error, '__notes__', None) or [])))
 
         for warning in warnings:
             parts.append(
@@ -160,8 +139,7 @@ class MarkdownFormatter(ErrorFormatter):
                     column=warning.column,
                     message=warning.message,
                     source_line=warning.source_line,
-                    notes=[],
-                ))
+                    notes=[]))
 
         if at_limit:
             parts.append(f"> _Stopped after {max_errors} errors._")
@@ -182,7 +160,7 @@ def _diag_to_dict(diag: "Hrw4uSyntaxError | Warning", severity: str) -> dict:
         "severity": severity,
         "message": message,
         "source_line": diag.source_line,
-        "notes": notes,
+        "notes": notes
     }
 
 
@@ -213,15 +191,7 @@ def _markdown_heading(error_count: int, warning_count: int) -> str:
 
 
 def _markdown_diagnostic(
-    *,
-    severity: str,
-    filename: str,
-    line: int,
-    column: int,
-    message: str,
-    source_line: str,
-    notes: list[str],
-) -> str:
+        *, severity: str, filename: str, line: int, column: int, message: str, source_line: str, notes: list[str]) -> str:
     lines = [f"### {severity} — `{filename}:{line}:{column}`", message]
 
     if source_line:
