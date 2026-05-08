@@ -31,16 +31,16 @@ Synopsis
 
     #include <ts/ts.h>
 
-.. type:: TSCfgSourceType
+.. enum:: TSCfgSourceType
 
    What content sources a plugin's config handler supports.
 
-   .. var:: TS_CFG_SOURCE_FILE_ONLY
+   .. enumerator:: TS_CFG_SOURCE_FILE_ONLY
 
       Handler reloads only from a file on disk. RPC-supplied YAML is
       rejected.
 
-   .. var:: TS_CFG_SOURCE_FILE_AND_RPC
+   .. enumerator:: TS_CFG_SOURCE_FILE_AND_RPC
 
       Handler can also process YAML content supplied via RPC.
 
@@ -95,7 +95,7 @@ Synopsis
    .. var:: TSCfgSourceType source
 
       Whether ``handler`` can also process YAML content supplied via RPC.
-      Defaults to :var:`TS_CFG_SOURCE_FILE_ONLY`.
+      Defaults to :enumerator:`TSCfgSourceType::TS_CFG_SOURCE_FILE_ONLY`.
 
    .. var:: bool is_required
 
@@ -355,7 +355,7 @@ Inputs:
    framework-reserved ``_reload`` directives are stripped before
    delivery. The returned node is undefined when the reload was driven
    by file change rather than RPC. Only meaningful when the entry was
-   registered with :var:`TS_CFG_SOURCE_FILE_AND_RPC`.
+   registered with :enumerator:`TSCfgSourceType::TS_CFG_SOURCE_FILE_AND_RPC`.
 
 :func:`TSCfgLoadCtxGetReloadDirectives`
    Returns the YAML map extracted from the ``_reload`` key in the
