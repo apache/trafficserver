@@ -156,7 +156,7 @@ $(ANTLR_FILES_FWD): $(GRAMMAR_FWD)
 # LSP no longer generates its own ANTLR files - it imports from hrw4u
 
 # Generate inverse parser/lexer into build/u4wrh
-gen-inv: $(ANTLR_FILES_INV)
+gen-inv: check-antlr $(ANTLR_FILES_INV)
 
 $(ANTLR_FILES_INV): $(GRAMMAR_INV)
 	@mkdir -p $(PKG_DIR_U4WRH)
