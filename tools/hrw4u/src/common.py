@@ -27,7 +27,7 @@ from antlr4.error.ErrorStrategy import BailErrorStrategy, DefaultErrorStrategy
 from antlr4 import InputStream, CommonTokenStream
 
 from hrw4u.errors import Hrw4uSyntaxError, ThrowingErrorListener, ErrorCollector, CollectingErrorListener
-from hrw4u.formatters import FORMATTERS
+from hrw4u.formatters import FORMATTERS, ErrorFormatter
 from hrw4u.types import MagicStrings
 
 
@@ -113,7 +113,7 @@ def fatal(message: str) -> NoReturn:
     sys.exit(1)
 
 
-def _build_formatter(error_format: str):
+def _build_formatter(error_format: str) -> ErrorFormatter:
     """Instantiate the configured error formatter, falling back to plain."""
     return FORMATTERS.get(error_format, FORMATTERS["plain"])()
 
