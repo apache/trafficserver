@@ -712,7 +712,7 @@ parseQueryParameters(const char *query, int query_len, ClientRequest &creq)
         }
       }
       param_start_pos = i + 1;
-    } else if (query[i] == ':') {
+    } else if ((query[i] == ':') && (colon_pos < param_start_pos)) {
       colon_pos = i;
     }
   }

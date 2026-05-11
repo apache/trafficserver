@@ -83,6 +83,7 @@ add_server_obj("text/css ; charset=utf-8", "/obj1")
 add_server_obj("text/javascript", "/sub/obj2")
 add_server_obj("text/argh", "/obj3")
 add_server_obj("application/javascript", "/obj4")
+add_server_obj("application/javascript", "/s/assets/module:variant_v1.js")
 
 ts = Test.MakeATSProcess("ts")
 
@@ -96,6 +97,7 @@ ts.Disk.plugin_config.AddLine("combo_handler.so - - - ctwl.txt")
 ts.Disk.remap_config.AddLine('map http://xyz/ http://127.0.0.1/ @plugin=combo_handler.so')
 ts.Disk.remap_config.AddLine(f'map http://localhost/127.0.0.1/ http://127.0.0.1:{server.Variables.Port}/')
 ts.Disk.remap_config.AddLine(f'map http://localhost/sub/ http://127.0.0.1:{server.Variables.Port}/sub/')
+ts.Disk.remap_config.AddLine(f'map http://localhost/s/ http://127.0.0.1:{server.Variables.Port}/s/')
 
 # Configure the combo_handler's configuration file.
 ts.Setup.Copy("ctwl.txt", ts.Variables.CONFIGDIR)
@@ -121,5 +123,15 @@ tr.Processes.Default.Command = tcp_client(
 tr.Processes.Default.ReturnCode = 0
 f = tr.Disk.File("_output/2-tr-Default/stream.all.txt")
 f.Content = "combo_handler_files/tr2.gold"
+
+tr = Test.AddTestRun()
+tr.Processes.Default.Command = tcp_client(
+    "127.0.0.1", ts.Variables.port,
+    "GET /admin/v1/combo?s:assets/module:variant_v1.js HTTP/1.1\n" + "Host: xyz\n" + "Connection: close\n" + "\n")
+tr.Processes.Default.ReturnCode = 0
+f = tr.Disk.File("_output/3-tr-Default/stream.all.txt")
+f.Content = Testers.ContainsExpression("HTTP/1.1 200 OK", "Should successfully combine an object with a colon in its path")
+f.Content += Testers.ContainsExpression(
+    "Content for /s/assets/module:variant_v1.js", "Should fetch the object path after the first colon")
 
 ts.Disk.diags_log.Content = Testers.ContainsExpression("ERROR", "Some tests are failure tests")
