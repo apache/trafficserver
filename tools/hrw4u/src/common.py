@@ -228,7 +228,7 @@ def create_parse_tree(
                 error_collector.add_error(syntax_error)
             return None, parser_obj, error_collector
         else:
-            emit_fatal_message(error_format, f"{filename}:0:0 - {error_prefix} error: {e}", filename=filename)
+            emit_fatal_message(error_format, f"{error_prefix} error: {e}", filename=filename)
 
 
 def generate_output(
