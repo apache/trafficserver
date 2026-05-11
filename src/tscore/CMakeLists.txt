@@ -21,7 +21,7 @@ add_executable(CompileParseRules CompileParseRules.cc)
 
 add_custom_command(
   OUTPUT ParseRulesCType ParseRulesCTypeToUpper ParseRulesCTypeToLower
-  COMMAND CompileParseRules
+  COMMAND ${CMAKE_COMMAND} -E env ASAN_OPTIONS=detect_leaks=0 $<TARGET_FILE:CompileParseRules>
   COMMENT "Generating compile parse rules"
 )
 
