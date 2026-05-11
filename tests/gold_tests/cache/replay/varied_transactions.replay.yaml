@@ -33,6 +33,37 @@ meta:
           fields:
           - [ Content-Length, 0 ]
 
+autest:
+  description: 'Run traffic with max_alts behavior when set to 4'
+
+  dns:
+    name: 'dns-vary-handling'
+
+  server:
+    name: 'server-vary-handling'
+
+  client:
+    name: 'client-vary-handling'
+
+  ats:
+    name: 'ts-vary-handling'
+    process_config:
+      enable_cache: true
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http'
+      proxy.config.http.insert_age_in_response: 0
+      proxy.config.cache.limits.http.max_alts: 4
+      proxy.config.cache.log.alternate.eviction: 1
+
+    remap_config:
+      - from: "http://example.com/"
+        to: "http://backend.example.com:{SERVER_HTTP_PORT}/"
+
+    log_validation:
+      diags_log:
+        gold_file: "gold/two_alternates_evicted.gold"
 
 sessions:
 - transactions:

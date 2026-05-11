@@ -1,0 +1,190 @@
+'''
+Implement general-purpose ATS test extensions using proxy verifier replay files.
+'''
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+from typing import Optional
+import os
+import yaml
+
+
+def configure_ats(obj: 'TestRun', server: 'Process', ats_config: dict, dns: Optional['Process'] = None):
+    '''Configure ATS per the configuration in the replay file.
+
+    :param obj: The Test object to configure ATS for.
+    :param server: The Proxy Verifier Server process to use.
+    :param ats_config: The ATS configuration from the replay file.
+    :param dns: The DNS process to use. Optional.
+    :returns: The ATS process object.
+    '''
+    name = ats_config.get('name', 'ts')
+    process_config = ats_config.get('process_config', {})
+    ts = obj.MakeATSProcess(name, **process_config)
+    records_config = ats_config.get('records_config', {})
+    ts.Disk.records_config.update(records_config)
+
+    # Configure plugin_config if specified.
+    plugin_config = ats_config.get('plugin_config', [])
+    for plugin_line in plugin_config:
+        ts.Disk.plugin_config.AddLine(plugin_line)
+
+    # Configure parent_config if specified.
+    parent_config = ats_config.get('parent_config', [])
+    for parent_line in parent_config:
+        ts.Disk.parent_config.AddLine(parent_line)
+
+    remap_config = ats_config.get('remap_config', [])
+    for remap_entry in remap_config:
+        if isinstance(remap_entry, str):
+            ts.Disk.remap_config.AddLine(remap_entry)
+        elif isinstance(remap_entry, dict):
+            from_url = remap_entry['from']
+            to_url = remap_entry['to']
+            to_url = to_url.replace('{SERVER_HTTP_PORT}', str(server.Variables.http_port))
+            to_url = to_url.replace('{SERVER_HTTPS_PORT}', str(server.Variables.https_port))
+            plugins = remap_entry.get('plugins', [])
+            line = f'map {from_url} {to_url}'
+            for plugin in plugins:
+                line += f' @plugin={plugin["name"]}'
+                for arg in plugin["args"]:
+                    line += f' @pparam={arg}'
+            ts.Disk.remap_config.AddLine(line)
+    if dns:
+        ts.Disk.records_config.update(
+            {
+                'proxy.config.dns.nameservers': f'127.0.0.1:{dns.Variables.Port}',
+                'proxy.config.dns.resolv_conf': 'NULL',
+            })
+
+    for item in ats_config.get('copy_to_config_dir', []):
+        item_path = os.path.join(obj.TestDirectory, item)
+        if os.path.isdir(item_path):
+            src_dir = item_path
+            dst_dir = os.path.join(ts.Variables.CONFIGDIR, item)
+            ts.Setup.MakeDir(dst_dir)
+            ts.Setup.Copy(src_dir, dst_dir)
+        else:
+            ts.Setup.CopyAs(item, ts.Variables.CONFIGDIR)
+
+    # Configure log validation if specified.
+    log_validation = ats_config.get('log_validation', {})
+    if log_validation:
+        # traffic_out validation.
+        traffic_out = log_validation.get('traffic_out', {})
+        for contains_entry in traffic_out.get('contains', []):
+            expression = contains_entry['expression']
+            description = contains_entry.get('description', f'Verify traffic_out contains: {expression}')
+            ts.Disk.traffic_out.Content += Testers.ContainsExpression(expression, description)
+        for excludes_entry in traffic_out.get('excludes', []):
+            expression = excludes_entry['expression']
+            description = excludes_entry.get('description', f'Verify traffic_out excludes: {expression}')
+            ts.Disk.traffic_out.Content += Testers.ExcludesExpression(expression, description)
+        # Gold file validation for traffic_out.
+        if 'gold_file' in traffic_out:
+            gold_file = traffic_out['gold_file']
+            ts.Disk.traffic_out.Content += gold_file
+
+        # diags_log validation.
+        diags_log = log_validation.get('diags_log', {})
+        for contains_entry in diags_log.get('contains', []):
+            expression = contains_entry['expression']
+            description = contains_entry.get('description', f'Verify diags_log contains: {expression}')
+            ts.Disk.diags_log.Content += Testers.ContainsExpression(expression, description)
+        for excludes_entry in diags_log.get('excludes', []):
+            expression = excludes_entry['expression']
+            description = excludes_entry.get('description', f'Verify diags_log excludes: {expression}')
+            ts.Disk.diags_log.Content += Testers.ExcludesExpression(expression, description)
+        # Gold file validation for diags_log.
+        if 'gold_file' in diags_log:
+            gold_file = diags_log['gold_file']
+            ts.Disk.diags_log.Content += gold_file
+
+    return ts
+
+
+def ATSReplayTest(obj, replay_file: str):
+    '''Create a TestRun that configures ATS and runs HTTP traffic using the replay file.
+
+    :param obj: The Test object to add the test run to.
+    :param replay_file: Replay file specifying the test configuration and test traffic.
+    :returns: The TestRun object.
+    '''
+
+    replay_path = replay_file if os.path.isabs(replay_file) else os.path.join(obj.TestDirectory, replay_file)
+    with open(replay_path, 'r') as f:
+        replay_config = yaml.safe_load(f)
+
+    # The user must specify the 'autest' node.
+    if not 'autest' in replay_config:
+        raise ValueError(f"Replay file {replay_file} does not contain 'autest' section")
+    autest_config = replay_config['autest']
+
+    tr = obj.AddTestRun(autest_config['description'])
+
+    # Copy the specified files and directories down.
+    tr.Setup.Copy(replay_file, tr.RunDirectory)
+
+    for files_to_copy in autest_config.get('files_to_copy', []):
+        tr.Setup.Copy(files_to_copy)
+    for dirs_to_copy in autest_config.get('dirs_to_copy', []):
+        tr.Setup.Copy(dirs_to_copy)
+
+    # DNS configuration.
+    dns = None
+    if 'dns' in autest_config:
+        dns_config = autest_config['dns']
+        name = dns_config['name']
+        if 'process_config' in dns_config:
+            process_config = dns_config['process_config']
+            dns = tr.MakeDNServer(name, **process_config)
+        else:
+            dns = tr.MakeDNServer(name, default='127.0.0.1')
+
+    # Proxy Verifier Server configuration.
+    if not 'server' in autest_config:
+        raise ValueError(f"Replay file {replay_file} does not contain 'autest.server' section")
+    server_config = autest_config['server']
+    name = server_config['name']
+    process_config = server_config.get('process_config', {})
+    server = tr.AddVerifierServerProcess(name, replay_file, **process_config)
+
+    # ATS configuration.
+    if not 'ats' in autest_config:
+        raise ValueError(f"Replay file {replay_file} does not contain 'autest.ats' section")
+    ats_config = autest_config['ats']
+    enable_tls = ats_config.get('enable_tls', False)
+    ts = configure_ats(tr, server=server, ats_config=ats_config, dns=dns)
+
+    # Proxy Verifier Client configuration.
+    if not 'client' in autest_config:
+        raise ValueError(f"Replay file {replay_file} does not contain 'autest.client' section")
+    client_config = autest_config['client']
+    name = client_config.get('name', 'client')
+    process_config = client_config.get('process_config', {})
+    https_ports = [ts.Variables.ssl_port] if enable_tls else None
+    client = tr.AddVerifierClientProcess(
+        name, replay_file, http_ports=[ts.Variables.port], https_ports=https_ports, **process_config)
+
+    if dns:
+        ts.StartBefore(dns)
+    ts.StartBefore(server)
+    client.StartBefore(ts)
+
+    return tr
+
+
+ExtendTest(ATSReplayTest, name="ATSReplayTest")

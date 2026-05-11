@@ -22,29 +22,19 @@
 # a new cmakelang version is desired.
 # See:
 # https://github.com/cheshirekow/cmake_format/tags
-CMAKE_FORMAT_VERSION="v0.6.13"
+CMAKE_FORMAT_VERSION="0.6.13"
 VERSION="0.6.13"
 
 function main() {
   set -e # exit on error
 
-  if ! type virtualenv >/dev/null 2>/dev/null
-  then
-    pip install -q virtualenv
+  # Check for uv.
+  if ! command -v uv &> /dev/null; then
+    echo "uv is not installed. Please install it: https://docs.astral.sh/uv/getting-started/installation/"
+    exit 1
   fi
 
-  GIT_DIR=$(git rev-parse --absolute-git-dir)
-  CMAKE_FORMAT_VENV=${CMAKE_FORMAT_VENV:-${GIT_DIR}/fmt/cmake_format_${CMAKE_FORMAT_VERSION}_venv}
-  if [ ! -e ${CMAKE_FORMAT_VENV} ]
-  then
-    virtualenv ${CMAKE_FORMAT_VENV}
-  fi
-  source ${CMAKE_FORMAT_VENV}/bin/activate
-
-  pip install -q --upgrade pip
-  pip install -q "cmakelang==${CMAKE_FORMAT_VERSION}" pyaml
-
-  ver=$(cmake-format --version 2>&1)
+  ver=$(uv tool run --quiet --from cmakelang@${CMAKE_FORMAT_VERSION} --with pyaml cmake-format --version 2>&1)
   if [ "$ver" != "$VERSION" ]
   then
       echo "Wrong version of cmake-format!"
@@ -59,7 +49,7 @@ function main() {
   tmp_dir=$(mktemp -d -t tracked-git-files.XXXXXXXXXX)
   files=${tmp_dir}/git_files.txt
   files_filtered=${tmp_dir}/git_files_filtered.txt
-  git ls-tree -r HEAD --name-only ${DIR} | grep -E 'CMakeLists.txt|.cmake$' | grep -vE "lib/(catch2|fastlz|swoc|yamlcpp)" > ${files}
+  git ls-tree -r HEAD --name-only ${DIR} | grep -E 'CMakeLists.txt|.cmake$' | grep -vE "lib/(catch2|Catch2|fastlz|ls-hpack|swoc|yamlcpp)" > ${files}
   # Add to the above any newly added staged files.
   git diff --cached --name-only --diff-filter=A >> ${files}
   # But probably not all the new staged files are CMakeLists.txt files:
@@ -76,16 +66,13 @@ function main() {
   # after this we assume was modified by cmake-format.
   start_time_file=${tmp_dir}/format_start.$$
   touch ${start_time_file}
-  cmake-format  -i $(cat ${files_filtered})
+  uv tool run --quiet --from cmakelang@${CMAKE_FORMAT_VERSION} --with pyaml cmake-format -i $(cat ${files_filtered})
   find $(cat ${files_filtered}) -newer ${start_time_file}
 
   rm -rf ${tmp_dir}
-  deactivate
 }
 
 if [[ "$(basename -- "$0")" == 'cmake-format.sh' ]]; then
   main "$@"
-else
-  GIT_DIR=$(git rev-parse --absolute-git-dir)
-  CMAKE_FORMAT_VENV=${CMAKE_FORMAT_VENV:-${GIT_DIR}/fmt/cmake_format_${CMAKE_FORMAT_VERSION}_venv}
 fi
+# When sourced, CMAKE_FORMAT_VERSION is already set at the top of this file.

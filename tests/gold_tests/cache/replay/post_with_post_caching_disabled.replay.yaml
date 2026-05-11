@@ -17,6 +17,35 @@
 meta:
   version: "1.0"
 
+# Configuration section for autest integration
+autest:
+  dns:
+    name: 'dns-post_with_post_caching_disabled'
+  dns:
+    name: 'dns-post_with_post_caching_disabled'
+  description: 'Verify correct POST response handling when caching POST responses is disabled'
+
+  server:
+    name: 'server-post-disabled'
+
+  client:
+    name: 'client-post-disabled'
+
+  ats:
+    name: 'ts'
+    process_config:
+      enable_cache: true
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http.*|cache.*'
+      proxy.config.http.insert_age_in_response: 0
+      # Caching of POST responses is disabled by default.
+      # proxy.config.http.cache.post_method: 0
+
+    remap_config:
+      - from: "http://example.com/"
+        to: "http://backend.example.com:{SERVER_HTTP_PORT}/"
 
 sessions:
 - transactions:

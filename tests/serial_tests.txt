@@ -1,0 +1,12 @@
+# Tests that must run serially (not in parallel) due to resource conflicts
+# or other constraints that prevent parallel execution.
+#
+# Format: One test file path per line, relative to tests/gold_tests/
+# Lines starting with # are comments and ignored.
+
+# Spins up 12 ATS instances with varying thread configs; fails under parallel load
+thread_config/thread_config.test.py
+
+# Starts repeated DNS/ATS/server triplets and can hit transient port reuse when
+# batched with other tests.
+slow_post/quick_server.test.py
