@@ -227,9 +227,13 @@ Registration
 
    Must be called from :func:`TSPluginInit`, **after**
    :func:`TSPluginRegister`. Returns ``TS_ERROR`` if called outside
-   ``TSPluginInit``, before ``TSPluginRegister``, with a null or
-   incomplete ``info`` struct, or if another plugin (or core) has
-   already registered the same key.
+   ``TSPluginInit``, before ``TSPluginRegister``, or with a null or
+   incomplete ``info`` struct.
+
+   If another plugin (or core) has already registered the same key,
+   the duplicate registration is rejected and a warning is logged
+   identifying both owners; ``TS_SUCCESS`` is still returned, since
+   the plugin has no useful recovery path at init time.
 
 :func:`TSCfgAttachReloadTrigger`
    Wires a record so that changing its value re-runs the reload handler

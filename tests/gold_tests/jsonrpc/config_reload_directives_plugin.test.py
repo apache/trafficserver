@@ -106,7 +106,7 @@ tr.Processes.Default.Streams.stdout = All(
     Testers.IncludesExpression('directive_version=2.0', 'Plugin should see version directive'),
     Testers.IncludesExpression('content_greeting=hello_directives', 'Plugin should see greeting in content'),
     Testers.IncludesExpression('success', 'Should complete successfully'),
-    Testers.IncludesExpression('[plugin]', 'Should have plugin tag'),
+    Testers.IncludesExpression(r'\[plugin: ', 'Should have plugin tag'),
 )
 tr.StillRunningAfter = ts
 

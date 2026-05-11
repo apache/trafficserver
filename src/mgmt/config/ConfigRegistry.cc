@@ -486,8 +486,9 @@ ConfigRegistry::apply_passed_config(ConfigContext &ctx, YAML::Node &passed_confi
   // Extract _reload directives before passing content to the handler. This keeps
   // supplied_yaml() clean (pure config data) and exposes reload_directives() as a
   // separate accessor for operational parameters.
-  if (passed_config.IsMap() && passed_config["_reload"]) {
-    auto directives = passed_config["_reload"];
+  const YAML::Node &cfg_view = passed_config;
+  if (cfg_view.IsMap() && cfg_view["_reload"]) {
+    auto directives = cfg_view["_reload"];
     if (!directives.IsMap()) {
       Warning("Config '%.*s': _reload must be a YAML map, ignoring directives", static_cast<int>(key.size()), key.data());
     } else {
