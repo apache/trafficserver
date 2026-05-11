@@ -14,11 +14,10 @@
 #  the License.
 #
 #######################
-FROM ubuntu:noble AS build
+FROM ubuntu:noble AS build-setup
 
 ARG LLVM_VERSION=18
 ARG BASE=/opt
-ARG ATS_VERSION=10.1.0
 ARG GO_VERSION=1.26.2
 
 RUN apt update \
@@ -196,6 +195,10 @@ RUN git clone --depth 1 -b curl-8_20_0 https://github.com/curl/curl.git \
  && make install \
  && cd .. \
  && rm -rf curl
+
+FROM build-setup as build
+
+ARG ATS_VERSION=10.1.0
 
 RUN git clone --depth 1 -b ${ATS_VERSION} https://github.com/apache/trafficserver.git \
  && cmake \
