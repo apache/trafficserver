@@ -127,7 +127,7 @@ tr.Processes.Default.Command = "traffic_ctl config status -t rpc-greet"
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = All(
-    Testers.IncludesExpression('[plugin]', 'Plugin task should have [plugin] tag'),
+    Testers.IncludesExpression(r'\[plugin: ', 'Plugin task should have [plugin: <name>] tag'),
     Testers.IncludesExpression('greet=world', 'Should show greeting in status'),
     Testers.IncludesExpression('success', 'Should show success'),
     Testers.IncludesExpression('handler entered', 'TSCfgLoadCtxAddLog message should appear'),
@@ -164,7 +164,7 @@ tr.Processes.Default.Command = "traffic_ctl config status -t rpc-fail"
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = All(
-    Testers.IncludesExpression('[plugin]', 'Failed task should have [plugin] tag'),
+    Testers.IncludesExpression(r'\[plugin: ', 'Failed task should have [plugin: <name>] tag'),
     Testers.IncludesExpression('fail', 'Should show fail state'),
     Testers.IncludesExpression('fail requested', 'TSCfgLoadCtxAddLog error message should appear'),
 )

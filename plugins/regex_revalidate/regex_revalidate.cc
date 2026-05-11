@@ -126,6 +126,7 @@ typedef struct {
   time_t          last_load;
   TSTextLogObject log;
   char           *state_path;
+  TSMutex         reload_mutex; ///< serializes do_config_reload() calls
 } plugin_state_t;
 
 static invalidate_t *
@@ -173,6 +174,7 @@ init_plugin_state_t(plugin_state_t *pstate)
   pstate->last_load       = 0;
   pstate->log             = nullptr;
   pstate->state_path      = nullptr;
+  pstate->reload_mutex    = TSMutexCreate();
   return pstate;
 }
 
@@ -193,6 +195,9 @@ free_plugin_state_t(plugin_state_t *pstate)
   }
   if (pstate->state_path) {
     TSfree(pstate->state_path);
+  }
+  if (pstate->reload_mutex) {
+    TSMutexDestroy(pstate->reload_mutex);
   }
   TSfree(pstate);
 }
@@ -594,7 +599,9 @@ config_reload(TSCfgLoadCtx ctx, void *data)
   auto *pstate = static_cast<plugin_state_t *>(data);
 
   Dbg(dbg_ctl, "Config reload via ConfigRegistry");
+  TSMutexLock(pstate->reload_mutex);
   bool const updated = do_config_reload(pstate);
+  TSMutexUnlock(pstate->reload_mutex);
   TSCfgLoadCtxComplete(ctx, updated ? "regex_revalidate config reloaded" : "regex_revalidate config unchanged");
 }
 
@@ -610,7 +617,9 @@ config_handler(TSCont cont, TSEvent /* event ATS_UNUSED */, void * /* edata ATS_
   TSMutexLock(mutex);
 
   pstate = (plugin_state_t *)TSContDataGet(cont);
+  TSMutexLock(pstate->reload_mutex);
   do_config_reload(pstate);
+  TSMutexUnlock(pstate->reload_mutex);
 
   TSMutexUnlock(mutex);
 
