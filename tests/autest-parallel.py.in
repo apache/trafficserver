@@ -45,6 +45,9 @@ from typing import Dict, List, Optional, Tuple
 DEFAULT_SERIAL_TESTS_FILE = Path("${CMAKE_CURRENT_SOURCE_DIR}") / "serial_tests.txt"
 # Default estimate for unknown tests (seconds)
 DEFAULT_TEST_TIME = 15.0
+# Default timeout for running one test at a time, used for timing collection
+# and serial tests.
+DEFAULT_SINGLE_TEST_TIMEOUT = 3600
 
 
 @dataclass
@@ -421,8 +424,15 @@ def extract_worker_diagnostics(output: str) -> str:
     return '\n\n...\n\n'.join(blocks) if blocks else clean
 
 
-def run_single_test(test: str, script_dir: Path, sandbox: Path, ats_bin: str, build_root: str, extra_args: List[str],
-                    env: dict) -> Tuple[str, float, str, str]:
+def run_single_test(
+        test: str,
+        script_dir: Path,
+        sandbox: Path,
+        ats_bin: str,
+        build_root: str,
+        extra_args: List[str],
+        env: dict,
+        timeout: int = DEFAULT_SINGLE_TEST_TIMEOUT) -> Tuple[str, float, str, str]:
     """
     Run a single test and return its timing.
 
@@ -445,7 +455,7 @@ def run_single_test(test: str, script_dir: Path, sandbox: Path, ats_bin: str, bu
             capture_output=True,
             text=True,
             env=env,
-            timeout=600  # 10 minute timeout per test
+            timeout=timeout
         )
         duration = time.time() - start
         output = proc.stdout + proc.stderr
@@ -463,7 +473,7 @@ def run_single_test(test: str, script_dir: Path, sandbox: Path, ats_bin: str, bu
             status = "FAIL"
         return (test, duration, status, output)
     except subprocess.TimeoutExpired:
-        return (test, 600.0, "FAIL", "TIMEOUT")
+        return (test, float(timeout), "FAIL", f"TIMEOUT: Test exceeded {timeout} second timeout")
     except Exception as e:
         return (test, time.time() - start, "FAIL", str(e))
 
@@ -1057,19 +1067,20 @@ Examples:
             print(f"{'=' * 70}")
             serial_start = time.time()
 
-            # Use a special worker ID for serial tests (after parallel workers)
-            serial_worker_id = len(partitions) if partitions else 0
-
-            # Set up environment without port offset (serial tests run alone)
-            env = os.environ.copy()
-            env['AUTEST_PORT_OFFSET'] = '0'
+            # Use worker IDs after the requested parallel worker range so
+            # serial-only runs do not fall back to the default port range.
+            serial_worker_id = max(len(partitions), args.jobs)
 
             serial_result = TestResult(worker_id=serial_worker_id, tests=serial_tests_to_run, is_serial=True)
+            serial_output = []
 
             for idx, test in enumerate(serial_tests_to_run, 1):
+                env = os.environ.copy()
+                env['AUTEST_PORT_OFFSET'] = str((serial_worker_id + idx - 1) * args.port_offset_step)
                 test_name, duration, status, output = run_single_test(
                     test, script_dir, sandbox_base / "serial", args.ats_bin, build_root, args.extra_args or [], env)
                 serial_result.test_timings[test_name] = duration
+                serial_output.append(output)
 
                 if status == "PASS":
                     serial_result.passed += 1
@@ -1091,6 +1102,7 @@ Examples:
                 print_progress(phase="Serial")
 
             serial_result.duration = time.time() - serial_start
+            serial_result.output = "\n".join(serial_output)
             results.append(serial_result)
 
             # Clear the progress line after serial phase

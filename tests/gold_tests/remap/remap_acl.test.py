@@ -169,7 +169,7 @@ class Test_remap_acl:
             p.Command = 'echo awaiting config reload'
             p.Env = ts.Env
             Test_remap_acl._ts_reload_counter += 1
-            count = Test_remap_acl._ts_reload_counter
+            count = Test_remap_acl._ts_reload_counter + 1
             await_config_reload = tr.Processes.Process(f'config_reload_succeeded_{count}', 'sleep 30')
             await_config_reload.Ready = When.FileContains(ts.Disk.diags_log.Name, "remap.config finished loading", count)
             p.StartBefore(await_config_reload)
