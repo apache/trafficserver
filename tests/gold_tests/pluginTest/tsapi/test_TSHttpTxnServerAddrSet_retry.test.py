@@ -14,31 +14,29 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 '''
-Test to reproduce issue #12611 - retry fails when TSHttpTxnServerAddrSet is used
+Tests for TSHttpTxnServerAddrSet() retry behavior with and without cache enabled.
 '''
 
 import os
 from ports import get_port
 
 Test.Summary = '''
-Reproduce issue #12611: OS_DNS hook is not called again on retry when using TSHttpTxnServerAddrSet
+Verify TSHttpTxnServerAddrSet() retry works with and without cache enabled
 '''
 
 plugin_name = "test_TSHttpTxnServerAddrSet_retry"
 
 
-class TestIssue12611:
-    """Reproduce issue #12611: retry fails when TSHttpTxnServerAddrSet is used."""
+class TestServerAddrSetRetry:
+    """Verify retry behavior for TSHttpTxnServerAddrSet() with and without cache."""
 
-    def _configure_dns(self, tr: 'TestRun') -> 'Process':
+    def _configure_dns(self, tr: 'TestRun', name: str) -> 'Process':
         """Configure the DNS process for a TestRun."""
-        self._dns = tr.MakeDNServer("dns", default=['127.0.0.1'])
-        return self._dns
+        return tr.MakeDNServer(name, default=['127.0.0.1'])
 
-    def _configure_traffic_server(self, tr: 'TestRun') -> 'Process':
+    def _configure_traffic_server(self, tr: 'TestRun', name: str, dns: 'Process', enable_cache: bool) -> 'Process':
         """Configure the Traffic Server process for a TestRun."""
-        self._ts = tr.MakeATSProcess("ts", enable_cache=False)
-        ts = self._ts
+        ts = tr.MakeATSProcess(name, enable_cache=enable_cache)
 
         plugin_path = os.path.join(Test.Variables.AtsBuildGoldTestsDir, 'pluginTest', 'tsapi', '.libs', f'{plugin_name}.so')
         ts.Setup.Copy(plugin_path, ts.Env['PROXY_CONFIG_PLUGIN_PLUGIN_DIR'])
@@ -46,7 +44,7 @@ class TestIssue12611:
 
         ts.Disk.records_config.update(
             {
-                'proxy.config.dns.nameservers': f'127.0.0.1:{self._dns.Variables.Port}',
+                'proxy.config.dns.nameservers': f'127.0.0.1:{dns.Variables.Port}',
                 'proxy.config.dns.resolv_conf': 'NULL',
                 'proxy.config.diags.debug.enabled': 1,
                 'proxy.config.diags.debug.tags': 'http|dns|test_TSHttpTxnServerAddrSet_retry',
@@ -58,30 +56,36 @@ class TestIssue12611:
         # Remap to a nonexisting server - the plugin will set addresses
         bogus_port = get_port(ts, "bogus_port")
         ts.Disk.remap_config.AddLine(f'map / http://non.existent.server.com:{bogus_port}')
+        return ts
 
-    def run(self):
-        """Configure the TestRun."""
-        tr = Test.AddTestRun("Reproduce issue #12611")
-        self._configure_dns(tr)
-        self._configure_traffic_server(tr)
+    def run(self, enable_cache: bool, description: str, name_suffix: str) -> None:
+        """Configure a TestRun."""
+        tr = Test.AddTestRun(description)
+        dns = self._configure_dns(tr, f"dns_{name_suffix}")
+        ts = self._configure_traffic_server(tr, f"ts_{name_suffix}", dns, enable_cache)
 
         # Make a simple request - it should fail since first address is non-routable
         # but the plugin should log whether OS_DNS was called multiple times
-        tr.Processes.Default.Command = f'curl -vs --connect-timeout 5 http://127.0.0.1:{self._ts.Variables.port}/ -o /dev/null 2>&1; true'
+        tr.Processes.Default.Command = f'curl -vs --connect-timeout 5 http://127.0.0.1:{ts.Variables.port}/ -o /dev/null 2>&1; true'
         tr.Processes.Default.ReturnCode = 0
 
-        tr.Processes.Default.StartBefore(self._dns)
-        tr.Processes.Default.StartBefore(self._ts)
+        tr.Processes.Default.StartBefore(dns)
+        tr.Processes.Default.StartBefore(ts)
 
         # Override the default diags.log error check - we use TSError() for test output
         # Using '=' instead of '+=' replaces the default "no errors" check
-        self._ts.Disk.diags_log.Content = Testers.ContainsExpression("OS_DNS hook called, count=1", "First OS_DNS call logged")
+        ts.Disk.diags_log.Content = Testers.ContainsExpression("OS_DNS hook called, count=1", "First OS_DNS call logged")
 
-        # This message indicates the fix works - OS_DNS was called multiple times
-        # Test will FAIL on master (bug exists), PASS after fix is applied
-        self._ts.Disk.diags_log.Content += Testers.ContainsExpression(
+        ts.Disk.diags_log.Content += Testers.ContainsExpression(
             "SUCCESS: OS_DNS hook was called", "Plugin was able to retry with different address")
 
+        if enable_cache:
+            ts.Disk.traffic_out.Content = Testers.ExcludesExpression(
+                "failed assertion", "ATS should not hit the redirect write-lock assertion")
+            ts.Disk.traffic_out.Content += Testers.ExcludesExpression(
+                "received signal 6", "ATS should not abort while retrying origin selection")
 
-test = TestIssue12611()
-test.run()
+
+test = TestServerAddrSetRetry()
+test.run(enable_cache=False, description="Reproduce issue #12611 without cache", name_suffix="nocache")
+test.run(enable_cache=True, description="Verify TSHttpTxnServerAddrSet retry is safe with cache enabled", name_suffix="cache")

@@ -3294,6 +3294,12 @@ HttpTransact::HandleCacheOpenReadMiss(State *s)
     s->cache_info.action = CACHE_DO_NO_ACTION;
   } else if (s->api_server_response_no_store) { // plugin may have decided not to cache the response
     s->cache_info.action = CACHE_DO_NO_ACTION;
+  } else if (s->cache_info.write_lock_state == CACHE_WL_SUCCESS && s->cache_info.action == CACHE_DO_WRITE) {
+    // Origin retry paths such as TSHttpTxnServerAddrSet() can loop back through
+    // HandleCacheOpenReadMiss after we already own the cache write lock. This
+    // is still the same request, so keep the existing write lock instead of
+    // re-preparing a write as if this were a redirect or a new cache miss.
+    TxnDbg(dbg_ctl_http_trans, "Reusing existing cache write lock while retrying origin selection");
   } else {
     HttpTransact::set_cache_prepare_write_action_for_new_request(s);
   }
