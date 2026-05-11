@@ -112,7 +112,8 @@ transform_one(Data *data, const char *upstream_buffer, int64_t upstream_length)
     }
 
     if (err != Z_OK) {
-      warning("deflate() call failed: %d", err);
+      error("deflate() call failed: %d", err);
+      return;
     }
 
     if (downstream_length > data->zstrm.avail_out) {
