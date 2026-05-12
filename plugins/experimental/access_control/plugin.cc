@@ -24,15 +24,19 @@
 
 #include <ctime> /* strftime */
 
-#include "common.h"         /* Common definitions */
-#include "config.h"         /* AccessControlConfig */
-#include "access_control.h" /* AccessToken */
-#include "ts/remap.h"       /* TSRemapInterface, TSRemapStatus, apiInfo */
-#include "ts/ts.h"          /* ATS API */
-#include "utils.h"          /* cryptoBase64Decode.* functions */
-#include "headers.h"        /* getHeader, setHeader, removeHeader */
+#include "common.h"                 /* Common definitions */
+#include "config.h"                 /* AccessControlConfig */
+#include "access_control.h"         /* AccessToken */
+#include "ts/remap.h"               /* TSRemapInterface, TSRemapStatus, apiInfo */
+#include "ts/ts.h"                  /* ATS API */
+#include "tscpp/util/LocalBuffer.h" /* ts::LocalBuffer */
+#include "utils.h"                  /* cryptoBase64Decode.* functions */
+#include "headers.h"                /* getHeader, setHeader, removeHeader */
 
 static const std::string_view UNKNOWN{"unknown"};
+
+// Stack reservation @c ts::LocalBuffer uses for the base64 cookie decode buffer.
+static constexpr size_t COOKIE_DECODE_STACK_BUFFER_SIZE = 8 * 1024;
 
 static const char *
 getEventName(TSEvent event)
@@ -515,7 +519,9 @@ enforceAccessControl(TSHttpTxn txnp, TSRemapRequestInfo *rri, AccessControlConfi
      * example, using Base64 [RFC4648].
      */
     size_t decodedCookieBufferSize = cryptoBase64DecodeSize(cookie.c_str(), cookie.size());
-    char decodedCookie[decodedCookieBufferSize];
+    ts::LocalBuffer<char, COOKIE_DECODE_STACK_BUFFER_SIZE> decodedCookieBuf(decodedCookieBufferSize);
+    // decodedCookieBuf owns the storage; decodedCookie is a non-owning view into it.
+    char *decodedCookie        = decodedCookieBuf.data();
     size_t decryptedCookieSize = cryptoModifiedBase64Decode(cookie.c_str(), cookie.size(), decodedCookie, decodedCookieBufferSize);
     if (0 < decryptedCookieSize) {
       AccessToken *token = config->_tokenFactory->getAccessToken();
