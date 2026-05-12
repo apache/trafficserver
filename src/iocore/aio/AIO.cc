@@ -85,6 +85,11 @@ AIOCallback::io_complete(int event, void *data)
 {
   (void)event;
   (void)data;
+  // Store from_api's value ahead of time because handling the event in the
+  // midst of this function may delete `this`, making using from_api itself a
+  // use-after-free later.
+  bool const should_delete_self = from_ts_api;
+
   if (aio_err_callback && !ok()) {
     AIOCallback *err_op          = new AIOCallback();
     err_op->aiocb.aio_fildes     = this->aiocb.aio_fildes;
@@ -99,7 +104,7 @@ AIOCallback::io_complete(int event, void *data)
   if (!action.cancelled && action.continuation) {
     action.continuation->handleEvent(AIO_EVENT_DONE, this);
   }
-  if (from_api) {
+  if (should_delete_self) {
     delete this;
   }
   return EVENT_DONE;
