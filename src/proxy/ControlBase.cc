@@ -42,6 +42,9 @@
 #include "proxy/ControlMatcher.h"
 #include "proxy/hdrs/HdrUtils.h"
 
+#include "swoc/string_view_util.h"
+
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -487,7 +490,7 @@ bool
 MethodMod::check(HttpRequestData *req) const
 {
   auto method{req->hdr->method_get()};
-  return method.length() >= text.length() && 0 == strncasecmp(method.data(), text.data(), text.length());
+  return method.length() == text.length() && 0 == strcasecmp(method, std::string_view(text.data(), text.length()));
 }
 std::unique_ptr<MethodMod>
 MethodMod::make(char *value, const char **)
