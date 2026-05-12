@@ -2916,12 +2916,18 @@ HttpSM::tunnel_handler_post(int event, void *data)
       // post failed
       switch (t_state.client_info.state) {
       case HttpTransact::ACTIVE_TIMEOUT:
+        tunnel.deallocate_buffers();
+        tunnel.reset();
         call_transact_and_set_next_state(HttpTransact::PostActiveTimeoutResponse);
         return 0;
       case HttpTransact::INACTIVE_TIMEOUT:
+        tunnel.deallocate_buffers();
+        tunnel.reset();
         call_transact_and_set_next_state(HttpTransact::PostInactiveTimeoutResponse);
         return 0;
       case HttpTransact::PARSE_ERROR:
+        tunnel.deallocate_buffers();
+        tunnel.reset();
         call_transact_and_set_next_state(HttpTransact::BadRequest);
         return 0;
       default:
