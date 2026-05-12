@@ -493,15 +493,23 @@ URLImpl::set_port(HdrHeap *heap, const char *value, int length, bool copy_string
   if (length == 0) {
     value = nullptr;
   }
-  mime_str_u16_set(heap, value, length, &(this->m_ptr_port), &(this->m_len_port), copy_string);
 
   this->m_port = 0;
   for (int i = 0; i < length; i++) {
     if (!ParseRules::is_digit(value[i])) {
       break;
     }
-    this->m_port = this->m_port * 10 + (value[i] - '0');
+    unsigned int next = this->m_port * 10 + (value[i] - '0');
+    if (next > 65535) {
+      // Reject out-of-range port: drop the parsed text as well so the URL is
+      // fully treated as if no port were given.
+      mime_str_u16_set(heap, nullptr, 0, &(this->m_ptr_port), &(this->m_len_port), copy_string);
+      this->m_port = 0;
+      return;
+    }
+    this->m_port = static_cast<uint16_t>(next);
   }
+  mime_str_u16_set(heap, value, length, &(this->m_ptr_port), &(this->m_len_port), copy_string);
 }
 
 /*-------------------------------------------------------------------------
