@@ -329,10 +329,21 @@ InterceptPlugin::handleEvent(int abstract_event, void *edata)
 
 namespace
 {
+/** RAII try-lock helper used by the @c InterceptPlugin continuation.
+ *
+ *  The guard takes shared ownership of the mutex for its entire scope.  The
+ *  locked region below may destroy the @c InterceptPlugin::State that owns
+ *  the only other @c std::shared_ptr to the mutex.
+ */
 class TryLockGuard
 {
 public:
-  TryLockGuard(Mutex &m) : _m(m), _isLocked(m.try_lock()) {}
+  TryLockGuard(std::shared_ptr<Mutex> m) : _m(std::move(m)), _isLocked(_m && _m->try_lock()) {}
+
+  TryLockGuard(const TryLockGuard &) = delete;
+  TryLockGuard &operator=(const TryLockGuard &) = delete;
+  TryLockGuard(TryLockGuard &&)                 = delete;
+  TryLockGuard &operator=(TryLockGuard &&) = delete;
 
   bool
   isLocked() const
@@ -343,13 +354,13 @@ public:
   ~TryLockGuard()
   {
     if (_isLocked) {
-      _m.unlock();
+      _m->unlock();
     }
   }
 
 private:
-  std::recursive_mutex &_m;
-  const bool _isLocked;
+  std::shared_ptr<Mutex> _m; ///< Shared ownership of the protected mutex.
+  const bool _isLocked;      ///< Whether @c _m->try_lock() succeeded.
 };
 
 int
@@ -364,7 +375,7 @@ handleEvents(TSCont cont, TSEvent pristine_event, void *pristine_edata)
     return 0;
   }
 
-  TryLockGuard scopedTryLock(*(state->plugin_mutex_));
+  TryLockGuard scopedTryLock(state->plugin_mutex_);
   if (!scopedTryLock.isLocked()) {
     LOG_ERROR("Couldn't get plugin lock. Will retry");
     if (event != TS_EVENT_TIMEOUT) { // save only "non-retry" info
