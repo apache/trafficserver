@@ -332,6 +332,96 @@ TEST_CASE("MIOBuffer", "[iocore]")
   }
 }
 
+TEST_CASE("MIOBuffer accessors on a writerless buffer", "[iocore]")
+{
+  // After dealloc(), MIOBuffer::_writer is null and first_write_block()
+  // returns nullptr.  The chain accessors must mirror the null-safe
+  // behaviour that buf() already provides instead of dereferencing the
+  // missing block.
+  MIOBuffer *miob = new_MIOBuffer(BUFFER_SIZE_INDEX_4K);
+  miob->dealloc();
+
+  REQUIRE(miob->first_write_block() == nullptr);
+  CHECK(miob->buf() == nullptr);
+  CHECK(miob->buf_end() == nullptr);
+  CHECK(miob->start() == nullptr);
+  CHECK(miob->end() == nullptr);
+
+  free_MIOBuffer(miob);
+}
+
+TEST_CASE("IOBufferBlock::set clamps _end to block storage", "[iocore]")
+{
+  // IOBufferBlock::set must not let _end land beyond _buf_end when the
+  // caller passes a length larger than the underlying block.  Otherwise
+  // read_avail() reports more bytes than the block actually holds and
+  // any subsequent copy reads out-of-bounds memory.
+  Ptr<IOBufferData>  data{new_IOBufferData(BUFFER_SIZE_INDEX_512)};
+  Ptr<IOBufferBlock> block{new_IOBufferBlock()};
+
+  const int64_t block_sz = data->block_size();
+
+  SECTION("len within the block")
+  {
+    block->set(data.get(), block_sz / 2, 0);
+    CHECK(block->read_avail() == block_sz / 2);
+    CHECK(block->end() <= block->buf_end());
+  }
+
+  SECTION("len exactly equal to the block")
+  {
+    block->set(data.get(), block_sz, 0);
+    CHECK(block->read_avail() == block_sz);
+    CHECK(block->end() == block->buf_end());
+  }
+
+  SECTION("len larger than the block is clamped")
+  {
+    block->set(data.get(), block_sz * 4, 0);
+    CHECK(block->read_avail() == block_sz);
+    CHECK(block->end() == block->buf_end());
+  }
+
+  SECTION("non-zero offset is honoured by the clamp")
+  {
+    const int64_t offset = block_sz / 4;
+    block->set(data.get(), block_sz, offset);
+    CHECK(block->read_avail() == block_sz - offset);
+    CHECK(block->end() == block->buf_end());
+  }
+
+  SECTION("offset beyond the block produces an empty slice")
+  {
+    block->set(data.get(), block_sz, block_sz * 2);
+    CHECK(block->read_avail() == 0);
+    CHECK(block->start() == block->buf_end());
+    CHECK(block->end() == block->buf_end());
+  }
+
+  SECTION("offset exactly at the block end produces an empty slice")
+  {
+    block->set(data.get(), block_sz, block_sz);
+    CHECK(block->read_avail() == 0);
+    CHECK(block->start() == block->buf_end());
+    CHECK(block->end() == block->buf_end());
+  }
+
+  SECTION("negative offset is treated as zero")
+  {
+    block->set(data.get(), block_sz, -32);
+    CHECK(block->read_avail() == block_sz);
+    CHECK(block->start() == block->buf());
+    CHECK(block->end() == block->buf_end());
+  }
+
+  SECTION("negative len is treated as zero")
+  {
+    block->set(data.get(), -10, 0);
+    CHECK(block->read_avail() == 0);
+    CHECK(block->start() == block->end());
+  }
+}
+
 TEST_CASE("block size parser", "[iocore]")
 {
   int  chunk_sizes[DEFAULT_BUFFER_SIZES] = {0};
