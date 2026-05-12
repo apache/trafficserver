@@ -20,6 +20,8 @@
 
 #include "sni_selector.h"
 
+extern int gVCIdx;
+
 std::atomic<SniSelector *> SniSelector::_instance = nullptr;
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -240,6 +242,8 @@ sni_queue_cont(TSCont cont, TSEvent /* event ATS_UNUSED */, void * /* edata ATS_
 
           (void)contp;
           Dbg(dbg_ctl, "Queued VC is too old (%ldms), erroring out", static_cast<long>(age.count()));
+          TSUserArgSet(vc, gVCIdx, nullptr);
+          limiter->selector()->release();
           TSVConnReenableEx(vc, TS_EVENT_ERROR);
           limiter->incrementMetric(RATE_LIMITER_METRIC_EXPIRED);
         }
