@@ -323,6 +323,44 @@ std::vector<url_parse_test_case> url_parse_test_cases = {
     IS_VALID
   },
   {
+    // Maximum value that fits in the 16-bit port field; preserved verbatim.
+    "https://www.example.com:65535/",
+    "https://www.example.com:65535/",
+    VERIFY_HOST_CHARACTERS,
+    "https://www.example.com:65535/",
+    IS_VALID,
+    IS_VALID
+  },
+  {
+    // One past the 16-bit boundary: the port is rejected and the URL is
+    // emitted with no explicit port so default-port logic applies.
+    "https://www.example.com:65536/",
+    "https://www.example.com/",
+    VERIFY_HOST_CHARACTERS,
+    "https://www.example.com/",
+    IS_VALID,
+    IS_VALID
+  },
+  {
+    // Five-digit value above the 16-bit range.
+    "https://www.example.com:99999/",
+    "https://www.example.com/",
+    VERIFY_HOST_CHARACTERS,
+    "https://www.example.com/",
+    IS_VALID,
+    IS_VALID
+  },
+  {
+    // Six-digit value whose low 16 bits coincide with a well-known port (80);
+    // must not be silently retained as if the user had asked for that port.
+    "https://www.example.com:131152/",
+    "https://www.example.com/",
+    VERIFY_HOST_CHARACTERS,
+    "https://www.example.com/",
+    IS_VALID,
+    IS_VALID
+  },
+  {
     "https://www.example.com/a/path",
     "https://www.example.com/a/path",
     VERIFY_HOST_CHARACTERS,
@@ -567,6 +605,49 @@ TEST_CASE("UrlParse", "[proxy][parseurl]")
   CAPTURE(test_case.input_uri, test_case.expected_printed_url, test_case.is_valid);
   test_parse(test_case, URL_PARSE);
   test_parse(test_case, URL_PARSE_REGEX);
+}
+
+TEST_CASE("UrlParsePortStorage", "[proxy][parseurl]")
+{
+  // Validate the underlying URLImpl port storage rather than the printed form,
+  // so the rejection path cannot leave the parsed text behind even when other
+  // serialization paths only inspect m_ptr_port.
+  struct Case {
+    std::string input_uri;
+    int         expected_port;    // numeric m_port value
+    bool        expect_port_text; // true if m_ptr_port should be non-null
+  };
+
+  // clang-format off
+  static const std::vector<Case> cases = {
+    // In-range ports keep both the numeric value and the parsed text.
+    {"https://www.example.com:8080/",   8080,  true },
+    {"https://www.example.com:65535/",  65535, true },
+    // Out-of-range ports clear both.
+    {"https://www.example.com:65536/",  0,     false},
+    {"https://www.example.com:99999/",  0,     false},
+    {"https://www.example.com:131152/", 0,     false},
+  };
+  // clang-format on
+
+  auto c = GENERATE(from_range(cases));
+  CAPTURE(c.input_uri, c.expected_port, c.expect_port_text);
+
+  URL      url;
+  HdrHeap *heap = new_HdrHeap();
+  url.create(heap);
+  REQUIRE(url.parse(c.input_uri) == ParseResult::DONE);
+
+  CHECK(url.m_url_impl->m_port == c.expected_port);
+  if (c.expect_port_text) {
+    CHECK(url.m_url_impl->m_ptr_port != nullptr);
+    CHECK(url.m_url_impl->m_len_port > 0);
+  } else {
+    CHECK(url.m_url_impl->m_ptr_port == nullptr);
+    CHECK(url.m_url_impl->m_len_port == 0);
+  }
+
+  heap->destroy();
 }
 
 struct get_hash_test_case {
