@@ -28,6 +28,8 @@
 #include "tscore/ink_memory.h"
 #include "tscore/ink_resource.h"
 
+#include <algorithm>
+
 // TODO: I think we're overly aggressive here on making MIOBuffer 64-bit
 // but not sure it's worthwhile changing anything to 32-bit honestly.
 
@@ -416,10 +418,13 @@ IOBufferBlock::set_internal(void *b, int64_t len, int64_t asize_index)
 TS_INLINE void
 IOBufferBlock::set(IOBufferData *d, int64_t len, int64_t offset)
 {
-  data     = d;
-  _start   = buf() + offset;
-  _end     = _start + len;
-  _buf_end = buf() + d->block_size();
+  data                      = d;
+  const int64_t block_sz    = d->block_size();
+  const int64_t safe_offset = std::clamp<int64_t>(offset, 0, block_sz);
+  const int64_t safe_len    = std::clamp<int64_t>(len, 0, block_sz - safe_offset);
+  _start                    = buf() + safe_offset;
+  _buf_end                  = buf() + block_sz;
+  _end                      = _start + safe_len;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -553,7 +558,7 @@ IOBufferReader::is_read_avail_more_than(int64_t size)
 TS_INLINE void
 IOBufferReader::consume(int64_t n)
 {
-  ink_assert(read_avail() >= n);
+  ink_release_assert(n == 0 || is_read_avail_more_than(n - 1));
   start_offset += n;
   if (size_limit != INT64_MAX) {
     size_limit -= n;
@@ -890,6 +895,7 @@ MIOBuffer::fill(int64_t len)
     len -= f;
     if (len > 0) {
       _writer = _writer->next;
+      ink_release_assert(_writer);
     }
     f = _writer->write_avail();
   }

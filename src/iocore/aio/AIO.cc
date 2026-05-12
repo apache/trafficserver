@@ -307,8 +307,9 @@ aio_init_fildes(int fildes, int fromAPI = 0)
     thread_is_created = 1;
     thread_num        = api_config_threads_per_disk;
   } else {
-    request->index        = num_filedes;
-    request->filedes      = fildes;
+    request->index   = num_filedes;
+    request->filedes = fildes;
+    ink_release_assert(num_filedes < MAX_DISKS_POSSIBLE);
     aio_reqs[num_filedes] = request;
     thread_num            = cache_config_threads_per_disk;
   }
