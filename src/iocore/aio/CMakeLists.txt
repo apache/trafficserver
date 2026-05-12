@@ -33,6 +33,10 @@ if(BUILD_TESTING)
     COMMAND $<TARGET_FILE:test_AIO>
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/src/iocore/aio
   )
+
+  add_executable(test_AIOCallback unit_tests/test_AIOCallback.cc)
+  target_link_libraries(test_AIOCallback PRIVATE ts::aio Catch2::Catch2WithMain)
+  add_catch2_test(NAME test_AIOCallback COMMAND test_AIOCallback)
 endif()
 
 clang_tidy_check(aio)
