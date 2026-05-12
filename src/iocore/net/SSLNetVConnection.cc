@@ -934,7 +934,7 @@ SSLNetVConnection::do_io_close(int lerrno)
 void
 SSLNetVConnection::do_io_shutdown(ShutdownHowTo_t howto)
 {
-  if (get_tunnel_type() == SNIRoutingType::BLIND) {
+  if (ssl == nullptr || get_tunnel_type() == SNIRoutingType::BLIND) {
     // we don't have TLS layer control of blind tunnel
     UnixNetVConnection::do_io_shutdown(howto);
     return;
