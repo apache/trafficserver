@@ -415,11 +415,11 @@ BgFetch::~BgFetch()
 bool
 BgFetch::schedule(BgFetchState *state, const PrefetchConfig &config, bool askPermission, TSMBuffer requestBuffer,
                   TSMLoc requestHeaderLoc, TSHttpTxn txnp, const char *path, size_t pathLen, const String &cachekey,
-                  bool removeQuery)
+                  bool removeQuery, const char *query, size_t queryLen)
 {
   bool     ret   = false;
   BgFetch *fetch = new BgFetch(state, config, askPermission);
-  if (fetch->init(requestBuffer, requestHeaderLoc, txnp, path, pathLen, cachekey, removeQuery)) {
+  if (fetch->init(requestBuffer, requestHeaderLoc, txnp, path, pathLen, cachekey, removeQuery, query, queryLen)) {
     fetch->schedule();
     ret = true;
   } else {
@@ -459,7 +459,7 @@ BgFetch::addBytes(int64_t b)
  */
 bool
 BgFetch::init(TSMBuffer reqBuffer, TSMLoc reqHdrLoc, TSHttpTxn txnp, const char *fetchPath, size_t fetchPathLen,
-              const String &cachekey, bool removeQuery)
+              const String &cachekey, bool removeQuery, const char *fetchQuery, size_t fetchQueryLen)
 {
   TSAssert(TS_NULL_MLOC == _headerLoc);
   TSAssert(TS_NULL_MLOC == _urlLoc);
@@ -520,6 +520,15 @@ BgFetch::init(TSMBuffer reqBuffer, TSMLoc reqHdrLoc, TSHttpTxn txnp, const char 
       PrefetchDebug("original query string removed");
     } else {
       PrefetchError("failed to remove original query string");
+    }
+  }
+
+  /* Replace the query string when a derived prefetch path supplied one. */
+  if (nullptr != fetchQuery) {
+    if (TS_SUCCESS == TSUrlHttpQuerySet(_mbuf, _urlLoc, fetchQuery, fetchQueryLen)) {
+      PrefetchDebug("setting URL query to %.*s", (int)fetchQueryLen, fetchQuery);
+    } else {
+      PrefetchError("failed to set URL query to %.*s", (int)fetchQueryLen, fetchQuery);
     }
   }
 
