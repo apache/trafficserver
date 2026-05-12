@@ -16,7 +16,7 @@
 #######################
 
 add_executable(
-  test_proxy main.cc test_ParentHashConfig.cc test_PluginYAML.cc
+  test_proxy main.cc test_ControlBase.cc test_ParentHashConfig.cc test_PluginYAML.cc
              "${PROJECT_SOURCE_DIR}/src/iocore/net/libinknet_stub.cc" stub.cc
 )
 
