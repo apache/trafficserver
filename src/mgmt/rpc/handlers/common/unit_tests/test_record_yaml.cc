@@ -96,7 +96,7 @@ TEST_CASE("Record YAML encoder exposes values for default-access config records"
 {
   RecRecord rec{};
   fill_string_config(rec, "proxy.config.example.normal", "current", "default", RECA_NULL);
-  YAML::Node node = encode_record_node(rec);
+  const YAML::Node node = encode_record_node(rec);
 
   REQUIRE(node[constants_rec::DATA_TYPE].as<std::string>() == "STRING");
   REQUIRE(node[constants_rec::CURRENT_VALUE].as<std::string>() == "current");
@@ -107,7 +107,7 @@ TEST_CASE("Record YAML encoder withholds values for RECA_NO_ACCESS string record
 {
   RecRecord rec{};
   fill_string_config(rec, "proxy.config.example.secret", "supersecret", "secret-default", RECA_NO_ACCESS);
-  YAML::Node node = encode_record_node(rec);
+  const YAML::Node node = encode_record_node(rec);
 
   // Type label and metadata are still expected so callers can enumerate the
   // record's existence and tier.
@@ -124,7 +124,7 @@ TEST_CASE("Record YAML encoder withholds values for RECA_NO_ACCESS int records",
 {
   RecRecord rec{};
   fill_int_config(rec, "proxy.config.example.token", 42, 0, RECA_NO_ACCESS);
-  YAML::Node node = encode_record_node(rec);
+  const YAML::Node node = encode_record_node(rec);
 
   REQUIRE(node[constants_rec::DATA_TYPE].as<std::string>() == "INT");
   REQUIRE_FALSE(node[constants_rec::CURRENT_VALUE]);
@@ -138,7 +138,7 @@ TEST_CASE("Record YAML encoder ignores access_type on STAT records", "[mgmt][rpc
   // REC_TYPE_IS_CONFIG check that fences the new no-access logic.
   RecRecord rec{};
   fill_int_stat(rec, "proxy.process.example.counter", 7);
-  YAML::Node node = encode_record_node(rec);
+  const YAML::Node node = encode_record_node(rec);
 
   REQUIRE(node[constants_rec::DATA_TYPE].as<std::string>() == "INT");
   REQUIRE(node[constants_rec::CURRENT_VALUE].as<int>() == 7);
