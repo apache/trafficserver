@@ -95,8 +95,11 @@ public:
   HSMresult_t acquireSession(sockaddr const *addr, CryptoHash const &host_hash, TSServerSessionSharingMatchMask match_style,
                              HttpSM *sm, PoolableSession *&server_session);
   /** Release a session to the pool.
+
+      @return @c true if the session was pooled; @c false if the session could not be pooled
+              (the caller is responsible for closing it in that case).
    */
-  void releaseSession(PoolableSession *ss);
+  bool releaseSession(PoolableSession *ss);
 
   /// Close all sessions and then clear the table.
   void purge();
