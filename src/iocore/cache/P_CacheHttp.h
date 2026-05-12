@@ -50,7 +50,6 @@ struct CacheHTTPInfoVector {
   }
   int            insert(CacheHTTPInfo *info, int id = -1);
   CacheHTTPInfo *get(int idx);
-  void           detach(int idx, CacheHTTPInfo *r);
   void           remove(int idx, bool destroy);
   void           clear(bool destroy = true);
   void
