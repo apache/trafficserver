@@ -1263,7 +1263,7 @@ namespace literals
    * rather bizarre to me, but there it is. Update: this depends on the version of the compiler,
    * so hopefully someday this can be removed.
    */
-  constexpr ts::TextView operator"" _tv(const char *s, size_t n) { return {s, n}; }
+  constexpr ts::TextView operator""_tv(const char *s, size_t n) { return {s, n}; }
 } // namespace literals
 
 /** Functor for STL containers that need caseless comparisons of standard string types.
@@ -1346,7 +1346,7 @@ template <> struct iterator_traits<ts::TextView> {
 //
 // I couldn't think of any better place to put this, so it's here. At least @c TextView is strongly related
 // to @c std::string_view.
-constexpr std::string_view operator"" _sv(const char *s, size_t n)
+constexpr std::string_view operator""_sv(const char *s, size_t n)
 {
   return {s, n};
 }
