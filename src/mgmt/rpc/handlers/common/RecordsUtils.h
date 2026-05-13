@@ -42,7 +42,9 @@ enum class RecordError {
   GENERAL_ERROR,
   RECORD_WRITE_ERROR,
   REQUESTED_TYPE_MISMATCH,
-  INVALID_INCOMING_DATA
+  INVALID_INCOMING_DATA,
+  RECORD_READ_ONLY,
+  RECORD_NO_ACCESS
 };
 std::error_code make_error_code(rpc::handlers::errors::RecordError e);
 } // namespace rpc::handlers::errors
