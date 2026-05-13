@@ -139,26 +139,41 @@ template <> struct convert<RecRecord> {
         node[constants_rec::OVERRIDABLE] = (it == ts::Overridable_Txn_Vars.end()) ? "false" : "true";
       }
 
+      // access_type lives in config_meta, which shares storage with stat_meta
+      // via a union; only inspect it when the record is actually a CONFIG
+      // record.  Records registered with @c RECA_NO_ACCESS opt out of having
+      // their value exposed, so withhold the value fields while still emitting
+      // the type label so callers can tell which records exist.
+      const bool no_access = REC_TYPE_IS_CONFIG(record.rec_type) && record.config_meta.access_type == RECA_NO_ACCESS;
+
       switch (record.data_type) {
       case RECD_INT:
-        node[constants_rec::DATA_TYPE]     = "INT";
-        node[constants_rec::CURRENT_VALUE] = record.data.rec_int;
-        node[constants_rec::DEFAULT_VALUE] = record.data_default.rec_int;
+        node[constants_rec::DATA_TYPE] = "INT";
+        if (!no_access) {
+          node[constants_rec::CURRENT_VALUE] = record.data.rec_int;
+          node[constants_rec::DEFAULT_VALUE] = record.data_default.rec_int;
+        }
         break;
       case RECD_FLOAT:
-        node[constants_rec::DATA_TYPE]     = "FLOAT";
-        node[constants_rec::CURRENT_VALUE] = record.data.rec_float;
-        node[constants_rec::DEFAULT_VALUE] = record.data_default.rec_float;
+        node[constants_rec::DATA_TYPE] = "FLOAT";
+        if (!no_access) {
+          node[constants_rec::CURRENT_VALUE] = record.data.rec_float;
+          node[constants_rec::DEFAULT_VALUE] = record.data_default.rec_float;
+        }
         break;
       case RECD_STRING:
-        node[constants_rec::DATA_TYPE]     = "STRING";
-        node[constants_rec::CURRENT_VALUE] = record.data.rec_string ? record.data.rec_string : "null";
-        node[constants_rec::DEFAULT_VALUE] = record.data_default.rec_string ? record.data_default.rec_string : "null";
+        node[constants_rec::DATA_TYPE] = "STRING";
+        if (!no_access) {
+          node[constants_rec::CURRENT_VALUE] = record.data.rec_string ? record.data.rec_string : "null";
+          node[constants_rec::DEFAULT_VALUE] = record.data_default.rec_string ? record.data_default.rec_string : "null";
+        }
         break;
       case RECD_COUNTER:
-        node[constants_rec::DATA_TYPE]     = "COUNTER";
-        node[constants_rec::CURRENT_VALUE] = record.data.rec_counter;
-        node[constants_rec::DEFAULT_VALUE] = record.data_default.rec_counter;
+        node[constants_rec::DATA_TYPE] = "COUNTER";
+        if (!no_access) {
+          node[constants_rec::CURRENT_VALUE] = record.data.rec_counter;
+          node[constants_rec::DEFAULT_VALUE] = record.data_default.rec_counter;
+        }
         break;
       default:
         // this is an error, internal we should flag it
