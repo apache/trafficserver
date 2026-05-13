@@ -4951,6 +4951,10 @@ TSHttpTxnErrorBodySet(TSHttpTxn txnp, char *buf, size_t buflength, char *mimetyp
   // TSHttpTxnErrorBodySet() and TSHttpTxnServerRequestBodySet() share the same buffer.
   // Switching to an error/response body override must clear the request-body mode.
   s->api_server_request_body_set = false;
+  // Record the hook the plugin was running on so HttpSM::handle_api_return() can
+  // scope the SERVER_READ/TRANSFORM_READ internal-body divert to response-stage
+  // body replacement (the canonical TSHttpTxnErrorBodySet() use case).
+  s->internal_msg_buffer_set_on = buf ? sm->get_cur_hook_id() : TS_HTTP_LAST_HOOK;
 
   s->internal_msg_buffer_type = mimetype;
 }

@@ -1749,7 +1749,9 @@ HttpSM::handle_api_return()
 
       setup_blind_tunnel(true, initial_data);
     } else if (t_state.internal_msg_buffer && !t_state.api_server_request_body_set && t_state.hdr_info.server_response.valid() &&
-               plugin_tunnel == nullptr) {
+               plugin_tunnel == nullptr &&
+               (t_state.internal_msg_buffer_set_on == TS_HTTP_READ_RESPONSE_HDR_HOOK ||
+                t_state.internal_msg_buffer_set_on == TS_HTTP_SEND_RESPONSE_HDR_HOOK)) {
       // Plugin replaced the origin response body via TSHttpTxnErrorBodySet(); divert to internal transfer.
       SMDbg(dbg_ctl_http, "plugin set internal body, using internal transfer instead of server tunnel");
       if (server_entry != nullptr && server_entry->in_tunnel == false) {
