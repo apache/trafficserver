@@ -808,7 +808,7 @@ RangeTransform::RangeTransform(ProxyMutex *mut, RangeRecord *ranges, int num_fie
   SET_HANDLER(&RangeTransform::handle_event);
 
   m_num_chars_for_cl = num_chars_for_int(m_range_content_length);
-  Dbg(dbg_ctl_http_trans, "RangeTransform creation finishes");
+  Dbg(dbg_ctl_http_trans, "RangeTransform init: %" PRId64 "-%" PRId64 "/%" PRId64, ranges->_start, ranges->_end, content_length);
 }
 
 /*-------------------------------------------------------------------------
@@ -925,8 +925,9 @@ RangeTransform::transform_to_range()
 
       if (toskip > 0) {
         reader->consume(toskip);
-        *done_byte += toskip;
-        avail       = reader->read_avail();
+        m_write_vio.ndone += toskip;
+        *done_byte        += toskip;
+        avail              = reader->read_avail();
       }
     }
 
@@ -939,6 +940,7 @@ RangeTransform::transform_to_range()
 
       m_output_buf->write(reader, tosend);
       reader->consume(tosend);
+      m_write_vio.ndone += tosend;
 
       m_done     += tosend;
       *done_byte += tosend;
