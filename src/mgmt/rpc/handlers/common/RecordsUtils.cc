@@ -63,6 +63,10 @@ RPCRecordErrorCategory::message(int ev) const
     return {"Found record does not match the requested type"};
   case rpc::handlers::errors::RecordError::INVALID_INCOMING_DATA:
     return {"Invalid request data provided"};
+  case rpc::handlers::errors::RecordError::RECORD_READ_ONLY:
+    return {"Record is read-only and cannot be modified through the management interface."};
+  case rpc::handlers::errors::RecordError::RECORD_NO_ACCESS:
+    return {"Record is not accessible through the management interface."};
   default:
     return "Record error error " + std::to_string(ev);
   }
