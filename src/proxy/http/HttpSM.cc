@@ -1687,12 +1687,10 @@ HttpSM::handle_api_return()
 
   switch (t_state.next_action) {
   case HttpTransact::StateMachineAction_t::TRANSFORM_READ: {
-    // A plugin has installed an internal response body (TSHttpTxnErrorBodySet()).
-    // In this branch we bypass transform streaming and switch to internal transfer.
+    // Bypass transform streaming when a plugin replaced the response body.
     if (t_state.internal_msg_buffer && !t_state.api_server_request_body_set && t_state.hdr_info.server_response.valid()) {
       SMDbg(dbg_ctl_http, "plugin set internal body, bypassing response transform for internal transfer");
       t_state.api_info.cache_untransformed = true;
-      // If a tunnel was already set up for transform I/O, shut it down before we re-route.
       if (tunnel.is_tunnel_active()) {
         tunnel.kill_tunnel();
       }
@@ -1707,7 +1705,7 @@ HttpSM::handle_api_return()
         t_state.hdr_info.client_response.create(HTTPType::RESPONSE);
         t_state.hdr_info.client_response.copy(&t_state.hdr_info.transform_response);
       }
-      // The server session is not needed for internal body transfer if it was never tunneled.
+      // Internal transfer doesn't use the server session.
       if (server_entry != nullptr && server_entry->in_tunnel == false) {
         release_server_session();
       }
@@ -1751,11 +1749,8 @@ HttpSM::handle_api_return()
 
       setup_blind_tunnel(true, initial_data);
     } else if (t_state.internal_msg_buffer && !t_state.api_server_request_body_set && t_state.hdr_info.server_response.valid() &&
-               plugin_tunnel == nullptr &&
-               (api_hooks.get(TS_HTTP_READ_RESPONSE_HDR_HOOK) != nullptr ||
-                api_hooks.get(TS_HTTP_SEND_RESPONSE_HDR_HOOK) != nullptr)) {
-      // A plugin replaced the origin response body via TSHttpTxnErrorBodySet().
-      // Serve the synthetic body before entering the response body tunnel.
+               plugin_tunnel == nullptr) {
+      // Plugin replaced the origin response body via TSHttpTxnErrorBodySet(); divert to internal transfer.
       SMDbg(dbg_ctl_http, "plugin set internal body, using internal transfer instead of server tunnel");
       if (server_entry != nullptr && server_entry->in_tunnel == false) {
         release_server_session();
@@ -7625,7 +7620,6 @@ HttpSM::transform_cleanup(TSHttpHookID hook, HttpTransformInfo *info)
     do {
       APIHook *next = t_hook->m_link.next;
       // Some transform hooks can already be detached by the time kill_this() runs.
-      // Guard against null continuations while still draining the remaining hooks.
       if (auto *t_vcon = static_cast<VConnection *>(t_hook->m_cont); t_vcon != nullptr) {
         t_vcon->do_io_close();
       }
