@@ -114,3 +114,32 @@ The plugin also supports optional fields from GeoGuard databases which includes:
 ``relay_proxy``
 ``proxy_over_vpn``
 ``smart_dns_proxy``
+
+Bypass
+======
+
+An optional ``bypass`` field allows a request to skip all geo checks entirely and pass through
+unmodified. If the specified request header is present, the plugin returns immediately without
+performing any country, IP, regex, or anonymous evaluation.
+
+``header``
+   Required sub-key. The name of the HTTP request header to look for, e.g. ``@GcdTaBypassGeo``.
+
+``value``
+   Optional sub-key. When set, the header must also match this exact value for the bypass to
+   trigger. When omitted, the presence of the header alone is sufficient.
+
+An example configuration ::
+
+   maxmind:
+    database: GeoIP2-City.mmdb
+    bypass:
+     header: "@GcdTaBypassGeo"
+     value: "1"   # optional — omit to bypass on header presence alone
+    allow:
+     country:
+      - US
+
+This is useful for internal or trusted upstream services that should not be subject to geo
+restrictions. If ``bypass`` is absent from the configuration, bypass is disabled and all
+requests are evaluated normally.

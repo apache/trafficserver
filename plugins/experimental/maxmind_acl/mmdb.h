@@ -69,6 +69,7 @@ public:
   }
 
   bool eval(TSRemapRequestInfo *rri, TSHttpTxn txnp);
+  bool check_bypass(TSHttpTxn txnp) const;
   bool init(char const *filename);
 
   void
@@ -111,6 +112,10 @@ protected:
 
   bool _anonymous_blocking = false;
 
+  // Bypass header fields
+  std::string _bypass_header;
+  std::string _bypass_header_value;
+
   // Do we want to allow by default or not? Useful
   // for deny only rules
   bool default_allow = false;
@@ -121,6 +126,7 @@ protected:
   bool    loaddeny(const YAML::Node &denyNode);
   void    loadhtml(const YAML::Node &htmlNode);
   bool    loadanonymous(const YAML::Node &anonNode);
+  bool    loadbypass(const YAML::Node &bypassNode);
   bool    eval_country(MMDB_entry_data_s *entry_data, const std::string &url);
   bool    eval_anonymous(MMDB_entry_s *entry_data);
   void    parseregex(const YAML::Node &regex, bool allow);
