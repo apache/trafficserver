@@ -72,6 +72,12 @@ if(BUILD_TESTING)
     test_jsonrpcserver Catch2::Catch2WithMain ts::jsonrpc_server ts::inkevent libswoc::libswoc configmanager
   )
   add_catch2_test(NAME test_jsonrpcserver COMMAND test_jsonrpcserver)
+
+  add_executable(test_record_yaml handlers/common/unit_tests/test_record_yaml.cc)
+  target_link_libraries(
+    test_record_yaml PRIVATE Catch2::Catch2WithMain ts::rpcpublichandlers ts::tscore yaml-cpp::yaml-cpp
+  )
+  add_catch2_test(NAME test_record_yaml COMMAND test_record_yaml)
 endif()
 
 clang_tidy_check(jsonrpc_protocol)
