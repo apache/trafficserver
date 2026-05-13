@@ -23,6 +23,8 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include <memory>
+
 #include "iocore/aio/AIO.h"
 #include "iocore/eventsystem/Event.h"
 
@@ -30,26 +32,27 @@ namespace
 {
 
 struct AIOCompletionOwner : Continuation {
-  AIOCallback callback;
-  bool       *completed = nullptr;
+  std::unique_ptr<AIOCallback> callback;
+  bool                        *completed = nullptr;
 
-  explicit AIOCompletionOwner(bool &completion_flag) : Continuation(nullptr), completed(&completion_flag)
+  explicit AIOCompletionOwner(bool &completion_flag)
+    : Continuation(nullptr), callback(std::make_unique<AIOCallback>()), completed(&completion_flag)
   {
     SET_HANDLER(&AIOCompletionOwner::handle_aio_complete);
 
-    callback.action           = this;
-    callback.aiocb.aio_nbytes = 0;
-    callback.aio_result       = 0;
+    callback->action           = this;
+    callback->aiocb.aio_nbytes = 0;
+    callback->aio_result       = 0;
   }
 
   int
   handle_aio_complete(int event, void *data)
   {
     CHECK(event == AIO_EVENT_DONE);
-    CHECK(data == &callback);
+    CHECK(data == callback.get());
 
     *completed = true;
-    delete this;
+    callback.reset();
     return EVENT_DONE;
   }
 };
@@ -84,11 +87,11 @@ struct DeletionTrackedAIOCallback : AIOCallback {
 
 } // namespace
 
-TEST_CASE("AIOCallback completion tolerates owner deletion", "[iocore][aio]")
+TEST_CASE("AIOCallback completion tolerates callback deletion", "[iocore][aio]")
 {
-  bool completed = false;
-  auto owner     = new AIOCompletionOwner(completed);
-  auto callback  = &owner->callback;
+  bool               completed = false;
+  AIOCompletionOwner owner(completed);
+  auto              *callback = owner.callback.get();
 
   // Without ASan, a broken implementation can still pass because the stale value of from_ts_api is typically false.
   CHECK(callback->io_complete(EVENT_NONE, nullptr) == EVENT_DONE);
