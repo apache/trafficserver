@@ -487,7 +487,9 @@ public:
   uint16_t
   get_proxy_protocol_src_port() const
   {
-    return ats_ip_port_host_order(this->get_proxy_protocol_addr(ProxyProtocolData::SRC));
+    sockaddr const *addr = this->get_proxy_protocol_addr(ProxyProtocolData::SRC);
+
+    return addr == nullptr ? 0 : ats_ip_port_host_order(addr);
   }
 
   sockaddr const *
@@ -499,7 +501,9 @@ public:
   uint16_t
   get_proxy_protocol_dst_port() const
   {
-    return ats_ip_port_host_order(this->get_proxy_protocol_addr(ProxyProtocolData::DST));
+    sockaddr const *addr = this->get_proxy_protocol_addr(ProxyProtocolData::DST);
+
+    return addr == nullptr ? 0 : ats_ip_port_host_order(addr);
   };
 
   void                 set_proxy_protocol_info(const ProxyProtocol &src);
@@ -714,20 +718,22 @@ inline sockaddr const *
 NetVConnection::get_effective_remote_addr()
 {
   if (pp_info.version != ProxyProtocolVersion::UNDEFINED && is_proxy_protocol_cp_src) {
-    return get_proxy_protocol_src_addr();
-  } else {
-    return get_remote_addr();
+    if (sockaddr const *addr = get_proxy_protocol_src_addr(); addr != nullptr) {
+      return addr;
+    }
   }
+
+  return get_remote_addr();
 }
 
 inline IpEndpoint const &
 NetVConnection::get_client_endpoint()
 {
-  if (pp_info.version != ProxyProtocolVersion::UNDEFINED && is_proxy_protocol_cp_src) {
+  if (pp_info.version != ProxyProtocolVersion::UNDEFINED && is_proxy_protocol_cp_src && get_proxy_protocol_src_addr() != nullptr) {
     return pp_info.src_addr;
-  } else {
-    return remote_addr;
   }
+
+  return get_remote_endpoint();
 }
 
 /// @return The remote port in host order.
