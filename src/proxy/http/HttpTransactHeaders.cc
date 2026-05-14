@@ -40,6 +40,7 @@
 
 #include "iocore/utils/Machine.h"
 #include "tsutil/DbgCtl.h"
+#include "tsutil/StringCompare.h"
 
 using namespace std::literals;
 
@@ -898,7 +899,7 @@ HttpTransactHeaders::remove_100_continue_headers(HttpTransact::State *s, HTTPHdr
 {
   auto expect{s->hdr_info.client_request.value_get(static_cast<std::string_view>(MIME_FIELD_EXPECT))};
 
-  if (strcasecmp(expect, static_cast<std::string_view>(HTTP_VALUE_100_CONTINUE)) == 0) {
+  if (ts::iequals(expect, static_cast<std::string_view>(HTTP_VALUE_100_CONTINUE))) {
     outgoing->field_delete(static_cast<std::string_view>(MIME_FIELD_EXPECT));
   }
 }
