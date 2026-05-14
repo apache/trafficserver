@@ -5302,12 +5302,12 @@ HttpSM::get_outbound_sni() const
     int         len;
     char const *ptr = t_state.hdr_info.server_request.host_get(&len);
     zret.assign(ptr, len);
-  } else if (_ua.get_txn() && policy == "server_name"_tv) {
-    const char *server_name = snis->get_sni_server_name();
-    if (server_name[0] == '\0') {
+  } else if (_ua.get_txn() && snis && policy == "server_name"_tv) {
+    const char *const server_name = snis->get_sni_server_name();
+    if (nullptr == server_name || server_name[0] == '\0') {
       zret.assign(nullptr, swoc::TextView::npos);
     } else {
-      zret.assign(snis->get_sni_server_name(), swoc::TextView::npos);
+      zret.assign(server_name, swoc::TextView::npos);
     }
   } else if (policy.front() == '@') { // guaranteed non-empty from previous clause
     zret = policy.remove_prefix(1);
