@@ -1,0 +1,163 @@
+/** @file
+
+  SIMD-accelerated bulk ASCII tolower copy.
+
+  Used on the URL canonicalization fast path for cache-key digests
+  (src/proxy/hdrs/URL.cc::url_CryptoHash_get_fast). The scalar loop is
+  the bottleneck for hosts and schemes long enough to vectorize; for
+  shorter inputs the scalar tail handles them with no SIMD overhead.
+
+  Semantics match a byte-at-a-time loop using ParseRules::ink_tolower():
+
+    - Bytes in 'A'..'Z' (0x41..0x5A) have bit 5 set, mapping them to
+      'a'..'z'. All other bytes (including 0x80..0xFF) pass through
+      unchanged. There is no UTF-8 case folding.
+
+    - The destination is written byte-for-byte; src and dst must point
+      to non-overlapping regions of size at least @n bytes.
+
+  Implementation note: the bodies are stacked widest-first and each
+  drains its block size before falling through to the next. A build
+  with AVX-512BW gets the 64-byte body as the main loop, then at most
+  one 32-byte AVX2 iteration and one 16-byte SSE2 iteration to drain
+  the remainder before the scalar tail handles 0-15 bytes. Builds
+  without the wider ISAs simply skip those blocks. Selection is purely
+  compile-time; no runtime dispatch.
+
+  @section license License
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+ */
+#pragma once
+
+#include <cstddef>
+#include <cstdint>
+
+#if defined(__AVX512BW__) || defined(__AVX2__) || defined(__SSE2__)
+#include <immintrin.h>
+#elif defined(__ARM_NEON) || defined(__aarch64__)
+#include <arm_neon.h>
+#endif
+
+namespace ts
+{
+
+inline void
+memcpy_tolower(char *dst, const char *src, std::size_t n) noexcept
+{
+#if defined(__AVX512BW__)
+  // AVX-512BW: 64 bytes per iteration with two key optimizations over the
+  // narrower paths:
+  //   - _mm512_mask_add_epi8 fuses the "+0x20 where upper" into a single
+  //     op (no separate maskz_set1 + or).
+  //   - A masked load/store handles the 1..63-byte tail in a single SIMD
+  //     pass, so we don't need to cascade to AVX2/SSE2 to drain the
+  //     remainder.
+  //
+  // The masked tail does carry ~7 ns of fixed setup cost, which loses to
+  // the cascade on short inputs. Gating the whole block on n >= 64 means
+  // tiny inputs fall through to the AVX2/SSE2 path below, where they keep
+  // the speedup that path already provides.
+  //
+  // Inspired by Tony Finch's copytolower64.c
+  // (https://dotat.at/cgi/git/vectolower.git/).
+  if (n >= 64) {
+    const __m512i A_vec = _mm512_set1_epi8('A');
+    const __m512i Z_vec = _mm512_set1_epi8('Z');
+    const __m512i delta = _mm512_set1_epi8('a' - 'A');
+    do {
+      __m512i   bytes    = _mm512_loadu_epi8(src);
+      __mmask64 is_upper = _mm512_cmpge_epi8_mask(bytes, A_vec) & _mm512_cmple_epi8_mask(bytes, Z_vec);
+      _mm512_storeu_epi8(dst, _mm512_mask_add_epi8(bytes, is_upper, bytes, delta));
+      src += 64;
+      dst += 64;
+      n   -= 64;
+    } while (n >= 64);
+    if (n != 0) {
+      auto      len_mask = static_cast<__mmask64>((~0ULL) >> (64 - n));
+      __m512i   bytes    = _mm512_maskz_loadu_epi8(len_mask, src);
+      __mmask64 is_upper = _mm512_cmpge_epi8_mask(bytes, A_vec) & _mm512_cmple_epi8_mask(bytes, Z_vec);
+      _mm512_mask_storeu_epi8(dst, len_mask, _mm512_mask_add_epi8(bytes, is_upper, bytes, delta));
+    }
+    return;
+  }
+#endif
+
+#if defined(__AVX2__)
+  // 32 bytes per iteration. Same compare-and-OR pattern as SSE2.
+  {
+    const __m256i a_minus_one = _mm256_set1_epi8('A' - 1);
+    const __m256i z_plus_one  = _mm256_set1_epi8('Z' + 1);
+    const __m256i bit5        = _mm256_set1_epi8(0x20);
+    while (n >= 32) {
+      __m256i bytes = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(src));
+      __m256i ge_A  = _mm256_cmpgt_epi8(bytes, a_minus_one);
+      __m256i le_Z  = _mm256_cmpgt_epi8(z_plus_one, bytes);
+      __m256i mask  = _mm256_and_si256(_mm256_and_si256(ge_A, le_Z), bit5);
+      _mm256_storeu_si256(reinterpret_cast<__m256i *>(dst), _mm256_or_si256(bytes, mask));
+      src += 32;
+      dst += 32;
+      n   -= 32;
+    }
+  }
+#endif
+
+#if defined(__SSE2__)
+  // 16 bytes per iteration. Signed compare works for ASCII A-Z because all
+  // letters live below 0x80; high bytes (0x80..0xFF) compare as negative
+  // and correctly miss the [A,Z] range so they pass through unchanged.
+  {
+    const __m128i a_minus_one = _mm_set1_epi8('A' - 1);
+    const __m128i z_plus_one  = _mm_set1_epi8('Z' + 1);
+    const __m128i bit5        = _mm_set1_epi8(0x20);
+    while (n >= 16) {
+      __m128i bytes = _mm_loadu_si128(reinterpret_cast<const __m128i *>(src));
+      __m128i ge_A  = _mm_cmpgt_epi8(bytes, a_minus_one);
+      __m128i le_Z  = _mm_cmpgt_epi8(z_plus_one, bytes);
+      __m128i mask  = _mm_and_si128(_mm_and_si128(ge_A, le_Z), bit5);
+      _mm_storeu_si128(reinterpret_cast<__m128i *>(dst), _mm_or_si128(bytes, mask));
+      src += 16;
+      dst += 16;
+      n   -= 16;
+    }
+  }
+#elif defined(__ARM_NEON) || defined(__aarch64__)
+  // 16 bytes per iteration; unsigned compare available natively.
+  {
+    const uint8x16_t a_minus_one = vdupq_n_u8('A' - 1);
+    const uint8x16_t z_plus_one  = vdupq_n_u8('Z' + 1);
+    const uint8x16_t bit5        = vdupq_n_u8(0x20);
+    while (n >= 16) {
+      uint8x16_t bytes = vld1q_u8(reinterpret_cast<const uint8_t *>(src));
+      uint8x16_t ge_A  = vcgtq_u8(bytes, a_minus_one);
+      uint8x16_t le_Z  = vcltq_u8(bytes, z_plus_one);
+      uint8x16_t mask  = vandq_u8(vandq_u8(ge_A, le_Z), bit5);
+      vst1q_u8(reinterpret_cast<uint8_t *>(dst), vorrq_u8(bytes, mask));
+      src += 16;
+      dst += 16;
+      n   -= 16;
+    }
+  }
+#endif
+
+  while (n--) {
+    auto c = static_cast<unsigned char>(*src++);
+    *dst++ = (c >= 'A' && c <= 'Z') ? static_cast<char>(c | 0x20) : static_cast<char>(c);
+  }
+}
+
+} // namespace ts
