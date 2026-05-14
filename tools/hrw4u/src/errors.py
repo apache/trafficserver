@@ -126,7 +126,7 @@ class SymbolResolutionError(Exception):
 
     def add_symbol_suggestion(self, suggestions: list[str]) -> None:
         if suggestions:
-            self.add_note(f"     | Did you mean: {suggestions[0]}?")
+            self.add_note(f"Did you mean: {suggestions[0]}?")
 
 
 def hrw4u_error(filename: str, ctx: object, exc: Exception) -> Hrw4uSyntaxError:

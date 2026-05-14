@@ -63,7 +63,7 @@ class PlainTextFormatter(ErrorFormatter):
                 lines.append(str(error))
                 notes = getattr(error, '__notes__', None)
                 if notes:
-                    lines.extend(notes)
+                    lines.extend(f"     | {note}" for note in notes)
 
         if warnings:
             if errors:
