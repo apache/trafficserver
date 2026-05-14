@@ -5093,9 +5093,8 @@ HttpSM::do_range_setup_if_necessary()
             Dbg(dbg_ctl_http_range, "Serving transform after stale cache re-serve");
 
             // Ranges and range_output_cl were computed against the stale cached object size. If the fresh origin Content-Length
-            // differs, re-parse against the fresh value so the outgoing Content-Length/Content- Range reflect the body we are
-            // actually about to send. Without this, a shrunk origin body leaves Content-Length advertising the stale cached size
-            // while only the shorter fresh body is delivered.
+            // differs, re-parse the Range against the fresh value so the outgoing Content-Length/Content-Range match the body
+            // actually being sent. Without this, Content-Length/Content-Range advertise the stale cached size.
             const int64_t fresh_cl  = t_state.hdr_info.server_response.get_content_length();
             const int64_t cached_cl = t_state.cache_info.object_read ? t_state.cache_info.object_read->object_size_get() : -1;
             if (fresh_cl > 0 && fresh_cl != cached_cl) {

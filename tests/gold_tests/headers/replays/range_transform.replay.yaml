@@ -114,3 +114,42 @@ sessions:
         proxy-response:
           status: 206
           reason: Partial Content
+          headers:
+            fields:
+              - [Content-Range, {value: "bytes 0-39999/40000", as: equal}]
+              - [Content-Length, {value: 40000, as: equal}]
+
+
+  # Stale revalidate: origin body grown to 80000 (larger than cached). Range stays
+  # satisfiable, but Content-Range total must reflect fresh 80000, not stale size.
+  - transactions:
+      - client-request:
+          delay: 1500ms
+          method: "GET"
+          version: "1.1"
+          url: /obj
+          headers:
+            fields:
+              - [Host, example.com]
+              - [uuid, range-revalidate-grown]
+              - [Range, "bytes=0-64096"]
+
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Date, "Mon, 01 Jan 2024 00:00:05 GMT"]
+              - [Cache-Control, "max-age=1, public"]
+              - [Content-Type, application/octet-stream]
+              - [Content-Length, 80000]
+          content:
+            size: 80000
+
+        proxy-response:
+          status: 206
+          reason: Partial Content
+          headers:
+            fields:
+              - [Content-Range, {value: "bytes 0-64096/80000", as: equal}]
+              - [Content-Length, {value: 64097, as: equal}]
