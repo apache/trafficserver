@@ -141,6 +141,7 @@ if(BUILD_TESTING)
     unit_tests/test_ProxyProtocol.cc
     unit_tests/test_SSLSNIConfig.cc
     unit_tests/test_YamlSNIConfig.cc
+    unit_tests/test_OCSPStapling.cc
     unit_tests/unit_test_main.cc
     unit_tests/benchmark_TLSCertCompression.cc
   )
