@@ -110,6 +110,10 @@ target_link_libraries(
   tscore PUBLIC OpenSSL::Crypto libswoc::libswoc yaml-cpp::yaml-cpp systemtap::systemtap resolv::resolv ts::tsutil
 )
 
+if(TS_USE_SIMDUTF)
+  target_link_libraries(tscore PUBLIC simdutf::simdutf)
+endif()
+
 if(TS_USE_POSIX_CAP)
   target_link_libraries(tscore PUBLIC cap::cap)
 endif()

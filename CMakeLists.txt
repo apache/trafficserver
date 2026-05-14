@@ -281,6 +281,7 @@ include(CheckOpenSSLIsBoringSSL)
 include(CheckOpenSSLIsQuictls)
 include(CheckOpenSSLIsAwsLc)
 find_package(OpenSSL REQUIRED)
+auto_option(SIMDUTF FEATURE_VAR TS_USE_SIMDUTF PACKAGE_DEPENDS simdutf)
 check_openssl_is_boringssl(SSLLIB_IS_BORINGSSL BORINGSSL_VERSION "${OPENSSL_INCLUDE_DIR}")
 check_openssl_is_awslc(SSLLIB_IS_AWSLC AWSLC_VERSION "${OPENSSL_INCLUDE_DIR}")
 
