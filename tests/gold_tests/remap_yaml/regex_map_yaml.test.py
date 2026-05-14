@@ -41,7 +41,7 @@ ts.Disk.records_config.update(
     })
 
 ts.Disk.remap_yaml.AddLines(
-    f'''
+    rf'''
 remap:
   - type: regex_map
     from:
