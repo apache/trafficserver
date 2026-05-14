@@ -5097,7 +5097,12 @@ HttpSM::get_outbound_sni() const
     char const *ptr = t_state.hdr_info.server_request.host_get(&len);
     zret.assign(ptr, len);
   } else if (ua_txn && !strcmp(policy, "server_name"_tv)) {
-    zret.assign(ua_txn->get_netvc()->get_server_name(), ts::TextView::npos);
+    const char *server_name = ua_txn->get_netvc()->get_server_name();
+    if (nullptr == server_name || server_name[0] == '\0') {
+      zret.assign(nullptr, ts::TextView::npos);
+    } else {
+      zret.assign(server_name, ts::TextView::npos);
+    }
   } else if (policy.front() == '@') { // guaranteed non-empty from previous clause
     zret = policy.remove_prefix(1);
   } else {
