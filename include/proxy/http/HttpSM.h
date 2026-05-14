@@ -193,6 +193,11 @@ public:
   HttpCacheSM     &get_cache_sm(); // Added to get the object of CacheSM YTS Team, yamsat
   std::string_view get_outbound_sni() const;
   std::string_view get_outbound_cert() const;
+  /// Return the name used by outbound TLS certificate name verification. This
+  /// usually matches @c get_outbound_sni() above, but adds fallbacks for reuse
+  /// checks that run after the original NetVCOptions are no longer being
+  /// built for those reuse situations.
+  std::string_view get_outbound_sni_for_cert_verification() const;
 
   void init(bool from_early_data = false);
 
