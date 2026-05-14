@@ -24,6 +24,9 @@
 #include "tscore/ink_defs.h"
 #include "tscore/ink_platform.h"
 #include "tscore/ink_memory.h"
+
+#include "tsutil/StringCompare.h"
+
 #include <cassert>
 #include <cctype>
 #include <cstdio>
@@ -1161,8 +1164,8 @@ _mime_hdr_field_list_search_by_string(MIMEHdrImpl *mh, std::string_view field_na
     too_far_field = &(fblock->m_field_slots[fblock->m_freetop]);
     while (field < too_far_field) {
       if (field->is_live() &&
-          strcasecmp(std::string_view{field->m_ptr_name, static_cast<std::string_view::size_type>(field->m_len_name)},
-                     field_name) == 0) {
+          ts::iequals(std::string_view{field->m_ptr_name, static_cast<std::string_view::size_type>(field->m_len_name)},
+                      field_name)) {
         return field;
       }
       ++field;
