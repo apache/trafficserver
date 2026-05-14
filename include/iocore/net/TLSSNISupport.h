@@ -30,6 +30,7 @@
 #include <netinet/in.h>
 #include <openssl/ssl.h>
 
+#include <string>
 #include <string_view>
 #include <memory>
 #include <optional>
@@ -132,17 +133,17 @@ public:
   bool        would_have_actions_for(const char *servername, IpEndpoint remote, int &enforcement_policy);
 
   struct HintsFromSNI {
-    std::optional<uint32_t>         http2_buffer_water_mark;
-    std::optional<uint32_t>         server_max_early_data;
-    std::optional<uint32_t>         http2_initial_window_size_in;
-    std::optional<int32_t>          http2_max_settings_frames_per_minute;
-    std::optional<int32_t>          http2_max_ping_frames_per_minute;
-    std::optional<int32_t>          http2_max_priority_frames_per_minute;
-    std::optional<int32_t>          http2_max_rst_stream_frames_per_minute;
-    std::optional<int32_t>          http2_max_continuation_frames_per_minute;
-    std::optional<int32_t>          ssl_ticket_enabled;
-    std::optional<int32_t>          ssl_ticket_number;
-    std::optional<std::string_view> outbound_sni_policy;
+    std::optional<uint32_t>    http2_buffer_water_mark;
+    std::optional<uint32_t>    server_max_early_data;
+    std::optional<uint32_t>    http2_initial_window_size_in;
+    std::optional<int32_t>     http2_max_settings_frames_per_minute;
+    std::optional<int32_t>     http2_max_ping_frames_per_minute;
+    std::optional<int32_t>     http2_max_priority_frames_per_minute;
+    std::optional<int32_t>     http2_max_rst_stream_frames_per_minute;
+    std::optional<int32_t>     http2_max_continuation_frames_per_minute;
+    std::optional<int32_t>     ssl_ticket_enabled;
+    std::optional<int32_t>     ssl_ticket_number;
+    std::optional<std::string> outbound_sni_policy;
   } hints_from_sni;
 
 protected:
