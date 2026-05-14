@@ -455,7 +455,7 @@ OutboundSNIPolicy::SNIAction(SSL &ssl, const Context & /* ctx ATS_UNUSED */) con
 {
   if (!policy.empty()) {
     if (auto snis = TLSSNISupport::getInstance(&ssl)) {
-      snis->hints_from_sni.outbound_sni_policy = policy;
+      snis->hints_from_sni.outbound_sni_policy.emplace(policy);
     }
   }
   return SSL_TLSEXT_ERR_OK;

@@ -5292,7 +5292,7 @@ HttpSM::get_outbound_sni() const
     if (auto *netvc = _ua.get_txn()->get_netvc(); netvc) {
       snis = netvc->get_service<TLSSNISupport>();
       if (snis && snis->hints_from_sni.outbound_sni_policy.has_value()) {
-        policy.assign(snis->hints_from_sni.outbound_sni_policy->data(), swoc::TextView::npos);
+        policy.assign(snis->hints_from_sni.outbound_sni_policy->data(), snis->hints_from_sni.outbound_sni_policy->size());
       }
     }
   }
