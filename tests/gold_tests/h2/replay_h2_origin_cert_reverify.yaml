@@ -1,0 +1,60 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: '1.0'
+
+sessions:
+  - protocol:
+      stack: http2
+      tls:
+        version: TLSv1.3
+        sni: foo.com
+        proxy-verify-mode: 1
+        proxy-provided-cert: false
+    transactions:
+      - all: { headers: { fields: [[ uuid, foo ]]}}
+
+        proxy-request:
+          protocol:
+            stack: http2
+            tls:
+              sni: foo.com
+              proxy-verify-mode: 1
+              proxy-provided-cert: false
+          version: '2'
+          scheme: https
+          method: GET
+          url: /foo
+          headers:
+            encoding: esc_json
+            fields:
+              - [ Host, foo.com ]
+          content:
+            encoding: plain
+            size: 0
+
+        server-response:
+          version: '2'
+          status: 200
+          headers:
+            encoding: esc_json
+            fields:
+              - [ Content-Length, 12 ]
+          content:
+            encoding: plain
+            data: foo-response
+            size: 12

@@ -112,9 +112,9 @@ TEST_CASE("CN_match", "[libts][X509HostnameValidator]")
   ts::PostScript x_defer([&]() -> void { X509_free(x); });
 
   REQUIRE(x != nullptr);
-  REQUIRE(validate_hostname(x, (unsigned char *)test_certificate_cn_name, false, &matching) == true);
+  REQUIRE(validate_hostname(x, test_certificate_cn_name, false, &matching) == true);
   REQUIRE(strcmp(test_certificate_cn_name, matching) == 0);
-  REQUIRE(validate_hostname(x, (unsigned char *)test_certificate_cn_name + 1, false, nullptr) == false);
+  REQUIRE(validate_hostname(x, std::string_view{test_certificate_cn_name + 1}, false, nullptr) == false);
   ats_free(matching);
 }
 
@@ -124,11 +124,11 @@ TEST_CASE("bad_wildcard_SANs", "[libts][X509HostnameValidator]")
   ts::PostScript x_defer([&]() -> void { X509_free(x); });
 
   REQUIRE(x != nullptr);
-  REQUIRE(validate_hostname(x, (unsigned char *)"something.or.other", false, nullptr) == false);
-  REQUIRE(validate_hostname(x, (unsigned char *)"a.b.c", false, nullptr) == false);
-  REQUIRE(validate_hostname(x, (unsigned char *)"0.0.0.0", true, nullptr) == false);
-  REQUIRE(validate_hostname(x, (unsigned char *)"......", true, nullptr) == false);
-  REQUIRE(validate_hostname(x, (unsigned char *)"a.b", true, nullptr) == false);
+  REQUIRE(validate_hostname(x, "something.or.other", false, nullptr) == false);
+  REQUIRE(validate_hostname(x, "a.b.c", false, nullptr) == false);
+  REQUIRE(validate_hostname(x, "0.0.0.0", true, nullptr) == false);
+  REQUIRE(validate_hostname(x, "......", true, nullptr) == false);
+  REQUIRE(validate_hostname(x, "a.b", true, nullptr) == false);
 }
 
 TEST_CASE("wildcard_SAN_and_CN", "[libts][X509HostnameValidator]")
@@ -138,14 +138,14 @@ TEST_CASE("wildcard_SAN_and_CN", "[libts][X509HostnameValidator]")
   ts::PostScript x_defer([&]() -> void { X509_free(x); });
 
   REQUIRE(x != nullptr);
-  REQUIRE(validate_hostname(x, (unsigned char *)test_certificate_cn_name, false, &matching) == true);
+  REQUIRE(validate_hostname(x, test_certificate_cn_name, false, &matching) == true);
   REQUIRE(strcmp(test_certificate_cn_name, matching) == 0);
   ats_free(matching);
 
-  REQUIRE(validate_hostname(x, (unsigned char *)"a.trafficserver.org", false, &matching) == true);
+  REQUIRE(validate_hostname(x, "a.trafficserver.org", false, &matching) == true);
   REQUIRE(strcmp("*.trafficserver.org", matching) == 0);
 
-  REQUIRE(validate_hostname(x, (unsigned char *)"a.*.trafficserver.org", false, nullptr) == false);
+  REQUIRE(validate_hostname(x, "a.*.trafficserver.org", false, nullptr) == false);
   ats_free(matching);
 }
 
@@ -156,12 +156,12 @@ TEST_CASE("IDNA_hostnames", "[libts][X509HostnameValidator]")
   ts::PostScript x_defer([&]() -> void { X509_free(x); });
 
   REQUIRE(x != nullptr);
-  REQUIRE(validate_hostname(x, (unsigned char *)"xn--foobar.trafficserver.org", false, &matching) == true);
+  REQUIRE(validate_hostname(x, "xn--foobar.trafficserver.org", false, &matching) == true);
   REQUIRE(strcmp("*.trafficserver.org", matching) == 0);
   ats_free(matching);
 
   // IDNA means wildcard must match full label
-  REQUIRE(validate_hostname(x, (unsigned char *)"xn--foobar.trafficserver.net", false, &matching) == false);
+  REQUIRE(validate_hostname(x, "xn--foobar.trafficserver.net", false, &matching) == false);
 }
 
 TEST_CASE("middle_label_match", "[libts][X509HostnameValidator]")
@@ -171,15 +171,15 @@ TEST_CASE("middle_label_match", "[libts][X509HostnameValidator]")
   ts::PostScript x_defer([&]() -> void { X509_free(x); });
 
   REQUIRE(x != nullptr);
-  REQUIRE(validate_hostname(x, (unsigned char *)"foosomething.trafficserver.com", false, &matching) == true);
+  REQUIRE(validate_hostname(x, "foosomething.trafficserver.com", false, &matching) == true);
   REQUIRE(strcmp("foo*.trafficserver.com", matching) == 0);
   ats_free(matching);
-  REQUIRE(validate_hostname(x, (unsigned char *)"somethingbar.trafficserver.net", false, &matching) == true);
+  REQUIRE(validate_hostname(x, "somethingbar.trafficserver.net", false, &matching) == true);
   REQUIRE(strcmp("*bar.trafficserver.net", matching) == 0);
   ats_free(matching);
 
-  REQUIRE(validate_hostname(x, (unsigned char *)"a.bar.trafficserver.net", false, nullptr) == false);
-  REQUIRE(validate_hostname(x, (unsigned char *)"foo.bar.trafficserver.net", false, nullptr) == false);
+  REQUIRE(validate_hostname(x, "a.bar.trafficserver.net", false, nullptr) == false);
+  REQUIRE(validate_hostname(x, "foo.bar.trafficserver.net", false, nullptr) == false);
 }
 
 int
