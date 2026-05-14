@@ -25,6 +25,7 @@
 #include <new>
 #include "tscore/ink_platform.h"
 #include "tscore/ink_memory.h"
+#include "tscore/ink_memcpy_tolower.h"
 #include "proxy/hdrs/URL.h"
 #include "proxy/hdrs/MIME.h"
 #include "proxy/hdrs/HTTP.h"
@@ -1684,16 +1685,6 @@ url_describe(HdrHeapObjImpl *raw, bool /* recurse ATS_UNUSED */)
  *                                                                     *
  ***********************************************************************/
 
-static inline void
-memcpy_tolower(char *d, const char *s, int n)
-{
-  while (n--) {
-    *d = ParseRules::ink_tolower(*s);
-    s++;
-    d++;
-  }
-}
-
 // fast path for CryptoHash, HTTP, no user/password/params/query,
 // no buffer overflow, no unescaping needed
 
@@ -1704,7 +1695,7 @@ url_CryptoHash_get_fast(const URLImpl *url, CryptoContext &ctx, CryptoHash *hash
   char *p;
 
   p = buffer;
-  memcpy_tolower(p, url->m_ptr_scheme, url->m_len_scheme);
+  ts::memcpy_tolower(p, url->m_ptr_scheme, url->m_len_scheme);
   p    += url->m_len_scheme;
   *p++  = ':';
   *p++  = '/';
@@ -1713,7 +1704,7 @@ url_CryptoHash_get_fast(const URLImpl *url, CryptoContext &ctx, CryptoHash *hash
   *p++ = ':';
   // no password
   *p++ = '@';
-  memcpy_tolower(p, url->m_ptr_host, url->m_len_host);
+  ts::memcpy_tolower(p, url->m_ptr_host, url->m_len_host);
   p    += url->m_len_host;
   *p++  = '/';
   memcpy(p, url->m_ptr_path, url->m_len_path);
