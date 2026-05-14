@@ -397,3 +397,33 @@ TEST_CASE("aggWrite behavior with f.evacuator set")
 
   delete[] source;
 }
+
+TEST_CASE("get_evac_bucket returns a mutable reference")
+{
+  CacheDisk disk;
+  init_disk(disk);
+  StripeSM stripe{&disk, 10, 0};
+
+  EvacuationBlock b1;
+  b1.init                 = 0;
+  b1.readers              = 0;
+  b1.earliest_evacuator   = nullptr;
+  b1.evac_frags.link.next = nullptr;
+
+  EvacuationBlock b2;
+  b2.init                 = 0;
+  b2.readers              = 0;
+  b2.earliest_evacuator   = nullptr;
+  b2.evac_frags.link.next = nullptr;
+
+  REQUIRE(stripe.evac_bucket_valid(0));
+  REQUIRE(stripe.get_evac_bucket(0).empty());
+
+  stripe.get_evac_bucket(0).push(&b1);
+  CHECK_FALSE(stripe.get_evac_bucket(0).empty());
+  CHECK(stripe.get_evac_bucket(0).head == &b1);
+
+  stripe.get_evac_bucket(0).push(&b2);
+  CHECK(stripe.get_evac_bucket(0).head == &b2);
+  CHECK(stripe.get_evac_bucket(0).head->link.next == &b1);
+}
