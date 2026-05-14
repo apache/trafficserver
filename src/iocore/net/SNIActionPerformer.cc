@@ -421,9 +421,14 @@ SNI_IpAllow::SNIAction(SSL &ssl, ActionItem::Context const & /* ctx ATS_UNUSED *
       break;
     } else if (IpAllow::Subject::PROXY == IpAllow::subjects[i] &&
                ssl_vc->get_proxy_protocol_version() != ProxyProtocolVersion::UNDEFINED) {
-      client_ip = ssl_vc->get_proxy_protocol_src_addr();
-      break;
+      if (sockaddr const *proxy_ip = ssl_vc->get_proxy_protocol_src_addr(); proxy_ip != nullptr) {
+        client_ip = proxy_ip;
+        break;
+      }
     }
+  }
+  if (client_ip == nullptr) {
+    client_ip = ssl_vc->get_remote_addr();
   }
   swoc::IPAddr ip = swoc::IPAddr(client_ip);
 

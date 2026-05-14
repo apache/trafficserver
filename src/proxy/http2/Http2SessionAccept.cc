@@ -50,9 +50,14 @@ Http2SessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferRead
       break;
     } else if (IpAllow::Subject::PROXY == IpAllow::subjects[i] &&
                netvc->get_proxy_protocol_version() != ProxyProtocolVersion::UNDEFINED) {
-      client_ip = netvc->get_proxy_protocol_src_addr();
-      break;
+      if (sockaddr const *proxy_ip = netvc->get_proxy_protocol_src_addr(); proxy_ip != nullptr) {
+        client_ip = proxy_ip;
+        break;
+      }
     }
+  }
+  if (client_ip == nullptr) {
+    client_ip = netvc->get_remote_addr();
   }
 
   IpAllow::ACL session_acl = IpAllow::match(client_ip, IpAllow::SRC_ADDR);

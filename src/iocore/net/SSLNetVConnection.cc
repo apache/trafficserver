@@ -376,11 +376,22 @@ SSLNetVConnection::read_raw_data()
       if (this->has_proxy_protocol(buffer, &r)) {
         Dbg(dbg_ctl_proxyprotocol, "ssl has proxy protocol header");
         if (dbg_ctl_proxyprotocol.on()) {
-          IpEndpoint dst;
-          dst.sa = *(this->get_proxy_protocol_dst_addr());
-          ip_port_text_buffer ipb1;
-          ats_ip_nptop(&dst, ipb1, sizeof(ipb1));
-          DbgPrint(dbg_ctl_proxyprotocol, "ssl_has_proxy_v1, dest IP received [%s]", ipb1);
+          sockaddr const *src_addr = this->get_proxy_protocol_src_addr();
+          sockaddr const *dst_addr = this->get_proxy_protocol_dst_addr();
+          if (src_addr != nullptr && dst_addr != nullptr) {
+            IpEndpoint src;
+            src.sa = *src_addr;
+            IpEndpoint dst;
+            dst.sa = *dst_addr;
+            ip_port_text_buffer src_ipb, dst_ipb;
+            ats_ip_nptop(&src, src_ipb, sizeof(src_ipb));
+            ats_ip_nptop(&dst, dst_ipb, sizeof(dst_ipb));
+            DbgPrint(dbg_ctl_proxyprotocol, "ssl proxy protocol v%d header parsed: src=[%s] dst=[%s]",
+                     static_cast<int>(this->get_proxy_protocol_version()), src_ipb, dst_ipb);
+          } else {
+            DbgPrint(dbg_ctl_proxyprotocol, "ssl proxy protocol v%d header parsed without address information",
+                     static_cast<int>(this->get_proxy_protocol_version()));
+          }
         }
       } else {
         Dbg(dbg_ctl_proxyprotocol, "proxy protocol was enabled, but Proxy Protocol header was not present");
@@ -1885,8 +1896,12 @@ SSLNetVConnection::_lookupContextByIP()
   }
 
   SSLCertContext *cc = nullptr;
-  if (this->get_is_proxy_protocol() && this->get_proxy_protocol_version() != ProxyProtocolVersion::UNDEFINED) {
-    ip.sa = *(this->get_proxy_protocol_dst_addr());
+  sockaddr const *proxy_protocol_dst_addr =
+    this->get_is_proxy_protocol() && this->get_proxy_protocol_version() != ProxyProtocolVersion::UNDEFINED ?
+      this->get_proxy_protocol_dst_addr() :
+      nullptr;
+  if (proxy_protocol_dst_addr != nullptr) {
+    ip.sa = *proxy_protocol_dst_addr;
     ip_port_text_buffer ipb1;
     ats_ip_nptop(&ip, ipb1, sizeof(ipb1));
     cc = lookup->find(ip);
