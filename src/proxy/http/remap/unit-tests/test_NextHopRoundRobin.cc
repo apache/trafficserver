@@ -381,3 +381,72 @@ SCENARIO("Testing NextHopRoundRobin class, using policy 'latched'", "[NextHopRou
     }
   }
 }
+
+SCENARIO("Testing NextHopHealthStatus failCount overflow saturation", "[NextHopHealthStatus]")
+{
+  // No thread setup, forbid use of thread local allocators.
+  cmd_disable_pfreelist = true;
+  http_init();
+
+  GIVEN("Loading the round-robin-tests.yaml config for overflow test.")
+  {
+    NextHopStrategyFactory          nhf(TS_SRC_DIR "/round-robin-tests.yaml");
+    NextHopSelectionStrategy *const strategy = nhf.strategyInstance("rr-strict-exhaust-ring");
+
+    REQUIRE(nhf.strategies_loaded == true);
+    REQUIRE(strategy != nullptr);
+
+    WHEN("failCount is near UINT32_MAX and markNextHop is called")
+    {
+      HttpSM        sm;
+      ParentResult *result = &sm.t_state.parent_result;
+      TSHttpTxn     txnp   = reinterpret_cast<TSHttpTxn>(&sm);
+
+      // Select a host so result is populated.
+      build_request(20001, &sm, nullptr, "rabbit.net", nullptr);
+      strategy->findNextHop(txnp);
+      REQUIRE(result->result == ParentResultType::SPECIFIED);
+      REQUIRE(result->hostname != nullptr);
+
+      // Get the HostRecord for the selected host.
+      std::shared_ptr<HostRecord> host_rec;
+      for (auto &group : strategy->host_groups) {
+        for (auto &h : group) {
+          if (h->hostname == result->hostname) {
+            host_rec = h;
+            break;
+          }
+        }
+        if (host_rec) {
+          break;
+        }
+      }
+      REQUIRE(host_rec != nullptr);
+
+      // Set failCount to UINT32_MAX - 1 to test saturation.
+      host_rec->failCount = UINT32_MAX - 1;
+      host_rec->failedAt  = time(nullptr);
+
+      // Set fail_threshold very high so set_unavailable doesn't interfere.
+      extern char _my_txn_conf[];
+      auto       *oride            = reinterpret_cast<OverridableHttpConfigParams *>(_my_txn_conf);
+      oride->parent_fail_threshold = static_cast<int64_t>(UINT32_MAX) + 1;
+      oride->parent_retry_time     = 30; // large retry window so we stay in the increment path
+
+      THEN("failCount saturates at UINT32_MAX and does not wrap to 0")
+      {
+        // First markNextHop: UINT32_MAX-1 -> UINT32_MAX
+        strategy->markNextHop(txnp, result->hostname, result->port, NHCmd::MARK_DOWN);
+        CHECK(host_rec->failCount.load() == UINT32_MAX);
+
+        // Second markNextHop: should stay at UINT32_MAX (saturated)
+        strategy->markNextHop(txnp, result->hostname, result->port, NHCmd::MARK_DOWN);
+        CHECK(host_rec->failCount.load() == UINT32_MAX);
+
+        // Verify host is still available (threshold not met since threshold > UINT32_MAX)
+        CHECK(host_rec->available.load() == true);
+      }
+      br_destroy(sm);
+    }
+  }
+}
