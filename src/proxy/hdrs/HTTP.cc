@@ -2212,9 +2212,16 @@ HTTPInfo::unmarshal(char *buf, int len, RefCountObj *block_ref)
   len -= HTTP_ALT_MARSHAL_SIZE;
 
   if (alt->m_frag_offset_count > HTTPCacheAlt::N_INTEGRAL_FRAG_OFFSETS) {
-    alt->m_frag_offsets  = reinterpret_cast<FragOffset *>(buf + reinterpret_cast<intptr_t>(alt->m_frag_offsets));
-    len                 -= sizeof(FragOffset) * alt->m_frag_offset_count;
-    ink_assert(len >= 0);
+    // Validate that m_frag_offset_count is sane: the fragment offset table must fit within the remaining buffer.
+    int64_t  frag_table_size = static_cast<int64_t>(sizeof(FragOffset)) * alt->m_frag_offset_count;
+    intptr_t frag_offset     = reinterpret_cast<intptr_t>(alt->m_frag_offsets);
+
+    if (alt->m_frag_offset_count < 0 || len < frag_table_size || frag_offset < 0 || orig_len < frag_offset + frag_table_size) {
+      ink_assert(!"HTTPInfo::unmarshal m_frag_offset_count or offset exceeds buffer");
+      return -1;
+    }
+    alt->m_frag_offsets  = reinterpret_cast<FragOffset *>(buf + frag_offset);
+    len                 -= static_cast<int>(frag_table_size);
   } else if (alt->m_frag_offset_count > 0) {
     alt->m_frag_offsets = alt->m_integral_frag_offsets;
   } else {
@@ -2279,9 +2286,19 @@ HTTPInfo::unmarshal_v24_1(char *buf, int len, RefCountObj *block_ref)
   len -= HTTP_ALT_MARSHAL_SIZE;
 
   if (alt->m_frag_offset_count > HTTPCacheAlt::N_INTEGRAL_FRAG_OFFSETS) {
+    // Validate that m_frag_offset_count is sane before computing sizes.
+    int64_t  frag_table_size = static_cast<int64_t>(sizeof(FragOffset)) * alt->m_frag_offset_count;
+    int64_t  extra64         = frag_table_size - static_cast<int64_t>(sizeof(alt->m_integral_frag_offsets));
+    intptr_t frag_offset     = reinterpret_cast<intptr_t>(alt->m_frag_offsets);
+
+    if (alt->m_frag_offset_count < 0 || len < extra64 || frag_offset < 0 || orig_len < frag_offset + extra64) {
+      ink_assert(!"HTTPInfo::unmarshal_v24_1 m_frag_offset_count or offset exceeds buffer");
+      return -1;
+    }
+
     // stuff that didn't fit in the integral slots.
-    int   extra     = sizeof(FragOffset) * alt->m_frag_offset_count - sizeof(alt->m_integral_frag_offsets);
-    char *extra_src = buf + reinterpret_cast<intptr_t>(alt->m_frag_offsets);
+    int   extra     = static_cast<int>(extra64);
+    char *extra_src = buf + frag_offset;
     // Actual buffer size, which must be a power of two.
     // Well, technically not, because we never modify an unmarshalled fragment
     // offset table, but it would be a nasty bug should that be done in the
