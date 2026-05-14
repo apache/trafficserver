@@ -27,6 +27,7 @@
 #include <openssl/x509.h>
 #include <openssl/x509v3.h>
 
+#include "tscore/X509HostnameValidator.h"
 #include "tscore/ink_memory.h"
 
 using equal_fn = bool (*)(const unsigned char *, size_t, const unsigned char *, size_t);
@@ -216,7 +217,7 @@ do_check_string(ASN1_STRING *a, int cmp_type, equal_fn equal, const unsigned cha
 }
 
 bool
-validate_hostname(X509 *x, const unsigned char *hostname, bool is_ip, char **peername)
+validate_hostname(X509 *x, std::string_view hostname, bool is_ip, char **peername)
 {
   GENERAL_NAMES *gens = nullptr;
   X509_NAME     *name = nullptr;
@@ -224,8 +225,13 @@ validate_hostname(X509 *x, const unsigned char *hostname, bool is_ip, char **pee
   int            alt_type;
   bool           retval = false;
   ;
-  equal_fn equal;
-  size_t   hostname_len = strlen((char *)hostname);
+  equal_fn    equal;
+  auto const *hostname_data = reinterpret_cast<const unsigned char *>(hostname.data());
+  size_t      hostname_len  = hostname.length();
+
+  if (hostname.empty()) {
+    return false;
+  }
 
   if (!is_ip) {
     alt_type = V_ASN1_IA5STRING;
@@ -252,7 +258,7 @@ validate_hostname(X509 *x, const unsigned char *hostname, bool is_ip, char **pee
         continue;
       }
 
-      if ((retval = do_check_string(cstr, alt_type, equal, hostname, hostname_len, peername)) == true) {
+      if ((retval = do_check_string(cstr, alt_type, equal, hostname_data, hostname_len, peername)) == true) {
         // We got a match
         break;
       }
@@ -277,7 +283,7 @@ validate_hostname(X509 *x, const unsigned char *hostname, bool is_ip, char **pee
     if (astrlen < 0) {
       return -1;
     }
-    retval = equal(astr, astrlen, hostname, hostname_len);
+    retval = equal(astr, astrlen, hostname_data, hostname_len);
     if (retval && peername) {
       *peername = ats_strndup((char *)astr, astrlen);
     }

@@ -5458,6 +5458,21 @@ HttpSM::get_outbound_sni() const
   return zret;
 }
 
+std::string_view
+HttpSM::get_outbound_sni_for_cert_verification() const
+{
+  auto zret = this->get_outbound_sni();
+  if (zret.empty()) {
+    zret = t_state.hdr_info.server_request.host_get();
+  }
+  if (zret.empty()) {
+    if (t_state.current.server != nullptr && t_state.current.server->name != nullptr) {
+      zret = t_state.current.server->name;
+    }
+  }
+  return zret;
+}
+
 bool
 HttpSM::apply_ip_allow_filter()
 {

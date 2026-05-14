@@ -23,6 +23,7 @@
  */
 
 #include "../../iocore/net/P_UnixNetVConnection.h"
+#include "../../iocore/net/P_SSLClientUtils.h"
 #include "tsutil/DbgCtl.h"
 #include "proxy/http/ConnectingEntry.h"
 #include "proxy/http/HttpSM.h"
@@ -91,13 +92,29 @@ ConnectingEntry::state_http_server_open(int event, void *data)
       int count = 0;
       if (new_session->is_multiplexing()) {
         // Hand off to all queued up ConnectSM's.
+        bool session_handed_off = false;
         while (!connect_sms.empty()) {
-          Dbg(dbg_ctl_http_connect, "ConnectingEntry Pass along CONNECT_EVENT_TXN %d", count++);
-          auto entry = connect_sms.begin();
+          auto  entry      = connect_sms.begin();
+          auto  event      = CONNECT_EVENT_TXN;
+          void *event_data = new_session;
 
+          if (!validate_server_certificate_hostname(new_session->get_netvc(), (*entry)->get_outbound_sni_for_cert_verification())) {
+            // Retry without joining another multiplexed connect queue so this
+            // transaction gets its own TLS handshake and certificate check.
+            event      = CONNECT_EVENT_DIRECT;
+            event_data = nullptr;
+          } else {
+            session_handed_off = true;
+          }
+
+          Dbg(dbg_ctl_http_connect, "ConnectingEntry Pass along %s %d",
+              event == CONNECT_EVENT_TXN ? "CONNECT_EVENT_TXN" : "CONNECT_EVENT_DIRECT", count++);
           SCOPED_MUTEX_LOCK(lock, (*entry)->mutex, this_ethread());
-          (*entry)->handleEvent(CONNECT_EVENT_TXN, new_session);
+          (*entry)->handleEvent(event, event_data);
           connect_sms.erase(entry);
+        }
+        if (!session_handed_off) {
+          new_session->do_io_close();
         }
       } else {
         // Hand off to one and tell all of the others to connect directly

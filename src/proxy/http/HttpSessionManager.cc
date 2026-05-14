@@ -31,6 +31,7 @@
  ****************************************************************************/
 
 #include "../../iocore/net/P_UnixNetVConnection.h"
+#include "../../iocore/net/P_SSLClientUtils.h"
 #include "proxy/http/HttpSessionManager.h"
 #include "proxy/ProxySession.h"
 #include "proxy/http/HttpSM.h"
@@ -43,6 +44,13 @@
 namespace
 {
 DbgCtl dbg_ctl_http_ss{"http_ss"};
+
+bool
+validate_session_origin_cert(HttpSM *sm, PoolableSession *session)
+{
+  return !session->is_multiplexing() ||
+         validate_server_certificate_hostname(session->get_netvc(), sm->get_outbound_sni_for_cert_verification());
+}
 
 } // end anonymous namespace
 
@@ -178,7 +186,8 @@ ServerSessionPool::acquireSession(sockaddr const *addr, CryptoHash const &hostna
       if (port == ats_ip_port_cast(iter->get_remote_addr()) &&
           (!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_SNI) || validate_sni(sm, iter->get_netvc())) &&
           (!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_HOSTSNISYNC) || validate_host_sni(sm, iter->get_netvc())) &&
-          (!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_CERT) || validate_cert(sm, iter->get_netvc()))) {
+          (!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_CERT) || validate_cert(sm, iter->get_netvc())) &&
+          validate_session_origin_cert(sm, &*iter)) {
         zret = HSMresult_t::DONE;
         break;
       }
@@ -205,14 +214,21 @@ ServerSessionPool::acquireSession(sockaddr const *addr, CryptoHash const &hostna
         if ((!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_HOSTONLY) || iter->hostname_hash == hostname_hash) &&
             (!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_SNI) || validate_sni(sm, iter->get_netvc())) &&
             (!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_HOSTSNISYNC) || validate_host_sni(sm, iter->get_netvc())) &&
-            (!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_CERT) || validate_cert(sm, iter->get_netvc()))) {
+            (!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_CERT) || validate_cert(sm, iter->get_netvc())) &&
+            validate_session_origin_cert(sm, &*iter)) {
           zret = HSMresult_t::DONE;
           break;
         }
         ++iter;
       }
-    } else if (iter != end) {
-      zret = HSMresult_t::DONE;
+    } else {
+      while (iter != end) {
+        if (validate_session_origin_cert(sm, &*iter)) {
+          zret = HSMresult_t::DONE;
+          break;
+        }
+        ++iter;
+      }
     }
     if (zret == HSMresult_t::DONE) {
       to_return = &*iter;
@@ -387,7 +403,8 @@ HttpSessionManager::acquire_session(HttpSM *sm, sockaddr const *ip, const char *
         (!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_HOSTSNISYNC) ||
          ServerSessionPool::validate_host_sni(sm, to_return->get_netvc())) &&
         (!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_CERT) ||
-         ServerSessionPool::validate_cert(sm, to_return->get_netvc()))) {
+         ServerSessionPool::validate_cert(sm, to_return->get_netvc())) &&
+        validate_session_origin_cert(sm, to_return)) {
       Dbg(dbg_ctl_http_ss, "[%" PRId64 "] [acquire session] returning attached session ", to_return->connection_id());
       to_return->state = PoolableSession::PooledState::SSN_IN_USE;
       sm->create_server_txn(to_return);
