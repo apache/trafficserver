@@ -1296,6 +1296,7 @@ cplist_update()
             config_vol->cachep = new_cp;
             fillExclusiveDisks(config_vol->cachep);
             cp_list.enqueue(new_cp);
+            cp_list_len++;
           } else {
             delete new_cp;
           }
