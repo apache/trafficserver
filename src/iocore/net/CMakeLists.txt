@@ -139,6 +139,7 @@ if(BUILD_TESTING)
     libinknet_stub.cc
     NetVCTest.cc
     unit_tests/test_ProxyProtocol.cc
+    unit_tests/test_SSLCertLookup.cc
     unit_tests/test_SSLSNIConfig.cc
     unit_tests/test_YamlSNIConfig.cc
     unit_tests/test_OCSPStapling.cc

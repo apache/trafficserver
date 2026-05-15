@@ -1,6 +1,6 @@
 /** @file
 
-  Collection of utility functions for converting between different chars.
+  Catch based unit tests for SSLCertLookup
 
   @section license License
 
@@ -21,29 +21,33 @@
   limitations under the License.
  */
 
-#pragma once
+#include "../P_SSLCertLookup.h"
 
-#include "swoc/MemSpan.h"
+#include <catch2/catch_test_macros.hpp>
 
-#include <algorithm>
-#include <cctype>
-#include <string_view>
+#include <string>
 
-namespace ts
+TEST_CASE("SSLCertLookup handles high-bit bytes while normalizing hostnames")
 {
-/** Copy @a src to @a dst, transforming to lower case.
- *
- * @param src Input string.
- * @param dst Output buffer.
- */
-inline void
-transform_lower(std::string_view src, swoc::MemSpan<char> dst)
-{
-  if (src.size() > dst.size() - 1) { // clip @a src, reserving space for the terminal nul.
-    src = std::string_view{src.data(), dst.size() - 1};
-  }
-  auto final =
-    std::transform(src.begin(), src.end(), dst.data(), [](unsigned char c) -> char { return static_cast<char>(std::tolower(c)); });
-  *final++ = '\0';
+  constexpr auto HIGH_ORDER_BIT = static_cast<char>(0x80);
+
+  SSLCertLookup lookup;
+  auto         *ctx = SSL_CTX_new(SSLv23_server_method());
+  REQUIRE(ctx != nullptr);
+
+  SSLCertContext context(ctx);
+
+  std::string cert_name{"High"};
+  cert_name.push_back(HIGH_ORDER_BIT);
+  cert_name.append(".Example.Com");
+
+  std::string lookup_name{"hIGH"};
+  lookup_name.push_back(HIGH_ORDER_BIT);
+  lookup_name.append(".eXAMPLE.cOM");
+
+  REQUIRE(lookup.insert(cert_name.c_str(), context) >= 0);
+
+  SSLCertContext *matched = lookup.find(lookup_name);
+  REQUIRE(matched != nullptr);
+  CHECK(matched->getCtx().get() == ctx);
 }
-} // namespace ts
