@@ -5122,7 +5122,7 @@ HttpSM::do_range_setup_if_necessary()
                 // Re-parse yielded e.g. RANGE_NOT_SATISFIABLE (entire range past fresh body); let downstream handling take over
                 // without installing the transform.
                 Dbg(dbg_ctl_http_range, "Not transforming: parse_range_and_compare set t_state.range_setup=%d",
-                    HttpTransact::RangeSetup_t::REQUESTED);
+                    static_cast<int>(HttpTransact::RangeSetup_t::REQUESTED));
                 return;
               }
             }
