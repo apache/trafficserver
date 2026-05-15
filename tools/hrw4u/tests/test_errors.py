@@ -16,8 +16,10 @@
 #  limitations under the License.
 
 from hrw4u.errors import ErrorCollector, Hrw4uSyntaxError, SymbolResolutionError, \
-    ThrowingErrorListener, hrw4u_error, CollectingErrorListener
+    ThrowingErrorListener, hrw4u_error, CollectingErrorListener, Warning
+from hrw4u.formatters import FORMATTERS, JSON_SCHEMA_VERSION, JSONFormatter, MarkdownFormatter, PlainTextFormatter
 from hrw4u.validation import Validator, ValidatorChain
+import json
 import pytest
 
 
@@ -321,6 +323,169 @@ class TestValidatorChainUnits:
     def test_quote_if_needed(self):
         assert Validator.quote_if_needed("simple") == "simple"
         assert Validator.quote_if_needed("has space") == '"has space"'
+
+
+class TestPlainTextFormatterParity:
+    """The plain formatter must preserve current CLI output byte-for-byte."""
+
+    def test_registry_has_expected_formats(self):
+        assert set(FORMATTERS.keys()) == {"plain", "json", "markdown"}
+
+    def test_empty_returns_no_errors_found(self):
+        ec = ErrorCollector(formatter=PlainTextFormatter())
+        assert ec.get_error_summary() == "No errors found."
+
+    def test_single_error_omits_found_preamble(self):
+        """A single error should not be prefixed with 'Found 1 error:'."""
+        ec = ErrorCollector(formatter=PlainTextFormatter())
+        err = Hrw4uSyntaxError("f.hrw4u", 1, 4, "oops", "foo bar")
+        ec.add_error(err)
+        out = ec.get_error_summary()
+        assert not out.startswith("Found")
+        assert out.startswith("f.hrw4u:1:4: error: oops")
+        assert "   1 | foo bar" in out
+
+    def test_multiple_errors_include_found_preamble(self):
+        """Two or more errors keep the 'Found N errors:' summary line."""
+        ec = ErrorCollector(formatter=PlainTextFormatter())
+        ec.add_error(Hrw4uSyntaxError("f.hrw4u", 1, 0, "a", ""))
+        ec.add_error(Hrw4uSyntaxError("f.hrw4u", 2, 0, "b", ""))
+        assert ec.get_error_summary().startswith("Found 2 errors:\n")
+
+    def test_at_limit_marker(self):
+        ec = ErrorCollector(max_errors=2, formatter=PlainTextFormatter())
+        err = Hrw4uSyntaxError("f.hrw4u", 1, 0, "x", "")
+        ec.add_error(err)
+        ec.add_error(err)
+        assert "(stopped after 2 errors)" in ec.get_error_summary()
+
+    def test_sandbox_message_appended(self):
+        ec = ErrorCollector(formatter=PlainTextFormatter())
+        err = Hrw4uSyntaxError("f.hrw4u", 1, 0, "x", "")
+        ec.add_error(err)
+        ec.set_sandbox_message("sandbox blocked thing")
+        assert ec.get_error_summary().endswith("sandbox blocked thing")
+
+    def test_default_formatter_is_plain(self):
+        """ErrorCollector() with no formatter must produce the legacy output."""
+        legacy = ErrorCollector()
+        custom = ErrorCollector(formatter=PlainTextFormatter())
+        err = Hrw4uSyntaxError("f.hrw4u", 2, 3, "m", "src")
+        err.add_note("hint")
+        legacy.add_error(err)
+        custom.add_error(err)
+        assert legacy.get_error_summary() == custom.get_error_summary()
+
+
+class TestJSONFormatter:
+    """JSON output is the stable contract for downstream UIs (edgeconf, etc.)."""
+
+    def _collect(self) -> ErrorCollector:
+        ec = ErrorCollector(formatter=JSONFormatter())
+        err = Hrw4uSyntaxError("f.hrw4u", 3, 4, "unexpected '('", "if foo ( {")
+        err.add_note("hint: try X")
+        ec.add_error(err)
+        ec.add_warning(Warning(filename="f.hrw4u", line=7, column=0, message="deprecated", source_line="old;"))
+        return ec
+
+    def test_output_is_valid_json(self):
+        payload = json.loads(self._collect().get_error_summary())
+        assert payload["version"] == JSON_SCHEMA_VERSION
+
+    def test_error_fields_are_preserved(self):
+        payload = json.loads(self._collect().get_error_summary())
+        err = payload["errors"][0]
+        assert err["filename"] == "f.hrw4u"
+        assert err["line"] == 3
+        assert err["column"] == 4
+        assert err["severity"] == "error"
+        assert err["message"] == "unexpected '('"
+        assert err["source_line"] == "if foo ( {"
+        assert err["notes"] == ["hint: try X"]
+
+    def test_warning_severity_and_message(self):
+        payload = json.loads(self._collect().get_error_summary())
+        w = payload["warnings"][0]
+        assert w["severity"] == "warning"
+        assert w["message"] == "deprecated"
+        assert w["notes"] == []
+
+    def test_summary_counts_and_truncation(self):
+        payload = json.loads(self._collect().get_error_summary())
+        assert payload["summary"]["error_count"] == 1
+        assert payload["summary"]["warning_count"] == 1
+        assert payload["summary"]["truncated"] is False
+        assert payload["summary"]["max_errors"] == 5
+
+    def test_truncated_flag_flips_at_limit(self):
+        ec = ErrorCollector(max_errors=2, formatter=JSONFormatter())
+        err = Hrw4uSyntaxError("f.hrw4u", 1, 0, "x", "")
+        ec.add_error(err)
+        ec.add_error(err)
+        payload = json.loads(ec.get_error_summary())
+        assert payload["summary"]["truncated"] is True
+        assert payload["summary"]["max_errors"] == 2
+
+    def test_sandbox_message_is_top_level(self):
+        ec = self._collect()
+        ec.set_sandbox_message("sandbox blocked x")
+        payload = json.loads(ec.get_error_summary())
+        assert payload["sandbox_message"] == "sandbox blocked x"
+
+    def test_empty_collector_still_emits_valid_schema(self):
+        ec = ErrorCollector(formatter=JSONFormatter())
+        payload = json.loads(ec.get_error_summary())
+        assert payload["errors"] == []
+        assert payload["warnings"] == []
+        assert payload["sandbox_message"] is None
+
+    def test_single_line_output_for_ndjson(self):
+        out = self._collect().get_error_summary()
+        assert "\n" not in out, "JSON output must be single-line for NDJSON streaming"
+
+
+class TestMarkdownFormatter:
+    """Markdown output is pure markdown — no ANSI, no colors."""
+
+    def _collect(self) -> ErrorCollector:
+        ec = ErrorCollector(formatter=MarkdownFormatter())
+        err = Hrw4uSyntaxError("f.hrw4u", 3, 4, "unexpected '('", "if foo ( {")
+        err.add_note("hint: try X")
+        ec.add_error(err)
+        return ec
+
+    def test_has_top_level_heading(self):
+        assert self._collect().get_error_summary().startswith("## hrw4u:")
+
+    def test_error_heading_includes_location(self):
+        assert "### Error — `f.hrw4u:3:4`" in self._collect().get_error_summary()
+
+    def test_contains_fenced_code_block_with_caret(self):
+        md = self._collect().get_error_summary()
+        assert "```" in md
+        assert "   3 | if foo ( {" in md
+        assert "^" in md
+
+    def test_notes_render_as_blockquotes(self):
+        assert "> hint: try X" in self._collect().get_error_summary()
+
+    def test_empty_collector_friendly_message(self):
+        ec = ErrorCollector(formatter=MarkdownFormatter())
+        assert ec.get_error_summary() == "_No errors found._"
+
+    def test_no_source_line_skips_code_block(self):
+        ec = ErrorCollector(formatter=MarkdownFormatter())
+        ec.add_error(Hrw4uSyntaxError("f.hrw4u", 0, 0, "file not found", ""))
+        md = ec.get_error_summary()
+        assert "```" not in md
+        assert "file not found" in md
+
+    def test_at_limit_marker(self):
+        ec = ErrorCollector(max_errors=2, formatter=MarkdownFormatter())
+        err = Hrw4uSyntaxError("f.hrw4u", 1, 0, "x", "src")
+        ec.add_error(err)
+        ec.add_error(err)
+        assert "Stopped after 2 errors" in ec.get_error_summary()
 
 
 if __name__ == "__main__":
