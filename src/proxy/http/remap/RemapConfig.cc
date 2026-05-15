@@ -1021,6 +1021,11 @@ process_regex_mapping_config(const char *from_host_lower, url_mapping *new_mappi
         Warning("Substitution id [%c] has no corresponding capture pattern in regex [%s]", to_host[i + 1], from_host_lower);
         goto lFail;
       }
+      if (reg_map->n_substitutions >= UrlRewrite::MAX_REGEX_SUBS) {
+        Warning("too many substitution markers in regex remap target [%.*s], saw %d markers, max %d", to_host_len, to_host.data(),
+                reg_map->n_substitutions + 1, UrlRewrite::MAX_REGEX_SUBS);
+        goto lFail;
+      }
       reg_map->substitution_markers[reg_map->n_substitutions] = i;
       reg_map->substitution_ids[reg_map->n_substitutions]     = substitution_id;
       ++reg_map->n_substitutions;
