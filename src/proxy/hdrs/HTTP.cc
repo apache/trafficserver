@@ -2216,7 +2216,7 @@ HTTPInfo::unmarshal(char *buf, int len, RefCountObj *block_ref)
     int64_t  frag_table_size = static_cast<int64_t>(sizeof(FragOffset)) * alt->m_frag_offset_count;
     intptr_t frag_offset     = reinterpret_cast<intptr_t>(alt->m_frag_offsets);
 
-    if (alt->m_frag_offset_count < 0 || len < frag_table_size || frag_offset < 0 || orig_len < frag_offset + frag_table_size) {
+    if (frag_offset < 0 || len < frag_table_size || static_cast<int64_t>(orig_len) - frag_offset < frag_table_size) {
       ink_assert(!"HTTPInfo::unmarshal m_frag_offset_count or offset exceeds buffer");
       return -1;
     }
@@ -2291,7 +2291,7 @@ HTTPInfo::unmarshal_v24_1(char *buf, int len, RefCountObj *block_ref)
     int64_t  extra64         = frag_table_size - static_cast<int64_t>(sizeof(alt->m_integral_frag_offsets));
     intptr_t frag_offset     = reinterpret_cast<intptr_t>(alt->m_frag_offsets);
 
-    if (alt->m_frag_offset_count < 0 || len < extra64 || frag_offset < 0 || orig_len < frag_offset + extra64) {
+    if (frag_offset < 0 || len < extra64 || static_cast<int64_t>(orig_len) - frag_offset < extra64) {
       ink_assert(!"HTTPInfo::unmarshal_v24_1 m_frag_offset_count or offset exceeds buffer");
       return -1;
     }
