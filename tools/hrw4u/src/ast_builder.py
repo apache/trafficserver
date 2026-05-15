@@ -21,7 +21,7 @@ from hrw4u.hrw4uVisitor import hrw4uVisitor
 from hrw4u.ast_nodes import *
 
 
-class ASTVisitor(hrw4uVisitor):
+class ASTBuilder(hrw4uVisitor):
     """ANTLR visitor that walks an HRW4U parse tree and produces an AST for HRW4U."""
 
     # Only visitProgram is overridden from the ANTLR visitor interface;

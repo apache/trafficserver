@@ -17,12 +17,12 @@
 
 from hrw4u.ast_nodes import *
 from utils import parse_input_text
-from hrw4u.ast_visitor import ASTVisitor
+from hrw4u.ast_builder import ASTBuilder
 
 
 def _build(source: str) -> HRW4UAST:
     _, tree = parse_input_text(source)
-    return ASTVisitor().visit(tree)
+    return ASTBuilder().visit(tree)
 
 
 class TestAssignments:
