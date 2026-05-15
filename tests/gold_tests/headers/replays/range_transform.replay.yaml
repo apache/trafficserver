@@ -139,7 +139,7 @@ sessions:
           reason: OK
           headers:
             fields:
-              - [Date, "Mon, 01 Jan 2024 00:00:05 GMT"]
+              - [Date, "Mon, 01 Jan 2026 00:00:10 GMT"]
               - [Cache-Control, "max-age=1, public"]
               - [Content-Type, application/octet-stream]
               - [Content-Length, 80000]
@@ -153,3 +153,71 @@ sessions:
             fields:
               - [Content-Range, {value: "bytes 0-64096/80000", as: equal}]
               - [Content-Length, {value: 64097, as: equal}]
+
+  # Error Cases: when requested range is unsatisfiable, choices are below from RFC 9110. Our choice is B.
+  #   A). Return 416 Range Not Satisfiable
+  #   B). Ignore Range header, return 200 OK
+
+  # Stale revalidate: new origin body is empty
+  - transactions:
+      - client-request:
+          delay: 1500ms
+          method: "GET"
+          version: "1.1"
+          url: /obj
+          headers:
+            fields:
+              - [Host, example.com]
+              - [uuid, range-revalidate-empty]
+              - [Range, "bytes=0-64096"]
+
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Date, "Mon, 01 Jan 2026 00:00:20 GMT"]
+              - [Cache-Control, "max-age=1, public"]
+              - [Content-Type, application/octet-stream]
+              - [Content-Length, 0]
+          content:
+            size: 0
+
+        proxy-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Content-Length, 40000]
+
+  # Stale revalidate: new origin body is smaller than requested range
+  - transactions:
+      - client-request:
+          delay: 1500ms
+          method: "GET"
+          version: "1.1"
+          url: /obj
+          headers:
+            fields:
+              - [Host, example.com]
+              - [uuid, range-revalidate-out-of-range]
+              - [Range, "bytes=60000-64096"]
+
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Date, "Mon, 01 Jan 2026 00:00:30 GMT"]
+              - [Cache-Control, "max-age=1, public"]
+              - [Content-Type, application/octet-stream]
+              - [Content-Length, 40000]
+          content:
+            size: 40000
+
+        proxy-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Content-Length, 40000]

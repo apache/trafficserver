@@ -5095,9 +5095,15 @@ HttpSM::do_range_setup_if_necessary()
             // Ranges and range_output_cl were computed against the stale cached object size. If the fresh origin Content-Length
             // differs, re-parse the Range against the fresh value so the outgoing Content-Length/Content-Range match the body
             // actually being sent. Without this, Content-Length/Content-Range advertise the stale cached size.
-            const int64_t fresh_cl  = t_state.hdr_info.server_response.get_content_length();
+            const int64_t fresh_cl = t_state.hdr_info.server_response.get_content_length();
+            if (fresh_cl == 0) {
+              // Re-parse yielded e.g. RANGE_NOT_SATISFIABLE (entire range past fresh body); let downstream handling take over
+              // without installing the transform.
+              Dbg(dbg_ctl_http_range, "Not transforming: fresh response body is empty");
+              return;
+            }
             const int64_t cached_cl = t_state.cache_info.object_read ? t_state.cache_info.object_read->object_size_get() : -1;
-            if (fresh_cl > 0 && fresh_cl != cached_cl) {
+            if (fresh_cl != cached_cl) {
               SMDbg(dbg_ctl_http_range, "Re-parsing range against fresh origin Content-Length %" PRId64 " (was %" PRId64 ")",
                     fresh_cl, cached_cl);
               delete[] t_state.ranges;
@@ -5113,9 +5119,10 @@ HttpSM::do_range_setup_if_necessary()
               calculate_output_cl(content_type.length(), num_chars_for_int(fresh_cl));
 
               if (t_state.range_setup != HttpTransact::RangeSetup_t::REQUESTED) {
-                // Re-parse yielded e.g. RANGE_NOT_SATISFIABLE (entire range
-                // past fresh body); let downstream handling take over without
-                // installing the transform.
+                // Re-parse yielded e.g. RANGE_NOT_SATISFIABLE (entire range past fresh body); let downstream handling take over
+                // without installing the transform.
+                Dbg(dbg_ctl_http_range, "Not transforming: parse_range_and_compare set t_state.range_setup=%d",
+                    HttpTransact::RangeSetup_t::REQUESTED);
                 return;
               }
             }
