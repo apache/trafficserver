@@ -44,6 +44,7 @@ using namespace std::literals;
 
 #include "proxy/hdrs/HTTP.h"
 #include "proxy/hdrs/HttpCompat.h"
+#include "tscore/Diags.h"
 
 // replaces test_http_parser_eos_boundary_cases
 TEST_CASE("HdrTestHttpParse", "[proxy][hdrtest]")
@@ -2706,7 +2707,13 @@ TEST_CASE("HdrPromotesOnlyValidHostHeaderMutations", "[proxy][hdrtest]")
 static std::vector<char>
 make_marshalled_alt(int frag_offset_count, intptr_t frag_ptr_value)
 {
-  // Allocate generously so the struct itself always fits.
+  // Ensure diags are initialized so Warning() calls in unmarshal() don't crash.
+  static bool diags_initialized = []() {
+    if (diags() == nullptr) {
+      DiagsPtr::set(new Diags("test_hdrs", nullptr, nullptr, new BaseLogFile("stderr")));
+    }
+    return true;
+  }();
   std::vector<char> buf(sizeof(HTTPCacheAlt) + 4096, 0);
   auto             *alt    = reinterpret_cast<HTTPCacheAlt *>(buf.data());
   alt->m_magic             = CacheAltMagic::MARSHALED;

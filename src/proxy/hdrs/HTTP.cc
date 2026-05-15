@@ -2217,7 +2217,7 @@ HTTPInfo::unmarshal(char *buf, int len, RefCountObj *block_ref)
     intptr_t frag_offset     = reinterpret_cast<intptr_t>(alt->m_frag_offsets);
 
     if (frag_offset < 0 || len < frag_table_size || static_cast<int64_t>(orig_len) - frag_offset < frag_table_size) {
-      ink_assert(!"HTTPInfo::unmarshal m_frag_offset_count or offset exceeds buffer");
+      Warning("HTTPInfo::unmarshal: m_frag_offset_count or offset exceeds buffer - corrupt cache entry");
       return -1;
     }
     alt->m_frag_offsets  = reinterpret_cast<FragOffset *>(buf + frag_offset);
@@ -2292,7 +2292,7 @@ HTTPInfo::unmarshal_v24_1(char *buf, int len, RefCountObj *block_ref)
     intptr_t frag_offset     = reinterpret_cast<intptr_t>(alt->m_frag_offsets);
 
     if (frag_offset < 0 || len < extra64 || static_cast<int64_t>(orig_len) - frag_offset < extra64) {
-      ink_assert(!"HTTPInfo::unmarshal_v24_1 m_frag_offset_count or offset exceeds buffer");
+      Warning("HTTPInfo::unmarshal_v24_1: m_frag_offset_count or offset exceeds buffer - corrupt cache entry");
       return -1;
     }
 
