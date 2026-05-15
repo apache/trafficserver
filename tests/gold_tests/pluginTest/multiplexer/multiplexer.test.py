@@ -31,6 +31,7 @@ class MultiplexerTestBase:
     """
 
     client_counter = 0
+    dns_counter = 0
     server_counter = 0
     ts_counter = 0
 
@@ -180,5 +181,86 @@ class MultiplexerSkipPostTest(MultiplexerTestBase):
             'uuid: PUT', "Verify the HTTPS server did not receive the PUT request.")
 
 
+class MultiplexerInvalidChunkedResponseTest:
+    """
+    Verify a copied upstream response with an oversized chunk-size does not
+    disrupt the original client transaction.
+    """
+
+    replay_file = os.path.join("replays", "multiplexer_invalid_chunk_original.replay.yaml")
+    multiplexed_host_replay_file = os.path.join("replays", "multiplexer_invalid_chunk_copy.replay.yaml")
+
+    def __init__(self):
+        self.setupServers()
+        self.setupDns()
+        self.setupTS()
+
+    def setupDns(self):
+        counter = MultiplexerTestBase.dns_counter
+        MultiplexerTestBase.dns_counter += 1
+        self.dns = Test.MakeDNServer(f"dns_{counter}", default='127.0.0.1')
+
+    def setupServers(self):
+        counter = MultiplexerTestBase.server_counter
+        MultiplexerTestBase.server_counter += 1
+        self.server_origin = Test.MakeVerifierServerProcess(f"server_origin_{counter}", self.replay_file)
+        self.server_http = Test.MakeVerifierServerProcess(f"server_http_{counter}", self.multiplexed_host_replay_file)
+        self.server_https = Test.MakeVerifierServerProcess(f"server_https_{counter}", self.multiplexed_host_replay_file)
+
+        self.server_origin.Streams.All += Testers.ContainsExpression(
+            'uuid: INVALID_CHUNK', "Verify the original server received the invalid chunk test request.")
+        self.server_origin.Streams.All += Testers.ContainsExpression(
+            'X-Multiplexer: original', 'Verify the original target received the "original" request.')
+        self.server_origin.Streams.All += Testers.ExcludesExpression(r'\[ERROR\]', 'Verify there were no errors in the replay.')
+
+        for server in [self.server_http, self.server_https]:
+            server.Streams.All += Testers.ContainsExpression(
+                'uuid: INVALID_CHUNK', "Verify the multiplexed server received the invalid chunk test request.")
+            server.Streams.All += Testers.ContainsExpression(
+                'X-Multiplexer: copy', 'Verify the multiplexed server received a "copy" of the request.')
+            server.Streams.All += Testers.ExcludesExpression(r'\[ERROR\]', 'Verify there were no errors in the replay.')
+
+        self.server_https.Streams.All += Testers.ContainsExpression(
+            'Finished accept using TLSSession', "Verify the HTTPS was indeed used by the HTTPS server.")
+
+    def setupTS(self):
+        counter = MultiplexerTestBase.ts_counter
+        MultiplexerTestBase.ts_counter += 1
+        self.ts = Test.MakeATSProcess(f"ts_{counter}", enable_tls=True, enable_cache=False)
+        self.ts.addDefaultSSLFiles()
+        self.ts.Disk.records_config.update(
+            {
+                "proxy.config.ssl.server.cert.path": f'{self.ts.Variables.SSLDir}',
+                "proxy.config.ssl.server.private_key.path": f'{self.ts.Variables.SSLDir}',
+                "proxy.config.ssl.client.verify.server.policy": 'PERMISSIVE',
+                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.tags': 'http|multiplexer',
+                'proxy.config.dns.nameservers': f'127.0.0.1:{self.dns.Variables.Port}',
+                'proxy.config.dns.resolv_conf': 'NULL',
+            })
+        self.ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+        self.ts.Disk.remap_config.AddLines(
+            [
+                f'map https://origin.server.com https://backend.origin.server.com:{self.server_origin.Variables.https_port} '
+                f'@plugin=multiplexer.so @pparam=nontls.server.com @pparam=tls.server.com',
+                f'map http://nontls.server.com http://backend.nontls.server.com:{self.server_http.Variables.http_port}',
+                f'map http://tls.server.com https://backend.tls.server.com:{self.server_https.Variables.https_port}',
+            ])
+
+    def run(self):
+        tr = Test.AddTestRun("Multiplexed response with oversized chunk-size")
+        self.ts.StartBefore(self.dns)
+        tr.Processes.Default.StartBefore(self.server_origin)
+        tr.Processes.Default.StartBefore(self.server_http)
+        tr.Processes.Default.StartBefore(self.server_https)
+        tr.Processes.Default.StartBefore(self.ts)
+
+        counter = MultiplexerTestBase.client_counter
+        MultiplexerTestBase.client_counter += 1
+        client = tr.AddVerifierClientProcess(f"client_{counter}", self.replay_file, https_ports=[self.ts.Variables.ssl_port])
+        client.Streams.All += Testers.ExcludesExpression(r'\[ERROR\]', 'Verify there were no errors in the replay.')
+
+
 MultiplexerTest().run()
 MultiplexerSkipPostTest().run()
+MultiplexerInvalidChunkedResponseTest().run()

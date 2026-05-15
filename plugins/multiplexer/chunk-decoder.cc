@@ -22,59 +22,84 @@
  */
 #include <algorithm>
 #include <cassert>
+#include <limits>
 
 #include "chunk-decoder.h"
+
+namespace
+{
+int
+parse_hex_digit(const char a)
+{
+  if (a >= '0' && a <= '9') {
+    return a - '0';
+  }
+  if (a >= 'A' && a <= 'F') {
+    return a - 'A' + 10;
+  }
+  if (a >= 'a' && a <= 'f') {
+    return a - 'a' + 10;
+  }
+  return -1;
+}
+} // namespace
 
 void
 ChunkDecoder::parseSizeCharacter(const char a)
 {
   assert(state_ == State::kSize);
-  if (a >= '0' && a <= '9') {
-    size_ = (size_ << 4) | (a - '0');
-  } else if (a >= 'A' && a <= 'F') {
-    size_ = (size_ << 4) | (a - 'A' + 10);
-  } else if (a >= 'a' && a <= 'f') {
-    size_ = (size_ << 4) | (a - 'a' + 10);
+  const int digit = parse_hex_digit(a);
+  if (digit >= 0) {
+    constexpr int64_t max_chunk_size = std::numeric_limits<int64_t>::max();
+    if (size_ > (max_chunk_size - digit) / 16) {
+      state_ = State::kInvalid;
+      size_  = 0;
+      return;
+    }
+    size_ = size_ * 16 + digit;
   } else if (a == '\r') {
     state_ = size_ == 0 ? State::kEndN : State::kDataN;
   } else {
-    assert(false); // invalid input
+    state_ = State::kInvalid;
+    return;
   }
+  return;
 }
 
-int
+int64_t
 ChunkDecoder::parseSize(const char *p, const int64_t s)
 {
   assert(p != nullptr);
   assert(s > 0);
-  int length = 0;
-  while (state_ != State::kData && *p != '\0' && length < s) {
+  int64_t length = 0;
+  while (state_ != State::kData && state_ != State::kInvalid && length < s) {
     assert(state_ < State::kUpperBound); // VALID RANGE
     switch (state_) {
     case State::kData:
-    case State::kInvalid:
     case State::kEnd:
     case State::kUpperBound:
       assert(false);
       break;
 
+    case State::kInvalid:
+      break;
+
     case State::kDataN:
-      assert(*p == '\n');
       state_ = (*p == '\n') ? State::kData : State::kInvalid;
       break;
 
     case State::kEndN:
-      assert(*p == '\n');
       state_ = (*p == '\n') ? State::kEnd : State::kInvalid;
-      return length;
+      if (state_ == State::kEnd) {
+        return length;
+      }
+      break;
 
     case State::kSizeR:
-      assert(*p == '\r');
       state_ = (*p == '\r') ? State::kSizeN : State::kInvalid;
       break;
 
     case State::kSizeN:
-      assert(*p == '\n');
       state_ = (*p == '\n') ? State::kSize : State::kInvalid;
       break;
 
@@ -84,7 +109,6 @@ ChunkDecoder::parseSize(const char *p, const int64_t s)
     }
     ++length;
     ++p;
-    assert(state_ != State::kInvalid);
   }
   return length;
 }
@@ -96,17 +120,21 @@ ChunkDecoder::isSizeState() const
          state_ == State::kSizeR;
 }
 
-int
+int64_t
 ChunkDecoder::decode(const TSIOBufferReader &r)
 {
   assert(r != nullptr);
+
+  if (state_ == State::kInvalid) {
+    return -1;
+  }
 
   if (state_ == State::kEnd) {
     return 0;
   }
 
   {
-    const int l = TSIOBufferReaderAvail(r);
+    const int64_t l = TSIOBufferReaderAvail(r);
     if (l == 0) {
       return 0;
     } else if (l < size_) {
@@ -120,12 +148,19 @@ ChunkDecoder::decode(const TSIOBufferReader &r)
 
   // Trying to parse a size.
   if (isSizeState()) {
-    while (block != nullptr && size_ == 0) {
+    while (block != nullptr && size_ == 0 && !isInvalid()) {
       const char *p = TSIOBufferBlockReadStart(block, r, &size);
+      if (size == 0) {
+        block = TSIOBufferBlockNext(block);
+        continue;
+      }
       assert(p != nullptr);
-      const int i = parseSize(p, size);
+      const int64_t i = parseSize(p, size);
       size -= i;
       TSIOBufferReaderConsume(r, i);
+      if (isInvalid()) {
+        return -1;
+      }
       if (state_ == State::kEnd) {
         assert(size_ == 0);
         return 0;
@@ -137,7 +172,7 @@ ChunkDecoder::decode(const TSIOBufferReader &r)
     }
   }
 
-  int length = 0;
+  int64_t length = 0;
 
   while (block != nullptr && state_ == State::kData) {
     assert(size_ > 0);
