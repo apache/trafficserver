@@ -29,3 +29,10 @@ add_atsplugin(
 target_compile_definitions(multiplexer PRIVATE PLUGIN_TAG="multiplexer")
 
 verify_remap_plugin(multiplexer)
+
+if(BUILD_TESTING)
+  add_executable(test_multiplexer_chunk_decoder unit_tests/test_chunk_decoder.cc chunk-decoder.cc)
+  target_include_directories(test_multiplexer_chunk_decoder PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+  target_link_libraries(test_multiplexer_chunk_decoder PRIVATE Catch2::Catch2WithMain ts::tsutil)
+  add_catch2_test(NAME test_multiplexer_chunk_decoder COMMAND test_multiplexer_chunk_decoder)
+endif()

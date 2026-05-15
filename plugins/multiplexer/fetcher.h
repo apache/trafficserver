@@ -137,10 +137,12 @@ template <class T> struct HttpTransaction {
   }
 
   static void
-  close(Self *const s)
+  close(TSCont c, Self *const s)
   {
+    assert(c != NULL);
     assert(s != NULL);
     TSVConnShutdown(s->vconnection_, 1, 0);
+    TSContDataSet(c, nullptr);
     delete s;
   }
 
@@ -174,8 +176,7 @@ template <class T> struct HttpTransaction {
       Dbg(dbg_ctl, "HttpTransaction: ERROR");
       self->t_.error();
       self->abort();
-      close(self);
-      TSContDataSet(c, nullptr);
+      close(c, self);
       break;
     case TS_EVENT_VCONN_EOS:
       Dbg(dbg_ctl, "HttpTransaction: EOS");
@@ -207,33 +208,46 @@ template <class T> struct HttpTransaction {
           available = TSIOBufferReaderAvail(self->in_->reader);
         }
         if (!self->parsingHeaders_) {
+          bool closed = false;
           if (self->chunkDecoder_ != NULL) {
             available = self->chunkDecoder_->decode(self->in_->reader);
-            if (available == 0) {
+            if (available < 0) {
+              self->t_.error();
+              self->abort();
+              close(c, self);
+              closed = true;
+            } else if (available == 0) {
               self->t_.data(self->in_->reader, available);
             }
-            while (available > 0) {
+            while (!closed && available > 0) {
               self->t_.data(self->in_->reader, available);
               TSIOBufferReaderConsume(self->in_->reader, available);
               available = self->chunkDecoder_->decode(self->in_->reader);
+              if (available < 0) {
+                self->t_.error();
+                self->abort();
+                close(c, self);
+                closed = true;
+              }
             }
           } else {
             self->t_.data(self->in_->reader, available);
             TSIOBufferReaderConsume(self->in_->reader, available);
           }
+          if (closed) {
+            break;
+          }
         }
       }
       if (e == TS_EVENT_VCONN_READ_COMPLETE || e == TS_EVENT_VCONN_EOS) {
         self->t_.done();
-        close(self);
-        TSContDataSet(c, nullptr);
+        close(c, self);
       } else if (self->chunkDecoder_ != NULL && self->chunkDecoder_->isEnd()) {
         assert(self->parsingHeaders_ == false);
         assert(isChunkEncoding(self->parser_.buffer_, self->parser_.location_));
         self->abort();
         self->t_.done();
-        close(self);
-        TSContDataSet(c, nullptr);
+        close(c, self);
       } else {
         TSVIOReenable(self->in_->vio);
       }
@@ -260,8 +274,7 @@ template <class T> struct HttpTransaction {
       Dbg(dbg_ctl, "HttpTransaction: Timeout");
       self->t_.timeout();
       self->abort();
-      close(self);
-      TSContDataSet(c, nullptr);
+      close(c, self);
       break;
 
     default:
