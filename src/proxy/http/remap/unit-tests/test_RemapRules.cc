@@ -37,6 +37,7 @@
 #include "tscore/BaseLogFile.h"
 #include "tsutil/PostScript.h"
 
+#include <filesystem>
 #include <fstream>
 #include <memory>
 
@@ -118,6 +119,49 @@ SCENARIO("Parsing ACL named filters", "[proxy][remap]")
         REQUIRE((bti.rules_list != nullptr && bti.rules_list->next == nullptr));
         REQUIRE((bti.rules_list != nullptr && bti.rules_list->allow_flag == true));
       }
+    }
+  }
+}
+
+std::string
+make_regex_remap_with_substitutions(int n_substitutions)
+{
+  std::string substitutions;
+
+  substitutions.reserve(n_substitutions * 2);
+  for (int i = 0; i < n_substitutions; ++i) {
+    substitutions += "$0";
+  }
+
+  return "regex_map http://([^.]+)\\.example\\.com/ http://" + substitutions + ".origin.example.com/\n";
+}
+
+SCENARIO("Parsing regex remap substitutions", "[proxy][remap]")
+{
+  GIVEN("A regex remap target with the maximum number of substitution markers")
+  {
+    std::unique_ptr<UrlRewrite> urlrw = std::make_unique<UrlRewrite>();
+
+    auto cpath = write_test_remap(make_regex_remap_with_substitutions(UrlRewrite::MAX_REGEX_SUBS), "max-regex-substitutions");
+    ts::PostScript file_cleanup([&]() -> void { std::filesystem::remove(cpath.c_str()); });
+
+    THEN("the remap parse succeeds")
+    {
+      REQUIRE(urlrw->BuildTable(cpath.c_str()) == TS_SUCCESS);
+    }
+  }
+
+  GIVEN("A regex remap target with too many substitution markers")
+  {
+    std::unique_ptr<UrlRewrite> urlrw = std::make_unique<UrlRewrite>();
+
+    auto cpath =
+      write_test_remap(make_regex_remap_with_substitutions(UrlRewrite::MAX_REGEX_SUBS + 1), "too-many-regex-substitutions");
+    ts::PostScript file_cleanup([&]() -> void { std::filesystem::remove(cpath.c_str()); });
+
+    THEN("the remap parse fails")
+    {
+      REQUIRE(urlrw->BuildTable(cpath.c_str()) != TS_SUCCESS);
     }
   }
 }
