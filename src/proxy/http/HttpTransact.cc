@@ -6624,7 +6624,7 @@ HttpTransact::process_quick_http_filter(State *s, int method)
 }
 
 bool
-HttpTransact::will_this_request_self_loop(State *s)
+HttpTransact::will_this_request_self_loop(State *s, bool is_outbound_transparent)
 {
   // The self-loop detection for this ATS node will allow up to max_proxy_cycles
   // (each time it sees it returns to itself it is one cycle) before declaring a self-looping condition detected.
@@ -6643,10 +6643,14 @@ HttpTransact::will_this_request_self_loop(State *s)
       in_port_t dst_port   = s->hdr_info.client_request.url_get()->port_get(); // going to this port.
       in_port_t local_port = s->client_info.dst_addr.host_order_port();        // already connected proxy port.
       // It's a loop if connecting to the same port as it already connected to the proxy and
-      // it's a proxy address or the same address it already connected to.
+      // it's any of the proxy's local addresses. In outbound-transparent mode we also allow
+      // the outbound destination to match the client's original connection destination
+      // (client_info.dst_addr), because that equality is expected for every transparent
+      // request (the client's original destination IS the legitimate upstream) and would
+      // false-positive this check.
       TxnDbg(dbg_ctl_http_transact, "dst_port = %d local_port = %d", dst_port, local_port);
-      if (dst_port == local_port && ((s->dns_info.active->data.ip == &Machine::instance()->ip.sa) ||
-                                     (s->dns_info.active->data.ip == s->client_info.dst_addr))) {
+      if (dst_port == local_port && (Machine::instance()->is_self(s->dns_info.active->data.ip) ||
+                                     (!is_outbound_transparent && s->dns_info.active->data.ip == s->client_info.dst_addr))) {
         switch (s->dns_info.looking_up) {
         case ResolveInfo::ORIGIN_SERVER:
           TxnDbg(dbg_ctl_http_transact, "host ip and port same as local ip and port - bailing");

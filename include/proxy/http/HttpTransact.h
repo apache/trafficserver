@@ -1109,7 +1109,7 @@ public:
   static bool is_response_valid(State *s, HTTPHdr *incoming_response);
 
   static void process_quick_http_filter(State *s, int method);
-  static bool will_this_request_self_loop(State *s);
+  static bool will_this_request_self_loop(State *s, bool is_outbound_transparent = false);
   static bool is_request_likely_cacheable(State *s, HTTPHdr *request);
   static bool is_cache_hit(CacheLookupResult_t r);
   static bool is_fresh_cache_hit(CacheLookupResult_t r);
