@@ -653,6 +653,31 @@ TEST_CASE("UrlParsePortStorage", "[proxy][parseurl]")
   heap->destroy();
 }
 
+TEST_CASE("UrlPrintLowerCaseSchemeHostHandlesHighBitBytes", "[proxy][urlprint]")
+{
+  constexpr auto HIGH_ORDER_BIT = static_cast<char>(0x80);
+
+  std::string input_uri{"HTTP://High"};
+  input_uri.push_back(HIGH_ORDER_BIT);
+  input_uri.append(".Example/path");
+
+  std::string expected_url{"http://high"};
+  expected_url.push_back(HIGH_ORDER_BIT);
+  expected_url.append(".example/path");
+
+  URL      url;
+  HdrHeap *heap = new_HdrHeap();
+  url.create(heap);
+  REQUIRE(url.parse_no_host_check(input_uri) == PARSE_RESULT_DONE);
+
+  int   length      = 0;
+  char *printed_url = url.string_get_ref(&length, URLNormalize::LC_SCHEME_HOST);
+  REQUIRE(printed_url != nullptr);
+  CHECK(std::string_view{printed_url, static_cast<std::string_view::size_type>(length)} == expected_url);
+
+  heap->destroy();
+}
+
 struct get_hash_test_case {
   const std::string description;
   const std::string uri_1;

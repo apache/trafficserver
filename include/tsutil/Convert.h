@@ -25,6 +25,8 @@
 
 #include "swoc/MemSpan.h"
 
+#include <algorithm>
+#include <cctype>
 #include <string_view>
 
 namespace ts
@@ -40,7 +42,8 @@ transform_lower(std::string_view src, swoc::MemSpan<char> dst)
   if (src.size() > dst.size() - 1) { // clip @a src, reserving space for the terminal nul.
     src = std::string_view{src.data(), dst.size() - 1};
   }
-  auto final = std::transform(src.begin(), src.end(), dst.data(), [](char c) -> char { return std::tolower(c); });
-  *final++   = '\0';
+  auto final =
+    std::transform(src.begin(), src.end(), dst.data(), [](unsigned char c) -> char { return static_cast<char>(std::tolower(c)); });
+  *final++ = '\0';
 }
 } // namespace ts
