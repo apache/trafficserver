@@ -2708,7 +2708,7 @@ static std::vector<char>
 make_marshalled_alt(int frag_offset_count, intptr_t frag_ptr_value)
 {
   // Ensure diags are initialized so Warning() calls in unmarshal() don't crash.
-  static bool diags_initialized = []() {
+  [[maybe_unused]] static bool diags_initialized = []() {
     if (diags() == nullptr) {
       DiagsPtr::set(new Diags("test_hdrs", nullptr, nullptr, new BaseLogFile("stderr")));
     }
