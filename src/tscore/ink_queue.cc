@@ -38,9 +38,13 @@
 
 #include "tscore/ink_config.h"
 
+#include <atomic>
 #include <cassert>
-#include <memory.h>
+#include <cstddef>
 #include <cstdlib>
+#include <memory.h>
+#include <mutex>
+#include <numeric>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/mman.h>
@@ -56,6 +60,8 @@
 #include "tscore/hugepages.h"
 #include "tscore/Diags.h"
 #include "tscore/JeMiAllocator.h"
+
+#include <iostream>
 
 struct ink_freelist_ops {
   void *(*fl_new)(InkFreeList *);
@@ -91,6 +97,9 @@ void  freelist_bulkfree(InkFreeList *f, void *head, void *tail, size_t num_item)
 void *malloc_new(InkFreeList *f);
 void  malloc_free(InkFreeList *f, void *item);
 void  malloc_bulkfree(InkFreeList *f, void *head, void *tail, size_t num_item);
+
+[[maybe_unused]] static bool is_next_ptr_aligned(InkFreeList const *f, head_p const &item);
+[[maybe_unused]] static bool is_addr_aligned(void const *item, std::size_t alignment);
 
 const ink_freelist_ops  malloc_ops   = {malloc_new, malloc_free, malloc_bulkfree};
 const ink_freelist_ops  freelist_ops = {freelist_new, freelist_free, freelist_bulkfree};
@@ -137,6 +146,15 @@ void
 ink_freelist_init(InkFreeList **fl, const char *name, uint32_t type_size, uint32_t chunk_size, uint32_t alignment,
                   bool use_hugepages)
 {
+  // The alignment is used as a boundary for INK_ALIGN,
+  // which requires a power of 2 boundary.
+  ink_release_assert(alignment % 2 == 0);
+
+  // Freelist nodes are head_p objects whenever they are free, which means
+  // our allocation has to meet alignment requirements for both head_p objects
+  // and the allocator type.
+  alignment = std::lcm(alignment, alignof(head_p));
+
   InkFreeList       *f;
   ink_freelist_list *fll;
 
@@ -152,7 +170,7 @@ ink_freelist_init(InkFreeList **fl, const char *name, uint32_t type_size, uint32
 
   f->name = name;
   /* quick test for power of 2 */
-  ink_assert(!(alignment & (alignment - 1)));
+  ink_release_assert(!(alignment & (alignment - 1)));
   // It is never useful to have alignment requirement looser than a page size
   // so clip it. This makes the item alignment checks in the actual allocator simpler.
   f->alignment         = alignment;
@@ -178,7 +196,10 @@ ink_freelist_init(InkFreeList **fl, const char *name, uint32_t type_size, uint32
     f->chunk_size = INK_ALIGN(chunk_size * f->type_size, ats_pagesize()) / f->type_size;
   }
   Dbg(dbg_ctl_freelist_init, "<%s> Chunk Size request/actual (%" PRIu32 "/%" PRIu32 ")", name, chunk_size, f->chunk_size);
-  SET_FREELIST_POINTER_VERSION(f->head, FROM_PTR(0), 0);
+  head_p empty_head;
+  SET_FREELIST_POINTER_VERSION(empty_head, FROM_PTR(0), 0);
+  ink_assert(is_next_ptr_aligned(f, empty_head));
+  f->head.store(empty_head);
 
   *fl = f;
 }
@@ -200,7 +221,13 @@ ink_freelist_create(const char *name, uint32_t type_size, uint32_t chunk_size, u
   return f;
 }
 
-#define ADDRESS_OF_NEXT(x, offset) ((void **)((char *)x + offset))
+static head_p *
+to_head_p(void *x, std::uint64_t offset)
+{
+  unsigned char *addr{reinterpret_cast<unsigned char *>(x) + offset};
+  // ink_assert(is_addr_aligned(x, alignof(head_p)));
+  return reinterpret_cast<head_p *>(addr);
+}
 
 void *
 ink_freelist_new(InkFreeList *f)
@@ -208,7 +235,7 @@ ink_freelist_new(InkFreeList *f)
   void *ptr;
 
   if (likely(ptr = freelist_global_ops->fl_new(f))) {
-    ink_atomic_increment(reinterpret_cast<int *>(&f->used), 1);
+    f->used.fetch_add(1, std::memory_order_acq_rel);
   }
 
   return ptr;
@@ -222,10 +249,13 @@ freelist_new(InkFreeList *f)
 {
   head_p item;
   head_p next;
-  int    result = 0;
+  bool   result = false;
+
+  std::lock_guard guard{f->m};
+
+  item = f->head.load();
 
   do {
-    INK_QUEUE_LD(item, f->head);
     if (TO_PTR(FREELIST_POINTER(item)) == nullptr) {
       uint32_t i;
       void    *newp       = nullptr;
@@ -248,13 +278,14 @@ freelist_new(InkFreeList *f)
       if (f->advice) {
         ats_madvise(static_cast<caddr_t>(newp), INK_ALIGN(alloc_size, alignment), f->advice);
       }
-      SET_FREELIST_POINTER_VERSION(item, newp, 0);
+      SET_FREELIST_POINTER_VERSION(item, FROM_PTR(newp), 0);
+      ink_assert(is_next_ptr_aligned(f, item));
 
-      ink_atomic_increment(reinterpret_cast<int *>(&f->allocated), f->chunk_size);
+      f->allocated.fetch_add(f->chunk_size, std::memory_order_relaxed);
 
       /* free each of the new elements */
       for (i = 0; i < f->chunk_size; i++) {
-        char *a = (static_cast<char *>(FREELIST_POINTER(item))) + i * f->type_size;
+        char *a = (static_cast<char *>(newp)) + i * f->type_size;
 #ifdef DEADBEEF
         const char str[4] = {static_cast<char>(0xde), static_cast<char>(0xad), static_cast<char>(0xbe), static_cast<char>(0xef)};
         for (int j = 0; j < static_cast<int>(f->type_size); j++) {
@@ -263,10 +294,11 @@ freelist_new(InkFreeList *f)
 #endif
         freelist_free(f, a);
       }
-
     } else {
-      SET_FREELIST_POINTER_VERSION(next, *ADDRESS_OF_NEXT(TO_PTR(FREELIST_POINTER(item)), 0), FREELIST_VERSION(item) + 1);
-      result = ink_atomic_cas(&f->head.data, item.data, next.data);
+      head_p *next_ptr = reinterpret_cast<head_p *>(TO_PTR(FREELIST_POINTER(item)));
+
+      SET_FREELIST_POINTER_VERSION(next, FREELIST_POINTER(*next_ptr), FREELIST_VERSION(item) + 1);
+      result = f->head.compare_exchange_weak(item, next, std::memory_order_acquire, std::memory_order_acquire);
 
 #ifdef SANITY
       if (result) {
@@ -282,9 +314,10 @@ freelist_new(InkFreeList *f)
       }
 #endif /* SANITY */
     }
-  } while (result == 0);
-  ink_assert(!((uintptr_t)TO_PTR(FREELIST_POINTER(item)) & (((uintptr_t)f->alignment) - 1)));
+  } while (result == false);
 
+  ink_assert(is_next_ptr_aligned(f, item));
+  ink_assert(is_next_ptr_aligned(f, next));
   return TO_PTR(FREELIST_POINTER(item));
 }
 
@@ -308,9 +341,9 @@ void
 ink_freelist_free(InkFreeList *f, void *item)
 {
   if (likely(item != nullptr)) {
-    ink_assert(f->used != 0);
     freelist_global_ops->fl_free(f, item);
-    ink_atomic_decrement(reinterpret_cast<int *>(&f->used), 1);
+    [[maybe_unused]] std::uint32_t old_used = f->used.fetch_sub(1, std::memory_order_acq_rel);
+    ink_assert(old_used != 0 && "Mismatched freelist block ref count (too many frees)");
   }
 }
 
@@ -320,12 +353,13 @@ namespace
 void
 freelist_free(InkFreeList *f, void *item)
 {
-  void **adr_of_next = ADDRESS_OF_NEXT(item, 0);
-  head_p h;
-  head_p item_pair;
-  int    result = 0;
+  // pointer to next pointer
+  head_p  h;
+  head_p  item_pair;
+  head_p *recovered_item;
+  bool    result = false;
 
-  // ink_assert(!((long)item&(f->alignment-1))); XXX - why is this no longer working? -bcall
+  ink_release_assert(is_addr_aligned(item, f->alignment));
 
 #ifdef DEADBEEF
   {
@@ -338,8 +372,9 @@ freelist_free(InkFreeList *f, void *item)
   }
 #endif /* DEADBEEF */
 
+  recovered_item = new (item) head_p{};
+  h              = f->head.load();
   while (!result) {
-    INK_QUEUE_LD(h, f->head);
 #ifdef SANITY
     if (TO_PTR(FREELIST_POINTER(h)) == item) {
       ink_abort("ink_freelist_free: trying to free item twice");
@@ -351,11 +386,16 @@ freelist_free(InkFreeList *f, void *item)
       dummy_forced_read(TO_PTR(FREELIST_POINTER(h)));
     }
 #endif /* SANITY */
-    *adr_of_next = FREELIST_POINTER(h);
+
+    ink_assert(is_next_ptr_aligned(f, h));
+
+    SET_FREELIST_POINTER_VERSION(*recovered_item, FREELIST_POINTER(h), 0);
     SET_FREELIST_POINTER_VERSION(item_pair, FROM_PTR(item), FREELIST_VERSION(h));
-    INK_MEMORY_BARRIER;
-    result = ink_atomic_cas(&f->head.data, h.data, item_pair.data);
+    result = f->head.compare_exchange_weak(h, item_pair, std::memory_order_release, std::memory_order_relaxed);
   }
+
+  ink_assert(is_next_ptr_aligned(f, h));
+  ink_assert(is_next_ptr_aligned(f, *recovered_item));
 }
 
 void
@@ -373,10 +413,9 @@ malloc_free(InkFreeList *f, void *item)
 void
 ink_freelist_free_bulk(InkFreeList *f, void *head, void *tail, size_t num_item)
 {
-  ink_assert(f->used >= num_item);
-
   freelist_global_ops->fl_bulkfree(f, head, tail, num_item);
-  ink_atomic_decrement(reinterpret_cast<int *>(&f->used), num_item);
+  [[maybe_unused]] std::uint32_t const old_used = f->used.fetch_sub(num_item, std::memory_order_acq_rel);
+  ink_assert(old_used >= num_item && "Mismatched freelist block ref count (too many frees)");
 }
 
 namespace
@@ -385,31 +424,32 @@ namespace
 void
 freelist_bulkfree(InkFreeList *f, void *head, void *tail, [[maybe_unused]] size_t num_item)
 {
-  void **adr_of_next = ADDRESS_OF_NEXT(tail, 0);
-  head_p h;
-  head_p item_pair;
-  int    result = 0;
+  head_p  h;
+  head_p  item_pair;
+  head_p *recovered_tail;
+  bool    result = false;
 
-  // ink_assert(!((long)item&(f->alignment-1))); XXX - why is this no longer working? -bcall
+  ink_release_assert(is_addr_aligned(head, f->alignment));
+  ink_release_assert(is_addr_aligned(tail, f->alignment));
 
 #ifdef DEADBEEF
   {
     static const char str[4] = {static_cast<char>(0xde), static_cast<char>(0xad), static_cast<char>(0xbe), static_cast<char>(0xef)};
 
     // set the entire item to DEADBEEF;
-    void *temp = head;
+    head_p *temp = reinterpret_cast<head_p *>(head);
     for (size_t i = 0; i < num_item; i++) {
       for (int j = sizeof(void *); j < static_cast<int>(f->type_size); j++) {
-        (static_cast<char *>(temp))[j] = str[j % 4];
+        (reinterpret_cast<char *>(temp))[j] = str[j % 4];
       }
-      *ADDRESS_OF_NEXT(temp, 0) = FROM_PTR(*ADDRESS_OF_NEXT(temp, 0));
-      temp                      = TO_PTR(*ADDRESS_OF_NEXT(temp, 0));
+      SET_FREELIST_POINTER_VERSION(*temp, FROM_PTR(FREELIST_POINTER(*temp)), FREELIST_VERSION(*temp));
+      temp = to_head_p(TO_PTR(FREELIST_POINTER(*temp)), 0);
     }
   }
 #endif /* DEADBEEF */
 
+  h = f->head.load();
   while (!result) {
-    INK_QUEUE_LD(h, f->head);
 #ifdef SANITY
     if (TO_PTR(FREELIST_POINTER(h)) == head) {
       ink_abort("ink_freelist_free: trying to free item twice");
@@ -421,10 +461,10 @@ freelist_bulkfree(InkFreeList *f, void *head, void *tail, [[maybe_unused]] size_
       dummy_forced_read(TO_PTR(FREELIST_POINTER(h)));
     }
 #endif /* SANITY */
-    *adr_of_next = FREELIST_POINTER(h);
+    recovered_tail = new (tail) head_p{};
+    SET_FREELIST_POINTER_VERSION(*recovered_tail, FREELIST_POINTER(h), 0);
     SET_FREELIST_POINTER_VERSION(item_pair, FROM_PTR(head), FREELIST_VERSION(h));
-    INK_MEMORY_BARRIER;
-    result = ink_atomic_cas(&f->head.data, h.data, item_pair.data);
+    result = f->head.compare_exchange_weak(h, item_pair, std::memory_order_release, std::memory_order_relaxed);
   }
 }
 
@@ -444,6 +484,18 @@ malloc_bulkfree(InkFreeList *f, void *head, void *tail, size_t num_item)
   }
 }
 
+bool
+is_next_ptr_aligned(InkFreeList const *f, head_p const &item)
+{
+  return is_addr_aligned(TO_PTR(FREELIST_POINTER(item)), f->alignment);
+}
+
+bool
+is_addr_aligned(void const *item, std::size_t alignment)
+{
+  return !(reinterpret_cast<std::uintptr_t>(item) & (alignment - 1u));
+}
+
 } // end anonymous namespace
 
 void
@@ -452,9 +504,9 @@ ink_freelists_snap_baseline()
   ink_freelist_list *fll;
   fll = freelists;
   while (fll) {
-    fll->fl->allocated_base = fll->fl->allocated;
-    fll->fl->used_base      = fll->fl->used;
-    fll                     = fll->next;
+    fll->fl->allocated_base.store(fll->fl->allocated.load(std::memory_order_relaxed), std::memory_order_relaxed);
+    fll->fl->used_base.store(fll->fl->used.load(std::memory_order_relaxed), std::memory_order_relaxed);
+    fll = fll->next;
   }
 }
 
@@ -472,12 +524,16 @@ ink_freelists_dump_baselinerel(FILE *f)
 
   fll = freelists;
   while (fll) {
-    int a = fll->fl->allocated - fll->fl->allocated_base;
+    std::uint32_t const allocated      = fll->fl->allocated.load(std::memory_order_relaxed);
+    std::uint32_t const allocated_base = fll->fl->allocated_base.load(std::memory_order_relaxed);
+    int const           a              = allocated - allocated_base;
     if (a != 0) {
+      std::uint32_t const used      = fll->fl->used.load(std::memory_order_relaxed);
+      std::uint32_t const used_base = fll->fl->used_base.load(std::memory_order_relaxed);
       fprintf(f, " %18" PRIu64 " | %18" PRIu64 " | %7u | %10u | memory/%s\n",
-              static_cast<uint64_t>(fll->fl->allocated - fll->fl->allocated_base) * static_cast<uint64_t>(fll->fl->type_size),
-              static_cast<uint64_t>(fll->fl->used - fll->fl->used_base) * static_cast<uint64_t>(fll->fl->type_size),
-              fll->fl->used - fll->fl->used_base, fll->fl->type_size, fll->fl->name ? fll->fl->name : "<unknown>");
+              static_cast<uint64_t>(allocated - allocated_base) * static_cast<uint64_t>(fll->fl->type_size),
+              static_cast<uint64_t>(used - used_base) * static_cast<uint64_t>(fll->fl->type_size), used - used_base,
+              fll->fl->type_size, fll->fl->name ? fll->fl->name : "<unknown>");
     }
     fll = fll->next;
   }
@@ -501,13 +557,14 @@ ink_freelists_dump(FILE *f)
   uint64_t total_used      = 0;
   fll                      = freelists;
   while (fll) {
+    std::uint64_t const allocated = fll->fl->allocated.load(std::memory_order_relaxed);
+    std::uint64_t const used      = fll->fl->used.load(std::memory_order_relaxed);
     fprintf(f, " %18" PRIu64 " | %18" PRIu64 " | %18" PRIu64 " | %18" PRIu64 " | %10u | %10u | %10u | memory/%s\n",
-            static_cast<uint64_t>(fll->fl->allocated) * static_cast<uint64_t>(fll->fl->type_size),
-            static_cast<uint64_t>(fll->fl->allocated),
-            static_cast<uint64_t>(fll->fl->used) * static_cast<uint64_t>(fll->fl->type_size), static_cast<uint64_t>(fll->fl->used),
-            fll->fl->type_size, fll->fl->chunk_size, fll->fl->hugepages_failure, fll->fl->name ? fll->fl->name : "<unknown>");
-    total_allocated += static_cast<uint64_t>(fll->fl->allocated) * static_cast<uint64_t>(fll->fl->type_size);
-    total_used      += static_cast<uint64_t>(fll->fl->used) * static_cast<uint64_t>(fll->fl->type_size);
+            allocated * static_cast<uint64_t>(fll->fl->type_size), allocated, used * static_cast<uint64_t>(fll->fl->type_size),
+            used, fll->fl->type_size, fll->fl->chunk_size, fll->fl->hugepages_failure.load(),
+            fll->fl->name ? fll->fl->name : "<unknown>");
+    total_allocated += allocated * static_cast<uint64_t>(fll->fl->type_size);
+    total_used      += used * static_cast<uint64_t>(fll->fl->type_size);
     fll              = fll->next;
   }
   fprintf(f, " %18" PRIu64 " | %18" PRIu64 " |            | TOTAL\n", total_allocated, total_used);
@@ -519,7 +576,9 @@ ink_atomiclist_init(InkAtomicList *l, const char *name, uint32_t offset_to_next)
 {
   l->name   = name;
   l->offset = offset_to_next;
-  SET_FREELIST_POINTER_VERSION(l->head, FROM_PTR(0), 0);
+  head_p empty_head;
+  SET_FREELIST_POINTER_VERSION(empty_head, FROM_PTR(nullptr), 0);
+  l->head.store(empty_head);
 }
 
 void *
@@ -527,20 +586,23 @@ ink_atomiclist_pop(InkAtomicList *l)
 {
   head_p item;
   head_p next;
-  int    result = 0;
+  bool   result = 0;
+
+  std::lock_guard guard{l->m};
+
+  item = l->head.load();
   do {
-    INK_QUEUE_LD(item, l->head);
     if (TO_PTR(FREELIST_POINTER(item)) == nullptr) {
       return nullptr;
     }
-    SET_FREELIST_POINTER_VERSION(next, *ADDRESS_OF_NEXT(TO_PTR(FREELIST_POINTER(item)), l->offset), FREELIST_VERSION(item) + 1);
-    result = ink_atomic_cas(&l->head.data, item.data, next.data);
-  } while (result == 0);
-  {
-    void *ret                        = TO_PTR(FREELIST_POINTER(item));
-    *ADDRESS_OF_NEXT(ret, l->offset) = nullptr;
-    return ret;
-  }
+    head_p *next_ptr = reinterpret_cast<head_p *>(reinterpret_cast<unsigned char *>(TO_PTR(FREELIST_POINTER(item))) + l->offset);
+    SET_FREELIST_POINTER_VERSION(next, FREELIST_POINTER(*next_ptr), FREELIST_VERSION(item) + 1);
+    result = l->head.compare_exchange_weak(item, next);
+  } while (result == false);
+
+  head_p *ret = reinterpret_cast<head_p *>(reinterpret_cast<unsigned char *>(TO_PTR(FREELIST_POINTER(item))) + l->offset);
+  SET_FREELIST_POINTER_VERSION(*ret, nullptr, 0);
+  return ret;
 }
 
 void *
@@ -548,45 +610,53 @@ ink_atomiclist_popall(InkAtomicList *l)
 {
   head_p item;
   head_p next;
-  int    result = 0;
+  bool   result = false;
+
+  item = l->head.load();
   do {
-    INK_QUEUE_LD(item, l->head);
     if (TO_PTR(FREELIST_POINTER(item)) == nullptr) {
       return nullptr;
     }
     SET_FREELIST_POINTER_VERSION(next, FROM_PTR(nullptr), FREELIST_VERSION(item) + 1);
-    result = ink_atomic_cas(&l->head.data, item.data, next.data);
-  } while (result == 0);
-  {
-    void *ret = TO_PTR(FREELIST_POINTER(item));
-    void *e   = ret;
-    /* fixup forward pointers */
-    while (e) {
-      void *n                        = TO_PTR(*ADDRESS_OF_NEXT(e, l->offset));
-      *ADDRESS_OF_NEXT(e, l->offset) = n;
-      e                              = n;
-    }
-    return ret;
+    result = l->head.compare_exchange_weak(item, next);
+  } while (result == false);
+
+  void *ret = TO_PTR(FREELIST_POINTER(item));
+  void *e   = ret;
+  /* fixup forward pointers */
+  while (e) {
+    head_p *e_ = to_head_p(e, l->offset);
+    void   *n  = TO_PTR(FREELIST_POINTER(*e_));
+    SET_FREELIST_POINTER_VERSION(*e_, n, FREELIST_VERSION(*e_));
+    e = n;
   }
+
+  // ink_assert(is_addr_aligned(reinterpret_cast<unsigned char *>(ret) + l->offset, alignof(head_p)));
+
+  return ret;
 }
 
 void *
 ink_atomiclist_push(InkAtomicList *l, void *item)
 {
-  void **adr_of_next = ADDRESS_OF_NEXT(item, l->offset);
-  head_p head;
-  head_p item_pair;
-  int    result = 0;
-  void  *h      = nullptr;
+  // ink_release_assert(is_addr_aligned(reinterpret_cast<unsigned char *>(item) + l->offset, alignof(head_p)));
+
+  head_p  head;
+  head_p  item_pair;
+  head_p *recovered_item;
+  bool    result = false;
+  void   *h      = nullptr;
+
+  head = l->head.load();
   do {
-    INK_QUEUE_LD(head, l->head);
-    h            = FREELIST_POINTER(head);
-    *adr_of_next = h;
+    h = FREELIST_POINTER(head);
     ink_assert(item != TO_PTR(h));
+
+    recovered_item = new (reinterpret_cast<unsigned char *>(item) + l->offset) head_p{};
+    SET_FREELIST_POINTER_VERSION(*recovered_item, FREELIST_POINTER(head), 0);
     SET_FREELIST_POINTER_VERSION(item_pair, FROM_PTR(item), FREELIST_VERSION(head));
-    INK_MEMORY_BARRIER;
-    result = ink_atomic_cas(&l->head.data, head.data, item_pair.data);
-  } while (result == 0);
+    result = l->head.compare_exchange_weak(head, item_pair);
+  } while (result == false);
 
   return TO_PTR(h);
 }
@@ -594,26 +664,25 @@ ink_atomiclist_push(InkAtomicList *l, void *item)
 void *
 ink_atomiclist_remove(InkAtomicList *l, void *item)
 {
-  head_p head;
-  void  *prev      = nullptr;
-  void **addr_next = ADDRESS_OF_NEXT(item, l->offset);
-  void  *item_next = *addr_next;
-  int    result    = 0;
+  head_p  head;
+  void   *prev      = nullptr;
+  head_p *addr_next = to_head_p(item, l->offset);
+  void   *item_next = FREELIST_POINTER(*addr_next);
+  bool    result    = 0;
 
   /*
    * first, try to pop it if it is first
    */
-  INK_QUEUE_LD(head, l->head);
+  head = l->head.load();
   while (TO_PTR(FREELIST_POINTER(head)) == item) {
     head_p next;
     SET_FREELIST_POINTER_VERSION(next, item_next, FREELIST_VERSION(head) + 1);
-    result = ink_atomic_cas(&l->head.data, head.data, next.data);
+    result = l->head.compare_exchange_weak(head, next);
 
     if (result) {
-      *addr_next = nullptr;
+      SET_FREELIST_POINTER_VERSION(*addr_next, nullptr, 0);
       return item;
     }
-    INK_QUEUE_LD(head, l->head);
   }
 
   /*
@@ -621,13 +690,13 @@ ink_atomiclist_remove(InkAtomicList *l, void *item)
    */
   prev = TO_PTR(FREELIST_POINTER(head));
   while (prev) {
-    void **prev_adr_of_next = ADDRESS_OF_NEXT(prev, l->offset);
-    void  *prev_prev        = prev;
-    prev                    = TO_PTR(*prev_adr_of_next);
+    head_p *prev_adr_of_next = to_head_p(prev, l->offset);
+    void   *prev_prev        = prev;
+    prev                     = TO_PTR(FREELIST_POINTER(*prev_adr_of_next));
     if (prev == item) {
       ink_assert(prev_prev != item_next);
-      *prev_adr_of_next = item_next;
-      *addr_next        = nullptr;
+      SET_FREELIST_POINTER_VERSION(*prev_adr_of_next, item_next, 0);
+      SET_FREELIST_POINTER_VERSION(*addr_next, nullptr, 0);
       return item;
     }
   }

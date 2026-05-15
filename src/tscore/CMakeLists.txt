@@ -107,7 +107,14 @@ else()
 endif()
 
 target_link_libraries(
-  tscore PUBLIC OpenSSL::Crypto libswoc::libswoc yaml-cpp::yaml-cpp systemtap::systemtap resolv::resolv ts::tsutil
+  tscore
+  PUBLIC atomic
+         OpenSSL::Crypto
+         libswoc::libswoc
+         yaml-cpp::yaml-cpp
+         systemtap::systemtap
+         resolv::resolv
+         ts::tsutil
 )
 
 if(TS_USE_POSIX_CAP)
@@ -161,6 +168,7 @@ if(BUILD_TESTING)
     unit_tests/test_ink_base64.cc
     unit_tests/test_ink_inet.cc
     unit_tests/test_ink_memory.cc
+    unit_tests/test_ink_queue.cc
     unit_tests/test_ink_string.cc
     unit_tests/test_ink_sys_control.cc
     unit_tests/test_layout.cc

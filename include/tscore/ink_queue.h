@@ -37,6 +37,10 @@
 #include "tscore/ink_defs.h"
 #include "tscore/ink_apidefs.h"
 
+#include <atomic>
+#include <cstring>
+#include <mutex>
+
 /*
   For information on the structure of the x86_64 memory map:
 
@@ -71,29 +75,61 @@ void ink_queue_load_64(void *dst, void *src);
 /*
  * Generic Free List Manager
  */
-// Warning: head_p is read and written in multiple threads without a
-// lock, use INK_QUEUE_LD to read safely.
-union head_p {
-  head_p() : data(){};
-
 #if (defined(__i386__) || defined(__arm__) || defined(__mips__)) && (SIZEOF_VOIDP == 4)
-  typedef int32_t version_type;
-  typedef int64_t data_type;
+typedef int32_t head_p_version_type;
+typedef int64_t head_p_data_type;
 #elif TS_HAS_128BIT_CAS
-  typedef int64_t    version_type;
-  typedef __int128_t data_type;
+typedef int64_t    head_p_version_type;
+typedef __int128_t head_p_data_type;
 #else
-  using version_type = int64_t;
-  using data_type    = int64_t;
+using head_p_version_type = int64_t;
+using head_p_data_type    = int64_t;
 #endif
 
-  struct {
-    void        *pointer;
-    version_type version;
-  } s;
+// Warning: head_p is read and written in multiple threads without a
+// lock, use INK_QUEUE_LD to read safely.
+using head_p = head_p_data_type;
 
-  data_type data;
+#if ((defined(__i386__) || defined(__arm__) || defined(__mips__)) && (SIZEOF_VOIDP == 4)) || TS_HAS_128BIT_CAS
+
+struct head_p_view {
+  void               *pointer;
+  head_p_version_type version;
 };
+
+#elif TS_HAS_128BIT_CAS
+
+struct head_p_view {
+  void               *pointer;
+  head_p_version_type version;
+};
+
+#elif defined(__x86_64__) || defined(__ia64__) || defined(__powerpc64__) || defined(__mips64)
+
+struct head_p_view {
+  int vaddr      : 48;
+  int version    : 15;
+  int vaddr_mode : 1;
+};
+#endif
+
+inline head_p_view
+load_head(head_p const &src)
+{
+  head_p_view result;
+  static_assert(sizeof(result) == sizeof(src));
+  std::memcpy(&result, &src, sizeof(result));
+  return result;
+}
+
+#include <iostream>
+
+inline void
+store_head(head_p &dest, head_p_view const src)
+{
+  static_assert(sizeof(dest) == sizeof(src));
+  std::memcpy(&dest, &src, sizeof(dest));
+}
 
 /*
  * Why is version required? One scenario is described below
@@ -119,17 +155,13 @@ union head_p {
 #endif
 
 #if (defined(__i386__) || defined(__arm__) || defined(__mips__)) && (SIZEOF_VOIDP == 4)
-#define FREELIST_POINTER(_x) (_x).s.pointer
-#define FREELIST_VERSION(_x) (_x).s.version
-#define SET_FREELIST_POINTER_VERSION(_x, _p, _v) \
-  (_x).s.pointer = _p;                           \
-  (_x).s.version = _v
+#define FREELIST_POINTER(_x)                     load_head((_x)).pointer
+#define FREELIST_VERSION(_x)                     load_head((_x)).version
+#define SET_FREELIST_POINTER_VERSION(_x, _p, _v) store_head((_x), head_p_view{(_p), (_v)})
 #elif TS_HAS_128BIT_CAS
-#define FREELIST_POINTER(_x) (_x).s.pointer
-#define FREELIST_VERSION(_x) (_x).s.version
-#define SET_FREELIST_POINTER_VERSION(_x, _p, _v) \
-  (_x).s.pointer = _p;                           \
-  (_x).s.version = _v
+#define FREELIST_POINTER(_x)                     load_head((_x)).pointer
+#define FREELIST_VERSION(_x)                     load_head((_x)).version
+#define SET_FREELIST_POINTER_VERSION(_x, _p, _v) store_head((_x), head_p_view{(_p), (_v)})
 #elif defined(__x86_64__) || defined(__ia64__) || defined(__powerpc64__) || defined(__mips64)
 /* Layout of FREELIST_POINTER
  *
@@ -178,13 +210,21 @@ union head_p {
 #endif
 
 struct _InkFreeList {
-  head_p      head;
-  const char *name;
-  uint32_t    type_size, chunk_size, used, allocated, alignment;
-  uint32_t    allocated_base, used_base;
-  uint32_t    hugepages_failure;
-  bool        use_hugepages;
-  int         advice;
+  std::mutex                 m;
+  std::atomic<head_p>        head;
+  const char                *name;
+  std::atomic<std::uint32_t> used;
+  std::atomic<std::uint32_t> allocated;
+
+  // These fields must be initialized once and not modified after
+  // initialization.
+  uint32_t type_size, chunk_size, alignment;
+
+  std::atomic<std::uint32_t> allocated_base;
+  std::atomic<std::uint32_t> used_base;
+  std::atomic<std::uint32_t> hugepages_failure;
+  bool                       use_hugepages;
+  int                        advice;
 };
 
 using InkFreeListOps = struct ink_freelist_ops;
@@ -213,9 +253,10 @@ void  ink_freelists_snap_baseline();
 
 struct InkAtomicList {
   InkAtomicList() {}
-  head_p      head{};
-  const char *name   = nullptr;
-  uint32_t    offset = 0;
+  std::mutex          m;
+  std::atomic<head_p> head{};
+  const char         *name   = nullptr;
+  uint32_t            offset = 0;
 };
 
 #if !defined(INK_QUEUE_NT)
