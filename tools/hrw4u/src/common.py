@@ -27,6 +27,7 @@ from antlr4.error.ErrorStrategy import BailErrorStrategy, DefaultErrorStrategy
 from antlr4 import InputStream, CommonTokenStream
 
 from hrw4u.errors import Hrw4uSyntaxError, ThrowingErrorListener, ErrorCollector, CollectingErrorListener
+from hrw4u.formatters import FORMATTERS, ErrorFormatter
 from hrw4u.types import MagicStrings
 
 
@@ -112,6 +113,43 @@ def fatal(message: str) -> NoReturn:
     sys.exit(1)
 
 
+def _build_formatter(error_format: str) -> ErrorFormatter:
+    """Instantiate the configured error formatter, falling back to plain."""
+    return FORMATTERS.get(error_format, FORMATTERS["plain"])()
+
+
+def emit_fatal_message(error_format: str, message: str, filename: str = SystemDefaults.DEFAULT_FILENAME) -> NoReturn:
+    """Emit a non-syntax error (I/O, argument) via the chosen formatter and exit.
+
+    Plain mode preserves the legacy bare-string output. Structured formats wrap
+    the message as a synthetic diagnostic so downstream consumers always see the
+    same schema regardless of where the error originated.
+    """
+    if error_format == 'plain':
+        print(message, file=sys.stderr)
+    else:
+        err = Hrw4uSyntaxError(filename, 0, 0, message, "")
+        collector = ErrorCollector(formatter=_build_formatter(error_format))
+        collector.add_error(err)
+        print(collector.get_error_summary(), file=sys.stderr)
+    sys.exit(1)
+
+
+def emit_fatal_error(error_format: str, error: Hrw4uSyntaxError) -> NoReturn:
+    """Emit a single Hrw4uSyntaxError via the chosen formatter and exit.
+
+    Plain mode keeps the legacy ``str(error)`` output (no ``Found 1 error:``
+    prefix) so existing CLI consumers see byte-identical output.
+    """
+    if error_format == 'plain':
+        print(str(error), file=sys.stderr)
+    else:
+        collector = ErrorCollector(formatter=_build_formatter(error_format))
+        collector.add_error(error)
+        print(collector.get_error_summary(), file=sys.stderr)
+    sys.exit(1)
+
+
 def create_base_parser(description: str) -> tuple[argparse.ArgumentParser, argparse._MutuallyExclusiveGroup]:
     """Create base argument parser with common options."""
     parser = argparse.ArgumentParser(description=description, formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -147,13 +185,14 @@ def create_parse_tree(
         parser_class: type[ParserProtocol],
         error_prefix: str,
         collect_errors: bool = True,
-        max_errors: int = 5) -> tuple[Any, ParserProtocol, ErrorCollector | None]:
+        max_errors: int = 5,
+        error_format: str = "plain") -> tuple[Any, ParserProtocol, ErrorCollector | None]:
     """Create ANTLR parse tree from input content with optional error collection."""
     input_stream = InputStream(content)
     error_collector = None
 
     if collect_errors:
-        error_collector = ErrorCollector(max_errors=max_errors)
+        error_collector = ErrorCollector(max_errors=max_errors, formatter=_build_formatter(error_format))
         error_listener = CollectingErrorListener(filename=filename, error_collector=error_collector)
     else:
         error_listener = ThrowingErrorListener(filename=filename)
@@ -181,7 +220,7 @@ def create_parse_tree(
                 error_collector.add_error(e)
             return None, parser_obj, error_collector
         else:
-            fatal(str(e))
+            emit_fatal_error(error_format, e)
     except Exception as e:
         if collect_errors:
             if error_collector:
@@ -189,7 +228,7 @@ def create_parse_tree(
                 error_collector.add_error(syntax_error)
             return None, parser_obj, error_collector
         else:
-            fatal(f"{filename}:0:0 - {error_prefix} error: {e}")
+            emit_fatal_message(error_format, f"{error_prefix} error: {e}", filename=filename)
 
 
 def generate_output(
@@ -233,7 +272,9 @@ def generate_output(
                             syntax_error.add_note(note)
                     error_collector.add_error(syntax_error)
                 else:
-                    fatal(str(e))
+                    visitor_err = e if isinstance(e, Hrw4uSyntaxError) else Hrw4uSyntaxError(
+                        filename, 0, 0, f"Visitor error: {e}", "")
+                    emit_fatal_error(getattr(args, 'error_format', 'plain'), visitor_err)
 
     if error_collector and (error_collector.has_errors() or error_collector.has_warnings()):
         print(error_collector.get_error_summary(), file=sys.stderr)
@@ -289,6 +330,16 @@ def run_main(
         default=5,
         dest="max_errors",
         help="Maximum number of errors to report before stopping (default: 5; ignored with --stop-on-error)")
+    parser.add_argument(
+        "--error-format",
+        choices=sorted(FORMATTERS.keys()),
+        default="plain",
+        dest="error_format",
+        help=(
+            "Format used for error and warning output on stderr (default: plain). "
+            "'json' emits one compact JSON object per input (NDJSON-friendly in bulk mode); "
+            "'markdown' emits a rendered report suitable for PR comments and chat. "
+            "Columns are always 0-based."))
 
     if add_args is not None:
         add_args(parser, output_group)
@@ -309,20 +360,18 @@ def run_main(
             try:
                 content = pre_process(content, filename, args)
             except Hrw4uSyntaxError as e:
-                print(str(e), file=sys.stderr)
-                sys.exit(1)
+                emit_fatal_error(args.error_format, e)
         tree, parser_obj, error_collector = create_parse_tree(
-            content, filename, lexer_class, parser_class, error_prefix, not args.stop_on_error, args.max_errors)
+            content, filename, lexer_class, parser_class, error_prefix, not args.stop_on_error, args.max_errors, args.error_format)
         generate_output(tree, parser_obj, visitor_class, filename, args, error_collector, extra_kwargs)
         return
 
     if any(':' in f for f in args.files):
         for pair in args.files:
             if ':' not in pair:
-                print(
-                    f"Error: Mixed formats not allowed. All files must use 'input:output' format for bulk compilation.",
-                    file=sys.stderr)
-                sys.exit(1)
+                emit_fatal_message(
+                    args.error_format,
+                    "Error: Mixed formats not allowed. All files must use 'input:output' format for bulk compilation.")
 
             input_path, output_path = pair.split(':', 1)
 
@@ -331,20 +380,18 @@ def run_main(
                     content = input_file.read()
                     filename = input_path
             except FileNotFoundError:
-                print(f"Error: Input file '{input_path}' not found", file=sys.stderr)
-                sys.exit(1)
+                emit_fatal_message(args.error_format, f"Error: Input file '{input_path}' not found", filename=input_path)
             except Exception as e:
-                print(f"Error reading '{input_path}': {e}", file=sys.stderr)
-                sys.exit(1)
+                emit_fatal_message(args.error_format, f"Error reading '{input_path}': {e}", filename=input_path)
 
             if pre_process is not None:
                 try:
                     content = pre_process(content, filename, args)
                 except Hrw4uSyntaxError as e:
-                    print(str(e), file=sys.stderr)
-                    sys.exit(1)
+                    emit_fatal_error(args.error_format, e)
             tree, parser_obj, error_collector = create_parse_tree(
-                content, filename, lexer_class, parser_class, error_prefix, not args.stop_on_error, args.max_errors)
+                content, filename, lexer_class, parser_class, error_prefix, not args.stop_on_error, args.max_errors,
+                args.error_format)
 
             try:
                 with open(output_path, 'w', encoding='utf-8') as output_file:
@@ -355,8 +402,7 @@ def run_main(
                     finally:
                         sys.stdout = original_stdout
             except Exception as e:
-                print(f"Error writing to '{output_path}': {e}", file=sys.stderr)
-                sys.exit(1)
+                emit_fatal_message(args.error_format, f"Error writing to '{output_path}': {e}", filename=output_path)
     else:
         for i, input_path in enumerate(args.files):
             if i > 0:
@@ -367,19 +413,17 @@ def run_main(
                     content = input_file.read()
                     filename = input_path
             except FileNotFoundError:
-                print(f"Error: Input file '{input_path}' not found", file=sys.stderr)
-                sys.exit(1)
+                emit_fatal_message(args.error_format, f"Error: Input file '{input_path}' not found", filename=input_path)
             except Exception as e:
-                print(f"Error reading '{input_path}': {e}", file=sys.stderr)
-                sys.exit(1)
+                emit_fatal_message(args.error_format, f"Error reading '{input_path}': {e}", filename=input_path)
 
             if pre_process is not None:
                 try:
                     content = pre_process(content, filename, args)
                 except Hrw4uSyntaxError as e:
-                    print(str(e), file=sys.stderr)
-                    sys.exit(1)
+                    emit_fatal_error(args.error_format, e)
             tree, parser_obj, error_collector = create_parse_tree(
-                content, filename, lexer_class, parser_class, error_prefix, not args.stop_on_error, args.max_errors)
+                content, filename, lexer_class, parser_class, error_prefix, not args.stop_on_error, args.max_errors,
+                args.error_format)
 
             generate_output(tree, parser_obj, visitor_class, filename, args, error_collector, extra_kwargs)

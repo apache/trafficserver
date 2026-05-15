@@ -36,6 +36,7 @@ SCRIPT_KG=scripts/hrw4u-kg
 SHARED_FILES=src/common.py \
 	src/debugging.py \
 	src/errors.py \
+	src/formatters.py \
 	src/states.py \
 	src/tables.py \
 	src/types.py \
@@ -106,9 +107,20 @@ INIT_HRW4U=$(PKG_DIR_HRW4U)/__init__.py
 INIT_U4WRH=$(PKG_DIR_U4WRH)/__init__.py
 INIT_LSP=$(PKG_DIR_LSP)/__init__.py
 
-.PHONY: all gen gen-fwd gen-inv copy-src test clean build package env setup-deps activate update coverage coverage-open
+.PHONY: all gen gen-fwd gen-inv copy-src check-antlr test clean build package env setup-deps activate update coverage coverage-open
 
 all: gen
+
+# Fail fast with a helpful message if the ANTLR generator is not on PATH.
+# Install is intentionally left to the user / bootstrap.sh — installers vary
+# by OS (brew on macOS, dnf/apt on Linux, CI images pin their own).
+check-antlr:
+	@command -v $(ANTLR) >/dev/null 2>&1 || { \
+		echo "Error: '$(ANTLR)' not found on PATH."; \
+		echo "Install it first (e.g. 'brew install antlr' on macOS),"; \
+		echo "or run ./bootstrap.sh which also sets up Python dependencies."; \
+		exit 1; \
+	}
 
 # Orchestrate generation then copy sources and drop __main__.py in each package
 gen: gen-fwd gen-inv copy-src $(MAIN_HRW4U) $(MAIN_U4WRH) $(MAIN_LSP) $(INIT_HRW4U) $(INIT_U4WRH) $(INIT_LSP)
@@ -137,7 +149,7 @@ $(INIT_LSP): | $(PKG_DIR_LSP)
 	touch $@
 
 # Generate forward parser/lexer into build/hrw4u and build/hrw4u-lsp
-gen-fwd: $(ANTLR_FILES_FWD)
+gen-fwd: check-antlr $(ANTLR_FILES_FWD)
 
 $(ANTLR_FILES_FWD): $(GRAMMAR_FWD)
 	@mkdir -p $(PKG_DIR_HRW4U)
@@ -146,7 +158,7 @@ $(ANTLR_FILES_FWD): $(GRAMMAR_FWD)
 # LSP no longer generates its own ANTLR files - it imports from hrw4u
 
 # Generate inverse parser/lexer into build/u4wrh
-gen-inv: $(ANTLR_FILES_INV)
+gen-inv: check-antlr $(ANTLR_FILES_INV)
 
 $(ANTLR_FILES_INV): $(GRAMMAR_INV)
 	@mkdir -p $(PKG_DIR_U4WRH)

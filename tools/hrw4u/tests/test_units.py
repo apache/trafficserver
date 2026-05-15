@@ -95,7 +95,7 @@ class TestErrorCollectorUnits:
 
         error_summary = self.error_collector.get_error_summary()
         assert "Test error" in error_summary
-        assert "Found 1 error:" in error_summary
+        assert "Found" not in error_summary
 
     def test_error_collector_multiple_errors(self):
         error1 = Hrw4uSyntaxError("test1.hrw4u", 1, 0, "Error 1", "line 1")
