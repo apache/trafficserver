@@ -23,8 +23,8 @@
 
 #pragma once
 
-#include <ts/ts.h>
 #include <cinttypes>
+#include <ts/ts.h>
 
 /** Class to handle state for decoding chunked data.
  */
@@ -53,9 +53,15 @@ public:
   ChunkDecoder() {}
 
   void parseSizeCharacter(const char);
-  int parseSize(const char *, const int64_t);
-  int decode(const TSIOBufferReader &);
+  int64_t parseSize(const char *, const int64_t);
+  int64_t decode(const TSIOBufferReader &);
   bool isSizeState() const;
+
+  inline bool
+  isInvalid() const
+  {
+    return state_ == State::kInvalid;
+  }
 
   inline bool
   isEnd() const
