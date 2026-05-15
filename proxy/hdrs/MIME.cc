@@ -2800,6 +2800,12 @@ to_same_char(int ch)
   return ch;
 }
 
+int
+to_lower_char(int ch)
+{
+  return std::tolower(static_cast<unsigned char>(ch));
+}
+
 } // end anonymous namespace
 
 int
@@ -2811,7 +2817,7 @@ mime_mem_print(const char *src_d, int src_l, char *buf_start, int buf_length, in
 int
 mime_mem_print_lc(const char *src_d, int src_l, char *buf_start, int buf_length, int *buf_index_inout, int *buf_chars_to_skip_inout)
 {
-  return mime_mem_print_(src_d, src_l, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout, std::tolower);
+  return mime_mem_print_(src_d, src_l, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout, to_lower_char);
 }
 
 int
