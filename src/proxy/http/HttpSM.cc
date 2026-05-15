@@ -5641,8 +5641,13 @@ HttpSM::do_http_server_open(bool raw, bool only_direct)
     }
   }
 
-  // Check for self loop.
-  if (!_ua.get_txn()->is_outbound_transparent() && HttpTransact::will_this_request_self_loop(&t_state)) {
+  // Check for self loop. In outbound-transparent mode the client's original
+  // destination is the legitimate upstream, so the client_info.dst_addr match
+  // inside the loop check is skipped. The self-IP check (when
+  // max_proxy_cycles == 0) and the Via-header multi-hop check are still
+  // enforced so a client targeting ATS's own listening address or looping
+  // through its own Via UUID is still caught.
+  if (HttpTransact::will_this_request_self_loop(&t_state, _ua.get_txn()->is_outbound_transparent())) {
     call_transact_and_set_next_state(HttpTransact::SelfLoop);
     return;
   }
