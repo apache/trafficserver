@@ -5116,12 +5116,11 @@ HTTP/2 Configuration
    frames. Write operation will be triggered at least once every this configured
    number of millisecond regardless of pending data size.
 
-.. ts:cv:: CONFIG proxy.config.http2.default_buffer_water_mark INT -1
+.. ts:cv:: CONFIG proxy.config.http2.default_buffer_water_mark INT 32768
    :reloadable:
    :units: bytes
 
    Specifies the high water mark for all HTTP/2 frames on an outgoing connection.
-   Default is -1 to preserve existing water marking behavior.
 
    You can override this global setting on a per domain basis in the :file:`sni.yaml` file using the :ref:`http2_buffer_water_mark <override-h2-properties>` attribute.
 
