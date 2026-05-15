@@ -194,6 +194,29 @@ TEST_CASE("SNIConfig reconfigure callback is invoked")
   CHECK(result == 42);
 }
 
+TEST_CASE("SNIConfig handles high-bit bytes while normalizing server names")
+{
+  constexpr auto HIGH_ORDER_BIT = static_cast<char>(0x80);
+
+  YamlSNIConfig::Item item;
+  item.fqdn = "High";
+  item.fqdn.push_back(HIGH_ORDER_BIT);
+  item.fqdn.append(".Example.Com");
+  item.inbound_port_ranges.emplace_back(1, ts::MAX_PORT_VALUE);
+
+  SNIConfigParams params;
+  params.yaml_sni.items.push_back(item);
+  REQUIRE(params.load_sni_config());
+
+  std::string servername{"hIGH"};
+  servername.push_back(HIGH_ORDER_BIT);
+  servername.append(".eXAMPLE.cOM");
+
+  auto const &actions{params.get(servername, 443)};
+  REQUIRE(actions.first);
+  CHECK(actions.first->size() == 2);
+}
+
 static IpEndpoint
 make_endpoint(const char *ip_str)
 {
