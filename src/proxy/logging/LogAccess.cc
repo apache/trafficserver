@@ -2610,6 +2610,25 @@ LogAccess::marshal_cache_hit_miss(char *buf)
   return INK_MIN_ALIGN;
 }
 
+
+int
+LogAccess::marshal_cache_freshness_limit(char *buf)
+{
+  if (buf) {
+    marshal_int(buf, static_cast<int64_t>(m_data->get_freshness_limit()));
+  }
+  return INK_MIN_ALIGN;
+}
+
+int
+LogAccess::marshal_cache_current_age(char *buf)
+{
+  if (buf) {
+    marshal_int(buf, m_data->get_current_age());
+  }
+  return INK_MIN_ALIGN;
+}
+
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 

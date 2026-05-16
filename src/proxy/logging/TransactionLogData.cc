@@ -949,6 +949,26 @@ TransactionLogData::get_max_cache_open_write_retries() const
   return -1;
 }
 
+int
+TransactionLogData::get_freshness_limit() const
+{
+  if (likely(m_http_sm != nullptr)) {
+    return m_http_sm->t_state.cache_info.freshness_limit;
+  }
+  return -1;
+}
+
+int64_t
+TransactionLogData::get_current_age() const
+{
+  if (likely(m_http_sm != nullptr)) {
+    return static_cast<int64_t>(m_http_sm->t_state.cache_info.current_age);
+  }
+  return -1;
+}
+
+// ===== Retry attempts =====
+
 // ===== Retry attempts =====
 
 int64_t

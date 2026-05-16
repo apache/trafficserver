@@ -190,6 +190,8 @@ public:
   int marshal_cache_result_subcode(char *);         // INT
   int marshal_proxy_host_port(char *);              // INT
   int marshal_cache_hit_miss(char *);               // INT
+  int marshal_cache_freshness_limit(char *);        // INT
+  int marshal_cache_current_age(char *);            // INT
   int marshal_proxy_resp_all_header_fields(char *); // STR
 
   //
