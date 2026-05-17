@@ -45,7 +45,8 @@ struct ATSHash32FNV1a : ATSHash32 {
   void     clear() override;
 
 private:
-  uint32_t hval;
+  static constexpr uint32_t fnv_init = 0x811c9dc5u;
+  uint32_t                  hval{fnv_init};
 };
 
 template <typename Transform>
@@ -76,7 +77,8 @@ struct ATSHash64FNV1a : ATSHash64 {
   void     clear() override;
 
 private:
-  uint64_t hval;
+  static constexpr uint64_t fnv_init = 0xcbf29ce484222325ull;
+  uint64_t                  hval{fnv_init};
 };
 
 template <typename Transform>
