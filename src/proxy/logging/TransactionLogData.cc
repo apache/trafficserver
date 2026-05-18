@@ -366,6 +366,16 @@ TransactionLogData::get_cache_lookup_url_len() const
   return 0;
 }
 
+const ts::CryptoHash *
+TransactionLogData::get_cache_lookup_hash() const
+{
+  if (likely(m_http_sm != nullptr)) {
+    return &(m_http_sm->get_cache_sm().get_cache_key().hash);
+  }
+
+  return nullptr;
+}
+
 // ===== Client addressing =====
 
 sockaddr const *
