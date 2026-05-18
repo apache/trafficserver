@@ -60,7 +60,7 @@ u4wrh = "u4wrh.__main__:main"
 hrw4u-lsp = "hrw4u_lsp.__main__:main"
 
 [tool.setuptools]
-script-files = ["scripts/hrw4u", "scripts/u4wrh", "scripts/hrw4u-lsp", "scripts/hrw4u-kg"]
+script-files = ["scripts/hrw4u", "scripts/u4wrh", "scripts/hrw4u-lsp", "scripts/hrw4u-kg", "scripts/hrw4u-ir"]
 
 [tool.setuptools.packages.find]
 where = ["build"]
