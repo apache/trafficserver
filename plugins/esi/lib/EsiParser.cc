@@ -198,8 +198,9 @@ EsiParser::_findOpeningTag(const string &data, size_t start_pos, size_t &opening
 
   while (i < total) {
     const char *p = static_cast<const char *>(memchr(buf + i, '<', total - i));
-    if (!p)
+    if (!p) {
       return NO_MATCH;
+    }
     const size_t pos   = static_cast<size_t>(p - buf);
     const size_t avail = total - pos;
 
