@@ -407,7 +407,7 @@ hdrtoken_init()
       heap_size                 += packed_prefix_str_len;
     }
 
-    _hdrtoken_strs_heap_f = static_cast<const char *>(ats_malloc(heap_size));
+    _hdrtoken_strs_heap_f = static_cast<const char *>(ats_calloc(1, heap_size));
     _hdrtoken_strs_heap_l = _hdrtoken_strs_heap_f + heap_size - 1;
 
     char *heap_ptr = const_cast<char *>(_hdrtoken_strs_heap_f);
