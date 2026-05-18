@@ -4478,6 +4478,35 @@ TSHttpTxnCacheLookupUrlSet(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc obj)
   return TS_SUCCESS;
 }
 
+TSReturnCode
+TSHttpTxnCacheKeyDigestGet(TSHttpTxn txnp, char *buffer, int *length)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  sdk_assert(length != nullptr);
+
+  HttpSM           *sm              = reinterpret_cast<HttpSM *>(txnp);
+  const CryptoHash &hash            = sm->get_cache_sm().get_cache_key().hash;
+  constexpr int     size            = CRYPTO_HASH_SIZE;
+  int               provided_length = *length;
+
+  *length = size;
+
+  if (hash.is_zero()) {
+    return TS_ERROR;
+  }
+
+  if (buffer == nullptr) {
+    return TS_SUCCESS;
+  }
+
+  if (provided_length < size) {
+    return TS_ERROR;
+  }
+
+  memcpy(buffer, hash.u8, size);
+  return TS_SUCCESS;
+}
+
 /**
  * timeout is in msec
  * overrides as proxy.config.http.transaction_active_timeout_out

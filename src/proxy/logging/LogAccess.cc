@@ -35,6 +35,7 @@
 #include "swoc/BufferWriter.h"
 #include "tscore/Encoding.h"
 #include "tscore/ink_inet.h"
+#include "tscore/ink_base64.h"
 
 char INVALID_STR[] = "!INVALID_STR!";
 
@@ -3032,6 +3033,35 @@ LogAccess::marshal_cache_write_transform_code(char *buf)
   }
 
   return INK_MIN_ALIGN;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
+LogAccess::marshal_cache_key_hash(char *buf)
+{
+  const ts::CryptoHash *hash = m_data->get_cache_lookup_hash();
+
+  if (!hash || hash->is_zero()) {
+    if (buf) {
+      marshal_str(buf, "-", padded_length(2));
+    }
+    return padded_length(2);
+  }
+
+  constexpr size_t b64_bufsize = ats_base64_encode_dstlen(CRYPTO_HASH_SIZE);
+  char             b64_str[b64_bufsize];
+  size_t           b64_len = 0;
+
+  ats_base64_encode(reinterpret_cast<const char *>(hash->u8), CRYPTO_HASH_SIZE, b64_str, b64_bufsize, &b64_len);
+
+  int len = padded_length(b64_len + 1);
+
+  if (buf) {
+    marshal_str(buf, b64_str, len);
+  }
+  return len;
 }
 
 /*-------------------------------------------------------------------------

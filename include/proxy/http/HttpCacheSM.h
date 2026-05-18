@@ -129,6 +129,12 @@ public:
     return cache_read_vc ? (cache_read_vc->is_compressed_in_ram()) : false;
   }
 
+  const HttpCacheKey &
+  get_cache_key() const
+  {
+    return cache_key;
+  }
+
   void
   set_open_read_tries(int value)
   {
