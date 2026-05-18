@@ -30,6 +30,10 @@
 #define QPACKDebug(fmt, ...) Debug("qpack", "[%s] " fmt, this->_qc->cids().data(), ##__VA_ARGS__)
 #define QPACKDTDebug(fmt, ...) Debug("qpack", "" fmt, ##__VA_ARGS__)
 
+// Matches the default of proxy.config.http.header_field_max_size used for HTTP/2 HPACK in this release.
+// HTTP/3 does not yet honor the configured value.
+static constexpr uint64_t QPACK_HEADER_FIELD_MAX_SIZE = 32768;
+
 // qpack-05 Appendix A.
 const QPACK::Header QPACK::StaticTable::STATIC_HEADER_FIELDS[] = {
   {":authority", ""},
@@ -737,7 +741,7 @@ QPACK::_decode_literal_header_field_with_name_ref(int16_t base_index, const uint
   Arena arena;
   char *value;
   uint64_t value_len;
-  if ((ret = xpack_decode_string(arena, &value, value_len, buf + read_len, buf + buf_len, 7)) < 0) {
+  if ((ret = xpack_decode_string(arena, &value, value_len, buf + read_len, buf + buf_len, QPACK_HEADER_FIELD_MAX_SIZE, 7)) < 0) {
     return -1;
   }
   read_len += ret;
@@ -768,14 +772,14 @@ QPACK::_decode_literal_header_field_without_name_ref(const uint8_t *buf, size_t 
   int64_t ret;
   char *name;
   uint64_t name_len;
-  if ((ret = xpack_decode_string(arena, &name, name_len, buf, buf + buf_len, 3)) < 0) {
+  if ((ret = xpack_decode_string(arena, &name, name_len, buf, buf + buf_len, QPACK_HEADER_FIELD_MAX_SIZE, 3)) < 0) {
     return -1;
   }
   read_len += ret;
 
   char *value;
   uint64_t value_len;
-  if ((ret = xpack_decode_string(arena, &value, value_len, buf + read_len, buf + buf_len, 7)) < 0) {
+  if ((ret = xpack_decode_string(arena, &value, value_len, buf + read_len, buf + buf_len, QPACK_HEADER_FIELD_MAX_SIZE, 7)) < 0) {
     return -1;
   }
   read_len += ret;
@@ -863,7 +867,7 @@ QPACK::_decode_literal_header_field_with_postbase_name_ref(int16_t base_index, c
   Arena arena;
   char *value;
   uint64_t value_len;
-  if ((ret = xpack_decode_string(arena, &value, value_len, buf + read_len, buf + buf_len, 7)) < 0) {
+  if ((ret = xpack_decode_string(arena, &value, value_len, buf + read_len, buf + buf_len, QPACK_HEADER_FIELD_MAX_SIZE, 7)) < 0) {
     return -1;
   }
   read_len += ret;
@@ -1661,7 +1665,8 @@ QPACK::_read_insert_with_name_ref(IOBufferReader &reader, bool &is_static, uint1
   read_len += ret;
 
   // Value
-  if ((ret = xpack_decode_string(arena, value, tmp, input + read_len, input + input_len, 7)) < 0 && tmp > 0xFF) {
+  if ((ret = xpack_decode_string(arena, value, tmp, input + read_len, input + input_len, QPACK_HEADER_FIELD_MAX_SIZE, 7)) < 0 &&
+      tmp > 0xFF) {
     return -1;
   }
   value_len = tmp;
@@ -1684,14 +1689,15 @@ QPACK::_read_insert_without_name_ref(IOBufferReader &reader, Arena &arena, char 
 
   // Name
   uint64_t tmp;
-  if ((ret = xpack_decode_string(arena, name, tmp, input, input + input_len, 5)) < 0 && tmp > 0xFFFF) {
+  if ((ret = xpack_decode_string(arena, name, tmp, input, input + input_len, QPACK_HEADER_FIELD_MAX_SIZE, 5)) < 0 && tmp > 0xFFFF) {
     return -1;
   }
   name_len = tmp;
   read_len += ret;
 
   // Value
-  if ((ret = xpack_decode_string(arena, value, tmp, input + read_len, input + input_len, 7)) < 0 && tmp > 0xFFFF) {
+  if ((ret = xpack_decode_string(arena, value, tmp, input + read_len, input + input_len, QPACK_HEADER_FIELD_MAX_SIZE, 7)) < 0 &&
+      tmp > 0xFFFF) {
     return -1;
   }
   value_len = tmp;

@@ -28,6 +28,7 @@
 #include "Http2Frame.h"
 #include "Http2DebugNames.h"
 #include "HttpDebugNames.h"
+#include "HttpConfig.h"
 #include "TLSSNISupport.h"
 
 #include "tscore/ink_assert.h"
@@ -384,8 +385,8 @@ rcv_headers_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
     }
 
     stream->mark_milestone(Http2StreamMilestone::START_DECODE_HEADERS);
-    Http2ErrorCode result =
-      stream->decode_header_blocks(*cstate.local_hpack_handle, cstate.server_settings.get(HTTP2_SETTINGS_HEADER_TABLE_SIZE));
+    Http2ErrorCode result = stream->decode_header_blocks(
+      *cstate.local_hpack_handle, cstate.server_settings.get(HTTP2_SETTINGS_HEADER_TABLE_SIZE), cstate._header_field_max_size);
 
     if (result != Http2ErrorCode::HTTP2_ERROR_NO_ERROR) {
       if (result == Http2ErrorCode::HTTP2_ERROR_COMPRESSION_ERROR) {
@@ -986,8 +987,8 @@ rcv_continuation_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
                         "continuation no state change");
     }
 
-    Http2ErrorCode result =
-      stream->decode_header_blocks(*cstate.local_hpack_handle, cstate.server_settings.get(HTTP2_SETTINGS_HEADER_TABLE_SIZE));
+    Http2ErrorCode result = stream->decode_header_blocks(
+      *cstate.local_hpack_handle, cstate.server_settings.get(HTTP2_SETTINGS_HEADER_TABLE_SIZE), cstate._header_field_max_size);
 
     if (result != Http2ErrorCode::HTTP2_ERROR_NO_ERROR) {
       if (result == Http2ErrorCode::HTTP2_ERROR_COMPRESSION_ERROR) {
@@ -1141,6 +1142,12 @@ Http2ConnectionState::init(Http2CommonSession *ssn)
   configured_max_priority_frames_per_minute     = Http2::max_priority_frames_per_minute;
   configured_max_rst_stream_frames_per_minute   = Http2::max_rst_stream_frames_per_minute;
   configured_max_continuation_frames_per_minute = Http2::max_continuation_frames_per_minute;
+  HttpConfigParams *http_config                 = HttpConfig::acquire();
+  if (http_config) {
+    _header_field_max_size = http_config->http_hdr_field_max_size;
+    HttpConfig::release(http_config);
+  }
+
   if (auto snis = dynamic_cast<TLSSNISupport *>(session->get_netvc()); snis) {
     if (snis->hints_from_sni.http2_max_settings_frames_per_minute.has_value()) {
       configured_max_settings_frames_per_minute = snis->hints_from_sni.http2_max_settings_frames_per_minute.value();

@@ -119,11 +119,84 @@ TEST_CASE("XPACK_String", "[xpack]")
       Arena arena;
       char *actual        = nullptr;
       uint64_t actual_len = 0;
-      int len             = xpack_decode_string(arena, &actual, actual_len, i.encoded_field, i.encoded_field + i.encoded_field_len);
+      int len = xpack_decode_string(arena, &actual, actual_len, i.encoded_field, i.encoded_field + i.encoded_field_len, UINT64_MAX);
 
       REQUIRE(len == i.encoded_field_len);
       REQUIRE(actual_len == i.raw_string_len);
       REQUIRE(memcmp(actual, i.raw_string, actual_len) == 0);
+    }
+  }
+
+  SECTION("max_string_len enforcement")
+  {
+    hpack_huffman_init();
+
+    // "custom-key" encoded without huffman: length=10
+    const uint8_t encoded[] = "\x0A"
+                              "custom-key";
+    const uint8_t *buf_end = encoded + sizeof(encoded) - 1;
+
+    // Exact limit should succeed
+    {
+      Arena arena;
+      char *actual        = nullptr;
+      uint64_t actual_len = 0;
+      int len             = xpack_decode_string(arena, &actual, actual_len, encoded, buf_end, 10);
+      REQUIRE(len == 11);
+      REQUIRE(actual_len == 10);
+    }
+
+    // Below limit should fail
+    {
+      Arena arena;
+      char *actual        = nullptr;
+      uint64_t actual_len = 0;
+      int len             = xpack_decode_string(arena, &actual, actual_len, encoded, buf_end, 9);
+      REQUIRE(len == XPACK_ERROR_COMPRESSION_ERROR);
+    }
+
+    // Zero limit should fail for non-empty strings
+    {
+      Arena arena;
+      char *actual        = nullptr;
+      uint64_t actual_len = 0;
+      int len             = xpack_decode_string(arena, &actual, actual_len, encoded, buf_end, 0);
+      REQUIRE(len == XPACK_ERROR_COMPRESSION_ERROR);
+    }
+
+    // Huffman encoded "custom-key": should check encoded length against limit
+    const uint8_t huffman_encoded[] = "\x88"
+                                      "\x25\xa8\x49\xe9\x5b\xa9\x7d\x7f";
+    const uint8_t *huffman_buf_end = huffman_encoded + sizeof(huffman_encoded) - 1;
+
+    {
+      Arena arena;
+      char *actual        = nullptr;
+      uint64_t actual_len = 0;
+      int len             = xpack_decode_string(arena, &actual, actual_len, huffman_encoded, huffman_buf_end, 8);
+      REQUIRE(len == 9);
+      REQUIRE(actual_len == 10);
+    }
+
+    {
+      Arena arena;
+      char *actual        = nullptr;
+      uint64_t actual_len = 0;
+      int len             = xpack_decode_string(arena, &actual, actual_len, huffman_encoded, huffman_buf_end, 7);
+      REQUIRE(len == XPACK_ERROR_COMPRESSION_ERROR);
+    }
+
+    // Empty string should always succeed regardless of limit
+    const uint8_t empty_encoded[] = "\x00";
+    const uint8_t *empty_buf_end  = empty_encoded + 1;
+
+    {
+      Arena arena;
+      char *actual        = nullptr;
+      uint64_t actual_len = 0;
+      int len             = xpack_decode_string(arena, &actual, actual_len, empty_encoded, empty_buf_end, 0);
+      REQUIRE(len == 1);
+      REQUIRE(actual_len == 0);
     }
   }
 }
