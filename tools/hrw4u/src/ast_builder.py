@@ -62,14 +62,14 @@ class ASTBuilder(hrw4uVisitor):
 
     def _visit_section(self, ctx) -> VarSection | Section:
         if ctx.varSection() is not None:
-            return self._visit_var_section(ctx.varSection(), "txn")
+            return self._visit_var_section(ctx.varSection(), VarSectionKind.TXN)
         if ctx.sessionVarSection() is not None:
-            return self._visit_var_section(ctx.sessionVarSection(), "session")
+            return self._visit_var_section(ctx.sessionVarSection(), VarSectionKind.SESSION)
         name = ctx.name.text
         body = self._visit_body(ctx.sectionBody())
         return Section(type=name, body=tuple(body), line=ctx.start.line)
 
-    def _visit_var_section(self, ctx, scope) -> VarSection:
+    def _visit_var_section(self, ctx, scope: VarSectionKind) -> VarSection:
         decls = []
         for var_item in ctx.variables().variablesItem():
             if var_item.variableDecl() is not None:
@@ -107,11 +107,11 @@ class ASTBuilder(hrw4uVisitor):
         if ctx.EQUAL():
             target = Target.from_dotted(ctx.lhs.text)
             value = self._extract_value(ctx.value())
-            return Assignment(target=target, operator="=", value=value, line=line)
+            return Assignment(target=target, operator=AssignOp.ASSIGN, value=value, line=line)
         if ctx.PLUSEQUAL():
             target = Target.from_dotted(ctx.lhs.text)
             value = self._extract_value(ctx.value())
-            return Assignment(target=target, operator="+=", value=value, line=line)
+            return Assignment(target=target, operator=AssignOp.PLUS_ASSIGN, value=value, line=line)
         if ctx.op:
             return FunctionCall(name=ctx.op.text, args=(), line=line)
         raise ValueError(f"Unhandled statement alternative at line {line}")
@@ -170,14 +170,14 @@ class ASTBuilder(hrw4uVisitor):
         if ctx.OR():
             left = self._visit_expression(ctx.expression())
             right = self._visit_term(ctx.term())
-            return LogicalOp(operator="||", left=left, right=right, line=ctx.start.line)
+            return LogicalOp(operator=BoolOp.OR, left=left, right=right, line=ctx.start.line)
         return self._visit_term(ctx.term())
 
     def _visit_term(self, ctx) -> ConditionExpr:
         if ctx.AND():
             left = self._visit_term(ctx.term())
             right = self._visit_factor(ctx.factor())
-            return LogicalOp(operator="&&", left=left, right=right, line=ctx.start.line)
+            return LogicalOp(operator=BoolOp.AND, left=left, right=right, line=ctx.start.line)
         return self._visit_factor(ctx.factor())
 
     def _visit_factor(self, ctx) -> ConditionExpr:
@@ -211,30 +211,30 @@ class ASTBuilder(hrw4uVisitor):
 
         return Comparison(left=left, operator=operator, right=right, modifiers=modifiers, line=line)
 
-    def _detect_comparison_operator(self, ctx) -> str:
+    def _detect_comparison_operator(self, ctx) -> CmpOp:
         if ctx.EQUALS():
-            return "=="
+            return CmpOp.EQ
         if ctx.NEQ():
-            return "!="
+            return CmpOp.NEQ
         if ctx.GT():
-            return ">"
+            return CmpOp.GT
         if ctx.LT():
-            return "<"
+            return CmpOp.LT
         if ctx.TILDE():
-            return "~"
+            return CmpOp.MATCH
         if ctx.NOT_TILDE():
-            return "!~"
+            return CmpOp.NOT_MATCH
         if ctx.IN():
             for child in ctx.children:
                 if hasattr(child, "getText") and child.getText() == "!":
-                    return "!in"
-            return "in"
+                    return CmpOp.NOT_IN
+            return CmpOp.IN
         raise ValueError(f"Unhandled comparison operator at line {ctx.start.line}")
 
-    def _extract_comparison_rhs(self, ctx, operator) -> ValueExpr | RegexValue | tuple[ValueExpr, ...]:
-        if operator in ("~", "!~"):
+    def _extract_comparison_rhs(self, ctx, operator: CmpOp) -> ValueExpr | RegexValue | tuple[ValueExpr, ...]:
+        if operator in (CmpOp.MATCH, CmpOp.NOT_MATCH):
             return RegexValue(raw=ctx.regex().getText()[1:-1])
-        if operator in ("in", "!in"):
+        if operator in (CmpOp.IN, CmpOp.NOT_IN):
             if ctx.set_():
                 return tuple(self._extract_value(v) for v in ctx.set_().value())
             if ctx.iprange():
