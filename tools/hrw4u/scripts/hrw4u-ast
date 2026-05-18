@@ -15,7 +15,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-"""hrw4u-ir - Inspect HRW4U intermediate representations (CST, AST, ...)."""
+"""hrw4u-ast - Inspect the HRW4U AST and the stages around it (CST, ...)."""
 
 from __future__ import annotations
 
@@ -35,26 +35,29 @@ def emit_cst(tree: Any, parser: hrw4uParser) -> None:
     print(tree.toStringTree(recog=parser))
 
 
-def emit_ast(tree: Any, parser: hrw4uParser) -> None:
+def emit_ast(tree: Any, _parser: hrw4uParser) -> None:
     ast = ASTBuilder().visit(tree)
-    pprint.pp(ast, sort_dicts=False)
+    pprint.pp(ast)
 
 
-# Stage registry. Adding a new stage (ast-resolved, ast-validated, ...)
-# is a one-line addition here plus its emit_* function above.
+# Stage registry. Adding a new stage (resolved, validated, ...) is a one-line
+# addition here plus its emit_* function above. Each emitter takes the parse
+# tree and the parser (some stages need the parser for token/rule names).
 STAGES: dict[str, Callable[[Any, hrw4uParser], None]] = {
     "cst": emit_cst,
     "ast": emit_ast,
 }
 
+DEFAULT_STAGE = "ast"
+
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Inspect HRW4U intermediate representations.",
+        description="Inspect the HRW4U AST and surrounding stages.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="Stages:\n"
         "  cst  ANTLR concrete syntax tree (raw parse tree)\n"
-        "  ast  dataclass AST built by ASTBuilder\n")
+        "  ast  dataclass AST built by ASTBuilder (default)\n")
     parser.add_argument(
         "input_file",
         nargs="?",
@@ -62,10 +65,7 @@ def main() -> int:
         default=sys.stdin,
         help="HRW4U source file (default: stdin)")
     parser.add_argument(
-        "--stage",
-        choices=sorted(STAGES.keys()),
-        required=True,
-        help="Which IR stage to emit (required)")
+        "--stage", choices=sorted(STAGES.keys()), default=DEFAULT_STAGE, help=f"Which stage to emit (default: {DEFAULT_STAGE})")
     args = parser.parse_args()
 
     content = args.input_file.read()

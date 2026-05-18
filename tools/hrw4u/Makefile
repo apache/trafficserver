@@ -31,7 +31,7 @@ SCRIPT_HRW4U=scripts/hrw4u
 SCRIPT_U4WRH=scripts/u4wrh
 SCRIPT_LSP=scripts/hrw4u-lsp
 SCRIPT_KG=scripts/hrw4u-kg
-SCRIPT_IR=scripts/hrw4u-ir
+SCRIPT_AST=scripts/hrw4u-ast
 
 # Shared source files (will go in hrw4u package)
 SHARED_FILES=src/common.py \
@@ -198,7 +198,7 @@ build: gen
 	uv run pyinstaller --onedir --name u4wrh --strip $(SCRIPT_U4WRH)
 	uv run pyinstaller --onedir --name hrw4u-lsp --strip $(SCRIPT_LSP)
 	uv run pyinstaller --onedir --name hrw4u-kg --strip $(SCRIPT_KG)
-	uv run pyinstaller --onedir --name hrw4u-ir --strip $(SCRIPT_IR)
+	uv run pyinstaller --onedir --name hrw4u-ast --strip $(SCRIPT_AST)
 
 # Wheel packaging (adjust pyproject to include both packages if desired)
 package: gen
