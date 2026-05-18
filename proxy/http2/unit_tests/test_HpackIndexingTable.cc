@@ -35,6 +35,7 @@ static constexpr int BUFSIZE_FOR_REGRESSION_TEST            = 128;
 static constexpr int MAX_TEST_FIELD_NUM                     = 8;
 static constexpr int MAX_REQUEST_HEADER_SIZE                = 131072;
 static constexpr int MAX_TABLE_SIZE                         = 4096;
+static constexpr int MAX_FIELD_SIZE                         = 32768;
 
 namespace
 {
@@ -243,7 +244,8 @@ TEST_CASE("HPACK low level APIs", "[hpack]")
           MIMEField *field = mime_field_create(headers->m_heap, headers->m_http->m_fields_impl);
           MIMEFieldWrapper header(field, headers->m_heap, headers->m_http->m_fields_impl);
 
-          int len = decode_literal_header_field(header, i.encoded_field, i.encoded_field + i.encoded_field_len, indexing_table);
+          int len = decode_literal_header_field(header, i.encoded_field, i.encoded_field + i.encoded_field_len, indexing_table,
+                                                MAX_FIELD_SIZE);
           REQUIRE(len == i.encoded_field_len);
 
           int name_len;
@@ -473,7 +475,8 @@ TEST_CASE("HPACK high level APIs", "[hpack]")
       headers->create(HTTP_TYPE_REQUEST);
 
       hpack_decode_header_block(indexing_table, headers.get(), encoded_field_request_test_case[i].encoded_field,
-                                encoded_field_request_test_case[i].encoded_field_len, MAX_REQUEST_HEADER_SIZE, MAX_TABLE_SIZE);
+                                encoded_field_request_test_case[i].encoded_field_len, MAX_REQUEST_HEADER_SIZE, MAX_TABLE_SIZE,
+                                MAX_FIELD_SIZE);
 
       for (unsigned int j = 0; j < sizeof(raw_field_request_test_case[i]) / sizeof(raw_field_request_test_case[i][0]); j++) {
         const char *expected_name  = raw_field_request_test_case[i][j].raw_name;
@@ -509,8 +512,8 @@ TEST_CASE("HPACK high level APIs", "[hpack]")
       uint8_t data[] = {0x82, 0x86, 0x84, 0x41, 0x0f, 0x77, 0x77, 0x77, 0x2e, 0x65,
                         0x78, 0x61, 0x6d, 0x70, 0x6c, 0x65, 0x2e, 0x63, 0x6f, 0x6d};
 
-      int64_t len =
-        hpack_decode_header_block(indexing_table, headers.get(), data, sizeof(data), MAX_REQUEST_HEADER_SIZE, MAX_TABLE_SIZE);
+      int64_t len = hpack_decode_header_block(indexing_table, headers.get(), data, sizeof(data), MAX_REQUEST_HEADER_SIZE,
+                                              MAX_TABLE_SIZE, MAX_FIELD_SIZE);
       CHECK(len == sizeof(data));
       CHECK(indexing_table.maximum_size() == 4096);
       CHECK(indexing_table.size() == 57);
@@ -523,8 +526,8 @@ TEST_CASE("HPACK high level APIs", "[hpack]")
 
       uint8_t data[] = {0x20};
 
-      int64_t len =
-        hpack_decode_header_block(indexing_table, headers.get(), data, sizeof(data), MAX_REQUEST_HEADER_SIZE, MAX_TABLE_SIZE);
+      int64_t len = hpack_decode_header_block(indexing_table, headers.get(), data, sizeof(data), MAX_REQUEST_HEADER_SIZE,
+                                              MAX_TABLE_SIZE, MAX_FIELD_SIZE);
       CHECK(len == sizeof(data));
       CHECK(indexing_table.maximum_size() == 0);
       CHECK(indexing_table.size() == 0);
@@ -537,8 +540,8 @@ TEST_CASE("HPACK high level APIs", "[hpack]")
 
       uint8_t data[] = {0x3f, 0xe1, 0x1f};
 
-      int64_t len =
-        hpack_decode_header_block(indexing_table, headers.get(), data, sizeof(data), MAX_REQUEST_HEADER_SIZE, MAX_TABLE_SIZE);
+      int64_t len = hpack_decode_header_block(indexing_table, headers.get(), data, sizeof(data), MAX_REQUEST_HEADER_SIZE,
+                                              MAX_TABLE_SIZE, MAX_FIELD_SIZE);
       CHECK(len == sizeof(data));
       CHECK(indexing_table.maximum_size() == 4096);
       CHECK(indexing_table.size() == 0);
@@ -551,8 +554,8 @@ TEST_CASE("HPACK high level APIs", "[hpack]")
 
       uint8_t data[] = {0x3f, 0xe2, 0x1f};
 
-      int64_t len =
-        hpack_decode_header_block(indexing_table, headers.get(), data, sizeof(data), MAX_REQUEST_HEADER_SIZE, MAX_TABLE_SIZE);
+      int64_t len = hpack_decode_header_block(indexing_table, headers.get(), data, sizeof(data), MAX_REQUEST_HEADER_SIZE,
+                                              MAX_TABLE_SIZE, MAX_FIELD_SIZE);
       CHECK(len == HPACK_ERROR_COMPRESSION_ERROR);
     }
   }

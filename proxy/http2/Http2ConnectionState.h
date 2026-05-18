@@ -108,6 +108,7 @@ public:
   uint32_t configured_max_priority_frames_per_minute     = 0;
   uint32_t configured_max_rst_stream_frames_per_minute   = 0;
   uint32_t configured_max_continuation_frames_per_minute = 0;
+  uint32_t _header_field_max_size                        = 32768;
 
   void init(Http2CommonSession *ssn);
   void send_connection_preface();
