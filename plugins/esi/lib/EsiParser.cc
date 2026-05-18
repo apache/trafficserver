@@ -27,6 +27,7 @@
 #include <ts/ts.h>
 
 #include <cctype>
+#include <cstring>
 
 using std::string;
 using namespace EsiLib;
@@ -182,68 +183,51 @@ EsiParser::_compareData(const string &data, size_t pos, const char *str, int str
   return PARTIAL_MATCH;
 }
 
-/** This implementation is optimized but not completely correct.  If
- * the opening tag were to have a repeating opening sequence ('<e<esi'
- * or something like that), this will break. However that is not the
- * case for the two opening tags we are looking for */
+/** Uses memchr to skip non-'<' bytes, then memcmp to verify each candidate
+ * anchor.  Delegates scanning to the platform's optimized memchr
+ * implementation.  Does not have the KMP-failure limitation of the original
+ * state-machine. */
 EsiParser::MATCH_TYPE
 EsiParser::_findOpeningTag(const string &data, size_t start_pos, size_t &opening_tag_pos, bool &is_html_comment_node) const
 {
-  size_t i_data = start_pos;
-  int    i_esi = 0, i_html_comment = 0;
+  const char *const buf     = data.data();
+  const size_t      total   = data.size();
+  const size_t      esi_len = ESI_TAG_PREFIX_LEN;
+  const size_t      hlen    = HTML_COMMENT_NODE_INFO.tag_suffix_len;
+  size_t            i       = start_pos;
 
-  while (i_data < data.size()) {
-    if (data[i_data] == ESI_TAG_PREFIX[i_esi]) {
-      if (++i_esi == ESI_TAG_PREFIX_LEN) {
-        is_html_comment_node = false;
-        opening_tag_pos      = i_data - i_esi + 1;
+  while (i < total) {
+    const char *p = static_cast<const char *>(memchr(buf + i, '<', total - i));
+    if (!p)
+      return NO_MATCH;
+    const size_t pos   = static_cast<size_t>(p - buf);
+    const size_t avail = total - pos;
+
+    if (avail >= esi_len && memcmp(p, ESI_TAG_PREFIX, esi_len) == 0) {
+      is_html_comment_node = false;
+      opening_tag_pos      = pos;
+      return COMPLETE_MATCH;
+    }
+    // hlen+1 bytes needed: hlen for the tag, 1 for the required trailing whitespace
+    if (avail > hlen && memcmp(p, HTML_COMMENT_NODE_INFO.tag_suffix, hlen) == 0) {
+      const char ch = p[hlen];
+      if (ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n') {
+        is_html_comment_node = true;
+        opening_tag_pos      = pos;
         return COMPLETE_MATCH;
       }
-    } else {
-      if (i_esi) {
-        i_esi = 0;
-        --i_data; // we do this to reexamine the current char as target string might start from here
-        if (i_html_comment) {
-          --i_html_comment; // in case other target string has started matching, adjust it's index
-        }
-      }
     }
-    // doing the exact same thing for the other target string
-    if (i_html_comment < HTML_COMMENT_NODE_INFO.tag_suffix_len &&
-        data[i_data] == HTML_COMMENT_NODE_INFO.tag_suffix[i_html_comment]) {
-      if (++i_html_comment == HTML_COMMENT_NODE_INFO.tag_suffix_len && i_data + 1 < data.size()) {
-        char ch = data[i_data + 1]; //<!--esi must follow by a space char
-        if (ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n') {
-          is_html_comment_node = true;
-          opening_tag_pos      = i_data - i_html_comment + 1;
-          return COMPLETE_MATCH;
-        }
-      }
-    } else {
-      if (i_html_comment) {
-        i_html_comment = 0;
-        --i_data; // same comments from above applies
-        if (i_esi) {
-          --i_esi;
-        }
-      }
+    if (avail < esi_len && memcmp(p, ESI_TAG_PREFIX, avail) == 0) {
+      is_html_comment_node = false;
+      opening_tag_pos      = pos;
+      return PARTIAL_MATCH;
     }
-    ++i_data;
-  }
-  // partial matches; with the nature of our current opening tags, the
-  // only way we can have a partial match for both target strings is
-  // if the last char of the input string is '<' and that is not
-  // enough information to differentiate the tags; Anyway, the parser
-  // takes no action for a partial match
-  if (i_esi) {
-    is_html_comment_node = false;
-    opening_tag_pos      = i_data - i_esi;
-    return PARTIAL_MATCH;
-  }
-  if (i_html_comment) {
-    is_html_comment_node = true;
-    opening_tag_pos      = i_data - i_html_comment;
-    return PARTIAL_MATCH;
+    if (avail <= hlen && memcmp(p, HTML_COMMENT_NODE_INFO.tag_suffix, avail) == 0) {
+      is_html_comment_node = true;
+      opening_tag_pos      = pos;
+      return PARTIAL_MATCH;
+    }
+    i = pos + 1;
   }
   return NO_MATCH;
 }
