@@ -254,6 +254,7 @@ public:
   //
   int marshal_cache_write_code(char *);           // INT
   int marshal_cache_write_transform_code(char *); // INT
+  int marshal_cache_key_hash(char *);             // STR
 
   // other fields
   //

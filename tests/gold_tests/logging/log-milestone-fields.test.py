@@ -39,9 +39,9 @@ class MilestoneFieldsTest:
     - No epoch-length garbage values (> 1_000_000_000)
     """
 
-    # All Phase 1 msdms fields plus ms and cache result code for identification.
+    # All Phase 1 msdms fields plus ms, cache result code, and cache key hash.
     LOG_FORMAT = (
-        'crc=%<crc> ms=%<ttms>'
+        'crc=%<crc> ckh=%<ckh> ms=%<ttms>'
         ' c_ttfb=%<{TS_MILESTONE_UA_BEGIN_WRITE-TS_MILESTONE_SM_START}msdms>'
         ' c_tls=%<{TS_MILESTONE_TLS_HANDSHAKE_END-TS_MILESTONE_TLS_HANDSHAKE_START}msdms>'
         ' c_hdr=%<{TS_MILESTONE_UA_READ_HEADER_DONE-TS_MILESTONE_SM_START}msdms>'

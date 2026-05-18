@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 '''
-Validate milestone timing fields in an ATS log file.
+Validate milestone timing fields and cache key hash in an ATS log file.
 
 Parses key=value log lines and checks:
   - All expected fields are present
@@ -9,6 +9,8 @@ Parses key=value log lines and checks:
   - Cache miss lines have ms > 0 and origin-phase fields populated
   - Cache hit lines have hit_proc and hit_xfer populated
   - The miss-path chain sums to approximately c_ttfb
+  - Cache key hash (ckh) is a valid base64 string on every line
+  - Cache key hash is identical between miss and hit for the same URL
 '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -26,10 +28,12 @@ Parses key=value log lines and checks:
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import base64
 import sys
 
 ALL_FIELDS = [
     'crc',
+    'ckh',
     'ms',
     'c_ttfb',
     'c_tls',
@@ -47,7 +51,7 @@ ALL_FIELDS = [
     'hit_xfer',
 ]
 
-TIMING_FIELDS = [f for f in ALL_FIELDS if f != 'crc']
+TIMING_FIELDS = [f for f in ALL_FIELDS if f not in ('crc', 'ckh')]
 
 # Fields that form the contiguous miss-path chain to c_ttfb:
 #   c_ttfb = c_hdr + c_proc + cache + dns + o_conn + o_wait + o_hdr + o_proc
@@ -76,6 +80,18 @@ def validate_line(fields: dict[str, str], line_num: int) -> list[str]:
     for name in ALL_FIELDS:
         if name not in fields:
             errors.append(f'line {line_num}: missing field "{name}"')
+
+    ckh = fields.get('ckh')
+    if ckh is not None:
+        if ckh == '-':
+            errors.append(f'line {line_num}: ckh should not be "-" (cache lookup was performed)')
+        else:
+            try:
+                raw = base64.b64decode(ckh, validate=True)
+                if len(raw) not in (16, 32):
+                    errors.append(f'line {line_num}: ckh decoded to {len(raw)} bytes (expected 16 or 32)')
+            except Exception as e:
+                errors.append(f'line {line_num}: ckh is not valid base64: {ckh!r} ({e})')
 
     for name in TIMING_FIELDS:
         val_str = fields.get(name)
@@ -183,6 +199,7 @@ def main():
     all_errors = []
     miss_found = False
     hit_found = False
+    cache_key_hashes = set()
 
     for i, line in enumerate(lines, start=1):
         fields = parse_line(line)
@@ -191,6 +208,9 @@ def main():
             miss_found = True
         if 'HIT' in crc and 'MISS' not in crc:
             hit_found = True
+        ckh = fields.get('ckh')
+        if ckh and ckh != '-':
+            cache_key_hashes.add(ckh)
         errors = validate_line(fields, i)
         all_errors.extend(errors)
 
@@ -198,6 +218,10 @@ def main():
         all_errors.append('No cache miss line found in log')
     if not hit_found:
         all_errors.append('No cache hit line found in log')
+    if len(cache_key_hashes) != 1:
+        all_errors.append(
+            f'Expected identical cache key hash on all lines, got {len(cache_key_hashes)} '
+            f'distinct values: {cache_key_hashes}')
 
     if all_errors:
         for err in all_errors:

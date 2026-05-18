@@ -151,6 +151,7 @@ Cache Details
 .. _crc:
 .. _crsc:
 .. _chm:
+.. _ckh:
 .. _cwr:
 .. _cwtr:
 .. _crra:
@@ -166,6 +167,10 @@ Field Source         Description
 cluc  Client Request Cache Lookup URL, also known as the :term:`cache key`,
                      which is the canonicalized version of the client request
                      URL.
+ckh   Proxy Cache    Cache Key Hash. The base64-encoded cryptographic hash of the
+                     effective cache key used for cache lookup and storage. This
+                     is the actual key used to index cache objects. Empty
+                     (``-``) when no cache lookup was performed.
 crc   Proxy Cache    Cache Result Code. The result of |TS| attempting to obtain
                      the object from cache; :ref:`admin-logging-cache-results`.
 crsc  Proxy Cache    Cache Result Sub-Code. More specific code to complement the

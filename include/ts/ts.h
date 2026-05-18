@@ -2768,6 +2768,25 @@ TSReturnCode TSHttpTxnCachedRespModifiableGet(TSHttpTxn txnp, TSMBuffer *bufp, T
 TSReturnCode TSHttpTxnCacheLookupStatusSet(TSHttpTxn txnp, int cachelookup);
 TSReturnCode TSHttpTxnCacheLookupUrlGet(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc obj);
 TSReturnCode TSHttpTxnCacheLookupUrlSet(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc obj);
+
+/**
+    Gets the effective cache key digest (cryptographic hash) that was
+    used for cache lookup or storage on this transaction.  The digest
+    is returned as raw bytes — 16 bytes for MD5 (default) or 32 bytes
+    for SHA-256 (FIPS mode).  A buffer of at least 32 bytes is
+    recommended to accommodate either configuration.
+
+    @param[in] txnp the transaction.
+    @param[out] buffer caller-provided buffer to receive the raw hash
+      bytes. If @c nullptr, only @a length is set (size query).
+    @param[in,out] length capacity of @a buffer in bytes on input; actual
+      digest size in bytes on output.
+
+    @return @c TS_SUCCESS if a cache key was computed for this
+      transaction, @c TS_ERROR if no cache lookup was performed or if
+      @a buffer is non-null and too small.
+ */
+TSReturnCode TSHttpTxnCacheKeyDigestGet(TSHttpTxn txnp, char *buffer, int *length);
 TSReturnCode TSHttpTxnPrivateSessionSet(TSHttpTxn txnp, int private_session);
 const char  *TSHttpTxnCacheDiskPathGet(TSHttpTxn txnp, int *length);
 int          TSHttpTxnBackgroundFillStarted(TSHttpTxn txnp);
