@@ -691,6 +691,22 @@ url_string_get_buf(URLImpl *url, char *dstbuf, int dstbuf_size, int *length)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
+namespace
+{
+/** Construct a string_view from a URL part pointer/length pair, guarding
+ *  against the nullptr case. Constructing std::string_view(nullptr, 0) is UB.
+ *  URL parts that are absent store a nullptr m_ptr_* and zero m_len_*.
+ */
+inline std::string_view
+make_part_view(const char *ptr, int len)
+{
+  if (ptr == nullptr) {
+    return {};
+  }
+  return {ptr, static_cast<std::string_view::size_type>(len)};
+}
+} // namespace
+
 std::string_view
 URLImpl::get_scheme() const noexcept
 {
@@ -698,7 +714,7 @@ URLImpl::get_scheme() const noexcept
     return {hdrtoken_index_to_wks(this->m_scheme_wks_idx),
             static_cast<std::string_view::size_type>(hdrtoken_index_to_length(this->m_scheme_wks_idx))};
   } else {
-    return {this->m_ptr_scheme, static_cast<std::string_view::size_type>(this->m_len_scheme)};
+    return make_part_view(this->m_ptr_scheme, this->m_len_scheme);
   }
 }
 
@@ -708,7 +724,7 @@ URLImpl::get_scheme() const noexcept
 std::string_view
 URLImpl::get_user() const noexcept
 {
-  return {this->m_ptr_user, static_cast<std::string_view::size_type>(this->m_len_user)};
+  return make_part_view(this->m_ptr_user, this->m_len_user);
 }
 
 /*-------------------------------------------------------------------------
@@ -717,7 +733,7 @@ URLImpl::get_user() const noexcept
 std::string_view
 URLImpl::get_password() const noexcept
 {
-  return {this->m_ptr_password, static_cast<std::string_view::size_type>(this->m_len_password)};
+  return make_part_view(this->m_ptr_password, this->m_len_password);
 }
 
 /*-------------------------------------------------------------------------
@@ -726,7 +742,7 @@ URLImpl::get_password() const noexcept
 std::string_view
 URLImpl::get_host() const noexcept
 {
-  return {this->m_ptr_host, static_cast<std::string_view::size_type>(this->m_len_host)};
+  return make_part_view(this->m_ptr_host, this->m_len_host);
 }
 
 /*-------------------------------------------------------------------------
@@ -744,7 +760,7 @@ URLImpl::get_port()
 std::string_view
 URLImpl::get_path() const noexcept
 {
-  return {this->m_ptr_path, static_cast<std::string_view::size_type>(this->m_len_path)};
+  return make_part_view(this->m_ptr_path, this->m_len_path);
 }
 
 /*-------------------------------------------------------------------------
@@ -753,7 +769,7 @@ URLImpl::get_path() const noexcept
 std::string_view
 URLImpl::get_query() const noexcept
 {
-  return {this->m_ptr_query, static_cast<std::string_view::size_type>(this->m_len_query)};
+  return make_part_view(this->m_ptr_query, this->m_len_query);
 }
 
 /*-------------------------------------------------------------------------
@@ -762,7 +778,7 @@ URLImpl::get_query() const noexcept
 std::string_view
 URLImpl::get_fragment() const noexcept
 {
-  return {this->m_ptr_fragment, static_cast<std::string_view::size_type>(this->m_len_fragment)};
+  return make_part_view(this->m_ptr_fragment, this->m_len_fragment);
 }
 
 /*-------------------------------------------------------------------------

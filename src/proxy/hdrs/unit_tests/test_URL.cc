@@ -851,3 +851,39 @@ TEST_CASE("UrlPathGet", "[url][path_get]")
     }
   }
 }
+
+// URL getters must not construct std::string_view from a nullptr pointer
+// (which is UB). Parts that are not present in the URL should return an
+// empty string_view with data() == nullptr.
+TEST_CASE("UrlMissingParts", "[url][missing_parts]")
+{
+  URL      url;
+  HdrHeap *heap = new_HdrHeap();
+  url.create(heap);
+
+  // A freshly created URL with no parse has no components set.
+  auto scheme{url.scheme_get()};
+  auto user{url.user_get()};
+  auto password{url.password_get()};
+  auto host{url.host_get()};
+  auto path{url.path_get()};
+  auto query{url.query_get()};
+  auto fragment{url.fragment_get()};
+
+  CHECK(scheme.empty());
+  CHECK(scheme.data() == nullptr);
+  CHECK(user.empty());
+  CHECK(user.data() == nullptr);
+  CHECK(password.empty());
+  CHECK(password.data() == nullptr);
+  CHECK(host.empty());
+  CHECK(host.data() == nullptr);
+  CHECK(path.empty());
+  CHECK(path.data() == nullptr);
+  CHECK(query.empty());
+  CHECK(query.data() == nullptr);
+  CHECK(fragment.empty());
+  CHECK(fragment.data() == nullptr);
+
+  heap->destroy();
+}
