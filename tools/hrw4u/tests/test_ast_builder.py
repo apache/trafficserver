@@ -41,6 +41,18 @@ class TestAssignments:
         assert isinstance(a, Assignment)
         assert a.value is True
 
+    def test_false_value(self):
+        ast = _build('SEND_RESPONSE {\n    http.cntl.TXN_DEBUG = false;\n}')
+        a = ast.body[0].body[0]
+        assert isinstance(a, Assignment)
+        assert a.value is False
+
+    def test_empty_string_value(self):
+        ast = _build('REMAP {\n    inbound.req.X-Foo = "";\n}')
+        a = ast.body[0].body[0]
+        assert isinstance(a, Assignment)
+        assert a.value == LiteralStringValue(raw="")
+
     def test_int_value(self):
         ast = _build('REMAP {\n    http.cntl.INTERCEPT_RETRY = 1;\n}')
         a = ast.body[0].body[0]
@@ -72,6 +84,19 @@ class TestAssignments:
         assert a.value == IdentValue(raw="flag")
 
 
+class TestTarget:
+
+    def test_from_dotted(self):
+        t = Target.from_dotted("inbound.req.X-Foo")
+        assert t.namespace == "inbound.req"
+        assert t.field == "X-Foo"
+
+    def test_from_dotted_no_namespace(self):
+        t = Target.from_dotted("flag")
+        assert t.namespace is None
+        assert t.field == "flag"
+
+
 class TestFunctionCalls:
 
     def test_no_args(self):
@@ -86,6 +111,14 @@ class TestFunctionCalls:
         fc = ast.body[0].body[0]
         assert fc.name == "set-header"
         assert fc.args == (LiteralStringValue(raw="X-Foo"), LiteralStringValue(raw="bar"))
+
+    def test_qualified_name(self):
+        src = 'use test::helper\nREMAP {\n    test::helper("tag");\n}'
+        ast = _build(src)
+        fc = ast.body[1].body[0]
+        assert isinstance(fc, FunctionCall)
+        assert fc.name == "test::helper"
+        assert fc.args == (LiteralStringValue(raw="tag"),)
 
     def test_param_ref_arg(self):
         src = 'procedure local::stamp($tag) {\n    set-header("X-Stamp", $tag);\n}\nREMAP {\n    set-debug();\n}'
@@ -312,6 +345,12 @@ class TestConditionExpressions:
         assert cond.operator == CmpOp.IN
         assert cond.right == (IPValue(raw="10.0.0.0/8"),)
 
+    def test_not_in_iprange(self):
+        cond = self._first_condition('REMAP {\n    if inbound.ip !in {10.0.0.0/8} {\n        set-debug();\n    }\n}')
+        assert isinstance(cond, Comparison)
+        assert cond.operator == CmpOp.NOT_IN
+        assert cond.right == (IPValue(raw="10.0.0.0/8"),)
+
     def test_modifiers(self):
         cond = self._first_condition('REMAP {\n    if inbound.req.X-Foo == "bar" with NOCASE {\n        set-debug();\n    }\n}')
         assert isinstance(cond, Comparison)
@@ -333,6 +372,11 @@ class TestConditionExpressions:
         cond = self._first_condition('REMAP {\n    if true {\n        set-debug();\n    }\n}')
         assert isinstance(cond, BoolLiteral)
         assert cond.value is True
+
+    def test_bool_literal_false(self):
+        cond = self._first_condition('REMAP {\n    if false {\n        set-debug();\n    }\n}')
+        assert isinstance(cond, BoolLiteral)
+        assert cond.value is False
 
     def test_ident_condition(self):
         cond = self._first_condition('REMAP {\n    if inbound.resp.All-Cache {\n        set-debug();\n    }\n}')
