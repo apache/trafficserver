@@ -55,15 +55,9 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description="Inspect the HRW4U AST and surrounding stages.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="Stages:\n"
-        "  cst  ANTLR concrete syntax tree (raw parse tree)\n"
-        "  ast  dataclass AST built by ASTBuilder (default)\n")
+        epilog="Stages:\n  cst  ANTLR concrete syntax tree (raw parse tree)\n  ast  dataclass AST built by ASTBuilder (default)\n")
     parser.add_argument(
-        "input_file",
-        nargs="?",
-        type=argparse.FileType("r"),
-        default=sys.stdin,
-        help="HRW4U source file (default: stdin)")
+        "input_file", nargs="?", type=argparse.FileType("r"), default=sys.stdin, help="HRW4U source file (default: stdin)")
     parser.add_argument(
         "--stage", choices=sorted(STAGES.keys()), default=DEFAULT_STAGE, help=f"Which stage to emit (default: {DEFAULT_STAGE})")
     args = parser.parse_args()

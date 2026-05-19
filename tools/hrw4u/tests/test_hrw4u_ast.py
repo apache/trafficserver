@@ -20,7 +20,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-
 SAMPLE = 'REMAP {\n    inbound.req.X-Foo = "bar";\n    set-debug();\n}\n'
 
 

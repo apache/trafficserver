@@ -55,7 +55,6 @@ __all__ = [
     "TopLevelNode",
 ]
 
-
 # Enum.__str__ yields "AssignOp.ASSIGN" while the default Enum.__repr__ yields
 # "<AssignOp.ASSIGN: 1>"; we alias __repr__ to __str__ on every operator enum
 # so that pprint output (used by hrw4u-ast) is concise and readable.

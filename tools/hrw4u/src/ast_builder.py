@@ -229,7 +229,8 @@ class ASTBuilder(hrw4uVisitor):
             return nodes.CmpOp.NOT_IN if ctx.BANG() else nodes.CmpOp.IN
         raise ValueError(f"Unhandled comparison operator at line {ctx.start.line}")
 
-    def _extract_comparison_rhs(self, ctx, operator: nodes.CmpOp) -> nodes.ValueExpr | nodes.RegexValue | tuple[nodes.ValueExpr, ...]:
+    def _extract_comparison_rhs(self, ctx,
+                                operator: nodes.CmpOp) -> nodes.ValueExpr | nodes.RegexValue | tuple[nodes.ValueExpr, ...]:
         if operator in (nodes.CmpOp.MATCH, nodes.CmpOp.NOT_MATCH):
             return nodes.RegexValue(pattern=ctx.regex().getText()[1:-1])
         if operator in (nodes.CmpOp.IN, nodes.CmpOp.NOT_IN):

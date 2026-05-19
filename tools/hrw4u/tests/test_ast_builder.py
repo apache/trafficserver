@@ -186,11 +186,12 @@ class TestSections:
         assert directives[1].spec == "test::stamp-request"
 
     def test_top_level_comments_skipped(self):
-        src = ('# leading comment\n'
-               'use test::helper\n'
-               '# between use and section\n'
-               'REMAP {\n    set-debug();\n}\n'
-               '# trailing comment\n')
+        src = (
+            '# leading comment\n'
+            'use test::helper\n'
+            '# between use and section\n'
+            'REMAP {\n    set-debug();\n}\n'
+            '# trailing comment\n')
         ast = _build(src)
         assert len(ast.body) == 2
         assert isinstance(ast.body[0], nodes.UseDirective)
@@ -832,7 +833,8 @@ REMAP {
         cond = ast.body[0].body[0].condition
         assert isinstance(cond, nodes.Comparison)
         assert cond.operator == nodes.CmpOp.IN
-        assert cond.right == (nodes.LiteralStringValue(text="php"), nodes.LiteralStringValue(text="php3"), nodes.LiteralStringValue(text="php4"))
+        assert cond.right == (
+            nodes.LiteralStringValue(text="php"), nodes.LiteralStringValue(text="php3"), nodes.LiteralStringValue(text="php4"))
         assert cond.modifiers == ("EXT",)
 
     def test_debug_pattern_for_lint_rules(self):
