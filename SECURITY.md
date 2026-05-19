@@ -16,7 +16,11 @@ Administrative users are always considered to be trusted. Reports for vulnerabil
 
 Security-sensitive information may be logged with modified logging configurations, particularly if debug logging is enabled.
 
-Experimental features and plugins are known unstable and not supposed to be used on production. We do not consider
-vulnerabilities in those as security issues. You may report vulnerabilities in those publicly on our public lists or GitHub. However, please
+Experimental features are known unstable and not supposed to be used on production. We do not consider
+vulnerabilities in those as security issues. This explicitly includes HTTP/3 and QUIC support, which remain
+experimental. You may report vulnerabilities in those publicly on our public lists or GitHub. However, please
 contact us privately, if you believe the vulnerabilities you find are serious, or if you are not sure whether you should report the
 vulnerabilities publicly.
+
+Plugins shipped with Traffic Server, including those under `plugins/experimental/`, are in scope for security
+reporting. Please report vulnerabilities in those through the private security mailing list following the process above.
