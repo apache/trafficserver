@@ -299,7 +299,7 @@ TransformationPlugin::pause()
               state_->vconn_, state_->txn_);
   } else {
     state_->paused_ = true;
-    if (!static_cast<bool>(static_cast<ResumeAfterPauseCont *>(state_.get()))) {
+    if (!static_cast<bool>(*static_cast<ResumeAfterPauseCont *>(state_.get()))) {
       *static_cast<ResumeAfterPauseCont *>(state_.get()) =
         ResumeAfterPauseCont(TSContMutexGet(reinterpret_cast<TSCont>(state_->txn_)));
     }
