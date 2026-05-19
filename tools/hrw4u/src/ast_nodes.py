@@ -19,7 +19,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Union
 
 __all__ = [
     "AssignOp",
@@ -55,6 +54,11 @@ __all__ = [
     "BodyNode",
     "TopLevelNode",
 ]
+
+
+# Enum.__str__ yields "AssignOp.ASSIGN" while the default Enum.__repr__ yields
+# "<AssignOp.ASSIGN: 1>"; we alias __repr__ to __str__ on every operator enum
+# so that pprint output (used by hrw4u-ast) is concise and readable.
 
 
 class AssignOp(Enum):
@@ -112,7 +116,7 @@ class RegexValue:
     raw: str
 
 
-ValueExpr = Union[LiteralStringValue, IdentValue, IPValue, ParamRef, int, bool, tuple[IPValue, ...]]
+ValueExpr = LiteralStringValue | IdentValue | IPValue | ParamRef | int | bool | tuple[IPValue, ...]
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -241,6 +245,6 @@ class HRW4UAST:
 
 
 # Type aliases: must follow all class definitions (evaluated at runtime).
-ConditionExpr = Union[Comparison, LogicalOp, NotOp, BoolLiteral, IdentCondition, FunctionCall]
-BodyNode = Union[Assignment, FunctionCall, IfBlock, Break]
-TopLevelNode = Union[UseDirective, VarSection, ProcedureDecl, Section]
+ConditionExpr = Comparison | LogicalOp | NotOp | BoolLiteral | IdentCondition | FunctionCall
+BodyNode = Assignment | FunctionCall | IfBlock | Break
+TopLevelNode = UseDirective | VarSection | ProcedureDecl | Section
