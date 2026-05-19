@@ -86,6 +86,22 @@ HttpDataFetcherImpl::~HttpDataFetcherImpl()
 bool
 HttpDataFetcherImpl::addFetchRequest(const string &url, FetchedDataProcessor *callback_obj /* = 0 */)
 {
+  static constexpr size_t MAX_REQ_LEN = 32 * 1024;
+
+  size_t total_len        = 0;
+  auto   add_to_total_len = [&total_len](size_t part_len) -> bool {
+    if (part_len > (MAX_REQ_LEN - total_len)) {
+      return false;
+    }
+    total_len += part_len;
+    return true;
+  };
+  if (!add_to_total_len(sizeof("GET ") - 1) || !add_to_total_len(url.length()) || !add_to_total_len(sizeof(" HTTP/1.0\r\n") - 1) ||
+      !add_to_total_len(_headers_str.length()) || !add_to_total_len(sizeof("\r\n") - 1)) {
+    TSError("[HttpDataFetcherImpl][%s] HTTP request size exceeds maximum %zu", __FUNCTION__, MAX_REQ_LEN);
+    return false;
+  }
+
   // do we already have a request for this?
   std::pair<UrlToContentMap::iterator, bool> insert_result = _pages.insert(UrlToContentMap::value_type(url, RequestData()));
   if (callback_obj) {
@@ -101,7 +117,7 @@ HttpDataFetcherImpl::addFetchRequest(const string &url, FetchedDataProcessor *ca
   int    length;
   size_t req_buf_size = 0;
 
-  length = sizeof("GET ") - 1 + url.length() + sizeof(" HTTP/1.0\r\n") - 1 + _headers_str.length() + sizeof("\r\n") - 1;
+  length = static_cast<int>(total_len);
   if (length < static_cast<int>(sizeof(buff))) {
     http_req     = buff;
     req_buf_size = sizeof(buff);
