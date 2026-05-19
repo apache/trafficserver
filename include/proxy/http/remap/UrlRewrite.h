@@ -80,7 +80,7 @@ public:
    */
   bool load(ConfigContext ctx = {});
 
-  bool load_table(const std::string &config_file_path, YAML::Node const *remap_node);
+  bool load_table(const std::string &config_file_path, YAML::Node const *remap_node, ConfigContext ctx = {});
 
   /** Build the internal url write tables.
    *
