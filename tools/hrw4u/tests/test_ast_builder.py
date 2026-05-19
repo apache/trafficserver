@@ -15,12 +15,12 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from hrw4u.ast_nodes import *
+from hrw4u import ast_nodes as nodes
 from utils import parse_input_text
 from hrw4u.ast_builder import ASTBuilder
 
 
-def _build(source: str) -> HRW4UAST:
+def _build(source: str) -> nodes.HRW4UAST:
     _, tree = parse_input_text(source)
     return ASTBuilder().visit(tree)
 
@@ -30,28 +30,28 @@ class TestAssignments:
     def test_simple_assignment(self):
         ast = _build('REMAP {\n    inbound.req.X-Foo = "test";\n}')
         a = ast.body[0].body[0]
-        assert isinstance(a, Assignment)
-        assert a.target == Target.from_dotted("inbound.req.X-Foo")
-        assert a.operator == AssignOp.ASSIGN
-        assert a.value == LiteralStringValue(raw="test")
+        assert isinstance(a, nodes.Assignment)
+        assert a.target == nodes.Target.from_dotted("inbound.req.X-Foo")
+        assert a.operator == nodes.AssignOp.ASSIGN
+        assert a.value == nodes.LiteralStringValue(raw="test")
 
     def test_bool_value(self):
         ast = _build('SEND_RESPONSE {\n    http.cntl.TXN_DEBUG = true;\n}')
         a = ast.body[0].body[0]
-        assert isinstance(a, Assignment)
+        assert isinstance(a, nodes.Assignment)
         assert a.value is True
 
     def test_false_value(self):
         ast = _build('SEND_RESPONSE {\n    http.cntl.TXN_DEBUG = false;\n}')
         a = ast.body[0].body[0]
-        assert isinstance(a, Assignment)
+        assert isinstance(a, nodes.Assignment)
         assert a.value is False
 
     def test_empty_string_value(self):
         ast = _build('REMAP {\n    inbound.req.X-Foo = "";\n}')
         a = ast.body[0].body[0]
-        assert isinstance(a, Assignment)
-        assert a.value == LiteralStringValue(raw="")
+        assert isinstance(a, nodes.Assignment)
+        assert a.value == nodes.LiteralStringValue(raw="")
 
     def test_int_value(self):
         ast = _build('REMAP {\n    http.cntl.INTERCEPT_RETRY = 1;\n}')
@@ -61,38 +61,38 @@ class TestAssignments:
     def test_plus_equals(self):
         ast = _build('REMAP {\n    inbound.req.X-Foo += "extra";\n}')
         a = ast.body[0].body[0]
-        assert a.operator == AssignOp.PLUS_ASSIGN
+        assert a.operator == nodes.AssignOp.PLUS_ASSIGN
 
     def test_ip_value(self):
         ast = _build('REMAP {\n    inbound.req.X-IP = 10.0.0.1;\n}')
         a = ast.body[0].body[0]
-        assert isinstance(a, Assignment)
-        assert a.value == IPValue(raw="10.0.0.1")
+        assert isinstance(a, nodes.Assignment)
+        assert a.value == nodes.IPValue(raw="10.0.0.1")
 
     def test_param_ref_value(self):
         src = 'procedure local::stamp($tag) {\n    inbound.req.X-Stamp = $tag;\n}\nREMAP {\n    set-debug();\n}'
         ast = _build(src)
         a = ast.body[0].body[0]
-        assert isinstance(a, Assignment)
-        assert a.value == ParamRef(raw="tag")
+        assert isinstance(a, nodes.Assignment)
+        assert a.value == nodes.ParamRef(raw="tag")
 
     def test_ident_value(self):
         src = 'VARS {\n    flag: bool;\n}\nREMAP {\n    inbound.req.X-Flag = flag;\n}'
         ast = _build(src)
         a = ast.body[1].body[0]
-        assert isinstance(a, Assignment)
-        assert a.value == IdentValue(raw="flag")
+        assert isinstance(a, nodes.Assignment)
+        assert a.value == nodes.IdentValue(raw="flag")
 
 
 class TestTarget:
 
     def test_from_dotted(self):
-        t = Target.from_dotted("inbound.req.X-Foo")
+        t = nodes.Target.from_dotted("inbound.req.X-Foo")
         assert t.namespace == "inbound.req"
         assert t.field == "X-Foo"
 
     def test_from_dotted_no_namespace(self):
-        t = Target.from_dotted("flag")
+        t = nodes.Target.from_dotted("flag")
         assert t.namespace is None
         assert t.field == "flag"
 
@@ -102,7 +102,7 @@ class TestFunctionCalls:
     def test_no_args(self):
         ast = _build('REMAP {\n    set-debug();\n}')
         fc = ast.body[0].body[0]
-        assert isinstance(fc, FunctionCall)
+        assert isinstance(fc, nodes.FunctionCall)
         assert fc.name == "set-debug"
         assert fc.args == ()
 
@@ -110,35 +110,35 @@ class TestFunctionCalls:
         ast = _build('REMAP {\n    set-header("X-Foo", "bar");\n}')
         fc = ast.body[0].body[0]
         assert fc.name == "set-header"
-        assert fc.args == (LiteralStringValue(raw="X-Foo"), LiteralStringValue(raw="bar"))
+        assert fc.args == (nodes.LiteralStringValue(raw="X-Foo"), nodes.LiteralStringValue(raw="bar"))
 
     def test_qualified_name(self):
         src = 'use test::helper\nREMAP {\n    test::helper("tag");\n}'
         ast = _build(src)
         fc = ast.body[1].body[0]
-        assert isinstance(fc, FunctionCall)
+        assert isinstance(fc, nodes.FunctionCall)
         assert fc.name == "test::helper"
-        assert fc.args == (LiteralStringValue(raw="tag"),)
+        assert fc.args == (nodes.LiteralStringValue(raw="tag"),)
 
     def test_param_ref_arg(self):
         src = 'procedure local::stamp($tag) {\n    set-header("X-Stamp", $tag);\n}\nREMAP {\n    set-debug();\n}'
         ast = _build(src)
         fc = ast.body[0].body[0]
-        assert isinstance(fc, FunctionCall)
+        assert isinstance(fc, nodes.FunctionCall)
         assert fc.name == "set-header"
-        assert fc.args == (LiteralStringValue(raw="X-Stamp"), ParamRef(raw="tag"))
+        assert fc.args == (nodes.LiteralStringValue(raw="X-Stamp"), nodes.ParamRef(raw="tag"))
 
     def test_standalone_operator(self):
         ast = _build('REMAP {\n    skip-remap;\n}')
         fc = ast.body[0].body[0]
-        assert isinstance(fc, FunctionCall)
+        assert isinstance(fc, nodes.FunctionCall)
         assert fc.name == "skip-remap"
         assert fc.args == ()
 
     def test_break(self):
         ast = _build('REMAP {\n    if true {\n        break;\n    }\n}')
         body = ast.body[0].body[0].body
-        assert isinstance(body[0], Break)
+        assert isinstance(body[0], nodes.Break)
 
 
 class TestSections:
@@ -156,13 +156,13 @@ class TestSections:
     def test_section_type(self):
         ast = _build('REMAP {\n    set-debug();\n}')
         s = ast.body[0]
-        assert isinstance(s, Section)
+        assert isinstance(s, nodes.Section)
         assert s.type == "REMAP"
 
     def test_multiple_sections(self):
         src = 'REMAP {\n    set-debug();\n}\nSEND_RESPONSE {\n    set-debug();\n}'
         ast = _build(src)
-        sections = [i for i in ast.body if isinstance(i, Section)]
+        sections = [i for i in ast.body if isinstance(i, nodes.Section)]
         assert len(sections) == 2
         assert sections[0].type == "REMAP"
         assert sections[1].type == "SEND_RESPONSE"
@@ -172,7 +172,7 @@ class TestSections:
         ast = _build(src)
         assert len(ast.body) == 2
         u = ast.body[0]
-        assert isinstance(u, UseDirective)
+        assert isinstance(u, nodes.UseDirective)
         assert u.spec == "test::add-debug-header"
 
     def test_multiple_use_directives(self):
@@ -180,7 +180,7 @@ class TestSections:
                'use test::stamp-request\n'
                'REMAP {\n    test::add-debug-header("tag");\n}')
         ast = _build(src)
-        directives = [i for i in ast.body if isinstance(i, UseDirective)]
+        directives = [i for i in ast.body if isinstance(i, nodes.UseDirective)]
         assert len(directives) == 2
         assert directives[0].spec == "test::add-debug-header"
         assert directives[1].spec == "test::stamp-request"
@@ -193,16 +193,16 @@ class TestSections:
                '# trailing comment\n')
         ast = _build(src)
         assert len(ast.body) == 2
-        assert isinstance(ast.body[0], UseDirective)
-        assert isinstance(ast.body[1], Section)
+        assert isinstance(ast.body[0], nodes.UseDirective)
+        assert isinstance(ast.body[1], nodes.Section)
 
     def test_item_ordering(self):
         src = 'VARS {\n    x: bool;\n}\nREMAP {\n    set-debug();\n}\nSEND_RESPONSE {\n    set-debug();\n}'
         ast = _build(src)
         assert len(ast.body) == 3
-        assert isinstance(ast.body[0], VarSection)
-        assert isinstance(ast.body[1], Section)
-        assert isinstance(ast.body[2], Section)
+        assert isinstance(ast.body[0], nodes.VarSection)
+        assert isinstance(ast.body[1], nodes.Section)
+        assert isinstance(ast.body[2], nodes.Section)
 
 
 class TestVarSections:
@@ -211,15 +211,15 @@ class TestVarSections:
         src = 'VARS {\n    # comment\n    x: bool;\n    # another\n    y: int;\n}\nREMAP {\n    set-debug();\n}'
         ast = _build(src)
         vs = ast.body[0]
-        assert isinstance(vs, VarSection)
+        assert isinstance(vs, nodes.VarSection)
         assert len(vs.declarations) == 2
 
     def test_txn_scope(self):
         src = 'VARS {\n    flag: bool;\n}\nREMAP {\n    set-debug();\n}'
         ast = _build(src)
         vs = ast.body[0]
-        assert isinstance(vs, VarSection)
-        assert vs.scope == VarSectionKind.TXN
+        assert isinstance(vs, nodes.VarSection)
+        assert vs.scope == nodes.VarSectionKind.TXN
         assert len(vs.declarations) == 1
         assert vs.declarations[0].name == "flag"
         assert vs.declarations[0].type_name == "bool"
@@ -229,22 +229,22 @@ class TestVarSections:
         src = 'SESSION_VARS {\n    counter: int;\n}\nREMAP {\n    set-debug();\n}'
         ast = _build(src)
         vs = ast.body[0]
-        assert isinstance(vs, VarSection)
-        assert vs.scope == VarSectionKind.SESSION
+        assert isinstance(vs, nodes.VarSection)
+        assert vs.scope == nodes.VarSectionKind.SESSION
         assert vs.declarations[0].name == "counter"
 
     def test_slot(self):
         src = 'VARS {\n    x: int @3;\n}\nREMAP {\n    set-debug();\n}'
         ast = _build(src)
         vs = ast.body[0]
-        assert isinstance(vs, VarSection)
+        assert isinstance(vs, nodes.VarSection)
         assert vs.declarations[0].slot == 3
 
     def test_multiple_declarations(self):
         src = 'VARS {\n    a: bool;\n    b: int;\n    c: string;\n}\nREMAP {\n    set-debug();\n}'
         ast = _build(src)
         vs = ast.body[0]
-        assert isinstance(vs, VarSection)
+        assert isinstance(vs, nodes.VarSection)
         assert len(vs.declarations) == 3
         assert vs.declarations[0].name == "a"
         assert vs.declarations[1].name == "b"
@@ -255,11 +255,11 @@ class TestVarSections:
                'SESSION_VARS {\n    counter: int;\n}\n'
                'REMAP {\n    set-debug();\n}')
         ast = _build(src)
-        var_sections = [i for i in ast.body if isinstance(i, VarSection)]
+        var_sections = [i for i in ast.body if isinstance(i, nodes.VarSection)]
         assert len(var_sections) == 2
-        assert var_sections[0].scope == VarSectionKind.TXN
+        assert var_sections[0].scope == nodes.VarSectionKind.TXN
         assert var_sections[0].declarations[0].name == "flag"
-        assert var_sections[1].scope == VarSectionKind.SESSION
+        assert var_sections[1].scope == nodes.VarSectionKind.SESSION
         assert var_sections[1].declarations[0].name == "counter"
 
 
@@ -269,7 +269,7 @@ class TestProcedures:
         src = 'procedure local::stamp($tag) {\n    inbound.req.X-Stamp = "$tag";\n}\nREMAP {\n    set-debug();\n}'
         ast = _build(src)
         pd = ast.body[0]
-        assert isinstance(pd, ProcedureDecl)
+        assert isinstance(pd, nodes.ProcedureDecl)
         assert pd.name == "local::stamp"
         assert len(pd.params) == 1
         assert pd.params[0].name == "tag"
@@ -279,7 +279,7 @@ class TestProcedures:
         src = 'procedure local::cache($ttl=300) {\n    set-debug();\n}\nREMAP {\n    set-debug();\n}'
         ast = _build(src)
         pd = ast.body[0]
-        assert isinstance(pd, ProcedureDecl)
+        assert isinstance(pd, nodes.ProcedureDecl)
         assert pd.params[0].name == "ttl"
         assert pd.params[0].default == 300
 
@@ -288,12 +288,12 @@ class TestProcedures:
                'REMAP {\n    set-debug();\n}')
         ast = _build(src)
         pd = ast.body[0]
-        assert isinstance(pd, ProcedureDecl)
+        assert isinstance(pd, nodes.ProcedureDecl)
         assert len(pd.params) == 3
         assert pd.params[0].name == "key"
         assert pd.params[0].default is None
         assert pd.params[1].name == "value"
-        assert pd.params[1].default == LiteralStringValue(raw="x")
+        assert pd.params[1].default == nodes.LiteralStringValue(raw="x")
         assert pd.params[2].name == "count"
         assert pd.params[2].default == 1
 
@@ -302,10 +302,10 @@ class TestProcedures:
                '    set-debug();\n}\nREMAP {\n    set-debug();\n}')
         ast = _build(src)
         pd = ast.body[0]
-        assert isinstance(pd, ProcedureDecl)
+        assert isinstance(pd, nodes.ProcedureDecl)
         assert len(pd.body) == 2
-        assert isinstance(pd.body[0], Assignment)
-        assert isinstance(pd.body[1], FunctionCall)
+        assert isinstance(pd.body[0], nodes.Assignment)
+        assert isinstance(pd.body[1], nodes.FunctionCall)
 
 
 class TestConditionExpressions:
@@ -316,127 +316,127 @@ class TestConditionExpressions:
 
     def test_equality_comparison(self):
         cond = self._first_condition('REMAP {\n    if inbound.req.X-Foo == "bar" {\n        set-debug();\n    }\n}')
-        assert isinstance(cond, Comparison)
-        assert cond.left == IdentValue(raw="inbound.req.X-Foo")
-        assert cond.operator == CmpOp.EQ
-        assert cond.right == LiteralStringValue(raw="bar")
+        assert isinstance(cond, nodes.Comparison)
+        assert cond.left == nodes.IdentValue(raw="inbound.req.X-Foo")
+        assert cond.operator == nodes.CmpOp.EQ
+        assert cond.right == nodes.LiteralStringValue(raw="bar")
         assert cond.modifiers == ()
 
     def test_regex_comparison(self):
         cond = self._first_condition('REMAP {\n    if inbound.url.path ~ /\\.php$/ {\n        set-debug();\n    }\n}')
-        assert isinstance(cond, Comparison)
-        assert cond.operator == CmpOp.MATCH
-        assert isinstance(cond.right, RegexValue)
+        assert isinstance(cond, nodes.Comparison)
+        assert cond.operator == nodes.CmpOp.MATCH
+        assert isinstance(cond.right, nodes.RegexValue)
 
     def test_in_set(self):
         cond = self._first_condition('REMAP {\n    if inbound.url.path in ["a", "b"] {\n        set-debug();\n    }\n}')
-        assert isinstance(cond, Comparison)
-        assert cond.operator == CmpOp.IN
-        assert cond.right == (LiteralStringValue(raw="a"), LiteralStringValue(raw="b"))
+        assert isinstance(cond, nodes.Comparison)
+        assert cond.operator == nodes.CmpOp.IN
+        assert cond.right == (nodes.LiteralStringValue(raw="a"), nodes.LiteralStringValue(raw="b"))
 
     def test_not_in_set(self):
         cond = self._first_condition('REMAP {\n    if inbound.url.path !in ["a"] {\n        set-debug();\n    }\n}')
-        assert isinstance(cond, Comparison)
-        assert cond.operator == CmpOp.NOT_IN
+        assert isinstance(cond, nodes.Comparison)
+        assert cond.operator == nodes.CmpOp.NOT_IN
 
     def test_in_iprange(self):
         cond = self._first_condition('REMAP {\n    if inbound.ip in {10.0.0.0/8} {\n        set-debug();\n    }\n}')
-        assert isinstance(cond, Comparison)
-        assert cond.operator == CmpOp.IN
-        assert cond.right == (IPValue(raw="10.0.0.0/8"),)
+        assert isinstance(cond, nodes.Comparison)
+        assert cond.operator == nodes.CmpOp.IN
+        assert cond.right == (nodes.IPValue(raw="10.0.0.0/8"),)
 
     def test_not_in_iprange(self):
         cond = self._first_condition('REMAP {\n    if inbound.ip !in {10.0.0.0/8} {\n        set-debug();\n    }\n}')
-        assert isinstance(cond, Comparison)
-        assert cond.operator == CmpOp.NOT_IN
-        assert cond.right == (IPValue(raw="10.0.0.0/8"),)
+        assert isinstance(cond, nodes.Comparison)
+        assert cond.operator == nodes.CmpOp.NOT_IN
+        assert cond.right == (nodes.IPValue(raw="10.0.0.0/8"),)
 
     def test_modifiers(self):
         cond = self._first_condition('REMAP {\n    if inbound.req.X-Foo == "bar" with NOCASE {\n        set-debug();\n    }\n}')
-        assert isinstance(cond, Comparison)
+        assert isinstance(cond, nodes.Comparison)
         assert cond.modifiers == ("NOCASE",)
 
     def test_modifiers_preserve_source_casing(self):
         cond = self._first_condition('REMAP {\n    if inbound.req.X-Foo == "bar" with nocase,Pre {\n        set-debug();\n    }\n}')
-        assert isinstance(cond, Comparison)
+        assert isinstance(cond, nodes.Comparison)
         assert cond.modifiers == ("nocase", "Pre")
 
     def test_function_call_comparable(self):
         cond = self._first_condition('REMAP {\n    if url(true) ~ /pat/ {\n        set-debug();\n    }\n}')
-        assert isinstance(cond, Comparison)
-        assert isinstance(cond.left, FunctionCall)
+        assert isinstance(cond, nodes.Comparison)
+        assert isinstance(cond.left, nodes.FunctionCall)
         assert cond.left.name == "url"
         assert cond.left.args == (True,)
 
     def test_bool_literal_true(self):
         cond = self._first_condition('REMAP {\n    if true {\n        set-debug();\n    }\n}')
-        assert isinstance(cond, BoolLiteral)
+        assert isinstance(cond, nodes.BoolLiteral)
         assert cond.value is True
 
     def test_bool_literal_false(self):
         cond = self._first_condition('REMAP {\n    if false {\n        set-debug();\n    }\n}')
-        assert isinstance(cond, BoolLiteral)
+        assert isinstance(cond, nodes.BoolLiteral)
         assert cond.value is False
 
     def test_ident_condition(self):
         cond = self._first_condition('REMAP {\n    if inbound.resp.All-Cache {\n        set-debug();\n    }\n}')
-        assert isinstance(cond, IdentCondition)
+        assert isinstance(cond, nodes.IdentCondition)
         assert cond.name == "inbound.resp.All-Cache"
 
     def test_not_condition(self):
         cond = self._first_condition('REMAP {\n    if !inbound.resp.All-Cache {\n        set-debug();\n    }\n}')
-        assert isinstance(cond, NotOp)
-        assert isinstance(cond.operand, IdentCondition)
+        assert isinstance(cond, nodes.NotOp)
+        assert isinstance(cond.operand, nodes.IdentCondition)
 
     def test_and_condition(self):
         cond = self._first_condition(
             'REMAP {\n    if inbound.req.X-A == "a" && inbound.req.X-B == "b" {\n        set-debug();\n    }\n}')
-        assert isinstance(cond, LogicalOp)
-        assert cond.operator == BoolOp.AND
-        assert isinstance(cond.left, Comparison)
-        assert isinstance(cond.right, Comparison)
+        assert isinstance(cond, nodes.LogicalOp)
+        assert cond.operator == nodes.BoolOp.AND
+        assert isinstance(cond.left, nodes.Comparison)
+        assert isinstance(cond.right, nodes.Comparison)
 
     def test_or_condition(self):
         cond = self._first_condition(
             'REMAP {\n    if inbound.req.X-A == "a" || inbound.req.X-B == "b" {\n        set-debug();\n    }\n}')
-        assert isinstance(cond, LogicalOp)
-        assert cond.operator == BoolOp.OR
+        assert isinstance(cond, nodes.LogicalOp)
+        assert cond.operator == nodes.BoolOp.OR
 
     def test_function_call_in_condition(self):
         cond = self._first_condition('REMAP {\n    if access("/tmp/bar") {\n        set-debug();\n    }\n}')
-        assert isinstance(cond, FunctionCall)
+        assert isinstance(cond, nodes.FunctionCall)
         assert cond.name == "access"
-        assert cond.args == (LiteralStringValue(raw="/tmp/bar"),)
+        assert cond.args == (nodes.LiteralStringValue(raw="/tmp/bar"),)
 
     def test_not_tilde_comparison(self):
         cond = self._first_condition('REMAP {\n    if inbound.url.path !~ /\\.jpg$/ {\n        set-debug();\n    }\n}')
-        assert isinstance(cond, Comparison)
-        assert cond.operator == CmpOp.NOT_MATCH
-        assert isinstance(cond.right, RegexValue)
+        assert isinstance(cond, nodes.Comparison)
+        assert cond.operator == nodes.CmpOp.NOT_MATCH
+        assert isinstance(cond.right, nodes.RegexValue)
 
     def test_greater_than_comparison(self):
         cond = self._first_condition('REMAP {\n    if inbound.req.Content-Length > 1000 {\n        set-debug();\n    }\n}')
-        assert isinstance(cond, Comparison)
-        assert cond.operator == CmpOp.GT
+        assert isinstance(cond, nodes.Comparison)
+        assert cond.operator == nodes.CmpOp.GT
         assert cond.right == 1000
 
     def test_less_than_comparison(self):
         cond = self._first_condition('REMAP {\n    if inbound.req.Content-Length < 500 {\n        set-debug();\n    }\n}')
-        assert isinstance(cond, Comparison)
-        assert cond.operator == CmpOp.LT
+        assert isinstance(cond, nodes.Comparison)
+        assert cond.operator == nodes.CmpOp.LT
         assert cond.right == 500
 
     def test_neq_comparison(self):
         cond = self._first_condition('REMAP {\n    if inbound.req.X-Foo != "bar" {\n        set-debug();\n    }\n}')
-        assert isinstance(cond, Comparison)
-        assert cond.operator == CmpOp.NEQ
-        assert cond.right == LiteralStringValue(raw="bar")
+        assert isinstance(cond, nodes.Comparison)
+        assert cond.operator == nodes.CmpOp.NEQ
+        assert cond.right == nodes.LiteralStringValue(raw="bar")
 
     def test_parenthesized_condition(self):
         cond = self._first_condition('REMAP {\n    if (inbound.req.X-Foo == "bar") {\n        set-debug();\n    }\n}')
-        assert isinstance(cond, Comparison)
-        assert cond.operator == CmpOp.EQ
-        assert cond.right == LiteralStringValue(raw="bar")
+        assert isinstance(cond, nodes.Comparison)
+        assert cond.operator == nodes.CmpOp.EQ
+        assert cond.right == nodes.LiteralStringValue(raw="bar")
 
     def test_and_binds_tighter_than_or(self):
         # a || b && c  should parse as  a || (b && c)
@@ -444,14 +444,14 @@ class TestConditionExpressions:
             'REMAP {\n'
             '    if inbound.req.X-A == "a" || inbound.req.X-B == "b" && inbound.req.X-C == "c" {\n'
             '        set-debug();\n    }\n}')
-        assert isinstance(cond, LogicalOp)
-        assert cond.operator == BoolOp.OR
-        assert isinstance(cond.left, Comparison)
-        assert cond.left.left == IdentValue(raw="inbound.req.X-A")
-        assert isinstance(cond.right, LogicalOp)
-        assert cond.right.operator == BoolOp.AND
-        assert cond.right.left.left == IdentValue(raw="inbound.req.X-B")
-        assert cond.right.right.left == IdentValue(raw="inbound.req.X-C")
+        assert isinstance(cond, nodes.LogicalOp)
+        assert cond.operator == nodes.BoolOp.OR
+        assert isinstance(cond.left, nodes.Comparison)
+        assert cond.left.left == nodes.IdentValue(raw="inbound.req.X-A")
+        assert isinstance(cond.right, nodes.LogicalOp)
+        assert cond.right.operator == nodes.BoolOp.AND
+        assert cond.right.left.left == nodes.IdentValue(raw="inbound.req.X-B")
+        assert cond.right.right.left == nodes.IdentValue(raw="inbound.req.X-C")
 
     def test_not_with_and(self):
         # !ident && comparison  should parse as  (!ident) && comparison
@@ -459,13 +459,13 @@ class TestConditionExpressions:
             'REMAP {\n'
             '    if !inbound.resp.All-Cache && inbound.req.X-B == "b" {\n'
             '        set-debug();\n    }\n}')
-        assert isinstance(cond, LogicalOp)
-        assert cond.operator == BoolOp.AND
-        assert isinstance(cond.left, NotOp)
-        assert isinstance(cond.left.operand, IdentCondition)
+        assert isinstance(cond, nodes.LogicalOp)
+        assert cond.operator == nodes.BoolOp.AND
+        assert isinstance(cond.left, nodes.NotOp)
+        assert isinstance(cond.left.operand, nodes.IdentCondition)
         assert cond.left.operand.name == "inbound.resp.All-Cache"
-        assert isinstance(cond.right, Comparison)
-        assert cond.right.left == IdentValue(raw="inbound.req.X-B")
+        assert isinstance(cond.right, nodes.Comparison)
+        assert cond.right.left == nodes.IdentValue(raw="inbound.req.X-B")
 
     def test_not_comparison_with_or(self):
         # !(a == "x") || b == "y"  should parse as  (!(a == "x")) || (b == "y")
@@ -473,26 +473,26 @@ class TestConditionExpressions:
             'REMAP {\n'
             '    if !(inbound.req.X-A == "x") || inbound.req.X-B == "y" {\n'
             '        set-debug();\n    }\n}')
-        assert isinstance(cond, LogicalOp)
-        assert cond.operator == BoolOp.OR
-        assert isinstance(cond.left, NotOp)
-        assert isinstance(cond.left.operand, Comparison)
-        assert cond.left.operand.left == IdentValue(raw="inbound.req.X-A")
-        assert cond.left.operand.right == LiteralStringValue(raw="x")
-        assert isinstance(cond.right, Comparison)
-        assert cond.right.left == IdentValue(raw="inbound.req.X-B")
+        assert isinstance(cond, nodes.LogicalOp)
+        assert cond.operator == nodes.BoolOp.OR
+        assert isinstance(cond.left, nodes.NotOp)
+        assert isinstance(cond.left.operand, nodes.Comparison)
+        assert cond.left.operand.left == nodes.IdentValue(raw="inbound.req.X-A")
+        assert cond.left.operand.right == nodes.LiteralStringValue(raw="x")
+        assert isinstance(cond.right, nodes.Comparison)
+        assert cond.right.left == nodes.IdentValue(raw="inbound.req.X-B")
 
     def test_double_negation(self):
         cond = self._first_condition('REMAP {\n    if !!inbound.resp.All-Cache {\n        set-debug();\n    }\n}')
-        assert isinstance(cond, NotOp)
-        assert isinstance(cond.operand, NotOp)
-        assert isinstance(cond.operand.operand, IdentCondition)
+        assert isinstance(cond, nodes.NotOp)
+        assert isinstance(cond.operand, nodes.NotOp)
+        assert isinstance(cond.operand.operand, nodes.IdentCondition)
         assert cond.operand.operand.name == "inbound.resp.All-Cache"
 
     def test_not_bool_literal(self):
         cond = self._first_condition('REMAP {\n    if !false {\n        set-debug();\n    }\n}')
-        assert isinstance(cond, NotOp)
-        assert isinstance(cond.operand, BoolLiteral)
+        assert isinstance(cond, nodes.NotOp)
+        assert isinstance(cond.operand, nodes.BoolLiteral)
         assert cond.operand.value is False
 
     def test_parens_override_precedence(self):
@@ -501,14 +501,14 @@ class TestConditionExpressions:
             'REMAP {\n'
             '    if (inbound.req.X-A == "a" || inbound.req.X-B == "b") && inbound.req.X-C == "c" {\n'
             '        set-debug();\n    }\n}')
-        assert isinstance(cond, LogicalOp)
-        assert cond.operator == BoolOp.AND
-        assert isinstance(cond.left, LogicalOp)
-        assert cond.left.operator == BoolOp.OR
-        assert cond.left.left.left == IdentValue(raw="inbound.req.X-A")
-        assert cond.left.right.left == IdentValue(raw="inbound.req.X-B")
-        assert isinstance(cond.right, Comparison)
-        assert cond.right.left == IdentValue(raw="inbound.req.X-C")
+        assert isinstance(cond, nodes.LogicalOp)
+        assert cond.operator == nodes.BoolOp.AND
+        assert isinstance(cond.left, nodes.LogicalOp)
+        assert cond.left.operator == nodes.BoolOp.OR
+        assert cond.left.left.left == nodes.IdentValue(raw="inbound.req.X-A")
+        assert cond.left.right.left == nodes.IdentValue(raw="inbound.req.X-B")
+        assert isinstance(cond.right, nodes.Comparison)
+        assert cond.right.left == nodes.IdentValue(raw="inbound.req.X-C")
 
     def test_nested_parens_with_not(self):
         # !(a == "x" || b == "y") && c == "z"
@@ -516,13 +516,13 @@ class TestConditionExpressions:
             'REMAP {\n'
             '    if !(inbound.req.X-A == "x" || inbound.req.X-B == "y") && inbound.req.X-C == "z" {\n'
             '        set-debug();\n    }\n}')
-        assert isinstance(cond, LogicalOp)
-        assert cond.operator == BoolOp.AND
-        assert isinstance(cond.left, NotOp)
-        assert isinstance(cond.left.operand, LogicalOp)
-        assert cond.left.operand.operator == BoolOp.OR
-        assert isinstance(cond.right, Comparison)
-        assert cond.right.left == IdentValue(raw="inbound.req.X-C")
+        assert isinstance(cond, nodes.LogicalOp)
+        assert cond.operator == nodes.BoolOp.AND
+        assert isinstance(cond.left, nodes.NotOp)
+        assert isinstance(cond.left.operand, nodes.LogicalOp)
+        assert cond.left.operand.operator == nodes.BoolOp.OR
+        assert isinstance(cond.right, nodes.Comparison)
+        assert cond.right.left == nodes.IdentValue(raw="inbound.req.X-C")
 
 
 class TestIfBlocks:
@@ -530,7 +530,7 @@ class TestIfBlocks:
     def test_simple_if(self):
         ast = _build('REMAP {\n    if true {\n        inbound.req.X = "y";\n    }\n}')
         ib = ast.body[0].body[0]
-        assert isinstance(ib, IfBlock)
+        assert isinstance(ib, nodes.IfBlock)
         assert len(ib.body) == 1
         assert ib.elif_branches == ()
         assert ib.else_body == ()
@@ -549,9 +549,9 @@ class TestIfBlocks:
             '        inbound.resp.X = "other";\n    }\n}')
         ast = _build(src)
         ib = ast.body[0].body[0]
-        assert isinstance(ib, IfBlock)
+        assert isinstance(ib, nodes.IfBlock)
         assert len(ib.elif_branches) == 1
-        assert isinstance(ib.elif_branches[0], ElifBranch)
+        assert isinstance(ib.elif_branches[0], nodes.ElifBranch)
         assert len(ib.elif_branches[0].body) == 1
         assert len(ib.else_body) == 1
 
@@ -571,9 +571,9 @@ class TestIfBlocks:
             '        if inbound.req.Y == "b" {\n            set-debug();\n        }\n    }\n}')
         ast = _build(src)
         outer = ast.body[0].body[0]
-        assert isinstance(outer, IfBlock)
+        assert isinstance(outer, nodes.IfBlock)
         inner = outer.body[0]
-        assert isinstance(inner, IfBlock)
+        assert isinstance(inner, nodes.IfBlock)
 
     def test_mixed_body(self):
         src = (
@@ -583,9 +583,9 @@ class TestIfBlocks:
         ast = _build(src)
         body = ast.body[0].body
         assert len(body) == 3
-        assert isinstance(body[0], Assignment)
-        assert isinstance(body[1], IfBlock)
-        assert isinstance(body[2], Assignment)
+        assert isinstance(body[0], nodes.Assignment)
+        assert isinstance(body[1], nodes.IfBlock)
+        assert isinstance(body[2], nodes.Assignment)
 
     def test_empty_blocks(self):
         # Grammar permits LBRACE blockItem* RBRACE — i.e. empty if/elif/else bodies.
@@ -594,7 +594,7 @@ class TestIfBlocks:
                '    } else {\n    }\n}')
         ast = _build(src)
         ib = ast.body[0].body[0]
-        assert isinstance(ib, IfBlock)
+        assert isinstance(ib, nodes.IfBlock)
         assert ib.body == ()
         assert len(ib.elif_branches) == 1
         assert ib.elif_branches[0].body == ()
@@ -641,97 +641,97 @@ class TestLineNumbers:
 
     def test_use_directive(self):
         u = self.ast.body[0]
-        assert isinstance(u, UseDirective)
+        assert isinstance(u, nodes.UseDirective)
         assert u.line == 1
 
     def test_var_section(self):
         vs = self.ast.body[1]
-        assert isinstance(vs, VarSection)
+        assert isinstance(vs, nodes.VarSection)
         assert vs.line == 2
 
     def test_var_decl(self):
         vd = self.ast.body[1].declarations[0]
-        assert isinstance(vd, VarDecl)
+        assert isinstance(vd, nodes.VarDecl)
         assert vd.line == 3
 
     def test_procedure_decl(self):
         pd = self.ast.body[2]
-        assert isinstance(pd, ProcedureDecl)
+        assert isinstance(pd, nodes.ProcedureDecl)
         assert pd.line == 5
 
     def test_proc_param(self):
         pp = self.ast.body[2].params[0]
-        assert isinstance(pp, ProcParam)
+        assert isinstance(pp, nodes.ProcParam)
         assert pp.line == 5
 
     def test_procedure_body_assignment(self):
         a = self.ast.body[2].body[0]
-        assert isinstance(a, Assignment)
+        assert isinstance(a, nodes.Assignment)
         assert a.line == 6
 
     def test_section(self):
         s = self.ast.body[3]
-        assert isinstance(s, Section)
+        assert isinstance(s, nodes.Section)
         assert s.line == 8
 
     def test_assignment(self):
         a = self.ast.body[3].body[0]
-        assert isinstance(a, Assignment)
+        assert isinstance(a, nodes.Assignment)
         assert a.line == 9
 
     def test_function_call(self):
         fc = self.ast.body[3].body[1]
-        assert isinstance(fc, FunctionCall)
+        assert isinstance(fc, nodes.FunctionCall)
         assert fc.line == 10
 
     def test_standalone_operator(self):
         fc = self.ast.body[3].body[2]
-        assert isinstance(fc, FunctionCall)
+        assert isinstance(fc, nodes.FunctionCall)
         assert fc.line == 11
 
     def test_if_block(self):
         ib = self.ast.body[3].body[3]
-        assert isinstance(ib, IfBlock)
+        assert isinstance(ib, nodes.IfBlock)
         assert ib.line == 12
 
     def test_comparison_in_condition(self):
         cond = self.ast.body[3].body[3].condition
-        assert isinstance(cond, Comparison)
+        assert isinstance(cond, nodes.Comparison)
         assert cond.line == 12
 
     def test_break(self):
         brk = self.ast.body[3].body[3].body[0]
-        assert isinstance(brk, Break)
+        assert isinstance(brk, nodes.Break)
         assert brk.line == 13
 
     def test_elif_branch(self):
         eb = self.ast.body[3].body[3].elif_branches[0]
-        assert isinstance(eb, ElifBranch)
+        assert isinstance(eb, nodes.ElifBranch)
         assert eb.line == 14
 
     def test_elif_condition(self):
         cond = self.ast.body[3].body[3].elif_branches[0].condition
-        assert isinstance(cond, Comparison)
+        assert isinstance(cond, nodes.Comparison)
         assert cond.line == 14
 
     def test_logical_op(self):
         cond = self.ast.body[3].body[4].condition
-        assert isinstance(cond, LogicalOp)
+        assert isinstance(cond, nodes.LogicalOp)
         assert cond.line == 19
 
     def test_not_op(self):
         cond = self.ast.body[3].body[5].condition
-        assert isinstance(cond, NotOp)
+        assert isinstance(cond, nodes.NotOp)
         assert cond.line == 22
 
     def test_bool_literal(self):
         cond = self.ast.body[3].body[6].condition
-        assert isinstance(cond, BoolLiteral)
+        assert isinstance(cond, nodes.BoolLiteral)
         assert cond.line == 25
 
     def test_ident_condition(self):
         cond = self.ast.body[3].body[7].condition
-        assert isinstance(cond, IdentCondition)
+        assert isinstance(cond, nodes.IdentCondition)
         assert cond.line == 28
 
 
@@ -767,18 +767,18 @@ REMAP {
     }
 }'''
         ast = _build(src)
-        sections = [i for i in ast.body if isinstance(i, Section)]
+        sections = [i for i in ast.body if isinstance(i, nodes.Section)]
         assert len(sections) == 1
         s = sections[0]
         assert s.type == "REMAP"
 
         # Top-level if block
         outer = s.body[0]
-        assert isinstance(outer, IfBlock)
+        assert isinstance(outer, nodes.IfBlock)
 
         # Body: assignment + nested if
-        assert isinstance(outer.body[0], Assignment)
-        assert isinstance(outer.body[1], IfBlock)
+        assert isinstance(outer.body[0], nodes.Assignment)
+        assert isinstance(outer.body[1], nodes.IfBlock)
         middle = outer.body[1]
 
         # Middle if has elif and else
@@ -787,14 +787,14 @@ REMAP {
 
         # Deepest nested if (3 levels)
         inner = middle.body[1]
-        assert isinstance(inner, IfBlock)
-        assert isinstance(inner.condition, LogicalOp)
-        assert inner.condition.operator == BoolOp.OR
+        assert isinstance(inner, nodes.IfBlock)
+        assert isinstance(inner.condition, nodes.LogicalOp)
+        assert inner.condition.operator == nodes.BoolOp.OR
 
         # Outer elif has modifiers
         assert len(outer.elif_branches) == 1
         elif_cond = outer.elif_branches[0].condition
-        assert isinstance(elif_cond, Comparison)
+        assert isinstance(elif_cond, nodes.Comparison)
         assert elif_cond.modifiers == ("NOCASE", "PRE")
 
     def test_http_cntl_booleans(self):
@@ -817,8 +817,8 @@ REMAP {
 }'''
         ast = _build(src)
         cond = ast.body[0].body[0].condition
-        assert isinstance(cond, Comparison)
-        assert cond.operator == CmpOp.IN
+        assert isinstance(cond, nodes.Comparison)
+        assert cond.operator == nodes.CmpOp.IN
         assert len(cond.right) == 2
 
     def test_set_membership_with_modifier(self):
@@ -830,9 +830,9 @@ REMAP {
 }'''
         ast = _build(src)
         cond = ast.body[0].body[0].condition
-        assert isinstance(cond, Comparison)
-        assert cond.operator == CmpOp.IN
-        assert cond.right == (LiteralStringValue(raw="php"), LiteralStringValue(raw="php3"), LiteralStringValue(raw="php4"))
+        assert isinstance(cond, nodes.Comparison)
+        assert cond.operator == nodes.CmpOp.IN
+        assert cond.right == (nodes.LiteralStringValue(raw="php"), nodes.LiteralStringValue(raw="php3"), nodes.LiteralStringValue(raw="php4"))
         assert cond.modifiers == ("EXT",)
 
     def test_debug_pattern_for_lint_rules(self):
@@ -846,14 +846,14 @@ REMAP {
         body = ast.body[0].body
 
         # set-debug() function call
-        assert isinstance(body[0], FunctionCall)
+        assert isinstance(body[0], nodes.FunctionCall)
         assert body[0].name == "set-debug"
 
         # TXN_DEBUG assignment with True
-        assert isinstance(body[1], Assignment)
-        assert body[1].target == Target.from_dotted("http.cntl.TXN_DEBUG")
+        assert isinstance(body[1], nodes.Assignment)
+        assert body[1].target == nodes.Target.from_dotted("http.cntl.TXN_DEBUG")
         assert body[1].value is True
 
         # Regular assignment (not flagged)
-        assert isinstance(body[2], Assignment)
+        assert isinstance(body[2], nodes.Assignment)
         assert body[2].target.namespace == "inbound.req"
