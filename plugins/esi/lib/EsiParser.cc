@@ -190,11 +190,9 @@ EsiParser::_compareData(const string &data, size_t pos, const char *str, int str
 EsiParser::MATCH_TYPE
 EsiParser::_findOpeningTag(const string &data, size_t start_pos, size_t &opening_tag_pos, bool &is_html_comment_node) const
 {
-  const char *const buf     = data.data();
-  const size_t      total   = data.size();
-  const size_t      esi_len = ESI_TAG_PREFIX_LEN;
-  const size_t      hlen    = HTML_COMMENT_NODE_INFO.tag_suffix_len;
-  size_t            i       = start_pos;
+  const char *const buf   = data.data();
+  const size_t      total = data.size();
+  size_t            i     = start_pos;
 
   while (i < total) {
     const char *p = static_cast<const char *>(memchr(buf + i, '<', total - i));
@@ -204,26 +202,28 @@ EsiParser::_findOpeningTag(const string &data, size_t start_pos, size_t &opening
     const size_t pos   = static_cast<size_t>(p - buf);
     const size_t avail = total - pos;
 
-    if (avail >= esi_len && memcmp(p, ESI_TAG_PREFIX, esi_len) == 0) {
+    if (avail >= static_cast<size_t>(ESI_TAG_PREFIX_LEN) && memcmp(p, ESI_TAG_PREFIX, ESI_TAG_PREFIX_LEN) == 0) {
       is_html_comment_node = false;
       opening_tag_pos      = pos;
       return COMPLETE_MATCH;
     }
-    // hlen+1 bytes needed: hlen for the tag, 1 for the required trailing whitespace
-    if (avail > hlen && memcmp(p, HTML_COMMENT_NODE_INFO.tag_suffix, hlen) == 0) {
-      const char ch = p[hlen];
+    // tag_suffix_len+1 bytes needed: tag_suffix_len for the tag, 1 for the required trailing whitespace
+    if (avail > static_cast<size_t>(HTML_COMMENT_NODE_INFO.tag_suffix_len) &&
+        memcmp(p, HTML_COMMENT_NODE_INFO.tag_suffix, HTML_COMMENT_NODE_INFO.tag_suffix_len) == 0) {
+      const char ch = p[HTML_COMMENT_NODE_INFO.tag_suffix_len];
       if (ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n') {
         is_html_comment_node = true;
         opening_tag_pos      = pos;
         return COMPLETE_MATCH;
       }
     }
-    if (avail < esi_len && memcmp(p, ESI_TAG_PREFIX, avail) == 0) {
+    if (avail < static_cast<size_t>(ESI_TAG_PREFIX_LEN) && memcmp(p, ESI_TAG_PREFIX, avail) == 0) {
       is_html_comment_node = false;
       opening_tag_pos      = pos;
       return PARTIAL_MATCH;
     }
-    if (avail <= hlen && memcmp(p, HTML_COMMENT_NODE_INFO.tag_suffix, avail) == 0) {
+    if (avail <= static_cast<size_t>(HTML_COMMENT_NODE_INFO.tag_suffix_len) &&
+        memcmp(p, HTML_COMMENT_NODE_INFO.tag_suffix, avail) == 0) {
       is_html_comment_node = true;
       opening_tag_pos      = pos;
       return PARTIAL_MATCH;
