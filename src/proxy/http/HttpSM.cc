@@ -5092,6 +5092,42 @@ HttpSM::do_range_setup_if_necessary()
         if (t_state.cache_info.action == HttpTransact::CacheAction_t::REPLACE) {
           if (t_state.hdr_info.server_response.status_get() == HTTPStatus::OK) {
             Dbg(dbg_ctl_http_range, "Serving transform after stale cache re-serve");
+
+            // Ranges and range_output_cl were computed against the stale cached object size. If the fresh origin Content-Length
+            // differs, re-parse the Range against the fresh value so the outgoing Content-Length/Content-Range match the body
+            // actually being sent. Without this, Content-Length/Content-Range advertise the stale cached size.
+            const int64_t fresh_cl = t_state.hdr_info.server_response.get_content_length();
+            if (fresh_cl == 0) {
+              // Re-parse yielded e.g. RANGE_NOT_SATISFIABLE (entire range past fresh body); let downstream handling take over
+              // without installing the transform.
+              Dbg(dbg_ctl_http_range, "Not transforming: fresh response body is empty");
+              return;
+            }
+            const int64_t cached_cl = t_state.cache_info.object_read ? t_state.cache_info.object_read->object_size_get() : -1;
+            if (fresh_cl != cached_cl) {
+              SMDbg(dbg_ctl_http_range, "Re-parsing range against fresh origin Content-Length %" PRId64 " (was %" PRId64 ")",
+                    fresh_cl, cached_cl);
+              delete[] t_state.ranges;
+              t_state.ranges           = nullptr;
+              t_state.num_range_fields = 0;
+              t_state.range_setup      = HttpTransact::RangeSetup_t::NONE;
+              t_state.range_output_cl  = 0;
+              parse_range_done         = false;
+
+              std::string_view content_type =
+                t_state.hdr_info.server_response.value_get(static_cast<std::string_view>(MIME_FIELD_CONTENT_TYPE));
+              parse_range_and_compare(field, fresh_cl);
+              calculate_output_cl(content_type.length(), num_chars_for_int(fresh_cl));
+
+              if (t_state.range_setup != HttpTransact::RangeSetup_t::REQUESTED) {
+                // Re-parse yielded e.g. RANGE_NOT_SATISFIABLE (entire range past fresh body); let downstream handling take over
+                // without installing the transform.
+                Dbg(dbg_ctl_http_range, "Not transforming: parse_range_and_compare set t_state.range_setup=%d",
+                    static_cast<int>(HttpTransact::RangeSetup_t::REQUESTED));
+                return;
+              }
+            }
+
             do_transform = true;
           } else {
             Dbg(dbg_ctl_http_range, "Not transforming after revalidate");
