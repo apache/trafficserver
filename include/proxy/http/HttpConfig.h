@@ -270,6 +270,7 @@ struct HttpStatsBlock {
   Metrics::Counter::AtomicType *total_transactions_time;
   Metrics::Counter::AtomicType *total_x_redirect;
   Metrics::Counter::AtomicType *trace_requests;
+  Metrics::Counter::AtomicType *tunnel_chunked_throttle;
   Metrics::Gauge::AtomicType   *tunnel_current_active_connections;
   Metrics::Counter::AtomicType *tunnels;
   Metrics::Counter::AtomicType *ua_begin_time;

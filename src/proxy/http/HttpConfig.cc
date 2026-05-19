@@ -498,6 +498,7 @@ register_stat_callbacks()
   http_rsb.total_transactions_time           = Metrics::Counter::createPtr("proxy.process.http.total_transactions_time");
   http_rsb.total_x_redirect                  = Metrics::Counter::createPtr("proxy.process.http.total_x_redirect_count");
   http_rsb.trace_requests                    = Metrics::Counter::createPtr("proxy.process.http.trace_requests");
+  http_rsb.tunnel_chunked_throttle           = Metrics::Counter::createPtr("proxy.process.http.tunnel.chunked_throttle");
   http_rsb.tunnel_current_active_connections = Metrics::Gauge::createPtr("proxy.process.tunnel.current_active_connections");
   http_rsb.tunnels                           = Metrics::Counter::createPtr("proxy.process.http.tunnels");
   http_rsb.ua_begin_time                     = Metrics::Counter::createPtr("proxy.process.http.milestone.ua_begin");

@@ -174,6 +174,11 @@ struct ChunkedHandler {
    */
   std::pair<int64_t, bool> generate_chunked_content();
 
+  /**
+   * Check if chunked_reader or dechunked_reader has more data to read
+   */
+  bool is_read_avail();
+
 private:
   /** Read a chunk header containing the size of the chunk.
    *
@@ -421,7 +426,6 @@ public:
   void                     tunnel_run(HttpTunnelProducer *p = nullptr);
 
   int     main_handler(int event, void *data);
-  void    consumer_reenable(HttpTunnelConsumer *c);
   bool    consumer_handler(int event, HttpTunnelConsumer *c);
   bool    producer_handler(int event, HttpTunnelProducer *p);
   int     producer_handler_dechunked(int event, HttpTunnelProducer *p);
@@ -455,6 +459,9 @@ private:
   void producer_run(HttpTunnelProducer *p);
   void _schedule_tls_tunnel_activity_check_event();
   bool _is_tls_tunnel_active() const;
+
+  bool _should_reenable_for_chunk_handler_fc(HttpTunnelConsumer *c);
+  bool _should_reenable_for_tunnel_chain_fc(HttpTunnelConsumer *c);
 
   HttpTunnelProducer *get_producer(VIO *vio);
   HttpTunnelConsumer *get_consumer(VIO *vio);
