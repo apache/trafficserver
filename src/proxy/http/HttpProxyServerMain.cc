@@ -158,6 +158,9 @@ make_net_accept_options(const HttpProxyPort *port, unsigned nthreads)
       net.local_ip = HttpConfig::m_master.inbound.ip4().network_order();
     } else if (AF_UNIX == port->m_family) {
       net.local_path = port->m_unix_path;
+      net.unix_perm  = port->m_unix_perm;
+      net.unix_uid   = port->m_unix_uid;
+      net.unix_gid   = port->m_unix_gid;
       net.sockopt_flags &=
         ~(NetVCOptions::SOCK_OPT_NO_DELAY | NetVCOptions::SOCK_OPT_TCP_FAST_OPEN | NetVCOptions::SOCK_OPT_TCP_NOTSENT_LOWAT);
     }
