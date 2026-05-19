@@ -108,7 +108,7 @@ endif()
 
 if(TS_HAS_128BIT_CAS)
   find_library(atomic QUIET)
-  if(atomic_FOUND)
+  if(APPLE)
     target_link_libraries(tscore PUBLIC atomic)
   endif()
 endif()
