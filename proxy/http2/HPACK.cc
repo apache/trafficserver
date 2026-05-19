@@ -667,7 +667,11 @@ decode_indexed_header_field(MIMEFieldWrapper &header, const uint8_t *buf_start, 
     return HPACK_ERROR_COMPRESSION_ERROR;
   }
 
-  if (indexing_table.get_header_field(index, header) == HPACK_ERROR_COMPRESSION_ERROR) {
+  if (index > UINT32_MAX) {
+    return HPACK_ERROR_COMPRESSION_ERROR;
+  }
+
+  if (indexing_table.get_header_field(static_cast<uint32_t>(index), header) == HPACK_ERROR_COMPRESSION_ERROR) {
     return HPACK_ERROR_COMPRESSION_ERROR;
   }
 
@@ -712,13 +716,17 @@ decode_literal_header_field(MIMEFieldWrapper &header, const uint8_t *buf_start, 
     return HPACK_ERROR_COMPRESSION_ERROR;
   }
 
+  if (index > UINT32_MAX) {
+    return HPACK_ERROR_COMPRESSION_ERROR;
+  }
+
   p += len;
 
   Arena arena;
 
   // Decode header field name
   if (index) {
-    if (indexing_table.get_header_field(index, header) == HPACK_ERROR_COMPRESSION_ERROR) {
+    if (indexing_table.get_header_field(static_cast<uint32_t>(index), header) == HPACK_ERROR_COMPRESSION_ERROR) {
       return HPACK_ERROR_COMPRESSION_ERROR;
     }
   } else {
