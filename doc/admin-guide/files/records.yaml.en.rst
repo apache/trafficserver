@@ -464,7 +464,7 @@ Thread Variables
    before :program:`traffic_server` drops privilege. If this variable
    is set to ``NULL``, no helper will be spawned.
 
-.. ts::vc:: CONFIG proxy.config.core_limit INT -1
+.. ts:cv:: CONFIG proxy.config.core_limit INT -1
 
    This option specifies the size limit for core files in the event
    that :program:`traffic_server` crashes. ``-1`` means there is
@@ -751,11 +751,6 @@ Management
       * Specify ``-DBIG_SECURITY_HOLE`` in ``CXXFLAGS`` during compilation.
 
       * Set the ``user_id=#-1`` and start trafficserver as root.
-
-.. ts:cv:: CONFIG proxy.config.admin.api.restricted INT 0
-
-   This is now deprecated, please refer to :ref:`admin-jsonrpc-configuration` to find
-   out about the new admin API mechanism.
 
 HTTP Engine
 ===========
@@ -2592,7 +2587,6 @@ Cache Control
    Setting this to ``0`` disables the feature.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.try_compat_key_read INT 0
-   :reloadable:
 
    When enabled (``1``), |TS| will try to lookup the cached object using the
    previous cache key generation algorithm, but will always write new objects
@@ -2764,7 +2758,7 @@ Cache Control
    a minimum time, and the actual sync may be delayed if the disks are larger than
    how fast we allow it to write to disk (see next options).
 
-.. ts:cv:: CONFIG proxy.config.cache.dir.sync_max_writes INT 2097152
+.. ts:cv:: CONFIG proxy.config.cache.dir.sync_max_write INT 2097152
    :units: bytes
 
    How much of a stripes cache directory we will write to disk in each write cycle.
@@ -2965,13 +2959,11 @@ Dynamic Content & Content Negotiation
 =====================================
 
 .. ts:cv:: CONFIG proxy.config.http.cache.open_read_retry_time INT 10
-   :reloadable:
    :overridable:
 
     The number of milliseconds a cacheable request will wait before requesting the object from cache if an equivalent request is in flight.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.max_open_read_retries INT -1
-   :reloadable:
    :overridable:
 
     The number of times to attempt fetching an object from cache if there was an equivalent request in flight.
@@ -3071,7 +3063,6 @@ Customizable User Response Pages
     Maximum size of the error template response page.
 
 .. ts:cv:: CONFIG proxy.config.body_factory.response_suppression_mode INT 0
-   :reloadable:
    :overridable:
 
    Specifies when |TS| suppresses generated response pages:
@@ -3598,7 +3589,7 @@ Logging Configuration
 
    How often |TS| executes log related periodic tasks, in seconds
 
-.. ts:cv:: CONFIG proxy.config.log.proxy.config.log.throttling_interval_msec INT 60000
+.. ts:cv:: CONFIG proxy.config.log.throttling_interval_msec INT 60000
    :reloadable:
    :units: milliseconds
 
@@ -3776,7 +3767,7 @@ Diagnostic Logging Configuration
 
    For details about how log throttling works, see
    :ts:cv:`log.throttling_interval_msec
-   <proxy.config.log.proxy.config.log.throttling_interval_msec>`.
+   <proxy.config.log.throttling_interval_msec>`.
 
 .. ts:cv:: CONFIG proxy.config.diags.logfile.filename STRING diags.log
 
@@ -5053,14 +5044,12 @@ removed in the future without prior notice.
 
    A size of hash table that stores connection information.
 
-.. ts:cv:: CONFIG proxy.config.quic.proxy.config.quic.num_alt_connection_ids INT 65521
-   :reloadable:
+.. ts:cv:: CONFIG proxy.config.quic.num_alt_connection_ids INT 8
 
    A number of alternate Connection IDs that |TS| provides to a peer. It has to
    be at least 8.
 
-.. ts:cv:: CONFIG proxy.config.quic.stateless_retry_enabled INT 0
-   :reloadable:
+.. ts:cv:: CONFIG proxy.config.quic.server.stateless_retry_enabled INT 0
 
    Enables Stateless Retry.
 
@@ -5075,19 +5064,16 @@ removed in the future without prior notice.
    Enables connection migration exercise on origin server connections.
 
 .. ts:cv:: CONFIG proxy.config.quic.server.supported_groups STRING "P-256:X25519:P-384:P-521"
-   :reloadable:
 
    Configures the list of supported groups provided by OpenSSL which will be
    used to determine the set of shared groups on QUIC origin server connections.
 
 .. ts:cv:: CONFIG proxy.config.quic.client.supported_groups STRING "P-256:X25519:P-384:P-521"
-   :reloadable:
 
    Configures the list of supported groups provided by OpenSSL which will be
    used to determine the set of shared groups on QUIC client connections.
 
 .. ts:cv:: CONFIG proxy.config.quic.client.session_file STRING ""
-   :reloadable:
 
    Only available for :program:`traffic_quic`.
    If specified, TLS session data will be stored to the file, and will be used
@@ -5137,61 +5123,61 @@ removed in the future without prior notice.
 
    This value will be advertised as ``initial_max_data`` Transport Parameter.
 
-.. ts:cv:: CONFIG proxy.config.quic.max_stream_data_bidi_local_in INT 0
+.. ts:cv:: CONFIG proxy.config.quic.initial_max_stream_data_bidi_local_in INT 0
    :reloadable:
 
    This value will be advertised as ``initial_max_stream_data_bidi_local``
    Transport Parameter.
 
-.. ts:cv:: CONFIG proxy.config.quic.max_stream_data_bidi_local_out INT 4096
+.. ts:cv:: CONFIG proxy.config.quic.initial_max_stream_data_bidi_local_out INT 4096
    :reloadable:
 
    This value will be advertised as ``initial_max_stream_data_bidi_local``
    Transport Parameter.
 
-.. ts:cv:: CONFIG proxy.config.quic.max_stream_data_bidi_remote_in INT 4096
+.. ts:cv:: CONFIG proxy.config.quic.initial_max_stream_data_bidi_remote_in INT 4096
    :reloadable:
 
    This value will be advertised as ``initial_max_stream_data_bidi_remote``
    Transport Parameter.
 
-.. ts:cv:: CONFIG proxy.config.quic.max_stream_data_bidi_remote_out INT 0
+.. ts:cv:: CONFIG proxy.config.quic.initial_max_stream_data_bidi_remote_out INT 0
    :reloadable:
 
    This value will be advertised as ``initial_max_stream_data_bidi_remote``
    Transport Parameter.
 
-.. ts:cv:: CONFIG proxy.config.quic.max_stream_data_uni_in INT 4096
+.. ts:cv:: CONFIG proxy.config.quic.initial_max_stream_data_uni_in INT 4096
    :reloadable:
 
    This value will be advertised as ``initial_max_stream_data_uni``
    Transport Parameter.
 
-.. ts:cv:: CONFIG proxy.config.quic.max_stream_data_uni_out INT 0
+.. ts:cv:: CONFIG proxy.config.quic.initial_max_stream_data_uni_out INT 4096
    :reloadable:
 
    This value will be advertised as ``initial_max_stream_data_uni``
    Transport Parameter.
 
-.. ts:cv:: CONFIG proxy.config.quic.max_streams_bidi_in INT 100
+.. ts:cv:: CONFIG proxy.config.quic.initial_max_streams_bidi_in INT 100
    :reloadable:
 
    This value will be advertised as ``initial_max_streams_bidi``
    Transport Parameter.
 
-.. ts:cv:: CONFIG proxy.config.quic.max_streams_bidi_out INT 100
+.. ts:cv:: CONFIG proxy.config.quic.initial_max_streams_bidi_out INT 100
    :reloadable:
 
    This value will be advertised as ``initial_max_streams_bidi``
    Transport Parameter.
 
-.. ts:cv:: CONFIG proxy.config.quic.max_streams_uni_in INT 100
+.. ts:cv:: CONFIG proxy.config.quic.initial_max_streams_uni_in INT 100
    :reloadable:
 
    This value will be advertised as ``initial_max_streams_uni``
    Transport Parameter.
 
-.. ts:cv:: CONFIG proxy.config.quic.max_streams_uni_out INT 100
+.. ts:cv:: CONFIG proxy.config.quic.initial_max_streams_uni_out INT 100
    :reloadable:
 
    This value will be advertised as ``initial_max_streams_uni``
@@ -5425,7 +5411,6 @@ Sockets
    Note: If MPTCP is enabled, TCP_DEFER_ACCEPT is only supported on Linux kernels 5.19+.
 
 .. ts:cv:: CONFIG proxy.config.net.listen_backlog INT -1
-   :reloadable:
 
    This directive sets the maximum number of pending connections.
    If it is set to -1, |TS| will automatically set this
