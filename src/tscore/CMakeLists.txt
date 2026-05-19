@@ -107,7 +107,27 @@ else()
 endif()
 
 if(TS_HAS_128BIT_CAS)
-  if(NOT APPLE)
+  set(ATOMICLIB_TEST_PROGRAM
+      "
+    #include <atomic>
+
+    std::atomic<__int128> g_atomic;
+
+    int main() { }
+  "
+  )
+
+  check_cxx_source_compiles("${ATOMICLIB_TEST_PROGRAM}" NEED_LIBATOMIC)
+
+  if(NEED_LIBATOMIC)
+    set(CMAKE_REQUIRED_LIBRARIES atomic)
+    check_cxx_source_compiles("${ATOMICLIB_TEST_PROGRAM}" HAVE_LIBATOMIC)
+    unset(CMAKE_REQUIRED_LIBRARIES)
+
+    if(NOT HAVE_LIBATOMIC)
+      message(FATAL_ERROR "Cannot build 128 bit atomics")
+    endif()
+
     target_link_libraries(tscore PUBLIC atomic)
   endif()
 endif()
