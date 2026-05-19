@@ -35,10 +35,12 @@
 
 set(CHECK_PROGRAM
     "
-    int main(void)
+    #include <atomic>
+
+    int main()
     {
-        __int128_t x = 0;
-        return __sync_bool_compare_and_swap(&x,0,10);
+        std::atomic<__int128> x{0};
+        return x.compare_exchange_strong(10, 0);
     }
     "
 )
@@ -60,7 +62,7 @@ set(USE_LIBATOMIC_CAS FALSE)
 set(NEED_LIBATOMIC FALSE)
 
 include(CheckCSourceCompiles)
-check_c_source_compiles("${CHECK_PROGRAM}" TS_HAS_128BIT_CAS)
+check_cxx_source_compiles("${CHECK_PROGRAM}" TS_HAS_128BIT_CAS)
 
 if(NOT TS_HAS_128BIT_CAS)
   unset(TS_HAS_128BIT_CAS CACHE)
