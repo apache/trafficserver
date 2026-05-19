@@ -1,22 +1,24 @@
-/*
+/** @file
 
-  @section license License
+    Freelist and Atomiclist tests
 
-  Licensed to the Apache Software Foundation (ASF) under one
-  or more contributor license agreements.  See the NOTICE file
-  distributed with this work for additional information
-  regarding copyright ownership.  The ASF licenses this file
-  to you under the Apache License, Version 2.0 (the
-  "License"); you may not use this file except in compliance
-  with the License.  You may obtain a copy of the License at
+    @section license License
 
-      http://www.apache.org/licenses/LICENSE-2.0
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
 
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS,
-  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  See the License for the specific language governing permissions and
-  limitations under the License.
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
 */
 
 #define CATCH_CONFIG_ENABLE_BENCHMARKING
@@ -25,8 +27,10 @@
 #include <tscore/ink_queue.h>
 
 #include <atomic>
+#include <cstddef>
 #include <cstdint>
 #include <thread>
+#include <vector>
 
 TEST_CASE("Freelist", "[freelist]")
 {
@@ -91,11 +95,16 @@ TEST_CASE("Popall from empty atomic list", "[atomiclist]")
 
 TEST_CASE("Atomic list", "[atomiclist]")
 {
+  struct test_type {
+    std::int32_t i;
+    head_p       next;
+  };
+
   InkAtomicList l;
-  ink_atomiclist_init(&l, "test#1", 0);
+  ink_atomiclist_init(&l, "test#1", offsetof(test_type, next));
 
   // We allocate memory this way to ensure proper alignment for atomiclist.
-  InkFreeList *f{ink_freelist_create("test#1", sizeof(std::int32_t), 1, alignof(std::int32_t))};
+  InkFreeList *f{ink_freelist_create("test#1", sizeof(test_type), 1, alignof(test_type))};
 
   SECTION("Atomic list becomes empty after push and pop")
   {
@@ -175,8 +184,9 @@ TEST_CASE("Atomic list", "[atomiclist]")
     ink_atomiclist_push(&l, a);
     ink_atomiclist_push(&l, b);
 
-    head_p *head{reinterpret_cast<head_p *>(ink_atomiclist_popall(&l))};
-    head_p *tail{reinterpret_cast<head_p *>(FREELIST_POINTER(*head))};
+    void   *head{ink_atomiclist_popall(&l)};
+    head_p *head_{reinterpret_cast<head_p *>(reinterpret_cast<unsigned char *>(head) + l.offset)};
+    void   *tail{FREELIST_POINTER(*head_)};
 
     CHECK(((head == b) && (tail == a)));
 
@@ -208,36 +218,4 @@ TEST_CASE("Freelist benchmarks", "[freelist][bench]")
 
     meter.measure([&](int i) { return ink_freelist_free(f, ptrs[i]); });
   };
-
-  /*
-  BENCHMARK_ADVANCED("yay")(Catch::Benchmark::Chronometer meter)
-  {
-    InkFreeList *f{ink_freelist_create("yay", 4, 8, 16)};
-
-    std::atomic<bool> done(false);
-
-    auto const use_memory{[&]() {
-      void         *storage{ink_freelist_new(f)};
-      std::int32_t *n{new (storage) std::int32_t{}};
-      *n = 10;
-      ink_freelist_free(f, n);
-    }};
-
-    auto const distract{[&]() {
-      while (!done) {
-        use_memory();
-      }
-    }};
-
-    std::jthread contender{distract};
-
-    meter.measure([&]() {
-      for (int i{0}; i < 10; ++i) {
-        use_memory();
-      }
-    });
-
-    done = true;
-  };
-  */
 }
