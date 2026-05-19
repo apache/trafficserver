@@ -1,0 +1,223 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+# Verify RangeTransform on stale-revalidate
+#
+# Preconditions for the bug:
+#  1. Client request has a `Range` header.
+#  2. Cached object is stale, so ATS revalidates.
+#  3. Origin returns `200 OK` with the full body (not 304, not 206).
+#  4. The fresh `Content-Length` differs from the cached object size.
+
+meta:
+  version: '1.0'
+
+autest:
+  description: 'Verify RangeTransform'
+
+  dns:
+    name: "dns-range-transform"
+
+  server:
+    name: "server-range-transform"
+
+  client:
+    name: "client-range-transform"
+
+  ats:
+    name: "ts-range-transform"
+
+    process_config:
+      enable_cache: true
+
+    records_config:
+      proxy.config.http.wait_for_cache: 1
+      proxy.config.http.cache.required_headers: 0
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http'
+
+    remap_config:
+      - from: "http://example.com/"
+        to: "http://backend.example.com:{SERVER_HTTP_PORT}/"
+
+    log_validation:
+      traffic_out:
+        contains:
+          - expression: 'perform_transform_cache_write_action CacheAction_t::REPLACE'
+            description: 'Stale cache is replaced via RangeTransform'
+
+sessions:
+  # Prime cache with BIG body.
+  - transactions:
+      - client-request:
+          method: "GET"
+          version: "1.1"
+          url: /obj
+          headers:
+            fields:
+              - [Host, example.com]
+              - [uuid, prime]
+
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Date, "Mon, 01 Jan 2026 00:00:00 GMT"]
+              - [Cache-Control, "max-age=1, public"]
+              - [Content-Type, application/octet-stream]
+              - [Content-Length, 64097]
+          content:
+            size: 64097
+
+        proxy-response:
+          status: 200
+
+  # Stale revalidate: origin body shrunk to 40000, Range end (64096) unreachable.
+  - transactions:
+      - client-request:
+          delay: 1500ms
+          method: "GET"
+          version: "1.1"
+          url: /obj
+          headers:
+            fields:
+              - [Host, example.com]
+              - [uuid, range-revalidate]
+              - [Range, "bytes=0-64096"]
+
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Date, "Mon, 01 Jan 2026 00:00:05 GMT"]
+              - [Cache-Control, "max-age=1, public"]
+              - [Content-Type, application/octet-stream]
+              - [Content-Length, 40000]
+          content:
+            size: 40000
+
+        proxy-response:
+          status: 206
+          reason: Partial Content
+          headers:
+            fields:
+              - [Content-Range, {value: "bytes 0-39999/40000", as: equal}]
+              - [Content-Length, {value: 40000, as: equal}]
+
+
+  # Stale revalidate: origin body grown to 80000 (larger than cached). Range stays
+  # satisfiable, but Content-Range total must reflect fresh 80000, not stale size.
+  - transactions:
+      - client-request:
+          delay: 1500ms
+          method: "GET"
+          version: "1.1"
+          url: /obj
+          headers:
+            fields:
+              - [Host, example.com]
+              - [uuid, range-revalidate-grown]
+              - [Range, "bytes=0-64096"]
+
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Date, "Mon, 01 Jan 2026 00:00:10 GMT"]
+              - [Cache-Control, "max-age=1, public"]
+              - [Content-Type, application/octet-stream]
+              - [Content-Length, 80000]
+          content:
+            size: 80000
+
+        proxy-response:
+          status: 206
+          reason: Partial Content
+          headers:
+            fields:
+              - [Content-Range, {value: "bytes 0-64096/80000", as: equal}]
+              - [Content-Length, {value: 64097, as: equal}]
+
+  # Error Cases: when requested range is unsatisfiable, choices are below from RFC 9110. Our choice is B.
+  #   A). Return 416 Range Not Satisfiable
+  #   B). Ignore Range header, return 200 OK
+
+  # Stale revalidate: new origin body is empty
+  - transactions:
+      - client-request:
+          delay: 1500ms
+          method: "GET"
+          version: "1.1"
+          url: /obj
+          headers:
+            fields:
+              - [Host, example.com]
+              - [uuid, range-revalidate-empty]
+              - [Range, "bytes=0-64096"]
+
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Date, "Mon, 01 Jan 2026 00:00:20 GMT"]
+              - [Cache-Control, "max-age=1, public"]
+              - [Content-Type, application/octet-stream]
+              - [Content-Length, 0]
+          content:
+            size: 0
+
+        proxy-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Content-Length, 40000]
+
+  # Stale revalidate: new origin body is smaller than requested range
+  - transactions:
+      - client-request:
+          delay: 1500ms
+          method: "GET"
+          version: "1.1"
+          url: /obj
+          headers:
+            fields:
+              - [Host, example.com]
+              - [uuid, range-revalidate-out-of-range]
+              - [Range, "bytes=60000-64096"]
+
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Date, "Mon, 01 Jan 2026 00:00:30 GMT"]
+              - [Cache-Control, "max-age=1, public"]
+              - [Content-Type, application/octet-stream]
+              - [Content-Length, 40000]
+          content:
+            size: 40000
+
+        proxy-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Content-Length, 40000]
