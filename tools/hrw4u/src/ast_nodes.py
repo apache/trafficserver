@@ -126,6 +126,8 @@ class Node:
 
 @dataclass(frozen=True)
 class Target:
+    # Value class, not an AST node — destructured from an Assignment's IDENT
+    # lhs, so source position lives on the enclosing Assignment.
     namespace: str | None
     field: str
 
