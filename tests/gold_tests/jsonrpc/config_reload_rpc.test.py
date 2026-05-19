@@ -424,30 +424,36 @@ tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_dir
 tr.StillRunningAfter = ts
 
 # ============================================================================
-# Test 12: Reload directive for unregistered config (virtualhost)
-# virtualhost is not registered yet — should get 6010.
-# This is the intended use case once the virtualhost handler is registered.
+# Test 12: Reload directive routes to registered handler (virtualhost)
+# virtualhost is registered as FileAndRpc — the _reload directive should be
+# accepted by the framework and forwarded to VirtualHost's handler, which
+# schedules an inline reload and returns a task token.
 # ============================================================================
-tr = Test.AddTestRun("Reload directive for unregistered config (virtualhost)")
+tr = Test.AddTestRun("Reload directive routed to registered virtualhost handler")
 tr.DelayStart = 2
 tr.AddJsonRPCClientRequest(ts, Request.admin_config_reload(configs={"virtualhost": {"_reload": {"id": "myhost.example.com"}}}))
 
 
-def validate_directive_unregistered(resp: Response):
+def validate_directive_routed(resp: Response):
     '''virtualhost is not registered — rejected with 6010'''
     result = resp.result
     errors = result.get('errors', [])
 
-    if not errors:
-        return (False, f"Expected error for unregistered config, got: {result}")
+    if errors:
+        error_str = str(errors)
+        if '6010' in error_str or 'not registered' in error_str:
+            return (False, f"virtualhost should now be registered, got: {errors}")
+        return (False, f"Unexpected synchronous error: {errors}")
 
-    error_str = str(errors)
-    if '6010' in error_str or 'not registered' in error_str:
-        return (True, f"Directive for unregistered config rejected: {errors}")
-    return (False, f"Expected error 6010, got: {errors}")
+    tasks = result.get('tasks', [])
+    message = result.get('message', [])
+    if tasks or message:
+        return (True, f"Directive accepted and reload scheduled: tasks={tasks}, message={message}")
+
+    return (False, f"Expected scheduled reload, got: {result}")
 
 
-tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_directive_unregistered)
+tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_directive_routed)
 tr.StillRunningAfter = ts
 
 # ============================================================================
