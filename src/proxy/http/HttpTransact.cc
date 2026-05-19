@@ -2686,6 +2686,18 @@ HttpTransact::CallOSDNSLookup(State *s)
   HostStatus  &pstatus = HostStatus::instance();
   HostStatRec *hst     = pstatus.getHostStatus(s->server_info.name);
   if (hst && hst->status == TSHostStatus::TS_HOST_STATUS_DOWN) {
+    // Guard against unbounded recursion when the host is DOWN, the cache has
+    // a HIT, and a Range request cannot be satisfied from cache. Without this
+    // flag, CallOSDNSLookup -> handle_server_connection_not_open ->
+    // build_response_from_cache (Range branch) -> CallOSDNSLookup recurses on
+    // the stack until overflow.
+    if (s->host_down_cache_fallback_attempted) {
+      TxnDbg(dbg_ctl_http, "host down cache fallback already attempted; returning 502");
+      build_error_response(s, HTTPStatus::BAD_GATEWAY, "Next Hop Connection Failed", "connect#failed_connect");
+      s->next_action = StateMachineAction_t::SEND_ERROR_CACHE_NOOP;
+      return;
+    }
+    s->host_down_cache_fallback_attempted = true;
     TxnDbg(dbg_ctl_http, "%d ", static_cast<int>(s->cache_lookup_result));
     s->current.state = OUTBOUND_CONGESTION;
     if (s->cache_lookup_result == CacheLookupResult_t::HIT_STALE || s->cache_lookup_result == CacheLookupResult_t::HIT_WARNING ||
