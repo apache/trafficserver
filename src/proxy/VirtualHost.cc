@@ -24,7 +24,6 @@
 #include <set>
 #include <string_view>
 #include <string>
-#include <unordered_set>
 #include <yaml-cpp/yaml.h>
 
 #include "proxy/VirtualHost.h"
@@ -253,7 +252,7 @@ VirtualHostConfig::load_entry(std::string_view id, Ptr<Entry> &entry)
     return false;
   }
   Dbg(dbg_ctl_virtualhost, "Virtualhost with id (%s) not found", id.data());
-  return true;
+  return false;
 }
 
 bool

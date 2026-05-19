@@ -116,11 +116,11 @@ selectively reload a single virtual host entry without affecting other virtual h
 
 By only updating the necessary changes, this reduces configuration deployment time and improves visibility on the changes made.
 
-To reload for a specific virtual host, use:
+To reload for a specific virtual host, use new reload directive:
 
 ::
 
-   $ traffic_ctl config reload --virtualhost <id>
+   $ traffic_ctl config reload -D virtualhost.id=<id>
 
 Where **<id>** is the virtual host ID defined in :file:`virtualhost.yaml`. Only the **<id>** virtual host
 configuration will be reloaded. This does not affect other virtual hosts or global configuration files.
@@ -129,10 +129,24 @@ Example:
 
 ::
 
-   $ traffic_ctl config reload --virtualhost foo
-   ┌ Virtualhost: foo
-   └┬ Reload status: ok
-    ├ Message: Virtualhost successfully reloaded
+   $ traffic_ctl config reload -D virtualhost.id=foo
+    ✔ Reload scheduled [rpc-123456789]
+
+    Monitor : traffic_ctl config reload -t rpc-123456789 -m
+    Details : traffic_ctl config reload -t rpc-123456789 -s -l
+
+  $ traffic_ctl config reload -t rpc-123456789 -s -l
+    ✗ Token 'rpc-123456789' already in use
+    ✔ Reload [success] — rpc-123456789
+    Started : 2026 May 19 19:20:20.691
+    Finished: 2026 May 19 19:20:20.692
+    Duration: 1ms
+
+    ✔ 1 success  ◌ 0 in-progress  ✗ 0 failed  (1 total)
+
+    Tasks:
+    ✔ virtualhost ··································    1ms
+        [Note]  Reloaded virtualhost entry: foo
 
 
 Examples
@@ -157,9 +171,9 @@ Examples
    remap:
      - type: map
         from:
-          url: http://example.com
+          url: http://www.x.com
         to:
-          url: http://origin.example.com/
+          url: http://other.example.com/
 
 This rules translates in the following translation.
 
@@ -187,7 +201,7 @@ Client Request                                   Translated Request
 
 
       - id: foo
-       domains:
+        domains:
          - foo.example.com
 
        remap:
