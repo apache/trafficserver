@@ -95,11 +95,11 @@ UrlRewrite::load(ConfigContext ctx)
       return false;
     }
   }
-  return load_table(std::string(config_file_path.get()), nullptr);
+  return load_table(std::string(config_file_path.get()), nullptr, ctx);
 }
 
 bool
-UrlRewrite::load_table(const std::string &config_file_path, YAML::Node const *remap_node)
+UrlRewrite::load_table(const std::string &config_file_path, YAML::Node const *remap_node, ConfigContext ctx)
 {
   if (remap_node) {
     this->_remap_yaml = true;

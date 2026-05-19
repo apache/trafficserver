@@ -357,11 +357,11 @@ VirtualHost::startup()
                                                          "proxy.config.virtualhost.filename", // record holding the filename
                                                          [](ConfigContext ctx) {
                                                            ctx.in_progress();
-                                                           auto yaml = ctx.supplied_yaml();
 
-                                                           // RPC-supplied scalar = single entry reload by ID
-                                                           if (yaml && yaml.IsScalar()) {
-                                                             std::string id = yaml.as<std::string>();
+                                                           // Single-entry reload requested via -D virtualhost.id=<id>
+                                                           if (auto directives = ctx.reload_directives();
+                                                               directives && directives["id"]) {
+                                                             std::string id = directives["id"].as<std::string>();
                                                              if (VirtualHost::reconfigure(id)) {
                                                                ctx.complete("Reloaded virtualhost entry: " + id);
                                                              } else {
