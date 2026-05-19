@@ -459,10 +459,9 @@ protected:
 
   void virtual _initialize() { _initialized = true; }
 
-  cripts::Transaction   *_state  = nullptr;
-  struct sockaddr const *_socket = nullptr;
-  TSVConn                _vc     = nullptr;
-  char                   _str[INET6_ADDRSTRLEN + 1];
+  cripts::Transaction   *_state       = nullptr;
+  struct sockaddr const *_socket      = nullptr;
+  TSVConn                _vc          = nullptr;
   bool                   _initialized = false;
 
 }; // End class ConnBase
