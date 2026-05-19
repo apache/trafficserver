@@ -1298,7 +1298,9 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
           ink_assert((skip + t->host_len) <= e->srv_hosts.srv_hosts_length);
 
           memcpy(pos + skip, t->host, t->host_len);
-          item.data.srv.srv_offset = (pos - reinterpret_cast<char *>(rr_data)) + skip;
+          auto offset = (pos - reinterpret_cast<char *>(rr_data)) + skip;
+          ink_release_assert(offset >= 0 && offset <= UINT16_MAX);
+          item.data.srv.srv_offset = offset;
 
           skip += t->host_len;
 
