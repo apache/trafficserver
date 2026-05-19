@@ -127,9 +127,10 @@ if(TS_HAS_128BIT_CAS)
     if(NOT HAVE_LIBATOMIC)
       message(WARNING "Cannot build 128 bit atomics")
       set(TS_HAS_128BIT_CAS FALSE)
+    else()
+      target_link_libraries(tscore PUBLIC atomic)
     endif()
 
-    target_link_libraries(tscore PUBLIC atomic)
   endif()
 endif()
 
