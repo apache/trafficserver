@@ -503,7 +503,10 @@ public:
 
   int valid() const;
 
+  // destroy() and clear() name-hide HdrHeapSDKHandle's non-virtual versions
+  // Dispatch is static; "override" doesn't apply
   void create(HTTPType polarity, HdrHeap *heap = nullptr);
+  void destroy();
   void clear();
   void reset();
   void copy(const HTTPHdr *hdr);
@@ -673,6 +676,16 @@ protected:
       @ _fill_target_cache @b always does a cache fill.
   */
   void _test_and_fill_target_cache() const;
+  /** Null cached pointers/flags without touching the URL or heap.
+      Shared between @c _reset_local_state() and @c reset(); URL and
+      heap handling differ between those paths.
+  */
+  void _reset_local_fields();
+  /** Null out members that reference the heap.
+      Shared prologue for @c clear() and @c destroy(); ensures a reused
+      HTTPHdr can't dereference a stale @c m_host_mime via @c host_get().
+  */
+  void _reset_local_state();
 
   static Arena *const USE_HDR_HEAP_MAGIC;
 
@@ -710,23 +723,47 @@ HTTPHdr::create(HTTPType polarity, HdrHeap *heap)
 }
 
 inline void
-HTTPHdr::clear()
+HTTPHdr::_reset_local_fields()
+{
+  m_http           = nullptr;
+  m_mime           = nullptr;
+  m_host_mime      = nullptr;
+  m_host_length    = 0;
+  m_port           = 0;
+  m_target_cached  = false;
+  m_target_in_url  = false;
+  m_port_in_header = false;
+}
+
+inline void
+HTTPHdr::_reset_local_state()
 {
   if (m_http && m_http->m_polarity == HTTP_TYPE_REQUEST) {
     m_url_cached.clear();
   }
+  _reset_local_fields();
+}
+
+inline void
+HTTPHdr::clear()
+{
+  _reset_local_state();
   this->HdrHeapSDKHandle::clear();
-  m_http = nullptr;
-  m_mime = nullptr;
+}
+
+inline void
+HTTPHdr::destroy()
+{
+  _reset_local_state();
+  this->HdrHeapSDKHandle::destroy();
 }
 
 inline void
 HTTPHdr::reset()
 {
   m_heap = nullptr;
-  m_http = nullptr;
-  m_mime = nullptr;
   m_url_cached.reset();
+  _reset_local_fields();
 }
 
 /*-------------------------------------------------------------------------
