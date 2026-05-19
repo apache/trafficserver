@@ -32,6 +32,8 @@
 #include <cstring>
 #include <string_view>
 #include <unordered_set>
+#include <grp.h>
+#include <pwd.h>
 
 using swoc::TextView;
 
@@ -181,6 +183,9 @@ const char *const HttpProxyPort::OPT_OUTBOUND_IP_PREFIX = "ip-out";
 const char *const HttpProxyPort::OPT_INBOUND_IP_PREFIX  = "ip-in";
 const char *const HttpProxyPort::OPT_HOST_RES_PREFIX    = "ip-resolve";
 const char *const HttpProxyPort::OPT_PROTO_PREFIX       = "proto";
+const char *const HttpProxyPort::OPT_UDS_PERM_PREFIX    = "uds-perm";
+const char *const HttpProxyPort::OPT_UDS_USER_PREFIX    = "uds-user";
+const char *const HttpProxyPort::OPT_UDS_GROUP_PREFIX   = "uds-group";
 
 const char *const HttpProxyPort::OPT_IPV6                      = "ipv6";
 const char *const HttpProxyPort::OPT_IPV4                      = "ipv4";
@@ -207,12 +212,35 @@ size_t const OPT_OUTBOUND_IP_PREFIX_LEN = strlen(HttpProxyPort::OPT_OUTBOUND_IP_
 size_t const OPT_INBOUND_IP_PREFIX_LEN  = strlen(HttpProxyPort::OPT_INBOUND_IP_PREFIX);
 size_t const OPT_HOST_RES_PREFIX_LEN    = strlen(HttpProxyPort::OPT_HOST_RES_PREFIX);
 size_t const OPT_PROTO_PREFIX_LEN       = strlen(HttpProxyPort::OPT_PROTO_PREFIX);
+size_t const OPT_UDS_PERM_PREFIX_LEN    = strlen(HttpProxyPort::OPT_UDS_PERM_PREFIX);
+size_t const OPT_UDS_USER_PREFIX_LEN    = strlen(HttpProxyPort::OPT_UDS_USER_PREFIX);
+size_t const OPT_UDS_GROUP_PREFIX_LEN   = strlen(HttpProxyPort::OPT_UDS_GROUP_PREFIX);
 
 constexpr std::string_view TS_ALPN_PROTO_ID_OPENSSL_HTTP_0_9("\x8http/0.9");
 constexpr std::string_view TS_ALPN_PROTO_ID_OPENSSL_HTTP_1_0("\x8http/1.0");
 constexpr std::string_view TS_ALPN_PROTO_ID_OPENSSL_HTTP_1_1("\x8http/1.1");
 constexpr std::string_view TS_ALPN_PROTO_ID_OPENSSL_HTTP_2("\x2h2");
 constexpr std::string_view TS_ALPN_PROTO_ID_OPENSSL_HTTP_3("\x2h3");
+
+bool
+parse_octal_mode(const char *s, mode_t &out)
+{
+  if (*s == '\0') {
+    return false;
+  }
+  unsigned long mode = 0;
+  for (; *s != '\0'; ++s) {
+    if (*s < '0' || *s > '7') {
+      return false;
+    }
+    mode = (mode << 3) | static_cast<unsigned long>(*s - '0');
+    if (mode > 0777) {
+      return false;
+    }
+  }
+  out = static_cast<mode_t>(mode);
+  return true;
+}
 } // namespace
 
 namespace
@@ -481,6 +509,33 @@ HttpProxyPort::processOptions(const char *opts)
     } else if (nullptr != (value = this->checkPrefix(item, OPT_PROTO_PREFIX, OPT_PROTO_PREFIX_LEN))) {
       this->processSessionProtocolPreference(value);
       sp_set_p = true;
+    } else if (nullptr != (value = this->checkPrefix(item, OPT_UDS_PERM_PREFIX, OPT_UDS_PERM_PREFIX_LEN))) {
+      if (!parse_octal_mode(value, m_unix_perm)) {
+        Warning("Invalid uds-perm value '%s' in proxy port descriptor '%s'", value, opts);
+        zret = false;
+      }
+    } else if (nullptr != (value = this->checkPrefix(item, OPT_UDS_USER_PREFIX, OPT_UDS_USER_PREFIX_LEN))) {
+      struct passwd *pw = nullptr;
+      if (*value != '\0') {
+        pw = getpwnam(value);
+      }
+      if (pw == nullptr) {
+        Warning("Invalid uds-user '%s' in proxy port descriptor '%s'", value, opts);
+        zret = false;
+      } else {
+        m_unix_uid = pw->pw_uid;
+      }
+    } else if (nullptr != (value = this->checkPrefix(item, OPT_UDS_GROUP_PREFIX, OPT_UDS_GROUP_PREFIX_LEN))) {
+      struct group *gr = nullptr;
+      if (*value != '\0') {
+        gr = getgrnam(value);
+      }
+      if (gr == nullptr) {
+        Warning("Invalid uds-group '%s' in proxy port descriptor '%s'", value, opts);
+        zret = false;
+      } else {
+        m_unix_gid = gr->gr_gid;
+      }
     } else {
       Warning("Invalid option '%s' in proxy port descriptor '%s'", item, opts);
     }
@@ -499,6 +554,13 @@ HttpProxyPort::processOptions(const char *opts)
     }
   } else if (in_ip_set_p) {
     m_family = m_inbound_ip.family(); // set according to address.
+  }
+
+  // uds-perm / uds-user / uds-group are only meaningful for unix domain sockets.
+  if (m_family != AF_UNIX &&
+      (m_unix_perm != 0666 || m_unix_uid != static_cast<uid_t>(-1) || m_unix_gid != static_cast<gid_t>(-1))) {
+    Warning("uds-perm, uds-user and uds-group are only valid for unix domain socket ports in '%s'", opts);
+    zret = false;
   }
 
   // If the port is outbound transparent only CLIENT host resolution is possible.
