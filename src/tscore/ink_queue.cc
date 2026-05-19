@@ -61,8 +61,6 @@
 #include "tscore/Diags.h"
 #include "tscore/JeMiAllocator.h"
 
-#include <iostream>
-
 struct ink_freelist_ops {
   void *(*fl_new)(InkFreeList *);
   void (*fl_free)(InkFreeList *, void *);
@@ -148,7 +146,7 @@ ink_freelist_init(InkFreeList **fl, const char *name, uint32_t type_size, uint32
 {
   // The alignment is used as a boundary for INK_ALIGN,
   // which requires a power of 2 boundary.
-  ink_release_assert(alignment % 2 == 0);
+  ink_release_assert(alignment != 0 && (alignment & (alignment - 1u)) == 0);
 
   // Freelist nodes are head_p objects whenever they are free, which means
   // our allocation has to meet alignment requirements for both head_p objects
@@ -160,8 +158,13 @@ ink_freelist_init(InkFreeList **fl, const char *name, uint32_t type_size, uint32
 
   /* its safe to add to this global list because ink_freelist_init()
      is only called from single-threaded initialization code. */
-  f = static_cast<InkFreeList *>(ats_memalign(alignment, sizeof(InkFreeList)));
-  ink_zero(*f);
+  f                    = new (ats_memalign(alignment, sizeof(InkFreeList))) InkFreeList;
+  f->used              = 0;
+  f->allocated         = 0;
+  f->allocated_base    = 0;
+  f->used_base         = 0;
+  f->hugepages_failure = 0;
+  f->advice            = 0;
 
   fll       = static_cast<ink_freelist_list *>(ats_malloc(sizeof(ink_freelist_list)));
   fll->fl   = f;
@@ -600,8 +603,9 @@ ink_atomiclist_pop(InkAtomicList *l)
     result = l->head.compare_exchange_weak(item, next);
   } while (result == false);
 
-  head_p *ret = reinterpret_cast<head_p *>(reinterpret_cast<unsigned char *>(TO_PTR(FREELIST_POINTER(item))) + l->offset);
-  SET_FREELIST_POINTER_VERSION(*ret, nullptr, 0);
+  void   *ret  = TO_PTR(FREELIST_POINTER(item));
+  head_p *ret_ = reinterpret_cast<head_p *>(reinterpret_cast<unsigned char *>(ret) + l->offset);
+  SET_FREELIST_POINTER_VERSION(*ret_, nullptr, 0);
   return ret;
 }
 

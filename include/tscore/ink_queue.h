@@ -92,25 +92,14 @@ using head_p = head_p_data_type;
 
 #if ((defined(__i386__) || defined(__arm__) || defined(__mips__)) && (SIZEOF_VOIDP == 4)) || TS_HAS_128BIT_CAS
 
+// This struct maps to head_p on the above platforms. On other platforms,
+// bitshifting is used to read head_p.
+// See FREELIST_POINTER for the layout on those platforms.
 struct head_p_view {
   void               *pointer;
   head_p_version_type version;
 };
 
-#elif TS_HAS_128BIT_CAS
-
-struct head_p_view {
-  void               *pointer;
-  head_p_version_type version;
-};
-
-#elif defined(__x86_64__) || defined(__ia64__) || defined(__powerpc64__) || defined(__mips64)
-
-struct head_p_view {
-  int vaddr      : 48;
-  int version    : 15;
-  int vaddr_mode : 1;
-};
 #endif
 
 inline head_p_view
@@ -121,8 +110,6 @@ load_head(head_p const &src)
   std::memcpy(&result, &src, sizeof(result));
   return result;
 }
-
-#include <iostream>
 
 inline void
 store_head(head_p &dest, head_p_view const src)
@@ -176,16 +163,14 @@ store_head(head_p &dest, head_p_view const src)
  */
 #if ((~0 >> 1) < 0)
 /* the shift is `arithmetic' */
-#define FREELIST_POINTER(_x) \
-  ((void *)((((intptr_t)(_x).data) & 0x0000FFFFFFFFFFFFLL) | ((((intptr_t)(_x).data) >> 63) << 48))) // sign extend
+#define FREELIST_POINTER(_x) ((void *)((((intptr_t)(_x)) & 0x0000FFFFFFFFFFFFLL) | ((((intptr_t)(_x)) >> 63) << 48))) // sign extend
 #else
 /* the shift is `logical' */
-#define FREELIST_POINTER(_x) \
-  ((void *)((((intptr_t)(_x).data) & 0x0000FFFFFFFFFFFFLL) | ((~((((intptr_t)(_x).data) >> 63) - 1)) << 48)))
+#define FREELIST_POINTER(_x) ((void *)((((intptr_t)(_x)) & 0x0000FFFFFFFFFFFFLL) | ((~((((intptr_t)(_x)) >> 63) - 1)) << 48)))
 #endif
 
-#define FREELIST_VERSION(_x)                     ((((intptr_t)(_x).data) & 0x7FFF000000000000LL) >> 48)
-#define SET_FREELIST_POINTER_VERSION(_x, _p, _v) (_x).data = ((((intptr_t)(_p)) & 0x8000FFFFFFFFFFFFLL) | (((_v) & 0x7FFFLL) << 48))
+#define FREELIST_VERSION(_x)                     ((((intptr_t)(_x)) & 0x7FFF000000000000LL) >> 48)
+#define SET_FREELIST_POINTER_VERSION(_x, _p, _v) (_x) = ((((intptr_t)(_p)) & 0x8000FFFFFFFFFFFFLL) | (((_v) & 0x7FFFLL) << 48))
 #elif defined(__aarch64__)
 /* Layout of FREELIST_POINTER
  *
@@ -195,16 +180,14 @@ store_head(head_p &dest, head_p_view const src)
  */
 #if ((~0 >> 1) < 0)
 /* the shift is `arithmetic' */
-#define FREELIST_POINTER(_x) \
-  ((void *)((((intptr_t)(_x).data) & 0x000FFFFFFFFFFFFFLL) | ((((intptr_t)(_x).data) >> 63) << 52))) // sign extend
+#define FREELIST_POINTER(_x) ((void *)((((intptr_t)(_x)) & 0x000FFFFFFFFFFFFFLL) | ((((intptr_t)(_x)) >> 63) << 52))) // sign extend
 #else
 /* the shift is `logical' */
-#define FREELIST_POINTER(_x) \
-  ((void *)((((intptr_t)(_x).data) & 0x000FFFFFFFFFFFFFLL) | ((~((((intptr_t)(_x).data) >> 63) - 1)) << 52)))
+#define FREELIST_POINTER(_x) ((void *)((((intptr_t)(_x)) & 0x000FFFFFFFFFFFFFLL) | ((~((((intptr_t)(_x)) >> 63) - 1)) << 52)))
 #endif
 
-#define FREELIST_VERSION(_x)                     ((((intptr_t)(_x).data) & 0x7FF0000000000000LL) >> 52)
-#define SET_FREELIST_POINTER_VERSION(_x, _p, _v) (_x).data = ((((intptr_t)(_p)) & 0x800FFFFFFFFFFFFFLL) | (((_v) & 0x7FFLL) << 52))
+#define FREELIST_VERSION(_x)                     ((((intptr_t)(_x)) & 0x7FF0000000000000LL) >> 52)
+#define SET_FREELIST_POINTER_VERSION(_x, _p, _v) (_x) = ((((intptr_t)(_p)) & 0x800FFFFFFFFFFFFFLL) | (((_v) & 0x7FFLL) << 52))
 #else
 #error "unsupported processor"
 #endif
