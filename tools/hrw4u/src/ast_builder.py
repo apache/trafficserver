@@ -127,7 +127,7 @@ class ASTBuilder(hrw4uVisitor):
         if ctx.number is not None:
             return int(ctx.number.text)
         if ctx.str_ is not None:
-            return nodes.LiteralStringValue(raw=ctx.str_.text[1:-1])
+            return nodes.LiteralStringValue(text=ctx.str_.text[1:-1])
         if ctx.TRUE():
             return True
         if ctx.FALSE():
@@ -139,7 +139,7 @@ class ASTBuilder(hrw4uVisitor):
         if ctx.iprange():
             return tuple(nodes.IPValue(raw=ip.getText()) for ip in ctx.iprange().ip())
         if ctx.paramRef():
-            return nodes.ParamRef(raw=ctx.paramRef().IDENT().getText())
+            return nodes.ParamRef(name=ctx.paramRef().IDENT().getText())
         raise ValueError(f"Unhandled value alternative at line {ctx.start.line}")
 
     def _visit_conditional(self, ctx) -> nodes.IfBlock:
@@ -231,7 +231,7 @@ class ASTBuilder(hrw4uVisitor):
 
     def _extract_comparison_rhs(self, ctx, operator: nodes.CmpOp) -> nodes.ValueExpr | nodes.RegexValue | tuple[nodes.ValueExpr, ...]:
         if operator in (nodes.CmpOp.MATCH, nodes.CmpOp.NOT_MATCH):
-            return nodes.RegexValue(raw=ctx.regex().getText()[1:-1])
+            return nodes.RegexValue(pattern=ctx.regex().getText()[1:-1])
         if operator in (nodes.CmpOp.IN, nodes.CmpOp.NOT_IN):
             if ctx.set_():
                 return tuple(self._extract_value(v) for v in ctx.set_().value())

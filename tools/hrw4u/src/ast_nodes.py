@@ -93,7 +93,10 @@ class VarSectionKind(Enum):
 
 @dataclass(frozen=True, kw_only=True)
 class LiteralStringValue:
-    raw: str
+    # The string body with surrounding quotes stripped. Escape sequences
+    # (e.g. '\n', '\"') are preserved as written; consumers needing the
+    # decoded value must do their own decoding.
+    text: str
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -108,12 +111,15 @@ class IPValue:
 
 @dataclass(frozen=True, kw_only=True)
 class ParamRef:
-    raw: str
+    # Parameter name without the '$' sigil (source `$tag` -> name='tag').
+    name: str
 
 
 @dataclass(frozen=True, kw_only=True)
 class RegexValue:
-    raw: str
+    # The regex body with surrounding '/' delimiters stripped. Backslash
+    # escapes inside the pattern are preserved as written.
+    pattern: str
 
 
 ValueExpr = LiteralStringValue | IdentValue | IPValue | ParamRef | int | bool | tuple[IPValue, ...]

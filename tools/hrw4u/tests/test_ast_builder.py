@@ -33,7 +33,7 @@ class TestAssignments:
         assert isinstance(a, nodes.Assignment)
         assert a.target == nodes.Target.from_dotted("inbound.req.X-Foo")
         assert a.operator == nodes.AssignOp.ASSIGN
-        assert a.value == nodes.LiteralStringValue(raw="test")
+        assert a.value == nodes.LiteralStringValue(text="test")
 
     def test_bool_value(self):
         ast = _build('SEND_RESPONSE {\n    http.cntl.TXN_DEBUG = true;\n}')
@@ -51,7 +51,7 @@ class TestAssignments:
         ast = _build('REMAP {\n    inbound.req.X-Foo = "";\n}')
         a = ast.body[0].body[0]
         assert isinstance(a, nodes.Assignment)
-        assert a.value == nodes.LiteralStringValue(raw="")
+        assert a.value == nodes.LiteralStringValue(text="")
 
     def test_int_value(self):
         ast = _build('REMAP {\n    http.cntl.INTERCEPT_RETRY = 1;\n}')
@@ -74,7 +74,7 @@ class TestAssignments:
         ast = _build(src)
         a = ast.body[0].body[0]
         assert isinstance(a, nodes.Assignment)
-        assert a.value == nodes.ParamRef(raw="tag")
+        assert a.value == nodes.ParamRef(name="tag")
 
     def test_ident_value(self):
         src = 'VARS {\n    flag: bool;\n}\nREMAP {\n    inbound.req.X-Flag = flag;\n}'
@@ -110,7 +110,7 @@ class TestFunctionCalls:
         ast = _build('REMAP {\n    set-header("X-Foo", "bar");\n}')
         fc = ast.body[0].body[0]
         assert fc.name == "set-header"
-        assert fc.args == (nodes.LiteralStringValue(raw="X-Foo"), nodes.LiteralStringValue(raw="bar"))
+        assert fc.args == (nodes.LiteralStringValue(text="X-Foo"), nodes.LiteralStringValue(text="bar"))
 
     def test_qualified_name(self):
         src = 'use test::helper\nREMAP {\n    test::helper("tag");\n}'
@@ -118,7 +118,7 @@ class TestFunctionCalls:
         fc = ast.body[1].body[0]
         assert isinstance(fc, nodes.FunctionCall)
         assert fc.name == "test::helper"
-        assert fc.args == (nodes.LiteralStringValue(raw="tag"),)
+        assert fc.args == (nodes.LiteralStringValue(text="tag"),)
 
     def test_param_ref_arg(self):
         src = 'procedure local::stamp($tag) {\n    set-header("X-Stamp", $tag);\n}\nREMAP {\n    set-debug();\n}'
@@ -126,7 +126,7 @@ class TestFunctionCalls:
         fc = ast.body[0].body[0]
         assert isinstance(fc, nodes.FunctionCall)
         assert fc.name == "set-header"
-        assert fc.args == (nodes.LiteralStringValue(raw="X-Stamp"), nodes.ParamRef(raw="tag"))
+        assert fc.args == (nodes.LiteralStringValue(text="X-Stamp"), nodes.ParamRef(name="tag"))
 
     def test_standalone_operator(self):
         ast = _build('REMAP {\n    skip-remap;\n}')
@@ -293,7 +293,7 @@ class TestProcedures:
         assert pd.params[0].name == "key"
         assert pd.params[0].default is None
         assert pd.params[1].name == "value"
-        assert pd.params[1].default == nodes.LiteralStringValue(raw="x")
+        assert pd.params[1].default == nodes.LiteralStringValue(text="x")
         assert pd.params[2].name == "count"
         assert pd.params[2].default == 1
 
@@ -319,7 +319,7 @@ class TestConditionExpressions:
         assert isinstance(cond, nodes.Comparison)
         assert cond.left == nodes.IdentValue(raw="inbound.req.X-Foo")
         assert cond.operator == nodes.CmpOp.EQ
-        assert cond.right == nodes.LiteralStringValue(raw="bar")
+        assert cond.right == nodes.LiteralStringValue(text="bar")
         assert cond.modifiers == ()
 
     def test_regex_comparison(self):
@@ -332,7 +332,7 @@ class TestConditionExpressions:
         cond = self._first_condition('REMAP {\n    if inbound.url.path in ["a", "b"] {\n        set-debug();\n    }\n}')
         assert isinstance(cond, nodes.Comparison)
         assert cond.operator == nodes.CmpOp.IN
-        assert cond.right == (nodes.LiteralStringValue(raw="a"), nodes.LiteralStringValue(raw="b"))
+        assert cond.right == (nodes.LiteralStringValue(text="a"), nodes.LiteralStringValue(text="b"))
 
     def test_not_in_set(self):
         cond = self._first_condition('REMAP {\n    if inbound.url.path !in ["a"] {\n        set-debug();\n    }\n}')
@@ -406,7 +406,7 @@ class TestConditionExpressions:
         cond = self._first_condition('REMAP {\n    if access("/tmp/bar") {\n        set-debug();\n    }\n}')
         assert isinstance(cond, nodes.FunctionCall)
         assert cond.name == "access"
-        assert cond.args == (nodes.LiteralStringValue(raw="/tmp/bar"),)
+        assert cond.args == (nodes.LiteralStringValue(text="/tmp/bar"),)
 
     def test_not_tilde_comparison(self):
         cond = self._first_condition('REMAP {\n    if inbound.url.path !~ /\\.jpg$/ {\n        set-debug();\n    }\n}')
@@ -430,13 +430,13 @@ class TestConditionExpressions:
         cond = self._first_condition('REMAP {\n    if inbound.req.X-Foo != "bar" {\n        set-debug();\n    }\n}')
         assert isinstance(cond, nodes.Comparison)
         assert cond.operator == nodes.CmpOp.NEQ
-        assert cond.right == nodes.LiteralStringValue(raw="bar")
+        assert cond.right == nodes.LiteralStringValue(text="bar")
 
     def test_parenthesized_condition(self):
         cond = self._first_condition('REMAP {\n    if (inbound.req.X-Foo == "bar") {\n        set-debug();\n    }\n}')
         assert isinstance(cond, nodes.Comparison)
         assert cond.operator == nodes.CmpOp.EQ
-        assert cond.right == nodes.LiteralStringValue(raw="bar")
+        assert cond.right == nodes.LiteralStringValue(text="bar")
 
     def test_and_binds_tighter_than_or(self):
         # a || b && c  should parse as  a || (b && c)
@@ -478,7 +478,7 @@ class TestConditionExpressions:
         assert isinstance(cond.left, nodes.NotOp)
         assert isinstance(cond.left.operand, nodes.Comparison)
         assert cond.left.operand.left == nodes.IdentValue(raw="inbound.req.X-A")
-        assert cond.left.operand.right == nodes.LiteralStringValue(raw="x")
+        assert cond.left.operand.right == nodes.LiteralStringValue(text="x")
         assert isinstance(cond.right, nodes.Comparison)
         assert cond.right.left == nodes.IdentValue(raw="inbound.req.X-B")
 
@@ -832,7 +832,7 @@ REMAP {
         cond = ast.body[0].body[0].condition
         assert isinstance(cond, nodes.Comparison)
         assert cond.operator == nodes.CmpOp.IN
-        assert cond.right == (nodes.LiteralStringValue(raw="php"), nodes.LiteralStringValue(raw="php3"), nodes.LiteralStringValue(raw="php4"))
+        assert cond.right == (nodes.LiteralStringValue(text="php"), nodes.LiteralStringValue(text="php3"), nodes.LiteralStringValue(text="php4"))
         assert cond.modifiers == ("EXT",)
 
     def test_debug_pattern_for_lint_rules(self):
