@@ -181,7 +181,7 @@ class ASTBuilder(hrw4uVisitor):
         return self._visit_factor(ctx.factor())
 
     def _visit_factor(self, ctx) -> ConditionExpr:
-        if ctx.getChildCount() == 2 and ctx.getChild(0).getText() == "!":
+        if ctx.BANG():
             return NotOp(operand=self._visit_factor(ctx.factor()), line=ctx.start.line)
         if ctx.LPAREN():
             return self._visit_expression(ctx.expression())
@@ -225,10 +225,7 @@ class ASTBuilder(hrw4uVisitor):
         if ctx.NOT_TILDE():
             return CmpOp.NOT_MATCH
         if ctx.IN():
-            for child in ctx.children:
-                if hasattr(child, "getText") and child.getText() == "!":
-                    return CmpOp.NOT_IN
-            return CmpOp.IN
+            return CmpOp.NOT_IN if ctx.BANG() else CmpOp.IN
         raise ValueError(f"Unhandled comparison operator at line {ctx.start.line}")
 
     def _extract_comparison_rhs(self, ctx, operator: CmpOp) -> ValueExpr | RegexValue | tuple[ValueExpr, ...]:
