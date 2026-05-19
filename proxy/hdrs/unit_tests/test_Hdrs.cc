@@ -101,6 +101,44 @@ TEST_CASE("HdrTestHttpParse", "[proxy][hdrtest]")
   }
 }
 
+TEST_CASE("HTTPHdr destroy clears cached request URL", "[proxy][hdrtest]")
+{
+  constexpr ts::TextView msg = "GET /index.html HTTP/1.1\r\nHost: example.com\r\n\r\n";
+
+  HTTPParser parser;
+  http_parser_init(&parser);
+
+  HTTPHdr req_hdr;
+  HdrHeap *heap = new_HdrHeap(HdrHeap::DEFAULT_SIZE + 64);
+
+  req_hdr.create(HTTP_TYPE_REQUEST, heap);
+
+  auto start = msg.data();
+  REQUIRE(req_hdr.parse_req(&parser, &start, msg.data_end(), true) == PARSE_RESULT_DONE);
+
+  // Force population of m_url_cached so it holds a pointer into the heap.
+  URL *u = req_hdr.url_get();
+  REQUIRE(u != nullptr);
+  REQUIRE(u->valid());
+  REQUIRE(req_hdr.m_url_cached.valid());
+
+  // Force population of the target cache so m_host_mime points into the heap.
+  int host_len     = 0;
+  const char *host = req_hdr.host_get(&host_len);
+  REQUIRE(host != nullptr);
+  REQUIRE(host_len > 0);
+  REQUIRE(req_hdr.m_target_cached);
+
+  req_hdr.destroy();
+
+  // After destroy(), no member should reference the freed heap.
+  REQUIRE(req_hdr.m_http == nullptr);
+  REQUIRE(req_hdr.m_mime == nullptr);
+  REQUIRE_FALSE(req_hdr.m_url_cached.valid());
+  REQUIRE(req_hdr.m_host_mime == nullptr);
+  REQUIRE_FALSE(req_hdr.m_target_cached);
+}
+
 TEST_CASE("MIMEScanner_fragments", "[proxy][mimescanner_fragments]")
 {
   constexpr ts::TextView const message = "GET /index.html HTTP/1.0\r\n";
