@@ -731,6 +731,9 @@ HTTP Engine
    tr-pass                      Pass through enabled.
    mptcp                        Multipath TCP.
    allow-plain                  Allow failback to non-TLS for TLS ports
+   uds-perm     Value           Unix domain socket file permission mode.
+   uds-user     Value           Unix domain socket file owner name.
+   uds-group    Value           Unix domain socket file group name.
    ============ =============== ========================================
 
 *port*
@@ -824,6 +827,41 @@ allow-plain
    For TLS ports, will fall back to non-TLS processing if the TLS handshake fails. Incompatible with
    quic ports.
 
+uds-perm
+   Set the file permission mode applied to a Unix domain socket listener after
+   ``bind()``. The value is parsed as octal (e.g. ``0660`` or ``660``) and must
+   be in the range ``0`` to ``0777``. The default is ``0666`` -- read/write for
+   any local user, matching the connect access of a TCP listener under the
+   default :file:`ip_allow.yaml`. Tighten it (e.g. ``0660``) together with
+   ``uds-user`` / ``uds-group`` to restrict which local users may connect.
+
+   Only valid for Unix domain socket ports.
+
+uds-user
+   Set the owning user of a Unix domain socket listener file. The value is a
+   user name resolved via :manpage:`getpwnam(3)`. If ``uds-user`` and / or
+   ``uds-group`` is specified, |TS| performs :manpage:`chown(2)` on the socket
+   path; otherwise the ownership inherited from the running process is kept.
+
+   Only valid for Unix domain socket ports.
+
+uds-group
+   Set the owning group of a Unix domain socket listener file. The value is a
+   group name resolved via :manpage:`getgrnam(3)`. See ``uds-user``.
+
+   Only valid for Unix domain socket ports.
+
+.. important::
+
+   IP-based access controls -- :file:`ip_allow.yaml` and remap ``@src_ip`` /
+   ``@src_ip_category`` rules -- are **not** evaluated for connections that
+   arrive over a Unix domain socket, because the peer has no IP address.
+   Connections accepted on a UDS listener are subject only to the filesystem
+   permissions and ownership of the socket file. Use ``uds-perm``,
+   ``uds-user`` and ``uds-group`` (or external filesystem ACLs on the
+   containing directory) to restrict which local users may connect, unless an
+   IP source is supplied through :ts:cv:`proxy.config.acl.subjects`.
+
 .. topic:: Example
 
    Listen on port 80 on any address for IPv4 and IPv6.::
@@ -836,6 +874,14 @@ allow-plain
    Proxy Protocol
 
       /var/run/trafficserver/proxy.sock:pp
+
+.. topic:: Example
+
+   Listen on unix domain socket at /var/run/trafficserver/proxy.sock owned by
+   user ``trafficserver`` and group ``ats-clients`` with mode ``0660`` so that
+   only members of ``ats-clients`` can connect::
+
+      /var/run/trafficserver/proxy.sock:uds-perm=0660:uds-user=trafficserver:uds-group=ats-clients
 
 .. topic:: Example
 
