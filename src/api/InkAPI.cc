@@ -7545,6 +7545,11 @@ TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
       s->t_state.my_txn_conf().ssl_client_ca_cert_filename = const_cast<char *>(value);
     }
     break;
+  case TS_CONFIG_SSL_CLIENT_CA_CERT_PATH:
+    if (value && length > 0) {
+      s->t_state.my_txn_conf().ssl_client_ca_cert_path = const_cast<char *>(value);
+    }
+    break;
   case TS_CONFIG_SSL_CLIENT_ALPN_PROTOCOLS:
     if (value && length > 0) {
       s->t_state.my_txn_conf().ssl_client_alpn_protocols = const_cast<char *>(value);
@@ -7622,6 +7627,10 @@ TSHttpTxnConfigStringGet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
     break;
   case TS_CONFIG_HTTP_SERVER_SESSION_SHARING_MATCH:
     *value  = sm->t_state.txn_conf->server_session_sharing_match_str;
+    *length = *value ? strlen(*value) : 0;
+    break;
+  case TS_CONFIG_SSL_CLIENT_CA_CERT_PATH:
+    *value  = sm->t_state.txn_conf->ssl_client_ca_cert_path;
     *length = *value ? strlen(*value) : 0;
     break;
   default: {
