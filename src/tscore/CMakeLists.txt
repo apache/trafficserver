@@ -125,7 +125,8 @@ if(TS_HAS_128BIT_CAS)
     unset(CMAKE_REQUIRED_LIBRARIES)
 
     if(NOT HAVE_LIBATOMIC)
-      message(FATAL_ERROR "Cannot build 128 bit atomics")
+      message(WARNING "Cannot build 128 bit atomics")
+      set(TS_HAS_128BIT_CAS FALSE)
     endif()
 
     target_link_libraries(tscore PUBLIC atomic)
