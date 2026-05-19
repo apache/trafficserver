@@ -178,10 +178,8 @@ tr.Processes.Default.Streams.All = Testers.ExcludesExpression("Access Denied", "
 tr = Test.AddTestRun("Connect with SNI longer than host sharing prefix")
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
-tr.MakeCurlCommand(
-    "-v --tls-max 1.2 -k --cert ./signed-foo.pem --key ./signed-foo.key -H 'host:bob' --resolve 'bob.bar.com:{0}:127.0.0.1' https://bob.bar.com:{0}/case1"
-    .format(ts.Variables.ssl_port),
-    ts=ts)
+tr.Processes.Default.Command = "curl -v --tls-max 1.2 -k --cert ./signed-foo.pem --key ./signed-foo.key -H 'host:bob' --resolve 'bob.bar.com:{0}:127.0.0.1' https://bob.bar.com:{0}/case1".format(
+    ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ContainsExpression("Access Denied", "Check response")
 
@@ -191,10 +189,8 @@ tr.Processes.Default.Streams.All = Testers.ContainsExpression("Access Denied", "
 tr = Test.AddTestRun("Connect with host longer than SNI sharing prefix")
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
-tr.MakeCurlCommand(
-    "-v --tls-max 1.2 -k --cert ./signed-foo.pem --key ./signed-foo.key -H 'host:bob.bar.com' --resolve 'bob:{0}:127.0.0.1' https://bob:{0}/case1"
-    .format(ts.Variables.ssl_port),
-    ts=ts)
+tr.Processes.Default.Command = "curl -v --tls-max 1.2 -k --cert ./signed-foo.pem --key ./signed-foo.key -H 'host:bob.bar.com' --resolve 'bob:{0}:127.0.0.1' https://bob:{0}/case1".format(
+    ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ContainsExpression("Access Denied", "Check response")
 
@@ -204,10 +200,8 @@ tr.Processes.Default.Streams.All = Testers.ContainsExpression("Access Denied", "
 tr = Test.AddTestRun("Connect with host ending with SNI value")
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
-tr.MakeCurlCommand(
-    "-v --tls-max 1.2 -k --cert ./signed-foo.pem --key ./signed-foo.key -H 'host:dave.bob' --resolve 'bob:{0}:127.0.0.1' https://bob:{0}/case1"
-    .format(ts.Variables.ssl_port),
-    ts=ts)
+tr.Processes.Default.Command = "curl -v --tls-max 1.2 -k --cert ./signed-foo.pem --key ./signed-foo.key -H 'host:dave.bob' --resolve 'bob:{0}:127.0.0.1' https://bob:{0}/case1".format(
+    ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ContainsExpression("Access Denied", "Check response")
 
@@ -217,10 +211,8 @@ tr.Processes.Default.Streams.All = Testers.ContainsExpression("Access Denied", "
 tr = Test.AddTestRun("Connect with SNI ending with host value")
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
-tr.MakeCurlCommand(
-    "-v --tls-max 1.2 -k --cert ./signed-foo.pem --key ./signed-foo.key -H 'host:bob' --resolve 'dave.bob:{0}:127.0.0.1' https://dave.bob:{0}/case1"
-    .format(ts.Variables.ssl_port),
-    ts=ts)
+tr.Processes.Default.Command = "curl -v --tls-max 1.2 -k --cert ./signed-foo.pem --key ./signed-foo.key -H 'host:bob' --resolve 'dave.bob:{0}:127.0.0.1' https://dave.bob:{0}/case1".format(
+    ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ContainsExpression("Access Denied", "Check response")
 

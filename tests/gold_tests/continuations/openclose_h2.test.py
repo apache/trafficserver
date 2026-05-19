@@ -60,14 +60,19 @@ ts.Disk.records_config.update(
 ts.Disk.remap_config.AddLine('map https://oc.test:{0} http://127.0.0.1:{1}'.format(ts.Variables.ssl_port, server.Variables.Port))
 ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
 
-cmd = 'curl -k --resolve oc.test:{0}:127.0.0.1 --http2 https://oc.test:{0}'.format(ts.Variables.ssl_port)
+cmd = '-k --resolve oc.test:{0}:127.0.0.1 --http2 https://oc.test:{0}'.format(ts.Variables.ssl_port)
 numberOfRequests = 100
 
+
+def spawn_curl_commands(test_run, cmdstr, count, retcode=0):
+    return test_run.SpawnCommands(cmdstr='curl ' + cmdstr, count=count, retcode=retcode)
+
+
 tr = Test.AddTestRun()
-# Create a bunch of curl commands to be executed in parallel. Default.Process is set in SpawnCommands.
+# Create a bunch of curl commands to be executed in parallel. Default.Process is set in spawn_curl_commands.
 # On Fedora 28/29, it seems that curl will occasionally timeout after a couple seconds and return exitcode 2
 # Examining the packet capture shows that Traffic Server dutifully sends the response
-ps = tr.SpawnCommands(cmdstr=cmd, count=numberOfRequests, retcode=Any(0, 2))
+ps = spawn_curl_commands(tr, cmdstr=cmd, count=numberOfRequests, retcode=Any(0, 2))
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.ReturnCode = Any(0, 2)
 
@@ -119,18 +124,33 @@ tr.Processes.Default.Streams.All = Testers.ContainsExpression(
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 
-comparator_command = '''
-if test "`traffic_ctl metric get ssntxnorder_verify.{0}.start | cut -d ' ' -f 2`" -eq "`traffic_ctl metric get ssntxnorder_verify.{0}.close | cut -d ' ' -f 2`" ; then\
-     echo yes;\
-    else \
-    echo no; \
-    fi; \
+
+def make_comparator_command(metric_name, expected_count=None):
+    expected_check = ''
+    if expected_count is not None:
+        expected_check = ' && test "$$start_count" = "{0}"'.format(expected_count)
+    return '''
+N=60
+while test "$$N" -gt 0 ; do
+  start_count=$$(traffic_ctl metric get ssntxnorder_verify.{0}.start | cut -d ' ' -f 2)
+  close_count=$$(traffic_ctl metric get ssntxnorder_verify.{0}.close | cut -d ' ' -f 2)
+  if test "$$start_count" = "$$close_count" && test "$$start_count" != "0"{1} ; then
+    echo yes
     traffic_ctl metric match ssntxnorder_verify
-    '''
+    exit 0
+  fi
+  sleep 1
+  N=$$((N - 1))
+done
+echo no
+traffic_ctl metric match ssntxnorder_verify
+exit 1
+    '''.format(metric_name, expected_check)
+
 
 # number of sessions/transactions opened and closed are equal
 tr = Test.AddTestRun("Check for ssn open/close")
-tr.Processes.Default.Command = comparator_command.format('ssn')
+tr.Processes.Default.Command = make_comparator_command('ssn')
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.Streams.stdout = Testers.ContainsExpression("yes", 'should verify contents')
@@ -139,7 +159,7 @@ tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 
 tr = Test.AddTestRun("Check for txn/open/close")
-tr.Processes.Default.Command = comparator_command.format('txn')
+tr.Processes.Default.Command = make_comparator_command('txn', numberOfRequests)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.Streams.stdout = Testers.ContainsExpression("yes", 'should verify contents')
