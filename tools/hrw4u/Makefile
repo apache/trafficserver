@@ -31,7 +31,9 @@ SCRIPT_HRW4U=scripts/hrw4u
 SCRIPT_U4WRH=scripts/u4wrh
 SCRIPT_LSP=scripts/hrw4u-lsp
 SCRIPT_KG=scripts/hrw4u-kg
-SCRIPT_AST=scripts/hrw4u-ast
+
+# scripts/hrw4u-ast is dev-only — not packaged or shipped. Run it from the
+# source tree via `uv run scripts/hrw4u-ast` or `python scripts/hrw4u-ast`.
 
 # Shared source files (will go in hrw4u package)
 SHARED_FILES=src/common.py \
@@ -192,13 +194,13 @@ coverage: gen
 coverage-open: coverage
 	uv run python -m webbrowser "file://$(shell pwd)/htmlcov/index.html"
 
-# Build standalone binaries (optional)
+# Build standalone binaries (optional). hrw4u-ast is intentionally
+# excluded — it's a dev-only inspection tool, not a shipped artifact.
 build: gen
 	uv run pyinstaller --onedir --name hrw4u --strip $(SCRIPT_HRW4U)
 	uv run pyinstaller --onedir --name u4wrh --strip $(SCRIPT_U4WRH)
 	uv run pyinstaller --onedir --name hrw4u-lsp --strip $(SCRIPT_LSP)
 	uv run pyinstaller --onedir --name hrw4u-kg --strip $(SCRIPT_KG)
-	uv run pyinstaller --onedir --name hrw4u-ast --strip $(SCRIPT_AST)
 
 # Wheel packaging (adjust pyproject to include both packages if desired)
 package: gen
