@@ -390,15 +390,16 @@ freelist_free(InkFreeList *f, void *item)
     }
 #endif /* SANITY */
 
-    ink_assert(is_next_ptr_aligned(f, h));
-
     SET_FREELIST_POINTER_VERSION(*recovered_item, FREELIST_POINTER(h), 0);
     SET_FREELIST_POINTER_VERSION(item_pair, FROM_PTR(item), FREELIST_VERSION(h));
+
+    // This assertion has to happen-before the node is in the list and
+    // can be handed out to an allocator.
+    ink_assert(is_next_ptr_aligned(f, *recovered_item));
     result = f->head.compare_exchange_weak(h, item_pair, std::memory_order_release, std::memory_order_relaxed);
   }
 
   ink_assert(is_next_ptr_aligned(f, h));
-  ink_assert(is_next_ptr_aligned(f, *recovered_item));
 }
 
 void
