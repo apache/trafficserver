@@ -1039,7 +1039,7 @@ remap_parse_yaml_bti(YAML::Node const *remap_node, BUILD_TABLE_INFO *bti, Config
 
     ACLBehaviorPolicy behavior_policy = ACLBehaviorPolicy::ACL_BEHAVIOR_LEGACY;
     if (!UrlRewrite::get_acl_behavior_policy(behavior_policy)) {
-      Warning("Failed to get ACL matching policy.");
+      CfgLoadLog(ctx, DL_Warning, "Failed to get ACL matching policy.");
       return false;
     }
     bti->behavior_policy = behavior_policy;
@@ -1049,7 +1049,7 @@ remap_parse_yaml_bti(YAML::Node const *remap_node, BUILD_TABLE_INFO *bti, Config
 
       auto errata = parse_yaml_remap_rule(rule, bti);
       if (!errata.is_ok()) {
-        Error("Failed to parse remap rule");
+        CfgLoadLog(ctx, DL_Error, "Failed to parse remap rule");
         return false;
       }
     }
@@ -1060,9 +1060,9 @@ remap_parse_yaml_bti(YAML::Node const *remap_node, BUILD_TABLE_INFO *bti, Config
     return true;
 
   } catch (YAML::Exception &ex) {
-    Error("YAML parsing error in inline remap rules: %s", ex.what());
+    CfgLoadLog(ctx, DL_Error, "YAML parsing error in inline remap rules: %s", ex.what());
   } catch (std::exception &ex) {
-    Error("Exception parsing inline remap YAML rules: %s", ex.what());
+    CfgLoadLog(ctx, DL_Error, "Exception parsing inline remap YAML rules: %s", ex.what());
   }
   return false;
 }
@@ -1089,14 +1089,14 @@ remap_parse_yaml(const char *path, UrlRewrite *rewrite, ConfigContext ctx)
 }
 
 bool
-remap_parse_yaml(YAML::Node const *remap_node, UrlRewrite *rewrite)
+remap_parse_yaml(YAML::Node const *remap_node, UrlRewrite *rewrite, ConfigContext ctx)
 {
   BUILD_TABLE_INFO bti;
 
   rewrite->pluginFactory.indicatePreReload();
 
   bti.rewrite = rewrite;
-  bool status = remap_parse_yaml_bti(remap_node, &bti);
+  bool status = remap_parse_yaml_bti(remap_node, &bti, ctx);
 
   rewrite->pluginFactory.indicatePostReload(status);
 

@@ -604,16 +604,6 @@ ConfigCommand::config_reload()
       return;
     }
   }
-  // If --virtualhost is set, inject the virtualhost id into the configs
-  // so the server-side handler receives it as a scalar value for
-  // single-entry reload.
-  auto vhost_arg = get_parsed_arguments()->get("virtualhost");
-  if (vhost_arg) {
-    std::string vhost_id = vhost_arg.value();
-    if (!vhost_id.empty()) {
-      configs["virtualhost"] = vhost_id;
-    }
-  }
 
   using ConfigError = config::reload::errors::ConfigReloadError;
 

@@ -174,9 +174,7 @@ main([[maybe_unused]] int argc, const char **argv)
                 "Maximum time to wait for reload completion (used with --monitor). "
                 "Accepts duration units: 30s, 1m, 500ms, etc. 0 means no timeout",
                 "", 1, "0")
-    .with_required("--monitor")
-    // Include virtualhost option to only reload specified entry
-    .add_option("--virtualhost", "", "Reload only the specific virtual host entry by id", "", 1, "");
+    .with_required("--monitor");
 
   config_command.add_command("status", "Check the configuration status", [&]() { command->execute(); })
     .add_option("--token", "-t", "Configuration token to check status.", "", 1, "")
