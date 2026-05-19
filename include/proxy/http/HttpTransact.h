@@ -706,29 +706,30 @@ public:
 
     Arena arena;
 
-    bool force_dns                    = false;
-    bool is_upgrade_request           = false;
-    bool is_websocket                 = false;
-    bool did_upgrade_succeed          = false;
-    bool client_connection_allowed    = true;
-    bool acl_filtering_performed      = false;
-    bool api_cleanup_cache_read       = false;
-    bool api_server_response_no_store = false;
-    bool api_server_response_ignore   = false;
-    bool api_http_sm_shutdown         = false;
-    bool api_modifiable_cached_resp   = false;
-    bool api_server_request_body_set  = false;
-    bool api_req_cacheable            = false;
-    bool api_resp_cacheable           = false;
-    bool api_server_addr_set_retried  = false;
-    bool reverse_proxy                = false;
-    bool url_remap_success            = false;
-    bool api_skip_all_remapping       = false;
-    bool already_downgraded           = false;
-    bool transparent_passthrough      = false;
-    bool range_in_cache               = false;
-    bool is_method_stats_incremented  = false;
-    bool skip_ip_allow_yaml           = false;
+    bool force_dns                          = false;
+    bool is_upgrade_request                 = false;
+    bool is_websocket                       = false;
+    bool did_upgrade_succeed                = false;
+    bool client_connection_allowed          = true;
+    bool acl_filtering_performed            = false;
+    bool api_cleanup_cache_read             = false;
+    bool api_server_response_no_store       = false;
+    bool api_server_response_ignore         = false;
+    bool api_http_sm_shutdown               = false;
+    bool api_modifiable_cached_resp         = false;
+    bool api_server_request_body_set        = false;
+    bool api_req_cacheable                  = false;
+    bool api_resp_cacheable                 = false;
+    bool api_server_addr_set_retried        = false;
+    bool host_down_cache_fallback_attempted = false;
+    bool reverse_proxy                      = false;
+    bool url_remap_success                  = false;
+    bool api_skip_all_remapping             = false;
+    bool already_downgraded                 = false;
+    bool transparent_passthrough            = false;
+    bool range_in_cache                     = false;
+    bool is_method_stats_incremented        = false;
+    bool skip_ip_allow_yaml                 = false;
 
     /// True if the response is cacheable because of negative caching configuration.
     ///

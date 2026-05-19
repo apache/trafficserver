@@ -2644,6 +2644,13 @@ HttpTransact::CallOSDNSLookup(State *s)
   HostStatus  &pstatus = HostStatus::instance();
   HostStatRec *hst     = pstatus.getHostStatus(s->server_info.name);
   if (hst && hst->status == TSHostStatus::TS_HOST_STATUS_DOWN) {
+    if (s->host_down_cache_fallback_attempted) {
+      TxnDbg(dbg_ctl_http, "host down cache fallback already attempted; returning 502");
+      build_error_response(s, HTTP_STATUS_BAD_GATEWAY, "Next Hop Connection Failed", "connect#failed_connect");
+      s->next_action = SM_ACTION_SEND_ERROR_CACHE_NOOP;
+      return;
+    }
+    s->host_down_cache_fallback_attempted = true;
     TxnDbg(dbg_ctl_http, "%d ", s->cache_lookup_result);
     s->current.state = OUTBOUND_CONGESTION;
     if (s->cache_lookup_result == CACHE_LOOKUP_HIT_STALE || s->cache_lookup_result == CACHE_LOOKUP_HIT_WARNING ||
