@@ -116,15 +116,15 @@ if(TS_HAS_HIGHWAY_DISPATCH)
   target_include_directories(tscore PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 endif()
 
+if(TS_HAS_128BIT_CAS)
+  find_library(atomic QUIET)
+  if(atomic_FOUND)
+    target_link_libraries(tscore PUBLIC atomic)
+  endif()
+endif()
+
 target_link_libraries(
-  tscore
-  PUBLIC atomic
-         OpenSSL::Crypto
-         libswoc::libswoc
-         yaml-cpp::yaml-cpp
-         systemtap::systemtap
-         resolv::resolv
-         ts::tsutil
+  tscore PUBLIC OpenSSL::Crypto libswoc::libswoc yaml-cpp::yaml-cpp systemtap::systemtap resolv::resolv ts::tsutil
 )
 
 if(TS_USE_POSIX_CAP)
