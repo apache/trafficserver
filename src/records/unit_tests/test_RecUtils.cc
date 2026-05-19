@@ -24,6 +24,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "../P_RecUtils.h"
+#include "records/RecordsConfig.h"
 
 TEST_CASE("recordRangeCheck via RecordValidityCheck", "[librecords][RecUtils]")
 {
@@ -198,4 +199,17 @@ TEST_CASE("recordRangeCheck via RecordValidityCheck", "[librecords][RecUtils]")
     REQUIRE(RecordValidityCheck("9223372036854775806", RECC_INT, "[0-9223372036854775807]"));   // INT64_MAX - 1
     REQUIRE(RecordValidityCheck("-9223372036854775807", RECC_INT, "[-9223372036854775808-0]")); // INT64_MIN + 1
   }
+}
+
+TEST_CASE("search_default_domains accepts documented values", "[librecords][RecUtils]")
+{
+  const auto *record = GetRecordElementByName("proxy.config.dns.search_default_domains");
+
+  REQUIRE(record != nullptr);
+  REQUIRE(record->check == RECC_INT);
+  REQUIRE(record->regex != nullptr);
+  REQUIRE(RecordValidityCheck("0", record->check, record->regex));
+  REQUIRE(RecordValidityCheck("1", record->check, record->regex));
+  REQUIRE(RecordValidityCheck("2", record->check, record->regex));
+  REQUIRE_FALSE(RecordValidityCheck("3", record->check, record->regex));
 }
