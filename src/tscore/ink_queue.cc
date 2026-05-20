@@ -636,7 +636,7 @@ ink_atomiclist_popall(InkAtomicList *l)
   /* fixup forward pointers */
   while (e) {
     void **e_ = to_voidp_p(e, l->offset);
-    void  *n  = TO_PTR(FREELIST_POINTER(*e_));
+    void  *n  = TO_PTR(*e_);
     *e_       = n;
     e         = n;
   }
@@ -702,7 +702,7 @@ ink_atomiclist_remove(InkAtomicList *l, void *item)
   while (prev) {
     void **prev_adr_of_next = to_voidp_p(prev, l->offset);
     void  *prev_prev        = prev;
-    prev                    = TO_PTR(FREELIST_POINTER(*prev_adr_of_next));
+    prev                    = TO_PTR(*prev_adr_of_next);
     if (prev == item) {
       ink_assert(prev_prev != item_next);
       *prev_adr_of_next = item_next;
