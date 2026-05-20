@@ -227,7 +227,7 @@ static void **
 to_voidp_p(void *x, std::uint64_t offset)
 {
   unsigned char *addr{reinterpret_cast<unsigned char *>(x) + offset};
-  ink_assert(is_addr_aligned(x, alignof(void **)));
+  ink_assert(is_addr_aligned(addr, alignof(void **)));
   return reinterpret_cast<void **>(addr);
 }
 
@@ -579,9 +579,9 @@ ink_atomiclist_init(InkAtomicList *l, const char *name, uint32_t offset_to_next)
 {
   // The pointers we push onto the atomiclist will also need to be aligned. If
   // the offset is not aligned, then it is not possible for the caller to
-  // determine a consistent, safe alignment for the object the head_p objects
+  // determine a consistent, safe alignment for the object the void* objects
   // are subobjects of.
-  ink_release_assert(offset_to_next % alignof(head_p) == 0);
+  ink_release_assert(offset_to_next % alignof(void *) == 0);
 
   l->name   = name;
   l->offset = offset_to_next;
@@ -641,7 +641,7 @@ ink_atomiclist_popall(InkAtomicList *l)
     e         = n;
   }
 
-  ink_assert(is_addr_aligned(ret, alignof(head_p)));
+  ink_assert(is_addr_aligned(ret, alignof(void *)));
 
   return ret;
 }
