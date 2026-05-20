@@ -578,6 +578,12 @@ ink_freelists_dump(FILE *f)
 void
 ink_atomiclist_init(InkAtomicList *l, const char *name, uint32_t offset_to_next)
 {
+  // The pointers we push onto the atomiclist will also need to be aligned. If
+  // the offset is not aligned, then it is not possible for the caller to
+  // determine a consistent, safe alignment for the object the head_p objects
+  // are subobjects of.
+  ink_release_assert(offset_to_next % alignof(head_p) == 0);
+
   l->name   = name;
   l->offset = offset_to_next;
   head_p empty_head;
@@ -636,7 +642,7 @@ ink_atomiclist_popall(InkAtomicList *l)
     e = n;
   }
 
-  // ink_assert(is_addr_aligned(reinterpret_cast<unsigned char *>(ret) + l->offset, alignof(head_p)));
+  ink_assert(is_addr_aligned(ret, alignof(head_p)));
 
   return ret;
 }
@@ -644,7 +650,7 @@ ink_atomiclist_popall(InkAtomicList *l)
 void *
 ink_atomiclist_push(InkAtomicList *l, void *item)
 {
-  // ink_release_assert(is_addr_aligned(reinterpret_cast<unsigned char *>(item) + l->offset, alignof(head_p)));
+  ink_release_assert(is_addr_aligned(item, alignof(head_p)));
 
   head_p  head;
   head_p  item_pair;
