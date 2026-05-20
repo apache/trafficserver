@@ -296,8 +296,13 @@ Http3App::_handle_uni_stream_on_read_ready(int /* event */, VIO *vio)
     // Recipients of unknown stream types MUST either abort reading of the stream or discard incoming data without further
     // processing. If reading is aborted, the recipient SHOULD use the H3_STREAM_CREATION_ERROR error code or a reserved error code
     // (Section 8.1). The recipient MUST NOT consider unknown stream types to be a connection error of any kind.
-    error = std::make_unique<Http3Error>(Http3ErrorClass::STREAM, Http3ErrorCode::H3_STREAM_CREATION_ERROR, "Stream type unkown");
-    Dbg(dbg_ctl, "UNKNOWN stream [%" PRIu64 "] error: %hu, %s", adapter->stream().id(), error->get_code(), error->msg);
+    IOBufferReader *reader = vio->get_reader();
+    if (reader != nullptr) {
+      int64_t const bytes_to_discard = reader->read_avail();
+
+      reader->consume(bytes_to_discard);
+      vio->ndone += bytes_to_discard;
+    }
     break;
   }
   default:
