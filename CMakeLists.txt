@@ -280,6 +280,7 @@ pkg_check_modules(PCRE2 REQUIRED IMPORTED_TARGET libpcre2-8)
 include(CheckOpenSSLIsBoringSSL)
 include(CheckOpenSSLIsQuictls)
 include(CheckOpenSSLIsAwsLc)
+include(CheckOpenSSLHasQuicTlsCbs)
 find_package(OpenSSL REQUIRED)
 check_openssl_is_boringssl(SSLLIB_IS_BORINGSSL BORINGSSL_VERSION "${OPENSSL_INCLUDE_DIR}")
 check_openssl_is_awslc(SSLLIB_IS_AWSLC AWSLC_VERSION "${OPENSSL_INCLUDE_DIR}")
@@ -309,6 +310,16 @@ if(OPENSSL_VERSION VERSION_GREATER_EQUAL "3.0.0")
   add_compile_definitions(OPENSSL_API_COMPAT=10002 OPENSSL_IS_OPENSSL3)
 endif()
 
+check_openssl_has_quic_tls_cbs(SSLLIB_HAS_QUIC_TLS_CBS "${OPENSSL_INCLUDE_DIR}")
+if(SSLLIB_HAS_QUIC_TLS_CBS
+   AND NOT SSLLIB_IS_BORINGSSL
+   AND NOT SSLLIB_IS_AWSLC
+   AND NOT SSLLIB_IS_QUICTLS
+)
+  set(TS_OPENSSL_QUIC_TLS_CBS_COMPAT TRUE)
+  add_compile_definitions(TS_OPENSSL_QUIC_TLS_CBS_COMPAT)
+endif()
+
 if(ENABLE_PROFILER)
   find_package(profiler REQUIRED)
   set(TS_HAS_PROFILER ${profiler_FOUND})
@@ -325,12 +336,20 @@ elseif(TS_HAS_MIMALLOC)
 endif()
 
 if(ENABLE_QUICHE)
+  if(TS_OPENSSL_QUIC_TLS_CBS_COMPAT)
+    set(quiche_USE_STATIC TRUE)
+  endif()
   find_package(quiche REQUIRED)
 
   set(TS_HAS_QUICHE ${quiche_FOUND})
   set(TS_USE_QUIC ${TS_HAS_QUICHE})
-  if(NOT SSLLIB_IS_BORINGSSL AND NOT SSLLIB_IS_QUICTLS)
-    message(FATAL_ERROR "Use of BoringSSL or OPENSSL/QUICTLS is required if quiche is used.")
+  if(NOT SSLLIB_IS_BORINGSSL
+     AND NOT SSLLIB_IS_QUICTLS
+     AND NOT TS_OPENSSL_QUIC_TLS_CBS_COMPAT
+  )
+    message(
+      FATAL_ERROR "Use of BoringSSL, OPENSSL/QUICTLS, or OpenSSL QUIC TLS callbacks is required if quiche is used."
+    )
   endif()
 
   if(SSLLIB_IS_QUICTLS)
@@ -339,6 +358,8 @@ if(ENABLE_QUICHE)
     message(
       "WARNING - Using quictls requires using a special version of quiche. Make sure quictls is supported in quiche."
     )
+  elseif(TS_OPENSSL_QUIC_TLS_CBS_COMPAT)
+    message(STATUS "Using OpenSSL QUIC TLS callbacks compatibility for quiche")
   endif()
 endif()
 
