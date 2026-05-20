@@ -30,7 +30,8 @@ set(CHECK_PROGRAM
     int main()
     {
         std::atomic<__int128> x{0};
-        return x.compare_exchange_strong(10, 0);
+        __int128 expected{x.load()};
+        return x.compare_exchange_strong(expected, 10);
     }
     "
 )
