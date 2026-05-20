@@ -148,10 +148,9 @@ ink_freelist_init(InkFreeList **fl, const char *name, uint32_t type_size, uint32
   // which requires a power of 2 boundary.
   ink_release_assert(alignment != 0 && (alignment & (alignment - 1u)) == 0);
 
-  // Freelist nodes are head_p objects whenever they are free, which means
-  // our allocation has to meet alignment requirements for both head_p objects
-  // and the allocator type.
-  alignment = std::lcm(alignment, alignof(head_p));
+  // Freelist nodes have to be at least void* aligned since they store void*s when
+  // not allocated out.
+  alignment = std::lcm(alignment, alignof(void *));
 
   InkFreeList       *f;
   ink_freelist_list *fll;
@@ -224,12 +223,12 @@ ink_freelist_create(const char *name, uint32_t type_size, uint32_t chunk_size, u
   return f;
 }
 
-static head_p *
-to_head_p(void *x, std::uint64_t offset)
+static void **
+to_voidp_p(void *x, std::uint64_t offset)
 {
   unsigned char *addr{reinterpret_cast<unsigned char *>(x) + offset};
-  // ink_assert(is_addr_aligned(x, alignof(head_p)));
-  return reinterpret_cast<head_p *>(addr);
+  ink_assert(is_addr_aligned(x, alignof(void **)));
+  return reinterpret_cast<void **>(addr);
 }
 
 void *
@@ -298,9 +297,9 @@ freelist_new(InkFreeList *f)
         freelist_free(f, a);
       }
     } else {
-      head_p *next_ptr = reinterpret_cast<head_p *>(TO_PTR(FREELIST_POINTER(item)));
+      void **next_ptr = reinterpret_cast<void **>(TO_PTR(FREELIST_POINTER(item)));
 
-      SET_FREELIST_POINTER_VERSION(next, FREELIST_POINTER(*next_ptr), FREELIST_VERSION(item) + 1);
+      SET_FREELIST_POINTER_VERSION(next, *next_ptr, FREELIST_VERSION(item) + 1);
       result = f->head.compare_exchange_weak(item, next, std::memory_order_acquire, std::memory_order_acquire);
 
 #ifdef SANITY
@@ -357,10 +356,10 @@ void
 freelist_free(InkFreeList *f, void *item)
 {
   // pointer to next pointer
-  head_p  h;
-  head_p  item_pair;
-  head_p *recovered_item;
-  bool    result = false;
+  head_p h;
+  head_p item_pair;
+  void **recovered_item;
+  bool   result = false;
 
   ink_release_assert(is_addr_aligned(item, f->alignment));
 
@@ -375,7 +374,7 @@ freelist_free(InkFreeList *f, void *item)
   }
 #endif /* DEADBEEF */
 
-  recovered_item = new (item) head_p{};
+  recovered_item = new (item) void *{};
   h              = f->head.load();
   while (!result) {
 #ifdef SANITY
@@ -390,12 +389,12 @@ freelist_free(InkFreeList *f, void *item)
     }
 #endif /* SANITY */
 
-    SET_FREELIST_POINTER_VERSION(*recovered_item, FREELIST_POINTER(h), 0);
-    SET_FREELIST_POINTER_VERSION(item_pair, FROM_PTR(item), FREELIST_VERSION(h));
+    *recovered_item = FREELIST_POINTER(h);
+    SET_FREELIST_POINTER_VERSION(item_pair, FROM_PTR(recovered_item), FREELIST_VERSION(h));
 
     // This assertion has to happen-before the node is in the list and
     // can be handed out to an allocator.
-    ink_assert(is_next_ptr_aligned(f, *recovered_item));
+    ink_assert(is_addr_aligned(TO_PTR(*recovered_item), f->alignment));
     result = f->head.compare_exchange_weak(h, item_pair, std::memory_order_release, std::memory_order_relaxed);
   }
 
@@ -428,10 +427,10 @@ namespace
 void
 freelist_bulkfree(InkFreeList *f, void *head, void *tail, [[maybe_unused]] size_t num_item)
 {
-  head_p  h;
-  head_p  item_pair;
-  head_p *recovered_tail;
-  bool    result = false;
+  head_p h;
+  head_p item_pair;
+  void **recovered_tail;
+  bool   result = false;
 
   ink_release_assert(is_addr_aligned(head, f->alignment));
   ink_release_assert(is_addr_aligned(tail, f->alignment));
@@ -441,13 +440,13 @@ freelist_bulkfree(InkFreeList *f, void *head, void *tail, [[maybe_unused]] size_
     static const char str[4] = {static_cast<char>(0xde), static_cast<char>(0xad), static_cast<char>(0xbe), static_cast<char>(0xef)};
 
     // set the entire item to DEADBEEF;
-    head_p *temp = reinterpret_cast<head_p *>(head);
+    void **temp = reinterpret_cast<void **>(head);
     for (size_t i = 0; i < num_item; i++) {
       for (int j = sizeof(void *); j < static_cast<int>(f->type_size); j++) {
         (reinterpret_cast<char *>(temp))[j] = str[j % 4];
       }
-      SET_FREELIST_POINTER_VERSION(*temp, FROM_PTR(FREELIST_POINTER(*temp)), FREELIST_VERSION(*temp));
-      temp = to_head_p(TO_PTR(FREELIST_POINTER(*temp)), 0);
+      *temp = FROM_PTR(*temp);
+      temp  = to_voidp_p(TO_PTR(*temp), 0);
     }
   }
 #endif /* DEADBEEF */
@@ -465,8 +464,8 @@ freelist_bulkfree(InkFreeList *f, void *head, void *tail, [[maybe_unused]] size_
       dummy_forced_read(TO_PTR(FREELIST_POINTER(h)));
     }
 #endif /* SANITY */
-    recovered_tail = new (tail) head_p{};
-    SET_FREELIST_POINTER_VERSION(*recovered_tail, FREELIST_POINTER(h), 0);
+    recovered_tail  = new (tail) void *{};
+    *recovered_tail = FREELIST_POINTER(h);
     SET_FREELIST_POINTER_VERSION(item_pair, FROM_PTR(head), FREELIST_VERSION(h));
     result = f->head.compare_exchange_weak(h, item_pair, std::memory_order_release, std::memory_order_relaxed);
   }
@@ -605,14 +604,14 @@ ink_atomiclist_pop(InkAtomicList *l)
     if (TO_PTR(FREELIST_POINTER(item)) == nullptr) {
       return nullptr;
     }
-    head_p *next_ptr = reinterpret_cast<head_p *>(reinterpret_cast<unsigned char *>(TO_PTR(FREELIST_POINTER(item))) + l->offset);
-    SET_FREELIST_POINTER_VERSION(next, FREELIST_POINTER(*next_ptr), FREELIST_VERSION(item) + 1);
+    void **next_ptr = reinterpret_cast<void **>(reinterpret_cast<unsigned char *>(TO_PTR(FREELIST_POINTER(item))) + l->offset);
+    SET_FREELIST_POINTER_VERSION(next, *next_ptr, FREELIST_VERSION(item) + 1);
     result = l->head.compare_exchange_weak(item, next);
   } while (result == false);
 
-  void   *ret  = TO_PTR(FREELIST_POINTER(item));
-  head_p *ret_ = reinterpret_cast<head_p *>(reinterpret_cast<unsigned char *>(ret) + l->offset);
-  SET_FREELIST_POINTER_VERSION(*ret_, nullptr, 0);
+  void  *ret  = TO_PTR(FREELIST_POINTER(item));
+  void **ret_ = reinterpret_cast<void **>(reinterpret_cast<unsigned char *>(ret) + l->offset);
+  *ret_       = nullptr;
   return ret;
 }
 
@@ -636,10 +635,10 @@ ink_atomiclist_popall(InkAtomicList *l)
   void *e   = ret;
   /* fixup forward pointers */
   while (e) {
-    head_p *e_ = to_head_p(e, l->offset);
-    void   *n  = TO_PTR(FREELIST_POINTER(*e_));
-    SET_FREELIST_POINTER_VERSION(*e_, n, FREELIST_VERSION(*e_));
-    e = n;
+    void **e_ = to_voidp_p(e, l->offset);
+    void  *n  = TO_PTR(FREELIST_POINTER(*e_));
+    *e_       = n;
+    e         = n;
   }
 
   ink_assert(is_addr_aligned(ret, alignof(head_p)));
@@ -650,21 +649,21 @@ ink_atomiclist_popall(InkAtomicList *l)
 void *
 ink_atomiclist_push(InkAtomicList *l, void *item)
 {
-  ink_release_assert(is_addr_aligned(item, alignof(head_p)));
+  ink_release_assert(is_addr_aligned(item, alignof(void *)));
 
-  head_p  head;
-  head_p  item_pair;
-  head_p *recovered_item;
-  bool    result = false;
-  void   *h      = nullptr;
+  head_p head;
+  head_p item_pair;
+  void **recovered_item;
+  bool   result = false;
+  void  *h      = nullptr;
 
   head = l->head.load();
   do {
     h = FREELIST_POINTER(head);
     ink_assert(item != TO_PTR(h));
 
-    recovered_item = new (reinterpret_cast<unsigned char *>(item) + l->offset) head_p{};
-    SET_FREELIST_POINTER_VERSION(*recovered_item, FREELIST_POINTER(head), 0);
+    recovered_item  = new (reinterpret_cast<unsigned char *>(item) + l->offset) void *{};
+    *recovered_item = FREELIST_POINTER(head);
     SET_FREELIST_POINTER_VERSION(item_pair, FROM_PTR(item), FREELIST_VERSION(head));
     result = l->head.compare_exchange_weak(head, item_pair);
   } while (result == false);
@@ -675,11 +674,11 @@ ink_atomiclist_push(InkAtomicList *l, void *item)
 void *
 ink_atomiclist_remove(InkAtomicList *l, void *item)
 {
-  head_p  head;
-  void   *prev      = nullptr;
-  head_p *addr_next = to_head_p(item, l->offset);
-  void   *item_next = FREELIST_POINTER(*addr_next);
-  bool    result    = 0;
+  head_p head;
+  void  *prev      = nullptr;
+  void **addr_next = to_voidp_p(item, l->offset);
+  void  *item_next = *addr_next;
+  bool   result    = 0;
 
   /*
    * first, try to pop it if it is first
@@ -691,7 +690,7 @@ ink_atomiclist_remove(InkAtomicList *l, void *item)
     result = l->head.compare_exchange_weak(head, next);
 
     if (result) {
-      SET_FREELIST_POINTER_VERSION(*addr_next, nullptr, 0);
+      *addr_next = nullptr;
       return item;
     }
   }
@@ -701,13 +700,13 @@ ink_atomiclist_remove(InkAtomicList *l, void *item)
    */
   prev = TO_PTR(FREELIST_POINTER(head));
   while (prev) {
-    head_p *prev_adr_of_next = to_head_p(prev, l->offset);
-    void   *prev_prev        = prev;
-    prev                     = TO_PTR(FREELIST_POINTER(*prev_adr_of_next));
+    void **prev_adr_of_next = to_voidp_p(prev, l->offset);
+    void  *prev_prev        = prev;
+    prev                    = TO_PTR(FREELIST_POINTER(*prev_adr_of_next));
     if (prev == item) {
       ink_assert(prev_prev != item_next);
-      SET_FREELIST_POINTER_VERSION(*prev_adr_of_next, item_next, 0);
-      SET_FREELIST_POINTER_VERSION(*addr_next, nullptr, 0);
+      *prev_adr_of_next = item_next;
+      *addr_next        = nullptr;
       return item;
     }
   }
