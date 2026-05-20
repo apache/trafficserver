@@ -185,7 +185,7 @@ TEST_CASE("Atomic list", "[atomiclist]")
 
     void  *head{ink_atomiclist_popall(&l)};
     void **head_{reinterpret_cast<void **>(reinterpret_cast<unsigned char *>(head) + l.offset)};
-    void  *tail{FREELIST_POINTER(*head_)};
+    void  *tail{(*head_};
 
     CHECK(((head == b) && (tail == a)));
 
