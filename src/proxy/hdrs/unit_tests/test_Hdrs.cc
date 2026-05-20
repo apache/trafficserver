@@ -44,6 +44,7 @@ using namespace std::literals;
 
 #include "proxy/hdrs/HTTP.h"
 #include "proxy/hdrs/HttpCompat.h"
+#include "tscore/Diags.h"
 
 // replaces test_http_parser_eos_boundary_cases
 TEST_CASE("HdrTestHttpParse", "[proxy][hdrtest]")
@@ -2695,4 +2696,98 @@ TEST_CASE("HdrPromotesOnlyValidHostHeaderMutations", "[proxy][hdrtest]")
 
   http_parser_clear(&parser);
   req_hdr.destroy();
+}
+
+// ---------------------------------------------------------------------------
+// Helpers for HTTPInfo::unmarshal frag-offset bounds-check tests.
+// Builds a minimal marshalled HTTPCacheAlt buffer.  All header-heap pointers
+// are left null so unmarshal() returns after the frag-offset check without
+// requiring a real heap.
+// ---------------------------------------------------------------------------
+static std::vector<char>
+make_marshalled_alt(int frag_offset_count, intptr_t frag_ptr_value)
+{
+  // Ensure diags are initialized so Warning() calls in unmarshal() don't crash.
+  [[maybe_unused]] static bool diags_initialized = []() {
+    if (diags() == nullptr) {
+      DiagsPtr::set(new Diags("test_hdrs", nullptr, nullptr, new BaseLogFile("stderr")));
+    }
+    return true;
+  }();
+  std::vector<char> buf(sizeof(HTTPCacheAlt) + 4096, 0);
+  auto             *alt    = reinterpret_cast<HTTPCacheAlt *>(buf.data());
+  alt->m_magic             = CacheAltMagic::MARSHALED;
+  alt->m_writeable         = 0;
+  alt->m_unmarshal_len     = -1;
+  alt->m_frag_offset_count = frag_offset_count;
+  // Store the raw offset value in the pointer field (mirrors what marshal() does).
+  *reinterpret_cast<intptr_t *>(&alt->m_frag_offsets) = frag_ptr_value;
+  return buf;
+}
+
+TEST_CASE("HTTPInfo::unmarshal frag bounds checks", "[proxy][hdrtest][unmarshal]")
+{
+  SECTION("huge frag_offset_count rejected")
+  {
+    auto buf = make_marshalled_alt(INT_MAX, 0);
+    int  len = static_cast<int>(buf.size());
+    CHECK(HTTPInfo::unmarshal(buf.data(), len, nullptr) == -1);
+  }
+
+  SECTION("negative frag_offset pointer value rejected")
+  {
+    // count > N_INTEGRAL_FRAG_OFFSETS but the stored offset is negative
+    auto buf = make_marshalled_alt(5, -1);
+    int  len = static_cast<int>(buf.size());
+    CHECK(HTTPInfo::unmarshal(buf.data(), len, nullptr) == -1);
+  }
+
+  SECTION("frag pointer near INTPTR_MAX rejected (overflow-safe check)")
+  {
+    // Without the subtraction-form check, frag_offset + frag_table_size wraps.
+    auto buf = make_marshalled_alt(5, std::numeric_limits<intptr_t>::max() - 1);
+    int  len = static_cast<int>(buf.size());
+    CHECK(HTTPInfo::unmarshal(buf.data(), len, nullptr) == -1);
+  }
+
+  SECTION("frag offset beyond orig_len rejected")
+  {
+    auto buf = make_marshalled_alt(5, 0);
+    // Set offset to one byte past the end of the buffer.
+    int  buf_len = static_cast<int>(buf.size());
+    auto buf2    = make_marshalled_alt(5, static_cast<intptr_t>(buf_len + 1));
+    CHECK(HTTPInfo::unmarshal(buf2.data(), buf_len, nullptr) == -1);
+  }
+}
+
+TEST_CASE("HTTPInfo::unmarshal_v24_1 frag bounds checks", "[proxy][hdrtest][unmarshal]")
+{
+  SECTION("huge frag_offset_count rejected")
+  {
+    auto buf = make_marshalled_alt(INT_MAX, 0);
+    int  len = static_cast<int>(buf.size());
+    CHECK(HTTPInfo::unmarshal_v24_1(buf.data(), len, nullptr) == -1);
+  }
+
+  SECTION("negative frag_offset pointer value rejected")
+  {
+    auto buf = make_marshalled_alt(5, -1);
+    int  len = static_cast<int>(buf.size());
+    CHECK(HTTPInfo::unmarshal_v24_1(buf.data(), len, nullptr) == -1);
+  }
+
+  SECTION("frag pointer near INTPTR_MAX rejected (overflow-safe check)")
+  {
+    auto buf = make_marshalled_alt(5, std::numeric_limits<intptr_t>::max() - 1);
+    int  len = static_cast<int>(buf.size());
+    CHECK(HTTPInfo::unmarshal_v24_1(buf.data(), len, nullptr) == -1);
+  }
+
+  SECTION("frag offset beyond orig_len rejected")
+  {
+    auto buf     = make_marshalled_alt(5, 0);
+    int  buf_len = static_cast<int>(buf.size());
+    auto buf2    = make_marshalled_alt(5, static_cast<intptr_t>(buf_len + 1));
+    CHECK(HTTPInfo::unmarshal_v24_1(buf2.data(), buf_len, nullptr) == -1);
+  }
 }
