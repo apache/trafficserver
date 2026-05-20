@@ -40,8 +40,7 @@ TEST_CASE("Freelist", "[freelist]")
 
   SECTION("Freelist allocates aligned pointers")
   {
-    InkFreeList *f{ink_freelist_create("test#1", sizeof(std::int32_t), 1, alignof(std::int32_t))};
-    void        *addr{ink_freelist_new(f)};
+    void *addr{ink_freelist_new(f)};
 
     CHECK(!(reinterpret_cast<std::uintptr_t>(addr) & (alignof(std::int32_t) - 1)));
 
@@ -97,7 +96,7 @@ TEST_CASE("Atomic list", "[atomiclist]")
 {
   struct test_type {
     std::int32_t i;
-    head_p       next;
+    void        *next;
   };
 
   InkAtomicList l;
@@ -184,9 +183,9 @@ TEST_CASE("Atomic list", "[atomiclist]")
     ink_atomiclist_push(&l, a);
     ink_atomiclist_push(&l, b);
 
-    void   *head{ink_atomiclist_popall(&l)};
-    head_p *head_{reinterpret_cast<head_p *>(reinterpret_cast<unsigned char *>(head) + l.offset)};
-    void   *tail{FREELIST_POINTER(*head_)};
+    void  *head{ink_atomiclist_popall(&l)};
+    void **head_{reinterpret_cast<void **>(reinterpret_cast<unsigned char *>(head) + l.offset)};
+    void  *tail{FREELIST_POINTER(*head_)};
 
     CHECK(((head == b) && (tail == a)));
 
