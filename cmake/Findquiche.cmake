@@ -28,7 +28,24 @@
 #     quiche::quiche
 #
 
+if(quiche_USE_STATIC
+   AND quiche_LIBRARY
+   AND NOT quiche_LIBRARY MATCHES "\\${CMAKE_STATIC_LIBRARY_SUFFIX}$"
+)
+  unset(quiche_LIBRARY CACHE)
+endif()
+
+if(quiche_USE_STATIC)
+  set(_quiche_ORIGINAL_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES})
+  set(CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_STATIC_LIBRARY_SUFFIX})
+endif()
+
 find_library(quiche_LIBRARY NAMES quiche)
+
+if(quiche_USE_STATIC)
+  set(CMAKE_FIND_LIBRARY_SUFFIXES ${_quiche_ORIGINAL_FIND_LIBRARY_SUFFIXES})
+endif()
+
 find_path(
   quiche_INCLUDE_DIR
   NAMES quiche.h
@@ -40,8 +57,18 @@ mark_as_advanced(quiche_FOUND quiche_LIBRARY quiche_INCLUDE_DIR)
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(quiche REQUIRED_VARS quiche_LIBRARY quiche_INCLUDE_DIR)
 
+if(quiche_USE_STATIC
+   AND quiche_FOUND
+   AND NOT quiche_LIBRARY MATCHES "\\${CMAKE_STATIC_LIBRARY_SUFFIX}$"
+)
+  message(FATAL_ERROR "Static quiche was requested, but ${quiche_LIBRARY} is not a static library")
+endif()
+
 if(quiche_FOUND)
   set(quiche_INCLUDE_DIRS "${quiche_INCLUDE_DIR}")
+  if(quiche_USE_STATIC)
+    message(STATUS "Using static quiche library: ${quiche_LIBRARY}")
+  endif()
 endif()
 
 if(quiche_FOUND AND NOT TARGET quiche::quiche)

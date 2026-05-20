@@ -42,8 +42,14 @@ DbgCtl dbg_ctl_http3{"http3"};
 void
 Http3FrameDispatcher::add_handler(Http3FrameHandler *handler)
 {
+  bool registered[256] = {};
+
   for (Http3FrameType t : handler->interests()) {
-    this->_handlers[static_cast<uint8_t>(t)].push_back(handler);
+    auto const type = static_cast<uint8_t>(t);
+    if (!registered[type]) {
+      this->_handlers[type].push_back(handler);
+      registered[type] = true;
+    }
   }
 }
 
