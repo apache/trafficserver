@@ -143,3 +143,12 @@ An example configuration ::
 This is useful for internal or trusted upstream services that should not be subject to geo
 restrictions. If ``bypass`` is absent from the configuration, bypass is disabled and all
 requests are evaluated normally.
+
+.. warning::
+
+   Because the bypass skips **all** ACL checks, the configured header must be
+   unforgeable by external clients. Use an internal ``@``-prefixed header (e.g.
+   ``@GcdTaBypassGeo``) that is set by ATS itself or a trusted upstream, or
+   ensure the edge strips/overwrites the header before it reaches this plugin.
+   Configuring a normal client-supplied header allows end users to opt out of
+   geo restrictions by simply sending the header in their request.
