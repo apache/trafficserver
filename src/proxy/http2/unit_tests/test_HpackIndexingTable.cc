@@ -24,6 +24,7 @@
     limitations under the License.
  */
 
+#include <cstring>
 #include <memory>
 #include <string_view>
 
@@ -530,4 +531,35 @@ TEST_CASE("HPACK high level APIs", "[hpack]")
       CHECK(len == HPACK_ERROR_COMPRESSION_ERROR);
     }
   }
+}
+
+// Validates that hpack_encode_header_block() lower-cases mixed-case field
+// names per RFC 7540 § 8.1.2 before emitting them. The lower-case step is the
+// path that goes through ts::ascii::tolower_copy; if a regression broke the
+// lowercasing, the byte-for-byte comparison below would fail.
+TEST_CASE("HPACK encode lower-cases mixed-case field names", "[hpack]")
+{
+  uint8_t            buf_mixed[BUFSIZE_FOR_REGRESSION_TEST];
+  uint8_t            buf_lower[BUFSIZE_FOR_REGRESSION_TEST];
+  HpackIndexingTable table_mixed(MAX_TABLE_SIZE);
+  HpackIndexingTable table_lower(MAX_TABLE_SIZE);
+
+  // Use a name long enough to exercise the 16-byte SSE2 body when present.
+  auto encode_one = [](HpackIndexingTable &table, uint8_t *buf, const char *name, const char *value) -> int64_t {
+    std::unique_ptr<HTTPHdr, void (*)(HTTPHdr *)> headers(new HTTPHdr, destroy_http_hdr);
+    headers->create(HTTPType::REQUEST);
+    MIMEField *field = mime_field_create(headers->m_heap, headers->m_http->m_fields_impl);
+    field->name_set(headers->m_heap, headers->m_http->m_fields_impl, std::string_view{name});
+    field->value_set(headers->m_heap, headers->m_http->m_fields_impl, std::string_view{value});
+    mime_hdr_field_attach(headers->m_http->m_fields_impl, field, 1, nullptr);
+    std::memset(buf, 0, BUFSIZE_FOR_REGRESSION_TEST);
+    return hpack_encode_header_block(table, buf, BUFSIZE_FOR_REGRESSION_TEST, headers.get());
+  };
+
+  int64_t mixed_len = encode_one(table_mixed, buf_mixed, "Long-Custom-Header-Name", "abc");
+  int64_t lower_len = encode_one(table_lower, buf_lower, "long-custom-header-name", "abc");
+
+  REQUIRE(mixed_len > 0);
+  REQUIRE(mixed_len == lower_len);
+  REQUIRE(std::memcmp(buf_mixed, buf_lower, lower_len) == 0);
 }
