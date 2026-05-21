@@ -25,6 +25,7 @@
 #include "proxy/hdrs/XPACK.h"
 #include "proxy/http3/QPACK.h"
 #include "tscore/ink_defs.h"
+#include "tscore/ink_memcpy_tolower.h"
 #include "tscore/ink_memory.h"
 
 #define QPACKDebug(fmt, ...)   Dbg(dbg_ctl_qpack, "[%s] " fmt, this->_qc->cids().data(), ##__VA_ARGS__)
@@ -369,9 +370,7 @@ QPACK::_encode_header(const MIMEField &field, uint16_t base_index, IOBufferBlock
 {
   auto  name{field.name_get()};
   char *lowered_name = this->_arena.str_store(name.data(), name.length());
-  for (size_t i = 0; i < name.length(); i++) {
-    lowered_name[i] = ParseRules::ink_tolower(lowered_name[i]);
-  }
+  ts::memcpy_tolower(lowered_name, lowered_name, name.length());
   auto value{field.value_get()};
 
   // TODO Set never_index flag on/off according to encoding headers
