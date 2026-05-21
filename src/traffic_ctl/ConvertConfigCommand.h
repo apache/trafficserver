@@ -29,7 +29,7 @@
  * Command handler for configuration format conversion.
  *
  * Converts configuration files from legacy formats to YAML.
- * Supports: ssl_multicert, storage, plugin_config
+ * Supports: ssl_multicert, storage
  */
 class ConvertConfigCommand : public CtrlCommand
 {
@@ -44,14 +44,10 @@ public:
 private:
   void convert_ssl_multicert();
   void convert_storage();
-  void convert_plugin_config();
 
   std::string _input_file;
   std::string _output_file;
 
   // For storage conversion only: optional volume.config path.
   std::string _volume_config_file;
-
-  // For plugin_config conversion: drop disabled entries from output.
-  bool _skip_disabled{false};
 };
