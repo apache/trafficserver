@@ -27,15 +27,21 @@
 
     - encode: standard RFC 1521 alphabet (`+`, `/`), `=` padding, no line
       breaks, trailing NUL written at outBuffer[length].
-    - decode: accepts both standard (`+`, `/`) and URL-safe (`-`, `_`)
-      alphabets in the same input; tolerates missing padding; on an
-      invalid character, truncates and returns success with whatever was
-      decoded up to that point; trailing NUL written at outBuffer[length].
 
-  Note: simdutf's forgiving-base64 mode silently skips ASCII whitespace
-  (space, tab, CR, LF, FF) inside the input, whereas the scalar path
-  treats whitespace as an end-of-input marker. No caller in-tree feeds
-  whitespace to these functions.
+    - decode: accepts both standard (`+`, `/`) and URL-safe (`-`, `_`)
+      alphabets in the same input; tolerates missing padding; on any
+      non-alphabet byte (including ASCII whitespace, '=', or garbage),
+      truncates and returns success with whatever was decoded up to that
+      point; trailing NUL written at outBuffer[length]; supports in-place
+      decode (dst == src).
+
+  Decode whitespace alignment: simdutf's forgiving-base64 mode would
+  silently skip ASCII whitespace and continue. To keep TSBase64Decode
+  results independent of build configuration and input size, the wrapper
+  pre-scans the input with the same printableToSixBit table the scalar
+  path uses and truncates inBufferSize at the first non-alphabet byte
+  before handing it to either implementation. Both paths therefore see
+  the same prefix of valid alphabet bytes and produce identical output.
 
   @section license License
 
@@ -91,6 +97,19 @@ decode_byte(char c)
   return printableToSixBit[static_cast<uint8_t>(c)];
 }
 
+// Count the leading base64-alphabet bytes (standard or URL-safe). The result
+// is the prefix length that both decode paths actually consume; any byte at
+// or after this index is whitespace, '=', or garbage and is dropped.
+inline size_t
+count_alphabet_prefix(const char *inBuffer, size_t inBufferSize)
+{
+  size_t valid = 0;
+  while (valid < inBufferSize && decode_byte(inBuffer[valid]) <= MAX_PRINT_VAL) {
+    ++valid;
+  }
+  return valid;
+}
+
 // Hand-rolled scalar encode. Caller has already validated outBufSize.
 void
 encode_scalar(const unsigned char *inBuffer, size_t inBufferSize, char *outBuffer, size_t *length)
@@ -135,42 +154,44 @@ encode_scalar(const unsigned char *inBuffer, size_t inBufferSize, char *outBuffe
   }
 }
 
-// Hand-rolled scalar decode. Caller has already validated outBufSize.
+// Hand-rolled scalar decode. Caller has pre-scanned: every byte in
+// inBuffer[0..inBufferSize) is in the base64 alphabet (decode_byte() returns
+// <= 63). The caller has also validated outBufSize.
+//
+// This restructures the legacy decode tail handling. The previous code ran
+// one extra loop iteration past the alphabet prefix when inBufferSize was in
+// {1, 2, 3} (reading inBuffer[2..3] which was either OOB to the caller's
+// buffer or past the valid prefix) and then read inBuffer[-2] in the trailing
+// adjustment block when no loop iterations had advanced inBuffer. Process
+// only complete 4-character groups in the main loop and decode any 2- or
+// 3-byte tail explicitly; a 1-byte tail encodes nothing meaningful and is
+// dropped, matching what an RFC 4648 decoder is supposed to do.
 void
 decode_scalar(const char *inBuffer, size_t inBufferSize, unsigned char *outBuffer, size_t *length)
 {
-  size_t         inBytes           = 0;
-  size_t         decodedBytes      = 0;
-  unsigned char *buf               = outBuffer;
-  int            inputBytesDecoded = 0;
+  size_t         decodedBytes = 0;
+  unsigned char *buf          = outBuffer;
 
-  // Ignore any trailing ='s or other undecodable characters.
-  while (inBytes < inBufferSize && decode_byte(inBuffer[inBytes]) <= MAX_PRINT_VAL) {
-    ++inBytes;
+  while (inBufferSize >= 4) {
+    buf[0]        = static_cast<unsigned char>(decode_byte(inBuffer[0]) << 2 | decode_byte(inBuffer[1]) >> 4);
+    buf[1]        = static_cast<unsigned char>(decode_byte(inBuffer[1]) << 4 | decode_byte(inBuffer[2]) >> 2);
+    buf[2]        = static_cast<unsigned char>(decode_byte(inBuffer[2]) << 6 | decode_byte(inBuffer[3]));
+    buf          += 3;
+    inBuffer     += 4;
+    decodedBytes += 3;
+    inBufferSize -= 4;
   }
 
-  for (size_t i = 0; i < inBytes; i += 4) {
-    buf[0] = static_cast<unsigned char>(decode_byte(inBuffer[0]) << 2 | decode_byte(inBuffer[1]) >> 4);
-    buf[1] = static_cast<unsigned char>(decode_byte(inBuffer[1]) << 4 | decode_byte(inBuffer[2]) >> 2);
-    buf[2] = static_cast<unsigned char>(decode_byte(inBuffer[2]) << 6 | decode_byte(inBuffer[3]));
-
-    buf               += 3;
-    inBuffer          += 4;
-    decodedBytes      += 3;
-    inputBytesDecoded += 4;
-  }
-
-  // If the consumed input wasn't a multiple of 4 we over-counted the last
-  // group; trim the trailing 1 or 2 bytes back off.
-  if ((inBytes - inputBytesDecoded) & 0x3) {
-    if (decode_byte(inBuffer[-2]) > MAX_PRINT_VAL) {
-      decodedBytes -= 2;
-    } else {
-      decodedBytes -= 1;
+  if (inBufferSize >= 2) {
+    buf[0]        = static_cast<unsigned char>(decode_byte(inBuffer[0]) << 2 | decode_byte(inBuffer[1]) >> 4);
+    decodedBytes += 1;
+    if (inBufferSize >= 3) {
+      buf[1]        = static_cast<unsigned char>(decode_byte(inBuffer[1]) << 4 | decode_byte(inBuffer[2]) >> 2);
+      decodedBytes += 1;
     }
   }
-  outBuffer[decodedBytes] = '\0';
 
+  outBuffer[decodedBytes] = '\0';
   if (length) {
     *length = decodedBytes;
   }
@@ -213,18 +234,26 @@ ats_base64_decode(const char *inBuffer, size_t inBufferSize, unsigned char *outB
     return false;
   }
 
+  // Truncate to the leading base64-alphabet prefix. Doing this upfront for
+  // both paths is what keeps the SIMD and scalar decoders aligned on inputs
+  // that contain ASCII whitespace, '=' padding, or any other non-alphabet
+  // byte; otherwise simdutf's forgiving mode would skip whitespace and
+  // continue while the scalar would have stopped at it.
+  const size_t valid = count_alphabet_prefix(inBuffer, inBufferSize);
+
 #if TS_USE_SIMDUTF
-  if (inBufferSize > BASE64_DECODE_SIMD_THRESHOLD) {
-    // Reserve one byte for the trailing NUL we always emit.
+  if (valid > BASE64_DECODE_SIMD_THRESHOLD) {
+    // Reserve one byte for the trailing NUL we always emit. The input we
+    // pass to simdutf is pure alphabet bytes (no whitespace, no '='), so
+    // last_chunk_options::loose handles the unpadded tail and
+    // decode_up_to_bad_char never triggers in practice.
     size_t out_len = outBufSize - 1;
-    auto   r       = simdutf::base64_to_binary_safe(inBuffer, inBufferSize, reinterpret_cast<char *>(outBuffer), out_len,
+    auto   r       = simdutf::base64_to_binary_safe(inBuffer, valid, reinterpret_cast<char *>(outBuffer), out_len,
                                                     simdutf::base64_default_or_url, simdutf::last_chunk_handling_options::loose,
                                                     /*decode_up_to_bad_char=*/true);
 
     // OUTPUT_BUFFER_TOO_SMALL is impossible given the upfront dstlen check;
-    // be defensive anyway. INVALID_BASE64_CHARACTER is expected: scalar
-    // behavior truncated at bad chars without surfacing an error, so we do
-    // the same.
+    // be defensive anyway.
     if (r.error == simdutf::error_code::OUTPUT_BUFFER_TOO_SMALL) {
       return false;
     }
@@ -237,6 +266,6 @@ ats_base64_decode(const char *inBuffer, size_t inBufferSize, unsigned char *outB
   }
 #endif
 
-  decode_scalar(inBuffer, inBufferSize, outBuffer, length);
+  decode_scalar(inBuffer, valid, outBuffer, length);
   return true;
 }

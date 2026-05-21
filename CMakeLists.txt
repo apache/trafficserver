@@ -282,6 +282,25 @@ include(CheckOpenSSLIsQuictls)
 include(CheckOpenSSLIsAwsLc)
 find_package(OpenSSL REQUIRED)
 auto_option(SIMDUTF FEATURE_VAR TS_USE_SIMDUTF PACKAGE_DEPENDS simdutf)
+# ats_base64_decode uses base64_default_or_url (added in 7.0.0) and the
+# decode_up_to_bad_char parameter on base64_to_binary_safe (also 7.0.0). A
+# simdutf package older than that would pass find_package and then fail at
+# compile time. Disable the feature with a status message in AUTO, hard-error
+# if the user asked for it explicitly.
+set(_MIN_SIMDUTF_VERSION "7.0.0")
+if(TS_USE_SIMDUTF AND simdutf_VERSION VERSION_LESS "${_MIN_SIMDUTF_VERSION}")
+  if(ENABLE_SIMDUTF STREQUAL "AUTO")
+    message(
+      STATUS
+        "Found simdutf ${simdutf_VERSION} but >= ${_MIN_SIMDUTF_VERSION} required for ats_base64; falling back to scalar"
+    )
+    set(TS_USE_SIMDUTF FALSE)
+  else()
+    message(FATAL_ERROR "TS_USE_SIMDUTF requires simdutf >= ${_MIN_SIMDUTF_VERSION} (found ${simdutf_VERSION}). "
+                        "Either upgrade simdutf or configure with -DENABLE_SIMDUTF=OFF."
+    )
+  endif()
+endif()
 check_openssl_is_boringssl(SSLLIB_IS_BORINGSSL BORINGSSL_VERSION "${OPENSSL_INCLUDE_DIR}")
 check_openssl_is_awslc(SSLLIB_IS_AWSLC AWSLC_VERSION "${OPENSSL_INCLUDE_DIR}")
 

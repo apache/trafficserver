@@ -1,8 +1,18 @@
 /** @file
 
-  Micro benchmark for ats_base64_encode / ats_base64_decode and the bulk
-  scalar tolower path used by URL canonicalization. Establishes a baseline
-  prior to any SIMD work.
+  Throughput benchmark for ats_base64_encode / ats_base64_decode comparing
+  the scalar path against the simdutf-backed path.
+
+  Sizes bracket both the scalar↔SIMD crossover thresholds (24 bytes for
+  encode, 48 bytes for decode) and the typical caller sizes inside ATS
+  (8-byte SnowflakeID, 20-32 byte HMACs, ~200 byte OCSP DER requests,
+  larger payloads for ceiling measurements). Correctness is covered by
+  src/tscore/unit_tests/test_ink_base64.cc, which runs under ctest in
+  every build.
+
+  Catch::Benchmark::keep_memory is used around each call to prevent the
+  optimizer from DCE-ing the inlined output buffer writes past the first
+  observed byte.
 
   @section license License
 
@@ -27,13 +37,14 @@
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/benchmark/catch_benchmark.hpp>
+#include <catch2/benchmark/catch_optimizer.hpp>
 
 #include "tscore/ink_base64.h"
-#include "tscore/ParseRules.h"
 
 #include <array>
 #include <cstdint>
 #include <cstring>
+#include <iostream>
 #include <random>
 #include <string>
 #include <vector>
@@ -45,7 +56,7 @@ namespace
 // crossover.
 //   8B   - SnowflakeID (uint64_t)
 //   16-48B - HMAC-SHA1/SHA256 and crossover region for encode
-//   64-128B - crossover region for decode
+//   64-96B - crossover region for decode
 //   200B - typical OCSP DER request (RFC6960 caps at 255B encoded)
 //   512B / 4KB - stress the inner loop where SIMD wins most
 constexpr std::array<size_t, 10> kPayloadSizes{8, 16, 24, 32, 48, 64, 96, 200, 512, 4096};
@@ -73,82 +84,20 @@ encode_with_ats(const std::vector<unsigned char> &in)
   return out;
 }
 
-std::vector<char>
-make_mixed_case_ascii(size_t n, uint64_t seed = 0xABCDEFULL)
-{
-  std::mt19937_64   rng(seed);
-  std::vector<char> v(n);
-  for (size_t i = 0; i < n; ++i) {
-    // Mix of uppercase, lowercase, and a few non-letter bytes that should
-    // pass through tolower unchanged. Models a URL/header byte stream.
-    auto r = static_cast<unsigned>(rng() & 0x3FU);
-    if (r < 26U) {
-      v[i] = static_cast<char>('A' + r);
-    } else if (r < 52U) {
-      v[i] = static_cast<char>('a' + (r - 26U));
-    } else {
-      static constexpr char kNonAlpha[] = "0123456789-_./:";
-      v[i]                              = kNonAlpha[r % (sizeof(kNonAlpha) - 1U)];
-    }
-  }
-  return v;
-}
-
-// Equivalent of the static inline memcpy_tolower() in src/proxy/hdrs/URL.cc.
-// Reproduced here because that definition has internal linkage and isn't
-// reachable from this TU.
-inline void
-memcpy_tolower_scalar(char *d, const char *s, int n)
-{
-  while (n--) {
-    *d = ParseRules::ink_tolower(*s);
-    ++s;
-    ++d;
-  }
-}
-
 } // namespace
 
-TEST_CASE("ats_base64 round-trip correctness", "[base64][correctness]")
+TEST_CASE("active base64 configuration", "[base64][config]")
 {
-  for (size_t sz : kPayloadSizes) {
-    auto                       input   = make_random_bytes(sz);
-    auto                       encoded = encode_with_ats(input);
-    std::vector<unsigned char> decoded(ats_base64_decode_dstlen(encoded.size()) + 1);
-    size_t                     dec_len = 0;
-    REQUIRE(ats_base64_decode(encoded.data(), encoded.size(), decoded.data(), decoded.size(), &dec_len));
-    REQUIRE(dec_len == sz);
-    REQUIRE(std::memcmp(decoded.data(), input.data(), sz) == 0);
-  }
-}
-
-// Lock the same byte-exact fixture used by InkAPITest's SDK_API_ENCODING
-// regression test. Any future implementation swap must keep this passing.
-TEST_CASE("ats_base64 InkAPITest fixture", "[base64][correctness][fixture]")
-{
-  const char *url = "http://www.example.com/foo?fie= \"#%<>[]\\^`{}~&bar={test}&fum=Apache Traffic Server";
-  const char *url_b64 =
-    "aHR0cDovL3d3dy5leGFtcGxlLmNvbS9mb28/ZmllPSAiIyU8PltdXF5ge31+JmJhcj17dGVzdH0mZnVtPUFwYWNoZSBUcmFmZmljIFNlcnZlcg==";
-  const auto url_len     = std::strlen(url);
-  const auto url_b64_len = std::strlen(url_b64);
-
-  SECTION("encode produces byte-identical RFC1521 output with '=' padding")
-  {
-    std::array<char, 1024> buf{};
-    size_t                 enc_len = 0;
-    REQUIRE(ats_base64_encode(url, url_len, buf.data(), buf.size(), &enc_len));
-    REQUIRE(enc_len == url_b64_len);
-    REQUIRE(std::strcmp(buf.data(), url_b64) == 0);
-  }
-
-  SECTION("decode reproduces the original byte-for-byte")
-  {
-    std::array<char, 1024> buf{};
-    size_t                 dec_len = 0;
-    REQUIRE(ats_base64_decode(url_b64, url_b64_len, reinterpret_cast<unsigned char *>(buf.data()), buf.size(), &dec_len));
-    REQUIRE(dec_len == url_len);
-    REQUIRE(std::strcmp(buf.data(), url) == 0);
-  }
+  // Print whether simdutf is wired in so the benchmark output makes the
+  // selected configuration obvious.
+  std::cout << "ats_base64 compiled with: ";
+#if TS_USE_SIMDUTF
+  std::cout << "simdutf hybrid (scalar <= 24/48B, simdutf above)";
+#else
+  std::cout << "scalar only";
+#endif
+  std::cout << '\n';
+  SUCCEED();
 }
 
 TEST_CASE("ats_base64_encode throughput", "[bench][base64][encode]")
@@ -162,7 +111,7 @@ TEST_CASE("ats_base64_encode throughput", "[bench][base64][encode]")
     {
       size_t out_len = 0;
       bool   ok      = ats_base64_encode(input.data(), input.size(), output.data(), output.size(), &out_len);
-      // Return a value that depends on the work to prevent DCE.
+      Catch::Benchmark::keep_memory(output.data());
       return ok ? out_len : size_t{0};
     };
   }
@@ -181,25 +130,8 @@ TEST_CASE("ats_base64_decode throughput", "[bench][base64][decode]")
     {
       size_t out_len = 0;
       bool   ok      = ats_base64_decode(encoded.data(), encoded.size(), output.data(), output.size(), &out_len);
+      Catch::Benchmark::keep_memory(output.data());
       return ok ? out_len : size_t{0};
-    };
-  }
-}
-
-TEST_CASE("memcpy_tolower throughput", "[bench][tolower]")
-{
-  // Sizes chosen to model URL paths / header names / cache-key segments.
-  constexpr std::array<size_t, 4> kTolowerSizes{16, 64, 256, 1024};
-
-  for (size_t sz : kTolowerSizes) {
-    auto              input = make_mixed_case_ascii(sz);
-    std::vector<char> output(sz);
-
-    std::string name = "tolower " + std::to_string(sz) + "B";
-    BENCHMARK(name.c_str())
-    {
-      memcpy_tolower_scalar(output.data(), input.data(), static_cast<int>(sz));
-      return output[0];
     };
   }
 }
