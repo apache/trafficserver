@@ -49,15 +49,29 @@ function main() {
   tmp_dir=$(mktemp -d -t tracked-git-files.XXXXXXXXXX)
   files=${tmp_dir}/git_files.txt
   files_filtered=${tmp_dir}/git_files_filtered.txt
+  files_deleted=${tmp_dir}/git_files_deleted.txt
   git ls-tree -r HEAD --name-only ${DIR} | grep -E 'CMakeLists.txt|.cmake$' | grep -vE "lib/(Catch2|fastlz|ls-hpack|swoc|yamlcpp)" > ${files}
   # Add to the above any newly added staged files.
   git diff --cached --name-only --diff-filter=A >> ${files}
   # But probably not all the new staged files are CMakeLists.txt files:
   grep -E 'CMakeLists.txt|.cmake$' ${files} > ${files_filtered}
+  # Drop files that are staged for deletion or otherwise missing from the
+  # working tree -- formatting a file that doesn't exist on disk fails.
+  git diff --cached --name-only --diff-filter=D > ${files_deleted}
+  if [ -s ${files_deleted} ]; then
+    grep -vxF -f ${files_deleted} ${files_filtered} > ${files_filtered}.tmp || true
+    mv ${files_filtered}.tmp ${files_filtered}
+  fi
   # Prepend the filenames with "./" to make the modified file output consistent
   # with the clang-format target output.
   sed -i'.bak' 's:^:\./:' ${files_filtered}
   rm -f ${files_filtered}.bak
+
+  # If after filtering there's nothing to format, we're done.
+  if [ ! -s ${files_filtered} ]; then
+    rm -rf ${tmp_dir}
+    return 0
+  fi
 
   # Efficiently retrieving modification timestamps in a platform
   # independent way is challenging. We use find's -newer argument, which
