@@ -23,9 +23,6 @@ Test revalidating cached objects
 
 Test.ContinueOnFail = True
 
-<<<<<<< HEAD
-Test.ATSReplayTest(replay_file="replays/cached_ims_range.replay.yaml")
-=======
 # Set up Origin server
 # request_header is from ATS to origin; response from Origin to ATS
 # lookup_key is to make unique response in origin for header "UID" that will pass in ATS request
@@ -286,4 +283,3 @@ tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "cache_and_error_nobody.gold"
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
->>>>>>> parent of 8415cef661 (Merge pull request #12983 from cmcfarlen/for-11-master)
