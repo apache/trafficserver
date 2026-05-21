@@ -22,7 +22,6 @@
  */
 
 #include "TLSCertCompression_zlib.h"
-#include "TLSCertCompression.h"
 #include "SSLStats.h"
 #include <openssl/ssl.h>
 #include <zlib.h>
@@ -54,12 +53,6 @@ compression_func_zlib(SSL * /* ssl */, CBB *out, const uint8_t *in, size_t in_le
 int
 decompression_func_zlib(SSL * /* ssl */, CRYPTO_BUFFER **out, size_t uncompressed_len, const uint8_t *in, size_t in_len)
 {
-  if (uncompressed_len > MAX_CERT_UNCOMPRESSED_LEN) {
-    *out = nullptr;
-    Metrics::Counter::increment(ssl_rsb.cert_decompress_zlib_failure);
-    return 0;
-  }
-
   uint8_t *buf;
 
   *out = CRYPTO_BUFFER_alloc(&buf, uncompressed_len);
