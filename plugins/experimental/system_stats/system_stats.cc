@@ -103,7 +103,7 @@ statAdd(const char *name, TSRecordDataType record_type, TSMutex create_mutex)
 {
   int stat_id = -1;
 
-  TSMutexLock(create_mutex);
+  TSMutexLockGuard lock(create_mutex);
 
   if (TS_ERROR == TSStatFindName(name, &stat_id)) {
     stat_id = TSStatCreate(name, record_type, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
@@ -113,8 +113,6 @@ statAdd(const char *name, TSRecordDataType record_type, TSMutex create_mutex)
       Dbg(dbg_ctl, "Created stat_name: %s stat_id: %d", name, stat_id);
     }
   }
-
-  TSMutexUnlock(create_mutex);
 
   return stat_id;
 }
