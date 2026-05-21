@@ -24,7 +24,6 @@
 #include "P_CacheHosting.h"
 #include "Stripe.h"
 #include "iocore/cache/CacheDefs.h"
-#include "mgmt/config/ConfigContextDiags.h"
 #include "swoc/swoc_file.h"
 
 #include "tscore/HostLookup.h"
@@ -189,7 +188,7 @@ CacheHostMatcher::NewEntry(matcher_line *line_info)
  *   End class HostMatcher
  *************************************************************/
 
-CacheHostTable::CacheHostTable(Cache *c, CacheType typ, ConfigContext ctx)
+CacheHostTable::CacheHostTable(Cache *c, CacheType typ)
 {
   ats_scoped_str config_path;
 
@@ -200,7 +199,7 @@ CacheHostTable::CacheHostTable(Cache *c, CacheType typ, ConfigContext ctx)
   config_path = RecConfigReadConfigPath("proxy.config.cache.hosting_filename");
   ink_release_assert(config_path);
 
-  m_numEntries = this->BuildTable(config_path, ctx);
+  m_numEntries = this->BuildTable(config_path);
 }
 
 CacheHostTable::~CacheHostTable() {}
@@ -237,9 +236,9 @@ int fstat_wrapper(int fd, struct stat *s);
 //      from it
 //
 int
-CacheHostTable::BuildTableFromString(const char *config_file_path, char *file_buf, ConfigContext ctx)
+CacheHostTable::BuildTableFromString(const char *config_file_path, char *file_buf)
 {
-  CfgLoadLog(ctx, DL_Note, "%s loading ...", ts::filename::HOSTING);
+  Note("%s loading ...", ts::filename::HOSTING);
 
   // Table build locals
   Tokenizer      bufTok("\n");
@@ -261,7 +260,7 @@ CacheHostTable::BuildTableFromString(const char *config_file_path, char *file_bu
     /* no hosting customers -- put all the volumes in the
        generic table */
     if (gen_host_rec.Init(type)) {
-      CfgLoadLog(ctx, DL_Warning, "Problems encountered while initializing the Generic Volume");
+      Warning("Problems encountered while initializing the Generic Volume");
     }
     return 0;
   }
@@ -281,7 +280,7 @@ CacheHostTable::BuildTableFromString(const char *config_file_path, char *file_bu
       errPtr  = parseConfigLine(const_cast<char *>(tmp), current, &config_tags);
 
       if (errPtr != nullptr) {
-        CfgLoadLog(ctx, DL_Warning, "%s discarding %s entry at line %d : %s", matcher_name, config_file_path, line_num, errPtr);
+        Warning("%s discarding %s entry at line %d : %s", matcher_name, config_file_path, line_num, errPtr);
         ats_free(current);
       } else {
         // Line parsed ok.  Figure out what the destination
@@ -318,9 +317,9 @@ CacheHostTable::BuildTableFromString(const char *config_file_path, char *file_bu
        generic table */
 
     if (gen_host_rec.Init(type)) {
-      CfgLoadLog(ctx, DL_Warning, "Problems encountered while initializing the Generic Volume");
+      Warning("Problems encountered while initializing the Generic Volume");
     }
-    CfgLoadLog(ctx, DL_Note, "%s finished loading", ts::filename::HOSTING);
+    Note("%s finished loading", ts::filename::HOSTING);
     return 0;
   }
 
@@ -346,22 +345,21 @@ CacheHostTable::BuildTableFromString(const char *config_file_path, char *file_bu
         if (current->dest_entry < MATCHER_MAX_TOKENS) {
           current->line[0][current->dest_entry] = nullptr;
         } else {
-          CfgLoadLog(ctx, DL_Warning, "Problems encountered while initializing the Generic Volume");
+          Warning("Problems encountered while initializing the Generic Volume");
         }
 
         current->num_el--;
         if (!gen_host_rec.Init(current, type)) {
           generic_rec_initd = 1;
         } else {
-          CfgLoadLog(ctx, DL_Warning, "Problems encountered while initializing the Generic Volume");
+          Warning("Problems encountered while initializing the Generic Volume");
         }
 
       } else {
         hostMatch->NewEntry(current);
       }
     } else {
-      CfgLoadLog(ctx, DL_Warning, "%s discarding %s entry with unknown type at line %d", matcher_name, config_file_path,
-                 current->line_num);
+      Warning("%s discarding %s entry with unknown type at line %d", matcher_name, config_file_path, current->line_num);
     }
 
     // Deallocate the parsing structure
@@ -370,12 +368,11 @@ CacheHostTable::BuildTableFromString(const char *config_file_path, char *file_bu
     ats_free(last);
   }
 
-  CfgLoadLog(ctx, DL_Note, "%s finished loading", ts::filename::HOSTING);
+  Note("%s finished loading", ts::filename::HOSTING);
 
   if (!generic_rec_initd) {
     const char *cache_type = (type == CacheType::HTTP) ? "http" : "mixt";
-    CfgLoadLog(ctx, DL_Warning, "No Volumes specified for Generic Hostnames for %s documents: %s cache will be disabled",
-               cache_type, cache_type);
+    Warning("No Volumes specified for Generic Hostnames for %s documents: %s cache will be disabled", cache_type, cache_type);
   }
 
   ink_assert(second_pass == numEntries);
@@ -387,7 +384,7 @@ CacheHostTable::BuildTableFromString(const char *config_file_path, char *file_bu
 }
 
 int
-CacheHostTable::BuildTable(const char *config_file_path, ConfigContext ctx)
+CacheHostTable::BuildTable(const char *config_file_path)
 {
   std::error_code ec;
   std::string     content{swoc::file::load(swoc::file::path{config_file_path}, ec)};
@@ -395,16 +392,16 @@ CacheHostTable::BuildTable(const char *config_file_path, ConfigContext ctx)
   if (ec) {
     switch (ec.value()) {
     case ENOENT:
-      CfgLoadLog(ctx, DL_Warning, "Cannot open the config file: %s - %s", config_file_path, strerror(ec.value()));
+      Warning("Cannot open the config file: %s - %s", config_file_path, strerror(ec.value()));
       break;
     default:
-      CfgLoadFail(ctx, "%s failed to load: %s", config_file_path, strerror(ec.value()));
+      Error("%s failed to load: %s", config_file_path, strerror(ec.value()));
       gen_host_rec.Init(type);
       return 0;
     }
   }
 
-  return BuildTableFromString(config_file_path, content.data(), ctx);
+  return BuildTableFromString(config_file_path, content.data());
 }
 
 int

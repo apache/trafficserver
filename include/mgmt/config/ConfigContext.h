@@ -33,7 +33,6 @@
 
 #include "swoc/Errata.h"
 #include "swoc/BufferWriter.h"
-#include "tsutil/ts_diag_levels.h"
 #include "yaml-cpp/node/node.h"
 
 // Forward declarations
@@ -119,8 +118,6 @@ public:
   }
 
   void log(std::string_view text);
-  void log(DiagsLevel level, std::string_view text);
-  void log(swoc::Errata const &errata);
   template <typename... Args>
   void
   log(swoc::TextView fmt, Args &&...args)

@@ -33,7 +33,6 @@
 #include "P_SSLConfig.h"
 #include "iocore/net/SSLSNIConfig.h"
 #include "iocore/net/SNIActionItem.h"
-#include "mgmt/config/ConfigContextDiags.h"
 #include "tscore/Diags.h"
 #include "tscore/Layout.h"
 #include "tscore/TSSystemState.h"
@@ -263,20 +262,22 @@ SNIConfigParams::get(std::string_view servername, in_port_t dest_incoming_port) 
 }
 
 bool
-SNIConfigParams::initialize(ConfigContext ctx)
+SNIConfigParams::initialize()
 {
   std::string sni_filename = RecConfigReadConfigPath("proxy.config.ssl.servername.filename");
-  return initialize(sni_filename, ctx);
+  return initialize(sni_filename);
 }
 
 bool
-SNIConfigParams::initialize(std::string const &sni_filename, ConfigContext ctx)
+SNIConfigParams::initialize(std::string const &sni_filename)
 {
-  CfgLoadInProgress(ctx, "%s loading ...", sni_filename.c_str());
+  Note("%s loading ...", sni_filename.c_str());
 
   struct stat sbuf;
   if (stat(sni_filename.c_str(), &sbuf) == -1 && errno == ENOENT) {
-    CfgLoadLog(ctx, DL_Warning, "Loading SNI configuration - %s doesn't exist", sni_filename.c_str());
+    Note("%s failed to load", sni_filename.c_str());
+    Warning("Loading SNI configuration - filename: %s doesn't exist", sni_filename.c_str());
+
     return true;
   }
 
@@ -288,7 +289,7 @@ SNIConfigParams::initialize(std::string const &sni_filename, ConfigContext ctx)
     if (TSSystemState::is_initializing()) {
       Emergency("%s failed to load: %s", sni_filename.c_str(), errMsg.str().c_str());
     } else {
-      CfgLoadFail(ctx, "%s failed to load: %s", sni_filename.c_str(), errMsg.str().c_str());
+      Error("%s failed to load: %s", sni_filename.c_str(), errMsg.str().c_str());
     }
     return false;
   }
@@ -320,20 +321,27 @@ SNIConfig::startup()
 int
 SNIConfig::reconfigure(ConfigContext ctx)
 {
+  Dbg(dbg_ctl_ssl, "Reload SNI file");
+
   SNIConfigParams *params = new SNIConfigParams;
 
-  std::string sni_filename = RecConfigReadConfigPath("proxy.config.ssl.servername.filename");
-  bool        retStatus    = params->initialize(sni_filename, ctx);
-
+  bool retStatus = params->initialize();
   if (retStatus) {
     _configid = configProcessor.set(_configid, params);
     if (SNIConfig::on_reconfigure) {
       SNIConfig::on_reconfigure();
     }
-    CfgLoadComplete(ctx, "%s finished loading", sni_filename.c_str());
   } else {
     delete params;
-    CfgLoadFail(ctx, "%s failed to load", sni_filename.c_str());
+  }
+
+  std::string sni_filename = RecConfigReadConfigPath("proxy.config.ssl.servername.filename");
+  if (retStatus || TSSystemState::is_initializing()) {
+    Note("%s finished loading", sni_filename.c_str());
+    ctx.complete("Loading finished");
+  } else {
+    Error("%s failed to load", sni_filename.c_str());
+    ctx.fail("Failed to load");
   }
 
   return retStatus ? 1 : 0;

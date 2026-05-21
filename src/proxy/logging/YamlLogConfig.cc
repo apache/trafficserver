@@ -22,7 +22,6 @@
 #include "proxy/logging/YamlLogConfig.h"
 #include "proxy/logging/YamlLogConfigDecoders.h"
 
-#include "mgmt/config/ConfigContextDiags.h"
 #include "proxy/logging/LogConfig.h"
 #include "proxy/logging/LogObject.h"
 
@@ -46,7 +45,7 @@ YamlLogConfig::parse(const char *cfgFilename)
   try {
     result = loadLogConfig(cfgFilename);
   } catch (std::exception &ex) {
-    CfgLoadLog(cfg->reload_ctx, DL_Error, "%s", ex.what());
+    Error("%s", ex.what());
     result = false;
   }
   return result;
@@ -62,14 +61,14 @@ YamlLogConfig::loadLogConfig(const char *cfgFilename)
   }
 
   if (!config.IsMap()) {
-    CfgLoadLog(cfg->reload_ctx, DL_Error, "malformed %s file; expected a map", cfgFilename);
+    Error("malformed %s file; expected a map", cfgFilename);
     return false;
   }
 
   if (config["logging"]) {
     config = config["logging"];
   } else {
-    CfgLoadLog(cfg->reload_ctx, DL_Error, "malformed %s file; expected a toplevel 'logging' node", cfgFilename);
+    Error("malformed %s file; expected a toplevel 'logging' node", cfgFilename);
     return false;
   }
 

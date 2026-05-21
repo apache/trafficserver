@@ -31,7 +31,6 @@
 #include "swoc/bwf_ip.h"
 #include "swoc/swoc_file.h"
 
-#include "mgmt/config/ConfigContextDiags.h"
 #include "tscore/MatcherUtils.h"
 #include "tscore/Tokenizer.h"
 #include "proxy/ControlMatcher.h"
@@ -640,8 +639,7 @@ IpMatcher<Data, MatchResult>::Print() const
 }
 
 template <class Data, class MatchResult>
-ControlMatcher<Data, MatchResult>::ControlMatcher(const char *file_var, const char *name, const matcher_tags *tags, int flags_in,
-                                                  ConfigContext ctx)
+ControlMatcher<Data, MatchResult>::ControlMatcher(const char *file_var, const char *name, const matcher_tags *tags, int flags_in)
 {
   flags = flags_in;
   ink_assert(flags & (ALLOW_HOST_TABLE | ALLOW_REGEX_TABLE | ALLOW_URL_TABLE | ALLOW_IP_TABLE));
@@ -666,7 +664,7 @@ ControlMatcher<Data, MatchResult>::ControlMatcher(const char *file_var, const ch
   hrMatch   = nullptr;
 
   if (!(flags & DONT_BUILD_TABLE)) {
-    m_numEntries = this->BuildTable(ctx);
+    m_numEntries = this->BuildTable();
   } else {
     m_numEntries = 0;
   }
@@ -733,7 +731,7 @@ ControlMatcher<Data, MatchResult>::Match(RequestData *rdata, MatchResult *result
 //
 template <class Data, class MatchResult>
 int
-ControlMatcher<Data, MatchResult>::BuildTableFromString(char *file_buf, ConfigContext ctx)
+ControlMatcher<Data, MatchResult>::BuildTableFromString(char *file_buf)
 {
   // Table build locals
   Tokenizer      bufTok("\n");
@@ -778,7 +776,7 @@ ControlMatcher<Data, MatchResult>::BuildTableFromString(char *file_buf, ConfigCo
         if (config_tags != &socks_server_tags) {
           Result error =
             Result::failure("%s discarding %s entry at line %d : %s", matcher_name, config_file_path, line_num, errptr);
-          CfgLoadLog(ctx, DL_Error, "%s", error.message());
+          Error("%s", error.message());
         }
         ats_free(current);
       } else {
@@ -876,7 +874,7 @@ ControlMatcher<Data, MatchResult>::BuildTableFromString(char *file_buf, ConfigCo
 
     // Check to see if there was an error in creating the NewEntry
     if (error.failed()) {
-      CfgLoadLog(ctx, DL_Error, "%s", error.message());
+      Error("%s", error.message());
     }
 
     // Deallocate the parsing structure
@@ -895,23 +893,22 @@ ControlMatcher<Data, MatchResult>::BuildTableFromString(char *file_buf, ConfigCo
 
 template <class Data, class MatchResult>
 int
-ControlMatcher<Data, MatchResult>::BuildTable(ConfigContext ctx)
+ControlMatcher<Data, MatchResult>::BuildTable()
 {
   std::error_code ec;
   std::string     content{swoc::file::load(swoc::file::path{config_file_path}, ec)};
-
   if (ec) {
     switch (ec.value()) {
     case ENOENT:
-      CfgLoadLog(ctx, DL_Warning, "ControlMatcher - Cannot open config file: %s - %s", config_file_path, strerror(ec.value()));
+      Warning("ControlMatcher - Cannot open config file: %s - %s", config_file_path, strerror(ec.value()));
       break;
     default:
-      CfgLoadFail(ctx, "ControlMatcher - %s failed to load: %s", config_file_path, strerror(ec.value()));
+      Error("ControlMatcher - %s failed to load: %s", config_file_path, strerror(ec.value()));
       return 1;
     }
   }
 
-  return BuildTableFromString(content.data(), ctx);
+  return BuildTableFromString(content.data());
 }
 
 /****************************************************************

@@ -48,7 +48,6 @@ using namespace std::literals;
 #include "tscore/SimpleTokenizer.h"
 
 #include "proxy/logging/YamlLogConfig.h"
-#include "mgmt/config/ConfigContextDiags.h"
 #include "mgmt/config/ConfigRegistry.h"
 
 #define DISK_IS_CONFIG_FULL_MESSAGE                    \
@@ -423,7 +422,7 @@ LogConfig::setup_log_objects()
 void
 LogConfig::reconfigure(ConfigContext ctx)
 {
-  CfgLoadDbg(ctx, dbg_ctl_log_config, "Reconfiguration request accepted");
+  Dbg(dbg_ctl_log_config, "Reconfiguration request accepted");
 
   Log::config->reconfiguration_needed = true;
   Log::config->reload_ctx             = ctx;
@@ -775,8 +774,8 @@ LogConfig::evaluate_config()
   ats_scoped_str path(RecConfigReadConfigPath("proxy.config.log.config.filename", ts::filename::LOGGING));
   struct stat    sbuf;
   if (stat(path.get(), &sbuf) == -1 && errno == ENOENT) {
-    // File doesn't exist — not a failure; ATS uses default logging.
-    CfgLoadComplete(reload_ctx, "logging configuration '%s' doesn't exist, using defaults", path.get());
+    Warning("logging configuration '%s' doesn't exist", path.get());
+    reload_ctx.fail("logging configuration '{}' doesn't exist", path.get());
     return false;
   }
 
@@ -785,9 +784,11 @@ LogConfig::evaluate_config()
 
   bool zret = y.parse(path.get());
   if (zret) {
-    CfgLoadComplete(reload_ctx, "%s finished loading", path.get());
+    Note("%s finished loading", path.get());
+    reload_ctx.complete("{} finished loading", path.get());
   } else {
-    CfgLoadFail(reload_ctx, "%s failed to load", path.get());
+    Note("%s failed to load", path.get());
+    reload_ctx.fail("{} failed to load", path.get());
   }
 
   return zret;

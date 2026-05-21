@@ -25,7 +25,6 @@
 
 #include <openssl/ssl.h>
 
-#include "mgmt/config/ConfigContextDiags.h"
 #include "records/RecHttp.h"
 
 #include "../P_SSLConfig.h"
@@ -58,7 +57,7 @@ quic_new_ssl_ctx()
    ALPN and SNI should be set to SSL object with NETVC_OPTIONS
  **/
 static shared_SSL_CTX
-quic_init_client_ssl_ctx(const QUICConfigParams *params, [[maybe_unused]] ConfigContext ctx)
+quic_init_client_ssl_ctx(const QUICConfigParams *params)
 {
   std::unique_ptr<SSL_CTX, decltype(&SSL_CTX_free)> ssl_ctx(nullptr, &SSL_CTX_free);
   ssl_ctx.reset(quic_new_ssl_ctx());
@@ -70,7 +69,7 @@ quic_init_client_ssl_ctx(const QUICConfigParams *params, [[maybe_unused]] Config
 #else
     if (SSL_CTX_set1_curves_list(ssl_ctx.get(), params->client_supported_groups()) != 1) {
 #endif
-      CfgLoadLog(ctx, DL_Error, "SSL_CTX_set1_groups_list failed");
+      Error("SSL_CTX_set1_groups_list failed");
     }
   }
 #endif
@@ -100,7 +99,7 @@ QUICConfigParams::~QUICConfigParams()
 };
 
 void
-QUICConfigParams::initialize(ConfigContext ctx)
+QUICConfigParams::initialize()
 {
   RecEstablishStaticConfigUInt32(this->_instance_id, "proxy.config.quic.instance_id");
   RecEstablishStaticConfigInt32(this->_connection_table_size, "proxy.config.quic.connection_table.size");
@@ -172,7 +171,7 @@ QUICConfigParams::initialize(ConfigContext ctx)
   RecEstablishStaticConfigUInt32(this->_disable_http_0_9, "proxy.config.quic.disable_http_0_9");
   RecEstablishStaticConfigUInt32(this->_cc_algorithm, "proxy.config.quic.cc_algorithm");
 
-  this->_client_ssl_ctx = quic_init_client_ssl_ctx(this, ctx);
+  this->_client_ssl_ctx = quic_init_client_ssl_ctx(this);
 }
 
 uint32_t
@@ -457,7 +456,7 @@ QUICConfig::reconfigure(ConfigContext ctx)
   QUICConfigParams *params;
   params = new QUICConfigParams;
   // re-read configuration
-  params->initialize(ctx);
+  params->initialize();
   _config_id = configProcessor.set(_config_id, params);
 
   QUICConnectionId::SCID_LEN = params->scid_len();

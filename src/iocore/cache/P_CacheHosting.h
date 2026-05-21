@@ -23,7 +23,6 @@
 
 #pragma once
 #include "iocore/cache/CacheDefs.h"
-#include "mgmt/config/ConfigContext.h"
 #include "records/RecCore.h"
 #include "tscore/MatcherUtils.h"
 #include "tscore/HostLookup.h"
@@ -226,11 +225,11 @@ class CacheHostTable
 public:
   // Parameter name must not be deallocated before this
   //  object is
-  CacheHostTable(Cache *c, CacheType typ, ConfigContext ctx = {});
+  CacheHostTable(Cache *c, CacheType typ);
   ~CacheHostTable();
 
-  int BuildTable(const char *config_file_path, ConfigContext ctx = {});
-  int BuildTableFromString(const char *config_file_path, char *str, ConfigContext ctx = {});
+  int BuildTable(const char *config_file_path);
+  int BuildTableFromString(const char *config_file_path, char *str);
 
   void Match(std::string_view rdata, CacheHostResult *result) const;
   void Print() const;

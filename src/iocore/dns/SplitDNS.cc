@@ -31,7 +31,6 @@
 #include "P_SplitDNSProcessor.h"
 #include "tscore/Tokenizer.h"
 #include "tscore/Filenames.h"
-#include "mgmt/config/ConfigContextDiags.h"
 #include "mgmt/config/ConfigRegistry.h"
 
 #include <sys/types.h>
@@ -133,23 +132,22 @@ void
 SplitDNSConfig::reconfigure(ConfigContext ctx)
 {
   if (0 == gsplit_dns_enabled) {
-    CfgLoadComplete(ctx, "SplitDNS disabled, skipping reload");
+    ctx.complete("SplitDNS disabled, skipping reload");
     return;
   }
 
-  CfgLoadLog(ctx, DL_Note, "%s loading ...", ts::filename::SPLITDNS);
+  Note("%s loading ...", ts::filename::SPLITDNS);
 
   SplitDNS *params = new SplitDNS;
 
   params->m_SplitDNSlEnable = gsplit_dns_enabled;
-  params->m_DNSSrvrTable    = std::make_unique<DNS_table>(
-    "proxy.config.dns.splitdns.filename", modulePrefix, &sdns_dest_tags,
-    ALLOW_HOST_TABLE | ALLOW_IP_TABLE | ALLOW_REGEX_TABLE | ALLOW_HOST_REGEX_TABLE | ALLOW_URL_TABLE, ctx);
+  params->m_DNSSrvrTable    = std::make_unique<DNS_table>("proxy.config.dns.splitdns.filename", modulePrefix, &sdns_dest_tags);
 
   if (nullptr == params->m_DNSSrvrTable || (0 == params->m_DNSSrvrTable->getEntryCount())) {
+    Warning("Failed to load %s - No NAMEDs provided! Disabling SplitDNS", ts::filename::SPLITDNS);
     gsplit_dns_enabled = 0;
     delete params;
-    CfgLoadFail(ctx, "Failed to load %s - No NAMEDs provided! Disabling SplitDNS", ts::filename::SPLITDNS);
+    ctx.fail("No NAMEDs provided, disabling SplitDNS");
     return;
   }
   params->m_numEle = params->m_DNSSrvrTable->getEntryCount();
@@ -167,7 +165,8 @@ SplitDNSConfig::reconfigure(ConfigContext ctx)
     SplitDNSConfig::print();
   }
 
-  CfgLoadComplete(ctx, "%s finished loading", ts::filename::SPLITDNS);
+  Note("%s finished loading", ts::filename::SPLITDNS);
+  ctx.complete("Finished loading");
 }
 
 /* --------------------------------------------------------------
