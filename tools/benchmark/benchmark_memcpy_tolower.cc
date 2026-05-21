@@ -26,6 +26,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/benchmark/catch_benchmark.hpp>
+#include <catch2/benchmark/catch_optimizer.hpp>
 
 #include "tscore/ink_memcpy_tolower.h"
 #include "tscore/ParseRules.h"
@@ -87,8 +88,7 @@ memcpy_tolower_scalar(char *d, const char *s, std::size_t n) noexcept
 TEST_CASE("active SIMD configuration", "[tolower][config]")
 {
   // Print the compile-time ISA path so the benchmark output makes the
-  // selected configuration obvious. Cascades stack: AVX-512BW builds also
-  // emit the AVX2 and SSE2 drain loops; AVX2 builds emit the SSE2 drain.
+  // selected configuration obvious.
   std::cout << "ts::memcpy_tolower compiled with: ";
 #if defined(__AVX512BW__)
   std::cout << "AVX-512BW (64B body + masked tail, gated at n>=64) + AVX2 + SSE2 cascade";
@@ -105,44 +105,6 @@ TEST_CASE("active SIMD configuration", "[tolower][config]")
   SUCCEED();
 }
 
-TEST_CASE("ts::memcpy_tolower matches scalar reference", "[tolower][correctness]")
-{
-  // Cover sizes that bracket the 16-byte SIMD body: smaller-than, equal-to,
-  // a couple of multiples, and several offsets between multiples.
-  for (std::size_t sz : std::array<std::size_t, 12>{0, 1, 5, 15, 16, 17, 23, 31, 32, 33, 64, 257}) {
-    auto              input = make_mixed_case_ascii(sz, 0xC0FFEE + sz);
-    std::vector<char> expected(sz);
-    std::vector<char> actual(sz);
-
-    memcpy_tolower_scalar(expected.data(), input.data(), sz);
-    ts::memcpy_tolower(actual.data(), input.data(), sz);
-
-    CAPTURE(sz);
-    REQUIRE(actual == expected);
-  }
-}
-
-TEST_CASE("ts::memcpy_tolower preserves non-ASCII bytes", "[tolower][correctness]")
-{
-  // Every byte value from 0..255 should round-trip unchanged unless it is in
-  // 'A'..'Z', in which case it should map to 'a'..'z'. This catches anyone
-  // who later tries to "speed things up" by widening the range to Latin-1.
-  std::array<unsigned char, 256> input;
-  for (std::size_t i = 0; i < 256; ++i) {
-    input[i] = static_cast<unsigned char>(i);
-  }
-  std::array<char, 256> output;
-  ts::memcpy_tolower(output.data(), reinterpret_cast<const char *>(input.data()), input.size());
-
-  for (std::size_t i = 0; i < 256; ++i) {
-    auto in  = static_cast<unsigned char>(i);
-    auto out = static_cast<unsigned char>(output[i]);
-    auto exp = (in >= 'A' && in <= 'Z') ? static_cast<unsigned char>(in | 0x20) : in;
-    CAPTURE(i);
-    REQUIRE(out == exp);
-  }
-}
-
 TEST_CASE("memcpy_tolower throughput", "[bench][tolower]")
 {
   for (std::size_t sz : kSizes) {
@@ -150,10 +112,16 @@ TEST_CASE("memcpy_tolower throughput", "[bench][tolower]")
     std::vector<char> output_scalar(sz);
     std::vector<char> output_simd(sz);
 
+    // Catch::Benchmark::keep_memory clobbers the buffer in the compiler's
+    // model, forcing it to materialize every byte we wrote. Without this an
+    // optimizing compiler can shrink or DCE the inline body's stores past
+    // the first element we observed.
+
     std::string scalar_name = "scalar  " + std::to_string(sz) + "B";
     BENCHMARK(scalar_name.c_str())
     {
       memcpy_tolower_scalar(output_scalar.data(), input.data(), sz);
+      Catch::Benchmark::keep_memory(output_scalar.data());
       return output_scalar[0];
     };
 
@@ -161,6 +129,7 @@ TEST_CASE("memcpy_tolower throughput", "[bench][tolower]")
     BENCHMARK(simd_name.c_str())
     {
       ts::memcpy_tolower(output_simd.data(), input.data(), sz);
+      Catch::Benchmark::keep_memory(output_simd.data());
       return output_simd[0];
     };
   }

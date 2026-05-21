@@ -133,3 +133,10 @@ Reference implementation: https://github.com/Thesys-lab/sosp23-s3fifo
 
 Highway is a C++ library that provides portable SIMD/vector intrinsics.
 https://github.com/google/highway
+
+~~
+
+include/tscore/ink_memcpy_tolower.h AVX-512BW kernel design (fused
+mask_add and masked-tail load/store) is adapted from Tony Finch's
+copytolower64.c (0BSD OR MIT-0).
+https://dotat.at/cgi/git/vectolower.git/
