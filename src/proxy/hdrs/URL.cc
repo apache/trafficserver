@@ -25,7 +25,7 @@
 #include <new>
 #include "tscore/ink_platform.h"
 #include "tscore/ink_memory.h"
-#include "tscore/ink_memcpy_tolower.h"
+#include "tscore/ink_ascii_tolower.h"
 #include "proxy/hdrs/URL.h"
 #include "proxy/hdrs/MIME.h"
 #include "proxy/hdrs/HTTP.h"
@@ -1695,7 +1695,7 @@ url_CryptoHash_get_fast(const URLImpl *url, CryptoContext &ctx, CryptoHash *hash
   char *p;
 
   p = buffer;
-  ts::memcpy_tolower(p, url->m_ptr_scheme, url->m_len_scheme);
+  ts::ascii::tolower_copy(p, url->m_ptr_scheme, url->m_len_scheme);
   p    += url->m_len_scheme;
   *p++  = ':';
   *p++  = '/';
@@ -1704,7 +1704,7 @@ url_CryptoHash_get_fast(const URLImpl *url, CryptoContext &ctx, CryptoHash *hash
   *p++ = ':';
   // no password
   *p++ = '@';
-  ts::memcpy_tolower(p, url->m_ptr_host, url->m_len_host);
+  ts::ascii::tolower_copy(p, url->m_ptr_host, url->m_len_host);
   p    += url->m_len_host;
   *p++  = '/';
   memcpy(p, url->m_ptr_path, url->m_len_path);
