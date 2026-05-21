@@ -118,3 +118,10 @@ LS-HPACK provides functionality to encode and decode HTTP headers using
 HPACK compression mechanism specified in RFC 7541.
 Copyright (c) 2018 - 2023 LiteSpeed Technologies Inc, (MIT License)
 https://github.com/litespeedtech/ls-hpack.git
+
+~~
+
+include/tscore/ink_memcpy_tolower.h AVX-512BW kernel design (fused
+mask_add and masked-tail load/store) is adapted from Tony Finch's
+copytolower64.c (0BSD OR MIT-0).
+https://dotat.at/cgi/git/vectolower.git/

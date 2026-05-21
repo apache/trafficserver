@@ -13,16 +13,27 @@
       'a'..'z'. All other bytes (including 0x80..0xFF) pass through
       unchanged. There is no UTF-8 case folding.
 
-    - The destination is written byte-for-byte; src and dst must point
-      to non-overlapping regions of size at least @n bytes.
+    - In-place use (dst == src) is supported: every SIMD body loads a
+      full block into a register before storing back, and the AVX-512BW
+      masked tail uses masked-load/masked-store at the same offset.
+      Partial overlap where dst != src is not supported.
 
-  Implementation note: the bodies are stacked widest-first and each
-  drains its block size before falling through to the next. A build
-  with AVX-512BW gets the 64-byte body as the main loop, then at most
-  one 32-byte AVX2 iteration and one 16-byte SSE2 iteration to drain
-  the remainder before the scalar tail handles 0-15 bytes. Builds
-  without the wider ISAs simply skip those blocks. Selection is purely
-  compile-time; no runtime dispatch.
+  Implementation note: selection is purely compile-time; no runtime
+  dispatch. The bodies are stacked widest-first.
+
+    - AVX-512BW builds: when n >= 64, a 64-byte main loop handles the
+      bulk and a single masked load/store finishes any 1..63-byte tail,
+      then we return. When n < 64, we fall through to the AVX2 + SSE2
+      cascade below so tiny inputs avoid the masked tail's fixed setup
+      cost.
+
+    - AVX2 builds: a 32-byte main loop drains to a 16-byte SSE2 step
+      and then to a scalar tail of 0..15 bytes.
+
+    - SSE2 / NEON builds: a single 16-byte main loop drains to a
+      scalar tail.
+
+    - Other targets: scalar only.
 
   @section license License
 

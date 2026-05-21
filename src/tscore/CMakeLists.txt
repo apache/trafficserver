@@ -159,6 +159,7 @@ if(BUILD_TESTING)
     unit_tests/test_Tokenizer.cc
     unit_tests/test_arena.cc
     unit_tests/test_ink_inet.cc
+    unit_tests/test_ink_memcpy_tolower.cc
     unit_tests/test_ink_memory.cc
     unit_tests/test_ink_string.cc
     unit_tests/test_layout.cc
