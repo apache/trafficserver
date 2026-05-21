@@ -136,6 +136,7 @@ if(BUILD_TESTING)
       ts::overridable_txn_vars
       ts::http
       ts::http_remap
+      ts::configmanager
   )
   if(TS_USE_QUIC)
     list(APPEND LINK_GROUP_LIBS quic http3)
