@@ -1,6 +1,6 @@
 /** @file
 
-  Unit tests for ts::memcpy_tolower.
+  Unit tests for ts::ascii::tolower_copy and ts::ascii::tolower_inplace.
 
   Runs as part of the standard test_tscore binary so the helper's SIMD
   and scalar paths are exercised by ctest in every build, not just when
@@ -27,7 +27,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 
-#include "tscore/ink_memcpy_tolower.h"
+#include "tscore/ink_ascii_tolower.h"
 #include "tscore/ParseRules.h"
 
 #include <array>
@@ -60,10 +60,10 @@ make_mixed_case_ascii(std::size_t n, std::uint64_t seed)
 }
 
 // Byte-at-a-time reference, equivalent to the prior static-inline
-// memcpy_tolower in URL.cc. Anything ts::memcpy_tolower produces must match
-// this for every input we test.
+// memcpy_tolower in URL.cc. Anything ts::ascii::tolower_copy produces must
+// match this for every input we test.
 void
-memcpy_tolower_reference(char *d, const char *s, std::size_t n) noexcept
+tolower_reference(char *d, const char *s, std::size_t n) noexcept
 {
   while (n--) {
     *d = ParseRules::ink_tolower(*s);
@@ -74,7 +74,7 @@ memcpy_tolower_reference(char *d, const char *s, std::size_t n) noexcept
 
 } // namespace
 
-TEST_CASE("ts::memcpy_tolower matches scalar reference", "[ts_memcpy_tolower]")
+TEST_CASE("ts::ascii::tolower_copy matches scalar reference", "[ts_ascii_tolower]")
 {
   // Bracket every SIMD body width (16/32/64) with both equal-to and
   // offset-from-multiple lengths so the cascade transitions and the
@@ -84,15 +84,15 @@ TEST_CASE("ts::memcpy_tolower matches scalar reference", "[ts_memcpy_tolower]")
     std::vector<char> expected(sz);
     std::vector<char> actual(sz);
 
-    memcpy_tolower_reference(expected.data(), input.data(), sz);
-    ts::memcpy_tolower(actual.data(), input.data(), sz);
+    tolower_reference(expected.data(), input.data(), sz);
+    ts::ascii::tolower_copy(actual.data(), input.data(), sz);
 
     CAPTURE(sz);
     REQUIRE(actual == expected);
   }
 }
 
-TEST_CASE("ts::memcpy_tolower preserves non-ASCII bytes", "[ts_memcpy_tolower]")
+TEST_CASE("ts::ascii::tolower_copy preserves non-ASCII bytes", "[ts_ascii_tolower]")
 {
   // Every byte value 0..255 should round-trip unchanged unless it is in
   // 'A'..'Z', in which case it should map to 'a'..'z'. Guards against any
@@ -102,7 +102,7 @@ TEST_CASE("ts::memcpy_tolower preserves non-ASCII bytes", "[ts_memcpy_tolower]")
     input[i] = static_cast<unsigned char>(i);
   }
   std::array<char, 256> output;
-  ts::memcpy_tolower(output.data(), reinterpret_cast<const char *>(input.data()), input.size());
+  ts::ascii::tolower_copy(output.data(), reinterpret_cast<const char *>(input.data()), input.size());
 
   for (std::size_t i = 0; i < 256; ++i) {
     auto in  = static_cast<unsigned char>(i);
@@ -113,19 +113,18 @@ TEST_CASE("ts::memcpy_tolower preserves non-ASCII bytes", "[ts_memcpy_tolower]")
   }
 }
 
-TEST_CASE("ts::memcpy_tolower supports in-place (dst == src)", "[ts_memcpy_tolower]")
+TEST_CASE("ts::ascii::tolower_inplace matches tolower_copy", "[ts_ascii_tolower]")
 {
-  // In-place use must match what an out-of-place call would have produced.
-  // Run across the same boundary sizes as the basic correctness case so the
-  // SIMD bodies and the AVX-512BW masked load/store are all exercised
-  // in-place.
+  // The inplace form must produce the same result as a non-overlapping copy.
+  // Exercise the same boundary sizes so the SIMD bodies and the AVX-512BW
+  // masked load/store are all exercised in-place.
   for (std::size_t sz : std::array<std::size_t, 14>{0, 1, 5, 15, 16, 17, 23, 31, 32, 33, 63, 64, 65, 257}) {
     auto              input = make_mixed_case_ascii(sz, 0xBADF00D + sz);
     std::vector<char> expected(sz);
     std::vector<char> in_place(input);
 
-    memcpy_tolower_reference(expected.data(), input.data(), sz);
-    ts::memcpy_tolower(in_place.data(), in_place.data(), sz);
+    tolower_reference(expected.data(), input.data(), sz);
+    ts::ascii::tolower_inplace(in_place.data(), sz);
 
     CAPTURE(sz);
     REQUIRE(in_place == expected);
