@@ -38,6 +38,13 @@ echo "Building boringssl H3 dependencies in ${WORKDIR}. Installation will be don
 CFLAGS=${CFLAGS:-"-O3 -g"}
 CXXFLAGS=${CXXFLAGS:-"-O3 -g"}
 BORINGSSL_PATH="${BASE}/boringssl"
+GO_VERSION=${GO_VERSION:-"1.26.2"}
+BORINGSSL_COMMIT=${BORINGSSL_COMMIT:-"c3ffc3300a9450cf8e396c7880be7c6cadc16a4a"}
+QUICHE_TAG=${QUICHE_TAG:-"0.28.0"}
+CURL_TAG=${CURL_TAG:-"curl-8_20_0"}
+NGHTTP3_TAG=${NGHTTP3_TAG:-"v1.15.0"}
+NGTCP2_TAG=${NGTCP2_TAG:-"v1.22.1"}
+NGHTTP2_TAG=${NGHTTP2_TAG:-"v1.69.0"}
 
 if [ -e /etc/redhat-release ]; then
     MAKE="gmake"
@@ -112,11 +119,9 @@ else
     OS="linux"
 fi
 
-go_version=1.26.2
-BORINGSSL_COMMIT=${BORINGSSL_COMMIT:-"c3ffc3300a9450cf8e396c7880be7c6cadc16a4a"}
-wget https://go.dev/dl/go${go_version}.${OS}-${ARCH}.tar.gz
-rm -rf ${BASE}/go && tar -C ${BASE} -xf go${go_version}.${OS}-${ARCH}.tar.gz
-rm go${go_version}.${OS}-${ARCH}.tar.gz
+wget https://go.dev/dl/go${GO_VERSION}.${OS}-${ARCH}.tar.gz
+rm -rf ${BASE}/go && tar -C ${BASE} -xf go${GO_VERSION}.${OS}-${ARCH}.tar.gz
+rm go${GO_VERSION}.${OS}-${ARCH}.tar.gz
 
 GO_BINARY_PATH=${BASE}/go/bin/go
 if [ ! -d boringssl ]; then
@@ -137,17 +142,31 @@ if [ $retVal -eq 1 ]; then
 fi
 set -e
 
+# Check compiler flags before passing them to CMake. GCC errors on some
+# Clang-only -Wno-error flags, including -Wno-error=character-conversion.
+compiler_supports_flag() {
+  local compiler=$1
+  local flag=$2
+
+  echo '' | "${compiler}" "${flag}" -x c++ -c -o /dev/null - >/dev/null 2>&1
+}
+
 # Note: -Wdangling-pointer=0
 #   We may have some issues with latest GCC compilers, so disabling -Wdangling-pointer=
 # Note: -UBORINGSSL_HAVE_LIBUNWIND
 #   Disable related libunwind test builds, there are some version number issues
 #   with this pkg in Ubuntu 20.04, so disable this to make sure it builds.
+BSSL_CXX_FLAGS="-Wno-error=ignored-attributes -UBORINGSSL_HAVE_LIBUNWIND"
+if compiler_supports_flag c++ -Wno-error=character-conversion; then
+  BSSL_CXX_FLAGS="-Wno-error=character-conversion ${BSSL_CXX_FLAGS}"
+fi
+
 cmake \
   -B build-shared \
   -DGO_EXECUTABLE=${GO_BINARY_PATH} \
   -DCMAKE_INSTALL_PREFIX=${BASE}/boringssl \
   -DCMAKE_BUILD_TYPE=Release \
-  -DCMAKE_CXX_FLAGS='-Wno-error=character-conversion -Wno-error=ignored-attributes -UBORINGSSL_HAVE_LIBUNWIND' \
+  -DCMAKE_CXX_FLAGS="${BSSL_CXX_FLAGS}" \
   -DCMAKE_C_FLAGS=${BSSL_C_FLAGS} \
   -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
   -DBUILD_TESTING=0 \
@@ -159,7 +178,7 @@ cmake \
   -DGO_EXECUTABLE=${GO_BINARY_PATH} \
   -DCMAKE_INSTALL_PREFIX=${BASE}/boringssl \
   -DCMAKE_BUILD_TYPE=Release \
-  -DCMAKE_CXX_FLAGS='-Wno-error=character-conversion -Wno-error=ignored-attributes -UBORINGSSL_HAVE_LIBUNWIND' \
+  -DCMAKE_CXX_FLAGS="${BSSL_CXX_FLAGS}" \
   -DCMAKE_C_FLAGS="${BSSL_C_FLAGS}" \
   -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
   -DBUILD_TESTING=0 \
@@ -180,14 +199,16 @@ echo "Building quiche"
 QUICHE_BASE="${BASE:-/opt}/quiche"
 [ ! -d quiche ] && git clone  https://github.com/cloudflare/quiche.git
 cd quiche
-git checkout 0.28.0
+git checkout ${QUICHE_TAG}
 QUICHE_BSSL_PATH=${BORINGSSL_LIB_PATH} QUICHE_BSSL_LINK_KIND=dylib cargo build -j4 --package quiche --release --features ffi,pkg-config-meta,qlog
 sudo mkdir -p ${QUICHE_BASE}/lib/pkgconfig
 sudo mkdir -p ${QUICHE_BASE}/include
 sudo cp target/release/libquiche.a ${QUICHE_BASE}/lib/
-[ -f target/release/libquiche.so ] && sudo cp target/release/libquiche.so ${QUICHE_BASE}/lib/
-# Why a link? https://github.com/cloudflare/quiche/issues/1808#issuecomment-2196233378
-sudo ln -sf ${QUICHE_BASE}/lib/libquiche.so ${QUICHE_BASE}/lib/libquiche.so.0
+if [ -f target/release/libquiche.so ]; then
+  sudo cp target/release/libquiche.so ${QUICHE_BASE}/lib/
+  # Why a link? https://github.com/cloudflare/quiche/issues/1808#issuecomment-2196233378
+  sudo ln -sf ${QUICHE_BASE}/lib/libquiche.so ${QUICHE_BASE}/lib/libquiche.so.0
+fi
 sudo cp quiche/include/quiche.h ${QUICHE_BASE}/include/
 sudo cp target/release/quiche.pc ${QUICHE_BASE}/lib/pkgconfig
 sudo chmod -R a+rX ${BASE}
@@ -197,7 +218,7 @@ LDFLAGS=${LDFLAGS:-"-Wl,-rpath,${BORINGSSL_LIB_PATH}"}
 
 # Then nghttp3
 echo "Building nghttp3..."
-[ ! -d nghttp3 ] && git clone --depth 1 -b v1.15.0 https://github.com/ngtcp2/nghttp3.git
+[ ! -d nghttp3 ] && git clone --depth 1 -b ${NGHTTP3_TAG} https://github.com/ngtcp2/nghttp3.git
 cd nghttp3
 git submodule update --init
 autoreconf -if
@@ -215,8 +236,9 @@ cd ..
 
 # Now ngtcp2
 echo "Building ngtcp2..."
-[ ! -d ngtcp2 ] && git clone --depth 1 -b v1.22.1 https://github.com/ngtcp2/ngtcp2.git
+[ ! -d ngtcp2 ] && git clone --depth 1 -b ${NGTCP2_TAG} https://github.com/ngtcp2/ngtcp2.git
 cd ngtcp2
+git submodule update --init
 autoreconf -if
 ./configure \
   --prefix=${BASE} \
@@ -235,7 +257,7 @@ cd ..
 
 # Then nghttp2, with support for H3
 echo "Building nghttp2 ..."
-[ ! -d nghttp2 ] && git clone --depth 1 -b v1.69.0 https://github.com/nghttp2/nghttp2.git
+[ ! -d nghttp2 ] && git clone --depth 1 -b ${NGHTTP2_TAG} https://github.com/nghttp2/nghttp2.git
 cd nghttp2
 git submodule update --init
 autoreconf -if
@@ -265,17 +287,19 @@ cd ..
 
 # Then curl
 echo "Building curl ..."
-[ ! -d curl ] && git clone --depth 1 -b curl-8_20_0 https://github.com/curl/curl.git
+[ ! -d curl ] && git clone --depth 1 -b ${CURL_TAG} https://github.com/curl/curl.git
 cd curl
 # On mac autoreconf fails on the first attempt with an issue finding ltmain.sh.
 # The second runs fine.
 autoreconf -fi || autoreconf -fi
+# Keep discovery on PKG_CONFIG_PATH so curl finds ngtcp2 and its BoringSSL crypto backend together.
+PKG_CONFIG_PATH=${BASE}/lib/pkgconfig:${BORINGSSL_LIB_PATH}/pkgconfig \
 ./configure \
   --prefix=${BASE} \
   --with-openssl="${BORINGSSL_PATH}" \
-  --with-nghttp2=${BASE} \
-  --with-nghttp3=${BASE} \
-  --with-ngtcp2=${BASE} \
+  --with-nghttp2 \
+  --with-nghttp3 \
+  --with-ngtcp2 \
   LDFLAGS="${LDFLAGS} -L${BORINGSSL_LIB_PATH} -Wl,-rpath,${BORINGSSL_LIB_PATH}" \
   CFLAGS="${CFLAGS}" \
   CXXFLAGS="${CXXFLAGS}"

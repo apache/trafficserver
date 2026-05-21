@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 #  Simple script to build OpenSSL and various tools with H3 and QUIC support
-#  including quiche+openssl-quictls.
+#  including quiche+OpenSSL.
 #  This probably needs to be modified based on platform.
 #
 #  Licensed to the Apache Software Foundation (ASF) under one
@@ -27,17 +27,22 @@ readonly WORKDIR
 
 cd "${WORKDIR}"
 
-# Update this as the draft we support updates.
-OPENSSL_BRANCH=${OPENSSL_BRANCH:-"openssl-3.1.7+quic"}
+# OPENSSL_BRANCH is kept for compatibility with older local invocations.
+OPENSSL_TAG=${OPENSSL_TAG:-${OPENSSL_BRANCH:-"openssl-3.5.6"}}
+QUICHE_TAG=${QUICHE_TAG:-"0.28.0"}
+CURL_TAG=${CURL_TAG:-"curl-8_20_0"}
+NGHTTP3_TAG=${NGHTTP3_TAG:-"v1.15.0"}
+NGTCP2_TAG=${NGTCP2_TAG:-"v1.22.1"}
+NGHTTP2_TAG=${NGHTTP2_TAG:-"v1.69.0"}
 
 # Set these, if desired, to change these to your preferred installation
 # directory
 BASE=${BASE:-"/opt/h3-tools-openssl"}
 OPENSSL_BASE=${OPENSSL_BASE:-"${BASE}/openssl-quic"}
-OPENSSL_PREFIX=${OPENSSL_PREFIX:-"${OPENSSL_BASE}-${OPENSSL_BRANCH}"}
+OPENSSL_PREFIX=${OPENSSL_PREFIX:-"${OPENSSL_BASE}-${OPENSSL_TAG}"}
 MAKE="make"
 
-echo "Building openssl/quictls H3 dependencies in ${WORKDIR}. Installation will be done in ${BASE}"
+echo "Building OpenSSL H3 dependencies in ${WORKDIR}. Installation will be done in ${BASE}"
 
 CFLAGS=${CFLAGS:-"-O3 -g"}
 CXXFLAGS=${CXXFLAGS:-"-O3 -g"}
@@ -90,9 +95,9 @@ else
 fi
 
 echo "Building OpenSSL with QUIC support"
-[ ! -d openssl-quic ] && git clone -b ${OPENSSL_BRANCH} --depth 1 https://github.com/quictls/openssl.git openssl-quic
-cd openssl-quic
-./config enable-tls1_3 --prefix=${OPENSSL_PREFIX}
+[ ! -d openssl ] && git clone -b ${OPENSSL_TAG} --depth 1 https://github.com/openssl/openssl.git openssl
+cd openssl
+./config enable-tls1_3 --prefix=${OPENSSL_PREFIX} --libdir=lib
 ${MAKE} -j ${num_threads}
 sudo ${MAKE} install_sw
 sudo chmod -R a+rX ${BASE}
@@ -103,7 +108,7 @@ sudo ln -sf ${OPENSSL_PREFIX} ${OPENSSL_BASE}
 sudo chmod -R a+rX ${BASE}
 cd ..
 
-# OpenSSL will install in /lib or lib64 depending upon the architecture.
+# OpenSSL is configured to install its libraries in lib.
 if [ -d "${OPENSSL_PREFIX}/lib" ]; then
   OPENSSL_LIB="${OPENSSL_PREFIX}/lib"
 elif [ -d "${OPENSSL_PREFIX}/lib64" ]; then
@@ -120,7 +125,7 @@ echo "Building quiche"
 QUICHE_BASE="${BASE:-/opt}/quiche"
 [ ! -d quiche ] && git clone https://github.com/cloudflare/quiche.git
 cd quiche
-git checkout 0.28.0
+git checkout ${QUICHE_TAG}
 
 PKG_CONFIG_PATH="$OPENSSL_LIB"/pkgconfig LD_LIBRARY_PATH="$OPENSSL_LIB" \
   cargo build -j4 --package quiche --release --features ffi,pkg-config-meta,qlog,openssl
@@ -128,9 +133,11 @@ PKG_CONFIG_PATH="$OPENSSL_LIB"/pkgconfig LD_LIBRARY_PATH="$OPENSSL_LIB" \
 sudo mkdir -p ${QUICHE_BASE}/lib/pkgconfig
 sudo mkdir -p ${QUICHE_BASE}/include
 sudo cp target/release/libquiche.a ${QUICHE_BASE}/lib/
-[ -f target/release/libquiche.so ] && sudo cp target/release/libquiche.so ${QUICHE_BASE}/lib/
-# Why a link? https://github.com/cloudflare/quiche/issues/1808#issuecomment-2196233378
-sudo ln -sf ${QUICHE_BASE}/lib/libquiche.so ${QUICHE_BASE}/lib/libquiche.so.0
+if [ -f target/release/libquiche.so ]; then
+  sudo cp target/release/libquiche.so ${QUICHE_BASE}/lib/
+  # Why a link? https://github.com/cloudflare/quiche/issues/1808#issuecomment-2196233378
+  sudo ln -sf ${QUICHE_BASE}/lib/libquiche.so ${QUICHE_BASE}/lib/libquiche.so.0
+fi
 sudo cp quiche/include/quiche.h ${QUICHE_BASE}/include/
 sudo cp target/release/quiche.pc ${QUICHE_BASE}/lib/pkgconfig
 sudo chmod -R a+rX ${BASE}
@@ -139,7 +146,7 @@ cd ..
 
 # Then nghttp3
 echo "Building nghttp3..."
-[ ! -d nghttp3 ] && git clone --depth 1 -b v1.15.0 https://github.com/ngtcp2/nghttp3.git
+[ ! -d nghttp3 ] && git clone --depth 1 -b ${NGHTTP3_TAG} https://github.com/ngtcp2/nghttp3.git
 cd nghttp3
 git submodule update --init
 autoreconf -if
@@ -157,11 +164,13 @@ cd ..
 
 # Now ngtcp2
 echo "Building ngtcp2..."
-[ ! -d ngtcp2 ] && git clone --depth 1 -b v1.22.1 https://github.com/ngtcp2/ngtcp2.git
+[ ! -d ngtcp2 ] && git clone --depth 1 -b ${NGTCP2_TAG} https://github.com/ngtcp2/ngtcp2.git
 cd ngtcp2
+git submodule update --init
 autoreconf -if
 ./configure \
   --prefix=${BASE} \
+  --with-openssl \
   PKG_CONFIG_PATH=${BASE}/lib/pkgconfig:${OPENSSL_LIB}/pkgconfig \
   CFLAGS="${CFLAGS}" \
   CXXFLAGS="${CXXFLAGS}" \
@@ -174,7 +183,7 @@ cd ..
 
 # Then nghttp2, with support for H3
 echo "Building nghttp2 ..."
-[ ! -d nghttp2 ] && git clone --depth 1 -b v1.69.0 https://github.com/nghttp2/nghttp2.git
+[ ! -d nghttp2 ] && git clone --depth 1 -b ${NGHTTP2_TAG} https://github.com/nghttp2/nghttp2.git
 cd nghttp2
 git submodule update --init
 autoreconf -if
@@ -202,11 +211,13 @@ cd ..
 
 # Then curl
 echo "Building curl ..."
-[ ! -d curl ] && git clone --depth 1 -b curl-8_20_0 https://github.com/curl/curl.git
+[ ! -d curl ] && git clone --depth 1 -b ${CURL_TAG} https://github.com/curl/curl.git
 cd curl
 # On mac autoreconf fails on the first attempt with an issue finding ltmain.sh.
 # The second runs fine.
 autoreconf -fi || autoreconf -fi
+# Curl 8.20 uses ngtcp2 for its OpenSSL-backed HTTP/3 transport.
+PKG_CONFIG_PATH=${BASE}/lib/pkgconfig:${OPENSSL_LIB}/pkgconfig \
 ./configure \
   --prefix=${BASE} \
   --with-ssl=${OPENSSL_PREFIX} \
