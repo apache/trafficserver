@@ -3,9 +3,11 @@
   SIMD-accelerated bulk ASCII tolower copy.
 
   Used on the URL canonicalization fast path for cache-key digests
-  (src/proxy/hdrs/URL.cc::url_CryptoHash_get_fast). The scalar loop is
-  the bottleneck for hosts and schemes long enough to vectorize; for
-  shorter inputs the scalar tail handles them with no SIMD overhead.
+  (src/proxy/hdrs/URL.cc::url_CryptoHash_get_fast) and any other place
+  that needs to fold ASCII to lowercase over a small-to-moderate
+  buffer. The scalar byte-at-a-time loop is the bottleneck for hosts
+  and schemes long enough to vectorize; for shorter inputs the scalar
+  tail handles them with no SIMD overhead.
 
   Semantics match a byte-at-a-time loop using ParseRules::ink_tolower():
 
@@ -13,13 +15,14 @@
       'a'..'z'. All other bytes (including 0x80..0xFF) pass through
       unchanged. There is no UTF-8 case folding.
 
-    - In-place use (dst == src) is supported: every SIMD body loads a
-      full block into a register before storing back, and the AVX-512BW
-      masked tail uses masked-load/masked-store at the same offset.
-      Partial overlap where dst != src is not supported.
+    - In-place use (dst == src) is supported on every path. Each SIMD
+      body loads a full block into a register before storing back at
+      the same offset, and the AVX-512BW masked tail does masked-load
+      / masked-store at the same offset. Partial overlap where
+      dst != src but the ranges intersect is not supported.
 
   Implementation note: selection is purely compile-time; no runtime
-  dispatch. The bodies are stacked widest-first.
+  dispatch. Bodies are stacked widest-first.
 
     - AVX-512BW builds: when n >= 64, a 64-byte main loop handles the
       bulk and a single masked load/store finishes any 1..63-byte tail,
@@ -64,11 +67,11 @@
 #include <arm_neon.h>
 #endif
 
-namespace ts
+namespace ts::ascii
 {
 
 inline void
-memcpy_tolower(char *dst, const char *src, std::size_t n) noexcept
+tolower_copy(char *dst, const char *src, std::size_t n) noexcept
 {
 #if defined(__AVX512BW__)
   // AVX-512BW: 64 bytes per iteration with two key optimizations over the
@@ -84,8 +87,7 @@ memcpy_tolower(char *dst, const char *src, std::size_t n) noexcept
   // tiny inputs fall through to the AVX2/SSE2 path below, where they keep
   // the speedup that path already provides.
   //
-  // Inspired by Tony Finch's copytolower64.c
-  // (https://dotat.at/cgi/git/vectolower.git/).
+  // Adapted from Tony Finch's copytolower64.c (see NOTICE).
   if (n >= 64) {
     const __m512i A_vec = _mm512_set1_epi8('A');
     const __m512i Z_vec = _mm512_set1_epi8('Z');
@@ -171,4 +173,13 @@ memcpy_tolower(char *dst, const char *src, std::size_t n) noexcept
   }
 }
 
-} // namespace ts
+// Thin sugar over tolower_copy for the in-place case. Makes call sites
+// like ts::ascii::tolower_inplace(buf, n) read naturally instead of
+// ts::ascii::tolower_copy(buf, buf, n).
+inline void
+tolower_inplace(char *buf, std::size_t n) noexcept
+{
+  tolower_copy(buf, buf, n);
+}
+
+} // namespace ts::ascii
