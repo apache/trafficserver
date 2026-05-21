@@ -1,7 +1,7 @@
 /** @file
 
-  Micro benchmark for ts::memcpy_tolower against a byte-at-a-time scalar
-  loop equivalent to the prior URL.cc::memcpy_tolower definition.
+  Micro benchmark for ts::ascii::tolower_copy against a byte-at-a-time
+  scalar loop equivalent to the prior URL.cc::memcpy_tolower definition.
 
   @section license License
 
@@ -28,7 +28,7 @@
 #include <catch2/benchmark/catch_benchmark.hpp>
 #include <catch2/benchmark/catch_optimizer.hpp>
 
-#include "tscore/ink_memcpy_tolower.h"
+#include "tscore/ink_ascii_tolower.h"
 #include "tscore/ParseRules.h"
 
 #include <array>
@@ -74,7 +74,7 @@ make_mixed_case_ascii(std::size_t n, std::uint64_t seed = 0xABCDEFULL)
 // Mirror of the prior static inline memcpy_tolower() from URL.cc, kept here
 // as the baseline the SIMD path is expected to beat.
 inline void
-memcpy_tolower_scalar(char *d, const char *s, std::size_t n) noexcept
+tolower_scalar(char *d, const char *s, std::size_t n) noexcept
 {
   while (n--) {
     *d = ParseRules::ink_tolower(*s);
@@ -89,7 +89,7 @@ TEST_CASE("active SIMD configuration", "[tolower][config]")
 {
   // Print the compile-time ISA path so the benchmark output makes the
   // selected configuration obvious.
-  std::cout << "ts::memcpy_tolower compiled with: ";
+  std::cout << "ts::ascii::tolower_copy compiled with: ";
 #if defined(__AVX512BW__)
   std::cout << "AVX-512BW (64B body + masked tail, gated at n>=64) + AVX2 + SSE2 cascade";
 #elif defined(__AVX2__)
@@ -105,7 +105,7 @@ TEST_CASE("active SIMD configuration", "[tolower][config]")
   SUCCEED();
 }
 
-TEST_CASE("memcpy_tolower throughput", "[bench][tolower]")
+TEST_CASE("tolower throughput", "[bench][tolower]")
 {
   for (std::size_t sz : kSizes) {
     auto              input = make_mixed_case_ascii(sz);
@@ -117,18 +117,18 @@ TEST_CASE("memcpy_tolower throughput", "[bench][tolower]")
     // optimizing compiler can shrink or DCE the inline body's stores past
     // the first element we observed.
 
-    std::string scalar_name = "scalar  " + std::to_string(sz) + "B";
+    std::string scalar_name = "scalar   " + std::to_string(sz) + "B";
     BENCHMARK(scalar_name.c_str())
     {
-      memcpy_tolower_scalar(output_scalar.data(), input.data(), sz);
+      tolower_scalar(output_scalar.data(), input.data(), sz);
       Catch::Benchmark::keep_memory(output_scalar.data());
       return output_scalar[0];
     };
 
-    std::string simd_name = "ts::mct " + std::to_string(sz) + "B";
+    std::string simd_name = "ts::atc  " + std::to_string(sz) + "B";
     BENCHMARK(simd_name.c_str())
     {
-      ts::memcpy_tolower(output_simd.data(), input.data(), sz);
+      ts::ascii::tolower_copy(output_simd.data(), input.data(), sz);
       Catch::Benchmark::keep_memory(output_simd.data());
       return output_simd[0];
     };
