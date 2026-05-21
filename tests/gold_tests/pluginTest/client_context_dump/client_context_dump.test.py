@@ -40,13 +40,7 @@ ts.Disk.records_config.update(
         'proxy.config.ssl.client.private_key.path': '{}'.format(ts.Variables.SSLDir),
     })
 
-ts.Disk.ssl_multicert_yaml.AddLines(
-    """
-ssl_multicert:
-  - dest_ip: "*"
-    ssl_cert_name: one.com.pem
-    ssl_key_name: one.com.pem
-""".split("\n"))
+ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=one.com.pem ssl_key_name=one.com.pem')
 
 ts.Disk.sni_yaml.AddLines(
     [

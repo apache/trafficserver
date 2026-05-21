@@ -44,13 +44,7 @@ class ChunkedEncodingDisabled:
                 # Never respond with chunked encoding.
                 "proxy.config.http.chunking_enabled": 0,
             })
-        self.ts.Disk.ssl_multicert_yaml.AddLines(
-            """
-ssl_multicert:
-  - dest_ip: "*"
-    ssl_cert_name: server.pem
-    ssl_key_name: server.key
-""".split("\n"))
+        self.ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
         self.ts.Disk.remap_config.AddLines(
             [
                 f"map /for/http http://127.0.0.1:{self.server.Variables.http_port}/",

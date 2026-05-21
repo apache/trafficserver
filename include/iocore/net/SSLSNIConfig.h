@@ -117,7 +117,7 @@ public:
   /** Loads sni.yaml and swap into place if successful
       @return 0 for success, 1 is failure
    */
-  static int              reconfigure(ConfigContext ctx = {});
+  static int              reconfigure();
   static SNIConfigParams *acquire();
   static void             release(SNIConfigParams *params);
 

@@ -41,13 +41,7 @@ ts.Disk.records_config.update(
         'proxy.config.http2.no_activity_timeout_in': 150,
     })
 
-ts.Disk.ssl_multicert_yaml.AddLines(
-    """
-ssl_multicert:
-  - dest_ip: "*"
-    ssl_cert_name: server.pem
-    ssl_key_name: server.key
-""".split("\n"))
+ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
 
 Test.GetTcpPort("server_port")
 

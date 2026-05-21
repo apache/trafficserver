@@ -40,6 +40,8 @@
 #include "swoc/swoc_ip.h"
 #include "swoc/Errata.h"
 
+// forward declare in name only so it can be a friend.
+struct IpAllowUpdate;
 namespace YAML
 {
 class Node;
@@ -204,7 +206,7 @@ public:
   static ACL match(sockaddr const *sa, match_key_t key);
 
   static void startup();
-  static void reconfigure(ConfigContext ctx = {});
+  static void reconfigure();
   /// @return The global instance.
   static IpAllow *acquire();
   /// Release the configuration.

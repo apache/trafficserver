@@ -166,13 +166,7 @@ class Http2FlowControlTest:
                 configuration: self._max_concurrent_streams,
             })
 
-        ts.Disk.ssl_multicert_yaml.AddLines(
-            """
-ssl_multicert:
-  - dest_ip: "*"
-    ssl_cert_name: server.pem
-    ssl_key_name: server.key
-""".split("\n"))
+        ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
 
         if self._server is not None:
             ts.Disk.remap_config.AddLine(f'map / https://127.0.0.1:{self._server.Variables.https_port}')

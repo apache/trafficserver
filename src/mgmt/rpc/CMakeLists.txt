@@ -68,9 +68,7 @@ if(BUILD_TESTING)
   add_executable(
     test_jsonrpcserver server/unit_tests/test_rpcserver.cc ${CMAKE_SOURCE_DIR}/src/shared/rpc/IPCSocketClient.cc
   )
-  target_link_libraries(
-    test_jsonrpcserver Catch2::Catch2WithMain ts::jsonrpc_server ts::inkevent libswoc::libswoc configmanager
-  )
+  target_link_libraries(test_jsonrpcserver Catch2::Catch2WithMain ts::jsonrpc_server ts::inkevent libswoc::libswoc)
   add_catch2_test(NAME test_jsonrpcserver COMMAND test_jsonrpcserver)
 
   add_executable(test_record_yaml handlers/common/unit_tests/test_record_yaml.cc)

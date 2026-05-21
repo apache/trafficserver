@@ -49,13 +49,7 @@ ts.Disk.records_config.update(
         'proxy.config.ssl.TLSv1_3.enabled': 0
     })
 
-ts.Disk.ssl_multicert_yaml.AddLines(
-    """
-ssl_multicert:
-  - dest_ip: "*"
-    ssl_cert_name: server.pem
-    ssl_key_name: server.key
-""".split("\n"))
+ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
 
 # Just map everything through to origin.  This test is concentrating on the user-agent side
 ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}/'.format(server.Variables.Port))

@@ -58,9 +58,7 @@ nameserver = Test.MakeDNServer("dns", default='127.0.0.1')
 tm.Disk.records_config.update(
     {
         'proxy.config.dns.nameservers': f"127.0.0.1:{nameserver.Variables.Port}",
-        'proxy.config.dns.resolv_conf': 'NULL',
-        'proxy.config.diags.debug.enabled': 1,
-        'proxy.config.diags.debug.tags': 'remap|config|file|rpc',
+        'proxy.config.dns.resolv_conf': 'NULL'
     })
 
 tr = Test.AddTestRun("verify load")

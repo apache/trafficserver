@@ -31,7 +31,6 @@
 #include "Stripe.h"
 #include "StripeSM.h"
 #include "iocore/cache/Cache.h"
-#include "mgmt/config/ConfigRegistry.h"
 #include "tscore/Filenames.h"
 #include "tscore/InkErrno.h"
 #include "tscore/Layout.h"
@@ -230,25 +229,7 @@ Cache::open_done()
   {
     CacheHostTable *hosttable_raw = new CacheHostTable(this, scheme);
     hosttable.reset(hosttable_raw);
-
-    auto *ppt = &this->hosttable;
-    config::ConfigRegistry::Get_Instance().register_config( // late config registration
-      "cache_hosting",                                      // registry key
-      ts::filename::HOSTING,                                // default filename
-      "proxy.config.cache.hosting_filename",                // record holding the filename
-      [ppt](ConfigContext ctx) {                            // reload handler
-        CacheType type  = CacheType::HTTP;
-        Cache    *cache = nullptr;
-        {
-          ReplaceablePtr<CacheHostTable>::ScopedReader ht(ppt);
-          type  = ht->getType();
-          cache = ht->getCache();
-        }
-        ppt->reset(new CacheHostTable(cache, type));
-        ctx.complete("Finished loading");
-      },
-      config::ConfigSource::FileOnly,           // no RPC content source. Legacy for now.
-      {"proxy.config.cache.hosting_filename"}); // trigger records
+    hosttable_raw->register_config_callback(&hosttable);
   }
 
   ReplaceablePtr<CacheHostTable>::ScopedReader hosttable(&this->hosttable);

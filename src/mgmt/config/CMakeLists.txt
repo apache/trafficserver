@@ -15,13 +15,13 @@
 #
 #######################
 
-add_library(configmanager STATIC FileManager.cc ConfigReloadExecutor.cc ConfigRegistry.cc)
+add_library(configmanager STATIC FileManager.cc AddConfigFilesHere.cc)
 add_library(ts::configmanager ALIAS configmanager)
 
 target_link_libraries(
   configmanager
-  PUBLIC ts::tscore ts::records
-  PRIVATE ts::inkevent ts::jsonrpc_protocol yaml-cpp::yaml-cpp
+  PUBLIC ts::tscore
+  PRIVATE ts::proxy
 )
 
 clang_tidy_check(configmanager)

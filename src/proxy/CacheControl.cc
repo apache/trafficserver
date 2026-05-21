@@ -33,7 +33,7 @@
 #include "tscore/Filenames.h"
 #include "proxy/CacheControl.h"
 #include "proxy/ControlMatcher.h"
-#include "mgmt/config/ConfigRegistry.h"
+#include "iocore/eventsystem/ConfigProcessor.h"
 #include "proxy/http/HttpConfig.h"
 namespace
 {
@@ -85,6 +85,30 @@ struct CC_FreerContinuation : public Continuation {
   CC_FreerContinuation(CC_table *ap) : Continuation(nullptr), p(ap) { SET_HANDLER(&CC_FreerContinuation::freeEvent); }
 };
 
+// struct CC_UpdateContinuation
+//
+//   Used to read the cache.conf file after the manager signals
+//      a change
+//
+struct CC_UpdateContinuation : public Continuation {
+  int
+  file_update_handler(int /* etype ATS_UNUSED */, void * /* data ATS_UNUSED */)
+  {
+    reloadCacheControl();
+    delete this;
+    return EVENT_DONE;
+  }
+  CC_UpdateContinuation(Ptr<ProxyMutex> &m) : Continuation(m) { SET_HANDLER(&CC_UpdateContinuation::file_update_handler); }
+};
+
+int
+cacheControlFile_CB(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */, RecData /* data ATS_UNUSED */,
+                    void * /* cookie ATS_UNUSED */)
+{
+  eventProcessor.schedule_imm(new CC_UpdateContinuation(reconfig_mutex), ET_CALL);
+  return 0;
+}
+
 //
 //   Begin API functions
 //
@@ -106,14 +130,7 @@ initCacheControl()
   ink_assert(CacheControlTable == nullptr);
   reconfig_mutex    = new_ProxyMutex();
   CacheControlTable = new CC_table("proxy.config.cache.control.filename", modulePrefix, &http_dest_tags);
-
-  config::ConfigRegistry::Get_Instance().register_config( // File registration.
-    "cache_control",                                      // registry key
-    ts::filename::CACHE,                                  // default filename
-    "proxy.config.cache.control.filename",                // record holding the filename
-    [](ConfigContext ctx) { reloadCacheControl(ctx); },   // reload handler
-    config::ConfigSource::FileOnly,                       // no RPC content source
-    {"proxy.config.cache.control.filename"});             // trigger records
+  RecRegisterConfigUpdateCb("proxy.config.cache.control.filename", cacheControlFile_CB, nullptr);
 }
 
 // void reloadCacheControl()
@@ -123,9 +140,10 @@ initCacheControl()
 //   lock acquire is also blocking
 //
 void
-reloadCacheControl(ConfigContext ctx)
+reloadCacheControl()
 {
   Note("%s loading ...", ts::filename::CACHE);
+
   CC_table *newTable;
 
   Dbg(dbg_ctl_cache_control, "%s updated, reloading", ts::filename::CACHE);
@@ -134,7 +152,6 @@ reloadCacheControl(ConfigContext ctx)
   ink_atomic_swap(&CacheControlTable, newTable);
 
   Note("%s finished loading", ts::filename::CACHE);
-  ctx.complete("Finished loading");
 }
 
 void

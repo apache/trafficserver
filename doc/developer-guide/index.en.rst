@@ -49,7 +49,6 @@ duplicate bugs is encouraged, but not required.
    plugins/index.en
    cripts/index.en
    config-vars.en
-   config-reload-framework.en
    api/index.en
    continuous-integration/index.en
    documentation/index.en

@@ -21,13 +21,11 @@
   limitations under the License.
  */
 
-#include "mgmt/config/ConfigContext.h"
-
-// A class to coordinate the loading of SSL related configs (SSLConfig, SNIConfig,
-// SSLCertificateConfig). All are reloaded together when any of the trigger records change.
+// A class to pass the ConfigUpdateHandler, so both SSLConfig and SNIConfig get updated
+// when the relevant files/configs get updated.
 class SSLClientCoordinator
 {
 public:
   static void startup();
-  static void reconfigure(ConfigContext ctx = {});
+  static void reconfigure();
 };

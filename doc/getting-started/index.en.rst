@@ -342,15 +342,11 @@ rules like::
     map https://www.acme.com/ http://localhost:8080/
     map https://static.acme.com/ https://origin-static.acme.com/
 
-This will require installing a certificate, and adding an entry to
-:file:`ssl_multicert.yaml`. Assuming the cert has the static.acme.com alternate
-name, and that cert should be presented by default:
+This will require installing a certificate, and adding a line to
+:file:`ssl_multicert.config`. Assuming the cert has the static.acme.com alternate
+name, and that cert should be presented by default::
 
-.. code-block:: yaml
-
-    ssl_multicert:
-      - ssl_cert_name: /path/to/secret/privatekey/acme.rsa
-        dest_ip: "*"
+    dest_ip=* ssl_cert_name=/path/to/secret/privatekey/acme.rsa
 
 Further information about configuring |TS| for TLS can be found :ref:`admin-ssl-termination`
 section of the documentation.
@@ -409,12 +405,9 @@ entries:
 
     /cache/trafficserver 500G
 
-:file:`ssl_multicert.yaml`:
+:file:`ssl_multicert.config`::
 
-.. code-block:: yaml
-
-    ssl_multicert:
-      - ssl_cert_name: /path/to/secret/acme.rsa
+    ssl_cert_name=/path/to/secret/acme.rsa
 
 Configuring A Forward Proxy
 ---------------------------

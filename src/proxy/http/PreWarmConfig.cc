@@ -23,7 +23,6 @@
 
 #include "proxy/http/PreWarmConfig.h"
 #include "proxy/http/PreWarmManager.h"
-#include "mgmt/config/ConfigRegistry.h"
 
 ////
 // PreWarmConfigParams
@@ -44,21 +43,22 @@ PreWarmConfigParams::PreWarmConfigParams()
 void
 PreWarmConfig::startup()
 {
-  config::ConfigRegistry::Get_Instance().register_record_config(
-    "prewarm", [](ConfigContext ctx) { PreWarmConfig::reconfigure(ctx); },
-    {"proxy.config.tunnel.prewarm.event_period", "proxy.config.tunnel.prewarm.algorithm"});
+  _config_update_handler = std::make_unique<ConfigUpdateHandler<PreWarmConfig>>();
+
+  // dynamic configs
+  _config_update_handler->attach("proxy.config.tunnel.prewarm.event_period");
+  _config_update_handler->attach("proxy.config.tunnel.prewarm.algorithm");
 
   reconfigure();
 }
 
 void
-PreWarmConfig::reconfigure(ConfigContext ctx)
+PreWarmConfig::reconfigure()
 {
   PreWarmConfigParams *params = new PreWarmConfigParams();
   _config_id                  = configProcessor.set(_config_id, params);
 
   prewarmManager.reconfigure();
-  ctx.complete("PreWarm config published.");
 }
 
 PreWarmConfigParams *

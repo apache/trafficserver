@@ -30,7 +30,7 @@ class QUICCertConfig
 {
 public:
   static void           startup();
-  static void           reconfigure(ConfigContext ctx = {});
+  static void           reconfigure();
   static SSLCertLookup *acquire();
   static void           release(SSLCertLookup *lookup);
 

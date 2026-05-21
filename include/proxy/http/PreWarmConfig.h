@@ -43,13 +43,14 @@ public:
 
   static void startup();
 
-  // ConfigRegistry reload handler
-  static void reconfigure(ConfigContext ctx = {});
+  // ConfigUpdateContinuation interface
+  static void reconfigure();
 
   // ConfigProcessor::scoped_config interface
   static PreWarmConfigParams *acquire();
   static void                 release(PreWarmConfigParams *params);
 
 private:
-  inline static int _config_id = 0;
+  inline static int                                                 _config_id = 0;
+  inline static std::unique_ptr<ConfigUpdateHandler<PreWarmConfig>> _config_update_handler;
 };

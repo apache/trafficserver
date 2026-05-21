@@ -23,4 +23,55 @@ Check the HSTS header is set correctly
 
 Test.ContinueOnFail = True
 
+<<<<<<< HEAD
 Test.ATSReplayTest(replay_file="replays/hsts.replay.yaml")
+=======
+# Define default ATS
+ts = Test.MakeATSProcess("ts", enable_tls=True)
+server = Test.MakeOriginServer("server")
+
+# **testname is required**
+testName = ""
+request_header = {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+server.addResponse("sessionlog.json", request_header, response_header)
+
+# ATS Configuration
+ts.addDefaultSSLFiles()
+
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'ssl',
+        'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.hsts_max_age': 300,
+    })
+
+ts.Disk.remap_config.AddLine('map https://www.example.com http://127.0.0.1:{0}'.format(server.Variables.Port))
+
+ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+
+# Test 1 - 200 Response
+tr = Test.AddTestRun()
+tr.Processes.Default.StartBefore(server)
+tr.Processes.Default.StartBefore(Test.Processes.ts)
+tr.MakeCurlCommand(
+    '-s -D - --verbose --ipv4 --http1.1 --insecure --header "Host: {0}" https://localhost:{1}'.format(
+        'www.example.com', ts.Variables.ssl_port),
+    ts=ts)
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Streams.stdout = "hsts.200.gold"
+tr.StillRunningAfter = ts
+
+# Test 2 - 404 Not Found on Accelerator
+tr = Test.AddTestRun()
+tr.MakeCurlCommand(
+    '-s -D - --verbose --ipv4 --http1.1 --insecure --header "Host: {0}" https://localhost:{1}'.format(
+        'bad_host', ts.Variables.ssl_port),
+    ts=ts)
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Streams.stdout = "hsts.404.gold"
+tr.StillRunningAfter = server
+tr.StillRunningAfter = ts
+>>>>>>> parent of 8415cef661 (Merge pull request #12983 from cmcfarlen/for-11-master)

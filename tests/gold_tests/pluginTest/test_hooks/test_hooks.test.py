@@ -49,13 +49,7 @@ ts.Disk.records_config.update(
         'proxy.config.diags.debug.tags': 'http|test_hooks',
     })
 
-ts.Disk.ssl_multicert_yaml.AddLines(
-    """
-ssl_multicert:
-  - dest_ip: "*"
-    ssl_cert_name: server.pem
-    ssl_key_name: server.key
-""".split("\n"))
+ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
 
 Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'test_hooks.so'), ts)
 
