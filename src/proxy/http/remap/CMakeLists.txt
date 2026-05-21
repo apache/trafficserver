@@ -24,7 +24,6 @@ add_library(
   NextHopRoundRobin.cc
   NextHopStrategyFactory.cc
   RemapConfig.cc
-  RemapYamlConfig.cc
   RemapPluginInfo.cc
   PluginDso.cc
   PluginFactory.cc
