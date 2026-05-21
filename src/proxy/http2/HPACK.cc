@@ -23,6 +23,7 @@
 
 #include "proxy/http2/HPACK.h"
 
+#include "tscore/ink_ascii_tolower.h"
 #include "tsutil/LocalBuffer.h"
 #include "swoc/TextView.h"
 
@@ -789,9 +790,7 @@ hpack_encode_header_block(HpackIndexingTable &indexing_table, uint8_t *out_buf, 
     int                   name_len      = original_name.size();
     ts::LocalBuffer<char> local_buffer(name_len);
     char                 *lower_name = local_buffer.data();
-    for (int i = 0; i < name_len; i++) {
-      lower_name[i] = ParseRules::ink_tolower(original_name[i]);
-    }
+    ts::ascii::tolower_copy(lower_name, original_name.data(), name_len);
 
     std::string_view name{lower_name, static_cast<size_t>(name_len)};
     std::string_view value = field.value_get();

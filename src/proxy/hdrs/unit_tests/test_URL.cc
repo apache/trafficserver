@@ -659,6 +659,39 @@ std::vector<get_hash_test_case> get_hash_test_cases = {
     !IGNORE_QUERY,
     HAS_EQUAL_HASH,
   },
+  {
+    // Verifies the scheme/host SIMD-tolower path in url_CryptoHash_get_fast:
+    // an uppercase host with a long enough prefix to hit the 16-byte SIMD
+    // body should hash identically to its lowercased form.
+    "Uppercase host: equal hashes",
+    "http://ONE.EXAMPLE.COM/a/path?name=value",
+    "http://one.example.com/a/path?name=value",
+    !IGNORE_QUERY,
+    HAS_EQUAL_HASH,
+  },
+  {
+    "Mixed-case host: equal hashes",
+    "http://One.Example.Com/a/path?name=value",
+    "http://one.example.com/a/path?name=value",
+    !IGNORE_QUERY,
+    HAS_EQUAL_HASH,
+  },
+  {
+    "Uppercase scheme: equal hashes",
+    "HTTP://one.example.com/a/path?name=value",
+    "http://one.example.com/a/path?name=value",
+    !IGNORE_QUERY,
+    HAS_EQUAL_HASH,
+  },
+  {
+    // Long uppercase host crosses 16- and 32-byte SIMD body boundaries so
+    // the wider paths (when compiled in) are exercised by this fixture.
+    "Long uppercase host: equal hashes",
+    "http://A-VERY-LONG-HOST-NAME-FOR-SIMD.EXAMPLE.COM/a/path",
+    "http://a-very-long-host-name-for-simd.example.com/a/path",
+    !IGNORE_QUERY,
+    HAS_EQUAL_HASH,
+  },
 };
 
 /** Return the hash related to a URI.
