@@ -46,11 +46,9 @@
 #include "mgmt/config/ConfigRegistry.h"
 
 #include <openssl/pem.h>
-#include <algorithm>
 #include <array>
 #include <cstring>
 #include <cmath>
-#include <thread>
 #include <unordered_map>
 
 int                SSLConfig::config_index                           = 0;
@@ -127,7 +125,6 @@ SSLConfigParams::reset()
   ssl_ctx_options                                      = SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3;
   ssl_client_ctx_options                               = SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3;
   configExitOnLoadError                                = 1;
-  configLoadConcurrency                                = 1;
 }
 
 void
@@ -434,10 +431,6 @@ SSLConfigParams::initialize()
 
   configFilePath        = ats_stringdup(RecConfigReadConfigPath("proxy.config.ssl.server.multicert.filename"));
   configExitOnLoadError = RecGetRecordInt("proxy.config.ssl.server.multicert.exit_on_load_fail").value_or(0);
-  configLoadConcurrency = RecGetRecordInt("proxy.config.ssl.server.multicert.concurrency").value_or(1);
-  if (configLoadConcurrency == 0) {
-    configLoadConcurrency = std::clamp(static_cast<int>(std::thread::hardware_concurrency()), 1, 256);
-  }
 
   {
     auto rec_str{RecGetRecordStringAlloc("proxy.config.ssl.server.private_key.path")};
@@ -679,7 +672,7 @@ SSLCertificateConfig::reconfigure(ConfigContext ctx)
     ink_hrtime_sleep(HRTIME_SECONDS(secs));
   }
 
-  auto errata = SSLMultiCertConfigLoader(params).load(lookup, configid == 0);
+  auto errata = SSLMultiCertConfigLoader(params).load(lookup);
   if (!lookup->is_valid || (errata.has_severity() && errata.severity() >= ERRATA_ERROR)) {
     retStatus = false;
   }
