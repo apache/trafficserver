@@ -27,75 +27,43 @@ test_cases = [
         "case": 0,
         "description": "default config",
         "storage": '''
-cache:
-  spans:
-    - name: disk.0
-      path: storage
-      size: 256M
+storage 256M
+''',
+        "volume": '''
+# empty
 '''
-    },
-    {
+    }, {
         "case": 1,
-        "description": "four equally divided volumes",
-        "storage":
+        "description": "four equally devided volumes",
+        "storage": '''
+storage 1G
+''',
+        "volume":
             '''
-cache:
-  spans:
-    - name: disk.0
-      path: storage
-      size: 1G
-  volumes:
-    - id: 1
-      size: 25%
-    - id: 2
-      size: 25%
-    - id: 3
-      size: 25%
-    - id: 4
-      size: 25%
+volume=1 scheme=http size=25%
+volume=2 scheme=http size=25%
+volume=3 scheme=http size=25%
+volume=4 scheme=http size=25%
 '''
-    },
-    {
+    }, {
         "case": 2,
         "description": "exclusive span",
-        "storage":
-            '''
-cache:
-  spans:
-    - name: disk.0
-      path: storage
-      size: 256M
-  volumes:
-    - id: 1
-      spans:
-        - use: disk.0
-          size: 100%
+        "storage": '''
+storage 256M volume=1
+''',
+        "volume": '''
+volume=1 scheme=http size=262144
 ''',
         "hosting": '''
 hostname=* volume=1
 '''
-    },
-    {
-        "case": 3,
-        "description": "two equally divided volumes without size option",
-        "storage":
-            '''
-cache:
-  spans:
-    - name: disk.0
-      path: storage
-      size: 512M
-  volumes:
-    - id: 1
-    - id: 2
-'''
-    },
+    }
 ]
 
 
 class StorageMetricsTest:
     """
-    Test loading storage.yaml
+    Test loading storage.config and volume.config
 
     1. Spawn TS process with configs in test_cases
     2. Get 'proxy.process.cache.*' metrics
@@ -106,11 +74,10 @@ class StorageMetricsTest:
         for config in test_cases:
             i = config["case"]
             ts = Test.MakeATSProcess(f"ts_{i}")
-            ts.Disk.storage_yaml.AddLine(config["storage"])
-
+            ts.Disk.storage_config.AddLine(config["storage"])
+            ts.Disk.volume_config.AddLine(config["volume"])
             if "hosting" in config:
                 ts.Disk.hosting_config.AddLine(config["hosting"])
-
             ts.Disk.records_config.update({
                 'proxy.config.diags.debug.enabled': 1,
                 'proxy.config.diags.debug.tags': 'cache',

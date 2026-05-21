@@ -1,5 +1,0 @@
-cache:
-  spans:
-    - name: disk-1
-      path: var/trafficserver
-      size: 256M

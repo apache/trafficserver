@@ -146,7 +146,8 @@ A number of file objects are defined to help with adding values to a given confi
  * socks.config
  * splitdns.config
  * ssl_multicert.config
- * storage.yaml
+ * storage.config
+ * volume.config
 
 #### Examples
 

@@ -315,7 +315,11 @@ def MakeATSProcess(
     tmpname = os.path.join(config_dir, fname)
     p.Disk.File(tmpname, id=make_id(fname), typename="ats:config")
 
-    fname = "storage.yaml"
+    fname = "storage.config"
+    tmpname = os.path.join(config_dir, fname)
+    p.Disk.File(tmpname, id=make_id(fname), typename="ats:config")
+
+    fname = "volume.config"
     tmpname = os.path.join(config_dir, fname)
     p.Disk.File(tmpname, id=make_id(fname), typename="ats:config")
 

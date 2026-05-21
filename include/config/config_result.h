@@ -59,9 +59,8 @@ namespace config
  * @tparam T The configuration type (e.g., SSLMultiCertConfig).
  */
 template <typename T> struct ConfigResult {
-  T            value;                  ///< The parsed configuration value.
-  swoc::Errata errata;                 ///< Errors or warnings from parsing.
-  bool         file_not_found = false; ///< True if the file was not found (ENOENT).
+  T            value;  ///< The parsed configuration value.
+  swoc::Errata errata; ///< Errors or warnings from parsing.
 
   /**
    * Check if parsing succeeded without errors.
