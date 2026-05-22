@@ -84,13 +84,7 @@ class TlsSniTicketTest:
         ts.addSSLfile('ssl/server.pem')
         ts.addSSLfile('ssl/server.key')
         ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{self.server.Variables.Port}')
-        ts.Disk.ssl_multicert_yaml.AddLines(
-            """
-ssl_multicert:
-  - dest_ip: "*"
-    ssl_cert_name: server.pem
-    ssl_key_name: server.key
-""".split("\n"))
+        ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
 
         ts.Disk.records_config.update(
             {

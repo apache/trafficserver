@@ -200,13 +200,7 @@ class JaxFingerprintTest:
         JaxFingerprintTest._ts_counter += 1
 
         self._ts.addDefaultSSLFiles()
-        self._ts.Disk.ssl_multicert_yaml.AddLines(
-            """
-ssl_multicert:
-  - dest_ip: "*"
-    ssl_cert_name: server.pem
-    ssl_key_name: server.key
-""".split("\n"))
+        self._ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
 
         if self._needs_tls:
             server_port = self._server.Variables.https_port
@@ -431,13 +425,7 @@ class AllMethodsTest:
         AllMethodsTest._ts_counter += 1
 
         self._ts.addDefaultSSLFiles()
-        self._ts.Disk.ssl_multicert_yaml.AddLines(
-            """
-ssl_multicert:
-  - dest_ip: "*"
-    ssl_cert_name: server.pem
-    ssl_key_name: server.key
-""".split("\n"))
+        self._ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
 
         server_port = self._server.Variables.https_port
 
