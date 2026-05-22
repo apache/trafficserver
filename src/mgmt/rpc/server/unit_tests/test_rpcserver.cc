@@ -28,11 +28,16 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <stdio.h>
+#include <unistd.h>
 
 #include <thread>
 #include <future>
 #include <chrono>
 #include <fstream>
+#include <cerrno>
+#include <cstring>
+#include <cstdlib>
+#include <vector>
 
 #include "swoc/swoc_file.h"
 
@@ -71,12 +76,75 @@ add_method_handler(const std::string &name, Func &&call)
 
 namespace
 {
-const std::string sockPath{"tests/var/jsonrpc20_test.sock"};
-const std::string lockPath{"tests/var/jsonrpc20_test.lock"};
-constexpr int     default_backlog{5};
-constexpr int     default_maxRetriesOnTransientErrors{64};
-constexpr size_t  default_incoming_req_max_size{32000 * 3};
-DbgCtl            dbg_ctl{"rpc.test.client"};
+constexpr std::string_view rpc_test_dir_template{"ats_rpc_XXXXXX"};
+constexpr std::string_view rpc_test_socket_name{"s"};
+constexpr std::string_view rpc_test_lock_name{"l"};
+constexpr size_t           max_rpc_socket_path_size{sizeof(sockaddr_un::sun_path) - 1};
+
+fs::path         rpcTestDir;
+std::string      sockPath;
+std::string      lockPath;
+constexpr int    default_backlog{5};
+constexpr int    default_maxRetriesOnTransientErrors{64};
+constexpr size_t default_incoming_req_max_size{32000 * 3};
+DbgCtl           dbg_ctl{"rpc.test.client"};
+
+/** Prepare JSONRPC socket paths beneath @a base.
+ *
+ * This owns creation of the per-run test directory and publishes the socket
+ * and lock paths shared by the JSONRPC test server and clients.
+ *
+ * @param[in] base Candidate parent directory for the test directory.
+ * @param[out] error Reason setup failed, if a usable directory was not created.
+ * @return @c true if the socket and lock paths are ready for this test run.
+ */
+bool
+try_setup_rpc_test_paths(fs::path const &base, std::string &error)
+{
+  auto const dir_template = (base / rpc_test_dir_template).string();
+  auto const socket_path  = (fs::path{dir_template} / rpc_test_socket_name).string();
+
+  if (socket_path.size() > max_rpc_socket_path_size) {
+    error = "JSONRPC test socket path is too long under " + base.string() + ": " + socket_path;
+    return false;
+  }
+
+  std::vector<char> mutable_template{dir_template.begin(), dir_template.end()};
+  mutable_template.push_back('\0');
+
+  char *created_dir = mkdtemp(mutable_template.data());
+  if (created_dir == nullptr) {
+    error = "Failed to create JSONRPC test directory under " + base.string() + ": " + std::strerror(errno);
+    return false;
+  }
+
+  rpcTestDir = fs::path{created_dir};
+  sockPath   = (rpcTestDir / rpc_test_socket_name).string();
+  lockPath   = (rpcTestDir / rpc_test_lock_name).string();
+  return true;
+}
+
+/** Prepare JSONRPC socket paths for the test run.
+ *
+ * This prefers the environment temporary directory, then falls back to @c /tmp
+ * when the generated Unix-domain socket path would be too long or setup fails.
+ *
+ * @param[out] error Reason setup failed, if no candidate directory works.
+ * @return @c true if the socket and lock paths are ready for this test run.
+ */
+bool
+setup_rpc_test_paths(std::string &error)
+{
+  if (try_setup_rpc_test_paths(fs::temp_directory_path(), error)) {
+    error.clear();
+    return true;
+  }
+  if (try_setup_rpc_test_paths(fs::path{"/tmp"}, error)) {
+    error.clear();
+    return true;
+  }
+  return false;
+}
 
 } // end anonymous namespace
 
@@ -88,6 +156,11 @@ struct RPCServerTestListener : Catch::EventListenerBase {
   void
   testRunStarting(Catch::TestRunInfo const & /* testRunInfo ATS_UNUSED */) override
   {
+    std::string setup_error;
+    bool const  setup_ok = setup_rpc_test_paths(setup_error);
+    INFO(setup_error);
+    REQUIRE(setup_ok);
+
     Layout::create();
     init_diags("rpc", nullptr);
     RecProcessInit();
@@ -122,6 +195,11 @@ struct RPCServerTestListener : Catch::EventListenerBase {
   {
     if (jsonrpcServer) {
       delete jsonrpcServer; // will stop the thread
+    }
+
+    std::error_code ec;
+    if (!rpcTestDir.empty()) {
+      fs::remove_all(rpcTestDir, ec);
     }
   }
 
