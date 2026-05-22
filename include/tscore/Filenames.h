@@ -25,7 +25,10 @@ namespace ts
 {
 namespace filename
 {
-  constexpr const char *STORAGE     = "storage.yaml";
+  constexpr const char *STORAGE_YAML = "storage.yaml";
+  constexpr const char *STORAGE      = "storage.config"; //< deprecated by STORAGE_YAML
+  constexpr const char *VOLUME       = "volume.config";  //< deprecated by STORAGE_YAML
+
   constexpr const char *RECORDS     = "records.yaml";
   constexpr const char *PLUGIN      = "plugin.config";
   constexpr const char *PLUGIN_YAML = "plugin.yaml";

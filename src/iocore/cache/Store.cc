@@ -34,6 +34,8 @@
 #include "tscore/ink_file.h"
 #include "tsutil/DbgCtl.h"
 
+#include "swoc/swoc_file.h"
+
 #if defined(__linux__)
 #include <linux/major.h>
 #endif
@@ -218,25 +220,90 @@ Span::~Span()
 Result
 Store::read_config()
 {
-  ats_scoped_str storage_path(RecConfigReadConfigPath(nullptr, ts::filename::STORAGE));
+  config::StorageConfig parsed;
 
-  Note("%s loading ...", ts::filename::STORAGE);
+  // Check storage.yaml, storage.config and volume.config
+  ats_scoped_str storage_yaml_path(RecConfigReadConfigPath(nullptr, ts::filename::STORAGE_YAML));
+  const bool     yaml_exists = storage_yaml_path && swoc::file::exists(swoc::file::path(storage_yaml_path.get()));
+
+  ats_scoped_str storage_config_path(RecConfigReadConfigPath(nullptr, ts::filename::STORAGE));
+  const bool     storage_config_exists = storage_config_path && swoc::file::exists(swoc::file::path(storage_config_path.get()));
+
+  ats_scoped_str volume_config_path(RecConfigReadConfigPath(nullptr, ts::filename::VOLUME));
+  const bool     volume_config_exists = volume_config_path && swoc::file::exists(swoc::file::path(volume_config_path.get()));
 
   config::StorageParser parser;
-  auto                  parse_result = parser.parse(storage_path.get());
-  if (!parse_result.ok()) {
-    std::string msg;
-    for (auto const &annotation : parse_result.errata) {
-      if (!msg.empty()) {
-        msg += "; ";
+
+  if (yaml_exists) {
+    Note("%s loading ...", ts::filename::STORAGE_YAML);
+
+    auto parse_result = parser.parse(storage_yaml_path.get());
+    if (!parse_result.ok()) {
+      std::string msg;
+      for (auto const &annotation : parse_result.errata) {
+        if (!msg.empty()) {
+          msg += "; ";
+        }
+        msg += std::string(annotation.text());
       }
-      msg += std::string(annotation.text());
+      return Result::failure("failed to load %s: %s", ts::filename::STORAGE_YAML, msg.c_str());
     }
-    return Result::failure("failed to load %s: %s", ts::filename::STORAGE, msg.c_str());
+    parsed = std::move(parse_result.value);
+
+    // If a legacy storage.config or volume.config also exists, warn that it is being ignored.
+    if (storage_config_exists) {
+      Warning("%s exists alongside %s; the legacy file is ignored. "
+              "Use 'traffic_ctl config convert storage' to migrate or remove storage.yaml",
+              ts::filename::STORAGE, ts::filename::STORAGE_YAML);
+    }
+
+    if (volume_config_exists) {
+      Warning("%s exists alongside %s; the legacy file is ignored. "
+              "Use 'traffic_ctl config convert storage' to migrate or remove storage.yaml",
+              ts::filename::VOLUME, ts::filename::STORAGE_YAML);
+    }
+  } else {
+    // Fall back to legacy storage.config + volume.config.
+    Note("%s not found, falling back to %s + %s", ts::filename::STORAGE_YAML, ts::filename::STORAGE, ts::filename::VOLUME);
+
+    if (!storage_config_exists) {
+      return Result::failure("neither %s nor %s found", ts::filename::STORAGE_YAML, ts::filename::STORAGE);
+    }
+
+    if (!volume_config_exists) {
+      return Result::failure("neither %s nor %s found", ts::filename::STORAGE_YAML, ts::filename::VOLUME);
+    }
+
+    auto storage_result = parser.parse(storage_config_path.get());
+    if (!storage_result.ok()) {
+      std::string msg;
+      for (auto const &annotation : storage_result.errata) {
+        if (!msg.empty()) {
+          msg += "; ";
+        }
+        msg += std::string(annotation.text());
+      }
+      return Result::failure("failed to load %s: %s", ts::filename::STORAGE, msg.c_str());
+    }
+
+    config::VolumeParser                        volume_parser;
+    config::ConfigResult<config::StorageConfig> volume_result = volume_parser.parse(volume_config_path.get());
+    if (!volume_result.ok()) {
+      std::string msg;
+      for (auto const &annotation : volume_result.errata) {
+        if (!msg.empty()) {
+          msg += "; ";
+        }
+        msg += std::string(annotation.text());
+      }
+      return Result::failure("failed to load %s: %s", ts::filename::VOLUME, msg.c_str());
+    }
+
+    parsed = config::merge_legacy_storage_configs(storage_result.value, volume_result.value);
   }
 
   // Convert StorageVolumeEntry -> ConfigVol and populate config_volumes.
-  for (auto const &vv : parse_result.value.volumes) {
+  for (auto const &vv : parsed.volumes) {
     auto *vol                = new ConfigVol();
     vol->number              = vv.id;
     vol->scheme              = (vv.scheme == "http") ? CacheType::HTTP : CacheType::NONE;
@@ -261,7 +328,7 @@ Store::read_config()
   }
   config_volumes.complement();
 
-  auto const &storage_spans = parse_result.value.spans;
+  auto const &storage_spans = parsed.spans;
   this->n_spans_in_config   = storage_spans.size();
 
   int   n_dsstore = 0;
@@ -331,7 +398,11 @@ Store::read_config()
     }
   }
 
-  Note("%s finished loading", ts::filename::STORAGE);
+  if (yaml_exists) {
+    Note("%s finished loading", ts::filename::STORAGE_YAML);
+  } else {
+    Note("%s & %s finished loading", ts::filename::STORAGE, ts::filename::VOLUME);
+  }
 
   return Result::ok();
 }

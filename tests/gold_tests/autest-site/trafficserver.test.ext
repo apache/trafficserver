@@ -60,7 +60,8 @@ def MakeATSProcess(
         dump_runroot=True,
         enable_proxy_protocol=False,
         enable_proxy_protocol_cp_src=False,
-        disable_log_checks=False):
+        disable_log_checks=False,
+        use_legacy_storage=False):
     """Create a traffic server process.
 
     :param block_for_debug: if True, causes traffic_server to run with the
@@ -68,6 +69,9 @@ def MakeATSProcess(
     triggered by running traffic_server under a debugger. In the debugger,
     `set cmd_block = 0`, set any desired break points, then `c` to continue
     to let the test proceed.
+    :param use_legacy_storage: if True, skip the default storage.yaml setup
+    so the test can stage legacy storage.config / volume.config files and
+    exercise the runtime fallback path.
     """
     #####################################
     # common locations
@@ -148,6 +152,8 @@ def MakeATSProcess(
     p.chownForATSProcess(config_dir)
 
     for f in os.listdir(cfg_dir):
+        if use_legacy_storage and f == 'storage.yaml':
+            continue
         p.Setup.CopyAs(os.path.join(cfg_dir, f), config_dir)
 
     #########################################################
@@ -317,7 +323,8 @@ def MakeATSProcess(
 
     fname = "storage.yaml"
     tmpname = os.path.join(config_dir, fname)
-    p.Disk.File(tmpname, id=make_id(fname), typename="ats:config")
+    if not use_legacy_storage:
+        p.Disk.File(tmpname, id=make_id(fname), typename="ats:config")
 
     # The big motivation in exposing this file is that we need to tell the traffic_ctl
     # where to find the socket to interact with the TS. traffic_ctl cannot rely only

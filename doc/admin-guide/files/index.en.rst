@@ -39,6 +39,8 @@ Configuration Files
    ssl_multicert.yaml.en
    sni.yaml.en
    storage.yaml.en
+   storage.config.en
+   volume.config.en
    strategies.yaml.en
    jsonrpc.yaml.en
 
@@ -89,6 +91,14 @@ Configuration Files
 
 :doc:`storage.yaml.en`
    Configures all storage devices and paths to be used for the |TS| cache and defines cache space usage by individual protocols.
+
+:doc:`storage.config.en`
+   Legacy line-based storage configuration. Loaded when :file:`storage.yaml`
+   is absent. Use ``traffic_ctl config convert storage`` to migrate.
+
+:doc:`volume.config.en`
+   Legacy line-based volume configuration. Loaded together with
+   :file:`storage.config` when :file:`storage.yaml` is absent.
 
 :doc:`strategies.yaml.en`
    Configures NextHop strategies used with `remap.config` and replaces parent.config.

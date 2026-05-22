@@ -158,7 +158,7 @@ struct Store {
   Store(){};
   ~Store();
 
-  unsigned n_spans_in_config = 0; ///< The number of disks/paths defined in storage.yaml
+  unsigned n_spans_in_config = 0; ///< The number of disks/paths defined in storage.yaml (or legacy storage.config)
   unsigned n_spans           = 0; ///< The number of disks/paths we could actually read and parse
   Span   **spans             = nullptr;
 

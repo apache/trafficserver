@@ -559,3 +559,27 @@ shares the remaining 1.5GB (4GB - 2GB - 512MB) and caches objects up to 1MB.
        - id: 3
          size: 40%
          ram_cache_cutoff: 1M
+
+
+Backward compatibility
+======================
+
+For backward compatibility |TS| also accepts the legacy
+:file:`storage.config` and :file:`volume.config` files. The selection rule at
+startup is:
+
+* If :file:`storage.yaml` exists in the configuration directory, it is loaded
+  and any :file:`storage.config` / :file:`volume.config` present alongside it
+  is ignored. A warning is logged in this case so that operators notice the
+  legacy file is being skipped.
+* If :file:`storage.yaml` does not exist, |TS| falls back to
+  :file:`storage.config` (required) and :file:`volume.config` (optional).
+  A missing :file:`volume.config` is treated as "no volumes configured".
+
+Use the ``traffic_ctl config convert storage`` command to convert a legacy
+configuration to :file:`storage.yaml`::
+
+   traffic_ctl config convert storage storage.config volume.config storage.yaml
+
+The legacy formats are described in :doc:`storage.config.en` and
+:doc:`volume.config.en`.
