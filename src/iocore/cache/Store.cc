@@ -302,7 +302,7 @@ Store::read_config()
       }
       volume_config = std::move(volume_result.value);
     } else {
-      Note("%s not found, treating as no volumes configured", ts::filename::VOLUME);
+      Warning("%s not found", ts::filename::VOLUME);
     }
 
     parsed = config::merge_legacy_storage_configs(storage_result.value, volume_config);
