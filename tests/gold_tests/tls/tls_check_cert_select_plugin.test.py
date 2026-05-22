@@ -170,7 +170,8 @@ tr.MakeCurlCommand(
 tr.ReturnCode = 60
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
-tr.Processes.Default.Streams.All = Testers.ContainsExpression("unknown CA", "Failed handshake")
-tr.Processes.Default.Streams.All += Testers.ExcludesExpression("CN=bar.com", "Cert should contain bar.com")
+tr.Processes.Default.Streams.All = Testers.ContainsExpression(r"curl: \(60\) SSL certificate", "Failed certificate verification")
+# Older versions of curl do not print certificate subject details when
+# certificate verification fails.
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("CN=foo.com", "Cert should not contain foo.com")
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("404", "Should make an exchange")
