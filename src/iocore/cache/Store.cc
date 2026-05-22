@@ -229,7 +229,7 @@ Store::read_config()
   ats_scoped_str storage_config_path(RecConfigReadConfigPath(nullptr, ts::filename::STORAGE));
   const bool     storage_config_exists = storage_config_path && swoc::file::exists(swoc::file::path(storage_config_path.get()));
 
-  ats_scoped_str volume_config_path(RecConfigReadConfigPath(nullptr, ts::filename::VOLUME));
+  ats_scoped_str volume_config_path(RecConfigReadConfigPath("proxy.config.cache.volume_filename", ts::filename::VOLUME));
   const bool     volume_config_exists = volume_config_path && swoc::file::exists(swoc::file::path(volume_config_path.get()));
 
   config::StorageParser parser;
@@ -252,15 +252,19 @@ Store::read_config()
 
     // If a legacy storage.config or volume.config also exists, warn that it is being ignored.
     if (storage_config_exists) {
-      Warning("%s exists alongside %s; the legacy file is ignored. "
-              "Use 'traffic_ctl config convert storage' to migrate or remove storage.yaml",
-              ts::filename::STORAGE, ts::filename::STORAGE_YAML);
+      Note("%s exists alongside %s; the legacy file is ignored. "
+           "To resolve, either: (a) migrate %s to %s (e.g. 'traffic_ctl config convert storage') and remove %s, "
+           "or (b) remove %s to fall back to %s.",
+           ts::filename::STORAGE, ts::filename::STORAGE_YAML, ts::filename::STORAGE, ts::filename::STORAGE_YAML,
+           ts::filename::STORAGE, ts::filename::STORAGE_YAML, ts::filename::STORAGE);
     }
 
     if (volume_config_exists) {
-      Warning("%s exists alongside %s; the legacy file is ignored. "
-              "Use 'traffic_ctl config convert storage' to migrate or remove storage.yaml",
-              ts::filename::VOLUME, ts::filename::STORAGE_YAML);
+      Note("%s exists alongside %s; the legacy file is ignored. "
+           "To resolve, either: (a) migrate %s to %s (e.g. 'traffic_ctl config convert storage') and remove %s, "
+           "or (b) remove %s to fall back to %s.",
+           ts::filename::VOLUME, ts::filename::STORAGE_YAML, ts::filename::VOLUME, ts::filename::STORAGE_YAML, ts::filename::VOLUME,
+           ts::filename::STORAGE_YAML, ts::filename::VOLUME);
     }
   } else {
     // Fall back to legacy storage.config + volume.config.
@@ -268,10 +272,6 @@ Store::read_config()
 
     if (!storage_config_exists) {
       return Result::failure("neither %s nor %s found", ts::filename::STORAGE_YAML, ts::filename::STORAGE);
-    }
-
-    if (!volume_config_exists) {
-      return Result::failure("neither %s nor %s found", ts::filename::STORAGE_YAML, ts::filename::VOLUME);
     }
 
     auto storage_result = parser.parse(storage_config_path.get());
@@ -286,20 +286,26 @@ Store::read_config()
       return Result::failure("failed to load %s: %s", ts::filename::STORAGE, msg.c_str());
     }
 
-    config::VolumeParser                        volume_parser;
-    config::ConfigResult<config::StorageConfig> volume_result = volume_parser.parse(volume_config_path.get());
-    if (!volume_result.ok()) {
-      std::string msg;
-      for (auto const &annotation : volume_result.errata) {
-        if (!msg.empty()) {
-          msg += "; ";
+    config::StorageConfig volume_config;
+    if (volume_config_exists) {
+      config::VolumeParser                        volume_parser;
+      config::ConfigResult<config::StorageConfig> volume_result = volume_parser.parse(volume_config_path.get());
+      if (!volume_result.ok()) {
+        std::string msg;
+        for (auto const &annotation : volume_result.errata) {
+          if (!msg.empty()) {
+            msg += "; ";
+          }
+          msg += std::string(annotation.text());
         }
-        msg += std::string(annotation.text());
+        return Result::failure("failed to load %s: %s", ts::filename::VOLUME, msg.c_str());
       }
-      return Result::failure("failed to load %s: %s", ts::filename::VOLUME, msg.c_str());
+      volume_config = std::move(volume_result.value);
+    } else {
+      Note("%s not found, treating as no volumes configured", ts::filename::VOLUME);
     }
 
-    parsed = config::merge_legacy_storage_configs(storage_result.value, volume_result.value);
+    parsed = config::merge_legacy_storage_configs(storage_result.value, volume_config);
   }
 
   // Convert StorageVolumeEntry -> ConfigVol and populate config_volumes.

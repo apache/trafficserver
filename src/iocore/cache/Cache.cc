@@ -971,6 +971,6 @@ ink_cache_init(ts::ModuleVersion v)
 
   Result result = theCacheStore.read_config();
   if (result.failed()) {
-    Fatal("Failed to read cache configuration %s: %s", ts::filename::STORAGE_YAML, result.message());
+    Fatal("Failed to read cache configuration: %s", result.message());
   }
 }
