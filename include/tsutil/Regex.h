@@ -23,10 +23,11 @@
 
 #pragma once
 
+#include <cstdint>
+#include <memory>
 #include <string_view>
 #include <string>
 #include <vector>
-#include <memory>
 
 /// @brief Match flags for regular expression evaluation.
 ///
