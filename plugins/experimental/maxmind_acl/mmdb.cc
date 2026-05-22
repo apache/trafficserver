@@ -434,36 +434,40 @@ Acl::parseregex(const YAML::Node &regex, bool allow)
   }
 }
 
-bool
+void
 Acl::loadbypass(const YAML::Node &bypassNode)
 {
   if (!bypassNode) {
     Dbg(dbg_ctl, "No bypass set");
-    return false;
+    return;
   }
   if (bypassNode.IsNull()) {
     Dbg(dbg_ctl, "bypass node is NULL");
-    return false;
+    return;
   }
 
   try {
     if (bypassNode["header"]) {
+      if (!bypassNode["value"]) {
+        TSWarning("[%s] bypass 'header' set without 'value' — bypass disabled; both are required", PLUGIN_NAME);
+        return;
+      }
+      _bypass_header_value = bypassNode["value"].as<std::string>();
+      if (_bypass_header_value.empty()) {
+        TSWarning("[%s] bypass 'value' is empty — bypass disabled; a non-empty value is required", PLUGIN_NAME);
+        return;
+      }
       _bypass_header = bypassNode["header"].as<std::string>();
       Dbg(dbg_ctl, "bypass header set to: %s", _bypass_header.c_str());
-      if (bypassNode["value"]) {
-        _bypass_header_value = bypassNode["value"].as<std::string>();
-        Dbg(dbg_ctl, "bypass value set to: %s", _bypass_header_value.c_str());
-      }
+      Dbg(dbg_ctl, "bypass value set to: %s", _bypass_header_value.c_str());
     } else {
       Dbg(dbg_ctl, "bypass missing 'header' key");
-      return false;
+      return;
     }
   } catch (const YAML::Exception &e) {
     TSError("[%s] YAML::Exception %s when parsing bypass config", PLUGIN_NAME, e.what());
-    return false;
+    return;
   }
-
-  return !_bypass_header.empty();
 }
 
 void
@@ -560,21 +564,14 @@ Acl::check_bypass(TSHttpTxn txnp) const
     return false;
   }
 
-  bool bypassed = false;
-  if (_bypass_header_value.empty()) {
-    // presence-only check
-    Dbg(dbg_ctl, "check_bypass: bypass header '%s' present", _bypass_header.c_str());
+  bool        bypassed = false;
+  int         val_len  = 0;
+  const char *val      = TSMimeHdrFieldValueStringGet(mbuf, hdr_loc, field_loc, -1, &val_len);
+  if (val != nullptr && 0 < val_len && std::string_view(val, val_len) == _bypass_header_value) {
+    Dbg(dbg_ctl, "check_bypass: bypass header '%s' matched value '%s'", _bypass_header.c_str(), _bypass_header_value.c_str());
     bypassed = true;
   } else {
-    int         val_len = 0;
-    const char *val     = TSMimeHdrFieldValueStringGet(mbuf, hdr_loc, field_loc, -1, &val_len);
-    if (val != nullptr && static_cast<int>(_bypass_header_value.size()) == val_len &&
-        _bypass_header_value.compare(0, std::string::npos, val, val_len) == 0) {
-      Dbg(dbg_ctl, "check_bypass: bypass header '%s' matched value '%s'", _bypass_header.c_str(), _bypass_header_value.c_str());
-      bypassed = true;
-    } else {
-      Dbg(dbg_ctl, "check_bypass: bypass header present but value did not match");
-    }
+    Dbg(dbg_ctl, "check_bypass: bypass header present but value did not match");
   }
 
   TSHandleMLocRelease(mbuf, hdr_loc, field_loc);

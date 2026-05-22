@@ -126,7 +126,7 @@ protected:
   bool    loaddeny(const YAML::Node &denyNode);
   void    loadhtml(const YAML::Node &htmlNode);
   bool    loadanonymous(const YAML::Node &anonNode);
-  bool    loadbypass(const YAML::Node &bypassNode);
+  void    loadbypass(const YAML::Node &bypassNode);
   bool    eval_country(MMDB_entry_data_s *entry_data, const std::string &url);
   bool    eval_anonymous(MMDB_entry_s *entry_data);
   void    parseregex(const YAML::Node &regex, bool allow);
