@@ -119,8 +119,9 @@ Bypass
 ======
 
 An optional ``bypass`` field allows a request to skip all geo checks entirely and pass through
-unmodified. If the specified request header is present, the plugin returns immediately without
-performing any country, IP, regex, or anonymous evaluation.
+unmodified. Both a header name and an expected value must be configured; when the named header
+is present in the request **and** its value matches exactly, the plugin returns immediately
+without performing any country, IP, regex, or anonymous evaluation.
 
 ``header``
    Required sub-key. The name of the HTTP request header to look for, e.g. ``@GeoBypass``.
@@ -131,8 +132,9 @@ performing any country, IP, regex, or anonymous evaluation.
    disables the bypass entirely and a warning is emitted to the ATS error log.
 
 The comparison uses the complete, raw field value of the first occurrence of the named header.
-Requests where the header appears multiple times (comma-separated or repeated lines) will not
-match, because the combined multi-value string will not equal the configured ``value``.
+Duplicate headers with the same name (repeated lines) are ignored — only the first is evaluated.
+Within that first field, the entire value must match exactly, so a comma-separated multi-value
+(e.g. ``@GeoBypass: 1, extra``) in a single header line will not match a simple configured value.
 
 An example configuration ::
 

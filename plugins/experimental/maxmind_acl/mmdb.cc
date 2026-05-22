@@ -568,7 +568,7 @@ Acl::check_bypass(TSHttpTxn txnp) const
   int         val_len  = 0;
   const char *val      = TSMimeHdrFieldValueStringGet(mbuf, hdr_loc, field_loc, -1, &val_len);
   if (val != nullptr && 0 < val_len && std::string_view(val, val_len) == _bypass_header_value) {
-    Dbg(dbg_ctl, "check_bypass: bypass header '%s' matched value '%s'", _bypass_header.c_str(), _bypass_header_value.c_str());
+    Dbg(dbg_ctl, "check_bypass: bypass triggered");
     bypassed = true;
   } else {
     Dbg(dbg_ctl, "check_bypass: bypass header present but value did not match");
