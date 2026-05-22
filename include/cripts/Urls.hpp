@@ -347,10 +347,10 @@ public:
     {
       auto p = operator[](ix);
 
-      if (_state) {
+      if (_state && ix < _state->segments.size()) {
         _state->size -= p.size();
+        p.operator=("");
       }
-      p.operator=("");
     }
 
     void
