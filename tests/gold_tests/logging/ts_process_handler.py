@@ -36,7 +36,10 @@ class GetPidError(Exception):
 def get_ts_process_pid(ts_identifier):
     processes = []
     for proc in psutil.process_iter(['cmdline']):
-        commandline = ' '.join(proc.info['cmdline'])
+        cmdline = proc.info.get('cmdline', [])
+        if not cmdline:
+            continue
+        commandline = ' '.join(cmdline)
         if '/traffic_server' in commandline and ts_identifier in commandline:
             return proc
     raise GetPidError("Could not find a traffic_server process")

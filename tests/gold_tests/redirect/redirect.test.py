@@ -69,7 +69,7 @@ dest_serv.addResponse("sessionfile.log", dest_request_header, dest_response_head
 
 dns.addRecords(records={"iwillredirect.test": ["127.0.0.1"]})
 
-data_dirname = 'generated_test_data'
+data_dirname = 'redirect_generated_test_data'
 data_path = os.path.join(Test.TestDirectory, data_dirname)
 os.makedirs(data_path, exist_ok=True)
 
