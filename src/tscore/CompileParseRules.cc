@@ -204,7 +204,7 @@ main()
       tparseRulesCType[i] |= is_hex_BIT;
     }
 
-    char cc = static_cast<char>(i);
+    unsigned char cc = static_cast<unsigned char>(i);
 
     if (ParseRules::is_pchar(&cc)) {
       tparseRulesCType[i] |= is_pchar_BIT;
