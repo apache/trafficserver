@@ -177,107 +177,107 @@ main()
 {
   for (uint16_t i = 0; i < 256; i++) {
     gTparseRulesCType[i]        = 0;
-    gTparseRulesCTypeToLower[i] = static_cast<uint8_t>(ParseRules::ink_tolower(i));
-    gTparseRulesCTypeToUpper[i] = static_cast<uint8_t>(ParseRules::ink_toupper(i));
+    gTparseRulesCTypeToLower[i] = static_cast<uint8_t>(ParseRules::InkTolower(i));
+    gTparseRulesCTypeToUpper[i] = static_cast<uint8_t>(ParseRules::InkToupper(i));
 
-    if (ParseRules::IsChar(index)) {
-      gTparseRulesCType[index] |= IS_CHAR_BIT;
+    if (ParseRules::IsChar(i)) {
+      gTparseRulesCType[i] |= IS_CHAR_BIT;
     }
-    if (ParseRules::IsUpalpha(index)) {
-      gTparseRulesCType[index] |= IS_UPALPHA_BIT;
+    if (ParseRules::IsUpalpha(i)) {
+      gTparseRulesCType[i] |= IS_UPALPHA_BIT;
     }
-    if (ParseRules::IsLoalpha(index)) {
-      gTparseRulesCType[index] |= IS_LOALPHA_BIT;
+    if (ParseRules::IsLoalpha(i)) {
+      gTparseRulesCType[i] |= IS_LOALPHA_BIT;
     }
-    if (ParseRules::IsAlpha(index)) {
-      gTparseRulesCType[index] |= IS_ALPHA_BIT;
+    if (ParseRules::IsAlpha(i)) {
+      gTparseRulesCType[i] |= IS_ALPHA_BIT;
     }
-    if (ParseRules::IsDigit(index)) {
-      gTparseRulesCType[index] |= IS_DIGIT_BIT;
+    if (ParseRules::IsDigit(i)) {
+      gTparseRulesCType[i] |= IS_DIGIT_BIT;
     }
-    if (ParseRules::IsCtl(index)) {
-      gTparseRulesCType[index] |= IS_CTL_BIT;
+    if (ParseRules::IsCtl(i)) {
+      gTparseRulesCType[i] |= IS_CTL_BIT;
     }
-    if (ParseRules::IsWs(index)) {
-      gTparseRulesCType[index] |= IS_WS_BIT;
+    if (ParseRules::IsWs(i)) {
+      gTparseRulesCType[i] |= IS_WS_BIT;
     }
-    if (ParseRules::IsHex(index)) {
-      gTparseRulesCType[index] |= IS_HEX_BIT;
+    if (ParseRules::IsHex(i)) {
+      gTparseRulesCType[i] |= IS_HEX_BIT;
     }
 
     unsigned char cc = static_cast<unsigned char>(i);
 
-    if (ParseRules::IsPchar(&currentChar)) {
-      gTparseRulesCType[index] |= IS_PCHAR_BIT;
+    if (ParseRules::IsPchar(&cc)) {
+      gTparseRulesCType[i] |= IS_PCHAR_BIT;
     }
-    if (ParseRules::IsExtra(index)) {
-      gTparseRulesCType[index] |= IS_EXTRA_BIT;
+    if (ParseRules::IsExtra(i)) {
+      gTparseRulesCType[i] |= IS_EXTRA_BIT;
     }
-    if (ParseRules::IsSafe(index)) {
-      gTparseRulesCType[index] |= IS_SAFE_BIT;
+    if (ParseRules::IsSafe(i)) {
+      gTparseRulesCType[i] |= IS_SAFE_BIT;
     }
-    if (ParseRules::IsUnsafe(index)) {
-      gTparseRulesCType[index] |= IS_UNSAFE_BIT;
+    if (ParseRules::IsUnsafe(i)) {
+      gTparseRulesCType[i] |= IS_UNSAFE_BIT;
     }
-    if (ParseRules::IsNational(index)) {
-      gTparseRulesCType[index] |= IS_NATIONAL_BIT;
+    if (ParseRules::IsNational(i)) {
+      gTparseRulesCType[i] |= IS_NATIONAL_BIT;
     }
-    if (ParseRules::IsReserved(index)) {
-      gTparseRulesCType[index] |= IS_RESERVED_BIT;
+    if (ParseRules::IsReserved(i)) {
+      gTparseRulesCType[i] |= IS_RESERVED_BIT;
     }
-    if (ParseRules::IsUnreserved(index)) {
-      gTparseRulesCType[index] |= IS_UNRESERVED_BIT;
+    if (ParseRules::IsUnreserved(i)) {
+      gTparseRulesCType[i] |= IS_UNRESERVED_BIT;
     }
-    if (ParseRules::IsPunct(index)) {
-      gTparseRulesCType[index] |= IS_PUNCT_BIT;
+    if (ParseRules::IsPunct(i)) {
+      gTparseRulesCType[i] |= IS_PUNCT_BIT;
     }
-    if (ParseRules::IsEndOfUrl(index)) {
-      gTparseRulesCType[index] |= IS_END_OF_URL_BIT;
+    if (ParseRules::IsEndOfUrl(i)) {
+      gTparseRulesCType[i] |= IS_END_OF_URL_BIT;
     }
-    if (ParseRules::IsTspecials(index)) {
-      gTparseRulesCType[index] |= IS_TSPECIALS_BIT;
+    if (ParseRules::IsTspecials(i)) {
+      gTparseRulesCType[i] |= IS_TSPECIALS_BIT;
     }
-    if (ParseRules::IsSpcr(index)) {
-      gTparseRulesCType[index] |= IS_SPCR_BIT;
+    if (ParseRules::IsSpcr(i)) {
+      gTparseRulesCType[i] |= IS_SPCR_BIT;
     }
-    if (ParseRules::IsSplf(index)) {
-      gTparseRulesCType[index] |= IS_SPLF_BIT;
+    if (ParseRules::IsSplf(i)) {
+      gTparseRulesCType[i] |= IS_SPLF_BIT;
     }
-    if (ParseRules::IsWslfcr(index)) {
-      gTparseRulesCType[index] |= IS_WSLFCR_BIT;
+    if (ParseRules::IsWslfcr(i)) {
+      gTparseRulesCType[i] |= IS_WSLFCR_BIT;
     }
-    if (ParseRules::IsEow(index)) {
-      gTparseRulesCType[index] |= IS_EOW_BIT;
+    if (ParseRules::IsEow(i)) {
+      gTparseRulesCType[i] |= IS_EOW_BIT;
     }
-    if (ParseRules::IsToken(index)) {
-      gTparseRulesCType[index] |= IS_TOKEN_BIT;
+    if (ParseRules::IsToken(i)) {
+      gTparseRulesCType[i] |= IS_TOKEN_BIT;
     }
-    if (ParseRules::IsUri(index)) {
-      gTparseRulesCType[index] |= IS_URI_BIT;
+    if (ParseRules::IsUri(i)) {
+      gTparseRulesCType[i] |= IS_URI_BIT;
     }
-    if (ParseRules::IsSep(index)) {
-      gTparseRulesCType[index] |= IS_SEP_BIT;
+    if (ParseRules::IsSep(i)) {
+      gTparseRulesCType[i] |= IS_SEP_BIT;
     }
-    if (ParseRules::IsEmpty(index)) {
-      gTparseRulesCType[index] |= IS_EMPTY_BIT;
+    if (ParseRules::IsEmpty(i)) {
+      gTparseRulesCType[i] |= IS_EMPTY_BIT;
     }
-    if (ParseRules::IsAlnum(index)) {
-      gTparseRulesCType[index] |= IS_ALNUM_BIT;
+    if (ParseRules::IsAlnum(i)) {
+      gTparseRulesCType[i] |= IS_ALNUM_BIT;
     }
-    if (ParseRules::IsSpace(index)) {
-      gTparseRulesCType[index] |= IS_SPACE_BIT;
+    if (ParseRules::IsSpace(i)) {
+      gTparseRulesCType[i] |= IS_SPACE_BIT;
     }
-    if (ParseRules::IsControl(index)) {
-      gTparseRulesCType[index] |= IS_CONTROL_BIT;
+    if (ParseRules::IsControl(i)) {
+      gTparseRulesCType[i] |= IS_CONTROL_BIT;
     }
-    if (ParseRules::IsMimeSep(index)) {
-      gTparseRulesCType[index] |= IS_MIME_SEP_BIT;
+    if (ParseRules::IsMimeSep(i)) {
+      gTparseRulesCType[i] |= IS_MIME_SEP_BIT;
     }
-    if (ParseRules::IsHttpFieldName(index)) {
-      gTparseRulesCType[index] |= IS_HTTP_FIELD_NAME_BIT;
+    if (ParseRules::IsHttpFieldName(i)) {
+      gTparseRulesCType[i] |= IS_HTTP_FIELD_NAME_BIT;
     }
-    if (ParseRules::IsHttpFieldValue(index)) {
-      gTparseRulesCType[index] |= IS_HTTP_FIELD_VALUE_BIT;
+    if (ParseRules::IsHttpFieldValue(i)) {
+      gTparseRulesCType[i] |= IS_HTTP_FIELD_VALUE_BIT;
     }
   }
 
@@ -290,7 +290,7 @@ main()
   for (uint16_t i = 0; i < 256; ++i) {
     outputFile << "/* " << std::setw(3) << i << " (" << (isprint(i) ? static_cast<char>(i) : '?') << ") */\t";
     outputFile << "0x" << std::hex << std::setw(8) << std::setfill('0') << gTparseRulesCType[i] << (i != 255 ? ",\t\t" : "\t\t");
-    outputFile << "/* [" << uint_to_binary(gTparseRulesCType[i]) << "] */\n";
+    outputFile << "/* [" << UintToBinary(gTparseRulesCType[i]) << "] */\n";
   }
 
   // Write ParseRulesCTypeToUpper (uppercase conversion table)
@@ -313,7 +313,7 @@ main()
       return 1;
     }
     for (uint16_t i = 0; i < 256; ++i) {
-      fp << "(uint8_t)" << static_cast<unsigned>(gTparseRulesCTypeToLower[i]) << (i != 255 ? ',' : ' ') << '\n';
+      outputFile << "(uint8_t)" << static_cast<unsigned>(gTparseRulesCTypeToLower[i]) << (i != 255 ? ',' : ' ') << '\n';
     }
   }
 
