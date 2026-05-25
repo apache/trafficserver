@@ -2536,7 +2536,7 @@ init_ssl_ctx_callback(void *ctx, bool server)
 void
 load_ssl_file_callback(const char *ssl_file)
 {
-  FileManager::instance().configFileChild(ts::filename::SSL_MULTICERT, ssl_file);
+  FileManager::instance().configFileChild(ts::filename::SSL_MULTICERT_YAML, ssl_file);
 }
 
 void

@@ -175,7 +175,7 @@ produce_layout(bool json)
   print_var(ts::filename::RECORDS, RecConfigReadConfigPath(nullptr, ts::filename::RECORDS), json);
   print_var(ts::filename::REMAP, RecConfigReadConfigPath("proxy.config.url_remap.filename"), json);
   print_var(ts::filename::PLUGIN, RecConfigReadConfigPath(nullptr, ts::filename::PLUGIN), json);
-  print_var(ts::filename::SSL_MULTICERT, RecConfigReadConfigPath("proxy.config.ssl.server.multicert.filename"), json);
+  print_var(ts::filename::SSL_MULTICERT_YAML, RecConfigReadConfigPath("proxy.config.ssl.server.multicert.filename"), json);
   print_var(ts::filename::STORAGE, RecConfigReadConfigPath(nullptr, ts::filename::STORAGE), json);
   print_var(ts::filename::HOSTING, RecConfigReadConfigPath("proxy.config.cache.hosting_filename"), json);
   print_var(ts::filename::IP_ALLOW, RecConfigReadConfigPath("proxy.config.cache.ip_allow.filename"), json, true);

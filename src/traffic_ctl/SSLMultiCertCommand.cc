@@ -41,7 +41,7 @@ get_default_ssl_multicert_path()
   } else {
     sysconfdir = Layout::get()->sysconfdir;
   }
-  return Layout::get()->relative_to(sysconfdir, ts::filename::SSL_MULTICERT);
+  return Layout::get()->relative_to(sysconfdir, ts::filename::SSL_MULTICERT_YAML);
 }
 
 } // namespace

@@ -1822,7 +1822,7 @@ SSLMultiCertConfigLoader::load(SSLCertLookup *lookup, bool firstLoad)
 {
   const SSLConfigParams *params = this->_params;
 
-  Note("(%s) %s loading ...", this->_debug_tag(), ts::filename::SSL_MULTICERT);
+  Note("(%s) %s loading ...", this->_debug_tag(), ts::filename::SSL_MULTICERT_YAML);
 
   // Optionally elevate/allow file access to read root-only
   // certificates. The destructor will drop privilege for us.

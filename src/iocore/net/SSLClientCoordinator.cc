@@ -66,8 +66,9 @@ SSLClientCoordinator::startup()
     "ssl_client_coordinator", "sni", "proxy.config.ssl.servername.filename", ts::filename::SNI, false);
 
   // Track ssl_multicert.config — same pattern.
-  config::ConfigRegistry::Get_Instance().add_file_and_node_dependency(
-    "ssl_client_coordinator", "ssl_multicert", "proxy.config.ssl.server.multicert.filename", ts::filename::SSL_MULTICERT, false);
+  config::ConfigRegistry::Get_Instance().add_file_and_node_dependency("ssl_client_coordinator", "ssl_multicert",
+                                                                      "proxy.config.ssl.server.multicert.filename",
+                                                                      ts::filename::SSL_MULTICERT_YAML, false);
 
   // Sub-module initialization (order matters: SSLConfig before SNIConfig)
   SSLConfig::startup();
