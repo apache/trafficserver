@@ -1,15 +1,13 @@
 /**
  * @file CompileParseRules.cc
  *
- * @brief Build-time utility for generating ParseRules character classification tables.
- *
  * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
+ * or more contributor license agreements. See the NOTICE file
  * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
+ * regarding copyright ownership. The ASF licenses this file
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * with the License. You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -18,22 +16,26 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ */
+
+/**
+ * @brief Build-time utility for generating ParseRules character classification tables.
  *
  * This standalone C++ program generates static lookup tables used by the
  * Traffic Server runtime for O(1) character classification and case conversion.
  * It is executed during the build process and is **not part of the runtime library**.
  *
  * The generated tables are written to the following files:
- *   - @c gParseRulesCType: Bitmask of character type flags (32-bit values).
- *   - @c gParseRulesCTypeToUpper: Uppercase conversion table (uint8_t values).
- *   - @c gParseRulesCTypeToLower: Lowercase conversion table (uint8_t values).
+ *   - @c ParseRulesCType: Bitmask of character type flags (32-bit values).
+ *   - @c ParseRulesCTypeToUpper: Uppercase conversion table (uint8_t values).
+ *   - @c ParseRulesCTypeToLower: Lowercase conversion table (uint8_t values).
  *
  * These files are typically included as static data in @c ParseRules.cc.
  *
  * @note This tool uses modern C++ features, including:
  *       - @c std::string for type-safe string handling.
  *       - @c std::ofstream for RAII-based file I/O.
- *       -  Fixed-width integer types (@c uint8_t, @c uint32_t) for portability.
+ *       - Fixed-width integer types (@c uint8_t, @c uint32_t) for portability.
  *
  * @see ParseRules.h for character classification function declarations.
  * @see ParseRules.cc for runtime usage of generated tables.
