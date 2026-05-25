@@ -1,3 +1,6 @@
+'''
+Verify the legacy ssl_multicert.config fallback path.
+'''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -15,157 +18,193 @@
 #  limitations under the License.
 
 import os
+from enum import Enum
 
 Test.Summary = '''
 Verify Apache Traffic Server falls back to legacy ssl_multicert.config
 when ssl_multicert.yaml is absent.
 '''
 
-sni_domain = 'example.com'
+SNI_DOMAIN = 'example.com'
+REPLAY_FILE = 'replay/ssl_multicert_legacy_fallback.replay.yaml'
 
-ts = Test.MakeATSProcess("ts", enable_tls=True, use_legacy_ssl_multicert=True)
-server = Test.MakeOriginServer("server")
-request_header = {"headers": f"GET / HTTP/1.1\r\nHost: {sni_domain}\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-server.addResponse("sessionlog.json", request_header, response_header)
 
-ts.Disk.records_config.update(
-    {
-        'proxy.config.ssl.server.cert.path': f'{ts.Variables.SSLDir}',
-        'proxy.config.ssl.server.private_key.path': f'{ts.Variables.SSLDir}',
-    })
-
-ts.addDefaultSSLFiles()
-
-ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{server.Variables.Port}')
-
-# Stage a legacy ssl_multicert.config (line-based) instead of ssl_multicert.yaml.
-legacy_path = os.path.join(ts.Variables.CONFIGDIR, 'ssl_multicert.config')
-ts.Disk.File(legacy_path, id='ssl_multicert_config', typename='ats:config')
-ts.Disk.ssl_multicert_config.AddLines([
-    'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key',
-])
-
-# The fallback Note should appear in diags.log.
-ts.Disk.diags_log.Content += Testers.ContainsExpression(
-    r'ssl_multicert\.yaml not found, falling back to ssl_multicert\.config',
-    'ssl_multicert.yaml fallback Note should be logged when only the legacy file is present')
-
-tr = Test.AddTestRun(f"Connect using cert loaded from legacy ssl_multicert.config (SNI={sni_domain})")
-tr.Processes.Default.StartBefore(Test.Processes.ts)
-tr.Processes.Default.StartBefore(server)
-tr.StillRunningAfter = ts
-tr.StillRunningAfter = server
-tr.MakeCurlCommand(
-    f"-q -s -v -k --resolve '{sni_domain}:{ts.Variables.ssl_port}:127.0.0.1' "
-    f"https://{sni_domain}:{ts.Variables.ssl_port}",
-    ts=ts)
-tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Check response")
-tr.Processes.Default.Streams.stderr = Testers.IncludesExpression(f"CN={sni_domain}", "Check response")
-
-##########################################################################
-# When ssl_multicert.yaml exists alongside legacy ssl_multicert.config,
-# yaml wins and a Note about the legacy file being ignored is logged.
-ts2 = Test.MakeATSProcess("ts2", enable_tls=True)
-server2 = Test.MakeOriginServer("server2")
-server2.addResponse("sessionlog.json", request_header, response_header)
-
-ts2.Disk.records_config.update(
-    {
-        'proxy.config.ssl.server.cert.path': f'{ts2.Variables.SSLDir}',
-        'proxy.config.ssl.server.private_key.path': f'{ts2.Variables.SSLDir}',
-    })
-ts2.addDefaultSSLFiles()
-ts2.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{server2.Variables.Port}')
-
-ts2.Disk.ssl_multicert_yaml.AddLines(
+class _BaseSslMulticertTest:
     """
+    Common scaffolding: a single ATS instance + verifier origin server.
+    Subclasses override _setupTS to stage the scenario-specific config.
+    """
+
+    _client_counter = 0
+
+    class State(Enum):
+        INIT = 0
+        RUNNING = 1
+
+    def __init__(self, ts_name, server_name):
+        self.state = self.State.INIT
+        self.ts_name = ts_name
+        self.server_name = server_name
+        self._setupServer()
+        self._setupTS()
+
+    def _setupServer(self):
+        self.server = Test.MakeVerifierServerProcess(self.server_name, REPLAY_FILE)
+
+    def _setupTS(self):
+        raise NotImplementedError
+
+    def _baseRecordsConfig(self):
+        return {
+            'proxy.config.ssl.server.cert.path': f'{self.ts.Variables.SSLDir}',
+            'proxy.config.ssl.server.private_key.path': f'{self.ts.Variables.SSLDir}',
+        }
+
+    def _checkProcessBefore(self, tr):
+        if self.state == self.State.RUNNING:
+            tr.StillRunningBefore = self.ts
+            tr.StillRunningBefore = self.server
+        else:
+            tr.Processes.Default.StartBefore(self.ts)
+            tr.Processes.Default.StartBefore(self.server)
+            self.state = self.State.RUNNING
+
+    def _checkProcessAfter(self, tr):
+        assert (self.state == self.State.RUNNING)
+        tr.StillRunningAfter = self.ts
+        tr.StillRunningAfter = self.server
+
+    def _addReplayRun(self, description):
+        tr = Test.AddTestRun(description)
+        self._checkProcessBefore(tr)
+        client_name = f'client-{_BaseSslMulticertTest._client_counter}'
+        _BaseSslMulticertTest._client_counter += 1
+        tr.AddVerifierClientProcess(client_name, REPLAY_FILE, https_ports=[self.ts.Variables.ssl_port])
+        self._checkProcessAfter(tr)
+
+    def _addRegistryRun(self, description, expected_files):
+        """
+        traffic_ctl config registry should list the SSL multicert files
+        registered by the SSL client coordinator at startup.
+        """
+        tr = Test.AddTestRun(description)
+        self._checkProcessBefore(tr)
+        tr.Processes.Default.Env = self.ts.Env
+        tr.Processes.Default.Command = 'traffic_ctl config registry'
+        tr.Processes.Default.ReturnCode = 0
+        for fname in expected_files:
+            tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+                fname.replace('.', r'\.'), f'{fname} should appear in the file registry')
+        self._checkProcessAfter(tr)
+
+
+class LegacySslMulticertOnlyTest(_BaseSslMulticertTest):
+    """
+    Only legacy ssl_multicert.config is staged; ATS should fall back to it
+    and load TLS certs successfully.
+    """
+
+    def __init__(self):
+        super().__init__("ts", "server")
+
+    def _setupTS(self):
+        self.ts = Test.MakeATSProcess(self.ts_name, enable_tls=True, use_legacy_ssl_multicert=True)
+        self.ts.Disk.records_config.update(self._baseRecordsConfig())
+        self.ts.addDefaultSSLFiles()
+        self.ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{self.server.Variables.http_port}')
+
+        self.ts.Setup.CopyAs(os.path.join(Test.TestDirectory, 'etc', 'ssl_multicert.config'), self.ts.Variables.CONFIGDIR)
+
+        self.ts.Disk.diags_log.Content += Testers.ContainsExpression(
+            r'ssl_multicert\.yaml not found, falling back to ssl_multicert\.config',
+            'ssl_multicert.yaml fallback Note should be logged when only the legacy file is present')
+
+    def run(self):
+        self._addReplayRun(f"Connect using cert loaded from legacy ssl_multicert.config (SNI={SNI_DOMAIN})")
+        self._addRegistryRun(
+            "Verify config registry lists ssl_multicert.yaml and legacy ssl_multicert.config",
+            ['ssl_multicert.yaml', 'ssl_multicert.config'])
+
+
+class CoexistSslMulticertTest(_BaseSslMulticertTest):
+    """
+    Both ssl_multicert.yaml and ssl_multicert.config exist; YAML wins and a
+    Note about the legacy file being ignored is logged.
+    """
+
+    def __init__(self):
+        super().__init__("ts2", "server2")
+
+    def _setupTS(self):
+        self.ts = Test.MakeATSProcess(self.ts_name, enable_tls=True)
+        self.ts.Disk.records_config.update(self._baseRecordsConfig())
+        self.ts.addDefaultSSLFiles()
+        self.ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{self.server.Variables.http_port}')
+
+        self.ts.Disk.ssl_multicert_yaml.AddLines(
+            """
 ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
 """.split("\n"))
 
-# Stage a stray legacy file so we exercise the "both present" warning path.
-legacy2_path = os.path.join(ts2.Variables.CONFIGDIR, 'ssl_multicert.config')
-ts2.Disk.File(legacy2_path, id='ssl_multicert_config_extra', typename='ats:config')
-ts2.Disk.ssl_multicert_config_extra.AddLines([
-    'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key',
-])
+        self.ts.Setup.CopyAs(os.path.join(Test.TestDirectory, 'etc', 'ssl_multicert.config'), self.ts.Variables.CONFIGDIR)
 
-ts2.Disk.diags_log.Content += Testers.ContainsExpression(
-    r'ssl_multicert\.config exists alongside ssl_multicert\.yaml; the legacy file is ignored',
-    'Note about ignored legacy ssl_multicert.config should be logged when both files are present')
+        self.ts.Disk.diags_log.Content += Testers.ContainsExpression(
+            r'ssl_multicert\.config exists alongside ssl_multicert\.yaml; the legacy file is ignored',
+            'Note about ignored legacy ssl_multicert.config should be logged when both files are present')
 
-tr2 = Test.AddTestRun(f"yaml wins when both files exist (SNI={sni_domain})")
-tr2.Processes.Default.StartBefore(ts2)
-tr2.Processes.Default.StartBefore(server2)
-tr2.StillRunningAfter = ts2
-tr2.StillRunningAfter = server2
-tr2.MakeCurlCommand(
-    f"-q -s -v -k --resolve '{sni_domain}:{ts2.Variables.ssl_port}:127.0.0.1' "
-    f"https://{sni_domain}:{ts2.Variables.ssl_port}",
-    ts=ts2)
-tr2.Processes.Default.ReturnCode = 0
-tr2.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Check response")
-tr2.Processes.Default.Streams.stderr = Testers.IncludesExpression(f"CN={sni_domain}", "Check response")
+    def run(self):
+        self._addReplayRun(f"yaml wins when both files exist (SNI={SNI_DOMAIN})")
+        self._addRegistryRun(
+            "Verify config registry lists both ssl_multicert.yaml and ssl_multicert.config",
+            ['ssl_multicert.yaml', 'ssl_multicert.config'])
 
-##########################################################################
-# When the admin has customized proxy.config.ssl.server.multicert.filename
-# to something other than the default ssl_multicert.yaml, the legacy
-# fallback must NOT engage even if ssl_multicert.config exists.
-ts3 = Test.MakeATSProcess("ts3", enable_tls=True, use_legacy_ssl_multicert=True)
-server3 = Test.MakeOriginServer("server3")
-server3.addResponse("sessionlog.json", request_header, response_header)
 
-ts3.Disk.records_config.update(
-    {
-        'proxy.config.ssl.server.cert.path': f'{ts3.Variables.SSLDir}',
-        'proxy.config.ssl.server.private_key.path': f'{ts3.Variables.SSLDir}',
-        'proxy.config.ssl.server.multicert.filename': 'custom_multicert.yaml',
-    })
-
-ts3.addDefaultSSLFiles()
-ts3.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{server3.Variables.Port}')
-
-# Stage the custom-named YAML so ATS has something valid to load.
-custom_path = os.path.join(ts3.Variables.CONFIGDIR, 'custom_multicert.yaml')
-ts3.Disk.File(custom_path, id='ssl_multicert_yaml_custom', typename='ats:config')
-ts3.Disk.ssl_multicert_yaml_custom.AddLines(
+class CustomFilenameSslMulticertTest(_BaseSslMulticertTest):
     """
+    proxy.config.ssl.server.multicert.filename is set to a non-default value.
+    The legacy fallback must NOT engage even if ssl_multicert.config exists.
+    """
+
+    def __init__(self):
+        super().__init__("ts3", "server3")
+
+    def _setupTS(self):
+        self.ts = Test.MakeATSProcess(self.ts_name, enable_tls=True, use_legacy_ssl_multicert=True)
+        records = self._baseRecordsConfig()
+        records['proxy.config.ssl.server.multicert.filename'] = 'custom_multicert.yaml'
+        self.ts.Disk.records_config.update(records)
+        self.ts.addDefaultSSLFiles()
+        self.ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{self.server.Variables.http_port}')
+
+        custom_path = os.path.join(self.ts.Variables.CONFIGDIR, 'custom_multicert.yaml')
+        self.ts.Disk.File(custom_path, id='ssl_multicert_yaml_custom', typename='ats:config')
+        self.ts.Disk.ssl_multicert_yaml_custom.AddLines(
+            """
 ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
 """.split("\n"))
 
-# Also stage a legacy ssl_multicert.config that would normally trigger fallback —
-# but must be ignored here because the record was customized.
-legacy3_path = os.path.join(ts3.Variables.CONFIGDIR, 'ssl_multicert.config')
-ts3.Disk.File(legacy3_path, id='ssl_multicert_config_custom', typename='ats:config')
-ts3.Disk.ssl_multicert_config_custom.AddLines([
-    'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key',
-])
+        self.ts.Setup.CopyAs(os.path.join(Test.TestDirectory, 'etc', 'ssl_multicert.config'), self.ts.Variables.CONFIGDIR)
 
-# Neither the fallback Note nor the "both present" Note should appear, because the
-# record value is not the default.
-ts3.Disk.diags_log.Content += Testers.ExcludesExpression(
-    r'ssl_multicert\.yaml not found, falling back to ssl_multicert\.config',
-    'Fallback Note must NOT appear when record is at a non-default filename')
-ts3.Disk.diags_log.Content += Testers.ExcludesExpression(
-    r'ssl_multicert\.config exists alongside ssl_multicert\.yaml; the legacy file is ignored',
-    '"Both present" Note must NOT appear when record is at a non-default filename')
+        self.ts.Disk.diags_log.Content += Testers.ExcludesExpression(
+            r'ssl_multicert\.yaml not found, falling back to ssl_multicert\.config',
+            'Fallback Note must NOT appear when record is at a non-default filename')
+        self.ts.Disk.diags_log.Content += Testers.ExcludesExpression(
+            r'ssl_multicert\.config exists alongside ssl_multicert\.yaml; the legacy file is ignored',
+            '"Both present" Note must NOT appear when record is at a non-default filename')
 
-tr3 = Test.AddTestRun(f"Custom record value disables legacy fallback (SNI={sni_domain})")
-tr3.Processes.Default.StartBefore(ts3)
-tr3.Processes.Default.StartBefore(server3)
-tr3.StillRunningAfter = ts3
-tr3.StillRunningAfter = server3
-tr3.MakeCurlCommand(
-    f"-q -s -v -k --resolve '{sni_domain}:{ts3.Variables.ssl_port}:127.0.0.1' "
-    f"https://{sni_domain}:{ts3.Variables.ssl_port}",
-    ts=ts3)
-tr3.Processes.Default.ReturnCode = 0
-tr3.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Check response")
-tr3.Processes.Default.Streams.stderr = Testers.IncludesExpression(f"CN={sni_domain}", "Check response")
+    def run(self):
+        self._addReplayRun(f"Custom record value disables legacy fallback (SNI={SNI_DOMAIN})")
+        self._addRegistryRun(
+            "Verify config registry lists custom_multicert.yaml and legacy ssl_multicert.config",
+            ['custom_multicert.yaml', 'ssl_multicert.config'])
+
+
+LegacySslMulticertOnlyTest().run()
+CoexistSslMulticertTest().run()
+CustomFilenameSslMulticertTest().run()
