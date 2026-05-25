@@ -15,12 +15,9 @@
 #
 #######################
 
-project(url_sig)
-
-add_atsplugin(url_sig url_sig.cc url_sig_config.cc url_sig_verify.cc)
-target_link_libraries(url_sig PRIVATE OpenSSL::SSL ts::tsutil)
-verify_remap_plugin(url_sig)
-
-if(BUILD_TESTING)
-  add_subdirectory(unit_tests)
-endif()
+add_executable(
+  test_url_sig test_url_sig.cc ${PROJECT_SOURCE_DIR}/url_sig_config.cc ${PROJECT_SOURCE_DIR}/url_sig_verify.cc
+)
+target_link_libraries(test_url_sig PRIVATE OpenSSL::SSL OpenSSL::Crypto Catch2::Catch2WithMain ts::tsutil)
+target_include_directories(test_url_sig PRIVATE ${PROJECT_SOURCE_DIR})
+add_catch2_test(NAME test_url_sig COMMAND test_url_sig)
