@@ -126,7 +126,7 @@ uint_to_binary(uint32_t u)
 {
   std::string buf(32, '0');
   for (uint8_t i = 0; i < 32; i++) {
-    if (u & (1 << (31 - i))) {
+    if (u & (1U << (31 - i))) {
       buf[i] = '1';
     }
   }
