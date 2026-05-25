@@ -67,15 +67,15 @@ ssl_cert_name=FILENAME[,FILENAME ...]
   When running with OpenSSL 1.0.2 or later, this directive can be
   used to configure the intermediate CA chain on a per-certificate
   basis.  Multiple chain files are separated by comma character.
-  For example, it is possible able to configure a ECDSA certificate
-  chain and a RSA certificate chain and serve them simultaneously,
+  For example, it is possible to configure an ECDSA certificate
+  chain and an RSA certificate chain and serve them simultaneously,
   allowing OpenSSL to determine which certificate would be used
   when the TLS session cipher suites are negotiated.  Note that the
   leaf certs in `FILENAME1` and `FILENAME2` must have the same
-  subjects and alternate names. The first certificate is used to
+  subjects and alternate names. The first certificate is used
   to match the client's SNI request.
 
-  You can also configure multiple leaf certificates in a same chain
+  You can also configure multiple leaf certificates in the same chain
   with OpenSSL 1.0.1.
 
   This is the only field that is required to be present.

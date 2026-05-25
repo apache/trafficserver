@@ -71,7 +71,7 @@ SSLClientCoordinator::startup()
                                                                       "proxy.config.ssl.server.multicert.filename",
                                                                       ts::filename::SSL_MULTICERT_YAML, false);
 
-  // Also register the legacy ssl_multicert.config so the backward-compatibility fallback
+  // Also register the legacy ssl_multicert.config so the backward-compatibility fallback remains monitored for reloads.
   FileManager::instance().addFile(ts::filename::SSL_MULTICERT, "proxy.config.ssl.server.multicert.filename", false, false);
 
   // Sub-module initialization (order matters: SSLConfig before SNIConfig)
