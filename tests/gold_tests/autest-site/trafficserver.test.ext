@@ -60,7 +60,8 @@ def MakeATSProcess(
         dump_runroot=True,
         enable_proxy_protocol=False,
         enable_proxy_protocol_cp_src=False,
-        disable_log_checks=False):
+        disable_log_checks=False,
+        use_legacy_ssl_multicert=False):
     """Create a traffic server process.
 
     :param block_for_debug: if True, causes traffic_server to run with the
@@ -68,6 +69,9 @@ def MakeATSProcess(
     triggered by running traffic_server under a debugger. In the debugger,
     `set cmd_block = 0`, set any desired break points, then `c` to continue
     to let the test proceed.
+    :param use_legacy_ssl_multicert: if True, skip the default
+    ssl_multicert.yaml setup so the test can stage a legacy
+    ssl_multicert.config file and exercise the runtime fallback path.
     """
     #####################################
     # common locations
@@ -309,7 +313,8 @@ def MakeATSProcess(
 
     fname = "ssl_multicert.yaml"
     tmpname = os.path.join(config_dir, fname)
-    p.Disk.File(tmpname, id=make_id(fname), typename="ats:config")
+    if not use_legacy_ssl_multicert:
+        p.Disk.File(tmpname, id=make_id(fname), typename="ats:config")
 
     fname = "sni.yaml"
     tmpname = os.path.join(config_dir, fname)

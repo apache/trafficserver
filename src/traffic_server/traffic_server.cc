@@ -2536,7 +2536,22 @@ init_ssl_ctx_callback(void *ctx, bool server)
 void
 load_ssl_file_callback(const char *ssl_file)
 {
-  FileManager::instance().configFileChild(ts::filename::SSL_MULTICERT_YAML, ssl_file);
+  // Parent lookup must match the actually-loaded multicert file, not just the
+  // YAML default name — when legacy fallback is in effect, configFilePath ends
+  // in ssl_multicert.config and the YAML-keyed parent binding would miss.
+  const char              *parent = ts::filename::SSL_MULTICERT_YAML;
+  SSLConfig::scoped_config params;
+
+  if (params && params->configFilePath != nullptr) {
+    std::string_view fp{params->configFilePath};
+
+    if (auto slash = fp.find_last_of('/'); slash != std::string_view::npos) {
+      parent = params->configFilePath + slash + 1;
+    } else {
+      parent = params->configFilePath;
+    }
+  }
+  FileManager::instance().configFileChild(parent, ssl_file);
 }
 
 void

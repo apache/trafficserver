@@ -37,6 +37,7 @@ Configuration Files
    remap.yaml.en
    splitdns.config.en
    ssl_multicert.yaml.en
+   ssl_multicert.config.en
    sni.yaml.en
    storage.yaml.en
    strategies.yaml.en
@@ -83,6 +84,11 @@ Configuration Files
 :doc:`ssl_multicert.yaml.en`
    Configures |TS| to use different server certificates for SSL termination
    when listening on multiple addresses or when clients employ SNI.
+
+:doc:`ssl_multicert.config.en`
+   Legacy line-based SSL multi-certificate configuration. Loaded when
+   :file:`ssl_multicert.yaml` is absent. Use ``traffic_ctl config convert
+   ssl_multicert`` to migrate.
 
 :doc:`sni.yaml.en`
    Configures SNI based Layer 4 routing.

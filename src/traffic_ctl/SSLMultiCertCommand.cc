@@ -26,12 +26,15 @@
 #include "tscore/Layout.h"
 #include "tscore/Filenames.h"
 
+#include "swoc/swoc_file.h"
+
 #include <iostream>
 
 namespace
 {
 
-/// Get the default ssl_multicert.yaml file path.
+/// Get the active ssl_multicert file path. Prefers ssl_multicert.yaml; falls
+/// back to legacy ssl_multicert.config when only that exists.
 std::string
 get_default_ssl_multicert_path()
 {
@@ -41,7 +44,13 @@ get_default_ssl_multicert_path()
   } else {
     sysconfdir = Layout::get()->sysconfdir;
   }
-  return Layout::get()->relative_to(sysconfdir, ts::filename::SSL_MULTICERT_YAML);
+  std::string yaml_path   = Layout::get()->relative_to(sysconfdir, ts::filename::SSL_MULTICERT_YAML);
+  std::string legacy_path = Layout::get()->relative_to(sysconfdir, ts::filename::SSL_MULTICERT);
+
+  if (!swoc::file::exists(swoc::file::path(yaml_path)) && swoc::file::exists(swoc::file::path(legacy_path))) {
+    return legacy_path;
+  }
+  return yaml_path;
 }
 
 } // namespace

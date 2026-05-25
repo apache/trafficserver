@@ -1822,18 +1822,18 @@ SSLMultiCertConfigLoader::load(SSLCertLookup *lookup, bool firstLoad)
 {
   const SSLConfigParams *params = this->_params;
 
-  Note("(%s) %s loading ...", this->_debug_tag(), ts::filename::SSL_MULTICERT_YAML);
+  // Guard against nullptr configFilePath which can happen if records aren't initialized.
+  if (params->configFilePath == nullptr) {
+    return swoc::Errata(ERRATA_WARN, "No SSL certificate configuration file path configured");
+  }
+
+  Note("(%s) %s loading ...", this->_debug_tag(), params->configFilePath);
 
   // Optionally elevate/allow file access to read root-only
   // certificates. The destructor will drop privilege for us.
   uint32_t elevate_setting = 0;
   elevate_setting          = RecGetRecordInt("proxy.config.ssl.cert.load_elevated").value_or(0);
   ElevateAccess elevate_access(elevate_setting ? ElevateAccess::FILE_PRIVILEGE : 0);
-
-  // Guard against nullptr configFilePath which can happen if records aren't initialized.
-  if (params->configFilePath == nullptr) {
-    return swoc::Errata(ERRATA_WARN, "No SSL certificate configuration file path configured");
-  }
 
   config::SSLMultiCertParser                       parser;
   config::ConfigResult<config::SSLMultiCertConfig> parse_result = parser.parse(params->configFilePath);

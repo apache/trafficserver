@@ -25,6 +25,7 @@
 #include "P_SSLConfig.h"
 #include "iocore/net/SSLSNIConfig.h"
 #include "mgmt/config/ConfigRegistry.h"
+#include "mgmt/config/FileManager.h"
 #include "tscore/Filenames.h"
 #if TS_USE_QUIC == 1
 #include "iocore/net/QUICMultiCertConfigLoader.h"
@@ -65,10 +66,13 @@ SSLClientCoordinator::startup()
   config::ConfigRegistry::Get_Instance().add_file_and_node_dependency(
     "ssl_client_coordinator", "sni", "proxy.config.ssl.servername.filename", ts::filename::SNI, false);
 
-  // Track ssl_multicert.config — same pattern.
+  // Track ssl_multicert.yaml — same pattern.
   config::ConfigRegistry::Get_Instance().add_file_and_node_dependency("ssl_client_coordinator", "ssl_multicert",
                                                                       "proxy.config.ssl.server.multicert.filename",
                                                                       ts::filename::SSL_MULTICERT_YAML, false);
+
+  // Also register the legacy ssl_multicert.config so the backward-compatibility fallback
+  FileManager::instance().addFile(ts::filename::SSL_MULTICERT, "proxy.config.ssl.server.multicert.filename", false, false);
 
   // Sub-module initialization (order matters: SSLConfig before SNIConfig)
   SSLConfig::startup();

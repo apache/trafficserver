@@ -42,6 +42,7 @@ namespace filename
   constexpr const char *REMAP_YAML    = "remap.yaml";
 
   constexpr const char *SSL_MULTICERT_YAML = "ssl_multicert.yaml";
+  constexpr const char *SSL_MULTICERT      = "ssl_multicert.config"; //< deprecated by SSL_MULTICERT_YAML
 
   constexpr const char *SPLITDNS = "splitdns.config";
   constexpr const char *SNI      = "sni.yaml";
