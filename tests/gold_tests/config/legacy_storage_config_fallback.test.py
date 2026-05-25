@@ -87,8 +87,25 @@ class LegacyStorageConfigFallbackTest:
         tr.Processes.Default.ReturnCode = 0
         self.__checkProcessAfter(tr)
 
+    def __testConfigRegistry(self):
+        """
+        traffic_ctl config registry should list the legacy storage.config and
+        volume.config entries that were registered as static files.
+        """
+        tr = Test.AddTestRun("Verify config registry lists legacy storage.config and volume.config")
+        self.__checkProcessBefore(tr)
+        tr.Processes.Default.Env = self.ts.Env
+        tr.Processes.Default.Command = 'traffic_ctl config registry'
+        tr.Processes.Default.ReturnCode = 0
+        tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+            r'storage\.config', 'storage.config should appear in the file registry')
+        tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+            r'volume\.config', 'volume.config should appear in the file registry')
+        self.__checkProcessAfter(tr)
+
     def run(self):
         self.__testFallback()
+        self.__testConfigRegistry()
 
 
 LegacyStorageConfigFallbackTest().run()
