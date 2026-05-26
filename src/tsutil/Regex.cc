@@ -40,6 +40,16 @@ static_assert(RE_NOTEMPTY == PCRE2_NOTEMPTY, "Update RE_NOTEMPTY for current PCR
 static_assert(RE_ERROR_NOMATCH == PCRE2_ERROR_NOMATCH, "Update RE_ERROR_NOMATCH for current PCRE2 version.");
 static_assert(RE_ERROR_NULL == PCRE2_ERROR_NULL, "Update RE_ERROR_NULL for current PCRE2 version.");
 
+// RE_FULL_MATCH is an ATS-only flag; it must not collide with any PCRE2 compile or match flag.
+// We strip it before forwarding to pcre2_match, but a collision would cause spurious behavior
+// if someone OR'd it into a flag word that's also passed elsewhere.
+static_assert((RE_FULL_MATCH & PCRE2_ANCHORED) == 0, "RE_FULL_MATCH bit collides with PCRE2_ANCHORED");
+static_assert((RE_FULL_MATCH & PCRE2_ENDANCHORED) == 0, "RE_FULL_MATCH bit collides with PCRE2_ENDANCHORED");
+static_assert((RE_FULL_MATCH & PCRE2_NO_UTF_CHECK) == 0, "RE_FULL_MATCH bit collides with PCRE2_NO_UTF_CHECK");
+static_assert((RE_FULL_MATCH & PCRE2_CASELESS) == 0, "RE_FULL_MATCH bit collides with PCRE2_CASELESS");
+static_assert((RE_FULL_MATCH & PCRE2_MULTILINE) == 0, "RE_FULL_MATCH bit collides with PCRE2_MULTILINE");
+static_assert((RE_FULL_MATCH & PCRE2_NOTEMPTY) == 0, "RE_FULL_MATCH bit collides with PCRE2_NOTEMPTY");
+
 //----------------------------------------------------------------------------
 namespace
 {
@@ -441,8 +451,11 @@ Regex::exec(std::string_view subject, RegexMatches &matches, uint32_t flags, Reg
     match_context = RegexMatchContext::_MatchContext::get(matchContext->_match_context);
   }
 
-  int const rc = pcre2_match(code, reinterpret_cast<PCRE2_SPTR>(subject.data()), subject.size(), 0, flags,
-                             RegexMatches::_MatchData::get(matches._match_data), match_context);
+  bool const     full_match  = (flags & RE_FULL_MATCH) != 0;
+  uint32_t const pcre2_flags = flags & ~RE_FULL_MATCH;
+
+  int rc = pcre2_match(code, reinterpret_cast<PCRE2_SPTR>(subject.data()), subject.size(), 0, pcre2_flags,
+                       RegexMatches::_MatchData::get(matches._match_data), match_context);
 
   matches._size = rc;
 
@@ -453,6 +466,12 @@ Regex::exec(std::string_view subject, RegexMatches &matches, uint32_t flags, Reg
     // match but the output vector was too small, adjust the size of the matches
     if (rc == 0) {
       matches._size = pcre2_get_ovector_count(RegexMatches::_MatchData::get(matches._match_data));
+    }
+
+    // Enforce full-subject consumption when requested.
+    if (full_match && matches[0].size() != subject.size()) {
+      matches._size = PCRE2_ERROR_NOMATCH;
+      rc            = PCRE2_ERROR_NOMATCH;
     }
   }
 
@@ -514,6 +533,11 @@ DFA::build(const std::string_view pattern, unsigned flags)
   Regex       rxp;
   std::string string{pattern};
 
+  if (flags & RE_FULL_MATCH) {
+    _full_match  = true;
+    flags       &= ~RE_FULL_MATCH;
+  }
+
   if (!(flags & RE_UNANCHORED)) {
     flags |= RE_ANCHORED;
   }
@@ -560,8 +584,10 @@ DFA::compile(const char *const *patterns, int npatterns, unsigned flags)
 int32_t
 DFA::match(std::string_view str) const
 {
+  uint32_t const exec_flags = _full_match ? static_cast<uint32_t>(RE_FULL_MATCH) : 0u;
+
   for (auto spot = _patterns.begin(), limit = _patterns.end(); spot != limit; ++spot) {
-    if (spot->_re.exec(str)) {
+    if (spot->_re.exec(str, exec_flags)) {
       return spot - _patterns.begin();
     }
   }
