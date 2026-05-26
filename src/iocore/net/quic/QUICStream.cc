@@ -118,36 +118,43 @@ QUICStream::on_eos()
 }
 
 void
-QUICStream::receive_data(quiche_conn *quiche_con)
+QUICStream::receive_data(QUICStreamIO &stream_io)
 {
   uint8_t                    buf[4096];
-  bool                       fin;
-  ssize_t                    read_len = 0;
-  [[maybe_unused]] ErrorCode error_code{0}; // Only set if QUICHE_ERR_STREAM_STOPPED(-15) or QUICHE_ERR_STREAM_RESET(-16) are
-                                            // returned by quiche_conn_stream_recv.
+  bool                       fin       = false;
+  bool                       delivered = false;
+  ssize_t                    read_len  = 0;
+  [[maybe_unused]] ErrorCode error_code{0};
 
-  while ((read_len = quiche_conn_stream_recv(quiche_con, this->_id, buf, sizeof(buf), &fin, &error_code)) > 0) {
+  while ((read_len = stream_io.read_stream(this->_id, buf, sizeof(buf), fin, error_code)) > 0) {
     this->_adapter->write(this->_received_bytes, buf, read_len, fin);
     this->_received_bytes += read_len;
+    delivered              = true;
   }
-  this->_has_no_more_data = quiche_conn_stream_finished(quiche_con, this->_id);
 
-  this->_adapter->encourge_read();
+  if (read_len == 0 && fin && !this->_has_no_more_data) {
+    this->_adapter->write(this->_received_bytes, buf, 0, true);
+    delivered = true;
+  }
+  this->_has_no_more_data = stream_io.stream_read_finished(this->_id);
+
+  if (delivered) {
+    this->_adapter->encourge_read();
+  }
 }
 
-void
-QUICStream::send_data(quiche_conn *quiche_con)
+int64_t
+QUICStream::send_data(QUICStreamIO &stream_io)
 {
   bool                       fin = false;
   ssize_t                    len = 0;
-  [[maybe_unused]] ErrorCode error_code{0}; // Only set if QUICHE_ERR_STREAM_STOPPED(-15) or QUICHE_ERR_STREAM_RESET(-16) are
-                                            // returned by quiche_conn_stream_send.
-  size_t written_this_event = 0;
+  [[maybe_unused]] ErrorCode error_code{0};
+  size_t                     written_this_event = 0;
 
   while (written_this_event < MAX_STREAM_SEND_BYTES_PER_EVENT) {
-    len = quiche_conn_stream_capacity(quiche_con, this->_id);
+    len = stream_io.stream_write_capacity(this->_id);
     if (len <= 0) {
-      return;
+      return written_this_event;
     }
 
     if (!this->_pending_send_block) {
@@ -156,13 +163,14 @@ QUICStream::send_data(quiche_conn *quiche_con)
       if (!this->_pending_send_block) {
         if (!this->_sent_fin && this->_adapter->is_eos() && this->_adapter->total_len() == this->_sent_bytes) {
           static constexpr uint8_t empty_data  = 0;
-          ssize_t                  written_len = quiche_conn_stream_send(quiche_con, this->_id, &empty_data, 0, true, &error_code);
+          ssize_t                  written_len = stream_io.write_stream(this->_id, &empty_data, 0, true, error_code);
           if (written_len >= 0) {
             this->_sent_fin = true;
+            return written_this_event + static_cast<size_t>(written_len);
           }
         }
         this->_adapter->encourge_write();
-        return;
+        return written_this_event;
       }
       this->_pending_send_fin = this->_adapter->total_len() == this->_sent_bytes + this->_pending_send_block->size();
     }
@@ -177,28 +185,30 @@ QUICStream::send_data(quiche_conn *quiche_con)
     }
 
     if (block->size() > 0 || fin) {
-      ssize_t written_len = quiche_conn_stream_send(quiche_con, this->_id, reinterpret_cast<uint8_t *>(block->start()),
-                                                    block->size(), fin, &error_code);
+      ssize_t written_len =
+        stream_io.write_stream(this->_id, reinterpret_cast<uint8_t *>(block->start()), block->size(), fin, error_code);
       if (written_len >= 0) {
         this->_adapter->consume(written_len);
         this->_sent_bytes  += written_len;
-        written_this_event += written_len;
+        written_this_event += static_cast<size_t>(written_len);
         if (written_len >= block->size()) {
           this->_pending_send_block = nullptr;
           this->_pending_send_fin   = false;
           this->_sent_fin           = fin;
         } else {
           block->consume(written_len);
-          return;
+          return written_this_event;
         }
         if (!this->has_data_to_send()) {
           this->_adapter->encourge_write();
-          return;
+          return written_this_event;
         }
         continue;
       }
     }
     this->_adapter->encourge_write();
-    return;
+    return written_this_event;
   }
+
+  return written_this_event;
 }
