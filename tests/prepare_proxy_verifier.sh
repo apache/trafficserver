@@ -17,8 +17,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-fail()
-{
+fail() {
     echo $1
     exit 1
 }
@@ -30,9 +29,11 @@ ROOT=${ROOT:-${SCRIPT_DIR}}
 
 PV_VERSION_FILE="${ROOT}/tests/proxy-verifier-version.txt"
 [ -r "${PV_VERSION_FILE}" ] || fail "\"${PV_VERSION_FILE}\" does not exist."
+PV_SUM_FILE="${ROOT}/tests/proxy-verifier-checksum.txt"
+[ -r "${PV_SUM_FILE}" ] || fail "\"${PV_SUM_FILE}\" does not exist."
 
 pv_name="proxy-verifier"
-pv_version=`cat ${ROOT}/tests/proxy-verifier-version.txt`
+read -r pv_version <"${PV_VERSION_FILE}"
 pv_top_dir="${ROOT}/tests/proxy-verifier"
 pv_unpack_dir="${pv_top_dir}/unpack/${pv_version}"
 bin_dir="${pv_unpack_dir}/bin"
@@ -40,29 +41,26 @@ pv_dir="${pv_name}-${pv_version}"
 pv_tar_filename="${pv_dir}.tar.gz"
 pv_tar="${pv_top_dir}/${pv_tar_filename}"
 pv_tar_url="https://ci.trafficserver.apache.org/bintray/${pv_tar_filename}"
-expected_sha1="8e9adc6e0b31251ca8e6fc2064ae54e5d752bb72"
+read -r expected_sha1 <"${PV_SUM_FILE}"
 pv_client="${bin_dir}/verifier-client"
 pv_server="${bin_dir}/verifier-server"
 TAR=${TAR:-tar}
 CURL=${CURL:-curl}
 # Check to see whether Proxy Verifier has already been unpacked.
-if ! [ -x ${pv_client} -a -x ${pv_server} ]
-then
+if ! [ -x ${pv_client} -a -x ${pv_server} ]; then
     # 1. Get the tar file if it has not been retrieved already.
     # Note that the two spaces between the hash and ${ARCHIVE) is needed
-    if [ ! -e ${pv_tar} ]
-    then
+    if [ ! -e ${pv_tar} ]; then
         # default to using native sha1sum command when available
-        if [ $(which sha1sum) ]
-        then
+        if [ $(which sha1sum) ]; then
             SHASUM=${SHASUM:-sha1sum}
         else
             SHASUM=${SHASUM:-shasum}
         fi
         mkdir -p ${pv_top_dir}
-        ${CURL} -L --progress-bar -o ${pv_tar} ${pv_tar_url} || \
+        ${CURL} -L --progress-bar -o ${pv_tar} ${pv_tar_url} ||
             fail "Failed to download ${pv_tar_url}."
-        cat > ${pv_top_dir}/sha1 << EOF
+        cat >${pv_top_dir}/sha1 <<EOF
 ${expected_sha1}  ${pv_tar}
 EOF
         ${SHASUM} -c ${pv_top_dir}/sha1 || fail "SHA1 mismatch for downloaded ${pv_tar_filename}."
@@ -104,6 +102,7 @@ EOF
         ;;
     *)
         fail "We need to build proxy-verifier for $(uname -s)"
+        ;;
     esac
 
     # 4. Link the OS-specific binaries to the bin directory.
