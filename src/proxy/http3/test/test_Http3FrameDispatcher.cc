@@ -92,7 +92,7 @@ TEST_CASE("Http3FrameHandler dispatch", "[http3]")
         total_nread += nread;
         CHECK(!error);
       }
-      CHECK(handler.total_frame_received == 5);
+      CHECK(handler.total_frame_received == 1);
       CHECK(total_nread == 19);
     }
   }

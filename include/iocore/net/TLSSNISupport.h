@@ -122,6 +122,7 @@ public:
    * @return True if the servername was set successfully, false otherwise.
    */
   bool set_sni_server_name(SSL *ssl, char const *name);
+  void set_sni_server_name(std::string_view name);
 
   /**
    * Get the server name in SNI

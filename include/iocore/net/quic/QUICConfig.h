@@ -24,7 +24,11 @@
 #pragma once
 
 #include <openssl/ssl.h>
+#include "tscore/ink_config.h"
+
+#if TS_HAS_QUICHE
 #include <quiche.h>
+#endif
 
 #include "iocore/eventsystem/ConfigProcessor.h"
 #include "iocore/net/SSLTypes.h"
@@ -89,7 +93,9 @@ public:
 
   bool disable_http_0_9() const;
 
+#if TS_HAS_QUICHE
   quiche_cc_algorithm get_cc_algorithm() const;
+#endif
 
 private:
   static int _connection_table_size;
@@ -163,3 +169,4 @@ private:
 };
 
 SSL_CTX *quic_new_ssl_ctx();
+SSL_CTX *quic_new_server_ssl_ctx();

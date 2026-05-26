@@ -113,14 +113,38 @@ QUICStreamManager::create_stream(QUICStreamId stream_id, QUICConnectionError & /
 }
 
 QUICConnectionErrorUPtr
-QUICStreamManager::create_uni_stream(QUICStreamId /* new_stream_id ATS_UNUSED */)
+QUICStreamManager::create_uni_stream(QUICStreamId &new_stream_id)
 {
+  if (this->_next_local_uni_stream_id == 0) {
+    this->_next_local_uni_stream_id =
+      static_cast<QUICStreamId>(this->_context->connection_info()->direction() == NET_VCONNECTION_IN ? QUICStreamType::SERVER_UNI :
+                                                                                                       QUICStreamType::CLIENT_UNI);
+  }
+
+  new_stream_id                    = this->_next_local_uni_stream_id;
+  this->_next_local_uni_stream_id += 4;
+
+  [[maybe_unused]] QUICConnectionError err;
+  this->create_stream(new_stream_id, err);
+
   return nullptr;
 }
 
 QUICConnectionErrorUPtr
-QUICStreamManager::create_bidi_stream(QUICStreamId /* new_stream_id ATS_UNUSED */)
+QUICStreamManager::create_bidi_stream(QUICStreamId &new_stream_id)
 {
+  if (this->_next_local_bidi_stream_id == 0) {
+    this->_next_local_bidi_stream_id =
+      static_cast<QUICStreamId>(this->_context->connection_info()->direction() == NET_VCONNECTION_IN ? QUICStreamType::SERVER_BIDI :
+                                                                                                       QUICStreamType::CLIENT_BIDI);
+  }
+
+  new_stream_id                     = this->_next_local_bidi_stream_id;
+  this->_next_local_bidi_stream_id += 4;
+
+  [[maybe_unused]] QUICConnectionError err;
+  this->create_stream(new_stream_id, err);
+
   return nullptr;
 }
 

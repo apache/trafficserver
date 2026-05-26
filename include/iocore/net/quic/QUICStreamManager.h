@@ -48,10 +48,10 @@ public:
 
   QUICStream *create_stream(QUICStreamId stream_id, QUICConnectionError &err);
 
-  QUICConnectionErrorUPtr create_uni_stream(QUICStreamId new_stream_id);
-  QUICConnectionErrorUPtr create_bidi_stream(QUICStreamId new_stream_id);
-  QUICConnectionErrorUPtr delete_stream(QUICStreamId new_stream_id);
-  void                    reset_stream(QUICStreamId stream_id, QUICStreamErrorUPtr error);
+  virtual QUICConnectionErrorUPtr create_uni_stream(QUICStreamId &new_stream_id);
+  virtual QUICConnectionErrorUPtr create_bidi_stream(QUICStreamId &new_stream_id);
+  QUICConnectionErrorUPtr         delete_stream(QUICStreamId new_stream_id);
+  void                            reset_stream(QUICStreamId stream_id, QUICStreamErrorUPtr error);
 
   void set_default_application(QUICApplication *app);
 
@@ -63,4 +63,6 @@ public:
 protected:
   QUICContext        *_context = nullptr;
   QUICApplicationMap *_app_map = nullptr;
+  QUICStreamId        _next_local_bidi_stream_id{0};
+  QUICStreamId        _next_local_uni_stream_id{0};
 };

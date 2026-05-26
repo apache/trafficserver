@@ -43,7 +43,11 @@
 
 #include "P_UnixNetProcessor.h"
 #include "iocore/net/quic/QUICConnectionTable.h"
+#include "tscore/ink_config.h"
+
+#if TS_HAS_QUICHE
 #include <quiche.h>
+#endif
 
 class UnixNetVConnection;
 struct NetAccept;
@@ -68,17 +72,21 @@ public:
 
   Action *main_accept(Continuation *cont, SOCKET fd, AcceptOptions const &opt) override;
 
+#if TS_HAS_QUICHE
   off_t quicPollCont_offset;
+#endif
 
 protected:
-  NetAccept *createNetAccept(const NetProcessor::AcceptOptions &opt) override;
+  NetAccept *createNetAccept(NetProcessor::AcceptOptions const &opt) override;
 
 private:
   QUICNetProcessor(const QUICNetProcessor &);
   QUICNetProcessor &operator=(const QUICNetProcessor &);
 
+#if TS_HAS_QUICHE
   QUICConnectionTable *_ctable        = nullptr;
   quiche_config       *_quiche_config = nullptr;
+#endif
 };
 
 extern QUICNetProcessor quic_NetProcessor;

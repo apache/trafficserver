@@ -183,11 +183,10 @@
       "inherits": ["ci"],
       "cacheVariables": {
         "ENABLE_PROBES": "ON",
-        "OPENSSL_ROOT_DIR": "/opt/openssl-quic",
         "opentelemetry_ROOT": "/opt",
-        "CURL_ROOT": "/opt",
         "wamr_ROOT": "/opt",
-        "ENABLE_CRIPTS": "ON"
+        "ENABLE_CRIPTS": "ON",
+        "ENABLE_OPENSSL_QUIC": "ON"
       }
     },
     {
@@ -203,20 +202,19 @@
       "name": "ci-fedora-quiche",
       "displayName": "CI Fedora Quiche",
       "description": "CI Pipeline config for Fedora Linux (quiche build)",
-      "inherits": ["ci"],
+      "inherits": ["ci-fedora"],
       "cacheVariables": {
         "OPENSSL_ROOT_DIR": "/opt/h3-tools-boringssl/boringssl",
         "quiche_ROOT": "/opt/h3-tools-boringssl/quiche",
-        "opentelemetry_ROOT": "/opt",
         "CURL_ROOT": "/opt",
-        "wamr_ROOT": "/opt",
         "CMAKE_INSTALL_PREFIX": "/tmp/ats-quiche",
+        "ENABLE_OPENSSL_QUIC": "OFF",
         "ENABLE_QUICHE": "ON"
       }
     },
     {
       "name": "ci-fedora-autest",
-      "displayName": "CI Fedora Quiche Autest",
+      "displayName": "CI Fedora Autest",
       "description": "CI Pipeline config for Fedora Linux (autest build)",
       "inherits": ["ci-fedora", "autest"]
     },
