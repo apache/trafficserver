@@ -266,6 +266,12 @@ Http3DataFrame::payload_length() const
   return this->_length;
 }
 
+bool
+Http3DataFrame::_parse()
+{
+  return this->_reader->read_avail() >= static_cast<int64_t>(this->_length);
+}
+
 IOBufferReader *
 Http3DataFrame::data() const
 {

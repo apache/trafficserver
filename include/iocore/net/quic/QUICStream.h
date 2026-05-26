@@ -31,10 +31,24 @@
 #include "iocore/net/quic/QUICConnection.h"
 #include "iocore/net/quic/QUICDebugNames.h"
 
-#include <quiche.h>
+#include <cstddef>
+#include <cstdint>
 
 class QUICStreamAdapter;
 class QUICStreamStateListener;
+
+class QUICStreamIO
+{
+public:
+  using ErrorCode = uint64_t;
+
+  virtual ~QUICStreamIO() = default;
+
+  virtual int64_t read_stream(QUICStreamId stream_id, uint8_t *buf, size_t len, bool &fin, ErrorCode &error_code)       = 0;
+  virtual bool    stream_read_finished(QUICStreamId stream_id)                                                          = 0;
+  virtual int64_t stream_write_capacity(QUICStreamId stream_id)                                                         = 0;
+  virtual int64_t write_stream(QUICStreamId stream_id, uint8_t const *buf, size_t len, bool fin, ErrorCode &error_code) = 0;
+};
 
 /**
  * @brief QUIC Stream
@@ -61,8 +75,8 @@ public:
   void stop_sending(QUICStreamErrorUPtr error);
   void reset(QUICStreamErrorUPtr error);
 
-  void receive_data(quiche_conn *quiche_con);
-  void send_data(quiche_conn *quiche_con);
+  void    receive_data(QUICStreamIO &stream_io);
+  int64_t send_data(QUICStreamIO &stream_io);
 
   /*
    * QUICApplication need to call one of these functions when it process VC_EVENT_*

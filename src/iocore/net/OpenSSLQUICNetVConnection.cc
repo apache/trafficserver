@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  OpenSSL native QUIC NetVConnection support.
 
   @section license License
 
@@ -28,23 +28,53 @@
 #include "api/APIHook.h"
 #include "iocore/eventsystem/EThread.h"
 #include "iocore/net/QUICMultiCertConfigLoader.h"
-#include "iocore/net/UDPPacket.h"
-#include "iocore/net/quic/QUICEvents.h"
-#include "iocore/net/quic/QUICStream.h"
-#include "iocore/net/quic/QUICGlobals.h"
 #include "iocore/net/SSLAPIHooks.h"
+#include "iocore/net/quic/QUICApplicationMap.h"
+#include "iocore/net/quic/QUICEvents.h"
+#include "iocore/net/quic/QUICGlobals.h"
+#include "iocore/net/quic/QUICStream.h"
+#include "iocore/net/quic/QUICStreamManager.h"
 #include "tscore/ink_config.h"
 
-#include <netinet/in.h>
-#include <quiche.h>
+#include <openssl/err.h>
+#include <openssl/quic.h>
+#include <openssl/ssl.h>
+
+#include <algorithm>
+#include <cerrno>
 #include <cstring>
+#include <vector>
 
 namespace
 {
-constexpr ink_hrtime WRITE_READY_INTERVAL = HRTIME_MSECONDS(2);
+constexpr ink_hrtime OPENSSL_QUIC_EVENT_INTERVAL = HRTIME_MSECONDS(2);
 
 DbgCtl dbg_ctl_quic_net{"quic_net"};
 DbgCtl dbg_ctl_v_quic_net{"v_quic_net"};
+
+class OpenSSLQUICStreamManager : public QUICStreamManager
+{
+public:
+  OpenSSLQUICStreamManager(QUICContext *context, QUICApplicationMap *app_map, QUICNetVConnection *vc)
+    : QUICStreamManager(context, app_map), _vc(vc)
+  {
+  }
+
+  QUICConnectionErrorUPtr
+  create_uni_stream(QUICStreamId &new_stream_id) override
+  {
+    return this->_vc->create_openssl_stream(SSL_STREAM_FLAG_UNI | SSL_STREAM_FLAG_NO_BLOCK, new_stream_id);
+  }
+
+  QUICConnectionErrorUPtr
+  create_bidi_stream(QUICStreamId &new_stream_id) override
+  {
+    return this->_vc->create_openssl_stream(SSL_STREAM_FLAG_NO_BLOCK, new_stream_id);
+  }
+
+private:
+  QUICNetVConnection *_vc = nullptr;
+};
 
 } // end anonymous namespace
 
@@ -67,34 +97,65 @@ QUICNetVConnection::QUICNetVConnection()
 QUICNetVConnection::~QUICNetVConnection() {}
 
 void
-QUICNetVConnection::init(QUICVersion /* version ATS_UNUSED */, QUICConnectionId /* peer_cid ATS_UNUSED */,
-                         QUICConnectionId /* original_cid ATS_UNUSED */, UDPConnection *, QUICPacketHandler *)
+QUICNetVConnection::init(SSL *ssl, QUICPacketHandler *packet_handler)
 {
+  SET_HANDLER((NetVConnHandler)&QUICNetVConnection::acceptEvent);
+
+  this->_ssl            = ssl;
+  this->_packet_handler = packet_handler;
+  this->_quic_connection_id.randomize();
+  this->_initial_source_connection_id = this->_quic_connection_id;
+  this->_cid_text                     = this->_quic_connection_id.hex();
+
+  SSL_set_ex_data(ssl, QUIC::ssl_quic_qc_index, static_cast<QUICConnection *>(this));
+  SSL_set_blocking_mode(ssl, 0);
+  SSL_set_event_handling_mode(ssl, SSL_VALUE_EVENT_HANDLING_MODE_IMPLICIT);
+  SSL_set_incoming_stream_policy(ssl, SSL_INCOMING_STREAM_POLICY_ACCEPT, 0);
+  SSL_set_default_stream_mode(ssl, SSL_DEFAULT_STREAM_MODE_NONE);
+
+  QUICConfig::scoped_config params;
+  SSL_set_feature_request_uint(ssl, SSL_VALUE_QUIC_IDLE_TIMEOUT, params->no_activity_timeout_in());
+  SSL_set_feature_request_uint(ssl, SSL_VALUE_QUIC_STREAM_BIDI_LOCAL_AVAIL, params->initial_max_streams_bidi_in());
+  SSL_set_feature_request_uint(ssl, SSL_VALUE_QUIC_STREAM_UNI_LOCAL_AVAIL, params->initial_max_streams_uni_in());
+
+  this->_bindSSLObject();
+  if (auto const servername = quic_sni_server_name(ssl); !servername.empty()) {
+    this->set_sni_server_name(servername);
+  }
 }
 
 void
-QUICNetVConnection::init(QUICVersion /* version ATS_UNUSED */, QUICConnectionId /* peer_cid ATS_UNUSED */,
-                         QUICConnectionId original_cid, QUICConnectionId /* first_cid ATS_UNUSED */,
-                         QUICConnectionId /* retry_cid ATS_UNUSED */, UDPConnection *udp_con, quiche_conn *quiche_con,
-                         QUICPacketHandler *packet_handler, QUICConnectionTable *ctable, SSL *ssl)
+QUICNetVConnection::set_quic_endpoints(IpEndpoint const &local, IpEndpoint const &remote)
 {
-  SET_HANDLER((NetVConnHandler)&QUICNetVConnection::acceptEvent);
-  this->_udp_con                     = udp_con;
-  this->_quiche_con                  = quiche_con;
-  this->_packet_handler              = packet_handler;
-  this->_original_quic_connection_id = original_cid;
-  this->_quic_connection_id.randomize();
-  this->_initial_source_connection_id = this->_quic_connection_id;
+  this->local_addr      = local;
+  this->remote_addr     = remote;
+  this->got_local_addr  = true;
+  this->got_remote_addr = true;
+}
 
-  if (ctable) {
-    this->_ctable = ctable;
-    this->_ctable->insert(this->_quic_connection_id, this);
-    this->_ctable->insert(this->_original_quic_connection_id, this);
+QUICConnectionErrorUPtr
+QUICNetVConnection::create_openssl_stream(uint64_t flags, QUICStreamId &new_stream_id)
+{
+  if (this->_ssl == nullptr) {
+    return std::make_unique<QUICConnectionError>(QUICTransErrorCode::INTERNAL_ERROR, "QUIC connection is not initialized");
   }
 
-  this->_ssl = ssl;
-  SSL_set_ex_data(ssl, QUIC::ssl_quic_qc_index, static_cast<QUICConnection *>(this));
-  this->_bindSSLObject();
+  SSL *stream_ssl = SSL_new_stream(this->_ssl, flags);
+  if (stream_ssl == nullptr) {
+    return std::make_unique<QUICConnectionError>(QUICTransErrorCode::INTERNAL_ERROR, "Failed to create QUIC stream");
+  }
+
+  SSL_set_blocking_mode(stream_ssl, 0);
+  SSL_set_event_handling_mode(stream_ssl, SSL_VALUE_EVENT_HANDLING_MODE_IMPLICIT);
+  SSL_set_mode(stream_ssl, SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER | SSL_MODE_ENABLE_PARTIAL_WRITE);
+
+  new_stream_id = SSL_get_stream_id(stream_ssl);
+  this->_openssl_streams.emplace(new_stream_id, stream_ssl);
+
+  [[maybe_unused]] QUICConnectionError err;
+  this->_stream_manager->create_stream(new_stream_id, err);
+
+  return nullptr;
 }
 
 void
@@ -103,17 +164,11 @@ QUICNetVConnection::free()
   this->free_thread(this_ethread());
 }
 
-// called by ET_UDP
 void
 QUICNetVConnection::remove_connection_ids()
 {
-  if (this->_ctable) {
-    this->_ctable->erase(this->_quic_connection_id, this);
-    this->_ctable->erase(this->_original_quic_connection_id, this);
-  }
 }
 
-// called by ET_UDP
 void
 QUICNetVConnection::destroy(EThread *t)
 {
@@ -135,13 +190,18 @@ QUICNetVConnection::free_thread(EThread * /* t ATS_UNUSED */)
 {
   QUICConDebug("Free connection");
 
-  this->_udp_con = nullptr;
+  this->_unschedule_openssl_event();
 
-  quiche_conn_free(this->_quiche_con);
-  this->_quiche_con = nullptr;
+  for (auto &[stream_id, stream_ssl] : this->_openssl_streams) {
+    SSL_free(stream_ssl);
+  }
+  this->_openssl_streams.clear();
 
-  this->_unschedule_quiche_timeout();
-  this->_unschedule_packet_write_ready();
+  if (this->_ssl != nullptr) {
+    this->_unbindSSLObject();
+    SSL_free(this->_ssl);
+    this->_ssl = nullptr;
+  }
 
   this->_application_map.reset();
   this->_stream_manager.reset();
@@ -152,8 +212,10 @@ QUICNetVConnection::free_thread(EThread * /* t ATS_UNUSED */)
   TLSEventSupport::clear();
   TLSCertSwitchSupport::_clear();
 
-  this->_packet_handler->close_connection(this);
-  this->_packet_handler = nullptr;
+  if (this->_packet_handler != nullptr) {
+    this->_packet_handler->close_connection(this);
+    this->_packet_handler = nullptr;
+  }
 }
 
 void
@@ -164,30 +226,22 @@ QUICNetVConnection::reenable(VIO * /* vio ATS_UNUSED */)
 int
 QUICNetVConnection::state_handshake(int event, Event *data)
 {
-  if (quiche_conn_is_established(this->_quiche_con)) {
-    this->_switch_to_established_state();
-    return this->handleEvent(event, data);
+  if (data == this->_packet_write_ready) {
+    this->_packet_write_ready = nullptr;
   }
 
   switch (event) {
-  case QUIC_EVENT_PACKET_READ_READY:
-    this->_handle_read_ready();
-    break;
-  case QUIC_EVENT_PACKET_WRITE_READY:
-    this->_close_packet_write_ready(data);
-    this->_handle_write_ready();
-    // Reschedule WRITE_READY
-    this->_schedule_packet_write_ready(true);
-    break;
+  case EVENT_IMMEDIATE:
   case EVENT_INTERVAL:
-    this->_close_quiche_timeout(data);
-    this->_handle_interval();
+  case QUIC_EVENT_PACKET_READ_READY:
+  case QUIC_EVENT_PACKET_WRITE_READY:
+    this->_handle_openssl_events();
     break;
   case VC_EVENT_EOS:
   case VC_EVENT_ERROR:
   case VC_EVENT_ACTIVE_TIMEOUT:
   case VC_EVENT_INACTIVITY_TIMEOUT:
-    _unschedule_packet_write_ready();
+    this->_unschedule_openssl_event();
     this->_propagate_event(event);
     this->closed = 1;
     break;
@@ -196,8 +250,15 @@ QUICNetVConnection::state_handshake(int event, Event *data)
     break;
   }
 
-  if (this->closed != 1 && (quiche_conn_is_closed(this->_quiche_con) || quiche_conn_is_draining(this->_quiche_con))) {
+  if (this->closed != 1 && SSL_is_init_finished(this->_ssl)) {
+    this->_switch_to_established_state();
+    this->_handle_openssl_events();
+  }
+
+  if (this->closed != 1 && this->_openssl_connection_closed()) {
     this->_schedule_closing_event();
+  } else if (this->closed != 1) {
+    this->_schedule_openssl_event();
   }
 
   return EVENT_DONE;
@@ -206,29 +267,26 @@ QUICNetVConnection::state_handshake(int event, Event *data)
 int
 QUICNetVConnection::state_established(int event, Event *data)
 {
-  if (!this->_quiche_con) {
-    // Connection has been closed.
+  if (this->_ssl == nullptr) {
     return EVENT_DONE;
   }
+
+  if (data == this->_packet_write_ready) {
+    this->_packet_write_ready = nullptr;
+  }
+
   switch (event) {
-  case QUIC_EVENT_PACKET_READ_READY:
-    this->_handle_read_ready();
-    break;
-  case QUIC_EVENT_PACKET_WRITE_READY:
-    this->_close_packet_write_ready(data);
-    this->_handle_write_ready();
-    // Reschedule WRITE_READY
-    this->_schedule_packet_write_ready(true);
-    break;
+  case EVENT_IMMEDIATE:
   case EVENT_INTERVAL:
-    this->_close_quiche_timeout(data);
-    this->_handle_interval();
+  case QUIC_EVENT_PACKET_READ_READY:
+  case QUIC_EVENT_PACKET_WRITE_READY:
+    this->_handle_openssl_events();
     break;
   case VC_EVENT_EOS:
   case VC_EVENT_ERROR:
   case VC_EVENT_ACTIVE_TIMEOUT:
   case VC_EVENT_INACTIVITY_TIMEOUT:
-    _unschedule_packet_write_ready();
+    this->_unschedule_openssl_event();
     this->_propagate_event(event);
     this->closed = 1;
     break;
@@ -237,8 +295,10 @@ QUICNetVConnection::state_established(int event, Event *data)
     break;
   }
 
-  if (this->closed != 1 && (quiche_conn_is_closed(this->_quiche_con) || quiche_conn_is_draining(this->_quiche_con))) {
+  if (this->closed != 1 && this->_openssl_connection_closed()) {
     this->_schedule_closing_event();
+  } else if (this->closed != 1) {
+    this->_schedule_openssl_event();
   }
 
   return EVENT_DONE;
@@ -251,35 +311,37 @@ QUICNetVConnection::_switch_to_established_state()
   this->_record_tls_handshake_end_time();
   this->_update_end_of_handshake_stats();
   SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_established);
-  this->_start_application();
   this->_handshake_completed = true;
+  this->_start_application();
 }
 
 void
 QUICNetVConnection::_start_application()
 {
-  if (!this->_application_started) {
-    this->_application_started = true;
+  if (this->_application_started) {
+    return;
+  }
 
-    const uint8_t *app_name;
-    size_t         app_name_len = 0;
-    quiche_conn_application_proto(this->_quiche_con, &app_name, &app_name_len);
-    if (app_name == nullptr) {
-      app_name     = reinterpret_cast<const uint8_t *>(IP_PROTO_TAG_HTTP_QUIC.data());
-      app_name_len = IP_PROTO_TAG_HTTP_QUIC.size();
+  this->_application_started = true;
+
+  unsigned char const *app_name     = nullptr;
+  unsigned int         app_name_len = 0;
+  SSL_get0_alpn_selected(this->_ssl, &app_name, &app_name_len);
+
+  if (app_name == nullptr || app_name_len == 0) {
+    app_name     = reinterpret_cast<unsigned char const *>(IP_PROTO_TAG_HTTP_QUIC.data());
+    app_name_len = IP_PROTO_TAG_HTTP_QUIC.size();
+  }
+
+  this->_negotiated_alpn.assign(reinterpret_cast<char const *>(app_name), app_name_len);
+  this->set_negotiated_protocol_id(this->_negotiated_alpn);
+
+  if (netvc_context == NET_VCONNECTION_IN) {
+    if (this->setSelectedProtocol(app_name, app_name_len)) {
+      this->endpoint()->handleEvent(NET_EVENT_ACCEPT, this);
     }
-
-    this->set_negotiated_protocol_id({reinterpret_cast<const char *>(app_name), static_cast<size_t>(app_name_len)});
-
-    if (netvc_context == NET_VCONNECTION_IN) {
-      if (!this->setSelectedProtocol(app_name, app_name_len)) {
-        // this->_handle_error(std::make_unique<QUICConnectionError>(QUICTransErrorCode::PROTOCOL_VIOLATION));
-      } else {
-        this->endpoint()->handleEvent(NET_EVENT_ACCEPT, this);
-      }
-    } else {
-      this->action_.continuation->handleEvent(NET_EVENT_OPEN, this);
-    }
+  } else {
+    this->action_.continuation->handleEvent(NET_EVENT_OPEN, this);
   }
 }
 
@@ -292,7 +354,6 @@ QUICNetVConnection::_propagate_event(int event)
   } else if (this->write.vio.cont && this->write.vio.mutex == this->write.vio.cont->mutex) {
     this->write.vio.cont->handleEvent(event, &this->write.vio);
   } else {
-    // Proxy Session does not exist
     QUICConVDebug("Session does not exist");
   }
 }
@@ -316,6 +377,7 @@ QUICNetVConnection::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader 
 {
   auto vio            = super::do_io_write(c, nbytes, buf);
   this->write.enabled = 1;
+  this->_schedule_openssl_event(false);
   return vio;
 }
 
@@ -338,28 +400,21 @@ QUICNetVConnection::acceptEvent(int event, Event *e)
 
   this->_context         = std::make_unique<QUICContext>(this);
   this->_application_map = std::make_unique<QUICApplicationMap>();
-  this->_stream_manager  = std::make_unique<QUICStreamManager>(this->_context.get(), this->_application_map.get());
+  this->_stream_manager  = std::make_unique<OpenSSLQUICStreamManager>(this->_context.get(), this->_application_map.get(), this);
 
-  // this->thread is already assigned by QUICPacketHandlerIn::_recv_packet
   ink_assert(this->thread == this_ethread());
 
-  // Send this NetVC to NetHandler and start to polling read & write event.
   if (h->startIO(this) < 0) {
     this->free_thread(t);
     return EVENT_DONE;
   }
 
-  // FIXME: complete do_io_xxxx instead
-  this->read.enabled = 1;
+  this->read.enabled  = 1;
+  this->write.enabled = 1;
 
-  // Handshake callback handler.
   SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_handshake);
 
-  // Send this netvc to InactivityCop.
-  // Note: even though we will set the timeouts to 0, we need this so we make sure the one gets freed and the IO is properly ended.
   nh->startCop(this);
-
-  // We will take care of this by using `idle_timeout` configured by `proxy.config.quic.no_activity_timeout_in`.
   this->set_default_inactivity_timeout(0);
 
   if (inactivity_timeout_in) {
@@ -371,9 +426,7 @@ QUICNetVConnection::acceptEvent(int event, Event *e)
   }
 
   action_.continuation->handleEvent(NET_EVENT_ACCEPT, this);
-  this->_schedule_packet_write_ready();
-
-  this->_schedule_quiche_timeout();
+  this->_schedule_openssl_event(false);
 
   return EVENT_DONE;
 }
@@ -393,51 +446,27 @@ QUICNetVConnection::stream_manager()
 void
 QUICNetVConnection::close_quic_connection(QUICConnectionErrorUPtr error)
 {
-  if (this->_quiche_con == nullptr || quiche_conn_is_closed(this->_quiche_con) || quiche_conn_is_draining(this->_quiche_con)) {
-    return;
+  if (this->_ssl != nullptr) {
+    SSL_SHUTDOWN_EX_ARGS args = {};
+    if (error != nullptr) {
+      args.quic_error_code = error->code;
+      args.quic_reason     = error->msg;
+    }
+    SSL_shutdown_ex(this->_ssl, SSL_SHUTDOWN_FLAG_NO_BLOCK, &args, sizeof(args));
   }
-
-  const bool     is_app_error = error != nullptr && error->cls == QUICErrorClass::APPLICATION;
-  const uint64_t code         = error == nullptr ? static_cast<uint64_t>(QUICTransErrorCode::NO_ERROR) : error->code;
-  const uint8_t *reason       = nullptr;
-  size_t         reason_len   = 0;
-
-  if (error != nullptr && error->msg != nullptr) {
-    reason     = reinterpret_cast<const uint8_t *>(error->msg);
-    reason_len = strlen(error->msg);
-  }
-
-  if (quiche_conn_close(this->_quiche_con, is_app_error, code, reason, reason_len) != 0) {
-    QUICConDebug("failed to close QUIC connection with code %" PRIu64, code);
-    return;
-  }
-
-  this->_schedule_packet_write_ready(false);
 }
 
 void
 QUICNetVConnection::reset_quic_connection()
 {
+  if (this->_ssl != nullptr) {
+    SSL_shutdown_ex(this->_ssl, SSL_SHUTDOWN_FLAG_RAPID | SSL_SHUTDOWN_FLAG_NO_BLOCK, nullptr, 0);
+  }
 }
 
 void
-QUICNetVConnection::handle_received_packet(UDPPacket *packet)
+QUICNetVConnection::handle_received_packet(UDPPacket * /* packet ATS_UNUSED */)
 {
-  size_t   buf_len{0};
-  uint8_t *buf = packet->get_entire_chain_buffer(&buf_len);
-  this->netActivity();
-  quiche_recv_info recv_info = {
-    &packet->from.sa,
-    static_cast<socklen_t>(packet->from.isIp4() ? sizeof(packet->from.sin) : sizeof(packet->from.sin6)),
-    &packet->to.sa,
-    static_cast<socklen_t>(packet->to.isIp4() ? sizeof(packet->to.sin) : sizeof(packet->to.sin6)),
-  };
-
-  ssize_t done = quiche_conn_recv(this->_quiche_con, buf, buf_len, &recv_info);
-  if (done < 0) {
-    QUICConVDebug("failed to process packet: %zd", done);
-    return;
-  }
 }
 
 void
@@ -472,25 +501,25 @@ QUICNetVConnection::retry_source_connection_id() const
 QUICConnectionId
 QUICNetVConnection::initial_source_connection_id() const
 {
-  return {};
+  return this->_initial_source_connection_id;
 }
 
 QUICConnectionId
 QUICNetVConnection::connection_id() const
 {
-  return {};
+  return this->_quic_connection_id;
 }
 
 std::string_view
 QUICNetVConnection::cids() const
 {
-  return "";
+  return this->_cid_text;
 }
 
-const QUICFiveTuple
+QUICFiveTuple const
 QUICNetVConnection::five_tuple() const
 {
-  return {};
+  return QUICFiveTuple(this->remote_addr, this->local_addr, IPPROTO_UDP);
 }
 
 uint32_t
@@ -508,29 +537,25 @@ QUICNetVConnection::direction() const
 QUICVersion
 QUICNetVConnection::negotiated_version() const
 {
-  return 0;
+  return QUIC_SUPPORTED_VERSIONS[0];
 }
 
 std::string_view
 QUICNetVConnection::negotiated_application_name() const
 {
-  const uint8_t *name;
-  size_t         name_len = 0;
-  quiche_conn_application_proto(this->_quiche_con, &name, &name_len);
-
-  return std::string_view(reinterpret_cast<const char *>(name), name_len);
+  return this->_negotiated_alpn;
 }
 
 void
 QUICNetVConnection::on_stream_updated()
 {
-  this->_schedule_packet_write_ready(false);
+  this->_schedule_openssl_event(false);
 }
 
 bool
 QUICNetVConnection::is_closed() const
 {
-  return quiche_conn_is_closed(this->_quiche_con);
+  return this->_openssl_connection_closed();
 }
 
 bool
@@ -542,13 +567,13 @@ QUICNetVConnection::is_at_anti_amplification_limit() const
 bool
 QUICNetVConnection::is_address_validation_completed() const
 {
-  return false;
+  return true;
 }
 
 bool
 QUICNetVConnection::is_handshake_completed() const
 {
-  return false;
+  return this->_handshake_completed;
 }
 
 void
@@ -592,166 +617,181 @@ QUICNetVConnection::_unbindSSLObject()
 void
 QUICNetVConnection::_schedule_packet_write_ready(bool delay)
 {
-  if (!this->_packet_write_ready) {
-    if (delay) {
-      this->_packet_write_ready = this->thread->schedule_in(this, WRITE_READY_INTERVAL, QUIC_EVENT_PACKET_WRITE_READY, nullptr);
-    } else {
-      this->_packet_write_ready = this->thread->schedule_imm(this, QUIC_EVENT_PACKET_WRITE_READY, nullptr);
-    }
-  }
+  this->_schedule_openssl_event(delay);
 }
 
 void
 QUICNetVConnection::_unschedule_packet_write_ready()
 {
-  if (this->_packet_write_ready) {
-    this->_packet_write_ready->cancel();
-    this->_packet_write_ready = nullptr;
-  }
+  this->_unschedule_openssl_event();
 }
 
 void
 QUICNetVConnection::_close_packet_write_ready(Event *data)
 {
-  ink_assert(this->_packet_write_ready == data);
-  this->_packet_write_ready = nullptr;
+  if (this->_packet_write_ready == data) {
+    this->_packet_write_ready = nullptr;
+  }
 }
 
 void
 QUICNetVConnection::_schedule_quiche_timeout()
 {
-  if (!this->_quiche_timeout) {
-    this->_quiche_timeout = this->thread->schedule_in(this, HRTIME_MSECONDS(quiche_conn_timeout_as_millis(this->_quiche_con)));
-  }
 }
 
 void
 QUICNetVConnection::_unschedule_quiche_timeout()
 {
-  if (this->_quiche_timeout) {
-    this->_quiche_timeout->cancel();
-    this->_quiche_timeout = nullptr;
-  }
 }
 
 void
-QUICNetVConnection::_close_quiche_timeout(Event *data)
+QUICNetVConnection::_close_quiche_timeout(Event * /* data ATS_UNUSED */)
 {
-  ink_assert(this->_quiche_timeout == data);
-  this->_quiche_timeout = nullptr;
 }
 
 void
 QUICNetVConnection::_schedule_closing_event()
 {
   QUICConDebug("Scheduling closing event");
-  if (quiche_conn_is_timed_out(this->_quiche_con)) {
-    QUICConDebug("QUIC Idle timeout detected");
-    this->thread->schedule_imm(this, VC_EVENT_INACTIVITY_TIMEOUT);
-    return;
+  SSL_CONN_CLOSE_INFO info = {};
+  if (this->_ssl != nullptr && SSL_get_conn_close_info(this->_ssl, &info, sizeof(info)) == 1) {
+    QUICConDebug("QUIC close info: error_code=%" PRIu64 " frame_type=%" PRIu64 " flags=0x%x reason=\"%.*s\"", info.error_code,
+                 info.frame_type, info.flags, static_cast<int>(info.reason_len), info.reason == nullptr ? "" : info.reason);
+    if (info.error_code == OSSL_QUIC_LOCAL_ERR_IDLE_TIMEOUT) {
+      QUICConDebug("QUIC Idle timeout detected");
+      this->thread->schedule_imm(this, VC_EVENT_INACTIVITY_TIMEOUT);
+      return;
+    }
   }
 
-  bool           is_app;
-  uint64_t       error_code;
-  const uint8_t *reason;
-  size_t         reason_len;
-  bool           has_error = quiche_conn_peer_error(this->_quiche_con, &is_app, &error_code, &reason, &reason_len) ||
-                   quiche_conn_local_error(this->_quiche_con, &is_app, &error_code, &reason, &reason_len);
-  if (has_error && error_code != static_cast<uint64_t>(QUICTransErrorCode::NO_ERROR)) {
-    QUICConDebug("is_app=%d error_code=%" PRId64 " reason=%.*s", is_app, error_code, static_cast<int>(reason_len), reason);
-    this->thread->schedule_imm(this, VC_EVENT_ERROR);
-    return;
-  }
-
-  // If it's not timeout nor error, it's probably eos
   this->thread->schedule_imm(this, VC_EVENT_EOS);
 }
 
 void
 QUICNetVConnection::_handle_read_ready()
 {
-  quiche_stream_iter *readable = quiche_conn_readable(this->_quiche_con);
-  uint64_t            s        = 0;
-  while (quiche_stream_iter_next(readable, &s)) {
-    QUICConVDebug("stream %" PRIu64 " is readable\n", s);
-    QUICStream *stream = static_cast<QUICStream *>(this->_stream_manager->find_stream(s));
-    if (stream == nullptr) {
-      [[maybe_unused]] QUICConnectionError err;
-      stream = this->_stream_manager->create_stream(s, err);
-    }
-    stream->receive_data(*this);
-  }
-  quiche_stream_iter_free(readable);
+  this->_handle_openssl_events();
 }
 
 void
 QUICNetVConnection::_handle_write_ready()
 {
-  if (quiche_conn_is_established(this->_quiche_con)) {
-    quiche_stream_iter *writable = quiche_conn_writable(this->_quiche_con);
-    uint64_t            s        = 0;
-    while (quiche_stream_iter_next(writable, &s)) {
-      QUICStream *stream = static_cast<QUICStream *>(this->_stream_manager->find_stream(s));
-      if (stream == nullptr) {
-        [[maybe_unused]] QUICConnectionError err;
-        stream = this->_stream_manager->create_stream(s, err);
-      }
-      stream->send_data(*this);
-    }
-    quiche_stream_iter_free(writable);
-  }
-
-  Ptr<IOBufferBlock> udp_payload;
-  quiche_send_info   send_info;
-  struct timespec    send_at_hint;
-  ssize_t            res;
-  ssize_t            written = 0;
-
-  size_t quantum              = quiche_conn_send_quantum(this->_quiche_con);
-  size_t max_udp_payload_size = quiche_conn_max_send_udp_payload_size(this->_quiche_con);
-
-  // This buffer size must be less than 64KB because it can be used for UDP GSO (UDP_SEGMENT)
-  udp_payload = new_IOBufferBlock();
-  udp_payload->alloc(buffer_size_to_index(quantum, BUFFER_SIZE_INDEX_32K));
-  quantum = std::min(static_cast<int64_t>(quantum), udp_payload->write_avail());
-  while (written + max_udp_payload_size <= quantum) {
-    res = quiche_conn_send(this->_quiche_con, reinterpret_cast<uint8_t *>(udp_payload->end()) + written, max_udp_payload_size,
-                           &send_info);
-#ifdef HAVE_SO_TXTIME
-    if (written == 0) {
-      memcpy(&send_at_hint, &send_info.at, sizeof(struct timespec));
-    }
-#endif
-
-    if (res > 0) {
-      written += res;
-    }
-    if (static_cast<size_t>(res) != max_udp_payload_size) {
-      break;
-    }
-  }
-  if (written > 0) {
-    udp_payload->fill(written);
-    int segment_size = 0;
-    if (static_cast<size_t>(written) > max_udp_payload_size) {
-      segment_size = max_udp_payload_size;
-    }
-    this->_packet_handler->send_packet(this->_udp_con, this->con.addr, udp_payload, segment_size, &send_at_hint);
-    this->netActivity();
-  }
+  this->_handle_openssl_events();
 }
 
 void
 QUICNetVConnection::_handle_interval()
 {
-  quiche_conn_on_timeout(this->_quiche_con);
+  this->_handle_openssl_events();
+}
 
-  if (quiche_conn_is_closed(this->_quiche_con)) {
-    this->_schedule_closing_event();
-  } else {
-    // Just schedule timeout event again if the connection is still open
-    this->_schedule_quiche_timeout();
+void
+QUICNetVConnection::_handle_openssl_events()
+{
+  if (this->_ssl == nullptr) {
+    return;
   }
+
+  if (SSL_handle_events(this->_ssl) != 1) {
+    QUICConDebug("SSL_handle_events failed: %s", ERR_error_string(ERR_peek_error(), nullptr));
+  }
+
+  if (this->_stream_manager != nullptr && this->_application_started) {
+    this->_accept_openssl_streams();
+    this->_process_openssl_streams();
+  }
+
+  this->netActivity();
+}
+
+void
+QUICNetVConnection::_accept_openssl_streams()
+{
+  while (SSL *stream_ssl = SSL_accept_stream(this->_ssl, SSL_ACCEPT_STREAM_NO_BLOCK)) {
+    SSL_set_blocking_mode(stream_ssl, 0);
+    SSL_set_event_handling_mode(stream_ssl, SSL_VALUE_EVENT_HANDLING_MODE_IMPLICIT);
+    SSL_set_mode(stream_ssl, SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER | SSL_MODE_ENABLE_PARTIAL_WRITE);
+
+    QUICStreamId stream_id = SSL_get_stream_id(stream_ssl);
+    this->_openssl_streams.emplace(stream_id, stream_ssl);
+
+    if (this->_stream_manager->find_stream(stream_id) == nullptr) {
+      [[maybe_unused]] QUICConnectionError err;
+      this->_stream_manager->create_stream(stream_id, err);
+    }
+  }
+}
+
+void
+QUICNetVConnection::_process_openssl_streams()
+{
+  std::vector<QUICStreamId> stream_ids;
+  stream_ids.reserve(this->_openssl_streams.size());
+  for (auto const &entry : this->_openssl_streams) {
+    stream_ids.push_back(entry.first);
+  }
+
+  for (QUICStreamId stream_id : stream_ids) {
+    auto stream_it = this->_openssl_streams.find(stream_id);
+    if (stream_it == this->_openssl_streams.end()) {
+      continue;
+    }
+
+    SSL        *stream_ssl = stream_it->second;
+    QUICStream *stream     = static_cast<QUICStream *>(this->_stream_manager->find_stream(stream_id));
+    if (stream == nullptr) {
+      continue;
+    }
+
+    int stream_type = SSL_get_stream_type(stream_ssl);
+    if ((stream_type & SSL_STREAM_TYPE_READ) != 0) {
+      stream->receive_data(*this);
+    }
+    if ((stream_type & SSL_STREAM_TYPE_WRITE) != 0 || stream->has_data_to_send()) {
+      if (stream->has_data_to_send()) {
+        while (stream->has_data_to_send() && stream->send_data(*this) > 0) {}
+      } else {
+        stream->send_data(*this);
+      }
+    }
+  }
+}
+
+void
+QUICNetVConnection::_schedule_openssl_event(bool delay)
+{
+  if (!delay && this->_packet_write_ready != nullptr) {
+    this->_packet_write_ready->cancel();
+    this->_packet_write_ready = nullptr;
+  }
+
+  if (this->_packet_write_ready == nullptr && this->thread != nullptr) {
+    if (delay) {
+      this->_packet_write_ready = this->thread->schedule_in(this, OPENSSL_QUIC_EVENT_INTERVAL);
+    } else {
+      this->_packet_write_ready = this->thread->schedule_imm(this, QUIC_EVENT_PACKET_WRITE_READY);
+    }
+  }
+}
+
+void
+QUICNetVConnection::_unschedule_openssl_event()
+{
+  if (this->_packet_write_ready != nullptr) {
+    this->_packet_write_ready->cancel();
+    this->_packet_write_ready = nullptr;
+  }
+}
+
+bool
+QUICNetVConnection::_openssl_connection_closed() const
+{
+  if (this->_ssl == nullptr) {
+    return true;
+  }
+
+  SSL_CONN_CLOSE_INFO info = {};
+  return SSL_get_conn_close_info(this->_ssl, &info, sizeof(info)) == 1;
 }
 
 int
@@ -770,10 +810,10 @@ QUICNetVConnection::populate_protocol(std::string_view *results, int n) const
   return retval;
 }
 
-const char *
+char const *
 QUICNetVConnection::protocol_contains(std::string_view prefix) const
 {
-  const char *retval = nullptr;
+  char const *retval = nullptr;
   if (prefix.size() <= IP_PROTO_TAG_QUIC.size() && strncmp(IP_PROTO_TAG_QUIC.data(), prefix.data(), prefix.size()) == 0) {
     retval = IP_PROTO_TAG_QUIC.data();
   } else if (prefix.size() <= IP_PROTO_TAG_TLS_1_3.size() &&
@@ -794,26 +834,94 @@ QUICNetVConnection::get_quic_connection()
 int64_t
 QUICNetVConnection::read_stream(QUICStreamId stream_id, uint8_t *buf, size_t len, bool &fin, QUICStreamIO::ErrorCode &error_code)
 {
-  return quiche_conn_stream_recv(this->_quiche_con, stream_id, buf, len, &fin, &error_code);
+  auto it = this->_openssl_streams.find(stream_id);
+  if (it == this->_openssl_streams.end()) {
+    error_code = ENOENT;
+    return -1;
+  }
+
+  SSL_handle_events(it->second);
+
+  size_t read_len = 0;
+  fin             = false;
+  if (SSL_read_ex(it->second, buf, len, &read_len) == 1) {
+    fin = this->stream_read_finished(stream_id);
+    return read_len;
+  }
+
+  int ssl_error = SSL_get_error(it->second, 0);
+  if (ssl_error == SSL_ERROR_WANT_READ || ssl_error == SSL_ERROR_WANT_WRITE) {
+    return 0;
+  }
+  if (ssl_error == SSL_ERROR_ZERO_RETURN) {
+    fin = true;
+    return 0;
+  }
+
+  error_code = ssl_error;
+  return -1;
 }
 
 bool
 QUICNetVConnection::stream_read_finished(QUICStreamId stream_id)
 {
-  return quiche_conn_stream_finished(this->_quiche_con, stream_id);
+  auto it = this->_openssl_streams.find(stream_id);
+  if (it == this->_openssl_streams.end()) {
+    return true;
+  }
+
+  int state = SSL_get_stream_read_state(it->second);
+  return state == SSL_STREAM_STATE_FINISHED || state == SSL_STREAM_STATE_RESET_REMOTE || state == SSL_STREAM_STATE_CONN_CLOSED;
 }
 
 int64_t
 QUICNetVConnection::stream_write_capacity(QUICStreamId stream_id)
 {
-  return quiche_conn_stream_capacity(this->_quiche_con, stream_id);
+  auto it = this->_openssl_streams.find(stream_id);
+  if (it == this->_openssl_streams.end()) {
+    return -1;
+  }
+
+  uint64_t avail = 0;
+  if (SSL_get_stream_write_buf_avail(it->second, &avail) == 1) {
+    return std::min<uint64_t>(avail, 16 * 1024);
+  }
+
+  return 0;
 }
 
 int64_t
-QUICNetVConnection::write_stream(QUICStreamId stream_id, const uint8_t *buf, size_t len, bool fin,
+QUICNetVConnection::write_stream(QUICStreamId stream_id, uint8_t const *buf, size_t len, bool fin,
                                  QUICStreamIO::ErrorCode &error_code)
 {
-  return quiche_conn_stream_send(this->_quiche_con, stream_id, const_cast<uint8_t *>(buf), len, fin, &error_code);
+  auto it = this->_openssl_streams.find(stream_id);
+  if (it == this->_openssl_streams.end()) {
+    error_code = ENOENT;
+    return -1;
+  }
+
+  SSL_handle_events(it->second);
+
+  if (len == 0 && fin) {
+    SSL_stream_conclude(it->second, 0);
+    return 0;
+  }
+
+  size_t         written_len = 0;
+  const uint64_t flags       = fin ? SSL_WRITE_FLAG_CONCLUDE : 0;
+  if (SSL_write_ex2(it->second, buf, len, flags, &written_len) == 1) {
+    return written_len;
+  }
+
+  int ssl_error = SSL_get_error(it->second, 0);
+  if (ssl_error == SSL_ERROR_WANT_READ || ssl_error == SSL_ERROR_WANT_WRITE) {
+    return 0;
+  }
+
+  error_code = ssl_error;
+  QUICConDebug("Failed to write %zu bytes on QUIC stream %" PRIu64 ": ssl_error=%d, openssl_error=%s", len, stream_id, ssl_error,
+               ERR_error_string(ERR_peek_error(), nullptr));
+  return -1;
 }
 
 void
@@ -847,7 +955,7 @@ QUICNetVConnection::getMutexForTLSEvents()
 bool
 QUICNetVConnection::_isReadyToTransferData() const
 {
-  return quiche_conn_is_established(this->_quiche_con);
+  return this->_handshake_completed;
 }
 
 SSL *
@@ -859,9 +967,6 @@ QUICNetVConnection::_get_ssl_object() const
 ssl_curve_id
 QUICNetVConnection::_get_tls_curve() const
 {
-  // For resumed server side session caching, we have to retrieve the curve/group
-  // from our stored data. For non-resumed sessions or from ticket based resumption,
-  // simply query the SSL object.
   if (getIsResumedFromSessionCache()) {
     return getSSLCurveNID();
   } else {
@@ -872,9 +977,6 @@ QUICNetVConnection::_get_tls_curve() const
 std::string_view
 QUICNetVConnection::_get_tls_group() const
 {
-  // For resumed server side session caching, we have to retrieve the curve/group
-  // from our stored data. For non-resumed sessions or from ticket based resumption,
-  // simply query the SSL object.
   if (getIsResumedFromSessionCache()) {
     return getSSLGroupName();
   } else {
@@ -889,7 +991,6 @@ QUICNetVConnection::_verify_certificate(X509_STORE_CTX * /* ctx ATS_UNUSED */)
   TSHttpHookID hookId;
   APIHook     *hook = nullptr;
 
-  // TODO Simply call callHooks once QUICNetVC implements TLSEventSupport
   if (get_context() == NET_VCONNECTION_IN) {
     eventId = TS_EVENT_SSL_VERIFY_CLIENT;
     hookId  = TS_SSL_VERIFY_CLIENT_HOOK;
@@ -904,8 +1005,6 @@ QUICNetVConnection::_verify_certificate(X509_STORE_CTX * /* ctx ATS_UNUSED */)
     hook->invoke(eventId, this);
   }
 
-  // According to the implementation in SSLNetVC,
-  // we can assume that reenable() is called during the event handling.
   ink_assert(this->_is_verifying_cert == false);
   if (this->_is_cert_verified) {
     return 1;
@@ -920,7 +1019,7 @@ QUICNetVConnection::_get_local_port()
   return this->get_local_port();
 }
 
-const IpEndpoint &
+IpEndpoint const &
 QUICNetVConnection::_getLocalEndpoint()
 {
   return this->local_addr;
@@ -929,13 +1028,11 @@ QUICNetVConnection::_getLocalEndpoint()
 bool
 QUICNetVConnection::_isTryingRenegotiation() const
 {
-  // Renegotiation is not allowed on QUIC (TLS 1.3) connections.
-  // If handshake is completed when this function is called, that should be unallowed attempt of renegotiation.
-  return quiche_conn_is_established(this->_quiche_con);
+  return this->_handshake_completed;
 }
 
 shared_SSL_CTX
-QUICNetVConnection::_lookupContextByName(const std::string &servername, SSLCertContextType ctxType)
+QUICNetVConnection::_lookupContextByName(std::string const &servername, SSLCertContextType ctxType)
 {
   shared_SSL_CTX                ctx = nullptr;
   QUICCertConfig::scoped_config lookup;
