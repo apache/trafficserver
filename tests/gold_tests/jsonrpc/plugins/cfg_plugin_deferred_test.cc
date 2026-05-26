@@ -1,22 +1,8 @@
 /** @file
 
-  Test plugin for deferred TSCfgLoadCtx completion - handler stores the context
-  and completes/fails from a two-stage scheduled continuation on ET_TASK.
-
-  Stage 0: fires 3 seconds after handler returns ("rescheduled work")
-  Stage 1: fires 2 seconds after stage 0 ("heavy work simulation")
-  Total deferred time: ~5 seconds
-
-  Registration (TSPluginInit):
-    TSCfgRegister - registers "cfg_plugin_deferred_test" with FILE_AND_RPC source
-
-  Handler (config_reload):
-    Stores TSCfgLoadCtx + behavior flag, schedules stage 0 at 3s, returns
-    WITHOUT calling Complete/Fail.
-
-  Behavior selection:
-    RPC mode:  {defer_fail: ...} → deferred fail, anything else → deferred success
-    File mode: file contains "defer_fail" → deferred fail, otherwise → deferred success
+  Test plugin for deferred TSCfgLoadCtx completion. The handler stores the
+  context and completes/fails from a two-stage scheduled continuation on
+  ET_TASK (3s + 2s).
 
   @section license License
 

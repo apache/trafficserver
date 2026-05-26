@@ -62,10 +62,6 @@ enum class ConfigSource {
 
 /// Handler signature for config reload - receives ConfigContext by value.
 /// Handler can check ctx.supplied_yaml() for rpc-supplied content.
-///
-/// Plugin handlers use the same signature: the plugin C API layer wraps the
-/// supplied context by value into its own TSCfgLoadCtx wrapper so the opaque
-/// handle outlives this call (for deferred completion).
 using ConfigReloadHandler = std::function<void(ConfigContext)>;
 
 ///
@@ -111,11 +107,7 @@ public:
     ConfigReloadHandler      handler;                        ///< Reload handler (empty for static / non-reloadable entries)
     std::vector<std::string> trigger_records;                ///< Records that trigger reload
     bool                     is_required{false};             ///< Whether the file must exist on disk
-    /// Plugin that registered this entry (from TSPluginRegister). Empty for core entries.
-    /// Non-empty <=> the entry was registered via TSCfgRegister; used as the
-    /// canonical "is plugin?" predicate throughout the framework. Surfaces in
-    /// conflict diagnostics, reload-trace logs, and traffic_ctl status output.
-    std::string plugin_name;
+    std::string              plugin_name;                    ///< Plugin that registered this entry (empty for core).
 
     /// Resolve the actual filename (reads from record, falls back to default)
     std::string resolve_filename() const;
@@ -145,17 +137,10 @@ public:
                        ConfigReloadHandler handler, ConfigSource source, std::initializer_list<const char *> trigger_records = {},
                        bool is_required = false);
 
-  /// @brief Register a plugin config file.
+  /// @brief Register a plugin-owned config file (TSCfgRegister entry point).
   ///
-  /// Same as register_config() but marks the entry as plugin-originated so that
-  /// reload tracing and traffic_ctl distinguish plugin tasks from core tasks.
-  /// Called exclusively from the TSCfgRegister plugin API.
-  ///
-  /// @param plugin_name  Name of the registering plugin (from TSPluginRegister).
-  ///                     Required: must be non-empty. Stored on the Entry for
-  ///                     conflict diagnostics, log attribution, and traffic_ctl
-  ///                     status display.
-  ///
+  /// @a plugin_name must be non-empty; it is recorded on the Entry and used
+  /// for diagnostics, log attribution, and traffic_ctl status output.
   void register_plugin_config(const std::string &key, const std::string &plugin_name, const std::string &default_filename,
                               const std::string &filename_record, ConfigReloadHandler handler, ConfigSource source,
                               std::initializer_list<const char *> trigger_records = {}, bool is_required = false);
@@ -219,7 +204,8 @@ public:
   ///
   ///
   /// @param key              The registered config key (must already exist)
-  /// @param filename_record  Record holding the filename (e.g., "proxy.config.cache.ip_categories.filename")
+  /// @param filename_record  Record holding the filename (e.g., "proxy.config.cache.ip_categories.filename"),
+  ///                         or nullptr / empty to use @a default_filename verbatim
   /// @param default_filename Default filename when record value is empty (e.g., "ip_categories.yaml")
   /// @param is_required      Whether the file is required to exist
   /// @return 0 on success, -1 if key not found
@@ -264,10 +250,6 @@ public:
   /// @param key The key to look up (can be a direct entry key or a dependency key)
   /// @return pair of {resolved_parent_key, entry_pointer}
   ///
-  /// The returned pointer follows the same stability contract as @c find: it
-  /// remains valid for the lifetime of the process while the registry stays
-  /// append-only.
-  ///
   std::pair<std::string, Entry const *> resolve(const std::string &key) const;
 
   ///
@@ -307,11 +289,7 @@ public:
   ///
   void execute_reload(const std::string &key);
 
-  /// Look up an entry by key.
-  ///
-  /// The returned pointer is stable for the lifetime of the process: the registry
-  /// is append-only - there is no unregister API. If one is ever added, callers
-  /// of @c find / @c resolve must be revisited.
+  /// look up.
   bool         contains(const std::string &key) const;
   Entry const *find(const std::string &key) const;
 
