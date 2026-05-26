@@ -23,8 +23,10 @@
 
 #include "tscore/ink_config.h"
 #include "FetchSM.h"
+#include <algorithm>
 #include <cstdint>
 #include <cstdio>
+#include <cstring>
 #include "HTTP.h"
 #include "PluginVC.h"
 #include "ts/ts.h" // Ugly, but we need a bunch of the public APIs here ... :-/
@@ -33,6 +35,35 @@
 #define FETCH_LOCK_RETRY_TIME HRTIME_MSECONDS(10)
 
 ClassAllocator<FetchSM> FetchSMAllocator("FetchSMAllocator");
+
+namespace
+{
+int64_t
+copy_from_reader(char *dst, IOBufferReader *reader, int64_t nbytes)
+{
+  int64_t copied = 0;
+
+  while (copied < nbytes) {
+    if (reader->block) {
+      reader->skip_empty_blocks();
+    }
+
+    const int64_t read_avail = reader->block_read_avail();
+    if (read_avail <= 0) {
+      break;
+    }
+
+    const int64_t to_copy = std::min(read_avail, nbytes - copied);
+
+    memcpy(dst + copied, reader->start(), to_copy);
+    reader->consume(to_copy);
+    copied += to_copy;
+  }
+
+  return copied;
+}
+
+} // end anonymous namespace
 void
 FetchSM::cleanUp()
 {
@@ -386,21 +417,24 @@ FetchSM::get_info_from_buffer(IOBufferReader *reader)
   blk = reader->block.get();
 
   // This is the equivalent of TSIOBufferBlockReadStart()
-  buf       = blk->start() + reader->start_offset;
   read_done = blk->read_avail() - reader->start_offset;
 
   if (header_done == 0 && read_done > 0) {
-    int bytes_used = 0;
-    header_done    = true;
+    int bytes_used                = 0;
+    IOBufferReader *header_reader = reader->clone();
+    header_done                   = true;
     if (client_response_hdr.parse_resp(&http_parser, reader, &bytes_used, 0) == PARSE_RESULT_DONE) {
       if ((bytes_used > 0) && (bytes_used <= read_avail)) {
-        memcpy(info, buf, bytes_used);
-        info += bytes_used;
-        client_bytes += bytes_used;
+        int64_t const bytes_copied = copy_from_reader(info, header_reader, bytes_used);
+
+        ink_release_assert(bytes_copied == bytes_used);
+        info += bytes_copied;
+        client_bytes += bytes_copied;
       }
     } else {
       Error("Failed to parse headers in FetchSM buffer");
     }
+    header_reader->dealloc();
     // adjust the read_avail
     read_avail -= bytes_used;
   }
