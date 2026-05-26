@@ -30,9 +30,11 @@ ROOT=${ROOT:-${SCRIPT_DIR}}
 
 PV_VERSION_FILE="${ROOT}/tests/proxy-verifier-version.txt"
 [ -r "${PV_VERSION_FILE}" ] || fail "\"${PV_VERSION_FILE}\" does not exist."
+PV_SUM_FILE="${ROOT}/tests/proxy-verifier-checksum.txt"
+[ -r "${PV_SUM_FILE}" ] || fail "\"${PV_SUM_FILE}\" does not exist."
 
 pv_name="proxy-verifier"
-pv_version=`cat ${ROOT}/tests/proxy-verifier-version.txt`
+read -r pv_version < "${PV_VERSION_FILE}"
 pv_top_dir="${ROOT}/tests/proxy-verifier"
 pv_unpack_dir="${pv_top_dir}/unpack/${pv_version}"
 bin_dir="${pv_unpack_dir}/bin"
@@ -40,7 +42,7 @@ pv_dir="${pv_name}-${pv_version}"
 pv_tar_filename="${pv_dir}.tar.gz"
 pv_tar="${pv_top_dir}/${pv_tar_filename}"
 pv_tar_url="https://ci.trafficserver.apache.org/bintray/${pv_tar_filename}"
-expected_sha1="e11b5867a56c5ffd496b18c901f1273e9c120a47"
+read -r expected_sha1 < "${PV_SUM_FILE}"
 pv_client="${bin_dir}/verifier-client"
 pv_server="${bin_dir}/verifier-server"
 TAR=${TAR:-tar}

@@ -30,6 +30,7 @@
 #include "tsutil/ts_bw_format.h"
 
 #include "yaml-cpp/yaml.h"
+#include "tscore/ink_config.h"
 #include "tscore/Layout.h"
 #include "tsutil/ts_bw_format.h"
 #include "mgmt/rpc/jsonrpc/JsonRPC.h"
@@ -40,8 +41,8 @@ constexpr char PLUGIN_NAME[] = "jsonrpc_plugin_handler_test";
 
 DbgCtl dbg_ctl{PLUGIN_NAME};
 
-const std::string MY_YAML_VERSION{"0.8.0"};
-const std::string RPC_PROVIDER_NAME{"RPC Plugin test"};
+constexpr std::string_view MY_YAML_VERSION{YAMLCPP_LIB_VERSION};
+const std::string          RPC_PROVIDER_NAME{"RPC Plugin test"};
 } // namespace
 
 namespace
@@ -277,7 +278,7 @@ TSPluginInit(int /* argc ATS_UNUSED */, const char ** /* argv ATS_UNUSED */)
 
   // Check-in to make sure we are compliant with the YAML version in TS.
   TSRPCProviderHandle rpcRegistrationInfo =
-    TSRPCRegister(RPC_PROVIDER_NAME.c_str(), RPC_PROVIDER_NAME.size(), MY_YAML_VERSION.c_str(), MY_YAML_VERSION.size());
+    TSRPCRegister(RPC_PROVIDER_NAME.c_str(), RPC_PROVIDER_NAME.size(), MY_YAML_VERSION.data(), MY_YAML_VERSION.size());
 
   if (rpcRegistrationInfo == nullptr) {
     TSError("[%s] RPC handler registration failed, yaml version not supported.", PLUGIN_NAME);
