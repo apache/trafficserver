@@ -215,8 +215,9 @@ private:
 #else
   MIOBuffer _receive_buffer{BUFFER_SIZE_INDEX_4K};
 #endif
-  VIO read_vio;
-  VIO write_vio;
+  VIO  read_vio;
+  VIO  write_vio;
+  bool _read_event_paused = false; ///< The read VIO is intentionally gated by a zero-byte read.
 
   History<HISTORY_DEFAULT_SIZE>                                                           _history;
   Milestones<Http2StreamMilestone, static_cast<size_t>(Http2StreamMilestone::LAST_ENTRY)> _milestones;
@@ -440,7 +441,7 @@ Http2Stream::read_vio_writer() const
 inline bool
 Http2Stream::is_read_enabled() const
 {
-  return !this->read_vio.is_disabled();
+  return !this->_read_event_paused && this->read_vio.nbytes != 0 && !this->read_vio.is_disabled();
 }
 
 inline void
@@ -459,5 +460,7 @@ Http2Stream::update_read_length(int count)
 inline void
 Http2Stream::set_read_done()
 {
-  read_vio.nbytes = read_vio.ndone;
+  if (!this->_read_event_paused) {
+    read_vio.nbytes = read_vio.ndone;
+  }
 }
