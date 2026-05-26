@@ -258,6 +258,38 @@ SSLConfigParams::SetServerPolicy(const char *verify_server)
   }
 }
 
+SSLMulticertFile
+SSLConfigParams::resolveMulticertConfig()
+{
+  SSLMulticertFile result;
+
+  char rec_buf[PATH_NAME_MAX] = {};
+  RecGetRecordString("proxy.config.ssl.server.multicert.filename", rec_buf, PATH_NAME_MAX);
+  const bool record_default = (rec_buf[0] == '\0' || strcmp(rec_buf, ts::filename::SSL_MULTICERT_YAML) == 0);
+
+  ats_scoped_str yaml_path(RecConfigReadConfigPath(nullptr, ts::filename::SSL_MULTICERT_YAML));
+  ats_scoped_str legacy_path(RecConfigReadConfigPath(nullptr, ts::filename::SSL_MULTICERT));
+
+  const bool yaml_exists   = yaml_path && swoc::file::exists(swoc::file::path(yaml_path.get()));
+  const bool legacy_exists = legacy_path && swoc::file::exists(swoc::file::path(legacy_path.get()));
+
+  if (record_default && !yaml_exists && legacy_exists) {
+    result.legacy_fallback = true;
+    result.parent_filename = ts::filename::SSL_MULTICERT;
+    if (legacy_path) {
+      result.path = legacy_path.get();
+    }
+  } else {
+    result.both_present    = record_default && yaml_exists && legacy_exists;
+    result.parent_filename = record_default ? ts::filename::SSL_MULTICERT_YAML : rec_buf;
+    if (ats_scoped_str p(RecConfigReadConfigPath("proxy.config.ssl.server.multicert.filename")); p) {
+      result.path = p.get();
+    }
+  }
+
+  return result;
+}
+
 void
 SSLConfigParams::initialize(ConfigContext ctx)
 {
@@ -440,35 +472,19 @@ SSLConfigParams::initialize(ConfigContext ctx)
     set_paths_helper(serverCertRelativePath, nullptr, &serverCertPathOnly, nullptr);
   }
 
-  // Resolve the multicert config path. Prefer the configured path; if the
-  // user is on the default (ssl_multicert.yaml) and it is absent while a
-  // legacy ssl_multicert.config exists alongside, fall back to the legacy
-  // file for backward compatibility.
   {
-    char rec_buf[PATH_NAME_MAX] = {};
-    RecGetRecordString("proxy.config.ssl.server.multicert.filename", rec_buf, PATH_NAME_MAX);
-    const bool record_default = (rec_buf[0] == '\0' || strcmp(rec_buf, ts::filename::SSL_MULTICERT_YAML) == 0);
-
-    ats_scoped_str yaml_path(RecConfigReadConfigPath(nullptr, ts::filename::SSL_MULTICERT_YAML));
-    ats_scoped_str legacy_path(RecConfigReadConfigPath(nullptr, ts::filename::SSL_MULTICERT));
-
-    const bool yaml_exists   = yaml_path && swoc::file::exists(swoc::file::path(yaml_path.get()));
-    const bool legacy_exists = legacy_path && swoc::file::exists(swoc::file::path(legacy_path.get()));
-
-    if (record_default && !yaml_exists && legacy_exists) {
+    auto multicert = resolveMulticertConfig();
+    if (multicert.legacy_fallback) {
       Note("%s not found, falling back to %s", ts::filename::SSL_MULTICERT_YAML, ts::filename::SSL_MULTICERT);
-      configFilePath = ats_strdup(legacy_path.get());
-    } else {
-      configFilePath = ats_stringdup(RecConfigReadConfigPath("proxy.config.ssl.server.multicert.filename"));
-      if (record_default && yaml_exists && legacy_exists) {
-        Note("%s exists alongside %s; the legacy file is ignored. "
-             "To resolve, either: (a) migrate %s to %s (e.g. 'traffic_ctl config convert ssl_multicert') and remove %s, "
-             "or (b) remove %s to fall back to %s.",
-             ts::filename::SSL_MULTICERT, ts::filename::SSL_MULTICERT_YAML, ts::filename::SSL_MULTICERT,
-             ts::filename::SSL_MULTICERT_YAML, ts::filename::SSL_MULTICERT, ts::filename::SSL_MULTICERT_YAML,
-             ts::filename::SSL_MULTICERT);
-      }
+    } else if (multicert.both_present) {
+      Note("%s exists alongside %s; the legacy file is ignored. "
+           "To resolve, either: (a) migrate %s to %s (e.g. 'traffic_ctl config convert ssl_multicert') and remove %s, "
+           "or (b) remove %s to fall back to %s.",
+           ts::filename::SSL_MULTICERT, ts::filename::SSL_MULTICERT_YAML, ts::filename::SSL_MULTICERT,
+           ts::filename::SSL_MULTICERT_YAML, ts::filename::SSL_MULTICERT, ts::filename::SSL_MULTICERT_YAML,
+           ts::filename::SSL_MULTICERT);
     }
+    configFilePath = multicert.path.empty() ? nullptr : ats_strdup(multicert.path.c_str());
   }
   configExitOnLoadError = RecGetRecordInt("proxy.config.ssl.server.multicert.exit_on_load_fail").value_or(0);
   configLoadConcurrency = RecGetRecordInt("proxy.config.ssl.server.multicert.concurrency").value_or(1);

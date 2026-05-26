@@ -42,6 +42,14 @@
 struct SSLCertLookup;
 struct ssl_ticket_key_block;
 
+// Resolved SSL multicert config file, including any legacy fallback state.
+struct SSLMulticertFile {
+  std::string path;
+  std::string parent_filename;         // basename for FileManager parent lookup
+  bool        legacy_fallback = false; // yaml absent, fell back to ssl_multicert.config
+  bool        both_present    = false; // record on default, both yaml and legacy exist
+};
+
 /////////////////////////////////////////////////////////////
 //
 // struct SSLConfigParams
@@ -162,6 +170,8 @@ struct SSLConfigParams : public ConfigInfo {
   void SSLConfigInit(swoc::IPRangeSet *global);
   void SetServerPolicy(const char *);
   void SetServerPolicyProperties(const char *);
+
+  static SSLMulticertFile resolveMulticertConfig();
 
 private:
   // c_str() of string passed to in-progess call to updateCTX().
