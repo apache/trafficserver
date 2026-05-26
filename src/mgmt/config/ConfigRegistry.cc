@@ -342,23 +342,29 @@ ConfigRegistry::attach(const std::string &key, const char *record_name)
 {
   std::string config_key;
 
-  // Single lock for check-and-modify.
   {
-    std::unique_lock lock(_mutex);
+    std::shared_lock lock(_mutex);
     auto             it = _entries.find(key);
     if (it == _entries.end()) {
       Warning("Cannot attach trigger to unknown config: %s", key.c_str());
       return -1;
     }
-
-    // Store record in entry - owned trigger
-    it->second.trigger_records.emplace_back(record_name);
     config_key = it->second.key;
   }
-  // Lock released before external call to RecRegisterConfigUpdateCb
 
   Dbg(dbg_ctl, "Attaching trigger '%s' to config '%s'", record_name, key.c_str());
-  return wire_record_callback(record_name, config_key);
+  if (int rc = wire_record_callback(record_name, config_key); rc != 0) {
+    return rc;
+  }
+
+  // Wire succeeded - record the trigger for diagnostic listings.
+  {
+    std::unique_lock lock(_mutex);
+    if (auto it = _entries.find(key); it != _entries.end()) {
+      it->second.trigger_records.emplace_back(record_name);
+    }
+  }
+  return 0;
 }
 
 int
@@ -383,16 +389,20 @@ ConfigRegistry::add_file_dependency(const std::string &key, const char *filename
   Dbg(dbg_ctl, "Adding file dependency '%s' (resolved: %s) to config '%s'", has_record ? filename_record : "<none>",
       resolved.c_str(), key.c_str());
 
+  // Wire the record callback first so a wiring failure leaves no partial state
+  // in FileManager (which has no removeFile API).
+  if (has_record) {
+    if (int rc = wire_record_callback(filename_record, config_key); rc != 0) {
+      return rc;
+    }
+  }
+
   // Register with FileManager for mtime-based change detection.
   // When filename_record is empty (e.g. plugin configs), pass the config key
   // as the configName so process_config_update routes mtime changes back to
   // ConfigRegistry::schedule_reload().
   const char *config_name = has_record ? filename_record : config_key.c_str();
   FileManager::instance().addFile(resolved.c_str(), config_name, false, is_required);
-
-  if (has_record) {
-    return wire_record_callback(filename_record, config_key);
-  }
 
   return 0;
 }
