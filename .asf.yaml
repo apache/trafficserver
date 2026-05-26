@@ -38,6 +38,9 @@ github:
     - lzx404243
     - phongn
     - jasmine-nahrain
+  copilot_code_review:
+    enabled: true
+    review_on_push: true
   protected_branches:
     master:
       required_status_checks:

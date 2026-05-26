@@ -383,6 +383,11 @@ MIOBuffer *buffer = (MIOBuffer*)malloc(sizeof(MIOBuffer));
 - `src/proxy/http/remap/RemapConfig.cc` - URL remapping logic
 - `include/ts/ts.h` - Plugin API
 
+## Security
+
+See [SECURITY.md](SECURITY.md) for the project's security policy, threat model,
+scope, and vulnerability reporting process.
+
 ## Resources
 
 - Official docs: https://trafficserver.apache.org/
