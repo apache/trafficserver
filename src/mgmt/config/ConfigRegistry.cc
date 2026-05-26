@@ -270,7 +270,11 @@ ConfigRegistry::register_plugin_config(const std::string &key, const std::string
                                        const std::string &filename_record, ConfigReloadHandler handler, ConfigSource source,
                                        std::initializer_list<const char *> trigger_records, bool is_required)
 {
-  ink_release_assert(!plugin_name.empty()); // contract; only TSCfgRegister calls this
+  if (plugin_name.empty()) {
+    Warning("ConfigRegistry::register_plugin_config: empty plugin_name for key '%s'; refusing", key.c_str());
+    ink_assert(!"register_plugin_config called with empty plugin_name");
+    return;
+  }
 
   Entry entry;
   entry.key              = key;

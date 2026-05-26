@@ -1,27 +1,6 @@
 /** @file
 
-  Test plugin for TSCfg* plugin config API - exercises every public function.
-
-  Registration (TSPluginInit):
-    TSCfgRegister          - registers "cfg_plugin_test" with FILE_AND_RPC source
-    TSCfgAttachReloadTrigger - attaches a record trigger that reloads
-    TSCfgAddFileDependency - adds a companion file dependency
-
-  Handler (config_reload):
-    TSCfgLoadCtxGetSuppliedYaml - detect RPC vs file mode
-    TSCfgLoadCtxGetFilename     - get resolved file path
-    TSCfgLoadCtxInProgress      - mark task in-progress
-    TSCfgLoadCtxAddLog          - add intermediate log entry
-    TSCfgLoadCtxAddSubtask      - create child subtask
-    TSCfgLoadCtxComplete        - report success
-    TSCfgLoadCtxFail            - report failure
-
-  Behavior is driven by supplied YAML keys:
-    {greet: <value>}       - success with greeting message
-    {fail_on_purpose: ...} - handler reports failure
-    {with_subtask: ...}    - creates a subtask, completes both
-    {subtask_fail: ...}    - creates a subtask that fails
-    (no YAML / file mode)  - reads file, fails if "fail_on_purpose" in content
+  Test plugin exercising every public TSCfg* API call.
 
   @section license License
 
@@ -65,26 +44,20 @@ config_reload(TSCfgLoadCtx ctx, void *data)
 {
   auto *state = static_cast<PluginState *>(data);
 
-  // --- TSCfgLoadCtxInProgress: mark in-progress with a message ---
   TSCfgLoadCtxInProgress(ctx, "cfg_plugin_test: processing started");
-
-  // --- TSCfgLoadCtxAddLog: add an intermediate log entry ---
   TSCfgLoadCtxAddLog(ctx, TS_CFG_LOG_NOTE, "cfg_plugin_test: handler entered");
 
-  // --- TSCfgLoadCtxGetSuppliedYaml: detect RPC vs file mode ---
   TSYaml yaml = TSCfgLoadCtxGetSuppliedYaml(ctx);
 
   if (yaml != nullptr) {
     auto *node = reinterpret_cast<YAML::Node *>(yaml);
 
-    // --- fail_on_purpose: test TSCfgLoadCtxFail ---
     if ((*node)["fail_on_purpose"]) {
       TSCfgLoadCtxAddLog(ctx, TS_CFG_LOG_ERROR, "cfg_plugin_test: fail requested");
       TSCfgLoadCtxFail(ctx, "cfg_plugin_test: fail_on_purpose via RPC");
       return;
     }
 
-    // --- with_subtask: test TSCfgLoadCtxAddSubtask + complete both ---
     if ((*node)["with_subtask"]) {
       TSCfgLoadCtx child = TSCfgLoadCtxAddSubtask(ctx, "cfg_plugin_test_subtask");
       TSCfgLoadCtxInProgress(child, "subtask working");
@@ -94,7 +67,6 @@ config_reload(TSCfgLoadCtx ctx, void *data)
       return;
     }
 
-    // --- subtask_fail: test subtask that fails ---
     if ((*node)["subtask_fail"]) {
       TSCfgLoadCtx child = TSCfgLoadCtxAddSubtask(ctx, "cfg_plugin_test_failing_subtask");
       TSCfgLoadCtxInProgress(child, "subtask starting");
@@ -103,7 +75,6 @@ config_reload(TSCfgLoadCtx ctx, void *data)
       return;
     }
 
-    // --- greet: test TSCfgLoadCtxComplete with message ---
     if ((*node)["greet"]) {
       std::string greet = (*node)["greet"].as<std::string>();
       TSCfgLoadCtxComplete(ctx, std::string{"cfg_plugin_test: RPC reload OK, greet="} + greet);
@@ -114,7 +85,6 @@ config_reload(TSCfgLoadCtx ctx, void *data)
     return;
   }
 
-  // --- File mode: TSCfgLoadCtxGetFilename ---
   std::string_view filename = TSCfgLoadCtxGetFilename(ctx);
   std::string      filename_str{filename.empty() ? state->config_path : std::string{filename}};
 
@@ -168,7 +138,6 @@ TSPluginInit(int argc, const char *argv[])
     state.config_path = std::string(TSConfigDirGet()) + "/" + argv[1];
   }
 
-  // --- TSCfgRegister ---
   TSCfgRegistrationInfo cfg_info{};
   cfg_info.key         = PLUGIN_NAME;
   cfg_info.config_path = state.config_path;
@@ -184,7 +153,6 @@ TSPluginInit(int argc, const char *argv[])
     return;
   }
 
-  // --- TSCfgAttachReloadTrigger: attach a record so changing it fires our handler ---
   ret = TSCfgAttachReloadTrigger(PLUGIN_NAME, "proxy.config.http.insert_age_in_response");
   if (ret == TS_SUCCESS) {
     Dbg(dbg_ctl, "TSCfgAttachReloadTrigger OK");
@@ -192,7 +160,6 @@ TSPluginInit(int argc, const char *argv[])
     TSError("[%s] TSCfgAttachReloadTrigger FAILED", PLUGIN_NAME);
   }
 
-  // --- TSCfgAddFileDependency: add companion file ---
   if (argc >= 3) {
     std::string companion;
     if (argv[2][0] == '/') {

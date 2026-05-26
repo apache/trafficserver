@@ -1,28 +1,8 @@
 /** @file
 
-  Test plugin for TSCfgLoadCtxGetReloadDirectives - verifies that _reload
-  directives are correctly extracted by the framework and delivered separately
-  from the supplied YAML config content.
-
-  Registration (TSPluginInit):
-    TSCfgRegister - registers "cfg_plugin_directives_test" with FILE_AND_RPC source
-
-  Handler (config_reload):
-    TSCfgLoadCtxGetReloadDirectives - read _reload directives (version key)
-    TSCfgLoadCtxGetSuppliedYaml     - read config content (greeting key)
-    TSCfgLoadCtxGetFilename         - get resolved file path (file mode)
-    TSCfgLoadCtxInProgress          - mark task in-progress
-    TSCfgLoadCtxAddLog              - add intermediate log entry
-    TSCfgLoadCtxComplete            - report success
-
-  Behavior:
-    RPC mode with directives:
-      _reload: {version: "X.Y"} → logs "directive_version=X.Y"
-      content: {greeting: "hi"} → logs "content_greeting=hi"
-    RPC mode without directives:
-      → logs "no_directives"
-    File mode:
-      → logs "file_mode" with byte count
+  Test plugin for TSCfgLoadCtxGetReloadDirectives: verifies that _reload
+  directives are extracted by the framework and delivered separately from the
+  supplied YAML config content.
 
   @section license License
 
@@ -62,7 +42,6 @@ config_reload(TSCfgLoadCtx ctx, void * /* data */)
 {
   TSCfgLoadCtxInProgress(ctx, PLUGIN_NAME ": processing started");
 
-  // --- Check for reload directives (_reload key, extracted by framework) ---
   TSYaml directives_yaml = TSCfgLoadCtxGetReloadDirectives(ctx);
 
   if (directives_yaml != nullptr) {
@@ -80,7 +59,6 @@ config_reload(TSCfgLoadCtx ctx, void * /* data */)
     Dbg(dbg_ctl, "No directives present");
   }
 
-  // --- Check for supplied YAML content (config body, without _reload) ---
   TSYaml yaml = TSCfgLoadCtxGetSuppliedYaml(ctx);
 
   if (yaml != nullptr) {
@@ -96,7 +74,6 @@ config_reload(TSCfgLoadCtx ctx, void * /* data */)
     return;
   }
 
-  // --- File mode fallback ---
   std::string_view filename = TSCfgLoadCtxGetFilename(ctx);
   if (!filename.empty()) {
     std::ifstream file(std::string{filename});

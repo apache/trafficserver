@@ -202,10 +202,7 @@ public:
     std::string                      filename;         ///< source file, if applicable
     std::vector<ConfigReloadTaskPtr> sub_tasks;        ///< child tasks (if any)
     bool                             main_task{false}; ///< true for the top-level reload task
-    /// Plugin name supplied at registration. Empty for core entries; non-empty
-    /// <=> plugin-originated (via TSCfgRegister). Used as the canonical
-    /// "is plugin?" predicate throughout the framework.
-    std::string plugin_name;
+    std::string                      plugin_name;      ///< Registering plugin (empty for core).
   };
 
   using self_type    = ConfigReloadTask;
@@ -268,9 +265,7 @@ public:
     _info.config_key = key;
   }
 
-  /// Set the registering plugin's name. Pass an empty view for core (non-plugin)
-  /// entries; non-empty marks the task as plugin-originated throughout the
-  /// framework.
+  /// Set the registering plugin's name (empty for core).
   void
   set_plugin_name(std::string_view name)
   {

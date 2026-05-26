@@ -126,7 +126,7 @@ typedef struct {
   time_t          last_load;
   TSTextLogObject log;
   char           *state_path;
-  TSMutex         reload_mutex; ///< serializes do_config_reload() calls
+  TSMutex         reload_mutex; ///< serializes do_config_reload between the timed path and the ConfigRegistry path
 } plugin_state_t;
 
 static invalidate_t *

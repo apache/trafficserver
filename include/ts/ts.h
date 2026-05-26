@@ -1231,278 +1231,89 @@ TSReturnCode TSMgmtConfigFileAdd(const char *parent, const char *fileName);
 /* --------------------------------------------------------------------------
    Config Registry - plugin config reload registration
 
-   Registers a plugin config file with the centralized reload framework
-   (ConfigRegistry). Plugins registered here:
-   - Participate in traffic_ctl config reload
-   - Report success/failure visible via traffic_ctl config status
-   - Get automatic file-change detection via FileManager
-   - Can optionally receive RPC-supplied YAML content
-*/
+   See doc/developer-guide/api/functions/TSCfgRegister.en.rst for usage,
+   semantics, and examples. */
 
-/**
-   Register a plugin config file with the reload framework.
+/** Register a plugin config file with the reload framework.
 
-   Must be called from TSPluginInit(), AFTER TSPluginRegister(). The plugin
-   name (set via TSPluginRegister) is automatically associated with the
-   registered entry for diagnostics, conflict reporting, and traffic_ctl
-   status output - plugins do not pass it explicitly.
+    Call from TSPluginInit() after TSPluginRegister(). All preconditions are
+    logged on failure; @a info must be non-null.
 
-   The struct shape (@see TSCfgRegistrationInfo) is used so that future ATS
-   versions can add fields without breaking source compatibility for existing
-   plugins. Pass the struct by pointer; null is rejected as invalid input.
-
-   The @c key field plays a triple role:
-     - registry lookup key (unique across all registered configs),
-     - YAML node name for RPC-driven reload (`traffic_ctl config reload
-       --data '{<key>: {...}}'`),
-     - human-readable label in diagnostics and status output.
-   By convention plugins use their own plugin name as the key (e.g.
-   "my_plugin"). Keep the key alphanumeric + underscore; avoid dots
-   so `traffic_ctl --directive` parsing stays unambiguous. When a
-   plugin owns multiple files that should reload together, use one
-   TSCfgRegister + TSCfgAddFileDependency rather than multiple
-   registrations. Avoid collisions with core entries (e.g. "ip_allow",
-   "sni").
-
-   The optional @c filename_record field lets the operator override the
-   configured @c config_path at runtime via a record (e.g.
-   "proxy.config.my_plugin.filename"). When the record is empty or unset
-   the registered @c config_path is used as the fallback.
-
-   @note Not supported for remap plugins (TSRemapInit / TSRemapNewInstance).
-
-   @param info  Registration parameters; required fields are @c key,
-                @c config_path, and @c handler. Must not be null.
-
-   @return TS_SUCCESS once preconditions pass and registration was attempted.
-           TS_ERROR if:
-             - called outside TSPluginInit(),
-             - called before TSPluginRegister(),
-             - @a info is null or required fields are missing.
-
-   @note Duplicate-key registrations are not signalled via the return value:
-         the framework logs a Warning identifying both the existing owner
-         and the new registrant, and the second registration is dropped
-         (one registration per key). This mirrors how core configs handle
-         the same situation.
+    @param info  Registration parameters.
+    @return TS_SUCCESS on registration attempt, TS_ERROR on precondition fail.
 */
 TSReturnCode TSCfgRegister(const TSCfgRegistrationInfo *info);
 
-/**
-   Wire a record so that changing its value re-runs the reload handler
-   registered for @c key. Internally registers a record-change callback
-   (@c RecRegisterConfigUpdateCb) and routes the event back into the same
-   reload pipeline as file changes: the plugin's @c TSCfgLoadCb is invoked
-   with the resolved file path available via @c TSCfgLoadCtxGetFilename,
-   exactly as it would be for an on-disk file change.
+/** Test whether a key is registered.
 
-   It triggers a reload, nothing else. Specifically the plugin cannot:
-     - Register a free-form record-change callback. There is no
-       @c TSRecordRegisterChangeCb today; the underlying primitive
-       (@c RecRegisterConfigUpdateCb) is internal-only.
-     - Receive record-change details. The handler gets no record name,
-       no old/new value, no event payload. Use @c TSMgmt*Get() inside
-       the handler if it needs the value.
-     - Subscribe a record without a registered config key. Calling with
-       an unknown @a key returns @c TS_ERROR.
-     - Multiplex one record across two keys, or attach in any shape
-       other than (one record, one config key, per call).
+    Plugins that may be loaded more than once (e.g. by an admin retry, or as
+    a remap plugin instance) can use this to skip a duplicate TSCfgRegister
+    call, which would otherwise be silently dropped.
 
-   When the record change is caused by @c "traffic_ctl config reload",
-   the handler runs as a subtask of that reload and surfaces in
-   @c "traffic_ctl config status". When the record is set standalone
-   (@c "traffic_ctl config set" outside a reload cycle), the handler
-   still runs and applies config, but no reload task is created so the
-   invocation is invisible to @c "config status" - same as core
-   record-triggered reloads outside a reload cycle.
+    @param key  Registry key.
+    @return     true if @a key is currently registered (core or plugin).
+*/
+bool TSCfgIsRegistered(std::string_view key);
 
-   Core analog: @c ConfigRegistry::register_config() accepts a
-   @c trigger_records initializer-list at registration time (e.g.
-   @c ssl_multicert lists ~10 record names there), and
-   @c ConfigRegistry::attach(key, record) is the post-registration form.
-   This function is the plugin-facing wrapper for the latter; the
-   initializer-list shape is intentionally not exposed on
-   @c TSCfgRegistrationInfo so the option struct stays ABI-stable.
+/** Attach a record so that changing its value re-runs the handler
+    registered for @a key. Call from TSPluginInit() after TSCfgRegister().
 
-   @note Must be called from TSPluginInit() after TSCfgRegister(). The
-         record must already exist (e.g. created via TSMgmtIntCreate).
-
-   @param key          The config key passed to TSCfgRegister().
-   @param record_name  Fully-qualified record name (e.g., "proxy.config.my_plugin.enabled").
-   @return TS_SUCCESS on success, TS_ERROR if key not found or record invalid.
+    @return TS_SUCCESS on success; TS_ERROR if @a key is unknown.
 */
 TSReturnCode TSCfgAttachReloadTrigger(std::string_view key, std::string_view record_name);
 
-/**
-   Add a companion file dependency to a registered plugin config. When the
-   companion file changes on disk - or when an operator submits inline YAML
-   under @c info->dep_key via JSONRPC, when set - the plugin's config handler
-   is invoked.
+/** Add a companion file dependency to a registered plugin config.
+    Call from TSPluginInit() after TSCfgRegister().
 
-   @note Must be called from TSPluginInit() after TSCfgRegister().
-
-   @param info  Populated TSCfgFileDependencyInfo. Required fields are
-                @c key and @c config_path.
-   @return TS_SUCCESS on success. TS_ERROR if:
-             - called outside TSPluginInit() / before TSPluginRegister(),
-             - @a info is null or required fields are missing,
-             - the parent key has not been registered.
+    @return TS_SUCCESS on success; TS_ERROR on precondition fail.
 */
 TSReturnCode TSCfgAddFileDependency(const TSCfgFileDependencyInfo *info);
 
-/**
-   Mark a load context as in-progress.
-
-   Intended to be called at most once, near the start of the handler, to
-   transition the reload task from CREATED to IN_PROGRESS and optionally
-   attach a single startup message. Subsequent calls are safe (the state
-   transition is a no-op once already IN_PROGRESS) but discouraged: use
-   TSCfgLoadCtxAddLog() for additional progress or diagnostic messages.
-
-   This call does NOT extend the reload timeout; long-running handlers
-   that defer past the configured reload timeout will still be marked
-   TIMEOUT by the core progress monitor.
-
-   Null-safety: passing a nullptr @a ctx makes the call a silent no-op,
-   so handlers can share code between startup loading (no context) and
-   reload (real context). For string arguments, an empty std::string_view
-   means "no message"; do not construct a string_view from a null pointer.
-
-   @param ctx  Context handle, or nullptr for no-op.
-   @param msg  Optional one-line progress message (logged to diags and load
-               status). Pass {} for no message.
+/** Transition the load context to IN_PROGRESS and optionally attach a
+    one-line progress @a msg. Null @a ctx or empty @a msg is a no-op.
 */
 void TSCfgLoadCtxInProgress(TSCfgLoadCtx ctx, std::string_view msg);
 
-/**
-   Report successful config load. Frees the context handle.
-   Do not use @a ctx after this call.
-
-   Null-safe: calling with a nullptr @a ctx is a no-op. An empty @a msg
-   means "no message" - do not construct a string_view from a null pointer.
-
-   @param ctx  Context handle from the TSCfgLoadCb callback, or nullptr.
-   @param msg  Optional human-readable success message (logged to diags and
-               load status). Pass {} for no message.
+/** Report successful config load. Frees @a ctx; do not use after this call.
+    Null @a ctx is a no-op; empty @a msg means no message.
 */
 void TSCfgLoadCtxComplete(TSCfgLoadCtx ctx, std::string_view msg);
 
-/**
-   Report failed config load. Frees the context handle.
-   Do not use @a ctx after this call.
-
-   Null-safe: calling with a nullptr @a ctx is a no-op. An empty @a msg
-   means "no message" - do not construct a string_view from a null pointer.
-
-   @param ctx  Context handle from the TSCfgLoadCb callback, or nullptr.
-   @param msg  Optional human-readable failure message (logged to diags and
-               load status). Pass {} for no message.
+/** Report failed config load. Frees @a ctx; do not use after this call.
+    Null @a ctx is a no-op; empty @a msg means no message.
 */
 void TSCfgLoadCtxFail(TSCfgLoadCtx ctx, std::string_view msg);
 
-/**
-   Log an intermediate message to both diags and the reload task log,
-   without changing state. This is the preferred channel for progress
-   and diagnostic messages emitted between handler entry and the eventual
-   Complete/Fail call (including from deferred continuations); prefer this
-   over repeated TSCfgLoadCtxInProgress() calls.
-
-   Null-safe: calling with a nullptr @a ctx or an empty @a msg is a no-op.
-
-   @param ctx    Context handle from the TSCfgLoadCb callback, or nullptr.
-   @param level  Severity level (TS_CFG_LOG_NOTE / WARNING / ERROR).
-   @param msg    Human-readable message; empty is a no-op.
+/** Log an intermediate message without changing state.
+    Preferred channel for progress/diagnostic messages between handler entry
+    and the eventual Complete/Fail call. Null @a ctx or empty @a msg is a no-op.
 */
 void TSCfgLoadCtxAddLog(TSCfgLoadCtx ctx, TSCfgLogLevel level, std::string_view msg);
 
-/**
-   Create a dependent subtask under this context. The subtask tracks its own
-   status independently and aggregates into the parent's overall state.
-   The returned handle must be completed/failed independently of the parent.
-
-   Null-safe: calling with a nullptr @a ctx returns nullptr. Since all
-   TSCfgLoadCtx* functions are also null-safe, the returned nullptr can be
-   used directly without checking.
-
-   @param ctx          Parent context handle, or nullptr.
-   @param description  Label for the subtask (shown in traffic_ctl config status).
-   @return New context handle for the subtask, or nullptr.
+/** Create a dependent subtask under @a ctx. The returned handle must be
+    completed/failed independently. Null @a ctx returns nullptr.
 */
 TSCfgLoadCtx TSCfgLoadCtxAddSubtask(TSCfgLoadCtx ctx, std::string_view description);
 
-/**
-   Returns the path the framework expects this handler to read.
-
-   Two-step resolution:
-     1. If the registration's @c filename_record was set AND the record
-        currently has a non-empty value, that value is returned (the
-        operator can override the filename at runtime via
-        @c "traffic_ctl config set <record>").
-     2. Otherwise, returns @c config_path as-registered.
-
-   Most plugins don't set @c filename_record and could equivalently use
-   their own stashed copy of the registered path; this function is the
-   canonical way to get the filename only when @c filename_record is in
-   play. Always populated for plugin handlers, including on RPC
-   reloads. To detect RPC content, check
-   @c TSCfgLoadCtxGetSuppliedYaml(ctx) - not this function.
-
-   Core analog: @c ConfigReloadTask::get_filename(). For core handlers,
-   the value is empty on RPC reloads; the plugin wrapper always
-   populates it so plugins can use @c SuppliedYaml as the canonical
-   RPC-detection signal.
-
-   Null-safe: calling with nullptr returns an empty string_view.
-
-   @param ctx  Context handle from the TSCfgLoadCb callback, or nullptr.
-   @return     Path string. Valid until TSCfgLoadCtxComplete/Fail. The view
-               points into storage owned by the context handle; do not retain
-               past the completing call. The underlying buffer is
-               null-terminated, so .data() may be passed where a C string is
-               expected, but prefer string_view-aware APIs.
+/** Resolved file path the framework expects this handler to read.
+    Returns the registration's @c config_path, or the current value of
+    @c filename_record if one was registered and is non-empty.
+    Valid until the completing call.
 */
 std::string_view TSCfgLoadCtxGetFilename(TSCfgLoadCtx ctx);
 
-/**
-   Get the reload token identifying the current reload cycle.
-
-   All tasks within the same reload share the same token. Useful for
-   correlating log entries or diagnostics across handlers.
-
-   Null-safe: calling with nullptr returns an empty string_view.
-
-   @param ctx  Context handle from the TSCfgLoadCb callback, or nullptr.
-   @return     Token string. Valid until TSCfgLoadCtxComplete/Fail. The view
-               points into storage owned by the context handle; do not retain
-               past the completing call. The underlying buffer is
-               null-terminated.
+/** Reload token identifying the current reload cycle.
+    Valid until the completing call.
 */
 std::string_view TSCfgLoadCtxGetReloadToken(TSCfgLoadCtx ctx);
 
-/**
-   Get RPC-supplied YAML content for this load.
-
-   For file-based reloads this returns nullptr. For RPC reloads (when the config
-   was registered with TS_CFG_SOURCE_FILE_AND_RPC), returns an opaque TSYaml
-   handle that can be cast to YAML::Node*.
-
-   Null-safe: calling with nullptr returns nullptr.
-
-   @param ctx  Context handle from the TSCfgLoadCb callback.
-   @return     TSYaml handle, or nullptr if this is a file-based reload.
+/** RPC-supplied YAML content for this load, or nullptr for file reloads.
+    Cast to YAML::Node*.
 */
 TSYaml TSCfgLoadCtxGetSuppliedYaml(TSCfgLoadCtx ctx);
 
-/**  Get reload directives extracted from the _reload key in RPC-supplied YAML.
-   Directives are operational parameters (e.g. scope) that modify how
-   the handler performs the reload - distinct from config content itself.
-   The framework strips _reload from the supplied node, so TSCfgLoadCtxGetSuppliedYaml
-   never contains _reload.
-
-   Null-safe: calling with nullptr returns nullptr.
-
-   @param ctx  Context handle from the TSCfgLoadCb callback.
-   @return     TSYaml handle, or nullptr if no directives were provided.
+/** RPC-supplied reload directives (the _reload key, extracted from the
+    supplied YAML by the framework), or nullptr if none were provided.
 */
 TSYaml TSCfgLoadCtxGetReloadDirectives(TSCfgLoadCtx ctx);
 
