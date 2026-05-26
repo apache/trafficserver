@@ -3424,7 +3424,8 @@ TSCfgAttachReloadTrigger(std::string_view key, std::string_view record_name)
   std::string key_str{key};
   std::string record_str{record_name};
   if (config::ConfigRegistry::Get_Instance().attach(key_str, record_str.c_str()) != 0) {
-    Dbg(dbg_ctl_plugin_config, "[%s] TSCfgAttachReloadTrigger: key '%s' not found", plugin_name, key_str.c_str());
+    Dbg(dbg_ctl_plugin_config, "[%s] TSCfgAttachReloadTrigger: attach failed (key='%s', record='%s')", plugin_name, key_str.c_str(),
+        record_str.c_str());
     return TS_ERROR;
   }
 
@@ -3464,7 +3465,8 @@ TSCfgAddFileDependency(const TSCfgFileDependencyInfo *info)
              registry.add_file_dependency(key_str, filename_record_arg, path_str.c_str(), info->is_required);
 
   if (rc != 0) {
-    Dbg(dbg_ctl_plugin_config, "[%s] TSCfgAddFileDependency: key '%s' not found", plugin_name, key_str.c_str());
+    Dbg(dbg_ctl_plugin_config, "[%s] TSCfgAddFileDependency: registration failed (key='%s', dep_key='%s', file='%s')", plugin_name,
+        key_str.c_str(), dep_key_str.c_str(), path_str.c_str());
     return TS_ERROR;
   }
 
