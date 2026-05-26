@@ -130,3 +130,44 @@ TEST_CASE("HdrHeap", "[proxy][hdrheap]")
   // Clean up
   heap->destroy();
 }
+
+TEST_CASE("HdrHeap check_marshalled rejects corrupt data", "[proxy][hdrheap]")
+{
+  HdrHeap *heap = new_HdrHeap();
+  URLImpl *url  = url_create(heap);
+  url->set_path(heap, "/test", 5, true);
+
+  char buf[2048];
+  int len = heap->marshal(buf, sizeof(buf));
+  REQUIRE(len > 0);
+
+  auto *hdr = reinterpret_cast<HdrHeap *>(buf);
+
+  SECTION("valid marshalled buffer passes") { CHECK(hdr->check_marshalled(len) == true); }
+
+  SECTION("negative m_heap_len is rejected")
+  {
+    hdr->m_ronly_heap[0].m_heap_len = -1;
+    CHECK(hdr->check_marshalled(len) == false);
+  }
+
+  SECTION("m_heap_len exceeding buf_length is rejected")
+  {
+    hdr->m_ronly_heap[0].m_heap_len = len;
+    CHECK(hdr->check_marshalled(len) == false);
+  }
+
+  SECTION("m_heap_start inconsistent with m_size is rejected")
+  {
+    hdr->m_ronly_heap[0].m_heap_start = reinterpret_cast<char *>(static_cast<intptr_t>(hdr->m_size + 1));
+    CHECK(hdr->check_marshalled(len) == false);
+  }
+
+  SECTION("m_size smaller than HDR_HEAP_HDR_SIZE is rejected")
+  {
+    hdr->m_size = 1;
+    CHECK(hdr->check_marshalled(len) == false);
+  }
+
+  heap->destroy();
+}

@@ -838,7 +838,11 @@ HdrHeap::check_marshalled(uint32_t buf_length)
     return false;
   }
 
-  if ((uintptr_t)(this->m_size + m_ronly_heap[0].m_heap_start) > buf_length) {
+  if (m_ronly_heap[0].m_heap_len < 0) {
+    return false;
+  }
+
+  if (static_cast<uint64_t>(this->m_size) + static_cast<uint64_t>(m_ronly_heap[0].m_heap_len) > buf_length) {
     return false;
   }
 
@@ -881,11 +885,15 @@ HdrHeap::unmarshal(int buf_length, int obj_type, HdrHeapObjImpl **found_obj, Ref
     return -1;
   }
 
-  int unmarshal_size = this->unmarshal_size();
-  if (unmarshal_size > buf_length) {
+  if (m_size < static_cast<uint32_t>(HDR_HEAP_HDR_SIZE) || // heap too small for header
+      m_size != (uintptr_t)m_ronly_heap[0].m_heap_start || // string heap offset inconsistent
+      m_ronly_heap[0].m_heap_len < 0 ||                    // invalid string heap length
+      buf_length < 0 ||                                    // invalid buf_length
+      static_cast<uint64_t>(m_size) + static_cast<uint64_t>(m_ronly_heap[0].m_heap_len) > static_cast<uint64_t>(buf_length)) {
     ink_assert(!"HdrHeap::unmarshal truncated header");
     return -1;
   }
+  int unmarshal_size = this->unmarshal_size();
 #ifdef HDR_HEAP_CHECKSUMS
   if (m_free_start != NULL) {
     uint32_t stored_sum = (uint32_t)m_free_start;
