@@ -178,6 +178,67 @@ TEST_CASE("Test SSLSNIConfig")
     REQUIRE(actions.first);
     REQUIRE(actions.first->size() == 2);
   }
+
+  SECTION("Wildcard fqdn does not match when the input has trailing content past the wildcarded suffix")
+  {
+    // *.bar.com must not match foo.bar.com.extra.com -- the regex must
+    // consume the entire SNI, not just a prefix of it.
+    auto const &actions{params.get("foo.bar.com.extra.com", 443)};
+    CHECK(!actions.first);
+  }
+
+  SECTION("get_property_config matches an exact fqdn")
+  {
+    CHECK(params.get_property_config("foo.bar.com") != nullptr);
+  }
+
+  SECTION("get_property_config matches a wildcard fqdn")
+  {
+    CHECK(params.get_property_config("baz.bar.com") != nullptr);
+  }
+
+  SECTION("get_property_config does not match when the input has trailing content past an exact fqdn")
+  {
+    // foo.bar.com is stored as a regex in next_hop_list; the lookup must
+    // not accept foo.bar.com.extra.com as a match.
+    CHECK(params.get_property_config("foo.bar.com.extra.com") == nullptr);
+  }
+
+  SECTION("get_property_config does not match when the input has trailing content past a wildcard fqdn")
+  {
+    CHECK(params.get_property_config("baz.bar.com.extra.com") == nullptr);
+  }
+
+  SECTION("get_property_config does not match when the input has leading content before an exact fqdn")
+  {
+    // allports.com is stored as a regex in next_hop_list; RE_ANCHORED at
+    // compile time should keep the lookup from matching prefix.allports.com.
+    // Use allports.com (which has no wildcard sibling in the test config)
+    // so the lookup cannot legitimately match via *.something.
+    CHECK(params.get_property_config("prefix.allports.com") == nullptr);
+  }
+
+  SECTION("get_property_config does not match when the input has trailing content past an exact-only fqdn")
+  {
+    // Mirror of the prefix case: allports.com has no wildcard sibling, so
+    // this isolates the exact-entry path in next_hop_list.
+    CHECK(params.get_property_config("allports.com.extra.com") == nullptr);
+  }
+
+  SECTION("get for an exact fqdn does not match when the input has leading content")
+  {
+    // Exact fqdns live in sni_action_map (hash-keyed), so a prefixed
+    // input must not produce a hit.
+    auto const &actions{params.get("prefix.allports.com", 1)};
+    CHECK(!actions.first);
+  }
+
+  SECTION("get for an exact-only fqdn does not match when the input has trailing content")
+  {
+    // Mirror of the prefix case for the hash-keyed path.
+    auto const &actions{params.get("allports.com.extra.com", 1)};
+    CHECK(!actions.first);
+  }
 }
 
 TEST_CASE("SNIConfig reconfigure callback is invoked")

@@ -883,3 +883,95 @@ TEST_CASE("RegexMatchContext", "[libts][Regex][RegexMatchContext]")
   REQUIRE(r.compile(item.regex) == item.valid);
   REQUIRE(r.exec(item.str, matches, 0, &match_context) == item.rcode);
 }
+
+TEST_CASE("Regex RE_FULL_MATCH rejects trailing content", "[libts][Regex][full_match]")
+{
+  Regex re;
+  REQUIRE(re.compile(R"(example\.com)", REFlags::RE_ANCHORED));
+
+  RegexMatches matches;
+
+  SECTION("exact input matches with RE_FULL_MATCH")
+  {
+    REQUIRE(re.exec("example.com", matches, REFlags::RE_FULL_MATCH) > 0);
+  }
+
+  SECTION("trailing content rejected with RE_FULL_MATCH")
+  {
+    int rc = re.exec("example.com.evil", matches, REFlags::RE_FULL_MATCH);
+    REQUIRE(rc == RE_ERROR_NOMATCH);
+  }
+
+  SECTION("trailing content still matches without RE_FULL_MATCH")
+  {
+    REQUIRE(re.exec("example.com.evil", matches) > 0);
+  }
+
+  SECTION("bool exec overload honors RE_FULL_MATCH")
+  {
+    REQUIRE(re.exec("example.com", REFlags::RE_FULL_MATCH));
+    REQUIRE_FALSE(re.exec("example.com.evil", REFlags::RE_FULL_MATCH));
+  }
+}
+
+TEST_CASE("Regex RE_FULL_MATCH preserves capture groups and combines with other flags", "[libts][Regex][full_match]")
+{
+  RegexMatches matches;
+
+  SECTION("captures available on full match")
+  {
+    Regex re;
+    REQUIRE(re.compile(R"(^([a-z]+)\.([a-z]+)$)"));
+    REQUIRE(re.exec("foo.bar", matches, REFlags::RE_FULL_MATCH) == 3);
+    REQUIRE(matches[1] == "foo");
+    REQUIRE(matches[2] == "bar");
+  }
+
+  SECTION("RE_FULL_MATCH composes with RE_CASE_INSENSITIVE")
+  {
+    Regex re;
+    REQUIRE(re.compile(R"(example\.com)", REFlags::RE_CASE_INSENSITIVE | REFlags::RE_ANCHORED));
+    REQUIRE(re.exec("EXAMPLE.COM", matches, REFlags::RE_FULL_MATCH) > 0);
+    REQUIRE(re.exec("EXAMPLE.COM.evil", matches, REFlags::RE_FULL_MATCH) == RE_ERROR_NOMATCH);
+  }
+
+  SECTION("matches._size reflects RE_ERROR_NOMATCH on length-rejected match")
+  {
+    Regex re;
+    REQUIRE(re.compile(R"(foo)"));
+    REQUIRE(re.exec("foobar", matches, REFlags::RE_FULL_MATCH) == RE_ERROR_NOMATCH);
+    REQUIRE(matches.size() == RE_ERROR_NOMATCH);
+  }
+}
+
+TEST_CASE("DFA RE_FULL_MATCH applied at compile time", "[libts][DFA][full_match]")
+{
+  SECTION("trailing content rejected when DFA compiled with RE_FULL_MATCH")
+  {
+    DFA              dfa;
+    std::string_view pattern = R"(example\.com)";
+    REQUIRE(dfa.compile(pattern, REFlags::RE_FULL_MATCH) == 1);
+
+    REQUIRE(dfa.match("example.com") == 0);
+    REQUIRE(dfa.match("example.com.evil") == -1);
+  }
+
+  SECTION("multi-pattern DFA: RE_FULL_MATCH applies to all patterns")
+  {
+    std::vector<std::string_view> patterns = {R"(foo)", R"(bar)"};
+    DFA                           dfa;
+    REQUIRE(dfa.compile(patterns.data(), patterns.size(), REFlags::RE_FULL_MATCH) == 2);
+
+    REQUIRE(dfa.match("foo") == 0);
+    REQUIRE(dfa.match("bar") == 1);
+    REQUIRE(dfa.match("foobar") == -1);
+    REQUIRE(dfa.match("barbaz") == -1);
+  }
+
+  SECTION("DFA without RE_FULL_MATCH still permits trailing content (existing behavior)")
+  {
+    DFA dfa;
+    REQUIRE(dfa.compile(R"(foo)") == 1);
+    REQUIRE(dfa.match("foobar") == 0);
+  }
+}
