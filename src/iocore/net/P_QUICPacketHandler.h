@@ -26,8 +26,13 @@
 #include "P_NetAccept.h"
 #include "P_QUICClosedConCollector.h"
 #include "iocore/net/UDPConnection.h"
+#include "tscore/ink_config.h"
 
+#if TS_HAS_OPENSSL_QUIC
+#include <openssl/ssl.h>
+#elif TS_HAS_QUICHE
 #include <quiche.h>
+#endif
 
 class QUICNetVConnection;
 class QUICConnectionTable;
@@ -54,7 +59,11 @@ protected:
 class QUICPacketHandlerIn : public NetAccept, public QUICPacketHandler
 {
 public:
-  QUICPacketHandlerIn(const NetProcessor::AcceptOptions &opt, QUICConnectionTable &ctable, quiche_config &config);
+#if TS_HAS_OPENSSL_QUIC
+  QUICPacketHandlerIn(NetProcessor::AcceptOptions const &opt);
+#elif TS_HAS_QUICHE
+  QUICPacketHandlerIn(NetProcessor::AcceptOptions const &opt, QUICConnectionTable &ctable, quiche_config &config);
+#endif
   ~QUICPacketHandlerIn();
 
   // NetAccept
@@ -68,10 +77,21 @@ protected:
   Continuation *_get_continuation() override;
 
 private:
+#if TS_HAS_OPENSSL_QUIC
+  SSL   *_listener = nullptr;
+  Event *_event    = nullptr;
+#elif TS_HAS_QUICHE
   QUICConnectionTable &_ctable;
   quiche_config       &_quiche_config;
+#endif
 
   void _recv_packet(int event, UDPPacket *udpPacket) override;
+
+#if TS_HAS_OPENSSL_QUIC
+  bool _start_listener();
+  void _service_listener();
+  void _schedule_event();
+#endif
 };
 
 class QUICPacketHandlerOut : public Continuation, public QUICPacketHandler

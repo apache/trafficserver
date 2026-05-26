@@ -54,8 +54,7 @@ QUIC::init()
 int
 QUIC::ssl_client_new_session([[maybe_unused]] SSL *ssl, [[maybe_unused]] SSL_SESSION *session)
 {
-#if TS_HAS_QUICHE
-#else
+#if !TS_HAS_OPENSSL_QUIC && !TS_HAS_QUICHE
   QUICTLS    *qtls         = static_cast<QUICTLS *>(SSL_get_ex_data(ssl, QUIC::ssl_quic_tls_index));
   const char *session_file = qtls->session_file();
   auto        file         = BIO_new_file(session_file, "w");
