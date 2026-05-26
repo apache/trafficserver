@@ -160,8 +160,12 @@ CacheScan::unmarshal(HdrHeap *hh, int buf_length, int obj_type, HdrHeapObjImpl *
     return zret;
   }
 
-  int unmarshal_size = hh->unmarshal_size();
-  if (unmarshal_size > buf_length) {
+  if (hh->m_size < static_cast<uint32_t>(HDR_HEAP_HDR_SIZE) ||     // heap too small for header
+      hh->m_size != (uintptr_t)hh->m_ronly_heap[0].m_heap_start || // string heap offset inconsistent
+      hh->m_ronly_heap[0].m_heap_len < 0 ||                        // invalid string heap length
+      buf_length < 0 ||                                            // invalid buf_length
+      static_cast<uint64_t>(hh->m_size) + static_cast<uint64_t>(hh->m_ronly_heap[0].m_heap_len) >
+        static_cast<uint64_t>(buf_length)) {
     ink_assert(!"HdrHeap::unmarshal truncated header");
     return zret;
   }
