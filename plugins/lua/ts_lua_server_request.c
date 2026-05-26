@@ -1100,6 +1100,8 @@ ts_lua_server_request_get_method(lua_State *L)
 
   GET_HTTP_CONTEXT(http_ctx, L);
 
+  TS_LUA_CHECK_SERVER_REQUEST_HDR(http_ctx);
+
   method = TSHttpHdrMethodGet(http_ctx->server_request_bufp, http_ctx->server_request_hdrp, &method_len);
 
   if (method && method_len) {
@@ -1120,6 +1122,8 @@ ts_lua_server_request_set_method(lua_State *L)
   ts_lua_http_ctx *http_ctx;
 
   GET_HTTP_CONTEXT(http_ctx, L);
+
+  TS_LUA_CHECK_SERVER_REQUEST_HDR(http_ctx);
 
   method = luaL_checklstring(L, 1, &method_len);
 
