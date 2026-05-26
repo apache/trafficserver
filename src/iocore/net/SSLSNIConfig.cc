@@ -116,8 +116,10 @@ SNIConfigParams::get_property_config(const std::string &servername) const
 {
   const NextHopProperty *nps = nullptr;
   for (auto &&item : next_hop_list) {
-    if (pcre_exec(item.match.get(), nullptr, servername.c_str(), servername.length(), 0, 0, nullptr, 0) >= 0) {
-      // Found a match
+    int ovector[3];
+    if (auto offset = pcre_exec(item.match.get(), nullptr, servername.c_str(), servername.length(), 0, 0, ovector, 3);
+        offset >= 0 && ovector[0] == 0 && ovector[1] == static_cast<int>(servername.length())) {
+      // Full-match required: prevent partial-match SNI policy bypass.
       nps = &item.prop;
       break;
     }
@@ -247,14 +249,14 @@ SNIConfigParams::get(std::string_view servername, in_port_t dest_incoming_port) 
       if (!is_port_in_the_ranges(retval.inbound_port_ranges, dest_incoming_port)) {
         continue;
       }
+      // Require the match to consume the full subject; otherwise partial
+      // matches like "example.com" against "example.com.evil" can bypass
+      // the SNI policy.
+      if (ovector[0] != 0 || ovector[1] != length) {
+        continue;
+      }
       if (offset == 1) {
-        // first pair identify the portion of the subject string matched by the entire pattern
-        if (ovector[0] == 0 && ovector[1] == length) {
-          // full match
-          return {&retval.actions, {}};
-        } else {
-          continue;
-        }
+        return {&retval.actions, {}};
       }
       // If contains groups
       if (offset == 0) {
