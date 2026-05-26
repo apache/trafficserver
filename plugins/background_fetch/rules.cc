@@ -78,11 +78,13 @@ check_value(TSHttpTxn txnp, BgFetchRule::size_cmp_type const &cmp)
   TSMLoc loc = TSMimeHdrFieldFind(hdr_bufp, hdr_loc, TS_MIME_FIELD_CONTENT_LENGTH, TS_MIME_LEN_CONTENT_LENGTH);
   if (TS_NULL_MLOC == loc) {
     Dbg(Bg_dbg_ctl, "No content-length field in resp");
+    TSHandleMLocRelease(hdr_bufp, TS_NULL_MLOC, hdr_loc);
     return false; // Field not found.
   }
 
   auto content_len = TSMimeHdrFieldValueUintGet(hdr_bufp, hdr_loc, loc, 0 /* index */);
   TSHandleMLocRelease(hdr_bufp, hdr_loc, loc);
+  TSHandleMLocRelease(hdr_bufp, TS_NULL_MLOC, hdr_loc);
 
   if (cmp._op == BgFetchRule::size_cmp_type::OP::GREATER_THAN_OR_EQUAL) {
     return content_len >= cmp._size;
@@ -108,11 +110,14 @@ check_value(TSHttpTxn txnp, BgFetchRule::field_cmp_type const &cmp)
 
   if (TS_NULL_MLOC == loc) {
     Dbg(Bg_dbg_ctl, "no field %s in request header", cmp._name.c_str());
+    TSHandleMLocRelease(hdr_bufp, TS_NULL_MLOC, hdr_loc);
     return false;
   }
 
-  if (cmp._name.size() == 1 && cmp._name.front() == '*') {
+  if (cmp._value.size() == 1 && cmp._value.front() == '*') {
     Dbg(Bg_dbg_ctl, "Found %s wild card", cmp._name.c_str());
+    TSHandleMLocRelease(hdr_bufp, hdr_loc, loc);
+    TSHandleMLocRelease(hdr_bufp, TS_NULL_MLOC, hdr_loc);
     return true;
   }
 
@@ -127,6 +132,7 @@ check_value(TSHttpTxn txnp, BgFetchRule::field_cmp_type const &cmp)
     zret = std::string_view::npos != std::string_view(val_str, val_len).find(cmp._value);
   }
   TSHandleMLocRelease(hdr_bufp, hdr_loc, loc);
+  TSHandleMLocRelease(hdr_bufp, TS_NULL_MLOC, hdr_loc);
   return zret;
 }
 
