@@ -1077,6 +1077,11 @@ ContentTypeHandler::nextObjectHeader(TSMBuffer bufp, TSMLoc hdr_loc)
     const char *value;
     int         value_len;
     int         n_values = TSMimeHdrFieldValuesCount(bufp, hdr_loc, field_loc);
+    if (n_values <= 0 && !_content_type_allowlist.empty()) {
+      // An empty Content-Type field with a non-empty allowlist must not pass.
+      TSHandleMLocRelease(bufp, hdr_loc, field_loc);
+      return false;
+    }
     for (int i = 0; i < n_values; ++i) {
       value = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, i, &value_len);
       swoc::TextView tv{value, size_t(value_len)};
@@ -1086,9 +1091,11 @@ ContentTypeHandler::nextObjectHeader(TSMBuffer bufp, TSMLoc hdr_loc)
       } else if (std::find_if(_content_type_allowlist.begin(), _content_type_allowlist.end(), [tv](swoc::TextView tv2) -> bool {
                    return strcasecmp(tv, tv2) == 0;
                  }) == _content_type_allowlist.end()) {
+        TSHandleMLocRelease(bufp, hdr_loc, field_loc);
         return false;
       } else if (tv.empty()) {
         // allowlist is bad, contains an empty string.
+        TSHandleMLocRelease(bufp, hdr_loc, field_loc);
         return false;
       }
       if (!_added_content_type) {
