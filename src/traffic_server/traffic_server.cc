@@ -87,6 +87,7 @@ extern "C" int plock(int);
 #include "records/RecordsConfig.h"
 #include "iocore/eventsystem/RecProcess.h"
 #include "proxy/Transform.h"
+#include "proxy/ReverseProxy.h"
 #include "iocore/eventsystem/ConfigProcessor.h"
 #include "proxy/http/HttpProxyServerMain.h"
 #include "proxy/http/HttpBodyFactory.h"
@@ -279,6 +280,8 @@ struct AutoStopCont : public Continuation {
     if (jsonrpcServer != nullptr) {
       jsonrpcServer->stop_thread();
     }
+
+    shutdown_url_rewrite();
 
     TSSystemState::shut_down_event_system();
     delete this;

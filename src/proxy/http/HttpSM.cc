@@ -255,7 +255,7 @@ HttpSM::~HttpSM()
   http_parser_clear(&http_parser);
 
   HttpConfig::release(t_state.http_config_param);
-  m_remap->release();
+  m_remap.reset();
 
   cache_sm.cancel_pending_action();
 
@@ -296,8 +296,9 @@ HttpSM::init(bool from_early_data)
   t_state.state_machine = this;
 
   t_state.http_config_param = HttpConfig::acquire();
-  // Acquire a lease on the global remap / rewrite table (stupid global name ...)
-  m_remap = rewrite_table->acquire();
+  // Snapshot the global remap / rewrite table.  shared_ptr keeps it alive across the txn
+  // even if reload swaps the global pointer concurrently.
+  m_remap = rewrite_table.load(std::memory_order_acquire);
 
   // Simply point to the global config for the time being, no need to copy this
   // entire struct if nothing is going to change it.
@@ -4451,7 +4452,7 @@ HttpSM::state_remap_request(int event, void * /* data ATS_UNUSED */)
   case EVENT_REMAP_COMPLETE: {
     pending_action = nullptr;
     SMDbg(dbg_ctl_url_rewrite, "completed processor-based remapping request");
-    t_state.url_remap_success = remapProcessor.finish_remap(&t_state, m_remap);
+    t_state.url_remap_success = remapProcessor.finish_remap(&t_state, m_remap.get());
     call_transact_and_set_next_state(nullptr);
     break;
   }
@@ -4529,7 +4530,7 @@ HttpSM::do_remap_request(bool run_inline)
 {
   SMDbg(dbg_ctl_http_seq, "Remapping request");
   SMDbg(dbg_ctl_url_rewrite, "Starting a possible remapping for request");
-  bool ret = remapProcessor.setup_for_remap(&t_state, m_remap);
+  bool ret = remapProcessor.setup_for_remap(&t_state, m_remap.get());
 
   check_sni_host();
 
@@ -8073,7 +8074,7 @@ HttpSM::set_next_state()
   case HttpTransact::SM_ACTION_REMAP_REQUEST: {
     do_remap_request(true); /* run inline */
     SMDbg(dbg_ctl_url_rewrite, "completed inline remapping request");
-    t_state.url_remap_success = remapProcessor.finish_remap(&t_state, m_remap);
+    t_state.url_remap_success = remapProcessor.finish_remap(&t_state, m_remap.get());
     if (t_state.next_action == HttpTransact::SM_ACTION_SEND_ERROR_CACHE_NOOP && t_state.transact_return_point == nullptr) {
       // It appears that we can now set the next_action to error and transact_return_point to nullptr when
       // going through do_remap_request presumably due to a plugin setting an error.  In that case, it seems
