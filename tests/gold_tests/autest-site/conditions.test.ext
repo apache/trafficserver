@@ -20,6 +20,110 @@ import os
 import subprocess
 import json
 import re
+import tempfile
+import time
+
+from ports import get_port_number
+
+OPENSSL_TLS_FLAGS = {
+    "1.0": "-tls1",
+    "1.1": "-tls1_1",
+    "1.2": "-tls1_2",
+    "1.3": "-tls1_3",
+}
+
+
+def _terminate_process(process):
+    if process.poll() is not None:
+        return
+    try:
+        process.terminate()
+        process.wait(timeout=2)
+    except (OSError, subprocess.TimeoutExpired):
+        try:
+            process.kill()
+            process.wait(timeout=2)
+        except (OSError, subprocess.TimeoutExpired):
+            pass
+
+
+def _probe_openssl_server(tls_version, client_probe):
+    """Run a local OpenSSL server for TLS capability probes.
+
+    This owns the temporary certificate, port allocation, and server process
+    lifecycle so AuTest conditions can perform a real handshake with the client
+    being checked. Local setup failures return ``False`` so callers can skip
+    dependent tests instead of failing the harness.
+
+    :param tls_version: TLS version string to look up in
+        ``OPENSSL_TLS_FLAGS``.
+    :param client_probe: Callable that receives the server port and TLS flag
+        and returns whether the client completed the expected handshake.
+    :returns: ``True`` if the client probe succeeds against the local server,
+        otherwise ``False``.
+    """
+    tls_flag = OPENSSL_TLS_FLAGS.get(tls_version)
+    if tls_flag is None:
+        return False
+
+    try:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            cert_path = os.path.join(tmpdir, "cert.pem")
+            key_path = os.path.join(tmpdir, "key.pem")
+            result = subprocess.run(
+                [
+                    "openssl",
+                    "req",
+                    "-x509",
+                    "-newkey",
+                    "rsa:2048",
+                    "-nodes",
+                    "-sha256",
+                    "-keyout",
+                    key_path,
+                    "-out",
+                    cert_path,
+                    "-subj",
+                    "/CN=localhost",
+                    "-days",
+                    "1",
+                ],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                timeout=10,
+            )
+            if result.returncode != 0:
+                return False
+
+            with get_port_number() as port:
+                server = subprocess.Popen(
+                    [
+                        "openssl",
+                        "s_server",
+                        "-quiet",
+                        "-accept",
+                        f"127.0.0.1:{port}",
+                        "-cert",
+                        cert_path,
+                        "-key",
+                        key_path,
+                        tls_flag,
+                        "-cipher",
+                        "DEFAULT@SECLEVEL=0",
+                        "-www",
+                    ],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                )
+                try:
+                    time.sleep(0.5)
+                    if server.poll() is not None:
+                        return False
+                    return client_probe(port, tls_flag)
+                finally:
+                    _terminate_process(server)
+    except (OSError, subprocess.SubprocessError):
+        return False
 
 
 def HasOpenSSLVersion(self, version):
@@ -67,38 +171,39 @@ def HasLegacyTLSSupport(self):
     always disable both legacy versions together. If TLSv1.0 is unavailable,
     TLSv1.1 will be too.
 
-    The check connects to localhost on a closed port to avoid any external
-    network dependency. A "connection refused" error means the TLS protocol
-    was available but nothing was listening; "no protocols available" means
-    the crypto-policy blocked TLSv1.0 entirely.
+    The check starts a local OpenSSL server and uses an OpenSSL client to
+    complete a real TLSv1.0 handshake. This avoids external network dependency
+    while catching environments that accept legacy TLS command-line flags but
+    reject the protocol during an actual handshake.
     """
 
     def check_tls1_support():
-        try:
-            # Connect to localhost on a port nothing is listening on.
-            # This avoids external network dependency while still detecting
-            # whether the crypto-policy allows TLSv1.0.
-            result = subprocess.run(
-                ['openssl', 's_client', '-tls1', '-connect', '127.0.0.1:1'],
-                capture_output=True,
-                text=True,
-                timeout=5,
-                input=''  # Don't wait for interactive input
-            )
-            output = result.stdout + result.stderr
-            # "no protocols available" means TLSv1 is disabled by crypto-policy
-            if 'no protocols available' in output:
+
+        def client_probe(port, tls_flag):
+            try:
+                result = subprocess.run(
+                    [
+                        'openssl',
+                        's_client',
+                        tls_flag,
+                        '-connect',
+                        f'127.0.0.1:{port}',
+                        '-cipher',
+                        'DEFAULT@SECLEVEL=0',
+                        '-brief',
+                    ],
+                    capture_output=True,
+                    text=True,
+                    timeout=5,
+                    input='Q\n')
+                output = result.stdout + result.stderr
+                return result.returncode == 0 and 'Protocol version: TLSv1' in output
+            except subprocess.TimeoutExpired:
                 return False
-            # Connection refused or other errors mean TLSv1 was attempted
-            # (the protocol is available, just no server listening)
-            return True
-        except subprocess.TimeoutExpired:
-            # Timeout on localhost shouldn't happen, but if it does,
-            # assume TLSv1 is not available (safer than false positive)
-            return False
-        except Exception:
-            # If we can't determine, assume TLSv1 is not available (safer)
-            return False
+            except Exception:
+                return False
+
+        return _probe_openssl_server("1.0", client_probe)
 
     return self.Condition(check_tls1_support, "System does not support legacy TLS protocols (TLSv1.0/TLSv1.1)")
 
@@ -154,7 +259,6 @@ def HasCurlTLSVersionSupport(self, tls_version):
     """
 
     def check_curl_tls_support():
-        # Map semantic versions used by tests to curl flags.
         version_map = {
             "1.0": ("--tlsv1", "1.0"),
             "1.1": ("--tlsv1.1", "1.1"),
@@ -165,43 +269,36 @@ def HasCurlTLSVersionSupport(self, tls_version):
             return False
 
         tls_flag, tls_max = version_map[tls_version]
-        try:
-            # Connect to localhost closed port to avoid network dependencies.
-            # "connection refused" means curl accepted the TLS flags and tried.
-            result = subprocess.run(
-                [
-                    "curl",
-                    "-svk",
-                    "--connect-timeout",
-                    "2",
-                    "--max-time",
-                    "3",
-                    tls_flag,
-                    "--tls-max",
-                    tls_max,
-                    "https://127.0.0.1:1",
-                ],
-                capture_output=True,
-                text=True,
-                timeout=5,
-            )
-            output = (result.stdout + result.stderr).lower()
-            unsupported_markers = [
-                "unsupported protocol",
-                "no protocols available",
-                "option --tlsv",
-                "unknown option",
-                "is unknown",
-            ]
-            if any(marker in output for marker in unsupported_markers):
+
+        def client_probe(port, _tls_flag):
+            try:
+                result = subprocess.run(
+                    [
+                        "curl",
+                        "-svk",
+                        "--connect-timeout",
+                        "2",
+                        "--max-time",
+                        "5",
+                        "--ciphers",
+                        "DEFAULT@SECLEVEL=0",
+                        tls_flag,
+                        "--tls-max",
+                        tls_max,
+                        f"https://127.0.0.1:{port}/",
+                    ],
+                    capture_output=True,
+                    text=True,
+                    timeout=7,
+                )
+                output = (result.stdout + result.stderr).lower()
+                return result.returncode == 0 and f"ssl connection using tlsv{tls_version}" in output
+            except subprocess.TimeoutExpired:
+                return False
+            except Exception:
                 return False
 
-            # Any attempt to connect implies curl accepted the TLS setting.
-            return True
-        except subprocess.TimeoutExpired:
-            return False
-        except Exception:
-            return False
+        return _probe_openssl_server(tls_version, client_probe)
 
     return self.Condition(
         check_curl_tls_support, "Curl does not support TLSv{version} in this environment".format(version=tls_version))
