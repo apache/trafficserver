@@ -463,6 +463,8 @@ class InverseSymbolResolver(SymbolResolverBase):
             special = self._resolve_ambiguous_exact(tag, section)
             if special is not None:
                 return special, False
+            if (bare_map := tables.REVERSE_RESOLUTION_MAP.get("BARE_TAG_MAP")) and (bare_ident := bare_map.get(tag)) is not None:
+                return bare_ident, False
             raise SymbolResolutionError(percent, "Missing payload for prefix condition")
 
         result = self._resolve_fallback_tag(tag, payload, section)
