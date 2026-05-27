@@ -43,12 +43,14 @@
 #include "proxy/http/remap/UrlMapping.h"
 #include "mgmt/config/ConfigContext.h"
 
+#include "tsutil/AtomicSharedPtr.h"
+
 #define EMPTY_PORT_MAPPING (int32_t) ~0
 
 class url_mapping;
 struct host_hdr_info;
 
-extern std::atomic<UrlRewrite *> rewrite_table;
+extern AtomicSharedPtr<UrlRewrite> rewrite_table;
 
 // API Functions
 int init_reverse_proxy();
@@ -61,4 +63,10 @@ bool reloadUrlRewrite(ConfigContext ctx);
 bool urlRewriteVerify();
 
 void init_remap_volume_host_records();
-int  url_rewrite_CB(const char *name, RecDataT data_type, RecData data, void *cookie);
+
+// Synchronously drops rewrite_table.  Call from a Continuation context
+// before TSSystemState::shut_down_event_system() so plugin doneInstance()
+// has this_ethread() for TSMutexLock.
+void shutdown_url_rewrite();
+
+int url_rewrite_CB(const char *name, RecDataT data_type, RecData data, void *cookie);
