@@ -63,6 +63,9 @@ class RegexPatterns:
     # Trailing [MODS] inside a %{} block, which u4wrh turns back into a "with" clause
     PERCENT_MODS: Final = re.compile(r'^(?P<body>.*?)\s+\[(?P<mods>[A-Za-z][A-Za-z0-9,\s]*)\]$')
 
+    # Grammar IDENT rule from hrw4u.g4 (header names, qualifiers)
+    GRAMMAR_IDENT: Final = re.compile(r'^[a-zA-Z_][a-zA-Z0-9_@.-]*$')
+
     # Additional performance patterns
     IDENTIFIER: Final = re.compile(r'^[a-zA-Z_][a-zA-Z0-9_]*$')
     WHITESPACE: Final = re.compile(r'\s+')
