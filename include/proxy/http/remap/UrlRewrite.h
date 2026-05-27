@@ -24,7 +24,6 @@
 
 #pragma once
 
-#include "iocore/eventsystem/Freer.h"
 #include "mgmt/config/ConfigContext.h"
 #include "proxy/http/remap/UrlMapping.h"
 #include "proxy/http/remap/UrlMappingPathIndex.h"
@@ -57,12 +56,12 @@ enum class mapping_type {
 /**
  *
  **/
-class UrlRewrite : public RefCountObjInHeap
+class UrlRewrite
 {
 public:
   using URLTable = std::unordered_map<std::string, UrlMappingPathIndex *>;
   UrlRewrite()   = default;
-  ~UrlRewrite() override;
+  ~UrlRewrite();
 
   /** Retrieve the configured ACL matching policy.
    *
@@ -92,26 +91,6 @@ public:
   bool         ReverseMap(HTTPHdr *response_header);
   void         SetReverseFlag(int flag);
   void         Print() const;
-
-  // The UrlRewrite object is-a RefCountObj, but this is a convenience to make it clear that we
-  // don't delete() these objects directly, but via the release() method only.
-  UrlRewrite *
-  acquire()
-  {
-    this->refcount_inc();
-    return this;
-  }
-
-  void
-  release()
-  {
-    if (0 == this->refcount_dec()) {
-      // Delete this on an ET_TASK thread, which avoids doing potentially slow things on an ET_NET thread.
-      static DbgCtl dc{"url_rewrite"};
-      Dbg(dc, "Deleting old configuration immediately");
-      new_Deleter(this, 0);
-    }
-  }
 
   bool
   is_valid() const
