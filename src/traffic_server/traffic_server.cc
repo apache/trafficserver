@@ -92,6 +92,7 @@ extern "C" int plock(int);
 #include "records/RecordsConfig.h"
 #include "iocore/eventsystem/RecProcess.h"
 #include "proxy/Transform.h"
+#include "proxy/ReverseProxy.h"
 #include "iocore/eventsystem/ConfigProcessor.h"
 #include "mgmt/config/ConfigContextDiags.h"
 #include "mgmt/config/ConfigRegistry.h"
@@ -295,6 +296,8 @@ struct AutoStopCont : public Continuation {
 
     // Push buffered log entries into the preproc queue before shutdown.
     Log::flush_all_objects();
+
+    shutdown_url_rewrite();
 
     TSSystemState::shut_down_event_system();
 

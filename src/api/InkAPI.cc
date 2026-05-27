@@ -5066,7 +5066,7 @@ TSHttpTxnNextHopNamedStrategyGet(TSHttpTxn txnp, const char *name)
 
   auto sm = reinterpret_cast<HttpSM const *>(txnp);
 
-  sdk_assert(sdk_sanity_check_null_ptr((void *)sm->m_remap) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void *)sm->m_remap.get()) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr((void *)sm->m_remap->strategyFactory) == TS_SUCCESS);
 
   // HttpSM has a reference count handle to UrlRewrite which has a
