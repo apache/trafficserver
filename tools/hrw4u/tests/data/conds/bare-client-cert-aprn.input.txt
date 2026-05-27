@@ -1,0 +1,5 @@
+REMAP {
+    if inbound.conn.client-cert.APRN-RAW {
+        inbound.req.X-Cert = "{inbound.conn.client-cert.APRN-RAW}";
+    }
+}

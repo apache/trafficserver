@@ -1,0 +1,3 @@
+cond %{REMAP_PSEUDO_HOOK}
+cond %{CLIENT-URL} ="https://download.swift.org/"
+    set-status 301
