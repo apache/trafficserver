@@ -16,6 +16,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+from contextlib import contextmanager
 from typing import Set
 import socket
 import subprocess
@@ -236,6 +237,50 @@ def _get_port_by_bind():
     return port
 
 
+def _reserve_port():
+    """
+    Get a port from the global port queue.
+
+    Returns:
+        A tuple containing the port value and whether it should be recycled
+        into the queue when the caller is done with it.
+    """
+    _setup_port_queue()
+    if g_ports.qsize() > 0:
+        try:
+            port = _get_available_port(g_ports)
+            host.WriteVerbose("_reserve_port", f"Using port from port queue: {port}")
+            return port, True
+        except PortQueueSelectionError:
+            port = _get_port_by_bind()
+            host.WriteVerbose("_reserve_port", f"Queue was drained. Using port from a bound socket: {port}")
+            return port, False
+
+    # Since the queue could not be populated, use a port via bind.
+    port = _get_port_by_bind()
+    host.WriteVerbose("_reserve_port", f"Queue is empty. Using port from a bound socket: {port}")
+    return port, False
+
+
+@contextmanager
+def get_port_number():
+    """
+    Reserve a port number from the same allocator used by get_port().
+
+    This is useful for helper code that needs a temporary listening port but
+    does not have an AuTest object with Setup hooks for recycling it. Queue
+    ports are recycled when the context exits.
+
+    :returns: A context manager yielding the reserved port value.
+    """
+    port, recycle_port = _reserve_port()
+    try:
+        yield port
+    finally:
+        if recycle_port:
+            g_ports.put(port)
+
+
 def get_port(obj, name):
     '''
     Get a port and set it to the specified variable on the object.
@@ -247,22 +292,10 @@ def get_port(obj, name):
     Returns:
         The port value.
     '''
-    _setup_port_queue()
-    port = 0
-    if g_ports.qsize() > 0:
-        try:
-            port = _get_available_port(g_ports)
-            host.WriteVerbose("get_port", f"Using port from port queue: {port}")
-            # setup clean up step to recycle the port
-            obj.Setup.Lambda(
-                func_cleanup=lambda: g_ports.put(port), description=f"recycling port: {port}, queue size: {g_ports.qsize()}")
-        except PortQueueSelectionError:
-            port = _get_port_by_bind()
-            host.WriteVerbose("get_port", f"Queue was drained. Using port from a bound socket: {port}")
-    else:
-        # Since the queue could not be populated, use a port via bind.
-        port = _get_port_by_bind()
-        host.WriteVerbose("get_port", f"Queue is empty. Using port from a bound socket: {port}")
+    port, recycle_port = _reserve_port()
+    if recycle_port:
+        obj.Setup.Lambda(
+            func_cleanup=lambda: g_ports.put(port), description=f"recycling port: {port}, queue size: {g_ports.qsize()}")
 
     # Assign to the named variable.
     obj.Variables[name] = port
