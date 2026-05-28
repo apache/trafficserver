@@ -34,6 +34,7 @@ class OptionType(Enum):
     DEFAULT_DIRECTIVES = 1
     FORCE_SWR = 2
     FORCE_SIE = 3
+    MAX_MEMORY_USAGE = 4
 
 
 assert len({option.value for option in OptionType.__members__.values()}) == len(OptionType.__members__)
@@ -68,6 +69,9 @@ class TestStaleResponse:
         elif option_type == OptionType.FORCE_SIE:
             self._replay_file = "stale_response_with_force_sie.replay.yaml"
             option_description = f"--force-stale-if-error 30: {plugin_type_description}"
+        elif option_type == OptionType.MAX_MEMORY_USAGE:
+            self._replay_file = "stale_response_max_memory.replay.yaml"
+            option_description = f"--max-memory-usage 256: {plugin_type_description}"
 
         tr = Test.AddTestRun(f"stale_response.so Options: {option_description}")
 
@@ -108,6 +112,8 @@ class TestStaleResponse:
                 plugin_command += ' --force-stale-while-revalidate 30'
             elif self._option_type == OptionType.FORCE_SIE:
                 plugin_command += ' --force-stale-if-error 30'
+            elif self._option_type == OptionType.MAX_MEMORY_USAGE:
+                plugin_command += ' --max-memory-usage 256'
             ts.Disk.plugin_config.AddLine(plugin_command)
         else:
             # Configure the stale_response plugin for the remap rule.
@@ -118,6 +124,8 @@ class TestStaleResponse:
                 remap_plugin_config += ' @pparam=--force-stale-while-revalidate @pparam=30'
             elif self._option_type == OptionType.FORCE_SIE:
                 remap_plugin_config += ' @pparam=--force-stale-if-error @pparam=30'
+            elif self._option_type == OptionType.MAX_MEMORY_USAGE:
+                remap_plugin_config += ' @pparam=--max-memory-usage @pparam=256'
 
         ts.Disk.records_config.update(
             {
@@ -140,6 +148,14 @@ class TestStaleResponse:
 
     def verify_plugin_log(self) -> None:
         """Verify the contents of the stale_response plugin log."""
+        if self._option_type == OptionType.MAX_MEMORY_USAGE:
+            diagnostic = "response exceeded memory limit; sending stale data"
+            Test.AddAwaitFileContainsTestRun(
+                "Verify stale_response max-memory diagnostic", self._ts.Disk.traffic_out.Name, diagnostic)
+            self._ts.Disk.traffic_out.Content += Testers.ContainsExpression(
+                diagnostic, "Verify max-memory stale-if-error fallback is logged")
+            return
+
         swr_log_pattern = "stale-while-revalidate:.*stale.jpeg"
         sie_log_pattern = "stale-if-error:.*error.jpeg"
 
@@ -162,8 +178,10 @@ TestStaleResponse(OptionType.NONE, is_global=True)
 TestStaleResponse(OptionType.DEFAULT_DIRECTIVES, is_global=True)
 TestStaleResponse(OptionType.FORCE_SWR, is_global=True)
 TestStaleResponse(OptionType.FORCE_SIE, is_global=True)
+TestStaleResponse(OptionType.MAX_MEMORY_USAGE, is_global=True)
 
 TestStaleResponse(OptionType.NONE, is_global=False)
 TestStaleResponse(OptionType.DEFAULT_DIRECTIVES, is_global=False)
 TestStaleResponse(OptionType.FORCE_SWR, is_global=False)
 TestStaleResponse(OptionType.FORCE_SIE, is_global=False)
+TestStaleResponse(OptionType.MAX_MEMORY_USAGE, is_global=False)
