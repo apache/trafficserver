@@ -67,17 +67,21 @@ std::string
 encode_word_buffer(unsigned char const *buf, int const len)
 {
   std::string result;
-  auto        it{buf};
-  while ((it < (buf + len)) && ja3_should_ignore(from_big_endian(it[0], it[1]))) {
+  if (len < 2) {
+    return result;
+  }
+  auto       it{buf};
+  auto const end{buf + len};
+  while ((it < end - 1) && ja3_should_ignore(from_big_endian(it[0], it[1]))) {
     it += 2;
   }
-  if (it < (buf + len)) {
+  if (it < end - 1) {
     // Benchmarks show that reserving buf.size() - 1 space in the string here
     // would have no impact on performance. Since the string may not even need
     // that much due to GREASE values present in the buffer, we don't do it.
     result.append(std::to_string(from_big_endian(it[0], it[1])));
     it += 2;
-    for (; it < buf + len; it += 2) {
+    for (; it < end - 1; it += 2) {
       auto const value{from_big_endian(it[0], it[1])};
       if (!ja3_should_ignore(value)) {
         result.push_back('-');

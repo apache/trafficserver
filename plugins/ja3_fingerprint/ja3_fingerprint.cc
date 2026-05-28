@@ -152,14 +152,14 @@ custom_get_ja3(SSL *ssl)
   result.push_back(',');
 
   // Get elliptic curves
-  if (SSL_client_hello_get0_ext(ssl, 0x0a, &buf, &len) == 1) {
+  if (SSL_client_hello_get0_ext(ssl, 0x0a, &buf, &len) == 1 && len >= 2) {
     // Skip first 2 bytes since we already have length
     result.append(ja3::encode_word_buffer(buf + 2, len - 2));
   }
   result.push_back(',');
 
   // Get elliptic curve point formats
-  if (SSL_client_hello_get0_ext(ssl, 0x0b, &buf, &len) == 1) {
+  if (SSL_client_hello_get0_ext(ssl, 0x0b, &buf, &len) == 1 && len >= 1) {
     // Skip first byte since we already have length
     result.append(ja3::encode_byte_buffer(buf + 1, len - 1));
   }

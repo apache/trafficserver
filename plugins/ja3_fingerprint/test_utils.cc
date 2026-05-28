@@ -60,6 +60,12 @@ TEST_CASE("ja3 word buffer encoding")
     CHECK("" == got);
   }
 
+  SECTION("nullptr with len 1 - early return must not deref")
+  {
+    auto got{ja3::encode_word_buffer(nullptr, 1)};
+    CHECK("" == got);
+  }
+
   SECTION("1 value")
   {
     auto got{ja3::encode_word_buffer(buf, 2)};
@@ -70,6 +76,55 @@ TEST_CASE("ja3 word buffer encoding")
   {
     auto got{ja3::encode_word_buffer(buf, 10)};
     CHECK("5-8-256" == got);
+  }
+
+  SECTION("all GREASE - skip-loop consumes buffer, no emit")
+  {
+    unsigned char const grease_buf[]{0x0a, 0x0a, 0xda, 0xda};
+    auto                got{ja3::encode_word_buffer(grease_buf, 4)};
+    CHECK("" == got);
+  }
+
+  SECTION("trailing GREASE - last pair is GREASE, no trailing dash")
+  {
+    unsigned char const buf2[]{0x00, 0x05, 0x0a, 0x0a};
+    auto                got{ja3::encode_word_buffer(buf2, 4)};
+    CHECK("5" == got);
+  }
+
+  SECTION("odd length 1 - single trailing byte must not be read as a word")
+  {
+    unsigned char const odd_buf[]{0x42};
+    auto                got{ja3::encode_word_buffer(odd_buf, 1)};
+    CHECK("" == got);
+  }
+
+  SECTION("odd length 3 - last byte without pair must be ignored")
+  {
+    unsigned char const odd_buf[]{0x00, 0x05, 0x42};
+    auto                got{ja3::encode_word_buffer(odd_buf, 3)};
+    CHECK("5" == got);
+  }
+
+  SECTION("odd length 3 after GREASE - skip-loop must not read past end")
+  {
+    unsigned char const odd_buf[]{0x0a, 0x0a, 0x42};
+    auto                got{ja3::encode_word_buffer(odd_buf, 3)};
+    CHECK("" == got);
+  }
+
+  SECTION("odd length 5 - tail loop must reject trailing single byte")
+  {
+    unsigned char const odd_buf[]{0x00, 0x05, 0x00, 0x08, 0x42};
+    auto                got{ja3::encode_word_buffer(odd_buf, 5)};
+    CHECK("5-8" == got);
+  }
+
+  SECTION("supported_groups path: 3-byte extension body, 1-byte tail")
+  {
+    unsigned char const ext_body[]{0x00, 0x01, 0x02};
+    auto                got{ja3::encode_word_buffer(ext_body + 2, 1)};
+    CHECK("" == got);
   }
 }
 
