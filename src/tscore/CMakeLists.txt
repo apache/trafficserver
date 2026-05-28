@@ -118,6 +118,16 @@ else()
   target_sources(tscore PRIVATE HKDF_openssl.cc)
 endif()
 
+# Highway-dispatched SIMD base64 (encode/decode). Only compiled when
+# ENABLE_HIGHWAY_DISPATCH=ON; otherwise ink_base64.cc uses the scalar path
+# entirely. The source dir is added to the include path so Highway's
+# foreach_target.h self-include of ink_base64_dispatch.cc resolves.
+if(TS_HAS_HIGHWAY_DISPATCH)
+  target_sources(tscore PRIVATE ink_base64_dispatch.cc)
+  target_link_libraries(tscore PRIVATE hwy::hwy)
+  target_include_directories(tscore PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+endif()
+
 target_link_libraries(
   tscore PUBLIC OpenSSL::Crypto libswoc::libswoc yaml-cpp::yaml-cpp systemtap::systemtap resolv::resolv ts::tsutil
 )
@@ -172,6 +182,7 @@ if(BUILD_TESTING)
     unit_tests/test_arena.cc
     unit_tests/test_ink_base64.cc
     unit_tests/test_ink_ascii_tolower.cc
+    unit_tests/test_ink_base64.cc
     unit_tests/test_ink_inet.cc
     unit_tests/test_ink_memory.cc
     unit_tests/test_ink_string.cc

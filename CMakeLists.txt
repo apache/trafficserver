@@ -217,7 +217,7 @@ set(ENABLE_TPROXY
 )
 option(ENABLE_QUICHE "Use quiche (default OFF)")
 option(ENABLE_HIGHWAY_DISPATCH
-       "Use Google Highway runtime dispatch for SIMD kernels (default OFF, default cascade compile-time selection)"
+       "Use Google Highway runtime dispatch for SIMD kernels (default OFF; without it the scalar paths are used)"
 )
 
 option(ENABLE_EXAMPLE "Build example directory (default OFF)")
@@ -328,6 +328,11 @@ if(TS_HAS_JEMALLOC)
   link_libraries(jemalloc::jemalloc)
 elseif(TS_HAS_MIMALLOC)
   link_libraries(mimalloc)
+endif()
+
+if(ENABLE_HIGHWAY_DISPATCH)
+  find_package(hwy CONFIG REQUIRED)
+  set(TS_HAS_HIGHWAY_DISPATCH ${hwy_FOUND})
 endif()
 
 if(ENABLE_QUICHE)
