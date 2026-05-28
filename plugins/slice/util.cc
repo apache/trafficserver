@@ -45,6 +45,41 @@ abort(TSCont const contp, Data *const data)
   TSContDestroy(contp);
 }
 
+void
+schedule_prefetch(Data *const data)
+{
+  if (!data->m_prefetchable || data->m_config->m_prefetchcount <= 0) {
+    return;
+  }
+
+  int         urllen = 0;
+  char *const urlstr = TSUrlStringGet(data->m_urlbuf, data->m_urlloc, &urllen);
+
+  if (urlstr == nullptr || urllen <= 0) {
+    TSfree(urlstr);
+    return;
+  }
+
+  std::string_view const url(urlstr, urllen);
+  int                    nextblocknum = data->m_blocknum + 1;
+
+  if (data->m_blocknum > data->m_req_range.firstBlockFor(data->m_config->m_blockbytes) + 1) {
+    nextblocknum = data->m_blocknum + data->m_config->m_prefetchcount;
+  }
+
+  for (int i = nextblocknum; i <= data->m_blocknum + data->m_config->m_prefetchcount; i++) {
+    if (data->m_req_range.blockIsInside(data->m_config->m_blockbytes, i)) {
+      if (BgBlockFetch::schedule(data, i, url)) {
+        DEBUG_LOG("Background fetch requested");
+      } else {
+        DEBUG_LOG("Background fetch not requested");
+      }
+    }
+  }
+
+  TSfree(urlstr);
+}
+
 // create and issue a block request
 bool
 request_block(TSCont contp, Data *const data)
@@ -151,22 +186,11 @@ request_block(TSCont contp, Data *const data)
     DEBUG_LOG("Headers\n%s", headerstr.c_str());
   }
 
-  // if prefetch config set, schedule next block requests in background
-  if (data->m_prefetchable && data->m_config->m_prefetchcount > 0) {
-    int nextblocknum = data->m_blocknum + 1;
-    if (data->m_blocknum > data->m_req_range.firstBlockFor(data->m_config->m_blockbytes) + 1) {
-      nextblocknum = data->m_blocknum + data->m_config->m_prefetchcount;
-    }
-    for (int i = nextblocknum; i <= data->m_blocknum + data->m_config->m_prefetchcount; i++) {
-      if (data->m_req_range.blockIsInside(data->m_config->m_blockbytes, i)) {
-        if (BgBlockFetch::schedule(data, i)) {
-          DEBUG_LOG("Background fetch requested");
-        } else {
-          DEBUG_LOG("Background fetch not requested");
-        }
-      }
-    }
+  // Extend prefetch sliding window past the initial burst
+  if (data->m_blocknum > data->m_req_range.firstBlockFor(data->m_config->m_blockbytes) + 1) {
+    schedule_prefetch(data);
   }
+
   // get ready for data back from the server
   data->m_upstream.setupVioRead(contp, INT64_MAX);
 
