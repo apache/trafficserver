@@ -55,7 +55,11 @@ handleFetchEvents(TSCont cont, TSEvent event, void *edata)
 
       TSHttpHdrTypeSet(hdr_buf, hdr_loc, TS_HTTP_TYPE_RESPONSE);
       if (TSHttpHdrParseResp(parser, hdr_buf, hdr_loc, &data_start, data_end) == TS_PARSE_DONE) {
-        TSHttpTxnErrorBodySet(http_txn, TSstrdup(data_start), (data_end - data_start), nullptr);
+        size_t body_len = data_end - data_start;
+        char  *body     = static_cast<char *>(TSmalloc(body_len + 1));
+        memcpy(body, data_start, body_len);
+        body[body_len] = '\0';
+        TSHttpTxnErrorBodySet(http_txn, body, body_len, nullptr);
       } else {
         TSWarning("[%s] Unable to parse set-custom-body fetch response", __FUNCTION__);
       }
