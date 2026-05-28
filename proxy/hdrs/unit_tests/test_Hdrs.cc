@@ -2542,6 +2542,78 @@ TEST_CASE("HdrTestHostCacheInvalidation", "[proxy][hdrtest]")
 
     req_hdr.destroy();
   }
+
+  SECTION("high-bit bytes are rejected without UB")
+  {
+    char buf[] = {'\xff', '\xff', '\xff'};
+    CHECK(http_parse_status(buf, buf + sizeof(buf)) == static_cast<HTTPStatus>(0));
+  }
+}
+
+TEST_CASE("HTTP parser tolerates high-bit bytes without UB", "[proxy][hdrtest]")
+{
+  using namespace std::string_view_literals;
+  struct Test {
+    std::string_view msg;
+    ParseResult expected_result;
+  };
+
+  static const std::vector<Test> tests = {
+    {"GET /x HTTP/\xff.0\r\n\r\n"sv, PARSE_RESULT_ERROR},
+    {"GET /x HTTP/1.\xff\r\n\r\n"sv, PARSE_RESULT_ERROR},
+    {"GET /\xff HTTP/1.0\r\n\r\n"sv, PARSE_RESULT_DONE},
+  };
+
+  auto test = GENERATE(from_range(tests));
+  CAPTURE(test.expected_result);
+
+  HTTPParser parser;
+  http_parser_init(&parser);
+
+  HTTPHdr req_hdr;
+  HdrHeap *heap = new_HdrHeap(HdrHeap::DEFAULT_SIZE + 64);
+
+  req_hdr.create(HTTP_TYPE_REQUEST, heap);
+
+  auto start = test.msg.data();
+  auto ret   = req_hdr.parse_req(&parser, &start, test.msg.data() + test.msg.size(), true);
+
+  CHECK(ret == test.expected_result);
+
+  req_hdr.destroy();
+}
+
+TEST_CASE("HTTP response parser tolerates high-bit bytes without UB", "[proxy][hdrtest]")
+{
+  using namespace std::string_view_literals;
+  struct Test {
+    std::string_view msg;
+    ParseResult expected_result;
+  };
+
+  static const std::vector<Test> tests = {
+    {"HTTP/\xff.0 200 OK\r\n\r\n"sv, PARSE_RESULT_ERROR},
+    {"HTTP/1.\xff 200 OK\r\n\r\n"sv, PARSE_RESULT_ERROR},
+    {"HTTP/1.0 \xff\xff\xff OK\r\n\r\n"sv, PARSE_RESULT_DONE},
+  };
+
+  auto test = GENERATE(from_range(tests));
+  CAPTURE(test.expected_result);
+
+  HTTPParser parser;
+  http_parser_init(&parser);
+
+  HTTPHdr resp_hdr;
+  HdrHeap *heap = new_HdrHeap(HdrHeap::DEFAULT_SIZE + 64);
+
+  resp_hdr.create(HTTP_TYPE_RESPONSE, heap);
+
+  auto start = test.msg.data();
+  auto ret   = resp_hdr.parse_resp(&parser, &start, test.msg.data() + test.msg.size(), true);
+
+  CHECK(ret == test.expected_result);
+
+  resp_hdr.destroy();
 }
 
 TEST_CASE("http_parse_status overflow protection", "[proxy][hdrtest]")
