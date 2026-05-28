@@ -125,6 +125,7 @@ struct StateInfo {
   bool             swr_active         = false;
   bool             sie_active         = false;
   bool             over_max_memory    = false;
+  bool             fetch_error        = false;
   TSIOBuffer       req_io_buf         = nullptr;
   TSIOBuffer       resp_io_buf        = nullptr;
   TSIOBufferReader req_io_buf_reader  = nullptr;
@@ -145,6 +146,7 @@ struct StateInfo {
 BodyData *async_check_active(uint32_t key_hash, ConfigInfo *plugin_config);
 bool      async_check_and_add_active(uint32_t key_hash, ConfigInfo *plugin_config);
 bool      async_remove_active(uint32_t key_hash, ConfigInfo *plugin_config);
+void      body_memory_release(ConfigInfo *plugin_config, BodyData *pBody);
 
 // 500, 502, 503, 504
 inline bool

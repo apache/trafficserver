@@ -142,6 +142,7 @@ connShutdownDataDestory(SContData *cont_data)
       SRDBG(TAG_BAD, "[%s] didnt delete async active", __FUNCTION__);
     }
   } else {
+    body_memory_release(cont_data->plugin_config, cont_data->pBody);
     delete cont_data->pBody;
   }
   // clean up my cont
