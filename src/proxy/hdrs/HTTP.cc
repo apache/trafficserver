@@ -914,7 +914,7 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
            (end[-2] ^ '\r') | (end[-1] ^ '\n')) != 0) {
         goto slow_case;
       }
-      if (!(isdigit(end[-5]) && isdigit(end[-3]))) {
+      if (!(ParseRules::is_digit(end[-5]) && ParseRules::is_digit(end[-3]))) {
         goto slow_case;
       }
       if (!(ParseRules::is_space(cur[3]) && (!ParseRules::is_space(cur[4])) && (!ParseRules::is_space(end[-12])) &&
@@ -1011,7 +1011,7 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
     }
     version_end = cur + 1;
   parse_version2:
-    if (isdigit(*cur)) {
+    if (ParseRules::is_digit(*cur)) {
       GETPREV(parse_url);
       goto parse_version2;
     }
@@ -1021,7 +1021,7 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
     }
     goto parse_url;
   parse_version3:
-    if (isdigit(*cur)) {
+    if (ParseRules::is_digit(*cur)) {
       GETPREV(parse_url);
       goto parse_version3;
     }
@@ -1362,8 +1362,9 @@ http_parser_parse_resp(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const
     if (end - cur >= 16) {
       int http_match =
         ((cur[0] ^ 'H') | (cur[1] ^ 'T') | (cur[2] ^ 'T') | (cur[3] ^ 'P') | (cur[4] ^ '/') | (cur[6] ^ '.') | (cur[8] ^ ' '));
-      if ((http_match != 0) || (!(isdigit(cur[5]) && isdigit(cur[7]) && isdigit(cur[9]) && isdigit(cur[10]) && isdigit(cur[11]) &&
-                                  (!ParseRules::is_space(cur[13]))))) {
+      if ((http_match != 0) ||
+          (!(ParseRules::is_digit(cur[5]) && ParseRules::is_digit(cur[7]) && ParseRules::is_digit(cur[9]) &&
+             ParseRules::is_digit(cur[10]) && ParseRules::is_digit(cur[11]) && (!ParseRules::is_space(cur[13]))))) {
         goto slow_case;
       }
 
@@ -1422,7 +1423,7 @@ http_parser_parse_resp(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const
     }
     GETNEXT(eoh);
   parse_version2:
-    if (isdigit(*cur)) {
+    if (ParseRules::is_digit(*cur)) {
       GETNEXT(eoh);
       goto parse_version2;
     }
@@ -1432,7 +1433,7 @@ http_parser_parse_resp(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const
     }
     goto eoh;
   parse_version3:
-    if (isdigit(*cur)) {
+    if (ParseRules::is_digit(*cur)) {
       GETNEXT(eoh);
       goto parse_version3;
     }
@@ -1451,7 +1452,7 @@ http_parser_parse_resp(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const
     status_start = cur;
   parse_status2:
     status_end = cur;
-    if (isdigit(*cur)) {
+    if (ParseRules::is_digit(*cur)) {
       GETNEXT(done);
       goto parse_status2;
     }
@@ -1523,7 +1524,7 @@ http_parse_status(const char *start, const char *end)
     start += 1;
   }
 
-  while ((start != end) && isdigit(*start)) {
+  while ((start != end) && ParseRules::is_digit(*start)) {
     status = (status * 10) + (*start++ - '0');
     if (status > 999) {
       return HTTPStatus::NONE;
@@ -1552,7 +1553,7 @@ http_parse_version(const char *start, const char *end)
     maj = 0;
     min = 0;
 
-    while ((start != end) && isdigit(*start)) {
+    while ((start != end) && ParseRules::is_digit(*start)) {
       maj    = (maj * 10) + (*start - '0');
       start += 1;
     }
@@ -1561,7 +1562,7 @@ http_parse_version(const char *start, const char *end)
       start += 1;
     }
 
-    while ((start != end) && isdigit(*start)) {
+    while ((start != end) && ParseRules::is_digit(*start)) {
       min    = (min * 10) + (*start - '0');
       start += 1;
     }
@@ -1631,7 +1632,7 @@ http_parse_qvalue(const char *&buf, int &len)
         http_skip_ws(buf, len);
 
         n = 0.0;
-        while (len > 0 && *buf && isdigit(*buf)) {
+        while (len > 0 && *buf && ParseRules::is_digit(*buf)) {
           n    = (n * 10) + (*buf++ - '0');
           len -= 1;
         }
@@ -1641,7 +1642,7 @@ http_parse_qvalue(const char *&buf, int &len)
           len -= 1;
 
           f = 10;
-          while (len > 0 && *buf && isdigit(*buf)) {
+          while (len > 0 && *buf && ParseRules::is_digit(*buf)) {
             n   += (*buf++ - '0') / static_cast<double>(f);
             f   *= 10;
             len -= 1;
