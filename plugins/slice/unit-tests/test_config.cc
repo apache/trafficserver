@@ -80,6 +80,26 @@ TEST_CASE("config bytesfrom invalid parsing", "[AWS][slice][utility]")
   }
 }
 
+TEST_CASE("prefetchAcquire deduplication", "[AWS][slice][utility]")
+{
+  Config config;
+
+  // Acquiring a new key should succeed with no freelist item.
+  auto [acquired1, bg1] = config.prefetchAcquire("http://example.com/file:0");
+  CHECK(acquired1 == true);
+  CHECK(bg1 == nullptr);
+
+  // Acquiring the same key again should fail (dedup).
+  auto [acquired2, bg2] = config.prefetchAcquire("http://example.com/file:0");
+  CHECK(acquired2 == false);
+  CHECK(bg2 == nullptr);
+
+  // A distinct key should succeed independently.
+  auto [acquired3, bg3] = config.prefetchAcquire("http://example.com/file:1");
+  CHECK(acquired3 == true);
+  CHECK(bg3 == nullptr);
+}
+
 TEST_CASE("config fromargs validate sizes", "[AWS][slice][utility]")
 {
   char const *const appname       = "slice.so";
