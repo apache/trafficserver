@@ -1,0 +1,91 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+# Verify that stale-if-error origin fetches honor --max-memory-usage. When the
+# origin response cannot fit in the plugin buffer, the plugin should fall back
+# to the cached stale response instead of buffering the oversized response.
+
+sessions:
+
+- transactions:
+
+  - client-request:
+      method: GET
+      url: /pictures/memory-cap.jpeg
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ uuid, first-request ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, image/jpeg ]
+        - [ Content-Length, 5 ]
+        - [ Connection, keep-alive ]
+        - [ Cache-Control, "max-age=1, stale-if-error=30" ]
+        - [ X-Response, cached-response ]
+      content:
+        encoding: plain
+        data: STALE
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response, { value: cached-response, as: equal } ]
+      content:
+        encoding: plain
+        data: STALE
+        verify: { as: equal }
+
+  - client-request:
+
+      delay: 2s
+
+      method: GET
+      url: /pictures/memory-cap.jpeg
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ uuid, second-request ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, image/jpeg ]
+        - [ Content-Length, 512 ]
+        - [ Connection, close ]
+        - [ Cache-Control, "max-age=1" ]
+        - [ X-Response, oversized-origin-response ]
+      content:
+        size: 512
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response, { value: cached-response, as: equal } ]
+      content:
+        encoding: plain
+        data: STALE
+        verify: { as: equal }
