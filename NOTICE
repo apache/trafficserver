@@ -140,3 +140,12 @@ include/tscore/ink_ascii_tolower.h AVX-512BW kernel design (fused
 mask_add and masked-tail load/store) is adapted from Tony Finch's
 copytolower64.c (0BSD OR MIT-0).
 https://dotat.at/cgi/git/vectolower.git/
+
+~~
+
+src/tscore/ink_base64_dispatch.cc contains SIMD base64 encode/decode kernels
+derived from the simdutf library, re-expressed using Google Highway. The
+algorithms (Wojciech Muła and Daniel Lemire's vectorized base64, and aqrit's
+combined standard/URL-safe classifier) and lookup tables originate there.
+simdutf: https://github.com/simdutf/simdutf (Apache-2.0 / MIT / BSL-1.0)
+Copyright (c) 2021 The simdutf authors
