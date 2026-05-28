@@ -138,6 +138,83 @@ TEST_CASE("ats_base64 round-trips across sizes", "[base64]")
   }
 }
 
+TEST_CASE("ats_base64_decode accepts the URL-safe alphabet", "[base64]")
+{
+  // '-' and '_' map to the same six-bit values as '+' and '/', so a URL-safe
+  // string decodes to the same bytes as its standard-alphabet equivalent.
+  CHECK(decode_tight("____") == decode_tight("////"));
+  CHECK(decode_tight("----") == decode_tight("++++"));
+
+  // Round-trip through the URL-safe alphabet: encode (standard), translate
+  // '+'/'/' to '-'/'_', decode, and expect the original bytes back.
+  std::mt19937                            rng(99);
+  std::uniform_int_distribution<unsigned> byte(0, 255);
+  for (size_t n = 0; n <= 200; ++n) {
+    std::string bin(n, '\0');
+    for (auto &c : bin) {
+      c = static_cast<char>(byte(rng));
+    }
+    std::string url = encode(bin);
+    for (auto &c : url) {
+      if (c == '+') {
+        c = '-';
+      } else if (c == '/') {
+        c = '_';
+      }
+    }
+    INFO("size=" << n);
+    CHECK(decode_tight(url) == bin);
+  }
+}
+
+TEST_CASE("ats_base64_decode accepts both alphabets mixed in one input", "[base64]")
+{
+  // The standard and URL-safe punctuation may appear in the same input.
+  std::mt19937                            rng(1234);
+  std::uniform_int_distribution<unsigned> byte(0, 255);
+  std::uniform_int_distribution<int>      coin(0, 1);
+  for (size_t n = 0; n <= 200; ++n) {
+    std::string bin(n, '\0');
+    for (auto &c : bin) {
+      c = static_cast<char>(byte(rng));
+    }
+    std::string enc = encode(bin);
+    for (auto &c : enc) {
+      if (c == '+' && coin(rng)) {
+        c = '-';
+      } else if (c == '/' && coin(rng)) {
+        c = '_';
+      }
+    }
+    INFO("size=" << n);
+    CHECK(decode_tight(enc) == bin);
+  }
+}
+
+TEST_CASE("ats_base64_decode truncates at the first non-alphabet byte", "[base64]")
+{
+  // A non-alphabet byte (whitespace, '=', or other garbage) ends the decodable
+  // input; decoding stops there and yields the decode of the prefix before it.
+  // Injecting it at every position also exercises the over-read fix under ASan.
+  const char                        *terminators = " \t\n\r=*@";
+  std::mt19937                       rng(55);
+  std::uniform_int_distribution<int> pick(0, 63);
+  for (size_t len : {1u, 2u, 3u, 4u, 5u, 7u, 8u, 16u, 17u, 31u, 33u, 64u, 100u}) {
+    std::string base;
+    for (size_t k = 0; k < len; ++k) {
+      base.push_back(kAlpha[pick(rng)]);
+    }
+    for (size_t pos = 0; pos < len; ++pos) {
+      for (const char *t = terminators; *t; ++t) {
+        std::string s = base;
+        s[pos]        = *t;
+        INFO("len=" << len << " pos=" << pos << " term=" << static_cast<int>(*t));
+        CHECK(decode_tight(s) == decode_tight(base.substr(0, pos)));
+      }
+    }
+  }
+}
+
 TEST_CASE("ats_base64_decode supports in-place (dst == src)", "[base64]")
 {
   std::mt19937                            rng(7);
