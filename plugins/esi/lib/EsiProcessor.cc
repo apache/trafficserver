@@ -614,6 +614,27 @@ EsiProcessor::_handleVars(const char *str, int str_len)
 bool
 EsiProcessor::_handleHtmlComment(const DocNodeList::iterator &curr_node)
 {
+  // Reject a nested <!--esi ...--> at any depth inside the wrapper's content.
+  // The wrapper exists to hide ESI markup from non-ESI parsers; its contents
+  // are raw ESI tags, never another wrapper. Catching it on the raw bytes
+  // (rather than on the parsed top-level inner_nodes) closes the case where
+  // the nested wrapper is held inside child_nodes of <esi:try>, <esi:choose>,
+  // <esi:when>, <esi:attempt>, <esi:except>, or <esi:otherwise>, where it
+  // would still be expanded later by _preprocess. Mirrors the parser's own
+  // opening-tag rule in EsiParser::_findOpeningTag: "<!--esi" + whitespace.
+  std::string_view inner(curr_node->data, curr_node->data_len);
+  for (size_t pos = 0; (pos = inner.find("<!--esi", pos)) != std::string_view::npos; ++pos) {
+    size_t after = pos + 7;
+    if (after < inner.size()) {
+      char c = inner[after];
+      if (c == ' ' || c == '\t' || c == '\r' || c == '\n') {
+        TSError("[%s] Nested <!--esi ...--> inside <!--esi ...--> is not allowed", __FUNCTION__);
+        Stats::increment(Stats::N_PARSE_ERRS);
+        return false;
+      }
+    }
+  }
+
   DocNodeList inner_nodes;
   if (!_parser.parse(inner_nodes, curr_node->data, curr_node->data_len)) {
     TSError("[%s] Couldn't parse html comment node content", __FUNCTION__);
