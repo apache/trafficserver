@@ -21,8 +21,24 @@
       / masked-store at the same offset. Partial overlap where
       dst != src but the ranges intersect is not supported.
 
-  Implementation note: selection is purely compile-time; no runtime
-  dispatch. Bodies are stacked widest-first.
+  Two implementations exist, gated by the ENABLE_HIGHWAY_DISPATCH
+  CMake option (TS_HAS_HIGHWAY_DISPATCH at compile time):
+
+    - OFF (default): the compile-time cascade defined below. Selection
+      is purely compile-time; no runtime dispatch. Body is fully
+      inlined into every caller. Best when the build target is broad
+      enough to enable the widest SIMD the production hosts support.
+
+    - ON: an out-of-line dispatched implementation in
+      src/tscore/ink_ascii_tolower_dispatch.cc, built against Google
+      Highway. The header degenerates to a one-line forward shim. At
+      runtime the highest SIMD target supported by the live CPU is
+      selected once and cached. Best when the build target is
+      intentionally conservative (e.g. -march=westmere) but the
+      production CPU fleet is heterogeneous.
+
+  Compile-time cascade (default-off path). Bodies are stacked
+  widest-first.
 
     - AVX-512BW builds: when n >= 64, a 64-byte main loop handles the
       bulk and a single masked load/store finishes any 1..63-byte tail,
@@ -60,6 +76,33 @@
 
 #include <cstddef>
 #include <cstdint>
+
+#include "tscore/ink_config.h"
+
+#if TS_HAS_HIGHWAY_DISPATCH
+
+namespace ts::ascii
+{
+
+// Out-of-line, runtime-dispatched implementation. Defined in
+// src/tscore/ink_ascii_tolower_dispatch.cc via Highway HWY_EXPORT.
+void tolower_copy_dispatch(char *dst, const char *src, std::size_t n) noexcept;
+
+inline void
+tolower_copy(char *dst, const char *src, std::size_t n) noexcept
+{
+  tolower_copy_dispatch(dst, src, n);
+}
+
+inline void
+tolower_inplace(char *buf, std::size_t n) noexcept
+{
+  tolower_copy_dispatch(buf, buf, n);
+}
+
+} // namespace ts::ascii
+
+#else // !TS_HAS_HIGHWAY_DISPATCH — compile-time cascade
 
 #if defined(__AVX512BW__) || defined(__AVX2__) || defined(__SSE2__)
 #include <immintrin.h>
@@ -183,3 +226,5 @@ tolower_inplace(char *buf, std::size_t n) noexcept
 }
 
 } // namespace ts::ascii
+
+#endif // TS_HAS_HIGHWAY_DISPATCH

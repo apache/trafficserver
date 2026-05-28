@@ -87,19 +87,21 @@ tolower_scalar(char *d, const char *s, std::size_t n) noexcept
 
 TEST_CASE("active SIMD configuration", "[tolower][config]")
 {
-  // Print the compile-time ISA path so the benchmark output makes the
-  // selected configuration obvious.
-  std::cout << "ts::ascii::tolower_copy compiled with: ";
-#if defined(__AVX512BW__)
-  std::cout << "AVX-512BW (64B body + masked tail, gated at n>=64) + AVX2 + SSE2 cascade";
+  // Print the configuration so the benchmark output makes the selected
+  // implementation obvious.
+  std::cout << "ts::ascii::tolower_copy implementation: ";
+#if TS_HAS_HIGHWAY_DISPATCH
+  std::cout << "Highway runtime dispatch (selects best available target at startup)";
+#elif defined(__AVX512BW__)
+  std::cout << "compile-time cascade — AVX-512BW (64B body + masked tail, gated at n>=64) + AVX2 + SSE2";
 #elif defined(__AVX2__)
-  std::cout << "AVX2 (32B body) + SSE2 (16B drain)";
+  std::cout << "compile-time cascade — AVX2 (32B body) + SSE2 (16B drain)";
 #elif defined(__SSE2__)
-  std::cout << "SSE2 (16B body)";
+  std::cout << "compile-time cascade — SSE2 (16B body)";
 #elif defined(__ARM_NEON) || defined(__aarch64__)
-  std::cout << "NEON (16B body)";
+  std::cout << "compile-time cascade — NEON (16B body)";
 #else
-  std::cout << "scalar only";
+  std::cout << "compile-time cascade — scalar only";
 #endif
   std::cout << '\n';
   SUCCEED();
