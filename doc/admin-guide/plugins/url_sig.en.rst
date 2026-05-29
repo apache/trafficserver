@@ -261,6 +261,14 @@ in the configuration file::
         pcre regex for urls that aren't signed.
         default: no regex
 
+        .. seealso::
+           The exclusion regex is matched against the full request URL
+           (sliced before any ``?`` or ``#``). Operator-written patterns
+           can match more inputs than intended when unanchored. For
+           per-site subject definitions, common pitfalls, and
+           recommended pattern shapes, see
+           :ref:`admin-regex-best-practices`.
+
     url_type
         which url to match against
         pristine or remap
