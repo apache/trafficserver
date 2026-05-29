@@ -65,6 +65,7 @@ public:
 
 protected:
   Ptr<IOBufferBlock> _read(size_t len) override;
+  void               _consume(size_t len) override;
 
   VIO _read_vio;
   VIO _write_vio;

@@ -37,4 +37,5 @@ public:
 
 private:
   bool _is_first_frame_received_on_control = false;
+  bool _is_headers_frame_received          = false;
 };
