@@ -58,6 +58,8 @@ def configure_ats(obj: 'TestRun', server: 'Process', ats_config: dict, dns: Opti
     # Configure parent_config if specified.
     parent_config = ats_config.get('parent_config', [])
     for parent_line in parent_config:
+        parent_line = parent_line.replace('{SERVER_HTTP_PORT}', str(server.Variables.http_port))
+        parent_line = parent_line.replace('{SERVER_HTTPS_PORT}', str(server.Variables.https_port))
         ts.Disk.parent_config.AddLine(parent_line)
 
     remap_config = ats_config.get('remap_config', [])
@@ -175,6 +177,12 @@ def ATSReplayTest(obj, replay_file: str):
     process_config = server_config.get('process_config', {})
     server = tr.AddVerifierServerProcess(name, replay_file, **process_config)
 
+    # Set expected return code for server if specified. A list of codes is
+    # wrapped in Any() so any of the listed values is accepted.
+    if 'return_code' in server_config:
+        rc = server_config['return_code']
+        server.ReturnCode = Any(*rc) if isinstance(rc, list) else rc
+
     # ATS configuration.
     if not 'ats' in autest_config:
         raise ValueError(f"Replay file {replay_file} does not contain 'autest.ats' section")
@@ -192,6 +200,12 @@ def ATSReplayTest(obj, replay_file: str):
     https_ports = [ts.Variables.ssl_port] if enable_tls else None
     client = tr.AddVerifierClientProcess(
         name, replay_file, http_ports=[ts.Variables.port], https_ports=https_ports, **process_config)
+
+    # Set expected return code for client if specified. A list of codes is
+    # wrapped in Any() so any of the listed values is accepted.
+    if 'return_code' in client_config:
+        rc = client_config['return_code']
+        client.ReturnCode = Any(*rc) if isinstance(rc, list) else rc
 
     if dns:
         ts.StartBefore(dns)
