@@ -94,7 +94,7 @@ struct Data {
 
   bool m_prefetchable{false};
 
-  int m_prefetch_hwm{-1}; // highest block this request has scheduled for prefetch
+  int64_t m_prefetch_hwm{-1}; // highest block this request has scheduled for prefetch
 
   HdrMgr m_req_hdrmgr;  // manager for server request
   HdrMgr m_resp_hdrmgr; // manager for client response
