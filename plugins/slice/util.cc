@@ -61,20 +61,31 @@ schedule_prefetch(Data *const data)
   }
 
   std::string_view const url(urlstr, urllen);
-  int                    nextblocknum = data->m_blocknum + 1;
+  int64_t                nextblocknum = data->m_blocknum + 1;
 
   if (data->m_blocknum > data->m_req_range.firstBlockFor(data->m_config->m_blockbytes) + 1) {
     nextblocknum = data->m_blocknum + data->m_config->m_prefetchcount;
   }
 
-  for (int i = nextblocknum; i <= data->m_blocknum + data->m_config->m_prefetchcount; i++) {
+  int64_t const lastblocknum = data->m_blocknum + data->m_config->m_prefetchcount;
+
+  // Skip blocks already scheduled this request; re-issuing them races the inline reads.
+  if (nextblocknum <= data->m_prefetch_hwm) {
+    nextblocknum = data->m_prefetch_hwm + 1;
+  }
+
+  for (int64_t i = nextblocknum; i <= lastblocknum; i++) {
     if (data->m_req_range.blockIsInside(data->m_config->m_blockbytes, i)) {
-      if (BgBlockFetch::schedule(data, i, url)) {
+      if (BgBlockFetch::schedule(data, static_cast<int>(i), url)) {
         DEBUG_LOG("Background fetch requested");
       } else {
         DEBUG_LOG("Background fetch not requested");
       }
     }
+  }
+
+  if (lastblocknum > data->m_prefetch_hwm) {
+    data->m_prefetch_hwm = lastblocknum;
   }
 
   TSfree(urlstr);
