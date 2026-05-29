@@ -35,6 +35,7 @@
 #include "ts/ts.h"
 
 #include "conditions.h"
+#include "cidr.h"
 #include "lulu.h"
 
 static const sockaddr *getClientAddr(TSHttpTxn txnp, int txn_private_slot);
@@ -1026,8 +1027,7 @@ ConditionCidr::set_qualifier(const std::string &q)
   Dbg(pi_dbg_ctl, "\tParsing %%{CIDR:%s} qualifier", q.c_str());
   cidr = strtol(q.c_str(), &endp, 10);
   if (cidr >= 0 && cidr <= 32) {
-    _v4_mask.s_addr = UINT32_MAX >> (32 - cidr);
-    _v4_cidr        = cidr;
+    _v4_cidr = cidr;
     if (endp && (*endp == ',' || *endp == '/' || *endp == ':')) {
       cidr = strtol(endp + 1, nullptr, 10);
       if (cidr >= 0 && cidr <= 128) {
@@ -1080,12 +1080,7 @@ ConditionCidr::append_value(std::string &s, const Resources &res)
       char            resource[INET6_ADDRSTRLEN];
       struct in6_addr ipv6 = reinterpret_cast<const struct sockaddr_in6 *>(addr)->sin6_addr;
 
-      if (_v6_zero_bytes > 0) {
-        memset(&ipv6.s6_addr[16 - _v6_zero_bytes], 0, _v6_zero_bytes);
-      }
-      if (_v6_mask != 0xff) {
-        ipv6.s6_addr[16 - _v6_zero_bytes] &= _v6_mask;
-      }
+      cidr_apply_v6(ipv6, _v6_zero_bytes, _v6_mask);
       inet_ntop(AF_INET6, &ipv6, resource, INET6_ADDRSTRLEN);
       if (resource[0]) {
         s += resource;
@@ -1101,9 +1096,8 @@ ConditionCidr::append_value(std::string &s, const Resources &res)
 void
 ConditionCidr::_create_masks()
 {
-  _v4_mask.s_addr = htonl(UINT32_MAX << (32 - _v4_cidr));
-  _v6_zero_bytes  = (128 - _v6_cidr) / 8;
-  _v6_mask        = 0xff >> ((128 - _v6_cidr) % 8);
+  _v4_mask.s_addr = cidr_v4_mask(_v4_cidr);
+  cidr_v6_params(_v6_cidr, _v6_zero_bytes, _v6_mask);
 }
 
 void

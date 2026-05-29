@@ -26,8 +26,11 @@
 #include <iostream>
 #include <ostream>
 #include <sys/stat.h>
+#include <string>
+#include <utility>
 
 #include "parser.h"
+#include "cidr.h"
 
 #if TS_USE_HRW_MAXMINDDB
 #include <maxminddb.h>
@@ -728,10 +731,81 @@ test_maxmind_geo()
 }
 #endif
 
+static std::string
+cidr_mask_v6_str(const char *addr_str, int prefix)
+{
+  in6_addr addr;
+
+  inet_pton(AF_INET6, addr_str, &addr);
+
+  int           zero_bytes = 0;
+  unsigned char mask       = 0;
+
+  cidr_v6_params(prefix, zero_bytes, mask);
+  cidr_apply_v6(addr, zero_bytes, mask);
+
+  char out[INET6_ADDRSTRLEN];
+
+  inet_ntop(AF_INET6, &addr, out, sizeof(out));
+
+  return std::string(out);
+}
+
+int
+test_cidr()
+{
+  int errors = 0;
+
+  // IPv4 masks, in network byte order. /0 must be 0 (and must not shift by 32).
+  const std::pair<int, in_addr_t> v4cases[] = {
+    {0,  0                 },
+    {24, htonl(0xFFFFFF00u)},
+    {32, htonl(0xFFFFFFFFu)},
+  };
+
+  for (auto const &[prefix, expect] : v4cases) {
+    in_addr_t const got = cidr_v4_mask(prefix);
+
+    if (got != expect) {
+      std::cerr << "FAIL: cidr_v4_mask(/" << prefix << ") = " << std::hex << got << ", expected " << expect << std::dec
+                << std::endl;
+      ++errors;
+    } else {
+      std::cout << "  PASS: cidr_v4_mask(/" << prefix << ")" << std::endl;
+    }
+  }
+
+  // IPv6 masks. The source has bits set in every byte so non-byte-aligned
+  // prefixes (the actual regression) produce distinct results.
+  const char                        *src       = "2001:db8:abcd:ef13:3456:789a:bcde:f012";
+  const std::pair<int, const char *> v6cases[] = {
+    {128, "2001:db8:abcd:ef13:3456:789a:bcde:f012"},
+    {64,  "2001:db8:abcd:ef13::"                  },
+    {63,  "2001:db8:abcd:ef12::"                  },
+    {60,  "2001:db8:abcd:ef10::"                  },
+    {52,  "2001:db8:abcd:e000::"                  },
+    {48,  "2001:db8:abcd::"                       },
+    {0,   "::"                                    },
+  };
+
+  for (auto const &[prefix, expect] : v6cases) {
+    std::string const got = cidr_mask_v6_str(src, prefix);
+
+    if (got != expect) {
+      std::cerr << "FAIL: " << src << " /" << prefix << " = " << got << ", expected " << expect << std::endl;
+      ++errors;
+    } else {
+      std::cout << "  PASS: " << src << " /" << prefix << " = " << got << std::endl;
+    }
+  }
+
+  return errors;
+}
+
 int
 main()
 {
-  if (test_parsing() || test_processing() || test_tokenizer()) {
+  if (test_parsing() || test_processing() || test_tokenizer() || test_cidr()) {
     return 1;
   }
 

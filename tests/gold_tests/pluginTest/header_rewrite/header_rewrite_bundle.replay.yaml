@@ -176,6 +176,13 @@ autest:
             args:
               - "rules/rule_session_vars.conf"
 
+      - from: "http://www.example.com/from_18/"
+        to: "http://backend.ex:{SERVER_HTTP_PORT}/to_18/"
+        plugins:
+          - name: "header_rewrite.so"
+            args:
+              - "rules/rule_cidr.conf"
+
     log_validation:
       traffic_out:
         excludes:
@@ -1936,3 +1943,34 @@ sessions:
       headers:
         fields:
         - [ X-Session-Seen, { value: "yes", as: equal } ]
+
+# Test 67: CIDR condition - IPv4 masking of the 127.0.0.1 client address.
+# /32 keeps the full address, /24 masks the last octet, /0 collapses to
+# 0.0.0.0 (also guards the former shift-by-32 UB). The two-mask form exercises
+# the IPv6 field parsing; ',40' (empty IPv4 field) parses as a /0 IPv4 mask.
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_18/
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ uuid, 67 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Cidr-32, { value: "127.0.0.1", as: equal } ]
+        - [ X-Cidr-24, { value: "127.0.0.0", as: equal } ]
+        - [ X-Cidr-0, { value: "0.0.0.0", as: equal } ]
+        - [ X-Cidr-Two-Mask, { value: "127.0.0.0", as: equal } ]
+        - [ X-Cidr-Empty-V4, { value: "0.0.0.0", as: equal } ]
