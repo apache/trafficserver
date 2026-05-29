@@ -63,8 +63,14 @@ You can mix and match the allow rules and deny rules, however deny rules will al
 The IP rules can take either single IPs or cidr formatted rules. It will also accept IPv6 IP and ranges.
 
 The regex portion can be added to both the allow and deny sections for creating allowable or deniable regexes. Each regex takes a country code first and a regex second. The regex
-operates on the entire original request URL, the pre-remapped fqdn and path.
+operates on the pre-remap host and path joined as ``host + "/" + path`` (no scheme, no query string).
 In the above example all requests from the US would be allowed except for those on ``txt`` and ``mp3`` files. More rules should be added as pairs, not as additions to existing lists.
+
+.. seealso::
+   Operator-written regex rules can match more inputs than intended
+   when the pattern is unanchored. For the exact subject this site
+   matches against, common pitfalls, and recommended pattern shapes,
+   see :ref:`admin-regex-best-practices`.
 
 Currently the only rules available are ``country``, ``ip``, and ``regex``, though more can easily be added if needed. Each config file does require a top level
 ``maxmind`` entry as well as a ``database`` entry for the IP lookups.  You can supply a separate database for each remap used in case you use custom

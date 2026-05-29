@@ -315,6 +315,13 @@ limitations below:
    ``regex_map`` you should make sure the reverse path is clear by
    setting (:ts:cv:`proxy.config.url_remap.pristine_host_hdr`)
 
+.. seealso::
+   The ``host`` regex is matched against the request host (no scheme,
+   port, or path). Operator-written patterns can match more inputs
+   than intended when unanchored. For per-site subject definitions,
+   common pitfalls, and recommended pattern shapes, see
+   :ref:`admin-regex-best-practices`.
+
 Examples
 --------
 
@@ -339,6 +346,13 @@ which describes the content of the "Referer" header which must be
 verified. In case an actual request does not have "Referer" header or it
 does not match with referer regular expression, the HTTP request will be
 redirected to 'redirect-URL'.
+
+.. seealso::
+   Each referer regex is matched against the value of the ``Referer``
+   HTTP header (the header value only, not the field name).
+   Operator-written patterns can match more inputs than intended when
+   unanchored. For per-site subject definitions, common pitfalls, and
+   recommended pattern shapes, see :ref:`admin-regex-best-practices`.
 
 At least one regular expressions must be specified in order to activate
 'deep linking protection'.  There are limitations for the number of referer
