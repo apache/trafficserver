@@ -405,7 +405,7 @@ InjectRemapHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
     const char *toUrlStr   = getRemapUrlStr(txn, TSRemapToUrlGet, toUrlStrLen);
 
     char buf[2048];
-    int  len = snprintf(buf, sizeof(buf), "from=%*s, to=%*s", fromUrlStrLen, fromUrlStr, toUrlStrLen, toUrlStr);
+    int  len = snprintf(buf, sizeof(buf), "from=%.*s, to=%.*s", fromUrlStrLen, fromUrlStr, toUrlStrLen, toUrlStr);
 
     if (fromUrlStr != NotFound) {
       TSfree(const_cast<char *>(fromUrlStr));
@@ -414,7 +414,12 @@ InjectRemapHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
       TSfree(const_cast<char *>(toUrlStr));
     }
 
-    TSReleaseAssert(TSMimeHdrFieldValueStringInsert(buffer, hdr, dst, -1 /* idx */, buf, len) == TS_SUCCESS);
+    if (len > 0) {
+      if (static_cast<size_t>(len) >= sizeof(buf)) {
+        len = sizeof(buf) - 1;
+      }
+      TSReleaseAssert(TSMimeHdrFieldValueStringInsert(buffer, hdr, dst, -1 /* idx */, buf, len) == TS_SUCCESS);
+    }
     TSHandleMLocRelease(buffer, hdr, dst);
   }
 }
