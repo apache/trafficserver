@@ -83,6 +83,8 @@ def configure_ats(obj: 'TestRun', server: 'Process', ats_config: dict, dns: Opti
     # Configure parent_config if specified.
     parent_config = ats_config.get('parent_config', [])
     for parent_line in parent_config:
+        parent_line = parent_line.replace('{SERVER_HTTP_PORT}', str(server.Variables.http_port))
+        parent_line = parent_line.replace('{SERVER_HTTPS_PORT}', str(server.Variables.https_port))
         ts.Disk.parent_config.AddLine(parent_line)
 
     # Configure logging.yaml if specified.
