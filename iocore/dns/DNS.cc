@@ -860,25 +860,23 @@ DNSHandler::recv_dns(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
           dnsc->tcp_data.buf_ptr = make_ptr(dnsBufAllocator.alloc());
         }
         if (dnsc->tcp_data.total_length == 0) {
-          // see if TS gets a two-byte size
-          uint16_t tmp = 0;
-          res          = socketManager.recv(dnsc->fd, &tmp, sizeof(tmp), MSG_PEEK);
-          if (res == -EAGAIN || res == 1) {
-            break;
-          }
-          if (res <= 0) {
-            goto Lerror;
-          }
-          // reading total size
-          res = socketManager.recv(dnsc->fd, &(dnsc->tcp_data.total_length), sizeof(dnsc->tcp_data.total_length), 0);
+          // Read the 2-byte length prefix incrementally
+          res = socketManager.recv(dnsc->fd, dnsc->tcp_data.length_buf + dnsc->tcp_data.length_read,
+                                   sizeof(dnsc->tcp_data.length_buf) - dnsc->tcp_data.length_read, 0);
           if (res == -EAGAIN) {
             break;
           }
           if (res <= 0) {
             goto Lerror;
           }
-          dnsc->tcp_data.total_length = ntohs(dnsc->tcp_data.total_length);
-          if (res != sizeof(dnsc->tcp_data.total_length)) {
+          dnsc->tcp_data.length_read += res;
+          if (dnsc->tcp_data.length_read < sizeof(dnsc->tcp_data.length_buf)) {
+            continue;
+          }
+          uint16_t net_length;
+          memcpy(&net_length, dnsc->tcp_data.length_buf, sizeof(net_length));
+          dnsc->tcp_data.total_length = ntohs(net_length);
+          if (dnsc->tcp_data.total_length == 0) {
             goto Lerror;
           }
         }

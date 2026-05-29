@@ -85,14 +85,20 @@ struct DNSConnection {
   /// TCPData structure is to track the reading progress of a TCP connection
   struct TCPData {
     Ptr<HostEnt> buf_ptr;
+    // Staging for the 2-byte TCP length prefix
+    unsigned char length_buf[2] = {0, 0};
+    unsigned short length_read  = 0;
     unsigned short total_length = 0;
     unsigned short done_reading = 0;
     void
     reset()
     {
       buf_ptr.clear();
-      total_length = 0;
-      done_reading = 0;
+      length_buf[0] = 0;
+      length_buf[1] = 0;
+      length_read   = 0;
+      total_length  = 0;
+      done_reading  = 0;
     }
   } tcp_data;
 
