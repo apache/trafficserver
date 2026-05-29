@@ -34,3 +34,4 @@ Proxy Cache Configuration
    hierarchical-caching.en
    proxy-protocol.en
    hrw4u.en
+   regex-best-practices.en

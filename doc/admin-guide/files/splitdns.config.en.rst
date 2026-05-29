@@ -71,7 +71,14 @@ The following list describes each field.
 
 ``url_regex``
     A valid URL regular expression. This specifies that DNS server
-    selection will be based on a regular expression.
+    selection will be based on a regular expression matched against
+    the full request URL.
+
+    .. seealso::
+       Operator-written regex rules can match more inputs than
+       intended when the pattern is unanchored. For per-site subject
+       definitions, common pitfalls, and recommended pattern shapes,
+       see :ref:`admin-regex-best-practices`.
 
 .. _splitdns-config-format-named:
 
