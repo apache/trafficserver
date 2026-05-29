@@ -20,6 +20,7 @@ bytes 0-4/18 miss
 bytes ``/18 miss
 bytes ``/18 miss
 bytes ``/18 miss
+bytes 10-14/18 hit-fresh
 bytes 15-17/18 hit-fresh
 bytes 5-16/18 miss, none
 bytes 0-6/18 hit-fresh
