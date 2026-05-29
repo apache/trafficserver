@@ -24,6 +24,8 @@ blib/**
 **/*.default.in
 **/*.config
 **/*.gold
+**/go.mod
+**/go.sum
 **/*.hrw4u
 **/.gitignore
 **/.gitmodules

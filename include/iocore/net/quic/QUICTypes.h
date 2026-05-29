@@ -455,9 +455,9 @@ public:
   int        protocol() const;
 
 private:
-  IpEndpoint _source;
-  IpEndpoint _destination;
-  int        _protocol;
+  IpEndpoint _source{};
+  IpEndpoint _destination{};
+  int        _protocol  = 0;
   uint64_t   _hash_code = 0;
 };
 

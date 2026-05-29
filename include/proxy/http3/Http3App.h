@@ -79,6 +79,7 @@ private:
   void _handle_bidi_stream_on_write_complete(int event, VIO *vio);
   void _handle_bidi_stream_on_eos(int event, VIO *vio);
 
+  void _handle_error(const Http3Error &error);
   void _set_qpack_stream(Http3StreamType type, QUICStreamVCAdapter *adapter);
 
   QUICStreamVCAdapter::IOInfo &_get_stream_info(QUICStreamId stream_id);
