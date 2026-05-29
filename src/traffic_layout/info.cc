@@ -139,6 +139,7 @@ produce_features(bool json)
   print_feature("TS_HAS_CERT_COMPRESSION_ZLIB", ts_has_cert_compression_zlib, json);
   print_feature("TS_HAS_CERT_COMPRESSION_BROTLI", ts_has_cert_compression_brotli, json);
   print_feature("TS_HAS_CERT_COMPRESSION_ZSTD", ts_has_cert_compression_zstd, json);
+  print_feature("TS_HAS_CRIPTS", TS_HAS_CRIPTS, json);
 #ifdef F_GETPIPE_SZ
   print_feature("TS_HAS_PIPE_BUFFER_SIZE_CONFIG", 1, json);
 #else
