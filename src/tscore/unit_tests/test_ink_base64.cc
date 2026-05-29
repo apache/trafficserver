@@ -52,7 +52,10 @@ decode_tight(const std::string &b64)
     std::memcpy(in.data(), b64.data(), b64.size());
   }
 
-  std::vector<unsigned char> out(ats_base64_decode_dstlen(b64.size()) + 1, 0xCC);
+  // ats_base64_decode_dstlen() already includes the trailing NUL, so this is
+  // the exact documented minimum -- no slack, so any write at or past the
+  // bound trips ASan.
+  std::vector<unsigned char> out(ats_base64_decode_dstlen(b64.size()), 0xCC);
   size_t                     n  = 0;
   bool                       ok = ats_base64_decode(in.data(), b64.size(), out.data(), out.size(), &n);
   REQUIRE(ok);
@@ -63,7 +66,7 @@ decode_tight(const std::string &b64)
 std::string
 encode(const std::string &bin)
 {
-  std::vector<char> out(ats_base64_encode_dstlen(bin.size()) + 1, '\0');
+  std::vector<char> out(ats_base64_encode_dstlen(bin.size()), '\0');
   size_t            n  = 0;
   bool              ok = ats_base64_encode(bin.data(), bin.size(), out.data(), out.size(), &n);
   REQUIRE(ok);
@@ -228,7 +231,8 @@ TEST_CASE("ats_base64_decode supports in-place (dst == src)", "[base64]")
     const std::string enc    = encode(bin);
     const std::string expect = decode_tight(enc);
 
-    std::vector<char> buf(std::max(enc.size(), ats_base64_decode_dstlen(enc.size())) + 1, '\0');
+    // Large enough to hold both the input copied in and the decoded output.
+    std::vector<char> buf(std::max(enc.size(), ats_base64_decode_dstlen(enc.size())), '\0');
     std::copy(enc.begin(), enc.end(), buf.begin());
     size_t n_out = 0;
     bool   ok    = ats_base64_decode(buf.data(), enc.size(), reinterpret_cast<unsigned char *>(buf.data()), buf.size(), &n_out);
