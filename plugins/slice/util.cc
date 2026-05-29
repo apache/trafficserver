@@ -67,7 +67,14 @@ schedule_prefetch(Data *const data)
     nextblocknum = data->m_blocknum + data->m_config->m_prefetchcount;
   }
 
-  for (int i = nextblocknum; i <= data->m_blocknum + data->m_config->m_prefetchcount; i++) {
+  int const lastblocknum = data->m_blocknum + data->m_config->m_prefetchcount;
+
+  // Skip blocks already scheduled this request; re-issuing them races the inline reads.
+  if (nextblocknum <= data->m_prefetch_hwm) {
+    nextblocknum = data->m_prefetch_hwm + 1;
+  }
+
+  for (int i = nextblocknum; i <= lastblocknum; i++) {
     if (data->m_req_range.blockIsInside(data->m_config->m_blockbytes, i)) {
       if (BgBlockFetch::schedule(data, i, url)) {
         DEBUG_LOG("Background fetch requested");
@@ -75,6 +82,10 @@ schedule_prefetch(Data *const data)
         DEBUG_LOG("Background fetch not requested");
       }
     }
+  }
+
+  if (lastblocknum > data->m_prefetch_hwm) {
+    data->m_prefetch_hwm = lastblocknum;
   }
 
   TSfree(urlstr);
