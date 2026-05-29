@@ -3810,7 +3810,9 @@ HttpTransact::handle_response_from_parent(State *s)
     if (s->current.retry_type == ParentRetry_t::SIMPLE) {
       s->current.simple_retry_attempts++;
     } else {
-      markParentDown(s);
+      if (is_request_retryable(s)) {
+        markParentDown(s);
+      }
       s->current.unavailable_server_retry_attempts++;
     }
     next_lookup           = find_server_and_update_current_info(s);
