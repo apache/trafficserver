@@ -105,6 +105,7 @@ produce_features(bool json)
 #else
   print_feature("TS_HAS_CERT_COMPRESSION", 0, json);
 #endif
+  print_feature("TS_HAS_CRIPTS", TS_HAS_CRIPTS, json);
 #ifdef F_GETPIPE_SZ
   print_feature("TS_HAS_PIPE_BUFFER_SIZE_CONFIG", 1, json);
 #else
