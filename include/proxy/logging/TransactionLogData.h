@@ -31,20 +31,20 @@
 #include <string_view>
 
 class HttpSM;
-class PreTransactionLogData;
+class NonHttpSmLogData;
 
-/** Provide access-log data from either a completed HttpSM or pre-transaction storage.
+/** Provide access-log data from either a completed HttpSM or non-HttpSM storage.
  *
  * The common completed-transaction path reads directly from @c HttpSM.  The
- * rare pre-transaction path reads from @c PreTransactionLogData, which owns
- * copied request/session state for malformed requests rejected before HttpSM
- * creation.
+ * rare non-HttpSM path reads from @c NonHttpSmLogData, which owns copied
+ * request/session state for exceptional access-log entries that cannot be
+ * backed by an @c HttpSM.
  */
 class TransactionLogData
 {
 public:
   explicit TransactionLogData(HttpSM *sm);
-  explicit TransactionLogData(PreTransactionLogData const &pre_data);
+  explicit TransactionLogData(NonHttpSmLogData const &non_http_sm_data);
 
   void *http_sm_for_plugins() const;
 
@@ -186,7 +186,7 @@ public:
   // ===== Server response Transfer-Encoding =====
   std::string_view get_server_response_transfer_encoding() const;
 
-  // ===== Fallback fields for pre-transaction logging =====
+  // ===== Fallback fields for non-HttpSM logging =====
   std::string_view get_method() const;
   std::string_view get_scheme() const;
   std::string_view get_client_protocol_str() const;
@@ -195,8 +195,8 @@ public:
   TransactionLogData &operator=(const TransactionLogData &) = delete;
 
 private:
-  HttpSM                      *m_http_sm  = nullptr;
-  PreTransactionLogData const *m_pre_data = nullptr;
+  HttpSM                 *m_http_sm          = nullptr;
+  NonHttpSmLogData const *m_non_http_sm_data = nullptr;
 
   // Cached values for fields that require computation or string formatting.
   mutable char m_client_rx_error_code[10] = {'-', '\0'};

@@ -1,7 +1,7 @@
 /** @file
 
-  PreTransactionLogData populates LogData for requests that fail before
-  HttpSM creation.
+  NonHttpSmLogData populates LogData for access-log entries that cannot be
+  backed by an HttpSM.
 
   @section license License
 
@@ -30,23 +30,32 @@
 
 #include <string>
 
-/** Populate LogData for requests that never created an HttpSM.
+/** Owns access-log data for entries that cannot be backed by an @c HttpSM.
  *
- * Malformed HTTP/2 or HTTP/3 request headers can be rejected while the
- * connection is still decoding and validating the stream, before the request
- * progresses far enough to create an HttpSM.  This class carries the
- * copied request and session metadata needed to emit a best-effort
- * transaction log entry for those failures.
+ * Normal transaction access logging is expected to use data extracted from a
+ * live @c HttpSM. This type is for exceptional client-facing failures that need
+ * transaction-log visibility but occur before an @c HttpSM exists, such as
+ * malformed HTTP/2 or HTTP/3 request headers rejected during protocol
+ * validation. It may also be used for connection-level failures, such as TLS
+ * handshake errors, when operators need those events in the access log.
  *
- * This class owns its milestones, addresses, and strings because the
- * originating stream is about to be destroyed.
+ * Because the protocol stream or connection state may be destroyed immediately
+ * after the failure is handled, this object owns the copied headers,
+ * addresses, milestones, protocol strings, and outcome fields needed by
+ * @c LogAccess. Fields that require an @c HttpSM, origin transaction, cache
+ * lookup, or server response are intentionally left unset and marshal through
+ * the normal default values.
+ *
+ * This path should remain narrow. If an @c HttpSM exists, prefer the standard
+ * @c HttpSM-backed logging path so normal transactions do not pay for extra
+ * copying or exceptional state.
  */
-class PreTransactionLogData
+class NonHttpSmLogData
 {
 public:
-  PreTransactionLogData() = default;
+  NonHttpSmLogData() = default;
 
-  ~PreTransactionLogData()
+  ~NonHttpSmLogData()
   {
     if (owned_client_request.valid()) {
       owned_client_request.destroy();

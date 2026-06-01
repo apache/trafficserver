@@ -22,7 +22,7 @@
  */
 
 #include "proxy/logging/TransactionLogData.h"
-#include "proxy/PreTransactionLogData.h"
+#include "proxy/NonHttpSmLogData.h"
 #include "proxy/http/HttpSM.h"
 #include "proxy/logging/LogAccess.h"
 #include "proxy/hdrs/MIME.h"
@@ -92,7 +92,7 @@ TransactionLogData::TransactionLogData(HttpSM *sm) : m_http_sm(sm)
   ink_assert(sm != nullptr);
 }
 
-TransactionLogData::TransactionLogData(PreTransactionLogData const &pre_data) : m_pre_data(&pre_data) {}
+TransactionLogData::TransactionLogData(NonHttpSmLogData const &non_http_sm_data) : m_non_http_sm_data(&non_http_sm_data) {}
 
 void *
 TransactionLogData::http_sm_for_plugins() const
@@ -111,7 +111,7 @@ TransactionLogData::get_milestones() const
   if (likely(m_http_sm != nullptr)) {
     return &m_http_sm->milestones;
   }
-  return &m_pre_data->owned_milestones;
+  return &m_non_http_sm_data->owned_milestones;
 }
 
 // ===== Headers =====
@@ -127,8 +127,8 @@ TransactionLogData::get_client_request() const
     return nullptr;
   }
 
-  if (m_pre_data->owned_client_request.valid()) {
-    return const_cast<HTTPHdr *>(&m_pre_data->owned_client_request);
+  if (m_non_http_sm_data->owned_client_request.valid()) {
+    return const_cast<HTTPHdr *>(&m_non_http_sm_data->owned_client_request);
   }
   return nullptr;
 }
@@ -207,7 +207,7 @@ TransactionLogData::get_client_req_url_str() const
     cache_url_strings();
     return m_client_req_url_str;
   }
-  return m_pre_data->owned_url.empty() ? nullptr : m_pre_data->owned_url.c_str();
+  return m_non_http_sm_data->owned_url.empty() ? nullptr : m_non_http_sm_data->owned_url.c_str();
 }
 
 int
@@ -217,7 +217,7 @@ TransactionLogData::get_client_req_url_len() const
     cache_url_strings();
     return m_client_req_url_len;
   }
-  return static_cast<int>(m_pre_data->owned_url.size());
+  return static_cast<int>(m_non_http_sm_data->owned_url.size());
 }
 
 const char *
@@ -227,7 +227,7 @@ TransactionLogData::get_client_req_url_path_str() const
     cache_url_strings();
     return m_client_req_url_path_str;
   }
-  return m_pre_data->owned_path.empty() ? nullptr : m_pre_data->owned_path.c_str();
+  return m_non_http_sm_data->owned_path.empty() ? nullptr : m_non_http_sm_data->owned_path.c_str();
 }
 
 int
@@ -237,7 +237,7 @@ TransactionLogData::get_client_req_url_path_len() const
     cache_url_strings();
     return m_client_req_url_path_len;
   }
-  return static_cast<int>(m_pre_data->owned_path.size());
+  return static_cast<int>(m_non_http_sm_data->owned_path.size());
 }
 
 // ===== Proxy response content-type / reason =====
@@ -384,7 +384,7 @@ TransactionLogData::get_client_addr() const
   if (likely(m_http_sm != nullptr)) {
     return &m_http_sm->t_state.effective_client_addr.sa;
   }
-  return &m_pre_data->owned_client_addr.sa;
+  return &m_non_http_sm_data->owned_client_addr.sa;
 }
 
 sockaddr const *
@@ -393,7 +393,7 @@ TransactionLogData::get_client_src_addr() const
   if (likely(m_http_sm != nullptr)) {
     return &m_http_sm->t_state.client_info.src_addr.sa;
   }
-  return &m_pre_data->owned_client_src_addr.sa;
+  return &m_non_http_sm_data->owned_client_src_addr.sa;
 }
 
 sockaddr const *
@@ -402,7 +402,7 @@ TransactionLogData::get_client_dst_addr() const
   if (likely(m_http_sm != nullptr)) {
     return &m_http_sm->t_state.client_info.dst_addr.sa;
   }
-  return &m_pre_data->owned_client_dst_addr.sa;
+  return &m_non_http_sm_data->owned_client_dst_addr.sa;
 }
 
 sockaddr const *
@@ -428,7 +428,7 @@ TransactionLogData::get_client_port() const
     }
     return 0;
   }
-  return m_pre_data->m_client_port;
+  return m_non_http_sm_data->m_client_port;
 }
 
 // ===== Server addressing =====
@@ -483,7 +483,7 @@ TransactionLogData::get_log_code() const
   if (likely(m_http_sm != nullptr)) {
     return m_http_sm->t_state.squid_codes.log_code;
   }
-  return m_pre_data->m_log_code;
+  return m_non_http_sm_data->m_log_code;
 }
 
 SquidSubcode
@@ -501,7 +501,7 @@ TransactionLogData::get_hit_miss_code() const
   if (likely(m_http_sm != nullptr)) {
     return m_http_sm->t_state.squid_codes.hit_miss_code;
   }
-  return m_pre_data->m_hit_miss_code;
+  return m_non_http_sm_data->m_hit_miss_code;
 }
 
 SquidHierarchyCode
@@ -510,7 +510,7 @@ TransactionLogData::get_hier_code() const
   if (likely(m_http_sm != nullptr)) {
     return m_http_sm->t_state.squid_codes.hier_code;
   }
-  return m_pre_data->m_hier_code;
+  return m_non_http_sm_data->m_hier_code;
 }
 
 // ===== Byte counters =====
@@ -595,7 +595,7 @@ TransactionLogData::get_connection_id() const
   if (likely(m_http_sm != nullptr)) {
     return m_http_sm->client_connection_id();
   }
-  return m_pre_data->m_connection_id;
+  return m_non_http_sm_data->m_connection_id;
 }
 
 int
@@ -604,7 +604,7 @@ TransactionLogData::get_transaction_id() const
   if (likely(m_http_sm != nullptr)) {
     return m_http_sm->client_transaction_id();
   }
-  return m_pre_data->m_transaction_id;
+  return m_non_http_sm_data->m_transaction_id;
 }
 
 int
@@ -653,7 +653,7 @@ TransactionLogData::get_client_protocol() const
   if (likely(m_http_sm != nullptr)) {
     return m_http_sm->get_user_agent().get_client_protocol();
   }
-  return m_pre_data->owned_client_protocol_str.empty() ? nullptr : m_pre_data->owned_client_protocol_str.c_str();
+  return m_non_http_sm_data->owned_client_protocol_str.empty() ? nullptr : m_non_http_sm_data->owned_client_protocol_str.c_str();
 }
 
 const char *
@@ -744,7 +744,7 @@ TransactionLogData::get_client_connection_is_ssl() const
   if (likely(m_http_sm != nullptr)) {
     return m_http_sm->get_user_agent().get_client_connection_is_ssl();
   }
-  return m_pre_data->m_client_connection_is_ssl;
+  return m_non_http_sm_data->m_client_connection_is_ssl;
 }
 
 bool
@@ -815,7 +815,7 @@ TransactionLogData::get_server_transact_count() const
   if (likely(m_http_sm != nullptr)) {
     return m_http_sm->server_transact_count;
   }
-  return m_pre_data->m_server_transact_count;
+  return m_non_http_sm_data->m_server_transact_count;
 }
 
 // ===== Finish status =====
@@ -1097,7 +1097,7 @@ TransactionLogData::get_server_response_transfer_encoding() const
   return {};
 }
 
-// ===== Fallback fields for pre-transaction logging =====
+// ===== Fallback fields for non-HttpSM logging =====
 
 std::string_view
 TransactionLogData::get_method() const
@@ -1105,7 +1105,7 @@ TransactionLogData::get_method() const
   if (likely(m_http_sm != nullptr)) {
     return {};
   }
-  return m_pre_data->owned_method;
+  return m_non_http_sm_data->owned_method;
 }
 
 std::string_view
@@ -1114,7 +1114,7 @@ TransactionLogData::get_scheme() const
   if (likely(m_http_sm != nullptr)) {
     return {};
   }
-  return m_pre_data->owned_scheme;
+  return m_non_http_sm_data->owned_scheme;
 }
 
 std::string_view
@@ -1123,5 +1123,5 @@ TransactionLogData::get_client_protocol_str() const
   if (likely(m_http_sm != nullptr)) {
     return {};
   }
-  return m_pre_data->owned_client_protocol_str;
+  return m_non_http_sm_data->owned_client_protocol_str;
 }
