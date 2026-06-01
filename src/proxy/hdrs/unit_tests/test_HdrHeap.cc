@@ -160,6 +160,14 @@ freelist_push(Allocator &a, ProxyAllocator &l, void *p)
   l.allocated++;
   a.increment_for_free();
 }
+
+// RAII guard that restores cmd_disable_pfreelist on scope exit, so a failing
+// REQUIRE()/CHECK() does not leak the flipped flag into later tests.
+struct PfreelistGuard {
+  int saved;
+  explicit PfreelistGuard(bool disable) : saved{cmd_disable_pfreelist} { cmd_disable_pfreelist = disable; }
+  ~PfreelistGuard() { cmd_disable_pfreelist = saved; }
+};
 } // namespace
 
 // Regression test for the hdrHeap/hdrStrHeap allocator inuse underflow. These two
@@ -183,9 +191,9 @@ TEST_CASE("allocator inuse stays balanced across freelist reuse", "[proxy][hdrhe
   };
 
   // The unit test harness disables per-thread freelists; enable them so that
-  // thread_alloc() exercises the freelist-reuse path that regressed.
-  bool const saved_disable = cmd_disable_pfreelist;
-  cmd_disable_pfreelist    = false;
+  // thread_alloc() exercises the freelist-reuse path that regressed. The guard
+  // restores the harness setting even if an assertion below throws.
+  PfreelistGuard const pfreelist_guard{false};
 
   for (auto const &c : cases) {
     ts::Metrics::IdType id;
@@ -220,8 +228,6 @@ TEST_CASE("allocator inuse stays balanced across freelist reuse", "[proxy][hdrhe
     c.allocator->free_void(p);
     CHECK(inuse->load() == baseline);
   }
-
-  cmd_disable_pfreelist = saved_disable;
 }
 
 #endif // TS_USE_ALLOCATOR_METRICS
