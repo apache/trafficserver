@@ -92,6 +92,17 @@ DbgCtl dbg_ctl_ssl_alpn{"ssl_alpn"};
 DbgCtl dbg_ctl_ssl_origin_session_cache{"ssl.origin_session_cache"};
 DbgCtl dbg_ctl_proxyprotocol{"proxyprotocol"};
 
+const char *
+resolve_client_ca_cert_path(const SSLConfigParams *params, const char *path, std::string &storage)
+{
+  if (path == nullptr) {
+    return params->clientCACertPath;
+  }
+
+  storage = Layout::get()->relative_to(Layout::get()->prefix, path);
+  return storage.c_str();
+}
+
 } // namespace
 
 //
@@ -1129,6 +1140,8 @@ SSLNetVConnection::_sslStartHandShake(int event, int &err)
       auto           nps       = sniParam->get_property_config(serverKey);
       shared_SSL_CTX sharedCTX = nullptr;
       SSL_CTX       *clientCTX = nullptr;
+      std::string    caCertPathStorage;
+      const char    *caCertPath = resolve_client_ca_cert_path(params, options.ssl_client_ca_cert_path, caCertPathStorage);
 
       // First Look to see if there are override parameters
       Dbg(dbg_ctl_ssl, "Checking for outbound client cert override [%p]", options.ssl_client_cert_name.get());
@@ -1144,18 +1157,21 @@ SSLNetVConnection::_sslStartHandShake(int event, int &err)
             keyFilePath = Layout::get()->relative_to(params->clientKeyPathOnly, options.ssl_client_private_key_name);
           }
           if (options.ssl_client_ca_cert_name) {
-            caCertFilePath = Layout::get()->relative_to(params->clientCACertPath, options.ssl_client_ca_cert_name);
+            caCertFilePath = Layout::get()->relative_to(caCertPath, options.ssl_client_ca_cert_name);
           }
           Dbg(dbg_ctl_ssl, "Using outbound client cert `%s'", options.ssl_client_cert_name.get());
         } else {
           Dbg(dbg_ctl_ssl, "Clearing outbound client cert");
         }
-        sharedCTX =
-          params->getCTX(certFilePath, keyFilePath, caCertFilePath.empty() ? params->clientCACertFilename : caCertFilePath.c_str(),
-                         params->clientCACertPath);
-      } else if (options.ssl_client_ca_cert_name) {
-        std::string caCertFilePath = Layout::get()->relative_to(params->clientCACertPath, options.ssl_client_ca_cert_name);
-        sharedCTX = params->getCTX(params->clientCertPath, params->clientKeyPath, caCertFilePath.c_str(), params->clientCACertPath);
+        sharedCTX = params->getCTX(certFilePath, keyFilePath,
+                                   caCertFilePath.empty() ? params->clientCACertFilename : caCertFilePath.c_str(), caCertPath);
+      } else if (options.ssl_client_ca_cert_name || options.ssl_client_ca_cert_path) {
+        std::string caCertFilePath;
+        if (options.ssl_client_ca_cert_name) {
+          caCertFilePath = Layout::get()->relative_to(caCertPath, options.ssl_client_ca_cert_name);
+        }
+        sharedCTX = params->getCTX(params->clientCertPath, params->clientKeyPath,
+                                   caCertFilePath.empty() ? params->clientCACertFilename : caCertFilePath.c_str(), caCertPath);
       } else if (nps && !nps->client_cert_file.empty()) {
         // If no overrides available, try the available nextHopProperty by reading from context mappings
         sharedCTX =

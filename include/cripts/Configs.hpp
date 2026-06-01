@@ -357,6 +357,7 @@ private:
           {
           public:
             cripts::StringConfig filename{"proxy.config.ssl.client.CA.cert.filename"};
+            cripts::StringConfig path{"proxy.config.ssl.client.CA.cert.path"};
           }; // End class Cert
 
         public:

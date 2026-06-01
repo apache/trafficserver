@@ -4407,6 +4407,7 @@ Client-Related Configuration
 
 .. ts:cv:: CONFIG proxy.config.ssl.client.CA.cert.path STRING NULL
    :reloadable:
+   :overridable:
 
    Specifies the location of the certificate authority file against
    which the origin server will be verified.

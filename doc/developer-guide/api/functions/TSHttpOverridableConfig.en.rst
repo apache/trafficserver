@@ -190,6 +190,7 @@ TSOverridableConfigKey Value                                              Config
 :enumerator:`TS_CONFIG_SSL_CLIENT_CERT_FILENAME`                        :ts:cv:`proxy.config.ssl.client.cert.filename`
 :enumerator:`TS_CONFIG_SSL_CLIENT_PRIVATE_KEY_FILENAME`                 :ts:cv:`proxy.config.ssl.client.private_key.filename`
 :enumerator:`TS_CONFIG_SSL_CLIENT_CA_CERT_FILENAME`                     :ts:cv:`proxy.config.ssl.client.CA.cert.filename`
+:enumerator:`TS_CONFIG_SSL_CLIENT_CA_CERT_PATH`                         :ts:cv:`proxy.config.ssl.client.CA.cert.path`
 :enumerator:`TS_CONFIG_HTTP_HOST_RESOLUTION_PREFERENCE`                 :ts:cv:`proxy.config.hostdb.ip_resolve`
 :enumerator:`TS_CONFIG_PLUGIN_VC_DEFAULT_BUFFER_INDEX`                  :ts:cv:`proxy.config.plugin.vc.default_buffer_index`
 :enumerator:`TS_CONFIG_PLUGIN_VC_DEFAULT_BUFFER_WATER_MARK`             :ts:cv:`proxy.config.plugin.vc.default_buffer_water_mark`
