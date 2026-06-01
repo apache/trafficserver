@@ -123,8 +123,8 @@ public:
    * The caller retains ownership of @a data, which must outlive the
    * synchronous Log::access() call that marshals this entry.
    *
-   * @param[in] data Populated TransactionLogData for a completed or
-   *                 pre-transaction entry.
+   * @param[in] data Populated TransactionLogData for an HttpSM-backed or
+   *                 non-HttpSM entry.
    */
   explicit LogAccess(TransactionLogData &data);
 
