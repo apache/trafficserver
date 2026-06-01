@@ -26,11 +26,15 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include "EsiGunzip.h"
 #include "Utils.h"
 #include "gzip.h"
 
 using std::string;
 using namespace EsiLib;
+
+extern void   enableFakeErrorLog();
+extern string gFakeErrorLog;
 
 TEST_CASE("test esi plugin - gzip")
 {
@@ -101,5 +105,27 @@ TEST_CASE("test esi plugin - gzip")
     BufferList buf_list;
     // check output of gunzip
     CHECK(gunzip(expected_cdata, 32, buf_list) == false);
+  }
+
+  SECTION("streaming gunzip does not log an error for chunks with no output")
+  {
+    const char expected_data[] = "Hello World!";
+
+    string cdata;
+    REQUIRE(gzip(expected_data, 12, cdata));
+
+    EsiGunzip gunzip;
+    string    data;
+
+    enableFakeErrorLog();
+    REQUIRE(gunzip.stream_decode(cdata.data(), GZIP_HEADER_SIZE, data));
+    CHECK(data.empty());
+    CHECK(gFakeErrorLog.empty());
+
+    REQUIRE(gunzip.stream_decode(cdata.data() + GZIP_HEADER_SIZE, cdata.size() - GZIP_HEADER_SIZE, data));
+    REQUIRE(gunzip.stream_finish());
+
+    CHECK(data == expected_data);
+    CHECK(gFakeErrorLog.empty());
   }
 }
