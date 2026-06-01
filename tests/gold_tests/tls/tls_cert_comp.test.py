@@ -24,7 +24,7 @@ with cert compression enabled. The test verifies compression and
 decompression succeed by checking the ssl cert compression metrics.
 '''
 
-Test.SkipUnless(Condition.HasATSFeature('TS_HAS_CERT_COMPRESSION'))
+Test.SkipUnless(Condition.HasATSFeature('TS_HAS_CERT_COMPRESSION_CALLBACKS'))
 
 REPLAY_FILE = 'replay/tls_cert_compression.replay.yaml'
 

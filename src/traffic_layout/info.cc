@@ -23,6 +23,7 @@
 
 #include <fcntl.h>
 #include <openssl/crypto.h>
+#include <openssl/ssl.h>
 #include <swoc/BufferWriter.h>
 #include <swoc/bwf_base.h>
 #include "tscore/Layout.h"
@@ -52,6 +53,39 @@
 #if HAVE_ZSTD_H
 #include <zstd.h>
 #endif
+
+#if HAVE_SSL_CTX_ADD_CERT_COMPRESSION_ALG
+static constexpr int ts_has_cert_compression_callbacks = 1;
+#else
+static constexpr int ts_has_cert_compression_callbacks = 0;
+#endif
+
+#if HAVE_SSL_CTX_ADD_CERT_COMPRESSION_ALG
+static constexpr int ts_has_cert_compression_zlib = 1;
+#elif HAVE_SSL_CTX_SET1_CERT_COMP_PREFERENCE && !defined(OPENSSL_NO_ZLIB)
+static constexpr int ts_has_cert_compression_zlib = 1;
+#else
+static constexpr int ts_has_cert_compression_zlib = 0;
+#endif
+
+#if HAVE_SSL_CTX_ADD_CERT_COMPRESSION_ALG && HAVE_BROTLI_ENCODE_H
+static constexpr int ts_has_cert_compression_brotli = 1;
+#elif !HAVE_SSL_CTX_ADD_CERT_COMPRESSION_ALG && HAVE_SSL_CTX_SET1_CERT_COMP_PREFERENCE && !defined(OPENSSL_NO_BROTLI)
+static constexpr int ts_has_cert_compression_brotli = 1;
+#else
+static constexpr int ts_has_cert_compression_brotli = 0;
+#endif
+
+#if HAVE_SSL_CTX_ADD_CERT_COMPRESSION_ALG && HAVE_ZSTD_H
+static constexpr int ts_has_cert_compression_zstd = 1;
+#elif !HAVE_SSL_CTX_ADD_CERT_COMPRESSION_ALG && HAVE_SSL_CTX_SET1_CERT_COMP_PREFERENCE && !defined(OPENSSL_NO_ZSTD)
+static constexpr int ts_has_cert_compression_zstd = 1;
+#else
+static constexpr int ts_has_cert_compression_zstd = 0;
+#endif
+
+static constexpr int ts_has_cert_compression =
+  ts_has_cert_compression_zlib | ts_has_cert_compression_brotli | ts_has_cert_compression_zstd;
 
 // Produce output about compile time features, useful for checking how things were built
 static void
@@ -100,11 +134,11 @@ produce_features(bool json)
 #else
   print_feature("TS_HAS_ZSTD", 0, json);
 #endif
-#if HAVE_SSL_CTX_ADD_CERT_COMPRESSION_ALG || HAVE_SSL_CTX_SET1_CERT_COMP_PREFERENCE
-  print_feature("TS_HAS_CERT_COMPRESSION", 1, json);
-#else
-  print_feature("TS_HAS_CERT_COMPRESSION", 0, json);
-#endif
+  print_feature("TS_HAS_CERT_COMPRESSION", ts_has_cert_compression, json);
+  print_feature("TS_HAS_CERT_COMPRESSION_CALLBACKS", ts_has_cert_compression_callbacks, json);
+  print_feature("TS_HAS_CERT_COMPRESSION_ZLIB", ts_has_cert_compression_zlib, json);
+  print_feature("TS_HAS_CERT_COMPRESSION_BROTLI", ts_has_cert_compression_brotli, json);
+  print_feature("TS_HAS_CERT_COMPRESSION_ZSTD", ts_has_cert_compression_zstd, json);
 #ifdef F_GETPIPE_SZ
   print_feature("TS_HAS_PIPE_BUFFER_SIZE_CONFIG", 1, json);
 #else
