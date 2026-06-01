@@ -86,6 +86,23 @@ ssl_multicert:
         tr.Processes.Default.StartBefore(self.ts)
         tr.AddVerifierClientProcess(
             "client", self.replay_file, http_ports=[self.ts.Variables.port], https_ports=[self.ts.Variables.ssl_port])
+        tr.StillRunningAfter = self.server
+        tr.StillRunningAfter = self.nameserver
+        tr.StillRunningAfter = self.ts
+
+        tr = Test.AddTestRun("Wait for transaction data sink output")
+        timeout = 30
+        watcher = tr.Processes.Process("watcher")
+        watcher.Command = f"sleep {timeout}"
+        watcher.Ready = When.FileContains(self.ts.Disk.traffic_out.Name, "http2_response_body_dumped")
+        watcher.TimeOut = timeout
+        tr.TimeOut = timeout
+        tr.StillRunningAfter = self.server
+        tr.StillRunningAfter = self.nameserver
+        tr.StillRunningAfter = self.ts
+        tr.Processes.Default.StartBefore(watcher)
+        tr.Processes.Default.Command = "echo await_transaction_data_sink_output"
+        tr.Processes.Default.ReturnCode = 0
 
 
 TransactionDataSyncTest().run()
