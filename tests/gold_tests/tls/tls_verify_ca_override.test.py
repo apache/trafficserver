@@ -17,7 +17,7 @@
 #  limitations under the License.
 
 Test.Summary = '''
-Test tls server  certificate verification options. Exercise conf_remap for ca bundle
+Test tls server certificate verification options. Exercise conf_remap for ca bundle path and file.
 '''
 
 # Define default ATS
@@ -58,18 +58,25 @@ ts.addSSLfile("ssl/signer.key")
 ts.addSSLfile("ssl/signer2.pem")
 ts.addSSLfile("ssl/signer2.key")
 
+
+def ca_cert_overrides(filename):
+    return (
+        f'@pparam=proxy.config.ssl.client.CA.cert.path={ts.Variables.SSLDir} '
+        f'@pparam=proxy.config.ssl.client.CA.cert.filename={filename}')
+
+
 ts.Disk.remap_config.AddLine(
-    'map /case1 https://127.0.0.1:{0}/ @plugin=conf_remap.so @pparam=proxy.config.ssl.client.CA.cert.filename={1}/{2}'.format(
-        server1.Variables.SSL_Port, ts.Variables.SSLDir, "signer.pem"))
+    f'map /case1 https://127.0.0.1:{server1.Variables.SSL_Port}/ '
+    f'@plugin=conf_remap.so {ca_cert_overrides("signer.pem")}')
 ts.Disk.remap_config.AddLine(
-    'map /badcase1 https://127.0.0.1:{0}/ @plugin=conf_remap.so @pparam=proxy.config.ssl.client.CA.cert.filename={1}/{2}'.format(
-        server1.Variables.SSL_Port, ts.Variables.SSLDir, "signer2.pem"))
+    f'map /badcase1 https://127.0.0.1:{server1.Variables.SSL_Port}/ '
+    f'@plugin=conf_remap.so {ca_cert_overrides("signer2.pem")}')
 ts.Disk.remap_config.AddLine(
-    'map /case2 https://127.0.0.1:{0}/ @plugin=conf_remap.so @pparam=proxy.config.ssl.client.CA.cert.filename={1}/{2}'.format(
-        server2.Variables.SSL_Port, ts.Variables.SSLDir, "signer2.pem"))
+    f'map /case2 https://127.0.0.1:{server2.Variables.SSL_Port}/ '
+    f'@plugin=conf_remap.so {ca_cert_overrides("signer2.pem")}')
 ts.Disk.remap_config.AddLine(
-    'map /badcase2 https://127.0.0.1:{0}/ @plugin=conf_remap.so @pparam=proxy.config.ssl.client.CA.cert.filename={1}/{2}'.format(
-        server2.Variables.SSL_Port, ts.Variables.SSLDir, "signer.pem"))
+    f'map /badcase2 https://127.0.0.1:{server2.Variables.SSL_Port}/ '
+    f'@plugin=conf_remap.so {ca_cert_overrides("signer.pem")}')
 
 ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
 
