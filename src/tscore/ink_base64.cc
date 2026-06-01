@@ -33,8 +33,6 @@
 #include "tscore/ink_base64.h"
 #include "tscore/ink_assert.h"
 
-// TODO: The code here seems a bit klunky, and could probably be improved a bit.
-
 bool
 ats_base64_encode(const unsigned char *inBuffer, size_t inBufferSize, char *outBuffer, size_t outBufSize, size_t *length)
 {
@@ -122,42 +120,47 @@ const unsigned char printableToSixBit[256] = {
 bool
 ats_base64_decode(const char *inBuffer, size_t inBufferSize, unsigned char *outBuffer, size_t outBufSize, size_t *length)
 {
-  size_t         inBytes           = 0;
-  size_t         decodedBytes      = 0;
-  unsigned char *buf               = outBuffer;
-  int            inputBytesDecoded = 0;
+  size_t         decodedBytes = 0;
+  unsigned char *buf          = outBuffer;
 
   // Make sure there is sufficient space in the output buffer
   if (outBufSize < ats_base64_decode_dstlen(inBufferSize)) {
     return false;
   }
 
-  // Ignore any trailing ='s or other undecodable characters.
+  // Ignore any trailing ='s or other undecodable characters: consume only the
+  // leading run of base64-alphabet bytes.
   // TODO: Perhaps that ought to be an error instead?
-  while (inBytes < inBufferSize && printableToSixBit[static_cast<uint8_t>(inBuffer[inBytes])] <= MAX_PRINT_VAL) {
+  size_t inBytes = 0;
+  while (inBytes < inBufferSize && DECODE(inBuffer[inBytes]) <= MAX_PRINT_VAL) {
     ++inBytes;
   }
 
-  for (size_t i = 0; i < inBytes; i += 4) {
-    buf[0] = static_cast<unsigned char>(DECODE(inBuffer[0]) << 2 | DECODE(inBuffer[1]) >> 4);
-    buf[1] = static_cast<unsigned char>(DECODE(inBuffer[1]) << 4 | DECODE(inBuffer[2]) >> 2);
-    buf[2] = static_cast<unsigned char>(DECODE(inBuffer[2]) << 6 | DECODE(inBuffer[3]));
-
-    buf               += 3;
-    inBuffer          += 4;
-    decodedBytes      += 3;
-    inputBytesDecoded += 4;
+  // Decode complete 4-character groups into 3 bytes each. Process only whole
+  // groups here so the loop never reads past the alphabet prefix; the previous
+  // code ran one extra iteration when inBytes was not a multiple of four (a
+  // read out of bounds of the input) and then read inBuffer[-2].
+  while (inBytes >= 4) {
+    buf[0]        = static_cast<unsigned char>(DECODE(inBuffer[0]) << 2 | DECODE(inBuffer[1]) >> 4);
+    buf[1]        = static_cast<unsigned char>(DECODE(inBuffer[1]) << 4 | DECODE(inBuffer[2]) >> 2);
+    buf[2]        = static_cast<unsigned char>(DECODE(inBuffer[2]) << 6 | DECODE(inBuffer[3]));
+    buf          += 3;
+    inBuffer     += 4;
+    decodedBytes += 3;
+    inBytes      -= 4;
   }
 
-  // Check to see if we decoded a multiple of 4 four
-  //    bytes
-  if ((inBytes - inputBytesDecoded) & 0x3) {
-    if (DECODE(inBuffer[-2]) > MAX_PRINT_VAL) {
-      decodedBytes -= 2;
-    } else {
-      decodedBytes -= 1;
+  // Decode a trailing 2- or 3-character group; a lone trailing character does
+  // not encode a full byte and is dropped (as an RFC 4648 decoder requires).
+  if (inBytes >= 2) {
+    buf[0]        = static_cast<unsigned char>(DECODE(inBuffer[0]) << 2 | DECODE(inBuffer[1]) >> 4);
+    decodedBytes += 1;
+    if (inBytes >= 3) {
+      buf[1]        = static_cast<unsigned char>(DECODE(inBuffer[1]) << 4 | DECODE(inBuffer[2]) >> 2);
+      decodedBytes += 1;
     }
   }
+
   outBuffer[decodedBytes] = '\0';
 
   if (length) {
