@@ -147,7 +147,7 @@ tr.Processes.Default.Command = tcp_client(
     "127.0.0.1", ts.Variables.port,
     "GET /admin/v1/combo?obj1&obj_empty_ct HTTP/1.1\n" + "Host: xyz\n" + "Connection: close\n" + "\n")
 tr.Processes.Default.ReturnCode = 0
-f = tr.Disk.File("_output/3-tr-Default/stream.all.txt")
+f = tr.Disk.File("_output/4-tr-Default/stream.all.txt")
 f.Content = "combo_handler_files/tr3.gold"
 
 ts.Disk.diags_log.Content = Testers.ContainsExpression("ERROR", "Some tests are failure tests")
