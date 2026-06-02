@@ -33,7 +33,6 @@
 
 #include "tscore/ParseRules.h"
 #include "tscore/ink_inet.h"
-#include "tscore/ink_inet.h"
 #include "tscore/ink_platform.h"
 
 // Look in MatcherUtils.cc for comments on function usage
