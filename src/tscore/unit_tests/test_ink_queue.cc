@@ -21,8 +21,7 @@
     limitations under the License.
 */
 
-#define CATCH_CONFIG_ENABLE_BENCHMARKING
-#include <catch2/catch_all.hpp>
+#include <catch2/catch_test_macros.hpp>
 
 #include <tscore/ink_queue.h>
 
@@ -192,29 +191,4 @@ TEST_CASE("Atomic list", "[atomiclist]")
     ink_freelist_free(f, a);
     ink_freelist_free(f, b);
   }
-}
-
-TEST_CASE("Freelist benchmarks", "[freelist][bench]")
-{
-  BENCHMARK_ADVANCED("Single threaded alloc")(Catch::Benchmark::Chronometer meter)
-  {
-    InkFreeList *f{ink_freelist_create("test#1", sizeof(std::int32_t), 4, alignof(std::int32_t))};
-
-    ink_freelist_new(f);
-
-    meter.measure([&]() { return ink_freelist_new(f); });
-  };
-
-  BENCHMARK_ADVANCED("Single threaded free")(Catch::Benchmark::Chronometer meter)
-  {
-    InkFreeList *f{ink_freelist_create("test#1", sizeof(std::int32_t), 4, alignof(std::int32_t))};
-
-    std::vector<void *> ptrs;
-    ptrs.resize(meter.runs());
-    for (auto &x : ptrs) {
-      x = ink_freelist_new(f);
-    }
-
-    meter.measure([&](int i) { return ink_freelist_free(f, ptrs[i]); });
-  };
 }
