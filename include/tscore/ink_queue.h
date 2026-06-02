@@ -78,7 +78,7 @@ void ink_queue_load_64(void *dst, void *src);
 #if (defined(__i386__) || defined(__arm__) || defined(__mips__)) && (SIZEOF_VOIDP == 4)
 typedef int32_t head_p_version_type;
 typedef int64_t head_p_data_type;
-#elif TS_HAS_128BIT_CAS
+#elif TS_HAS_128BIT_ATOMIC
 typedef int64_t    head_p_version_type;
 typedef __int128_t head_p_data_type;
 #else
@@ -90,7 +90,7 @@ using head_p_data_type    = int64_t;
 // lock, use INK_QUEUE_LD to read safely.
 using head_p = head_p_data_type;
 
-#if ((defined(__i386__) || defined(__arm__) || defined(__mips__)) && (SIZEOF_VOIDP == 4)) || TS_HAS_128BIT_CAS
+#if ((defined(__i386__) || defined(__arm__) || defined(__mips__)) && (SIZEOF_VOIDP == 4)) || TS_HAS_128BIT_ATOMIC
 
 // This struct maps to head_p on the above platforms. On other platforms,
 // bitshifting is used to read head_p.
@@ -100,8 +100,6 @@ struct head_p_view {
   head_p_version_type version;
 };
 
-#endif
-
 inline head_p_view
 load_head(head_p const &src)
 {
@@ -110,6 +108,8 @@ load_head(head_p const &src)
   std::memcpy(&result, &src, sizeof(result));
   return result;
 }
+
+#endif
 
 inline void
 store_head(head_p &dest, head_p_view const src)
@@ -145,7 +145,7 @@ store_head(head_p &dest, head_p_view const src)
 #define FREELIST_POINTER(_x)                     load_head((_x)).pointer
 #define FREELIST_VERSION(_x)                     load_head((_x)).version
 #define SET_FREELIST_POINTER_VERSION(_x, _p, _v) store_head((_x), head_p_view{(_p), (_v)})
-#elif TS_HAS_128BIT_CAS
+#elif TS_HAS_128BIT_ATOMIC
 #define FREELIST_POINTER(_x)                     load_head((_x)).pointer
 #define FREELIST_VERSION(_x)                     load_head((_x)).version
 #define SET_FREELIST_POINTER_VERSION(_x, _p, _v) store_head((_x), head_p_view{(_p), (_v)})

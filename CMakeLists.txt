@@ -416,6 +416,7 @@ if(EXTERNAL_LIBSWOC)
 endif()
 
 include(Check128BitCas)
+include(Check128BitAtomic)
 include(ConfigureTransparentProxy)
 
 # Find ccache
