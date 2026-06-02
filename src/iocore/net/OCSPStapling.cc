@@ -1374,10 +1374,18 @@ ssl_callback_ocsp_stapling(SSL *ssl, void *)
 
   certinfo *cinf = nullptr;
 
-  // Fast path: if only one certificate in the map, skip SSL_get_certificate() lookup
+#ifndef HAVE_NATIVE_DUAL_CERT_SUPPORT
+  // Fast path: without native dual-cert support each SSL_CTX holds exactly one
+  // certificate, so a single map entry must be the negotiated cert. This skips
+  // the SSL_get_certificate() lookup and the X509_cmp() DER re-parse below.
+  // Not safe under HAVE_NATIVE_DUAL_CERT_SUPPORT: a dual-cert CTX where only one
+  // cert has OCSP info also yields map->size()==1, but the negotiated cert may
+  // be the other one.
   if (map->size() == 1) {
     cinf = map->begin()->second;
-  } else {
+  } else
+#endif
+  {
     // Fetch the specific certificate used in this negotiation
     X509 *cert = SSL_get_certificate(ssl);
     if (!cert) {
