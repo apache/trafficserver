@@ -95,12 +95,22 @@ public:
   using VarUnmarshalFuncSliceOnly = std::variant<UnmarshalFunc, UnmarshalFuncWithSlice>;
   using VarUnmarshalFunc          = std::variant<decltype(nullptr), UnmarshalFunc, UnmarshalFuncWithSlice, UnmarshalFuncWithMap>;
 
-  enum Type {
-    sINT = 0, ///< Single INT
-    dINT,     ///< Double INT
-    STRING,   ///< String
-    IP,       ///< IP Address
-    N_TYPES
+  /** Field value type.
+
+      These values are also the on-wire type codes of the v3 binary log schema
+      (see LogBufferHeader::fmt_fieldtypes() and the v3 format docs under
+      doc/developer-guide/logging-architecture/), so they are a published
+      contract: append before N_TYPES, never renumber. 0 is reserved for INVALID
+      so a zero-filled schema byte can't pass as a real type. The code describes
+      only framing (how to walk/skip a field), never the value's meaning.
+  */
+  enum class Type : uint8_t {
+    INVALID = 0, ///< Reserved: never written; a reader treats 0 (or any unknown code) as unframmable and stops.
+    sINT    = 1, ///< one int64_t, 8 bytes (host byte order).
+    dINT    = 2, ///< two int64_t (16 bytes), e.g. HTTP version major/minor.
+    STRING  = 3, ///< NUL-terminated, 8-byte padded.
+    IP      = 4, ///< uint16_t family + family-sized address, 8-byte padded.
+    N_TYPES = 5, ///< Internal bound (asserts / name table); NOT a wire code.
   };
 
   enum Container {

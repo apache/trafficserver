@@ -1650,10 +1650,10 @@ struct TSResponseAction {
 };
 
 enum TSLogType {
-  TS_LOG_TYPE_INT,
+  TS_LOG_TYPE_INT = 1, ///< LogField::Type::sINT
   // DINT is omitted from the public API for now, until we decide whether we keep the type
-  TS_LOG_TYPE_STRING = 2,
-  TS_LOG_TYPE_ADDR   = 3,
+  TS_LOG_TYPE_STRING = 3, ///< LogField::Type::STRING
+  TS_LOG_TYPE_ADDR   = 4, ///< LogField::Type::IP
 };
 
 /* --------------------------------------------------------------------------
