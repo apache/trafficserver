@@ -1729,19 +1729,17 @@ LogAccess::marshal_proxy_protocol_tls_version(char *buf)
 int
 LogAccess::marshal_proxy_protocol_tls_group(char *buf)
 {
-  int len = INK_MIN_ALIGN;
+  int              len   = INK_MIN_ALIGN;
+  std::string_view group = m_data->get_pp_tls_group();
 
-  if (m_http_sm) {
-    if (auto group = m_http_sm->t_state.pp_info.get_tlv_ssl_group(); group) {
-      len = padded_length(group->size() + 1);
-      if (buf) {
-        marshal_mem(buf, group->data(), group->size(), len);
-      }
-    } else {
-      if (buf) {
-        // This prints the default value ("-")
-        marshal_mem(buf, nullptr, 0, len);
-      }
+  if (!group.empty()) {
+    len = padded_length(static_cast<int>(group.size()) + 1);
+    if (buf) {
+      marshal_mem(buf, group.data(), static_cast<int>(group.size()), len);
+    }
+  } else {
+    if (buf) {
+      marshal_mem(buf, nullptr, 0, len);
     }
   }
   return len;
