@@ -91,7 +91,8 @@ logging:
             tr.MakeCurlCommand(f"-v --fail -s -p -x 127.0.0.1:{self.ts.Variables.port} 'http://foo.com/get'", ts=self.ts)
             tr.Processes.Default.Streams.stderr = "gold/connect_0_stderr.gold"
             tr.Processes.Default.Streams.stderr = Testers.ContainsExpression(
-                f'Connected to 127.0.0.1.*{self.ts.Variables.port}', 'Curl should connect through the ATS proxy port.')
+                rf'(Connected to|Established connection to) 127\.0\.0\.1.*{self.ts.Variables.port}',
+                'Curl should connect through the ATS proxy port.')
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.TimeOut = 3
         self.__checkProcessAfter(tr)

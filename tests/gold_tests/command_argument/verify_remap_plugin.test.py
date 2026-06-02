@@ -39,12 +39,12 @@ def create_ts_process():
     # Ideally we would set the test run's Processes.Default to ts, but deep
     # copy of processes is not currently implemented in autest. Therefore we
     # replace the command which ts runs with a dummy command, and pull in
-    # piecemeal the values from ts that we want into the test run.
-    ts.Command = "sleep 100"
-    # sleep will return -2 when autest kills it. We set the expectation for the
-    # -2 return code here so the test doesn't fail because of this.
-    ts.ReturnCode = -2
-    # Clear the ready criteria because sleep is ready as soon as it is running.
+    # piecemeal the values from ts that we want into the test run. The helper
+    # only needs to create the ATS environment and runroot, so let it exit
+    # normally instead of depending on AuTest's cleanup signal behavior.
+    ts.Command = "true"
+    ts.ReturnCode = 0
+    # Clear the ready criteria because the helper is ready as soon as it runs.
     ts.Ready = None
     return ts
 
