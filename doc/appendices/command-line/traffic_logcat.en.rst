@@ -25,13 +25,16 @@ traffic_logcat
 Synopsis
 ========
 
-:program:`traffic_logcat` [-o output-file | -a] [-CEhSVw2] [input-file ...]
+:program:`traffic_logcat` [-o output-file | -a] [-CEHhSVw2] [input-file ...]
 
 Description
 ===========
 
 To analyze a binary log file using standard tools, you must first convert
 it to ASCII. :program:`traffic_logcat` does exactly that.
+
+:program:`traffic_logcat` reads both version 2 and version 3 binary log
+segments. See :ref:`binary-log-v3-format` for the self-describing v3 format.
 
 Options
 =======
@@ -73,6 +76,21 @@ Attempts to transform the input to Squid format, if possible.
 .. option:: -2, --elf2
 
 Attempt to transform the input to Netscape Extended-2 format, if possible.
+
+.. option:: -j, --json
+
+Emits each entry as a JSON object, decoded directly from the self-describing
+v3 field-type schema (see :ref:`binary-log-v3-format`). Requires version 3
+binary logs; version 2 segments lack the schema and are skipped with a note.
+
+.. option:: -H, --header
+
+Prints the header of each binary log segment (version, format type, byte and
+entry counts, timestamps, log object signature, the format name/fieldlist/printf
+strings, source hostname, and log filename) instead of decoding entries. For
+version 3 segments the self-describing field-type schema is printed as well,
+pairing each field symbol with its framing type. Works for both version 2 and
+version 3 segments.
 
 .. option:: -T, --debug_tags
 

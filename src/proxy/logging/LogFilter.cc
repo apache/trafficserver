@@ -171,24 +171,24 @@ LogFilter::parse(const char *name, Action action, const char *condition)
   LogFilter     *filter;
 
   switch (field_type) {
-  case LogField::sINT:
+  case LogField::Type::sINT:
     filter = new LogFilterInt(name, logfield.get(), action, oper, val_str);
     break;
 
-  case LogField::dINT:
+  case LogField::Type::dINT:
     Error("Invalid field type (double int); cannot create filter '%s'", name);
     return nullptr;
 
-  case LogField::STRING:
+  case LogField::Type::STRING:
     filter = new LogFilterString(name, logfield.get(), action, oper, val_str);
     break;
 
-  case LogField::IP:
+  case LogField::Type::IP:
     filter = new LogFilterIP(name, logfield.get(), action, oper, val_str);
     break;
 
   default:
-    Error("Unknown logging field type %d; cannot create filter '%s'", field_type, name);
+    Error("Unknown logging field type %d; cannot create filter '%s'", static_cast<int>(field_type), name);
     return nullptr;
   }
 

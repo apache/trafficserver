@@ -518,18 +518,16 @@ LogFile::write_ascii_logbuffer(LogBufferHeader *buffer_header, int fd, const cha
   char         *fieldlist_str;
   char         *printf_str;
 
-  switch (buffer_header->version) {
-  case LOG_SEGMENT_VERSION:
-    format_type = static_cast<LogFormatType>(buffer_header->format_type);
-
+  // v3 is identical to v2 for ASCII output: it still uses fmt_fieldlist and
+  // fmt_printf; the extra field-type schema is additive and ignored here.
+  if (log_segment_version_supported(buffer_header->version)) {
+    format_type   = static_cast<LogFormatType>(buffer_header->format_type);
     fieldlist_str = buffer_header->fmt_fieldlist();
     printf_str    = buffer_header->fmt_printf();
-    break;
-
-  default:
+  } else {
     Note("Invalid LogBuffer version %d in write_ascii_logbuffer; "
-         "current version is %d",
-         buffer_header->version, LOG_SEGMENT_VERSION);
+         "supported versions are %d-%d",
+         buffer_header->version, LOG_SEGMENT_VERSION_MIN_SUPPORTED, LOG_SEGMENT_VERSION);
     return 0;
   }
 
@@ -584,17 +582,16 @@ LogFile::write_ascii_logbuffer3(LogBufferHeader *buffer_header, const char *alt_
   char         *printf_str;
   char         *ascii_buffer;
 
-  switch (buffer_header->version) {
-  case LOG_SEGMENT_VERSION:
+  // Same v2/v3 handling as write_ascii_logbuffer: the v3 schema is additive
+  // and not needed for ASCII output.
+  if (log_segment_version_supported(buffer_header->version)) {
     format_type   = static_cast<LogFormatType>(buffer_header->format_type);
     fieldlist_str = buffer_header->fmt_fieldlist();
     printf_str    = buffer_header->fmt_printf();
-    break;
-
-  default:
+  } else {
     Note("Invalid LogBuffer version %d in write_ascii_logbuffer; "
-         "current version is %d",
-         buffer_header->version, LOG_SEGMENT_VERSION);
+         "supported versions are %d-%d",
+         buffer_header->version, LOG_SEGMENT_VERSION_MIN_SUPPORTED, LOG_SEGMENT_VERSION);
     return 0;
   }
 
