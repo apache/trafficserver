@@ -48,13 +48,12 @@ Context::reset()
     _server.request.Reset();
   }
 
-  // Clear the initialized URLs before calling next hook
-  if (_urls.pristine.Initialized()) {
-    _urls.pristine.Reset();
-  }
-  if (_urls.parent.Initialized()) {
-    _urls.parent.Reset();
-  }
+  // Release lazy URLs entirely — they get recreated on demand for the next txn.
+  _urls.pristine.reset();
+  _urls.parent.reset();
+  _urls.remap.from.reset();
+  _urls.remap.to.reset();
+
   if (_cache.url.Initialized()) {
     _cache.url.Reset();
   }
