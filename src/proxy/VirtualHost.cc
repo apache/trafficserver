@@ -21,9 +21,14 @@
   limitations under the License.
  */
 
+#include <algorithm>
+#include <cerrno>
+#include <memory>
 #include <set>
-#include <string_view>
 #include <string>
+#include <string_view>
+#include <strings.h>
+#include <sys/stat.h>
 #include <yaml-cpp/yaml.h>
 
 #include "proxy/VirtualHost.h"
@@ -102,14 +107,13 @@ template <> struct YAML::convert<VirtualHostConfig::Entry> {
 
       // Check if domain is wildcard, prefixed with *
       if (domain[0] == '*') {
-        const char *subdomain = index(domain, '*');
-        if (subdomain && subdomain[1] == '.') {
-          item.wildcard_domains.push_back(subdomain + 2);
-        } else {
-          Dbg(dbg_ctl_virtualhost, "Virtual host wildcard entry must have '*.[domain]' format");
+        if (domain[1] != '.' || domain[2] == '\0' || domain[2] == '.' || strchr(domain + 2, '*') != nullptr) {
+          Dbg(dbg_ctl_virtualhost, "Virtual host wildcard '%s' must match '*.[domain]' format", domain);
+          return false;
         }
+        item.wildcard_domains.emplace_back(domain + 2);
       } else {
-        item.exact_domains.push_back(domain);
+        item.exact_domains.emplace_back(domain);
       }
     }
 
@@ -224,7 +228,7 @@ VirtualHostConfig::load_entry(std::string_view id, Ptr<Entry> &entry)
     YAML::Node config = YAML::LoadFile(config_path);
     if (config.IsNull()) {
       Dbg(dbg_ctl_virtualhost, "Empty virtualhost config: %s", config_path.c_str());
-      return true;
+      return false;
     }
 
     config = config["virtualhost"];
@@ -358,15 +362,17 @@ VirtualHost::startup()
                                                            ctx.in_progress();
 
                                                            // Single-entry reload requested via -D virtualhost.id=<id>
-                                                           if (auto directives = ctx.reload_directives();
-                                                               directives && directives["id"]) {
-                                                             std::string id = directives["id"].as<std::string>();
-                                                             if (VirtualHost::reconfigure(id)) {
-                                                               ctx.complete("Reloaded virtualhost entry: " + id);
-                                                             } else {
-                                                               ctx.fail("Failed to reload virtualhost entry: " + id);
+                                                           if (auto directives = ctx.reload_directives(); directives) {
+                                                             const auto id_dir = directives["id"];
+                                                             if (id_dir && id_dir.IsScalar()) {
+                                                               std::string id = id_dir.as<std::string>();
+                                                               if (VirtualHost::reconfigure(id)) {
+                                                                 ctx.complete("Reloaded virtualhost entry: " + id);
+                                                               } else {
+                                                                 ctx.fail("Failed to reload virtualhost entry: " + id);
+                                                               }
+                                                               return;
                                                              }
-                                                             return;
                                                            }
 
                                                            // Full reload (file-based or no supplied content)

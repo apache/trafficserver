@@ -20,6 +20,8 @@
 
 #include <string>
 #include <string_view>
+#include <unordered_map>
+#include <vector>
 
 #include "iocore/eventsystem/ConfigProcessor.h"
 #include "proxy/http/remap/UrlRewrite.h"
