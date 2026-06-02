@@ -2764,7 +2764,7 @@ Cache Control
    a minimum time, and the actual sync may be delayed if the disks are larger than
    how fast we allow it to write to disk (see next options).
 
-.. ts:cv:: CONFIG proxy.config.cache.dir.sync_max_writes INT 2097152
+.. ts:cv:: CONFIG proxy.config.cache.dir.sync_max_write INT 2097152
    :units: bytes
 
    How much of a stripes cache directory we will write to disk in each write cycle.
