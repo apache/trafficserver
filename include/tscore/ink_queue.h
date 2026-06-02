@@ -254,7 +254,7 @@ struct InkAtomicList {
   uint32_t            offset = 0;
 };
 
-#define INK_ATOMICLIST_EMPTY(_x) (!(TO_PTR(FREELIST_POINTER((_x.head)))))
+#define INK_ATOMICLIST_EMPTY(_x) (!(TO_PTR(FREELIST_POINTER((_x.head.load())))))
 
 // WARNING: the "name" string is not copied, it has to be a statically-stored constant string.
 //

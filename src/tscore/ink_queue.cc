@@ -148,9 +148,15 @@ ink_freelist_init(InkFreeList **fl, const char *name, uint32_t type_size, uint32
   // which requires a power of 2 boundary.
   ink_release_assert(alignment != 0 && (alignment & (alignment - 1u)) == 0);
 
-  // Freelist nodes have to be at least void* aligned since they store void*s when
-  // not allocated out.
-  alignment = std::lcm(alignment, alignof(void *));
+  // The same alignment is used for both the InkFreeList object and to
+  // calculate the alignment member that determines alignment for
+  // chunks allocated in ink_freelist_new. I don't know why.
+  //
+  // The alignment may need to be corrected to ensure all internal bookkeeping
+  // objects are properly aligned, not only the user objects placed into the
+  // allocated memory.
+  alignment = std::lcm(alignment, static_cast<std::uint32_t>(alignof(InkFreeList)));
+  alignment = std::lcm(alignment, static_cast<std::uint32_t>(alignof(void *)));
 
   InkFreeList       *f;
   ink_freelist_list *fll;

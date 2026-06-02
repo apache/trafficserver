@@ -36,7 +36,7 @@ set(CHECK_PROGRAM
     "
 )
 
-include(CheckCSourceCompiles)
+include(CheckCXXSourceCompiles)
 check_cxx_source_compiles("${CHECK_PROGRAM}" TS_HAS_128BIT_ATOMIC)
 
 if(NOT TS_HAS_128BIT_ATOMIC)
