@@ -41,7 +41,10 @@ void
 Error::Reason::_set(cripts::Context *context, const cripts::string_view msg)
 {
   context->state.error.Fail();
-  context->state.error._reason._setter(msg);
+  if (!context->state.error._reason) {
+    context->state.error._reason = std::make_unique<Reason>();
+  }
+  context->state.error._reason->_setter(msg);
 }
 
 // For convenience, an optional Reason message can also be specified with the status
@@ -52,7 +55,10 @@ Error::Status::_set(cripts::Context *context, TSHttpStatus status, const cripts:
   context->state.error._status._setter(status);
 
   if (msg.size() > 0) {
-    context->state.error._reason._setter(msg);
+    if (!context->state.error._reason) {
+      context->state.error._reason = std::make_unique<Reason>();
+    }
+    context->state.error._reason->_setter(msg);
   }
 
   if (context->state.error.Redirected() || status == TS_HTTP_STATUS_MOVED_PERMANENTLY ||

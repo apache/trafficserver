@@ -17,6 +17,7 @@
 */
 #pragma once
 
+#include <memory>
 #include <utility>
 
 #include "ts/ts.h"
@@ -132,10 +133,10 @@ public:
   void Execute(cripts::Context *context);
 
 private:
-  Reason _reason;
-  Status _status;
-  bool   _failed   = false;
-  bool   _redirect = false;
+  std::unique_ptr<Reason> _reason;
+  Status                  _status;
+  bool                    _failed   = false;
+  bool                    _redirect = false;
 };
 
 } // namespace cripts
