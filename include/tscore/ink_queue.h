@@ -82,21 +82,21 @@ void ink_queue_load_64(void *dst, void *src);
  * Generic Free List Manager
  */
 #if (defined(__i386__) || defined(__arm__) || defined(__mips__)) && (SIZEOF_VOIDP == 4)
-  typedef int32_t version_type;
-  typedef int64_t data_type;
-#elif TS_HAS_128BIT_CAS || TS_HAS_128BIT_CAS_LIBATOMIC
-  using head_p_version_type = int64_t;
-  using head_p_data_type    = __int128_t;
+using head_p_version_type = int32_t;
+using head_p_data_type    = int64_t;
+#elif TS_HAS_128BIT_ATOMIC || TS_HAS_128BIT_CAS_LIBATOMIC
+using head_p_version_type = int64_t;
+using head_p_data_type    = __int128_t;
 #else
-  using head_p_version_type = int64_t;
-  using head_p_data_type    = int64_t;
+using head_p_version_type = int64_t;
+using head_p_data_type    = int64_t;
 #endif
 
 // Warning: head_p is read and written in multiple threads without a
 // lock, use INK_QUEUE_LD to read safely.
 using head_p = head_p_data_type;
 
-#if ((defined(__i386__) || defined(__arm__) || defined(__mips__)) && (SIZEOF_VOIDP == 4)) || TS_HAS_128BIT_CAS
+#if ((defined(__i386__) || defined(__arm__) || defined(__mips__)) && (SIZEOF_VOIDP == 4)) || TS_HAS_128BIT_ATOMIC || TS_HAS_128BIT_LIBATOMIC
 
 // This struct maps to head_p on the above platforms. On other platforms,
 // bitshifting is used to read head_p.
@@ -106,8 +106,6 @@ struct head_p_view {
   head_p_version_type version;
 };
 
-#endif
-
 inline head_p_view
 load_head(head_p const &src)
 {
@@ -116,6 +114,8 @@ load_head(head_p const &src)
   std::memcpy(&result, &src, sizeof(result));
   return result;
 }
+
+#endif
 
 inline void
 store_head(head_p &dest, head_p_view const src)
@@ -151,7 +151,7 @@ store_head(head_p &dest, head_p_view const src)
 #define FREELIST_POINTER(_x)                     load_head((_x)).pointer
 #define FREELIST_VERSION(_x)                     load_head((_x)).version
 #define SET_FREELIST_POINTER_VERSION(_x, _p, _v) store_head((_x), head_p_view{(_p), (_v)})
-#elif TS_HAS_128BIT_CAS || TS_HAS_128BIT_CAS_LIBATOMIC
+#elif TS_HAS_128BIT_ATOMIC || TS_HAS_128BIT_CAS_LIBATOMIC
 #define FREELIST_POINTER(_x)                     load_head((_x)).pointer
 #define FREELIST_VERSION(_x)                     load_head((_x)).version
 #define SET_FREELIST_POINTER_VERSION(_x, _p, _v) store_head((_x), head_p_view{(_p), (_v)})
