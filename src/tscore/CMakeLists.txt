@@ -106,34 +106,6 @@ else()
   target_sources(tscore PRIVATE HKDF_openssl.cc)
 endif()
 
-if(TS_HAS_128BIT_CAS)
-  set(ATOMICLIB_TEST_PROGRAM
-      "
-    #include <atomic>
-
-    std::atomic<__int128> g_atomic;
-
-    int main() { }
-  "
-  )
-
-  check_cxx_source_compiles("${ATOMICLIB_TEST_PROGRAM}" NEED_LIBATOMIC)
-
-  if(NEED_LIBATOMIC)
-    set(CMAKE_REQUIRED_LIBRARIES atomic)
-    check_cxx_source_compiles("${ATOMICLIB_TEST_PROGRAM}" HAVE_LIBATOMIC)
-    unset(CMAKE_REQUIRED_LIBRARIES)
-
-    if(NOT HAVE_LIBATOMIC)
-      message(WARNING "Cannot build 128 bit atomics")
-      set(TS_HAS_128BIT_CAS FALSE)
-    else()
-      target_link_libraries(tscore PUBLIC atomic)
-    endif()
-
-  endif()
-endif()
-
 target_link_libraries(
   tscore PUBLIC OpenSSL::Crypto libswoc::libswoc yaml-cpp::yaml-cpp systemtap::systemtap resolv::resolv ts::tsutil
 )
@@ -151,7 +123,10 @@ endif()
 
 add_dependencies(tscore ParseRules)
 target_include_directories(tscore PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
-if(TS_HAS_128BIT_CAS AND TS_NEEDS_MCX16_FOR_CAS)
+if((TS_HAS_128BIT_CAS
+    AND TS_HAS_128BIT_ATOMIC
+    AND (TS_NEEDS_MCX16_FOR_CAS OR TS_NEEDS_MCX16_FOR_128BIT_ATOMIC))
+)
   target_compile_options(tscore PUBLIC "-mcx16")
 endif()
 
