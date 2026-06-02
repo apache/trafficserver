@@ -55,6 +55,12 @@
 
 void ink_queue_load_64(void *dst, void *src);
 
+#if TS_HAS_128BIT_CAS && TS_HAS_128BIT_ATOMIC
+#define TS_128BIT_QUEUE 1
+#else
+#define TS_128BIT_QUEUE 0
+#endif
+
 #ifdef __x86_64__
 #define INK_QUEUE_LD64(dst, src) *((uint64_t *)&(dst)) = *((uint64_t *)&(src))
 #else
@@ -62,7 +68,7 @@ void ink_queue_load_64(void *dst, void *src);
 #endif
 
 // passing a const volatile value of 0 works around a gcc bug
-#if TS_HAS_128BIT_CAS
+#if TS_128BIT_QUEUE
 #define INK_QUEUE_LD(dst, src)                                                                     \
   do {                                                                                             \
     const volatile __int128_t iqld0 = 0;                                                           \
@@ -78,7 +84,7 @@ void ink_queue_load_64(void *dst, void *src);
 #if (defined(__i386__) || defined(__arm__) || defined(__mips__)) && (SIZEOF_VOIDP == 4)
 typedef int32_t head_p_version_type;
 typedef int64_t head_p_data_type;
-#elif TS_HAS_128BIT_ATOMIC
+#elif TS_128BIT_QUEUE
 typedef int64_t    head_p_version_type;
 typedef __int128_t head_p_data_type;
 #else
@@ -90,7 +96,7 @@ using head_p_data_type    = int64_t;
 // lock, use INK_QUEUE_LD to read safely.
 using head_p = head_p_data_type;
 
-#if ((defined(__i386__) || defined(__arm__) || defined(__mips__)) && (SIZEOF_VOIDP == 4)) || TS_HAS_128BIT_ATOMIC
+#if ((defined(__i386__) || defined(__arm__) || defined(__mips__)) && (SIZEOF_VOIDP == 4)) || TS_128BIT_QUEUE
 
 // This struct maps to head_p on the above platforms. On other platforms,
 // bitshifting is used to read head_p.
@@ -145,7 +151,7 @@ store_head(head_p &dest, head_p_view const src)
 #define FREELIST_POINTER(_x)                     load_head((_x)).pointer
 #define FREELIST_VERSION(_x)                     load_head((_x)).version
 #define SET_FREELIST_POINTER_VERSION(_x, _p, _v) store_head((_x), head_p_view{(_p), (_v)})
-#elif TS_HAS_128BIT_ATOMIC
+#elif TS_128BIT_QUEUE
 #define FREELIST_POINTER(_x)                     load_head((_x)).pointer
 #define FREELIST_VERSION(_x)                     load_head((_x)).version
 #define SET_FREELIST_POINTER_VERSION(_x, _p, _v) store_head((_x), head_p_view{(_p), (_v)})
