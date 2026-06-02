@@ -69,10 +69,10 @@ Field Name            Description
 
 ``domains``
    Domains can be defined as request domain name or subdomains using wildcard feature.
-   Wildcard support only allows single left most ``*``. This does not support regex.
+   Wildcard support only allows a single left most ``*``. This does not support regex.
    When matching to a virtual host entry, domains with exact match have precedence
-   over wildcard. If a domain matches to multiple wildcard domains, the virtual host
-   config defined first has precedence.
+   over wildcard. If a domain matches to multiple wildcard domains, the most specific
+   (longest) suffix match is selected.
 
    For example:
       Supported:
@@ -103,8 +103,8 @@ Evaluation Order
    a. Follow existing :file:`remap.yaml` rules and matching orders. If a matching remap rule is found, that remap rule is selected.
 3. If neither virtual host nor remap rules match, ATS falls back to global :file:`remap.yaml` resolution.
 
-Only one virtual host entry may match a given request. If multiple entries could match, ATS uses the first matching
-entry defined in :file:`virtualhost.yaml`.
+Only one virtual host entry may match a given request. Exact domain matches take precedence over wildcard matches. For wildcard matches,
+ATS selects the most specific (longest) matching suffix (e.g. ``*.example.com`` before ``*.com``).
 
 
 Granular Reload
@@ -170,10 +170,10 @@ Examples
    # remap.yaml
    remap:
      - type: map
-        from:
-          url: http://www.x.com
-        to:
-          url: http://other.example.com/
+       from:
+         url: http://www.x.com
+       to:
+         url: http://other.example.com/
 
 This rules translates in the following translation.
 
@@ -200,8 +200,8 @@ Client Request                                   Translated Request
             url: http://origin$1.example.com/
 
 
-      - id: foo
-        domains:
+     - id: foo
+       domains:
          - foo.example.com
 
        remap:
