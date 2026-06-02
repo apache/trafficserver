@@ -109,14 +109,14 @@ load_head(head_p const &src)
   return result;
 }
 
-#endif
-
 inline void
 store_head(head_p &dest, head_p_view const src)
 {
   static_assert(sizeof(dest) == sizeof(src));
   std::memcpy(&dest, &src, sizeof(dest));
 }
+
+#endif
 
 /*
  * Why is version required? One scenario is described below
