@@ -24,9 +24,6 @@ import threading
 import argparse
 
 LOCAL_HOST = '127.0.0.1'
-TIMEOUT = 0.5
-# Create a thread-local data object to store the number of bytes transferred.
-thread_local_data = threading.local()
 
 
 def parse_args() -> argparse.Namespace:
@@ -40,39 +37,38 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def initialize_thread_local_data():
-    thread_local_data.client_to_server_bytes = 0
-    thread_local_data.server_to_client_bytes = 0
-
-
-def forward(source, destination, is_client_to_server):
+def forward(source, destination, is_client_to_server, byte_counts):
     """Forward traffic from source to destination.
 
     :param source: socket to read from.
     :param destination: socket to write to.
     :param is_client_to_server: True if forwarding from client to server.
+    :param byte_counts: A dictionary to record bytes sent in each direction.
     """
-    # Initialize thread-local data.
-    initialize_thread_local_data()
+    bytes_transferred = 0
 
-    while True:
-        try:
+    try:
+        while True:
             data = source.recv(4096)
             if not data:
                 break
             destination.sendall(data)
-        except Exception as e:
-            # Catching all exceptions.
-            break
-        if is_client_to_server:
-            thread_local_data.client_to_server_bytes += len(data)
-        else:
-            thread_local_data.server_to_client_bytes += len(data)
+            bytes_transferred += len(data)
+    except OSError:
+        pass
+    finally:
+        try:
+            destination.shutdown(socket.SHUT_WR)
+        except OSError:
+            pass
     # Forwarding done. Print the number of bytes transferred in the direction.
-    if thread_local_data.client_to_server_bytes > 0:
-        print(f"client-to-server: {thread_local_data.client_to_server_bytes}")
-    elif thread_local_data.server_to_client_bytes > 0:
-        print(f"server-to-client: {thread_local_data.server_to_client_bytes}")
+    if bytes_transferred > 0:
+        if is_client_to_server:
+            byte_counts["client-to-server"] = bytes_transferred
+            print(f"client-to-server: {bytes_transferred}", flush=True)
+        else:
+            byte_counts["server-to-client"] = bytes_transferred
+            print(f"server-to-client: {bytes_transferred}", flush=True)
 
 
 def start_bidirectional_forwarding(client_socket, forwarding_port):
@@ -80,44 +76,47 @@ def start_bidirectional_forwarding(client_socket, forwarding_port):
 
     :param client_socket: socket connected to the client.
     :param forwarding_port: server port to forward to.
+    :return: The number of bytes forwarded in both directions.
     """
     CLIENT_TO_SERVER = True
     SERVER_TO_CLIENT = False
+    byte_counts = {}
     with client_socket, socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
-        client_socket.settimeout(TIMEOUT)
-        server_socket.settimeout(TIMEOUT)
-        server_socket.connect((LOCAL_HOST, forwarding_port))
+        try:
+            server_socket.connect((LOCAL_HOST, forwarding_port))
+        except OSError:
+            return 0
+
         # Spawn a thread to forward traffic from client to server.
-        client_to_server = threading.Thread(target=forward, args=(client_socket, server_socket, CLIENT_TO_SERVER))
+        client_to_server = threading.Thread(target=forward, args=(client_socket, server_socket, CLIENT_TO_SERVER, byte_counts))
         client_to_server.start()
 
-        # Forward traffic from server to client in the current thread.
-        forward(server_socket, client_socket, SERVER_TO_CLIENT)
+        server_to_client = threading.Thread(target=forward, args=(server_socket, client_socket, SERVER_TO_CLIENT, byte_counts))
+        server_to_client.start()
         client_to_server.join()
+        server_to_client.join()
+    return sum(byte_counts.values())
 
 
 def main() -> int:
     """Run the proxy."""
-    print(f"Starting proxy...")
+    print("Starting proxy...", flush=True)
     args = parse_args()
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as listen_socket:
         listen_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         listen_socket.bind((LOCAL_HOST, args.listening_port))
         listen_socket.listen()
-        print(f"Proxy listening on {LOCAL_HOST}:{args.listening_port}")
+        print(f"Proxy listening on {LOCAL_HOST}:{args.listening_port}", flush=True)
         try:
             while True:
                 client_sock, client_addr = listen_socket.accept()
-                print(f"Accepted connection from {client_addr}")
-                # Handle each client connection in a new thread.
-                client_thread = threading.Thread(target=start_bidirectional_forwarding, args=(client_sock, args.forwarding_port))
-                client_thread.start()
-        except Exception:
-            # Catching all exceptions.
-            pass
+                print(f"Accepted connection from {client_addr}", flush=True)
+                if start_bidirectional_forwarding(client_sock, args.forwarding_port) > 0:
+                    break
         except KeyboardInterrupt:
-            print("Caught KeyboardInterrupt, terminating the program")
+            print("Caught KeyboardInterrupt, terminating the program", flush=True)
             return 0
+    return 0
 
 
 if __name__ == "__main__":
