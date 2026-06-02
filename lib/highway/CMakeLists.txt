@@ -616,6 +616,7 @@ if(UNIX AND NOT APPLE)
 endif()
 endif()  # HWY_ENABLE_TESTS
 
+if (CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
 # -------------------------------------------------------- hwy_list_targets
 # Generate a tool to print the compiled-in targets as defined by the current
 # flags. This tool will print to stderr at build time, after building hwy.
@@ -633,6 +634,7 @@ if (NOT CMAKE_CROSSCOMPILING OR CMAKE_CROSSCOMPILING_EMULATOR)
 add_custom_command(TARGET hwy_list_targets POST_BUILD
     COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR} $<TARGET_FILE:hwy_list_targets> || (exit 0))
 endif()
+endif()  # CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR
 
 # --------------------------------------------------------
 # Allow skipping the following sections for projects that do not need them:
