@@ -25,19 +25,16 @@
 
 set(CHECK_PROGRAM
     "
-    #include <atomic>
-
-    int main()
+    int main(void)
     {
-        std::atomic<__int128> x{0};
-        __int128 expected{x.load()};
-        return x.compare_exchange_strong(expected, 10);
+        __int128_t x = 0;
+        return __sync_bool_compare_and_swap(&x,0,10);
     }
     "
 )
 
 include(CheckCSourceCompiles)
-check_cxx_source_compiles("${CHECK_PROGRAM}" TS_HAS_128BIT_CAS)
+check_c_source_compiles("${CHECK_PROGRAM}" TS_HAS_128BIT_CAS)
 
 if(NOT TS_HAS_128BIT_CAS)
   unset(TS_HAS_128BIT_CAS CACHE)

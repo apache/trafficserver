@@ -100,6 +100,8 @@ struct head_p_view {
   head_p_version_type version;
 };
 
+#endif
+
 inline head_p_view
 load_head(head_p const &src)
 {
@@ -115,8 +117,6 @@ store_head(head_p &dest, head_p_view const src)
   static_assert(sizeof(dest) == sizeof(src));
   std::memcpy(&dest, &src, sizeof(dest));
 }
-
-#endif
 
 /*
  * Why is version required? One scenario is described below
