@@ -684,3 +684,184 @@ REGRESSION_TEST(ram_cache)(RegressionTest *t, int level, int *pstatus)
     }
   }
 }
+
+// Measures how well a RAM cache adapts when the hot working set shifts. Phase 1 warms set A to
+// (most of) the cache; phase 2 shifts every reference to a disjoint set B of the same size. A
+// frequency policy that never ages resident hit counts keeps the now-cold A pinned and starves
+// B (low B hit rate, high A retention); a recency or properly-aged policy releases A.
+struct RamCacheAdaptResult {
+  double b_hit_rate = 0.0;
+  int    a_retained = 0;
+  int    a_total    = 0;
+};
+
+static RamCacheAdaptResult
+test_RamCache_adaptivity(RamCache *cache, int64_t cache_size, StripeSM *stripe)
+{
+  cache->init(cache_size, stripe);
+
+  int const      obj    = BUFFER_SIZE_FOR_INDEX(BUFFER_SIZE_INDEX_16K);
+  int const      nhot   = static_cast<int>((cache_size / obj) * 7 / 8); // working set ~7/8 of capacity
+  int const      p1     = 20;                                           // rounds warming A
+  int const      p2     = 26;                                           // rounds referencing B
+  uint64_t const a_base = 1;
+  uint64_t const b_base = 1000000;
+
+  std::vector<Ptr<IOBufferData>> keep;
+  auto                           access = [&](uint64_t k) -> bool {
+    CryptoHash hash;
+    hash.u64[0] = (k << 32) + k;
+    hash.u64[1] = (k << 32) + k;
+    Ptr<IOBufferData> got;
+    if (cache->get(&hash, &got)) {
+      return true;
+    }
+    IOBufferData *d = THREAD_ALLOC(ioDataAllocator, this_thread());
+    d->alloc(BUFFER_SIZE_INDEX_16K);
+    memset(d->data(), 0, d->block_size());
+    keep.push_back(make_ptr(d));
+    cache->put(&hash, d, d->block_size());
+    return false;
+  };
+
+  for (int r = 0; r < p1; r++) { // warm A to the cache
+    for (int i = 0; i < nhot; i++) {
+      access(a_base + i);
+    }
+    keep.clear();
+  }
+
+  int b_hits = 0, b_total = 0;
+  for (int r = 0; r < p2; r++) { // shift all references to B
+    for (int i = 0; i < nhot; i++) {
+      bool hit = access(b_base + i);
+      if (r >= p2 / 2) { // measure once B has had a chance to establish
+        b_total++;
+        b_hits += hit ? 1 : 0;
+      }
+    }
+    keep.clear();
+  }
+
+  int a_ret = 0;
+  for (int i = 0; i < nhot; i++) {
+    CryptoHash hash;
+    hash.u64[0] = ((a_base + i) << 32) + (a_base + i);
+    hash.u64[1] = ((a_base + i) << 32) + (a_base + i);
+    Ptr<IOBufferData> got;
+    if (cache->get(&hash, &got)) {
+      a_ret++;
+    }
+  }
+  keep.clear();
+
+  RamCacheAdaptResult res;
+  res.b_hit_rate = b_total ? static_cast<double>(b_hits) / b_total : 0.0;
+  res.a_retained = a_ret;
+  res.a_total    = nhot;
+  return res;
+}
+
+REGRESSION_TEST(ram_cache_adaptivity)(RegressionTest *t, int level, int *pstatus)
+{
+  if (REGRESSION_TEST_NIGHTLY > level) {
+    *pstatus = REGRESSION_TEST_PASSED;
+    return;
+  }
+  if (cacheProcessor.IsCacheEnabled() != CacheInitState::INITIALIZED) {
+    rprintf(t, "cache not initialized");
+    *pstatus = REGRESSION_TEST_FAILED;
+    return;
+  }
+
+  CacheKey  key;
+  StripeSM *stripe     = theCache->key_to_stripe(&key, "example.com"sv);
+  int64_t   cache_size = 1LL << 21; // 2 MB
+
+  RamCacheAdaptResult lru   = test_RamCache_adaptivity(new_RamCacheLRU(), cache_size, stripe);
+  RamCacheAdaptResult clfus = test_RamCache_adaptivity(new_RamCacheCLFUS(), cache_size, stripe);
+
+  rprintf(t, "RamCache adaptivity after working-set shift (higher B-hit-rate / lower A-retained is better)\n");
+  rprintf(t, "RamCache LRU   B-hit-rate %.3f  A-retained %d/%d\n", lru.b_hit_rate, lru.a_retained, lru.a_total);
+  rprintf(t, "RamCache CLFUS B-hit-rate %.3f  A-retained %d/%d\n", clfus.b_hit_rate, clfus.a_retained, clfus.a_total);
+
+  // With the F2 fixes CLFUS must follow the shift: serve the new working set and release the stale one.
+  *pstatus = (clfus.b_hit_rate >= 0.90 && clfus.a_retained <= clfus.a_total / 3) ? REGRESSION_TEST_PASSED : REGRESSION_TEST_FAILED;
+}
+
+// Gradual-drift adaptivity: a rolling working set. Each round accesses a window of keys (a few
+// times each, so they stay hot and get admitted) and slides the window forward by a few keys.
+// Keys that roll off the trailing edge go cold while still carrying high hit counts; a policy
+// that never ages resident counts keeps that stale trailing edge and starves the leading edge.
+// Returns the hit rate on the current window over the second half of the run.
+static double
+test_RamCache_drift(RamCache *cache, int64_t cache_size, StripeSM *stripe)
+{
+  cache->init(cache_size, stripe);
+
+  int const cap    = static_cast<int>(cache_size / BUFFER_SIZE_FOR_INDEX(BUFFER_SIZE_INDEX_16K));
+  int const win    = cap * 3 / 4; // active working-set window (fits with room)
+  int const reps   = 2;           // accesses per key per round (keeps the window hot/admitted)
+  int const slide  = 3;           // keys retired and introduced per round
+  int const rounds = 40;
+
+  std::vector<Ptr<IOBufferData>> keep;
+  auto                           access = [&](uint64_t k) -> bool {
+    CryptoHash hash;
+    hash.u64[0] = (k << 32) + k;
+    hash.u64[1] = (k << 32) + k;
+    Ptr<IOBufferData> got;
+    if (cache->get(&hash, &got)) {
+      return true;
+    }
+    IOBufferData *d = THREAD_ALLOC(ioDataAllocator, this_thread());
+    d->alloc(BUFFER_SIZE_INDEX_16K);
+    memset(d->data(), 0, d->block_size());
+    keep.push_back(make_ptr(d));
+    cache->put(&hash, d, d->block_size());
+    return false;
+  };
+
+  int hits = 0, total = 0;
+  for (int r = 0; r < rounds; r++) {
+    uint64_t base = static_cast<uint64_t>(r) * slide; // window = [base, base + win)
+    for (int rep = 0; rep < reps; rep++) {
+      for (int i = 0; i < win; i++) {
+        bool hit = access(base + i);
+        if (r >= rounds / 2) {
+          total++;
+          hits += hit ? 1 : 0;
+        }
+      }
+    }
+    keep.clear();
+  }
+  return total ? static_cast<double>(hits) / total : 0.0;
+}
+
+REGRESSION_TEST(ram_cache_drift)(RegressionTest *t, int level, int *pstatus)
+{
+  if (REGRESSION_TEST_NIGHTLY > level) {
+    *pstatus = REGRESSION_TEST_PASSED;
+    return;
+  }
+  if (cacheProcessor.IsCacheEnabled() != CacheInitState::INITIALIZED) {
+    rprintf(t, "cache not initialized");
+    *pstatus = REGRESSION_TEST_FAILED;
+    return;
+  }
+
+  CacheKey  key;
+  StripeSM *stripe     = theCache->key_to_stripe(&key, "example.com"sv);
+  int64_t   cache_size = 1LL << 21; // 2 MB
+
+  double lru   = test_RamCache_drift(new_RamCacheLRU(), cache_size, stripe);
+  double clfus = test_RamCache_drift(new_RamCacheCLFUS(), cache_size, stripe);
+
+  rprintf(t, "RamCache gradual-drift current-window hit rate (higher is better)\n");
+  rprintf(t, "RamCache LRU   drift-hit-rate %.3f\n", lru);
+  rprintf(t, "RamCache CLFUS drift-hit-rate %.3f\n", clfus);
+
+  // With the F2 fixes CLFUS must track a rolling working set, not freeze on the initial cohort.
+  *pstatus = (clfus >= 0.80) ? REGRESSION_TEST_PASSED : REGRESSION_TEST_FAILED;
+}
