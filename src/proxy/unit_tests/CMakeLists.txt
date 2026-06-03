@@ -15,10 +15,7 @@
 #
 #######################
 
-add_executable(
-  test_proxy main.cc test_ControlBase.cc test_FetchSM.cc test_ParentHashConfig.cc
-             "${PROJECT_SOURCE_DIR}/src/iocore/net/libinknet_stub.cc" stub.cc
-)
+add_executable(test_proxy main.cc test_ControlBase.cc test_FetchSM.cc test_ParentHashConfig.cc stub.cc)
 
 target_link_libraries(test_proxy PRIVATE Catch2::Catch2WithMain ts::http ts::proxy ts::tscore ts::records ts::inkevent)
 
