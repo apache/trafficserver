@@ -58,7 +58,8 @@ def MakeATSProcess(
         use_traffic_out=True,
         dump_runroot=True,
         enable_proxy_protocol=False,
-        enable_proxy_protocol_cp_src=False):
+        enable_proxy_protocol_cp_src=False,
+        enable_cripts=False):
     """Create a traffic server process.
 
     :param block_for_debug: if True, causes traffic_server to run with the
@@ -403,6 +404,16 @@ def MakeATSProcess(
         p.Disk.records_config.update({
             'proxy.config.udp.threads': 1,
         })
+
+    if enable_cripts:
+        cripts_compiler = os.path.join(bin_path, 'cripts_compiler.sh')
+        p.Setup.Copy(os.path.join(p.Variables.RepoDir, 'tools', 'cripts', 'compiler.sh'), cripts_compiler)
+        p.Variables.cripts_compiler = cripts_compiler
+        p.Disk.records_config.update({
+            'proxy.config.plugin.compiler_path': cripts_compiler,
+        })
+        # ATS_ROOT is used by compiler.sh to find the ATS install directory.
+        p.Env['ATS_ROOT'] = p.Variables.PREFIX
 
     # The following message was added so that tests and users can know when
     # Traffic Server is ready to both receive and optimize traffic.
