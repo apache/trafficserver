@@ -21,4 +21,14 @@
   limitations under the License.
  */
 
-#include "proxy/IPAllow.h"
+#include "tscore/Version.h"
+
+// libinknet.a references appVersionInfo (declared in tscore/Version.h) but
+// the tscore definition is file-static, so nobody exports a global instance
+// for the linker. Provide one here.
+//
+// IpAllow::subjects used to live here too, but it duplicates the real
+// definition in libproxy.a (IPAllow.cc). The test_proxy link line now pulls
+// IPAllow.cc.o in transitively (via FetchSM in libproxy.a), which trips
+// Apple ld on duplicate symbols.
+AppVersionInfo appVersionInfo;
