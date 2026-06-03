@@ -36,18 +36,18 @@ public:
   HRWBridge(const self_type &)      = delete;
   void operator=(const self_type &) = delete;
 
-  HRWBridge(const cripts::string_view &str) : _value(str) {}
+  HRWBridge(const cripts::string_view &str) : _raw(str) {}
 
   virtual ~HRWBridge() = default;
 
   virtual cripts::string_view
-  value(cripts::Context * /* context ATS_UNUSED */)
+  value(cripts::Context * /* context ATS_UNUSED */, cripts::string & /* scratch ATS_UNUSED */)
   {
-    return _value;
+    return _raw;
   }
 
-protected:
-  cripts::string _value;
+private:
+  const cripts::string _raw;
 
 }; // class HRWBridge
 
