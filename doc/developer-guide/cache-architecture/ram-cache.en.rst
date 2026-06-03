@@ -107,34 +107,99 @@ with the CLOCK rate of the Cached and History Lists.
 Cached List
 ===========
 
-The *Cached List* contains objects actually in memory. The basic operation is
-LRU with new entries inserted into a FIFO queue and hits causing objects to be
-reinserted. The interesting bit comes when an object is being considered for
-insertion. A check is first made against the Object Hash to see if the object
-is in the Cached List or History. Hits result in updating the ``hit`` field and
-reinsertion of the object. History hits result in the ``hit`` field being
-updated and a comparison to see if this object should be kept in memory. The
-comparison is against the least recently used members of the Cache List, and
-is based on a weighted frequency::
+The *Cached List* (``_lru[0]`` in ``RamCacheCLFUS.cc``) holds the objects
+actually resident in memory. New entries are inserted into a FIFO queue and a
+hit reinserts the object at the tail. The interesting work happens when an
+object is considered for insertion (a *Put*, after a read from secondary
+storage). A check is first made against the object hash to see if the object is
+already in the Cached List or the History List.
 
-   CACHE_VALUE = hits / (size + overhead)
+Each object is ranked by a weighted frequency, its *value*::
 
-A new object must be enough bytes worth of currently cached objects to cover
-itself. Each time an object is considered for replacement the CLOCK moves
-forward. If the History object has a greater value then it is inserted into the
-Cached List and the replaced objects are removed from memory and their list
-entries are inserted into the History List. If the History object has a lesser
-value it is reinserted into the History List. Objects considered for replacement
-(at least one) but not replaced have their ``hits`` field set to ``0`` and are
-reinserted into the Cached List. This is the CLOCK operation on the Cached List.
+   CACHE_VALUE = (hits + 1) / (size + ENTRY_OVERHEAD)
+
+Smaller and more frequently used objects rank higher, which is what is meant by
+least frequently used *by size*. The value of a candidate is compared against
+``_average_value``, an exponential moving average of the value of the objects
+passed over for replacement -- in effect a floating admission bar.
+
+.. note::
+
+   ``CACHE_VALUE`` must be evaluated in floating point. Because ``hits`` is
+   small and ``size`` is large, computing ``(hits + 1) / (size + overhead)`` in
+   integer arithmetic truncates to ``0`` for every normal object, which silently
+   collapses CLFUS to FIFO. This was the regression introduced in GitHub PR
+   #11733; the division is now forced to floating point.
+
+When a *Put* finds the incoming object in the History List, its value is
+compared against the least recently used members of the Cached List. The
+candidate must be worth at least as many bytes of currently cached objects as it
+displaces. Each time an object is considered for replacement the CLOCK advances.
+If the candidate wins it is moved into the Cached List and the objects it
+displaces are removed from memory, their (data-less) list entries moving to the
+History List; if it loses it is returned to the History List. Objects passed
+over for replacement (at least one) have their ``hits`` reduced and are
+reinserted -- this is the CLOCK (second chance) on the Cached List.
+
+Aging the cached list
+---------------------
+
+Frequency counts on resident objects would otherwise only ever grow, so an
+object that was hot days ago keeps winning replacement long after it has gone
+cold, and the cache cannot follow a changing working set. To prevent this, once
+per *turnover* (one *Put* for every resident object) ``_age_resident()`` halves
+every resident ``hits`` count *and* halves ``_average_value`` in the same pass.
+Halving the bar matters: ``_average_value`` is otherwise updated only inside the
+replacement loop, which a low-value candidate never reaches, so without it the
+decayed counts would be invisible to the admission decision and a warming
+working set could never break in.
 
 History List
 ============
 
-Each CLOCK, the least recently used entry in the History List is dequeued and
-if the ``hits`` field is not greater than ``1`` (it was hit at least once in
-the History or Cached List) it is deleted. Otherwise, the ``hits`` is set to
-``0`` and it is requeued on the History List.
+The *History List* (``_lru[1]``) is a bounded record of keys recently evicted
+from, or considered for, the Cached List. Its entries carry no data (the
+``IOBufferData`` pointer is null); they exist so that an object requested again
+soon after eviction can be cheaply re-admitted, and so a newly seen object can
+accumulate enough value to earn admission before it is forgotten.
+
+Each CLOCK tick (``_tick()``, run once per eviction) ages the oldest History
+entry -- halving its ``hits`` -- and *keeps* it, freeing entries only to hold the
+list at its target size, ``_objects / HISTORY_DIVISOR + HISTORY_HYSTERIA``. An
+earlier version freed an entry the moment its aged ``hits`` reached ``0``, which
+held the list nearly empty and denied re-requested objects their second chance.
+
+The list is deliberately capped well below a full cache-worth
+(``HISTORY_DIVISOR`` defaults to 4): it only needs to remember recent candidates
+long enough to be requested again, and a full cache-worth of history entries is a
+large memory cost (see `Memory overhead`_) for caches holding many small objects.
+
+Following a shifting working set
+================================
+
+The combination of the bounded, persistent History List and resident aging is
+what lets CLFUS track a working set that changes over time. New objects survive
+in history long enough to prove themselves and be admitted, while the frequency
+advantage of the previous working set decays until its members fall below the
+admission bar and are evicted. The ``ram_cache_adaptivity`` (an abrupt change of
+the entire hot set) and ``ram_cache_drift`` (a gradually rolling working set)
+regression tests in ``CacheTest.cc`` exercise this and compare CLFUS against the
+simpler LRU RAM cache.
+
+Memory overhead
+===============
+
+Every object in the Cached List has a resident list entry; this per-object
+overhead (roughly ``ENTRY_OVERHEAD``) is counted against
+``proxy.config.cache.ram_cache.size``. Every object in the History List has a
+list entry too (about 88 bytes), but these are **not** counted against the
+configured size -- they are memory the process uses in addition to it.
+
+Because the overhead is per object, it is largest for a big cache holding many
+small objects. ``HISTORY_DIVISOR`` bounds the History List to roughly
+``_objects / 4`` entries to keep this cost modest: for example a 32 GB cache of
+1 KB objects holds about 32 million resident objects and therefore about 8
+million history entries (~700 MB), rather than ~2.8 GB at a full cache-worth.
 
 Compression and Decompression
 =============================
