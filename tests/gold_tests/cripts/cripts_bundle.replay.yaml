@@ -1,0 +1,262 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+# Configuration for autest integration. This replay file is the harness for
+# a bundle of cripts tests — bundle_headers.cript exercising cripts::Bundle::Headers
+# and direct_headers.cript exercising the equivalent direct Cripts API, with room
+# to add more cripts and more transactions under the same driver. Multiple parallel
+# client sessions widen the
+# exposure surface; under a TSAN build this is the regression target for
+# any future bug that puts shared mutable state back into a Cripts plugin
+# instance.
+autest:
+  description: 'cripts: bundle of feature tests (bundle_headers.cript: every Bundle::Headers dynamic substitution across all four hooks; direct_headers.cript: the equivalent direct Cripts API path)'
+
+  dns:
+    name: 'dns'
+
+  server:
+    name: 'server'
+
+  client:
+    name: 'client'
+
+  ats:
+    name: 'ts'
+
+    process_config:
+      enable_cripts: true
+      enable_cache: false
+
+    copy_to_config_dir:
+      - 'files/bundle_headers.cript'
+      - 'files/direct_headers.cript'
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'cript|plugin'
+      proxy.config.plugin.dynamic_reload_mode: 1
+
+    remap_config:
+      - from: "http://www.example.com/"
+        to: "http://backend.ex:{SERVER_HTTP_PORT}/"
+        plugins:
+          - name: "bundle_headers.cript"
+            args: []
+      - from: "http://direct.example.com/"
+        to: "http://backend.ex:{SERVER_HTTP_PORT}/"
+        plugins:
+          - name: "direct_headers.cript"
+            args: []
+
+    log_validation:
+      diags_log:
+        excludes:
+          - expression: "FATAL"
+            description: "No fatal cript or plugin errors"
+          - expression: "Failed to load plugin"
+            description: "bundle_headers.cript and direct_headers.cript should compile and load"
+
+# Sessions are independent connections; Proxy Verifier dispatches them in
+# parallel by default, which is what we want for exposing any latent
+# Instance-shared mutable state in the bundle.
+sessions:
+
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /alpha?q=1
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ uuid, sess-1 ]
+        # rm_headers("Client::Request") should drop this before it reaches origin.
+        - [ X-Cript-Strip-CReq, "should-be-removed" ]
+
+    proxy-request:
+      headers:
+        fields:
+        - [ X-Cript-Req-UUID,    { as: present } ]
+        - [ X-Cript-Req-TxnID,   { as: present } ]
+        - [ X-Cript-Req-ProcID,  { as: present } ]
+        - [ X-Cript-Req-CIP,     { as: present } ]
+        - [ X-Cript-Req-IIP,     { as: present } ]
+        - [ X-Cript-Req-CIDR,    { as: present } ]
+        - [ X-Cript-Req-Host,    { as: present } ]
+        - [ X-Cript-Req-Path,    { value: "alpha",           as: equal } ]
+        - [ X-Cript-Req-Port,    { as: present } ]
+        - [ X-Cript-Req-Query,   { value: "q=1",             as: equal } ]
+        - [ X-Cript-Req-Scheme,  { value: "http",            as: equal } ]
+        - [ X-Cript-SReq-UUID,   { as: present } ]
+        - [ X-Cript-SReq-CIP,    { as: present } ]
+        - [ X-Cript-SReq-Path,   { value: "alpha",           as: equal } ]
+        - [ X-Cript-Strip-CReq,  { as: absent } ]
+
+    server-response:
+      status: 200
+      reason: "OK"
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+        # rm_headers("Client::Response") should drop this from the response
+        # the client ultimately sees.
+        - [ X-Cript-Strip-CResp, "should-be-removed" ]
+
+    proxy-response:
+      headers:
+        fields:
+        - [ X-Cript-Resp-UUID,    { as: present } ]
+        - [ X-Cript-Resp-ProcID,  { as: present } ]
+        - [ X-Cript-Resp-CIP,     { as: present } ]
+        - [ X-Cript-Resp-Host,    { as: present } ]
+        - [ X-Cript-Resp-Path,    { value: "alpha",           as: equal } ]
+        - [ X-Cript-Strip-CResp,  { as: absent } ]
+
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /beta/gamma?x=y&a=b
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ uuid, sess-2 ]
+
+    proxy-request:
+      headers:
+        fields:
+        - [ X-Cript-Req-UUID,    { as: present } ]
+        - [ X-Cript-Req-Path,    { value: "beta/gamma", as: equal } ]
+        - [ X-Cript-Req-Query,   { value: "x=y&a=b",    as: equal } ]
+        - [ X-Cript-SReq-Path,   { value: "beta/gamma", as: equal } ]
+
+    server-response:
+      status: 200
+      reason: "OK"
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+
+    proxy-response:
+      headers:
+        fields:
+        - [ X-Cript-Resp-UUID, { as: present } ]
+        - [ X-Cript-Resp-Path, { value: "beta/gamma", as: equal } ]
+
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /delta
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ uuid, sess-3 ]
+
+    proxy-request:
+      headers:
+        fields:
+        - [ X-Cript-Req-UUID, { as: present } ]
+        - [ X-Cript-Req-Path, { value: "delta", as: equal } ]
+        - [ X-Cript-Req-CIP,  { as: present } ]
+        - [ X-Cript-Req-CIDR, { as: present } ]
+
+    server-response:
+      status: 200
+      reason: "OK"
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+
+    proxy-response:
+      headers:
+        fields:
+        - [ X-Cript-Resp-UUID, { as: present } ]
+        - [ X-Cript-Resp-Path, { value: "delta", as: equal } ]
+
+# Sessions for direct_headers.cript — same data sources, no HRWBridge.
+
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /epsilon?k=v
+      headers:
+        fields:
+        - [ Host, direct.example.com ]
+        - [ uuid, sess-direct-1 ]
+
+    proxy-request:
+      headers:
+        fields:
+        - [ X-Direct-Req-UUID,   { as: present } ]
+        - [ X-Direct-Req-Host,   { as: present } ]
+        - [ X-Direct-Req-Path,   { value: "epsilon",            as: equal } ]
+        - [ X-Direct-Req-Query,  { value: "k=v",                as: equal } ]
+        - [ X-Direct-Req-Scheme, { value: "http",               as: equal } ]
+        - [ X-Direct-Req-Port,   { as: present } ]
+        - [ X-Direct-Req-CIP,    { as: present } ]
+        - [ X-Direct-SReq-UUID,  { as: present } ]
+        - [ X-Direct-SReq-Path,  { value: "epsilon",            as: equal } ]
+
+    server-response:
+      status: 200
+      reason: "OK"
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+
+    proxy-response:
+      headers:
+        fields:
+        - [ X-Direct-Resp-UUID,     { as: present } ]
+        - [ X-Direct-Resp-ProcID,   { as: present } ]
+        - [ X-Direct-Resp-Host,     { as: present } ]
+        - [ X-Direct-Resp-Path,     { value: "epsilon",            as: equal } ]
+        - [ X-Direct-Resp-CIP,      { as: present } ]
+
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /zeta/eta
+      headers:
+        fields:
+        - [ Host, direct.example.com ]
+        - [ uuid, sess-direct-2 ]
+
+    proxy-request:
+      headers:
+        fields:
+        - [ X-Direct-Req-UUID, { as: present } ]
+        - [ X-Direct-Req-Path, { value: "zeta/eta", as: equal } ]
+
+    server-response:
+      status: 200
+      reason: "OK"
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+
+    proxy-response:
+      headers:
+        fields:
+        - [ X-Direct-Resp-UUID,     { as: present } ]
+        - [ X-Direct-Resp-Path,     { value: "zeta/eta", as: equal } ]

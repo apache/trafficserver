@@ -39,7 +39,7 @@ public:
   ID(const cripts::string_view &id);
   ~ID() override = default;
 
-  cripts::string_view value(cripts::Context *context) override;
+  cripts::string_view value(cripts::Context *context, cripts::string &scratch) override;
 
 private:
   Type _type = Type::none;
@@ -59,24 +59,24 @@ ID::ID(const cripts::string_view &id) : super_type(id)
 }
 
 cripts::string_view
-ID::value(cripts::Context *context)
+ID::value(cripts::Context *context, cripts::string &scratch)
 {
   switch (_type) {
   case Type::REQUEST:
-    _value = cripts::UUID::Request::_get(context);
+    scratch = cripts::UUID::Request::_get(context);
     break;
   case Type::PROCESS:
-    _value = cripts::UUID::Process::_get(context);
+    scratch = cripts::UUID::Process::_get(context);
     break;
   case Type::UNIQUE:
-    _value = cripts::UUID::Unique::_get(context);
+    scratch = cripts::UUID::Unique::_get(context);
     break;
   default:
-    _value = "";
+    scratch.clear();
     break;
   }
 
-  return _value;
+  return scratch;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -95,7 +95,7 @@ public:
   IP(const cripts::string_view &ip);
   ~IP() override = default;
 
-  cripts::string_view value(cripts::Context *context) override;
+  cripts::string_view value(cripts::Context *context, cripts::string &scratch) override;
 
 private:
   Type _type = Type::none;
@@ -110,38 +110,38 @@ IP::IP(const cripts::string_view &type) : super_type(type)
   } else if (type == "SERVER") {
     _type = Type::SERVER;
   } else if (type == "OUTBOUND") {
-    _type = Type::INBOUND;
+    _type = Type::OUTBOUND;
   } else {
     CFatal("[Cripts::Headers] Unknown HRWBridge IP type: %s.", type.data());
   }
 }
 
 cripts::string_view
-IP::value(cripts::Context *context)
+IP::value(cripts::Context *context, cripts::string &scratch)
 {
   switch (_type) {
   case Type::CLIENT: {
     auto ip = cripts::Client::Connection::Get().IP();
-    _value  = ip.string();
+    scratch = ip.string();
   } break;
   case Type::INBOUND: {
     auto ip = cripts::Client::Connection::Get().LocalIP();
-    _value  = ip.string();
+    scratch = ip.string();
   } break;
   case Type::SERVER: {
     auto ip = cripts::Server::Connection::Get().IP();
-    _value  = ip.string();
+    scratch = ip.string();
   } break;
   case Type::OUTBOUND: {
     auto ip = cripts::Server::Connection::Get().LocalIP();
-    _value  = ip.string();
+    scratch = ip.string();
   } break;
   default:
-    _value = "";
+    scratch.clear();
     break;
   }
 
-  return _value;
+  return scratch;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -158,7 +158,7 @@ public:
   CIDR(cripts::string_view &cidr);
   ~CIDR() override = default;
 
-  cripts::string_view value(cripts::Context *context) override;
+  cripts::string_view value(cripts::Context *context, cripts::string &scratch) override;
 
 private:
   unsigned int _ipv4_cidr = 32;
@@ -184,13 +184,13 @@ CIDR::CIDR(cripts::string_view &cidr) : super_type(cidr)
 }
 
 cripts::string_view
-CIDR::value(cripts::Context *context)
+CIDR::value(cripts::Context *context, cripts::string &scratch)
 {
   auto ip = cripts::Client::Connection::Get().IP();
 
-  _value = ip.string(_ipv4_cidr, _ipv6_cidr);
+  scratch = ip.string(_ipv4_cidr, _ipv6_cidr);
 
-  return _value;
+  return scratch;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -212,50 +212,45 @@ public:
   URL(Type utype, const cripts::string_view &comp);
   ~URL() override = default;
 
-  cripts::string_view value(cripts::Context *context) override;
+  cripts::string_view value(cripts::Context *context, cripts::string &scratch) override;
 
 private:
-  cripts::string_view _getComponent(cripts::Url &url);
+  cripts::string_view _getComponent(cripts::Url &url, cripts::string &scratch);
 
   Type      _type = Type::none;
   Component _comp = Component::none;
 };
 
 cripts::string_view
-URL::_getComponent(cripts::Url &url)
+URL::_getComponent(cripts::Url &url, cripts::string &scratch)
 {
   switch (_comp) {
   case Component::HOST:
     return url.host.GetSV();
-    break;
 
   case Component::PATH:
     return url.path;
-    break;
 
   case Component::PORT:
-    _value = cripts::string(std::to_string(url.port));
-    break;
+    scratch = cripts::string(std::to_string(url.port));
+    return scratch;
 
   case Component::QUERY:
     return url.query;
-    break;
 
   case Component::SCHEME:
     return url.scheme;
-    break;
 
   case Component::URL:
     return "";
     // return url.url;
-    break;
 
   default:
     CFatal("[Cripts::Headers] Invalid URL component in HRWBridge.");
     break;
   }
 
-  return ""; // Should never happen
+  return ""; // unreachable
 }
 
 URL::URL(Type utype, const cripts::string_view &comp) : super_type("")
@@ -280,51 +275,51 @@ URL::URL(Type utype, const cripts::string_view &comp) : super_type("")
 }
 
 cripts::string_view
-URL::value(cripts::Context *context)
+URL::value(cripts::Context *context, cripts::string &scratch)
 {
   switch (_type) {
   case Type::CLIENT: {
     borrow url = cripts::Client::URL::Get();
 
-    return _getComponent(url);
-  } break;
+    return _getComponent(url, scratch);
+  }
 
   case Type::REMAP_FROM: {
     borrow url = cripts::Remap::From::URL::Get();
 
-    return _getComponent(url);
-  } break;
+    return _getComponent(url, scratch);
+  }
 
   case Type::REMAP_TO: {
     borrow url = cripts::Remap::To::URL::Get();
 
-    return _getComponent(url);
-  } break;
+    return _getComponent(url, scratch);
+  }
 
   case Type::PRISTINE: {
     borrow url = cripts::Pristine::URL::Get();
 
-    return _getComponent(url);
-  } break;
+    return _getComponent(url, scratch);
+  }
 
   case Type::CACHE: {
     borrow url = cripts::Cache::URL::Get();
 
-    return _getComponent(url);
-  } break;
+    return _getComponent(url, scratch);
+  }
 
   case Type::PARENT: {
     borrow url = cripts::Parent::URL::Get();
 
-    return _getComponent(url);
-  } break;
+    return _getComponent(url, scratch);
+  }
 
   default:
     CFatal("[Cripts::Headers] Invalid URL type in HRWBridge.");
     break;
   }
 
-  return _value;
+  return {}; // unreachable
 }
 
 } // namespace detail
