@@ -1075,6 +1075,7 @@ LogAccess::unmarshal_http_version(char **buf, char *dest, int len)
     DBG_UNMARSHAL_DEST_OVERRUN
     return -1;
   }
+  p += res2;
 
   int val_len = p - val_buf;
   if (val_len < len) {

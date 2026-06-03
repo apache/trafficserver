@@ -26,6 +26,7 @@
 #include "proxy/NonHttpSmLogData.h"
 #include "proxy/logging/LogAccess.h"
 #include "proxy/logging/TransactionLogData.h"
+#include "tscore/ink_align.h"
 #include "tscore/ink_inet.h"
 
 #include <string_view>
@@ -212,4 +213,22 @@ TEST_CASE("LogAccess non-HttpSM client host port is null-safe", "[LogAccess]")
 
   CHECK(access.marshal_client_host_port(nullptr) == INK_MIN_ALIGN);
   CHECK(marshal_int_value([&](char *buf) { return access.marshal_client_host_port(buf); }) == 4321);
+}
+
+TEST_CASE("LogAccess unmarshal_http_version keeps the minor version", "[LogAccess]")
+{
+  auto render = [](int64_t major, int64_t minor) -> std::string {
+    char marshalled[2 * INK_MIN_ALIGN];
+    LogAccess::marshal_int(marshalled, major);
+    LogAccess::marshal_int(marshalled + INK_MIN_ALIGN, minor);
+
+    char  dest[64] = {};
+    char *src      = marshalled;
+    int   len      = LogAccess::unmarshal_http_version(&src, dest, sizeof(dest));
+    REQUIRE(len > 0);
+    return std::string(dest, len);
+  };
+
+  CHECK(render(1, 1) == "HTTP/1.1");
+  CHECK(render(1, 0) == "HTTP/1.0");
 }
