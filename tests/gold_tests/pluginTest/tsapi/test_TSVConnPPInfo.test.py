@@ -73,7 +73,9 @@ Test.Env["OUTPUT_FILE"] = log_path
 # plaintext HTTP
 tr = Test.AddTestRun()
 tr.TimeOut = 10
-tr.Processes.Default.Command = f"curl --haproxy-protocol --haproxy-clientip 1.2.3.4 'http://127.0.0.1:{ts.Variables.proxy_protocol_port}/httpbin/get'"
+tr.Processes.Default.Command = (
+    f"curl --haproxy-protocol --haproxy-clientip 1.2.3.4 "
+    f"'http://127.0.0.1:{ts.Variables.proxy_protocol_port}/httpbin/get'")
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(httpbin, ready=When.PortOpen(httpbin.Variables.Port))
 tr.Processes.Default.StartBefore(Test.Processes.ts)
@@ -84,7 +86,9 @@ tr.StillRunningAfter = ts
 # HTTPS
 tr = Test.AddTestRun()
 tr.TimeOut = 10
-tr.Processes.Default.Command = f"curl --haproxy-protocol --haproxy-clientip 5.6.7.8 -k 'https://127.0.0.1:{ts.Variables.proxy_protocol_ssl_port}/httpbin/get'"
+tr.Processes.Default.Command = (
+    f"curl --haproxy-protocol --haproxy-clientip 5.6.7.8 -k "
+    f"'https://127.0.0.1:{ts.Variables.proxy_protocol_ssl_port}/httpbin/get'")
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "test_TSVConnPPInfo_curl1.gold"
 tr.StillRunningAfter = httpbin
@@ -95,7 +99,8 @@ tr.Processes.Default.Command = "echo check log"
 tr.Processes.Default.ReturnCode = 0
 f = tr.Disk.File(log_path)
 f.Content = "test_TSVConnPPInfo_plugin_log.gold"
+# curl 8.20+ intentionally uses --haproxy-clientip for both PROXY addresses so the address family matches.
 f.Content += Testers.ContainsExpression(
-    "PP Info Received:V1,P2,T1,SRC1.2.3.4,DST127.0.0.1", "Expected information should be received")
+    r"PP Info Received:V1,P2,T1,SRC1\.2\.3\.4,DST(127\.0\.0\.1|1\.2\.3\.4)", "Expected information should be received")
 f.Content += Testers.ContainsExpression(
-    "PP Info Received:V1,P2,T1,SRC5.6.7.8,DST127.0.0.1", "Expected information should be received")
+    r"PP Info Received:V1,P2,T1,SRC5\.6\.7\.8,DST(127\.0\.0\.1|5\.6\.7\.8)", "Expected information should be received")
