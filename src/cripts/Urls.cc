@@ -372,14 +372,15 @@ Url::Query::Erase(std::initializer_list<cripts::string_view> list, bool keep)
 
     for (auto viter = _ordered.begin(); viter != _ordered.end();) {
       if (list.end() == std::find(list.begin(), list.end(), *viter)) {
-        auto iter = _hashed.find(*viter);
-
-        CAssert(iter != _hashed.end());
-        _size -= iter->second.size(); // Size of the erased value
-        _size -= viter->size();       // Length of the erased key
-        _hashed.erase(iter);
-        viter     = _ordered.erase(viter);
-        _modified = true;
+        // Duplicate keys (?a=1&a=2) share one _hashed entry, so a later occurrence may
+        // already be gone -- guard the lookup; attacker input must not abort.
+        if (auto iter = _hashed.find(*viter); iter != _hashed.end()) {
+          _size -= iter->second.size(); // Size of the erased value
+          _hashed.erase(iter);
+        }
+        _size     -= viter->size(); // Length of the erased key
+        viter      = _ordered.erase(viter);
+        _modified  = true;
       } else {
         ++viter;
       }
