@@ -175,13 +175,13 @@ class Test_remap_acl:
             #
             tr = Test.AddTestRun("Await config reload")
             p = tr.Processes.Default
-            p.Command = 'echo awaiting config reload'
-            p.Env = ts.Env
             Test_remap_acl._ts_reload_counter += 1
-            count = Test_remap_acl._ts_reload_counter
-            await_config_reload = tr.Processes.Process(f'config_reload_succeeded_{count}', 'sleep 30')
-            await_config_reload.Ready = When.FileContains(ts.Disk.diags_log.Name, "remap.yaml finished loading", count)
-            p.StartBefore(await_config_reload)
+            count = 1 + Test_remap_acl._ts_reload_counter
+            condwait = os.path.join(Test.Variables.AtsTestToolsDir, 'condwait')
+            p.Command = (f"'{condwait}' 30 --contains '{ts.Disk.diags_log.Name}' "
+                         f"'remap.yaml finished loading' {count}")
+            p.Env = ts.Env
+            tr.StillRunningAfter = ts
 
         else:
             record_config = {
