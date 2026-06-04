@@ -142,13 +142,10 @@ IP::GetSV(unsigned ipv4_cidr, unsigned ipv6_cidr)
   return "";
 }
 
-sockaddr
+swoc::IPEndpoint
 IP::Socket() const
 {
-  sockaddr addr = {};
-
-  this->copy_to(&addr);
-  return addr;
+  return swoc::IPEndpoint{*this};
 }
 
 uint64_t
