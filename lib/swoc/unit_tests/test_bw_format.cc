@@ -8,6 +8,7 @@
 #include <iostream>
 #include <variant>
 #include <cmath>
+#include <cerrno>
 
 #include <netinet/in.h>
 
@@ -544,6 +545,18 @@ TEST_CASE("bwstring std formats", "[libswoc][bwprint]") {
   REQUIRE(w.view() == "EACCES [13]"sv);
   w.clear().print("{::l}", swoc::bwf::Errno(13));
   REQUIRE(w.view() == "Permission denied [13]"sv);
+
+  // The symbolic short name must come from the running platform's <errno.h>,
+  // not a fixed Linux-numbered table. Regression guard for the FreeBSD/macOS
+  // mislabel where ETIMEDOUT (errno 60 on those platforms) printed as "ENOSTR"
+  // (apache/trafficserver#13203). Use the macros so each platform checks its
+  // own numbering.
+  w.clear().print("{:s:s}", swoc::bwf::Errno(EPERM));
+  REQUIRE(w.view() == "EPERM"sv);
+  w.clear().print("{:s:s}", swoc::bwf::Errno(ETIMEDOUT));
+  REQUIRE(w.view() == "ETIMEDOUT"sv);
+  w.clear().print("{:s:s}", swoc::bwf::Errno(ECONNREFUSED));
+  REQUIRE(w.view() == "ECONNREFUSED"sv);
 
   time_t t = 1528484137;
   // default is GMT
