@@ -183,8 +183,7 @@ class InverseSymbolResolver(SymbolResolverBase):
 
                 if tag == "HEADER":
                     return f"{self.get_prefix_for_context('header_condition', section)}{suffix}", False
-                else:
-                    return f"{lhs_prefix}{suffix.replace(':', '.')}", False
+                return f"{lhs_prefix}{suffix.replace(':', '.')}", False
         return None
 
     def _should_lowercase_suffix(self, tag_match: str, lhs_prefix: str) -> bool:
@@ -508,10 +507,15 @@ class InverseSymbolResolver(SymbolResolverBase):
             commands = params.target if params else None
             if (isinstance(commands, (list, tuple)) and cmd in commands) or (cmd == commands):
                 uppercase = params.upper if params else False
+                if params:
+                    qualifier = toks[1] if len(toks) > 1 else ""
+                    name = f"{lhs_key}{qualifier}" if lhs_key.endswith(".") else lhs_key
+                    self.validate_section_access(name, section, params.sections)
                 return self._handle_operator_command(cmd, toks, lhs_key, uppercase, section)
 
         for name, params in tables.STATEMENT_FUNCTION_MAP.items():
             if params.target == cmd:
+                self.validate_section_access(name, section, params.sections)
                 return self._handle_statement_function(name, args, section, op_state)
 
         raise SymbolResolutionError(line, f"Unknown operator: {cmd}")
