@@ -44,6 +44,7 @@
 #include <cstdlib>
 #include <memory.h>
 #include <mutex>
+#include <new>
 #include <numeric>
 #include <unistd.h>
 #include <sys/types.h>
