@@ -22,6 +22,8 @@
 #include "ts/apidefs.h"
 #include "ts/ts.h"
 
+#include "swoc/IPEndpoint.h"
+
 #include "cripts/Lulu.hpp"
 #include "cripts/Matcher.hpp"
 
@@ -77,8 +79,8 @@ public:
   uint64_t Hasher(unsigned ipv4_cidr = 32, unsigned ipv6_cidr = 128);
   bool     Sample(double rate, uint32_t seed = 0, unsigned ipv4_cidr = 32, unsigned ipv6_cidr = 128);
 
-  // Convert IP to sockaddr structure
-  [[nodiscard]] sockaddr Socket() const;
+  // Convert IP to a socket address (sized for both IPv4 and IPv6)
+  [[nodiscard]] swoc::IPEndpoint Socket() const;
 
   // Geo-IP functionality - can be used with any IP address
   [[nodiscard]] cripts::string ASN() const;
