@@ -743,83 +743,79 @@ FixedBufferWriter::operator>>(std::ostream &s) const {
 }
 
 namespace {
-// Hand rolled, might not be totally compliant everywhere, but probably close
-// enough. The long string will be locally accurate. Clang requires the double
-// braces. Why, Turing only knows.
-static const std::array<std::string_view, 134> ERRNO_SHORT_NAME = {
-  {
-   "SUCCESS", "EPERM",
-   "ENOENT", "ESRCH",
-   "EINTR", "EIO",
-   "ENXIO", "E2BIG ",
-   "ENOEXEC", "EBADF",
-   "ECHILD", "EAGAIN",
-   "ENOMEM", "EACCES",
-   "EFAULT", "ENOTBLK",
-   "EBUSY", "EEXIST",
-   "EXDEV", "ENODEV",
-   "ENOTDIR", "EISDIR",
-   "EINVAL", "ENFILE",
-   "EMFILE", "ENOTTY",
-   "ETXTBSY", "EFBIG",
-   "ENOSPC", "ESPIPE",
-   "EROFS", "EMLINK",
-   "EPIPE", "EDOM",
-   "ERANGE", "EDEADLK",
-   "ENAMETOOLONG", "ENOLCK",
-   "ENOSYS", "ENOTEMPTY",
-   "ELOOP", "EWOULDBLOCK",
-   "ENOMSG", "EIDRM",
-   "ECHRNG", "EL2NSYNC",
-   "EL3HLT", "EL3RST",
-   "ELNRNG", "EUNATCH",
-   "ENOCSI", "EL2HTL",
-   "EBADE", "EBADR",
-   "EXFULL", "ENOANO",
-   "EBADRQC", "EBADSLT",
-   "EDEADLOCK", "EBFONT",
-   "ENOSTR", "ENODATA",
-   "ETIME", "ENOSR",
-   "ENONET", "ENOPKG",
-   "EREMOTE", "ENOLINK",
-   "EADV", "ESRMNT",
-   "ECOMM", "EPROTO",
-   "EMULTIHOP", "EDOTDOT",
-   "EBADMSG", "EOVERFLOW",
-   "ENOTUNIQ", "EBADFD",
-   "EREMCHG", "ELIBACC",
-   "ELIBBAD", "ELIBSCN",
-   "ELIBMAX", "ELIBEXEC",
-   "EILSEQ", "ERESTART",
-   "ESTRPIPE", "EUSERS",
-   "ENOTSOCK", "EDESTADDRREQ",
-   "EMSGSIZE", "EPROTOTYPE",
-   "ENOPROTOOPT", "EPROTONOSUPPORT",
-   "ESOCKTNOSUPPORT", "EOPNOTSUPP",
-   "EPFNOSUPPORT", "EAFNOSUPPORT",
-   "EADDRINUSE", "EADDRNOTAVAIL",
-   "ENETDOWN", "ENETUNREACH",
-   "ENETRESET", "ECONNABORTED",
-   "ECONNRESET", "ENOBUFS",
-   "EISCONN", "ENOTCONN",
-   "ESHUTDOWN", "ETOOMANYREFS",
-   "ETIMEDOUT", "ECONNREFUSED",
-   "EHOSTDOWN", "EHOSTUNREACH",
-   "EALREADY", "EINPROGRESS",
-   "ESTALE", "EUCLEAN",
-   "ENOTNAM", "ENAVAIL",
-   "EISNAM", "EREMOTEIO",
-   "EDQUOT", "ENOMEDIUM",
-   "EMEDIUMTYPE", "ECANCELED",
-   "ENOKEY", "EKEYEXPIRED",
-   "EKEYREVOKED", "EKEYREJECTED",
-   "EOWNERDEAD", "ENOTRECOVERABLE",
-   "ERFKILL", "EHWPOISON",
-   }
+// errno value -> symbolic name, indexed directly by the errno number (O(1)).
+// The numbering differs between Linux and the BSD-derived platforms, and even
+// macOS and FreeBSD disagree on a few of their own high-numbered codes, so each
+// platform carries a table generated from its real <errno.h>. Gaps in the
+// numbering are empty and fall through to "Unknown"; a platform with no table
+// is a compile error. The long form (the 'l' spec, below) still uses strerror().
+// clang-format off
+#if defined(__linux__)
+static constexpr std::string_view ERRNO_NAMES[] = {
+  /*   0 */ "SUCCESS", "EPERM", "ENOENT", "ESRCH", "EINTR", "EIO", "ENXIO", "E2BIG",
+  /*   8 */ "ENOEXEC", "EBADF", "ECHILD", "EAGAIN", "ENOMEM", "EACCES", "EFAULT", "ENOTBLK",
+  /*  16 */ "EBUSY", "EEXIST", "EXDEV", "ENODEV", "ENOTDIR", "EISDIR", "EINVAL", "ENFILE",
+  /*  24 */ "EMFILE", "ENOTTY", "ETXTBSY", "EFBIG", "ENOSPC", "ESPIPE", "EROFS", "EMLINK",
+  /*  32 */ "EPIPE", "EDOM", "ERANGE", "EDEADLK", "ENAMETOOLONG", "ENOLCK", "ENOSYS", "ENOTEMPTY",
+  /*  40 */ "ELOOP", "", "ENOMSG", "EIDRM", "ECHRNG", "EL2NSYNC", "EL3HLT", "EL3RST",
+  /*  48 */ "ELNRNG", "EUNATCH", "ENOCSI", "", "EBADE", "EBADR", "EXFULL", "ENOANO",
+  /*  56 */ "EBADRQC", "EBADSLT", "", "EBFONT", "ENOSTR", "ENODATA", "ETIME", "ENOSR",
+  /*  64 */ "ENONET", "ENOPKG", "EREMOTE", "ENOLINK", "EADV", "ESRMNT", "ECOMM", "EPROTO",
+  /*  72 */ "EMULTIHOP", "EDOTDOT", "EBADMSG", "EOVERFLOW", "ENOTUNIQ", "EBADFD", "EREMCHG", "ELIBACC",
+  /*  80 */ "ELIBBAD", "ELIBSCN", "ELIBMAX", "ELIBEXEC", "EILSEQ", "ERESTART", "ESTRPIPE", "EUSERS",
+  /*  88 */ "ENOTSOCK", "EDESTADDRREQ", "EMSGSIZE", "EPROTOTYPE", "ENOPROTOOPT", "EPROTONOSUPPORT", "ESOCKTNOSUPPORT", "ENOTSUP",
+  /*  96 */ "EPFNOSUPPORT", "EAFNOSUPPORT", "EADDRINUSE", "EADDRNOTAVAIL", "ENETDOWN", "ENETUNREACH", "ENETRESET", "ECONNABORTED",
+  /* 104 */ "ECONNRESET", "ENOBUFS", "EISCONN", "ENOTCONN", "ESHUTDOWN", "ETOOMANYREFS", "ETIMEDOUT", "ECONNREFUSED",
+  /* 112 */ "EHOSTDOWN", "EHOSTUNREACH", "EALREADY", "EINPROGRESS", "ESTALE", "EUCLEAN", "ENOTNAM", "ENAVAIL",
+  /* 120 */ "EISNAM", "EREMOTEIO", "EDQUOT", "ENOMEDIUM", "EMEDIUMTYPE", "ECANCELED", "ENOKEY", "EKEYEXPIRED",
+  /* 128 */ "EKEYREVOKED", "EKEYREJECTED", "EOWNERDEAD", "ENOTRECOVERABLE", "ERFKILL", "EHWPOISON",
 };
-static constexpr DiscreteRange<unsigned> ERRNO_RANGE{0, ERRNO_SHORT_NAME.size() - 1};
-// This provides convenient safe access to the errno short name array.
-auto errno_short_name = [](unsigned n) { return ERRNO_RANGE.contains(n) ? ERRNO_SHORT_NAME[n] : "Unknown"sv; };
+#elif defined(__APPLE__)
+static constexpr std::string_view ERRNO_NAMES[] = {
+  /*   0 */ "SUCCESS", "EPERM", "ENOENT", "ESRCH", "EINTR", "EIO", "ENXIO", "E2BIG",
+  /*   8 */ "ENOEXEC", "EBADF", "ECHILD", "EDEADLK", "ENOMEM", "EACCES", "EFAULT", "ENOTBLK",
+  /*  16 */ "EBUSY", "EEXIST", "EXDEV", "ENODEV", "ENOTDIR", "EISDIR", "EINVAL", "ENFILE",
+  /*  24 */ "EMFILE", "ENOTTY", "ETXTBSY", "EFBIG", "ENOSPC", "ESPIPE", "EROFS", "EMLINK",
+  /*  32 */ "EPIPE", "EDOM", "ERANGE", "EAGAIN", "EINPROGRESS", "EALREADY", "ENOTSOCK", "EDESTADDRREQ",
+  /*  40 */ "EMSGSIZE", "EPROTOTYPE", "ENOPROTOOPT", "EPROTONOSUPPORT", "ESOCKTNOSUPPORT", "ENOTSUP", "EPFNOSUPPORT", "EAFNOSUPPORT",
+  /*  48 */ "EADDRINUSE", "EADDRNOTAVAIL", "ENETDOWN", "ENETUNREACH", "ENETRESET", "ECONNABORTED", "ECONNRESET", "ENOBUFS",
+  /*  56 */ "EISCONN", "ENOTCONN", "ESHUTDOWN", "ETOOMANYREFS", "ETIMEDOUT", "ECONNREFUSED", "ELOOP", "ENAMETOOLONG",
+  /*  64 */ "EHOSTDOWN", "EHOSTUNREACH", "ENOTEMPTY", "EPROCLIM", "EUSERS", "EDQUOT", "ESTALE", "EREMOTE",
+  /*  72 */ "EBADRPC", "ERPCMISMATCH", "EPROGUNAVAIL", "EPROGMISMATCH", "EPROCUNAVAIL", "ENOLCK", "ENOSYS", "EFTYPE",
+  /*  80 */ "EAUTH", "ENEEDAUTH", "EPWROFF", "EDEVERR", "EOVERFLOW", "EBADEXEC", "EBADARCH", "ESHLIBVERS",
+  /*  88 */ "EBADMACHO", "ECANCELED", "EIDRM", "ENOMSG", "EILSEQ", "", "EBADMSG", "EMULTIHOP",
+  /*  96 */ "ENODATA", "ENOLINK", "ENOSR", "ENOSTR", "EPROTO", "ETIME", "EOPNOTSUPP", "ENOPOLICY",
+  /* 104 */ "ENOTRECOVERABLE", "EOWNERDEAD", "EQFULL", "ENOTCAPABLE",
+};
+#elif defined(__FreeBSD__)
+static constexpr std::string_view ERRNO_NAMES[] = {
+  /*   0 */ "SUCCESS", "", "ENOENT", "ESRCH", "EINTR", "EIO", "ENXIO", "E2BIG",
+  /*   8 */ "ENOEXEC", "EBADF", "ECHILD", "EDEADLK", "ENOMEM", "EACCES", "EFAULT", "ENOTBLK",
+  /*  16 */ "EBUSY", "EEXIST", "EXDEV", "ENODEV", "ENOTDIR", "EISDIR", "EINVAL", "ENFILE",
+  /*  24 */ "EMFILE", "ENOTTY", "ETXTBSY", "EFBIG", "ENOSPC", "ESPIPE", "EROFS", "EMLINK",
+  /*  32 */ "EPIPE", "EDOM", "ERANGE", "EAGAIN", "EINPROGRESS", "EALREADY", "ENOTSOCK", "EDESTADDRREQ",
+  /*  40 */ "EMSGSIZE", "EPROTOTYPE", "ENOPROTOOPT", "EPROTONOSUPPORT", "ESOCKTNOSUPPORT", "ENOTSUP", "EPFNOSUPPORT", "EAFNOSUPPORT",
+  /*  48 */ "EADDRINUSE", "EADDRNOTAVAIL", "ENETDOWN", "ENETUNREACH", "ENETRESET", "ECONNABORTED", "ECONNRESET", "ENOBUFS",
+  /*  56 */ "EISCONN", "ENOTCONN", "ESHUTDOWN", "ETOOMANYREFS", "ETIMEDOUT", "ECONNREFUSED", "ELOOP", "ENAMETOOLONG",
+  /*  64 */ "EHOSTDOWN", "EHOSTUNREACH", "ENOTEMPTY", "EPROCLIM", "EUSERS", "EDQUOT", "ESTALE", "EREMOTE",
+  /*  72 */ "EBADRPC", "ERPCMISMATCH", "EPROGUNAVAIL", "EPROGMISMATCH", "EPROCUNAVAIL", "ENOLCK", "ENOSYS", "EFTYPE",
+  /*  80 */ "EAUTH", "ENEEDAUTH", "EIDRM", "ENOMSG", "EOVERFLOW", "ECANCELED", "EILSEQ", "",
+  /*  88 */ "EDOOFUS", "EBADMSG", "EMULTIHOP", "ENOLINK", "EPROTO", "ENOTCAPABLE", "ECAPMODE", "ENOTRECOVERABLE",
+  /*  96 */ "EOWNERDEAD", "EINTEGRITY",
+};
+#else
+#error "errno name table not defined for this platform"
+#endif
+// clang-format on
+
+std::string_view
+errno_short_name(int e)
+{
+  if (e >= 0 && e < static_cast<int>(sizeof(ERRNO_NAMES) / sizeof(ERRNO_NAMES[0])) && !ERRNO_NAMES[e].empty()) {
+    return ERRNO_NAMES[e];
+  }
+  return "Unknown"sv;
+}
 } // namespace
 
 BufferWriter &
@@ -910,8 +906,9 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, std::error_code const &ec) {
   if (spec.has_numeric_type()) {                        // if numeric type, print just the numeric part.
     bwformat(w, spec, ec.value());
   } else {
-    if ((&ec.category() == G_CAT || &ec.category() == S_CAT) && swoc::ERRNO_RANGE.contains(ec.value())) {
-      bwformat(w, spec, swoc::ERRNO_SHORT_NAME[ec.value()]);
+    auto short_name = (&ec.category() == G_CAT || &ec.category() == S_CAT) ? errno_short_name(ec.value()) : "Unknown"sv;
+    if (short_name != "Unknown"sv) {
+      bwformat(w, spec, short_name);
     } else {
       w.write(ec.message());
     }
