@@ -36,6 +36,8 @@ set(CHECK_PROGRAM
 include(CheckCSourceCompiles)
 check_c_source_compiles("${CHECK_PROGRAM}" TS_HAS_128BIT_CAS)
 
+set(NEED_MCX16 FALSE)
+
 if(NOT TS_HAS_128BIT_CAS)
   unset(TS_HAS_128BIT_CAS CACHE)
   set(CMAKE_REQUIRED_FLAGS "-Werror -mcx16")
@@ -50,6 +52,6 @@ set(TS_NEEDS_MCX16_FOR_CAS
 )
 
 unset(CHECK_PROGRAM)
-unset(NEEDS_MCX16)
+unset(NEED_MCX16)
 
 mark_as_advanced(TS_HAS_128BIT_CAS TS_NEEDS_MCX16_FOR_CAS)
