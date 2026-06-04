@@ -150,11 +150,11 @@ ink_freelist_init(InkFreeList **fl, const char *name, uint32_t type_size, uint32
 
   // The same alignment is used for both the InkFreeList object and to
   // calculate the alignment member that determines alignment for
-  // chunks allocated in ink_freelist_new. I don't know why.
+  // chunks allocated in ink_freelist_new.
   //
-  // The alignment may need to be corrected to ensure all internal bookkeeping
-  // objects are properly aligned, not only the user objects placed into the
-  // allocated memory.
+  // The alignment is adjusted here to ensure all internal bookkeeping
+  // objects are properly aligned, as well as user objects placed into
+  // memory allocated from the freelist.
   alignment = std::lcm(alignment, static_cast<std::uint32_t>(alignof(InkFreeList)));
   alignment = std::lcm(alignment, static_cast<std::uint32_t>(alignof(void *)));
 
