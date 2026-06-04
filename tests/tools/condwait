@@ -23,6 +23,7 @@
 #
 # CONDITION is the ('test' command) condition to wait for.  (It may contain white space.)
 # For file existence tests (-f, -e, -d), glob patterns are supported (e.g., -f /path/crash-*.log).
+# Use "--contains FILE PATTERN COUNT" to wait until FILE contains PATTERN in at least COUNT lines.
 #
 # MAX-WAIT is the maximum number of seconds to wait for the condition.  If it is omitted, it defaults to 60.
 #
@@ -34,8 +35,13 @@
 WAIT=60
 POST_WAIT=0
 
+usage() {
+    echo "usage: condwait [ MAX-WAIT [ POST-WAIT ] ] TEST-CONDITION" >&2
+    echo "       condwait [ MAX-WAIT [ POST-WAIT ] ] --contains FILE PATTERN COUNT" >&2
+}
+
 if [[ "$1" = "" ]] ; then
-    echo "usage: condwait [ MAX-WAIT [ POST-WAIT ] ] TEST-CONDTION" >&2
+    usage
     exit 1
 fi
 
@@ -44,7 +50,7 @@ if [[ "$X" = "$1" ]] ; then
     WAIT=$1
     shift
     if [[ "$1" = "" ]] ; then
-        echo "usage: condwait [ MAX-WAIT [ POST-WAIT ] ] TEST-CONDTION" >&2
+        usage
         exit 1
     fi
     X=$( echo "$1" | sed 's/x/yy/g' | sed 's/[^0-9]/x/g' )
@@ -55,24 +61,64 @@ if [[ "$X" = "$1" ]] ; then
 fi
 
 if [[ "$1" = "" ]] ; then
-    echo "usage: condwait [ MAX-WAIT [ POST-WAIT ] ] TEST-CONDTION" >&2
+    usage
     exit 1
 fi
 
-# Check if this is a simple file existence test (-f, -e, -d). If so, use ls -d
-# which handles glob patterns properly. Otherwise, use test for the condition.
+if [[ "$1" = "--contains" ]]; then
+    if [[ $# -ne 4 ]] || ! [[ "$4" =~ ^[0-9]+$ ]]; then
+        usage
+        exit 1
+    fi
+fi
+
+# Check simple file existence tests (-f, -e, -d) specially so literal paths with
+# whitespace work while glob patterns remain supported.
 check_condition() {
-    if [[ "$1" = "-f" || "$1" = "-e" || "$1" = "-d" ]] && [[ $# -eq 2 ]]; then
-        # Use ls -d for file existence tests to support glob patterns.
-        ls -d $2 >/dev/null 2>&1
+    if [[ "$1" = "--contains" ]]; then
+        [[ -f "$2" ]] || return 1
+        local matches
+        matches=$(awk -v pattern="$3" -v expected="$4" '
+            BEGIN {
+                if (expected == 0) {
+                    print 0
+                    found = 1
+                    exit
+                }
+            }
+            index($0, pattern) {
+                count++
+                if (count >= expected) {
+                    print count
+                    found = 1
+                    exit
+                }
+            }
+            END {
+                if (!found) {
+                    print count + 0
+                }
+            }
+        ' "$2")
+        (( matches >= $4 ))
+    elif [[ "$1" = "-f" || "$1" = "-e" || "$1" = "-d" ]] && [[ $# -eq 2 ]]; then
+        if [[ "$2" = *[\*\?\[]* ]]; then
+            # Use compgen for file existence tests to support glob patterns.
+            local match
+            while IFS= read -r match; do
+                test "$1" "$match" && return 0
+            done < <(compgen -G "$2")
+            return 1
+        fi
+        test "$1" "$2"
     else
-        test $*
+        test "$@"
     fi
 }
 
 while (( WAIT > 0 ))
 do
-    if check_condition $*
+    if check_condition "$@"
     then
         if (( POST_WAIT > 0 ))
         then
