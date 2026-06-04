@@ -1087,42 +1087,6 @@ LogAccess::unmarshal_http_version(char **buf, char *dest, int len)
 }
 
 /*-------------------------------------------------------------------------
-  LogAccess::unmarshal_http_text
-
-  The http text is a reproduced HTTP/1.x request line. It's HTTP method (cqhm) + URL (pqu) + HTTP version.
-  This doesn't support HTTP/2 and HTTP/3 since those don't have a request line.
-  -------------------------------------------------------------------------*/
-
-int
-LogAccess::unmarshal_http_text(char **buf, char *dest, int len, LogSlice *slice, LogEscapeType escape_type)
-{
-  ink_assert(buf != nullptr);
-  ink_assert(*buf != nullptr);
-  ink_assert(dest != nullptr);
-
-  char *p = dest;
-
-  //    int res1 = unmarshal_http_method (buf, p, len);
-  int res1 = unmarshal_str(buf, p, len, nullptr, escape_type);
-  if (res1 < 0) {
-    return -1;
-  }
-  p        += res1;
-  *p++      = ' ';
-  int res2  = unmarshal_str(buf, p, len - res1 - 1, slice, escape_type);
-  if (res2 < 0) {
-    return -1;
-  }
-  p        += res2;
-  *p++      = ' ';
-  int res3  = unmarshal_http_version(buf, p, len - res1 - res2 - 2);
-  if (res3 < 0) {
-    return -1;
-  }
-  return res1 + res2 + res3 + 2;
-}
-
-/*-------------------------------------------------------------------------
   LogAccess::unmarshal_http_status
 
   An http response status code (pssc,sssc) is just an INT, but it's always
