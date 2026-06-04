@@ -39,6 +39,8 @@ set(CHECK_PROGRAM
 include(CheckCXXSourceCompiles)
 check_cxx_source_compiles("${CHECK_PROGRAM}" TS_HAS_128BIT_ATOMIC)
 
+set(NEED_MCX16 FALSE)
+
 if(NOT TS_HAS_128BIT_ATOMIC)
   unset(TS_HAS_128BIT_ATOMIC CACHE)
   set(CMAKE_REQUIRED_FLAGS "-Werror -mcx16")
