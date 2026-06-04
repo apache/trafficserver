@@ -507,7 +507,6 @@ contHandleFetch(const TSCont contp, TSEvent event, void *edata)
 
   // For these cases we need to access the client request
   switch (event) {
-  case TS_EVENT_HTTP_POST_REMAP:
   case TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE:
   case TS_EVENT_HTTP_SEND_RESPONSE_HDR:
     if (TS_SUCCESS != TSHttpTxnClientReqGet(txnp, &reqBuffer, &reqHdrLoc)) {
@@ -521,15 +520,16 @@ contHandleFetch(const TSCont contp, TSEvent event, void *edata)
   }
 
   switch (event) {
-  case TS_EVENT_HTTP_POST_REMAP: {
-    /* Use the cache key since this has better lookup behavior when using plugins like the cachekey plugin,
-     * for example multiple URIs can match a single cache key */
+  case TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE: {
+    /* Use the cache key (multiple URIs can map to one key). CACHE_LOOKUP_COMPLETE is
+     * the earliest hook where TSHttpTxnCacheLookupUrlGet returns a populated URL. */
     if (data->frontend() && data->secondPass()) {
       /* Create a separate cache key name space to be used only for front-end and second-pass fetch policy checks. */
       data->_cachekey.assign("/prefetch");
     }
     if (!appendCacheKey(txnp, reqBuffer, data->_cachekey)) {
       PrefetchError("failed to get the cache key");
+      TSHandleMLocRelease(reqBuffer, TS_NULL_MLOC, reqHdrLoc);
       TSHttpTxnReenable(txnp, TS_EVENT_HTTP_ERROR);
       return 0;
     }
@@ -542,17 +542,15 @@ contHandleFetch(const TSCont contp, TSEvent event, void *edata)
           data->_fetchable = state->acquire(data->_cachekey);
           PrefetchDebug("request is %s fetchable", data->_fetchable ? " " : " not ");
         }
-      }
-    }
-  } break;
-
-  case TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE: {
-    if (data->frontend()) {
-      /* front-end instance */
-      if (data->secondPass()) {
+      } else {
         /* second-pass */
-        data->_fetchable = state->acquire(data->_cachekey);
-        data->_fetchable = data->_fetchable && state->uniqueAcquire(data->_cachekey);
+        if (state->acquire(data->_cachekey)) {
+          if (state->uniqueAcquire(data->_cachekey)) {
+            data->_fetchable = true;
+          } else {
+            state->release(data->_cachekey);
+          }
+        }
         PrefetchDebug("request is %s fetchable", data->_fetchable ? " " : " not ");
 
         if (isFetchable(txnp, data)) {
@@ -734,8 +732,7 @@ contHandleFetch(const TSCont contp, TSEvent event, void *edata)
   }
 
   /* Release the request MLoc */
-  if (event == TS_EVENT_HTTP_POST_REMAP || event == TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE ||
-      event == TS_EVENT_HTTP_SEND_RESPONSE_HDR) {
+  if (event == TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE || event == TS_EVENT_HTTP_SEND_RESPONSE_HDR) {
     TSHandleMLocRelease(reqBuffer, TS_NULL_MLOC, reqHdrLoc);
   }
 
@@ -868,7 +865,6 @@ TSRemapDoRemap(void *instance, TSHttpTxn txnp, TSRemapRequestInfo *rri)
           TSCont cont = TSContCreate(contHandleFetch, TSMutexCreate());
           TSContDataSet(cont, static_cast<void *>(data));
 
-          TSHttpTxnHookAdd(txnp, TS_HTTP_POST_REMAP_HOOK, cont);
           TSHttpTxnHookAdd(txnp, TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, cont);
           TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, cont);
           TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, cont);
