@@ -1016,7 +1016,7 @@ CookieHelper::cookieModifyHelper(const char *cookies, const size_t cookies_len, 
     for (; idx < cookies_len && std::isspace(cookies[idx]); idx++) {
       ;
     }
-    if (0 == strncmp(cookies + idx, cookie_key.c_str(), cookie_key.size())) {
+    if (cookies_len - idx >= cookie_key.size() && 0 == memcmp(cookies + idx, cookie_key.c_str(), cookie_key.size())) {
       size_t key_start_idx = idx;
       // advance to past the name and any subsequent spaces
       for (idx += cookie_key.size(); idx < cookies_len && std::isspace(cookies[idx]); idx++) {
@@ -1034,12 +1034,7 @@ CookieHelper::cookieModifyHelper(const char *cookies, const size_t cookies_len, 
         for (; idx < cookies_len && cookies[idx] != ';'; idx++) {
           ;
         }
-        // If we have not reached the end and there is a space after the
-        // semi-colon, advance one char
-        if (idx + 1 < cookies_len && std::isspace(cookies[idx + 1])) {
-          idx++;
-        }
-        // cookie value is found
+        // idx now points at the ';' ending this pair, or at cookies_len.
         size_t value_end_idx = idx;
         if (CookieHelper::COOKIE_OP_SET == cookie_op) {
           updated_cookies.append(cookies, value_start_idx);
@@ -1049,10 +1044,15 @@ CookieHelper::cookieModifyHelper(const char *cookies, const size_t cookies_len, 
         }
 
         if (CookieHelper::COOKIE_OP_DEL == cookie_op) {
-          // +1 to skip the semi-colon after the cookie_value
           updated_cookies.append(cookies, key_start_idx);
+          // Drop the deleted pair's trailing ';' and one following space, if present.
           if (value_end_idx < cookies_len) {
-            updated_cookies.append(cookies + value_end_idx + 1, cookies_len - value_end_idx - 1);
+            size_t tail_idx = value_end_idx + 1;
+
+            if (tail_idx < cookies_len && std::isspace(cookies[tail_idx])) {
+              tail_idx++;
+            }
+            updated_cookies.append(cookies + tail_idx, cookies_len - tail_idx);
           }
           // if the cookie to delete is the last pair,
           // the semi-colon before this pair needs to be deleted
