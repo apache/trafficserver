@@ -747,11 +747,9 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf
   do {
     IOBufferReader *reader = buf.reader();
 
-    // Unlike the per-block original, l may span blocks so it can be coalesced below.
-    int64_t avail  = reader->read_avail();
-    int64_t wavail = towrite - total_written;
-
-    l = (wavail < avail) ? wavail : avail;
+    // towrite is already bounded by read_avail() in the caller, so this never exceeds
+    // what's queued -- avoid re-walking the block chain (O(n)) on the write hot path.
+    l = towrite - total_written;
 
     // TS-2365: If the SSL max record size is set and we have
     // more data than that, break this into smaller write
