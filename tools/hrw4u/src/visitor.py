@@ -1012,9 +1012,9 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                 return
             operator = ctx.getChild(1)
 
-            # Detect negation: '!=' and '!~' are single tokens (NEQ, NOT_TILDE),
-            # but '!in' is two separate tokens ('!' + IN).
-            if operator.getText() == '!':
+            # Detect negation: '!=' and '!~' are single tokens (NEQ, NOT_TILDE);
+            # 'in' is single, but '!in' is BANG followed by IN as separate tokens.
+            if ctx.BANG():
                 negate = True
             else:
                 negate = operator.symbol.type in (hrw4uParser.NEQ, hrw4uParser.NOT_TILDE)
@@ -1136,7 +1136,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
     def emit_factor(self, ctx, *, last: bool = False) -> None:
         with self.debug_context("emit_factor"), self.trap(ctx):
             match ctx:
-                case _ if ctx.getChildCount() == 2 and ctx.getChild(0).getText() == "!":
+                case _ if ctx.BANG():
                     self._dbg("`NOT' detected")
                     child = ctx.getChild(1)
                     if child.LPAREN():

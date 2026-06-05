@@ -18,9 +18,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Union
+from enum import Enum, auto
 
 __all__ = [
+    "AssignOp",
+    "CmpOp",
+    "BoolOp",
+    "VarSectionKind",
     "LiteralStringValue",
     "IdentValue",
     "IPValue",
@@ -51,10 +55,47 @@ __all__ = [
     "TopLevelNode",
 ]
 
+# Enum.__str__ yields "AssignOp.ASSIGN" while the default Enum.__repr__ yields
+# "<AssignOp.ASSIGN: 1>"; we alias __repr__ to __str__ on every operator enum
+# so that pprint output (used by hrw4u-ast) is concise and readable.
+
+
+class AssignOp(Enum):
+    ASSIGN = auto()
+    PLUS_ASSIGN = auto()
+    __repr__ = Enum.__str__
+
+
+class CmpOp(Enum):
+    EQ = auto()
+    NEQ = auto()
+    GT = auto()
+    LT = auto()
+    MATCH = auto()
+    NOT_MATCH = auto()
+    IN = auto()
+    NOT_IN = auto()
+    __repr__ = Enum.__str__
+
+
+class BoolOp(Enum):
+    AND = auto()
+    OR = auto()
+    __repr__ = Enum.__str__
+
+
+class VarSectionKind(Enum):
+    TXN = auto()
+    SESSION = auto()
+    __repr__ = Enum.__str__
+
 
 @dataclass(frozen=True, kw_only=True)
 class LiteralStringValue:
-    raw: str
+    # The string body with surrounding quotes stripped. Escape sequences
+    # (e.g. '\n', '\"') are preserved as written; consumers needing the
+    # decoded value must do their own decoding.
+    text: str
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -69,15 +110,18 @@ class IPValue:
 
 @dataclass(frozen=True, kw_only=True)
 class ParamRef:
-    raw: str
+    # Parameter name without the '$' sigil (source `$tag` -> name='tag').
+    name: str
 
 
 @dataclass(frozen=True, kw_only=True)
 class RegexValue:
-    raw: str
+    # The regex body with surrounding '/' delimiters stripped. Backslash
+    # escapes inside the pattern are preserved as written.
+    pattern: str
 
 
-ValueExpr = Union[LiteralStringValue, IdentValue, IPValue, ParamRef, int, bool, tuple[IPValue, ...]]
+ValueExpr = LiteralStringValue | IdentValue | IPValue | ParamRef | int | bool | tuple[IPValue, ...]
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -87,6 +131,8 @@ class Node:
 
 @dataclass(frozen=True)
 class Target:
+    # Value class, not an AST node — destructured from an Assignment's IDENT
+    # lhs, so source position lives on the enclosing Assignment.
     namespace: str | None
     field: str
 
@@ -104,7 +150,7 @@ class Target:
 @dataclass(frozen=True, kw_only=True)
 class Assignment(Node):
     target: Target
-    operator: str  # "=" or "+="
+    operator: AssignOp
     value: ValueExpr
 
 
@@ -122,14 +168,14 @@ class Break(Node):
 @dataclass(frozen=True, kw_only=True)
 class Comparison(Node):
     left: IdentValue | FunctionCall
-    operator: str  # "==", "!=", ">", "<", "~", "!~", "in", "!in"
+    operator: CmpOp
     right: ValueExpr | RegexValue | tuple[ValueExpr, ...]
     modifiers: tuple[str, ...]
 
 
 @dataclass(frozen=True, kw_only=True)
 class LogicalOp(Node):
-    operator: str  # "&&" or "||"
+    operator: BoolOp
     left: ConditionExpr
     right: ConditionExpr
 
@@ -184,7 +230,7 @@ class VarDecl(Node):
 
 @dataclass(frozen=True, kw_only=True)
 class VarSection(Node):
-    scope: str
+    scope: VarSectionKind
     declarations: tuple[VarDecl, ...]
 
 
@@ -206,6 +252,6 @@ class HRW4UAST:
 
 
 # Type aliases: must follow all class definitions (evaluated at runtime).
-ConditionExpr = Union[Comparison, LogicalOp, NotOp, BoolLiteral, IdentCondition, FunctionCall]
-BodyNode = Union[Assignment, FunctionCall, IfBlock, Break]
-TopLevelNode = Union[UseDirective, VarSection, ProcedureDecl, Section]
+ConditionExpr = Comparison | LogicalOp | NotOp | BoolLiteral | IdentCondition | FunctionCall
+BodyNode = Assignment | FunctionCall | IfBlock | Break
+TopLevelNode = UseDirective | VarSection | ProcedureDecl | Section
