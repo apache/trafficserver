@@ -107,6 +107,11 @@ public:
   int64_t get_cache_response_body_bytes() const;
   int64_t get_cache_response_hdr_bytes() const;
 
+  // ===== TLS handshake byte counters =====
+  uint64_t get_client_tls_handshake_bytes_rx() const;
+  uint64_t get_client_tls_handshake_bytes_tx() const;
+  size_t   get_client_tls_early_data_len() const;
+
   // ===== Transaction identifiers =====
   int64_t get_sm_id() const;
   int64_t get_connection_id() const;
