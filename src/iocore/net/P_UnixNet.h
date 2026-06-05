@@ -23,6 +23,8 @@
 
 #pragma once
 
+#include <atomic>
+
 #include "P_Net.h"
 #include "P_UnixNetVConnection.h"
 #include "P_UnixPollDescriptor.h"
@@ -42,13 +44,13 @@ PollDescriptor *get_PollDescriptor(EThread *t);
 using NetContHandler = int (NetHandler::*)(int, void *);
 using uint32         = unsigned int;
 
-extern ink_hrtime last_throttle_warning;
-extern ink_hrtime last_shedding_warning;
-extern ink_hrtime emergency_throttle_time;
-extern int        net_connections_throttle;
-extern bool       net_memory_throttle;
-extern int        fds_throttle;
-extern ink_hrtime last_transient_accept_error;
+extern ink_hrtime        last_throttle_warning;
+extern ink_hrtime        last_shedding_warning;
+extern ink_hrtime        emergency_throttle_time;
+extern int               net_connections_throttle;
+extern std::atomic<bool> net_memory_throttle;
+extern int               fds_throttle;
+extern ink_hrtime        last_transient_accept_error;
 
 //
 // Configuration Parameter had to move here to share
@@ -105,6 +107,14 @@ check_shedding_warning()
 TS_INLINE bool
 check_net_throttle(ThrottleType t)
 {
+  // Throttle new inbound connections when resident memory exceeds
+  // proxy.config.memory.max_usage (set by the MemoryLimit continuation). Only
+  // ACCEPT is throttled; outbound CONNECTs may be needed to let in-flight
+  // transactions complete and release memory.
+  if (t == ACCEPT && net_memory_throttle.load(std::memory_order_relaxed)) {
+    return true;
+  }
+
   int connections = net_connections_to_throttle(t);
 
   if (net_connections_throttle != 0 && connections >= net_connections_throttle) {

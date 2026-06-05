@@ -31,12 +31,12 @@
 #include "iocore/io_uring/IO_URING.h"
 #endif
 
-ink_hrtime last_throttle_warning;
-ink_hrtime last_shedding_warning;
-int        net_connections_throttle;
-bool       net_memory_throttle = false;
-int        fds_throttle;
-ink_hrtime last_transient_accept_error;
+ink_hrtime        last_throttle_warning;
+ink_hrtime        last_shedding_warning;
+int               net_connections_throttle;
+std::atomic<bool> net_memory_throttle = false;
+int               fds_throttle;
+ink_hrtime        last_transient_accept_error;
 
 NetHandler::Config                                     NetHandler::global_config;
 std::bitset<std::numeric_limits<unsigned int>::digits> NetHandler::active_thread_types;
