@@ -200,8 +200,10 @@ TunnelDestination::SNIAction(SSL &ssl, const Context &ctx) const
     auto fixed_dst{destination};
     // Apply mapping functions to get the final destination.
     for (auto fnArrIndex : fnArrIndexes) {
+      bool has_dynamic_port = false;
       // Dispatch to the correct tunnel destination port function.
-      fixed_dst = fix_destination[fnArrIndex](fixed_dst, var_start_pos, ctx, ssl_netvc, port_is_dynamic);
+      fixed_dst        = fix_destination[fnArrIndex](fixed_dst, var_start_pos, ctx, ssl_netvc, has_dynamic_port);
+      port_is_dynamic |= has_dynamic_port;
     }
     tuns->set_tunnel_destination(fixed_dst, type, port_is_dynamic, tunnel_prewarm);
     Dbg(dbg_ctl_ssl_sni, "Destination now is [%s], configured [%s], fqdn [%s]", fixed_dst.c_str(), destination.c_str(), servername);
