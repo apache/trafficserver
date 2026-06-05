@@ -478,7 +478,6 @@ class MemoryLimit : public Continuation
 public:
   MemoryLimit() : Continuation(new_ProxyMutex())
   {
-    memset(&_usage, 0, sizeof(_usage));
     SET_HANDLER(&MemoryLimit::periodic);
     memory_rss = Metrics::Gauge::createPtr("proxy.process.traffic_server.memory.rss");
   }
@@ -495,41 +494,44 @@ public:
       return EVENT_DONE;
     }
 
-    // "reload" the setting, we don't do this often so not expensive
+    // "reload" the setting, we don't do this often so not expensive.
+    // proxy.config.memory.max_usage is in bytes; 0 (the default) disables the
+    // feature. We only schedule this continuation when it is enabled, but
+    // re-check here defensively and stop monitoring if it is ever cleared.
     _memory_limit = RecGetRecordInt("proxy.config.memory.max_usage").value_or(0);
-    _memory_limit = _memory_limit >> 10; // divide by 1024
+    if (_memory_limit <= 0) {
+      Dbg(dbg_ctl_server, "limiting connections based on memory usage has been disabled");
+      e->cancel();
+      delete this;
+      return EVENT_DONE;
+    }
 
-    if (getrusage(RUSAGE_SELF, &_usage) == 0) {
-      ts::Metrics::Gauge::store(memory_rss, _usage.ru_maxrss << 10); // * 1024
-      Dbg(dbg_ctl_server, "memory usage - ru_maxrss: %ld memory limit: %" PRId64, _usage.ru_maxrss, _memory_limit);
-      if (_memory_limit > 0) {
-        if (_usage.ru_maxrss > _memory_limit) {
-          if (net_memory_throttle == false) {
-            net_memory_throttle = true;
-            Dbg(dbg_ctl_server, "memory usage exceeded limit - ru_maxrss: %ld memory limit: %" PRId64, _usage.ru_maxrss,
-                _memory_limit);
-          }
-        } else {
-          if (net_memory_throttle == true) {
-            net_memory_throttle = false;
-            Dbg(dbg_ctl_server, "memory usage under limit - ru_maxrss: %ld memory limit: %" PRId64, _usage.ru_maxrss,
-                _memory_limit);
-          }
-        }
-      } else {
-        // this feature has not been enabled
-        Dbg(dbg_ctl_server, "limiting connections based on memory usage has been disabled");
-        e->cancel();
-        delete this;
-        return EVENT_DONE;
+    // Sample and publish the *current* RSS only while the feature is enabled,
+    // so we incur the cost of reading RSS only when it is needed.
+    // ink_get_current_rss() reports current (not peak) RSS in bytes, portably,
+    // so the gauge can both rise and fall and the throttle releases correctly.
+    uint64_t rss = ink_get_current_rss();
+    ts::Metrics::Gauge::store(memory_rss, static_cast<int64_t>(rss));
+    Dbg(dbg_ctl_server, "memory usage - current rss: %" PRIu64 " bytes memory limit: %" PRId64 " bytes", rss, _memory_limit);
+
+    // net_memory_throttle is read on accept threads, so use relaxed atomics.
+    if (rss > static_cast<uint64_t>(_memory_limit)) {
+      if (net_memory_throttle.load(std::memory_order_relaxed) == false) {
+        net_memory_throttle.store(true, std::memory_order_relaxed);
+        Dbg(dbg_ctl_server, "memory usage exceeded limit - current rss: %" PRIu64 " memory limit: %" PRId64, rss, _memory_limit);
+      }
+    } else {
+      if (net_memory_throttle.load(std::memory_order_relaxed) == true) {
+        net_memory_throttle.store(false, std::memory_order_relaxed);
+        Dbg(dbg_ctl_server, "memory usage under limit - current rss: %" PRIu64 " memory limit: %" PRId64, rss, _memory_limit);
       }
     }
+
     return EVENT_CONT;
   }
 
 private:
   int64_t                     _memory_limit = 0;
-  struct rusage               _usage;
   Metrics::Gauge::AtomicType *memory_rss;
 };
 
@@ -2231,7 +2233,13 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 
   eventProcessor.schedule_every(new SignalContinuation, HRTIME_MSECOND * 500, ET_CALL);
   eventProcessor.schedule_every(new DiagsLogContinuation, HRTIME_SECOND, ET_TASK);
-  eventProcessor.schedule_every(new MemoryLimit, HRTIME_SECOND * 10, ET_TASK);
+  // Only monitor RSS and enforce the memory limit when the feature is enabled.
+  // proxy.config.memory.max_usage requires a restart to change, so this gate is
+  // stable for the life of the process. This also avoids reading RSS and
+  // publishing the memory.rss gauge when the feature is off.
+  if (RecGetRecordInt("proxy.config.memory.max_usage").value_or(0) > 0) {
+    eventProcessor.schedule_every(new MemoryLimit, HRTIME_SECOND * 10, ET_TASK);
+  }
   RecRegisterConfigUpdateCb("proxy.config.dump_mem_info_frequency", init_memory_tracker, nullptr);
   init_memory_tracker(nullptr, RECD_NULL, RecData(), nullptr);
 
