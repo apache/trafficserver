@@ -195,6 +195,9 @@ class yamlcpp_json_encoder
       for (auto const &err : errata) {
         json << YAML::BeginMap;
         json << YAML::Key << "code" << YAML::Value << errata.code().value();
+        // Default to DIAG for annotations without explicit severity — this is a wire format
+        // concern, not stored in the Errata model nor in the RPC error model.
+        json << YAML::Key << "severity" << YAML::Value << static_cast<int>(err.has_severity() ? err.severity() : ERRATA_DIAG);
         json << YAML::Key << "message" << YAML::Value << std::string{err.text().data(), err.text().size()};
         json << YAML::EndMap;
       }
