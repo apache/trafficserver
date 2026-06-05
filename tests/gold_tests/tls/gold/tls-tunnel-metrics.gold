@@ -1,6 +1,6 @@
-proxy.process.http.total_incoming_connections 13
-proxy.process.http.total_client_connections 13
-proxy.process.http.total_client_connections_ipv4 13
+proxy.process.http.total_incoming_connections 14
+proxy.process.http.total_client_connections 14
+proxy.process.http.total_client_connections_ipv4 14
 proxy.process.http.total_client_connections_ipv6 0
 proxy.process.http.total_server_connections 0
 proxy.process.http2.total_client_connections 2
