@@ -509,7 +509,7 @@ Http3FrameFactory::create(IOBufferReader &reader)
 
   uint8_t           type_buf[FRAME_TYPE_MAX_BYTES]{};
   std::size_t const type_avail{std::min<std::size_t>(reader.read_avail(), sizeof(type_buf))};
-  reader.memcpy(type_buf, type_buf_len);
+  reader.memcpy(type_buf, type_avail);
   Http3FrameType type = Http3Frame::type(type_buf, type_avail);
 
   switch (type) {
