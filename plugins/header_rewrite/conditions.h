@@ -205,7 +205,7 @@ private:
     end   = buf + buf_len;
 
     while (start < end) {
-      if (strncasecmp(start, name, name_len) != 0) {
+      if (end - start < name_len || strncasecmp(start, name, name_len) != 0) {
         goto skip;
       }
 
