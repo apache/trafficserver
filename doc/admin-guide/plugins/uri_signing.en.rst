@@ -86,14 +86,15 @@ like this:
       "Kabletown URI Authority": {
         "renewal_kid": "Second Key",
         "auth_directives": [
-          { auth: "allow", uri: "uri-regex:.*crossdomain.xml" },
-          { auth: "deny",  uri: "uri-regex:https?://[^/]*/public/secret.xml.*" },
-          { auth: "allow", uri: "uri-regex:https?://[^/]*/public/.*" },
-          { auth: "allow", uri: "uri-regex:.*favicon.ico" }
-        ]
+          { "auth": "allow", "uri": "regex:.*crossdomain.xml" },
+          { "auth": "deny",  "uri": "regex:https?://[^/]*/public/secret.xml.*" },
+          { "auth": "allow", "uri": "regex:https?://[^/]*/public/.*" },
+          { "auth": "allow", "uri": "regex:.*favicon.ico" }
+        ],
         "keys": [
           ⋮
         ]
+      }
     }
 
 Each of the ``auth_directives`` will be evaluated in order for each url
@@ -130,10 +131,11 @@ ID
             "id" : "mycdn",
             "auth_directives": [
               ⋮
-            ]
+            ],
             "keys": [
               ⋮
             ]
+          }
         }
 
 Usage
@@ -165,6 +167,15 @@ The following claims are understood:
 * ``cdniets``: If cdnistt is 1, this must be present and non-zero.
 * ``cdnistt``: If present, must be 1.
 * ``cdnistd``: Renewal token cookies will have cdnistd path segments of the request in their path attribute.
+
+.. seealso::
+   The ``cdniuc`` claim with kind ``regex`` is matched against the
+   full normalized request URI. Unanchored issuer patterns can
+   authorize request URIs the issuer did not intend, because a
+   pattern that names only a prefix will still satisfy the claim for
+   any URI that starts with that prefix. For the per-site subject
+   definition, common pitfalls, and recommended issuer pattern
+   shapes, see :ref:`admin-regex-best-practices`.
 
 Unsupported Claims
 ------------------

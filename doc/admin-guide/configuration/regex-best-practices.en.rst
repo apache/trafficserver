@@ -162,6 +162,46 @@ Patterns at this site are start-anchored at compile time by the
 plugin, so prefix injection is blocked. Operators should still add the
 end-anchor ``$`` to block trailing-content matches.
 
+uri_signing — ``cdniuc`` regex match
+------------------------------------
+
+.. note::
+   The "matching contract" section at the top of this document
+   describes |TS|'s general regex behavior, which is implemented
+   with PCRE2. This call site is the exception: ``uri_signing``
+   uses the GNU ``regex.h`` library's ``re_match``, which is
+   start-anchored by definition (the pattern always matches
+   starting at offset 0 of the subject). A leading ``^`` in an
+   issuer pattern is therefore implicit, and only the trailing
+   anchor ``$`` controls whether trailing content is allowed —
+   the opposite of PCRE2's default substring match.
+
+**Subject:** the normalized request URI (scheme, authority, path, and
+query — produced by the plugin's URI-normalization step).
+
+Unlike the other sites in this document, the regex pattern at this
+site is **not operator-controlled**: it is the value of an inbound
+JWT's ``cdniuc`` claim, in the form ``regex:<pattern>``, and is
+chosen by the token issuer.
+The ATS operator is the verifier, not the author of the pattern. An
+unanchored issuer pattern that names a directory prefix (for example
+``https://media\.example\.com/preview/``) will accept any request URI
+that *starts* with that prefix — including URIs the issuer did not
+intend the token to authorize. Operators who deploy ``uri_signing``
+should require their token issuers to fully anchor every ``regex:``
+container with ``^...$`` and confirm the issuer rejects unanchored
+patterns at token-mint time.
+
+The CDNI URI Signing draft itself does not explicitly require any
+anchoring — it states only that the URI must match the regex, leaving
+"match" open to interpretation. |TS| performs start-anchoring (the
+GNU ``re_match`` API used internally is start-anchored by definition)
+but does not enforce end-anchoring; other CDNI relying parties may
+interpret the contract differently. Fully anchored issuer patterns
+are the one shape every relying party agrees on, so they remove
+cross-implementation ambiguity in addition to bounding the issuer's
+intended scope.
+
 Common pitfalls
 ===============
 
@@ -346,6 +386,25 @@ Operator intent                                               Recommended patter
 ============================================================  =================================================================
 Match the exact SNI ``svc.example.com``                       ``^svc\.example\.com$``
 Match any SNI under ``.example.com``                          ``^.*\.example\.com$``
+============================================================  =================================================================
+
+uri_signing — ``cdniuc`` regex match
+------------------------------------
+
+Subject: normalized request URI (full URI, including scheme, authority,
+path, and query).
+
+Patterns are issuer-authored; the table below describes shapes the
+issuer should use when minting tokens, not patterns the ATS operator
+edits directly.
+
+============================================================  =================================================================
+Issuer intent                                                 Recommended pattern
+============================================================  =================================================================
+Authorize a single fixed asset                                ``^https://media\.example\.com/clip\.m3u8$``
+Authorize a single fixed asset, allow any query string        ``^https://media\.example\.com/clip\.m3u8(\?.*)?$``
+Authorize every asset under ``/preview/``                     ``^https://media\.example\.com/preview/.*$``
+Authorize one named asset under ``/preview/``                 ``^https://media\.example\.com/preview/clip\.m3u8$``
 ============================================================  =================================================================
 
 Why this matters
