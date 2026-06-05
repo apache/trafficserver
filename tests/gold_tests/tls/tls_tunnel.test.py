@@ -286,6 +286,25 @@ ts.Disk.traffic_out.Content += Testers.ContainsExpression(
     "Verify the tunnel destination is expanded correctly.")
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("HTTP/1.1 200 OK", "Verify a successful response is received")
 
+# Regression: a tunnel_route that combines $N match groups with a port variable
+# must still enforce connect_ports.  An earlier bug let MATCH_GROUPS clear the
+# dynamic-port flag set by MAP_WITH_PROXY_PROTOCOL_PORT, bypassing the check.
+tr = Test.AddTestRun("test wildcard with proxy_protocol_port - not in connect_ports")
+tr.TimeOut = 5
+tr.Setup.Copy('proxy_protocol_client.py')
+wildcard_rejected_port = server_forbidden.Variables.SSL_Port
+tr.Processes.Default.Command = (
+    f'{sys.executable} proxy_protocol_client.py '
+    f'127.0.0.1 {ts.Variables.proxy_protocol_ssl_port} wildcard.with.proxy.protocol.port.com '
+    f'127.0.0.1 127.0.0.1 60123 {wildcard_rejected_port} '
+    f'2 --https')
+tr.ReturnCode = 1
+tr.StillRunningAfter = ts
+tr.Processes.Default.Streams.All += Testers.ContainsExpression("ssl.SSL.*Error:.*EOF", "Verify the handshake failed")
+ts.Disk.traffic_out.Content += Testers.ContainsExpression(
+    f"Rejected a tunnel to port {wildcard_rejected_port} not in connect_ports",
+    "Verify the tunnel was rejected even though the route uses a $N match group")
+
 # Update sni file and reload
 tr = Test.AddTestRun("Update config files")
 # Update the SNI config
