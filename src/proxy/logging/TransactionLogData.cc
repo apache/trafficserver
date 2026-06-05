@@ -738,6 +738,33 @@ TransactionLogData::get_client_tcp_reused() const
   return false;
 }
 
+uint64_t
+TransactionLogData::get_client_tls_handshake_bytes_rx() const
+{
+  if (likely(m_http_sm != nullptr)) {
+    return m_http_sm->get_user_agent().get_client_tls_handshake_bytes_rx();
+  }
+  return 0;
+}
+
+uint64_t
+TransactionLogData::get_client_tls_handshake_bytes_tx() const
+{
+  if (likely(m_http_sm != nullptr)) {
+    return m_http_sm->get_user_agent().get_client_tls_handshake_bytes_tx();
+  }
+  return 0;
+}
+
+size_t
+TransactionLogData::get_client_tls_early_data_len() const
+{
+  if (likely(m_http_sm != nullptr)) {
+    return m_http_sm->get_user_agent().get_client_tls_early_data_len();
+  }
+  return 0;
+}
+
 bool
 TransactionLogData::get_client_connection_is_ssl() const
 {
