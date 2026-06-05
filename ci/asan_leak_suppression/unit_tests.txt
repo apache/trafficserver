@@ -6,4 +6,4 @@ leak:test_http_hdr_print_and_copy_aux
 # on 64-bit architectures, freelist pointers are stored in a special bitwise
 # format, so LSan cannot find link pointers. It will erroneously determine
 # that the list tail is not reachable.
-leak:ink_freelist_new
+leak:freelist_new*
