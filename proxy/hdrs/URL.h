@@ -517,6 +517,10 @@ URL::scheme_get()
   ink_assert(valid());
   int length;
   const char *scheme = m_url_impl->get_scheme(&length);
+  // Constructing std::string_view(nullptr, 0) is UB.
+  if (scheme == nullptr) {
+    return {};
+  }
   return std::string_view{scheme, static_cast<size_t>(length)};
 }
 
