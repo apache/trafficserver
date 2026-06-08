@@ -462,7 +462,7 @@ freelist_pop(int s, StripeSM *stripe)
   stripe->directory.header->freelist[s] = dir_next(e);
   // if the freelist if bad, punt.
   if (dir_offset(e)) {
-    stripe->directory->init_segment(s);
+    stripe->directory.init_segment(s);
     return nullptr;
   }
   Dir *h = dir_from_offset(stripe->directory.header->freelist[s], seg);

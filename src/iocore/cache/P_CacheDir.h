@@ -286,9 +286,7 @@ struct StripeHeaderFooter {
   uint16_t          freelist[1];
 };
 
-class Directory
-{
-public:
+struct Directory {
   char               *raw_dir{nullptr};
   Dir                *dir{};
   StripeHeaderFooter *header{};
@@ -318,9 +316,7 @@ public:
   int      bucket_length(Dir *b, int s);
   int      freelist_length(int s);
   void     clean_segment(int s, StripeSM *stripe);
-
-private:
-  void init_segment(int s);
+  void     init_segment(int s);
 };
 
 inline int
