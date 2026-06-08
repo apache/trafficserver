@@ -629,9 +629,11 @@ HttpTunnel::get_consumer(VConnection *vc)
 inline HttpTunnelProducer *
 HttpTunnel::get_producer(VIO *vio)
 {
-  for (int i = 0; i < MAX_PRODUCERS; i++) {
-    if (producers[i].read_vio == vio) {
-      return producers + i;
+  if (vio) {
+    for (int i = 0; i < MAX_PRODUCERS; i++) {
+      if (producers[i].alive && producers[i].read_vio == vio) {
+        return producers + i;
+      }
     }
   }
   return nullptr;
