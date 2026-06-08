@@ -180,8 +180,10 @@ HttpHeader::valueForKey(char const *const keystr, int const keylen, char *const 
 
   int const valcap = *vallen;
   *vallen          = 0;
-  valstr[0]        = 0;
-
+  if (valcap <= 0) {
+    return false;
+  }
+  valstr[0]             = '\0';
   TSMLoc const locfield = TSMimeHdrFieldFind(m_buffer, m_lochdr, keystr, keylen);
 
   if (nullptr != locfield) {
