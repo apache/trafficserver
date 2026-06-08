@@ -1323,7 +1323,7 @@ StripeSM::shutdown(EThread *shutdown_thread)
   // the process is going down, do a blocking call
   // dont release the volume's lock, there could
   // be another aggWrite in progress
-  MUTEX_TAKE_LOCK(this->mutex, shutdown_thread);
+  SCOPED_MUTEX_LOCK(lock, this->mutex, shutdown_thread);
 
   if (DISK_BAD(this->disk)) {
     Dbg(dbg_ctl_cache_dir_sync, "Dir %s: ignoring -- bad disk", this->hash_text.get());
