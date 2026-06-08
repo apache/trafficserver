@@ -121,6 +121,9 @@ Acl::init(char const *filename)
   _proxy_over_vpn  = false;
   _smart_dns_proxy = false;
 
+  _bypass_header.clear();
+  _bypass_header_value.clear();
+
   if (loadallow(maxmind["allow"])) {
     Dbg(dbg_ctl, "Loaded Allow ruleset");
     status = true;
@@ -138,6 +141,8 @@ Acl::init(char const *filename)
   loadhtml(maxmind["html"]);
 
   _anonymous_blocking = loadanonymous(maxmind["anonymous"]);
+
+  loadbypass(maxmind["bypass"]);
 
   if (!status) {
     Dbg(dbg_ctl, "Failed to load any rulesets, none specified");
@@ -430,6 +435,58 @@ Acl::parseregex(const YAML::Node &regex, bool allow)
 }
 
 void
+Acl::loadbypass(const YAML::Node &bypassNode)
+{
+  if (!bypassNode) {
+    Dbg(dbg_ctl, "No bypass set");
+    return;
+  }
+  if (bypassNode.IsNull()) {
+    TSWarning("[%s] bypass node is NULL — bypass disabled", PLUGIN_NAME);
+    return;
+  }
+
+  try {
+    if (bypassNode["header"]) {
+      const YAML::Node &headerNode = bypassNode["header"];
+      if (headerNode.IsNull() || !headerNode.IsScalar()) {
+        TSWarning("[%s] bypass 'header' is null or non-scalar — bypass disabled", PLUGIN_NAME);
+        return;
+      }
+
+      if (!bypassNode["value"]) {
+        TSWarning("[%s] bypass 'header' set without 'value' — bypass disabled; both are required", PLUGIN_NAME);
+        return;
+      }
+      const YAML::Node &valueNode = bypassNode["value"];
+      if (valueNode.IsNull() || !valueNode.IsScalar()) {
+        TSWarning("[%s] bypass 'value' is null or non-scalar — bypass disabled", PLUGIN_NAME);
+        return;
+      }
+
+      _bypass_header_value = valueNode.as<std::string>();
+      if (_bypass_header_value.empty()) {
+        TSWarning("[%s] bypass 'value' is empty — bypass disabled; a non-empty value is required", PLUGIN_NAME);
+        return;
+      }
+      _bypass_header = headerNode.as<std::string>();
+      if (_bypass_header.empty()) {
+        TSWarning("[%s] bypass 'header' is empty — bypass disabled; a non-empty header is required", PLUGIN_NAME);
+        return;
+      }
+      Dbg(dbg_ctl, "bypass header set to: %s", _bypass_header.c_str());
+      Dbg(dbg_ctl, "bypass value set to: %s", _bypass_header_value.c_str());
+    } else {
+      TSWarning("[%s] bypass is set but missing 'header' key — bypass disabled", PLUGIN_NAME);
+      return;
+    }
+  } catch (const YAML::Exception &e) {
+    TSError("[%s] YAML::Exception %s when parsing bypass config", PLUGIN_NAME, e.what());
+    return;
+  }
+}
+
+void
 Acl::loadhtml(const YAML::Node &htmlNode)
 {
   std::string   htmlname, htmlloc;
@@ -501,6 +558,41 @@ Acl::loaddb(const YAML::Node &dbNode)
   db_loaded = true;
   Dbg(dbg_ctl, "Initialized MMDB with %s", dbloc.c_str());
   return true;
+}
+
+bool
+Acl::check_bypass(TSHttpTxn txnp) const
+{
+  if (_bypass_header.empty()) {
+    return false;
+  }
+
+  TSMBuffer mbuf;
+  TSMLoc    hdr_loc;
+  if (TS_SUCCESS != TSHttpTxnClientReqGet(txnp, &mbuf, &hdr_loc)) {
+    Dbg(dbg_ctl, "check_bypass: failed to get client request headers");
+    return false;
+  }
+
+  TSMLoc field_loc = TSMimeHdrFieldFind(mbuf, hdr_loc, _bypass_header.c_str(), static_cast<int>(_bypass_header.size()));
+  if (TS_NULL_MLOC == field_loc) {
+    TSHandleMLocRelease(mbuf, TS_NULL_MLOC, hdr_loc);
+    return false;
+  }
+
+  bool        bypassed = false;
+  int         val_len  = 0;
+  const char *val      = TSMimeHdrFieldValueStringGet(mbuf, hdr_loc, field_loc, -1, &val_len);
+  if (val != nullptr && 0 < val_len && std::string_view(val, val_len) == _bypass_header_value) {
+    Dbg(dbg_ctl, "check_bypass: bypass triggered");
+    bypassed = true;
+  } else {
+    Dbg(dbg_ctl, "check_bypass: bypass header present but value did not match");
+  }
+
+  TSHandleMLocRelease(mbuf, hdr_loc, field_loc);
+  TSHandleMLocRelease(mbuf, TS_NULL_MLOC, hdr_loc);
+  return bypassed;
 }
 
 bool

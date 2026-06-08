@@ -114,3 +114,48 @@ The plugin also supports optional fields from GeoGuard databases which includes:
 ``relay_proxy``
 ``proxy_over_vpn``
 ``smart_dns_proxy``
+
+Bypass
+======
+
+An optional ``bypass`` field allows a request to skip all geo checks entirely and pass through
+unmodified. Both a header name and an expected value must be configured; when the named header
+is present in the request **and** its value matches exactly, the plugin returns immediately
+without performing any country, IP, regex, or anonymous evaluation.
+
+``header``
+   Required sub-key. The name of the HTTP request header to look for, e.g. ``@GeoBypass``.
+
+``value``
+   Required sub-key. The header field value must match this string exactly for the bypass to
+   trigger. Both ``header`` and ``value`` must be present and non-empty; omitting either
+   disables the bypass entirely and a warning is emitted to the ATS error log.
+
+The comparison uses the complete, raw field value of the first occurrence of the named header.
+Duplicate headers with the same name (repeated lines) are ignored — only the first is evaluated.
+Within that first field, the entire value must match exactly, so a comma-separated multi-value
+(e.g. ``@GeoBypass: 1, extra``) in a single header line will not match a simple configured value.
+
+An example configuration ::
+
+   maxmind:
+    database: GeoIP2-City.mmdb
+    bypass:
+     header: "@GeoBypass"
+     value: "1"
+    allow:
+     country:
+      - US
+
+This is useful for internal or trusted upstream services that should not be subject to geo
+restrictions. If ``bypass`` is absent from the configuration, or if either ``header`` or
+``value`` is missing, bypass is disabled and all requests are evaluated normally.
+
+.. warning::
+
+   Because the bypass skips **all** ACL checks, the configured header must be
+   unforgeable by external clients. Use an internal ``@``-prefixed header (e.g.
+   ``@GeoBypass``) that is set by ATS itself or a trusted upstream, or
+   ensure the edge strips/overwrites the header before it reaches this plugin.
+   Configuring a normal client-supplied header allows end users to opt out of
+   geo restrictions by simply sending the header in their request.
