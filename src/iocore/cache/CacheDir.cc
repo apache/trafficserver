@@ -260,7 +260,7 @@ Directory::bucket_length(Dir *b, int s)
   int  i   = 0;
   Dir *seg = this->get_segment(s);
 #ifdef LOOP_CHECK_MODE
-  if (this->bucket_loop_fix(b, s, this))
+  if (this->bucket_loop_fix(b, s))
     return 1;
 #endif
   while (e) {
@@ -684,7 +684,7 @@ Directory::remove(const CacheKey *key, StripeSM *stripe, Dir *del)
 #ifdef LOOP_CHECK_MODE
       loop_count++;
       if (loop_count > DIR_LOOP_THRESHOLD) {
-        if (this->bucket_loop_fix(dir_bucket(b, seg), s, this))
+        if (this->bucket_loop_fix(dir_bucket(b, seg), s))
           return 0;
       }
 #endif
