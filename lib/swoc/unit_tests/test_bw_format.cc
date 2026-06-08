@@ -9,6 +9,8 @@
 #include <variant>
 #include <cmath>
 #include <cerrno>
+#include <string>
+#include <system_error>
 
 #include <netinet/in.h>
 
@@ -557,6 +559,13 @@ TEST_CASE("bwstring std formats", "[libswoc][bwprint]") {
   REQUIRE(w.view() == "ETIMEDOUT"sv);
   w.clear().print("{:s:s}", swoc::bwf::Errno(ECONNREFUSED));
   REQUIRE(w.view() == "ECONNREFUSED"sv);
+
+  // The std::error_code formatter routes through the same per-platform table,
+  // rendering "<name> [<value>]". Build the expectation from the macro so the
+  // numeric part matches the running platform's numbering.
+  std::string ec_expected = "ECONNREFUSED [" + std::to_string(ECONNREFUSED) + "]";
+  w.clear().print("{}", std::error_code(ECONNREFUSED, std::generic_category()));
+  REQUIRE(w.view() == ec_expected);
 
   time_t t = 1528484137;
   // default is GMT

@@ -751,14 +751,14 @@ namespace {
 // is a compile error. The long form (the 'l' spec, below) still uses strerror().
 // clang-format off
 #if defined(__linux__)
-static constexpr std::string_view ERRNO_NAMES[] = {
+static constexpr std::array<std::string_view, 134> ERRNO_NAMES = {{
   /*   0 */ "SUCCESS", "EPERM", "ENOENT", "ESRCH", "EINTR", "EIO", "ENXIO", "E2BIG",
   /*   8 */ "ENOEXEC", "EBADF", "ECHILD", "EAGAIN", "ENOMEM", "EACCES", "EFAULT", "ENOTBLK",
   /*  16 */ "EBUSY", "EEXIST", "EXDEV", "ENODEV", "ENOTDIR", "EISDIR", "EINVAL", "ENFILE",
   /*  24 */ "EMFILE", "ENOTTY", "ETXTBSY", "EFBIG", "ENOSPC", "ESPIPE", "EROFS", "EMLINK",
   /*  32 */ "EPIPE", "EDOM", "ERANGE", "EDEADLK", "ENAMETOOLONG", "ENOLCK", "ENOSYS", "ENOTEMPTY",
   /*  40 */ "ELOOP", "", "ENOMSG", "EIDRM", "ECHRNG", "EL2NSYNC", "EL3HLT", "EL3RST",
-  /*  48 */ "ELNRNG", "EUNATCH", "ENOCSI", "", "EBADE", "EBADR", "EXFULL", "ENOANO",
+  /*  48 */ "ELNRNG", "EUNATCH", "ENOCSI", "EL2HLT", "EBADE", "EBADR", "EXFULL", "ENOANO",
   /*  56 */ "EBADRQC", "EBADSLT", "", "EBFONT", "ENOSTR", "ENODATA", "ETIME", "ENOSR",
   /*  64 */ "ENONET", "ENOPKG", "EREMOTE", "ENOLINK", "EADV", "ESRMNT", "ECOMM", "EPROTO",
   /*  72 */ "EMULTIHOP", "EDOTDOT", "EBADMSG", "EOVERFLOW", "ENOTUNIQ", "EBADFD", "EREMCHG", "ELIBACC",
@@ -769,9 +769,9 @@ static constexpr std::string_view ERRNO_NAMES[] = {
   /* 112 */ "EHOSTDOWN", "EHOSTUNREACH", "EALREADY", "EINPROGRESS", "ESTALE", "EUCLEAN", "ENOTNAM", "ENAVAIL",
   /* 120 */ "EISNAM", "EREMOTEIO", "EDQUOT", "ENOMEDIUM", "EMEDIUMTYPE", "ECANCELED", "ENOKEY", "EKEYEXPIRED",
   /* 128 */ "EKEYREVOKED", "EKEYREJECTED", "EOWNERDEAD", "ENOTRECOVERABLE", "ERFKILL", "EHWPOISON",
-};
+}};
 #elif defined(__APPLE__)
-static constexpr std::string_view ERRNO_NAMES[] = {
+static constexpr std::array<std::string_view, 108> ERRNO_NAMES = {{
   /*   0 */ "SUCCESS", "EPERM", "ENOENT", "ESRCH", "EINTR", "EIO", "ENXIO", "E2BIG",
   /*   8 */ "ENOEXEC", "EBADF", "ECHILD", "EDEADLK", "ENOMEM", "EACCES", "EFAULT", "ENOTBLK",
   /*  16 */ "EBUSY", "EEXIST", "EXDEV", "ENODEV", "ENOTDIR", "EISDIR", "EINVAL", "ENFILE",
@@ -783,12 +783,12 @@ static constexpr std::string_view ERRNO_NAMES[] = {
   /*  64 */ "EHOSTDOWN", "EHOSTUNREACH", "ENOTEMPTY", "EPROCLIM", "EUSERS", "EDQUOT", "ESTALE", "EREMOTE",
   /*  72 */ "EBADRPC", "ERPCMISMATCH", "EPROGUNAVAIL", "EPROGMISMATCH", "EPROCUNAVAIL", "ENOLCK", "ENOSYS", "EFTYPE",
   /*  80 */ "EAUTH", "ENEEDAUTH", "EPWROFF", "EDEVERR", "EOVERFLOW", "EBADEXEC", "EBADARCH", "ESHLIBVERS",
-  /*  88 */ "EBADMACHO", "ECANCELED", "EIDRM", "ENOMSG", "EILSEQ", "", "EBADMSG", "EMULTIHOP",
+  /*  88 */ "EBADMACHO", "ECANCELED", "EIDRM", "ENOMSG", "EILSEQ", "ENOATTR", "EBADMSG", "EMULTIHOP",
   /*  96 */ "ENODATA", "ENOLINK", "ENOSR", "ENOSTR", "EPROTO", "ETIME", "EOPNOTSUPP", "ENOPOLICY",
   /* 104 */ "ENOTRECOVERABLE", "EOWNERDEAD", "EQFULL", "ENOTCAPABLE",
-};
+}};
 #elif defined(__FreeBSD__)
-static constexpr std::string_view ERRNO_NAMES[] = {
+static constexpr std::array<std::string_view, 98> ERRNO_NAMES = {{
   /*   0 */ "SUCCESS", "EPERM", "ENOENT", "ESRCH", "EINTR", "EIO", "ENXIO", "E2BIG",
   /*   8 */ "ENOEXEC", "EBADF", "ECHILD", "EDEADLK", "ENOMEM", "EACCES", "EFAULT", "ENOTBLK",
   /*  16 */ "EBUSY", "EEXIST", "EXDEV", "ENODEV", "ENOTDIR", "EISDIR", "EINVAL", "ENFILE",
@@ -799,10 +799,10 @@ static constexpr std::string_view ERRNO_NAMES[] = {
   /*  56 */ "EISCONN", "ENOTCONN", "ESHUTDOWN", "ETOOMANYREFS", "ETIMEDOUT", "ECONNREFUSED", "ELOOP", "ENAMETOOLONG",
   /*  64 */ "EHOSTDOWN", "EHOSTUNREACH", "ENOTEMPTY", "EPROCLIM", "EUSERS", "EDQUOT", "ESTALE", "EREMOTE",
   /*  72 */ "EBADRPC", "ERPCMISMATCH", "EPROGUNAVAIL", "EPROGMISMATCH", "EPROCUNAVAIL", "ENOLCK", "ENOSYS", "EFTYPE",
-  /*  80 */ "EAUTH", "ENEEDAUTH", "EIDRM", "ENOMSG", "EOVERFLOW", "ECANCELED", "EILSEQ", "",
+  /*  80 */ "EAUTH", "ENEEDAUTH", "EIDRM", "ENOMSG", "EOVERFLOW", "ECANCELED", "EILSEQ", "ENOATTR",
   /*  88 */ "EDOOFUS", "EBADMSG", "EMULTIHOP", "ENOLINK", "EPROTO", "ENOTCAPABLE", "ECAPMODE", "ENOTRECOVERABLE",
   /*  96 */ "EOWNERDEAD", "EINTEGRITY",
-};
+}};
 #else
 #error "errno name table not defined for this platform"
 #endif
@@ -811,7 +811,7 @@ static constexpr std::string_view ERRNO_NAMES[] = {
 std::string_view
 errno_short_name(int e)
 {
-  if (e >= 0 && e < static_cast<int>(sizeof(ERRNO_NAMES) / sizeof(ERRNO_NAMES[0])) && !ERRNO_NAMES[e].empty()) {
+  if (e >= 0 && e < static_cast<int>(ERRNO_NAMES.size()) && !ERRNO_NAMES[e].empty()) {
     return ERRNO_NAMES[e];
   }
   return "Unknown"sv;
