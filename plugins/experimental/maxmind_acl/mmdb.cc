@@ -442,26 +442,42 @@ Acl::loadbypass(const YAML::Node &bypassNode)
     return;
   }
   if (bypassNode.IsNull()) {
-    Dbg(dbg_ctl, "bypass node is NULL");
+    TSWarning("[%s] bypass node is NULL — bypass disabled", PLUGIN_NAME);
     return;
   }
 
   try {
     if (bypassNode["header"]) {
+      const YAML::Node &headerNode = bypassNode["header"];
+      if (headerNode.IsNull() || !headerNode.IsScalar()) {
+        TSWarning("[%s] bypass 'header' is null or non-scalar — bypass disabled", PLUGIN_NAME);
+        return;
+      }
+
       if (!bypassNode["value"]) {
         TSWarning("[%s] bypass 'header' set without 'value' — bypass disabled; both are required", PLUGIN_NAME);
         return;
       }
-      _bypass_header_value = bypassNode["value"].as<std::string>();
+      const YAML::Node &valueNode = bypassNode["value"];
+      if (valueNode.IsNull() || !valueNode.IsScalar()) {
+        TSWarning("[%s] bypass 'value' is null or non-scalar — bypass disabled", PLUGIN_NAME);
+        return;
+      }
+
+      _bypass_header_value = valueNode.as<std::string>();
       if (_bypass_header_value.empty()) {
         TSWarning("[%s] bypass 'value' is empty — bypass disabled; a non-empty value is required", PLUGIN_NAME);
         return;
       }
-      _bypass_header = bypassNode["header"].as<std::string>();
+      _bypass_header = headerNode.as<std::string>();
+      if (_bypass_header.empty()) {
+        TSWarning("[%s] bypass 'header' is empty — bypass disabled; a non-empty header is required", PLUGIN_NAME);
+        return;
+      }
       Dbg(dbg_ctl, "bypass header set to: %s", _bypass_header.c_str());
       Dbg(dbg_ctl, "bypass value set to: %s", _bypass_header_value.c_str());
     } else {
-      Dbg(dbg_ctl, "bypass missing 'header' key");
+      TSWarning("[%s] bypass is set but missing 'header' key — bypass disabled", PLUGIN_NAME);
       return;
     }
   } catch (const YAML::Exception &e) {
