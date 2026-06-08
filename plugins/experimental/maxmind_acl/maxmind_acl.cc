@@ -68,6 +68,10 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
     Dbg(dbg_ctl, "No ACLs configured");
   } else {
     Acl *a = static_cast<Acl *>(ih);
+    if (a->check_bypass(rh)) {
+      Dbg(dbg_ctl, "bypassing geo check due to bypass header");
+      return TSREMAP_NO_REMAP;
+    }
     if (!a->eval(rri, rh)) {
       Dbg(dbg_ctl, "denying request");
       TSHttpTxnStatusSet(rh, TS_HTTP_STATUS_FORBIDDEN, PLUGIN_NAME);
