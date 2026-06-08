@@ -61,7 +61,7 @@ ts_lua_update_server_response_hdrp(ts_lua_http_ctx *http_ctx)
 void
 ts_lua_clear_http_ctx(ts_lua_http_ctx *http_ctx)
 {
-  if (http_ctx->rri == NULL) {
+  if (!http_ctx->from_remap) {
     if (http_ctx->client_request_url != NULL) {
       TSHandleMLocRelease(http_ctx->client_request_bufp, http_ctx->client_request_hdrp, http_ctx->client_request_url);
       http_ctx->client_request_url = NULL;
@@ -842,7 +842,7 @@ ts_lua_destroy_http_ctx(ts_lua_http_ctx *http_ctx)
 
   ci = &http_ctx->cinfo;
 
-  if (http_ctx->rri == NULL) {
+  if (!http_ctx->from_remap) {
     if (http_ctx->client_request_url) {
       TSHandleMLocRelease(http_ctx->client_request_bufp, http_ctx->client_request_hdrp, http_ctx->client_request_url);
     }
