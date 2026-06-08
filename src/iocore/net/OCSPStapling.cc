@@ -745,7 +745,7 @@ TS_OCSP_resp_find_status(TS_OCSP_BASICRESP *bs, TS_OCSP_CERTID *id, int *status,
  * In the case of multiple certificates associated with a SSL_CTX, we must store a map
  * of cached responses
  */
-using certinfo_map = std::map<X509 *, certinfo *>;
+using certinfo_map = std::map<X509 *, std::unique_ptr<certinfo>>;
 
 void
 certinfo_map_free(void * /*parent*/, void *ptr, CRYPTO_EX_DATA * /*ad*/, int /*idx*/, long /*argl*/, void * /*argp*/)
@@ -756,12 +756,13 @@ certinfo_map_free(void * /*parent*/, void *ptr, CRYPTO_EX_DATA * /*ad*/, int /*i
     return;
   }
 
-  for (auto &iter : *map) {
 #ifdef OPENSSL_IS_BORINGSSL
+  // The map owns a reference on each X509 key under BoringSSL; the certinfo
+  // values are freed by their unique_ptr destructors when the map is deleted.
+  for (auto &iter : *map) {
     X509_free(iter.first);
-#endif
-    delete iter.second;
   }
+#endif
   delete map;
 }
 
@@ -956,7 +957,7 @@ ssl_stapling_init_cert(SSL_CTX *ctx, X509 *cert, const char *certname, const cha
   X509_up_ref(cert);
 #endif
 
-  map->insert(std::make_pair(cert, cinf_ptr.release()));
+  map->emplace(cert, std::move(cinf_ptr));
   SSL_CTX_set_ex_data(ctx, ssl_stapling_index, map);
 
   Note("successfully initialized stapling for %s into SSL_CTX: %p uri=%s", certname, ctx, cinf->uri);
@@ -1327,7 +1328,7 @@ ocsp_update()
           if (map) {
             // Walk over all certs associated with this CTX
             for (auto &iter : *map) {
-              cinf = iter.second;
+              cinf = iter.second.get();
               ink_mutex_acquire(&cinf->stapling_mutex);
               current_time = time(nullptr);
               if (cinf->resp_derlen == 0 || cinf->is_expire || cinf->expire_time < current_time) {
@@ -1380,7 +1381,7 @@ ssl_callback_ocsp_stapling(SSL *ssl, void *)
   // cert has OCSP info also yields map->size()==1, but the negotiated cert may
   // be the other one.
   if (map->size() == 1) {
-    cinf = map->begin()->second;
+    cinf = map->begin()->second.get();
   } else
 #endif
   {
@@ -1394,7 +1395,7 @@ ssl_callback_ocsp_stapling(SSL *ssl, void *)
 #if HAVE_NATIVE_DUAL_CERT_SUPPORT
     certinfo_map::iterator iter = map->find(cert);
     if (iter != map->end()) {
-      cinf = iter->second;
+      cinf = iter->second.get();
     }
 #else
     for (certinfo_map::iterator iter = map->begin(); iter != map->end(); ++iter) {
@@ -1404,7 +1405,7 @@ ssl_callback_ocsp_stapling(SSL *ssl, void *)
       }
 
       if (X509_cmp(key, cert) == 0) {
-        cinf = iter->second;
+        cinf = iter->second.get();
         break;
       }
     }
