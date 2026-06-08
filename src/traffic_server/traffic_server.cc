@@ -85,6 +85,7 @@ extern "C" int plock(int);
 #include "../iocore/net/P_SSLUtils.h"
 #include "../iocore/dns/P_SplitDNSProcessor.h"
 #include "../iocore/hostdb/P_HostDB.h"
+#include "../iocore/cache/P_CacheDir.h"
 #include "../records/P_RecCore.h"
 #include "tscore/Layout.h"
 #include "iocore/utils/Machine.h"
@@ -285,6 +286,11 @@ struct AutoStopCont : public Continuation {
     // if the jsonrpc feature was disabled, the object will not be created.
     if (jsonrpcServer != nullptr) {
       jsonrpcServer->stop_thread();
+    }
+
+    // Flush the in-memory cache directory to disk
+    if (cacheProcessor.IsCacheEnabled() == CacheInitState::INITIALIZED) {
+      sync_cache_dir_on_shutdown();
     }
 
     // Push buffered log entries into the preproc queue before shutdown.
