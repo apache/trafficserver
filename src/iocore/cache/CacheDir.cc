@@ -210,16 +210,16 @@ dir_bucket_loop_check(Dir *start_dir, Dir *seg)
 // adds all the directory entries
 // in a segment to the segment freelist
 void
-dir_init_segment(int s, Directory *directory)
+Directory::init_segment(int s)
 {
-  directory->header->freelist[s] = 0;
-  Dir *seg                       = directory->get_segment(s);
+  this->header->freelist[s] = 0;
+  Dir *seg                  = this->get_segment(s);
   int  l, b;
-  memset(static_cast<void *>(seg), 0, SIZEOF_DIR * DIR_DEPTH * directory->buckets);
+  memset(static_cast<void *>(seg), 0, SIZEOF_DIR * DIR_DEPTH * this->buckets);
   for (l = 1; l < DIR_DEPTH; l++) {
-    for (b = 0; b < directory->buckets; b++) {
+    for (b = 0; b < this->buckets; b++) {
       Dir *bucket = dir_bucket(b, seg);
-      directory->free_entry(dir_bucket_row(bucket, l), s);
+      this->free_entry(dir_bucket_row(bucket, l), s);
     }
   }
 }
@@ -231,7 +231,7 @@ dir_bucket_loop_fix(Dir *start_dir, int s, Directory *directory)
 {
   if (!dir_bucket_loop_check(start_dir, directory->get_segment(s))) {
     Warning("Dir loop exists, clearing segment %d", s);
-    dir_init_segment(s, directory);
+    directory->init_segment(s);
     return 1;
   }
   return 0;
@@ -462,7 +462,7 @@ freelist_pop(int s, StripeSM *stripe)
   stripe->directory.header->freelist[s] = dir_next(e);
   // if the freelist if bad, punt.
   if (dir_offset(e)) {
-    dir_init_segment(s, &stripe->directory);
+    stripe->directory->init_segment(s);
     return nullptr;
   }
   Dir *h = dir_from_offset(stripe->directory.header->freelist[s], seg);
