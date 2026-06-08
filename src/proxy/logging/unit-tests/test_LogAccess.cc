@@ -231,4 +231,7 @@ TEST_CASE("LogAccess unmarshal_http_version keeps the minor version", "[LogAcces
 
   CHECK(render(1, 1) == "HTTP/1.1");
   CHECK(render(1, 0) == "HTTP/1.0");
+  // known bug of `.0` suffix for HTTP/2 and HTTP/3
+  CHECK(render(2, 0) == "HTTP/2.0");
+  CHECK(render(3, 0) == "HTTP/3.0");
 }
