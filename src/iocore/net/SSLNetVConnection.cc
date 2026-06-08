@@ -739,16 +739,17 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf
 
   Dbg(dbg_ctl_ssl, "towrite=%" PRId64, towrite);
 
-  // Per-thread scratch to coalesce fragmented blocks into one SSL_write. Reuse across
-  // connections is safe: a WANT_WRITE retry flushes SSL's own record buffer, not this.
+  // SSL_write retries (WANT_WRITE/READ) must reuse the same address; thread_local gives the
+  // coalesce path a stable one. SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER is off.
   static thread_local char gather_buf[SSL_MAX_TLS_RECORD_SIZE];
+
+  // Caller bounds towrite by read_avail(); asserting lets the loop skip an O(n) chain walk.
+  ink_assert(towrite <= buf.reader()->read_avail());
 
   ERR_clear_error();
   do {
     IOBufferReader *reader = buf.reader();
 
-    // towrite is already bounded by read_avail() in the caller, so this never exceeds
-    // what's queued -- avoid re-walking the block chain (O(n)) on the write hot path.
     l = towrite - total_written;
 
     // TS-2365: If the SSL max record size is set and we have
@@ -781,8 +782,7 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf
       break;
     }
 
-    // Coalesce into the scratch buffer only when the chunk spans blocks and fits one
-    // record; otherwise write in place capped to the block.
+    // Coalesce across blocks only when it fits one record; else write in place, capped to the block.
     const char *write_block;
     int64_t     block_avail = reader->block_read_avail();
 
