@@ -34,12 +34,16 @@ Context::reset()
 {
   // Clear the initialized headers before calling next hook
   // Note: we don't clear the pristine URL, nor the Remap From/To URLs, they are static.
-  //      We also don't clear the client URL, since it's from the RRI.
   if (_client.response.Initialized()) {
     _client.response.Reset();
   }
   if (_server.response.Initialized()) {
     _server.response.Reset();
+  }
+
+  // Reset the client URL (releases its handle only when we own it).
+  if (_urls.request.Initialized()) {
+    _urls.request.Reset();
   }
   if (_client.request.Initialized()) {
     _client.request.Reset();

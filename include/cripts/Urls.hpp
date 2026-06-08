@@ -651,15 +651,21 @@ namespace Client
     URL(const self_type &)            = delete;
     void operator=(const self_type &) = delete;
 
-    // We must not release the bufp etc. since it comes from the RRI structure
-    // However, we still need to clear cached data in query and path components
+    // Release/re-init only when we own _urlp: a borrowed remap handle isn't ours, and re-init would deref a dangling RRI.
     void
     Reset() override
     {
-      query.Reset();
+      if (_owns_urlp) {
+        TSHandleMLocRelease(_bufp, _hdr_loc, _urlp);
+        _urlp        = nullptr;
+        _bufp        = nullptr;
+        _hdr_loc     = nullptr;
+        _owns_urlp   = false;
+        _initialized = false;
+      }
       path.Reset();
-      _initialized = false;
-      _modified    = false;
+      query.Reset();
+      _modified = false;
     }
 
     static self_type &_get(cripts::Context *context);
@@ -667,6 +673,9 @@ namespace Client
 
   protected:
     void _initialize() override;
+
+  private:
+    bool _owns_urlp = false;
 
   }; // End class Client::URL
 

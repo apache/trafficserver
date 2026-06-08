@@ -469,9 +469,10 @@ Client::URL::_initialize()
 {
   if (_context->rriValid()) {
     super_type::_initialize();
-    _bufp    = _context->rri->requestBufp;
-    _hdr_loc = _context->rri->requestHdrp;
-    _urlp    = _context->rri->requestUrl;
+    _bufp      = _context->rri->requestBufp;
+    _hdr_loc   = _context->rri->requestHdrp;
+    _urlp      = _context->rri->requestUrl;
+    _owns_urlp = false;
   } else {
     Client::Request &req = Client::Request::_get(_context); // Repurpose / create the shared request object
 
@@ -482,6 +483,7 @@ Client::URL::_initialize()
       _context->state.error.Fail();
     } else {
       super_type::_initialize();
+      _owns_urlp = true;
     }
   }
 }
