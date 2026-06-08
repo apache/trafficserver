@@ -364,45 +364,47 @@ SSLNetVConnection::read_raw_data()
 
     if (this->get_is_proxy_protocol() && this->get_proxy_protocol_version() == ProxyProtocolVersion::UNDEFINED) {
       Dbg(dbg_ctl_proxyprotocol, "proxy protocol is enabled on this port");
-      if (pp_ipmap->count() > 0) {
-        Dbg(dbg_ctl_proxyprotocol, "proxy protocol has a configured allowlist of trusted IPs - checking");
+      if (this->has_proxy_protocol_preface(buffer, r)) {
+        if (pp_ipmap->count() > 0) {
+          Dbg(dbg_ctl_proxyprotocol, "proxy protocol has a configured allowlist of trusted IPs - checking");
 
-        // Using get_remote_addr() will return the ip of the
-        // proxy source IP, not the Proxy Protocol client ip.
-        if (!pp_ipmap->contains(swoc::IPAddr(get_remote_addr()))) {
-          Dbg(dbg_ctl_proxyprotocol, "Source IP is NOT in the configured allowlist of trusted IPs - closing connection");
-          r = -ENOTCONN; // Need a quick close/exit here to refuse the connection!!!!!!!!!
-          goto proxy_protocol_bypass;
+          // Using get_remote_addr() will return the ip of the
+          // proxy source IP, not the Proxy Protocol client ip.
+          if (!pp_ipmap->contains(swoc::IPAddr(get_remote_addr()))) {
+            Dbg(dbg_ctl_proxyprotocol, "Source IP is NOT in the configured allowlist of trusted IPs - closing connection");
+            r = -ENOTCONN; // Need a quick close/exit here to refuse the connection!!!!!!!!!
+            goto proxy_protocol_bypass;
+          } else {
+            char new_host[INET6_ADDRSTRLEN];
+            Dbg(dbg_ctl_proxyprotocol, "Source IP [%s] is in the trusted allowlist for proxy protocol",
+                ats_ip_ntop(this->get_remote_addr(), new_host, sizeof(new_host)));
+          }
         } else {
-          char new_host[INET6_ADDRSTRLEN];
-          Dbg(dbg_ctl_proxyprotocol, "Source IP [%s] is in the trusted allowlist for proxy protocol",
-              ats_ip_ntop(this->get_remote_addr(), new_host, sizeof(new_host)));
+          Dbg(dbg_ctl_proxyprotocol, "proxy protocol DOES NOT have a configured allowlist of trusted IPs but "
+                                     "proxy protocol is enabled on this port - processing all connections with Proxy Protocol "
+                                     "headers");
         }
-      } else {
-        Dbg(dbg_ctl_proxyprotocol, "proxy protocol DOES NOT have a configured allowlist of trusted IPs but "
-                                   "proxy protocol is enabled on this port - processing all connections");
-      }
 
-      auto const stored_r = r;
-      if (this->has_proxy_protocol(buffer, &r)) {
-        Dbg(dbg_ctl_proxyprotocol, "ssl has proxy protocol header");
-        if (dbg_ctl_proxyprotocol.on()) {
-          IpEndpoint src;
-          src.sa = *(this->get_proxy_protocol_src_addr());
-          IpEndpoint dst;
-          dst.sa = *(this->get_proxy_protocol_dst_addr());
-          ip_port_text_buffer src_ipb, dst_ipb;
-          ats_ip_nptop(&src, src_ipb, sizeof(src_ipb));
-          ats_ip_nptop(&dst, dst_ipb, sizeof(dst_ipb));
-          DbgPrint(dbg_ctl_proxyprotocol, "ssl proxy protocol v%d header parsed: src=[%s] dst=[%s]",
-                   static_cast<int>(this->get_proxy_protocol_version()), src_ipb, dst_ipb);
+        auto const stored_r = r;
+        if (this->has_proxy_protocol(buffer, &r)) {
+          Dbg(dbg_ctl_proxyprotocol, "ssl has proxy protocol header");
+          if (dbg_ctl_proxyprotocol.on()) {
+            IpEndpoint src;
+            src.sa = *(this->get_proxy_protocol_src_addr());
+            IpEndpoint dst;
+            dst.sa = *(this->get_proxy_protocol_dst_addr());
+            ip_port_text_buffer src_ipb, dst_ipb;
+            ats_ip_nptop(&src, src_ipb, sizeof(src_ipb));
+            ats_ip_nptop(&dst, dst_ipb, sizeof(dst_ipb));
+            DbgPrint(dbg_ctl_proxyprotocol, "ssl proxy protocol v%d header parsed: src=[%s] dst=[%s]",
+                     static_cast<int>(this->get_proxy_protocol_version()), src_ipb, dst_ipb);
+          }
+        } else {
+          Dbg(dbg_ctl_proxyprotocol, "proxy protocol preface was present, but Proxy Protocol header could not be parsed");
+          r = stored_r;
         }
       } else {
         Dbg(dbg_ctl_proxyprotocol, "proxy protocol was enabled, but Proxy Protocol header was not present");
-        // We are flexible with the Proxy Protocol designation. Maybe not all
-        // connections include Proxy Protocol. Revert to the stored value of r so
-        // we can process the bytes that are on the wire (likely a CLIENT_HELLO).
-        r = stored_r;
       }
     }
   } // end of Proxy Protocol processing

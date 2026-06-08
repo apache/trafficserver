@@ -163,6 +163,10 @@ The following :file:`records.yaml` changes have been made:
   :ts:cv:`proxy.config.http.header_field_max_size` have been changed to 32KB.
 - The records.yaml entry :ts:cv:`proxy.config.http.server_ports` now also accepts the
   ``allow-plain`` option
+- The records.yaml entry :ts:cv:`proxy.config.http.proxy_protocol_allowlist` is now enforced
+  only for connections on Proxy Protocol-enabled ports that begin with a Proxy Protocol
+  header preface. Non-Proxy Protocol traffic on flexible Proxy Protocol ports is no longer
+  restricted by this setting; use :file:`ip_allow.yaml` for general source-IP access control.
 - The records.yaml entry :ts:cv:`proxy.config.http.cache.max_open_write_retry_timeout` has been added to specify a timeout for starting a write to cache
 - The records.yaml entry :ts:cv:`proxy.config.net.per_client.max_connections_in` has
   been added to limit the number of connections from a client IP. This works the
