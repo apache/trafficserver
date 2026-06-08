@@ -511,9 +511,10 @@ ts_lua_remap_plugin_init(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 
   http_ctx = ts_lua_create_http_ctx(main_ctx, instance_conf);
 
-  http_ctx->txnp     = rh;
-  http_ctx->has_hook = 0;
-  http_ctx->rri      = rri;
+  http_ctx->txnp       = rh;
+  http_ctx->has_hook   = 0;
+  http_ctx->from_remap = (rri != NULL) ? 1 : 0;
+  http_ctx->rri        = rri;
   if (rri != NULL) {
     http_ctx->client_request_bufp = rri->requestBufp;
     http_ctx->client_request_hdrp = rri->requestHdrp;
@@ -547,6 +548,11 @@ ts_lua_remap_plugin_init(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
   }
 
   lua_pop(L, 1);
+
+  // rri lives on the caller's stack; clear it so post-remap hooks
+  // see ts.remap.* return nil per the documented do_remap-only
+  // context.  Destructors gate handle release on from_remap, not rri.
+  http_ctx->rri = NULL;
 
   if (http_ctx->has_hook) {
     TSDebug(TS_LUA_DEBUG_TAG, "[%s] has txn hook -> adding txn close hook handler to release resources", __FUNCTION__);
