@@ -975,7 +975,6 @@ void
 Http2Stream::send_body(bool /* call_update ATS_UNUSED */)
 {
   Http2ConnectionState &connection_state = this->get_connection_state();
-  _timeout.update_inactivity();
 
   reentrancy_count++;
 
