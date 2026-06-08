@@ -202,16 +202,16 @@ ts_lua_fetch_multi(lua_State *L)
 static int
 ts_lua_fetch_one_item(lua_State *L, const char *url, size_t url_len, ts_lua_fetch_info *fi)
 {
-  TSCont          contp;
-  int             tb, flags, host_len, n;
-  int             cl, ht, ua;
-  const char     *method, *key, *value, *body, *opt;
-  const char     *addr, *ptr, *host;
-  size_t          method_len, key_len, value_len, body_len;
-  size_t          addr_len, opt_len, i, left;
-  char            c;
-  struct sockaddr clientaddr;
-  char            buf[32];
+  TSCont                  contp;
+  int                     tb, flags, host_len, n;
+  int                     cl, ht, ua;
+  const char             *method, *key, *value, *body, *opt;
+  const char             *addr, *ptr, *host;
+  size_t                  method_len, key_len, value_len, body_len;
+  size_t                  addr_len, opt_len, i, left;
+  char                    c;
+  struct sockaddr_storage clientaddr;
+  char                    buf[32];
 
   tb = lua_istable(L, -1);
 
@@ -259,15 +259,17 @@ ts_lua_fetch_one_item(lua_State *L, const char *url, size_t url_len, ts_lua_fetc
     if (lua_isstring(L, -1)) {
       addr = luaL_checklstring(L, -1, &addr_len);
 
-      if (TS_ERROR == TSIpStringToAddr(addr, addr_len, &clientaddr)) {
+      if (TS_ERROR == TSIpStringToAddr(addr, addr_len, reinterpret_cast<struct sockaddr *>(&clientaddr))) {
         TSError("[ts_lua][%s] Client ip parse failed! Using default.", TS_LUA_DEBUG_TAG);
-        if (TS_ERROR == TSIpStringToAddr(TS_LUA_FETCH_CLIENT_ADDRPORT, TS_LUA_FETCH_CLIENT_ADDRPORT_LEN, &clientaddr)) {
+        if (TS_ERROR == TSIpStringToAddr(TS_LUA_FETCH_CLIENT_ADDRPORT, TS_LUA_FETCH_CLIENT_ADDRPORT_LEN,
+                                         reinterpret_cast<struct sockaddr *>(&clientaddr))) {
           TSError("[ts_lua][%s] Default client ip parse failed!", TS_LUA_DEBUG_TAG);
           return 0;
         }
       }
     } else {
-      if (TS_ERROR == TSIpStringToAddr(TS_LUA_FETCH_CLIENT_ADDRPORT, TS_LUA_FETCH_CLIENT_ADDRPORT_LEN, &clientaddr)) {
+      if (TS_ERROR == TSIpStringToAddr(TS_LUA_FETCH_CLIENT_ADDRPORT, TS_LUA_FETCH_CLIENT_ADDRPORT_LEN,
+                                       reinterpret_cast<struct sockaddr *>(&clientaddr))) {
         TSError("[ts_lua][%s] Default client ip parse failed!", TS_LUA_DEBUG_TAG);
         return 0;
       }
@@ -275,7 +277,8 @@ ts_lua_fetch_one_item(lua_State *L, const char *url, size_t url_len, ts_lua_fetc
 
     lua_pop(L, 1);
   } else {
-    if (TS_ERROR == TSIpStringToAddr(TS_LUA_FETCH_CLIENT_ADDRPORT, TS_LUA_FETCH_CLIENT_ADDRPORT_LEN, &clientaddr)) {
+    if (TS_ERROR == TSIpStringToAddr(TS_LUA_FETCH_CLIENT_ADDRPORT, TS_LUA_FETCH_CLIENT_ADDRPORT_LEN,
+                                     reinterpret_cast<struct sockaddr *>(&clientaddr))) {
       TSError("[ts_lua][%s] Default client ip parse failed!", TS_LUA_DEBUG_TAG);
       return 0;
     }
@@ -315,7 +318,7 @@ ts_lua_fetch_one_item(lua_State *L, const char *url, size_t url_len, ts_lua_fetc
   TSContDataSet(contp, fi);
 
   fi->contp = contp;
-  fi->fch   = TSFetchCreate(contp, method, url, "HTTP/1.1", &clientaddr, flags);
+  fi->fch   = TSFetchCreate(contp, method, url, "HTTP/1.1", reinterpret_cast<struct sockaddr *>(&clientaddr), flags);
 
   /* header */
   cl = ht = ua = 0;
