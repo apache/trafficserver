@@ -46,6 +46,38 @@ DbgCtl dbg_ctl_ssl{"ssl"};
 //
 
 /**
+   PROXY Protocol preface check with IOBufferReader.
+ */
+bool
+NetVConnection::has_proxy_protocol_preface(IOBufferReader *reader) const
+{
+  if (reader == nullptr) {
+    return false;
+  }
+
+  swoc::TextView tv;
+
+  char preface[PPv2_CONNECTION_HEADER_LEN];
+  tv.assign(preface, reader->memcpy(preface, sizeof(preface), 0));
+  return proxy_protocol_detect(tv);
+}
+
+/**
+   PROXY Protocol preface check with a raw buffer.
+ */
+bool
+NetVConnection::has_proxy_protocol_preface(const char *buffer, int64_t bytes_r) const
+{
+  if (buffer == nullptr || bytes_r <= 0) {
+    return false;
+  }
+
+  swoc::TextView tv;
+  tv.assign(buffer, static_cast<size_t>(bytes_r));
+  return proxy_protocol_detect(tv);
+}
+
+/**
    PROXY Protocol check with IOBufferReader
 
    If the buffer has PROXY Protocol, it will be consumed by this function.
@@ -55,9 +87,7 @@ NetVConnection::has_proxy_protocol(IOBufferReader *reader, int max_header_size)
 {
   swoc::TextView tv;
 
-  char preface[PPv2_CONNECTION_HEADER_LEN];
-  tv.assign(preface, reader->memcpy(preface, sizeof(preface), 0));
-  if (!proxy_protocol_detect(tv)) {
+  if (!this->has_proxy_protocol_preface(reader)) {
     return false;
   }
 

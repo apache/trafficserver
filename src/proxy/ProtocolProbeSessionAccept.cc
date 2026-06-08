@@ -111,27 +111,33 @@ struct ProtocolProbeTrampoline : public Continuation, public ProtocolProbeSessio
 
     if (netvc->get_is_proxy_protocol() && netvc->get_proxy_protocol_version() == ProxyProtocolVersion::UNDEFINED) {
       Dbg(dbg_ctl_proxyprotocol, "ioCompletionEvent: proxy protocol is enabled on this port");
-      if (pp_ipmap->count() > 0) {
-        Dbg(dbg_ctl_proxyprotocol, "ioCompletionEvent: proxy protocol has a configured allowlist of trusted IPs - checking");
-        if (!pp_ipmap->contains(swoc::IPAddr(netvc->get_remote_addr()))) {
-          Dbg(dbg_ctl_proxyprotocol,
-              "ioCompletionEvent: Source IP is NOT in the configured allowlist of trusted IPs - closing connection");
-          goto done;
+      if (netvc->has_proxy_protocol_preface(reader)) {
+        if (pp_ipmap->count() > 0) {
+          Dbg(dbg_ctl_proxyprotocol, "ioCompletionEvent: proxy protocol has a configured allowlist of trusted IPs - checking");
+          if (!pp_ipmap->contains(swoc::IPAddr(netvc->get_remote_addr()))) {
+            Dbg(dbg_ctl_proxyprotocol,
+                "ioCompletionEvent: Source IP is NOT in the configured allowlist of trusted IPs - closing connection");
+            goto done;
+          } else {
+            char new_host[INET6_ADDRSTRLEN];
+            Dbg(dbg_ctl_proxyprotocol, "ioCompletionEvent: Source IP [%s] is trusted in the allowlist for proxy protocol",
+                ats_ip_ntop(netvc->get_remote_addr(), new_host, sizeof(new_host)));
+          }
         } else {
-          char new_host[INET6_ADDRSTRLEN];
-          Dbg(dbg_ctl_proxyprotocol, "ioCompletionEvent: Source IP [%s] is trusted in the allowlist for proxy protocol",
-              ats_ip_ntop(netvc->get_remote_addr(), new_host, sizeof(new_host)));
+          Dbg(dbg_ctl_proxyprotocol,
+              "ioCompletionEvent: proxy protocol DOES NOT have a configured allowlist of trusted IPs but proxy protocol is "
+              "enabled on this port - processing all connections with Proxy Protocol headers");
         }
-      } else {
-        Dbg(dbg_ctl_proxyprotocol,
-            "ioCompletionEvent: proxy protocol DOES NOT have a configured allowlist of trusted IPs but proxy protocol is "
-            "enabled on this port - processing all connections");
-      }
-      HttpConfigParams *param           = HttpConfig::acquire();
-      int               max_header_size = param->pp_hdr_max_size;
-      HttpConfig::release(param);
-      if (netvc->has_proxy_protocol(reader, max_header_size)) {
-        Dbg(dbg_ctl_proxyprotocol, "ioCompletionEvent: http has proxy protocol header");
+
+        HttpConfigParams *param           = HttpConfig::acquire();
+        int               max_header_size = param->pp_hdr_max_size;
+        HttpConfig::release(param);
+        if (netvc->has_proxy_protocol(reader, max_header_size)) {
+          Dbg(dbg_ctl_proxyprotocol, "ioCompletionEvent: http has proxy protocol header");
+        } else {
+          Dbg(dbg_ctl_proxyprotocol,
+              "ioCompletionEvent: proxy protocol preface was present, but Proxy Protocol header could not be parsed");
+        }
       } else {
         Dbg(dbg_ctl_proxyprotocol, "ioCompletionEvent: proxy protocol was enabled, but Proxy Protocol header was not present");
       }
