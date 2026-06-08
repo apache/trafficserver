@@ -465,9 +465,31 @@ LogAccess::marshal_ip(char *dest, sockaddr const *ip)
 }
 
 int
-LogAccess::marshal_custom_field(char *buf, const LogField::CustomMarshalFunc &plugin_marshal_func)
+LogAccess::marshal_custom_field(char *buf, LogField::Type type, const LogField::CustomMarshalFunc &plugin_marshal_func)
 {
-  int len = plugin_marshal_func(m_data->http_sm_for_plugins(), buf);
+  void *sm = m_data->http_sm_for_plugins();
+  if (sm == nullptr) {
+    switch (type) {
+    case LogField::sINT:
+    case LogField::dINT:
+      if (buf) {
+        marshal_int(buf, 0);
+      }
+      return INK_MIN_ALIGN;
+    case LogField::STRING: {
+      int len = LogAccess::padded_strlen(nullptr);
+      if (buf) {
+        marshal_str(buf, nullptr, len);
+      }
+      return len;
+    }
+    case LogField::IP:
+      return marshal_ip(buf, nullptr);
+    case LogField::N_TYPES:
+      break;
+    }
+  }
+  int len = plugin_marshal_func(sm, buf);
   return LogAccess::padded_length(len);
 }
 
