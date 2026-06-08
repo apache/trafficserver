@@ -317,6 +317,7 @@ struct Directory {
   int      freelist_length(int s);
   void     clean_segment(int s, StripeSM *stripe);
   void     init_segment(int s);
+  int      bucket_loop_fix(Dir *start_dir, int s);
 };
 
 inline int

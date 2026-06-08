@@ -227,11 +227,11 @@ Directory::init_segment(int s)
 // break the infinite loop in directory entries
 // Note : abuse of the token bit in dir entries
 int
-dir_bucket_loop_fix(Dir *start_dir, int s, Directory *directory)
+Directory::bucket_loop_fix(Dir *start_dir, int s)
 {
-  if (!dir_bucket_loop_check(start_dir, directory->get_segment(s))) {
+  if (!dir_bucket_loop_check(start_dir, this->get_segment(s))) {
     Warning("Dir loop exists, clearing segment %d", s);
-    directory->init_segment(s);
+    this->init_segment(s);
     return 1;
   }
   return 0;
@@ -243,7 +243,7 @@ Directory::freelist_length(int s)
   int  free = 0;
   Dir *seg  = this->get_segment(s);
   Dir *e    = dir_from_offset(this->header->freelist[s], seg);
-  if (dir_bucket_loop_fix(e, s, this)) {
+  if (this->bucket_loop_fix(e, s)) {
     return (DIR_DEPTH - 1) * this->buckets;
   }
   while (e) {
@@ -260,7 +260,7 @@ Directory::bucket_length(Dir *b, int s)
   int  i   = 0;
   Dir *seg = this->get_segment(s);
 #ifdef LOOP_CHECK_MODE
-  if (dir_bucket_loop_fix(b, s, this))
+  if (this->bucket_loop_fix(b, s, this))
     return 1;
 #endif
   while (e) {
@@ -357,7 +357,7 @@ dir_clean_bucket(Dir *b, int s, StripeSM *stripe)
 #ifdef LOOP_CHECK_MODE
     loop_count++;
     if (loop_count > DIR_LOOP_THRESHOLD) {
-      if (dir_bucket_loop_fix(b, s, vol->directory))
+      if (vol->directory.bucket_loop_fix(b, s))
         return;
     }
 #endif
@@ -495,7 +495,7 @@ Directory::probe(const CacheKey *key, StripeSM *stripe, Dir *result, Dir **last_
   Dir *e = nullptr, *p = nullptr, *collision = *last_collision;
   CHECK_DIR(d);
 #ifdef LOOP_CHECK_MODE
-  if (dir_bucket_loop_fix(dir_bucket(b, seg), s, this))
+  if (this->bucket_loop_fix(dir_bucket(b, seg), s))
     return 0;
 #endif
 Lagain:
@@ -653,7 +653,7 @@ Lagain:
 #ifdef LOOP_CHECK_MODE
       loop_count++;
       if (loop_count > DIR_LOOP_THRESHOLD && loop_possible) {
-        if (dir_bucket_loop_fix(b, s, this)) {
+        if (this->bucket_loop_fix(b, s)) {
           loop_possible = false;
           goto Lagain;
         }
@@ -733,7 +733,7 @@ Directory::remove(const CacheKey *key, StripeSM *stripe, Dir *del)
 #ifdef LOOP_CHECK_MODE
       loop_count++;
       if (loop_count > DIR_LOOP_THRESHOLD) {
-        if (dir_bucket_loop_fix(dir_bucket(b, seg), s, this))
+        if (this->bucket_loop_fix(dir_bucket(b, seg), s, this))
           return 0;
       }
 #endif
@@ -939,7 +939,7 @@ Directory::entries_used()
     sfull    = 0;
     for (int b = 0; b < this->buckets; b++) {
       Dir *e = dir_bucket(b, seg);
-      if (dir_bucket_loop_fix(e, s, this)) {
+      if (this->bucket_loop_fix(e, s)) {
         sfull = 0;
         break;
       }
