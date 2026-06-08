@@ -30,6 +30,8 @@
 #include "tscore/Version.h"
 #include "tscore/hugepages.h"
 
+#include <ts/ats_probe.h>
+
 #include <cstdint>
 #include <ctime>
 
@@ -320,22 +322,11 @@ public:
   void     clean_segment(int s, StripeSM *stripe);
   void     init_segment(int s);
   int      bucket_loop_fix(Dir *start_dir, int s);
+  Dir     *delete_entry(Dir *e, Dir *p, int s);
 
 private:
   void unlink_from_freelist(Dir *e, int s);
 };
-
-inline int
-Directory::entries() const
-{
-  return this->buckets * DIR_DEPTH * this->segments;
-}
-
-inline Dir *
-Directory::get_segment(int s) const
-{
-  return reinterpret_cast<Dir *>((reinterpret_cast<char *>(this->dir)) + (s * this->buckets) * DIR_DEPTH * SIZEOF_DIR);
-}
 
 // Global Functions
 
@@ -371,22 +362,6 @@ dir_from_offset(int64_t i, Dir *seg)
 #endif
 }
 
-inline void
-Directory::unlink_from_freelist(Dir *e, int s)
-{
-  Dir *seg = this->get_segment(s);
-  Dir *p   = dir_from_offset(dir_prev(e), seg);
-  if (p) {
-    dir_set_next(p, dir_next(e));
-  } else {
-    this->header->freelist[s] = dir_next(e);
-  }
-  Dir *n = dir_from_offset(dir_next(e), seg);
-  if (n) {
-    dir_set_prev(n, dir_prev(e));
-  }
-}
-
 inline Dir *
 next_dir(Dir *d, Dir *seg)
 {
@@ -416,4 +391,65 @@ inline Dir *
 dir_bucket_row(Dir *b, int64_t i)
 {
   return dir_in_seg(b, i);
+}
+
+inline int
+Directory::entries() const
+{
+  return this->buckets * DIR_DEPTH * this->segments;
+}
+
+inline Dir *
+Directory::get_segment(int s) const
+{
+  return reinterpret_cast<Dir *>((reinterpret_cast<char *>(this->dir)) + (s * this->buckets) * DIR_DEPTH * SIZEOF_DIR);
+}
+
+inline void
+Directory::unlink_from_freelist(Dir *e, int s)
+{
+  Dir *seg = this->get_segment(s);
+  Dir *p   = dir_from_offset(dir_prev(e), seg);
+  if (p) {
+    dir_set_next(p, dir_next(e));
+  } else {
+    this->header->freelist[s] = dir_next(e);
+  }
+  Dir *n = dir_from_offset(dir_next(e), seg);
+  if (n) {
+    dir_set_prev(n, dir_prev(e));
+  }
+}
+
+inline Dir *
+Directory::delete_entry(Dir *e, Dir *p, int s)
+{
+  Dir *seg            = this->get_segment(s);
+  int  no             = dir_next(e);
+  this->header->dirty = 1;
+  if (p) {
+    unsigned int fo = this->header->freelist[s];
+    unsigned int eo = dir_to_offset(e, seg);
+    dir_clear(e);
+    dir_set_next(p, no);
+    dir_set_next(e, fo);
+    if (fo) {
+      dir_set_prev(dir_from_offset(fo, seg), eo);
+    }
+    this->header->freelist[s] = eo;
+  } else {
+    Dir *n = next_dir(e, seg);
+    if (n) {
+      // "Shuffle" here means that we're copying the second entry's data to the head entry's location, and removing the second entry
+      // - because the head entry can't be moved.
+      ATS_PROBE3(cache_dir_shuffle, s, dir_to_offset(e, seg), dir_to_offset(n, seg));
+      dir_assign(e, n);
+      this->delete_entry(n, e, s);
+      return e;
+    } else {
+      dir_clear(e);
+      return nullptr;
+    }
+  }
+  return dir_from_offset(no, seg);
 }
