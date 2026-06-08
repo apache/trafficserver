@@ -286,7 +286,9 @@ struct StripeHeaderFooter {
   uint16_t          freelist[1];
 };
 
-struct Directory {
+class Directory
+{
+public:
   char               *raw_dir{nullptr};
   Dir                *dir{};
   StripeHeaderFooter *header{};
@@ -318,6 +320,9 @@ struct Directory {
   void     clean_segment(int s, StripeSM *stripe);
   void     init_segment(int s);
   int      bucket_loop_fix(Dir *start_dir, int s);
+
+private:
+  void unlink_from_freelist(Dir *e, int s);
 };
 
 inline int
@@ -364,6 +369,22 @@ dir_from_offset(int64_t i, Dir *seg)
   i = i + ((i - 1) / (DIR_DEPTH - 1));
   return dir_in_seg(seg, i);
 #endif
+}
+
+inline void
+Directory::unlink_from_freelist(Dir *e, int s)
+{
+  Dir *seg = this->get_segment(s);
+  Dir *p   = dir_from_offset(dir_prev(e), seg);
+  if (p) {
+    dir_set_next(p, dir_next(e));
+  } else {
+    this->header->freelist[s] = dir_next(e);
+  }
+  Dir *n = dir_from_offset(dir_next(e), seg);
+  if (n) {
+    dir_set_prev(n, dir_prev(e));
+  }
 }
 
 inline Dir *

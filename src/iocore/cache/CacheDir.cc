@@ -296,22 +296,6 @@ Directory::check()
   return 1;
 }
 
-inline void
-unlink_from_freelist(Dir *e, int s, Directory *directory)
-{
-  Dir *seg = directory->get_segment(s);
-  Dir *p   = dir_from_offset(dir_prev(e), seg);
-  if (p) {
-    dir_set_next(p, dir_next(e));
-  } else {
-    directory->header->freelist[s] = dir_next(e);
-  }
-  Dir *n = dir_from_offset(dir_next(e), seg);
-  if (n) {
-    dir_set_prev(n, dir_prev(e));
-  }
-}
-
 inline Dir *
 dir_delete_entry(Dir *e, Dir *p, int s, Directory *directory)
 {
@@ -585,7 +569,7 @@ Lagain:
   for (l = 1; l < DIR_DEPTH; l++) {
     e = dir_bucket_row(b, l);
     if (dir_is_empty(e)) {
-      unlink_from_freelist(e, s, this);
+      this->unlink_from_freelist(e, s);
       goto Llink;
     }
   }
@@ -679,7 +663,7 @@ Lagain:
   for (l = 1; l < DIR_DEPTH; l++) {
     e = dir_bucket_row(b, l);
     if (dir_is_empty(e)) {
-      unlink_from_freelist(e, s, this);
+      this->unlink_from_freelist(e, s);
       goto Llink;
     }
   }
