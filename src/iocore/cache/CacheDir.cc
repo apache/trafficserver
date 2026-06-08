@@ -1019,7 +1019,7 @@ Lrestart:
       /* Don't sync the directory to disk if its not dirty. Syncing the
          clean directory to disk is also the cause of INKqa07151. Increasing
          the serial number causes the cache to recover more data than necessary.
-         The dirty bit it set in dir_insert, overwrite and Directory::delete_entry
+         The dirty bit is set in dir_insert, overwrite and Directory::delete_entry
        */
       if (!stripe->directory.header->dirty) {
         Dbg(dbg_ctl_cache_dir_sync, "Dir %s not dirty", stripe->hash_text.get());
