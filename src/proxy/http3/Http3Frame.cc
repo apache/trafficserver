@@ -27,6 +27,8 @@
 #include "proxy/http3/Http3Frame.h"
 #include "proxy/http3/Http3Config.h"
 
+#include <algorithm>
+
 ClassAllocator<Http3Frame, false>         http3FrameAllocator("http3FrameAllocator");
 ClassAllocator<Http3DataFrame, false>     http3DataFrameAllocator("http3DataFrameAllocator");
 ClassAllocator<Http3HeadersFrame, false>  http3HeadersFrameAllocator("http3HeadersFrameAllocator");
@@ -505,9 +507,10 @@ Http3FrameFactory::create(IOBufferReader &reader)
   ts::Http3Config::scoped_config params;
   Http3Frame                    *frame = nullptr;
 
-  uint8_t type_buf[FRAME_TYPE_MAX_BYTES]{};
-  reader.memcpy(type_buf, sizeof(type_buf));
-  Http3FrameType type = Http3Frame::type(type_buf, sizeof(type_buf));
+  uint8_t           type_buf[FRAME_TYPE_MAX_BYTES]{};
+  std::size_t const type_avail{std::min<std::size_t>(reader.read_avail(), sizeof(type_buf))};
+  reader.memcpy(type_buf, type_avail);
+  Http3FrameType type = Http3Frame::type(type_buf, type_avail);
 
   switch (type) {
   case Http3FrameType::HEADERS:
@@ -534,9 +537,10 @@ Http3FrameFactory::create(IOBufferReader &reader)
 std::shared_ptr<Http3Frame>
 Http3FrameFactory::fast_create(IOBufferReader &reader)
 {
-  uint8_t type_buf[FRAME_TYPE_MAX_BYTES]{};
-  reader.memcpy(type_buf, sizeof(type_buf));
-  Http3FrameType type = Http3Frame::type(type_buf, sizeof(type_buf));
+  uint8_t           type_buf[FRAME_TYPE_MAX_BYTES]{};
+  std::size_t const type_avail{std::min<std::size_t>(reader.read_avail(), sizeof(type_buf))};
+  reader.memcpy(type_buf, type_avail);
+  Http3FrameType type = Http3Frame::type(type_buf, type_avail);
   if (type == Http3FrameType::UNKNOWN) {
     if (!this->_unknown_frame) {
       this->_unknown_frame = Http3FrameFactory::create(reader);
