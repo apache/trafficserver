@@ -538,17 +538,17 @@ Log::init_fields()
   global_field_list.add(field, false);
   field_symbol_hash.emplace("cqcl", field);
 
-  field = new LogField("client_req_tcp_reused", "cqtr", LogField::dINT, &LogAccess::marshal_client_req_tcp_reused,
+  field = new LogField("client_req_tcp_reused", "cqtr", LogField::sINT, &LogAccess::marshal_client_req_tcp_reused,
                        &LogAccess::unmarshal_int_to_str);
   global_field_list.add(field, false);
   field_symbol_hash.emplace("cqtr", field);
 
-  field = new LogField("client_req_is_ssl", "cqssl", LogField::dINT, &LogAccess::marshal_client_req_is_ssl,
+  field = new LogField("client_req_is_ssl", "cqssl", LogField::sINT, &LogAccess::marshal_client_req_is_ssl,
                        &LogAccess::unmarshal_int_to_str);
   global_field_list.add(field, false);
   field_symbol_hash.emplace("cqssl", field);
 
-  field = new LogField("client_req_ssl_reused", "cqssr", LogField::dINT, &LogAccess::marshal_client_req_ssl_reused,
+  field = new LogField("client_req_ssl_reused", "cqssr", LogField::sINT, &LogAccess::marshal_client_req_ssl_reused,
                        &LogAccess::unmarshal_int_to_str);
   global_field_list.add(field, false);
   field_symbol_hash.emplace("cqssr", field);
@@ -817,7 +817,7 @@ Log::init_fields()
   global_field_list.add(field, false);
   field_symbol_hash.emplace("pqssl", field);
 
-  field = new LogField("proxy_req_ssl_reused", "pqssr", LogField::dINT, &LogAccess::marshal_proxy_req_ssl_reused,
+  field = new LogField("proxy_req_ssl_reused", "pqssr", LogField::sINT, &LogAccess::marshal_proxy_req_ssl_reused,
                        &LogAccess::unmarshal_int_to_str);
   global_field_list.add(field, false);
   field_symbol_hash.emplace("pqssr", field);
@@ -998,17 +998,17 @@ Log::init_fields()
   global_field_list.add(field, false);
   field_symbol_hash.emplace("ctid", field);
 
-  field = new LogField("cache_read_retry_attempts", "crra", LogField::dINT, &LogAccess::marshal_cache_read_retries,
+  field = new LogField("cache_read_retry_attempts", "crra", LogField::sINT, &LogAccess::marshal_cache_read_retries,
                        &LogAccess::unmarshal_int_to_str);
   global_field_list.add(field, false);
   field_symbol_hash.emplace("crra", field);
 
-  field = new LogField("cache_write_retry_attempts", "cwra", LogField::dINT, &LogAccess::marshal_cache_write_retries,
+  field = new LogField("cache_write_retry_attempts", "cwra", LogField::sINT, &LogAccess::marshal_cache_write_retries,
                        &LogAccess::unmarshal_int_to_str);
   global_field_list.add(field, false);
   field_symbol_hash.emplace("cwra", field);
 
-  field = new LogField("cache_collapsed_connection_success", "cccs", LogField::dINT,
+  field = new LogField("cache_collapsed_connection_success", "cccs", LogField::sINT,
                        &LogAccess::marshal_cache_collapsed_connection_success, &LogAccess::unmarshal_int_to_str);
   global_field_list.add(field, false);
   field_symbol_hash.emplace("cccs", field);
@@ -1023,7 +1023,7 @@ Log::init_fields()
   global_field_list.add(field, false);
   field_symbol_hash.emplace("ctpd", field);
 
-  field = new LogField("proxy_protocol_version", "ppv", LogField::dINT, &LogAccess::marshal_proxy_protocol_version,
+  field = new LogField("proxy_protocol_version", "ppv", LogField::STRING, &LogAccess::marshal_proxy_protocol_version,
                        &LogAccess::unmarshal_str);
   global_field_list.add(field, false);
   field_symbol_hash.emplace("ppv", field);
