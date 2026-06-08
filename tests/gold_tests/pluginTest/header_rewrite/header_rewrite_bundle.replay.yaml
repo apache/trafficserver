@@ -1901,11 +1901,11 @@ sessions:
         - [ X-Server-Host-Header, { value: "backend.ex", as: contains } ]
         - [ X-Path-Match, { value: "Yes", as: equal } ]
 
-# Test 64: SESSION-FLAG persists across keep-alive transactions.
-# The first request sees the flag unset; set-session-flag marks it true.
-# The second request on the same keep-alive session sees the flag set.
+# Test 64: STATE (txn) and SESSION (ssn) state variables across a keep-alive
+# session -- the read paths hardened by the issue #143 fix.  SESSION-* persists:
+# request 1 sees it unset, request 2 sees it set.
 - transactions:
-  # First transaction - flag is unset, header absent; flag is then set.
+  # Request 1: session vars unset; STATE set+read within the transaction.
   - client-request:
       method: "GET"
       version: "1.1"
@@ -1929,9 +1929,15 @@ sessions:
       status: 200
       headers:
         fields:
+        - [ X-State-Flag, { value: "set", as: equal } ]
+        - [ X-State-Int8, { value: "42", as: equal } ]
+        - [ X-State-Int16, { value: "4242", as: equal } ]
         - [ X-Session-Seen, { as: absent } ]
+        - [ X-Session-Int8, { value: "0", as: equal } ]
+        - [ X-Session-Int8-Seen, { as: absent } ]
+        - [ X-Session-Int16, { value: "0", as: equal } ]
 
-  # Second transaction - flag set by previous request; header must appear.
+  # Second transaction on the same keep-alive session - session vars persist.
   - client-request:
       method: "GET"
       version: "1.1"
@@ -1955,7 +1961,13 @@ sessions:
       status: 200
       headers:
         fields:
+        - [ X-State-Flag, { value: "set", as: equal } ]
+        - [ X-State-Int8, { value: "42", as: equal } ]
+        - [ X-State-Int16, { value: "4242", as: equal } ]
         - [ X-Session-Seen, { value: "yes", as: equal } ]
+        - [ X-Session-Int8, { value: "100", as: equal } ]
+        - [ X-Session-Int8-Seen, { value: "yes", as: equal } ]
+        - [ X-Session-Int16, { value: "4242", as: equal } ]
 
 # Test 67: set-status inside if/endif at REMAP_PSEUDO_HOOK time.
 # Before the fix, the set-status operator inside an if/endif block retained
