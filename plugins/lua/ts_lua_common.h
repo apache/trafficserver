@@ -148,6 +148,7 @@ typedef struct {
   ts_lua_instance_conf *instance_conf;
 
   int has_hook;
+  int from_remap;
 
   TSRemapRequestInfo *rri;
 
