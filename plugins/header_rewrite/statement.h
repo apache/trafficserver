@@ -253,10 +253,14 @@ protected:
     return false;
   }
 
-  // Scope-aware helpers for state variable access
+  // Scope-aware state accessors. A null handle (internal txns have no session)
+  // would trip a release assert in TSUserArg*, so treat it as unset.
   uint64_t
   _get_state_data(TSUserArgType scope, const Resources &res) const
   {
+    if (!_check_state_handle(scope, res)) {
+      return 0;
+    }
     if (scope == TS_USER_ARGS_SSN) {
       return reinterpret_cast<uint64_t>(TSUserArgGet(res.state.ssnp, _ssn_slot));
     }
@@ -266,6 +270,9 @@ protected:
   void
   _set_state_data(TSUserArgType scope, const Resources &res, uint64_t data) const
   {
+    if (!_check_state_handle(scope, res)) {
+      return;
+    }
     if (scope == TS_USER_ARGS_SSN) {
       TSUserArgSet(res.state.ssnp, _ssn_slot, reinterpret_cast<void *>(data));
     } else {
