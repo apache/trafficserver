@@ -1954,6 +1954,9 @@ Origin Server Connect Attempts
    :overridable:
 
    Specifies how long (in seconds) |TS| remembers that an origin server was unreachable.
+   During this window, if a stale cached response exists and its age is within the cached response's ``max-age`` plus
+   :ts:cv:`proxy.config.http.cache.max_stale_age`, |TS| serves the stale content directly
+   without attempting to contact the origin server.
 
 .. ts:cv:: CONFIG proxy.config.http.uncacheable_requests_bypass_parent INT 1
    :reloadable:
