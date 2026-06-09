@@ -31,6 +31,11 @@ ts_lua_client_entry(TSCont contp, TSEvent ev, void *edata)
   event         = (int)ev;
   transform_ctx = (ts_lua_http_transform_ctx *)TSContDataGet(contp);
 
+  if (TSVConnClosedGet(contp)) {
+    ts_lua_destroy_http_transform_ctx(transform_ctx);
+    return 0;
+  }
+
   n = 0;
 
   switch (event) {
