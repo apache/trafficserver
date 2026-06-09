@@ -1,4 +1,4 @@
-#######################
+######################
 #
 #  Licensed to the Apache Software Foundation (ASF) under one or more contributor license
 #  agreements.  See the NOTICE file distributed with this work for additional information regarding
@@ -13,26 +13,11 @@
 #  or implied. See the License for the specific language governing permissions and limitations under
 #  the License.
 #
-#######################
+######################
 
-add_library(inkdns STATIC DNS.cc DNSConnection.cc DNSEventIO.cc HostEnt.cc SplitDNS.cc)
-add_library(ts::inkdns ALIAS inkdns)
-
-target_include_directories(
-  inkdns
-  PUBLIC "${PROJECT_SOURCE_DIR}/include"
-  PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}"
-)
-
-target_link_libraries(
-  inkdns
-  PUBLIC libswoc::libswoc ts::inkevent ts::inkhostdb
-         #ts::inknet cyclic dependency
-         ts::proxy ts::tsutil ts::tscore
-)
-
-clang_tidy_check(inkdns)
-
-if(BUILD_TESTING)
-  add_subdirectory(unit_tests)
-endif()
+# Compile HostEnt.cc directly into the test rather than linking libinkdns,
+# which would drag in libproxy/libhttp via inkdns's PUBLIC link deps.
+add_executable(test_HostEnt test_HostEnt.cc ../HostEnt.cc)
+target_include_directories(test_HostEnt PRIVATE "${PROJECT_SOURCE_DIR}/include")
+target_link_libraries(test_HostEnt PRIVATE Catch2::Catch2WithMain ts::tscore ts::tsutil ts::inkevent)
+add_catch2_test(NAME test_dns_HostEnt COMMAND $<TARGET_FILE:test_HostEnt>)
