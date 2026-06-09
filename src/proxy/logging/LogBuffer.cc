@@ -92,7 +92,10 @@ char *
 LogBufferHeader::fmt_fieldtypes()
 {
   char *addr = nullptr;
-  if (fmt_fieldtypes_offset) {
+  // The field-type schema is v3+. A v2 segment has no fmt_fieldtypes_offset on
+  // disk, so a version-sized read leaves those bytes uninitialized; gate on the
+  // version too rather than trusting the caller to have zeroed them.
+  if (version >= 3 && fmt_fieldtypes_offset) {
     addr = reinterpret_cast<char *>(this) + fmt_fieldtypes_offset;
   }
   return addr;

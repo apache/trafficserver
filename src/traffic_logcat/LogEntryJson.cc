@@ -176,14 +176,58 @@ log_entry_to_json(LogEntryHeader *entry, LogBufferHeader *header, char *buf, int
         return -1;
       }
       for (const char *p = s; p < nul; ++p) {
-        // Minimal JSON escaping for structural characters.
-        if (*p == '"' || *p == '\\') {
-          if (!put_ch('\\')) {
+        // JSON requires escaping the quote, backslash, and every control
+        // character (< 0x20); the latter use the short forms where they exist
+        // and \u00XX otherwise. Bytes >= 0x20 pass through verbatim, preserving
+        // the original (possibly non-UTF-8) field value.
+        unsigned char c = static_cast<unsigned char>(*p);
+        switch (c) {
+        case '"':
+          if (!put("\\\"", 2)) {
             return -1;
           }
-        }
-        if (!put_ch(*p)) {
-          return -1;
+          break;
+        case '\\':
+          if (!put("\\\\", 2)) {
+            return -1;
+          }
+          break;
+        case '\b':
+          if (!put("\\b", 2)) {
+            return -1;
+          }
+          break;
+        case '\f':
+          if (!put("\\f", 2)) {
+            return -1;
+          }
+          break;
+        case '\n':
+          if (!put("\\n", 2)) {
+            return -1;
+          }
+          break;
+        case '\r':
+          if (!put("\\r", 2)) {
+            return -1;
+          }
+          break;
+        case '\t':
+          if (!put("\\t", 2)) {
+            return -1;
+          }
+          break;
+        default:
+          if (c < 0x20) {
+            char esc[7];
+            int  n = snprintf(esc, sizeof(esc), "\\u%04x", c);
+            if (!put(esc, n)) {
+              return -1;
+            }
+          } else if (!put_ch(*p)) {
+            return -1;
+          }
+          break;
         }
       }
       if (!put_ch('"')) {
