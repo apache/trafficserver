@@ -193,20 +193,38 @@ struct ParentResult {
   const char      *url;
   int              port;
   bool             retry;
-  bool             chash_init[MAX_GROUP_RINGS] = {false};
-  bool             use_pristine                = false;
-  TSHostStatus     first_choice_status         = TSHostStatus::TS_HOST_STATUS_INIT;
-  bool             do_not_cache_response       = false;
+  bool             chash_init[MAX_GROUP_RINGS];
+  bool             use_pristine;
+  TSHostStatus     first_choice_status;
+  bool             do_not_cache_response;
 
   void
   reset()
   {
-    ink_zero(*this);
-    line_number           = -1;
+    // Public members
     result                = ParentResultType::UNDEFINED;
-    mapWrapped[0]         = false;
-    mapWrapped[1]         = false;
+    hostname              = nullptr;
+    url                   = nullptr;
+    port                  = 0;
+    retry                 = false;
+    use_pristine          = false;
+    first_choice_status   = TSHostStatus::TS_HOST_STATUS_INIT;
     do_not_cache_response = false;
+
+    // Private members
+    line_number  = -1;
+    rec          = nullptr;
+    last_parent  = 0;
+    start_parent = 0;
+    last_group   = 0;
+    wrap_around  = false;
+    last_lookup  = 0;
+
+    for (uint32_t i = 0; i < MAX_GROUP_RINGS; ++i) {
+      chash_init[i] = false;
+      mapWrapped[i] = false;
+      chashIter[i]  = ATSConsistentHashIter{};
+    }
   }
 
   bool
@@ -332,7 +350,7 @@ private:
   uint32_t      start_parent;
   uint32_t      last_group;
   bool          wrap_around;
-  bool          mapWrapped[2];
+  bool          mapWrapped[MAX_GROUP_RINGS];
   // state for consistent hash.
   int                   last_lookup;
   ATSConsistentHashIter chashIter[MAX_GROUP_RINGS];
