@@ -201,6 +201,7 @@ NextHopRoundRobin::findNextHop(TSHttpTxn txnp, void * /* ih ATS_UNUSED */, time_
             wrapped = wrap_around[cur_grp_index] = result->wrap_around = true;
           } else {
             start_host = cur_hst_index = 0;
+            hst_size                   = host_groups[cur_grp_index].size();
           }
         }
       }
