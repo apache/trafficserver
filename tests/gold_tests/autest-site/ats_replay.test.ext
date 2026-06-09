@@ -38,6 +38,11 @@ def configure_ats(obj: 'TestRun', server: 'Process', ats_config: dict, dns: Opti
     if disable_log_checks:
         ts.Disk.diags_log.Content = Testers.ExcludesExpression(r'(?!)', 'Default diags log checks are disabled.')
 
+    # Cripts are compiled with clang at TS startup (during remap load), which is
+    # slow and scales with the number of cripts.
+    if process_config.get('enable_cripts', False):
+        ts.StartupTimeout = 60
+
     records_config = ats_config.get('records_config', {})
     ts.Disk.records_config.update(records_config)
 
