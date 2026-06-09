@@ -585,9 +585,26 @@ handle_server_resp(TSCont contp, TSEvent event, Data *const data)
       } break;
       case BlockState::ActiveRef: {
         // Mark the reference block for "skip".
-        int64_t const blockbytes      = data->m_config->m_blockbytes;
-        int64_t const firstblock      = data->m_req_range.firstBlockFor(blockbytes);
-        int64_t const blockpos        = firstblock * blockbytes;
+        int64_t const blockbytes = data->m_config->m_blockbytes;
+        int64_t const firstblock = data->m_req_range.firstBlockFor(blockbytes);
+        int64_t const blockpos   = firstblock * blockbytes;
+        int64_t const range_beg  = data->m_req_range.m_beg;
+
+        // Once the content no longer reaches the requested first byte, the client range is unsatisfiable.
+        if (data->m_contentlen <= range_beg) {
+          if (data->m_config->canLogError()) {
+            ERROR_LOG("Content length %" PRId64 " shrunk below requested range start %" PRId64, data->m_contentlen, range_beg);
+          }
+          data->m_upstream.abort();
+          data->m_blockstate = BlockState::Fail;
+          if (data->m_dnstream.m_write.isOpen()) {
+            TSVIOReenable(data->m_dnstream.m_write.m_vio);
+          } else {
+            shutdown(contp, data);
+          }
+          return;
+        }
+
         int64_t const firstblockbytes = std::min(blockbytes, data->m_contentlen - blockpos);
         data->m_blockskip             = firstblockbytes;
 
