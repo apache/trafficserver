@@ -92,9 +92,7 @@ is_addr_query(int qtype)
 
 DNSProcessor                    dnsProcessor;
 ClassAllocator<DNSEntry, false> dnsEntryAllocator("dnsEntryAllocator");
-// Users are expected to free these entries in short order!
-// We could page align this buffer to enable page flipping for recv...
-ClassAllocator<HostEnt> dnsBufAllocator("dnsBufAllocator", 2);
+extern ClassAllocator<HostEnt>  dnsBufAllocator;
 
 //
 // Function Prototypes
@@ -149,12 +147,6 @@ bool
 HostEnt::isNameError()
 {
   return get_rcode(this) == NXDOMAIN;
-}
-
-void
-HostEnt::free()
-{
-  dnsBufAllocator.free(this);
 }
 
 size_t
