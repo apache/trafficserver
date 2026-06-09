@@ -21,6 +21,8 @@
 
 #include "P_OCSPStapling.h"
 
+#include <memory>
+
 #include <openssl/ssl.h>
 #include <openssl/x509v3.h>
 #include <openssl/asn1.h>
@@ -279,17 +281,36 @@ namespace
 
 // Cached info stored in SSL_CTX ex_info
 struct certinfo {
-  unsigned char   idx[20]; // Index in session cache SHA1 hash of certificate
-  TS_OCSP_CERTID *cid;     // Certificate ID for OCSP requests or nullptr if ID cannot be determined
-  char           *uri;     // Responder details
-  char           *certname;
-  char           *user_agent;
+  unsigned char   idx[20]    = {};      // Index in session cache SHA1 hash of certificate
+  TS_OCSP_CERTID *cid        = nullptr; // Certificate ID for OCSP requests
+  char           *uri        = nullptr; // Responder details
+  char           *certname   = nullptr;
+  char           *user_agent = nullptr;
   ink_mutex       stapling_mutex;
-  unsigned char   resp_der[MAX_STAPLING_DER];
-  unsigned int    resp_derlen;
-  bool            is_prefetched;
-  bool            is_expire;
-  time_t          expire_time;
+  unsigned char   resp_der[MAX_STAPLING_DER] = {};
+  unsigned int    resp_derlen                = 0;
+  bool            is_prefetched              = false;
+  bool            is_expire                  = true;
+  time_t          expire_time                = 0;
+
+  certinfo() { ink_mutex_init(&stapling_mutex); }
+  ~certinfo()
+  {
+    if (cid) {
+      TS_OCSP_CERTID_free(cid);
+    }
+    if (uri) {
+      OPENSSL_free(uri);
+    }
+    ats_free(certname);
+    ats_free(user_agent);
+    ink_mutex_destroy(&stapling_mutex);
+  }
+
+  certinfo(const certinfo &)            = delete;
+  certinfo &operator=(const certinfo &) = delete;
+  certinfo(certinfo &&)                 = delete;
+  certinfo &operator=(certinfo &&)      = delete;
 };
 
 class HTTPRequest : public Continuation
@@ -724,7 +745,7 @@ TS_OCSP_resp_find_status(TS_OCSP_BASICRESP *bs, TS_OCSP_CERTID *id, int *status,
  * In the case of multiple certificates associated with a SSL_CTX, we must store a map
  * of cached responses
  */
-using certinfo_map = std::map<X509 *, certinfo *>;
+using certinfo_map = std::map<X509 *, std::unique_ptr<certinfo>>;
 
 void
 certinfo_map_free(void * /*parent*/, void *ptr, CRYPTO_EX_DATA * /*ad*/, int /*idx*/, long /*argl*/, void * /*argp*/)
@@ -735,18 +756,13 @@ certinfo_map_free(void * /*parent*/, void *ptr, CRYPTO_EX_DATA * /*ad*/, int /*i
     return;
   }
 
+#ifdef OPENSSL_IS_BORINGSSL
+  // The map owns a reference on each X509 key under BoringSSL; the certinfo
+  // values are freed by their unique_ptr destructors when the map is deleted.
   for (auto &iter : *map) {
-    certinfo *cinf = iter.second;
-    if (cinf->uri) {
-      OPENSSL_free(cinf->uri);
-    }
-
-    ats_free(cinf->certname);
-    ats_free(cinf->user_agent);
-
-    ink_mutex_destroy(&cinf->stapling_mutex);
-    OPENSSL_free(cinf);
+    X509_free(iter.first);
   }
+#endif
   delete map;
 }
 
@@ -860,28 +876,20 @@ ssl_stapling_init_cert(SSL_CTX *ctx, X509 *cert, const char *certname, const cha
     return false;
   }
 
+  bool map_is_new = false;
   if (!map) {
-    map = new certinfo_map;
+    map        = new certinfo_map;
+    map_is_new = true;
   }
-  certinfo *cinf = static_cast<certinfo *>(OPENSSL_malloc(sizeof(certinfo)));
-  if (!cinf) {
-    Error("error allocating memory for %s", certname);
-    delete map;
-    return false;
-  }
+  auto      cinf_ptr = std::make_unique<certinfo>();
+  certinfo *cinf     = cinf_ptr.get();
 
   // Initialize certinfo
-  cinf->cid      = nullptr;
-  cinf->uri      = nullptr;
   cinf->certname = ats_strdup(certname);
   if (SSLConfigParams::ssl_ocsp_user_agent != nullptr) {
     cinf->user_agent = ats_strdup(SSLConfigParams::ssl_ocsp_user_agent);
   }
-  cinf->resp_derlen = 0;
-  ink_mutex_init(&cinf->stapling_mutex);
   cinf->is_prefetched = rsp_file ? true : false;
-  cinf->is_expire     = true;
-  cinf->expire_time   = 0;
 
   if (cinf->is_prefetched) {
     Dbg(dbg_ctl_ssl_ocsp, "using OCSP prefetched response file %s", rsp_file);
@@ -949,24 +957,17 @@ ssl_stapling_init_cert(SSL_CTX *ctx, X509 *cert, const char *certname, const cha
   X509_up_ref(cert);
 #endif
 
-  map->insert(std::make_pair(cert, cinf));
+  map->emplace(cert, std::move(cinf_ptr));
   SSL_CTX_set_ex_data(ctx, ssl_stapling_index, map);
 
   Note("successfully initialized stapling for %s into SSL_CTX: %p uri=%s", certname, ctx, cinf->uri);
   return true;
 
 err:
-  if (cinf->cid) {
-    TS_OCSP_CERTID_free(cinf->cid);
-  }
-
-  ats_free(cinf->certname);
-  ats_free(cinf->user_agent);
-
-  if (cinf) {
-    OPENSSL_free(cinf);
-  }
-  if (map) {
+  // cinf_ptr destructor handles certinfo cleanup.
+  // Only tear down the map if this call created it; an existing map is still
+  // owned by the SSL_CTX.
+  if (map_is_new) {
     delete map;
   }
 
@@ -1327,7 +1328,7 @@ ocsp_update()
           if (map) {
             // Walk over all certs associated with this CTX
             for (auto &iter : *map) {
-              cinf = iter.second;
+              cinf = iter.second.get();
               ink_mutex_acquire(&cinf->stapling_mutex);
               current_time = time(nullptr);
               if (cinf->resp_derlen == 0 || cinf->is_expire || cinf->expire_time < current_time) {
@@ -1370,32 +1371,46 @@ ssl_callback_ocsp_stapling(SSL *ssl, void *)
     return SSL_TLSEXT_ERR_NOACK;
   }
 
-  // Fetch the specific certificate used in this negotiation
-  X509 *cert = SSL_get_certificate(ssl);
-  if (!cert) {
-    Error("ssl_callback_ocsp_stapling: failed to get certificate");
-    return SSL_TLSEXT_ERR_NOACK;
-  }
-
   certinfo *cinf = nullptr;
-#if HAVE_NATIVE_DUAL_CERT_SUPPORT
-  certinfo_map::iterator iter = map->find(cert);
-  if (iter != map->end()) {
-    cinf = iter->second;
-  }
-#else
-  for (certinfo_map::iterator iter = map->begin(); iter != map->end(); ++iter) {
-    X509 *key = iter->first;
-    if (key == nullptr) {
-      continue;
+
+#ifndef HAVE_NATIVE_DUAL_CERT_SUPPORT
+  // Fast path: without native dual-cert support each SSL_CTX holds exactly one
+  // certificate, so a single map entry must be the negotiated cert. This skips
+  // the SSL_get_certificate() lookup and the X509_cmp() DER re-parse below.
+  // Not safe under HAVE_NATIVE_DUAL_CERT_SUPPORT: a dual-cert CTX where only one
+  // cert has OCSP info also yields map->size()==1, but the negotiated cert may
+  // be the other one.
+  if (map->size() == 1) {
+    cinf = map->begin()->second.get();
+  } else
+#endif
+  {
+    // Fetch the specific certificate used in this negotiation
+    X509 *cert = SSL_get_certificate(ssl);
+    if (!cert) {
+      Error("ssl_callback_ocsp_stapling: failed to get certificate");
+      return SSL_TLSEXT_ERR_NOACK;
     }
 
-    if (X509_cmp(key, cert) == 0) {
-      cinf = iter->second;
-      break;
+#if HAVE_NATIVE_DUAL_CERT_SUPPORT
+    certinfo_map::iterator iter = map->find(cert);
+    if (iter != map->end()) {
+      cinf = iter->second.get();
     }
-  }
+#else
+    for (certinfo_map::iterator iter = map->begin(); iter != map->end(); ++iter) {
+      X509 *key = iter->first;
+      if (key == nullptr) {
+        continue;
+      }
+
+      if (X509_cmp(key, cert) == 0) {
+        cinf = iter->second.get();
+        break;
+      }
+    }
 #endif
+  }
 
   if (cinf == nullptr) {
     Error("ssl_callback_ocsp_stapling: failed to get certificate information for ssl=%p", ssl);
