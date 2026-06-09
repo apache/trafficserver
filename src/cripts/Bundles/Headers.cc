@@ -65,11 +65,11 @@ Headers::rm_headers(const cripts::string_view target, const HeaderList &headers)
     NeedCallback(cripts::Callbacks::DO_SEND_RESPONSE);
     break;
   case SERVER_REQUEST:
-    _client_response.rm_headers.insert(_client_response.rm_headers.end(), headers.begin(), headers.end());
+    _server_request.rm_headers.insert(_server_request.rm_headers.end(), headers.begin(), headers.end());
     NeedCallback(cripts::Callbacks::DO_SEND_REQUEST);
     break;
   case SERVER_RESPONSE:
-    _client_response.rm_headers.insert(_client_response.rm_headers.end(), headers.begin(), headers.end());
+    _server_response.rm_headers.insert(_server_response.rm_headers.end(), headers.begin(), headers.end());
     NeedCallback(cripts::Callbacks::DO_READ_RESPONSE);
     break;
   default:

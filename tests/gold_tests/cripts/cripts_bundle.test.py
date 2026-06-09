@@ -11,6 +11,14 @@ Currently bundled:
   - direct_headers.cript : same data sources but via the direct cripts
                            API (UUID/IP/Url accessors), bypassing
                            Bundle::Headers entirely.
+  - server_bundle_headers.cript : Bundle::Headers on the two server hooks
+                           — rm_headers (incl. Authorization/Cookie/
+                           Set-Cookie) plus set_headers with literal
+                           values (add + overwrite). Server-only so it
+                           also pins the regression where rm_headers()
+                           misrouted both server targets into the
+                           client-response list and silently dropped the
+                           strips.
 
 Concurrent client sessions widen the exposure surface; under a TSAN
 build this is the regression target for any bug that puts shared mutable

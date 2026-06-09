@@ -1,0 +1,45 @@
+/*
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+*/
+
+// Bundle::Headers coverage on the two server hooks: rm_headers (including the
+// Authorization/Cookie/Set-Cookie an operator means to scrub) plus set_headers
+// with literal values — both adding a new header and overwriting an existing
+// one. Complements bundle_headers.cript, which sets dynamic %{...} values
+// across all four hooks.
+//
+// Also the regression for the server rm_headers misrouting to the
+// client-response list. Deliberately no Client::Response op here: either a
+// strip or a set on that target registers DO_SEND_RESPONSE, which would flush
+// the misrouted entries and mask a Server::Response bug. Keep this server-only.
+
+#include <cripts/Preamble.hpp>
+#include <cripts/Bundles/Headers.hpp>
+
+do_create_instance()
+{
+  cripts::Bundle::Headers::Activate()
+    .rm_headers("Server::Request",
+                {
+                  "Authorization", "Cookie", "X-Cript-Strip-SReq"
+  })
+    .set_headers("Server::Request", {{"X-Cript-Set-SReq", "set-sreq"}, {"X-Cript-Over-SReq", "over-sreq"}})
+    .rm_headers("Server::Response", {"Set-Cookie", "X-Cript-Strip-SResp"})
+    .set_headers("Server::Response", {{"X-Cript-Set-SResp", "set-sresp"}, {"X-Cript-Over-SResp", "over-sresp"}});
+}
+
+#include <cripts/Epilogue.hpp>
