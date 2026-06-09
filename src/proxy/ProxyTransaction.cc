@@ -253,6 +253,12 @@ ProxyTransaction::expect_send_trailer() const
   return false;
 }
 
+bool
+ProxyTransaction::can_send_h2_trailer() const
+{
+  return false;
+}
+
 void
 ProxyTransaction::set_expect_send_trailer()
 {

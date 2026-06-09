@@ -1085,6 +1085,10 @@ uds-group
    for details about chunked trailers. By default, this option is enabled
    and therefore |TS| will drop chunked trailers.
 
+   This option controls HTTP/1.1 chunked trailer handling. HTTP/2 origin
+   response trailers are not converted to HTTP/1.1 chunked trailers, and |TS|
+   drops them when the client connection is HTTP/1.x.
+
 .. ts:cv:: CONFIG proxy.config.http.strict_chunk_parsing INT 1
    :reloadable:
    :overridable:

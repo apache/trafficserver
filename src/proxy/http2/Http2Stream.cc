@@ -1278,6 +1278,12 @@ Http2Stream::expect_send_trailer() const
   return this->_expect_send_trailer;
 }
 
+bool
+Http2Stream::can_send_h2_trailer() const
+{
+  return !send_end_stream;
+}
+
 void
 Http2Stream::set_expect_send_trailer()
 {

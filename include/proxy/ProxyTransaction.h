@@ -53,6 +53,10 @@ public:
   virtual void cancel_active_timeout();
   virtual bool is_read_closed() const;
   virtual bool expect_send_trailer() const;
+  /// @return @c true if this transaction can send an HTTP/2 trailer through
+  /// the delayed trailer tunnel. HTTP/1 chunked trailer pass-through is
+  /// handled by HttpTunnel and does not use this state query.
+  virtual bool can_send_h2_trailer() const;
   virtual void set_expect_send_trailer();
   virtual bool expect_receive_trailer() const;
   virtual void set_expect_receive_trailer();
