@@ -75,3 +75,4 @@ port\.h
 ^clang-tidy.conf$
 ^build.*$
 ^cmake-build.*$
+.*\.lock$
