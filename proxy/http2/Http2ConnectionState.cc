@@ -963,6 +963,10 @@ rcv_continuation_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
   }
 
   uint32_t header_blocks_offset = stream->header_blocks_length;
+  if (http2_continuation_length_would_overflow(stream->header_blocks_length, payload_length)) {
+    return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_ENHANCE_YOUR_CALM,
+                      "header blocks length overflow");
+  }
   stream->header_blocks_length += payload_length;
 
   // ATS advertises SETTINGS_MAX_HEADER_LIST_SIZE as a limit of total header blocks length. (Details in [RFC 7560] 10.5.1.)

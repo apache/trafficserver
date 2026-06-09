@@ -167,3 +167,42 @@ TEST_CASE("Convert HTTPHdr", "[HTTP2]")
     CHECK_THAT(buf, Catch::StartsWith("HTTP/1.1 200 OK\r\n\r\n"));
   }
 }
+
+// Regression: Http2ConnectionState::rcv_continuation_frame accumulates
+// the size of every CONTINUATION payload into stream->header_blocks_length, a uint32_t.
+// Before the fix, the increment was performed without overflow checking, so a crafted
+// sequence of CONTINUATION frames whose payloads sum to more than UINT32_MAX would
+// wrap the accumulator, and the subsequent ats_realloc would allocate a buffer smaller
+// than the pre-wrap offset that memcpy then writes to.
+TEST_CASE("CONTINUATION header_blocks_length overflow guard", "[HTTP2]")
+{
+  SECTION("zero accumulator and zero payload do not overflow") { CHECK_FALSE(http2_continuation_length_would_overflow(0u, 0u)); }
+
+  SECTION("small additions do not overflow")
+  {
+    CHECK_FALSE(http2_continuation_length_would_overflow(0u, 16384u));
+    CHECK_FALSE(http2_continuation_length_would_overflow(16384u, 16384u));
+    CHECK_FALSE(http2_continuation_length_would_overflow(1u << 20, 1u << 20));
+  }
+
+  SECTION("sum that exactly fills uint32_t is allowed")
+  {
+    CHECK_FALSE(http2_continuation_length_would_overflow(UINT32_MAX, 0u));
+    CHECK_FALSE(http2_continuation_length_would_overflow(0u, UINT32_MAX));
+    CHECK_FALSE(http2_continuation_length_would_overflow(UINT32_MAX - 1u, 1u));
+    CHECK_FALSE(http2_continuation_length_would_overflow(1u, UINT32_MAX - 1u));
+  }
+
+  SECTION("sum exceeding uint32_t by one wraps and must be rejected")
+  {
+    CHECK(http2_continuation_length_would_overflow(UINT32_MAX, 1u));
+    CHECK(http2_continuation_length_would_overflow(1u, UINT32_MAX));
+  }
+
+  SECTION("realistic attack shape: prior bytes plus a max HTTP/2 frame payload")
+  {
+    constexpr uint32_t max_frame_payload = (1u << 24) - 1u;
+    CHECK(http2_continuation_length_would_overflow(UINT32_MAX - max_frame_payload + 1u, max_frame_payload));
+    CHECK_FALSE(http2_continuation_length_would_overflow(UINT32_MAX - max_frame_payload, max_frame_payload));
+  }
+}
