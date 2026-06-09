@@ -737,18 +737,18 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf
 
   Dbg(dbg_ctl_ssl, "towrite=%" PRId64, towrite);
 
+  // SSL_write retries (WANT_WRITE/READ) must reuse the same address; thread_local gives the
+  // coalesce path a stable one. SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER is off.
+  static thread_local char gather_buf[SSL_MAX_TLS_RECORD_SIZE];
+
+  // Caller bounds towrite by read_avail(); asserting lets the loop skip an O(n) chain walk.
+  ink_assert(towrite <= buf.reader()->read_avail());
+
   ERR_clear_error();
   do {
-    // What is remaining left in the next block?
-    l                   = buf.reader()->block_read_avail();
-    char *current_block = buf.reader()->start();
+    IOBufferReader *reader = buf.reader();
 
-    // check if to amount to write exceeds that in this buffer
-    int64_t wavail = towrite - total_written;
-
-    if (l > wavail) {
-      l = wavail;
-    }
+    l = towrite - total_written;
 
     // TS-2365: If the SSL max record size is set and we have
     // more data than that, break this into smaller write
@@ -780,15 +780,29 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf
       break;
     }
 
+    // Coalesce across blocks only when it fits one record; else write in place, capped to the block.
+    const char *write_block;
+    int64_t     block_avail = reader->block_read_avail();
+
+    if (block_avail < l && l <= static_cast<int64_t>(sizeof(gather_buf))) {
+      reader->memcpy(gather_buf, l, 0);
+      write_block = gather_buf;
+    } else {
+      if (l > block_avail) {
+        l = block_avail;
+      }
+      write_block = reader->start();
+    }
+
     try_to_write       = l;
     num_really_written = 0;
-    Dbg(dbg_ctl_v_ssl, "b=%p l=%" PRId64, current_block, l);
-    err = this->_ssl_write_buffer(current_block, l, num_really_written);
+    Dbg(dbg_ctl_v_ssl, "b=%p l=%" PRId64, write_block, l);
+    err = this->_ssl_write_buffer(write_block, l, num_really_written);
 
     // We wrote all that we thought we should
     if (num_really_written > 0) {
       total_written += num_really_written;
-      buf.reader()->consume(num_really_written);
+      reader->consume(num_really_written);
     }
 
     Dbg(dbg_ctl_ssl, "try_to_write=%" PRId64 " written=%" PRId64 " total_written=%" PRId64, try_to_write, num_really_written,
