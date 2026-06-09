@@ -114,7 +114,9 @@ struct HttpHeader {
   // returns false if header invalid or something went wrong with removal.
   bool removeKey(char const *const key, int const keylen);
 
-  // retrieves header value as a char*
+  // retrieves header value as a null terminated char* in valstr.
+  // caller must ensure the valstr buffer has sufficient capacity.
+  // null termination only guaranteed on success.
   bool valueForKey(char const *const keystr, int const keylen,
                    char *const valstr,    // <-- return string value
                    int *const  vallen,    // <-- pass in capacity, returns len of string
