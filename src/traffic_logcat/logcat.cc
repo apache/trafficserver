@@ -128,6 +128,27 @@ follow_rotate(const char *input_file, ino_t old_inode_num)
   }
 }
 
+// Write all @a len bytes of @a buf to @a fd, retrying short writes and EINTR.
+// write() may transfer fewer bytes than requested (notably to a pipe), so a
+// single call is not enough to guarantee the whole line lands. Returns true
+// only if every byte was written.
+bool
+write_all(int fd, const char *buf, size_t len)
+{
+  size_t off = 0;
+  while (off < len) {
+    ssize_t w = write(fd, buf + off, len - off);
+    if (w < 0) {
+      if (errno == EINTR) {
+        continue;
+      }
+      return false;
+    }
+    off += static_cast<size_t>(w);
+  }
+  return true;
+}
+
 // Emit every entry of a v3 segment as a line of JSON. v2 segments lack the
 // field-type schema needed for self-describing decode, so they are skipped
 // with a note. Returns the number of entries written.
@@ -148,9 +169,11 @@ write_json_logbuffer(LogBufferHeader *header, int out_fd)
     int n = log_entry_to_json(entry, header, line, sizeof(line) - 1);
     if (n > 0) {
       line[n] = '\n';
-      if (write(out_fd, line, n + 1) > 0) {
-        ++count;
+      if (!write_all(out_fd, line, static_cast<size_t>(n) + 1)) {
+        fprintf(stderr, "Error writing JSON output: %s\n", strerror(errno));
+        return count;
       }
+      ++count;
     }
   }
   return count;

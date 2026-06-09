@@ -184,6 +184,30 @@ TEST_CASE("v3 generic decode escapes JSON structural characters in strings", "[l
   CHECK(std::string(out, n) == R"({"msg":"he\"llo\\x"})");
 }
 
+TEST_CASE("v3 generic decode escapes control characters in strings", "[logcat][v3]")
+{
+  V3Segment seg;
+  init_segment(seg, "msg", {LogField::Type::STRING});
+
+  auto *entry = reinterpret_cast<LogEntryHeader *>(seg.storage + DATA_OFF);
+  char *w     = reinterpret_cast<char *>(entry) + sizeof(LogEntryHeader);
+
+  // Newline and tab take the short escapes; 0x01 has no short form and must use
+  // \u00XX. Emitted raw, any of the three would produce invalid JSON. (The
+  // \x01 escape is split from 'd' so the literal is the byte 0x01, not 0x1D.)
+  const char *msg  = "a\nb\tc\x01"
+                     "d";
+  int         slen = LogAccess::padded_strlen(msg);
+  LogAccess::marshal_str(w, msg, slen);
+  w                += slen;
+  entry->entry_len  = static_cast<uint32_t>(w - reinterpret_cast<char *>(entry));
+
+  char out[256];
+  int  n = log_entry_to_json(entry, seg.header(), out, sizeof(out));
+  REQUIRE(n > 0);
+  CHECK(std::string(out, n) == R"({"msg":"a\nb\tc\u0001d"})");
+}
+
 TEST_CASE("v3 generic decode rejects an unknown type code", "[logcat][v3]")
 {
   V3Segment seg;
