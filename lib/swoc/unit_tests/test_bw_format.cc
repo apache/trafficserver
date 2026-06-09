@@ -560,6 +560,19 @@ TEST_CASE("bwstring std formats", "[libswoc][bwprint]") {
   w.clear().print("{:s:s}", swoc::bwf::Errno(ECONNREFUSED));
   REQUIRE(w.view() == "ECONNREFUSED"sv);
 
+  // Direct guards for the codes that were missing from the tables (each one
+  // formatted as "Unknown" before this fix). They are platform-specific, so
+  // each only compiles where it is defined: ENOATTR on macOS/FreeBSD, EL2HLT
+  // on Linux.
+#ifdef ENOATTR
+  w.clear().print("{:s:s}", swoc::bwf::Errno(ENOATTR));
+  REQUIRE(w.view() == "ENOATTR"sv);
+#endif
+#ifdef EL2HLT
+  w.clear().print("{:s:s}", swoc::bwf::Errno(EL2HLT));
+  REQUIRE(w.view() == "EL2HLT"sv);
+#endif
+
   // The std::error_code formatter routes through the same per-platform table,
   // rendering "<name> [<value>]". Build the expectation from the macro so the
   // numeric part matches the running platform's numbering.
