@@ -24,6 +24,7 @@
 #include <cstring>
 #include <cerrno>
 #include <getopt.h>
+#include <limits.h>
 
 #include <sys/stat.h>
 
@@ -39,7 +40,8 @@
 #include <unordered_map> // cnDataMap
 #include <queue>         // vconnQ
 #include <string>        // std::string
-#include <fstream>       // ofstream
+#include <string_view>
+#include <fstream> // ofstream
 #include <memory>
 #include <algorithm>
 
@@ -316,6 +318,38 @@ static TSMutex serial_mutex;     ///< serial number mutex
 static std::unique_ptr<SslLRUList> ssl_list = nullptr;
 static std::string store_path;
 
+/** Maximum textual DNS name length without a root dot. */
+static constexpr std::string_view::size_type MAX_DNS_NAME_LEN = 253;
+/** Extension appended when a generated certificate is cached on disk. */
+static constexpr std::string_view CERT_FILENAME_EXTENSION = ".crt";
+/** Maximum SNI length that keeps the generated cache filename within @c NAME_MAX. */
+static constexpr std::string_view::size_type MAX_CERT_STORE_SERVERNAME_LEN =
+  std::min<std::string_view::size_type>(MAX_DNS_NAME_LEN, NAME_MAX - CERT_FILENAME_EXTENSION.size());
+
+/**
+ * Determine whether @a servername can safely key the certificate store.
+ *
+ * The certifier plugin uses the SNI both as a certificate subject name and as
+ * the base name for a generated @c .crt file under the configured store. This
+ * helper accepts the hostname-like names the plugin can store without path
+ * interpretation while rejecting empty, oversized, or separator-bearing inputs
+ * before they reach file APIs.
+ *
+ * @param[in] servername The SNI value from the TLS handshake.
+ * @return @c true if @a servername is suitable for certificate storage.
+ */
+static bool
+is_servername_storage_safe(std::string_view servername)
+{
+  if (servername.empty() || servername.size() > MAX_CERT_STORE_SERVERNAME_LEN) {
+    return false;
+  }
+
+  return std::all_of(servername.begin(), servername.end(), [](unsigned char c) {
+    return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '.' || c == '-' || c == '_';
+  });
+}
+
 /// Local helper function that generates a CSR based on common name
 static scoped_X509_REQ
 mkcsr(const char *cn)
@@ -555,8 +589,15 @@ cert_retriever(TSCont contp, TSEvent event, void *edata)
   SSL_CTX *ref_ctx       = nullptr;
 
   if (servername == nullptr) {
-    TSError("[%s] cert_retriever(): No SNI available.", PLUGIN_NAME);
-    return TS_ERROR;
+    TSDebug(PLUGIN_NAME, "%s: no SNI available; using default certificate", __func__);
+    TSVConnReenable(ssl_vc);
+    return TS_SUCCESS;
+  }
+
+  if (!is_servername_storage_safe(servername)) {
+    TSDebug(PLUGIN_NAME, "%s: rejecting unsafe SNI for certificate storage", __func__);
+    TSVConnReenable(ssl_vc);
+    return TS_SUCCESS;
   }
   bool wontdo = false;
   ref_ctx     = ssl_list->lookup_and_create(servername, edata, wontdo);
