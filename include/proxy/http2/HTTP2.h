@@ -373,6 +373,18 @@ bool http2_parse_goaway(IOVec, Http2Goaway &);
 
 bool http2_parse_window_update(IOVec, uint32_t &);
 
+// Returns true if appending `payload_length` more bytes to an
+// existing CONTINUATION header-block accumulator of `current_length` would
+// overflow a uint32_t. Used by Http2ConnectionState::rcv_continuation_frame()
+// to reject crafted CONTINUATION chains whose total payload would wrap the
+// 32-bit accumulator and pair an undersized ats_realloc() with a memcpy at
+// the pre-wrap offset.
+static inline bool
+http2_continuation_length_would_overflow(uint32_t current_length, uint32_t payload_length)
+{
+  return current_length > UINT32_MAX - payload_length;
+}
+
 Http2ErrorCode http2_decode_header_blocks(HTTPHdr *, const uint8_t *, const uint32_t, uint32_t *, HpackHandle &, bool, uint32_t,
                                           uint32_t, bool is_outbound = false);
 

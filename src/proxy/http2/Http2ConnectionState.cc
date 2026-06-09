@@ -1093,8 +1093,12 @@ Http2ConnectionState::rcv_continuation_frame(const Http2Frame &frame)
                       "reset too frequent CONTINUATION frames");
   }
 
-  uint32_t header_blocks_offset  = stream->header_blocks_length;
-  stream->header_blocks_length  += payload_length;
+  uint32_t header_blocks_offset = stream->header_blocks_length;
+  if (http2_continuation_length_would_overflow(stream->header_blocks_length, payload_length)) {
+    return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_ENHANCE_YOUR_CALM,
+                      "header blocks length overflow");
+  }
+  stream->header_blocks_length += payload_length;
 
   // ATS advertises SETTINGS_MAX_HEADER_LIST_SIZE as a limit of total header blocks length. (Details in [RFC 7560] 10.5.1.)
   // Make it double to relax the limit in cases of 1) HPACK is used naively, or 2) Huffman Encoding generates large header blocks.
