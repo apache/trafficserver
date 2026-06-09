@@ -47,6 +47,7 @@ autest:
     copy_to_config_dir:
       - 'files/bundle_headers.cript'
       - 'files/direct_headers.cript'
+      - 'files/server_bundle_headers.cript'
 
     records_config:
       proxy.config.diags.debug.enabled: 1
@@ -64,6 +65,11 @@ autest:
         plugins:
           - name: "direct_headers.cript"
             args: []
+      - from: "http://server.example.com/"
+        to: "http://backend.ex:{SERVER_HTTP_PORT}/"
+        plugins:
+          - name: "server_bundle_headers.cript"
+            args: []
 
     log_validation:
       diags_log:
@@ -71,7 +77,7 @@ autest:
           - expression: "FATAL"
             description: "No fatal cript or plugin errors"
           - expression: "Failed to load plugin"
-            description: "bundle_headers.cript and direct_headers.cript should compile and load"
+            description: "all cripts under files/ should compile and load"
 
 # Sessions are independent connections; Proxy Verifier dispatches them in
 # parallel by default, which is what we want for exposing any latent
@@ -260,3 +266,60 @@ sessions:
         fields:
         - [ X-Direct-Resp-UUID,     { as: present } ]
         - [ X-Direct-Resp-Path,     { value: "zeta/eta", as: equal } ]
+
+# server_bundle_headers.cript: Bundle::Headers on the server hooks. rm_headers
+# drops the listed headers (server strips must not be no-ops),
+# set_headers adds X-Cript-Set-* and overwrites X-Cript-Over-*, and X-Cript-Keep-*
+# must pass through untouched.
+
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /theta
+      headers:
+        fields:
+        - [ Host, server.example.com ]
+        - [ uuid, sess-server-1 ]
+        # rm_headers("Server::Request") must drop these before they reach origin.
+        - [ Authorization, "Bearer should-be-removed" ]
+        - [ Cookie, "sid=should-be-removed" ]
+        - [ X-Cript-Strip-SReq, "should-be-removed" ]
+        # set_headers("Server::Request") must overwrite this value.
+        - [ X-Cript-Over-SReq, "original-sreq" ]
+        # Not touched by the cript — must reach origin unchanged.
+        - [ X-Cript-Keep-SReq, "should-survive" ]
+
+    proxy-request:
+      headers:
+        fields:
+        - [ Authorization,      { as: absent } ]
+        - [ Cookie,             { as: absent } ]
+        - [ X-Cript-Strip-SReq, { as: absent } ]
+        - [ X-Cript-Set-SReq,   { value: "set-sreq",       as: equal } ]
+        - [ X-Cript-Over-SReq,  { value: "over-sreq",      as: equal } ]
+        - [ X-Cript-Keep-SReq,  { value: "should-survive", as: equal } ]
+
+    server-response:
+      status: 200
+      reason: "OK"
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+        # rm_headers("Server::Response") must drop these before the client sees them.
+        - [ Set-Cookie, "sid=should-be-removed" ]
+        - [ X-Cript-Strip-SResp, "should-be-removed" ]
+        # set_headers("Server::Response") must overwrite this value.
+        - [ X-Cript-Over-SResp, "original-sresp" ]
+        # Not touched by the cript — must reach the client unchanged.
+        - [ X-Cript-Keep-SResp, "should-survive" ]
+
+    proxy-response:
+      headers:
+        fields:
+        - [ Set-Cookie,          { as: absent } ]
+        - [ X-Cript-Strip-SResp, { as: absent } ]
+        - [ X-Cript-Set-SResp,   { value: "set-sresp",      as: equal } ]
+        - [ X-Cript-Over-SResp,  { value: "over-sresp",     as: equal } ]
+        - [ X-Cript-Keep-SResp,  { value: "should-survive", as: equal } ]
+
