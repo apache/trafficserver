@@ -118,6 +118,10 @@ private:
   std::string formatValue(double value, StatType type) const;
   std::string getCurrentTimestamp() const;
 
+  /// Escape a string for safe embedding in a JSON string literal
+  /// (quotes, backslashes, newlines and other control characters).
+  static std::string jsonEscape(const std::string &s);
+
   OutputFormat             _format;
   FILE                    *_output;
   std::vector<std::string> _stat_keys;

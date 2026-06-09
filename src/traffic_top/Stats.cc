@@ -43,6 +43,12 @@ namespace
   constexpr int RPC_TIMEOUT_MS  = 1000; // Timeout for RPC calls in milliseconds
   constexpr int RPC_RETRY_COUNT = 10;   // Number of retries for RPC calls
 
+  // Scaling factor applied to the raw "total_time" counter
+  // (proxy.process.http.total_transactions_time) before it is displayed.
+  // Carried over verbatim from the original traffic_top (stats.h) to preserve
+  // identical output; the raw counter is in ink_hrtime units.
+  constexpr double TOTAL_TIME_SCALE = 10000000.0;
+
   /// Convenience class for creating metric lookup requests
   struct MetricParam : shared::rpc::RecordLookupRequest::Params {
     explicit MetricParam(std::string name)
@@ -616,9 +622,9 @@ Stats::getStat(const std::string &key, double &value, std::string &prettyName, S
       value = getValue(item.name, _stats.get());
     }
 
-    // Special handling for total_time (convert from nanoseconds)
+    // Special handling for total_time: scale the raw hrtime counter for display.
     if (key == "total_time") {
-      value = value / 10000000;
+      value = value / TOTAL_TIME_SCALE;
     }
 
     // Calculate rate if needed
@@ -626,7 +632,7 @@ Stats::getStat(const std::string &key, double &value, std::string &prettyName, S
         _old_stats != nullptr && !_absolute) {
       double old = getValue(item.name, _old_stats.get());
       if (key == "total_time") {
-        old = old / 10000000;
+        old = old / TOTAL_TIME_SCALE;
       }
       value = _time_diff > 0 ? (value - old) / _time_diff : 0;
     }

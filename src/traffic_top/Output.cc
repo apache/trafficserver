@@ -227,11 +227,55 @@ Output::printJsonStats(Stats &stats)
   fflush(_output);
 }
 
+std::string
+Output::jsonEscape(const std::string &s)
+{
+  std::string out;
+  out.reserve(s.size() + 8);
+  for (unsigned char c : s) {
+    switch (c) {
+    case '"':
+      out += "\\\"";
+      break;
+    case '\\':
+      out += "\\\\";
+      break;
+    case '\b':
+      out += "\\b";
+      break;
+    case '\f':
+      out += "\\f";
+      break;
+    case '\n':
+      out += "\\n";
+      break;
+    case '\r':
+      out += "\\r";
+      break;
+    case '\t':
+      out += "\\t";
+      break;
+    default:
+      if (c < 0x20) {
+        // Other control characters must be emitted as \u00XX.
+        char buf[7];
+        snprintf(buf, sizeof(buf), "\\u%04x", c);
+        out += buf;
+      } else {
+        out += static_cast<char>(c);
+      }
+      break;
+    }
+  }
+  return out;
+}
+
 void
 Output::printError(const std::string &message)
 {
   if (_format == OutputFormat::Json) {
-    fprintf(_output, "{\"error\":\"%s\",\"timestamp\":\"%s\"}\n", message.c_str(), getCurrentTimestamp().c_str());
+    fprintf(_output, "{\"error\":\"%s\",\"timestamp\":\"%s\"}\n", jsonEscape(message).c_str(),
+            jsonEscape(getCurrentTimestamp()).c_str());
   } else {
     fprintf(stderr, "Error: %s\n", message.c_str());
   }
