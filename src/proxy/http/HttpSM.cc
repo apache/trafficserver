@@ -5120,7 +5120,7 @@ HttpSM::do_cache_lookup_and_read()
 }
 
 void
-HttpSM::do_cache_delete_all_alts(Continuation *cont)
+HttpSM::do_cache_delete_all_alts()
 {
   // Do not delete a non-existent object.
   ink_assert(t_state.cache_info.object_read);
@@ -5130,9 +5130,7 @@ HttpSM::do_cache_delete_all_alts(Continuation *cont)
   HttpCacheKey key;
   Cache::generate_key(&key, t_state.cache_info.lookup_url, t_state.txn_conf->cache_ignore_query,
                       t_state.txn_conf->cache_generation_number);
-  pending_action = cacheProcessor.remove(cont, &key);
-
-  return;
+  cacheProcessor.remove(nullptr, &key);
 }
 
 inline void
@@ -8284,7 +8282,7 @@ HttpSM::set_next_state()
     // Nuke all the alternates since this is mostly likely
     //   the result of a delete method
     cache_sm.end_both();
-    do_cache_delete_all_alts(nullptr);
+    do_cache_delete_all_alts();
 
     release_server_session();
     t_state.api_next_action = HttpTransact::SM_ACTION_API_SEND_RESPONSE_HDR;
