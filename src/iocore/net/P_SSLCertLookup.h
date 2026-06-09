@@ -26,10 +26,10 @@
 #include "iocore/eventsystem/ConfigProcessor.h"
 #include "iocore/net/SSLTypes.h"
 #include "records/RecCore.h"
+#include <shared_mutex>
 
 #include <set>
 #include <openssl/ssl.h>
-#include <mutex>
 #include <unordered_map>
 #include <utility>
 
@@ -94,8 +94,8 @@ using shared_ssl_ticket_key_block = std::shared_ptr<ssl_ticket_key_block>;
 */
 struct SSLCertContext {
 private:
-  mutable std::mutex ctx_mutex;
-  shared_SSL_CTX     ctx;
+  mutable std::shared_mutex ctx_mutex;
+  shared_SSL_CTX            ctx;
 
 public:
   SSLCertContext() : ctx_mutex(), ctx(nullptr), opt(SSLCertContextOption::OPT_NONE), userconfig(nullptr), keyblock(nullptr) {}

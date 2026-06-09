@@ -33,6 +33,7 @@
 
 #include "P_SSLUtils.h"
 
+#include <mutex>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -237,7 +238,7 @@ SSLCertContext::SSLCertContext(SSLCertContext const &other)
   userconfig = other.userconfig;
   keyblock   = other.keyblock;
   ctx_type   = other.ctx_type;
-  std::lock_guard<std::mutex> lock(other.ctx_mutex);
+  std::shared_lock lock(other.ctx_mutex);
   ctx = other.ctx;
 }
 
@@ -249,7 +250,7 @@ SSLCertContext::operator=(SSLCertContext const &other)
     this->userconfig = other.userconfig;
     this->keyblock   = other.keyblock;
     this->ctx_type   = other.ctx_type;
-    std::lock_guard<std::mutex> lock(other.ctx_mutex);
+    std::shared_lock lock(other.ctx_mutex);
     this->ctx = other.ctx;
   }
   return *this;
@@ -258,14 +259,14 @@ SSLCertContext::operator=(SSLCertContext const &other)
 shared_SSL_CTX
 SSLCertContext::getCtx()
 {
-  std::lock_guard<std::mutex> lock(ctx_mutex);
+  std::shared_lock lock(ctx_mutex);
   return ctx;
 }
 
 void
 SSLCertContext::setCtx(shared_SSL_CTX sc)
 {
-  std::lock_guard<std::mutex> lock(ctx_mutex);
+  std::lock_guard lock(ctx_mutex);
   ctx = std::move(sc);
 }
 
