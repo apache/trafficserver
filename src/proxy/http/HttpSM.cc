@@ -3005,11 +3005,23 @@ HttpSM::setup_tunnel_handler_trailer(HttpTunnelProducer *p)
 
   SMDbg(dbg_ctl_http, "Wait for the trailing header");
 
+  ProxyTransaction *ua_txn = _ua.get_txn();
+  if (!ua_txn) {
+    tunnel.local_finish_all(p);
+    return;
+  }
+
+  if (!ua_txn->can_send_h2_trailer()) {
+    SMDbg(dbg_ctl_http, "User agent transaction cannot send HTTP/2 trailers; dropping the origin trailer");
+    tunnel.local_finish_all(p);
+    return;
+  }
+  // Mark this before the body tunnel completes so HTTP/2 does not send END_STREAM
+  // on the final DATA frame.
+  ua_txn->set_expect_send_trailer();
+
   // Swap out the default hander to set up the new tunnel for the trailer exchange.
   HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::tunnel_handler_trailer);
-  if (_ua.get_txn()) {
-    _ua.get_txn()->set_expect_send_trailer();
-  }
   tunnel.local_finish_all(p);
 }
 
@@ -3032,27 +3044,45 @@ HttpSM::tunnel_handler_trailer(int event, void *data)
   // Set up a new tunnel to transport the trailing header to the UA
   HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::tunnel_handler);
 
+  ProxyTransaction *ua_txn        = _ua.get_txn();
+  HttpVCTableEntry *ua_entry      = _ua.get_entry();
+  IOBufferReader   *server_reader = server_txn ? server_txn->get_remote_reader() : nullptr;
+  if (!ua_txn || !ua_entry || !ua_entry->vc || !server_reader || !server_entry || !server_entry->vc) {
+    if (server_reader) {
+      server_reader->consume(server_reader->read_avail());
+    }
+    SMDbg(dbg_ctl_http, "Cannot set up trailer tunnel; dropping the origin trailer");
+    return tunnel_handler(event, data);
+  }
+
+  if (!ua_txn->expect_send_trailer()) {
+    if (!ua_txn->can_send_h2_trailer()) {
+      server_reader->consume(server_reader->read_avail());
+      SMDbg(dbg_ctl_http, "User agent transaction cannot send HTTP/2 trailers; dropping the origin trailer");
+      return tunnel_handler(event, data);
+    }
+    ua_txn->set_expect_send_trailer();
+  }
+
   MIOBuffer      *trailer_buffer = new_MIOBuffer(HTTP_HEADER_BUFFER_SIZE_INDEX);
   IOBufferReader *buf_start      = trailer_buffer->alloc_reader();
 
   size_t nbytes      = INT64_MAX;
-  int    start_bytes = trailer_buffer->write(server_txn->get_remote_reader(), server_txn->get_remote_reader()->read_avail());
-  server_txn->get_remote_reader()->consume(start_bytes);
+  int    start_bytes = trailer_buffer->write(server_reader, server_reader->read_avail());
+  server_reader->consume(start_bytes);
   // The server has already sent all it has
   if (server_txn->is_read_closed()) {
     nbytes = start_bytes;
   }
-  // Signal the _ua.get_txn() to get ready for a trailer
-  _ua.get_txn()->set_expect_send_trailer();
   tunnel.deallocate_buffers();
   tunnel.reset();
   HttpTunnelProducer *p = tunnel.add_producer(server_entry->vc, nbytes, buf_start, &HttpSM::tunnel_handler_trailer_server,
                                               HttpTunnelType_t::HTTP_SERVER, "http server trailer");
-  tunnel.add_consumer(_ua.get_entry()->vc, server_entry->vc, &HttpSM::tunnel_handler_trailer_ua, HttpTunnelType_t::HTTP_CLIENT,
+  tunnel.add_consumer(ua_entry->vc, server_entry->vc, &HttpSM::tunnel_handler_trailer_ua, HttpTunnelType_t::HTTP_CLIENT,
                       "user agent trailer");
 
-  _ua.get_entry()->in_tunnel = true;
-  server_entry->in_tunnel    = true;
+  ua_entry->in_tunnel     = true;
+  server_entry->in_tunnel = true;
 
   tunnel.tunnel_run(p);
 
@@ -3725,7 +3755,9 @@ HttpSM::tunnel_handler_ua(int event, HttpTunnelConsumer *c)
     break;
   }
 
-  if (event == VC_EVENT_WRITE_COMPLETE && server_txn && server_txn->expect_receive_trailer()) {
+  ProxyTransaction *ua_txn = _ua.get_txn();
+  if (event == VC_EVENT_WRITE_COMPLETE && server_txn && server_txn->expect_receive_trailer() && ua_txn &&
+      ua_txn->expect_send_trailer()) {
     // Don't shutdown if we are still expecting a trailer
   } else if (close_connection) {
     // If the client could be pipelining or is doing a POST, we need to

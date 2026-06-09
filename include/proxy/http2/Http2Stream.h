@@ -77,6 +77,7 @@ public:
   void do_io_close(int lerrno = -1) override;
 
   bool expect_send_trailer() const override;
+  bool can_send_h2_trailer() const override;
   void set_expect_send_trailer() override;
   bool expect_receive_trailer() const override;
   void set_expect_receive_trailer() override;
