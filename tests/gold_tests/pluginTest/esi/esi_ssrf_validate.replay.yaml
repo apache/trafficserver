@@ -1,0 +1,164 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+#
+# Exercises the SSRF validator added to the ESI plugin. Each top-level
+# document below contains an esi:include whose src= is either rejected by
+# the validator (cloud-metadata IP literal, loopback IP literal, bad
+# scheme, attacker-controlled variable expansion) or permitted (the
+# upstream host configured in remap.config). On rejection, the include
+# tag is left as-is in the served body; on acceptance, ATS fetches the
+# snippet and inlines it.
+#
+
+sessions:
+
+- transactions:
+
+  # 1. Reject: cloud-metadata IPv4 literal (link-local 169.254/16).
+  - client-request:
+      method: GET
+      url: /metadata.php
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+
+    server-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Esi, "1" ]
+        - [ Content-Type, "text/html" ]
+        - [ Connection, "close" ]
+        - [ Transfer-Encoding, "chunked" ]
+      content:
+        encoding: plain
+        data: "<body><esi:include src=\"http://169.254.169.254/latest/meta-data/iam/security-credentials/\"/></body>\n"
+
+  # 2. Reject: loopback IPv4 literal.
+  - client-request:
+      method: GET
+      url: /loopback.php
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+
+    server-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Esi, "1" ]
+        - [ Content-Type, "text/html" ]
+        - [ Connection, "close" ]
+        - [ Transfer-Encoding, "chunked" ]
+      content:
+        encoding: plain
+        data: "<body><esi:include src=\"http://127.0.0.1/admin\"/></body>\n"
+
+  # 3. Reject: non-http(s) scheme.
+  - client-request:
+      method: GET
+      url: /badscheme.php
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+
+    server-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Esi, "1" ]
+        - [ Content-Type, "text/html" ]
+        - [ Connection, "close" ]
+        - [ Transfer-Encoding, "chunked" ]
+      content:
+        encoding: plain
+        data: "<body><esi:include src=\"gopher://internal.svc/x\"/></body>\n"
+
+  # 4. Reject: attacker-influenced variable expansion. The upstream
+  #    template uses $(HTTP_HEADER{x-esi-target}) to compose the host,
+  #    and the client supplies a private-IP value in that header.
+  #    Validation runs post-expansion so the resulting URL is rejected.
+  #
+  #    The header name is lowercase on purpose: ESI's HTTP_HEADER{...}
+  #    lookup is case-sensitive (see plugins/esi/lib/Variables.cc), and
+  #    proxy-verifier / ATS may normalize wire header names. Using a
+  #    name that is already canonical removes the ambiguity.
+  - client-request:
+      method: GET
+      url: /varinject.php
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ x-esi-target, "10.0.0.5" ]
+
+    server-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Esi, "1" ]
+        - [ Content-Type, "text/html" ]
+        - [ Connection, "close" ]
+        - [ Transfer-Encoding, "chunked" ]
+      content:
+        encoding: plain
+        data: "<body><esi:include src=\"http://$(HTTP_HEADER{x-esi-target})/secret\"/></body>\n"
+
+  # 5. Accept: ordinary include to the upstream host configured via
+  #    remap.config. The snippet must be fetched and inlined.
+  - client-request:
+      method: GET
+      url: /allowed.php
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+
+    server-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Esi, "1" ]
+        - [ Content-Type, "text/html" ]
+        - [ Connection, "close" ]
+        - [ Transfer-Encoding, "chunked" ]
+      content:
+        encoding: plain
+        data: "<body>before:<esi:include src=\"http://www.example.com/snippet.html\"/>:after</body>\n"
+
+  # 6. The fetched snippet for case 5.
+  - client-request:
+      method: GET
+      url: /snippet.html
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+
+    server-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Type, "text/html" ]
+        - [ Connection, "close" ]
+        - [ Transfer-Encoding, "chunked" ]
+      content:
+        encoding: plain
+        data: "SNIPPET-OK"
