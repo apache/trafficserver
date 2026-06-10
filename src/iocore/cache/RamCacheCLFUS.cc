@@ -24,6 +24,7 @@
 // Clocked Least Frequently Used by Size (CLFUS) replacement policy
 // See https://cwiki.apache.org/confluence/display/TS/RamCache
 
+#include "RamCacheCLFUS.h"
 #include "P_RamCache.h"
 #include "P_CacheInternal.h"
 #include "StripeSM.h"
@@ -64,67 +65,6 @@ DbgCtl dbg_ctl_ram_cache_compare{"ram_cache_compare"};
 } // end anonymous namespace
 
 #endif
-
-struct RamCacheCLFUSEntry {
-  CryptoHash key;
-  uint64_t   auxkey;
-  uint64_t   hits;
-  uint32_t   size; // memory used including padding in buffer
-  uint32_t   len;  // actual data length
-  uint32_t   compressed_len;
-  union {
-    struct {
-      uint32_t compressed     : 3; // compression type
-      uint32_t incompressible : 1;
-      uint32_t lru            : 1;
-      uint32_t copy           : 1; // copy-in-copy-out
-    } flag_bits;
-    uint32_t flags;
-  };
-  LINK(RamCacheCLFUSEntry, lru_link);
-  LINK(RamCacheCLFUSEntry, hash_link);
-  Ptr<IOBufferData> data;
-};
-
-class RamCacheCLFUS : public RamCache
-{
-public:
-  RamCacheCLFUS() {}
-
-  // returns 1 on found/stored, 0 on not found/stored, if provided auxkey1 and auxkey2 must match
-  int     get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint64_t auxkey = 0) override;
-  int     put(CryptoHash *key, IOBufferData *data, uint32_t len, bool copy = false, uint64_t auxkey = 0) override;
-  int     fixup(const CryptoHash *key, uint64_t old_auxkey, uint64_t new_auxkey) override;
-  int64_t size() const override;
-
-  void init(int64_t max_bytes, StripeSM *stripe) override;
-
-  void compress_entries(EThread *thread, int do_at_most = INT_MAX);
-
-  // TODO move it to private.
-  StripeSM *stripe = nullptr; // for stats
-private:
-  int64_t _max_bytes = 0;
-  int64_t _bytes     = 0;
-  int64_t _objects   = 0;
-
-  double  _average_value                        = 0;
-  int64_t _history                              = 0;
-  int     _ibuckets                             = 0;
-  int     _nbuckets                             = 0;
-  DList(RamCacheCLFUSEntry, hash_link) *_bucket = nullptr;
-  Que(RamCacheCLFUSEntry, lru_link) _lru[2];
-  uint16_t           *_seen        = nullptr;
-  int                 _ncompressed = 0;
-  RamCacheCLFUSEntry *_compressed  = nullptr; // first uncompressed lru[0] entry
-
-  void                _resize_hashtable();
-  void                _victimize(RamCacheCLFUSEntry *e);
-  void                _move_compressed(RamCacheCLFUSEntry *e);
-  RamCacheCLFUSEntry *_destroy(RamCacheCLFUSEntry *e);
-  void                _requeue_victims(Que(RamCacheCLFUSEntry, lru_link) & victims);
-  void                _tick(); // move CLOCK on history
-};
 
 int64_t
 RamCacheCLFUS::size() const
