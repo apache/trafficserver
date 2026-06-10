@@ -96,6 +96,7 @@ if(BUILD_TESTING)
   add_cache_test(Update_Header unit_tests/test_Update_header.cc)
   add_cache_test(CacheStripe unit_tests/test_Stripe.cc)
   add_cache_test(CacheAggregateWriteBuffer unit_tests/test_AggregateWriteBuffer.cc)
+  add_cache_test(RamCacheCLFUS unit_tests/test_RamCacheCLFUS.cc)
 
   # Unit Tests without unit_tests/main.cc
   add_executable(test_ConfigVolumes unit_tests/test_ConfigVolumes.cc)
