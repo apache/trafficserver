@@ -341,11 +341,7 @@ sessions:
         <<: *origin_response_should_not_be_used
 
         proxy-response:
-          status: 200
-          headers:
-            fields:
-              - [Content-Length, { value: 0, as: equal }]
-              - [Cache-Control, { value: max-age=3, as: equal }]
+          status: 500
 
       - client-request:
           delay: 2s
@@ -390,11 +386,7 @@ sessions:
         <<: *origin_response_should_not_be_used
 
         proxy-response:
-          status: 404
-          headers:
-            fields:
-              - [Content-Length, { value: 0, as: equal }]
-              - [Cache-Control, { value: max-age=3, as: equal }]
+          status: 500
 
   - protocol:
       stack: https
