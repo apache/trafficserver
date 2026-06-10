@@ -47,6 +47,7 @@
 #include "EsiProcessor.h"
 #include "HttpDataFetcher.h"
 #include "HandlerManager.h"
+#include "IncludeUrlValidator.h"
 #include "serverIntercept.h"
 #include "Stats.h"
 #include "HttpDataFetcherImpl.h"
@@ -60,14 +61,29 @@ using response_codes_t = std::unordered_set<int>;
 #include "http_utils.h"
 
 struct OptionInfo {
-  bool             packed_node_support{false};
-  bool             private_response{false};
-  bool             disable_gzip_output{false};
-  bool             first_byte_flush{false};
-  unsigned         max_doc_size{1024 * 1024};
-  unsigned         max_inclusion_depth{3};
-  response_codes_t allowed_response_codes{200, 304};
+  bool                        packed_node_support{false};
+  bool                        private_response{false};
+  bool                        disable_gzip_output{false};
+  bool                        first_byte_flush{false};
+  bool                        allow_private_include_hosts{false};
+  unsigned                    max_doc_size{1024 * 1024};
+  unsigned                    max_inclusion_depth{3};
+  response_codes_t            allowed_response_codes{200, 304};
+  EsiLib::IncludeUrlValidator url_validator;
 };
+
+// OptionInfo is allocated with TSRalloc + placement-new, so TSfree alone will
+// not run its destructor. It owns non-trivially destructible members (e.g. the
+// PCRE2-backed ts::Regex state inside url_validator), so every free path must
+// destroy first.
+static void
+freeOptionInfo(OptionInfo *pOptionInfo)
+{
+  if (pOptionInfo != nullptr) {
+    pOptionInfo->~OptionInfo();
+    TSfree(pOptionInfo);
+  }
+}
 
 static HandlerManager        *gHandlerManager = nullptr;
 static Utils::HeaderValueList gAllowlistCookies;
@@ -254,7 +270,8 @@ ContData::init()
       esi_vars = new Variables(contp, gAllowlistCookies);
     }
 
-    esi_proc = new EsiProcessor(contp, *data_fetcher, *esi_vars, *gHandlerManager, option_info->max_doc_size, request_url);
+    esi_proc = new EsiProcessor(contp, *data_fetcher, *esi_vars, *gHandlerManager, option_info->max_doc_size, request_url,
+                                &option_info->url_validator);
 
     esi_gzip   = new EsiGzip();
     esi_gunzip = new EsiGunzip();
@@ -1660,19 +1677,37 @@ esiPluginInit(int argc, const char *argv[], OptionInfo *pOptionInfo)
   if (argc > 1) {
     int                        c;
     static const struct option longopts[] = {
-      {const_cast<char *>("packed-node-support"),    no_argument,       nullptr, 'n'},
-      {const_cast<char *>("private-response"),       no_argument,       nullptr, 'p'},
-      {const_cast<char *>("disable-gzip-output"),    no_argument,       nullptr, 'z'},
-      {const_cast<char *>("first-byte-flush"),       no_argument,       nullptr, 'b'},
-      {const_cast<char *>("handler-filename"),       required_argument, nullptr, 'f'},
-      {const_cast<char *>("max-doc-size"),           required_argument, nullptr, 'd'},
-      {const_cast<char *>("max-inclusion-depth"),    required_argument, nullptr, 'i'},
-      {const_cast<char *>("allowed-response-codes"), required_argument, nullptr, 'r'},
-      {nullptr,                                      0,                 nullptr, 0  },
+      {const_cast<char *>("packed-node-support"),         no_argument,       nullptr, 'n'},
+      {const_cast<char *>("private-response"),            no_argument,       nullptr, 'p'},
+      {const_cast<char *>("disable-gzip-output"),         no_argument,       nullptr, 'z'},
+      {const_cast<char *>("first-byte-flush"),            no_argument,       nullptr, 'b'},
+      {const_cast<char *>("handler-filename"),            required_argument, nullptr, 'f'},
+      {const_cast<char *>("max-doc-size"),                required_argument, nullptr, 'd'},
+      {const_cast<char *>("max-inclusion-depth"),         required_argument, nullptr, 'i'},
+      {const_cast<char *>("allowed-response-codes"),      required_argument, nullptr, 'r'},
+      {const_cast<char *>("include-host-allow"),          required_argument, nullptr, 'H'},
+      {const_cast<char *>("allow-private-include-hosts"), no_argument,       nullptr, 'P'},
+      {nullptr,                                           0,                 nullptr, 0  },
     };
 
+    // Reset getopt's global parsing state. esiPluginInit() can run more than
+    // once per process (e.g. one TSRemapNewInstance per remap rule); without
+    // this, leftover state from a prior call makes getopt_long() skip or
+    // mis-parse options. Mirrors the reset ATS performs before plugin init
+    // in src/proxy/Plugin.cc.
+#if (!defined(kfreebsd) && defined(freebsd)) || defined(darwin)
+    optreset = 1;
+#endif
+#if defined(__GLIBC__)
+    optind = 0;
+#else
+    optind = 1;
+#endif
+    opterr = 0;
+    optarg = nullptr;
+
     int longindex = 0;
-    while ((c = getopt_long(argc, const_cast<char *const *>(argv), "npzbf:d:i:r:", longopts, &longindex)) != -1) {
+    while ((c = getopt_long(argc, const_cast<char *const *>(argv), "npzbf:d:i:r:H:P", longopts, &longindex)) != -1) {
       switch (c) {
       case 'n':
         pOptionInfo->packed_node_support = true;
@@ -1754,6 +1789,23 @@ esiPluginInit(int argc, const char *argv[], OptionInfo *pOptionInfo)
         }
         break;
       }
+      case 'H': {
+        // The host allowlist is a security control; if the operator
+        // intended one but typo'd the regex, do not silently fall back
+        // to "no allowlist". TSEmergency exits the process, but return
+        // -1 makes the fail-closed contract explicit and survives any
+        // future change to that helper.
+        if (!pOptionInfo->url_validator.setHostAllowRegex(optarg)) {
+          TSEmergency("[esi][%s] include-host-allow regex (%s) failed to compile", __FUNCTION__, optarg);
+          return -1;
+        }
+        break;
+      }
+      case 'P': {
+        pOptionInfo->allow_private_include_hosts = true;
+        pOptionInfo->url_validator.setAllowPrivateHosts(true);
+        break;
+      }
       default:
         TSEmergency("[esi][%s] bad option", __FUNCTION__);
         return -1;
@@ -1773,9 +1825,10 @@ esiPluginInit(int argc, const char *argv[], OptionInfo *pOptionInfo)
   Dbg(dbg_ctl_local,
       "[%s] Plugin started, "
       "packed-node-support: %d, private-response: %d, disable-gzip-output: %d, first-byte-flush: %d, max-doc-size %u, "
-      "max-inclusion-depth %u, allowed-response-codes: [%s]",
+      "max-inclusion-depth %u, allowed-response-codes: [%s], allow-private-include-hosts: %d",
       __FUNCTION__, pOptionInfo->packed_node_support, pOptionInfo->private_response, pOptionInfo->disable_gzip_output,
-      pOptionInfo->first_byte_flush, pOptionInfo->max_doc_size, pOptionInfo->max_inclusion_depth, response_codes_str.c_str());
+      pOptionInfo->first_byte_flush, pOptionInfo->max_doc_size, pOptionInfo->max_inclusion_depth, response_codes_str.c_str(),
+      pOptionInfo->allow_private_include_hosts);
 
   return 0;
 }
@@ -1799,14 +1852,14 @@ TSPluginInit(int argc, const char *argv[])
     return;
   }
   if (esiPluginInit(argc, argv, pOptionInfo) != 0) {
-    TSfree(pOptionInfo);
+    freeOptionInfo(pOptionInfo);
     return;
   }
 
   TSCont global_contp = TSContCreate(globalHookHandler, nullptr);
   if (!global_contp) {
     TSError("[esi][%s] Could not create global continuation", __FUNCTION__);
-    TSfree(pOptionInfo);
+    freeOptionInfo(pOptionInfo);
     return;
   }
   TSContDataSet(global_contp, pOptionInfo);
@@ -1867,7 +1920,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
   }
   if (esiPluginInit(index, new_argv, pOptionInfo) != 0) {
     snprintf(errbuf, errbuf_size, "esiPluginInit fail!");
-    TSfree(pOptionInfo);
+    freeOptionInfo(pOptionInfo);
     return TS_ERROR;
   }
   TSCont contp = TSContCreate(globalHookHandler, nullptr);
@@ -1882,6 +1935,8 @@ TSRemapDeleteInstance(void *ih)
 {
   TSCont contp = static_cast<TSCont>(ih);
   if (contp != nullptr) {
+    auto *pOptionInfo = static_cast<OptionInfo *>(TSContDataGet(contp));
+    freeOptionInfo(pOptionInfo);
     TSContDestroy(contp);
   }
 }

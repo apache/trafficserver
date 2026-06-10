@@ -23,9 +23,10 @@ add_library(
   EsiProcessor.cc
   Expression.cc
   HandlerManager.cc
+  IncludeUrlValidator.cc
   Stats.cc
   Variables.cc
 )
-target_link_libraries(esicore PUBLIC esi-common fetcher libswoc::libswoc)
+target_link_libraries(esicore PUBLIC esi-common fetcher libswoc::libswoc ts::tsutil)
 target_include_directories(esicore PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 set_target_properties(esicore PROPERTIES POSITION_INDEPENDENT_CODE ON)
