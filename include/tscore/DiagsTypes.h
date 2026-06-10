@@ -274,4 +274,13 @@ private:
   {
     ink_mutex_release(&tag_table_lock);
   }
+
+  bool roll_diags_on_filesize(int mb_threshold);
+  bool roll_diags_on_interval(int interval);
+
+  bool roll_streams_on_filesize(int mb_threshold);
+  bool roll_streams_on_interval(int interval);
+
+  std::unique_ptr<BaseLogFile> remake_logfile(BaseLogFile const *logfile);
+  void                         swap_diagslog(BaseLogFile *new_diags);
 };
