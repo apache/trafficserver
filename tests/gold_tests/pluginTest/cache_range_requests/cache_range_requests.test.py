@@ -159,12 +159,35 @@ req_psd = {
 
 server.addResponse("sessionlog.json", req_psd, res_pselect)
 
+# long cache key test: URL path long enough to push cache key over 16384 bytes
+long_path = 'A' * 16400
+req_long_key = {
+    "headers":
+        "GET /{} HTTP/1.1\r\n".format(long_path) + "Host: www.longkey.com\r\n" + "Accept: */*\r\n" + "Range: bytes=0-17\r\n" +
+        "uuid: long_key\r\n" + "\r\n",
+    "timestamp": "1469733493.993",
+    "body": ""
+}
+
+res_long_key = {
+    "headers":
+        "HTTP/1.1 206 Partial Content\r\n" + "Accept-Ranges: bytes\r\n" + "Cache-Control: max-age=500\r\n" +
+        "Content-Range: bytes 0-17/{}\r\n".format(len(body)) + "Connection: close\r\n" + 'Etag: "longkey"\r\n' + "\r\n",
+    "timestamp": "1469733493.993",
+    "body": body
+}
+
+server.addResponse("sessionlog.json", req_long_key, res_long_key)
+
 # cache range requests plugin remap
 ts.Setup.CopyAs('reason.conf', Test.RunDirectory)
 ts.Disk.remap_config.AddLines(
     [
         'map http://www.example.com http://127.0.0.1:{}'.format(server.Variables.Port) +
         ' @plugin=header_rewrite.so @pparam={}/reason.conf @plugin=cache_range_requests.so'.format(Test.RunDirectory),
+
+        # long cache key: URL alone exceeds the 16384-byte stack buffer
+        'map http://www.longkey.com http://127.0.0.1:{}'.format(server.Variables.Port) + ' @plugin=cache_range_requests.so',
 
         # parent select cache key option
         'map http://parentselect http://127.0.0.1:{}'.format(server.Variables.Port) +
@@ -327,6 +350,19 @@ ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression(
     "X-ParentSelection-Key: .*-bytes=",
     "expected bytes in parent selection key",
+)
+tr.StillRunningAfter = ts
+tr.StillRunningAfter = server
+
+# 13 Test - range request where URL+range_value exceeds 16384 bytes (spill path)
+tr = Test.AddTestRun("long cache key spill")
+ps = tr.Processes.Default
+tr.MakeCurlCommand(curl_and_args + ' http://www.longkey.com/{} -r 0-17 -H "uuid: long_key"'.format(long_path), ts=ts)
+ps.ReturnCode = 0
+ps.Streams.stdout.Content = Testers.ContainsExpression("206", "expected 206 for long-key range request")
+ts.Disk.diags_log.Content = Testers.ExcludesExpression(
+    "disabling cache for this transaction",
+    "spill path must not disable cache",
 )
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
