@@ -568,7 +568,7 @@ static constexpr RecordElement RecordsConfig[] =
 
   {RECT_CONFIG, "proxy.config.http.request_line_max_size", RECD_INT, "65535", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.http.header_field_max_size", RECD_INT, "32768", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  {RECT_CONFIG, "proxy.config.http.header_field_max_size", RECD_INT, "32768", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-65535]", RECA_NULL}
   ,
   //        ############
   //        # security #

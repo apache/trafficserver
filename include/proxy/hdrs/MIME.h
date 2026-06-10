@@ -169,10 +169,10 @@ struct MIMEField {
   time_t   value_get_date() const;
   int      value_get_comma_list(StrList *list) const;
 
-  void name_set(HdrHeap *heap, MIMEHdrImpl *mh, std::string_view name);
+  bool name_set(HdrHeap *heap, MIMEHdrImpl *mh, std::string_view name);
   bool name_is_valid(uint32_t invalid_char_bits = is_control_BIT) const;
 
-  void value_set(HdrHeap *heap, MIMEHdrImpl *mh, std::string_view value);
+  bool value_set(HdrHeap *heap, MIMEHdrImpl *mh, std::string_view value);
   void value_set_int(HdrHeap *heap, MIMEHdrImpl *mh, int32_t value);
   void value_set_uint(HdrHeap *heap, MIMEHdrImpl *mh, uint32_t value);
   void value_set_int64(HdrHeap *heap, MIMEHdrImpl *mh, int64_t value);
@@ -763,7 +763,7 @@ MIMEField *mime_hdr_prepare_for_value_set(HdrHeap *heap, MIMEHdrImpl *mh, std::s
 
 void mime_field_destroy(MIMEHdrImpl *mh, MIMEField *field);
 
-void mime_field_name_set(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, int16_t name_wks_idx_or_neg1, std::string_view name,
+bool mime_field_name_set(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, int16_t name_wks_idx_or_neg1, std::string_view name,
                          bool must_copy_string);
 
 int32_t     mime_field_value_get_int(const MIMEField *field);
@@ -779,12 +779,12 @@ void mime_field_value_delete_comma_val(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField
 void mime_field_value_extend_comma_val(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, int idx, std::string_view new_piece);
 void mime_field_value_insert_comma_val(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, int idx, std::string_view new_piece);
 
-void mime_field_value_set(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, std::string_view value, bool must_copy_string);
+bool mime_field_value_set(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, std::string_view value, bool must_copy_string);
 void mime_field_value_set_int(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, int32_t value);
 void mime_field_value_set_uint(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, uint32_t value);
 void mime_field_value_set_int64(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, int64_t value);
 void mime_field_value_set_date(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, time_t value);
-void mime_field_name_value_set(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, int16_t name_wks_idx_or_neg1,
+bool mime_field_name_value_set(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, int16_t name_wks_idx_or_neg1,
                                std::string_view name, std::string_view value, int n_v_raw_printable, int n_v_raw_length,
                                bool must_copy_strings);
 
@@ -837,18 +837,18 @@ bool     mime_parse_integer(const char *&buf, const char *end, int *integer);
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline void
+inline bool
 MIMEField::name_set(HdrHeap *heap, MIMEHdrImpl *mh, std::string_view name)
 {
   const char *name_wks;
 
   if (hdrtoken_is_wks(name.data())) {
     int16_t name_wks_idx = hdrtoken_wks_to_index(name.data());
-    mime_field_name_set(heap, mh, this, name_wks_idx, name, true);
+    return mime_field_name_set(heap, mh, this, name_wks_idx, name, true);
   } else {
     int field_name_wks_idx = hdrtoken_tokenize(name.data(), static_cast<int>(name.length()), &name_wks);
-    mime_field_name_set(heap, mh, this, field_name_wks_idx,
-                        field_name_wks_idx == -1 ? name : std::string_view{name_wks, name.length()}, true);
+    return mime_field_name_set(heap, mh, this, field_name_wks_idx,
+                               field_name_wks_idx == -1 ? name : std::string_view{name_wks, name.length()}, true);
   }
 }
 
@@ -903,10 +903,10 @@ MIMEField::value_get_comma_list(StrList *list) const
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline void
+inline bool
 MIMEField::value_set(HdrHeap *heap, MIMEHdrImpl *mh, std::string_view value)
 {
-  mime_field_value_set(heap, mh, this, value, true);
+  return mime_field_value_set(heap, mh, this, value, true);
 }
 
 inline void
