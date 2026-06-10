@@ -41,7 +41,8 @@ meta:
         - [ Content-Length, 96 ]
 
 sessions:
-- protocol: [ { name: ip, version : 4} ]
+- protocol:
+    stack: http
   transactions:
 
   - all: { headers: { fields: [[ uuid, delain ]]}}
@@ -65,8 +66,6 @@ sessions:
       headers:
         fields:
         - [ Host, bad.ex ]
-    proxy-request:
-      <<: *base-req
     server-response:
       <<: *base-rsp
     proxy-response:
@@ -79,8 +78,6 @@ sessions:
       headers:
         fields:
         - [ Host, bad.ex ]
-    proxy-request:
-      <<: *base-req
     server-response:
       <<: *base-rsp
     proxy-response:
@@ -93,8 +90,6 @@ sessions:
       headers:
         fields:
         - [ Host, bad.ex ]
-    proxy-request:
-      <<: *base-req
     server-response:
       <<: *base-rsp
     proxy-response:

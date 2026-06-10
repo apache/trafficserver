@@ -2,13 +2,9 @@ meta:
   version: '1.0'
 sessions:
 - protocol:
-  - name: http
-    version: 2
-  - name: tls
-    sni: test_sni
-  - name: tcp
-  - name: ip
-    version: 4
+    stack: http2
+    tls:
+      sni: test_sni
   keep-connection-open: 2s
   transactions:
   - client-request:
@@ -31,12 +27,6 @@ sessions:
             data: client_test
             size: 11
 
-    proxy-request:
-      content:
-        encoding: plain
-        data: client_test
-        verify: {as: equal}
-
     server-response:
       headers:
         fields:
@@ -47,9 +37,3 @@ sessions:
         encoding: plain
         data: server_test
         size: 11
-
-    proxy-response:
-      content:
-        encoding: plain
-        data: server_test
-        verify: {as: equal}

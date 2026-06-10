@@ -24,13 +24,8 @@ meta:
 sessions:
   # Test 1: Incoming PROXY Protocol v1 on TCP port
   - protocol:
-      - name: http
-        version: 1
-      - name: proxy-protocol
-        version: 1
-      - name: tcp
-      - name: ip
-
+      stack: http
+      proxy-protocol: 1
     transactions:
       - client-request:
           method: GET
@@ -57,14 +52,8 @@ sessions:
 
   # Test 2: Incoming PROXY Protocol v1 on SSL port
   - protocol:
-      - name: http
-        version: 1
-      - name: tls
-      - name: proxy-protocol
-        version: 1
-      - name: tcp
-      - name: ip
-
+      stack: https
+      proxy-protocol: 1
     transactions:
       - client-request:
           method: GET
@@ -92,13 +81,8 @@ sessions:
 
   # Test 3: Incoming PROXY Protocol v2 on TCP port
   - protocol:
-      - name: http
-        version: 1
-      - name: proxy-protocol
-        version: 2
-      - name: tcp
-      - name: ip
-
+      stack: http
+      proxy-protocol: 2
     transactions:
       - client-request:
           method: GET
@@ -125,14 +109,8 @@ sessions:
 
   # Test 4: Incoming PROXY Protocol v2 on SSL port
   - protocol:
-      - name: http
-        version: 1
-      - name: tls
-      - name: proxy-protocol
-        version: 2
-      - name: tcp
-      - name: ip
-
+      stack: https
+      proxy-protocol: 2
     transactions:
       - client-request:
           method: GET
@@ -160,15 +138,11 @@ sessions:
   # Test 3: Incoming PROXY Protocol v1 on TCP port, with arbitrary source and
   # destination address in PROXY message
   - protocol:
-      - name: http
-        version: 1
-      - name: proxy-protocol
+      stack: http
+      proxy-protocol:
         version: 1
         src-addr: 198.51.100.1:51137
         dst-addr: 198.51.100.2:80
-      - name: tcp
-      - name: ip
-
     transactions:
       - client-request:
           method: GET
@@ -201,12 +175,8 @@ sessions:
   # Test 4: Verify ATS with :pp: server_ports designation can handle a
   # connection without Proxy Protocol.
   - protocol:
-      - name: http
-        version: 1
       # not sending Proxy Protcol
-      - name: tcp
-      - name: ip
-
+      stack: http
     transactions:
       - client-request:
           method: GET
@@ -234,13 +204,8 @@ sessions:
   # Test 5: Verify ATS with :pp: server_ports designation can handle a TLS
   # connection without Proxy Protocol.
   - protocol:
-      - name: http
-        version: 1
-      - name: tls
       # not sending Proxy Protcol
-      - name: tcp
-      - name: ip
-
+      stack: https
     transactions:
       - client-request:
           method: GET

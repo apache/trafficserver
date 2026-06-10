@@ -45,7 +45,8 @@ meta:
         - [ Content-Length, 96 ]
 
 sessions:
-- protocol: [ { name: ip, version : 4} ]
+- protocol:
+    stack: http
   transactions:
 
   - all: { headers: { fields: [[ uuid, alpha ]]}}
@@ -74,8 +75,6 @@ sessions:
       headers:
         fields:
         - [ Host, api.ex ]
-    proxy-request:
-      <<: *base-req
     server-response:
       <<: *base-rsp
     proxy-response:
@@ -90,8 +89,6 @@ sessions:
         fields:
         - [ Host, api.ex ]
         - [ Referrer, "http://echo.ex/ui/demo" ]
-    proxy-request:
-        <<: *base-req
     server-response:
       <<: *base-rsp
     proxy-response:
@@ -114,4 +111,3 @@ sessions:
       headers:
         fields:
         - [ "CORS", { value: "delta.ex", as: equal }]
-

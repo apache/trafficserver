@@ -3,9 +3,9 @@ meta:
 
 sessions:
 - protocol:
-  - name: tls
-    sni: "alpha"
-
+    stack: https
+    tls:
+      sni: "alpha"
   transactions:
   - client-request:
       method: "GET"

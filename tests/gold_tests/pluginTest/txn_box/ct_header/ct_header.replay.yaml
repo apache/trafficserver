@@ -57,7 +57,8 @@ sessions:
   #
   # Test 1: For non-TLS connections, we should not add cross site fields.
   #
-- protocol: [ { name: ip, version : 4} ]
+- protocol:
+    stack: http
   transactions:
 
   - all: { headers: { fields:  [[ uuid, 1 ]]}}
@@ -90,7 +91,8 @@ sessions:
   #
   # Test 2: Since this is TLS, expect the cross site fields.
   #
-- protocol: [ { name: tls } , { name: ip, version: 4 } ]
+- protocol:
+    stack: https
   transactions:
 
   - all: { headers: { fields: [[ uuid, 2 ]]}}
@@ -176,7 +178,8 @@ sessions:
         fields:
         - [ expect-ct, { value: "max-age=31536000, report-uri=\"http://cane.example.com/path/cane?src=examplecom-expect-ct-report-only\"", as: equal} ]
 
-- protocol: [ { name: ip, version : 4} ]
+- protocol:
+    stack: http
   transactions:
 
   #

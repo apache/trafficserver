@@ -19,11 +19,7 @@ meta:
 
 sessions:
 - protocol:
-  - name: http
-    version: 1
-  - name: tcp
-  - name: ip
-
+    stack: http
   transactions:
   - client-request:
       method: "GET"

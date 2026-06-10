@@ -33,6 +33,8 @@ class EscalateTest:
 
     _replay_original_file: str = 'escalate_original.replay.yaml'
     _replay_failover_file: str = 'escalate_failover.replay.yaml'
+    _server_original_file: str = 'escalate_original_server_default.replay.yaml'
+    _server_failover_file: str = 'escalate_failover_server_default.replay.yaml'
 
     def __init__(self):
         '''Configure the test run.'''
@@ -56,8 +58,10 @@ class EscalateTest:
         '''
         tr.Setup.Copy(self._replay_original_file)
         tr.Setup.Copy(self._replay_failover_file)
-        self._server_origin = tr.AddVerifierServerProcess(f"server_origin", self._replay_original_file)
-        self._server_failover = tr.AddVerifierServerProcess(f"server_failover", self._replay_failover_file)
+        tr.Setup.Copy(self._server_original_file)
+        tr.Setup.Copy(self._server_failover_file)
+        self._server_origin = tr.AddVerifierServerProcess(f"server_origin", self._server_original_file)
+        self._server_failover = tr.AddVerifierServerProcess(f"server_failover", self._server_failover_file)
 
         self._server_origin.Streams.All += Testers.ContainsExpression(
             'uuid: GET', "Verify the origin server received the GET request.")

@@ -103,8 +103,10 @@ class Http2FlowControlTest:
         Http2FlowControlTest._dns_counter += 1
         return dns
 
-    def _configure_server(self, tr: 'TestRun', server_type: ServerType) -> 'Process':
+    def _configure_server(self, tr: 'TestRun', server_type: ServerType) -> Optional['Process']:
         """Configure the test server."""
+        if self._flow_control_policy_is_malformed:
+            return None
         if server_type == self.ServerType.HTTP1_CHUNKED:
             replay_file = self._replay_chunked_file
         else:
@@ -166,7 +168,8 @@ class Http2FlowControlTest:
 
         ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
 
-        ts.Disk.remap_config.AddLine(f'map / https://127.0.0.1:{self._server.Variables.https_port}')
+        if self._server is not None:
+            ts.Disk.remap_config.AddLine(f'map / https://127.0.0.1:{self._server.Variables.https_port}')
 
         if self._flow_control_policy_is_malformed:
             if is_outbound:

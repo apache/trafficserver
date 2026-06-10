@@ -61,7 +61,8 @@ meta:
         - [ Content-Length, 96 ]
 
 sessions:
-- protocol: [ { name: ip, version : 4} ]
+- protocol:
+    stack: http
   transactions:
 
   ## Checks for the concat modifier.
@@ -172,7 +173,8 @@ sessions:
     proxy-response:
       <<: *base-rsp
 
-- protocol: [ { name: ip, version : 4} ]
+- protocol:
+    stack: http
   transactions:
 
   ## Checks for regular expression modifier.

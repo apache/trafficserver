@@ -19,13 +19,9 @@ meta:
 
 sessions:
 - protocol:
-  - name: http
-    version: 1
-  - name: tls
-    sni: yay.example.com
-  - name: tcp
-  - name: ip
-
+    stack: https
+    tls:
+      sni: yay.example.com
   transactions:
   - client-request:
       method: "GET"

@@ -33,22 +33,26 @@ class TestJA4Fingerprint:
     '''Configure a test for ja4_fingerprint.'''
 
     replay_filepath: str = 'ja4_fingerprint.replay.yaml'
+    basic_server_replay_filepath: str = 'ja4_fingerprint_basic_server.replay.yaml'
     client_counter: int = 0
     server_counter: int = 0
     ts_counter: int = 0
 
-    def __init__(self, name: str, /, autorun: bool) -> None:
+    def __init__(self, name: str, /, autorun: bool, use_preserve: bool = False) -> None:
         '''Initialize the test.
 
         :param name: The name of the test.
+        :param use_preserve: Whether to use the --preserve flag.
         '''
         self.name = name
         self.autorun = autorun
+        self.use_preserve = use_preserve
 
     def _init_run(self) -> 'TestRun':
         '''Initialize processes for the test run.'''
 
-        server_one = TestJA4Fingerprint.configure_server('yay.com')
+        replay_filepath = self.replay_filepath if self.use_preserve else self.basic_server_replay_filepath
+        server_one = TestJA4Fingerprint.configure_server('yay.com', replay_filepath=replay_filepath)
         self._configure_traffic_server(server_one)
 
         tr = Test.AddTestRun(self.name)
@@ -93,11 +97,9 @@ class TestJA4Fingerprint:
         return wrapper
 
     @staticmethod
-    def configure_server(domain: str):
+    def configure_server(domain: str, replay_filepath: str):
         server = Test.MakeVerifierServerProcess(
-            f'server{TestJA4Fingerprint.server_counter + 1}.{domain}',
-            TestJA4Fingerprint.replay_filepath,
-            other_args='--format \'{url}\'')
+            f'server{TestJA4Fingerprint.server_counter + 1}.{domain}', replay_filepath, other_args="--format '{url}'")
         TestJA4Fingerprint.server_counter += 1
 
         return server
@@ -117,6 +119,7 @@ class TestJA4Fingerprint:
                 'proxy.config.ssl.server.cert.path': f'{ts.Variables.SSLDir}',
                 'proxy.config.ssl.server.private_key.path': f'{ts.Variables.SSLDir}',
                 'proxy.config.http.server_ports': f'{self._port_one}:ssl',
+                'proxy.config.proxy_name': 'test.proxy.com',
                 'proxy.config.diags.debug.enabled': 1,
                 'proxy.config.diags.debug.tags': 'ja4_fingerprint|http',
             })
@@ -144,7 +147,8 @@ class TestJA4Fingerprint:
                  'then a JA4 header should be attached.')
 def test1(params: TestParams) -> None:
     client = params['tr'].Processes.Default
-    params['tr'].MakeCurlCommand('-k -v "https://localhost:{0}/resource"'.format(params['port_one']), ts=params['ts'])
+    params['tr'].MakeCurlCommand(
+        '-k -v -H "uuid: no-existing-headers" "https://localhost:{0}/resource"'.format(params['port_one']), ts=params['ts'])
 
     client.ReturnCode = 0
     client.Streams.stdout += Testers.ContainsExpression(r'Yay!', 'We should receive the expected body.')

@@ -30,7 +30,8 @@ schema_path = os.path.join(Test.Variables.AtsTestToolsDir, 'lib', 'replay_schema
 
 # Configure the origin server.
 replay_file = "replay/traffic_dump.yaml"
-server = Test.MakeVerifierServerProcess("server", replay_file, ssl_cert="ssl/server_combined.pem", ca_cert="ssl/signer.pem")
+server = Test.MakeVerifierServerProcess(
+    "server", "replay/traffic_dump_server.yaml", ssl_cert="ssl/server_combined.pem", ca_cert="ssl/signer.pem")
 
 # Define ATS and configure it.
 ts = Test.MakeATSProcess("ts", enable_tls=True)

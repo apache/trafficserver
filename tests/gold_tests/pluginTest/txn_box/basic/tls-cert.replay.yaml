@@ -37,7 +37,10 @@ meta:
         - [ Content-Length, 96 ]
 
 sessions:
-- protocol: [ { name: ip, version : 4} , { name: "tls", sni: "alpha.ex" } ]
+- protocol:
+    stack: https
+    tls:
+      sni: "alpha.ex"
   transactions:
   - all: { headers: { fields: [[ uuid, 101 ]]}}
     client-request:
@@ -59,7 +62,8 @@ sessions:
         fields:
         - [ "target-cert-subject", { value: "server_cn", as: equal } ]
 
-- protocol: [ { name: ip, version : 4} ]
+- protocol:
+    stack: http
   transactions:
   # Verify the outbound client cert is there with the expected values.
   - all: { headers: { fields: [[ uuid, outbound-TLS ]]}}
