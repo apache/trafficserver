@@ -308,7 +308,7 @@ dir_clean_bucket(Dir *b, int s, StripeSM *stripe)
 #ifdef LOOP_CHECK_MODE
     loop_count++;
     if (loop_count > DIR_LOOP_THRESHOLD) {
-      if (vol->directory.bucket_loop_fix(b, s))
+      if (stripe->directory.bucket_loop_fix(b, s))
         return;
     }
 #endif
