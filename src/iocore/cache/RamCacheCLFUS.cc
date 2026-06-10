@@ -40,6 +40,9 @@
 #ifdef HAVE_LZ4_H
 #include <lz4.h>
 #endif
+#ifdef HAVE_ZSTD_H
+#include <zstd.h>
+#endif
 
 // #define CHECK_ACOUNTING 1 // very expensive double checking of all sizes
 
@@ -131,6 +134,11 @@ RamCacheCLFUSCompressor::mainEvent(int /* event ATS_UNUSED */, Event *e)
   case CACHE_COMPRESSION_LZ4:
 #ifndef HAVE_LZ4_H
     Warning("lz4 not available for RAM cache compression");
+#endif
+    break;
+  case CACHE_COMPRESSION_ZSTD:
+#ifndef HAVE_ZSTD_H
+    Warning("zstd not available for RAM cache compression");
 #endif
     break;
   }
@@ -273,6 +281,18 @@ RamCacheCLFUS::get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint64_t auxkey
               goto Lfailed;
             }
             ram_hit_state = RAM_HIT_COMPRESS_LZ4;
+            break;
+          }
+#endif
+#ifdef HAVE_ZSTD_H
+          case CACHE_COMPRESSION_ZSTD: {
+            size_t l  = static_cast<size_t>(e->len);
+            size_t ll = 0;
+            ll        = ZSTD_decompress(b, l, e->data->data(), e->compressed_len);
+            if (ZSTD_isError(ll) || l != ll) {
+              goto Lfailed;
+            }
+            ram_hit_state = RAM_HIT_COMPRESS_ZSTD;
             break;
           }
 #endif
@@ -448,6 +468,11 @@ RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most)
         l = static_cast<uint32_t>(LZ4_compressBound(e->len));
         break;
 #endif
+#ifdef HAVE_ZSTD_H
+      case CACHE_COMPRESSION_ZSTD:
+        l = static_cast<uint32_t>(ZSTD_compressBound(e->len));
+        break;
+#endif
       }
       // store transient data for lock release
       Ptr<IOBufferData> edata = e->data;
@@ -492,6 +517,18 @@ RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most)
         int ll = l;
         if ((l = LZ4_compress_default(edata->data(), b, elen, ll)) == 0) {
           failed = true;
+        }
+        break;
+      }
+#endif
+#ifdef HAVE_ZSTD_H
+      case CACHE_COMPRESSION_ZSTD: {
+        size_t ll   = l;
+        size_t zret = ZSTD_compress(b, ll, edata->data(), elen, ZSTD_CLEVEL_DEFAULT);
+        if (ZSTD_isError(zret)) {
+          failed = true;
+        } else {
+          l = static_cast<uint32_t>(zret);
         }
         break;
       }

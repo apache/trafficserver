@@ -1677,6 +1677,11 @@ CacheProcessor::cacheInitialized()
         Fatal("lz4 not available for RAM cache compression");
 #endif
         break;
+      case CACHE_COMPRESSION_ZSTD:
+#ifndef HAVE_ZSTD_H
+        Fatal("zstd not available for RAM cache compression");
+#endif
+        break;
       }
 
       ts::Metrics::Gauge::store(cache_rsb.ram_cache_bytes_total, total_ram_cache_bytes);
