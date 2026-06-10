@@ -425,6 +425,11 @@ else()
   set(HAVE_ZSTD_H FALSE)
 endif()
 
+find_package(LZ4)
+if(LZ4_FOUND)
+  set(HAVE_LZ4_H TRUE)
+endif()
+
 # ncurses is used in traffic_top
 find_package(Curses)
 set(HAVE_CURSES_H ${CURSES_HAVE_CURSES_H})

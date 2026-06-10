@@ -57,6 +57,10 @@ if(HAVE_LZMA_H)
   target_link_libraries(inkcache PRIVATE LibLZMA::LibLZMA)
 endif()
 
+if(HAVE_LZ4_H)
+  target_link_libraries(inkcache PRIVATE LZ4::LZ4)
+endif()
+
 if(BUILD_TESTING)
   # Unit Tests with unit_tests/main.cc
   macro(add_cache_test name)

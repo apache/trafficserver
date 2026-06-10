@@ -35,6 +35,9 @@
 #ifdef HAVE_LZMA_H
 #include <lzma.h>
 #endif
+#ifdef HAVE_LZ4_H
+#include <lz4.h>
+#endif
 
 #define REQUIRED_COMPRESSION 0.9 // must get to this size or declared incompressible
 #define REQUIRED_SHRINK      0.8 // must get to this size or keep original buffer (with padding)
@@ -164,6 +167,11 @@ RamCacheCLFUSCompressor::mainEvent(int /* event ATS_UNUSED */, Event *e)
   case CACHE_COMPRESSION_LIBLZMA:
 #ifndef HAVE_LZMA_H
     Warning("lzma not available for RAM cache compression");
+#endif
+    break;
+  case CACHE_COMPRESSION_LZ4:
+#ifndef HAVE_LZ4_H
+    Warning("lz4 not available for RAM cache compression");
 #endif
     break;
   }
@@ -296,6 +304,16 @@ RamCacheCLFUS::get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint64_t auxkey
               goto Lfailed;
             }
             ram_hit_state = RAM_HIT_COMPRESS_LIBLZMA;
+            break;
+          }
+#endif
+#ifdef HAVE_LZ4_H
+          case CACHE_COMPRESSION_LZ4: {
+            int l = static_cast<int>(e->len);
+            if (l != LZ4_decompress_safe(e->data->data(), b, e->compressed_len, l)) {
+              goto Lfailed;
+            }
+            ram_hit_state = RAM_HIT_COMPRESS_LZ4;
             break;
           }
 #endif
@@ -463,7 +481,12 @@ RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most)
         break;
 #ifdef HAVE_LZMA_H
       case CACHE_COMPRESSION_LIBLZMA:
-        l = e->len;
+        l = static_cast<uint32_t>(lzma_stream_buffer_bound(e->len));
+        break;
+#endif
+#ifdef HAVE_LZ4_H
+      case CACHE_COMPRESSION_LZ4:
+        l = static_cast<uint32_t>(LZ4_compressBound(e->len));
         break;
 #endif
       }
@@ -502,6 +525,15 @@ RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most)
           failed = true;
         }
         l = static_cast<int>(pos);
+        break;
+      }
+#endif
+#ifdef HAVE_LZ4_H
+      case CACHE_COMPRESSION_LZ4: {
+        int ll = l;
+        if ((l = LZ4_compress_default(edata->data(), b, elen, ll)) == 0) {
+          failed = true;
+        }
         break;
       }
 #endif
