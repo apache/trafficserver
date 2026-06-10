@@ -50,6 +50,7 @@
 #include "ts/ts.h"
 
 #include <memory>
+#include <stdexcept>
 #include <string_view>
 
 int DiagsConfigState::_enabled[2] = {0, 0};
@@ -543,7 +544,7 @@ Diags::should_roll_diagslog()
         diagslog_rolling_enabled == RollingEnabledValues::ROLL_ON_TIME_OR_SIZE) {
       try {
         ret_val = roll_diags_on_filesize(diagslog_rolling_size);
-      } catch (std::runtime_error const &e) {
+      } catch (std::runtime_error const &) {
         return false;
       }
     }
@@ -593,7 +594,7 @@ Diags::should_roll_outputlog()
         outputlog_rolling_enabled == RollingEnabledValues::ROLL_ON_TIME_OR_SIZE) {
       try {
         ret_val = roll_streams_on_filesize(outputlog_rolling_size);
-      } catch (std::runtime_error &e) {
+      } catch (std::runtime_error const &) {
         return false;
       }
     }
@@ -789,7 +790,7 @@ Diags::roll_streams_on_filesize(int mb_threshold)
   // disk, and stderr pointing to a different file on disk, and then also wants both files to
   // rotate according to the (same || different) scheme, it would not be difficult to add
   // some more config options in records.yaml and said feature into this function.
-  ink_assert(0 == strcmp(stdout_log->get_name(), stderr_log->get_name()));
+  ink_release_assert(0 == strcmp(stdout_log->get_name(), stderr_log->get_name()));
   log_log_trace("oldname == stderr_log->get_name()\n");
   set_std_output(StdStream::STDERR, oldname);
 
@@ -830,7 +831,7 @@ Diags::roll_streams_on_interval(int interval)
   // disk, and stderr pointing to a different file on disk, and then also wants both files to
   // rotate according to the (same || different) scheme, it would not be difficult to add
   // some more config options in records.yaml and said feature into this function.
-  ink_assert(0 == strcmp(stdout_log->get_name(), stderr_log->get_name()));
+  ink_release_assert(0 == strcmp(stdout_log->get_name(), stderr_log->get_name()));
   log_log_trace("oldname == stderr_log->get_name()\n");
   set_std_output(StdStream::STDERR, oldname);
 
