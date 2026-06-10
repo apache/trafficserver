@@ -63,6 +63,9 @@ compression_cases()
 #ifdef HAVE_LZ4_H
   cases.push_back({CACHE_COMPRESSION_LZ4, RAM_HIT_COMPRESS_LZ4, "lz4"});
 #endif
+#ifdef HAVE_ZSTD_H
+  cases.push_back({CACHE_COMPRESSION_ZSTD, RAM_HIT_COMPRESS_ZSTD, "zstd"});
+#endif
   return cases;
 }
 
