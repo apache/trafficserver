@@ -6742,7 +6742,8 @@ TSHttpTxnRedirectUrlSet(TSHttpTxn txnp, const char *url, const int url_len)
   sm->redirect_url       = const_cast<char *>(url);
   sm->redirect_url_len   = url_len;
   sm->enable_redirection = true;
-  sm->redirection_tries  = 0;
+  // Don't reset HttpSM::redirection_tries here: a per-hop reset defeats the number_of_redirections
+  // limit that HttpSM enforces, allowing an unbounded redirect chain.
 
   // Make sure we allow for at least one redirection.
   if (sm->t_state.txn_conf->number_of_redirections <= 0) {
