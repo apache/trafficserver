@@ -38,13 +38,15 @@ class TestJA4Fingerprint:
     server_counter: int = 0
     ts_counter: int = 0
 
-    def __init__(self, name: str, /, autorun: bool) -> None:
+    def __init__(self, name: str, /, autorun: bool, use_preserve: bool = False) -> None:
         '''Initialize the test.
 
         :param name: The name of the test.
+        :param use_preserve: Whether to use the --preserve flag.
         '''
         self.name = name
         self.autorun = autorun
+        self.use_preserve = use_preserve
 
     def _init_run(self) -> 'TestRun':
         '''Initialize processes for the test run.'''
@@ -117,6 +119,7 @@ class TestJA4Fingerprint:
                 'proxy.config.ssl.server.cert.path': f'{ts.Variables.SSLDir}',
                 'proxy.config.ssl.server.private_key.path': f'{ts.Variables.SSLDir}',
                 'proxy.config.http.server_ports': f'{self._port_one}:ssl',
+                'proxy.config.proxy_name': 'test.proxy.com',
                 'proxy.config.diags.debug.enabled': 1,
                 'proxy.config.diags.debug.tags': 'ja4_fingerprint|http',
             })
@@ -144,7 +147,8 @@ class TestJA4Fingerprint:
                  'then a JA4 header should be attached.')
 def test1(params: TestParams) -> None:
     client = params['tr'].Processes.Default
-    params['tr'].MakeCurlCommand('-k -v "https://localhost:{0}/resource"'.format(params['port_one']), ts=params['ts'])
+    params['tr'].MakeCurlCommand(
+        '-k -v -H "uuid: no-existing-headers" "https://localhost:{0}/resource"'.format(params['port_one']), ts=params['ts'])
 
     client.ReturnCode = 0
     client.Streams.stdout += Testers.ContainsExpression(r'Yay!', 'We should receive the expected body.')

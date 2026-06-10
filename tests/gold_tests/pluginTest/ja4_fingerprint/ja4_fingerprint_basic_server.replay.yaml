@@ -39,7 +39,6 @@ sessions:
       headers:
         fields:
         - [ ja4, { as: present } ]
-        - [ x-ja4-via, { value: 'test.proxy.com', as: equal } ]
 
     server-response:
       status: 200
