@@ -1168,6 +1168,26 @@ TSReturnCode TSMutexLockTry(TSMutex mutexp);
 
 void TSMutexUnlock(TSMutex mutexp);
 
+/** Scoped lock guard for a @c TSMutex.
+
+    Locks @a mutexp on construction and unlocks it when the guard leaves scope.
+ */
+class TSMutexLockGuard
+{
+public:
+  [[nodiscard]] explicit TSMutexLockGuard(TSMutex mutexp) : m_mutex(mutexp) { TSMutexLock(m_mutex); }
+
+  TSMutexLockGuard(const TSMutexLockGuard &)            = delete;
+  TSMutexLockGuard &operator=(const TSMutexLockGuard &) = delete;
+  TSMutexLockGuard(TSMutexLockGuard &&)                 = delete;
+  TSMutexLockGuard &operator=(TSMutexLockGuard &&)      = delete;
+
+  ~TSMutexLockGuard() { TSMutexUnlock(m_mutex); }
+
+private:
+  TSMutex m_mutex = nullptr;
+};
+
 /* --------------------------------------------------------------------------
    cachekey */
 /**
