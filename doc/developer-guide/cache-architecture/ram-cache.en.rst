@@ -37,7 +37,7 @@ following features:
 * Is Scan Resistant and extracts robust hit rates even when the working set does
   not fit in the RAM Cache.
 
-* Supports compression at 4 levels: fastlz, gzip (libz), xz (liblzma) and lz4.
+* Supports compression at 5 levels: fastlz, gzip (libz), xz (liblzma), lz4 and zstd.
   Compression can be moved to another thread.
 
 * Has very low CPU overhead, only slightly more than a basic LRU. Rather than
@@ -72,7 +72,7 @@ len            Length of the object, which differs from *size* because of
                compression and padding).
 compressed_len Compressed length of the object.
 compressed     Compression type, or ``none`` if no compression. Possible types
-               are: *fastlz*, *libz*, *liblzma*, and *lz4*.
+               are: *fastlz*, *libz*, *liblzma*, *lz4* and *zstd*.
 uncompressible Flag indicating that content cannot be compressed (true), or that
                it mat be compressed (false).
 copy           Whether or not this object should be copied in and copied out
@@ -147,8 +147,8 @@ since we need to make a copy anyway. Those not tagged ``copy`` are inserted
 uncompressed in the hope that they can be reused in uncompressed form. This is
 a compile time option and may be something we want to change.
 
-There are 4 algorithms and levels of compression (speed on an Intel Xeon Gold
-6338 processor using lzbench and the silesia XML benchmark):
+There are 5 algorithms and levels of compression (speed on an Intel Xeon Gold
+6338 processor using lzbench and the silesia XML corpus):
 
 ======= ================ ================== ====================================
 Method  Compression Rate Decompression Rate Notes
@@ -156,11 +156,14 @@ Method  Compression Rate Decompression Rate Notes
 fastlz  452 MB/sec       913 MB/sec         Effectively obsolete; prefer lz4.
                                             Basically free since disk or network
                                             will limit first; ~26% final size.
-libz    54 MB/sec        536 MB/sec         Almost free, particularly
+libz    54 MB/sec        536 MB/sec         Effectively obsolete; prefer zstd.
+                                            Almost free, particularly
                                             decompression; ~13% final size.
 liblzma 5 MB/sec         291 MB/sec         Expensive; ~8% final size.
 lz4     727 MB/sec       3458 MB/sec        Basically free since disk or network
                                             will limit first; 23% final size
+zstd    508 MB/sec       1690 MB/sec        Basically free since disk or network
+                                            will limit first; ~12% final size.
 ======= ================ ================== ====================================
 
 These are ballpark numbers, and your millage will vary enormously. JPEG, for

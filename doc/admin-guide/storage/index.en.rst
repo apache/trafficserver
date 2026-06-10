@@ -110,6 +110,7 @@ Value   Meaning
 2       *libz* compression
 3       *liblzma* compression
 4       *lz4* compression
+5       *zstd* compression
 ======= =============================
 
 .. _changing-the-size-of-the-ram-cache:
