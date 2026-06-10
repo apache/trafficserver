@@ -366,8 +366,8 @@ set(TS_USE_MALLOC_ALLOCATOR ${ENABLE_MALLOC_ALLOCATOR})
 set(TS_USE_ALLOCATOR_METRICS ${ENABLE_ALLOCATOR_METRICS})
 find_package(ZLIB REQUIRED)
 
-find_package(zstd CONFIG QUIET)
-if(zstd_FOUND)
+find_package(ZSTD)
+if(ZSTD_FOUND)
 
   # Provide a compatibility target name if the upstream package does not export it
   # Our code links against `zstd::zstd`; upstream zstd usually exports
@@ -388,6 +388,8 @@ if(zstd_FOUND)
     else()
       set(HAVE_ZSTD_H FALSE)
     endif()
+  else()
+    set(HAVE_ZSTD_H TRUE)
   endif()
 else()
   set(HAVE_ZSTD_H FALSE)
