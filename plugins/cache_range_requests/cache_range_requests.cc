@@ -37,6 +37,8 @@
 #include <string>
 #include <string_view>
 
+#include "swoc/bwf_base.h"
+
 #define PLUGIN_NAME         "cache_range_requests"
 #define DEBUG_LOG(fmt, ...) Dbg(dbg_ctl, fmt, ##__VA_ARGS__)
 #define ERROR_LOG(fmt, ...) TSError("[%s:%d] %s(): " fmt, __FILE__, __LINE__, __func__, ##__VA_ARGS__)
@@ -251,26 +253,53 @@ range_header_check(TSHttpTxn txnp, pluginconfig *const pc)
         std::string const &rv = txn_state->range_value;
         DEBUG_LOG("txn_state->range_value: '%s'", rv.c_str());
 
+        // for performance provide a stack buffer or a spill buffer
+        swoc::LocalBufferWriter<16384> cache_key_bw;
+        std::string                    cache_key_spill;
+        std::string_view               cache_key{};
+
         // Consider config options
         if (nullptr != pc) {
-          char cache_key_url[16384] = {0};
-          int  cache_key_url_len    = 0;
-
           if (pc->modify_cache_key || PS_CACHEKEY_URL == pc->ps_mode) {
             int         url_len = 0;
             char *const req_url = TSHttpTxnEffectiveUrlStringGet(txnp, &url_len);
-            cache_key_url_len   = snprintf(cache_key_url, sizeof(cache_key_url), "%s-%s", req_url, rv.c_str());
-            DEBUG_LOG("Forming new cache URL for '%s': '%.*s'", req_url, cache_key_url_len, cache_key_url);
-            if (req_url != nullptr) {
+            if (nullptr != req_url && 0 < url_len) {
+              std::string_view const url_sv{req_url, static_cast<size_t>(url_len)};
+
+              // Format once into the stack buffer; only fall back to heap when it overflows.
+              cache_key_bw.print("{}-{}", url_sv, rv);
+              if (!cache_key_bw.error()) {
+                cache_key = cache_key_bw.view();
+              } else {
+                cache_key_spill.resize(cache_key_bw.extent());
+                swoc::FixedBufferWriter spill_bw{cache_key_spill.data(), cache_key_spill.size()};
+                spill_bw.print("{}-{}", url_sv, rv);
+                cache_key = std::string_view{cache_key_spill.data(), spill_bw.extent()};
+              }
               TSfree(req_url);
+              DEBUG_LOG("Forming new cache URL: '%.*s'", static_cast<int>(cache_key.size()), cache_key.data());
+            } else {
+              if (nullptr != req_url) {
+                TSfree(req_url);
+              }
+              ERROR_LOG("TSHttpTxnEffectiveUrlStringGet returned nullptr or zero-length URL, skipping cache key modification.");
             }
           }
 
           // Modify the cache_key
           if (pc->modify_cache_key) {
-            DEBUG_LOG("Setting cache key to '%.*s'", cache_key_url_len, cache_key_url);
-            if (TS_SUCCESS != TSCacheUrlSet(txnp, cache_key_url, cache_key_url_len)) {
-              ERROR_LOG("Failed to change the cache url, disabling cache for this transaction to avoid cache poisoning.");
+            bool disable_cache = false;
+            if (!cache_key.empty()) {
+              DEBUG_LOG("Setting cache key to '%.*s'", static_cast<int>(cache_key.size()), cache_key.data());
+              if (TS_SUCCESS != TSCacheUrlSet(txnp, cache_key.data(), static_cast<int>(cache_key.size()))) {
+                ERROR_LOG("Failed to change the cache url, disabling cache for this transaction to avoid cache poisoning.");
+                disable_cache = true;
+              }
+            } else {
+              ERROR_LOG("Failed to build override cache key, disabling cache for this transaction to avoid cache poisoning.");
+              disable_cache = true;
+            }
+            if (disable_cache) {
               TSHttpTxnCntlSet(txnp, TS_HTTP_CNTL_SERVER_NO_STORE, true);
               TSHttpTxnCntlSet(txnp, TS_HTTP_CNTL_RESPONSE_CACHEABLE, false);
               TSHttpTxnCntlSet(txnp, TS_HTTP_CNTL_REQUEST_CACHEABLE, false);
@@ -278,14 +307,14 @@ range_header_check(TSHttpTxn txnp, pluginconfig *const pc)
           }
 
           // Set the parent_selection_url to the modified cache_key.
-          if (PS_CACHEKEY_URL == pc->ps_mode) {
+          if (PS_CACHEKEY_URL == pc->ps_mode && !cache_key.empty()) {
             TSMLoc      ps_loc = TS_NULL_MLOC;
-            const char *start  = cache_key_url;
-            const char *end    = cache_key_url + cache_key_url_len;
+            const char *start  = cache_key.data();
+            const char *end    = start + cache_key.size();
             if (TS_SUCCESS == TSUrlCreate(hdr_buf, &ps_loc)) {
-              if (TS_PARSE_DONE == TSUrlParse(hdr_buf, ps_loc, &start, end) && // This should always succeed.
+              if (TS_PARSE_DONE == TSUrlParse(hdr_buf, ps_loc, &start, end) &&
                   TS_SUCCESS == TSHttpTxnParentSelectionUrlSet(txnp, hdr_buf, ps_loc)) {
-                DEBUG_LOG("Setting Parent Selection URL to '%.*s'", cache_key_url_len, cache_key_url);
+                DEBUG_LOG("Setting Parent Selection URL to '%.*s'", static_cast<int>(cache_key.size()), cache_key.data());
               }
               TSHandleMLocRelease(hdr_buf, TS_NULL_MLOC, ps_loc);
             }
