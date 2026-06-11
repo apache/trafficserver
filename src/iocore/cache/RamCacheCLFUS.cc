@@ -32,6 +32,9 @@
 #include "iocore/eventsystem/Tasks.h"
 #include "fastlz/fastlz.h"
 #include "tscore/CryptoHash.h"
+#include "tscore/Throttler.h"
+
+#include <chrono>
 #include <zlib.h>
 #ifdef HAVE_LZMA_H
 #include <lzma.h>
@@ -49,7 +52,8 @@ namespace
 
 // One-shot ZSTD_compress/ZSTD_decompress allocate and free a context on every
 // call, so reuse a per-thread context instead. May return nullptr if zstd
-// fails to allocate one. The compression level is a sticky parameter set once
+// fails to allocate one; that failure is sticky for the life of the thread, so
+// warn when it happens. The compression level is a sticky parameter set once
 // here; no explicit ZSTD_CCtx_reset() is needed because ZSTD_compress2()
 // starts a new session on every call (resets are only for interrupting the
 // streaming API or changing sticky parameters).
@@ -61,6 +65,9 @@ zstd_cctx()
     if (c && ZSTD_isError(ZSTD_CCtx_setParameter(c.get(), ZSTD_c_compressionLevel, CLFUS_ZSTD_LEVEL))) {
       c.reset();
     }
+    if (!c) {
+      Warning("unable to allocate zstd compression context; RAM cache entries will not be compressed on this thread");
+    }
     return c;
   }();
   return ctx.get();
@@ -69,12 +76,22 @@ zstd_cctx()
 ZSTD_DCtx *
 zstd_dctx()
 {
-  thread_local std::unique_ptr<ZSTD_DCtx, size_t (*)(ZSTD_DCtx *)> ctx{ZSTD_createDCtx(), ZSTD_freeDCtx};
+  thread_local std::unique_ptr<ZSTD_DCtx, size_t (*)(ZSTD_DCtx *)> ctx = [] {
+    std::unique_ptr<ZSTD_DCtx, size_t (*)(ZSTD_DCtx *)> c{ZSTD_createDCtx(), ZSTD_freeDCtx};
+    if (!c) {
+      Warning("unable to allocate zstd decompression context; compressed RAM cache entries will miss on this thread");
+    }
+    return c;
+  }();
   return ctx.get();
 }
 
 } // end anonymous namespace
 #endif
+
+// The compression type is stored in the 3-bit RamCacheCLFUSEntry
+// flag_bits.compressed field; a new codec value must still fit.
+static_assert(CACHE_COMPRESSION_ZSTD < (1 << 3));
 
 #define REQUIRED_COMPRESSION 0.9 // must get to this size or declared incompressible
 #define REQUIRED_SHRINK      0.8 // must get to this size or keep original buffer (with padding)
@@ -301,7 +318,10 @@ RamCacheCLFUS::get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint64_t auxkey
             size_t     l    = static_cast<size_t>(e->len);
             ZSTD_DCtx *dctx = zstd_dctx();
             if (dctx == nullptr) {
-              goto Lfailed;
+              // This thread can't decompress, but the entry itself is fine:
+              // miss instead of evicting it.
+              ats_free(b);
+              goto Lerror;
             }
             size_t ll = ZSTD_decompressDCtx(dctx, b, l, e->data->data(), e->compressed_len);
             if (ZSTD_isError(ll) || l != ll) {
@@ -355,6 +375,20 @@ Lerror:
   return 0;
 Lfailed:
   ats_free(b);
+  {
+    // A failure here is data corruption or a codec error, not an ordinary
+    // miss; make it visible beyond the debug-gated trace below.
+    static Throttler decompress_failure_throttler(std::chrono::seconds(60));
+
+    uint64_t suppressed = 0;
+    if (!decompress_failure_throttler.is_throttled(suppressed)) {
+      Warning("RAM cache decompression failed: type %d len %u compressed_len %u key %X; entry dropped"
+              " (%" PRIu64 " similar failures suppressed)",
+              static_cast<int>(e->flag_bits.compressed), e->len, e->compressed_len, key->slice32(3), suppressed);
+    }
+    ts::Metrics::Counter::increment(cache_rsb.ram_cache_decompress_failures);
+    ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.ram_cache_decompress_failures);
+  }
   this->_destroy(e);
   DDbg(dbg_ctl_ram_cache, "get %X %" PRId64 " Z_ERR", key->slice32(3), auxkey);
   goto Lerror;

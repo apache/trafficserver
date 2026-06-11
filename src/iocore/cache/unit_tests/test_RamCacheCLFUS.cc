@@ -89,12 +89,15 @@ wire_stripe(StripeSM &stripe, CacheVol &cache_vol)
 {
   stripe.cache_vol = &cache_vol;
 
-  cache_rsb.ram_cache_bytes          = ts::Metrics::Gauge::createPtr("unit_test.clfus.ram_cache.bytes");
-  cache_rsb.ram_cache_hits           = ts::Metrics::Counter::createPtr("unit_test.clfus.ram_cache.hits");
-  cache_rsb.ram_cache_misses         = ts::Metrics::Counter::createPtr("unit_test.clfus.ram_cache.misses");
-  cache_vol.vol_rsb.ram_cache_bytes  = ts::Metrics::Gauge::createPtr("unit_test.clfus.vol.ram_cache.bytes");
-  cache_vol.vol_rsb.ram_cache_hits   = ts::Metrics::Counter::createPtr("unit_test.clfus.vol.ram_cache.hits");
-  cache_vol.vol_rsb.ram_cache_misses = ts::Metrics::Counter::createPtr("unit_test.clfus.vol.ram_cache.misses");
+  cache_rsb.ram_cache_bytes               = ts::Metrics::Gauge::createPtr("unit_test.clfus.ram_cache.bytes");
+  cache_rsb.ram_cache_hits                = ts::Metrics::Counter::createPtr("unit_test.clfus.ram_cache.hits");
+  cache_rsb.ram_cache_misses              = ts::Metrics::Counter::createPtr("unit_test.clfus.ram_cache.misses");
+  cache_rsb.ram_cache_decompress_failures = ts::Metrics::Counter::createPtr("unit_test.clfus.ram_cache.decompress.failure");
+  cache_vol.vol_rsb.ram_cache_bytes       = ts::Metrics::Gauge::createPtr("unit_test.clfus.vol.ram_cache.bytes");
+  cache_vol.vol_rsb.ram_cache_hits        = ts::Metrics::Counter::createPtr("unit_test.clfus.vol.ram_cache.hits");
+  cache_vol.vol_rsb.ram_cache_misses      = ts::Metrics::Counter::createPtr("unit_test.clfus.vol.ram_cache.misses");
+  cache_vol.vol_rsb.ram_cache_decompress_failures =
+    ts::Metrics::Counter::createPtr("unit_test.clfus.vol.ram_cache.decompress.failure");
 }
 
 Ptr<IOBufferData>
@@ -132,11 +135,17 @@ incompressible_bytes(std::size_t len)
   return bytes;
 }
 
+struct RoundtripResult {
+  int               hit         = 0;
+  int64_t           size_before = 0; // rc.size() after put, before the compression pass
+  int64_t           size_after  = 0; // rc.size() after the compression pass
+  std::vector<char> out;
+};
+
 // Store payload under a fresh key, force a synchronous compression pass with
-// `config`, then read it back. Returns the RAM_HIT_* state reported by get()
-// and the bytes that were returned.
-int
-store_compress_get(StripeSM &stripe, int config, const std::vector<char> &payload, std::vector<char> &out)
+// `config`, then read it back.
+RoundtripResult
+store_compress_get(StripeSM &stripe, int config, const std::vector<char> &payload)
 {
   // Initialize with compression disabled so init() does not schedule the
   // background compressor (which would retain a pointer to this stack object).
@@ -158,14 +167,19 @@ store_compress_get(StripeSM &stripe, int config, const std::vector<char> &payloa
 
   REQUIRE(rc.put(&key, in.get(), len) == 1);
 
+  RoundtripResult r;
+
+  r.size_before                   = rc.size();
   cache_config_ram_cache_compress = config;
   rc.compress_entries(this_ethread());
+  r.size_after = rc.size();
 
   Ptr<IOBufferData> ret;
-  int               hit = rc.get(&key, &ret);
+
+  r.hit = rc.get(&key, &ret);
   REQUIRE(ret.get() != nullptr);
-  out.assign(ret->data(), ret->data() + len);
-  return hit;
+  r.out.assign(ret->data(), ret->data() + len);
+  return r;
 }
 
 } // namespace
@@ -178,15 +192,21 @@ TEST_CASE("CLFUS compressible objects roundtrip cleanly", "[cache][ramcache][com
   CacheVol cache_vol;
   wire_stripe(stripe, cache_vol);
 
-  auto                  payload = compressible_bytes(8192);
+  // Large enough to exercise the *_compressBound() arithmetic and uint32_t
+  // casts in compress_entries(), not just small-buffer paths.
+  auto                  payload = compressible_bytes(256 * 1024);
   const CompressionCase c       = GENERATE(from_range(compression_cases()));
   INFO("compression backend: " << c.name);
 
-  std::vector<char> out;
-  int               hit = store_compress_get(stripe, c.config, payload, out);
+  RoundtripResult r = store_compress_get(stripe, c.config, payload);
 
-  CHECK(hit == c.expected_hit);
-  CHECK(out == payload);
+  CHECK(r.hit == c.expected_hit);
+  CHECK(r.out == payload);
+  if (c.config != CACHE_COMPRESSION_NONE) {
+    // The feature's contract is that compression saves memory, not merely
+    // that the entry is tagged compressed.
+    CHECK(r.size_after < r.size_before);
+  }
 }
 
 TEST_CASE("CLFUS incompressible objects fall back to uncompressed storage", "[cache][ramcache][compress]")
@@ -197,7 +217,7 @@ TEST_CASE("CLFUS incompressible objects fall back to uncompressed storage", "[ca
   CacheVol cache_vol;
   wire_stripe(stripe, cache_vol);
 
-  auto payload = incompressible_bytes(8192);
+  auto payload = incompressible_bytes(256 * 1024);
 
   // Only the backends that actually attempt compression are interesting here;
   // skip the NONE case.
@@ -206,12 +226,11 @@ TEST_CASE("CLFUS incompressible objects fall back to uncompressed storage", "[ca
   const CompressionCase c = GENERATE_REF(from_range(cases));
   INFO("compression backend: " << c.name);
 
-  std::vector<char> out;
-  int               hit = store_compress_get(stripe, c.config, payload, out);
+  RoundtripResult r = store_compress_get(stripe, c.config, payload);
 
   // Incompressible data is kept verbatim, so a read reports no compression.
-  CHECK(hit == RAM_HIT_COMPRESS_NONE);
-  CHECK(out == payload);
+  CHECK(r.hit == RAM_HIT_COMPRESS_NONE);
+  CHECK(r.out == payload);
 }
 
 TEST_CASE("CLFUS single-byte payload roundtrips", "[cache][ramcache][compress]")
@@ -222,8 +241,25 @@ TEST_CASE("CLFUS single-byte payload roundtrips", "[cache][ramcache][compress]")
   CacheVol cache_vol;
   wire_stripe(stripe, cache_vol);
 
-  std::vector<char> out;
-  int               hit = store_compress_get(stripe, CACHE_COMPRESSION_NONE, compressible_bytes(1), out);
-  CHECK(hit == RAM_HIT_COMPRESS_NONE);
-  CHECK(out == compressible_bytes(1));
+  RoundtripResult r = store_compress_get(stripe, CACHE_COMPRESSION_NONE, compressible_bytes(1));
+
+  CHECK(r.hit == RAM_HIT_COMPRESS_NONE);
+  CHECK(r.out == compressible_bytes(1));
+}
+
+// A backend that is not compiled in silently disappears from the parametrized
+// cases above; make that visible in the test output rather than shipping an
+// untested backend behind a green run.
+TEST_CASE("CLFUS compression backends compiled in", "[cache][ramcache][compress]")
+{
+#ifndef HAVE_LZMA_H
+  WARN("liblzma is not compiled in; the liblzma RAM cache compression backend is NOT tested");
+#endif
+#ifndef HAVE_LZ4_H
+  WARN("lz4 is not compiled in; the lz4 RAM cache compression backend is NOT tested");
+#endif
+#ifndef HAVE_ZSTD_H
+  WARN("zstd is not compiled in; the zstd RAM cache compression backend is NOT tested");
+#endif
+  CHECK(compression_cases().size() >= 3);
 }
