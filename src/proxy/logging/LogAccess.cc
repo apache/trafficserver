@@ -470,22 +470,25 @@ LogAccess::marshal_custom_field(char *buf, LogField::Type type, const LogField::
   void *sm = m_data->http_sm_for_plugins();
   if (sm == nullptr) {
     switch (type) {
-    case LogField::sINT:
-    case LogField::dINT:
+    case LogField::Type::sINT:
       if (buf) {
         marshal_int(buf, 0);
       }
       return INK_MIN_ALIGN;
-    case LogField::STRING: {
+    case LogField::Type::STRING: {
       int len = LogAccess::padded_strlen(nullptr);
       if (buf) {
         marshal_str(buf, nullptr, len);
       }
       return len;
     }
-    case LogField::IP:
+    case LogField::Type::IP:
       return marshal_ip(buf, nullptr);
-    case LogField::N_TYPES:
+    case LogField::Type::N_TYPES:
+      [[fallthrough]];
+    case LogField::Type::dINT:
+      [[fallthrough]];
+    case LogField::Type::INVALID:
       break;
     }
   }
