@@ -23,6 +23,8 @@
 
 #include "proxy/http3/Http3Config.h"
 
+#include "tscore/Diags.h"
+
 int ts::Http3Config::_config_id = 0;
 
 //
@@ -36,6 +38,16 @@ ts::Http3ConfigParams::initialize()
   RecEstablishStaticConfigUInt32(this->_qpack_blocked_streams, "proxy.config.http3.qpack_blocked_streams");
   RecEstablishStaticConfigUInt32(this->_num_placeholders, "proxy.config.http3.num_placeholders");
   RecEstablishStaticConfigUInt32(this->_max_settings, "proxy.config.http3.max_settings");
+
+  // The QPACK dynamic table is not implemented: XpackDynamicTable never stores
+  // entries (its capacity is fixed at zero and never raised). Advertising a
+  // non-zero table size or blocked-stream count would tell a peer it may
+  // insert entries our decoder silently drops and then reference them, which
+  // breaks decoding. Refuse to start until the dynamic table is implemented.
+  if (this->_header_table_size != 0 || this->_qpack_blocked_streams != 0) {
+    Fatal("HTTP/3 QPACK dynamic table is not implemented; proxy.config.http3.header_table_size and "
+          "proxy.config.http3.qpack_blocked_streams must be 0");
+  }
 }
 
 uint32_t
