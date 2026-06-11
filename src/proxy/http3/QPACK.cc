@@ -27,6 +27,10 @@
 #include "tscore/ink_defs.h"
 #include "tscore/ink_memory.h"
 
+#include <algorithm>
+#include <array>
+#include <string_view>
+
 #define QPACKDebug(fmt, ...)   Dbg(dbg_ctl_qpack, "[%s] " fmt, this->_qc->cids().data(), ##__VA_ARGS__)
 #define QPACKDTDebug(fmt, ...) Dbg(dbg_ctl_qpack, "" fmt, ##__VA_ARGS__)
 
@@ -1226,26 +1230,42 @@ QPACK::StaticTable::lookup(uint16_t index, const char **name, size_t *name_len, 
 const XpackLookupResult
 QPACK::StaticTable::lookup(const char *name, size_t name_len, const char *value, size_t value_len)
 {
-  XpackLookupResult::MatchType match_type      = XpackLookupResult::MatchType::NONE;
-  uint16_t                     i               = 0;
-  uint16_t                     candidate_index = 0;
-  int                          n               = countof(STATIC_HEADER_FIELDS);
-
-  for (; i < n; ++i) {
-    const Header &h = STATIC_HEADER_FIELDS[i];
-    if (h.name_len == name_len) {
-      if (memcmp(name, h.name, name_len) == 0) {
-        candidate_index = i;
-        if (value_len == h.value_len && memcmp(value, h.value, value_len) == 0) {
-          // Exact match
-          match_type = XpackLookupResult::MatchType::EXACT;
-          break;
-        } else {
-          // Name match -- Keep it for no exact matches
-          match_type = XpackLookupResult::MatchType::NAME;
-        }
-      }
+  // The static table (RFC 9204 Appendix A) is not ordered by name and its
+  // indices are part of the wire encoding, so it cannot be reordered. Keep an
+  // auxiliary index sorted by name (ties broken by ascending table index) so a
+  // lookup scans only the entries sharing the requested name instead of all of
+  // them. Returns the same index the former linear scan did: the sole exact
+  // match, or the highest-indexed name match otherwise.
+  static const auto name_order = [] {
+    std::array<uint16_t, sizeof(STATIC_HEADER_FIELDS) / sizeof(STATIC_HEADER_FIELDS[0])> order;
+    for (uint16_t i = 0; i < order.size(); ++i) {
+      order[i] = i;
     }
+    std::sort(order.begin(), order.end(), [](uint16_t l, uint16_t r) {
+      const std::string_view ln{STATIC_HEADER_FIELDS[l].name, STATIC_HEADER_FIELDS[l].name_len};
+      const std::string_view rn{STATIC_HEADER_FIELDS[r].name, STATIC_HEADER_FIELDS[r].name_len};
+      return ln != rn ? ln < rn : l < r;
+    });
+    return order;
+  }();
+
+  const std::string_view target{name, name_len};
+  auto                   it = std::lower_bound(name_order.begin(), name_order.end(), target, [](uint16_t idx, std::string_view t) {
+    return std::string_view{STATIC_HEADER_FIELDS[idx].name, STATIC_HEADER_FIELDS[idx].name_len} < t;
+  });
+
+  XpackLookupResult::MatchType match_type      = XpackLookupResult::MatchType::NONE;
+  uint16_t                     candidate_index = 0;
+  for (; it != name_order.end(); ++it) {
+    const Header &h = STATIC_HEADER_FIELDS[*it];
+    if (h.name_len != name_len || memcmp(h.name, name, name_len) != 0) {
+      break; // Past the run of entries sharing this name.
+    }
+    candidate_index = *it;
+    if (value_len == h.value_len && memcmp(value, h.value, value_len) == 0) {
+      return {candidate_index, XpackLookupResult::MatchType::EXACT};
+    }
+    match_type = XpackLookupResult::MatchType::NAME;
   }
   return {candidate_index, match_type};
 }
