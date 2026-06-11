@@ -32,6 +32,7 @@
 void
 Resources::gather(const ResourceIDs ids, TSHttpHookID hook)
 {
+  this->hook = hook;
   Dbg(pi_dbg_ctl, "Building resources, hook=%s", TSHttpHookNameLookup(hook));
   Dbg(pi_dbg_ctl, "Gathering resources for hook %s with IDs %d", TSHttpHookNameLookup(hook), ids);
 
