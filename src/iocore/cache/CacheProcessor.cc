@@ -1486,6 +1486,10 @@ CacheProcessor::cacheInitialized()
 
     if (gnstripes) {
       // new ram_caches, with algorithm from the config
+      static const char *const ram_cache_algorithm_name[] = {"CLFUS", "LRU", "S3-FIFO"};
+      int const                ram_alg                    = cache_config_ram_cache_algorithm;
+      Dbg(dbg_ctl_cache_init, "ram_cache algorithm = %d (%s)", ram_alg,
+          (ram_alg >= 0 && ram_alg <= RAM_CACHE_ALGORITHM_S3FIFO) ? ram_cache_algorithm_name[ram_alg] : "unknown");
       for (int i = 0; i < gnstripes; i++) {
         switch (cache_config_ram_cache_algorithm) {
         default:
@@ -1494,6 +1498,9 @@ CacheProcessor::cacheInitialized()
           break;
         case RAM_CACHE_ALGORITHM_LRU:
           gstripes[i]->ram_cache = new_RamCacheLRU();
+          break;
+        case RAM_CACHE_ALGORITHM_S3FIFO:
+          gstripes[i]->ram_cache = new_RamCacheS3FIFO();
           break;
         }
       }
