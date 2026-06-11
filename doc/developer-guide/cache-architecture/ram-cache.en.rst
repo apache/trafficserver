@@ -73,7 +73,7 @@ len            Length of the object, which differs from *size* because of
 compressed_len Compressed length of the object.
 compressed     Compression type, or ``none`` if no compression. Possible types
                are: *fastlz*, *libz*, *liblzma*, *lz4* and *zstd*.
-uncompressible Flag indicating that content cannot be compressed (true), or that
+incompressible Flag indicating that content cannot be compressed (true), or that
                it mat be compressed (false).
 copy           Whether or not this object should be copied in and copied out
                (e.g. HTTP HDR).
@@ -150,21 +150,21 @@ a compile time option and may be something we want to change.
 There are 5 algorithms and levels of compression (speed on an Intel Xeon Gold
 6338 processor using lzbench and the silesia XML corpus):
 
-======= ================ ================== ====================================
-Method  Compression Rate Decompression Rate Notes
-======= ================ ================== ====================================
-fastlz  452 MB/sec       913 MB/sec         Effectively obsolete; prefer lz4.
-                                            Basically free since disk or network
-                                            will limit first; ~26% final size.
-libz    54 MB/sec        536 MB/sec         Effectively obsolete; prefer zstd.
-                                            Almost free, particularly
-                                            decompression; ~13% final size.
-liblzma 5 MB/sec         291 MB/sec         Expensive; ~8% final size.
-lz4     727 MB/sec       3458 MB/sec        Basically free since disk or network
-                                            will limit first; 23% final size
-zstd    508 MB/sec       1690 MB/sec        Basically free since disk or network
-                                            will limit first; ~12% final size.
-======= ================ ================== ====================================
+======= ===== ================= ================== ====================================
+Method  Level Compression Rate  Decompression Rate Notes
+======= ===== ================= ================== ====================================
+fastlz    1   452 MB/sec        913 MB/sec         Effectively obsolete; prefer lz4.
+                                                   Basically free since disk or network
+                                                   will limit first; ~26% final size.
+libz      6   54 MB/sec         536 MB/sec         Effectively obsolete; prefer zstd.
+                                                   Almost free, particularly
+                                                   decompression; ~13% final size.
+liblzma   6   5 MB/sec          291 MB/sec         Expensive; ~8% final size.
+lz4       1   727 MB/sec        3458 MB/sec        Basically free since disk or network
+                                                   will limit first; ~23% final size.
+zstd      3   508 MB/sec        1690 MB/sec        Basically free since disk or network
+                                                   will limit first; ~12% final size.
+======= ===== ================= ================== ====================================
 
 These are ballpark numbers, and your millage will vary enormously. JPEG, for
 example, will not compress with any of these (or at least will only do so at

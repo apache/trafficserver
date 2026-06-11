@@ -95,6 +95,11 @@ Cache
 
    Accumulates the number of misses to the LRU RAM cache for all volumes.  Note that this includes hits to the other memory caches, including the last open read and aggregation buffer caches, so it may not represent the total number of cache accesses that go to disk.
 
+.. ts:stat:: global proxy.process.cache.ram_cache.decompress.failure integer
+   :type: counter
+
+   Accumulates the number of RAM cache entries that failed to decompress on read, for all volumes.  A failed entry is dropped from the RAM cache and the read is treated as a miss.  A nonzero value indicates data corruption or a compression library error, not ordinary cache churn.
+
 .. ts:stat:: global proxy.process.cache.last_open_read.hits integer
    :type: counter
 

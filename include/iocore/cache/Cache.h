@@ -57,6 +57,15 @@ enum {
   RAM_HIT_LAST_ENTRY
 };
 
+// The RAM_HIT_COMPRESS_* values are the CACHE_COMPRESSION_* values offset by
+// one; keep the two sequences from silently desyncing when a codec is added.
+static_assert(RAM_HIT_COMPRESS_NONE == CACHE_COMPRESSION_NONE + 1);
+static_assert(RAM_HIT_COMPRESS_FASTLZ == CACHE_COMPRESSION_FASTLZ + 1);
+static_assert(RAM_HIT_COMPRESS_LIBZ == CACHE_COMPRESSION_LIBZ + 1);
+static_assert(RAM_HIT_COMPRESS_LIBLZMA == CACHE_COMPRESSION_LIBLZMA + 1);
+static_assert(RAM_HIT_COMPRESS_LZ4 == CACHE_COMPRESSION_LZ4 + 1);
+static_assert(RAM_HIT_COMPRESS_ZSTD == CACHE_COMPRESSION_ZSTD + 1);
+
 struct CacheVC;
 class CacheEvacuateDocVC;
 struct CacheDisk;
