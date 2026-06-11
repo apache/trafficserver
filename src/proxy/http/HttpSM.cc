@@ -8676,8 +8676,9 @@ HttpSM::redirect_request(const char *arg_redirect_url, const int arg_redirect_le
 
     if (auto tmpOrigHost{t_state.hdr_info.server_request.value_get(static_cast<std::string_view>(MIME_FIELD_HOST))};
         !tmpOrigHost.empty()) {
-      memcpy(origHost, tmpOrigHost.data(), tmpOrigHost.length());
-      origHost[std::min(tmpOrigHost.length(), sizeof(origHost) - 1)] = '\0';
+      auto hostLen = std::min(tmpOrigHost.length(), sizeof(origHost) - 1);
+      memcpy(origHost, tmpOrigHost.data(), hostLen);
+      origHost[hostLen] = '\0';
     } else {
       valid_origHost = false;
     }
