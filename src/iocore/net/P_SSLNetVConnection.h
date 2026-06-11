@@ -107,6 +107,8 @@ class SSLNetVConnection : public UnixNetVConnection,
 {
   using super = UnixNetVConnection; ///< Parent type.
 
+  friend struct SSLNetVConnectionAsyncEpTestAccess;
+
 public:
   int  sslStartHandShake(int event, int &err) override;
   void clear() override;
