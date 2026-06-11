@@ -41,7 +41,39 @@
 #endif
 #ifdef HAVE_ZSTD_H
 #include <zstd.h>
+#include <memory>
 constexpr int CLFUS_ZSTD_LEVEL = 3;
+
+namespace
+{
+
+// One-shot ZSTD_compress/ZSTD_decompress allocate and free a context on every
+// call, so reuse a per-thread context instead. May return nullptr if zstd
+// fails to allocate one. The compression level is a sticky parameter set once
+// here; no explicit ZSTD_CCtx_reset() is needed because ZSTD_compress2()
+// starts a new session on every call (resets are only for interrupting the
+// streaming API or changing sticky parameters).
+ZSTD_CCtx *
+zstd_cctx()
+{
+  thread_local std::unique_ptr<ZSTD_CCtx, size_t (*)(ZSTD_CCtx *)> ctx = [] {
+    std::unique_ptr<ZSTD_CCtx, size_t (*)(ZSTD_CCtx *)> c{ZSTD_createCCtx(), ZSTD_freeCCtx};
+    if (c && ZSTD_isError(ZSTD_CCtx_setParameter(c.get(), ZSTD_c_compressionLevel, CLFUS_ZSTD_LEVEL))) {
+      c.reset();
+    }
+    return c;
+  }();
+  return ctx.get();
+}
+
+ZSTD_DCtx *
+zstd_dctx()
+{
+  thread_local std::unique_ptr<ZSTD_DCtx, size_t (*)(ZSTD_DCtx *)> ctx{ZSTD_createDCtx(), ZSTD_freeDCtx};
+  return ctx.get();
+}
+
+} // end anonymous namespace
 #endif
 
 #define REQUIRED_COMPRESSION 0.9 // must get to this size or declared incompressible
@@ -266,10 +298,12 @@ RamCacheCLFUS::get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint64_t auxkey
 #endif
 #ifdef HAVE_ZSTD_H
           case CACHE_COMPRESSION_ZSTD: {
-            size_t l  = static_cast<size_t>(e->len);
-            size_t ll = 0;
-            // TODO: Use a thread_local ZSTD_DCtx
-            ll        = ZSTD_decompress(b, l, e->data->data(), e->compressed_len);
+            size_t     l    = static_cast<size_t>(e->len);
+            ZSTD_DCtx *dctx = zstd_dctx();
+            if (dctx == nullptr) {
+              goto Lfailed;
+            }
+            size_t ll = ZSTD_decompressDCtx(dctx, b, l, e->data->data(), e->compressed_len);
             if (ZSTD_isError(ll) || l != ll) {
               goto Lfailed;
             }
@@ -504,9 +538,12 @@ RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most)
 #endif
 #ifdef HAVE_ZSTD_H
       case CACHE_COMPRESSION_ZSTD: {
-        size_t ll   = l;
-        // TODO: Use a thread_local ZSTD_CCtx
-        size_t zret = ZSTD_compress(b, ll, edata->data(), elen, CLFUS_ZSTD_LEVEL);
+        ZSTD_CCtx *cctx = zstd_cctx();
+        if (cctx == nullptr) {
+          failed = true;
+          break;
+        }
+        size_t zret = ZSTD_compress2(cctx, b, l, edata->data(), elen);
         if (ZSTD_isError(zret)) {
           failed = true;
         } else {

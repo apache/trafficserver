@@ -398,7 +398,9 @@ set(TS_USE_MALLOC_ALLOCATOR ${ENABLE_MALLOC_ALLOCATOR})
 set(TS_USE_ALLOCATOR_METRICS ${ENABLE_ALLOCATOR_METRICS})
 find_package(ZLIB REQUIRED)
 
-find_package(ZSTD)
+# 1.4.0 stabilized the advanced one-shot API (ZSTD_compress2 et al.) used by
+# the RAM cache.
+find_package(ZSTD 1.4.0)
 if(ZSTD_FOUND)
 
   # Provide a compatibility target name if the upstream package does not export it
