@@ -430,7 +430,6 @@ encode_literal_header_field_with_indexed_name(uint8_t *buf_start, const uint8_t 
 
   switch (type) {
   case HpackField::INDEXED_LITERAL:
-    indexing_table.add_header_field(header);
     prefix = 6;
     flag   = 0x40;
     break;
@@ -467,6 +466,11 @@ encode_literal_header_field_with_indexed_name(uint8_t *buf_start, const uint8_t 
   }
   p += len;
 
+  // Encoded successfully; update the dynamic table.
+  if (type == HpackField::INDEXED_LITERAL) {
+    indexing_table.add_header_field(header);
+  }
+
   Dbg(dbg_ctl_hpack_encode, "Encoded field: %d: %.*s", index, static_cast<int>(header.value.size()), header.value.data());
   return p - buf_start;
 }
@@ -483,7 +487,6 @@ encode_literal_header_field_with_new_name(uint8_t *buf_start, const uint8_t *buf
 
   switch (type) {
   case HpackField::INDEXED_LITERAL:
-    indexing_table.add_header_field(header);
     flag = 0x40;
     break;
   case HpackField::NOINDEX_LITERAL:
@@ -514,6 +517,11 @@ encode_literal_header_field_with_new_name(uint8_t *buf_start, const uint8_t *buf
   }
 
   p += len;
+
+  // Encoded successfully; update the dynamic table.
+  if (type == HpackField::INDEXED_LITERAL) {
+    indexing_table.add_header_field(header);
+  }
 
   Dbg(dbg_ctl_hpack_encode, "Encoded field: %.*s: %.*s", static_cast<int>(header.name.size()), header.name.data(),
       static_cast<int>(header.value.size()), header.value.data());
@@ -784,12 +792,13 @@ hpack_encode_header_block(HpackIndexingTable &indexing_table, uint8_t *out_buf, 
 
   // Update dynamic table size
   if (maximum_table_size >= 0) {
-    indexing_table.update_maximum_size(maximum_table_size);
     int64_t written = encode_dynamic_table_size_update(cursor, out_buf_end, maximum_table_size);
     if (written == HPACK_ERROR_COMPRESSION_ERROR) {
       return HPACK_ERROR_COMPRESSION_ERROR;
     }
     cursor += written;
+    // Encoded successfully; update the dynamic table.
+    indexing_table.update_maximum_size(maximum_table_size);
   }
 
   for (auto &field : *hdr) {
