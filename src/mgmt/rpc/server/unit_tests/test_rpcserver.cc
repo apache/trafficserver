@@ -26,6 +26,7 @@
 
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <sys/un.h>
 #include <sys/wait.h>
 #include <fcntl.h>
@@ -41,6 +42,7 @@
 #include <cstring>
 #include <cstdlib>
 #include <vector>
+#include <functional>
 
 #include "swoc/swoc_file.h"
 
@@ -491,6 +493,44 @@ TEST_CASE("Basic message sending to a running server", "[socket]")
     }());
   }
   REQUIRE(rpc::test_remove_handler("do_nothing"));
+}
+
+TEST_CASE("JSONRPC socket inode permissions reflect restricted_api config", "[socket][permissions]")
+{
+  SECTION("restricted_api=true yields mode 0700 on the socket inode")
+  {
+    auto confStr{
+      R"({"rpc": { "enabled": true, "unix": { "lock_path_name": ")" + lockPath + R"(", "sock_path_name": ")" + sockPath +
+      R"(",  "backlog": 5, "max_retry_on_transient_errors": 64, "incoming_request_max_size": 32000, "restricted_api": true }}})"};
+    YAML::Node n = YAML::Load(confStr);
+    restart_json_rpc_server(n);
+
+    // Restore the default test server configuration on scope exit, even if an
+    // assertion below fails (REQUIRE throws), so subsequent test cases are not
+    // left running against the restricted-api server.
+    struct ConfigRestorer {
+      std::function<void()> restore;
+      ~ConfigRestorer()
+      {
+        try {
+          restore();
+        } catch (...) {
+        }
+      }
+    } config_restorer{[&]() {
+      auto       restoreStr{R"({"rpc": { "enabled": true, "unix": { "lock_path_name": ")" + lockPath + R"(", "sock_path_name": ")" +
+                      sockPath +
+                      R"(",  "backlog": 5, "max_retry_on_transient_errors": 64, "incoming_request_max_size": 32000 }}})"};
+      YAML::Node restoreN = YAML::Load(restoreStr);
+      restart_json_rpc_server(restoreN);
+    }};
+
+    struct stat st {
+    };
+    REQUIRE(::stat(sockPath.c_str(), &st) == 0);
+    CHECK(S_ISSOCK(st.st_mode));
+    CHECK((st.st_mode & 0777) == 0700);
+  }
 }
 
 TEST_CASE("Sending a message bigger than the internal server's buffer. 32000", "[buffer][error]")
