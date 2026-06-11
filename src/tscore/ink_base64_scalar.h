@@ -163,4 +163,17 @@ decode_scalar(const char *inBuffer, size_t inBufferSize, unsigned char *outBuffe
   }
 }
 
+// Decode the leading base64-alphabet run of inBuffer[0..inBufferSize): truncate
+// at the first non-alphabet byte, write the decoded bytes plus trailing NUL to
+// outBuffer, and set *length (if non-null) to the decoded byte count. This is
+// the canonical scalar decode, used directly by ats_base64_decode and as the
+// SIMD path's scalar tail in ink_base64_dispatch.cc.
+inline void
+decode_scalar_prefix(const char *inBuffer, size_t inBufferSize, unsigned char *outBuffer, size_t *length)
+{
+  const size_t valid = count_alphabet_prefix(inBuffer, inBufferSize);
+
+  decode_scalar(inBuffer, valid, outBuffer, length);
+}
+
 } // namespace ats::base64
