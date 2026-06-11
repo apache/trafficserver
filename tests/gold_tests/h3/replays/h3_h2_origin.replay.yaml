@@ -1,0 +1,352 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information regarding
+#  copyright ownership.  The ASF licenses this file to you under
+#  the Apache License, Version 2.0 (the "License"); you may not
+#  use this file except in compliance with the License.  You may
+#  obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+autest:
+  description: "Verify HTTP/3 client traffic to an HTTP/2 origin"
+
+  server:
+    name: "server-h3-h2-origin"
+    process_config:
+      verbose: false
+      other_args: "--poll-timeout 30000"
+
+  client:
+    name: "client-h3-h2-origin"
+    process_config:
+      verbose: false
+      other_args: "--poll-timeout 30000"
+
+  ats:
+    name: "ts-h3-h2-origin"
+    startup_timeout: 60
+    process_config:
+      enable_tls: true
+      enable_quic: true
+      enable_cache: false
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: "quic|http3|http2"
+      proxy.config.quic.initial_max_data_in: 1000000
+      proxy.config.quic.initial_max_stream_data_bidi_remote_in: 1000000
+      proxy.config.quic.server.stateless_retry_enabled: 0
+      proxy.config.ssl.client.alpn_protocols: "h2,http/1.1"
+      proxy.config.ssl.client.verify.server.policy: PERMISSIVE
+
+    remap_config:
+    - from: "https://example.com/"
+      to: "https://127.0.0.1:{SERVER_HTTPS_PORT}/"
+
+    log_validation:
+      traffic_out:
+        contains:
+        - expression: 'start HTTP/3 app \(ALPN=h3\)'
+          description: "ATS should negotiate HTTP/3 on the client side"
+
+sessions:
+- protocol:
+    stack: http3
+    tls:
+      sni: example.com
+
+  transactions:
+  - client-request:
+      version: "3"
+      headers:
+        fields:
+        - [ ":method", GET ]
+        - [ ":scheme", https ]
+        - [ ":authority", example.com ]
+        - [ ":path", /h3-h2-get-empty ]
+        - [ uuid, h3-h2-get-empty ]
+
+    proxy-request:
+      protocol:
+        stack: http2
+      version: "2"
+      method: GET
+      scheme: https
+      url: /h3-h2-get-empty
+
+    server-response:
+      version: "2"
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, "0" ]
+      content:
+        size: 0
+
+    proxy-response:
+      version: "3"
+      status: 200
+      headers:
+        fields:
+        - [ Content-Length, { value: "0", as: equal } ]
+
+  - client-request:
+      version: "3"
+      await: h3-h2-get-empty
+      headers:
+        fields:
+        - [ ":method", HEAD ]
+        - [ ":scheme", https ]
+        - [ ":authority", example.com ]
+        - [ ":path", /h3-h2-head-no-body ]
+        - [ uuid, h3-h2-head-no-body ]
+
+    proxy-request:
+      protocol:
+        stack: http2
+      version: "2"
+      method: HEAD
+      scheme: https
+      url: /h3-h2-head-no-body
+
+    server-response:
+      version: "2"
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, application/octet-stream ]
+        - [ Content-Length, "100" ]
+
+    proxy-response:
+      version: "3"
+      status: 200
+      headers:
+        fields:
+        - [ Content-Length, { value: "100", as: equal } ]
+
+  - client-request:
+      version: "3"
+      await: h3-h2-head-no-body
+      headers:
+        fields:
+        - [ ":method", OPTIONS ]
+        - [ ":scheme", https ]
+        - [ ":authority", example.com ]
+        - [ ":path", /h3-h2-options-small ]
+        - [ uuid, h3-h2-options-small ]
+
+    proxy-request:
+      protocol:
+        stack: http2
+      version: "2"
+      method: OPTIONS
+      scheme: https
+      url: /h3-h2-options-small
+
+    server-response:
+      version: "2"
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, application/octet-stream ]
+        - [ Content-Length, "100" ]
+      content:
+        size: 100
+
+    proxy-response:
+      version: "3"
+      status: 200
+      headers:
+        fields:
+        - [ Content-Length, { value: "100", as: equal } ]
+      content:
+        size: 100
+
+  - client-request:
+      version: "3"
+      await: h3-h2-options-small
+      headers:
+        fields:
+        - [ ":method", DELETE ]
+        - [ ":scheme", https ]
+        - [ ":authority", example.com ]
+        - [ ":path", /h3-h2-delete-empty ]
+        - [ uuid, h3-h2-delete-empty ]
+
+    proxy-request:
+      protocol:
+        stack: http2
+      version: "2"
+      method: DELETE
+      scheme: https
+      url: /h3-h2-delete-empty
+
+    server-response:
+      version: "2"
+      status: 204
+      reason: No Content
+      headers:
+        fields:
+        - [ X-H3-Origin, h2-delete ]
+
+    proxy-response:
+      version: "3"
+      status: 204
+
+- protocol:
+    stack: http3
+    tls:
+      sni: example.com
+
+  transactions:
+  - client-request:
+      version: "3"
+      headers:
+        fields:
+        - [ ":method", POST ]
+        - [ ":scheme", https ]
+        - [ ":authority", example.com ]
+        - [ ":path", /h3-h2-post-small ]
+        - [ Content-Type, application/octet-stream ]
+        - [ Content-Length, "100" ]
+        - [ uuid, h3-h2-post-small ]
+      content:
+        size: 100
+
+    proxy-request:
+      protocol:
+        stack: http2
+      version: "2"
+      method: POST
+      scheme: https
+      url: /h3-h2-post-small
+      headers:
+        fields:
+        - [ Content-Length, { value: "100", as: equal } ]
+      content:
+        size: 100
+
+    server-response:
+      version: "2"
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, application/octet-stream ]
+        - [ Content-Length, "100" ]
+      content:
+        size: 100
+
+    proxy-response:
+      version: "3"
+      status: 200
+      headers:
+        fields:
+        - [ Content-Length, { value: "100", as: equal } ]
+      content:
+        size: 100
+
+  - client-request:
+      version: "3"
+      await: h3-h2-post-small
+      headers:
+        fields:
+        - [ ":method", PUT ]
+        - [ ":scheme", https ]
+        - [ ":authority", example.com ]
+        - [ ":path", /h3-h2-put-large ]
+        - [ Content-Type, application/octet-stream ]
+        - [ Content-Length, "300000" ]
+        - [ uuid, h3-h2-put-large ]
+      content:
+        size: 300000
+
+    proxy-request:
+      protocol:
+        stack: http2
+      version: "2"
+      method: PUT
+      scheme: https
+      url: /h3-h2-put-large
+      headers:
+        fields:
+        - [ Content-Length, { value: "300000", as: equal } ]
+      content:
+        size: 300000
+
+    server-response:
+      version: "2"
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, application/octet-stream ]
+        - [ Content-Length, "300000" ]
+      content:
+        size: 300000
+
+    proxy-response:
+      version: "3"
+      status: 200
+      headers:
+        fields:
+        - [ Content-Length, { value: "300000", as: equal } ]
+      content:
+        size: 300000
+
+- protocol:
+    stack: http3
+    tls:
+      sni: example.com
+
+  transactions:
+  - client-request:
+      version: "3"
+      headers:
+        fields:
+        - [ ":method", GET ]
+        - [ ":scheme", https ]
+        - [ ":authority", example.com ]
+        - [ ":path", /h3-h2-get-large ]
+        - [ uuid, h3-h2-get-large ]
+
+    proxy-request:
+      protocol:
+        stack: http2
+      version: "2"
+      method: GET
+      scheme: https
+      url: /h3-h2-get-large
+
+    server-response:
+      version: "2"
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, application/octet-stream ]
+        - [ Content-Length, "300000" ]
+      content:
+        size: 300000
+
+    proxy-response:
+      version: "3"
+      status: 200
+      headers:
+        fields:
+        - [ Content-Length, { value: "300000", as: equal } ]
+      content:
+        size: 300000
