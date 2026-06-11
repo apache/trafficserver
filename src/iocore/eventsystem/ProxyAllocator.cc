@@ -34,6 +34,14 @@ thread_alloc(Allocator &a, ProxyAllocator &l)
     void *v    = l.freelist;
     l.freelist = *static_cast<void **>(l.freelist);
     --(l.allocated);
+#if TS_USE_ALLOCATOR_METRICS
+    // Reusing an item from the per-thread freelist is an allocation as far as
+    // the metrics are concerned. THREAD_FREE decremented inuse when the item
+    // was pushed onto the freelist, so without this the counted frees exceed
+    // the counted allocs and inuse underflows. The templated thread_alloc()
+    // below already does this; the two paths must stay symmetric.
+    a.increment_for_alloc();
+#endif
     return v;
   }
   return a.alloc_void();
