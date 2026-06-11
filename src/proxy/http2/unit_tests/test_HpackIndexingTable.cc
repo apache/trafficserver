@@ -301,6 +301,46 @@ TEST_CASE("HPACK low level APIs", "[hpack]")
         REQUIRE(len == HPACK_ERROR_COMPRESSION_ERROR);
       }
     }
+
+    SECTION("dynamic table is not mutated when encoding fails")
+    {
+      HpackHeaderField const header{"custom-key", "custom-header"};
+      uint8_t                buf[1];
+
+      // A zero-length output buffer guarantees the first xpack_encode_*
+      // call fails.  The dynamic table must remain untouched.
+      {
+        HpackIndexingTable indexing_table(4096);
+        uint32_t const     baseline_size = indexing_table.size();
+
+        int64_t len =
+          encode_literal_header_field_with_indexed_name(buf, buf, header, 4, indexing_table, HpackField::INDEXED_LITERAL);
+        REQUIRE(len == HPACK_ERROR_COMPRESSION_ERROR);
+        REQUIRE(indexing_table.size() == baseline_size);
+      }
+      {
+        HpackIndexingTable indexing_table(4096);
+        uint32_t const     baseline_size = indexing_table.size();
+
+        int64_t len = encode_literal_header_field_with_new_name(buf, buf, header, indexing_table, HpackField::INDEXED_LITERAL);
+        REQUIRE(len == HPACK_ERROR_COMPRESSION_ERROR);
+        REQUIRE(indexing_table.size() == baseline_size);
+      }
+
+      // The size-update branch in hpack_encode_header_block must likewise
+      // leave maximum_size untouched on encode failure.
+      {
+        std::unique_ptr<HTTPHdr, void (*)(HTTPHdr *)> headers(new HTTPHdr, destroy_http_hdr);
+        headers->create(HTTPType::REQUEST);
+
+        HpackIndexingTable indexing_table(4096);
+        uint32_t const     baseline_max = indexing_table.maximum_size();
+
+        int64_t len = hpack_encode_header_block(indexing_table, buf, 0, headers.get(), 256);
+        REQUIRE(len == HPACK_ERROR_COMPRESSION_ERROR);
+        REQUIRE(indexing_table.maximum_size() == baseline_max);
+      }
+    }
   }
 }
 

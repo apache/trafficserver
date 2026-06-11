@@ -2510,6 +2510,11 @@ Http2ConnectionState::send_headers_frame(Http2Stream *stream)
   Http2ErrorCode result = http2_encode_header_blocks(send_hdr, buf, buf_len, &header_blocks_size, *(this->peer_hpack_handle),
                                                      peer_settings.get(HTTP2_SETTINGS_HEADER_TABLE_SIZE));
   if (result != Http2ErrorCode::HTTP2_ERROR_NO_ERROR) {
+    // The encoder may have mutated the dynamic table for fields written before
+    // the failure.  Rolling that back to keep other streams alive would be
+    // ideal but is non-trivial; close the connection instead so peer state
+    // cannot diverge.
+    this->_close_connection(result);
     return;
   }
 
@@ -2628,6 +2633,10 @@ Http2ConnectionState::send_push_promise_frame(Http2Stream *stream, URL &url, con
   Http2ErrorCode result = http2_encode_header_blocks(&hdr, buf, buf_len, &header_blocks_size, *(this->peer_hpack_handle),
                                                      peer_settings.get(HTTP2_SETTINGS_HEADER_TABLE_SIZE));
   if (result != Http2ErrorCode::HTTP2_ERROR_NO_ERROR) {
+    // See send_headers_frame: a partial encode can leave the dynamic table
+    // out of sync with the peer.  Close the connection rather than risk
+    // desync; rollback would be cleaner but is non-trivial.
+    this->_close_connection(result);
     return false;
   }
 
