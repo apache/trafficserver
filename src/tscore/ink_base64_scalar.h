@@ -49,7 +49,7 @@
 #include <cstdint>
 #include <cstring>
 
-namespace ats::base64
+namespace ts::base64
 {
 // Converts a printable character to its six-bit representation; 64 marks a
 // non-alphabet byte. Both standard (`+`=62, `/`=63) and URL-safe (`-`=62,
@@ -176,4 +176,4 @@ decode_scalar_prefix(const char *inBuffer, size_t inBufferSize, unsigned char *o
   decode_scalar(inBuffer, valid, outBuffer, length);
 }
 
-} // namespace ats::base64
+} // namespace ts::base64
