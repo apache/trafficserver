@@ -56,7 +56,7 @@
 #include <hwy/highway.h>
 
 HWY_BEFORE_NAMESPACE();
-namespace ats::base64
+namespace ts::base64
 {
 namespace HWY_NAMESPACE
 {
@@ -233,11 +233,11 @@ namespace HWY_NAMESPACE
   }
 
 } // namespace HWY_NAMESPACE
-} // namespace ats::base64
+} // namespace ts::base64
 HWY_AFTER_NAMESPACE();
 
 #if HWY_ONCE
-namespace ats::base64
+namespace ts::base64
 {
 HWY_EXPORT(DecodeImpl);
 HWY_EXPORT(EncodeImpl);
@@ -254,5 +254,5 @@ encode_dispatch(const unsigned char *in, size_t in_len, char *out, size_t *out_l
   HWY_DYNAMIC_DISPATCH(EncodeImpl)(in, in_len, out, out_len);
 }
 
-} // namespace ats::base64
+} // namespace ts::base64
 #endif

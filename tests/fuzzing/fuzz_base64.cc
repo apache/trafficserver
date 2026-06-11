@@ -63,10 +63,10 @@ check_decode(const char *in, size_t len)
     fail("decode returned false with sufficient buffer");
   }
 
-  const size_t               valid = ats::base64::count_alphabet_prefix(in, len);
+  const size_t               valid = ts::base64::count_alphabet_prefix(in, len);
   std::vector<unsigned char> out_ref(cap + 1, 0xCD);
   size_t                     n_ref = 0;
-  ats::base64::decode_scalar(in, valid, out_ref.data(), &n_ref);
+  ts::base64::decode_scalar(in, valid, out_ref.data(), &n_ref);
 
   if (n_pub != n_ref || std::memcmp(out_pub.data(), out_ref.data(), n_ref) != 0 || out_pub[n_ref] != '\0') {
     fail("decode parity");
@@ -95,7 +95,7 @@ LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 
   std::vector<char> enc_ref(ecap + 1, 2);
   size_t            ne_ref = 0;
-  ats::base64::encode_scalar(data, size, enc_ref.data(), &ne_ref);
+  ts::base64::encode_scalar(data, size, enc_ref.data(), &ne_ref);
   if (ne_pub != ne_ref || std::memcmp(enc_pub.data(), enc_ref.data(), ne_ref + 1) != 0) {
     fail("encode parity");
   }

@@ -35,7 +35,7 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace ats::base64
+namespace ts::base64
 {
 // Decode `in_len` bytes of base64 input. Output buffer capacity has already
 // been validated by the caller (ats_base64_decode). Writes a trailing NUL at
@@ -46,4 +46,4 @@ void decode_dispatch(const char *in, size_t in_len, unsigned char *out, size_t *
 // Writes a trailing NUL at out[*out_len].
 void encode_dispatch(const unsigned char *in, size_t in_len, char *out, size_t *out_len);
 
-} // namespace ats::base64
+} // namespace ts::base64
