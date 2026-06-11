@@ -282,7 +282,7 @@ cond %{INBOUND:<C>}               {in,out}bound.conn.<c>             inbound (:r
 
     - ``inbound.req.<header>`` → ``CLIENT-HEADER`` - Headers from the client request
     - ``outbound.req.<header>`` → ``SERVER-HEADER`` - Headers in the request sent to origin
-    - ``inbound.url.<part>`` → ``CLIENT-URL`` - URL from the original client request
+    - ``inbound.url.<part>`` → ``CLIENT-URL`` - URL from the original client request (which is immutable)
     - ``outbound.url.<part>`` → ``SERVER-URL`` - URL in the request sent to origin (after remapping)
     - ``nexthop.<field>`` → ``NEXT-HOP`` - Network destination info (host, port, strategy)
 
@@ -319,7 +319,7 @@ add-header X-bar foo          inbound.{req,resp}.x-Bar += "bar" Add the header t
 counter my_stat               counter("my_stat")                Increment internal counter
 rm-client-header X-Foo        inbound.req.X-Foo = ""            Remove a client request header
 rm-cookie foo                 {in,out}bound.cookie.foo = ""     Remove the cookie named foo
-rm-destination <C>            inbound.url.<C> = ""              Remove an URL component, ``C`` is path, query etc.
+rm-destination <C>            outbound.url.<C> = ""             Remove an URL component, ``C`` is path, query etc.
 rm-header X-Foo               {in,out}bound.req.X-Foo = ""      Context sensitive header removal
 rm-destination QUERY ...      remove_query("foo,bar")           Remove specified query keys
 rm-destination QUERY ... [I]  keep_query("foo,bar")             Keep only specified query keys
@@ -330,7 +330,7 @@ set-config <name> 12          set-config("name", 17)            Set a configurat
 set-conn-dscp 8               inbound.conn.dscp = 8             Set the DSCP value for the connection
 set-conn-mark 17              inbound.conn.mark = 17            Set the MARK value for the connection
 set-cookie foo bar            {in,out}bound.cookie.foo = "bar"  Set a request/response cookie named foo
-set-destination <C> bar       {in,out}bound.url.<C> = "bar"     Set a URL component, <:ref:`C<admin-plugins-header-rewrite-url-parts>`> is path, query etc.
+set-destination <C> bar       outbound.url.<C> = "bar"           Set a URL component, <:ref:`C<admin-plugins-header-rewrite-url-parts>`> is path, query etc.
 set-header X-Bar foo          inbound.{req,resp}.X-Bar = "foo"  Assign a client request/origin response header
 set-plugin-cntl <C> <T>       set-plugin-cntl(<C>) = <T>        Set the plugin control <C> to <T>, see <:ref:`C<admin-plugins-header-rewrite-plugin-cntl>`>
 set-redirect <Code> <URL>     set-redirect(302, "\https://...") Set a redirect response
@@ -1075,7 +1075,7 @@ Remove Client Query Parameters
 The following ruleset removes any query parameters set by the client.::
 
    REMAP {
-       inbound.url.query = "";
+       outbound.url.query = "";
    }
 
 Remove only a few select query parameters::
