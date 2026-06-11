@@ -271,6 +271,171 @@ TEST_CASE("HttpTransact", "[http]")
       CHECK(field->has_dups() == true);
     }
 
+    SECTION("Connection-named header from 304 is not merged")
+    {
+      HTTPHdr        cached_headers;
+      HTTPHdr        response_headers;
+      ts::PostScript cached_headers_defer([&]() -> void { cached_headers.destroy(); });
+      ts::PostScript response_headers_defer([&]() -> void { response_headers.destroy(); });
+
+      MIMEField *field;
+
+      struct header {
+        std::string_view name;
+        std::string_view value;
+      };
+
+      struct header cached[] = {
+        {"AAA", "111"},
+        {"BBB", "222"},
+      };
+      struct header response[] = {
+        {"Connection", "X-Evil"  },
+        {"X-Evil",     "injected"},
+        {"CCC",        "333"     },
+      };
+
+      cached_headers.create(HTTPType::RESPONSE);
+      for (auto &&entry : cached) {
+        field = cached_headers.field_create(entry.name);
+        cached_headers.field_attach(field);
+        cached_headers.field_value_set(field, entry.value.data(), entry.value.length());
+      }
+
+      response_headers.create(HTTPType::RESPONSE);
+      for (auto &&entry : response) {
+        field = response_headers.field_create(entry.name);
+        response_headers.field_attach(field);
+        response_headers.field_value_set(field, entry.value.data(), entry.value.length());
+      }
+
+      HttpTransact::merge_response_header_with_cached_header(&cached_headers, &response_headers);
+
+      CHECK(cached_headers.fields_count() == 3);
+
+      field = cached_headers.field_find("Connection"sv);
+      CHECK(field == nullptr);
+
+      field = cached_headers.field_find("X-Evil"sv);
+      CHECK(field == nullptr);
+
+      field = cached_headers.field_find("CCC"sv);
+      REQUIRE(field != nullptr);
+      auto str{field->value_get()};
+      CHECK(str == "333"sv);
+      CHECK(field->has_dups() == false);
+    }
+
+    SECTION("Multiple Connection tokens are all skipped")
+    {
+      HTTPHdr        cached_headers;
+      HTTPHdr        response_headers;
+      ts::PostScript cached_headers_defer([&]() -> void { cached_headers.destroy(); });
+      ts::PostScript response_headers_defer([&]() -> void { response_headers.destroy(); });
+
+      MIMEField *field;
+
+      struct header {
+        std::string_view name;
+        std::string_view value;
+      };
+
+      struct header cached[] = {
+        {"AAA", "111"},
+      };
+      struct header response[] = {
+        {"Connection", "X-Foo, X-Bar"},
+        {"X-Foo",      "a"           },
+        {"X-Bar",      "b"           },
+        {"DDD",        "444"         },
+      };
+
+      cached_headers.create(HTTPType::RESPONSE);
+      for (auto &&entry : cached) {
+        field = cached_headers.field_create(entry.name);
+        cached_headers.field_attach(field);
+        cached_headers.field_value_set(field, entry.value.data(), entry.value.length());
+      }
+
+      response_headers.create(HTTPType::RESPONSE);
+      for (auto &&entry : response) {
+        field = response_headers.field_create(entry.name);
+        response_headers.field_attach(field);
+        response_headers.field_value_set(field, entry.value.data(), entry.value.length());
+      }
+
+      HttpTransact::merge_response_header_with_cached_header(&cached_headers, &response_headers);
+
+      CHECK(cached_headers.fields_count() == 2);
+
+      field = cached_headers.field_find("X-Foo"sv);
+      CHECK(field == nullptr);
+
+      field = cached_headers.field_find("X-Bar"sv);
+      CHECK(field == nullptr);
+
+      field = cached_headers.field_find("DDD"sv);
+      REQUIRE(field != nullptr);
+      auto str{field->value_get()};
+      CHECK(str == "444"sv);
+      CHECK(field->has_dups() == false);
+    }
+
+    SECTION("Connection: TE keeps cached TE and merges normal headers")
+    {
+      HTTPHdr        cached_headers;
+      HTTPHdr        response_headers;
+      ts::PostScript cached_headers_defer([&]() -> void { cached_headers.destroy(); });
+      ts::PostScript response_headers_defer([&]() -> void { response_headers.destroy(); });
+
+      MIMEField *field;
+
+      struct header {
+        std::string_view name;
+        std::string_view value;
+      };
+
+      struct header cached[] = {
+        {"AAA", "111"     },
+        {"TE",  "trailers"},
+      };
+      struct header response[] = {
+        {"Connection", "TE"      },
+        {"TE",         "trailers"},
+        {"BBB",        "222"     },
+      };
+
+      cached_headers.create(HTTPType::RESPONSE);
+      for (auto &&entry : cached) {
+        field = cached_headers.field_create(entry.name);
+        cached_headers.field_attach(field);
+        cached_headers.field_value_set(field, entry.value.data(), entry.value.length());
+      }
+
+      response_headers.create(HTTPType::RESPONSE);
+      for (auto &&entry : response) {
+        field = response_headers.field_create(entry.name);
+        response_headers.field_attach(field);
+        response_headers.field_value_set(field, entry.value.data(), entry.value.length());
+      }
+
+      HttpTransact::merge_response_header_with_cached_header(&cached_headers, &response_headers);
+
+      CHECK(cached_headers.fields_count() == 3);
+
+      field = cached_headers.field_find("TE"sv);
+      REQUIRE(field != nullptr);
+      auto str{field->value_get()};
+      CHECK(str == "trailers"sv);
+      CHECK(field->has_dups() == false);
+
+      field = cached_headers.field_find("BBB"sv);
+      REQUIRE(field != nullptr);
+      str = field->value_get();
+      CHECK(str == "222"sv);
+      CHECK(field->has_dups() == false);
+    }
+
     SECTION("Have dup headers 2")
     {
       HTTPHdr        hdr1;
@@ -428,6 +593,7 @@ TEST_CASE("HttpTransact", "[http]")
       CHECK(str == "999"sv);
       CHECK(field->has_dups() == false);
     }
+
     SECTION("Response has superset")
     {
       HTTPHdr        cached_headers;
