@@ -25,7 +25,10 @@
 #include "tscore/ink_platform.h"
 
 #include <strings.h>
+#include <algorithm>
 #include <cmath>
+#include <string>
+#include <array>
 
 #include "HttpTransact.h"
 #include "HttpTransactHeaders.h"
@@ -5156,17 +5159,34 @@ HttpTransact::merge_response_header_with_cached_header(HTTPHdr *cached_header, H
   const char *name;
   bool dups_seen = false;
 
+  // Connection tokens are hop-by-hop header names to strip.  Real-world Connection headers
+  // rarely contain more than a few tokens; use a fixed-capacity buffer to avoid allocation.
+  // If a pathological response exceeds the buffer, fall back to scanning the Connection field
+  // directly to ensure no token is silently skipped.
+  static constexpr size_t MAX_CONN_TOKENS = 16;
+  std::array<ts::TextView, MAX_CONN_TOKENS> conn_tokens;
+  size_t conn_token_count = 0;
+  bool conn_overflow      = false;
+
+  MIMEField *conn_field = response_header->field_find(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION);
+  if (conn_field != nullptr) {
+    HdrCsvIter csv;
+
+    for (auto token = csv.get_first(conn_field, true); token; token = csv.get_next()) {
+      if (conn_token_count < MAX_CONN_TOKENS) {
+        conn_tokens[conn_token_count++] = token;
+      } else {
+        conn_overflow = true;
+        break;
+      }
+    }
+  }
+
   for (auto spot = response_header->begin(), limit = response_header->end(); spot != limit; ++spot) {
     MIMEField &field{*spot};
     int name_len;
     name = field.name_get(&name_len);
 
-    ///////////////////////////
-    // is hop-by-hop header? //
-    ///////////////////////////
-    if (HttpTransactHeaders::is_this_a_hop_by_hop_header(name)) {
-      continue;
-    }
     /////////////////////////////////////
     // dont cache content-length field  and transfer encoding //
     /////////////////////////////////////
@@ -5194,6 +5214,33 @@ HttpTransact::merge_response_header_with_cached_header(HTTPHdr *cached_header, H
     /////////////////////////////////////
     if (name == MIME_FIELD_WARNING) {
       continue;
+    }
+    ///////////////////////////
+    // is hop-by-hop header? //
+    ///////////////////////////
+    if (HttpTransactHeaders::is_this_a_hop_by_hop_header(name)) {
+      continue;
+    }
+    // Check if named in Connection header (linear scan — after cheap pointer checks above).
+    // On overflow, fall back to re-scanning the Connection CSV to guarantee correctness.
+    if (conn_field != nullptr) {
+      ts::TextView name_tv{name, static_cast<size_t>(name_len)};
+      bool is_conn_token = false;
+      if (!conn_overflow) {
+        is_conn_token = std::any_of(conn_tokens.begin(), conn_tokens.begin() + conn_token_count,
+                                    [&name_tv](ts::TextView conn_token) { return strcasecmp(name_tv, conn_token) == 0; });
+      } else {
+        HdrCsvIter csv;
+        for (auto token = csv.get_first(conn_field, true); token; token = csv.get_next()) {
+          if (strcasecmp(name_tv, token) == 0) {
+            is_conn_token = true;
+            break;
+          }
+        }
+      }
+      if (is_conn_token) {
+        continue;
+      }
     }
     // Copy all remaining headers with replacement
 
