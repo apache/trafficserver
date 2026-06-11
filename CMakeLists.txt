@@ -404,6 +404,9 @@ if(ZSTD_FOUND)
   # Provide a compatibility target name if the upstream package does not export it
   # Our code links against `zstd::zstd`; upstream zstd usually exports
   # `zstd::libzstd_shared`/`zstd::libzstd_static`. Create an alias if needed.
+  # Normally this will be dead code if we use the packaged FindZSTD.cmake; but
+  # if CMAKE_FIND_PACKAGE_PREFER_CONFIG=1 and zstd-config.cmake is found, this
+  # may be useful.
   if(NOT TARGET zstd::zstd)
     if(TARGET zstd::libzstd_shared)
       set(_zstd_target zstd::libzstd_shared)
