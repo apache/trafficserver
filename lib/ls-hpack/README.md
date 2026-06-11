@@ -23,4 +23,4 @@ Huffman decoding acceleration.
 
 The current implementation pulled into ATS is based upon what is currently the
 latest version,
-[v2.3.4](https://github.com/litespeedtech/ls-hpack/releases/tag/v2.3.4).
+[v2.3.5](https://github.com/litespeedtech/ls-hpack/releases/tag/v2.3.5).
