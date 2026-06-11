@@ -56,6 +56,14 @@ if(HAVE_LZMA_H)
   target_link_libraries(inkcache PRIVATE LibLZMA::LibLZMA)
 endif()
 
+if(HAVE_LZ4_H)
+  target_link_libraries(inkcache PRIVATE LZ4::LZ4)
+endif()
+
+if(HAVE_ZSTD_H)
+  target_link_libraries(inkcache PRIVATE zstd::zstd)
+endif()
+
 if(BUILD_TESTING)
   # Unit Tests with unit_tests/main.cc
   macro(add_cache_test name)
@@ -91,6 +99,7 @@ if(BUILD_TESTING)
   add_cache_test(Update_Header unit_tests/test_Update_header.cc)
   add_cache_test(CacheStripe unit_tests/test_Stripe.cc)
   add_cache_test(CacheAggregateWriteBuffer unit_tests/test_AggregateWriteBuffer.cc)
+  add_cache_test(RamCacheCLFUS unit_tests/test_RamCacheCLFUS.cc)
 
   # Unit Tests without unit_tests/main.cc
   add_executable(test_ConfigVolumes unit_tests/test_ConfigVolumes.cc)
