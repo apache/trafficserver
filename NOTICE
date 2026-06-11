@@ -118,3 +118,10 @@ LS-HPACK provides functionality to encode and decode HTTP headers using
 HPACK compression mechanism specified in RFC 7541.
 Copyright (c) 2018 - 2023 LiteSpeed Technologies Inc, (MIT License)
 https://github.com/litespeedtech/ls-hpack.git
+
+~~
+
+cmake/FindLZ4.cmake and cmake/FindZSTD.cmake derived from:
+VTK: open-source software system for image processing, 3D graphics, volume rendering and visualization
+Copyright (c) 1993-2015 Ken Martin, Will Schroeder, Bill Lorensen (BSD-3-Clause License)
+https://gitlab.kitware.com/vtk/vtk
