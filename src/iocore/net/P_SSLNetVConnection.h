@@ -106,6 +106,8 @@ class SSLNetVConnection : public UnixNetVConnection,
 {
   using super = UnixNetVConnection; ///< Parent type.
 
+  friend struct SSLNetVConnectionAsyncEpTestAccess;
+
 public:
   void clear() override;
   void free_thread(EThread *t) override;
