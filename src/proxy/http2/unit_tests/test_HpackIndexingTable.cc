@@ -547,10 +547,10 @@ TEST_CASE("HPACK encode lower-cases mixed-case field names", "[hpack]")
   // Use a name long enough to exercise the 16-byte SSE2 body when present.
   auto encode_one = [](HpackIndexingTable &table, uint8_t *buf, const char *name, const char *value) -> int64_t {
     std::unique_ptr<HTTPHdr, void (*)(HTTPHdr *)> headers(new HTTPHdr, destroy_http_hdr);
-    headers->create(HTTPType::REQUEST);
+    headers->create(HTTP_TYPE_REQUEST);
     MIMEField *field = mime_field_create(headers->m_heap, headers->m_http->m_fields_impl);
-    field->name_set(headers->m_heap, headers->m_http->m_fields_impl, std::string_view{name});
-    field->value_set(headers->m_heap, headers->m_http->m_fields_impl, std::string_view{value});
+    field->name_set(headers->m_heap, headers->m_http->m_fields_impl, name, strlen(name));
+    field->value_set(headers->m_heap, headers->m_http->m_fields_impl, value, strlen(value));
     mime_hdr_field_attach(headers->m_http->m_fields_impl, field, 1, nullptr);
     std::memset(buf, 0, BUFSIZE_FOR_REGRESSION_TEST);
     return hpack_encode_header_block(table, buf, BUFSIZE_FOR_REGRESSION_TEST, headers.get());
