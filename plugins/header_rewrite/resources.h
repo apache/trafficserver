@@ -15,10 +15,6 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
-//////////////////////////////////////////////////////////////////////////////////////////////
-//
-// Implement the classes for the various types of hash keys we support.
-//
 #pragma once
 
 #include <string>
