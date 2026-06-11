@@ -145,13 +145,27 @@ def make_malformed_headers(scenario: str) -> bytes:
             ("x-injected", "before\nafter"),
             ("uuid", "malformed-lf-value"),
         ]
+    elif scenario == "nul-in-header-value":
+        headers = [
+            (":method", "GET"),
+            (":scheme", "https"),
+            (":authority", "nul-value.example"),
+            (":path", "/nul-value"),
+            ("x-injected", "before\0after"),
+            ("uuid", "malformed-nul-value"),
+        ]
     else:
         raise ValueError(f"unknown scenario: {scenario}")
 
     return encoder.encode(headers)
 
 
-SCENARIOS_EXPECTING_ERROR_RESPONSE = {"crlf-in-header-value", "cr-in-header-value", "lf-in-header-value"}
+SCENARIOS_EXPECTING_ERROR_RESPONSE = {
+    "crlf-in-header-value",
+    "cr-in-header-value",
+    "lf-in-header-value",
+    "nul-in-header-value",
+}
 
 
 def main() -> int:
@@ -166,6 +180,7 @@ def main() -> int:
             "crlf-in-header-value",
             "cr-in-header-value",
             "lf-in-header-value",
+            "nul-in-header-value",
         ),
         help="Malformed request shape to send",
     )
@@ -173,7 +188,7 @@ def main() -> int:
 
     tls_socket = connect_socket(args.port)
     decoder = hpack.Decoder()
-    expect_response = args.scenario in SCENARIOS_EXPECTING_ERROR_RESPONSE
+    expect_error_response = args.scenario in SCENARIOS_EXPECTING_ERROR_RESPONSE
     try:
         payload = make_malformed_headers(args.scenario)
         tls_socket.sendall(H2_PREFACE)
@@ -201,7 +216,7 @@ def main() -> int:
                 print(f"Received GOAWAY with error code {error_code}")
                 return 0 if error_code in (0, PROTOCOL_ERROR) else 1
 
-            if frame_type == TYPE_HEADERS and frame["stream_id"] == 1 and expect_response:
+            if frame_type == TYPE_HEADERS and frame["stream_id"] == 1 and expect_error_response:
                 headers = decoder.decode(frame["payload"])
                 status = dict(headers).get(":status", "")
                 status_code = int(status) if status else 0
