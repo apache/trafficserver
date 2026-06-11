@@ -1,0 +1,121 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+autest:
+  description: "Verify dynamic Connection-token hop-by-hop header stripping (forward-path)"
+
+  server:
+    name: 'hopbyhop-server'
+
+  client:
+    name: 'hopbyhop-client'
+
+  ats:
+    name: 'ts-hopbyhop'
+    remap_config:
+      - from: "http://www.example.com/"
+        to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"
+
+sessions:
+  - transactions:
+      - client-request:
+          method: GET
+          version: "1.1"
+          url: /t1
+          headers:
+            fields:
+              - [Host, www.example.com]
+              - [Connection, X-Internal-Auth]
+              - [X-Internal-Auth, admin]
+              - [uuid, hopbyhop-1]
+
+        proxy-request:
+          headers:
+            fields:
+              - [X-Internal-Auth, { as: absent }]
+              - [Connection, { as: absent }]
+
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Content-Length, 0]
+
+        proxy-response:
+          status: 200
+
+      - client-request:
+          method: GET
+          version: "1.1"
+          url: /t2
+          headers:
+            fields:
+              - [Host, www.example.com]
+              - [Connection, "X-Foo, X-Bar"]
+              - [X-Foo, a]
+              - [X-Bar, b]
+              - [uuid, hopbyhop-2]
+
+        proxy-request:
+          headers:
+            fields:
+              - [X-Foo, { as: absent }]
+              - [X-Bar, { as: absent }]
+              - [Connection, { as: absent }]
+
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Content-Length, 0]
+
+        proxy-response:
+          status: 200
+
+      - client-request:
+          method: GET
+          version: "1.1"
+          url: /t3
+          headers:
+            fields:
+              - [Host, www.example.com]
+              - [Connection, TE]
+              - [TE, trailers]
+              - [uuid, hopbyhop-3]
+
+        proxy-request:
+          headers:
+            fields:
+              # 9.2.x strips TE unconditionally as a hop-by-hop header (it lacks
+              # the te:trailers gRPC carve-out that exists on 10.x), so the origin
+              # must not see TE. The Connection header itself is also stripped.
+              - [TE, { as: absent }]
+              - [Connection, { as: absent }]
+
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Content-Length, 0]
+
+        proxy-response:
+          status: 200

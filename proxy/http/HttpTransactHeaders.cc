@@ -24,6 +24,7 @@
 #include <bitset>
 #include <algorithm>
 #include <array>
+#include <string>
 #include <string_view>
 
 #include "tscore/ink_platform.h"
@@ -212,6 +213,33 @@ HttpTransactHeaders::copy_header_fields(HTTPHdr *src_hdr, HTTPHdr *new_hdr, bool
 
   // Start with an exact duplicate
   new_hdr->copy(src_hdr);
+
+  if (MIMEField *conn_field = new_hdr->field_find(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION); conn_field != nullptr) {
+    HdrCsvIter csv;
+
+    for (auto token = csv.get_first(conn_field, true); !token.empty(); token = csv.get_next()) {
+      if (token[0] == '@') {
+        continue;
+      }
+
+      // Look up the named header; skip if not present
+      MIMEField *target = new_hdr->field_find(token.data(), static_cast<int>(token.size()));
+      if (target == nullptr) {
+        continue;
+      }
+
+      // Use wksidx for cheap well-known header exemption checks
+      int const wks_idx = target->m_wks_idx;
+      if (wks_idx == MIME_WKSIDX_TE || wks_idx == MIME_WKSIDX_CONNECTION) {
+        continue;
+      }
+      if (retain_proxy_auth_hdrs && (wks_idx == MIME_WKSIDX_PROXY_AUTHENTICATE || wks_idx == MIME_WKSIDX_PROXY_AUTHORIZATION)) {
+        continue;
+      }
+
+      new_hdr->field_delete(target);
+    }
+  }
 
   // Nuke hop-by-hop headers
   //
