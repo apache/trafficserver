@@ -500,6 +500,12 @@ private:
   int       get_request_method_wksidx() const;
 
 public:
+  TSHttpHookID
+  get_cur_hook_id() const
+  {
+    return cur_hook_id;
+  }
+
   // TODO:  Now that bodies can be empty, should the body counters be set to -1 ? TS-2213
   // Stats & Logging Info
   int     client_request_hdr_bytes        = 0;
