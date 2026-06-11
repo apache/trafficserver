@@ -135,12 +135,12 @@ RamCacheS3FIFO::init(int64_t abytes, StripeSM *astripe)
   if (!_max_bytes) {
     return;
   }
-  _ghost_size_limit = _max_bytes / 100 * GHOST_SIZE_PERCENT;
+  _ghost_size_limit = (_max_bytes * GHOST_SIZE_PERCENT) / 100;
   // The ghost stores keys only, but each key still costs ~ENTRY_OVERHEAD of real memory. Bound the
   // ghost by both its object-size sum (keeps it proportional for large objects) and an entry count
   // that caps its metadata at GHOST_MEM_PERCENT of the configured size; the metadata is counted
   // against the budget (see put) so total memory never exceeds ram_cache.size.
-  _ghost_max = (_max_bytes / 100 * GHOST_MEM_PERCENT) / ENTRY_OVERHEAD;
+  _ghost_max = ((_max_bytes * GHOST_MEM_PERCENT) / 100) / ENTRY_OVERHEAD;
   _resize_hashtable();
 }
 
