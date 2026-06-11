@@ -22,10 +22,13 @@
 */
 
 #include "proxy/hdrs/HuffmanCodec.h"
+#include "ls-hpack/lshpack.h"
 #include <cstdlib>
 #include <iostream>
 #include <cassert>
 #include <cstring>
+#include <random>
+#include <vector>
 #include <catch2/catch_test_macros.hpp>
 
 using namespace std;
@@ -205,5 +208,116 @@ TEST_CASE("decode_errors", "[proxy][huffman]")
     int   len     = huffman_decode(dst, dst_len, (uint8_t *)test_cases[i].input, test_cases[i].input_len);
     REQUIRE(len == -1);
     free(dst);
+  }
+}
+
+TEST_CASE("decode_known_vectors", "[proxy][huffman]")
+{
+  for (const auto &i : huffman_encode_test_data) {
+    char    dst[64];
+    int64_t len = huffman_decode(dst, sizeof(dst), i.expect, i.expect_len);
+
+    REQUIRE(len == i.src_len);
+    REQUIRE(memcmp(dst, i.src, len) == 0);
+  }
+}
+
+// The fast table-based decoder must agree with the original 4-bit FSM decoder
+// on input validity and decoded content. The full decoder run with a roomy
+// destination serves as the oracle. The one permitted difference is an
+// exactly-sized destination (dst_len == decoded length): depending on how the
+// trailing padding falls on nibble boundaries, either decoder may report
+// LSHPACK_ERR_MORE_BUF where the other succeeds. One byte of headroom
+// guarantees success for both; ATS callers always allocate twice the encoded
+// length, which is strictly more than any decoded length. Sentinel bytes
+// verify nothing is written past dst_len.
+static void
+require_decoder_parity(const uint8_t *src, uint32_t src_len, uint32_t dst_len)
+{
+  constexpr size_t  SENTINEL_LEN = 64;
+  std::vector<char> oracle_buf(2 * src_len + 8);
+  int64_t           oracle = litespeed::lshpack_dec_huff_decode_full(src, src_len, oracle_buf.data(), oracle_buf.size());
+
+  std::vector<char> fast_buf(dst_len + SENTINEL_LEN, '\xa5');
+  int64_t           fast = litespeed::lshpack_dec_huff_decode(src, src_len, fast_buf.data(), dst_len);
+
+  if (oracle < 0 || static_cast<uint64_t>(oracle) > dst_len) {
+    REQUIRE(fast < 0);
+  } else if (static_cast<uint64_t>(oracle) == dst_len && fast < 0) {
+    REQUIRE(fast == -3); // LSHPACK_ERR_MORE_BUF on an exact-fit destination
+  } else {
+    REQUIRE(fast == oracle);
+    REQUIRE(memcmp(fast_buf.data(), oracle_buf.data(), oracle) == 0);
+  }
+  for (size_t i = dst_len; i < dst_len + SENTINEL_LEN; ++i) {
+    REQUIRE(fast_buf[i] == '\xa5');
+  }
+}
+
+TEST_CASE("decoder_parity_exhaustive_short", "[proxy][huffman]")
+{
+  uint8_t src[2];
+
+  for (uint32_t hi = 0; hi < 256; ++hi) {
+    src[0] = static_cast<uint8_t>(hi);
+    for (uint32_t dst_len = 0; dst_len <= 4; ++dst_len) {
+      require_decoder_parity(src, 1, dst_len);
+    }
+    for (uint32_t lo = 0; lo < 256; ++lo) {
+      src[1] = static_cast<uint8_t>(lo);
+      require_decoder_parity(src, 2, 8);
+    }
+  }
+}
+
+TEST_CASE("decoder_parity_fuzz", "[proxy][huffman]")
+{
+  std::mt19937                       rng(0x5eed);
+  std::uniform_int_distribution<int> len_dist(0, 64);
+  std::uniform_int_distribution<int> byte_dist(0, 255);
+  uint8_t                            src[64];
+
+  for (int i = 0; i < 100000; ++i) {
+    int src_len = len_dist(rng);
+    for (int j = 0; j < src_len; ++j) {
+      src[j] = static_cast<uint8_t>(byte_dist(rng));
+    }
+    // Bias some iterations toward trailing 0xff runs to exercise the
+    // EOS-prefix and padding paths.
+    if (i % 4 == 0 && src_len > 0) {
+      for (int j = byte_dist(rng) % src_len; j < src_len; ++j) {
+        src[j] = 0xff;
+      }
+    }
+    // Mostly roomy destination, sometimes a tight one to exercise the
+    // bounds-checked path and LSHPACK_ERR_MORE_BUF.
+    uint32_t dst_len = (i % 8 == 0) ? static_cast<uint32_t>(byte_dist(rng) % 16) : static_cast<uint32_t>(2 * src_len + 8);
+    require_decoder_parity(src, src_len, dst_len);
+  }
+}
+
+TEST_CASE("decoder_roundtrip_fuzz", "[proxy][huffman]")
+{
+  std::mt19937                       rng(0xc0ffee);
+  std::uniform_int_distribution<int> len_dist(0, 300);
+  std::uniform_int_distribution<int> byte_dist(0, 255);
+
+  for (int i = 0; i < 20000; ++i) {
+    uint32_t             src_len = static_cast<uint32_t>(len_dist(rng));
+    std::vector<uint8_t> src(src_len);
+    for (auto &c : src) {
+      c = static_cast<uint8_t>(byte_dist(rng));
+    }
+
+    // Worst-case Huffman expansion is 30 bits per input byte.
+    std::vector<uint8_t> encoded(src_len * 4 + 8);
+    int64_t              enc_len = huffman_encode(encoded.data(), encoded.size(), src.data(), src_len);
+    REQUIRE(enc_len >= 0);
+
+    // One byte of headroom guarantees success (see require_decoder_parity).
+    std::vector<char> decoded(src_len + 1);
+    int64_t           dec_len = huffman_decode(decoded.data(), src_len + 1, encoded.data(), enc_len);
+    REQUIRE(dec_len == static_cast<int64_t>(src_len));
+    REQUIRE(memcmp(decoded.data(), src.data(), src_len) == 0);
   }
 }

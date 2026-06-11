@@ -65,4 +65,7 @@ int64_t lshpack_enc_huff_encode(uint8_t const *src,
 int64_t lshpack_dec_huff_decode_full(uint8_t const *src, uint32_t src_len,
                                  char *dst, uint32_t dst_len);
 
+int64_t lshpack_dec_huff_decode(uint8_t const *src, uint32_t src_len,
+                                 char *dst, uint32_t dst_len);
+
 } // namespace litespeed
