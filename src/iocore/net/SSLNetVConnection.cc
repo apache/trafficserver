@@ -891,6 +891,14 @@ SSLNetVConnection::SSLNetVConnection()
 void
 SSLNetVConnection::do_io_close(int lerrno)
 {
+  // Stop any async-handshake eventfd before the VC is closed.
+  // If WANT_ASYNC was registered the eventfd is wired into the poller with
+  // `this` as the EventIO target. Without this stop() the SSLNetVConnection
+  // can be freed while the eventfd still has a live epoll registration; when
+  // the OpenSSL async job completes the poller wakes on freed memory.
+  if (async_ep.fd >= 0) {
+    async_ep.stop();
+  }
   if (this->ssl != nullptr) {
     if (get_context() == NET_VCONNECTION_OUT) {
       callHooks(TS_EVENT_VCONN_OUTBOUND_CLOSE);
@@ -999,6 +1007,15 @@ SSLNetVConnection::clear()
   // Since we created the shared pointer with a custom deleter,
   // resetting here will decrement the ref-counter.
   client_sess.reset();
+
+  // Stop the async-handshake eventfd before SSL_free. The
+  // eventfd is owned by the SSL object, so SSL_free closes it; deregistering
+  // first keeps the EPOLL_CTL_DEL operating on a valid, owned fd. clear() runs
+  // on every free path through free_thread(), so it is the backstop in case
+  // do_io_close() did not already stop the eventfd.
+  if (async_ep.fd >= 0) {
+    async_ep.stop();
+  }
 
   if (ssl != nullptr) {
     // clear() runs from free() once per VC recycle, so this is the single chokepoint where a TLS
