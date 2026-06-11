@@ -17,7 +17,6 @@
 
 add_library(lshpack STATIC)
 target_sources(lshpack PRIVATE lshpack.cc huff-tables.h lshpack.h)
-target_include_directories(lshpack PUBLIC ${CMAKE_SOURCE_DIR}/lib)
 
 # lshpack.h uses C99 array designators (see the hencs array in huff-tables.h).
 # In theory this limits portability because very old compilers that are C89 only

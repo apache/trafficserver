@@ -24,3 +24,17 @@ Huffman decoding acceleration.
 The current implementation pulled into ATS is based upon what is currently the
 latest version,
 [v2.3.5](https://github.com/litespeedtech/ls-hpack/releases/tag/v2.3.5).
+
+# ATS Modifications
+
+The code is kept as close to upstream as practical, with one deliberate
+behavioral divergence that any future re-sync must preserve:
+
+- `lshpack_dec_huff_decode` (the fast decoder) rejects Huffman padding of 8 or
+  more bits, as required by RFC 7541 section 5.2. Upstream's fast decoder
+  accepts such padding when it follows the final symbol near the end of the
+  input; the 4-bit FSM decoder (`lshpack_dec_huff_decode_full`) has always
+  rejected it. See the commented tail check in `lshpack.cc` and the
+  `decode_overlong_padding` test in
+  `src/proxy/hdrs/unit_tests/test_Huffmancode.cc`, which fails if the check is
+  dropped.

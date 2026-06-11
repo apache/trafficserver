@@ -52,6 +52,7 @@ SOFTWARE.
  */
 
 #include "huff-tables.h"
+#include "lshpack.h"
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
@@ -63,8 +64,7 @@ namespace litespeed {
 namespace
 {
 
-constexpr int64_t  LSHPACK_ERR_MORE_BUF = -3;
-constexpr unsigned SHORTEST_CODE        = 5;
+constexpr unsigned SHORTEST_CODE = 5;
 
 struct decode_status {
   uint8_t state;

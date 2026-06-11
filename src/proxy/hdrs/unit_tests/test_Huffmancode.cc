@@ -23,6 +23,7 @@
 
 #include "proxy/hdrs/HuffmanCodec.h"
 #include "ls-hpack/lshpack.h"
+#include <algorithm>
 #include <cstdlib>
 #include <iostream>
 #include <cassert>
@@ -244,14 +245,12 @@ require_decoder_parity(const uint8_t *src, uint32_t src_len, uint32_t dst_len)
   if (oracle < 0 || static_cast<uint64_t>(oracle) > dst_len) {
     REQUIRE(fast < 0);
   } else if (static_cast<uint64_t>(oracle) == dst_len && fast < 0) {
-    REQUIRE(fast == -3); // LSHPACK_ERR_MORE_BUF on an exact-fit destination
+    REQUIRE(fast == litespeed::LSHPACK_ERR_MORE_BUF); // exact-fit destination
   } else {
     REQUIRE(fast == oracle);
     REQUIRE(memcmp(fast_buf.data(), oracle_buf.data(), oracle) == 0);
   }
-  for (size_t i = dst_len; i < dst_len + SENTINEL_LEN; ++i) {
-    REQUIRE(fast_buf[i] == '\xa5');
-  }
+  REQUIRE(std::all_of(fast_buf.begin() + dst_len, fast_buf.end(), [](char c) { return c == '\xa5'; }));
 }
 
 TEST_CASE("decoder_parity_exhaustive_short", "[proxy][huffman]")
@@ -293,6 +292,30 @@ TEST_CASE("decoder_parity_fuzz", "[proxy][huffman]")
     // bounds-checked path and LSHPACK_ERR_MORE_BUF.
     uint32_t dst_len = (i % 8 == 0) ? static_cast<uint32_t>(byte_dist(rng) % 16) : static_cast<uint32_t>(2 * src_len + 8);
     require_decoder_parity(src, src_len, dst_len);
+  }
+}
+
+// Streams whose final symbol is followed by 8 or more bits of all-ones
+// padding. RFC 7541 5.2 requires treating padding longer than 7 bits as a
+// decoding error. Upstream ls-hpack's fast decoder accepts these; the ATS
+// copy deliberately rejects them (see the tail check in
+// lib/ls-hpack/lshpack.cc), and this test pins that divergence against a
+// future re-sync. The exhaustive parity test cannot cover this branch: it is
+// only reachable with inputs of four or more bytes.
+TEST_CASE("decode_overlong_padding", "[proxy][huffman]")
+{
+  const static struct {
+    const uint8_t *input;
+    uint32_t       input_len;
+  } test_cases[] = {
+    {reinterpret_cast<const uint8_t *>("\xbf\xd0\x37\xd9\xff"),                         5 },
+    {reinterpret_cast<const uint8_t *>("\xd9\x68\x63\x84\x4c\xfe\x77\xa0\xbc\xc9\xff"), 11},
+  };
+
+  for (const auto &tc : test_cases) {
+    char dst[64];
+    REQUIRE(litespeed::lshpack_dec_huff_decode(tc.input, tc.input_len, dst, sizeof(dst)) == -1);
+    REQUIRE(litespeed::lshpack_dec_huff_decode_full(tc.input, tc.input_len, dst, sizeof(dst)) == -1);
   }
 }
 

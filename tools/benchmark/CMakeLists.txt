@@ -50,3 +50,4 @@ target_link_libraries(
 
 add_executable(benchmark_HuffmanDecode benchmark_HuffmanDecode.cc)
 target_link_libraries(benchmark_HuffmanDecode PRIVATE Catch2::Catch2WithMain lshpack)
+target_include_directories(benchmark_HuffmanDecode PRIVATE ${CMAKE_SOURCE_DIR}/lib)
