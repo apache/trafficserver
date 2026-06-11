@@ -93,7 +93,7 @@ add_subdirectory(ls-hpack)
 # CMakeLists.txt slightly modified to fully disable
 # building tests if `HWY_ENABLE_TESTS=OFF`, we intend
 # to upstream this change
-if(NOT EXTERNAL_HWY)
+if(ENABLE_HIGHWAY_DISPATCH AND NOT EXTERNAL_HWY)
   message(STATUS "Using internal highway")
   set(HWY_FORCE_STATIC_LIBS
       ON
