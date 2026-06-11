@@ -42,6 +42,7 @@
 #include "proxy/http/remap/UrlRewrite.h"
 #include "proxy/http/remap/UrlMapping.h"
 #include "proxy/http/remap/UrlMappingPathIndex.h"
+#include "proxy/VirtualHost.h"
 
 namespace
 {
@@ -119,6 +120,8 @@ init_reverse_proxy()
   ink_assert(0 == config_reg.attach("remap_yaml", "proxy.config.proxy_name"));
   ink_assert(0 == config_reg.attach("remap_yaml", "proxy.config.http.referer_default_redirect"));
   RecRegisterConfigUpdateCb("proxy.config.reverse_proxy.enabled", url_rewrite_CB, (void *)REVERSE_CHANGED);
+
+  VirtualHost::startup();
 
   return 0;
 }

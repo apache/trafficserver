@@ -1027,6 +1027,47 @@ remap_parse_yaml_bti(const char *path, BUILD_TABLE_INFO *bti, ConfigContext ctx)
 }
 
 bool
+remap_parse_yaml_bti(YAML::Node const *remap_node, BUILD_TABLE_INFO *bti, ConfigContext ctx)
+{
+  try {
+    if (!remap_node || remap_node->IsNull() || !remap_node->IsSequence()) {
+      Dbg(dbg_ctl_remap_yaml, "Remap node must be a sequence");
+      return false;
+    }
+
+    Dbg(dbg_ctl_url_rewrite, "[BuildTable] UrlRewrite::BuildTable()");
+
+    ACLBehaviorPolicy behavior_policy = ACLBehaviorPolicy::ACL_BEHAVIOR_LEGACY;
+    if (!UrlRewrite::get_acl_behavior_policy(behavior_policy)) {
+      CfgLoadLog(ctx, DL_Warning, "Failed to get ACL matching policy.");
+      return false;
+    }
+    bti->behavior_policy = behavior_policy;
+
+    for (const auto &rule : *remap_node) {
+      bti->reset();
+
+      auto errata = parse_yaml_remap_rule(rule, bti);
+      if (!errata.is_ok()) {
+        CfgLoadLog(ctx, DL_Error, "Failed to parse remap rule");
+        return false;
+      }
+    }
+
+    IpAllow::enableAcceptCheck(bti->accept_check_p);
+
+    Dbg(dbg_ctl_remap_yaml, "Successfully parsed inline remap YAML rules");
+    return true;
+
+  } catch (YAML::Exception &ex) {
+    CfgLoadLog(ctx, DL_Error, "YAML parsing error in inline remap rules: %s", ex.what());
+  } catch (std::exception &ex) {
+    CfgLoadLog(ctx, DL_Error, "Exception parsing inline remap YAML rules: %s", ex.what());
+  }
+  return false;
+}
+
+bool
 remap_parse_yaml(const char *path, UrlRewrite *rewrite, ConfigContext ctx)
 {
   BUILD_TABLE_INFO bti;
@@ -1040,6 +1081,23 @@ remap_parse_yaml(const char *path, UrlRewrite *rewrite, ConfigContext ctx)
 
   /* Now after we parsed the configuration and (re)loaded plugins and plugin instances
    * accordingly notify all plugins that we are done */
+  rewrite->pluginFactory.indicatePostReload(status);
+
+  bti.clear_acl_rules_list();
+
+  return status;
+}
+
+bool
+remap_parse_yaml(YAML::Node const *remap_node, UrlRewrite *rewrite, ConfigContext ctx)
+{
+  BUILD_TABLE_INFO bti;
+
+  rewrite->pluginFactory.indicatePreReload();
+
+  bti.rewrite = rewrite;
+  bool status = remap_parse_yaml_bti(remap_node, &bti, ctx);
+
   rewrite->pluginFactory.indicatePostReload(status);
 
   bti.clear_acl_rules_list();
