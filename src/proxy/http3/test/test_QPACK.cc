@@ -469,3 +469,26 @@ TEST_CASE("Decoding", "[qpack-decode]")
     }
   }
 }
+
+// ATS advertises a zero-capacity QPACK dynamic table, so a header block whose
+// Required Insert Count is non-zero references entries that can never exist.
+// decode() must fail rather than queue the stream as blocked forever.
+TEST_CASE("QPACK decode rejects a dynamic reference with no dynamic table", "[qpack]")
+{
+  QUICApplicationDriver  driver;
+  QPACK                 *qpack         = new QPACK(driver.get_connection(), UINT32_MAX, 0, 0);
+  TestQPACKEventHandler *event_handler = new TestQPACKEventHandler();
+
+  HTTPHdr hdr;
+  hdr.create(HTTPType::REQUEST);
+
+  uint8_t block[8];
+  int     len   = 0;
+  len          += xpack_encode_integer(block + len, block + sizeof(block), 1, 8); // Required Insert Count = 1
+  block[len++]  = 0x00;                                                           // S = 0, Delta Base = 0
+
+  int ret = qpack->decode(1, block, len, hdr, event_handler, eventProcessor.all_ethreads[0]);
+  CHECK(ret < 0);
+
+  hdr.destroy();
+}

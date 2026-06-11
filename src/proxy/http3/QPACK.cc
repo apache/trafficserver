@@ -291,6 +291,15 @@ QPACK::decode(uint64_t stream_id, const uint8_t *header_block, size_t header_blo
   }
   uint16_t largest_reference = tmp;
 
+  // A non-zero Required Insert Count references the dynamic table. We only
+  // store dynamic entries once a non-zero table capacity is negotiated (and we
+  // currently always advertise zero), so when the table capacity is zero such
+  // a reference can never be satisfied. Treat it as a decoding failure instead
+  // of queuing the stream as blocked forever.
+  if (largest_reference != 0 && this->_dynamic_table.maximum_size() == 0) {
+    return -1;
+  }
+
   if (largest_reference != 0 && (this->_dynamic_table.is_empty() || this->_dynamic_table.largest_index() < largest_reference)) {
     // Blocked
     if (this->_add_to_blocked_list(
