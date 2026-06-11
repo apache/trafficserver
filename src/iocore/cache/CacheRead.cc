@@ -29,6 +29,8 @@
 #include "tscore/InkErrno.h"
 #include "ts/ats_probe.h"
 
+#include <cstdlib>
+
 #ifdef DEBUG
 #include "iocore/eventsystem/EThread.h"
 #endif
@@ -47,6 +49,24 @@ DbgCtl dbg_ctl_cache_hit_evac{"cache_hit_evac"};
 #endif
 
 constexpr int MAX_READ_RECURSION_DEPTH = 10;
+
+// Per-thread recursion counter for openReadStartEarliest. The counter must
+// outlive the CacheVC because the recursive handleEvent below can free `this`,
+// after which any access through a CacheVC member would be a use-after-free.
+thread_local int t_read_recursive = 0;
+
+// Test hook: when the env variable ATS_TEST_FORCE_CORRUPT_DOC is set at startup
+// every doc read is treated as having a bad magic, which drives
+// openReadStartEarliest into the recursive Lread path. When an inner recursion
+// level falls into free_CacheVC the outer frame then touches the recursion
+// counter through the freed `this`; reaching the depth limit is not required to
+// trigger it. Used by the autest reproducer to observe the recursive-read
+// use-after-free (ASan build) on the unfixed sources.
+#if TS_HAS_TESTS
+static bool const test_force_corrupt_doc = std::getenv("ATS_TEST_FORCE_CORRUPT_DOC") != nullptr;
+#else
+static constexpr bool test_force_corrupt_doc = false;
+#endif
 
 } // end anonymous namespace
 
@@ -786,7 +806,7 @@ CacheVC::openReadStartEarliest(int /* event ATS_UNUSED */, Event * /* e ATS_UNUS
       goto Lread;
     }
     doc = reinterpret_cast<Doc *>(buf->data());
-    if (doc->magic != DOC_MAGIC) {
+    if (doc->magic != DOC_MAGIC || test_force_corrupt_doc) {
       char tmpstring[CRYPTO_HEX_SIZE];
       if (is_action_tag_set("cache")) {
         ink_release_assert(false);
@@ -827,12 +847,12 @@ CacheVC::openReadStartEarliest(int /* event ATS_UNUSED */, Event * /* e ATS_UNUS
       if ((call_result = do_read_call(&key)) == EVENT_RETURN) {
         if (this->handler == reinterpret_cast<ContinuationHandler>(&CacheVC::openReadStartEarliest)) {
           is_recursive_call = true;
-          if (read_recursive > MAX_READ_RECURSION_DEPTH) {
+          if (t_read_recursive > MAX_READ_RECURSION_DEPTH) {
             char tmpstring[CRYPTO_HEX_SIZE];
             Error("Too many recursive calls with %s", key.toHexStr(tmpstring));
             goto Ldone;
           }
-          ++read_recursive;
+          ++t_read_recursive;
         }
 
         goto Lcallreturn;
@@ -906,8 +926,11 @@ CacheVC::openReadStartEarliest(int /* event ATS_UNUSED */, Event * /* e ATS_UNUS
   return free_CacheVC(this);
 Lcallreturn:
   event_result = handleEvent(AIO_EVENT_DONE, nullptr); // hopefully a tail call
+  // handleEvent above may free `this` on the recursive failure path, so the
+  // depth counter cannot be a CacheVC member. It is a thread-local
+  // (t_read_recursive) and remains valid after `this` is gone.
   if (is_recursive_call) {
-    --read_recursive;
+    --t_read_recursive;
   }
   return event_result;
 Lsuccess:
