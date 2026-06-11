@@ -1,5 +1,5 @@
 '''
-Verify HTTP/2 requests with control characters in header values are rejected.
+Verify HTTP/2 requests with NUL, CR, or LF in header values are rejected.
 '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -19,12 +19,12 @@ Verify HTTP/2 requests with control characters in header values are rejected.
 
 import sys
 
-Test.Summary = 'HTTP/2 requests with CRLF in header values are rejected during version conversion'
+Test.Summary = 'HTTP/2 requests with NUL, CR, or LF in header values are rejected'
 Test.ContinueOnFail = True
 
 MALFORMED_CLIENT = 'malformed_h2_request_client.py'
 
-CRLF_CASES = (
+CONTROL_CHARACTER_CASES = (
     {
         'scenario': 'crlf-in-header-value',
         'description': 'HTTP/2 request with CRLF in header value',
@@ -37,12 +37,20 @@ CRLF_CASES = (
         'scenario': 'lf-in-header-value',
         'description': 'HTTP/2 request with bare LF in header value',
     },
+    {
+        'scenario': 'nul-in-header-value',
+        'description': 'HTTP/2 request with NUL in header value',
+    },
 )
 
 server = Test.MakeOriginServer('server')
 server.Streams.All = Testers.ExcludesExpression(
     'x-injected',
-    'Malformed CRLF requests must not reach the origin server.',
+    'Malformed control-character requests must not reach the origin server.',
+)
+server.Streams.All += Testers.ExcludesExpression(
+    'malformed-nul-value',
+    'Malformed NUL request must not reach the origin server.',
 )
 server.addResponse(
     'sessionlog.json', {
@@ -67,7 +75,7 @@ ssl_multicert:
 ts.Disk.records_config.update(
     {
         'proxy.config.diags.debug.enabled': 1,
-        'proxy.config.diags.debug.tags': 'http2',
+        'proxy.config.diags.debug.tags': 'http',
         'proxy.config.ssl.server.cert.path': ts.Variables.SSLDir,
         'proxy.config.ssl.server.private_key.path': ts.Variables.SSLDir,
     })
@@ -75,7 +83,7 @@ ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{server.Variables.Port}/')
 
 Test.Setup.CopyAs('../connect/' + MALFORMED_CLIENT, Test.RunDirectory)
 
-for i, case in enumerate(CRLF_CASES):
+for i, case in enumerate(CONTROL_CHARACTER_CASES):
     tr = Test.AddTestRun(case['description'])
     tr.Processes.Default.Command = (f'{sys.executable} {MALFORMED_CLIENT} {ts.Variables.ssl_port} {case["scenario"]}')
     tr.Processes.Default.ReturnCode = 0
