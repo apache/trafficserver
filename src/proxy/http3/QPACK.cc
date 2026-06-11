@@ -287,7 +287,7 @@ QPACK::decode(uint64_t stream_id, const uint8_t *header_block, size_t header_blo
 
   uint64_t tmp = 0;
   int64_t  ret = xpack_decode_integer(tmp, header_block, header_block + header_block_len, 8);
-  if (ret < 0 && tmp > 0xFFFF) {
+  if (ret < 0 || tmp > 0xFFFF) {
     return -1;
   }
   uint16_t largest_reference = tmp;
@@ -917,21 +917,21 @@ QPACK::_decode_literal_header_field_with_postbase_name_ref(int16_t base_index, c
 int
 QPACK::_decode_header(const uint8_t *header_block, size_t header_block_len, HTTPHdr &hdr)
 {
-  const uint8_t *pos        = header_block;
-  size_t         remain_len = header_block_len;
-  int64_t        ret;
+  const uint8_t       *pos = header_block;
+  const uint8_t *const end = header_block + header_block_len;
+  int64_t              ret;
 
   // Decode Header Data Prefix
-  uint64_t tmp;
-  if ((ret = xpack_decode_integer(tmp, pos, pos + remain_len, 8)) < 0 && tmp > 0xFFFF) {
+  uint64_t tmp = 0;
+  if ((ret = xpack_decode_integer(tmp, pos, end, 8)) < 0 || tmp > 0xFFFF) {
     return -1;
   }
   pos                        += ret;
   uint16_t largest_reference  = tmp;
 
-  uint64_t delta_base_index;
+  uint64_t delta_base_index = 0;
   uint16_t base_index;
-  if ((ret = xpack_decode_integer(delta_base_index, pos, pos + remain_len, 7)) < 0 && delta_base_index < 0xFFFF) {
+  if ((ret = xpack_decode_integer(delta_base_index, pos, end, 7)) < 0 || delta_base_index > 0xFFFF) {
     return -2;
   }
 
@@ -948,7 +948,8 @@ QPACK::_decode_header(const uint8_t *header_block, size_t header_block_len, HTTP
   uint32_t decoded_header_list_size = 0;
 
   // Decode Instructions
-  while (pos < header_block + header_block_len) {
+  while (pos < end) {
+    size_t   remain_len = end - pos;
     uint32_t header_len = 0;
 
     if (pos[0] & 0x80) { // Index Header Field
