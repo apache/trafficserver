@@ -142,16 +142,16 @@ namespace HWY_NAMESPACE
         break;
       }
     }
-    // Scalar finishes the remainder: count the alphabet prefix (truncating at
-    // the first non-alphabet byte) then decode 4-groups + a 2/3 char tail.
+    // Scalar finishes the remainder: truncate at the first non-alphabet byte
+    // then decode 4-groups + a 2/3 char tail (and write the trailing NUL).
     // Identical to running the scalar decoder over the whole alphabet prefix,
     // because the SIMD loop consumed only fully-valid 4-group-aligned blocks.
-    const size_t rem_valid = count_alphabet_prefix(in + i, in_len - i);
-    size_t       tail_len  = 0;
-    decode_scalar(in + i, rem_valid, out + o, &tail_len);
-    o        += tail_len;
-    out[o]    = '\0';
-    *out_len  = o;
+    size_t tail_len = 0;
+    decode_scalar_prefix(in + i, in_len - i, out + o, &tail_len);
+    o += tail_len;
+    if (out_len) {
+      *out_len = o;
+    }
   }
 
   // ---- ENCODE ----
@@ -226,8 +226,10 @@ namespace HWY_NAMESPACE
     }
     size_t tail = 0;
     encode_scalar(in + i, in_len - i, out + o, &tail);
-    o        += tail;
-    *out_len  = o;
+    o += tail;
+    if (out_len) {
+      *out_len = o;
+    }
   }
 
 } // namespace HWY_NAMESPACE

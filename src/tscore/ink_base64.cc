@@ -111,8 +111,6 @@ ats_base64_decode(const char *inBuffer, size_t inBufferSize, unsigned char *outB
 
   // Ignore any trailing `=`s or other undecodable characters, then decode the
   // valid alphabet prefix.
-  const size_t valid = ats::base64::count_alphabet_prefix(inBuffer, inBufferSize);
-
-  ats::base64::decode_scalar(inBuffer, valid, outBuffer, length);
+  ats::base64::decode_scalar_prefix(inBuffer, inBufferSize, outBuffer, length);
   return true;
 }

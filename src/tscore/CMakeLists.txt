@@ -94,18 +94,6 @@ add_library(
 )
 add_library(ts::tscore ALIAS tscore)
 
-# Highway-dispatched implementation of ts::ascii::tolower_copy. Only
-# compiled when ENABLE_HIGHWAY_DISPATCH=ON; otherwise the cascade in
-# include/tscore/ink_ascii_tolower.h provides the implementation
-# entirely inline at the call site. The source dir is added to the
-# include path so Highway's foreach_target.h self-include of
-# ink_ascii_tolower_dispatch.cc resolves.
-if(TS_HAS_HIGHWAY_DISPATCH)
-  target_sources(tscore PRIVATE ink_ascii_tolower_dispatch.cc)
-  target_link_libraries(tscore PRIVATE hwy::hwy)
-  target_include_directories(tscore PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-endif()
-
 # Some plugins link against ts::tscore and therefore need it to be compiled as
 # position independent.
 set_target_properties(tscore PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
@@ -118,12 +106,13 @@ else()
   target_sources(tscore PRIVATE HKDF_openssl.cc)
 endif()
 
-# Highway-dispatched SIMD base64 (encode/decode). Only compiled when
-# ENABLE_HIGHWAY_DISPATCH=ON; otherwise ink_base64.cc uses the scalar path
-# entirely. The source dir is added to the include path so Highway's
-# foreach_target.h self-include of ink_base64_dispatch.cc resolves.
+# Highway runtime-dispatched SIMD kernels (ASCII tolower, base64). Only
+# compiled when ENABLE_HIGHWAY_DISPATCH=ON; otherwise ink_ascii_tolower.h and
+# ink_base64.cc use their scalar paths. The source dir is added to the include
+# path so Highway's foreach_target.h self-include of each *_dispatch.cc
+# resolves.
 if(TS_HAS_HIGHWAY_DISPATCH)
-  target_sources(tscore PRIVATE ink_base64_dispatch.cc)
+  target_sources(tscore PRIVATE ink_ascii_tolower_dispatch.cc ink_base64_dispatch.cc)
   target_link_libraries(tscore PRIVATE hwy::hwy)
   target_include_directories(tscore PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 endif()

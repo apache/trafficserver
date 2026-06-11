@@ -281,6 +281,15 @@
       }
     },
     {
+      "name": "branch-highway",
+      "displayName": "CI branch with Highway SIMD dispatch",
+      "description": "Builds the Highway runtime-dispatched SIMD kernels (base64, ASCII tolower) so their unit tests run as real SIMD-vs-scalar parity checks instead of scalar-vs-scalar.",
+      "inherits": ["branch"],
+      "cacheVariables": {
+        "ENABLE_HIGHWAY_DISPATCH": "ON"
+      }
+    },
+    {
       "name": "branch-debug",
       "displayName": "CI branch debug",
       "inherits": ["branch"],
