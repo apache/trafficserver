@@ -362,11 +362,6 @@ elseif(TS_HAS_MIMALLOC)
   link_libraries(mimalloc)
 endif()
 
-if(ENABLE_HIGHWAY_DISPATCH)
-  find_package(hwy CONFIG REQUIRED)
-  set(TS_HAS_HIGHWAY_DISPATCH ${hwy_FOUND})
-endif()
-
 if(ENABLE_QUICHE)
   if(TS_OPENSSL_QUIC_TLS_CBS_COMPAT)
     set(quiche_USE_STATIC TRUE)
