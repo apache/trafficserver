@@ -59,10 +59,16 @@ SOFTWARE.
 
 namespace litespeed {
 
+// Matches upstream lshpack.h's LSHPACK_ERR_MORE_BUF.
+constexpr int64_t LSHPACK_ERR_MORE_BUF = -3;
+
 int64_t lshpack_enc_huff_encode(uint8_t const *src,
     uint8_t const *const src_end, uint8_t *dst, uint32_t dst_len);
 
 int64_t lshpack_dec_huff_decode_full(uint8_t const *src, uint32_t src_len,
+                                 char *dst, uint32_t dst_len);
+
+int64_t lshpack_dec_huff_decode(uint8_t const *src, uint32_t src_len,
                                  char *dst, uint32_t dst_len);
 
 } // namespace litespeed
