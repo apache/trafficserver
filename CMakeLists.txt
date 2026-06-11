@@ -330,11 +330,6 @@ elseif(TS_HAS_MIMALLOC)
   link_libraries(mimalloc)
 endif()
 
-if(ENABLE_HIGHWAY_DISPATCH)
-  find_package(hwy CONFIG REQUIRED)
-  set(TS_HAS_HIGHWAY_DISPATCH ${hwy_FOUND})
-endif()
-
 if(ENABLE_QUICHE)
   find_package(quiche REQUIRED)
 
@@ -455,9 +450,13 @@ if(EXTERNAL_LIBSWOC)
   find_package(libswoc REQUIRED)
 endif()
 
-if(EXTERNAL_HWY)
-  message(STATUS "Looking for external highway")
-  find_package(HWY "1.4.0" CONFIG REQUIRED)
+if(ENABLE_HIGHWAY_DISPATCH)
+  if(EXTERNAL_HWY)
+    message(STATUS "Looking for external highway")
+    find_package(HWY "1.4.0" CONFIG REQUIRED)
+    set(TS_HAS_HIGHWAY_DISPATCH ${hwy_FOUND})
+  endif()
+  set(TS_HAS_HIGHWAY_DISPATCH 1)
 endif()
 
 include(Check128BitCas)
