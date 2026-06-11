@@ -469,3 +469,83 @@ TEST_CASE("Decoding", "[qpack-decode]")
     }
   }
 }
+
+// Encode an "Indexed Header Field" (RFC 9204 4.5.2) that references a
+// static-table entry, returning the number of bytes written.
+static int
+append_static_indexed_field(uint8_t *buf, const uint8_t *buf_end, uint16_t index)
+{
+  int64_t n  = xpack_encode_integer(buf, buf_end, index, 6);
+  buf[0]    |= 0xC0; // '1' Indexed Header Field + 'T'=1 static table
+  return static_cast<int>(n);
+}
+
+// The QPACK static table (RFC 9204 Appendix A) is normative: its 99 indices are
+// wire values shared with every peer and must not be reordered. These cases
+// span the range a previous change shifted by inserting a non-standard entry;
+// decoding each index must yield the exact RFC name and value.
+TEST_CASE("QPACK static table conforms to RFC 9204", "[qpack]")
+{
+  struct {
+    uint16_t    index;
+    const char *name;
+    const char *value;
+  } const cases[] = {
+    {31, "accept-encoding",  "gzip, deflate, br"       },
+    {42, "content-encoding", "br"                      },
+    {52, "content-type",     "text/html; charset=utf-8"},
+    {71, ":status",          "500"                     },
+    {98, "x-frame-options",  "sameorigin"              },
+  };
+
+  QUICApplicationDriver  driver;
+  QPACK                 *qpack         = new QPACK(driver.get_connection(), UINT32_MAX, 0, 0);
+  TestQPACKEventHandler *event_handler = new TestQPACKEventHandler();
+
+  HTTPHdr hdr;
+  hdr.create(HTTPType::RESPONSE);
+
+  uint8_t block[256];
+  int     len  = 0;
+  block[len++] = 0x00; // Required Insert Count = 0
+  block[len++] = 0x00; // S = 0, Delta Base = 0
+  for (auto const &c : cases) {
+    len += append_static_indexed_field(block + len, block + sizeof(block), c.index);
+  }
+
+  // decode() populates the header set synchronously; only the completion event
+  // is scheduled, so the fields can be inspected as soon as it returns.
+  int ret = qpack->decode(1, block, len, hdr, event_handler, eventProcessor.all_ethreads[0]);
+  REQUIRE(ret == 0);
+
+  for (auto const &c : cases) {
+    MIMEField *field = hdr.field_find(std::string_view{c.name});
+    REQUIRE(field != nullptr);
+    CHECK(field->value_get() == std::string_view{c.value});
+  }
+
+  hdr.destroy();
+}
+
+// ATS advertises a zero-capacity QPACK dynamic table, so a header block whose
+// Required Insert Count is non-zero references entries that can never exist.
+// decode() must fail rather than queue the stream as blocked forever.
+TEST_CASE("QPACK decode rejects a dynamic reference with no dynamic table", "[qpack]")
+{
+  QUICApplicationDriver  driver;
+  QPACK                 *qpack         = new QPACK(driver.get_connection(), UINT32_MAX, 0, 0);
+  TestQPACKEventHandler *event_handler = new TestQPACKEventHandler();
+
+  HTTPHdr hdr;
+  hdr.create(HTTPType::REQUEST);
+
+  uint8_t block[8];
+  int     len   = 0;
+  len          += xpack_encode_integer(block + len, block + sizeof(block), 1, 8); // Required Insert Count = 1
+  block[len++]  = 0x00;                                                           // S = 0, Delta Base = 0
+
+  int ret = qpack->decode(1, block, len, hdr, event_handler, eventProcessor.all_ethreads[0]);
+  CHECK(ret < 0);
+
+  hdr.destroy();
+}
