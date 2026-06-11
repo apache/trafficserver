@@ -41,6 +41,7 @@
 #endif
 #ifdef HAVE_ZSTD_H
 #include <zstd.h>
+constexpr int CLFUS_ZSTD_LEVEL = 3;
 #endif
 
 #define REQUIRED_COMPRESSION 0.9 // must get to this size or declared incompressible
@@ -103,9 +104,7 @@ RamCacheCLFUSCompressor::mainEvent(int /* event ATS_UNUSED */, Event *e)
     Warning("unknown RAM cache compression type: %d", cache_config_ram_cache_compress);
   case CACHE_COMPRESSION_NONE:
   case CACHE_COMPRESSION_FASTLZ:
-    break;
   case CACHE_COMPRESSION_LIBZ:
-    Warning("libz not available for RAM cache compression");
     break;
   case CACHE_COMPRESSION_LIBLZMA:
 #ifndef HAVE_LZMA_H
@@ -269,6 +268,7 @@ RamCacheCLFUS::get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint64_t auxkey
           case CACHE_COMPRESSION_ZSTD: {
             size_t l  = static_cast<size_t>(e->len);
             size_t ll = 0;
+            // TODO: Use a thread_local ZSTD_DCtx
             ll        = ZSTD_decompress(b, l, e->data->data(), e->compressed_len);
             if (ZSTD_isError(ll) || l != ll) {
               goto Lfailed;
@@ -505,7 +505,8 @@ RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most)
 #ifdef HAVE_ZSTD_H
       case CACHE_COMPRESSION_ZSTD: {
         size_t ll   = l;
-        size_t zret = ZSTD_compress(b, ll, edata->data(), elen, ZSTD_CLEVEL_DEFAULT);
+        // TODO: Use a thread_local ZSTD_CCtx
+        size_t zret = ZSTD_compress(b, ll, edata->data(), elen, CLFUS_ZSTD_LEVEL);
         if (ZSTD_isError(zret)) {
           failed = true;
         } else {
