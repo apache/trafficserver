@@ -62,7 +62,7 @@ oracle_encode(const std::string &bin)
 {
   std::vector<char> out(ats_base64_encode_dstlen(bin.size()) + 1, '\xCC');
   size_t            n = 0;
-  ats::base64::encode_scalar(reinterpret_cast<const unsigned char *>(bin.data()), bin.size(), out.data(), &n);
+  ts::base64::encode_scalar(reinterpret_cast<const unsigned char *>(bin.data()), bin.size(), out.data(), &n);
   return std::string(out.data(), n);
 }
 
@@ -70,10 +70,10 @@ oracle_encode(const std::string &bin)
 std::string
 oracle_decode(const std::string &b64)
 {
-  const size_t               valid = ats::base64::count_alphabet_prefix(b64.data(), b64.size());
+  const size_t               valid = ts::base64::count_alphabet_prefix(b64.data(), b64.size());
   std::vector<unsigned char> out(ats_base64_decode_dstlen(b64.size()) + 1, 0xCC);
   size_t                     n = 0;
-  ats::base64::decode_scalar(b64.data(), valid, out.data(), &n);
+  ts::base64::decode_scalar(b64.data(), valid, out.data(), &n);
   return std::string(reinterpret_cast<char *>(out.data()), n);
 }
 

@@ -78,12 +78,12 @@ ats_base64_encode(const unsigned char *inBuffer, size_t inBufferSize, char *outB
 
 #if TS_HAS_HIGHWAY_DISPATCH
   if (inBufferSize > BASE64_ENCODE_SIMD_THRESHOLD) {
-    ats::base64::encode_dispatch(inBuffer, inBufferSize, outBuffer, length);
+    ts::base64::encode_dispatch(inBuffer, inBufferSize, outBuffer, length);
     return true;
   }
 #endif
 
-  ats::base64::encode_scalar(inBuffer, inBufferSize, outBuffer, length);
+  ts::base64::encode_scalar(inBuffer, inBufferSize, outBuffer, length);
   return true;
 }
 
@@ -104,13 +104,13 @@ ats_base64_decode(const char *inBuffer, size_t inBufferSize, unsigned char *outB
   if (inBufferSize > BASE64_DECODE_SIMD_THRESHOLD) {
     // The SIMD path validates inline and truncates at the first non-alphabet
     // byte, so no separate alphabet pre-scan is needed here.
-    ats::base64::decode_dispatch(inBuffer, inBufferSize, outBuffer, length);
+    ts::base64::decode_dispatch(inBuffer, inBufferSize, outBuffer, length);
     return true;
   }
 #endif
 
   // Ignore any trailing `=`s or other undecodable characters, then decode the
   // valid alphabet prefix.
-  ats::base64::decode_scalar_prefix(inBuffer, inBufferSize, outBuffer, length);
+  ts::base64::decode_scalar_prefix(inBuffer, inBufferSize, outBuffer, length);
   return true;
 }
