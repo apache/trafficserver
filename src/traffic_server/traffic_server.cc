@@ -905,6 +905,7 @@ CB_After_Cache_Init()
     // delayed the call to start_HttpProxyServer until we got here. We must
     // call accept on the ports now that the cache is initialized.
     Note("Enabling listen, cache initialization finished");
+    exec_thr_late_init(); // Must be called before start_HttpProxyServer
     start_HttpProxyServer();
     emit_fully_initialized_message();
   }
@@ -2471,6 +2472,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
         //
         // In either case we should not delay to accept the ports.
         Dbg(dbg_ctl_http_listen, "Not delaying listen");
+        exec_thr_late_init();    // Must be called before start_HttpProxyServer
         start_HttpProxyServer(); // PORTS_READY_HOOK called from in here
         emit_fully_initialized_message();
       }
