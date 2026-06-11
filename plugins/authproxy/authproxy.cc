@@ -661,6 +661,8 @@ StateAuthorized(AuthRequestContext *auth, void *)
       TSHandleMLocRelease(auth->rheader.buffer, auth->rheader.header, field_loc);
       field_loc = next_field_loc;
     }
+
+    TSHandleMLocRelease(request_bufp, TS_NULL_MLOC, request_hdr);
   }
 
   // Proceed with the modified request
