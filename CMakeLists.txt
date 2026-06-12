@@ -550,6 +550,22 @@ check_symbol_exists(MD5_Init "openssl/md5.h" HAVE_MD5_INIT)
 check_symbol_exists(ENGINE_load_dynamic "openssl/engine.h" HAVE_ENGINE_LOAD_DYNAMIC)
 check_symbol_exists(ENGINE_get_default_RSA "openssl/engine.h" HAVE_ENGINE_GET_DEFAULT_RSA)
 check_symbol_exists(ENGINE_load_private_key "openssl/engine.h" HAVE_ENGINE_LOAD_PRIVATE_KEY)
+check_source_compiles(
+  C
+  "#include <openssl/engine.h>
+  #if defined(OPENSSL_NO_ENGINE) || defined(OPENSSL_NO_DYNAMIC_ENGINE)
+  #error OpenSSL dynamic engine support unavailable
+  #endif
+  int main(void) {
+    ENGINE_load_dynamic();
+    ENGINE *engine = ENGINE_new();
+    if (engine) {
+      ENGINE_free(engine);
+    }
+    return 0;
+  }"
+  HAVE_OPENSSL_DYNAMIC_ENGINE
+)
 check_symbol_exists(sysctlbyname "sys/sysctl.h" HAVE_SYSCTLBYNAME)
 
 if(SSLLIB_IS_OPENSSL3)

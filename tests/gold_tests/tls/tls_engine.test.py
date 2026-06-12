@@ -25,16 +25,19 @@ Test.Summary = '''
 Test tls via the async interface with the sample async_engine
 '''
 
+async_engine = os.path.join(Test.Variables.AtsTestPluginsDir, 'async_engine.so')
+
 Test.SkipUnless(
     Condition.HasOpenSSLVersion('1.1.1'),
     Condition.IsOpenSSL(),
+    Condition(lambda: os.path.isfile(async_engine), async_engine + " not found."),
 )
 
 # Define default ATS
 ts = Test.MakeATSProcess("ts", enable_tls=True)
 server = Test.MakeOriginServer("server")
 
-ts.Setup.Copy(os.path.join(Test.Variables.AtsTestPluginsDir, 'async_engine.so'), Test.RunDirectory)
+ts.Setup.Copy(async_engine, Test.RunDirectory)
 
 # Add info the origin server responses
 server.addResponse(
