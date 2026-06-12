@@ -253,6 +253,7 @@ ssl_multicert:
             self._ts.Disk.records_config.update({
                 "proxy.config.http.connect_ports": f'{self._server.Variables.https_port}',
             })
+            self._ts.addPrivateConnectAllowYaml()
 
             self._ts.Disk.sni_yaml.AddLines(
                 [

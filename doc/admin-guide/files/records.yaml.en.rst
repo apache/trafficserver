@@ -995,6 +995,10 @@ uds-group
 .. note::
 
    These are the ports on the *origin server*, not |TS| :ts:cv:`proxy ports <proxy.config.http.server_ports>`.
+   This setting is not a destination host or address policy. Use outbound rules in
+   :file:`ip_allow.yaml` to control which destination IP addresses may be used for ``CONNECT``
+   tunnels. The default :file:`ip_allow.yaml` denies ``CONNECT`` tunnels to unspecified,
+   loopback, private, link-local, and IPv4-mapped IPv6 destination ranges.
 
 
 .. ts:cv:: CONFIG proxy.config.http.forward_connect_method INT 0
