@@ -73,17 +73,7 @@ class SplitDNSReloadTest:
         tr.Processes.Default.ReturnCode = 0
         tr.StillRunningAfter = self.ts
 
-        tr = Test.AddTestRun("Reload after splitdns.config touch")
-        p = tr.Processes.Process("reload-1")
-        p.Command = 'traffic_ctl config reload; sleep 30'
-        p.Env = self.ts.Env
-        p.ReturnCode = Any(0, -2)
-        # Wait for 2nd "finished loading" (1st is startup)
-        p.Ready = When.FileContains(self.ts.Disk.diags_log.Name, "splitdns.config finished loading", 2)
-        p.Timeout = 20
-        tr.Processes.Default.StartBefore(p)
-        tr.Processes.Default.Command = ('echo "waiting for splitdns.config reload"')
-        tr.TimeOut = 25
+        tr = Test.AddConfigReload(self.ts, expect_tasks=["splitdns.config"], description="Reload after splitdns.config touch")
         tr.StillRunningAfter = self.ts
 
 

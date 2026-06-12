@@ -197,21 +197,9 @@ class Test_ip_category:
 
             # Reload the ip_allow.yaml file.
             ts = Test_ip_category._ts
-            tr = Test.AddTestRun(f"Reload the configuration file.")
             Test_ip_category._reload_counter += 1
-            p = tr.Processes.Process(f"reload-{Test_ip_category._reload_counter}")
-            # The sleep is added to give time for the reload to happen.
-            p.Command = 'traffic_ctl config reload; sleep 30'
-            p.Env = ts.Env
-            # Killing the sleep can result in a -2 return code.
-            p.ReturnCode = Any(0, -2)
-            p.Ready = When.FileContains(
-                ts.Disk.diags_log.Name, "ip_allow.yaml finished loading", 1 + Test_ip_category._reload_counter)
-            p.Timeout = 20
+            tr = Test.AddConfigReload(ts, expect_tasks=["ip_allow.yaml"], description="Reload the configuration")
             tr.StillRunningAfter = ts
-            tr.Processes.Default.StartBefore(p)
-            tr.Processes.Default.Command = 'echo "waiting upon traffic server to reload"'
-            tr.TimeOut = 20
 
             return
         ts = Test.MakeATSProcess("ts", enable_cache=False, enable_tls=True)
