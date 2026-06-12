@@ -144,10 +144,6 @@ public:
   CacheSync *waiting_dir_sync     = nullptr;
   bool       writing_end_marker   = false;
 
-  CacheKey          first_fragment_key;
-  int64_t           first_fragment_offset = 0;
-  Ptr<IOBufferData> first_fragment_data;
-
   void cancel_trigger();
 
   int recover_data();
