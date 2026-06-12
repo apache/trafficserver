@@ -706,11 +706,11 @@ struct OverridableHttpConfigParams {
   ////////////////////////////////////
   // origin server connect attempts //
   ////////////////////////////////////
-  MgmtInt connect_attempts_max_retries             = 0;
-  MgmtInt connect_attempts_max_retries_down_server = 3;
-  MgmtInt connect_attempts_rr_retries              = 3;
-  MgmtInt connect_attempts_timeout                 = 30;
-  MgmtInt connect_attempts_retry_backoff_base      = 0;
+  MgmtInt connect_attempts_max_retries                = 0;
+  MgmtInt connect_attempts_max_retries_suspect_server = 1;
+  MgmtInt connect_attempts_rr_retries                 = 3;
+  MgmtInt connect_attempts_timeout                    = 30;
+  MgmtInt connect_attempts_retry_backoff_base         = 0;
 
   MgmtInt connect_down_policy = 2;
 
