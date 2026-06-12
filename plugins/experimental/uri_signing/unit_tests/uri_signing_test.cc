@@ -35,6 +35,7 @@ extern "C" {
 #include "../config.h"
 
 #include "tscore/Version.h"
+#include "tsutil/LocalBuffer.h"
 
 AppVersionInfo appVersionInfo;
 
@@ -170,43 +171,47 @@ jwt_parsing_helper(const char *jwt_string)
 bool
 normalize_uri_helper(const char *uri, const char *expected_normal)
 {
-  size_t uri_ct    = strlen(uri);
-  int    buff_size = uri_ct + 2;
+  size_t uri_ct       = strlen(uri);
+  size_t requested_ct = uri_ct + 2;
   int    err;
-  char  *uri_normal = static_cast<char *>(malloc(buff_size));
-  memset(uri_normal, 0, buff_size);
 
-  err = normalize_uri(uri, uri_ct, uri_normal, buff_size);
+  ts::LocalBuffer<char> uri_normal(requested_ct);
+  memset(uri_normal.data(), 0, requested_ct);
+
+  err = normalize_uri(uri, static_cast<int>(uri_ct), uri_normal.data(), static_cast<int>(requested_ct));
 
   if (err) {
-    free(uri_normal);
     return false;
   }
 
-  if (expected_normal && strcmp(expected_normal, uri_normal) == 0) {
-    free(uri_normal);
+  if (expected_normal && strcmp(expected_normal, uri_normal.data()) == 0) {
     return true;
   }
 
-  free(uri_normal);
   return false;
 }
 
 bool
 remove_dot_helper(const char *path, const char *expected_path)
 {
-  fprintf(stderr, "Removing Dot Segments from Path: %s\n", path);
   size_t path_ct = strlen(path);
-  path_ct++;
-  int  new_ct;
-  char path_buffer[path_ct];
-  memset(path_buffer, 0, path_ct);
 
-  new_ct = remove_dot_segments(path, path_ct, path_buffer, path_ct);
+  if (path_ct > 120) {
+    fprintf(stderr, "Removing Dot Segments from Path: %.120s... (%zu bytes)\n", path, path_ct);
+  } else {
+    fprintf(stderr, "Removing Dot Segments from Path: %s\n", path);
+  }
+  size_t requested_ct = path_ct + 1;
+  int    new_ct;
+
+  ts::LocalBuffer<char> path_buffer(requested_ct);
+  memset(path_buffer.data(), 0, requested_ct);
+
+  new_ct = remove_dot_segments(path, static_cast<int>(path_ct), path_buffer.data(), static_cast<int>(requested_ct));
 
   if (new_ct < 0) {
     return false;
-  } else if (strcmp(expected_path, path_buffer) == 0) {
+  } else if (strcmp(expected_path, path_buffer.data()) == 0) {
     return true;
   } else {
     return false;
@@ -217,24 +222,30 @@ bool
 jws_parsing_helper(const char *uri, const char *paramName, const char *expected_strip)
 {
   bool   resp;
-  size_t uri_ct   = strlen(uri);
-  size_t strip_ct = 0;
+  size_t uri_ct       = strlen(uri);
+  size_t strip_ct     = 0;
+  size_t requested_ct = uri_ct + 1;
 
-  char *uri_strip = static_cast<char *>(malloc(uri_ct + 1));
-  memset(uri_strip, 0, uri_ct + 1);
+  ts::LocalBuffer<char> uri_strip(requested_ct);
+  memset(uri_strip.data(), 0, requested_ct);
 
-  cjose_jws_t *jws = get_jws_from_uri(uri, uri_ct, paramName, uri_strip, uri_ct, &strip_ct);
+  cjose_jws_t *jws = get_jws_from_uri(uri, uri_ct, paramName, uri_strip.data(), requested_ct, &strip_ct);
   if (jws) {
     resp = true;
-    if (strcmp(uri_strip, expected_strip) != 0) {
-      cjose_jws_release(jws);
-      resp = false;
+    if (expected_strip != nullptr) {
+      if (strcmp(uri_strip.data(), expected_strip) != 0) {
+        resp = false;
+      }
+    } else {
+      // expected_strip == nullptr means we expect uri_strip to be empty
+      if (uri_strip.data()[0] != '\0') {
+        resp = false;
+      }
     }
   } else {
     resp = false;
   }
   cjose_jws_release(jws);
-  free(uri_strip);
   return resp;
 }
 
@@ -436,7 +447,7 @@ TEST_CASE("2", "[JWSFromURLTest]")
   }
 }
 
-TEST_CASE("3", "[RemoveDotSegmentsTest]")
+TEST_CASE("3", "[RemoveDotSegmentsTest][large-path]")
 {
   INFO("TEST 3, Test Removal of Dot Segments From Paths");
 
@@ -529,6 +540,24 @@ TEST_CASE("3", "[RemoveDotSegmentsTest]")
   {
     REQUIRE(remove_dot_helper("/foo/bar/././something/../foobar", "/foo/bar/foobar"));
   }
+
+  SECTION("Large path normalization scenario")
+  {
+    std::string large_path = "/" + std::string(70000, 'a');
+    REQUIRE(remove_dot_helper(large_path.c_str(), large_path.c_str()));
+  }
+
+  SECTION("500 plus dot-segment normalization scenario")
+  {
+    std::string many_segments;
+    many_segments.reserve(4 * 512 + 4);
+    for (int i = 0; i < 512; ++i) {
+      many_segments += "/../";
+    }
+    many_segments += "bar";
+    REQUIRE(remove_dot_helper(many_segments.c_str(), "/bar"));
+  }
+
   fprintf(stderr, "\n");
 }
 
@@ -779,15 +808,18 @@ TEST_CASE("7", "[TestsConfig]")
 bool
 jws_validation_helper(const char *url, const char *package, struct config *cfg)
 {
-  size_t url_ct   = strlen(url);
-  size_t strip_ct = 0;
-  char   uri_strip[url_ct + 1];
-  memset(uri_strip, 0, sizeof uri_strip);
-  cjose_jws_t *jws = get_jws_from_uri(url, url_ct, package, uri_strip, url_ct, &strip_ct);
+  size_t url_ct       = strlen(url);
+  size_t strip_ct     = 0;
+  size_t requested_ct = url_ct + 1;
+
+  ts::LocalBuffer<char> uri_strip(requested_ct);
+  memset(uri_strip.data(), 0, requested_ct);
+
+  cjose_jws_t *jws = get_jws_from_uri(url, url_ct, package, uri_strip.data(), requested_ct, &strip_ct);
   if (!jws) {
     return false;
   }
-  struct jwt *jwt = validate_jws(jws, cfg, uri_strip, strip_ct);
+  struct jwt *jwt = validate_jws(jws, cfg, uri_strip.data(), strip_ct);
   cjose_jws_release(jws);
   if (!jwt) {
     return false;

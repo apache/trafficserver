@@ -23,21 +23,25 @@
 
 #include <cstdio>
 
+#include "tsutil/LocalBuffer.h"
+
 /* Remove Dot Algorithm outlined in RFC3986 section 5.2.4
  * Function writes normalizes path and writes to ret_buffer */
 int
 remove_dot_segments(const char *path, int path_ct, char *ret_buffer, int buff_ct)
 {
-  /* Ensure buffer is at least the size of the path */
-  if (buff_ct < path_ct) {
+  /* Validate pointers and ensure buffer has room for the path plus NUL terminator */
+  if (path == nullptr || ret_buffer == nullptr || path_ct < 0 || buff_ct <= path_ct) {
     PluginDebug("Path buffer not large enough");
     return -1;
   }
 
   /* Create an input buffer that we can change */
-  char inBuff[path_ct + 1];
-  memset(inBuff, 0, path_ct + 1);
-  strcpy(inBuff, path);
+  size_t                inBuff_size = static_cast<size_t>(path_ct) + 1;
+  ts::LocalBuffer<char> inBuff_storage(inBuff_size);
+  char                 *inBuff = inBuff_storage.data();
+  memset(inBuff, 0, inBuff_size);
+  memcpy(inBuff, path, path_ct);
 
   const char *path_end  = inBuff + path_ct;
   char       *seg_start = inBuff;
@@ -108,20 +112,18 @@ remove_dot_segments(const char *path, int path_ct, char *ret_buffer, int buff_ct
       }
 
       /* Write subsequent characters to buffer */
-      while (*seg_start != '/') {
+      while (*seg_start != '/' && *seg_start != '\0') {
         *write_buffer = *seg_start;
         write_buffer++;
-        if (*seg_start == 0) {
-          break;
-        }
         seg_start++;
       }
     }
     seg_start = seg_end;
   }
 
+  *write_buffer = '\0';
   PluginDebug("Normalized Path: %s", ret_buffer);
-  return strlen(ret_buffer);
+  return static_cast<int>(write_buffer - ret_buffer);
 }
 
 /* Function percent decodes uri_ct characters of the string uri and writes it to the decoded_uri
@@ -196,10 +198,11 @@ decode_failure:
 }
 
 /* This function takes a uri and an initialized buffer to populate with the normalized uri.
- * Returns non zero for error
+ * Returns non zero for error.
  *
- * The buffer provided must be at least the length of the uri + 1 as the normalized uri will
- * potentially be one char larger than the original uri if a backslash is added to the path.
+ * The buffer provided must be at least uri_ct + 2 bytes: the normalized uri can be one
+ * character larger than the original (a trailing '/' added when the path is empty) plus
+ * one byte for the NUL terminator.
  *
  *   The normalization function returns a string with the following modifications
  *   1. Lowecase protocol/domain
@@ -207,24 +210,31 @@ decode_failure:
  *   3. Alphabetical percent encoded octet values are toupper
  *   4. Non-reserved percent encoded octet values are decoded
  *   5. The Port is removed if it is default
- *   6. Defaults to a single backslash for the path segment if path segment is empty
+ *   6. Defaults to a single forward slash for the path segment if path segment is empty
  */
 int
 normalize_uri(const char *uri, int uri_ct, char *normal_uri, int normal_ct)
 {
+  /* Validate inputs before any pointer arithmetic or dereferences.
+   * The output buffer must hold uri_ct + 2 bytes: the URI itself plus a
+   * possible trailing '/' added when the authority has an empty path, plus
+   * the NUL terminator.  The overflow-safe form of normal_ct < uri_ct + 2
+   * is normal_ct - 1 <= uri_ct.
+   */
+  if (uri == nullptr || normal_uri == nullptr || uri_ct < 0 || normal_ct < 2 || normal_ct - 1 <= uri_ct) {
+    PluginDebug("Buffer to Normalize URI not large enough.");
+    return -1;
+  }
+
   PluginDebug("Normalizing URI: %s", uri);
 
   /* Buffer provided must be large enough to store the uri plus one additional char */
   const char *uri_end  = uri + uri_ct;
   const char *buff_end = normal_uri + normal_ct;
 
-  if ((normal_uri == nullptr) || (normal_uri && normal_ct < uri_ct + 1)) {
-    PluginDebug("Buffer to Normalize URI not large enough.");
-    return -1;
-  }
-
   /* Initialize a path buffer to pass to path normalization function later on */
-  char path_buffer[normal_ct];
+  ts::LocalBuffer<char> path_buffer_storage(normal_ct);
+  char                 *path_buffer = path_buffer_storage.data();
   memset(path_buffer, 0, normal_ct);
 
   /* Comp variables store starting/ending indexes for each uri component as uri is parsed.
