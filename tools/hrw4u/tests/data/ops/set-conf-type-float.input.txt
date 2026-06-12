@@ -1,0 +1,5 @@
+REMAP {
+    if true {
+        set-config("proxy.config.http.background_fill_completed_threshold", "0.5");
+    }
+}

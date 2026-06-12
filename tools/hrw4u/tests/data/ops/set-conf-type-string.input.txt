@@ -1,0 +1,5 @@
+REMAP {
+    if true {
+        set-config("proxy.config.http.response_server_str", "my-server");
+    }
+}
