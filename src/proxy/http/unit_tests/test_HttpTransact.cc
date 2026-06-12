@@ -30,6 +30,7 @@ using namespace std::string_view_literals;
 #include "tscore/Diags.h"
 #include "tsutil/PostScript.h"
 
+#include "proxy/http/HttpConfig.h"
 #include "proxy/http/HttpTransact.h"
 #include "records/RecordsConfig.h"
 
@@ -909,5 +910,54 @@ TEST_CASE("HttpTransact", "[http]")
         CHECK(cached.m_heap->marshal_length() - settled <= 4096);
       }
     }
+  }
+
+  SECTION("HttpTransact::strip_at_headers removes duplicate internal headers")
+  {
+    static constexpr char raw_request[] = "GET / HTTP/1.1\r\n"
+                                          "Host: example.test\r\n"
+                                          "@Ats-Internal: first\r\n"
+                                          "X-Keep: ok\r\n"
+                                          "@Ats-Internal: second\r\n"
+                                          "@Another: third\r\n"
+                                          "\r\n";
+
+    HTTPHdr        hdr;
+    ts::PostScript hdr_defer([&]() -> void { hdr.destroy(); });
+    HTTPParser     parser;
+
+    if (http_rsb.client_request_at_headers_stripped == nullptr) {
+      http_rsb.client_request_at_headers_stripped =
+        Metrics::Counter::createPtr("proxy.process.http.client_request_at_headers_stripped");
+    }
+    if (http_rsb.origin_response_at_headers_stripped == nullptr) {
+      http_rsb.origin_response_at_headers_stripped =
+        Metrics::Counter::createPtr("proxy.process.http.origin_response_at_headers_stripped");
+    }
+
+    hdr.create(HTTPType::REQUEST);
+    http_parser_init(&parser);
+
+    auto       *start = raw_request;
+    auto const *end   = raw_request + sizeof(raw_request) - 1;
+    ParseResult err;
+
+    while (true) {
+      err = hdr.parse_req(&parser, &start, end, true);
+      if (err != ParseResult::CONT) {
+        break;
+      }
+    }
+
+    REQUIRE(err == ParseResult::DONE);
+    HttpTransact::strip_at_headers(hdr, HttpTransact::AtHeaderSource::CLIENT_REQUEST, 1);
+
+    CHECK(hdr.field_find("@Ats-Internal"sv) == nullptr);
+    CHECK(hdr.field_find("@Another"sv) == nullptr);
+    CHECK(hdr.field_find("Host"sv) != nullptr);
+
+    MIMEField *field = hdr.field_find("X-Keep"sv);
+    REQUIRE(field != nullptr);
+    CHECK(field->value_get() == "ok"sv);
   }
 }

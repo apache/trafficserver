@@ -37,6 +37,7 @@ endfunction()
 
 add_subdirectory(tools/plugins)
 add_subdirectory(gold_tests/chunked_encoding)
+add_subdirectory(gold_tests/at_headers/plugins)
 add_subdirectory(gold_tests/continuations/plugins)
 add_subdirectory(gold_tests/jsonrpc/plugins)
 add_subdirectory(gold_tests/pluginTest/crash_test)
