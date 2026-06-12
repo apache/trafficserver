@@ -143,6 +143,7 @@ trafficserver ............. Top src dir
 ├── lib ................... Third-party libraries
 │   ├── Catch2 ............ Unit testing framework
 │   ├── fastlz ............ Fast compression library
+│   ├── highway ........... Portable SIMD/vector intrinsics
 │   ├── ls-hpack .......... HPACK compression for HTTP/2
 │   ├── swoc .............. Solid Wall of Code utility library
 │   ├── systemtap ......... SystemTap integration

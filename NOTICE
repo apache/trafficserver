@@ -118,3 +118,8 @@ LS-HPACK provides functionality to encode and decode HTTP headers using
 HPACK compression mechanism specified in RFC 7541.
 Copyright (c) 2018 - 2023 LiteSpeed Technologies Inc, (MIT License)
 https://github.com/litespeedtech/ls-hpack.git
+
+~~
+
+Highway is a C++ library that provides portable SIMD/vector intrinsics.
+https://github.com/google/highway
