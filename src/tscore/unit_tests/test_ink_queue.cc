@@ -25,12 +25,9 @@
 
 #include <tscore/ink_queue.h>
 
-#include <atomic>
 #include <cstddef>
 #include <cstdint>
 #include <new>
-#include <thread>
-#include <vector>
 
 // Chunk-seeded cells on the free-chain at process exit must not appear
 // as direct leaks. The one issued cell is reachable via the registered root
