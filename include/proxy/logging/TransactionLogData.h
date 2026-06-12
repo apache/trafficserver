@@ -169,6 +169,8 @@ public:
   int get_cache_transform_write_code() const;
   int get_cache_open_read_tries() const;
   int get_cache_open_write_tries() const;
+  int get_freshness_limit() const;
+  int64_t get_current_age() const;
   int get_max_cache_open_write_retries() const;
 
   // ===== Retry attempts =====
