@@ -1229,6 +1229,95 @@ void        *TSConfigDataGet(TSConfig configp);
 TSReturnCode TSMgmtConfigFileAdd(const char *parent, const char *fileName);
 
 /* --------------------------------------------------------------------------
+   Config Registry - plugin config reload registration
+
+   See doc/developer-guide/api/functions/TSCfgRegister.en.rst for usage,
+   semantics, and examples. */
+
+/** Register a plugin config file with the reload framework.
+
+    Call from TSPluginInit() after TSPluginRegister(). All preconditions are
+    logged on failure; @a info must be non-null.
+
+    @param info  Registration parameters.
+    @return TS_SUCCESS on registration attempt, TS_ERROR on precondition fail.
+*/
+TSReturnCode TSCfgRegister(const TSCfgRegistrationInfo *info);
+
+/** Test whether a key is registered.
+
+    Plugins that may be loaded more than once (e.g. by an admin retry, or as
+    a remap plugin instance) can use this to skip a duplicate TSCfgRegister
+    call, which would otherwise be silently dropped.
+
+    @param key  Registry key.
+    @return     true if @a key is currently registered (core or plugin).
+*/
+bool TSCfgIsRegistered(std::string_view key);
+
+/** Attach a record so that changing its value re-runs the handler
+    registered for @a key. Call from TSPluginInit() after TSCfgRegister().
+
+    @return TS_SUCCESS on success; TS_ERROR if @a key is unknown.
+*/
+TSReturnCode TSCfgAttachReloadTrigger(std::string_view key, std::string_view record_name);
+
+/** Add a companion file dependency to a registered plugin config.
+    Call from TSPluginInit() after TSCfgRegister().
+
+    @return TS_SUCCESS on success; TS_ERROR on precondition fail.
+*/
+TSReturnCode TSCfgAddFileDependency(const TSCfgFileDependencyInfo *info);
+
+/** Transition the load context to IN_PROGRESS and optionally attach a
+    one-line progress @a msg. Null @a ctx or empty @a msg is a no-op.
+*/
+void TSCfgLoadCtxInProgress(TSCfgLoadCtx ctx, std::string_view msg);
+
+/** Report successful config load. Frees @a ctx; do not use after this call.
+    Null @a ctx is a no-op; empty @a msg means no message.
+*/
+void TSCfgLoadCtxComplete(TSCfgLoadCtx ctx, std::string_view msg);
+
+/** Report failed config load. Frees @a ctx; do not use after this call.
+    Null @a ctx is a no-op; empty @a msg means no message.
+*/
+void TSCfgLoadCtxFail(TSCfgLoadCtx ctx, std::string_view msg);
+
+/** Log an intermediate message without changing state.
+    Preferred channel for progress/diagnostic messages between handler entry
+    and the eventual Complete/Fail call. Null @a ctx or empty @a msg is a no-op.
+*/
+void TSCfgLoadCtxAddLog(TSCfgLoadCtx ctx, TSCfgLogLevel level, std::string_view msg);
+
+/** Create a dependent subtask under @a ctx. The returned handle must be
+    completed/failed independently. Null @a ctx returns nullptr.
+*/
+TSCfgLoadCtx TSCfgLoadCtxAddSubtask(TSCfgLoadCtx ctx, std::string_view description);
+
+/** Resolved file path the framework expects this handler to read.
+    Returns the registration's @c config_path, or the current value of
+    @c filename_record if one was registered and is non-empty.
+    Valid until the completing call.
+*/
+std::string_view TSCfgLoadCtxGetFilename(TSCfgLoadCtx ctx);
+
+/** Reload token identifying the current reload cycle.
+    Valid until the completing call.
+*/
+std::string_view TSCfgLoadCtxGetReloadToken(TSCfgLoadCtx ctx);
+
+/** RPC-supplied YAML content for this load, or nullptr for file reloads.
+    Cast to YAML::Node*.
+*/
+TSYaml TSCfgLoadCtxGetSuppliedYaml(TSCfgLoadCtx ctx);
+
+/** RPC-supplied reload directives (the _reload key, extracted from the
+    supplied YAML by the framework), or nullptr if none were provided.
+*/
+TSYaml TSCfgLoadCtxGetReloadDirectives(TSCfgLoadCtx ctx);
+
+/* --------------------------------------------------------------------------
    Management */
 void         TSMgmtUpdateRegister(TSCont contp, const char *plugin_name, const char *plugin_file_name = nullptr);
 TSReturnCode TSMgmtIntGet(const char *var_name, TSMgmtInt *result);

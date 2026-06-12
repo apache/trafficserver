@@ -45,6 +45,7 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <string_view>
 #include <vector>
 #include <netinet/in.h>
 #include <sys/types.h>
@@ -1590,6 +1591,49 @@ enum TSHttpCntlType {
   TS_HTTP_CNTL_SERVER_NO_STORE,
   TS_HTTP_CNTL_TXN_DEBUG,
   TS_HTTP_CNTL_SKIP_REMAPPING,
+};
+
+// Config reload registration interface.
+// See doc/developer-guide/api/functions/TSCfgRegister.en.rst for usage.
+using TSCfgLoadCtx = struct tsapi_cfgloadctx *;
+
+/// Plugin config load callback. The handler MUST call exactly one of
+/// TSCfgLoadCtxComplete / TSCfgLoadCtxFail per handle (parent + each subtask),
+/// either synchronously or from a deferred continuation. After the completing
+/// call, the handle is invalid.
+using TSCfgLoadCb = void (*)(TSCfgLoadCtx ctx, void *data);
+
+/// What content sources a plugin config handler supports.
+enum TSCfgSourceType {
+  TS_CFG_SOURCE_FILE_ONLY,   ///< File on disk only.
+  TS_CFG_SOURCE_FILE_AND_RPC ///< File or YAML supplied via RPC.
+};
+
+/// Severity for log entries emitted via TSCfgLoadCtxAddLog().
+enum TSCfgLogLevel {
+  TS_CFG_LOG_NOTE,    ///< Informational; default.
+  TS_CFG_LOG_WARNING, ///< Concerning; reload may still complete.
+  TS_CFG_LOG_ERROR    ///< Failure cause; pair with TSCfgLoadCtxFail.
+};
+
+/// Options for TSCfgRegister(). Default-construct, populate, pass by pointer.
+struct TSCfgRegistrationInfo {
+  std::string_view key;                             ///< Unique registry/RPC-routing key. Required.
+  std::string_view config_path;                     ///< Default config file path (absolute or relative to sysconfdir). Required.
+  std::string_view filename_record;                 ///< Optional record that overrides @c config_path at runtime.
+  TSCfgLoadCb      handler{nullptr};                ///< Reload callback. Required.
+  void            *data{nullptr};                   ///< Opaque pointer passed unmodified to @c handler. Plugin-owned.
+  TSCfgSourceType  source{TS_CFG_SOURCE_FILE_ONLY}; ///< Accepted content sources.
+  bool             is_required{false};              ///< FileManager hint; not enforced at reload time.
+};
+
+/// Options for TSCfgAddFileDependency(). Default-construct, populate, pass by pointer.
+struct TSCfgFileDependencyInfo {
+  std::string_view key;                ///< Parent registry key. Required.
+  std::string_view config_path;        ///< Companion file path. Required.
+  std::string_view filename_record;    ///< Optional record that overrides @c config_path at runtime.
+  std::string_view dep_key;            ///< Optional RPC routing key for inline YAML under this top-level node.
+  bool             is_required{false}; ///< FileManager hint.
 };
 
 // JSONRPC 2.0 related interface.

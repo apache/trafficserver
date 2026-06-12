@@ -205,3 +205,64 @@ TEST_CASE("ConfigRegistry resolve() does not confuse entries and deps", "[config
   REQUIRE(key_b == "test_entry_b");
   REQUIRE(entry_b->source == ConfigSource::FileAndRpc);
 }
+
+// ─── register_plugin_config: filename_record propagation ──────────────────────
+
+TEST_CASE("ConfigRegistry register_plugin_config stores filename_record on the entry",
+          "[config][registry][plugin][filename_record]")
+{
+  auto &reg = ConfigRegistry::Get_Instance();
+
+  // Plugin path: register with a filename_record so an operator can override
+  // the active filename via that record at runtime. The plumbing tested here
+  // is the only difference between the plugin layer and core register_config:
+  // a typo in TSCfgRegister would silently fall back to default_filename.
+  reg.register_plugin_config("test_plugin_filename_record", "test_plugin", "default.yaml", "proxy.config.test_plugin.filename",
+                             noop_handler, ConfigSource::FileOnly, {}, false);
+
+  auto const *entry = reg.find("test_plugin_filename_record");
+  REQUIRE(entry != nullptr);
+  CHECK(entry->key == "test_plugin_filename_record");
+  CHECK(entry->plugin_name == "test_plugin");
+  CHECK_FALSE(entry->plugin_name.empty()); // plugin_name non-empty == plugin entry
+  CHECK(entry->default_filename == "default.yaml");
+  CHECK(entry->filename_record == "proxy.config.test_plugin.filename");
+  CHECK(entry->source == ConfigSource::FileOnly);
+  CHECK_FALSE(entry->is_required);
+}
+
+TEST_CASE("ConfigRegistry add_file_and_node_dependency leaves no half-state on dep_key collision", "[config][registry][dependency]")
+{
+  ensure_test_records();
+  auto &reg = ConfigRegistry::Get_Instance();
+
+  reg.register_config("test_no_half_state", "", "", noop_handler, ConfigSource::FileAndRpc, {});
+
+  int ret1 = reg.add_file_and_node_dependency("test_no_half_state", "test_no_half_dep", "test.registry.dep.filename1",
+                                              "test_sni.yaml", false);
+  REQUIRE(ret1 == 0);
+
+  // Duplicate dep_key: must fail without disturbing the live mapping.
+  int ret2 = reg.add_file_and_node_dependency("test_no_half_state", "test_no_half_dep", "test.registry.dep.filename1",
+                                              "test_sni.yaml", false);
+  REQUIRE(ret2 == -1);
+
+  auto [parent_key, entry] = reg.resolve("test_no_half_dep");
+  REQUIRE(entry != nullptr);
+  REQUIRE(parent_key == "test_no_half_state");
+}
+
+TEST_CASE("ConfigRegistry register_plugin_config accepts empty filename_record", "[config][registry][plugin][filename_record]")
+{
+  auto &reg = ConfigRegistry::Get_Instance();
+
+  // Empty filename_record is the default for plugins that don't expose a
+  // runtime-tunable path; resolve_filename() then always uses default_filename.
+  reg.register_plugin_config("test_plugin_no_record", "test_plugin", "fixed.yaml", "", noop_handler, ConfigSource::FileOnly, {},
+                             false);
+
+  auto const *entry = reg.find("test_plugin_no_record");
+  REQUIRE(entry != nullptr);
+  CHECK(entry->filename_record.empty());
+  CHECK(entry->default_filename == "fixed.yaml");
+}
