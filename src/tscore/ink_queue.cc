@@ -299,17 +299,16 @@ freelist_new(InkFreeList *f)
       if (f->advice) {
         ats_madvise(static_cast<caddr_t>(newp), INK_ALIGN(alloc_size, alignment), f->advice);
       }
-      // LSan root-region registration. Each cell on the free-chain stores its
-      // successor as a bitwise-tagged pointer (version bits merged into the high
-      // bits of the word by SET_FREELIST_POINTER_VERSION / FROM_PTR). LSan's
-      // pointer scanner sees the tagged word and cannot recognize it as a heap
-      // pointer, so it classifies the cells as direct leaks. Registering the
-      // entire chunk as a root region tells LSan to scan the chunk's bytes for
-      // pointers; through that scan every cell on the chain becomes reachable and
-      // is reclassified as "still reachable." Registration happens once per chunk
-      // (amortized over chunk_size cells) and is a no-op in non-ASan builds.
+      // Tell LSan not to report this chunk as a direct leak. Cells on the
+      // free-chain store their successor as a bitwise-tagged pointer (version
+      // bits merged into bits 48-62 by SET_FREELIST_POINTER_VERSION), which
+      // exceeds LSan's CanBeAHeapPointer threshold on x86_64/aarch64. LSan
+      // therefore cannot trace from any root through the chain to the chunk,
+      // and reports it as a direct leak. __lsan_ignore_object suppresses the
+      // report for the chunk itself; one call per chunk allocation, no
+      // per-cell cost.
 #ifdef TS_ASAN_ENABLED
-      __lsan_register_root_region(newp, INK_ALIGN(alloc_size, alignment));
+      __lsan_ignore_object(newp);
 #endif
       SET_FREELIST_POINTER_VERSION(item, FROM_PTR(newp), 0);
       ink_assert(is_next_ptr_aligned(f, item));
