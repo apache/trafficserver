@@ -63,6 +63,27 @@ struct certinfo {
  */
 using certinfo_map = std::map<X509 *, certinfo *>;
 
+static void
+certinfo_free(certinfo *cinf)
+{
+  if (cinf == nullptr) {
+    return;
+  }
+
+  if (cinf->cid) {
+    OCSP_CERTID_free(cinf->cid);
+  }
+  if (cinf->uri) {
+    OPENSSL_free(cinf->uri);
+  }
+
+  ats_free(cinf->certname);
+  ats_free(cinf->user_agent);
+
+  ink_mutex_destroy(&cinf->stapling_mutex);
+  OPENSSL_free(cinf);
+}
+
 void
 certinfo_map_free(void * /*parent*/, void *ptr, CRYPTO_EX_DATA * /*ad*/, int /*idx*/, long /*argl*/, void * /*argp*/)
 {
@@ -73,16 +94,7 @@ certinfo_map_free(void * /*parent*/, void *ptr, CRYPTO_EX_DATA * /*ad*/, int /*i
   }
 
   for (certinfo_map::iterator iter = map->begin(); iter != map->end(); ++iter) {
-    certinfo *cinf = iter->second;
-    if (cinf->uri) {
-      OPENSSL_free(cinf->uri);
-    }
-
-    ats_free(cinf->certname);
-    ats_free(cinf->user_agent);
-
-    ink_mutex_destroy(&cinf->stapling_mutex);
-    OPENSSL_free(cinf);
+    certinfo_free(iter->second);
   }
   delete map;
 }
@@ -203,20 +215,24 @@ ssl_stapling_init_cert(SSL_CTX *ctx, X509 *cert, const char *certname, const cha
     return false;
   }
 
+  bool const map_was_created = map == nullptr;
   if (!map) {
     map = new certinfo_map;
   }
   certinfo *cinf = static_cast<certinfo *>(OPENSSL_malloc(sizeof(certinfo)));
   if (!cinf) {
     Error("error allocating memory for %s", certname);
-    delete map;
+    if (map_was_created) {
+      delete map;
+    }
     return false;
   }
 
   // Initialize certinfo
-  cinf->cid      = nullptr;
-  cinf->uri      = nullptr;
-  cinf->certname = ats_strdup(certname);
+  cinf->cid        = nullptr;
+  cinf->uri        = nullptr;
+  cinf->certname   = ats_strdup(certname);
+  cinf->user_agent = nullptr;
   if (SSLConfigParams::ssl_ocsp_user_agent != nullptr) {
     cinf->user_agent = ats_strdup(SSLConfigParams::ssl_ocsp_user_agent);
   }
@@ -289,17 +305,8 @@ ssl_stapling_init_cert(SSL_CTX *ctx, X509 *cert, const char *certname, const cha
   return true;
 
 err:
-  if (cinf->cid) {
-    OCSP_CERTID_free(cinf->cid);
-  }
-
-  ats_free(cinf->certname);
-  ats_free(cinf->user_agent);
-
-  if (cinf) {
-    OPENSSL_free(cinf);
-  }
-  if (map) {
+  certinfo_free(cinf);
+  if (map_was_created) {
     delete map;
   }
 
