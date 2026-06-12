@@ -196,12 +196,65 @@ ChunkedHandler::read_size()
             state = ChunkedState::READ_ERROR;
             done  = true;
             break;
+          } else if (*tmp == ';') {
+            // Start of a chunk extension. Parse it explicitly so that the value
+            // of a quoted-string extension is consumed up to its closing DQUOTE.
+            in_quoted_string = false;
+            in_escape        = false;
+            state            = ChunkedState::READ_EXTENSION;
           } else {
             if (ParseRules::is_cr(*tmp)) {
               ++num_cr;
             }
             state = ChunkedState::READ_SIZE_CRLF; // now look for CRLF
           }
+        }
+      } else if (state == ChunkedState::READ_EXTENSION) {
+        // Parse a chunk extension per RFC 9112 Section 7.1.1:
+        //   chunk-ext     = *( BWS ";" BWS chunk-ext-name [ BWS "=" BWS chunk-ext-val ] )
+        //   chunk-ext-val = token / quoted-string
+        // A quoted-string (RFC 9110 Section 5.6.4) cannot contain a bare CR or LF
+        // (neither qdtext nor quoted-pair permits them), so either octet inside a
+        // quoted-string is a protocol error, not a line terminator. Rejecting it
+        // keeps a request whose extension embeds CR/LF from being forwarded and
+        // framed differently by a downstream parser.
+        if (in_quoted_string) {
+          if (ParseRules::is_cr(*tmp) || ParseRules::is_lf(*tmp)) {
+            state = ChunkedState::READ_ERROR;
+            done  = true;
+            break;
+          } else if (in_escape) {
+            in_escape = false; // Consume the escaped octet of a quoted-pair.
+          } else if (*tmp == '\\') {
+            in_escape = true; // Begin a quoted-pair.
+          } else if (*tmp == '"') {
+            in_quoted_string = false; // Closing DQUOTE.
+          }
+          // Any other octet is part of the quoted-string value.
+        } else {
+          if (*tmp == '"') {
+            in_quoted_string = true; // Opening DQUOTE.
+          } else if (ParseRules::is_cr(*tmp)) {
+            // End of the chunk size line; hand off to the CRLF scanner.
+            ++num_cr;
+            state = ChunkedState::READ_SIZE_CRLF;
+          } else if (ParseRules::is_lf(*tmp)) {
+            // A bare LF (no preceding CR) ends the chunk size line. This is a
+            // protocol violation: reject it under strict parsing and tolerate it
+            // otherwise, matching how READ_SIZE_CRLF handles a bare LF.
+            Dbg(dbg_ctl_http_chunk, "Found an LF without a preceding CR (protocol violation) in chunk extension");
+            if (strict_chunk_parsing) {
+              state = ChunkedState::READ_ERROR;
+              done  = true;
+              break;
+            }
+            cur_chunk_bytes_left = (cur_chunk_size = running_sum);
+            state                = (running_sum == 0) ? ChunkedState::READ_TRAILER_BLANK : ChunkedState::READ_CHUNK;
+            done                 = true;
+            num_cr               = 0;
+            break;
+          }
+          // Any other octet is part of the extension name or unquoted value.
         }
       } else if (state == ChunkedState::READ_SIZE_CRLF) { // Scan for a linefeed
         if (ParseRules::is_lf(*tmp)) {
@@ -226,6 +279,15 @@ ChunkedHandler::read_size()
             break;
           }
           ++num_cr;
+        } else if (*tmp == ';' && num_cr == 0) {
+          // Optional whitespace (BWS) is allowed between the chunk size and the
+          // ';' that begins a chunk extension (RFC 9112 Section 7.1.1). Reaching
+          // here with num_cr == 0 means a ';' followed that whitespace, so parse
+          // the extension rather than scanning for CRLF; otherwise a quoted-string
+          // value preceded by BWS would not be handled.
+          in_quoted_string = false;
+          in_escape        = false;
+          state            = ChunkedState::READ_EXTENSION;
         }
       } else if (state == ChunkedState::READ_SIZE_START) {
         Dbg(dbg_ctl_http_chunk, "ChunkedState::READ_SIZE_START 0x%02x", *tmp);
@@ -404,6 +466,7 @@ ChunkedHandler::process_chunked_content()
   while (chunked_reader->is_read_avail_more_than(0) && state != ChunkedState::READ_DONE && state != ChunkedState::READ_ERROR) {
     switch (state) {
     case ChunkedState::READ_SIZE:
+    case ChunkedState::READ_EXTENSION:
     case ChunkedState::READ_SIZE_CRLF:
     case ChunkedState::READ_SIZE_START:
       bytes_read += read_size();
