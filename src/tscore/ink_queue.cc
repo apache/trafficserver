@@ -52,6 +52,10 @@
 
 #include "swoc/bwf_ip.h"
 
+#if defined(__SANITIZE_ADDRESS__) || (defined(__has_feature) && __has_feature(address_sanitizer))
+#include <sanitizer/lsan_interface.h>
+#endif
+
 #include "tscore/ink_atomic.h"
 #include "tscore/ink_queue.h"
 #include "tscore/ink_memory.h"
@@ -287,6 +291,18 @@ freelist_new(InkFreeList *f)
       if (f->advice) {
         ats_madvise(static_cast<caddr_t>(newp), INK_ALIGN(alloc_size, alignment), f->advice);
       }
+      // LSan root-region registration. Each cell on the free-chain stores its
+      // successor as a bitwise-tagged pointer (version bits merged into the high
+      // bits of the word by SET_FREELIST_POINTER_VERSION / FROM_PTR). LSan's
+      // pointer scanner sees the tagged word and cannot recognize it as a heap
+      // pointer, so it classifies the cells as direct leaks. Registering the
+      // entire chunk as a root region tells LSan to scan the chunk's bytes for
+      // pointers; through that scan every cell on the chain becomes reachable and
+      // is reclassified as "still reachable." Registration happens once per chunk
+      // (amortized over chunk_size cells) and is a no-op in non-ASan builds.
+#if defined(__SANITIZE_ADDRESS__) || (defined(__has_feature) && __has_feature(address_sanitizer))
+      __lsan_register_root_region(newp, INK_ALIGN(alloc_size, alignment));
+#endif
       SET_FREELIST_POINTER_VERSION(item, FROM_PTR(newp), 0);
       ink_assert(is_next_ptr_aligned(f, item));
 

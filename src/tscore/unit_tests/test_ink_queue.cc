@@ -32,6 +32,52 @@
 #include <thread>
 #include <vector>
 
+// Chunk-seeded cells on the free-chain at process exit must not appear
+// as direct leaks. The one issued cell is reachable via the registered root
+// region; the remaining chunk_size-1 seeded cells are also covered because
+// the entire chunk is a registered LSan root region.
+#if defined(__SANITIZE_ADDRESS__) || (defined(__has_feature) && __has_feature(address_sanitizer))
+TEST_CASE("FreelistChunkSeededCellsNotDirectLeak", "[freelist][lsan]")
+{
+  InkFreeList *f{ink_freelist_create("lsan_seeded", 8, 8, 8)};
+
+  // Force the first chunk allocation. Do not return this cell — intentionally
+  // held to represent an "in-use" cell so LSan sees it reachable via the
+  // root region scan rather than as a dropped pointer.
+  (void)ink_freelist_new(f);
+
+  // The remaining chunk_size-1 seeded cells are on the free-chain. At process
+  // exit LSan must classify them as "still reachable" through the registered
+  // root region, not as direct leaks.
+  CHECK(true);
+}
+#endif
+
+// Caller-returned cells on the free-chain at process exit must not
+// appear as direct leaks.
+#if defined(__SANITIZE_ADDRESS__) || (defined(__has_feature) && __has_feature(address_sanitizer))
+TEST_CASE("FreelistReturnedCellsNotDirectLeak", "[freelist][lsan]")
+{
+  InkFreeList *f{ink_freelist_create("lsan_returned", 8, 8, 8)};
+
+  // Issue several cells then return them all via single-item free.
+  void *a{ink_freelist_new(f)};
+  void *b{ink_freelist_new(f)};
+  void *c{ink_freelist_new(f)};
+  void *d{ink_freelist_new(f)};
+
+  ink_freelist_free(f, a);
+  ink_freelist_free(f, b);
+  ink_freelist_free(f, c);
+  ink_freelist_free(f, d);
+
+  // All four returned cells are now on the free-chain. At process exit LSan
+  // must classify them as "still reachable" through the registered root
+  // region, not as direct leaks.
+  CHECK(true);
+}
+#endif
+
 TEST_CASE("Freelist", "[freelist]")
 {
   // There is no error reporting for this routine. The allocation
