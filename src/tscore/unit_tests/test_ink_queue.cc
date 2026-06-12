@@ -36,7 +36,15 @@
 // as direct leaks. The one issued cell is reachable via the registered root
 // region; the remaining chunk_size-1 seeded cells are also covered because
 // the entire chunk is a registered LSan root region.
-#if defined(__SANITIZE_ADDRESS__) || (defined(__has_feature) && __has_feature(address_sanitizer))
+#ifdef __SANITIZE_ADDRESS__
+#define TS_ASAN_ENABLED
+#elif defined(__has_feature)
+#if __has_feature(address_sanitizer)
+#define TS_ASAN_ENABLED
+#endif
+#endif
+
+#ifdef TS_ASAN_ENABLED
 TEST_CASE("FreelistChunkSeededCellsNotDirectLeak", "[freelist][lsan]")
 {
   InkFreeList *f{ink_freelist_create("lsan_seeded", 8, 8, 8)};
@@ -51,11 +59,9 @@ TEST_CASE("FreelistChunkSeededCellsNotDirectLeak", "[freelist][lsan]")
   // root region, not as direct leaks.
   CHECK(true);
 }
-#endif
 
 // Caller-returned cells on the free-chain at process exit must not
 // appear as direct leaks.
-#if defined(__SANITIZE_ADDRESS__) || (defined(__has_feature) && __has_feature(address_sanitizer))
 TEST_CASE("FreelistReturnedCellsNotDirectLeak", "[freelist][lsan]")
 {
   InkFreeList *f{ink_freelist_create("lsan_returned", 8, 8, 8)};
@@ -76,7 +82,7 @@ TEST_CASE("FreelistReturnedCellsNotDirectLeak", "[freelist][lsan]")
   // region, not as direct leaks.
   CHECK(true);
 }
-#endif
+#endif // TS_ASAN_ENABLED
 
 TEST_CASE("Freelist", "[freelist]")
 {

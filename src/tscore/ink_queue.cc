@@ -52,7 +52,15 @@
 
 #include "swoc/bwf_ip.h"
 
-#if defined(__SANITIZE_ADDRESS__) || (defined(__has_feature) && __has_feature(address_sanitizer))
+#ifdef __SANITIZE_ADDRESS__
+#define TS_ASAN_ENABLED
+#elif defined(__has_feature)
+#if __has_feature(address_sanitizer)
+#define TS_ASAN_ENABLED
+#endif
+#endif
+
+#ifdef TS_ASAN_ENABLED
 #include <sanitizer/lsan_interface.h>
 #endif
 
@@ -300,7 +308,7 @@ freelist_new(InkFreeList *f)
       // pointers; through that scan every cell on the chain becomes reachable and
       // is reclassified as "still reachable." Registration happens once per chunk
       // (amortized over chunk_size cells) and is a no-op in non-ASan builds.
-#if defined(__SANITIZE_ADDRESS__) || (defined(__has_feature) && __has_feature(address_sanitizer))
+#ifdef TS_ASAN_ENABLED
       __lsan_register_root_region(newp, INK_ALIGN(alloc_size, alignment));
 #endif
       SET_FREELIST_POINTER_VERSION(item, FROM_PTR(newp), 0);
