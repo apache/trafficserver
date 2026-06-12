@@ -118,6 +118,8 @@ struct SSLNextProtocolTrampoline : public Continuation {
       }
 
       if (endpoint_cont) {
+        netvc->cancel_inactivity_timeout();
+
         // disable read io, send events to endpoint
         netvc->do_io_read(endpoint_cont, 0, nullptr);
 

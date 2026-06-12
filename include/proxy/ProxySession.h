@@ -151,6 +151,7 @@ public:
   virtual bool support_sni() const;
 
   APIHook            *hook_get(TSHttpHookID id) const;
+  bool                has_session_hook(TSHttpHookID id) const;
   HttpAPIHooks const *feature_hooks() const;
 
   // Returns null pointer if session does not use a TLS connection.
@@ -290,6 +291,12 @@ inline bool
 ProxySession::has_hooks() const
 {
   return this->api_hooks.has_hooks() || http_global_hooks->has_hooks();
+}
+
+inline bool
+ProxySession::has_session_hook(TSHttpHookID id) const
+{
+  return this->hook_get(id) != nullptr || http_global_hooks->get(id) != nullptr;
 }
 
 inline SSLProxySession const *
