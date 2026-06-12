@@ -114,6 +114,15 @@ In addition to this, in the :file:`records.yaml` file, edit ``connect_ports`` li
    -  :ts:cv:`proxy.config.http.connect_ports`: ``443 4443`` to allow |TS| to connect
       to the destination port
 
+If the route target resolves to an unspecified, loopback, private, link-local, or IPv4-mapped IPv6
+address, the default :file:`ip_allow.yaml` outbound policy will deny the synthesized ``CONNECT``.
+Add an explicit ``apply: out`` allow rule for the intended destination before the default deny rule.
+
+``forward_route`` and ``partial_blind_route`` do not blind tunnel the original TLS session, but
+their upstream destinations are also subject to outbound :file:`ip_allow.yaml` policy before |TS|
+opens the connection. Configure explicit outbound policy for intentional local or private layer-4
+routes.
+
 The sequence of network activity for a Client connecting to ``service-2`` is
 
 .. uml:: ../uml/l4-sni-routing-seq.uml

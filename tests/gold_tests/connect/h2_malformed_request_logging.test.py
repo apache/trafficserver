@@ -104,6 +104,7 @@ class MalformedH2RequestLoggingTest:
                 'proxy.config.http.connect_ports': self._server.Variables.http_port,
             })
         self._ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{self._server.Variables.http_port}/')
+        self._ts.addPrivateConnectAllowYaml(methods='[ CONNECT, GET ]')
         self._ts.Disk.logging_yaml.AddLines(
             """
 logging:

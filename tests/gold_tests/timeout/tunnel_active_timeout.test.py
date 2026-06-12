@@ -51,6 +51,7 @@ ts.Disk.records_config.update(
     })
 
 ts.Disk.remap_config.AddLine(f'map / https://127.0.0.1:{server.Variables.SSL_Port}')
+ts.addPrivateConnectAllowYaml()
 
 # Configure custom log format to capture squid code
 ts.Disk.logging_yaml.AddLines(

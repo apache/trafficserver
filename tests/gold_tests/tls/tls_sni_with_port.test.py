@@ -120,6 +120,7 @@ class TestSNIWithPort:
             })
 
         ts.Disk.remap_config.AddLine(f"map / http://127.0.0.1:{server_three.Variables.http_port}")
+        ts.addPrivateConnectAllowYaml(methods='[ CONNECT, GET ]')
 
         ts.Disk.sni_yaml.AddLines(
             [
