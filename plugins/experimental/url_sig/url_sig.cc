@@ -645,6 +645,10 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
           case AF_INET:
             Dbg(dbg_ctl, "ip->sa_family: AF_INET");
             has_path_params == false ? (pp = strstr(cp, "&")) : (pp = strstr(cp, ";"));
+            if (pp == nullptr) {
+              err_log(url, url_len, "Malformed C parameter: missing delimiter.");
+              goto deny;
+            }
             if ((pp - cp) > INET_ADDRSTRLEN - 1 || (pp - cp) < 4) {
               err_log(url, url_len, "IP address string too long or short.");
               goto deny;
@@ -662,6 +666,10 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
           case AF_INET6:
             Dbg(dbg_ctl, "ip->sa_family: AF_INET6");
             has_path_params == false ? (pp = strstr(cp, "&")) : (pp = strstr(cp, ";"));
+            if (pp == nullptr) {
+              err_log(url, url_len, "Malformed C parameter: missing delimiter.");
+              goto deny;
+            }
             if ((pp - cp) > INET6_ADDRSTRLEN - 1 || (pp - cp) < 4) {
               err_log(url, url_len, "IP address string too long or short.");
               goto deny;

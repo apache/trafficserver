@@ -178,6 +178,36 @@ tr.MakeCurlCommand(
     "foo/abcde/qrstuvwxyz?C=127.0.0.1&E=33046620008&A=2&&K=13&P=101&S=d1f352d4f1d931ad2f441013402d93f8#'" + LogTee,
     ts=ts)
 
+# With client / MD5 / Only C parameter -- truncated query string.
+#
+tr = Test.AddTestRun("Truncated query string with only client IP should fail")
+p = tr.MakeCurlCommand(
+    f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://seven.eight.nine/" + "foo/abcde/qrstuvwxyz?C=127.0.0.1'" +
+    LogTee,
+    ts=ts)
+p.ReturnCode = 0
+p.Streams.stdout = Testers.ContainsExpression("HTTP.*403", "Should receive 403 Forbidden")
+
+# With client / MD5 / C parameter last in query -- missing trailing delimiter.
+#
+tr = Test.AddTestRun("Client IP as final query parameter should fail")
+p = tr.MakeCurlCommand(
+    f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://seven.eight.nine/" +
+    "foo/abcde/qrstuvwxyz?E=33046620008&A=2&K=13&P=101&S=d1f352d4f1d931ad2f441013402d93f8&C=127.0.0.1'" + LogTee,
+    ts=ts)
+p.ReturnCode = 0
+p.Streams.stdout = Testers.ContainsExpression("HTTP.*403", "Should receive 403 Forbidden")
+
+# With client / MD5 / C parameter has empty value.
+#
+tr = Test.AddTestRun("Empty client IP value should fail")
+p = tr.MakeCurlCommand(
+    f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://seven.eight.nine/" +
+    "foo/abcde/qrstuvwxyz?C=&E=33046620008&A=2&K=13&P=101&S=d1f352d4f1d931ad2f441013402d93f8'" + LogTee,
+    ts=ts)
+p.ReturnCode = 0
+p.Streams.stdout = Testers.ContainsExpression("HTTP.*403", "Should receive 403 Forbidden")
+
 # Success tests.
 
 # With client / SHA1 / P=1 / URL pristine / URL not altered.
