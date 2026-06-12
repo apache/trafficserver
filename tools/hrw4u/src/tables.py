@@ -132,6 +132,8 @@ CONDITION_MAP: dict[str, MapParams] = {
 }
 
 FALLBACK_TAG_MAP: dict[str, tuple[str, bool]] = {
+    "CLIENT-CERT": ("inbound.conn.client-cert.", False),
+    "CLIENT-CERT:SAN": ("inbound.conn.client-cert.SAN.", False),
     "CLIENT-HEADER": ("inbound.req.", False),
     "CLIENT-URL:QUERY": ("inbound.url.query.", False),
     "COOKIE": ("inbound.cookie.", False),
@@ -149,6 +151,13 @@ FALLBACK_TAG_MAP: dict[str, tuple[str, bool]] = {
     "SERVER-HEADER": ("outbound.req.", False),
     "SERVER-URL": ("outbound.url.", False),
     "TO-URL:QUERY": ("to.url.query.", False)
+}
+
+# Reverse mapping for bare %{TAG} references (without payload) in raw HRW when the
+# tag is not an exact condition and must resolve to a HRW4U identifier.
+BARE_TAG_MAP: dict[str, str] = {
+    "CLIENT-URL": "inbound.url.url",
+    "SERVER-URL": "outbound.url.url",
 }
 
 # Context type to mapping name associations
