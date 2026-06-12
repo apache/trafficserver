@@ -21,7 +21,7 @@ sessions:
 - protocol:
     stack: http3
     tls:
-      sni: test_sni
+      sni: foo.com
   transactions:
 
   - client-request:
@@ -31,7 +31,7 @@ sessions:
         - [ Content-Length, 0 ]
         - [:method, GET]
         - [:scheme, https]
-        - [:authority, example.com]
+        - [:authority, foo.com]
         - [:path, /path/test1]
         - [ uuid, has_sni ]
     server-response:
@@ -55,7 +55,7 @@ sessions:
         - [ Content-Length, 0 ]
         - [:method, GET]
         - [:scheme, https]
-        - [:authority, example.com]
+        - [:authority, foo.com]
         - [:path, /path/test1]
         - [ uuid, no_sni ]
     server-response:

@@ -24,6 +24,8 @@
 #include "iocore/eventsystem/VConnection.h"
 #include "iocore/net/quic/QUICStreamVCAdapter.h"
 
+#include <algorithm>
+
 QUICStreamVCAdapter::QUICStreamVCAdapter(QUICStream &stream) : VConnection(new_ProxyMutex()), QUICStreamAdapter(stream)
 {
   SET_HANDLER(&QUICStreamVCAdapter::state_stream_open);
@@ -84,16 +86,43 @@ QUICStreamVCAdapter::_read(size_t len)
     SCOPED_MUTEX_LOCK(lock, this->_write_vio.mutex, this_ethread());
 
     IOBufferReader *reader = this->_write_vio.get_reader();
-    block                  = make_ptr<IOBufferBlock>(reader->get_current_block()->clone());
+    if (reader == nullptr || reader->get_current_block() == nullptr || reader->block_read_avail() <= 0) {
+      return block;
+    }
+
+    const size_t read_len = std::min(len, static_cast<size_t>(reader->block_read_avail()));
+    block                 = make_ptr<IOBufferBlock>(reader->get_current_block()->clone());
     if (block->size()) {
       block->consume(reader->start_offset);
-      block->_end             = std::min(block->start() + len, block->_buf_end);
-      this->_write_vio.ndone += block->size();
+      block->_end = block->start() + read_len;
     }
-    reader->consume(block->size());
+    if (block->size() == 0) {
+      block = nullptr;
+    }
   }
 
   return block;
+}
+
+void
+QUICStreamVCAdapter::_consume(size_t len)
+{
+  if (len == 0 || this->_write_vio.op != VIO::WRITE) {
+    return;
+  }
+
+  SCOPED_MUTEX_LOCK(lock, this->_write_vio.mutex, this_ethread());
+
+  IOBufferReader *reader = this->_write_vio.get_reader();
+  if (reader == nullptr) {
+    return;
+  }
+
+  const size_t consume_len = std::min(len, static_cast<size_t>(std::max<int64_t>(reader->read_avail(), 0)));
+  if (consume_len > 0) {
+    reader->consume(consume_len);
+    this->_write_vio.ndone += consume_len;
+  }
 }
 
 bool
@@ -119,7 +148,8 @@ QUICStreamVCAdapter::unread_len()
 {
   if (this->_write_vio.op == VIO::WRITE) {
     SCOPED_MUTEX_LOCK(lock, this->_write_vio.mutex, this_ethread());
-    return this->_write_vio.get_reader()->block_read_avail();
+    IOBufferReader *reader = this->_write_vio.get_reader();
+    return reader == nullptr ? 0 : reader->block_read_avail();
   } else {
     return 0;
   }
@@ -321,23 +351,33 @@ QUICStreamVCAdapter::do_io_shutdown(ShutdownHowTo_t /* howto ATS_UNUSED */)
 }
 
 void
-QUICStreamVCAdapter::reenable(VIO * /* vio ATS_UNUSED */)
+QUICStreamVCAdapter::reenable(VIO *vio)
 {
-  // TODO We probably need to tell QUICStream that the application consumed received data
-  // to update receive window here. In other words, we should not update receive window
-  // until the application consume data.
+  if (vio == nullptr || vio->op != VIO::WRITE) {
+    // TODO We probably need to tell QUICStream that the application consumed received data
+    // to update receive window here. In other words, we should not update receive window
+    // until the application consume data.
+    return;
+  }
+
+  const bool has_buffered_data = vio->get_reader() != nullptr && vio->get_reader()->read_avail() > 0;
+  const bool needs_fin         = vio->nbytes != INT64_MAX && vio->ntodo() == 0;
+  if (has_buffered_data || needs_fin) {
+    this->stream().on_write();
+  }
 }
 
 bool
 QUICStreamVCAdapter::is_readable()
 {
-  return this->stream().direction() != QUICStreamDirection::SEND && _read_vio.nbytes != _read_vio.ndone;
+  return this->stream().direction() != QUICStreamDirection::SEND && this->_read_vio.op == VIO::READ &&
+         this->_read_vio.nbytes != this->_read_vio.ndone;
 }
 
 bool
 QUICStreamVCAdapter::is_writable()
 {
-  return this->stream().direction() != QUICStreamDirection::RECEIVE && _write_vio.nbytes != _read_vio.ndone;
+  return this->stream().direction() != QUICStreamDirection::RECEIVE;
 }
 
 int
