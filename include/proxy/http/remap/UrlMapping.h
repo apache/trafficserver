@@ -38,6 +38,7 @@
 #include "tscore/List.h"
 
 class NextHopSelectionStrategy;
+class NextHopStrategyFactory;
 struct CacheHostRecord;
 
 /**
@@ -115,10 +116,14 @@ public:
   bool              ip_allow_check_enabled_p = false;
   acl_filter_rule  *filter                   = nullptr; // acl filtering (linked list of rules)
   LINK(url_mapping, link);                              // For use with the main Queue linked list holding all the mapping
-  NextHopSelectionStrategy      *strategy = nullptr;
+  NextHopSelectionStrategy      *strategy        = nullptr;
+  NextHopStrategyFactory        *strategyFactory = nullptr;
   std::string                    remapKey;
   std::atomic<uint64_t>          _hitCount       = 0; // counter can overflow
   std::atomic<CacheHostRecord *> volume_host_rec = nullptr;
+
+  // For use with the strategies API to be called during TSRemapNewInstance.
+  static inline thread_local url_mapping *instance = nullptr;
 
   CacheHostRecord *
   getVolumeHostRec() const
