@@ -76,6 +76,8 @@ Http2ServerSession::start()
   SET_HANDLER(&Http2ServerSession::main_event_handler);
   HTTP2_SET_SESSION_HANDLER(&Http2ServerSession::state_start_frame_read);
 
+  _vc->set_inactivity_timeout(HRTIME_SECONDS(Http2::accept_no_activity_timeout));
+
   VIO *read_vio = this->do_io_read(this, INT64_MAX, this->read_buffer);
   write_vio     = this->do_io_write(this, INT64_MAX, this->_write_buffer_reader);
 
@@ -103,9 +105,8 @@ Http2ServerSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
   this->_milestones.mark(Http2SsnMilestone::OPEN);
 
   // Unique client session identifier.
-  this->con_id = ProxySession::next_connection_id();
-  this->_vc    = new_vc;
-  _vc->set_inactivity_timeout(HRTIME_SECONDS(Http2::accept_no_activity_timeout));
+  this->con_id         = ProxySession::next_connection_id();
+  this->_vc            = new_vc;
   this->schedule_event = nullptr;
   this->mutex          = new_vc->mutex;
 
@@ -139,6 +140,9 @@ Http2ServerSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
 
   this->_handle_if_ssl(new_vc);
 
+  if (has_session_hook(TS_HTTP_SSN_START_HOOK)) {
+    _vc->cancel_inactivity_timeout();
+  }
   do_api_callout(TS_HTTP_SSN_START_HOOK);
 
   this->add_session();
