@@ -21,8 +21,9 @@
 # The top level tag 'ip_allow' identifies the rule items. Its value must be a rule item or a
 # sequence of rule items.
 #
-# Rules are applied in the order listed starting from the top.
-# That means you generally want to append your rules after the ones listed here.
+# Rules are applied in the order listed starting from the top. The first
+# matching IP range determines the rule used for that connection, so add
+# explicit exceptions before broader deny rules.
 #
 # Allow anything on localhost, limit destructive and debug methods elsewhere.
 ip_allow:
@@ -50,3 +51,26 @@ ip_allow:
       - PUSH
       - DELETE
       - TRACE
+  # Deny CONNECT tunnels to unspecified, loopback, private, and link-local
+  # destination addresses by default. If you intentionally proxy CONNECT to
+  # one of these ranges, add a more specific outbound allow rule before this
+  # one.
+  - apply: out
+    ip_addrs:
+      - 0.0.0.0/8
+      - 127.0.0.0/8
+      - "::"
+      - ::1
+      - 10.0.0.0/8
+      - 172.16.0.0/12
+      - 192.168.0.0/16
+      - 169.254.0.0/16
+      - ::/96
+      - fc00::/7
+      - fe80::/10
+      # IPv4-compatible IPv6 ranges use ::/96. IPv4-mapped IPv6 ranges use
+      # hexadecimal notation because the range parser does not accept
+      # embedded dotted-quad tails.
+      - ::ffff:0:0/96
+    action: deny
+    methods: CONNECT

@@ -138,6 +138,7 @@ class TestSniIpAllow:
             ts.Disk.records_config.update({
                 'proxy.config.http.connect_ports': f"{server.Variables.https_port}",
             })
+            ts.addPrivateConnectAllowYaml()
         return ts
 
     def _configure_client(

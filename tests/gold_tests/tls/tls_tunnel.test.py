@@ -93,6 +93,7 @@ ts.Disk.records_config.update(
         'proxy.config.dns.nameservers': f'127.0.0.1:{dns.Variables.Port}',
         'proxy.config.dns.resolv_conf': 'NULL'
     })
+ts.addPrivateConnectAllowYaml()
 
 # foo.com should not terminate.  Just tunnel to server_foo
 # bar.com should terminate.  Forward its tcp stream to server_bar

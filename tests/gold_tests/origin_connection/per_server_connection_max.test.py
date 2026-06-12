@@ -124,6 +124,7 @@ class ConnectMethodTest:
         self._ts.Disk.remap_config.AddLines([
             f"map http://foo.com/ http://www.this.origin.com:{self._server.Variables.Port}/",
         ])
+        self._ts.addPrivateConnectAllowYaml()
 
     def _configure_client_with_slow_response(self, tr) -> 'Test.Process':
         """Configure a client to perform a CONNECT request with a slow response from the server."""

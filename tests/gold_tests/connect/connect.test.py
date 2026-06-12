@@ -55,6 +55,7 @@ class ConnectTest:
         self.ts.Disk.remap_config.AddLines([
             f"map http://foo.com/ http://127.0.0.1:{self.httpbin.Variables.Port}/",
         ])
+        self.ts.addPrivateConnectAllowYaml()
 
         self.ts.Disk.logging_yaml.AddLines(
             '''
@@ -145,6 +146,7 @@ class ConnectViaPVTest:
         self.ts.Disk.remap_config.AddLines([
             f"map / http://127.0.0.1:{self.server.Variables.http_port}/",
         ])
+        self.ts.addPrivateConnectAllowYaml()
         # Verify ts logs
         self.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
             f"Proxy's Request.*\n.*\nCONNECT 127.0.0.1:{self.server.Variables.http_port} HTTP/1.1",
@@ -230,6 +232,7 @@ class ConnectViaPVTest2:
         self.ts.Disk.remap_config.AddLines([
             f"map / http://127.0.0.1:{self.server.Variables.http_port}/",
         ])
+        self.ts.addPrivateConnectAllowYaml()
         # Verify ts logs
         self.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
             f"Proxy's Request.*\n.*\nCONNECT 127.0.0.1:{self.server.Variables.http_port} HTTP/1.1",
