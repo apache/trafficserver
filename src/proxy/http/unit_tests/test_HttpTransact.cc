@@ -27,6 +27,7 @@ using namespace std::string_view_literals;
 #include "tscore/Diags.h"
 #include "tsutil/PostScript.h"
 
+#include "proxy/http/HttpConfig.h"
 #include "proxy/http/HttpTransact.h"
 #include "records/RecordsConfig.h"
 
@@ -539,5 +540,58 @@ TEST_CASE("HttpTransact", "[http]")
       CHECK(field->has_dups() == false);
       ///////////////////////////////////////
     }
+  }
+
+  SECTION("HttpTransact::strip_at_headers removes duplicate internal headers")
+  {
+    static constexpr char raw_request[]         = "GET / HTTP/1.1\r\n"
+                                                  "Host: example.test\r\n"
+                                                  "@Ats-Internal: first\r\n"
+                                                  "X-Keep: ok\r\n"
+                                                  "@Ats-Internal: second\r\n"
+                                                  "@Another: third\r\n"
+                                                  "\r\n";
+    static constexpr char ats_internal_header[] = "@Ats-Internal";
+    static constexpr char another_header[]      = "@Another";
+    static constexpr char host_header[]         = "Host";
+    static constexpr char keep_header[]         = "X-Keep";
+
+    HTTPHdr        hdr;
+    ts::PostScript hdr_defer([&]() -> void { hdr.destroy(); });
+    HTTPParser     parser;
+
+    if (http_rsb.client_request_at_headers_stripped == nullptr) {
+      http_rsb.client_request_at_headers_stripped =
+        Metrics::Counter::createPtr("proxy.process.http.client_request_at_headers_stripped");
+    }
+    if (http_rsb.origin_response_at_headers_stripped == nullptr) {
+      http_rsb.origin_response_at_headers_stripped =
+        Metrics::Counter::createPtr("proxy.process.http.origin_response_at_headers_stripped");
+    }
+
+    hdr.create(HTTP_TYPE_REQUEST);
+    http_parser_init(&parser);
+
+    auto       *start = raw_request;
+    auto const *end   = raw_request + sizeof(raw_request) - 1;
+    ParseResult err;
+
+    while (true) {
+      err = hdr.parse_req(&parser, &start, end, true);
+      if (err != PARSE_RESULT_CONT) {
+        break;
+      }
+    }
+
+    REQUIRE(err == PARSE_RESULT_DONE);
+    HttpTransact::strip_at_headers(hdr, HttpTransact::AtHeaderSource::CLIENT_REQUEST, 1);
+
+    CHECK(hdr.field_find(ats_internal_header, sizeof(ats_internal_header) - 1) == nullptr);
+    CHECK(hdr.field_find(another_header, sizeof(another_header) - 1) == nullptr);
+    CHECK(hdr.field_find(host_header, sizeof(host_header) - 1) != nullptr);
+
+    MIMEField *field = hdr.field_find(keep_header, sizeof(keep_header) - 1);
+    REQUIRE(field != nullptr);
+    CHECK(field->value_get() == "ok"sv);
   }
 }

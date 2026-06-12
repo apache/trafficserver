@@ -122,6 +122,8 @@ struct HttpStatsBlock {
   Metrics::Counter::AtomicType *https_total_client_connections;
   Metrics::Counter::AtomicType *incoming_requests;
   Metrics::Counter::AtomicType *incoming_responses;
+  Metrics::Counter::AtomicType *client_request_at_headers_stripped;
+  Metrics::Counter::AtomicType *origin_response_at_headers_stripped;
   Metrics::Counter::AtomicType *invalid_client_requests;
   Metrics::Counter::AtomicType *misc_count;
   Metrics::Counter::AtomicType *misc_origin_server_bytes;
