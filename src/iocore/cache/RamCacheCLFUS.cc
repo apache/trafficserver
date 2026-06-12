@@ -31,6 +31,7 @@
 #include "iocore/eventsystem/Tasks.h"
 #include "fastlz/fastlz.h"
 #include "tscore/CryptoHash.h"
+#include "tscore/Regression.h"
 #include <zlib.h>
 #ifdef HAVE_LZMA_H
 #include <lzma.h>
@@ -44,7 +45,7 @@
 // #define CHECK_ACOUNTING 1 // very expensive double checking of all sizes
 
 #define REQUEUE_HITS(_h)              ((_h) ? ((_h) - 1) : 0)
-#define CACHE_VALUE_HITS_SIZE(_h, _s) (static_cast<float>(((_h) + 1) / ((_s) + ENTRY_OVERHEAD)))
+#define CACHE_VALUE_HITS_SIZE(_h, _s) (static_cast<float>((_h) + 1) / ((_s) + ENTRY_OVERHEAD))
 #define CACHE_VALUE(_x)               CACHE_VALUE_HITS_SIZE((_x)->hits, (_x)->size)
 
 #define AVERAGE_VALUE_OVER 100
@@ -791,4 +792,34 @@ new_RamCacheCLFUS()
 {
   RamCacheCLFUS *r = new RamCacheCLFUS;
   return r;
+}
+
+// Guards against PR #11733-style regressions of the CLFUS value metric: the value density
+// must be computed in floating point. Integer division truncates (hits + 1) / (size + overhead)
+// to 0 for normal object sizes, zeroing the metric and silently collapsing CLFUS to FIFO (no
+// promote-on-hit, no clock second chance, no value-based ghost re-admission).
+REGRESSION_TEST(ram_cache_clfus_value)(RegressionTest *t, int /* level ATS_UNUSED */, int *pstatus)
+{
+  *pstatus = REGRESSION_TEST_PASSED;
+
+  float v_one   = CACHE_VALUE_HITS_SIZE(1u, 16384u);   // a typical 16 KiB object, seen once
+  float v_hot   = CACHE_VALUE_HITS_SIZE(100u, 16384u); // same size, many more hits
+  float v_small = CACHE_VALUE_HITS_SIZE(10u, 1024u);   // smaller object, equal hits
+  float v_large = CACHE_VALUE_HITS_SIZE(10u, 16384u);
+
+  // A non-zero fraction: the integer-division regression makes this exactly 0.0f.
+  if (!(v_one > 0.0f)) {
+    rprintf(t, "CLFUS value metric truncated to zero (integer division)\n");
+    *pstatus = REGRESSION_TEST_FAILED;
+  }
+  // Frequency aware: more hits at equal size must rank higher.
+  if (!(v_hot > v_one)) {
+    rprintf(t, "CLFUS value metric does not increase with hits\n");
+    *pstatus = REGRESSION_TEST_FAILED;
+  }
+  // Size aware (the "by Size" in CLFUS): smaller objects at equal hits must rank higher.
+  if (!(v_small > v_large)) {
+    rprintf(t, "CLFUS value metric does not decrease with size\n");
+    *pstatus = REGRESSION_TEST_FAILED;
+  }
 }
