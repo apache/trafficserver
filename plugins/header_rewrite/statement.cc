@@ -48,15 +48,9 @@ Statement::get_resource_ids() const
 }
 
 bool
-Statement::set_hook(TSHttpHookID hook)
+Statement::is_hook_valid(TSHttpHookID hook) const
 {
-  bool ret = std::find(_allowed_hooks.begin(), _allowed_hooks.end(), hook) != _allowed_hooks.end();
-
-  if (ret) {
-    _hook = hook;
-  }
-
-  return ret;
+  return std::find(_allowed_hooks.begin(), _allowed_hooks.end(), hook) != _allowed_hooks.end();
 }
 
 // This should be overridden for any Statement which only supports some hooks

@@ -144,13 +144,8 @@ public:
   Statement(const Statement &)      = delete;
   void operator=(const Statement &) = delete;
 
-  // Which hook are we adding this statement to?
-  bool set_hook(TSHttpHookID hook);
-  TSHttpHookID
-  get_hook() const
-  {
-    return _hook;
-  }
+  // Validate that this statement is allowed on the given hook. Used during parsing only.
+  bool is_hook_valid(TSHttpHookID hook) const;
 
   // Which hooks are this "statement" applicable for? Used during parsing only.
   void
@@ -267,7 +262,6 @@ protected:
 
 private:
   ResourceIDs               _rsrc = RSRC_NONE;
-  TSHttpHookID              _hook = TS_HTTP_READ_RESPONSE_HDR_HOOK;
   std::vector<TSHttpHookID> _allowed_hooks;
   bool                      _initialized = false;
 };
