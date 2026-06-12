@@ -328,7 +328,7 @@ freelist_new(InkFreeList *f)
         freelist_free(f, a);
       }
     } else {
-      void **next_ptr = reinterpret_cast<void **>(TO_PTR(FREELIST_POINTER(item)));
+      void **next_ptr = to_voidp_p(TO_PTR(FREELIST_POINTER(item)), 0);
 
       SET_FREELIST_POINTER_VERSION(next, *next_ptr, FREELIST_VERSION(item) + 1);
       result = f->head.compare_exchange_weak(item, next, std::memory_order_acquire, std::memory_order_acquire);
@@ -471,7 +471,7 @@ freelist_bulkfree(InkFreeList *f, void *head, void *tail, [[maybe_unused]] size_
     static const char str[4] = {static_cast<char>(0xde), static_cast<char>(0xad), static_cast<char>(0xbe), static_cast<char>(0xef)};
 
     // set the entire item to DEADBEEF;
-    void **temp = reinterpret_cast<void **>(head);
+    void **temp = to_voidp_p(head, 0);
     for (size_t i = 0; i < num_item; i++) {
       for (int j = sizeof(void *); j < static_cast<int>(f->type_size); j++) {
         (reinterpret_cast<char *>(temp))[j] = str[j % 4];
@@ -635,13 +635,13 @@ ink_atomiclist_pop(InkAtomicList *l)
     if (TO_PTR(FREELIST_POINTER(item)) == nullptr) {
       return nullptr;
     }
-    void **next_ptr = reinterpret_cast<void **>(reinterpret_cast<unsigned char *>(TO_PTR(FREELIST_POINTER(item))) + l->offset);
+    void **next_ptr = to_voidp_p(reinterpret_cast<unsigned char *>(TO_PTR(FREELIST_POINTER(item))), l->offset);
     SET_FREELIST_POINTER_VERSION(next, *next_ptr, FREELIST_VERSION(item) + 1);
     result = l->head.compare_exchange_weak(item, next);
   } while (result == false);
 
   void  *ret  = TO_PTR(FREELIST_POINTER(item));
-  void **ret_ = reinterpret_cast<void **>(reinterpret_cast<unsigned char *>(ret) + l->offset);
+  void **ret_ = to_voidp_p(reinterpret_cast<unsigned char *>(ret), l->offset);
   *ret_       = nullptr;
   return ret;
 }
