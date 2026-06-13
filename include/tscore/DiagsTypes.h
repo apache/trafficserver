@@ -222,9 +222,11 @@ private:
  *   and reconfiguration are a data race on config.outputs. Tag-table
  *   mutation methods (activate_taglist,
  *   deactivate_all) acquire tag_table_lock internally. Log-pointer swap methods
- *   (reseat_diagslog, should_roll_*, set_std_output) acquire tag_table_lock
- *   only for their pointer swap step; file operations run outside the lock.
- *   setup_diagslog() acquires no lock; callers must serialize it.
+ *   (reseat_diagslog, should_roll_diagslog) acquire tag_table_lock only for
+ *   their pointer swap step; file operations run outside the lock.
+ *   set_std_output (and should_roll_outputlog through it) additionally holds
+ *   the lock across the dup2() rebinding of the standard stream descriptor on
+ *   success. setup_diagslog() acquires no lock; callers must serialize it.
  *   Rolling-policy configuration methods (config_roll_diagslog,
  *   config_roll_outputlog) and dump() do not acquire any lock; see the
  *   per-method @par Thread safety paragraphs below for details.
@@ -450,15 +452,23 @@ public:
    * @param[in] loc Source location of the call site, or nullptr.
    * @param[in] fmt Non-null printf-format string.
    * @pre fmt is non-null and arguments match its conversions.
+   * @pre level is in [0, DiagsLevel_Count); out-of-range values terminate the
+   *   process via release assertion.
    * @post Message emitted to all sinks enabled for level in config.outputs.
-   *   stderr is also written when regression_testing_on is true, even if
+   *   When regression-testing mode has been enabled (see
+   *   tell_diags_regression_testing_is_on()), stderr is also written even if
    *   config.outputs[level].to_stderr is false.
    *   Does not handle terminal levels; the process does not exit.
    *   Use error_va() if terminal-level exit behavior is required.
    * @par Errors
    * I/O errors during emission are absorbed; output may be lost.
    * @par Thread safety
-   * Safe to call concurrently from any thread.
+   * Safe to call concurrently with other emission calls (print, log, error);
+   *   tag_table_lock serializes the diagslog, stdout, and stderr writes. The
+   *   read of config.outputs[level] is not synchronized against
+   *   reconfigure_diags(), which writes config without acquiring the lock;
+   *   concurrent reconfiguration is a data race on config.outputs (see the
+   *   class-level Thread safety paragraph).
    */
   void
   print(const char *tag, DiagsLevel level, const SourceLocation *loc, const char *fmt, ...) const TS_PRINTFLIKE(5, 6)
@@ -479,6 +489,8 @@ public:
    * @param[in] ap Initialized va_list whose types match fmt. Consumed by this
    *   call; the caller MUST NOT reuse ap without va_end + va_start.
    * @pre fmt is non-null; ap is initialized.
+   * @pre level is in [0, DiagsLevel_Count); out-of-range values terminate the
+   *   process via release assertion.
    * @post Same as print().
    * @par Errors
    * Same as print().
@@ -786,18 +798,26 @@ public:
    * stderr, when redirected to the same path) are rebound to the new file.
    * The time-based path also advances the last-roll timestamp.
    *
-   * @return True if the underlying file was renamed; false otherwise.
-   * @pre stdout_log and stderr_log are non-null; violation aborts.
-   *   When a roll occurs, stdout_log and stderr_log must refer to the same
-   *   filesystem path; violation aborts.
+   * @return True if the underlying file was renamed; false otherwise. True is
+   *   returned even when reopening the fresh file at the original path fails.
+   * @pre stdout_log and stderr_log are non-null. When a roll occurs,
+   *   stdout_log and stderr_log must refer to the same filesystem path. Both
+   *   conditions are checked with ink_assert(): violations abort in debug
+   *   builds and are undefined behavior (typically a null-pointer crash) in
+   *   release builds.
    * @post On a successful roll the file at the configured path is a fresh,
    *   empty file and the process's stdout and stderr (when sharing the path)
-   *   are bound to it. With no roll, all state is unchanged. An
+   *   are bound to it. If renaming succeeded but reopening did not, stdout_log
+   *   (and stderr_log when sharing the path) are set to null and the configured
+   *   path is left absent; the standard-stream descriptors retain their prior
+   *   binding to the renamed file. With no roll, all state is unchanged. An
    *   uninitialized stdout_log returns false without inspecting policy.
    * @par Errors
-   * None signaled. fstat (size-based policy only) and roll failures silently
-   *   suppress replacement. An fstat failure short-circuits the function and
-   *   skips any time-based check.
+   * None signaled via the return value. fstat (size-based policy only),
+   *   rename, and reopen failures are reported at LL_Error only when
+   *   BASELOGFILE_DEBUG_MODE is enabled (off by default); in normal builds
+   *   they are silent. An fstat failure short-circuits the function and skips
+   *   any time-based check.
    * @par Thread safety
    * tag_table_lock is acquired only during the BaseLogFile pointer swap and
    *   the dup2() rebinding of the standard stream. The rolling-condition
@@ -826,9 +846,10 @@ public:
    *   unbound (nullptr). Internal log_log_error messages are emitted only
    *   when BASELOGFILE_DEBUG_MODE is enabled (off by default).
    * @par Thread safety
-   * Acquires tag_table_lock for the pointer update on success and on
-   *   file-open failure. The empty-string early return does not acquire
-   *   the lock.
+   * On success, tag_table_lock is held across both the pointer update and
+   *   the dup2() rebinding of the standard-stream file descriptor; on
+   *   file-open failure it is held only for the pointer update. The
+   *   empty-string early return does not acquire the lock.
    */
   bool set_std_output(StdStream stream, const char *file);
 
