@@ -652,6 +652,16 @@ ink_atomiclist_popall(InkAtomicList *l)
   head_p next;
   bool   result = false;
 
+  // Later in this routine, we need to walk the freelist chain to restore
+  // next pointers. Because `ink_atomiclist_pop` reads one of the pointers
+  // in the chain after loading the head, we need to mutually exclude
+  // the walk in this routine (which writes) from the read in
+  // `ink_atomiclist_pop`. We do not need to acquire the lock this early,
+  // but freelist benchmarks suggest that serializing pop operations is
+  // more efficient than CAS loops under contention in these types of
+  // data structures. We acquire the lock early for that reason.
+  std::lock_guard guard{l->m};
+
   item = l->head.load();
   do {
     if (TO_PTR(FREELIST_POINTER(item)) == nullptr) {
