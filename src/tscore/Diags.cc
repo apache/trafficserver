@@ -432,12 +432,6 @@ Diags::error_va(DiagsLevel level, const SourceLocation *loc, const char *format_
   }
 }
 
-/*
- * Sets up and error handles the given BaseLogFile object to work
- * with this instance of Diags.
- *
- * Returns true on success, false otherwise
- */
 bool
 Diags::setup_diagslog(BaseLogFile *blf)
 {

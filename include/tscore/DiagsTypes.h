@@ -596,21 +596,21 @@ public:
   /**
    * @brief Enable tags matching the given PCRE2 pattern for the given mode.
    *
-   * @param[in] taglist PCRE2 regex string, or nullptr. If nullptr, this call
-   *   is a no-op and the previous pattern (if any) is unchanged.
+   * @param[in] taglist PCRE2 regex string, or nullptr. If nullptr, the stored
+   *   pattern is unchanged.
    * @param[in] mode DiagsTagType_Debug or DiagsTagType_Action.
    * @pre taglist is null or a valid PCRE2 pattern string. The regex engine is
-   *   PCRE2, not POSIX ERE; PCRE2-specific syntax (lookaheads, named groups,
-   *   etc.) is accepted.
-   * @post If taglist is non-null: the new pattern unconditionally replaces the
-   *   previous one. If the pattern fails to compile, the previous pattern is
-   *   cleared and no tags will match until a valid pattern is installed.
+   *   PCRE2, not POSIX ERE.
+   * @post If taglist is non-null, the new pattern unconditionally replaces the
+   *   previous one; if the pattern fails to compile, the stored pattern becomes
+   *   empty and no tags will match until a valid pattern is installed.
    *   For DiagsTagType_Debug, if this is the process-global Diags instance,
-   *   all registered debug controls are updated immediately to reflect the
-   *   new pattern.
+   *   DbgCtl::update() is called to resync all registered debug controls
+   *   against the current pattern — this occurs regardless of whether taglist
+   *   is null.
    * @par Errors
-   * Invalid regex is silently accepted; compile failure is not
-   *   signaled. The previous pattern is NOT retained on compile failure.
+   * Compile failures are not signaled to the caller; the stored pattern
+   *   becomes empty rather than retaining the previous one.
    * @par Thread safety
    * Acquires tag_table_lock. Safe to call concurrently with
    *   emission, but serialized with other reconfiguration methods.
@@ -708,9 +708,7 @@ public:
    *
    * @return False if diags_log is null or not yet initialized (safe no-op).
    *   True in all other cases, including when the internal reopen fails —
-   *   reopen failures are not reflected in the return value and are
-   *   observable only via log_log_trace, which is compiled out unless
-   *   BASELOGFILE_DEBUG_MODE is enabled (off by default).
+   *   reopen failures are not reflected in the return value.
    * @pre A Diags instance is active and diags_log is initialized
    *   (is_init() == true). If this precondition is not met, returns false
    *   without performing a reopen — this is the safe no-op path for calls
@@ -722,8 +720,8 @@ public:
    *   is deleted before it returns.
    * @par Errors
    * Open failures are not signaled via the return value. They are reported
-   *   via log_log_trace only when BASELOGFILE_DEBUG_MODE is enabled (off
-   *   by default); in normal builds the failure is completely silent.
+   *   at LL_Error only when BASELOGFILE_DEBUG_MODE is enabled (off by
+   *   default); in normal builds the failure is completely silent.
    * @par Thread safety
    * The swap in step 4 is performed under tag_table_lock.
    *   Concurrent emission either observes the pre-swap or post-swap log;
@@ -737,17 +735,24 @@ public:
   /**
    * @brief Roll diags.log if the current rolling policy condition is met.
    *
-   * @return True if the underlying file was renamed (rolled); false if no
-   *   roll condition was triggered, or if fstat failed. Note: true is
-   *   returned even when the subsequent reopen of the new log file fails.
-   * @pre None.
-   * @post If the rolling condition is met: the current diags.log is flushed,
-   *   rolled (renamed), and replaced by a new BaseLogFile at the same path.
-   *   If not: no state change. fstat failure causes an early false return
-   *   without rolling.
+   * Under a size-based policy, the current file's size is compared to the
+   * configured threshold. Under a time-based policy, the elapsed time since
+   * the last roll is compared to the configured interval. Combined policies
+   * evaluate both conditions independently. When a condition is met the
+   * current file is flushed, renamed, and a fresh file is opened at the same
+   * path.
+   *
+   * @return True if the underlying file was renamed; false otherwise. True is
+   *   returned even when reopening the fresh file at the original path fails.
+   * @pre None. A null or uninitialized diags_log is a safe no-op that
+   *   returns false.
+   * @post On a successful roll the file at the configured path is a fresh,
+   *   empty file and emission is directed to it. If renaming succeeded but
+   *   reopening did not, the configured path is left absent and emission
+   *   continues to the renamed file. With no roll, all state is unchanged.
    * @par Errors
-   * None signaled. fstat and reopen failures silently suppress the
-   *   replacement; the rolled state of the original file is not reversed.
+   * None signaled. fstat (size-based policy only) and reopen failures
+   *   silently suppress replacement; a completed rename is never reversed.
    * @par Thread safety
    * tag_table_lock is acquired only during the BaseLogFile
    *   pointer swap. The rolling-condition checks and file operations execute
@@ -757,18 +762,35 @@ public:
   bool should_roll_diagslog();
 
   /**
-   * @brief Roll stdout_log and stderr_log if the current rolling policy
-   *   condition is met.
+   * @brief Roll the standard-output redirection file if the current rolling
+   *   policy condition is met.
    *
-   * @return True if any output log was rolled; false otherwise.
-   * @pre stdout_log and stderr_log are non-null.
-   * @post If the rolling condition is met: affected logs are flushed, rolled,
-   *   and replaced by new BaseLogFile instances at the same paths.
-   *   If not: no state change. fstat failure causes an early false return.
+   * Under a size-based policy, the current file's size is compared to the
+   * configured threshold. Under a time-based policy, the elapsed time since
+   * the last roll is compared to the configured interval. Combined policies
+   * evaluate both conditions independently. When a condition is met both
+   * stdout_log and stderr_log are flushed, the underlying file is renamed,
+   * and a fresh file is opened at the same path; the process's stdout (and
+   * stderr, when redirected to the same path) are rebound to the new file.
+   * The time-based path also advances the last-roll timestamp.
+   *
+   * @return True if the underlying file was renamed; false otherwise.
+   * @pre stdout_log and stderr_log are non-null; violation aborts.
+   *   When a roll occurs, stdout_log and stderr_log must refer to the same
+   *   filesystem path; violation aborts.
+   * @post On a successful roll the file at the configured path is a fresh,
+   *   empty file and the process's stdout and stderr (when sharing the path)
+   *   are bound to it. With no roll, all state is unchanged. An
+   *   uninitialized stdout_log returns false without inspecting policy.
    * @par Errors
-   * None signaled. fstat failures silently suppress the roll.
+   * None signaled. fstat (size-based policy only) and roll failures silently
+   *   suppress replacement. An fstat failure short-circuits the function and
+   *   skips any time-based check.
    * @par Thread safety
-   * Same as should_roll_diagslog(); see config_roll_outputlog().
+   * tag_table_lock is acquired only during the BaseLogFile pointer swap and
+   *   the dup2() rebinding of the standard stream. The rolling-condition
+   *   checks and file operations execute without a lock; the caller must
+   *   ensure no concurrent reconfiguration (see config_roll_outputlog()).
    */
   bool should_roll_outputlog();
 
