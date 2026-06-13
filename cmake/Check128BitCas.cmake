@@ -62,8 +62,6 @@ set(NEED_LIBATOMIC FALSE)
 include(CheckCSourceCompiles)
 check_c_source_compiles("${CHECK_PROGRAM}" TS_HAS_128BIT_CAS)
 
-set(NEED_MCX16 FALSE)
-
 if(NOT TS_HAS_128BIT_CAS)
   unset(TS_HAS_128BIT_CAS CACHE)
   set(CMAKE_REQUIRED_FLAGS "-Werror -mcx16")
