@@ -418,6 +418,9 @@ Diags::error_va(DiagsLevel level, const SourceLocation *loc, const char *format_
     va_list ap2;
 
     va_copy(ap2, ap);
+    // No re-entry guard: if two threads emit a terminal-level message
+    // concurrently, or if cleanup_func itself emits one, cleanup_func may
+    // be invoked more than once. The callback must tolerate this.
     if (cleanup_func) {
       cleanup_func();
     }

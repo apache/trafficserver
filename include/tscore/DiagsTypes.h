@@ -114,17 +114,21 @@ enum RollingEnabledValues { NO_ROLLING = 0, ROLL_ON_TIME, ROLL_ON_SIZE, ROLL_ON_
 
 /**
  * @brief Cleanup callback invoked before process termination on a terminal
- *   DiagsLevel (Fatal, Alert, Emergency).
+ *   DiagsLevel (DL_Fatal, DL_Alert, DL_Emergency).
  *
- * @pre The callback runs on the thread that emitted the terminal message.
- *   It MUST NOT throw. It MUST be async-signal-safe if terminal-level
- *   emission can occur from a signal handler.
- * @post On return, the process continues into the exit path for the terminal
- *   level: DL_Fatal and DL_Alert invoke ink_fatal_va; DL_Emergency invokes
- *   ink_emergency_va (a distinct, stronger exit path).
+ * @pre Runs synchronously on the thread that emitted the terminal message,
+ *   before the process exits. MUST NOT throw. MUST be async-signal-safe if
+ *   installed in a process that may emit terminal-level messages from a
+ *   signal handler. MUST tolerate being invoked more than once per process
+ *   (for example, from concurrent terminal emissions on different threads,
+ *   or from a terminal emission inside the callback itself).
+ * @post On return, the process is terminated; control does not return to
+ *   the emitter. DL_Emergency exits via the unrecoverable path; DL_Fatal
+ *   and DL_Alert exit via the recoverable path.
  * @par Thread safety
- * Only one callback is installed per Diags instance.
- *   The callback is invoked at most once per process.
+ * No serialization is provided. The callback may run concurrently on
+ *   multiple threads if multiple terminal emissions race; the callback
+ *   itself is responsible for any required synchronization or idempotency.
  */
 using DiagsCleanupFunc = void (*)();
 
@@ -543,12 +547,11 @@ public:
    * @param[in] loc Source location, or nullptr.
    * @param[in] fmt Non-null printf-format string.
    * @pre fmt is non-null; arguments match its conversions.
-   * @post Message emitted to all enabled sinks. For terminal levels the
-   *   process exits — does not return.
+   * @post Same as error_va().
    * @par Errors
-   * Same as print().
+   * Same as error_va().
    * @par Thread safety
-   * Safe to call concurrently from any thread.
+   * Same as error_va().
    */
   void
   error(DiagsLevel level, const SourceLocation *loc, const char *fmt, ...) const TS_PRINTFLIKE(4, 5)
@@ -568,12 +571,13 @@ public:
    * @param[in] ap Initialized va_list. Consumed; caller MUST NOT reuse
    *   without va_end + va_start.
    * @pre fmt is non-null; ap is initialized.
-   * @post Same as error(). For terminal levels, invokes cleanup_func (if
-   *   set) then exits the process; does not return.
+   * @post Message emitted to all sinks enabled for level. For terminal
+   *   levels (DL_Fatal and above), invokes cleanup_func (if set) and then
+   *   terminates the process; does not return.
    * @par Errors
    * None signaled; I/O errors absorbed.
    * @par Thread safety
-   * Safe to call concurrently.
+   * Safe to call concurrently from any thread.
    */
   virtual void error_va(DiagsLevel level, const SourceLocation *loc, const char *fmt, va_list ap) const;
 
