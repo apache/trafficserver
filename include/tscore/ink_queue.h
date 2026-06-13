@@ -37,6 +37,10 @@
 #include "tscore/ink_defs.h"
 #include "tscore/ink_apidefs.h"
 
+#include <atomic>
+#include <cstring>
+#include <mutex>
+
 /*
   For information on the structure of the x86_64 memory map:
 
@@ -51,6 +55,12 @@
 
 void ink_queue_load_64(void *dst, void *src);
 
+#if TS_HAS_128BIT_CAS && TS_HAS_128BIT_ATOMIC
+#define TS_128BIT_QUEUE 1
+#else
+#define TS_128BIT_QUEUE 0
+#endif
+
 #ifdef __x86_64__
 #define INK_QUEUE_LD64(dst, src) *((uint64_t *)&(dst)) = *((uint64_t *)&(src))
 #else
@@ -58,7 +68,7 @@ void ink_queue_load_64(void *dst, void *src);
 #endif
 
 // passing a const volatile value of 0 works around a gcc bug
-#if TS_HAS_128BIT_CAS
+#if TS_128BIT_QUEUE
 #define INK_QUEUE_LD(dst, src)                                                                     \
   do {                                                                                             \
     const volatile __int128_t iqld0 = 0;                                                           \
@@ -71,29 +81,48 @@ void ink_queue_load_64(void *dst, void *src);
 /*
  * Generic Free List Manager
  */
-// Warning: head_p is read and written in multiple threads without a
-// lock, use INK_QUEUE_LD to read safely.
-union head_p {
-  head_p() : data(){};
-
 #if (defined(__i386__) || defined(__arm__) || defined(__mips__)) && (SIZEOF_VOIDP == 4)
-  typedef int32_t version_type;
-  typedef int64_t data_type;
-#elif TS_HAS_128BIT_CAS
-  typedef int64_t    version_type;
-  typedef __int128_t data_type;
+typedef int32_t head_p_version_type;
+typedef int64_t head_p_data_type;
+#elif TS_128BIT_QUEUE
+typedef int64_t    head_p_version_type;
+typedef __int128_t head_p_data_type;
 #else
-  using version_type = int64_t;
-  using data_type    = int64_t;
+using head_p_version_type = int64_t;
+using head_p_data_type    = int64_t;
 #endif
 
-  struct {
-    void        *pointer;
-    version_type version;
-  } s;
+// Warning: head_p is read and written in multiple threads without a
+// lock, use INK_QUEUE_LD to read safely.
+using head_p = head_p_data_type;
 
-  data_type data;
+#if ((defined(__i386__) || defined(__arm__) || defined(__mips__)) && (SIZEOF_VOIDP == 4)) || TS_128BIT_QUEUE
+
+// This struct maps to head_p on the above platforms. On other platforms,
+// bitshifting is used to read head_p.
+// See FREELIST_POINTER for the layout on those platforms.
+struct head_p_view {
+  void               *pointer;
+  head_p_version_type version;
 };
+
+inline head_p_view
+load_head(head_p const &src)
+{
+  head_p_view result;
+  static_assert(sizeof(result) == sizeof(src));
+  std::memcpy(&result, &src, sizeof(result));
+  return result;
+}
+
+inline void
+store_head(head_p &dest, head_p_view const src)
+{
+  static_assert(sizeof(dest) == sizeof(src));
+  std::memcpy(&dest, &src, sizeof(dest));
+}
+
+#endif
 
 /*
  * Why is version required? One scenario is described below
@@ -119,17 +148,13 @@ union head_p {
 #endif
 
 #if (defined(__i386__) || defined(__arm__) || defined(__mips__)) && (SIZEOF_VOIDP == 4)
-#define FREELIST_POINTER(_x) (_x).s.pointer
-#define FREELIST_VERSION(_x) (_x).s.version
-#define SET_FREELIST_POINTER_VERSION(_x, _p, _v) \
-  (_x).s.pointer = _p;                           \
-  (_x).s.version = _v
-#elif TS_HAS_128BIT_CAS
-#define FREELIST_POINTER(_x) (_x).s.pointer
-#define FREELIST_VERSION(_x) (_x).s.version
-#define SET_FREELIST_POINTER_VERSION(_x, _p, _v) \
-  (_x).s.pointer = _p;                           \
-  (_x).s.version = _v
+#define FREELIST_POINTER(_x)                     load_head((_x)).pointer
+#define FREELIST_VERSION(_x)                     load_head((_x)).version
+#define SET_FREELIST_POINTER_VERSION(_x, _p, _v) store_head((_x), head_p_view{(_p), (_v)})
+#elif TS_128BIT_QUEUE
+#define FREELIST_POINTER(_x)                     load_head((_x)).pointer
+#define FREELIST_VERSION(_x)                     load_head((_x)).version
+#define SET_FREELIST_POINTER_VERSION(_x, _p, _v) store_head((_x), head_p_view{(_p), (_v)})
 #elif defined(__x86_64__) || defined(__ia64__) || defined(__powerpc64__) || defined(__mips64)
 /* Layout of FREELIST_POINTER
  *
@@ -144,16 +169,14 @@ union head_p {
  */
 #if ((~0 >> 1) < 0)
 /* the shift is `arithmetic' */
-#define FREELIST_POINTER(_x) \
-  ((void *)((((intptr_t)(_x).data) & 0x0000FFFFFFFFFFFFLL) | ((((intptr_t)(_x).data) >> 63) << 48))) // sign extend
+#define FREELIST_POINTER(_x) ((void *)((((intptr_t)(_x)) & 0x0000FFFFFFFFFFFFLL) | ((((intptr_t)(_x)) >> 63) << 48))) // sign extend
 #else
 /* the shift is `logical' */
-#define FREELIST_POINTER(_x) \
-  ((void *)((((intptr_t)(_x).data) & 0x0000FFFFFFFFFFFFLL) | ((~((((intptr_t)(_x).data) >> 63) - 1)) << 48)))
+#define FREELIST_POINTER(_x) ((void *)((((intptr_t)(_x)) & 0x0000FFFFFFFFFFFFLL) | ((~((((intptr_t)(_x)) >> 63) - 1)) << 48)))
 #endif
 
-#define FREELIST_VERSION(_x)                     ((((intptr_t)(_x).data) & 0x7FFF000000000000LL) >> 48)
-#define SET_FREELIST_POINTER_VERSION(_x, _p, _v) (_x).data = ((((intptr_t)(_p)) & 0x8000FFFFFFFFFFFFLL) | (((_v) & 0x7FFFLL) << 48))
+#define FREELIST_VERSION(_x)                     ((((intptr_t)(_x)) & 0x7FFF000000000000LL) >> 48)
+#define SET_FREELIST_POINTER_VERSION(_x, _p, _v) (_x) = ((((intptr_t)(_p)) & 0x8000FFFFFFFFFFFFLL) | (((_v) & 0x7FFFLL) << 48))
 #elif defined(__aarch64__)
 /* Layout of FREELIST_POINTER
  *
@@ -163,28 +186,34 @@ union head_p {
  */
 #if ((~0 >> 1) < 0)
 /* the shift is `arithmetic' */
-#define FREELIST_POINTER(_x) \
-  ((void *)((((intptr_t)(_x).data) & 0x000FFFFFFFFFFFFFLL) | ((((intptr_t)(_x).data) >> 63) << 52))) // sign extend
+#define FREELIST_POINTER(_x) ((void *)((((intptr_t)(_x)) & 0x000FFFFFFFFFFFFFLL) | ((((intptr_t)(_x)) >> 63) << 52))) // sign extend
 #else
 /* the shift is `logical' */
-#define FREELIST_POINTER(_x) \
-  ((void *)((((intptr_t)(_x).data) & 0x000FFFFFFFFFFFFFLL) | ((~((((intptr_t)(_x).data) >> 63) - 1)) << 52)))
+#define FREELIST_POINTER(_x) ((void *)((((intptr_t)(_x)) & 0x000FFFFFFFFFFFFFLL) | ((~((((intptr_t)(_x)) >> 63) - 1)) << 52)))
 #endif
 
-#define FREELIST_VERSION(_x)                     ((((intptr_t)(_x).data) & 0x7FF0000000000000LL) >> 52)
-#define SET_FREELIST_POINTER_VERSION(_x, _p, _v) (_x).data = ((((intptr_t)(_p)) & 0x800FFFFFFFFFFFFFLL) | (((_v) & 0x7FFLL) << 52))
+#define FREELIST_VERSION(_x)                     ((((intptr_t)(_x)) & 0x7FF0000000000000LL) >> 52)
+#define SET_FREELIST_POINTER_VERSION(_x, _p, _v) (_x) = ((((intptr_t)(_p)) & 0x800FFFFFFFFFFFFFLL) | (((_v) & 0x7FFLL) << 52))
 #else
 #error "unsupported processor"
 #endif
 
 struct _InkFreeList {
-  head_p      head;
-  const char *name;
-  uint32_t    type_size, chunk_size, used, allocated, alignment;
-  uint32_t    allocated_base, used_base;
-  uint32_t    hugepages_failure;
-  bool        use_hugepages;
-  int         advice;
+  std::mutex                 m;
+  std::atomic<head_p>        head;
+  const char                *name;
+  std::atomic<std::uint32_t> used;
+  std::atomic<std::uint32_t> allocated;
+
+  // These fields must be initialized once and not modified after
+  // initialization.
+  uint32_t type_size, chunk_size, alignment;
+
+  std::atomic<std::uint32_t> allocated_base;
+  std::atomic<std::uint32_t> used_base;
+  std::atomic<std::uint32_t> hugepages_failure;
+  bool                       use_hugepages;
+  int                        advice;
 };
 
 using InkFreeListOps = struct ink_freelist_ops;
@@ -213,16 +242,17 @@ void  ink_freelists_snap_baseline();
 
 struct InkAtomicList {
   InkAtomicList() {}
-  head_p      head{};
-  const char *name   = nullptr;
-  uint32_t    offset = 0;
+  std::mutex          m;
+  std::atomic<head_p> head{};
+  const char         *name   = nullptr;
+  uint32_t            offset = 0;
 };
 
 #if !defined(INK_QUEUE_NT)
-#define INK_ATOMICLIST_EMPTY(_x) (!(TO_PTR(FREELIST_POINTER((_x.head)))))
+#define INK_ATOMICLIST_EMPTY(_x) (!(TO_PTR(FREELIST_POINTER((_x.head.load())))))
 #else
 /* ink_queue_nt.c doesn't do the FROM/TO pointer swizzling */
-#define INK_ATOMICLIST_EMPTY(_x) (!((FREELIST_POINTER((_x.head)))))
+#define INK_ATOMICLIST_EMPTY(_x) (!((FREELIST_POINTER((_x.head.load())))))
 #endif
 
 // WARNING: the "name" string is not copied, it has to be a statically-stored constant string.

@@ -324,18 +324,18 @@ increment_pointer_version(head_p *dst)
   do {
     INK_QUEUE_LD(h, *dst);
     SET_FREELIST_POINTER_VERSION(new_h, FREELIST_POINTER(h), FREELIST_VERSION(h) + 1);
-  } while (ink_atomic_cas(&dst->data, h.data, new_h.data) == false);
+  } while (ink_atomic_cas(dst, h, new_h) == false);
 
   return h;
 }
 
 static bool
-write_pointer_version(head_p *dst, head_p old_h, void *ptr, head_p::version_type vers)
+write_pointer_version(head_p *dst, head_p old_h, void *ptr, head_p_version_type vers)
 {
   head_p tmp_h;
 
   SET_FREELIST_POINTER_VERSION(tmp_h, ptr, vers);
-  return ink_atomic_cas(&dst->data, old_h.data, tmp_h.data);
+  return ink_atomic_cas(dst, old_h, tmp_h);
 }
 
 LogBuffer *
