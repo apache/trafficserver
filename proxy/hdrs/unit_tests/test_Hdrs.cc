@@ -2543,3 +2543,48 @@ TEST_CASE("HdrTestHostCacheInvalidation", "[proxy][hdrtest]")
     req_hdr.destroy();
   }
 }
+
+TEST_CASE("http_parse_status overflow protection", "[proxy][hdrtest]")
+{
+  SECTION("valid 3-digit status codes")
+  {
+    std::string_view s200 = "200";
+    CHECK(http_parse_status(s200.data(), s200.data() + s200.size()) == static_cast<HTTPStatus>(200));
+
+    std::string_view s404 = "404";
+    CHECK(http_parse_status(s404.data(), s404.data() + s404.size()) == static_cast<HTTPStatus>(404));
+
+    std::string_view s999 = "999";
+    CHECK(http_parse_status(s999.data(), s999.data() + s999.size()) == static_cast<HTTPStatus>(999));
+  }
+
+  SECTION("4-digit status returns NONE")
+  {
+    std::string_view s1000 = "1000";
+    CHECK(http_parse_status(s1000.data(), s1000.data() + s1000.size()) == HTTP_STATUS_NONE);
+
+    std::string_view s9999 = "9999";
+    CHECK(http_parse_status(s9999.data(), s9999.data() + s9999.size()) == HTTP_STATUS_NONE);
+  }
+
+  SECTION("very long digit sequence returns NONE")
+  {
+    std::string s_long = "99999999999999999999";
+    CHECK(http_parse_status(s_long.data(), s_long.data() + s_long.size()) == HTTP_STATUS_NONE);
+  }
+
+  SECTION("empty and zero")
+  {
+    std::string_view empty = "";
+    CHECK(http_parse_status(empty.data(), empty.data()) == HTTP_STATUS_NONE);
+
+    std::string_view zero = "0";
+    CHECK(http_parse_status(zero.data(), zero.data() + zero.size()) == static_cast<HTTPStatus>(0));
+  }
+
+  SECTION("leading spaces are skipped")
+  {
+    std::string_view s = "  200";
+    CHECK(http_parse_status(s.data(), s.data() + s.size()) == static_cast<HTTPStatus>(200));
+  }
+}
