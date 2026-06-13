@@ -350,17 +350,6 @@ Diags::tag_activated(const char *tag, DiagsTagType mode) const
   return regex ? regex->exec(tag, RE_ANCHORED) : false;
 }
 
-//////////////////////////////////////////////////////////////////////////////
-//
-//      void Diags::activate_taglist(char * taglist, DiagsTagType mode)
-//
-//      This routine adds all tags in the vertical-bar-separated taglist
-//      to the tag table of type <mode>.  Each addition is done under a lock.
-//      If an individual tag is already set, that tag is ignored.  If
-//      <taglist> is nullptr, this routine exits immediately.
-//
-//////////////////////////////////////////////////////////////////////////////
-
 void
 Diags::activate_taglist(const char *taglist, DiagsTagType mode)
 {
@@ -714,12 +703,6 @@ Diags::should_roll_outputlog()
   return ret_val;
 }
 
-/*
- * Sets up a BaseLogFile for the specified file. Then it binds the specified standard steam
- * to the aforementioned BaseLogFile.
- *
- * Returns true on successful binding and setup, false otherwise
- */
 bool
 Diags::set_std_output(StdStream stream, const char *file)
 {
