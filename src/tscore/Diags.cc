@@ -57,6 +57,12 @@ using namespace swoc::literals;
 void
 DiagsConfigState::enabled(DiagsTagType dtt, int new_value)
 {
+  // NOTE: proxy.config.diags.debug.enabled is validated as [0-3] in
+  // RecordsConfig.cc, so new_value may be 3 even though the API contract
+  // documents [0, 2].  Value 3 is not range-checked here; it reaches
+  // _enabled[dtt] and DbgCtl::_config_mode unchanged.  In Diags::on(),
+  // the test (config.enabled(mode) & 1) makes value 3 behave identically
+  // to value 1 (always-enabled).
   if (_enabled[dtt] == new_value) {
     return;
   }

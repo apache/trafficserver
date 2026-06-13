@@ -85,8 +85,8 @@ struct DiagsModeOutput {
 /**
  * @brief Identifies which standard stream Diags::set_std_output reseats.
  *
- * STDOUT (=0) targets the standard output stream; STDERR targets the
- * standard error stream. Values are used as array indices; do not renumber.
+ * STDOUT targets the standard output stream; STDERR targets the standard
+ * error stream.
  */
 enum StdStream { STDOUT = 0, STDERR };
 
@@ -135,16 +135,17 @@ using DiagsCleanupFunc = void (*)();
  *   1 — enabled for all callers,
  *   2 — enabled only when ContFlags::DEBUG_OVERRIDE is set on the
  *       current Continuation (per-connection debug override).
- *
- * @note DEFECT: The backing store _enabled[2] is a plain int, not
- *   std::atomic<int>. Concurrent reads from emission threads while a
- *   reconfiguration thread writes is a C++ data race (undefined behavior).
- *   The intended semantics are relaxed-atomic load/store; until the type
- *   is fixed, callers should treat reads as best-effort.
  */
+// DEFECT: The backing store _enabled[2] is a plain int, not std::atomic<int>.
+// Concurrent reads from emission threads while a reconfiguration thread writes
+// is a C++ data race (undefined behavior).  The intended semantics are
+// relaxed-atomic load/store; until the type is fixed, callers should treat
+// reads as best-effort.
 class DiagsConfigState
 {
 public:
+  // DEFECT: _enabled[2] is a plain int; concurrent reads while a write is in
+  // progress are a C++ data race.  See the DEFECT comment above the class.
   /**
    * @brief Return the current enable state for the given tag type.
    *
@@ -153,9 +154,7 @@ public:
    * @pre None.
    * @post No state change.
    * @errors None.
-   * @thread-safety DEFECT: _enabled[2] is a plain int. Concurrent reads
-   *   while a write is in progress are a C++ data race. Intended semantics:
-   *   relaxed atomic load. See DiagsConfigState class contract.
+   * @thread-safety Not thread-safe; see class-level DEFECT note.
    */
   static int
   enabled(DiagsTagType dtt)
@@ -168,11 +167,12 @@ public:
    *
    * @param[in] dtt DiagsTagType_Debug or DiagsTagType_Action.
    * @param[in] new_value 0, 1, or 2 (see class contract).
-   * @pre new_value is in [0, 2].
-   * @post enabled(dtt) returns new_value on all subsequent calls. As a side
-   *   effect, when dtt == DiagsTagType_Debug, DbgCtl::_config_mode is also
-   *   updated via a relaxed atomic store so that DbgCtl-based checks remain
-   *   in sync without acquiring a lock.
+   * @pre new_value is in [0, 2]; values outside this range produce
+   *   unspecified behavior.
+   * @post enabled(dtt) returns new_value on all subsequent calls. When
+   *   dtt == DiagsTagType_Debug and the value changes, DbgCtl::_config_mode
+   *   is also updated via a relaxed atomic store so that DbgCtl-based checks
+   *   remain in sync without acquiring a lock.
    * @errors None.
    * @thread-safety Must be called with external serialization against
    *   concurrent enabled(dtt) reads.
@@ -307,10 +307,12 @@ public:
    * @pre None.
    * @post No state change.
    * @errors None.
-   * @thread-safety DEFECT: reads debug_client_ip, a plain (non-atomic)
-   *   struct, while the live config-update callback may write it on another
-   *   thread. Intended semantics: relaxed atomic read.
+   * @thread-safety Not thread-safe: debug_client_ip is a plain (non-atomic)
+   *   struct that may be written by the config-update callback on another
+   *   thread.
    */
+  // DEFECT: debug_client_ip is read here without synchronization while the
+  // config-update callback (update_debug_client_ip) may write it concurrently.
   bool
   test_override_ip(IpEndpoint const &test_ip)
   {
@@ -553,11 +555,11 @@ public:
    *   PCRE2, not POSIX ERE; PCRE2-specific syntax (lookaheads, named groups,
    *   etc.) is accepted.
    * @post If taglist is non-null: the new pattern unconditionally replaces the
-   *   previous one. If the pattern fails to compile, the new (empty) Regex
-   *   object still replaces the previous one — no tags will match until a
-   *   valid pattern is installed. For DiagsTagType_Debug, if this is the
-   *   process-global Diags instance, all registered DbgCtl objects are
-   *   updated immediately to reflect the new pattern via DbgCtl::update.
+   *   previous one. If the pattern fails to compile, the previous pattern is
+   *   cleared and no tags will match until a valid pattern is installed.
+   *   For DiagsTagType_Debug, if this is the process-global Diags instance,
+   *   all registered debug controls are updated immediately to reflect the
+   *   new pattern.
    * @errors Invalid regex is silently accepted; compile failure is not
    *   signaled. The previous pattern is NOT retained on compile failure.
    * @thread-safety Acquires tag_table_lock. Safe to call concurrently with
@@ -717,9 +719,10 @@ public:
    *   it is passed directly to strcmp without a null guard).
    * @post On success: the new file is open and bound as the named stream;
    *   the previous BaseLogFile is deleted.
-   *   On failure: the stream pointer is set to nullptr — the previous
-   *   binding is NOT preserved. The previous BaseLogFile is NOT freed
-   *   (leaked on the failure path).
+   *   On file-open failure: the stream pointer is set to nullptr — the
+   *   previous binding is NOT preserved. The previous BaseLogFile is NOT
+   *   freed (leaked on this path).
+   *   On empty-string return: no state is modified.
    * @errors File-open failures cause a false return and internal
    *   log_log_error messages; the named stream is left unbound (nullptr).
    * @thread-safety Acquires tag_table_lock internally on both success and
@@ -734,7 +737,9 @@ public:
   const char *base_action_tags;
 
   /// Optional IP address for per-connection debug override. When set,
-  /// on(mode) returns true for connections whose remote IP matches this.
+  /// connections whose remote IP matches this address have
+  /// ContFlags::DEBUG_OVERRIDE set, which causes on(mode) to return true
+  /// only when the global debug state is in DEBUG_OVERRIDE mode (value 2).
   IpAddr debug_client_ip;
 
 private:
