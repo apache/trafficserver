@@ -71,7 +71,8 @@ enum DiagsTagType { DiagsTagType_Debug = 0, DiagsTagType_Action = 1 };
  * to the corresponding sink. Multiple sinks may be set simultaneously;
  * the message is emitted to all enabled sinks in unspecified order.
  *
- * @thread-safety Carries no internal synchronization. Callers reading or
+ * @par Thread safety
+ * Carries no internal synchronization. Callers reading or
  *   modifying Diags::config.outputs[] must respect the concurrency contract
  *   of the containing DiagsConfigState.
  */
@@ -121,7 +122,8 @@ enum RollingEnabledValues { NO_ROLLING = 0, ROLL_ON_TIME, ROLL_ON_SIZE, ROLL_ON_
  * @post On return, the process continues into the exit path for the terminal
  *   level: DL_Fatal and DL_Alert invoke ink_fatal_va; DL_Emergency invokes
  *   ink_emergency_va (a distinct, stronger exit path).
- * @thread-safety Only one callback is installed per Diags instance.
+ * @par Thread safety
+ * Only one callback is installed per Diags instance.
  *   The callback is invoked at most once per process.
  */
 using DiagsCleanupFunc = void (*)();
@@ -134,27 +136,25 @@ using DiagsCleanupFunc = void (*)();
  *   0 — disabled (no emission),
  *   1 — enabled for all callers,
  *   2 — enabled only when ContFlags::DEBUG_OVERRIDE is set on the
- *       current Continuation (per-connection debug override).
+ *       current Continuation (per-connection debug override),
+ *   3 — treated identically to 1 (always-enabled).
  */
-// DEFECT: The backing store _enabled[2] is a plain int, not std::atomic<int>.
-// Concurrent reads from emission threads while a reconfiguration thread writes
-// is a C++ data race (undefined behavior).  The intended semantics are
-// relaxed-atomic load/store; until the type is fixed, callers should treat
-// reads as best-effort.
 class DiagsConfigState
 {
 public:
-  // DEFECT: _enabled[2] is a plain int; concurrent reads while a write is in
-  // progress are a C++ data race.  See the DEFECT comment above the class.
   /**
    * @brief Return the current enable state for the given tag type.
    *
    * @param[in] dtt DiagsTagType_Debug or DiagsTagType_Action.
-   * @return 0 (disabled), 1 (enabled), or 2 (DEBUG_OVERRIDE mode).
+   * @return 0 (disabled), 1 (enabled), 2 (DEBUG_OVERRIDE mode), or 3
+   *   (always-enabled, same effect as 1).
    * @pre None.
    * @post No state change.
-   * @errors None.
-   * @thread-safety Not thread-safe; see class-level DEFECT note.
+   * @par Errors
+   * None.
+   * @par Thread safety
+   * Not thread-safe. Reads _enabled without synchronization;
+   *   concurrent writes from a reconfiguration thread are a data race.
    */
   static int
   enabled(DiagsTagType dtt)
@@ -166,15 +166,18 @@ public:
    * @brief Set the enable state for the given tag type.
    *
    * @param[in] dtt DiagsTagType_Debug or DiagsTagType_Action.
-   * @param[in] new_value 0, 1, or 2 (see class contract).
-   * @pre new_value is in [0, 2]; values outside this range produce
+   * @param[in] new_value 0, 1, 2, or 3 (see class contract); 3 behaves
+   *   identically to 1.
+   * @pre new_value is in [0, 3]; values outside this range produce
    *   unspecified behavior.
    * @post enabled(dtt) returns new_value on all subsequent calls. When
    *   dtt == DiagsTagType_Debug and the value changes, DbgCtl::_config_mode
    *   is also updated via a relaxed atomic store so that DbgCtl-based checks
    *   remain in sync without acquiring a lock.
-   * @errors None.
-   * @thread-safety Must be called with external serialization against
+   * @par Errors
+   * None.
+   * @par Thread safety
+   * Must be called with external serialization against
    *   concurrent enabled(dtt) reads.
    */
   static void enabled(DiagsTagType dtt, int new_value);
@@ -197,15 +200,19 @@ private:
  * Emergency, Diag) route through the process-global Diags instance installed
  * via DiagsPtr.
  *
- * @thread-safety After construction, the instance is safe to use concurrently
- *   from any number of threads for emission (print, log, error). Tag-table
- *   mutation methods (activate_taglist, deactivate_all) acquire tag_table_lock
- *   internally. Log-pointer swap methods (reseat_diagslog, should_roll_*,
- *   set_std_output) acquire tag_table_lock only for their pointer swap step;
- *   file operations run outside the lock. setup_diagslog() acquires no lock at
- *   all; callers must serialize it. Rolling-policy configuration methods
- *   (config_roll_diagslog, config_roll_outputlog) and dump() do NOT acquire any
- *   lock; see per-method @thread-safety for details.
+ * @par Thread safety
+ * Concurrent emission calls (print, log, error) are serialized
+ *   against each other via tag_table_lock. Reconfiguration writes to
+ *   config.outputs (e.g., via DiagsConfig::reconfigure_diags) do not acquire
+ *   tag_table_lock, so concurrent emission and reconfiguration are a data race
+ *   on config.outputs. Tag-table mutation methods (activate_taglist,
+ *   deactivate_all) acquire tag_table_lock internally. Log-pointer swap methods
+ *   (reseat_diagslog, should_roll_*, set_std_output) acquire tag_table_lock
+ *   only for their pointer swap step; file operations run outside the lock.
+ *   setup_diagslog() acquires no lock; callers must serialize it.
+ *   Rolling-policy configuration methods (config_roll_diagslog,
+ *   config_roll_outputlog) and dump() do not acquire any lock; see the
+ *   per-method @par Thread safety paragraphs below for details.
  */
 class Diags : public DebugInterface
 {
@@ -229,9 +236,11 @@ public:
    *   tables are empty until activate_taglist() is called (typically via
    *   reconfigure_diags()); diags_log is set and open if _diags_log is
    *   non-null and openable, otherwise diags_log is null.
-   * @errors Allocation failures abort via ink_abort. Log-open failures are
+   * @par Errors
+   * Allocation failures abort via ink_abort. Log-open failures are
    *   reported via log_log_error and result in diags_log being null.
-   * @thread-safety Single-threaded construction expected. After construction
+   * @par Thread safety
+   * Single-threaded construction expected. After construction
    *   the instance may be installed via DiagsPtr::set and used concurrently.
    */
   Diags(std::string_view prefix_string, const char *base_debug_tags, const char *base_action_tags, BaseLogFile *_diags_log,
@@ -242,8 +251,10 @@ public:
    *
    * @pre No thread is currently executing a method on this instance.
    * @post All owned BaseLogFile handles are deleted (closing their FILE *).
-   * @errors None.
-   * @thread-safety Single-threaded destruction. The caller must ensure no
+   * @par Errors
+   * None.
+   * @par Thread safety
+   * Single-threaded destruction. The caller must ensure no
    *   other thread holds or will acquire a reference to this instance.
    */
   virtual ~Diags();
@@ -286,8 +297,10 @@ public:
    *   executing Continuation; false otherwise or if no Continuation is active.
    * @pre None.
    * @post No state change.
-   * @errors None.
-   * @thread-safety Safe to call from any thread; reads a thread-local
+   * @par Errors
+   * None.
+   * @par Thread safety
+   * Safe to call from any thread; reads a thread-local
    *   Continuation flag.
    */
   bool
@@ -306,13 +319,13 @@ public:
    *   debug client IP; false otherwise or if no debug client IP is set.
    * @pre None.
    * @post No state change.
-   * @errors None.
-   * @thread-safety Not thread-safe: debug_client_ip is a plain (non-atomic)
-   *   struct that may be written by the config-update callback on another
-   *   thread.
+   * @par Errors
+   * None.
+   * @par Thread safety
+   * Not thread-safe. Reads debug_client_ip without
+   *   synchronization; concurrent writes from the config-update callback are
+   *   a data race.
    */
-  // DEFECT: debug_client_ip is read here without synchronization while the
-  // config-update callback (update_debug_client_ip) may write it concurrently.
   bool
   test_override_ip(IpEndpoint const &test_ip)
   {
@@ -324,15 +337,17 @@ public:
    *
    * @param[in] mode DiagsTagType_Debug or DiagsTagType_Action; defaults to
    *   DiagsTagType_Debug.
-   * @return True if the tag type is enabled (value 1), OR if it is in
-   *   DEBUG_OVERRIDE mode (value 2) and the current Continuation has the
-   *   override flag set.
+   * @return True if the tag type is unconditionally enabled (value 1 or 3),
+   *   OR if it is in DEBUG_OVERRIDE mode (value 2) and the current
+   *   Continuation has the override flag set.
    * @pre None.
    * @post No state change.
-   * @errors None.
-   * @thread-safety DEFECT: reads DiagsConfigState::_enabled, a plain int,
-   *   without a lock. Intended semantics: relaxed atomic load. See
-   *   DiagsConfigState class contract.
+   * @par Errors
+   * None.
+   * @par Thread safety
+   * Not thread-safe. Reads DiagsConfigState::_enabled without
+   *   synchronization; concurrent writes from a reconfiguration thread are a
+   *   data race.
    * @note This method is on the hot path of every Dbg/Diag macro. Call it
    *   before any block-local static with non-const initialization to avoid
    *   the hidden initialization-check overhead when diagnostics are off.
@@ -352,8 +367,10 @@ public:
    *   the configured tag regex. A null tag matches unconditionally.
    * @pre None (null tag is safe).
    * @post No state change.
-   * @errors None.
-   * @thread-safety The tag_activated sub-call is safe: the active regex
+   * @par Errors
+   * None.
+   * @par Thread safety
+   * The tag_activated sub-call is safe: the active regex
    *   pointer is snapshotted under tag_table_lock, with regex execution
    *   outside the lock. The on(mode) sub-call reads _enabled without a lock;
    *   see DiagsConfigState::enabled().
@@ -378,8 +395,10 @@ public:
    *   nullptr, returns true unconditionally.
    * @pre None (null tag is safe).
    * @post No state change.
-   * @errors None.
-   * @thread-safety Safe to call concurrently. The active regex pointer is
+   * @par Errors
+   * None.
+   * @par Thread safety
+   * Safe to call concurrently. The active regex pointer is
    *   snapshotted under tag_table_lock; regex execution runs outside the lock.
    */
   bool tag_activated(const char *tag, DiagsTagType mode = DiagsTagType_Debug) const;
@@ -392,8 +411,10 @@ public:
    *   returns true unconditionally.
    * @pre None (null tag is safe).
    * @post No state change.
-   * @errors None.
-   * @thread-safety Same as tag_activated.
+   * @par Errors
+   * None.
+   * @par Thread safety
+   * Same as tag_activated.
    */
   bool
   debug_tag_activated(const char *tag) const override
@@ -417,8 +438,10 @@ public:
    * @post Message emitted to all sinks enabled for level in config.outputs.
    *   Does not handle terminal levels; the process does not exit.
    *   Use error_va() if terminal-level exit behavior is required.
-   * @errors I/O errors during emission are absorbed; output may be lost.
-   * @thread-safety Safe to call concurrently from any thread.
+   * @par Errors
+   * I/O errors during emission are absorbed; output may be lost.
+   * @par Thread safety
+   * Safe to call concurrently from any thread.
    */
   void
   print(const char *tag, DiagsLevel level, const SourceLocation *loc, const char *fmt, ...) const TS_PRINTFLIKE(5, 6)
@@ -440,8 +463,10 @@ public:
    *   call; the caller MUST NOT reuse ap without va_end + va_start.
    * @pre fmt is non-null; ap is initialized.
    * @post Same as print().
-   * @errors Same as print().
-   * @thread-safety Same as print().
+   * @par Errors
+   * Same as print().
+   * @par Thread safety
+   * Same as print().
    */
   void print_va(const char *tag, DiagsLevel level, const SourceLocation *loc, const char *fmt, va_list ap) const override;
 
@@ -456,8 +481,10 @@ public:
    * @pre fmt is non-null; arguments match fmt's conversions.
    * @post If on(tag) is true, message is emitted identically to print().
    *   If on(tag) is false, no output is produced.
-   * @errors Same as print().
-   * @thread-safety Same as print(). The on() call reads _enabled without a
+   * @par Errors
+   * Same as print().
+   * @par Thread safety
+   * Same as print(). The on() call reads _enabled without a
    *   lock; see DiagsConfigState::enabled().
    */
   void
@@ -482,8 +509,10 @@ public:
    *   without va_end + va_start.
    * @pre fmt is non-null; ap is initialized.
    * @post Same as log().
-   * @errors Same as print().
-   * @thread-safety Same as log(). The on() call reads _enabled without a
+   * @par Errors
+   * Same as print().
+   * @par Thread safety
+   * Same as log(). The on() call reads _enabled without a
    *   lock; see DiagsConfigState::enabled().
    */
   void
@@ -503,8 +532,10 @@ public:
    * @pre fmt is non-null; arguments match its conversions.
    * @post Message emitted to all enabled sinks. For terminal levels the
    *   process exits — does not return.
-   * @errors Same as print().
-   * @thread-safety Safe to call concurrently from any thread.
+   * @par Errors
+   * Same as print().
+   * @par Thread safety
+   * Safe to call concurrently from any thread.
    */
   void
   error(DiagsLevel level, const SourceLocation *loc, const char *fmt, ...) const TS_PRINTFLIKE(4, 5)
@@ -526,8 +557,10 @@ public:
    * @pre fmt is non-null; ap is initialized.
    * @post Same as error(). For terminal levels, invokes cleanup_func (if
    *   set) then exits the process; does not return.
-   * @errors None signaled; I/O errors absorbed.
-   * @thread-safety Safe to call concurrently.
+   * @par Errors
+   * None signaled; I/O errors absorbed.
+   * @par Thread safety
+   * Safe to call concurrently.
    */
   virtual void error_va(DiagsLevel level, const SourceLocation *loc, const char *fmt, va_list ap) const;
 
@@ -537,8 +570,10 @@ public:
    * @param[in] fp Destination FILE *; defaults to stdout.
    * @pre fp is a valid open stream.
    * @post Configuration summary written to fp.
-   * @errors I/O errors on fp are not signaled.
-   * @thread-safety Not thread-safe. Reads config fields (_enabled,
+   * @par Errors
+   * I/O errors on fp are not signaled.
+   * @par Thread safety
+   * Not thread-safe. Reads config fields (_enabled,
    *   outputs, base_debug_tags, base_action_tags) without holding
    *   tag_table_lock. Concurrent reconfiguration may produce
    *   interleaved or inconsistent output.
@@ -560,9 +595,11 @@ public:
    *   For DiagsTagType_Debug, if this is the process-global Diags instance,
    *   all registered debug controls are updated immediately to reflect the
    *   new pattern.
-   * @errors Invalid regex is silently accepted; compile failure is not
+   * @par Errors
+   * Invalid regex is silently accepted; compile failure is not
    *   signaled. The previous pattern is NOT retained on compile failure.
-   * @thread-safety Acquires tag_table_lock. Safe to call concurrently with
+   * @par Thread safety
+   * Acquires tag_table_lock. Safe to call concurrently with
    *   emission, but serialized with other reconfiguration methods.
    */
   void activate_taglist(const char *taglist, DiagsTagType mode = DiagsTagType_Debug);
@@ -573,8 +610,10 @@ public:
    * @param[in] mode DiagsTagType_Debug or DiagsTagType_Action.
    * @pre None.
    * @post No tag matches for mode; activated_tags[mode] is null.
-   * @errors None.
-   * @thread-safety Acquires tag_table_lock. Safe to call concurrently with
+   * @par Errors
+   * None.
+   * @par Thread safety
+   * Acquires tag_table_lock. Safe to call concurrently with
    *   emission, but serialized with other reconfiguration methods.
    */
   void deactivate_all(DiagsTagType mode = DiagsTagType_Debug);
@@ -594,9 +633,11 @@ public:
    * @pre blf is null or points to a BaseLogFile that has not yet been opened.
    * @post On true return: blf (if non-null) is open; caller must assign it to
    *   diags_log. On false return: blf has been deleted; diags_log is unchanged.
-   * @errors Open failures cause a false return and an internal log_log_error
+   * @par Errors
+   * Open failures cause a false return and an internal log_log_error
    *   diagnostic at LL_Error.
-   * @thread-safety Caller MUST serialize with all other reconfiguration
+   * @par Thread safety
+   * Caller MUST serialize with all other reconfiguration
    *   methods. reseat_diagslog() acquires tag_table_lock only for the
    *   pointer swap that follows this call; setup_diagslog() itself is not
    *   called under the lock. Direct callers must provide equivalent
@@ -613,8 +654,10 @@ public:
    *   policies).
    * @pre None.
    * @post Rolling policy fields are updated in the calling thread.
-   * @errors None.
-   * @thread-safety No lock is acquired. The caller must ensure no concurrent
+   * @par Errors
+   * None.
+   * @par Thread safety
+   * No lock is acquired. The caller must ensure no concurrent
    *   calls to should_roll_diagslog() occur during reconfiguration.
    */
   void config_roll_diagslog(RollingEnabledValues re, int ri, int rs);
@@ -627,8 +670,10 @@ public:
    * @param[in] rs Rolling size threshold in bytes.
    * @pre None.
    * @post Rolling policy fields are updated in the calling thread.
-   * @errors None.
-   * @thread-safety No lock is acquired. The caller must ensure no concurrent
+   * @par Errors
+   * None.
+   * @par Thread safety
+   * No lock is acquired. The caller must ensure no concurrent
    *   calls to should_roll_outputlog() occur during reconfiguration.
    */
   void config_roll_outputlog(RollingEnabledValues re, int ri, int rs);
@@ -660,9 +705,11 @@ public:
    *   subsequent emission goes to the new file.
    *   On failure: diags_log is unchanged; the newly allocated BaseLogFile
    *   is deleted before it returns.
-   * @errors Open failures are not directly signaled via the return value;
+   * @par Errors
+   * Open failures are not directly signaled via the return value;
    *   failure is reported to the internal diagnostic trace log only.
-   * @thread-safety The swap in step 4 is performed under tag_table_lock.
+   * @par Thread safety
+   * The swap in step 4 is performed under tag_table_lock.
    *   Concurrent emission either observes the pre-swap or post-swap log;
    *   no message is lost or written to a destroyed FILE *.
    * @note When diagnostic output is disabled or redirected to a non-file
@@ -683,9 +730,11 @@ public:
    *   rolled (renamed), and replaced by a new BaseLogFile at the same path.
    *   If not: no state change. fstat failure causes an early false return
    *   without rolling.
-   * @errors None signaled. fstat and reopen failures silently suppress the
+   * @par Errors
+   * None signaled. fstat and reopen failures silently suppress the
    *   replacement; the rolled state of the original file is not reversed.
-   * @thread-safety tag_table_lock is acquired only during the BaseLogFile
+   * @par Thread safety
+   * tag_table_lock is acquired only during the BaseLogFile
    *   pointer swap. The rolling-condition checks and file operations execute
    *   without a lock; the caller must ensure no concurrent reconfiguration
    *   (see config_roll_diagslog()).
@@ -701,8 +750,10 @@ public:
    * @post If the rolling condition is met: affected logs are flushed, rolled,
    *   and replaced by new BaseLogFile instances at the same paths.
    *   If not: no state change. fstat failure causes an early false return.
-   * @errors None signaled. fstat failures silently suppress the roll.
-   * @thread-safety Same as should_roll_diagslog(); see config_roll_outputlog().
+   * @par Errors
+   * None signaled. fstat failures silently suppress the roll.
+   * @par Thread safety
+   * Same as should_roll_diagslog(); see config_roll_outputlog().
    */
   bool should_roll_outputlog();
 
@@ -723,9 +774,11 @@ public:
    *   previous binding is NOT preserved. The previous BaseLogFile is NOT
    *   freed (leaked on this path).
    *   On empty-string return: no state is modified.
-   * @errors File-open failures cause a false return and internal
+   * @par Errors
+   * File-open failures cause a false return and internal
    *   log_log_error messages; the named stream is left unbound (nullptr).
-   * @thread-safety Acquires tag_table_lock internally on both success and
+   * @par Thread safety
+   * Acquires tag_table_lock internally on both success and
    *   failure paths.
    */
   bool set_std_output(StdStream stream, const char *file);
