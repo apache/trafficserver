@@ -83,6 +83,10 @@ add_server_obj("text/css ; charset=utf-8", "/obj1")
 add_server_obj("text/javascript", "/sub/obj2")
 add_server_obj("text/argh", "/obj3")
 add_server_obj("application/javascript", "/obj4")
+# Empty Content-Type header: the field is present but carries no value.
+# With an allowlist configured this must be rejected; otherwise it would
+# silently bypass the type check.
+add_server_obj("", "/obj_empty_ct")
 
 ts = Test.MakeATSProcess("ts")
 
@@ -121,5 +125,17 @@ tr.Processes.Default.Command = tcp_client(
 tr.Processes.Default.ReturnCode = 0
 f = tr.Disk.File("_output/2-tr-Default/stream.all.txt")
 f.Content = "combo_handler_files/tr2.gold"
+
+# An object whose Content-Type header is present but empty must not slip
+# past the allowlist. Pairing it with the allowed obj1 ensures the request
+# would have succeeded if the empty value were not enforced -- so a 403
+# here is a regression check for the bypass fix.
+tr = Test.AddTestRun()
+tr.Processes.Default.Command = tcp_client(
+    "127.0.0.1", ts.Variables.port,
+    "GET /admin/v1/combo?obj1&obj_empty_ct HTTP/1.1\n" + "Host: xyz\n" + "Connection: close\n" + "\n")
+tr.Processes.Default.ReturnCode = 0
+f = tr.Disk.File("_output/3-tr-Default/stream.all.txt")
+f.Content = "combo_handler_files/tr3.gold"
 
 ts.Disk.diags_log.Content = Testers.ContainsExpression("ERROR", "Some tests are failure tests")
