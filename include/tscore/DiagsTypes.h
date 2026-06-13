@@ -248,8 +248,9 @@ public:
    *   reconfigure_diags()); diags_log is set and open if _diags_log is
    *   non-null and openable, otherwise diags_log is null.
    * @par Errors
-   * Allocation failures abort via ink_abort. Log-open failures are
-   *   reported via log_log_error and result in diags_log being null.
+   * Allocation failures abort via ink_abort. Log-open failures result in
+   *   diags_log being null and are reported via log_log_error only when
+   *   BASELOGFILE_DEBUG_MODE is enabled (off by default).
    * @par Thread safety
    * Single-threaded construction expected. After construction
    *   the instance may be installed via DiagsPtr::set and used concurrently.
@@ -446,6 +447,8 @@ public:
    * @param[in] fmt Non-null printf-format string.
    * @pre fmt is non-null and arguments match its conversions.
    * @post Message emitted to all sinks enabled for level in config.outputs.
+   *   stderr is also written when regression_testing_on is true, even if
+   *   config.outputs[level].to_stderr is false.
    *   Does not handle terminal levels; the process does not exit.
    *   Use error_va() if terminal-level exit behavior is required.
    * @par Errors
@@ -644,8 +647,9 @@ public:
    * @post On true return: blf (if non-null) is open; caller must assign it to
    *   diags_log. On false return: blf has been deleted; diags_log is unchanged.
    * @par Errors
-   * Open failures cause a false return and an internal log_log_error
-   *   diagnostic at LL_Error.
+   * Open failures cause a false return. A log_log_error diagnostic at
+   *   LL_Error is emitted only when BASELOGFILE_DEBUG_MODE is enabled
+   *   (off by default).
    * @par Thread safety
    * Caller MUST serialize with all other reconfiguration
    *   methods. reseat_diagslog() acquires tag_table_lock only for the
@@ -705,7 +709,8 @@ public:
    * @return False if diags_log is null or not yet initialized (safe no-op).
    *   True in all other cases, including when the internal reopen fails —
    *   reopen failures are not reflected in the return value and are
-   *   observable only via the internal diagnostic trace log.
+   *   observable only via log_log_trace, which is compiled out unless
+   *   BASELOGFILE_DEBUG_MODE is enabled (off by default).
    * @pre A Diags instance is active and diags_log is initialized
    *   (is_init() == true). If this precondition is not met, returns false
    *   without performing a reopen — this is the safe no-op path for calls
@@ -716,16 +721,16 @@ public:
    *   On failure: diags_log is unchanged; the newly allocated BaseLogFile
    *   is deleted before it returns.
    * @par Errors
-   * Open failures are not directly signaled via the return value;
-   *   failure is reported to the internal diagnostic trace log only.
+   * Open failures are not signaled via the return value. They are reported
+   *   via log_log_trace only when BASELOGFILE_DEBUG_MODE is enabled (off
+   *   by default); in normal builds the failure is completely silent.
    * @par Thread safety
    * The swap in step 4 is performed under tag_table_lock.
    *   Concurrent emission either observes the pre-swap or post-swap log;
    *   no message is lost or written to a destroyed FILE *.
    * @note When diagnostic output is disabled or redirected to a non-file
    *   sink (e.g., syslog), diags_log is null or uninitialized and the
-   *   initialization guard causes an early false return. SIGUSR2 is a
-   *   safe no-op in that configuration.
+   *   initialization guard causes an early false return.
    */
   bool reseat_diagslog();
 
@@ -771,25 +776,25 @@ public:
    * @brief Reseat the named standard stream to a file at the given path.
    *
    * @param[in] stream STDOUT or STDERR (see StdStream).
-   * @param[in] file Non-null path string. Passed verbatim to the OS open
-   *   call; symlinks are re-resolved at each call. An empty string causes an
-   *   immediate false return without modifying any state.
+   * @param[in] file Non-null filesystem path. Symlinks are re-resolved at
+   *   each call. An empty string causes an immediate false return without
+   *   modifying any state.
    * @return True on success; false if file is empty, the file could not be
    *   opened, or the resulting FILE * is null.
-   * @pre A Diags instance is active; file is non-null (passing null is UB —
-   *   it is passed directly to strcmp without a null guard).
+   * @pre file must not be null.
    * @post On success: the new file is open and bound as the named stream;
    *   the previous BaseLogFile is deleted.
-   *   On file-open failure: the stream pointer is set to nullptr — the
-   *   previous binding is NOT preserved. The previous BaseLogFile is NOT
-   *   freed (leaked on this path).
+   *   On file-open failure: the stream pointer is set to nullptr and the
+   *   previous BaseLogFile is not freed.
    *   On empty-string return: no state is modified.
    * @par Errors
-   * File-open failures cause a false return and internal
-   *   log_log_error messages; the named stream is left unbound (nullptr).
+   * File-open failures cause a false return; the named stream is left
+   *   unbound (nullptr). Internal log_log_error messages are emitted only
+   *   when BASELOGFILE_DEBUG_MODE is enabled (off by default).
    * @par Thread safety
-   * Acquires tag_table_lock internally on both success and
-   *   failure paths.
+   * Acquires tag_table_lock for the pointer update on success and on
+   *   file-open failure. The empty-string early return does not acquire
+   *   the lock.
    */
   bool set_std_output(StdStream stream, const char *file);
 

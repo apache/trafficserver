@@ -217,6 +217,7 @@ Diags::~Diags()
 //              void print(...)
 //              void log_va(...)
 //              void log(...)
+//              void error_va(...)
 //
 //////////////////////////////////////////////////////////////////////////////
 
@@ -467,19 +468,6 @@ Diags::config_roll_outputlog(RollingEnabledValues re, int ri, int rs)
   outputlog_rolling_size     = rs;
 }
 
-/*
- * Update diags_log to use the underlying file on disk.
- *
- * This function will replace the current BaseLogFile object with a new one, as
- * each BaseLogFile object logically represents one file on disk. It can be
- * used when we want to re-open the log file if the initial one was moved.
- *
- * Note that, however, cross process race conditions may still exist,
- * especially with the metafile, and further work with flock() for fcntl() may
- * still need to be done.
- *
- * Returns true if the log was reseated, false otherwise.
- */
 bool
 Diags::reseat_diagslog()
 {
@@ -728,7 +716,7 @@ Diags::set_std_output(StdStream stream, const char *file)
     log_log_error("[Warning]: %s is currently not bound to anything\n", target_stream);
     delete new_log;
     lock();
-    *current = nullptr;
+    *current = nullptr; // old_log is not freed here
     unlock();
     return false;
   }
@@ -737,7 +725,7 @@ Diags::set_std_output(StdStream stream, const char *file)
     log_log_error("[Warning]: %s is currently not bound to anything\n", target_stream);
     delete new_log;
     lock();
-    *current = nullptr;
+    *current = nullptr; // old_log is not freed here
     unlock();
     return false;
   }
