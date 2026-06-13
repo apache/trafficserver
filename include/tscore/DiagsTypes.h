@@ -599,8 +599,9 @@ public:
    * @param[in] taglist PCRE2 regex string, or nullptr. If nullptr, the stored
    *   pattern is unchanged.
    * @param[in] mode DiagsTagType_Debug or DiagsTagType_Action.
-   * @pre taglist is null or a valid PCRE2 pattern string. The regex engine is
-   *   PCRE2, not POSIX ERE.
+   * @pre None (null taglist and invalid PCRE2 patterns are both safe; see
+   *   @post for the invalid-pattern case). The regex engine is PCRE2, not
+   *   POSIX ERE.
    * @post If taglist is non-null, the new pattern unconditionally replaces the
    *   previous one; if the pattern fails to compile, the stored pattern becomes
    *   empty and no tags will match until a valid pattern is installed.
@@ -662,14 +663,17 @@ public:
   /**
    * @brief Configure the rolling policy for diags.log.
    *
-   * @param[in] re Rolling policy (see RollingEnabledValues).
-   * @param[in] ri Rolling interval in seconds (used by time-based policies).
-   * @param[in] rs Rolling size threshold in bytes (used by size-based
-   *   policies).
+   * @param[in] re Rolling policy (see RollingEnabledValues). NO_ROLLING
+   *   disables rolling.
+   * @param[in] ri Rolling interval in seconds, consulted under time-based
+   *   policies. A value of -1 disables the time-based threshold.
+   * @param[in] rs Rolling size threshold in megabytes, consulted under
+   *   size-based policies. A value of -1 disables the size-based threshold.
    * @pre None.
-   * @post Rolling policy fields are updated in the calling thread.
+   * @post The three rolling policy fields are overwritten with the supplied
+   *   values. No other state is modified.
    * @par Errors
-   * None.
+   * None. Inputs are stored verbatim without validation.
    * @par Thread safety
    * No lock is acquired. The caller must ensure no concurrent
    *   calls to should_roll_diagslog() occur during reconfiguration.
@@ -679,13 +683,17 @@ public:
   /**
    * @brief Configure the rolling policy for the output log (traffic.out).
    *
-   * @param[in] re Rolling policy.
-   * @param[in] ri Rolling interval in seconds.
-   * @param[in] rs Rolling size threshold in bytes.
+   * @param[in] re Rolling policy (see RollingEnabledValues). NO_ROLLING
+   *   disables rolling.
+   * @param[in] ri Rolling interval in seconds, consulted under time-based
+   *   policies. A value of -1 disables the time-based threshold.
+   * @param[in] rs Rolling size threshold in megabytes, consulted under
+   *   size-based policies. A value of -1 disables the size-based threshold.
    * @pre None.
-   * @post Rolling policy fields are updated in the calling thread.
+   * @post The three rolling policy fields are overwritten with the supplied
+   *   values. No other state is modified.
    * @par Errors
-   * None.
+   * None. Inputs are stored verbatim without validation.
    * @par Thread safety
    * No lock is acquired. The caller must ensure no concurrent
    *   calls to should_roll_outputlog() occur during reconfiguration.
