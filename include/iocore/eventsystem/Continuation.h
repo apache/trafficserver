@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  Continuation base class and event handler type definitions.
 
   @section license License
 
@@ -22,14 +22,10 @@
 
   @section details Details
 
-  Continuations have a handleEvent() method to invoke them. Users
-  can determine the behavior of a Continuation by supplying a
-  "ContinuationHandler" (member function name) which is invoked
-  when events arrive. This function can be changed with the
-  "setHandler" method.
-
-  Continuations can be subclassed to add additional state and
-  methods.
+  Continuations have a @c handleEvent method to invoke them. A
+  @c ContinuationHandler (a pointer-to-member) determines the behavior
+  invoked when events arrive; it is installed with the @c SET_HANDLER
+  macro. Subclasses add state and additional handler methods.
 
  */
 
@@ -56,11 +52,49 @@ extern EThread *this_event_thread();
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/**
+  The default event code passed to @c Continuation::handleEvent when no
+  Processor-specific code applies. Processors define their own non-zero
+  event codes (e.g., @c EVENT_IMMEDIATE, @c VC_EVENT_READ_READY) that
+  handlers dispatch on.
+*/
 #define CONTINUATION_EVENT_NONE 0
 
+/**
+  Handler return code signaling, by convention, that the state machine has
+  finished processing this event. @c EVENT_DONE and @c VC_EVENT_DONE alias
+  this value.
+
+  The Event System dispatcher discards the handler's return value; it is
+  meaningful only to callers that invoke @c handleEvent directly and define
+  a convention for it.
+*/
 #define CONTINUATION_DONE 0
+
+/**
+  Handler return code signaling, by convention, that the state machine has
+  not finished processing and expects further dispatches. @c EVENT_CONT and
+  @c VC_EVENT_CONT alias this value.
+
+  The Event System dispatcher discards the handler's return value; it is
+  meaningful only to callers that invoke @c handleEvent directly and define
+  a convention for it.
+*/
 #define CONTINUATION_CONT 1
 
+/**
+  Pointer-to-member type for a Continuation event handler.
+
+  Handler methods have signature @c int(int event, void *data). This
+  typedef is the form stored in @c Continuation::handler: the
+  pointer-to-member is rebound to @c Continuation regardless of which
+  subclass declared the method. Install handlers with @c SET_HANDLER or
+  @c SET_CONTINUATION_HANDLER, which perform the conversion safely. A
+  direct @c reinterpret_cast to this type is not equivalent — under
+  multiple inheritance, where @c Continuation is not the first base of
+  the subclass, it skips the offset adjustment that @c static_cast
+  applies and yields a handler that dispatches into the wrong subobject.
+*/
 using ContinuationHandler = int (Continuation::*)(int, void *);
 
 // Convert event handler pointer fp to type ContinuationHandler, but with a compiler error if class C is not
@@ -108,60 +142,104 @@ public:
 };
 
 /**
-  Base class for all state machines to receive notification of
-  events.
+  Base class for event-driven state machines dispatched by the IO Core
+  Event System.
 
-  The Continuation class represents the main abstraction mechanism
-  used throughout the IO Core Event System to communicate its users
-  the occurrence of an event. A Continuation is a lightweight data
-  structure that implements a single method with which the user is
-  called back.
+  A Continuation pairs a member-function handler with a @c ProxyMutex.
+  When a Processor delivers an event to the Continuation (via
+  @c handleEvent), the dispatching thread first acquires
+  @c this->mutex; the handler then runs while that lock is held and can
+  manipulate the Continuation's state safely. Subclasses add state and
+  additional handler methods, switching between them with
+  @c SET_HANDLER.
 
-  Continuations are typically subclassed in order to implement
-  event-driven state machines. By including additional state and
-  methods, continuations can combine state with control flow, and
-  they are generally used to support split-phase, event-driven
-  control flow.
+  @par Ownership
+  Caller-owned. Continuation does not allocate or free itself; the
+  derived state machine controls its own lifetime. Once a Continuation
+  has been registered with a Processor (e.g., via a @c schedule_*
+  call), it MUST remain alive until either (a) the Processor returns
+  @c ACTION_RESULT_DONE / @c ACTION_IO_ERROR for a synchronous
+  completion, or (b) every outstanding @c Action returned by that
+  Processor for this Continuation has been cancelled and any in-flight
+  callback has unwound.
 
-  Given the multithreaded nature of the Event System, every
-  continuation carries a reference to a ProxyMutex object to protect
-  its state and ensure atomic operations. This ProxyMutex object
-  must be allocated by continuation-derived classes or by clients
-  of the IO Core Event System and it is required as a parameter to
-  the Continuation's class constructor.
-
+  @par Thread Safety
+  Not instance-thread-safe. All reads and writes of a Continuation's
+  fields MUST be performed by a thread that holds @c this->mutex, except
+  where an individual field documents otherwise. When the Event System
+  dispatches a handler it holds @c this->mutex for the duration of the
+  call; the dispatcher acquires that lock with a try-lock and reschedules
+  the Event rather than blocking, so a handler runs only once the lock is
+  available. Code reached from outside a handler MUST acquire the mutex
+  explicitly before touching the Continuation.
 */
-
 class Continuation : private force_VFPT_to_top
 {
 public:
   /**
-    The current continuation handler function.
+    The current handler invoked by @c handleEvent.
 
-    The current handler should not be set directly. In order to
-    change it, first acquire the Continuation's lock and then use
-    the SET_HANDLER macro which takes care of the type casting
-    issues.
+    Initial value is null; dispatching an event before a handler is
+    installed is undefined behavior. Install a handler with
+    @c SET_HANDLER (on @c this) or @c SET_CONTINUATION_HANDLER (on
+    another Continuation) rather than assigning directly; the macros
+    perform a type-checked conversion that a bare assignment skips,
+    catching offset bugs that would otherwise arise under multiple
+    inheritance.
 
+    @par Thread Safety
+    Unsynchronized pointer-to-member. Once the Continuation has been
+    published to any other thread, readers and writers MUST hold
+    @c this->mutex.
   */
   ContinuationHandler handler = nullptr;
 
 #ifdef DEBUG
+  /**
+    Name of the most recently installed handler, captured by
+    @c SET_HANDLER / @c SET_CONTINUATION_HANDLER for diagnostic use.
+    Present only in DEBUG builds. Initial value is null. Same
+    synchronization rules as @c handler.
+  */
   const char *handler_name = nullptr;
 #endif
 
   /**
-    The Continuation's lock.
+    Reference-counted pointer to the @c ProxyMutex protecting this
+    Continuation's state.
 
-    A reference counted pointer to the Continuation's lock. This
-    lock is initialized in the constructor and should not be set
-    directly.
+    Initialized by the Continuation's constructor. The field MAY be
+    reassigned after construction, but only while no other thread is
+    dispatching this Continuation; scheduling a Continuation that holds a
+    null mutex causes the Event System to adopt the dispatching thread's
+    mutex. A null value is otherwise permitted only when dispatching
+    through a Processor that documents the no-mutex case.
 
-    TODO:  make this private.
-
+    @par Thread Safety
+    The reference itself is not synchronized. Reads and writes of the
+    field MUST be ordered by an external happens-before edge (typically
+    the publication of the Continuation to a Processor); concurrent
+    unsynchronized access is a data race. The lock macros
+    (@c MUTEX_TRY_LOCK, @c SCOPED_MUTEX_LOCK, etc.) accept the
+    @c Ptr<ProxyMutex> directly.
   */
   Ptr<ProxyMutex> mutex;
 
+  /**
+    Returns a raw pointer to the @c ProxyMutex protecting this
+    Continuation, without changing the reference count.
+
+    @return The @c ProxyMutex currently held in @c this->mutex, or
+            nullptr if the field is null. The pointer is valid only
+            while @c this->mutex retains a reference to it; to keep
+            the mutex alive past the Continuation's destruction or a
+            reassignment of @c this->mutex, the caller MUST take its
+            own @c Ptr<ProxyMutex> rather than store the raw pointer.
+
+    @par Thread Safety
+    Caller-synchronized. Callers must order this read against any
+    concurrent writers via an external happens-before edge.
+  */
   ProxyMutex *
   getMutex() const
   {
@@ -169,22 +247,76 @@ public:
   }
 
   /**
-    Link to other continuations.
+    Doubly-linked list hook used to enqueue this Continuation in
+    intrusive lists whose list-traits class is the nested type
+    @c Continuation::Link_link (declared by the @c LINK macro). Both
+    @c next and @c prev are null-initialized by @c Link<Continuation>'s
+    own default constructor, leaving the hook in the unlinked state.
 
-    A doubly-linked element to allow Lists of Continuations to be
-    assembled.
-
+    @par Thread Safety
+    Plain links. The owner of the list (the Processor or subsystem
+    that holds the queue) is responsible for synchronizing
+    insertion, removal, and traversal. Because there is a single
+    @c next / @c prev pair, the Continuation MUST belong to at most
+    one such list at a time.
   */
   LINK(Continuation, link);
 
   /**
-    Contains values for debug_override and future flags that
-    needs to be thread local while this continuation is running
+    Per-Continuation @c ContFlags snapshot used to propagate diagnostic
+    overrides across thread boundaries.
+
+    Initialized from @c get_cont_flags() at construction. When an Event is
+    scheduled through @c EThread::schedule or @c EThread::schedule_local,
+    the scheduler overwrites this field with the scheduling thread's
+    current @c get_cont_flags(), so the snapshot tracks the originating
+    thread's state. Just before invoking @c handleEvent, the dispatcher
+    copies the snapshot into the dispatching thread's TLS via
+    @c set_cont_flags, so debug-override state follows the Continuation
+    across handoffs. Subclasses MAY mutate the flags directly to influence
+    diagnostic behavior on subsequent dispatches.
+
+    @par Thread Safety
+    Plain @c ContFlags. The scheduling write occurs without holding
+    @c this->mutex; visibility on the dispatching thread is established
+    by the happens-before edge of the event-queue handoff. The dispatcher
+    reads the field after acquiring @c this->mutex, so any mutation by
+    application code MUST also hold @c this->mutex — an unsynchronized
+    concurrent write is a data race.
   */
   ContFlags control_flags;
 
+  /**
+    The EThread on which this Continuation prefers to run, or nullptr
+    if no preference has been set.
+
+    Read by @c EventProcessor::schedule when choosing the thread to
+    service a Continuation, and by subsystems that pin work to a thread
+    (e.g., UDP, HostDB, and the plugin API). The field is advisory —
+    Processors are not required to honor it.
+
+    @par Thread Safety
+    Plain pointer; the @c setThreadAffinity, @c getThreadAffinity, and
+    @c clearThreadAffinity helpers do not synchronize. Reads and writes
+    must be ordered by an external happens-before edge (typically the
+    publication of the Continuation to a Processor, after which only one
+    party at a time updates the field). Concurrent unsynchronized access
+    from multiple threads is a data race.
+  */
   EThread *thread_affinity = nullptr;
 
+  /**
+    Sets the preferred dispatch thread for this Continuation.
+
+    @param[in] ethread The EThread to bind to. Passing nullptr is treated
+                       as "no change" (use @c clearThreadAffinity to clear);
+                       the call returns false in that case.
+    @return true if @p ethread was non-null and the affinity was set;
+            false if @p ethread was null and no change was made.
+
+    @par Thread Safety
+    Caller-synchronized; see @c thread_affinity.
+  */
   bool
   setThreadAffinity(EThread *ethread)
   {
@@ -195,12 +327,26 @@ public:
     return false;
   }
 
+  /**
+    Returns the EThread previously installed as this Continuation's
+    affinity, or nullptr if none has been set.
+
+    @par Thread Safety
+    Caller-synchronized read; see @c thread_affinity.
+  */
   EThread *
   getThreadAffinity()
   {
     return thread_affinity;
   }
 
+  /**
+    Clears the dispatch-thread affinity, restoring the "no preference"
+    state.
+
+    @par Thread Safety
+    Caller-synchronized; see @c thread_affinity.
+  */
   void
   clearThreadAffinity()
   {
@@ -208,17 +354,26 @@ public:
   }
 
   /**
-    Receives the event code and data for an Event.
+    Dispatches an event to this Continuation's currently installed
+    handler.
 
-    This function receives the event code and data for an event and
-    forwards them to the current continuation handler. The processor
-    calling back the continuation is responsible for acquiring its
-    lock.  If the lock is present and not held, this method will assert.
+    @param[in]     event Event code to forward. Meaning is Processor-specific
+                         (e.g., @c VC_EVENT_READ_READY, @c EVENT_IMMEDIATE).
+                         Defaults to @c CONTINUATION_EVENT_NONE.
+    @param[in,out] data  Auxiliary payload to forward. Lifetime, ownership, and
+                         type are Processor-specific. Defaults to nullptr.
+    @return The handler's return value, by convention
+            @c CONTINUATION_DONE or @c CONTINUATION_CONT. The Event
+            System dispatcher discards it; only direct callers of
+            @c handleEvent can give it meaning.
 
-    @param event Event code to be passed at callback (Processor specific).
-    @param data General purpose data related to the event code (Processor specific).
-    @return State machine and processor specific return code.
+    @pre  @c this->handler is non-null. Calling with a null handler is
+          undefined behavior (invokes a null pointer-to-member).
 
+    @par Thread Safety
+    Caller-synchronized via @c this->mutex. The Event System holds
+    the mutex around its calls; ad-hoc callers (e.g., re-entrant
+    inline dispatch) MUST also hold it.
   */
   TS_INLINE int
   handleEvent(int event = CONTINUATION_EVENT_NONE, void *data = nullptr)
@@ -230,22 +385,62 @@ public:
 
 protected:
   /**
-    Constructor of the Continuation object. It should not be used
-    directly. Instead create an object of a derived type.
+    Constructs a Continuation that holds a (possibly null) reference to
+    a @c ProxyMutex and snapshots the calling thread's @c ContFlags
+    into @c control_flags.
 
-    @param amutex Lock to be set for this Continuation.
-
+    @param[in] amutex Raw @c ProxyMutex pointer to retain. nullptr is
+                      permitted; a Continuation with a null mutex MAY only
+                      be dispatched by a Processor that documents the
+                      no-mutex case.
+    @post @c mutex retains @p amutex, incrementing its refcount when
+          non-null; @c control_flags is set from @c get_cont_flags() on
+          the calling thread.
   */
   explicit Continuation(ProxyMutex *amutex = nullptr);
+
+  /**
+    Constructs a Continuation that retains a reference to an existing
+    @c Ptr<ProxyMutex>.
+
+    @param[in] amutex Smart pointer whose target becomes @c this->mutex.
+                      May refer to a null @c ProxyMutex; same caveats as
+                      the raw-pointer constructor apply.
+    @post @c mutex shares ownership with @p amutex; @c control_flags is
+          set from @c get_cont_flags() on the calling thread.
+  */
   explicit Continuation(Ptr<ProxyMutex> &amutex);
 };
 
 /**
-  Sets the Continuation's handler. The preferred mechanism for
-  setting the Continuation's handler.
+  Installs @p _h as the handler invoked by the enclosing Continuation's
+  @c handleEvent.
 
-  @param _h Pointer to the function used to callback with events.
+  Expands to an assignment to @c handler (and @c handler_name in DEBUG
+  builds) using @c continuation_handler_void_ptr to enforce that the
+  handler's class derives from @c Continuation. Intended for use from
+  within a member function of a Continuation-derived class, where
+  @c handler refers to @c this->handler.
 
+  @param[in] _h Pointer-to-member function with signature
+               @c int(C::*)(int, T*) for some Continuation-derived @c C
+               and some pointer type @c T*. May also be @c nullptr to
+               detach the handler.
+
+  @pre  Invocation context MUST refer to a Continuation instance
+        (@c handler is the member of that instance).
+  @post @c handler points to the type-cast form of @p _h. In DEBUG
+        builds, @c handler_name holds the stringified token of @p _h.
+
+  @par Errors
+  A @c C that does not derive from @c Continuation is a compile-time
+  error from @c continuation_handler_void_ptr. The data parameter type
+  @c T* is @b not checked — it is reinterpret-cast, so the handler and
+  the Processor delivering the event must agree on it by convention.
+
+  @par Thread Safety
+  Caller-synchronized via the enclosing Continuation's mutex. Concurrent
+  installation racing against a dispatching handler is undefined.
 */
 #ifdef DEBUG
 #define SET_HANDLER(_h) (handler = continuation_handler_void_ptr(_h), handler_name = #_h)
@@ -254,13 +449,28 @@ protected:
 #endif
 
 /**
-  Sets a Continuation's handler.
+  Installs @p _h as the handler of the Continuation pointed to by
+  @p _c.
 
-  The preferred mechanism for setting the Continuation's handler.
+  Same semantics as @c SET_HANDLER, but operates on an explicit
+  Continuation pointer rather than the implicit @c this. Use when a
+  Continuation needs to install a handler on another Continuation it
+  owns (e.g., a parent state machine arming a child's handler before
+  dispatch).
 
-  @param _c Pointer to a Continuation whose handler is being set.
-  @param _h Pointer to the function used to callback with events.
+  @param[in] _c Non-null pointer to the target Continuation.
+  @param[in] _h Pointer-to-member function as for @c SET_HANDLER.
 
+  @pre  @p _c is non-null and refers to a live Continuation.
+  @post @c _c->handler points to the type-cast form of @p _h. In DEBUG
+        builds, @c _c->handler_name holds the stringified token of
+        @p _h.
+
+  @par Errors
+  Same compile-time checking as @c SET_HANDLER.
+
+  @par Thread Safety
+  Caller-synchronized via @c _c->mutex.
 */
 #ifdef DEBUG
 #define SET_CONTINUATION_HANDLER(_c, _h) (_c->handler = continuation_handler_void_ptr(_h), _c->handler_name = #_h)
