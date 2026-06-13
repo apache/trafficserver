@@ -117,11 +117,14 @@ enum RollingEnabledValues { NO_ROLLING = 0, ROLL_ON_TIME, ROLL_ON_SIZE, ROLL_ON_
  *   DiagsLevel (DL_Fatal, DL_Alert, DL_Emergency).
  *
  * @pre Runs synchronously on the thread that emitted the terminal message,
- *   before the process exits. MUST NOT throw. MUST be async-signal-safe if
- *   installed in a process that may emit terminal-level messages from a
- *   signal handler. MUST tolerate being invoked more than once per process
- *   (for example, from concurrent terminal emissions on different threads,
- *   or from a terminal emission inside the callback itself).
+ *   before the process exits. MUST NOT throw. MUST tolerate being invoked
+ *   more than once per process (for example, from concurrent terminal
+ *   emissions on different threads, or from a terminal emission inside the
+ *   callback itself).
+ * @note Terminal-level emission is not async-signal-safe, so the callback
+ *   MUST NOT be reached from a signal handler. Code paths that may emit at
+ *   terminal level from signal context are bugs in the emitter, not a
+ *   constraint this callback is expected to satisfy.
  * @post On return, the process is terminated; control does not return to
  *   the emitter. DL_Emergency exits via the unrecoverable path; DL_Fatal
  *   and DL_Alert exit via the recoverable path.
