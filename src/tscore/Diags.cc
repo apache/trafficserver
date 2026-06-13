@@ -88,19 +88,13 @@ tell_diags_regression_testing_is_on()
 
 //////////////////////////////////////////////////////////////////////////////
 //
-//      Diags::Diags(char *bdt, char *bat)
+//      Diags::Diags(prefix_string, bdt, bat, _diags_log, dl_perm, ol_perm)
 //
-//      This is the constructor for the Diags class.  The constructor takes
-//      two strings called the "base debug tags" (bdt) and the
-//      "base action tags" (bat).  These represent debug/action overrides,
-//      to override the records.yaml values.  They current come from
-//      command-line options.
-//
-//      If bdt is not nullptr, and not "", it overrides records.yaml settings.
-//      If bat is not nullptr, and not "", it overrides records.yaml settings.
-//
-//      When the constructor is done, records.yaml callbacks will be set,
-//      the initial values read, and the Diags instance will be ready to use.
+//      Constructor for the Diags class.  bdt and bat are the "base debug
+//      tags" and "base action tags" — command-line overrides for the
+//      records.yaml tag settings.  Non-null, non-empty values are stored
+//      for later use by activate_taglist(); activated tag tables are left
+//      empty until an external reconfigure call populates them.
 //
 //////////////////////////////////////////////////////////////////////////////
 
@@ -320,8 +314,9 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SourceLocat
 //
 //      This routine inquires if a particular <tag> in the tag table of
 //      type <mode> is activated, returning true if it is, false if it
-//      isn't.  If <tag> is nullptr, true is returned.  The call uses a lock
-//      to get atomic access to the tag tables.
+//      isn't.  If <tag> is nullptr, true is returned.  The active regex
+//      pointer is snapshotted under tag_table_lock; regex execution runs
+//      outside the lock.
 //
 //////////////////////////////////////////////////////////////////////////////
 

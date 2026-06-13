@@ -199,11 +199,13 @@ private:
  *
  * @thread-safety After construction, the instance is safe to use concurrently
  *   from any number of threads for emission (print, log, error). Tag-table
- *   mutation methods (activate_taglist, deactivate_all) and log-pointer
- *   swap methods (setup_diagslog, reseat_diagslog, should_roll_*,
- *   set_std_output) acquire tag_table_lock internally. Rolling-policy
- *   configuration methods (config_roll_diagslog, config_roll_outputlog) and
- *   dump() do NOT acquire any lock; see per-method @thread-safety for details.
+ *   mutation methods (activate_taglist, deactivate_all) acquire tag_table_lock
+ *   internally. Log-pointer swap methods (reseat_diagslog, should_roll_*,
+ *   set_std_output) acquire tag_table_lock only for their pointer swap step;
+ *   file operations run outside the lock. setup_diagslog() acquires no lock at
+ *   all; callers must serialize it. Rolling-policy configuration methods
+ *   (config_roll_diagslog, config_roll_outputlog) and dump() do NOT acquire any
+ *   lock; see per-method @thread-safety for details.
  */
 class Diags : public DebugInterface
 {
@@ -223,10 +225,12 @@ public:
    *   files, or -1 for the system default.
    * @pre prefix_string is non-empty; safe to construct before any thread
    *   reads via diags().
-   * @post magic == DIAGS_MAGIC; tag tables are initialized from the given
-   *   regexes; diags_log is open if _diags_log is non-null and openable.
+   * @post magic == DIAGS_MAGIC; tag regex strings are stored; activated tag
+   *   tables are empty until activate_taglist() is called (typically via
+   *   reconfigure_diags()); diags_log is set and open if _diags_log is
+   *   non-null and openable, otherwise diags_log is null.
    * @errors Allocation failures abort via ink_abort. Log-open failures are
-   *   reported via log_log_error and result in a null m_fp for the log.
+   *   reported via log_log_error and result in diags_log being null.
    * @thread-safety Single-threaded construction expected. After construction
    *   the instance may be installed via DiagsPtr::set and used concurrently.
    */
@@ -343,14 +347,14 @@ public:
    * @param[in] tag C string naming the tag to check, or nullptr.
    * @param[in] mode DiagsTagType_Debug or DiagsTagType_Action.
    * @return True if the tag mode is globally enabled AND the tag matches
-   *   the configured tag regex. A null tag matches unconditionally (delegates
-   *   to tag_activated, which returns true for nullptr).
+   *   the configured tag regex. A null tag matches unconditionally.
    * @pre None (null tag is safe).
    * @post No state change.
    * @errors None.
-   * @thread-safety The tag_activated sub-call is safe: tag-table reads are
-   *   serialized by tag_table_lock. The on(mode) sub-call reads _enabled
-   *   without a lock; see DiagsConfigState::enabled().
+   * @thread-safety The tag_activated sub-call is safe: the active regex
+   *   pointer is snapshotted under tag_table_lock, with regex execution
+   *   outside the lock. The on(mode) sub-call reads _enabled without a lock;
+   *   see DiagsConfigState::enabled().
    */
   bool
   on(const char *tag, DiagsTagType mode = DiagsTagType_Debug) const
@@ -369,12 +373,12 @@ public:
    * @param[in] tag C string to match, or nullptr.
    * @param[in] mode DiagsTagType_Debug or DiagsTagType_Action.
    * @return True if tag matches the compiled regex for mode. If tag is
-   *   nullptr, returns true unconditionally (null tag matches everything).
-   * @pre A Diags instance is active.
+   *   nullptr, returns true unconditionally.
+   * @pre None (null tag is safe).
    * @post No state change.
    * @errors None.
-   * @thread-safety Safe to call concurrently. Reads are serialized by
-   *   the internal tag_table_lock.
+   * @thread-safety Safe to call concurrently. The active regex pointer is
+   *   snapshotted under tag_table_lock; regex execution runs outside the lock.
    */
   bool tag_activated(const char *tag, DiagsTagType mode = DiagsTagType_Debug) const;
 
@@ -383,7 +387,7 @@ public:
    *
    * @param[in] tag C string naming the debug tag, or nullptr.
    * @return True if tag is active in DiagsTagType_Debug mode. A null tag
-   *   returns true unconditionally (see tag_activated).
+   *   returns true unconditionally.
    * @pre None (null tag is safe).
    * @post No state change.
    * @errors None.
@@ -443,7 +447,7 @@ public:
    * @brief Emit a message only if the tag is active in DiagsTagType_Debug.
    *
    * @param[in] tag C string naming the debug tag, or nullptr (null matches
-   *   unconditionally; see tag_activated).
+   *   unconditionally).
    * @param[in] level DiagsLevel for routing.
    * @param[in] loc Source location, or nullptr.
    * @param[in] fmt Non-null printf-format string.
