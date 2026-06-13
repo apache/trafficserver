@@ -59,8 +59,8 @@
  *   debug tags (controlling Dbg/Diag emission) or action tags (controlling
  *   is_action_tag_set conditional code paths).
  *
- * @note Numeric values are used as array indices into
- *   DiagsConfigState::_enabled and Diags::activated_tags. Do not renumber.
+ * @note Numeric values are used as array indices into the enable-state
+ *   array and Diags::activated_tags. Do not renumber.
  */
 enum DiagsTagType { DiagsTagType_Debug = 0, DiagsTagType_Action = 1 };
 
@@ -129,15 +129,24 @@ enum RollingEnabledValues { NO_ROLLING = 0, ROLL_ON_TIME, ROLL_ON_SIZE, ROLL_ON_
 using DiagsCleanupFunc = void (*)();
 
 /**
- * @brief Process-global enable state for the two tag tables.
+ * @brief Bundles the two orthogonal pieces of Diags output configuration:
+ *   the process-global per-tag enable state and the per-level output routing.
  *
- * Exposes two static methods to read and write the per-tag enable state.
- * The state for each DiagsTagType is one of:
+ * The enable state for each DiagsTagType is one of:
  *   0 — disabled (no emission),
  *   1 — enabled for all callers,
  *   2 — enabled only when ContFlags::DEBUG_OVERRIDE is set on the
  *       current Continuation (per-connection debug override),
  *   3 — treated identically to 1 (always-enabled).
+ *
+ * The output routing is stored in @c outputs[], one entry per DiagsLevel.
+ *
+ * @par Thread safety
+ * The enable state is process-global (static storage). Reads via
+ *   enabled() and writes via enabled(dtt, value) carry no internal
+ *   synchronization; callers must provide external serialization when a
+ *   write may race a read. The @c outputs[] array carries no internal
+ *   synchronization either; the same serialization requirement applies.
  */
 class DiagsConfigState
 {
@@ -153,7 +162,7 @@ public:
    * @par Errors
    * None.
    * @par Thread safety
-   * Not thread-safe. Reads _enabled without synchronization;
+   * Not thread-safe. The read carries no synchronization;
    *   concurrent writes from a reconfiguration thread are a data race.
    */
   static int
@@ -171,9 +180,9 @@ public:
    * @pre new_value is in [0, 3]; values outside this range produce
    *   unspecified behavior.
    * @post enabled(dtt) returns new_value on all subsequent calls. When
-   *   dtt == DiagsTagType_Debug and the value changes, DbgCtl::_config_mode
-   *   is also updated via a relaxed atomic store so that DbgCtl-based checks
-   *   remain in sync without acquiring a lock.
+   *   dtt == DiagsTagType_Debug and the value changes, the DbgCtl fast-path
+   *   enable state is updated via a relaxed atomic store so that DbgCtl-based
+   *   checks remain in sync without acquiring a lock.
    * @par Errors
    * None.
    * @par Thread safety
@@ -201,11 +210,13 @@ private:
  * via DiagsPtr.
  *
  * @par Thread safety
- * Concurrent emission calls (print, log, error) are serialized
- *   against each other via tag_table_lock. Reconfiguration writes to
- *   config.outputs (e.g., via DiagsConfig::reconfigure_diags) do not acquire
- *   tag_table_lock, so concurrent emission and reconfiguration are a data race
- *   on config.outputs. Tag-table mutation methods (activate_taglist,
+ * Concurrent emission calls (print, log, error) hold tag_table_lock for
+ *   diagslog, stdout, and stderr output. On non-FreeBSD platforms the lock is
+ *   released before the syslog() call, so concurrent syslog output is not
+ *   serialized against other emission calls. Reconfiguration writes to
+ *   config.outputs do not acquire tag_table_lock, so concurrent emission
+ *   and reconfiguration are a data race on config.outputs. Tag-table
+ *   mutation methods (activate_taglist,
  *   deactivate_all) acquire tag_table_lock internally. Log-pointer swap methods
  *   (reseat_diagslog, should_roll_*, set_std_output) acquire tag_table_lock
  *   only for their pointer swap step; file operations run outside the lock.
@@ -345,9 +356,8 @@ public:
    * @par Errors
    * None.
    * @par Thread safety
-   * Not thread-safe. Reads DiagsConfigState::_enabled without
-   *   synchronization; concurrent writes from a reconfiguration thread are a
-   *   data race.
+   * Not thread-safe. The enable-state read carries no synchronization;
+   *   concurrent writes from a reconfiguration thread are a data race.
    * @note This method is on the hot path of every Dbg/Diag macro. Call it
    *   before any block-local static with non-const initialization to avoid
    *   the hidden initialization-check overhead when diagnostics are off.
@@ -372,8 +382,8 @@ public:
    * @par Thread safety
    * The tag_activated sub-call is safe: the active regex
    *   pointer is snapshotted under tag_table_lock, with regex execution
-   *   outside the lock. The on(mode) sub-call reads _enabled without a lock;
-   *   see DiagsConfigState::enabled().
+   *   outside the lock. The on(mode) sub-call carries no synchronization on
+   *   the enable-state read; see DiagsConfigState::enabled().
    */
   bool
   on(const char *tag, DiagsTagType mode = DiagsTagType_Debug) const
@@ -484,8 +494,8 @@ public:
    * @par Errors
    * Same as print().
    * @par Thread safety
-   * Same as print(). The on() call reads _enabled without a
-   *   lock; see DiagsConfigState::enabled().
+   * Same as print(). The on() call carries no synchronization on
+   *   the enable-state read; see DiagsConfigState::enabled().
    */
   void
   log(const char *tag, DiagsLevel level, const SourceLocation *loc, const char *fmt, ...) const TS_PRINTFLIKE(5, 6)
@@ -512,8 +522,8 @@ public:
    * @par Errors
    * Same as print().
    * @par Thread safety
-   * Same as log(). The on() call reads _enabled without a
-   *   lock; see DiagsConfigState::enabled().
+   * Same as log(). The on() call carries no synchronization on
+   *   the enable-state read; see DiagsConfigState::enabled().
    */
   void
   log_va(const char *tag, DiagsLevel level, const SourceLocation *loc, const char *fmt, va_list ap)
@@ -573,7 +583,7 @@ public:
    * @par Errors
    * I/O errors on fp are not signaled.
    * @par Thread safety
-   * Not thread-safe. Reads config fields (_enabled,
+   * Not thread-safe. Reads config fields (enable state,
    *   outputs, base_debug_tags, base_action_tags) without holding
    *   tag_table_lock. Concurrent reconfiguration may produce
    *   interleaved or inconsistent output.
