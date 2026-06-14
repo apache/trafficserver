@@ -37,6 +37,7 @@ enum REFlags {
   RE_CASE_INSENSITIVE = 0x00000008u, ///< Ignore case (by default, matches are case sensitive).
   RE_UNANCHORED       = 0x00000400u, ///< Unanchored (@a DFA defaults to anchored).
   RE_ANCHORED         = 0x80000000u, ///< Anchored (@a Regex defaults to unanchored).
+  RE_ENDANCHORED      = 0x20000000u, ///< Anchored at the subject end; with RE_ANCHORED, requires a whole-subject match.
   RE_NOTEMPTY         = 0x00000004u, ///< Not empty (by default, matches may match empty string).
   /// Require the match to consume the entire subject. When set, a successful pcre2 match
   /// that does not span [0, subject.size()) is reported as @c RE_ERROR_NOMATCH. Implemented
