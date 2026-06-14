@@ -316,10 +316,6 @@ public:
   //
   int marshal_milestone(TSMilestonesType ms, char *buf);
   int marshal_milestone_fmt_sec(TSMilestonesType ms, char *buf);
-  int marshal_milestone_fmt_squid(TSMilestonesType ms, char *buf);
-  int marshal_milestone_fmt_netscape(TSMilestonesType ms, char *buf);
-  int marshal_milestone_fmt_date(TSMilestonesType ms, char *buf);
-  int marshal_milestone_fmt_time(TSMilestonesType ms, char *buf);
   int marshal_milestone_fmt_ms(TSMilestonesType ms, char *buf);
   int marshal_milestone_diff(TSMilestonesType ms1, TSMilestonesType ms2, char *buf);
   int marshal_milestones_csv(char *buf);
@@ -348,7 +344,6 @@ public:
   static int     unmarshal_int_to_time_str(char **buf, char *dest, int len);
   static int     unmarshal_int_to_netscape_str(char **buf, char *dest, int len);
   static int     unmarshal_http_version(char **buf, char *dest, int len);
-  static int     unmarshal_http_text(char **buf, char *dest, int len, LogSlice *slice, LogEscapeType escape_type);
   static int     unmarshal_http_status(char **buf, char *dest, int len);
   static int     unmarshal_ip(char **buf, IpEndpoint *dest);
   static int     unmarshal_ip_to_str(char **buf, char *dest, int len);
@@ -358,7 +353,6 @@ public:
   static int     unmarshal_cache_code(char **buf, char *dest, int len, const Ptr<LogFieldAliasMap> &map);
   static int     unmarshal_cache_hit_miss(char **buf, char *dest, int len, const Ptr<LogFieldAliasMap> &map);
   static int     unmarshal_cache_write_code(char **buf, char *dest, int len, const Ptr<LogFieldAliasMap> &map);
-  static int     unmarshal_client_protocol_stack(char **buf, char *dest, int len, Ptr<LogFieldAliasMap> map);
 
   static int unmarshal_with_map(int64_t code, char *dest, int len, const Ptr<LogFieldAliasMap> &map, const char *msg = nullptr);
 
