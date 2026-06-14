@@ -1057,6 +1057,8 @@ UrlRewrite::_regexMappingLookup(RegexMappingList &regex_mappings, URL *request_u
       continue;
     }
 
+    // The regex is compiled anchored at both ends (see process_regex_mapping_config), so a
+    // successful match spans the entire request host, never a leading or trailing substring.
     int match_result = list_iter->regular_expression.exec(std::string_view(request_host, request_host_len), matches);
 
     if (match_result > 0) {
