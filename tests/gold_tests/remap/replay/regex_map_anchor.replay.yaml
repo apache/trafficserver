@@ -1,0 +1,204 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: '1.0'
+
+autest:
+  description: 'Verify regex_map performs full-hostname matching'
+
+  dns:
+    name: 'dns'
+
+  server:
+    name: 'server'
+
+  client:
+    name: 'client'
+
+  ats:
+    name: 'ts'
+
+    process_config:
+      enable_cache: false
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http|url_rewrite_regex'
+      proxy.config.url_remap.remap_required: 1
+
+    remap_config:
+      # The rule must match ONLY the exact host "cdn.example.com", never a host
+      # in which that string appears as a leading or trailing substring.
+      - 'regex_map http://cdn\.example\.com/ http://127.0.0.1:{SERVER_HTTP_PORT}/'
+
+sessions:
+- transactions:
+
+  # Leading-prefix attack: the configured host appears only after a prefix.
+  # Rejected by the start anchor (RE_ANCHORED) alone: the match cannot begin at
+  # offset 0. ATS must return 404 and never forward to the origin.
+  - client-request:
+      method: GET
+      url: /path/test.html
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, prefix.cdn.example.com]
+        - [uuid, leading-prefix-attack]
+
+    proxy-request:
+      expect: absent
+
+    proxy-response:
+      status: 404
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, 0]
+
+  # Trailing-content attack: the host starts with the configured value but
+  # continues past it. Start-anchoring alone would still match this; it is
+  # rejected only by full-hostname matching (RE_FULL_MATCH). ATS must return 404
+  # and never forward to the origin.
+  - client-request:
+      method: GET
+      url: /path/test.html
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, cdn.example.com.evil.com]
+        - [uuid, trailing-content-attack]
+
+    proxy-request:
+      expect: absent
+
+    proxy-response:
+      status: 404
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, 0]
+
+  # Shared-prefix attack with no label boundary ("cdn.example.com" + "puter").
+  # Distinguishes true full-string matching from a naive label-boundary heuristic.
+  # Rejected by full-hostname matching. ATS must return 404 and not forward.
+  - client-request:
+      method: GET
+      url: /path/test.html
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, cdn.example.computer]
+        - [uuid, shared-prefix-attack]
+
+    proxy-request:
+      expect: absent
+
+    proxy-response:
+      status: 404
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, 0]
+
+  # Trailing-dot FQDN: "cdn.example.com." is the same name to DNS but carries a
+  # trailing label separator. With anchored full-hostname matching it does not
+  # match the rule, so ATS returns 404 and does not forward. This transaction
+  # pins that behavior against silent drift.
+  - client-request:
+      method: GET
+      url: /path/test.html
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, cdn.example.com.]
+        - [uuid, trailing-dot]
+
+    proxy-request:
+      expect: absent
+
+    proxy-response:
+      status: 404
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, 0]
+
+  # Exact match: the request host is exactly the configured host. It must match,
+  # be forwarded to the origin, and return 200. The origin stamps a marker header
+  # that the client verifies, proving the 200 came from the origin and not from a
+  # synthesized/error response.
+  - client-request:
+      method: GET
+      url: /path/test.html
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, cdn.example.com]
+        - [uuid, exact-match]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, 0]
+        - [X-Origin-Marker, served-by-origin]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Origin-Marker, {value: served-by-origin, as: equal}]
+
+  # Case-insensitive exact match: the request host differs only in case. The
+  # lookup lowercases the host before matching, so this must still match, be
+  # forwarded, and return the origin's 200 (verified via the marker header).
+  - client-request:
+      method: GET
+      url: /path/test.html
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, CDN.EXAMPLE.COM]
+        - [uuid, case-insensitive-match]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, 0]
+        - [X-Origin-Marker, served-by-origin]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Origin-Marker, {value: served-by-origin, as: equal}]

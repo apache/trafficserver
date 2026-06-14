@@ -982,10 +982,11 @@ process_regex_mapping_config(const char *from_host_lower, url_mapping *new_mappi
 
   reg_map->url_map = new_mapping;
 
-  // using from_host_lower (and not new_mapping->fromURL.host_get())
-  // as this one will be nullptr-terminated (required by pcre_compile)
-  if (reg_map->regular_expression.compile(from_host_lower) == false) {
-    Warning("pcre_compile failed! Regex has error starting at %s", from_host_lower);
+  // Compile the lowercased from-host as the matching pattern, anchored at both ends
+  // (RE_ANCHORED | RE_ENDANCHORED) so a rule for "cdn.example.com" matches the entire host and
+  // not a leading or trailing substring (e.g. "prefix.cdn.example.com" or "cdn.example.com.evil.com").
+  if (reg_map->regular_expression.compile(from_host_lower, RE_ANCHORED | RE_ENDANCHORED) == false) {
+    Warning("Failed to compile regex for remap from-host: %s", from_host_lower);
     goto lFail;
   }
 

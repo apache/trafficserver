@@ -70,6 +70,8 @@ def configure_ats(obj: 'TestRun', server: 'Process', ats_config: dict, dns: Opti
     remap_config = ats_config.get('remap_config', [])
     for remap_entry in remap_config:
         if isinstance(remap_entry, str):
+            remap_entry = remap_entry.replace('{SERVER_HTTP_PORT}', str(server.Variables.http_port))
+            remap_entry = remap_entry.replace('{SERVER_HTTPS_PORT}', str(server.Variables.https_port))
             ts.Disk.remap_config.AddLine(remap_entry)
         elif isinstance(remap_entry, dict):
             from_url = remap_entry['from']
