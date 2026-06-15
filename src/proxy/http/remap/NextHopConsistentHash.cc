@@ -402,7 +402,11 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, void * /* ih ATS_UNUSED */, t
         // for retry.
         if (!pRec->available.load() && host_stat == TS_HOST_STATUS_UP) {
           _now == 0 ? _now = time(nullptr) : _now = now;
-          if ((pRec->failedAt.load() + retry_time) < _now) {
+          // Atomically push failedAt to (_now - retry_time) so only one
+          // concurrent transaction with this _now takes the retry slot;
+          // sequential retries with a later _now still pass the window check.
+          time_t observed = pRec->failedAt.load();
+          if ((observed + retry_time) < _now && pRec->failedAt.compare_exchange_strong(observed, _now - retry_time)) {
             nextHopRetry       = true;
             result.last_parent = pRec->host_index;
             result.last_lookup = pRec->group_index;
