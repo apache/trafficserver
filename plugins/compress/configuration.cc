@@ -40,6 +40,16 @@
 
 namespace Compress
 {
+// isspace and friends invoke undefined behavior when the argument is a
+// signed char with the high bit set (negative when sign-extended to int).
+// HTTP headers can carry obs-text bytes (>= 0x80), so route every ctype
+// call through this wrapper that casts to unsigned char first.
+inline int
+safe_isspace(int ch)
+{
+  return ::isspace(static_cast<unsigned char>(ch));
+}
+
 swoc::TextView
 extractFirstToken(swoc::TextView &view, int (*fp)(int))
 {
@@ -154,7 +164,7 @@ swoc::TextView
 strip_params(swoc::TextView v)
 {
   v = v.take_prefix_at(';');
-  v.rtrim_if(&::isspace);
+  v.rtrim_if(&safe_isspace);
   return v;
 }
 
@@ -190,7 +200,7 @@ HostConfiguration::is_content_type_compressible(const char *content_type, int co
 constexpr int
 isCommaOrSpace(int ch)
 {
-  return (ch == ',') or isspace(ch);
+  return (ch == ',') or safe_isspace(ch);
 }
 
 void
@@ -332,12 +342,12 @@ Configuration::Parse(const char *path)
     ++lineno;
 
     // Trim whitespace
-    line_view.trim_if(&::isspace);
+    line_view.trim_if(&safe_isspace);
     if (line_view.empty()) {
       continue;
     }
     for (;;) {
-      auto token = extractFirstToken(line_view, isspace);
+      auto token = extractFirstToken(line_view, safe_isspace);
 
       if (token.empty()) {
         break;
