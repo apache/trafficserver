@@ -34,6 +34,16 @@ namespace Gzip
 {
 using namespace std;
 
+// isspace and friends invoke undefined behavior when the argument is a
+// signed char with the high bit set (negative when sign-extended to int).
+// HTTP headers can carry obs-text bytes (>= 0x80), so route every ctype
+// call through this wrapper that casts to unsigned char first.
+inline int
+safe_isspace(int ch)
+{
+  return ::isspace(static_cast<unsigned char>(ch));
+}
+
 void
 ltrim_if(string &s, int (*fp)(int))
 {
@@ -218,7 +228,7 @@ HostConfiguration::is_content_type_compressible(const char *content_type, int co
 int
 isCommaOrSpace(int ch)
 {
-  return (ch == ',') or isspace(ch);
+  return (ch == ',') or safe_isspace(ch);
 }
 
 void
@@ -285,7 +295,7 @@ Configuration::Parse(const char *path)
     pathstring.append(path);
   }
 
-  trim_if(pathstring, isspace);
+  trim_if(pathstring, safe_isspace);
 
   Configuration *c                              = new Configuration();
   HostConfiguration *current_host_configuration = new HostConfiguration("");
@@ -316,13 +326,13 @@ Configuration::Parse(const char *path)
     getline(f, line);
     ++lineno;
 
-    trim_if(line, isspace);
+    trim_if(line, safe_isspace);
     if (line.empty()) {
       continue;
     }
 
     for (;;) {
-      string token = extractFirstToken(line, isspace);
+      string token = extractFirstToken(line, safe_isspace);
 
       if (token.empty()) {
         break;
