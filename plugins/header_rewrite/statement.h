@@ -27,10 +27,18 @@
 #include <vector>
 
 #include "ts/ts.h"
+#include "tsutil/Metrics.h"
 
 #include "resources.h"
 #include "parser.h"
 #include "lulu.h"
+
+// Counters for the number of header_rewrite operators executed and conditions evaluated; the
+// bare hook invocation count cannot tell a small ruleset from a large one. Created once via
+// init_hrw_work_stats(); both are null until then, so increments are guarded.
+extern ts::Metrics::Counter::AtomicType *hrw_stat_operators;
+extern ts::Metrics::Counter::AtomicType *hrw_stat_conditions;
+void                                     init_hrw_work_stats();
 
 namespace header_rewrite_ns
 {

@@ -49,6 +49,10 @@ public:
   bool
   do_eval(const Resources &res)
   {
+    // In do_eval, so AND/OR short-circuited conditions aren't counted.
+    if (hrw_stat_conditions != nullptr) {
+      ts::Metrics::Counter::increment(hrw_stat_conditions);
+    }
     bool rt = eval(res);
 
     if (has_modifier(_mods, CondModifiers::NOT)) {
