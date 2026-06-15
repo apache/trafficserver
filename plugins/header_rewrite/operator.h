@@ -78,6 +78,10 @@ public:
   unsigned
   do_exec(const Resources &res) const
   {
+    // Count each operator executed (CPU-model work driver); do_exec runs once per operator.
+    if (TS_ERROR != hrw_stat_operators) {
+      TSStatIntIncrement(hrw_stat_operators, 1);
+    }
     unsigned no_reenable{exec(res) ? 0U : 1U};
     if (nullptr != _next) {
       no_reenable += static_cast<Operator *>(_next)->do_exec(res);

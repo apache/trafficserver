@@ -21,6 +21,25 @@
 //
 #include "statement.h"
 
+// CPU-model work counters; see statement.h. TS_ERROR until init_hrw_work_stats() runs.
+int hrw_stat_operators  = TS_ERROR;
+int hrw_stat_conditions = TS_ERROR;
+
+void
+init_hrw_work_stats()
+{
+  // Plugin init is single-threaded; create each counter once so global + remap loading of
+  // header_rewrite.so share one process-wide stat.
+  if (TS_ERROR == hrw_stat_operators) {
+    hrw_stat_operators = TSStatCreate("proxy.process.plugin.header_rewrite.operators", TS_RECORDDATATYPE_INT,
+                                      TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_COUNT);
+  }
+  if (TS_ERROR == hrw_stat_conditions) {
+    hrw_stat_conditions = TSStatCreate("proxy.process.plugin.header_rewrite.conditions", TS_RECORDDATATYPE_INT,
+                                       TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_COUNT);
+  }
+}
+
 void
 Statement::append(Statement *stmt)
 {

@@ -49,6 +49,11 @@ public:
   bool
   do_eval(const Resources &res)
   {
+    // Count each condition evaluated (CPU-model work driver); do_eval runs once per condition,
+    // respecting short-circuit so only conditions that actually executed are counted.
+    if (TS_ERROR != hrw_stat_conditions) {
+      TSStatIntIncrement(hrw_stat_conditions, 1);
+    }
     bool rt = eval(res);
 
     if (has_modifier(_mods, CondModifiers::NOT)) {

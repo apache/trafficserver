@@ -32,6 +32,17 @@
 #include "parser.h"
 #include "lulu.h"
 
+// Per-plugin work counters for the CPU-usage model:
+// proxy.process.plugin.header_rewrite.{operators,conditions} accumulate the total number of
+// operators executed and conditions evaluated across all transactions. Together with the bare
+// invocation count this captures per-script work -- the cost of a transaction's header_rewrite
+// hook scales with how many operators/conditions the configured rules run, not just the call
+// count. Created once via init_hrw_work_stats(); both are TS_ERROR until then, so increments
+// are guarded.
+extern int hrw_stat_operators;
+extern int hrw_stat_conditions;
+void       init_hrw_work_stats();
+
 namespace header_rewrite_ns
 {
 constexpr int NUM_STATE_FLAGS = 16;
