@@ -638,6 +638,7 @@ LogObject::log(LogAccess *lad, std::string_view text_entry)
     bytes_needed = m_format->field_count() * INK_MIN_ALIGN;
   } else if (lad) {
     bytes_needed = m_format->m_field_list.marshal_len(lad);
+    Metrics::Counter::increment(log_rsb.marshalled_bytes, bytes_needed);
   } else if (!text_entry.empty()) {
     bytes_needed = INK_ALIGN_DEFAULT(text_entry.size() + 1); // must include null terminator.
   }
