@@ -33,6 +33,13 @@ class ConnectParentErrorBodyTest:
             'CONNECT www.example.com:443 HTTP/1.1', 'Verify that ATS forwards the CONNECT request to the parent proxy.')
         self.parent.Streams.stdout += Testers.ContainsExpression(
             'GET http://www.example.com/next HTTP/1.1', 'Verify that ATS reuses the parent connection for the next request.')
+        # Each no-DNS-forward request must reach the parent for that request's
+        # host. The parent receiving the third request with its own Host
+        # header confirms ATS did not short-circuit to a destination derived
+        # from earlier State (the dns_info.addr stale-data case).
+        self.parent.Streams.stdout += Testers.ContainsExpression(
+            'GET http://other.example.org/page HTTP/1.1',
+            'Verify that ATS forwards a different host on the same session to the parent.')
 
     def _setupTS(self):
         self.ts = Test.MakeATSProcess('ts', enable_cache=False)

@@ -60,7 +60,7 @@ sessions:
       headers:
         fields:
         - [ Host, www.example.com ]
-        - [ Proxy-Connection, close ]
+        - [ Proxy-Connection, keep-alive ]
         - [ uuid, follow-up ]
 
     server-response:
@@ -69,7 +69,7 @@ sessions:
       headers:
         fields:
         - [ Content-Length, 19 ]
-        - [ Connection, close ]
+        - [ Connection, keep-alive ]
       content:
         encoding: plain
         data: "follow-up response\n"
@@ -79,4 +79,37 @@ sessions:
       content:
         encoding: plain
         data: "follow-up response\n"
+        verify: { as: equal }
+
+  # Third transaction with a different host. Each no-DNS-forward request
+  # must reach the parent for that request's host. If a stale dns_info.addr
+  # from an earlier transaction were reused, this request would either
+  # short-circuit to the wrong destination or fail to reach the parent.
+  - client-request:
+      delay: 100ms
+      method: GET
+      version: '1.1'
+      url: http://other.example.org/page
+      headers:
+        fields:
+        - [ Host, other.example.org ]
+        - [ Proxy-Connection, close ]
+        - [ uuid, third-host ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 20 ]
+        - [ Connection, close ]
+      content:
+        encoding: plain
+        data: "third host response\n"
+
+    proxy-response:
+      status: 200
+      content:
+        encoding: plain
+        data: "third host response\n"
         verify: { as: equal }
