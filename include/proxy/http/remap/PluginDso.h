@@ -46,16 +46,36 @@
 namespace fs = swoc::file;
 
 #include "tscore/Ptr.h"
+#include "tsutil/Metrics.h"
 #include "iocore/eventsystem/EventSystem.h"
 
 #include "proxy/Plugin.h"
 
+#include <string_view>
+
 class PluginThreadContext : public RefCountObjInHeap
 {
 public:
-  virtual void                       acquire() = 0;
-  virtual void                       release() = 0;
-  static constexpr const char *const _tag      = "plugin_context"; /** @brief log tag used by this class */
+  virtual void acquire() = 0;
+  virtual void release() = 0;
+
+  /** @brief Register this plugin's proxy.process.plugin.<name>.* metrics. @a plugin_name is the DSO
+   *  path; only its basename stem is used as <name>. */
+  void registerPluginMetrics(std::string_view plugin_name);
+
+  void
+  countInvocation()
+  {
+    if (_invocations != nullptr) {
+      _invocations->increment(1);
+    }
+  }
+
+  ts::Metrics::Counter::AtomicType *_invocations = nullptr;
+  ts::Metrics::Counter::AtomicType *_bytes       = nullptr;
+  ts::Metrics::Counter::AtomicType *_transfers   = nullptr;
+
+  static constexpr const char *const _tag = "plugin_context"; /** @brief log tag used by this class */
 };
 
 class PluginDso : public PluginThreadContext

@@ -29,6 +29,7 @@
 
 #include "proxy/http/remap/PluginDso.h"
 #include "iocore/eventsystem/Freer.h"
+#include "tsutil/Metrics.h"
 #ifdef PLUGIN_DSO_TESTS
 #include "unit-tests/plugin_testing_common.h"
 #else
@@ -37,8 +38,13 @@
 #define PluginError Error
 #endif
 
+#include <cctype>
 #include <cstdlib>
+#include <string>
+#include <string_view>
 #include <utility>
+
+using ts::Metrics;
 
 namespace
 {
@@ -55,7 +61,42 @@ concat_error(std::string &error, const std::string &msg)
   }
 }
 
+// Derive a metric-safe token from a plugin path: the basename with the extension removed (at the
+// last '.'), then any character outside [A-Za-z0-9_-] -- including any remaining '.' -- replaced by
+// '_' (e.g. "/.../header_rewrite.so" -> "header_rewrite", "foo.bar.so" -> "foo_bar").
+std::string
+plugin_metric_token(std::string_view name)
+{
+  if (auto slash = name.find_last_of('/'); slash != std::string_view::npos) {
+    name.remove_prefix(slash + 1);
+  }
+  if (auto dot = name.find_last_of('.'); dot != std::string_view::npos) {
+    name = name.substr(0, dot);
+  }
+
+  std::string token{name};
+  for (auto &c : token) {
+    if (!(std::isalnum(static_cast<unsigned char>(c)) || c == '_' || c == '-')) {
+      c = '_';
+    }
+  }
+  if (token.empty()) {
+    token = "unknown";
+  }
+  return token;
+}
+
 } // namespace
+
+void
+PluginThreadContext::registerPluginMetrics(std::string_view plugin_name)
+{
+  std::string prefix = "proxy.process.plugin." + plugin_metric_token(plugin_name) + ".";
+
+  _invocations = Metrics::Counter::createPtr(prefix + "invocations");
+  _bytes       = Metrics::Counter::createPtr(prefix + "bytes");
+  _transfers   = Metrics::Counter::createPtr(prefix + "transfers");
+}
 
 PluginDso::PluginDso(const fs::path &configPath, const fs::path &effectivePath, const fs::path &runtimePath)
   : _configPath(configPath), _effectivePath(effectivePath), _runtimePath(runtimePath)
@@ -138,6 +179,10 @@ PluginDso::load(std::string &error, const fs::path &compilerPath)
     }
   }
   PluginDbg(_dbg_ctl(), "plugin '%s' finished loading DSO", _configPath.c_str());
+
+  if (result) {
+    registerPluginMetrics(_effectivePath.string());
+  }
 
   return result;
 }

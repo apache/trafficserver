@@ -157,8 +157,13 @@ INKContInternal::handle_event(int event, void *edata)
     /* set the plugin context */
     auto *previousContext = pluginThreadContext;
     pluginThreadContext   = reinterpret_cast<PluginThreadContext *>(m_context);
-    int retval            = m_event_func((TSCont)this, (TSEvent)event, edata);
-    pluginThreadContext   = previousContext;
+    // Every TSCont (continuation) callback dispatch flows through here; count it against the owning
+    // plugin. (Remap doRemap dispatch does not, and is counted in RemapPlugins::run_plugin instead.)
+    if (pluginThreadContext != nullptr) {
+      pluginThreadContext->countInvocation();
+    }
+    int retval          = m_event_func((TSCont)this, (TSEvent)event, edata);
+    pluginThreadContext = previousContext;
     if (edata && event == EVENT_INTERVAL) {
       Event *e = reinterpret_cast<Event *>(edata);
       if (e->period != 0) {
