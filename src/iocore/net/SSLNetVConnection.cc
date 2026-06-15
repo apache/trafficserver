@@ -218,6 +218,9 @@ SSLNetVConnection::_ssl_read_from_net(int64_t &ret)
     char *current_block = buf.writer()->end();
     ink_release_assert(current_block != nullptr);
     sslErr = this->_ssl_read_buffer(current_block, amount_to_read, nread);
+    // Count each application-data read attempt, symmetric with calls_to_write in
+    // load_buffer_and_write (the handshake raw-read path counts calls_to_read separately).
+    Metrics::Counter::increment(net_rsb.calls_to_read);
 
     Dbg(dbg_ctl_ssl, "nread=%" PRId64, nread);
 
@@ -287,6 +290,13 @@ SSLNetVConnection::_ssl_read_from_net(int64_t &ret)
     Dbg(dbg_ctl_ssl, "bytes_read=%" PRId64, bytes_read);
 
     s->vio.ndone += bytes_read;
+    // Account the decrypted application bytes for TLS connections so that
+    // proxy.process.net.read_bytes is symmetric with net_write_io's write_bytes
+    // (which records plaintext bytes for TLS). Handshake ciphertext is intentionally
+    // not counted here (see read_raw_data); blind tunnels flow through the plain
+    // super::net_read_io path and are accounted there.
+    Metrics::Counter::increment(net_rsb.read_bytes, bytes_read);
+    Metrics::Counter::increment(net_rsb.read_bytes_count);
     this->netActivity();
 
     ret = bytes_read;
@@ -351,8 +361,9 @@ SSLNetVConnection::read_raw_data()
       r = total_read - rattempted + r;
     }
   }
-  Metrics::Counter::increment(net_rsb.read_bytes, r);
-  Metrics::Counter::increment(net_rsb.read_bytes_count);
+  // Handshake ciphertext is intentionally not added to net_rsb.read_bytes; that counter
+  // tracks decrypted application bytes (incremented in _ssl_read_from_net), symmetric with
+  // write_bytes. The calls_to_read above still records this raw socket read.
 
   if (!this->haveCheckedProxyProtocol) {
     // The PROXY Protocol, by spec, is designed to require only the first TCP packet of bytes
