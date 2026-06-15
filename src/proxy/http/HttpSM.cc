@@ -4680,6 +4680,11 @@ HttpSM::do_hostdb_lookup()
 
   // If directed to not look up fqdns then mark as resolved
   if (t_state.txn_conf->no_dns_forward_to_parent && t_state.parent_result.result == ParentResultType::UNDEFINED) {
+    // resolved_p documents that dns_info.addr holds a valid resolved address.
+    // We are not actually resolving anything here, so set addr to INADDR_ANY
+    // so the ats_is_ip_any check in HttpTransact::OSDNSLookup produces a
+    // clean Bad Request response rather than reusing leftover State data.
+    ats_ip4_set(&t_state.dns_info.addr, INADDR_ANY, 0);
     t_state.dns_info.resolved_p = true;
     call_transact_and_set_next_state(nullptr);
     return;
@@ -8283,7 +8288,12 @@ HttpSM::set_next_state()
       break;
     } else if (t_state.dns_info.looking_up == ResolveInfo::ORIGIN_SERVER && t_state.txn_conf->no_dns_forward_to_parent &&
                t_state.parent_result.result != ParentResultType::UNDEFINED) {
-      t_state.dns_info.resolved_p = true; // seems dangerous - where's the IP address?
+      // We claim resolved here so the SM does not stall on origin DNS, but no
+      // address has been obtained. Set addr to INADDR_ANY so the
+      // ats_is_ip_any guard in HttpTransact::OSDNSLookup produces a clean
+      // Bad Request rather than reusing leftover State data.
+      ats_ip4_set(&t_state.dns_info.addr, INADDR_ANY, 0);
+      t_state.dns_info.resolved_p = true;
       call_transact_and_set_next_state(nullptr);
       break;
     } else if (t_state.dns_info.resolved_p) {
