@@ -335,6 +335,25 @@ public:
 
     using Component::Component;
 
+    // _state is deep-copied, but the segment `string_view`s (and Component::_owner) still
+    // reference the source URL. The copy's views dangle if the source URL's path is rewritten,
+    // and Flush()/operator= on the copy write back to the source URL via TSUrlPathSet.
+    Path(const self_type &o) : Component(o), _state(o._state ? std::make_unique<State>(*o._state) : nullptr) {}
+
+    self_type &
+    operator=(const self_type &o)
+    {
+      if (this != &o) {
+        auto new_state = o._state ? std::make_unique<State>(*o._state) : nullptr;
+        Component::operator=(o);
+        _state = std::move(new_state);
+      }
+      return *this;
+    }
+
+    Path(self_type &&)                 = default;
+    self_type &operator=(self_type &&) = default;
+
     void Reset() override;
 
     cripts::string_view GetSV() override;
@@ -484,6 +503,25 @@ public:
       _loaded            = true;
       _state->standalone = true;
     }
+
+    // _state is deep-copied, but the parameter `string_view`s (and Component::_owner) still
+    // reference the source URL. The copy's views dangle if the source URL's query is rewritten,
+    // and Flush()/operator= on the copy write back to the source URL via TSUrlHttpQuerySet.
+    Query(const self_type &o) : Component(o), _state(o._state ? std::make_unique<State>(*o._state) : nullptr) {}
+
+    self_type &
+    operator=(const self_type &o)
+    {
+      if (this != &o) {
+        auto new_state = o._state ? std::make_unique<State>(*o._state) : nullptr;
+        Component::operator=(o);
+        _state = std::move(new_state);
+      }
+      return *this;
+    }
+
+    Query(self_type &&)                = default;
+    self_type &operator=(self_type &&) = default;
 
     void Reset() override;
 
