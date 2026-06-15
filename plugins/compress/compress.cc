@@ -349,6 +349,21 @@ compress_transform_init(TSCont contp, Data *data)
   TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
 }
 
+// CPU-model driver for the compress plugin (its CPU lands in the generic 'plugin' bucket): total
+// uncompressed input bytes fed to the codec, the near-linear driver of deflate/gzip/brotli CPU.
+// compress dispatches via TSTransformCreate (not PluginVC), so the core per-plugin byte counter
+// never sees it. Created once at plugin init.
+static int compress_stat_bytes_in = TS_ERROR;
+
+static void
+init_compress_stats()
+{
+  if (TS_ERROR == compress_stat_bytes_in) {
+    compress_stat_bytes_in =
+      TSStatCreate("proxy.process.plugin.compress.bytes_in", TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_COUNT);
+  }
+}
+
 static void
 compress_transform_one(Data *data, TSIOBufferReader upstream_reader, int amount)
 {
@@ -369,6 +384,11 @@ compress_transform_one(Data *data, TSIOBufferReader upstream_reader, int amount)
 
     if (upstream_length > amount) {
       upstream_length = amount;
+    }
+
+    // Count uncompressed input bytes (compress CPU driver).
+    if (TS_ERROR != compress_stat_bytes_in) {
+      TSStatIntIncrement(compress_stat_bytes_in, upstream_length);
     }
 
 #if HAVE_ZSTD_H
@@ -1032,6 +1052,8 @@ TSPluginInit(int argc, const char *argv[])
     fatal("the compress plugin failed to register");
   }
 
+  Compress::init_compress_stats();
+
   info("TSPluginInit %s", argv[0]);
 
   if (!Compress::global_hidden_header_name) {
@@ -1060,6 +1082,7 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 {
   CHECK_REMAP_API_COMPATIBILITY(api_info, errbuf, errbuf_size);
   info("The compress plugin is successfully initialized");
+  Compress::init_compress_stats();
   return TS_SUCCESS;
 }
 
