@@ -319,6 +319,28 @@ TLSBasicSupport::_update_end_of_handshake_stats()
 {
   Metrics::Counter::increment(ssl_rsb.total_success_handshake_count_in);
 
+  // Only a full handshake runs the asymmetric signature (a resumed one skips it); count those
+  // signatures by the server private-key type.
+  {
+    const SSL *ssl = this->_get_ssl_object();
+    if (ssl != nullptr && !SSL_session_reused(ssl)) {
+      if (EVP_PKEY *pkey = SSL_get_privatekey(ssl); pkey != nullptr) {
+        switch (EVP_PKEY_id(pkey)) {
+        case EVP_PKEY_RSA:
+        case EVP_PKEY_RSA_PSS:
+          Metrics::Counter::increment(ssl_rsb.handshake_sign_rsa);
+          break;
+        case EVP_PKEY_EC:
+          Metrics::Counter::increment(ssl_rsb.handshake_sign_ecdsa);
+          break;
+        default:
+          Metrics::Counter::increment(ssl_rsb.handshake_sign_other);
+          break;
+        }
+      }
+    }
+  }
+
 #if defined(OPENSSL_IS_BORINGSSL)
   SSL     *ssl      = this->_get_ssl_object();
   uint16_t group_id = SSL_get_group_id(ssl);

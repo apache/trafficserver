@@ -223,6 +223,10 @@ SSLInitializeStatistics()
   ssl_rsb.total_sslv3                        = Metrics::Counter::createPtr("proxy.process.ssl.ssl_total_sslv3");
   ssl_rsb.total_success_handshake_count_in   = Metrics::Counter::createPtr("proxy.process.ssl.total_success_handshake_count_in");
   ssl_rsb.total_success_handshake_count_out  = Metrics::Counter::createPtr("proxy.process.ssl.total_success_handshake_count_out");
+  ssl_rsb.handshake_sign_rsa                 = Metrics::Counter::createPtr("proxy.process.ssl.handshake_sign_rsa");
+  ssl_rsb.handshake_sign_ecdsa               = Metrics::Counter::createPtr("proxy.process.ssl.handshake_sign_ecdsa");
+  ssl_rsb.handshake_sign_other               = Metrics::Counter::createPtr("proxy.process.ssl.handshake_sign_other");
+  ssl_rsb.connections_closed                 = Metrics::Counter::createPtr("proxy.process.ssl.connections_closed");
   ssl_rsb.total_ticket_keys_renewed          = Metrics::Counter::createPtr("proxy.process.ssl.total_ticket_keys_renewed");
   ssl_rsb.total_tickets_created              = Metrics::Counter::createPtr("proxy.process.ssl.total_tickets_created");
   ssl_rsb.total_tickets_not_found            = Metrics::Counter::createPtr("proxy.process.ssl.total_tickets_not_found");
