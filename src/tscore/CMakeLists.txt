@@ -161,6 +161,7 @@ if(BUILD_TESTING)
     unit_tests/test_List.cc
     unit_tests/test_MMH.cc
     unit_tests/test_ParseRules.cc
+    unit_tests/test_PendingAction.cc
     unit_tests/test_PluginUserArgs.cc
     unit_tests/test_PriorityQueue.cc
     unit_tests/test_Ptr.cc
