@@ -991,6 +991,9 @@ SSLNetVConnection::clear()
   client_sess.reset();
 
   if (ssl != nullptr) {
+    // One SSL_free per VC that owned an SSL object -- the causal driver for ssl:close
+    // (cert-chain X509 free dominates the teardown).
+    Metrics::Counter::increment(ssl_rsb.connections_closed);
     SSL_free(ssl);
     ssl = nullptr;
   }

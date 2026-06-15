@@ -85,6 +85,12 @@ struct SSLStatsBlock {
   Metrics::Counter::AtomicType *total_sslv3                                    = nullptr;
   Metrics::Counter::AtomicType *total_success_handshake_count_in               = nullptr;
   Metrics::Counter::AtomicType *total_success_handshake_count_out              = nullptr;
+  Metrics::Counter::AtomicType *total_success_handshake_count_in_full          = nullptr;
+  Metrics::Counter::AtomicType *total_success_handshake_count_in_resumed       = nullptr;
+  Metrics::Counter::AtomicType *handshake_sign_rsa                             = nullptr;
+  Metrics::Counter::AtomicType *handshake_sign_ecdsa                           = nullptr;
+  Metrics::Counter::AtomicType *handshake_sign_other                           = nullptr;
+  Metrics::Counter::AtomicType *connections_closed                             = nullptr;
   Metrics::Counter::AtomicType *total_ticket_keys_renewed                      = nullptr;
   Metrics::Counter::AtomicType *total_tickets_created                          = nullptr;
   Metrics::Counter::AtomicType *total_tickets_not_found                        = nullptr;

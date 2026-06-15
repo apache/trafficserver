@@ -223,19 +223,27 @@ SSLInitializeStatistics()
   ssl_rsb.total_sslv3                        = Metrics::Counter::createPtr("proxy.process.ssl.ssl_total_sslv3");
   ssl_rsb.total_success_handshake_count_in   = Metrics::Counter::createPtr("proxy.process.ssl.total_success_handshake_count_in");
   ssl_rsb.total_success_handshake_count_out  = Metrics::Counter::createPtr("proxy.process.ssl.total_success_handshake_count_out");
-  ssl_rsb.total_ticket_keys_renewed          = Metrics::Counter::createPtr("proxy.process.ssl.total_ticket_keys_renewed");
-  ssl_rsb.total_tickets_created              = Metrics::Counter::createPtr("proxy.process.ssl.total_tickets_created");
-  ssl_rsb.total_tickets_not_found            = Metrics::Counter::createPtr("proxy.process.ssl.total_tickets_not_found");
-  ssl_rsb.total_tickets_renewed              = Metrics::Counter::createPtr("proxy.process.ssl.total_tickets_renewed");
-  ssl_rsb.total_tickets_verified             = Metrics::Counter::createPtr("proxy.process.ssl.total_tickets_verified");
-  ssl_rsb.total_tickets_verified_old_key     = Metrics::Counter::createPtr("proxy.process.ssl.total_tickets_verified_old_key");
-  ssl_rsb.total_tlsv1                        = Metrics::Counter::createPtr("proxy.process.ssl.ssl_total_tlsv1");
-  ssl_rsb.total_tlsv11                       = Metrics::Counter::createPtr("proxy.process.ssl.ssl_total_tlsv11");
-  ssl_rsb.total_tlsv12                       = Metrics::Counter::createPtr("proxy.process.ssl.ssl_total_tlsv12");
-  ssl_rsb.total_tlsv13                       = Metrics::Counter::createPtr("proxy.process.ssl.ssl_total_tlsv13");
-  ssl_rsb.user_agent_bad_cert                = Metrics::Counter::createPtr("proxy.process.ssl.user_agent_bad_cert");
-  ssl_rsb.user_agent_cert_verify_failed      = Metrics::Counter::createPtr("proxy.process.ssl.user_agent_cert_verify_failed");
-  ssl_rsb.user_agent_decryption_failed       = Metrics::Counter::createPtr("proxy.process.ssl.user_agent_decryption_failed");
+  ssl_rsb.total_success_handshake_count_in_full =
+    Metrics::Counter::createPtr("proxy.process.ssl.total_success_handshake_count_in_full");
+  ssl_rsb.total_success_handshake_count_in_resumed =
+    Metrics::Counter::createPtr("proxy.process.ssl.total_success_handshake_count_in_resumed");
+  ssl_rsb.handshake_sign_rsa             = Metrics::Counter::createPtr("proxy.process.ssl.handshake_sign_rsa");
+  ssl_rsb.handshake_sign_ecdsa           = Metrics::Counter::createPtr("proxy.process.ssl.handshake_sign_ecdsa");
+  ssl_rsb.handshake_sign_other           = Metrics::Counter::createPtr("proxy.process.ssl.handshake_sign_other");
+  ssl_rsb.connections_closed             = Metrics::Counter::createPtr("proxy.process.ssl.connections_closed");
+  ssl_rsb.total_ticket_keys_renewed      = Metrics::Counter::createPtr("proxy.process.ssl.total_ticket_keys_renewed");
+  ssl_rsb.total_tickets_created          = Metrics::Counter::createPtr("proxy.process.ssl.total_tickets_created");
+  ssl_rsb.total_tickets_not_found        = Metrics::Counter::createPtr("proxy.process.ssl.total_tickets_not_found");
+  ssl_rsb.total_tickets_renewed          = Metrics::Counter::createPtr("proxy.process.ssl.total_tickets_renewed");
+  ssl_rsb.total_tickets_verified         = Metrics::Counter::createPtr("proxy.process.ssl.total_tickets_verified");
+  ssl_rsb.total_tickets_verified_old_key = Metrics::Counter::createPtr("proxy.process.ssl.total_tickets_verified_old_key");
+  ssl_rsb.total_tlsv1                    = Metrics::Counter::createPtr("proxy.process.ssl.ssl_total_tlsv1");
+  ssl_rsb.total_tlsv11                   = Metrics::Counter::createPtr("proxy.process.ssl.ssl_total_tlsv11");
+  ssl_rsb.total_tlsv12                   = Metrics::Counter::createPtr("proxy.process.ssl.ssl_total_tlsv12");
+  ssl_rsb.total_tlsv13                   = Metrics::Counter::createPtr("proxy.process.ssl.ssl_total_tlsv13");
+  ssl_rsb.user_agent_bad_cert            = Metrics::Counter::createPtr("proxy.process.ssl.user_agent_bad_cert");
+  ssl_rsb.user_agent_cert_verify_failed  = Metrics::Counter::createPtr("proxy.process.ssl.user_agent_cert_verify_failed");
+  ssl_rsb.user_agent_decryption_failed   = Metrics::Counter::createPtr("proxy.process.ssl.user_agent_decryption_failed");
   ssl_rsb.user_agent_decryption_failed_or_bad_record_mac =
     Metrics::Counter::createPtr("proxy.process.ssl.user_agent_decryption_failed_or_bad_record_mac");
   ssl_rsb.user_agent_expired_cert           = Metrics::Counter::createPtr("proxy.process.ssl.user_agent_expired_cert");

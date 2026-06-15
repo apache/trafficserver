@@ -319,6 +319,34 @@ TLSBasicSupport::_update_end_of_handshake_stats()
 {
   Metrics::Counter::increment(ssl_rsb.total_success_handshake_count_in);
 
+  // Split inbound handshakes into full vs. resumed, and for full handshakes
+  // record the server private-key type. A full handshake runs an asymmetric
+  // signature (RSA being far heavier than ECDSA), while a resumed handshake
+  // skips it -- these are the causal workload drivers behind ssl:accept CPU.
+  {
+    SSL *ssl = this->_get_ssl_object();
+    if (ssl != nullptr) {
+      if (SSL_session_reused(ssl)) {
+        Metrics::Counter::increment(ssl_rsb.total_success_handshake_count_in_resumed);
+      } else {
+        Metrics::Counter::increment(ssl_rsb.total_success_handshake_count_in_full);
+        if (EVP_PKEY *pkey = SSL_get_privatekey(ssl); pkey != nullptr) {
+          switch (EVP_PKEY_id(pkey)) {
+          case EVP_PKEY_RSA:
+            Metrics::Counter::increment(ssl_rsb.handshake_sign_rsa);
+            break;
+          case EVP_PKEY_EC:
+            Metrics::Counter::increment(ssl_rsb.handshake_sign_ecdsa);
+            break;
+          default:
+            Metrics::Counter::increment(ssl_rsb.handshake_sign_other);
+            break;
+          }
+        }
+      }
+    }
+  }
+
 #if defined(OPENSSL_IS_BORINGSSL)
   SSL     *ssl      = this->_get_ssl_object();
   uint16_t group_id = SSL_get_group_id(ssl);
