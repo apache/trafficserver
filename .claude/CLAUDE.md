@@ -87,14 +87,15 @@ AuTest lives under `tests/` and is invoked through `tests/autest.sh` (it does
 ```bash
 cd tests
 pipenv install                                   # first time only
-./autest.sh --sandbox /tmp/sb --clean=none -f <test_name_without_test_py>
+# --ats-bin is REQUIRED: point it at the installed bin dir (e.g. <prefix>/bin).
+./autest.sh --ats-bin /opt/ats/bin --sandbox /tmp/sb --clean=none -f <test_name_without_test_py>
 ```
 For example, to run `cache-auth.test.py`:
 ```bash
-./autest.sh --sandbox /tmp/sb --clean=none -f cache-auth
+./autest.sh --ats-bin /opt/ats/bin --sandbox /tmp/sb --clean=none -f cache-auth
 ```
 Most end-to-end coverage is in `tests/gold_tests/`. Gold files can mask dynamic
-output with double-backtick (`` `` ``) wildcards.
+output with a double-backtick (``` `` ```) wildcard.
 
 ### Writing Autests
 **New tests should use the `Test.ATSReplayTest()` approach**, which references a
