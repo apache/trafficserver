@@ -674,6 +674,133 @@ TEST_CASE("4", "[NormalizeTest]")
   {
     REQUIRE(!normalize_uri_helper("http://?/", nullptr));
   }
+
+  SECTION("Userinfo with colon-separated credentials and default port")
+  {
+    REQUIRE(normalize_uri_helper("https://admin:443@cdn.example.com:443/content/video.mp4",
+                                 "https://admin:443@cdn.example.com/content/video.mp4"));
+  }
+
+  SECTION("Userinfo with numeric password over http with default port")
+  {
+    REQUIRE(normalize_uri_helper("http://user:80@origin.example.net:80/assets/img.png",
+                                 "http://user:80@origin.example.net/assets/img.png"));
+  }
+
+  SECTION("Userinfo numeric password over http without host port")
+  {
+    REQUIRE(
+      normalize_uri_helper("http://deploy:80@origin.example.net/release/v2", "http://deploy:80@origin.example.net/release/v2"));
+  }
+
+  SECTION("Userinfo with colon but no host port")
+  {
+    REQUIRE(
+      normalize_uri_helper("https://token:443@storage.example.io/bucket/obj", "https://token:443@storage.example.io/bucket/obj"));
+  }
+
+  SECTION("Userinfo with non-default numeric value and host default port")
+  {
+    REQUIRE(
+      normalize_uri_helper("https://svc:8080@api.example.com:443/v1/resource", "https://svc:8080@api.example.com/v1/resource"));
+  }
+
+  SECTION("Userinfo containing only digits after colon")
+  {
+    REQUIRE(normalize_uri_helper("http://node:3000@cluster.local:80/healthz", "http://node:3000@cluster.local/healthz"));
+  }
+
+  SECTION("Userinfo with empty password and host port")
+  {
+    REQUIRE(normalize_uri_helper("https://user:@files.example.org:443/doc.pdf", "https://user:@files.example.org/doc.pdf"));
+  }
+
+  SECTION("Simple username without password and host default port")
+  {
+    REQUIRE(normalize_uri_helper("http://anonymous@mirror.example.com:80/pub/archive.tar.gz",
+                                 "http://anonymous@mirror.example.com/pub/archive.tar.gz"));
+  }
+
+  SECTION("Userinfo with percent-encoded colon and host default port")
+  {
+    REQUIRE(
+      normalize_uri_helper("https://user%3Aname:pass@host.example.com:443/path", "https://user%3Aname:pass@host.example.com/path"));
+  }
+
+  SECTION("Userinfo with multiple colons")
+  {
+    REQUIRE(normalize_uri_helper("http://a:b:c@www.example.com:80/index.html", "http://a:b:c@www.example.com/index.html"));
+  }
+
+  SECTION("Userinfo preserves case while host is lowered")
+  {
+    REQUIRE(normalize_uri_helper("https://MyUser:MyPass@WWW.EXAMPLE.COM:443/Path", "https://MyUser:MyPass@www.example.com/Path"));
+  }
+
+  SECTION("Userinfo with non-default host port preserved")
+  {
+    REQUIRE(
+      normalize_uri_helper("https://ops:deploy@internal.example.com:8443/api", "https://ops:deploy@internal.example.com:8443/api"));
+  }
+
+  SECTION("Userinfo with query string and fragment")
+  {
+    REQUIRE(normalize_uri_helper("http://cache:secret@edge.example.net:80/video?quality=hd#t=10",
+                                 "http://cache:secret@edge.example.net/video?quality=hd#t=10"));
+  }
+
+  SECTION("Userinfo with encoded at-sign in username")
+  {
+    REQUIRE(normalize_uri_helper("http://foo%40bar:baz@www.example.com:80/", "http://foo%40bar:baz@www.example.com/"));
+  }
+
+  SECTION("Long userinfo with embedded port-like substring")
+  {
+    REQUIRE(normalize_uri_helper("https://serviceaccount:443secret@backend.example.com:443/rpc",
+                                 "https://serviceaccount:443secret@backend.example.com/rpc"));
+  }
+
+  SECTION("Userinfo digits matching port pattern but not at boundary")
+  {
+    REQUIRE(normalize_uri_helper("http://x:12380@lb.example.com:80/status", "http://x:12380@lb.example.com/status"));
+  }
+
+  SECTION("Userinfo and host both without port")
+  {
+    REQUIRE(normalize_uri_helper("https://readonly:tok@repo.example.com/org/project",
+                                 "https://readonly:tok@repo.example.com/org/project"));
+  }
+
+  SECTION("Userinfo with path dot-segment removal")
+  {
+    REQUIRE(normalize_uri_helper("https://ci:runner@build.example.com:443/workspace/../output/artifact.zip",
+                                 "https://ci:runner@build.example.com/output/artifact.zip"));
+  }
+
+  SECTION("FQDN-style userinfo with port-like suffix and host default port")
+  {
+    REQUIRE(normalize_uri_helper("https://registry.internal:443@cdn.example.com:443/v2/image/manifests/latest",
+                                 "https://registry.internal:443@cdn.example.com/v2/image/manifests/latest"));
+  }
+
+  SECTION("FQDN-style userinfo with port-like suffix and host without port")
+  {
+    REQUIRE(normalize_uri_helper("https://upstream.proxy.local:443@edge.example.net/assets/bundle.js",
+                                 "https://upstream.proxy.local:443@edge.example.net/assets/bundle.js"));
+  }
+
+  SECTION("FQDN-style userinfo with http default port value")
+  {
+    REQUIRE(normalize_uri_helper("http://cache.node.dc1:80@origin.example.com:80/media/stream.m3u8",
+                                 "http://cache.node.dc1:80@origin.example.com/media/stream.m3u8"));
+  }
+
+  SECTION("FQDN-style userinfo without port and host default port")
+  {
+    REQUIRE(normalize_uri_helper("https://forwarder.mesh.internal@gateway.example.com:443/api/v1/tokens",
+                                 "https://forwarder.mesh.internal@gateway.example.com/api/v1/tokens"));
+  }
+
   fprintf(stderr, "\n");
 }
 
