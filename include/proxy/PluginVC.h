@@ -40,6 +40,7 @@
 #include "tscore/ink_atomic.h"
 
 class PluginVCCore;
+class PluginThreadContext; // owning intercept plugin (for per-plugin byte accounting)
 
 struct PluginVCState {
   PluginVCState();
@@ -252,6 +253,11 @@ private:
 
   Continuation *connect_to = nullptr;
   bool          connected  = false;
+
+  // The plugin that created this intercept (thread-local pluginThreadContext captured at alloc()),
+  // used to attribute PluginVC transport bytes to proxy.process.plugin.<name>.bytes. May be null
+  // for core-internal PluginVCs.
+  PluginThreadContext *_owner = nullptr;
 
   IpEndpoint passive_addr_struct;
   IpEndpoint active_addr_struct;

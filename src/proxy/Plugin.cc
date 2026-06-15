@@ -25,12 +25,15 @@
 #include <algorithm>
 #include <filesystem>
 #include <optional>
+#include <string_view>
+#include <vector>
 #include "tscore/ink_platform.h"
 #include "tscore/ink_file.h"
 #include "tscore/ParseRules.h"
 #include "records/RecCore.h"
 #include "tscore/Layout.h"
 #include "proxy/Plugin.h"
+#include "proxy/http/remap/RemapPluginInfo.h" // PluginThreadContext + the pluginThreadContext TLS
 #include "tscore/ink_cap.h"
 #include "tscore/Filenames.h"
 #include <yaml-cpp/yaml.h>
@@ -93,6 +96,38 @@ plugin_dir_init()
 }
 
 using init_func_t = void (*)(int, char **);
+
+namespace
+{
+/** Per-global-plugin execution context.
+ *
+ *  Global plugins are loaded with a raw dlopen in single_plugin_init() rather than through the
+ *  PluginFactory/PluginDso path, so unlike remap plugins they have no PluginThreadContext to carry
+ *  their identity. This minimal subclass provides one: it is installed as the thread-local
+ *  pluginThreadContext around the plugin's TSPluginInit so that the continuations the plugin creates
+ *  (directly, or later inside its hook/transform callbacks via TSContCreate/TSTransformCreate) are
+ *  stamped with it; INKContInternal::handle_event then bumps the per-plugin invocation counter.
+ *
+ *  Global plugins are never unloaded, so these contexts live for the process lifetime and the
+ *  continuation refcount hooks acquire()/release() are no-ops. They are retained in
+ *  g_global_plugin_contexts so they stay reachable. */
+class GlobalPluginContext : public PluginThreadContext
+{
+public:
+  explicit GlobalPluginContext(std::string_view name) { registerPluginMetrics(name); }
+  void
+  acquire() override
+  {
+  }
+  void
+  release() override
+  {
+  }
+};
+
+// Retains global-plugin contexts for the process lifetime (only mutated single-threaded at startup).
+std::vector<GlobalPluginContext *> g_global_plugin_contexts;
+} // namespace
 
 static PluginLoadSummary s_plugin_load_summary;
 
@@ -215,7 +250,19 @@ single_plugin_init(int argc, char *argv[], bool validateOnly)
 #endif
     opterr = 0;
     optarg = nullptr;
+
+    // Install a per-plugin context for the duration of TSPluginInit so that any continuations this
+    // global plugin creates -- directly here, or later inside its hook/transform callbacks -- carry
+    // its identity and drive proxy.process.plugin.<name>.invocations. Retained for the process
+    // lifetime (global plugins are never unloaded).
+    auto *global_context = new GlobalPluginContext(path);
+    g_global_plugin_contexts.push_back(global_context);
+    auto *prev_plugin_context = pluginThreadContext;
+    pluginThreadContext       = global_context;
+
     init(argc, argv);
+
+    pluginThreadContext = prev_plugin_context;
   } // done elevating access
 
   if (plugin_reg_current->plugin_registered) {

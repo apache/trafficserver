@@ -59,6 +59,9 @@ RemapPlugins::run_plugin(RemapPluginInst *plugin)
     _s->os_response_plugin_inst = plugin;
   }
 
+  // Count this remap-plugin invocation (model driver: proxy.process.plugin.<name>.invocations).
+  plugin->_plugin.countInvocation();
+
   HttpTransact::milestone_start_api_time(_s);
   plugin_retcode = plugin->doRemap(reinterpret_cast<TSHttpTxn>(_s->state_machine), &rri);
   HttpTransact::milestone_update_api_time(_s);

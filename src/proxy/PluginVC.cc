@@ -72,6 +72,7 @@
  ****************************************************************************/
 
 #include "proxy/PluginVC.h"
+#include "proxy/http/remap/RemapPluginInfo.h" // PluginThreadContext + the pluginThreadContext TLS
 #include "../iocore/net/P_Net.h"
 #include "tscore/Regression.h"
 #if TS_HAS_TESTS
@@ -466,6 +467,12 @@ PluginVC::transfer_bytes(MIOBuffer *transfer_to, IOBufferReader *transfer_from, 
     total_added += moved;
   }
 
+  // Attribute the application bytes shuffled across this intercept to the owning plugin (both
+  // directions share core_obj->_owner); a no-op for core-internal PluginVCs.
+  if (core_obj->_owner != nullptr) {
+    core_obj->_owner->countBytes(total_added);
+  }
+
   return total_added;
 }
 
@@ -520,6 +527,14 @@ PluginVC::process_write_side()
       write_state.vio.cont->handleEvent(VC_EVENT_WRITE_READY, &write_state.vio);
     }
     return;
+  }
+
+  // Past this point there is application data to move, so this is a real write-side processing
+  // pass: attribute it to the owning intercept plugin. This per-pass count -- not bytes -- is the
+  // primary driver of intercept (plugin:vc) CPU, which is the buffer-scan / VIO-signal / reenable
+  // bookkeeping of each pass (large transfers are zero-copy). No-op for core-internal PluginVCs.
+  if (core_obj->_owner != nullptr) {
+    core_obj->_owner->countTransfer();
   }
 
   // Check the state of the other side read buffer as well as ntodo
@@ -1002,6 +1017,9 @@ PluginVCCore::alloc(Continuation *acceptor, int64_t buffer_index, int64_t buffer
   PluginVCCore *pvc = new PluginVCCore;
   pvc->init(buffer_index, buffer_water_mark);
   pvc->connect_to = acceptor;
+  // Capture the plugin that is creating this intercept so its transport bytes can be attributed to
+  // proxy.process.plugin.<name>.bytes; null for core-internal PluginVCs.
+  pvc->_owner = pluginThreadContext;
   return pvc;
 }
 

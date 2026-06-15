@@ -46,16 +46,65 @@
 namespace fs = swoc::file;
 
 #include "tscore/Ptr.h"
+#include "tsutil/Metrics.h"
 #include "iocore/eventsystem/EventSystem.h"
 
 #include "proxy/Plugin.h"
 
+#include <string_view>
+
 class PluginThreadContext : public RefCountObjInHeap
 {
 public:
-  virtual void                       acquire() = 0;
-  virtual void                       release() = 0;
-  static constexpr const char *const _tag      = "plugin_context"; /** @brief log tag used by this class */
+  virtual void acquire() = 0;
+  virtual void release() = 0;
+
+  /** @brief Register the per-plugin workload metrics (proxy.process.plugin.<name>.*) consumed by the
+   *  CPU-usage model. @a plugin_name is typically the DSO path; only its basename stem is used as the
+   *  metric token. Bounded by the number of named plugins. Safe to call once per plugin -- metric
+   *  names are de-duplicated by the Metrics registry. */
+  void registerPluginMetrics(std::string_view plugin_name);
+
+  /** @brief Bump this plugin's invocation counter, once per hook/remap callback dispatch. Cheap and
+   *  lock-free; a no-op until registerPluginMetrics() has run. */
+  void
+  countInvocation()
+  {
+    if (_invocations != nullptr) {
+      _invocations->increment(1);
+    }
+  }
+
+  /** @brief Add @a n application bytes this plugin moved through a plugin-owned transport (PluginVC
+   *  intercept). A workload driver for byte-scaling plugin CPU. No-op until registration has run. */
+  void
+  countBytes(int64_t n)
+  {
+    if (_bytes != nullptr && n > 0) {
+      _bytes->increment(n);
+    }
+  }
+
+  /** @brief Bump this plugin's intercept transfer-event counter, once per PluginVC write-side
+   *  processing pass. This is the primary driver for intercept (PluginVC) CPU: the cost is the
+   *  per-pass state-machine bookkeeping (buffer scans, VIO signals, reenables), not bytes, because
+   *  large transfers are zero-copy. No-op until registration has run. */
+  void
+  countTransfer()
+  {
+    if (_transfers != nullptr) {
+      _transfers->increment(1);
+    }
+  }
+
+  /// Per-plugin invocation counter (model driver); nullptr until registerPluginMetrics() runs.
+  ts::Metrics::Counter::AtomicType *_invocations = nullptr;
+  /// Per-plugin bytes-moved counter (model driver for intercept/transport CPU); nullptr until registered.
+  ts::Metrics::Counter::AtomicType *_bytes = nullptr;
+  /// Per-plugin intercept transfer-event counter (primary PluginVC driver); nullptr until registered.
+  ts::Metrics::Counter::AtomicType *_transfers = nullptr;
+
+  static constexpr const char *const _tag = "plugin_context"; /** @brief log tag used by this class */
 };
 
 class PluginDso : public PluginThreadContext

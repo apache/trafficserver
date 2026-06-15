@@ -157,8 +157,15 @@ INKContInternal::handle_event(int event, void *edata)
     /* set the plugin context */
     auto *previousContext = pluginThreadContext;
     pluginThreadContext   = reinterpret_cast<PluginThreadContext *>(m_context);
-    int retval            = m_event_func((TSCont)this, (TSEvent)event, edata);
-    pluginThreadContext   = previousContext;
+    // Count this plugin callback dispatch as a workload invocation. Global, transform and
+    // intercept hook plugins -- and remap plugins' deferred transaction hooks -- all flow
+    // through here, so this drives proxy.process.plugin.<name>.invocations for them. It is a
+    // no-op for core/internal continuations, which have no plugin context (m_context == nullptr).
+    if (pluginThreadContext != nullptr) {
+      pluginThreadContext->countInvocation();
+    }
+    int retval          = m_event_func((TSCont)this, (TSEvent)event, edata);
+    pluginThreadContext = previousContext;
     if (edata && event == EVENT_INTERVAL) {
       Event *e = reinterpret_cast<Event *>(edata);
       if (e->period != 0) {
