@@ -2913,7 +2913,44 @@ RAM Cache
        (no per-hit reordering); strong hit rates on CDN and key-value
        workloads. Its eviction metadata (including the ghost) is accounted
        within :ts:cv:`proxy.config.cache.ram_cache.size`. Experimental; it does
-       not use the seen filter or support in-RAM compression.
+       not use the seen filter or support in-RAM compression. Its queue split,
+       ghost bounds, and promotion threshold can be tuned with the
+       ``proxy.config.cache.ram_cache.s3fifo.*`` settings below; the defaults
+       follow the original paper and suit most workloads.
+
+.. ts:cv:: CONFIG proxy.config.cache.ram_cache.s3fifo.main_percent INT 90
+
+   Only applies when :ts:cv:`proxy.config.cache.ram_cache.algorithm` is ``2``
+   (S3-FIFO). The target size of the main queue as a percentage of the resident
+   budget; the remainder is the small admission queue. The default ``90`` gives
+   the ~10% small / ~90% main split from the paper. Valid range is ``1`` to
+   ``99`` (an out-of-range value is rejected with a warning and the default is
+   used); a larger value grows the main queue at the expense of the admission
+   queue.
+
+.. ts:cv:: CONFIG proxy.config.cache.ram_cache.s3fifo.ghost_size_percent INT 90
+
+   Only applies when :ts:cv:`proxy.config.cache.ram_cache.algorithm` is ``2``
+   (S3-FIFO). The ghost queue remembers the keys of recently evicted objects for
+   up to this percentage of :ts:cv:`proxy.config.cache.ram_cache.size` worth of
+   object bytes. Valid range is ``0`` to ``100``; ``0`` disables this bound.
+
+.. ts:cv:: CONFIG proxy.config.cache.ram_cache.s3fifo.ghost_mem_percent INT 25
+
+   Only applies when :ts:cv:`proxy.config.cache.ram_cache.algorithm` is ``2``
+   (S3-FIFO). Caps the memory the ghost queue's per-key metadata may consume at
+   this percentage of :ts:cv:`proxy.config.cache.ram_cache.size`. This metadata
+   is counted against the configured RAM cache size, so total memory stays
+   within the budget regardless of object cardinality. Valid range is ``0`` to
+   ``100``; ``0`` disables the ghost queue.
+
+.. ts:cv:: CONFIG proxy.config.cache.ram_cache.s3fifo.promote_threshold INT 2
+
+   Only applies when :ts:cv:`proxy.config.cache.ram_cache.algorithm` is ``2``
+   (S3-FIFO). The number of times an object in the small admission queue must be
+   reused before it is promoted to the main queue instead of being demoted to
+   the ghost. The default ``2`` admits objects seen at least twice. Valid range
+   is ``1`` to ``3``; a higher value makes admission to the main queue stricter.
 
 .. ts:cv:: CONFIG proxy.config.cache.ram_cache.use_seen_filter INT 1
 

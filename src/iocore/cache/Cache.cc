@@ -56,35 +56,39 @@ constexpr ts::VersionNumber CACHE_DB_VERSION(CACHE_DB_MAJOR_VERSION, CACHE_DB_MI
 
 // Configuration
 
-int64_t cache_config_ram_cache_size                = AUTO_SIZE_RAM_CACHE;
-int     cache_config_ram_cache_algorithm           = 1;
-int     cache_config_ram_cache_compress            = 0;
-int     cache_config_ram_cache_compress_percent    = 90;
-int     cache_config_ram_cache_use_seen_filter     = 1;
-int     cache_config_http_max_alts                 = 3;
-int     cache_config_log_alternate_eviction        = 0;
-int     cache_config_dir_sync_frequency            = 60;
-int     cache_config_dir_sync_delay                = 500;
-int     cache_config_dir_sync_max_write            = (2 * 1024 * 1024);
-int     cache_config_dir_sync_parallel_tasks       = 1;
-int     cache_config_permit_pinning                = 0;
-int     cache_config_select_alternate              = 1;
-int     cache_config_max_doc_size                  = 0;
-int     cache_config_min_average_object_size       = ESTIMATED_OBJECT_SIZE;
-int64_t cache_config_ram_cache_cutoff              = AGG_SIZE;
-int     cache_config_max_disk_errors               = 5;
-int     cache_config_hit_evacuate_percent          = 10;
-int     cache_config_hit_evacuate_size_limit       = 0;
-int     cache_config_force_sector_size             = 0;
-int     cache_config_target_fragment_size          = DEFAULT_TARGET_FRAGMENT_SIZE;
-int     cache_config_agg_write_backlog             = AGG_SIZE * 2;
-int     cache_config_enable_checksum               = 0;
-int     cache_config_alt_rewrite_max_size          = 4096;
-int     cache_config_read_while_writer             = 0;
-int     cache_config_mutex_retry_delay             = 2;
-int     cache_read_while_writer_retry_delay        = 50;
-int     cache_config_read_while_writer_max_retries = 10;
-int     cache_config_persist_bad_disks             = false;
+int64_t cache_config_ram_cache_size                      = AUTO_SIZE_RAM_CACHE;
+int     cache_config_ram_cache_algorithm                 = 1;
+int     cache_config_ram_cache_compress                  = 0;
+int     cache_config_ram_cache_compress_percent          = 90;
+int     cache_config_ram_cache_use_seen_filter           = 1;
+int     cache_config_ram_cache_s3fifo_main_percent       = 90;
+int     cache_config_ram_cache_s3fifo_ghost_size_percent = 90;
+int     cache_config_ram_cache_s3fifo_ghost_mem_percent  = 25;
+int     cache_config_ram_cache_s3fifo_promote_threshold  = 2;
+int     cache_config_http_max_alts                       = 3;
+int     cache_config_log_alternate_eviction              = 0;
+int     cache_config_dir_sync_frequency                  = 60;
+int     cache_config_dir_sync_delay                      = 500;
+int     cache_config_dir_sync_max_write                  = (2 * 1024 * 1024);
+int     cache_config_dir_sync_parallel_tasks             = 1;
+int     cache_config_permit_pinning                      = 0;
+int     cache_config_select_alternate                    = 1;
+int     cache_config_max_doc_size                        = 0;
+int     cache_config_min_average_object_size             = ESTIMATED_OBJECT_SIZE;
+int64_t cache_config_ram_cache_cutoff                    = AGG_SIZE;
+int     cache_config_max_disk_errors                     = 5;
+int     cache_config_hit_evacuate_percent                = 10;
+int     cache_config_hit_evacuate_size_limit             = 0;
+int     cache_config_force_sector_size                   = 0;
+int     cache_config_target_fragment_size                = DEFAULT_TARGET_FRAGMENT_SIZE;
+int     cache_config_agg_write_backlog                   = AGG_SIZE * 2;
+int     cache_config_enable_checksum                     = 0;
+int     cache_config_alt_rewrite_max_size                = 4096;
+int     cache_config_read_while_writer                   = 0;
+int     cache_config_mutex_retry_delay                   = 2;
+int     cache_read_while_writer_retry_delay              = 50;
+int     cache_config_read_while_writer_max_retries       = 10;
+int     cache_config_persist_bad_disks                   = false;
 
 // Globals
 
@@ -864,6 +868,14 @@ ink_cache_init(ts::ModuleVersion v)
   RecEstablishStaticConfigInt32(cache_config_ram_cache_compress, "proxy.config.cache.ram_cache.compress");
   RecEstablishStaticConfigInt32(cache_config_ram_cache_compress_percent, "proxy.config.cache.ram_cache.compress_percent");
   cache_config_ram_cache_use_seen_filter = RecGetRecordInt("proxy.config.cache.ram_cache.use_seen_filter").value_or(0);
+
+  RecEstablishStaticConfigInt32(cache_config_ram_cache_s3fifo_main_percent, "proxy.config.cache.ram_cache.s3fifo.main_percent");
+  RecEstablishStaticConfigInt32(cache_config_ram_cache_s3fifo_ghost_size_percent,
+                                "proxy.config.cache.ram_cache.s3fifo.ghost_size_percent");
+  RecEstablishStaticConfigInt32(cache_config_ram_cache_s3fifo_ghost_mem_percent,
+                                "proxy.config.cache.ram_cache.s3fifo.ghost_mem_percent");
+  RecEstablishStaticConfigInt32(cache_config_ram_cache_s3fifo_promote_threshold,
+                                "proxy.config.cache.ram_cache.s3fifo.promote_threshold");
 
   RecEstablishStaticConfigInt32(cache_config_http_max_alts, "proxy.config.cache.limits.http.max_alts");
   Dbg(dbg_ctl_cache_init, "proxy.config.cache.limits.http.max_alts = %d", cache_config_http_max_alts);

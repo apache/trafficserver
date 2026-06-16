@@ -34,7 +34,9 @@
 // exactly the CDN "quick demotion" property -- at FIFO cost (no per-hit reordering). The ghost
 // holds keys, so it costs per-entry metadata at high object cardinality; that metadata is bounded
 // and counted against ram_cache.size so total memory stays within the configured budget. Selectable
-// as proxy.config.cache.ram_cache.algorithm = 2; see the admin guide (records.yaml.en.rst).
+// as proxy.config.cache.ram_cache.algorithm = 2; the queue split, ghost bounds, and promotion
+// threshold are tunable via proxy.config.cache.ram_cache.s3fifo.* (see init() and the admin guide,
+// records.yaml.en.rst).
 
 #include "P_RamCache.h"
 #include "P_CacheInternal.h"
@@ -43,12 +45,13 @@
 #include "tscore/CryptoHash.h"
 #include "tscore/List.h"
 
-#define ENTRY_OVERHEAD         128 // per-entry metadata counted against ram_cache.size
-#define MAIN_PERCENT           90  // main queue target size, percent of capacity
-#define GHOST_SIZE_PERCENT     90  // ghost remembers keys for ~this percent of capacity by object size
-#define GHOST_MEM_PERCENT      25  // but never more ghost metadata than this percent of size (OOM-safe)
-#define MOVE_TO_MAIN_THRESHOLD 2   // an object in S is promoted to M once reused this many times
-#define FREQ_MAX               3   // 2-bit saturating frequency counter
+#define ENTRY_OVERHEAD 128 // per-entry metadata counted against ram_cache.size
+#define FREQ_MAX       3   // 2-bit saturating frequency counter; keep ram_cache.s3fifo.promote_threshold's range in sync
+
+namespace
+{
+DbgCtl dbg_ctl_ram_cache{"ram_cache"};
+} // namespace
 
 enum { SEG_SMALL = 0, SEG_MAIN = 1, SEG_GHOST = 2 };
 
@@ -71,15 +74,17 @@ struct RamCacheS3FIFO : public RamCache {
   void    init(int64_t max_bytes, StripeSM *stripe) override;
 
 private:
-  int64_t _max_bytes        = 0;
-  int64_t _ghost_size_limit = 0; // ghost object-size bound (keeps it proportional for big objects)
-  int64_t _ghost_max        = 0; // ghost entry-count bound (caps metadata to GHOST_MEM_PERCENT)
-  int64_t _s_bytes          = 0; // resident bytes in the small queue (incl. ENTRY_OVERHEAD per entry)
-  int64_t _m_bytes          = 0; // resident bytes in the main queue
-  int64_t _g_bytes          = 0; // ghost object-size sum (vs _ghost_size_limit)
-  int64_t _g_count          = 0; // ghost entries; each costs ~ENTRY_OVERHEAD, counted in the budget
-  int64_t _objects          = 0; // resident objects (S + M)
-  int64_t _nentries         = 0; // hash entries (resident + ghost), for sizing the hash table
+  int     _main_percent      = 90; // main queue target size, percent of the resident budget (configurable)
+  int     _promote_threshold = 2;  // reuse count in the small queue that promotes an object to main (configurable)
+  int64_t _max_bytes         = 0;
+  int64_t _ghost_size_limit  = 0; // ghost object-size bound (keeps it proportional for big objects)
+  int64_t _ghost_max         = 0; // ghost entry-count bound (caps metadata to ghost_mem_percent)
+  int64_t _s_bytes           = 0; // resident bytes in the small queue (incl. ENTRY_OVERHEAD per entry)
+  int64_t _m_bytes           = 0; // resident bytes in the main queue
+  int64_t _g_bytes           = 0; // ghost object-size sum (vs _ghost_size_limit)
+  int64_t _g_count           = 0; // ghost entries; each costs ~ENTRY_OVERHEAD, counted in the budget
+  int64_t _objects           = 0; // resident objects (S + M)
+  int64_t _nentries          = 0; // hash entries (resident + ghost), for sizing the hash table
 
   Que(RamCacheS3FIFOEntry, lru_link) _seg[3]; // head = oldest, tail = newest, per segment
   DList(RamCacheS3FIFOEntry, hash_link) *_bucket = nullptr;
@@ -135,12 +140,26 @@ RamCacheS3FIFO::init(int64_t abytes, StripeSM *astripe)
   if (!_max_bytes) {
     return;
   }
-  _ghost_size_limit = (_max_bytes * GHOST_SIZE_PERCENT) / 100;
+
+  // The tunables are range-validated in records.yaml (RECC_INT): an out-of-range value is rejected
+  // there with a warning and the documented default is used in its place, so the values read here
+  // are already within their safe ranges -- no clamping needed.
+  _main_percent          = cache_config_ram_cache_s3fifo_main_percent;
+  _promote_threshold     = cache_config_ram_cache_s3fifo_promote_threshold;
+  int ghost_size_percent = cache_config_ram_cache_s3fifo_ghost_size_percent;
+  int ghost_mem_percent  = cache_config_ram_cache_s3fifo_ghost_mem_percent;
+
+  _ghost_size_limit = (_max_bytes * ghost_size_percent) / 100;
   // The ghost stores keys only, but each key still costs ~ENTRY_OVERHEAD of real memory. Bound the
   // ghost by both its object-size sum (keeps it proportional for large objects) and an entry count
-  // that caps its metadata at GHOST_MEM_PERCENT of the configured size; the metadata is counted
+  // that caps its metadata at ghost_mem_percent of the configured size; the metadata is counted
   // against the budget (see put) so total memory never exceeds ram_cache.size.
-  _ghost_max = ((_max_bytes * GHOST_MEM_PERCENT) / 100) / ENTRY_OVERHEAD;
+  _ghost_max = ((_max_bytes * ghost_mem_percent) / 100) / ENTRY_OVERHEAD;
+
+  Dbg(dbg_ctl_ram_cache,
+      "S3-FIFO init %" PRId64 " bytes: main_percent=%d ghost_size_percent=%d ghost_mem_percent=%d promote_threshold=%d", _max_bytes,
+      _main_percent, ghost_size_percent, ghost_mem_percent, _promote_threshold);
+
   _resize_hashtable();
 }
 
@@ -257,7 +276,7 @@ RamCacheS3FIFO::_evict_small()
 {
   while (_seg[SEG_SMALL].head) {
     RamCacheS3FIFOEntry *c = _seg[SEG_SMALL].head;
-    if (c->freq >= MOVE_TO_MAIN_THRESHOLD) {
+    if (c->freq >= _promote_threshold) {
       _to_main(c);
     } else {
       _to_ghost(c);
@@ -291,7 +310,7 @@ RamCacheS3FIFO::_evict()
   // metadata is reserved out of the configured size, so basing the split on raw _max_bytes would
   // (when the ghost is full) keep _m_bytes below the limit forever and starve the small queue.
   int64_t resident_budget = _max_bytes - _g_count * ENTRY_OVERHEAD;
-  if (_m_bytes > resident_budget * MAIN_PERCENT / 100 || _s_bytes == 0) {
+  if (_m_bytes > resident_budget * _main_percent / 100 || _s_bytes == 0) {
     _evict_main();
   } else {
     _evict_small();

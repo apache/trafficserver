@@ -860,6 +860,15 @@ static constexpr RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.cache.ram_cache.algorithm", RECD_INT, "1", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-2]", RECA_NULL}
   ,
+  //  # S3-FIFO (ram_cache.algorithm = 2) tunables
+  {RECT_CONFIG, "proxy.config.cache.ram_cache.s3fifo.main_percent", RECD_INT, "90", RECU_RESTART_TS, RR_NULL, RECC_INT, "[1-99]", RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.cache.ram_cache.s3fifo.ghost_size_percent", RECD_INT, "90", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-100]", RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.cache.ram_cache.s3fifo.ghost_mem_percent", RECD_INT, "25", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-100]", RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.cache.ram_cache.s3fifo.promote_threshold", RECD_INT, "2", RECU_RESTART_TS, RR_NULL, RECC_INT, "[1-3]", RECA_NULL}
+  ,
   {RECT_CONFIG, "proxy.config.cache.ram_cache.use_seen_filter", RECD_INT, "1", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-9]", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.cache.ram_cache.compress", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-3]", RECA_NULL}
