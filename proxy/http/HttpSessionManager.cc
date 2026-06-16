@@ -196,9 +196,16 @@ ServerSessionPool::acquireSession(sockaddr const *addr, CryptoHash const &hostna
   return zret;
 }
 
-void
+bool
 ServerSessionPool::releaseSession(PoolableSession *ss)
 {
+  IOBufferReader *remote_reader = ss->get_remote_reader();
+  if (remote_reader->read_avail() > 0) {
+    // The caller is responsible for closing when this returns false.
+    Debug("http_ss", "[%" PRId64 "] [release session] origin sent unexpected bytes; not pooling", ss->connection_id());
+    return false;
+  }
+
   ss->state = PoolableSession::KA_POOLED;
   // Now we need to issue a read on the connection to detect
   //  if it closes on us.  We will get called back in the
@@ -206,7 +213,7 @@ ServerSessionPool::releaseSession(PoolableSession *ss)
   //  to remove the connection from our lists
   //  Actually need to have a buffer here, otherwise the vc is
   //  disabled
-  ss->do_io_read(this, INT64_MAX, ss->get_remote_reader()->mbuf);
+  ss->do_io_read(this, INT64_MAX, remote_reader->mbuf);
 
   // Transfer control of the write side as well
   ss->do_io_write(this, 0, nullptr);
@@ -221,6 +228,7 @@ ServerSessionPool::releaseSession(PoolableSession *ss)
         "[%" PRId64 "] [release session] "
         "session placed into shared pool",
         ss->connection_id());
+  return true;
 }
 
 //   Called from the NetProcessor to let us know that a
@@ -466,7 +474,11 @@ HttpSessionManager::release_session(PoolableSession *to_release)
   // The per thread lock looks like it should not be needed but if it's not locked the close checking I/O op will crash.
   MUTEX_TRY_LOCK(lock, pool->mutex, ethread);
   if (lock.is_locked()) {
-    pool->releaseSession(to_release);
+    bool const pooled = pool->releaseSession(to_release);
+    if (!pooled) {
+      // close & free session
+      to_release->do_io_close();
+    }
   } else if (this->get_pool_type() == TS_SERVER_SESSION_SHARING_POOL_HYBRID) {
     // Try again with the thread pool
     to_release->sharing_pool = TS_SERVER_SESSION_SHARING_POOL_THREAD;
