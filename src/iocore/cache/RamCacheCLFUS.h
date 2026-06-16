@@ -62,6 +62,7 @@ class RamCacheCLFUS : public RamCache
 {
 public:
   RamCacheCLFUS() {}
+  ~RamCacheCLFUS() override;
 
   // returns 1 on found/stored, 0 on not found/stored, if provided auxkey1 and auxkey2 must match
   int     get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint64_t auxkey = 0) override;

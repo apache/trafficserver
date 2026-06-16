@@ -183,6 +183,21 @@ static const int bucket_sizes[] = {127,      251,      509,       1021,      203
                                    65521,    131071,   262139,    524287,    1048573,   2097143,    4194301,   8388593, 16777213,
                                    33554393, 67108859, 134217689, 268435399, 536870909, 1073741789, 2147483647};
 
+RamCacheCLFUS::~RamCacheCLFUS()
+{
+  // Entries are pool-allocated without running their destructor, so release the
+  // data reference explicitly before returning each one to the allocator, then
+  // free the hash table and the seen filter.
+  for (auto &lru : this->_lru) {
+    while (RamCacheCLFUSEntry *e = lru.dequeue()) {
+      e->data = nullptr;
+      THREAD_FREE(e, ramCacheCLFUSEntryAllocator, this_thread());
+    }
+  }
+  ats_free(this->_bucket);
+  ats_free(this->_seen);
+}
+
 void
 RamCacheCLFUS::_resize_hashtable()
 {
