@@ -121,7 +121,7 @@ size_t
 run_callback(Fn fn, SSL *ssl, std::vector<uint8_t> const &input)
 {
   CBB cbb;
-  CBB_init(&cbb, CBB_INITIAL_CAPACITY);
+  REQUIRE(CBB_init(&cbb, CBB_INITIAL_CAPACITY) == 1);
   int rv = fn(ssl, &cbb, input.data(), input.size());
   REQUIRE(rv == 1);
   size_t out_len = CBB_len(&cbb);
