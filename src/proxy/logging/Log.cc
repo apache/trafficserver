@@ -505,12 +505,12 @@ Log::init_fields()
   global_field_list.add(field, false);
   field_symbol_hash.emplace("cssn", field);
 
-  field = new LogField("client_ssl_cert_provided", "cscert", LogField::STRING, &LogAccess::marshal_client_provided_cert,
+  field = new LogField("client_ssl_cert_provided", "cscert", LogField::sINT, &LogAccess::marshal_client_provided_cert,
                        &LogAccess::unmarshal_int_to_str);
   global_field_list.add(field, false);
   field_symbol_hash.emplace("cscert", field);
 
-  field = new LogField("proxy_ssl_cert_provided", "pscert", LogField::STRING, &LogAccess::marshal_proxy_provided_cert,
+  field = new LogField("proxy_ssl_cert_provided", "pscert", LogField::sINT, &LogAccess::marshal_proxy_provided_cert,
                        &LogAccess::unmarshal_int_to_str);
   global_field_list.add(field, false);
   field_symbol_hash.emplace("pscert", field);
@@ -739,7 +739,7 @@ Log::init_fields()
   global_field_list.add(field, false);
   field_symbol_hash.emplace("nhi", field);
 
-  field = new LogField("next_hop_port", "nhp", LogField::IP, &LogAccess::marshal_next_hop_port, &LogAccess::unmarshal_int_to_str);
+  field = new LogField("next_hop_port", "nhp", LogField::sINT, &LogAccess::marshal_next_hop_port, &LogAccess::unmarshal_int_to_str);
   global_field_list.add(field, false);
   field_symbol_hash.emplace("nhp", field);
 
@@ -1003,7 +1003,7 @@ Log::init_fields()
   global_field_list.add(field, false);
   field_symbol_hash.emplace("ppdip", field);
 
-  field = new LogField("proxy_protocol_authority", "ppa", LogField::IP, &LogAccess::marshal_proxy_protocol_authority,
+  field = new LogField("proxy_protocol_authority", "ppa", LogField::STRING, &LogAccess::marshal_proxy_protocol_authority,
                        &LogAccess::unmarshal_str);
   global_field_list.add(field, false);
   field_symbol_hash.emplace("ppa", field);
