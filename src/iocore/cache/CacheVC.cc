@@ -769,9 +769,17 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
       }
       break;
     }
-    if (doc->data() - buf->data() > static_cast<int>(io.aiocb.aio_nbytes)) {
-      might_need_overlap_read = true;
-      goto Lskip;
+    {
+      size_t const doc_off = reinterpret_cast<char *>(doc) - buf->data();
+      // Bounds-check in unsigned domain: doc must lie within the
+      // buffer, with room for the Doc header, and doc->hlen must
+      // fit in the remaining bytes before doc->hdr() and
+      // HTTPInfo::unmarshal walk it.
+      if (io.aiocb.aio_nbytes < doc_off || (io.aiocb.aio_nbytes - doc_off) < sizeof(Doc) ||
+          (io.aiocb.aio_nbytes - doc_off - sizeof(Doc)) < doc->hlen) {
+        might_need_overlap_read = true;
+        goto Lskip;
+      }
     }
     {
       char *tmp = doc->hdr();
