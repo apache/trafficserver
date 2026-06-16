@@ -227,6 +227,7 @@ register_certificate_compression_preference(SSL_CTX *ctx, const std::vector<std:
 
   return 1;
 #elif HAVE_SSL_CTX_SET1_CERT_COMP_PREFERENCE
+  (void)cache;
   if (specified_algs.size() > N_ALGORITHMS) {
     return 0;
   }
@@ -249,6 +250,7 @@ register_certificate_compression_preference(SSL_CTX *ctx, const std::vector<std:
   }
   return ret;
 #else
+  (void)cache;
   // If Certificate Compression is unsupported there's nothing to do.
   // No need to raise an error since handshake would be done successfully without compression.
   Dbg(dbg_ctl_ssl_cert_compress, "Certificate Compression is unsupported");
