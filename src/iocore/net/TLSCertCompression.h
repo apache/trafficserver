@@ -42,6 +42,7 @@ constexpr size_t MAX_CERT_UNCOMPRESSED_LEN = 128 * 1024;
  *
  * @param[in] ctx SSL_CTX
  * @param[in] algs A vector that contains compression algorithm names ("zlib", "brotli", or "zstd")
+ * @param[in] cache If true, cache the compressed cert chain per SSL_CTX (BoringSSL only; no-op on OpenSSL)
  * @return 1 on success
  */
 int register_certificate_compression_preference(SSL_CTX *ctx, const std::vector<std::string> &algs, bool cache);
