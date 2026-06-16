@@ -524,7 +524,14 @@ TEST_CASE("QPACK static table conforms to RFC 9204", "[qpack]")
     CHECK(field->value_get() == std::string_view{c.value});
   }
 
+  // decode() scheduled a completion event that references event_handler; let it
+  // run before tearing the handler down, then release everything.
+  sleep(1);
+  CHECK(event_handler->last_event() == QPACK_EVENT_DECODE_COMPLETE);
+
   hdr.destroy();
+  delete event_handler;
+  delete qpack;
 }
 
 // ATS advertises a zero-capacity QPACK dynamic table, so a header block whose
@@ -547,5 +554,9 @@ TEST_CASE("QPACK decode rejects a dynamic reference with no dynamic table", "[qp
   int ret = qpack->decode(1, block, len, hdr, event_handler, eventProcessor.all_ethreads[0]);
   CHECK(ret < 0);
 
+  // decode() failed before scheduling any event, so nothing else references
+  // these; release them to keep the test leak-free.
   hdr.destroy();
+  delete event_handler;
+  delete qpack;
 }
