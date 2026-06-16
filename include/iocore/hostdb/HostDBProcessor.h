@@ -582,7 +582,7 @@ struct ResolveInfo {
   bool mark_active_server_up();
 
   /// Select / resolve to the next RR entry for the record.
-  bool select_next_rr();
+  bool select_next_rr(ts_time now, ts_seconds fail_window);
 
   bool is_srv() const;
 };
