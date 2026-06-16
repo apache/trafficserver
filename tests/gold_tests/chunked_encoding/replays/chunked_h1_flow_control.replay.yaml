@@ -1,0 +1,138 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+# Regression test for the chunked-tunnel high-water throttle on the DOCHUNK
+# (re-chunking) producer path in HttpTunnel.
+#
+# An HTTP/1.0 origin returns a body without Content-Length (close-delimited)
+# and an HTTP/1.1 client requests it. ATS must re-chunk the body for the
+# client, which exercises ChunkedHandler::Action::DOCHUNK and writes
+# generated chunks into the chunked_buffer output. With a small
+# default_buffer_water_mark, that output buffer crosses high_water before
+# the consumer drains it, which must trigger producer_handler's
+# "disable ... read_vio" throttle (HttpTunnel.cc) and a re-enable when the
+# consumer catches up. The response must still complete with the full body.
+
+autest:
+  description: 'HTTP/1.0 origin -> HTTP/1.1 chunked client do-chunk flow-control throttle'
+
+  dns:
+    name: 'dns-chunked-h1-fc'
+
+  server:
+    name: 'server-chunked-h1-fc'
+
+  client:
+    name: 'client-chunked-h1-fc'
+
+  ats:
+    name: 'ts-chunked-h1-fc'
+    process_config:
+      enable_tls: false
+      enable_cache: false
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http_tunnel'
+      # Small water_mark so the chunked output buffer crosses high_water
+      # well before the user-agent socket can drain it.
+      proxy.config.http.default_buffer_water_mark: 4096
+
+    remap_config:
+      - from: "http://www.example.com/"
+        to: "http://backend.example.com:{SERVER_HTTP_PORT}/"
+
+    log_validation:
+      diags_log:
+        excludes:
+          # Indicator of the tunnel getting stuck on a dropped terminal event.
+          - expression: 'ERROR.*inactivity timeout'
+            description: 'Tunnel must not stall to inactivity timeout.'
+
+    metric_checks:
+      # The chunked-tunnel throttle must fire at least once: the chunked
+      # output buffer crosses high_water before the consumer drains it.
+      - metric: proxy.process.http.tunnel.chunked_throttle
+        value: '[1-9][0-9]*'
+
+sessions:
+- protocol:
+  - name: http
+    version: 1
+
+  transactions:
+
+  # An HTTP/1.0 origin delivering a sizable, close-delimited body. ATS will
+  # re-chunk it for the HTTP/1.1 client, which is the DOCHUNK path.
+  - client-request:
+      method: GET
+      version: "1.1"
+      url: /large-rechunk
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ uuid, large-rechunk-1 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      version: "1.0"
+      headers:
+        fields:
+        - [ "Content-Type", "text/plain" ]
+      content:
+        size: 524288  # 512 KB
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ "Transfer-Encoding", { value: "chunked", as: equal } ]
+      content:
+        size: { value: 524288, as: equal }
+
+  # A second transaction back-to-back, exercising the re-enable path
+  # after the first throttle cycle on a fresh connection.
+  - client-request:
+      delay: 100ms
+      method: GET
+      version: "1.1"
+      url: /large-rechunk-2
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ uuid, large-rechunk-2 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      version: "1.0"
+      headers:
+        fields:
+        - [ "Content-Type", "text/plain" ]
+      content:
+        size: 262144  # 256 KB
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ "Transfer-Encoding", { value: "chunked", as: equal } ]
+      content:
+        size: { value: 262144, as: equal }
