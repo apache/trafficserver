@@ -22,7 +22,6 @@
  */
 
 #include "proxy/http/remap/RemapProcessor.h"
-#include "proxy/http/HttpConfig.h"
 
 using namespace std::literals;
 
@@ -51,15 +50,8 @@ RemapProcessor::setup_for_remap(HttpTransact::State *s, UrlRewrite *table)
   int      request_port;
   bool     proxy_request = false;
 
-  s->url_map.set(s->hdr_info.client_request.m_heap);
-  if (unlikely(table == nullptr)) {
-    Metrics::Counter::increment(http_rsb.remap_missing_table);
-    Warning("No remap table available; skipping remap");
-    Dbg(dbg_ctl_url_rewrite, "No remap table available; skipping remap");
-    return false;
-  }
-
   s->reverse_proxy = table->reverse_proxy;
+  s->url_map.set(s->hdr_info.client_request.m_heap);
 
   ink_assert(redirect_url != nullptr);
 
@@ -165,23 +157,13 @@ bool
 RemapProcessor::finish_remap(HttpTransact::State *s, UrlRewrite *table)
 {
   url_mapping  *map            = nullptr;
-  HTTPHdr      *request_header = nullptr;
-  URL          *request_url    = nullptr;
+  HTTPHdr      *request_header = &s->hdr_info.client_request;
+  URL          *request_url    = request_header->url_get();
   char        **redirect_url   = &s->remap_redirect;
   char          tmp_referer_buf[4096], tmp_redirect_buf[4096], tmp_buf[2048];
   int           tmp;
   int           from_len;
   referer_info *ri;
-
-  if (unlikely(table == nullptr)) {
-    Metrics::Counter::increment(http_rsb.remap_missing_table);
-    Warning("No remap table available; skipping remap completion");
-    Dbg(dbg_ctl_url_rewrite, "No remap table available; skipping remap completion");
-    return false;
-  }
-
-  request_header = &s->hdr_info.client_request;
-  request_url    = request_header->url_get();
 
   map = s->url_map.getMapping();
   if (nullptr == map) {

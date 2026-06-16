@@ -32,7 +32,6 @@ using namespace std::string_view_literals;
 
 #include "proxy/http/HttpConfig.h"
 #include "proxy/http/HttpTransact.h"
-#include "proxy/http/remap/RemapProcessor.h"
 #include "records/RecordsConfig.h"
 
 #include <catch2/catch_test_macros.hpp>
@@ -42,22 +41,6 @@ TEST_CASE("HttpTransact", "[http]")
   url_init();
   mime_init();
   http_init();
-
-  SECTION("RemapProcessor tolerates a missing remap table")
-  {
-    HttpTransact::State state;
-    RemapProcessor      processor;
-
-    if (http_rsb.remap_missing_table == nullptr) {
-      http_rsb.remap_missing_table = Metrics::Counter::createPtr("proxy.process.http.remap_missing_table");
-    }
-    auto const remap_missing_table_count = Metrics::Counter::load(http_rsb.remap_missing_table);
-
-    CHECK_FALSE(processor.setup_for_remap(&state, nullptr));
-    CHECK(Metrics::Counter::load(http_rsb.remap_missing_table) == remap_missing_table_count + 1);
-    CHECK_FALSE(processor.finish_remap(&state, nullptr));
-    CHECK(Metrics::Counter::load(http_rsb.remap_missing_table) == remap_missing_table_count + 2);
-  }
 
   SECTION("HttpTransact::merge_response_header_with_cached_header")
   {
