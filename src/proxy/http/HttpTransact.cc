@@ -562,6 +562,41 @@ HttpTransact::is_server_negative_cached(State *s)
   }
 }
 
+/**
+  ATS has two configuration options controlling how many times it retries a connection attempt against origin servers.
+
+  - proxy.config.http.connect_attempts_max_retries
+  - proxy.config.http.connect_attempts_max_retries_suspect_server
+
+  The choice is based on the state of the active HostDBInfo.
+
+  - HostDBInfo::State::UP: use proxy.config.http.connect_attempts_max_retries
+  - HostDBInfo::State::DOWN: no retry
+  - HostDBInfo::State::SUSPECT: use proxy.config.http.connect_attempts_max_retries_suspect_server
+
+*/
+uint8_t
+HttpTransact::origin_server_connect_attempts_max_retries(State *s)
+{
+  HostDBInfo *active = s->dns_info.active;
+  if (active == nullptr) {
+    return 0;
+  }
+
+  switch (active->state(ts_clock::now(), s->txn_conf->down_server_timeout)) {
+  case HostDBInfo::State::UP:
+    return s->txn_conf->connect_attempts_max_retries;
+  case HostDBInfo::State::DOWN:
+    return 0;
+  case HostDBInfo::State::SUSPECT:
+    return s->txn_conf->connect_attempts_max_retries_suspect_server;
+  default:
+    break;
+  }
+
+  return 0;
+}
+
 inline static void
 update_current_info(HttpTransact::CurrentInfo *into, HttpTransact::ConnectionAttributes *from,
                     ResolveInfo::UpstreamResolveStyle who, bool clear_retry_attempts)
@@ -971,22 +1006,6 @@ HttpTransact::TooEarly(State *s)
   TxnDbg(dbg_ctl_http_trans, "Early Data method is not safe");
   bootstrap_state_variables_from_request(s, &s->hdr_info.client_request);
   build_error_response(s, HTTPStatus::TOO_EARLY, "Too Early", "too#early");
-  TRANSACT_RETURN(StateMachineAction_t::SEND_ERROR_CACHE_NOOP, nullptr);
-}
-
-void
-HttpTransact::OriginDown(State *s)
-{
-  TxnDbg(dbg_ctl_http_trans, "origin server is marked down");
-  bootstrap_state_variables_from_request(s, &s->hdr_info.client_request);
-  build_error_response(s, HTTPStatus::BAD_GATEWAY, "Origin Server Marked Down", "connect#failed_connect");
-  Metrics::Counter::increment(http_rsb.down_server_no_requests);
-  char            *url_str = s->hdr_info.client_request.url_string_get_ref(nullptr);
-  std::string_view host_name{s->unmapped_url.host_get()};
-  swoc::bwprint(error_bw_buffer, "CONNECT: down server no request to {} for host='{}' url='{}'", s->current.server->dst_addr,
-                host_name, swoc::bwf::FirstOf(url_str, "<none>"));
-  Log::error("%s", error_bw_buffer.c_str());
-
   TRANSACT_RETURN(StateMachineAction_t::SEND_ERROR_CACHE_NOOP, nullptr);
 }
 
@@ -1969,6 +1988,9 @@ HttpTransact::OSDNSLookup(State *s)
         build_error_response(s, HTTPStatus::INTERNAL_SERVER_ERROR, "Cannot find server.", Dns_error_body);
         log_msg = "looking up";
       } else {
+        // HostDB has the record but every address is DOWN within `down_server.cache_time`. This is a refusal-to-attempt
+        // rather than a true DNS failure; track it under down_server_no_requests.
+        Metrics::Counter::increment(http_rsb.down_server_no_requests);
         build_error_response(s, HTTPStatus::INTERNAL_SERVER_ERROR, "No valid server.", "connect#all_down");
         log_msg = "no valid server";
       }
@@ -1998,7 +2020,8 @@ HttpTransact::OSDNSLookup(State *s)
     // We've backed off from a client supplied address and found some
     // HostDB addresses. We use those if they're different from the CTA.
     // In all cases we now commit to client or HostDB for our source.
-    if (s->dns_info.set_active(&s->current.server->dst_addr.sa) && s->dns_info.select_next_rr()) {
+    if (s->dns_info.set_active(&s->current.server->dst_addr.sa) &&
+        s->dns_info.select_next_rr(ts_clock::now(), s->txn_conf->down_server_timeout)) {
       s->dns_info.os_addr_style = ResolveInfo::OS_Addr::USE_HOSTDB;
     } else {
       // nothing else there, continue with CTA.
@@ -2687,6 +2710,7 @@ HttpTransact::CallOSDNSLookup(State *s)
     } else {
       s->cache_info.action = CacheAction_t::NO_ACTION;
     }
+    error_log_connection_failure(s, s->current.state);
     handle_server_connection_not_open(s);
   } else {
     TRANSACT_RETURN(StateMachineAction_t::DNS_LOOKUP, OSDNSLookup);
@@ -3882,6 +3906,7 @@ HttpTransact::handle_response_from_parent(State *s)
   case ResolveInfo::HOST_NONE:
     // Check if content can be served from cache
     s->current.request_to = ResolveInfo::PARENT_PROXY;
+    error_log_connection_failure(s, s->current.state);
     handle_server_connection_not_open(s);
     break;
   default:
@@ -3914,7 +3939,6 @@ HttpTransact::handle_response_from_server(State *s)
 {
   TxnDbg(dbg_ctl_http_trans, "(hrfs)");
   HTTP_RELEASE_ASSERT(s->current.server == &s->server_info);
-  unsigned max_connect_retries = 0;
 
   // plugin call
   s->server_info.state = s->current.state;
@@ -3933,6 +3957,7 @@ HttpTransact::handle_response_from_server(State *s)
     TxnDbg(dbg_ctl_http_trans, "Error. congestion control -- congested.");
     SET_VIA_STRING(VIA_DETAIL_SERVER_CONNECT, VIA_DETAIL_SERVER_FAILURE);
     s->set_connect_fail(EUSERS); // too many users
+    error_log_connection_failure(s, s->current.state);
     handle_server_connection_not_open(s);
     break;
   case OPEN_RAW_ERROR:
@@ -3941,8 +3966,7 @@ HttpTransact::handle_response_from_server(State *s)
   case INACTIVE_TIMEOUT:
   case PARSE_ERROR:
   case CONNECTION_CLOSED:
-  case BAD_INCOMING_RESPONSE:
-
+  case BAD_INCOMING_RESPONSE: {
     // Ensure cause_of_death_errno is set for all error states if not already set.
     // This prevents the assertion failure in retry_server_connection_not_open.
     if (s->cause_of_death_errno == -UNKNOWN_INTERNAL_ERROR) {
@@ -3957,63 +3981,92 @@ HttpTransact::handle_response_from_server(State *s)
       }
     }
 
-    if (is_server_negative_cached(s)) {
-      max_connect_retries = s->txn_conf->connect_attempts_max_retries_down_server - 1;
-    } else {
-      // server not yet negative cached - use default number of retries
-      max_connect_retries = s->txn_conf->connect_attempts_max_retries;
-    }
-
+    unsigned max_connect_retries = s->txn_conf->connect_attempts_max_retries;
     TxnDbg(dbg_ctl_http_trans, "max_connect_retries: %d s->current.retry_attempts: %d", max_connect_retries,
            s->current.retry_attempts.get());
 
-    if (is_request_retryable(s) && s->current.retry_attempts.get() < max_connect_retries &&
-        !HttpTransact::is_response_valid(s, &s->hdr_info.server_response)) {
-      // If this is a round robin DNS entry & we're tried configured
-      //    number of times, we should try another node
-      if (ResolveInfo::OS_Addr::TRY_CLIENT == s->dns_info.os_addr_style) {
-        // attempt was based on client supplied server address. Try again using HostDB.
-        // Allow DNS attempt
-        s->dns_info.resolved_p = false;
-        // See if we can get data from HostDB for this.
-        s->dns_info.os_addr_style = ResolveInfo::OS_Addr::TRY_HOSTDB;
-        // Force host resolution to have the same family as the client.
-        // Because this is a transparent connection, we can't switch address
-        // families - that is locked in by the client source address.
-        ats_force_order_by_family(s->current.server->dst_addr.family(), s->my_txn_conf().host_res_data.order);
-        return CallOSDNSLookup(s);
-      } else if (ResolveInfo::OS_Addr::USE_API == s->dns_info.os_addr_style && !s->api_server_addr_set_retried) {
-        // Plugin set the server address via TSHttpTxnServerAddrSet(). Clear resolution
-        // state to allow the OS_DNS hook to be called again, giving the plugin a chance
-        // to set a different server address for retry (issue #12611).
-        // Only retry once to avoid infinite loops if the plugin keeps setting failing addresses.
-        s->api_server_addr_set_retried = true;
-        s->dns_info.resolved_p         = false;
-        s->dns_info.os_addr_style      = ResolveInfo::OS_Addr::TRY_DEFAULT;
-        // Clear the server request so it can be rebuilt for the new destination
-        s->hdr_info.server_request.destroy();
-        TxnDbg(dbg_ctl_http_trans, "Retrying with plugin-set address, returning to OS_DNS hook");
-        return CallOSDNSLookup(s);
-      } else {
-        if ((s->txn_conf->connect_attempts_rr_retries > 0) &&
-            ((s->current.retry_attempts.get() + 1) % s->txn_conf->connect_attempts_rr_retries == 0)) {
-          s->dns_info.select_next_rr();
-        }
-        retry_server_connection_not_open(s, s->current.state, max_connect_retries);
-        TxnDbg(dbg_ctl_http_trans, "Error. Retrying...");
-        s->next_action = how_to_open_connection(s);
-      }
-    } else {
+    // Bail out if the request is not retryable, the global retry cap is reached, or we already have a usable response.
+    if (!is_request_retryable(s) || s->current.retry_attempts.get() >= max_connect_retries ||
+        HttpTransact::is_response_valid(s, &s->hdr_info.server_response)) {
+      TxnDbg(dbg_ctl_http_trans, "Error. No more retries. %d/%d", s->current.retry_attempts.get(), max_connect_retries);
+      SET_VIA_STRING(VIA_DETAIL_SERVER_CONNECT, VIA_DETAIL_SERVER_FAILURE);
       error_log_connection_failure(s, s->current.state);
-      TxnDbg(dbg_ctl_http_trans, "Error. No more retries.");
+      s->state_machine->do_hostdb_update_if_necessary();
+      handle_server_connection_not_open(s);
+      break;
+    }
+
+    // Attempt was based on a client-supplied address. Re-resolve via HostDB.
+    if (ResolveInfo::OS_Addr::TRY_CLIENT == s->dns_info.os_addr_style) {
+      // Allow DNS attempt
+      s->dns_info.resolved_p = false;
+      // See if we can get data from HostDB for this.
+      s->dns_info.os_addr_style = ResolveInfo::OS_Addr::TRY_HOSTDB;
+      // Force host resolution to have the same family as the client.
+      // Because this is a transparent connection, we can't switch address
+      // families - that is locked in by the client source address.
+      ats_force_order_by_family(s->current.server->dst_addr.family(), s->my_txn_conf().host_res_data.order);
+      return CallOSDNSLookup(s);
+    }
+
+    // Plugin set the server address via TSHttpTxnServerAddrSet(). Clear resolution
+    // state to allow the OS_DNS hook to be called again, giving the plugin a chance
+    // to set a different server address for retry (issue #12611).
+    // Only retry once to avoid infinite loops if the plugin keeps setting failing addresses.
+    if (ResolveInfo::OS_Addr::USE_API == s->dns_info.os_addr_style && !s->api_server_addr_set_retried) {
+      s->api_server_addr_set_retried = true;
+      s->dns_info.resolved_p         = false;
+      s->dns_info.os_addr_style      = ResolveInfo::OS_Addr::TRY_DEFAULT;
+      // Clear the server request so it can be rebuilt for the new destination
+      s->hdr_info.server_request.destroy();
+      TxnDbg(dbg_ctl_http_trans, "Retrying with plugin-set address, returning to OS_DNS hook");
+      return CallOSDNSLookup(s);
+    }
+
+    // Record the failure on the current active target.
+    error_log_connection_failure(s, s->current.state);
+    s->state_machine->do_hostdb_update_if_necessary();
+
+    // Decide between switching to the next round-robin member or staying on the same target.
+    if ((s->txn_conf->connect_attempts_rr_retries > 0) &&
+        ((s->current.retry_attempts.get() + 1) % s->txn_conf->connect_attempts_rr_retries == 0)) {
+      if (s->dns_info.select_next_rr(ts_clock::now(), s->txn_conf->down_server_timeout)) {
+        // select_next_rr() only updates dns_info.active; change the dst_addr too.
+        s->dns_info.addr.assign(s->dns_info.active->data.ip);
+        s->server_info.dst_addr.assign(s->dns_info.active->data.ip, s->server_info.dst_addr.network_order_port());
+        if (dbg_ctl_http_trans.on()) {
+          ip_port_text_buffer addrbuf;
+          TxnDbg(dbg_ctl_http_trans, "switched to next round-robin upstream addr=%s",
+                 ats_ip_nptop(&s->server_info.dst_addr.sa, addrbuf, sizeof(addrbuf)));
+        }
+      } else {
+        TxnDbg(dbg_ctl_http_trans, "No round-robin targets available, retrying current upstream if possible");
+      }
+    }
+
+    // The active target (HostDB) may be SUSPECT state, so re-evaluate the retry limit.
+    // Skip when there is no HostDBInfo (e.g. USE_CLIENT / USE_API) and keep the configured baseline.
+    if (s->dns_info.active != nullptr) {
+      max_connect_retries = origin_server_connect_attempts_max_retries(s);
+    }
+    if (max_connect_retries <= s->current.retry_attempts.get()) {
+      TxnDbg(dbg_ctl_http_trans, "Per-host retries exhausted. Giving up. %d/%d", s->current.retry_attempts.get(),
+             max_connect_retries);
       SET_VIA_STRING(VIA_DETAIL_SERVER_CONNECT, VIA_DETAIL_SERVER_FAILURE);
       handle_server_connection_not_open(s);
+      break;
     }
+
+    TxnDbg(dbg_ctl_http_trans, "Error. Retrying...");
+    retry_server_connection_not_open(s, max_connect_retries);
+    s->next_action = how_to_open_connection(s);
     break;
+  }
   case ACTIVE_TIMEOUT:
     TxnDbg(dbg_ctl_http_trans, "[hrfs] connection not alive");
     SET_VIA_STRING(VIA_DETAIL_SERVER_CONNECT, VIA_DETAIL_SERVER_FAILURE);
     s->set_connect_fail(ETIMEDOUT);
+    s->state_machine->do_hostdb_update_if_necessary();
     handle_server_connection_not_open(s);
     break;
   default:
@@ -4062,14 +4115,12 @@ HttpTransact::error_log_connection_failure(State *s, ServerState_t conn_state)
 //
 ///////////////////////////////////////////////////////////////////////////////
 void
-HttpTransact::retry_server_connection_not_open(State *s, ServerState_t conn_state, unsigned max_retries)
+HttpTransact::retry_server_connection_not_open(State *s, unsigned max_retries)
 {
   ink_assert(s->current.state != CONNECTION_ALIVE);
   ink_assert(s->current.state != ACTIVE_TIMEOUT);
   ink_assert(s->current.retry_attempts.get() < max_retries);
   ink_assert(s->cause_of_death_errno != -UNKNOWN_INTERNAL_ERROR);
-
-  error_log_connection_failure(s, conn_state);
 
   //////////////////////////////////////////////
   // disable keep-alive for request and retry //
@@ -4103,9 +4154,6 @@ HttpTransact::handle_server_connection_not_open(State *s)
 
   SET_VIA_STRING(VIA_SERVER_RESULT, VIA_SERVER_ERROR);
   Metrics::Counter::increment(http_rsb.broken_server_connections);
-
-  // Fire off a hostdb update to mark the server as down
-  s->state_machine->do_hostdb_update_if_necessary();
 
   switch (s->cache_info.action) {
   case CacheAction_t::UPDATE:

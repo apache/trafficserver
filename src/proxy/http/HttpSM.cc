@@ -24,6 +24,7 @@
 
 #include "proxy/http/HttpConfig.h"
 #include "tscore/ink_hrtime.h"
+#include "tscore/ink_time.h"
 #include "tsutil/Metrics.h"
 #include "tsutil/StringCompare.h"
 #include "tsutil/ts_bw_format.h"
@@ -4771,9 +4772,12 @@ HttpSM::do_hostdb_update_if_necessary()
     t_state.dns_info.active->http_version = t_state.updated_server_version;
   }
 
+  char addrbuf[INET6_ADDRPORTSTRLEN];
+  SMDbg(dbg_ctl_http, "update hostdb info: %s", ats_ip_nptop(&t_state.current.server->dst_addr.sa, addrbuf, sizeof(addrbuf)));
+
   // Check to see if we need to report or clear a connection failure
   if (track_connect_fail()) {
-    this->mark_host_failure(&t_state.dns_info, ts_clock::from_time_t(t_state.client_request_time));
+    this->mark_host_failure(&t_state.dns_info, ts_clock::now());
   } else {
     if (t_state.dns_info.mark_active_server_up()) {
       char addrbuf[INET6_ADDRPORTSTRLEN];
@@ -4788,8 +4792,6 @@ HttpSM::do_hostdb_update_if_necessary()
     }
   }
 
-  char addrbuf[INET6_ADDRPORTSTRLEN];
-  SMDbg(dbg_ctl_http, "server info = %s", ats_ip_nptop(&t_state.current.server->dst_addr.sa, addrbuf, sizeof(addrbuf)));
   return;
 }
 
@@ -5597,12 +5599,6 @@ HttpSM::do_http_server_open(bool raw, bool only_direct)
       return;
     }
   }
-  if (HttpTransact::is_server_negative_cached(&t_state) == true &&
-      t_state.txn_conf->connect_attempts_max_retries_down_server <= 0) {
-    SMDbg(dbg_ctl_http_seq, "Not connecting to the server because it is marked down.");
-    call_transact_and_set_next_state(HttpTransact::OriginDown);
-    return;
-  }
 
   // Check for self loop.
   if (!_ua.get_txn()->is_outbound_transparent() && HttpTransact::will_this_request_self_loop(&t_state)) {
@@ -6053,34 +6049,36 @@ HttpSM::do_transform_open()
 void
 HttpSM::mark_host_failure(ResolveInfo *info, ts_time time_down)
 {
-  char addrbuf[INET6_ADDRPORTSTRLEN];
+  ink_assert(time_down != TS_TIME_ZERO);
 
-  if (info->active) {
-    if (time_down != TS_TIME_ZERO) {
-      ats_ip_nptop(&t_state.current.server->dst_addr.sa, addrbuf, sizeof(addrbuf));
-      // Increment the fail_count
-      if (auto [down, fail_count] = info->active->increment_fail_count(time_down, t_state.txn_conf->connect_attempts_rr_retries,
-                                                                       t_state.txn_conf->down_server_timeout);
-          down) {
-        char            *url_str = t_state.hdr_info.client_request.url_string_get_ref(nullptr);
-        std::string_view host_name{t_state.unmapped_url.host_get()};
-        swoc::bwprint(error_bw_buffer, "CONNECT : {::s} connecting to {} for host='{}' url='{}' fail_count='{}' marking down",
-                      swoc::bwf::Errno(t_state.current.server->connect_result), t_state.current.server->dst_addr, host_name,
-                      swoc::bwf::FirstOf(url_str, "<none>"), fail_count);
-        Log::error("%s", error_bw_buffer.c_str());
-        SMDbg(dbg_ctl_http, "hostdb update marking IP: %s as down", addrbuf);
-        ATS_PROBE2(hostdb_mark_ip_as_down, sm_id, addrbuf);
-      } else {
-        ATS_PROBE3(hostdb_inc_ip_failcount, sm_id, addrbuf, fail_count);
-        SMDbg(dbg_ctl_http, "hostdb increment IP failcount %s to %d", addrbuf, fail_count);
-      }
-    } else { // Clear the failure
-      info->active->mark_up();
-    }
+  if (info->active == nullptr) {
+    return;
   }
-#ifdef DEBUG
-  ink_assert(std::chrono::system_clock::now() + t_state.txn_conf->down_server_timeout > time_down);
-#endif
+
+  char addrbuf[INET6_ADDRPORTSTRLEN];
+  ats_ip_nptop(&t_state.current.server->dst_addr.sa, addrbuf, sizeof(addrbuf));
+
+  const uint8_t    max_connect_retries = HttpTransact::origin_server_connect_attempts_max_retries(&t_state);
+  const ts_seconds fail_window         = t_state.txn_conf->down_server_timeout;
+
+  // Mark the host DOWN only after every attempt has failed. `max_connect_retries` counts only "retries", so the total attempt
+  // budget is `max_connect_retries + 1` (the initial connect plus each retry).
+  auto [down, fail_count] = info->active->increment_fail_count(time_down, max_connect_retries + 1, fail_window);
+
+  if (down) {
+    Metrics::Counter::increment(http_rsb.down_server_no_requests);
+    char            *url_str = t_state.hdr_info.client_request.url_string_get_ref(nullptr);
+    std::string_view host_name{t_state.unmapped_url.host_get()};
+    swoc::bwprint(error_bw_buffer, "CONNECT : {::s} connecting to {} for host='{}' url='{}' fail_count='{}' marking down",
+                  swoc::bwf::Errno(t_state.current.server->connect_result), t_state.current.server->dst_addr, host_name,
+                  swoc::bwf::FirstOf(url_str, "<none>"), fail_count);
+    Log::error("%s", error_bw_buffer.c_str());
+    SMDbg(dbg_ctl_http, "hostdb update marking IP: %s as down", addrbuf);
+    ATS_PROBE2(hostdb_mark_ip_as_down, sm_id, addrbuf);
+  } else {
+    ATS_PROBE3(hostdb_inc_ip_failcount, sm_id, addrbuf, fail_count);
+    SMDbg(dbg_ctl_http, "hostdb increment IP failcount %s to %d", addrbuf, fail_count);
+  }
 }
 
 void

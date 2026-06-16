@@ -39,11 +39,11 @@ autest:
     records_config:
       proxy.config.diags.debug.enabled: 1
       proxy.config.diags.debug.tags: 'http|hostdb|dns'
-      proxy.config.http.connect_attempts_rr_retries: 2
-      proxy.config.http.connect_attempts_max_retries: 0
-      proxy.config.http.connect_attempts_max_retries_down_server: 0
+      proxy.config.http.connect_attempts_rr_retries: 1
+      proxy.config.http.connect_attempts_max_retries: 1
+      proxy.config.http.connect_attempts_max_retries_suspect_server: 1
       proxy.config.http.connect_attempts_timeout: 1
-      proxy.config.http.down_server.cache_time: 10
+      proxy.config.http.down_server.cache_time: 3
 
     remap_config:
       - from: "http://example.com/"
@@ -55,7 +55,9 @@ autest:
 
 sessions:
 - transactions:
-  # try 0.0.0.1
+  # Both 0.0.0.1 and 0.0.0.2 are UP. ATS tries one host, then rr_retries to the
+  # other (connect_attempts_rr_retries=1). Both attempts fail, so the client
+  # gets 502. Each host's fail_count is now 1.
   - client-request:
       method: GET
       url: /path/
@@ -73,7 +75,8 @@ sessions:
     proxy-response:
       status: 502
 
-  # try 0.0.0.1 again
+  # Same round-robin path as above. After this attempt each host's fail_count
+  # reaches connect_attempts_max_retries + 1 (=2), so both are marked DOWN.
   - client-request:
       method: GET
       url: /path/
@@ -91,7 +94,8 @@ sessions:
     proxy-response:
       status: 502
 
-  # try 0.0.0.2
+  # Within down_server.cache_time (3s): both hosts are still cached as DOWN, so
+  # ATS skips the connect attempts entirely and returns 500.
   - client-request:
       method: GET
       url: /path/
@@ -107,45 +111,10 @@ sessions:
       reason: OK
 
     proxy-response:
-      status: 502
-
-  # try 0.0.0.2 again
-  - client-request:
-      method: GET
-      url: /path/
-      version: '1.1'
-      headers:
-        fields:
-        - [Host, example.com]
-        - [uuid, 4]
-
-    # should not hit
-    server-response:
-      status: 200
-      reason: OK
-
-    proxy-response:
-      status: 502
-
-  # The request is expected to hit the down_server cache and immediately receive a 500 response.
-  - client-request:
-      method: GET
-      url: /path/
-      version: '1.1'
-      headers:
-        fields:
-        - [Host, example.com]
-        - [uuid, 10]
-
-    # should not hit
-    server-response:
-      status: 200
-      reason: OK
-
-    proxy-response:
       status: 500
 
-  # when down_server.cache_time is expired, try connect attempts
+  # After the 5s delay, down_server.cache_time (3s) has expired. ATS tries both
+  # hosts again via round-robin; both still fail, so the client gets 502.
   - client-request:
       method: GET
       url: /path/
@@ -154,7 +123,7 @@ sessions:
         fields:
         - [Host, example.com]
         - [uuid, 20]
-      delay: 10s
+      delay: 5s
 
     # should not hit
     server-response:

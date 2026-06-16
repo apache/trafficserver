@@ -1003,7 +1003,6 @@ public:
   static void Forbidden(State *s);
   static void SelfLoop(State *s);
   static void TooEarly(State *s);
-  static void OriginDown(State *s);
   static void PostActiveTimeoutResponse(State *s);
   static void PostInactiveTimeoutResponse(State *s);
   static void DecideCacheLookup(State *s);
@@ -1034,7 +1033,7 @@ public:
   static void handle_response_from_parent_plugin(State *s);
   static void handle_response_from_server(State *s);
   static void delete_server_rr_entry(State *s, int max_retries);
-  static void retry_server_connection_not_open(State *s, ServerState_t conn_state, unsigned max_retries);
+  static void retry_server_connection_not_open(State *s, unsigned max_retries);
   static void error_log_connection_failure(State *s, ServerState_t conn_state);
   static void handle_server_connection_not_open(State *s);
   static void handle_forward_server_connection_open(State *s);
@@ -1077,6 +1076,8 @@ public:
   static bool does_client_request_permit_storing(CacheControlResult *c, HTTPHdr *h);
   static bool handle_trace_and_options_requests(State *s, HTTPHdr *incoming_hdr);
   static void bootstrap_state_variables_from_request(State *s, HTTPHdr *incoming_request);
+
+  static uint8_t origin_server_connect_attempts_max_retries(State *s);
 
   // WARNING:  this function may be called multiple times for the same transaction.
   //

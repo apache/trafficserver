@@ -496,11 +496,13 @@ static constexpr RecordElement RecordsConfig[] =
   //        ##################################
   //        # origin server connect attempts #
   //        ##################################
-  {RECT_CONFIG, "proxy.config.http.connect_attempts_max_retries", RECD_INT, "3", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  {RECT_CONFIG, "proxy.config.http.connect_attempts_max_retries", RECD_INT, "3", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-254]", RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.http.connect_attempts_max_retries_down_server", RECD_INT, "1", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  {RECT_CONFIG, "proxy.config.http.connect_attempts_max_retries_down_server", RECD_INT, "1", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-254]", RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.http.connect_attempts_rr_retries", RECD_INT, "3", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  {RECT_CONFIG, "proxy.config.http.connect_attempts_max_retries_suspect_server", RECD_INT, "1", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-254]", RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.http.connect_attempts_rr_retries", RECD_INT, "3", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-254]", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.http.connect_attempts_timeout", RECD_INT, "30", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,

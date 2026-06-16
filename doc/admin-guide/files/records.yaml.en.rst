@@ -1818,15 +1818,28 @@ Origin Server Connect Attempts
    The maximum number of connection retries |TS| can make when the origin server is not responding.
    Each retry attempt lasts for `proxy.config.http.connect_attempts_timeout`_ seconds.  Once the maximum number of retries is
    reached, the origin is marked down (as controlled by `proxy.config.http.connect.down.policy`_.  After this, the setting
-   `proxy.config.http.connect_attempts_max_retries_down_server`_ is used to limit the number of retry attempts to the known down origin.
+   `proxy.config.http.connect_attempts_max_retries_suspect_server`_ is used to limit the number of retry attempts when the origin is
+   in the SUSPECT state (recovering after `proxy.config.http.down_server.cache_time`_ has elapsed).
+
+.. ts:cv:: CONFIG proxy.config.http.connect_attempts_max_retries_suspect_server INT 1
+   :reloadable:
+   :overridable:
+
+   Maximum number of connection retries |TS| can make while an origin is in the SUSPECT state (the first request after
+   `proxy.config.http.down_server.cache_time`_ has elapsed on a previously-down origin). The total attempt budget for a SUSPECT
+   origin is therefore ``connect_attempts_max_retries_suspect_server + 1`` (the initial probe plus each retry). If any attempt
+   succeeds, the origin transitions back to UP; if all attempts fail, the origin returns to DOWN for another
+   `proxy.config.http.down_server.cache_time`_ seconds. Typically smaller than `proxy.config.http.connect_attempts_max_retries`_
+   so the recovering origin is not flooded.
 
 .. ts:cv:: CONFIG proxy.config.http.connect_attempts_max_retries_down_server INT 1
    :reloadable:
    :overridable:
+   :deprecated:
 
-   Maximum number of connection attempts |TS| can make while an origin is marked down per request.  Typically this value is smaller than
-   `proxy.config.http.connect_attempts_max_retries`_ so an error is returned to the client faster and also to reduce the load on the down origin.
-   The timeout interval `proxy.config.http.connect_attempts_timeout`_ in seconds is used with this setting.
+   This setting is deprecated in favor of :ts:cv:`proxy.config.http.connect_attempts_max_retries_suspect_server`. If the
+   deprecated setting is set explicitly and the replacement is not, the deprecated value is mirrored forward and a warning is
+   logged. If both are set explicitly, the new setting wins and the deprecated value is ignored.
 
 .. ts:cv:: CONFIG proxy.config.http.connect_attempts_retry_backoff_base INT 0
    :reloadable:

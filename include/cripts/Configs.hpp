@@ -154,6 +154,8 @@ private:
 
       cripts::IntConfig connect_attempts_max_retries{"proxy.config.http.connect_attempts_max_retries"};
       cripts::IntConfig connect_attempts_max_retries_down_server{"proxy.config.http.connect_attempts_max_retries_down_server"};
+      cripts::IntConfig connect_attempts_max_retries_suspect_server{
+        "proxy.config.http.connect_attempts_max_retries_suspect_server"};
       cripts::IntConfig connect_attempts_rr_retries{"proxy.config.http.connect_attempts_rr_retries"};
       cripts::IntConfig connect_attempts_timeout{"proxy.config.http.connect_attempts_timeout"};
       cripts::IntConfig default_buffer_size{"proxy.config.http.default_buffer_size"};

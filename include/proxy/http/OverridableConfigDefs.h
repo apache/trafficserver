@@ -160,7 +160,8 @@
   X(HTTP_TRANSACTION_NO_ACTIVITY_TIMEOUT_OUT,       transaction_no_activity_timeout_out,        "proxy.config.http.transaction_no_activity_timeout_out",          INT,    GENERIC) \
   X(HTTP_TRANSACTION_ACTIVE_TIMEOUT_OUT,            transaction_active_timeout_out,             "proxy.config.http.transaction_active_timeout_out",               INT,    GENERIC) \
   X(HTTP_CONNECT_ATTEMPTS_MAX_RETRIES,              connect_attempts_max_retries,               "proxy.config.http.connect_attempts_max_retries",                 INT,    GENERIC) \
-  X(HTTP_CONNECT_ATTEMPTS_MAX_RETRIES_DOWN_SERVER,  connect_attempts_max_retries_down_server,   "proxy.config.http.connect_attempts_max_retries_down_server",     INT,    GENERIC) \
+  X(HTTP_CONNECT_ATTEMPTS_MAX_RETRIES_DOWN_SERVER,  connect_attempts_max_retries_suspect_server, "proxy.config.http.connect_attempts_max_retries_down_server",     INT,    GENERIC) \
+  X(HTTP_CONNECT_ATTEMPTS_MAX_RETRIES_SUSPECT_SERVER, connect_attempts_max_retries_suspect_server, "proxy.config.http.connect_attempts_max_retries_suspect_server", INT,    GENERIC) \
   X(HTTP_CONNECT_ATTEMPTS_RR_RETRIES,               connect_attempts_rr_retries,                "proxy.config.http.connect_attempts_rr_retries",                  INT,    GENERIC) \
   X(HTTP_CONNECT_ATTEMPTS_TIMEOUT,                  connect_attempts_timeout,                   "proxy.config.http.connect_attempts_timeout",                     INT,    GENERIC) \
   X(HTTP_DOWN_SERVER_CACHE_TIME,                    down_server_timeout,                        "proxy.config.http.down_server.cache_time",                       INT,    HttpDownServerCacheTimeConv) \
