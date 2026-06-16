@@ -39,19 +39,29 @@ namespace
 GlobalPlugin *plugin;
 }
 
-class AsyncHttpFetch2 : public AsyncHttpFetch
+class AsyncHttpFetch2 final : public AsyncHttpFetch
 {
 public:
   explicit AsyncHttpFetch2(const string &request) : AsyncHttpFetch(request){};
+  void
+  run() override
+  {
+    AsyncHttpFetch::run();
+  }
 };
 
-class AsyncHttpFetch3 : public AsyncHttpFetch
+class AsyncHttpFetch3 final : public AsyncHttpFetch
 {
 public:
   AsyncHttpFetch3(const string &request, HttpMethod method) : AsyncHttpFetch(request, method){};
+  void
+  run() override
+  {
+    AsyncHttpFetch::run();
+  }
 };
 
-class DelayedAsyncHttpFetch : public AsyncHttpFetch, public AsyncReceiver<AsyncTimer>
+class DelayedAsyncHttpFetch final : public AsyncHttpFetch, public AsyncReceiver<AsyncTimer>
 {
 public:
   DelayedAsyncHttpFetch(const string &request, HttpMethod method, std::shared_ptr<Mutex> mutex)

@@ -76,9 +76,18 @@ Config::loadConfig(const std::string &filename)
       }
       line.ltrim_if(&isspace);
       ts::TextView field = line.take_prefix_at('=');
-      TSDebug(PLUGIN, "%.*s=%.*s", static_cast<int>(field.size()), field.data(), static_cast<int>(line.size()), line.data());
-      if (field.size() > 0) {
-        m_config[std::string(field.data(), field.size())] = std::string(line.data(), line.size());
+      std::string field_name;
+      std::string value;
+      if (!field.empty()) {
+        field_name.assign(field.data(), field.size());
+      }
+      if (!line.empty()) {
+        value.assign(line.data(), line.size());
+      }
+      TSDebug(PLUGIN, "%.*s=%.*s", static_cast<int>(field_name.size()), field_name.c_str(), static_cast<int>(value.size()),
+              value.c_str());
+      if (!field_name.empty()) {
+        m_config[field_name] = value;
       }
     }
 
