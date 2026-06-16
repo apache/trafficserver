@@ -23,7 +23,7 @@ is enabled, the compressed result is reused across handshakes. When disabled,
 each handshake compresses independently and the cache_hit metric stays at 0.
 '''
 
-Test.SkipUnless(Condition.HasATSFeature('TS_HAS_CERT_COMPRESSION'))
+Test.SkipUnless(Condition.HasATSFeature('TS_HAS_CERT_COMPRESSION_CALLBACKS'))
 
 REPLAY_FILE = 'replay/tls_cert_compression_cache.replay.yaml'
 
