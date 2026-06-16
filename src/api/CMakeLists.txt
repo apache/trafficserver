@@ -28,6 +28,9 @@ set(TSAPI_PUBLIC_HEADERS ${PROJECT_SOURCE_DIR}/include/ts/ts.h ${PROJECT_SOURCE_
 
 # OpenSSL needs to be listed in before other libraries that can be found in the system default lib directory (See #11511)
 target_link_libraries(tsapi PRIVATE libswoc::libswoc yaml-cpp::yaml-cpp OpenSSL::SSL)
+if(ENABLE_PROBES)
+  target_link_libraries(tsapi PRIVATE systemtap::systemtap)
+endif()
 set_target_properties(tsapi PROPERTIES PUBLIC_HEADER "${TSAPI_PUBLIC_HEADERS}")
 
 # Items common between api and other ts libraries
