@@ -26,6 +26,7 @@
 #include "SSLStats.h"
 #include <openssl/ssl.h>
 #include <zstd.h>
+#include <cstring>
 
 int
 compression_func_zstd(SSL *ssl, CBB *out, const uint8_t *in, size_t in_len)

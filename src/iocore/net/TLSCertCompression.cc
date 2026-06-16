@@ -139,7 +139,9 @@ cert_compress_cache_attach(SSL_CTX *ctx)
     return;
   }
   auto *cache = new CertCompressionCache();
-  SSL_CTX_set_ex_data(ctx, cert_compress_cache_index, cache);
+  if (SSL_CTX_set_ex_data(ctx, cert_compress_cache_index, cache) != 1) {
+    delete cache;
+  }
 }
 
 void

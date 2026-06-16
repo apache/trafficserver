@@ -27,6 +27,7 @@
 #include <openssl/ssl.h>
 #include <brotli/decode.h>
 #include <brotli/encode.h>
+#include <cstring>
 
 int
 compression_func_brotli(SSL *ssl, CBB *out, const uint8_t *in, size_t in_len)
