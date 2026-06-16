@@ -99,6 +99,7 @@ ssl_multicert:
                 'proxy.config.ssl.server.private_key.path': ts.Variables.SSLDir,
                 'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
                 'proxy.config.ssl.client.cert_compression.algorithms': self._algorithm,
+                'proxy.config.http.keep_alive_enabled_out': 0,
                 'proxy.config.diags.debug.enabled': 1,
                 'proxy.config.diags.debug.tags': 'ssl_cert_compress',
             })
@@ -156,7 +157,17 @@ ssl_multicert:
         tr.StillRunningAfter = self._server
 
         # Test run 5: Check cache_hit metric.
-        if not self._cache_enabled:
+        if self._cache_enabled:
+            tr = Test.AddTestRun(f'Verify cache_hit is 1 with cache {cache_label}')
+            tr.Processes.Default.Command = 'traffic_ctl metric get proxy.process.ssl.cert_compress.cache_hit'
+            tr.Processes.Default.Env = self._ts_mid.Env
+            tr.Processes.Default.ReturnCode = 0
+            tr.Processes.Default.Streams.All = Testers.ContainsExpression(
+                'proxy.process.ssl.cert_compress.cache_hit 1', 'cache_hit should be 1 when caching is enabled (1 miss + 1 hit)')
+            tr.StillRunningAfter = self._ts_mid
+            tr.StillRunningAfter = self._ts_edge
+            tr.StillRunningAfter = self._server
+        else:
             tr = Test.AddTestRun(f'Verify cache_hit is 0 with cache {cache_label}')
             tr.Processes.Default.Command = 'traffic_ctl metric get proxy.process.ssl.cert_compress.cache_hit'
             tr.Processes.Default.Env = self._ts_mid.Env

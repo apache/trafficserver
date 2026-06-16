@@ -54,8 +54,11 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/benchmark/catch_benchmark.hpp>
 
+#include <algorithm>
 #include <atomic>
+#include <chrono>
 #include <cstdint>
+#include <cstdio>
 #include <random>
 #include <thread>
 #include <vector>
