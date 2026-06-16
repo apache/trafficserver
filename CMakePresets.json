@@ -194,13 +194,9 @@
       "name": "ci-fedora-cxx20",
       "displayName": "CI Fedora c++20",
       "description": "CI Pipeline config for Fedora Linux compiled with c++20",
-      "inherits": ["ci"],
+      "inherits": ["ci-fedora"],
       "cacheVariables": {
-        "opentelemetry_ROOT": "/opt",
-        "CURL_ROOT": "/opt",
-        "wamr_ROOT": "/opt",
-        "CMAKE_CXX_STANDARD": "20",
-        "ENABLE_CRIPTS": "ON"
+        "CMAKE_CXX_STANDARD": "20"
       }
     },
     {
@@ -450,4 +446,3 @@
     }
   ]
 }
-
