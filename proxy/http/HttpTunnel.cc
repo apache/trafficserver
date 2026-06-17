@@ -413,10 +413,16 @@ ChunkedHandler::read_trailer()
         //  must a LF
         state = (state == CHUNK_READ_TRAILER_BLANK) ? CHUNK_READ_TRAILER_CR : CHUNK_READ_TRAILER_LINE;
       } else if (ParseRules::is_lf(*tmp)) {
-        // For a LF to signal we are done reading the
-        //   trailer, the line must have either been blank
-        //   or must have only had a CR on it
-        if (state == CHUNK_READ_TRAILER_CR || state == CHUNK_READ_TRAILER_BLANK) {
+        // For a LF to signal we are done reading the trailer, the line must have
+        // been blank or have had only a CR on it. In RFC 9112 Section 7.1 the
+        // empty line that ends the chunked body (after the trailer section) is a
+        // full CRLF. A bare LF blank line is accepted only in non-strict mode;
+        // under strict parsing it is a protocol error, mirroring the chunk size
+        // line, so any bytes following the bare LF cannot be framed by a
+        // downstream parser as a separate request.
+        const bool valid_terminator =
+          state == CHUNK_READ_TRAILER_CR || (state == CHUNK_READ_TRAILER_BLANK && !strict_chunk_parsing);
+        if (valid_terminator) {
           state = CHUNK_READ_DONE;
           Debug("http_chunk", "completed read of trailers");
 
@@ -427,6 +433,12 @@ ChunkedHandler::read_trailer()
             chunked_size += FINAL_CRLF.size();
           }
           done = true;
+          break;
+        } else if (state == CHUNK_READ_TRAILER_BLANK) {
+          // Strict parsing: a bare LF blank line is not a valid trailer terminator.
+          Debug("http_chunk", "rejecting bare LF trailer terminator under strict parsing");
+          state = CHUNK_READ_ERROR;
+          done  = true;
           break;
         } else {
           // A LF that does not terminate the trailer
