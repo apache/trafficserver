@@ -787,7 +787,9 @@ public:
   uint16_t
   get_proxy_protocol_src_port() const
   {
-    return ats_ip_port_host_order(this->get_proxy_protocol_addr(ProxyProtocolData::SRC));
+    sockaddr const *addr = this->get_proxy_protocol_addr(ProxyProtocolData::SRC);
+
+    return addr == nullptr ? 0 : ats_ip_port_host_order(addr);
   }
 
   sockaddr const *
@@ -799,7 +801,9 @@ public:
   uint16_t
   get_proxy_protocol_dst_port() const
   {
-    return ats_ip_port_host_order(this->get_proxy_protocol_addr(ProxyProtocolData::DST));
+    sockaddr const *addr = this->get_proxy_protocol_addr(ProxyProtocolData::DST);
+
+    return addr == nullptr ? 0 : ats_ip_port_host_order(addr);
   };
 
   void set_proxy_protocol_info(const ProxyProtocol &src);
