@@ -34,6 +34,7 @@
 #include "fetch_policy.h"
 #include "headers.h"
 #include "evaluate.h"
+#include "path.h"
 
 static const char *
 getEventName(TSEvent event)
@@ -550,25 +551,35 @@ contHandleFetch(const TSCont contp, TSEvent event, void *edata)
         /* Trigger all necessary background fetches based on the query string(s) */
 
         PrefetchDebug("currentQuery: %s", currentQuery.c_str());
-        size_t lastSlashIndex = currentPath.find_last_of("/");
-        size_t keyLen         = config.getQueryKeyName().size();
-        unsigned done         = 1;
+        const String &queryKeyName = config.getQueryKeyName();
+        const size_t keyLen        = queryKeyName.size();
+        unsigned done              = 1;
         std::istringstream cStringStream(currentQuery);
-        std::string param;
+        String param;
 
         while (getline(cStringStream, param, '&')) {
-          if (param.find(config.getQueryKeyName()) != 0) {
+          if (param.size() <= keyLen || param.compare(0, keyLen, queryKeyName) != 0 || param[keyLen] != '=') {
+            continue;
+          }
+          String nextFile = param.substr(keyLen + 1); // +1 for the '='
+          if (nextFile.empty()) {
+            PrefetchDebug("skipping empty query prefetch path");
             continue;
           }
           if (config.getFetchCount() < done++) {
             break;
           }
-          std::string nextFile = param.substr(keyLen + 1); // +1 for the '='
-          std::string nextPath = currentPath.substr(0, lastSlashIndex + 1) + nextFile;
 
-          PrefetchDebug("nextPath %s, cacheKey %s", nextPath.c_str(), data->_cachekey.c_str());
-          BgFetch::schedule(state, config, /* askPermission */ false, reqBuffer, reqHdrLoc, txnp, nextPath.c_str(),
-                            nextPath.length(), data->_cachekey);
+          SafeRelativeFetchPath nextPath;
+          if (!makeSafeRelativeFetchPath(currentPath, nextFile, nextPath)) {
+            PrefetchDebug("skipping unsafe query prefetch path: '%s'", nextFile.c_str());
+            continue;
+          }
+
+          PrefetchDebug("nextPath %s, cacheKey %s", nextPath.path.c_str(), data->_cachekey.c_str());
+          BgFetch::schedule(state, config, /* askPermission */ false, reqBuffer, reqHdrLoc, txnp, nextPath.path.c_str(),
+                            nextPath.path.length(), data->_cachekey, /* removeQuery */ true,
+                            nextPath.hasQuery ? nextPath.query.c_str() : nullptr, nextPath.query.length());
         }
       }
     }
