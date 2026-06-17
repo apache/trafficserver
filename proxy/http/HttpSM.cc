@@ -5112,6 +5112,23 @@ HttpSM::get_outbound_sni() const
   return zret;
 }
 
+std::string_view
+HttpSM::get_outbound_sni_for_cert_verification() const
+{
+  auto zret = this->get_outbound_sni();
+  if (zret.empty()) {
+    int len          = 0;
+    const char *host = t_state.hdr_info.server_request.host_get(&len);
+    if (host != nullptr && len > 0) {
+      zret = std::string_view(host, len);
+    }
+  }
+  if (zret.empty() && t_state.current.server != nullptr && t_state.current.server->name != nullptr) {
+    zret = t_state.current.server->name;
+  }
+  return zret;
+}
+
 //////////////////////////////////////////////////////////////////////////
 //
 //  HttpSM::do_http_server_open()

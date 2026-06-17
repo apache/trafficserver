@@ -31,9 +31,20 @@
  ****************************************************************************/
 
 #include "HttpSessionManager.h"
+#include "P_SSLClientUtils.h"
 #include "../ProxySession.h"
 #include "HttpSM.h"
 #include "HttpDebugNames.h"
+
+namespace
+{
+bool
+validate_session_origin_cert(HttpSM *sm, PoolableSession *session)
+{
+  return validate_server_certificate_hostname(session->get_netvc(), sm->get_outbound_sni_for_cert_verification());
+}
+
+} // namespace
 
 // Initialize a thread to handle HTTP session management
 void
@@ -157,7 +168,8 @@ ServerSessionPool::acquireSession(sockaddr const *addr, CryptoHash const &hostna
       if (port == ats_ip_port_cast(first->get_remote_addr()) &&
           (!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_SNI) || validate_sni(sm, first->get_netvc())) &&
           (!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_HOSTSNISYNC) || validate_host_sni(sm, first->get_netvc())) &&
-          (!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_CERT) || validate_cert(sm, first->get_netvc()))) {
+          (!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_CERT) || validate_cert(sm, first->get_netvc())) &&
+          validate_session_origin_cert(sm, first)) {
         zret = HSM_DONE;
         break;
       }
@@ -179,14 +191,21 @@ ServerSessionPool::acquireSession(sockaddr const *addr, CryptoHash const &hostna
         if ((!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_HOSTONLY) || first->hostname_hash == hostname_hash) &&
             (!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_SNI) || validate_sni(sm, first->get_netvc())) &&
             (!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_HOSTSNISYNC) || validate_host_sni(sm, first->get_netvc())) &&
-            (!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_CERT) || validate_cert(sm, first->get_netvc()))) {
+            (!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_CERT) || validate_cert(sm, first->get_netvc())) &&
+            validate_session_origin_cert(sm, first)) {
           zret = HSM_DONE;
           break;
         }
         ++first;
       }
-    } else if (first != m_ip_pool.end()) {
-      zret = HSM_DONE;
+    } else {
+      while (first != m_ip_pool.end() && ats_ip_addr_port_eq(first->get_remote_addr(), addr)) {
+        if (validate_session_origin_cert(sm, first)) {
+          zret = HSM_DONE;
+          break;
+        }
+        ++first;
+      }
     }
     if (zret == HSM_DONE) {
       to_return = first;
@@ -359,7 +378,8 @@ HttpSessionManager::acquire_session(HttpSM *sm, sockaddr const *ip, const char *
         (!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_HOSTSNISYNC) ||
          ServerSessionPool::validate_host_sni(sm, to_return->get_netvc())) &&
         (!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_CERT) ||
-         ServerSessionPool::validate_cert(sm, to_return->get_netvc()))) {
+         ServerSessionPool::validate_cert(sm, to_return->get_netvc())) &&
+        validate_session_origin_cert(sm, to_return)) {
       Debug("http_ss", "[%" PRId64 "] [acquire session] returning attached session ", to_return->connection_id());
       to_return->state = PoolableSession::SSN_IN_USE;
       sm->create_server_txn(to_return);
