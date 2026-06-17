@@ -419,7 +419,7 @@ parse_data(TSCont contp, TSIOBufferReader input_reader, int avail, int *toconsum
 static const char *
 _basename(const char *filename)
 {
-  char *cptr;
+  const char *cptr;
   const char *ptr = filename;
 
   while ((cptr = strchr(ptr, '/')) != NULL) {

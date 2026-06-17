@@ -641,7 +641,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
     int pathsz;
     TSUrlPathGet(rri->requestBufp, rri->requestUrl, &pathsz);
     if (pathsz > 0) {
-      VERROR("Path is not an exact match. Rejecting!");
+      VDEBUG("Path is not an exact match. Rejecting!");
       TSHttpTxnStatusSet(rh, TS_HTTP_STATUS_NOT_FOUND);
       return TSREMAP_NO_REMAP;
     }

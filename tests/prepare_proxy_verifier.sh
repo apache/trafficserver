@@ -53,7 +53,7 @@ then
     if [ ! -e ${pv_tar} ]
     then
         # default to using native sha1sum command when available
-        if [ $(which sha1sum) ]
+        if command -v sha1sum >/dev/null 2>&1
         then
             SHASUM=${SHASUM:-sha1sum}
         else
@@ -68,20 +68,16 @@ EOF
         ${SHASUM} -c ${pv_top_dir}/sha1 || fail "SHA1 mismatch for downloaded ${pv_tar_filename}."
     fi
 
-    # 2. Untar the Proxy Verifier binaries.
-    mkdir -p ${pv_unpack_dir}
-    ${TAR} -x -C ${pv_unpack_dir} -f ${pv_tar}
-
-    # 3. Determine the target OS.
-    pv_os_dir=""
+    # 2. Determine the target OS.
+    pv_os_archive_dir=""
     case $(uname -s) in
     Darwin)
         case $(uname -m) in
         x86_64)
-            pv_os_dir="${pv_unpack_dir}/${pv_dir}/darwin-amd64"
+            pv_os_archive_dir="${pv_dir}/darwin-amd64"
             ;;
         arm64)
-            pv_os_dir="${pv_unpack_dir}/${pv_dir}/darwin-arm64"
+            pv_os_archive_dir="${pv_dir}/darwin-arm64"
             ;;
         *)
             fail "Unrecognized Mac architecture: $(uname -m)"
@@ -89,13 +85,12 @@ EOF
         esac
         ;;
     Linux)
-        pv_os_dir="${pv_unpack_dir}/${pv_dir}/linux"
         case $(uname -m) in
         x86_64)
-            pv_os_dir="${pv_unpack_dir}/${pv_dir}/linux-amd64"
+            pv_os_archive_dir="${pv_dir}/linux-amd64"
             ;;
         aarch64)
-            pv_os_dir="${pv_unpack_dir}/${pv_dir}/linux-arm64"
+            pv_os_archive_dir="${pv_dir}/linux-arm64"
             ;;
         *)
             fail "Unrecognized Linux architecture: $(uname -m)"
@@ -106,10 +101,14 @@ EOF
         fail "We need to build proxy-verifier for $(uname -s)"
     esac
 
-    # 4. Link the OS-specific binaries to the bin directory.
+    # 3. Extract the OS-specific binaries to the bin directory.
     mkdir -p ${bin_dir}
-    ln -s ${pv_os_dir}/verifier-client ${bin_dir}
-    ln -s ${pv_os_dir}/verifier-server ${bin_dir}
-    chmod +x ${pv_client}
-    chmod +x ${pv_server}
+    rm -f "${pv_client}" "${pv_server}" "${pv_client}.tmp" "${pv_server}.tmp"
+    ${TAR} -x -O -f "${pv_tar}" "${pv_os_archive_dir}/verifier-client" > "${pv_client}.tmp" || \
+        fail "Failed to extract ${pv_os_archive_dir}/verifier-client from ${pv_tar_filename}."
+    ${TAR} -x -O -f "${pv_tar}" "${pv_os_archive_dir}/verifier-server" > "${pv_server}.tmp" || \
+        fail "Failed to extract ${pv_os_archive_dir}/verifier-server from ${pv_tar_filename}."
+    mv "${pv_client}.tmp" "${pv_client}"
+    mv "${pv_server}.tmp" "${pv_server}"
+    chmod +x "${pv_client}" "${pv_server}"
 fi

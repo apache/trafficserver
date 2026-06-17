@@ -234,4 +234,3 @@ sessions:
       headers:
         fields:
         - [ X-Response, {value: 'fifth-response', as: equal } ]
-
