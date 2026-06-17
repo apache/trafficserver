@@ -123,7 +123,9 @@ struct ProtocolProbeTrampoline : public Continuation, public ProtocolProbeSessio
 
       if (netvc->has_proxy_protocol(reader)) {
         Debug("proxyprotocol", "ioCompletionEvent: http has proxy protocol header");
-        netvc->set_remote_addr(netvc->get_proxy_protocol_src_addr());
+        if (sockaddr const *proxy_src_addr = netvc->get_proxy_protocol_src_addr(); proxy_src_addr != nullptr) {
+          netvc->set_remote_addr(proxy_src_addr);
+        }
       } else {
         Debug("proxyprotocol",
               "ioCompletionEvent: proxy protocol was enabled, but required header was not present in the transaction - "

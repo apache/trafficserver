@@ -312,8 +312,12 @@ set_context_cert(SSL *ssl, void *arg)
     IpEndpoint ip;
     int namelen = sizeof(ip);
 
-    if (netvc->get_is_proxy_protocol() && netvc->get_proxy_protocol_version() != ProxyProtocolVersion::UNDEFINED) {
-      ip.sa = *(netvc->get_proxy_protocol_dst_addr());
+    sockaddr const *proxy_protocol_dst_addr =
+      netvc->get_is_proxy_protocol() && netvc->get_proxy_protocol_version() != ProxyProtocolVersion::UNDEFINED ?
+        netvc->get_proxy_protocol_dst_addr() :
+        nullptr;
+    if (proxy_protocol_dst_addr != nullptr) {
+      ip.sa = *proxy_protocol_dst_addr;
       ip_port_text_buffer ipb1;
       ats_ip_nptop(&ip, ipb1, sizeof(ipb1));
       cc = lookup->find(ip);

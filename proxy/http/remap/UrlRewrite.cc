@@ -410,7 +410,8 @@ UrlRewrite::PerformACLFiltering(HttpTransact::State *s, url_mapping *map)
         src_addr   = &s->client_info.src_addr;
         local_addr = &s->client_info.dst_addr;
         break;
-      } else if (IpAllow::Subject::PROXY == IpAllow::subjects[i] && pp_info.version != ProxyProtocolVersion::UNDEFINED) {
+      } else if (IpAllow::Subject::PROXY == IpAllow::subjects[i] && pp_info.version != ProxyProtocolVersion::UNDEFINED &&
+                 pp_info.src_addr.isValid() && pp_info.dst_addr.isValid()) {
         src_addr   = &pp_info.src_addr;
         local_addr = &pp_info.dst_addr;
         break;

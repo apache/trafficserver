@@ -5933,8 +5933,12 @@ HttpTransact::initialize_state_variables_from_request(State *s, HTTPHdr *obsolet
     s->request_data.incoming_port = vc->get_local_port();
     s->pp_info.version            = vc->get_proxy_protocol_version();
     if (s->pp_info.version != ProxyProtocolVersion::UNDEFINED) {
-      ats_ip_copy(s->pp_info.src_addr, vc->get_proxy_protocol_src_addr());
-      ats_ip_copy(s->pp_info.dst_addr, vc->get_proxy_protocol_dst_addr());
+      if (sockaddr const *proxy_src_addr = vc->get_proxy_protocol_src_addr(); proxy_src_addr != nullptr) {
+        ats_ip_copy(s->pp_info.src_addr, proxy_src_addr);
+      }
+      if (sockaddr const *proxy_dst_addr = vc->get_proxy_protocol_dst_addr(); proxy_dst_addr != nullptr) {
+        ats_ip_copy(s->pp_info.dst_addr, proxy_dst_addr);
+      }
     }
   }
   s->request_data.xact_start                      = s->client_request_time;

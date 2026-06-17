@@ -29,7 +29,7 @@
 bool
 HttpSessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferReader *reader)
 {
-  sockaddr const *client_ip = netvc->get_remote_addr();
+  sockaddr const *client_ip = nullptr;
   IpAllow::ACL acl;
   ip_port_text_buffer ipb;
 
@@ -39,9 +39,14 @@ HttpSessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferReade
       break;
     } else if (IpAllow::Subject::PROXY == IpAllow::subjects[i] &&
                netvc->get_proxy_protocol_version() != ProxyProtocolVersion::UNDEFINED) {
-      client_ip = netvc->get_proxy_protocol_src_addr();
-      break;
+      if (sockaddr const *proxy_ip = netvc->get_proxy_protocol_src_addr(); proxy_ip != nullptr) {
+        client_ip = proxy_ip;
+        break;
+      }
     }
+  }
+  if (client_ip == nullptr) {
+    client_ip = netvc->get_remote_addr();
   }
   acl = IpAllow::match(client_ip, IpAllow::SRC_ADDR);
   if (!acl.isValid()) { // if there's no ACL, it's a hard deny.
