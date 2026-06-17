@@ -31,6 +31,7 @@ using namespace std::string_view_literals;
 #include "tsutil/PostScript.h"
 
 #include "proxy/http/HttpTransact.h"
+#include "proxy/http/remap/RemapProcessor.h"
 #include "records/RecordsConfig.h"
 
 #include <catch2/catch_test_macros.hpp>
@@ -40,6 +41,15 @@ TEST_CASE("HttpTransact", "[http]")
   url_init();
   mime_init();
   http_init();
+
+  SECTION("RemapProcessor tolerates a missing remap table")
+  {
+    HttpTransact::State state;
+    RemapProcessor      processor;
+
+    CHECK_FALSE(processor.setup_for_remap(&state, nullptr));
+    CHECK_FALSE(processor.finish_remap(&state, nullptr));
+  }
 
   SECTION("HttpTransact::merge_response_header_with_cached_header")
   {
