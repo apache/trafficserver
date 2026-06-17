@@ -533,4 +533,64 @@ TEST_CASE("HttpTransact", "[http]")
       ///////////////////////////////////////
     }
   }
+
+  SECTION("HttpTransact::strip_at_headers removes duplicate internal headers")
+  {
+    static constexpr char raw_request[] = "GET / HTTP/1.1\r\n"
+                                          "Host: example.test\r\n"
+                                          "@Ats-Internal: first\r\n"
+                                          "X-Keep: ok\r\n"
+                                          "@Ats-Internal: second\r\n"
+                                          "@Another: third\r\n"
+                                          "\r\n";
+    static constexpr char ats_internal_header[] = "@Ats-Internal";
+    static constexpr char another_header[]      = "@Another";
+    static constexpr char host_header[]         = "Host";
+    static constexpr char keep_header[]         = "X-Keep";
+
+    HTTPHdr hdr;
+    HTTPParser parser;
+    const char *str;
+    int len;
+
+    if (http_rsb == nullptr) {
+      http_rsb = RecAllocateRawStatBlock(static_cast<int>(http_stat_count));
+      REQUIRE(http_rsb != nullptr);
+      REQUIRE(RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.client_request_at_headers_stripped", RECD_COUNTER,
+                                 RECP_PERSISTENT, static_cast<int>(http_client_request_at_headers_stripped_stat),
+                                 RecRawStatSyncCount) == REC_ERR_OKAY);
+      REQUIRE(RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.origin_response_at_headers_stripped", RECD_COUNTER,
+                                 RECP_PERSISTENT, static_cast<int>(http_origin_response_at_headers_stripped_stat),
+                                 RecRawStatSyncCount) == REC_ERR_OKAY);
+    }
+
+    hdr.create(HTTP_TYPE_REQUEST);
+    http_parser_init(&parser);
+
+    auto *start     = raw_request;
+    auto const *end = raw_request + sizeof(raw_request) - 1;
+    ParseResult err;
+
+    while (true) {
+      err = hdr.parse_req(&parser, &start, end, true);
+      if (err != PARSE_RESULT_CONT) {
+        break;
+      }
+    }
+
+    REQUIRE(err == PARSE_RESULT_DONE);
+    HttpTransact::strip_at_headers(hdr, HttpTransact::AtHeaderSource::CLIENT_REQUEST, 1);
+
+    CHECK(hdr.field_find(ats_internal_header, sizeof(ats_internal_header) - 1) == nullptr);
+    CHECK(hdr.field_find(another_header, sizeof(another_header) - 1) == nullptr);
+    CHECK(hdr.field_find(host_header, sizeof(host_header) - 1) != nullptr);
+
+    MIMEField *field = hdr.field_find(keep_header, sizeof(keep_header) - 1);
+    REQUIRE(field != nullptr);
+    str = field->value_get(&len);
+    CHECK(len == 2);
+    CHECK(strncmp(str, "ok", len) == 0);
+
+    hdr.destroy();
+  }
 }

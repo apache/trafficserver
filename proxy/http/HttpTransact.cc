@@ -54,7 +54,56 @@ char const Dns_error_body[] = "connect#dns_failed";
 
 /// Buffer for some error logs.
 thread_local std::string error_bw_buffer;
+
+char const *
+get_at_header_source_name(HttpTransact::AtHeaderSource source)
+{
+  switch (source) {
+  case HttpTransact::AtHeaderSource::CLIENT_REQUEST:
+    return "client request";
+  case HttpTransact::AtHeaderSource::ORIGIN_RESPONSE:
+    return "origin response";
+  }
+
+  return "unknown source";
+}
+
+int
+get_at_header_source_stat(HttpTransact::AtHeaderSource source)
+{
+  switch (source) {
+  case HttpTransact::AtHeaderSource::CLIENT_REQUEST:
+    return http_client_request_at_headers_stripped_stat;
+  case HttpTransact::AtHeaderSource::ORIGIN_RESPONSE:
+    return http_origin_response_at_headers_stripped_stat;
+  }
+
+  return -1;
+}
 } // namespace
+
+void
+HttpTransact::strip_at_headers(HTTPHdr &header, AtHeaderSource source, int64_t sm_id)
+{
+  char const *source_name = get_at_header_source_name(source);
+  int stat_id             = get_at_header_source_stat(source);
+
+  for (auto field = header.begin(); field != header.end();) {
+    MIMEField *current = &*field;
+    auto name          = current->name_get();
+
+    ++field;
+
+    if (!name.empty() && name[0] == '@') {
+      if (stat_id >= 0) {
+        RecIncrRawStat(http_rsb, this_ethread(), stat_id, 1);
+      }
+      Error("[%" PRId64 "] stripped internal @ header from %s: %.*s", sm_id, source_name, static_cast<int>(name.size()),
+            name.data());
+      header.field_delete(current, false);
+    }
+  }
+}
 
 // Support ip_resolve override.
 const MgmtConverter HttpTransact::HOST_RES_CONV{[](const void *data) -> std::string_view {
@@ -1449,6 +1498,8 @@ HttpTransact::ModifyRequest(State *s)
       request.mark_target_dirty();
     }
   }
+
+  strip_at_headers(request, AtHeaderSource::CLIENT_REQUEST, s->state_machine->sm_id);
 
   TxnDebug("http_trans", "END HttpTransact::ModifyRequest");
 

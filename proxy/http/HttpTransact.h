@@ -292,6 +292,8 @@ public:
     HOST_NONE,
   };
 
+  enum class AtHeaderSource { CLIENT_REQUEST, ORIGIN_RESPONSE };
+
   enum ProxyMode_t {
     UNDEFINED_MODE,
     GENERIC_PROXY,
@@ -1012,6 +1014,14 @@ public:
                                        HostDBInfo *host_db_info);
   static void setup_plugin_request_intercept(State *s);
   static void add_client_ip_to_outgoing_request(State *s, HTTPHdr *request);
+  /**
+   * Remove internal @ headers from a parsed header before plugin hooks run.
+   *
+   * @param[in,out] header The header to sanitize in place.
+   * @param[in] source The source of the header being sanitized.
+   * @param[in] sm_id The state machine identifier for diagnostic logging.
+   */
+  static void strip_at_headers(HTTPHdr &header, AtHeaderSource source, int64_t sm_id);
   static RequestError_t check_request_validity(State *s, HTTPHdr *incoming_hdr);
   static ResponseError_t check_response_validity(State *s, HTTPHdr *incoming_hdr);
   static void set_client_request_state(State *s, HTTPHdr *incoming_hdr);

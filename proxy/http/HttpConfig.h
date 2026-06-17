@@ -246,6 +246,8 @@ enum {
   http_ua_msecs_counts_other_unclassified_stat,
 
   disallowed_post_100_continue,
+  http_client_request_at_headers_stripped_stat,
+  http_origin_response_at_headers_stripped_stat,
   http_post_body_too_large,
 
   http_total_x_redirect_stat,
