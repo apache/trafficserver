@@ -456,6 +456,12 @@ register_stat_callbacks()
   RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.incoming_responses", RECD_COUNTER, RECP_PERSISTENT,
                      (int)http_incoming_responses_stat, RecRawStatSyncCount);
 
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.client_request_at_headers_stripped", RECD_COUNTER, RECP_PERSISTENT,
+                     (int)http_client_request_at_headers_stripped_stat, RecRawStatSyncCount);
+
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.origin_response_at_headers_stripped", RECD_COUNTER,
+                     RECP_PERSISTENT, (int)http_origin_response_at_headers_stripped_stat, RecRawStatSyncCount);
+
   RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.invalid_client_requests", RECD_COUNTER, RECP_PERSISTENT,
                      (int)http_invalid_client_requests_stat, RecRawStatSyncCount);
 

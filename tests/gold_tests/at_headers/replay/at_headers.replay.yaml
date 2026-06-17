@@ -1,0 +1,94 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+sessions:
+  - transactions:
+      - client-request:
+          method: "GET"
+          url: &global_path "/global"
+          version: "1.1"
+          headers:
+            fields:
+              - [Host, example.com]
+              - [&global_request_probe "@Client-Test", spoofed-value]
+              - [X-Normal, keep-me]
+              - [uuid, at-header-global-client]
+
+        proxy-request:
+          method: "GET"
+          url: *global_path
+          headers:
+            fields:
+              - [*global_request_probe, {as: absent}]
+              - [&request_added "@Plugin-Request", {as: absent}]
+              - [X-Normal, {value: keep-me, as: equal}]
+
+        server-response:
+          status: 200
+          reason: "OK"
+          headers:
+            fields:
+              - [&response_probe "@Origin-Test", spoofed-response]
+              - [Content-Length, "0"]
+
+        proxy-response:
+          status: 200
+          headers:
+            fields:
+              - [*response_probe, {as: absent}]
+              - [&response_added "@Plugin-Response", {as: absent}]
+              - [&client_stripped_header X-Client-At-Headers-Stripped, {value: "1", as: equal}]
+              - [&origin_stripped_header X-Origin-At-Headers-Stripped, {value: "1", as: equal}]
+
+      - client-request:
+          method: "GET"
+          url: &remap_path "/remap"
+          version: "1.1"
+          headers:
+            fields:
+              - [Host, example.com]
+              - [&remap_request_probe "@Client-Remap-Test", spoofed-value]
+              - [X-Normal, keep-me]
+              - [uuid, at-header-remap-client]
+
+        proxy-request:
+          method: "GET"
+          url: *remap_path
+          headers:
+            fields:
+              - [*remap_request_probe, {as: absent}]
+              - [*request_added, {as: absent}]
+              - [X-Normal, {value: keep-me, as: equal}]
+
+        server-response:
+          status: 200
+          reason: "OK"
+          headers:
+            fields:
+              - [*response_probe, spoofed-remap-response]
+              - [Content-Length, "0"]
+
+        proxy-response:
+          status: 200
+          headers:
+            fields:
+              - [*response_probe, {as: absent}]
+              - [*response_added, {as: absent}]
+              - [*client_stripped_header, {value: "2", as: equal}]
+              - [*origin_stripped_header, {value: "2", as: equal}]
