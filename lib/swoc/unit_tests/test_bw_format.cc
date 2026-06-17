@@ -8,6 +8,9 @@
 #include <iostream>
 #include <variant>
 #include <cmath>
+#include <cerrno>
+#include <string>
+#include <system_error>
 
 #include <netinet/in.h>
 
@@ -544,6 +547,38 @@ TEST_CASE("bwstring std formats", "[libswoc][bwprint]") {
   REQUIRE(w.view() == "EACCES [13]"sv);
   w.clear().print("{::l}", swoc::bwf::Errno(13));
   REQUIRE(w.view() == "Permission denied [13]"sv);
+
+  // The symbolic short name must come from the running platform's <errno.h>,
+  // not a fixed Linux-numbered table. Regression guard for the FreeBSD/macOS
+  // mislabel where ETIMEDOUT (errno 60 on those platforms) printed as "ENOSTR"
+  // (apache/trafficserver#13203). Use the macros so each platform checks its
+  // own numbering.
+  w.clear().print("{:s:s}", swoc::bwf::Errno(EPERM));
+  REQUIRE(w.view() == "EPERM"sv);
+  w.clear().print("{:s:s}", swoc::bwf::Errno(ETIMEDOUT));
+  REQUIRE(w.view() == "ETIMEDOUT"sv);
+  w.clear().print("{:s:s}", swoc::bwf::Errno(ECONNREFUSED));
+  REQUIRE(w.view() == "ECONNREFUSED"sv);
+
+  // Direct guards for the codes that were missing from the tables (each one
+  // formatted as "Unknown" before this fix). They are platform-specific, so
+  // each only compiles where it is defined: ENOATTR on macOS/FreeBSD, EL2HLT
+  // on Linux.
+#ifdef ENOATTR
+  w.clear().print("{:s:s}", swoc::bwf::Errno(ENOATTR));
+  REQUIRE(w.view() == "ENOATTR"sv);
+#endif
+#ifdef EL2HLT
+  w.clear().print("{:s:s}", swoc::bwf::Errno(EL2HLT));
+  REQUIRE(w.view() == "EL2HLT"sv);
+#endif
+
+  // The std::error_code formatter routes through the same per-platform table,
+  // rendering "<name> [<value>]". Build the expectation from the macro so the
+  // numeric part matches the running platform's numbering.
+  std::string ec_expected = "ECONNREFUSED [" + std::to_string(ECONNREFUSED) + "]";
+  w.clear().print("{}", std::error_code(ECONNREFUSED, std::generic_category()));
+  REQUIRE(w.view() == ec_expected);
 
   time_t t = 1528484137;
   // default is GMT
