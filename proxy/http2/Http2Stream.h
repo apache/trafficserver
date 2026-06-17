@@ -170,6 +170,7 @@ private:
   int64_t read_vio_nbytes;
   VIO read_vio;
   VIO write_vio;
+  bool _read_event_paused = false; ///< The read VIO is intentionally gated by a zero-byte read.
 
   History<HISTORY_DEFAULT_SIZE> _history;
   Milestones<Http2StreamMilestone, static_cast<size_t>(Http2StreamMilestone::LAST_ENTRY)> _milestones;

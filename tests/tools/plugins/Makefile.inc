@@ -29,6 +29,9 @@ tools_plugins_cont_schedule_la_SOURCES = tools/plugins/cont_schedule.cc
 noinst_LTLIBRARIES += tools/plugins/custom204plugin.la
 tools_plugins_custom204plugin_la_SOURCES = tools/plugins/custom204plugin.cc
 
+noinst_LTLIBRARIES += tools/plugins/delay_txn_start.la
+tools_plugins_delay_txn_start_la_SOURCES = tools/plugins/delay_txn_start.cc
+
 noinst_LTLIBRARIES += tools/plugins/emergency_shutdown.la
 tools_plugins_emergency_shutdown_la_SOURCES = tools/plugins/emergency_shutdown.cc
 
@@ -87,4 +90,3 @@ tools_plugins_async_engine_la_LDFLAGS = \
   -shared \
   -avoid-version \
   -rpath $(abs_builddir)
-
