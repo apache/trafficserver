@@ -27,11 +27,14 @@
 #include "P_SSLConfig.h"
 
 #include <openssl/ssl.h>
+#include <string_view>
 
 // BoringSSL does not have this include file
 #ifndef OPENSSL_IS_BORINGSSL
 #include <openssl/opensslconf.h>
 #endif
+
+class NetVConnection;
 
 // Create and initialize a SSL client context.
 SSL_CTX *SSLInitClientContext(const struct SSLConfigParams *param);
@@ -39,3 +42,4 @@ SSL_CTX *SSLCreateClientContext(const struct SSLConfigParams *params, const char
                                 const char *cert_path, const char *key_path);
 
 int verify_callback(int preverify_ok, X509_STORE_CTX *ctx);
+bool validate_server_certificate_hostname(NetVConnection *netvc, std::string_view hostname);
