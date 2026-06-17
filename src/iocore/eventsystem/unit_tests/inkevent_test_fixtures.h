@@ -110,8 +110,7 @@ private:
   Continuation whose handler counts every dispatch into a public atomic
   counter. The first consumer is the Continuation tests in
   test_Continuation.cc; later inkevent tests reuse it whenever they need
-  to observe handler invocations as an externally-visible side effect
-  (FR-003).
+  to observe handler invocations as an externally-visible side effect.
 
   Usage:
     CountingContinuation cont{new_ProxyMutex()};
