@@ -30,6 +30,7 @@
 
 #include <string>
 #include <unistd.h>
+#include <fcntl.h>
 #if defined(__linux__)
 #include <sys/prctl.h>
 #include <sys/syscall.h>
@@ -146,6 +147,10 @@ crash_logger_init(const char *user)
   crash_logger_pid = child;
   crash_logger_fd  = pipe[0];
 
+  // Don't leak this socket into later fork+exec children; the logger relies on seeing EOF
+  // here when we (its parent) exit.
+  fcntl(crash_logger_fd, F_SETFD, FD_CLOEXEC);
+
 #if defined(__linux__)
   // Allow the crash logger to ptrace us. Without this, Yama's ptrace_scope=1
   // (the default on many distros) prevents a child process from tracing its parent.
@@ -173,6 +178,10 @@ crash_logger_invoke(int signo, siginfo_t *info, void *ctx)
 
     // Let the crash logger free ...
     kill(crash_logger_pid, SIGCONT);
+
+    // Notify the logger that this is a real crash; a plain exit closes the socket (EOF)
+    // instead. Written on every platform, ahead of the Linux-only thread payload below.
+    ATS_UNUSED_RETURN(write(crash_logger_fd, &signo, sizeof(signo)));
 
 #if defined(__linux__)
     // Write the crashing thread information to the crash logger. While the siginfo_t is blesses by POSIX, the
