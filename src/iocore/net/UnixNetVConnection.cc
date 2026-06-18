@@ -1220,6 +1220,9 @@ UnixNetVConnection::clear()
   read.vio.vc_server  = nullptr;
   write.vio.vc_server = nullptr;
   options.reset();
+  // The VC allocator is Destruct_on_free=false (~ProxyProtocol never runs on recycle), so release
+  // pp_info's heap explicitly here.
+  pp_info.reset();
   if (netvc_context == NET_VCONNECTION_OUT) {
     read.vio.buffer.clear();
     write.vio.buffer.clear();
