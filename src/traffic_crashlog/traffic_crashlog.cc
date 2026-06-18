@@ -216,8 +216,16 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     // A real crash sends us a notification on this socket; any other parent exit just closes
     // it, so EOF (or a short read) means there is nothing to log. getppid() is unreliable here:
     // PR_SET_PDEATHSIG can fire while our parent pid is still alive.
-    int crash_signo = 0; // unused; an int keeps the framing aligned with the writer
-    if (read(STDIN_FILENO, &crash_signo, sizeof(crash_signo)) != sizeof(crash_signo)) {
+    //
+    //
+    //
+    int     crash_signo = 0; // value unused; an int keeps the socket framing aligned with the writer
+    ssize_t nbytes;
+    do {
+      nbytes = read(STDIN_FILENO, &crash_signo, sizeof(crash_signo));
+    } while (nbytes < 0 && errno == EINTR);
+
+    if (nbytes != static_cast<ssize_t>(sizeof(crash_signo))) {
       return 0;
     }
   }
