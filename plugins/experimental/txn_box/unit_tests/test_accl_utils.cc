@@ -337,8 +337,9 @@ TEST_CASE("Very basic perf test")
     }
     {
       func_timer<> f;
-      auto const  &took = f.run([&map]() { map.find("ASF.com"); });
-      std::cout << "std::unordered_map - insert(\"ASF.com\") took " << took << to_string<func_timer<>::unit>::value << std::endl;
+      // Only time the lookup dispatch; the returned iterator is intentionally unused.
+      auto const &took = f.run([&map]() { static_cast<void>(map.find("ASF.com")); });
+      std::cout << "std::unordered_map - find(\"ASF.com\") took " << took << to_string<func_timer<>::unit>::value << std::endl;
     }
   }
 }
