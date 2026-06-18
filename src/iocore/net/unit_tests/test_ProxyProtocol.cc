@@ -956,3 +956,53 @@ TEST_CASE("ProxyProtocol Rule of 5", "[ProxyProtocol]")
     CHECK(orig_tlv.value() == "original");
   }
 }
+
+TEST_CASE("ProxyProtocol reset", "[ProxyProtocol]")
+{
+  // A PROXY v2 / TCP over IPv4 header carrying TLVs, so the parsed pp_info owns both the
+  // additional_data string and the tlv map that reset() must release.
+  uint8_t raw_data[] = {
+    0x0D, 0x0A, 0x0D, 0x0A, 0x00, 0x0D, 0x0A, 0x51, ///< preface
+    0x55, 0x49, 0x54, 0x0A,                         ///<
+    0x21,                                           ///< version & command
+    0x11,                                           ///< protocol & family
+    0x00, 0x32,                                     ///< len
+    0xC0, 0x00, 0x02, 0x01,                         ///< src_addr
+    0xC6, 0x33, 0x64, 0x01,                         ///< dst_addr
+    0xC3, 0x50,                                     ///< src_port
+    0x01, 0xBB,                                     ///< dst_port
+    0x01, 0x00, 0x02, 0x68, 0x32,                   /// PP2_TYPE_ALPN (h2)
+    0x02, 0x00, 0x03, 0x61, 0x62, 0x63,             /// PP2_TYPE_AUTHORITY (abc)
+    0x20, 0x00, 0x18, 0x01, 0x00, 0x00, 0x00, 0x00, /// PP2_TYPE_SSL (client=0x01, verify=0)
+    0x23, 0x00, 0x03, 0x58, 0x59, 0x5A,             /// PP2_SUBTYPE_SSL_CIPHER (XYZ)
+    0x26, 0x00, 0x04, 0x58, 0x31, 0x32, 0x33,       /// PP2_SUBTYPE_SSL_GROUP (X123)
+    0x21, 0x00, 0x03, 0x54, 0x4C, 0x53,             /// PP2_SUBTYPE_SSL_VERSION (TLS)
+  };
+
+  swoc::TextView tv(reinterpret_cast<char *>(raw_data), sizeof(raw_data));
+
+  ProxyProtocol pp_info;
+  REQUIRE(proxy_protocol_parse(&pp_info, tv) == tv.size());
+
+  // Precondition: pp_info is fully populated, including its heap-owning members.
+  REQUIRE(pp_info.version == ProxyProtocolVersion::V2);
+  REQUIRE(pp_info.ip_family == AF_INET);
+  REQUIRE(pp_info.type == SOCK_STREAM);
+  REQUIRE_FALSE(pp_info.tlv.empty());
+  REQUIRE(pp_info.get_tlv(PP2_TYPE_ALPN).has_value());
+
+  pp_info.reset();
+
+  // Every field is back to the default-constructed state and the backing storage is released.
+  CHECK(pp_info.version == ProxyProtocolVersion::UNDEFINED);
+  CHECK(pp_info.ip_family == AF_UNSPEC);
+  CHECK(pp_info.type == 0);
+  CHECK_FALSE(ats_is_ip(&pp_info.src_addr));
+  CHECK_FALSE(ats_is_ip(&pp_info.dst_addr));
+  CHECK(pp_info.tlv.empty());
+  CHECK_FALSE(pp_info.get_tlv(PP2_TYPE_ALPN).has_value());
+
+  // reset() is idempotent and safe to call on an already-empty object.
+  pp_info.reset();
+  CHECK(pp_info.tlv.empty());
+}
