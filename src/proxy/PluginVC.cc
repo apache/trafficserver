@@ -528,11 +528,6 @@ PluginVC::process_write_side()
     return;
   }
 
-  // Past this point there is data to move: count a write-side pass for the owning plugin
-  if (core_obj->_transfers != nullptr) {
-    core_obj->_transfers->increment(1);
-  }
-
   // Check the state of the other side read buffer as well as ntodo
   int64_t other_ntodo = other_side->read_state.vio.ntodo();
   if (other_ntodo == 0) {
@@ -573,6 +568,11 @@ PluginVC::process_write_side()
     //   buffer_size factor doesn't apply
     Dbg(dbg_ctl_pvc, "[%u] %s: process_read_side from other side out of buffer space", core_obj->id, PVC_TYPE);
     return;
+  }
+
+  // Count a write-side pass for the owning plugin only when data actually moved to the peer.
+  if (core_obj->_transfers != nullptr && added > 0) {
+    core_obj->_transfers->increment(1);
   }
 
   write_state.vio.ndone            += added;
