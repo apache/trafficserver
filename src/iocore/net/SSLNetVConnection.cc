@@ -990,6 +990,12 @@ SSLNetVConnection::clear()
   client_sess.reset();
 
   if (ssl != nullptr) {
+    // clear() runs from free() once per VC recycle, so this is the single chokepoint where a TLS
+    // connection's SSL object is torn down -- count it as one connection close here. Blind-tunnel
+    // conversions free their SSL earlier (before any data) and continue as a tunnel rather than a
+    // close, so by here ssl is already null for them and they are not counted (they are tracked by
+    // the tunnel metrics instead).
+    Metrics::Counter::increment(ssl_rsb.connections_closed);
     SSL_free(ssl);
     ssl = nullptr;
   }
