@@ -153,25 +153,10 @@ class Test_remap_acl:
                     remap_cfg_path, '\n'.join(remap_config_lines), ip_allow_path, '\n'.join(self._ip_allow_lines)))
 
             #
-            # Kick off the ATS config reload.
+            # Kick off the ATS config reload and await completion.
             #
-            tr = Test.AddTestRun("Reload the ATS configuration")
-            p = tr.Processes.Default
-            p.Command = 'traffic_ctl config reload'
-            p.Env = ts.Env
-            tr.StillRunningAfter = ts
-
-            #
-            # Await the config reload to finish.
-            #
-            tr = Test.AddTestRun("Await config reload")
-            p = tr.Processes.Default
             Test_remap_acl._ts_reload_counter += 1
-            count = 1 + Test_remap_acl._ts_reload_counter
-            condwait = os.path.join(Test.Variables.AtsTestToolsDir, 'condwait')
-            p.Command = (f"'{condwait}' 30 --contains '{ts.Disk.diags_log.Name}' "
-                         f"'remap.config finished loading' {count}")
-            p.Env = ts.Env
+            tr = Test.AddConfigReload(ts, expect_tasks=["remap.config"], description="Reload the ATS configuration")
             tr.StillRunningAfter = ts
 
         else:

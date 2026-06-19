@@ -20,7 +20,7 @@ Test reloading ssl_multicert.config with errors and keeping around the old ssl c
 
 sni_domain = 'example.com'
 
-ts = Test.MakeATSProcess("ts", enable_tls=True)
+ts = Test.MakeATSProcess("ts", enable_tls=True, disable_log_checks=True)
 server = Test.MakeOriginServer("server")
 server2 = Test.MakeOriginServer("server3")
 request_header = {"headers": f"GET / HTTP/1.1\r\nHost: {sni_domain}\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
@@ -68,19 +68,13 @@ tr2.Processes.Default.Command = 'echo Updated configs'
 tr2.Processes.Default.Env = ts.Env
 tr2.Processes.Default.ReturnCode = 0
 
-tr2reload = Test.AddTestRun("Reload config")
-tr2reload.StillRunningAfter = ts
+tr2reload = Test.AddConfigReload(ts, expect="fail", expect_tasks=["ssl_multicert.config"], description="Reload config")
 tr2reload.StillRunningAfter = server
-tr2reload.Processes.Default.Command = 'traffic_ctl config reload'
-tr2reload.Processes.Default.Env = ts.Env
-tr2reload.Processes.Default.ReturnCode = 0
-ts.Disk.diags_log.Content = Testers.ContainsExpression('ERROR: ', 'ERROR')
 
 # Reload of ssl_multicert.config should fail, BUT the old config structure
 # should be in place to successfully answer for the test domain
 tr3 = Test.AddTestRun("Make request again for $sni_domain")
-# Wait for the reload to complete
-tr3.Processes.Default.StartBefore(server2, ready=When.FileContains(ts.Disk.diags_log.Name, 'failed to load certificate ', 1))
+tr3.Processes.Default.StartBefore(server2)
 tr3.StillRunningAfter = ts
 tr3.StillRunningAfter = server
 tr3.MakeCurlCommand(

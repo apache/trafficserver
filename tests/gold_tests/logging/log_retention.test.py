@@ -478,13 +478,7 @@ test.tr.Processes.Default.ReturnCode = 0
 test.tr.StillRunningAfter = test.ts
 test.tr.StillRunningAfter = test.server
 
-tr = Test.AddTestRun("Perform a config reload")
-tr.Processes.Default.Command = "traffic_ctl config reload"
-tr.Processes.Default.Env = test.ts.Env
-tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.TimeOut = 5
-tr.TimeOut = 5
-tr.StillRunningAfter = test.ts
+tr = Test.AddConfigReload(test.ts, description="Perform a config reload")
 tr.StillRunningAfter = test.server
 
 tr = Test.AddTestRun("Get the log to rotate.")
