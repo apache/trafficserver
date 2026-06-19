@@ -677,6 +677,8 @@ LogObject::log(LogAccess *lad, std::string_view text_entry)
   } else if (lad) {
     bytes_used = m_format->m_field_list.marshal(lad, &(*buffer)[offset]);
     ink_assert(bytes_needed >= bytes_used);
+    // Count only entries that were successfully checked out and marshalled, not dropped ones.
+    Metrics::Counter::increment(log_rsb.marshalled_bytes, bytes_needed);
   } else if (!text_entry.empty()) {
     char *dst = &(*buffer)[offset];
     memcpy(dst, text_entry.data(), text_entry.size());
