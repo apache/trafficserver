@@ -51,6 +51,8 @@ namespace fs = swoc::file;
 
 #include "proxy/Plugin.h"
 
+#include <cctype>
+#include <string>
 #include <string_view>
 
 class PluginThreadContext : public RefCountObjInHeap
@@ -60,8 +62,17 @@ public:
   virtual void release() = 0;
 
   /** @brief Register this plugin's proxy.process.plugin.<name>.* metrics. @a plugin_name is the DSO
-   *  path; only its basename stem is used as <name>. */
-  void registerPluginMetrics(std::string_view plugin_name);
+   *  path; only its basename stem is used as <name>. Defined inline so callers in ts::proxy (the
+   *  global-plugin context) take no link dependency on ts::http_remap. */
+  void
+  registerPluginMetrics(std::string_view plugin_name)
+  {
+    std::string prefix = "proxy.process.plugin." + _metric_token(plugin_name) + ".";
+
+    _invocations = ts::Metrics::Counter::createPtr(prefix + "invocations");
+    _bytes       = ts::Metrics::Counter::createPtr(prefix + "bytes");
+    _transfers   = ts::Metrics::Counter::createPtr(prefix + "transfers");
+  }
 
   void
   countInvocation()
@@ -76,6 +87,31 @@ public:
   ts::Metrics::Counter::AtomicType *_transfers   = nullptr;
 
   static constexpr const char *const _tag = "plugin_context"; /** @brief log tag used by this class */
+
+private:
+  /** Derive a metric-safe token from a plugin path: the basename with the extension removed, then any
+   *  character outside [A-Za-z0-9_-] replaced by '_' (e.g. "/.../header_rewrite.so" -> "header_rewrite"). */
+  static std::string
+  _metric_token(std::string_view name)
+  {
+    if (auto slash = name.find_last_of('/'); slash != std::string_view::npos) {
+      name.remove_prefix(slash + 1);
+    }
+    if (auto dot = name.find_last_of('.'); dot != std::string_view::npos) {
+      name = name.substr(0, dot);
+    }
+
+    std::string token{name};
+    for (auto &c : token) {
+      if (!(std::isalnum(static_cast<unsigned char>(c)) || c == '_' || c == '-')) {
+        c = '_';
+      }
+    }
+    if (token.empty()) {
+      token = "unknown";
+    }
+    return token;
+  }
 };
 
 class PluginDso : public PluginThreadContext
