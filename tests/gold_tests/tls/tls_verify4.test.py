@@ -134,15 +134,8 @@ tr2.Processes.Default.Command = 'echo Updated configs'
 tr2.Processes.Default.Env = ts.Env
 tr2.Processes.Default.ReturnCode = 0
 
-# Change the config to PERMISSIVE.  Same command should work now
-trreload = Test.AddTestRun("Reload config")
-trreload.StillRunningAfter = ts
+trreload = Test.AddConfigReload(ts, description="Reload config")
 trreload.StillRunningAfter = server
-# takes a few seconds for the reload to be ready for the next connection
-trreload.Processes.Default.Command = 'traffic_ctl config reload; sleep 5'
-# Need to copy over the environment so traffic_ctl knows where to find the unix domain socket
-trreload.Processes.Default.Env = ts.Env
-trreload.Processes.Default.ReturnCode = 0
 
 tragain = Test.AddTestRun("permissive-after-update")
 tragain.MakeCurlCommand("-k -H \"host: random3.com\"  https://127.0.0.1:{0}".format(ts.Variables.ssl_port), ts=ts)
@@ -178,14 +171,8 @@ tr2.Processes.Default.Command = 'echo Updated configs to ENFORCED'
 tr2.Processes.Default.Env = ts.Env
 tr2.Processes.Default.ReturnCode = 0
 
-trreload = Test.AddTestRun("Reload config again")
-trreload.StillRunningAfter = ts
+trreload = Test.AddConfigReload(ts, description="Reload config to ENFORCED")
 trreload.StillRunningAfter = server
-# takes a few seconds for the reload to be ready for the next connection
-trreload.Processes.Default.Command = 'traffic_ctl config reload; sleep 5'
-# Need to copy over the environment so traffic_ctl knows where to find the unix domain socket
-trreload.Processes.Default.Env = ts.Env
-trreload.Processes.Default.ReturnCode = 0
 
 tragain = Test.AddTestRun("enforced-after-update")
 tragain.MakeCurlCommand("-k -H \"host: random4.com\"  https://127.0.0.1:{0}".format(ts.Variables.ssl_port), ts=ts)

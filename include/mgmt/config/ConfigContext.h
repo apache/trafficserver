@@ -170,7 +170,7 @@ public:
   /// Each dependent reports its own status (in_progress/complete/fail) and the parent
   /// task aggregates them. The dependent context also inherits the parent's supplied YAML node.
   ///
-  [[nodiscard]] ConfigContext add_dependent_ctx(std::string_view description = "");
+  [[nodiscard]] ConfigContext add_dependent_ctx(std::string_view description = "", std::string_view filename = "");
 
   /// Get supplied YAML node (for RPC-based reloads).
   /// Returns Undefined when no content was provided (operator bool() == false).
