@@ -102,10 +102,16 @@ createRequestString(const std::string_view &value, char (&req_buf)[MAX_SIZE], in
     const char *host = TSUrlHostGet(url_buf, url_loc, &host_len);
     char       *url  = TSUrlStringGet(url_buf, url_loc, &url_len);
 
-    *req_buf_size = snprintf(req_buf, MAX_SIZE, "GET %.*s HTTP/1.1\r\nHost: %.*s\r\n\r\n", url_len, url, host_len, host);
+    int written = snprintf(req_buf, MAX_SIZE, "GET %.*s HTTP/1.1\r\nHost: %.*s\r\n\r\n", url_len, url, host_len, host);
 
     TSfree(url);
     TSMBufferDestroy(url_buf);
+
+    if (written < 0 || static_cast<unsigned int>(written) >= MAX_SIZE) {
+      Dbg(pi_dbg_ctl, "Request string does not fit in %u byte buffer, not sending truncated request", MAX_SIZE);
+      return TS_ERROR;
+    }
+    *req_buf_size = written;
 
     return TS_SUCCESS;
   } else {
