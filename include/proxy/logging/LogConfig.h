@@ -49,6 +49,7 @@ struct LogsStatsBlock {
   Metrics::Counter::AtomicType *event_log_access_aggr;
   Metrics::Counter::AtomicType *event_log_access_full;
   Metrics::Counter::AtomicType *event_log_access_fail;
+  Metrics::Counter::AtomicType *marshalled_bytes;
   Metrics::Counter::AtomicType *num_sent_to_network;
   Metrics::Counter::AtomicType *num_lost_before_sent_to_network;
   Metrics::Counter::AtomicType *num_received_from_network;
