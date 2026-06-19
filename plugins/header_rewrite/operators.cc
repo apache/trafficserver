@@ -100,10 +100,11 @@ createRequestString(const std::string_view &value, char (&req_buf)[MAX_SIZE], in
 
   if (TSUrlCreate(url_buf, &url_loc) == TS_SUCCESS && TSUrlParse(url_buf, url_loc, &start, end) == TS_PARSE_DONE) {
     const char *host = TSUrlHostGet(url_buf, url_loc, &host_len);
-    const char *url  = TSUrlStringGet(url_buf, url_loc, &url_len);
+    char       *url  = TSUrlStringGet(url_buf, url_loc, &url_len);
 
     *req_buf_size = snprintf(req_buf, MAX_SIZE, "GET %.*s HTTP/1.1\r\nHost: %.*s\r\n\r\n", url_len, url, host_len, host);
 
+    TSfree(url);
     TSMBufferDestroy(url_buf);
 
     return TS_SUCCESS;
