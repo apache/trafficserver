@@ -24,6 +24,9 @@ Verify the per-plugin workload counters proxy.process.plugin.<name>.invocations 
 dispatch), .bytes and .transfers (PluginVC intercept transport).
 '''
 
+Test.SkipUnless(
+    Condition.PluginExists('header_rewrite.so'), Condition.PluginExists('conf_remap.so'), Condition.PluginExists('generator.so'))
+
 Test.ContinueOnFail = True
 
 
