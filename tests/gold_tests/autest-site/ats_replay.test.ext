@@ -322,14 +322,28 @@ def ATSReplayTest(obj, replay_file: str):
 
         for check in metric_checks:
             metric_name = check['metric']
-            expected_value = check['value']
-            check_tr = obj.AddTestRun(f'Verify {metric_name} == {expected_value}')
-            check_tr.Processes.Default.Command = f'traffic_ctl metric get {metric_name}'
-            check_tr.Processes.Default.Env = ts.Env
-            check_tr.Processes.Default.ReturnCode = 0
-            check_tr.Processes.Default.Streams.All = Testers.ContainsExpression(
-                f'^{re.escape(metric_name)}\\s+{expected_value}$', f'{metric_name} should be {expected_value}')
-            check_tr.StillRunningAfter = ts
+            if 'value' in check:
+                expected_value = check['value']
+                check_tr = obj.AddTestRun(f'Verify {metric_name} == {expected_value}')
+                check_tr.Processes.Default.Command = f'traffic_ctl metric get {metric_name}'
+                check_tr.Processes.Default.Env = ts.Env
+                check_tr.Processes.Default.ReturnCode = 0
+                check_tr.Processes.Default.Streams.All = Testers.ContainsExpression(
+                    f'^{re.escape(metric_name)}\\s+{expected_value}$', f'{metric_name} should be {expected_value}')
+                check_tr.StillRunningAfter = ts
+            elif 'min' in check:
+                minimum = check['min']
+                check_tr = obj.AddTestRun(f'Verify {metric_name} >= {minimum}')
+                # Fail if the metric value (field 2) is below the minimum, or absent.
+                # $$ escapes the awk field ref from autest's command templating.
+                check_tr.Processes.Default.Command = (
+                    f"traffic_ctl metric get {metric_name} | "
+                    f"awk 'BEGIN {{ rc = 1 }} {{ if ($$2 + 0 >= {minimum}) rc = 0 }} END {{ exit rc }}'")
+                check_tr.Processes.Default.Env = ts.Env
+                check_tr.Processes.Default.ReturnCode = 0
+                check_tr.StillRunningAfter = ts
+            else:
+                raise ValueError(f"metric_checks entry for '{metric_name}' must specify 'value' or 'min'")
 
     # wait for error log
     if log_validation and log_validation.get('error_log'):
