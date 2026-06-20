@@ -419,6 +419,9 @@ def MakeATSProcess(
         })
         # ATS_ROOT is used by compiler.sh to find the ATS install directory.
         p.Env['ATS_ROOT'] = p.Variables.PREFIX
+        # Cripts are compiled at startup, which can exceed the default 10s readiness window
+        # under CI load and flake the "fully initialized" wait. Give cripts startup more room.
+        p.StartupTimeout = 60
 
     # The following message was added so that tests and users can know when
     # Traffic Server is ready to both receive and optimize traffic.
