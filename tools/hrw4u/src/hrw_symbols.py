@@ -480,7 +480,7 @@ class InverseSymbolResolver(SymbolResolverBase):
             if len(args) > 1:
                 func = "keep_query" if op_state.invert else "remove_query"
                 return f"{func}({self._rewrite_inline_percents(args[1], section)})"
-            return 'inbound.url.query = ""'
+            return f'{self.get_prefix_for_context("destination_ops", section)}query = ""'
 
         toks = [cmd] + args
         line = " ".join(toks)

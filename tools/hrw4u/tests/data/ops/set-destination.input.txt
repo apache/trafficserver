@@ -1,5 +1,5 @@
 REMAP {
-    inbound.url.host = "foo";
+    outbound.url.host = "foo";
 }
 
 SEND_REQUEST {
