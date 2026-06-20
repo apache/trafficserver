@@ -176,6 +176,12 @@ autest:
             args:
               - "rules/rule_session_vars.conf"
 
+    metric_checks:
+      - metric: "proxy.process.plugin.header_rewrite.operators"
+        min: 1
+      - metric: "proxy.process.plugin.header_rewrite.conditions"
+        min: 1
+
     log_validation:
       traffic_out:
         excludes:

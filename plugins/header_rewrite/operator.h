@@ -78,6 +78,9 @@ public:
   unsigned
   do_exec(const Resources &res) const
   {
+    if (hrw_stat_operators != nullptr) {
+      ts::Metrics::Counter::increment(hrw_stat_operators);
+    }
     unsigned no_reenable{exec(res) ? 0U : 1U};
     if (nullptr != _next) {
       no_reenable += static_cast<Operator *>(_next)->do_exec(res);

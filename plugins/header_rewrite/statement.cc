@@ -21,6 +21,24 @@
 //
 #include "statement.h"
 
+ts::Metrics::Counter::AtomicType *hrw_stat_operators  = nullptr;
+ts::Metrics::Counter::AtomicType *hrw_stat_conditions = nullptr;
+
+void
+init_hrw_work_stats()
+{
+  // createPtr() is idempotent and internally synchronized: it returns the existing counter when
+  // one already has the given name. header_rewrite.so can be loaded both globally (TSPluginInit)
+  // and as a remap plugin (TSRemapInit), so init runs more than once; every call resolves to the
+  // same process-wide counter regardless of ordering or which thread runs it.
+  if (nullptr == hrw_stat_operators) {
+    hrw_stat_operators = ts::Metrics::Counter::createPtr("proxy.process.plugin.header_rewrite.operators");
+  }
+  if (nullptr == hrw_stat_conditions) {
+    hrw_stat_conditions = ts::Metrics::Counter::createPtr("proxy.process.plugin.header_rewrite.conditions");
+  }
+}
+
 void
 Statement::append(Statement *stmt)
 {
