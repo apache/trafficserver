@@ -287,6 +287,9 @@ SSLNetVConnection::_ssl_read_from_net(int64_t &ret)
     Dbg(dbg_ctl_ssl, "bytes_read=%" PRId64, bytes_read);
 
     s->vio.ndone += bytes_read;
+    // Decrypted application bytes, to match write_bytes (also plaintext for TLS).
+    Metrics::Counter::increment(net_rsb.read_bytes, bytes_read);
+    Metrics::Counter::increment(net_rsb.read_bytes_count);
     this->netActivity();
 
     ret = bytes_read;
@@ -351,8 +354,6 @@ SSLNetVConnection::read_raw_data()
       r = total_read - rattempted + r;
     }
   }
-  Metrics::Counter::increment(net_rsb.read_bytes, r);
-  Metrics::Counter::increment(net_rsb.read_bytes_count);
 
   if (!this->haveCheckedProxyProtocol) {
     // The PROXY Protocol, by spec, is designed to require only the first TCP packet of bytes
