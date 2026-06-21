@@ -28,6 +28,7 @@
 #include "tscore/ink_config.h"
 
 #include <tsutil/PostScript.h>
+#include <tsutil/Metrics.h>
 
 #include "ts/ts.h"
 #include "tscore/ink_defs.h"
@@ -349,8 +350,18 @@ compress_transform_init(TSCont contp, Data *data)
   TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
 }
 
+static ts::Metrics::Counter::AtomicType *compress_stat_bytes_in = nullptr;
+
 static void
-compress_transform_one(Data *data, TSIOBufferReader upstream_reader, int amount)
+init_compress_stats()
+{
+  if (compress_stat_bytes_in == nullptr) {
+    compress_stat_bytes_in = ts::Metrics::Counter::createPtr("proxy.process.plugin.compress.bytes_in");
+  }
+}
+
+static void
+compress_transform_one(Data *data, TSIOBufferReader upstream_reader, int64_t amount)
 {
   TSIOBufferBlock downstream_blkp;
   int64_t         upstream_length;
@@ -369,6 +380,10 @@ compress_transform_one(Data *data, TSIOBufferReader upstream_reader, int amount)
 
     if (upstream_length > amount) {
       upstream_length = amount;
+    }
+
+    if (compress_stat_bytes_in != nullptr) {
+      compress_stat_bytes_in->increment(upstream_length);
     }
 
 #if HAVE_ZSTD_H
@@ -1032,6 +1047,8 @@ TSPluginInit(int argc, const char *argv[])
     fatal("the compress plugin failed to register");
   }
 
+  Compress::init_compress_stats();
+
   info("TSPluginInit %s", argv[0]);
 
   if (!Compress::global_hidden_header_name) {
@@ -1060,6 +1077,7 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 {
   CHECK_REMAP_API_COMPATIBILITY(api_info, errbuf, errbuf_size);
   info("The compress plugin is successfully initialized");
+  Compress::init_compress_stats();
   return TS_SUCCESS;
 }
 
