@@ -17,14 +17,12 @@
 #  limitations under the License.
 
 # Wait till remap.config finishes loading two times.
-
 WAIT=60
 LOG_FILE="$1"
 
-while (( WAIT > 0 ))
-do
-    N=$( grep -F 'NOTE: remap.config finished loading' $LOG_FILE | wc -l )
-    if [[ $N = 2 ]] ; then
+while ((WAIT > 0)); do
+    N=$(grep -F 'NOTE: remap.config finished loading' $LOG_FILE | wc -l)
+    if [[ $N = 2 ]]; then
         exit 0
     fi
     sleep 1
