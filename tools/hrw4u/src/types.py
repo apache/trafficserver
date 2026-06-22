@@ -95,7 +95,7 @@ class SuffixGroup(Enum):
     CERT_FIELDS = frozenset(
         {
             "PEM", "pem", "SIG", "sig", "SUBJECT", "subject", "ISSUER", "issuer", "SERIAL", "serial", "NOT_BEFORE", "not_before",
-            "NOT_AFTER", "not_after", "VERSION", "version"
+            "NOT_AFTER", "not_after", "VERSION", "version", "APRN-RAW", "aprn-raw"
         })
     SAN_FIELDS = frozenset({"DNS", "dns", "IP", "ip", "EMAIL", "email", "URI", "uri"})
     PLUGIN_CNTL_MAPPING = {"TIMEZONE": frozenset({"GMT", "LOCAL"}), "INBOUND_IP_SOURCE": frozenset({"PEER", "PROXY"})}
