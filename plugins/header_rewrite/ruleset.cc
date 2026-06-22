@@ -136,6 +136,15 @@ RuleSet::get_all_resource_ids() const
 bool
 RuleSet::add_operator(Operator *op)
 {
+  // OperatorIf is a pseudo-operator container - it doesn't need hook validation itself.
+  if (op->type_name() != "OperatorIf") {
+    if (!op->set_hook(_hook)) {
+      Dbg(pi_dbg_ctl, "can't use this operator in hook=%s", TSHttpHookNameLookup(_hook));
+      TSError("[%s] can't use this operator in hook=%s", PLUGIN_NAME, TSHttpHookNameLookup(_hook));
+      return false;
+    }
+  }
+
   auto *cur_sec = _op_if.cur_section();
 
   if (!cur_sec->ops.oper) {

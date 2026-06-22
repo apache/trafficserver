@@ -24,10 +24,83 @@
 #include "operators.h"
 #include "conditions.h"
 #include "conditions_geo.h"
+#include "hrw4u/ObjTypes.h"
 
 ///////////////////////////////////////////////////////////////////////////////
 // "Factory" functions, processing the parsed lines
 //
+Operator *
+operator_factory(hrw::OperatorType op_type)
+{
+  switch (op_type) {
+  case hrw::OperatorType::RM_HEADER:
+    return new OperatorRMHeader();
+  case hrw::OperatorType::SET_HEADER:
+    return new OperatorSetHeader();
+  case hrw::OperatorType::ADD_HEADER:
+    return new OperatorAddHeader();
+  case hrw::OperatorType::SET_CONFIG:
+    return new OperatorSetConfig();
+  case hrw::OperatorType::SET_STATUS:
+    return new OperatorSetStatus();
+  case hrw::OperatorType::SET_STATUS_REASON:
+    return new OperatorSetStatusReason();
+  case hrw::OperatorType::SET_DESTINATION:
+    return new OperatorSetDestination();
+  case hrw::OperatorType::RM_DESTINATION:
+    return new OperatorRMDestination();
+  case hrw::OperatorType::SET_REDIRECT:
+    return new OperatorSetRedirect();
+  case hrw::OperatorType::TIMEOUT_OUT:
+    return new OperatorSetTimeoutOut();
+  case hrw::OperatorType::SKIP_REMAP:
+    return new OperatorSkipRemap();
+  case hrw::OperatorType::NO_OP:
+    return new OperatorNoOp();
+  case hrw::OperatorType::COUNTER:
+    return new OperatorCounter();
+  case hrw::OperatorType::RM_COOKIE:
+    return new OperatorRMCookie();
+  case hrw::OperatorType::SET_COOKIE:
+    return new OperatorSetCookie();
+  case hrw::OperatorType::ADD_COOKIE:
+    return new OperatorAddCookie();
+  case hrw::OperatorType::SET_CONN_DSCP:
+    return new OperatorSetConnDSCP();
+  case hrw::OperatorType::SET_CONN_MARK:
+    return new OperatorSetConnMark();
+  case hrw::OperatorType::SET_DEBUG:
+    return new OperatorSetDebug();
+  case hrw::OperatorType::SET_BODY:
+    return new OperatorSetBody();
+  case hrw::OperatorType::SET_HTTP_CNTL:
+    return new OperatorSetHttpCntl();
+  case hrw::OperatorType::SET_PLUGIN_CNTL:
+    return new OperatorSetPluginCntl();
+  case hrw::OperatorType::RUN_PLUGIN:
+    return new OperatorRunPlugin();
+  case hrw::OperatorType::SET_BODY_FROM:
+    return new OperatorSetBodyFrom();
+  case hrw::OperatorType::SET_STATE_FLAG:
+    return new OperatorSetStateFlag();
+  case hrw::OperatorType::SET_STATE_INT8:
+    return new OperatorSetStateInt8();
+  case hrw::OperatorType::SET_STATE_INT16:
+    return new OperatorSetStateInt16();
+  case hrw::OperatorType::SET_EFFECTIVE_ADDRESS:
+    return new OperatorSetEffectiveAddress();
+  case hrw::OperatorType::SET_NEXT_HOP_STRATEGY:
+    return new OperatorSetNextHopStrategy();
+  case hrw::OperatorType::SET_CC_ALG:
+    return new OperatorSetCCAlgorithm();
+  case hrw::OperatorType::IF:
+  case hrw::OperatorType::NONE:
+  default:
+    TSError("[%s] Invalid operator type: %d", PLUGIN_NAME, static_cast<int>(op_type));
+    return nullptr;
+  }
+}
+
 Operator *
 operator_factory(const std::string &op)
 {

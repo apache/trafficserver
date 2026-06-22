@@ -54,11 +54,28 @@ Operator::initialize(Parser &p)
 }
 
 void
-OperatorHeaders::initialize(Parser &p)
+Operator::initialize(const hrw::OperatorSpec &spec)
 {
-  Operator::initialize(p);
+  initialize_hooks();
+  allocate_slots();
 
-  _header     = p.get_arg();
+  if (spec.mod_last) {
+    _mods = static_cast<OperModifiers>(_mods | OPER_LAST);
+  }
+
+  if (spec.mod_qsa) {
+    _mods = static_cast<OperModifiers>(_mods | OPER_QSA);
+  }
+
+  if (spec.mod_inv) {
+    _mods = static_cast<OperModifiers>(_mods | OPER_INV);
+  }
+}
+
+void
+OperatorHeaders::do_initialize(const std::string &arg)
+{
+  _header     = arg;
   _header_wks = TSMimeHdrStringToWKS(_header.c_str(), _header.length());
 
   require_resources(RSRC_SERVER_RESPONSE_HEADERS);
@@ -68,12 +85,38 @@ OperatorHeaders::initialize(Parser &p)
 }
 
 void
-OperatorCookies::initialize(Parser &p)
+OperatorHeaders::initialize(Parser &p)
 {
   Operator::initialize(p);
+  do_initialize(p.get_arg());
+}
 
-  _cookie = p.get_arg();
+void
+OperatorCookies::do_initialize(const std::string &arg)
+{
+  _cookie = arg;
 
   require_resources(RSRC_SERVER_REQUEST_HEADERS);
   require_resources(RSRC_CLIENT_REQUEST_HEADERS);
+}
+
+void
+OperatorCookies::initialize(Parser &p)
+{
+  Operator::initialize(p);
+  do_initialize(p.get_arg());
+}
+
+void
+OperatorHeaders::initialize(const hrw::OperatorSpec &spec)
+{
+  Operator::initialize(spec);
+  do_initialize(spec.arg);
+}
+
+void
+OperatorCookies::initialize(const hrw::OperatorSpec &spec)
+{
+  Operator::initialize(spec);
+  do_initialize(spec.arg);
 }

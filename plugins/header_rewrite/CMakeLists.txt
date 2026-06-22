@@ -15,11 +15,34 @@
 #
 #######################
 
+# Native hrw4u parsing support
+if(TARGET ts::hrw4u)
+  set(HRW4U_NATIVE_DEFAULT ON)
+else()
+  set(HRW4U_NATIVE_DEFAULT OFF)
+endif()
+
+option(ENABLE_HRW4U_NATIVE "Enable native hrw4u parsing (requires ANTLR4)" ${HRW4U_NATIVE_DEFAULT})
+
+if(ENABLE_HRW4U_NATIVE)
+  if(TARGET ts::hrw4u)
+    message(STATUS "header_rewrite: Native hrw4u parsing enabled")
+    set(HRW4U_NATIVE_ENABLED TRUE)
+  else()
+    message(WARNING "header_rewrite: Native hrw4u parsing requested but ANTLR4 not available - disabled")
+    set(HRW4U_NATIVE_ENABLED FALSE)
+  endif()
+else()
+  message(STATUS "header_rewrite: Native hrw4u parsing disabled")
+  set(HRW4U_NATIVE_ENABLED FALSE)
+endif()
+
 add_atsplugin(
   header_rewrite
   condition.cc
   conditions.cc
   factory.cc
+  objtypes.cc
   header_rewrite.cc
   lulu.cc
   matcher.cc
@@ -33,6 +56,12 @@ add_atsplugin(
   value.cc
 )
 
+# Add hrw4u integration if enabled
+if(HRW4U_NATIVE_ENABLED)
+  target_sources(header_rewrite PRIVATE hrw4u.cc)
+  target_compile_definitions(header_rewrite PRIVATE ENABLE_HRW4U_NATIVE=1)
+endif()
+
 add_library(header_rewrite_parser STATIC parser.cc)
 target_link_libraries(header_rewrite_parser PUBLIC libswoc::libswoc)
 
@@ -45,6 +74,10 @@ target_link_libraries(
 if(ENABLE_CRIPTS)
   target_link_libraries(header_rewrite PRIVATE ts::cripts)
   target_compile_definitions(header_rewrite PRIVATE TS_HAS_CRIPTS=1)
+endif()
+
+if(HRW4U_NATIVE_ENABLED)
+  target_link_libraries(header_rewrite PRIVATE ts::hrw4u)
 endif()
 
 if(maxminddb_FOUND)
