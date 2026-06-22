@@ -94,7 +94,7 @@ DNSProcessor                    dnsProcessor;
 ClassAllocator<DNSEntry, false> dnsEntryAllocator("dnsEntryAllocator");
 // Users are expected to free these entries in short order!
 // We could page align this buffer to enable page flipping for recv...
-ClassAllocator<HostEnt, false> dnsBufAllocator("dnsBufAllocator", 2);
+ClassAllocator<HostEnt> dnsBufAllocator("dnsBufAllocator", 2);
 
 //
 // Function Prototypes
