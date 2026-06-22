@@ -21,6 +21,8 @@
   limitations under the License.
  */
 
+#include <atomic>
+
 #include "inkevent_test_fixtures.h"
 
 using inkevent_test::AtomicFlag;

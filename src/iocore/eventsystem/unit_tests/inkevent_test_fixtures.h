@@ -2,6 +2,8 @@
 
   Shared test fixtures for inkevent Catch2 unit tests.
 
+  This header provides EventSystem.h.
+
   @section license License
 
   Licensed to the Apache Software Foundation (ASF) under one
@@ -23,19 +25,20 @@
 
 #pragma once
 
-#include <atomic>
-#include <chrono>
-#include <thread>
+#include <iocore/eventsystem/EventSystem.h>
+
+#include <iocore/utils/diags.i>
+
+#include <tscore/Layout.h>
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/reporters/catch_reporter_event_listener.hpp>
 #include <catch2/reporters/catch_reporter_registrars.hpp>
 #include <catch2/interfaces/catch_interfaces_config.hpp>
 
-#include "iocore/eventsystem/EventSystem.h"
-#include "tscore/Layout.h"
-
-#include "iocore/utils/diags.i"
+#include <atomic>
+#include <chrono>
+#include <thread>
 
 namespace inkevent_test
 {
