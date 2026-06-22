@@ -1,0 +1,13 @@
+REMAP {
+    if cidr(16, 48) == "10.0.0.0" {
+        inbound.req.X-V4Single = "matched";
+    }
+
+    if cidr(24, 64) == "10.1.0.0" {
+        inbound.req.X-V4V6 = "matched";
+    }
+
+    if cidr(24, 8) == "10.2.0.0" {
+        inbound.req.X-V6Only = "matched";
+    }
+}

@@ -1,0 +1,9 @@
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{CIDR:16} ="10.0.0.0"
+    set-header X-V4Single "matched"
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{CIDR:24,64} ="10.1.0.0"
+    set-header X-V4V6 "matched"
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{CIDR:,8} ="10.2.0.0"
+    set-header X-V6Only "matched"

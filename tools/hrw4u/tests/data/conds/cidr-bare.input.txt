@@ -1,0 +1,5 @@
+REMAP {
+    if cidr(24, 48) == "10.0.0.0" {
+        inbound.req.X-Bare = "matched";
+    }
+}
