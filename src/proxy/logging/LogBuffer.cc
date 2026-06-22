@@ -95,7 +95,7 @@ LogBufferHeader::fmt_fieldtypes()
   // The field-type schema is v3+. A v2 segment has no fmt_fieldtypes_offset on
   // disk, so a version-sized read leaves those bytes uninitialized; gate on the
   // version too rather than trusting the caller to have zeroed them.
-  if (version >= 3 && fmt_fieldtypes_offset) {
+  if (version >= LOG_SEGMENT_VERSION_FIELDTYPES && fmt_fieldtypes_offset) {
     addr = reinterpret_cast<char *>(this) + fmt_fieldtypes_offset;
   }
   return addr;
@@ -523,7 +523,7 @@ LogBuffer::_add_buffer_header(const LogConfig *cfg)
   // reader needs no ATS symbol->type table. Skipped for v2 and text logs. The
   // schema leads with a uint16, so align its offset off the NUL-terminated
   // header strings before writing.
-  if (version >= 3 && fmt->fieldlist()) {
+  if (version >= LOG_SEGMENT_VERSION_FIELDTYPES && fmt->fieldlist()) {
     size_t schema_off = INK_ALIGN(header_len, alignof(LogFieldTypeSchema));
     if (unsigned schema_len = add_field_type_schema(&fmt->field_list(), &m_buffer[schema_off], m_size - schema_off);
         schema_len > 0) {

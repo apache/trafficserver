@@ -328,7 +328,7 @@ print_logbuffer_header(LogBufferHeader *header, int out_fd)
 
   // v3 appended fmt_fieldtypes_offset after data_offset; the v2 on-disk header
   // does not contain it, so only touch it for v3 segments.
-  if (header->version >= 3) {
+  if (header->version >= LOG_SEGMENT_VERSION_FIELDTYPES) {
     print_field_type_schema(header, out_fd);
   }
 }

@@ -36,13 +36,11 @@ class LogObject;
 class LogConfig;
 class LogBufferIterator;
 
-#define LOG_SEGMENT_COOKIE  0xaceface
-#define LOG_SEGMENT_VERSION 3
+#define LOG_SEGMENT_COOKIE 0xaceface
 
-// Oldest segment version this build can still read. Readers accept the
-// inclusive range [LOG_SEGMENT_VERSION_MIN_SUPPORTED, LOG_SEGMENT_VERSION] so
-// that a new build keeps decoding logs written by an older one.
-#define LOG_SEGMENT_VERSION_MIN_SUPPORTED 2
+#define LOG_SEGMENT_VERSION               3 ///< Current default version.
+#define LOG_SEGMENT_VERSION_MIN_SUPPORTED 2 ///< Oldest version this build can still read.
+#define LOG_SEGMENT_VERSION_FIELDTYPES    3 ///< First version that carries the field-type schema (self-describing).
 
 #if defined(__linux__)
 #define LB_DEFAULT_ALIGN 512
@@ -166,7 +164,7 @@ log_buffer_header_size(unsigned version)
     return 0;
   }
   // v2 stops at data_offset; v3 and later include fmt_fieldtypes_offset.
-  return version >= 3 ? sizeof(LogBufferHeader) : offsetof(LogBufferHeader, fmt_fieldtypes_offset);
+  return version >= LOG_SEGMENT_VERSION_FIELDTYPES ? sizeof(LogBufferHeader) : offsetof(LogBufferHeader, fmt_fieldtypes_offset);
 }
 
 union LB_State {
