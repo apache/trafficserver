@@ -101,6 +101,7 @@ esi_esi_la_LIBADD = esi/libesicore.la
 
 esi_combo_handler_la_SOURCES = \
 	esi/combo_handler.cc \
+	esi/combo_handler_utils.cc \
 	esi/fetcher/HttpDataFetcherImpl.cc \
 	esi/lib/HandlerManager.cc
 
