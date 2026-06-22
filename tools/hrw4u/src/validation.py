@@ -229,6 +229,18 @@ class Validator:
         return f'"{value}"' if Validator.needs_quotes(value) else value
 
     @staticmethod
+    def unquote_if_ident(value: str) -> str:
+        """Strip surrounding quotes when the unquoted form is a valid grammar IDENT.
+
+        See grammar/hrw4u.g4:72 (IDENT rule); regex at common.py:52 must stay in sync.
+        """
+        if len(value) >= 2 and value.startswith('"') and value.endswith('"'):
+            inner = value[1:-1]
+            if RegexPatterns.GRAMMAR_IDENT.fullmatch(inner):
+                return inner
+        return value
+
+    @staticmethod
     def percent_block() -> Callable[[str], None]:
 
         def validator(value: str) -> None:

@@ -233,6 +233,7 @@ class InverseSymbolResolver(SymbolResolverBase):
 
     def _handle_set_rm_operation(
             self, cmd: str, toks: list[str], prefix: str, qualifier: str, section: SectionType | None = None) -> str:
+        qualifier = Validator.unquote_if_ident(qualifier)
         if cmd.startswith("rm-"):
             return f'{prefix}{qualifier} = ""'
         if len(toks) < 3:
@@ -289,7 +290,7 @@ class InverseSymbolResolver(SymbolResolverBase):
             qargs = [status_code, self._rewrite_inline_percents(f'"{url_arg}"', section)]
         elif name == "add-header" and args:
             # Convert add-header command to += syntax for reverse mapping
-            header_name = args[0]
+            header_name = Validator.unquote_if_ident(args[0])
             prefix = self.get_prefix_for_context("header_ops", section)
             prefixed_header = f"{prefix}{header_name}"
 
