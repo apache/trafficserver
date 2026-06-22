@@ -510,12 +510,6 @@ Log::init_fields()
   global_field_list.add(field, false);
   field_symbol_hash.emplace("cqqtl", field);
 
-  // Client request squid length plus TLS handshake bytes received for TLS connections
-  field = new LogField("client_req_squid_len_tls", "cqqtl", LogField::Type::sINT, &LogAccess::marshal_client_req_squid_len_tls,
-                       &LogAccess::unmarshal_int_to_str);
-  global_field_list.add(field, false);
-  field_symbol_hash.emplace("cqqtl", field);
-
   field = new LogField("cache_lookup_url_canonical", "cluc", LogField::Type::STRING, &LogAccess::marshal_cache_lookup_url_canon,
                        &LogAccess::unmarshal_str);
   global_field_list.add(field, false);
@@ -672,12 +666,6 @@ Log::init_fields()
                        &LogAccess::unmarshal_int_to_str);
   global_field_list.add(field, false);
   field_symbol_hash.emplace("psql", field);
-
-  // Squid length plus TLS handshake bytes sent for TLS connections
-  field = new LogField("proxy_resp_squid_len_tls", "psqtl", LogField::Type::sINT, &LogAccess::marshal_proxy_resp_squid_len_tls,
-                       &LogAccess::unmarshal_int_to_str);
-  global_field_list.add(field, false);
-  field_symbol_hash.emplace("psqtl", field);
 
   // Squid length plus TLS handshake bytes sent for TLS connections
   field = new LogField("proxy_resp_squid_len_tls", "psqtl", LogField::Type::sINT, &LogAccess::marshal_proxy_resp_squid_len_tls,

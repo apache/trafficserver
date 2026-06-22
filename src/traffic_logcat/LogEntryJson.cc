@@ -121,6 +121,68 @@ log_entry_to_json(LogEntryHeader *entry, LogBufferHeader *header, char *buf, int
   };
   auto put_ch = [&](char c) -> bool { return put(&c, 1); };
 
+  // Emit the bytes in [start, end) as the body of a JSON string (the part
+  // between the surrounding quotes). JSON requires escaping the quote,
+  // backslash, and every control character (< 0x20); the latter use the short
+  // forms where they exist and \u00XX otherwise. Bytes >= 0x20 pass through
+  // verbatim, preserving the original (possibly non-UTF-8) bytes. Used for both
+  // field values and the symbol keys, since a corrupt/untrusted segment may
+  // carry arbitrary bytes in either.
+  auto put_json_escaped = [&](const char *start, const char *end) -> bool {
+    for (const char *p = start; p < end; ++p) {
+      unsigned char c = static_cast<unsigned char>(*p);
+      switch (c) {
+      case '"':
+        if (!put("\\\"", 2)) {
+          return false;
+        }
+        break;
+      case '\\':
+        if (!put("\\\\", 2)) {
+          return false;
+        }
+        break;
+      case '\b':
+        if (!put("\\b", 2)) {
+          return false;
+        }
+        break;
+      case '\f':
+        if (!put("\\f", 2)) {
+          return false;
+        }
+        break;
+      case '\n':
+        if (!put("\\n", 2)) {
+          return false;
+        }
+        break;
+      case '\r':
+        if (!put("\\r", 2)) {
+          return false;
+        }
+        break;
+      case '\t':
+        if (!put("\\t", 2)) {
+          return false;
+        }
+        break;
+      default:
+        if (c < 0x20) {
+          char esc[7];
+          int  n = snprintf(esc, sizeof(esc), "\\u%04x", c);
+          if (!put(esc, n)) {
+            return false;
+          }
+        } else if (!put_ch(*p)) {
+          return false;
+        }
+        break;
+      }
+    }
+    return true;
+  };
+
   if (!put_ch('{')) {
     return -1;
   }
@@ -135,12 +197,11 @@ log_entry_to_json(LogEntryHeader *entry, LogBufferHeader *header, char *buf, int
     while (sym < seg_end && *sym != '\0' && !is_field_sep(*sym)) {
       ++sym;
     }
-    int sym_len = static_cast<int>(sym - sym_start);
 
     if (i > 0 && !put_ch(',')) {
       return -1;
     }
-    if (!put_ch('"') || !put(sym_start, sym_len) || !put_ch('"') || !put_ch(':')) {
+    if (!put_ch('"') || !put_json_escaped(sym_start, sym) || !put_ch('"') || !put_ch(':')) {
       return -1;
     }
 
@@ -172,65 +233,7 @@ log_entry_to_json(LogEntryHeader *entry, LogBufferHeader *header, char *buf, int
         return -1;
       }
       read_from += padded_len;
-      if (!put_ch('"')) {
-        return -1;
-      }
-      for (const char *p = s; p < nul; ++p) {
-        // JSON requires escaping the quote, backslash, and every control
-        // character (< 0x20); the latter use the short forms where they exist
-        // and \u00XX otherwise. Bytes >= 0x20 pass through verbatim, preserving
-        // the original (possibly non-UTF-8) field value.
-        unsigned char c = static_cast<unsigned char>(*p);
-        switch (c) {
-        case '"':
-          if (!put("\\\"", 2)) {
-            return -1;
-          }
-          break;
-        case '\\':
-          if (!put("\\\\", 2)) {
-            return -1;
-          }
-          break;
-        case '\b':
-          if (!put("\\b", 2)) {
-            return -1;
-          }
-          break;
-        case '\f':
-          if (!put("\\f", 2)) {
-            return -1;
-          }
-          break;
-        case '\n':
-          if (!put("\\n", 2)) {
-            return -1;
-          }
-          break;
-        case '\r':
-          if (!put("\\r", 2)) {
-            return -1;
-          }
-          break;
-        case '\t':
-          if (!put("\\t", 2)) {
-            return -1;
-          }
-          break;
-        default:
-          if (c < 0x20) {
-            char esc[7];
-            int  n = snprintf(esc, sizeof(esc), "\\u%04x", c);
-            if (!put(esc, n)) {
-              return -1;
-            }
-          } else if (!put_ch(*p)) {
-            return -1;
-          }
-          break;
-        }
-      }
-      if (!put_ch('"')) {
+      if (!put_ch('"') || !put_json_escaped(s, nul) || !put_ch('"')) {
         return -1;
       }
       break;

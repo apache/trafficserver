@@ -33,7 +33,7 @@ Motivation
 ==========
 
 In version 2, a segment header carries the field *symbols* (``fmt_fieldlist``,
-e.g. ``"chi cqu pssc"``) and a printf-style *template* (``fmt_printf``) but
+e.g. ``"chi,cqu,pssc"``) and a printf-style *template* (``fmt_printf``) but
 **not** the field types. To decode an entry a reader had to already know the
 type of each symbol, because the value encodings are only self-delimiting once
 the type is known (``IP`` is variable length, for example). That coupled every
@@ -55,7 +55,7 @@ A ``.blog`` file is a stream of segments, each a serialized ``LogBuffer``:
       version      = 3
       format_type, byte_count, entry_count, timestamps, flags, signature
       fmt_name_offset
-      fmt_fieldlist_offset      -> "chi cqu pssc ..."   (symbols, space separated)
+      fmt_fieldlist_offset      -> "chi,cqu,pssc,..."  (symbols, comma separated)
       fmt_printf_offset         -> "%<chi> %<cqu> ..."
       src_hostname_offset, log_filename_offset
       data_offset               -> first entry
@@ -169,7 +169,9 @@ Given a segment, a generic decoder:
 
 #. Reads ``field_count`` and the ``type_code[]`` array from the schema at
    ``fmt_fieldtypes_offset``.
-#. Splits ``fmt_fieldlist`` into ``field_count`` whitespace-separated symbols.
+#. Splits ``fmt_fieldlist`` into ``field_count`` comma-separated symbols
+   (``LogFormat::parse_format_string()`` joins symbols with ``,``; the reference
+   decoder also tolerates spaces as separators).
 #. For each entry (located via ``data_offset`` and walked using
    ``LogEntryHeader::entry_len``), reads the fields left to right, using
    ``type_code[i]`` to pick the encoding above and advance the read cursor.

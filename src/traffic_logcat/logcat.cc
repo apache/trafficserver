@@ -224,13 +224,17 @@ bounded_header_str(LogBufferHeader *header, uint32_t offset)
     return nullptr;
   }
 
+  // Validate the offset against the segment size *before* forming a pointer:
+  // pointer arithmetic landing outside the object is undefined behavior even if
+  // the result is never dereferenced, and offset is untrusted here.
+  if (offset >= header->byte_count) {
+    return nullptr;
+  }
+
   char *seg_start = reinterpret_cast<char *>(header);
   char *seg_end   = seg_start + header->byte_count;
   char *addr      = seg_start + offset;
 
-  if (addr < seg_start || addr >= seg_end) {
-    return nullptr;
-  }
   if (memchr(addr, '\0', static_cast<size_t>(seg_end - addr)) == nullptr) {
     return nullptr;
   }

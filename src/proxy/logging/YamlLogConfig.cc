@@ -245,6 +245,7 @@ YamlLogConfig::decodeLogObject(const YAML::Node &node)
       binary_log_version = LOG_SEGMENT_VERSION;
     } else if (file_type != LOG_FILE_BINARY) {
       Warning("binary_log_version only applies to binary logs; ignoring for this object");
+      binary_log_version = LOG_SEGMENT_VERSION;
     }
   }
 

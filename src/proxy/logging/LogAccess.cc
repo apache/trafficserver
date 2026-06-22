@@ -471,6 +471,8 @@ LogAccess::marshal_custom_field(char *buf, LogField::Type type, const LogField::
   if (sm == nullptr) {
     switch (type) {
     case LogField::Type::sINT:
+      [[fallthrough]];
+    case LogField::Type::dINT:
       if (buf) {
         marshal_int(buf, 0);
       }
@@ -485,8 +487,6 @@ LogAccess::marshal_custom_field(char *buf, LogField::Type type, const LogField::
     case LogField::Type::IP:
       return marshal_ip(buf, nullptr);
     case LogField::Type::N_TYPES:
-      [[fallthrough]];
-    case LogField::Type::dINT:
       [[fallthrough]];
     case LogField::Type::INVALID:
       break;

@@ -208,6 +208,27 @@ TEST_CASE("v3 generic decode escapes control characters in strings", "[logcat][v
   CHECK(std::string(out, n) == R"({"msg":"a\nb\tc\u0001d"})");
 }
 
+TEST_CASE("v3 generic decode escapes JSON structural characters in symbol keys", "[logcat][v3]")
+{
+  // A corrupt/untrusted segment may carry arbitrary bytes in fmt_fieldlist, and
+  // the symbol becomes a JSON key. The quote and backslash must be escaped just
+  // like string values (control-character escaping is covered above); emitted
+  // raw they would produce invalid (or structurally different) JSON.
+  V3Segment seg;
+  init_segment(seg, "a\"b\\c", {LogField::Type::sINT});
+
+  auto *entry = reinterpret_cast<LogEntryHeader *>(seg.storage + DATA_OFF);
+  char *w     = reinterpret_cast<char *>(entry) + sizeof(LogEntryHeader);
+  LogAccess::marshal_int(w, 7);
+  w                += INK_MIN_ALIGN;
+  entry->entry_len  = static_cast<uint32_t>(w - reinterpret_cast<char *>(entry));
+
+  char out[256];
+  int  n = log_entry_to_json(entry, seg.header(), out, sizeof(out));
+  REQUIRE(n > 0);
+  CHECK(std::string(out, n) == R"({"a\"b\\c":7})");
+}
+
 TEST_CASE("v3 generic decode rejects an unknown type code", "[logcat][v3]")
 {
   V3Segment seg;

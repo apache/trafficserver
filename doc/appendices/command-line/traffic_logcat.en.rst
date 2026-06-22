@@ -25,7 +25,7 @@ traffic_logcat
 Synopsis
 ========
 
-:program:`traffic_logcat` [-o output-file | -a] [-CEHhSVw2] [input-file ...]
+:program:`traffic_logcat` [-o output-file | -a] [-CEHhjSVw2] [input-file ...]
 
 Description
 ===========
