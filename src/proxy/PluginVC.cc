@@ -72,6 +72,7 @@
  ****************************************************************************/
 
 #include "proxy/PluginVC.h"
+#include "proxy/http/remap/RemapPluginInfo.h"
 #include "../iocore/net/P_Net.h"
 #include "tscore/Regression.h"
 #if TS_HAS_TESTS
@@ -466,6 +467,11 @@ PluginVC::transfer_bytes(MIOBuffer *transfer_to, IOBufferReader *transfer_from, 
     total_added += moved;
   }
 
+  // Attribute the bytes moved across this intercept to the owning plugin.
+  if (core_obj->_bytes != nullptr && total_added > 0) {
+    core_obj->_bytes->increment(total_added);
+  }
+
   return total_added;
 }
 
@@ -562,6 +568,11 @@ PluginVC::process_write_side()
     //   buffer_size factor doesn't apply
     Dbg(dbg_ctl_pvc, "[%u] %s: process_read_side from other side out of buffer space", core_obj->id, PVC_TYPE);
     return;
+  }
+
+  // Count a write-side pass for the owning plugin only when data actually moved to the peer.
+  if (core_obj->_transfers != nullptr && added > 0) {
+    core_obj->_transfers->increment(1);
   }
 
   write_state.vio.ndone            += added;
@@ -1002,6 +1013,11 @@ PluginVCCore::alloc(Continuation *acceptor, int64_t buffer_index, int64_t buffer
   PluginVCCore *pvc = new PluginVCCore;
   pvc->init(buffer_index, buffer_water_mark);
   pvc->connect_to = acceptor;
+  // Capture the creating plugin's transport counters (registry-owned) for per-plugin accounting.
+  if (pluginThreadContext != nullptr) {
+    pvc->_bytes     = pluginThreadContext->_bytes;
+    pvc->_transfers = pluginThreadContext->_transfers;
+  }
   return pvc;
 }
 
