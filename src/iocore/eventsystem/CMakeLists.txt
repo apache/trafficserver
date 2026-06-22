@@ -64,6 +64,10 @@ if(BUILD_TESTING)
   add_catch2_test(NAME test_IOBuffer COMMAND test_IOBuffer)
   add_catch2_test(NAME test_MIOBufferWriter COMMAND test_MIOBufferWriter)
 
+  add_executable(test_Continuation unit_tests/test_Continuation.cc)
+  target_link_libraries(test_Continuation ts::inkevent configmanager Catch2::Catch2WithMain)
+  add_catch2_test(NAME test_Continuation COMMAND test_Continuation)
+
 endif()
 
 clang_tidy_check(inkevent)
