@@ -29,6 +29,7 @@
 
 #include "proxy/http/remap/PluginDso.h"
 #include "iocore/eventsystem/Freer.h"
+#include "tsutil/Metrics.h"
 #ifdef PLUGIN_DSO_TESTS
 #include "unit-tests/plugin_testing_common.h"
 #else
@@ -38,6 +39,8 @@
 #endif
 
 #include <cstdlib>
+#include <string>
+#include <string_view>
 #include <utility>
 
 namespace
@@ -138,6 +141,10 @@ PluginDso::load(std::string &error, const fs::path &compilerPath)
     }
   }
   PluginDbg(_dbg_ctl(), "plugin '%s' finished loading DSO", _configPath.c_str());
+
+  if (result) {
+    registerPluginMetrics(_effectivePath.string());
+  }
 
   return result;
 }

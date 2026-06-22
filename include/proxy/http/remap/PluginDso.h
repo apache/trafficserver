@@ -46,17 +46,14 @@
 namespace fs = swoc::file;
 
 #include "tscore/Ptr.h"
+#include "tsutil/Metrics.h"
 #include "iocore/eventsystem/EventSystem.h"
 
 #include "proxy/Plugin.h"
+#include "proxy/PluginThreadContext.h"
 
-class PluginThreadContext : public RefCountObjInHeap
-{
-public:
-  virtual void                       acquire() = 0;
-  virtual void                       release() = 0;
-  static constexpr const char *const _tag      = "plugin_context"; /** @brief log tag used by this class */
-};
+#include <string>
+#include <string_view>
 
 class PluginDso : public PluginThreadContext
 {
