@@ -29,13 +29,11 @@
  *
  ****************************************************************************/
 
-#include "tscore/ink_platform.h"
 #include "tscore/Diags.h"
-#include "tscore/ink_memory.h"
-#include "tscore/ink_inet.h"
-#include "tscore/ink_assert.h"
 #include "tscore/MatcherUtils.h"
 #include "tscore/Tokenizer.h"
+#include "tscore/ink_assert.h"
+#include "tscore/ink_memory.h"
 
 // char* readIntoBuffer(const char* file_path, const char* module_name,
 //                          int* read_size_ptr)
@@ -113,7 +111,7 @@ readIntoBuffer(const char *file_path, const char *module_name, int *read_size_pt
     // Didn't get the whole file, drop everything. We don't want to return
     //   something partially read because, ie. with configs, the behaviour
     //   is undefined.
-    Error("%s Only able to read %ld bytes out %ld for %s file", module_name, read_size, file_size, file_path);
+    Error("%s Only able to read %zd bytes out %zd for %s file", module_name, read_size, file_size, file_path);
     ats_free(file_buf);
     file_buf = nullptr;
   }
@@ -144,7 +142,7 @@ unescapifyStr(char *buffer)
     if (*read == '%' && *(read + 1) != '\0' && *(read + 2) != '\0') {
       subStr[0] = *(++read);
       subStr[1] = *(++read);
-      *write    = static_cast<char>(strtol(subStr, (char **)nullptr, 16));
+      *write    = static_cast<char>(strtol(subStr, static_cast<char **>(nullptr), 16));
       read++;
       write++;
     } else if (*read == '+') {
