@@ -23,7 +23,13 @@ PKGDATE="20200514"
 
 function main() {
   set -e # exit on error
-  ROOT=${ROOT:-$(cd $(dirname $0) && git rev-parse --show-toplevel)/.git/fmt/${PKGDATE}}
+
+  # Resolve the common git directory, which is shared by all linked worktrees, so the
+  # downloaded clang-format is cached and found in one place.  --git-common-dir can return a
+  # relative path, so make it absolute without --path-format (which needs git 2.31+); this
+  # matches how CMakeLists.txt resolves GIT_COMMON_DIR.
+  GIT_COMMON_DIR=$(cd "$(git rev-parse --git-common-dir)" && pwd)
+  ROOT=${ROOT:-${GIT_COMMON_DIR}/fmt/${PKGDATE}}
   # The presence of this file indicates clang-format was successfully installed.
   INSTALLED_SENTINEL=${ROOT}/.clang-format-installed
 
@@ -36,7 +42,7 @@ function main() {
       exit 2
     fi
   fi
-  DIR=${@:-.}
+  DIR=${@:-$(git rev-parse --show-toplevel)}
   PACKAGE="clang-format-${PKGDATE}.tar.bz2"
   VERSION="clang-format version 10.0.0 (https://github.com/llvm/llvm-project.git d32170dbd5b0d54436537b6b75beaf44324e0c28)"
 
@@ -118,5 +124,6 @@ EOF
 if [[ "$(basename -- "$0")" == 'clang-format.sh' ]]; then
   main "$@"
 else
-  ROOT=${ROOT:-$(git rev-parse --show-toplevel)/.git/fmt/${PKGDATE}}
+  GIT_COMMON_DIR=$(cd "$(git rev-parse --git-common-dir)" && pwd)
+  ROOT=${ROOT:-${GIT_COMMON_DIR}/fmt/${PKGDATE}}
 fi
