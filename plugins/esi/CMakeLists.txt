@@ -25,7 +25,7 @@ target_include_directories(esi PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 verify_global_plugin(esi)
 verify_remap_plugin(esi)
 
-add_atsplugin(combo_handler combo_handler.cc)
+add_atsplugin(combo_handler combo_handler.cc combo_handler_utils.cc)
 
 target_link_libraries(combo_handler PRIVATE esicore fetcher)
 target_include_directories(combo_handler PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")

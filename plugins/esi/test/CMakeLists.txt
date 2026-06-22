@@ -38,3 +38,9 @@ add_esi_test(test_gzip gzip_test.cc)
 target_link_libraries(test_gzip PRIVATE catch2::catch2 esi-common)
 add_esi_test(test_include_url_validator include_url_validator_test.cc)
 target_link_libraries(test_include_url_validator PRIVATE catch2::catch2 esi-common esicore)
+# combo_handler_utils.cc lives in the parent plugin source dir; compile
+# it directly into the test binary since it is bundled into combo_handler.so
+# rather than its own library.
+add_esi_test(test_combo_handler_utils combo_handler_utils_test.cc ${CMAKE_CURRENT_SOURCE_DIR}/../combo_handler_utils.cc)
+target_include_directories(test_combo_handler_utils PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)
+target_link_libraries(test_combo_handler_utils PRIVATE catch2::catch2)
