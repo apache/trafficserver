@@ -22,12 +22,15 @@
  */
 
 #include <cstdio>
+#include <string_view>
+#include <vector>
 #include "tscore/ink_platform.h"
 #include "tscore/ink_file.h"
 #include "tscore/ParseRules.h"
 #include "records/RecCore.h"
 #include "tscore/Layout.h"
 #include "proxy/Plugin.h"
+#include "proxy/http/remap/RemapPluginInfo.h"
 #include "tscore/ink_cap.h"
 #include "tscore/Filenames.h"
 
@@ -78,6 +81,31 @@ parsePluginConfig()
 static const char *plugin_dir = ".";
 
 using init_func_t = void (*)(int, char **);
+
+namespace
+{
+/** Plugin context for global plugins, which load via raw dlopen() rather than the
+ *  PluginFactory/PluginDso path and so would otherwise have no PluginThreadContext to carry their
+ *  identity. Installed as the thread-local pluginThreadContext around TSPluginInit so the plugin's
+ *  continuations are stamped with it. Global plugins are never unloaded, so acquire()/release() are
+ *  no-ops and instances live for the process lifetime. */
+class GlobalPluginContext : public PluginThreadContext
+{
+public:
+  explicit GlobalPluginContext(std::string_view name) { registerPluginMetrics(name); }
+  void
+  acquire() override
+  {
+  }
+  void
+  release() override
+  {
+  }
+};
+
+// Keeps global-plugin contexts reachable for the process lifetime; mutated single-threaded at startup.
+std::vector<GlobalPluginContext *> g_global_plugin_contexts;
+} // namespace
 
 // Plugin registration vars
 //
@@ -192,7 +220,17 @@ single_plugin_init(int argc, char *argv[], bool validateOnly)
 #endif
     opterr = 0;
     optarg = nullptr;
+
+    // Install this plugin's context around TSPluginInit so the continuations it creates carry its
+    // identity (see GlobalPluginContext).
+    auto *global_context = new GlobalPluginContext(path);
+    g_global_plugin_contexts.push_back(global_context);
+    auto *prev_plugin_context = pluginThreadContext;
+    pluginThreadContext       = global_context;
+
     init(argc, argv);
+
+    pluginThreadContext = prev_plugin_context;
   } // done elevating access
 
   if (plugin_reg_current->plugin_registered) {

@@ -18,7 +18,8 @@ N=60
 while (( N > 0 ))
 do
     rm -f metrics.out metrics.txt
-    traffic_ctl metric match lua > metrics.out
+    # Anchor to this plugin's own metrics; exclude the proxy.process.plugin.* workload counters.
+    traffic_ctl metric match '^plugin\.lua\.' > metrics.out
     sleep 1
     sed 's/ [0-9][0-9]*//' metrics.out > metrics.txt
     if diff metrics.txt ${AUTEST_TEST_DIR}/gold/metrics.gold
