@@ -78,3 +78,40 @@ add_library(systemtap::systemtap INTERFACE IMPORTED GLOBAL)
 target_include_directories(systemtap::systemtap INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/systemtap")
 
 add_subdirectory(ls-hpack)
+
+# Currently v1.4.0
+#
+# Upstream: https://github.com/google/highway
+#
+# Source-only, preserves the readme, license, cmake
+# infrastructure and main source; does not include
+# examples, tests or documentation.
+#
+# Note that hwy/tests/list_targets.cc is retained
+# for compiled-in target information
+#
+# CMakeLists.txt slightly modified to fully disable
+# building tests if `HWY_ENABLE_TESTS=OFF`, we intend
+# to upstream this change
+if(NOT EXTERNAL_HWY)
+  message(STATUS "Using internal highway")
+  set(HWY_FORCE_STATIC_LIBS
+      ON
+      CACHE BOOL "Ignore BUILD_SHARED_LIBS" FORCE
+  )
+  set(HWY_ENABLE_INSTALL
+      OFF
+      CACHE BOOL "Install library" FORCE
+  )
+  set(HWY_ENABLE_EXAMPLES
+      OFF
+      CACHE BOOL "Build examples" FORCE
+  )
+  set(HWY_ENABLE_TESTS
+      OFF
+      CACHE BOOL "Enable HWY tests" FORCE
+  )
+  add_subdirectory(highway)
+  add_library(hwy::hwy ALIAS hwy)
+  add_library(hwy::hwy_contrib ALIAS hwy_contrib)
+endif()
