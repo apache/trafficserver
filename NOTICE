@@ -128,3 +128,8 @@ Copyright 2023, Carnegie Mellon University (Apache-2.0)
 Website: https://s3fifo.com/
 Paper: http://dx.doi.org/10.1145/3600006.3613147
 Reference implementation: https://github.com/Thesys-lab/sosp23-s3fifo
+
+~~
+
+Highway is a C++ library that provides portable SIMD/vector intrinsics.
+https://github.com/google/highway
