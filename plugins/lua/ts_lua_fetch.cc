@@ -542,7 +542,7 @@ ts_lua_fetch_multi_handler(TSCont contp, TSEvent event ATS_UNUSED, void *edata)
   }
 
   // all finish
-  TSMutexLock(lmutex);
+  TSMutexLockGuard lock(lmutex);
 
   if (fmi->total == 1 && !fmi->multi) {
     ts_lua_fill_one_result(L, fi);
@@ -559,7 +559,6 @@ ts_lua_fetch_multi_handler(TSCont contp, TSEvent event ATS_UNUSED, void *edata)
     TSContCall(ci->contp, TSEvent(TS_LUA_EVENT_COROUTINE_CONT), reinterpret_cast<void *>(1));
   }
 
-  TSMutexUnlock(lmutex);
   return 0;
 }
 

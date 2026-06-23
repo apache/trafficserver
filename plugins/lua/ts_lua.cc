@@ -525,7 +525,7 @@ ts_lua_remap_plugin_init(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
     pthread_setspecific(lua_state_key, main_ctx);
   }
 
-  TSMutexLock(main_ctx->mutexp);
+  TSMutexLockGuard lock(main_ctx->mutexp);
 
   http_ctx = ts_lua_create_http_ctx(main_ctx, instance_conf);
 
@@ -551,7 +551,6 @@ ts_lua_remap_plugin_init(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
   if (lua_type(L, -1) != LUA_TFUNCTION) {
     lua_pop(L, 1);
     ts_lua_destroy_http_ctx(http_ctx);
-    TSMutexUnlock(main_ctx->mutexp);
     return TSREMAP_NO_REMAP;
   }
 
@@ -573,8 +572,6 @@ ts_lua_remap_plugin_init(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
     Dbg(dbg_ctl, "[%s] no txn hook -> release resources now", __FUNCTION__);
     ts_lua_destroy_http_ctx(http_ctx);
   }
-
-  TSMutexUnlock(main_ctx->mutexp);
 
   return TSRemapStatus(ret);
 }
