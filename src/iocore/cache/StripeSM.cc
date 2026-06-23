@@ -31,6 +31,7 @@
 #include "CacheEvacuateDocVC.h"
 #include "PreservationTable.h"
 #include "Stripe.h"
+#include "CacheShm.h"
 
 #include "iocore/cache/CacheDefs.h"
 #include "CacheVC.h"
@@ -176,6 +177,26 @@ StripeSM::init(bool clear)
   if (clear) {
     Note("clearing cache directory '%s'", hash_text.get());
     return clear_dir_aio();
+  }
+
+  // shm fast restart: a clean shutdown left the in-shm directory authoritative, so
+  // skip both the disk read and recover_data() (which would re-scan the tail and
+  // discard the entries the shm copy preserved). After validating the in-shm
+  // header/footer, jump straight to dir_init_done() in the normal post-recovery
+  // state. Validation failure falls through to disk read + recover_data().
+  if (CacheShm::mode() == CacheShm::Mode::AttachExisting && CacheShm::is_shm_pointer(this->directory.raw_dir)) {
+    if (this->directory.header->magic == STRIPE_MAGIC && this->directory.footer->magic == STRIPE_MAGIC &&
+        CACHE_DB_MAJOR_VERSION_COMPATIBLE <= this->directory.header->version._major &&
+        this->directory.header->version._major <= CACHE_DB_MAJOR_VERSION && this->_shm_directory_is_valid()) {
+      Note("attaching cached directory from shm for '%s' (fast restart, recovery skipped)", hash_text.get());
+      this->sector_size = this->directory.header->sector_size;
+      this->scan_pos    = this->directory.header->write_pos;
+      this->_preserved_dirs.periodic_scan(this);
+      this->set_io_not_in_progress();
+      SET_HANDLER(&StripeSM::dir_init_done);
+      return this->dir_init_done(EVENT_IMMEDIATE, nullptr);
+    }
+    Note("shm directory invalid for '%s'; falling back to disk read", hash_text.get());
   }
 
   init_info           = new StripeInitInfo();
@@ -1326,7 +1347,10 @@ StripeSM::shutdown(EThread *shutdown_thread)
   SCOPED_MUTEX_LOCK(lock, this->mutex, shutdown_thread);
 
   if (DISK_BAD(this->disk)) {
-    Dbg(dbg_ctl_cache_dir_sync, "Dir %s: ignoring -- bad disk", this->hash_text.get());
+    // Bad disk: invalidate the shm copy so the next start recovers from disk
+    // (mirrors the flush-failure branch below).
+    Dbg(dbg_ctl_cache_dir_sync, "Dir %s: bad disk -- invalidating shm copy for disk recovery", this->hash_text.get());
+    CacheShm::invalidate_stripe_directory(this->directory.raw_dir);
     return;
   }
   size_t dirlen = this->dirlen();
@@ -1342,7 +1366,15 @@ StripeSM::shutdown(EThread *shutdown_thread)
   // directories have not been inserted for these writes
   if (!this->_write_buffer.is_empty()) {
     Dbg(dbg_ctl_cache_dir_sync, "Dir %s: flushing agg buffer first", this->hash_text.get());
-    this->flush_aggregate_write_buffer(this->fd);
+    if (!this->flush_aggregate_write_buffer(this->fd)) {
+      // Flush failed (e.g. disk went bad): the pwrite below would abort on a short
+      // write, and the directory no longer matches disk, so invalidate the shm copy
+      // so this stripe falls back to disk read + recover_data() next start.
+      Error("Dir %s: aggregation buffer flush failed during shutdown; invalidating shm copy so this stripe reloads from disk",
+            this->hash_text.get());
+      CacheShm::invalidate_stripe_directory(this->directory.raw_dir);
+      return;
+    }
   }
 
   // We already asserted that dirlen > 0.
@@ -1354,6 +1386,16 @@ StripeSM::shutdown(EThread *shutdown_thread)
   this->directory.footer->sync_serial = this->directory.header->sync_serial;
 
   CHECK_DIR(d);
+
+  // A shm-backed directory is kept current in the shared segment by every
+  // dir_insert and attached directly next start, so the on-disk write here is pure
+  // waste -- skip it. If the shm segment is later dropped, the on-disk A/B copies +
+  // recover_data() reconcile the tail, the same path an unclean restart takes.
+  if (CacheShm::is_shm_pointer(this->directory.raw_dir)) {
+    Note("Dir %s: shm-backed, skipping on-disk directory write", this->hash_text.get());
+    return;
+  }
+
   size_t B     = this->directory.header->sync_serial & 1;
   off_t  start = this->skip + (B ? dirlen : 0);
   B            = pwrite(this->fd, this->directory.raw_dir, dirlen, start);

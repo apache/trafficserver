@@ -31,6 +31,7 @@
 #include "tscore/signals.h"
 
 #include "CtrlCommands.h"
+#include "CacheShmCommand.h"
 #include "ConvertConfigCommand.h"
 #include "FileConfigCommand.h"
 #include "SSLMultiCertCommand.h"
@@ -101,6 +102,7 @@ main([[maybe_unused]] int argc, const char **argv)
   auto &host_command       = parser.add_command("host", "Interact with host status").require_commands();
   auto &hostdb_command     = parser.add_command("hostdb", "Interact with HostDB status").require_commands();
   auto &direct_rpc_command = parser.add_command("rpc", "Interact with the rpc api").require_commands();
+  auto &cache_command      = parser.add_command("cache", "Inspect and manage the cache").require_commands();
 
   // config commands
   config_command.add_command("defaults", "Show default information configuration values", Command_Execute)
@@ -315,6 +317,16 @@ main([[maybe_unused]] int argc, const char **argv)
     .add_option("--params", "-p", "Parameters to be passed in the request, YAML or JSON format", "", MORE_THAN_ONE_ARG_N, "", "")
     .add_example_usage("traffic_ctl rpc invoke foo_bar -p \"numbers: [1, 2, 3]\"");
 
+  // cache shm commands - operate directly on POSIX shared memory; no running server required.
+  auto &shm_command = cache_command.add_command("shm", "Inspect and manage cache shared-memory segments").require_commands();
+  shm_command.add_option("--prefix", "-p", "shm name prefix word, framed as /<word>- (default 'ats')", "", 1, "ats");
+  shm_command.add_command("status", "Show the cache shared-memory control segment and stripe table", [&]() { command->execute(); })
+    .add_example_usage("traffic_ctl cache shm status")
+    .add_example_usage("traffic_ctl cache shm status --prefix ats-t");
+  shm_command.add_command("clear", "Unlink the cache shared-memory control and stripe segments", [&]() { command->execute(); })
+    .add_example_usage("traffic_ctl cache shm clear")
+    .add_example_usage("traffic_ctl cache shm clear --prefix ats-t");
+
   auto create_command = [](ts::Arguments &args) -> std::unique_ptr<CtrlCommand> {
     if (args.get("config")) {
       if (args.get("convert")) {
@@ -337,6 +349,7 @@ main([[maybe_unused]] int argc, const char **argv)
       {"host",    [](ts::Arguments *a) { return std::make_unique<HostCommand>(a); }     },
       {"hostdb",  [](ts::Arguments *a) { return std::make_unique<HostDBCommand>(a); }   },
       {"rpc",     [](ts::Arguments *a) { return std::make_unique<DirectRPCCommand>(a); }},
+      {"cache",   [](ts::Arguments *a) { return std::make_unique<CacheShmCommand>(a); } },
     };
 
     for (const auto &[key, factory] : factories) {

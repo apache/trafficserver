@@ -18,6 +18,7 @@
 add_executable(
   traffic_ctl
   traffic_ctl.cc
+  CacheShmCommand.cc
   ConvertConfigCommand.cc
   CtrlCommands.cc
   CtrlPrinters.cc
@@ -26,6 +27,8 @@ add_executable(
   SSLMultiCertCommand.cc
   ${CMAKE_SOURCE_DIR}/src/shared/rpc/IPCSocketClient.cc
 )
+
+target_include_directories(traffic_ctl PRIVATE ${CMAKE_SOURCE_DIR}/src/iocore/cache)
 
 target_link_libraries(traffic_ctl ts::tscore ts::config libswoc::libswoc yaml-cpp::yaml-cpp ts::tsutil)
 

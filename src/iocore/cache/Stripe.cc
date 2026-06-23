@@ -24,6 +24,7 @@
 #include "P_CacheDisk.h"
 #include "P_CacheInternal.h"
 #include "StripeSM.h"
+#include "CacheShm.h"
 
 #include "tsutil/DbgCtl.h"
 
@@ -153,21 +154,74 @@ Stripe::_init_directory(std::size_t directory_size, int header_size, int footer_
 
   Dbg(dbg_ctl_cache_init, "Stripe %s: allocating %zu directory bytes for a %lld byte volume (%lf%%)", hash_text.get(),
       directory_size, (long long)this->len, percent(directory_size, this->len));
-  if (ats_hugepage_enabled()) {
-    this->directory.raw_dir = static_cast<char *>(ats_alloc_hugepage(directory_size));
-    if (this->directory.raw_dir != nullptr) {
-      this->directory.raw_dir_huge = true;
-    }
-  }
-  if (nullptr == this->directory.raw_dir) {
-    this->directory.raw_dir      = static_cast<char *>(ats_memalign(ats_pagesize(), directory_size));
+  // Try a shared-memory-backed directory first; fall back to the hugepage /
+  // aligned-heap path when shm is disabled or the attach/create fails.
+  this->directory.raw_dir = CacheShm::attach_or_create_stripe(hash_text.get(), directory_size);
+  if (this->directory.raw_dir != nullptr) {
     this->directory.raw_dir_huge = false;
+  } else {
+    if (ats_hugepage_enabled()) {
+      this->directory.raw_dir = static_cast<char *>(ats_alloc_hugepage(directory_size));
+      if (this->directory.raw_dir != nullptr) {
+        this->directory.raw_dir_huge = true;
+      }
+    }
+    if (nullptr == this->directory.raw_dir) {
+      this->directory.raw_dir      = static_cast<char *>(ats_memalign(ats_pagesize(), directory_size));
+      this->directory.raw_dir_huge = false;
+    }
   }
   this->directory.raw_dir_size = directory_size;
   this->directory.dir          = reinterpret_cast<Dir *>(this->directory.raw_dir + header_size);
   this->directory.header       = reinterpret_cast<StripeHeaderFooter *>(this->directory.raw_dir);
   std::size_t const footer_offset{directory_size - static_cast<std::size_t>(footer_size)};
   this->directory.footer = reinterpret_cast<StripeHeaderFooter *>(this->directory.raw_dir + footer_offset);
+}
+
+// Bounds-check the trusted header/freelist fields of an in-shm directory before
+// the fast-restart attach (magic/version are already checked by the caller). A
+// stale-but-magic-valid segment could present out-of-range offsets that become OOB
+// disk I/O. On failure the caller falls through to the disk read + recover_data().
+//
+// Trust model: the shm segment is trusted to the same degree as the on-disk
+// directory (same-uid, mode 0600). Stripe geometry (segments/buckets) is recomputed
+// locally each run and raw_dir_size is exact-matched before attach, so this only
+// validates the header cursor fields and per-segment freelist heads; it does not
+// re-validate individual Dir entries -- the read path already checks Doc magic + key
+// before serving, so a stale entry resolves to a miss, never served corruption.
+bool
+Stripe::_shm_directory_is_valid() const
+{
+  // sector_size must be sane geometry (mirrors the hw_sector_size range in Cache.cc).
+  if (this->directory.header->sector_size == 0 || this->directory.header->sector_size > STORE_BLOCK_SIZE) {
+    return false;
+  }
+
+  // phase is a single bit of write-cursor state; only 0/1 are valid.
+  if (this->directory.header->phase > 1) {
+    return false;
+  }
+
+  // write_pos/last_write_pos/agg_pos must point into the data region.
+  const off_t data_lo = this->start;
+  const off_t data_hi = this->skip + this->len;
+
+  if (this->directory.header->write_pos < data_lo || this->directory.header->write_pos > data_hi ||
+      this->directory.header->last_write_pos < data_lo || this->directory.header->last_write_pos > data_hi ||
+      this->directory.header->agg_pos < data_lo || this->directory.header->agg_pos > data_hi) {
+    return false;
+  }
+
+  // Each per-segment freelist head must index a Dir within its segment (0 == empty);
+  // a head past the entry count would walk the free list out of bounds.
+  const int64_t segment_entries = static_cast<int64_t>(this->directory.buckets) * DIR_DEPTH;
+  for (int s = 0; s < this->directory.segments; s++) {
+    if (this->directory.header->freelist[s] >= segment_entries) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 // coverity[exn_spec_violation] - ink_assert aborts (doesn't throw), Dbg is exception-safe
@@ -182,12 +236,19 @@ Stripe::~Stripe()
     ink_assert(this->directory.raw_dir_size > 0);
     ink_assert(this->directory.raw_dir_size < MAX_STRIPE_SIZE);
 
+    // shm-backed directories must outlive the process; never ats_free or poison them.
+    const bool is_shm = CacheShm::is_shm_pointer(this->directory.raw_dir);
+
 #ifdef DEBUG
-    // Poison memory before freeing to help detect use-after-free
-    memset(this->directory.raw_dir, 0xDE, this->directory.raw_dir_size);
+    if (!is_shm) {
+      // Poison memory before freeing to help detect use-after-free
+      memset(this->directory.raw_dir, 0xDE, this->directory.raw_dir_size);
+    }
 #endif
 
-    if (this->directory.raw_dir_huge) {
+    if (is_shm) {
+      CacheShm::detach_stripe(this->directory.raw_dir);
+    } else if (this->directory.raw_dir_huge) {
       ats_free_hugepage(this->directory.raw_dir, this->directory.raw_dir_size);
     } else {
       ats_free(this->directory.raw_dir);
