@@ -39,6 +39,7 @@ using ts::Metrics;
 struct SSLStatsBlock {
   Metrics::Counter::AtomicType *cert_compress_zlib                             = nullptr;
   Metrics::Counter::AtomicType *cert_compress_zlib_failure                     = nullptr;
+  Metrics::Counter::AtomicType *cert_compress_cache_hit                        = nullptr;
   Metrics::Counter::AtomicType *cert_decompress_zlib                           = nullptr;
   Metrics::Counter::AtomicType *cert_decompress_zlib_failure                   = nullptr;
   Metrics::Counter::AtomicType *cert_compress_brotli                           = nullptr;

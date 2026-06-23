@@ -177,6 +177,7 @@ SSLInitializeStatistics()
 
   ssl_rsb.cert_compress_zlib                 = Metrics::Counter::createPtr("proxy.process.ssl.cert_compress.zlib");
   ssl_rsb.cert_compress_zlib_failure         = Metrics::Counter::createPtr("proxy.process.ssl.cert_compress.zlib_failure");
+  ssl_rsb.cert_compress_cache_hit            = Metrics::Counter::createPtr("proxy.process.ssl.cert_compress.cache_hit");
   ssl_rsb.cert_decompress_zlib               = Metrics::Counter::createPtr("proxy.process.ssl.cert_decompress.zlib");
   ssl_rsb.cert_decompress_zlib_failure       = Metrics::Counter::createPtr("proxy.process.ssl.cert_decompress.zlib_failure");
   ssl_rsb.cert_compress_brotli               = Metrics::Counter::createPtr("proxy.process.ssl.cert_compress.brotli");

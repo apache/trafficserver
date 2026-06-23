@@ -27,11 +27,28 @@
 #include <openssl/ssl.h>
 #include <brotli/decode.h>
 #include <brotli/encode.h>
+#include <cstring>
 
 int
-compression_func_brotli(SSL * /* ssl */, CBB *out, const uint8_t *in, size_t in_len)
+compression_func_brotli(SSL *ssl, CBB *out, const uint8_t *in, size_t in_len)
 {
-  // TODO Need a cache mechanism inside this function for better performance.
+  auto *cache = cert_compress_cache_get(SSL_get_SSL_CTX(ssl));
+
+  if (cache) {
+    auto const *entry = cache->slots[CERT_COMPRESS_ALG_BROTLI].live.load(std::memory_order_acquire);
+    if (entry) {
+      uint8_t *buf;
+      if (CBB_reserve(out, &buf, entry->bytes.size()) != 1) {
+        Metrics::Counter::increment(ssl_rsb.cert_compress_brotli_failure);
+        return 0;
+      }
+      memcpy(buf, entry->bytes.data(), entry->bytes.size());
+      CBB_did_write(out, entry->bytes.size());
+      Metrics::Counter::increment(ssl_rsb.cert_compress_brotli);
+      Metrics::Counter::increment(ssl_rsb.cert_compress_cache_hit);
+      return 1;
+    }
+  }
 
   uint8_t      *buf;
   unsigned long buf_len = BrotliEncoderMaxCompressedSize(in_len);
@@ -45,6 +62,13 @@ compression_func_brotli(SSL * /* ssl */, CBB *out, const uint8_t *in, size_t in_
       BROTLI_TRUE) {
     CBB_did_write(out, buf_len);
     Metrics::Counter::increment(ssl_rsb.cert_compress_brotli);
+
+    if (cache) {
+      auto *fresh = new CertCompressionCache::Entry();
+      fresh->bytes.assign(buf, buf + buf_len);
+      cert_compress_cache_try_publish(cache->slots[CERT_COMPRESS_ALG_BROTLI], fresh);
+    }
+
     return 1;
   } else {
     CBB_did_write(out, 0);

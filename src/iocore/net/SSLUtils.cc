@@ -448,7 +448,7 @@ SSLMultiCertConfigLoader::_enable_cert_compression(SSL_CTX *ctx)
     }
   }
 
-  if (register_certificate_compression_preference(ctx, algs) == 1) {
+  if (register_certificate_compression_preference(ctx, algs, this->_params->server_cert_compression_cache) == 1) {
     return true;
   } else {
     SSLError("Failed to enable certificate compression");
@@ -881,6 +881,10 @@ SSLInitializeLibrary()
   }
 
   ssl_stapling_ex_init();
+
+#if HAVE_SSL_CTX_ADD_CERT_COMPRESSION_ALG
+  cert_compress_cache_init();
+#endif
 
   // Reserve an application data index so that we can attach
   // the SSLNetVConnection to the SSL session.

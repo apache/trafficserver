@@ -4322,6 +4322,24 @@ SSL Termination
 
       proxy.config.ssl.server.cert_compression.algorithms: zlib,brotli
 
+.. ts:cv:: CONFIG proxy.config.ssl.server.cert_compression.cache INT 1
+   :reloadable:
+
+   Controls whether the compressed certificate is reused across
+   handshakes. With caching enabled (the default), the certificate is
+   compressed once and the result is reused. With caching disabled, the
+   certificate is recompressed on every handshake.
+
+   Has no effect on OpenSSL builds; OpenSSL always reuses the
+   compressed result.
+
+   ===== =================
+   Value Description
+   ===== =================
+   ``0`` Disables caching.
+   ``1`` Enables caching.
+   ===== =================
+
 .. ts:cv:: CONFIG proxy.config.ssl.client.cert_compression.algorithms STRING
    :reloadable:
 
