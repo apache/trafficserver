@@ -33,6 +33,7 @@ add_library(
   PreservationTable.cc
   RamCacheCLFUS.cc
   RamCacheLRU.cc
+  RamCacheS3FIFO.cc
   Store.cc
   Stripe.cc
   StripeSM.cc

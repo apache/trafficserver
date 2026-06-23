@@ -860,7 +860,16 @@ static constexpr RecordElement RecordsConfig[] =
   //  # alternatively: 20971520 (20MB)
   {RECT_CONFIG, "proxy.config.cache.ram_cache.size", RECD_INT, "-1", RECU_RESTART_TS, RR_NULL, RECC_STR, "^-?[0-9]+[A-Za-z]{0,}$", RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.cache.ram_cache.algorithm", RECD_INT, "1", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.cache.ram_cache.algorithm", RECD_INT, "1", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-2]", RECA_NULL}
+  ,
+  //  # S3-FIFO (ram_cache.algorithm = 2) tunables
+  {RECT_CONFIG, "proxy.config.cache.ram_cache.s3fifo.main_percent", RECD_INT, "90", RECU_RESTART_TS, RR_NULL, RECC_INT, "[1-99]", RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.cache.ram_cache.s3fifo.ghost_size_percent", RECD_INT, "90", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-100]", RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.cache.ram_cache.s3fifo.ghost_mem_percent", RECD_INT, "25", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-100]", RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.cache.ram_cache.s3fifo.promote_threshold", RECD_INT, "2", RECU_RESTART_TS, RR_NULL, RECC_INT, "[1-3]", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.cache.ram_cache.use_seen_filter", RECD_INT, "1", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-9]", RECA_NULL}
   ,
