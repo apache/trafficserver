@@ -118,3 +118,12 @@ LS-HPACK provides functionality to encode and decode HTTP headers using
 HPACK compression mechanism specified in RFC 7541.
 Copyright (c) 2018 - 2023 LiteSpeed Technologies Inc, (MIT License)
 https://github.com/litespeedtech/ls-hpack.git
+
+~~
+
+S3-FIFO: A simple, scalable FIFO-based algorithm with three static queues
+Copyright 2023, Carnegie Mellon University (Apache-2.0)
+
+Website: https://s3fifo.com/
+Paper: http://dx.doi.org/10.1145/3600006.3613147
+Reference implementation: https://github.com/Thesys-lab/sosp23-s3fifo
