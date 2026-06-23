@@ -328,7 +328,7 @@ Http2ServerSession::new_transaction()
 
   if (!stream || connection_state.is_peer_concurrent_stream_ub()) {
     if (error.cls != Http2ErrorClass::HTTP2_ERROR_CLASS_NONE) {
-      Http2SsnDebug("HTTP/2 stream error code=0x%02x %s", static_cast<int>(error.code), error.msg);
+      Error("HTTP/2 stream error code=0x%02x %s", static_cast<int>(error.code), error.msg);
     }
 
     remove_session();
