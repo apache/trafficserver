@@ -18,25 +18,23 @@
 
 import os
 
-# Someday should add client cert to origin to exercise the
-# engine interface on the other side
-
 Test.Summary = '''
-Test tls via the async interface with the sample async_engine
+Test TLS handshakes through OpenSSL's async job interface.
 '''
+
+async_handshake = os.path.join(Test.Variables.AtsTestPluginsDir, 'async_handshake.so')
 
 Test.SkipUnless(
     Condition.HasOpenSSLVersion('1.1.1'),
     Condition.IsOpenSSL(),
+    Condition(lambda: os.path.isfile(async_handshake), async_handshake + " not found."),
 )
 
-# Define default ATS
 ts = Test.MakeATSProcess("ts", enable_tls=True)
 server = Test.MakeOriginServer("server")
 
-ts.Setup.Copy(os.path.join(Test.Variables.AtsTestPluginsDir, 'async_engine.so'), Test.RunDirectory)
+Test.PrepareTestPlugin(async_handshake, ts)
 
-# Add info the origin server responses
 server.addResponse(
     "sessionlog.json", {
         "headers": "GET / HTTP/1.1\r\nuuid: basic\r\n\r\n",
@@ -44,12 +42,12 @@ server.addResponse(
         "body": ""
     }, {
         "headers":
-            "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\nCache-Control: max-age=3600\r\nContent-Length: 2\r\n\r\n",
+            "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\n"
+            "Cache-Control: max-age=3600\r\nContent-Length: 2\r\n\r\n",
         "timestamp": "1469733493.993",
         "body": "ok"
     })
 
-# add ssl materials like key, certificates for the server
 ts.addSSLfile("ssl/server.pem")
 ts.addSSLfile("ssl/server.key")
 
@@ -61,36 +59,11 @@ ts.Disk.records_config.update(
         'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
         'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
         'proxy.config.exec_thread.autoconfig.scale': 1.0,
-        'proxy.config.ssl.engine.conf_file': '{0}/ts/config/load_engine.cnf'.format(Test.RunDirectory),
         'proxy.config.ssl.async.handshake.enabled': 1,
         'proxy.config.diags.debug.enabled': 0,
         'proxy.config.diags.debug.tags': 'ssl|http'
     })
 
-ts.Disk.MakeConfigFile('load_engine.cnf').AddLines(
-    [
-        'openssl_conf = openssl_init',
-        '',
-        '[openssl_init]',
-        '',
-        'engines = engine_section',
-        '',
-        '[engine_section]',
-        '',
-        'async = async_section',
-        '',
-        '[async_section]',
-        '',
-        'dynamic_path = {0}/async_engine.so'.format(Test.RunDirectory),
-        '',
-        'engine_id = async-test',
-        '',
-        'default_algorithms = RSA',
-        '',
-        'init = 1',
-    ])
-
-# Make a basic request.  Hopefully it goes through
 tr = Test.AddTestRun("Run-Test")
 tr.MakeCurlCommand("-k -v -H uuid:basic -H host:example.com  https://127.0.0.1:{0}/".format(ts.Variables.ssl_port), ts=ts)
 tr.ReturnCode = 0
@@ -99,4 +72,4 @@ tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Varia
 tr.Processes.Default.Streams.All = Testers.ContainsExpression(r"HTTP/(2|1\.1) 200", "Request succeeds")
 tr.StillRunningAfter = server
 
-ts.Disk.traffic_out.Content += Testers.ContainsExpression("Send signal to ", "The Async engine triggers")
+ts.Disk.traffic_out.Content += Testers.ContainsExpression("resumed OpenSSL async job", "The OpenSSL async job resumes")
