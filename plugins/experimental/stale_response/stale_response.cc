@@ -202,11 +202,12 @@ free_state_info(StateInfo *state)
 int64_t
 aync_memory_total_add(ConfigInfo *plugin_config, int64_t change)
 {
-  int64_t total;
-  TSMutexLock(plugin_config->body_data_mutex);
+  int64_t          total;
+  TSMutexLockGuard lock(plugin_config->body_data_mutex);
+
   plugin_config->body_data_memory_usage += change;
   total                                  = plugin_config->body_data_memory_usage;
-  TSMutexUnlock(plugin_config->body_data_mutex);
+
   return total;
 }
 /*-----------------------------------------------------------------------------------------------*/

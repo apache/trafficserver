@@ -132,12 +132,12 @@ public:
   SSL_CTX *
   lookup_and_create(const char *servername, void *edata, bool &wontdo)
   {
-    SslData       *ssl_data        = nullptr;
-    scoped_SslData scoped_ssl_data = nullptr;
-    SSL_CTX       *ref_ctx         = nullptr;
-    std::string    commonName(servername);
-    TSMutexLock(list_mutex);
-    auto dataItr = cnDataMap.find(commonName);
+    SslData         *ssl_data        = nullptr;
+    scoped_SslData   scoped_ssl_data = nullptr;
+    SSL_CTX         *ref_ctx         = nullptr;
+    std::string      commonName(servername);
+    TSMutexLockGuard lock(list_mutex);
+    auto             dataItr = cnDataMap.find(commonName);
     /// If such a context exists in dict
     if (dataItr != cnDataMap.end()) {
       /// Reuse context if already built, self queued if not
@@ -165,7 +165,6 @@ public:
         ssl_data->scheduled = true;
       }
     }
-    TSMutexUnlock(list_mutex);
     return ref_ctx;
   }
 
@@ -265,27 +264,24 @@ public:
   SslData *
   get_newest()
   {
-    TSMutexLock(list_mutex);
-    SslData *ret = head;
-    TSMutexUnlock(list_mutex);
+    TSMutexLockGuard lock(list_mutex);
+    SslData         *ret = head;
     return ret;
   }
 
   SslData *
   get_oldest()
   {
-    TSMutexLock(list_mutex);
-    SslData *ret = tail;
-    TSMutexUnlock(list_mutex);
+    TSMutexLockGuard lock(list_mutex);
+    SslData         *ret = tail;
     return ret;
   }
 
   int
   get_size()
   {
-    TSMutexLock(list_mutex);
-    int ret = size;
-    TSMutexUnlock(list_mutex);
+    TSMutexLockGuard lock(list_mutex);
+    int              ret = size;
     return ret;
   }
 
@@ -293,14 +289,13 @@ public:
   int
   set_schedule(const std::string &commonName, bool flag)
   {
-    int ret = -1;
-    TSMutexLock(list_mutex);
-    auto iter = cnDataMap.find(commonName);
+    int              ret = -1;
+    TSMutexLockGuard lock(list_mutex);
+    auto             iter = cnDataMap.find(commonName);
     if (iter != cnDataMap.end()) {
       iter->second->scheduled = flag;
       ret                     = 0;
     }
-    TSMutexUnlock(list_mutex);
     return ret;
   }
 };

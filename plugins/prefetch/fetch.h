@@ -140,7 +140,7 @@ public:
     BgFetchState                              *state;
     std::map<String, BgFetchState *>::iterator it;
 
-    TSMutexLock(_prefetchStates->_lock);
+    TSMutexLockGuard lock(_prefetchStates->_lock);
     it = _prefetchStates->_states.find(space);
     if (it != _prefetchStates->_states.end()) {
       state = it->second;
@@ -148,7 +148,6 @@ public:
       state                           = new BgFetchState();
       _prefetchStates->_states[space] = state;
     }
-    TSMutexUnlock(_prefetchStates->_lock);
     return state;
   }
 
