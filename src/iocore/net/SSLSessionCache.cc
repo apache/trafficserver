@@ -43,7 +43,7 @@ SSLSessDeleter(SSL_SESSION *_p)
 
 SSLOriginSessionCache::SSLOriginSessionCache() {}
 
-SSLOriginSessionCache::~SSLOriginSessionCache()
+SSLOriginSessionCache::~SSLOriginSessionCache() TS_NO_THREAD_SAFETY_ANALYSIS // single-threaded teardown
 {
   while (auto *node = orig_sess_que.pop()) {
     delete node;
@@ -78,8 +78,8 @@ SSLOriginSessionCache::insert_session(const std::string &lookup_key, SSL_SESSION
     new SSLOriginSession(lookup_key, curve, group_name, std::shared_ptr<SSL_SESSION>{sess_ptr, SSLSessDeleter}));
   auto new_node = ssl_orig_session.release();
 
-  std::unique_lock lock(mutex);
-  auto             entry = orig_sess_map.find(lookup_key);
+  ts::scoped_writer_lock lock(mutex);
+  auto                   entry = orig_sess_map.find(lookup_key);
   if (entry != orig_sess_map.end()) {
     auto node = entry->second;
     Dbg(dbg_ctl_ssl_origin_session_cache, "found duplicate key: %s, replacing %p with %p", lookup_key.c_str(),
@@ -89,7 +89,7 @@ SSLOriginSessionCache::insert_session(const std::string &lookup_key, SSL_SESSION
     delete node;
   } else if (orig_sess_map.size() >= SSLConfigParams::origin_session_cache_size) {
     Dbg(dbg_ctl_ssl_origin_session_cache, "origin session cache full, removing oldest session");
-    remove_oldest_session(lock);
+    remove_oldest_session();
   }
 
   orig_sess_que.enqueue(new_node);
@@ -101,8 +101,8 @@ SSLOriginSessionCache::get_session(const std::string &lookup_key, ssl_curve_id *
 {
   Dbg(dbg_ctl_ssl_origin_session_cache, "get session: %s", lookup_key.c_str());
 
-  std::shared_lock lock(mutex);
-  auto             entry = orig_sess_map.find(lookup_key);
+  ts::scoped_reader_lock lock(mutex);
+  auto                   entry = orig_sess_map.find(lookup_key);
   if (entry == orig_sess_map.end()) {
     return nullptr;
   }
@@ -117,11 +117,8 @@ SSLOriginSessionCache::get_session(const std::string &lookup_key, ssl_curve_id *
 }
 
 void
-SSLOriginSessionCache::remove_oldest_session(const std::unique_lock<ts::shared_mutex> &lock)
+SSLOriginSessionCache::remove_oldest_session()
 {
-  // Caller must hold the bucket shared_mutex with unique_lock.
-  ink_release_assert(lock.owns_lock());
-
   while (orig_sess_que.head && orig_sess_que.size >= static_cast<int>(SSLConfigParams::origin_session_cache_size)) {
     auto node = orig_sess_que.pop();
     Dbg(dbg_ctl_ssl_origin_session_cache, "remove oldest session: %s, session ptr: %p", node->key.c_str(), node->shared_sess.get());
@@ -134,8 +131,8 @@ void
 SSLOriginSessionCache::remove_session(const std::string &lookup_key)
 {
   // We can't bail on contention here because this session MUST be removed.
-  std::unique_lock lock(mutex);
-  auto             entry = orig_sess_map.find(lookup_key);
+  ts::scoped_writer_lock lock(mutex);
+  auto                   entry = orig_sess_map.find(lookup_key);
   if (entry != orig_sess_map.end()) {
     auto node = entry->second;
     Dbg(dbg_ctl_ssl_origin_session_cache, "remove session: %s, session ptr: %p", lookup_key.c_str(), node->shared_sess.get());
