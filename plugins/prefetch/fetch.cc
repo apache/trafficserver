@@ -231,7 +231,7 @@ BgFetchState::init(const PrefetchConfig &config)
   TSMutexUnlock(_lock);
 
   /* Initialize fetching policy */
-  TSMutexLock(_policyLock);
+  TSMutexLockGuard policy_lock(_policyLock);
 
   if (!config.getFetchPolicy().empty() && 0 != config.getFetchPolicy().compare("simple")) {
     status &= initializePolicy(_policy, config.getFetchPolicy().c_str());
@@ -241,8 +241,6 @@ BgFetchState::init(const PrefetchConfig &config)
   } else {
     PrefetchDebug("Policy not specified or 'simple' policy chosen (skipping)");
   }
-
-  TSMutexUnlock(_policyLock);
 
   return status;
 }
